@@ -1446,6 +1446,9 @@ function App() {
   const [logging,  setLogging]  = useState(null);
   const [editLog,  setEditLog]  = useState(null);
   const [search,         setSearch]        = useState("");
+  const [filterGrade,    setFilterGrade]   = useState("All");
+  const [filterTrack,    setFilterTrack]   = useState("All");
+  const [sortBy,         setSortBy]        = useState("name");
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [importing,    setImporting]    = useState(false);
   const [userId,   setUserId]   = useState(null);
@@ -1478,8 +1481,33 @@ function App() {
 
   const filtered = useMemo(()=>{
     const q = search.toLowerCase();
-    return students.filter(s=>s.name.toLowerCase().includes(q)||s.grade.toLowerCase().includes(q));
-  },[students,search]);
+    let list = students.filter(s => {
+      const matchSearch = s.name.toLowerCase().includes(q) || s.grade.toLowerCase().includes(q);
+      const matchGrade  = filterGrade === "All" || s.grade === filterGrade;
+      const matchTrack  = filterTrack === "All" || s.track === filterTrack;
+      return matchSearch && matchGrade && matchTrack;
+    });
+    list = [...list].sort((a, b) => {
+      if (sortBy === "name")       return a.name.localeCompare(b.name);
+      if (sortBy === "grade")      return GRADES.indexOf(a.grade) - GRADES.indexOf(b.grade);
+      if (sortBy === "exam")  {
+        if (!a.examDate && !b.examDate) return 0;
+        if (!a.examDate) return 1;
+        if (!b.examDate) return -1;
+        return a.examDate.localeCompare(b.examDate);
+      }
+      if (sortBy === "lastlog") {
+        const aLog = logs.filter(l=>l.studentId===a.id).sort((x,y)=>y.date.localeCompare(x.date))[0];
+        const bLog = logs.filter(l=>l.studentId===b.id).sort((x,y)=>y.date.localeCompare(x.date))[0];
+        if (!aLog && !bLog) return 0;
+        if (!aLog) return 1;
+        if (!bLog) return -1;
+        return bLog.date.localeCompare(aLog.date);
+      }
+      return 0;
+    });
+    return list;
+  },[students, search, filterGrade, filterTrack, sortBy, logs]);
 
   const urgent = students.filter(s=>s.track==="exam" && weeksUntil(s.examDate)!==null && weeksUntil(s.examDate)<=4);
 
@@ -1826,9 +1854,54 @@ function App() {
         {tab==="students" && view==="list" && (
           <>
             {students.length > 0 && (
-              <input value={search} onChange={e=>setSearch(e.target.value)}
-                placeholder="Search students..."
-                className="input mb-5" style={{maxWidth:"280px"}}/>
+              <div className="flex flex-wrap items-center gap-2 mb-5 no-print">
+                {/* Search */}
+                <input value={search} onChange={e=>setSearch(e.target.value)}
+                  placeholder="Search students…"
+                  className="input" style={{width:"200px",flexShrink:0}}/>
+
+                {/* Grade filter */}
+                <select value={filterGrade} onChange={e=>setFilterGrade(e.target.value)}
+                  className="input" style={{width:"auto",flexShrink:0}}>
+                  <option value="All">All grades</option>
+                  {GRADES.map(g=><option key={g} value={g}>{g}</option>)}
+                </select>
+
+                {/* Track filter */}
+                <div className="flex gap-1 bg-slate-100 rounded-xl p-1" style={{flexShrink:0}}>
+                  {[["All","All"],["exam","Exam"],["general","General"]].map(([val,label])=>(
+                    <button key={val} onClick={()=>setFilterTrack(val)}
+                      className="px-3 py-1 rounded-lg text-xs font-semibold transition-all"
+                      style={filterTrack===val?{background:"white",color:"#4f46e5",boxShadow:"0 1px 4px #0001"}:{color:"#94a3b8"}}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Sort */}
+                <select value={sortBy} onChange={e=>setSortBy(e.target.value)}
+                  className="input" style={{width:"auto",flexShrink:0}}>
+                  <option value="name">Sort: Name</option>
+                  <option value="grade">Sort: Grade</option>
+                  <option value="exam">Sort: Exam date</option>
+                  <option value="lastlog">Sort: Last log</option>
+                </select>
+
+                {/* Active filter count badge */}
+                {(search || filterGrade!=="All" || filterTrack!=="All") && (
+                  <span style={{fontSize:"11px",fontWeight:700,padding:"3px 10px",borderRadius:"99px",background:"#eef2ff",color:"#4338ca"}}>
+                    {filtered.length} / {students.length}
+                  </span>
+                )}
+
+                {/* Clear filters */}
+                {(search || filterGrade!=="All" || filterTrack!=="All") && (
+                  <button onClick={()=>{setSearch("");setFilterGrade("All");setFilterTrack("All");}}
+                    style={{fontSize:"11px",fontWeight:700,color:"#94a3b8",background:"none",border:"none",cursor:"pointer",padding:"3px 6px"}}>
+                    ✕ Clear
+                  </button>
+                )}
+              </div>
             )}
             {students.length === 0 ? (
               <div className="card p-16 text-center fade-in">
@@ -1845,7 +1918,13 @@ function App() {
                     onDelete={deleteStudent} onSelect={selectStudent}/>
                 ))}
                 {filtered.length===0 && (
-                  <div className="col-span-3 text-center py-12 text-slate-400 text-sm">No students match "{search}"</div>
+                  <div className="col-span-3 text-center py-12 text-slate-400 text-sm">
+                    No students match your filters.
+                    <button onClick={()=>{setSearch("");setFilterGrade("All");setFilterTrack("All");}}
+                      className="ml-2" style={{color:"#4f46e5",fontWeight:600,background:"none",border:"none",cursor:"pointer",fontSize:"inherit"}}>
+                      Clear filters
+                    </button>
+                  </div>
                 )}
               </div>
             )}
