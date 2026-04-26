@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Piano Butler</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="auth.js"></script>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Pretendard', -apple-system, sans-serif;
+      background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 50%, #f0fdf4 100%);
+      min-height: 100vh;
+    }
+    .card {
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 60px -12px rgba(79,70,229,0.18), 0 4px 16px rgba(0,0,0,0.06);
+    }
+    .card:active {
+      transform: translateY(-1px);
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+// _supabase and requireAuth/signOut are provided by auth.js
+
+const SECTIONS = [
+  {
+    id: "repertoire",
+    href: "Index.html",
+    icon: "🎹",
+    title: "Repertoire Browser",
+    subtitle: "2026 AMEB Piano Syllabus",
+    description: "Browse and filter all pieces across Preliminary to Grade 8 — Comprehensive and Leisure. Search by era, nationality, focus area, and more.",
+    gradientFrom: "#6366f1",
+    gradientTo: "#8b5cf6",
+    shadow: "rgba(99,102,241,0.25)",
+    tag: "All Grades · 2,099 Pieces",
+  },
+  {
+    id: "teacher",
+    href: "teacher-dashboard.html",
+    icon: "👩‍🏫",
+    title: "Teacher Dashboard",
+    subtitle: "Student & Lesson Management",
+    description: "Track students, log lessons, plan exam timelines, and monitor focus patterns across your studio — all in one place.",
+    gradientFrom: "#10b981",
+    gradientTo: "#14b8a6",
+    shadow: "rgba(16,185,129,0.25)",
+    tag: "Exam & General Tracks",
+  },
+];
+
+function HubApp() {
+  const { useState, useEffect } = React;
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    requireAuth().then(session => {
+      if (session) setReady(true);
+      // requireAuth() handles redirect to login.html if no session
+    });
+  }, []);
+
+  const handleLogout = () => signOut();
+
+  if (!ready) return null;
+
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      {/* Header */}
+      <header style={{
+        padding: "32px 40px 0",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: 16,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{
+            width: 48, height: 48,
+            background: "linear-gradient(135deg, #4f46e5, #6366f1)",
+            borderRadius: 14,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 24, boxShadow: "0 4px 14px rgba(79,70,229,0.3)",
+          }}>🎹</div>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: "#1e293b", letterSpacing: "-0.03em" }}>
+              Piano Butler
+            </h1>
+            <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              2026 AMEB · Studio Hub
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={handleLogout}
+          style={{
+            fontSize: 11, fontWeight: 700, fontFamily: "inherit",
+            padding: "7px 16px", borderRadius: 99,
+            border: "1.5px solid #e2e8f0",
+            background: "white", color: "#94a3b8",
+            cursor: "pointer", letterSpacing: "0.05em",
+            textTransform: "uppercase",
+            boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
+            transition: "all 0.15s",
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = "#f1f5f9"}
+          onMouseLeave={e => e.currentTarget.style.background = "white"}
+        >
+          Sign out
+        </button>
+      </header>
+
+      {/* Hero text */}
+      <div style={{ textAlign: "center", padding: "52px 24px 40px" }}>
+        <p style={{
+          margin: "0 0 8px",
+          fontSize: 13, fontWeight: 700, color: "#a5b4fc",
+          textTransform: "uppercase", letterSpacing: "0.1em",
+        }}>Welcome back</p>
+        <h2 style={{
+          margin: 0,
+          fontSize: 34, fontWeight: 900, color: "#1e293b",
+          letterSpacing: "-0.04em", lineHeight: 1.15,
+        }}>Where would you like to go?</h2>
+      </div>
+
+      {/* Cards */}
+      <div style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: 24,
+        justifyContent: "center",
+        padding: "0 24px 60px",
+        maxWidth: 880,
+        margin: "0 auto",
+        width: "100%",
+      }}>
+        {SECTIONS.map(s => (
+          <a
+            key={s.id}
+            href={s.href}
+            className="card"
+            style={{
+              flex: "1 1 340px",
+              maxWidth: 400,
+              background: "white",
+              borderRadius: 24,
+              overflow: "hidden",
+              boxShadow: `0 8px 32px -8px ${s.shadow}, 0 2px 8px rgba(0,0,0,0.04)`,
+              textDecoration: "none",
+              color: "inherit",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            {/* Card header strip */}
+            <div style={{
+              background: `linear-gradient(135deg, ${s.gradientFrom}, ${s.gradientTo})`,
+              padding: "28px 28px 24px",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 16,
+            }}>
+              <div style={{
+                width: 52, height: 52, flexShrink: 0,
+                background: "rgba(255,255,255,0.2)",
+                borderRadius: 14,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 26,
+              }}>{s.icon}</div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "white", letterSpacing: "-0.02em" }}>
+                  {s.title}
+                </h3>
+                <p style={{ margin: "4px 0 0", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  {s.subtitle}
+                </p>
+              </div>
+            </div>
+
+            {/* Card body */}
+            <div style={{ padding: "22px 28px 26px", flex: 1, display: "flex", flexDirection: "column", gap: 16 }}>
+              <p style={{ margin: 0, fontSize: 14, color: "#64748b", lineHeight: 1.65, fontWeight: 500 }}>
+                {s.description}
+              </p>
+              <div style={{ marginTop: "auto", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{
+                  fontSize: 11, fontWeight: 700, color: "#a5b4fc",
+                  textTransform: "uppercase", letterSpacing: "0.07em",
+                }}>
+                  {s.tag}
+                </span>
+                <span style={{ fontSize: 18, color: "#cbd5e1" }}>→</span>
+              </div>
+            </div>
+          </a>
+        ))}
+      </div>
+
+      {/* Footer */}
+      <div style={{ textAlign: "center", padding: "0 24px 32px", marginTop: "auto" }}>
+        <p style={{ margin: 0, fontSize: 11, fontWeight: 600, color: "#cbd5e1", letterSpacing: "0.05em", textTransform: "uppercase" }}>
+          Piano Butler · 2026 AMEB Piano Syllabus
+        </p>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<HubApp />);
+</script>
+</body>
+</html>

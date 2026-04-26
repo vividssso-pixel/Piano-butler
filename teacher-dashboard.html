@@ -1,0 +1,1896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Piano Butler — Teacher Dashboard</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  <!-- Supabase Auth client (must load before auth.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <!-- Login gate -->
+  <script src="auth.js"></script>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    body { background:#f8fafc; font-family:'Pretendard',-apple-system,sans-serif; color:#334155; margin:0; }
+    input,select,textarea,button { font-family:inherit; }
+    textarea { resize:none; }
+    .card { background:white; border-radius:16px; border:1px solid #e2e8f0; }
+    .fade-in { animation:fadeIn 0.2s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+    .field-label { display:block; font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px; }
+    .input { width:100%; border:1px solid #e2e8f0; border-radius:12px; padding:10px 14px; font-size:14px; outline:none; transition:box-shadow 0.15s; background:white; }
+    .input:focus { box-shadow:0 0 0 3px #c7d2fe; border-color:#818cf8; }
+    .btn-primary { background:#4f46e5; color:white; border:none; border-radius:12px; padding:10px 20px; font-size:13px; font-weight:700; cursor:pointer; transition:background 0.15s; }
+    .btn-primary:hover { background:#4338ca; }
+    .btn-primary:disabled { background:#e2e8f0; color:#94a3b8; cursor:not-allowed; }
+    .btn-ghost { background:transparent; border:1px solid #e2e8f0; border-radius:12px; padding:10px 16px; font-size:13px; color:#64748b; cursor:pointer; transition:background 0.15s; }
+    .btn-ghost:hover { background:#f8fafc; }
+
+    /* ── Print / PDF ── */
+    .pdf-only { display:none; }
+    @media print {
+      body { background:white !important; font-size:11pt; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      header, .no-print { display:none !important; }
+      .card { box-shadow:none !important; }
+      .pdf-only { display:block !important; }
+      .fade-in { animation:none !important; }
+      /* Keep coloured borders and backgrounds in PDF */
+      * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useMemo, useCallback } = React;
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONSTANTS
+═══════════════════════════════════════════════════════════════════════════ */
+const GRADES = ["Preliminary","Grade 1","Grade 2","Grade 3","Grade 4","Grade 5","Grade 6","Grade 7","Grade 8"];
+const LESSON_DURATIONS = [30, 45, 60];
+const PLAN_MONTHS = [1, 2, 3, 6, 12];
+
+// Calculate goal date from startDate + N months
+const addMonths = (dateStr, months) => {
+  if (!dateStr) return "";
+  const d = new Date(dateStr + "T12:00:00");
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString().slice(0,10);
+};
+
+// Time allocation by lesson duration (minutes)
+const TIME_ALLOC = {
+  30: { repertoire:18, technical:7,  sr:3,  gk:2  },
+  45: { repertoire:25, technical:12, sr:5,  gk:3  },
+  60: { repertoire:35, technical:15, sr:7,  gk:3  },
+};
+// For custom durations: scale proportionally from the 45-min baseline
+const getAlloc = (mins) => {
+  if (TIME_ALLOC[mins]) return TIME_ALLOC[mins];
+  const ratio = mins / 45;
+  return {
+    repertoire: Math.round(25 * ratio),
+    technical:  Math.round(12 * ratio),
+    sr:         Math.round(5  * ratio),
+    gk:         Math.round(3  * ratio),
+  };
+};
+
+const PHASE_META = {
+  foundation:    { name:"Foundation & Learning",      color:"#6366f1", bg:"#eef2ff", text:"#4338ca" },
+  development:   { name:"Development & Technique",    color:"#0891b2", bg:"#ecfeff", text:"#0e7490" },
+  consolidation: { name:"Consolidation",              color:"#16a34a", bg:"#f0fdf4", text:"#15803d" },
+  polish:        { name:"Polish & Performance",       color:"#d97706", bg:"#fffbeb", text:"#b45309" },
+  exam:          { name:"Exam Preparation",           color:"#dc2626", bg:"#fef2f2", text:"#b91c1c" },
+  // General track phases
+  exploration:   { name:"Exploration & Learning",     color:"#7c3aed", bg:"#f5f3ff", text:"#6d28d9" },
+  performance:   { name:"Performance & Sharing",      color:"#0d9488", bg:"#f0fdfa", text:"#0f766e" },
+};
+
+const GRADE_COLOR = {
+  "Preliminary":{ bg:"#eef2ff", text:"#4338ca" },
+  "Grade 1":    { bg:"#f5f3ff", text:"#6d28d9" },
+  "Grade 2":    { bg:"#eff6ff", text:"#1d4ed8" },
+  "Grade 3":    { bg:"#ecfeff", text:"#0e7490" },
+  "Grade 4":    { bg:"#f0fdfa", text:"#0f766e" },
+  "Grade 5":    { bg:"#f0fdf4", text:"#15803d" },
+  "Grade 6":    { bg:"#f7fee7", text:"#4d7c0f" },
+  "Grade 7":    { bg:"#fffbeb", text:"#b45309" },
+  "Grade 8":    { bg:"#fff7ed", text:"#c2410c" },
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════════════════════════════════ */
+const uid = () => Math.random().toString(36).slice(2,9);
+const todayStr = () => new Date().toISOString().slice(0,10);
+const fmtDate = (d) => d ? new Date(d+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"}) : "—";
+const fmtShort = (d) => d ? new Date(d+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short"}) : "—";
+
+const MONTH_NAMES = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+const fmtMonth = (dateStr) => {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr + "T12:00:00");
+  return MONTH_NAMES[d.getMonth()] + " " + d.getFullYear();
+};
+
+const monthsUntil = (dateStr) => {
+  if (!dateStr) return null;
+  const now = new Date();
+  const end = new Date(dateStr + "T12:00:00");
+  const diff = (end.getFullYear() - now.getFullYear()) * 12 + (end.getMonth() - now.getMonth());
+  return Math.max(diff, 0);
+};
+const monthsSince = (dateStr) => {
+  if (!dateStr) return 1;
+  const start = new Date(dateStr + "T12:00:00");
+  const now   = new Date();
+  const diff  = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+  return Math.max(diff + 1, 1);
+};
+// Keep weeksUntil for exam countdown display only
+const weeksUntil = (dateStr) => {
+  if (!dateStr) return null;
+  const diff = Math.ceil((new Date(dateStr) - new Date()) / (1000*60*60*24*7));
+  return Math.max(diff, 0);
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PLAN GENERATION
+═══════════════════════════════════════════════════════════════════════════ */
+function buildPlan(student) {
+  const endDate = student.track === "exam"
+    ? student.examDate
+    : addMonths(student.startDate, student.planMonths || 3);
+  if (!endDate || !student.startDate) return [];
+
+  const MONTH_FOCUS = {
+    foundation:    ["Select all exam repertoire. Begin hands-separate reading of each piece.","Hands-together work begins. Establish daily practice routine.","Scales and technical exercises for this grade. Sight-reading starts.","Full review of all pieces HS and HT. Identify problem passages."],
+    development:   ["Increase tempo on all pieces. Focus on voicing and tone.","Technical demands: scales, arpeggios, exercises at tempo.","Musical shaping — dynamics, articulation, phrasing across all pieces.","Aural training and General Knowledge for this grade.","Targeted passage work. Rhythm and memory check."],
+    consolidation: ["Full run-throughs of all pieces. Record and self-review.","Technical work at performance tempo. Aural all required skills.","General Knowledge: composer context, form, Italian terms.","Back-to-back run-through. Note stamina and consistency."],
+    polish:        ["Mock exam #1 — full run in exam order. Written feedback.","Address mock exam feedback. Performance detail on each piece.","Mock exam #2 — simulate exam conditions. Final refinements."],
+    exam:          ["Light maintenance only. No new learning. Rest and trust your preparation."],
+    exploration:   ["Discuss goals. Select repertoire together. Begin reading new pieces.","Hands-together work begins. Identify technical focus areas.","Establish daily practice structure suited to this student."],
+    performance:   ["Polish all pieces to sharing standard. Record a home performance.","Reflect on progress. Celebrate achievements. Plan ahead."],
+  };
+
+  // Step 1: Generate every month from startDate to endDate (cursor-based, guaranteed correct)
+  const allMonths = [];
+  const cursor = new Date(student.startDate + "T12:00:00");
+  cursor.setDate(1);
+  const endD = new Date(endDate + "T12:00:00");
+  endD.setDate(1);
+
+  while (cursor <= endD) {
+    allMonths.push({
+      monthStr: cursor.toISOString().slice(0, 7),
+      label: MONTH_NAMES[cursor.getMonth()] + " " + cursor.getFullYear(),
+    });
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+
+  const total = allMonths.length;
+  if (total === 0) return [];
+
+  // Step 2: Assign a phase to each month index by ratio (no rounding errors)
+  const getPhase = (i) => {
+    const ratio = i / total;
+    if (student.track === "exam") {
+      if (i === total - 1)       return "exam";
+      if (ratio >= 0.85)         return "polish";
+      if (ratio >= 0.60)         return "consolidation";
+      if (ratio >= 0.30)         return "development";
+      return "foundation";
+    } else {
+      if (ratio >= 0.85)         return "performance";
+      if (ratio >= 0.65)         return "consolidation";
+      if (ratio >= 0.35)         return "development";
+      return "exploration";
+    }
+  };
+
+  // Step 3: Apply startingPhase — clamp early phases upward (never remove months)
+  const EXAM_ORDER    = ["foundation","development","consolidation","polish","exam"];
+  const GENERAL_ORDER = ["exploration","development","consolidation","performance"];
+  const order = student.track === "exam" ? EXAM_ORDER : GENERAL_ORDER;
+  const cutPhase = student.startingPhase || (student.track === "exam" ? "foundation" : "exploration");
+  const cutIdx   = Math.max(order.indexOf(cutPhase), 0);
+
+  // Step 4: Build final month objects
+  const phaseCounter = {};
+  return allMonths
+    .map((m, i) => {
+      // Clamp phase — never go below the startingPhase
+      const raw = getPhase(i);
+      const rawIdx = order.indexOf(raw);
+      const phase = rawIdx < cutIdx ? cutPhase : raw;
+      return { ...m, phase };
+    })
+    .map(m => {
+      phaseCounter[m.phase] = (phaseCounter[m.phase] || 0);
+      const focusArr = MONTH_FOCUS[m.phase] || ["Continue focused practice."];
+      const focus = focusArr[Math.min(phaseCounter[m.phase], focusArr.length - 1)];
+      phaseCounter[m.phase]++;
+      return { ...m, focus, alloc: getAlloc(student.lessonDuration) };
+    });
+}
+
+// Current month string "YYYY-MM"
+const currentMonthStr = () => new Date().toISOString().slice(0,7);
+const monthsSinceStart = (startDate) => {
+  if (!startDate) return 0;
+  const s = new Date(startDate + "T12:00:00");
+  const n = new Date();
+  return Math.max((n.getFullYear()-s.getFullYear())*12 + (n.getMonth()-s.getMonth()), 0);
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AI GUIDE (rule-based)
+═══════════════════════════════════════════════════════════════════════════ */
+function generateGuide(student, logs, currentMonthIdx, plan) {
+  const studentLogs = logs
+    .filter(l => l.studentId === student.id)
+    .sort((a,b) => b.date.localeCompare(a.date));
+
+  const recentLogs = studentLogs.slice(0, 3);
+  const phase = plan[currentMonthIdx]?.phase;
+  const weeksLeft = student.track === "exam" ? weeksUntil(student.examDate) : null;
+  const monthsLeft = student.track === "exam"
+    ? monthsUntil(student.examDate)
+    : monthsUntil(addMonths(student.startDate, student.planMonths||3));
+
+  const alerts  = [];
+  const tips    = [];
+  let   status  = "on-track"; // "on-track" | "warning" | "urgent"
+
+  if (studentLogs.length === 0) {
+    return { status:"neutral", alerts:[], tips:["Start logging lessons to get personalised guidance."] };
+  }
+
+  // ── Check: missing sections ──
+  const last2 = recentLogs.slice(0,2);
+  const noTech  = last2.length >= 2 && last2.every(l => !l.technical?.trim());
+  const noSR    = last2.length >= 2 && last2.every(l => !l.srAural?.trim());
+  const noGK    = recentLogs.slice(0,3).every(l => !l.gk?.trim()) && recentLogs.length >= 3;
+
+  if (noTech)  { alerts.push("Technical work hasn't been recorded for 2+ weeks."); status="warning"; }
+  if (noSR)    { alerts.push("Sight-reading & Aural missing for 2+ weeks."); status="warning"; }
+  if (noGK && (phase === "consolidation" || phase === "polish" || phase === "exam"))
+               { alerts.push("General Knowledge not recorded — important at this stage."); status="warning"; }
+
+  // ── Check: exam-specific urgency ──
+  if (student.track === "exam") {
+    if (weeksLeft !== null && weeksLeft <= 4) {
+      status = "urgent";
+      const hasMock = studentLogs.some(l => l.notes?.toLowerCase().includes("mock") || l.repertoire?.toLowerCase().includes("mock"));
+      if (!hasMock) alerts.push("No mock exam recorded yet — schedule one this week.");
+    }
+    if (monthsLeft !== null && monthsLeft <= 2 && phase === "development") {
+      alerts.push("Development phase is running long — consider moving to Consolidation.");
+      status = "warning";
+    }
+    if (phase === "exam") {
+      tips.push("Exam month: light maintenance only. No new learning. Rest and trust the preparation.");
+    }
+  }
+
+  // ── Positive patterns ──
+  const allSections = recentLogs.every(l => l.repertoire?.trim() && l.technical?.trim());
+  if (allSections && recentLogs.length >= 2) tips.push("Great consistency — all sections covered recently.");
+
+  // ── Phase-specific tips ──
+  const phaseTips = {
+    foundation:    "Focus on reading accuracy before adding speed.",
+    development:   "Rotate piece focus each session — don't overload one piece.",
+    consolidation: "Start recording full run-throughs. Note stamina and memory.",
+    polish:        "Run mock exams. One specific fix per piece per lesson.",
+    exam:          "Trust the preparation. Light practice, good sleep.",
+    exploration:   "Keep it positive — let the student drive repertoire choices where possible.",
+    performance:   "Celebrate what's been achieved this term.",
+  };
+  if (phaseTips[phase]) tips.push(phaseTips[phase]);
+
+  // ── Lesson duration tip ──
+  if (student.lessonDuration === 30 && recentLogs[0]) {
+    const lastLog = recentLogs[0];
+    const filledSections = [lastLog.repertoire, lastLog.technical, lastLog.srAural, lastLog.gk].filter(s => s?.trim()).length;
+    if (filledSections >= 4) tips.push("30-min lesson — prioritise repertoire + one other section per week.");
+  }
+
+  if (alerts.length === 0 && status === "on-track") tips.unshift("On track — keep the current pace.");
+
+  return { status, alerts, tips };
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SUPABASE DATA LAYER
+   _supabase is provided by auth.js (loaded before this script)
+═══════════════════════════════════════════════════════════════════════════ */
+
+// Map Supabase row → app student object
+const rowToStudent = (r) => ({
+  id: r.id,
+  name: r.name,
+  grade: r.grade || "Grade 5",
+  track: r.track || "exam",
+  examDate: r.exam_date || "",
+  startDate: r.created_at ? r.created_at.slice(0,10) : todayStr(),
+  planMonths: r.plan_months || 3,
+  lessonDuration: r.lesson_dur || 45,
+  lessonDay: r.lesson_day || "Monday",
+  lessonTime: r.lesson_time || "16:00",
+  startingPhase: r.start_phase || "foundation",
+  // extra fields stored as JSON blob in notes column
+  ...(r.extra ? JSON.parse(r.extra) : {}),
+});
+
+// Map app student object → Supabase row (for insert/update)
+const studentToRow = (f, userId) => {
+  // Pull out the core columns, stash the rest in `extra`
+  const { id, name, grade, track, examDate, startDate, planMonths,
+          lessonDuration, lessonDay, lessonTime, startingPhase, ...rest } = f;
+  return {
+    ...(userId ? { user_id: userId } : {}),
+    name: (name || "").trim(),
+    grade: grade || "Grade 5",
+    track: track || "exam",
+    exam_date: examDate || null,
+    plan_months: planMonths || 3,
+    lesson_dur: lessonDuration || 45,
+    lesson_day: lessonDay || "Monday",
+    lesson_time: lessonTime || "16:00",
+    start_phase: startingPhase || "foundation",
+    extra: Object.keys(rest).length ? JSON.stringify(rest) : null,
+  };
+};
+
+// Map Supabase row → app log object (gk is the canonical app field name)
+const rowToLog = (r) => {
+  const extra = r.extra ? (() => { try { return JSON.parse(r.extra); } catch(e) { return {}; } })() : {};
+  return {
+    id: r.id,
+    studentId: r.student_id,
+    date: r.date,
+    monthStr: r.date ? r.date.slice(0,7) : "",
+    repertoire: r.repertoire || "",
+    technical: r.technical || "",
+    srAural: r.sr_aural || "",
+    gk: r.general_k || "",
+    notes: r.notes || "",
+    mood: extra.mood || "",
+    pieceRating: extra.pieceRating || "",
+  };
+};
+
+// Map app log object → Supabase row
+// NOTE: extra column must exist in Supabase: ALTER TABLE lesson_logs ADD COLUMN extra text;
+const logToRow = (f, studentId, userId) => ({
+  ...(userId ? { user_id: userId } : {}),
+  student_id: studentId,
+  date: f.date || todayStr(),
+  repertoire: f.repertoire || "",
+  technical: f.technical || "",
+  sr_aural: f.srAural || "",
+  general_k: f.gk || "",
+  notes: f.notes || "",
+  ...(( f.mood || f.pieceRating ) ? { extra: JSON.stringify({ mood: f.mood || "", pieceRating: f.pieceRating || "" }) } : {}),
+});
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STUDENT MODAL
+═══════════════════════════════════════════════════════════════════════════ */
+function StudentModal({ initial, onSave, onClose }) {
+  const LEVELS = ["Beginner","Elementary","Intermediate","Advanced"];
+  const EXAM_PHASES = [
+    { key:"foundation",    label:"Foundation",    sub:"Just starting — reading new pieces" },
+    { key:"development",   label:"Development",   sub:"Pieces learned, building technique" },
+    { key:"consolidation", label:"Consolidation", sub:"All pieces solid, polishing" },
+    { key:"polish",        label:"Polish",        sub:"Mock exam ready" },
+  ];
+  const GENERAL_PHASES = [
+    { key:"exploration",   label:"Exploration",   sub:"Choosing & learning new repertoire" },
+    { key:"development",   label:"Development",   sub:"Developing pieces technically" },
+    { key:"consolidation", label:"Consolidation", sub:"Pieces nearly performance-ready" },
+  ];
+
+  const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+  const blank = {
+    name:"", grade:"Grade 5", level:"Elementary", track:"exam",
+    examDate:"", planMonths:3, customMonths:false, goalMonthsInput:3, termGoal:"",
+    startDate: todayStr(),
+    lessonDuration: 45, customDuration: false, lessonsPerWeek: 1,
+    startingPhase: "foundation",
+    lessonDay: "Monday", lessonDay2: "",
+    lessonTime: "16:00", lessonTime2: "",
+    listA:"", listB:"", listC:"",
+  };
+  // Merge initial into blank so new fields always have defaults
+  // Also sync goalMonthsInput with planMonths so custom input shows correct value
+  const [f, setF] = useState(() => {
+    if (!initial) return blank;
+    const merged = { ...blank, ...initial };
+    merged.goalMonthsInput = merged.planMonths;
+    return merged;
+  });
+  const set = (k,v) => setF(p => ({...p,[k]:v}));
+  const valid = f.name.trim().length > 0 && (f.track==="exam" ? !!f.examDate : !!f.planMonths);
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 overflow-y-auto" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg my-6 fade-in" onClick={e=>e.stopPropagation()}>
+        <div className="p-6 border-b border-slate-100">
+          <h2 className="text-base font-bold text-slate-800">{initial?"Edit student":"Add student"}</h2>
+        </div>
+        <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+
+          {/* Name */}
+          <div>
+            <label className="field-label text-slate-500">Student name</label>
+            <input autoFocus className="input" value={f.name} onChange={e=>set("name",e.target.value)} placeholder="e.g. Clara Park"/>
+          </div>
+
+          {/* Track */}
+          <div>
+            <label className="field-label text-slate-500">Track</label>
+            <div className="flex gap-2">
+              {[["exam","Exam prep","#4f46e5"],["general","General lessons","#0d9488"]].map(([val,label,col])=>(
+                <button key={val} onClick={()=>set("track",val)}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all"
+                  style={f.track===val?{background:col,color:"white",borderColor:col}:{background:"white",color:"#64748b",borderColor:"#e2e8f0"}}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Grade / Level — conditional on track */}
+          {f.track==="exam" ? (
+            <div>
+              <label className="field-label text-slate-500">AMEB Grade</label>
+              <select className="input" value={f.grade} onChange={e=>set("grade",e.target.value)}>
+                {GRADES.map(g=><option key={g}>{g}</option>)}
+              </select>
+            </div>
+          ) : (
+            <div>
+              <label className="field-label text-slate-500">Level</label>
+              <div className="grid grid-cols-2 gap-2">
+                {LEVELS.map(lv=>(
+                  <button key={lv} onClick={()=>set("level",lv)}
+                    className="py-2.5 rounded-xl text-sm font-semibold border transition-all"
+                    style={f.level===lv?{background:"#0d9488",color:"white",borderColor:"#0d9488"}:{background:"white",color:"#64748b",borderColor:"#e2e8f0"}}>
+                    {lv}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Track-specific */}
+          {f.track==="exam" ? (
+            <div>
+              <label className="field-label text-slate-500">Exam date</label>
+              <input type="date" className="input" value={f.examDate} onChange={e=>set("examDate",e.target.value)}/>
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className="field-label text-slate-500">
+                  Plan length
+                  <span className="font-normal normal-case text-slate-400 ml-1">— how long is this plan?</span>
+                </label>
+                <div className="flex gap-2 flex-wrap mb-2">
+                  {PLAN_MONTHS.map(m=>{
+                    const active = f.planMonths===m && !f.customMonths;
+                    return (
+                      <button key={m} onClick={()=>{set("planMonths",m);set("customMonths",false);}}
+                        className="px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all"
+                        style={active?{background:"#0d9488",color:"white",borderColor:"#0d9488"}:{background:"white",color:"#64748b",borderColor:"#e2e8f0"}}>
+                        {m === 1 ? "1 mo" : m === 12 ? "1 yr" : `${m} mo`}
+                      </button>
+                    );
+                  })}
+                  <button onClick={()=>set("customMonths",true)}
+                    className="px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all"
+                    style={f.customMonths?{background:"#0d9488",color:"white",borderColor:"#0d9488"}:{background:"white",color:"#64748b",borderColor:"#e2e8f0"}}>
+                    Custom
+                  </button>
+                </div>
+                {f.customMonths && (
+                  <div className="flex items-center gap-2">
+                    <input type="number" min="1" max="24" className="input text-sm" style={{maxWidth:"80px"}}
+                      value={f.goalMonthsInput}
+                      onChange={e=>{const v=Math.max(1,Math.min(24,parseInt(e.target.value)||1));set("goalMonthsInput",v);set("planMonths",v);}}
+                      placeholder="3"/>
+                    <span className="text-sm text-slate-400">months</span>
+                  </div>
+                )}
+                {/* Show calculated end date */}
+                {f.startDate && (
+                  <p className="text-xs text-slate-400 mt-2">
+                    Plan ends: <span className="font-semibold text-slate-600">{fmtDate(addMonths(f.startDate, f.planMonths))}</span>
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="field-label text-slate-500">Goal <span className="font-normal text-slate-400 normal-case">(what should this student achieve?)</span></label>
+                <textarea className="input" rows={2} value={f.termGoal} onChange={e=>set("termGoal",e.target.value)}
+                  placeholder="e.g. Complete Sonatina Op.36 No.1, scales 2 oct HT fluently, enjoy playing"/>
+              </div>
+            </>
+          )}
+
+          {/* Lesson duration */}
+          <div>
+            <label className="field-label text-slate-500">Lesson duration</label>
+            <div className="flex gap-2 mb-2">
+              {[30, 45, 60].map(d => {
+                const active = f.lessonDuration===d && !f.customDuration;
+                return (
+                  <button key={d} onClick={()=>{set("lessonDuration",d);set("customDuration",false);}}
+                    className="flex-1 py-3 rounded-xl border transition-all flex items-center justify-center"
+                    style={active?{background:"#4f46e5",color:"white",borderColor:"#4f46e5",boxShadow:"0 2px 8px #4f46e533"}:{background:"white",color:"#64748b",borderColor:"#e2e8f0"}}>
+                    <span className="text-base font-bold">{d}m</span>
+                  </button>
+                );
+              })}
+              <button onClick={()=>set("customDuration",true)}
+                className="flex-1 py-3 rounded-xl border transition-all flex items-center justify-center"
+                style={f.customDuration?{background:"#4f46e5",color:"white",borderColor:"#4f46e5",boxShadow:"0 2px 8px #4f46e533"}:{background:"white",color:"#64748b",borderColor:"#e2e8f0"}}>
+                <span className="text-base font-bold">Custom</span>
+              </button>
+            </div>
+            {f.customDuration && (
+              <div className="flex items-center gap-2">
+                <input type="number" min="10" max="180" className="input text-sm"
+                  style={{maxWidth:"100px"}}
+                  value={f.lessonDuration}
+                  onChange={e=>set("lessonDuration", Math.max(10,Math.min(180,parseInt(e.target.value)||45)))}
+                  placeholder="45"/>
+                <span className="text-sm text-slate-400">minutes</span>
+              </div>
+            )}
+          </div>
+
+          {/* Lessons / week + day/time */}
+          <div>
+            <label className="field-label text-slate-500">Lessons / week</label>
+            <div className="flex gap-2 mb-3">
+              {[1,2].map(n=>(
+                <button key={n} onClick={()=>set("lessonsPerWeek",n)}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all"
+                  style={f.lessonsPerWeek===n?{background:"#4f46e5",color:"white",borderColor:"#4f46e5"}:{background:"white",color:"#64748b",borderColor:"#e2e8f0"}}>
+                  {n}×
+                </button>
+              ))}
+            </div>
+
+            {/* Lesson 1 day + time */}
+            <div className="flex gap-2 items-center mb-2">
+              <select className="input text-sm" style={{flex:2}} value={f.lessonDay} onChange={e=>set("lessonDay",e.target.value)}>
+                {DAYS.map(d=><option key={d}>{d}</option>)}
+              </select>
+              <input type="time" className="input text-sm" style={{flex:1}} value={f.lessonTime} onChange={e=>set("lessonTime",e.target.value)}/>
+            </div>
+
+            {/* Lesson 2 day + time — only if 2× per week */}
+            {f.lessonsPerWeek === 2 && (
+              <div className="flex gap-2 items-center">
+                <select className="input text-sm" style={{flex:2}} value={f.lessonDay2} onChange={e=>set("lessonDay2",e.target.value)}>
+                  <option value="">— 2nd day —</option>
+                  {DAYS.map(d=><option key={d}>{d}</option>)}
+                </select>
+                <input type="time" className="input text-sm" style={{flex:1}} value={f.lessonTime2} onChange={e=>set("lessonTime2",e.target.value)}/>
+              </div>
+            )}
+          </div>
+
+          {/* Start date */}
+          <div>
+            <label className="field-label text-slate-500">Lessons started with me</label>
+            <input type="date" className="input" value={f.startDate} onChange={e=>set("startDate",e.target.value)}/>
+          </div>
+
+          {/* Starting phase — exam track only */}
+          {f.track === "exam" && (
+            <div>
+              <label className="field-label text-slate-500">
+                Current preparation stage
+                <span className="font-normal normal-case text-slate-400 ml-1">— where is this student right now?</span>
+              </label>
+              <div className="space-y-2">
+                {EXAM_PHASES.map(({key,label,sub})=>{
+                  const active = (f.startingPhase||"foundation") === key;
+                  return (
+                    <button key={key} onClick={()=>set("startingPhase",key)}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all"
+                      style={active
+                        ? {background:"#4f46e5",borderColor:"#4f46e5",color:"white"}
+                        : {background:"white",borderColor:"#e2e8f0",color:"#64748b"}}>
+                      <div className="w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{background: active ? "white" : "#cbd5e1"}}/>
+                      <div>
+                        <p className="text-sm font-semibold leading-tight">{label}</p>
+                        <p className="text-xs mt-0.5 opacity-75">{sub}</p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+
+        </div>
+        <div className="p-6 flex gap-3 border-t border-slate-100">
+          <button className="btn-ghost flex-1" onClick={onClose}>Cancel</button>
+          <button className="btn-primary flex-1" onClick={()=>valid&&onSave(f)} disabled={!valid}>
+            {initial?"Save changes":"Add student"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LESSON LOG MODAL
+═══════════════════════════════════════════════════════════════════════════ */
+function LogModal({ student, existingLog, currentMonth, lastLog, onSave, onClose }) {
+  const blank = { date:todayStr(), repertoire:"", technical:"", srAural:"", gk:"", notes:"", mood:"", pieceRating:"" };
+  const [f, setF] = useState(existingLog ?? blank);
+  const [copied, setCopied] = useState(false);
+  const set = (k,v) => setF(p=>({...p,[k]:v}));
+
+  // ── Mood rating ──
+  const MOODS = [
+    { val:"rough",   emoji:"😕", label:"Rough" },
+    { val:"okay",    emoji:"😐", label:"Okay"  },
+    { val:"good",    emoji:"🙂", label:"Good"  },
+    { val:"great",   emoji:"😀", label:"Great" },
+  ];
+
+  // ── Piece traffic light ──
+  const TRAFFIC = [
+    { val:"🔴", label:"Needs work" },
+    { val:"🟡", label:"Progressing" },
+    { val:"🟢", label:"Solid" },
+  ];
+
+  // ── Focus tag chips ──
+  const CHIPS = {
+    repertoire: ["HS","HT","Slow practice","Voicing","Dynamics","Phrasing","Memory","Bar-by-bar","LH alone","RH alone","Full run"],
+    technical:  ["Scales","Arpeggios","Contrary motion","Broken chords","Octaves","Staccato","Legato","Fingering","Wrist","Tempo","Hands together"],
+  };
+
+  const appendChip = (key, chip) => {
+    setF(p => {
+      const cur = p[key];
+      const sep = cur && !cur.endsWith(" ") && !cur.endsWith("\n") ? " " : "";
+      return { ...p, [key]: cur + sep + chip + " " };
+    });
+  };
+
+  const insertRating = (val) => {
+    set("pieceRating", val);
+    setF(p => {
+      const cur = p.repertoire;
+      // Replace existing leading traffic light if present
+      const cleaned = cur.replace(/^[🔴🟡🟢]\s*/, "");
+      return { ...p, repertoire: val + " " + cleaned, pieceRating: val };
+    });
+  };
+
+  const copyHomework = () => {
+    if (!f.notes?.trim()) return;
+    navigator.clipboard.writeText(f.notes.trim()).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const showLastHint = !existingLog && lastLog?.notes?.trim();
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-start justify-center z-50 p-4 overflow-y-auto" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg my-6 fade-in" onClick={e=>e.stopPropagation()}>
+
+        {/* Header */}
+        <div className="p-5 border-b border-slate-100">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div>
+              <p className="font-bold text-slate-800">{student.name}</p>
+              <p className="text-xs text-slate-400 mt-0.5">{student.grade} · {currentMonth} · {student.lessonDuration} min lesson</p>
+            </div>
+            <input type="date" className="input" style={{width:"auto",fontSize:"12px",padding:"6px 10px"}}
+              value={f.date} onChange={e=>set("date",e.target.value)}/>
+          </div>
+          {/* Mood rating */}
+          <div className="flex items-center gap-2">
+            <span style={{fontSize:"10px",fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:"#94a3b8"}}>Today's lesson</span>
+            <div className="flex gap-1">
+              {MOODS.map(m=>(
+                <button key={m.val} onClick={()=>set("mood", f.mood===m.val ? "" : m.val)}
+                  title={m.label}
+                  style={{
+                    fontSize:"20px", padding:"4px 6px", borderRadius:"8px", border:"none", cursor:"pointer", lineHeight:1,
+                    background: f.mood===m.val ? "#f1f5f9" : "transparent",
+                    outline: f.mood===m.val ? "2px solid #6366f1" : "none",
+                    transition:"all 0.1s",
+                  }}>
+                  {m.emoji}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Last lesson hint */}
+        {showLastHint && (
+          <div style={{margin:"12px 20px 0",padding:"10px 14px",background:"#f8fafc",borderRadius:"10px",border:"1px dashed #e2e8f0"}}>
+            <p style={{margin:"0 0 3px",fontSize:"10px",fontWeight:700,letterSpacing:"0.07em",textTransform:"uppercase",color:"#94a3b8"}}>Last lesson homework</p>
+            <p style={{margin:0,fontSize:"12px",color:"#94a3b8",lineHeight:1.5,whiteSpace:"pre-wrap"}}>{lastLog.notes.trim()}</p>
+          </div>
+        )}
+
+        {/* Fields */}
+        <div className="p-5 space-y-4 max-h-[55vh] overflow-y-auto">
+
+          {/* Repertoire — with traffic light + chips */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="field-label" style={{color:"#4f46e5",marginBottom:0}}>Repertoire</label>
+              <div className="flex gap-1">
+                {TRAFFIC.map(t=>(
+                  <button key={t.val} onClick={()=>insertRating(t.val)}
+                    title={t.label}
+                    style={{
+                      fontSize:"15px", padding:"2px 5px", borderRadius:"6px", border:"none", cursor:"pointer", lineHeight:1,
+                      background: f.pieceRating===t.val ? "#f1f5f9" : "transparent",
+                      outline: f.pieceRating===t.val ? "2px solid #6366f1" : "none",
+                    }}>
+                    {t.val}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <textarea
+              value={f.repertoire}
+              onChange={e=>set("repertoire",e.target.value)}
+              rows={2}
+              placeholder="e.g. List A bars 1–16 HT, voicing in bar 8. List B HS, LH secure."
+              className="input text-sm"
+              style={{background:"#eef2ff",borderColor:"transparent"}}
+              onFocus={e=>e.target.style.borderColor="#4f46e5"}
+              onBlur={e=>e.target.style.borderColor="transparent"}
+            />
+            <div className="flex flex-wrap gap-1 mt-1">
+              {CHIPS.repertoire.map(c=>(
+                <button key={c} onClick={()=>appendChip("repertoire",c)}
+                  style={{fontSize:"10px",fontWeight:600,padding:"2px 8px",borderRadius:"99px",border:"1px solid #c7d2fe",background:"#eef2ff",color:"#4338ca",cursor:"pointer"}}>
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Technical — with chips */}
+          <div>
+            <label className="field-label" style={{color:"#7c3aed"}}>Technical work</label>
+            <textarea
+              value={f.technical}
+              onChange={e=>set("technical",e.target.value)}
+              rows={2}
+              placeholder="e.g. 5B exercise – good. B major 4 oct, need more speed."
+              className="input text-sm"
+              style={{background:"#f5f3ff",borderColor:"transparent"}}
+              onFocus={e=>e.target.style.borderColor="#7c3aed"}
+              onBlur={e=>e.target.style.borderColor="transparent"}
+            />
+            <div className="flex flex-wrap gap-1 mt-1">
+              {CHIPS.technical.map(c=>(
+                <button key={c} onClick={()=>appendChip("technical",c)}
+                  style={{fontSize:"10px",fontWeight:600,padding:"2px 8px",borderRadius:"99px",border:"1px solid #ddd6fe",background:"#f5f3ff",color:"#6d28d9",cursor:"pointer"}}>
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* SR & Aural */}
+          <div>
+            <label className="field-label" style={{color:"#0891b2"}}>Sight-reading & Aural</label>
+            <textarea
+              value={f.srAural}
+              onChange={e=>set("srAural",e.target.value)}
+              rows={2}
+              placeholder="e.g. SR p.14 – hesitant bar 5. Intervals up to 6th solid."
+              className="input text-sm"
+              style={{background:"#ecfeff",borderColor:"transparent"}}
+              onFocus={e=>e.target.style.borderColor="#0891b2"}
+              onBlur={e=>e.target.style.borderColor="transparent"}
+            />
+          </div>
+
+          {/* General Knowledge */}
+          <div>
+            <label className="field-label" style={{color:"#d97706"}}>General Knowledge</label>
+            <textarea
+              value={f.gk}
+              onChange={e=>set("gk",e.target.value)}
+              rows={2}
+              placeholder="e.g. Baroque style discussed. Terms: andante, legato. Binary form."
+              className="input text-sm"
+              style={{background:"#fffbeb",borderColor:"transparent"}}
+              onFocus={e=>e.target.style.borderColor="#d97706"}
+              onBlur={e=>e.target.style.borderColor="transparent"}
+            />
+          </div>
+
+          {/* Notes & homework — with copy button */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="field-label" style={{color:"#64748b",marginBottom:0}}>Notes & homework</label>
+              <button onClick={copyHomework}
+                style={{
+                  fontSize:"10px",fontWeight:700,padding:"3px 10px",borderRadius:"99px",cursor:"pointer",
+                  border:"1px solid #e2e8f0",background: copied ? "#f0fdf4" : "white",
+                  color: copied ? "#15803d" : "#64748b", transition:"all 0.2s",
+                }}>
+                {copied ? "✓ Copied!" : "📋 Copy"}
+              </button>
+            </div>
+            <textarea
+              value={f.notes}
+              onChange={e=>set("notes",e.target.value)}
+              rows={2}
+              placeholder="e.g. HW: List A bars 1–8 slowly ×3 daily. Parents updated re: exam."
+              className="input text-sm"
+              style={{background:"#f8fafc",borderColor:"transparent"}}
+              onFocus={e=>e.target.style.borderColor="#64748b"}
+              onBlur={e=>e.target.style.borderColor="transparent"}
+            />
+          </div>
+
+        </div>
+
+        <div className="p-5 flex gap-3 border-t border-slate-100">
+          <button className="btn-ghost flex-1" onClick={onClose}>Cancel</button>
+          <button className="btn-primary flex-1" onClick={()=>onSave(f)}>Save lesson log</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STUDENT CARD (list view)
+═══════════════════════════════════════════════════════════════════════════ */
+function StudentCard({ student, logs, onLog, onEdit, onDelete, onSelect }) {
+  const gc = GRADE_COLOR[student.grade] || GRADE_COLOR["Grade 5"];
+  const studentLogs = logs.filter(l=>l.studentId===student.id).sort((a,b)=>b.date.localeCompare(a.date));
+  const lastLog = studentLogs[0];
+  const studentNorm = { startingPhase: student.track==="exam" ? "foundation" : "exploration", ...student };
+  const plan = buildPlan(studentNorm);
+  const curMonthStr = currentMonthStr();
+  const currentMonthIdx = plan.findIndex(m => m.monthStr === curMonthStr);
+  const currentPlanMonth = currentMonthIdx >= 0 ? plan[currentMonthIdx] : plan[plan.length-1];
+  const phase = currentPlanMonth?.phase;
+  const pm = PHASE_META[phase] || PHASE_META.foundation;
+
+  const weeksLeft = student.track==="exam" ? weeksUntil(student.examDate) : null;
+  const monthsLeft = student.track==="exam"
+    ? monthsUntil(student.examDate)
+    : monthsUntil(addMonths(student.startDate, student.planMonths||3));
+
+  const guide = generateGuide(student, logs, Math.max(currentMonthIdx,0), plan);
+
+  const urgentColor = weeksLeft !== null && weeksLeft <= 4 ? "#dc2626" : weeksLeft !== null && weeksLeft <= 8 ? "#d97706" : "#16a34a";
+
+  const initials = student.name.split(" ").map(n=>n[0]).join("").slice(0,2).toUpperCase();
+
+  return (
+    <div className="card overflow-hidden hover:shadow-lg transition-all duration-200 cursor-pointer fade-in flex flex-col"
+      onClick={()=>onSelect(student)}>
+
+      {/* Phase bar */}
+      <div className="h-1.5" style={{background:pm.color}}/>
+
+      <div className="p-5 flex-1 flex flex-col">
+        {/* Top row */}
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+              style={{background:gc.bg, color:gc.text}}>{initials}</div>
+            <div>
+              <p className="font-bold text-slate-800 text-sm leading-tight">{student.name}</p>
+              <p className="text-xs text-slate-400 mt-0.5">{student.track==="exam" ? student.grade : (student.level||"General")} · {student.lessonDuration}m</p>
+            </div>
+          </div>
+          <div className="text-right shrink-0">
+            {student.track==="exam" && weeksLeft !== null ? (
+              <>
+                <p className="text-lg font-black" style={{color:urgentColor}}>{weeksLeft}w</p>
+                <p className="text-xs text-slate-400">to exam</p>
+              </>
+            ) : monthsLeft !== null ? (
+              <>
+                <p className="text-lg font-black text-slate-600">{monthsLeft}mo</p>
+                <p className="text-xs text-slate-400">left</p>
+              </>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Phase + current month */}
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{background:pm.bg,color:pm.text}}>
+            {pm.name}
+          </span>
+          {currentPlanMonth && <span className="text-xs text-slate-400">{currentPlanMonth.label}</span>}
+        </div>
+
+        {/* This month focus */}
+        {currentPlanMonth && (
+          <div className="bg-slate-50 rounded-xl p-3 mb-3">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1">This month</p>
+            <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">{currentPlanMonth.focus}</p>
+          </div>
+        )}
+
+        {/* AI guide */}
+        {guide.status !== "neutral" && (
+          <div className="rounded-xl p-3 mb-3"
+            style={{background: guide.status==="urgent"?"#fef2f2": guide.status==="warning"?"#fffbeb":"#f0fdf4"}}>
+            <p className="text-[10px] font-bold uppercase tracking-wide mb-1"
+              style={{color: guide.status==="urgent"?"#dc2626": guide.status==="warning"?"#d97706":"#16a34a"}}>
+              {guide.status==="urgent"?"⚠ Urgent": guide.status==="warning"?"⚡ Check":"✓ On track"}
+            </p>
+            <p className="text-xs leading-relaxed" style={{color:"#475569"}}>
+              {guide.alerts[0] || guide.tips[0]}
+            </p>
+          </div>
+        )}
+
+        {/* Last log */}
+        <div className="mt-auto">
+          {lastLog ? (
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs text-slate-400">Last lesson: {fmtShort(lastLog.date)}</p>
+              {/* Mood trend — last 3 logs */}
+              {(() => {
+                const recent = studentLogs.slice(0,3).map(l=>l.mood).filter(Boolean);
+                const MOOD_EMOJI = { rough:"😕", okay:"😐", good:"🙂", great:"😀" };
+                return recent.length > 0 ? (
+                  <div className="flex gap-0.5" title="Recent lesson moods">
+                    {recent.map((m,i)=>(
+                      <span key={i} style={{fontSize:"14px",opacity: i===0?1:i===1?0.65:0.35}}>{MOOD_EMOJI[m]||""}</span>
+                    ))}
+                  </div>
+                ) : null;
+              })()}
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400 mb-3">No lessons logged yet</p>
+          )}
+
+          {/* Actions */}
+          <div className="flex gap-2" onClick={e=>e.stopPropagation()}>
+            <button onClick={()=>onLog(student)}
+              className="flex-1 text-white text-xs font-bold py-2 rounded-xl transition-all"
+              style={{background:"#4f46e5"}}>
+              + Log lesson
+            </button>
+            <button onClick={()=>onEdit(student)}
+              className="px-3 py-2 border border-slate-200 rounded-xl text-xs text-slate-500 hover:bg-slate-50">
+              Edit
+            </button>
+            <button onClick={()=>onDelete(student.id)}
+              className="px-3 py-2 border border-red-100 rounded-xl text-xs text-red-400 hover:bg-red-50">
+              ✕
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GENERAL PLAN PANEL — Last Lesson + Focus Pattern
+═══════════════════════════════════════════════════════════════════════════ */
+
+function GeneralPlanPanel({ student, logs }) {
+  const AREAS = [
+    { key:"repertoire", label:"Repertoire", bg:"#eef2ff", col:"#4f46e5" },
+    { key:"technical",  label:"Technical",  bg:"#f5f3ff", col:"#7c3aed" },
+    { key:"srAural",    label:"SR & Aural", bg:"#ecfeff", col:"#0891b2" },
+    { key:"gk",         label:"Gen. Knowledge", bg:"#fffbeb", col:"#d97706" },
+    { key:"notes",      label:"Notes",      bg:"#f8fafc", col:"#64748b" },
+  ];
+
+  const sorted = [...logs].sort((a,b)=>b.date.localeCompare(a.date));
+  const latestLog = sorted[0];
+
+  // Count how many logs touched each area
+  const counts = {};
+  AREAS.forEach(a => { counts[a.key] = logs.filter(l=>l[a.key]?.trim()).length; });
+  const maxCount = Math.max(...Object.values(counts), 1);
+
+  return (
+    <div className="mt-6 space-y-5">
+
+      {/* Latest lesson snapshot */}
+      <div className="card p-5">
+        <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-4">
+          {latestLog ? `Last lesson — ${latestLog.date}` : "Last lesson"}
+        </h3>
+        {latestLog ? (
+          <div className="space-y-2">
+            {AREAS.filter(a => latestLog[a.key]?.trim()).map(a => (
+              <div key={a.key} className="px-3 py-2.5 rounded-xl text-xs" style={{background:a.bg}}>
+                <span className="font-bold mr-2" style={{color:a.col}}>{a.label}</span>
+                <span className="text-slate-600 leading-relaxed">
+                  {latestLog[a.key].slice(0,140)}{latestLog[a.key].length>140?"…":""}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-slate-400 italic">Log your first lesson to see notes here.</p>
+        )}
+      </div>
+
+      {/* Focus pattern — built from all logs */}
+      <div className="card p-5">
+        <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-1">Focus pattern</h3>
+        <p className="text-xs text-slate-400 mb-4">Based on {logs.length} lesson{logs.length!==1?"s":""} logged</p>
+        {logs.length === 0 ? (
+          <p className="text-xs text-slate-400 italic">No lessons logged yet — pattern will appear as you log lessons.</p>
+        ) : (
+          <div className="space-y-2.5">
+            {AREAS.filter(a => counts[a.key] > 0).sort((a,b)=>counts[b.key]-counts[a.key]).map(a => (
+              <div key={a.key} className="flex items-center gap-3">
+                <span className="text-xs font-semibold w-28 shrink-0" style={{color:a.col}}>{a.label}</span>
+                <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full rounded-full transition-all"
+                    style={{width:`${Math.round((counts[a.key]/maxCount)*100)}%`, background:a.col, opacity:0.7}}/>
+                </div>
+                <span className="text-xs text-slate-400 w-12 text-right shrink-0">
+                  {counts[a.key]} lesson{counts[a.key]!==1?"s":""}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STUDENT DETAIL VIEW
+═══════════════════════════════════════════════════════════════════════════ */
+function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onBack, onEdit }) {
+  const gc = GRADE_COLOR[student.grade] || GRADE_COLOR["Grade 5"];
+  // Back-fill startingPhase for older student records
+  const studentNorm = { startingPhase: student.track==="exam" ? "foundation" : "exploration", ...student };
+  const plan = buildPlan(studentNorm);
+  const curMonthStr = currentMonthStr();
+  const currentMonthIdx = plan.findIndex(m => m.monthStr === curMonthStr);
+  const currentPlanMonth = currentMonthIdx >= 0 ? plan[currentMonthIdx] : plan[plan.length-1];
+  const phase = currentPlanMonth?.phase;
+  const pm = PHASE_META[phase] || PHASE_META.foundation;
+  const alloc = getAlloc(student.lessonDuration);
+
+  const studentLogs = logs.filter(l=>l.studentId===student.id).sort((a,b)=>b.date.localeCompare(a.date));
+  const guide = generateGuide(student, logs, Math.max(currentMonthIdx,0), plan);
+
+  const weeksLeft  = student.track==="exam" ? weeksUntil(student.examDate) : null;
+  const monthsLeft = student.track==="exam"
+    ? monthsUntil(student.examDate)
+    : monthsUntil(addMonths(student.startDate, student.planMonths||3));
+
+  const initials = student.name.split(" ").map(n=>n[0]).join("").slice(0,2).toUpperCase();
+
+  const LOG_SECTIONS = [
+    { key:"repertoire", label:"Repertoire",          color:"#4f46e5", bg:"#eef2ff" },
+    { key:"technical",  label:"Technical",            color:"#7c3aed", bg:"#f5f3ff" },
+    { key:"srAural",    label:"SR & Aural",           color:"#0891b2", bg:"#ecfeff" },
+    { key:"gk",         label:"General Knowledge",   color:"#d97706", bg:"#fffbeb" },
+    { key:"notes",      label:"Notes & Homework",    color:"#64748b", bg:"#f8fafc" },
+  ];
+
+  const printDate = new Date().toLocaleDateString("en-AU",{day:"numeric",month:"long",year:"numeric"});
+
+  return (
+    <div className="fade-in">
+
+      {/* PDF-only header — hidden on screen, visible in print */}
+      <div className="pdf-only mb-6 pb-4" style={{borderBottom:"2px solid #e2e8f0"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div>
+            <p style={{fontSize:"9pt",color:"#94a3b8",letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"4px"}}>Piano Butler — Teacher Plan</p>
+            <h1 style={{fontSize:"18pt",fontWeight:"800",color:"#1e293b",margin:0}}>{student.name}</h1>
+            <p style={{fontSize:"10pt",color:"#64748b",marginTop:"4px"}}>
+              {student.grade} · {student.lessonDuration}min lessons · {student.track==="exam"?"Exam track":"General track"}
+              {student.track==="exam" && student.examDate ? ` · Exam: ${fmtDate(student.examDate)}` : ""}
+            </p>
+          </div>
+          <p style={{fontSize:"9pt",color:"#94a3b8"}}>Generated {printDate}</p>
+        </div>
+      </div>
+
+      {/* Back — hidden in print */}
+      <button onClick={onBack} className="no-print text-slate-400 hover:text-slate-600 text-sm font-medium mb-6 flex items-center gap-1">
+        ← All students
+      </button>
+
+      {/* Student header card */}
+      <div className="card p-5 mb-5" style={{borderTop:`4px solid ${pm.color}`}}>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0"
+              style={{background:gc.bg,color:gc.text}}>{initials}</div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-800">{student.name}</h2>
+              <p className="text-sm text-slate-400">{student.track==="exam" ? student.grade : (student.level||"General")} · {student.lessonDuration}min · {student.lessonsPerWeek}× per week</p>
+              {student.track==="general" && student.termGoal && (
+                <p className="text-xs text-teal-600 mt-1 bg-teal-50 px-2 py-1 rounded-lg inline-block">
+                  Goal: {student.termGoal}
+                </p>
+              )}
+              {student.track==="general" && (
+                <p className="text-xs text-slate-400 mt-1">
+                  Plan ends: {fmtDate(addMonths(student.startDate, student.planMonths||3))}
+                </p>
+              )}
+              {studentNorm.startingPhase && studentNorm.startingPhase !== "foundation" && studentNorm.startingPhase !== "exploration" && (
+                <p className="text-xs text-amber-600 mt-1 bg-amber-50 px-2 py-1 rounded-lg inline-block">
+                  Started with me at: {PHASE_META[studentNorm.startingPhase]?.name}
+                </p>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-3 flex-wrap">
+            {student.track==="exam" && weeksLeft !== null && (
+              <div className="text-center px-4 py-2 rounded-xl" style={{background: weeksLeft<=4?"#fef2f2": weeksLeft<=8?"#fffbeb":"#f0fdf4"}}>
+                <p className="text-2xl font-black" style={{color:weeksLeft<=4?"#dc2626":weeksLeft<=8?"#d97706":"#16a34a"}}>{weeksLeft}w</p>
+                <p className="text-xs text-slate-400">to exam</p>
+                <p className="text-[10px] text-slate-400">{fmtShort(student.examDate)}</p>
+              </div>
+            )}
+            {student.track!=="exam" && monthsLeft !== null && (
+              <div className="text-center px-4 py-2 rounded-xl bg-slate-50">
+                <p className="text-2xl font-black text-slate-700">{monthsLeft}mo</p>
+                <p className="text-xs text-slate-400">left</p>
+              </div>
+            )}
+            <div className="text-center px-4 py-2 rounded-xl bg-slate-50">
+              <p className="text-xl font-black text-slate-700">{currentPlanMonth?.label || "—"}</p>
+              <p className="text-xs text-slate-400">{pm.name}</p>
+            </div>
+            <div className="text-center px-4 py-2 rounded-xl bg-slate-50">
+              <p className="text-2xl font-black text-slate-700">{studentLogs.length}</p>
+              <p className="text-xs text-slate-400">logs</p>
+            </div>
+          </div>
+        </div>
+
+
+        <div className="flex gap-2 mt-4 pt-4 border-t border-slate-100 flex-wrap">
+          <button onClick={()=>onEdit(student)} className="btn-ghost text-xs py-1.5 px-3">Edit student</button>
+          <button onClick={()=>window.print()} className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1.5">
+            <span>⬇</span> Download PDF
+          </button>
+        </div>
+      </div>
+
+      {/* This month plan — exam track only */}
+      {student.track === "exam" && currentPlanMonth && (
+        <div className="card p-5 mb-5" style={{borderLeft:`4px solid ${pm.color}`}}>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xs font-bold uppercase tracking-wide" style={{color:pm.text}}>This month — {currentPlanMonth.label}</span>
+            <span className="text-xs px-2 py-0.5 rounded-full" style={{background:pm.bg,color:pm.text}}>{pm.name}</span>
+          </div>
+          <p className="text-sm text-slate-700 leading-relaxed mb-4">{currentPlanMonth.focus}</p>
+          <div className="flex flex-wrap gap-2">
+            {[["Repertoire",alloc.repertoire,"#eef2ff","#4f46e5"],
+              ["Technical",alloc.technical,"#f5f3ff","#7c3aed"],
+              ["SR/Aural",alloc.sr,"#ecfeff","#0891b2"],
+              ["GK",alloc.gk,"#fffbeb","#d97706"]].map(([label,mins,bg,col])=>(
+              <div key={label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+                style={{background:bg,color:col}}>
+                {label} <span className="font-normal opacity-70">{mins}m</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* AI Guide */}
+      <div className="card p-5 mb-5" style={{
+        borderLeft:`4px solid ${guide.status==="urgent"?"#dc2626":guide.status==="warning"?"#d97706":"#16a34a"}`
+      }}>
+        <p className="text-xs font-bold uppercase tracking-wide mb-3"
+          style={{color:guide.status==="urgent"?"#dc2626":guide.status==="warning"?"#d97706":"#16a34a"}}>
+          {guide.status==="urgent"?"⚠ Action needed":guide.status==="warning"?"⚡ Check these":"✓ Looking good"}
+        </p>
+        {guide.alerts.length > 0 && (
+          <ul className="space-y-1.5 mb-3">
+            {guide.alerts.map((a,i)=>(
+              <li key={i} className="text-sm text-slate-700 flex gap-2">
+                <span className="text-red-400 shrink-0">•</span>{a}
+              </li>
+            ))}
+          </ul>
+        )}
+        {guide.tips.length > 0 && (
+          <ul className="space-y-1.5">
+            {guide.tips.map((t,i)=>(
+              <li key={i} className="text-sm text-slate-500 flex gap-2">
+                <span className="text-slate-300 shrink-0">→</span>{t}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Lesson log */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-bold text-slate-700">Lesson history</h3>
+        <button onClick={()=>onLog(student)} className="btn-primary text-xs py-2 px-4">+ Log lesson</button>
+      </div>
+
+      {studentLogs.length === 0 ? (
+        <div className="card p-10 text-center text-slate-400 text-sm">No lessons logged yet.</div>
+      ) : (
+        <div className="space-y-4">
+          {studentLogs.map(log=>(
+            <div key={log.id} className="card overflow-hidden">
+              <div className="px-5 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-slate-400 font-mono">{log.monthStr ? MONTH_NAMES[parseInt(log.monthStr.slice(5,7))-1]+" "+log.monthStr.slice(0,4) : fmtDate(log.date)}</span>
+                  <span className="text-sm font-semibold text-slate-700">{fmtDate(log.date)}</span>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={()=>onEditLog(log)} className="text-xs text-slate-400 hover:text-indigo-600 px-2 py-1 rounded-lg hover:bg-indigo-50">Edit</button>
+                  <button onClick={()=>onDeleteLog(log.id)} className="text-xs text-slate-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50">Delete</button>
+                </div>
+              </div>
+              <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                {LOG_SECTIONS.filter(s=>log[s.key]?.trim()).map(s=>(
+                  <div key={s.key}>
+                    <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{color:s.color}}>{s.label}</p>
+                    <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{log[s.key]}</p>
+                  </div>
+                ))}
+                {LOG_SECTIONS.every(s=>!log[s.key]?.trim()) && (
+                  <p className="text-sm text-slate-400 col-span-2">No content recorded.</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Full plan timeline — exam track only */}
+      {student.track === "exam" && plan.length > 0 && (
+        <div className="mt-8" style={{breakBefore:"auto"}}>
+          <h3 className="text-sm font-bold text-slate-700 mb-4">Full plan — {plan.length} months</h3>
+          <div className="space-y-1.5">
+            {plan.map((m,i)=>{
+              const pm2 = PHASE_META[m.phase]||PHASE_META.foundation;
+              const isCurrent = m.monthStr === curMonthStr;
+              const isPast    = m.monthStr < curMonthStr;
+              const hasLog    = studentLogs.some(l=>l.monthStr===m.monthStr);
+              return (
+                <div key={i} className="flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all"
+                  style={{
+                    background: isCurrent ? pm2.bg : isPast ? "#f8fafc" : "transparent",
+                    border: isCurrent ? `1px solid ${pm2.color}40` : "1px solid transparent",
+                    breakInside: "avoid",
+                  }}>
+                  <span className="text-xs font-bold text-slate-500 w-16 shrink-0">{m.label}</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold shrink-0" style={{background:pm2.bg,color:pm2.text}}>{pm2.name}</span>
+                  <span className="text-xs text-slate-500 flex-1 truncate">{m.focus}</span>
+                  {isCurrent && <span className="text-xs font-bold shrink-0" style={{color:pm2.color}}>← now</span>}
+                  {hasLog && !isCurrent && <span className="text-xs text-green-500 shrink-0">✓</span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* General track — Focus Board + Milestone Tracker */}
+      {student.track === "general" && (
+        <GeneralPlanPanel student={student} logs={studentLogs} alloc={alloc} />
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SCHEDULE VIEW
+═══════════════════════════════════════════════════════════════════════════ */
+const DAYS_ORDER = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const fmtTime = (t) => {
+  if (!t) return "";
+  const [h,m] = t.split(":");
+  const hr = parseInt(h);
+  const ampm = hr >= 12 ? "PM" : "AM";
+  const hr12 = hr % 12 || 12;
+  return `${hr12}:${m} ${ampm}`;
+};
+
+function ScheduleView({ students, onSelect, onAdd }) {
+  // Build slots: [{day, time, student}]
+  const slots = [];
+  students.forEach(s => {
+    if (s.lessonDay) slots.push({ day: s.lessonDay, time: s.lessonTime||"", student: s });
+    if (s.lessonsPerWeek === 2 && s.lessonDay2) slots.push({ day: s.lessonDay2, time: s.lessonTime2||"", student: s });
+  });
+
+  // Group by day
+  const byDay = {};
+  DAYS_ORDER.forEach(d => { byDay[d] = []; });
+  slots.forEach(slot => {
+    if (byDay[slot.day]) byDay[slot.day].push(slot);
+  });
+  // Sort each day by time
+  DAYS_ORDER.forEach(d => {
+    byDay[d].sort((a,b) => (a.time||"00:00").localeCompare(b.time||"00:00"));
+  });
+
+  const activeDays = DAYS_ORDER.filter(d => byDay[d].length > 0);
+  const unscheduled = students.filter(s => !s.lessonDay);
+
+  if (students.length === 0) {
+    return (
+      <div className="card p-16 text-center fade-in">
+        <div className="text-5xl mb-4">🗓</div>
+        <p className="text-slate-600 font-semibold mb-1">No students yet</p>
+        <p className="text-slate-400 text-sm mb-6">Add your first student to see the schedule.</p>
+        <button className="btn-primary" onClick={onAdd}>+ Add student</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fade-in">
+      {/* Day columns — horizontal scroll on mobile */}
+      {activeDays.length > 0 ? (
+        <div className="grid gap-4" style={{gridTemplateColumns:`repeat(${Math.min(activeDays.length,3)},1fr)`}}>
+          {activeDays.map(day => (
+            <div key={day}>
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="text-sm font-bold text-slate-700">{day}</h3>
+                <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{byDay[day].length}</span>
+              </div>
+              <div className="space-y-2">
+                {byDay[day].map((slot,i) => {
+                  const s = slot.student;
+                  const gc = GRADE_COLOR[s.grade] || GRADE_COLOR["Grade 5"];
+                  const plan = buildPlan({ startingPhase: s.track==="exam"?"foundation":"exploration", ...s });
+                  const curM = plan.findIndex(m => m.monthStr === currentMonthStr());
+                  const phase = (curM>=0 ? plan[curM] : plan[plan.length-1])?.phase;
+                  const pm = PHASE_META[phase] || PHASE_META.foundation;
+                  const initials = s.name.split(" ").map(n=>n[0]).join("").slice(0,2).toUpperCase();
+                  const wl = s.track==="exam" ? weeksUntil(s.examDate) : null;
+
+                  return (
+                    <div key={i} onClick={()=>onSelect(s)}
+                      className="card p-3 cursor-pointer hover:shadow-md transition-all"
+                      style={{borderLeft:`3px solid ${pm.color}`}}>
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                          style={{background:gc.bg,color:gc.text}}>{initials}</div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-slate-800 truncate">{s.name}</p>
+                          <p className="text-xs text-slate-400">{s.grade} · {s.lessonDuration}m</p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          {slot.time && <p className="text-xs font-bold text-slate-600">{fmtTime(slot.time)}</p>}
+                          {wl !== null && (
+                            <p className="text-xs font-bold" style={{color: wl<=4?"#dc2626":"#94a3b8"}}>{wl}w</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="card p-10 text-center text-slate-400 text-sm mb-6">
+          No lesson days set yet — edit each student to add their day and time.
+        </div>
+      )}
+
+      {/* Unscheduled students */}
+      {unscheduled.length > 0 && (
+        <div className="mt-8">
+          <h3 className="text-sm font-bold text-slate-500 mb-3">No day set yet</h3>
+          <div className="flex flex-wrap gap-2">
+            {unscheduled.map(s => (
+              <button key={s.id} onClick={()=>onSelect(s)}
+                className="text-xs bg-white border border-slate-200 px-3 py-2 rounded-xl text-slate-600 hover:bg-slate-50 transition-all">
+                {s.name} · {s.grade}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function App() {
+  const [students, setStudents] = useState([]);
+  const [logs,     setLogs]     = useState([]);
+  const [view,     setView]     = useState("list");
+  const [tab,      setTab]      = useState("students");
+  const [selected, setSelected] = useState(null);
+  const [showAdd,  setShowAdd]  = useState(false);
+  const [editing,  setEditing]  = useState(null);
+  const [logging,  setLogging]  = useState(null);
+  const [editLog,  setEditLog]  = useState(null);
+  const [search,         setSearch]        = useState("");
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [importing,    setImporting]    = useState(false);
+  const [userId,   setUserId]   = useState(null);
+  const [loading,  setLoading]  = useState(true);
+  const [dbError,  setDbError]  = useState("");
+
+  // ── Load data from Supabase on mount ──────────────────────────────────────
+  useEffect(() => {
+    async function init() {
+      const session = await requireAuth();
+      if (!session) return;
+      const uid = session.user.id;
+      setUserId(uid);
+
+      const [{ data: sData, error: sErr }, { data: lData, error: lErr }] = await Promise.all([
+        _supabase.from("students").select("*").eq("user_id", uid).order("created_at"),
+        _supabase.from("lesson_logs").select("*").eq("user_id", uid).order("date", { ascending: false }),
+      ]);
+
+      if (sErr || lErr) {
+        setDbError("Could not load data. Please refresh.");
+      } else {
+        setStudents((sData || []).map(rowToStudent));
+        setLogs((lData || []).map(rowToLog));
+      }
+      setLoading(false);
+    }
+    init();
+  }, []);
+
+  const filtered = useMemo(()=>{
+    const q = search.toLowerCase();
+    return students.filter(s=>s.name.toLowerCase().includes(q)||s.grade.toLowerCase().includes(q));
+  },[students,search]);
+
+  const urgent = students.filter(s=>s.track==="exam" && weeksUntil(s.examDate)!==null && weeksUntil(s.examDate)<=4);
+
+  // ── CRUD: Students ────────────────────────────────────────────────────────
+  const addStudent = async (f) => {
+    const row = studentToRow(f, userId);
+    const { data, error } = await _supabase.from("students").insert(row).select().single();
+    if (error) { alert("Could not save student: " + error.message); return; }
+    setStudents(p => [...p, rowToStudent(data)]);
+    setShowAdd(false);
+  };
+
+  const updateStudent = async (f) => {
+    const row = studentToRow({...editing, ...f});
+    const { data, error } = await _supabase.from("students").update(row).eq("id", editing.id).select().single();
+    if (error) { alert("Could not update student: " + error.message); return; }
+    const updated = rowToStudent(data);
+    setStudents(p => p.map(s => s.id === editing.id ? updated : s));
+    if (selected?.id === editing.id) setSelected(updated);
+    setEditing(null);
+  };
+
+  const deleteStudent = async (id) => {
+    if (!confirm("Delete this student and all their lesson logs?")) return;
+    const { error } = await _supabase.from("students").delete().eq("id", id);
+    if (error) { alert("Could not delete student: " + error.message); return; }
+    setStudents(p => p.filter(s => s.id !== id));
+    setLogs(p => p.filter(l => l.studentId !== id));
+    if (selected?.id === id) { setView("list"); setSelected(null); }
+  };
+
+  // ── CRUD: Logs ────────────────────────────────────────────────────────────
+  const saveLog = async (f) => {
+    if (editLog) {
+      const row = logToRow(f, editLog.studentId, userId);
+      const { data, error } = await _supabase.from("lesson_logs").update(row).eq("id", editLog.id).select().single();
+      if (error) { alert("Could not update log: " + error.message); return; }
+      setLogs(p => p.map(l => l.id === editLog.id ? rowToLog(data) : l));
+      setEditLog(null);
+    } else {
+      const row = logToRow(f, logging.id, userId);
+      const { data, error } = await _supabase.from("lesson_logs").insert(row).select().single();
+      if (error) { alert("Could not save log: " + error.message); return; }
+      setLogs(p => [rowToLog(data), ...p]);
+    }
+    setLogging(null);
+  };
+
+  // ── Bulk import from schedule image ──────────────────────────────────────
+  const SCHEDULE_DATA = [
+    { name:"Juliana",    lessonDay:"Monday",    lessonTime:"06:45", lessonDuration:60 },
+    { name:"Geert",      lessonDay:"Monday",    lessonTime:"07:45", lessonDuration:60 },
+    { name:"Austin",     lessonDay:"Monday",    lessonTime:"17:10", lessonDuration:60 },
+    { name:"Charlotte",  lessonDay:"Monday",    lessonTime:"18:15", lessonDuration:30 },
+    { name:"Josephine",  lessonDay:"Monday",    lessonTime:"18:50", lessonDuration:45 },
+    { name:"Diana",      lessonDay:"Monday",    lessonTime:"19:40", lessonDuration:60 },
+    { name:"Anna",       lessonDay:"Tuesday",   lessonTime:"09:30", lessonDuration:30 },
+    { name:"Diana",      lessonDay:"Tuesday",   lessonTime:"10:10", lessonDuration:60 },
+    { name:"Andy",       lessonDay:"Wednesday", lessonTime:"07:05", lessonDuration:45 },
+    { name:"Ethan",      lessonDay:"Wednesday", lessonTime:"08:00", lessonDuration:45 },
+    { name:"Diana",      lessonDay:"Wednesday", lessonTime:"09:55", lessonDuration:60 },
+    { name:"Katalina",   lessonDay:"Wednesday", lessonTime:"11:00", lessonDuration:45 },
+    { name:"Narelle",    lessonDay:"Wednesday", lessonTime:"14:15", lessonDuration:45 },
+    { name:"Ryan",       lessonDay:"Wednesday", lessonTime:"15:10", lessonDuration:45 },
+    { name:"Kaira",      lessonDay:"Wednesday", lessonTime:"16:00", lessonDuration:30 },
+    { name:"Ruby",       lessonDay:"Wednesday", lessonTime:"16:30", lessonDuration:30 },
+    { name:"Aston",      lessonDay:"Wednesday", lessonTime:"18:15", lessonDuration:45 },
+    { name:"Sebby",      lessonDay:"Wednesday", lessonTime:"19:05", lessonDuration:45 },
+    { name:"Sierra",     lessonDay:"Thursday",  lessonTime:"07:20", lessonDuration:30 },
+    { name:"Jayden",     lessonDay:"Thursday",  lessonTime:"08:00", lessonDuration:30 },
+    { name:"Ping",       lessonDay:"Thursday",  lessonTime:"08:40", lessonDuration:30 },
+    { name:"Annie",      lessonDay:"Thursday",  lessonTime:"15:20", lessonDuration:60 },
+    { name:"Sade",       lessonDay:"Thursday",  lessonTime:"16:20", lessonDuration:60 },
+    { name:"Charlotte Y",lessonDay:"Thursday",  lessonTime:"17:25", lessonDuration:30 },
+    { name:"Aiden",      lessonDay:"Thursday",  lessonTime:"18:00", lessonDuration:30 },
+    { name:"Ariana",     lessonDay:"Thursday",  lessonTime:"18:45", lessonDuration:45 },
+    { name:"Kayleigh",   lessonDay:"Thursday",  lessonTime:"19:30", lessonDuration:45 },
+    { name:"Charlotte B",lessonDay:"Thursday",  lessonTime:"20:20", lessonDuration:45 },
+    { name:"FTLR",       lessonDay:"Friday",    lessonTime:"05:50", lessonDuration:70 },
+    { name:"Nara",       lessonDay:"Friday",    lessonTime:"15:10", lessonDuration:30 },
+    { name:"Elise",      lessonDay:"Friday",    lessonTime:"15:45", lessonDuration:30 },
+    { name:"Ava",        lessonDay:"Friday",    lessonTime:"16:15", lessonDuration:30 },
+    { name:"Henry",      lessonDay:"Friday",    lessonTime:"16:45", lessonDuration:30 },
+    { name:"Elaine",     lessonDay:"Friday",    lessonTime:"17:20", lessonDuration:30 },
+    { name:"Jessica",    lessonDay:"Friday",    lessonTime:"17:50", lessonDuration:30 },
+    { name:"Ian",        lessonDay:"Friday",    lessonTime:"18:25", lessonDuration:30 },
+    { name:"Ryan",       lessonDay:"Friday",    lessonTime:"19:00", lessonDuration:45 },
+    { name:"Ashleigh",   lessonDay:"Friday",    lessonTime:"19:50", lessonDuration:30 },
+    { name:"Elena",      lessonDay:"Saturday",  lessonTime:"09:45", lessonDuration:30 },
+    { name:"Olivia H",   lessonDay:"Saturday",  lessonTime:"10:30", lessonDuration:60 },
+    { name:"Ethan",      lessonDay:"Saturday",  lessonTime:"11:40", lessonDuration:30 },
+    { name:"Jenny",      lessonDay:"Saturday",  lessonTime:"12:20", lessonDuration:30 },
+    { name:"Sophie",     lessonDay:"Saturday",  lessonTime:"15:00", lessonDuration:45 },
+    { name:"Taiyo",      lessonDay:"Saturday",  lessonTime:"15:15", lessonDuration:30 },
+    { name:"Alexander",  lessonDay:"Saturday",  lessonTime:"15:30", lessonDuration:30 },
+    { name:"Xi",         lessonDay:"Saturday",  lessonTime:"15:50", lessonDuration:30 },
+    { name:"Claire",     lessonDay:"Saturday",  lessonTime:"16:10", lessonDuration:45 },
+    { name:"Liam C",     lessonDay:"Saturday",  lessonTime:"16:30", lessonDuration:60 },
+    { name:"Angie",      lessonDay:"Saturday",  lessonTime:"17:00", lessonDuration:60 },
+    { name:"Elena",      lessonDay:"Saturday",  lessonTime:"17:30", lessonDuration:45 },
+    { name:"Mia",        lessonDay:"Saturday",  lessonTime:"18:00", lessonDuration:45 },
+    { name:"Lucas",      lessonDay:"Saturday",  lessonTime:"18:20", lessonDuration:30 },
+    { name:"Lawrence",   lessonDay:"Saturday",  lessonTime:"18:50", lessonDuration:45 },
+    { name:"Matilda",    lessonDay:"Saturday",  lessonTime:"18:45", lessonDuration:45 },
+    { name:"Ian",        lessonDay:"Saturday",  lessonTime:"19:40", lessonDuration:30 },
+    { name:"Raphael",    lessonDay:"Saturday",  lessonTime:"20:15", lessonDuration:45 },
+    { name:"Diana",      lessonDay:"Sunday",    lessonTime:"19:30", lessonDuration:60 },
+  ];
+
+  const bulkImport = async () => {
+    if (!confirm(`Import ${SCHEDULE_DATA.length} students from schedule? Existing students will not be affected.`)) return;
+    setImporting(true);
+    const today = todayStr();
+    let added = 0, failed = 0;
+    for (const s of SCHEDULE_DATA) {
+      const row = {
+        user_id: userId,
+        name: s.name,
+        grade: "Grade 5",
+        level: "Elementary",
+        track: "general",
+        start_date: today,
+        plan_months: 3,
+        lesson_dur: s.lessonDuration,
+        lessons_per_week: 1,
+        lesson_day: s.lessonDay,
+        lesson_time: s.lessonTime,
+        lesson_day2: "",
+        lesson_time2: "",
+        starting_phase: "exploration",
+        term_goal: "",
+        list_a: "", list_b: "", list_c: "",
+      };
+      const { error } = await _supabase.from("students").insert(row).select().single().then(r => {
+        if (!r.error) setStudents(p => [...p, rowToStudent(r.data)]);
+        return r;
+      });
+      if (error) failed++; else added++;
+    }
+    setImporting(false);
+    alert(`Import complete: ${added} students added${failed ? `, ${failed} failed` : ""}.`);
+  };
+
+  const deleteLog = async (id) => {
+    if (!confirm("Delete this lesson log?")) return;
+    const { error } = await _supabase.from("lesson_logs").delete().eq("id", id);
+    if (error) { alert("Could not delete log: " + error.message); return; }
+    setLogs(p => p.filter(l => l.id !== id));
+  };
+
+  const selectStudent = (s) => { setSelected(s); setView("detail"); };
+
+  // ── Loading / error states ────────────────────────────────────────────────
+  if (loading) return (
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"inherit"}}>
+      <div style={{textAlign:"center",color:"#94a3b8"}}>
+        <div style={{fontSize:32,marginBottom:12}}>🎹</div>
+        <div style={{fontSize:14,fontWeight:600}}>Loading your studio…</div>
+      </div>
+    </div>
+  );
+  if (dbError) return (
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"inherit"}}>
+      <div style={{textAlign:"center",color:"#dc2626",fontSize:14,fontWeight:600}}>{dbError}</div>
+    </div>
+  );
+
+  const exportJSON = () => {
+    const blob = new Blob([JSON.stringify({students,logs,exportedAt:new Date().toISOString()},null,2)],{type:"application/json"});
+    const a = document.createElement("a"); a.href=URL.createObjectURL(blob);
+    a.download=`PianoButler_${todayStr()}.json`; a.click();
+  };
+
+  const exportExcel = () => {
+    const wb = XLSX.utils.book_new();
+
+    // ── Sheet 1: Students ──
+    const studentRows = students.map(s => {
+      const sNorm = { startingPhase: s.track==="exam"?"foundation":"exploration", ...s };
+      const plan  = buildPlan(sNorm);
+      const curM  = plan.findIndex(m => m.monthStr === currentMonthStr());
+      const phase = (curM>=0 ? plan[curM] : plan[plan.length-1])?.phase || "—";
+      const wl    = s.track==="exam" ? weeksUntil(s.examDate) : null;
+      const ml    = s.track==="exam"
+        ? monthsUntil(s.examDate)
+        : monthsUntil(addMonths(s.startDate, s.planMonths||3));
+      const studentLogs = logs.filter(l=>l.studentId===s.id);
+      return {
+        "Name":             s.name,
+        "Grade":            s.grade,
+        "Track":            s.track==="exam" ? "Exam" : "General",
+        "Lesson Day":       s.lessonDay || "—",
+        "Lesson Time":      fmtTime(s.lessonTime),
+        "Duration (min)":   s.lessonDuration,
+        "Lessons/week":     s.lessonsPerWeek,
+        "Started":          fmtDate(s.startDate),
+        "Exam Date":        s.track==="exam" ? fmtDate(s.examDate) : "—",
+        "Weeks to Exam":    wl !== null ? wl : "—",
+        "Months Left":      ml !== null ? ml : "—",
+        "Current Phase":    PHASE_META[phase]?.name || phase,
+        "Starting Phase":   PHASE_META[s.startingPhase]?.name || s.startingPhase || "—",
+        "Plan Months":      s.track==="exam" ? "—" : (s.planMonths||3),
+        "Total Logs":       studentLogs.length,
+        "Last Log Date":    studentLogs.length ? studentLogs.sort((a,b)=>b.date.localeCompare(a.date))[0].date : "—",
+      };
+    });
+    const ws1 = XLSX.utils.json_to_sheet(studentRows);
+    ws1["!cols"] = [{wch:20},{wch:12},{wch:10},{wch:12},{wch:12},{wch:14},{wch:14},{wch:14},{wch:14},{wch:14},{wch:12},{wch:22},{wch:22},{wch:12},{wch:10},{wch:14}];
+    XLSX.utils.book_append_sheet(wb, ws1, "Students");
+
+    // ── Sheet 2: Lesson Logs ──
+    const logRows = logs.map(l => {
+      const s = students.find(st=>st.id===l.studentId);
+      return {
+        "Student":      s?.name || "—",
+        "Grade":        s?.grade || "—",
+        "Date":         fmtDate(l.date),
+        "Month":        l.monthStr ? MONTH_NAMES[parseInt(l.monthStr.slice(5,7))-1]+" "+l.monthStr.slice(0,4) : "—",
+        "Repertoire":   l.repertoire || "",
+        "Technical":    l.technical  || "",
+        "SR & Aural":   l.srAural    || "",
+        "General Knowledge": l.gk   || "",
+        "Notes":        l.notes      || "",
+      };
+    }).sort((a,b)=>a["Student"].localeCompare(b["Student"])||b["Date"].localeCompare(a["Date"]));
+    const ws2 = XLSX.utils.json_to_sheet(logRows);
+    ws2["!cols"] = [{wch:20},{wch:12},{wch:14},{wch:14},{wch:30},{wch:30},{wch:20},{wch:20},{wch:30}];
+    XLSX.utils.book_append_sheet(wb, ws2, "Lesson Logs");
+
+    // ── Sheet 3: Monthly Plans ──
+    const planRows = [];
+    students.forEach(s => {
+      const sNorm = { startingPhase: s.track==="exam"?"foundation":"exploration", ...s };
+      const plan  = buildPlan(sNorm);
+      plan.forEach(m => {
+        planRows.push({
+          "Student":  s.name,
+          "Grade":    s.grade,
+          "Month":    m.label,
+          "Phase":    PHASE_META[m.phase]?.name || m.phase,
+          "Focus":    m.focus,
+          "Rep (min)":m.alloc.repertoire,
+          "Tech (min)":m.alloc.technical,
+          "SR (min)": m.alloc.sr,
+          "GK (min)": m.alloc.gk,
+        });
+      });
+    });
+    const ws3 = XLSX.utils.json_to_sheet(planRows);
+    ws3["!cols"] = [{wch:20},{wch:12},{wch:12},{wch:24},{wch:50},{wch:10},{wch:10},{wch:10},{wch:10}];
+    XLSX.utils.book_append_sheet(wb, ws3, "Monthly Plans");
+
+    XLSX.writeFile(wb, `PianoButler_${todayStr()}.xlsx`);
+    setShowExportMenu(false);
+  };
+
+  const exportPDF = () => {
+    window.print();
+    setShowExportMenu(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <a href="Index.html" className="text-slate-400 hover:text-slate-600 text-sm no-print">← Piano Butler</a>
+            <span className="text-slate-300 no-print">|</span>
+            <h1 className="text-base font-bold text-slate-800">Teacher Dashboard</h1>
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Tab switcher */}
+            <div className="flex gap-1 bg-slate-100 rounded-xl p-1 no-print">
+              {[["students","Students"],["schedule","Schedule"]].map(([key,label])=>(
+                <button key={key} onClick={()=>{setTab(key);if(view==="detail"){setView("list");setSelected(null);}}}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                  style={tab===key?{background:"white",color:"#4f46e5",boxShadow:"0 1px 4px #0001"}:{color:"#94a3b8"}}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            {/* Export dropdown */}
+            <div className="relative no-print">
+              <button onClick={()=>setShowExportMenu(p=>!p)}
+                className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1">
+                ⬇ Export <span className="opacity-50 text-[10px]">▾</span>
+              </button>
+              {showExportMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={()=>setShowExportMenu(false)}/>
+                  <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden min-w-[160px]">
+                    <button onClick={exportPDF}
+                      className="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                      <span>📄</span> Download PDF
+                    </button>
+                    <button onClick={exportExcel}
+                      className="w-full text-left px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2">
+                      <span>📊</span> Download Excel
+                    </button>
+                    <div className="border-t border-slate-100"/>
+                    <button onClick={()=>{exportJSON();setShowExportMenu(false);}}
+                      className="w-full text-left px-4 py-2.5 text-xs text-slate-400 hover:bg-slate-50 flex items-center gap-2">
+                      <span>💾</span> Backup JSON
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+            <button onClick={bulkImport} disabled={importing}
+              className="btn-ghost text-xs py-2 px-3 no-print"
+              style={{color:"#0d9488", borderColor:"#0d9488", opacity: importing ? 0.6 : 1}}>
+              {importing ? "Importing…" : "⬆ Import schedule"}
+            </button>
+            <button onClick={()=>setShowAdd(true)} className="btn-primary text-xs py-2 px-4 no-print">+ Add student</button>
+            <button onClick={()=>signOut()} className="btn-ghost text-xs py-2 px-3 no-print" style={{color:"#94a3b8"}}>Sign out</button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto px-4 py-6">
+
+        {/* Schedule tab */}
+        {tab==="schedule" && (
+          <ScheduleView
+            students={students}
+            onSelect={s=>{setSelected(s);setView("detail");setTab("students");}}
+            onAdd={()=>setShowAdd(true)}
+          />
+        )}
+
+        {/* Urgent banner */}
+        {tab==="students" && urgent.length > 0 && view==="list" && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 mb-6 flex flex-wrap items-center gap-3">
+            <span className="text-red-500">⚠</span>
+            <div>
+              <p className="text-sm font-bold text-red-700">Exam coming up</p>
+              <p className="text-xs text-red-400">{urgent.map(s=>`${s.name} (${weeksUntil(s.examDate)}w)`).join(" · ")}</p>
+            </div>
+          </div>
+        )}
+
+        {/* List view */}
+        {tab==="students" && view==="list" && (
+          <>
+            {students.length > 0 && (
+              <input value={search} onChange={e=>setSearch(e.target.value)}
+                placeholder="Search students..."
+                className="input mb-5" style={{maxWidth:"280px"}}/>
+            )}
+            {students.length === 0 ? (
+              <div className="card p-16 text-center fade-in">
+                <div className="text-5xl mb-4">🎹</div>
+                <p className="text-slate-600 font-semibold mb-1">No students yet</p>
+                <p className="text-slate-400 text-sm mb-6">Add your first student to get started.</p>
+                <button className="btn-primary" onClick={()=>setShowAdd(true)}>+ Add student</button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filtered.map(s=>(
+                  <StudentCard key={s.id} student={s} logs={logs}
+                    onLog={setLogging} onEdit={setEditing}
+                    onDelete={deleteStudent} onSelect={selectStudent}/>
+                ))}
+                {filtered.length===0 && (
+                  <div className="col-span-3 text-center py-12 text-slate-400 text-sm">No students match "{search}"</div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Detail view — always read student from live students array so edits reflect immediately */}
+        {tab==="students" && view==="detail" && selected && (() => {
+          const liveStudent = students.find(s=>s.id===selected.id) || selected;
+          return (
+            <StudentDetail
+              student={liveStudent} logs={logs}
+              onLog={setLogging}
+              onEditLog={(log)=>{setEditLog(log);setLogging(liveStudent);}}
+              onDeleteLog={deleteLog}
+              onBack={()=>{setView("list");setSelected(null);}}
+              onEdit={setEditing}
+            />
+          );
+        })()}
+      </main>
+
+      {/* Modals */}
+      {showAdd && <StudentModal onSave={addStudent} onClose={()=>setShowAdd(false)}/>}
+      {editing  && <StudentModal initial={editing} onSave={updateStudent} onClose={()=>setEditing(null)}/>}
+      {logging  && (
+        <LogModal
+          student={logging}
+          existingLog={editLog}
+          currentMonth={MONTH_NAMES[new Date().getMonth()] + " " + new Date().getFullYear()}
+          lastLog={!editLog ? logs.filter(l=>l.studentId===logging.id).sort((a,b)=>b.date.localeCompare(a.date))[0] : null}
+          onSave={saveLog}
+          onClose={()=>{setLogging(null);setEditLog(null);}}
+        />
+      )}
+    </div>
+  );
+}
+
+// Check session before rendering — redirects to login.html if not logged in
+requireAuth().then(session => {
+  if (session) {
+    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+  }
+});
+</script>
+</body>
+</html>

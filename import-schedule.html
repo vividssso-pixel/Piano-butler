@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Piano Butler — Import Schedule</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="auth.js"></script>
+  <style>
+    body { font-family: -apple-system, sans-serif; max-width: 600px; margin: 60px auto; padding: 0 24px; color: #1e293b; }
+    h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+    p { color: #64748b; font-size: 14px; margin-bottom: 24px; }
+    button { background: #4f46e5; color: white; border: none; border-radius: 12px; padding: 12px 28px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    button:disabled { opacity: 0.5; cursor: default; }
+    #log { margin-top: 24px; font-size: 13px; line-height: 1.8; color: #475569; white-space: pre-wrap; }
+    .ok  { color: #0d9488; }
+    .err { color: #dc2626; }
+    .done { font-weight: 700; color: #4f46e5; }
+    a { color: #4f46e5; text-decoration: none; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h1>Import Schedule</h1>
+  <p>이미지에서 읽은 57명을 Teacher Dashboard에 일괄 추가합니다.<br>로그인된 계정(vividssso@gmail.com)으로 insert됩니다.</p>
+  <button id="btn" onclick="runImport()">▶ Import 57 students</button>
+  <div id="log"></div>
+  <script>
+    // _supabase is provided by auth.js
+
+    const SCHEDULE = [
+      { name:"Juliana",     lessonDay:"Monday",    lessonTime:"06:45", lessonDuration:60 },
+      { name:"Geert",       lessonDay:"Monday",    lessonTime:"07:45", lessonDuration:60 },
+      { name:"Austin",      lessonDay:"Monday",    lessonTime:"17:10", lessonDuration:60 },
+      { name:"Charlotte",   lessonDay:"Monday",    lessonTime:"18:15", lessonDuration:30 },
+      { name:"Josephine",   lessonDay:"Monday",    lessonTime:"18:50", lessonDuration:45 },
+      { name:"Diana",       lessonDay:"Monday",    lessonTime:"19:40", lessonDuration:60 },
+      { name:"Anna",        lessonDay:"Tuesday",   lessonTime:"09:30", lessonDuration:30 },
+      { name:"Diana",       lessonDay:"Tuesday",   lessonTime:"10:10", lessonDuration:60 },
+      { name:"Andy",        lessonDay:"Wednesday", lessonTime:"07:05", lessonDuration:45 },
+      { name:"Ethan",       lessonDay:"Wednesday", lessonTime:"08:00", lessonDuration:45 },
+      { name:"Diana",       lessonDay:"Wednesday", lessonTime:"09:55", lessonDuration:60 },
+      { name:"Katalina",    lessonDay:"Wednesday", lessonTime:"11:00", lessonDuration:45 },
+      { name:"Narelle",     lessonDay:"Wednesday", lessonTime:"14:15", lessonDuration:45 },
+      { name:"Ryan",        lessonDay:"Wednesday", lessonTime:"15:10", lessonDuration:45 },
+      { name:"Kaira",       lessonDay:"Wednesday", lessonTime:"16:00", lessonDuration:30 },
+      { name:"Ruby",        lessonDay:"Wednesday", lessonTime:"16:30", lessonDuration:30 },
+      { name:"Aston",       lessonDay:"Wednesday", lessonTime:"18:15", lessonDuration:45 },
+      { name:"Sebby",       lessonDay:"Wednesday", lessonTime:"19:05", lessonDuration:45 },
+      { name:"Sierra",      lessonDay:"Thursday",  lessonTime:"07:20", lessonDuration:30 },
+      { name:"Jayden",      lessonDay:"Thursday",  lessonTime:"08:00", lessonDuration:30 },
+      { name:"Ping",        lessonDay:"Thursday",  lessonTime:"08:40", lessonDuration:30 },
+      { name:"Annie",       lessonDay:"Thursday",  lessonTime:"15:20", lessonDuration:60 },
+      { name:"Sade",        lessonDay:"Thursday",  lessonTime:"16:20", lessonDuration:60 },
+      { name:"Charlotte Y", lessonDay:"Thursday",  lessonTime:"17:25", lessonDuration:30 },
+      { name:"Aiden",       lessonDay:"Thursday",  lessonTime:"18:00", lessonDuration:30 },
+      { name:"Ariana",      lessonDay:"Thursday",  lessonTime:"18:45", lessonDuration:45 },
+      { name:"Kayleigh",    lessonDay:"Thursday",  lessonTime:"19:30", lessonDuration:45 },
+      { name:"Charlotte B", lessonDay:"Thursday",  lessonTime:"20:20", lessonDuration:45 },
+      { name:"FTLR",        lessonDay:"Friday",    lessonTime:"05:50", lessonDuration:70 },
+      { name:"Nara",        lessonDay:"Friday",    lessonTime:"15:10", lessonDuration:30 },
+      { name:"Elise",       lessonDay:"Friday",    lessonTime:"15:45", lessonDuration:30 },
+      { name:"Ava",         lessonDay:"Friday",    lessonTime:"16:15", lessonDuration:30 },
+      { name:"Henry",       lessonDay:"Friday",    lessonTime:"16:45", lessonDuration:30 },
+      { name:"Elaine",      lessonDay:"Friday",    lessonTime:"17:20", lessonDuration:30 },
+      { name:"Jessica",     lessonDay:"Friday",    lessonTime:"17:50", lessonDuration:30 },
+      { name:"Ian",         lessonDay:"Friday",    lessonTime:"18:25", lessonDuration:30 },
+      { name:"Ryan",        lessonDay:"Friday",    lessonTime:"19:00", lessonDuration:45 },
+      { name:"Ashleigh",    lessonDay:"Friday",    lessonTime:"19:50", lessonDuration:30 },
+      { name:"Elena",       lessonDay:"Saturday",  lessonTime:"09:45", lessonDuration:30 },
+      { name:"Olivia H",    lessonDay:"Saturday",  lessonTime:"10:30", lessonDuration:60 },
+      { name:"Ethan",       lessonDay:"Saturday",  lessonTime:"11:40", lessonDuration:30 },
+      { name:"Jenny",       lessonDay:"Saturday",  lessonTime:"12:20", lessonDuration:30 },
+      { name:"Sophie",      lessonDay:"Saturday",  lessonTime:"15:00", lessonDuration:45 },
+      { name:"Taiyo",       lessonDay:"Saturday",  lessonTime:"15:15", lessonDuration:30 },
+      { name:"Alexander",   lessonDay:"Saturday",  lessonTime:"15:30", lessonDuration:30 },
+      { name:"Xi",          lessonDay:"Saturday",  lessonTime:"15:50", lessonDuration:30 },
+      { name:"Claire",      lessonDay:"Saturday",  lessonTime:"16:10", lessonDuration:45 },
+      { name:"Liam C",      lessonDay:"Saturday",  lessonTime:"16:30", lessonDuration:60 },
+      { name:"Angie",       lessonDay:"Saturday",  lessonTime:"17:00", lessonDuration:60 },
+      { name:"Elena",       lessonDay:"Saturday",  lessonTime:"17:30", lessonDuration:45 },
+      { name:"Mia",         lessonDay:"Saturday",  lessonTime:"18:00", lessonDuration:45 },
+      { name:"Lucas",       lessonDay:"Saturday",  lessonTime:"18:20", lessonDuration:30 },
+      { name:"Lawrence",    lessonDay:"Saturday",  lessonTime:"18:50", lessonDuration:45 },
+      { name:"Matilda",     lessonDay:"Saturday",  lessonTime:"18:45", lessonDuration:45 },
+      { name:"Ian",         lessonDay:"Saturday",  lessonTime:"19:40", lessonDuration:30 },
+      { name:"Raphael",     lessonDay:"Saturday",  lessonTime:"20:15", lessonDuration:45 },
+      { name:"Diana",       lessonDay:"Sunday",    lessonTime:"19:30", lessonDuration:60 },
+    ];
+
+    function log(msg, cls) {
+      const el = document.getElementById("log");
+      const line = document.createElement("span");
+      if (cls) line.className = cls;
+      line.textContent = msg + "\n";
+      el.appendChild(line);
+    }
+
+    async function runImport() {
+      const btn = document.getElementById("btn");
+      btn.disabled = true;
+      document.getElementById("log").innerHTML = "";
+
+      const session = await requireAuth();
+      if (!session) return; // requireAuth redirects to login.html if not logged in
+      const userId = session.user.id;
+      log(`Logged in as: ${session.user.email}\n`);
+
+      const today = new Date().toISOString().slice(0,10);
+      let added = 0, failed = 0;
+
+      for (const s of SCHEDULE) {
+        const row = {
+          user_id: userId,
+          name: s.name,
+          grade: "Grade 5",
+          track: "general",
+          exam_date: null,
+          plan_months: 3,
+          lesson_dur: s.lessonDuration,
+          lesson_day: s.lessonDay,
+          lesson_time: s.lessonTime,
+          start_phase: "exploration",
+          extra: JSON.stringify({ level:"Elementary", lessonsPerWeek:1, startDate: today }),
+        };
+        const { error } = await _supabase.from("students").insert(row);
+        if (error) {
+          log(`✗ ${s.name} (${s.lessonDay} ${s.lessonTime}) — ${error.message}`, "err");
+          failed++;
+        } else {
+          log(`✓ ${s.name} — ${s.lessonDay} ${s.lessonTime}`, "ok");
+          added++;
+        }
+      }
+
+      log(`\n━━━ Done: ${added} added, ${failed} failed ━━━`, "done");
+      if (added > 0) {
+        const link = document.createElement("a");
+        link.href = "teacher-dashboard.html";
+        link.textContent = "→ Open Teacher Dashboard";
+        link.style.display = "block";
+        link.style.marginTop = "16px";
+        document.getElementById("log").appendChild(link);
+      }
+      btn.disabled = false;
+    }
+  </script>
+</body>
+</html>

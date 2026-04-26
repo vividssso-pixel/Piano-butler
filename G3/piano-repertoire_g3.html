@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>AMEB Grade 3 Piano</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        body { background-color: #f8fafc; font-family: 'Pretendard', sans-serif; color: #334155; }
+        .list-row { border-bottom: 1px solid #f1f5f9; transition: all 0.2s; background: white; margin-bottom: 8px; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
+        .list-row:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .tag-baroque   { background: #e0e7ff; color: #4338ca; }
+        .tag-classical { background: #ffedd5; color: #9a3412; }
+        .tag-romantic  { background: #fce7f3; color: #be185d; }
+        .tag-modern    { background: #dcfce7; color: #15803d; }
+        .tag-contemporary { background: #f0fdf4; color: #166534; }
+        .tag-collab    { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+        .composer-link { color: #94a3b8; text-decoration: none; cursor: pointer; transition: all 0.2s; }
+        .composer-link:hover { color: #64748b; text-decoration: underline; }
+        .era-chip { padding: 0.375rem 0.875rem; border-radius: 9999px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: 2px solid transparent; }
+        .era-chip.active { background: #4f46e5; color: white; border-color: #4f46e5; }
+        .era-chip:not(.active) { background: #f1f5f9; color: #64748b; }
+        .era-chip:not(.active):hover { background: #e2e8f0; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script>
+// ─── COMPOSER LINKS MAPPING ──────────────────────────────────────────────────
+const COMPOSER_LINKS = {
+  "BACH, J.S.": "https://en.wikipedia.org/wiki/Johann_Sebastian_Bach",
+  "BACH, J.C.F.": "https://en.wikipedia.org/wiki/Johann_Christoph_Friedrich_Bach",
+  "BACH, C.P.E.": "https://en.wikipedia.org/wiki/Carl_Philipp_Emanuel_Bach",
+  "BACH, W.F.": "https://en.wikipedia.org/wiki/Wilhelm_Friedemann_Bach",
+  "BEETHOVEN, L. van.": "https://en.wikipedia.org/wiki/Ludwig_van_Beethoven",
+  "CHOPIN, F.": "https://en.wikipedia.org/wiki/Frédéric_Chopin",
+  "MOZART, W.A.": "https://en.wikipedia.org/wiki/Wolfgang_Amadeus_Mozart",
+  "MOZART, W.": "https://en.wikipedia.org/wiki/Wolfgang_Amadeus_Mozart",
+  "HAYDN, J.": "https://en.wikipedia.org/wiki/Joseph_Haydn",
+  "HAYDN, F.": "https://en.wikipedia.org/wiki/Joseph_Haydn",
+  "SCARLATTI, D.": "https://en.wikipedia.org/wiki/Domenico_Scarlatti",
+  "HANDEL, G.": "https://en.wikipedia.org/wiki/George_Frideric_Handel",
+  "HANDEL, G.F.": "https://en.wikipedia.org/wiki/George_Frideric_Handel",
+  "HANDLE, A.": "https://en.wikipedia.org/wiki/Anthony_Handel",
+  "GRIEG, E.": "https://en.wikipedia.org/wiki/Edvard_Grieg",
+  "GRIEG, E.H.": "https://en.wikipedia.org/wiki/Edvard_Grieg",
+  "SCHUMANN, R.": "https://en.wikipedia.org/wiki/Robert_Schumann",
+  "SCHUMANN, C.": "https://en.wikipedia.org/wiki/Clara_Schumann",
+  "DEBUSSY, C.": "https://en.wikipedia.org/wiki/Claude_Debussy",
+  "RAVEL, M.": "https://en.wikipedia.org/wiki/Maurice_Ravel",
+  "PROKOFIEV, S.": "https://en.wikipedia.org/wiki/Sergei_Prokofiev",
+  "BARTÓK, B.": "https://en.wikipedia.org/wiki/Béla_Bartók",
+  "KABALEVSKY, D.": "https://en.wikipedia.org/wiki/Dmitry_Kabalevsky",
+  "SHOSTAKOVICH, D.": "https://en.wikipedia.org/wiki/Dmitri_Shostakovich",
+  "SATIE, E.": "https://en.wikipedia.org/wiki/Erik_Satie",
+  "CHUA, S.": "https://en.wikipedia.org/wiki/Sonny_Chua",
+  "CLEMENTI, M.": "https://en.wikipedia.org/wiki/Muzio_Clementi",
+  "CZERNY, C.": "https://en.wikipedia.org/wiki/Carl_Czerny",
+  "HELLER, S.": "https://en.wikipedia.org/wiki/Stephen_Heller",
+  "MENDELSSOHN, F.": "https://en.wikipedia.org/wiki/Felix_Mendelssohn",
+  "SCHUBERT, F.": "https://en.wikipedia.org/wiki/Franz_Schubert",
+  "GERSHWIN, G.": "https://en.wikipedia.org/wiki/George_Gershwin",
+  "VILLA-LOBOS, H.": "https://en.wikipedia.org/wiki/Heitor_Villa-Lobos",
+  "MANCINI, H.": "https://en.wikipedia.org/wiki/Henry_Mancini",
+  "NYMAN, M.": "https://en.wikipedia.org/wiki/Michael_Nyman",
+  "YIRUMA.": "https://en.wikipedia.org/wiki/Yiruma",
+  "BERNSTEIN, L.": "https://en.wikipedia.org/wiki/Leonard_Bernstein",
+  "PUCCINI, G.": "https://en.wikipedia.org/wiki/Giacomo_Puccini",
+  "DVOŘÁK, A.": "https://en.wikipedia.org/wiki/Antonín_Dvořák",
+  "FRANCK, C.": "https://en.wikipedia.org/wiki/César_Franck",
+  "ARNE, T.": "https://en.wikipedia.org/wiki/Thomas_Arne",
+  "BURGMÜLLER, F.": "https://en.wikipedia.org/wiki/Friedrich_Burgmüller",
+  "BURGMÜLLER, J.": "https://en.wikipedia.org/wiki/Johann_Friedrich_Burgmüller",
+  "ZIPOLI, D.": "https://en.wikipedia.org/wiki/Domenico_Zipoli",
+  "SEIXAS, C. de.": "https://en.wikipedia.org/wiki/Carlos_de_Seixas",
+  "TANSMAN, A.": "https://en.wikipedia.org/wiki/Alexandre_Tansman",
+  "BERENS, H.": "https://en.wikipedia.org/wiki/Hermann_Berens",
+  "COUPERIN, F.": "https://en.wikipedia.org/wiki/François_Couperin",
+  "FARRENC, L.": "https://en.wikipedia.org/wiki/Louise_Farrenc",
+  "MARCELLO, B.": "https://en.wikipedia.org/wiki/Benedetto_Marcello",
+  "MOSZKOWSKI, M.": "https://en.wikipedia.org/wiki/Moritz_Moszkowski",
+  "NIELSEN, C.": "https://en.wikipedia.org/wiki/Carl_Nielsen",
+  "PESCETTI, G.": "https://en.wikipedia.org/wiki/Giovanni_Pescetti",
+  "SHCHEDRIN, R.": "https://en.wikipedia.org/wiki/Rodion_Shchedrin",
+  "TELEMANN, G.": "https://en.wikipedia.org/wiki/Georg_Philipp_Telemann",
+  "TELEMANN, G.P.": "https://en.wikipedia.org/wiki/Georg_Philipp_Telemann",
+  "BENDA, G.": "https://en.wikipedia.org/wiki/Georg_Benda",
+  "BENDA, J.": "https://en.wikipedia.org/wiki/Jiří_Antonín_Benda",
+  "HUMMEL, J.": "https://en.wikipedia.org/wiki/Johann_Nepomuk_Hummel",
+  "HUMMEL, J.N.": "https://en.wikipedia.org/wiki/Johann_Nepomuk_Hummel",
+  "EBERL, A.": "https://en.wikipedia.org/wiki/Anton_Eberl",
+  "DIABELLI, A.": "https://en.wikipedia.org/wiki/Anton_Diabelli",
+  "DUSSEK, J.": "https://en.wikipedia.org/wiki/Jan_Ladislav_Dussek",
+  "DUSSEK, J.L.": "https://en.wikipedia.org/wiki/Jan_Ladislav_Dussek",
+  "KUHLAU, F.": "https://en.wikipedia.org/wiki/Friedrich_Kuhlau",
+  "PLEYEL, I.": "https://en.wikipedia.org/wiki/Ignaz_Pleyel",
+  "VOŘÍŠEK, J.V.": "https://en.wikipedia.org/wiki/Jan_Václav_Voříšek",
+  "CHAMINADE, C.": "https://en.wikipedia.org/wiki/Cécile_Chaminade",
+  "GLIÈRE, R.": "https://en.wikipedia.org/wiki/Reinhold_Glière",
+  "GLIER, R.": "https://en.wikipedia.org/wiki/Reinhold_Glière",
+  "GRANADOS, E.": "https://en.wikipedia.org/wiki/Enrique_Granados",
+  "GADE, N.": "https://en.wikipedia.org/wiki/Niels_Wilhelm_Gade",
+  "KÖLLING, C.": "https://en.wikipedia.org/wiki/Carl_Kölling",
+  "MACDOWELL, E.": "https://en.wikipedia.org/wiki/Edward_MacDowell",
+  "SÉVERAC, D. de.": "https://en.wikipedia.org/wiki/Déodat_de_Séverac",
+  "WOLLENHAUPT, H.": "https://en.wikipedia.org/wiki/Hermann_Wollenhaupt",
+  "ALBÉNIZ, I.": "https://en.wikipedia.org/wiki/Isaac_Albéniz",
+  "BEACH, A.": "https://en.wikipedia.org/wiki/Amy_Beach",
+  "BRUCH, M.": "https://en.wikipedia.org/wiki/Max_Bruch",
+  "CUI, C.": "https://en.wikipedia.org/wiki/César_Cui",
+  "REGER, M.": "https://en.wikipedia.org/wiki/Max_Reger",
+  "REINECKE, C.": "https://en.wikipedia.org/wiki/Carl_Reinecke",
+  "SIBELIUS, J.": "https://en.wikipedia.org/wiki/Jean_Sibelius",
+  "CAPERS, V.": "https://en.wikipedia.org/wiki/Valerie_Capers",
+  "GLANVILLE-HICKS, P.": "https://en.wikipedia.org/wiki/Peggy_Glanville-Hicks",
+  "GREENAWAY, S.": "https://en.wikipedia.org/wiki/Stella_Greenaway",
+  "HANNAN, M.": "https://en.wikipedia.org/wiki/Michael_Hannan",
+  "SANG, T.": "https://en.wikipedia.org/wiki/Tao_Sang",
+  "BENJAMIN, A.": "https://en.wikipedia.org/wiki/Arthur_Benjamin",
+  "RUSSELL-SMITH, G.": "https://en.wikipedia.org/wiki/Geoff_Russell-Smith",
+  "IBERT, J.": "https://en.wikipedia.org/wiki/Jacques_Ibert",
+  "LUTOSŁAWSKI, W.": "https://en.wikipedia.org/wiki/Witold_Lutosławski",
+  "SITSKY, L.": "https://en.wikipedia.org/wiki/Larry_Sitsky",
+  "EAGLES, M.": "https://en.wikipedia.org/wiki/Michael_Eagles",
+  "BAILEY, K.": "https://en.wikipedia.org/w/index.php?search=Kerry+Bailey+Australian+composer+piano",
+  "BRUMBY, C.": "https://en.wikipedia.org/wiki/Colin_Brumby",
+  "COREA, C.": "https://en.wikipedia.org/wiki/Chick_Corea",
+  "CORNICK, M.": "https://en.wikipedia.org/w/index.php?search=Mike+Cornick+jazz+piano",
+  "DE JONG, S.": "https://en.wikipedia.org/wiki/Serge_de_Jong",
+  "DELLO JOIO, N.": "https://en.wikipedia.org/wiki/Norman_Dello_Joio",
+  "DURHAM, B.": "https://en.wikipedia.org/wiki/Bryn_Durham",
+  "EASTON, M.": "https://en.wikipedia.org/w/index.php?search=Michael+Easton+Australian+composer+piano",
+  "HOLLAND, D.": "https://en.wikipedia.org/w/index.php?search=Dulcie+Holland+Australian+composer",
+  "HUTCHENS, F.": "https://en.wikipedia.org/wiki/Frank_Hutchens",
+  "HYDE, M.": "https://en.wikipedia.org/wiki/Miriam_Hyde",
+  "McCOMBE, C.": "https://en.wikipedia.org/wiki/Christopher_McCombe",
+  "MILHAUD, D.": "https://en.wikipedia.org/wiki/Darius_Milhaud",
+  "TCHEREPNIN, A.": "https://en.wikipedia.org/wiki/Alexander_Tcherepnin",
+  "DING, S.": "https://en.wikipedia.org/wiki/Ding_Shande",
+  "THIMAN, E.": "https://en.wikipedia.org/wiki/Eric_Thiman",
+  "KÖHLER, L.": "https://en.wikipedia.org/wiki/Louis_Köhler",
+  "HÄSSLER, J.": "https://en.wikipedia.org/wiki/Johann_Wilhelm_Hässler",
+  "KHACHATURIAN, A.": "https://en.wikipedia.org/wiki/Aram_Khachaturian",
+  "GRECHANINOV, A.": "https://en.wikipedia.org/wiki/Alexander_Grechaninov",
+  "MAYKAPAR, S.": "https://en.wikipedia.org/wiki/Samuel_Maykapar",
+  "BENNETT, R.": "https://en.wikipedia.org/wiki/Richard_Rodney_Bennett",
+  "BERTINI, H.": "https://en.wikipedia.org/wiki/Henri_Bertini",
+  "MORRICONE, E.": "https://en.wikipedia.org/wiki/Ennio_Morricone",
+  "NORTON, C.": "https://en.wikipedia.org/wiki/Christopher_Norton_(composer)",
+  "ORFF, C.": "https://en.wikipedia.org/wiki/Carl_Orff",
+  "SILVESTRI, A.": "https://en.wikipedia.org/wiki/Alan_Silvestri",
+  "WILCHER, P.": "https://en.wikipedia.org/wiki/Pamela_Wilcher",
+  "WRIGHT, R.": "https://en.wikipedia.org/wiki/Robert_Wright",
+  "COWAN, M.": "https://en.wikipedia.org/wiki/Marjorie_Cowan",
+  "JOBIM, A.": "https://en.wikipedia.org/wiki/Antônio_Carlos_Jobim",
+  "LEGRAND, M.": "https://en.wikipedia.org/wiki/Michel_Legrand",
+  "MASSENET, J.": "https://en.wikipedia.org/wiki/Jules_Massenet",
+  "MASSENET, J. arr. LANNING": "https://en.wikipedia.org/wiki/Jules_Massenet",
+  "MYERS, S.": "https://en.wikipedia.org/wiki/Stanley_Myers",
+  "PETERSON, O.": "https://en.wikipedia.org/wiki/Oscar_Peterson",
+  "WESLEY-SMITH, M.": "https://en.wikipedia.org/wiki/Martin_Wesley-Smith",
+  "WILLIAMS, J.": "https://en.wikipedia.org/wiki/John_Williams",
+  "BOYD, B.": "https://en.wikipedia.org/w/index.php?search=Bill+Boyd+Australian+composer+piano",
+  "BRANDMAN, M.": "https://en.wikipedia.org/w/index.php?search=Michael+Brandman+Australian+composer+piano",
+  "FISCHER, J.": "https://en.wikipedia.org/wiki/Johann_Caspar_Ferdinand_Fischer",
+  "FISCHER, J.C.F.": "https://en.wikipedia.org/wiki/Johann_Caspar_Ferdinand_Fischer",
+  "OLSON, K.": "https://en.wikipedia.org/w/index.php?search=K+Olson+piano+composer",
+  "YU, J.": "https://en.wikipedia.org/w/index.php?search=Jun+Yu+Chinese+Australian+composer+piano",
+  "JUN YU": "https://en.wikipedia.org/w/index.php?search=Jun+Yu+Chinese+Australian+composer+piano",
+  "DARGOMIZHSKY, A.": "https://en.wikipedia.org/wiki/Alexander_Dargomyzhsky",
+  "HOEY, P.": "https://en.wikipedia.org/w/index.php?search=Phillip+Hoey+Australian+composer",
+  "HOEY, D.": "https://en.wikipedia.org/w/index.php?search=Phillip+Hoey+Australian+composer",
+  "KIRNBERGER, J.": "https://en.wikipedia.org/wiki/Johann_Philipp_Kirnberger",
+  "KIRNBERGER, J.P.": "https://en.wikipedia.org/wiki/Johann_Philipp_Kirnberger",
+  "LEMOINE, A.": "https://en.wikipedia.org/wiki/Henry_Lemoine_(musician)",
+  "LEMOINE, H.": "https://en.wikipedia.org/wiki/Henry_Lemoine_(musician)",
+  "MAYER, C.": "https://en.wikipedia.org/wiki/Charles_Mayer_(composer)",
+  "PURCELL, H.": "https://en.wikipedia.org/wiki/Henry_Purcell",
+  "PURCELL, H. arr. MILNE": "https://en.wikipedia.org/wiki/Henry_Purcell",
+  "ROLLIN, C.": "https://en.wikipedia.org/w/index.php?search=Catherine+Rollin+composer+piano",
+  "VANHAL, J.B.": "https://en.wikipedia.org/wiki/Johann_Baptist_Vanhal",
+  "VANHAL, J.": "https://en.wikipedia.org/wiki/Johann_Baptist_Vanhal",
+  "HOFMANN, H.": "https://en.wikipedia.org/wiki/Heinrich_Hofmann_(composer)",
+  "PACHULSKI, H.": "https://en.wikipedia.org/wiki/Henryk_Pachulski",
+  "PACHULSKI, K.": "https://en.wikipedia.org/wiki/Henryk_Pachulski",
+  "PESKANOV, A.": "https://en.wikipedia.org/w/index.php?search=Alexander+Peskanov+pianist+composer",
+  "TCHAIKOVSKY, P.I.": "https://en.wikipedia.org/wiki/Pyotr_Ilyich_Tchaikovsky",
+  "TCHAIKOVSKY, P.": "https://en.wikipedia.org/wiki/Pyotr_Ilyich_Tchaikovsky",
+  "KATS-CHERNIN, E.": "https://en.wikipedia.org/wiki/Elena_Kats-Chernin",
+  "LIEBERMANN, L.": "https://en.wikipedia.org/wiki/Lowell_Liebermann",
+  "MILNE, E.": "https://en.wikipedia.org/w/index.php?search=Elissa+Milne+Australian+composer",
+  "BACH, W. (attrib.)": "https://en.wikipedia.org/wiki/Wilhelm_Friedemann_Bach",
+  "FIBICH, Z.": "https://en.wikipedia.org/wiki/Zdeněk_Fibich",
+  "GILLOCK, W.": "https://en.wikipedia.org/wiki/William_Gillock",
+  "GLINKA, M.": "https://en.wikipedia.org/wiki/Mikhail_Glinka",
+  "GURLITT, C.": "https://en.wikipedia.org/wiki/Cornelius_Gurlitt",
+  "KIRCHNER, T.": "https://en.wikipedia.org/wiki/Theodor_Kirchner",
+  "KOZELUCH, L.": "https://en.wikipedia.org/wiki/Leopold_Kozeluch",
+  "MUSORGSKY, P.": "https://en.wikipedia.org/wiki/Modest_Mussorgsky",
+  "CASELLA, A.": "https://en.wikipedia.org/wiki/Alfredo_Casella",
+  "ADAMS, E.": "https://en.wikipedia.org/w/index.php?search=Eileen+Adams+American+composer+piano",
+  "CHAPPLE, B.": "https://en.wikipedia.org/w/index.php?search=Brian+Chapple+composer",
+  "EDWARDS, R.": "https://en.wikipedia.org/w/index.php?search=Ross+Edwards+Australian+composer",
+  "GOEDICKE, A.": "https://en.wikipedia.org/wiki/Alexander_Goedicke",
+  "HARRHY, E.": "https://en.wikipedia.org/w/index.php?search=Eileen+Harrhy+composer+piano",
+  "LEAHY, M.": "https://en.wikipedia.org/w/index.php?search=Mary+Leahy+Australian+composer",
+  "LEEK, S.": "https://en.wikipedia.org/wiki/Stephen_Leek",
+  "NEWNHAM, H.": "https://en.wikipedia.org/w/index.php?search=Peter+Newnham+Australian+composer+piano",
+  "NEWNHAM, P.": "https://en.wikipedia.org/w/index.php?search=Peter+Newnham+Australian+composer+piano",
+  "PETERSON, J.": "https://en.wikipedia.org/w/index.php?search=Wayne+Peterson+Australian+composer+piano",
+  "PETERSON, W.": "https://en.wikipedia.org/w/index.php?search=Wayne+Peterson+Australian+composer+piano",
+  "REBIKOV, V.": "https://en.wikipedia.org/wiki/Vladimir_Rebikov",
+  "ROCHEROLLE, E.": "https://en.wikipedia.org/w/index.php?search=Eugénie+Rocherolle+composer+piano",
+  "VINE, C.": "https://en.wikipedia.org/wiki/Carl_Vine",
+  "ALEXANDER, D.": "https://en.wikipedia.org/w/index.php?search=Dennis+Alexander+pianist+composer",
+  "ARLEN, H. arr. FABER": "https://en.wikipedia.org/wiki/Harold_Arlen",
+  "ARNOLD, M.": "https://en.wikipedia.org/wiki/Malcolm_Arnold",
+  "BASTIEN, J.": "https://en.wikipedia.org/wiki/James+Bastien",
+  "BOBER, M.": "https://en.wikipedia.org/w/index.php?search=Melody+Bober+composer+piano",
+  "BOULANGER, N.": "https://en.wikipedia.org/wiki/Nadia_Boulanger",
+  "BIZET, G. arr. HARRIS": "https://en.wikipedia.org/wiki/Georges_Bizet",
+  "ANONYMOUS": "https://en.wikipedia.org/wiki/Anonymous_music",
+  "CIMAROSA, D.": "https://en.wikipedia.org/wiki/Domenico_Cimarosa",
+  "CONCONE, G.": "https://en.wikipedia.org/wiki/Giuseppe_Concone",
+  "CONCONE, J.": "https://en.wikipedia.org/wiki/Giuseppe_Concone",
+  "DELIBES, L. arr. LANNING": "https://en.wikipedia.org/wiki/Léo_Delibes",
+  "DVOŘÁK, A. arr. BRIMHALL": "https://en.wikipedia.org/wiki/Antonín_Dvořák",
+  "ELGAR, E. arr. LANNING": "https://en.wikipedia.org/wiki/Edward_Elgar",
+  "ELGAR, E.": "https://en.wikipedia.org/wiki/Edward_Elgar",
+  "ELFMAN, D.": "https://en.wikipedia.org/wiki/Danny_Elfman",
+  "FAURÉ, G. arr. BROADSTOCK": "https://en.wikipedia.org/wiki/Gabriel_Fauré",
+  "GERSHWIN, G. arr. MARTIN": "https://en.wikipedia.org/wiki/George_Gershwin",
+  "GERSHWIN, G. arr. WEDGWOOD": "https://en.wikipedia.org/wiki/George_Gershwin",
+  "GLASS, P.": "https://en.wikipedia.org/wiki/Philip_Glass",
+  "GRAINGER, P. arr. STEVENSON": "https://en.wikipedia.org/wiki/Percy_Grainger",
+  "HANDLE, G.F. arr. LANNING": "https://en.wikipedia.org/wiki/George_Frideric_Handel",
+  "JOPLIN, S. arr. BARRATT": "https://en.wikipedia.org/wiki/Scott_Joplin",
+  "JOPLIN, S. arr. DENNIS": "https://en.wikipedia.org/wiki/Scott_Joplin",
+  "JOPLIN, S. arr. RAY": "https://en.wikipedia.org/wiki/Scott_Joplin",
+  "JOPLIN, S. arr. FABER": "https://en.wikipedia.org/wiki/Scott_Joplin",
+  "KANDER, J. arr. FABER": "https://en.wikipedia.org/wiki/John_Kander",
+  "KEANE, L.": "https://en.wikipedia.org/w/index.php?search=Laurence+Keane+Australian+composer+piano",
+  "KLOSE, M.": "https://en.wikipedia.org/w/index.php?search=Mike+Klose+composer+piano",
+  "LENNON, J. and McCARTNEY, P. (arr. BAKER)": "https://en.wikipedia.org/wiki/Lennon%E2%80%93McCartney",
+  "LENNON/McCARTNEY arr. BAKER": "https://en.wikipedia.org/wiki/Lennon%E2%80%93McCartney",
+  "MIER, M.": "https://en.wikipedia.org/w/index.php?search=Martha+Mier+piano+composer",
+  "MONK, T.": "https://en.wikipedia.org/wiki/Thelonious_Monk",
+  "NEVIN, E. arr. MANHIRE": "https://en.wikipedia.org/wiki/Ethelbert_Nevin",
+  "NORTH, A.": "https://en.wikipedia.org/wiki/Alex_North",
+  "BACH, J.S. arr. AARONSON": "https://en.wikipedia.org/wiki/Johann_Sebastian_Bach",
+  "PODGORNOV, I.": "https://en.wikipedia.org/w/index.php?search=Igor+Podgornov+composer+piano",
+  "PUCCINI, G. arr. LANNING": "https://en.wikipedia.org/wiki/Giacomo_Puccini",
+  "RIMSKY-KORSAKOV, N. arr. BRADLEY": "https://en.wikipedia.org/wiki/Nikolai_Rimsky-Korsakov",
+  "ROLAND, N.": "https://en.wikipedia.org/w/index.php?search=Nicholas+Roland+Australian+composer+piano",
+  "ROSSINI, G. arr. LANNING": "https://en.wikipedia.org/wiki/Gioachino_Rossini",
+  "SAINT-SAËNS, C. arr. STEWART": "https://en.wikipedia.org/wiki/Camille_Saint-Saëns",
+  "SAINT-SAËNS, C. arr. BRIMHALL": "https://en.wikipedia.org/wiki/Camille_Saint-Saëns",
+  "SAINT-SAËNS, C. arr. HEUMANN, G.": "https://en.wikipedia.org/wiki/Camille_Saint-Saëns",
+  "SCHMITZ, M.": "https://en.wikipedia.org/w/index.php?search=Manfred+Schmitz+jazz+piano+composer",
+  "SCHOEMEHL, D.": "https://en.wikipedia.org/w/index.php?search=Schoemehl+Train+journey+piano",
+  "SCHOENMEHL, M.": "https://en.wikipedia.org/w/index.php?search=Schoemehl+Train+journey+piano",
+  "SCHÖNBERG, C. arr. GOUT": "https://en.wikipedia.org/wiki/Claude-Michel_Schönberg",
+  "SCULTHORPE, P.": "https://en.wikipedia.org/wiki/Peter_Sculthorpe",
+  "SISKIND, J.": "https://en.wikipedia.org/w/index.php?search=Carol+Siskind+Australian+composer+piano",
+  "SISKIND, C.": "https://en.wikipedia.org/w/index.php?search=Carol+Siskind+Australian+composer+piano",
+  "SLAVICKÝ, K.": "https://en.wikipedia.org/wiki/Klement_Slavický",
+  "SMETANA, B. arr. HEUMANN": "https://en.wikipedia.org/wiki/Bedřich_Smetana",
+  "STÖLZEL, G.H.": "https://en.wikipedia.org/wiki/Gottfried_Heinrich_Stölzel",
+  "TSITSAROS, C.": "https://en.wikipedia.org/w/index.php?search=Christos+Tsitsaros+piano+composer",
+  "WAXMAN, F.": "https://en.wikipedia.org/wiki/Franz_Waxman",
+  "WEDGWOOD, P.": "https://en.wikipedia.org/w/index.php?search=Pam+Wedgwood+piano+composer",
+  "ROSSI, W.": "https://en.wikipedia.org/w/index.php?search=Wynn+Rossi+jazz+piano+composer",
+  "MATTHEWS, W.": "https://en.wikipedia.org/w/index.php?search=William+Matthews+composer+piano",
+  "HIRAYOSHI, A.": "https://en.wikipedia.org/w/index.php?search=Aki+Hirayoshi+composer+piano",
+  "RAMEAU, J.-P.": "https://en.wikipedia.org/wiki/Jean-Philippe_Rameau",
+  "GOUNOD, C. (arr. FABER and FABER)": "https://en.wikipedia.org/wiki/Charles_Gounod",
+  "JOHN, E. (arr. BRANDMAN)": "https://en.wikipedia.org/wiki/Elton_John",
+  "OLSON, L.": "https://en.wikipedia.org/w/index.php?search=Larry+Olson+composer+piano",
+  "TRADITIONAL (arr. BARRATT)": "https://en.wikipedia.org/wiki/Traditional_music",
+  "COBURN, W.": "https://en.wikipedia.org/w/index.php?search=William+Coburn+composer",
+  "SEROCKI, K.": "https://en.wikipedia.org/wiki/Kazimierz_Serocki",
+  "RAICHEV, A.": "https://en.wikipedia.org/w/index.php?search=Alexander+Raichev+Bulgarian+composer",
+  "HENGEVELD, G.": "https://en.wikipedia.org/w/index.php?search=Gert+Hengeveld+composer",
+  "RYBICKI, F.": "https://en.wikipedia.org/w/index.php?search=Felicja+Rybicki+Polish+composer",
+  "DUVERNOY, J.": "https://en.wikipedia.org/wiki/Jean_Duvernoy",
+  "LABURDA, J.": "https://en.wikipedia.org/w/index.php?search=Jeronym+Laburda+composer",
+  "NEUGASIMOV, V.": "https://en.wikipedia.org/w/index.php?search=Vasily+Neugasimov+Russian+composer",
+  "SOLER, A.": "https://en.wikipedia.org/wiki/Antonio_Soler",
+  "RIES, F.": "https://en.wikipedia.org/wiki/Ferdinand_Ries",
+  "WEBER, C.M. von.": "https://en.wikipedia.org/wiki/Carl_Maria_von_Weber",
+  "BROADSTOCK, B.": "https://en.wikipedia.org/w/index.php?search=Brett+Broadstock+Australian+composer",
+  "HINDSON, M.": "https://en.wikipedia.org/w/index.php?search=Michael+Hindson+Australian+composer",
+  "POLDEN, A.": "https://en.wikipedia.org/w/index.php?search=Andrew+Polden+Australian+composer",
+  "SYMONS, J.": "https://en.wikipedia.org/w/index.php?search=Jim+Symons+Australian+composer",
+  "CARR, E.": "https://en.wikipedia.org/w/index.php?search=Elaine+Carr+Australian+composer",
+  "BALUTET, M.": "https://en.wikipedia.org/w/index.php?search=Marie+Balutet+composer",
+  "HOOK, J.": "https://en.wikipedia.org/wiki/James_Hook",
+  "MUCZYNSKI, R.": "https://en.wikipedia.org/wiki/Robert_Muczynski",
+  "KOEHNE, G.": "https://en.wikipedia.org/w/index.php?search=Graeme+Koehne+Australian+composer",
+  "SEIBER, M.": "https://en.wikipedia.org/wiki/Mátyás_Seiber",
+  "HILLER, W.": "https://en.wikipedia.org/w/index.php?search=Wilfried+Hiller+composer",
+  "BAUSTETTER, J.": "https://en.wikipedia.org/w/index.php?search=Johann+Baustetter+composer",
+  "SCARLATTI, A.": "https://en.wikipedia.org/wiki/Alessandro_Scarlatti",
+  "SOREL, A.": "https://en.wikipedia.org/wiki/Antonio_Soler",
+  "McBROOM, A. (arr. COATES)": "https://en.wikipedia.org/w/index.php?search=Amanda+McBroom+composer",
+  "SCHWANDT, F. and ANDRE, W. (arr. BRIMHALL)": "https://en.wikipedia.org/w/index.php?search=Schwandt+Andre+composers",
+  "SCHUMANN, R. (arr. BRADLEY)": "https://en.wikipedia.org/wiki/Robert_Schumann",
+  "WALDTEUFEL, E. (arr. LANNING)": "https://en.wikipedia.org/wiki/Émile_Waldteufel",
+  "WILLIAMS, S. (arr. DURO)": "https://en.wikipedia.org/wiki/Spencer_Williams",
+  "HARLINE, L. (arr. BRIMHALL)": "https://en.wikipedia.org/wiki/Leigh_Harline",
+  "CARMICHAEL, M.": "https://en.wikipedia.org/wiki/Hoagy_Carmichael",
+  "HEFTI, N.": "https://en.wikipedia.org/wiki/Neal_Hefti",
+  "HENLEY, L.": "https://en.wikipedia.org/w/index.php?search=Larry+Henley+composer",
+};
+
+function getComposerLink(composer) {
+  return COMPOSER_LINKS[composer] || `https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(composer.replace(/,.*/, '').trim())}`;
+}
+
+// ─── GENERAL SYLLABUS DATA ── Grade 3 Solo (Exam code: 9943) ──────────────────
+const DATA_G3 = [
+
+  // ═══════════════════════════════════════════════════
+  //  LIST A  — Baroque / Classical technique & études
+  // ═══════════════════════════════════════════════════
+
+  // --- List A · S19 ---
+  { "l":"A","s":"S19","c":"BURGMÜLLER, F.","t":"La tarantelle (Tarantella) No 20 from 25 études faciles et progressives Op.100","nat":"German","era":"Romantic","key":"A minor","focus":["Dance character","Staccato technique","Rhythmic drive"] },
+  { "l":"A","s":"S19","c":"HANDEL, G.F.","t":"Sarabande II from Suite HWV 448","nat":"German","era":"Baroque","key":"D minor","focus":["Baroque dance","Ornamentation","Sustained tone"] },
+  { "l":"A","s":"S19","c":"HENGEVELD, G.","t":"Maestoso No 15 from 15 polyphonic studies","nat":"Dutch","era":"Modern","key":"Variable","focus":["Polyphonic texture","Voice independence","Stately character"] },
+  { "l":"A","s":"S19","c":"RYBICKI, F.","t":"Prelude from I am already playing Op.21","nat":"Polish","era":"Modern","key":"Variable","focus":["Lyrical melody","Expressive playing","Contemporary idiom"] },
+
+  // --- List A · S18 ---
+  { "l":"A","s":"S18","c":"CONCONE, G.","t":"Study No 5 from 30 melodious studies Op.24","nat":"Italian","era":"Romantic","key":"Variable","focus":["Cantabile melody","Tone shaping","Legato playing"] },
+  { "l":"A","s":"S18","c":"HANDEL, G.F.","t":"Preludio from Chaconne HWV 442","nat":"German","era":"Baroque","key":"G major","focus":["Baroque preludio","Ornamentation","Keyboard fluency"] },
+  { "l":"A","s":"S18","c":"SCHOENMEHL, M.","t":"Banjo tune","nat":"German","era":"Modern","key":"Variable","focus":["Rhythmic character","Modern idiom","Light touch"] },
+  { "l":"A","s":"S18","c":"TELEMANN, G.P.","t":"Loure 3rd movement from Overture TWV 32:12","nat":"German","era":"Baroque","key":"Variable","focus":["Baroque dance","Stylistic awareness","Dotted rhythm"] },
+
+  // --- List A · S17 ---
+  { "l":"A","s":"S17","c":"BURGMÜLLER, F.","t":"Ballade No 15 from 25 easy and progressive studies Op.100","nat":"German","era":"Romantic","key":"G minor","focus":["Narrative character","Dynamic shaping","Romantic drama"] },
+  { "l":"A","s":"S17","c":"HANDEL, G.F.","t":"Sonatina HWV 585","nat":"German","era":"Baroque","key":"Variable","focus":["Baroque clarity","Ornamentation","Formal structure"] },
+  { "l":"A","s":"S17","c":"HUMMEL, J.N.","t":"Etude No 32 from Ausführlich theoretisch-practische Anweisung Op.s157","nat":"Austrian","era":"Classical","key":"Variable","focus":["Finger technique","Classical elegance","Velocity control"] },
+  { "l":"A","s":"S17","c":"RAICHEV, A.","t":"The water mill","nat":"Bulgarian","era":"Modern","key":"Variable","focus":["Musical imagery","Rhythmic motion","Modern character"] },
+
+  // --- List A · Manual (45 pieces) ---
+  { "l":"A","s":"Manual","c":"ANON.","t":"Polonaise in G minor BWV Anh 119 from Clavierbüchlein für Anna Magdalena Bach","nat":"German","era":"Baroque","key":"G minor","focus":["Baroque dance","Stylistic clarity","Rhythmic precision"] },
+  { "l":"A","s":"Manual","c":"BACH, C.P.E.","t":"Polonaise in G minor BWV Anh 125 from Clavierbüchlein für Anna Magdalena Bach","nat":"German","era":"Baroque","key":"G minor","focus":["Baroque dance","Galant style","Articulation"] },
+  { "l":"A","s":"Manual","c":"BACH, J.C.F.","t":"Solfeggio","nat":"German","era":"Classical","key":"Variable","focus":["Keyboard fluency","Classical clarity","Finger technique"] },
+  { "l":"A","s":"Manual","c":"BACH, J.S.","t":"Minuet in G minor BWV 842 from Clavier-Büchlein für Wilhelm Friedemann Bach","nat":"German","era":"Baroque","key":"G minor","focus":["Baroque minuet","Polyphonic texture","Stylistic grace"] },
+  { "l":"A","s":"Manual","c":"BACH, J.S.","t":"Polonaise 5th movement from French Suite in E major BWV 817","nat":"German","era":"Baroque","key":"E major","focus":["Baroque dance","Ornamentation","Rhythmic drive"] },
+  { "l":"A","s":"Manual","c":"BACH, J.S.","t":"Præambulum in C major BWV 924 from Clavier-Büchlein für Wilhelm Friedemann Bach","nat":"German","era":"Baroque","key":"C major","focus":["Baroque preludio","Finger independence","Voice leading"] },
+  { "l":"A","s":"Manual","c":"BACH, J.S.","t":"Prelude in C major BWV 939","nat":"German","era":"Baroque","key":"C major","focus":["Baroque clarity","Broken chord texture","Even tone"] },
+  { "l":"A","s":"Manual","c":"BACH, J.S.","t":"Prelude in C minor BWV 999","nat":"German","era":"Baroque","key":"C minor","focus":["Broken chord pattern","Baroque style","Tonal colour"] },
+  { "l":"A","s":"Manual","c":"BACH, W.F.","t":"Allemande in G minor BWV 836 from Clavier-Büchlein für Wilhelm Friedemann Bach","nat":"German","era":"Baroque","key":"G minor","focus":["Baroque allemande","Ornamentation","Stylistic clarity"] },
+  { "l":"A","s":"Manual","c":"BAUSTETTER, J.","t":"Spanish folia","nat":"German","era":"Baroque","key":"Variable","focus":["Baroque variations","Dance character","Keyboard style"] },
+  { "l":"A","s":"Manual","c":"BERTINI, H.","t":"Andantino quasi allegretto in G major No 16 from 25 études Op.100","nat":"French","era":"Romantic","key":"G major","focus":["Lyrical étude","Singing melody","Legato playing"] },
+  { "l":"A","s":"Manual","c":"BERTINI, H.","t":"Movimento di Valtzer in D major No 10 from 25 études Op.100","nat":"French","era":"Romantic","key":"D major","focus":["Waltz character","Light touch","Rhythmic grace"] },
+  { "l":"A","s":"Manual","c":"BRANDMAN, M.","t":"The ring-tail 'possum No 9 from Contemporary modal pieces","nat":"Australian","era":"Contemporary","key":"Modal","focus":["Modal writing","Australian character","Contemporary idiom"] },
+  { "l":"A","s":"Manual","c":"BURGMÜLLER, J.","t":"Le courant limpide (The limpid stream) No 7 from 25 easy and progressive studies Op.100","nat":"German","era":"Romantic","key":"A major","focus":["Flowing texture","Legato playing","Tonal colour"] },
+  { "l":"A","s":"Manual","c":"BURGMÜLLER, J.","t":"La chasse (The chase) No 9 from 25 easy and progressive studies Op.100","nat":"German","era":"Romantic","key":"E major","focus":["Hunt character","Staccato technique","Rhythmic drive"] },
+  { "l":"A","s":"Manual","c":"BURGMÜLLER, J.","t":"Douce plainte (Sweet sorrow) No 16 from 25 easy and progressive studies Op.100","nat":"German","era":"Romantic","key":"B minor","focus":["Expressive melody","Romantic phrasing","Cantabile"] },
+  { "l":"A","s":"Manual","c":"COBURN, W.","t":"Frolicky rollicky wind","nat":"American","era":"Modern","key":"Variable","focus":["Musical imagery","Light character","Contemporary style"] },
+  { "l":"A","s":"Manual","c":"CZERNY, C.","t":"Etude in B♭ major No 83 from Practical exercises for beginners Op.599","nat":"Austrian","era":"Romantic","key":"B♭ major","focus":["Finger technique","Velocity","Technical fluency"] },
+  { "l":"A","s":"Manual","c":"CZERNY, C.","t":"Etude in B minor No 98 from 100 progressive studies Op.139","nat":"Austrian","era":"Romantic","key":"B minor","focus":["Finger independence","Technical agility","Rhythmic precision"] },
+  { "l":"A","s":"Manual","c":"DUVERNOY, J.","t":"Allegretto in A minor No 18 from 25 elementary studies Op.176","nat":"French","era":"Romantic","key":"A minor","focus":["Étude technique","Musical expression","Tone shaping"] },
+  { "l":"A","s":"Manual","c":"GURLITT, C.","t":"Stormy Weather (Hurry skurry) No 20 from Album for the young Op.140","nat":"German","era":"Romantic","key":"Variable","focus":["Dramatic character","Rhythmic drive","Dynamic shaping"] },
+  { "l":"A","s":"Manual","c":"HANDEL, G.F.","t":"Minuet in A minor HWV 549","nat":"German","era":"Baroque","key":"A minor","focus":["Baroque minuet","Ornamentation","Stylistic grace"] },
+  { "l":"A","s":"Manual","c":"HANDEL, G.F.","t":"Sarabande 3rd movement from Suite in D minor HWV 447","nat":"German","era":"Baroque","key":"D minor","focus":["Baroque sarabande","Sustained melody","Ornamentation"] },
+  { "l":"A","s":"Manual","c":"HELLER, S.","t":"Etude (Allegro vivace) in A minor No 2 from 25 études mélodiques Op.45","nat":"German","era":"Romantic","key":"A minor","focus":["Velocity","Finger technique","Rhythmic energy"] },
+  { "l":"A","s":"Manual","c":"HELLER, S.","t":"Etude (Allegretto) in C major No 1 from 25 études Op.47","nat":"German","era":"Romantic","key":"C major","focus":["Rhythmic étude","Musical character","Light touch"] },
+  { "l":"A","s":"Manual","c":"HELLER, S.","t":"Etude (Allegretto con moto) in A minor No 3 from 25 études Op.47","nat":"German","era":"Romantic","key":"A minor","focus":["Expressive étude","Melodic shaping","Tone control"] },
+  { "l":"A","s":"Manual","c":"HELLER, S.","t":"Etude (Andante quasi Allegretto) in C minor No 16 from 24 études Op.125","nat":"German","era":"Romantic","key":"C minor","focus":["Cantabile melody","Accompaniment balance","Lyrical phrasing"] },
+  { "l":"A","s":"Manual","c":"HOEY, D.","t":"Lydian No 3 from Five moods in five modes","nat":"Australian","era":"Contemporary","key":"Lydian","focus":["Modal writing","Contemporary idiom","Australian music"] },
+  { "l":"A","s":"Manual","c":"KABALEVSKY, D.","t":"A little joke No 13 from 30 pieces for children Op.27","nat":"Russian","era":"Modern","key":"Variable","focus":["Playful character","Light staccato","Modern style"] },
+  { "l":"A","s":"Manual","c":"KIRCHNER, T.","t":"Study in D minor No 24 from 100 kleine Studien Op.71","nat":"German","era":"Romantic","key":"D minor","focus":["Étude technique","Tone equality","Finger training"] },
+  { "l":"A","s":"Manual","c":"KIRNBERGER, J.P.","t":"Invention","nat":"German","era":"Baroque","key":"Variable","focus":["Baroque invention","Counterpoint","Voice independence"] },
+  { "l":"A","s":"Manual","c":"KIRNBERGER, J.P.","t":"La lutine from Clavierstücke","nat":"German","era":"Baroque","key":"Variable","focus":["Baroque dance","Light character","Keyboard style"] },
+  { "l":"A","s":"Manual","c":"LABURDA, J.","t":"Gavotte No 6 from 10 little polyphonic pieces","nat":"Czech","era":"Modern","key":"Variable","focus":["Polyphonic texture","Modern character","Dance style"] },
+  { "l":"A","s":"Manual","c":"MAYER, C.","t":"Study in A minor Op.340 No 2","nat":"German","era":"Romantic","key":"A minor","focus":["Étude technique","Legato playing","Tone shaping"] },
+  { "l":"A","s":"Manual","c":"NEUGASIMOV, V.","t":"Butterfly","nat":"Russian","era":"Modern","key":"Variable","focus":["Musical imagery","Light touch","Modern character"] },
+  { "l":"A","s":"Manual","c":"PESKANOV, A.","t":"Invention – Tribute to J.S. Bach","nat":"American","era":"Contemporary","key":"Variable","focus":["Neo-Baroque style","Counterpoint","Contemporary voice"] },
+  { "l":"A","s":"Manual","c":"PURCELL, H.","t":"Hornpipe in E minor Z T685 (arr. MILNE)","nat":"English","era":"Baroque","key":"E minor","focus":["Baroque hornpipe","Dance character","Articulation"] },
+  { "l":"A","s":"Manual","c":"ROLLIN, C.","t":"Winter wind","nat":"American","era":"Contemporary","key":"Variable","focus":["Musical imagery","Technical agility","Contemporary style"] },
+  { "l":"A","s":"Manual","c":"SCARLATTI, A.","t":"Aria in D minor","nat":"Italian","era":"Baroque","key":"D minor","focus":["Baroque aria","Singing melody","Ornament clarity"] },
+  { "l":"A","s":"Manual","c":"SCARLATTI, A.","t":"Folia","nat":"Italian","era":"Baroque","key":"D minor","focus":["Baroque variations","Dance character","Stylistic awareness"] },
+  { "l":"A","s":"Manual","c":"SEIXAS, C. de.","t":"Toccata in C major","nat":"Portuguese","era":"Baroque","key":"C major","focus":["Baroque toccata","Finger velocity","Keyboard brilliance"] },
+  { "l":"A","s":"Manual","c":"SOLER, A.","t":"Sonata in D minor R115","nat":"Spanish","era":"Baroque","key":"D minor","focus":["Spanish Baroque","Stylistic character","Keyboard technique"] },
+  { "l":"A","s":"Manual","c":"STREABBOG, L.","t":"Allegretto No 11 from 12 very easy and melodious studies Op.63","nat":"Belgian","era":"Romantic","key":"Variable","focus":["Lyrical étude","Melodic shaping","Light touch"] },
+  { "l":"A","s":"Manual","c":"STREABBOG, L.","t":"Allegro moderato No 9 from 12 easy and melodious studies Op.64","nat":"Belgian","era":"Romantic","key":"Variable","focus":["Technical agility","Musical character","Tone evenness"] },
+  { "l":"A","s":"Manual","c":"ZILCHER, P.","t":"The gossip (Die Schwätzerin) No 4 from Op.55","nat":"German","era":"Romantic","key":"Variable","focus":["Humorous character","Light staccato","Musical wit"] },
+
+  // ═══════════════════════════════════════════════════
+  //  LIST B  — Classical / Romantic character pieces
+  // ═══════════════════════════════════════════════════
+
+  // --- List B · S19 ---
+  { "l":"B","s":"S19","c":"BALUTET, M.","t":"Villanelle from Quatre petites pièces en clef de sol","nat":"French","era":"Modern","key":"Variable","focus":["Lyrical character","French style","Melodic shaping"] },
+  { "l":"B","s":"S19","c":"HOOK, J.","t":"Allegro First movement of Sonatina Op.12 No 5","nat":"English","era":"Classical","key":"Variable","focus":["Classical sonatina","Clarity","Finger technique"] },
+  { "l":"B","s":"S19","c":"RIES, F.","t":"Polonaise Op.124 No 3","nat":"German","era":"Romantic","key":"Variable","focus":["Dance character","Romantic style","Musical phrasing"] },
+  { "l":"B","s":"S19","c":"WEBER, C.M. von.","t":"Scherzo Second movement of Divertimento assai facile Op.38","nat":"German","era":"Romantic","key":"Variable","focus":["Playful character","Light touch","Rhythmic precision"] },
+
+  // --- List B · S18 ---
+  { "l":"B","s":"S18","c":"BEACH, A.","t":"Gavotte No 2 from Children's album Op.36","nat":"American","era":"Romantic","key":"Variable","focus":["Dance elegance","Romantic character","Musical shaping"] },
+  { "l":"B","s":"S18","c":"BENDA, G.","t":"Sonatina No 11 from 34 Sonatinas","nat":"Czech","era":"Classical","key":"Variable","focus":["Classical sonatina","Clarity","Formal structure"] },
+  { "l":"B","s":"S18","c":"ELGAR, E.","t":"Andantino 1st movement from Sonatina","nat":"English","era":"Romantic","key":"Variable","focus":["Lyrical melody","English Romantic","Cantabile"] },
+  { "l":"B","s":"S18","c":"HAYDN, J.","t":"Menuet and Trio 3rd movement from Divertimento Hob XVI:1","nat":"Austrian","era":"Classical","key":"C major","focus":["Classical minuet","Elegance","Articulation"] },
+
+  // --- List B · S17 ---
+  { "l":"B","s":"S17","c":"BENDA, G.","t":"Sonatine No 3 from 34 Sonatines","nat":"Czech","era":"Classical","key":"Variable","focus":["Classical form","Clarity","Technical fluency"] },
+  { "l":"B","s":"S17","c":"DIABELLI, A.","t":"Allegro moderato 1st movement of Sonatina No 2 from Op.168","nat":"Austrian","era":"Classical","key":"Variable","focus":["Classical sonatina","Balanced texture","Elegant articulation"] },
+  { "l":"B","s":"S17","c":"LICHNER, H.","t":"Rondo 3rd movement of Sonatina No 3 from Op.4","nat":"German","era":"Romantic","key":"Variable","focus":["Rondo form","Light character","Rhythmic energy"] },
+  { "l":"B","s":"S17","c":"VANHAL, J.","t":"Alla tedesca 2nd movement of Sonatina No 9 from Op.41","nat":"Austrian","era":"Classical","key":"Variable","focus":["Dance character","Classical style","Graceful phrasing"] },
+
+  // --- List B · Manual (47 pieces) ---
+  { "l":"B","s":"Manual","c":"BEETHOVEN, L. van (attrib.)","t":"Allegro assai 1st movement from Sonatina in F major WoO Anh 5/2","nat":"German","era":"Classical","key":"F major","focus":["Classical sonatina","Finger technique","Articulation"] },
+  { "l":"B","s":"Manual","c":"BEETHOVEN, L. van (attrib.)","t":"Rondo 2nd movement from Sonatina in F major WoO Anh 5/2","nat":"German","era":"Classical","key":"F major","focus":["Rondo character","Light touch","Classical elegance"] },
+  { "l":"B","s":"Manual","c":"BACH, C.P.E.","t":"La Pott H 80/W 117.18","nat":"German","era":"Classical","key":"Variable","focus":["Galant style","Expressive playing","Ornamentation"] },
+  { "l":"B","s":"Manual","c":"BEETHOVEN, L. van.","t":"German dance (Deutscher Tanz) in B♭ major No 6 from 12 German dances WoO 13","nat":"German","era":"Classical","key":"B♭ major","focus":["Dance character","Classical clarity","Rhythmic precision"] },
+  { "l":"B","s":"Manual","c":"BENDA, G.","t":"Sonatina in G minor No 16 from 34 piano sonatinas","nat":"Czech","era":"Classical","key":"G minor","focus":["Classical form","Minor character","Expressive playing"] },
+  { "l":"B","s":"Manual","c":"BENDA, G.","t":"Sonatina in F major No 10 from 34 piano sonatinas","nat":"Czech","era":"Classical","key":"F major","focus":["Classical sonatina","Clarity","Formal structure"] },
+  { "l":"B","s":"Manual","c":"BENDA, G.","t":"Sonatina in D major No 17 from 34 piano sonatinas","nat":"Czech","era":"Classical","key":"D major","focus":["Classical form","Elegance","Balanced texture"] },
+  { "l":"B","s":"Manual","c":"CHOPIN, F.","t":"Wiosna (Spring) Op.74 No 2/CT 130","nat":"Polish","era":"Romantic","key":"A minor","focus":["Lyrical melody","Romantic character","Expressive phrasing"] },
+  { "l":"B","s":"Manual","c":"CLEMENTI, M.","t":"Waltz in G major No 8 from 12 waltzes Op.38","nat":"Italian","era":"Classical","key":"G major","focus":["Waltz elegance","Classical clarity","Light touch"] },
+  { "l":"B","s":"Manual","c":"DIABELLI, A.","t":"Moderato cantabile 1st movement from Sonatina in F major Op.168 No 1","nat":"Austrian","era":"Classical","key":"F major","focus":["Singing melody","Classical sonatina","Cantabile"] },
+  { "l":"B","s":"Manual","c":"DIABELLI, A.","t":"Scherzo 2nd movement from Sonatina in G major Op.151 No 1","nat":"Austrian","era":"Classical","key":"G major","focus":["Playful character","Light staccato","Classical wit"] },
+  { "l":"B","s":"Manual","c":"GRECHANINOV, A.","t":"My dear mother No 1 from Grandfather's Album Op.119","nat":"Russian","era":"Romantic","key":"Variable","focus":["Expressive melody","Romantic character","Singing tone"] },
+  { "l":"B","s":"Manual","c":"GRECHANINOV, A.","t":"Orientale No 11 from Historiettes Op.118","nat":"Russian","era":"Romantic","key":"Variable","focus":["Eastern character","Romantic colour","Musical imagery"] },
+  { "l":"B","s":"Manual","c":"GURLITT, C.","t":"In the garden No 4 from Album for the young Op.140","nat":"German","era":"Romantic","key":"Variable","focus":["Lyrical melody","Romantic phrasing","Melodic shaping"] },
+  { "l":"B","s":"Manual","c":"GURLITT, C.","t":"Andantino (Wild Mignonette) No 1 from Kleine Blumen Op.205","nat":"German","era":"Romantic","key":"Variable","focus":["Flowing melody","Romantic character","Singing tone"] },
+  { "l":"B","s":"Manual","c":"GURLITT, C.","t":"Longing No 11 from Album for the young Op.140","nat":"German","era":"Romantic","key":"Variable","focus":["Romantic expression","Expressive phrasing","Emotional depth"] },
+  { "l":"B","s":"Manual","c":"GURLITT, C.","t":"Träumerei No 32 from Der erste Vortrag Op.210","nat":"German","era":"Romantic","key":"Variable","focus":["Dreamy character","Soft tone","Romantic style"] },
+  { "l":"B","s":"Manual","c":"HAYDN, J.","t":"Menuetto and Trio in C minor","nat":"Austrian","era":"Classical","key":"C minor","focus":["Classical minuet","Minor character","Formal elegance"] },
+  { "l":"B","s":"Manual","c":"HAYDN, J.","t":"Piano piece in D Major","nat":"Austrian","era":"Classical","key":"D major","focus":["Classical clarity","Elegant character","Balanced texture"] },
+  { "l":"B","s":"Manual","c":"HOOK, J.","t":"Rondo from Sonatina Op.12 No 9","nat":"English","era":"Classical","key":"Variable","focus":["Rondo form","Classical elegance","Light character"] },
+  { "l":"B","s":"Manual","c":"IORDANSKY, M.","t":"An old ballad from Op.24","nat":"Russian","era":"Romantic","key":"Variable","focus":["Ballad character","Romantic melody","Expressive playing"] },
+  { "l":"B","s":"Manual","c":"KIRCHNER, T.","t":"Andantino No 3 from Neue Kinderszenen Op.55","nat":"German","era":"Romantic","key":"Variable","focus":["Lyrical melody","Romantic phrasing","Singing tone"] },
+  { "l":"B","s":"Manual","c":"KIRCHNER, T.","t":"Allegretto No 10 from Neue Kinderszenen Op.55","nat":"German","era":"Romantic","key":"Variable","focus":["Light character","Melodic shaping","Romantic style"] },
+  { "l":"B","s":"Manual","c":"KIRCHNER, T.","t":"Ruhig, ausdrucksvoll No 8 from Miniaturen Op.62","nat":"German","era":"Romantic","key":"Variable","focus":["Expressive playing","Quiet character","Tonal colour"] },
+  { "l":"B","s":"Manual","c":"KIRCHNER, T.","t":"Allegretto, poco agitato No 9 from Miniaturen Op.62","nat":"German","era":"Romantic","key":"Variable","focus":["Agitated character","Rhythmic energy","Romantic expression"] },
+  { "l":"B","s":"Manual","c":"KOZELUCH, L.","t":"Menuetto 2nd movement from Sonata No 37 in G major","nat":"Czech","era":"Classical","key":"G major","focus":["Classical minuet","Elegance","Formal clarity"] },
+  { "l":"B","s":"Manual","c":"KUHLAU, F.","t":"Allegro 1st movement from Sonatina in C major Op.55 No 1","nat":"Danish","era":"Classical","key":"C major","focus":["Classical sonatina","Finger technique","Clarity"] },
+  { "l":"B","s":"Manual","c":"KUHLAU, F.","t":"Rondo – Vivace 2nd movement from Sonatina in C major Op.55 No 1","nat":"Danish","era":"Classical","key":"C major","focus":["Rondo form","Light character","Technical fluency"] },
+  { "l":"B","s":"Manual","c":"KULLAK, T.","t":"Die Wanduhr (The clock) No 2 from Kinderleben Op.62","nat":"German","era":"Romantic","key":"Variable","focus":["Musical imagery","Even touch","Rhythmic precision"] },
+  { "l":"B","s":"Manual","c":"LICHNER, H.","t":"Allegro moderato 1st movement from Sonatina in F major Op.4 No 2","nat":"German","era":"Romantic","key":"F major","focus":["Classical sonatina","Finger technique","Elegance"] },
+  { "l":"B","s":"Manual","c":"LICHNER, H.","t":"Moderato 1st movement from Sonatina in G major Op.4 No 3","nat":"German","era":"Romantic","key":"G major","focus":["Lyrical melody","Classical form","Cantabile"] },
+  { "l":"B","s":"Manual","c":"LICHNER, H.","t":"Moderato 1st movement from Sonatina in G major Op.49 No 2","nat":"German","era":"Romantic","key":"G major","focus":["Singing tone","Classical sonatina","Musical shaping"] },
+  { "l":"B","s":"Manual","c":"LICHNER, H.","t":"Moderato 1st movement from Sonatina in G major Op.66 No 3","nat":"German","era":"Romantic","key":"G major","focus":["Romantic character","Lyrical playing","Formal clarity"] },
+  { "l":"B","s":"Manual","c":"MENDELSSOHN, F.","t":"Romanze","nat":"German","era":"Romantic","key":"Variable","focus":["Romantic melody","Singing tone","Expressive phrasing"] },
+  { "l":"B","s":"Manual","c":"MOROVSKY, A.","t":"Valsette","nat":"Russian","era":"Romantic","key":"Variable","focus":["Waltz elegance","Light touch","Romantic character"] },
+  { "l":"B","s":"Manual","c":"MOZART, W.","t":"Larghetto 1st movement from Viennese sonatina No 5 in F major","nat":"Austrian","era":"Classical","key":"F major","focus":["Singing melody","Classical elegance","Cantabile"] },
+  { "l":"B","s":"Manual","c":"MOZART, W.","t":"Polonaise 3rd movement from Viennese sonatina No 5 in F major","nat":"Austrian","era":"Classical","key":"F major","focus":["Dance character","Classical clarity","Elegant articulation"] },
+  { "l":"B","s":"Manual","c":"MOZART, W.","t":"Rondo in C major","nat":"Austrian","era":"Classical","key":"C major","focus":["Rondo form","Classical wit","Light touch"] },
+  { "l":"B","s":"Manual","c":"REBIKOV, V.","t":"Shepherd playing his pipe No 8 from Op.31","nat":"Russian","era":"Romantic","key":"Variable","focus":["Pastoral character","Lyrical melody","Singing tone"] },
+  { "l":"B","s":"Manual","c":"REINECKE, C.","t":"Scherzo 3rd movement from Serenade Op.183 No 5","nat":"German","era":"Romantic","key":"Variable","focus":["Playful character","Light touch","Rhythmic energy"] },
+  { "l":"B","s":"Manual","c":"SANDRÉ, G.","t":"Go to sleep","nat":"French","era":"Romantic","key":"Variable","focus":["Lullaby character","Soft tone","Gentle phrasing"] },
+  { "l":"B","s":"Manual","c":"SCHUBERT, F.","t":"Waltz Op.18 No 6 D 145","nat":"Austrian","era":"Romantic","key":"Variable","focus":["Viennese waltz","Romantic character","Lyrical melody"] },
+  { "l":"B","s":"Manual","c":"SCHUMANN, R.","t":"Erster Verlust (First loss) No 16 from Album für die Jugend Op.68","nat":"German","era":"Romantic","key":"E minor","focus":["Expressive melody","Romantic emotion","Singing tone"] },
+  { "l":"B","s":"Manual","c":"SCHUMANN, R.","t":"Schnitterliedchen (Reaper's song) No 18 from Album für die Jugend Op.68","nat":"German","era":"Romantic","key":"C major","focus":["Song character","Light touch","Rhythmic energy"] },
+  { "l":"B","s":"Manual","c":"SCHUMANN, R.","t":"Wilder Reiter (Wild horseman) No 8 from Album für die Jugend Op.68","nat":"German","era":"Romantic","key":"A minor","focus":["Energetic character","Rhythmic drive","Dynamic shaping"] },
+  { "l":"B","s":"Manual","c":"SPINDLER, F.","t":"Flying Leaf Op.123 No 10","nat":"German","era":"Romantic","key":"Variable","focus":["Light character","Melodic shaping","Romantic style"] },
+  { "l":"B","s":"Manual","c":"TCHAIKOVSKY, P.","t":"Chanson italienne (Italian song) No 15 from Album pour enfants Op.39","nat":"Russian","era":"Romantic","key":"D major","focus":["Italian character","Singing melody","Lyrical phrasing"] },
+
+  // ═══════════════════════════════════════════════════
+  //  LIST C  — Modern / Contemporary / Creative
+  // ═══════════════════════════════════════════════════
+
+  // --- List C · S19 ---
+  { "l":"C","s":"S19","c":"KABALEVSKY, D.","t":"A short story No 22 from 24 pieces for children Op.39","nat":"Russian","era":"Modern","key":"Variable","focus":["Lyrical character","Expressive playing","Modern style"] },
+  { "l":"C","s":"S19","c":"MILNE, E.","t":"Scoot from Pepperbox jazz Book 1","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Jazz idiom","Rhythmic energy","Contemporary character"] },
+  { "l":"C","s":"S19","c":"SEROCKI, K.","t":"Mazurka No 3 from Krasnoludki (Dwarves)","nat":"Polish","era":"Modern","key":"Variable","focus":["Polish dance","Rhythmic precision","Modern character"] },
+  { "l":"C","s":"S19","c":"YU, J.","t":"A phone call to Mozart from Cutetudes","nat":"Chinese-Australian","era":"Contemporary","key":"Variable","focus":["Humorous character","Contemporary idiom","Musical imagination"] },
+
+  // --- List C · S18 ---
+  { "l":"C","s":"S18","c":"BENJAMIN, A.","t":"A song with a sad ending No 3 from Fantasies","nat":"Australian","era":"Modern","key":"Variable","focus":["Expressive melody","Modern character","Musical narrative"] },
+  { "l":"C","s":"S18","c":"HILLER, W.","t":"Butterfly waltz from 2 Miniaturen für Kinder","nat":"German","era":"Contemporary","key":"Variable","focus":["Delicate character","Waltz style","Contemporary idiom"] },
+  { "l":"C","s":"S18","c":"MUCZYNSKI, R.","t":"Fable No 9 from Fables","nat":"American","era":"Modern","key":"Variable","focus":["Narrative character","Modern style","Expressive playing"] },
+  { "l":"C","s":"S18","c":"TANSMAN, A.","t":"La poupée No 2 from Pour les enfants","nat":"Polish","era":"Modern","key":"Variable","focus":["Gentle character","Modern idiom","Musical imagination"] },
+
+  // --- List C · S17 ---
+  { "l":"C","s":"S17","c":"BENJAMIN, A.","t":"Soldiers in the distance No 3 from Fantasies","nat":"Australian","era":"Modern","key":"Variable","focus":["Musical imagery","Australian music","Modern character"] },
+  { "l":"C","s":"S17","c":"KOEHNE, G.","t":"A closed world of fine feelings and grand design No 2 from Aphorisms","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Contemporary idiom","Australian character","Expressive playing"] },
+  { "l":"C","s":"S17","c":"SEIBER, M.","t":"Foxtrot No 2 from Leichte Tänze","nat":"Hungarian","era":"Modern","key":"Variable","focus":["Jazz-influenced","Dance character","Rhythmic energy"] },
+  { "l":"C","s":"S17","c":"SHOSTAKOVICH, D.","t":"Eine lustige Geschichte No 4 from Detskaya tetrad'","nat":"Russian","era":"Modern","key":"Variable","focus":["Humorous character","Modern style","Rhythmic drive"] },
+
+  // --- List C · Aust Anthology (5 pieces) ---
+  { "l":"C","s":"AustAnth","c":"BRANDMAN, M.","t":"Spider on the mirror","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Contemporary idiom","Australian music","Musical imagery"] },
+  { "l":"C","s":"AustAnth","c":"BROADSTOCK, B.","t":"Cool...","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Contemporary style","Expressive freedom","Australian character"] },
+  { "l":"C","s":"AustAnth","c":"HINDSON, M.","t":"Gentle giant","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Musical character","Contemporary idiom","Australian music"] },
+  { "l":"C","s":"AustAnth","c":"POLDEN, A.","t":"5 to 4","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Rhythmic character","Contemporary style","Australian music"] },
+  { "l":"C","s":"AustAnth","c":"SYMONS, J.","t":"Ambling along","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Relaxed character","Australian idiom","Contemporary style"] },
+
+  // --- List C · Manual (12 pieces) ---
+  { "l":"C","s":"Manual","c":"BAILEY, K.","t":"Breezin' from Jazzin' around 2","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Jazz character","Relaxed style","Australian music"] },
+  { "l":"C","s":"Manual","c":"BAILEY, K.","t":"Study in Latin from Jazzin' around 2","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Latin rhythm","Contemporary idiom","Australian music"] },
+  { "l":"C","s":"Manual","c":"BARTÓK, B.","t":"Little study No 77 from Mikrokosmos Volume III","nat":"Hungarian","era":"Modern","key":"Variable","focus":["Modern technique","Legato study","Contemporary awareness"] },
+  { "l":"C","s":"Manual","c":"BARTÓK, B.","t":"Moderato No 26 from Gyermekeknek (For children) Volume 1","nat":"Hungarian","era":"Modern","key":"Variable","focus":["Folk character","Modern style","Musical imagination"] },
+  { "l":"C","s":"Manual","c":"BARTÓK, B.","t":"Lassú vergődés (Frustration) No 2 from Ten easy pieces","nat":"Hungarian","era":"Modern","key":"Variable","focus":["Expressive character","Modern idiom","Emotional depth"] },
+  { "l":"C","s":"Manual","c":"BARTÓK, B.","t":"Tót legények tánca (Slovak boys' dance) No 3 from Ten easy pieces","nat":"Hungarian","era":"Modern","key":"Variable","focus":["Folk dance","Rhythmic energy","Modern character"] },
+  { "l":"C","s":"Manual","c":"BARTÓK, B.","t":"Teasing song No 18 from Gyermekeknek (For children) Volume 2","nat":"Hungarian","era":"Modern","key":"Variable","focus":["Playful character","Folk idiom","Modern style"] },
+  { "l":"C","s":"Manual","c":"BRANDMAN, M.","t":"The squirrel glider from Contemporary modal pieces","nat":"Australian","era":"Contemporary","key":"Modal","focus":["Modal writing","Australian character","Contemporary idiom"] },
+  { "l":"C","s":"Manual","c":"CAPERS, V.","t":"Ella scats the little lamb from Portraits in jazz","nat":"American","era":"Contemporary","key":"Variable","focus":["Jazz idiom","Creative character","Contemporary style"] },
+  { "l":"C","s":"Manual","c":"CHUA, S.","t":"Midnight snack from Scenes of childhood","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Contemporary character","Australian music","Musical imagination"] },
+  { "l":"C","s":"Manual","c":"CORNICK, M.","t":"Ballad from Easy jazzy piano","nat":"English","era":"Contemporary","key":"Variable","focus":["Jazz ballad","Lyrical playing","Contemporary idiom"] },
+  { "l":"C","s":"Manual","c":"CORNICK, M.","t":"Blues in two from Easy jazzy piano","nat":"English","era":"Contemporary","key":"Variable","focus":["Blues character","Jazz idiom","Contemporary style"] },
+];
+
+// ─── LEISURE SYLLABUS DATA ── Grade 3 Leisure (Exam code: 6333) ───────────────
+const DATA_G3_LEISURE = [
+
+  // ═══════════════════════════════════════════════════
+  //  SERIES 4  (12 pieces)
+  // ═══════════════════════════════════════════════════
+
+  { "l":"S4","s":"S4","c":"ALEXANDER, D.","t":"Toccata ritmico","nat":"American","era":"Contemporary","key":"Variable","focus":["Toccata style","Rhythmic precision","Technical energy"] },
+  { "l":"S4","s":"S4","c":"ALLEN, P.","t":"I still call Australia home","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Australian identity","Lyrical melody","Popular character"] },
+  { "l":"S4","s":"S4","c":"ARNOLD, G.","t":"Twilight","nat":"British","era":"Contemporary","key":"Variable","focus":["Atmospheric character","Lyrical playing","Contemporary idiom"] },
+  { "l":"S4","s":"S4","c":"BOBER, M.","t":"Midnight ride","nat":"American","era":"Contemporary","key":"Variable","focus":["Descriptive character","Rhythmic drive","Contemporary style"] },
+  { "l":"S4","s":"S4","c":"GARNER, E.","t":"Misty","nat":"American","era":"Contemporary","key":"Variable","focus":["Jazz standard","Lyrical melody","Expressive character"] },
+  { "l":"S4","s":"S4","c":"GRECHANINOV, A.","t":"The little would-be man","nat":"Russian","era":"Modern","key":"Variable","focus":["Character piece","Expressive phrasing","Russian style"] },
+  { "l":"S4","s":"S4","c":"MILLER, C.","t":"Spanish dance","nat":"American","era":"Contemporary","key":"Variable","focus":["Spanish character","Dance rhythm","Stylistic colour"] },
+  { "l":"S4","s":"S4","c":"NAKADA, Y.","t":"Song of twilight","nat":"Japanese","era":"Contemporary","key":"Variable","focus":["Lyrical melody","Atmospheric character","Contemporary idiom"] },
+  { "l":"S4","s":"S4","c":"ROLLIN, C.","t":"Nashville rag","nat":"American","era":"Contemporary","key":"Variable","focus":["Ragtime character","Rhythmic energy","American style"] },
+  { "l":"S4","s":"S4","c":"SCHÖNBERG, C.-M.","t":"I dreamed a dream","nat":"French","era":"Contemporary","key":"Variable","focus":["Musical theatre","Lyrical expression","Dramatic character"] },
+  { "l":"S4","s":"S4","c":"TCHAIKOVSKY, P.I.","t":"Morning prayer","nat":"Russian","era":"Romantic","key":"Variable","focus":["Romantic character","Lyrical melody","Peaceful expression"] },
+  { "l":"S4","s":"S4","c":"WEDGWOOD, O.","t":"Buckaroo","nat":"English","era":"Contemporary","key":"Variable","focus":["Energetic character","Rhythmic drive","Contemporary style"] },
+
+  // ═══════════════════════════════════════════════════
+  //  SERIES 3  (11 pieces)
+  // ═══════════════════════════════════════════════════
+
+  { "l":"S3","s":"S3","c":"BIRCH, S.","t":"Havanna nights","nat":"British","era":"Contemporary","key":"Variable","focus":["Latin character","Rhythmic energy","Contemporary idiom"] },
+  { "l":"S3","s":"S3","c":"BIZET, G.","t":"Chanson bohème","nat":"French","era":"Romantic","key":"Variable","focus":["Romantic drama","Stylistic flair","Operatic character"] },
+  { "l":"S3","s":"S3","c":"DELIBES, L.","t":"Flower duet","nat":"French","era":"Romantic","key":"Variable","focus":["Romantic elegance","Lyrical melody","Legato playing"] },
+  { "l":"S3","s":"S3","c":"HENLEY, D. and FREY, G.","t":"Desperado","nat":"American","era":"Contemporary","key":"Variable","focus":["Popular ballad","Lyrical expression","Contemporary style"] },
+  { "l":"S3","s":"S3","c":"LENNON, J. and McCARTNEY, P.","t":"Here there and everywhere","nat":"British","era":"Contemporary","key":"Variable","focus":["Popular melody","Lyrical character","Contemporary arrangement"] },
+  { "l":"S3","s":"S3","c":"MIER, M.","t":"Jelly bean rag","nat":"American","era":"Contemporary","key":"Variable","focus":["Ragtime style","Rhythmic character","Contemporary idiom"] },
+  { "l":"S3","s":"S3","c":"MOSER, J.","t":"Flying bees","nat":"German","era":"Contemporary","key":"Variable","focus":["Descriptive character","Light technique","Contemporary style"] },
+  { "l":"S3","s":"S3","c":"MOZART, W.","t":"Theme and Variation 1","nat":"Austrian","era":"Classical","key":"Variable","focus":["Classical form","Theme and variation","Musical clarity"] },
+  { "l":"S3","s":"S3","c":"MOZART, W. (arr. FABER and FABER)","t":"Theme","nat":"Austrian","era":"Classical","key":"Variable","focus":["Classical style","Melodic playing","Musical arrangement"] },
+  { "l":"S3","s":"S3","c":"SHEARING, G.","t":"Lullaby of Birdland","nat":"British","era":"Contemporary","key":"Variable","focus":["Jazz character","Lyrical melody","Contemporary style"] },
+  { "l":"S3","s":"S3","c":"WILLIAMS, J.","t":"Theme from Jurassic Park","nat":"American","era":"Contemporary","key":"Variable","focus":["Film music","Dramatic character","Expressive melody"] },
+
+  // ═══════════════════════════════════════════════════
+  //  SERIES 2  (9 pieces)
+  // ═══════════════════════════════════════════════════
+
+  { "l":"S2","s":"S2","c":"BACH, J.S.","t":"Præambulum","nat":"German","era":"Baroque","key":"Variable","focus":["Baroque style","Finger technique","Keyboard clarity"] },
+  { "l":"S2","s":"S2","c":"BRANDMAN, M.","t":"Minnamurra rainforest dreaming","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Australian character","Musical imagery","Contemporary idiom"] },
+  { "l":"S2","s":"S2","c":"CARR, E.","t":"Doves of peace","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Peaceful character","Contemporary style","Musical expression"] },
+  { "l":"S2","s":"S2","c":"CORNICK, M.","t":"Minor event","nat":"English","era":"Contemporary","key":"Variable","focus":["Jazz-influenced","Minor character","Contemporary idiom"] },
+  { "l":"S2","s":"S2","c":"GOUNOD, C. (arr. FABER and FABER)","t":"Funeral march of a marionette","nat":"French","era":"Romantic","key":"D minor","focus":["Humorous character","March style","Dramatic flair"] },
+  { "l":"S2","s":"S2","c":"JOHN, E. (arr. BRANDMAN)","t":"Song for Guy","nat":"English","era":"Contemporary","key":"Variable","focus":["Pop character","Lyrical melody","Contemporary style"] },
+  { "l":"S2","s":"S2","c":"MOZART, W.","t":"Polonaise","nat":"Austrian","era":"Classical","key":"Variable","focus":["Classical dance","Elegant character","Rhythmic precision"] },
+  { "l":"S2","s":"S2","c":"OLSON, L.","t":"Thank you Mrs Bach","nat":"American","era":"Contemporary","key":"Variable","focus":["Tribute character","Contemporary idiom","Musical humour"] },
+  { "l":"S2","s":"S2","c":"SAINT-SAËNS, C. (arr. BRIMHALL)","t":"Le cygne (The swan)","nat":"French","era":"Romantic","key":"Variable","focus":["Lyrical melody","Elegant character","Flowing style"] },
+
+  // ═══════════════════════════════════════════════════
+  //  SERIES 1  (13 pieces)
+  // ═══════════════════════════════════════════════════
+
+  { "l":"S1","s":"S1","c":"BACH, J.S.","t":"Prelude","nat":"German","era":"Baroque","key":"Variable","focus":["Baroque style","Keyboard fluency","Technical clarity"] },
+  { "l":"S1","s":"S1","c":"BEETHOVEN, L. van.","t":"Choral symphony (arr.)","nat":"German","era":"Romantic","key":"Variable","focus":["Choral character","Musical arrangement","Expressive playing"] },
+  { "l":"S1","s":"S1","c":"CARMICHAEL, M.","t":"Georgia on my mind","nat":"American","era":"Contemporary","key":"Variable","focus":["Jazz standard","Lyrical melody","Contemporary style"] },
+  { "l":"S1","s":"S1","c":"CHOPIN, F.","t":"Sostenuto","nat":"Polish","era":"Romantic","key":"Variable","focus":["Romantic phrasing","Expressive melody","Lyrical playing"] },
+  { "l":"S1","s":"S1","c":"COREA, C.","t":"Children's song No 1","nat":"American","era":"Contemporary","key":"Variable","focus":["Contemporary idiom","Lyrical character","Jazz influence"] },
+  { "l":"S1","s":"S1","c":"GERSHWIN, G.","t":"Fascinating rhythm","nat":"American","era":"Contemporary","key":"Variable","focus":["Jazz rhythm","Syncopation","Contemporary style"] },
+  { "l":"S1","s":"S1","c":"HEFTI, N.","t":"Batman theme","nat":"American","era":"Contemporary","key":"Variable","focus":["Popular character","Rhythmic energy","Contemporary idiom"] },
+  { "l":"S1","s":"S1","c":"HENLEY, L.","t":"The wind beneath my wings","nat":"American","era":"Contemporary","key":"Variable","focus":["Popular style","Lyrical melody","Expressive playing"] },
+  { "l":"S1","s":"S1","c":"KABALEVSKY, D.","t":"Toccatina","nat":"Russian","era":"Modern","key":"Variable","focus":["Rhythmic drive","Light staccato","Modern character"] },
+  { "l":"S1","s":"S1","c":"NORTON, C.","t":"Rhodes scholar","nat":"English","era":"Contemporary","key":"Variable","focus":["Contemporary style","Lyrical character","Musical expression"] },
+  { "l":"S1","s":"S1","c":"TCHAIKOVSKY, P.","t":"Waltz of the flowers","nat":"Russian","era":"Romantic","key":"Variable","focus":["Waltz character","Romantic elegance","Lyrical melody"] },
+  { "l":"S1","s":"S1","c":"TRADITIONAL (arr. BARRATT)","t":"Londonderry air","nat":"Irish","era":"Romantic","key":"Variable","focus":["Folk melody","Lyrical playing","Expressive tone"] },
+  { "l":"S1","s":"S1","c":"WEDGWOOD, P.","t":"Brighton boogie","nat":"English","era":"Contemporary","key":"Variable","focus":["Boogie character","Rhythmic energy","Contemporary style"] },
+
+  // ═══════════════════════════════════════════════════
+  //  MANUAL  (23 pieces)
+  // ═══════════════════════════════════════════════════
+
+  { "l":"Manual","s":"Manual","c":"BAILEY, K.","t":"Mullumbimby bounce from Jazzin' around 4","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Jazz character","Rhythmic bounce","Australian music"] },
+  { "l":"Manual","s":"Manual","c":"BAILEY, K.","t":"March of the brass band blues boys from Jazzin' around 6","nat":"Australian","era":"Contemporary","key":"Variable","focus":["March character","Blues idiom","Australian music"] },
+  { "l":"Manual","s":"Manual","c":"BAILEY, K.","t":"Petite prelude from Jazzin' around 5","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Prelude style","Contemporary idiom","Australian music"] },
+  { "l":"Manual","s":"Manual","c":"BAILEY, K.","t":"Groove time from Jazzin' around 4","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Groove character","Rhythmic energy","Contemporary style"] },
+  { "l":"Manual","s":"Manual","c":"BAILEY, K.","t":"Blue waltz from Jazzin' around 3","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Blues-waltz","Contemporary idiom","Australian music"] },
+  { "l":"Manual","s":"Manual","c":"DELIBES, L. (arr. LANNING)","t":"Pizzicato polka","nat":"French","era":"Romantic","key":"Variable","focus":["Dance character","Light staccato","Romantic elegance"] },
+  { "l":"Manual","s":"Manual","c":"EDWARDS, R.","t":"No 2 from 5 little pieces","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Contemporary character","Musical expression","Australian music"] },
+  { "l":"Manual","s":"Manual","c":"GERSHWIN, G. (arr. WEDGWOOD)","t":"Summertime","nat":"American","era":"Contemporary","key":"Variable","focus":["Jazz standard","Lyrical melody","Contemporary arrangement"] },
+  { "l":"Manual","s":"Manual","c":"HARLINE, L. (arr. BRIMHALL)","t":"When you wish upon a star","nat":"American","era":"Contemporary","key":"Variable","focus":["Lyrical melody","Expressive playing","Popular style"] },
+  { "l":"Manual","s":"Manual","c":"JOPLIN, S. (arr. RAY)","t":"The entertainer","nat":"American","era":"Contemporary","key":"Variable","focus":["Ragtime character","Rhythmic precision","American style"] },
+  { "l":"Manual","s":"Manual","c":"KHACHATURIAN, A. (arr. LANNING)","t":"Adagio from Spartacus","nat":"Armenian","era":"Modern","key":"Variable","focus":["Expressive melody","Dramatic character","Lyrical playing"] },
+  { "l":"Manual","s":"Manual","c":"LENNON, J. and McCARTNEY, P. (arr. BAKER)","t":"Michelle","nat":"English","era":"Contemporary","key":"Variable","focus":["Popular melody","Lyrical character","Contemporary arrangement"] },
+  { "l":"Manual","s":"Manual","c":"McBROOM, A. (arr. COATES)","t":"The rose","nat":"American","era":"Contemporary","key":"Variable","focus":["Popular ballad","Expressive melody","Lyrical playing"] },
+  { "l":"Manual","s":"Manual","c":"MIER, M.","t":"Wild honeysuckle rag","nat":"American","era":"Contemporary","key":"Variable","focus":["Ragtime style","Rhythmic energy","Contemporary character"] },
+  { "l":"Manual","s":"Manual","c":"MILNE, E.","t":"Brolga stroll","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Australian character","Relaxed style","Contemporary idiom"] },
+  { "l":"Manual","s":"Manual","c":"NORTON, C.","t":"Steam-train blues","nat":"English","era":"Contemporary","key":"Variable","focus":["Blues character","Rhythmic drive","Contemporary style"] },
+  { "l":"Manual","s":"Manual","c":"ROLLIN, C.","t":"Swan waltz","nat":"American","era":"Contemporary","key":"Variable","focus":["Waltz elegance","Lyrical melody","Contemporary style"] },
+  { "l":"Manual","s":"Manual","c":"SAINT-SAËNS, C. (arr. HEUMANN, G.)","t":"Finale from Carnival of the animals","nat":"French","era":"Romantic","key":"Variable","focus":["Brilliant character","Energetic playing","Popular arrangement"] },
+  { "l":"Manual","s":"Manual","c":"SCHWANDT, F. and ANDRE, W. (arr. BRIMHALL)","t":"Dream a little dream of me","nat":"American","era":"Contemporary","key":"Variable","focus":["Popular standard","Lyrical melody","Contemporary arrangement"] },
+  { "l":"Manual","s":"Manual","c":"SCHUMANN, R. (arr. BRADLEY)","t":"A little study","nat":"German","era":"Romantic","key":"Variable","focus":["Romantic character","Simplified arrangement","Musical expression"] },
+  { "l":"Manual","s":"Manual","c":"WALDTEUFEL, E. (arr. LANNING)","t":"Skater's waltz","nat":"French","era":"Romantic","key":"Variable","focus":["Waltz elegance","Light character","Romantic style"] },
+  { "l":"Manual","s":"Manual","c":"WILLIAMS, S. (arr. DURO)","t":"Basin street blues","nat":"American","era":"Contemporary","key":"Variable","focus":["Blues character","Jazz idiom","Contemporary arrangement"] },
+  { "l":"Manual","s":"Manual","c":"WEDGWOOD, P.","t":"Break-out from Up-grade! Piano Grades 2–3","nat":"English","era":"Contemporary","key":"Variable","focus":["Contemporary style","Energetic character","Modern idiom"] },
+];
+    </script>
+
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+
+        const GENERAL_LISTS = ["A", "B", "C"];
+        const LEISURE_LISTS = ["S4", "S3", "S2", "S1", "Manual"];
+        const ERAS = ["All", "Baroque", "Classical", "Romantic", "Modern", "Contemporary"];
+
+        function App() {
+            const [search, setSearch] = useState("");
+            const [mode, setMode] = useState("General");
+            const [activeList, setActiveList] = useState("A");
+            const [selectedEra, setSelectedEra] = useState("All");
+            const [selectedNationality, setSelectedNationality] = useState("All");
+
+            const lists = mode === "General" ? GENERAL_LISTS : LEISURE_LISTS;
+            const data = mode === "General" ? DATA_G3 : DATA_G3_LEISURE;
+
+            const handleMode = (m) => {
+                setMode(m);
+                setSearch("");
+                setActiveList(m === "General" ? "A" : "S2");
+                setSelectedEra("All");
+                setSelectedNationality("All");
+            };
+
+            const eraClass = (era) => {
+                if (!era) return "tag-modern";
+                const e = era.toLowerCase();
+                if (e.includes("baroque")) return "tag-baroque";
+                if (e.includes("classical")) return "tag-classical";
+                if (e.includes("romantic")) return "tag-romantic";
+                if (e.includes("contemporary")) return "tag-contemporary";
+                return "tag-modern";
+            };
+
+            const getNationalities = useMemo(() => {
+                const nats = new Set(data.map(p => p.nat).filter(Boolean));
+                return ["All", ...Array.from(nats).sort()];
+            }, [data]);
+
+            const matchesEra = (era) => {
+                if (selectedEra === "All") return true;
+                if (!era) return false;
+                return era.toLowerCase().includes(selectedEra.toLowerCase());
+            };
+
+            const filtered = useMemo(() => {
+                return data.filter(p => {
+                    const matchSearch = (p.t + p.c).toLowerCase().includes(search.toLowerCase());
+                    const matchList = p.l === activeList;
+                    const matchEra = matchesEra(p.era);
+                    const matchNat = selectedNationality === "All" || p.nat === selectedNationality;
+                    return matchSearch && matchList && matchEra && matchNat;
+                });
+            }, [search, activeList, data, selectedEra, selectedNationality]);
+
+            const listLabel = (l) => {
+                if (l.startsWith("S")) return `Series ${l.slice(1)}`;
+                return `List ${l}`;
+            };
+
+            const ComposerLink = ({ name }) => {
+                const link = getComposerLink(name);
+                return (
+                    <a href={link} target="_blank" rel="noopener noreferrer" className="composer-link">
+                        {name}
+                    </a>
+                );
+            };
+
+            return (
+                <div className="max-w-4xl mx-auto p-4 md:p-10">
+                    <header className="mb-8 flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-2 h-8 bg-indigo-600 rounded-full"></div>
+                                <h1 className="text-2xl font-black text-slate-800 tracking-tight">AMEB Grade 3</h1>
+                            </div>
+                            <p className="text-[12px] text-slate-400 font-semibold uppercase tracking-widest mt-1 ml-4">2026 Piano Syllabus Master</p>
+                        </div>
+                        <div className="bg-white px-4 py-2 rounded-2xl shadow-sm border border-slate-100 text-right">
+                            <span className="text-2xl font-black text-indigo-600">{filtered.length}</span>
+                            <span className="text-[10px] text-slate-400 block font-bold uppercase">Pieces</span>
+                        </div>
+                    </header>
+
+                    <div className="sticky top-4 z-20 mb-8">
+                        <div className="bg-white/80 backdrop-blur-md p-3 rounded-2xl shadow-xl shadow-slate-200/50 border border-white">
+
+                            {/* General / Leisure toggle */}
+                            <div className="flex gap-1 mb-2">
+                                {["General", "Leisure"].map(m => (
+                                    <button key={m} onClick={() => handleMode(m)}
+                                        className={`flex-1 py-2 rounded-xl text-[13px] font-bold transition-all ${mode === m ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'text-slate-400 hover:bg-slate-50'}`}>
+                                        {m === "General" ? "🎼 General" : "🎹 Leisure"}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* List tabs */}
+                            <div className="flex gap-1 mb-2 overflow-x-auto no-scrollbar">
+                                {lists.map(list => (
+                                    <button key={list} onClick={() => setActiveList(list)}
+                                        className={`flex-1 min-w-[60px] py-2.5 rounded-xl text-[12px] font-bold transition-all ${activeList === list ? 'bg-slate-700 text-white shadow-md' : 'text-slate-400 hover:bg-slate-50'}`}>
+                                        {listLabel(list)}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Era filter chips */}
+                            <div className="flex gap-1 mb-2 overflow-x-auto no-scrollbar">
+                                {ERAS.map(era => (
+                                    <button key={era} onClick={() => setSelectedEra(era)}
+                                        className={`era-chip whitespace-nowrap ${selectedEra === era ? 'active' : ''}`}>
+                                        {era}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Search */}
+                            <input type="text" placeholder="Search composer or title..."
+                                className="w-full px-5 py-3 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 outline-none placeholder:text-slate-300"
+                                value={search} onChange={e => setSearch(e.target.value)} />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        {filtered.length > 0 ? filtered.map((p, idx) => (
+                            <div key={idx} className="list-row">
+                                {/* Tags row */}
+                                <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500`}>{p.s}</span>
+                                    {p.era && <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${eraClass(p.era)}`}>{p.era}</span>}
+                                    {p.key && p.key !== "None" && p.key !== "Variable" && (
+                                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-50 text-slate-400 border border-slate-200">{p.key}</span>
+                                    )}
+                                </div>
+                                {/* Title */}
+                                <h3 className="text-[15px] font-bold text-slate-800 leading-snug mb-0.5">{p.t}</h3>
+                                {/* Composer */}
+                                <p className="text-[13px] text-slate-400 font-medium mb-3">
+                                    <ComposerLink name={p.c} />
+                                    {p.nat && <span className="ml-2 text-slate-300">· {p.nat}</span>}
+                                </p>
+                                {/* Bottom row: focus tags + action buttons */}
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex flex-wrap gap-1">
+                                        {p.focus && p.focus.map((f, i) => (
+                                            <span key={i} className="text-[10px] px-2 py-0.5 bg-indigo-50 text-indigo-400 rounded-full font-semibold">{f}</span>
+                                        ))}
+                                    </div>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        <a href={`https://www.youtube.com/results?search_query=piano+${encodeURIComponent(p.c + " " + p.t)}`} target="_blank" rel="noopener noreferrer"
+                                            className="px-3 py-1.5 bg-slate-800 text-white text-[11px] font-bold rounded-lg hover:bg-slate-900 transition-colors whitespace-nowrap">▶ YouTube</a>
+                                        <a href={`https://www.google.com/search?q=${encodeURIComponent(p.c + " " + p.t + " sheet music pdf")}`} target="_blank" rel="noopener noreferrer"
+                                            className="px-3 py-1.5 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-lg hover:bg-slate-200 transition-colors whitespace-nowrap">♪ Sheet</a>
+                                    </div>
+                                </div>
+                            </div>
+                        )) : (
+                            <div className="py-20 text-center">
+                                <div className="text-4xl mb-4">🎹</div>
+                                <div className="text-slate-300 text-sm font-bold uppercase tracking-widest">No pieces found</div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

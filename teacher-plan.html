@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Piano Butler — Teacher Weekly Plan Generator</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- docx export -->
+  <script src="https://unpkg.com/docx@8.5.0/build/index.js"></script>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    body { background: #f8fafc; font-family: 'Pretendard', -apple-system, sans-serif; color: #334155; margin: 0; }
+    input, select, textarea { font-family: inherit; }
+
+    /* ── Week card ── */
+    .week-card { background: white; border-radius: 16px; border: 1px solid #e2e8f0; margin-bottom: 16px; overflow: hidden; }
+    .week-header { padding: 14px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
+    .week-header:hover { background: #f8fafc; }
+    .week-body { padding: 0 20px 18px; }
+    .section-tag { display: inline-block; font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 6px; letter-spacing: 0.05em; text-transform: uppercase; }
+
+    /* Phase colours */
+    .phase-foundation { border-left: 4px solid #6366f1; }
+    .phase-development { border-left: 4px solid #0891b2; }
+    .phase-consolidation { border-left: 4px solid #16a34a; }
+    .phase-polish { border-left: 4px solid #d97706; }
+    .phase-exam { border-left: 4px solid #dc2626; }
+
+    /* ── Print ── */
+    @media print {
+      body { background: white; }
+      .no-print { display: none !important; }
+      .week-card { break-inside: avoid; border: 1px solid #cbd5e1; box-shadow: none; }
+      .week-body { display: block !important; }
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useMemo, useRef } = React;
+
+/* ─── Constants ─────────────────────────────────────────────────────────── */
+const GRADES = [
+  "Preliminary", "Grade 1", "Grade 2", "Grade 3",
+  "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8"
+];
+
+const SYLLABUS_TYPE = ["Comprehensive Piano", "Piano for Leisure"];
+
+// AMEB technical work requirements per grade — sourced from AMEB Piano Technical Workbook (2026)
+const TECH_WORK = {
+  "Preliminary": [
+    "Technical Exercises: PA — Hide and seek (RH), Gone again! (LH) · PB — This little piggy (RH), Off to market (LH)",
+    "Scales (1 oct): C major, G major · A & E natural and harmonic minor",
+    "Contrary Motion (1 oct): C major, A harmonic minor",
+  ],
+  "Grade 1": [
+    "Technical Exercises: 1A — Broken triads · 1B — Waiting for the bell · 1C — Forearm rotation",
+    "Scales (2 oct): G major, F major · E & D natural and harmonic minor",
+    "Contrary Motion (2 oct): C major, G major · A & E harmonic minor",
+    "Chromatic Scale (1 oct): commencing on G",
+  ],
+  "Grade 2": [
+    "Technical Exercises: 2A — Thumb driving, Bass driver · 2B — Too tame to tango · 2C — Broken chords",
+    "Scales (2 oct): D major, Bb major · B natural & harmonic minor · G natural, harmonic & melodic minor",
+    "Contrary Motion (2 oct): G major, F major · E & D harmonic minor",
+    "Chromatic Scale (2 oct): commencing on D",
+  ],
+  "Grade 3": [
+    "Technical Exercises: 3A — Whirlygig, Wind whipper · 3B — Alone · 3C — My special place",
+    "Scales (2 oct): A major, Eb major · F# natural & harmonic minor · C natural, harmonic & melodic minor",
+    "Contrary Motion (2 oct): D major, Bb major · B & G harmonic minor",
+    "Chromatic Scale (2 oct): commencing on A and D#/Eb",
+  ],
+  "Grade 4": [
+    "Technical Exercises: 4A — Winter winds · 4B — Catch me if you can, Skater chaser · 4C — Finger picker, Ticky tacky",
+    "Scales (4 oct): E major, Ab major · C# natural, harmonic & melodic minor · F natural, harmonic & melodic minor",
+    "Staccato Scales (4 oct): Ab major, F melodic minor",
+    "Contrary Motion (2 oct): A major, Eb major · F# & C harmonic minor",
+    "Chromatic Scale (4 oct): commencing on E and G#/Ab",
+    "Arpeggios (4 oct): E major & minor, Ab major & minor",
+  ],
+  "Grade 5": [
+    "Technical Exercises: 5A — Ins and outs · 5B — Leaps and bounds · 5C — Positive pulse",
+    "Scales (4 oct): B major, Db major · G# harmonic & melodic minor · Bb harmonic & melodic minor",
+    "Staccato Scales (4 oct): Db major, Bb melodic minor",
+    "Contrary Motion (2 oct): E major, Ab major · C# & F harmonic minor",
+    "Chromatic Scales (4 oct): commencing on B and C#/Db",
+    "Arpeggios (4 oct): B major & minor, Db major & minor",
+  ],
+  "Grade 6": [
+    "Technical Exercises: 6A — Closing the gaps · 6B — Perfect polyrhythms · 6C — Short 'n sweet",
+    "Scales (4 oct): F# major · D# harmonic & melodic minor",
+    "Abbreviated Grand Scale (4 oct): Eb major, C harmonic minor",
+    "Legato & Staccato Combination (4 oct): F# major, D# melodic minor",
+    "Contrary Motion (2 oct): B major, Db major · G# & Bb harmonic minor",
+    "Chromatic Scale (4 oct): commencing on F#/Gb",
+    "Chord Progressions I–V–I: G major, F major, A major",
+    "Arpeggios (4 oct): F# major & minor, Eb major & minor",
+    "7th Arpeggios (4 oct): Dominant 7th & Diminished 7th of F# and Eb",
+  ],
+  "Grade 7": [
+    "Technical Exercises: 7A — Flying high · 7B — Two-part retention · 7C — Octave activation",
+    "Abbreviated Grand Scale (4 oct): D major, Ab major · B & F harmonic minor",
+    "Polyrhythmic Scales (3 against 2): D major, B harmonic minor",
+    "Contrary Motion (2 oct): F# major, D# harmonic minor",
+    "Chromatic Scales (4 oct): commencing on D, G#/Ab · Eb (2 oct)",
+    "Chord Progressions I–IV–V–I: G major, F major, E major",
+    "Arpeggios (4 oct): D major & minor, Ab major & minor",
+    "7th Arpeggios (4 oct): Dominant 7th & Diminished 7th of D and Ab",
+  ],
+  "Grade 8": [
+    "Technical Exercises: 8A — Double digits · 8B — Clean sweeps · 8C — Active octavation",
+    "Abbreviated Grand Scale (4 oct): E major, Bb major · C# & G harmonic minor",
+    "Polyrhythmic Scale (2 against 3): E major (2/3 oct)",
+    "Hands Together 3rds & 6ths apart (4 oct): E major, Bb major · C# & G harmonic minor",
+    "Chromatic Scales (3 oct): commencing on E and A#/Bb",
+    "Chromatic Scale in Double Thirds (2 oct): commencing on C and Eb",
+    "Chord Progressions I–IV–I⁶⁄₄–V–I: C major, D major, Eb major",
+    "Arpeggios (4 oct): E major & minor, Bb major & minor",
+    "7th Arpeggios (4 oct): Dominant 7th & Diminished 7th of E and Bb",
+  ],
+};
+
+// Sight-reading & Aural by grade
+const SIGHT_AURAL = {
+  "Preliminary":  { sr: "Simple 4-bar melody, C or G major, common time", aural: "Echo clapping, pitch matching, mood description" },
+  "Grade 1":      { sr: "4–8 bars, major keys with few accidentals", aural: "Rhythm echo, major/minor discrimination, melodic intervals up to 5th" },
+  "Grade 2":      { sr: "8 bars, major + minor keys, simple rhythms", aural: "Intervals up to octave, cadence identification (perfect/imperfect)" },
+  "Grade 3":      { sr: "8–12 bars, more complex rhythms, some accidentals", aural: "All diatonic intervals, cadences, 2-bar melodic memory" },
+  "Grade 4":      { sr: "12–16 bars, compound time, wider range", aural: "All intervals, chord quality (M/m/dom7), modulation to dominant" },
+  "Grade 5":      { sr: "16+ bars, compound + irregular time, chromatic", aural: "Chord progressions, modulations, style identification" },
+  "Grade 6":      { sr: "Passage with varied articulation, dynamics, pedal", aural: "Four-part harmony, modulations to relative/subdominant" },
+  "Grade 7":      { sr: "Extended passage, varied style, articulation choices", aural: "Complex harmony, extended chords, modulations to any key" },
+  "Grade 8":      { sr: "Demanding passage with expressive interpretation", aural: "Full harmonic analysis, form identification, style recognition" },
+};
+
+// General knowledge / Viva voce topics per grade
+const GENERAL_KNOWLEDGE = {
+  "Preliminary":  ["Basics: note names, time signatures, dynamics markings", "Composer nationalities for exam pieces", "Meaning of Italian terms in pieces"],
+  "Grade 1":      ["Key signatures up to 2 sharps/flats", "Tempo & dynamic terms", "Simple form (AB, ABA)", "Composer eras"],
+  "Grade 2":      ["Key signatures up to 3 sharps/flats", "Musical periods: Baroque, Classical", "Ornaments: trill, mordent", "Scales and cadences"],
+  "Grade 3":      ["All key signatures", "Musical periods + style characteristics", "More ornaments: turn, appoggiatura", "Harmonic analysis: I IV V"],
+  "Grade 4":      ["Chord analysis in exam pieces", "Four musical periods + major composers", "Structural analysis: binary, ternary, rondo", "Modulation"],
+  "Grade 5":      ["Harmonic analysis of all exam pieces", "Historical context of each piece", "Form: sonata, theme & variations", "Score-reading skills"],
+  "Grade 6":      ["Detailed harmonic + structural analysis", "Performance practice by era", "Extended chords", "Relevant theory at Grade 6 level"],
+  "Grade 7":      ["Full analysis of all exam repertoire", "Comparative style analysis", "Advanced form & harmony", "Relevant music history"],
+  "Grade 8":      ["In-depth analysis of all exam pieces", "Research: composer biography + historical context", "Advanced theory", "Personal interpretive decisions"],
+};
+
+/* ─── Phase logic ────────────────────────────────────────────────────────── */
+function buildPhases(totalWeeks) {
+  // Distribute weeks into 5 phases
+  if (totalWeeks <= 4) {
+    return [
+      { name: "Consolidation & Polish", key: "consolidation", weeks: Math.max(1, totalWeeks - 1) },
+      { name: "Exam Preparation", key: "exam", weeks: 1 },
+    ];
+  }
+  const exam   = Math.min(2, Math.floor(totalWeeks * 0.1) + 1);
+  const polish = Math.min(4, Math.floor(totalWeeks * 0.15) + 1);
+  const consol = Math.min(6, Math.floor(totalWeeks * 0.2) + 1);
+  const dev    = Math.min(Math.floor(totalWeeks * 0.3), totalWeeks - exam - polish - consol - 2);
+  const found  = totalWeeks - exam - polish - consol - Math.max(dev, 0);
+  return [
+    { name: "Foundation & Learning",       key: "foundation",    weeks: Math.max(found, 1) },
+    { name: "Development & Technique",     key: "development",   weeks: Math.max(dev, 0) },
+    { name: "Consolidation & Memorising",  key: "consolidation", weeks: Math.max(consol, 1) },
+    { name: "Polish & Performance",        key: "polish",        weeks: Math.max(polish, 1) },
+    { name: "Exam Preparation",            key: "exam",          weeks: exam },
+  ].filter(p => p.weeks > 0);
+}
+
+function weekFocus(phaseKey, weekInPhase, grade) {
+  const focuses = {
+    foundation: [
+      "Select and obtain all exam repertoire. Begin hands-separate reading of List A piece.",
+      "Hands-separate reading: List B piece. Begin technical work for this grade.",
+      "Hands-together work begins on List A. Identify technical challenges.",
+      "Begin List C piece. Review syllabus requirements: technical work, sight-reading, aural.",
+      "Slow HT practice all pieces. Begin scales required for this grade.",
+      "Consolidate reading of all pieces. Sight-reading practice (daily 5–10 min).",
+    ],
+    development: [
+      "Increase tempo on List A. Work on voicing and tone production.",
+      "Focus on List B technical demands. Arpeggios and scale fluency.",
+      "List C musical shaping. Dynamics and articulation.",
+      "Begin aural training exercises relevant to this grade.",
+      "Revisit weak passages in all pieces. Rhythm accuracy check.",
+      "General Knowledge study begins: musical periods, terms in pieces.",
+      "Mock run-through of technical work. Identify gaps.",
+      "Sight-reading: practise daily with graded material.",
+    ],
+    consolidation: [
+      "Full run-throughs of all pieces. Record and review.",
+      "Memorisation work (if required). Section-by-section.",
+      "Technical work polished to performance tempo.",
+      "Aural: all required skills — intervals, cadences, melody memory.",
+      "General Knowledge: composer context, form analysis, Italian terms.",
+      "Sustained run-through (all pieces back-to-back). Note stamina issues.",
+    ],
+    polish: [
+      "Performance details: pedalling, tone colour, phrasing arc.",
+      "Mock exam #1 — perform all pieces in exam order. Written feedback.",
+      "Address mock exam feedback. Fine detail work on each piece.",
+      "Mock exam #2 — simulate full exam conditions (timer, audience).",
+    ],
+    exam: [
+      "Final week: light maintenance practice only. No new learning. Rest well.",
+      "Day before exam: play through once at moderate tempo. Visualise success.",
+    ],
+  };
+  const arr = focuses[phaseKey] || ["Continue focused practice on all exam requirements."];
+  return arr[Math.min(weekInPhase, arr.length - 1)];
+}
+
+function dailyPlan(phaseKey, grade) {
+  const plans = {
+    foundation: {
+      "Warm-up (10 min)": "Scales + arpeggios at slow tempo, hands separate",
+      "Repertoire (25 min)": "Hands-separate reading of new material, one piece per session",
+      "Technical (10 min)": `Technical exercises + ${TECH_WORK[grade]?.[1] ?? "scales and arpeggios"}`,
+      "Sight-reading (5 min)": "Daily sight-reading from graded anthology or AMEB SR book",
+    },
+    development: {
+      "Warm-up (10 min)": "Full scale set + arpeggios at medium tempo",
+      "Repertoire (25 min)": "Hands-together work, rotating focus across all three lists",
+      "Technical (10 min)": "Grade technical work at increasing tempo",
+      "Sight-reading (5 min)": "Sight-reading + aural interval recognition",
+      "Aural (5 min)": "Chord quality, cadence identification, melodic memory",
+    },
+    consolidation: {
+      "Warm-up (5 min)": "Technical work at performance tempo",
+      "Repertoire (30 min)": "Full run-through of all pieces, then targeted section work",
+      "Aural (10 min)": "All required aural skills for this grade",
+      "General Knowledge (5 min)": "Viva voce preparation: terms, composers, form",
+    },
+    polish: {
+      "Warm-up (5 min)": "Technical work — maintain, don't drill",
+      "Performance run (35 min)": "Full mock exam performance in exam order",
+      "Review (10 min)": "Self-assess or teacher feedback. One targeted fix per piece.",
+    },
+    exam: {
+      "Maintenance (20 min)": "One gentle play-through of each piece at comfortable tempo",
+      "Mental preparation": "Visualise the exam room. Breathe. Trust the preparation.",
+      "Rest": "Avoid over-practising. Fatigue is the enemy this week.",
+    },
+  };
+  return plans[phaseKey] ?? plans["foundation"];
+}
+
+/* ─── docx export ────────────────────────────────────────────────────────── */
+async function exportDocx(studentName, grade, syllabusType, examDate, weeks) {
+  const { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType, BorderStyle, TableRow, TableCell, Table, WidthType } = docx;
+
+  const title = `${studentName || "Student"} — ${grade} ${syllabusType} Practice Plan`;
+  const subtitle = `Exam date: ${examDate} · Generated by Piano Butler`;
+
+  const children = [
+    new Paragraph({ text: title, heading: HeadingLevel.HEADING_1, spacing: { after: 120 } }),
+    new Paragraph({ text: subtitle, spacing: { after: 400 }, run: { color: "888888" } }),
+  ];
+
+  for (const w of weeks) {
+    children.push(new Paragraph({
+      text: `Week ${w.weekNum} — ${w.dateRange} · ${w.phaseName}`,
+      heading: HeadingLevel.HEADING_2,
+      spacing: { before: 300, after: 120 },
+    }));
+    children.push(new Paragraph({ text: `Focus: ${w.focus}`, spacing: { after: 80 } }));
+    children.push(new Paragraph({ text: "Daily practice plan:", spacing: { after: 60 }, run: { bold: true } }));
+    for (const [slot, task] of Object.entries(w.daily)) {
+      children.push(new Paragraph({
+        text: `• ${slot}: ${task}`,
+        spacing: { after: 40 },
+        indent: { left: 360 },
+      }));
+    }
+    if (w.techWork?.length) {
+      children.push(new Paragraph({ text: "Technical work this week:", spacing: { before: 120, after: 60 }, run: { bold: true } }));
+      for (const t of w.techWork) {
+        children.push(new Paragraph({ text: `• ${t}`, spacing: { after: 40 }, indent: { left: 360 } }));
+      }
+    }
+    children.push(new Paragraph({ text: "", spacing: { after: 200 } }));
+  }
+
+  // Appendix
+  children.push(new Paragraph({ text: "Appendix: Grade Requirements", heading: HeadingLevel.HEADING_2, spacing: { before: 400, after: 160 } }));
+  children.push(new Paragraph({ text: "Sight-reading:", run: { bold: true }, spacing: { after: 60 } }));
+  children.push(new Paragraph({ text: SIGHT_AURAL[grade]?.sr ?? "", spacing: { after: 120 }, indent: { left: 360 } }));
+  children.push(new Paragraph({ text: "Aural:", run: { bold: true }, spacing: { after: 60 } }));
+  children.push(new Paragraph({ text: SIGHT_AURAL[grade]?.aural ?? "", spacing: { after: 120 }, indent: { left: 360 } }));
+  children.push(new Paragraph({ text: "General Knowledge / Viva Voce:", run: { bold: true }, spacing: { after: 60 } }));
+  for (const g of (GENERAL_KNOWLEDGE[grade] ?? [])) {
+    children.push(new Paragraph({ text: `• ${g}`, spacing: { after: 40 }, indent: { left: 360 } }));
+  }
+
+  const doc = new Document({ sections: [{ children }] });
+  const blob = await Packer.toBlob(doc);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `Piano_Butler_Plan_${(studentName || "Student").replace(/\s+/g, "_")}_${grade.replace(/\s+/g, "")}.docx`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ─── SR/Aural checkbox row ─────────────────────────────────────────────── */
+function CheckRow({ label, checked, onChange }) {
+  return (
+    <label className="flex items-center gap-2 cursor-pointer group">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        className="w-3.5 h-3.5 rounded accent-indigo-500 cursor-pointer"
+      />
+      <span className={`text-xs transition-colors ${checked ? "line-through text-slate-300" : "text-slate-600"}`}>{label}</span>
+    </label>
+  );
+}
+
+/* ─── WeekCard component ─────────────────────────────────────────────────── */
+function WeekCard({ week, isOpen, onToggle, srChecks, setSrChecks, auralChecks, setAuralChecks, gkNote, setGkNote, teacherNote, setTeacherNote }) {
+  const phaseColors = {
+    foundation:    "bg-indigo-50 text-indigo-700",
+    development:   "bg-cyan-50 text-cyan-700",
+    consolidation: "bg-green-50 text-green-700",
+    polish:        "bg-amber-50 text-amber-700",
+    exam:          "bg-red-50 text-red-700",
+  };
+  const phaseHex = {
+    foundation:    "#6366f1",
+    development:   "#0891b2",
+    consolidation: "#16a34a",
+    polish:        "#d97706",
+    exam:          "#dc2626",
+  };
+
+  const toggleSr    = (i) => setSrChecks(prev => { const n=[...prev]; n[i]=!n[i]; return n; });
+  const toggleAural = (i) => setAuralChecks(prev => { const n=[...prev]; n[i]=!n[i]; return n; });
+
+  // SR items — always 3 fixed checkboxes
+  const srItems    = ["Practised this week", "Tested in lesson", "Passed / ready for exam"];
+  const auralItems = ["Practised this week", "Tested in lesson", "Passed / ready for exam"];
+
+  return (
+    <div className={`week-card phase-${week.phaseKey}`} style={{ borderLeft: `4px solid ${phaseHex[week.phaseKey]}` }}>
+      <div className="week-header" onClick={onToggle}>
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <span className="text-slate-400 font-mono text-sm w-16 shrink-0">Wk {week.weekNum}</span>
+          <span className="font-semibold text-slate-800 truncate">{week.dateRange}</span>
+          <span className={`section-tag ${phaseColors[week.phaseKey]} shrink-0`}>{week.phaseName}</span>
+        </div>
+        <span className="text-slate-400 text-lg">{isOpen ? "▲" : "▼"}</span>
+      </div>
+
+      {isOpen && (
+        <div className="week-body">
+          {/* Focus */}
+          <div className="bg-slate-50 rounded-xl p-4 mb-4 border border-slate-100">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Weekly focus</p>
+            <p className="text-slate-700 text-sm leading-relaxed">{week.focus}</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            {/* Daily plan */}
+            <div>
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Daily practice schedule</p>
+              <div className="space-y-2">
+                {Object.entries(week.daily).map(([slot, task]) => (
+                  <div key={slot} className="flex gap-2">
+                    <span className="text-slate-400 text-xs mt-0.5 shrink-0">•</span>
+                    <div>
+                      <span className="text-xs font-semibold text-slate-600">{slot}: </span>
+                      <span className="text-xs text-slate-600">{task}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Technical work */}
+            {week.techWork?.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Technical work</p>
+                <div className="space-y-1.5">
+                  {week.techWork.map((t, i) => (
+                    <div key={i} className="flex gap-2">
+                      <span className="text-slate-400 text-xs mt-0.5 shrink-0">•</span>
+                      <span className="text-xs text-slate-600">{t}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ── SR / Aural / GK row ── */}
+          {week.showSR && (
+            <div className="border-t border-slate-100 pt-4 mt-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+
+              {/* Sight-reading */}
+              <div className="bg-sky-50 rounded-xl p-3 border border-sky-100">
+                <p className="text-xs font-semibold text-sky-700 uppercase tracking-wide mb-2">Sight-reading</p>
+                <div className="space-y-1.5 mb-2">
+                  {srItems.map((item, i) => (
+                    <CheckRow key={i} label={item} checked={srChecks[i]} onChange={() => toggleSr(i)} />
+                  ))}
+                </div>
+                <textarea
+                  value={srChecks[3] ?? ""}
+                  onChange={e => setSrChecks(prev => { const n=[...prev]; n[3]=e.target.value; return n; })}
+                  className="w-full text-xs text-slate-600 border border-sky-200 bg-white rounded-lg p-2 resize-none focus:outline-none focus:ring-2 focus:ring-sky-200"
+                  rows={2}
+                  placeholder="Notes: piece used, difficulties, next steps..."
+                />
+              </div>
+
+              {/* Aural */}
+              <div className="bg-violet-50 rounded-xl p-3 border border-violet-100">
+                <p className="text-xs font-semibold text-violet-700 uppercase tracking-wide mb-2">Aural</p>
+                <div className="space-y-1.5 mb-2">
+                  {auralItems.map((item, i) => (
+                    <CheckRow key={i} label={item} checked={auralChecks[i]} onChange={() => toggleAural(i)} />
+                  ))}
+                </div>
+                <textarea
+                  value={auralChecks[3] ?? ""}
+                  onChange={e => setAuralChecks(prev => { const n=[...prev]; n[3]=e.target.value; return n; })}
+                  className="w-full text-xs text-slate-600 border border-violet-200 bg-white rounded-lg p-2 resize-none focus:outline-none focus:ring-2 focus:ring-violet-200"
+                  rows={2}
+                  placeholder="Notes: skills covered, intervals, cadences..."
+                />
+              </div>
+
+              {/* General Knowledge */}
+              <div className="bg-amber-50 rounded-xl p-3 border border-amber-100">
+                <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-2">General Knowledge</p>
+                <textarea
+                  value={gkNote}
+                  onChange={e => setGkNote(e.target.value)}
+                  className="w-full text-xs text-slate-600 border border-amber-200 bg-white rounded-lg p-2 resize-none focus:outline-none focus:ring-2 focus:ring-amber-200"
+                  rows={5}
+                  placeholder={"Piece: \nComposer: \nEra / Style: \nItalian terms covered: \nForm / Structure: \nViva voce Q&A notes:"}
+                />
+              </div>
+
+            </div>
+          )}
+
+          {/* Teacher notes */}
+          <div className="mt-4 border-t border-slate-100 pt-3">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Teacher notes</p>
+            <textarea
+              value={teacherNote}
+              onChange={e => setTeacherNote(e.target.value)}
+              className="w-full text-xs text-slate-600 border border-slate-200 rounded-lg p-2 resize-none focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              rows={2}
+              placeholder="General lesson notes, homework set, parent communication..."
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Main App ───────────────────────────────────────────────────────────── */
+function App() {
+  const [studentName, setStudentName] = useState("");
+  const [grade, setGrade] = useState("Grade 5");
+  const [syllabusType, setSyllabusType] = useState("Comprehensive Piano");
+  const [examDate, setExamDate] = useState("");
+  const [lessonsPerWeek, setLessonsPerWeek] = useState(1);
+  const [minutesPerDay, setMinutesPerDay] = useState(30);
+  const [generated, setGenerated] = useState(false);
+  const [openWeeks, setOpenWeeks] = useState({});
+  // Per-week flexible notes state: { [weekIndex]: { srChecks, auralChecks, gkNote, teacherNote } }
+  const [weekNotes, setWeekNotes] = useState({});
+  const printRef = useRef();
+
+  const getWeekNotes = (i) => weekNotes[i] ?? { srChecks: [false,false,false,""], auralChecks: [false,false,false,""], gkNote: "", teacherNote: "" };
+  const setWeekField = (i, field, val) => setWeekNotes(prev => ({ ...prev, [i]: { ...getWeekNotes(i), [field]: val } }));
+
+  // Calculate weeks from today to exam date
+  const { totalWeeks, startDate } = useMemo(() => {
+    if (!examDate) return { totalWeeks: 0, startDate: null };
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const exam = new Date(examDate);
+    const diff = Math.ceil((exam - today) / (1000 * 60 * 60 * 24 * 7));
+    return { totalWeeks: Math.max(diff, 1), startDate: today };
+  }, [examDate]);
+
+  // Build week objects
+  const weeks = useMemo(() => {
+    if (!generated || totalWeeks === 0) return [];
+    const phases = buildPhases(totalWeeks);
+    const result = [];
+    let weekNum = 1;
+    let cursor = new Date(startDate);
+
+    for (const phase of phases) {
+      for (let i = 0; i < phase.weeks; i++) {
+        const weekStart = new Date(cursor);
+        const weekEnd = new Date(cursor);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        const fmt = (d) => d.toLocaleDateString("en-AU", { day: "numeric", month: "short" });
+        const dateRange = `${fmt(weekStart)} – ${fmt(weekEnd)}`;
+
+        const techWork = TECH_WORK[grade] ?? [];
+        // SR/Aural/GK shown from development phase onwards
+        const showSR = ["development", "consolidation", "polish", "exam"].includes(phase.key);
+
+        result.push({
+          weekNum,
+          dateRange,
+          phaseKey: phase.key,
+          phaseName: phase.name,
+          focus: weekFocus(phase.key, i, grade),
+          daily: dailyPlan(phase.key, grade),
+          techWork: phase.key === "exam" ? [] : techWork,
+          showSR,
+        });
+
+        weekNum++;
+        cursor.setDate(cursor.getDate() + 7);
+      }
+    }
+    return result;
+  }, [generated, totalWeeks, grade, startDate]);
+
+  const toggleWeek = (i) => setOpenWeeks(prev => ({ ...prev, [i]: !prev[i] }));
+  const openAll = () => {
+    const all = {};
+    weeks.forEach((_, i) => { all[i] = true; });
+    setOpenWeeks(all);
+  };
+
+  const phaseColors = {
+    foundation: "bg-indigo-100 text-indigo-700",
+    development: "bg-cyan-100 text-cyan-700",
+    consolidation: "bg-green-100 text-green-700",
+    polish: "bg-amber-100 text-amber-700",
+    exam: "bg-red-100 text-red-700",
+  };
+
+  const phaseSummary = useMemo(() => {
+    const map = {};
+    weeks.forEach(w => { map[w.phaseKey] = (map[w.phaseKey] ?? { name: w.phaseName, count: 0 }); map[w.phaseKey].count++; });
+    return Object.entries(map).map(([key, v]) => ({ key, ...v }));
+  }, [weeks]);
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <header className="bg-white border-b border-slate-200 no-print">
+        <div className="max-w-4xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <a href="Index.html" className="text-slate-400 hover:text-slate-600 text-sm">← Piano Butler</a>
+            <span className="text-slate-300">|</span>
+            <h1 className="text-lg font-bold text-slate-800">Teacher Weekly Plan Generator</h1>
+          </div>
+          <span className="text-xs text-slate-400 bg-slate-100 px-3 py-1 rounded-full">2026 AMEB Syllabus</span>
+        </div>
+      </header>
+
+      <main className="max-w-4xl mx-auto px-4 py-8" ref={printRef}>
+
+        {/* ── Form ── */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-8 no-print">
+          <h2 className="text-base font-bold text-slate-800 mb-5">Plan details</h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Student name */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Student name</label>
+              <input
+                type="text"
+                value={studentName}
+                onChange={e => setStudentName(e.target.value)}
+                placeholder="e.g. Emily Chen"
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              />
+            </div>
+
+            {/* Grade */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">AMEB Grade</label>
+              <select
+                value={grade}
+                onChange={e => { setGrade(e.target.value); setGenerated(false); }}
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 bg-white"
+              >
+                {GRADES.map(g => <option key={g}>{g}</option>)}
+              </select>
+            </div>
+
+            {/* Syllabus type */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Syllabus type</label>
+              <div className="flex gap-2">
+                {SYLLABUS_TYPE.map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setSyllabusType(t)}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all ${
+                      syllabusType === t
+                        ? "bg-indigo-600 text-white border-indigo-600"
+                        : "bg-white text-slate-600 border-slate-200 hover:border-indigo-300"
+                    }`}
+                  >{t}</button>
+                ))}
+              </div>
+            </div>
+
+            {/* Exam date */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Exam date</label>
+              <input
+                type="date"
+                value={examDate}
+                onChange={e => { setExamDate(e.target.value); setGenerated(false); }}
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              />
+              {examDate && totalWeeks > 0 && (
+                <p className="text-xs text-indigo-600 mt-1.5">{totalWeeks} weeks until exam</p>
+              )}
+            </div>
+
+            {/* Practice per day */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+                Daily practice target: <span className="text-indigo-600">{minutesPerDay} min</span>
+              </label>
+              <input
+                type="range"
+                min={15} max={120} step={5}
+                value={minutesPerDay}
+                onChange={e => setMinutesPerDay(Number(e.target.value))}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-slate-400 mt-1">
+                <span>15 min</span><span>120 min</span>
+              </div>
+            </div>
+
+            {/* Lessons per week */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Lessons per week</label>
+              <div className="flex gap-2">
+                {[1, 2].map(n => (
+                  <button
+                    key={n}
+                    onClick={() => setLessonsPerWeek(n)}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition-all ${
+                      lessonsPerWeek === n
+                        ? "bg-indigo-600 text-white border-indigo-600"
+                        : "bg-white text-slate-600 border-slate-200 hover:border-indigo-300"
+                    }`}
+                  >{n}× per week</button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Generate button */}
+          <div className="mt-6 flex gap-3">
+            <button
+              onClick={() => { if (examDate && totalWeeks > 0) { setGenerated(true); setOpenWeeks({ 0: true }); } }}
+              disabled={!examDate || totalWeeks <= 0}
+              className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-200 disabled:text-slate-400 text-white font-semibold py-3 rounded-xl transition-all text-sm"
+            >
+              {!examDate ? "Set an exam date to generate" : generated ? "Regenerate plan" : `Generate ${totalWeeks}-week plan →`}
+            </button>
+          </div>
+        </div>
+
+        {/* ── Generated plan ── */}
+        {generated && weeks.length > 0 && (
+          <>
+            {/* Plan header */}
+            <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800">
+                  {studentName ? `${studentName}'s plan` : "Practice plan"} — {grade}
+                </h2>
+                <p className="text-sm text-slate-500 mt-0.5">
+                  {syllabusType} · {totalWeeks} weeks · Exam {new Date(examDate).toLocaleDateString("en-AU", { day: "numeric", month: "long", year: "numeric" })}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 no-print">
+                <button onClick={openAll} className="text-xs px-3 py-1.5 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50">Expand all</button>
+                <button onClick={() => window.print()} className="text-xs px-3 py-1.5 border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50">🖨 Print</button>
+                <button
+                  onClick={() => exportDocx(studentName, grade, syllabusType, examDate, weeks)}
+                  className="text-xs px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                >⬇ Download .docx</button>
+              </div>
+            </div>
+
+            {/* Phase summary bar */}
+            <div className="flex flex-wrap gap-2 mb-6 no-print">
+              {phaseSummary.map(p => (
+                <span key={p.key} className={`text-xs font-semibold px-3 py-1.5 rounded-full ${phaseColors[p.key]}`}>
+                  {p.name} · {p.count}w
+                </span>
+              ))}
+            </div>
+
+            {/* Grade requirements summary */}
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 mb-6">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-bold text-slate-700">Technical work — {grade}</h3>
+                <span className="text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-full">From AMEB Technical Workbook</span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-slate-600">
+                {(TECH_WORK[grade] ?? []).map((t, i) => (
+                  <div key={i} className="flex gap-2">
+                    <span className="text-slate-300 shrink-0">•</span>
+                    <span>{t}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-100 flex gap-2 items-start">
+                <span className="text-amber-500 text-xs mt-0.5 shrink-0">ℹ</span>
+                <p className="text-xs text-slate-400">Sight-reading, Aural, and General Knowledge are tracked per week using the flexible fields below. Fill in based on your lesson and the actual books/pieces used.</p>
+              </div>
+            </div>
+
+            {/* Week cards */}
+            {weeks.map((week, i) => {
+              const wn = getWeekNotes(i);
+              return (
+                <WeekCard
+                  key={i}
+                  week={week}
+                  isOpen={!!openWeeks[i]}
+                  onToggle={() => toggleWeek(i)}
+                  srChecks={wn.srChecks}
+                  setSrChecks={val => setWeekField(i, "srChecks", typeof val === "function" ? val(wn.srChecks) : val)}
+                  auralChecks={wn.auralChecks}
+                  setAuralChecks={val => setWeekField(i, "auralChecks", typeof val === "function" ? val(wn.auralChecks) : val)}
+                  gkNote={wn.gkNote}
+                  setGkNote={val => setWeekField(i, "gkNote", val)}
+                  teacherNote={wn.teacherNote}
+                  setTeacherNote={val => setWeekField(i, "teacherNote", val)}
+                />
+              );
+            })}
+
+            {/* Footer note */}
+            <p className="text-xs text-slate-400 text-center mt-8 no-print">
+              Generated by Piano Butler · 2026 AMEB Syllabus · Adjust weekly focus to suit individual student needs
+            </p>
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

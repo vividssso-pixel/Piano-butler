@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Piano Butler — Sign In</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Pretendard', -apple-system, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 50%, #f0fdf4 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      width: 100%;
+      max-width: 400px;
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 8px 40px -8px rgba(79,70,229,0.12), 0 2px 8px rgba(0,0,0,0.04);
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+      padding: 32px 32px 28px;
+      text-align: center;
+    }
+    .header-icon { font-size: 36px; margin-bottom: 10px; line-height: 1; }
+    .header h1 {
+      margin: 0; font-size: 22px; font-weight: 900;
+      color: white; letter-spacing: -0.03em;
+    }
+    .header p {
+      margin: 6px 0 0; font-size: 11px; font-weight: 700;
+      color: rgba(255,255,255,0.65);
+      text-transform: uppercase; letter-spacing: 0.1em;
+    }
+    .body { padding: 28px 32px 32px; }
+    label {
+      display: block; font-size: 11px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: #94a3b8; margin-bottom: 8px;
+    }
+    input {
+      width: 100%; padding: 12px 14px;
+      font-size: 15px; font-family: inherit; font-weight: 600;
+      border-radius: 12px; border: 1.5px solid #e2e8f0;
+      outline: none; color: #1e293b; background: #f8fafc;
+      margin-bottom: 16px; transition: border 0.15s;
+    }
+    input:focus { border-color: #6366f1; background: white; }
+    .pw-wrap { position: relative; margin-bottom: 16px; }
+    .pw-wrap input { margin-bottom: 0; padding-right: 44px; }
+    .pw-toggle {
+      position: absolute; right: 12px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px; background: none; border: none;
+      cursor: pointer; color: #94a3b8; line-height: 1; padding: 2px;
+    }
+    .error-box {
+      font-size: 12px; font-weight: 600; color: #dc2626;
+      background: #fef2f2; border: 1px solid #fecaca;
+      border-radius: 8px; padding: 8px 12px; margin-bottom: 16px;
+    }
+    .submit-btn {
+      width: 100%; padding: 13px 0;
+      font-size: 14px; font-weight: 800; font-family: inherit;
+      letter-spacing: 0.02em; border-radius: 12px; border: none;
+      background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+      color: white; cursor: pointer;
+      box-shadow: 0 4px 14px -2px rgba(79,70,229,0.35);
+      transition: all 0.2s;
+    }
+    .submit-btn:disabled {
+      background: #a5b4fc; box-shadow: none; cursor: not-allowed;
+    }
+    .footer-note {
+      margin-top: 20px; margin-bottom: 0;
+      font-size: 10px; font-weight: 600; color: #cbd5e1;
+      text-align: center; letter-spacing: 0.04em; text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="header-icon">🎹</div>
+      <h1>Piano Butler</h1>
+      <p>Piano Repertoire · 2026 AMEB</p>
+    </div>
+    <div class="body">
+      <form id="loginForm">
+        <label for="email">Email</label>
+        <input type="email" id="email" placeholder="your@email.com" autocomplete="username" autofocus required>
+
+        <label for="password">Password</label>
+        <div class="pw-wrap">
+          <input type="password" id="password" placeholder="Enter password…" autocomplete="current-password" required>
+          <button type="button" class="pw-toggle" id="pwToggle" title="Show/hide password">👁</button>
+        </div>
+
+        <div class="error-box" id="errorBox" style="display:none;"></div>
+
+        <button type="submit" class="submit-btn" id="submitBtn">Enter Piano Butler →</button>
+        <p class="footer-note">2026 AMEB Piano Syllabus · All Grades</p>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL  = "https://icefqxaccclwasnfzgnp.supabase.co";
+    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImljZWZxeGFjY2Nsd2FzbmZ6Z25wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwNjgzMTgsImV4cCI6MjA5MjY0NDMxOH0.lZ8BO_L8iOtET8RtUuk9trkf9bQbLqR8K6rKEfPtmtQ";
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+    // If already logged in, skip login page
+    _supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) window.location.href = "home.html";
+    });
+
+    // Password toggle
+    const pwToggle = document.getElementById("pwToggle");
+    const pwInput  = document.getElementById("password");
+    pwToggle.addEventListener("click", () => {
+      const show = pwInput.type === "password";
+      pwInput.type = show ? "text" : "password";
+      pwToggle.textContent = show ? "🙈" : "👁";
+    });
+
+    // Form submit
+    const form      = document.getElementById("loginForm");
+    const submitBtn = document.getElementById("submitBtn");
+    const errorBox  = document.getElementById("errorBox");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+      const pw    = document.getElementById("password").value;
+
+      if (!email) { showError("Please enter your email address."); return; }
+      if (!pw)    { showError("Please enter your password."); return; }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Signing in…";
+      errorBox.style.display = "none";
+
+      const { error } = await _supabase.auth.signInWithPassword({ email, password: pw });
+
+      if (error) {
+        showError(error.message || "Incorrect email or password.");
+        document.getElementById("password").value = "";
+        submitBtn.disabled = false;
+        submitBtn.textContent = "Enter Piano Butler →";
+      } else {
+        window.location.href = "home.html";
+      }
+    });
+
+    function showError(msg) {
+      errorBox.textContent = "⚠ " + msg;
+      errorBox.style.display = "block";
+    }
+  </script>
+</body>
+</html>
