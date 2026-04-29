@@ -166,7 +166,7 @@ Each `piano-repertoire_gX.html` is a **self-contained single-file app** — no s
 
 | # | Change | File(s) | Detail |
 |---|--------|---------|--------|
-| 1 | Sheet button → Google search | Prelim–G8 HTML (9 files) | `google.com/search?q=` with composer surname + title + "sheet music". Originally set to IMSLP but reverted same day — IMSLP returns empty results too often. |
+| 1 | Sheet button → Google search | Prelim–G8 HTML (9 files) + Index.html | `google.com/search?q=` with composer surname + title + "sheet music". Originally set to IMSLP but reverted same day — IMSLP returns empty results too often. `imslpUrl()` helper and `PUBLIC_DOMAIN_ERAS` removed from Index.html; replaced with `sheetUrl()`. |
 | 2 | COMPOSER_LINKS expanded | Prelim–G8 HTML (9 files) | 131–141 new Wikipedia URLs added per file (Brahms, Liszt, Rachmaninoff, Fauré, Ellington, Copland, Joplin, Saint-Saëns, Vaughan Williams, etc.) — 1,119 total entries injected |
 | 3 | Progress Passport added | teacher-dashboard.html | New section inside `StudentDetail` (above Lesson History) — shows attendance rate, lesson streak, section coverage bars (Repertoire/Technical/SR/GK), List A/B/C mention scan, parent-facing summary. No Supabase schema changes required. |
 | 4 | Absent ↔ Attended toggle added | teacher-dashboard.html | `markAttended()` function added — flips absent log to `type: "regular"` via Supabase update. Button appears on absent log cards in StudentDetail. |
@@ -325,7 +325,7 @@ Always cross-check the **2026 AMEB Piano Syllabus PDF** before adding or removin
 | 10 | Stripe payment button | Not yet — optional later via payments.html |
 | 11 | Grade-up recommender | ✅ Done — GradeUpRecommender in Index.html |
 | 12 | Teacher Dashboard | ✅ Done — teacher-dashboard.html, Supabase DB backed |
-| 13 | Sheet music links | ✅ Done (2026-04-29) — Google "sheet music" search on all Prelim–G8 HTML files (reverted from IMSLP — empty results issue) |
+| 13 | Sheet music links | ✅ Done (2026-04-29) — Google "sheet music" search on all Prelim–G8 HTML files + Index.html (reverted from IMSLP — empty results issue) |
 | 14 | Claude API assistant | Natural language search, requires backend |
 | 15 | Progress Passport | ✅ Done (2026-04-29) — embedded in StudentDetail; period filter (Month/Quarter/All time) added same day |
 | 16 | Fortnightly scheduling | ✅ Done (2026-04-29) — isFortnightWeek() helper, stored in extra JSON blob |
