@@ -162,6 +162,23 @@ Each `piano-repertoire_gX.html` is a **self-contained single-file app** — no s
 
 ---
 
+### Phase 3 Updates (2026-04-29)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Sheet button upgraded to IMSLP | Prelim–G8 HTML (9 files) | Replaced Google search link with `imslp.org/wiki/Special:Search/` — surname-only extraction via `p.c.replace(/,.*/, "")` |
+| 2 | COMPOSER_LINKS expanded | Prelim–G8 HTML (9 files) | 131–141 new Wikipedia URLs added per file (Brahms, Liszt, Rachmaninoff, Fauré, Ellington, Copland, Joplin, Saint-Saëns, Vaughan Williams, etc.) — 1,119 total entries injected |
+| 3 | Progress Passport added | teacher-dashboard.html | New section inside `StudentDetail` (above Lesson History) — shows attendance rate, lesson streak, section coverage bars (Repertoire/Technical/SR/GK), List A/B/C mention scan, parent-facing summary. No Supabase schema changes required. |
+| 4 | Absent ↔ Attended toggle added | teacher-dashboard.html | `markAttended()` function added — flips absent log to `type: "regular"` via Supabase update. Button appears on absent log cards in StudentDetail. |
+| 5 | Makeup Schedule section added | teacher-dashboard.html | New card in StudentDetail (above Lesson History) — shows pending makeups from absent logs that have `makeupDate` set. Colour-coded: overdue (red), today (green), upcoming (grey). ✓ Done button marks makeup as attended. |
+| 6 | Today view — student name clickable | teacher-dashboard.html | Avatar + name area in TodayView cards now navigates to StudentDetail on click (hover highlight added). ScheduleView calendar cards also wired with `onClick → onSelect`. |
+| 7 | Today view — status-aware action buttons | teacher-dashboard.html | Replaced single Absent button with dynamic status system: pending → + Log lesson (primary) + Absent (quiet text), absent → 😔 badge + ✓ Attended + 📅 Set makeup + ↩ Undo, logged → ✓ Logged badge + Edit log. Card left-border colour reflects status. |
+| 8 | Fortnightly lesson frequency | teacher-dashboard.html | Added "Fortnightly" option to lesson frequency selector. `isFortnightWeek(startDate)` helper calculates Monday-based week diff to show/dim off-weeks in ScheduleView. Stored in `extra` JSON blob — no schema migration needed. |
+| 9 | planMonths removed for general track | teacher-dashboard.html | General track students no longer need a plan duration — form shows only Goal textarea. "Plan ends:" line and "Xmo left" badge hidden in StudentDetail header. Progress Passport unaffected (reads only from lesson_logs). |
+| 10 | Progress Passport period filter | teacher-dashboard.html | Month / Quarter / All time toggle added to Passport header. `passportPeriod` state in `StudentDetail` filters `studentLogs` by date range before computing all stats, coverage bars, and parent summary. |
+
+---
+
 ### Phase 2 Audit — Issues Found & Fixed (2026-04-23)
 
 | # | Issue | File(s) | Fix Applied |
@@ -279,7 +296,7 @@ Always cross-check the **2026 AMEB Piano Syllabus PDF** before adding or removin
 
 ---
 
-## Build Status — Last updated 2026-04-25 (Supabase DB migration + auth restructure)
+## Build Status — Last updated 2026-04-29
 
 ### Completed Features (Index.html)
 | # | Feature | Status |
@@ -306,9 +323,12 @@ Always cross-check the **2026 AMEB Piano Syllabus PDF** before adding or removin
 | 10 | Stripe payment button | Not yet — next major feature |
 | 11 | Grade-up recommender | ✅ Done — GradeUpRecommender in Index.html |
 | 12 | Teacher Dashboard | ✅ Done — teacher-dashboard.html, Supabase DB backed |
-| 13 | Sheet music links | IMSLP per piece — not yet |
+| 13 | Sheet music links | ✅ Done (2026-04-29) — IMSLP search link on all Prelim–G8 HTML files |
 | 14 | Claude API assistant | Natural language search, requires backend |
-| 15 | Progress Passport | Full system with Zapier |
+| 15 | Progress Passport | ✅ Done (2026-04-29) — embedded in StudentDetail; period filter (Month/Quarter/All time) added same day |
+| 16 | Fortnightly scheduling | ✅ Done (2026-04-29) — isFortnightWeek() helper, stored in extra JSON blob |
+| 17 | General track — remove planMonths | ✅ Done (2026-04-29) — form shows only Goal textarea; header badges removed |
+| 18 | payments.html — lesson fee management | 🔜 Planned (weekend) — separate page, same Supabase DB. Per-student fee, auto lesson count, paid/unpaid toggle, PDF invoice. Stripe optional later. |
 
 ### Deployment Plan (updated 2026-04-25)
 - **Live:** https://exquisite-faloodeh-6d8e82.netlify.app
