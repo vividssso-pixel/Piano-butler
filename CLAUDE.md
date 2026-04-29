@@ -176,6 +176,8 @@ Each `piano-repertoire_gX.html` is a **self-contained single-file app** — no s
 | 8 | Fortnightly lesson frequency | teacher-dashboard.html | Added "Fortnightly" option to lesson frequency selector. `isFortnightWeek(startDate)` helper calculates Monday-based week diff to show/dim off-weeks in ScheduleView. Stored in `extra` JSON blob — no schema migration needed. |
 | 9 | planMonths removed for general track | teacher-dashboard.html | General track students no longer need a plan duration — form shows only Goal textarea. "Plan ends:" line and "Xmo left" badge hidden in StudentDetail header. Progress Passport unaffected (reads only from lesson_logs). |
 | 10 | Progress Passport period filter | teacher-dashboard.html | Month / Quarter / All time toggle added to Passport header. `passportPeriod` state in `StudentDetail` filters `studentLogs` by date range before computing all stats, coverage bars, and parent summary. |
+| 11 | Student pause/resume | teacher-dashboard.html | `pauseStudent()` / `resumeStudent()` functions added to App. `paused: true` + `pausedAt` stored in `extra` JSON blob. ⏸ Pause button in StudentDetail, paused banner shown. Card greyed out + "⏸ Paused" badge. Paused students excluded from TodayView and ScheduleView slots. `showPaused` toggle in student list filter bar. |
+| 12 | "3mo left" badge removed from general track cards | teacher-dashboard.html | StudentCard top-right badge now only shows weeks countdown for exam track students. General track shows nothing. |
 
 ---
 
@@ -320,22 +322,23 @@ Always cross-check the **2026 AMEB Piano Syllabus PDF** before adding or removin
 | # | Feature | Notes |
 |---|---------|-------|
 | 9 | Login gate | ✅ Done — `login.html` (pure JS, Supabase email/password auth) |
-| 10 | Stripe payment button | Not yet — next major feature |
+| 10 | Stripe payment button | Not yet — optional later via payments.html |
 | 11 | Grade-up recommender | ✅ Done — GradeUpRecommender in Index.html |
 | 12 | Teacher Dashboard | ✅ Done — teacher-dashboard.html, Supabase DB backed |
 | 13 | Sheet music links | ✅ Done (2026-04-29) — IMSLP search link on all Prelim–G8 HTML files |
 | 14 | Claude API assistant | Natural language search, requires backend |
 | 15 | Progress Passport | ✅ Done (2026-04-29) — embedded in StudentDetail; period filter (Month/Quarter/All time) added same day |
 | 16 | Fortnightly scheduling | ✅ Done (2026-04-29) — isFortnightWeek() helper, stored in extra JSON blob |
-| 17 | General track — remove planMonths | ✅ Done (2026-04-29) — form shows only Goal textarea; header badges removed |
-| 18 | payments.html — lesson fee management | 🔜 Planned (weekend) — separate page, same Supabase DB. Per-student fee, auto lesson count, paid/unpaid toggle, PDF invoice. Stripe optional later. |
+| 17 | General track — remove planMonths | ✅ Done (2026-04-29) — form shows only Goal textarea; "Plan ends:" and "Xmo left" badges removed from card + detail header |
+| 18 | Student pause/resume | ✅ Done (2026-04-29) — ⏸ Pause button in StudentDetail; paused stored in extra JSON blob; hidden from Today/Schedule views; "⏸ Paused" badge on card; showPaused toggle in student list |
+| 19 | payments.html — lesson fee management | 🔜 Planned (weekend) — separate page, same Supabase DB. Per-student fee, auto lesson count, paid/unpaid toggle, PDF invoice. Stripe optional later. |
 
-### Deployment Plan (updated 2026-04-25)
+### Deployment Plan (updated 2026-04-29)
 - **Live:** https://exquisite-faloodeh-6d8e82.netlify.app
-- **Stack:** Netlify Drop + Supabase Auth + Supabase DB (public.students + public.lesson_logs)
-- **Auth pattern (B안):** login.html → requireAuth() on each protected page → signOut()
+- **Stack:** GitHub → Netlify (auto-deploy on push to `main`) + Supabase Auth + Supabase DB (public.students + public.lesson_logs)
+- **Auth pattern:** login.html → requireAuth() on each protected page → signOut()
 - **Data:** All teacher/student/log data in Supabase DB with Row Level Security per user_id
-- **No GitHub connection yet** — deploy by dragging Piano Butler folder to Netlify Drop
+- **GitHub:** https://github.com/vividssso-pixel/Piano-butler — Netlify auto-deploys on push to `main`
 - Do NOT use Wix — incompatible with React/Babel structure
 
 ### Language Rule
