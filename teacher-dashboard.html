@@ -241,18 +241,18 @@ const daysUntilNext = (dayName) => {
 
 // Returns true if this week is a lesson week for a fortnightly student
 // Uses startDate as the anchor — week 0 = lesson week, week 1 = off week, etc.
-const isFortnightWeek = (startDate) => {
+const isFortnightWeek = (startDate, weekOffset = 0) => {
   if (!startDate) return true; // fallback: always show
   const start = new Date(startDate + "T12:00:00");
   // Get Monday of the start week
-  const startDay = start.getDay(); // 0=Sun
+  const startDay = start.getDay();
   const startMonday = new Date(start);
   startMonday.setDate(start.getDate() - ((startDay + 6) % 7));
-  // Get Monday of current week
+  // Get Monday of target week (current week + offset)
   const now = new Date();
   const nowDay = now.getDay();
   const nowMonday = new Date(now);
-  nowMonday.setDate(now.getDate() - ((nowDay + 6) % 7));
+  nowMonday.setDate(now.getDate() - ((nowDay + 6) % 7) + weekOffset * 7);
   // How many weeks apart?
   const weeksDiff = Math.round((nowMonday - startMonday) / (7 * 24 * 60 * 60 * 1000));
   return weeksDiff % 2 === 0;
@@ -427,6 +427,67 @@ const logToRow = (f, studentId, userId) => ({
 /* ═══════════════════════════════════════════════════════════════════════════
    ABSENCE MODAL — mark a lesson as absent or makeup
 ═══════════════════════════════════════════════════════════════════════════ */
+function PauseModal({ student, onSave, onClose }) {
+  const [pauseFrom, setPauseFrom] = useState(todayStr());
+  const [returnDate, setReturnDate] = useState("");
+  const [undecided, setUndecided] = useState(false);
+
+  const handleSave = () => {
+    onSave({
+      pauseFrom,
+      pauseUntil: undecided ? null : (returnDate || null),
+      pauseUndecided: undecided,
+    });
+  };
+
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.4)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:"16px"}}>
+      <div className="card p-6 fade-in" style={{width:"100%",maxWidth:400}}>
+        <h3 className="font-bold text-slate-800 mb-1">⏸ Pause lessons</h3>
+        <p className="text-sm text-slate-400 mb-5">{student.name}</p>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Pause from</label>
+            <input type="date" value={pauseFrom} onChange={e=>setPauseFrom(e.target.value)}
+              className="input w-full" />
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Return date</label>
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" checked={undecided} onChange={e=>setUndecided(e.target.checked)}
+                  style={{accentColor:"#f59e0b"}} />
+                <span className="text-xs font-semibold text-amber-600">Undecided</span>
+              </label>
+            </div>
+            <input type="date" value={returnDate} onChange={e=>setReturnDate(e.target.value)}
+              disabled={undecided}
+              className="input w-full"
+              style={{opacity: undecided ? 0.4 : 1, cursor: undecided ? "not-allowed" : "auto"}} />
+            {undecided && (
+              <p className="text-xs text-amber-600 mt-1.5">Return date TBD — you can set it later.</p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button onClick={handleSave}
+            className="flex-1 text-white text-sm font-bold py-2.5 rounded-xl"
+            style={{background:"#f59e0b"}}>
+            ⏸ Confirm pause
+          </button>
+          <button onClick={onClose}
+            className="btn-ghost text-sm py-2.5 px-4">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AbsenceModal({ student, onSave, onClose }) {
   const [type, setType] = useState("absent");
   const [date, setDate] = useState(todayStr());
@@ -950,6 +1011,11 @@ function StudentCard({ student, logs, onLog, onEdit, onDelete, onSelect }) {
   const gc = GRADE_COLOR[student.grade] || GRADE_COLOR["Grade 5"];
   const studentLogs = logs.filter(l=>l.studentId===student.id).sort((a,b)=>b.date.localeCompare(a.date));
   const lastLog = studentLogs[0];
+  const thisMonthLogs = (() => {
+    const now = new Date();
+    const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+    return studentLogs.filter(l => l.date && l.date.startsWith(ym) && l.type !== "absent").length;
+  })();
   const studentNorm = { startingPhase: student.track==="exam" ? "foundation" : "exploration", ...student };
   const plan = buildPlan(studentNorm);
   const curMonthStr = currentMonthStr();
@@ -1060,7 +1126,14 @@ function StudentCard({ student, logs, onLog, onEdit, onDelete, onSelect }) {
         <div className="mt-auto">
           {lastLog ? (
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs text-slate-400">Last lesson: {fmtShort(lastLog.date)}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-xs text-slate-400">Last lesson: {fmtShort(lastLog.date)}</p>
+                {thisMonthLogs > 0 && (
+                  <span title="Lessons this month" style={{fontSize:"10px",fontWeight:700,padding:"1px 7px",borderRadius:"99px",background:"#eef2ff",color:"#4338ca",border:"1px solid #c7d2fe"}}>
+                    {thisMonthLogs}× this month
+                  </span>
+                )}
+              </div>
               {/* Mood trend — last 3 logs */}
               {(() => {
                 const recent = studentLogs.slice(0,3).map(l=>l.mood).filter(Boolean);
@@ -1285,7 +1358,7 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
               ▶ Resume lessons
             </button>
           ) : (
-            <button onClick={()=>{ if(confirm(`Pause lessons for ${student.name}? They'll be hidden from Today and Schedule views.`)) onPause(student); }}
+            <button onClick={()=>onPause(student)}
               className="text-xs py-1.5 px-3 rounded-xl border font-semibold transition-all"
               style={{background:"#fffbeb",color:"#d97706",borderColor:"#fde68a"}}>
               ⏸ Pause lessons
@@ -1295,7 +1368,13 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
         {student.paused && (
           <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold"
             style={{background:"#fffbeb",color:"#92400e",border:"1px solid #fde68a"}}>
-            ⏸ Lessons paused since {fmtDate(student.pausedAt)} — hidden from Today & Schedule
+            ⏸ Paused since {fmtDate(student.pausedAt)}
+            {student.pauseUndecided
+              ? " · Return date TBD"
+              : student.pauseUntil
+                ? ` · Returning ${fmtDate(student.pauseUntil)}`
+                : ""
+            }
           </div>
         )}
       </div>
@@ -1691,9 +1770,9 @@ function TodayView({ students, logs, onLog, onAbsence, onSelect, onDeleteLog, on
   const todayName = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][new Date().getDay()];
   const todayLabel = new Date().toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long"});
 
-  // Collect today's slots — skip paused students
+  // Collect today's slots — include paused students (shown dimmed)
   const slots = [];
-  students.filter(s => !s.paused).forEach(s => {
+  students.forEach(s => {
     const isFort = s.lessonsPerWeek === "fortnightly";
     const fortOk = !isFort || isFortnightWeek(s.startDate);
     if (s.lessonDay === todayName && fortOk) slots.push({ student:s, time: s.lessonTime||"09:00", dur: s.lessonDuration||45 });
@@ -1740,11 +1819,11 @@ function TodayView({ students, logs, onLog, onAbsence, onSelect, onDeleteLog, on
 
             return (
               <div key={i} className="card overflow-hidden transition-all"
-                style={{borderLeft:`4px solid ${
-                  status==="absent" ? "#dc2626" :
-                  status==="logged" ? "#16a34a" :
-                  pm.color
-                }`}}>
+                style={{
+                  borderLeft:`4px solid ${s.paused ? "#cbd5e1" : status==="absent" ? "#dc2626" : status==="logged" ? "#16a34a" : pm.color}`,
+                  opacity: s.paused ? 0.55 : 1,
+                  filter: s.paused ? "grayscale(40%)" : "none",
+                }}>
                 <div className="p-4 flex items-center gap-4">
                   {/* Time */}
                   <div className="text-center shrink-0 w-14">
@@ -1768,11 +1847,14 @@ function TodayView({ students, logs, onLog, onAbsence, onSelect, onDeleteLog, on
                     </div>
                   </div>
 
-                  {/* Actions — dynamic by status */}
+                  {/* Actions — dynamic by status, hidden for paused */}
                   <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+                    {s.paused && (
+                      <span style={{fontSize:"11px",fontWeight:700,padding:"3px 10px",borderRadius:"99px",background:"#fffbeb",color:"#d97706",border:"1px solid #fde68a"}}>⏸ Paused</span>
+                    )}
 
                     {/* PENDING — not yet logged or marked absent */}
-                    {status === "pending" && (<>
+                    {!s.paused && status === "pending" && (<>
                       <button onClick={()=>onLog(s)}
                         className="btn-primary text-xs py-1.5 px-4">
                         + Log lesson
@@ -1787,7 +1869,7 @@ function TodayView({ students, logs, onLog, onAbsence, onSelect, onDeleteLog, on
                     </>)}
 
                     {/* ABSENT — marked absent today */}
-                    {status === "absent" && (<>
+                    {!s.paused && status === "absent" && (<>
                       <span style={{fontSize:"11px",fontWeight:700,padding:"3px 10px",borderRadius:"99px",background:"#fef2f2",color:"#dc2626",border:"1px solid #fecaca"}}>
                         😔 Absent
                       </span>
@@ -1814,7 +1896,7 @@ function TodayView({ students, logs, onLog, onAbsence, onSelect, onDeleteLog, on
                     </>)}
 
                     {/* LOGGED — lesson logged today */}
-                    {status === "logged" && (<>
+                    {!s.paused && status === "logged" && (<>
                       <span style={{fontSize:"11px",fontWeight:700,padding:"3px 10px",borderRadius:"99px",background:"#f0fdf4",color:"#16a34a",border:"1px solid #bbf7d0"}}>
                         ✓ Logged
                       </span>
@@ -1841,13 +1923,13 @@ function TodayView({ students, logs, onLog, onAbsence, onSelect, onDeleteLog, on
 ═══════════════════════════════════════════════════════════════════════════ */
 const DAYS_ORDER = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 const DAY_COLOR = {
-  Monday:    { bg:"#eef2ff", border:"#818cf8", text:"#4338ca", grid:"#f5f7ff" },
-  Tuesday:   { bg:"#fdf2f8", border:"#e879a0", text:"#9d174d", grid:"#fdf5fa" },
-  Wednesday: { bg:"#ecfeff", border:"#22d3ee", text:"#0e7490", grid:"#f0fbfd" },
-  Thursday:  { bg:"#fff7ed", border:"#fb923c", text:"#c2410c", grid:"#fffaf5" },
-  Friday:    { bg:"#f0fdf4", border:"#4ade80", text:"#15803d", grid:"#f5fdf7" },
-  Saturday:  { bg:"#faf5ff", border:"#c084fc", text:"#7e22ce", grid:"#fdf8ff" },
-  Sunday:    { bg:"#fff1f2", border:"#fb7185", text:"#be123c", grid:"#fff5f6" },
+  Monday:    { bg:"#e8ecf7", border:"#7f8ec4", text:"#363c6e", grid:"white", blockBg:"#dfe4f4", blockText:"#363c6e" },
+  Tuesday:   { bg:"#f5e8f2", border:"#b87aaa", text:"#62324e", grid:"white", blockBg:"#f0dcea", blockText:"#62324e" },
+  Wednesday: { bg:"#e4f2f7", border:"#5aaec2", text:"#1e5f6e", grid:"white", blockBg:"#d8ecf5", blockText:"#1e5f6e" },
+  Thursday:  { bg:"#f7ede3", border:"#c08a55", text:"#6b3f18", grid:"white", blockBg:"#f2e3d0", blockText:"#6b3f18" },
+  Friday:    { bg:"#e4f2e8", border:"#5eaa7a", text:"#1e5c38", grid:"white", blockBg:"#d6edde", blockText:"#1e5c38" },
+  Saturday:  { bg:"#ede8f5", border:"#8e78bb", text:"#3d2e68", grid:"white", blockBg:"#e4ddf0", blockText:"#3d2e68" },
+  Sunday:    { bg:"#f5e8e8", border:"#b87a7a", text:"#622e2e", grid:"white", blockBg:"#f0d8d8", blockText:"#622e2e" },
 };
 const fmtTime = (t) => {
   if (!t) return "";
@@ -1859,10 +1941,25 @@ const fmtTime = (t) => {
 };
 
 function ScheduleView({ students, logs, onLog, onAbsence, onSelect, onAdd }) {
-  // ── Build slots — skip paused students ───────────────────────────────────
+  const [weekOffset, setWeekOffset] = React.useState(0); // 0 = this week, 1 = next, -1 = last
+
+  // Week label — "This week", "Next week", "Apr 28 – May 4", etc.
+  const weekLabel = (() => {
+    if (weekOffset === 0) return "This week";
+    if (weekOffset === 1) return "Next week";
+    if (weekOffset === -1) return "Last week";
+    const now = new Date();
+    const mon = new Date(now);
+    mon.setDate(now.getDate() - now.getDay() + 1 + weekOffset * 7);
+    const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+    const fmt = d => d.toLocaleDateString("en-AU", {day:"numeric", month:"short"});
+    return `${fmt(mon)} – ${fmt(sun)}`;
+  })();
+
+  // ── Build slots — include paused students (shown dimmed) ─────────────────
   const slots = [];
-  students.filter(s => !s.paused).forEach(s => {
-    if (s.lessonDay) slots.push({ day: s.lessonDay, time: s.lessonTime||"09:00", student: s, dur: s.lessonDuration||45, fortnightly: s.lessonsPerWeek==="fortnightly", fortActive: s.lessonsPerWeek!=="fortnightly" || isFortnightWeek(s.startDate) });
+  students.forEach(s => {
+    if (s.lessonDay) slots.push({ day: s.lessonDay, time: s.lessonTime||"09:00", student: s, dur: s.lessonDuration||45, fortnightly: s.lessonsPerWeek==="fortnightly", fortActive: s.lessonsPerWeek!=="fortnightly" || isFortnightWeek(s.startDate, weekOffset) });
     if (s.lessonsPerWeek === 2 && s.lessonDay2) slots.push({ day: s.lessonDay2, time: s.lessonTime2||"09:00", student: s, dur: s.lessonDuration||45, fortnightly: false, fortActive: true });
   });
 
@@ -1920,6 +2017,24 @@ function ScheduleView({ students, logs, onLog, onAbsence, onSelect, onAdd }) {
 
   return (
     <div className="fade-in">
+      {/* ── Week navigation ── */}
+      <div className="flex items-center justify-between mb-4">
+        <button onClick={()=>setWeekOffset(w=>w-1)}
+          className="btn-ghost text-sm py-1.5 px-4">← Prev</button>
+        <div className="text-center">
+          <span className="text-sm font-bold text-slate-700">{weekLabel}</span>
+          {weekOffset !== 0 && (
+            <button onClick={()=>setWeekOffset(0)}
+              className="ml-3 text-xs font-semibold text-indigo-500 hover:text-indigo-700"
+              style={{background:"none",border:"none",cursor:"pointer"}}>
+              Today
+            </button>
+          )}
+        </div>
+        <button onClick={()=>setWeekOffset(w=>w+1)}
+          className="btn-ghost text-sm py-1.5 px-4">Next →</button>
+      </div>
+
       {/* ── Weekly calendar grid ── */}
       <div className="card overflow-hidden" style={{marginBottom: unscheduled.length ? 24 : 0}}>
         {/* Header row — day names */}
@@ -1938,10 +2053,28 @@ function ScheduleView({ students, logs, onLog, onAbsence, onSelect, onAdd }) {
                   fontSize:"11px", fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase",
                   color: dc.text,
                 }}>{day.slice(0,3)}</span>
-                {day===todayDay && (
+                {day===todayDay && weekOffset===0 && (
                   <span style={{display:"block",width:6,height:6,borderRadius:"50%",background:dc.border,margin:"3px auto 0"}}/>
                 )}
-                <span style={{display:"block",fontSize:"10px",color:dc.border,marginTop:2,opacity:0.8}}>{byDay[day].length} lesson{byDay[day].length!==1?"s":""}</span>
+                {(() => {
+                  const count = byDay[day].length;
+                  const totalMins = byDay[day].reduce((sum, slot) => sum + (slot.dur||45), 0);
+                  const hrs = Math.floor(totalMins / 60);
+                  const mins = totalMins % 60;
+                  const timeStr = hrs > 0 ? (mins > 0 ? `${hrs}h ${mins}m` : `${hrs}h`) : `${mins}m`;
+                  return (
+                    <>
+                      <span style={{display:"block",fontSize:"10px",color:dc.border,marginTop:2,opacity:0.8}}>
+                        {count} lesson{count!==1?"s":""}
+                      </span>
+                      {count > 0 && (
+                        <span style={{display:"block",fontSize:"9px",color:dc.border,opacity:0.6,marginTop:1}}>
+                          {timeStr}
+                        </span>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             );
           })}
@@ -1989,12 +2122,16 @@ function ScheduleView({ students, logs, onLog, onAbsence, onSelect, onAdd }) {
                 const initials = s.name.split(" ").map(n=>n[0]).join("").slice(0,2).toUpperCase();
                 const top = timeToY(slot.time);
                 const height = Math.max(durToH(slot.dur), 28);
-                const isShort = height < 44;
-                const isToday = day === todayDay;
+                const isTiny    = height < 30;  // name only (e.g. <30min)
+                const isCompact = height < 44;  // name + time on one line, no grade/buttons
+                const isShort   = isTiny;       // legacy alias for button guard below
+                const isToday = day === todayDay && weekOffset === 0;
                 const isOffWeek = slot.fortnightly && !slot.fortActive;
 
-                // Check for recent absence/makeup for this student today's week
-                const recentAbsent = logs.filter(l => l.studentId===s.id && (l.type==="absent"||l.type==="makeup")).slice(0,1)[0];
+                // Status for today's slot only
+                const todayStr = new Date().toISOString().slice(0,10);
+                const todayLog = isToday ? logs.filter(l => l.studentId===s.id && l.date===todayStr).sort((a,b)=>b.date.localeCompare(a.date))[0] : null;
+                const todayStatus = !isToday ? null : todayLog ? (todayLog.type==="absent" ? "absent" : "logged") : "pending";
 
                 return (
                   <div key={i}
@@ -2002,41 +2139,57 @@ function ScheduleView({ students, logs, onLog, onAbsence, onSelect, onAdd }) {
                     style={{
                       position:"absolute", top: top+2, left:4, right:4, height: height-4,
                       borderRadius:8,
-                      background: isOffWeek ? "#f8fafc" : "white",
-                      borderLeft:`3px solid ${isOffWeek ? "#cbd5e1" : dc.border}`,
-                      opacity: isOffWeek ? 0.5 : 1,
+                      background: (isOffWeek || s.paused) ? "#f1f5f9" : dc.blockBg,
+                      borderLeft:`3px solid ${(isOffWeek || s.paused) ? "#cbd5e1" : dc.border}`,
+                      opacity: (isOffWeek || s.paused) ? 0.5 : 1,
+                      filter: s.paused ? "grayscale(40%)" : "none",
                       cursor:"pointer", overflow:"hidden", transition:"all 0.15s",
-                      boxShadow:"0 1px 3px rgba(0,0,0,0.06)",
-                      padding: isShort ? "2px 6px" : "5px 8px",
-                      display:"flex", flexDirection: isShort ? "row" : "column",
-                      alignItems: isShort ? "center" : "flex-start", gap: isShort ? 4 : 1,
+                      boxShadow:"0 1px 4px rgba(0,0,0,0.08)",
+                      padding: isTiny ? "2px 6px" : isCompact ? "3px 6px" : "5px 8px",
+                      display:"flex",
+                      flexDirection: "column",
+                      alignItems: "flex-start",
+                      gap: 1,
                     }}
                     onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 4px 12px rgba(0,0,0,0.12)"; e.currentTarget.style.zIndex=10;}}
                     onMouseLeave={e=>{e.currentTarget.style.boxShadow="0 1px 3px rgba(0,0,0,0.06)"; e.currentTarget.style.zIndex=1;}}>
-                    <span style={{fontSize:"10px",fontWeight:700,color: isOffWeek ? "#94a3b8" : dc.text,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%"}}>
-                      {s.name}
+                    {/* Name — always first, never clipped by flex */}
+                    <span style={{fontSize:"10px",fontWeight:700,color:(isOffWeek||s.paused)?"#94a3b8":dc.blockText,
+                      whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
+                      width:"100%",flexShrink:0}}>
+                      {s.name}{s.paused ? " ⏸" : ""}
                     </span>
-                    {!isShort && (
-                      <span style={{fontSize:"10px",color:dc.border,fontWeight:600}}>
+                    {/* Time info — only when not tiny */}
+                    {!isTiny && (
+                      <span style={{fontSize:"9px",color:(isOffWeek||s.paused)?"#94a3b8":dc.border,fontWeight:600,whiteSpace:"nowrap",flexShrink:0}}>
                         {fmtTime(slot.time)} · {slot.dur}m
                       </span>
                     )}
-                    {!isShort && (
-                      <span style={{fontSize:"9px",color:"#94a3b8",marginTop:1}}>{s.grade}</span>
-                    )}
-                    {/* Action buttons — show on hover via group */}
-                    {!isShort && (
+                    {/* Action buttons — today only, status-aware, not for paused */}
+                    {!isTiny && isToday && todayStatus !== null && !s.paused && (
                       <div style={{marginTop:"auto",display:"flex",gap:3,paddingTop:2}} onClick={e=>e.stopPropagation()}>
-                        <button onClick={()=>onLog(s)}
-                          style={{fontSize:"9px",fontWeight:700,padding:"2px 6px",borderRadius:5,border:"none",
-                            background:dc.bg,color:dc.text,cursor:"pointer"}}>
-                          + Log
-                        </button>
-                        <button onClick={()=>onAbsence(s)}
-                          style={{fontSize:"9px",fontWeight:700,padding:"2px 6px",borderRadius:5,border:"none",
-                            background:"#fef2f2",color:"#dc2626",cursor:"pointer"}}>
-                          Absent
-                        </button>
+                        {todayStatus === "logged" && (
+                          <span style={{fontSize:"9px",fontWeight:700,padding:"2px 6px",borderRadius:5,
+                            background:"#f0fdf4",color:"#16a34a"}}>✓ Logged</span>
+                        )}
+                        {todayStatus === "absent" && (
+                          <span style={{fontSize:"9px",fontWeight:700,padding:"2px 6px",borderRadius:5,
+                            background:"#fef2f2",color:"#dc2626"}}>😔 Absent</span>
+                        )}
+                        {todayStatus === "pending" && (
+                          <>
+                            <button onClick={()=>onLog(s)}
+                              style={{fontSize:"9px",fontWeight:700,padding:"2px 6px",borderRadius:5,border:"none",
+                                background:dc.border,color:"white",cursor:"pointer"}}>
+                              + Log
+                            </button>
+                            <button onClick={()=>onAbsence(s)}
+                              style={{fontSize:"9px",fontWeight:700,padding:"2px 6px",borderRadius:5,border:"none",
+                                background:"#fef2f2",color:"#dc2626",cursor:"pointer"}}>
+                              Absent
+                            </button>
+                          </>
+                        )}
                       </div>
                     )}
                   </div>
@@ -2079,10 +2232,11 @@ function App() {
   const [filterGrade,    setFilterGrade]   = useState("All");
   const [filterTrack,    setFilterTrack]   = useState("All");
   const [sortBy,         setSortBy]        = useState("name");
-  const [showPaused,     setShowPaused]    = useState(false);
+  const [showPaused,     setShowPaused]    = useState(true);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [importing,    setImporting]    = useState(false);
   const [absenceTarget, setAbsenceTarget] = useState(null); // student to mark absent
+  const [pauseTarget,   setPauseTarget]   = useState(null); // student to pause (shows modal)
   const [userId,   setUserId]   = useState(null);
   const [loading,  setLoading]  = useState(true);
   const [dbError,  setDbError]  = useState("");
@@ -2137,6 +2291,13 @@ function App() {
         if (!bLog) return -1;
         return bLog.date.localeCompare(aLog.date);
       }
+      if (sortBy === "monthcount") {
+        const now = new Date();
+        const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+        const aCount = logs.filter(l=>l.studentId===a.id && l.date&&l.date.startsWith(ym) && l.type!=="absent").length;
+        const bCount = logs.filter(l=>l.studentId===b.id && l.date&&l.date.startsWith(ym) && l.type!=="absent").length;
+        return bCount - aCount;
+      }
       return 0;
     });
     return list;
@@ -2172,14 +2333,15 @@ function App() {
     if (selected?.id === id) { setView("list"); setSelected(null); }
   };
 
-  const pauseStudent = async (student) => {
-    const updated = { ...student, paused: true, pausedAt: todayStr() };
+  const pauseStudent = async (student, { pauseFrom, pauseUntil, pauseUndecided }) => {
+    const updated = { ...student, paused: true, pausedAt: pauseFrom, pauseUntil: pauseUntil || null, pauseUndecided: !!pauseUndecided };
     const row = studentToRow(updated);
     const { data, error } = await _supabase.from("students").update(row).eq("id", student.id).select().single();
     if (error) { alert("Could not pause student: " + error.message); return; }
     const s = rowToStudent(data);
     setStudents(p => p.map(x => x.id === s.id ? s : x));
     setSelected(s);
+    setPauseTarget(null);
   };
 
   const resumeStudent = async (student) => {
@@ -2574,6 +2736,7 @@ function App() {
                   <option value="grade">Sort: Grade</option>
                   <option value="exam">Sort: Exam date</option>
                   <option value="lastlog">Sort: Last log</option>
+                  <option value="monthcount">Sort: Lessons this month</option>
                 </select>
 
                 {/* Active filter count badge */}
@@ -2643,7 +2806,7 @@ function App() {
               onMarkAttended={markAttended}
               onBack={()=>{setView("list");setSelected(null);}}
               onEdit={setEditing}
-              onPause={pauseStudent}
+              onPause={setPauseTarget}
               onResume={resumeStudent}
             />
           );
@@ -2654,6 +2817,7 @@ function App() {
       {showAdd && <StudentModal onSave={addStudent} onClose={()=>setShowAdd(false)}/>}
       {editing  && <StudentModal initial={editing} onSave={updateStudent} onClose={()=>setEditing(null)}/>}
       {absenceTarget && <AbsenceModal student={absenceTarget} onSave={saveAbsence} onClose={()=>setAbsenceTarget(null)}/>}
+      {pauseTarget && <PauseModal student={pauseTarget} onSave={(opts)=>pauseStudent(pauseTarget, opts)} onClose={()=>setPauseTarget(null)}/>}
       {logging  && (
         <LogModal
           student={logging}

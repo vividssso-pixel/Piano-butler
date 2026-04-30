@@ -1,7 +1,7 @@
 # Piano Butler — Complete Build Log
-**Last updated:** 2026-04-26  
-**Live URL:** https://exquisite-faloodeh-6d8e82.netlify.app  
-**Stack:** React 18 + Babel + Tailwind CSS (all CDN) · Supabase Auth + DB · Netlify
+**Last updated:** 2026-04-27 (Session 8 wrap-up — next: Session 9 Beat Butler polish)
+**Live URL:** https://vividssso-pixel.github.io/Piano-butler/login.html  
+**Stack:** React 18 + Babel + Tailwind CSS (all CDN) · Supabase Auth + DB · GitHub Pages
 
 ---
 
@@ -273,18 +273,141 @@ const DAYS_ORDER = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday",
 
 ---
 
+---
+
+### SESSION 7 — 캘린더 기능 강화 + GitHub Pages 이전 (2026-04-26 오전)
+
+**Goal:** 구글 캘린더 대체 기능 추가, 호스팅 이전
+
+#### Today View (새 탭)
+- 앱 첫 탭을 "Today"로 변경 (기존: Schedule)
+- 오늘 요일에 해당하는 학생을 시간순으로 표시
+- 각 학생 옆에 "+ Log lesson" / "Absent" 버튼 바로 노출
+- 오늘 이미 로그 기록한 학생은 "✓ Logged" 뱃지 표시
+- 레슨 없는 날은 "No lessons today — Enjoy your day off!" 표시
+
+#### 결석 / 보강 기록 (AbsenceModal)
+- Today 탭 + 캘린더 블록에 "Absent" 버튼 추가
+- AbsenceModal: Absent / Makeup 선택, 날짜, 보강 날짜, 메모 입력
+- lesson_logs의 extra JSON에 `type: "absent" | "makeup"` 저장
+- rowToLog() / logToRow() 업데이트 — type, makeupDate 파싱
+- 레슨 히스토리에서 "😔 Absent" / "🔄 Makeup" 뱃지로 표시
+
+#### D-day 뱃지 (학생 카드)
+- `daysUntilNext(dayName)` 헬퍼 추가 — 다음 요일까지 며칠인지 계산
+- `daysUntilExam(examDate)` 헬퍼 추가
+- 학생 카드 이름 아래에 두 가지 뱃지 표시:
+  - "🎹 Today!" (오늘 레슨) / "Next: Mon in 2d" (다음 레슨)
+  - "D-42" (시험까지) — 14일 이내 빨간색, 60일 이내 노란색
+- Today view에도 D-day 뱃지 표시
+
+#### 캘린더 블록 → 바로 액션
+- ScheduleView 블록 안에 "+ Log" / "Absent" 버튼 직접 노출
+- onLog / onAbsence prop 추가 — 클릭 시 바로 모달 오픈
+- 기존: 블록 클릭 → 학생 디테일 이동 (3단계)
+- 변경: 버튼 클릭 → LogModal / AbsenceModal 바로 오픈 (1단계)
+
+#### 탭 구조 변경
+- 탭 순서: Today → Students → Schedule
+- 기본 탭: Today (앱 열면 오늘 레슨이 첫 화면)
+
+#### 호스팅 이전 — Netlify → GitHub Pages
+- **문제:** Netlify AI 에이전트 크레딧 300개 초과 → 사이트 전체 정지
+- **원인:** GitHub 연결 후 매 push마다 Netlify 빌드 실행 → 크레딧 소모
+- **해결:** GitHub 레포를 Public으로 변경 → GitHub Pages 활성화
+- **새 URL:** https://vividssso-pixel.github.io/Piano-butler/login.html
+- **Supabase URL Configuration 업데이트:**
+  - Site URL: `https://vividssso-pixel.github.io`
+  - Redirect URL: `https://vividssso-pixel.github.io/Piano-butler/home.html`
+- Netlify는 삭제하지 않고 방치 (5월 24일 크레딧 리셋, 무료 플랜이라 비용 없음)
+- 앞으로 배포: `git add . && git commit -m "..." && git push` → GitHub Pages 자동 반영
+
+#### 전체 빌드 로그 문서 작성
+- `PIANO_BUTLER_BUILD_LOG.md` 생성 — 세션 1~6 전체 누락 없이 기록
+
+---
+
+### SESSION 8 — Brand Identity & Logo (2026-04-27)
+
+**Goal:** Finalise logo mark and establish Butler Suite visual identity.
+
+#### Brand Decisions
+| Item | Decision |
+|------|---------|
+| Logo concept | Pocket watch — staff lines on face, arrow hand, crown at top |
+| Hand position | 10:30 — upper-left 45°, arrow tip stops inside circle |
+| Staff lines | 5 lines ghost-faded, centre line passes through dot |
+| Centre dot | Sits exactly on middle staff line, hand originates from dot edge |
+| Tagline | "At your service, always on time." |
+| Piano Butler hand | 10:30 — prepared, time to spare (one lesson length remaining) |
+| Beat Butler hand | 12:00 — downbeat, this very moment, metronome straight up |
+| Butler Suite concept | Same mark, same crown, same circle — hand angle = product identity |
+| Exam board scope | Broadened beyond AMEB — tagline no longer exam-board specific |
+
+#### Files Created
+| File | Description |
+|------|-------------|
+| `piano-butler-logo.svg` | Final vector logo mark — watch, staff, arrow hand, wordmark |
+
+#### Session 8 — Design decisions made, not yet applied
+| Item | Status |
+|------|--------|
+| piano-butler-logo.svg | ✅ Final — watch mark, 10:30 hand, 5 staff lines, wordmark, tagline |
+| beat-butler-logo.svg | ⚠️ Needs fix — staff lines currently vertical (should be horizontal, same as Piano Butler) |
+| Centre dot colour | 🕐 Deferred — 3 options shown (black/black · black/red · black/gold). Decide next session |
+| Colour system | 🕐 Deferred — Ebony/Ivory mono vs Navy/Gold premium |
+| Typography system | 🕐 Deferred — serif wordmark + UI sans |
+| Apply design to pages | 🕐 Deferred — login → home → dashboard order |
+
+---
+
+### SESSION 9 — Beat Butler Polish (next session)
+
+**Goal:** Finish Beat Butler as the first fully "done" product in the Butler Suite.
+
+#### Start here
+1. **Fix beat-butler-logo.svg** — replace vertical beat lines with 5 horizontal staff lines (identical to piano-butler-logo.svg layout). Hand stays at 12:00, black.
+2. **Centre dot colour decision** — confirm from 3 options: (a) both black, (b) Piano=black/Beat=red, (c) Piano=black/Beat=gold. Apply to both SVGs.
+3. **Beat Butler branding** — update header wordmark in `Beat Butler/index.html` to match Butler Suite style (Georgia serif, letter-spacing, same tagline).
+4. **Beat Butler logo in header** — embed SVG mark inline in the Beat Butler app header.
+5. **Final check** — dark mode, mobile, BPM range, tap tempo, voice/record modes all working.
+
+#### Beat Butler current state (as of 2026-04-27)
+| Feature | Status |
+|---------|--------|
+| BPM slider + display | ✅ Done |
+| Tap tempo (keyboard + button) | ✅ Done |
+| Tempo name (Grave → Prestissimo) | ✅ Done |
+| Time signature selector | ✅ Done |
+| Subdivision selector | ✅ Done |
+| Voice counting (TTS) | ✅ Done |
+| Custom voice recording per beat | ✅ Done |
+| Click sound mix toggle | ✅ Done |
+| Dark / light mode toggle | ✅ Done |
+| Colour accent swatches | ✅ Done |
+| Mobile layout | ✅ Done |
+| Logo / branding | ⚠️ Not applied — beat-butler-logo.svg exists but not embedded |
+| Auth / login gate | ❌ Not yet — standalone app, no auth |
+| Stripe / paywall | ❌ Not yet |
+
+---
+
 ## Features Remaining (Not Yet Built)
 
 | # | Feature | Priority |
 |---|---------|---------|
-| 1 | Logo finalisation | 🔴 HIGH — design undecided |
-| 2 | Design system overhaul | 🔴 HIGH — full redesign pending |
-| 3 | IMSLP sheet music links per piece | 🟡 MED |
-| 4 | Stripe payment gate | 🟡 MED |
-| 5 | Progress Passport | 🟢 LOW |
-| 6 | Claude API assistant (natural language search) | 🟢 LOW — requires backend |
-| 7 | Mobile UX feedback | 🟡 MED — test on phone |
-| 8 | git config identity (committer name/email) | 🟢 LOW |
+| 1 | Beat Butler — logo fix + branding | 🔴 HIGH — do first (lightest lift, one product "done") |
+| 2 | Centre dot colour decision | 🔴 HIGH — confirm then apply to both SVGs |
+| 3 | Colour system | 🔴 HIGH — Ebony/Ivory mono or Navy/Gold premium |
+| 4 | Typography system | 🔴 HIGH — serif wordmark + UI sans, define scale |
+| 5 | Apply design to Piano Butler pages | 🟡 MED — login → home → dashboard order |
+| 6 | Index.html — Stripe payment gate | 🟡 MED |
+| 7 | Calendar extras | 🟡 MED — holiday blocks, monthly view, tuition, parent contacts |
+| 8 | IMSLP sheet music links per piece | 🟡 MED |
+| 9 | Teacher Dashboard — Polish pass | 🟡 MED — edge cases, UX improvements |
+| 10 | Progress Passport | 🟢 LOW |
+| 11 | Claude API assistant | 🟢 LOW — requires backend |
+| 12 | Mobile UX phone test | 🟡 MED |
 
 ---
 
