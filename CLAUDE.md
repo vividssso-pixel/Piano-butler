@@ -162,6 +162,25 @@ Each `piano-repertoire_gX.html` is a **self-contained single-file app** — no s
 
 ---
 
+### Phase 4 Updates (2026-04-30)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Piece count verification | All data_gX.js files | Bash count script confirmed 2,099 total pieces across 18 files — all match CLAUDE.md table exactly |
+| 2 | Student card: "Lessons this month" badge | teacher-dashboard.html | Shows `N× this month` badge next to last lesson date. Counts only non-absent logs for current calendar month. |
+| 3 | Sort: "Lessons this month" option | teacher-dashboard.html | New `monthcount` sort option added to student list dropdown — sorts by most lessons in current month first |
+| 4 | ScheduleView: Absent button fix | teacher-dashboard.html | + Log / Absent buttons now only appear on today's slots (weekOffset=0, day=todayDay). Other days show no buttons. Already-logged slots show ✓ Logged; absent slots show 😔 Absent badge. |
+| 5 | Paused students visible in calendar | teacher-dashboard.html | Removed `filter(s => !s.paused)` from ScheduleView and TodayView slot builders. Paused students shown dimmed (opacity 0.55, grayscale 40%) with ⏸ suffix on name. No Log/Absent buttons for paused slots. |
+| 6 | showPaused default → true | teacher-dashboard.html | `useState(false)` → `useState(true)` — paused students visible in student list by default |
+| 7 | Pause modal with date fields | teacher-dashboard.html | `PauseModal` component added — replaces `confirm()` dialog. Fields: Pause from (date, default today), Return date (date, optional), Undecided checkbox (disables return date, shows "TBD"). `pauseUntil` + `pauseUndecided` stored in `extra` JSON blob. Paused banner in StudentDetail shows return date or "Return date TBD". |
+| 8 | ScheduleView: slot display tiers | teacher-dashboard.html | Three display tiers: tiny (<30px, name only), compact (30–44px, name + time), full (44px+, name + time + buttons). Removed Grade label from all calendar slots. |
+| 9 | ScheduleView: day header shows total hours | teacher-dashboard.html | Each day column header now shows lesson count + total hours (e.g. `10 lessons / 9h 30m`). Zero-lesson days show count only. |
+| 10 | ScheduleView: week navigation | teacher-dashboard.html | ← Prev / Next → buttons added above calendar. `weekOffset` state (0=this week). Label shows "This week" / "Next week" / "Last week" / date range. Today dot highlight and Log/Absent buttons only active at weekOffset=0. `isFortnightWeek()` updated to accept `weekOffset` param for correct fortnightly display across weeks. |
+| 11 | Calendar background → white + coloured blocks | teacher-dashboard.html | Grid column backgrounds changed to white. Lesson blocks now filled with muted pastel per day colour (`blockBg`). `DAY_COLOR` extended with `blockBg` + `blockText` fields. + Log button uses `dc.border` background with white text. |
+| 12 | Pastel colours refined | teacher-dashboard.html | DAY_COLOR palette tuned twice — first to low-saturation muted pastels, then slightly deepened for better day distinction while remaining easy on the eyes. |
+
+---
+
 ### Phase 3 Updates (2026-04-29)
 
 | # | Change | File(s) | Detail |
@@ -298,7 +317,7 @@ Always cross-check the **2026 AMEB Piano Syllabus PDF** before adding or removin
 
 ---
 
-## Build Status — Last updated 2026-04-29
+## Build Status — Last updated 2026-04-30
 
 ### Completed Features (Index.html)
 | # | Feature | Status |
@@ -330,8 +349,10 @@ Always cross-check the **2026 AMEB Piano Syllabus PDF** before adding or removin
 | 15 | Progress Passport | ✅ Done (2026-04-29) — embedded in StudentDetail; period filter (Month/Quarter/All time) added same day |
 | 16 | Fortnightly scheduling | ✅ Done (2026-04-29) — isFortnightWeek() helper, stored in extra JSON blob |
 | 17 | General track — remove planMonths | ✅ Done (2026-04-29) — form shows only Goal textarea; "Plan ends:" and "Xmo left" badges removed from card + detail header |
-| 18 | Student pause/resume | ✅ Done (2026-04-29) — ⏸ Pause button in StudentDetail; paused stored in extra JSON blob; hidden from Today/Schedule views; "⏸ Paused" badge on card; showPaused toggle in student list |
-| 19 | payments.html — lesson fee management | 🔜 Planned (weekend) — separate page, same Supabase DB. Per-student fee, auto lesson count, paid/unpaid toggle, PDF invoice. Stripe optional later. |
+| 18 | Student pause/resume | ✅ Done (2026-04-29, enhanced 2026-04-30) — ⏸ Pause button opens PauseModal with pause-from date, optional return date, and "Undecided" toggle. Paused students shown dimmed in Today/Schedule views (not hidden). `showPaused` defaults to true. `pauseUntil` + `pauseUndecided` stored in extra JSON blob. |
+| 19 | payments.html — lesson fee management | 🔜 Planned — separate page, same Supabase DB. Per-student fee, auto lesson count, paid/unpaid toggle, PDF invoice. Stripe optional later. |
+| 20 | Schedule week navigation | ✅ Done (2026-04-30) — ← / → buttons to browse past and future weeks. Fortnightly logic offset-aware. |
+| 21 | Schedule calendar UX polish | ✅ Done (2026-04-30) — White grid background, coloured lesson blocks per day, grade label removed, slot display tiers (tiny/compact/full), day header shows total lesson hours. |
 
 ### Deployment Plan (updated 2026-04-29)
 - **Live:** https://exquisite-faloodeh-6d8e82.netlify.app
