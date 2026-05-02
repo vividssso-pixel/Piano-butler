@@ -16,6 +16,10 @@
   <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
     body { background:#f8fafc; font-family:'Pretendard',-apple-system,sans-serif; color:#334155; margin:0; }
+    body.dragging { user-select:none; cursor:grabbing !important; }
+    body.dragging * { cursor:grabbing !important; }
+    [data-slot]:hover .skip-btn { opacity:1 !important; }
+    .skip-btn:hover { background:#fef2f2 !important; color:#dc2626 !important; }
     input,select,textarea,button { font-family:inherit; }
     textarea { resize:none; }
     .card { background:white; border-radius:16px; border:1px solid #e2e8f0; }
@@ -144,7 +148,7 @@ const weeksUntil = (dateStr) => {
    PLAN GENERATION
 ═══════════════════════════════════════════════════════════════════════════ */
 function buildPlan(student) {
-  const endDate = student.track === "exam"
+  const endDate = isExamStudent(student)
     ? student.examDate
     : addMonths(student.startDate, student.planMonths || 3);
   if (!endDate || !student.startDate) return [];
@@ -180,7 +184,7 @@ function buildPlan(student) {
   // Step 2: Assign a phase to each month index by ratio (no rounding errors)
   const getPhase = (i) => {
     const ratio = i / total;
-    if (student.track === "exam") {
+    if (isExamStudent(student)) {
       if (i === total - 1)       return "exam";
       if (ratio >= 0.85)         return "polish";
       if (ratio >= 0.60)         return "consolidation";
@@ -197,8 +201,8 @@ function buildPlan(student) {
   // Step 3: Apply startingPhase — clamp early phases upward (never remove months)
   const EXAM_ORDER    = ["foundation","development","consolidation","polish","exam"];
   const GENERAL_ORDER = ["exploration","development","consolidation","performance"];
-  const order = student.track === "exam" ? EXAM_ORDER : GENERAL_ORDER;
-  const cutPhase = student.startingPhase || (student.track === "exam" ? "foundation" : "exploration");
+  const order = isExamStudent(student) ? EXAM_ORDER : GENERAL_ORDER;
+  const cutPhase = student.startingPhase || (isExamStudent(student) ? "foundation" : "exploration");
   const cutIdx   = Math.max(order.indexOf(cutPhase), 0);
 
   // Step 4: Build final month objects
@@ -275,8 +279,8 @@ function generateGuide(student, logs, currentMonthIdx, plan) {
 
   const recentLogs = studentLogs.slice(0, 3);
   const phase = plan[currentMonthIdx]?.phase;
-  const weeksLeft = student.track === "exam" ? weeksUntil(student.examDate) : null;
-  const monthsLeft = student.track === "exam"
+  const weeksLeft = isExamStudent(student) ? weeksUntil(student.examDate) : null;
+  const monthsLeft = isExamStudent(student)
     ? monthsUntil(student.examDate)
     : monthsUntil(addMonths(student.startDate, student.planMonths||3));
 
@@ -300,7 +304,7 @@ function generateGuide(student, logs, currentMonthIdx, plan) {
                { alerts.push("General Knowledge not recorded — important at this stage."); status="warning"; }
 
   // ── Check: exam-specific urgency ──
-  if (student.track === "exam") {
+  if (isExamStudent(student)) {
     if (weeksLeft !== null && weeksLeft <= 4) {
       status = "urgent";
       const hasMock = studentLogs.some(l => l.notes?.toLowerCase().includes("mock") || l.repertoire?.toLowerCase().includes("mock"));
@@ -348,40 +352,58 @@ function generateGuide(student, logs, currentMonthIdx, plan) {
    _supabase is provided by auth.js (loaded before this script)
 ═══════════════════════════════════════════════════════════════════════════ */
 
+// Helper: treat a student as exam-bound if they have an exam date set
+const isExamStudent = (s) => !!(s && s.examDate);
+
 // Map Supabase row → app student object
-const rowToStudent = (r) => ({
-  id: r.id,
-  name: r.name,
-  grade: r.grade || "Grade 5",
-  track: r.track || "exam",
-  examDate: r.exam_date || "",
-  startDate: r.created_at ? r.created_at.slice(0,10) : todayStr(),
-  planMonths: r.plan_months || 3,
-  lessonDuration: r.lesson_dur || 45,
-  lessonDay: r.lesson_day || "Monday",
-  lessonTime: r.lesson_time || "16:00",
-  startingPhase: r.start_phase || "foundation",
-  // extra fields stored as JSON blob in notes column
-  ...(r.extra ? JSON.parse(r.extra) : {}),
-});
+const rowToStudent = (r) => {
+  const extra = r.extra ? (() => { try { return JSON.parse(r.extra); } catch(e) { return {}; } })() : {};
+  return {
+    id: r.id,
+    name: r.name,
+    grade: extra.grade || r.grade || "",
+    track: r.track || "general",
+    examDate: r.exam_date || "",
+    // Prefer startDate saved in extra (user-editable), fall back to row creation timestamp
+    startDate: extra.startDate || (r.created_at ? r.created_at.slice(0,10) : todayStr()),
+    planMonths: r.plan_months || 3,
+    lessonDuration: r.lesson_dur || 45,
+    lessonDay: r.lesson_day || "Monday",
+    lessonTime: r.lesson_time || "16:00",
+    lessonDay2: r.lesson_day2 || "",
+    lessonTime2: r.lesson_time2 || "",
+    startingPhase: r.start_phase || "foundation",
+    // Spread remaining extra fields (startDate already handled above)
+    ...extra,
+  };
+};
 
 // Map app student object → Supabase row (for insert/update)
 const studentToRow = (f, userId) => {
   // Pull out the core columns, stash the rest in `extra`
   const { id, name, grade, track, examDate, startDate, planMonths,
-          lessonDuration, lessonDay, lessonTime, startingPhase, ...rest } = f;
+          lessonDuration, lessonDay, lessonTime, lessonDay2, lessonTime2,
+          startingPhase, ...rest } = f;
+  // Always persist startDate + grade (free text) in the extra blob
+  const extraObj = { ...rest };
+  if (startDate) extraObj.startDate = startDate;
+  if (grade) extraObj.grade = grade;
+  // derive track from examDate presence
+  const derivedTrack = examDate ? "exam" : "general";
   return {
     ...(userId ? { user_id: userId } : {}),
     name: (name || "").trim(),
-    grade: grade || "Grade 5",
-    track: track || "exam",
+    grade: grade || "",
+    track: derivedTrack,
     exam_date: examDate || null,
     plan_months: planMonths || 3,
     lesson_dur: lessonDuration || 45,
     lesson_day: lessonDay || "Monday",
     lesson_time: lessonTime || "16:00",
+    lesson_day2: lessonDay2 || null,
+    lesson_time2: lessonTime2 || null,
     start_phase: startingPhase || "foundation",
-    extra: Object.keys(rest).length ? JSON.stringify(rest) : null,
+    extra: Object.keys(extraObj).length ? JSON.stringify(extraObj) : null,
   };
 };
 
@@ -555,41 +577,33 @@ function AbsenceModal({ student, onSave, onClose }) {
    STUDENT MODAL
 ═══════════════════════════════════════════════════════════════════════════ */
 function StudentModal({ initial, onSave, onClose }) {
-  const LEVELS = ["Beginner","Elementary","Intermediate","Advanced"];
-  const EXAM_PHASES = [
+  const PREP_PHASES = [
     { key:"foundation",    label:"Foundation",    sub:"Just starting — reading new pieces" },
     { key:"development",   label:"Development",   sub:"Pieces learned, building technique" },
     { key:"consolidation", label:"Consolidation", sub:"All pieces solid, polishing" },
     { key:"polish",        label:"Polish",        sub:"Mock exam ready" },
   ];
-  const GENERAL_PHASES = [
-    { key:"exploration",   label:"Exploration",   sub:"Choosing & learning new repertoire" },
-    { key:"development",   label:"Development",   sub:"Developing pieces technically" },
-    { key:"consolidation", label:"Consolidation", sub:"Pieces nearly performance-ready" },
-  ];
-
-  const DAYS = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
   const blank = {
-    name:"", grade:"Grade 5", level:"Elementary", track:"exam",
-    examDate:"", planMonths:3, customMonths:false, goalMonthsInput:3, termGoal:"",
+    name:"", grade:"", level:"",
+    examType:"", examDate:"",
+    planMonths:3, termGoal:"",
     startDate: todayStr(),
     lessonDuration: 45, customDuration: false, lessonsPerWeek: 1,
+    lessonDuration2: 45, customDuration2: false,
     startingPhase: "foundation",
     lessonDay: "Monday", lessonDay2: "",
     lessonTime: "16:00", lessonTime2: "",
-    listA:"", listB:"", listC:"",
   };
-  // Merge initial into blank so new fields always have defaults
-  // Also sync goalMonthsInput with planMonths so custom input shows correct value
   const [f, setF] = useState(() => {
     if (!initial) return blank;
-    const merged = { ...blank, ...initial };
-    merged.goalMonthsInput = merged.planMonths;
-    return merged;
+    return { ...blank, ...initial };
   });
+  const [examOpen, setExamOpen] = useState(() => !!(initial?.examDate || initial?.examType));
   const set = (k,v) => setF(p => ({...p,[k]:v}));
-  const valid = f.name.trim().length > 0 && (f.track==="exam" ? !!f.examDate : true);
+  const valid = f.name.trim().length > 0;
+  const hasExam = !!(f.examDate || f.examType);
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 overflow-y-auto" onClick={onClose}>
@@ -605,56 +619,83 @@ function StudentModal({ initial, onSave, onClose }) {
             <input autoFocus className="input" value={f.name} onChange={e=>set("name",e.target.value)} placeholder="e.g. Clara Park"/>
           </div>
 
-          {/* Track */}
+          {/* Grade / Level — free text */}
           <div>
-            <label className="field-label text-slate-500">Track</label>
-            <div className="flex gap-2">
-              {[["exam","Exam prep","#4f46e5"],["general","General lessons","#0d9488"]].map(([val,label,col])=>(
-                <button key={val} onClick={()=>set("track",val)}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold border transition-all"
-                  style={f.track===val?{background:col,color:"white",borderColor:col}:{background:"white",color:"#64748b",borderColor:"#e2e8f0"}}>
-                  {label}
-                </button>
-              ))}
-            </div>
+            <label className="field-label text-slate-500">Grade / Level <span className="font-normal text-slate-400 normal-case">(optional)</span></label>
+            <input className="input" value={f.grade || f.level || ""} onChange={e=>{set("grade",e.target.value);set("level",e.target.value);}}
+              placeholder="e.g. Grade 4, Beginner, Diploma…"/>
           </div>
 
-          {/* Grade / Level — conditional on track */}
-          {f.track==="exam" ? (
-            <div>
-              <label className="field-label text-slate-500">AMEB Grade</label>
-              <select className="input" value={f.grade} onChange={e=>set("grade",e.target.value)}>
-                {GRADES.map(g=><option key={g}>{g}</option>)}
-              </select>
-            </div>
-          ) : (
-            <div>
-              <label className="field-label text-slate-500">Level</label>
-              <div className="grid grid-cols-2 gap-2">
-                {LEVELS.map(lv=>(
-                  <button key={lv} onClick={()=>set("level",lv)}
-                    className="py-2.5 rounded-xl text-sm font-semibold border transition-all"
-                    style={f.level===lv?{background:"#0d9488",color:"white",borderColor:"#0d9488"}:{background:"white",color:"#64748b",borderColor:"#e2e8f0"}}>
-                    {lv}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          {/* Goal */}
+          <div>
+            <label className="field-label text-slate-500">Goal <span className="font-normal text-slate-400 normal-case">(optional)</span></label>
+            <textarea className="input" rows={2} value={f.termGoal} onChange={e=>set("termGoal",e.target.value)}
+              placeholder="e.g. Complete Sonatina Op.36 No.1, enjoy playing confidently"/>
+          </div>
 
-          {/* Track-specific */}
-          {f.track==="exam" ? (
-            <div>
-              <label className="field-label text-slate-500">Exam date</label>
-              <input type="date" className="input" value={f.examDate} onChange={e=>set("examDate",e.target.value)}/>
-            </div>
-          ) : (
-            <div>
-              <label className="field-label text-slate-500">Goal <span className="font-normal text-slate-400 normal-case">(what should this student achieve?)</span></label>
-              <textarea className="input" rows={2} value={f.termGoal} onChange={e=>set("termGoal",e.target.value)}
-                placeholder="e.g. Complete Sonatina Op.36 No.1, scales 2 oct HT fluently, enjoy playing"/>
-            </div>
-          )}
+          {/* ── Exam section (collapsible) ── */}
+          <div className="rounded-xl border transition-all overflow-hidden"
+            style={{borderColor: examOpen ? "#c7d2fe" : "#e2e8f0", background: examOpen ? "#f8f7ff" : "white"}}>
+            <button className="w-full flex items-center justify-between px-4 py-3 text-left"
+              onClick={()=>setExamOpen(v=>!v)}>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold text-slate-700">🎓 Exam preparation</span>
+                {hasExam && !examOpen && (
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                    style={{background:"#eef2ff",color:"#4f46e5"}}>
+                    {f.examType || "exam"}{f.examDate ? " · " + f.examDate : ""}
+                  </span>
+                )}
+              </div>
+              <span className="text-slate-400 text-sm">{examOpen ? "▲" : "▼"}</span>
+            </button>
+            {examOpen && (
+              <div className="px-4 pb-4 space-y-4 border-t border-indigo-100 pt-4">
+                {/* Exam type — free text */}
+                <div>
+                  <label className="field-label text-slate-500">Exam type</label>
+                  <input className="input" value={f.examType||""} onChange={e=>set("examType",e.target.value)}
+                    placeholder="e.g. AMEB, RCM, Trinity, ABRSM…"/>
+                </div>
+                {/* Exam date */}
+                <div>
+                  <label className="field-label text-slate-500">Exam date <span className="font-normal text-slate-400 normal-case">(optional)</span></label>
+                  <input type="date" className="input" value={f.examDate||""} onChange={e=>set("examDate",e.target.value)}/>
+                  {f.examDate && (
+                    <p className="text-xs text-indigo-600 mt-1">
+                      {(()=>{const w=weeksUntil(f.examDate);return w!==null?`${w} weeks to go`:"";})()}
+                    </p>
+                  )}
+                </div>
+                {/* Current prep stage */}
+                <div>
+                  <label className="field-label text-slate-500">
+                    Current preparation stage
+                    <span className="font-normal normal-case text-slate-400 ml-1">— where is this student right now?</span>
+                  </label>
+                  <div className="space-y-2">
+                    {PREP_PHASES.map(({key,label,sub})=>{
+                      const active = (f.startingPhase||"foundation") === key;
+                      return (
+                        <button key={key} onClick={()=>set("startingPhase",key)}
+                          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all"
+                          style={active
+                            ? {background:"#4f46e5",borderColor:"#4f46e5",color:"white"}
+                            : {background:"white",borderColor:"#e2e8f0",color:"#64748b"}}>
+                          <div className="w-2.5 h-2.5 rounded-full shrink-0"
+                            style={{background: active ? "white" : "#cbd5e1"}}/>
+                          <div>
+                            <p className="text-sm font-semibold leading-tight">{label}</p>
+                            <p className="text-xs mt-0.5 opacity-75">{sub}</p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Lesson duration */}
           <div>
@@ -705,23 +746,47 @@ function StudentModal({ initial, onSave, onClose }) {
                 📅 Fortnightly — lesson weeks calculated from the start date below.
               </p>
             )}
-
-            {/* Lesson 1 day + time */}
             <div className="flex gap-2 items-center mb-2">
               <select className="input text-sm" style={{flex:2}} value={f.lessonDay} onChange={e=>set("lessonDay",e.target.value)}>
                 {DAYS.map(d=><option key={d}>{d}</option>)}
               </select>
               <input type="time" className="input text-sm" style={{flex:1}} value={f.lessonTime} onChange={e=>set("lessonTime",e.target.value)}/>
             </div>
-
-            {/* Lesson 2 day + time — only if 2× per week */}
             {f.lessonsPerWeek === 2 && (
-              <div className="flex gap-2 items-center">
-                <select className="input text-sm" style={{flex:2}} value={f.lessonDay2} onChange={e=>set("lessonDay2",e.target.value)}>
-                  <option value="">— 2nd day —</option>
-                  {DAYS.map(d=><option key={d}>{d}</option>)}
-                </select>
-                <input type="time" className="input text-sm" style={{flex:1}} value={f.lessonTime2} onChange={e=>set("lessonTime2",e.target.value)}/>
+              <div className="space-y-2">
+                <div className="flex gap-2 items-center">
+                  <select className="input text-sm" style={{flex:2}} value={f.lessonDay2||""} onChange={e=>set("lessonDay2",e.target.value)}>
+                    <option value="">— 2nd day —</option>
+                    {DAYS.map(d=><option key={d}>{d}</option>)}
+                  </select>
+                  <input type="time" className="input text-sm" style={{flex:1}} value={f.lessonTime2||""} onChange={e=>set("lessonTime2",e.target.value)}/>
+                </div>
+                {/* Duration for 2nd lesson — shown only if different from lesson 1 */}
+                <div className="pl-1">
+                  <p className="text-xs text-slate-400 mb-1.5">2nd lesson duration</p>
+                  <div className="flex gap-2">
+                    {[30,45,60].map(d=>{
+                      const active = (f.lessonDuration2||45)===d && !f.customDuration2;
+                      return (
+                        <button key={d} onClick={()=>{set("lessonDuration2",d);set("customDuration2",false);}}
+                          className="px-3 py-1.5 rounded-lg border text-xs font-bold transition-all"
+                          style={active?{background:"#4f46e5",color:"white",borderColor:"#4f46e5"}:{background:"white",color:"#64748b",borderColor:"#e2e8f0"}}>
+                          {d}m
+                        </button>
+                      );
+                    })}
+                    <button onClick={()=>set("customDuration2",true)}
+                      className="px-3 py-1.5 rounded-lg border text-xs font-bold transition-all"
+                      style={f.customDuration2?{background:"#4f46e5",color:"white",borderColor:"#4f46e5"}:{background:"white",color:"#64748b",borderColor:"#e2e8f0"}}>
+                      Custom
+                    </button>
+                    {f.customDuration2 && (
+                      <input type="number" min="10" max="180" className="input text-xs" style={{width:"64px"}}
+                        value={f.lessonDuration2||45}
+                        onChange={e=>set("lessonDuration2", Math.max(10,Math.min(180,parseInt(e.target.value)||45)))}/>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -729,38 +794,8 @@ function StudentModal({ initial, onSave, onClose }) {
           {/* Start date */}
           <div>
             <label className="field-label text-slate-500">Lessons started with me</label>
-            <input type="date" className="input" value={f.startDate} onChange={e=>set("startDate",e.target.value)}/>
+            <input type="date" className="input" value={f.startDate||""} onChange={e=>set("startDate",e.target.value)}/>
           </div>
-
-          {/* Starting phase — exam track only */}
-          {f.track === "exam" && (
-            <div>
-              <label className="field-label text-slate-500">
-                Current preparation stage
-                <span className="font-normal normal-case text-slate-400 ml-1">— where is this student right now?</span>
-              </label>
-              <div className="space-y-2">
-                {EXAM_PHASES.map(({key,label,sub})=>{
-                  const active = (f.startingPhase||"foundation") === key;
-                  return (
-                    <button key={key} onClick={()=>set("startingPhase",key)}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all"
-                      style={active
-                        ? {background:"#4f46e5",borderColor:"#4f46e5",color:"white"}
-                        : {background:"white",borderColor:"#e2e8f0",color:"#64748b"}}>
-                      <div className="w-2.5 h-2.5 rounded-full shrink-0"
-                        style={{background: active ? "white" : "#cbd5e1"}}/>
-                      <div>
-                        <p className="text-sm font-semibold leading-tight">{label}</p>
-                        <p className="text-xs mt-0.5 opacity-75">{sub}</p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
 
         </div>
         <div className="p-6 flex gap-3 border-t border-slate-100">
@@ -1016,7 +1051,7 @@ function StudentCard({ student, logs, onLog, onEdit, onDelete, onSelect }) {
     const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
     return studentLogs.filter(l => l.date && l.date.startsWith(ym) && l.type !== "absent").length;
   })();
-  const studentNorm = { startingPhase: student.track==="exam" ? "foundation" : "exploration", ...student };
+  const studentNorm = { startingPhase: isExamStudent(student) ? "foundation" : "exploration", ...student };
   const plan = buildPlan(studentNorm);
   const curMonthStr = currentMonthStr();
   const currentMonthIdx = plan.findIndex(m => m.monthStr === curMonthStr);
@@ -1024,8 +1059,8 @@ function StudentCard({ student, logs, onLog, onEdit, onDelete, onSelect }) {
   const phase = currentPlanMonth?.phase;
   const pm = PHASE_META[phase] || PHASE_META.foundation;
 
-  const weeksLeft = student.track==="exam" ? weeksUntil(student.examDate) : null;
-  const monthsLeft = student.track==="exam"
+  const weeksLeft = isExamStudent(student) ? weeksUntil(student.examDate) : null;
+  const monthsLeft = isExamStudent(student)
     ? monthsUntil(student.examDate)
     : monthsUntil(addMonths(student.startDate, student.planMonths||3));
 
@@ -1035,7 +1070,7 @@ function StudentCard({ student, logs, onLog, onEdit, onDelete, onSelect }) {
 
   // D-day helpers
   const nextLessonDays = daysUntilNext(student.lessonDay);
-  const examDays = student.track==="exam" ? daysUntilExam(student.examDate) : null;
+  const examDays = isExamStudent(student) ? daysUntilExam(student.examDate) : null;
   const nextLessonLabel = nextLessonDays === 0 ? "Today!" : nextLessonDays === 1 ? "Tomorrow" : nextLessonDays !== null ? `in ${nextLessonDays}d` : null;
   const isToday = nextLessonDays === 0;
 
@@ -1062,7 +1097,7 @@ function StudentCard({ student, logs, onLog, onEdit, onDelete, onSelect }) {
                   <span style={{fontSize:"10px",fontWeight:700,padding:"1px 7px",borderRadius:"99px",background:"#fffbeb",color:"#d97706",border:"1px solid #fde68a"}}>⏸ Paused</span>
                 )}
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">{student.track==="exam" ? student.grade : (student.level||"General")} · {student.lessonDuration}m</p>
+              <p className="text-xs text-slate-400 mt-0.5">{student.grade || student.level || "General"} · {student.lessonDuration}m</p>
               <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                 {nextLessonLabel && (
                   <span style={{fontSize:"10px",fontWeight:700,padding:"1px 7px",borderRadius:"99px",
@@ -1083,7 +1118,7 @@ function StudentCard({ student, logs, onLog, onEdit, onDelete, onSelect }) {
             </div>
           </div>
           <div className="text-right shrink-0">
-            {student.track==="exam" && weeksLeft !== null ? (
+            {isExamStudent(student) && weeksLeft !== null ? (
               <>
                 <p className="text-lg font-black" style={{color:urgentColor}}>{weeksLeft}w</p>
                 <p className="text-xs text-slate-400">to exam</p>
@@ -1252,7 +1287,7 @@ function GeneralPlanPanel({ student, logs }) {
 function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAttended, onBack, onEdit, onPause, onResume }) {
   const gc = GRADE_COLOR[student.grade] || GRADE_COLOR["Grade 5"];
   // Back-fill startingPhase for older student records
-  const studentNorm = { startingPhase: student.track==="exam" ? "foundation" : "exploration", ...student };
+  const studentNorm = { startingPhase: isExamStudent(student) ? "foundation" : "exploration", ...student };
   const [passportPeriod, setPassportPeriod] = useState("all"); // "month" | "quarter" | "all"
   const plan = buildPlan(studentNorm);
   const curMonthStr = currentMonthStr();
@@ -1265,8 +1300,8 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
   const studentLogs = logs.filter(l=>l.studentId===student.id).sort((a,b)=>b.date.localeCompare(a.date));
   const guide = generateGuide(student, logs, Math.max(currentMonthIdx,0), plan);
 
-  const weeksLeft  = student.track==="exam" ? weeksUntil(student.examDate) : null;
-  const monthsLeft = student.track==="exam"
+  const weeksLeft  = isExamStudent(student) ? weeksUntil(student.examDate) : null;
+  const monthsLeft = isExamStudent(student)
     ? monthsUntil(student.examDate)
     : monthsUntil(addMonths(student.startDate, student.planMonths||3));
 
@@ -1292,8 +1327,8 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
             <p style={{fontSize:"9pt",color:"#94a3b8",letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"4px"}}>Piano Butler — Teacher Plan</p>
             <h1 style={{fontSize:"18pt",fontWeight:"800",color:"#1e293b",margin:0}}>{student.name}</h1>
             <p style={{fontSize:"10pt",color:"#64748b",marginTop:"4px"}}>
-              {student.grade} · {student.lessonDuration}min lessons · {student.track==="exam"?"Exam track":"General track"}
-              {student.track==="exam" && student.examDate ? ` · Exam: ${fmtDate(student.examDate)}` : ""}
+              {student.grade || student.level || "General"} · {student.lessonDuration}min lessons
+              {student.examDate ? ` · Exam: ${fmtDate(student.examDate)}` : ""}
             </p>
           </div>
           <p style={{fontSize:"9pt",color:"#94a3b8"}}>Generated {printDate}</p>
@@ -1313,8 +1348,8 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
               style={{background:gc.bg,color:gc.text}}>{initials}</div>
             <div>
               <h2 className="text-lg font-bold text-slate-800">{student.name}</h2>
-              <p className="text-sm text-slate-400">{student.track==="exam" ? student.grade : (student.level||"General")} · {student.lessonDuration}min · {student.lessonsPerWeek==="fortnightly" ? "Fortnightly" : `${student.lessonsPerWeek}× per week`}</p>
-              {student.track==="general" && student.termGoal && (
+              <p className="text-sm text-slate-400">{student.grade || student.level || "General"} · {student.lessonDuration}min · {student.lessonsPerWeek==="fortnightly" ? "Fortnightly" : `${student.lessonsPerWeek}× per week`}</p>
+              {student.termGoal && (
                 <p className="text-xs text-teal-600 mt-1 bg-teal-50 px-2 py-1 rounded-lg inline-block">
                   Goal: {student.termGoal}
                 </p>
@@ -1327,7 +1362,7 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
             </div>
           </div>
           <div className="flex gap-3 flex-wrap">
-            {student.track==="exam" && weeksLeft !== null && (
+            {isExamStudent(student) && weeksLeft !== null && (
               <div className="text-center px-4 py-2 rounded-xl" style={{background: weeksLeft<=4?"#fef2f2": weeksLeft<=8?"#fffbeb":"#f0fdf4"}}>
                 <p className="text-2xl font-black" style={{color:weeksLeft<=4?"#dc2626":weeksLeft<=8?"#d97706":"#16a34a"}}>{weeksLeft}w</p>
                 <p className="text-xs text-slate-400">to exam</p>
@@ -1379,8 +1414,8 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
         )}
       </div>
 
-      {/* This month plan — exam track only */}
-      {student.track === "exam" && currentPlanMonth && (
+      {/* This month plan — exam students only */}
+      {isExamStudent(student) && currentPlanMonth && (
         <div className="card p-5 mb-5" style={{borderLeft:`4px solid ${pm.color}`}}>
           <div className="flex items-center gap-2 mb-3">
             <span className="text-xs font-bold uppercase tracking-wide" style={{color:pm.text}}>This month — {currentPlanMonth.label}</span>
@@ -1590,7 +1625,7 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
                 </div>
 
                 {/* Repertoire list mentions (exam track) */}
-                {student.track === "exam" && (listAMentions + listBMentions + listCMentions > 0) && (
+                {isExamStudent(student) && (listAMentions + listBMentions + listCMentions > 0) && (
                   <div className="mb-5">
                     <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-3">Repertoire list mentions in logs</p>
                     <div className="flex gap-3 flex-wrap">
@@ -1726,8 +1761,8 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
         </div>
       )}
 
-      {/* Full plan timeline — exam track only */}
-      {student.track === "exam" && plan.length > 0 && (
+      {/* Full plan timeline — exam students only */}
+      {isExamStudent(student) && plan.length > 0 && (
         <div className="mt-8" style={{breakBefore:"auto"}}>
           <h3 className="text-sm font-bold text-slate-700 mb-4">Full plan — {plan.length} months</h3>
           <div className="space-y-1.5">
@@ -1755,8 +1790,8 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
         </div>
       )}
 
-      {/* General track — Focus Board + Milestone Tracker */}
-      {student.track === "general" && (
+      {/* General plan panel — shown when no exam date set */}
+      {!isExamStudent(student) && (
         <GeneralPlanPanel student={student} logs={studentLogs} alloc={alloc} />
       )}
     </div>
@@ -1776,7 +1811,7 @@ function TodayView({ students, logs, onLog, onAbsence, onSelect, onDeleteLog, on
     const isFort = s.lessonsPerWeek === "fortnightly";
     const fortOk = !isFort || isFortnightWeek(s.startDate);
     if (s.lessonDay === todayName && fortOk) slots.push({ student:s, time: s.lessonTime||"09:00", dur: s.lessonDuration||45 });
-    if (s.lessonsPerWeek===2 && s.lessonDay2===todayName) slots.push({ student:s, time: s.lessonTime2||"09:00", dur: s.lessonDuration||45 });
+    if (s.lessonsPerWeek===2 && s.lessonDay2===todayName) slots.push({ student:s, time: s.lessonTime2||"09:00", dur: s.lessonDuration2||s.lessonDuration||45 });
   });
   slots.sort((a,b) => a.time.localeCompare(b.time));
 
@@ -1804,12 +1839,12 @@ function TodayView({ students, logs, onLog, onAbsence, onSelect, onDeleteLog, on
             const s = slot.student;
             const gc = GRADE_COLOR[s.grade] || GRADE_COLOR["Grade 5"];
             const initials = s.name.split(" ").map(n=>n[0]).join("").slice(0,2).toUpperCase();
-            const studentNorm = { startingPhase: s.track==="exam"?"foundation":"exploration", ...s };
+            const studentNorm = { startingPhase: isExamStudent(s)?"foundation":"exploration", ...s };
             const plan = buildPlan(studentNorm);
             const curM = plan.findIndex(m => m.monthStr === currentMonthStr());
             const phase = (curM>=0 ? plan[curM] : plan[plan.length-1])?.phase;
             const pm = PHASE_META[phase] || PHASE_META.foundation;
-            const examDays = s.track==="exam" ? daysUntilExam(s.examDate) : null;
+            const examDays = isExamStudent(s) ? daysUntilExam(s.examDate) : null;
 
             // Find today's log for this student
             const todayLog = todayLogs.find(l => l.studentId === s.id);
@@ -1940,8 +1975,648 @@ const fmtTime = (t) => {
   return `${hr12}:${m} ${ampm}`;
 };
 
-function ScheduleView({ students, logs, onLog, onAbsence, onSelect, onAdd }) {
-  const [weekOffset, setWeekOffset] = React.useState(0); // 0 = this week, 1 = next, -1 = last
+// ── Reschedule choice modal ───────────────────────────────────────────────
+function RescheduleModal({ pendingDrop, onWeekOnly, onPermanent, onCancel }) {
+  // Legacy — no longer used as a modal; kept for compat but renders nothing
+  return null;
+}
+
+// ── Create Slot Popover — 빈 칸 클릭 시 학생 선택 + 시간 확인 ──────────────
+function CreateSlotPopover({ popover, students, onSave, onSaveNew, onCancel }) {
+  const [mode,       setMode]       = React.useState("existing"); // "existing" | "new"
+  const [selectedId, setSelectedId] = React.useState("");
+  const [newName,    setNewName]    = React.useState("");
+  const [newGrade,   setNewGrade]   = React.useState("Grade 3");
+  const [editTime,   setEditTime]   = React.useState(popover?.time || "09:00");
+  const [dur,        setDur]        = React.useState(45);
+  const popRef = React.useRef(null);
+  const [pos, setPos] = React.useState({ left: 0, top: 0 });
+
+  React.useEffect(() => {
+    if (popover) { setEditTime(popover.time); setSelectedId(""); setNewName(""); setMode("existing"); setDur(45); }
+  }, [popover?.day, popover?.time]);
+
+  React.useEffect(() => {
+    if (!popRef.current || !popover) return;
+    const pop = popRef.current.getBoundingClientRect();
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let left = popover.anchorX + 10;
+    if (left + pop.width > vw - 8) left = popover.anchorX - pop.width - 10;
+    let top = popover.anchorY - 20;
+    top = Math.min(top, vh - pop.height - 8);
+    top = Math.max(8, top);
+    setPos({ left, top });
+  }, [popover, mode, selectedId, newName, editTime]);
+
+  if (!popover) return null;
+
+  const timeToMins = (t) => { const [h,m] = (t||"09:00").split(":").map(Number); return h*60+(m||0); };
+  const minsToTime = (m) => {
+    const c = Math.max(0, Math.min(23*60+59, m));
+    return String(Math.floor(c/60)).padStart(2,"0")+":"+String(c%60).padStart(2,"0");
+  };
+  const adjust = (d) => setEditTime(t => minsToTime(timeToMins(t) + d));
+  const endTime = minsToTime(timeToMins(editTime) + dur);
+  const available = students.filter(s => !s.paused);
+  const canSave = mode === "existing" ? !!selectedId : newName.trim().length > 0;
+
+  const handleSave = (weekOnly) => {
+    if (!canSave) return;
+    if (mode === "existing") {
+      onSave({ studentId: selectedId, day: popover.day, time: editTime, dur, weekOnly: !!weekOnly });
+    } else {
+      onSaveNew({ name: newName.trim(), grade: newGrade, day: popover.day, time: editTime, dur, weekOnly: !!weekOnly });
+    }
+  };
+
+  const tabStyle = (active) => ({
+    flex:1, padding:"7px 0", borderRadius:8, border:"none",
+    background: active ? "#6366f1" : "#f1f5f9",
+    color: active ? "#fff" : "#64748b",
+    fontWeight: active ? 700 : 500, fontSize:12, cursor:"pointer",
+    transition:"all 0.12s",
+  });
+
+  return (
+    <>
+      <div style={{position:"fixed",inset:0,zIndex:999}} onClick={onCancel}/>
+      <div ref={popRef} style={{
+        position:"fixed", left:pos.left, top:pos.top, zIndex:1000,
+        background:"#fff", borderRadius:16, padding:"18px 18px 16px",
+        width:310, boxShadow:"0 8px 32px rgba(0,0,0,0.18)",
+        border:"1px solid #e2e8f0", display:"flex", flexDirection:"column", gap:14,
+      }} onClick={e=>e.stopPropagation()}>
+
+        {/* Title */}
+        <div style={{display:"flex", alignItems:"center", justifyContent:"space-between"}}>
+          <div>
+            <p style={{fontSize:15, fontWeight:800, color:"#0f172a", margin:0}}>Add lesson</p>
+            <p style={{fontSize:12, color:"#64748b", margin:"3px 0 0"}}>{popover.day} · {fmtTime(editTime)}</p>
+          </div>
+          <button onClick={onCancel} style={{
+            background:"#f1f5f9", border:"none", borderRadius:"50%",
+            width:28, height:28, cursor:"pointer", fontSize:13, color:"#64748b",
+            display:"flex", alignItems:"center", justifyContent:"center",
+          }}>✕</button>
+        </div>
+
+        {/* Mode tabs */}
+        <div style={{display:"flex", gap:6}}>
+          <button style={tabStyle(mode==="existing")} onClick={()=>setMode("existing")}>Existing student</button>
+          <button style={tabStyle(mode==="new")}      onClick={()=>setMode("new")}>+ New student</button>
+        </div>
+
+        {/* Student picker / new student form */}
+        {mode === "existing" ? (
+          <div>
+            <select value={selectedId} onChange={e=>setSelectedId(e.target.value)}
+              style={{width:"100%", border:"1px solid #e2e8f0", borderRadius:10, padding:"9px 12px",
+                fontSize:13, outline:"none", background:"white", color: selectedId ? "#1e293b" : "#94a3b8"}}>
+              <option value="">Select student…</option>
+              {available.map(s => <option key={s.id} value={s.id}>{s.name} · {s.grade}</option>)}
+            </select>
+          </div>
+        ) : (
+          <div style={{display:"flex", flexDirection:"column", gap:8}}>
+            <input
+              autoFocus
+              type="text" placeholder="Student name"
+              value={newName} onChange={e=>setNewName(e.target.value)}
+              onKeyDown={e=>{ if(e.key==="Enter" && canSave) handleSave(); }}
+              style={{width:"100%", border:"1px solid #e2e8f0", borderRadius:10, padding:"9px 12px",
+                fontSize:13, outline:"none", background:"white", boxSizing:"border-box"}}
+            />
+            <select value={newGrade} onChange={e=>setNewGrade(e.target.value)}
+              style={{width:"100%", border:"1px solid #e2e8f0", borderRadius:10, padding:"9px 12px",
+                fontSize:13, outline:"none", background:"white"}}>
+              {["Preliminary","Grade 1","Grade 2","Grade 3","Grade 4","Grade 5","Grade 6","Grade 7","Grade 8"].map(g =>
+                <option key={g} value={g}>{g}</option>
+              )}
+            </select>
+          </div>
+        )}
+
+        {/* Time */}
+        <div>
+          <p style={{fontSize:11, fontWeight:700, color:"#94a3b8", textTransform:"uppercase", letterSpacing:"0.06em", margin:"0 0 8px"}}>Time</p>
+          <input type="time" value={editTime} onChange={e=>setEditTime(e.target.value)}
+            style={{width:"100%", textAlign:"center", fontSize:22, fontWeight:800, color:"#4338ca",
+              border:"2px solid #e0e7ff", borderRadius:12, padding:"10px 8px",
+              background:"#f5f3ff", outline:"none", fontFamily:"inherit", boxSizing:"border-box"}}/>
+          <p style={{fontSize:11, color:"#94a3b8", textAlign:"center", margin:"6px 0 0"}}>{fmtTime(editTime)} – {fmtTime(endTime)}</p>
+        </div>
+
+        {/* Duration */}
+        <div style={{display:"flex", gap:6}}>
+          {[30,45,60].map(d => (
+            <button key={d} onClick={()=>setDur(d)} style={{
+              flex:1, padding:"8px 0", borderRadius:9, border:"none",
+              background: dur===d ? "#6366f1" : "#f1f5f9",
+              color: dur===d ? "#fff" : "#64748b",
+              fontWeight: dur===d ? 800 : 500, fontSize:12, cursor:"pointer",
+            }}>{d}m</button>
+          ))}
+        </div>
+
+        {/* Two save modes */}
+        <div style={{display:"flex", flexDirection:"column", gap:6}}>
+          <button disabled={!canSave} onClick={()=>handleSave(false)} style={{
+            padding:"11px", borderRadius:11, border:"none",
+            background: canSave ? "#6366f1" : "#e2e8f0",
+            color: canSave ? "#fff" : "#94a3b8",
+            fontWeight:700, fontSize:13, cursor: canSave ? "pointer" : "not-allowed",
+            textAlign:"left", paddingLeft:14,
+          }}>
+            📅 {mode === "new" ? "Register student + recurring lesson" : "Save as recurring lesson"}
+            <span style={{display:"block", fontSize:11, fontWeight:400, opacity:0.75, marginTop:1}}>
+              Fixed to this day &amp; time every week
+            </span>
+          </button>
+          {mode === "existing" && (
+            <button disabled={!canSave} onClick={()=>handleSave(true)} style={{
+              padding:"11px", borderRadius:11, border:"1.5px solid #e2e8f0",
+              background: canSave ? "#f8fafc" : "#f1f5f9",
+              color: canSave ? "#334155" : "#94a3b8",
+              fontWeight:700, fontSize:13, cursor: canSave ? "pointer" : "not-allowed",
+              textAlign:"left", paddingLeft:14,
+            }}>
+              🗓 This week only
+              <span style={{display:"block", fontSize:11, fontWeight:400, color:"#94a3b8", marginTop:1}}>
+                Won't appear from next week
+              </span>
+            </button>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── RevertConfirmPopover: overridden slot ✕ click — revert options ───────────
+function RevertConfirmPopover({ popover, onRevertWeek, onRevertFromWeek, onRevertAll, onCancel }) {
+  const popRef = React.useRef(null);
+  const [pos, setPos] = React.useState({ left: 0, top: 0 });
+
+  React.useEffect(() => {
+    if (!popRef.current || !popover) return;
+    const pop = popRef.current.getBoundingClientRect();
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let left = (popover.anchorX || 0) + 10;
+    if (left + pop.width > vw - 8) left = (popover.anchorX || 0) - pop.width - 10;
+    let top = (popover.anchorY || 0) - 20;
+    top = Math.min(top, vh - pop.height - 8);
+    top = Math.max(8, top);
+    setPos({ left, top });
+  }, [popover]);
+
+  if (!popover) return null;
+
+  const { studentName, originalDay, originalTime } = popover;
+
+  const optBtn = (onClick, border, bg, color, emoji, title, sub) => (
+    <button onClick={onClick} style={{
+      width:"100%", padding:"11px 14px", borderRadius:10,
+      border:`1.5px solid ${border}`, background:bg, color,
+      fontWeight:700, fontSize:13, cursor:"pointer",
+      textAlign:"left", lineHeight:1,
+    }}>
+      {emoji} {title}
+      <span style={{display:"block", fontSize:11, fontWeight:400, color:"#94a3b8", marginTop:3}}>
+        {sub}
+      </span>
+    </button>
+  );
+
+  return (
+    <>
+      <div style={{position:"fixed",inset:0,zIndex:1099}} onClick={onCancel}/>
+      <div ref={popRef} style={{
+        position:"fixed", left:pos.left, top:pos.top, zIndex:1100,
+        background:"#fff", borderRadius:14, padding:"16px 18px",
+        width:280, boxShadow:"0 8px 32px rgba(0,0,0,0.18)",
+        border:"1.5px solid #e0e7ff", display:"flex", flexDirection:"column", gap:8,
+      }} onClick={e=>e.stopPropagation()}>
+        <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:2}}>
+          <div>
+            <p style={{margin:0, fontSize:13, fontWeight:800, color:"#0f172a"}}>{studentName}</p>
+            <p style={{margin:"2px 0 0", fontSize:11, color:"#6366f1"}}>↪ This slot has been moved</p>
+          </div>
+          <button onClick={onCancel}
+            style={{background:"none",border:"none",cursor:"pointer",fontSize:13,color:"#94a3b8",padding:0}}>✕</button>
+        </div>
+        {optBtn(onRevertWeek,    "#e2e8f0","#f8fafc","#334155", "↺", "Revert this week only",
+          `Back to ${originalDay ? originalDay.slice(0,3)+" "+originalTime : "original time"} · next week keeps this slot`)}
+        {optBtn(onRevertFromWeek,"#c7d2fe","#eef2ff","#3730a3", "↺↺", "Revert from this week on",
+          "All future weeks return to original schedule")}
+        {optBtn(onRevertAll,     "#fde68a","#fffbeb","#92400e", "⚡", "Revert all weeks",
+          "Restores original time across past and future")}
+      </div>
+    </>
+  );
+}
+
+// ── SkipConfirmPopover: ✕ 클릭 시 3가지 삭제 옵션 ──────────────────────────
+function SkipConfirmPopover({ popover, onSkipWeek, onSkipFromWeek, onDeleteSlot, onDeleteStudent, onCancel }) {
+  const popRef = React.useRef(null);
+  const [pos, setPos] = React.useState({ left: 0, top: 0 });
+  const [confirmDelete, setConfirmDelete] = React.useState(false); // 전체 삭제 2-step confirm
+
+  React.useEffect(() => {
+    if (!popRef.current || !popover) return;
+    const pop = popRef.current.getBoundingClientRect();
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let left = (popover.anchorX || 0) + 10;
+    if (left + pop.width > vw - 8) left = (popover.anchorX || 0) - pop.width - 10;
+    let top = (popover.anchorY || 0) - 20;
+    top = Math.min(top, vh - pop.height - 8);
+    top = Math.max(8, top);
+    setPos({ left, top });
+  }, [popover]);
+
+  if (!popover) return null;
+
+  const optBtn = (onClick, border, bg, color, emoji, title, sub) => (
+    <button onClick={onClick} style={{
+      width:"100%", padding:"11px 14px", borderRadius:10,
+      border:`1.5px solid ${border}`, background:bg, color,
+      fontWeight:700, fontSize:13, cursor:"pointer",
+      textAlign:"left", lineHeight:1,
+    }}>
+      {emoji} {title}
+      <span style={{display:"block", fontSize:11, fontWeight:400, color:"#94a3b8", marginTop:3}}>
+        {sub}
+      </span>
+    </button>
+  );
+
+  return (
+    <>
+      <div style={{position:"fixed",inset:0,zIndex:1099}} onClick={()=>{setConfirmDelete(false);onCancel();}}/>
+      <div ref={popRef} style={{
+        position:"fixed", left:pos.left, top:pos.top, zIndex:1100,
+        background:"#fff", borderRadius:14, padding:"16px 18px",
+        width:272, boxShadow:"0 8px 32px rgba(0,0,0,0.18)",
+        border:"1px solid #e2e8f0", display:"flex", flexDirection:"column", gap:8,
+      }} onClick={e=>e.stopPropagation()}>
+
+        {/* Header */}
+        <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:2}}>
+          <p style={{margin:0, fontSize:13, fontWeight:800, color:"#0f172a"}}>
+            {popover.studentName}
+          </p>
+          <button onClick={()=>{setConfirmDelete(false);onCancel();}}
+            style={{background:"none",border:"none",cursor:"pointer",fontSize:13,color:"#94a3b8",padding:0}}>✕</button>
+        </div>
+
+        {!confirmDelete ? (<>
+          {/* Option 1 */}
+          {optBtn(onSkipWeek,           "#e2e8f0","#f8fafc","#334155", "📅", "Skip this week only",     "Lesson resumes automatically from next week")}
+          {/* Option 2 */}
+          {optBtn(onSkipFromWeek,       "#fed7aa","#fff7ed","#b45309", "⏭", "Skip from this week on",  "Cancels this and all future occurrences · slot kept")}
+          {/* Option 3 */}
+          {optBtn(onDeleteSlot,         "#fde68a","#fffbeb","#92400e", "⏹", "Remove this lesson slot",  "Permanently removes slot · student card stays")}
+          {/* Option 4 */}
+          {optBtn(()=>setConfirmDelete(true), "#fecaca","#fff5f5","#dc2626", "🗑", "Delete student",     "Removes student and all lesson records")}
+        </>) : (<>
+          {/* 2-step confirm for full delete */}
+          <p style={{margin:0, fontSize:13, color:"#dc2626", fontWeight:700}}>Are you sure?</p>
+          <p style={{margin:"0 0 4px", fontSize:12, color:"#64748b", lineHeight:1.4}}>
+            {popover.studentName}'s card and all lesson records will be permanently deleted.
+          </p>
+          <div style={{display:"flex", gap:8}}>
+            <button onClick={()=>setConfirmDelete(false)} style={{
+              flex:1, padding:"10px 0", borderRadius:9, border:"1px solid #e2e8f0",
+              background:"#f8fafc", color:"#64748b", fontWeight:700, fontSize:13, cursor:"pointer",
+            }}>Cancel</button>
+            <button onClick={onDeleteStudent} style={{
+              flex:1, padding:"10px 0", borderRadius:9, border:"none",
+              background:"#dc2626", color:"#fff", fontWeight:700, fontSize:13, cursor:"pointer",
+            }}>Delete</button>
+          </div>
+        </>)}
+      </div>
+    </>
+  );
+}
+
+function ReschedulePopover({ activePopover, weekOverrides, onWeekOnly, onFromWeek, onAllTime, onReset, onDeleteSlot, onCancel }) {
+  // ALL hooks must be declared unconditionally at the top — before any early return
+  const [editDay,  setEditDay]  = React.useState(() => activePopover?.toDay  || activePopover?.fromDay  || null);
+  const [editTime, setEditTime] = React.useState(() => activePopover?.toTime || activePopover?.fromTime || null);
+  const [targetWeekOffset, setTargetWeekOffset] = React.useState(0);
+  const popRef = React.useRef(null);
+  const [pos, setPos] = React.useState({ left: 0, top: 0 });
+
+  // Sync when a NEW slot is opened (overrideKey changes) — also reset week offset
+  React.useEffect(() => {
+    if (activePopover) {
+      setEditDay(activePopover.toDay  || activePopover.fromDay);
+      setEditTime(activePopover.toTime || activePopover.fromTime);
+      setTargetWeekOffset(0);
+    }
+  }, [activePopover?.overrideKey]);
+
+  // Position the popover next to the anchor slot rect
+  React.useEffect(() => {
+    if (!activePopover || !popRef.current) return;
+    const { anchorRect } = activePopover;
+    const pop = popRef.current.getBoundingClientRect();
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const GAP = 8;
+    let left = anchorRect.right + GAP;
+    if (left + pop.width > vw - 8) left = anchorRect.left - pop.width - GAP;
+    left = Math.max(8, left);
+    let top = anchorRect.top;
+    top = Math.min(top, vh - pop.height - 8);
+    top = Math.max(8, top);
+    setPos({ left, top });
+  }, [activePopover, editDay, editTime, targetWeekOffset]);
+
+  // ── Early returns AFTER all hooks ──
+  if (!activePopover) return null;
+  if (!editDay || !editTime) return null;
+
+  const { slot, fromDay, fromTime } = activePopover;
+  const studentName = slot.student.name;
+  const dur = slot.dur || 45;
+
+  // Time arithmetic helpers
+  const timeToMins = (t) => { const [h,m] = (t||"09:00").split(":").map(Number); return h*60+(m||0); };
+  const minsToTime = (m) => {
+    const clamped = Math.max(0, Math.min(23*60+59, m));
+    return String(Math.floor(clamped/60)).padStart(2,"0") + ":" + String(clamped%60).padStart(2,"0");
+  };
+  const adjustTime = (delta) => setEditTime(t => minsToTime(timeToMins(t) + delta));
+
+  const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const DAY_SHORT = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+  // Compute the ISO Monday for a given offset from today's week
+  const getWeekKeyByOffset = (offset) => {
+    const now = new Date();
+    const mon = new Date(now);
+    mon.setDate(now.getDate() - ((now.getDay() + 6) % 7) + offset * 7);
+    return mon.toISOString().slice(0, 10);
+  };
+  const targetWeekKey = getWeekKeyByOffset((activePopover?.calendarWeekOffset || 0) + targetWeekOffset);
+
+  // Week label for display
+  const weekLabel = (() => {
+    const base = activePopover?.calendarWeekOffset || 0;
+    const total = base + targetWeekOffset;
+    if (total === 0) return "This week";
+    if (total === 1) return "Next week";
+    if (total === -1) return "Last week";
+    const now = new Date();
+    const mon = new Date(now);
+    mon.setDate(now.getDate() - ((now.getDay() + 6) % 7) + total * 7);
+    const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+    const fmt = d => d.toLocaleDateString("en-AU", { day:"numeric", month:"short" });
+    return `${fmt(mon)} – ${fmt(sun)}`;
+  })();
+
+  // Compute end time for display
+  const endTime = minsToTime(timeToMins(editTime) + dur);
+  const changed = editDay !== fromDay || editTime !== fromTime || targetWeekOffset !== 0;
+
+  // Pass edited values back to handlers — include targetWeekKey
+  const handleWeekOnly  = () => onWeekOnly({ toDay: editDay, toTime: editTime, weekKey: targetWeekKey });
+  const handleFromWeek  = () => onFromWeek && onFromWeek({ toDay: editDay, toTime: editTime, fromWeek: targetWeekKey });
+  const handleAllTime   = () => onAllTime  && onAllTime({ toDay: editDay, toTime: editTime });
+
+  return (
+    <>
+      {/* Invisible backdrop to catch outside clicks */}
+      <div style={{position:"fixed",inset:0,zIndex:999}} onClick={onCancel}/>
+      {/* Popover card — positioned near the slot */}
+      <div ref={popRef} style={{
+        position:"fixed", left: pos.left, top: pos.top,
+        zIndex:1000,
+        background:"#fff", borderRadius:16, padding:"18px 18px 16px",
+        width:320, boxShadow:"0 8px 32px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.08)",
+        display:"flex", flexDirection:"column", gap:14,
+        border:"1px solid #e2e8f0",
+      }} onClick={e=>e.stopPropagation()}>
+
+        {/* ── Title row ── */}
+        <div style={{display:"flex", alignItems:"center", justifyContent:"space-between"}}>
+          <div>
+            <p style={{fontSize:15, fontWeight:800, color:"#0f172a", margin:0}}>Reschedule lesson</p>
+            <p style={{fontSize:12, color:"#64748b", margin:"3px 0 0"}}>{studentName} · {dur}min</p>
+          </div>
+          <button onClick={onCancel} style={{
+            background:"#f1f5f9", border:"none", borderRadius:"50%",
+            width:28, height:28, cursor:"pointer", fontSize:13, color:"#64748b",
+            display:"flex", alignItems:"center", justifyContent:"center",
+          }}>✕</button>
+        </div>
+
+        {/* ── Date picker: week nav + day cells with actual dates ── */}
+        {(() => {
+          // Sun-first display order (matches schedule calendar)
+          const WEEK_DAYS  = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+          const WEEK_SHORT = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+          // Compute the 7 dates — week starts on Sunday
+          const now = new Date();
+          const baseOffset = (activePopover?.calendarWeekOffset || 0) + targetWeekOffset;
+          // Find the Sunday of the current week, then shift by baseOffset weeks
+          const sun = new Date(now);
+          sun.setDate(now.getDate() - now.getDay() + baseOffset * 7);
+          // offsets from Sunday: Sun=0, Mon=1, ..., Sat=6
+          const dayOffset = { Sunday:0, Monday:1, Tuesday:2, Wednesday:3, Thursday:4, Friday:5, Saturday:6 };
+          const weekDates = WEEK_DAYS.map(dayName => {
+            const d = new Date(sun);
+            d.setDate(sun.getDate() + dayOffset[dayName]);
+            return d;
+          });
+          const todayStr = new Date().toDateString();
+          const selectedDate = weekDates[WEEK_DAYS.indexOf(editDay)];
+          const selectedDateStr = selectedDate ? selectedDate.toLocaleDateString("en-AU", { day:"numeric", month:"short" }) : "";
+          const monthYear = sun.toLocaleDateString("en-AU", { month:"long", year:"numeric" });
+
+          return (
+            <div>
+              {/* Month + week nav */}
+              <div style={{display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8}}>
+                <button onClick={()=>setTargetWeekOffset(o=>o-1)} style={{
+                  width:26, height:26, borderRadius:7, border:"1px solid #e2e8f0",
+                  background:"#f8fafc", cursor:"pointer", fontSize:13, color:"#475569",
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                }}>‹</button>
+                <div style={{textAlign:"center"}}>
+                  <p style={{margin:0, fontSize:12, fontWeight:700, color:"#334155"}}>{monthYear}</p>
+                  {targetWeekOffset !== 0 && (
+                    <button onClick={()=>setTargetWeekOffset(0)} style={{
+                      fontSize:10, color:"#6366f1", background:"none", border:"none",
+                      cursor:"pointer", padding:0,
+                    }}>↺ This week</button>
+                  )}
+                </div>
+                <button onClick={()=>setTargetWeekOffset(o=>o+1)} style={{
+                  width:26, height:26, borderRadius:7, border:"1px solid #e2e8f0",
+                  background:"#f8fafc", cursor:"pointer", fontSize:13, color:"#475569",
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                }}>›</button>
+              </div>
+
+              {/* Day cells — Mon first */}
+              <div style={{display:"flex", gap:4}}>
+                {WEEK_DAYS.map((dayName, i) => {
+                  const date = weekDates[i];
+                  const isSelected = editDay === dayName;
+                  const isToday = date.toDateString() === todayStr;
+                  const isFrom = dayName === fromDay && targetWeekOffset === 0;
+                  return (
+                    <button key={dayName} onClick={()=>setEditDay(dayName)} style={{
+                      flex:1, padding:"6px 2px", borderRadius:9, border:"none",
+                      background: isSelected ? "#6366f1" : isFrom ? "#eef2ff" : "#f8fafc",
+                      color: isSelected ? "#fff" : isFrom ? "#4338ca" : "#475569",
+                      cursor:"pointer", transition:"all 0.12s",
+                      outline: isFrom && !isSelected ? "1.5px solid #c7d2fe" : "none",
+                    }}>
+                      <p style={{margin:0, fontSize:"9px", fontWeight:600,
+                        color: isSelected ? "rgba(255,255,255,0.75)" : "#94a3b8",
+                        textTransform:"uppercase", letterSpacing:"0.04em"}}>
+                        {WEEK_SHORT[i]}
+                      </p>
+                      <p style={{margin:"2px 0 0", fontSize:13, fontWeight: isSelected||isToday ? 800 : 500,
+                        color: isSelected ? "#fff" : isToday ? "#6366f1" : "inherit"}}>
+                        {date.getDate()}
+                      </p>
+                      {isToday && !isSelected && (
+                        <div style={{width:4, height:4, borderRadius:"50%", background:"#6366f1", margin:"2px auto 0"}}/>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Selected date summary */}
+              <p style={{margin:"6px 0 0", fontSize:11, textAlign:"center", color: editDay !== fromDay || targetWeekOffset !== 0 ? "#6366f1" : "#94a3b8", fontWeight:600}}>
+                {editDay !== fromDay || targetWeekOffset !== 0
+                  ? `→ ${editDay}, ${selectedDateStr} · ${fmtTime(editTime)}`
+                  : `${fromDay}, ${fmtTime(fromTime)} (original)`}
+              </p>
+            </div>
+          );
+        })()}
+
+        {/* ── Time picker ── */}
+        <div>
+          <p style={{fontSize:11, fontWeight:700, color:"#94a3b8", textTransform:"uppercase", letterSpacing:"0.06em", margin:"0 0 8px"}}>Time</p>
+          <input
+            type="time"
+            value={editTime}
+            onChange={e=>setEditTime(e.target.value)}
+            style={{
+              width:"100%", textAlign:"center", fontSize:22, fontWeight:800,
+              color:"#4338ca", border:"2px solid #e0e7ff", borderRadius:12,
+              padding:"10px 8px", background:"#f5f3ff", outline:"none",
+              fontFamily:"inherit", boxSizing:"border-box",
+            }}
+          />
+          <div style={{display:"none"}}>
+            {/* nudge buttons removed — use native time picker */}
+            {[-5,-1,+1,+5].map(d => (
+              <button key={d}>{d}</button>
+            ))}
+          </div>
+        </div>
+
+        <hr style={{border:"none", borderTop:"1px solid #f1f5f9", margin:"0 -4px"}}/>
+
+        {/* ── Save options ── */}
+        {changed ? (
+          <div style={{display:"flex", flexDirection:"column", gap:7}}>
+            {[
+              { onClick: handleWeekOnly, emoji:"📅", title:"This week only",         sub:"Reverts to normal schedule next week" },
+              { onClick: handleFromWeek, emoji:"🔁", title:"From this week onwards", sub:"Previous weeks stay unchanged" },
+              { onClick: handleAllTime,  emoji:"⚡", title:"All weeks",              sub:"Applies to past and future" },
+            ].map(opt => (
+              <button key={opt.title} onClick={opt.onClick} style={{
+                display:"flex", alignItems:"center", gap:12,
+                padding:"10px 14px", borderRadius:11,
+                border:"1.5px solid #e2e8f0", background:"#fafafa",
+                cursor:"pointer", textAlign:"left", transition:"all 0.15s",
+              }}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor="#6366f1";e.currentTarget.style.background="#f5f3ff";}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="#e2e8f0";e.currentTarget.style.background="#fafafa";}}>
+                <span style={{fontSize:18}}>{opt.emoji}</span>
+                <div>
+                  <p style={{fontSize:13, fontWeight:700, color:"#1e293b", margin:0}}>{opt.title}</p>
+                  <p style={{fontSize:11, color:"#64748b", margin:"2px 0 0", lineHeight:1.3}}>{opt.sub}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p style={{fontSize:12, color:"#94a3b8", textAlign:"center", margin:0}}>
+            Change the day or time above to see save options
+          </p>
+        )}
+
+        {/* Reset override */}
+        {activePopover.slot.isOverridden && onReset && (
+          <button onClick={onReset} style={{
+            display:"flex", alignItems:"center", gap:10,
+            padding:"9px 14px", borderRadius:10,
+            border:"1.5px solid #fecaca", background:"#fff5f5",
+            cursor:"pointer", textAlign:"left",
+          }}>
+            <span>↺</span>
+            <div>
+              <p style={{fontSize:12, fontWeight:700, color:"#dc2626", margin:0}}>Reset this week</p>
+              <p style={{fontSize:11, color:"#f87171", margin:"1px 0 0"}}>Back to regular slot ({fromDay.slice(0,3)} {fmtTime(fromTime)})</p>
+            </div>
+          </button>
+        )}
+
+        {/* Delete slot — via ✕ button on slot */}
+
+        <button onClick={onCancel} style={{
+          background:"none", border:"none", cursor:"pointer",
+          fontSize:12, color:"#94a3b8", textAlign:"center",
+        }}>Cancel</button>
+      </div>
+    </>
+  );
+}
+
+// Small helper for coarse nudge buttons
+function nudgeBtnStyle(bg, color) {
+  return {
+    padding:"8px 10px", borderRadius:9, border:"1px solid #e2e8f0",
+    background:bg, color, fontSize:11, fontWeight:700,
+    cursor:"pointer", whiteSpace:"nowrap", minWidth:36,
+  };
+}
+
+function ScheduleView({ students, logs, overrides, onLog, onAbsence, onSelect, onAdd, onSaveOverride, onDeleteOverride, onPermanentReschedule, onCreateSlot, onDeleteSlot, onCreateNewStudent, onDeleteStudent }) {
+  const [weekOffset, setWeekOffset] = React.useState(0);
+  // weekOverrides is now just an alias for the Supabase-backed overrides prop
+  const weekOverrides = overrides || {};
+
+  // ── Reschedule popover: { slot, fromDay, fromTime, anchorRect }
+  const [activePopover, setActivePopover] = React.useState(null);
+
+  // ── Skip confirm popover: { overrideKey, studentName, slotIdx, student, anchorX, anchorY }
+  const [skipConfirm, setSkipConfirm] = React.useState(null);
+  // ── Revert confirm popover: { overrideKey, studentName, slotIdx, student, originalDay, originalTime, anchorX, anchorY }
+  const [revertConfirm, setRevertConfirm] = React.useState(null);
+
+  // ── Drag state — all mutable refs, zero React state changes during drag
+  const gridRef        = React.useRef(null);
+  const slotsRef       = React.useRef([]);
+  const gridParamsRef  = React.useRef({});
+  // (no React drag state — all drag visuals handled in pure DOM)
+
+  // ── New slot popover (빈 칸 클릭)
+  const [newSlotPopover, setNewSlotPopover] = React.useState(null);
+  // { day, time, anchorX, anchorY }
+
+  // ── Snap to 15-min grid
+  const snap15 = (mins) => Math.round(mins / 15) * 15;
 
   // Week label — "This week", "Next week", "Apr 28 – May 4", etc.
   const weekLabel = (() => {
@@ -1949,24 +2624,86 @@ function ScheduleView({ students, logs, onLog, onAbsence, onSelect, onAdd }) {
     if (weekOffset === 1) return "Next week";
     if (weekOffset === -1) return "Last week";
     const now = new Date();
-    const mon = new Date(now);
-    mon.setDate(now.getDate() - now.getDay() + 1 + weekOffset * 7);
-    const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+    const sun = new Date(now);
+    sun.setDate(now.getDate() - now.getDay() + weekOffset * 7);
+    const sat = new Date(sun); sat.setDate(sun.getDate() + 6);
     const fmt = d => d.toLocaleDateString("en-AU", {day:"numeric", month:"short"});
-    return `${fmt(mon)} – ${fmt(sun)}`;
+    return `${fmt(sun)} – ${fmt(sat)}`;
   })();
 
-  // ── Build slots — include paused students (shown dimmed) ─────────────────
+  // ── Week key: ISO Monday date of the displayed week ──────────────────────
+  const getWeekKey = (offset) => {
+    const now = new Date();
+    const mon = new Date(now);
+    mon.setDate(now.getDate() - ((now.getDay() + 6) % 7) + offset * 7);
+    return mon.toISOString().slice(0, 10);
+  };
+  const currentWeekKey = getWeekKey(weekOffset);
+
+  // ── Resolve effective override for a given student/slot/week ───────────────
+  // Priority: 1) exact week override  2) most-recent "from" override <= currentWeekKey  3) null
+  const getEffectiveOverride = (studentId, slotIdx, weekKey) => {
+    // 1. Exact week match
+    const exactKey = `${weekKey}/${studentId}/${slotIdx}`;
+    if (weekOverrides[exactKey]) return weekOverrides[exactKey];
+    // 2. Find all "from" overrides for this student/slot, pick the latest one <= weekKey
+    const fromEntries = Object.entries(weekOverrides)
+      .filter(([k]) => k.startsWith(`from/`) && k.endsWith(`/${studentId}/${slotIdx}`))
+      .map(([k, v]) => ({ fromWeek: k.split("/")[1], ...v }))
+      .filter(e => e.fromWeek <= weekKey)
+      .sort((a, b) => b.fromWeek.localeCompare(a.fromWeek)); // latest first
+    return fromEntries[0] || null;
+  };
+
+  // ── Build slots — apply weekly overrides ─────────────────────────────────
   const slots = [];
+  const skippedSlots = []; // slots hidden this week (skip override)
   students.forEach(s => {
-    if (s.lessonDay) slots.push({ day: s.lessonDay, time: s.lessonTime||"09:00", student: s, dur: s.lessonDuration||45, fortnightly: s.lessonsPerWeek==="fortnightly", fortActive: s.lessonsPerWeek!=="fortnightly" || isFortnightWeek(s.startDate, weekOffset) });
-    if (s.lessonsPerWeek === 2 && s.lessonDay2) slots.push({ day: s.lessonDay2, time: s.lessonTime2||"09:00", student: s, dur: s.lessonDuration||45, fortnightly: false, fortActive: true });
+    if (s.lessonDay) {
+      const overrideKey = `${currentWeekKey}/${s.id}/1`;
+      const ov = getEffectiveOverride(s.id, 1, currentWeekKey);
+      const effectiveOvKey = ov?.fromWeek ? `from/${ov.fromWeek}/${s.id}/1` : overrideKey;
+      if (ov?.skip) {
+        skippedSlots.push({ day: s.lessonDay, time: s.lessonTime||"09:00", student: s, dur: s.lessonDuration||45, overrideKey: effectiveOvKey, slotIdx:1 });
+      } else {
+        slots.push({
+          day: ov ? ov.day : s.lessonDay,
+          time: ov ? ov.time : (s.lessonTime||"09:00"),
+          student: s, dur: s.lessonDuration||45,
+          fortnightly: s.lessonsPerWeek==="fortnightly",
+          fortActive: s.lessonsPerWeek!=="fortnightly" || isFortnightWeek(s.startDate, weekOffset),
+          overrideKey,
+          isOverridden: !!ov,
+          slotIdx: 1,
+        });
+      }
+    }
+    if (s.lessonsPerWeek === 2 && s.lessonDay2) {
+      const overrideKey = `${currentWeekKey}/${s.id}/2`;
+      const ov = getEffectiveOverride(s.id, 2, currentWeekKey);
+      const effectiveOvKey2 = ov?.fromWeek ? `from/${ov.fromWeek}/${s.id}/2` : overrideKey;
+      const dur2 = s.lessonDuration2 || s.lessonDuration || 45;
+      if (ov?.skip) {
+        skippedSlots.push({ day: s.lessonDay2, time: s.lessonTime2||"09:00", student: s, dur: dur2, overrideKey: effectiveOvKey2, slotIdx:2 });
+      } else {
+        slots.push({
+          day: ov ? ov.day : s.lessonDay2,
+          time: ov ? ov.time : (s.lessonTime2||"09:00"),
+          student: s, dur: dur2,
+          fortnightly: false, fortActive: true,
+          overrideKey,
+          isOverridden: !!ov,
+          slotIdx: 2,
+        });
+      }
+    }
   });
 
   const byDay = {};
   DAYS_ORDER.forEach(d => { byDay[d] = []; });
   slots.forEach(slot => { if (byDay[slot.day]) byDay[slot.day].push(slot); });
   DAYS_ORDER.forEach(d => { byDay[d].sort((a,b) => a.time.localeCompare(b.time)); });
+  slotsRef.current = slots; // keep ref fresh for drag handlers
 
   const activeDays = DAYS_ORDER; // show all days including empty ones
   const unscheduled = students.filter(s => !s.lessonDay);
@@ -1995,9 +2732,32 @@ function ScheduleView({ students, logs, onLog, onAbsence, onSelect, onAdd }) {
   const hours = [];
   for (let t = minTime; t <= maxTime; t += 60) hours.push(t);
 
-  const SLOT_H = 56;  // px per 60 min
+  const SLOT_H = 80;  // px per 60 min — 30min=40px, 45min=60px, 60min=80px
   const TIME_COL = 52; // px width of time label column
   const gridH = (maxTime - minTime) / 60 * SLOT_H;
+
+  // Keep grid params fresh for drag handlers (avoids stale closure in mouseup)
+  gridParamsRef.current = { SLOT_H, TIME_COL, minTime, maxTime, activeDays: DAYS_ORDER };
+
+  // ── Date numbers for each day column ────────────────────────────────────
+  // Get the Monday of the displayed week, then compute each day's date
+  const weekDates = (() => {
+    const now = new Date();
+    const nowDay = now.getDay(); // 0=Sun
+    // Sunday of the displayed week (anchor: Sun-first)
+    const sun = new Date(now);
+    sun.setDate(now.getDate() - nowDay + weekOffset * 7);
+    // Build map: day name → Date object
+    // DAYS_ORDER = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
+    const DAY_OFFSET = { Sunday:0, Monday:1, Tuesday:2, Wednesday:3, Thursday:4, Friday:5, Saturday:6 };
+    const map = {};
+    DAYS_ORDER.forEach(d => {
+      const dt = new Date(sun);
+      dt.setDate(sun.getDate() + DAY_OFFSET[d]);
+      map[d] = dt;
+    });
+    return map;
+  })();
 
   const timeToY = (timeStr) => {
     const [h, m] = timeStr.split(":").map(Number);
@@ -2015,6 +2775,176 @@ function ScheduleView({ students, logs, onLog, onAbsence, onSelect, onAdd }) {
   // Today's day name for highlight
   const todayDay = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][new Date().getDay()];
 
+  const clearOverride = (overrideKey) => {
+    if (onDeleteOverride) onDeleteOverride(overrideKey);
+  };
+
+  // ── Slot mousedown → pure-DOM drag, zero React state changes during move ──
+  const onSlotMouseDown = (e, slot) => {
+    if (e.button !== 0) return;
+    e.stopPropagation();
+
+    // Capture everything we need as local primitives at mousedown time
+    const overrideKey  = slot.overrideKey;
+    const slotIdx      = slot.slotIdx;
+    const studentId    = slot.student.id;
+    const studentName  = slot.student.name;
+    const origDay      = slot.day;
+    const dur          = slot.dur || 45;
+    const fromDay      = slot.isOverridden
+      ? (weekOverrides[overrideKey]?.day  || origDay)
+      : (slot.student[slotIdx===2 ? "lessonDay2"  : "lessonDay"]  || origDay);
+    const fromTime     = slot.isOverridden
+      ? (weekOverrides[overrideKey]?.time || "09:00")
+      : (slot.student[slotIdx===2 ? "lessonTime2" : "lessonTime"] || "09:00");
+    const startX = e.clientX, startY = e.clientY;
+
+    let active = false; // true once drag threshold crossed
+    let overlay = null, clone = null, ghost = null;
+
+    // ── Compute day/time from cursor ──────────────────────────────────────
+    const hitTest = (cx, cy) => {
+      const gp = gridParamsRef.current;
+      const grid = gridRef.current;
+      if (!grid || !gp || !gp.activeDays) return null;
+      const { SLOT_H: SH, TIME_COL: TC, minTime: mn, maxTime: mx, activeDays: days } = gp;
+      const rect = grid.getBoundingClientRect();
+      const scrollLeft = grid.scrollLeft || 0;
+      // x relative to start of day columns (accounting for scroll)
+      const x = (cx - rect.left) + scrollLeft - TC;
+      const y = cy - rect.top;
+      if (y < 0 || y > rect.height) return null;
+      // Use scrollWidth for true total width (all day columns)
+      const totalColW = grid.scrollWidth - TC;
+      const colW = totalColW / days.length;
+      const dayIdx = Math.max(0, Math.min(days.length - 1, Math.floor(x / colW)));
+      const rawMins = mn + (y / SH) * 60;
+      const snapped = Math.round(rawMins / 15) * 15;
+      const clamped = Math.max(mn, Math.min(mx - 15, snapped));
+      const hh = String(Math.floor(clamped / 60)).padStart(2, "0");
+      const mm = String(clamped % 60).padStart(2, "0");
+      return { day: days[dayIdx], time: `${hh}:${mm}`, dayIdx, colW, rect, scrollLeft };
+    };
+
+    // ── Create overlay + visuals once drag threshold is crossed ──────────
+    const startDrag = () => {
+      document.body.classList.add("dragging");
+
+      // Overlay: full-screen transparent div to capture all mouse events
+      overlay = document.createElement("div");
+      overlay.style.cssText = "position:fixed;inset:0;z-index:9990;cursor:grabbing;";
+      document.body.appendChild(overlay);
+
+      // Floating clone
+      clone = document.createElement("div");
+      const dc = DAY_COLOR[origDay] || DAY_COLOR.Monday;
+      clone.style.cssText = `position:fixed;z-index:9999;width:130px;border-radius:8px;
+        padding:5px 8px;box-shadow:0 8px 24px rgba(0,0,0,0.25);pointer-events:none;
+        opacity:0.95;background:${dc.blockBg};border-left:3px solid ${dc.border};`;
+      clone.innerHTML = `
+        <div style="font-size:10px;font-weight:700;color:${dc.blockText};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${studentName}</div>
+        <div id="_dc_time" style="font-size:9px;color:${dc.border};font-weight:600;margin-top:1px;">${fmtTime(fromTime)} · ${dur}m</div>
+        <div id="_dc_day" style="font-size:9px;color:#6366f1;font-weight:700;margin-top:1px;display:none;"></div>
+      `;
+      document.body.appendChild(clone);
+
+      // Drop ghost
+      ghost = document.createElement("div");
+      ghost.style.cssText = "position:fixed;z-index:9991;border-radius:8px;border:2px dashed #6366f1;background:rgba(99,102,241,0.1);pointer-events:none;display:none;";
+      ghost.innerHTML = `<span id="_dg_time" style="font-size:9px;color:#6366f1;font-weight:700;padding:3px 6px;display:block;"></span>`;
+      document.body.appendChild(ghost);
+
+      // Dim source slot in DOM directly (no React state)
+      const sourceEl = document.querySelector(`[data-override-key="${overrideKey}"]`);
+      if (sourceEl) sourceEl.style.opacity = "0.25";
+
+      active = true;
+    };
+
+    // ── Update clone + ghost positions ───────────────────────────────────
+    const updateVisuals = (cx, cy) => {
+      clone.style.left = (cx + 14) + "px";
+      clone.style.top  = (cy - 20) + "px";
+
+      const hit = hitTest(cx, cy);
+      if (hit) {
+        const tEl = clone.querySelector("#_dc_time");
+        if (tEl) tEl.textContent = `${fmtTime(hit.time)} · ${dur}m`;
+        const dEl = clone.querySelector("#_dc_day");
+        if (dEl) {
+          if (hit.day !== fromDay) { dEl.textContent = `→ ${hit.day.slice(0,3)}`; dEl.style.display="block"; }
+          else { dEl.style.display="none"; }
+        }
+        // Position ghost
+        const [h,m] = hit.time.split(":").map(Number);
+        const gp = gridParamsRef.current;
+        const scrollLeft = gridRef.current ? gridRef.current.scrollLeft : 0;
+        const topPx = ((h*60+(m||0) - gp.minTime) / 60) * gp.SLOT_H;
+        const leftPx = hit.rect.left + gp.TIME_COL + hit.dayIdx * hit.colW - scrollLeft + 4;
+        const ghostH = Math.max((dur/60)*gp.SLOT_H, 28) - 4;
+        ghost.style.display = "block";
+        ghost.style.top    = (hit.rect.top + topPx + 2) + "px";
+        ghost.style.left   = leftPx + "px";
+        ghost.style.width  = (hit.colW - 8) + "px";
+        ghost.style.height = ghostH + "px";
+        const gtEl = ghost.querySelector("#_dg_time");
+        if (gtEl) gtEl.textContent = fmtTime(hit.time);
+      } else {
+        ghost.style.display = "none";
+      }
+    };
+
+    // ── Cleanup helper ────────────────────────────────────────────────────
+    const cleanup = () => {
+      document.body.classList.remove("dragging");
+      if (overlay) { overlay.remove(); overlay = null; }
+      if (clone)   { clone.remove();   clone   = null; }
+      if (ghost)   { ghost.remove();   ghost   = null; }
+      // Restore source slot opacity
+      const sourceEl = document.querySelector(`[data-override-key="${overrideKey}"]`);
+      if (sourceEl) sourceEl.style.opacity = "";
+    };
+
+    const onMove = (ev) => {
+      const dx = ev.clientX - startX, dy = ev.clientY - startY;
+      if (!active) {
+        if (Math.sqrt(dx*dx + dy*dy) < 6) return;
+        startDrag();
+      }
+      updateVisuals(ev.clientX, ev.clientY);
+    };
+
+    const onUp = (ev) => {
+      overlay && overlay.removeEventListener("mousemove", onMove);
+      overlay && overlay.removeEventListener("mouseup", onUp);
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+
+      if (!active) { cleanup(); return; }
+
+      const hit = hitTest(ev.clientX, ev.clientY);
+      const toDay  = hit ? hit.day  : fromDay;
+      const toTime = hit ? hit.time : fromTime;
+      cleanup();
+
+      // Now safe to call React setters — drag is fully over
+      const liveSlot = slotsRef.current.find(sl => sl.overrideKey === overrideKey);
+      if (liveSlot) {
+        setActivePopover({
+          overrideKey,
+          slot: liveSlot,
+          fromDay, fromTime,
+          toDay, toTime,
+          calendarWeekOffset: weekOffset,
+          anchorRect: { right: ev.clientX + 10, left: ev.clientX - 330, top: ev.clientY - 60 },
+        });
+      }
+    };
+
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+  };
+
   return (
     <div className="fade-in">
       {/* ── Week navigation ── */}
@@ -2023,11 +2953,15 @@ function ScheduleView({ students, logs, onLog, onAbsence, onSelect, onAdd }) {
           className="btn-ghost text-sm py-1.5 px-4">← Prev</button>
         <div className="text-center">
           <span className="text-sm font-bold text-slate-700">{weekLabel}</span>
-          {weekOffset !== 0 && (
-            <button onClick={()=>setWeekOffset(0)}
-              className="ml-3 text-xs font-semibold text-indigo-500 hover:text-indigo-700"
+          {Object.keys(weekOverrides).filter(k=>k.startsWith(currentWeekKey)).length > 0 && (
+            <button onClick={()=>{
+              Object.keys(weekOverrides).filter(k=>k.startsWith(currentWeekKey)).forEach(k=>{
+                if (onDeleteOverride) onDeleteOverride(k);
+              });
+            }}
+              className="ml-3 text-xs font-semibold text-rose-400 hover:text-rose-600"
               style={{background:"none",border:"none",cursor:"pointer"}}>
-              Today
+              ↺ Reset moves
             </button>
           )}
         </div>
@@ -2053,6 +2987,22 @@ function ScheduleView({ students, logs, onLog, onAbsence, onSelect, onAdd }) {
                   fontSize:"11px", fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase",
                   color: dc.text,
                 }}>{day.slice(0,3)}</span>
+                {/* Date number */}
+                {(() => {
+                  const dt = weekDates[day];
+                  const dateNum = dt ? dt.getDate() : "";
+                  const isToday = day === todayDay && weekOffset === 0;
+                  return (
+                    <span style={{
+                      display:"block",
+                      fontSize: isToday ? "15px" : "13px",
+                      fontWeight: isToday ? 800 : 600,
+                      color: isToday ? dc.border : dc.text,
+                      marginTop: 2,
+                      lineHeight: 1,
+                    }}>{dateNum}</span>
+                  );
+                })()}
                 {day===todayDay && weekOffset===0 && (
                   <span style={{display:"block",width:6,height:6,borderRadius:"50%",background:dc.border,margin:"3px auto 0"}}/>
                 )}
@@ -2081,7 +3031,7 @@ function ScheduleView({ students, logs, onLog, onAbsence, onSelect, onAdd }) {
         </div>
 
         {/* Grid body */}
-        <div style={{display:"flex", overflowX:"auto"}}>
+        <div ref={gridRef} style={{display:"flex", overflowX:"auto"}}>
           {/* Time labels column */}
           <div style={{width:TIME_COL, flexShrink:0, position:"relative", height:gridH, borderRight:"1px solid #f1f5f9"}}>
             {hours.map(t => (
@@ -2102,7 +3052,23 @@ function ScheduleView({ students, logs, onLog, onAbsence, onSelect, onAdd }) {
               flex:1, position:"relative", height:gridH, minWidth:120,
               borderRight:"1px solid #f1f5f9",
               background: dc.grid,
-            }}>
+              cursor:"crosshair",
+            }}
+            onClick={e=>{
+              // Only fire if click was directly on the column (not on a slot)
+              if (e.target !== e.currentTarget && e.target.closest("[data-slot]")) return;
+              const gp = gridParamsRef.current;
+              if (!gp || !gp.SLOT_H) return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              const y = e.clientY - rect.top;
+              const rawMins = gp.minTime + (y / gp.SLOT_H) * 60;
+              const snapped = Math.round(rawMins / 15) * 15;
+              const clamped = Math.max(gp.minTime, Math.min(gp.maxTime - 30, snapped));
+              const hh = String(Math.floor(clamped/60)).padStart(2,"0");
+              const mm = String(clamped%60).padStart(2,"0");
+              setNewSlotPopover({ day, time:`${hh}:${mm}`, anchorX: e.clientX, anchorY: e.clientY });
+            }}
+            >
               {/* Hour grid lines */}
               {hours.map(t => (
                 <div key={t} style={{
@@ -2111,19 +3077,22 @@ function ScheduleView({ students, logs, onLog, onAbsence, onSelect, onAdd }) {
                 }}/>
               ))}
 
+              {/* Drop ghost created in pure DOM during drag — no JSX */}
+
               {/* Lesson blocks */}
               {byDay[day].map((slot, i) => {
                 const s = slot.student;
                 const gc = GRADE_COLOR[s.grade] || GRADE_COLOR["Grade 5"];
-                const plan = buildPlan({ startingPhase: s.track==="exam"?"foundation":"exploration", ...s });
+                const plan = buildPlan({ startingPhase: isExamStudent(s)?"foundation":"exploration", ...s });
                 const curM = plan.findIndex(m => m.monthStr === currentMonthStr());
                 const phase = (curM>=0 ? plan[curM] : plan[plan.length-1])?.phase;
                 const pm = PHASE_META[phase] || PHASE_META.foundation;
                 const initials = s.name.split(" ").map(n=>n[0]).join("").slice(0,2).toUpperCase();
                 const top = timeToY(slot.time);
-                const height = Math.max(durToH(slot.dur), 28);
-                const isTiny    = height < 30;  // name only (e.g. <30min)
-                const isCompact = height < 44;  // name + time on one line, no grade/buttons
+                const safeDur = (slot.dur && slot.dur > 0) ? slot.dur : 45;
+                const height = Math.max(durToH(safeDur), 28);
+                const isTiny    = height < 28;  // name only (very short slots <20min)
+                const isCompact = height < 50;  // name+time only, no buttons
                 const isShort   = isTiny;       // legacy alias for button guard below
                 const isToday = day === todayDay && weekOffset === 0;
                 const isOffWeek = slot.fortnightly && !slot.fortActive;
@@ -2133,39 +3102,117 @@ function ScheduleView({ students, logs, onLog, onAbsence, onSelect, onAdd }) {
                 const todayLog = isToday ? logs.filter(l => l.studentId===s.id && l.date===todayStr).sort((a,b)=>b.date.localeCompare(a.date))[0] : null;
                 const todayStatus = !isToday ? null : todayLog ? (todayLog.type==="absent" ? "absent" : "logged") : "pending";
 
+                const isPopoverOpen = activePopover?.overrideKey === slot.overrideKey;
+
                 return (
                   <div key={i}
-                    onClick={()=>onSelect(s)}
+                    data-slot="1"
+                    data-override-key={slot.overrideKey}
+                    onClick={()=>{ onSelect(s); }}
+                    onMouseDown={e=>{ if (!s.paused && !isOffWeek) onSlotMouseDown(e, slot); }}
                     style={{
                       position:"absolute", top: top+2, left:4, right:4, height: height-4,
                       borderRadius:8,
-                      background: (isOffWeek || s.paused) ? "#f1f5f9" : dc.blockBg,
-                      borderLeft:`3px solid ${(isOffWeek || s.paused) ? "#cbd5e1" : dc.border}`,
+                      background: (isOffWeek || s.paused) ? "#f1f5f9" : slot.isOverridden ? "#ede9fe" : dc.blockBg,
+                      borderLeft:`3px solid ${(isOffWeek || s.paused) ? "#cbd5e1" : slot.isOverridden ? "#6366f1" : dc.border}`,
+                      outline: isPopoverOpen ? "2px solid #6366f1" : slot.isOverridden ? "1.5px dashed #a5b4fc" : "none",
                       opacity: (isOffWeek || s.paused) ? 0.5 : 1,
                       filter: s.paused ? "grayscale(40%)" : "none",
-                      cursor:"pointer", overflow:"hidden", transition:"all 0.15s",
-                      boxShadow:"0 1px 4px rgba(0,0,0,0.08)",
-                      padding: isTiny ? "2px 6px" : isCompact ? "3px 6px" : "5px 8px",
-                      display:"flex",
-                      flexDirection: "column",
-                      alignItems: "flex-start",
-                      gap: 1,
+                      cursor: s.paused || isOffWeek ? "default" : "grab",
+                      overflow:"hidden", transition:"box-shadow 0.15s",
+                      boxShadow: isPopoverOpen ? "0 0 0 3px rgba(99,102,241,0.15)" : slot.isOverridden ? "0 1px 4px rgba(99,102,241,0.2)" : "0 1px 4px rgba(0,0,0,0.08)",
+                      padding: isTiny ? "1px 5px" : "3px 6px",
+                      display:"flex", flexDirection:"column", alignItems:"flex-start", gap:1,
+                      zIndex: isPopoverOpen ? 20 : 1,
                     }}
-                    onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 4px 12px rgba(0,0,0,0.12)"; e.currentTarget.style.zIndex=10;}}
-                    onMouseLeave={e=>{e.currentTarget.style.boxShadow="0 1px 3px rgba(0,0,0,0.06)"; e.currentTarget.style.zIndex=1;}}>
-                    {/* Name — always first, never clipped by flex */}
-                    <span style={{fontSize:"10px",fontWeight:700,color:(isOffWeek||s.paused)?"#94a3b8":dc.blockText,
-                      whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
-                      width:"100%",flexShrink:0}}>
-                      {s.name}{s.paused ? " ⏸" : ""}
-                    </span>
-                    {/* Time info — only when not tiny */}
+                    onMouseEnter={e=>{if(!isPopoverOpen){e.currentTarget.style.boxShadow="0 4px 12px rgba(0,0,0,0.15)";e.currentTarget.style.zIndex=10;}}}
+                    onMouseLeave={e=>{if(!isPopoverOpen){e.currentTarget.style.boxShadow="0 1px 4px rgba(0,0,0,0.08)";e.currentTarget.style.zIndex=1;}}}>
+
+                    {/* Name row + reschedule button */}
+                    <div style={{display:"flex",alignItems:"center",width:"100%",gap:2,flexShrink:0}}>
+                      <span style={{fontSize: isTiny ? "9px" : "10px", fontWeight:700,
+                        color:(isOffWeek||s.paused)?"#94a3b8": slot.isOverridden ? "#4338ca" : dc.blockText,
+                        whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",
+                        flex:1, lineHeight:"1.2"}}>
+                        {s.name}{s.paused ? " ⏸" : ""}
+                      </span>
+                      {/* ✎ reschedule icon */}
+                      {!s.paused && !isOffWeek && (
+                        <button
+                          title="Reschedule"
+                          onClick={e=>{
+                            e.stopPropagation();
+                            const rect = e.currentTarget.closest("[data-slot]").getBoundingClientRect();
+                            const fromD = slot.isOverridden ? weekOverrides[slot.overrideKey]?.day  : s[slot.slotIdx===2?"lessonDay2":"lessonDay"];
+                            const fromT = slot.isOverridden ? weekOverrides[slot.overrideKey]?.time : (s[slot.slotIdx===2?"lessonTime2":"lessonTime"] || "09:00");
+                            setActivePopover(prev =>
+                              prev?.overrideKey === slot.overrideKey ? null :
+                              { overrideKey: slot.overrideKey, slot, fromDay: fromD, fromTime: fromT, calendarWeekOffset: weekOffset, anchorRect: rect }
+                            );
+                          }}
+                          style={{fontSize:"9px",lineHeight:1,padding:"1px 3px",border:"none",
+                            background: isPopoverOpen ? "#6366f1" : "transparent",
+                            color: isPopoverOpen ? "#fff" : "#94a3b8",
+                            cursor:"pointer",flexShrink:0,borderRadius:4,
+                            transition:"all 0.1s"}}>✎</button>
+                      )}
+                      {slot.isOverridden && (
+                        <button title="Revert this slot"
+                          onClick={e=>{
+                            e.stopPropagation();
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const origDay  = s[slot.slotIdx===2?"lessonDay2":"lessonDay"];
+                            const origTime = s[slot.slotIdx===2?"lessonTime2":"lessonTime"] || "09:00";
+                            setRevertConfirm({
+                              overrideKey: slot.overrideKey,
+                              studentName: s.name,
+                              slotIdx: slot.slotIdx,
+                              student: s,
+                              originalDay: origDay,
+                              originalTime: fmtTime(origTime),
+                              anchorX: rect.right,
+                              anchorY: rect.top,
+                            });
+                            setActivePopover(null);
+                          }}
+                          style={{fontSize:"9px",lineHeight:1,padding:"0 2px",border:"none",background:"transparent",
+                            color:"#6366f1",cursor:"pointer",flexShrink:0,fontWeight:900}}>✕</button>
+                      )}
+                      {/* Skip this week button — only for non-overridden slots */}
+                      {!s.paused && !isOffWeek && !slot.isOverridden && (
+                        <button title="Remove lesson"
+                          onClick={e=>{
+                            e.stopPropagation();
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setSkipConfirm({
+                              overrideKey: slot.overrideKey,
+                              studentName: s.name,
+                              slotIdx: slot.slotIdx,
+                              student: s,
+                              anchorX: rect.right,
+                              anchorY: rect.top,
+                            });
+                          }}
+                          style={{fontSize:"9px",lineHeight:1,padding:"1px 3px",border:"none",
+                            background:"transparent", color:"#f87171",
+                            cursor:"pointer",flexShrink:0,borderRadius:4,
+                            transition:"all 0.1s", opacity:0,
+                          }}
+                          className="skip-btn"
+                        >✕</button>
+                      )}
+                    </div>
+
+                    {/* Time info */}
                     {!isTiny && (
-                      <span style={{fontSize:"9px",color:(isOffWeek||s.paused)?"#94a3b8":dc.border,fontWeight:600,whiteSpace:"nowrap",flexShrink:0}}>
-                        {fmtTime(slot.time)} · {slot.dur}m
+                      <span style={{fontSize:"9px",color:(isOffWeek||s.paused)?"#94a3b8": slot.isOverridden?"#6366f1":dc.border,
+                        fontWeight:600,whiteSpace:"nowrap",flexShrink:0,lineHeight:"1.2"}}>
+                        {fmtTime(slot.time)} · {safeDur}m
+                        {slot.isOverridden && <span style={{marginLeft:3,opacity:0.7}}>↪</span>}
                       </span>
                     )}
-                    {/* Action buttons — today only, status-aware, not for paused */}
+
+                    {/* Action buttons — today only */}
                     {!isTiny && isToday && todayStatus !== null && !s.paused && (
                       <div style={{marginTop:"auto",display:"flex",gap:3,paddingTop:2}} onClick={e=>e.stopPropagation()}>
                         {todayStatus === "logged" && (
@@ -2180,14 +3227,10 @@ function ScheduleView({ students, logs, onLog, onAbsence, onSelect, onAdd }) {
                           <>
                             <button onClick={()=>onLog(s)}
                               style={{fontSize:"9px",fontWeight:700,padding:"2px 6px",borderRadius:5,border:"none",
-                                background:dc.border,color:"white",cursor:"pointer"}}>
-                              + Log
-                            </button>
+                                background:dc.border,color:"white",cursor:"pointer"}}>+ Log</button>
                             <button onClick={()=>onAbsence(s)}
                               style={{fontSize:"9px",fontWeight:700,padding:"2px 6px",borderRadius:5,border:"none",
-                                background:"#fef2f2",color:"#dc2626",cursor:"pointer"}}>
-                              Absent
-                            </button>
+                                background:"#fef2f2",color:"#dc2626",cursor:"pointer"}}>Absent</button>
                           </>
                         )}
                       </div>
@@ -2195,6 +3238,8 @@ function ScheduleView({ students, logs, onLog, onAbsence, onSelect, onAdd }) {
                   </div>
                 );
               })}
+
+              {/* Skipped slots — hidden cleanly (no ghost shown) */}
             </div>
           ); })}
         </div>
@@ -2214,6 +3259,156 @@ function ScheduleView({ students, logs, onLog, onAbsence, onSelect, onAdd }) {
           </div>
         </div>
       )}
+
+      {/* Drag clone + ghost are created/removed in pure DOM inside onSlotMouseDown */}
+
+      {/* ── Reschedule popover ── */}
+      <ReschedulePopover
+        activePopover={activePopover}
+        weekOverrides={weekOverrides}
+        onCancel={() => setActivePopover(null)}
+        onWeekOnly={({ toDay, toTime, weekKey: targetKey }) => {
+          // Single-week override — use week from popover's week picker (may differ from currentWeekKey)
+          const studentId = activePopover.slot.student.id;
+          const slotIdx   = activePopover.slot.slotIdx;
+          const wk = targetKey || currentWeekKey;
+          if (onSaveOverride) onSaveOverride({ weekKey: wk, studentId, slotIdx, day: toDay, time: toTime });
+          setActivePopover(null);
+        }}
+        onFromWeek={({ toDay, toTime, fromWeek: targetKey }) => {
+          // "From this week onwards" permanent override
+          const fw = targetKey || currentWeekKey;
+          if (!fw) { alert("Could not determine week — please try again."); return; }
+          if (onSaveOverride) onSaveOverride({
+            weekKey: null,
+            fromWeek: fw,
+            studentId: activePopover.slot.student.id,
+            slotIdx: activePopover.slot.slotIdx,
+            day: toDay, time: toTime,
+          });
+          setActivePopover(null);
+        }}
+        onAllTime={({ toDay, toTime }) => {
+          // Change lesson_day/lesson_time directly (affects all weeks past+future)
+          if (onPermanentReschedule) {
+            onPermanentReschedule({ student: activePopover.slot.student, slotIdx: activePopover.slot.slotIdx, toDay, toTime });
+          }
+          if (onDeleteOverride) onDeleteOverride(activePopover.overrideKey);
+          setActivePopover(null);
+        }}
+        onReset={() => {
+          if (onDeleteOverride) onDeleteOverride(activePopover.overrideKey);
+          setActivePopover(null);
+        }}
+        onDeleteSlot={() => {
+          if (onDeleteSlot) onDeleteSlot(activePopover.slot.student, activePopover.slot.slotIdx);
+          setActivePopover(null);
+        }}
+      />
+
+      {/* ── Skip confirm popover ── */}
+      <SkipConfirmPopover
+        popover={skipConfirm}
+        onCancel={() => setSkipConfirm(null)}
+        onSkipWeek={() => {
+          if (!skipConfirm) return;
+          if (onSaveOverride) onSaveOverride({ weekKey: currentWeekKey, studentId: skipConfirm.student.id, slotIdx: skipConfirm.slotIdx, skip: true });
+          setSkipConfirm(null);
+        }}
+        onSkipFromWeek={() => {
+          if (!skipConfirm) return;
+          if (onSaveOverride) onSaveOverride({ weekKey: null, fromWeek: currentWeekKey, studentId: skipConfirm.student.id, slotIdx: skipConfirm.slotIdx, skip: true });
+          setSkipConfirm(null);
+        }}
+        onDeleteSlot={() => {
+          if (!skipConfirm) return;
+          if (onDeleteSlot) onDeleteSlot(skipConfirm.student, skipConfirm.slotIdx);
+          setSkipConfirm(null);
+        }}
+        onDeleteStudent={() => {
+          if (!skipConfirm) return;
+          if (onDeleteStudent) onDeleteStudent(skipConfirm.student.id);
+          setSkipConfirm(null);
+        }}
+      />
+
+      {/* ── Revert confirm popover (overridden slot ✕) ── */}
+      <RevertConfirmPopover
+        popover={revertConfirm}
+        onCancel={() => setRevertConfirm(null)}
+        onRevertWeek={() => {
+          if (!revertConfirm) return;
+          // Delete only the single-week override key (exact week_key match)
+          // Build a week-specific key for this week and delete it
+          const weekKey = `${currentWeekKey}/${revertConfirm.student.id}/${revertConfirm.slotIdx}`;
+          if (onDeleteOverride) onDeleteOverride(weekKey);
+          // Also clear the effective override key in case it's a "from" key
+          if (revertConfirm.overrideKey !== weekKey) {
+            // Add a single-week "revert" by saving the original day/time for this week only
+            const origDay  = revertConfirm.student[revertConfirm.slotIdx===2?"lessonDay2":"lessonDay"];
+            const origTime = revertConfirm.student[revertConfirm.slotIdx===2?"lessonTime2":"lessonTime"] || "09:00";
+            if (onSaveOverride) onSaveOverride({
+              weekKey: currentWeekKey,
+              studentId: revertConfirm.student.id,
+              slotIdx: revertConfirm.slotIdx,
+              day: origDay, time: origTime,
+            });
+          }
+          setRevertConfirm(null);
+        }}
+        onRevertFromWeek={() => {
+          if (!revertConfirm) return;
+          // Delete the override — from this week on, use the regular schedule
+          if (onDeleteOverride) onDeleteOverride(revertConfirm.overrideKey);
+          // Also save a "from this week" override pointing back to original
+          const origDay  = revertConfirm.student[revertConfirm.slotIdx===2?"lessonDay2":"lessonDay"];
+          const origTime = revertConfirm.student[revertConfirm.slotIdx===2?"lessonTime2":"lessonTime"] || "09:00";
+          if (onSaveOverride) onSaveOverride({
+            weekKey: null,
+            fromWeek: currentWeekKey,
+            studentId: revertConfirm.student.id,
+            slotIdx: revertConfirm.slotIdx,
+            day: origDay, time: origTime,
+          });
+          setRevertConfirm(null);
+        }}
+        onRevertAll={() => {
+          if (!revertConfirm) return;
+          // Delete override entirely — restores regular slot for all weeks
+          if (onDeleteOverride) onDeleteOverride(revertConfirm.overrideKey);
+          setRevertConfirm(null);
+        }}
+      />
+
+      {/* ── Create slot popover — 빈 칸 클릭 ── */}
+      <CreateSlotPopover
+        popover={newSlotPopover}
+        students={students}
+        onCancel={() => setNewSlotPopover(null)}
+        onSave={({ studentId, day, time, dur, weekOnly }) => {
+          const s = students.find(st => st.id === studentId);
+          if (!s) return;
+          const slotIdx = s.lessonDay ? 2 : 1;
+          if (weekOnly) {
+            // Store as a week override only — does not modify the student's regular slot
+            if (onSaveOverride) onSaveOverride({
+              weekKey: currentWeekKey,
+              studentId: s.id,
+              slotIdx,
+              day,
+              time,
+            });
+          } else {
+            if (onCreateSlot) onCreateSlot({ student: s, slotIdx, day, time, dur });
+          }
+          setNewSlotPopover(null);
+        }}
+        onSaveNew={({ name, grade, day, time, dur, weekOnly }) => {
+          // New students always get a permanent slot (weekOnly ignored for brand-new students)
+          if (onCreateNewStudent) onCreateNewStudent({ name, grade, lessonDay: day, lessonTime: time, lessonDuration: dur });
+          setNewSlotPopover(null);
+        }}
+      />
     </div>
   );
 }
@@ -2240,6 +3435,9 @@ function App() {
   const [userId,   setUserId]   = useState(null);
   const [loading,  setLoading]  = useState(true);
   const [dbError,  setDbError]  = useState("");
+  // overrides: { "<weekKey>/<studentId>/<slotIdx>": { day, time, id } }
+  // id = Supabase row id (for upsert/delete)
+  const [overrides, setOverrides] = useState({});
 
   // ── Load data from Supabase on mount ──────────────────────────────────────
   useEffect(() => {
@@ -2249,9 +3447,10 @@ function App() {
       const uid = session.user.id;
       setUserId(uid);
 
-      const [{ data: sData, error: sErr }, { data: lData, error: lErr }] = await Promise.all([
+      const [{ data: sData, error: sErr }, { data: lData, error: lErr }, { data: oData, error: oErr }] = await Promise.all([
         _supabase.from("students").select("*").eq("user_id", uid).order("created_at"),
         _supabase.from("lesson_logs").select("*").eq("user_id", uid).order("date", { ascending: false }),
+        _supabase.from("lesson_overrides").select("*").eq("user_id", uid),
       ]);
 
       if (sErr || lErr) {
@@ -2259,11 +3458,86 @@ function App() {
       } else {
         setStudents((sData || []).map(rowToStudent));
         setLogs((lData || []).map(rowToLog));
+        // Build overrides map from DB rows
+        // Two key formats:
+        //   "<weekKey>/<studentId>/<slotIdx>"  → single-week override
+        //   "from/<fromWeek>/<studentId>/<slotIdx>" → "from this week onwards" permanent override
+        const map = {};
+        (oData || []).forEach(r => {
+          if (r.from_week && !r.week_key) {
+            // Permanent-from override
+            const key = `from/${r.from_week}/${r.student_id}/${r.slot_idx}`;
+            const val = r.day === "__skip__" ? { skip: true, id: r.id, fromWeek: r.from_week }
+                                             : { day: r.day, time: r.time, id: r.id, fromWeek: r.from_week };
+            map[key] = val;
+          } else if (r.week_key) {
+            // Single-week override (original behaviour)
+            const key = `${r.week_key}/${r.student_id}/${r.slot_idx}`;
+            map[key] = r.day === "__skip__" ? { skip: true, id: r.id }
+                                            : { day: r.day, time: r.time, id: r.id };
+          }
+        });
+        setOverrides(map);
       }
       setLoading(false);
     }
     init();
   }, []);
+
+  // ── Override CRUD ─────────────────────────────────────────────────────────
+  // fromWeek: if set, stores a "from this week onwards" permanent override (week_key=null, from_week=fromWeek)
+  // weekKey only: stores a single-week override (original behaviour)
+  const saveOverride = async ({ weekKey, studentId, slotIdx, day, time, skip, fromWeek }) => {
+    const dbDay  = skip ? "__skip__" : day;
+    const dbTime = skip ? null : time;
+
+    // Guard: must have either fromWeek or weekKey — never save a row with both NULL
+    if (!fromWeek && !weekKey) {
+      console.error("saveOverride: both fromWeek and weekKey are null — skipping save", { studentId, slotIdx, day, time });
+      return;
+    }
+
+    if (fromWeek) {
+      // ── Permanent-from override ──
+      const key = `from/${fromWeek}/${studentId}/${slotIdx}`;
+      const existing = overrides[key];
+      const localVal = skip ? { skip: true, fromWeek } : { day, time, fromWeek };
+      const row = { user_id: userId, student_id: studentId, week_key: null, from_week: fromWeek, slot_idx: slotIdx, day: dbDay, time: dbTime };
+      if (existing) {
+        const { data, error } = await _supabase.from("lesson_overrides").update({ day: dbDay, time: dbTime }).eq("id", existing.id).select().single();
+        if (error) { alert("Could not save override: " + error.message); return; }
+        setOverrides(prev => ({ ...prev, [key]: { ...localVal, id: data.id } }));
+      } else {
+        const { data, error } = await _supabase.from("lesson_overrides").insert(row).select().single();
+        if (error) { alert("Could not save override: " + error.message); return; }
+        setOverrides(prev => ({ ...prev, [key]: { ...localVal, id: data.id } }));
+      }
+    } else {
+      // ── Single-week override ──
+      const key = `${weekKey}/${studentId}/${slotIdx}`;
+      const existing = overrides[key];
+      const localVal = skip ? { skip: true } : { day, time };
+      if (existing) {
+        const { data, error } = await _supabase.from("lesson_overrides").update({ day: dbDay, time: dbTime }).eq("id", existing.id).select().single();
+        if (error) { alert("Could not save override: " + error.message); return; }
+        setOverrides(prev => ({ ...prev, [key]: { ...localVal, id: data.id } }));
+      } else {
+        const { data, error } = await _supabase.from("lesson_overrides")
+          .insert({ user_id: userId, student_id: studentId, week_key: weekKey, from_week: null, slot_idx: slotIdx, day: dbDay, time: dbTime })
+          .select().single();
+        if (error) { alert("Could not save override: " + error.message); return; }
+        setOverrides(prev => ({ ...prev, [key]: { ...localVal, id: data.id } }));
+      }
+    }
+  };
+
+  const deleteOverride = async (key) => {
+    const existing = overrides[key];
+    if (!existing) return;
+    const { error } = await _supabase.from("lesson_overrides").delete().eq("id", existing.id);
+    if (error) { alert("Could not delete override: " + error.message); return; }
+    setOverrides(prev => { const n = {...prev}; delete n[key]; return n; });
+  };
 
   const filtered = useMemo(()=>{
     const q = search.toLowerCase();
@@ -2271,7 +3545,9 @@ function App() {
       if (!showPaused && s.paused) return false;
       const matchSearch = s.name.toLowerCase().includes(q) || s.grade.toLowerCase().includes(q);
       const matchGrade  = filterGrade === "All" || s.grade === filterGrade;
-      const matchTrack  = filterTrack === "All" || s.track === filterTrack;
+      const matchTrack  = filterTrack === "All"
+        || (filterTrack === "exam" && isExamStudent(s))
+        || (filterTrack === "general" && !isExamStudent(s));
       return matchSearch && matchGrade && matchTrack;
     });
     list = [...list].sort((a, b) => {
@@ -2303,7 +3579,7 @@ function App() {
     return list;
   },[students, search, filterGrade, filterTrack, sortBy, logs]);
 
-  const urgent = students.filter(s=>s.track==="exam" && weeksUntil(s.examDate)!==null && weeksUntil(s.examDate)<=4);
+  const urgent = students.filter(s=>isExamStudent(s) && weeksUntil(s.examDate)!==null && weeksUntil(s.examDate)<=4);
 
   // ── CRUD: Students ────────────────────────────────────────────────────────
   const addStudent = async (f) => {
@@ -2324,13 +3600,17 @@ function App() {
     setEditing(null);
   };
 
-  const deleteStudent = async (id) => {
-    if (!confirm("Delete this student and all their lesson logs?")) return;
+  const _doDeleteStudent = async (id) => {
     const { error } = await _supabase.from("students").delete().eq("id", id);
     if (error) { alert("Could not delete student: " + error.message); return; }
     setStudents(p => p.filter(s => s.id !== id));
     setLogs(p => p.filter(l => l.studentId !== id));
     if (selected?.id === id) { setView("list"); setSelected(null); }
+  };
+
+  const deleteStudent = async (id) => {
+    if (!confirm("Delete this student and all their lesson logs?")) return;
+    await _doDeleteStudent(id);
   };
 
   const pauseStudent = async (student, { pauseFrom, pauseUntil, pauseUndecided }) => {
@@ -2352,6 +3632,65 @@ function App() {
     const s = rowToStudent(data);
     setStudents(p => p.map(x => x.id === s.id ? s : x));
     setSelected(s);
+  };
+
+  // ── Permanent reschedule from drag-and-drop ──────────────────────────────
+  const handlePermanentReschedule = async ({ student, slotIdx, toDay, toTime }) => {
+    const field = slotIdx === 2
+      ? { lesson_day2: toDay,  lesson_time2: toTime }
+      : { lesson_day:  toDay,  lesson_time:  toTime };
+    const { data, error } = await _supabase
+      .from("students").update(field).eq("id", student.id).select().single();
+    if (error) { alert("Could not update schedule: " + error.message); return; }
+    const updated = rowToStudent(data);
+    setStudents(p => p.map(s => s.id === updated.id ? updated : s));
+    if (selected?.id === updated.id) setSelected(updated);
+  };
+
+  // ── Create / Delete slot ─────────────────────────────────────────────────
+  const handleCreateSlot = async ({ student, slotIdx, day, time, dur }) => {
+    const field = slotIdx === 2
+      ? { lesson_day2: day, lesson_time2: time }
+      : { lesson_day: day, lesson_time: time, lesson_dur: dur };
+    // Also update duration if slot 1
+    const updateField = slotIdx === 2
+      ? { lesson_day2: day, lesson_time2: time }
+      : { lesson_day: day, lesson_time: time, lesson_dur: dur };
+    const { data, error } = await _supabase
+      .from("students").update(updateField).eq("id", student.id).select().single();
+    if (error) { alert("Could not create slot: " + error.message); return; }
+    const updated = rowToStudent(data);
+    setStudents(p => p.map(s => s.id === updated.id ? updated : s));
+    if (selected?.id === updated.id) setSelected(updated);
+  };
+
+  const handleCreateNewStudent = async ({ name, grade, lessonDay, lessonTime, lessonDuration }) => {
+    if (!name.trim()) { alert("Please enter a student name."); return; }
+    const f = {
+      name: name.trim(),
+      grade: grade || "Grade 3",
+      track: "general",
+      lessonDay: lessonDay || "Monday",
+      lessonTime: lessonTime || "16:00",
+      lessonDuration: lessonDuration || 45,
+      startingPhase: "foundation",
+    };
+    const row = studentToRow(f, userId);
+    const { data, error } = await _supabase.from("students").insert(row).select().single();
+    if (error) { alert("Could not create student: " + error.message); return; }
+    setStudents(p => [...p, rowToStudent(data)]);
+  };
+
+  const handleDeleteSlot = async (student, slotIdx) => {
+    const field = slotIdx === 2
+      ? { lesson_day2: null, lesson_time2: null }
+      : { lesson_day: null, lesson_time: null };
+    const { data, error } = await _supabase
+      .from("students").update(field).eq("id", student.id).select().single();
+    if (error) { alert("Could not delete slot: " + error.message); return; }
+    const updated = rowToStudent(data);
+    setStudents(p => p.map(s => s.id === updated.id ? updated : s));
+    if (selected?.id === updated.id) setSelected(updated);
   };
 
   // ── CRUD: Logs ────────────────────────────────────────────────────────────
@@ -2521,30 +3860,28 @@ function App() {
 
     // ── Sheet 1: Students ──
     const studentRows = students.map(s => {
-      const sNorm = { startingPhase: s.track==="exam"?"foundation":"exploration", ...s };
+      const sNorm = { startingPhase: isExamStudent(s)?"foundation":"exploration", ...s };
       const plan  = buildPlan(sNorm);
       const curM  = plan.findIndex(m => m.monthStr === currentMonthStr());
       const phase = (curM>=0 ? plan[curM] : plan[plan.length-1])?.phase || "—";
-      const wl    = s.track==="exam" ? weeksUntil(s.examDate) : null;
-      const ml    = s.track==="exam"
+      const wl    = isExamStudent(s) ? weeksUntil(s.examDate) : null;
+      const ml    = isExamStudent(s)
         ? monthsUntil(s.examDate)
         : monthsUntil(addMonths(s.startDate, s.planMonths||3));
       const studentLogs = logs.filter(l=>l.studentId===s.id);
       return {
         "Name":             s.name,
-        "Grade":            s.grade,
-        "Track":            s.track==="exam" ? "Exam" : "General",
+        "Grade/Level":      s.grade || s.level || "General",
+        "Exam":             s.examType ? `${s.examType}${s.examDate ? " · " + fmtDate(s.examDate) : ""}` : (s.examDate ? fmtDate(s.examDate) : "—"),
         "Lesson Day":       s.lessonDay || "—",
         "Lesson Time":      fmtTime(s.lessonTime),
         "Duration (min)":   s.lessonDuration,
         "Lessons/week":     s.lessonsPerWeek,
         "Started":          fmtDate(s.startDate),
-        "Exam Date":        s.track==="exam" ? fmtDate(s.examDate) : "—",
         "Weeks to Exam":    wl !== null ? wl : "—",
         "Months Left":      ml !== null ? ml : "—",
         "Current Phase":    PHASE_META[phase]?.name || phase,
         "Starting Phase":   PHASE_META[s.startingPhase]?.name || s.startingPhase || "—",
-        "Plan Months":      s.track==="exam" ? "—" : (s.planMonths||3),
         "Total Logs":       studentLogs.length,
         "Last Log Date":    studentLogs.length ? studentLogs.sort((a,b)=>b.date.localeCompare(a.date))[0].date : "—",
       };
@@ -2575,7 +3912,7 @@ function App() {
     // ── Sheet 3: Monthly Plans ──
     const planRows = [];
     students.forEach(s => {
-      const sNorm = { startingPhase: s.track==="exam"?"foundation":"exploration", ...s };
+      const sNorm = { startingPhase: isExamStudent(s)?"foundation":"exploration", ...s };
       const plan  = buildPlan(sNorm);
       plan.forEach(m => {
         planRows.push({
@@ -2683,10 +4020,18 @@ function App() {
           <ScheduleView
             students={students}
             logs={logs}
+            overrides={overrides}
             onLog={setLogging}
             onAbsence={setAbsenceTarget}
             onSelect={s=>{setSelected(s);setView("detail");setTab("students");}}
             onAdd={()=>setShowAdd(true)}
+            onSaveOverride={saveOverride}
+            onDeleteOverride={deleteOverride}
+            onPermanentReschedule={handlePermanentReschedule}
+            onCreateSlot={handleCreateSlot}
+            onDeleteSlot={handleDeleteSlot}
+            onCreateNewStudent={handleCreateNewStudent}
+            onDeleteStudent={_doDeleteStudent}
           />
         )}
 
@@ -2720,7 +4065,7 @@ function App() {
 
                 {/* Track filter */}
                 <div className="flex gap-1 bg-slate-100 rounded-xl p-1" style={{flexShrink:0}}>
-                  {[["All","All"],["exam","Exam"],["general","General"]].map(([val,label])=>(
+                  {[["All","All"],["exam","With exam"],["general","No exam"]].map(([val,label])=>(
                     <button key={val} onClick={()=>setFilterTrack(val)}
                       className="px-3 py-1 rounded-lg text-xs font-semibold transition-all"
                       style={filterTrack===val?{background:"white",color:"#4f46e5",boxShadow:"0 1px 4px #0001"}:{color:"#94a3b8"}}>
@@ -2832,10 +4177,42 @@ function App() {
   );
 }
 
+// ── Error boundary — catches any React render crash and shows the error ──
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(err) { return { error: err }; }
+  componentDidCatch(err, info) {
+    console.error("React crash:", err, info);
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{padding:40, fontFamily:"monospace", background:"#fef2f2", minHeight:"100vh"}}>
+          <h2 style={{color:"#dc2626", marginBottom:16}}>⚠ React render error</h2>
+          <pre style={{background:"#fff", border:"1px solid #fca5a5", borderRadius:8, padding:16,
+            fontSize:12, whiteSpace:"pre-wrap", wordBreak:"break-all", color:"#1e293b"}}>
+            {this.state.error.toString()}
+            {"\n\n"}
+            {this.state.error.stack}
+          </pre>
+          <button onClick={()=>this.setState({error:null})}
+            style={{marginTop:16, padding:"8px 20px", background:"#dc2626", color:"white",
+              border:"none", borderRadius:8, cursor:"pointer", fontSize:14}}>
+            Try again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 // Check session before rendering — redirects to login.html if not logged in
 requireAuth().then(session => {
   if (session) {
-    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+    ReactDOM.createRoot(document.getElementById("root")).render(
+      <ErrorBoundary><App/></ErrorBoundary>
+    );
   }
 });
 </script>

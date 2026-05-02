@@ -317,7 +317,44 @@ Always cross-check the **2026 AMEB Piano Syllabus PDF** before adding or removin
 
 ---
 
-## Build Status — Last updated 2026-04-30
+### Phase 5 Updates (2026-05-01)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Date numbers in schedule day headers | teacher-dashboard.html | Each day column (SUN–SAT) now shows the actual date number below the weekday label. Computed from `weekOffset` via `weekDates` map (ISO Monday anchor). Today's date shown larger + coloured; other days smaller + muted. Correct across Prev/Next week navigation. |
+| 2 | Slot height bug fix (30-min slots) | teacher-dashboard.html | `lessonDuration` missing → `dur = undefined` → `height = NaN` → slot rendered as tiny (name only). Fixed with `safeDur` fallback: `(slot.dur && slot.dur > 0) ? slot.dur : 45`. |
+| 3 | Calendar grid height expanded | teacher-dashboard.html | `SLOT_H` raised 56 → 60 → 80 px/hour. Results: 30-min = 40px (name+time visible), 45-min = 60px (name+time+buttons), 60-min = 80px (full). |
+| 4 | Slot display tier logic simplified | teacher-dashboard.html | `isTiny = height < 28` (name only for <20min slots); `isCompact` removed — all non-tiny slots show name + time + buttons. `lineHeight: 1.2` added to prevent text clipping. |
+| 5 | Weekly override system | teacher-dashboard.html | `weekOverrides` state: `{ "<isoMonday>/<studentId>/<slotIdx>": { day, time } }`. Slots rendered from override when present. Week key computed from `weekOffset`. Override indicator: purple dashed border + ↪ suffix on time. ✕ button to reset individual override. "↺ Reset moves" button in week header clears all overrides for current week. |
+| 6 | Reschedule popover (replaces broken drag-and-drop modal) | teacher-dashboard.html | Drag-and-drop fully removed (caused blank screen due to browser drag event timing). Replaced with ✎ icon on each slot → click opens `ReschedulePopover` anchored next to the slot (fixed position, auto-flips left/right to stay in viewport). Popover contains: day picker (Sun–Sat tabs, original day highlighted), time editor (−1h/−15/direct input/+15/+1h coarse + −5/−1/+1/+5m fine nudge), live end-time display. Save buttons appear only when day or time has changed: 📅 This week only (stores to `weekOverrides`) / 🔁 Update regular schedule (Supabase `lesson_day`/`lesson_time` update + `setStudents`). Backdrop click closes popover. |
+| 7 | `handlePermanentReschedule` in App | teacher-dashboard.html | New App-level async function. Updates `lesson_day`/`lesson_time` (slotIdx=1) or `lesson_day2`/`lesson_time2` (slotIdx=2) via Supabase. Reflects in `students` state and `selected` immediately. |
+| 8 | Drag-and-drop — pure DOM approach | teacher-dashboard.html | Completely rewrote drag to avoid React render cycles. All drag visuals (clone div + ghost div) are `createElement`/`appendChild`/`remove` in pure DOM inside `onSlotMouseDown` closure — zero `setState` calls during mouse movement. Full-screen transparent overlay div captures all mouse events during drag. `data-override-key` attribute on each slot div allows direct `style.opacity` manipulation without React. `setActivePopover` called only once on mouseup after cleanup. |
+| 9 | ReschedulePopover crash fix | teacher-dashboard.html | Root cause of all blank-screen crashes: `editTime` state was `null` on first render (useEffect runs after render, not before) → `timeToMins(null)` → `null.split(":")` → TypeError. Fixed by initialising `useState` directly from `activePopover` props instead of relying on useEffect, plus a `if (!editDay \|\| !editTime) return null` guard. |
+| 10 | ErrorBoundary added | teacher-dashboard.html | `class ErrorBoundary extends React.Component` wraps `<App/>` in `ReactDOM.createRoot(...).render(...)`. Catches any future React render crash and displays the error message + stack trace on screen instead of a blank page. |
+
+---
+
+### Phase 6 Updates (2026-05-02)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | `startDate` persisting after edit | teacher-dashboard.html | `studentToRow` was silently dropping `startDate` (not written to any column). Fixed: `extraObj.startDate = startDate` explicitly added. `rowToStudent` reads `extra.startDate` first before falling back to `created_at`. |
+| 2 | Save button always enabled | teacher-dashboard.html | `valid` check simplified to `f.name.trim().length > 0` — no longer requires `examDate` for exam track students. |
+| 3 | Exam prep refactored as optional section | teacher-dashboard.html | Removed binary exam/general toggle. `isExamStudent(s)` helper: `!!(s && s.examDate)`. All 43 `track==="exam"` comparisons replaced. `StudentModal` rewritten with collapsible "Exam" accordion — only visible when expanded. `examType` field added (free text — supports AMEB, RCM, Trinity, ABRSM, etc.), stored in `extra` blob. |
+| 4 | `lessonDuration2` for 2x-per-week students | teacher-dashboard.html | Second lesson duration field added to `StudentModal` when `lessonsPerWeek=2`. Stored in `extra` blob as `lessonDuration2`. `safeDur2` computed in `ScheduleView` with fallback to `lessonDuration`. |
+| 5 | `lesson_day2` / `lesson_time2` DB columns | teacher-dashboard.html | Added via `ALTER TABLE students ADD COLUMN lesson_day2 text, ADD COLUMN lesson_time2 text`. `rowToStudent` and `studentToRow` updated to map these columns. `NOTIFY pgrst, 'reload schema'` run to clear PostgREST cache. |
+| 6 | `lesson_overrides` table: `from_week` column | teacher-dashboard.html | `from_week date` column added to `lesson_overrides`. `saveOverride` guard added: rejects saves when both `from_week` and `week_key` are NULL. `onFromWeek` handler uses `fw = targetKey \|\| currentWeekKey` as null-safe fallback. |
+| 7 | Override `from` key format | teacher-dashboard.html | "From this week onwards" overrides stored as `from/<isoMonday>/<studentId>/<slotIdx>`. `getEffectiveOverride()` checks exact week key first, then most-recent `from/` ≤ currentWeekKey. |
+| 8 | `weekDates` Sunday anchor fix | teacher-dashboard.html | Previous formula gave SUN the following week's date (index off-by-one). Fixed with Sunday anchor: `sun.setDate(now.getDate() - nowDay + weekOffset * 7)` + `DAY_OFFSET` dict. `DAYS_ORDER = ["Sunday","Monday",...,"Saturday"]` (Sun-first). |
+| 9 | `hitTest` cross-column drag fix | teacher-dashboard.html | `x` calculation corrected: `(cx - rect.left) + scrollLeft - TC`. `totalColW` now uses `grid.scrollWidth - TC` (full scroll width) instead of `rect.width` (visible only). `hitTest` returns `{ day, time, dayIdx, colW, rect, scrollLeft }` — `updateVisuals` uses `hit.colW` for ghost width. |
+| 10 | Google Calendar-style drag-and-drop | teacher-dashboard.html | Pure DOM drag (no React setState during mousemove). Floating clone follows cursor, ghost shows drop target. Cross-column dragging works via fixed `hitTest`. On mouseup: opens `ReschedulePopover` at drop position with pre-filled day/time. |
+| 11 | RevertConfirmPopover (new component) | teacher-dashboard.html | Clicking ✕ on an overridden (moved) slot opens 3-option revert menu: ↺ Revert this week only (masks from-override with exact-week original) / ↺↺ Revert from this week on (new from-override pointing to original) / ⚡ Revert all weeks (delete override entirely). |
+| 12 | Skip button hidden on overridden slots | teacher-dashboard.html | Skip-btn ✕ (red, hover-visible) now only shows on non-overridden slots (`!slot.isOverridden`). Overridden slots show blue ✕ → RevertConfirmPopover. Eliminates two conflicting ✕ buttons on same block. |
+| 13 | SkipConfirmPopover label improvements | teacher-dashboard.html | Clearer option labels: "Skip this week only" / "Skip from this week on" / "Remove this lesson slot" / "Delete student". Subtitles explain exactly what each option does. |
+
+---
+
+## Build Status — Last updated 2026-05-02
 
 ### Completed Features (Index.html)
 | # | Feature | Status |
@@ -352,7 +389,11 @@ Always cross-check the **2026 AMEB Piano Syllabus PDF** before adding or removin
 | 18 | Student pause/resume | ✅ Done (2026-04-29, enhanced 2026-04-30) — ⏸ Pause button opens PauseModal with pause-from date, optional return date, and "Undecided" toggle. Paused students shown dimmed in Today/Schedule views (not hidden). `showPaused` defaults to true. `pauseUntil` + `pauseUndecided` stored in extra JSON blob. |
 | 19 | payments.html — lesson fee management | 🔜 Planned — separate page, same Supabase DB. Per-student fee, auto lesson count, paid/unpaid toggle, PDF invoice. Stripe optional later. |
 | 20 | Schedule week navigation | ✅ Done (2026-04-30) — ← / → buttons to browse past and future weeks. Fortnightly logic offset-aware. |
-| 21 | Schedule calendar UX polish | ✅ Done (2026-04-30) — White grid background, coloured lesson blocks per day, grade label removed, slot display tiers (tiny/compact/full), day header shows total lesson hours. |
+| 21 | Schedule calendar UX polish | ✅ Done (2026-04-30, further improved 2026-05-01) — White grid background, coloured lesson blocks per day, grade label removed, slot display tiers, day header shows total lesson hours. Grid height expanded (SLOT_H=80), 30-min slots now show name+time. Date numbers added to day headers. |
+| 22 | Schedule reschedule (weekly override + permanent) | ✅ Done (2026-05-01, drag improved 2026-05-02) — ✎ icon on each slot opens inline popover with day picker + time nudge. Three save modes: This week only / From this week on / All weeks (permanent). Google Calendar-style pure DOM drag-and-drop restores cross-column movement. |
+| 23 | Exam track refactor + flexible exam type | ✅ Done (2026-05-02) — Binary exam/general toggle removed. Exam section is now collapsible in StudentModal. `examType` free-text field supports AMEB, RCM, Trinity, ABRSM. `isExamStudent(s)` helper replaces all `track==="exam"` checks. |
+| 24 | Override revert UX (RevertConfirmPopover) | ✅ Done (2026-05-02) — Overridden slot ✕ opens 3-option revert menu. Skip button separated from revert button. SkipConfirmPopover labels clarified. |
+| 25 | payments.html — lesson fee management | 🔜 Planned — separate page, same Supabase DB. Per-student fee, auto lesson count, paid/unpaid toggle, PDF invoice. Stripe optional later. |
 
 ### Deployment Plan (updated 2026-04-29)
 - **Live:** https://exquisite-faloodeh-6d8e82.netlify.app
@@ -361,6 +402,64 @@ Always cross-check the **2026 AMEB Piano Syllabus PDF** before adding or removin
 - **Data:** All teacher/student/log data in Supabase DB with Row Level Security per user_id
 - **GitHub:** https://github.com/vividssso-pixel/Piano-butler — Netlify auto-deploys on push to `main`
 - Do NOT use Wix — incompatible with React/Babel structure
+
+### Supabase Schema (current as of 2026-05-02)
+
+**`public.students` columns:**
+```
+id, user_id, name, grade, track, exam_date, plan_months, lesson_dur,
+lesson_day, lesson_time, lesson_day2, lesson_time2,   ← lesson_day2/time2 added 2026-05-02
+start_phase, created_at, extra (jsonb)
+```
+
+**`extra` jsonb blob fields (teacher-dashboard.html):**
+```
+startDate, grade, examType, lessonDuration2, customDuration, customDuration2,
+lessonsPerWeek, termGoal, level, startingPhase,
+paused, pausedAt, pauseUntil, pauseUndecided,
+frequency (e.g. "fortnightly")
+```
+
+**`public.lesson_logs` columns:**
+```
+id, user_id, student_id, date, type, notes, sections (jsonb), created_at
+```
+
+**`public.lesson_overrides` columns:**
+```
+id, user_id, student_id, week_key (date, nullable), from_week (date, nullable),
+slot_idx (int), day (text), time (text), created_at
+```
+- `week_key` set → single-week override; `from_week` set → permanent from that week
+- Never both NULL — `saveOverride` guard enforces this
+- After adding `from_week`: run `NOTIFY pgrst, 'reload schema';` in Supabase SQL editor
+
+### Key Helper Functions (teacher-dashboard.html)
+
+| Function | Purpose |
+|----------|---------|
+| `isExamStudent(s)` | `!!(s && s.examDate)` — replaces `track==="exam"` |
+| `rowToStudent(r)` | DB row → React state; reads `extra` JSON first for `startDate`, `grade`, etc. |
+| `studentToRow(f, userId)` | React form state → DB row; writes `startDate`/`grade` into `extra` blob |
+| `getEffectiveOverride(studentId, slotIdx, weekKey)` | Priority: exact week match → latest `from/` override ≤ weekKey |
+| `getWeekKey(offset)` | ISO Monday date for a given weekOffset |
+| `isFortnightWeek(startDate, offset)` | Returns true if this week is an "on" week for fortnightly students |
+| `fmtTime(t)` | `"14:00"` → `"2:00 PM"` |
+| `hitTest(cx, cy)` | Pure DOM: maps viewport coords → `{ day, time, dayIdx, colW, rect, scrollLeft }` |
+| `saveOverride({ weekKey, fromWeek, studentId, slotIdx, day, time, skip })` | Upserts to `lesson_overrides` Supabase table |
+| `deleteOverride(key)` | Deletes override row by its local state key |
+
+### Override Key Format
+
+| Key format | Meaning |
+|------------|---------|
+| `"<isoMonday>/<studentId>/<slotIdx>"` | Single-week override (exact week_key match) |
+| `"from/<isoMonday>/<studentId>/<slotIdx>"` | Permanent from that week onwards |
+
+### Known Issues / Watch Points (as of 2026-05-02)
+- `from_week` column: run `NOTIFY pgrst, 'reload schema';` in Supabase SQL if saves fail silently
+- Drag cross-column: uses `grid.scrollWidth` (not `rect.width`) for `totalColW` — if layout changes, re-check `hitTest`
+- `isExamStudent()` reads `s.examDate` — if examDate not loaded from `extra`, exam section won't open in edit modal
 
 ### Language Rule
 - Conversation: Korean is fine
