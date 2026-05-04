@@ -64,6 +64,36 @@ Piano Butler/
 │   ├── data_g8.js                   ← G8 Comprehensive (145 pieces)
 │   ├── data_g8_leisure.js           ← G8 Leisure (95 pieces)
 │   └── piano-repertoire_g8.html
+├── ABRSM/
+│   ├── Syllabus/
+│   │   └── ABRSM Piano 2025 & 2026.pdf  ← authoritative source
+│   ├── Initial/
+│   │   ├── data_abrsm_initial.js    ← ABRSM Initial (42 pieces: A:12, B:15, C:15)
+│   │   └── piano-repertoire_abrsm_initial.html
+│   ├── G1/
+│   │   ├── data_abrsm_g1.js         ← ABRSM G1 (47 pieces: A:15, B:16, C:14) — ⚠️ recount from PDF
+│   │   └── piano-repertoire_abrsm_g1.html
+│   ├── G2/
+│   │   ├── data_abrsm_g2.js         ← ABRSM G2 (45 pieces: A:15, B:14, C:15)
+│   │   └── piano-repertoire_abrsm_g2.html
+│   ├── G3/
+│   │   ├── data_abrsm_g3.js         ← ABRSM G3 (46 pieces: A:15, B:16, C:14)
+│   │   └── piano-repertoire_abrsm_g3.html
+│   ├── G4/
+│   │   ├── data_abrsm_g4.js         ← ABRSM G4 (46 pieces: A:16, B:16, C:14)
+│   │   └── piano-repertoire_abrsm_g4.html
+│   ├── G5/
+│   │   ├── data_abrsm_g5.js         ← ABRSM G5 (47 pieces: A:15, B:16, C:16)
+│   │   └── piano-repertoire_abrsm_g5.html
+│   ├── G6/
+│   │   ├── data_abrsm_g6.js         ← ABRSM G6 (47 pieces: A:16, B:16, C:15)
+│   │   └── piano-repertoire_abrsm_g6.html
+│   ├── G7/
+│   │   ├── data_abrsm_g7.js         ← ABRSM G7 (46 pieces: A:16, B:15, C:15)
+│   │   └── piano-repertoire_abrsm_g7.html
+│   └── G8/
+│       ├── data_abrsm_g8.js         ← ABRSM G8 (45 pieces: A:16, B:15, C:14)
+│       └── piano-repertoire_abrsm_g8.html
 ```
 
 ---
@@ -394,6 +424,8 @@ Always cross-check the **2026 AMEB Piano Syllabus PDF** before adding or removin
 | 23 | Exam track refactor + flexible exam type | ✅ Done (2026-05-02) — Binary exam/general toggle removed. Exam section is now collapsible in StudentModal. `examType` free-text field supports AMEB, RCM, Trinity, ABRSM. `isExamStudent(s)` helper replaces all `track==="exam"` checks. |
 | 24 | Override revert UX (RevertConfirmPopover) | ✅ Done (2026-05-02) — Overridden slot ✕ opens 3-option revert menu. Skip button separated from revert button. SkipConfirmPopover labels clarified. |
 | 25 | payments.html — lesson fee management | 🔜 Planned — separate page, same Supabase DB. Per-student fee, auto lesson count, paid/unpaid toggle, PDF invoice. Stripe optional later. |
+| 26 | ABRSM syllabus integration | ✅ Done (2026-05-04) — Initial–G8, 411 pieces, AMEB/ABRSM toggle on Index.html, title quality pass (182 corrections). |
+| 27 | ABRSM missing pieces recovery (411→432) | 🔜 Planned — 21 pieces lost to PDF noise filter; manual audit pass needed. |
 
 ### Deployment Plan (updated 2026-04-29)
 - **Live:** https://exquisite-faloodeh-6d8e82.netlify.app
@@ -460,6 +492,66 @@ slot_idx (int), day (text), time (text), created_at
 - `from_week` column: run `NOTIFY pgrst, 'reload schema';` in Supabase SQL if saves fail silently
 - Drag cross-column: uses `grid.scrollWidth` (not `rect.width`) for `totalColW` — if layout changes, re-check `hitTest`
 - `isExamStudent()` reads `s.examDate` — if examDate not loaded from `extra`, exam section won't open in edit modal
+
+---
+
+### Phase 7 Updates (2026-05-04)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | ABRSM syllabus added — Initial through Grade 8 | `ABRSM/` folder (18 new files) | 411 pieces total extracted from official *ABRSM Piano 2025 & 2026* PDF via pdfplumber word-bbox parsing. Each grade has `data_abrsm_gX.js` + `piano-repertoire_abrsm_gX.html` (self-contained React 18 + Tailwind). ABRSM purple theme (`#7c3aed`). Features: List A/B/C tabs, Era chips, Nationality dropdown, search, YouTube + Google Sheet links, Wikipedia COMPOSER_LINKS. Back-link `../../Index.html`. |
+| 2 | AMEB/ABRSM syllabus toggle on Index.html | `Index.html` | New `SyllabusGrid` React component (line ~189) replaces static AMEB-only grade grid. 🇦🇺 AMEB / 🇬🇧 ABRSM tab toggle. AMEB renders existing `GradeCard` components; ABRSM renders 9 violet-accented cards (Initial–G8) with List A/B/C chips. Fixes prior IIFE-based `React.useState` hook violation. |
+| 3 | ABRSM title quality pass | All `data_abrsm_*.js` + `piano-repertoire_abrsm_*.html` (18 files) | 182 title corrections applied across all 9 grades: trailing `(from)` restored, truncated `Op./No./Vol.` numbers completed, spurious `Piano` word insertions removed, composer-name leakage into titles cleared, duplicate `Piano Piano` collapsed. All verified against PDF. |
+
+### ABRSM Piece Counts (2026-05-04)
+
+| Grade | File | Total | List A | List B | List C |
+|-------|------|-------|--------|--------|--------|
+| Initial | data_abrsm_initial.js | 42 | 12 | 15 | 15 |
+| G1 | data_abrsm_g1.js | 47 | 15 | 16 | 14 |  ← ⚠️ 47 vs expected 48 — 1 piece may still be missing |
+| G2 | data_abrsm_g2.js | 45 | 15 | 14 | 15 |  ← ⚠️ 45 vs expected 48 |
+| G3 | data_abrsm_g3.js | 46 | 15 | 16 | 14 |  ← ⚠️ 46 vs expected 48 |
+| G4 | data_abrsm_g4.js | 46 | 16 | 16 | 14 |  ← ⚠️ 46 vs expected 48 |
+| G5 | data_abrsm_g5.js | 47 | 15 | 16 | 16 |  ← ⚠️ 47 vs expected 48 |
+| G6 | data_abrsm_g6.js | 47 | 16 | 16 | 15 |  ← ⚠️ 47 vs expected 48 |
+| G7 | data_abrsm_g7.js | 46 | 16 | 15 | 15 |  ← ⚠️ 46 vs expected 48 |
+| G8 | data_abrsm_g8.js | 45 | 16 | 15 | 14 |  ← ⚠️ 45 vs expected 48 |
+| **Total** | | **411** | | | | ← expected 432 (16×3×9); 21 pieces to recover in future pass |
+
+### ABRSM Data Architecture
+
+Each `data_abrsm_gX.js` follows the same schema as AMEB data but without `s` (series) or `key` fields:
+
+```javascript
+const DATA_ABRSM_G1 = [
+  {
+    "l": "A",              // List: A / B / C
+    "c": "HANDEL",         // Composer — SURNAME, Firstname format
+    "t": "Fireworks Minuet (from Music for the Royal Fireworks)",
+    "nat": "German",       // Nationality
+    "era": "Baroque",      // Era: Baroque / Classical / Romantic / Modern / Contemporary
+    "focus": ["Baroque style", "Dance character", "Keyboard clarity"]  // exactly 3 keywords
+  },
+  ...
+];
+```
+
+### ABRSM HTML App Architecture
+
+Each `piano-repertoire_abrsm_gX.html` is a **self-contained single-file app**:
+- React 18 + Babel + Tailwind CSS (CDN) — same stack as AMEB pages
+- Data embedded **inline** (no external JS file needed)
+- ABRSM violet theme: `#7c3aed`
+- `nats` computed via `useMemo` from data (dynamic nationality list)
+- Back-link: `../../Index.html`
+- `COMPOSER_LINKS` object with Wikipedia URLs
+
+### Remaining TODO (ABRSM)
+| # | Task | Priority |
+|---|------|----------|
+| 1 | Recover missing 21 pieces (411 → 432) | Medium — PDF page-boundary parsing edge cases |
+| 2 | payments.html — lesson fee management page | High |
+| 3 | GitHub push → Netlify deploy | Done (2026-05-04) |
 
 ### Language Rule
 - Conversation: Korean is fine

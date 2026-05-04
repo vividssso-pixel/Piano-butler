@@ -1,0 +1,51 @@
+// ABRSM Piano 2025 & 2026 — Initial
+// Total: 42 pieces  A:12 B:15 C:15
+// Generated from official ABRSM Piano 2025 & 2026 Syllabus PDF
+
+const DATA_ABRSM_INITIAL = [
+  // LIST A — 12 pieces
+{"l":"A","c":"HAUGHTON, Alan","t":"Gopak","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Dance character", "Musical expression"]},
+{"l":"A","c":"WEDGWOOD, Pam","t":"Make Way for the King! (No. 1 from Up-Grade! Piano Grades 0–1)","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+{"l":"A","c":"TRAD. SWEDISH","t":"Björnen sover","nat":"Swedish","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+{"l":"A","c":"MARTIN, Guy Berryman, Jonny Buckland, Will Champion & Chris","t":"Clocks","nat":"International","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+{"l":"A","c":"CARROLL, W.","t":"Raindrops (No. 4 from The Countryside) W.","nat":"English","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
+{"l":"A","c":"GURLITT","t":"Dance (No. 2 from Das kleines Konzert, Op. 82)","nat":"German","era":"Classical","focus":["Classical phrasing", "Dance character", "Formal structure"]},
+{"l":"A","c":"HUMBERT","t":"The Black Forest Doll (No. 3 from Allerlei Humbert: Spielzeug)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
+{"l":"A","c":"REINAGLE, A.","t":"Allegretto (No. 9 from 24 Short and Easy Pieces, Op. 1)","nat":"English","era":"Baroque","focus":["Baroque style", "Finger independence", "Keyboard clarity"]},
+{"l":"A","c":"SCHATTEL, Bertram","t":"Racing Against Each Other (No. 12 from For Pp. Rosalie and Finn) (Breitkopf)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
+{"l":"A","c":"TRAD. IRISH","t":"John Ryan’s Polka","nat":"Irish","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+{"l":"A","c":"WEDGWOOD, Pam","t":"Mission Impossible (No. 11 from Up-Grade! Piano Grades 0–1)","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+{"l":"A","c":"WELLS, Elsie","t":"Donkey Ride (from Sea Pictures, Set 1) s","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+  // LIST B — 15 pieces
+{"l":"B","c":"BEYER","t":"Melody in G (No. 39 from École préliminaire de piano, Op. 101)","nat":"German","era":"Modern","focus":["Rhythmic precision", "Singing tone", "Character contrast"]},
+{"l":"B","c":"CROSLAND, Ben","t":"King for a Day! (from Magic Beans!)","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+{"l":"B","c":"AGAY","t":"Moonlit Pagoda More","nat":"Hungarian-American","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+{"l":"B","c":"ARMSTRONG, June","t":"Butterfly","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+{"l":"B","c":"CHAMBERLAIN, Louise","t":"The Sad Little Pig (from Step It Up! Piano Grades 0–1)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
+{"l":"B","c":"HALL, Pauline","t":"The Secret Garden","nat":"English","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
+{"l":"B","c":"HAUGHTON, Alan","t":"Budgie (from Fun Club Piano Grades 0–1)","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+{"l":"B","c":"MARSHALL, Karen","t":"Sprinkling Stardust","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
+{"l":"B","c":"MATHEWS, Alison","t":"Sailing Under a Moonlit Sky","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+{"l":"B","c":"NORTON, Christopher","t":"Enchanted Castle (No. 6 from The Microjazz Christopher s Collection)","nat":"International","era":"Contemporary","focus":["Contemporary idiom", "Jazz/Pop style", "Musical expression"]},
+{"l":"B","c":"ORFF","t":"No. 1 (from Two Pieces) From","nat":"German","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
+{"l":"B","c":"PESKETT, Phil","t":"A Dream on the Prairie","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Singing tone", "Musical expression"]},
+{"l":"B","c":"SATIE","t":"What the Little Princess Tulip Says (No. 2 from Satie: Menus propos enfantins)","nat":"French","era":"Romantic","focus":["Expressive tone", "Lyrical phrasing", "Dynamic shaping"]},
+{"l":"B","c":"TRAD. CHINESE","t":"Crescent Moon","nat":"Chinese","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+{"l":"B","c":"WEDGWOOD, Pam","t":"Whirleybird (No. 2 from Up-Grade! Piano Grades 0–1)","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+  // LIST C — 15 pieces
+{"l":"C","c":"ARMSTRONG, June","t":"The Elephant Herd (from Prehistoric Piano Time)","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+{"l":"C","c":"JOLLIFFE, Edmund","t":"In the Dead of Night","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
+{"l":"C","c":"WATTS, Sarah","t":"The Wibbly Waltz","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Dance character", "Musical expression"]},
+{"l":"C","c":"GIBSON, George Barnett, Joel Laslett Pott & Fred","t":"Shotgun","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
+{"l":"C","c":"WITHERS","t":"Lean on Me","nat":"American","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+{"l":"C","c":"HALL, Pauline","t":"Stegosaurus Stomp (from Prehistoric)","nat":"English","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
+{"l":"C","c":"HAMMOND, Heather","t":"Action Stations","nat":"English","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
+{"l":"C","c":"TANNER, Mark","t":"Wonkey Donkey","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+{"l":"C","c":"HAUGHTON, Alan","t":"Treading Carefully","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+{"l":"C","c":"HEUMANN, Hans-Günter","t":"Piano Junior Blues","nat":"International","era":"Modern","focus":["Rhythmic precision", "Jazz/Pop style", "Character contrast"]},
+{"l":"C","c":"JOHN, Elton","t":"I Just Can’t Wait to Be King (from The Lion King)","nat":"English","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
+{"l":"C","c":"KLOSE, Carol","t":"Those Creepy Crawly Things on the Cellar Floor Hal (Hal)","nat":"American","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+{"l":"C","c":"KNERR, Julie","t":"Detective Wombat Blues","nat":"American","era":"Contemporary","focus":["Contemporary idiom", "Jazz/Pop style", "Musical expression"]},
+{"l":"C","c":"LAST, J. M.","t":"Ducks in the Pond","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
+{"l":"C","c":"MARTIN, Gerald","t":"Boogie No.","nat":"American","era":"Contemporary","focus":["Contemporary idiom", "Jazz/Pop style", "Musical expression"]},
+];
