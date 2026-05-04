@@ -10,10 +10,13 @@ You are the **"Piano Butler AI,"** a world-class Orchestrator and Creative Strat
 
 ## Project Overview
 
-**Piano Butler** is an integrated browser-based assistant that helps pianists:
-- Browse and filter repertoire by grade, list, era, nationality, and focus area
-- Track practice progress according to 2026 AMEB standards
-- Receive intelligent feedback on technical work and repertoire selection
+**Piano Butler** is a public piano repertoire search tool covering AMEB and ABRSM syllabuses. It helps pianists and teachers:
+- Browse and filter 2,510 pieces across AMEB (Prelim–G8, Comprehensive + Leisure) and ABRSM (Initial–G8)
+- Search by grade, era, nationality, list (A/B/C), and focus area
+- Save favourite pieces (Magic Link login — no password required)
+- Teacher Dashboard available for studio management (deprioritized; not publicly promoted)
+
+**Business model:** Public access → ad revenue (piano brands, sheet music publishers, lesson referrals) → Stripe payments optional later.
 
 ---
 
@@ -22,7 +25,7 @@ You are the **"Piano Butler AI,"** a world-class Orchestrator and Creative Strat
 ```
 Piano Butler/
 ├── CLAUDE.md                        ← this file
-├── Index.html                       ← main entry/landing page
+├── index.html                       ← main public search page (fully public, no login wall)
 ├── AMEB Syllabus/
 │   ├── Piano Syllabus 2026.pdf      ← authoritative source (Comprehensive)
 │   ├── Piano for Leisure Syllabus 2026.pdf  ← authoritative source (Leisure)
@@ -407,25 +410,29 @@ Always cross-check the **2026 AMEB Piano Syllabus PDF** before adding or removin
 ### Remaining Build Order
 | # | Feature | Notes |
 |---|---------|-------|
-| 9 | Login gate | ✅ Done — `login.html` (pure JS, Supabase email/password auth) |
-| 10 | Stripe payment button | Not yet — optional later via payments.html |
-| 11 | Grade-up recommender | ✅ Done — GradeUpRecommender in Index.html |
-| 12 | Teacher Dashboard | ✅ Done — teacher-dashboard.html, Supabase DB backed |
-| 13 | Sheet music links | ✅ Done (2026-04-29) — Google "sheet music" search on all Prelim–G8 HTML files + Index.html (reverted from IMSLP — empty results issue) |
-| 14 | Claude API assistant | Natural language search, requires backend |
-| 15 | Progress Passport | ✅ Done (2026-04-29) — embedded in StudentDetail; period filter (Month/Quarter/All time) added same day |
-| 16 | Fortnightly scheduling | ✅ Done (2026-04-29) — isFortnightWeek() helper, stored in extra JSON blob |
-| 17 | General track — remove planMonths | ✅ Done (2026-04-29) — form shows only Goal textarea; "Plan ends:" and "Xmo left" badges removed from card + detail header |
-| 18 | Student pause/resume | ✅ Done (2026-04-29, enhanced 2026-04-30) — ⏸ Pause button opens PauseModal with pause-from date, optional return date, and "Undecided" toggle. Paused students shown dimmed in Today/Schedule views (not hidden). `showPaused` defaults to true. `pauseUntil` + `pauseUndecided` stored in extra JSON blob. |
-| 19 | payments.html — lesson fee management | 🔜 Planned — separate page, same Supabase DB. Per-student fee, auto lesson count, paid/unpaid toggle, PDF invoice. Stripe optional later. |
-| 20 | Schedule week navigation | ✅ Done (2026-04-30) — ← / → buttons to browse past and future weeks. Fortnightly logic offset-aware. |
-| 21 | Schedule calendar UX polish | ✅ Done (2026-04-30, further improved 2026-05-01) — White grid background, coloured lesson blocks per day, grade label removed, slot display tiers, day header shows total lesson hours. Grid height expanded (SLOT_H=80), 30-min slots now show name+time. Date numbers added to day headers. |
-| 22 | Schedule reschedule (weekly override + permanent) | ✅ Done (2026-05-01, drag improved 2026-05-02) — ✎ icon on each slot opens inline popover with day picker + time nudge. Three save modes: This week only / From this week on / All weeks (permanent). Google Calendar-style pure DOM drag-and-drop restores cross-column movement. |
-| 23 | Exam track refactor + flexible exam type | ✅ Done (2026-05-02) — Binary exam/general toggle removed. Exam section is now collapsible in StudentModal. `examType` free-text field supports AMEB, RCM, Trinity, ABRSM. `isExamStudent(s)` helper replaces all `track==="exam"` checks. |
-| 24 | Override revert UX (RevertConfirmPopover) | ✅ Done (2026-05-02) — Overridden slot ✕ opens 3-option revert menu. Skip button separated from revert button. SkipConfirmPopover labels clarified. |
-| 25 | payments.html — lesson fee management | 🔜 Planned — separate page, same Supabase DB. Per-student fee, auto lesson count, paid/unpaid toggle, PDF invoice. Stripe optional later. |
-| 26 | ABRSM syllabus integration | ✅ Done (2026-05-04) — Initial–G8, 411 pieces, AMEB/ABRSM toggle on Index.html, title quality pass (182 corrections). |
-| 27 | ABRSM missing pieces recovery (411→432) | 🔜 Planned — 21 pieces lost to PDF noise filter; manual audit pass needed. |
+| 9 | Login gate | ✅ Done — Magic Link only (`signInWithOtp`), no password. Triggered only on ★ Save. |
+| 10 | Stripe payment button | 🔜 Optional later via payments.html |
+| 11 | Grade-up recommender | ✅ Done — GradeUpRecommender in index.html |
+| 12 | Teacher Dashboard | ✅ Done — teacher-dashboard.html, Supabase DB backed. Deprioritized for public launch. |
+| 13 | Sheet music links | ✅ Done (2026-04-29) — Google "sheet music" search on all Prelim–G8 HTML files + index.html |
+| 14 | Claude API assistant | 🔜 Natural language search, requires backend |
+| 15 | Progress Passport | ✅ Done (2026-04-29) — embedded in StudentDetail; period filter added |
+| 16 | Fortnightly scheduling | ✅ Done (2026-04-29) — isFortnightWeek() helper |
+| 17 | General track — remove planMonths | ✅ Done (2026-04-29) |
+| 18 | Student pause/resume | ✅ Done (2026-04-29, enhanced 2026-04-30) |
+| 19 | payments.html — lesson fee management | 🔜 Planned — per-student fee, invoice PDF, paid/unpaid toggle |
+| 20 | Schedule week navigation | ✅ Done (2026-04-30) |
+| 21 | Schedule calendar UX polish | ✅ Done (2026-04-30, further improved 2026-05-01) |
+| 22 | Schedule reschedule (weekly override + permanent) | ✅ Done (2026-05-01, drag improved 2026-05-02) |
+| 23 | Exam track refactor + flexible exam type | ✅ Done (2026-05-02) |
+| 24 | Override revert UX (RevertConfirmPopover) | ✅ Done (2026-05-02) |
+| 25 | ABRSM syllabus integration | ✅ Done (2026-05-04) — Initial–G8, 411 pieces, toggle on index.html, 182 title corrections |
+| 26 | index.html public rewrite + Magic Link | ✅ Done (2026-05-04) — fully public, no login wall, 2,510-piece unified corpus |
+| 27 | Auto-deploy GitHub Action | ✅ Done (2026-05-04) — push to main → auto-syncs gh-pages |
+| 28 | SEO meta tags | 🔜 Next — description, Open Graph, keywords for search engine discovery |
+| 29 | ABRSM missing pieces recovery (411→432) | 🔜 21 pieces lost to PDF noise filter; manual audit pass needed |
+| 30 | Admin piece-count page | 🔜 Password-protected internal page, owner-only |
+| 31 | Ad integration | 🔜 Google AdSense / affiliate / direct piano brand deals |
 
 ### Deployment Plan (updated 2026-04-29)
 - **Live:** https://exquisite-faloodeh-6d8e82.netlify.app
@@ -552,6 +559,64 @@ Each `piano-repertoire_abrsm_gX.html` is a **self-contained single-file app**:
 | 1 | Recover missing 21 pieces (411 → 432) | Medium — PDF page-boundary parsing edge cases |
 | 2 | payments.html — lesson fee management page | High |
 | 3 | GitHub push → Netlify deploy | Done (2026-05-04) |
+
+---
+
+### Phase 8 Updates (2026-05-04 — same day, evening session)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | index.html complete rewrite — public access | `index.html` | Removed `requireAuth()` entirely. Page is now fully public — no login wall. Supabase client inlined (no longer depends on auth.js). `buildCorpus()` merges AMEB (2,099) + ABRSM (411) = **2,510 searchable pieces**, each tagged with `_syllabus: "AMEB"` or `_syllabus: "ABRSM"`. |
+| 2 | Magic Link login modal | `index.html` | New `LoginModal` component — email only, no password. Uses `_sb.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.href } })`. Shows "Check your email ✉️" confirmation after send. Triggered only when user clicks ★ Save without a session. |
+| 3 | Session-aware auth state | `index.html` | `useEffect` checks `_sb.auth.getSession()` on load. `onAuthStateChange` listens for Magic Link callback. `user` state drives Save button behaviour site-wide. |
+| 4 | Save button (login-gated) | `index.html` | ★ button on each piece card. If no session → opens LoginModal. If logged in → saves to localStorage (`pb_interests_v2`) and optionally Supabase. |
+| 5 | Sidebar filters | `index.html` | Left sidebar with: Syllabus (AMEB / ABRSM chips), Era chips, Grade dropdown, Nationality dropdown. All filters update search corpus in real time. |
+| 6 | Minimal GradeGrid component | `index.html` | Clean grade cards — no piece counts shown publicly. AMEB/ABRSM toggle preserved. Piece counts moved to internal admin view (planned). |
+| 7 | Branding cleaned up | `login.html`, `home.html` | Removed all "2026 AMEB" references. Updated to "Piano Repertoire · Exam & Studio" and "AMEB & ABRSM Piano Syllabus" — covers all major piano syllabuses. |
+| 8 | 404 fix — case sensitivity | `home.html`, `teacher-dashboard.html`, `teacher-plan.html`, all 9 ABRSM HTML files | GitHub Pages (Linux) is case-sensitive. Fixed all `href="Index.html"` → `href="index.html"` across 11 files using grep + sed. |
+| 9 | Auto-deploy GitHub Action | `.github/workflows/deploy.yml` | Created workflow: on push to `main` → `git push origin HEAD:gh-pages --force`. GitHub Actions bot pushes directly. Personal Access Token needed `workflow` scope (user enabled this). Now: `git push origin main` alone deploys the site. |
+| 10 | Deployment pipeline confirmed live | Netlify + GitHub | Live URL: https://exquisite-faloodeh-6d8e82.netlify.app — public, no login wall. GitHub: https://github.com/vividssso-pixel/Piano-butler — auto-deploys on push to `main`. |
+
+### Business Strategy Decision (2026-05-04)
+
+**Pivot confirmed:** Piano Butler is now a **public repertoire search tool**, not a teacher-gated app.
+
+| Pillar | Decision |
+|--------|----------|
+| Access model | Fully public — no login wall on index.html |
+| Monetization | Ads: piano brands, sheet music publishers, lesson platform referrals |
+| Login use | Magic Link only — triggered when saving pieces (low friction) |
+| Teacher Dashboard | Deprioritized — kept in codebase but not promoted publicly |
+| User acquisition | SEO + word of mouth — search "AMEB piano repertoire", "ABRSM grade 5 pieces" etc. |
+| Revenue timeline | Gather users first → ads once traffic grows → Stripe optional later |
+
+### index.html Architecture (as of Phase 8)
+
+```
+index.html (fully public, no requireAuth)
+├── Supabase client (inline — not auth.js)
+├── buildCorpus()           — merges AMEB + ABRSM, tags _syllabus field
+├── useVideoModal()         — YouTube in-page modal hook
+├── LoginModal              — Magic Link email form, no password
+├── PieceRow                — piece card with ★ Save (login-gated)
+├── GradeGrid               — AMEB/ABRSM tab toggle, clean grade cards
+├── Sidebar                 — Syllabus / Era / Grade / Nationality filters
+└── App
+    ├── useEffect: _sb.auth.getSession() → setUser
+    ├── onAuthStateChange subscription
+    └── renders: <Sidebar> + <SearchBar> + <PieceRow list>
+```
+
+### Upcoming Next Steps (priority order)
+
+| # | Task | Notes |
+|---|------|-------|
+| 1 | Test Magic Link end-to-end | Open site in incognito → click ★ → enter email → check inbox → verify session |
+| 2 | SEO meta tags on index.html | `<meta name="description">`, Open Graph tags for social sharing |
+| 3 | Admin piece-count page | Separate password-protected page showing grade-by-grade counts (for owner only) |
+| 4 | ABRSM missing 21 pieces recovery | Manual audit of 9 grades against PDF — G2 missing 3, G3–G8 each missing 1–3 |
+| 5 | Ad integration planning | Research: Google AdSense, Musicnotes affiliate, piano brand direct deals |
+| 6 | payments.html — teacher fee tracking | Per-student lesson fee, invoice PDF, paid/unpaid toggle |
 
 ### Language Rule
 - Conversation: Korean is fine
