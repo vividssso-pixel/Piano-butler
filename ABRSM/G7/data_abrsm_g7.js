@@ -1,5 +1,6 @@
 // ABRSM Piano 2025 & 2026 — G7
-// Total: 46 pieces  A:16 B:15 C:15
+// Total: 48 pieces  A:16 B:16 C:16
+// Updated: VINE, Carl — Spartacus added to List C
 // Generated from official ABRSM Piano 2025 & 2026 Syllabus PDF
 
 const DATA_ABRSM_G7 = [
@@ -20,11 +21,12 @@ const DATA_ABRSM_G7 = [
 {"l":"A","c":"SCARLATTI, D.","t":"Sonata in E, Kp. 380, L. 23 Pp. Sonatas, D.","nat":"Italian","era":"Baroque","focus":["Baroque style", "Formal structure", "Keyboard clarity"]},
 {"l":"A","c":"SCHUMANN, C.","t":"Scherzo (No. 4 from Quatre pièces fugitives, Op. 15)","nat":"International","era":"Romantic","focus":["Expressive tone", "Formal structure", "Dynamic shaping"]},
 {"l":"A","c":"TURINA, Joaquín","t":"El mercado (No. 5 from Miniaturas, Op. 52)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-  // LIST B — 15 pieces
+  // LIST B — 16 pieces
 {"l":"B","c":"SCHUMANN","t":"Winterzeit I (No. 38 from Album für die Jugend, Op. 68)","nat":"German","era":"Romantic","focus":["Expressive tone", "Lyrical phrasing", "Dynamic shaping"]},
-{"l":"B","c":"GINASTERA","t":"Adagietto pianissimo (No. 1 from Suite de danzas criollas, Op. 15)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"B","c":"MENDELSSOHN","t":"Musical Sketch in B flat (No. 1 from Two Musical Sketches)","nat":"International","era":"Romantic","focus":["Expressive tone", "Lyrical phrasing", "Dynamic shaping"]},
+{"l":"B","c":"GINASTERA","t":"Adagietto pianissimo (No. 1 from Suite de danzas criollas, Op. 15)","nat":"Argentine","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
+{"l":"B","c":"MENDELSSOHN","t":"Musical Sketch in B flat (No. 1 from Two Musical Sketches)","nat":"German","era":"Romantic","focus":["Expressive tone", "Lyrical phrasing", "Dynamic shaping"]},
 {"l":"B","c":"BULLARD, Alan","t":"Prelude No. 9 (from 12 or 13 Preludes for Piano Solo, Set One)","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Contrapuntal texture", "Musical expression"]},
+{"l":"B","c":"DEBUSSY","t":"The Little Shepherd (No. 5 from Children's Corner)","nat":"French","era":"Modern","focus":["Impressionist style", "Singing tone", "Musical expression"]},
 {"l":"B","c":"GÖRRES","t":"Children's Song (No. 11 from Bunte Reihen kurzer Klavierstücke, Op. 13)","nat":"German","era":"Modern","focus":["Rhythmic precision", "Singing tone", "Character contrast"]},
 {"l":"B","c":"HENSEL, F.M.","t":"Mélodie, Op. 4 No. 2","nat":"German","era":"Romantic","focus":["Expressive tone", "Lyrical phrasing", "Dynamic shaping"]},
 {"l":"B","c":"ILYINSKY","t":"Berceuse (No. 7 from Noure et Anitra, Op. 13)","nat":"Russian","era":"Romantic","focus":["Expressive tone", "Singing tone", "Dynamic shaping"]},
@@ -52,4 +54,5 @@ const DATA_ABRSM_G7 = [
 {"l":"C","c":"PIAZZOLLA","t":"Milonga del ángel Piazzolla","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
 {"l":"C","c":"UZOIGWE","t":"Nigerian Dance No. 1 (from Four Nigerian Dances)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Dance character", "Character contrast"]},
 {"l":"C","c":"VILLOLDO","t":"El Choclo","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
+{"l":"C","c":"VINE, Carl","t":"Spartacus","nat":"Australian","era":"Contemporary","focus":["Contemporary idiom", "Rhythmic precision", "Musical expression"]},
 ];

@@ -1,5 +1,5 @@
 // ABRSM Piano 2025 & 2026 — G4
-// Total: 46 pieces  A:16 B:16 C:14
+// Total: 48 pieces  A:16 B:16 C:16
 // Generated from official ABRSM Piano 2025 & 2026 Syllabus PDF
 
 const DATA_ABRSM_G4 = [
@@ -37,19 +37,21 @@ const DATA_ABRSM_G4 = [
 {"l":"B","c":"MENDELSSOHN","t":"Andante (2nd movt from Violin Concerto in E minor, Op. 64)","nat":"International","era":"Romantic","focus":["Expressive tone", "Formal structure", "Dynamic shaping"]},
 {"l":"B","c":"TRAD. MALAY","t":"Voyage of the Sampan","nat":"Malay","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
 {"l":"B","c":"WILLIAMS, Vaughan","t":"Valse lente (from Six Teaching Pieces) Vaughan","nat":"International","era":"Romantic","focus":["Expressive tone", "Dance character", "Dynamic shaping"]},
-  // LIST C — 14 pieces
-{"l":"C","c":"IBERT","t":"Danse du cocher (No. 15 from Petite suite en 15 Piano images)","nat":"French","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"C","c":"NOTT, Julian","t":"Wallace and Gromit Theme, arr. L’Estrange","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"C","c":"YIU, Raymond","t":"Canzonetta","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"C","c":"ANDERSON, Benny Andersson, Björn Ulvaeus &","t":"Dancing Queen","nat":"International","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
-{"l":"C","c":"GRIEG","t":"In the Hall of the Mountain King (from Peer Gynt, Suite No. 1, Op. 46)","nat":"Norwegian","era":"Romantic","focus":["Expressive tone", "Lyrical phrasing", "Dynamic shaping"]},
-{"l":"C","c":"MAIKAPAR","t":"At the Smithy, Op. 8 No. 5 A","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"C","c":"MATHEWS, Alison","t":"Buried Rubies (No. 8 from Treasure Trove) Alison (Editions)","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
-{"l":"C","c":"MIER, Martha","t":"Worrisome Blues (from Jazz, Rags & Blues)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Jazz/Pop style", "Character contrast"]},
-{"l":"C","c":"PÄRT, Arvo","t":"Für Anna Maria fröhlich or nachdenklich Arvo","nat":"International","era":"Modern","focus":["Rhythmic precision", "Singing tone", "Character contrast"]},
-{"l":"C","c":"PRICE, F.","t":"The Goblin and the Mosquito Isata","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"C","c":"PROKOFIEV","t":"Marche (No. 10 from Musiques d'enfants, Op. 65)","nat":"Russian","era":"Modern","focus":["Rhythmic precision", "Dance character", "Character contrast"]},
-{"l":"C","c":"STOYANOV, V.","t":"Bulgarian Peasant Dance","nat":"International","era":"Modern","focus":["Rhythmic precision", "Singing tone", "Character contrast"]},
-{"l":"C","c":"TRAD.","t":"Shenandoah","nat":"Traditional","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
-{"l":"C","c":"BROOKS, Waller, Razaf & H.","t":"Ain’t Misbehavin’","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
+  // LIST C — 16 pieces
+{"l":"C","c":"IBERT","t":"Danse du cocher (No. 15 from Petite suite en 15 images)","nat":"French","era":"Modern","focus":["Rhythmic precision", "Character contrast", "Finger independence"]},
+{"l":"C","c":"NOTT, Julian","t":"Wallace and Gromit Theme, arr. L’Estrange","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Character contrast", "Musical expression"]},
+{"l":"C","c":"YIU, Raymond","t":"Canzonetta","nat":"Hong Kong","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+{"l":"C","c":"ABBA (arr. Önaç)","t":"Dancing Queen","nat":"Swedish","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+{"l":"C","c":"GRIEG","t":"In the Hall of the Mountain King (from Peer Gynt, Suite No. 1, Op. 46)","nat":"Norwegian","era":"Romantic","focus":["Expressive tone", "Dynamic shaping", "Rhythmic precision"]},
+{"l":"C","c":"KABALEVSKY","t":"Toccatina (No. 12 from 30 Children’s Pieces, Op. 27)","nat":"Russian","era":"Modern","focus":["Rhythmic precision", "Finger independence", "Character contrast"]},
+{"l":"C","c":"MAIKAPAR","t":"At the Smithy, Op. 8 No. 5","nat":"Russian","era":"Romantic","focus":["Expressive tone", "Rhythmic precision", "Dynamic shaping"]},
+{"l":"C","c":"MATHEWS, Alison","t":"Buried Rubies (No. 8 from Treasure Trove)","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+{"l":"C","c":"MIER, Martha","t":"Worrisome Blues (from Jazz, Rags & Blues, Book 3)","nat":"American","era":"Contemporary","focus":["Contemporary idiom", "Jazz/Pop style", "Rhythmic precision"]},
+{"l":"C","c":"PÄRT, Arvo","t":"Für Anna Maria","nat":"Estonian","era":"Contemporary","focus":["Contemporary idiom", "Singing tone", "Musical expression"]},
+{"l":"C","c":"PRICE, F.","t":"The Goblin and the Mosquito","nat":"American","era":"Modern","focus":["Rhythmic precision", "Character contrast", "Finger independence"]},
+{"l":"C","c":"PROKOFIEV","t":"Marche (No. 10 from Musiques d’enfants, Op. 65)","nat":"Russian","era":"Modern","focus":["Rhythmic precision", "Dance character", "Character contrast"]},
+{"l":"C","c":"STOYANOV, V.","t":"Bulgarian Peasant Dance","nat":"Bulgarian","era":"Modern","focus":["Rhythmic precision", "Dance character", "Character contrast"]},
+{"l":"C","c":"TRAD.","t":"Shenandoah, arr. Bennett","nat":"American","era":"Contemporary","focus":["Contemporary idiom", "Singing tone", "Musical expression"]},
+{"l":"C","c":"WALLER, RAZAF & BROOKS","t":"Ain’t Misbehavin’, arr. Iles","nat":"American","era":"Modern","focus":["Rhythmic precision", "Jazz/Pop style", "Character contrast"]},
+{"l":"C","c":"WILLIAMS, John","t":"Star Wars (Main Theme), arr. Turner","nat":"American","era":"Contemporary","focus":["Contemporary idiom", "Character contrast", "Musical expression"]},
 ];

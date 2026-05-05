@@ -1,5 +1,5 @@
 // ABRSM Piano 2025 & 2026 — G3
-// Total: 45 pieces  A:15 B:16 C:14
+// Total: 48 pieces  A:16 B:16 C:16
 // Generated from official ABRSM Piano 2025 & 2026 Syllabus PDF
 
 const DATA_ABRSM_G3 = [
@@ -18,7 +18,8 @@ const DATA_ABRSM_G3 = [
 {"l":"A","c":"PROKOFIEV","t":"Gavotte (from Classical Symphony, Op. 25), arr. Agay","nat":"Russian","era":"Modern","focus":["Rhythmic precision", "Dance character", "Character contrast"]},
 {"l":"A","c":"REINECKE","t":"Vivace (4th movt from Sonatina in A minor, Reinecke: Op. 136 No. 4) (Breitkopf Sonatinas)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Formal structure", "Character contrast"]},
 {"l":"A","c":"SCHUMANN","t":"Wilder Reiter (The Wild Horseman) (No. 8 from Album für die Jugend, Op. 68)","nat":"German","era":"Romantic","focus":["Expressive tone", "Lyrical phrasing", "Dynamic shaping"]},
-{"l":"A","c":"SEIBER","t":"Jazz Etudiette (from Easy Dances II)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Jazz/Pop style", "Character contrast"]},
+{"l":"A","c":"SEIBER","t":"Jazz Etudiette (from Easy Dances II)","nat":"Hungarian","era":"Modern","focus":["Rhythmic precision", "Jazz/Pop style", "Character contrast"]},
+{"l":"A","c":"WEBER","t":"Scherzo","nat":"German","era":"Romantic","focus":["Expressive tone", "Rhythmic precision", "Formal structure"]},
   // LIST B — 16 pieces
 {"l":"B","c":"BARTÓK","t":"Where is love? (from Oliver!)","nat":"Hungarian","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
 {"l":"B","c":"BONIS, Mel","t":"Douce amis (from Album pour les tout-petits, Op. 26)","nat":"French","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
@@ -36,7 +37,7 @@ const DATA_ABRSM_G3 = [
 {"l":"B","c":"TCHAIKOVSKY","t":"Chanson italienne (No. 15 from Album pour enfants, Op. 39)","nat":"Russian","era":"Romantic","focus":["Expressive tone", "Singing tone", "Dynamic shaping"]},
 {"l":"B","c":"TRAD. IRISH","t":"She Moved Through the Fair","nat":"Irish","era":"Contemporary","focus":["Contemporary idiom", "Singing tone", "Musical expression"]},
 {"l":"B","c":"TRAD. JAPANESE","t":"Sakura","nat":"Japanese","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
-  // LIST C — 15 pieces
+  // LIST C — 16 pieces
 {"l":"C","c":"BARTÓK","t":"Allegretto (No. 3 from For Children, Vol. 2)","nat":"Hungarian","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
 {"l":"C","c":"POTTLE, Henson &","t":"The Muppet Show Theme","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
 {"l":"C","c":"RAJASEKAR, Shruthi","t":"The Quiet of the Night","nat":"Indian","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
@@ -44,12 +45,13 @@ const DATA_ABRSM_G3 = [
 {"l":"C","c":"GORANSON, M. Bober & G.","t":"Rushing River Melody (FJH)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Singing tone", "Character contrast"]},
 {"l":"C","c":"CAPERS, Valerie","t":"Ella Scats the Little Lamb (No. 1 from Portraits Valerie in Jazz)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Jazz/Pop style", "Character contrast"]},
 {"l":"C","c":"CARSE","t":"Csardas Carse","nat":"English","era":"Classical","focus":["Classical phrasing", "Hand coordination", "Formal structure"]},
-{"l":"C","c":"CORNICK, Mike","t":"The Waltz of the Elephants (from Clever Cat Mike Goes on)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Dance character", "Character contrast"]},
-,
-{"l":"C","c":"HOFMANN, H.","t":"Waldvöglein (No. 15 from Skizzen, Op. 77)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
+{"l":"C","c":"CORNICK, Mike","t":"The Waltz of the Elephants (from Clever Cat Goes on Safari)","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Dance character", "Musical expression"]},
+{"l":"C","c":"GODDARD, Mark","t":"Locked On Latin (from Hands On Jazz)","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Jazz/Pop style", "Rhythmic precision"]},
+{"l":"C","c":"HOFMANN, H.","t":"Waldvöglein (No. 15 from Skizzen, Op. 77)","nat":"German","era":"Romantic","focus":["Expressive tone", "Singing tone", "Dynamic shaping"]},
 {"l":"C","c":"JOHN, Elton","t":"Can You Feel the Love Tonight? (from The Lion)","nat":"English","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
 {"l":"C","c":"MERCER, H. Mancini & J.","t":"Moon River (from Breakfast at Tiffany’s), A","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
 {"l":"C","c":"O’CONNELL, Billie Eilish & Finneas","t":"No Time to Die","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
 {"l":"C","c":"SCOFIELD, John","t":"I’ll Take Les","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
 {"l":"C","c":"TANAKA, Karen","t":"Northern Lights","nat":"Japanese","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+{"l":"C","c":"WELBURN, James","t":"Groovin' Grasshopper (from Adventures and Accolades)","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Jazz/Pop style", "Rhythmic precision"]},
 ];

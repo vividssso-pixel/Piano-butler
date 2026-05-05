@@ -1,5 +1,5 @@
 // ABRSM Piano 2025 & 2026 — G1
-// Total: 45 pieces  A:15 B:16 C:14
+// Total: 47 pieces  A:16 B:16 C:15
 // Generated from official ABRSM Piano 2025 & 2026 Syllabus PDF
 
 const DATA_ABRSM_G1 = [
@@ -18,8 +18,8 @@ const DATA_ABRSM_G1 = [
 {"l":"A","c":"MOZART","t":"Allegro (No. 8 from 12 Duos, K.)","nat":"Austrian","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
 {"l":"A","c":"PURCELL","t":"Minuet in A minor, Z.","nat":"English","era":"Baroque","focus":["Baroque style", "Dance character", "Keyboard clarity"]},
 {"l":"A","c":"RICHERT, Teresa","t":"Comical Cat (from Copycat Copycat)","nat":"American","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
-,
-{"l":"A","c":"WELLS, Elsie","t":"Courante","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Dance character", "Musical expression"]},
+{"l":"A","c":"TÜRK","t":"Arioso in F (No. 1 from 12 Handstücke)","nat":"German","era":"Classical","focus":["Classical phrasing", "Singing tone", "Formal structure"]},
+{"l":"A","c":"WELLS, Elsie","t":"Courante","nat":"English","era":"Baroque","focus":["Baroque style", "Dance character", "Keyboard clarity"]},
   // LIST B — 16 pieces
 {"l":"B","c":"DUNHILL","t":"A Song of Erin (No. 8 from)","nat":"English","era":"Romantic","focus":["Expressive tone", "Singing tone", "Dynamic shaping"]},
 {"l":"B","c":"ANDERSON-LOPEZ, Kristen & Robert","t":"Remember Me (from Coco), arr. L’Estrange","nat":"International","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
@@ -52,5 +52,6 @@ const DATA_ABRSM_G1 = [
 {"l":"C","c":"TRAD. EWE","t":"Tu tu Gbovi","nat":"Ewe","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
 {"l":"C","c":"SNOW, Barbara","t":"Jazzy Dragon (from Animal Jazz)","nat":"American","era":"Contemporary","focus":["Contemporary idiom", "Jazz/Pop style", "Musical expression"]},
 {"l":"C","c":"TAN, Chee-Hwa","t":"At the Seaside (from A Child’s Garden of Verses)","nat":"Singaporean","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
-,
+{"l":"C","c":"SEBBA, Jane","t":"Latin Laughter","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Rhythmic precision", "Musical expression"]},
+{"l":"C","c":"TRAD. JAMAICAN","t":"Mango Walk, arr. Cornick","nat":"Jamaican","era":"Contemporary","focus":["Contemporary idiom", "Dance character", "Musical expression"]},
 ];

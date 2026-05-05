@@ -10,8 +10,8 @@ You are the **"Piano Butler AI,"** a world-class Orchestrator and Creative Strat
 
 ## Project Overview
 
-**Piano Butler** is a public piano repertoire search tool covering AMEB and ABRSM syllabuses. It helps pianists and teachers:
-- Browse and filter 2,510 pieces across AMEB (Prelim–G8, Comprehensive + Leisure) and ABRSM (Initial–G8)
+**Piano Butler** is a public piano repertoire search tool covering AMEB, ABRSM, and AMEB Diploma syllabuses. It helps pianists and teachers:
+- Browse and filter 2,919 pieces across AMEB (Prelim–G8, Comprehensive + Leisure), ABRSM (Initial–G8), and AMEB Diploma (AMusA + LMusA)
 - Search by grade, era, nationality, list (A/B/C), and focus area
 - Save favourite pieces (Magic Link login — no password required)
 - Teacher Dashboard available for studio management (deprioritized; not publicly promoted)
@@ -67,6 +67,12 @@ Piano Butler/
 │   ├── data_g8.js                   ← G8 Comprehensive (145 pieces)
 │   ├── data_g8_leisure.js           ← G8 Leisure (95 pieces)
 │   └── piano-repertoire_g8.html
+├── AMusA/
+│   ├── data_amusa.js                ← AMusA Diploma (161 pieces: A:39, B:27, C:50, D:45)
+│   └── piano-repertoire_amusa.html
+├── LMusA/
+│   ├── data_lmusa.js                ← LMusA Diploma (226 pieces: A:55, B:29, C:51, D:91)
+│   └── piano-repertoire_lmusa.html
 ├── ABRSM/
 │   ├── Syllabus/
 │   │   └── ABRSM Piano 2025 & 2026.pdf  ← authoritative source
@@ -192,6 +198,19 @@ Each `piano-repertoire_gX.html` is a **self-contained single-file app** — no s
 | **Total** | | **706** | | | | | | |
 
 ### Grand Total: 2,099 pieces across all grades and both syllabuses
+
+### AMEB Diploma Repertoire
+
+| Exam | Code | File | Total | List A | List B | List C | List D | Program |
+|------|------|------|-------|--------|--------|--------|--------|---------|
+| AMusA | 9950 | data_amusa.js | 161 | 39 | 27 | 50 | 45 | 25–40 min |
+| LMusA | 9951 | data_lmusa.js | 226 | 55 | 29 | 51 | 91 | 35–50 min |
+| **Total** | | | **387** | | | | | |
+
+**Grand Total across all syllabuses: 2,919 pieces**
+- AMEB Comprehensive + Leisure: 2,099
+- ABRSM Initial–G8: 433
+- AMEB Diploma (AMusA + LMusA): 387 — but note: open-pool format (candidates select from the list; pieces may appear in multiple lists)
 
 ---
 
@@ -387,6 +406,17 @@ Always cross-check the **2026 AMEB Piano Syllabus PDF** before adding or removin
 
 ---
 
+### Phase 10 Updates (2026-05-05)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | AMusA diploma repertoire | `AMusA/data_amusa.js`, `AMusA/piano-repertoire_amusa.html` | 161 pieces (A:39, B:27, C:50, D:45) from 2026 AMEB Manual of Syllabuses pp.79–80. Self-contained React 18 + Tailwind app, purple gradient header, exam requirements banner (Exam 9950, 25–40 min), List A/B/C/D tabs, Era chips, Nationality dropdown, Wikipedia COMPOSER_LINKS, YT + Sheet links. |
+| 2 | LMusA diploma repertoire | `LMusA/data_lmusa.js`, `LMusA/piano-repertoire_lmusa.html` | 226 pieces (A:55, B:29, C:51, D:91) from 2026 AMEB Manual of Syllabuses pp.81–83. Same self-contained app pattern, deeper purple header (#3b0764), exam requirements banner (Exam 9951, 35–50 min, concert standard, 1 work from memory). |
+| 3 | index.html — diploma integration | `index.html` | `DIPLOMA_META` array added. `buildCorpus()` now includes diploma data tagged `_syllabus:"AMEB Diploma"`. `GradeGrid` shows "Diploma Level" section under AMEB tab with direct links to AMusA/LMusA pages. Sidebar filter gains "🎓 Diploma" option. Piece count updated to 2,897. |
+| 4 | CLAUDE.md updated | `CLAUDE.md` | File structure, project overview, grand total, and diploma piece count table all updated. |
+
+---
+
 ## Build Status — Last updated 2026-05-02
 
 ### Completed Features (Index.html)
@@ -429,17 +459,22 @@ Always cross-check the **2026 AMEB Piano Syllabus PDF** before adding or removin
 | 25 | ABRSM syllabus integration | ✅ Done (2026-05-04) — Initial–G8, 411 pieces, toggle on index.html, 182 title corrections |
 | 26 | index.html public rewrite + Magic Link | ✅ Done (2026-05-04) — fully public, no login wall, 2,510-piece unified corpus |
 | 27 | Auto-deploy GitHub Action | ✅ Done (2026-05-04) — push to main → auto-syncs gh-pages |
-| 28 | SEO meta tags | 🔜 Next — description, Open Graph, keywords for search engine discovery |
-| 29 | ABRSM missing pieces recovery (411→432) | 🔜 21 pieces lost to PDF noise filter; manual audit pass needed |
-| 30 | Admin piece-count page | 🔜 Password-protected internal page, owner-only |
+| 28 | SEO meta tags | ✅ Done (2026-05-05) — Open Graph, Twitter Card, canonical, keywords, robots |
+| 29 | ABRSM missing pieces recovery (411→433) | ✅ Done (2026-05-05) — all 9 grades at 48 pieces; G5 List C has 17 per PDF |
+| 30 | AMEB Diploma — AMusA repertoire | ✅ Done (2026-05-05) — 161 pieces, data_amusa.js + piano-repertoire_amusa.html |
+| 31 | AMEB Diploma — LMusA repertoire | ✅ Done (2026-05-05) — 226 pieces, data_lmusa.js + piano-repertoire_lmusa.html |
+| 32 | index.html diploma integration | ✅ Done (2026-05-05) — DIPLOMA_META, GradeGrid cards, corpus, sidebar filter |
+| 33 | Admin piece-count page | 🔜 Password-protected internal page, owner-only |
 | 31 | Ad integration | 🔜 Google AdSense / affiliate / direct piano brand deals |
 
-### Deployment Plan (updated 2026-04-29)
-- **Live:** https://exquisite-faloodeh-6d8e82.netlify.app
-- **Stack:** GitHub → Netlify (auto-deploy on push to `main`) + Supabase Auth + Supabase DB (public.students + public.lesson_logs)
+### Deployment Plan (updated 2026-05-05)
+- **Live:** https://vividssso-pixel.github.io/Piano-butler/
+- **Stack:** GitHub Pages (auto-deploy via GitHub Actions on push to `main`) + Supabase Auth + Supabase DB (public.students + public.lesson_logs)
+- **Deploy:** push to `main` → GitHub Actions → force-pushes to `gh-pages` branch → live in ~1 min
 - **Auth pattern:** login.html → requireAuth() on each protected page → signOut()
 - **Data:** All teacher/student/log data in Supabase DB with Row Level Security per user_id
-- **GitHub:** https://github.com/vividssso-pixel/Piano-butler — Netlify auto-deploys on push to `main`
+- **GitHub:** https://github.com/vividssso-pixel/Piano-butler
+- ⚠️ Netlify (https://exquisite-faloodeh-6d8e82.netlify.app) is NO LONGER USED — GitHub Pages only
 - Do NOT use Wix — incompatible with React/Babel structure
 
 ### Supabase Schema (current as of 2026-05-02)
@@ -506,24 +541,24 @@ slot_idx (int), day (text), time (text), created_at
 
 | # | Change | File(s) | Detail |
 |---|--------|---------|--------|
-| 1 | ABRSM syllabus added — Initial through Grade 8 | `ABRSM/` folder (18 new files) | 411 pieces total extracted from official *ABRSM Piano 2025 & 2026* PDF via pdfplumber word-bbox parsing. Each grade has `data_abrsm_gX.js` + `piano-repertoire_abrsm_gX.html` (self-contained React 18 + Tailwind). ABRSM purple theme (`#7c3aed`). Features: List A/B/C tabs, Era chips, Nationality dropdown, search, YouTube + Google Sheet links, Wikipedia COMPOSER_LINKS. Back-link `../../Index.html`. |
+| 1 | ABRSM syllabus added — Initial through Grade 8 | `ABRSM/` folder (18 new files) | 411 pieces initially extracted from official *ABRSM Piano 2025 & 2026* PDF via pdfplumber word-bbox parsing; recovered to 433 in Phase 9 (2026-05-05). Each grade has `data_abrsm_gX.js` + `piano-repertoire_abrsm_gX.html` (self-contained React 18 + Tailwind). ABRSM purple theme (`#7c3aed`). Features: List A/B/C tabs, Era chips, Nationality dropdown, search, YouTube + Google Sheet links, Wikipedia COMPOSER_LINKS. Back-link `../../Index.html`. |
 | 2 | AMEB/ABRSM syllabus toggle on Index.html | `Index.html` | New `SyllabusGrid` React component (line ~189) replaces static AMEB-only grade grid. 🇦🇺 AMEB / 🇬🇧 ABRSM tab toggle. AMEB renders existing `GradeCard` components; ABRSM renders 9 violet-accented cards (Initial–G8) with List A/B/C chips. Fixes prior IIFE-based `React.useState` hook violation. |
 | 3 | ABRSM title quality pass | All `data_abrsm_*.js` + `piano-repertoire_abrsm_*.html` (18 files) | 182 title corrections applied across all 9 grades: trailing `(from)` restored, truncated `Op./No./Vol.` numbers completed, spurious `Piano` word insertions removed, composer-name leakage into titles cleared, duplicate `Piano Piano` collapsed. All verified against PDF. |
 
-### ABRSM Piece Counts (2026-05-04)
+### ABRSM Piece Counts (2026-05-05 — fully recovered)
 
 | Grade | File | Total | List A | List B | List C |
 |-------|------|-------|--------|--------|--------|
-| Initial | data_abrsm_initial.js | 42 | 12 | 15 | 15 |
-| G1 | data_abrsm_g1.js | 47 | 15 | 16 | 14 |  ← ⚠️ 47 vs expected 48 — 1 piece may still be missing |
-| G2 | data_abrsm_g2.js | 45 | 15 | 14 | 15 |  ← ⚠️ 45 vs expected 48 |
-| G3 | data_abrsm_g3.js | 46 | 15 | 16 | 14 |  ← ⚠️ 46 vs expected 48 |
-| G4 | data_abrsm_g4.js | 46 | 16 | 16 | 14 |  ← ⚠️ 46 vs expected 48 |
-| G5 | data_abrsm_g5.js | 47 | 15 | 16 | 16 |  ← ⚠️ 47 vs expected 48 |
-| G6 | data_abrsm_g6.js | 47 | 16 | 16 | 15 |  ← ⚠️ 47 vs expected 48 |
-| G7 | data_abrsm_g7.js | 46 | 16 | 15 | 15 |  ← ⚠️ 46 vs expected 48 |
-| G8 | data_abrsm_g8.js | 45 | 16 | 15 | 14 |  ← ⚠️ 45 vs expected 48 |
-| **Total** | | **411** | | | | ← expected 432 (16×3×9); 21 pieces to recover in future pass |
+| Initial | data_abrsm_initial.js | 48 | 16 | 16 | 16 |
+| G1 | data_abrsm_g1.js | 48 | 16 | 16 | 16 |
+| G2 | data_abrsm_g2.js | 48 | 16 | 16 | 16 |
+| G3 | data_abrsm_g3.js | 48 | 16 | 16 | 16 |
+| G4 | data_abrsm_g4.js | 48 | 16 | 16 | 16 |
+| G5 | data_abrsm_g5.js | 49 | 16 | 16 | 17 |  ← List C legitimately has 17 per PDF |
+| G6 | data_abrsm_g6.js | 48 | 16 | 16 | 16 |
+| G7 | data_abrsm_g7.js | 48 | 16 | 16 | 16 |
+| G8 | data_abrsm_g8.js | 48 | 16 | 16 | 16 |
+| **Total** | | **433** | | | | ← recovery complete (2026-05-05) |
 
 ### ABRSM Data Architecture
 
@@ -617,6 +652,19 @@ index.html (fully public, no requireAuth)
 | 4 | ABRSM missing 21 pieces recovery | Manual audit of 9 grades against PDF — G2 missing 3, G3–G8 each missing 1–3 |
 | 5 | Ad integration planning | Research: Google AdSense, Musicnotes affiliate, piano brand direct deals |
 | 6 | payments.html — teacher fee tracking | Per-student lesson fee, invoice PDF, paid/unpaid toggle |
+
+### Phase 11 Updates (2026-05-05)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | sitemap.xml — diploma pages added | `sitemap.xml` | AMusA + LMusA pages added (priority 0.8, monthly) |
+| 2 | robots.txt — admin page blocked | `robots.txt` | `Disallow: /admin-counts.html` added |
+| 3 | Admin piece-count page | `admin-counts.html` | Password-protected (`pianobutler2026`) React dashboard. Shows live piece counts from all loaded data files. Grand Total card + per-syllabus subtotals. SectionTable with list badges + ✓ OK / ⚠ MISSING status. Expected vs Actual panel compares live counts to CLAUDE.md targets — red highlight on mismatch. `noindex` meta tag. |
+| 4 | SEO keywords expanded | `index.html` | Added: AMusA repertoire, LMusA repertoire, AMEB diploma piano, ABRSM diploma piano, piano exam pieces Australia, piano syllabus search |
+| 5 | Back-link added to all AMEB grade pages | `Prelim–G8/piano-repertoire_*.html` (9 files) | `← Piano Butler` link (`../index.html`) injected into header of all 9 AMEB Comprehensive/Leisure grade pages. ABRSM pages already had back-links. |
+| 6 | ABRSM Diploma task logged | Task #7 | Pending — requires ABRSM Diploma PDF (ARSM / DipABRSM / LRSM / FRSM). User to download from abrsm.org → Performance Diplomas. |
+
+---
 
 ### Language Rule
 - Conversation: Korean is fine

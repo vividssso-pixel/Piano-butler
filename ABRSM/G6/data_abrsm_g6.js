@@ -1,5 +1,5 @@
 // ABRSM Piano 2025 & 2026 — G6
-// Total: 47 pieces  A:16 B:16 C:15
+// Total: 48 pieces  A:16 B:16 C:16
 // Generated from official ABRSM Piano 2025 & 2026 Syllabus PDF
 
 const DATA_ABRSM_G6 = [
@@ -37,7 +37,7 @@ const DATA_ABRSM_G6 = [
 {"l":"B","c":"KHACHATURIAN","t":"Legend (No. 6 from Pictures of Childhood) Khachaturian","nat":"Armenian","era":"Romantic","focus":["Expressive tone", "Singing tone", "Dynamic shaping"]},
 {"l":"B","c":"SCHUMANN","t":"Einsame Blumen (No. 3 from Waldscenen, Op. 82)","nat":"German","era":"Romantic","focus":["Expressive tone", "Lyrical phrasing", "Dynamic shaping"]},
 {"l":"B","c":"WEDGWOOD, Sam","t":"Empty Rooms (from Chilling Out)","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
-  // LIST C — 15 pieces
+  // LIST C — 16 pieces
 {"l":"C","c":"BARTÓK","t":"Stamping Dance (No. 128 from Mikrokosmos, Vol. 5)","nat":"Hungarian","era":"Modern","focus":["Rhythmic precision", "Dance character", "Character contrast"]},
 {"l":"C","c":"RAHMAN, Zoe","t":"The Bounce","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Jazz/Pop style", "Musical expression"]},
 {"l":"C","c":"KOMITAS","t":"Shushiki (No. 4 from Dances)","nat":"Armenian","era":"Modern","focus":["Rhythmic precision", "Dance character", "Character contrast"]},
@@ -52,5 +52,6 @@ const DATA_ABRSM_G6 = [
 {"l":"C","c":"MONTAGUE, Stephen","t":"Tsunami","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
 {"l":"C","c":"PROKOFIEV","t":"Cortège de sauterelles (No. 7 from Musiques d'enfants, Op. 65)","nat":"Russian","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
 {"l":"C","c":"OKOYE, Nkeiru","t":"Dancing Barefoot in the Rain (from African Piano Sketches)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"C","c":"RUDERS, Poul","t":"Shooting Stars","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
+{"l":"C","c":"RUDERS, Poul","t":"Shooting Stars","nat":"Danish","era":"Contemporary","focus":["Contemporary idiom", "Modern harmony", "Musical expression"]},
+{"l":"C","c":"TAYLOR, Billy","t":"I Wish I Knew How It Would Feel to Be Free, arr. Churchill","nat":"American","era":"Modern","focus":["Jazz/Pop style", "Rhythmic precision", "Musical expression"]},
 ];

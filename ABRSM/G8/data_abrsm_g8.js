@@ -1,5 +1,5 @@
 // ABRSM Piano 2025 & 2026 — G8
-// Total: 45 pieces  A:16 B:15 C:14
+// Total: 48 pieces  A:16 B:16 C:16
 // Generated from official ABRSM Piano 2025 & 2026 Syllabus PDF
 
 const DATA_ABRSM_G8 = [
@@ -20,7 +20,8 @@ const DATA_ABRSM_G8 = [
 {"l":"A","c":"RAMEAU","t":"Les cyclopes (from Pièces de clavecin) Rameau: Rameau","nat":"International","era":"Baroque","focus":["Baroque style", "Finger independence", "Keyboard clarity"]},
 {"l":"A","c":"SCARLATTI, D.","t":"Sonata in D, Kp. 443, L. 418 Pp. Book D.","nat":"Italian","era":"Baroque","focus":["Baroque style", "Formal structure", "Keyboard clarity"]},
 {"l":"A","c":"SCHUMANN, C.","t":"Un poco agitato (No. 2 from Quatre pièces fugitives, Op. 15)","nat":"International","era":"Romantic","focus":["Expressive tone", "Lyrical phrasing", "Dynamic shaping"]},
-  // LIST B — 15 pieces
+  // LIST B — 16 pieces
+{"l":"B","c":"DEBUSSY","t":"La fille aux cheveux de lin (No. 8 from Préludes, Book 1)","nat":"French","era":"Modern","focus":["Impressionist style", "Singing tone", "Musical expression"]},
 {"l":"B","c":"HISAISHI, Joe","t":"il porco rosso (from Porco Rosso)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
 {"l":"B","c":"LISZT","t":"Consolation in E (No. 2 from Consolations, S.)","nat":"Hungarian","era":"Romantic","focus":["Expressive tone", "Singing tone", "Dynamic shaping"]},
 {"l":"B","c":"ARENSKY","t":"Nocturne in D- (No. 3 from 24 Characteristic Pieces, Op. 36)","nat":"International","era":"Contemporary","focus":["Contemporary idiom", "Singing tone", "Musical expression"]},
@@ -36,7 +37,8 @@ const DATA_ABRSM_G8 = [
 {"l":"B","c":"TAILLEFERRE","t":"Impromptu Tailleferre","nat":"French","era":"Modern","focus":["Rhythmic precision", "Singing tone", "Character contrast"]},
 {"l":"B","c":"TCHAIKOVSKY","t":"Janvier ‘Au coin du feu’ (No. 1 from The Seasons, Tchaikovsky: Op. 37bis)","nat":"Russian","era":"Romantic","focus":["Expressive tone", "Lyrical phrasing", "Dynamic shaping"]},
 {"l":"B","c":"WOLF, P. E.","t":"Hiding Rainbow (Bujkáló szivárvárny) (No. 22 Jazz from Jazz Preludes Wolf-temperiertes Klavier 2) (EMB)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Jazz/Pop style", "Character contrast"]},
-  // LIST C — 14 pieces
+  // LIST C — 16 pieces
+{"l":"C","c":"DEBUSSY","t":"Rêverie","nat":"French","era":"Modern","focus":["Impressionist style", "Singing tone", "Musical expression"]},
 {"l":"C","c":"FRANCES-HOAD, Cheryl","t":"In the Dew, a Homage to Janáček (from Piano Homages)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
 {"l":"C","c":"JOPLIN","t":"Maple Leaf Rag","nat":"International","era":"Contemporary","focus":["Contemporary idiom", "Jazz/Pop style", "Musical expression"]},
 {"l":"C","c":"MASCHWITZ, Sherwin &","t":"A Nightingale Sang in Berkeley Square","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
@@ -51,4 +53,5 @@ const DATA_ABRSM_G8 = [
 {"l":"C","c":"MCDOWALL, Cecilia","t":"Vespers in Venice (from Four Piano Solos)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
 {"l":"C","c":"MCHUGH","t":"On the Sunny Side of the Street","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
 {"l":"C","c":"TRAD. IRISH","t":"Danny Boy","nat":"Irish","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
+{"l":"C","c":"VILLA-LOBOS","t":"O polichinelo (from A prole do bebê, Suite No. 1)","nat":"Brazilian","era":"Modern","focus":["Rhythmic precision", "Character contrast", "Musical expression"]},
 ];

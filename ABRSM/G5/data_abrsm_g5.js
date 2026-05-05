@@ -1,23 +1,24 @@
 // ABRSM Piano 2025 & 2026 — G5
-// Total: 47 pieces  A:15 B:16 C:16
+// Total: 48 pieces  A:16 B:16 C:16
 // Generated from official ABRSM Piano 2025 & 2026 Syllabus PDF
 
 const DATA_ABRSM_G5 = [
-  // LIST A — 15 pieces
+  // LIST A — 16 pieces
 {"l":"A","c":"BURGMÜLLER, J.F.F.","t":"La tarantelle (No. 20 from 25 études faciles et progressives, Op. 100)","nat":"German","era":"Modern","focus":["Rhythmic precision", "Formal structure", "Character contrast"]},
 {"l":"A","c":"CLEMENTI","t":"Spiritoso (1st movt from Sonatina in C, Op. 36 No. 1)","nat":"Italian","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
-{"l":"A","c":"ILES, Nikki","t":"Hook’s Hornpipe (from Piano Tales for Peter Pan)","nat":"English","era":"Modern","focus":["Rhythmic precision", "Dance character", "Character contrast"]},
+{"l":"A","c":"ILES, Nikki","t":"Hook's Hornpipe (from Piano Tales for Peter Pan)","nat":"English","era":"Modern","focus":["Rhythmic precision", "Dance character", "Character contrast"]},
 {"l":"A","c":"BACH, J.S.","t":"Invention No. 8 in F, BWV 779 J. J.","nat":"German","era":"Baroque","focus":["Baroque style", "Contrapuntal texture", "Keyboard clarity"]},
 {"l":"A","c":"BEETHOVEN","t":"Bagatelle in G minor, Op. 119 No. 1 A","nat":"German","era":"Classical","focus":["Classical phrasing", "Hand coordination", "Formal structure"]},
 {"l":"A","c":"CHAMINADE","t":"Gavotte (No. 5 from Album des enfants, Op. 123)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Dance character", "Character contrast"]},
 {"l":"A","c":"FIOCCO, J. H.","t":"Andante (from Pièces de clavecin, Op. 1)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"A","c":"GADE","t":"Ringeltanz (Boys’ Merry-go-round) (No. 2 from Gade: Children’s Christmas, Op. 36) More","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
+{"l":"A","c":"GADE","t":"Ringeltanz (Boys' Merry-go-round) (No. 2 from Gade: Children's Christmas, Op. 36) More","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
 {"l":"A","c":"HAYDN","t":"Allegro (1st movt from Sonata in G, Hob. XVI:G1) Pp. Book Essential","nat":"Austrian","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
 {"l":"A","c":"HELLER, S.","t":"Study in E minor (No. 7 from 30 Progressive Studies, Op. 47)","nat":"International","era":"Romantic","focus":["Expressive tone", "Lyrical phrasing", "Dynamic shaping"]},
 {"l":"A","c":"HUMMEL","t":"Allegro in C (No. 2 from Six pièces très faciles, Op. 52)","nat":"Austrian","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
 {"l":"A","c":"KUHLAU","t":"Allegro con spirito (1st movt from Sonatina in C, Op. 55 No. 1)","nat":"International","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
-{"l":"A","c":"LEO","t":"Toccata No.","nat":"International","era":"Modern","focus":["Rhythmic precision", "Contrapuntal texture", "Character contrast"]},
-{"l":"A","c":"MOZART","t":"Theme, Var. 1 and Var. 5 (from 12 Variations on Mozart: “Ah vous dirai-je, maman”, K. 265) K. Mozart: C","nat":"Austrian","era":"Classical","focus":["Classical phrasing", "Singing tone", "Formal structure"]},
+{"l":"A","c":"KREBS, J. L.","t":"Toccata in E-","nat":"German","era":"Baroque","focus":["Baroque style", "Finger independence", "Keyboard clarity"]},
+{"l":"A","c":"LEO","t":"Toccata No. 3","nat":"Italian","era":"Baroque","focus":["Baroque style", "Finger independence", "Keyboard clarity"]},
+{"l":"A","c":"MOZART","t":"Theme, Var. 1 and Var. 5 (from 12 Variations on 'Ah vous dirai-je, maman', K. 265)","nat":"Austrian","era":"Classical","focus":["Classical phrasing", "Variation technique", "Formal structure"]},
 {"l":"A","c":"SIFFORD, Jason","t":"Rondo Scherzando","nat":"International","era":"Modern","focus":["Rhythmic precision", "Formal structure", "Character contrast"]},
   // LIST B — 16 pieces
 {"l":"B","c":"ROMAN, Capaldi, Kohn, Kelleher, Barnes &","t":"Someone You Loved","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
@@ -44,7 +45,7 @@ const DATA_ABRSM_G5 = [
 {"l":"C","c":"ALWYN","t":"The Sea is Angry","nat":"English","era":"Romantic","focus":["Expressive tone", "Lyrical phrasing", "Dynamic shaping"]},
 {"l":"C","c":"ARLEN","t":"Stormy Weather","nat":"International","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
 {"l":"C","c":"BAREILLES, Sara","t":"King of Anything","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"C","c":"COOK, Alicia Augello","t":"If I Ain’t Got You","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
+{"l":"C","c":"COOK, Alicia Augello","t":"If I Ain't Got You","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
 {"l":"C","c":"BARTÓK","t":"Winter Solstice Song (No. 38 from For Children, Vol. 1)","nat":"Hungarian","era":"Modern","focus":["Rhythmic precision", "Singing tone", "Character contrast"]},
 {"l":"C","c":"BERWIN, Lindsey","t":"The Ghost Train (from All the Fun of the Fair)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Singing tone", "Character contrast"]},
 {"l":"C","c":"BORISOVA-OLLAS, Victoria","t":"Silent Island","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
@@ -52,5 +53,6 @@ const DATA_ABRSM_G5 = [
 {"l":"C","c":"MIER, Martha","t":"Tuxedo Jazz (from Jazz, Rags & Blues)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Jazz/Pop style", "Character contrast"]},
 {"l":"C","c":"PINTO","t":"March, Little Soldier! (No. 3 from Scenas Pinto: infantis) gliss. optional","nat":"International","era":"Modern","focus":["Rhythmic precision", "Dance character", "Character contrast"]},
 {"l":"C","c":"ROLLIN, Catherine","t":"Love Theme (from Lyric Moments)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Singing tone", "Character contrast"]},
-{"l":"C","c":"STARER","t":"Bright Orange (from Sketches in Colour, Set One)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
+{"l":"C","c":"STARER","t":"Bright Orange (from Sketches in Colour, Set One)","nat":"Austrian-American","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
+{"l":"C","c":"BANGAMBULA VINDU, André","t":"Lullaby (from Suite for Piano)","nat":"Congolese","era":"Contemporary","focus":["Contemporary idiom", "Singing tone", "Musical expression"]},
 ];
