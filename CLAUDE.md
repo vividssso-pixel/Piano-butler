@@ -709,6 +709,14 @@ index.html (fully public, no requireAuth)
 
 ---
 
+### Phase 13 Updates (2026-05-05 — late night)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | AMEB Leisure filter added to sidebar | `index.html` | Syllabus filter now has 5 options: All / 🇦🇺 AMEB Comprehensive / 🎵 AMEB Leisure / 🇬🇧 ABRSM / 🎓 Diploma. Previously Leisure pieces were in the corpus (`_type:"Leisure"`) but had no way to be filtered separately. Filter logic updated: `"AMEB"` → `_syllabus==="AMEB" && _type==="General"` only; `"AMEB Leisure"` → `_syllabus==="AMEB" && _type==="Leisure"` only. Each filter has its own accent colour (Leisure = `#0891b2`). Syllabus filter buttons also reset `gradeFilter` to "All" on click. |
+
+---
+
 ### Language Rule
 - Conversation: Korean is fine
 - All code, file outputs, comments: English only
