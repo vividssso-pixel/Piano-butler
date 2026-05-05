@@ -666,6 +666,49 @@ index.html (fully public, no requireAuth)
 
 ---
 
+### Phase 12 Updates (2026-05-05 — evening session)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Full system audit | All files | Ran complete audit of bugs found during user testing session. |
+| 2 | G5 corpus silent bug fix | `index.html` | `GRADE_META` referenced `DATA_G5_1` but `G5/data_g5_1.js` exports `DATA_G5`. Result: 168 G5 pieces were silently absent from all search results. Fixed by correcting the variable reference to `DATA_G5`. |
+| 3 | Footer piece count corrected | `index.html` | Footer showed stale "2,510" (pre-diploma count). Updated to "2,919 pieces". |
+| 4 | admin-counts.html expected count fix | `admin-counts.html` | Expected Comprehensive count was `2099 - leisureTotal` (evaluated dynamically to wrong value). Fixed to hardcoded `1393`. |
+| 5 | SEO meta tags — all 18 grade pages | `Prelim–G8/piano-repertoire_*.html` (9 files) + `ABRSM/*/piano-repertoire_abrsm_*.html` (9 files) | Added `<meta name="keywords">` and `<meta name="description">` to all 18 grade HTML pages via Python batch script. Descriptions include piece counts, syllabus name, and grade number. |
+| 6 | Composer Wikipedia links restored on index.html | `index.html` | index.html was rebuilt without `COMPOSER_LINKS`. Extracted 414-entry object from grade pages and added to index.html. Both `PieceRow` and `ForYouPanel` `MiniCard` composer names now always render as clickable links with Wikipedia search fallback: `COMPOSER_LINKS[p.c] \|\| wikipedia search URL`. |
+| 7 | Save button — login gate removed | `index.html` | ★ Save button no longer requires login. Any user can save pieces to localStorage without signing in. Login modal only shown if user manually clicks "Sign in" in the header. |
+| 8 | interests state sync | `index.html` | `saveInterests()` now dispatches `window.dispatchEvent(new Event("pb_interests_changed"))`. App-level `interests` state has a `useEffect` listener that syncs via `loadInterests()` whenever PieceRow updates localStorage. ForYouPanel now reacts in real time. |
+| 9 | focus field saved in interests | `index.html` | `focus: p.focus\|\|[]` added to interests object when saving a piece — required for ForYouPanel recommendation scoring. |
+| 10 | For You recommendation engine | `index.html` | `getRecommendations(interests, corpus, count=5)` function added. Two modes: **More like this** (scores by era match, nationality match, focus tag overlap) and **Broaden your repertoire** (scores by least-listened era, unseen nationality, novel focus tags). Shuffled corpus for variety on each render. `ForYouPanel` component renders both sections below GradeGrid on homepage (only visible when `interests.length > 0`). |
+| 11 | 🎓 Diploma filter — empty results bug fix | `index.html` | Clicking "🎓 Diploma" in sidebar showed "No pieces found". Root cause: `gradeFilter` retained previous value (e.g. `"G1"`) when switching syllabus. Diploma pieces have `_gradeKey: "AMusA"\|"LMusA"` — so grade filter blocked all results. Fix: syllabus filter buttons now also call `setGradeFilter("All")`. Deployed 2026-05-05. |
+
+---
+
+### Build Status — Last updated 2026-05-05 (evening)
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–32 | All previously completed features | ✅ Done (see Phases 1–11) |
+| 33 | For You recommendation engine | ✅ Done (Phase 12) |
+| 34 | Composer Wikipedia links on index.html | ✅ Done (Phase 12) |
+| 35 | 🎓 Diploma filter bug fix | ✅ Done (Phase 12) |
+| 36 | G5 corpus bug fix (168 missing pieces) | ✅ Done (Phase 12) |
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | payments.html — lesson fee management | High | Per-student fee, invoice PDF, paid/unpaid toggle. For Teacher Dashboard only. |
+| 2 | Google Search Console — submit sitemap | Quick win | Go to search.google.com/search-console → add sitemap.xml URL → verify |
+| 3 | Ad integration | Medium | Google AdSense application, or direct piano brand deals. Requires traffic first. |
+| 4 | Design unification | Medium | All grade pages have slightly different styling. Deferred — not blocking. |
+| 5 | ABRSM Diploma | Low | Needs PDF from abrsm.org (ARSM / DipABRSM / LRSM / FRSM). User to download first. |
+
+### Known Issues (as of 2026-05-05)
+- None active. All bugs from today's audit session resolved and deployed.
+
+---
+
 ### Language Rule
 - Conversation: Korean is fine
 - All code, file outputs, comments: English only
