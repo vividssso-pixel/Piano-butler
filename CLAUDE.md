@@ -717,6 +717,69 @@ index.html (fully public, no requireAuth)
 
 ---
 
+---
+
+### Phase 14 Updates (2026-05-06 — morning session)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | CertP (Certificate of Performance) added | `CertP/data_certp.js`, `CertP/piano-repertoire_certp.html` | 128 pieces (A:28, B:27, C:33, D:40) from 2026 AMEB Piano Syllabus pp.76–77. Teal gradient header (`#0f4c75` → `#0f766e`). Exam banner: Level 2, 45-min exam, 25–35 min programme, one work from each of Lists A/B/C/D. All pieces have exactly 3 focus keywords, nat, era fields. Verified with node count script. |
+| 2 | index.html — CertP integrated | `index.html` | Script tag added: `<script src="CertP/data_certp.js"></script>`. CertP added first in `DIPLOMA_META` array (key:"CertP", accent:"#0f766e", bg:"#f0fdfa", examCode:"Level 2", program:"25–35 min"). Piece count updated 2,919 → 3,047 in all 4 meta/og/twitter tags. |
+| 3 | Series badge added to search results | `index.html` | `PieceRow` now shows a series badge between List and Era badges when `p.s` field exists. Badge only appears on pieces that have a series code (AMEB Grade 1–8 pieces). CertP, Diploma, and ABRSM pieces have no `s` field → no badge shown. Colour-coded: S19=blue, S18=indigo, S17=violet, AustAnth=yellow, Manual=grey, Leisure S1–S4=green. IIFE pattern used inside JSX. |
+| 4 | Logo button — home navigation | `index.html` | "Piano Butler" logo in top-left changed from `<div>` to `<button onClick={handleClear}>` with explicit `style={{background:"none",border:"none",padding:0,cursor:"pointer",position:"relative",zIndex:40}}`. Clicking resets all filters and returns to homepage. |
+| 5 | admin-counts.html — CertP integrated | `admin-counts.html` | Script tag + DIPLOMA array entry added for CertP. Expected counts updated: AMEB Diploma + CertP total → 515, Grand Total → 3,047. |
+| 6 | sitemap.xml — CertP page added | `sitemap.xml` | CertP URL added: `https://vividssso-pixel.github.io/Piano-butler/CertP/piano-repertoire_certp.html` (priority 0.8, monthly). |
+| 7 | Diploma grid layout fix | `index.html` | `grid-cols-2` → `grid-cols-3` for Diploma Level cards. All three diploma cards (CertP, AMusA, LMusA) now appear in a single row. |
+
+### CertP Repertoire — Verified Piece Counts
+
+| List | Count | Character |
+|------|-------|-----------|
+| A | 28 | Studies & Baroque/Early — Scarlatti, Bach WTC, Cramer, Czerny, Handel, Hensel, Liszt, Moscheles, Moszkowski, Rameau, Schumann C., Shostakovich |
+| B | 27 | Classical Sonatas/Suites — CPE Bach, JC Bach, JS Bach BWV814, Beethoven, Clementi, Haydn, Hummel, Méhul, Mozart, Poulenc, Sculthorpe, Sutherland |
+| C | 33 | Romantic — Arensky, Bridge, Chopin x9, Fauré, Grieg, Hensel x5, Hill, Liszt x2, Mendelssohn, Rachmaninoff x4, Schubert, Schumann R. x4, Skryabin x2, Tchaikovsky |
+| D | 40 | Modern/Contemporary — Albéniz x3, Bailey, Bartók x2, Benjamin, Boulanger, Chua, Copland x2, Debussy x6, Durham, Falla, Ginastera x2, Gould, Handel A., Holland x2, Kabalevsky, Khachaturian, Prokofiev x2, Ravel, Schoenberg, Sitsky, Stravinsky x2, Sutherland M., Villa-Lobos x5 |
+| **Total** | **128** | |
+
+### Updated Piece Count Totals (as of Phase 14)
+
+| Syllabus | Count |
+|----------|-------|
+| AMEB Comprehensive (Prelim–G8) | 1,393 |
+| AMEB Piano for Leisure (Prelim–G8) | 706 |
+| AMEB Diploma — CertP | 128 |
+| AMEB Diploma — AMusA | 161 |
+| AMEB Diploma — LMusA | 226 |
+| ABRSM Initial–G8 | 433 |
+| **Grand Total** | **3,047** |
+
+### File Structure Update
+
+```
+Piano Butler/
+├── CertP/                           ← NEW (Phase 14)
+│   ├── data_certp.js                ← CertP Diploma (128 pieces: A:28, B:27, C:33, D:40)
+│   └── piano-repertoire_certp.html  ← Self-contained React app, teal theme
+```
+
+### Known Issues (as of 2026-05-06 morning)
+- Logo button click fix deployed (commit 9277762) — awaiting user confirmation
+- CertP grid layout fixed to `grid-cols-3` — awaiting user confirmation after push
+- **Pending user action:** run `git push origin main` from Terminal to deploy Phase 14 fixes
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | Individual grade page UX — tab/accordion view | High | User requested: pieces currently listed A→B→C→D requiring long scroll. Suggested improvement: tab or accordion per list so user can jump to any list quickly. |
+| 2 | payments.html — lesson fee management | High | Per-student fee, invoice PDF, paid/unpaid toggle. Teacher Dashboard only. |
+| 3 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL |
+| 4 | Ad integration | Medium | Google AdSense, or direct piano brand deals. Requires traffic first. |
+| 5 | Design unification | Medium | All grade pages have slightly different styling. Deferred. |
+| 6 | ABRSM Diploma | Low | Needs PDF from abrsm.org (ARSM / DipABRSM / LRSM / FRSM). |
+
+---
+
 ### Language Rule
 - Conversation: Korean is fine
 - All code, file outputs, comments: English only
