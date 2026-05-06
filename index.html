@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Piano Butler — AMEB & ABRSM Piano Repertoire Search</title>
-    <meta name="description" content="Search 3,047 piano pieces across the 2026 AMEB, ABRSM, and AMEB Diploma syllabuses. Filter by grade, era, nationality, and focus area. Free for pianists and teachers.">
+    <meta name="description" content="Search 3,283 piano pieces across the 2026 AMEB, ABRSM, and AMEB Diploma syllabuses. Filter by grade, era, nationality, and focus area. Free for pianists and teachers.">
 
     <!-- Canonical -->
     <link rel="canonical" href="https://vividssso-pixel.github.io/Piano-butler/">
@@ -13,7 +13,7 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://vividssso-pixel.github.io/Piano-butler/">
     <meta property="og:title" content="Piano Butler — AMEB & ABRSM Piano Repertoire Search">
-    <meta property="og:description" content="Search 3,047 piano pieces across the 2026 AMEB, ABRSM, and AMEB Diploma syllabuses. Filter by grade, era, nationality, and focus area. Free for pianists and teachers.">
+    <meta property="og:description" content="Search 3,283 piano pieces across the 2026 AMEB, ABRSM, and AMEB Diploma syllabuses. Filter by grade, era, nationality, and focus area. Free for pianists and teachers.">
     <meta property="og:image" content="https://vividssso-pixel.github.io/Piano-butler/og-image.png">
     <meta property="og:locale" content="en_AU">
     <meta property="og:site_name" content="Piano Butler">
@@ -21,7 +21,7 @@
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Piano Butler — AMEB & ABRSM Piano Repertoire Search">
-    <meta name="twitter:description" content="Search 3,047 piano pieces across the 2026 AMEB, ABRSM, and AMEB Diploma syllabuses. Filter by grade, era, nationality, and focus area.">
+    <meta name="twitter:description" content="Search 3,283 piano pieces across the 2026 AMEB, ABRSM, and AMEB Diploma syllabuses. Filter by grade, era, nationality, and focus area.">
     <meta name="twitter:image" content="https://vividssso-pixel.github.io/Piano-butler/og-image.png">
 
     <!-- SEO -->
@@ -57,6 +57,9 @@
     <script src="CertP/data_certp.js"></script>
     <script src="AMusA/data_amusa.js"></script>
     <script src="LMusA/data_lmusa.js"></script>
+    <!-- ABRSM Diploma data -->
+    <script src="ABRSM/Diploma/data_abrsm_lrsm.js"></script>
+    <script src="ABRSM/Diploma/data_abrsm_frsm.js"></script>
     <!-- ABRSM data -->
     <script src="ABRSM/Initial/data_abrsm_initial.js"></script>
     <script src="ABRSM/G1/data_abrsm_g1.js"></script>
@@ -261,6 +264,16 @@ const DIPLOMA_META = [
       desc:"Licentiate in Music, Australia",
       examCode:"9951", program:"35–50 min",
       data: typeof DATA_LMUSA!=="undefined"?DATA_LMUSA:null },
+    { key:"LRSM", label:"LRSM", accent:"#1e1b4b", bg:"#eef2ff",
+      url:"ABRSM/Diploma/piano-repertoire_abrsm_lrsm.html",
+      desc:"Licentiate of the Royal Schools of Music",
+      examCode:"ABRSM", program:"Open pool",
+      data: typeof DATA_ABRSM_LRSM!=="undefined"?DATA_ABRSM_LRSM:null },
+    { key:"FRSM", label:"FRSM", accent:"#0f0a1e", bg:"#f3e8ff",
+      url:"ABRSM/Diploma/piano-repertoire_abrsm_frsm.html",
+      desc:"Fellow of the Royal Schools of Music",
+      examCode:"ABRSM", program:"Open pool",
+      data: typeof DATA_ABRSM_FRSM!=="undefined"?DATA_ABRSM_FRSM:null },
 ];
 
 const buildCorpus = () => {
@@ -273,7 +286,8 @@ const buildCorpus = () => {
         if (g.data) g.data.forEach(p => rows.push({...p, _grade:g.label, _gradeKey:g.key, _type:"ABRSM", _accent:g.accent, _syllabus:"ABRSM"}));
     });
     DIPLOMA_META.forEach(g => {
-        if (g.data) g.data.forEach(p => rows.push({...p, _grade:g.label, _gradeKey:g.key, _type:"Diploma", _accent:g.accent, _syllabus:"AMEB Diploma"}));
+        const syllabusTag = (g.key==="LRSM"||g.key==="FRSM") ? "ABRSM Diploma" : "AMEB Diploma";
+        if (g.data) g.data.forEach(p => rows.push({...p, _grade:g.label, _gradeKey:g.key, _type:"Diploma", _accent:g.accent, _syllabus:syllabusTag}));
     });
     return rows;
 };
@@ -955,26 +969,33 @@ function GradeGrid({ onGradeClick, activeSyllabus, setActiveSyllabus }) {
                 ))}
             </div>
 
-            {/* Diploma cards — AMEB only */}
-            {activeSyllabus === "AMEB" && (
-                <div className="mt-5">
-                    <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Diploma Level</div>
-                    <div className="grid grid-cols-3 gap-3">
-                        {DIPLOMA_META.map(g => (
-                            <a key={g.key} href={g.url}
-                                className="rounded-2xl p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md block"
-                                style={{background: g.bg, border:`1.5px solid ${g.accent}33`, textDecoration:"none"}}>
-                                <div className="text-[13px] font-black" style={{color: g.accent}}>{g.label}</div>
-                                <div className="text-[10px] text-slate-500 mt-0.5">{g.desc}</div>
-                                <div className="mt-2 flex items-center gap-2">
-                                    <div className="w-6 h-1 rounded-full" style={{background: g.accent}}></div>
-                                    <span className="text-[9px] text-slate-400 font-bold">{g.program}</span>
-                                </div>
-                            </a>
-                        ))}
+            {/* Diploma cards */}
+            {(() => {
+                const amebDip  = DIPLOMA_META.filter(g => g.key!=="LRSM" && g.key!=="FRSM");
+                const abrsmdip = DIPLOMA_META.filter(g => g.key==="LRSM" || g.key==="FRSM");
+                const showAmeb  = activeSyllabus === "AMEB";
+                const showAbrsm = activeSyllabus === "ABRSM";
+                if (!showAmeb && !showAbrsm) return null;
+                return (
+                    <div className="mt-5">
+                        <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Diploma Level</div>
+                        <div className="grid grid-cols-3 gap-3">
+                            {(showAmeb ? amebDip : abrsmdip).map(g => (
+                                <a key={g.key} href={g.url}
+                                    className="rounded-2xl p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md block"
+                                    style={{background: g.bg, border:`1.5px solid ${g.accent}33`, textDecoration:"none"}}>
+                                    <div className="text-[13px] font-black" style={{color: g.accent}}>{g.label}</div>
+                                    <div className="text-[10px] text-slate-500 mt-0.5">{g.desc}</div>
+                                    <div className="mt-2 flex items-center gap-2">
+                                        <div className="w-6 h-1 rounded-full" style={{background: g.accent}}></div>
+                                        <span className="text-[9px] text-slate-400 font-bold">{g.program}</span>
+                                    </div>
+                                </a>
+                            ))}
+                        </div>
                     </div>
-                </div>
-            )}
+                );
+            })()}
         </div>
     );
 }
@@ -1032,10 +1053,11 @@ function App() {
             const mG = gradeFilter==="All"    || p._gradeKey===gradeFilter;
             const mN = natFilter==="All"      || (p.nat&&p.nat.toLowerCase().includes(natFilter.toLowerCase()));
             const mS = syllabusFilter==="All"
-                || (syllabusFilter==="AMEB"         && p._syllabus==="AMEB" && p._type==="General")
-                || (syllabusFilter==="AMEB Leisure" && p._syllabus==="AMEB" && p._type==="Leisure")
-                || (syllabusFilter==="ABRSM"        && p._syllabus==="ABRSM")
-                || (syllabusFilter==="AMEB Diploma" && p._syllabus==="AMEB Diploma");
+                || (syllabusFilter==="AMEB"          && p._syllabus==="AMEB" && p._type==="General")
+                || (syllabusFilter==="AMEB Leisure"  && p._syllabus==="AMEB" && p._type==="Leisure")
+                || (syllabusFilter==="ABRSM"         && p._syllabus==="ABRSM")
+                || (syllabusFilter==="AMEB Diploma"  && p._syllabus==="AMEB Diploma")
+                || (syllabusFilter==="ABRSM Diploma" && p._syllabus==="ABRSM Diploma");
             return mQ && mE && mG && mN && mS;
         });
     }, [query, eraFilter, gradeFilter, natFilter, syllabusFilter, searchActive]);
@@ -1119,7 +1141,7 @@ function App() {
                     {/* Syllabus */}
                     <div className="mb-4">
                         <div className="text-[9px] font-black uppercase tracking-widest text-slate-300 mb-1.5">Syllabus</div>
-                        {[["All","All","#4f46e5"],["AMEB","🇦🇺 AMEB Comprehensive","#4f46e5"],["AMEB Leisure","🎵 AMEB Leisure","#0891b2"],["ABRSM","🇬🇧 ABRSM","#7c3aed"],["AMEB Diploma","🎓 Diploma","#4c1d95"]].map(([val,lbl,col]) => (
+                        {[["All","All","#4f46e5"],["AMEB","🇦🇺 AMEB Comprehensive","#4f46e5"],["AMEB Leisure","🎵 AMEB Leisure","#0891b2"],["ABRSM","🇬🇧 ABRSM","#7c3aed"],["AMEB Diploma","🎓 AMEB Diploma","#4c1d95"],["ABRSM Diploma","🎓 ABRSM Diploma","#1e1b4b"]].map(([val,lbl,col]) => (
                             <button key={val} onClick={() => { setSyllabusFilter(val); setGradeFilter("All"); setSearchTriggered(true); }}
                                 className="block w-full text-left text-[11px] font-bold px-3 py-1.5 rounded-lg mb-0.5 transition-all"
                                 style={{
@@ -1237,7 +1259,7 @@ function App() {
 
             {/* Footer */}
             <footer className="border-t border-slate-200 py-4 text-center text-[10px] text-slate-300 font-semibold tracking-wide" style={{background:"white"}}>
-                Piano Butler · AMEB 2026 · ABRSM 2025&amp;2026 · AMEB Diploma · 3,047 pieces
+                Piano Butler · AMEB 2026 · ABRSM 2025&amp;2026 · AMEB &amp; ABRSM Diploma · 3,283 pieces
             </footer>
         </div>
         </>

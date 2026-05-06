@@ -767,6 +767,54 @@ Piano Butler/
 - CertP grid layout fixed to `grid-cols-3` — awaiting user confirmation after push
 - **Pending user action:** run `git push origin main` from Terminal to deploy Phase 14 fixes
 
+---
+
+### Phase 15 Updates (2026-05-07)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | ABRSM LRSM diploma repertoire | `ABRSM/Diploma/data_abrsm_lrsm.js`, `ABRSM/Diploma/piano-repertoire_abrsm_lrsm.html` | 139 entries from *Piano LRSM Repertoire [7 Nov 2023] FINAL.pdf*. Open pool format (no lists). ABRSM violet theme (`#7c3aed`). Era/Nationality filters, search, YT + Sheet links, Wikipedia COMPOSER_LINKS. Back-link to index.html. |
+| 2 | ABRSM FRSM diploma repertoire | `ABRSM/Diploma/data_abrsm_frsm.js`, `ABRSM/Diploma/piano-repertoire_abrsm_frsm.html` | 97 entries from *Piano FRSM Repertoire [7 Nov 2023] FINAL.pdf*. Same open pool pattern. Deeper purple theme (`#4c1d95`). |
+| 3 | index.html — LRSM & FRSM integration | `index.html` | Script tags added. `DIPLOMA_META` gains LRSM + FRSM entries (`_syllabus:"ABRSM Diploma"`). Sidebar filter gains "🎓 ABRSM Diploma" option. GradeGrid Diploma section shows LRSM/FRSM cards under ABRSM tab. Filter logic updated with `ABRSM Diploma` case. Piece count 3,047 → 3,283. Footer updated. |
+| 4 | sitemap.xml | `sitemap.xml` | LRSM + FRSM pages added (priority 0.8, monthly). |
+| 5 | admin-counts.html | `admin-counts.html` | Script tags + DIPLOMA array entries added for LRSM + FRSM. Grand Total expected updated to 3,283. ABRSM Diploma row (236) added to Expected vs Actual panel. |
+| 6 | CLAUDE.md | `CLAUDE.md` | Phase 15 logged. File structure, piece counts, and pending work updated. |
+
+### ABRSM Diploma Piece Counts (Phase 15)
+
+| Diploma | File | Total | Format | Valid from |
+|---------|------|-------|--------|------------|
+| LRSM | data_abrsm_lrsm.js | 139 | Open pool | Nov 2023 |
+| FRSM | data_abrsm_frsm.js | 97 | Open pool | Nov 2023 |
+| **Total** | | **236** | | |
+
+> Note: ARSM and DipABRSM PDFs not yet available. LRSM + FRSM only for now.
+
+### Updated Piece Count Totals (as of Phase 15)
+
+| Syllabus | Count |
+|----------|-------|
+| AMEB Comprehensive (Prelim–G8) | 1,393 |
+| AMEB Piano for Leisure (Prelim–G8) | 706 |
+| AMEB Diploma — CertP | 128 |
+| AMEB Diploma — AMusA | 161 |
+| AMEB Diploma — LMusA | 226 |
+| ABRSM Initial–G8 | 433 |
+| ABRSM Diploma — LRSM | 139 |
+| ABRSM Diploma — FRSM | 97 |
+| **Grand Total** | **3,283** |
+
+### File Structure Update (Phase 15)
+
+```
+ABRSM/
+└── Diploma/                          ← NEW (Phase 15)
+    ├── data_abrsm_lrsm.js            ← LRSM (139 entries)
+    ├── piano-repertoire_abrsm_lrsm.html
+    ├── data_abrsm_frsm.js            ← FRSM (97 entries)
+    └── piano-repertoire_abrsm_frsm.html
+```
+
 ### Pending Work (priority order for next session)
 
 | # | Task | Priority | Notes |
@@ -776,7 +824,7 @@ Piano Butler/
 | 3 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL |
 | 4 | Ad integration | Medium | Google AdSense, or direct piano brand deals. Requires traffic first. |
 | 5 | Design unification | Medium | All grade pages have slightly different styling. Deferred. |
-| 6 | ABRSM Diploma | Low | Needs PDF from abrsm.org (ARSM / DipABRSM / LRSM / FRSM). |
+| 6 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. User to download from abrsm.org when ready. |
 
 ---
 
