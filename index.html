@@ -856,8 +856,237 @@ function ForYouPanel({ interests, onLoginRequired, openVideo, user, onSearch }) 
     );
 }
 
+/* ── List Modal — add piece to a list ── */
+function ListModal({ piece, user, onClose }) {
+    const [lists, setLists]       = useState([]);
+    const [loading, setLoading]   = useState(true);
+    const [newName, setNewName]   = useState("");
+    const [creating, setCreating] = useState(false);
+    const [adding, setAdding]     = useState(null);
+    const [added, setAdded]       = useState(new Set());
+    const [error, setError]       = useState("");
+
+    useEffect(() => {
+        _sb.from("repertoire_lists").select("*").eq("user_id", user.id).order("created_at", {ascending:false})
+            .then(({ data, error }) => {
+                if (!error) setLists(data || []);
+                setLoading(false);
+            });
+    }, []);
+
+    const createList = async () => {
+        if (!newName.trim()) return;
+        setCreating(true);
+        const { data, error } = await _sb.from("repertoire_lists")
+            .insert({ user_id: user.id, name: newName.trim(), is_public: true })
+            .select().single();
+        setCreating(false);
+        if (error) { setError("Failed to create list"); return; }
+        setLists(prev => [data, ...prev]);
+        setNewName("");
+    };
+
+    const addToList = async (listId) => {
+        setAdding(listId);
+        const { error } = await _sb.from("list_pieces").insert({
+            list_id: listId,
+            composer: piece.c, title: piece.t,
+            grade: piece._grade, syllabus: piece._syllabus,
+            era: piece.era || null, nat: piece.nat || null,
+        });
+        setAdding(null);
+        if (!error) setAdded(prev => new Set([...prev, listId]));
+        else setError("Failed to add piece");
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
+            style={{background:"rgba(0,0,0,0.55)"}} onClick={onClose}>
+            <div className="w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden"
+                style={{background:"#1e293b",border:"1px solid #334155"}}
+                onClick={e => e.stopPropagation()}>
+                {/* Header */}
+                <div className="px-5 py-4 border-b border-slate-700 flex items-center justify-between">
+                    <div>
+                        <div className="text-[13px] font-black text-white">Add to list</div>
+                        <div className="text-[11px] text-slate-400 font-medium mt-0.5 truncate max-w-[240px]">{piece.t} · {piece.c}</div>
+                    </div>
+                    <button onClick={onClose} className="text-slate-500 hover:text-white text-lg font-bold transition-colors">×</button>
+                </div>
+                {/* Create new list */}
+                <div className="px-5 py-3 border-b border-slate-700">
+                    <div className="flex gap-2">
+                        <input value={newName} onChange={e => setNewName(e.target.value)}
+                            onKeyDown={e => e.key==="Enter" && createList()}
+                            placeholder="New list name…"
+                            className="flex-1 px-3 py-1.5 rounded-lg text-[12px] font-medium text-white outline-none"
+                            style={{background:"#0f172a",border:"1px solid #334155"}} />
+                        <button onClick={createList} disabled={creating || !newName.trim()}
+                            className="px-3 py-1.5 text-[11px] font-bold rounded-lg transition-colors"
+                            style={{background: newName.trim() ? "#4f46e5" : "#1e293b", color: newName.trim() ? "white" : "#475569"}}>
+                            {creating ? "…" : "+ Create"}
+                        </button>
+                    </div>
+                    {error && <div className="text-[10px] text-rose-400 mt-1">{error}</div>}
+                </div>
+                {/* Existing lists */}
+                <div className="max-h-64 overflow-y-auto">
+                    {loading ? (
+                        <div className="py-8 text-center text-[11px] text-slate-500">Loading…</div>
+                    ) : lists.length === 0 ? (
+                        <div className="py-8 text-center text-[11px] text-slate-500">No lists yet — create one above</div>
+                    ) : lists.map(lst => (
+                        <div key={lst.id} className="flex items-center justify-between px-5 py-3 hover:bg-slate-700/40 transition-colors border-b border-slate-700/50">
+                            <div>
+                                <div className="text-[12px] font-bold text-white">{lst.name}</div>
+                                <div className="text-[10px] text-slate-400">{lst.is_public ? "🔗 Public" : "🔒 Private"}</div>
+                            </div>
+                            <button onClick={() => addToList(lst.id)} disabled={added.has(lst.id) || adding===lst.id}
+                                className="text-[11px] font-bold px-3 py-1 rounded-lg transition-all"
+                                style={{
+                                    background: added.has(lst.id) ? "#10b981" : "#4f46e518",
+                                    color:      added.has(lst.id) ? "white"   : "#818cf8",
+                                    border:     `1px solid ${added.has(lst.id) ? "#10b981" : "#4f46e544"}`,
+                                }}>
+                                {adding===lst.id ? "…" : added.has(lst.id) ? "✓ Added" : "+ Add"}
+                            </button>
+                        </div>
+                    ))}
+                </div>
+                <div className="px-5 py-3 text-center">
+                    <button onClick={onClose} className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors">Done</button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ── My Lists Page ── */
+function MyListsPage({ user, onClose }) {
+    const [lists, setLists]         = useState([]);
+    const [loading, setLoading]     = useState(true);
+    const [openList, setOpenList]   = useState(null);
+    const [pieces, setPieces]       = useState([]);
+    const [piecesLoading, setPiecesLoading] = useState(false);
+    const [copied, setCopied]       = useState(false);
+    const [deleting, setDeleting]   = useState(null);
+
+    useEffect(() => {
+        _sb.from("repertoire_lists").select("*").eq("user_id", user.id).order("created_at", {ascending:false})
+            .then(({ data }) => { setLists(data||[]); setLoading(false); });
+    }, []);
+
+    const openListDetail = async (lst) => {
+        setOpenList(lst);
+        setPiecesLoading(true);
+        const { data } = await _sb.from("list_pieces").select("*").eq("list_id", lst.id).order("added_at", {ascending:true});
+        setPieces(data||[]);
+        setPiecesLoading(false);
+    };
+
+    const copyLink = (token) => {
+        const url = `${location.origin}${location.pathname}?list=${token}`;
+        navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+    };
+
+    const removePiece = async (pieceId) => {
+        await _sb.from("list_pieces").delete().eq("id", pieceId);
+        setPieces(prev => prev.filter(p => p.id !== pieceId));
+    };
+
+    const deleteList = async (listId) => {
+        setDeleting(listId);
+        await _sb.from("repertoire_lists").delete().eq("id", listId);
+        setLists(prev => prev.filter(l => l.id !== listId));
+        if (openList?.id === listId) setOpenList(null);
+        setDeleting(null);
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4"
+            style={{background:"rgba(0,0,0,0.6)"}} onClick={onClose}>
+            <div className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[80vh] flex flex-col"
+                style={{background:"#1e293b",border:"1px solid #334155"}}
+                onClick={e => e.stopPropagation()}>
+                {/* Header */}
+                <div className="px-5 py-4 border-b border-slate-700 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-2">
+                        {openList && (
+                            <button onClick={() => setOpenList(null)} className="text-slate-400 hover:text-white transition-colors text-sm font-bold mr-1">←</button>
+                        )}
+                        <span className="text-[14px] font-black text-white">{openList ? openList.name : "My Lists"}</span>
+                        {openList && <span className="text-[10px] text-slate-400">{pieces.length} pieces</span>}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        {openList && (
+                            <button onClick={() => copyLink(openList.share_token)}
+                                className="text-[11px] font-bold px-3 py-1 rounded-lg transition-all"
+                                style={{background: copied ? "#10b981" : "#4f46e518", color: copied ? "white" : "#818cf8", border:"1px solid #4f46e544"}}>
+                                {copied ? "✓ Copied!" : "🔗 Share link"}
+                            </button>
+                        )}
+                        <button onClick={onClose} className="text-slate-500 hover:text-white text-lg font-bold transition-colors">×</button>
+                    </div>
+                </div>
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto">
+                    {!openList ? (
+                        loading ? (
+                            <div className="py-12 text-center text-[11px] text-slate-500">Loading…</div>
+                        ) : lists.length === 0 ? (
+                            <div className="py-12 text-center">
+                                <div className="text-3xl mb-3">📋</div>
+                                <div className="text-[12px] text-slate-400 font-semibold">No lists yet</div>
+                                <div className="text-[11px] text-slate-500 mt-1">Click "+ List" on any piece to get started</div>
+                            </div>
+                        ) : lists.map(lst => (
+                            <div key={lst.id} className="flex items-center justify-between px-5 py-4 hover:bg-slate-700/30 transition-colors border-b border-slate-700/50 cursor-pointer"
+                                onClick={() => openListDetail(lst)}>
+                                <div>
+                                    <div className="text-[13px] font-bold text-white">{lst.name}</div>
+                                    <div className="text-[10px] text-slate-400 mt-0.5">{lst.is_public ? "🔗 Public · shareable" : "🔒 Private"}</div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={e => { e.stopPropagation(); copyLink(lst.share_token); }}
+                                        className="text-[10px] font-bold px-2 py-1 rounded-lg text-slate-400 border border-slate-600 hover:text-white hover:border-slate-400 transition-colors">
+                                        🔗
+                                    </button>
+                                    <button onClick={e => { e.stopPropagation(); if(window.confirm(`Delete "${lst.name}"?`)) deleteList(lst.id); }}
+                                        disabled={deleting===lst.id}
+                                        className="text-[10px] font-bold px-2 py-1 rounded-lg text-slate-500 border border-slate-700 hover:text-rose-400 hover:border-rose-400/50 transition-colors">
+                                        {deleting===lst.id ? "…" : "🗑"}
+                                    </button>
+                                    <span className="text-slate-500 text-sm">›</span>
+                                </div>
+                            </div>
+                        ))
+                    ) : piecesLoading ? (
+                        <div className="py-12 text-center text-[11px] text-slate-500">Loading…</div>
+                    ) : pieces.length === 0 ? (
+                        <div className="py-12 text-center text-[11px] text-slate-500">No pieces yet</div>
+                    ) : pieces.map((pc, i) => (
+                        <div key={pc.id} className="flex items-center justify-between px-5 py-3 border-b border-slate-700/50">
+                            <div className="flex-1 min-w-0">
+                                <div className="flex gap-1 mb-1">
+                                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded text-white"
+                                        style={{background: pc.syllabus==="ABRSM"?"#7c3aed":"#4f46e5"}}>{pc.grade}</span>
+                                    {pc.era && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-700 text-slate-300">{pc.era}</span>}
+                                </div>
+                                <div className="text-[12px] font-bold text-white truncate">{pc.title}</div>
+                                <div className="text-[10px] text-slate-400 truncate">{pc.composer}</div>
+                            </div>
+                            <button onClick={() => removePiece(pc.id)}
+                                className="ml-3 text-[10px] text-slate-600 hover:text-rose-400 transition-colors font-bold shrink-0">✕</button>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 /* ── Piece Row ── */
-function PieceRow({ p, user, onLoginRequired, openVideo }) {
+function PieceRow({ p, user, onLoginRequired, openVideo, onAddToList }) {
     const [interests, setInterests] = useState(() => loadInterests());
     const isStarred = interests.some(i => i.composer===p.c && i.title===p.t);
 
@@ -923,6 +1152,11 @@ function PieceRow({ p, user, onLoginRequired, openVideo }) {
                         borderColor: isStarred ? "#f59e0b" : "#fde68a",
                     }}>
                     {isStarred ? "⭐ Saved" : "☆ Save"}
+                </button>
+                <button onClick={() => onAddToList(p)}
+                    className="px-3 py-1.5 text-[11px] font-bold rounded-lg transition-colors border border-indigo-200 hover:border-indigo-400"
+                    style={{background:"#eef2ff", color:"#4f46e5"}}>
+                    + List
                 </button>
                 <button onClick={() => openVideo(p.c, p.t)}
                     className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold rounded-lg transition-colors">
@@ -1013,8 +1247,34 @@ function App() {
     const [activeSyllabus, setActiveSyllabus] = useState("AMEB");
     const [interests, setInterests]         = useState(() => loadInterests());
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [listModalPiece, setListModalPiece] = useState(null);   // piece to add to list
+    const [showMyLists, setShowMyLists]       = useState(false);  // my lists panel
+    const [sharedList, setSharedList]         = useState(null);   // { list, pieces } for shared view
     const searchInputRef = React.useRef(null);
     const { modal: videoModal, open: openVideo, close: closeVideo } = useVideoModal();
+
+    /* Check for shared list URL param on load */
+    useEffect(() => {
+        const token = new URLSearchParams(location.search).get("list");
+        if (!token) return;
+        Promise.all([
+            _sb.from("repertoire_lists").select("*").eq("share_token", token).eq("is_public", true).single(),
+            _sb.from("list_pieces").select("*")
+                .in("list_id", _sb.from("repertoire_lists").select("id").eq("share_token", token))
+                .order("added_at", {ascending:true}),
+        ]).then(async ([listRes, _]) => {
+            if (listRes.error || !listRes.data) return;
+            const lst = listRes.data;
+            const { data: pcs } = await _sb.from("list_pieces").select("*").eq("list_id", lst.id).order("added_at", {ascending:true});
+            setSharedList({ list: lst, pieces: pcs||[] });
+        });
+    }, []);
+
+    /* Handle add-to-list click: require login */
+    const handleAddToList = (piece) => {
+        if (!user) { setShowLogin(true); return; }
+        setListModalPiece(piece);
+    };
 
     /* Sync interests state when localStorage changes (e.g. from PieceRow) */
     useEffect(() => {
@@ -1213,8 +1473,49 @@ function App() {
 
     return (
         <>
-        {showLogin && <LoginModal onClose={() => setShowLogin(false)} onSuccess={() => setShowLogin(false)} />}
+        {showLogin && <LoginModal onClose={() => setShowLogin(false)} onSuccess={(u) => { setShowLogin(false); }} />}
         <VideoModal modal={videoModal} onClose={closeVideo} />
+        {listModalPiece && user && <ListModal piece={listModalPiece} user={user} onClose={() => setListModalPiece(null)} />}
+        {showMyLists && user && <MyListsPage user={user} onClose={() => setShowMyLists(false)} />}
+
+        {/* Shared list view — full page overlay */}
+        {sharedList && (
+            <div className="fixed inset-0 z-50 overflow-y-auto" style={{background:"#f1f5f9"}}>
+                <div className="max-w-2xl mx-auto px-4 py-10">
+                    <div className="flex items-center gap-3 mb-6">
+                        <button onClick={() => { setSharedList(null); history.replaceState(null,"",location.pathname); }}
+                            className="text-[11px] font-bold text-indigo-400 hover:text-indigo-300">← Back to Piano Butler</button>
+                    </div>
+                    <div className="rounded-2xl overflow-hidden shadow-lg" style={{background:"white",border:"1px solid #e2e8f0"}}>
+                        <div className="px-6 py-5 border-b border-slate-100">
+                            <div className="text-[20px] font-black text-slate-800">{sharedList.list.name}</div>
+                            <div className="text-[12px] text-slate-400 mt-1">{sharedList.pieces.length} pieces · shared via Piano Butler</div>
+                        </div>
+                        {sharedList.pieces.map((pc, i) => (
+                            <div key={pc.id} className="flex items-center gap-3 px-6 py-4 border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                                <span className="text-[10px] font-black text-slate-400 w-5 shrink-0">{i+1}</span>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex gap-1 mb-1 flex-wrap">
+                                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded text-white"
+                                            style={{background: pc.syllabus==="ABRSM"?"#7c3aed":"#4f46e5"}}>{pc.grade}</span>
+                                        {pc.era && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500">{pc.era}</span>}
+                                    </div>
+                                    <div className="text-[14px] font-bold text-slate-800 leading-snug">{pc.title}</div>
+                                    <div className="text-[11px] text-slate-400 mt-0.5">{pc.composer}{pc.nat ? ` · ${pc.nat}` : ""}</div>
+                                </div>
+                                <button onClick={() => openVideo(pc.composer, pc.title)}
+                                    className="px-2.5 py-1 bg-red-600 text-white text-[10px] font-bold rounded-lg shrink-0">▶</button>
+                            </div>
+                        ))}
+                        <div className="px-6 py-4 text-center">
+                            <a href={location.pathname} className="text-[11px] font-bold text-indigo-500 hover:text-indigo-400">
+                                🎹 Explore 3,283 pieces on Piano Butler →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
 
         <div className="min-h-screen flex flex-col" style={{background:"#f1f5f9"}}>
 
@@ -1271,7 +1572,14 @@ function App() {
                     {/* Right */}
                     <div className="ml-auto flex items-center gap-2">
                         {user ? (
-                            <span className="text-[11px] font-bold text-slate-400 hidden md:block">{user.email}</span>
+                            <>
+                                <button onClick={() => setShowMyLists(true)}
+                                    className="px-3 py-1.5 text-[11px] font-bold rounded-xl transition-colors"
+                                    style={{background:"#4f46e518",color:"#818cf8",border:"1px solid #4f46e544"}}>
+                                    📋 My Lists
+                                </button>
+                                <span className="text-[10px] font-bold text-slate-500 hidden md:block truncate max-w-[120px]">{user.email}</span>
+                            </>
                         ) : (
                             <button onClick={() => setShowLogin(true)}
                                 className="px-3 py-1.5 text-[11px] font-bold rounded-xl transition-colors"
@@ -1459,7 +1767,7 @@ function App() {
                             </div>
                         </div>
                         {results.length > 0
-                            ? results.map((p,i) => <PieceRow key={i} p={p} user={user} onLoginRequired={() => setShowLogin(true)} openVideo={openVideo} />)
+                            ? results.map((p,i) => <PieceRow key={i} p={p} user={user} onLoginRequired={() => setShowLogin(true)} openVideo={openVideo} onAddToList={handleAddToList} />)
                             : (
                                 <div className="py-12 text-center">
                                     <div className="text-4xl mb-4">🎹</div>

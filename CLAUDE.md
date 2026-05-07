@@ -843,6 +843,40 @@ ABRSM/
 | 5 | Auto-detected signal pills | `index.html` | When `parseQuery` extracts grade/era/nat/syllabus from query text, dashed-border hint pills appear in results header (e.g. `↳ Romantic`, `↳ G5`, `↳ French`) — distinct from solid sidebar filter pills. |
 | 6 | Effective filter merging | `index.html` | `effEra/effGrade/effNat/effSyllabus` — sidebar filter takes priority; parsed signal used as fallback. Allows "grade 5 romantic" to work even when sidebar is on "All". |
 
+### Phase 19 Updates (2026-05-07 — night)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | `repertoire_lists` + `list_pieces` Supabase tables | Supabase SQL | `repertoire_lists`: id, user_id, name, is_public, share_token (auto-generated 10-char), created_at. `list_pieces`: id, list_id, composer, title, grade, syllabus, era, nat, added_at. RLS: owner full access; public can read is_public=true lists + their pieces. |
+| 2 | `ListModal` component | `index.html` | Dark modal: shows user's existing lists + create-new-list input. "+ Add" button per list → inserts into list_pieces. "✓ Added" confirmation. Triggered by "+ List" button on PieceRow. |
+| 3 | `MyListsPage` component | `index.html` | Full modal panel: list of user's lists → click to drill into pieces. "🔗 Share link" copies `?list=<token>` URL to clipboard. Per-piece ✕ remove button. Delete list button. |
+| 4 | `SharedListPage` inline view | `index.html` | Reads `?list=<token>` URL param on load. Fetches public list + pieces from Supabase. Renders full-page shareable list (no login needed). ▶ YouTube button per piece. "Explore 3,283 pieces on Piano Butler →" CTA at bottom. |
+| 5 | "+ List" button on PieceRow | `index.html` | Indigo button next to ★ Save. Opens LoginModal if not logged in; opens ListModal if logged in. |
+| 6 | "📋 My Lists" nav button | `index.html` | Shown in header when user is logged in. Opens MyListsPage modal. |
+| 7 | Login gate for list features | `index.html` | handleAddToList() checks user state — triggers Magic Link modal if not signed in. Core mechanism for email collection. |
+
+### Supabase Schema Update (Phase 19)
+
+```sql
+-- New tables added 2026-05-07
+CREATE TABLE public.repertoire_lists (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  name text NOT NULL,
+  description text,
+  is_public boolean DEFAULT true,
+  share_token text UNIQUE DEFAULT substr(md5(random()::text), 1, 10),
+  created_at timestamptz DEFAULT now()
+);
+CREATE TABLE public.list_pieces (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  list_id uuid REFERENCES public.repertoire_lists(id) ON DELETE CASCADE,
+  composer text, title text, grade text, syllabus text, era text, nat text,
+  added_at timestamptz DEFAULT now()
+);
+-- RLS: owner full, public read on is_public=true
+```
+
 ### Pending Work (priority order for next session)
 
 | # | Task | Priority | Notes |
