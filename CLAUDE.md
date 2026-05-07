@@ -815,16 +815,32 @@ ABRSM/
     └── piano-repertoire_abrsm_frsm.html
 ```
 
+### Phase 16 Updates (2026-05-07 — afternoon)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Coloured list tabs with piece counts — all AMEB grade pages | `Prelim–G8/piano-repertoire_*.html` (9 files) | `tabColors` object covers A/B/C/D/Collab/S1/S2/S3/S4/Manual. Each tab button shows list label + piece count as two-line display. Comprehensive tabs: A=blue, B=indigo, C=violet, D=purple, Collab=pink. Leisure series tabs: S4=teal, S3=cyan, S2=sky, S1=green, Manual=slate. |
+
+### Phase 17 Updates (2026-05-07 — evening)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Instant search (keystroke-triggered) | `index.html` | Removed Enter-key requirement for text queries. `onChange` directly activates results via `searchActive = query.trim() \|\| ...`. Empty query clears `searchTriggered`. |
+| 2 | Autocomplete suggestions dropdown | `index.html` | `autoSuggestions` useMemo fires when query ≥ 2 chars. Returns up to 8 results: 4 composer matches + 4 title matches from full corpus. Dark dropdown anchored to search input. `composer` badge (indigo) / `title` badge (cyan). Click on suggestion fills query + triggers results. Closes on blur (150ms delay for click handling). |
+| 3 | Quick search chips on homepage | `index.html` | 14 chips below GradeGrid: Chopin, Bach, Debussy, Beethoven, Romantic, Baroque, Australian, Contemporary, French, Russian, Sonatina, Waltz, Mazurka, Nocturne. Era chips set `eraFilter`; name chips set `query`. All trigger results instantly. |
+| 4 | Active filter pills in results header | `index.html` | When results are active, shows colour-coded pill badges for current query + each active filter. "clear filters" link appears next to result count when any filter is active. |
+| 5 | Smart "no results" UI | `index.html` | Shows query name in message, "Clear all filters" button if any filter active, and 6 suggested composer name chips (Chopin, Bach, Beethoven, Debussy, Schubert, Brahms). |
+| 6 | Search placeholder updated | `index.html` | Changed to "Search composer, title, nationality…" to communicate search scope. |
+
 ### Pending Work (priority order for next session)
 
 | # | Task | Priority | Notes |
 |---|------|----------|-------|
-| 1 | Individual grade page UX — tab/accordion view | High | User requested: pieces currently listed A→B→C→D requiring long scroll. Suggested improvement: tab or accordion per list so user can jump to any list quickly. |
-| 2 | payments.html — lesson fee management | High | Per-student fee, invoice PDF, paid/unpaid toggle. Teacher Dashboard only. |
-| 3 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL |
-| 4 | Ad integration | Medium | Google AdSense, or direct piano brand deals. Requires traffic first. |
-| 5 | Design unification | Medium | All grade pages have slightly different styling. Deferred. |
-| 6 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. User to download from abrsm.org when ready. |
+| 1 | payments.html — lesson fee management | High | Per-student fee, invoice PDF, paid/unpaid toggle. Teacher Dashboard only. |
+| 2 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL |
+| 3 | Ad integration | Medium | Google AdSense, or direct piano brand deals. Requires traffic first. |
+| 4 | Design unification | Medium | All grade pages have slightly different styling. Deferred. |
+| 5 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. User to download from abrsm.org when ready. |
 
 ---
 

@@ -1012,6 +1012,8 @@ function App() {
     const [showLogin, setShowLogin]         = useState(false);
     const [activeSyllabus, setActiveSyllabus] = useState("AMEB");
     const [interests, setInterests]         = useState(() => loadInterests());
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const searchInputRef = React.useRef(null);
     const { modal: videoModal, open: openVideo, close: closeVideo } = useVideoModal();
 
     /* Sync interests state when localStorage changes (e.g. from PieceRow) */
@@ -1034,7 +1036,27 @@ function App() {
 
     const searchActive = searchTriggered || query.trim() || eraFilter!=="All" || gradeFilter!=="All" || natFilter!=="All" || syllabusFilter!=="All";
 
-    const handleClear = () => { setQuery(""); setEraFilter("All"); setGradeFilter("All"); setNatFilter("All"); setSyllabusFilter("All"); setSearchTriggered(false); };
+    const handleClear = () => { setQuery(""); setEraFilter("All"); setGradeFilter("All"); setNatFilter("All"); setSyllabusFilter("All"); setSearchTriggered(false); setShowSuggestions(false); };
+
+    /* Autocomplete suggestions — top 8 matching composers or titles */
+    const autoSuggestions = useMemo(() => {
+        if (!query || query.trim().length < 2) return [];
+        const q = query.toLowerCase().trim();
+        const seen = new Set();
+        const composerHits = [];
+        const titleHits = [];
+        CORPUS.forEach(p => {
+            if (p.c && p.c.toLowerCase().includes(q) && !seen.has("c:"+p.c)) {
+                seen.add("c:"+p.c);
+                composerHits.push({ type: "composer", label: p.c, query: p.c });
+            }
+            if (p.t && p.t.toLowerCase().includes(q) && !seen.has("t:"+p.t)) {
+                seen.add("t:"+p.t);
+                titleHits.push({ type: "title", label: p.t, query: p.t, composer: p.c });
+            }
+        });
+        return [...composerHits.slice(0,4), ...titleHits.slice(0,4)].slice(0,8);
+    }, [query]);
 
     const handleGradeClick = (gradeKey) => { setGradeFilter(gradeKey); setSyllabusFilter(activeSyllabus); setSearchTriggered(true); };
 
@@ -1046,7 +1068,7 @@ function App() {
 
     const results = useMemo(() => {
         if (!searchActive) return [];
-        const q = query.toLowerCase();
+        const q = query.toLowerCase().trim();
         return CORPUS.filter(p => {
             const mQ = !q || p.t.toLowerCase().includes(q) || p.c.toLowerCase().includes(q) || (p.nat&&p.nat.toLowerCase().includes(q)) || (p.era&&p.era.toLowerCase().includes(q));
             const mE = eraFilter==="All"      || p.era===eraFilter;
@@ -1083,19 +1105,39 @@ function App() {
                     <div className="flex-1 flex items-center gap-2 max-w-xl">
                         <div className="relative flex-1">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm pointer-events-none">🔍</span>
-                            <input type="text" value={query}
-                                onChange={e => setQuery(e.target.value)}
-                                onKeyDown={e => { if (e.key==="Enter") setSearchTriggered(true); if (e.key==="Escape") handleClear(); }}
-                                placeholder="Search composer, title, era…"
+                            <input ref={searchInputRef} type="text" value={query}
+                                onChange={e => { setQuery(e.target.value); setShowSuggestions(true); if (!e.target.value.trim()) { setSearchTriggered(false); } }}
+                                onKeyDown={e => {
+                                    if (e.key==="Enter") { setSearchTriggered(true); setShowSuggestions(false); }
+                                    if (e.key==="Escape") { if (query) { setShowSuggestions(false); } else handleClear(); }
+                                }}
+                                onFocus={() => { if (query.trim().length >= 2) setShowSuggestions(true); }}
+                                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                                placeholder="Search composer, title, nationality…"
                                 className="w-full pl-9 pr-8 py-1.5 rounded-xl text-[13px] font-medium text-slate-800 outline-none"
                                 style={{background:"#f8fafc",border:"1.5px solid #334155"}}
                             />
                             {query && <button onClick={handleClear} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-base leading-none">×</button>}
+                            {/* Autocomplete dropdown */}
+                            {showSuggestions && autoSuggestions.length > 0 && (
+                                <div className="absolute left-0 right-0 top-full mt-1 rounded-xl shadow-2xl overflow-hidden z-50"
+                                    style={{background:"#1e293b",border:"1px solid #334155"}}>
+                                    {autoSuggestions.map((s,i) => (
+                                        <button key={i} className="w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-slate-700 transition-colors"
+                                            onMouseDown={() => { setQuery(s.query); setSearchTriggered(true); setShowSuggestions(false); }}>
+                                            <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded"
+                                                style={{background: s.type==="composer" ? "#4f46e522" : "#0891b222", color: s.type==="composer" ? "#818cf8" : "#38bdf8"}}>
+                                                {s.type==="composer" ? "composer" : "title"}
+                                            </span>
+                                            <span className="text-[12px] font-semibold text-white truncate flex-1">{s.label}</span>
+                                            {s.composer && s.type==="title" && (
+                                                <span className="text-[10px] text-slate-400 shrink-0 truncate max-w-[100px]">{s.composer}</span>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                        <button onClick={() => setSearchTriggered(true)}
-                            className="px-4 py-1.5 bg-indigo-500 hover:bg-indigo-400 text-white text-[12px] font-bold rounded-xl transition-colors whitespace-nowrap">
-                            Search
-                        </button>
                         {searchActive && (
                             <button onClick={handleClear} className="text-[11px] font-bold text-slate-400 hover:text-indigo-300 transition-colors whitespace-nowrap">
                                 ← Back
@@ -1218,10 +1260,43 @@ function App() {
                         )}
                     </div>
 
-                    {/* Home — grade grid + For You */}
+                    {/* Home — grade grid + quick searches + For You */}
                     {!searchActive && (
                         <>
                         <GradeGrid onGradeClick={handleGradeClick} activeSyllabus={activeSyllabus} setActiveSyllabus={setActiveSyllabus} />
+                        {/* Quick search chips */}
+                        <div className="mt-6 mb-2">
+                            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 px-1">Quick searches</div>
+                            <div className="flex flex-wrap gap-2">
+                                {[
+                                    {label:"🎹 Chopin",        q:"Chopin"},
+                                    {label:"🎵 Bach",          q:"Bach"},
+                                    {label:"🌸 Debussy",       q:"Debussy"},
+                                    {label:"🔥 Beethoven",     q:"Beethoven"},
+                                    {label:"🦋 Romantic",      q:"Romantic",   era:"Romantic"},
+                                    {label:"🏛 Baroque",       q:"",           era:"Baroque"},
+                                    {label:"🌏 Australian",    q:"Australian"},
+                                    {label:"🎸 Contemporary",  q:"",           era:"Contemporary"},
+                                    {label:"🇫🇷 French",        q:"French"},
+                                    {label:"🇷🇺 Russian",       q:"Russian"},
+                                    {label:"📖 Sonatina",      q:"Sonatina"},
+                                    {label:"🎼 Waltz",         q:"Waltz"},
+                                    {label:"💃 Mazurka",       q:"Mazurka"},
+                                    {label:"🌙 Nocturne",      q:"Nocturne"},
+                                ].map((chip,i) => (
+                                    <button key={i}
+                                        onClick={() => {
+                                            if (chip.era) { setEraFilter(chip.era); }
+                                            if (chip.q)   { setQuery(chip.q); }
+                                            setSearchTriggered(true);
+                                        }}
+                                        className="text-[11px] font-bold px-3 py-1.5 rounded-full transition-all hover:shadow-sm"
+                                        style={{background:"white",border:"1.5px solid #e2e8f0",color:"#475569"}}>
+                                        {chip.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                         <ForYouPanel
                             interests={interests}
                             user={user}
@@ -1238,17 +1313,51 @@ function App() {
                         <div className="flex items-center justify-between mb-3 px-1">
                             <div className="text-[12px] font-semibold text-slate-400">
                                 {results.length === 0
-                                    ? "No pieces found"
-                                    : <>{results.length.toLocaleString()} <span className="text-slate-300">pieces found</span></>}
+                                    ? <span className="text-rose-400 font-bold">No pieces found</span>
+                                    : <>{results.length.toLocaleString()} <span className="text-slate-300">pieces found</span>
+                                        {(eraFilter!=="All"||syllabusFilter!=="All"||gradeFilter!=="All"||natFilter!=="All") && (
+                                            <button onClick={handleClear} className="ml-2 text-[10px] text-indigo-400 hover:text-indigo-300 font-bold">clear filters</button>
+                                        )}
+                                      </>}
+                            </div>
+                            {/* Active filter pills */}
+                            <div className="flex gap-1 flex-wrap justify-end">
+                                {query && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500 text-white">"{query}"</span>}
+                                {eraFilter!=="All" && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-600">{eraFilter}</span>}
+                                {gradeFilter!=="All" && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{gradeFilter}</span>}
+                                {syllabusFilter!=="All" && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-100 text-violet-600">{syllabusFilter}</span>}
+                                {natFilter!=="All" && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-600">{natFilter}</span>}
                             </div>
                         </div>
                         {results.length > 0
                             ? results.map((p,i) => <PieceRow key={i} p={p} user={user} onLoginRequired={() => setShowLogin(true)} openVideo={openVideo} />)
                             : (
-                                <div className="py-20 text-center">
-                                    <div className="text-3xl mb-3">🎹</div>
-                                    <div className="text-slate-300 text-sm font-bold">No pieces found</div>
-                                    <div className="text-slate-300 text-xs mt-1">Try adjusting your filters</div>
+                                <div className="py-12 text-center">
+                                    <div className="text-4xl mb-4">🎹</div>
+                                    <div className="text-slate-600 text-sm font-bold mb-1">No pieces found</div>
+                                    {query && (
+                                        <div className="text-slate-400 text-xs mb-5">
+                                            No results for <span className="font-bold text-slate-500">"{query}"</span>
+                                            {(eraFilter!=="All"||syllabusFilter!=="All"||gradeFilter!=="All"||natFilter!=="All") && " with your current filters"}
+                                        </div>
+                                    )}
+                                    <div className="flex flex-col items-center gap-2 mt-4">
+                                        {(eraFilter!=="All"||gradeFilter!=="All"||syllabusFilter!=="All"||natFilter!=="All") && (
+                                            <button onClick={() => { setEraFilter("All"); setGradeFilter("All"); setSyllabusFilter("All"); setNatFilter("All"); }}
+                                                className="text-[12px] font-bold px-4 py-2 rounded-xl bg-indigo-500 text-white hover:bg-indigo-400 transition-colors">
+                                                Clear all filters
+                                            </button>
+                                        )}
+                                        <div className="text-[11px] text-slate-400 font-semibold mt-2">Try searching for:</div>
+                                        <div className="flex flex-wrap gap-2 justify-center mt-1">
+                                            {["Chopin","Bach","Beethoven","Debussy","Schubert","Brahms"].map(name => (
+                                                <button key={name} onClick={() => { setQuery(name); setSearchTriggered(true); }}
+                                                    className="text-[11px] font-bold px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors">
+                                                    {name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             )
                         }
