@@ -832,6 +832,17 @@ ABRSM/
 | 5 | Smart "no results" UI | `index.html` | Shows query name in message, "Clear all filters" button if any filter active, and 6 suggested composer name chips (Chopin, Bach, Beethoven, Debussy, Schubert, Brahms). |
 | 6 | Search placeholder updated | `index.html` | Changed to "Search composer, title, nationality…" to communicate search scope. |
 
+### Phase 18 Updates (2026-05-07 — night)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Smart query parser (`parseQuery`) | `index.html` | Extracts grade / era / nationality / syllabus signals from free text before keyword search. Maps: GRADE_MAP (prelim/g1–g8/amusa/lmusa/certp/lrsm/frsm), ERA_MAP (baroque/classical/romantic/modern/contemporary + aliases), NAT_MAP (australian/french/german/russian/english etc.), SYLLABUS_MAP (ameb/abrsm/diploma etc.). Multi-word patterns matched longest-first. |
+| 2 | Multi-token AND matching | `index.html` | Query split into tokens after signal extraction. Every token must match at least one field (title, composer, nationality, era, **or focus array**). Previously single string `.includes()` — now all tokens must hit, e.g. "bach minuet" returns only Bach pieces with "Minuet" in title. |
+| 3 | Focus field search | `index.html` | `p.focus` array now included in token matching. Queries like "finger independence", "voicing", "pedalling" now return relevant results. |
+| 4 | Fuzzy composer matching (Levenshtein ≤ 1) | `index.html` | Each token checked against all known composer surnames. Typos like "Chopn", "Debussi", "Beetoven" auto-corrected before search. Distance threshold = 1 edit. |
+| 5 | Auto-detected signal pills | `index.html` | When `parseQuery` extracts grade/era/nat/syllabus from query text, dashed-border hint pills appear in results header (e.g. `↳ Romantic`, `↳ G5`, `↳ French`) — distinct from solid sidebar filter pills. |
+| 6 | Effective filter merging | `index.html` | `effEra/effGrade/effNat/effSyllabus` — sidebar filter takes priority; parsed signal used as fallback. Allows "grade 5 romantic" to work even when sidebar is on "All". |
+
 ### Pending Work (priority order for next session)
 
 | # | Task | Priority | Notes |
