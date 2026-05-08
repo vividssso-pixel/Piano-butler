@@ -752,6 +752,72 @@ const INTERESTS_KEY = "pb_interests_v2";
 const loadInterests = () => { try { return JSON.parse(localStorage.getItem(INTERESTS_KEY)||"[]"); } catch { return []; } };
 const saveInterests = arr => { try { localStorage.setItem(INTERESTS_KEY, JSON.stringify(arr)); window.dispatchEvent(new Event("pb_interests_changed")); } catch {} };
 
+/* ── Local-first Repertoire Lists ── */
+const LISTS_KEY = "pb_lists_v1";
+
+const loadLists = () => { try { return JSON.parse(localStorage.getItem(LISTS_KEY)||"[]"); } catch { return []; } };
+const saveLists = arr => { try { localStorage.setItem(LISTS_KEY, JSON.stringify(arr)); window.dispatchEvent(new Event("pb_lists_changed")); } catch {} };
+
+const LIST_TYPES = [
+    { value:"student",  label:"Student",  color:"#4f46e5", bg:"#eef2ff" },
+    { value:"concert",  label:"Concert",  color:"#0f766e", bg:"#f0fdfa" },
+    { value:"exam",     label:"Exam",     color:"#b45309", bg:"#fffbeb" },
+    { value:"general",  label:"General",  color:"#475569", bg:"#f8fafc" },
+];
+
+const listTypeInfo = (type) => LIST_TYPES.find(t=>t.value===type) || LIST_TYPES[3];
+
+function createLocalList({ name, type, description="" }) {
+    const list = {
+        id: "local_" + Date.now() + "_" + Math.random().toString(36).slice(2,7),
+        name, type, description,
+        pieces: [],
+        createdAt: new Date().toISOString(),
+        local: true,
+    };
+    const all = loadLists();
+    all.unshift(list);
+    saveLists(all);
+    return list;
+}
+
+function addPieceToList(listId, piece) {
+    const all = loadLists();
+    const list = all.find(l=>l.id===listId);
+    if (!list) return false;
+    const already = list.pieces.some(p=>p.composer===piece.c && p.title===piece.t);
+    if (already) return false;
+    list.pieces.push({
+        composer: piece.c, title: piece.t,
+        grade: piece._grade, syllabus: piece._syllabus,
+        era: piece.era||null, nat: piece.nat||null,
+        list: piece.l||null,
+        addedAt: new Date().toISOString(),
+    });
+    saveLists(all);
+    return true;
+}
+
+function removePieceFromList(listId, composerTitle) {
+    const all = loadLists();
+    const list = all.find(l=>l.id===listId);
+    if (!list) return;
+    list.pieces = list.pieces.filter(p=>!(p.composer+"||"+p.title === composerTitle));
+    saveLists(all);
+}
+
+function deleteList(listId) {
+    saveLists(loadLists().filter(l=>l.id!==listId));
+}
+
+function updateList(listId, patch) {
+    const all = loadLists();
+    const idx = all.findIndex(l=>l.id===listId);
+    if (idx===-1) return;
+    all[idx] = {...all[idx], ...patch};
+    saveLists(all);
+}
+
 /* ── Recommendation Engine ── */
 function getRecommendations(interests, corpus, count=5) {
     if (!interests || interests.length === 0) return { moreLike:[], tryDifferent:[] };
@@ -880,230 +946,392 @@ function ForYouPanel({ interests, onLoginRequired, openVideo, user, onSearch }) 
     );
 }
 
-/* ── List Modal — add piece to a list ── */
-function ListModal({ piece, user, onClose }) {
-    const [lists, setLists]       = useState([]);
-    const [loading, setLoading]   = useState(true);
-    const [newName, setNewName]   = useState("");
-    const [creating, setCreating] = useState(false);
-    const [adding, setAdding]     = useState(null);
+/* ── Add to List Modal (local-first) ── */
+function AddToListModal({ piece, user, onClose, onListsChanged }) {
+    const [lists, setLists]       = useState(() => loadLists());
     const [added, setAdded]       = useState(new Set());
-    const [error, setError]       = useState("");
+    const [showCreate, setShowCreate] = useState(false);
+    const [newName, setNewName]   = useState("");
+    const [newType, setNewType]   = useState("student");
+    const [newDesc, setNewDesc]   = useState("");
 
-    useEffect(() => {
-        _sb.from("repertoire_lists").select("*").eq("user_id", user.id).order("created_at", {ascending:false})
-            .then(({ data, error }) => {
-                if (!error) setLists(data || []);
-                setLoading(false);
-            });
-    }, []);
+    const sync = () => { const l = loadLists(); setLists(l); if(onListsChanged) onListsChanged(l); };
 
-    const createList = async () => {
+    const handleAdd = (listId) => {
+        const ok = addPieceToList(listId, piece);
+        if (ok) { setAdded(prev => new Set([...prev, listId])); sync(); }
+    };
+
+    const handleCreate = () => {
         if (!newName.trim()) return;
-        setCreating(true);
-        const { data, error } = await _sb.from("repertoire_lists")
-            .insert({ user_id: user.id, name: newName.trim(), is_public: true })
-            .select().single();
-        setCreating(false);
-        if (error) { setError("Failed to create list"); return; }
-        setLists(prev => [data, ...prev]);
-        setNewName("");
+        const lst = createLocalList({ name: newName.trim(), type: newType, description: newDesc.trim() });
+        addPieceToList(lst.id, piece);
+        setAdded(prev => new Set([...prev, lst.id]));
+        setShowCreate(false); setNewName(""); setNewDesc("");
+        sync();
     };
 
-    const addToList = async (listId) => {
-        setAdding(listId);
-        const { error } = await _sb.from("list_pieces").insert({
-            list_id: listId,
-            composer: piece.c, title: piece.t,
-            grade: piece._grade, syllabus: piece._syllabus,
-            era: piece.era || null, nat: piece.nat || null,
-        });
-        setAdding(null);
-        if (!error) setAdded(prev => new Set([...prev, listId]));
-        else setError("Failed to add piece");
-    };
+    const isInList = (lst) => lst.pieces.some(p => p.composer===piece.c && p.title===piece.t);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
-            style={{background:"rgba(0,0,0,0.55)"}} onClick={onClose}>
-            <div className="w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden"
-                style={{background:"#1e293b",border:"1px solid #334155"}}
-                onClick={e => e.stopPropagation()}>
+        <div style={{position:"fixed",inset:0,zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:16,background:"rgba(0,0,0,0.35)"}}
+            onClick={onClose}>
+            <div style={{background:"white",borderRadius:16,width:"100%",maxWidth:360,boxShadow:"0 20px 50px rgba(0,0,0,0.12)",border:"1px solid #e2e8f0",overflow:"hidden"}}
+                onClick={e=>e.stopPropagation()}>
                 {/* Header */}
-                <div className="px-5 py-4 border-b border-slate-700 flex items-center justify-between">
-                    <div>
-                        <div className="text-[13px] font-black text-white">Add to list</div>
-                        <div className="text-[11px] text-slate-400 font-medium mt-0.5 truncate max-w-[240px]">{piece.t} · {piece.c}</div>
+                <div style={{padding:"16px 18px 12px",borderBottom:"1px solid #f1f5f9"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                        <div>
+                            <div style={{fontSize:13,fontWeight:700,color:"#1e293b"}}>Add to list</div>
+                            <div style={{fontSize:11,color:"#94a3b8",marginTop:2,maxWidth:260,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{piece.t} · {piece.c}</div>
+                        </div>
+                        <button onClick={onClose} style={{background:"none",border:"none",fontSize:18,color:"#cbd5e1",cursor:"pointer",lineHeight:1,padding:0}}>×</button>
                     </div>
-                    <button onClick={onClose} className="text-slate-500 hover:text-white text-lg font-bold transition-colors">×</button>
                 </div>
-                {/* Create new list */}
-                <div className="px-5 py-3 border-b border-slate-700">
-                    <div className="flex gap-2">
-                        <input value={newName} onChange={e => setNewName(e.target.value)}
-                            onKeyDown={e => e.key==="Enter" && createList()}
-                            placeholder="New list name…"
-                            className="flex-1 px-3 py-1.5 rounded-lg text-[12px] font-medium text-white outline-none"
-                            style={{background:"#0f172a",border:"1px solid #334155"}} />
-                        <button onClick={createList} disabled={creating || !newName.trim()}
-                            className="px-3 py-1.5 text-[11px] font-bold rounded-lg transition-colors"
-                            style={{background: newName.trim() ? "#4f46e5" : "#1e293b", color: newName.trim() ? "white" : "#475569"}}>
-                            {creating ? "…" : "+ Create"}
-                        </button>
-                    </div>
-                    {error && <div className="text-[10px] text-rose-400 mt-1">{error}</div>}
-                </div>
+
                 {/* Existing lists */}
-                <div className="max-h-64 overflow-y-auto">
-                    {loading ? (
-                        <div className="py-8 text-center text-[11px] text-slate-500">Loading…</div>
-                    ) : lists.length === 0 ? (
-                        <div className="py-8 text-center text-[11px] text-slate-500">No lists yet — create one above</div>
-                    ) : lists.map(lst => (
-                        <div key={lst.id} className="flex items-center justify-between px-5 py-3 hover:bg-slate-700/40 transition-colors border-b border-slate-700/50">
-                            <div>
-                                <div className="text-[12px] font-bold text-white">{lst.name}</div>
-                                <div className="text-[10px] text-slate-400">{lst.is_public ? "🔗 Public" : "🔒 Private"}</div>
+                <div style={{maxHeight:240,overflowY:"auto"}}>
+                    {lists.length === 0 && !showCreate && (
+                        <div style={{padding:"24px 18px",textAlign:"center",color:"#94a3b8",fontSize:12}}>
+                            No lists yet — create one below
+                        </div>
+                    )}
+                    {lists.map(lst => {
+                        const ti = listTypeInfo(lst.type);
+                        const inList = isInList(lst) || added.has(lst.id);
+                        return (
+                            <div key={lst.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 18px",borderBottom:"1px solid #f8fafc"}}>
+                                <div style={{flex:1,minWidth:0}}>
+                                    <div style={{display:"flex",alignItems:"center",gap:6}}>
+                                        <span style={{fontSize:10,fontWeight:700,padding:"2px 7px",borderRadius:6,background:ti.bg,color:ti.color}}>{ti.label}</span>
+                                        <span style={{fontSize:12,fontWeight:600,color:"#334155",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{lst.name}</span>
+                                    </div>
+                                    <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{lst.pieces.length} piece{lst.pieces.length!==1?"s":""}</div>
+                                </div>
+                                <button onClick={() => handleAdd(lst.id)} disabled={inList}
+                                    style={{fontSize:11,fontWeight:700,padding:"5px 12px",borderRadius:8,border:"none",cursor:inList?"default":"pointer",
+                                        background: inList ? "#f0fdf4" : "#4f46e5",
+                                        color:      inList ? "#16a34a" : "white",
+                                        transition:"all 0.15s", marginLeft:8, flexShrink:0}}>
+                                    {inList ? "✓ Added" : "+ Add"}
+                                </button>
                             </div>
-                            <button onClick={() => addToList(lst.id)} disabled={added.has(lst.id) || adding===lst.id}
-                                className="text-[11px] font-bold px-3 py-1 rounded-lg transition-all"
-                                style={{
-                                    background: added.has(lst.id) ? "#10b981" : "#4f46e518",
-                                    color:      added.has(lst.id) ? "white"   : "#818cf8",
-                                    border:     `1px solid ${added.has(lst.id) ? "#10b981" : "#4f46e544"}`,
-                                }}>
-                                {adding===lst.id ? "…" : added.has(lst.id) ? "✓ Added" : "+ Add"}
+                        );
+                    })}
+                </div>
+
+                {/* Create new */}
+                {showCreate ? (
+                    <div style={{padding:"14px 18px",borderTop:"1px solid #f1f5f9",background:"#fafafa"}}>
+                        <input value={newName} onChange={e=>setNewName(e.target.value)}
+                            placeholder="List name (e.g. Sophie Kim, Winter Concert)"
+                            autoFocus
+                            style={{width:"100%",fontSize:12,padding:"8px 10px",borderRadius:8,border:"1px solid #e2e8f0",outline:"none",marginBottom:8,boxSizing:"border-box",fontFamily:"inherit"}} />
+                        <div style={{display:"flex",gap:4,marginBottom:8,flexWrap:"wrap"}}>
+                            {LIST_TYPES.map(t => (
+                                <button key={t.value} onClick={() => setNewType(t.value)}
+                                    style={{fontSize:11,fontWeight:600,padding:"4px 10px",borderRadius:20,border:`1.5px solid ${newType===t.value?t.color:t.bg}`,
+                                        background: newType===t.value ? t.bg : "white",
+                                        color: newType===t.value ? t.color : "#94a3b8",
+                                        cursor:"pointer", transition:"all 0.1s"}}>
+                                    {t.label}
+                                </button>
+                            ))}
+                        </div>
+                        <input value={newDesc} onChange={e=>setNewDesc(e.target.value)}
+                            placeholder="Note (optional — e.g. Grade 4 AMEB, Exam Oct 2026)"
+                            style={{width:"100%",fontSize:11,padding:"7px 10px",borderRadius:8,border:"1px solid #e2e8f0",outline:"none",marginBottom:10,boxSizing:"border-box",fontFamily:"inherit",color:"#475569"}} />
+                        <div style={{display:"flex",gap:6}}>
+                            <button onClick={handleCreate} disabled={!newName.trim()}
+                                style={{flex:1,fontSize:12,fontWeight:700,padding:"8px 0",borderRadius:8,border:"none",
+                                    background: newName.trim() ? "#4f46e5" : "#e2e8f0",
+                                    color: newName.trim() ? "white" : "#94a3b8", cursor:"pointer"}}>
+                                Create &amp; add piece
+                            </button>
+                            <button onClick={() => setShowCreate(false)}
+                                style={{fontSize:12,fontWeight:600,padding:"8px 14px",borderRadius:8,border:"1px solid #e2e8f0",background:"white",color:"#94a3b8",cursor:"pointer"}}>
+                                Cancel
                             </button>
                         </div>
-                    ))}
-                </div>
-                <div className="px-5 py-3 text-center">
-                    <button onClick={onClose} className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors">Done</button>
-                </div>
+                    </div>
+                ) : (
+                    <div style={{padding:"12px 18px",borderTop:"1px solid #f1f5f9"}}>
+                        <button onClick={() => setShowCreate(true)}
+                            style={{width:"100%",fontSize:12,fontWeight:600,padding:"8px 0",borderRadius:8,border:"1.5px dashed #e2e8f0",background:"#fafafa",color:"#6366f1",cursor:"pointer"}}>
+                            + New list
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
 }
 
-/* ── My Lists Page ── */
-function MyListsPage({ user, onClose }) {
-    const [lists, setLists]         = useState([]);
-    const [loading, setLoading]     = useState(true);
-    const [openList, setOpenList]   = useState(null);
-    const [pieces, setPieces]       = useState([]);
-    const [piecesLoading, setPiecesLoading] = useState(false);
-    const [copied, setCopied]       = useState(false);
-    const [deleting, setDeleting]   = useState(null);
+/* ── My Lists Panel ── */
+function MyListsPanel({ user, onClose }) {
+    const [lists, setLists]       = useState(() => loadLists());
+    const [openList, setOpenList] = useState(null);
+    const [editingId, setEditingId] = useState(null);
+    const [editName, setEditName] = useState("");
+    const [editDesc, setEditDesc] = useState("");
+    const [copied, setCopied]     = useState(false);
+    const [printMode, setPrintMode] = useState(false);
+
+    const sync = () => setLists(loadLists());
 
     useEffect(() => {
-        _sb.from("repertoire_lists").select("*").eq("user_id", user.id).order("created_at", {ascending:false})
-            .then(({ data }) => { setLists(data||[]); setLoading(false); });
+        const handler = () => sync();
+        window.addEventListener("pb_lists_changed", handler);
+        return () => window.removeEventListener("pb_lists_changed", handler);
     }, []);
 
-    const openListDetail = async (lst) => {
-        setOpenList(lst);
-        setPiecesLoading(true);
-        const { data } = await _sb.from("list_pieces").select("*").eq("list_id", lst.id).order("added_at", {ascending:true});
-        setPieces(data||[]);
-        setPiecesLoading(false);
+    const handleRemovePiece = (listId, composerTitle) => {
+        removePieceFromList(listId, composerTitle);
+        sync();
+        if (openList?.id === listId) setOpenList(loadLists().find(l=>l.id===listId)||null);
     };
 
-    const copyLink = (token) => {
-        const url = `${location.origin}${location.pathname}?list=${token}`;
-        navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
-    };
-
-    const removePiece = async (pieceId) => {
-        await _sb.from("list_pieces").delete().eq("id", pieceId);
-        setPieces(prev => prev.filter(p => p.id !== pieceId));
-    };
-
-    const deleteList = async (listId) => {
-        setDeleting(listId);
-        await _sb.from("repertoire_lists").delete().eq("id", listId);
-        setLists(prev => prev.filter(l => l.id !== listId));
+    const handleDeleteList = (listId, name) => {
+        if (!window.confirm(`Delete "${name}"?`)) return;
+        deleteList(listId);
+        sync();
         if (openList?.id === listId) setOpenList(null);
-        setDeleting(null);
     };
+
+    const handleSaveEdit = (listId) => {
+        updateList(listId, { name: editName, description: editDesc });
+        sync();
+        if (openList?.id === listId) setOpenList(loadLists().find(l=>l.id===listId)||null);
+        setEditingId(null);
+    };
+
+    const copyLocalLink = () => {
+        const data = JSON.stringify(openList);
+        const b64 = btoa(unescape(encodeURIComponent(data)));
+        const url = `${location.origin}${location.pathname}?locallist=${b64}`;
+        navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(()=>setCopied(false),2000); });
+    };
+
+    const handlePrint = () => {
+        const lst = openList;
+        const ti = listTypeInfo(lst.type);
+        const win = window.open("","_blank");
+        win.document.write(`<!DOCTYPE html><html><head><title>${lst.name}</title>
+        <style>
+          body { font-family: -apple-system, sans-serif; padding: 40px; color: #1e293b; }
+          h1 { font-size: 22px; font-weight: 700; margin: 0 0 4px; }
+          .meta { font-size: 12px; color: #64748b; margin-bottom: 6px; }
+          .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: ${ti.bg}; color: ${ti.color}; margin-bottom: 20px; }
+          .desc { font-size: 13px; color: #475569; margin: -10px 0 20px; font-style: italic; }
+          table { width: 100%; border-collapse: collapse; }
+          th { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; padding: 6px 10px; border-bottom: 2px solid #f1f5f9; text-align: left; }
+          td { font-size: 13px; padding: 10px 10px; border-bottom: 1px solid #f8fafc; vertical-align: top; }
+          .num { color: #94a3b8; font-size: 11px; }
+          .grade { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #eef2ff; color: #4f46e5; }
+          .era { font-size: 10px; color: #64748b; }
+          .footer { margin-top: 30px; font-size: 11px; color: #cbd5e1; text-align: center; }
+          @media print { body { padding: 20px; } }
+        </style></head><body>
+        <h1>${lst.name}</h1>
+        <span class="badge">${ti.label}</span>
+        ${lst.description ? `<p class="desc">${lst.description}</p>` : ""}
+        <p class="meta">${lst.pieces.length} piece${lst.pieces.length!==1?"s":""} · Generated ${new Date().toLocaleDateString("en-AU",{day:"numeric",month:"long",year:"numeric"})}</p>
+        <table>
+          <thead><tr><th>#</th><th>Piece</th><th>Composer</th><th>Grade</th><th>Era</th></tr></thead>
+          <tbody>
+            ${lst.pieces.map((p,i)=>`<tr>
+              <td class="num">${i+1}</td>
+              <td><strong>${p.title}</strong></td>
+              <td>${p.composer}</td>
+              <td><span class="grade">${p.grade||""}</span></td>
+              <td class="era">${p.era||""}</td>
+            </tr>`).join("")}
+          </tbody>
+        </table>
+        <div class="footer">Piano Butler · pianobutler.com.au</div>
+        </body></html>`);
+        win.document.close();
+        win.print();
+    };
+
+    const currentList = openList ? lists.find(l=>l.id===openList.id) || openList : null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-start justify-center pt-16 px-4"
-            style={{background:"rgba(0,0,0,0.6)"}} onClick={onClose}>
-            <div className="w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[80vh] flex flex-col"
-                style={{background:"#1e293b",border:"1px solid #334155"}}
-                onClick={e => e.stopPropagation()}>
-                {/* Header */}
-                <div className="px-5 py-4 border-b border-slate-700 flex items-center justify-between shrink-0">
-                    <div className="flex items-center gap-2">
-                        {openList && (
-                            <button onClick={() => setOpenList(null)} className="text-slate-400 hover:text-white transition-colors text-sm font-bold mr-1">←</button>
-                        )}
-                        <span className="text-[14px] font-black text-white">{openList ? openList.name : "My Lists"}</span>
-                        {openList && <span className="text-[10px] text-slate-400">{pieces.length} pieces</span>}
-                    </div>
-                    <div className="flex items-center gap-2">
-                        {openList && (
-                            <button onClick={() => copyLink(openList.share_token)}
-                                className="text-[11px] font-bold px-3 py-1 rounded-lg transition-all"
-                                style={{background: copied ? "#10b981" : "#4f46e518", color: copied ? "white" : "#818cf8", border:"1px solid #4f46e544"}}>
-                                {copied ? "✓ Copied!" : "🔗 Share link"}
-                            </button>
-                        )}
-                        <button onClick={onClose} className="text-slate-500 hover:text-white text-lg font-bold transition-colors">×</button>
-                    </div>
-                </div>
-                {/* Content */}
-                <div className="flex-1 overflow-y-auto">
-                    {!openList ? (
-                        loading ? (
-                            <div className="py-12 text-center text-[11px] text-slate-500">Loading…</div>
-                        ) : lists.length === 0 ? (
-                            <div className="py-12 text-center">
-                                <div className="text-3xl mb-3">📋</div>
-                                <div className="text-[12px] text-slate-400 font-semibold">No lists yet</div>
-                                <div className="text-[11px] text-slate-500 mt-1">Click "+ List" on any piece to get started</div>
-                            </div>
-                        ) : lists.map(lst => (
-                            <div key={lst.id} className="flex items-center justify-between px-5 py-4 hover:bg-slate-700/30 transition-colors border-b border-slate-700/50 cursor-pointer"
-                                onClick={() => openListDetail(lst)}>
-                                <div>
-                                    <div className="text-[13px] font-bold text-white">{lst.name}</div>
-                                    <div className="text-[10px] text-slate-400 mt-0.5">{lst.is_public ? "🔗 Public · shareable" : "🔒 Private"}</div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <button onClick={e => { e.stopPropagation(); copyLink(lst.share_token); }}
-                                        className="text-[10px] font-bold px-2 py-1 rounded-lg text-slate-400 border border-slate-600 hover:text-white hover:border-slate-400 transition-colors">
-                                        🔗
-                                    </button>
-                                    <button onClick={e => { e.stopPropagation(); if(window.confirm(`Delete "${lst.name}"?`)) deleteList(lst.id); }}
-                                        disabled={deleting===lst.id}
-                                        className="text-[10px] font-bold px-2 py-1 rounded-lg text-slate-500 border border-slate-700 hover:text-rose-400 hover:border-rose-400/50 transition-colors">
-                                        {deleting===lst.id ? "…" : "🗑"}
-                                    </button>
-                                    <span className="text-slate-500 text-sm">›</span>
-                                </div>
-                            </div>
-                        ))
-                    ) : piecesLoading ? (
-                        <div className="py-12 text-center text-[11px] text-slate-500">Loading…</div>
-                    ) : pieces.length === 0 ? (
-                        <div className="py-12 text-center text-[11px] text-slate-500">No pieces yet</div>
-                    ) : pieces.map((pc, i) => (
-                        <div key={pc.id} className="flex items-center justify-between px-5 py-3 border-b border-slate-700/50">
-                            <div className="flex-1 min-w-0">
-                                <div className="flex gap-1 mb-1">
-                                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded text-white"
-                                        style={{background: pc.syllabus==="ABRSM"?"#7c3aed":"#4f46e5"}}>{pc.grade}</span>
-                                    {pc.era && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-700 text-slate-300">{pc.era}</span>}
-                                </div>
-                                <div className="text-[12px] font-bold text-white truncate">{pc.title}</div>
-                                <div className="text-[10px] text-slate-400 truncate">{pc.composer}</div>
-                            </div>
-                            <button onClick={() => removePiece(pc.id)}
-                                className="ml-3 text-[10px] text-slate-600 hover:text-rose-400 transition-colors font-bold shrink-0">✕</button>
+        <div style={{position:"fixed",inset:0,zIndex:400,display:"flex",alignItems:"flex-start",justifyContent:"flex-end"}}
+            onClick={onClose}>
+            <div style={{background:"white",width:"100%",maxWidth:440,height:"100vh",overflowY:"auto",boxShadow:"-4px 0 24px rgba(0,0,0,0.08)",display:"flex",flexDirection:"column",borderLeft:"1px solid #f1f5f9"}}
+                onClick={e=>e.stopPropagation()}>
+
+                {/* ── Header ── */}
+                <div style={{padding:"18px 20px 14px",borderBottom:"1px solid #f1f5f9",position:"sticky",top:0,background:"white",zIndex:10}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8}}>
+                            {currentList && (
+                                <button onClick={()=>setOpenList(null)}
+                                    style={{background:"none",border:"none",fontSize:14,color:"#94a3b8",cursor:"pointer",padding:"0 4px 0 0"}}>←</button>
+                            )}
+                            <span style={{fontSize:15,fontWeight:700,color:"#1e293b"}}>
+                                {currentList ? currentList.name : "My Lists"}
+                            </span>
+                            {currentList && (
+                                <span style={{fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:20,
+                                    background: listTypeInfo(currentList.type).bg,
+                                    color: listTypeInfo(currentList.type).color}}>
+                                    {listTypeInfo(currentList.type).label}
+                                </span>
+                            )}
                         </div>
-                    ))}
+                        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                            {currentList && <>
+                                <button onClick={handlePrint}
+                                    style={{fontSize:11,fontWeight:600,padding:"5px 10px",borderRadius:8,border:"1px solid #e2e8f0",background:"#fafafa",color:"#475569",cursor:"pointer"}}>
+                                    Print / PDF
+                                </button>
+                                <button onClick={copyLocalLink}
+                                    style={{fontSize:11,fontWeight:600,padding:"5px 10px",borderRadius:8,border:"1px solid #e2e8f0",
+                                        background: copied?"#f0fdf4":"#fafafa", color: copied?"#16a34a":"#475569",cursor:"pointer"}}>
+                                    {copied ? "✓ Copied" : "Share"}
+                                </button>
+                            </>}
+                            <button onClick={onClose}
+                                style={{background:"none",border:"none",fontSize:20,color:"#cbd5e1",cursor:"pointer",lineHeight:1,padding:0}}>×</button>
+                        </div>
+                    </div>
+                    {currentList?.description && (
+                        <div style={{fontSize:11,color:"#94a3b8",marginTop:6,fontStyle:"italic"}}>{currentList.description}</div>
+                    )}
                 </div>
+
+                {/* ── List detail view ── */}
+                {currentList ? (
+                    <div style={{flex:1}}>
+                        {/* Edit name/desc */}
+                        {editingId === currentList.id ? (
+                            <div style={{padding:"12px 20px",background:"#fafafa",borderBottom:"1px solid #f1f5f9"}}>
+                                <input value={editName} onChange={e=>setEditName(e.target.value)}
+                                    style={{width:"100%",fontSize:13,padding:"7px 10px",borderRadius:8,border:"1px solid #e2e8f0",outline:"none",marginBottom:6,boxSizing:"border-box",fontFamily:"inherit"}} />
+                                <input value={editDesc} onChange={e=>setEditDesc(e.target.value)}
+                                    placeholder="Description (optional)"
+                                    style={{width:"100%",fontSize:11,padding:"6px 10px",borderRadius:8,border:"1px solid #e2e8f0",outline:"none",marginBottom:8,boxSizing:"border-box",fontFamily:"inherit",color:"#475569"}} />
+                                <div style={{display:"flex",gap:6}}>
+                                    <button onClick={()=>handleSaveEdit(currentList.id)}
+                                        style={{fontSize:12,fontWeight:700,padding:"6px 16px",borderRadius:8,border:"none",background:"#4f46e5",color:"white",cursor:"pointer"}}>Save</button>
+                                    <button onClick={()=>setEditingId(null)}
+                                        style={{fontSize:12,fontWeight:600,padding:"6px 12px",borderRadius:8,border:"1px solid #e2e8f0",background:"white",color:"#94a3b8",cursor:"pointer"}}>Cancel</button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div style={{padding:"8px 20px",borderBottom:"1px solid #f8fafc",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                                <span style={{fontSize:11,color:"#94a3b8"}}>{currentList.pieces.length} piece{currentList.pieces.length!==1?"s":""}</span>
+                                <div style={{display:"flex",gap:8}}>
+                                    <button onClick={()=>{setEditingId(currentList.id);setEditName(currentList.name);setEditDesc(currentList.description||"");}}
+                                        style={{fontSize:11,fontWeight:600,color:"#6366f1",background:"none",border:"none",cursor:"pointer",padding:0}}>Edit</button>
+                                    <button onClick={()=>handleDeleteList(currentList.id, currentList.name)}
+                                        style={{fontSize:11,fontWeight:600,color:"#f87171",background:"none",border:"none",cursor:"pointer",padding:0}}>Delete list</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {currentList.pieces.length === 0 ? (
+                            <div style={{padding:"40px 20px",textAlign:"center",color:"#94a3b8",fontSize:13}}>
+                                No pieces yet — use "+ List" on any piece to add here
+                            </div>
+                        ) : currentList.pieces.map((pc, i) => {
+                            const syllBg = pc.syllabus==="ABRSM" ? "#ede9fe" : "#eef2ff";
+                            const syllCol = pc.syllabus==="ABRSM" ? "#6d28d9" : "#4f46e5";
+                            return (
+                                <div key={i} style={{display:"flex",alignItems:"center",padding:"11px 20px",borderBottom:"1px solid #f8fafc"}}>
+                                    <span style={{fontSize:11,color:"#cbd5e1",minWidth:22,flexShrink:0}}>{i+1}</span>
+                                    <div style={{flex:1,minWidth:0}}>
+                                        <div style={{display:"flex",gap:4,marginBottom:3,flexWrap:"wrap",alignItems:"center"}}>
+                                            {pc.grade && <span style={{fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:4,background:syllBg,color:syllCol}}>{pc.grade}</span>}
+                                            {pc.era && <span style={{fontSize:9,color:"#94a3b8",fontWeight:500}}>{pc.era}</span>}
+                                        </div>
+                                        <div style={{fontSize:13,fontWeight:600,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{pc.title}</div>
+                                        <div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>{pc.composer}</div>
+                                    </div>
+                                    <button onClick={()=>handleRemovePiece(currentList.id, pc.composer+"||"+pc.title)}
+                                        style={{background:"none",border:"none",fontSize:14,color:"#e2e8f0",cursor:"pointer",padding:"0 0 0 8px",flexShrink:0,lineHeight:1}}
+                                        onMouseOver={e=>e.target.style.color="#f87171"}
+                                        onMouseOut={e=>e.target.style.color="#e2e8f0"}>×</button>
+                                </div>
+                            );
+                        })}
+
+                        {/* Login upsell if not signed in */}
+                        {!user && (
+                            <div style={{margin:"16px 20px",padding:"12px 14px",borderRadius:10,background:"#fafafa",border:"1px solid #f1f5f9"}}>
+                                <div style={{fontSize:11,fontWeight:700,color:"#334155",marginBottom:4}}>Sign in to sync &amp; share</div>
+                                <div style={{fontSize:11,color:"#94a3b8",marginBottom:8,lineHeight:1.5}}>Your lists are saved in this browser. Sign in to access them on any device and share with students or parents.</div>
+                                <button onClick={()=>{onClose(); setTimeout(()=>document.querySelector('[data-signin]')?.click(),100);}}
+                                    style={{fontSize:11,fontWeight:700,padding:"6px 14px",borderRadius:8,border:"none",background:"#4f46e5",color:"white",cursor:"pointer"}}>
+                                    Sign in free
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    /* ── Lists overview ── */
+                    <div style={{flex:1}}>
+                        {lists.length === 0 ? (
+                            <div style={{padding:"48px 20px",textAlign:"center"}}>
+                                <div style={{fontSize:32,marginBottom:12}}>📋</div>
+                                <div style={{fontSize:13,fontWeight:700,color:"#334155",marginBottom:6}}>No lists yet</div>
+                                <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6,marginBottom:20}}>
+                                    Click "+ List" on any piece to start organising<br/>by student, concert, or exam.
+                                </div>
+                                <div style={{fontSize:11,color:"#94a3b8"}}>
+                                    {LIST_TYPES.map(t=>(
+                                        <span key={t.value} style={{display:"inline-block",margin:"3px 4px",padding:"3px 10px",borderRadius:20,background:t.bg,color:t.color,fontWeight:600}}>{t.label}</span>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                {/* Group by type */}
+                                {LIST_TYPES.map(ti => {
+                                    const filtered = lists.filter(l=>l.type===ti.value);
+                                    if (filtered.length===0) return null;
+                                    return (
+                                        <div key={ti.value}>
+                                            <div style={{padding:"10px 20px 4px",fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",color:"#cbd5e1"}}>
+                                                {ti.label}
+                                            </div>
+                                            {filtered.map(lst => (
+                                                <div key={lst.id}
+                                                    style={{display:"flex",alignItems:"center",padding:"12px 20px",borderBottom:"1px solid #f8fafc",cursor:"pointer",transition:"background 0.1s"}}
+                                                    onMouseOver={e=>e.currentTarget.style.background="#fafafa"}
+                                                    onMouseOut={e=>e.currentTarget.style.background="white"}
+                                                    onClick={()=>setOpenList(lst)}>
+                                                    <div style={{flex:1,minWidth:0}}>
+                                                        <div style={{fontSize:13,fontWeight:600,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{lst.name}</div>
+                                                        {lst.description && <div style={{fontSize:11,color:"#94a3b8",marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{lst.description}</div>}
+                                                        <div style={{fontSize:11,color:"#cbd5e1",marginTop:2}}>{lst.pieces.length} piece{lst.pieces.length!==1?"s":""}</div>
+                                                    </div>
+                                                    <div style={{display:"flex",alignItems:"center",gap:6,marginLeft:10}}>
+                                                        <button onClick={e=>{e.stopPropagation();handleDeleteList(lst.id,lst.name);}}
+                                                            style={{background:"none",border:"none",fontSize:12,color:"#e2e8f0",cursor:"pointer",padding:0,lineHeight:1}}
+                                                            onMouseOver={e=>e.target.style.color="#f87171"}
+                                                            onMouseOut={e=>e.target.style.color="#e2e8f0"}>✕</button>
+                                                        <span style={{color:"#e2e8f0",fontSize:14}}>›</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {/* Login upsell (not signed in) */}
+                        {!user && lists.length > 0 && (
+                            <div style={{margin:"12px 20px",padding:"12px 14px",borderRadius:10,background:"#fafafa",border:"1px solid #f1f5f9"}}>
+                                <div style={{fontSize:11,fontWeight:700,color:"#334155",marginBottom:4}}>Saved in this browser</div>
+                                <div style={{fontSize:11,color:"#94a3b8",lineHeight:1.5}}>Sign in to sync across devices and share lists with a link.</div>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -1306,9 +1534,8 @@ function App() {
         });
     }, []);
 
-    /* Handle add-to-list click: require login */
+    /* Handle add-to-list click: no login required (local-first) */
     const handleAddToList = (piece) => {
-        if (!user) { setShowLogin(true); return; }
         setListModalPiece(piece);
     };
 
@@ -1511,8 +1738,8 @@ function App() {
         <>
         {showLogin && <LoginModal onClose={() => setShowLogin(false)} onSuccess={(u) => { setShowLogin(false); }} />}
         <VideoModal modal={videoModal} onClose={closeVideo} />
-        {listModalPiece && user && <ListModal piece={listModalPiece} user={user} onClose={() => setListModalPiece(null)} />}
-        {showMyLists && user && <MyListsPage user={user} onClose={() => setShowMyLists(false)} />}
+        {listModalPiece && <AddToListModal piece={listModalPiece} user={user} onClose={() => setListModalPiece(null)} onListsChanged={() => {}} />}
+        {showMyLists && <MyListsPanel user={user} onClose={() => setShowMyLists(false)} />}
 
         {/* Shared list view — full page overlay */}
         {sharedList && (
@@ -1607,17 +1834,15 @@ function App() {
                     </div>
                     {/* Right */}
                     <div className="ml-auto flex items-center gap-2">
+                        <button onClick={() => setShowMyLists(true)}
+                            style={{fontSize:11,fontWeight:700,padding:"6px 12px",borderRadius:8,border:"1px solid #e2e8f0",background:"#fafafa",color:"#6366f1",cursor:"pointer"}}>
+                            My Lists
+                        </button>
                         {user ? (
-                            <>
-                                <button onClick={() => setShowMyLists(true)}
-                                    style={{fontSize:11,fontWeight:700,padding:"6px 12px",borderRadius:8,border:"1px solid #e2e8f0",background:"#fafafa",color:"#6366f1",cursor:"pointer"}}>
-                                    My Lists
-                                </button>
-                                <span style={{fontSize:10,fontWeight:500,color:"#94a3b8",maxWidth:120,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} className="hidden md:block">{user.email}</span>
-                            </>
+                            <span style={{fontSize:10,fontWeight:500,color:"#94a3b8",maxWidth:120,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} className="hidden md:block">{user.email}</span>
                         ) : (
-                            <button onClick={() => setShowLogin(true)}
-                                style={{fontSize:11,fontWeight:700,padding:"6px 12px",borderRadius:8,border:"1px solid #e2e8f0",background:"#fafafa",color:"#6366f1",cursor:"pointer"}}>
+                            <button data-signin onClick={() => setShowLogin(true)}
+                                style={{fontSize:11,fontWeight:700,padding:"6px 12px",borderRadius:8,border:"1px solid #e2e8f0",background:"#fafafa",color:"#94a3b8",cursor:"pointer"}}>
                                 Sign in
                             </button>
                         )}
