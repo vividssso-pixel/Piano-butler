@@ -74,20 +74,44 @@
     <style>
         @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
         * { box-sizing: border-box; }
-        body { background: #f8fafc; font-family: 'Pretendard', -apple-system, sans-serif; color: #334155; margin: 0; }
+        body { background: #ffffff; font-family: 'Pretendard', -apple-system, sans-serif; color: #1e293b; margin: 0; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .tag-baroque      { background: #e0e7ff; color: #4338ca; }
-        .tag-classical    { background: #ffedd5; color: #9a3412; }
-        .tag-romantic     { background: #fce7f3; color: #be185d; }
-        .tag-modern       { background: #dcfce7; color: #15803d; }
-        .tag-contemporary { background: #f0fdf4; color: #166534; }
-        .piece-row { background: white; border-radius: 12px; padding: 14px 16px; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); transition: box-shadow 0.15s; }
-        .piece-row:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
-        .fade-in { animation: fadeIn 0.2s ease; }
+        .tag-baroque      { background: #ede9fe; color: #5b21b6; }
+        .tag-classical    { background: #fef3c7; color: #92400e; }
+        .tag-romantic     { background: #fce7f3; color: #9d174d; }
+        .tag-modern       { background: #d1fae5; color: #065f46; }
+        .tag-contemporary { background: #e0f2fe; color: #0369a1; }
+        /* Piece card — minimal */
+        .piece-row {
+            background: #fff;
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-bottom: 4px;
+            border: 1px solid #f1f5f9;
+            transition: border-color 0.12s, box-shadow 0.12s;
+        }
+        .piece-row:hover { border-color: #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+        .fade-in { animation: fadeIn 0.18s ease; }
         .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:500; display:flex; align-items:center; justify-content:center; padding:16px; }
         .modal-box { background:white; border-radius:20px; width:100%; max-width:380px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
+        /* Discovery prompts */
+        .prompt-card {
+            background: #fafafa;
+            border: 1.5px solid #f1f5f9;
+            border-radius: 12px;
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s, transform 0.12s;
+            text-align: left;
+        }
+        .prompt-card:hover { border-color: #c7d2fe; background: #fafafe; transform: translateY(-1px); }
+        /* Sidebar */
+        .sidebar-label { font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: #cbd5e1; margin-bottom: 6px; display: block; }
+        .filter-btn { display: block; width: 100%; text-align: left; font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 8px; border: none; background: transparent; cursor: pointer; color: #94a3b8; transition: background 0.1s, color 0.1s; }
+        .filter-btn:hover { background: #f8fafc; color: #475569; }
+        .filter-btn.active { background: #eef2ff; color: #4f46e5; font-weight: 700; }
     </style>
 </head>
 <body>
@@ -1101,71 +1125,83 @@ function PieceRow({ p, user, onLoginRequired, openVideo, onAddToList }) {
         saveInterests(updated);
     };
 
+    const syllabusColor = p._syllabus==="ABRSM" ? "#7c3aed" : p._syllabus==="ABRSM Diploma" ? "#4c1d95" : p._syllabus==="AMEB Diploma" ? "#0f766e" : "#4f46e5";
+
     return (
         <div className="piece-row fade-in">
-            {/* Tags row */}
-            <div className="flex flex-wrap gap-1 mb-2">
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-full text-white"
-                    style={{background: p._syllabus==="ABRSM" ? "#7c3aed" : "#4f46e5"}}>
-                    {p._syllabus}
-                </span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">{p._grade}</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-50 text-slate-400 border border-slate-200">List {p.l}</span>
-                {p.s && (() => {
-                    const sMap = {
-                        "S19":      {bg:"#dbeafe", color:"#1e40af", label:"Series 19"},
-                        "S18":      {bg:"#e0e7ff", color:"#3730a3", label:"Series 18"},
-                        "S17":      {bg:"#ede9fe", color:"#5b21b6", label:"Series 17"},
-                        "AustAnth": {bg:"#fef9c3", color:"#854d0e", label:"Aust. Anthology"},
-                        "S4":       {bg:"#d1fae5", color:"#065f46", label:"Leisure S4"},
-                        "S3":       {bg:"#d1fae5", color:"#065f46", label:"Leisure S3"},
-                        "S2":       {bg:"#d1fae5", color:"#065f46", label:"Leisure S2"},
-                        "S1":       {bg:"#d1fae5", color:"#065f46", label:"Leisure S1"},
-                        "Manual":   {bg:"#f1f5f9", color:"#64748b", label:"Manual List"},
-                    };
-                    const s = sMap[p.s] || {bg:"#f1f5f9", color:"#64748b", label: p.s};
-                    return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{background:s.bg, color:s.color}}>{s.label}</span>;
-                })()}
-                {p.era && <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${eraClass(p.era)}`}>{p.era}</span>}
+            {/* Top row: meta badges + actions */}
+            <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex flex-wrap gap-1 items-center">
+                    {/* Syllabus + Grade combined */}
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md text-white"
+                        style={{background: syllabusColor}}>
+                        {p._grade}
+                    </span>
+                    {p.l && (
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-md"
+                            style={{background:"#f8fafc", color:"#94a3b8", border:"1px solid #e2e8f0"}}>
+                            List {p.l}
+                        </span>
+                    )}
+                    {p.era && (
+                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md ${eraClass(p.era)}`}>{p.era}</span>
+                    )}
+                    {p.nat && (
+                        <span className="text-[10px] text-slate-400 font-medium">{p.nat}</span>
+                    )}
+                </div>
+                {/* Star action — top right */}
+                <button onClick={toggleStar}
+                    className="shrink-0 transition-all text-[18px] leading-none"
+                    title={isStarred ? "Remove from saved" : "Save this piece"}
+                    style={{color: isStarred ? "#f59e0b" : "#cbd5e1", background:"none", border:"none", cursor:"pointer", padding:"0 2px"}}>
+                    {isStarred ? "★" : "☆"}
+                </button>
             </div>
-            {/* Title + composer */}
-            <div className="text-[15px] font-bold text-slate-800 leading-snug">{p.t}</div>
-            <div className="text-[12px] text-slate-400 font-medium mt-0.5 mb-3">
-                <a href={COMPOSER_LINKS[p.c] || `https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(p.c.replace(/,.*/, '').trim())}`} target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-slate-600 transition-colors">{p.c}</a>
-                {p.nat && <span className="text-slate-300"> · {p.nat}</span>}
+
+            {/* Title */}
+            <div className="text-[15px] font-bold leading-snug mb-0.5" style={{color:"#0f172a"}}>{p.t}</div>
+
+            {/* Composer */}
+            <div className="text-[12px] font-medium mb-3" style={{color:"#94a3b8"}}>
+                <a href={COMPOSER_LINKS[p.c] || `https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(p.c.replace(/,.*/, '').trim())}`}
+                    target="_blank" rel="noopener noreferrer"
+                    style={{color:"#64748b", textDecoration:"none"}}
+                    onMouseOver={e=>e.target.style.color="#4f46e5"}
+                    onMouseOut={e=>e.target.style.color="#64748b"}>
+                    {p.c}
+                </a>
             </div>
-            {/* Focus tags */}
+
+            {/* Focus tags — subtle */}
             {p.focus && p.focus.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-3">
                     {p.focus.map((f,i) => (
-                        <span key={i} className="text-[10px] px-2 py-0.5 bg-indigo-50 text-indigo-400 rounded-full font-semibold">{f}</span>
+                        <span key={i} className="text-[10px] px-2 py-0.5 rounded-md font-medium"
+                            style={{background:"#f8fafc", color:"#94a3b8", border:"1px solid #f1f5f9"}}>
+                            {f}
+                        </span>
                     ))}
                 </div>
             )}
-            {/* Actions */}
-            <div className="flex flex-wrap gap-1.5">
-                <button onClick={toggleStar}
-                    className="px-3 py-1.5 text-[11px] font-bold rounded-lg transition-colors border"
-                    style={{
-                        background: isStarred ? "#f59e0b" : "#fffbeb",
-                        color:      isStarred ? "white"   : "#d97706",
-                        borderColor: isStarred ? "#f59e0b" : "#fde68a",
-                    }}>
-                    {isStarred ? "⭐ Saved" : "☆ Save"}
-                </button>
-                <button onClick={() => onAddToList(p)}
-                    className="px-3 py-1.5 text-[11px] font-bold rounded-lg transition-colors border border-indigo-200 hover:border-indigo-400"
-                    style={{background:"#eef2ff", color:"#4f46e5"}}>
-                    + List
-                </button>
+
+            {/* Actions — minimal */}
+            <div className="flex gap-2 items-center">
                 <button onClick={() => openVideo(p.c, p.t)}
-                    className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-[11px] font-bold rounded-lg transition-colors">
-                    ▶ YouTube
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-lg transition-colors"
+                    style={{background:"#fef2f2", color:"#dc2626", border:"1px solid #fecaca"}}>
+                    ▶ Listen
                 </button>
                 <a href={sheetUrl(p.c, p.t)} target="_blank" rel="noopener noreferrer"
-                    className="px-3 py-1.5 text-[11px] font-bold rounded-lg border border-slate-200 text-slate-400 hover:border-slate-300 transition-colors">
-                    📄 Score
+                    className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold rounded-lg transition-colors"
+                    style={{background:"#f8fafc", color:"#64748b", border:"1px solid #e2e8f0", textDecoration:"none"}}>
+                    Score
                 </a>
+                <button onClick={() => onAddToList(p)}
+                    className="px-3 py-1.5 text-[11px] font-semibold rounded-lg transition-colors"
+                    style={{background:"#f0f4ff", color:"#6366f1", border:"1px solid #e0e7ff"}}>
+                    + List
+                </button>
             </div>
         </div>
     );
@@ -1517,14 +1553,14 @@ function App() {
             </div>
         )}
 
-        <div className="min-h-screen flex flex-col" style={{background:"#f1f5f9"}}>
+        <div className="min-h-screen flex flex-col" style={{background:"#ffffff"}}>
 
             {/* ── Nav ── */}
-            <header style={{background:"#1e293b",borderBottom:"1px solid #0f172a"}} className="sticky top-0 z-30">
+            <header style={{background:"#ffffff",borderBottom:"1px solid #f1f5f9"}} className="sticky top-0 z-30">
                 <div className="max-w-screen-xl mx-auto px-4 h-13 flex items-center gap-3" style={{height:52}}>
-                    <button onClick={handleClear} style={{background:"none",border:"none",padding:0,cursor:"pointer",position:"relative",zIndex:40}} className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity">
-                        <div className="w-1 h-6 rounded-full bg-indigo-400"></div>
-                        <span className="text-[16px] font-black text-white">Piano Butler</span>
+                    <button onClick={handleClear} style={{background:"none",border:"none",padding:0,cursor:"pointer",position:"relative",zIndex:40}} className="flex items-center gap-2 shrink-0 hover:opacity-70 transition-opacity">
+                        <div style={{width:3,height:20,borderRadius:2,background:"#6366f1"}}></div>
+                        <span style={{fontSize:15,fontWeight:900,color:"#1e293b",letterSpacing:"-0.02em"}}>Piano Butler</span>
                     </button>
                     {/* Search */}
                     <div className="flex-1 flex items-center gap-2 max-w-xl">
@@ -1538,9 +1574,9 @@ function App() {
                                 }}
                                 onFocus={() => { if (query.trim().length >= 2) setShowSuggestions(true); }}
                                 onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-                                placeholder="Search composer, title, nationality…"
-                                className="w-full pl-9 pr-8 py-1.5 rounded-xl text-[13px] font-medium text-slate-800 outline-none"
-                                style={{background:"#f8fafc",border:"1.5px solid #334155"}}
+                                placeholder="Composer, title, or nationality…"
+                                className="w-full pl-9 pr-8 py-1.5 rounded-xl text-[13px] font-medium outline-none"
+                                style={{background:"#f8fafc",border:"1.5px solid #e2e8f0",color:"#1e293b"}}
                             />
                             {query && <button onClick={handleClear} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-base leading-none">×</button>}
                             {/* Autocomplete dropdown */}
@@ -1574,23 +1610,21 @@ function App() {
                         {user ? (
                             <>
                                 <button onClick={() => setShowMyLists(true)}
-                                    className="px-3 py-1.5 text-[11px] font-bold rounded-xl transition-colors"
-                                    style={{background:"#4f46e518",color:"#818cf8",border:"1px solid #4f46e544"}}>
-                                    📋 My Lists
+                                    style={{fontSize:11,fontWeight:700,padding:"6px 12px",borderRadius:8,border:"1px solid #e2e8f0",background:"#fafafa",color:"#6366f1",cursor:"pointer"}}>
+                                    My Lists
                                 </button>
-                                <span className="text-[10px] font-bold text-slate-500 hidden md:block truncate max-w-[120px]">{user.email}</span>
+                                <span style={{fontSize:10,fontWeight:500,color:"#94a3b8",maxWidth:120,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} className="hidden md:block">{user.email}</span>
                             </>
                         ) : (
                             <button onClick={() => setShowLogin(true)}
-                                className="px-3 py-1.5 text-[11px] font-bold rounded-xl transition-colors"
-                                style={{background:"#4f46e522",color:"#818cf8",border:"1px solid #4f46e544"}}>
+                                style={{fontSize:11,fontWeight:700,padding:"6px 12px",borderRadius:8,border:"1px solid #e2e8f0",background:"#fafafa",color:"#6366f1",cursor:"pointer"}}>
                                 Sign in
                             </button>
                         )}
                         <a href="teacher-dashboard.html"
-                            className="hidden md:block px-3 py-1.5 text-[11px] font-bold rounded-xl transition-colors"
-                            style={{background:"#0f172a",color:"#475569",border:"1px solid #1e293b"}}>
-                            Teacher →
+                            className="hidden md:block"
+                            style={{fontSize:11,fontWeight:600,padding:"6px 12px",borderRadius:8,border:"1px solid #f1f5f9",background:"#fafafa",color:"#94a3b8",textDecoration:"none"}}>
+                            Teachers
                         </a>
                     </div>
                 </div>
@@ -1601,75 +1635,66 @@ function App() {
 
                 {/* Sidebar */}
                 <aside className="hidden md:flex flex-col shrink-0 sticky top-[52px] self-start overflow-y-auto no-scrollbar"
-                    style={{width:220,height:"calc(100vh - 52px)",background:"white",borderRight:"1px solid #e2e8f0",padding:"16px 14px"}}>
+                    style={{width:200,height:"calc(100vh - 52px)",borderRight:"1px solid #f1f5f9",padding:"20px 12px",background:"#fafafa"}}>
 
-                    <div className="flex items-center justify-between mb-4">
-                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Filters</span>
+                    <div className="flex items-center justify-between mb-5">
+                        <span className="sidebar-label" style={{marginBottom:0}}>Filter</span>
                         {activeFilterCount > 0 && (
-                            <button onClick={handleClear} className="text-[10px] font-bold text-indigo-400 hover:text-indigo-600">
-                                Clear ({activeFilterCount})
+                            <button onClick={handleClear}
+                                style={{fontSize:10,fontWeight:700,color:"#6366f1",background:"none",border:"none",cursor:"pointer",padding:0}}>
+                                Clear all
                             </button>
                         )}
                     </div>
 
                     {/* Syllabus */}
-                    <div className="mb-4">
-                        <div className="text-[9px] font-black uppercase tracking-widest text-slate-300 mb-1.5">Syllabus</div>
-                        {[["All","All","#4f46e5"],["AMEB","🇦🇺 AMEB Comprehensive","#4f46e5"],["AMEB Leisure","🎵 AMEB Leisure","#0891b2"],["ABRSM","🇬🇧 ABRSM","#7c3aed"],["AMEB Diploma","🎓 AMEB Diploma","#4c1d95"],["ABRSM Diploma","🎓 ABRSM Diploma","#6d28d9"]].map(([val,lbl,col]) => (
-                            <button key={val} onClick={() => { setSyllabusFilter(val); setGradeFilter("All"); setSearchTriggered(true); }}
-                                className="block w-full text-left text-[11px] font-bold px-3 py-1.5 rounded-lg mb-0.5 transition-all"
-                                style={{
-                                    background: syllabusFilter===val ? col+"18" : "transparent",
-                                    color:      syllabusFilter===val ? col : "#94a3b8",
-                                    border:     `1px solid ${syllabusFilter===val ? col+"44" : "transparent"}`,
-                                }}>
+                    <div style={{marginBottom:20}}>
+                        <span className="sidebar-label">Syllabus</span>
+                        {[
+                            {val:"All",           lbl:"All syllabuses"},
+                            {val:"AMEB",          lbl:"AMEB Comprehensive"},
+                            {val:"AMEB Leisure",  lbl:"AMEB Leisure"},
+                            {val:"ABRSM",         lbl:"ABRSM"},
+                            {val:"AMEB Diploma",  lbl:"AMEB Diploma"},
+                            {val:"ABRSM Diploma", lbl:"ABRSM Diploma"},
+                        ].map(({val,lbl}) => (
+                            <button key={val}
+                                className={`filter-btn${syllabusFilter===val?" active":""}`}
+                                onClick={() => { setSyllabusFilter(val); setGradeFilter("All"); setSearchTriggered(true); }}>
                                 {lbl}
                             </button>
                         ))}
                     </div>
 
                     {/* Era */}
-                    <div className="mb-4">
-                        <div className="text-[9px] font-black uppercase tracking-widest text-slate-300 mb-1.5">Era</div>
+                    <div style={{marginBottom:20}}>
+                        <span className="sidebar-label">Era</span>
                         {ERAS.map(era => (
-                            <button key={era} onClick={() => { setEraFilter(era); setSearchTriggered(true); }}
-                                className="block w-full text-left text-[11px] font-bold px-3 py-1.5 rounded-lg mb-0.5 transition-all"
-                                style={{
-                                    background: eraFilter===era ? "#4f46e518" : "transparent",
-                                    color:      eraFilter===era ? "#4f46e5"   : "#94a3b8",
-                                    border:     `1px solid ${eraFilter===era ? "#4f46e544" : "transparent"}`,
-                                }}>
-                                {era}
+                            <button key={era}
+                                className={`filter-btn${eraFilter===era?" active":""}`}
+                                onClick={() => { setEraFilter(era); setSearchTriggered(true); }}>
+                                {era==="All" ? "All eras" : era}
                             </button>
                         ))}
                     </div>
 
                     {/* Grade */}
-                    <div className="mb-4">
-                        <div className="text-[9px] font-black uppercase tracking-widest text-slate-300 mb-1.5">Grade</div>
-                        {["All",...GRADE_META.map(g=>g.key)].map(gk => {
-                            const meta = GRADE_META.find(g=>g.key===gk);
-                            const col = meta?.accent || "#64748b";
-                            return (
-                                <button key={gk} onClick={() => { setGradeFilter(gk); setSearchTriggered(true); }}
-                                    className="block w-full text-left text-[11px] font-bold px-3 py-1.5 rounded-lg mb-0.5 transition-all"
-                                    style={{
-                                        background: gradeFilter===gk ? col+"18" : "transparent",
-                                        color:      gradeFilter===gk ? col      : "#94a3b8",
-                                        border:     `1px solid ${gradeFilter===gk ? col+"44" : "transparent"}`,
-                                    }}>
-                                    {gk==="All" ? "All Grades" : gk==="Prelim" ? "Preliminary" : gk.replace("G","Grade ")}
-                                </button>
-                            );
-                        })}
+                    <div style={{marginBottom:20}}>
+                        <span className="sidebar-label">Grade</span>
+                        {["All",...GRADE_META.map(g=>g.key)].map(gk => (
+                            <button key={gk}
+                                className={`filter-btn${gradeFilter===gk?" active":""}`}
+                                onClick={() => { setGradeFilter(gk); setSearchTriggered(true); }}>
+                                {gk==="All" ? "All grades" : gk==="Prelim" ? "Preliminary" : gk.replace("G","Grade ")}
+                            </button>
+                        ))}
                     </div>
 
                     {/* Nationality */}
-                    <div className="mb-4">
-                        <div className="text-[9px] font-black uppercase tracking-widest text-slate-300 mb-1.5">Nationality</div>
+                    <div style={{marginBottom:20}}>
+                        <span className="sidebar-label">Nationality</span>
                         <select value={natFilter} onChange={e => { setNatFilter(e.target.value); setSearchTriggered(true); }}
-                            className="w-full text-[11px] font-semibold px-2 py-1.5 rounded-lg outline-none cursor-pointer"
-                            style={{border:"1px solid #e2e8f0",background:"#f8fafc",color:natFilter!=="All"?"#4f46e5":"#94a3b8"}}>
+                            style={{width:"100%",fontSize:12,fontWeight:500,padding:"6px 8px",borderRadius:8,border:"1px solid #e2e8f0",background:"white",color:natFilter!=="All"?"#4f46e5":"#94a3b8",outline:"none",cursor:"pointer"}}>
                             {NAT_LIST.map(n => <option key={n} value={n}>{n}</option>)}
                         </select>
                     </div>
@@ -1692,43 +1717,79 @@ function App() {
                         )}
                     </div>
 
-                    {/* Home — grade grid + quick searches + For You */}
+                    {/* Home — guided discovery + grade grid + For You */}
                     {!searchActive && (
                         <>
-                        <GradeGrid onGradeClick={handleGradeClick} activeSyllabus={activeSyllabus} setActiveSyllabus={setActiveSyllabus} />
-                        {/* Quick search chips */}
-                        <div className="mt-6 mb-2">
-                            <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2 px-1">Quick searches</div>
-                            <div className="flex flex-wrap gap-2">
+                        {/* ── Guided Discovery Prompts ── */}
+                        <div style={{marginBottom:28}}>
+                            <p style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:"#cbd5e1",marginBottom:12,marginTop:4}}>
+                                What are you looking for?
+                            </p>
+                            <div style={{display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(180px, 1fr))", gap:10}}>
                                 {[
-                                    {label:"🎹 Chopin",        q:"Chopin"},
-                                    {label:"🎵 Bach",          q:"Bach"},
-                                    {label:"🌸 Debussy",       q:"Debussy"},
-                                    {label:"🔥 Beethoven",     q:"Beethoven"},
-                                    {label:"🦋 Romantic",      q:"Romantic",   era:"Romantic"},
-                                    {label:"🏛 Baroque",       q:"",           era:"Baroque"},
-                                    {label:"🌏 Australian",    q:"Australian"},
-                                    {label:"🎸 Contemporary",  q:"",           era:"Contemporary"},
-                                    {label:"🇫🇷 French",        q:"French"},
-                                    {label:"🇷🇺 Russian",       q:"Russian"},
-                                    {label:"📖 Sonatina",      q:"Sonatina"},
-                                    {label:"🎼 Waltz",         q:"Waltz"},
-                                    {label:"💃 Mazurka",       q:"Mazurka"},
-                                    {label:"🌙 Nocturne",      q:"Nocturne"},
+                                    { icon:"🎓", label:"Preparing for an exam",   sub:"Filter by grade & syllabus",  action:() => { setSyllabusFilter("AMEB"); setSearchTriggered(true); } },
+                                    { icon:"🎼", label:"Exploring Romantic music", sub:"Chopin, Schumann, Brahms…",   action:() => { setEraFilter("Romantic"); setSearchTriggered(true); } },
+                                    { icon:"🌏", label:"Australian composers",     sub:"Chua, Hyde, Sitsky & more",   action:() => { setQuery("Australian"); setSearchTriggered(true); } },
+                                    { icon:"🎹", label:"A specific composer",      sub:"Type a name to search",       action:() => { if(searchInputRef.current) { searchInputRef.current.focus(); } } },
+                                    { icon:"🏛",  label:"Baroque & Early music",   sub:"Bach, Handel, Scarlatti…",    action:() => { setEraFilter("Baroque"); setSearchTriggered(true); } },
+                                    { icon:"🎓", label:"ABRSM repertoire",         sub:"Initial through Grade 8",     action:() => { setSyllabusFilter("ABRSM"); setGradeFilter("All"); setSearchTriggered(true); } },
+                                    { icon:"🌙", label:"Nocturnes & slow pieces",  sub:"Lyrical, expressive works",   action:() => { setQuery("Nocturne"); setSearchTriggered(true); } },
+                                    { icon:"🎭", label:"Diploma level repertoire", sub:"CertP, AMusA, LMusA, LRSM",   action:() => { setSyllabusFilter("AMEB Diploma"); setGradeFilter("All"); setSearchTriggered(true); } },
+                                ].map((card, i) => (
+                                    <button key={i} className="prompt-card" onClick={card.action}>
+                                        <div style={{fontSize:20, marginBottom:6}}>{card.icon}</div>
+                                        <div style={{fontSize:12, fontWeight:700, color:"#334155", marginBottom:2}}>{card.label}</div>
+                                        <div style={{fontSize:11, color:"#94a3b8"}}>{card.sub}</div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* ── Grade grid ── */}
+                        <div style={{borderTop:"1px solid #f1f5f9", paddingTop:24}}>
+                            <p style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:"#cbd5e1",marginBottom:14}}>
+                                Browse by grade
+                            </p>
+                            <GradeGrid onGradeClick={handleGradeClick} activeSyllabus={activeSyllabus} setActiveSyllabus={setActiveSyllabus} />
+                        </div>
+
+                        {/* ── Quick search chips ── */}
+                        <div style={{borderTop:"1px solid #f1f5f9", paddingTop:20, marginTop:24}}>
+                            <p style={{fontSize:11,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.08em",color:"#cbd5e1",marginBottom:10}}>
+                                Popular searches
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                                {[
+                                    {label:"Chopin",       q:"Chopin"},
+                                    {label:"Bach",         q:"Bach"},
+                                    {label:"Debussy",      q:"Debussy"},
+                                    {label:"Beethoven",    q:"Beethoven"},
+                                    {label:"Romantic",     era:"Romantic"},
+                                    {label:"Baroque",      era:"Baroque"},
+                                    {label:"Contemporary", era:"Contemporary"},
+                                    {label:"Sonatina",     q:"Sonatina"},
+                                    {label:"Waltz",        q:"Waltz"},
+                                    {label:"Nocturne",     q:"Nocturne"},
+                                    {label:"French",       q:"French"},
+                                    {label:"Russian",      q:"Russian"},
+                                    {label:"Australian",   q:"Australian"},
+                                    {label:"Mazurka",      q:"Mazurka"},
                                 ].map((chip,i) => (
                                     <button key={i}
                                         onClick={() => {
-                                            if (chip.era) { setEraFilter(chip.era); }
-                                            if (chip.q)   { setQuery(chip.q); }
+                                            if (chip.era) setEraFilter(chip.era);
+                                            if (chip.q)   setQuery(chip.q);
                                             setSearchTriggered(true);
                                         }}
-                                        className="text-[11px] font-bold px-3 py-1.5 rounded-full transition-all hover:shadow-sm"
-                                        style={{background:"white",border:"1.5px solid #e2e8f0",color:"#475569"}}>
+                                        style={{fontSize:11, fontWeight:600, padding:"5px 12px", borderRadius:20, border:"1px solid #e2e8f0", background:"#fafafa", color:"#64748b", cursor:"pointer", transition:"all 0.12s"}}
+                                        onMouseOver={e=>{e.currentTarget.style.borderColor="#c7d2fe";e.currentTarget.style.color="#4f46e5";e.currentTarget.style.background="#eef2ff";}}
+                                        onMouseOut={e=>{e.currentTarget.style.borderColor="#e2e8f0";e.currentTarget.style.color="#64748b";e.currentTarget.style.background="#fafafa";}}>
                                         {chip.label}
                                     </button>
                                 ))}
                             </div>
                         </div>
+
                         <ForYouPanel
                             interests={interests}
                             user={user}
@@ -1742,28 +1803,52 @@ function App() {
                     {/* Results */}
                     {searchActive && (
                         <>
-                        <div className="flex items-center justify-between mb-3 px-1 flex-wrap gap-2">
-                            <div className="text-[12px] font-semibold text-slate-400">
-                                {results.length === 0
-                                    ? <span className="text-rose-400 font-bold">No pieces found</span>
-                                    : <>{results.length.toLocaleString()} <span className="text-slate-300">pieces found</span>
-                                        {(eraFilter!=="All"||syllabusFilter!=="All"||gradeFilter!=="All"||natFilter!=="All") && (
-                                            <button onClick={handleClear} className="ml-2 text-[10px] text-indigo-400 hover:text-indigo-300 font-bold">clear filters</button>
-                                        )}
-                                      </>}
+                        <div className="flex items-center justify-between mb-4 flex-wrap gap-2"
+                            style={{borderBottom:"1px solid #f1f5f9", paddingBottom:12}}>
+                            <div style={{display:"flex",flexWrap:"wrap",gap:6,alignItems:"center"}}>
+                                {/* Active filter pills */}
+                                {query && (
+                                    <span style={{fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:20,background:"#4f46e5",color:"white"}}>
+                                        {query}
+                                    </span>
+                                )}
+                                {eraFilter!=="All" && (
+                                    <span style={{fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:20,background:"#eef2ff",color:"#4f46e5",border:"1px solid #e0e7ff"}}>
+                                        {eraFilter}
+                                    </span>
+                                )}
+                                {gradeFilter!=="All" && (
+                                    <span style={{fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:20,background:"#f8fafc",color:"#475569",border:"1px solid #e2e8f0"}}>
+                                        {gradeFilter==="Prelim"?"Preliminary":gradeFilter.replace("G","Grade ")}
+                                    </span>
+                                )}
+                                {syllabusFilter!=="All" && (
+                                    <span style={{fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:20,background:"#f5f3ff",color:"#6d28d9",border:"1px solid #ede9fe"}}>
+                                        {syllabusFilter}
+                                    </span>
+                                )}
+                                {natFilter!=="All" && (
+                                    <span style={{fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:20,background:"#ecfeff",color:"#0e7490",border:"1px solid #cffafe"}}>
+                                        {natFilter}
+                                    </span>
+                                )}
+                                {/* Auto-detected signals */}
+                                {parsedSignals.detectedEra      && eraFilter==="All"      && <span style={{fontSize:10,fontWeight:600,padding:"3px 8px",borderRadius:20,border:"1px dashed #c7d2fe",color:"#6366f1"}}>↳ {parsedSignals.detectedEra}</span>}
+                                {parsedSignals.detectedNat      && natFilter==="All"      && <span style={{fontSize:10,fontWeight:600,padding:"3px 8px",borderRadius:20,border:"1px dashed #a5f3fc",color:"#0891b2"}}>↳ {parsedSignals.detectedNat}</span>}
+                                {parsedSignals.detectedGrade    && gradeFilter==="All"    && <span style={{fontSize:10,fontWeight:600,padding:"3px 8px",borderRadius:20,border:"1px dashed #e2e8f0",color:"#64748b"}}>↳ {parsedSignals.detectedGrade}</span>}
                             </div>
-                            {/* Active filter pills — sidebar + auto-detected from query */}
-                            <div className="flex gap-1 flex-wrap justify-end items-center">
-                                {query && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500 text-white">"{query}"</span>}
-                                {eraFilter!=="All" && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-600">{eraFilter}</span>}
-                                {gradeFilter!=="All" && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{gradeFilter}</span>}
-                                {syllabusFilter!=="All" && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-100 text-violet-600">{syllabusFilter}</span>}
-                                {natFilter!=="All" && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-600">{natFilter}</span>}
-                                {/* Auto-detected signals from query text */}
-                                {parsedSignals.detectedGrade    && gradeFilter==="All"    && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-dashed border-slate-300 text-slate-500">↳ {parsedSignals.detectedGrade}</span>}
-                                {parsedSignals.detectedEra      && eraFilter==="All"      && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-dashed border-indigo-300 text-indigo-400">↳ {parsedSignals.detectedEra}</span>}
-                                {parsedSignals.detectedNat      && natFilter==="All"      && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-dashed border-cyan-300 text-cyan-500">↳ {parsedSignals.detectedNat}</span>}
-                                {parsedSignals.detectedSyllabus && syllabusFilter==="All" && <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-dashed border-violet-300 text-violet-400">↳ {parsedSignals.detectedSyllabus}</span>}
+                            <div style={{display:"flex",alignItems:"center",gap:10}}>
+                                {results.length > 0 && (
+                                    <span style={{fontSize:12,fontWeight:500,color:"#94a3b8"}}>
+                                        {results.length.toLocaleString()} pieces
+                                    </span>
+                                )}
+                                {(eraFilter!=="All"||syllabusFilter!=="All"||gradeFilter!=="All"||natFilter!=="All"||query) && (
+                                    <button onClick={handleClear}
+                                        style={{fontSize:11,fontWeight:600,color:"#6366f1",background:"none",border:"none",cursor:"pointer",padding:0}}>
+                                        ← Back
+                                    </button>
+                                )}
                             </div>
                         </div>
                         {results.length > 0
@@ -1804,8 +1889,8 @@ function App() {
             </div>
 
             {/* Footer */}
-            <footer className="border-t border-slate-200 py-4 text-center text-[10px] text-slate-300 font-semibold tracking-wide" style={{background:"white"}}>
-                Piano Butler · AMEB 2026 · ABRSM 2025&amp;2026 · AMEB &amp; ABRSM Diploma · 3,283 pieces
+            <footer style={{borderTop:"1px solid #f1f5f9",padding:"16px 0",textAlign:"center",fontSize:10,fontWeight:500,color:"#cbd5e1",letterSpacing:"0.05em",background:"#fafafa"}}>
+                Piano Butler · AMEB 2026 · ABRSM 2025 &amp; 2026 · Diploma · 3,283 pieces
             </footer>
         </div>
         </>
