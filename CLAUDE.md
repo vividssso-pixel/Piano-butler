@@ -877,15 +877,55 @@ CREATE TABLE public.list_pieces (
 -- RLS: owner full, public read on is_public=true
 ```
 
+### Phase 20 Updates (2026-05-08 — morning)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Search UX redesign — minimal aesthetic | `index.html` | White background, border-based piece rows (no shadows), simplified nav, `.prompt-card` / `.sidebar-label` / `.filter-btn` CSS classes. |
+| 2 | Guided discovery prompts | `index.html` | "What are you looking for?" section with 8 scenario cards above grade grid. |
+| 3 | PieceRow redesign | `index.html` | Star button top-right, cleaner badges, minimal action buttons (Listen / Score / + List). |
+
+### Phase 21 Updates (2026-05-08)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Local-first list system | `index.html` | `LISTS_KEY = "pb_lists_v1"` in localStorage. Helpers: `loadLists`, `saveLists`, `createLocalList`, `addPieceToList`, `removePieceFromList`, `deleteList`, `updateList`. Custom event `pb_lists_changed` for sync. |
+| 2 | `LIST_TYPES` — 4 categories | `index.html` | Student (indigo), Concert (teal), Exam (amber), General (slate). |
+| 3 | `AddToListModal` (replaces `ListModal`) | `index.html` | No login required. Existing local lists with type badges, inline create form (name + type + description). One-action "Create & add". |
+| 4 | `MyListsPanel` (replaces `MyListsPage`) | `index.html` | Slide-in right panel. Lists grouped by type. Detail view, inline edit, Print/PDF export, Share via base64 URL (`?locallist=…`), delete, remove pieces. Login upsell for sync/share upgrade. |
+| 5 | Login gate removed from list creation | `index.html` | `handleAddToList()` no longer requires login — any visitor can create lists locally. |
+| 6 | "My Lists" nav button always visible | `index.html` | Shown for all users. `data-signin` on Sign in button for upsell targeting. |
+
+### Phase 22 Updates (2026-05-08)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Google-style minimal homepage | `index.html` | Pre-search screen: logo + subtitle + large centered search bar + 8 quiet hint chips + bottom links. Grade grid, prompt cards, ForYouPanel all removed. |
+| 2 | Nav hidden on homepage | `index.html` | Top nav only renders when `searchActive === true`. Clean blank canvas until user searches. |
+| 3 | Sidebar hidden on homepage | `index.html` | Filter sidebar and mobile filter strip only appear in results mode. |
+| 4 | Large search bar with glow | `index.html` | `borderRadius:28`, `fontSize:15`, indigo glow on focus. Autocomplete preserved. |
+| 5 | Hint chips — minimal | `index.html` | 8 chips (Chopin, Bach, Romantic, Australian, Grade 5, Diploma, ABRSM, Debussy). Grey default, indigo hover, no fill. |
+
+### Build Status — Last updated 2026-05-08
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–35 | All previously completed features | ✅ Done (Phases 1–19) |
+| 36 | Local-first list system (AddToListModal + MyListsPanel) | ✅ Done (Phase 21) |
+| 37 | Google-style minimal homepage | ✅ Done (Phase 22) |
+
 ### Pending Work (priority order for next session)
 
 | # | Task | Priority | Notes |
 |---|------|----------|-------|
 | 1 | payments.html — lesson fee management | High | Per-student fee, invoice PDF, paid/unpaid toggle. Teacher Dashboard only. |
 | 2 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL |
-| 3 | Ad integration | Medium | Google AdSense, or direct piano brand deals. Requires traffic first. |
+| 3 | Ad integration | Medium | Google AdSense or direct piano brand deals. Requires traffic first. |
 | 4 | Design unification | Medium | All grade pages have slightly different styling. Deferred. |
 | 5 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. User to download from abrsm.org when ready. |
+
+### Known Issues (as of 2026-05-08)
+- None active.
 
 ---
 
