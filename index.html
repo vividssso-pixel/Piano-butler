@@ -1502,6 +1502,7 @@ function App() {
     const [natFilter, setNatFilter]         = useState("All");
     const [syllabusFilter, setSyllabusFilter] = useState("All");
     const [searchTriggered, setSearchTriggered] = useState(false);
+    const [searchQuery, setSearchQuery] = useState(""); // debounced — drives actual filtering
     const [showLogin, setShowLogin]         = useState(false);
     const [activeSyllabus, setActiveSyllabus] = useState("AMEB");
     const [interests, setInterests]         = useState(() => loadInterests());
@@ -1511,6 +1512,13 @@ function App() {
     const [sharedList, setSharedList]         = useState(null);   // { list, pieces } for shared view
     const searchInputRef = React.useRef(null);
     const { modal: videoModal, open: openVideo, close: closeVideo } = useVideoModal();
+
+    /* Debounce search filtering only — input display stays instant */
+    useEffect(() => {
+        if (!query.trim()) { setSearchQuery(""); return; }
+        const t = setTimeout(() => setSearchQuery(query), 200);
+        return () => clearTimeout(t);
+    }, [query]);
 
 
     /* Check for shared list URL param on load */
@@ -1553,9 +1561,9 @@ function App() {
         return () => subscription.unsubscribe();
     }, []);
 
-    const searchActive = searchTriggered || query.trim() || eraFilter!=="All" || gradeFilter!=="All" || natFilter!=="All" || syllabusFilter!=="All";
+    const searchActive = searchTriggered || searchQuery.trim() || eraFilter!=="All" || gradeFilter!=="All" || natFilter!=="All" || syllabusFilter!=="All";
 
-    const handleClear = () => { setQuery(""); setEraFilter("All"); setGradeFilter("All"); setNatFilter("All"); setSyllabusFilter("All"); setSearchTriggered(false); setShowSuggestions(false); };
+    const handleClear = () => { setQuery(""); setSearchQuery(""); setEraFilter("All"); setGradeFilter("All"); setNatFilter("All"); setSyllabusFilter("All"); setSearchTriggered(false); setShowSuggestions(false); };
 
     /* Autocomplete suggestions — top 8 matching composers or titles */
     const autoSuggestions = useMemo(() => {
@@ -1591,7 +1599,7 @@ function App() {
     */
     const results = useMemo(() => {
         if (!searchActive) return [];
-        const q = query.toLowerCase().trim();
+        const q = searchQuery.toLowerCase().trim();
         return CORPUS.filter(p => {
             const mQ = !q ||
                 p.t.toLowerCase().includes(q) ||
@@ -1609,7 +1617,7 @@ function App() {
                 || (syllabusFilter === "ABRSM Diploma" && p._syllabus==="ABRSM Diploma");
             return mQ && mE && mG && mN && mS;
         });
-    }, [query, eraFilter, gradeFilter, natFilter, syllabusFilter, searchActive]);
+    }, [searchQuery, eraFilter, gradeFilter, natFilter, syllabusFilter, searchActive]);
 
     const parsedSignals = {};
 
