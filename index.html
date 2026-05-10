@@ -1589,108 +1589,29 @@ function App() {
        Extracts grade / era / syllabus / nationality signals from free text,
        returns { tokens: [...remaining words], detectedGrade, detectedEra, detectedNat, detectedSyllabus }
     */
-    const parseQuery = (raw) => {
-        const GRADE_MAP = {
-            "preliminary":"Prelim","prelim":"Prelim",
-            "grade 1":"G1","grade1":"G1","g1":"G1","grade 2":"G2","grade2":"G2","g2":"G2",
-            "grade 3":"G3","grade3":"G3","g3":"G3","grade 4":"G4","grade4":"G4","g4":"G4",
-            "grade 5":"G5","grade5":"G5","g5":"G5","grade 6":"G6","grade6":"G6","g6":"G6",
-            "grade 7":"G7","grade7":"G7","g7":"G7","grade 8":"G8","grade8":"G8","g8":"G8",
-            "amusa":"AMusA","lmusa":"LMusA","certp":"CertP","lrsm":"LRSM","frsm":"FRSM",
-        };
-        const ERA_MAP = {
-            "baroque":"Baroque","bach era":"Baroque","early music":"Baroque",
-            "classical":"Classical","classic":"Classical","classical era":"Classical",
-            "romantic":"Romantic","romance":"Romantic","19th century":"Romantic",
-            "modern":"Modern","20th century":"Modern",
-            "contemporary":"Contemporary","current":"Contemporary","new music":"Contemporary",
-        };
-        const NAT_MAP = {
-            "australian":"Australian","australia":"Australian","aussie":"Australian",
-            "french":"French","france":"French",
-            "german":"German","germany":"German","deutsch":"German",
-            "russian":"Russian","russia":"Russian",
-            "english":"English","british":"English","uk":"English",
-            "italian":"Italian","italy":"Italian",
-            "spanish":"Spanish","spain":"Spanish",
-            "american":"American","usa":"American","us":"American",
-            "chinese":"Chinese","china":"Chinese",
-            "japanese":"Japanese","japan":"Japanese",
-            "hungarian":"Hungarian","hungary":"Hungarian",
-            "polish":"Polish","poland":"Polish",
-            "norwegian":"Norwegian","norway":"Norwegian",
-            "austrian":"Austrian","austria":"Austrian",
-            "czech":"Czech","bohemian":"Czech",
-        };
-        const SYLLABUS_MAP = {
-            "ameb":"AMEB","ameb comprehensive":"AMEB",
-            "leisure":"AMEB Leisure","piano for leisure":"AMEB Leisure","ameb leisure":"AMEB Leisure",
-            "abrsm":"ABRSM",
-            "diploma":"AMEB Diploma","ameb diploma":"AMEB Diploma",
-            "abrsm diploma":"ABRSM Diploma",
-        };
-        const lower = raw.toLowerCase().trim();
-        let remaining = lower;
-        let detectedGrade = null, detectedEra = null, detectedNat = null, detectedSyllabus = null;
-
-        // Check multi-word patterns first (longest match first)
-        const allMaps = [
-            [GRADE_MAP, (v) => { detectedGrade = v; }],
-            [ERA_MAP,   (v) => { detectedEra = v; }],
-            [NAT_MAP,   (v) => { detectedNat = v; }],
-            [SYLLABUS_MAP, (v) => { detectedSyllabus = v; }],
-        ];
-        for (const [map, setter] of allMaps) {
-            const keys = Object.keys(map).sort((a,b) => b.length - a.length);
-            for (const k of keys) {
-                if (remaining.includes(k)) {
-                    setter(map[k]);
-                    remaining = remaining.replace(k, " ").replace(/\s+/g," ").trim();
-                    break;
-                }
-            }
-        }
-
-        const tokens = remaining.split(/\s+/).filter(t => t.length > 1);
-
-        return { tokens, detectedGrade, detectedEra, detectedNat, detectedSyllabus };
-    };
-
     const results = useMemo(() => {
         if (!searchActive) return [];
-        const raw = query.toLowerCase().trim();
-        const { tokens, detectedGrade, detectedEra, detectedNat, detectedSyllabus } = parseQuery(raw);
-
-        // Effective filters: sidebar filters OR detected from query
-        const effEra      = eraFilter      !== "All" ? eraFilter      : (detectedEra      || "All");
-        const effGrade    = gradeFilter    !== "All" ? gradeFilter    : (detectedGrade    || "All");
-        const effNat      = natFilter      !== "All" ? natFilter      : (detectedNat      || "All");
-        const effSyllabus = syllabusFilter !== "All" ? syllabusFilter : (detectedSyllabus || "All");
-
+        const q = query.toLowerCase().trim();
         return CORPUS.filter(p => {
-            // Multi-token AND match: every token must hit at least one field
-            const mQ = tokens.length === 0 || tokens.every(tok =>
-                p.t.toLowerCase().includes(tok) ||
-                p.c.toLowerCase().includes(tok) ||
-                (p.nat  && p.nat.toLowerCase().includes(tok)) ||
-                (p.era  && p.era.toLowerCase().includes(tok)) ||
-                (p.focus && p.focus.some(f => f.toLowerCase().includes(tok)))
-            );
-            const mE = effEra   === "All" || p.era === effEra;
-            const mG = effGrade === "All" || p._gradeKey === effGrade;
-            const mN = effNat   === "All" || (p.nat && p.nat.toLowerCase().includes(effNat.toLowerCase()));
-            const mS = effSyllabus === "All"
-                || (effSyllabus === "AMEB"          && p._syllabus==="AMEB" && p._type==="General")
-                || (effSyllabus === "AMEB Leisure"  && p._syllabus==="AMEB" && p._type==="Leisure")
-                || (effSyllabus === "ABRSM"         && p._syllabus==="ABRSM")
-                || (effSyllabus === "AMEB Diploma"  && p._syllabus==="AMEB Diploma")
-                || (effSyllabus === "ABRSM Diploma" && p._syllabus==="ABRSM Diploma");
+            const mQ = !q ||
+                p.t.toLowerCase().includes(q) ||
+                p.c.toLowerCase().includes(q) ||
+                (p.nat && p.nat.toLowerCase().includes(q)) ||
+                (p.era && p.era.toLowerCase().includes(q));
+            const mE = eraFilter      === "All" || p.era === eraFilter;
+            const mG = gradeFilter    === "All" || p._gradeKey === gradeFilter;
+            const mN = natFilter      === "All" || (p.nat && p.nat.toLowerCase().includes(natFilter.toLowerCase()));
+            const mS = syllabusFilter === "All"
+                || (syllabusFilter === "AMEB"          && p._syllabus==="AMEB" && p._type==="General")
+                || (syllabusFilter === "AMEB Leisure"  && p._syllabus==="AMEB" && p._type==="Leisure")
+                || (syllabusFilter === "ABRSM"         && p._syllabus==="ABRSM")
+                || (syllabusFilter === "AMEB Diploma"  && p._syllabus==="AMEB Diploma")
+                || (syllabusFilter === "ABRSM Diploma" && p._syllabus==="ABRSM Diploma");
             return mQ && mE && mG && mN && mS;
         });
     }, [query, eraFilter, gradeFilter, natFilter, syllabusFilter, searchActive]);
 
-    /* Detected signals from current query (for showing hint pills) */
-    const parsedSignals = useMemo(() => query.trim() ? parseQuery(query.toLowerCase().trim()) : {}, [query]);
+    const parsedSignals = {};
 
     const ERAS = ["All","Baroque","Classical","Romantic","Modern","Contemporary"];
     const activeFilterCount = [eraFilter!=="All", gradeFilter!=="All", natFilter!=="All", syllabusFilter!=="All"].filter(Boolean).length;
