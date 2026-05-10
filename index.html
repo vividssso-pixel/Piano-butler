@@ -1492,9 +1492,22 @@ function GradeGrid({ onGradeClick, activeSyllabus, setActiveSyllabus }) {
 }
 
 /* ── Main App ── */
+/* ── Fuzzy composer surnames — computed ONCE at module load, never rebuilt on keystrokes ── */
+const FUZZY_COMPOSERS = (() => {
+    const surnames = new Set();
+    CORPUS.forEach(p => {
+        if (p.c) {
+            const s = p.c.split(",")[0].toLowerCase().trim();
+            if (s.length >= 4) surnames.add(s);
+        }
+    });
+    return Array.from(surnames);
+})();
+
 function App() {
     const [user, setUser]                   = useState(null);
     const [query, setQuery]                 = useState("");
+    const [debouncedQuery, setDebouncedQuery] = useState("");
     const [eraFilter, setEraFilter]         = useState("All");
     const [gradeFilter, setGradeFilter]     = useState("All");
     const [natFilter, setNatFilter]         = useState("All");
@@ -1509,6 +1522,12 @@ function App() {
     const [sharedList, setSharedList]         = useState(null);   // { list, pieces } for shared view
     const searchInputRef = React.useRef(null);
     const { modal: videoModal, open: openVideo, close: closeVideo } = useVideoModal();
+
+    /* Debounce heavy query processing — input stays instant, search fires after 150ms idle */
+    useEffect(() => {
+        const t = setTimeout(() => setDebouncedQuery(query), 150);
+        return () => clearTimeout(t);
+    }, [query]);
 
     /* Check for shared list URL param on load */
     useEffect(() => {
@@ -1556,8 +1575,8 @@ function App() {
 
     /* Autocomplete suggestions — top 8 matching composers or titles */
     const autoSuggestions = useMemo(() => {
-        if (!query || query.trim().length < 2) return [];
-        const q = query.toLowerCase().trim();
+        if (!debouncedQuery || debouncedQuery.trim().length < 2) return [];
+        const q = debouncedQuery.toLowerCase().trim();
         const seen = new Set();
         const composerHits = [];
         const titleHits = [];
@@ -1572,7 +1591,7 @@ function App() {
             }
         });
         return [...composerHits.slice(0,4), ...titleHits.slice(0,4)].slice(0,8);
-    }, [query]);
+    }, [debouncedQuery]);
 
     const handleGradeClick = (gradeKey) => { setGradeFilter(gradeKey); setSyllabusFilter(activeSyllabus); setSearchTriggered(true); };
 
@@ -1637,16 +1656,7 @@ function App() {
             return dp[a.length][b.length];
         };
         // Fuzzy match against known composer names (Levenshtein ≤ 1 on surname)
-        const fuzzyComposers = (() => {
-            const surnames = new Set();
-            CORPUS.forEach(p => {
-                if (p.c) {
-                    const s = p.c.split(",")[0].toLowerCase().trim();
-                    if (s.length >= 4) surnames.add(s);
-                }
-            });
-            return Array.from(surnames);
-        })();
+        // fuzzyComposers is computed once at module level — see FUZZY_COMPOSERS below
 
         const lower = raw.toLowerCase().trim();
         let remaining = lower;
@@ -1676,7 +1686,7 @@ function App() {
             if (tok.length < 4) return tok;
             // find closest composer surname
             let best = tok, bestDist = 1; // max dist 1
-            for (const s of fuzzyComposers) {
+            for (const s of FUZZY_COMPOSERS) {
                 const d = levenshtein(tok, s);
                 if (d < bestDist || (d === bestDist && s.length === tok.length)) {
                     bestDist = d; best = s;
@@ -1690,7 +1700,7 @@ function App() {
 
     const results = useMemo(() => {
         if (!searchActive) return [];
-        const raw = query.toLowerCase().trim();
+        const raw = debouncedQuery.toLowerCase().trim();
         const { tokens, detectedGrade, detectedEra, detectedNat, detectedSyllabus } = parseQuery(raw);
 
         // Effective filters: sidebar filters OR detected from query
@@ -1719,10 +1729,10 @@ function App() {
                 || (effSyllabus === "ABRSM Diploma" && p._syllabus==="ABRSM Diploma");
             return mQ && mE && mG && mN && mS;
         });
-    }, [query, eraFilter, gradeFilter, natFilter, syllabusFilter, searchActive]);
+    }, [debouncedQuery, eraFilter, gradeFilter, natFilter, syllabusFilter, searchActive]);
 
     /* Detected signals from current query (for showing hint pills) */
-    const parsedSignals = useMemo(() => query.trim() ? parseQuery(query.toLowerCase().trim()) : {}, [query]);
+    const parsedSignals = useMemo(() => debouncedQuery.trim() ? parseQuery(debouncedQuery.toLowerCase().trim()) : {}, [debouncedQuery]);
 
     const ERAS = ["All","Baroque","Classical","Romantic","Modern","Contemporary"];
     const activeFilterCount = [eraFilter!=="All", gradeFilter!=="All", natFilter!=="All", syllabusFilter!=="All"].filter(Boolean).length;
