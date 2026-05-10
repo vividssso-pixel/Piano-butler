@@ -932,3 +932,66 @@ CREATE TABLE public.list_pieces (
 ### Language Rule
 - Conversation: Korean is fine
 - All code, file outputs, comments: English only
+
+---
+
+### Phase 23 Updates (2026-05-10 — design session)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Reverted Google-style homepage | `index.html` | Restored Phase 21 version (grade grid visible on load). Google-style blank canvas felt too empty — grade grid gives immediate context. |
+| 2 | Grade card redesign | `index.html` | 3-col grid, fixed 80px height, left color bar per grade accent, subtle color background (`accent + "0d"`), text bottom-aligned. |
+| 3 | Hero search bar on homepage | `index.html` | Large search input (15px, padding 14px, border-radius 14px) placed above grade grid. Nav search bar hidden (`invisible`) on homepage — only appears in results mode. |
+| 4 | PieceRow simplified | `index.html` | Removed focus chips entirely. Badges smaller (9px). Inline layout (text left, star right). Buttons smaller (10px). Card style changed to borderless with bottom divider. |
+| 5 | Sidebar cleanup | `index.html` | Reduced section spacing, smaller label font, "Filters" header instead of "FILTER". |
+| 6 | Removed guided discovery prompts | `index.html` | 8 prompt cards removed — clutter without clear value. |
+| 7 | Removed popular search chips | `index.html` | Chips below grade grid removed — cleaner homepage. |
+
+---
+
+## Product Direction (decided 2026-05-10)
+
+### Core insight
+Piano Butler's "can't live without" feature is **curated teaching lists** — not just search.
+
+The problem piano teachers actually have:
+> "Finding pieces that are technically achievable, sound impressive, and that students will enjoy" — this relies entirely on years of personal experience and memory.
+
+### The real value
+**Soohyun's teaching philosophy in action:**
+- Start with pieces that have clear technical goals AND student appeal (Wild Chase → Going Baroque → Malagueña)
+- Build momentum through small wins and a sense of accomplishment
+- Piece selection IS the curriculum — wrong piece = student quits
+
+### Product evolution path
+
+**Stage 1 — Teaching Lists (next session)**
+Upgrade My Lists → Teaching Lists:
+- Ordered sequence (drag to reorder, numbered)
+- Per-piece teacher note ("focus on legato, 2-week goal")
+- Grade range tag on the list ("Prelim–G2")
+- Share link shows order + notes (currently notes are lost on share)
+
+**Stage 2 — Soohyun's curated lists (after Stage 1)**
+- Build 3–5 real teaching sequences from Soohyun's experience
+- Show as "Featured Lists" on homepage
+- First-time visitors immediately understand the value
+
+**Stage 3 — Community (when traffic grows)**
+- Other teachers can publish their lists publicly
+- Homepage shows curated feed of teacher lists
+- Becomes a living resource, not just a database
+
+### Why this works
+- Soohyun uses it herself → honest feedback loop
+- Teacher's curated list = value for students too (pass knowledge down)
+- Community of lists = reason to come back, reason to share
+
+### Next session action items
+1. Try creating a real list in My Lists (Wild Chase → Going Baroque → Malagueña)
+2. Note exactly what's missing/annoying in the current UI
+3. Build: ordered list + per-piece notes + improved share view
+4. Design: homepage "Featured Lists" section
+
+### Known Issues (as of 2026-05-10)
+- None active. All design changes deployed.
