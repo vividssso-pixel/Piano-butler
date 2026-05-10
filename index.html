@@ -1493,16 +1493,6 @@ function GradeGrid({ onGradeClick, activeSyllabus, setActiveSyllabus }) {
 
 /* ── Main App ── */
 /* ── Fuzzy composer surnames — computed ONCE at module load, never rebuilt on keystrokes ── */
-const FUZZY_COMPOSERS = (() => {
-    const surnames = new Set();
-    CORPUS.forEach(p => {
-        if (p.c) {
-            const s = p.c.split(",")[0].toLowerCase().trim();
-            if (s.length >= 4) surnames.add(s);
-        }
-    });
-    return Array.from(surnames);
-})();
 
 function App() {
     const [user, setUser]                   = useState(null);
@@ -1639,19 +1629,6 @@ function App() {
             "diploma":"AMEB Diploma","ameb diploma":"AMEB Diploma",
             "abrsm diploma":"ABRSM Diploma",
         };
-        // Typo tolerance: Levenshtein distance ≤ 1 for short words
-        const levenshtein = (a, b) => {
-            if (Math.abs(a.length - b.length) > 2) return 99;
-            const dp = Array.from({length: a.length+1}, (_,i) => [i]);
-            for (let j=1; j<=b.length; j++) dp[0][j]=j;
-            for (let i=1; i<=a.length; i++)
-                for (let j=1; j<=b.length; j++)
-                    dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1] : 1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
-            return dp[a.length][b.length];
-        };
-        // Fuzzy match against known composer names (Levenshtein ≤ 1 on surname)
-        // fuzzyComposers is computed once at module level — see FUZZY_COMPOSERS below
-
         const lower = raw.toLowerCase().trim();
         let remaining = lower;
         let detectedGrade = null, detectedEra = null, detectedNat = null, detectedSyllabus = null;
@@ -1674,20 +1651,7 @@ function App() {
             }
         }
 
-        // Split remaining into tokens, apply fuzzy correction
-        const rawTokens = remaining.split(/\s+/).filter(t => t.length > 1);
-        const tokens = rawTokens.map(tok => {
-            if (tok.length < 4) return tok;
-            // find closest composer surname
-            let best = tok, bestDist = 1; // max dist 1
-            for (const s of FUZZY_COMPOSERS) {
-                const d = levenshtein(tok, s);
-                if (d < bestDist || (d === bestDist && s.length === tok.length)) {
-                    bestDist = d; best = s;
-                }
-            }
-            return best;
-        });
+        const tokens = remaining.split(/\s+/).filter(t => t.length > 1);
 
         return { tokens, detectedGrade, detectedEra, detectedNat, detectedSyllabus };
     };
