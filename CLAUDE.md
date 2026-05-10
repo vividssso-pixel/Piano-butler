@@ -995,3 +995,36 @@ Upgrade My Lists → Teaching Lists:
 
 ### Known Issues (as of 2026-05-10)
 - None active. All design changes deployed.
+
+---
+
+### Phase 24 Updates (2026-05-10 — search performance session)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Removed Levenshtein fuzzy matching | `index.html` | `parseQuery` + `FUZZY_COMPOSERS` + Levenshtein distance function fully removed. Was rebuilding composer surname list and running edit-distance on every keystroke — major lag source. |
+| 2 | Replaced parseQuery with simple includes | `index.html` | Results filtering now uses single `string.includes(q)` against title, composer, nat, era. No tokenization, no signal detection. Much faster. |
+| 3 | Decoupled input display from search filtering | `index.html` | Added `searchQuery` state (separate from `query`). `query` updates instantly on every keystroke (input feels responsive). `searchQuery` updates after 200ms idle via useEffect debounce. `searchActive`, `results` useMemo both depend on `searchQuery` — filtering never runs mid-keystroke. Root cause of English lag: every keystroke triggered `searchActive=true` via `query.trim()`, which fired 3,283-piece filter. Fixed by tying `searchActive` to `searchQuery` instead. |
+| 4 | Single search bar | `index.html` | Removed nav search bar (duplicate). Now one search bar always visible above grade grid. No page-transition animation — results appear inline below search bar. Grade grid hidden only while results are active. |
+| 5 | Removed screen transition | `index.html` | Previous design had home→results layout switch that felt slow. Now grade grid stays in place; results replace it in-line with no React re-layout. |
+
+### Search Architecture (as of Phase 24)
+
+```
+query state        → input value (instant, every keystroke)
+searchQuery state  → debounced 200ms → drives results + searchActive
+results useMemo    → depends on [searchQuery, eraFilter, gradeFilter, natFilter, syllabusFilter, searchActive]
+                   → simple includes() match on title/composer/nat/era
+autoSuggestions    → depends on [query] — fires on keystroke for dropdown
+```
+
+### Known Issues (as of 2026-05-10 evening)
+- None active. Search is responsive.
+
+### Next Session (Teaching Lists)
+1. Upgrade My Lists → Teaching Lists: ordered sequence (drag to reorder, numbered)
+2. Per-piece teacher note ("focus on legato, 2-week goal")
+3. Grade range tag on list ("Prelim–G2")
+4. Improved share view — preserves order + notes
+5. Try creating real list: Wild Chase → Going Baroque → Malagueña — note UI friction points
+6. Homepage "Featured Lists" section (Soohyun's curated sequences)
