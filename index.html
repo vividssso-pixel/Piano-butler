@@ -1507,7 +1507,6 @@ const FUZZY_COMPOSERS = (() => {
 function App() {
     const [user, setUser]                   = useState(null);
     const [query, setQuery]                 = useState("");
-    const [debouncedQuery, setDebouncedQuery] = useState("");
     const [eraFilter, setEraFilter]         = useState("All");
     const [gradeFilter, setGradeFilter]     = useState("All");
     const [natFilter, setNatFilter]         = useState("All");
@@ -1523,11 +1522,6 @@ function App() {
     const searchInputRef = React.useRef(null);
     const { modal: videoModal, open: openVideo, close: closeVideo } = useVideoModal();
 
-    /* Debounce heavy query processing — input stays instant, search fires after 150ms idle */
-    useEffect(() => {
-        const t = setTimeout(() => setDebouncedQuery(query), 150);
-        return () => clearTimeout(t);
-    }, [query]);
 
     /* Check for shared list URL param on load */
     useEffect(() => {
@@ -1575,8 +1569,8 @@ function App() {
 
     /* Autocomplete suggestions — top 8 matching composers or titles */
     const autoSuggestions = useMemo(() => {
-        if (!debouncedQuery || debouncedQuery.trim().length < 2) return [];
-        const q = debouncedQuery.toLowerCase().trim();
+        if (!query || query.trim().length < 2) return [];
+        const q = query.toLowerCase().trim();
         const seen = new Set();
         const composerHits = [];
         const titleHits = [];
@@ -1591,7 +1585,7 @@ function App() {
             }
         });
         return [...composerHits.slice(0,4), ...titleHits.slice(0,4)].slice(0,8);
-    }, [debouncedQuery]);
+    }, [query]);
 
     const handleGradeClick = (gradeKey) => { setGradeFilter(gradeKey); setSyllabusFilter(activeSyllabus); setSearchTriggered(true); };
 
@@ -1700,7 +1694,7 @@ function App() {
 
     const results = useMemo(() => {
         if (!searchActive) return [];
-        const raw = debouncedQuery.toLowerCase().trim();
+        const raw = query.toLowerCase().trim();
         const { tokens, detectedGrade, detectedEra, detectedNat, detectedSyllabus } = parseQuery(raw);
 
         // Effective filters: sidebar filters OR detected from query
@@ -1729,10 +1723,10 @@ function App() {
                 || (effSyllabus === "ABRSM Diploma" && p._syllabus==="ABRSM Diploma");
             return mQ && mE && mG && mN && mS;
         });
-    }, [debouncedQuery, eraFilter, gradeFilter, natFilter, syllabusFilter, searchActive]);
+    }, [query, eraFilter, gradeFilter, natFilter, syllabusFilter, searchActive]);
 
     /* Detected signals from current query (for showing hint pills) */
-    const parsedSignals = useMemo(() => debouncedQuery.trim() ? parseQuery(debouncedQuery.toLowerCase().trim()) : {}, [debouncedQuery]);
+    const parsedSignals = useMemo(() => query.trim() ? parseQuery(query.toLowerCase().trim()) : {}, [query]);
 
     const ERAS = ["All","Baroque","Classical","Romantic","Modern","Contemporary"];
     const activeFilterCount = [eraFilter!=="All", gradeFilter!=="All", natFilter!=="All", syllabusFilter!=="All"].filter(Boolean).length;
