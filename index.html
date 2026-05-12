@@ -1778,25 +1778,118 @@ function App() {
                 {/* Main */}
                 <main className="flex-1 min-w-0 px-4 py-5">
 
-                    {/* Mobile filter strip */}
-                    <div className="md:hidden flex gap-1.5 overflow-x-auto no-scrollbar mb-4 pb-1">
-                        {ERAS.slice(1).map(era => (
-                            <button key={era} onClick={() => { setEraFilter(era===eraFilter?"All":era); setSearchTriggered(true); }}
-                                className="whitespace-nowrap text-[11px] font-bold px-2.5 py-1 rounded-lg shrink-0"
-                                style={{background:eraFilter===era?"#4f46e5":"white",color:eraFilter===era?"white":"#64748b",border:"1px solid #e2e8f0"}}>
-                                {era}
-                            </button>
-                        ))}
-                        {activeFilterCount > 0 && (
-                            <button onClick={handleClear} className="whitespace-nowrap text-[11px] font-bold px-2.5 py-1 rounded-lg shrink-0 bg-red-50 text-red-400 border border-red-100">✕</button>
-                        )}
-                    </div>
+                    {/* Mobile filter panel */}
+                    {(() => {
+                        const [mobileFiltersOpen, setMobileFiltersOpen] = React.useState(false);
+                        return (
+                            <div className="md:hidden mb-4">
+                                {/* Toggle row */}
+                                <div style={{display:"flex",gap:6,alignItems:"center",marginBottom: mobileFiltersOpen ? 10 : 0}}>
+                                    <button
+                                        onClick={() => setMobileFiltersOpen(v => !v)}
+                                        style={{display:"flex",alignItems:"center",gap:6,fontSize:11,fontWeight:700,padding:"6px 12px",borderRadius:8,
+                                            border: activeFilterCount > 0 ? "1.5px solid #6366f1" : "1px solid #e2e8f0",
+                                            background: activeFilterCount > 0 ? "#eef2ff" : "white",
+                                            color: activeFilterCount > 0 ? "#4f46e5" : "#64748b",cursor:"pointer"}}>
+                                        <span style={{fontSize:13}}>⚙</span>
+                                        Filters
+                                        {activeFilterCount > 0 && <span style={{fontSize:10,fontWeight:800,background:"#6366f1",color:"white",borderRadius:99,padding:"1px 6px"}}>{activeFilterCount}</span>}
+                                        <span style={{fontSize:10,color:"#94a3b8"}}>{mobileFiltersOpen ? "▲" : "▼"}</span>
+                                    </button>
+                                    {activeFilterCount > 0 && (
+                                        <button onClick={handleClear}
+                                            style={{fontSize:11,fontWeight:600,padding:"6px 10px",borderRadius:8,border:"1px solid #fee2e2",background:"#fef2f2",color:"#ef4444",cursor:"pointer"}}>
+                                            Clear all
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Expanded filter panel */}
+                                {mobileFiltersOpen && (
+                                    <div style={{background:"#fafafa",border:"1px solid #f1f5f9",borderRadius:12,padding:"14px 14px 10px",display:"flex",flexDirection:"column",gap:12}}>
+
+                                        {/* Syllabus */}
+                                        <div>
+                                            <div style={{fontSize:9,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.1em",color:"#d1d5db",marginBottom:6}}>Syllabus</div>
+                                            <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                                                {[
+                                                    {val:"All", lbl:"All"},
+                                                    {val:"AMEB", lbl:"AMEB"},
+                                                    {val:"AMEB Leisure", lbl:"Leisure"},
+                                                    {val:"ABRSM", lbl:"ABRSM"},
+                                                    {val:"AMEB Diploma", lbl:"AMEB Dip"},
+                                                    {val:"ABRSM Diploma", lbl:"ABRSM Dip"},
+                                                ].map(({val,lbl}) => (
+                                                    <button key={val}
+                                                        onClick={() => { setSyllabusFilter(val); setGradeFilter("All"); setSearchTriggered(true); }}
+                                                        style={{fontSize:11,fontWeight:600,padding:"5px 10px",borderRadius:20,cursor:"pointer",
+                                                            background: syllabusFilter===val ? "#4f46e5" : "white",
+                                                            color:      syllabusFilter===val ? "white" : "#64748b",
+                                                            border:     syllabusFilter===val ? "1.5px solid #4f46e5" : "1px solid #e2e8f0"}}>
+                                                        {lbl}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Era */}
+                                        <div>
+                                            <div style={{fontSize:9,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.1em",color:"#d1d5db",marginBottom:6}}>Era</div>
+                                            <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                                                {ERAS.map(era => (
+                                                    <button key={era}
+                                                        onClick={() => { setEraFilter(era); setSearchTriggered(true); }}
+                                                        style={{fontSize:11,fontWeight:600,padding:"5px 10px",borderRadius:20,cursor:"pointer",
+                                                            background: eraFilter===era ? "#4f46e5" : "white",
+                                                            color:      eraFilter===era ? "white" : "#64748b",
+                                                            border:     eraFilter===era ? "1.5px solid #4f46e5" : "1px solid #e2e8f0"}}>
+                                                        {era==="All" ? "All eras" : era}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Grade */}
+                                        <div>
+                                            <div style={{fontSize:9,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.1em",color:"#d1d5db",marginBottom:6}}>Grade</div>
+                                            <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                                                {["All",...GRADE_META.map(g=>g.key)].map(gk => (
+                                                    <button key={gk}
+                                                        onClick={() => { setGradeFilter(gk); setSearchTriggered(true); }}
+                                                        style={{fontSize:11,fontWeight:600,padding:"5px 10px",borderRadius:20,cursor:"pointer",
+                                                            background: gradeFilter===gk ? "#4f46e5" : "white",
+                                                            color:      gradeFilter===gk ? "white" : "#64748b",
+                                                            border:     gradeFilter===gk ? "1.5px solid #4f46e5" : "1px solid #e2e8f0"}}>
+                                                        {gk==="All" ? "All" : gk==="Prelim" ? "Prelim" : gk}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Nationality */}
+                                        <div>
+                                            <div style={{fontSize:9,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.1em",color:"#d1d5db",marginBottom:6}}>Nationality</div>
+                                            <select value={natFilter} onChange={e => { setNatFilter(e.target.value); setSearchTriggered(true); }}
+                                                style={{width:"100%",fontSize:12,fontWeight:500,padding:"7px 10px",borderRadius:8,border:"1px solid #e2e8f0",background:"white",
+                                                    color:natFilter!=="All"?"#4f46e5":"#94a3b8",outline:"none",cursor:"pointer"}}>
+                                                {NAT_LIST.map(n => <option key={n} value={n}>{n}</option>)}
+                                            </select>
+                                        </div>
+
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()}
 
                     {/* Header + search always visible */}
                     <div style={{marginBottom:28, paddingTop:8}}>
                         <div style={{marginBottom:14}}>
                             <span style={{fontSize:22,fontWeight:900,color:"#1e293b",letterSpacing:"-0.03em"}}>Piano Butler</span>
                             <span style={{fontSize:13,color:"#94a3b8",fontWeight:500,marginLeft:10}}>3,283 pieces · AMEB, ABRSM & Diploma</span>
+                            <div style={{fontSize:13,color:"#64748b",fontWeight:400,marginTop:6,lineHeight:1.5}}>
+                                Search 3,283 piano exam pieces across the 2026 AMEB, ABRSM, and Diploma syllabuses — filter by grade, era, and nationality.
+                            </div>
                         </div>
                         <div style={{position:"relative", maxWidth:560}}>
                             <span style={{position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",fontSize:16,pointerEvents:"none"}}>🔍</span>
