@@ -1521,21 +1521,19 @@ function App() {
     }, [query]);
 
 
-    /* Check for shared list URL param on load */
+    /* Check for shared list URL param on load — local-first base64 only */
     useEffect(() => {
-        const token = new URLSearchParams(location.search).get("list");
-        if (!token) return;
-        Promise.all([
-            _sb.from("repertoire_lists").select("*").eq("share_token", token).eq("is_public", true).single(),
-            _sb.from("list_pieces").select("*")
-                .in("list_id", _sb.from("repertoire_lists").select("id").eq("share_token", token))
-                .order("added_at", {ascending:true}),
-        ]).then(async ([listRes, _]) => {
-            if (listRes.error || !listRes.data) return;
-            const lst = listRes.data;
-            const { data: pcs } = await _sb.from("list_pieces").select("*").eq("list_id", lst.id).order("added_at", {ascending:true});
-            setSharedList({ list: lst, pieces: pcs||[] });
-        });
+        const params = new URLSearchParams(location.search);
+        const b64 = params.get("locallist");
+        if (!b64) return;
+        try {
+            const lst = JSON.parse(decodeURIComponent(escape(atob(b64))));
+            if (lst && lst.name && Array.isArray(lst.pieces)) {
+                setSharedList({ list: lst, pieces: lst.pieces });
+            }
+        } catch(e) {
+            console.warn("Invalid shared list URL", e);
+        }
     }, []);
 
     /* Handle add-to-list click: no login required (local-first) */
@@ -1641,11 +1639,15 @@ function App() {
                     </div>
                     <div className="rounded-2xl overflow-hidden shadow-lg" style={{background:"white",border:"1px solid #e2e8f0"}}>
                         <div className="px-6 py-5 border-b border-slate-100">
+                            {sharedList.list.type && (() => { const ti = listTypeInfo(sharedList.list.type); return (
+                                <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:6,background:ti.bg,color:ti.color,display:"inline-block",marginBottom:8}}>{ti.label}</span>
+                            ); })()}
                             <div className="text-[20px] font-black text-slate-800">{sharedList.list.name}</div>
-                            <div className="text-[12px] text-slate-400 mt-1">{sharedList.pieces.length} pieces · shared via Piano Butler</div>
+                            {sharedList.list.description && <div className="text-[12px] text-slate-500 mt-1 italic">{sharedList.list.description}</div>}
+                            <div className="text-[12px] text-slate-400 mt-1">{sharedList.pieces.length} piece{sharedList.pieces.length!==1?"s":""} · shared via Piano Butler</div>
                         </div>
                         {sharedList.pieces.map((pc, i) => (
-                            <div key={pc.id} className="flex items-center gap-3 px-6 py-4 border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                            <div key={i} className="flex items-center gap-3 px-6 py-4 border-b border-slate-50 hover:bg-slate-50 transition-colors">
                                 <span className="text-[10px] font-black text-slate-400 w-5 shrink-0">{i+1}</span>
                                 <div className="flex-1 min-w-0">
                                     <div className="flex gap-1 mb-1 flex-wrap">
@@ -1655,6 +1657,7 @@ function App() {
                                     </div>
                                     <div className="text-[14px] font-bold text-slate-800 leading-snug">{pc.title}</div>
                                     <div className="text-[11px] text-slate-400 mt-0.5">{pc.composer}{pc.nat ? ` · ${pc.nat}` : ""}</div>
+                                    {pc.note && <div className="text-[11px] text-indigo-400 mt-1 italic">{pc.note}</div>}
                                 </div>
                                 <button onClick={() => openVideo(pc.composer, pc.title)}
                                     className="px-2.5 py-1 bg-red-600 text-white text-[10px] font-bold rounded-lg shrink-0">▶</button>
