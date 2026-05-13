@@ -1685,6 +1685,30 @@ function App() {
     const ERAS = ["All","Baroque","Classical","Romantic","Modern","Contemporary"];
     const activeFilterCount = [eraFilter!=="All", gradeFilter!=="All", natFilter!=="All", syllabusFilter!=="All"].filter(Boolean).length;
 
+    // Grade keys shown in grade filter — depends on active syllabus filter
+    const gradeKeys = useMemo(() => {
+        if (syllabusFilter === "Trinity") {
+            return TRINITY_META.map(g => g.key);
+        } else if (syllabusFilter === "ABRSM" || syllabusFilter === "ABRSM Diploma") {
+            return [...ABRSM_META.map(g => g.key), ...DIPLOMA_META.filter(g=>g._syllabus==="ABRSM Diploma"||g.key==="LRSM"||g.key==="FRSM").map(g=>g.key)];
+        } else if (syllabusFilter === "AMEB Diploma") {
+            return DIPLOMA_META.filter(g=>g.key==="CertP"||g.key==="AMusA"||g.key==="LMusA").map(g=>g.key);
+        } else {
+            return GRADE_META.map(g => g.key);
+        }
+    }, [syllabusFilter]);
+
+    const gradeLabel = (gk) => {
+        if (gk === "All") return "All grades";
+        if (gk === "Prelim") return "Preliminary";
+        if (gk === "TInitial") return "Initial";
+        if (gk.startsWith("TG")) return "Grade " + gk.slice(2);
+        if (gk === "CertP") return "Cert. of Perf.";
+        if (gk === "AMusA" || gk === "LMusA" || gk === "LRSM" || gk === "FRSM") return gk;
+        if (gk === "ABRSMInitial") return "Initial";
+        return gk.replace("G", "Grade ");
+    };
+
     return (
         <>
         {showLogin && <LoginModal onClose={() => setShowLogin(false)} onSuccess={(u) => { setShowLogin(false); }} />}
@@ -1820,11 +1844,11 @@ function App() {
                     {/* Grade */}
                     <div style={{marginBottom:16}}>
                         <span className="sidebar-label">Grade</span>
-                        {["All",...GRADE_META.map(g=>g.key)].map(gk => (
+                        {["All",...gradeKeys].map(gk => (
                             <button key={gk}
                                 className={`filter-btn${gradeFilter===gk?" active":""}`}
                                 onClick={() => { setGradeFilter(gk); setSearchTriggered(true); }}>
-                                {gk==="All" ? "All grades" : gk==="Prelim" ? "Preliminary" : gk.replace("G","Grade ")}
+                                {gradeLabel(gk)}
                             </button>
                         ))}
                     </div>
@@ -1918,14 +1942,14 @@ function App() {
                                         <div>
                                             <div style={{fontSize:9,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.1em",color:"#d1d5db",marginBottom:6}}>Grade</div>
                                             <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
-                                                {["All",...GRADE_META.map(g=>g.key)].map(gk => (
+                                                {["All",...gradeKeys].map(gk => (
                                                     <button key={gk}
                                                         onClick={() => { setGradeFilter(gk); setSearchTriggered(true); }}
                                                         style={{fontSize:11,fontWeight:600,padding:"5px 10px",borderRadius:20,cursor:"pointer",
                                                             background: gradeFilter===gk ? "#4f46e5" : "white",
                                                             color:      gradeFilter===gk ? "white" : "#64748b",
                                                             border:     gradeFilter===gk ? "1.5px solid #4f46e5" : "1px solid #e2e8f0"}}>
-                                                        {gk==="All" ? "All" : gk==="Prelim" ? "Prelim" : gk}
+                                                        {gk==="All" ? "All" : gradeLabel(gk)}
                                                     </button>
                                                 ))}
                                             </div>
@@ -2015,7 +2039,7 @@ function App() {
                                 )}
                                 {gradeFilter!=="All" && (
                                     <span style={{fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:20,background:"#f8fafc",color:"#475569",border:"1px solid #e2e8f0"}}>
-                                        {gradeFilter==="Prelim"?"Preliminary":gradeFilter.replace("G","Grade ")}
+                                        {gradeLabel(gradeFilter)}
                                     </span>
                                 )}
                                 {syllabusFilter!=="All" && (
