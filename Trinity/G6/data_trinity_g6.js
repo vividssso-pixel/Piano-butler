@@ -1,0 +1,71 @@
+// Trinity College London Piano — Grade 6
+// 2023 Syllabus | Group A + Group B (candidates must choose at least one from each group)
+// Total: 59 pieces (Group A: 24 | Group B: 35)
+// Source: trinitycollege.com/piano-repertoire
+
+const DATA_TRINITY_G6 = [
+  // ── GROUP A ──────────────────────────────────────────────────────────────────
+  // Baroque / Classical / Early Romantic (24 pieces)
+  { "grp": "A", "c": "BACH, C.P.E.", "t": "Solfeggio in C minor, H. 220", "nat": "German", "era": "Classical", "focus": ["Baroque–Classical transition", "Singing melody", "Ornamentation"] },
+  { "grp": "A", "c": "BACH, J.S.", "t": "Prelude in C minor, BWV 999", "nat": "German", "era": "Baroque", "focus": ["Broken chord figurations", "Smooth legato", "Harmonic awareness"] },
+  { "grp": "A", "c": "BACH, J.S.", "t": "Two-Part Invention No. 13 in A minor, BWV 784", "nat": "German", "era": "Baroque", "focus": ["Counterpoint", "Finger independence", "Imitation"] },
+  { "grp": "A", "c": "BACH, J.S. (arr.)", "t": "Jesu, Joy of Man's Desiring (BWV 147, arr.)", "nat": "German", "era": "Baroque", "focus": ["Flowing triplets", "Melody projection", "Baroque style"] },
+  { "grp": "A", "c": "BENDA, J.", "t": "Sonatina in A minor", "nat": "Czech", "era": "Classical", "focus": ["Classical sonatina", "Ornamentation", "Clear phrasing"] },
+  { "grp": "A", "c": "BIBER, H.I.F. (arr.)", "t": "Passacaglia in G minor (arr.)", "nat": "Austrian", "era": "Baroque", "focus": ["Ground bass", "Ornament", "Expressive playing"] },
+  { "grp": "A", "c": "BYRD, W.", "t": "The Carman's Whistle (from My Ladye Nevells Booke)", "nat": "English", "era": "Baroque", "focus": ["Renaissance variation", "Ornamentation", "Keyboard style"] },
+  { "grp": "A", "c": "COUPERIN, F.", "t": "Le Carillon de Cythère (from Pièces de clavecin, 3rd Book)", "nat": "French", "era": "Baroque", "focus": ["French Baroque ornament", "Delicate touch", "Ringing texture"] },
+  { "grp": "A", "c": "COUPERIN, F.", "t": "Les Barricades Mystérieuses (from Pièces de clavecin, 2nd Book)", "nat": "French", "era": "Baroque", "focus": ["Arpeggiated texture", "Atmospheric playing", "French Baroque style"] },
+  { "grp": "A", "c": "FARRENC, L.", "t": "Étude in A minor, Op. 50 No. 11", "nat": "French", "era": "Romantic", "focus": ["Technical development", "Lyrical melody", "Finger independence"] },
+  { "grp": "A", "c": "GALUPPI, B.", "t": "Sonata in D, No. 5 (1st mvt)", "nat": "Italian", "era": "Baroque", "focus": ["Baroque style", "Clear phrasing", "Ornamentation"] },
+  { "grp": "A", "c": "DE GAMBARINI, E.", "t": "Sonata in D (from Lessons for Harpsichord or Organ)", "nat": "English", "era": "Baroque", "focus": ["Baroque sonata", "Two-voice texture", "Clear articulation"] },
+  { "grp": "A", "c": "GEROU, T.", "t": "Sonatina in C (from Recital Collection for Piano, Grade 6)", "nat": "American", "era": "Contemporary", "focus": ["Sonatina form", "Classical style", "Clear phrasing"] },
+  { "grp": "A", "c": "HAYDN, J.", "t": "Sonata in D, Hob. XVI/37 (1st mvt)", "nat": "Austrian", "era": "Classical", "focus": ["Classical sonata form", "Ornament", "Balanced phrasing"] },
+  { "grp": "A", "c": "HAYDN, J.", "t": "Sonata in G, Hob. XVI/27 (1st mvt)", "nat": "Austrian", "era": "Classical", "focus": ["Classical form", "Clear phrasing", "Ornamentation"] },
+  { "grp": "A", "c": "JACQUET DE LA GUERRE, E.", "t": "Suite in D minor: Courante", "nat": "French", "era": "Baroque", "focus": ["French Baroque dance", "Ornament", "Clear articulation"] },
+  { "grp": "A", "c": "JOBIM, A.C. (arr.)", "t": "The Girl from Ipanema (arr. for classical piano)", "nat": "Brazilian", "era": "Contemporary", "focus": ["Bossa nova character", "Lyrical melody", "Chord voicing"] },
+  { "grp": "A", "c": "JONES, D.", "t": "Sonatina (from Recital Collection for Piano, Grade 6)", "nat": "English", "era": "Contemporary", "focus": ["Sonatina form", "Clear phrasing", "Classical style"] },
+  { "grp": "A", "c": "KHACHATURIAN, A.", "t": "Sonatina (1st mvt)", "nat": "Armenian", "era": "Modern", "focus": ["Folk-influenced style", "Classical form", "Rhythmic drive"] },
+  { "grp": "A", "c": "MYSLIVEČEK, J.", "t": "Sonata in G (1st mvt)", "nat": "Czech", "era": "Classical", "focus": ["Classical sonata", "Clear phrasing", "Ornamentation"] },
+  { "grp": "A", "c": "PASEK, B. / PAUL, J. (arr.)", "t": "This Is Me (from The Greatest Showman, arr.)", "nat": "American", "era": "Contemporary", "focus": ["Musical theatre", "Lyrical melody", "Accompaniment style"] },
+  { "grp": "A", "c": "ROSETTI, F.A.", "t": "Sonatina in G (1st mvt)", "nat": "Czech", "era": "Classical", "focus": ["Classical sonatina", "Clear phrasing", "Balanced texture"] },
+  { "grp": "A", "c": "SCHUBERT, F.", "t": "Moment Musical, Op. 94 No. 6", "nat": "Austrian", "era": "Romantic", "focus": ["Dance character", "Simple phrasing", "Rhythmic precision"] },
+  { "grp": "A", "c": "SKEVINGTON, A.", "t": "Prelude (from Recital Collection for Piano, Grade 6)", "nat": "English", "era": "Contemporary", "focus": ["Simple texture", "Lyrical playing", "Clear phrasing"] },
+
+  // ── GROUP B ──────────────────────────────────────────────────────────────────
+  // Romantic / 20th Century / Contemporary / Popular (35 pieces)
+  { "grp": "B", "c": "BARTÓK, B.", "t": "Romanian Folk Dance No. 1 (Stick Dance)", "nat": "Hungarian", "era": "Modern", "focus": ["Folk character", "Rhythmic drive", "Modal harmony"] },
+  { "grp": "B", "c": "BASTEAU, J.-M.", "t": "Mélodie (from Recital Collection for Piano, Grade 6)", "nat": "French", "era": "Contemporary", "focus": ["Lyrical melody", "Singing tone", "Simple phrasing"] },
+  { "grp": "B", "c": "BÉRA-TAGRINE, N.", "t": "Bossa Nova (from Recital Collection for Piano, Grade 6)", "nat": "French", "era": "Contemporary", "focus": ["Bossa nova style", "Simple syncopation", "Light touch"] },
+  { "grp": "B", "c": "BÉRA-TAGRINE, N.", "t": "Tango Nuevo (from Recital Collection for Piano, Grade 6)", "nat": "French", "era": "Contemporary", "focus": ["Tango character", "Rhythmic drive", "Expressive phrasing"] },
+  { "grp": "B", "c": "BURGMÜLLER, F.", "t": "La Chevaleresque, Op. 100 No. 25", "nat": "German", "era": "Romantic", "focus": ["Heroic character", "Scale technique", "Dynamic contrast"] },
+  { "grp": "B", "c": "BURLEIGH, H.T.", "t": "Deep River (arr.)", "nat": "American", "era": "Romantic", "focus": ["Spiritual character", "Singing melody", "Expressive phrasing"] },
+  { "grp": "B", "c": "CAINE, U.", "t": "Blues Fantasia (from Recital Collection for Piano, Grade 6)", "nat": "American", "era": "Contemporary", "focus": ["Blues style", "Expressive freedom", "Jazz character"] },
+  { "grp": "B", "c": "CAINE, U.", "t": "Latin Nocturne (from Recital Collection for Piano, Grade 6)", "nat": "American", "era": "Contemporary", "focus": ["Latin jazz style", "Night character", "Expressive phrasing"] },
+  { "grp": "B", "c": "CASELLA, A.", "t": "Bolero (from 11 Pezzi Infantili, Op. 35)", "nat": "Italian", "era": "Modern", "focus": ["Dance character", "Rhythmic drive", "Simple texture"] },
+  { "grp": "B", "c": "CURRY, D.", "t": "Prelude (from Recital Collection for Piano, Grade 6)", "nat": "English", "era": "Contemporary", "focus": ["Simple texture", "Lyrical phrasing", "Atmospheric playing"] },
+  { "grp": "B", "c": "DELLO JOIO, N.", "t": "Noel (from Suite for Piano)", "nat": "American", "era": "Modern", "focus": ["Christmas character", "Simple texture", "Lyrical melody"] },
+  { "grp": "B", "c": "EINAUDI, L.", "t": "Nuvole Bianche", "nat": "Italian", "era": "Contemporary", "focus": ["Minimalist style", "Simple ostinato", "Atmospheric playing"] },
+  { "grp": "B", "c": "ELFMAN, D.", "t": "This Is Halloween (from The Nightmare Before Christmas, arr.)", "nat": "American", "era": "Contemporary", "focus": ["Film music", "Dramatic character", "Simple arrangement"] },
+  { "grp": "B", "c": "GEROU, T.", "t": "Nocturne (from Recital Collection for Piano, Grade 6)", "nat": "American", "era": "Contemporary", "focus": ["Night character", "Lyrical melody", "Simple phrasing"] },
+  { "grp": "B", "c": "GRIEG, E.", "t": "In the Hall of the Mountain King (from Peer Gynt, Op. 46, arr.)", "nat": "Norwegian", "era": "Romantic", "focus": ["Descriptive playing", "Crescendo build", "Rhythmic drive"] },
+  { "grp": "B", "c": "HISAISHI, J. (arr.)", "t": "Merry-Go-Round of Life (from Howl's Moving Castle, arr.)", "nat": "Japanese", "era": "Contemporary", "focus": ["Film music", "Waltz character", "Lyrical melody"] },
+  { "grp": "B", "c": "HUANG-HSU, C.", "t": "Five Tones (from Recital Collection for Piano, Grade 6)", "nat": "Taiwanese", "era": "Contemporary", "focus": ["Pentatonic character", "Simple texture", "Atmospheric playing"] },
+  { "grp": "B", "c": "KARGANOV, G.", "t": "Berceuse, Op. 25 No. 2", "nat": "Russian", "era": "Romantic", "focus": ["Lullaby character", "Lyrical melody", "Simple accompaniment"] },
+  { "grp": "B", "c": "KAVANAUGH, P.", "t": "A Gentle Melody (from Recital Collection for Piano, Grade 6)", "nat": "English", "era": "Contemporary", "focus": ["Lyrical playing", "Simple phrasing", "Singing tone"] },
+  { "grp": "B", "c": "LANE, R.", "t": "Funky Street (from Recital Collection for Piano, Grade 6)", "nat": "English", "era": "Contemporary", "focus": ["Funk style", "Strong rhythm", "Simple coordination"] },
+  { "grp": "B", "c": "LE FLEMING, C.", "t": "Spanish Caprice (from Recital Collection for Piano, Grade 6)", "nat": "English", "era": "Modern", "focus": ["Spanish character", "Rhythmic drive", "Expressive playing"] },
+  { "grp": "B", "c": "PAGE, J. / PLANT, R.", "t": "Kashmir (arr.)", "nat": "English", "era": "Contemporary", "focus": ["Rock style", "Simple arrangement", "Modal character"] },
+  { "grp": "B", "c": "PANUFNIK, A.", "t": "Pentasonata (from Twelve Miniature Studies)", "nat": "Polish", "era": "Modern", "focus": ["Dissonant harmony", "Clear texture", "Rhythmic precision"] },
+  { "grp": "B", "c": "PETERSON, O.", "t": "Hymn to Freedom (simplified arr.)", "nat": "Canadian", "era": "Contemporary", "focus": ["Gospel-jazz style", "Lyrical melody", "Simple arrangement"] },
+  { "grp": "B", "c": "PORTMAN, R. (arr.)", "t": "The Cider House Rules (Theme, arr.)", "nat": "English", "era": "Contemporary", "focus": ["Film music", "Lyrical melody", "Atmospheric playing"] },
+  { "grp": "B", "c": "RAMSKILL, T.", "t": "Midnight Blues (from Recital Collection for Piano, Grade 6)", "nat": "English", "era": "Contemporary", "focus": ["Blues style", "Night character", "Expressive playing"] },
+  { "grp": "B", "c": "REBIKOV, V.", "t": "Christmas Tree, Op. 8 No. 3", "nat": "Russian", "era": "Romantic", "focus": ["Descriptive playing", "Waltz character", "Simple texture"] },
+  { "grp": "B", "c": "REGER, M.", "t": "Romance (from 10 Little Pieces, Op. 44 No. 9)", "nat": "German", "era": "Romantic", "focus": ["Lyrical melody", "Simple texture", "Expressive phrasing"] },
+  { "grp": "B", "c": "RODGERS, R. (arr.)", "t": "My Favourite Things (from The Sound of Music, jazz arr.)", "nat": "American", "era": "Contemporary", "focus": ["Jazz arrangement", "Musical theatre", "Simple syncopation"] },
+  { "grp": "B", "c": "SAINIO, L.", "t": "Tango (from Recital Collection for Piano, Grade 6)", "nat": "Finnish", "era": "Contemporary", "focus": ["Tango style", "Rhythmic precision", "Expressive character"] },
+  { "grp": "B", "c": "SCHMITZ, M.", "t": "Swing Street (from Recital Collection for Piano, Grade 6)", "nat": "American", "era": "Contemporary", "focus": ["Swing jazz", "Simple syncopation", "Relaxed character"] },
+  { "grp": "B", "c": "SHANG, D.", "t": "Jasmine Flower (arr.)", "nat": "Chinese", "era": "Contemporary", "focus": ["Chinese folk melody", "Simple arrangement", "Pentatonic character"] },
+  { "grp": "B", "c": "SHORE, H. / WALSH, J. (arr.)", "t": "Concerning Hobbits (from Lord of the Rings, arr.)", "nat": "Canadian", "era": "Contemporary", "focus": ["Film music", "Folk character", "Lyrical melody"] },
+  { "grp": "B", "c": "WILKINSON, M.", "t": "Intermezzo (from Recital Collection for Piano, Grade 6)", "nat": "English", "era": "Contemporary", "focus": ["Lyrical playing", "Simple phrasing", "Expressive touch"] },
+  { "grp": "B", "c": "WITHERS, B. et al. (arr.)", "t": "Lean on Me (arr.)", "nat": "American", "era": "Contemporary", "focus": ["Soul/R&B style", "Simple arrangement", "Lyrical melody"] }
+];
