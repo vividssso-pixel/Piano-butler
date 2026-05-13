@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Repertoire Recommender | Piano Butler</title>
+  <meta name="description" content="Get a personalised piano repertoire combination based on syllabus, grade, era balance and student personality.">
+  <meta name="robots" content="noindex">
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+  <!-- AMEB Comprehensive -->
+  <script src="Prelim/data_prelim.js"></script>
+  <script src="G1/data_g1.js"></script>
+  <script src="G2/data_g2.js"></script>
+  <script src="G3/data_g3.js"></script>
+  <script src="G4/data_g4.js"></script>
+  <script src="G5/data_g5_1.js"></script>
+  <script src="G6/data_g6_comp.js"></script>
+  <script src="G7/data_g7.js"></script>
+  <script src="G8/data_g8.js"></script>
+  <!-- AMEB Leisure -->
+  <script src="Prelim/data_prelim_leisure.js"></script>
+  <script src="G1/data_g1_leisure.js"></script>
+  <script src="G2/data_g2_leisure.js"></script>
+  <script src="G3/data_g3_leisure.js"></script>
+  <script src="G4/data_g4_leisure.js"></script>
+  <script src="G5/data_g5_leisure.js"></script>
+  <script src="G6/data_g6_leisure.js"></script>
+  <script src="G7/data_g7_leisure.js"></script>
+  <script src="G8/data_g8_leisure.js"></script>
+  <!-- AMEB Diploma -->
+  <script src="CertP/data_certp.js"></script>
+  <script src="AMusA/data_amusa.js"></script>
+  <script src="LMusA/data_lmusa.js"></script>
+  <!-- ABRSM -->
+  <script src="ABRSM/Initial/data_abrsm_initial.js"></script>
+  <script src="ABRSM/G1/data_abrsm_g1.js"></script>
+  <script src="ABRSM/G2/data_abrsm_g2.js"></script>
+  <script src="ABRSM/G3/data_abrsm_g3.js"></script>
+  <script src="ABRSM/G4/data_abrsm_g4.js"></script>
+  <script src="ABRSM/G5/data_abrsm_g5.js"></script>
+  <script src="ABRSM/G6/data_abrsm_g6.js"></script>
+  <script src="ABRSM/G7/data_abrsm_g7.js"></script>
+  <script src="ABRSM/G8/data_abrsm_g8.js"></script>
+  <script src="ABRSM/Diploma/data_abrsm_lrsm.js"></script>
+  <script src="ABRSM/Diploma/data_abrsm_frsm.js"></script>
+  <!-- Trinity -->
+  <script src="Trinity/Initial/data_trinity_initial.js"></script>
+  <script src="Trinity/G1/data_trinity_g1.js"></script>
+  <script src="Trinity/G2/data_trinity_g2.js"></script>
+  <script src="Trinity/G3/data_trinity_g3.js"></script>
+  <script src="Trinity/G4/data_trinity_g4.js"></script>
+  <script src="Trinity/G5/data_trinity_g5.js"></script>
+  <script src="Trinity/G6/data_trinity_g6.js"></script>
+  <script src="Trinity/G7/data_trinity_g7.js"></script>
+  <script src="Trinity/G8/data_trinity_g8.js"></script>
+  <script src="Trinity/Diploma/data_trinity_atcl.js"></script>
+  <script src="Trinity/Diploma/data_trinity_ltcl.js"></script>
+  <script src="Trinity/Diploma/data_trinity_ftcl.js"></script>
+
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    * { box-sizing: border-box; font-family: 'Pretendard', -apple-system, sans-serif; }
+    body { background: #f8fafc; margin: 0; color: #1e293b; }
+
+    /* Choice chips */
+    .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      padding: 8px 16px; border-radius: 20px; border: 1.5px solid #e2e8f0;
+      background: #fff; cursor: pointer; font-size: 13px; font-weight: 500;
+      color: #475569; transition: all 0.15s;
+    }
+    .chip:hover { border-color: #c7d2fe; background: #eef2ff; color: #4338ca; }
+    .chip.selected { border-color: #4f46e5; background: #4f46e5; color: #fff; font-weight: 700; }
+    .chip.selected:hover { background: #4338ca; }
+
+    /* Era chips */
+    .era-baroque   { --c:#7c3aed; }
+    .era-classical { --c:#b45309; }
+    .era-romantic  { --c:#be185d; }
+    .era-modern    { --c:#047857; }
+    .era-contemporary { --c:#0369a1; }
+    .era-chip.selected { border-color: var(--c); background: var(--c); color:#fff; }
+    .era-chip:hover    { border-color: var(--c); color: var(--c); }
+
+    /* Result card */
+    .result-card {
+      background: #fff; border-radius: 14px; padding: 20px;
+      border: 1.5px solid #e2e8f0; transition: box-shadow 0.15s;
+    }
+    .result-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
+
+    /* Step indicator */
+    .step-dot { width:8px; height:8px; border-radius:50%; background:#e2e8f0; transition:background 0.2s; }
+    .step-dot.active { background:#4f46e5; }
+    .step-dot.done   { background:#a5b4fc; }
+
+    /* Progress bar */
+    .progress-bar { height:3px; background:#e2e8f0; border-radius:2px; overflow:hidden; }
+    .progress-fill { height:100%; background:linear-gradient(90deg,#6366f1,#8b5cf6); border-radius:2px; transition:width 0.3s; }
+
+    @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+    .fade-in { animation: fadeIn 0.2s ease; }
+
+    /* Focus tag */
+    .focus-tag { display:inline-block; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:600; background:#f1f5f9; color:#64748b; }
+
+    /* Reason badge */
+    .reason-badge { display:inline-flex; align-items:center; gap:3px; padding:2px 8px; border-radius:10px; font-size:10px; font-weight:600; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useMemo, useCallback } = React;
+
+/* ─── Corpus builder ─── */
+function buildCorpus() {
+  const rows = [];
+  const push = (arr, syllabus, gradeKey, gradeLabel, type) => {
+    if (!arr) return;
+    arr.forEach(p => rows.push({ ...p, _syllabus: syllabus, _gradeKey: gradeKey, _grade: gradeLabel, _type: type }));
+  };
+
+  // AMEB Comprehensive
+  const amebComp = [
+    [typeof DATA_PRELIM!=='undefined'?DATA_PRELIM:null,'AMEB','Prelim','Prelim'],
+    [typeof DATA_G1!=='undefined'?DATA_G1:null,'AMEB','G1','Grade 1'],
+    [typeof DATA_G2!=='undefined'?DATA_G2:null,'AMEB','G2','Grade 2'],
+    [typeof DATA_G3!=='undefined'?DATA_G3:null,'AMEB','G3','Grade 3'],
+    [typeof DATA_G4!=='undefined'?DATA_G4:null,'AMEB','G4','Grade 4'],
+    [typeof DATA_G5!=='undefined'?DATA_G5:null,'AMEB','G5','Grade 5'],
+    [typeof DATA_G6_COMP!=='undefined'?DATA_G6_COMP:null,'AMEB','G6','Grade 6'],
+    [typeof DATA_G7!=='undefined'?DATA_G7:null,'AMEB','G7','Grade 7'],
+    [typeof DATA_G8!=='undefined'?DATA_G8:null,'AMEB','G8','Grade 8'],
+  ];
+  amebComp.forEach(([d,s,k,l]) => push(d,s,k,l,'Comprehensive'));
+
+  // AMEB Leisure
+  const amebLeisure = [
+    [typeof DATA_PRELIM_LEISURE!=='undefined'?DATA_PRELIM_LEISURE:null,'AMEB','Prelim','Prelim'],
+    [typeof DATA_G1_LEISURE!=='undefined'?DATA_G1_LEISURE:null,'AMEB','G1','Grade 1'],
+    [typeof DATA_G2_LEISURE!=='undefined'?DATA_G2_LEISURE:null,'AMEB','G2','Grade 2'],
+    [typeof DATA_G3_LEISURE!=='undefined'?DATA_G3_LEISURE:null,'AMEB','G3','Grade 3'],
+    [typeof DATA_G4_LEISURE!=='undefined'?DATA_G4_LEISURE:null,'AMEB','G4','Grade 4'],
+    [typeof DATA_G5_LEISURE!=='undefined'?DATA_G5_LEISURE:null,'AMEB','G5','Grade 5'],
+    [typeof DATA_G6_LEISURE!=='undefined'?DATA_G6_LEISURE:null,'AMEB','G6','Grade 6'],
+    [typeof DATA_G7_LEISURE!=='undefined'?DATA_G7_LEISURE:null,'AMEB','G7','Grade 7'],
+    [typeof DATA_G8_LEISURE!=='undefined'?DATA_G8_LEISURE:null,'AMEB','G8','Grade 8'],
+  ];
+  amebLeisure.forEach(([d,s,k,l]) => push(d,s,k,l,'Leisure'));
+
+  // AMEB Diploma
+  if (typeof DATA_CERTP!=='undefined') push(DATA_CERTP,'AMEB Diploma','CertP','CertP','Diploma');
+  if (typeof DATA_AMUSA!=='undefined') push(DATA_AMUSA,'AMEB Diploma','AMusA','AMusA','Diploma');
+  if (typeof DATA_LMUSA!=='undefined') push(DATA_LMUSA,'AMEB Diploma','LMusA','LMusA','Diploma');
+
+  // ABRSM
+  const abrsm = [
+    [typeof DATA_ABRSM_INITIAL!=='undefined'?DATA_ABRSM_INITIAL:null,'ABRSM','Initial','Initial'],
+    [typeof DATA_ABRSM_G1!=='undefined'?DATA_ABRSM_G1:null,'ABRSM','G1','Grade 1'],
+    [typeof DATA_ABRSM_G2!=='undefined'?DATA_ABRSM_G2:null,'ABRSM','G2','Grade 2'],
+    [typeof DATA_ABRSM_G3!=='undefined'?DATA_ABRSM_G3:null,'ABRSM','G3','Grade 3'],
+    [typeof DATA_ABRSM_G4!=='undefined'?DATA_ABRSM_G4:null,'ABRSM','G4','Grade 4'],
+    [typeof DATA_ABRSM_G5!=='undefined'?DATA_ABRSM_G5:null,'ABRSM','G5','Grade 5'],
+    [typeof DATA_ABRSM_G6!=='undefined'?DATA_ABRSM_G6:null,'ABRSM','G6','Grade 6'],
+    [typeof DATA_ABRSM_G7!=='undefined'?DATA_ABRSM_G7:null,'ABRSM','G7','Grade 7'],
+    [typeof DATA_ABRSM_G8!=='undefined'?DATA_ABRSM_G8:null,'ABRSM','G8','Grade 8'],
+  ];
+  abrsm.forEach(([d,s,k,l]) => push(d,s,k,l,'Graded'));
+  if (typeof DATA_ABRSM_LRSM!=='undefined') push(DATA_ABRSM_LRSM,'ABRSM Diploma','LRSM','LRSM','Diploma');
+  if (typeof DATA_ABRSM_FRSM!=='undefined') push(DATA_ABRSM_FRSM,'ABRSM Diploma','FRSM','FRSM','Diploma');
+
+  // Trinity
+  const trinity = [
+    [typeof DATA_TRINITY_INITIAL!=='undefined'?DATA_TRINITY_INITIAL:null,'Trinity','Initial','Initial'],
+    [typeof DATA_TRINITY_G1!=='undefined'?DATA_TRINITY_G1:null,'Trinity','G1','Grade 1'],
+    [typeof DATA_TRINITY_G2!=='undefined'?DATA_TRINITY_G2:null,'Trinity','G2','Grade 2'],
+    [typeof DATA_TRINITY_G3!=='undefined'?DATA_TRINITY_G3:null,'Trinity','G3','Grade 3'],
+    [typeof DATA_TRINITY_G4!=='undefined'?DATA_TRINITY_G4:null,'Trinity','G4','Grade 4'],
+    [typeof DATA_TRINITY_G5!=='undefined'?DATA_TRINITY_G5:null,'Trinity','G5','Grade 5'],
+    [typeof DATA_TRINITY_G6!=='undefined'?DATA_TRINITY_G6:null,'Trinity','G6','Grade 6'],
+    [typeof DATA_TRINITY_G7!=='undefined'?DATA_TRINITY_G7:null,'Trinity','G7','Grade 7'],
+    [typeof DATA_TRINITY_G8!=='undefined'?DATA_TRINITY_G8:null,'Trinity','G8','Grade 8'],
+  ];
+  trinity.forEach(([d,s,k,l]) => push(d,s,k,l,'Graded'));
+  if (typeof DATA_TRINITY_ATCL!=='undefined') push(DATA_TRINITY_ATCL,'Trinity Diploma','ATCL','ATCL','Diploma');
+  if (typeof DATA_TRINITY_LTCL!=='undefined') push(DATA_TRINITY_LTCL,'Trinity Diploma','LTCL','LTCL','Diploma');
+  if (typeof DATA_TRINITY_FTCL!=='undefined') push(DATA_TRINITY_FTCL,'Trinity Diploma','FTCL','FTCL','Diploma');
+
+  return rows;
+}
+
+const CORPUS = buildCorpus();
+
+/* ─── Config ─── */
+const SYLLABUSES = [
+  { id:'AMEB', label:'🇦🇺 AMEB', desc:'Australian Music Examinations Board', color:'#4f46e5' },
+  { id:'ABRSM', label:'🇬🇧 ABRSM', desc:'Associated Board of the Royal Schools of Music', color:'#7c3aed' },
+  { id:'Trinity', label:'🎓 Trinity', desc:'Trinity College London', color:'#b91c1c' },
+];
+
+const GRADE_OPTIONS = {
+  AMEB: [
+    { id:'Prelim', label:'Prelim' }, { id:'G1', label:'Grade 1' }, { id:'G2', label:'Grade 2' },
+    { id:'G3', label:'Grade 3' }, { id:'G4', label:'Grade 4' }, { id:'G5', label:'Grade 5' },
+    { id:'G6', label:'Grade 6' }, { id:'G7', label:'Grade 7' }, { id:'G8', label:'Grade 8' },
+    { id:'CertP', label:'CertP' }, { id:'AMusA', label:'AMusA' }, { id:'LMusA', label:'LMusA' },
+  ],
+  ABRSM: [
+    { id:'Initial', label:'Initial' }, { id:'G1', label:'Grade 1' }, { id:'G2', label:'Grade 2' },
+    { id:'G3', label:'Grade 3' }, { id:'G4', label:'Grade 4' }, { id:'G5', label:'Grade 5' },
+    { id:'G6', label:'Grade 6' }, { id:'G7', label:'Grade 7' }, { id:'G8', label:'Grade 8' },
+    { id:'LRSM', label:'LRSM' }, { id:'FRSM', label:'FRSM' },
+  ],
+  Trinity: [
+    { id:'Initial', label:'Initial' }, { id:'G1', label:'Grade 1' }, { id:'G2', label:'Grade 2' },
+    { id:'G3', label:'Grade 3' }, { id:'G4', label:'Grade 4' }, { id:'G5', label:'Grade 5' },
+    { id:'G6', label:'Grade 6' }, { id:'G7', label:'Grade 7' }, { id:'G8', label:'Grade 8' },
+    { id:'ATCL', label:'ATCL' }, { id:'LTCL', label:'LTCL' }, { id:'FTCL', label:'FTCL' },
+  ],
+};
+
+const ERAS = ['Baroque','Classical','Romantic','Modern','Contemporary'];
+const ERA_COLORS = {
+  Baroque:'#7c3aed', Classical:'#b45309', Romantic:'#be185d', Modern:'#047857', Contemporary:'#0369a1'
+};
+const ERA_BG = {
+  Baroque:'#ede9fe', Classical:'#fef3c7', Romantic:'#fce7f3', Modern:'#d1fae5', Contemporary:'#e0f2fe'
+};
+
+const CHARACTERS = [
+  { id:'technical', label:'🎯 Technical', desc:'Loves precision and challenge' },
+  { id:'expressive', label:'🎭 Expressive', desc:'Naturally musical and emotive' },
+  { id:'playful', label:'🎪 Playful', desc:'Responds to fun, catchy pieces' },
+  { id:'balanced', label:'⚖️ Balanced', desc:'Works well with any style' },
+];
+
+const NAT_DIVERSITY = [
+  { id:'any', label:'Any nationalities' },
+  { id:'diverse', label:'Varied nationalities preferred' },
+  { id:'western', label:'Western European focus' },
+  { id:'australian', label:'Include Australian pieces' },
+];
+
+const COMBO_SIZE = {
+  exam3: { id:'exam3', label:'Exam (3 pieces)', desc:'List A + B + C combination', count:3 },
+  exam4: { id:'exam4', label:'Exam (4 pieces)', desc:'List A + B + C + D combination', count:4 },
+  lesson4: { id:'lesson4', label:'Lesson set (4 pieces)', desc:'Varied programme for lessons', count:4 },
+  lesson6: { id:'lesson6', label:'Lesson set (6 pieces)', desc:'Broader lesson programme', count:6 },
+};
+
+/* ─── Recommendation engine ─── */
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function scorepiece(p, prefs) {
+  let score = 0;
+  const reasons = [];
+
+  // Era preference
+  if (prefs.eras.length > 0 && prefs.eras.includes(p.era)) {
+    score += 30;
+    reasons.push({ label: p.era, icon: '🕰️', bg: ERA_BG[p.era]||'#f1f5f9', color: ERA_COLORS[p.era]||'#475569' });
+  }
+
+  // Character alignment
+  const focus = (p.focus||[]).join(' ').toLowerCase();
+  if (prefs.character === 'technical') {
+    const techWords = ['finger','scale','arpeggio','technical','velocity','dexterity','agility','precision','rhythm','hand','independence','coordination'];
+    const match = techWords.find(w => focus.includes(w));
+    if (match) { score += 25; reasons.push({ label:'Technical focus', icon:'🎯', bg:'#f0fdf4', color:'#166534' }); }
+  }
+  if (prefs.character === 'expressive') {
+    const expWords = ['cantabile','lyrical','expressive','phrasing','voicing','tone','singing','melodic','romantic'];
+    const match = expWords.find(w => focus.includes(w));
+    if (match) { score += 25; reasons.push({ label:'Expressive depth', icon:'🎭', bg:'#fdf4ff', color:'#7e22ce' }); }
+  }
+  if (prefs.character === 'playful') {
+    const funWords = ['dance','character','humour','playful','wit','energetic','rhythmic drive','jazz','swing'];
+    const match = funWords.find(w => focus.includes(w));
+    if (match) { score += 25; reasons.push({ label:'Student appeal', icon:'🎪', bg:'#fff7ed', color:'#c2410c' }); }
+  }
+
+  // Nationality preference
+  const nat = (p.nat||'').toLowerCase();
+  if (prefs.natDiversity === 'australian' && nat === 'australian') {
+    score += 20;
+    reasons.push({ label:'Australian', icon:'🇦🇺', bg:'#fffbeb', color:'#92400e' });
+  }
+  if (prefs.natDiversity === 'western' && ['german','french','austrian','english','italian','polish','russian','czech','spanish','norwegian','hungarian'].includes(nat)) {
+    score += 10;
+  }
+
+  // Small random factor for variety
+  score += Math.random() * 15;
+
+  return { ...p, _score: score, _reasons: reasons };
+}
+
+function pickByList(pool, list) {
+  const listPieces = pool.filter(p => p.l === list);
+  if (!listPieces.length) return null;
+  return listPieces.sort((a,b) => b._score - a._score)[0];
+}
+
+function generateCombination(corpus, prefs, seed) {
+  // Filter to selected syllabus + grade
+  const pool = corpus.filter(p => {
+    const sylOk = p._syllabus === prefs.syllabus || p._syllabus === prefs.syllabus + ' Diploma';
+    const gradeOk = p._gradeKey === prefs.grade;
+    return sylOk && gradeOk;
+  });
+
+  if (!pool.length) return null;
+
+  // Score all
+  const scored = shuffle(pool).map(p => scorepiece(p, prefs));
+
+  const comboType = prefs.comboType;
+  let selected = [];
+
+  if (comboType === 'exam3') {
+    // Pick one from A, one from B, one from C
+    const lists = ['A','B','C'];
+    for (const list of lists) {
+      const pick = pickByList(scored, list);
+      if (pick) selected.push({ ...pick, _listLabel: 'List ' + list });
+    }
+    // If no lists exist (open pool), pick top 3 with era diversity
+    if (selected.length < 2) {
+      selected = pickDiverse(scored, 3);
+    }
+  } else if (comboType === 'exam4') {
+    const lists = ['A','B','C','D'];
+    for (const list of lists) {
+      const pick = pickByList(scored, list);
+      if (pick) selected.push({ ...pick, _listLabel: 'List ' + list });
+    }
+    if (selected.length < 2) {
+      selected = pickDiverse(scored, 4);
+    }
+  } else if (comboType === 'lesson4') {
+    selected = pickDiverse(scored, 4);
+  } else {
+    selected = pickDiverse(scored, 6);
+  }
+
+  return selected;
+}
+
+function pickDiverse(scored, count) {
+  const result = [];
+  const usedEras = new Set();
+  const usedNats = new Set();
+
+  // Sort by score
+  const sorted = [...scored].sort((a,b) => b._score - a._score);
+
+  // First: pick highest scorer
+  if (sorted.length) { result.push(sorted[0]); usedEras.add(sorted[0].era); usedNats.add(sorted[0].nat); }
+
+  // Then pick with era/nat diversity bonus
+  for (const p of sorted) {
+    if (result.length >= count) break;
+    if (result.some(r => r.c === p.c && r.t === p.t)) continue;
+    const newEra = !usedEras.has(p.era);
+    const newNat = !usedNats.has(p.nat);
+    const bonus = (newEra ? 20 : 0) + (newNat ? 10 : 0);
+    p._diversityBonus = bonus;
+    result.push(p);
+    usedEras.add(p.era);
+    usedNats.add(p.nat);
+  }
+
+  // Fill remaining if needed
+  for (const p of sorted) {
+    if (result.length >= count) break;
+    if (!result.some(r => r.c === p.c && r.t === p.t)) result.push(p);
+  }
+
+  return result;
+}
+
+/* ─── Chip component ─── */
+function Chip({ label, selected, onClick, color, extraClass='', desc }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`chip ${selected ? 'selected' : ''} ${extraClass}`}
+      style={selected && color ? { background: color, borderColor: color } : {}}
+      title={desc||''}
+    >
+      {label}
+    </button>
+  );
+}
+
+/* ─── Result card ─── */
+function ResultCard({ piece, index, comboType }) {
+  const ytUrl = 'https://www.youtube.com/results?search_query=' + encodeURIComponent((piece.c||'').split(',')[0] + ' ' + piece.t);
+  const sheetUrl = 'https://www.google.com/search?q=' + encodeURIComponent((piece.c||'').split(',')[0] + ' ' + piece.t + ' sheet music');
+
+  const listLabel = piece._listLabel;
+  const listColors = { 'List A':'#1d4ed8','List B':'#6d28d9','List C':'#be185d','List D':'#0f766e' };
+  const eraColor = ERA_COLORS[piece.era] || '#475569';
+  const eraBg = ERA_BG[piece.era] || '#f1f5f9';
+
+  return (
+    <div className="result-card fade-in" style={{ marginBottom: 12 }}>
+      <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
+        {/* Number */}
+        <div style={{
+          width:28, height:28, borderRadius:'50%', background:'#4f46e5', color:'#fff',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          fontSize:12, fontWeight:800, flexShrink:0, marginTop:1
+        }}>
+          {index + 1}
+        </div>
+        <div style={{ flex:1, minWidth:0 }}>
+          {/* List + era badges */}
+          <div style={{ display:'flex', flexWrap:'wrap', gap:5, marginBottom:6 }}>
+            {listLabel && (
+              <span style={{
+                background: listColors[listLabel]||'#4f46e5', color:'#fff',
+                fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:10
+              }}>{listLabel}</span>
+            )}
+            <span style={{ background:eraBg, color:eraColor, fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:10 }}>
+              {piece.era}
+            </span>
+            {piece.nat && (
+              <span style={{ background:'#f1f5f9', color:'#64748b', fontSize:10, fontWeight:600, padding:'2px 8px', borderRadius:10 }}>
+                {piece.nat}
+              </span>
+            )}
+          </div>
+
+          {/* Composer + title */}
+          <div style={{ fontWeight:700, fontSize:13, color:'#b91c1c', marginBottom:2 }}>{piece.c}</div>
+          <div style={{ fontSize:13, color:'#374151', marginBottom:8 }}>{piece.t}</div>
+
+          {/* Why this piece */}
+          {piece._reasons && piece._reasons.length > 0 && (
+            <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginBottom:8 }}>
+              {piece._reasons.map((r,i) => (
+                <span key={i} className="reason-badge" style={{ background:r.bg, color:r.color }}>
+                  <span>{r.icon}</span> {r.label}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Focus tags */}
+          {piece.focus && piece.focus.length > 0 && (
+            <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginBottom:10 }}>
+              {piece.focus.map((f,i) => (
+                <span key={i} className="focus-tag">{f}</span>
+              ))}
+            </div>
+          )}
+
+          {/* Action links */}
+          <div style={{ display:'flex', gap:8 }}>
+            <a href={ytUrl} target="_blank" rel="noopener"
+              style={{ background:'#fee2e2', color:'#b91c1c', fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:8, textDecoration:'none' }}>
+              ▶ Listen
+            </a>
+            <a href={sheetUrl} target="_blank" rel="noopener"
+              style={{ background:'#f0fdf4', color:'#15803d', fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:8, textDecoration:'none' }}>
+              ♩ Score
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Main App ─── */
+function App() {
+  // Form state
+  const [step, setStep] = useState(0); // 0=syllabus,1=grade,2=combo,3=character,4=eras,5=nat,6=results
+  const [syllabus, setSyllabus] = useState(null);
+  const [grade, setGrade] = useState(null);
+  const [comboType, setComboType] = useState(null);
+  const [character, setCharacter] = useState(null);
+  const [eras, setEras] = useState([]);
+  const [natDiversity, setNatDiversity] = useState('any');
+  const [results, setResults] = useState(null);
+  const [seed, setSeed] = useState(0);
+
+  const TOTAL_STEPS = 6;
+  const progress = Math.round((step / TOTAL_STEPS) * 100);
+
+  const gradeOptions = syllabus ? GRADE_OPTIONS[syllabus] || [] : [];
+
+  // Diploma grades have different combo types
+  const isDiploma = grade && !['Prelim','Initial','G1','G2','G3','G4','G5','G6','G7','G8'].includes(grade);
+
+  const comboOptions = isDiploma
+    ? [
+        { id:'lesson4', label:'4-piece programme', desc:'Varied selection for a diploma programme', count:4 },
+        { id:'lesson6', label:'6-piece programme', desc:'Broader diploma programme exploration', count:6 },
+      ]
+    : Object.values(COMBO_SIZE);
+
+  function toggleEra(era) {
+    setEras(prev => prev.includes(era) ? prev.filter(e => e !== era) : [...prev, era]);
+  }
+
+  function generate() {
+    const prefs = { syllabus, grade, comboType, character, eras, natDiversity };
+    const combo = generateCombination(CORPUS, prefs, seed);
+    setResults(combo);
+    setStep(6);
+  }
+
+  function regenerate() {
+    setSeed(s => s + 1);
+    const prefs = { syllabus, grade, comboType, character, eras, natDiversity };
+    const combo = generateCombination(CORPUS, prefs, seed + 1);
+    setResults(combo);
+  }
+
+  function reset() {
+    setSyllabus(null); setGrade(null); setComboType(null);
+    setCharacter(null); setEras([]); setNatDiversity('any');
+    setResults(null); setStep(0);
+  }
+
+  function canAdvance() {
+    if (step === 0) return !!syllabus;
+    if (step === 1) return !!grade;
+    if (step === 2) return !!comboType;
+    if (step === 3) return !!character;
+    if (step === 4) return true; // eras optional
+    if (step === 5) return true;
+    return false;
+  }
+
+  const syllabusColor = { AMEB:'#4f46e5', ABRSM:'#7c3aed', Trinity:'#b91c1c' };
+  const accentColor = syllabus ? syllabusColor[syllabus] : '#4f46e5';
+
+  return (
+    <div style={{ minHeight:'100vh', background:'#f8fafc' }}>
+      {/* Header */}
+      <div style={{
+        background: `linear-gradient(135deg, ${accentColor} 0%, #1e293b 100%)`,
+        padding:'20px 20px 24px'
+      }}>
+        <a href="index.html" style={{ color:'rgba(255,255,255,0.7)', fontSize:12, textDecoration:'none', display:'block', marginBottom:10 }}>← Piano Butler</a>
+        <h1 style={{ color:'#fff', fontSize:22, fontWeight:800, margin:'0 0 4px' }}>🎹 Repertoire Recommender</h1>
+        <p style={{ color:'rgba(255,255,255,0.75)', fontSize:13, margin:'0 0 16px' }}>
+          Answer a few questions and get a personalised programme suggestion
+        </p>
+        {/* Progress bar */}
+        {step < 6 && (
+          <div className="progress-bar">
+            <div className="progress-fill" style={{ width: progress + '%' }}></div>
+          </div>
+        )}
+      </div>
+
+      <div style={{ maxWidth:640, margin:'0 auto', padding:'24px 16px 80px' }}>
+
+        {/* ── STEP 0: Syllabus ── */}
+        {step === 0 && (
+          <div className="fade-in">
+            <h2 style={{ fontSize:17, fontWeight:700, color:'#1e293b', marginBottom:6 }}>Which syllabus?</h2>
+            <p style={{ fontSize:13, color:'#64748b', marginBottom:18 }}>Select the exam board for this student.</p>
+            <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:24 }}>
+              {SYLLABUSES.map(s => (
+                <button key={s.id} onClick={() => { setSyllabus(s.id); setGrade(null); }}
+                  style={{
+                    padding:'14px 18px', borderRadius:12, border:'2px solid',
+                    borderColor: syllabus===s.id ? s.color : '#e2e8f0',
+                    background: syllabus===s.id ? s.color+'11' : '#fff',
+                    cursor:'pointer', textAlign:'left', transition:'all 0.15s'
+                  }}>
+                  <div style={{ fontSize:15, fontWeight:700, color: syllabus===s.id ? s.color : '#1e293b' }}>{s.label}</div>
+                  <div style={{ fontSize:12, color:'#64748b', marginTop:2 }}>{s.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 1: Grade ── */}
+        {step === 1 && (
+          <div className="fade-in">
+            <h2 style={{ fontSize:17, fontWeight:700, color:'#1e293b', marginBottom:6 }}>Which grade?</h2>
+            <p style={{ fontSize:13, color:'#64748b', marginBottom:18 }}>
+              Select the student's current exam grade.
+            </p>
+            <div className="chip-group" style={{ marginBottom:24 }}>
+              {gradeOptions.map(g => (
+                <Chip key={g.id} label={g.label} selected={grade===g.id}
+                  onClick={() => setGrade(g.id)} color={accentColor} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 2: Combination type ── */}
+        {step === 2 && (
+          <div className="fade-in">
+            <h2 style={{ fontSize:17, fontWeight:700, color:'#1e293b', marginBottom:6 }}>What kind of programme?</h2>
+            <p style={{ fontSize:13, color:'#64748b', marginBottom:18 }}>
+              How will these pieces be used?
+            </p>
+            <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:24 }}>
+              {comboOptions.map(c => (
+                <button key={c.id} onClick={() => setComboType(c.id)}
+                  style={{
+                    padding:'14px 18px', borderRadius:12, border:'2px solid',
+                    borderColor: comboType===c.id ? accentColor : '#e2e8f0',
+                    background: comboType===c.id ? accentColor+'11' : '#fff',
+                    cursor:'pointer', textAlign:'left', transition:'all 0.15s'
+                  }}>
+                  <div style={{ fontSize:14, fontWeight:700, color: comboType===c.id ? accentColor : '#1e293b' }}>{c.label}</div>
+                  <div style={{ fontSize:12, color:'#64748b', marginTop:2 }}>{c.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 3: Character ── */}
+        {step === 3 && (
+          <div className="fade-in">
+            <h2 style={{ fontSize:17, fontWeight:700, color:'#1e293b', marginBottom:6 }}>Student personality?</h2>
+            <p style={{ fontSize:13, color:'#64748b', marginBottom:18 }}>
+              This helps match pieces to the student's natural strengths.
+            </p>
+            <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:24 }}>
+              {CHARACTERS.map(ch => (
+                <button key={ch.id} onClick={() => setCharacter(ch.id)}
+                  style={{
+                    padding:'14px 18px', borderRadius:12, border:'2px solid',
+                    borderColor: character===ch.id ? accentColor : '#e2e8f0',
+                    background: character===ch.id ? accentColor+'11' : '#fff',
+                    cursor:'pointer', textAlign:'left', transition:'all 0.15s'
+                  }}>
+                  <div style={{ fontSize:14, fontWeight:700, color: character===ch.id ? accentColor : '#1e293b' }}>{ch.label}</div>
+                  <div style={{ fontSize:12, color:'#64748b', marginTop:2 }}>{ch.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 4: Era preferences ── */}
+        {step === 4 && (
+          <div className="fade-in">
+            <h2 style={{ fontSize:17, fontWeight:700, color:'#1e293b', marginBottom:6 }}>Era preferences?</h2>
+            <p style={{ fontSize:13, color:'#64748b', marginBottom:18 }}>
+              Select any eras you'd especially like included. <em>Optional — skip to get a balanced mix.</em>
+            </p>
+            <div className="chip-group" style={{ marginBottom:24 }}>
+              {ERAS.map(era => (
+                <button key={era} onClick={() => toggleEra(era)}
+                  className={`chip era-chip era-${era.toLowerCase()}`}
+                  style={eras.includes(era)
+                    ? { background:ERA_COLORS[era], borderColor:ERA_COLORS[era], color:'#fff' }
+                    : { borderColor:'#e2e8f0', color:'#475569' }
+                  }>
+                  {era}
+                </button>
+              ))}
+            </div>
+            {eras.length > 0 && (
+              <p style={{ fontSize:12, color:'#64748b', marginBottom:8 }}>
+                Selected: {eras.join(', ')}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* ── STEP 5: Nationality ── */}
+        {step === 5 && (
+          <div className="fade-in">
+            <h2 style={{ fontSize:17, fontWeight:700, color:'#1e293b', marginBottom:6 }}>Nationality variety?</h2>
+            <p style={{ fontSize:13, color:'#64748b', marginBottom:18 }}>
+              Do you have a preference for how diverse the repertoire is by composer nationality?
+            </p>
+            <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:24 }}>
+              {NAT_DIVERSITY.map(n => (
+                <button key={n.id} onClick={() => setNatDiversity(n.id)}
+                  style={{
+                    padding:'12px 18px', borderRadius:12, border:'2px solid',
+                    borderColor: natDiversity===n.id ? accentColor : '#e2e8f0',
+                    background: natDiversity===n.id ? accentColor+'11' : '#fff',
+                    cursor:'pointer', textAlign:'left', transition:'all 0.15s'
+                  }}>
+                  <div style={{ fontSize:14, fontWeight:600, color: natDiversity===n.id ? accentColor : '#1e293b' }}>{n.label}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 6: Results ── */}
+        {step === 6 && (
+          <div className="fade-in">
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+              <div>
+                <h2 style={{ fontSize:17, fontWeight:700, color:'#1e293b', margin:'0 0 2px' }}>Your programme</h2>
+                <p style={{ fontSize:12, color:'#64748b', margin:0 }}>
+                  {syllabus} · {grade} · {COMBO_SIZE[comboType]?.label || comboType}
+                </p>
+              </div>
+              <button onClick={regenerate}
+                style={{
+                  padding:'8px 14px', borderRadius:10, border:'1.5px solid #e2e8f0',
+                  background:'#fff', cursor:'pointer', fontSize:12, fontWeight:700, color:'#4f46e5'
+                }}>
+                🔀 Try again
+              </button>
+            </div>
+
+            {results && results.length > 0 ? (
+              results.map((p, i) => <ResultCard key={i} piece={p} index={i} comboType={comboType} />)
+            ) : (
+              <div style={{ textAlign:'center', padding:40, color:'#94a3b8', fontSize:14 }}>
+                Not enough pieces found for this combination.<br/>
+                <button onClick={reset} style={{ marginTop:12, padding:'8px 20px', borderRadius:10, border:'none', background:'#4f46e5', color:'#fff', cursor:'pointer', fontWeight:700 }}>
+                  Try different options
+                </button>
+              </div>
+            )}
+
+            {results && results.length > 0 && (
+              <div style={{ marginTop:24, display:'flex', gap:10, flexWrap:'wrap' }}>
+                <button onClick={reset}
+                  style={{
+                    flex:1, padding:'12px', borderRadius:12, border:'1.5px solid #e2e8f0',
+                    background:'#fff', cursor:'pointer', fontSize:13, fontWeight:700, color:'#475569'
+                  }}>
+                  ← Start over
+                </button>
+                <button onClick={regenerate}
+                  style={{
+                    flex:2, padding:'12px', borderRadius:12, border:'none',
+                    background: accentColor, cursor:'pointer', fontSize:13, fontWeight:700, color:'#fff'
+                  }}>
+                  🔀 Generate another combination
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Navigation buttons ── */}
+        {step < 6 && (
+          <div style={{ display:'flex', gap:10 }}>
+            {step > 0 && (
+              <button onClick={() => setStep(s => s - 1)}
+                style={{
+                  padding:'12px 20px', borderRadius:12, border:'1.5px solid #e2e8f0',
+                  background:'#fff', cursor:'pointer', fontSize:13, fontWeight:600, color:'#475569'
+                }}>
+                ← Back
+              </button>
+            )}
+            {step < 5 ? (
+              <button onClick={() => setStep(s => s + 1)}
+                disabled={!canAdvance()}
+                style={{
+                  flex:1, padding:'12px', borderRadius:12, border:'none',
+                  background: canAdvance() ? accentColor : '#e2e8f0',
+                  color: canAdvance() ? '#fff' : '#94a3b8',
+                  cursor: canAdvance() ? 'pointer' : 'not-allowed',
+                  fontSize:13, fontWeight:700
+                }}>
+                Continue →
+              </button>
+            ) : (
+              <button onClick={generate}
+                style={{
+                  flex:1, padding:'12px', borderRadius:12, border:'none',
+                  background: accentColor, color:'#fff',
+                  cursor:'pointer', fontSize:13, fontWeight:700
+                }}>
+                🎹 Get recommendations
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Step dots */}
+        {step < 6 && (
+          <div style={{ display:'flex', justifyContent:'center', gap:6, marginTop:20 }}>
+            {Array.from({length:6}).map((_,i) => (
+              <div key={i} className={`step-dot ${i < step ? 'done' : i === step ? 'active' : ''}`}></div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
