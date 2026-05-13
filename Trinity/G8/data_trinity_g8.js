@@ -1,0 +1,71 @@
+// Trinity College London Piano — Grade 8
+// 2023 Syllabus | Group A + Group B (candidates must choose at least one from each group)
+// Total: 59 pieces (Group A: 25 | Group B: 34)
+// Source: trinitycollege.com/piano-repertoire
+
+const DATA_TRINITY_G8 = [
+  // ── GROUP A ──────────────────────────────────────────────────────────────────
+  // Baroque / Classical / Early Romantic (25 pieces)
+  { "grp": "A", "c": "BACH, J.S.", "t": "Prelude and Fugue in C minor, BWV 847 (Well-Tempered Clavier, Book 1)", "nat": "German", "era": "Baroque", "focus": ["Fugue technique", "Counterpoint", "Harmonic awareness"] },
+  { "grp": "A", "c": "BACH, J.S.", "t": "Partita No. 1 in B flat, BWV 825: Prelude", "nat": "German", "era": "Baroque", "focus": ["Baroque partita", "Flowing figurations", "Technical fluency"] },
+  { "grp": "A", "c": "BARTÓK, B.", "t": "Allegro barbaro, Sz. 49", "nat": "Hungarian", "era": "Modern", "focus": ["Percussive technique", "Folk rhythm", "Dynamic power"] },
+  { "grp": "A", "c": "BEETHOVEN, L. van", "t": "Sonata in G minor, Op. 49 No. 1 (1st mvt)", "nat": "German", "era": "Classical", "focus": ["Classical sonata form", "Expressive ornament", "Dynamic contrast"] },
+  { "grp": "A", "c": "CAINE, U.", "t": "Baroque Fantasia (from Recital Collection for Piano, Grade 8)", "nat": "American", "era": "Contemporary", "focus": ["Neo-Baroque style", "Counterpoint", "Expressive playing"] },
+  { "grp": "A", "c": "COLLEY, B.", "t": "Sonatina (from Recital Collection for Piano, Grade 8)", "nat": "English", "era": "Contemporary", "focus": ["Contemporary sonatina", "Clear phrasing", "Dynamic contrast"] },
+  { "grp": "A", "c": "CZERNY, C.", "t": "Study, Op. 740 No. 1", "nat": "Austrian", "era": "Classical", "focus": ["Technical fluency", "Rapid figurations", "Even tone"] },
+  { "grp": "A", "c": "DUPHLY, J.", "t": "La Pothoüin (from Pièces de clavecin, 3rd Book)", "nat": "French", "era": "Baroque", "focus": ["French Baroque style", "Ornamentation", "Delicate touch"] },
+  { "grp": "A", "c": "FITZGERALD, W.", "t": "Prelude (from Recital Collection for Piano, Grade 8)", "nat": "English", "era": "Contemporary", "focus": ["Contemporary prelude", "Lyrical character", "Simple texture"] },
+  { "grp": "A", "c": "HANDEL, G.F.", "t": "Suite in B flat, HWV 434: Chaconne", "nat": "German", "era": "Baroque", "focus": ["Ground bass variations", "Technical development", "Ornamentation"] },
+  { "grp": "A", "c": "HAYDN, J.", "t": "Sonata in E flat, Hob. XVI/52 (1st mvt)", "nat": "Austrian", "era": "Classical", "focus": ["Late Classical style", "Brilliant passage work", "Dynamic contrast"] },
+  { "grp": "A", "c": "HAYDN, J.", "t": "Sonata in C minor, Hob. XVI/20 (1st mvt)", "nat": "Austrian", "era": "Classical", "focus": ["Dramatic character", "Classical form", "Expressive playing"] },
+  { "grp": "A", "c": "HAYDN, J.", "t": "Sonata in D, Hob. XVI/42 (1st mvt)", "nat": "Austrian", "era": "Classical", "focus": ["Classical sonata", "Ornament", "Clear phrasing"] },
+  { "grp": "A", "c": "HENGEVELD, G.", "t": "Sonatina in G (1st mvt)", "nat": "Dutch", "era": "Modern", "focus": ["Sonatina form", "Clear phrasing", "Technical development"] },
+  { "grp": "A", "c": "HINDEMITH, P.", "t": "Interlude (from Suite '1922', Op. 26)", "nat": "German", "era": "Modern", "focus": ["Neo-Classical style", "Polytonality", "Rhythmic drive"] },
+  { "grp": "A", "c": "KUHLAU, F.", "t": "Sonatina in C, Op. 55 No. 3 (1st mvt)", "nat": "German", "era": "Classical", "focus": ["Classical sonatina", "Scale technique", "Clear phrasing"] },
+  { "grp": "A", "c": "LI, Y.", "t": "Spring Festival Overture (simplified arr.)", "nat": "Chinese", "era": "Contemporary", "focus": ["Chinese folk style", "Festive character", "Pentatonic melody"] },
+  { "grp": "A", "c": "DE MONTGEROULT, H.", "t": "Study in C minor, Op. 9 No. 44", "nat": "French", "era": "Classical", "focus": ["Technical development", "Expressive phrasing", "Lyrical character"] },
+  { "grp": "A", "c": "MORI, R. / KIYOOKA, H. (arr.)", "t": "Sakura Sakura (arr.)", "nat": "Japanese", "era": "Contemporary", "focus": ["Japanese folk melody", "Pentatonic character", "Atmospheric playing"] },
+  { "grp": "A", "c": "MOZART, W.A.", "t": "Sonata in C, K. 309 (1st mvt)", "nat": "Austrian", "era": "Classical", "focus": ["Classical sonata form", "Brilliant passage work", "Ornamentation"] },
+  { "grp": "A", "c": "POULENC, F.", "t": "Improvisations No. 3 in B minor", "nat": "French", "era": "Modern", "focus": ["French style", "Lyrical melody", "Expressive phrasing"] },
+  { "grp": "A", "c": "RAMEAU, J.-P.", "t": "Les Cyclopes (from Pièces de clavecin, 2nd Book)", "nat": "French", "era": "Baroque", "focus": ["French Baroque style", "Ornamentation", "Dynamic power"] },
+  { "grp": "A", "c": "SCARLATTI, D.", "t": "Sonata in D minor, K. 141", "nat": "Italian", "era": "Baroque", "focus": ["Baroque sonata", "Rapid repetitions", "Technical agility"] },
+  { "grp": "A", "c": "SCARLATTI, D.", "t": "Sonata in D, K. 430", "nat": "Italian", "era": "Baroque", "focus": ["Baroque style", "Brilliant passage work", "Ornamentation"] },
+  { "grp": "A", "c": "SCHUBERT, F.", "t": "Impromptu in E flat, Op. 90 No. 2", "nat": "Austrian", "era": "Romantic", "focus": ["Continuous figurations", "Lyrical melody", "Technical fluency"] },
+
+  // ── GROUP B ──────────────────────────────────────────────────────────────────
+  // Romantic / 20th Century / Contemporary / Popular (34 pieces)
+  { "grp": "B", "c": "BARTÓK, B.", "t": "Romanian Folk Dance No. 2 (Sash Dance)", "nat": "Hungarian", "era": "Modern", "focus": ["Folk character", "Modal harmony", "Rhythmic drive"] },
+  { "grp": "B", "c": "BEACH, A.", "t": "Dreaming, Op. 15 No. 3", "nat": "American", "era": "Romantic", "focus": ["Lyrical melody", "Romantic phrasing", "Simple texture"] },
+  { "grp": "B", "c": "BOULANGER, L.", "t": "D'un vieux jardin", "nat": "French", "era": "Modern", "focus": ["Impressionist colour", "Atmospheric playing", "Lyrical melody"] },
+  { "grp": "B", "c": "BRAHMS, J.", "t": "Intermezzo in A, Op. 118 No. 2", "nat": "German", "era": "Romantic", "focus": ["Romantic phrasing", "Inner voice balance", "Lyrical melody"] },
+  { "grp": "B", "c": "BUTLER, D.", "t": "Jazz Suite (from Recital Collection for Piano, Grade 8)", "nat": "English", "era": "Contemporary", "focus": ["Jazz style", "Swing character", "Expressive playing"] },
+  { "grp": "B", "c": "CAINE, U.", "t": "Blues Concerto (from Recital Collection for Piano, Grade 8)", "nat": "American", "era": "Contemporary", "focus": ["Blues style", "Jazz character", "Expressive playing"] },
+  { "grp": "B", "c": "CHOI, S.H.", "t": "Korean Folk Song (arr.)", "nat": "Korean", "era": "Contemporary", "focus": ["Korean folk melody", "Simple arrangement", "Lyrical character"] },
+  { "grp": "B", "c": "CHOPIN, F.", "t": "Nocturne in E flat, Op. 9 No. 2", "nat": "Polish", "era": "Romantic", "focus": ["Singing melody", "Ornamental variation", "Romantic phrasing"] },
+  { "grp": "B", "c": "CHOPIN, F.", "t": "Waltz in A flat, Op. 69 No. 1 (posth.)", "nat": "Polish", "era": "Romantic", "focus": ["Waltz style", "Expressive melody", "Cantabile touch"] },
+  { "grp": "B", "c": "COLERIDGE-TAYLOR, S. (arr.)", "t": "Demande et Réponse, Op. 41 No. 2 (arr.)", "nat": "English", "era": "Romantic", "focus": ["Lyrical melody", "Call and response", "Expressive phrasing"] },
+  { "grp": "B", "c": "COREA, C. (arr.)", "t": "Crystal Silence (arr.)", "nat": "American", "era": "Contemporary", "focus": ["Jazz meditation", "Atmospheric playing", "Chord voicing"] },
+  { "grp": "B", "c": "DEBUSSY, C.", "t": "Clair de lune (from Suite bergamasque)", "nat": "French", "era": "Romantic", "focus": ["Impressionist colour", "Atmospheric playing", "Tonal balance"] },
+  { "grp": "B", "c": "DEBUSSY, C.", "t": "Arabesque No. 1", "nat": "French", "era": "Romantic", "focus": ["Flowing figurations", "Delicate touch", "Impressionist colour"] },
+  { "grp": "B", "c": "DRING, M.", "t": "Tarantella", "nat": "English", "era": "Modern", "focus": ["Dance character", "Rapid triplets", "Rhythmic drive"] },
+  { "grp": "B", "c": "EDIS, V.", "t": "Nocturne (from Recital Collection for Piano, Grade 8)", "nat": "English", "era": "Contemporary", "focus": ["Night character", "Lyrical melody", "Atmospheric playing"] },
+  { "grp": "B", "c": "FAURÉ, G.", "t": "Nocturne No. 1, Op. 33 No. 1", "nat": "French", "era": "Romantic", "focus": ["Lyrical melody", "Romantic phrasing", "Night character"] },
+  { "grp": "B", "c": "FOLDS, B. (arr.)", "t": "The Luckiest (arr.)", "nat": "American", "era": "Contemporary", "focus": ["Pop ballad", "Lyrical melody", "Simple arrangement"] },
+  { "grp": "B", "c": "GERSHWIN, G.", "t": "The Man I Love (arr.)", "nat": "American", "era": "Modern", "focus": ["Jazz standard", "Lyrical melody", "Chord voicing"] },
+  { "grp": "B", "c": "GRANADOS, E.", "t": "Spanish Dance No. 2 (Oriental)", "nat": "Spanish", "era": "Romantic", "focus": ["Spanish character", "Guitar imitation", "Expressive phrasing"] },
+  { "grp": "B", "c": "HAYAZAKI, K. (arr.)", "t": "Departures (from film, arr.)", "nat": "Japanese", "era": "Contemporary", "focus": ["Film music", "Lyrical melody", "Atmospheric playing"] },
+  { "grp": "B", "c": "IRELAND, J.", "t": "The Island Spell (from Decorations)", "nat": "English", "era": "Modern", "focus": ["Impressionist colour", "Atmospheric playing", "Tonal sensitivity"] },
+  { "grp": "B", "c": "JANÁČEK, L.", "t": "On the Overgrown Path: Our Evenings", "nat": "Czech", "era": "Modern", "focus": ["Folk-influenced character", "Atmospheric playing", "Lyrical melody"] },
+  { "grp": "B", "c": "JENNINGS, C.", "t": "Toccata (from Recital Collection for Piano, Grade 8)", "nat": "English", "era": "Contemporary", "focus": ["Staccato technique", "Rhythmic drive", "Bright character"] },
+  { "grp": "B", "c": "JOHN, E. (arr.)", "t": "Rocket Man (arr.)", "nat": "English", "era": "Contemporary", "focus": ["Pop style", "Lyrical melody", "Simple arrangement"] },
+  { "grp": "B", "c": "JOPLIN, S.", "t": "Maple Leaf Rag", "nat": "American", "era": "Romantic", "focus": ["Ragtime style", "Syncopation", "Clear structure"] },
+  { "grp": "B", "c": "MA, S. / ZHANG, Y. (arr.)", "t": "Butterfly Lovers (arr.)", "nat": "Chinese", "era": "Contemporary", "focus": ["Chinese melody", "Lyrical character", "Simple arrangement"] },
+  { "grp": "B", "c": "NYMAN, M.", "t": "The Heart Asks Pleasure First (from The Piano, arr.)", "nat": "English", "era": "Contemporary", "focus": ["Film music", "Minimalist style", "Atmospheric playing"] },
+  { "grp": "B", "c": "PEJAČEVIĆ, D.", "t": "Nocturne, Op. 50", "nat": "Croatian", "era": "Romantic", "focus": ["Night character", "Lyrical melody", "Romantic phrasing"] },
+  { "grp": "B", "c": "PETERSON, O.", "t": "Hymn to Freedom", "nat": "Canadian", "era": "Contemporary", "focus": ["Gospel-jazz style", "Expressive playing", "Lyrical melody"] },
+  { "grp": "B", "c": "POULENC, F.", "t": "Nocturne No. 1 in C", "nat": "French", "era": "Modern", "focus": ["Night character", "French style", "Lyrical melody"] },
+  { "grp": "B", "c": "SCIARRA, P.", "t": "Jazz Nocturne (from Recital Collection for Piano, Grade 8)", "nat": "Italian", "era": "Contemporary", "focus": ["Jazz nocturne", "Night character", "Expressive phrasing"] },
+  { "grp": "B", "c": "TAKE THAT (arr.)", "t": "Back for Good (arr.)", "nat": "English", "era": "Contemporary", "focus": ["Pop ballad", "Lyrical melody", "Simple arrangement"] },
+  { "grp": "B", "c": "TCHAIKOVSKY, P.", "t": "The Seasons: October (Autumn Song), Op. 37b No. 10", "nat": "Russian", "era": "Romantic", "focus": ["Lyrical melody", "Romantic phrasing", "Inner voice balance"] },
+  { "grp": "B", "c": "TURINA, J.", "t": "Sacro-Monte, Op. 55 No. 5", "nat": "Spanish", "era": "Romantic", "focus": ["Spanish character", "Flamenco style", "Expressive phrasing"] }
+];

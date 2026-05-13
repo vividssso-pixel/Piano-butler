@@ -10,8 +10,8 @@ You are the **"Piano Butler AI,"** a world-class Orchestrator and Creative Strat
 
 ## Project Overview
 
-**Piano Butler** is a public piano repertoire search tool covering AMEB, ABRSM, and AMEB Diploma syllabuses. It helps pianists and teachers:
-- Browse and filter 2,919 pieces across AMEB (Prelim–G8, Comprehensive + Leisure), ABRSM (Initial–G8), and AMEB Diploma (AMusA + LMusA)
+**Piano Butler** is a public piano repertoire search tool covering AMEB, ABRSM, Trinity College London, and Diploma syllabuses. It helps pianists and teachers:
+- Browse and filter 3,799 pieces across AMEB (Prelim–G8, Comprehensive + Leisure), ABRSM (Initial–G8), Trinity (Initial–G8), and AMEB/ABRSM Diploma
 - Search by grade, era, nationality, list (A/B/C), and focus area
 - Save favourite pieces (Magic Link login — no password required)
 - Teacher Dashboard available for studio management (deprioritized; not publicly promoted)
@@ -1021,10 +1021,76 @@ autoSuggestions    → depends on [query] — fires on keystroke for dropdown
 ### Known Issues (as of 2026-05-10 evening)
 - None active. Search is responsive.
 
-### Next Session (Teaching Lists)
-1. Upgrade My Lists → Teaching Lists: ordered sequence (drag to reorder, numbered)
-2. Per-piece teacher note ("focus on legato, 2-week goal")
-3. Grade range tag on list ("Prelim–G2")
-4. Improved share view — preserves order + notes
-5. Try creating real list: Wild Chase → Going Baroque → Malagueña — note UI friction points
-6. Homepage "Featured Lists" section (Soohyun's curated sequences)
+---
+
+### Phase 25 Updates (2026-05-13 — Trinity integration)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Trinity College London syllabus added — Initial through Grade 8 | `Trinity/` folder (18 new files) | 516 pieces scraped from trinitycollege.com 2023 syllabus. Each grade has `data_trinity_gX.js` + `piano-repertoire_trinity_gX.html` (self-contained React 18 + Tailwind). Trinity crimson theme (`#b91c1c`). Initial–G5: flat open pool (no groups). G6–G8: Group A (Baroque/Classical/early) + Group B (Romantic/Contemporary) filter tabs. Features: Era chips, Nationality dropdown, search, YouTube + Google Sheet links, Wikipedia COMPOSER_LINKS. Back-link to index.html. |
+| 2 | index.html — Trinity integration | `index.html` | Script tags for all 9 Trinity data files. `TRINITY_META` array. `buildCorpus()` now includes Trinity tagged `_syllabus:"Trinity"`. GradeGrid gains "Trinity" tab (crimson cards, links to HTML pages). Sidebar filter + mobile strip gains `🇬🇧 Trinity` option. syllabusFilter logic updated. syllabusColor updated. Piece count 3,283 → 3,799 across all meta/og/twitter/footer tags. |
+| 3 | sitemap.xml — Trinity pages added | `sitemap.xml` | All 9 Trinity URLs added (priority 0.8, monthly). |
+| 4 | admin-counts.html — Trinity integrated | `admin-counts.html` | Script tags + `TRINITY` array + `SectionTable` + grand total + Expected vs Actual row (expected 516). Grand Total target updated 3,283 → 3,799. |
+| 5 | CLAUDE.md updated | `CLAUDE.md` | Phase 25 logged. Project overview, piece counts, file structure, pending work all updated. |
+
+### Trinity Piece Counts (Phase 25)
+
+| Grade | File | Total | Format |
+|-------|------|-------|--------|
+| Initial | data_trinity_initial.js | 56 | Open pool |
+| Grade 1 | data_trinity_g1.js | 57 | Open pool |
+| Grade 2 | data_trinity_g2.js | 56 | Open pool |
+| Grade 3 | data_trinity_g3.js | 57 | Open pool |
+| Grade 4 | data_trinity_g4.js | 56 | Open pool |
+| Grade 5 | data_trinity_g5.js | 58 | Open pool |
+| Grade 6 | data_trinity_g6.js | 59 | Group A: 24, Group B: 35 |
+| Grade 7 | data_trinity_g7.js | 58 | Group A: 23, Group B: 35 |
+| Grade 8 | data_trinity_g8.js | 59 | Group A: 25, Group B: 34 |
+| **Total** | | **516** | |
+
+### Updated Piece Count Totals (as of Phase 25)
+
+| Syllabus | Count |
+|----------|-------|
+| AMEB Comprehensive (Prelim–G8) | 1,393 |
+| AMEB Piano for Leisure (Prelim–G8) | 706 |
+| AMEB Diploma — CertP | 128 |
+| AMEB Diploma — AMusA | 161 |
+| AMEB Diploma — LMusA | 226 |
+| ABRSM Initial–G8 | 433 |
+| ABRSM Diploma — LRSM | 139 |
+| ABRSM Diploma — FRSM | 97 |
+| Trinity College London Initial–G8 | 516 |
+| **Grand Total** | **3,799** |
+
+### File Structure Update (Phase 25)
+
+```
+Trinity/                              ← NEW (Phase 25)
+├── Initial/
+│   ├── data_trinity_initial.js       ← 56 pieces
+│   └── piano-repertoire_trinity_initial.html
+├── G1/ … G5/                         ← same pattern, flat pool
+├── G6/
+│   ├── data_trinity_g6.js            ← 59 pieces (Group A: 24, Group B: 35)
+│   └── piano-repertoire_trinity_g6.html  ← Group A/B tab filter
+├── G7/
+│   ├── data_trinity_g7.js            ← 58 pieces (Group A: 23, Group B: 35)
+│   └── piano-repertoire_trinity_g7.html
+└── G8/
+    ├── data_trinity_g8.js            ← 59 pieces (Group A: 25, Group B: 34)
+    └── piano-repertoire_trinity_g8.html
+```
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | git push origin main | Immediate | Deploy Phase 25 (Trinity) to GitHub Pages |
+| 2 | Teaching Lists upgrade | High | Ordered sequence, per-piece notes, grade range tag, improved share view |
+| 3 | payments.html — lesson fee management | High | Per-student fee, invoice PDF, paid/unpaid toggle. Teacher Dashboard only. |
+| 4 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL |
+| 5 | Ad integration | Medium | Google AdSense or direct piano brand deals. Requires traffic first. |
+
+### Known Issues (as of 2026-05-13)
+- None active. All 516 Trinity pieces verified by node count script.
