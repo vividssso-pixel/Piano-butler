@@ -8,7 +8,7 @@ const DATA_G4_LEISURE = [
   //  SERIES 4  (12 pieces)
   // ═══════════════════════════════════════════════════
 
-  { "l":"S4","s":"S4","c":"ANONYMOUS","t":"Allegro","nat":"","era":"Classical","key":"Variable","focus":["Classical character","Clarity","Articulation"] },
+  { "l":"S4","s":"S4","c":"ANONYMOUS","t":"Allegro","nat":"Unknown","era":"Classical","key":"Variable","focus":["Classical character","Clarity","Articulation"] },
   { "l":"S4","s":"S4","c":"ARNOLD, M.","t":"Tambo tango","nat":"British","era":"Contemporary","key":"Variable","focus":["Tango idiom","Rhythmic drive","Musical character"] },
   { "l":"S4","s":"S4","c":"BASTIEN, J.","t":"Let the good times roll","nat":"American","era":"Contemporary","key":"Variable","focus":["Blues idiom","Musical flair","Rhythmic energy"] },
   { "l":"S4","s":"S4","c":"BERENS, H.","t":"Allegro con fuoco","nat":"German","era":"Romantic","key":"Variable","focus":["Fiery character","Rhythmic drive","Technical energy"] },
