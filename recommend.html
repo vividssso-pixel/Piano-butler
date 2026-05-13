@@ -627,13 +627,20 @@ function App() {
 
   function canAdvance() {
     if (step === 0) return !!mode;
-    if (step === 1) return !!syllabus;
-    if (step === 2) return !!grade;
+    if (step === 1) return mode === 'free' ? true : !!syllabus;
+    if (step === 2) return mode === 'free' ? true : !!grade;
     if (step === 3) return !!comboType;
     if (step === 4) return !!character;
     if (step === 5) return true;
     if (step === 6) return true;
     return false;
+  }
+
+  // For free mode, step jumps: 0 → 3 → 4 → 5 → 6 → 7
+  // For exam mode, step goes: 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7
+  function nextStep() {
+    if (mode === 'free' && step === 0) { setStep(3); return; }
+    setStep(s => s + 1);
   }
 
   const syllabusColor = { AMEB:'#4f46e5', ABRSM:'#7c3aed', Trinity:'#b91c1c' };
@@ -693,7 +700,7 @@ function App() {
         )}
 
         {/* ── STEP 1: Syllabus (exam mode only) ── */}
-        {step === 1 && (
+        {step === 1 && mode === 'exam' && (
           <div className="fade-in">
             <h2 style={{ fontSize:17, fontWeight:700, color:'#1e293b', marginBottom:6 }}>Which syllabus?</h2>
             <p style={{ fontSize:13, color:'#64748b', marginBottom:18 }}>Select the exam board for this student.</p>
@@ -715,8 +722,7 @@ function App() {
         )}
 
         {/* ── STEP 2: Grade (exam mode only) ── */}
-        {/* ── STEP 2: Grade (exam mode only) ── */}
-        {step === 2 && (
+        {step === 2 && mode === 'exam' && (
           <div className="fade-in">
             <h2 style={{ fontSize:17, fontWeight:700, color:'#1e293b', marginBottom:6 }}>Which grade?</h2>
             <p style={{ fontSize:13, color:'#64748b', marginBottom:18 }}>
@@ -895,7 +901,7 @@ function App() {
               </button>
             )}
             {step < 6 ? (
-              <button onClick={() => setStep(s => s + 1)}
+              <button onClick={nextStep}
                 disabled={!canAdvance()}
                 style={{
                   flex:1, padding:'12px', borderRadius:12, border:'none',
