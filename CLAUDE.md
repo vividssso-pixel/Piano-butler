@@ -958,7 +958,7 @@ The problem piano teachers actually have:
 > "Finding pieces that are technically achievable, sound impressive, and that students will enjoy" — this relies entirely on years of personal experience and memory.
 
 ### The real value
-**Soohyun's teaching philosophy in action:**
+**Sohyun's teaching philosophy in action:**
 - Start with pieces that have clear technical goals AND student appeal (Wild Chase → Going Baroque → Malagueña)
 - Build momentum through small wins and a sense of accomplishment
 - Piece selection IS the curriculum — wrong piece = student quits
@@ -972,8 +972,8 @@ Upgrade My Lists → Teaching Lists:
 - Grade range tag on the list ("Prelim–G2")
 - Share link shows order + notes (currently notes are lost on share)
 
-**Stage 2 — Soohyun's curated lists (after Stage 1)**
-- Build 3–5 real teaching sequences from Soohyun's experience
+**Stage 2 — Sohyun's curated lists (after Stage 1)**
+- Build 3–5 real teaching sequences from Sohyun's experience
 - Show as "Featured Lists" on homepage
 - First-time visitors immediately understand the value
 
@@ -983,7 +983,7 @@ Upgrade My Lists → Teaching Lists:
 - Becomes a living resource, not just a database
 
 ### Why this works
-- Soohyun uses it herself → honest feedback loop
+- Sohyun uses it herself → honest feedback loop
 - Teacher's curated list = value for students too (pass knowledge down)
 - Community of lists = reason to come back, reason to share
 
@@ -1106,7 +1106,7 @@ Trinity/                              ← NEW (Phase 25)
 | # | Task | Priority | Notes |
 |---|------|----------|-------|
 | 1 | Teaching Lists upgrade | High | Ordered sequence (drag to reorder), per-piece teacher notes, grade range tag, share view preserving order + notes. Core "can't live without" feature. |
-| 2 | Homepage "Featured Lists" | High | Soohyun's 3–5 curated teaching sequences shown on homepage. First-time visitors immediately understand the value. |
+| 2 | Homepage "Featured Lists" | High | Sohyun's 3–5 curated teaching sequences shown on homepage. First-time visitors immediately understand the value. |
 | 3 | payments.html — lesson fee management | Medium | Per-student fee, invoice PDF, paid/unpaid toggle. Teacher Dashboard only. |
 | 4 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify |
 | 5 | Ad integration | Medium | Google AdSense application, or direct piano brand deals. Requires traffic first. |

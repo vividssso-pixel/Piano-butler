@@ -1653,19 +1653,26 @@ function App() {
         return ["All", ...Array.from(s).sort()];
     }, []);
 
-    /* ── Smart query parser ──
-       Extracts grade / era / syllabus / nationality signals from free text,
-       returns { tokens: [...remaining words], detectedGrade, detectedEra, detectedNat, detectedSyllabus }
+    /* ── Multi-token AND search ──
+       Splits query into individual words. Every token must match at least one
+       of: title, composer, nationality, era, or focus tags.
+       e.g. "bach minuet" → token "bach" AND token "minuet" must both hit.
+       e.g. "romantic french" → era match AND nationality match.
     */
     const results = useMemo(() => {
         if (!searchActive) return [];
         const q = searchQuery.toLowerCase().trim();
+        const tokens = q ? q.split(/\s+/).filter(Boolean) : [];
         return CORPUS.filter(p => {
-            const mQ = !q ||
-                p.t.toLowerCase().includes(q) ||
-                p.c.toLowerCase().includes(q) ||
-                (p.nat && p.nat.toLowerCase().includes(q)) ||
-                (p.era && p.era.toLowerCase().includes(q));
+            // Multi-token AND: every token must match at least one field
+            const mQ = tokens.length === 0 || tokens.every(tok => {
+                const focusStr = (p.focus || []).join(" ").toLowerCase();
+                return p.t.toLowerCase().includes(tok) ||
+                    p.c.toLowerCase().includes(tok) ||
+                    (p.nat && p.nat.toLowerCase().includes(tok)) ||
+                    (p.era && p.era.toLowerCase().includes(tok)) ||
+                    focusStr.includes(tok);
+            });
             const mE = eraFilter      === "All" || p.era === eraFilter;
             const mG = gradeFilter    === "All" || p._gradeKey === gradeFilter;
             const mN = natFilter      === "All" || (p.nat && p.nat.toLowerCase().includes(natFilter.toLowerCase()));
