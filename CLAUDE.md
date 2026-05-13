@@ -1082,15 +1082,35 @@ Trinity/                              ← NEW (Phase 25)
     └── piano-repertoire_trinity_g8.html
 ```
 
+---
+
+### Phase 26 Updates (2026-05-13 — bug fixes + UX)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Series badge added to search results | `index.html` | `PieceRow` now renders a series badge when `p.s` field exists. Manual=slate, S19=blue, S18=indigo, S17=violet, AustAnth=yellow, S1–S4=green. IIFE pattern inside JSX. Commit `9ac7b1d`. |
+| 2 | Trinity grade filter bug fix | `index.html` | Grade filter was always showing AMEB keys (Prelim/G1–G8). Selecting Trinity syllabus now renders Trinity grade keys (TInitial, TG1–TG8). `gradeKeys` useMemo + `gradeLabel()` helper added. Commit `d102429`. |
+| 3 | Syllabus filter emoji/flag icons | `index.html` | All syllabus filter labels now have icons: 🇦🇺 AMEB Comprehensive, 🎵 AMEB Leisure, 🇬🇧 ABRSM, 🎓 AMEB Diploma, 🎓 ABRSM Diploma, 🇬🇧 Trinity. Applied to sidebar + mobile panel. Commit `f06fd35`. |
+
+### Build Status — Last updated 2026-05-13
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–37 | All previously completed features (Phases 1–25) | ✅ Done |
+| 38 | Series badge in search results (Manual/S19/S18/S17/AustAnth/Leisure) | ✅ Done (Phase 26) |
+| 39 | Trinity grade filter fix (TInitial/TG1–TG8) | ✅ Done (Phase 26) |
+| 40 | Syllabus filter emoji icons | ✅ Done (Phase 26) |
+
 ### Pending Work (priority order for next session)
 
 | # | Task | Priority | Notes |
 |---|------|----------|-------|
-| 1 | git push origin main | Immediate | Deploy Phase 25 (Trinity) to GitHub Pages |
-| 2 | Teaching Lists upgrade | High | Ordered sequence, per-piece notes, grade range tag, improved share view |
-| 3 | payments.html — lesson fee management | High | Per-student fee, invoice PDF, paid/unpaid toggle. Teacher Dashboard only. |
-| 4 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL |
-| 5 | Ad integration | Medium | Google AdSense or direct piano brand deals. Requires traffic first. |
+| 1 | Teaching Lists upgrade | High | Ordered sequence (drag to reorder), per-piece teacher notes, grade range tag, share view preserving order + notes. Core "can't live without" feature. |
+| 2 | Homepage "Featured Lists" | High | Soohyun's 3–5 curated teaching sequences shown on homepage. First-time visitors immediately understand the value. |
+| 3 | payments.html — lesson fee management | Medium | Per-student fee, invoice PDF, paid/unpaid toggle. Teacher Dashboard only. |
+| 4 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify |
+| 5 | Ad integration | Medium | Google AdSense application, or direct piano brand deals. Requires traffic first. |
+| 6 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. User to download from abrsm.org when ready. |
 
 ### Known Issues (as of 2026-05-13)
-- None active. All 516 Trinity pieces verified by node count script.
+- None active. All fixes verified and deployed.
