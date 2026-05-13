@@ -1640,24 +1640,57 @@ function App() {
 
     const handleClear = () => { setQuery(""); setSearchQuery(""); setEraFilter("All"); setGradeFilter("All"); setNatFilter("All"); setSyllabusFilter("All"); setSearchTriggered(false); setShowSuggestions(false); };
 
-    /* Autocomplete suggestions — top 8 matching composers or titles */
+    /* Autocomplete suggestions — composers, titles, eras, nationalities, focus tags */
     const autoSuggestions = useMemo(() => {
         if (!query || query.trim().length < 2) return [];
         const q = query.toLowerCase().trim();
         const seen = new Set();
-        const composerHits = [];
-        const titleHits = [];
+        const composerHits = [], titleHits = [], eraHits = [], natHits = [], focusHits = [];
+
+        const ERAS_ALL = ["Baroque","Classical","Romantic","Modern","Contemporary"];
+        ERAS_ALL.forEach(e => {
+            if (e.toLowerCase().includes(q) && !seen.has("era:"+e)) {
+                seen.add("era:"+e);
+                eraHits.push({ type:"era", label:e, query:e });
+            }
+        });
+
         CORPUS.forEach(p => {
             if (p.c && p.c.toLowerCase().includes(q) && !seen.has("c:"+p.c)) {
                 seen.add("c:"+p.c);
-                composerHits.push({ type: "composer", label: p.c, query: p.c });
+                composerHits.push({ type:"composer", label:p.c, query:p.c });
             }
             if (p.t && p.t.toLowerCase().includes(q) && !seen.has("t:"+p.t)) {
                 seen.add("t:"+p.t);
-                titleHits.push({ type: "title", label: p.t, query: p.t, composer: p.c });
+                titleHits.push({ type:"title", label:p.t, query:p.t, composer:p.c });
+            }
+            if (p.nat) {
+                p.nat.split("/").forEach(n => {
+                    const nat = n.trim();
+                    if (nat.toLowerCase().includes(q) && !seen.has("nat:"+nat)) {
+                        seen.add("nat:"+nat);
+                        natHits.push({ type:"nationality", label:nat, query:nat });
+                    }
+                });
+            }
+            if (p.focus) {
+                p.focus.forEach(f => {
+                    if (f.toLowerCase().includes(q) && !seen.has("focus:"+f)) {
+                        seen.add("focus:"+f);
+                        focusHits.push({ type:"focus", label:f, query:f });
+                    }
+                });
             }
         });
-        return [...composerHits.slice(0,4), ...titleHits.slice(0,4)].slice(0,8);
+
+        // Priority: era > composer > nationality > title > focus, cap at 8
+        return [
+            ...eraHits.slice(0,1),
+            ...composerHits.slice(0,3),
+            ...natHits.slice(0,1),
+            ...titleHits.slice(0,2),
+            ...focusHits.slice(0,1),
+        ].slice(0,8);
     }, [query]);
 
     const handleGradeClick = (gradeKey) => { setGradeFilter(gradeKey); setSyllabusFilter(activeSyllabus); setSearchTriggered(true); };
@@ -2022,14 +2055,28 @@ function App() {
                             )}
                             {showSuggestions && autoSuggestions.length > 0 && (
                                 <div style={{position:"absolute",left:0,right:0,top:"100%",marginTop:6,borderRadius:12,overflow:"hidden",zIndex:50,background:"#1e293b",border:"1px solid #334155",boxShadow:"0 8px 32px rgba(0,0,0,0.18)"}}>
-                                    {autoSuggestions.map((s,i) => (
-                                        <button key={i} className="w-full text-left px-4 py-2.5 flex items-center gap-2 hover:bg-slate-700 transition-colors"
-                                            onMouseDown={() => { setQuery(s.query); setSearchTriggered(true); setShowSuggestions(false); }}>
-                                            <span style={{fontSize:9,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.08em",padding:"2px 6px",borderRadius:4,background:s.type==="composer"?"#4f46e522":"#0891b222",color:s.type==="composer"?"#818cf8":"#38bdf8"}}>{s.type==="composer"?"composer":"title"}</span>
-                                            <span style={{fontSize:13,fontWeight:600,color:"white",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.label}</span>
-                                            {s.composer && s.type==="title" && <span style={{fontSize:11,color:"#94a3b8",whiteSpace:"nowrap"}}>{s.composer}</span>}
-                                        </button>
-                                    ))}
+                                    {autoSuggestions.map((s,i) => {
+                                        const badgeStyle = {
+                                            composer:    {bg:"#4f46e522", color:"#818cf8"},
+                                            title:       {bg:"#0891b222", color:"#38bdf8"},
+                                            era:         {bg:"#dc262622", color:"#f87171"},
+                                            nationality: {bg:"#d9770622", color:"#fb923c"},
+                                            focus:       {bg:"#05966922", color:"#34d399"},
+                                        }[s.type] || {bg:"#ffffff11", color:"#94a3b8"};
+                                        const icon = {
+                                            composer:"🎼", title:"🎵", era:"🕰️", nationality:"🌍", focus:"🎯"
+                                        }[s.type] || "";
+                                        return (
+                                            <button key={i} className="w-full text-left px-4 py-2.5 flex items-center gap-2 hover:bg-slate-700 transition-colors"
+                                                onMouseDown={() => { setQuery(s.query); setSearchTriggered(true); setShowSuggestions(false); }}>
+                                                <span style={{fontSize:9,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.08em",padding:"2px 6px",borderRadius:4,background:badgeStyle.bg,color:badgeStyle.color,whiteSpace:"nowrap"}}>
+                                                    {icon} {s.type}
+                                                </span>
+                                                <span style={{fontSize:13,fontWeight:600,color:"white",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.label}</span>
+                                                {s.composer && s.type==="title" && <span style={{fontSize:11,color:"#94a3b8",whiteSpace:"nowrap"}}>{s.composer}</span>}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
