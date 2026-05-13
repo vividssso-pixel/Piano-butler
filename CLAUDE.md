@@ -1092,25 +1092,51 @@ Trinity/                              ← NEW (Phase 25)
 | 2 | Trinity grade filter bug fix | `index.html` | Grade filter was always showing AMEB keys (Prelim/G1–G8). Selecting Trinity syllabus now renders Trinity grade keys (TInitial, TG1–TG8). `gradeKeys` useMemo + `gradeLabel()` helper added. Commit `d102429`. |
 | 3 | Syllabus filter emoji/flag icons | `index.html` | All syllabus filter labels now have icons: 🇦🇺 AMEB Comprehensive, 🎵 AMEB Leisure, 🇬🇧 ABRSM, 🎓 AMEB Diploma, 🎓 ABRSM Diploma, 🇬🇧 Trinity. Applied to sidebar + mobile panel. Commit `f06fd35`. |
 
-### Build Status — Last updated 2026-05-13
+### Phase 27 Updates (2026-05-13 — search UX + data audit session)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Multi-token AND search | `index.html` | Query split into tokens on whitespace. Every token must match at least one field (title, composer, nat, era, focus). Previously single-string includes — `"bach minuet"` returned 0 results. Now returns correctly. |
+| 2 | focus field included in search | `index.html` | `p.focus` array now joined and searched per token. Queries like `"finger independence"`, `"voicing"` now return results. |
+| 3 | Syllabus badge on piece cards | `index.html` | `syllabusBadge` computed per piece. Always-visible coloured pill before Grade badge: AMEB=indigo, ABRSM=violet, Trinity=crimson, AMEB Leisure=cyan, AMEB Diploma=teal, ABRSM Diploma=deep purple. |
+| 4 | Autocomplete — era/nationality/focus hints | `index.html` | `autoSuggestions` useMemo extended to include era (🕰️), nationality (🌍), focus (🎯) matches in addition to composer (🎼) and title (🎵). Priority order: era > composer > nationality > title > focus, cap 8. Badge colour per type. |
+| 5 | AMEB data audit — ERA fixes | `G5/data_g5_1.js`, `G5/data_g5_leisure.js`, `G6/data_g6_leisure.js` | 23 invalid era values corrected: `"Classical-Romantic"` → `"Classical"`, `"Modern-Jazz"` / `"Contemporary-Jazz"` → `"Modern"` / `"Contemporary"`, `"Modern-Contemporary"` → `"Contemporary"`, `"Traditional"` → `"Contemporary"` / `"Modern"` / `"Romantic"` as appropriate. |
+| 6 | AMEB data audit — FOCUS fixes | `G5/data_g5_leisure.js`, `G6/data_g6_leisure.js` | 166 pieces with 2-item focus arrays fixed: 3rd pedagogical keyword added to all 78 G5 Leisure + all 88 G6 Leisure pieces. |
+| 7 | AMEB data audit — NAT fix | `G4/data_g4_leisure.js` | ANONYMOUS - Allegro: `nat: ""` → `"Unknown"`. |
+| 8 | ERA nat fix — Traditional folk pieces | `G6/data_g6_leisure.js` | Go tell it on the mountains: `nat: "Traditional"` → `"American"`. Danny boy: `nat: "Traditional"` → `"Irish"`. |
+
+### AMEB Data Audit Status (2026-05-13)
+
+| Check | Result |
+|-------|--------|
+| Piece counts (all 18 files) | ✅ All match CLAUDE.md targets exactly |
+| ERA validity | ✅ All 2,099 pieces have valid era |
+| FOCUS length = 3 | ✅ All 2,099 pieces have exactly 3 focus keywords |
+| NAT not empty | ✅ All pieces have nationality |
+| Duplicates | ⚠️ 1 pending: G8 Leisure BEETHOVEN Andante appears in S4 and S1 — needs PDF verification |
+
+### Build Status — Last updated 2026-05-13 (evening)
 
 | # | Feature | Status |
 |---|---------|--------|
-| 1–37 | All previously completed features (Phases 1–25) | ✅ Done |
-| 38 | Series badge in search results (Manual/S19/S18/S17/AustAnth/Leisure) | ✅ Done (Phase 26) |
-| 39 | Trinity grade filter fix (TInitial/TG1–TG8) | ✅ Done (Phase 26) |
-| 40 | Syllabus filter emoji icons | ✅ Done (Phase 26) |
+| 1–40 | All previously completed features (Phases 1–26) | ✅ Done |
+| 41 | Multi-token AND search + focus field search | ✅ Done (Phase 27) |
+| 42 | Syllabus badge on piece cards | ✅ Done (Phase 27) |
+| 43 | Autocomplete era/nationality/focus hints | ✅ Done (Phase 27) |
+| 44 | AMEB data audit — ERA/FOCUS/NAT corrections | ✅ Done (Phase 27) |
 
 ### Pending Work (priority order for next session)
 
 | # | Task | Priority | Notes |
 |---|------|----------|-------|
-| 1 | Teaching Lists upgrade | High | Ordered sequence (drag to reorder), per-piece teacher notes, grade range tag, share view preserving order + notes. Core "can't live without" feature. |
-| 2 | Homepage "Featured Lists" | High | Sohyun's 3–5 curated teaching sequences shown on homepage. First-time visitors immediately understand the value. |
-| 3 | payments.html — lesson fee management | Medium | Per-student fee, invoice PDF, paid/unpaid toggle. Teacher Dashboard only. |
-| 4 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify |
-| 5 | Ad integration | Medium | Google AdSense application, or direct piano brand deals. Requires traffic first. |
-| 6 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. User to download from abrsm.org when ready. |
+| 1 | G8 Leisure BEETHOVEN Andante duplicate | Quick fix | Check Piano for Leisure G8 PDF — is Andante in both S4 and S1? If not, remove one. |
+| 2 | ABRSM data audit | High | Run same automated audit (ERA/FOCUS/NAT/duplicate) across all 9 ABRSM grade files. |
+| 3 | Trinity data audit | High | Run same automated audit across all 9 Trinity grade files. |
+| 4 | C — sitewide UX review | High | Open live site, use it as a real teacher would, note friction points. |
+| 5 | Teaching Lists upgrade | High | Ordered sequence, per-piece teacher notes, grade range tag, improved share view. |
+| 6 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify. |
+| 7 | Ad integration | Medium | Google AdSense or direct piano brand deals. Requires traffic first. |
+| 8 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
 
-### Known Issues (as of 2026-05-13)
-- None active. All fixes verified and deployed.
+### Known Issues (as of 2026-05-13 evening)
+- ⚠️ G8 Leisure: BEETHOVEN Andante appears in both S4 (index 1) and S1 (index 24) — pending PDF verification before removal.
