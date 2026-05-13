@@ -530,13 +530,23 @@ function ResultCard({ piece, index, comboType, onListen }) {
   );
 }
 
+/* ─── Free-mode generator (no syllabus/grade) ─── */
+function generateFreeMode(corpus, prefs, seed) {
+  // Score all pieces across entire corpus
+  const scored = shuffle(corpus).map(p => scorepiece(p, prefs));
+  const count = prefs.comboType === 'lesson6' ? 6 : 4;
+  return pickDiverse(scored, count);
+}
+
 /* ─── Main App ─── */
 function App() {
-  // Form state
-  const [step, setStep] = useState(0); // 0=syllabus,1=grade,2=combo,3=character,4=eras,5=nat,6=results
+  // mode: 'exam' = syllabus+grade flow, 'free' = no syllabus flow
+  const [mode, setMode] = useState(null); // null = not chosen yet
+  // step: 0=mode, 1=syllabus(exam only), 2=grade(exam only), 3=combo, 4=character, 5=eras, 6=nat, 7=results
+  const [step, setStep] = useState(0);
   const [syllabus, setSyllabus] = useState(null);
   const [grade, setGrade] = useState(null);
-  const [comboType, setComboType] = useState(null);
+  const [comboType, setComboType] = useState('lesson4');
   const [character, setCharacter] = useState(null);
   const [eras, setEras] = useState([]);
   const [natDiversity, setNatDiversity] = useState('any');
@@ -544,18 +554,24 @@ function App() {
   const [seed, setSeed] = useState(0);
   const { modal: videoModal, open: openVideo, close: closeVideo } = useVideoModal();
 
-  const TOTAL_STEPS = 6;
-  const progress = Math.round((step / TOTAL_STEPS) * 100);
+  // Steps differ by mode
+  // exam mode: 0(mode) → 1(syllabus) → 2(grade) → 3(combo) → 4(character) → 5(eras) → 6(nat) → 7(results)
+  // free mode: 0(mode) → 3(combo) → 4(character) → 5(eras) → 6(nat) → 7(results)
+  const EXAM_STEPS = 7;
+  const FREE_STEPS = 4;
+  const totalSteps = mode === 'free' ? FREE_STEPS : EXAM_STEPS;
+  // progress: normalize step into 0–100
+  const stepForProgress = mode === 'free'
+    ? Math.max(0, step - 2) // free skips steps 1+2
+    : step;
+  const progress = Math.round((stepForProgress / totalSteps) * 100);
 
   const gradeOptions = syllabus ? GRADE_OPTIONS[syllabus] || [] : [];
-
-  // Diploma grades have different combo types
   const isDiploma = grade && !['Prelim','Initial','G1','G2','G3','G4','G5','G6','G7','G8'].includes(grade);
-
-  const comboOptions = isDiploma
+  const comboOptions = (mode === 'free' || isDiploma)
     ? [
-        { id:'lesson4', label:'4-piece programme', desc:'Varied selection for a diploma programme', count:4 },
-        { id:'lesson6', label:'6-piece programme', desc:'Broader diploma programme exploration', count:6 },
+        { id:'lesson4', label:'4-piece set', desc:'Varied programme across 4 pieces', count:4 },
+        { id:'lesson6', label:'6-piece set', desc:'Broader exploration across 6 pieces', count:6 },
       ]
     : Object.values(COMBO_SIZE);
 
@@ -563,38 +579,65 @@ function App() {
     setEras(prev => prev.includes(era) ? prev.filter(e => e !== era) : [...prev, era]);
   }
 
+  function chooseMode(m) {
+    setMode(m);
+    if (m === 'free') {
+      setStep(3); // skip syllabus + grade
+    } else {
+      setStep(1);
+    }
+  }
+
   function generate() {
     const prefs = { syllabus, grade, comboType, character, eras, natDiversity };
-    const combo = generateCombination(CORPUS, prefs, seed);
+    let combo;
+    if (mode === 'free') {
+      combo = generateFreeMode(CORPUS, prefs, seed);
+    } else {
+      combo = generateCombination(CORPUS, prefs, seed);
+    }
     setResults(combo);
-    setStep(6);
+    setStep(7);
   }
 
   function regenerate() {
     setSeed(s => s + 1);
     const prefs = { syllabus, grade, comboType, character, eras, natDiversity };
-    const combo = generateCombination(CORPUS, prefs, seed + 1);
+    let combo;
+    if (mode === 'free') {
+      combo = generateFreeMode(CORPUS, prefs, seed + 1);
+    } else {
+      combo = generateCombination(CORPUS, prefs, seed + 1);
+    }
     setResults(combo);
   }
 
   function reset() {
-    setSyllabus(null); setGrade(null); setComboType(null);
+    setMode(null); setSyllabus(null); setGrade(null); setComboType('lesson4');
     setCharacter(null); setEras([]); setNatDiversity('any');
     setResults(null); setStep(0);
   }
 
+  function goBack() {
+    if (step === 3 && mode === 'free') { setMode(null); setStep(0); }
+    else if (step === 3 && mode === 'exam') setStep(2);
+    else if (step === 1) { setMode(null); setStep(0); }
+    else setStep(s => s - 1);
+  }
+
   function canAdvance() {
-    if (step === 0) return !!syllabus;
-    if (step === 1) return !!grade;
-    if (step === 2) return !!comboType;
-    if (step === 3) return !!character;
-    if (step === 4) return true; // eras optional
+    if (step === 0) return !!mode;
+    if (step === 1) return !!syllabus;
+    if (step === 2) return !!grade;
+    if (step === 3) return !!comboType;
+    if (step === 4) return !!character;
     if (step === 5) return true;
+    if (step === 6) return true;
     return false;
   }
 
   const syllabusColor = { AMEB:'#4f46e5', ABRSM:'#7c3aed', Trinity:'#b91c1c' };
-  const accentColor = syllabus ? syllabusColor[syllabus] : '#4f46e5';
+  const accentColor = mode === 'free' ? '#0891b2' : (syllabus ? syllabusColor[syllabus] : '#4f46e5');
 
   return (
     <div style={{ minHeight:'100vh', background:'#f8fafc' }}>
@@ -607,10 +650,10 @@ function App() {
         <a href="index.html" style={{ color:'rgba(255,255,255,0.7)', fontSize:12, textDecoration:'none', display:'block', marginBottom:10 }}>← Piano Butler</a>
         <h1 style={{ color:'#fff', fontSize:22, fontWeight:800, margin:'0 0 4px' }}>🎹 Repertoire Recommender</h1>
         <p style={{ color:'rgba(255,255,255,0.75)', fontSize:13, margin:'0 0 16px' }}>
-          Answer a few questions and get a personalised programme suggestion
+          {mode === 'free' ? 'Discover pieces from all 4,501 in the library' : 'Answer a few questions and get a personalised programme'}
         </p>
         {/* Progress bar */}
-        {step < 6 && (
+        {step < 7 && (
           <div className="progress-bar">
             <div className="progress-fill" style={{ width: progress + '%' }}></div>
           </div>
@@ -619,8 +662,38 @@ function App() {
 
       <div style={{ maxWidth:640, margin:'0 auto', padding:'24px 16px 80px' }}>
 
-        {/* ── STEP 0: Syllabus ── */}
+        {/* ── STEP 0: Mode selection ── */}
         {step === 0 && (
+          <div className="fade-in">
+            <h2 style={{ fontSize:17, fontWeight:700, color:'#1e293b', marginBottom:6 }}>How would you like to explore?</h2>
+            <p style={{ fontSize:13, color:'#64748b', marginBottom:18 }}>Choose a mode to get started.</p>
+            <div style={{ display:'flex', flexDirection:'column', gap:12, marginBottom:24 }}>
+              <button onClick={() => chooseMode('exam')}
+                style={{
+                  padding:'18px 20px', borderRadius:14, border:'2px solid',
+                  borderColor: mode==='exam' ? '#4f46e5' : '#e2e8f0',
+                  background: mode==='exam' ? '#eef2ff' : '#fff',
+                  cursor:'pointer', textAlign:'left', transition:'all 0.15s'
+                }}>
+                <div style={{ fontSize:15, fontWeight:800, color: mode==='exam' ? '#4f46e5' : '#1e293b', marginBottom:4 }}>🎓 By exam syllabus</div>
+                <div style={{ fontSize:12, color:'#64748b' }}>Choose AMEB, ABRSM, or Trinity — then pick a grade. Recommends pieces that match the list structure (A/B/C/D).</div>
+              </button>
+              <button onClick={() => chooseMode('free')}
+                style={{
+                  padding:'18px 20px', borderRadius:14, border:'2px solid',
+                  borderColor: mode==='free' ? '#0891b2' : '#e2e8f0',
+                  background: mode==='free' ? '#ecfeff' : '#fff',
+                  cursor:'pointer', textAlign:'left', transition:'all 0.15s'
+                }}>
+                <div style={{ fontSize:15, fontWeight:800, color: mode==='free' ? '#0891b2' : '#1e293b', marginBottom:4 }}>🎲 Free discovery</div>
+                <div style={{ fontSize:12, color:'#64748b' }}>No syllabus, no grade. Just tell me the student's personality and what you're looking for — I'll search all 4,501 pieces.</div>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── STEP 1: Syllabus (exam mode only) ── */}
+        {step === 1 && (
           <div className="fade-in">
             <h2 style={{ fontSize:17, fontWeight:700, color:'#1e293b', marginBottom:6 }}>Which syllabus?</h2>
             <p style={{ fontSize:13, color:'#64748b', marginBottom:18 }}>Select the exam board for this student.</p>
@@ -641,8 +714,9 @@ function App() {
           </div>
         )}
 
-        {/* ── STEP 1: Grade ── */}
-        {step === 1 && (
+        {/* ── STEP 2: Grade (exam mode only) ── */}
+        {/* ── STEP 2: Grade (exam mode only) ── */}
+        {step === 2 && (
           <div className="fade-in">
             <h2 style={{ fontSize:17, fontWeight:700, color:'#1e293b', marginBottom:6 }}>Which grade?</h2>
             <p style={{ fontSize:13, color:'#64748b', marginBottom:18 }}>
@@ -657,8 +731,8 @@ function App() {
           </div>
         )}
 
-        {/* ── STEP 2: Combination type ── */}
-        {step === 2 && (
+        {/* ── STEP 3: Combination type ── */}
+        {step === 3 && (
           <div className="fade-in">
             <h2 style={{ fontSize:17, fontWeight:700, color:'#1e293b', marginBottom:6 }}>What kind of programme?</h2>
             <p style={{ fontSize:13, color:'#64748b', marginBottom:18 }}>
@@ -681,8 +755,8 @@ function App() {
           </div>
         )}
 
-        {/* ── STEP 3: Character ── */}
-        {step === 3 && (
+        {/* ── STEP 4: Character ── */}
+        {step === 4 && (
           <div className="fade-in">
             <h2 style={{ fontSize:17, fontWeight:700, color:'#1e293b', marginBottom:6 }}>Student personality?</h2>
             <p style={{ fontSize:13, color:'#64748b', marginBottom:18 }}>
@@ -705,8 +779,8 @@ function App() {
           </div>
         )}
 
-        {/* ── STEP 4: Era preferences ── */}
-        {step === 4 && (
+        {/* ── STEP 5: Era preferences ── */}
+        {step === 5 && (
           <div className="fade-in">
             <h2 style={{ fontSize:17, fontWeight:700, color:'#1e293b', marginBottom:6 }}>Era preferences?</h2>
             <p style={{ fontSize:13, color:'#64748b', marginBottom:18 }}>
@@ -732,8 +806,8 @@ function App() {
           </div>
         )}
 
-        {/* ── STEP 5: Nationality ── */}
-        {step === 5 && (
+        {/* ── STEP 6: Nationality ── */}
+        {step === 6 && (
           <div className="fade-in">
             <h2 style={{ fontSize:17, fontWeight:700, color:'#1e293b', marginBottom:6 }}>Nationality variety?</h2>
             <p style={{ fontSize:13, color:'#64748b', marginBottom:18 }}>
@@ -755,14 +829,16 @@ function App() {
           </div>
         )}
 
-        {/* ── STEP 6: Results ── */}
-        {step === 6 && (
+        {/* ── STEP 7: Results ── */}
+        {step === 7 && (
           <div className="fade-in">
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
               <div>
                 <h2 style={{ fontSize:17, fontWeight:700, color:'#1e293b', margin:'0 0 2px' }}>Your programme</h2>
                 <p style={{ fontSize:12, color:'#64748b', margin:0 }}>
-                  {syllabus} · {grade} · {COMBO_SIZE[comboType]?.label || comboType}
+                  {mode === 'free'
+                    ? `Free discovery · ${comboType === 'lesson6' ? '6' : '4'} pieces · all 4,501 pieces`
+                    : `${syllabus} · ${grade} · ${COMBO_SIZE[comboType]?.label || comboType}`}
                 </p>
               </div>
               <button onClick={regenerate}
@@ -807,10 +883,10 @@ function App() {
         )}
 
         {/* ── Navigation buttons ── */}
-        {step < 6 && (
+        {step < 7 && (
           <div style={{ display:'flex', gap:10 }}>
             {step > 0 && (
-              <button onClick={() => setStep(s => s - 1)}
+              <button onClick={goBack}
                 style={{
                   padding:'12px 20px', borderRadius:12, border:'1.5px solid #e2e8f0',
                   background:'#fff', cursor:'pointer', fontSize:13, fontWeight:600, color:'#475569'
@@ -818,7 +894,7 @@ function App() {
                 ← Back
               </button>
             )}
-            {step < 5 ? (
+            {step < 6 ? (
               <button onClick={() => setStep(s => s + 1)}
                 disabled={!canAdvance()}
                 style={{
@@ -844,11 +920,14 @@ function App() {
         )}
 
         {/* Step dots */}
-        {step < 6 && (
+        {step < 7 && step > 0 && (
           <div style={{ display:'flex', justifyContent:'center', gap:6, marginTop:20 }}>
-            {Array.from({length:6}).map((_,i) => (
-              <div key={i} className={`step-dot ${i < step ? 'done' : i === step ? 'active' : ''}`}></div>
-            ))}
+            {Array.from({length: mode === 'free' ? 4 : 6}).map((_,i) => {
+              const dotStep = mode === 'free' ? i + 3 : i + 1;
+              return (
+                <div key={i} className={`step-dot ${step > dotStep ? 'done' : step === dotStep ? 'active' : ''}`}></div>
+              );
+            })}
           </div>
         )}
       </div>
