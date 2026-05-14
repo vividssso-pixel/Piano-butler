@@ -1358,3 +1358,91 @@ diagnose.html
 - ⚠️ G8 Leisure: BEETHOVEN Andante appears in both S4 (index 1) and S1 (index 24) — pending PDF verification before removal.
 - Trinity Diploma data: some multi-line title entries may have minor formatting differences — spot-check against source PDF if needed.
 - diagnose.html $4 report CTA: currently a coming-soon modal with waitlist email. Stripe integration pending.
+
+---
+
+### Phase 31 Updates (2026-05-14 — evening session)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Teacher Dashboard removed from public nav | `index.html` | `teacher-dashboard.html` link removed from header. File kept in codebase but no longer promoted publicly. Product direction confirmed: Piano Butler = public repertoire search + diagnosis + connection hub (not a studio management app). |
+| 2 | connect.html — teacher/course matching page | `connect.html` | New self-contained React 18 + Tailwind page. Reads `pb_diagnosis_v1` from localStorage. **Teachers tab**: cards sorted by match % against weak domains, match bar, domain badges. **Courses & Apps tab**: Piano Marvel, Musicarta, Lessonface, Musicnotes, Simply Piano — each scored against weak domains. "Apply to be listed" CTA for teacher acquisition. Affiliate disclosure note. |
+| 3 | diagnose.html → connect.html wired | `diagnose.html` | Diagnosis result saved to `localStorage('pb_diagnosis_v1')`. Results CTA gains "👩‍🏫 Find a teacher" button (green) → connect.html. |
+| 4 | diagnose.html — purpose-first full redesign | `diagnose.html` | Complete rewrite. Target audience narrowed to **returning players** (people who learned before and want to come back). New flow: Landing ("You used to play piano. Where are you now?") → Step 1: Purpose (5 options) → Step 2: Gap (4 options) → Step 3: Memory test (4 questions) → Step 4: Hands readiness (4 questions) → Processing → Results. |
+| 5 | Result engine — purpose × gap × score | `diagnose.html` | `computeResult()` combines purpose + gap + memScore + handScore → levelKey (Prelim / G1-G2 / G2-G3 / G4-G5) + personalised headline/message/nextStep per purpose + retention score breakdown (theory memory / physical readiness / overall %) + weak areas list + purpose-filtered corpus picks. |
+| 6 | sitemap.xml updated | `sitemap.xml` | diagnose.html (priority 0.9), connect.html (priority 0.9), recommend.html (priority 0.8) added. |
+
+### Product Direction (confirmed 2026-05-14)
+
+| Decision | Detail |
+|----------|--------|
+| Teacher Dashboard | Removed from public nav. File preserved. Not promoted. |
+| Target user | Returning adult pianists — people who learned before and want to come back |
+| Piano Butler role | **Middleperson** — diagnosis → connection → commission. Not a content creator. |
+| Revenue model | $4 full report (Stripe pending) + teacher referral commission + course affiliate |
+| Content strategy | No curriculum creation, no course filming, no ongoing content pressure |
+
+### connect.html Architecture
+
+```
+connect.html
+├── TEACHERS[]         — teacher cards with strengths[] per domain
+├── PLATFORMS[]        — course/app cards with strengths[] per domain
+├── matchScore()       — % of user's weak domains covered by item
+├── TeacherCard        — avatar, match %, match bar, domain badges, booking CTA
+├── PlatformCard       — logo, match %, domain badges, affiliate link
+└── App
+    ├── useEffect      — reads pb_diagnosis_v1 from localStorage
+    ├── weakDomains    — bottom 2 domains from scores
+    ├── Teachers tab   — sorted by match score
+    └── Courses tab    — sorted by match score + affiliate note
+```
+
+### diagnose.html Architecture (Phase 31 — redesigned)
+
+```
+diagnose.html (purpose-first, returning player focused)
+├── PURPOSES (5)       — child / self / exam / hobby / perform
+├── GAPS (4)           — recent / few / decade / long
+├── MEMORY_QUESTIONS (4) — note reading, time sig, piece memory, notation reading
+├── HANDS_QUESTIONS (4)  — finger readiness, hands together, previous level, mindset
+├── computeResult()    — purpose × gap × memScore × handScore → full profile
+│   ├── levelKey       — Prelim / G1-G2 / G2-G3 / G4-G5
+│   ├── pmsg           — purpose-specific headline + msg + nextStep
+│   ├── memWeak[]      — specific theory gaps
+│   ├── handsWeak[]    — specific physical gaps
+│   └── pieces[]       — 5 corpus picks filtered by purpose + level
+└── Results screen
+    ├── Purpose message card (headline + msg + next step callout)
+    ├── Retention score (theory memory / physical readiness / overall %)
+    ├── Brush up on (weak areas list)
+    ├── Piece recommendations (5 pieces)
+    └── CTAs: Find a teacher → connect.html / Full report $4 (modal)
+```
+
+### Build Status — Last updated 2026-05-14 (evening)
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–54 | All previously completed features (Phases 1–30) | ✅ Done |
+| 55 | Teacher Dashboard removed from public nav | ✅ Done (Phase 31) |
+| 56 | connect.html — teacher/course matching page | ✅ Done (Phase 31) |
+| 57 | diagnose.html — purpose-first redesign for returning players | ✅ Done (Phase 31) |
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | Test diagnose.html end-to-end | First thing | Go through all 5 purpose paths. Check piece recommendations make sense per purpose + level. Note any friction. |
+| 2 | connect.html — add real teacher info | High | Replace Sohyun placeholder with real photo, real booking link, real price. Add 1–2 more real teachers if possible. |
+| 3 | $4 Full Report — define content | High | Decide exactly what's in the report before building Stripe/jsPDF. Suggested: personalised level summary + 6-month plan outline + 10 piece list + teacher match. |
+| 4 | $4 Full Report — Stripe + jsPDF | High | Stripe Checkout (hosted, no backend) → payment success → jsPDF generates PDF in browser. |
+| 5 | G8 Leisure BEETHOVEN Andante duplicate | Quick fix | Check Piano for Leisure G8 PDF — is Andante in both S4 and S1? |
+| 6 | ABRSM data audit | Medium | ERA/FOCUS/NAT/duplicate check across all 9 ABRSM grade files. |
+| 7 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify. |
+| 8 | Ad integration | Low | After traffic grows. |
+
+### Known Issues (as of 2026-05-14 evening)
+- ⚠️ G8 Leisure: BEETHOVEN Andante duplicate — pending PDF verification.
+- diagnose.html $4 report CTA: coming-soon modal with waitlist email. Stripe pending.
+- connect.html teacher cards: placeholder data only. Real teacher info needed before promoting publicly.
