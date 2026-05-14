@@ -1262,3 +1262,99 @@ recommend.html
 - ⚠️ G8 Leisure: BEETHOVEN Andante appears in both S4 (index 1) and S1 (index 24) — pending PDF verification before removal.
 - Trinity Diploma data parsed from PDF text extraction — some multi-line title entries may have minor formatting differences. Spot-check against source PDF if needed.
 - recommend.html Free discovery: returns pieces from all syllabuses mixed — could optionally add a syllabus filter in future.
+
+---
+
+### Phase 30 Updates (2026-05-14 — Diagnosis System MVP)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Piano Diagnosis MVP | `diagnose.html` | Self-contained React 18 + Tailwind page. 16 plain-language questions across 4 domains (Ear, Sight-reading, Technique, Theory). 4 questions per domain, scored Always/Usually/Sometimes/Rarely → 4/3/2/1. Score bands: 13–16 Strong, 8–12 Developing, 4–7 Needs work. |
+| 2 | SVG radar chart | `diagnose.html` | Pure SVG 4-axis diamond polygon. Grid rings at 25/50/75/100%. Data polygon filled indigo. Score labels per axis. No Chart.js dependency. |
+| 3 | Repertoire matching engine | `diagnose.html` | `pickPieces(domain, band, count)` filters live 4,501-piece corpus by domain weakness. Ear → Baroque/Classical + melodic focus tags. Sight → Baroque/Classical + rhythm/pulse tags. Technique → étude/finger/articulation/pedal focus tags. Theory → Bach/Haydn/Mozart/Beethoven + Baroque/Classical era. Era diversity bonus in selection loop. |
+| 4 | Weakness explanation cards | `diagnose.html` | `WEAKNESS_TIPS` object — per-domain: what it means, quick fix, piece type rationale. Shown for bottom 2 domains only. |
+| 5 | Estimated level (by-product) | `diagnose.html` | `estimatedLevel(scores)` maps average score → Beginner/Prelim through Diploma/Advanced. Shown as secondary info in results header, not as primary framing. |
+| 6 | Coming Soon modal | `diagnose.html` | "$4 Full Report" CTA opens modal with waitlist mailto link (`vividssso@gmail.com`). Placeholder for future Stripe + jsPDF integration. |
+| 7 | 🔬 Diagnose button in nav | `index.html` | Amber pill button added to top nav, left of 🎹 Recommend. Links to `diagnose.html`. |
+| 8 | ErrorBoundary | `diagnose.html` | `class ErrorBoundary` wraps `<App/>` — shows error + stack trace on crash instead of blank screen. |
+
+### diagnose.html Architecture
+
+```
+diagnose.html
+├── buildCorpus()          — loads all 4,501 pieces (same as recommend.html)
+├── DOMAINS (4)            — Ear / Sight-reading / Technique / Theory
+├── QUESTIONS (16)         — 4 per domain, plain language, with hint
+├── OPTIONS (4)            — Always(4) / Usually(3) / Sometimes(2) / Rarely(1)
+├── scoreDomain()          — sums answers for a domain
+├── bandFor(score)         — Strong / Developing / Needs work
+├── estimatedLevel(scores) — average → grade range string
+├── pickPieces(domain, n)  — corpus filter + era diversity selection
+├── RadarChart             — pure SVG 4-axis polygon
+├── PieceCard              — piece card with composer Wikipedia link + focus tags
+├── ComingSoonModal        — $4 report waitlist CTA
+├── DomainCard             — intro screen domain cards
+├── WEAKNESS_TIPS          — per-domain explanations + quick fix advice
+└── App (5 screens)
+    ├── landing            — gradient hero, "Start the diagnosis →"
+    ├── intro              — 4 domain cards, "Begin 16 questions →"
+    ├── quiz               — question cards, auto-advance, progress dots, go back
+    ├── processing         — spin animation, 5 sequential messages
+    └── results            — radar chart + band grid + weakness cards + piece recs + CTAs
+```
+
+### Quiz Question Design
+
+| Domain | Q# | Theme |
+|--------|-----|-------|
+| Ear | 1 | Melodic memory — can you hum a tune back? |
+| Ear | 2 | Chord quality — major vs minor by ear |
+| Ear | 3 | Error detection — noticing wrong notes |
+| Ear | 4 | Playing by ear — finding a melody without music |
+| Sight-reading | 1 | Rhythm reading — tapping before playing |
+| Sight-reading | 2 | Pulse maintenance — no stopping |
+| Sight-reading | 3 | Key signature recognition |
+| Sight-reading | 4 | Both hands together from a new page |
+| Technique | 1 | Scale fluency — even, in tempo, hands together |
+| Technique | 2 | Dynamic control — piano/forte in the right places |
+| Technique | 3 | Articulation — staccato/legato switching |
+| Technique | 4 | Pedalling — clean vs muddy |
+| Theory | 1 | Time signature — reading and understanding |
+| Theory | 2 | Harmonic resolution — feeling a phrase "land" |
+| Theory | 3 | Formal structure — identifying sections and repeats |
+| Theory | 4 | Theory-aided learning — using structure to memorise |
+
+### Business Model Integration (Phase 30)
+
+| Stage | Feature | Status |
+|-------|---------|--------|
+| Stage 1 | Free diagnosis (radar + weakness + recs) | ✅ Live |
+| Stage 2 | $4 Full PDF report (roadmap + teacher match) | 🔜 Stripe + jsPDF needed |
+| Stage 3 | Teacher matching page (`connect.html`) | 🔜 Planned |
+| Stage 4 | Course/affiliate connections | 🔜 After traffic grows |
+
+### Build Status — Last updated 2026-05-14
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–52 | All previously completed features (Phases 1–29) | ✅ Done |
+| 53 | Piano Diagnosis MVP — diagnose.html | ✅ Done (Phase 30) |
+| 54 | 🔬 Diagnose button in index.html nav | ✅ Done (Phase 30) |
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | Stripe + jsPDF for $4 full report | High | Stripe Checkout (hosted, no backend) + jsPDF or browser print-to-PDF. Unlock full PDF on payment. |
+| 2 | connect.html — teacher/course matching | High | Shows matched teachers + courses based on diagnosis result stored in localStorage. Start with 3–5 teachers Sohyun knows. |
+| 3 | G8 Leisure BEETHOVEN Andante duplicate | Quick fix | Check Piano for Leisure G8 PDF — is Andante in both S4 and S1? If not, remove one. |
+| 4 | ABRSM data audit | Medium | ERA/FOCUS/NAT/duplicate check across all 9 ABRSM grade files. |
+| 5 | Trinity data audit | Medium | Same audit across all 9 Trinity grade files + 3 diploma files. |
+| 6 | Teaching Lists upgrade | Medium | Ordered sequence, per-piece teacher notes, grade range tag, improved share view. |
+| 7 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify. |
+| 8 | Ad integration | Low | Google AdSense or direct piano brand deals. Requires traffic first. |
+
+### Known Issues (as of 2026-05-14)
+- ⚠️ G8 Leisure: BEETHOVEN Andante appears in both S4 (index 1) and S1 (index 24) — pending PDF verification before removal.
+- Trinity Diploma data: some multi-line title entries may have minor formatting differences — spot-check against source PDF if needed.
+- diagnose.html $4 report CTA: currently a coming-soon modal with waitlist email. Stripe integration pending.
