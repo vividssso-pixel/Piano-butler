@@ -11,7 +11,7 @@ You are the **"Piano Butler AI,"** a world-class Orchestrator and Creative Strat
 ## Project Overview
 
 **Piano Butler** is a public piano repertoire search tool covering AMEB, ABRSM, Trinity College London, and Diploma syllabuses. It helps pianists and teachers:
-- Browse and filter 3,799 pieces across AMEB (Prelim–G8, Comprehensive + Leisure), ABRSM (Initial–G8), Trinity (Initial–G8), and AMEB/ABRSM Diploma
+- Browse and filter 4,501 pieces across AMEB (Prelim–G8, Comprehensive + Leisure), ABRSM (Initial–G8), Trinity (Initial–G8 + ATCL/LTCL/FTCL Diploma), and AMEB/ABRSM Diploma
 - Search by grade, era, nationality, list (A/B/C), and focus area
 - Save favourite pieces (Magic Link login — no password required)
 - Teacher Dashboard available for studio management (deprioritized; not publicly promoted)
@@ -1140,3 +1140,125 @@ Trinity/                              ← NEW (Phase 25)
 
 ### Known Issues (as of 2026-05-13 evening)
 - ⚠️ G8 Leisure: BEETHOVEN Andante appears in both S4 (index 1) and S1 (index 24) — pending PDF verification before removal.
+
+---
+
+### Phase 28 Updates (2026-05-13 — Trinity Diploma integration)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Trinity ATCL diploma repertoire | `Trinity/Diploma/data_trinity_atcl.js`, `Trinity/Diploma/piano-repertoire_trinity_atcl.html` | 241 works from official *Trinity Piano Diploma Repertoire List 2026* PDF (trinitycollege.com/resource?id=8546). Open pool format. Crimson-dark gradient header. Era/Nationality filters, search, YT + Sheet links, Wikipedia COMPOSER_LINKS. |
+| 2 | Trinity LTCL diploma repertoire | `Trinity/Diploma/data_trinity_ltcl.js`, `Trinity/Diploma/piano-repertoire_trinity_ltcl.html` | 306 works. Same open pool pattern. Purple-crimson gradient. |
+| 3 | Trinity FTCL diploma repertoire | `Trinity/Diploma/data_trinity_ftcl.js`, `Trinity/Diploma/piano-repertoire_trinity_ftcl.html` | 155 works. Deep purple header. FTCL note: concertos permitted (with second piano). |
+| 4 | index.html — Trinity Diploma integration | `index.html` | `TRINITY_DIPLOMA_META` array added. Script tags for all 3 diploma JS files. `buildCorpus()` includes Trinity Diploma tagged `_syllabus:"Trinity Diploma"`. GradeGrid Trinity tab shows ATCL/LTCL/FTCL diploma cards. Sidebar + mobile strip gain `🎓 Trinity Diploma` filter. syllabusBadge + syllabusColor updated. Piece count updated 3,799 → 4,501. |
+| 5 | admin-counts.html | `admin-counts.html` | Script tags + `TRINITY_DIPLOMA` array + `SectionTable` + grand total + Expected vs Actual row (702 total). Grand Total target updated 3,799 → 4,501. |
+| 6 | sitemap.xml | `sitemap.xml` | 3 Trinity Diploma URLs added (priority 0.8, monthly). |
+| 7 | CLAUDE.md | `CLAUDE.md` | Phase 28 logged. Project overview, piece counts, file structure, pending work updated. |
+
+### Trinity Diploma Piece Counts (Phase 28)
+
+| Diploma | File | Total | Format | Performance |
+|---------|------|-------|--------|-------------|
+| ATCL | data_trinity_atcl.js | 241 | Open pool | 32–38 min |
+| LTCL | data_trinity_ltcl.js | 306 | Open pool | 37–43 min |
+| FTCL | data_trinity_ftcl.js | 155 | Open pool | 42–48 min |
+| **Total** | | **702** | | |
+
+> Source: [Trinity Piano Diploma Repertoire List 2026](https://www.trinitycollege.com/resource?id=8546). Own-choice programmes must be pre-approved by Trinity.
+
+### Updated Piece Count Totals (as of Phase 28)
+
+| Syllabus | Count |
+|----------|-------|
+| AMEB Comprehensive (Prelim–G8) | 1,393 |
+| AMEB Piano for Leisure (Prelim–G8) | 706 |
+| AMEB Diploma — CertP | 128 |
+| AMEB Diploma — AMusA | 161 |
+| AMEB Diploma — LMusA | 226 |
+| ABRSM Initial–G8 | 433 |
+| ABRSM Diploma — LRSM | 139 |
+| ABRSM Diploma — FRSM | 97 |
+| Trinity College London Initial–G8 | 516 |
+| Trinity Diploma — ATCL | 241 |
+| Trinity Diploma — LTCL | 306 |
+| Trinity Diploma — FTCL | 155 |
+| **Grand Total** | **4,501** |
+
+### File Structure Update (Phase 28)
+
+```
+Trinity/
+└── Diploma/                                    ← NEW (Phase 28)
+    ├── data_trinity_atcl.js                    ← ATCL (241 works)
+    ├── piano-repertoire_trinity_atcl.html
+    ├── data_trinity_ltcl.js                    ← LTCL (306 works)
+    ├── piano-repertoire_trinity_ltcl.html
+    ├── data_trinity_ftcl.js                    ← FTCL (155 works)
+    └── piano-repertoire_trinity_ftcl.html
+```
+
+### Build Status — Last updated 2026-05-13 (Phase 29)
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–44 | All previously completed features (Phases 1–27) | ✅ Done |
+| 45 | Trinity Diploma — ATCL repertoire | ✅ Done (Phase 28) |
+| 46 | Trinity Diploma — LTCL repertoire | ✅ Done (Phase 28) |
+| 47 | Trinity Diploma — FTCL repertoire | ✅ Done (Phase 28) |
+| 48 | index.html Trinity Diploma integration | ✅ Done (Phase 28) |
+| 49 | Repertoire Recommender — recommend.html | ✅ Done (Phase 29) |
+| 50 | Recommender — YouTube in-page modal | ✅ Done (Phase 29) |
+| 51 | Recommender — Free discovery mode (no syllabus/grade) | ✅ Done (Phase 29) |
+| 52 | index.html — 🎹 Recommend button in header | ✅ Done (Phase 29) |
+
+---
+
+### Phase 29 Updates (2026-05-13 — Recommender session)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Repertoire Recommender page created | `recommend.html` | Self-contained React 18 + Tailwind app. 6-step form wizard: mode → syllabus → grade → combo type → character → era → nationality → results. Scoring engine: era match (+30), character focus keyword match (+25), nationality preference (+20), random variety (+15). Era diversity + nationality diversity bonus in `pickDiverse()`. |
+| 2 | Two recommendation modes | `recommend.html` | **Exam mode**: filters corpus by syllabus + grade, picks one piece per list (A/B/C/D). **Free discovery**: searches all 4,501 pieces, no syllabus/grade constraint. |
+| 3 | YouTube in-page modal | `recommend.html` | ▶ Listen button opens YouTube video inside a dark overlay modal — same pattern as index.html. Uses YouTube Data API v3 for video search. |
+| 4 | 🎹 Recommend button in header | `index.html` | Indigo pill button added to top nav, links to recommend.html. |
+| 5 | Free mode step routing fix | `recommend.html` | Free discovery jumps step 0→3 (skips syllabus/grade steps 1+2). `mode === 'exam'` guard on step 1 and step 2 render blocks. `nextStep()` helper handles branching. |
+
+### recommend.html Architecture
+
+```
+recommend.html
+├── buildCorpus()          — loads all 4,501 pieces from all data files
+├── scorepiece(p, prefs)   — scores each piece by era/character/nationality match
+├── pickDiverse(scored, n) — picks n pieces with era+nationality diversity bonus
+├── generateCombination()  — exam mode: filters by syllabus+grade, picks by list (A/B/C/D)
+├── generateFreeMode()     — free mode: scores entire corpus, picks diverse set
+├── useVideoModal()        — YouTube Data API v3 search → in-page iframe modal
+├── ResultCard             — piece card with list badge, era, reasons, focus tags, ▶ Listen, ♩ Score
+└── App (6-step wizard)
+    ├── Step 0: mode picker (Exam / Free discovery)
+    ├── Step 1: syllabus — AMEB / ABRSM / Trinity [exam mode only]
+    ├── Step 2: grade — Prelim–G8 / Diploma [exam mode only]
+    ├── Step 3: programme type — Exam 3/4 pieces or Lesson 4/6 pieces
+    ├── Step 4: student personality — Technical / Expressive / Playful / Balanced
+    ├── Step 5: era preference — Baroque / Classical / Romantic / Modern / Contemporary
+    ├── Step 6: nationality diversity — Any / Varied / Western / Australian
+    └── Step 7: results — scored combination + 🔀 regenerate
+```
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | G8 Leisure BEETHOVEN Andante duplicate | Quick fix | Check Piano for Leisure G8 PDF — is Andante in both S4 and S1? If not, remove one. |
+| 2 | Recommender UX polish | High | Test with real students. Possible improvements: show which syllabus/grade each result is from, add "exclude this piece" button, show more results with scroll. |
+| 3 | ABRSM data audit | High | Run automated audit (ERA/FOCUS/NAT/duplicate) across all 9 ABRSM grade files. |
+| 4 | Trinity data audit | High | Run same audit across all 9 Trinity grade files + 3 diploma files. |
+| 5 | Teaching Lists upgrade | High | Ordered sequence, per-piece teacher notes, grade range tag, improved share view. |
+| 6 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify. |
+| 7 | Ad integration | Medium | Google AdSense or direct piano brand deals. Requires traffic first. |
+| 8 | payments.html — teacher fee management | Low | Per-student fee, invoice PDF, paid/unpaid toggle. |
+
+### Known Issues (as of 2026-05-13 Phase 29)
+- ⚠️ G8 Leisure: BEETHOVEN Andante appears in both S4 (index 1) and S1 (index 24) — pending PDF verification before removal.
+- Trinity Diploma data parsed from PDF text extraction — some multi-line title entries may have minor formatting differences. Spot-check against source PDF if needed.
+- recommend.html Free discovery: returns pieces from all syllabuses mixed — could optionally add a syllabus filter in future.
