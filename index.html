@@ -191,10 +191,20 @@ function VideoModal({ modal, onClose }) {
 
 /* ── Magic Link Login Modal ── */
 function LoginModal({ onClose, onSuccess }) {
-    const [email, setEmail] = useState('');
-    const [sent, setSent] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+    const [step, setStep] = React.useState(1);
+    const [name, setName] = React.useState('');
+    const [role, setRole] = React.useState('');
+    const [email, setEmail] = React.useState('');
+    const [sent, setSent] = React.useState(false);
+    const [loading, setLoading] = React.useState(false);
+    const [error, setError] = React.useState('');
+
+    const ROLES = [
+        { id: 'student', label: 'Student',      emoji: '🎹' },
+        { id: 'teacher', label: 'Teacher',      emoji: '👩\u200d🏫' },
+        { id: 'hobby',   label: 'Hobby player', emoji: '🎵' },
+        { id: 'parent',  label: 'Parent',       emoji: '👨\u200d👧' },
+    ];
 
     const handleSend = async (e) => {
         e.preventDefault();
@@ -202,20 +212,38 @@ function LoginModal({ onClose, onSuccess }) {
         setLoading(true); setError('');
         const { error: err } = await _sb.auth.signInWithOtp({
             email: email.trim(),
-            options: { emailRedirectTo: window.location.href }
+            options: {
+                emailRedirectTo: window.location.href,
+                data: { full_name: name.trim(), role }
+            }
         });
         setLoading(false);
-        if (err) setError(err.message);
-        else setSent(true);
+        if (err) { setError(err.message); }
+        else {
+            if (name.trim()) localStorage.setItem('pb_user_name', name.trim());
+            if (role) localStorage.setItem('pb_user_role', role);
+            setSent(true);
+        }
     };
+
+    const headerBg = 'linear-gradient(135deg,#4f46e5,#6366f1)';
 
     return (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-box" onClick={e => e.stopPropagation()}>
-                <div style={{background:'linear-gradient(135deg,#4f46e5,#6366f1)',padding:'24px 24px 20px',textAlign:'center'}}>
+                <div style={{background:headerBg,padding:'24px 24px 20px',textAlign:'center'}}>
                     <div style={{fontSize:28,marginBottom:8}}>🎹</div>
-                    <div style={{fontSize:17,fontWeight:900,color:'white'}}>Save your pieces</div>
-                    <div style={{fontSize:11,color:'rgba(255,255,255,0.7)',marginTop:4,fontWeight:600}}>Sign in with just your email — no password needed</div>
+                    <div style={{fontSize:17,fontWeight:900,color:'white'}}>
+                        {step===1 ? 'Tell us about yourself' : 'Sign in to save your pieces'}
+                    </div>
+                    <div style={{fontSize:11,color:'rgba(255,255,255,0.7)',marginTop:4,fontWeight:600}}>
+                        {step===1 ? "We'll personalise your experience" : 'One click — no password needed'}
+                    </div>
+                    <div style={{display:'flex',justifyContent:'center',gap:6,marginTop:14}}>
+                        {[1,2].map(s => (
+                            <div key={s} style={{width:s===step?20:6,height:6,borderRadius:3,background:s===step?'white':'rgba(255,255,255,0.35)',transition:'width 0.2s'}}/>
+                        ))}
+                    </div>
                 </div>
                 <div style={{padding:'20px 24px 24px'}}>
                     {sent ? (
@@ -224,22 +252,50 @@ function LoginModal({ onClose, onSuccess }) {
                             <div style={{fontSize:14,fontWeight:800,color:'#1e293b',marginBottom:6}}>Check your email</div>
                             <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.5}}>We sent a sign-in link to <strong>{email}</strong>. Click it to continue.</div>
                         </div>
-                    ) : (
-                        <form onSubmit={handleSend}>
-                            <label style={{fontSize:10,fontWeight:800,textTransform:'uppercase',letterSpacing:'0.08em',color:'#94a3b8',display:'block',marginBottom:6}}>Email</label>
+                    ) : step === 1 ? (
+                        <div>
+                            <label style={{fontSize:10,fontWeight:800,textTransform:'uppercase',letterSpacing:'0.08em',color:'#94a3b8',display:'block',marginBottom:6}}>Your name</label>
                             <input
-                                type="email" value={email} onChange={e=>setEmail(e.target.value)}
-                                placeholder="your@email.com" autoFocus required
-                                style={{width:'100%',padding:'10px 12px',fontSize:14,fontFamily:'inherit',fontWeight:600,borderRadius:10,border:'1.5px solid #e2e8f0',outline:'none',color:'#1e293b',background:'#f8fafc',marginBottom:12}}
+                                type="text" value={name} onChange={e=>setName(e.target.value)}
+                                placeholder="e.g. Sarah" autoFocus
+                                style={{width:'100%',padding:'10px 12px',fontSize:14,fontFamily:'inherit',fontWeight:600,borderRadius:10,border:'1.5px solid #e2e8f0',outline:'none',color:'#1e293b',background:'#f8fafc',marginBottom:16,boxSizing:'border-box'}}
                             />
-                            {error && <div style={{fontSize:11,color:'#dc2626',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'6px 10px',marginBottom:10}}>{error}</div>}
-                            <button type="submit" disabled={loading}
-                                style={{width:'100%',padding:'11px 0',fontSize:13,fontWeight:800,fontFamily:'inherit',borderRadius:10,border:'none',background:'linear-gradient(135deg,#4f46e5,#6366f1)',color:'white',cursor:'pointer',opacity:loading?0.7:1}}>
-                                {loading ? 'Sending...' : 'Send sign-in link →'}
+                            <label style={{fontSize:10,fontWeight:800,textTransform:'uppercase',letterSpacing:'0.08em',color:'#94a3b8',display:'block',marginBottom:8}}>I am a…</label>
+                            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
+                                {ROLES.map(r => (
+                                    <button key={r.id} type="button" onClick={()=>setRole(r.id)}
+                                        style={{padding:'10px 8px',borderRadius:10,border:role===r.id?'2px solid #4f46e5':'1.5px solid #e2e8f0',background:role===r.id?'#eef2ff':'#f8fafc',cursor:'pointer',fontFamily:'inherit',transition:'all 0.15s'}}>
+                                        <div style={{fontSize:20,marginBottom:4}}>{r.emoji}</div>
+                                        <div style={{fontSize:11,fontWeight:800,color:role===r.id?'#4f46e5':'#475569'}}>{r.label}</div>
+                                    </button>
+                                ))}
+                            </div>
+                            <button type="button" onClick={()=>setStep(2)}
+                                style={{width:'100%',padding:'11px 0',fontSize:13,fontWeight:800,fontFamily:'inherit',borderRadius:10,border:'none',background:headerBg,color:'white',cursor:'pointer'}}>
+                                Continue →
                             </button>
                             <button type="button" onClick={onClose}
                                 style={{width:'100%',marginTop:8,padding:'9px 0',fontSize:12,fontWeight:700,fontFamily:'inherit',borderRadius:10,border:'1px solid #e2e8f0',background:'transparent',color:'#94a3b8',cursor:'pointer'}}>
                                 Continue without signing in
+                            </button>
+                        </div>
+                    ) : (
+                        <form onSubmit={handleSend}>
+                            {name && <div style={{fontSize:13,color:'#475569',marginBottom:14}}>Hi <strong style={{color:'#1e293b'}}>{name}</strong>! Enter your email to save your pieces.</div>}
+                            <label style={{fontSize:10,fontWeight:800,textTransform:'uppercase',letterSpacing:'0.08em',color:'#94a3b8',display:'block',marginBottom:6}}>Email</label>
+                            <input
+                                type="email" value={email} onChange={e=>setEmail(e.target.value)}
+                                placeholder="your@email.com" autoFocus required
+                                style={{width:'100%',padding:'10px 12px',fontSize:14,fontFamily:'inherit',fontWeight:600,borderRadius:10,border:'1.5px solid #e2e8f0',outline:'none',color:'#1e293b',background:'#f8fafc',marginBottom:12,boxSizing:'border-box'}}
+                            />
+                            {error && <div style={{fontSize:11,color:'#dc2626',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'6px 10px',marginBottom:10}}>{error}</div>}
+                            <button type="submit" disabled={loading}
+                                style={{width:'100%',padding:'11px 0',fontSize:13,fontWeight:800,fontFamily:'inherit',borderRadius:10,border:'none',background:headerBg,color:'white',cursor:'pointer',opacity:loading?0.7:1}}>
+                                {loading ? 'Sending...' : 'Send sign-in link →'}
+                            </button>
+                            <button type="button" onClick={()=>setStep(1)}
+                                style={{width:'100%',marginTop:8,padding:'9px 0',fontSize:12,fontWeight:700,fontFamily:'inherit',borderRadius:10,border:'1px solid #e2e8f0',background:'transparent',color:'#94a3b8',cursor:'pointer'}}>
+                                ← Back
                             </button>
                         </form>
                     )}
