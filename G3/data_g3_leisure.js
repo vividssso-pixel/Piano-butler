@@ -17,7 +17,7 @@ const DATA_G3_LEISURE = [
   { "l":"S4","s":"S4","c":"NAKADA, Y.","t":"Song of twilight","nat":"Japanese","era":"Contemporary","key":"Variable","focus":["Lyrical melody","Atmospheric character","Contemporary idiom"] },
   { "l":"S4","s":"S4","c":"ROLLIN, C.","t":"Nashville rag","nat":"American","era":"Contemporary","key":"Variable","focus":["Ragtime character","Rhythmic energy","American style"] },
   { "l":"S4","s":"S4","c":"SCHÖNBERG, C.-M.","t":"I dreamed a dream","nat":"French","era":"Contemporary","key":"Variable","focus":["Musical theatre","Lyrical expression","Dramatic character"] },
-  { "l":"S4","s":"S4","c":"TCHAIKOVSKY, P.I.","t":"Morning prayer","nat":"Russian","era":"Romantic","key":"Variable","focus":["Romantic character","Lyrical melody","Peaceful expression"] },
+  { "l":"S4","s":"S4","c":"TCHAIKOVSKY, P.","t":"Morning prayer","nat":"Russian","era":"Romantic","key":"Variable","focus":["Romantic character","Lyrical melody","Peaceful expression"] },
   { "l":"S4","s":"S4","c":"WEDGWOOD, O.","t":"Buckaroo","nat":"English","era":"Contemporary","key":"Variable","focus":["Energetic character","Rhythmic drive","Contemporary style"] },
 
   // ═══════════════════════════════════════════════════
@@ -31,8 +31,8 @@ const DATA_G3_LEISURE = [
   { "l":"S3","s":"S3","c":"LENNON, J. and McCARTNEY, P.","t":"Here there and everywhere","nat":"British","era":"Contemporary","key":"Variable","focus":["Popular melody","Lyrical character","Contemporary arrangement"] },
   { "l":"S3","s":"S3","c":"MIER, M.","t":"Jelly bean rag","nat":"American","era":"Contemporary","key":"Variable","focus":["Ragtime style","Rhythmic character","Contemporary idiom"] },
   { "l":"S3","s":"S3","c":"MOSER, J.","t":"Flying bees","nat":"German","era":"Contemporary","key":"Variable","focus":["Descriptive character","Light technique","Contemporary style"] },
-  { "l":"S3","s":"S3","c":"MOZART, W.","t":"Theme and Variation 1","nat":"Austrian","era":"Classical","key":"Variable","focus":["Classical form","Theme and variation","Musical clarity"] },
-  { "l":"S3","s":"S3","c":"MOZART, W. (arr. FABER and FABER)","t":"Theme","nat":"Austrian","era":"Classical","key":"Variable","focus":["Classical style","Melodic playing","Musical arrangement"] },
+  { "l":"S3","s":"S3","c":"MOZART, W.A.","t":"Theme and Variation 1","nat":"Austrian","era":"Classical","key":"Variable","focus":["Classical form","Theme and variation","Musical clarity"] },
+  { "l":"S3","s":"S3","c":"MOZART, W.A. (arr. FABER and FABER)","t":"Theme","nat":"Austrian","era":"Classical","key":"Variable","focus":["Classical style","Melodic playing","Musical arrangement"] },
   { "l":"S3","s":"S3","c":"SHEARING, G.","t":"Lullaby of Birdland","nat":"British","era":"Contemporary","key":"Variable","focus":["Jazz character","Lyrical melody","Contemporary style"] },
   { "l":"S3","s":"S3","c":"WILLIAMS, J.","t":"Theme from Jurassic Park","nat":"American","era":"Contemporary","key":"Variable","focus":["Film music","Dramatic character","Expressive melody"] },
 
@@ -46,7 +46,7 @@ const DATA_G3_LEISURE = [
   { "l":"S2","s":"S2","c":"CORNICK, M.","t":"Minor event","nat":"English","era":"Contemporary","key":"Variable","focus":["Jazz-influenced","Minor character","Contemporary idiom"] },
   { "l":"S2","s":"S2","c":"GOUNOD, C. (arr. FABER and FABER)","t":"Funeral march of a marionette","nat":"French","era":"Romantic","key":"D minor","focus":["Humorous character","March style","Dramatic flair"] },
   { "l":"S2","s":"S2","c":"JOHN, E. (arr. BRANDMAN)","t":"Song for Guy","nat":"English","era":"Contemporary","key":"Variable","focus":["Pop character","Lyrical melody","Contemporary style"] },
-  { "l":"S2","s":"S2","c":"MOZART, W.","t":"Polonaise","nat":"Austrian","era":"Classical","key":"Variable","focus":["Classical dance","Elegant character","Rhythmic precision"] },
+  { "l":"S2","s":"S2","c":"MOZART, W.A.","t":"Polonaise","nat":"Austrian","era":"Classical","key":"Variable","focus":["Classical dance","Elegant character","Rhythmic precision"] },
   { "l":"S2","s":"S2","c":"OLSON, L.","t":"Thank you Mrs Bach","nat":"American","era":"Contemporary","key":"Variable","focus":["Tribute character","Contemporary idiom","Musical humour"] },
   { "l":"S2","s":"S2","c":"SAINT-SAËNS, C. (arr. BRIMHALL)","t":"Le cygne (The swan)","nat":"French","era":"Romantic","key":"Variable","focus":["Lyrical melody","Elegant character","Flowing style"] },
 
@@ -55,7 +55,7 @@ const DATA_G3_LEISURE = [
   // ═══════════════════════════════════════════════════
 
   { "l":"S1","s":"S1","c":"BACH, J.S.","t":"Prelude","nat":"German","era":"Baroque","key":"Variable","focus":["Baroque style","Keyboard fluency","Technical clarity"] },
-  { "l":"S1","s":"S1","c":"BEETHOVEN, L. van.","t":"Choral symphony (arr.)","nat":"German","era":"Romantic","key":"Variable","focus":["Choral character","Musical arrangement","Expressive playing"] },
+  { "l":"S1","s":"S1","c":"BEETHOVEN, L. van","t":"Choral symphony (arr.)","nat":"German","era":"Romantic","key":"Variable","focus":["Choral character","Musical arrangement","Expressive playing"] },
   { "l":"S1","s":"S1","c":"CARMICHAEL, M.","t":"Georgia on my mind","nat":"American","era":"Contemporary","key":"Variable","focus":["Jazz standard","Lyrical melody","Contemporary style"] },
   { "l":"S1","s":"S1","c":"CHOPIN, F.","t":"Sostenuto","nat":"Polish","era":"Romantic","key":"Variable","focus":["Romantic phrasing","Expressive melody","Lyrical playing"] },
   { "l":"S1","s":"S1","c":"COREA, C.","t":"Children's song No 1","nat":"American","era":"Contemporary","key":"Variable","focus":["Contemporary idiom","Lyrical character","Jazz influence"] },
@@ -84,7 +84,7 @@ const DATA_G3_LEISURE = [
   { "l":"Manual","s":"Manual","c":"JOPLIN, S. (arr. RAY)","t":"The entertainer","nat":"American","era":"Contemporary","key":"Variable","focus":["Ragtime character","Rhythmic precision","American style"] },
   { "l":"Manual","s":"Manual","c":"KHACHATURIAN, A. (arr. LANNING)","t":"Adagio from Spartacus","nat":"Armenian","era":"Modern","key":"Variable","focus":["Expressive melody","Dramatic character","Lyrical playing"] },
   { "l":"Manual","s":"Manual","c":"LENNON, J. and McCARTNEY, P. (arr. BAKER)","t":"Michelle","nat":"English","era":"Contemporary","key":"Variable","focus":["Popular melody","Lyrical character","Contemporary arrangement"] },
-  { "l":"Manual","s":"Manual","c":"McBROOM, A. (arr. COATES)","t":"The rose","nat":"American","era":"Contemporary","key":"Variable","focus":["Popular ballad","Expressive melody","Lyrical playing"] },
+  { "l":"Manual","s":"Manual","c":"MCBROOM, A. (arr. COATES)","t":"The rose","nat":"American","era":"Contemporary","key":"Variable","focus":["Popular ballad","Expressive melody","Lyrical playing"] },
   { "l":"Manual","s":"Manual","c":"MIER, M.","t":"Wild honeysuckle rag","nat":"American","era":"Contemporary","key":"Variable","focus":["Ragtime style","Rhythmic energy","Contemporary character"] },
   { "l":"Manual","s":"Manual","c":"MILNE, E.","t":"Brolga stroll","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Australian character","Relaxed style","Contemporary idiom"] },
   { "l":"Manual","s":"Manual","c":"NORTON, C.","t":"Steam-train blues","nat":"English","era":"Contemporary","key":"Variable","focus":["Blues character","Rhythmic drive","Contemporary style"] },

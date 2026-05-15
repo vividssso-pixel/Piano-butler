@@ -48,7 +48,7 @@ const DATA_TRINITY_G2 = [
   { "c": "SHOSTAKOVICH, D.", "t": "March, Op. 69 No. 1", "nat": "Russian", "era": "Modern", "focus": ["March character", "Staccato touch", "Rhythmic precision"] },
   { "c": "STRECKE, G.", "t": "Romance (from Recital Collection for Piano, Grade 2)", "nat": "German", "era": "Romantic", "focus": ["Lyrical melody", "Expressive playing", "Simple phrasing"] },
   { "c": "TANSMAN, A.", "t": "Mazurka (from Pour les Enfants, 1st set)", "nat": "Polish", "era": "Modern", "focus": ["Folk-influenced dance", "Rhythmic character", "Simple phrasing"] },
-  { "c": "TÜRK, D.G.", "t": "Minuet in A minor (from Little Pieces for Pianoforte Players)", "nat": "German", "era": "Classical", "focus": ["Classical minuet", "Clear phrasing", "Simple ornamentation"] },
+  { "c": "TÜRK, D.", "t": "Minuet in A minor (from Little Pieces for Pianoforte Players)", "nat": "German", "era": "Classical", "focus": ["Classical minuet", "Clear phrasing", "Simple ornamentation"] },
   { "c": "TERZIBASCHITSCH, A.", "t": "Latin Groove (from Recital Collection for Piano, Grade 2)", "nat": "German", "era": "Contemporary", "focus": ["Latin style", "Rhythmic drive", "Simple syncopation"] },
   { "c": "VILLA-LOBOS, H.", "t": "Polka do bebê (from A Prole do Bebê, Vol. 1 No. 2, arr.)", "nat": "Brazilian", "era": "Modern", "focus": ["Dance character", "Brazilian flavour", "Light touch"] },
   { "c": "WALLIS, E.", "t": "Lullaby (from Recital Collection for Piano, Grade 2)", "nat": "English", "era": "Contemporary", "focus": ["Gentle character", "Smooth legato", "Simple melody"] },

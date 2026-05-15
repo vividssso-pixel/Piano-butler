@@ -107,7 +107,7 @@ const DATA_G7 = [
     "focus": ["Velocity", "Fingerwork", "Evenness"] },
 
   { "g": 7, "type": "General", "l": "A", "s": "Manual",
-    "c": "BURGMÜLLER, F.", "t": "La fileuse [Spinning song] No 9 from 18 characteristic studies Op. 109",
+    "c": "BURGMÜLLER, J.", "t": "La fileuse [Spinning song] No 9 from 18 characteristic studies Op. 109",
     "nat": "German", "era": "Romantic", "key": "D major",
     "focus": ["Spinning wheel figuration", "Legato touch", "Evenness"] },
 
@@ -142,7 +142,7 @@ const DATA_G7 = [
     "focus": ["Romantic lyrical style", "Cantabile", "Phrasing"] },
 
   { "g": 7, "type": "General", "l": "A", "s": "Manual",
-    "c": "HANDEL, G.", "t": "Preludio 1st movement from Suite (Partita) in G major HWV 450",
+    "c": "HANDEL, G.F.", "t": "Preludio 1st movement from Suite (Partita) in G major HWV 450",
     "nat": "German", "era": "Baroque", "key": "G major",
     "focus": ["Baroque style", "Ornaments", "Stately character"] },
 
@@ -210,7 +210,7 @@ const DATA_G7 = [
     "focus": ["Early Classical style", "Elegant phrasing", "Galant style"] },
 
   { "g": 7, "type": "General", "l": "B", "s": "Series 19",
-    "c": "BEETHOVEN, L. van.", "t": "Vivace Third movement of Sonata Op. 79",
+    "c": "BEETHOVEN, L. van", "t": "Vivace Third movement of Sonata Op. 79",
     "nat": "German", "era": "Classical", "key": "G major",
     "focus": ["Beethoven style", "Wit and energy", "Rhythmic precision"] },
 
@@ -231,7 +231,7 @@ const DATA_G7 = [
     "focus": ["Classical sonata", "Haydn humour", "Light articulation"] },
 
   { "g": 7, "type": "General", "l": "B", "s": "Series 18",
-    "c": "MOZART, W.", "t": "Allegro 1st movement from Sonata K 332",
+    "c": "MOZART, W.A.", "t": "Allegro 1st movement from Sonata K 332",
     "nat": "Austrian", "era": "Classical", "key": "F major",
     "focus": ["Mozartian elegance", "Sonata form", "Singing tone"] },
 
@@ -257,7 +257,7 @@ const DATA_G7 = [
     "focus": ["Classical style", "Sonata form", "Elegant articulation"] },
 
   { "g": 7, "type": "General", "l": "B", "s": "Series 17",
-    "c": "MOZART, W.", "t": "Allegro moderato 1st movement of Sonata K 330",
+    "c": "MOZART, W.A.", "t": "Allegro moderato 1st movement of Sonata K 330",
     "nat": "Austrian", "era": "Classical", "key": "C major",
     "focus": ["Mozartian grace", "Classical phrasing", "Singing tone"] },
 
@@ -273,22 +273,22 @@ const DATA_G7 = [
     "focus": ["Galant style", "Brilliant figuration", "Classical form"] },
 
   { "g": 7, "type": "General", "l": "B", "s": "Manual",
-    "c": "BEETHOVEN, L. van.", "t": "Rondo – Allegro 3rd movement from Sonata [No 8] in C minor Op. 13",
+    "c": "BEETHOVEN, L. van", "t": "Rondo – Allegro 3rd movement from Sonata [No 8] in C minor Op. 13",
     "nat": "German", "era": "Classical", "key": "C minor",
     "focus": ["Pathetique Sonata", "Drama and passion", "Classical rondo"] },
 
   { "g": 7, "type": "General", "l": "B", "s": "Manual",
-    "c": "BEETHOVEN, L. van.", "t": "Largo appassionato 2nd movement from Sonata in A major Op. 2 No 2",
+    "c": "BEETHOVEN, L. van", "t": "Largo appassionato 2nd movement from Sonata in A major Op. 2 No 2",
     "nat": "German", "era": "Classical", "key": "D major",
     "focus": ["Slow movement", "Singing tone", "Emotional depth"] },
 
   { "g": 7, "type": "General", "l": "B", "s": "Manual",
-    "c": "BEETHOVEN, L. van.", "t": "Rondo in C major Op. 51 No 1",
+    "c": "BEETHOVEN, L. van", "t": "Rondo in C major Op. 51 No 1",
     "nat": "German", "era": "Classical", "key": "C major",
     "focus": ["Rondo form", "Elegance", "Classical charm"] },
 
   { "g": 7, "type": "General", "l": "B", "s": "Manual",
-    "c": "BEETHOVEN, L. van.", "t": "Allegro cantabile 1st movement from Sonata in E♭ major WoO 47",
+    "c": "BEETHOVEN, L. van", "t": "Allegro cantabile 1st movement from Sonata in E♭ major WoO 47",
     "nat": "German", "era": "Classical", "key": "E♭ major",
     "focus": ["Early Beethoven", "Cantabile style", "Classical form"] },
 
@@ -318,27 +318,27 @@ const DATA_G7 = [
     "focus": ["Classical sonatina", "Elegant phrasing", "Light articulation"] },
 
   { "g": 7, "type": "General", "l": "B", "s": "Manual",
-    "c": "MOZART, W.", "t": "Allegro 1st movement from Sonata K 283",
+    "c": "MOZART, W.A.", "t": "Allegro 1st movement from Sonata K 283",
     "nat": "Austrian", "era": "Classical", "key": "G major",
     "focus": ["Mozartian singing tone", "Classical form", "Elegance"] },
 
   { "g": 7, "type": "General", "l": "B", "s": "Manual",
-    "c": "MOZART, W.", "t": "Allegro con spirito 1st movement from Sonata in C major K 309",
+    "c": "MOZART, W.A.", "t": "Allegro con spirito 1st movement from Sonata in C major K 309",
     "nat": "Austrian", "era": "Classical", "key": "C major",
     "focus": ["Mozartian brilliance", "Orchestral keyboard writing", "Phrasing"] },
 
   { "g": 7, "type": "General", "l": "B", "s": "Manual",
-    "c": "MOZART, W.", "t": "Rondo – Allegretto grazioso 3rd movement from Sonata in C major K 309",
+    "c": "MOZART, W.A.", "t": "Rondo – Allegretto grazioso 3rd movement from Sonata in C major K 309",
     "nat": "Austrian", "era": "Classical", "key": "C major",
     "focus": ["Rondo form", "Graceful character", "Light touch"] },
 
   { "g": 7, "type": "General", "l": "B", "s": "Manual",
-    "c": "MOZART, W.", "t": "Allegro 1st movement from Sonata in C minor K 457",
+    "c": "MOZART, W.A.", "t": "Allegro 1st movement from Sonata in C minor K 457",
     "nat": "Austrian", "era": "Classical", "key": "C minor",
     "focus": ["Dramatic power", "Operatic style", "Passion and control"] },
 
   { "g": 7, "type": "General", "l": "B", "s": "Manual",
-    "c": "MOZART, W.", "t": "Rondo in D major K 485",
+    "c": "MOZART, W.A.", "t": "Rondo in D major K 485",
     "nat": "Austrian", "era": "Classical", "key": "D major",
     "focus": ["Rondo form", "Sparkling clarity", "Elegant style"] },
 
@@ -361,13 +361,13 @@ const DATA_G7 = [
     "focus": ["Romantic melody", "Cantabile", "Expressive phrasing"] },
 
   { "g": 7, "type": "General", "l": "C", "s": "Series 19",
-    "c": "TCHAIKOVSKY, P.I.", "t": "Mars: Chant de l'alouette [March: Song of the lark] No 3 from Les saisons Op. 37b",
+    "c": "TCHAIKOVSKY, P.", "t": "Mars: Chant de l'alouette [March: Song of the lark] No 3 from Les saisons Op. 37b",
     "nat": "Russian", "era": "Romantic", "key": "Variable",
     "focus": ["Programmatic music", "Lyrical melody", "Russian Romantic style"] },
 
   // From AMEB Piano Grade 7 Series 18
   { "g": 7, "type": "General", "l": "C", "s": "Series 18",
-    "c": "FALLA, M. de.", "t": "Canción",
+    "c": "FALLA, M. de", "t": "Canción",
     "nat": "Spanish", "era": "Modern", "key": "Variable",
     "focus": ["Spanish colour", "Atmospheric", "Modern idiom"] },
 
@@ -382,7 +382,7 @@ const DATA_G7 = [
     "focus": ["Romantic impressionism", "Programme music", "Tone colour"] },
 
   { "g": 7, "type": "General", "l": "C", "s": "Series 18",
-    "c": "SÉVERAC, D. de.", "t": "Où l'on entend vieille boite à musique No 6 from En vacances Vol 1",
+    "c": "SÉVERAC, D. de", "t": "Où l'on entend vieille boite à musique No 6 from En vacances Vol 1",
     "nat": "French", "era": "Romantic", "key": "Variable",
     "focus": ["Impressionist character", "Tone colour", "Atmospheric playing"] },
 
@@ -403,7 +403,7 @@ const DATA_G7 = [
     "focus": ["Romantic expression", "Album leaf", "Lyrical melody"] },
 
   { "g": 7, "type": "General", "l": "C", "s": "Series 17",
-    "c": "SCHUMANN [née Wieck], C.", "t": "Larghetto No 1 from Op. 15",
+    "c": "SCHUMANN, C.", "t": "Larghetto No 1 from Op. 15",
     "nat": "German", "era": "Romantic", "key": "Variable",
     "focus": ["Romantic lyricism", "Singing tone", "Intimate expression"] },
 

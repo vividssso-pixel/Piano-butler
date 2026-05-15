@@ -26,7 +26,7 @@ const DATA_G2 = [
   // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═
 
   { "l":"A","s":"S17","c":"BARTÓK, B.","t":"Allegro","nat":"Hungarian","era":"Modern","key":"Variable","focus":["Modern idiom","Rhythmic precision","Stylistic clarity"] },
-  { "l":"A","s":"S17","c":"BURGMÜLLER, F.","t":"Innocence","nat":"German","era":"Romantic","key":"Variable","focus":["Expressive phrasing","Singing tone","Musical sensitivity"] },
+  { "l":"A","s":"S17","c":"BURGMÜLLER, J.","t":"Innocence","nat":"German","era":"Romantic","key":"Variable","focus":["Expressive phrasing","Singing tone","Musical sensitivity"] },
   { "l":"A","s":"S17","c":"COUPPEY, F. Le.","t":"Study","nat":"French","era":"Romantic","key":"Variable","focus":["Romantic character","Dynamic range","Legato playing"] },
   { "l":"A","s":"S17","c":"FISCHER, J.","t":"Balet anglois","nat":"German","era":"Baroque","key":"Variable","focus":["Baroque elegance","Terraced dynamics","Period style"] },
 
@@ -67,7 +67,7 @@ const DATA_G2 = [
   { "l":"A","s":"Manual","c":"KOTCHIE, J.","t":"Chasing tornados","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Lyrical expression","Contemporary idiom","Technical fluency"] },
   { "l":"A","s":"Manual","c":"LABURDA, J.","t":"Prelude No 1 from 10 little polyphonic pieces","nat":"Czech","era":"Contemporary","key":"Variable","focus":["Musical narrative","Contemporary character","Expressive tone"] },
   { "l":"A","s":"Manual","c":"LABURDA, J.","t":"Canzona No 2 from 10 little polyphonic pieces","nat":"Czech","era":"Contemporary","key":"Variable","focus":["Popular character","Contemporary style","Musical engagement"] },
-  { "l":"A","s":"Manual","c":"McDONAGH, A.","t":"Rat race","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Jazz-influenced","Contemporary idiom","Rhythmic awareness"] },
+  { "l":"A","s":"Manual","c":"MCDONAGH, A.","t":"Rat race","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Jazz-influenced","Contemporary idiom","Rhythmic awareness"] },
   { "l":"A","s":"Manual","c":"MILNE, E.","t":"Gold rush","nat":"American","era":"Contemporary","key":"Variable","focus":["Stylistic flair","Contemporary expression","Musical colour"] },
   { "l":"A","s":"Manual","c":"MILNE, E.","t":"Mister bumble","nat":"American","era":"Contemporary","key":"Variable","focus":["Australian character","Contemporary style","Musical identity"] },
   { "l":"A","s":"Manual","c":"MOZART, L.","t":"Burleske","nat":"Austrian","era":"Classical","key":"Variable","focus":["Classical phrasing","Melodic clarity","Period style"] },
@@ -76,16 +76,16 @@ const DATA_G2 = [
   { "l":"A","s":"Manual","c":"PEZOLD, C.","t":"Minuet in G minor BWV Anh 115","nat":"German","era":"Baroque","key":"Variable","focus":["Baroque style","Finger independence","Keyboard clarity"] },
   { "l":"A","s":"Manual","c":"PURCELL, H. (arr. MILNE)","t":"Air in D minor","nat":"English","era":"Baroque","key":"Variable","focus":["Baroque phrasing","Dance character","Ornamental detail"] },
   { "l":"A","s":"Manual","c":"PURCELL, H.","t":"Hornpipe in B♭ major","nat":"English","era":"Baroque","key":"Variable","focus":["Contrapuntal texture","Voice leading","Rhythmic precision"] },
-  { "l":"A","s":"Manual","c":"RAMEAU, J.","t":"Menuet in A minor","nat":"French","era":"Baroque","key":"Variable","focus":["Baroque elegance","Terraced dynamics","Period style"] },
+  { "l":"A","s":"Manual","c":"RAMEAU, J.-P.","t":"Menuet in A minor","nat":"French","era":"Baroque","key":"Variable","focus":["Baroque elegance","Terraced dynamics","Period style"] },
   { "l":"A","s":"Manual","c":"ROWLEY, A.","t":"Two’s company","nat":"English","era":"Modern","key":"Variable","focus":["Rhythmic energy","Modern character","Tonal contrast"] },
-  { "l":"A","s":"Manual","c":"TELEMANN, G.","t":"Jig","nat":"German","era":"Baroque","key":"Variable","focus":["Dance form","Keyboard fluency","Baroque character"] },
-  { "l":"A","s":"Manual","c":"TELEMANN, G.","t":"Rigaudon","nat":"German","era":"Baroque","key":"Variable","focus":["Polyphonic texture","Articulate playing","Historical style"] },
+  { "l":"A","s":"Manual","c":"TELEMANN, G.P.","t":"Jig","nat":"German","era":"Baroque","key":"Variable","focus":["Dance form","Keyboard fluency","Baroque character"] },
+  { "l":"A","s":"Manual","c":"TELEMANN, G.P.","t":"Rigaudon","nat":"German","era":"Baroque","key":"Variable","focus":["Polyphonic texture","Articulate playing","Historical style"] },
 
   // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═
   //  LIST B — S19  (4 pieces)
   // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═
 
-  { "l":"B","s":"S19","c":"BEETHOVEN, L. van.","t":"Romanze (2nd mvt from Sonatina Anh. 5 No 1)","nat":"German","era":"Classical","key":"Variable","focus":["Classical elegance","Clear articulation","Formal structure"] },
+  { "l":"B","s":"S19","c":"BEETHOVEN, L. van","t":"Romanze (2nd mvt from Sonatina Anh. 5 No 1)","nat":"German","era":"Classical","key":"Variable","focus":["Classical elegance","Clear articulation","Formal structure"] },
   { "l":"B","s":"S19","c":"GOEDICKE, A.","t":"Sonatina No 20 from Op. 36","nat":"Russian","era":"Modern","key":"Variable","focus":["Modern idiom","Rhythmic precision","Stylistic clarity"] },
   { "l":"B","s":"S19","c":"GURLITT, C.","t":"Der Leiermann No 19 from Op. 210","nat":"German","era":"Romantic","key":"Variable","focus":["Romantic expression","Lyrical melody","Tonal colour"] },
   { "l":"B","s":"S19","c":"SCHMITT, J.","t":"Allegro moderato (1st mvt from Sonatine Op. 249 No 1)","nat":"German","era":"Romantic","key":"Variable","focus":["Expressive phrasing","Singing tone","Musical sensitivity"] },
@@ -96,14 +96,14 @@ const DATA_G2 = [
 
   { "l":"B","s":"S18","c":"GOEDICKE, A.","t":"Petite pièce No 5 from Op. 6","nat":"Russian","era":"Modern","key":"Variable","focus":["Rhythmic energy","Modern character","Tonal contrast"] },
   { "l":"B","s":"S18","c":"LYNES, F.","t":"Allegro (1st mvt from Sonatina No 1 Op. 39)","nat":"American","era":"Romantic","key":"Variable","focus":["Romantic character","Dynamic range","Legato playing"] },
-  { "l":"B","s":"S18","c":"MOZART, W.","t":"Minuet KV 5","nat":"Austrian","era":"Classical","key":"Variable","focus":["Classical phrasing","Melodic clarity","Period style"] },
+  { "l":"B","s":"S18","c":"MOZART, W.A.","t":"Minuet KV 5","nat":"Austrian","era":"Classical","key":"Variable","focus":["Classical phrasing","Melodic clarity","Period style"] },
   { "l":"B","s":"S18","c":"ROLLIN, C.","t":"Mazurka for Chopin","nat":"American","era":"Contemporary","key":"Variable","focus":["Contemporary style","Musical expression","Creative character"] },
 
   // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═
   //  LIST B — S17  (4 pieces)
   // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═
 
-  { "l":"B","s":"S17","c":"MOZART, W.","t":"Menuetto I and Menuetto II (3rd mvt from Sonata KV 13)","nat":"Austrian","era":"Classical","key":"Variable","focus":["Sonatina form","Musical balance","Classical character"] },
+  { "l":"B","s":"S17","c":"MOZART, W.A.","t":"Menuetto I and Menuetto II (3rd mvt from Sonata KV 13)","nat":"Austrian","era":"Classical","key":"Variable","focus":["Sonatina form","Musical balance","Classical character"] },
   { "l":"B","s":"S17","c":"REICHARDT, J.","t":"Scherzo","nat":"German","era":"Classical","key":"Variable","focus":["Clean technique","Tonal clarity","Classical idiom"] },
   { "l":"B","s":"S17","c":"TÜRK, D.","t":"Poco presto e con allegrezza (3rd mvt from Sonata No 3)","nat":"German","era":"Classical","key":"Variable","focus":["Melodic singing","Phrase shaping","Even tone"] },
   { "l":"B","s":"S17","c":"VANHAL, J.","t":"Allegretto (2nd mvt from Sonatina No 2 Op. 41)","nat":"Czech","era":"Classical","key":"Variable","focus":["Classical balance","Light touch","Structural clarity"] },
@@ -116,7 +116,7 @@ const DATA_G2 = [
   { "l":"B","s":"Manual","c":"ATTWOOD, T.","t":"Sonatina in G Major No 1","nat":"English","era":"Classical","key":"Variable","focus":["Formal elegance","Tonal control","Classical phrasing"] },
   { "l":"B","s":"Manual","c":"BACH, J.C.","t":"Risoluto","nat":"German","era":"Classical","key":"Variable","focus":["Dance character","Classical precision","Light elegance"] },
   { "l":"B","s":"Manual","c":"BACH, J.C.","t":"Tempo giusto","nat":"German","era":"Classical","key":"Variable","focus":["Minuet grace","Period style","Expressive clarity"] },
-  { "l":"B","s":"Manual","c":"BEETHOVEN, L. van.","t":"Moderato (1st mvt from Sonatina in G major WoO Anh 5/1)","nat":"German","era":"Classical","key":"Variable","focus":["Lyrical melody","Classical poise","Tonal balance"] },
+  { "l":"B","s":"Manual","c":"BEETHOVEN, L. van","t":"Moderato (1st mvt from Sonatina in G major WoO Anh 5/1)","nat":"German","era":"Classical","key":"Variable","focus":["Lyrical melody","Classical poise","Tonal balance"] },
   { "l":"B","s":"Manual","c":"BURGMÜLLER, J.","t":"Pastorale No 3 from Op. 100","nat":"German","era":"Romantic","key":"Variable","focus":["Romantic warmth","Melodic shaping","Pianistic colour"] },
   { "l":"B","s":"Manual","c":"CLEMENTI, M.","t":"Vivace (3rd mvt from Sonatina Op. 36 No 1)","nat":"Italian","era":"Classical","key":"Variable","focus":["Sonatina style","Technical fluency","Musical proportion"] },
   { "l":"B","s":"Manual","c":"DIABELLI, A.","t":"Allegro moderato (1st mvt from Sonatina Op. 168 No 3)","nat":"Austrian","era":"Classical","key":"Variable","focus":["Classical elegance","Clear articulation","Formal structure"] },
@@ -228,8 +228,8 @@ const DATA_G2 = [
   { "l":"C","s":"Manual","c":"KABALEVSKY, D.","t":"Chastushka No 25 from Op. 89","nat":"Russian","era":"Modern","key":"Variable","focus":["Staccato technique","Modern idiom","Rhythmic precision"] },
   { "l":"C","s":"Manual","c":"LINN, J.","t":"L’oiseau-mouche [Hummingbird]","nat":"American","era":"Contemporary","key":"Variable","focus":["Rhythmic feel","Contemporary style","Musical personality"] },
   { "l":"C","s":"Manual","c":"MAGEAU, M.","t":"That mosquito!","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Lyrical expression","Contemporary idiom","Technical fluency"] },
-  { "l":"C","s":"Manual","c":"McDONAGH, A.","t":"Cheeky tango","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Musical narrative","Contemporary character","Expressive tone"] },
-  { "l":"C","s":"Manual","c":"McFARLANE, D.","t":"Reflections","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Popular character","Contemporary style","Musical engagement"] },
+  { "l":"C","s":"Manual","c":"MCDONAGH, A.","t":"Cheeky tango","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Musical narrative","Contemporary character","Expressive tone"] },
+  { "l":"C","s":"Manual","c":"MCFARLANE, D.","t":"Reflections","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Popular character","Contemporary style","Musical engagement"] },
   { "l":"C","s":"Manual","c":"MILNE, E.","t":"The little vortex","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Jazz-influenced","Contemporary idiom","Rhythmic awareness"] },
   { "l":"C","s":"Manual","c":"NORTON, C.","t":"Cheeky (rock ‘n’ roll) No 8","nat":"English","era":"Contemporary","key":"Variable","focus":["Stylistic flair","Contemporary expression","Musical colour"] },
   { "l":"C","s":"Manual","c":"NORTON, C.","t":"Foot tapper (disco) No 4","nat":"English","era":"Contemporary","key":"Variable","focus":["Rhythmic drive","Contemporary style","Dance energy"] },
@@ -243,7 +243,7 @@ const DATA_G2 = [
   { "l":"C","s":"Manual","c":"REBIKOV, V.","t":"The clown (Masterpieces with flair! Book 2)","nat":"Russian","era":"Modern","key":"Variable","focus":["Character piece","Modern style","Musical imagery"] },
   { "l":"C","s":"Manual","c":"ROWLEY, A.","t":"Miniature prelude and Miniature Fugue No 1","nat":"English","era":"Modern","key":"Variable","focus":["Rhythmic energy","Modern character","Tonal contrast"] },
   { "l":"C","s":"Manual","c":"SCHMITZ, M.","t":"Jazz invention No 1","nat":"German","era":"Contemporary","key":"Variable","focus":["Rhythmic feel","Contemporary style","Musical personality"] },
-  { "l":"C","s":"Manual","c":"SCHOENMEHL, M.","t":"The somersault king","nat":"German","era":"Contemporary","key":"Variable","focus":["Lyrical expression","Contemporary idiom","Technical fluency"] },
+  { "l":"C","s":"Manual","c":"SCHÖNMEHL, M.","t":"The somersault king","nat":"German","era":"Contemporary","key":"Variable","focus":["Lyrical expression","Contemporary idiom","Technical fluency"] },
   { "l":"C","s":"Manual","c":"SEIBER, M.","t":"Comodo No 1 from Rhythmical studies","nat":"Hungarian","era":"Modern","key":"Variable","focus":["Modern style","Dynamic contrast","Rhythmic drive"] },
   { "l":"C","s":"Manual","c":"SEIBER, M.","t":"Polka from Easy dances","nat":"Hungarian","era":"Modern","key":"Variable","focus":["Harmonic colour","Precise articulation","Modern phrasing"] },
   { "l":"C","s":"Manual","c":"SEIBER, M.","t":"Tango II (Habanera) from Easy dances","nat":"Hungarian","era":"Modern","key":"Variable","focus":["Rhythmic vitality","Modern harmony","Musical directness"] },

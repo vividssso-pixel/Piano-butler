@@ -42,7 +42,7 @@ const DATA_TRINITY_INITIAL = [
   { "c": "TERZIBASCHITSCH, A.", "t": "Rock Around the Clock (arr.)", "nat": "German", "era": "Contemporary", "focus": ["Rock style", "Simple arrangement", "Strong rhythm"] },
   { "c": "THUNTAWECH, A.", "t": "Firefly (from Recital Collection for Piano, Initial)", "nat": "Thai", "era": "Contemporary", "focus": ["Delicate touch", "Simple figurations", "Descriptive playing"] },
   { "c": "TRAD. / HUSSEY, D.", "t": "Scarborough Fair (arr.)", "nat": "English", "era": "Contemporary", "focus": ["Folk melody", "Simple arrangement", "Lyrical touch"] },
-  { "c": "TÜRK, D.G.", "t": "Little Rondo (from Recital Collection for Piano, Initial)", "nat": "German", "era": "Classical", "focus": ["Classical rondo", "Clear phrasing", "Balanced structure"] },
+  { "c": "TÜRK, D.", "t": "Little Rondo (from Recital Collection for Piano, Initial)", "nat": "German", "era": "Classical", "focus": ["Classical rondo", "Clear phrasing", "Balanced structure"] },
   { "c": "U2 (arr.)", "t": "With or Without You (arr.)", "nat": "Irish", "era": "Contemporary", "focus": ["Pop style", "Simple arrangement", "Lyrical melody"] },
   { "c": "VICARI, F.", "t": "Spring Morning (from Recital Collection for Piano, Initial)", "nat": "Italian", "era": "Contemporary", "focus": ["Descriptive playing", "Light touch", "Simple phrasing"] },
   { "c": "VOGEL, C.", "t": "Autumn Leaves (from Recital Collection for Piano, Initial)", "nat": "German", "era": "Contemporary", "focus": ["Atmospheric playing", "Lyrical melody", "Gentle touch"] },

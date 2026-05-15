@@ -37,7 +37,7 @@ const DATA_TRINITY_G6 = [
   { "grp": "B", "c": "BASTEAU, J.-M.", "t": "Mélodie (from Recital Collection for Piano, Grade 6)", "nat": "French", "era": "Contemporary", "focus": ["Lyrical melody", "Singing tone", "Simple phrasing"] },
   { "grp": "B", "c": "BÉRA-TAGRINE, N.", "t": "Bossa Nova (from Recital Collection for Piano, Grade 6)", "nat": "French", "era": "Contemporary", "focus": ["Bossa nova style", "Simple syncopation", "Light touch"] },
   { "grp": "B", "c": "BÉRA-TAGRINE, N.", "t": "Tango Nuevo (from Recital Collection for Piano, Grade 6)", "nat": "French", "era": "Contemporary", "focus": ["Tango character", "Rhythmic drive", "Expressive phrasing"] },
-  { "grp": "B", "c": "BURGMÜLLER, F.", "t": "La Chevaleresque, Op. 100 No. 25", "nat": "German", "era": "Romantic", "focus": ["Heroic character", "Scale technique", "Dynamic contrast"] },
+  { "grp": "B", "c": "BURGMÜLLER, J.", "t": "La Chevaleresque, Op. 100 No. 25", "nat": "German", "era": "Romantic", "focus": ["Heroic character", "Scale technique", "Dynamic contrast"] },
   { "grp": "B", "c": "BURLEIGH, H.T.", "t": "Deep River (arr.)", "nat": "American", "era": "Romantic", "focus": ["Spiritual character", "Singing melody", "Expressive phrasing"] },
   { "grp": "B", "c": "CAINE, U.", "t": "Blues Fantasia (from Recital Collection for Piano, Grade 6)", "nat": "American", "era": "Contemporary", "focus": ["Blues style", "Expressive freedom", "Jazz character"] },
   { "grp": "B", "c": "CAINE, U.", "t": "Latin Nocturne (from Recital Collection for Piano, Grade 6)", "nat": "American", "era": "Contemporary", "focus": ["Latin jazz style", "Night character", "Expressive phrasing"] },

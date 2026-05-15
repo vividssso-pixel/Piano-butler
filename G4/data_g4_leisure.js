@@ -13,7 +13,7 @@ const DATA_G4_LEISURE = [
   { "l":"S4","s":"S4","c":"BASTIEN, J.","t":"Let the good times roll","nat":"American","era":"Contemporary","key":"Variable","focus":["Blues idiom","Musical flair","Rhythmic energy"] },
   { "l":"S4","s":"S4","c":"BERENS, H.","t":"Allegro con fuoco","nat":"German","era":"Romantic","key":"Variable","focus":["Fiery character","Rhythmic drive","Technical energy"] },
   { "l":"S4","s":"S4","c":"BOBER, M.","t":"Twilight","nat":"American","era":"Contemporary","key":"Variable","focus":["Lyrical character","Tone colour","Evening imagery"] },
-  { "l":"S4","s":"S4","c":"GRIEG, E.H.","t":"Grandmother's minuet","nat":"Norwegian","era":"Romantic","key":"Variable","focus":["Minuet character","Elegant playing","Musical grace"] },
+  { "l":"S4","s":"S4","c":"GRIEG, E.","t":"Grandmother's minuet","nat":"Norwegian","era":"Romantic","key":"Variable","focus":["Minuet character","Elegant playing","Musical grace"] },
   { "l":"S4","s":"S4","c":"HUTCHENS, F.","t":"Sunday morning","nat":"Australian","era":"Modern","key":"Variable","focus":["Tranquil character","Australian music","Lyrical playing"] },
   { "l":"S4","s":"S4","c":"KANDER, J. arr. FABER","t":"Theme from New York New York","nat":"American","era":"Contemporary","key":"Variable","focus":["Jazz/Broadway idiom","Arrangement","Musical flair"] },
   { "l":"S4","s":"S4","c":"ROLLIN, C.","t":"Kitten 'n' mousin' on the keys","nat":"American","era":"Contemporary","key":"Variable","focus":["Playful character","Light touch","Musical humour"] },

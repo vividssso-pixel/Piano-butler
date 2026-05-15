@@ -61,7 +61,7 @@ const DATA_G2_LEISURE = [
   { "l":"S1","s":"S1","c":"CHUA, S.","t":"Hoonmobile","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Contemporary idiom","Stylistic awareness","Expressive playing"] },
   { "l":"S1","s":"S1","c":"JOPLIN, S.","t":"The entertainer","nat":"American","era":"Contemporary","key":"Variable","focus":["Creative expression","Contemporary character","Musical imagery"] },
   { "l":"S1","s":"S1","c":"MIER, M.","t":"Raspberry rag","nat":"American","era":"Contemporary","key":"Variable","focus":["Rhythmic feel","Contemporary style","Musical personality"] },
-  { "l":"S1","s":"S1","c":"MOZART, W.","t":"Cherubino’s song","nat":"Austrian","era":"Classical","key":"Variable","focus":["Classical elegance","Clear articulation","Formal structure"] },
+  { "l":"S1","s":"S1","c":"MOZART, W.A.","t":"Cherubino’s song","nat":"Austrian","era":"Classical","key":"Variable","focus":["Classical elegance","Clear articulation","Formal structure"] },
   { "l":"S1","s":"S1","c":"NICKLAUS, C.","t":"Fantasie","nat":"German","era":"Romantic","key":"Variable","focus":["Romantic expression","Lyrical melody","Tonal colour"] },
   { "l":"S1","s":"S1","c":"PEZOLD, C.","t":"Menuet","nat":"German","era":"Baroque","key":"Variable","focus":["Baroque style","Finger independence","Keyboard clarity"] },
   { "l":"S1","s":"S1","c":"TANAKA, K.","t":"Dugong","nat":"Japanese","era":"Contemporary","key":"Variable","focus":["Lyrical expression","Contemporary idiom","Technical fluency"] },

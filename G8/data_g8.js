@@ -18,7 +18,7 @@ const DATA_G8 = [
 
   // ── LIST A ── Series 17 ────────────────────────────────────────────────────
   { "l": "A", "s": "S17", "c": "BACH, J.S.", "t": "Capriccio 6th movement of Partita No 2 BWV 826", "nat": "German", "era": "Baroque", "key": "C minor", "focus": ["Dance form", "Counterpoint", "Baroque style"] },
-  { "l": "A", "s": "S17", "c": "HANDEL, G.", "t": "Allegro 3rd movement of Suite HWV 431", "nat": "German", "era": "Baroque", "key": "Variable", "focus": ["Suite character", "Articulation", "Rhythmic precision"] },
+  { "l": "A", "s": "S17", "c": "HANDEL, G.F.", "t": "Allegro 3rd movement of Suite HWV 431", "nat": "German", "era": "Baroque", "key": "Variable", "focus": ["Suite character", "Articulation", "Rhythmic precision"] },
   { "l": "A", "s": "S17", "c": "MOSZKOWSKI, M.", "t": "Etude No 2 from Op. 72", "nat": "German", "era": "Romantic", "key": "Variable", "focus": ["Étude", "Velocity", "Technical brilliance"] },
   { "l": "A", "s": "S17", "c": "SCARLATTI, D.", "t": "Sonata K 209", "nat": "Italian", "era": "Baroque", "key": "A major", "focus": ["Binary form", "Ornamentation", "Leaps"] },
 
@@ -56,17 +56,17 @@ const DATA_G8 = [
   // ── LIST B ── Series 17 ────────────────────────────────────────────────────
   { "l": "B", "s": "S17", "c": "HAYDN, J.", "t": "Allegro 1st movement of Sonata Hob XVI:49", "nat": "Austrian", "era": "Classical", "key": "E♭ major", "focus": ["Classical form", "Ornamentation", "Haydn wit"] },
   { "l": "B", "s": "S17", "c": "KOZELUCH, L.", "t": "Allegro con brio 1st movement of Sonata Op. 1 No 3", "nat": "Czech", "era": "Classical", "key": "Variable", "focus": ["Classical sonata", "Drive", "Articulation"] },
-  { "l": "B", "s": "S17", "c": "MOZART, W.", "t": "Allegro con spirito 1st movement of Sonata K 311 (284c)", "nat": "Austrian", "era": "Classical", "key": "D major", "focus": ["Sonata form", "Energy", "Ornaments"] },
+  { "l": "B", "s": "S17", "c": "MOZART, W.A.", "t": "Allegro con spirito 1st movement of Sonata K 311 (284c)", "nat": "Austrian", "era": "Classical", "key": "D major", "focus": ["Sonata form", "Energy", "Ornaments"] },
   { "l": "B", "s": "S17", "c": "SCHUBERT, F.", "t": "Allegro moderato 1st movement of Sonata D 459", "nat": "Austrian", "era": "Romantic", "key": "E major", "focus": ["Romantic sonata", "Lyricism", "Harmonic colour"] },
 
   // ── LIST B ── Manual ────────────────────────────────────────────────────────
-  { "l": "B", "s": "Manual", "c": "BEETHOVEN, L. van.", "t": "Rondo – Grazioso 4th movement from Sonata in A major Op. 2 No 2", "nat": "German", "era": "Classical", "key": "A major", "focus": ["Rondo form", "Classical wit", "Lightness"] },
-  { "l": "B", "s": "Manual", "c": "BEETHOVEN, L. van.", "t": "Rondo – Poco allegretto e grazioso 4th movement from Sonata in E♭ major Op. 7", "nat": "German", "era": "Classical", "key": "E♭ major", "focus": ["Rondo form", "Grace", "Long-range phrasing"] },
-  { "l": "B", "s": "Manual", "c": "BEETHOVEN, L. van.", "t": "Allegro con brio 1st movement from Sonata in B♭ major Op. 22", "nat": "German", "era": "Classical", "key": "B♭ major", "focus": ["Sonata form", "Virtuosity", "Development"] },
-  { "l": "B", "s": "Manual", "c": "BEETHOVEN, L. van.", "t": "Allegro 1st movement from Sonata in D major Op. 28", "nat": "German", "era": "Classical", "key": "D major", "focus": ["Sonata form", "Pastoral character", "Development"] },
-  { "l": "B", "s": "Manual", "c": "BEETHOVEN, L. van.", "t": "Allegro vivace 1st movement from Sonata in G major Op. 31 No 1", "nat": "German", "era": "Classical", "key": "G major", "focus": ["Sonata form", "Humor", "Development"] },
-  { "l": "B", "s": "Manual", "c": "BEETHOVEN, L. van.", "t": "Polonaise in C major Op. 89", "nat": "German", "era": "Classical", "key": "C major", "focus": ["Dance character", "Clarity", "Elegance"] },
-  { "l": "B", "s": "Manual", "c": "BEETHOVEN, L. van.", "t": "Rondo a Capriccio ('Rage over a lost penny') Op. 129", "nat": "German", "era": "Classical", "key": "G major", "focus": ["Rondo form", "Humor", "Technical brilliance"] },
+  { "l": "B", "s": "Manual", "c": "BEETHOVEN, L. van", "t": "Rondo – Grazioso 4th movement from Sonata in A major Op. 2 No 2", "nat": "German", "era": "Classical", "key": "A major", "focus": ["Rondo form", "Classical wit", "Lightness"] },
+  { "l": "B", "s": "Manual", "c": "BEETHOVEN, L. van", "t": "Rondo – Poco allegretto e grazioso 4th movement from Sonata in E♭ major Op. 7", "nat": "German", "era": "Classical", "key": "E♭ major", "focus": ["Rondo form", "Grace", "Long-range phrasing"] },
+  { "l": "B", "s": "Manual", "c": "BEETHOVEN, L. van", "t": "Allegro con brio 1st movement from Sonata in B♭ major Op. 22", "nat": "German", "era": "Classical", "key": "B♭ major", "focus": ["Sonata form", "Virtuosity", "Development"] },
+  { "l": "B", "s": "Manual", "c": "BEETHOVEN, L. van", "t": "Allegro 1st movement from Sonata in D major Op. 28", "nat": "German", "era": "Classical", "key": "D major", "focus": ["Sonata form", "Pastoral character", "Development"] },
+  { "l": "B", "s": "Manual", "c": "BEETHOVEN, L. van", "t": "Allegro vivace 1st movement from Sonata in G major Op. 31 No 1", "nat": "German", "era": "Classical", "key": "G major", "focus": ["Sonata form", "Humor", "Development"] },
+  { "l": "B", "s": "Manual", "c": "BEETHOVEN, L. van", "t": "Polonaise in C major Op. 89", "nat": "German", "era": "Classical", "key": "C major", "focus": ["Dance character", "Clarity", "Elegance"] },
+  { "l": "B", "s": "Manual", "c": "BEETHOVEN, L. van", "t": "Rondo a Capriccio ('Rage over a lost penny') Op. 129", "nat": "German", "era": "Classical", "key": "G major", "focus": ["Rondo form", "Humor", "Technical brilliance"] },
   { "l": "B", "s": "Manual", "c": "CLEMENTI, M.", "t": "Rondo – Spiritoso 2nd movement from Sonata in C major Op. 2 No 1", "nat": "Italian", "era": "Classical", "key": "C major", "focus": ["Rondo form", "Energy", "Articulation"] },
   { "l": "B", "s": "Manual", "c": "CLEMENTI, M.", "t": "Presto 1st movement from Sonata in D major Op. 25 No 6", "nat": "Italian", "era": "Classical", "key": "D major", "focus": ["Sonata form", "Velocity", "Virtuosity"] },
   { "l": "B", "s": "Manual", "c": "CLEMENTI, M.", "t": "Rondo – Allegro assai 3rd movement from Sonata in D major Op. 25 No 6", "nat": "Italian", "era": "Classical", "key": "D major", "focus": ["Rondo form", "Velocity", "Brilliance"] },
@@ -74,9 +74,9 @@ const DATA_G8 = [
   { "l": "B", "s": "Manual", "c": "HAYDN, J.", "t": "Sonata in G major [complete] Hob XVI:40", "nat": "Austrian", "era": "Classical", "key": "G major", "focus": ["Complete sonata", "Classical style", "Ornamentation"] },
   { "l": "B", "s": "Manual", "c": "HAYDN, J.", "t": "Allegro 1st movement from Sonata in B♭ major Hob XVI:41", "nat": "Austrian", "era": "Classical", "key": "B♭ major", "focus": ["Classical form", "Wit", "Articulation"] },
   { "l": "B", "s": "Manual", "c": "HAYDN, J.", "t": "Fantasia in C major Hob XVII:4", "nat": "Austrian", "era": "Classical", "key": "C major", "focus": ["Fantasy form", "Harmonic exploration", "Improvisation"] },
-  { "l": "B", "s": "Manual", "c": "MOZART, W.", "t": "Rondeau – Allegro 3rd movement from Sonata in B♭ major K 281 (189f)", "nat": "Austrian", "era": "Classical", "key": "B♭ major", "focus": ["Rondo form", "Grace", "Melody"] },
-  { "l": "B", "s": "Manual", "c": "MOZART, W.", "t": "Allegro 1st movement from Sonata in D major K 284 (205b)", "nat": "Austrian", "era": "Classical", "key": "D major", "focus": ["Sonata form", "Brilliance", "Development"] },
-  { "l": "B", "s": "Manual", "c": "MOZART, W.", "t": "Allegro assai 3rd movement from Sonata in F major K 332 (300k)", "nat": "Austrian", "era": "Classical", "key": "F major", "focus": ["Sonata form", "Energy", "Clarity"] },
+  { "l": "B", "s": "Manual", "c": "MOZART, W.A.", "t": "Rondeau – Allegro 3rd movement from Sonata in B♭ major K 281 (189f)", "nat": "Austrian", "era": "Classical", "key": "B♭ major", "focus": ["Rondo form", "Grace", "Melody"] },
+  { "l": "B", "s": "Manual", "c": "MOZART, W.A.", "t": "Allegro 1st movement from Sonata in D major K 284 (205b)", "nat": "Austrian", "era": "Classical", "key": "D major", "focus": ["Sonata form", "Brilliance", "Development"] },
+  { "l": "B", "s": "Manual", "c": "MOZART, W.A.", "t": "Allegro assai 3rd movement from Sonata in F major K 332 (300k)", "nat": "Austrian", "era": "Classical", "key": "F major", "focus": ["Sonata form", "Energy", "Clarity"] },
 
   // ── LIST C ── Series 19 ────────────────────────────────────────────────────
   { "l": "C", "s": "S19", "c": "COLERIDGE-TAYLOR, S.", "t": "Andante No 2 from Three-fours (Valse suite) Op. 71", "nat": "British", "era": "Romantic", "key": "Variable", "focus": ["Waltz character", "Lyricism", "Tone colour"] },
@@ -88,7 +88,7 @@ const DATA_G8 = [
   { "l": "C", "s": "S18", "c": "MACDOWELL, E.", "t": "Hexentanz No 2 from Op. 17", "nat": "American", "era": "Romantic", "key": "Variable", "focus": ["Character piece", "Brilliance", "Imagery"] },
   { "l": "C", "s": "S18", "c": "SCHUMANN, C.", "t": "Mazurka No 3 from Op. 6", "nat": "German", "era": "Romantic", "key": "Variable", "focus": ["Dance character", "Women composers", "Rhythm"] },
   { "l": "C", "s": "S18", "c": "SMETANA, B.", "t": "Polka No 1 from Op. 8", "nat": "Czech", "era": "Romantic", "key": "Variable", "focus": ["Dance character", "Czech music", "Rhythm"] },
-  { "l": "C", "s": "S18", "c": "TCHAIKOVSKY, P.I.", "t": "Humoresque No 2 from Op. 10", "nat": "Russian", "era": "Romantic", "key": "G major", "focus": ["Humor", "Character piece", "Elegance"] },
+  { "l": "C", "s": "S18", "c": "TCHAIKOVSKY, P.", "t": "Humoresque No 2 from Op. 10", "nat": "Russian", "era": "Romantic", "key": "G major", "focus": ["Humor", "Character piece", "Elegance"] },
 
   // ── LIST C ── Series 17 ────────────────────────────────────────────────────
   { "l": "C", "s": "S17", "c": "CHADWICK, G.", "t": "Scherzino No 3 from Op. 7", "nat": "American", "era": "Romantic", "key": "Variable", "focus": ["Character piece", "Scherzo humor", "Lightness"] },
@@ -119,7 +119,7 @@ const DATA_G8 = [
   { "l": "C", "s": "Manual", "c": "SCHUMANN, R.", "t": "Romance in F♯ major No 2 from Drei Romanzen Op. 28", "nat": "German", "era": "Romantic", "key": "F♯ major", "focus": ["Romance", "Lyricism", "Counterpoint"] },
   { "l": "C", "s": "Manual", "c": "SCHUMANN, R.", "t": "Vogel als Prophet No 7 from Waldscenen Op. 82", "nat": "German", "era": "Romantic", "key": "G minor", "focus": ["Nature imagery", "Atmosphere", "Subtle touch"] },
   { "l": "C", "s": "Manual", "c": "SCHUMANN, R.", "t": "Schlummerlied [Slumber song] No 16 from Albumblätter Op. 124", "nat": "German", "era": "Romantic", "key": "E major", "focus": ["Gentle character", "Lullaby", "Voice leading"] },
-  { "l": "C", "s": "Manual", "c": "SKRYABIN, A.", "t": "Andante No 1 from Two nocturnes Op. 5", "nat": "Russian", "era": "Romantic", "key": "F♯ major", "focus": ["Nocturne", "Lyricism", "Harmonic richness"] },
+  { "l": "C", "s": "Manual", "c": "SCRIABIN, A.", "t": "Andante No 1 from Two nocturnes Op. 5", "nat": "Russian", "era": "Romantic", "key": "F♯ major", "focus": ["Nocturne", "Lyricism", "Harmonic richness"] },
   { "l": "C", "s": "Manual", "c": "SZYMANOWSKA, M.", "t": "Nocturne", "nat": "Polish", "era": "Romantic", "key": "B♭ major", "focus": ["Nocturne", "Women composers", "Polish Romanticism"] },
   { "l": "C", "s": "Manual", "c": "WIDOR, C.", "t": "Valse-impromptu No 6 from 6 morceaux de salon Op. 15", "nat": "French", "era": "Romantic", "key": "Variable", "focus": ["Waltz", "French salon music", "Elegance"] },
   { "l": "C", "s": "Manual", "c": "WILCHER, P.", "t": "A rose in water", "nat": "Australian", "era": "Contemporary", "key": "Variable", "focus": ["Australian music", "Imagery", "Contemporary style"] },

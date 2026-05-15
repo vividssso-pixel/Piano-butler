@@ -11,7 +11,7 @@ const DATA_G7_LEISURE = [
     "focus": ["Lyrical melody", "Expressive playing", "Romantic character"] },
 
   { "g": 7, "type": "Leisure", "l": "S4", "s": "Series 4",
-    "c": "COPLAND, A. arr. NORTON.", "t": "Hoedown",
+    "c": "COPLAND, A. arr. NORTON", "t": "Hoedown",
     "nat": "American", "era": "Modern", "key": "Variable",
     "focus": ["American folk style", "Rhythmic drive", "Ensemble character"] },
 
@@ -31,7 +31,7 @@ const DATA_G7_LEISURE = [
     "focus": ["Pop ballad style", "Lyrical phrasing", "Contemporary arrangement"] },
 
   { "g": 7, "type": "Leisure", "l": "S4", "s": "Series 4",
-    "c": "MASSENET, J. arr. ROQUES.", "t": "Méditation",
+    "c": "MASSENET, J. arr. ROQUES", "t": "Méditation",
     "nat": "French", "era": "Romantic", "key": "Variable",
     "focus": ["Lyrical cantabile", "Romantic expression", "Singing tone"] },
 
@@ -123,7 +123,7 @@ const DATA_G7_LEISURE = [
     "focus": ["Romantic character", "Czech folk influence", "Lyrical melody"] },
 
   { "g": 7, "type": "Leisure", "l": "S2", "s": "Series 2",
-    "c": "FALLA, M. de. arr. DURO.", "t": "Danza del terror",
+    "c": "FALLA, M. de arr. DURO", "t": "Danza del terror",
     "nat": "Spanish", "era": "Modern", "key": "Variable",
     "focus": ["Spanish character", "Rhythmic vitality", "Dramatic playing"] },
 
@@ -189,7 +189,7 @@ const DATA_G7_LEISURE = [
     "focus": ["Baroque style", "Voice leading", "Ornamentation"] },
 
   { "g": 7, "type": "Leisure", "l": "S1", "s": "Series 1",
-    "c": "BEETHOVEN, L. van.", "t": "Adagio sostenuto",
+    "c": "BEETHOVEN, L. van", "t": "Adagio sostenuto",
     "nat": "German", "era": "Classical", "key": "C♯ minor",
     "focus": ["Moonlight Sonata", "Sustained tone", "Expressive depth"] },
 
@@ -234,7 +234,7 @@ const DATA_G7_LEISURE = [
     "focus": ["Pop ballad style", "Lyrical melody", "Expressive phrasing"] },
 
   { "g": 7, "type": "Leisure", "l": "S1", "s": "Series 1",
-    "c": "MOZART, W.", "t": "Rondo alla turca",
+    "c": "MOZART, W.A.", "t": "Rondo alla turca",
     "nat": "Austrian", "era": "Classical", "key": "A major",
     "focus": ["Turkish style", "Crisp articulation", "Rhythmic vitality"] },
 
@@ -265,12 +265,12 @@ const DATA_G7_LEISURE = [
     "focus": ["Baroque counterpoint", "Prelude character", "Voice leading"] },
 
   { "g": 7, "type": "Leisure", "l": "Manual", "s": "Manual",
-    "c": "BEETHOVEN, L. van.", "t": "Allegro 1st movement from Sonata in F minor Op. 2 No 1",
+    "c": "BEETHOVEN, L. van", "t": "Allegro 1st movement from Sonata in F minor Op. 2 No 1",
     "nat": "German", "era": "Classical", "key": "F minor",
     "focus": ["Early Beethoven", "Dramatic character", "Sonata form"] },
 
   { "g": 7, "type": "Leisure", "l": "Manual", "s": "Manual",
-    "c": "BEETHOVEN, L. van.", "t": "Menuetto 3rd movement from Sonata in E♭ major Op. 31 No 3",
+    "c": "BEETHOVEN, L. van", "t": "Menuetto 3rd movement from Sonata in E♭ major Op. 31 No 3",
     "nat": "German", "era": "Classical", "key": "E♭ major",
     "focus": ["Minuet character", "Classical grace", "Light articulation"] },
 
@@ -410,27 +410,27 @@ const DATA_G7_LEISURE = [
     "focus": ["Romantic character", "Improvisatory style", "Expression"] },
 
   { "g": 7, "type": "Leisure", "l": "Manual", "s": "Manual",
-    "c": "MOZART, W.", "t": "Marcia in C major K 408/1",
+    "c": "MOZART, W.A.", "t": "Marcia in C major K 408/1",
     "nat": "Austrian", "era": "Classical", "key": "C major",
     "focus": ["March character", "Classical style", "Crisp articulation"] },
 
   { "g": 7, "type": "Leisure", "l": "Manual", "s": "Manual",
-    "c": "MOZART, W.", "t": "Minuet in D major K 355",
+    "c": "MOZART, W.A.", "t": "Minuet in D major K 355",
     "nat": "Austrian", "era": "Classical", "key": "D major",
     "focus": ["Minuet character", "Classical elegance", "Grace and poise"] },
 
   { "g": 7, "type": "Leisure", "l": "Manual", "s": "Manual",
-    "c": "MOZART, W.", "t": "Rondeau en polonaise 2nd movement from Sonata in D major K 284",
+    "c": "MOZART, W.A.", "t": "Rondeau en polonaise 2nd movement from Sonata in D major K 284",
     "nat": "Austrian", "era": "Classical", "key": "D major",
     "focus": ["Polish dance style", "Classical form", "Elegant character"] },
 
   { "g": 7, "type": "Leisure", "l": "Manual", "s": "Manual",
-    "c": "MOZART, W.", "t": "Variations on 'Ah, vous dirai-je, maman' K 265",
+    "c": "MOZART, W.A.", "t": "Variations on 'Ah, vous dirai-je, maman' K 265",
     "nat": "Austrian", "era": "Classical", "key": "C major",
     "focus": ["Theme and variations", "Classical style", "Technical variety"] },
 
   { "g": 7, "type": "Leisure", "l": "Manual", "s": "Manual",
-    "c": "MUSORGSKY, M.", "t": "Il vecchio castello No 2 from Kartinki s vitavki (Pictures at an exhibition)",
+    "c": "MUSSORGSKY, M.", "t": "Il vecchio castello No 2 from Kartinki s vitavki (Pictures at an exhibition)",
     "nat": "Russian", "era": "Romantic", "key": "G♯ minor",
     "focus": ["Programme music", "Atmospheric", "Singing melody"] },
 
@@ -445,7 +445,7 @@ const DATA_G7_LEISURE = [
     "focus": ["Humorous character", "Contemporary style", "Fun piece"] },
 
   { "g": 7, "type": "Leisure", "l": "Manual", "s": "Manual",
-    "c": "RACHMANINOFF, S. arr. LONG.", "t": "18th variation from Rhapsody on a theme of Paganini",
+    "c": "RACHMANINOFF, S. arr. LONG", "t": "18th variation from Rhapsody on a theme of Paganini",
     "nat": "Russian", "era": "Romantic", "key": "D♭ major",
     "focus": ["Romantic lyricism", "Cantabile melody", "Expressive depth"] },
 

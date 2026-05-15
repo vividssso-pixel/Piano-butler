@@ -24,7 +24,7 @@ const DATA_G4 = [
   { "l":"A","s":"S17","c":"DARGOMIZHSKY, A.","t":"Tabakerochniÿ val's (Snuffbox waltz)","nat":"Russian","era":"Romantic","key":"Variable","focus":["Waltz style","Delicate touch","Romantic character"] },
   { "l":"A","s":"S17","c":"HELLER, S.","t":"Study No 1 from Op.46","nat":"German","era":"Romantic","key":"Variable","focus":["Étude","Legato melody","Accompaniment balance"] },
   { "l":"A","s":"S17","c":"SCHUMANN, R.","t":"Kleine Studie No 14 from Op.68","nat":"German","era":"Romantic","key":"Variable","focus":["Legato playing","Voice independence","Romantic character"] },
-  { "l":"A","s":"S17","c":"TELEMANN, G.","t":"Bourrée 2nd movement of Suite No 12 from Exercizii musici TWV 32:4","nat":"German","era":"Baroque","key":"Variable","focus":["Baroque dance","Articulation","Rhythmic precision"] },
+  { "l":"A","s":"S17","c":"TELEMANN, G.P.","t":"Bourrée 2nd movement of Suite No 12 from Exercizii musici TWV 32:4","nat":"German","era":"Baroque","key":"Variable","focus":["Baroque dance","Articulation","Rhythmic precision"] },
 
   // --- List A · Manual ---
   { "l":"A","s":"Manual","c":"BACH, J.C.F.","t":"Trio (The joy of Baroque)","nat":"German","era":"Baroque","key":"Variable","focus":["Baroque trio texture","Counterpoint","Stylistic awareness"] },
@@ -43,8 +43,8 @@ const DATA_G4 = [
   { "l":"A","s":"Manual","c":"BURGMÜLLER, J.","t":"Le retour (Returning home) No 23 from 25 easy and progressive studies Op.100","nat":"German","era":"Romantic","key":"Variable","focus":["Return theme","Lyrical melody","Romantic character"] },
   { "l":"A","s":"Manual","c":"CONCONE, J.","t":"Allegro brillante (also listed as Winter Wind) Op.24 No 25","nat":"Italian","era":"Romantic","key":"Variable","focus":["Brilliance","Finger velocity","Technical fluency"] },
   { "l":"A","s":"Manual","c":"CZERNY, C.","t":"Etude in B♭ major No 7 from 25 studies for small hands Op.748","nat":"Austrian","era":"Romantic","key":"B♭ major","focus":["Finger technique","Velocity","Equal finger training"] },
-  { "l":"A","s":"Manual","c":"HANDEL, G.","t":"Aria from Suite in G HWV 441","nat":"German","era":"Baroque","key":"G major","focus":["Baroque aria","Ornamentation","Singing melody"] },
-  { "l":"A","s":"Manual","c":"HANDEL, G.","t":"Sarabande 3rd movement from Suite in D minor HWV 437","nat":"German","era":"Baroque","key":"D minor","focus":["Baroque dance","Slow movement","Ornamentation"] },
+  { "l":"A","s":"Manual","c":"HANDEL, G.F.","t":"Aria from Suite in G HWV 441","nat":"German","era":"Baroque","key":"G major","focus":["Baroque aria","Ornamentation","Singing melody"] },
+  { "l":"A","s":"Manual","c":"HANDEL, G.F.","t":"Sarabande 3rd movement from Suite in D minor HWV 437","nat":"German","era":"Baroque","key":"D minor","focus":["Baroque dance","Slow movement","Ornamentation"] },
   { "l":"A","s":"Manual","c":"HELLER, S.","t":"Etude (Allegretto) in A minor No 3 from 30 études progressives Op.46","nat":"German","era":"Romantic","key":"A minor","focus":["Cantabile melody","Étude","Accompaniment balance"] },
   { "l":"A","s":"Manual","c":"HELLER, S.","t":"Etude (Andantino) in B minor No 11 from 30 études progressives Op.46","nat":"German","era":"Romantic","key":"B minor","focus":["Lyrical étude","Tone shaping","Musical expressivity"] },
   { "l":"A","s":"Manual","c":"HELLER, S.","t":"Etude (Adagio) in E minor No 15 from Op.47","nat":"German","era":"Romantic","key":"E minor","focus":["Slow étude","Cantabile","Emotional depth"] },
@@ -71,20 +71,20 @@ const DATA_G4 = [
 
   // --- List B · S19 ---
   { "l":"B","s":"S19","c":"HOFMANN, H.","t":"Elfen (Elves) No 17 from Skizzen Op.77","nat":"German","era":"Romantic","key":"Variable","focus":["Character piece","Light touch","Musical imagery"] },
-  { "l":"B","s":"S19","c":"HUMMEL, J.","t":"Allegretto No 50 from Ausführlich theoretisch-practische Anweisung zum Piano-forte Spiel","nat":"Austrian","era":"Classical","key":"Variable","focus":["Classical elegance","Light texture","Graceful playing"] },
+  { "l":"B","s":"S19","c":"HUMMEL, J.N.","t":"Allegretto No 50 from Ausführlich theoretisch-practische Anweisung zum Piano-forte Spiel","nat":"Austrian","era":"Classical","key":"Variable","focus":["Classical elegance","Light texture","Graceful playing"] },
   { "l":"B","s":"S19","c":"PACHULSKI, H.","t":"Un peu de rêves (Passing dreams) No 4 from Album pour la jeunesse Op.23","nat":"Polish","era":"Romantic","key":"Variable","focus":["Dreamy character","Romantic lyricism","Tone colour"] },
   { "l":"B","s":"S19","c":"VANHAL, J.B.","t":"Allegretto Second movement of Sonatina Op.41 No 12","nat":"Czech","era":"Classical","key":"Variable","focus":["Classical grace","Clarity","Articulation"] },
 
   // --- List B · S18 ---
   { "l":"B","s":"S18","c":"CHAMINADE, C.","t":"Orientale No 9 from Op.123","nat":"French","era":"Romantic","key":"Variable","focus":["Exotic character","Romantic colour","Musical imagery"] },
   { "l":"B","s":"S18","c":"HAYDN, J.","t":"Allegro No 2 from 12 kleine Stücke Hob XVII:anh","nat":"Austrian","era":"Classical","key":"Variable","focus":["Classical character","Clarity","Articulation"] },
-  { "l":"B","s":"S18","c":"HUMMEL, J.","t":"Romanze No 4 from Op.52","nat":"Austrian","era":"Classical","key":"Variable","focus":["Singing melody","Romance character","Cantabile"] },
-  { "l":"B","s":"S18","c":"TCHAIKOVSKY, P.I.","t":"Mazurka No 10 from Op.39","nat":"Russian","era":"Romantic","key":"Variable","focus":["Dance character","Mazurka style","Musical expression"] },
+  { "l":"B","s":"S18","c":"HUMMEL, J.N.","t":"Romanze No 4 from Op.52","nat":"Austrian","era":"Classical","key":"Variable","focus":["Singing melody","Romance character","Cantabile"] },
+  { "l":"B","s":"S18","c":"TCHAIKOVSKY, P.","t":"Mazurka No 10 from Op.39","nat":"Russian","era":"Romantic","key":"Variable","focus":["Dance character","Mazurka style","Musical expression"] },
 
   // --- List B · S17 ---
   { "l":"B","s":"S17","c":"BACH, W. (attrib.)","t":"Allegro","nat":"German","era":"Baroque","key":"Variable","focus":["Baroque character","Clarity","Articulation"] },
   { "l":"B","s":"S17","c":"BENDA, G.","t":"Sonatine No 6 from 34 Sonatines","nat":"Czech","era":"Classical","key":"Variable","focus":["Classical sonatina","Elegance","Musical form"] },
-  { "l":"B","s":"S17","c":"HUMMEL, J.","t":"Allegro No 2 from Op.52","nat":"Austrian","era":"Classical","key":"Variable","focus":["Brilliant style","Classical character","Technical fluency"] },
+  { "l":"B","s":"S17","c":"HUMMEL, J.N.","t":"Allegro No 2 from Op.52","nat":"Austrian","era":"Classical","key":"Variable","focus":["Brilliant style","Classical character","Technical fluency"] },
   { "l":"B","s":"S17","c":"VANHAL, J.","t":"Cantabile and Allegro 2nd and 3rd movements of Sonatina No 6 from Op.41","nat":"Czech","era":"Classical","key":"Variable","focus":["Contrasting moods","Cantabile","Classical elegance"] },
 
   // --- List B · Manual ---
@@ -105,8 +105,8 @@ const DATA_G4 = [
   { "l":"B","s":"Manual","c":"GURLITT, C.","t":"Valse noble No 14 from Albumleaves for the young Op.101","nat":"German","era":"Romantic","key":"Variable","focus":["Waltz style","Lyrical melody","Accompaniment balance"] },
   { "l":"B","s":"Manual","c":"HAYDN, J.","t":"Allegro 1st movement from Divertimento in C major Hob XVI:1","nat":"Austrian","era":"Classical","key":"C major","focus":["Classical form","Clarity","Ornamentation"] },
   { "l":"B","s":"Manual","c":"HAYDN, J.","t":"Finale – Presto 3rd movement from Sonata in D major Hob XVI:24","nat":"Austrian","era":"Classical","key":"D major","focus":["Presto finale","Clarity","Wit"] },
-  { "l":"B","s":"Manual","c":"HUMMEL, J.","t":"Gigue in D major","nat":"Austrian","era":"Classical","key":"D major","focus":["Gigue dance","Rhythmic drive","Technical fluency"] },
-  { "l":"B","s":"Manual","c":"HUMMEL, J.","t":"Tempo di menuetto in C major No 3 from 6 pièces très faciles Op.52","nat":"Austrian","era":"Classical","key":"C major","focus":["Minuet character","Elegance","Classical phrasing"] },
+  { "l":"B","s":"Manual","c":"HUMMEL, J.N.","t":"Gigue in D major","nat":"Austrian","era":"Classical","key":"D major","focus":["Gigue dance","Rhythmic drive","Technical fluency"] },
+  { "l":"B","s":"Manual","c":"HUMMEL, J.N.","t":"Tempo di menuetto in C major No 3 from 6 pièces très faciles Op.52","nat":"Austrian","era":"Classical","key":"C major","focus":["Minuet character","Elegance","Classical phrasing"] },
   { "l":"B","s":"Manual","c":"KIRCHNER, T.","t":"Andantino No 12 from Neue Kinderszenen Op.55","nat":"German","era":"Romantic","key":"Variable","focus":["Lyrical playing","Romantic expression","Phrasing"] },
   { "l":"B","s":"Manual","c":"KIRCHNER, T.","t":"Allegretto No 20 from Neue Kinderszenen Op.55","nat":"German","era":"Romantic","key":"Variable","focus":["Light character","Melodic shaping","Romantic style"] },
   { "l":"B","s":"Manual","c":"KIRCHNER, T.","t":"Moderato No 25 from Neue Kinderszenen Op.55","nat":"German","era":"Romantic","key":"Variable","focus":["Expressive playing","Romantic phrasing","Tone control"] },
@@ -114,11 +114,11 @@ const DATA_G4 = [
   { "l":"B","s":"Manual","c":"KUHLAU, F.","t":"Allegretto 1st movement from Sonatina in G major Op.55 No 2","nat":"Danish","era":"Classical","key":"G major","focus":["Sonatina style","Finger technique","Musical shaping"] },
   { "l":"B","s":"Manual","c":"KUHLAU, F.","t":"Allegro con spirito 1st movement from Sonatina in C major Op.55 No 3","nat":"Danish","era":"Classical","key":"C major","focus":["Spirited playing","Technical fluency","Classical clarity"] },
   { "l":"B","s":"Manual","c":"MAYKAPAR, S.","t":"The turbulent waters No 18 from Miniatures Op.33","nat":"Russian","era":"Romantic","key":"Variable","focus":["Musical imagery","Tone colour","Dynamic contrast"] },
-  { "l":"B","s":"Manual","c":"MOZART, W.","t":"Allegro 1st movement from Viennese sonatina No 1 in C major","nat":"Austrian","era":"Classical","key":"C major","focus":["Classical grace","Sonata form","Singing tone"] },
-  { "l":"B","s":"Manual","c":"MOZART, W.","t":"Allegro 4th movement from Viennese sonatina No 1 in C major","nat":"Austrian","era":"Classical","key":"C major","focus":["Rondo form","Classical elegance","Articulation"] },
-  { "l":"B","s":"Manual","c":"MOZART, W.","t":"Allegro 1st movement from Viennese sonatina No 6 in C major","nat":"Austrian","era":"Classical","key":"C major","focus":["Classical form","Clarity","Mozartian grace"] },
-  { "l":"B","s":"Manual","c":"MOZART, W.","t":"Finale – Allegro 4th movement from Viennese sonatina No 6 in C major","nat":"Austrian","era":"Classical","key":"C major","focus":["Rondo finale","Lightness","Classical style"] },
-  { "l":"B","s":"Manual","c":"MUSORGSKY, P.","t":"Une larme (A tear) Op. post. 70 No 18","nat":"Russian","era":"Romantic","key":"Variable","focus":["Singing melody","Romantic expression","Tone shaping"] },
+  { "l":"B","s":"Manual","c":"MOZART, W.A.","t":"Allegro 1st movement from Viennese sonatina No 1 in C major","nat":"Austrian","era":"Classical","key":"C major","focus":["Classical grace","Sonata form","Singing tone"] },
+  { "l":"B","s":"Manual","c":"MOZART, W.A.","t":"Allegro 4th movement from Viennese sonatina No 1 in C major","nat":"Austrian","era":"Classical","key":"C major","focus":["Rondo form","Classical elegance","Articulation"] },
+  { "l":"B","s":"Manual","c":"MOZART, W.A.","t":"Allegro 1st movement from Viennese sonatina No 6 in C major","nat":"Austrian","era":"Classical","key":"C major","focus":["Classical form","Clarity","Mozartian grace"] },
+  { "l":"B","s":"Manual","c":"MOZART, W.A.","t":"Finale – Allegro 4th movement from Viennese sonatina No 6 in C major","nat":"Austrian","era":"Classical","key":"C major","focus":["Rondo finale","Lightness","Classical style"] },
+  { "l":"B","s":"Manual","c":"MUSSORGSKY, M.","t":"Une larme (A tear) Op. post. 70 No 18","nat":"Russian","era":"Romantic","key":"Variable","focus":["Singing melody","Romantic expression","Tone shaping"] },
   { "l":"B","s":"Manual","c":"PACHULSKI, K.","t":"Valse Mignonne","nat":"Polish","era":"Romantic","key":"Variable","focus":["Waltz character","Romantic lyricism","Elegant phrasing"] },
   { "l":"B","s":"Manual","c":"PESKANOV, A.","t":"Mazurka","nat":"American","era":"Contemporary","key":"Variable","focus":["Dance character","Contemporary style","Rhythmic precision"] },
   { "l":"B","s":"Manual","c":"SCHUMANN, R.","t":"Kleine Romanze No 19 from Album für die Jugend Op.68","nat":"German","era":"Romantic","key":"Variable","focus":["Romance character","Singing melody","Romantic expression"] },
@@ -192,7 +192,7 @@ const DATA_G4 = [
   { "l":"C","s":"Manual","c":"ROCHEROLLE, E.","t":"Court jester from Seven scenes","nat":"American","era":"Contemporary","key":"Variable","focus":["Humorous character","Musical wit","Contemporary style"] },
   { "l":"C","s":"Manual","c":"ROCHEROLLE, E.","t":"Island breeze from Rainbow's end Level 3","nat":"American","era":"Contemporary","key":"Variable","focus":["Tropical character","Musical colour","Contemporary idiom"] },
   { "l":"C","s":"Manual","c":"ROLLIN, C.","t":"Summer's nocturne from Best of Catherine Rollin Book 2","nat":"American","era":"Contemporary","key":"Variable","focus":["Nocturne character","Lyrical playing","Contemporary style"] },
-  { "l":"C","s":"Manual","c":"SCHOEMEHL, D.","t":"Train-journey from Piano studies in pop","nat":"Contemporary","era":"Contemporary","key":"Variable","focus":["Travel imagery","Rhythmic drive","Musical character"] },
+  { "l":"C","s":"Manual","c":"SCHÖNMEHL, M.","t":"Train-journey from Piano studies in pop","nat":"Contemporary","era":"Contemporary","key":"Variable","focus":["Travel imagery","Rhythmic drive","Musical character"] },
   { "l":"C","s":"Manual","c":"SHOSTAKOVICH, D.","t":"A clockwork doll No 6 (also listed as Mechanical doll) from Detskaya tetrad' Op.69","nat":"Russian","era":"Modern","key":"Variable","focus":["Mechanical character","Musical wit","Modern style"] },
   { "l":"C","s":"Manual","c":"SISKIND, J.","t":"Pineapple woman from Jazz etude inspirations","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Character piece","Musical humour","Australian music"] },
   { "l":"C","s":"Manual","c":"TANSMAN, A.","t":"Night mood (Nocturne) No 8 from Pour les enfants Book 1","nat":"Polish-French","era":"Modern","key":"Variable","focus":["Nocturne character","Impressionist colour","Modern style"] },
