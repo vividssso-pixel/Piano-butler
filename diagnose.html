@@ -11,6 +11,7 @@
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 
   <!-- AMEB Comprehensive -->
@@ -315,15 +316,15 @@ function computeResult(purpose, gap, memAnswers, handsAnswers) {
   const handScore = Object.values(handsAnswers).reduce((a,b)=>a+b,0); // 0–12
   const total     = memScore + handScore; // 0–24
 
-  // Starting level recommendation
+  // Starting level recommendation — uses gap-adjusted total
   let levelKey, levelLabel, levelDesc;
-  if (total >= 20) {
+  if (adjustedTotal >= 20) {
     levelKey = 'G4-G5'; levelLabel = 'Grade 4–5 level';
     levelDesc = 'Your memory and technique retention are strong. You can return at an intermediate level.';
-  } else if (total >= 14) {
+  } else if (adjustedTotal >= 14) {
     levelKey = 'G2-G3'; levelLabel = 'Grade 2–3 level';
     levelDesc = 'Good foundations are still there. A few weeks of targeted practice and you\'ll feel at home again.';
-  } else if (total >= 8) {
+  } else if (adjustedTotal >= 8) {
     levelKey = 'G1-G2'; levelLabel = 'Grade 1–2 level';
     levelDesc = 'Some basics remain but notation and technique need refreshing. Start easy — progress will be fast.';
   } else {
@@ -331,8 +332,11 @@ function computeResult(purpose, gap, memAnswers, handsAnswers) {
     levelDesc = 'The break has been long. Starting from the foundations is the fastest path — you\'ll move through quickly.';
   }
 
-  // Gap modifier
+  // Gap modifier — adjusts level down if the break was very long
   const gapFactor = { recent: 1.0, few: 0.85, decade: 0.7, long: 0.55 }[gap] || 0.7;
+  // Apply gap penalty: long break lowers the effective total by up to 4 points
+  const gapPenalty = Math.round((1 - gapFactor) * 8);
+  const adjustedTotal = Math.max(0, total - gapPenalty);
 
   // Purpose-specific message + next step
   const purposeMessages = {
@@ -382,25 +386,29 @@ function computeResult(purpose, gap, memAnswers, handsAnswers) {
   // Corpus filter by purpose + level
   let pool = CORPUS.filter(p => targetGrades.includes(p._gradeKey));
 
-  // Purpose-based corpus preference
+  // Purpose-based corpus preference — with fallback to unfiltered pool if too few results
+  let filteredPool = pool;
   if (purpose === 'child') {
-    pool = pool.filter(p =>
+    filteredPool = pool.filter(p =>
       p.era === 'Classical' || p.era === 'Baroque' ||
-      (p.focus||[]).some(f => /melodic|simple|clear|song|dance|character/i.test(f))
+      (p.focus||[]).some(f => /melodic|simple|clear|song|dance|character|lyric/i.test(f))
     );
   } else if (purpose === 'exam') {
-    pool = pool.filter(p => p._syllabus === 'AMEB' || p._syllabus === 'ABRSM');
+    filteredPool = pool.filter(p => p._syllabus === 'AMEB' || p._syllabus === 'ABRSM');
   } else if (purpose === 'hobby' || purpose === 'self') {
-    pool = pool.filter(p =>
+    filteredPool = pool.filter(p =>
       p.era === 'Romantic' || p.era === 'Classical' || p.era === 'Contemporary' ||
-      (p.focus||[]).some(f => /lyric|cantabile|expressive|melody|character/i.test(f))
+      (p.focus||[]).some(f => /lyric|cantabile|expressive|melody|character|musical/i.test(f))
     );
   } else if (purpose === 'perform') {
-    pool = pool.filter(p =>
+    filteredPool = pool.filter(p =>
       p.era === 'Romantic' || p.era === 'Classical' ||
-      (p.focus||[]).some(f => /expressive|character|dramatic|musical|shaping/i.test(f))
+      (p.focus||[]).some(f => /expressive|character|dramatic|musical|shaping|phrasing/i.test(f))
     );
   }
+  // Fallback: if filter yields fewer than 8 pieces, use the full grade pool
+  if (filteredPool.length < 8) filteredPool = pool;
+  pool = filteredPool;
 
   // Pick with era diversity
   const picked = [];
@@ -432,7 +440,7 @@ function computeResult(purpose, gap, memAnswers, handsAnswers) {
 
   return {
     levelKey, levelLabel, levelDesc, pmsg,
-    memScore, handScore, total,
+    memScore, handScore, total, adjustedTotal,
     pieces: picked.slice(0,5),
     memWeak, handsWeak,
   };
@@ -478,24 +486,300 @@ function PieceCard({ piece, idx }) {
 /* ══════════════════════════════════════════
    COMING SOON MODAL
 ══════════════════════════════════════════ */
-function ComingSoonModal({ onClose }) {
+// GUMROAD_URL: replace with your actual Gumroad product link once uploaded
+const GUMROAD_URL = 'https://pianobutler.gumroad.com/l/report'; // ← update this
+
+/* ══════════════════════════════════════════
+   PDF REPORT GENERATOR (jsPDF)
+══════════════════════════════════════════ */
+function generatePDFReport(result, purpose, gap) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const W = 210, H = 297;
+  const ml = 20, mr = 20, cw = W - ml - mr;
+  let y = 0;
+
+  // ── Helpers ──
+  const hex2rgb = hex => {
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return [r,g,b];
+  };
+  const setFill = hex => { const [r,g,b]=hex2rgb(hex); doc.setFillColor(r,g,b); };
+  const setDraw = hex => { const [r,g,b]=hex2rgb(hex); doc.setDrawColor(r,g,b); };
+  const setTxt  = hex => { const [r,g,b]=hex2rgb(hex); doc.setTextColor(r,g,b); };
+
+  const wrap = (text, maxW, fontSize) => {
+    doc.setFontSize(fontSize);
+    return doc.splitTextToSize(text, maxW);
+  };
+
+  // ── PAGE 1: Cover ──
+  // Gradient-like header (solid)
+  setFill('#312e81'); doc.rect(0, 0, W, 55, 'F');
+  setFill('#4f46e5'); doc.rect(0, 30, W, 25, 'F');
+
+  setTxt('#ffffff');
+  doc.setFontSize(22); doc.setFont('helvetica','bold');
+  doc.text('Your Piano Profile', W/2, 22, { align:'center' });
+  doc.setFontSize(11); doc.setFont('helvetica','normal');
+  doc.text('Personalised diagnosis by Piano Butler', W/2, 30, { align:'center' });
+
+  // Level badge
+  const levelColors = {
+    'G4-G5': ['#d1fae5','#065f46'],
+    'G2-G3': ['#fef3c7','#92400e'],
+    'G1-G2': ['#eef2ff','#3730a3'],
+    'Prelim': ['#ede9fe','#5b21b6'],
+  };
+  const [lbg, ltxt] = levelColors[result.levelKey] || ['#eef2ff','#3730a3'];
+  setFill(lbg); doc.roundedRect(W/2-28, 38, 56, 10, 3, 3, 'F');
+  setTxt(ltxt); doc.setFontSize(9); doc.setFont('helvetica','bold');
+  doc.text(result.levelLabel, W/2, 44.5, { align:'center' });
+
+  y = 65;
+
+  // Purpose goal section
+  const purposeLabels = { child:'Teaching my child', self:'Personal joy', exam:'Exam goal', hobby:'Relaxing hobby', perform:'Performing for others' };
+  const gapLabels = { recent:'Less than a year ago', few:'2–5 years ago', decade:'5–10 years ago', long:'More than 10 years' };
+
+  setFill('#f8faff'); doc.roundedRect(ml, y, cw, 38, 4, 4, 'F');
+  setDraw('#c7d2fe'); doc.roundedRect(ml, y, cw, 38, 4, 4, 'S');
+  setTxt('#6366f1'); doc.setFontSize(8); doc.setFont('helvetica','bold');
+  doc.text('YOUR GOAL', ml+5, y+7);
+  setTxt('#1e293b'); doc.setFontSize(13); doc.setFont('helvetica','bold');
+  doc.text(result.pmsg.headline, ml+5, y+15);
+  const msgLines = wrap(result.pmsg.msg, cw-10, 9);
+  setTxt('#475569'); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  doc.text(msgLines.slice(0,3), ml+5, y+22);
+  y += 44;
+
+  // Next step callout
+  setFill('#e0f2fe'); doc.roundedRect(ml, y, cw, 18, 3, 3, 'F');
+  setFill('#0369a1'); doc.rect(ml, y, 3, 18, 'F');
+  setTxt('#0369a1'); doc.setFontSize(7); doc.setFont('helvetica','bold');
+  doc.text('NEXT STEP', ml+7, y+6);
+  const nsLines = wrap(result.pmsg.nextStep, cw-15, 9);
+  setTxt('#1e293b'); doc.setFont('helvetica','normal'); doc.setFontSize(9);
+  doc.text(nsLines.slice(0,2), ml+7, y+12);
+  y += 24;
+
+  // Scores
+  setTxt('#64748b'); doc.setFontSize(8); doc.setFont('helvetica','bold');
+  doc.text('RETENTION SCORES', ml, y+5);
+  y += 9;
+
+  const scoreBoxes = [
+    { label:'Theory Memory', score:`${result.memScore}/12`, bg:'#eff6ff', txt:'#1d4ed8' },
+    { label:'Physical Readiness', score:`${result.handScore}/12`, bg:'#f0fdf4', txt:'#166534' },
+    { label:'Overall Retention', score:`${Math.round((result.adjustedTotal/24)*100)}%`, bg:lbg, txt:ltxt },
+  ];
+  const bw = (cw - 8) / 3;
+  scoreBoxes.forEach((b, i) => {
+    const bx = ml + i * (bw + 4);
+    setFill(b.bg); doc.roundedRect(bx, y, bw, 22, 3, 3, 'F');
+    setTxt(b.txt); doc.setFontSize(14); doc.setFont('helvetica','bold');
+    doc.text(b.score, bx + bw/2, y+12, { align:'center' });
+    setTxt('#64748b'); doc.setFontSize(7); doc.setFont('helvetica','normal');
+    doc.text(b.label, bx + bw/2, y+19, { align:'center' });
+  });
+  y += 28;
+
+  // Radar chart (SVG-style drawn with lines)
+  const cx = W/2, cy = y + 36, rmax = 28;
+  const domains = ['Theory\nMemory','Physical\nReadiness','Gap\nFactor','Focus'];
+  const vals = [
+    result.memScore / 12,
+    result.handScore / 12,
+    { recent:1.0, few:0.75, decade:0.5, long:0.3 }[gap] || 0.5,
+    0.7,
+  ];
+  const angles = [Math.PI*1.5, 0, Math.PI*0.5, Math.PI];
+
+  // Grid rings
+  setDraw('#e2e8f0');
+  [0.25, 0.5, 0.75, 1.0].forEach(r => {
+    doc.setLineWidth(0.3);
+    const pts = angles.map(a => ({ x: cx + Math.cos(a)*rmax*r, y: cy + Math.sin(a)*rmax*r }));
+    for (let i=0; i<pts.length; i++) {
+      const n = pts[(i+1)%pts.length];
+      doc.line(pts[i].x, pts[i].y, n.x, n.y);
+    }
+  });
+  // Axis lines
+  angles.forEach(a => {
+    doc.setLineWidth(0.3);
+    doc.line(cx, cy, cx+Math.cos(a)*rmax, cy+Math.sin(a)*rmax);
+  });
+  // Data polygon
+  setDraw('#4f46e5'); setFill('#c7d2fe');
+  doc.setLineWidth(1.0);
+  doc.setGState(doc.GState({ opacity: 0.4 }));
+  const dpts = vals.map((v,i) => ({ x: cx+Math.cos(angles[i])*rmax*v, y: cy+Math.sin(angles[i])*rmax*v }));
+  doc.moveTo(dpts[0].x, dpts[0].y);
+  dpts.forEach(p => doc.lineTo(p.x, p.y));
+  doc.closePath(); doc.fillStroke();
+  doc.setGState(doc.GState({ opacity: 1.0 }));
+  // Dots
+  setFill('#4f46e5');
+  dpts.forEach(p => doc.circle(p.x, p.y, 1.2, 'F'));
+  // Labels
+  setTxt('#334155'); doc.setFontSize(7); doc.setFont('helvetica','bold');
+  const lblOffset = 8;
+  [
+    { label:'Theory', x:cx, y:cy-rmax-lblOffset },
+    { label:'Physical', x:cx+rmax+lblOffset, y:cy },
+    { label:'Gap', x:cx, y:cy+rmax+lblOffset+2 },
+    { label:'Focus', x:cx-rmax-lblOffset, y:cy },
+  ].forEach(l => doc.text(l.label, l.x, l.y, { align:'center' }));
+
+  y += 74;
+
+  // Weak areas
+  const allWeak = [...(result.memWeak||[]), ...(result.handsWeak||[])];
+  if (allWeak.length > 0) {
+    setTxt('#92400e'); doc.setFontSize(8); doc.setFont('helvetica','bold');
+    doc.text('THINGS TO BRUSH UP ON', ml, y);
+    y += 5;
+    allWeak.slice(0,4).forEach(w => {
+      setFill('#fff7ed'); doc.roundedRect(ml, y, cw, 9, 2, 2, 'F');
+      setDraw('#fed7aa'); doc.roundedRect(ml, y, cw, 9, 2, 2, 'S');
+      setTxt('#92400e'); doc.setFontSize(8); doc.setFont('helvetica','normal');
+      doc.text('⚡  ' + w, ml+5, y+6);
+      y += 11;
+    });
+  }
+
+  // Footer p1
+  setFill('#1e293b'); doc.rect(0, H-12, W, 12, 'F');
+  setTxt('#94a3b8'); doc.setFontSize(7); doc.setFont('helvetica','normal');
+  doc.text('Piano Butler · pianobutler.com · Page 1 of 2', W/2, H-4, { align:'center' });
+
+  // ── PAGE 2: 4-Week Roadmap + Pieces ──
+  doc.addPage();
+  y = 0;
+
+  setFill('#312e81'); doc.rect(0,0,W,18,'F');
+  setTxt('#ffffff'); doc.setFontSize(13); doc.setFont('helvetica','bold');
+  doc.text('Your 4-Week Practice Roadmap', W/2, 12, { align:'center' });
+  y = 26;
+
+  const roadmapWeeks = [
+    {
+      week:'Week 1', title:'Reactivation',
+      tasks: ['Spend 15 min/day just listening — find 2 pieces you love', 'Play through scales hands separately, very slowly', 'Revisit note reading: identify notes on treble + bass clef'],
+    },
+    {
+      week:'Week 2', title:'Foundation',
+      tasks: ['Start one recommended piece hands separately', 'Practise a simple 5-finger pattern each session', 'Work on one bar at a time — no rushing ahead'],
+    },
+    {
+      week:'Week 3', title:'Building',
+      tasks: ['Hands together on bars you\'ve learned separately', 'Add a second recommended piece', 'Slow metronome practice: aim for accuracy, not speed'],
+    },
+    {
+      week:'Week 4', title:'Consolidation',
+      tasks: ['Run through both pieces start to finish (imperfect is OK)', 'Identify one technical challenge and drill it', 'Set your next 4-week goal — which piece next?'],
+    },
+  ];
+  const weekColors = ['#e0f2fe','#d1fae5','#fef3c7','#ede9fe'];
+  const weekTxtColors = ['#0369a1','#065f46','#92400e','#5b21b6'];
+
+  roadmapWeeks.forEach((w, wi) => {
+    const bh = 32;
+    setFill(weekColors[wi]); doc.roundedRect(ml, y, cw, bh, 3, 3, 'F');
+    setTxt(weekTxtColors[wi]); doc.setFontSize(9); doc.setFont('helvetica','bold');
+    doc.text(w.week + ' — ' + w.title, ml+5, y+7);
+    setTxt('#1e293b'); doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    w.tasks.forEach((t, ti) => doc.text('•  ' + t, ml+8, y+14+(ti*6)));
+    y += bh + 4;
+  });
+
+  y += 4;
+  setTxt('#64748b'); doc.setFontSize(8); doc.setFont('helvetica','bold');
+  doc.text('RECOMMENDED PIECES — MATCHED TO YOU', ml, y);
+  y += 6;
+
+  const eraColors2 = { Baroque:'#5b21b6', Classical:'#92400e', Romantic:'#9d174d', Modern:'#065f46', Contemporary:'#075985' };
+  const pieces10 = result.pieces || [];
+  pieces10.slice(0, 10).forEach((p, pi) => {
+    if (y > H - 30) { doc.addPage(); y = 20; }
+    const ph = 16;
+    setFill(pi%2===0?'#fafbff':'#ffffff'); doc.roundedRect(ml, y, cw, ph, 2, 2, 'F');
+    setDraw('#e8edf5'); doc.roundedRect(ml, y, cw, ph, 2, 2, 'S');
+    setTxt('#1e293b'); doc.setFontSize(9); doc.setFont('helvetica','bold');
+    doc.text((pi+1)+'. '+p.t, ml+4, y+7);
+    setTxt('#4f46e5'); doc.setFontSize(7); doc.setFont('helvetica','normal');
+    doc.text(p.c, ml+4, y+13);
+    const eraC = eraColors2[p.era] || '#475569';
+    setTxt(eraC); doc.setFont('helvetica','bold');
+    doc.text(p.era||'', ml+cw-40, y+7);
+    setTxt('#94a3b8'); doc.setFont('helvetica','normal');
+    doc.text((p._syllabus||'')+' '+p._grade, ml+cw-40, y+13);
+    y += ph + 3;
+  });
+
+  y += 6;
+  // CTA box
+  setFill('#1e1b4b'); doc.roundedRect(ml, y, cw, 26, 4, 4, 'F');
+  setTxt('#ffffff'); doc.setFontSize(11); doc.setFont('helvetica','bold');
+  doc.text('Ready to continue? Find a teacher matched to your goal.', W/2, y+10, { align:'center' });
+  setTxt('#a5b4fc'); doc.setFontSize(9); doc.setFont('helvetica','normal');
+  doc.text('Visit: pianobutler.com/connect.html', W/2, y+18, { align:'center' });
+
+  // Footer p2
+  setFill('#1e293b'); doc.rect(0, H-12, W, 12, 'F');
+  setTxt('#94a3b8'); doc.setFontSize(7); doc.setFont('helvetica','normal');
+  doc.text('Piano Butler · pianobutler.com · Page 2 of 2', W/2, H-4, { align:'center' });
+
+  doc.save('Piano_Butler_Report.pdf');
+}
+
+function FullReportModal({ onClose, result, purpose, gap }) {
+  const [generating, setGenerating] = React.useState(false);
+  const purposeLabel = { child:'teaching your child', self:'personal joy', exam:'exam prep', hobby:'relaxing hobby', perform:'performing for others' }[purpose] || 'your goal';
+
+  const handleDownload = () => {
+    setGenerating(true);
+    setTimeout(() => {
+      try { generatePDFReport(result, purpose, gap); } catch(e) { console.error(e); }
+      setGenerating(false);
+    }, 100);
+  };
+
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-box" onClick={e=>e.stopPropagation()}>
         <div style={{ fontSize:44, marginBottom:12 }}>📋</div>
-        <h2 style={{ fontSize:19, fontWeight:800, color:'#1e293b', margin:'0 0 10px' }}>Full Report — Coming Soon</h2>
-        <p style={{ fontSize:13, color:'#64748b', lineHeight:1.6, margin:'0 0 20px' }}>
-          The full PDF report includes a personalised 6-month practice roadmap,
-          a complete graded repertoire list, and a teacher match — available soon for <strong>$4</strong>.
+        <h2 style={{ fontSize:19, fontWeight:800, color:'#1e293b', margin:'0 0 6px' }}>Your Full Piano Report</h2>
+        <p style={{ fontSize:12, color:'#94a3b8', margin:'0 0 14px' }}>
+          Personalised for <strong style={{color:'#4f46e5'}}>{purposeLabel}</strong> · {result?.levelLabel}
         </p>
-        <a href="mailto:vividssso@gmail.com?subject=Piano Butler — Full Report Waitlist"
-          style={{ display:'block', padding:'12px 24px', background:'#4f46e5', color:'#fff',
-            borderRadius:12, textDecoration:'none', fontWeight:700, fontSize:14, marginBottom:12 }}>
-          ✉️ Join the waitlist
-        </a>
+        <div style={{ textAlign:'left', background:'#f8faff', borderRadius:12, padding:'14px 16px', marginBottom:16 }}>
+          {[
+            '📊 Radar chart — your 4-domain retention score',
+            '📅 4-week practice roadmap — week by week plan',
+            '🎼 10 recommended pieces with reasons',
+            '👩‍🏫 Teacher & course match summary',
+          ].map((item,i) => (
+            <div key={i} style={{ display:'flex', gap:8, alignItems:'center', padding:'5px 0',
+              borderBottom: i<3 ? '1px solid #e8edf5' : 'none' }}>
+              <span style={{ fontSize:13 }}>{item}</span>
+            </div>
+          ))}
+        </div>
+        <button onClick={handleDownload} disabled={generating}
+          style={{ display:'block', width:'100%', padding:'13px 24px', background: generating?'#6366f1':'#4f46e5',
+            color:'#fff', borderRadius:12, border:'none', fontWeight:800, fontSize:15, marginBottom:10,
+            cursor: generating?'default':'pointer' }}>
+          {generating ? '⏳ Generating PDF…' : '📥 Download my report (PDF)'}
+        </button>
+        <p style={{ fontSize:11, color:'#94a3b8', margin:'0 0 12px' }}>
+          Your personalised 2-page PDF report
+          {/* GUMROAD: uncomment when ready → <a href={GUMROAD_URL} ...>Get the full version — $4</a> */}
+        </p>
         <button onClick={onClose}
-          style={{ width:'100%', padding:'11px', border:'2px solid #e2e8f0', borderRadius:12,
-            background:'none', color:'#64748b', fontWeight:600, cursor:'pointer', fontSize:14 }}>
+          style={{ width:'100%', padding:'10px', border:'2px solid #e2e8f0', borderRadius:12,
+            background:'none', color:'#64748b', fontWeight:600, cursor:'pointer', fontSize:13 }}>
           Close
         </button>
       </div>
@@ -832,15 +1116,15 @@ function App() {
 
   /* ── RESULTS ── */
   if (screen === 'results' && result) {
-    const { levelLabel, levelDesc, pmsg, memScore, handScore, total,
+    const { levelLabel, levelDesc, pmsg, memScore, handScore, total, adjustedTotal,
             pieces, memWeak, handsWeak } = result;
-    const totalPct = Math.round((total / 24) * 100);
+    const totalPct = Math.round((adjustedTotal / 24) * 100);
     const levelColor = totalPct >= 80 ? '#065f46' : totalPct >= 55 ? '#b45309' : '#4f46e5';
     const levelBg    = totalPct >= 80 ? '#d1fae5' : totalPct >= 55 ? '#fef3c7' : '#eef2ff';
 
     return (
       <div style={{ minHeight:'100vh', background:'#f0f4ff', paddingBottom:60 }}>
-        {showModal && <ComingSoonModal onClose={() => setShowModal(false)} />}
+        {showModal && <FullReportModal onClose={() => setShowModal(false)} result={result} purpose={purpose} gap={gap} />}
 
         {/* Header */}
         <div style={{ background:'linear-gradient(135deg,#1e1b4b,#312e81)',
