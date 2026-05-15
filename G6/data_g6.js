@@ -45,7 +45,7 @@ const MASTER_DATA = [
   // --- LIST B (Classical Sonatas) ---
   { "l": "B", "s": "S19", "c": "BEETHOVEN, L. van", "t": "Andante (Sonata Op. 49 No 1)" },
   { "l": "B", "s": "S19", "c": "HAYDN, J.", "t": "Theme and Variations Hob XVII:2" },
-  { "l": "B", "s": "S19", "c": "MARTÍNEZ, M. von.", "t": "Allegro (Sonata Op. 4)" },
+  { "l": "B", "s": "S19", "c": "MARTÍNEZ, M. von", "t": "Allegro (Sonata Op. 4)" },
   { "l": "B", "s": "S19", "c": "NEEFE, C.", "t": "Allegro di molto Fourth movement (6 neue Klaviersonaten)" },
   { "l": "B", "s": "S18", "c": "BACH, J.C.", "t": "Allegro (Sonata Op. 17 No 3)" },
   { "l": "B", "s": "S18", "c": "EBERL, A.", "t": "Allegro (Sonatine Op. 5)" },

@@ -14,7 +14,7 @@ const DATA_ABRSM_G8 = [
 {"l":"A","c":"HAYDN, J.","t":"Allegro con brio (1st movt from Sonata in D, Haydn: Hob. XVI:37) Haydn","nat":"Austrian","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
 {"l":"A","c":"HAYDN, J.","t":"Allegro (1st movt from Sonata in E-, Haydn: Hob. XVI:49)","nat":"Austrian","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
 {"l":"A","c":"HOUGH, Stephen","t":"Toccatina (5th movt from Suite R-B) Stephen (Weinberger)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"A","c":"MARTÍNEZ","t":"Allegro/Moderato (1st movt from Sonata in A)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Formal structure", "Character contrast"]},
+{"l":"A","c":"MARTÍNEZ, M. von","t":"Allegro/Moderato (1st movt from Sonata in A)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Formal structure", "Character contrast"]},
 {"l":"A","c":"MOSZKOWSKI, M.","t":"Scherzino, Op. 77 No. 2 Moszkowski","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
 {"l":"A","c":"MOZART, W.A.","t":"Andante grazioso and Vars. 1–6 (1st movt from Mozart: Sonata in A, K. 331) Mozart","nat":"Austrian","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
 {"l":"A","c":"RAMEAU, J.-P.","t":"Les cyclopes (from Pièces de clavecin) Rameau: Rameau","nat":"International","era":"Baroque","focus":["Baroque style", "Finger independence", "Keyboard clarity"]},

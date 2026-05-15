@@ -758,7 +758,7 @@ const DATA_G6_LEISURE = [
     "s": "Manual",
     "c": "ANDERSSON, B., RICE, T. and ULVAEUS, B. arr. BOOTH.",
     "t": "I know him so well",
-    "nat": "Swedish/British",
+    "nat": "Swedish",
     "era": "Contemporary",
     "key": "Variable",
     "focus": [

@@ -4,7 +4,7 @@
 const DATA_PRELIM_LEISURE = [
   {"l":"S4","s":"S4","c":"BIZET, G. (arr. MATZ)","t":"March of the Toreadors","nat":"French","era":"Romantic","key":"Variable","focus":["Romantic expression", "Lyrical melody", "Tonal colour"]},
   {"l":"S4","s":"S4","c":"BOBER, M.","t":"Saxophone blues","nat":"American","era":"Contemporary","key":"Variable","focus":["Contemporary style", "Musical expression", "Creative character"]},
-  {"l":"S4","s":"S4","c":"COUPPEY, F. Le.","t":"Bourr\u00e9e","nat":"French","era":"Romantic","key":"Variable","focus":["Expressive phrasing", "Singing tone", "Musical sensitivity"]},
+  {"l":"S4","s":"S4","c":"LE COUPPEY, F.","t":"Bourr\u00e9e","nat":"French","era":"Romantic","key":"Variable","focus":["Expressive phrasing", "Singing tone", "Musical sensitivity"]},
   {"l":"S4","s":"S4","c":"DORNAN, M.","t":"Three plus two","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Contemporary idiom", "Stylistic awareness", "Expressive playing"]},
   {"l":"S4","s":"S4","c":"GILLOCK, W.","t":"The singing Sioux","nat":"American","era":"Contemporary","key":"Variable","focus":["Creative expression", "Contemporary character", "Musical imagery"]},
   {"l":"S4","s":"S4","c":"GURLITT, C.","t":"Moonlight variation","nat":"German","era":"Romantic","key":"Variable","focus":["Romantic character", "Dynamic range", "Legato playing"]},

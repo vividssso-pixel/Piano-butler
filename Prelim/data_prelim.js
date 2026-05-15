@@ -10,7 +10,7 @@ const DATA_PRELIM = [
   {"l":"A","s":"S18","c":"HIRSCHBERG, D.","t":"The little fisherman","nat":"German","era":"Romantic","key":"Variable","focus":["Expressive phrasing", "Singing tone", "Musical sensitivity"]},
   {"l":"A","s":"S18","c":"SPINDLER, F.","t":"Theme No 12 from Op. 308","nat":"German","era":"Romantic","key":"Variable","focus":["Romantic character", "Dynamic range", "Legato playing"]},
   {"l":"A","s":"S18","c":"TELEMANN, G.P. (arr. HODGSON)","t":"Minuet No 11 from TWV 34","nat":"German","era":"Baroque","key":"Variable","focus":["Baroque style", "Finger independence", "Keyboard clarity"]},
-  {"l":"A","s":"S17","c":"COUPPEY, F. Le.","t":"Study No 2 from Op. 17","nat":"French","era":"Romantic","key":"Variable","focus":["Romantic warmth", "Melodic shaping", "Pianistic colour"]},
+  {"l":"A","s":"S17","c":"LE COUPPEY, F.","t":"Study No 2 from Op. 17","nat":"French","era":"Romantic","key":"Variable","focus":["Romantic warmth", "Melodic shaping", "Pianistic colour"]},
   {"l":"A","s":"S17","c":"MCKERN, B.","t":"Scherzo","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Rhythmic feel", "Contemporary style", "Musical personality"]},
   {"l":"A","s":"S17","c":"MILNE, E.","t":"Salt and pepper from Very easy little peppers","nat":"British","era":"Contemporary","key":"Variable","focus":["Lyrical expression", "Contemporary idiom", "Technical fluency"]},
   {"l":"A","s":"S17","c":"MILNE, E.","t":"The banjo","nat":"British","era":"Contemporary","key":"Variable","focus":["Musical narrative", "Contemporary character", "Expressive tone"]},

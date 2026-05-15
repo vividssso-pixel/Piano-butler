@@ -294,7 +294,7 @@ const DATA_G5_LEISURE = [
     "s": "Series 3",
     "c": "NORTON, C.",
     "t": "Scamp",
-    "nat": "British-NZ",
+    "nat": "British",
     "era": "Contemporary",
     "key": "Variable",
     "focus": [
@@ -1142,7 +1142,7 @@ const DATA_G5_LEISURE = [
     "s": "Manual",
     "c": "NORTON, C.",
     "t": "Beguine",
-    "nat": "British-NZ",
+    "nat": "British",
     "era": "Contemporary",
     "key": "Variable",
     "focus": [
