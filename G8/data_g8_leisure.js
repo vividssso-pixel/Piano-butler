@@ -33,7 +33,6 @@ const DATA_G8_LEISURE = [
 
   // ── SERIES 1 ───────────────────────────────────────────────────────────────
   { "l": "S1", "s": "Series 1", "c": "ALBÉNIZ, I.", "t": "Sevilla sevillanas", "nat": "Spanish", "era": "Romantic", "key": "Variable", "focus": ["Spanish character", "Flamenco influence", "Rhythm"] },
-  { "l": "S1", "s": "Series 1", "c": "BEETHOVEN, L. van", "t": "Andante", "nat": "German", "era": "Classical", "key": "Variable", "focus": ["Classical style", "Cantabile", "Phrasing"] },
   { "l": "S1", "s": "Series 1", "c": "BERNIE, B.", "t": "Sweet Georgia Brown", "nat": "American", "era": "Modern", "key": "Variable", "focus": ["Jazz standard", "Swing feel", "Style"] },
   { "l": "S1", "s": "Series 1", "c": "BRUBECK, D.", "t": "Far more blue", "nat": "American", "era": "Modern", "key": "Variable", "focus": ["Jazz style", "Blues influence", "Character"] },
   { "l": "S1", "s": "Series 1", "c": "CHOPIN, F.", "t": "Polonaise", "nat": "Polish", "era": "Romantic", "key": "Variable", "focus": ["Polish character", "Dance rhythm", "Romantic style"] },
