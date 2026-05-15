@@ -9,7 +9,7 @@ const DATA_G3 = [
   // ═══════════════════════════════════════════════════
 
   // --- List A · S19 ---
-  { "l":"A","s":"S19","c":"BURGMÜLLER, F.","t":"La tarantelle (Tarantella) No 20 from 25 études faciles et progressives Op.100","nat":"German","era":"Romantic","key":"A minor","focus":["Dance character","Staccato technique","Rhythmic drive"] },
+  { "l":"A","s":"S19","c":"BURGMÜLLER, J.","t":"La tarantelle (Tarantella) No 20 from 25 études faciles et progressives Op.100","nat":"German","era":"Romantic","key":"A minor","focus":["Dance character","Staccato technique","Rhythmic drive"] },
   { "l":"A","s":"S19","c":"HANDEL, G.F.","t":"Sarabande II from Suite HWV 448","nat":"German","era":"Baroque","key":"D minor","focus":["Baroque dance","Ornamentation","Sustained tone"] },
   { "l":"A","s":"S19","c":"HENGEVELD, G.","t":"Maestoso No 15 from 15 polyphonic studies","nat":"Dutch","era":"Modern","key":"Variable","focus":["Polyphonic texture","Voice independence","Stately character"] },
   { "l":"A","s":"S19","c":"RYBICKI, F.","t":"Prelude from I am already playing Op.21","nat":"Polish","era":"Modern","key":"Variable","focus":["Lyrical melody","Expressive playing","Contemporary idiom"] },
@@ -17,11 +17,11 @@ const DATA_G3 = [
   // --- List A · S18 ---
   { "l":"A","s":"S18","c":"CONCONE, G.","t":"Study No 5 from 30 melodious studies Op.24","nat":"Italian","era":"Romantic","key":"Variable","focus":["Cantabile melody","Tone shaping","Legato playing"] },
   { "l":"A","s":"S18","c":"HANDEL, G.F.","t":"Preludio from Chaconne HWV 442","nat":"German","era":"Baroque","key":"G major","focus":["Baroque preludio","Ornamentation","Keyboard fluency"] },
-  { "l":"A","s":"S18","c":"SCHOENMEHL, M.","t":"Banjo tune","nat":"German","era":"Modern","key":"Variable","focus":["Rhythmic character","Modern idiom","Light touch"] },
+  { "l":"A","s":"S18","c":"SCHÖNMEHL, M.","t":"Banjo tune","nat":"German","era":"Modern","key":"Variable","focus":["Rhythmic character","Modern idiom","Light touch"] },
   { "l":"A","s":"S18","c":"TELEMANN, G.P.","t":"Loure 3rd movement from Overture TWV 32:12","nat":"German","era":"Baroque","key":"Variable","focus":["Baroque dance","Stylistic awareness","Dotted rhythm"] },
 
   // --- List A · S17 ---
-  { "l":"A","s":"S17","c":"BURGMÜLLER, F.","t":"Ballade No 15 from 25 easy and progressive studies Op.100","nat":"German","era":"Romantic","key":"G minor","focus":["Narrative character","Dynamic shaping","Romantic drama"] },
+  { "l":"A","s":"S17","c":"BURGMÜLLER, J.","t":"Ballade No 15 from 25 easy and progressive studies Op.100","nat":"German","era":"Romantic","key":"G minor","focus":["Narrative character","Dynamic shaping","Romantic drama"] },
   { "l":"A","s":"S17","c":"HANDEL, G.F.","t":"Sonatina HWV 585","nat":"German","era":"Baroque","key":"Variable","focus":["Baroque clarity","Ornamentation","Formal structure"] },
   { "l":"A","s":"S17","c":"HUMMEL, J.N.","t":"Etude No 32 from Ausführlich theoretisch-practische Anweisung Op.s157","nat":"Austrian","era":"Classical","key":"Variable","focus":["Finger technique","Classical elegance","Velocity control"] },
   { "l":"A","s":"S17","c":"RAICHEV, A.","t":"The water mill","nat":"Bulgarian","era":"Modern","key":"Variable","focus":["Musical imagery","Rhythmic motion","Modern character"] },
@@ -67,7 +67,7 @@ const DATA_G3 = [
   { "l":"A","s":"Manual","c":"ROLLIN, C.","t":"Winter wind","nat":"American","era":"Contemporary","key":"Variable","focus":["Musical imagery","Technical agility","Contemporary style"] },
   { "l":"A","s":"Manual","c":"SCARLATTI, A.","t":"Aria in D minor","nat":"Italian","era":"Baroque","key":"D minor","focus":["Baroque aria","Singing melody","Ornament clarity"] },
   { "l":"A","s":"Manual","c":"SCARLATTI, A.","t":"Folia","nat":"Italian","era":"Baroque","key":"D minor","focus":["Baroque variations","Dance character","Stylistic awareness"] },
-  { "l":"A","s":"Manual","c":"SEIXAS, C. de.","t":"Toccata in C major","nat":"Portuguese","era":"Baroque","key":"C major","focus":["Baroque toccata","Finger velocity","Keyboard brilliance"] },
+  { "l":"A","s":"Manual","c":"SEIXAS, C. de","t":"Toccata in C major","nat":"Portuguese","era":"Baroque","key":"C major","focus":["Baroque toccata","Finger velocity","Keyboard brilliance"] },
   { "l":"A","s":"Manual","c":"SOLER, A.","t":"Sonata in D minor R115","nat":"Spanish","era":"Baroque","key":"D minor","focus":["Spanish Baroque","Stylistic character","Keyboard technique"] },
   { "l":"A","s":"Manual","c":"STREABBOG, L.","t":"Allegretto No 11 from 12 very easy and melodious studies Op.63","nat":"Belgian","era":"Romantic","key":"Variable","focus":["Lyrical étude","Melodic shaping","Light touch"] },
   { "l":"A","s":"Manual","c":"STREABBOG, L.","t":"Allegro moderato No 9 from 12 easy and melodious studies Op.64","nat":"Belgian","era":"Romantic","key":"Variable","focus":["Technical agility","Musical character","Tone evenness"] },
@@ -81,7 +81,7 @@ const DATA_G3 = [
   { "l":"B","s":"S19","c":"BALUTET, M.","t":"Villanelle from Quatre petites pièces en clef de sol","nat":"French","era":"Modern","key":"Variable","focus":["Lyrical character","French style","Melodic shaping"] },
   { "l":"B","s":"S19","c":"HOOK, J.","t":"Allegro First movement of Sonatina Op.12 No 5","nat":"English","era":"Classical","key":"Variable","focus":["Classical sonatina","Clarity","Finger technique"] },
   { "l":"B","s":"S19","c":"RIES, F.","t":"Polonaise Op.124 No 3","nat":"German","era":"Romantic","key":"Variable","focus":["Dance character","Romantic style","Musical phrasing"] },
-  { "l":"B","s":"S19","c":"WEBER, C.M. von.","t":"Scherzo Second movement of Divertimento assai facile Op.38","nat":"German","era":"Romantic","key":"Variable","focus":["Playful character","Light touch","Rhythmic precision"] },
+  { "l":"B","s":"S19","c":"WEBER, C.M.","t":"Scherzo Second movement of Divertimento assai facile Op.38","nat":"German","era":"Romantic","key":"Variable","focus":["Playful character","Light touch","Rhythmic precision"] },
 
   // --- List B · S18 ---
   { "l":"B","s":"S18","c":"BEACH, A.","t":"Gavotte No 2 from Children's album Op.36","nat":"American","era":"Romantic","key":"Variable","focus":["Dance elegance","Romantic character","Musical shaping"] },
@@ -99,7 +99,7 @@ const DATA_G3 = [
   { "l":"B","s":"Manual","c":"BEETHOVEN, L. van (attrib.)","t":"Allegro assai 1st movement from Sonatina in F major WoO Anh 5/2","nat":"German","era":"Classical","key":"F major","focus":["Classical sonatina","Finger technique","Articulation"] },
   { "l":"B","s":"Manual","c":"BEETHOVEN, L. van (attrib.)","t":"Rondo 2nd movement from Sonatina in F major WoO Anh 5/2","nat":"German","era":"Classical","key":"F major","focus":["Rondo character","Light touch","Classical elegance"] },
   { "l":"B","s":"Manual","c":"BACH, C.P.E.","t":"La Pott H 80/W 117.18","nat":"German","era":"Classical","key":"Variable","focus":["Galant style","Expressive playing","Ornamentation"] },
-  { "l":"B","s":"Manual","c":"BEETHOVEN, L. van.","t":"German dance (Deutscher Tanz) in B♭ major No 6 from 12 German dances WoO 13","nat":"German","era":"Classical","key":"B♭ major","focus":["Dance character","Classical clarity","Rhythmic precision"] },
+  { "l":"B","s":"Manual","c":"BEETHOVEN, L. van","t":"German dance (Deutscher Tanz) in B♭ major No 6 from 12 German dances WoO 13","nat":"German","era":"Classical","key":"B♭ major","focus":["Dance character","Classical clarity","Rhythmic precision"] },
   { "l":"B","s":"Manual","c":"BENDA, G.","t":"Sonatina in G minor No 16 from 34 piano sonatinas","nat":"Czech","era":"Classical","key":"G minor","focus":["Classical form","Minor character","Expressive playing"] },
   { "l":"B","s":"Manual","c":"BENDA, G.","t":"Sonatina in F major No 10 from 34 piano sonatinas","nat":"Czech","era":"Classical","key":"F major","focus":["Classical sonatina","Clarity","Formal structure"] },
   { "l":"B","s":"Manual","c":"BENDA, G.","t":"Sonatina in D major No 17 from 34 piano sonatinas","nat":"Czech","era":"Classical","key":"D major","focus":["Classical form","Elegance","Balanced texture"] },
@@ -131,9 +131,9 @@ const DATA_G3 = [
   { "l":"B","s":"Manual","c":"LICHNER, H.","t":"Moderato 1st movement from Sonatina in G major Op.66 No 3","nat":"German","era":"Romantic","key":"G major","focus":["Romantic character","Lyrical playing","Formal clarity"] },
   { "l":"B","s":"Manual","c":"MENDELSSOHN, F.","t":"Romanze","nat":"German","era":"Romantic","key":"Variable","focus":["Romantic melody","Singing tone","Expressive phrasing"] },
   { "l":"B","s":"Manual","c":"MOROVSKY, A.","t":"Valsette","nat":"Russian","era":"Romantic","key":"Variable","focus":["Waltz elegance","Light touch","Romantic character"] },
-  { "l":"B","s":"Manual","c":"MOZART, W.","t":"Larghetto 1st movement from Viennese sonatina No 5 in F major","nat":"Austrian","era":"Classical","key":"F major","focus":["Singing melody","Classical elegance","Cantabile"] },
-  { "l":"B","s":"Manual","c":"MOZART, W.","t":"Polonaise 3rd movement from Viennese sonatina No 5 in F major","nat":"Austrian","era":"Classical","key":"F major","focus":["Dance character","Classical clarity","Elegant articulation"] },
-  { "l":"B","s":"Manual","c":"MOZART, W.","t":"Rondo in C major","nat":"Austrian","era":"Classical","key":"C major","focus":["Rondo form","Classical wit","Light touch"] },
+  { "l":"B","s":"Manual","c":"MOZART, W.A.","t":"Larghetto 1st movement from Viennese sonatina No 5 in F major","nat":"Austrian","era":"Classical","key":"F major","focus":["Singing melody","Classical elegance","Cantabile"] },
+  { "l":"B","s":"Manual","c":"MOZART, W.A.","t":"Polonaise 3rd movement from Viennese sonatina No 5 in F major","nat":"Austrian","era":"Classical","key":"F major","focus":["Dance character","Classical clarity","Elegant articulation"] },
+  { "l":"B","s":"Manual","c":"MOZART, W.A.","t":"Rondo in C major","nat":"Austrian","era":"Classical","key":"C major","focus":["Rondo form","Classical wit","Light touch"] },
   { "l":"B","s":"Manual","c":"REBIKOV, V.","t":"Shepherd playing his pipe No 8 from Op.31","nat":"Russian","era":"Romantic","key":"Variable","focus":["Pastoral character","Lyrical melody","Singing tone"] },
   { "l":"B","s":"Manual","c":"REINECKE, C.","t":"Scherzo 3rd movement from Serenade Op.183 No 5","nat":"German","era":"Romantic","key":"Variable","focus":["Playful character","Light touch","Rhythmic energy"] },
   { "l":"B","s":"Manual","c":"SANDRÉ, G.","t":"Go to sleep","nat":"French","era":"Romantic","key":"Variable","focus":["Lullaby character","Soft tone","Gentle phrasing"] },
@@ -225,7 +225,7 @@ const DATA_G3 = [
   { "l":"C","s":"Manual","c":"ROLLIN, C.","t":"Jazz cat from Best of Catherine Rollin Book 1","nat":"American","era":"Contemporary","key":"Variable","focus":["Jazz character","Contemporary style","Rhythmic energy"] },
   { "l":"C","s":"Manual","c":"ROLLIN, C.","t":"Rockin' in New Orleans from Best of Catherine Rollin Book 2","nat":"American","era":"Contemporary","key":"Variable","focus":["Rock character","Contemporary idiom","Rhythmic drive"] },
   { "l":"C","s":"Manual","c":"SCHMITZ, M.","t":"Tango Aurora (Miti tango) Book 1","nat":"German","era":"Contemporary","key":"Variable","focus":["Tango character","Contemporary style","Dance energy"] },
-  { "l":"C","s":"Manual","c":"SCHOENMEHL, M.","t":"Melancholy reflections from Studies in pop","nat":"German","era":"Contemporary","key":"Variable","focus":["Lyrical character","Contemporary idiom","Expressive playing"] },
+  { "l":"C","s":"Manual","c":"SCHÖNMEHL, M.","t":"Melancholy reflections from Studies in pop","nat":"German","era":"Contemporary","key":"Variable","focus":["Lyrical character","Contemporary idiom","Expressive playing"] },
   { "l":"C","s":"Manual","c":"SCULTHORPE, P.","t":"Koori dancing No 5 from A little book of hours","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Australian character","Contemporary idiom","Rhythmic energy"] },
   { "l":"C","s":"Manual","c":"SCULTHORPE, P.","t":"Left bank waltz No 2 from Two easy pieces","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Waltz character","Australian music","Contemporary style"] },
   { "l":"C","s":"Manual","c":"SCULTHORPE, P.","t":"Sea chant No 1 from Two easy pieces","nat":"Australian","era":"Contemporary","key":"Variable","focus":["Australian character","Atmospheric character","Contemporary idiom"] },

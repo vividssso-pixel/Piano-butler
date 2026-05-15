@@ -17,7 +17,7 @@ const DATA_TRINITY_G5 = [
   { "c": "COPLAND, A.", "t": "Simple Gifts (from Appalachian Spring, simplified arr.)", "nat": "American", "era": "Modern", "focus": ["American folk style", "Simple arrangement", "Lyrical character"] },
   { "c": "CROSLAND, J.", "t": "Salsa Fever (from Recital Collection for Piano, Grade 5)", "nat": "English", "era": "Contemporary", "focus": ["Latin character", "Rhythmic drive", "Simple syncopation"] },
   { "c": "DEBUSSY, C.", "t": "Rêverie", "nat": "French", "era": "Romantic", "focus": ["Impressionist colour", "Flowing figurations", "Atmospheric playing"] },
-  { "c": "DVORAK, A.", "t": "Humoresque, Op. 101 No. 7 (simplified)", "nat": "Czech", "era": "Romantic", "focus": ["Character piece", "Lyrical melody", "Simple phrasing"] },
+  { "c": "DVOŘÁK, A.", "t": "Humoresque, Op. 101 No. 7 (simplified)", "nat": "Czech", "era": "Romantic", "focus": ["Character piece", "Lyrical melody", "Simple phrasing"] },
   { "c": "FAURÉ, G.", "t": "Nocturne No. 1, Op. 33 No. 1 (simplified)", "nat": "French", "era": "Romantic", "focus": ["Night character", "Lyrical melody", "Romantic phrasing"] },
   { "c": "GEROU, T.", "t": "In the Groove (from Recital Collection for Piano, Grade 5)", "nat": "American", "era": "Contemporary", "focus": ["Jazz style", "Swing character", "Simple syncopation"] },
   { "c": "GRANADOS, E.", "t": "Spanish Dance No. 5 (Andaluza)", "nat": "Spanish", "era": "Romantic", "focus": ["Spanish character", "Guitar imitation", "Expressive phrasing"] },
