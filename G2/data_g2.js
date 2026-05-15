@@ -27,7 +27,7 @@ const DATA_G2 = [
 
   { "l":"A","s":"S17","c":"BARTÓK, B.","t":"Allegro","nat":"Hungarian","era":"Modern","key":"Variable","focus":["Modern idiom","Rhythmic precision","Stylistic clarity"] },
   { "l":"A","s":"S17","c":"BURGMÜLLER, J.","t":"Innocence","nat":"German","era":"Romantic","key":"Variable","focus":["Expressive phrasing","Singing tone","Musical sensitivity"] },
-  { "l":"A","s":"S17","c":"COUPPEY, F. Le.","t":"Study","nat":"French","era":"Romantic","key":"Variable","focus":["Romantic character","Dynamic range","Legato playing"] },
+  { "l":"A","s":"S17","c":"LE COUPPEY, F.","t":"Study","nat":"French","era":"Romantic","key":"Variable","focus":["Romantic character","Dynamic range","Legato playing"] },
   { "l":"A","s":"S17","c":"FISCHER, J.","t":"Balet anglois","nat":"German","era":"Baroque","key":"Variable","focus":["Baroque elegance","Terraced dynamics","Period style"] },
 
   // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═  // ═

@@ -49,7 +49,7 @@ const DATA_G6 = [
   // --- LIST B ---
   { "l": "B", "s": "S19", "c": "BEETHOVEN, L. van", "t": "Andante (Sonata Op. 49 No 1)", "nat": "German", "era": "Classical", "key": "Variable", "focus": ["Classical form", "Phrasing", "Ornamentation"] },
   { "l": "B", "s": "S19", "c": "HAYDN, J.", "t": "Theme and Variations Hob XVII:2", "nat": "Austrian", "era": "Classical", "key": "Variable", "focus": ["Theme & variations", "Expression", "Classical clarity"] },
-  { "l": "B", "s": "S19", "c": "MARTÍNEZ, M. von.", "t": "Allegro (Sonata Op. 4)", "nat": "Spanish", "era": "Classical", "key": "Variable", "focus": ["Classical style", "Melody", "Formal structure"] },
+  { "l": "B", "s": "S19", "c": "MARTÍNEZ, M. von", "t": "Allegro (Sonata Op. 4)", "nat": "Spanish", "era": "Classical", "key": "Variable", "focus": ["Classical style", "Melody", "Formal structure"] },
   { "l": "B", "s": "S19", "c": "NEEFE, C.", "t": "Allegro di molto (Sonata No 2)", "nat": "German", "era": "Classical", "key": "Variable", "focus": ["Classical form", "Vigor", "Balanced phrasing"] },
   { "l": "B", "s": "S18", "c": "BACH, J.C.", "t": "Allegro (Sonata Op. 17 No 3)", "nat": "German", "era": "Classical", "key": "Variable", "focus": ["Classical form", "Articulation", "Elegant articulation"] },
   { "l": "B", "s": "S18", "c": "EBERL, A.", "t": "Allegro (Sonatine Op. 5)", "nat": "German", "era": "Classical", "key": "Variable", "focus": ["Classical elegance", "Melody", "Harmonic awareness"] },
@@ -168,7 +168,7 @@ const DATA_G6 = [
   { "l": "C", "s": "Collab", "c": "RACHMANINOFF, S.", "t": "Thème russe No 3 [Primo or Secondo]", "nat": "Russian", "era": "Romantic", "key": "Variable", "focus": ["Duet", "Romantic", "Tonal colour"] },
   { "l": "C", "s": "Collab", "c": "SCHUMANN, R.", "t": "Trauer No 6 [Secondo] from Op. 85", "nat": "German", "era": "Romantic", "key": "Variable", "focus": ["Duet form", "Secondo", "Expressive range"] },
   { "l": "D", "s": "Collab", "c": "CORNICK, M.", "t": "Blues in F [Secondo]", "nat": "British", "era": "Contemporary", "key": "F Major", "focus": ["Blues character", "Secondo", "Contemporary flavour"] },
-  { "l": "D", "s": "Collab", "c": "GRAINGER, P.", "t": "Country gardens No 22 [Primo]", "nat": "Australian-British", "era": "Modern", "key": "Variable", "focus": ["Folk arrangement", "Primo", "Contemporary idiom"] },
+  { "l": "D", "s": "Collab", "c": "GRAINGER, P.", "t": "Country gardens No 22 [Primo]", "nat": "Australian", "era": "Modern", "key": "Variable", "focus": ["Folk arrangement", "Primo", "Contemporary idiom"] },
   { "l": "D", "s": "Collab", "c": "NORTON, C.", "t": "Mambo [Primo or Secondo] from Latin duets", "nat": "British", "era": "Contemporary", "key": "Variable", "focus": ["Latin character", "Duet", "Musical imagination"] },
   { "l": "D", "s": "Collab", "c": "PETER-HORAS, T.", "t": "Tabasco [Primo or Secondo]", "nat": "Romanian", "era": "Contemporary", "key": "Variable", "focus": ["Latin character", "Virtuosity", "Tonal exploration"] },
   { "l": "D", "s": "Collab", "c": "POULENC, F.", "t": "Sonata for four hands - Prelude (1st movt) [Primo]", "nat": "French", "era": "Modern", "key": "Variable", "focus": ["Duet form", "Primo", "Rhythmic imagination"] }
