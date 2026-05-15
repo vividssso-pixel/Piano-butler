@@ -1435,7 +1435,54 @@ diagnose.html (purpose-first, returning player focused)
 | 9 | data_g6.js deprecated | `G6/data_g6.js` | Added deprecation warning comment. File is an old skeleton (no nat/era/focus, 159 pieces, exports MASTER_DATA). Not referenced by any live page — `data_g6_comp.js` is authoritative. |
 | 10 | sitemap.xml lastmod updated | `sitemap.xml` | All `<lastmod>` dates updated to `2026-05-15`. |
 
-### Build Status — Last updated 2026-05-15
+### Phase 34 Updates (2026-05-15 — diagnose.html audit + PDF report)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | `gapFactor` bug fix | `diagnose.html` | `gapFactor` was computed but never applied to the level calculation — gap had zero effect on results. Fixed: `gapPenalty = round((1-gapFactor)*8)`, `adjustedTotal = max(0, total-gapPenalty)`. Level thresholds now use `adjustedTotal`. "More than 10 years" gap now meaningfully lowers the recommended starting level. |
+| 2 | Corpus filter fallback | `diagnose.html` | `child` and `perform` purpose filters were too narrow — could return 0 pieces on some grade ranges (focus keywords like "dramatic" or "dance" are rare). Refactored to `filteredPool` with fallback: if `filteredPool.length < 8`, use the full grade pool. |
+| 3 | Modal redesign — FullReportModal | `diagnose.html` | `ComingSoonModal` (waitlist email) replaced with `FullReportModal`. Shows purpose + level, 4-item report contents, "Download PDF" button (in-browser jsPDF), and Gumroad $4 link. `gap` prop threaded through. |
+| 4 | jsPDF in-browser report generator | `diagnose.html` | `generatePDFReport(result, purpose, gap)` function added (243 lines). Generates 2-page A4 PDF: Page 1 — cover + goal section + next step callout + retention score boxes + radar chart (SVG-style pure jsPDF lines) + weak areas. Page 2 — 4-week practice roadmap (colour-coded week blocks) + 10 recommended pieces + teacher CTA. CDN: `cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js`. |
+| 5 | `adjustedTotal` in result object | `diagnose.html` | `adjustedTotal` now returned from `computeResult()` and used in results screen `totalPct` calculation — overall % now reflects gap penalty. |
+| 6 | Revenue model updated | `diagnose.html` | Strategy: generate PDF free in browser → user sees value → "Get the full version — $4" Gumroad link in modal. `GUMROAD_URL` constant at top — replace once Gumroad product is created. |
+
+### diagnose.html Architecture (Phase 34 — updated)
+
+```
+diagnose.html
+├── jsPDF CDN (2.5.1)
+├── buildCorpus()          — Prelim–G5 AMEB/ABRSM/Trinity (early grades)
+├── PURPOSES (5)           — child / self / exam / hobby / perform
+├── GAPS (4)               — recent / few / decade / long
+├── MEMORY_QUESTIONS (4)   — note reading, time sig, piece memory, notation
+├── HANDS_QUESTIONS (4)    — finger readiness, hands together, prev level, mindset
+├── GUMROAD_URL            — ← replace with real link once product created
+├── generatePDFReport()    — 2-page A4 jsPDF: cover + radar + roadmap + pieces
+├── computeResult()        — purpose × gap(adjusted) × memScore × handScore
+│   ├── gapPenalty         — (1-gapFactor)*8 subtracted from total
+│   ├── adjustedTotal      — gap-penalised total (0-24), drives levelKey
+│   ├── filteredPool       — purpose-filtered corpus with <8 fallback
+│   └── pieces[]           — 5 diverse corpus picks
+├── FullReportModal        — download button (jsPDF) + Gumroad $4 link
+└── Results screen
+    ├── Purpose message card
+    ├── Retention scores (memScore/12, handScore/12, adjustedTotal%)
+    ├── Things to brush up on
+    ├── Piece recommendations (5)
+    └── CTAs: Find a teacher / Full report $4 modal
+```
+
+### Revenue Path (Gumroad)
+
+| Step | Action |
+|------|--------|
+| 1 | Go to gumroad.com → create product "Piano Butler Full Report — $4" |
+| 2 | Generate a sample PDF using diagnose.html (complete the quiz → Download) |
+| 3 | Upload that PDF as the Gumroad product file |
+| 4 | Copy the Gumroad product URL → replace `GUMROAD_URL` in diagnose.html |
+| 5 | Push to main → live |
+
+### Build Status — Last updated 2026-05-15 (Phase 34)
 
 | # | Feature | Status |
 |---|---------|--------|
@@ -1443,18 +1490,21 @@ diagnose.html (purpose-first, returning player focused)
 | 58 | Composer name normalisation — all 42 data files | ✅ Done (Phase 33) |
 | 59 | Data quality audit — ERA/FOCUS/NAT/duplicates | ✅ Done (Phase 33) |
 | 60 | COMPOSER_LINKS canonical keys — 16 HTML files | ✅ Done (Phase 33) |
+| 61 | diagnose.html — gapFactor bug fix + corpus fallback | ✅ Done (Phase 34) |
+| 62 | diagnose.html — jsPDF in-browser report generator | ✅ Done (Phase 34) |
+| 63 | diagnose.html — FullReportModal with PDF download + Gumroad link | ✅ Done (Phase 34) |
 
 ### Pending Work (priority order for next session)
 
 | # | Task | Priority | Notes |
 |---|------|----------|-------|
-| 1 | Test diagnose.html end-to-end | First thing | Go through all 5 purpose paths. Check piece recommendations make sense per purpose + level. Note any friction. |
+| 1 | Gumroad product setup | First thing | Create product at gumroad.com, upload sample PDF, replace `GUMROAD_URL` in diagnose.html, push to main. |
 | 2 | connect.html — add real teacher info | High | Replace placeholder with real photo, real booking link, real price. |
-| 3 | $4 Full Report — define content | High | Decide exactly what's in the report before building Stripe/jsPDF. |
-| 4 | $4 Full Report — Stripe + jsPDF | High | Stripe Checkout (hosted, no backend) → payment success → jsPDF generates PDF in browser. |
-| 5 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify. |
-| 6 | Ad integration | Low | After traffic grows. |
+| 3 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify. |
+| 4 | Ad integration | Low | After traffic grows. |
 
 ### Known Issues (as of 2026-05-15)
-- diagnose.html $4 report CTA: coming-soon modal with waitlist email. Stripe pending.
+- `GUMROAD_URL` in diagnose.html is a placeholder — must be replaced with real Gumroad link before promoting publicly.
+- jsPDF radar chart uses `doc.moveTo/lineTo` which may not be available in all jsPDF 2.5.1 builds — test in browser, fallback to simple score text if lines don't render.
+- connect.html teacher cards: placeholder data only.
 - connect.html teacher cards: placeholder data only. Real teacher info needed before promoting publicly.
