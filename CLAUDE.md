@@ -11,7 +11,7 @@ You are the **"Piano Butler AI,"** a world-class Orchestrator and Creative Strat
 ## Project Overview
 
 **Piano Butler** is a public piano repertoire search tool covering AMEB, ABRSM, Trinity College London, and Diploma syllabuses. It helps pianists and teachers:
-- Browse and filter 4,501 pieces across AMEB (Prelim–G8, Comprehensive + Leisure), ABRSM (Initial–G8), Trinity (Initial–G8 + ATCL/LTCL/FTCL Diploma), and AMEB/ABRSM Diploma
+- Browse and filter 4,500 pieces across AMEB (Prelim–G8, Comprehensive + Leisure), ABRSM (Initial–G8), Trinity (Initial–G8 + ATCL/LTCL/FTCL Diploma), and AMEB/ABRSM Diploma
 - Search by grade, era, nationality, list (A/B/C), and focus area
 - Save favourite pieces (Magic Link login — no password required)
 - Teacher Dashboard available for studio management (deprioritized; not publicly promoted)
@@ -194,8 +194,8 @@ Each `piano-repertoire_gX.html` is a **self-contained single-file app** — no s
 | G5 | data_g5_leisure.js | 78 | 12 | 11 | 13 | 12 | 30 | |
 | G6 | data_g6_leisure.js | 88 | 12 | 12 | 11 | 12 | 41 | |
 | G7 | data_g7_leisure.js | 92 | 12 | 9 | 14 | 12 | 45 | |
-| G8 | data_g8_leisure.js | 95 | 11 | — | 12 | 12 | 60 | No S3 — series only goes to G7 |
-| **Total** | | **706** | | | | | | |
+| G8 | data_g8_leisure.js | 94 | 11 | — | 12 | 11 | 60 | No S3 — series only goes to G7; BEETHOVEN Andante duplicate removed from S1 |
+| **Total** | | **705** | | | | | | |
 
 ### Grand Total: 2,099 pieces across all grades and both syllabuses
 
@@ -746,7 +746,7 @@ index.html (fully public, no requireAuth)
 | Syllabus | Count |
 |----------|-------|
 | AMEB Comprehensive (Prelim–G8) | 1,393 |
-| AMEB Piano for Leisure (Prelim–G8) | 706 |
+| AMEB Piano for Leisure (Prelim–G8) | 705 |
 | AMEB Diploma — CertP | 128 |
 | AMEB Diploma — AMusA | 161 |
 | AMEB Diploma — LMusA | 226 |
@@ -795,7 +795,7 @@ Piano Butler/
 | Syllabus | Count |
 |----------|-------|
 | AMEB Comprehensive (Prelim–G8) | 1,393 |
-| AMEB Piano for Leisure (Prelim–G8) | 706 |
+| AMEB Piano for Leisure (Prelim–G8) | 705 |
 | AMEB Diploma — CertP | 128 |
 | AMEB Diploma — AMusA | 161 |
 | AMEB Diploma — LMusA | 226 |
@@ -1053,7 +1053,7 @@ autoSuggestions    → depends on [query] — fires on keystroke for dropdown
 | Syllabus | Count |
 |----------|-------|
 | AMEB Comprehensive (Prelim–G8) | 1,393 |
-| AMEB Piano for Leisure (Prelim–G8) | 706 |
+| AMEB Piano for Leisure (Prelim–G8) | 705 |
 | AMEB Diploma — CertP | 128 |
 | AMEB Diploma — AMusA | 161 |
 | AMEB Diploma — LMusA | 226 |
@@ -1150,7 +1150,7 @@ Trinity/                              ← NEW (Phase 25)
 | 1 | Trinity ATCL diploma repertoire | `Trinity/Diploma/data_trinity_atcl.js`, `Trinity/Diploma/piano-repertoire_trinity_atcl.html` | 241 works from official *Trinity Piano Diploma Repertoire List 2026* PDF (trinitycollege.com/resource?id=8546). Open pool format. Crimson-dark gradient header. Era/Nationality filters, search, YT + Sheet links, Wikipedia COMPOSER_LINKS. |
 | 2 | Trinity LTCL diploma repertoire | `Trinity/Diploma/data_trinity_ltcl.js`, `Trinity/Diploma/piano-repertoire_trinity_ltcl.html` | 306 works. Same open pool pattern. Purple-crimson gradient. |
 | 3 | Trinity FTCL diploma repertoire | `Trinity/Diploma/data_trinity_ftcl.js`, `Trinity/Diploma/piano-repertoire_trinity_ftcl.html` | 155 works. Deep purple header. FTCL note: concertos permitted (with second piano). |
-| 4 | index.html — Trinity Diploma integration | `index.html` | `TRINITY_DIPLOMA_META` array added. Script tags for all 3 diploma JS files. `buildCorpus()` includes Trinity Diploma tagged `_syllabus:"Trinity Diploma"`. GradeGrid Trinity tab shows ATCL/LTCL/FTCL diploma cards. Sidebar + mobile strip gain `🎓 Trinity Diploma` filter. syllabusBadge + syllabusColor updated. Piece count updated 3,799 → 4,501. |
+| 4 | index.html — Trinity Diploma integration | `index.html` | `TRINITY_DIPLOMA_META` array added. Script tags for all 3 diploma JS files. `buildCorpus()` includes Trinity Diploma tagged `_syllabus:"Trinity Diploma"`. GradeGrid Trinity tab shows ATCL/LTCL/FTCL diploma cards. Sidebar + mobile strip gain `🎓 Trinity Diploma` filter. syllabusBadge + syllabusColor updated. Piece count updated 3,799 → 4,500. |
 | 5 | admin-counts.html | `admin-counts.html` | Script tags + `TRINITY_DIPLOMA` array + `SectionTable` + grand total + Expected vs Actual row (702 total). Grand Total target updated 3,799 → 4,501. |
 | 6 | sitemap.xml | `sitemap.xml` | 3 Trinity Diploma URLs added (priority 0.8, monthly). |
 | 7 | CLAUDE.md | `CLAUDE.md` | Phase 28 logged. Project overview, piece counts, file structure, pending work updated. |
@@ -1171,7 +1171,7 @@ Trinity/                              ← NEW (Phase 25)
 | Syllabus | Count |
 |----------|-------|
 | AMEB Comprehensive (Prelim–G8) | 1,393 |
-| AMEB Piano for Leisure (Prelim–G8) | 706 |
+| AMEB Piano for Leisure (Prelim–G8) | 705 |
 | AMEB Diploma — CertP | 128 |
 | AMEB Diploma — AMusA | 161 |
 | AMEB Diploma — LMusA | 226 |
@@ -1182,7 +1182,7 @@ Trinity/                              ← NEW (Phase 25)
 | Trinity Diploma — ATCL | 241 |
 | Trinity Diploma — LTCL | 306 |
 | Trinity Diploma — FTCL | 155 |
-| **Grand Total** | **4,501** |
+| **Grand Total** | **4,500** |
 
 ### File Structure Update (Phase 28)
 
@@ -1218,7 +1218,7 @@ Trinity/
 | # | Change | File(s) | Detail |
 |---|--------|---------|--------|
 | 1 | Repertoire Recommender page created | `recommend.html` | Self-contained React 18 + Tailwind app. 6-step form wizard: mode → syllabus → grade → combo type → character → era → nationality → results. Scoring engine: era match (+30), character focus keyword match (+25), nationality preference (+20), random variety (+15). Era diversity + nationality diversity bonus in `pickDiverse()`. |
-| 2 | Two recommendation modes | `recommend.html` | **Exam mode**: filters corpus by syllabus + grade, picks one piece per list (A/B/C/D). **Free discovery**: searches all 4,501 pieces, no syllabus/grade constraint. |
+| 2 | Two recommendation modes | `recommend.html` | **Exam mode**: filters corpus by syllabus + grade, picks one piece per list (A/B/C/D). **Free discovery**: searches all 4,500 pieces, no syllabus/grade constraint. |
 | 3 | YouTube in-page modal | `recommend.html` | ▶ Listen button opens YouTube video inside a dark overlay modal — same pattern as index.html. Uses YouTube Data API v3 for video search. |
 | 4 | 🎹 Recommend button in header | `index.html` | Indigo pill button added to top nav, links to recommend.html. |
 | 5 | Free mode step routing fix | `recommend.html` | Free discovery jumps step 0→3 (skips syllabus/grade steps 1+2). `mode === 'exam'` guard on step 1 and step 2 render blocks. `nextStep()` helper handles branching. |
@@ -1227,7 +1227,7 @@ Trinity/
 
 ```
 recommend.html
-├── buildCorpus()          — loads all 4,501 pieces from all data files
+├── buildCorpus()          — loads all 4,500 pieces from all data files
 ├── scorepiece(p, prefs)   — scores each piece by era/character/nationality match
 ├── pickDiverse(scored, n) — picks n pieces with era+nationality diversity bonus
 ├── generateCombination()  — exam mode: filters by syllabus+grade, picks by list (A/B/C/D)
@@ -1271,7 +1271,7 @@ recommend.html
 |---|--------|---------|--------|
 | 1 | Piano Diagnosis MVP | `diagnose.html` | Self-contained React 18 + Tailwind page. 16 plain-language questions across 4 domains (Ear, Sight-reading, Technique, Theory). 4 questions per domain, scored Always/Usually/Sometimes/Rarely → 4/3/2/1. Score bands: 13–16 Strong, 8–12 Developing, 4–7 Needs work. |
 | 2 | SVG radar chart | `diagnose.html` | Pure SVG 4-axis diamond polygon. Grid rings at 25/50/75/100%. Data polygon filled indigo. Score labels per axis. No Chart.js dependency. |
-| 3 | Repertoire matching engine | `diagnose.html` | `pickPieces(domain, band, count)` filters live 4,501-piece corpus by domain weakness. Ear → Baroque/Classical + melodic focus tags. Sight → Baroque/Classical + rhythm/pulse tags. Technique → étude/finger/articulation/pedal focus tags. Theory → Bach/Haydn/Mozart/Beethoven + Baroque/Classical era. Era diversity bonus in selection loop. |
+| 3 | Repertoire matching engine | `diagnose.html` | `pickPieces(domain, band, count)` filters live 4,500-piece corpus by domain weakness. Ear → Baroque/Classical + melodic focus tags. Sight → Baroque/Classical + rhythm/pulse tags. Technique → étude/finger/articulation/pedal focus tags. Theory → Bach/Haydn/Mozart/Beethoven + Baroque/Classical era. Era diversity bonus in selection loop. |
 | 4 | Weakness explanation cards | `diagnose.html` | `WEAKNESS_TIPS` object — per-domain: what it means, quick fix, piece type rationale. Shown for bottom 2 domains only. |
 | 5 | Estimated level (by-product) | `diagnose.html` | `estimatedLevel(scores)` maps average score → Beginner/Prelim through Diploma/Advanced. Shown as secondary info in results header, not as primary framing. |
 | 6 | Coming Soon modal | `diagnose.html` | "$4 Full Report" CTA opens modal with waitlist mailto link (`vividssso@gmail.com`). Placeholder for future Stripe + jsPDF integration. |
@@ -1282,7 +1282,7 @@ recommend.html
 
 ```
 diagnose.html
-├── buildCorpus()          — loads all 4,501 pieces (same as recommend.html)
+├── buildCorpus()          — loads all 4,500 pieces (same as recommend.html)
 ├── DOMAINS (4)            — Ear / Sight-reading / Technique / Theory
 ├── QUESTIONS (16)         — 4 per domain, plain language, with hint
 ├── OPTIONS (4)            — Always(4) / Usually(3) / Sometimes(2) / Rarely(1)
