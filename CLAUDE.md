@@ -1420,29 +1420,41 @@ diagnose.html (purpose-first, returning player focused)
     └── CTAs: Find a teacher → connect.html / Full report $4 (modal)
 ```
 
-### Build Status — Last updated 2026-05-14 (evening)
+### Phase 33 Updates (2026-05-15 — data quality session)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Composer name normalisation | All 42 `data_*.js` files | 1,641 fixes across all data files. Standard: `SURNAME, Initials` format (e.g. `BEETHOVEN, L.`, `BACH, J.S.`). Fixed: bare surnames, Title Case, Unicode encoding errors (BARTÓK, BURGMÜLLER etc.), RACHMANINOV→RACHMANINOFF, SKRYABIN→SCRIABIN, trailing dots removed. |
+| 2 | G8 Leisure BEETHOVEN duplicate removed | `G8/data_g8_leisure.js` | BEETHOVEN Andante appeared in both S4 and S1. PDF confirmed S4 only — removed from S1. Count: 95→94. Leisure total: 706→705. Grand total: 4,501→4,500. |
+| 3 | LE COUPPEY fix | `Prelim/data_prelim.js`, `Prelim/data_prelim_leisure.js`, `G2/data_g2.js` | `COUPPEY, F. Le.` → `LE COUPPEY, F.` (correct surname format). |
+| 4 | MARTÍNEZ trailing dot removed | `G6/data_g6_comp.js`, `G6/data_g6.js` | `MARTÍNEZ, M. von.` → `MARTÍNEZ, M. von`. |
+| 5 | MARTÍNEZ bare surname fixed | `ABRSM/G8/data_abrsm_g8.js` | `MARTÍNEZ` → `MARTÍNEZ, M. von`. |
+| 6 | NAT standardisation | `G6/data_g6_comp.js`, `G6/data_g6_leisure.js`, `G5/data_g5_leisure.js` | `Australian-British`→`Australian` (GRAINGER), `Swedish/British`→`Swedish` (ANDERSSON/ULVAEUS), `British-NZ`→`British` (NORTON, C.). |
+| 7 | Piece count 4,501→4,500 | `index.html`, `diagnose.html`, `recommend.html`, `admin-counts.html` | All public-facing counts updated to 4,500. |
+| 8 | COMPOSER_LINKS canonical keys added | 16 HTML files | 727 new canonical-format keys added to COMPOSER_LINKS objects across all ABRSM, LMusA, AMusA, Trinity Diploma HTML files. Keys now match normalised `p.c` values so Wikipedia links work correctly. |
+| 9 | data_g6.js deprecated | `G6/data_g6.js` | Added deprecation warning comment. File is an old skeleton (no nat/era/focus, 159 pieces, exports MASTER_DATA). Not referenced by any live page — `data_g6_comp.js` is authoritative. |
+| 10 | sitemap.xml lastmod updated | `sitemap.xml` | All `<lastmod>` dates updated to `2026-05-15`. |
+
+### Build Status — Last updated 2026-05-15
 
 | # | Feature | Status |
 |---|---------|--------|
-| 1–54 | All previously completed features (Phases 1–30) | ✅ Done |
-| 55 | Teacher Dashboard removed from public nav | ✅ Done (Phase 31) |
-| 56 | connect.html — teacher/course matching page | ✅ Done (Phase 31) |
-| 57 | diagnose.html — purpose-first redesign for returning players | ✅ Done (Phase 31) |
+| 1–57 | All previously completed features (Phases 1–31) | ✅ Done |
+| 58 | Composer name normalisation — all 42 data files | ✅ Done (Phase 33) |
+| 59 | Data quality audit — ERA/FOCUS/NAT/duplicates | ✅ Done (Phase 33) |
+| 60 | COMPOSER_LINKS canonical keys — 16 HTML files | ✅ Done (Phase 33) |
 
 ### Pending Work (priority order for next session)
 
 | # | Task | Priority | Notes |
 |---|------|----------|-------|
 | 1 | Test diagnose.html end-to-end | First thing | Go through all 5 purpose paths. Check piece recommendations make sense per purpose + level. Note any friction. |
-| 2 | connect.html — add real teacher info | High | Replace Sohyun placeholder with real photo, real booking link, real price. Add 1–2 more real teachers if possible. |
-| 3 | $4 Full Report — define content | High | Decide exactly what's in the report before building Stripe/jsPDF. Suggested: personalised level summary + 6-month plan outline + 10 piece list + teacher match. |
+| 2 | connect.html — add real teacher info | High | Replace placeholder with real photo, real booking link, real price. |
+| 3 | $4 Full Report — define content | High | Decide exactly what's in the report before building Stripe/jsPDF. |
 | 4 | $4 Full Report — Stripe + jsPDF | High | Stripe Checkout (hosted, no backend) → payment success → jsPDF generates PDF in browser. |
-| 5 | G8 Leisure BEETHOVEN Andante duplicate | Quick fix | Check Piano for Leisure G8 PDF — is Andante in both S4 and S1? |
-| 6 | ABRSM data audit | Medium | ERA/FOCUS/NAT/duplicate check across all 9 ABRSM grade files. |
-| 7 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify. |
-| 8 | Ad integration | Low | After traffic grows. |
+| 5 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify. |
+| 6 | Ad integration | Low | After traffic grows. |
 
-### Known Issues (as of 2026-05-14 evening)
-- ⚠️ G8 Leisure: BEETHOVEN Andante duplicate — pending PDF verification.
+### Known Issues (as of 2026-05-15)
 - diagnose.html $4 report CTA: coming-soon modal with waitlist email. Stripe pending.
 - connect.html teacher cards: placeholder data only. Real teacher info needed before promoting publicly.

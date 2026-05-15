@@ -1,3 +1,5 @@
+// ⚠️ DEPRECATED — use data_g6_comp.js instead (full fields: nat/era/focus, 160 pieces)
+// This file is an old skeleton with no nat/era/focus fields and is not referenced by any live page.
 const MASTER_DATA = [
   // --- LIST A (Baroque & Studies) ---
   { "l": "A", "s": "S19", "c": "BACH, J.S.", "t": "Allemande (French Suite No 4 BWV 815)" },
