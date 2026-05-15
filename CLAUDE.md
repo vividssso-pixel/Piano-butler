@@ -1508,3 +1508,36 @@ diagnose.html
 - jsPDF radar chart uses `doc.moveTo/lineTo` which may not be available in all jsPDF 2.5.1 builds — test in browser, fallback to simple score text if lines don't render.
 - connect.html teacher cards: placeholder data only.
 - connect.html teacher cards: placeholder data only. Real teacher info needed before promoting publicly.
+
+---
+
+### Phase 35 Updates (2026-05-15 — domain + onboarding session)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Domain migrated to thepianobutler.com | `CNAME`, `index.html`, `sitemap.xml`, `robots.txt`, `diagnose.html`, `connect.html` | All domain references updated from `pianobutler.com` → `thepianobutler.com`. CNAME file updated. Namecheap DNS configured (4× A records + CNAME → vividssso-pixel.github.io). GitHub Pages custom domain set + DNS check successful + Enforce HTTPS enabled. Supabase Site URL + Redirect URLs updated. |
+| 2 | 2-step onboarding LoginModal | `index.html` | Step 1: name input + role selector (Student 🎹 / Teacher 👩‍🏫 / Hobby player 🎵 / Parent 👨‍👧). Step 2: personalised greeting + email input. Name/role saved to `localStorage` (`pb_user_name`, `pb_user_role`) and Supabase `user_metadata` on auth. Progress dots in header. |
+| 3 | Supabase Magic Link email template | Supabase dashboard | Subject: "🎹 Your Piano Butler sign-in link". Body: branded HTML email with Piano Butler header, gradient CTA button, footer with thepianobutler.com link. |
+| 4 | Dark theme redesign — Claude-inspired | `index.html` | Full dark aesthetic: `#1a1a1a` body, `#e8e3dc` text, `#d4956a` orange accent, Inter font. Nav, sidebar, grade cards, piece rows, search bar, modals, autocomplete all updated. Grade cards: dark bg + subtle accent border. Search input: dark with orange focus glow. Star/save: orange. All filter states use warm orange instead of indigo. |
+
+### Build Status — Last updated 2026-05-15 (Phase 36)
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–63 | All previously completed features | ✅ Done |
+| 64 | Domain thepianobutler.com — DNS + HTTPS | ✅ Done (Phase 35) |
+| 65 | 2-step onboarding modal | ✅ Done (Phase 35) |
+| 66 | Magic Link email template | ✅ Done (Phase 35) |
+| 67 | Dark theme redesign | ✅ Done (Phase 36) |
+
+### Pending Work (next session)
+
+| # | Task | Priority |
+|---|------|----------|
+| 1 | CLAUDE.md update | ✅ Done this session |
+| 2 | connect.html dark theme | Medium — still light theme |
+| 3 | diagnose.html dark theme | Medium — still light theme |
+| 4 | recommend.html dark theme | Medium — still light theme |
+| 5 | YouTube API key referrer restriction | High — set in Google Cloud Console |
+| 6 | Google Search Console — submit sitemap | Quick win |
+| 7 | Ad integration | Low — after traffic |
