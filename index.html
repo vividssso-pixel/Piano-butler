@@ -345,10 +345,15 @@ function pickDiverse(scored, n) {
 }
 
 function getMatches({ gradeKey, syllabus, era, nat, count = 12 }) {
-    // Filter corpus to matching grade+syllabus, then score
     let pool = CORPUS.filter(p => {
         if (gradeKey && p._gradeKey !== gradeKey) return false;
-        if (syllabus && syllabus !== "All" && p._syllabus !== syllabus) return false;
+        if (syllabus && syllabus !== "All") {
+            if (syllabus === "AMEB Leisure") {
+                if (p._syllabus !== "AMEB" || p._type !== "Leisure") return false;
+            } else {
+                if (p._syllabus !== syllabus) return false;
+            }
+        }
         return true;
     });
     if (pool.length === 0) return [];
@@ -402,11 +407,28 @@ function TeacherFlow({ openVideo }) {
     }
 
     const SYLLABUSES = [
-        { val:"All",    label:"All syllabuses" },
-        { val:"AMEB",   label:"🇦🇺 AMEB" },
-        { val:"ABRSM",  label:"🇬🇧 ABRSM" },
-        { val:"Trinity",label:"Trinity" },
+        { val:"All",          label:"All syllabuses" },
+        { val:"AMEB",         label:"🇦🇺 AMEB" },
+        { val:"AMEB Leisure", label:"🎵 AMEB Leisure" },
+        { val:"ABRSM",        label:"🇬🇧 ABRSM" },
+        { val:"Trinity",      label:"Trinity" },
     ];
+
+    // Grade groups for display
+    const GRADE_GROUPS = [
+        {
+            label: "Grades",
+            grades: ["Prelim","G1","G2","G3","G4","G5","G6","G7","G8"],
+        },
+        {
+            label: "Diploma & Advanced",
+            grades: ["CertP","AMusA","LMusA","LRSM","FRSM","TATCL","TLTCL","TFTCL"],
+        },
+    ];
+    const DIPLOMA_GRADE_LABEL = {
+        "CertP":"Cert. of Performance","AMusA":"AMusA","LMusA":"LMusA",
+        "LRSM":"LRSM","FRSM":"FRSM","TATCL":"ATCL","TLTCL":"LTCL","TFTCL":"FTCL",
+    };
 
     return (
         <div>
@@ -416,21 +438,30 @@ function TeacherFlow({ openVideo }) {
                     <div style={{fontSize:13,fontWeight:600,color:"#666",marginBottom:20}}>
                         What grade is your student working at?
                     </div>
-                    <div style={{display:"flex",flexWrap:"wrap",gap:8,marginBottom:28}}>
-                        {["Prelim","G1","G2","G3","G4","G5","G6","G7","G8"].map(gk => (
-                            <button key={gk}
-                                className={`grade-btn${gradeKey===gk?" active":""}`}
-                                onClick={() => setGradeKey(gk)}>
-                                {GRADE_LABEL[gk]}
-                            </button>
-                        ))}
-                    </div>
+                    {GRADE_GROUPS.map(group => (
+                        <div key={group.label} style={{marginBottom:20}}>
+                            <span style={{fontSize:10,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.1em",color:"#444",display:"block",marginBottom:8}}>
+                                {group.label}
+                            </span>
+                            <div style={{display:"flex",flexWrap:"wrap",gap:8}}>
+                                {group.grades.map(gk => (
+                                    <button key={gk}
+                                        className={`grade-btn${gradeKey===gk?" active":""}`}
+                                        onClick={() => setGradeKey(gk)}>
+                                        {GRADE_LABEL[gk] || DIPLOMA_GRADE_LABEL[gk] || gk}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                    <div style={{marginTop:8}}>
                     {gradeKey && (
                         <button onClick={() => setStep("syllabus")}
                             style={{padding:"12px 28px",borderRadius:12,background:"#d4956a",color:"#1a1a1a",border:"none",fontSize:14,fontWeight:800,cursor:"pointer"}}>
                             Next →
                         </button>
                     )}
+                    </div>
                 </div>
             )}
 
