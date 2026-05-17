@@ -4,8 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Repertoire Recommender | Piano Butler</title>
-  <meta name="description" content="Get a personalised piano repertoire combination based on syllabus, grade, era balance and student personality.">
-  <meta name="robots" content="noindex">
+  <meta name="description" content="Find the perfect piano pieces for any student — personalised by level, personality, and musical taste.">
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -66,20 +65,18 @@
     * { box-sizing: border-box; font-family: 'Pretendard', -apple-system, sans-serif; }
     body { background: #f8fafc; margin: 0; color: #1e293b; }
 
-    .chip {
-      padding: 8px 16px; border-radius: 20px; border: 1.5px solid #e2e8f0;
-      background: #fff; cursor: pointer; font-size: 13px; font-weight: 500;
-      color: #475569; transition: all 0.15s;
-    }
-    .chip:hover { border-color: #c7d2fe; background: #eef2ff; color: #4338ca; }
-    .chip.selected { border-color: #4f46e5; background: #4f46e5; color: #fff; font-weight: 700; }
-
     .option-btn {
-      width:100%; padding: 14px 18px; border-radius: 13px; border: 2px solid #e2e8f0;
+      width: 100%; padding: 14px 18px; border-radius: 13px; border: 2px solid #e2e8f0;
       background: #fff; cursor: pointer; text-align: left; transition: all 0.15s;
     }
     .option-btn:hover { border-color: #c7d2fe; background: #f8faff; }
-    .option-btn.selected { border-color: var(--accent,#4f46e5); background: #f0f0ff; }
+
+    .chip {
+      padding: 8px 16px; border-radius: 20px; border: 1.5px solid #e2e8f0;
+      background: #fff; cursor: pointer; font-size: 13px; font-weight: 500;
+      color: #475569; transition: all 0.15s; white-space: nowrap;
+    }
+    .chip:hover { border-color: #c7d2fe; background: #eef2ff; color: #4338ca; }
 
     .result-card {
       background: #fff; border-radius: 16px; padding: 20px 20px 16px;
@@ -89,34 +86,22 @@
     }
     .result-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.08); transform: translateY(-1px); }
 
-    .step-dot { width:7px; height:7px; border-radius:50%; background:#e2e8f0; transition:all 0.2s; }
-    .step-dot.active { background:#4f46e5; transform:scale(1.3); }
-    .step-dot.done   { background:#a5b4fc; }
+    .progress-bar { height: 3px; background: rgba(255,255,255,0.25); border-radius: 2px; overflow: hidden; }
+    .progress-fill { height: 100%; background: #fff; border-radius: 2px; transition: width 0.4s ease; }
 
-    .progress-bar { height:3px; background:rgba(255,255,255,0.25); border-radius:2px; overflow:hidden; }
-    .progress-fill { height:100%; background:#fff; border-radius:2px; transition:width 0.4s ease; }
-
-    @keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
     .fade-up { animation: fadeUp 0.25s ease both; }
 
-    .focus-tag { display:inline-block; padding:3px 9px; border-radius:10px; font-size:10px; font-weight:600; background:#f1f5f9; color:#64748b; }
-    .reason-badge { display:inline-flex; align-items:center; gap:3px; padding:3px 9px; border-radius:10px; font-size:10px; font-weight:700; }
-
-    .era-bar-wrap { display:flex; gap:2px; height:6px; border-radius:4px; overflow:hidden; margin:8px 0 4px; }
-    .era-bar-seg { height:100%; transition:width 0.5s ease; }
-
-    @media print {
-      .no-print { display:none!important; }
-      .result-card { box-shadow:none; border:1px solid #e2e8f0; break-inside:avoid; }
-      body { background:#fff; }
-    }
+    .step-dot { width: 7px; height: 7px; border-radius: 50%; background: #e2e8f0; transition: all 0.2s; display: inline-block; }
+    .step-dot.active { background: #4f46e5; transform: scale(1.3); }
+    .step-dot.done { background: #a5b4fc; }
   </style>
 </head>
 <body>
 <div id="root"></div>
 
 <script type="text/babel">
-const { useState, useMemo, useCallback, useRef } = React;
+const { useState, useMemo, useCallback } = React;
 
 /* ─── Corpus ─── */
 function buildCorpus() {
@@ -186,75 +171,77 @@ function buildCorpus() {
 const CORPUS = buildCorpus();
 
 /* ─── Config ─── */
+// Level → grade keys mapping
+const LEVEL_GRADE_KEYS = {
+  beginner:     ['Prelim','Initial'],
+  elementary:   ['G1','G2','G3'],
+  intermediate: ['G4','G5','G6'],
+  advanced:     ['G7','G8','CertP','ATCL'],
+  diploma:      ['AMusA','LMusA','LRSM','FRSM','LTCL','FTCL'],
+};
+
+const LEVELS = [
+  { id:'beginner',     label:'🌱 Beginner',     desc:'Just starting out — first pieces, simple patterns' },
+  { id:'elementary',   label:'🎵 Elementary',    desc:'Getting comfortable — Grades 1–3 range' },
+  { id:'intermediate', label:'🎹 Intermediate',  desc:'Building fluency — Grades 4–6 range' },
+  { id:'advanced',     label:'🌟 Advanced',      desc:'Polished playing — Grades 7–8 range' },
+  { id:'diploma',      label:'🎓 Diploma',       desc:'Concert-level repertoire — AMusA, LMusA, LRSM and above' },
+];
+
+const CHARACTERS = [
+  { id:'technical',   icon:'🎯', label:'Technical',    desc:'Loves a challenge — scales, velocity, precision' },
+  { id:'expressive',  icon:'🎭', label:'Expressive',   desc:'Naturally musical — tone, phrasing, shaping' },
+  { id:'playful',     icon:'🎪', label:'Playful',      desc:'Catchy and fun — character pieces, dance rhythms' },
+  { id:'lyrical',     icon:'🌸', label:'Lyrical',      desc:'Beautiful melodies — cantabile, singing tone' },
+  { id:'virtuosic',   icon:'⚡', label:'Impressive',   desc:'Wants to wow — dramatic, fast, showy' },
+  { id:'balanced',    icon:'⚖️', label:'Balanced',     desc:'Works well with any style' },
+];
+
+const ERAS = [
+  { id:'Baroque',       label:'Baroque',       color:'#7c3aed', bg:'#ede9fe' },
+  { id:'Classical',     label:'Classical',     color:'#b45309', bg:'#fef3c7' },
+  { id:'Romantic',      label:'Romantic',      color:'#be185d', bg:'#fce7f3' },
+  { id:'Modern',        label:'Modern',        color:'#047857', bg:'#d1fae5' },
+  { id:'Contemporary',  label:'Contemporary',  color:'#0369a1', bg:'#e0f2fe' },
+];
+
 const SYLLABUSES = [
-  { id:'AMEB',    label:'🇦🇺 AMEB',    desc:'Australian Music Examinations Board', color:'#4f46e5' },
-  { id:'ABRSM',   label:'🇬🇧 ABRSM',   desc:'Associated Board of the Royal Schools of Music', color:'#7c3aed' },
-  { id:'Trinity', label:'🎓 Trinity',  desc:'Trinity College London', color:'#b91c1c' },
+  { id:'AMEB',    label:'🇦🇺 AMEB',    color:'#4f46e5' },
+  { id:'ABRSM',   label:'🇬🇧 ABRSM',   color:'#7c3aed' },
+  { id:'Trinity', label:'🎓 Trinity',  color:'#b91c1c' },
 ];
 
 const GRADE_OPTIONS = {
-  AMEB: [
-    { id:'Prelim', label:'Prelim' },{ id:'G1', label:'Grade 1' },{ id:'G2', label:'Grade 2' },
-    { id:'G3', label:'Grade 3' },{ id:'G4', label:'Grade 4' },{ id:'G5', label:'Grade 5' },
-    { id:'G6', label:'Grade 6' },{ id:'G7', label:'Grade 7' },{ id:'G8', label:'Grade 8' },
-    { id:'CertP', label:'CertP' },{ id:'AMusA', label:'AMusA' },{ id:'LMusA', label:'LMusA' },
-  ],
-  ABRSM: [
-    { id:'Initial', label:'Initial' },{ id:'G1', label:'Grade 1' },{ id:'G2', label:'Grade 2' },
-    { id:'G3', label:'Grade 3' },{ id:'G4', label:'Grade 4' },{ id:'G5', label:'Grade 5' },
-    { id:'G6', label:'Grade 6' },{ id:'G7', label:'Grade 7' },{ id:'G8', label:'Grade 8' },
-    { id:'LRSM', label:'LRSM' },{ id:'FRSM', label:'FRSM' },
-  ],
-  Trinity: [
-    { id:'Initial', label:'Initial' },{ id:'G1', label:'Grade 1' },{ id:'G2', label:'Grade 2' },
-    { id:'G3', label:'Grade 3' },{ id:'G4', label:'Grade 4' },{ id:'G5', label:'Grade 5' },
-    { id:'G6', label:'Grade 6' },{ id:'G7', label:'Grade 7' },{ id:'G8', label:'Grade 8' },
-    { id:'ATCL', label:'ATCL' },{ id:'LTCL', label:'LTCL' },{ id:'FTCL', label:'FTCL' },
-  ],
+  AMEB:    ['Prelim','G1','G2','G3','G4','G5','G6','G7','G8','CertP','AMusA','LMusA'],
+  ABRSM:   ['Initial','G1','G2','G3','G4','G5','G6','G7','G8','LRSM','FRSM'],
+  Trinity: ['Initial','G1','G2','G3','G4','G5','G6','G7','G8','ATCL','LTCL','FTCL'],
 };
 
-const ERAS = ['Baroque','Classical','Romantic','Modern','Contemporary'];
-const ERA_COLORS = { Baroque:'#7c3aed', Classical:'#b45309', Romantic:'#be185d', Modern:'#047857', Contemporary:'#0369a1' };
-const ERA_BG     = { Baroque:'#ede9fe', Classical:'#fef3c7', Romantic:'#fce7f3', Modern:'#d1fae5', Contemporary:'#e0f2fe' };
-
-const CHARACTERS = [
-  { id:'technical',   label:'🎯 Technical',    desc:'Loves precision and a challenge — scales, velocity, clarity' },
-  { id:'expressive',  label:'🎭 Expressive',   desc:'Naturally musical and emotive — singing tone, rubato, shaping' },
-  { id:'playful',     label:'🎪 Playful',       desc:'Responds to catchy, fun, character-driven pieces' },
-  { id:'virtuosic',   label:'⚡ Virtuosic',    desc:'Wants to impress — fast, dramatic, technically demanding' },
-  { id:'lyrical',     label:'🌸 Lyrical',      desc:'Drawn to beautiful melodies, slow pieces, cantabile playing' },
-  { id:'balanced',    label:'⚖️ Balanced',     desc:'Works well with any style — good all-rounder' },
-];
-
-const NAT_OPTIONS = [
-  { id:'any',        label:'🌍 Any nationalities',          desc:'No preference — full variety' },
-  { id:'diverse',    label:'🗺️ Diverse mix preferred',     desc:'Actively spreads across different countries' },
-  { id:'australian', label:'🇦🇺 Include Australian',       desc:'At least one Australian composer in the set' },
-  { id:'french',     label:'🇫🇷 French focus',             desc:'Debussy, Fauré, Ravel, Satie, Poulenc...' },
-  { id:'german',     label:'🇩🇪 German/Austrian',          desc:'Bach, Beethoven, Brahms, Schumann, Schubert...' },
-  { id:'russian',    label:'🇷🇺 Russian focus',            desc:'Prokofiev, Rachmaninoff, Kabalevsky, Shostakovich...' },
-  { id:'western',    label:'🏛️ Western European',          desc:'German, French, Austrian, Italian, English composers' },
-];
+const GRADE_LABELS = {
+  Prelim:'Prelim', Initial:'Initial', G1:'Grade 1', G2:'Grade 2', G3:'Grade 3',
+  G4:'Grade 4', G5:'Grade 5', G6:'Grade 6', G7:'Grade 7', G8:'Grade 8',
+  CertP:'CertP', AMusA:'AMusA', LMusA:'LMusA', LRSM:'LRSM', FRSM:'FRSM',
+  ATCL:'ATCL', LTCL:'LTCL', FTCL:'FTCL',
+};
 
 /* ─── Engine ─── */
 function shuffle(arr) {
-  const a=[...arr];
-  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  const a = [...arr];
+  for (let i = a.length-1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
   return a;
 }
 
 function scorepiece(p, prefs) {
   let score = 0;
-  const reasons = [];
   const focus = (p.focus||[]).join(' ').toLowerCase();
   const nat = (p.nat||'').toLowerCase();
-  const era = (p.era||'');
+  const era = p.era||'';
 
   // Era preference
-  if (prefs.eras.length > 0 && prefs.eras.includes(era)) {
-    score += 30;
-    reasons.push({ label:era, icon:'🕰️', bg:ERA_BG[era]||'#f1f5f9', color:ERA_COLORS[era]||'#475569' });
-  }
+  if (prefs.eras.length > 0 && prefs.eras.includes(era)) score += 30;
 
   // Character alignment
   const CHAR_WORDS = {
@@ -265,66 +252,33 @@ function scorepiece(p, prefs) {
     lyrical:    ['lyrical','cantabile','singing','melodic','lullaby','nocturne','romance','beautiful','smooth','legato'],
     balanced:   [],
   };
-  const words = CHAR_WORDS[prefs.character] || [];
-  const matched = words.find(w => focus.includes(w));
-  if (matched && prefs.character !== 'balanced') {
-    score += 25;
-    const charLabel = { technical:'Technical focus', expressive:'Expressive depth', playful:'Student appeal', virtuosic:'Impressive & showy', lyrical:'Beautiful melody' }[prefs.character];
-    const charBg    = { technical:'#f0fdf4', expressive:'#fdf4ff', playful:'#fff7ed', virtuosic:'#fff1f2', lyrical:'#fdf2f8' }[prefs.character];
-    const charCol   = { technical:'#166534', expressive:'#7e22ce', playful:'#c2410c', virtuosic:'#9f1239', lyrical:'#86198f' }[prefs.character];
-    const charMatch = CHARACTERS.find(c=>c.id===prefs.character);
-    reasons.push({ label:charLabel, icon:charMatch ? charMatch.label.split(' ')[0] : '✓', bg:charBg, color:charCol });
-  }
+  const words = CHAR_WORDS[prefs.character]||[];
+  if (words.length && words.find(w => focus.includes(w))) score += 25;
 
-  // Nationality
-  const NAT_MATCHES = {
-    australian: ['australian'],
-    french:     ['french'],
-    german:     ['german','austrian'],
-    russian:    ['russian'],
-    western:    ['german','french','austrian','english','italian','polish','russian','czech','spanish','norwegian','hungarian'],
-    diverse:    [],
-    any:        [],
-  };
-  const matchNats = NAT_MATCHES[prefs.natDiversity] || [];
-  if (matchNats.length > 0 && matchNats.includes(nat)) {
-    score += 20;
-    const flag = { australian:'🇦🇺', french:'🇫🇷', german:'🇩🇪', russian:'🇷🇺' }[prefs.natDiversity] || '🌍';
-    reasons.push({ label:p.nat, icon:flag, bg:'#fffbeb', color:'#92400e' });
-  }
-
-  // Small random factor
+  // Random variety
   score += Math.random() * 12;
 
-  return { ...p, _score:score, _reasons:reasons };
+  return { ...p, _score:score };
 }
 
-function pickByList(pool, list) {
-  const lp = pool.filter(p => p.l === list);
-  if (!lp.length) return null;
-  return lp.sort((a,b) => b._score - a._score)[0];
-}
-
-function pickDiverse(scored, count, prefs) {
+function pickDiverse(scored, count) {
   const result = [];
   const usedEras = new Set();
   const usedNats = new Set();
   const sorted = [...scored].sort((a,b) => b._score - a._score);
-  if (sorted.length) { result.push(sorted[0]); usedEras.add(sorted[0].era); usedNats.add(sorted[0].nat); }
-
-  // For 'diverse' nationality pref, strongly prefer new nationalities
-  const natBonus = (prefs && prefs.natDiversity === 'diverse') ? 20 : 10;
 
   for (const p of sorted) {
     if (result.length >= count) break;
     if (result.some(r => r.c===p.c && r.t===p.t)) continue;
     const newEra = !usedEras.has(p.era);
     const newNat = !usedNats.has(p.nat);
-    if (newEra) { p._diversityBonus = (p._diversityBonus||0) + 20; }
-    if (newNat) { p._diversityBonus = (p._diversityBonus||0) + natBonus; }
+    if (newEra) p._score += 15;
+    if (newNat) p._score += 10;
     result.push(p);
-    usedEras.add(p.era); usedNats.add(p.nat);
+    usedEras.add(p.era);
+    usedNats.add(p.nat);
   }
+  // Fill if not enough
   for (const p of sorted) {
     if (result.length >= count) break;
     if (!result.some(r => r.c===p.c && r.t===p.t)) result.push(p);
@@ -332,51 +286,50 @@ function pickDiverse(scored, count, prefs) {
   return result;
 }
 
-function generateCombination(corpus, prefs, seed) {
-  const pool = corpus.filter(p => {
-    const sylOk = p._syllabus === prefs.syllabus || p._syllabus === prefs.syllabus + ' Diploma';
-    return sylOk && p._gradeKey === prefs.grade;
-  });
-  if (!pool.length) return null;
-  const scored = shuffle(pool).map(p => scorepiece(p, prefs));
+function generate(prefs) {
+  let pool = CORPUS;
 
-  let selected = [];
-  if (prefs.comboType === 'exam3') {
-    ['A','B','C'].forEach(l => { const p=pickByList(scored,l); if(p) selected.push({...p,_listLabel:'List '+l}); });
-    if (selected.length < 2) selected = pickDiverse(scored, 3, prefs);
-  } else if (prefs.comboType === 'exam4') {
-    ['A','B','C','D'].forEach(l => { const p=pickByList(scored,l); if(p) selected.push({...p,_listLabel:'List '+l}); });
-    if (selected.length < 2) selected = pickDiverse(scored, 4, prefs);
-  } else if (prefs.comboType === 'lesson4') {
-    selected = pickDiverse(scored, 4, prefs);
-  } else {
-    selected = pickDiverse(scored, 6, prefs);
+  // Filter by level → grade keys
+  const gradeKeys = LEVEL_GRADE_KEYS[prefs.level]||[];
+  pool = pool.filter(p => gradeKeys.includes(p._gradeKey));
+
+  // Optional: filter by syllabus + exact grade
+  if (prefs.syllabus && prefs.grade) {
+    const sylPool = pool.filter(p =>
+      (p._syllabus === prefs.syllabus || p._syllabus === prefs.syllabus + ' Diploma') &&
+      p._gradeKey === prefs.grade
+    );
+    if (sylPool.length >= 4) pool = sylPool;
+  } else if (prefs.syllabus) {
+    const sylPool = pool.filter(p =>
+      p._syllabus === prefs.syllabus || p._syllabus === prefs.syllabus + ' Diploma'
+    );
+    if (sylPool.length >= 4) pool = sylPool;
   }
-  return selected;
-}
 
-function generateFreeMode(corpus, prefs) {
-  const scored = shuffle(corpus).map(p => scorepiece(p, prefs));
-  const count = prefs.comboType === 'lesson6' ? 6 : 4;
-  return pickDiverse(scored, count, prefs);
+  if (!pool.length) pool = CORPUS; // fallback
+
+  const count = prefs.setSize || 4;
+  const scored = shuffle(pool).map(p => scorepiece(p, prefs));
+  return pickDiverse(scored, count);
 }
 
 /* ─── YouTube modal ─── */
 const YT_API_KEY = "AIzaSyDR9BQfybtyS2e-H9wgtFgWbfqlQWpLCW8";
 function useVideoModal() {
-  const [modal, setModal] = React.useState(null);
-  const open = React.useCallback(async (composer, title) => {
+  const [modal, setModal] = useState(null);
+  const open = useCallback(async (composer, title) => {
     setModal({ loading:true, title });
     try {
       const q = encodeURIComponent(composer.split(',')[0].trim()+' '+title+' piano');
-      const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}&type=video&maxResults=1&key=${YT_API_KEY}`);
+      const res = await fetch('https://www.googleapis.com/youtube/v3/search?part=snippet&q='+q+'&type=video&maxResults=1&key='+YT_API_KEY);
       const data = await res.json();
       const item = data.items && data.items[0];
       if (item) setModal({ videoId:item.id.videoId, title:item.snippet.title, loading:false });
       else { setModal(null); window.open('https://www.youtube.com/results?search_query='+q,'_blank'); }
-    } catch { setModal(null); }
+    } catch(e) { setModal(null); }
   },[]);
-  const close = React.useCallback(() => setModal(null),[]);
+  const close = useCallback(() => setModal(null),[]);
   return { modal, open, close };
 }
 
@@ -394,7 +347,7 @@ function VideoModal({ modal, onClose }) {
         <div style={{position:'relative',paddingBottom:'56.25%',height:0}}>
           {modal.loading
             ? <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',color:'#94a3b8',fontSize:13}}>🎹 Searching YouTube...</div>
-            : <iframe src={`https://www.youtube.com/embed/${modal.videoId}?autoplay=1&rel=0`}
+            : <iframe src={'https://www.youtube.com/embed/'+modal.videoId+'?autoplay=1&rel=0'}
                 style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',border:'none'}}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen/>
           }
@@ -404,534 +357,355 @@ function VideoModal({ modal, onClose }) {
   );
 }
 
-/* ─── Series badge ─── */
-function SeriesBadge({ s }) {
-  if (!s) return null;
+/* ─── Syllabus badge ─── */
+function SyllabusBadge({ syllabus }) {
+  if (!syllabus) return null;
   const cfg = {
-    S19:{ bg:'#dbeafe', color:'#1e40af', label:'S19' },
-    S18:{ bg:'#ede9fe', color:'#5b21b6', label:'S18' },
-    S17:{ bg:'#f3e8ff', color:'#7e22ce', label:'S17' },
-    AustAnth:{ bg:'#fef3c7', color:'#92400e', label:'AustAnth' },
-    Manual:{ bg:'#f1f5f9', color:'#475569', label:'Manual' },
+    'AMEB':           { bg:'#e0e7ff', color:'#3730a3', label:'AMEB' },
+    'AMEB Diploma':   { bg:'#ccfbf1', color:'#0f766e', label:'AMEB Diploma' },
+    'ABRSM':          { bg:'#ede9fe', color:'#5b21b6', label:'ABRSM' },
+    'ABRSM Diploma':  { bg:'#f3e8ff', color:'#7e22ce', label:'ABRSM Dip' },
+    'Trinity':        { bg:'#fee2e2', color:'#991b1b', label:'Trinity' },
+    'Trinity Diploma':{ bg:'#fce7f3', color:'#9d174d', label:'Trinity Dip' },
   };
-  const key = s.startsWith('Series') ? null : s;
-  const c = key && cfg[key] ? cfg[key] : (s.startsWith('Series') ? { bg:'#d1fae5', color:'#065f46', label:s } : { bg:'#f1f5f9', color:'#475569', label:s });
+  const c = cfg[syllabus]||{ bg:'#f1f5f9', color:'#475569', label:syllabus };
   return (
-    <span style={{ background:c.bg, color:c.color, fontSize:9, fontWeight:800, padding:'2px 7px', borderRadius:8, letterSpacing:'0.03em' }}>
+    <span style={{background:c.bg,color:c.color,fontSize:9,fontWeight:800,padding:'2px 7px',borderRadius:8,letterSpacing:'0.03em'}}>
       {c.label}
     </span>
   );
 }
 
-/* ─── Era balance bar ─── */
-function EraBalanceBar({ pieces }) {
-  const counts = {};
-  ERAS.forEach(e => counts[e] = 0);
-  pieces.forEach(p => { if (counts[p.era] !== undefined) counts[p.era]++; });
-  const total = pieces.length || 1;
-  const hasAny = ERAS.some(e => counts[e] > 0);
-  if (!hasAny) return null;
-  return (
-    <div style={{ marginBottom:16 }}>
-      <div style={{ fontSize:10, fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:6 }}>Era balance</div>
-      <div className="era-bar-wrap">
-        {ERAS.map(era => counts[era] > 0 && (
-          <div key={era} className="era-bar-seg" title={era + ': ' + counts[era]}
-            style={{ width:(counts[era]/total*100)+'%', background:ERA_COLORS[era], borderRadius:3 }} />
-        ))}
-      </div>
-      <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginTop:6 }}>
-        {ERAS.filter(e => counts[e] > 0).map(era => (
-          <span key={era} style={{ display:'flex', alignItems:'center', gap:4, fontSize:10, color:ERA_COLORS[era], fontWeight:600 }}>
-            <span style={{ width:8, height:8, borderRadius:2, background:ERA_COLORS[era], display:'inline-block' }}/>
-            {era} ×{counts[era]}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /* ─── Result card ─── */
-function ResultCard({ piece, index, onListen, onSaveToList }) {
-  const [saved, setSaved] = useState(false);
-  const sheetUrl = 'https://www.google.com/search?q=' + encodeURIComponent((piece.c||'').split(',')[0]+' '+piece.t+' sheet music');
-  const listLabel = piece._listLabel;
-  const listColors = { 'List A':'#1d4ed8','List B':'#6d28d9','List C':'#be185d','List D':'#0f766e' };
-  const eraColor = ERA_COLORS[piece.era]||'#475569';
-  const eraBg   = ERA_BG[piece.era]||'#f1f5f9';
+function ResultCard({ piece, onWatch }) {
+  const eraColors = { Baroque:'#7c3aed', Classical:'#b45309', Romantic:'#be185d', Modern:'#047857', Contemporary:'#0369a1' };
+  const eraBgs    = { Baroque:'#ede9fe', Classical:'#fef3c7', Romantic:'#fce7f3', Modern:'#d1fae5', Contemporary:'#e0f2fe' };
+  const eraColor = eraColors[piece.era]||'#475569';
+  const eraBg    = eraBgs[piece.era]||'#f1f5f9';
 
-  function handleSave() {
-    setSaved(true);
-    onSaveToList(piece);
-    setTimeout(() => setSaved(false), 2000);
-  }
+  const sheetUrl = 'https://www.google.com/search?q='+encodeURIComponent(piece.c.split(',')[0].trim()+' '+piece.t+' piano sheet music');
+  const wikiUrl  = 'https://en.wikipedia.org/wiki/'+encodeURIComponent(piece.c.split(',')[0].trim());
 
   return (
-    <div className="result-card fade-up" style={{ animationDelay: (index*0.06)+'s' }}>
-      <div style={{ display:'flex', gap:12 }}>
-        {/* Index circle */}
-        <div style={{
-          width:30, height:30, borderRadius:'50%',
-          background: listLabel ? (listColors[listLabel]||'#4f46e5') : '#4f46e5',
-          color:'#fff', display:'flex', alignItems:'center', justifyContent:'center',
-          fontSize:13, fontWeight:800, flexShrink:0, marginTop:2
-        }}>{index+1}</div>
-
-        <div style={{ flex:1, minWidth:0 }}>
-          {/* Badges row */}
-          <div style={{ display:'flex', flexWrap:'wrap', gap:5, marginBottom:7, alignItems:'center' }}>
-            {listLabel && (
-              <span style={{ background:listColors[listLabel]||'#4f46e5', color:'#fff', fontSize:10, fontWeight:800, padding:'2px 8px', borderRadius:9 }}>
-                {listLabel}
-              </span>
-            )}
-            <span style={{ background:eraBg, color:eraColor, fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:9 }}>
-              {piece.era}
-            </span>
-            {piece.nat && (
-              <span style={{ background:'#f8fafc', color:'#64748b', fontSize:10, fontWeight:600, padding:'2px 8px', borderRadius:9, border:'1px solid #e2e8f0' }}>
-                {piece.nat}
-              </span>
-            )}
-            {piece.s && <SeriesBadge s={piece.s} />}
-          </div>
-
-          {/* Composer + title */}
-          <div style={{ fontWeight:800, fontSize:13, color:'#1e293b', marginBottom:1 }}>{piece.c}</div>
-          <div style={{ fontSize:13, color:'#475569', marginBottom:8, lineHeight:1.4 }}>{piece.t}</div>
-
-          {/* Why this piece */}
-          {piece._reasons && piece._reasons.length > 0 && (
-            <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginBottom:8 }}>
-              {piece._reasons.map((r,i) => (
-                <span key={i} className="reason-badge" style={{ background:r.bg, color:r.color }}>
-                  <span>{r.icon}</span>{r.label}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Focus tags */}
-          {piece.focus && piece.focus.length > 0 && (
-            <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginBottom:12 }}>
-              {piece.focus.map((f,i) => <span key={i} className="focus-tag">{f}</span>)}
-            </div>
-          )}
-
-          {/* Actions */}
-          <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-            <button onClick={() => onListen(piece.c||'', piece.t||'')}
-              style={{ background:'#fee2e2', color:'#b91c1c', fontSize:11, fontWeight:700, padding:'5px 11px', borderRadius:8, border:'none', cursor:'pointer' }}>
-              ▶ Listen
-            </button>
-            <a href={sheetUrl} target="_blank" rel="noopener"
-              style={{ background:'#f0fdf4', color:'#15803d', fontSize:11, fontWeight:700, padding:'5px 11px', borderRadius:8, textDecoration:'none', display:'inline-block' }}>
-              ♩ Score
-            </a>
-            <button onClick={handleSave}
-              style={{ background: saved ? '#d1fae5' : '#f8fafc', color: saved ? '#065f46' : '#64748b',
-                fontSize:11, fontWeight:700, padding:'5px 11px', borderRadius:8, border:'1.5px solid', borderColor: saved ? '#6ee7b7' : '#e2e8f0', cursor:'pointer', transition:'all 0.2s' }}>
-              {saved ? '✓ Saved' : '+ Save'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Programme summary ─── */
-function ProgrammeSummary({ results, prefs, mode }) {
-  if (!results || results.length === 0) return null;
-  const eras = [...new Set(results.map(p=>p.era).filter(Boolean))];
-  const nats = [...new Set(results.map(p=>p.nat).filter(Boolean))];
-  const hasList = results.some(p=>p._listLabel);
-
-  return (
-    <div style={{ background:'#f8fafc', border:'1.5px solid #e2e8f0', borderRadius:14, padding:16, marginBottom:20 }}>
-      <div style={{ fontSize:11, fontWeight:800, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.1em', marginBottom:10 }}>
-        Programme overview
-      </div>
-      <EraBalanceBar pieces={results} />
-      <div style={{ display:'flex', flexWrap:'wrap', gap:16, marginTop:8 }}>
-        <div>
-          <div style={{ fontSize:10, color:'#94a3b8', fontWeight:600, marginBottom:3 }}>NATIONALITIES</div>
-          <div style={{ fontSize:12, color:'#374151', fontWeight:600 }}>{nats.join(', ') || '—'}</div>
-        </div>
-        {hasList && (
-          <div>
-            <div style={{ fontSize:10, color:'#94a3b8', fontWeight:600, marginBottom:3 }}>LISTS COVERED</div>
-            <div style={{ fontSize:12, color:'#374151', fontWeight:600 }}>
-              {[...new Set(results.map(p=>p._listLabel).filter(Boolean))].join(', ')}
-            </div>
-          </div>
+    <div className="result-card">
+      {/* Badges row */}
+      <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:10}}>
+        <SyllabusBadge syllabus={piece._syllabus} />
+        {piece._grade && (
+          <span style={{background:'#f1f5f9',color:'#475569',fontSize:9,fontWeight:700,padding:'2px 7px',borderRadius:8}}>
+            {piece._grade}
+          </span>
         )}
-        <div>
-          <div style={{ fontSize:10, color:'#94a3b8', fontWeight:600, marginBottom:3 }}>PIECES</div>
-          <div style={{ fontSize:12, color:'#374151', fontWeight:600 }}>{results.length}</div>
+        {piece.era && (
+          <span style={{background:eraBg,color:eraColor,fontSize:9,fontWeight:700,padding:'2px 7px',borderRadius:8}}>
+            {piece.era}
+          </span>
+        )}
+        {piece.l && (
+          <span style={{background:'#f8fafc',color:'#64748b',fontSize:9,fontWeight:700,padding:'2px 7px',borderRadius:8,border:'1px solid #e2e8f0'}}>
+            List {piece.l}
+          </span>
+        )}
+      </div>
+
+      {/* Title + composer */}
+      <div style={{fontSize:15,fontWeight:800,color:'#1e293b',marginBottom:3,lineHeight:1.3}}>{piece.t}</div>
+      <a href={wikiUrl} target="_blank" rel="noopener noreferrer"
+        style={{fontSize:12,color:'#4f46e5',fontWeight:600,textDecoration:'none',display:'inline-block',marginBottom:10}}>
+        {piece.c}
+      </a>
+
+      {/* Focus tags */}
+      {piece.focus && piece.focus.length > 0 && (
+        <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:12}}>
+          {piece.focus.map((f,i) => (
+            <span key={i} style={{background:'#f8fafc',color:'#64748b',fontSize:10,padding:'2px 8px',borderRadius:6,border:'1px solid #e8edf5'}}>
+              {f}
+            </span>
+          ))}
         </div>
+      )}
+
+      {/* Action buttons */}
+      <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+        <button onClick={()=>onWatch(piece.c,piece.t)}
+          style={{display:'flex',alignItems:'center',gap:5,padding:'6px 12px',borderRadius:8,background:'#1e293b',color:'#fff',border:'none',cursor:'pointer',fontSize:11,fontWeight:700}}>
+          ▶ Listen
+        </button>
+        <a href={sheetUrl} target="_blank" rel="noopener noreferrer"
+          style={{display:'flex',alignItems:'center',gap:5,padding:'6px 12px',borderRadius:8,background:'#f1f5f9',color:'#475569',textDecoration:'none',fontSize:11,fontWeight:700}}>
+          ♩ Score
+        </a>
       </div>
     </div>
   );
 }
 
-/* ─── Main App ─── */
+/* ─── App ─── */
+// Steps: 0=character, 1=level, 2=era, 3=exam(optional), 4=results
 function App() {
-  const [mode, setMode]           = useState(null);
   const [step, setStep]           = useState(0);
+  const [character, setCharacter] = useState(null);
+  const [level, setLevel]         = useState(null);
+  const [eras, setEras]           = useState([]);
+  // Optional exam fields
+  const [wantsExam, setWantsExam] = useState(null); // true/false/null
   const [syllabus, setSyllabus]   = useState(null);
   const [grade, setGrade]         = useState(null);
-  const [comboType, setComboType] = useState('lesson4');
-  const [character, setCharacter] = useState(null);
-  const [eras, setEras]           = useState([]);
-  const [natDiversity, setNatDiversity] = useState('any');
+  const [setSize, setSetSize]     = useState(4);
   const [results, setResults]     = useState(null);
-  const [seed, setSeed]           = useState(0);
-  const [copyDone, setCopyDone]   = useState(false);
   const { modal:videoModal, open:openVideo, close:closeVideo } = useVideoModal();
 
-  const gradeOptions = syllabus ? GRADE_OPTIONS[syllabus]||[] : [];
-  const isDiploma = grade && !['Prelim','Initial','G1','G2','G3','G4','G5','G6','G7','G8'].includes(grade);
-  const comboOptions = (mode==='free'||isDiploma)
-    ? [
-        { id:'lesson4', label:'4-piece set', desc:'Varied programme across 4 pieces' },
-        { id:'lesson6', label:'6-piece set', desc:'Broader exploration across 6 pieces' },
-      ]
-    : [
-        { id:'exam3', label:'Exam — 3 pieces', desc:'One from each list: A + B + C' },
-        { id:'exam4', label:'Exam — 4 pieces', desc:'Full programme: List A + B + C + D' },
-        { id:'lesson4', label:'Lesson set — 4 pieces', desc:'Varied programme for studio lessons' },
-        { id:'lesson6', label:'Lesson set — 6 pieces', desc:'Broader selection, 6 pieces' },
-      ];
-
-  const syllabusColor = { AMEB:'#4f46e5', ABRSM:'#7c3aed', Trinity:'#b91c1c' };
-  const accentColor = mode==='free' ? '#0891b2' : (syllabus ? syllabusColor[syllabus] : '#4f46e5');
-
-  // Steps: exam 0→1→2→3→4→5→6→7(results), free 0→3→4→5→6→7
-  const totalSteps = mode==='free' ? 4 : 6;
-  const stepForProgress = mode==='free' ? Math.max(0,step-2) : step;
-  const progress = Math.min(100, Math.round((stepForProgress/totalSteps)*100));
-
-  function toggleEra(era) { setEras(prev=>prev.includes(era)?prev.filter(e=>e!==era):[...prev,era]); }
-
-  function chooseMode(m) {
-    setMode(m);
-    setStep(m==='free' ? 3 : 1);
-  }
-
-  const prefs = { syllabus, grade, comboType, character, eras, natDiversity };
-
-  function generate() {
-    const combo = mode==='free' ? generateFreeMode(CORPUS, prefs) : generateCombination(CORPUS, prefs, seed);
-    setResults(combo);
-    setStep(7);
-  }
-
-  function regenerate() {
-    setSeed(s=>s+1);
-    const combo = mode==='free' ? generateFreeMode(CORPUS, prefs) : generateCombination(CORPUS, prefs, seed+1);
-    setResults(combo);
-  }
-
-  function reset() {
-    setMode(null); setSyllabus(null); setGrade(null); setComboType('lesson4');
-    setCharacter(null); setEras([]); setNatDiversity('any');
-    setResults(null); setStep(0);
-  }
-
-  function goBack() {
-    if (step===7) { setStep(6); return; }
-    if (step===3 && mode==='free') { setMode(null); setStep(0); }
-    else if (step===1) { setMode(null); setStep(0); }
-    else setStep(s=>s-1);
-  }
-
-  function nextStep() {
-    if (mode==='free' && step===0) { setStep(3); return; }
-    setStep(s=>s+1);
+  function toggleEra(era) {
+    setEras(prev => prev.includes(era) ? prev.filter(e=>e!==era) : [...prev,era]);
   }
 
   function canAdvance() {
-    if (step===1) return !!syllabus;
-    if (step===2) return !!grade;
-    if (step===3) return !!comboType;
-    if (step===4) return !!character;
-    return true;
+    if (step===0) return !!character;
+    if (step===1) return !!level;
+    if (step===2) return true; // era is optional
+    if (step===3) return wantsExam === false || (wantsExam && !!syllabus);
+    return false;
   }
 
-  function handleSaveToList(piece) {
-    try {
-      const lists = JSON.parse(localStorage.getItem('pb_lists_v1')||'[]');
-      let target = lists.find(l=>l.name==='Recommender Picks');
-      if (!target) {
-        target = { id:'rec-'+Date.now(), name:'Recommender Picks', type:'general', pieces:[], created:Date.now() };
-        lists.push(target);
-      }
-      const alreadyIn = target.pieces.some(p=>p.composer===piece.c && p.title===piece.t);
-      if (!alreadyIn) {
-        target.pieces.push({ composer:piece.c, title:piece.t, grade:piece._grade, syllabus:piece._syllabus, era:piece.era, nat:piece.nat, focus:piece.focus||[], added:Date.now() });
-        localStorage.setItem('pb_lists_v1', JSON.stringify(lists));
-        window.dispatchEvent(new Event('pb_lists_changed'));
-      }
-    } catch(e) { console.error(e); }
+  function next() {
+    if (step < 3) { setStep(s=>s+1); return; }
+    // Generate results
+    const prefs = { character, level, eras, syllabus: wantsExam ? syllabus : null, grade: wantsExam ? grade : null, setSize };
+    setResults(generate(prefs));
+    setStep(4);
   }
 
-  function copyProgramme() {
-    if (!results) return;
-    const lines = results.map((p,i) => `${i+1}. ${p.c} — ${p.t}${p._listLabel?' ('+p._listLabel+')':''} [${p.era}, ${p.nat}]`);
-    const header = mode==='free' ? 'Free Discovery Programme' : `${syllabus} ${grade} Programme`;
-    navigator.clipboard.writeText(header+'\n\n'+lines.join('\n')).then(()=>{
-      setCopyDone(true); setTimeout(()=>setCopyDone(false), 2000);
-    });
+  function back() {
+    if (step === 0) return;
+    setStep(s=>s-1);
   }
+
+  function reset() {
+    setStep(0); setCharacter(null); setLevel(null); setEras([]);
+    setWantsExam(null); setSyllabus(null); setGrade(null); setSetSize(4); setResults(null);
+  }
+
+  function regenerate() {
+    const prefs = { character, level, eras, syllabus: wantsExam ? syllabus : null, grade: wantsExam ? grade : null, setSize };
+    setResults(generate(prefs));
+  }
+
+  // Progress dots (4 steps, 0-3)
+  const TOTAL_STEPS = 4;
+  const dots = Array.from({length:TOTAL_STEPS},(_,i)=>i);
 
   return (
-    <div style={{ minHeight:'100vh', background:'#f8fafc' }}>
+    <div style={{minHeight:'100vh',background:'#f8fafc'}}>
       <VideoModal modal={videoModal} onClose={closeVideo} />
 
       {/* Header */}
-      <div style={{ background:`linear-gradient(135deg, ${accentColor} 0%, #0f172a 100%)`, padding:'18px 20px 22px' }}>
-        <a href="index.html" style={{ color:'rgba(255,255,255,0.6)', fontSize:12, textDecoration:'none', display:'block', marginBottom:8 }} className="no-print">← Piano Butler</a>
-        <h1 style={{ color:'#fff', fontSize:20, fontWeight:900, margin:'0 0 3px', letterSpacing:'-0.02em' }}>🎹 Repertoire Recommender</h1>
-        <p style={{ color:'rgba(255,255,255,0.7)', fontSize:12, margin:'0 0 14px' }}>
-          {mode==='free' ? 'Searching all 4,500 pieces' : 'Personalised exam programme builder'}
-        </p>
-        {step < 7 && (
+      <div style={{background:'linear-gradient(135deg, #4f46e5 0%, #0f172a 100%)',padding:'18px 20px 22px'}}>
+        <a href="index.html" style={{color:'rgba(255,255,255,0.6)',fontSize:12,textDecoration:'none',display:'block',marginBottom:8}}>← Piano Butler</a>
+        <h1 style={{color:'#fff',fontSize:20,fontWeight:900,margin:'0 0 3px',letterSpacing:'-0.02em'}}>🎹 Repertoire Recommender</h1>
+        <p style={{color:'rgba(255,255,255,0.7)',fontSize:12,margin:'0 0 14px'}}>Find the right pieces for your student</p>
+        {step < 4 && (
           <div className="progress-bar">
-            <div className="progress-fill" style={{ width:progress+'%' }}/>
+            <div className="progress-fill" style={{width:Math.round((step/TOTAL_STEPS)*100)+'%'}} />
           </div>
         )}
       </div>
 
-      <div style={{ maxWidth:620, margin:'0 auto', padding:'24px 16px 96px' }}>
+      <div style={{maxWidth:620,margin:'0 auto',padding:'24px 16px 96px'}}>
 
-        {/* STEP 0: Mode */}
+        {/* STEP 0: Character */}
         {step===0 && (
           <div className="fade-up">
-            <h2 style={{ fontSize:17, fontWeight:800, color:'#1e293b', marginBottom:5 }}>How would you like to explore?</h2>
-            <p style={{ fontSize:13, color:'#64748b', marginBottom:18 }}>Choose a mode to get started.</p>
-            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-              <button onClick={()=>chooseMode('exam')} className="option-btn" style={{'--accent':'#4f46e5'}}>
-                <div style={{ fontSize:15, fontWeight:800, color:'#1e293b', marginBottom:3 }}>🎓 By exam syllabus</div>
-                <div style={{ fontSize:12, color:'#64748b' }}>Pick AMEB, ABRSM, or Trinity — then a grade. Recommends pieces matching the list structure (A/B/C/D).</div>
-              </button>
-              <button onClick={()=>chooseMode('free')} className="option-btn" style={{'--accent':'#0891b2'}}>
-                <div style={{ fontSize:15, fontWeight:800, color:'#1e293b', marginBottom:3 }}>🎲 Free discovery</div>
-                <div style={{ fontSize:12, color:'#64748b' }}>No syllabus required. Just describe the student — I'll search all 4,500 pieces across every syllabus.</div>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* STEP 1: Syllabus */}
-        {step===1 && mode==='exam' && (
-          <div className="fade-up">
-            <h2 style={{ fontSize:17, fontWeight:800, color:'#1e293b', marginBottom:5 }}>Which syllabus?</h2>
-            <p style={{ fontSize:13, color:'#64748b', marginBottom:18 }}>Select the exam board for this student.</p>
-            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-              {SYLLABUSES.map(s => (
-                <button key={s.id} onClick={()=>{setSyllabus(s.id);setGrade(null);}}
-                  className="option-btn"
-                  style={{ '--accent':s.color, borderColor:syllabus===s.id?s.color:'#e2e8f0', background:syllabus===s.id?s.color+'11':'#fff' }}>
-                  <div style={{ fontSize:15, fontWeight:700, color:syllabus===s.id?s.color:'#1e293b' }}>{s.label}</div>
-                  <div style={{ fontSize:12, color:'#64748b', marginTop:2 }}>{s.desc}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* STEP 2: Grade */}
-        {step===2 && mode==='exam' && (
-          <div className="fade-up">
-            <h2 style={{ fontSize:17, fontWeight:800, color:'#1e293b', marginBottom:5 }}>Which grade?</h2>
-            <p style={{ fontSize:13, color:'#64748b', marginBottom:18 }}>Select the student's current exam grade.</p>
-            <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:24 }}>
-              {gradeOptions.map(g => (
-                <button key={g.id} onClick={()=>setGrade(g.id)}
-                  className="chip" style={{ ...(grade===g.id ? { background:accentColor, borderColor:accentColor, color:'#fff' } : {}) }}>
-                  {g.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* STEP 3: Combo type */}
-        {step===3 && (
-          <div className="fade-up">
-            <h2 style={{ fontSize:17, fontWeight:800, color:'#1e293b', marginBottom:5 }}>What kind of programme?</h2>
-            <p style={{ fontSize:13, color:'#64748b', marginBottom:18 }}>How will these pieces be used?</p>
-            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-              {comboOptions.map(c => (
-                <button key={c.id} onClick={()=>setComboType(c.id)}
-                  className="option-btn"
-                  style={{ '--accent':accentColor, borderColor:comboType===c.id?accentColor:'#e2e8f0', background:comboType===c.id?accentColor+'11':'#fff' }}>
-                  <div style={{ fontSize:14, fontWeight:700, color:comboType===c.id?accentColor:'#1e293b' }}>{c.label}</div>
-                  <div style={{ fontSize:12, color:'#64748b', marginTop:2 }}>{c.desc}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* STEP 4: Character */}
-        {step===4 && (
-          <div className="fade-up">
-            <h2 style={{ fontSize:17, fontWeight:800, color:'#1e293b', marginBottom:5 }}>Student personality?</h2>
-            <p style={{ fontSize:13, color:'#64748b', marginBottom:18 }}>Shapes which focus areas get prioritised in the selection.</p>
-            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            <h2 style={{fontSize:17,fontWeight:800,color:'#1e293b',marginBottom:5}}>What's this student like?</h2>
+            <p style={{fontSize:13,color:'#64748b',marginBottom:18}}>Choose the style that best fits their personality.</p>
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
               {CHARACTERS.map(ch => (
                 <button key={ch.id} onClick={()=>setCharacter(ch.id)}
                   className="option-btn"
-                  style={{ '--accent':accentColor, borderColor:character===ch.id?accentColor:'#e2e8f0', background:character===ch.id?accentColor+'11':'#fff' }}>
-                  <div style={{ fontSize:14, fontWeight:700, color:character===ch.id?accentColor:'#1e293b' }}>{ch.label}</div>
-                  <div style={{ fontSize:12, color:'#94a3b8', marginTop:2 }}>{ch.desc}</div>
+                  style={{borderColor:character===ch.id?'#4f46e5':'#e2e8f0',background:character===ch.id?'#eef2ff':'#fff'}}>
+                  <div style={{fontSize:14,fontWeight:700,color:character===ch.id?'#4f46e5':'#1e293b'}}>
+                    {ch.icon} {ch.label}
+                  </div>
+                  <div style={{fontSize:12,color:'#64748b',marginTop:2}}>{ch.desc}</div>
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        {/* STEP 5: Era preferences */}
-        {step===5 && (
+        {/* STEP 1: Level */}
+        {step===1 && (
           <div className="fade-up">
-            <h2 style={{ fontSize:17, fontWeight:800, color:'#1e293b', marginBottom:5 }}>Era preferences?</h2>
-            <p style={{ fontSize:13, color:'#64748b', marginBottom:18 }}>
-              Select eras you'd especially like included. <em>Optional — skip for a balanced mix.</em>
+            <h2 style={{fontSize:17,fontWeight:800,color:'#1e293b',marginBottom:5}}>What level are they at?</h2>
+            <p style={{fontSize:13,color:'#64748b',marginBottom:18}}>Approximate level — doesn't need to be exact.</p>
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              {LEVELS.map(lv => (
+                <button key={lv.id} onClick={()=>setLevel(lv.id)}
+                  className="option-btn"
+                  style={{borderColor:level===lv.id?'#4f46e5':'#e2e8f0',background:level===lv.id?'#eef2ff':'#fff'}}>
+                  <div style={{fontSize:14,fontWeight:700,color:level===lv.id?'#4f46e5':'#1e293b'}}>{lv.label}</div>
+                  <div style={{fontSize:12,color:'#64748b',marginTop:2}}>{lv.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2: Era */}
+        {step===2 && (
+          <div className="fade-up">
+            <h2 style={{fontSize:17,fontWeight:800,color:'#1e293b',marginBottom:5}}>Any era preferences?</h2>
+            <p style={{fontSize:13,color:'#64748b',marginBottom:18}}>
+              Skip this for a balanced mix, or pick what you'd like to include.
             </p>
-            <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:20 }}>
+            <div style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:20}}>
               {ERAS.map(era => (
-                <button key={era} onClick={()=>toggleEra(era)}
+                <button key={era.id} onClick={()=>toggleEra(era.id)}
                   className="chip"
-                  style={ eras.includes(era)
-                    ? { background:ERA_COLORS[era], borderColor:ERA_COLORS[era], color:'#fff', fontWeight:700 }
-                    : { borderColor:'#e2e8f0', color:'#475569' } }>
-                  {era}
+                  style={eras.includes(era.id)
+                    ? {background:era.color,borderColor:era.color,color:'#fff',fontWeight:700}
+                    : {borderColor:'#e2e8f0',color:'#475569'}}>
+                  {era.label}
                 </button>
               ))}
             </div>
             {eras.length > 0 && (
-              <p style={{ fontSize:12, color:'#64748b' }}>Selected: <strong>{eras.join(', ')}</strong></p>
+              <p style={{fontSize:12,color:'#64748b'}}>Selected: <strong>{eras.join(', ')}</strong></p>
             )}
-          </div>
-        )}
 
-        {/* STEP 6: Nationality */}
-        {step===6 && (
-          <div className="fade-up">
-            <h2 style={{ fontSize:17, fontWeight:800, color:'#1e293b', marginBottom:5 }}>Composer nationality?</h2>
-            <p style={{ fontSize:13, color:'#64748b', marginBottom:18 }}>Do you have a preference for the national flavour of the repertoire?</p>
-            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-              {NAT_OPTIONS.map(n => (
-                <button key={n.id} onClick={()=>setNatDiversity(n.id)}
-                  className="option-btn"
-                  style={{ '--accent':accentColor, borderColor:natDiversity===n.id?accentColor:'#e2e8f0', background:natDiversity===n.id?accentColor+'11':'#fff' }}>
-                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                    <div style={{ fontSize:14, fontWeight:700, color:natDiversity===n.id?accentColor:'#1e293b' }}>{n.label}</div>
-                    {natDiversity===n.id && <span style={{ fontSize:14 }}>✓</span>}
-                  </div>
-                  <div style={{ fontSize:11, color:'#94a3b8', marginTop:2 }}>{n.desc}</div>
-                </button>
-              ))}
+            {/* Set size */}
+            <div style={{marginTop:24,paddingTop:20,borderTop:'1px solid #f1f5f9'}}>
+              <p style={{fontSize:13,fontWeight:700,color:'#374151',marginBottom:12}}>How many pieces?</p>
+              <div style={{display:'flex',gap:8}}>
+                {[4,6].map(n => (
+                  <button key={n} onClick={()=>setSetSize(n)}
+                    className="chip"
+                    style={setSize===n?{background:'#4f46e5',borderColor:'#4f46e5',color:'#fff',fontWeight:700}:{}}>
+                    {n} pieces
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
 
-        {/* STEP 7: Results */}
-        {step===7 && (
+        {/* STEP 3: Exam (optional) */}
+        {step===3 && (
           <div className="fade-up">
-            {/* Header row */}
-            <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:16, gap:12 }}>
+            <h2 style={{fontSize:17,fontWeight:800,color:'#1e293b',marginBottom:5}}>Preparing for an exam?</h2>
+            <p style={{fontSize:13,color:'#64748b',marginBottom:18}}>Optional — skip this if you just want general recommendations.</p>
+
+            <div style={{display:'flex',flexDirection:'column',gap:10,marginBottom:20}}>
+              <button onClick={()=>setWantsExam(false)}
+                className="option-btn"
+                style={{borderColor:wantsExam===false?'#4f46e5':'#e2e8f0',background:wantsExam===false?'#eef2ff':'#fff'}}>
+                <div style={{fontSize:14,fontWeight:700,color:wantsExam===false?'#4f46e5':'#1e293b'}}>
+                  No exam — just recommend great pieces
+                </div>
+                <div style={{fontSize:12,color:'#64748b',marginTop:2}}>Search across all 4,500 pieces at the right level</div>
+              </button>
+              <button onClick={()=>setWantsExam(true)}
+                className="option-btn"
+                style={{borderColor:wantsExam===true?'#4f46e5':'#e2e8f0',background:wantsExam===true?'#eef2ff':'#fff'}}>
+                <div style={{fontSize:14,fontWeight:700,color:wantsExam===true?'#4f46e5':'#1e293b'}}>
+                  Yes — filter by exam syllabus
+                </div>
+                <div style={{fontSize:12,color:'#64748b',marginTop:2}}>Narrow results to a specific board and grade</div>
+              </button>
+            </div>
+
+            {/* Syllabus + grade pickers — only if exam chosen */}
+            {wantsExam && (
+              <div className="fade-up">
+                <p style={{fontSize:13,fontWeight:700,color:'#374151',marginBottom:10}}>Which syllabus?</p>
+                <div style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:20}}>
+                  {SYLLABUSES.map(s => (
+                    <button key={s.id} onClick={()=>{setSyllabus(s.id);setGrade(null);}}
+                      className="chip"
+                      style={syllabus===s.id?{background:s.color,borderColor:s.color,color:'#fff',fontWeight:700}:{}}>
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+
+                {syllabus && (
+                  <div className="fade-up">
+                    <p style={{fontSize:13,fontWeight:700,color:'#374151',marginBottom:10}}>Which grade? <span style={{fontWeight:400,color:'#94a3b8'}}>(optional)</span></p>
+                    <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
+                      {(GRADE_OPTIONS[syllabus]||[]).map(g => (
+                        <button key={g} onClick={()=>setGrade(grade===g?null:g)}
+                          className="chip"
+                          style={grade===g?{background:'#4f46e5',borderColor:'#4f46e5',color:'#fff',fontWeight:700}:{}}>
+                          {GRADE_LABELS[g]||g}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* STEP 4: Results */}
+        {step===4 && results && (
+          <div className="fade-up">
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:18,flexWrap:'wrap',gap:8}}>
               <div>
-                <h2 style={{ fontSize:17, fontWeight:800, color:'#1e293b', margin:'0 0 2px' }}>Your programme</h2>
-                <p style={{ fontSize:12, color:'#64748b', margin:0 }}>
-                  {mode==='free'
-                    ? `Free discovery · ${comboType==='lesson6'?'6':'4'} pieces`
-                    : `${syllabus} · ${grade} · ${(comboOptions.find(c=>c.id===comboType)||{label:comboType}).label}`}
+                <h2 style={{fontSize:17,fontWeight:800,color:'#1e293b',margin:'0 0 4px'}}>Your recommendations</h2>
+                <p style={{fontSize:12,color:'#64748b',margin:0}}>
+                  {results.length} pieces · {CHARACTERS.find(c=>c.id===character) ? CHARACTERS.find(c=>c.id===character).label : ''} · {LEVELS.find(l=>l.id===level) ? LEVELS.find(l=>l.id===level).label.replace(/^\S+\s/,'') : ''}
+                  {eras.length > 0 ? ' · '+eras.join(', ') : ''}
                 </p>
               </div>
-              <div style={{ display:'flex', gap:6, flexShrink:0 }} className="no-print">
-                <button onClick={copyProgramme}
-                  style={{ padding:'7px 12px', borderRadius:9, border:'1.5px solid #e2e8f0', background:copyDone?'#d1fae5':'#fff', cursor:'pointer', fontSize:11, fontWeight:700, color:copyDone?'#065f46':'#475569', transition:'all 0.2s' }}>
-                  {copyDone ? '✓ Copied' : '📋 Copy'}
-                </button>
-                <button onClick={()=>window.print()}
-                  style={{ padding:'7px 12px', borderRadius:9, border:'1.5px solid #e2e8f0', background:'#fff', cursor:'pointer', fontSize:11, fontWeight:700, color:'#475569' }}>
-                  🖨️ Print
-                </button>
-                <button onClick={regenerate}
-                  style={{ padding:'7px 12px', borderRadius:9, border:'1.5px solid #e2e8f0', background:'#fff', cursor:'pointer', fontSize:11, fontWeight:700, color:'#4f46e5' }}>
-                  🔀
-                </button>
-              </div>
+              <button onClick={regenerate}
+                style={{padding:'7px 14px',borderRadius:9,background:'#4f46e5',color:'#fff',border:'none',cursor:'pointer',fontSize:12,fontWeight:700}}>
+                🔀 Regenerate
+              </button>
             </div>
 
-            {/* Programme summary */}
-            {results && results.length > 0 && <ProgrammeSummary results={results} prefs={prefs} mode={mode} />}
+            {results.map((piece,i) => (
+              <ResultCard key={i} piece={piece} onWatch={openVideo} />
+            ))}
 
-            {/* Result cards */}
-            {results && results.length > 0 ? (
-              results.map((p,i) => (
-                <ResultCard key={i} piece={p} index={i} onListen={openVideo} onSaveToList={handleSaveToList} />
-              ))
-            ) : (
-              <div style={{ textAlign:'center', padding:40, color:'#94a3b8', fontSize:14 }}>
-                Not enough pieces found for this combination.
-                <button onClick={reset} style={{ display:'block', margin:'16px auto 0', padding:'10px 24px', borderRadius:10, border:'none', background:'#4f46e5', color:'#fff', cursor:'pointer', fontWeight:700 }}>
-                  Try different options
-                </button>
-              </div>
-            )}
-
-            {results && results.length > 0 && (
-              <div style={{ marginTop:20, display:'flex', gap:10 }} className="no-print">
-                <button onClick={reset}
-                  style={{ flex:1, padding:'12px', borderRadius:12, border:'1.5px solid #e2e8f0', background:'#fff', cursor:'pointer', fontSize:13, fontWeight:700, color:'#475569' }}>
-                  ← Start over
-                </button>
-                <button onClick={regenerate}
-                  style={{ flex:2, padding:'12px', borderRadius:12, border:'none', background:accentColor, cursor:'pointer', fontSize:13, fontWeight:700, color:'#fff' }}>
-                  🔀 Generate another
-                </button>
-              </div>
-            )}
+            <div style={{marginTop:20,display:'flex',gap:10,flexWrap:'wrap'}}>
+              <button onClick={reset}
+                style={{padding:'10px 18px',borderRadius:10,background:'#f1f5f9',color:'#475569',border:'none',cursor:'pointer',fontSize:13,fontWeight:700}}>
+                ← Start over
+              </button>
+              <a href="index.html"
+                style={{padding:'10px 18px',borderRadius:10,background:'#fff',color:'#4f46e5',border:'1.5px solid #c7d2fe',textDecoration:'none',fontSize:13,fontWeight:700}}>
+                Search all pieces ↗
+              </a>
+            </div>
           </div>
         )}
 
-        {/* Navigation — steps 1–6 */}
-        {step > 0 && step < 7 && (
-          <div style={{ display:'flex', gap:10, marginTop:24 }} className="no-print">
-            <button onClick={goBack}
-              style={{ padding:'12px 20px', borderRadius:12, border:'1.5px solid #e2e8f0', background:'#fff', cursor:'pointer', fontSize:13, fontWeight:600, color:'#475569' }}>
-              ← Back
-            </button>
-            {step < 6 ? (
-              <button onClick={nextStep} disabled={!canAdvance()}
-                style={{ flex:1, padding:'12px', borderRadius:12, border:'none',
-                  background: canAdvance()?accentColor:'#e2e8f0',
-                  color: canAdvance()?'#fff':'#94a3b8',
-                  cursor: canAdvance()?'pointer':'not-allowed',
-                  fontSize:13, fontWeight:700 }}>
-                Continue →
-              </button>
-            ) : (
-              <button onClick={generate}
-                style={{ flex:1, padding:'12px', borderRadius:12, border:'none', background:accentColor, color:'#fff', cursor:'pointer', fontSize:13, fontWeight:700 }}>
-                🎹 Get recommendations
-              </button>
-            )}
-          </div>
-        )}
+        {/* Nav buttons */}
+        {step < 4 && (
+          <div style={{marginTop:28}}>
+            {/* Step dots */}
+            <div style={{display:'flex',justifyContent:'center',gap:6,marginBottom:20}}>
+              {dots.map(i => (
+                <span key={i} className={'step-dot'+(i===step?' active':i<step?' done':'')} />
+              ))}
+            </div>
 
-        {/* Step dots */}
-        {step > 0 && step < 7 && (
-          <div style={{ display:'flex', justifyContent:'center', gap:6, marginTop:18 }}>
-            {Array.from({length: mode==='free'?4:6}).map((_,i) => {
-              const dotStep = mode==='free' ? i+3 : i+1;
-              return <div key={i} className={`step-dot ${step>dotStep?'done':step===dotStep?'active':''}`}/>;
-            })}
+            <div style={{display:'flex',gap:10}}>
+              {step > 0 && (
+                <button onClick={back}
+                  style={{flex:'0 0 auto',padding:'13px 20px',borderRadius:12,background:'#fff',color:'#475569',border:'1.5px solid #e2e8f0',cursor:'pointer',fontSize:13,fontWeight:700}}>
+                  ← Back
+                </button>
+              )}
+              <button onClick={next} disabled={!canAdvance()}
+                style={{flex:1,padding:'13px 20px',borderRadius:12,
+                  background:canAdvance()?'#4f46e5':'#e2e8f0',
+                  color:canAdvance()?'#fff':'#94a3b8',
+                  border:'none',cursor:canAdvance()?'pointer':'default',fontSize:14,fontWeight:800,transition:'all 0.15s'}}>
+                {step===3 ? '✨ Find pieces' : 'Continue →'}
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -940,8 +714,8 @@ function App() {
 }
 
 class ErrorBoundary extends React.Component {
-  constructor(props) { super(props); this.state = { error: null }; }
-  static getDerivedStateFromError(err) { return { error: err }; }
+  constructor(props) { super(props); this.state = { error:null }; }
+  static getDerivedStateFromError(err) { return { error:err }; }
   render() {
     if (this.state.error) return (
       <div style={{padding:40,color:'#ef4444',fontFamily:'monospace',fontSize:13}}>
