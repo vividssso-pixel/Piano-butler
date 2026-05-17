@@ -1,0 +1,2449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Piano Butler — Admin Search</title>
+    <meta name="robots" content="noindex, nofollow">
+    <style>
+        #pb-gate {
+            position: fixed; inset: 0; z-index: 9999;
+            background: #1a1a1a;
+            display: flex; align-items: center; justify-content: center;
+        }
+        #pb-gate .box {
+            background: #242424; border: 1px solid #333; border-radius: 16px;
+            padding: 40px 36px; width: 320px; text-align: center;
+        }
+        #pb-gate h2 { color: #e8e3dc; font-size: 18px; font-weight: 800; margin: 0 0 6px; }
+        #pb-gate p  { color: #666; font-size: 12px; margin: 0 0 20px; }
+        #pb-gate input {
+            width: 100%; padding: 12px 14px; border-radius: 10px;
+            border: 1px solid #333; background: #1a1a1a; color: #e8e3dc;
+            font-size: 14px; outline: none; margin-bottom: 10px; box-sizing: border-box;
+        }
+        #pb-gate input:focus { border-color: #d4956a; }
+        #pb-gate button {
+            width: 100%; padding: 12px; border-radius: 10px; border: none;
+            background: #d4956a; color: #1a1a1a; font-size: 14px;
+            font-weight: 800; cursor: pointer;
+        }
+        #pb-gate button:hover { background: #c4845a; }
+        #pb-gate .err { color: #f87171; font-size: 12px; margin-top: 8px; display: none; }
+    </style>
+    <script>
+        // Simple gate — runs before React loads
+        (function() {
+            const PASS = "pianobutler2026";
+            const KEY  = "pb_admin_auth";
+            if (sessionStorage.getItem(KEY) === "1") return; // already authed this session
+            document.addEventListener("DOMContentLoaded", function() {
+                const gate = document.getElementById("pb-gate");
+                if (!gate) return;
+                const inp = gate.querySelector("input");
+                const err = gate.querySelector(".err");
+                gate.querySelector("button").addEventListener("click", function() {
+                    if (inp.value === PASS) {
+                        sessionStorage.setItem(KEY, "1");
+                        gate.style.display = "none";
+                    } else {
+                        err.style.display = "block";
+                        inp.value = "";
+                        inp.focus();
+                    }
+                });
+                inp.addEventListener("keydown", function(e) {
+                    if (e.key === "Enter") gate.querySelector("button").click();
+                });
+            });
+        })();
+    </script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+    <!-- AMEB data -->
+    <script src="Prelim/data_prelim.js"></script>
+    <script src="Prelim/data_prelim_leisure.js"></script>
+    <script src="G1/data_g1.js"></script>
+    <script src="G1/data_g1_leisure.js"></script>
+    <script src="G2/data_g2.js"></script>
+    <script src="G2/data_g2_leisure.js"></script>
+    <script src="G3/data_g3.js"></script>
+    <script src="G3/data_g3_leisure.js"></script>
+    <script src="G4/data_g4.js"></script>
+    <script src="G4/data_g4_leisure.js"></script>
+    <script src="G5/data_g5_1.js"></script>
+    <script src="G5/data_g5_leisure.js"></script>
+    <script src="G6/data_g6_comp.js"></script>
+    <script src="G6/data_g6_leisure.js"></script>
+    <script src="G7/data_g7.js"></script>
+    <script src="G7/data_g7_leisure.js"></script>
+    <script src="G8/data_g8.js"></script>
+    <script src="G8/data_g8_leisure.js"></script>
+    <!-- Diploma / Advanced data -->
+    <script src="CertP/data_certp.js"></script>
+    <script src="AMusA/data_amusa.js"></script>
+    <script src="LMusA/data_lmusa.js"></script>
+    <!-- ABRSM Diploma data -->
+    <script src="ABRSM/Diploma/data_abrsm_lrsm.js"></script>
+    <script src="ABRSM/Diploma/data_abrsm_frsm.js"></script>
+    <!-- ABRSM data -->
+    <script src="ABRSM/Initial/data_abrsm_initial.js"></script>
+    <script src="ABRSM/G1/data_abrsm_g1.js"></script>
+    <script src="ABRSM/G2/data_abrsm_g2.js"></script>
+    <script src="ABRSM/G3/data_abrsm_g3.js"></script>
+    <script src="ABRSM/G4/data_abrsm_g4.js"></script>
+    <script src="ABRSM/G5/data_abrsm_g5.js"></script>
+    <script src="ABRSM/G6/data_abrsm_g6.js"></script>
+    <script src="ABRSM/G7/data_abrsm_g7.js"></script>
+    <script src="ABRSM/G8/data_abrsm_g8.js"></script>
+
+    <script src="Trinity/Initial/data_trinity_initial.js"></script>
+    <script src="Trinity/G1/data_trinity_g1.js"></script>
+    <script src="Trinity/G2/data_trinity_g2.js"></script>
+    <script src="Trinity/G3/data_trinity_g3.js"></script>
+    <script src="Trinity/G4/data_trinity_g4.js"></script>
+    <script src="Trinity/G5/data_trinity_g5.js"></script>
+    <script src="Trinity/G6/data_trinity_g6.js"></script>
+    <script src="Trinity/G7/data_trinity_g7.js"></script>
+    <script src="Trinity/G8/data_trinity_g8.js"></script>
+    <!-- Trinity Diploma data -->
+    <script src="Trinity/Diploma/data_trinity_atcl.js"></script>
+    <script src="Trinity/Diploma/data_trinity_ltcl.js"></script>
+    <script src="Trinity/Diploma/data_trinity_ftcl.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        * { box-sizing: border-box; }
+        body { background: #1a1a1a; font-family: 'Inter', -apple-system, sans-serif; color: #e8e3dc; margin: 0; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Era tags — muted on dark */
+        .tag-baroque      { background: #2d2535; color: #c4b5d4; }
+        .tag-classical    { background: #2d2a1e; color: #d4c27a; }
+        .tag-romantic     { background: #2d1e26; color: #d4829a; }
+        .tag-modern       { background: #1e2d24; color: #7dc49a; }
+        .tag-contemporary { background: #1e2630; color: #7ab4d4; }
+        /* Piece row */
+        .piece-row {
+            background: transparent;
+            border-radius: 0;
+            padding: 14px 0;
+            margin-bottom: 0;
+            border: none;
+            border-bottom: 1px solid #2a2a2a;
+            transition: background 0.1s;
+        }
+        .piece-row:hover { background: #222222; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:translateY(0); } }
+        .fade-in { animation: fadeIn 0.15s ease; }
+        /* Modal */
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:500; display:flex; align-items:center; justify-content:center; padding:16px; }
+        .modal-box { background:#242424; border-radius:20px; width:100%; max-width:380px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.5); border:1px solid #333; }
+        /* Sidebar */
+        .sidebar-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #555; margin-bottom: 4px; margin-top: 18px; display: block; }
+        .sidebar-label:first-child { margin-top: 0; }
+        .filter-btn { display: block; width: 100%; text-align: left; font-size: 12px; font-weight: 500; padding: 5px 8px; border-radius: 6px; border: none; background: transparent; cursor: pointer; color: #666; transition: background 0.1s, color 0.1s; }
+        .filter-btn:hover { background: #2a2a2a; color: #e8e3dc; }
+        .filter-btn.active { background: #2a2218; color: #d4956a; font-weight: 700; }
+        /* Grade grid cards */
+        .grade-card {
+            border-radius: 10px;
+            padding: 14px 16px;
+            text-align: left;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+            background: #222;
+            border: 1px solid #2e2e2e;
+            height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+        .grade-card:hover { transform: translateY(-2px); background: #282828; box-shadow: 0 4px 20px rgba(0,0,0,0.3); border-color: #d4956a44; }
+        /* Search input */
+        .search-input {
+            width: 100%;
+            padding: 13px 16px 13px 44px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            border-radius: 12px;
+            border: 1px solid #2e2e2e;
+            background: #222;
+            color: #e8e3dc;
+            outline: none;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .search-input::placeholder { color: #555; }
+        .search-input:focus { border-color: #d4956a; box-shadow: 0 0 0 3px rgba(212,149,106,0.12); }
+        /* Nav */
+        .nav-btn {
+            padding: 6px 14px;
+            border-radius: 8px;
+            border: 1px solid #2e2e2e;
+            background: transparent;
+            color: #999;
+            font-size: 12px;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .nav-btn:hover { background: #2a2a2a; color: #e8e3dc; border-color: #444; }
+        .nav-btn-accent {
+            background: #2a2218;
+            border-color: #d4956a44;
+            color: #d4956a;
+        }
+        .nav-btn-accent:hover { background: #332a1f; border-color: #d4956a88; color: #e8a87a; }
+        /* Footer */
+        .footer { text-align:center; padding: 32px 0 24px; font-size: 11px; color: #444; }
+        .footer a { color: #666; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<!-- Password gate — hidden once authenticated -->
+<div id="pb-gate">
+    <div class="box">
+        <div style="font-size:28px;margin-bottom:12px">🎹</div>
+        <h2>Piano Butler</h2>
+        <p>Admin — Full Syllabus Search</p>
+        <input type="password" placeholder="Password" autofocus />
+        <button>Enter</button>
+        <div class="err">Incorrect password</div>
+    </div>
+</div>
+
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useMemo, useCallback, useEffect } = React;
+
+/* ── Supabase ── */
+const SUPABASE_URL  = "https://icefqxaccclwasnfzgnp.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImljZWZxeGFjY2Nsd2FzbmZ6Z25wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwNjgzMTgsImV4cCI6MjA5MjY0NDMxOH0.lZ8BO_L8iOtET8RtUuk9trkf9bQbLqR8K6rKEfPtmtQ";
+const _sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+/* ── YouTube modal ── */
+const YT_API_KEY = "AIzaSyDR9BQfybtyS2e-H9wgtFgWbfqlQWpLCW8";
+
+function useVideoModal() {
+    const [modal, setModal] = useState(null);
+    const open = useCallback(async (composer, title) => {
+        setModal({ loading: true, title });
+        try {
+            const q = encodeURIComponent(composer.split(',')[0].trim() + ' ' + title + ' piano');
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}&type=video&maxResults=1&key=${YT_API_KEY}`);
+            const data = await res.json();
+            const item = data.items?.[0];
+            if (item) setModal({ videoId: item.id.videoId, title: item.snippet.title, loading: false });
+            else { setModal(null); window.open('https://www.youtube.com/results?search_query=' + q, '_blank'); }
+        } catch { setModal(null); }
+    }, []);
+    const close = useCallback(() => setModal(null), []);
+    return { modal, open, close };
+}
+
+function VideoModal({ modal, onClose }) {
+    if (!modal) return null;
+    return (
+        <div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.8)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
+            <div onClick={e=>e.stopPropagation()} style={{background:'#0f0f0f',borderRadius:16,overflow:'hidden',width:'100%',maxWidth:760,boxShadow:'0 25px 60px rgba(0,0,0,0.5)'}}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'10px 14px',background:'#1a1a1a'}}>
+                    <span style={{color:'#e2e8f0',fontSize:12,fontWeight:700,flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',paddingRight:12}}>
+                        {modal.loading ? 'Searching...' : modal.title}
+                    </span>
+                    <button onClick={onClose} style={{color:'#94a3b8',background:'none',border:'none',cursor:'pointer',fontSize:20,lineHeight:1}}>✕</button>
+                </div>
+                <div style={{position:'relative',paddingBottom:'56.25%',height:0}}>
+                    {modal.loading
+                        ? <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',color:'#94a3b8',fontSize:13}}>🎹 Searching...</div>
+                        : <iframe src={`https://www.youtube.com/embed/${modal.videoId}?autoplay=1&rel=0`}
+                            style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',border:'none'}}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen/>
+                    }
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ── Magic Link Login Modal ── */
+function LoginModal({ onClose, onSuccess }) {
+    const [step, setStep] = React.useState(1);
+    const [name, setName] = React.useState('');
+    const [role, setRole] = React.useState('');
+    const [email, setEmail] = React.useState('');
+    const [sent, setSent] = React.useState(false);
+    const [loading, setLoading] = React.useState(false);
+    const [error, setError] = React.useState('');
+
+    const ROLES = [
+        { id: 'student', label: 'Student',      emoji: '🎹' },
+        { id: 'teacher', label: 'Teacher',      emoji: '👩\u200d🏫' },
+        { id: 'hobby',   label: 'Hobby player', emoji: '🎵' },
+        { id: 'parent',  label: 'Parent',       emoji: '👨\u200d👧' },
+    ];
+
+    const handleSend = async (e) => {
+        e.preventDefault();
+        if (!email.trim()) return;
+        setLoading(true); setError('');
+        const { error: err } = await _sb.auth.signInWithOtp({
+            email: email.trim(),
+            options: {
+                emailRedirectTo: window.location.href,
+                data: { full_name: name.trim(), role }
+            }
+        });
+        setLoading(false);
+        if (err) { setError(err.message); }
+        else {
+            if (name.trim()) localStorage.setItem('pb_user_name', name.trim());
+            if (role) localStorage.setItem('pb_user_role', role);
+            setSent(true);
+        }
+    };
+
+    const headerBg = 'linear-gradient(135deg,#4f46e5,#6366f1)';
+
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-box" onClick={e => e.stopPropagation()}>
+                <div style={{background:headerBg,padding:'24px 24px 20px',textAlign:'center'}}>
+                    <div style={{fontSize:28,marginBottom:8}}>🎹</div>
+                    <div style={{fontSize:17,fontWeight:900,color:'white'}}>
+                        {step===1 ? 'Tell us about yourself' : 'Sign in to save your pieces'}
+                    </div>
+                    <div style={{fontSize:11,color:'rgba(255,255,255,0.7)',marginTop:4,fontWeight:600}}>
+                        {step===1 ? "We'll personalise your experience" : 'One click — no password needed'}
+                    </div>
+                    <div style={{display:'flex',justifyContent:'center',gap:6,marginTop:14}}>
+                        {[1,2].map(s => (
+                            <div key={s} style={{width:s===step?20:6,height:6,borderRadius:3,background:s===step?'white':'rgba(255,255,255,0.35)',transition:'width 0.2s'}}/>
+                        ))}
+                    </div>
+                </div>
+                <div style={{padding:'20px 24px 24px'}}>
+                    {sent ? (
+                        <div style={{textAlign:'center',padding:'8px 0'}}>
+                            <div style={{fontSize:32,marginBottom:12}}>📬</div>
+                            <div style={{fontSize:14,fontWeight:800,color:'#e8e3dc',marginBottom:6}}>Check your email</div>
+                            <div style={{fontSize:12,color:'#94a3b8',lineHeight:1.5}}>We sent a sign-in link to <strong>{email}</strong>. Click it to continue.</div>
+                        </div>
+                    ) : step === 1 ? (
+                        <div>
+                            <label style={{fontSize:10,fontWeight:800,textTransform:'uppercase',letterSpacing:'0.08em',color:'#666',display:'block',marginBottom:6}}>Your name</label>
+                            <input
+                                type="text" value={name} onChange={e=>setName(e.target.value)}
+                                placeholder="e.g. Sarah" autoFocus
+                                style={{width:'100%',padding:'10px 12px',fontSize:14,fontFamily:'inherit',fontWeight:600,borderRadius:10,border:'1.5px solid #e2e8f0',outline:'none',color:'#1e293b',background:'#1e1e1e',color:'#e8e3dc',marginBottom:16,boxSizing:'border-box'}}
+                            />
+                            <label style={{fontSize:10,fontWeight:800,textTransform:'uppercase',letterSpacing:'0.08em',color:'#666',display:'block',marginBottom:8}}>I am a…</label>
+                            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:16}}>
+                                {ROLES.map(r => (
+                                    <button key={r.id} type="button" onClick={()=>setRole(r.id)}
+                                        style={{padding:'10px 8px',borderRadius:10,border:role===r.id?'2px solid #d4956a':'1.5px solid #2e2e2e',background:role===r.id?'#2a2218':'#222',cursor:'pointer',fontFamily:'inherit',transition:'all 0.15s'}}>
+                                        <div style={{fontSize:20,marginBottom:4}}>{r.emoji}</div>
+                                        <div style={{fontSize:11,fontWeight:800,color:role===r.id?'#d4956a':'#888'}}>{r.label}</div>
+                                    </button>
+                                ))}
+                            </div>
+                            <button type="button" onClick={()=>setStep(2)}
+                                style={{width:'100%',padding:'11px 0',fontSize:13,fontWeight:800,fontFamily:'inherit',borderRadius:10,border:'none',background:headerBg,color:'white',cursor:'pointer'}}>
+                                Continue →
+                            </button>
+                            <button type="button" onClick={onClose}
+                                style={{width:'100%',marginTop:8,padding:'9px 0',fontSize:12,fontWeight:700,fontFamily:'inherit',borderRadius:10,border:'1px solid #e2e8f0',background:'transparent',color:'#94a3b8',cursor:'pointer'}}>
+                                Continue without signing in
+                            </button>
+                        </div>
+                    ) : (
+                        <form onSubmit={handleSend}>
+                            {name && <div style={{fontSize:13,color:'#aaa',marginBottom:14}}>Hi <strong style={{color:'#e8e3dc'}}>{name}</strong>! Enter your email to save your pieces.</div>}
+                            <label style={{fontSize:10,fontWeight:800,textTransform:'uppercase',letterSpacing:'0.08em',color:'#666',display:'block',marginBottom:6}}>Email</label>
+                            <input
+                                type="email" value={email} onChange={e=>setEmail(e.target.value)}
+                                placeholder="your@email.com" autoFocus required
+                                style={{width:'100%',padding:'10px 12px',fontSize:14,fontFamily:'inherit',fontWeight:600,borderRadius:10,border:'1.5px solid #e2e8f0',outline:'none',color:'#1e293b',background:'#1e1e1e',color:'#e8e3dc',marginBottom:12,boxSizing:'border-box'}}
+                            />
+                            {error && <div style={{fontSize:11,color:'#dc2626',background:'#fef2f2',border:'1px solid #fecaca',borderRadius:8,padding:'6px 10px',marginBottom:10}}>{error}</div>}
+                            <button type="submit" disabled={loading}
+                                style={{width:'100%',padding:'11px 0',fontSize:13,fontWeight:800,fontFamily:'inherit',borderRadius:10,border:'none',background:headerBg,color:'white',cursor:'pointer',opacity:loading?0.7:1}}>
+                                {loading ? 'Sending...' : 'Send sign-in link →'}
+                            </button>
+                            <button type="button" onClick={()=>setStep(1)}
+                                style={{width:'100%',marginTop:8,padding:'9px 0',fontSize:12,fontWeight:700,fontFamily:'inherit',borderRadius:10,border:'1px solid #e2e8f0',background:'transparent',color:'#94a3b8',cursor:'pointer'}}>
+                                ← Back
+                            </button>
+                        </form>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/* ── Data ── */
+const GRADE_META = [
+    { key:"Prelim", label:"Preliminary", accent:"#4f46e5", bg:"#eef2ff",
+      comp: typeof DATA_PRELIM!=="undefined"?DATA_PRELIM:null,
+      leisure: typeof DATA_PRELIM_LEISURE!=="undefined"?DATA_PRELIM_LEISURE:null },
+    { key:"G1", label:"Grade 1", accent:"#7c3aed", bg:"#f5f3ff",
+      comp: typeof DATA_G1!=="undefined"?DATA_G1:null,
+      leisure: typeof DATA_G1_LEISURE!=="undefined"?DATA_G1_LEISURE:null },
+    { key:"G2", label:"Grade 2", accent:"#2563eb", bg:"#eff6ff",
+      comp: typeof DATA_G2!=="undefined"?DATA_G2:null,
+      leisure: typeof DATA_G2_LEISURE!=="undefined"?DATA_G2_LEISURE:null },
+    { key:"G3", label:"Grade 3", accent:"#0891b2", bg:"#ecfeff",
+      comp: typeof DATA_G3!=="undefined"?DATA_G3:null,
+      leisure: typeof DATA_G3_LEISURE!=="undefined"?DATA_G3_LEISURE:null },
+    { key:"G4", label:"Grade 4", accent:"#0d9488", bg:"#f0fdfa",
+      comp: typeof DATA_G4!=="undefined"?DATA_G4:null,
+      leisure: typeof DATA_G4_LEISURE!=="undefined"?DATA_G4_LEISURE:null },
+    { key:"G5", label:"Grade 5", accent:"#16a34a", bg:"#f0fdf4",
+      comp: typeof DATA_G5!=="undefined"?DATA_G5:null,
+      leisure: typeof DATA_G5_LEISURE!=="undefined"?DATA_G5_LEISURE:null },
+    { key:"G6", label:"Grade 6", accent:"#65a30d", bg:"#f7fee7",
+      comp: typeof DATA_G6!=="undefined"?DATA_G6:null,
+      leisure: typeof DATA_G6_LEISURE!=="undefined"?DATA_G6_LEISURE:null },
+    { key:"G7", label:"Grade 7", accent:"#d97706", bg:"#fffbeb",
+      comp: typeof DATA_G7!=="undefined"?DATA_G7:null,
+      leisure: typeof DATA_G7_LEISURE!=="undefined"?DATA_G7_LEISURE:null },
+    { key:"G8", label:"Grade 8", accent:"#ea580c", bg:"#fff7ed",
+      comp: typeof DATA_G8!=="undefined"?DATA_G8:null,
+      leisure: typeof DATA_G8_LEISURE!=="undefined"?DATA_G8_LEISURE:null },
+];
+
+const ABRSM_META = [
+    { key:"Initial", label:"Initial", accent:"#7c3aed", data: typeof DATA_ABRSM_INITIAL!=="undefined"?DATA_ABRSM_INITIAL:null },
+    { key:"G1", label:"Grade 1", accent:"#7c3aed", data: typeof DATA_ABRSM_G1!=="undefined"?DATA_ABRSM_G1:null },
+    { key:"G2", label:"Grade 2", accent:"#7c3aed", data: typeof DATA_ABRSM_G2!=="undefined"?DATA_ABRSM_G2:null },
+    { key:"G3", label:"Grade 3", accent:"#7c3aed", data: typeof DATA_ABRSM_G3!=="undefined"?DATA_ABRSM_G3:null },
+    { key:"G4", label:"Grade 4", accent:"#7c3aed", data: typeof DATA_ABRSM_G4!=="undefined"?DATA_ABRSM_G4:null },
+    { key:"G5", label:"Grade 5", accent:"#7c3aed", data: typeof DATA_ABRSM_G5!=="undefined"?DATA_ABRSM_G5:null },
+    { key:"G6", label:"Grade 6", accent:"#7c3aed", data: typeof DATA_ABRSM_G6!=="undefined"?DATA_ABRSM_G6:null },
+    { key:"G7", label:"Grade 7", accent:"#7c3aed", data: typeof DATA_ABRSM_G7!=="undefined"?DATA_ABRSM_G7:null },
+    { key:"G8", label:"Grade 8", accent:"#7c3aed", data: typeof DATA_ABRSM_G8!=="undefined"?DATA_ABRSM_G8:null },
+];
+
+const DIPLOMA_META = [
+    { key:"CertP", label:"Cert. of Performance", accent:"#0f766e", bg:"#f0fdfa",
+      url:"CertP/piano-repertoire_certp.html",
+      desc:"Certificate of Performance",
+      examCode:"Level 2", program:"25–35 min",
+      data: typeof DATA_CERTP!=="undefined"?DATA_CERTP:null },
+    { key:"AMusA", label:"AMusA", accent:"#4c1d95", bg:"#f5f3ff",
+      url:"AMusA/piano-repertoire_amusa.html",
+      desc:"Associate in Music, Australia",
+      examCode:"9950", program:"25–40 min",
+      data: typeof DATA_AMUSA!=="undefined"?DATA_AMUSA:null },
+    { key:"LMusA", label:"LMusA", accent:"#3b0764", bg:"#ede9fe",
+      url:"LMusA/piano-repertoire_lmusa.html",
+      desc:"Licentiate in Music, Australia",
+      examCode:"9951", program:"35–50 min",
+      data: typeof DATA_LMUSA!=="undefined"?DATA_LMUSA:null },
+    { key:"LRSM", label:"LRSM", accent:"#1e1b4b", bg:"#eef2ff",
+      url:"ABRSM/Diploma/piano-repertoire_abrsm_lrsm.html",
+      desc:"Licentiate of the Royal Schools of Music",
+      examCode:"ABRSM", program:"Open pool",
+      data: typeof DATA_ABRSM_LRSM!=="undefined"?DATA_ABRSM_LRSM:null },
+    { key:"FRSM", label:"FRSM", accent:"#6d28d9", bg:"#f3e8ff",
+      url:"ABRSM/Diploma/piano-repertoire_abrsm_frsm.html",
+      desc:"Fellow of the Royal Schools of Music",
+      examCode:"ABRSM", program:"Open pool",
+      data: typeof DATA_ABRSM_FRSM!=="undefined"?DATA_ABRSM_FRSM:null },
+];
+
+const TRINITY_META = [
+    { key:"TInitial", label:"Initial", accent:"#b91c1c", bg:"#fef2f2", url:"Trinity/Initial/piano-repertoire_trinity_initial.html",
+      data: typeof DATA_TRINITY_INITIAL!=="undefined"?DATA_TRINITY_INITIAL:null },
+    { key:"TG1", label:"Grade 1",  accent:"#b91c1c", bg:"#fef2f2", url:"Trinity/G1/piano-repertoire_trinity_g1.html",
+      data: typeof DATA_TRINITY_G1!=="undefined"?DATA_TRINITY_G1:null },
+    { key:"TG2", label:"Grade 2",  accent:"#b91c1c", bg:"#fef2f2", url:"Trinity/G2/piano-repertoire_trinity_g2.html",
+      data: typeof DATA_TRINITY_G2!=="undefined"?DATA_TRINITY_G2:null },
+    { key:"TG3", label:"Grade 3",  accent:"#b91c1c", bg:"#fef2f2", url:"Trinity/G3/piano-repertoire_trinity_g3.html",
+      data: typeof DATA_TRINITY_G3!=="undefined"?DATA_TRINITY_G3:null },
+    { key:"TG4", label:"Grade 4",  accent:"#b91c1c", bg:"#fef2f2", url:"Trinity/G4/piano-repertoire_trinity_g4.html",
+      data: typeof DATA_TRINITY_G4!=="undefined"?DATA_TRINITY_G4:null },
+    { key:"TG5", label:"Grade 5",  accent:"#b91c1c", bg:"#fef2f2", url:"Trinity/G5/piano-repertoire_trinity_g5.html",
+      data: typeof DATA_TRINITY_G5!=="undefined"?DATA_TRINITY_G5:null },
+    { key:"TG6", label:"Grade 6",  accent:"#b91c1c", bg:"#fef2f2", url:"Trinity/G6/piano-repertoire_trinity_g6.html",
+      data: typeof DATA_TRINITY_G6!=="undefined"?DATA_TRINITY_G6:null },
+    { key:"TG7", label:"Grade 7",  accent:"#b91c1c", bg:"#fef2f2", url:"Trinity/G7/piano-repertoire_trinity_g7.html",
+      data: typeof DATA_TRINITY_G7!=="undefined"?DATA_TRINITY_G7:null },
+    { key:"TG8", label:"Grade 8",  accent:"#b91c1c", bg:"#fef2f2", url:"Trinity/G8/piano-repertoire_trinity_g8.html",
+      data: typeof DATA_TRINITY_G8!=="undefined"?DATA_TRINITY_G8:null },
+];
+
+const TRINITY_DIPLOMA_META = [
+    { key:"TATCL", label:"ATCL", accent:"#7f1d1d", bg:"#fff1f2",
+      url:"Trinity/Diploma/piano-repertoire_trinity_atcl.html",
+      examCode:"Trinity Diploma", program:"32–38 min",
+      data: typeof DATA_TRINITY_ATCL!=="undefined"?DATA_TRINITY_ATCL:null },
+    { key:"TLTCL", label:"LTCL", accent:"#6b21a8", bg:"#fdf4ff",
+      url:"Trinity/Diploma/piano-repertoire_trinity_ltcl.html",
+      examCode:"Trinity Diploma", program:"37–43 min",
+      data: typeof DATA_TRINITY_LTCL!=="undefined"?DATA_TRINITY_LTCL:null },
+    { key:"TFTCL", label:"FTCL", accent:"#4c1d95", bg:"#f5f3ff",
+      url:"Trinity/Diploma/piano-repertoire_trinity_ftcl.html",
+      examCode:"Trinity Diploma", program:"42–48 min",
+      data: typeof DATA_TRINITY_FTCL!=="undefined"?DATA_TRINITY_FTCL:null },
+];
+
+const buildCorpus = () => {
+    const rows = [];
+    GRADE_META.forEach(g => {
+        if (g.comp)    g.comp.forEach(p    => rows.push({...p, _grade:g.label, _gradeKey:g.key, _type:"General",  _accent:g.accent, _syllabus:"AMEB"}));
+        if (g.leisure) g.leisure.forEach(p => rows.push({...p, _grade:g.label, _gradeKey:g.key, _type:"Leisure",  _accent:g.accent, _syllabus:"AMEB"}));
+    });
+    ABRSM_META.forEach(g => {
+        if (g.data) g.data.forEach(p => rows.push({...p, _grade:g.label, _gradeKey:g.key, _type:"ABRSM", _accent:g.accent, _syllabus:"ABRSM"}));
+    });
+    DIPLOMA_META.forEach(g => {
+        const syllabusTag = (g.key==="LRSM"||g.key==="FRSM") ? "ABRSM Diploma" : "AMEB Diploma";
+        if (g.data) g.data.forEach(p => rows.push({...p, _grade:g.label, _gradeKey:g.key, _type:"Diploma", _accent:g.accent, _syllabus:syllabusTag}));
+    });
+    TRINITY_META.forEach(g => {
+        if (g.data) g.data.forEach(p => rows.push({...p, _grade:"Trinity "+g.label, _gradeKey:g.key, _type:"Trinity", _accent:g.accent, _syllabus:"Trinity"}));
+    });
+    TRINITY_DIPLOMA_META.forEach(g => {
+        if (g.data) g.data.forEach(p => rows.push({...p, _grade:"Trinity "+g.label, _gradeKey:g.key, _type:"Trinity Diploma", _accent:g.accent, _syllabus:"Trinity Diploma"}));
+    });
+    return rows;
+};
+const CORPUS = buildCorpus();
+
+const eraClass = era => {
+    if (!era) return "tag-modern";
+    const e = era.toLowerCase();
+    if (e.includes("baroque"))      return "tag-baroque";
+    if (e.includes("classical"))    return "tag-classical";
+    if (e.includes("romantic"))     return "tag-romantic";
+    if (e.includes("contemporary")) return "tag-contemporary";
+    return "tag-modern";
+};
+
+const sheetUrl = (composer, title) =>
+    `https://www.google.com/search?q=${encodeURIComponent(composer.replace(/,.*/, '').trim() + ' ' + title + ' sheet music')}`;
+
+const COMPOSER_LINKS = {
+  "BACH, J.S.": "https://en.wikipedia.org/wiki/Johann_Sebastian_Bach",
+  "BACH, J.C.F.": "https://en.wikipedia.org/wiki/Johann_Christoph_Friedrich_Bach",
+  "BACH, C.P.E.": "https://en.wikipedia.org/wiki/Carl_Philipp_Emanuel_Bach",
+  "BACH, W.F.": "https://en.wikipedia.org/wiki/Wilhelm_Friedemann_Bach",
+  "BEETHOVEN, L. van.": "https://en.wikipedia.org/wiki/Ludwig_van_Beethoven",
+  "CHOPIN, F.": "https://en.wikipedia.org/wiki/Frédéric_Chopin",
+  "MOZART, W.A.": "https://en.wikipedia.org/wiki/Wolfgang_Amadeus_Mozart",
+  "MOZART, W.": "https://en.wikipedia.org/wiki/Wolfgang_Amadeus_Mozart",
+  "HAYDN, J.": "https://en.wikipedia.org/wiki/Joseph_Haydn",
+  "HAYDN, F.": "https://en.wikipedia.org/wiki/Joseph_Haydn",
+  "SCARLATTI, D.": "https://en.wikipedia.org/wiki/Domenico_Scarlatti",
+  "HANDEL, G.": "https://en.wikipedia.org/wiki/George_Frideric_Handel",
+  "HANDEL, G.F.": "https://en.wikipedia.org/wiki/George_Frideric_Handel",
+  "HANDLE, A.": "https://en.wikipedia.org/wiki/Anthony_Handel",
+  "GRIEG, E.": "https://en.wikipedia.org/wiki/Edvard_Grieg",
+  "GRIEG, E.H.": "https://en.wikipedia.org/wiki/Edvard_Grieg",
+  "SCHUMANN, R.": "https://en.wikipedia.org/wiki/Robert_Schumann",
+  "SCHUMANN, C.": "https://en.wikipedia.org/wiki/Clara_Schumann",
+  "DEBUSSY, C.": "https://en.wikipedia.org/wiki/Claude_Debussy",
+  "RAVEL, M.": "https://en.wikipedia.org/wiki/Maurice_Ravel",
+  "PROKOFIEV, S.": "https://en.wikipedia.org/wiki/Sergei_Prokofiev",
+  "BARTÓK, B.": "https://en.wikipedia.org/wiki/Béla_Bartók",
+  "KABALEVSKY, D.": "https://en.wikipedia.org/wiki/Dmitry_Kabalevsky",
+  "SHOSTAKOVICH, D.": "https://en.wikipedia.org/wiki/Dmitri_Shostakovich",
+  "SATIE, E.": "https://en.wikipedia.org/wiki/Erik_Satie",
+  "CHUA, S.": "https://en.wikipedia.org/wiki/Sonny_Chua",
+  "CLEMENTI, M.": "https://en.wikipedia.org/wiki/Muzio_Clementi",
+  "CZERNY, C.": "https://en.wikipedia.org/wiki/Carl_Czerny",
+  "HELLER, S.": "https://en.wikipedia.org/wiki/Stephen_Heller",
+  "MENDELSSOHN, F.": "https://en.wikipedia.org/wiki/Felix_Mendelssohn",
+  "SCHUBERT, F.": "https://en.wikipedia.org/wiki/Franz_Schubert",
+  "GERSHWIN, G.": "https://en.wikipedia.org/wiki/George_Gershwin",
+  "VILLA-LOBOS, H.": "https://en.wikipedia.org/wiki/Heitor_Villa-Lobos",
+  "MANCINI, H.": "https://en.wikipedia.org/wiki/Henry_Mancini",
+  "NYMAN, M.": "https://en.wikipedia.org/wiki/Michael_Nyman",
+  "YIRUMA.": "https://en.wikipedia.org/wiki/Yiruma",
+  "BERNSTEIN, L.": "https://en.wikipedia.org/wiki/Leonard_Bernstein",
+  "PUCCINI, G.": "https://en.wikipedia.org/wiki/Giacomo_Puccini",
+  "DVOŘÁK, A.": "https://en.wikipedia.org/wiki/Antonín_Dvořák",
+  "FRANCK, C.": "https://en.wikipedia.org/wiki/César_Franck",
+  "ARNE, T.": "https://en.wikipedia.org/wiki/Thomas_Arne",
+  "BURGMÜLLER, F.": "https://en.wikipedia.org/wiki/Friedrich_Burgmüller",
+  "BURGMÜLLER, J.": "https://en.wikipedia.org/wiki/Johann_Friedrich_Burgmüller",
+  "ZIPOLI, D.": "https://en.wikipedia.org/wiki/Domenico_Zipoli",
+  "SEIXAS, C. de.": "https://en.wikipedia.org/wiki/Carlos_de_Seixas",
+  "TANSMAN, A.": "https://en.wikipedia.org/wiki/Alexandre_Tansman",
+  "BERENS, H.": "https://en.wikipedia.org/wiki/Hermann_Berens",
+  "COUPERIN, F.": "https://en.wikipedia.org/wiki/François_Couperin",
+  "FARRENC, L.": "https://en.wikipedia.org/wiki/Louise_Farrenc",
+  "MARCELLO, B.": "https://en.wikipedia.org/wiki/Benedetto_Marcello",
+  "MOSZKOWSKI, M.": "https://en.wikipedia.org/wiki/Moritz_Moszkowski",
+  "NIELSEN, C.": "https://en.wikipedia.org/wiki/Carl_Nielsen",
+  "PESCETTI, G.": "https://en.wikipedia.org/wiki/Giovanni_Pescetti",
+  "SHCHEDRIN, R.": "https://en.wikipedia.org/wiki/Rodion_Shchedrin",
+  "TELEMANN, G.": "https://en.wikipedia.org/wiki/Georg_Philipp_Telemann",
+  "TELEMANN, G.P.": "https://en.wikipedia.org/wiki/Georg_Philipp_Telemann",
+  "BENDA, G.": "https://en.wikipedia.org/wiki/Georg_Benda",
+  "BENDA, J.": "https://en.wikipedia.org/wiki/Jiří_Antonín_Benda",
+  "HUMMEL, J.": "https://en.wikipedia.org/wiki/Johann_Nepomuk_Hummel",
+  "HUMMEL, J.N.": "https://en.wikipedia.org/wiki/Johann_Nepomuk_Hummel",
+  "EBERL, A.": "https://en.wikipedia.org/wiki/Anton_Eberl",
+  "DIABELLI, A.": "https://en.wikipedia.org/wiki/Anton_Diabelli",
+  "DUSSEK, J.": "https://en.wikipedia.org/wiki/Jan_Ladislav_Dussek",
+  "DUSSEK, J.L.": "https://en.wikipedia.org/wiki/Jan_Ladislav_Dussek",
+  "KUHLAU, F.": "https://en.wikipedia.org/wiki/Friedrich_Kuhlau",
+  "PLEYEL, I.": "https://en.wikipedia.org/wiki/Ignaz_Pleyel",
+  "VOŘÍŠEK, J.V.": "https://en.wikipedia.org/wiki/Jan_Václav_Voříšek",
+  "CHAMINADE, C.": "https://en.wikipedia.org/wiki/Cécile_Chaminade",
+  "GLIÈRE, R.": "https://en.wikipedia.org/wiki/Reinhold_Glière",
+  "GLIER, R.": "https://en.wikipedia.org/wiki/Reinhold_Glière",
+  "GRANADOS, E.": "https://en.wikipedia.org/wiki/Enrique_Granados",
+  "GADE, N.": "https://en.wikipedia.org/wiki/Niels_Wilhelm_Gade",
+  "KÖLLING, C.": "https://en.wikipedia.org/wiki/Carl_Kölling",
+  "MACDOWELL, E.": "https://en.wikipedia.org/wiki/Edward_MacDowell",
+  "SÉVERAC, D. de.": "https://en.wikipedia.org/wiki/Déodat_de_Séverac",
+  "WOLLENHAUPT, H.": "https://en.wikipedia.org/wiki/Hermann_Wollenhaupt",
+  "ALBÉNIZ, I.": "https://en.wikipedia.org/wiki/Isaac_Albéniz",
+  "BEACH, A.": "https://en.wikipedia.org/wiki/Amy_Beach",
+  "BRUCH, M.": "https://en.wikipedia.org/wiki/Max_Bruch",
+  "CUI, C.": "https://en.wikipedia.org/wiki/César_Cui",
+  "REGER, M.": "https://en.wikipedia.org/wiki/Max_Reger",
+  "REINECKE, C.": "https://en.wikipedia.org/wiki/Carl_Reinecke",
+  "SIBELIUS, J.": "https://en.wikipedia.org/wiki/Jean_Sibelius",
+  "CAPERS, V.": "https://en.wikipedia.org/wiki/Valerie_Capers",
+  "GLANVILLE-HICKS, P.": "https://en.wikipedia.org/wiki/Peggy_Glanville-Hicks",
+  "GREENAWAY, S.": "https://en.wikipedia.org/wiki/Stella_Greenaway",
+  "HANNAN, M.": "https://en.wikipedia.org/wiki/Michael_Hannan",
+  "SANG, T.": "https://en.wikipedia.org/wiki/Tao_Sang",
+  "BENJAMIN, A.": "https://en.wikipedia.org/wiki/Arthur_Benjamin",
+  "RUSSELL-SMITH, G.": "https://en.wikipedia.org/wiki/Geoff_Russell-Smith",
+  "IBERT, J.": "https://en.wikipedia.org/wiki/Jacques_Ibert",
+  "LUTOSŁAWSKI, W.": "https://en.wikipedia.org/wiki/Witold_Lutosławski",
+  "SITSKY, L.": "https://en.wikipedia.org/wiki/Larry_Sitsky",
+  "EAGLES, M.": "https://en.wikipedia.org/wiki/Michael_Eagles",
+  "BAILEY, K.": "https://en.wikipedia.org/w/index.php?search=Kerry+Bailey+Australian+composer+piano",
+  "BRUMBY, C.": "https://en.wikipedia.org/wiki/Colin_Brumby",
+  "COREA, C.": "https://en.wikipedia.org/wiki/Chick_Corea",
+  "CORNICK, M.": "https://en.wikipedia.org/w/index.php?search=Mike+Cornick+jazz+piano",
+  "DE JONG, S.": "https://en.wikipedia.org/wiki/Serge_de_Jong",
+  "DELLO JOIO, N.": "https://en.wikipedia.org/wiki/Norman_Dello_Joio",
+  "DURHAM, B.": "https://en.wikipedia.org/wiki/Bryn_Durham",
+  "EASTON, M.": "https://en.wikipedia.org/w/index.php?search=Michael+Easton+Australian+composer+piano",
+  "HOLLAND, D.": "https://en.wikipedia.org/w/index.php?search=Dulcie+Holland+Australian+composer",
+  "HUTCHENS, F.": "https://en.wikipedia.org/wiki/Frank_Hutchens",
+  "HYDE, M.": "https://en.wikipedia.org/wiki/Miriam_Hyde",
+  "McCOMBE, C.": "https://en.wikipedia.org/wiki/Christopher_McCombe",
+  "MILHAUD, D.": "https://en.wikipedia.org/wiki/Darius_Milhaud",
+  "TCHEREPNIN, A.": "https://en.wikipedia.org/wiki/Alexander_Tcherepnin",
+  "DING, S.": "https://en.wikipedia.org/wiki/Ding_Shande",
+  "THIMAN, E.": "https://en.wikipedia.org/wiki/Eric_Thiman",
+  "KÖHLER, L.": "https://en.wikipedia.org/wiki/Louis_Köhler",
+  "HÄSSLER, J.": "https://en.wikipedia.org/wiki/Johann_Wilhelm_Hässler",
+  "KHACHATURIAN, A.": "https://en.wikipedia.org/wiki/Aram_Khachaturian",
+  "GRECHANINOV, A.": "https://en.wikipedia.org/wiki/Alexander_Grechaninov",
+  "MAYKAPAR, S.": "https://en.wikipedia.org/wiki/Samuel_Maykapar",
+  "BENNETT, R.": "https://en.wikipedia.org/wiki/Richard_Rodney_Bennett",
+  "BERTINI, H.": "https://en.wikipedia.org/wiki/Henri_Bertini",
+  "MORRICONE, E.": "https://en.wikipedia.org/wiki/Ennio_Morricone",
+  "NORTON, C.": "https://en.wikipedia.org/wiki/Christopher_Norton_(composer)",
+  "ORFF, C.": "https://en.wikipedia.org/wiki/Carl_Orff",
+  "SILVESTRI, A.": "https://en.wikipedia.org/wiki/Alan_Silvestri",
+  "WILCHER, P.": "https://en.wikipedia.org/wiki/Pamela_Wilcher",
+  "WRIGHT, R.": "https://en.wikipedia.org/wiki/Robert_Wright",
+  "COWAN, M.": "https://en.wikipedia.org/wiki/Marjorie_Cowan",
+  "JOBIM, A.": "https://en.wikipedia.org/wiki/Antônio_Carlos_Jobim",
+  "LEGRAND, M.": "https://en.wikipedia.org/wiki/Michel_Legrand",
+  "MASSENET, J.": "https://en.wikipedia.org/wiki/Jules_Massenet",
+  "MASSENET, J. arr. LANNING": "https://en.wikipedia.org/wiki/Jules_Massenet",
+  "MYERS, S.": "https://en.wikipedia.org/wiki/Stanley_Myers",
+  "PETERSON, O.": "https://en.wikipedia.org/wiki/Oscar_Peterson",
+  "WESLEY-SMITH, M.": "https://en.wikipedia.org/wiki/Martin_Wesley-Smith",
+  "WILLIAMS, J.": "https://en.wikipedia.org/wiki/John_Williams",
+  "BOYD, B.": "https://en.wikipedia.org/w/index.php?search=Bill+Boyd+Australian+composer+piano",
+  "BRANDMAN, M.": "https://en.wikipedia.org/w/index.php?search=Michael+Brandman+Australian+composer+piano",
+  "FISCHER, J.": "https://en.wikipedia.org/wiki/Johann_Caspar_Ferdinand_Fischer",
+  "FISCHER, J.C.F.": "https://en.wikipedia.org/wiki/Johann_Caspar_Ferdinand_Fischer",
+  "OLSON, K.": "https://en.wikipedia.org/w/index.php?search=K+Olson+piano+composer",
+  "YU, J.": "https://en.wikipedia.org/w/index.php?search=Jun+Yu+Chinese+Australian+composer+piano",
+  "JUN YU": "https://en.wikipedia.org/w/index.php?search=Jun+Yu+Chinese+Australian+composer+piano",
+  "DARGOMIZHSKY, A.": "https://en.wikipedia.org/wiki/Alexander_Dargomyzhsky",
+  "HOEY, P.": "https://en.wikipedia.org/w/index.php?search=Phillip+Hoey+Australian+composer",
+  "HOEY, D.": "https://en.wikipedia.org/w/index.php?search=Phillip+Hoey+Australian+composer",
+  "KIRNBERGER, J.": "https://en.wikipedia.org/wiki/Johann_Philipp_Kirnberger",
+  "KIRNBERGER, J.P.": "https://en.wikipedia.org/wiki/Johann_Philipp_Kirnberger",
+  "LEMOINE, A.": "https://en.wikipedia.org/wiki/Henry_Lemoine_(musician)",
+  "LEMOINE, H.": "https://en.wikipedia.org/wiki/Henry_Lemoine_(musician)",
+  "MAYER, C.": "https://en.wikipedia.org/wiki/Charles_Mayer_(composer)",
+  "PURCELL, H.": "https://en.wikipedia.org/wiki/Henry_Purcell",
+  "PURCELL, H. arr. MILNE": "https://en.wikipedia.org/wiki/Henry_Purcell",
+  "ROLLIN, C.": "https://en.wikipedia.org/w/index.php?search=Catherine+Rollin+composer+piano",
+  "VANHAL, J.B.": "https://en.wikipedia.org/wiki/Johann_Baptist_Vanhal",
+  "VANHAL, J.": "https://en.wikipedia.org/wiki/Johann_Baptist_Vanhal",
+  "HOFMANN, H.": "https://en.wikipedia.org/wiki/Heinrich_Hofmann_(composer)",
+  "PACHULSKI, H.": "https://en.wikipedia.org/wiki/Henryk_Pachulski",
+  "PACHULSKI, K.": "https://en.wikipedia.org/wiki/Henryk_Pachulski",
+  "PESKANOV, A.": "https://en.wikipedia.org/w/index.php?search=Alexander+Peskanov+pianist+composer",
+  "TCHAIKOVSKY, P.I.": "https://en.wikipedia.org/wiki/Pyotr_Ilyich_Tchaikovsky",
+  "TCHAIKOVSKY, P.": "https://en.wikipedia.org/wiki/Pyotr_Ilyich_Tchaikovsky",
+  "KATS-CHERNIN, E.": "https://en.wikipedia.org/wiki/Elena_Kats-Chernin",
+  "LIEBERMANN, L.": "https://en.wikipedia.org/wiki/Lowell_Liebermann",
+  "MILNE, E.": "https://en.wikipedia.org/w/index.php?search=Elissa+Milne+Australian+composer",
+  "BACH, W. (attrib.)": "https://en.wikipedia.org/wiki/Wilhelm_Friedemann_Bach",
+  "FIBICH, Z.": "https://en.wikipedia.org/wiki/Zdeněk_Fibich",
+  "GILLOCK, W.": "https://en.wikipedia.org/wiki/William_Gillock",
+  "GLINKA, M.": "https://en.wikipedia.org/wiki/Mikhail_Glinka",
+  "GURLITT, C.": "https://en.wikipedia.org/wiki/Cornelius_Gurlitt",
+  "KIRCHNER, T.": "https://en.wikipedia.org/wiki/Theodor_Kirchner",
+  "KOZELUCH, L.": "https://en.wikipedia.org/wiki/Leopold_Kozeluch",
+  "MUSORGSKY, P.": "https://en.wikipedia.org/wiki/Modest_Mussorgsky",
+  "CASELLA, A.": "https://en.wikipedia.org/wiki/Alfredo_Casella",
+  "ADAMS, E.": "https://en.wikipedia.org/w/index.php?search=Eileen+Adams+American+composer+piano",
+  "CHAPPLE, B.": "https://en.wikipedia.org/w/index.php?search=Brian+Chapple+composer",
+  "EDWARDS, R.": "https://en.wikipedia.org/w/index.php?search=Ross+Edwards+Australian+composer",
+  "GOEDICKE, A.": "https://en.wikipedia.org/wiki/Alexander_Goedicke",
+  "HARRHY, E.": "https://en.wikipedia.org/w/index.php?search=Eileen+Harrhy+composer+piano",
+  "LEAHY, M.": "https://en.wikipedia.org/w/index.php?search=Mary+Leahy+Australian+composer",
+  "LEEK, S.": "https://en.wikipedia.org/wiki/Stephen_Leek",
+  "NEWNHAM, H.": "https://en.wikipedia.org/w/index.php?search=Peter+Newnham+Australian+composer+piano",
+  "NEWNHAM, P.": "https://en.wikipedia.org/w/index.php?search=Peter+Newnham+Australian+composer+piano",
+  "PETERSON, J.": "https://en.wikipedia.org/w/index.php?search=Wayne+Peterson+Australian+composer+piano",
+  "PETERSON, W.": "https://en.wikipedia.org/w/index.php?search=Wayne+Peterson+Australian+composer+piano",
+  "REBIKOV, V.": "https://en.wikipedia.org/wiki/Vladimir_Rebikov",
+  "ROCHEROLLE, E.": "https://en.wikipedia.org/w/index.php?search=Eugénie+Rocherolle+composer+piano",
+  "VINE, C.": "https://en.wikipedia.org/wiki/Carl_Vine",
+  "ALEXANDER, D.": "https://en.wikipedia.org/w/index.php?search=Dennis+Alexander+pianist+composer",
+  "ARLEN, H. arr. FABER": "https://en.wikipedia.org/wiki/Harold_Arlen",
+  "ARNOLD, M.": "https://en.wikipedia.org/wiki/Malcolm_Arnold",
+  "BASTIEN, J.": "https://en.wikipedia.org/wiki/James+Bastien",
+  "BOBER, M.": "https://en.wikipedia.org/w/index.php?search=Melody+Bober+composer+piano",
+  "BOULANGER, N.": "https://en.wikipedia.org/wiki/Nadia_Boulanger",
+  "BIZET, G. arr. HARRIS": "https://en.wikipedia.org/wiki/Georges_Bizet",
+  "ANONYMOUS": "https://en.wikipedia.org/wiki/Anonymous_music",
+  "CIMAROSA, D.": "https://en.wikipedia.org/wiki/Domenico_Cimarosa",
+  "CONCONE, G.": "https://en.wikipedia.org/wiki/Giuseppe_Concone",
+  "CONCONE, J.": "https://en.wikipedia.org/wiki/Giuseppe_Concone",
+  "DELIBES, L. arr. LANNING": "https://en.wikipedia.org/wiki/Léo_Delibes",
+  "DVOŘÁK, A. arr. BRIMHALL": "https://en.wikipedia.org/wiki/Antonín_Dvořák",
+  "ELGAR, E. arr. LANNING": "https://en.wikipedia.org/wiki/Edward_Elgar",
+  "ELGAR, E.": "https://en.wikipedia.org/wiki/Edward_Elgar",
+  "ELFMAN, D.": "https://en.wikipedia.org/wiki/Danny_Elfman",
+  "FAURÉ, G. arr. BROADSTOCK": "https://en.wikipedia.org/wiki/Gabriel_Fauré",
+  "GERSHWIN, G. arr. MARTIN": "https://en.wikipedia.org/wiki/George_Gershwin",
+  "GERSHWIN, G. arr. WEDGWOOD": "https://en.wikipedia.org/wiki/George_Gershwin",
+  "GLASS, P.": "https://en.wikipedia.org/wiki/Philip_Glass",
+  "GRAINGER, P. arr. STEVENSON": "https://en.wikipedia.org/wiki/Percy_Grainger",
+  "HANDLE, G.F. arr. LANNING": "https://en.wikipedia.org/wiki/George_Frideric_Handel",
+  "JOPLIN, S. arr. BARRATT": "https://en.wikipedia.org/wiki/Scott_Joplin",
+  "JOPLIN, S. arr. DENNIS": "https://en.wikipedia.org/wiki/Scott_Joplin",
+  "JOPLIN, S. arr. RAY": "https://en.wikipedia.org/wiki/Scott_Joplin",
+  "JOPLIN, S. arr. FABER": "https://en.wikipedia.org/wiki/Scott_Joplin",
+  "KANDER, J. arr. FABER": "https://en.wikipedia.org/wiki/John_Kander",
+  "KEANE, L.": "https://en.wikipedia.org/w/index.php?search=Laurence+Keane+Australian+composer+piano",
+  "KLOSE, M.": "https://en.wikipedia.org/w/index.php?search=Mike+Klose+composer+piano",
+  "LENNON, J. and McCARTNEY, P. (arr. BAKER)": "https://en.wikipedia.org/wiki/Lennon%E2%80%93McCartney",
+  "LENNON/McCARTNEY arr. BAKER": "https://en.wikipedia.org/wiki/Lennon%E2%80%93McCartney",
+  "MIER, M.": "https://en.wikipedia.org/w/index.php?search=Martha+Mier+piano+composer",
+  "MONK, T.": "https://en.wikipedia.org/wiki/Thelonious_Monk",
+  "NEVIN, E. arr. MANHIRE": "https://en.wikipedia.org/wiki/Ethelbert_Nevin",
+  "NORTH, A.": "https://en.wikipedia.org/wiki/Alex_North",
+  "BACH, J.S. arr. AARONSON": "https://en.wikipedia.org/wiki/Johann_Sebastian_Bach",
+  "PODGORNOV, I.": "https://en.wikipedia.org/w/index.php?search=Igor+Podgornov+composer+piano",
+  "PUCCINI, G. arr. LANNING": "https://en.wikipedia.org/wiki/Giacomo_Puccini",
+  "RIMSKY-KORSAKOV, N. arr. BRADLEY": "https://en.wikipedia.org/wiki/Nikolai_Rimsky-Korsakov",
+  "ROLAND, N.": "https://en.wikipedia.org/w/index.php?search=Nicholas+Roland+Australian+composer+piano",
+  "ROSSINI, G. arr. LANNING": "https://en.wikipedia.org/wiki/Gioachino_Rossini",
+  "SAINT-SAËNS, C. arr. STEWART": "https://en.wikipedia.org/wiki/Camille_Saint-Saëns",
+  "SAINT-SAËNS, C. arr. BRIMHALL": "https://en.wikipedia.org/wiki/Camille_Saint-Saëns",
+  "SAINT-SAËNS, C. arr. HEUMANN, G.": "https://en.wikipedia.org/wiki/Camille_Saint-Saëns",
+  "SCHMITZ, M.": "https://en.wikipedia.org/w/index.php?search=Manfred+Schmitz+jazz+piano+composer",
+  "SCHOEMEHL, D.": "https://en.wikipedia.org/w/index.php?search=Schoemehl+Train+journey+piano",
+  "SCHOENMEHL, M.": "https://en.wikipedia.org/w/index.php?search=Schoemehl+Train+journey+piano",
+  "SCHÖNBERG, C. arr. GOUT": "https://en.wikipedia.org/wiki/Claude-Michel_Schönberg",
+  "SCULTHORPE, P.": "https://en.wikipedia.org/wiki/Peter_Sculthorpe",
+  "SISKIND, J.": "https://en.wikipedia.org/w/index.php?search=Carol+Siskind+Australian+composer+piano",
+  "SISKIND, C.": "https://en.wikipedia.org/w/index.php?search=Carol+Siskind+Australian+composer+piano",
+  "SLAVICKÝ, K.": "https://en.wikipedia.org/wiki/Klement_Slavický",
+  "SMETANA, B. arr. HEUMANN": "https://en.wikipedia.org/wiki/Bedřich_Smetana",
+  "STÖLZEL, G.H.": "https://en.wikipedia.org/wiki/Gottfried_Heinrich_Stölzel",
+  "TSITSAROS, C.": "https://en.wikipedia.org/w/index.php?search=Christos+Tsitsaros+piano+composer",
+  "WAXMAN, F.": "https://en.wikipedia.org/wiki/Franz_Waxman",
+  "WEDGWOOD, P.": "https://en.wikipedia.org/w/index.php?search=Pam+Wedgwood+piano+composer",
+  "ROSSI, W.": "https://en.wikipedia.org/w/index.php?search=Wynn+Rossi+jazz+piano+composer",
+  "MATTHEWS, W.": "https://en.wikipedia.org/w/index.php?search=William+Matthews+composer+piano",
+  "HIRAYOSHI, A.": "https://en.wikipedia.org/w/index.php?search=Aki+Hirayoshi+composer+piano",
+  "RAMEAU, J.-P.": "https://en.wikipedia.org/wiki/Jean-Philippe_Rameau",
+  "GOUNOD, C. (arr. FABER and FABER)": "https://en.wikipedia.org/wiki/Charles_Gounod",
+  "JOHN, E. (arr. BRANDMAN)": "https://en.wikipedia.org/wiki/Elton_John",
+  "OLSON, L.": "https://en.wikipedia.org/w/index.php?search=Larry+Olson+composer+piano",
+  "TRADITIONAL (arr. BARRATT)": "https://en.wikipedia.org/wiki/Traditional_music",
+  "COBURN, W.": "https://en.wikipedia.org/w/index.php?search=William+Coburn+composer",
+  "SEROCKI, K.": "https://en.wikipedia.org/wiki/Kazimierz_Serocki",
+  "RAICHEV, A.": "https://en.wikipedia.org/w/index.php?search=Alexander+Raichev+Bulgarian+composer",
+  "HENGEVELD, G.": "https://en.wikipedia.org/w/index.php?search=Gert+Hengeveld+composer",
+  "RYBICKI, F.": "https://en.wikipedia.org/w/index.php?search=Felicja+Rybicki+Polish+composer",
+  "DUVERNOY, J.": "https://en.wikipedia.org/wiki/Jean_Duvernoy",
+  "LABURDA, J.": "https://en.wikipedia.org/w/index.php?search=Jeronym+Laburda+composer",
+  "NEUGASIMOV, V.": "https://en.wikipedia.org/w/index.php?search=Vasily+Neugasimov+Russian+composer",
+  "SOLER, A.": "https://en.wikipedia.org/wiki/Antonio_Soler",
+  "RIES, F.": "https://en.wikipedia.org/wiki/Ferdinand_Ries",
+  "WEBER, C.M. von.": "https://en.wikipedia.org/wiki/Carl_Maria_von_Weber",
+  "BROADSTOCK, B.": "https://en.wikipedia.org/w/index.php?search=Brett+Broadstock+Australian+composer",
+  "HINDSON, M.": "https://en.wikipedia.org/w/index.php?search=Michael+Hindson+Australian+composer",
+  "POLDEN, A.": "https://en.wikipedia.org/w/index.php?search=Andrew+Polden+Australian+composer",
+  "SYMONS, J.": "https://en.wikipedia.org/w/index.php?search=Jim+Symons+Australian+composer",
+  "CARR, E.": "https://en.wikipedia.org/w/index.php?search=Elaine+Carr+Australian+composer",
+  "BALUTET, M.": "https://en.wikipedia.org/w/index.php?search=Marie+Balutet+composer",
+  "HOOK, J.": "https://en.wikipedia.org/wiki/James_Hook",
+  "MUCZYNSKI, R.": "https://en.wikipedia.org/wiki/Robert_Muczynski",
+  "KOEHNE, G.": "https://en.wikipedia.org/w/index.php?search=Graeme+Koehne+Australian+composer",
+  "SEIBER, M.": "https://en.wikipedia.org/wiki/Mátyás_Seiber",
+  "HILLER, W.": "https://en.wikipedia.org/w/index.php?search=Wilfried+Hiller+composer",
+  "BAUSTETTER, J.": "https://en.wikipedia.org/w/index.php?search=Johann+Baustetter+composer",
+  "SCARLATTI, A.": "https://en.wikipedia.org/wiki/Alessandro_Scarlatti",
+  "SOREL, A.": "https://en.wikipedia.org/wiki/Antonio_Soler",
+  "McBROOM, A. (arr. COATES)": "https://en.wikipedia.org/w/index.php?search=Amanda+McBroom+composer",
+  "SCHWANDT, F. and ANDRE, W. (arr. BRIMHALL)": "https://en.wikipedia.org/w/index.php?search=Schwandt+Andre+composers",
+  "SCHUMANN, R. (arr. BRADLEY)": "https://en.wikipedia.org/wiki/Robert_Schumann",
+  "WALDTEUFEL, E. (arr. LANNING)": "https://en.wikipedia.org/wiki/Émile_Waldteufel",
+  "WILLIAMS, S. (arr. DURO)": "https://en.wikipedia.org/wiki/Spencer_Williams",
+  "HARLINE, L. (arr. BRIMHALL)": "https://en.wikipedia.org/wiki/Leigh_Harline",
+  "CARMICHAEL, M.": "https://en.wikipedia.org/wiki/Hoagy_Carmichael",
+  "HEFTI, N.": "https://en.wikipedia.org/wiki/Neal_Hefti",
+  "HENLEY, L.": "https://en.wikipedia.org/w/index.php?search=Larry+Henley+composer",
+  "ADAIR, Y.": "https://en.wikipedia.org/wiki/Yvonne_Adair",
+  "AGAY, D.": "https://en.wikipedia.org/wiki/Denes_Agay",
+  "ALKAN, C.-V.": "https://en.wikipedia.org/wiki/Charles-Valentin_Alkan",
+  "ARENSKY, A.": "https://en.wikipedia.org/wiki/Anton_Arensky",
+  "ARNOLD, S.": "https://en.wikipedia.org/wiki/Samuel_Arnold",
+  "ATTWOOD, T.": "https://en.wikipedia.org/wiki/Thomas_Attwood",
+  "ATWELL, W.": "https://en.wikipedia.org/wiki/Winifred_Atwell",
+  "BABELL, W.": "https://en.wikipedia.org/wiki/William_Babell",
+  "BACH, J.C.": "https://en.wikipedia.org/wiki/Johann_Christian_Bach",
+  "BACHARACH, B.": "https://en.wikipedia.org/wiki/Burt_Bacharach",
+  "BERLIN, I.": "https://en.wikipedia.org/wiki/Irving_Berlin",
+  "BIZET, G.": "https://en.wikipedia.org/wiki/Georges_Bizet",
+  "BONIS, M.": "https://en.wikipedia.org/wiki/Mel_Bonis",
+  "BORODIN, A.": "https://en.wikipedia.org/wiki/Alexander_Borodin",
+  "BORTKIEWICZ, S.": "https://en.wikipedia.org/wiki/Sergei_Bortkiewicz",
+  "BOULANGER, L.": "https://en.wikipedia.org/wiki/Lili_Boulanger",
+  "BRAHMS, J.": "https://en.wikipedia.org/wiki/Johannes_Brahms",
+  "BRIDGE, F.": "https://en.wikipedia.org/wiki/Frank_Bridge",
+  "BRITTEN, B.": "https://en.wikipedia.org/wiki/Benjamin_Britten",
+  "BRUBECK, D.": "https://en.wikipedia.org/wiki/Dave_Brubeck",
+  "BUTTERLEY, N.": "https://en.wikipedia.org/wiki/Nigel_Butterley",
+  "CARR-BOYD, A.": "https://en.wikipedia.org/wiki/Ann_Carr-Boyd",
+  "CHADWICK, G.": "https://en.wikipedia.org/wiki/George_Whitefield_Chadwick",
+  "CLARKE, J.": "https://en.wikipedia.org/wiki/Jeremiah_Clarke",
+  "COLERIDGE-TAYLOR, S.": "https://en.wikipedia.org/wiki/Samuel_Coleridge-Taylor",
+  "CONFREY, Z.": "https://en.wikipedia.org/wiki/Zez_Confrey",
+  "COPLAND, A.": "https://en.wikipedia.org/wiki/Aaron_Copland",
+  "CORELLI, A.": "https://en.wikipedia.org/wiki/Arcangelo_Corelli",
+  "CRAMER, J.": "https://en.wikipedia.org/wiki/Johann_Baptist_Cramer",
+  "DAQUIN, L.": "https://en.wikipedia.org/wiki/Louis-Claude_Daquin",
+  "DAQUIN, L-C.": "https://en.wikipedia.org/wiki/Louis-Claude_Daquin",
+  "DELIBES, L.": "https://en.wikipedia.org/wiki/L%C3%A9o_Delibes",
+  "DESMOND, P.": "https://en.wikipedia.org/wiki/Paul_Desmond",
+  "DETT, R.": "https://en.wikipedia.org/wiki/R._Nathaniel_Dett",
+  "DETT, N.": "https://en.wikipedia.org/wiki/R._Nathaniel_Dett",
+  "EINAUDI, L.": "https://en.wikipedia.org/wiki/Ludovico_Einaudi",
+  "EL-DABH, H.": "https://en.wikipedia.org/wiki/Halim_El-Dabh",
+  "ELLINGTON, D.": "https://en.wikipedia.org/wiki/Duke_Ellington",
+  "FALLA, M. de.": "https://en.wikipedia.org/wiki/Manuel_de_Falla",
+  "FAURÉ, G.": "https://en.wikipedia.org/wiki/Gabriel_Faur%C3%A9",
+  "FIELD, J.": "https://en.wikipedia.org/wiki/John_Field_(composer)",
+  "GALUPPI, B.": "https://en.wikipedia.org/wiki/Baldassare_Galuppi",
+  "GARNER, E.": "https://en.wikipedia.org/wiki/Erroll_Garner",
+  "GOUNOD, C.": "https://en.wikipedia.org/wiki/Charles_Gounod",
+  "GRAINGER, P.": "https://en.wikipedia.org/wiki/Percy_Grainger",
+  "GRAUPNER, C.": "https://en.wikipedia.org/wiki/Christoph_Graupner",
+  "GRIFFES, C.": "https://en.wikipedia.org/wiki/Charles_Tomlinson_Griffes",
+  "HENSEL, F.": "https://en.wikipedia.org/wiki/Fanny_Mendelssohn",
+  "HENSELT, A.": "https://en.wikipedia.org/wiki/Adolf_von_Henselt",
+  "HINDEMITH, P.": "https://en.wikipedia.org/wiki/Paul_Hindemith",
+  "HOFFMEISTER, F.": "https://en.wikipedia.org/wiki/Franz_Anton_Hoffmeister",
+  "HOLST, G.": "https://en.wikipedia.org/wiki/Gustav_Holst",
+  "HORNER, J.": "https://en.wikipedia.org/wiki/James_Horner",
+  "JANÁČEK, L.": "https://en.wikipedia.org/wiki/Leo%C5%A1_Jan%C3%A1%C4%8Dek",
+  "JARRE, M.": "https://en.wikipedia.org/wiki/Maurice_Jarre",
+  "JOHN, E.": "https://en.wikipedia.org/wiki/Elton_John",
+  "JOPLIN, S.": "https://en.wikipedia.org/wiki/Scott_Joplin",
+  "KALINNIKOV, V.": "https://en.wikipedia.org/wiki/Vasily_Kalinnikov",
+  "KODÁLY, Z.": "https://en.wikipedia.org/wiki/Zolt%C3%A1n_Kod%C3%A1ly",
+  "KREBS, J.": "https://en.wikipedia.org/wiki/Johann_Ludwig_Krebs",
+  "KRIEGER, J.": "https://en.wikipedia.org/wiki/Johann_Krieger",
+  "KULLAK, T.": "https://en.wikipedia.org/wiki/Theodor_Kullak",
+  "LACK, T.": "https://en.wikipedia.org/wiki/Th%C3%A9odore_Lack",
+  "LICHNER, H.": "https://en.wikipedia.org/wiki/Heinrich_Lichner",
+  "LIGETI, G.": "https://en.wikipedia.org/wiki/Gy%C3%B6rgy_Ligeti",
+  "LISZT, F.": "https://en.wikipedia.org/wiki/Franz_Liszt",
+  "LLOYD WEBBER, A.": "https://en.wikipedia.org/wiki/Andrew_Lloyd_Webber",
+  "LOESCHHORN, C.A.": "https://en.wikipedia.org/wiki/Carl_Albert_Loeschhorn",
+  "LULLY, J.": "https://en.wikipedia.org/wiki/Jean-Baptiste_Lully",
+  "LYADOV, A.": "https://en.wikipedia.org/wiki/Anatoly_Lyadov",
+  "MARTINŮ, B.": "https://en.wikipedia.org/wiki/Bohuslav_Martin%C5%AF",
+  "MEALE, R.": "https://en.wikipedia.org/wiki/Richard_Meale",
+  "MENOTTI, G.": "https://en.wikipedia.org/wiki/Gian_Carlo_Menotti",
+  "MOMPOU, F.": "https://en.wikipedia.org/wiki/Federico_Mompou",
+  "MOSCHELES, I.": "https://en.wikipedia.org/wiki/Ignaz_Moscheles",
+  "MOURET, J.": "https://en.wikipedia.org/wiki/Jean-Joseph_Mouret",
+  "MOZART, L.": "https://en.wikipedia.org/wiki/Leopold_Mozart",
+  "MUSORGSKY, M.": "https://en.wikipedia.org/wiki/Modest_Mussorgsky",
+  "MÉHUL, E.-N.": "https://en.wikipedia.org/wiki/%C3%89tienne_M%C3%A9hul",
+  "NAKADA, Y.": "https://en.wikipedia.org/wiki/Yoshinao_Nakada",
+  "NAZARETH, E.": "https://en.wikipedia.org/wiki/Ernesto_Nazareth",
+  "NEEFE, C.": "https://en.wikipedia.org/wiki/Christian_Gottlob_Neefe",
+  "NEVIN, E.": "https://en.wikipedia.org/wiki/Ethelbert_Nevin",
+  "PACHELBEL, J.": "https://en.wikipedia.org/wiki/Johann_Pachelbel",
+  "PADEREWSKI, I.": "https://en.wikipedia.org/wiki/Ignacy_Jan_Paderewski",
+  "PARADIES, D.": "https://en.wikipedia.org/wiki/Pietro_Domenico_Paradies",
+  "PEETERS, F.": "https://en.wikipedia.org/wiki/Flor_Peeters",
+  "PEZOLD, C.": "https://en.wikipedia.org/wiki/Christian_Pezold",
+  "POLDINI, E.": "https://en.wikipedia.org/wiki/Ede_Poldini",
+  "PONCHIELLI, A.": "https://en.wikipedia.org/wiki/Amilcare_Ponchielli",
+  "POULENC, F.": "https://en.wikipedia.org/wiki/Francis_Poulenc",
+  "PREVIN, A.": "https://en.wikipedia.org/wiki/Andr%C3%A9_Previn",
+  "PRICE, F.": "https://en.wikipedia.org/wiki/Florence_Price",
+  "RACHMANINOFF, S.": "https://en.wikipedia.org/wiki/Sergei_Rachmaninoff",
+  "RAMEAU, J.": "https://en.wikipedia.org/wiki/Jean-Philippe_Rameau",
+  "REICHARDT, J.": "https://en.wikipedia.org/wiki/Johann_Friedrich_Reichardt",
+  "RIEGGER, W.": "https://en.wikipedia.org/wiki/Wallingford_Riegger",
+  "RODGERS, R.": "https://en.wikipedia.org/wiki/Richard_Rodgers",
+  "ROSSI, M.": "https://en.wikipedia.org/wiki/Michelangelo_Rossi",
+  "ROSSINI, G.": "https://en.wikipedia.org/wiki/Gioachino_Rossini",
+  "RUBINSTEIN, A.": "https://en.wikipedia.org/wiki/Anton_Rubinstein",
+  "SAINT-SAËNS, C.": "https://en.wikipedia.org/wiki/Camille_Saint-Sa%C3%ABns",
+  "SCHOENBERG, A.": "https://en.wikipedia.org/wiki/Arnold_Schoenberg",
+  "SCHUMANN [née Wieck], C.": "https://en.wikipedia.org/wiki/Clara_Schumann",
+  "SCHYTTE, L.": "https://en.wikipedia.org/wiki/Ludvig_Schytte",
+  "SCHÖNBERG, C.-M.": "https://en.wikipedia.org/wiki/Claude-Michel_Sch%C3%B6nberg",
+  "SHEARING, G.": "https://en.wikipedia.org/wiki/George_Shearing",
+  "SINDING, C.": "https://en.wikipedia.org/wiki/Christian_Sinding",
+  "SKRYABIN, A.": "https://en.wikipedia.org/wiki/Alexander_Scriabin",
+  "SMETANA, B.": "https://en.wikipedia.org/wiki/Bed%C5%99ich_Smetana",
+  "SONDHEIM, S.": "https://en.wikipedia.org/wiki/Stephen_Sondheim",
+  "SPEER, D.": "https://en.wikipedia.org/wiki/Daniel_Speer",
+  "STEIBELT, D.": "https://en.wikipedia.org/wiki/Daniel_Steibelt",
+  "STRAUSS, J.": "https://en.wikipedia.org/wiki/Johann_Strauss_II",
+  "STREABBOG, L.": "https://en.wikipedia.org/wiki/Jean-Louis_Gobbaerts",
+  "SUTHERLAND, M.": "https://en.wikipedia.org/wiki/Margaret_Sutherland",
+  "SZYMANOWSKA, M.": "https://en.wikipedia.org/wiki/Maria_Szymanowska",
+  "TAKÁCS, J.": "https://en.wikipedia.org/wiki/Jen%C5%91_Tak%C3%A1cs",
+  "TIERSEN, Y.": "https://en.wikipedia.org/wiki/Yann_Tiersen",
+  "TIZOL, J.": "https://en.wikipedia.org/wiki/Juan_Tizol",
+  "TOCH, E.": "https://en.wikipedia.org/wiki/Ernst_Toch",
+  "TURINA, J.": "https://en.wikipedia.org/wiki/Joaqu%C3%ADn_Turina",
+  "TURPIN, T.": "https://en.wikipedia.org/wiki/Tom_Turpin",
+  "TÜRK, D.": "https://en.wikipedia.org/wiki/Daniel_Gottlob_T%C3%BCrk",
+  "VANDALL, R.": "https://en.wikipedia.org/wiki/Robert_D._Vandall",
+  "VAUGHAN WILLIAMS, R.": "https://en.wikipedia.org/wiki/Ralph_Vaughan_Williams",
+  "VOŘÍŠEK, J.": "https://en.wikipedia.org/wiki/Jan_V%C3%A1clav_Vo%C5%99%C3%AD%C5%A1ek",
+  "WALLER, T.": "https://en.wikipedia.org/wiki/Fats_Waller",
+  "WIDOR, C.": "https://en.wikipedia.org/wiki/Charles-Marie_Widor",
+  "WONDER, S.": "https://en.wikipedia.org/wiki/Stevie_Wonder",
+  "YOUMANS, V.": "https://en.wikipedia.org/wiki/Vincent_Youmans",
+
+};
+
+const INTERESTS_KEY = "pb_interests_v2";
+const loadInterests = () => { try { return JSON.parse(localStorage.getItem(INTERESTS_KEY)||"[]"); } catch { return []; } };
+const saveInterests = arr => { try { localStorage.setItem(INTERESTS_KEY, JSON.stringify(arr)); window.dispatchEvent(new Event("pb_interests_changed")); } catch {} };
+
+/* ── Local-first Repertoire Lists ── */
+const LISTS_KEY = "pb_lists_v1";
+
+const loadLists = () => { try { return JSON.parse(localStorage.getItem(LISTS_KEY)||"[]"); } catch { return []; } };
+const saveLists = arr => { try { localStorage.setItem(LISTS_KEY, JSON.stringify(arr)); window.dispatchEvent(new Event("pb_lists_changed")); } catch {} };
+
+const LIST_TYPES = [
+    { value:"student",  label:"Student",  color:"#4f46e5", bg:"#eef2ff" },
+    { value:"concert",  label:"Concert",  color:"#0f766e", bg:"#f0fdfa" },
+    { value:"exam",     label:"Exam",     color:"#b45309", bg:"#fffbeb" },
+    { value:"general",  label:"General",  color:"#475569", bg:"#f8fafc" },
+];
+
+const listTypeInfo = (type) => LIST_TYPES.find(t=>t.value===type) || LIST_TYPES[3];
+
+function createLocalList({ name, type, description="" }) {
+    const list = {
+        id: "local_" + Date.now() + "_" + Math.random().toString(36).slice(2,7),
+        name, type, description,
+        pieces: [],
+        createdAt: new Date().toISOString(),
+        local: true,
+    };
+    const all = loadLists();
+    all.unshift(list);
+    saveLists(all);
+    return list;
+}
+
+function addPieceToList(listId, piece) {
+    const all = loadLists();
+    const list = all.find(l=>l.id===listId);
+    if (!list) return false;
+    const already = list.pieces.some(p=>p.composer===piece.c && p.title===piece.t);
+    if (already) return false;
+    list.pieces.push({
+        composer: piece.c, title: piece.t,
+        grade: piece._grade, syllabus: piece._syllabus,
+        era: piece.era||null, nat: piece.nat||null,
+        list: piece.l||null,
+        addedAt: new Date().toISOString(),
+    });
+    saveLists(all);
+    return true;
+}
+
+function removePieceFromList(listId, composerTitle) {
+    const all = loadLists();
+    const list = all.find(l=>l.id===listId);
+    if (!list) return;
+    list.pieces = list.pieces.filter(p=>!(p.composer+"||"+p.title === composerTitle));
+    saveLists(all);
+}
+
+function deleteList(listId) {
+    saveLists(loadLists().filter(l=>l.id!==listId));
+}
+
+function updateList(listId, patch) {
+    const all = loadLists();
+    const idx = all.findIndex(l=>l.id===listId);
+    if (idx===-1) return;
+    all[idx] = {...all[idx], ...patch};
+    saveLists(all);
+}
+
+/* ── Recommendation Engine ── */
+function getRecommendations(interests, corpus, count=5) {
+    if (!interests || interests.length === 0) return { moreLike:[], tryDifferent:[] };
+
+    // 1. Era distribution from saved pieces
+    const eraCounts = {};
+    const natCounts = {};
+    const focusPool = [];
+    interests.forEach(p => {
+        if (p.era) eraCounts[p.era] = (eraCounts[p.era]||0) + 1;
+        if (p.nat) natCounts[p.nat] = (natCounts[p.nat]||0) + 1;
+        if (p.focus) p.focus.forEach(f => focusPool.push(f));
+    });
+
+    const savedKeys = new Set(interests.map(p => p.composer+"||"+p.title));
+    const allEras = ["Baroque","Classical","Romantic","Modern","Contemporary"];
+
+    // Most listened era
+    const topEra = Object.entries(eraCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || null;
+    // Least listened era (from the full era list, excluding zero)
+    const leastEra = allEras
+        .filter(e => e !== topEra)
+        .sort((a,b) => (eraCounts[a]||0) - (eraCounts[b]||0))[0];
+    // Top nationality
+    const topNat = Object.entries(natCounts).sort((a,b)=>b[1]-a[1])[0]?.[0] || null;
+
+    // Score function for "more like this"
+    const scoreSimilar = (p) => {
+        if (savedKeys.has(p.c+"||"+p.t)) return -1;
+        let score = 0;
+        if (p.era === topEra) score += 3;
+        if (p.nat === topNat) score += 1;
+        if (p.focus) p.focus.forEach(f => { if (focusPool.includes(f)) score += 2; });
+        return score;
+    };
+
+    // Score function for "try something different"
+    const scoreDifferent = (p) => {
+        if (savedKeys.has(p.c+"||"+p.t)) return -1;
+        let score = 0;
+        if (p.era === leastEra) score += 4;
+        else if (!eraCounts[p.era]) score += 3; // era never listened
+        if (p.nat && !natCounts[p.nat]) score += 2; // nationality never listened
+        if (p.focus) p.focus.forEach(f => { if (!focusPool.includes(f)) score += 1; });
+        return score;
+    };
+
+    // Shuffle for variety, then score
+    const shuffled = [...corpus].sort(() => Math.random() - 0.5);
+
+    const moreLike = shuffled
+        .map(p => ({ p, score: scoreSimilar(p) }))
+        .filter(x => x.score > 0)
+        .sort((a,b) => b.score - a.score)
+        .slice(0, count)
+        .map(x => x.p);
+
+    const tryDifferent = shuffled
+        .map(p => ({ p, score: scoreDifferent(p) }))
+        .filter(x => x.score > 0)
+        .sort((a,b) => b.score - a.score)
+        .slice(0, count)
+        .map(x => x.p);
+
+    return { moreLike, tryDifferent, topEra, leastEra };
+}
+
+/* ── For You Panel ── */
+function ForYouPanel({ interests, onLoginRequired, openVideo, user, onSearch }) {
+    const { moreLike, tryDifferent, topEra, leastEra } = useMemo(
+        () => getRecommendations(interests, CORPUS, 5),
+        [interests]
+    );
+
+    if (interests.length === 0) return null;
+
+    const MiniCard = ({ p }) => (
+        <div style={{background:"white",border:"1px solid #f1f5f9",borderRadius:12,padding:"12px 14px",marginBottom:8}}>
+            <div className="flex gap-1 mb-1.5">
+                <span className="text-[9px] font-black px-1.5 py-0.5 rounded text-white"
+                    style={{background: p._syllabus==="ABRSM"?"#7c3aed":"#4f46e5"}}>{p._grade}</span>
+                {p.era && <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${eraClass(p.era)}`}>{p.era}</span>}
+            </div>
+            <div className="text-[13px] font-bold text-slate-800 leading-snug mb-0.5">{p.t}</div>
+            <div className="text-[11px] text-slate-400 mb-2">
+                <a href={COMPOSER_LINKS[p.c] || `https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(p.c.replace(/,.*/, '').trim())}`} target="_blank" rel="noopener noreferrer" className="hover:underline hover:text-slate-600 transition-colors">{p.c}</a>
+                {p.nat && <span className="text-slate-300"> · {p.nat}</span>}
+            </div>
+            <div className="flex gap-1.5">
+                <button onClick={() => openVideo(p.c, p.t)}
+                    className="px-2.5 py-1 bg-red-600 text-white text-[10px] font-bold rounded-lg">▶</button>
+                <a href={sheetUrl(p.c, p.t)} target="_blank" rel="noopener noreferrer"
+                    style={{fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:6,border:"1px solid #2e2e2e",background:"transparent",color:"#666",cursor:"pointer",textDecoration:"none"}}>Score</a>
+                <button onClick={() => onSearch(p.era)}
+                    style={{fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:6,border:"1px solid #2e2e2e",background:"transparent",color:"#666",cursor:"pointer"}}>More {p.era}</button>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="mt-6">
+            <div className="flex items-center gap-2 mb-4">
+                <div className="w-1 h-5 bg-amber-400 rounded-full"></div>
+                <span className="text-[11px] font-black uppercase tracking-widest text-slate-400">For You</span>
+                <span className="text-[10px] text-slate-300 font-medium">· based on {interests.length} saved piece{interests.length>1?"s":""}</span>
+            </div>
+
+            {moreLike.length > 0 && (
+                <div className="mb-5">
+                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-300 mb-2">
+                        More like what you love {topEra && <span className="text-indigo-300">· {topEra}</span>}
+                    </div>
+                    {moreLike.map((p,i) => <MiniCard key={i} p={p} />)}
+                </div>
+            )}
+
+            {tryDifferent.length > 0 && (
+                <div>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-300 mb-2">
+                        Broaden your repertoire {leastEra && <span className="text-emerald-400">→ {leastEra}</span>}
+                    </div>
+                    {tryDifferent.map((p,i) => <MiniCard key={i} p={p} />)}
+                </div>
+            )}
+        </div>
+    );
+}
+
+/* ── Add to List Modal (local-first) ── */
+function AddToListModal({ piece, user, onClose, onListsChanged }) {
+    const [lists, setLists]       = useState(() => loadLists());
+    const [added, setAdded]       = useState(new Set());
+    const [showCreate, setShowCreate] = useState(false);
+    const [newName, setNewName]   = useState("");
+    const [newType, setNewType]   = useState("student");
+    const [newDesc, setNewDesc]   = useState("");
+
+    const sync = () => { const l = loadLists(); setLists(l); if(onListsChanged) onListsChanged(l); };
+
+    const handleAdd = (listId) => {
+        const ok = addPieceToList(listId, piece);
+        if (ok) { setAdded(prev => new Set([...prev, listId])); sync(); }
+    };
+
+    const handleCreate = () => {
+        if (!newName.trim()) return;
+        const lst = createLocalList({ name: newName.trim(), type: newType, description: newDesc.trim() });
+        addPieceToList(lst.id, piece);
+        setAdded(prev => new Set([...prev, lst.id]));
+        setShowCreate(false); setNewName(""); setNewDesc("");
+        sync();
+    };
+
+    const isInList = (lst) => lst.pieces.some(p => p.composer===piece.c && p.title===piece.t);
+
+    return (
+        <div style={{position:"fixed",inset:0,zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",padding:16,background:"rgba(0,0,0,0.35)"}}
+            onClick={onClose}>
+            <div style={{background:"white",borderRadius:16,width:"100%",maxWidth:360,boxShadow:"0 20px 50px rgba(0,0,0,0.12)",border:"1px solid #333",overflow:"hidden"}}
+                onClick={e=>e.stopPropagation()}>
+                {/* Header */}
+                <div style={{padding:"16px 18px 12px",borderBottom:"1px solid #f1f5f9"}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
+                        <div>
+                            <div style={{fontSize:13,fontWeight:700,color:"#e8e3dc"}}>Add to list</div>
+                            <div style={{fontSize:11,color:"#666",marginTop:2,maxWidth:260,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{piece.t} · {piece.c}</div>
+                        </div>
+                        <button onClick={onClose} style={{background:"none",border:"none",fontSize:18,color:"#666",cursor:"pointer",lineHeight:1,padding:0}}>×</button>
+                    </div>
+                </div>
+
+                {/* Existing lists */}
+                <div style={{maxHeight:240,overflowY:"auto"}}>
+                    {lists.length === 0 && !showCreate && (
+                        <div style={{padding:"24px 18px",textAlign:"center",color:"#94a3b8",fontSize:12}}>
+                            No lists yet — create one below
+                        </div>
+                    )}
+                    {lists.map(lst => {
+                        const ti = listTypeInfo(lst.type);
+                        const inList = isInList(lst) || added.has(lst.id);
+                        return (
+                            <div key={lst.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 18px",borderBottom:"1px solid #f8fafc"}}>
+                                <div style={{flex:1,minWidth:0}}>
+                                    <div style={{display:"flex",alignItems:"center",gap:6}}>
+                                        <span style={{fontSize:10,fontWeight:700,padding:"2px 7px",borderRadius:6,background:ti.bg,color:ti.color}}>{ti.label}</span>
+                                        <span style={{fontSize:12,fontWeight:600,color:"#334155",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{lst.name}</span>
+                                    </div>
+                                    <div style={{fontSize:10,color:"#94a3b8",marginTop:2}}>{lst.pieces.length} piece{lst.pieces.length!==1?"s":""}</div>
+                                </div>
+                                <button onClick={() => handleAdd(lst.id)} disabled={inList}
+                                    style={{fontSize:11,fontWeight:700,padding:"5px 12px",borderRadius:8,border:"none",cursor:inList?"default":"pointer",
+                                        background: inList ? "#f0fdf4" : "#4f46e5",
+                                        color:      inList ? "#16a34a" : "white",
+                                        transition:"all 0.15s", marginLeft:8, flexShrink:0}}>
+                                    {inList ? "✓ Added" : "+ Add"}
+                                </button>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* Create new */}
+                {showCreate ? (
+                    <div style={{padding:"14px 18px",borderTop:"1px solid #f1f5f9",background:"#fafafa"}}>
+                        <input value={newName} onChange={e=>setNewName(e.target.value)}
+                            placeholder="List name (e.g. Sophie Kim, Winter Concert)"
+                            autoFocus
+                            style={{width:"100%",fontSize:12,padding:"8px 10px",borderRadius:8,border:"1px solid #333",outline:"none",marginBottom:8,boxSizing:"border-box",fontFamily:"inherit"}} />
+                        <div style={{display:"flex",gap:4,marginBottom:8,flexWrap:"wrap"}}>
+                            {LIST_TYPES.map(t => (
+                                <button key={t.value} onClick={() => setNewType(t.value)}
+                                    style={{fontSize:11,fontWeight:600,padding:"4px 10px",borderRadius:20,border:`1.5px solid ${newType===t.value?t.color:t.bg}`,
+                                        background: newType===t.value ? t.bg : "white",
+                                        color: newType===t.value ? t.color : "#94a3b8",
+                                        cursor:"pointer", transition:"all 0.1s"}}>
+                                    {t.label}
+                                </button>
+                            ))}
+                        </div>
+                        <input value={newDesc} onChange={e=>setNewDesc(e.target.value)}
+                            placeholder="Note (optional — e.g. Grade 4 AMEB, Exam Oct 2026)"
+                            style={{width:"100%",fontSize:11,padding:"7px 10px",borderRadius:8,border:"1px solid #333",outline:"none",marginBottom:10,boxSizing:"border-box",fontFamily:"inherit",color:"#475569"}} />
+                        <div style={{display:"flex",gap:6}}>
+                            <button onClick={handleCreate} disabled={!newName.trim()}
+                                style={{flex:1,fontSize:12,fontWeight:700,padding:"8px 0",borderRadius:8,border:"none",
+                                    background: newName.trim() ? "#4f46e5" : "#e2e8f0",
+                                    color: newName.trim() ? "white" : "#94a3b8", cursor:"pointer"}}>
+                                Create &amp; add piece
+                            </button>
+                            <button onClick={() => setShowCreate(false)}
+                                style={{fontSize:12,fontWeight:600,padding:"8px 14px",borderRadius:8,border:"1px solid #333",background:"white",color:"#94a3b8",cursor:"pointer"}}>
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <div style={{padding:"12px 18px",borderTop:"1px solid #f1f5f9"}}>
+                        <button onClick={() => setShowCreate(true)}
+                            style={{width:"100%",fontSize:12,fontWeight:600,padding:"8px 0",borderRadius:8,border:"1.5px dashed #e2e8f0",background:"#fafafa",color:"#6366f1",cursor:"pointer"}}>
+                            + New list
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+/* ── My Lists Panel ── */
+function MyListsPanel({ user, onClose }) {
+    const [lists, setLists]       = useState(() => loadLists());
+    const [openList, setOpenList] = useState(null);
+    const [editingId, setEditingId] = useState(null);
+    const [editName, setEditName] = useState("");
+    const [editDesc, setEditDesc] = useState("");
+    const [copied, setCopied]     = useState(false);
+    const [printMode, setPrintMode] = useState(false);
+
+    const sync = () => setLists(loadLists());
+
+    useEffect(() => {
+        const handler = () => sync();
+        window.addEventListener("pb_lists_changed", handler);
+        return () => window.removeEventListener("pb_lists_changed", handler);
+    }, []);
+
+    const handleRemovePiece = (listId, composerTitle) => {
+        removePieceFromList(listId, composerTitle);
+        sync();
+        if (openList?.id === listId) setOpenList(loadLists().find(l=>l.id===listId)||null);
+    };
+
+    const handleDeleteList = (listId, name) => {
+        if (!window.confirm(`Delete "${name}"?`)) return;
+        deleteList(listId);
+        sync();
+        if (openList?.id === listId) setOpenList(null);
+    };
+
+    const handleSaveEdit = (listId) => {
+        updateList(listId, { name: editName, description: editDesc });
+        sync();
+        if (openList?.id === listId) setOpenList(loadLists().find(l=>l.id===listId)||null);
+        setEditingId(null);
+    };
+
+    const copyLocalLink = () => {
+        const data = JSON.stringify(openList);
+        const b64 = btoa(unescape(encodeURIComponent(data)));
+        const url = `${location.origin}${location.pathname}?locallist=${b64}`;
+        navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(()=>setCopied(false),2000); });
+    };
+
+    const handlePrint = () => {
+        const lst = openList;
+        const ti = listTypeInfo(lst.type);
+        const win = window.open("","_blank");
+        win.document.write(`<!DOCTYPE html><html><head><title>${lst.name}</title>
+        <style>
+          body { font-family: -apple-system, sans-serif; padding: 40px; color: #1e293b; }
+          h1 { font-size: 22px; font-weight: 700; margin: 0 0 4px; }
+          .meta { font-size: 12px; color: #64748b; margin-bottom: 6px; }
+          .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: ${ti.bg}; color: ${ti.color}; margin-bottom: 20px; }
+          .desc { font-size: 13px; color: #475569; margin: -10px 0 20px; font-style: italic; }
+          table { width: 100%; border-collapse: collapse; }
+          th { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #94a3b8; padding: 6px 10px; border-bottom: 2px solid #f1f5f9; text-align: left; }
+          td { font-size: 13px; padding: 10px 10px; border-bottom: 1px solid #f8fafc; vertical-align: top; }
+          .num { color: #94a3b8; font-size: 11px; }
+          .grade { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: #eef2ff; color: #4f46e5; }
+          .era { font-size: 10px; color: #888; }
+          .footer { margin-top: 30px; font-size: 11px; color: #cbd5e1; text-align: center; }
+          @media print { body { padding: 20px; } }
+        </style></head><body>
+        <h1>${lst.name}</h1>
+        <span class="badge">${ti.label}</span>
+        ${lst.description ? `<p class="desc">${lst.description}</p>` : ""}
+        <p class="meta">${lst.pieces.length} piece${lst.pieces.length!==1?"s":""} · Generated ${new Date().toLocaleDateString("en-AU",{day:"numeric",month:"long",year:"numeric"})}</p>
+        <table>
+          <thead><tr><th>#</th><th>Piece</th><th>Composer</th><th>Grade</th><th>Era</th></tr></thead>
+          <tbody>
+            ${lst.pieces.map((p,i)=>`<tr>
+              <td class="num">${i+1}</td>
+              <td><strong>${p.title}</strong></td>
+              <td>${p.composer}</td>
+              <td><span class="grade">${p.grade||""}</span></td>
+              <td class="era">${p.era||""}</td>
+            </tr>`).join("")}
+          </tbody>
+        </table>
+        <div class="footer">Piano Butler · <a href="https://thepianobutler.com">thepianobutler.com</a></div>
+        </body></html>`);
+        win.document.close();
+        win.print();
+    };
+
+    const currentList = openList ? lists.find(l=>l.id===openList.id) || openList : null;
+
+    return (
+        <div style={{position:"fixed",inset:0,zIndex:400,display:"flex",alignItems:"flex-start",justifyContent:"flex-end"}}
+            onClick={onClose}>
+            <div style={{background:"white",width:"100%",maxWidth:440,height:"100vh",overflowY:"auto",boxShadow:"-4px 0 24px rgba(0,0,0,0.08)",display:"flex",flexDirection:"column",borderLeft:"1px solid #f1f5f9"}}
+                onClick={e=>e.stopPropagation()}>
+
+                {/* ── Header ── */}
+                <div style={{padding:"18px 20px 14px",borderBottom:"1px solid #f1f5f9",position:"sticky",top:0,background:"white",zIndex:10}}>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8}}>
+                            {currentList && (
+                                <button onClick={()=>setOpenList(null)}
+                                    style={{background:"none",border:"none",fontSize:14,color:"#94a3b8",cursor:"pointer",padding:"0 4px 0 0"}}>←</button>
+                            )}
+                            <span style={{fontSize:15,fontWeight:700,color:"#1e293b"}}>
+                                {currentList ? currentList.name : "My Lists"}
+                            </span>
+                            {currentList && (
+                                <span style={{fontSize:10,fontWeight:600,padding:"2px 8px",borderRadius:20,
+                                    background: listTypeInfo(currentList.type).bg,
+                                    color: listTypeInfo(currentList.type).color}}>
+                                    {listTypeInfo(currentList.type).label}
+                                </span>
+                            )}
+                        </div>
+                        <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                            {currentList && <>
+                                <button onClick={handlePrint}
+                                    style={{fontSize:11,fontWeight:600,padding:"5px 10px",borderRadius:8,border:"1px solid #333",background:"#fafafa",color:"#475569",cursor:"pointer"}}>
+                                    Print / PDF
+                                </button>
+                                <button onClick={copyLocalLink}
+                                    style={{fontSize:11,fontWeight:600,padding:"5px 10px",borderRadius:8,border:"1px solid #333",
+                                        background: copied?"#f0fdf4":"#fafafa", color: copied?"#16a34a":"#475569",cursor:"pointer"}}>
+                                    {copied ? "✓ Copied" : "Share"}
+                                </button>
+                            </>}
+                            <button onClick={onClose}
+                                style={{background:"none",border:"none",fontSize:20,color:"#666",cursor:"pointer",lineHeight:1,padding:0}}>×</button>
+                        </div>
+                    </div>
+                    {currentList?.description && (
+                        <div style={{fontSize:11,color:"#666",marginTop:6,fontStyle:"italic"}}>{currentList.description}</div>
+                    )}
+                </div>
+
+                {/* ── List detail view ── */}
+                {currentList ? (
+                    <div style={{flex:1}}>
+                        {/* Edit name/desc */}
+                        {editingId === currentList.id ? (
+                            <div style={{padding:"12px 20px",background:"#fafafa",borderBottom:"1px solid #f1f5f9"}}>
+                                <input value={editName} onChange={e=>setEditName(e.target.value)}
+                                    style={{width:"100%",fontSize:13,padding:"7px 10px",borderRadius:8,border:"1px solid #333",outline:"none",marginBottom:6,boxSizing:"border-box",fontFamily:"inherit"}} />
+                                <input value={editDesc} onChange={e=>setEditDesc(e.target.value)}
+                                    placeholder="Description (optional)"
+                                    style={{width:"100%",fontSize:11,padding:"6px 10px",borderRadius:8,border:"1px solid #333",outline:"none",marginBottom:8,boxSizing:"border-box",fontFamily:"inherit",color:"#475569"}} />
+                                <div style={{display:"flex",gap:6}}>
+                                    <button onClick={()=>handleSaveEdit(currentList.id)}
+                                        style={{fontSize:12,fontWeight:700,padding:"6px 16px",borderRadius:8,border:"none",background:"#4f46e5",color:"white",cursor:"pointer"}}>Save</button>
+                                    <button onClick={()=>setEditingId(null)}
+                                        style={{fontSize:12,fontWeight:600,padding:"6px 12px",borderRadius:8,border:"1px solid #333",background:"white",color:"#94a3b8",cursor:"pointer"}}>Cancel</button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div style={{padding:"8px 20px",borderBottom:"1px solid #f8fafc",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                                <span style={{fontSize:11,color:"#666"}}>{currentList.pieces.length} piece{currentList.pieces.length!==1?"s":""}</span>
+                                <div style={{display:"flex",gap:8}}>
+                                    <button onClick={()=>{setEditingId(currentList.id);setEditName(currentList.name);setEditDesc(currentList.description||"");}}
+                                        style={{fontSize:11,fontWeight:600,color:"#d4956a",background:"none",border:"none",cursor:"pointer",padding:0}}>Edit</button>
+                                    <button onClick={()=>handleDeleteList(currentList.id, currentList.name)}
+                                        style={{fontSize:11,fontWeight:600,color:"#f87171",background:"none",border:"none",cursor:"pointer",padding:0}}>Delete list</button>
+                                </div>
+                            </div>
+                        )}
+
+                        {currentList.pieces.length === 0 ? (
+                            <div style={{padding:"40px 20px",textAlign:"center",color:"#94a3b8",fontSize:13}}>
+                                No pieces yet — use "+ List" on any piece to add here
+                            </div>
+                        ) : currentList.pieces.map((pc, i) => {
+                            const syllBg = pc.syllabus==="ABRSM" ? "#ede9fe" : "#eef2ff";
+                            const syllCol = pc.syllabus==="ABRSM" ? "#6d28d9" : "#4f46e5";
+                            return (
+                                <div key={i} style={{display:"flex",alignItems:"center",padding:"11px 20px",borderBottom:"1px solid #f8fafc"}}>
+                                    <span style={{fontSize:11,color:"#555",minWidth:22,flexShrink:0}}>{i+1}</span>
+                                    <div style={{flex:1,minWidth:0}}>
+                                        <div style={{display:"flex",gap:4,marginBottom:3,flexWrap:"wrap",alignItems:"center"}}>
+                                            {pc.grade && <span style={{fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:4,background:syllBg,color:syllCol}}>{pc.grade}</span>}
+                                            {pc.era && <span style={{fontSize:9,color:"#94a3b8",fontWeight:500}}>{pc.era}</span>}
+                                        </div>
+                                        <div style={{fontSize:13,fontWeight:600,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{pc.title}</div>
+                                        <div style={{fontSize:11,color:"#666",marginTop:1}}>{pc.composer}</div>
+                                    </div>
+                                    <button onClick={()=>handleRemovePiece(currentList.id, pc.composer+"||"+pc.title)}
+                                        style={{background:"none",border:"none",fontSize:14,color:"#e2e8f0",cursor:"pointer",padding:"0 0 0 8px",flexShrink:0,lineHeight:1}}
+                                        onMouseOver={e=>e.target.style.color="#f87171"}
+                                        onMouseOut={e=>e.target.style.color="#e2e8f0"}>×</button>
+                                </div>
+                            );
+                        })}
+
+                        {/* Login upsell if not signed in */}
+                        {!user && (
+                            <div style={{margin:"16px 20px",padding:"12px 14px",borderRadius:10,background:"#fafafa",border:"1px solid #f1f5f9"}}>
+                                <div style={{fontSize:11,fontWeight:700,color:"#334155",marginBottom:4}}>Sign in to sync &amp; share</div>
+                                <div style={{fontSize:11,color:"#666",marginBottom:8,lineHeight:1.5}}>Your lists are saved in this browser. Sign in to access them on any device and share with students or parents.</div>
+                                <button onClick={()=>{onClose(); setTimeout(()=>document.querySelector('[data-signin]')?.click(),100);}}
+                                    style={{fontSize:11,fontWeight:700,padding:"6px 14px",borderRadius:8,border:"none",background:"#4f46e5",color:"white",cursor:"pointer"}}>
+                                    Sign in free
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    /* ── Lists overview ── */
+                    <div style={{flex:1}}>
+                        {lists.length === 0 ? (
+                            <div style={{padding:"48px 20px",textAlign:"center"}}>
+                                <div style={{fontSize:32,marginBottom:12}}>📋</div>
+                                <div style={{fontSize:13,fontWeight:700,color:"#334155",marginBottom:6}}>No lists yet</div>
+                                <div style={{fontSize:12,color:"#94a3b8",lineHeight:1.6,marginBottom:20}}>
+                                    Click "+ List" on any piece to start organising<br/>by student, concert, or exam.
+                                </div>
+                                <div style={{fontSize:11,color:"#666"}}>
+                                    {LIST_TYPES.map(t=>(
+                                        <span key={t.value} style={{display:"inline-block",margin:"3px 4px",padding:"3px 10px",borderRadius:20,background:t.bg,color:t.color,fontWeight:600}}>{t.label}</span>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            <div>
+                                {/* Group by type */}
+                                {LIST_TYPES.map(ti => {
+                                    const filtered = lists.filter(l=>l.type===ti.value);
+                                    if (filtered.length===0) return null;
+                                    return (
+                                        <div key={ti.value}>
+                                            <div style={{padding:"10px 20px 4px",fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.1em",color:"#555"}}>
+                                                {ti.label}
+                                            </div>
+                                            {filtered.map(lst => (
+                                                <div key={lst.id}
+                                                    style={{display:"flex",alignItems:"center",padding:"12px 20px",borderBottom:"1px solid #f8fafc",cursor:"pointer",transition:"background 0.1s"}}
+                                                    onMouseOver={e=>e.currentTarget.style.background="#fafafa"}
+                                                    onMouseOut={e=>e.currentTarget.style.background="white"}
+                                                    onClick={()=>setOpenList(lst)}>
+                                                    <div style={{flex:1,minWidth:0}}>
+                                                        <div style={{fontSize:13,fontWeight:600,color:"#1e293b",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{lst.name}</div>
+                                                        {lst.description && <div style={{fontSize:11,color:"#666",marginTop:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{lst.description}</div>}
+                                                        <div style={{fontSize:11,color:"#666",marginTop:2}}>{lst.pieces.length} piece{lst.pieces.length!==1?"s":""}</div>
+                                                    </div>
+                                                    <div style={{display:"flex",alignItems:"center",gap:6,marginLeft:10}}>
+                                                        <button onClick={e=>{e.stopPropagation();handleDeleteList(lst.id,lst.name);}}
+                                                            style={{background:"none",border:"none",fontSize:12,color:"#e2e8f0",cursor:"pointer",padding:0,lineHeight:1}}
+                                                            onMouseOver={e=>e.target.style.color="#f87171"}
+                                                            onMouseOut={e=>e.target.style.color="#e2e8f0"}>✕</button>
+                                                        <span style={{color:"#e2e8f0",fontSize:14}}>›</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {/* Login upsell (not signed in) */}
+                        {!user && lists.length > 0 && (
+                            <div style={{margin:"12px 20px",padding:"12px 14px",borderRadius:10,background:"#fafafa",border:"1px solid #f1f5f9"}}>
+                                <div style={{fontSize:11,fontWeight:700,color:"#334155",marginBottom:4}}>Saved in this browser</div>
+                                <div style={{fontSize:11,color:"#666",lineHeight:1.5}}>Sign in to sync across devices and share lists with a link.</div>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+/* ── Piece Row ── */
+function PieceRow({ p, user, onLoginRequired, openVideo, onAddToList }) {
+    const [interests, setInterests] = useState(() => loadInterests());
+    const isStarred = interests.some(i => i.composer===p.c && i.title===p.t);
+
+    const toggleStar = () => {
+        let updated;
+        if (isStarred) {
+            updated = interests.filter(i => !(i.composer===p.c && i.title===p.t));
+        } else {
+            updated = [...interests, { composer:p.c, title:p.t, grade:p._grade, gradeKey:p._gradeKey, list:p.l, era:p.era, nat:p.nat, focus:p.focus||[] }];
+        }
+        setInterests(updated);
+        saveInterests(updated);
+    };
+
+    const syllabusColor = p._syllabus==="ABRSM" ? "#7c3aed" : p._syllabus==="ABRSM Diploma" ? "#4c1d95" : p._syllabus==="AMEB Diploma" ? "#0f766e" : p._syllabus==="Trinity" ? "#b91c1c" : p._syllabus==="Trinity Diploma" ? "#7f1d1d" : "#4f46e5";
+
+    // Syllabus badge label + style
+    const syllabusBadge = (() => {
+        if (p._syllabus==="ABRSM")            return { label:"ABRSM",            bg:"#7c3aed", text:"#fff" };
+        if (p._syllabus==="ABRSM Diploma")    return { label:"ABRSM Diploma",    bg:"#4c1d95", text:"#fff" };
+        if (p._syllabus==="AMEB Diploma")     return { label:"AMEB Diploma",     bg:"#0f766e", text:"#fff" };
+        if (p._syllabus==="Trinity")          return { label:"Trinity",           bg:"#b91c1c", text:"#fff" };
+        if (p._syllabus==="Trinity Diploma")  return { label:"Trinity Diploma",   bg:"#7f1d1d", text:"#fff" };
+        if (p._type==="Leisure")              return { label:"AMEB Leisure",      bg:"#0891b2", text:"#fff" };
+        return                                       { label:"AMEB",              bg:"#4f46e5", text:"#fff" };
+    })();
+
+    return (
+        <div className="piece-row fade-in">
+            <div className="flex items-start gap-3">
+                {/* Left: all text info */}
+                <div className="flex-1 min-w-0">
+                    {/* Badges row */}
+                    <div className="flex flex-wrap gap-1 items-center mb-1.5">
+                        {/* Syllabus badge — always visible */}
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                            style={{background: syllabusBadge.bg, color: syllabusBadge.text}}>
+                            {syllabusBadge.label}
+                        </span>
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded text-white"
+                            style={{background: syllabusColor}}>
+                            {p._grade}
+                        </span>
+                        {p.l && (
+                            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded"
+                                style={{background:"#f1f5f9", color:"#94a3b8"}}>
+                                List {p.l}
+                            </span>
+                        )}
+                        {p.s && (() => {
+                            const sc = {
+                                S19:{bg:"#dbeafe",color:"#1d4ed8"},
+                                S18:{bg:"#e0e7ff",color:"#3730a3"},
+                                S17:{bg:"#ede9fe",color:"#6d28d9"},
+                                AustAnth:{bg:"#fef9c3",color:"#92400e"},
+                                Manual:{bg:"#f1f5f9",color:"#475569"},
+                                S4:{bg:"#d1fae5",color:"#065f46"},
+                                S3:{bg:"#ccfbf1",color:"#0f766e"},
+                                S2:{bg:"#cffafe",color:"#0e7490"},
+                                S1:{bg:"#dcfce7",color:"#166534"},
+                            };
+                            const style = sc[p.s] || {bg:"#f1f5f9",color:"#666"};
+                            return <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded" style={{background:style.bg,color:style.color}}>{p.s}</span>;
+                        })()}
+                        {p.era && (
+                            <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${eraClass(p.era)}`}>{p.era}</span>
+                        )}
+                        {p.nat && (
+                            <span className="text-[9px] text-slate-400 font-medium">{p.nat}</span>
+                        )}
+                    </div>
+
+                    {/* Title */}
+                    <div className="text-[14px] font-bold leading-snug mb-0.5" style={{color:"#e8e3dc"}}>{p.t}</div>
+
+                    {/* Composer */}
+                    <div className="text-[11px] font-medium mb-2.5" style={{color:"#666"}}>
+                        <a href={COMPOSER_LINKS[p.c] || `https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(p.c.replace(/,.*/, '').trim())}`}
+                            target="_blank" rel="noopener noreferrer"
+                            style={{color:"#666", textDecoration:"none"}}
+                            onMouseOver={e=>e.target.style.color="#d4956a"}
+                            onMouseOut={e=>e.target.style.color="#666"}>
+                            {p.c}
+                        </a>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-1.5 items-center">
+                        <button onClick={() => openVideo(p.c, p.t)}
+                            className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-md"
+                            style={{background:"#222", color:"#888", border:"1px solid #2e2e2e"}}>
+                            ▶ Listen
+                        </button>
+                        <a href={sheetUrl(p.c, p.t)} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold rounded-md"
+                            style={{background:"#222", color:"#888", border:"1px solid #2e2e2e", textDecoration:"none"}}>
+                            Score
+                        </a>
+                        <button onClick={() => onAddToList(p)}
+                            className="px-2.5 py-1 text-[10px] font-semibold rounded-md"
+                            style={{background:"none", color:"#666", border:"1px solid #2e2e2e"}}>
+                            + List
+                        </button>
+                    </div>
+                </div>
+
+                {/* Right: star only */}
+                <button onClick={toggleStar}
+                    className="shrink-0 text-[16px] leading-none mt-0.5"
+                    title={isStarred ? "Remove from saved" : "Save"}
+                    style={{color: isStarred ? "#d4956a" : "#444", background:"none", border:"none", cursor:"pointer", padding:"2px"}}>
+                    {isStarred ? "★" : "☆"}
+                </button>
+            </div>
+        </div>
+    );
+}
+
+/* ── Grade cards (home) ── */
+function GradeGrid({ onGradeClick, activeSyllabus, setActiveSyllabus }) {
+    return (
+        <div>
+            {/* Syllabus toggle */}
+            <div className="flex items-center gap-1 mb-4" style={{borderBottom:"1px solid #2a2a2a", paddingBottom:12}}>
+                {[["AMEB","AMEB","#4f46e5"],["ABRSM","ABRSM","#7c3aed"],["Trinity","Trinity","#b91c1c"]].map(([val,lbl,col]) => (
+                    <button key={val} onClick={() => setActiveSyllabus(val)}
+                        className="px-3 py-1.5 text-[11px] font-bold rounded-lg transition-all"
+                        style={{
+                            background:  activeSyllabus===val ? "#2a2218" : "transparent",
+                            color:       activeSyllabus===val ? "#d4956a" : "#555",
+                            border:      "none",
+                        }}>
+                        {lbl}
+                    </button>
+                ))}
+            </div>
+
+            {/* Grade cards — 3 col */}
+            {activeSyllabus === "Trinity" ? (
+                <div className="grid grid-cols-3 gap-2.5">
+                    {TRINITY_META.map(g => (
+                        <a key={g.key} href={g.url}
+                            className="grade-card block"
+                            style={{background:"#271e1e", borderLeft:"3px solid #b91c1c44", textDecoration:"none"}}>
+                            <div style={{fontSize:9, fontWeight:700, color:"#b91c1c99", marginBottom:4, textTransform:"uppercase", letterSpacing:"0.08em"}}>Trinity</div>
+                            <div style={{fontSize:15, fontWeight:900, color:"#e8e3dc", lineHeight:1.1, letterSpacing:"-0.01em"}}>{g.label}</div>
+                        </a>
+                    ))}
+                </div>
+            ) : (
+                <div className="grid grid-cols-3 gap-2.5">
+                    {(activeSyllabus === "AMEB" ? GRADE_META : ABRSM_META).map(g => (
+                        <button key={g.key} onClick={() => onGradeClick(g.key)}
+                            className="grade-card"
+                            style={{background: "#222", borderLeft:`3px solid ${g.accent}44`}}>
+                            <div style={{fontSize:9, fontWeight:700, color: g.accent+"99", marginBottom:4, textTransform:"uppercase", letterSpacing:"0.08em"}}>{activeSyllabus}</div>
+                            <div style={{fontSize:15, fontWeight:900, color:"#e8e3dc", lineHeight:1.1, letterSpacing:"-0.01em"}}>{g.label}</div>
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            {/* Diploma cards */}
+            {(() => {
+                const amebDip   = DIPLOMA_META.filter(g => g.key!=="LRSM" && g.key!=="FRSM");
+                const abrsmdip  = DIPLOMA_META.filter(g => g.key==="LRSM" || g.key==="FRSM");
+                const triDip    = TRINITY_DIPLOMA_META;
+                const showAmeb  = activeSyllabus === "AMEB";
+                const showAbrsm = activeSyllabus === "ABRSM";
+                const showTrinity = activeSyllabus === "Trinity";
+                if (!showAmeb && !showAbrsm && !showTrinity) return null;
+                const diplomas = showAmeb ? amebDip : showAbrsm ? abrsmdip : triDip;
+                return (
+                    <div className="mt-4">
+                        <div style={{fontSize:9,fontWeight:700,textTransform:"uppercase",letterSpacing:"0.12em",color:"#444",marginBottom:8}}>Diploma</div>
+                        <div className="grid grid-cols-3 gap-3">
+                            {diplomas.map(g => (
+                                <a key={g.key} href={g.url}
+                                    className="grade-card block"
+                                    style={{background: "#222", borderLeft:`3px solid ${g.accent}44`, textDecoration:"none"}}>
+                                    <div style={{fontSize:10, fontWeight:700, color: g.accent+"99", marginBottom:3, textTransform:"uppercase", letterSpacing:"0.06em"}}>{g.key.replace("T","")}</div>
+                                    <div style={{fontSize:14, fontWeight:800, color:"#e8e3dc", lineHeight:1.1}}>{g.label}</div>
+                                    <div style={{fontSize:10, color:"#555", marginTop:3}}>{g.program}</div>
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                );
+            })()}
+        </div>
+    );
+}
+
+/* ── Main App ── */
+/* ── Fuzzy composer surnames — computed ONCE at module load, never rebuilt on keystrokes ── */
+
+function App() {
+    const [user, setUser]                   = useState(null);
+    const [query, setQuery]                 = useState("");
+    const [eraFilter, setEraFilter]         = useState("All");
+    const [gradeFilter, setGradeFilter]     = useState("All");
+    const [natFilter, setNatFilter]         = useState("All");
+    const [syllabusFilter, setSyllabusFilter] = useState("All");
+    const [listFilter, setListFilter]       = useState("All");
+    const [searchTriggered, setSearchTriggered] = useState(false);
+    const [searchQuery, setSearchQuery] = useState(""); // debounced — drives actual filtering
+    const [showLogin, setShowLogin]         = useState(false);
+    const [activeSyllabus, setActiveSyllabus] = useState("AMEB");
+    const [interests, setInterests]         = useState(() => loadInterests());
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [listModalPiece, setListModalPiece] = useState(null);   // piece to add to list
+    const [showMyLists, setShowMyLists]       = useState(false);  // my lists panel
+    const [sharedList, setSharedList]         = useState(null);   // { list, pieces } for shared view
+    const searchInputRef = React.useRef(null);
+    const { modal: videoModal, open: openVideo, close: closeVideo } = useVideoModal();
+
+    /* Debounce search filtering only — input display stays instant */
+    useEffect(() => {
+        if (!query.trim()) { setSearchQuery(""); return; }
+        const t = setTimeout(() => setSearchQuery(query), 200);
+        return () => clearTimeout(t);
+    }, [query]);
+
+
+    /* Check for shared list URL param on load — local-first base64 only */
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const b64 = params.get("locallist");
+        if (!b64) return;
+        try {
+            const lst = JSON.parse(decodeURIComponent(escape(atob(b64))));
+            if (lst && lst.name && Array.isArray(lst.pieces)) {
+                setSharedList({ list: lst, pieces: lst.pieces });
+            }
+        } catch(e) {
+            console.warn("Invalid shared list URL", e);
+        }
+    }, []);
+
+    /* Handle add-to-list click: no login required (local-first) */
+    const handleAddToList = (piece) => {
+        setListModalPiece(piece);
+    };
+
+    /* Sync interests state when localStorage changes (e.g. from PieceRow) */
+    useEffect(() => {
+        const sync = () => setInterests(loadInterests());
+        window.addEventListener("pb_interests_changed", sync);
+        return () => window.removeEventListener("pb_interests_changed", sync);
+    }, []);
+
+    /* Check session on load */
+    useEffect(() => {
+        _sb.auth.getSession().then(({ data: { session } }) => {
+            setUser(session?.user || null);
+        });
+        const { data: { subscription } } = _sb.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user || null);
+        });
+        return () => subscription.unsubscribe();
+    }, []);
+
+    const searchActive = searchTriggered || searchQuery.trim() || eraFilter!=="All" || gradeFilter!=="All" || natFilter!=="All" || syllabusFilter!=="All" || listFilter!=="All";
+
+    const handleClear = () => { setQuery(""); setSearchQuery(""); setEraFilter("All"); setGradeFilter("All"); setNatFilter("All"); setSyllabusFilter("All"); setListFilter("All"); setSearchTriggered(false); setShowSuggestions(false); };
+
+    /* Autocomplete suggestions — composers, titles, eras, nationalities, focus tags */
+    const autoSuggestions = useMemo(() => {
+        if (!query || query.trim().length < 2) return [];
+        const q = query.toLowerCase().trim();
+        const seen = new Set();
+        const composerHits = [], titleHits = [], eraHits = [], natHits = [], focusHits = [];
+
+        const ERAS_ALL = ["Baroque","Classical","Romantic","Modern","Contemporary"];
+        ERAS_ALL.forEach(e => {
+            if (e.toLowerCase().includes(q) && !seen.has("era:"+e)) {
+                seen.add("era:"+e);
+                eraHits.push({ type:"era", label:e, query:e });
+            }
+        });
+
+        CORPUS.forEach(p => {
+            if (p.c && p.c.toLowerCase().includes(q) && !seen.has("c:"+p.c)) {
+                seen.add("c:"+p.c);
+                composerHits.push({ type:"composer", label:p.c, query:p.c });
+            }
+            if (p.t && p.t.toLowerCase().includes(q) && !seen.has("t:"+p.t)) {
+                seen.add("t:"+p.t);
+                titleHits.push({ type:"title", label:p.t, query:p.t, composer:p.c });
+            }
+            if (p.nat) {
+                p.nat.split("/").forEach(n => {
+                    const nat = n.trim();
+                    if (nat.toLowerCase().includes(q) && !seen.has("nat:"+nat)) {
+                        seen.add("nat:"+nat);
+                        natHits.push({ type:"nationality", label:nat, query:nat });
+                    }
+                });
+            }
+            if (p.focus) {
+                p.focus.forEach(f => {
+                    if (f.toLowerCase().includes(q) && !seen.has("focus:"+f)) {
+                        seen.add("focus:"+f);
+                        focusHits.push({ type:"focus", label:f, query:f });
+                    }
+                });
+            }
+        });
+
+        // Priority: era > composer > nationality > title > focus, cap at 8
+        return [
+            ...eraHits.slice(0,1),
+            ...composerHits.slice(0,3),
+            ...natHits.slice(0,1),
+            ...titleHits.slice(0,2),
+            ...focusHits.slice(0,1),
+        ].slice(0,8);
+    }, [query]);
+
+    const handleGradeClick = (gradeKey) => { setGradeFilter(gradeKey); setSyllabusFilter(activeSyllabus); setSearchTriggered(true); };
+
+    const NAT_LIST = useMemo(() => {
+        const s = new Set();
+        CORPUS.forEach(p => { if (p.nat) p.nat.split("/").forEach(n => s.add(n.trim())); });
+        return ["All", ...Array.from(s).sort()];
+    }, []);
+
+    /* ── Multi-token AND search ──
+       Splits query into individual words. Every token must match at least one
+       of: title, composer, nationality, era, or focus tags.
+       e.g. "bach minuet" → token "bach" AND token "minuet" must both hit.
+       e.g. "romantic french" → era match AND nationality match.
+    */
+    const results = useMemo(() => {
+        if (!searchActive) return [];
+        const q = searchQuery.toLowerCase().trim();
+        const tokens = q ? q.split(/\s+/).filter(Boolean) : [];
+        return CORPUS.filter(p => {
+            // Multi-token AND: every token must match at least one field
+            const mQ = tokens.length === 0 || tokens.every(tok => {
+                const focusStr = (p.focus || []).join(" ").toLowerCase();
+                return p.t.toLowerCase().includes(tok) ||
+                    p.c.toLowerCase().includes(tok) ||
+                    (p.nat && p.nat.toLowerCase().includes(tok)) ||
+                    (p.era && p.era.toLowerCase().includes(tok)) ||
+                    focusStr.includes(tok);
+            });
+            const mE = eraFilter      === "All" || p.era === eraFilter;
+            const mG = gradeFilter    === "All" || p._gradeKey === gradeFilter;
+            const mN = natFilter      === "All" || (p.nat && p.nat.toLowerCase().includes(natFilter.toLowerCase()));
+            const mS = syllabusFilter === "All"
+                || (syllabusFilter === "AMEB"          && p._syllabus==="AMEB" && p._type==="General")
+                || (syllabusFilter === "AMEB Leisure"  && p._syllabus==="AMEB" && p._type==="Leisure")
+                || (syllabusFilter === "ABRSM"         && p._syllabus==="ABRSM")
+                || (syllabusFilter === "AMEB Diploma"  && p._syllabus==="AMEB Diploma")
+                || (syllabusFilter === "ABRSM Diploma" && p._syllabus==="ABRSM Diploma")
+                || (syllabusFilter === "Trinity"         && p._syllabus==="Trinity")
+                || (syllabusFilter === "Trinity Diploma" && p._syllabus==="Trinity Diploma");
+            const mL = listFilter === "All" || (p.l && p.l === listFilter);
+            return mQ && mE && mG && mN && mS && mL;
+        });
+    }, [searchQuery, eraFilter, gradeFilter, natFilter, syllabusFilter, listFilter, searchActive]);
+
+    // Pre-list results: same as results but without listFilter — used to compute available list tabs
+    const preListResults = useMemo(() => {
+        if (!searchActive) return [];
+        return corpus.filter(p => {
+            const q = searchQuery.trim().toLowerCase();
+            if (!q && eraFilter==="All" && gradeFilter==="All" && natFilter==="All" && syllabusFilter==="All") return true;
+            const tokens = q ? q.split(/\s+/).filter(Boolean) : [];
+            const mQ = tokens.length === 0 || tokens.every(tok =>
+                (p.t&&p.t.toLowerCase().includes(tok))||(p.c&&p.c.toLowerCase().includes(tok))||
+                (p.nat&&p.nat.toLowerCase().includes(tok))||(p.era&&p.era.toLowerCase().includes(tok))||
+                (p.focus&&p.focus.join(" ").toLowerCase().includes(tok))
+            );
+            const mE = eraFilter==="All" || p.era===eraFilter;
+            const mG = gradeFilter==="All" || p._gradeKey===gradeFilter;
+            const mN = natFilter==="All" || (p.nat&&p.nat.toLowerCase().includes(natFilter.toLowerCase()));
+            const mS = syllabusFilter==="All"
+                ||(syllabusFilter==="AMEB"&&p._syllabus==="AMEB"&&p._type==="General")
+                ||(syllabusFilter==="AMEB Leisure"&&p._syllabus==="AMEB"&&p._type==="Leisure")
+                ||(syllabusFilter==="ABRSM"&&p._syllabus==="ABRSM")
+                ||(syllabusFilter==="AMEB Diploma"&&p._syllabus==="AMEB Diploma")
+                ||(syllabusFilter==="ABRSM Diploma"&&p._syllabus==="ABRSM Diploma")
+                ||(syllabusFilter==="Trinity"&&p._syllabus==="Trinity")
+                ||(syllabusFilter==="Trinity Diploma"&&p._syllabus==="Trinity Diploma");
+            return mQ&&mE&&mG&&mN&&mS;
+        });
+    }, [searchQuery, eraFilter, gradeFilter, natFilter, syllabusFilter, searchActive]);
+
+    const parsedSignals = {};
+
+    const ERAS = ["All","Baroque","Classical","Romantic","Modern","Contemporary"];
+    const activeFilterCount = [eraFilter!=="All", gradeFilter!=="All", natFilter!=="All", syllabusFilter!=="All", listFilter!=="All"].filter(Boolean).length;
+
+    // Grade keys shown in grade filter — depends on active syllabus filter
+    const gradeKeys = useMemo(() => {
+        if (syllabusFilter === "Trinity") {
+            return TRINITY_META.map(g => g.key);
+        } else if (syllabusFilter === "Trinity Diploma") {
+            return TRINITY_DIPLOMA_META.map(g => g.key);
+        } else if (syllabusFilter === "ABRSM" || syllabusFilter === "ABRSM Diploma") {
+            return [...ABRSM_META.map(g => g.key), ...DIPLOMA_META.filter(g=>g._syllabus==="ABRSM Diploma"||g.key==="LRSM"||g.key==="FRSM").map(g=>g.key)];
+        } else if (syllabusFilter === "AMEB Diploma") {
+            return DIPLOMA_META.filter(g=>g.key==="CertP"||g.key==="AMusA"||g.key==="LMusA").map(g=>g.key);
+        } else {
+            return GRADE_META.map(g => g.key);
+        }
+    }, [syllabusFilter]);
+
+    const gradeLabel = (gk) => {
+        if (gk === "All") return "All grades";
+        if (gk === "Prelim") return "Preliminary";
+        if (gk === "TInitial") return "Initial";
+        if (gk.startsWith("TG")) return "Grade " + gk.slice(2);
+        if (gk === "CertP") return "Cert. of Perf.";
+        if (gk === "AMusA" || gk === "LMusA" || gk === "LRSM" || gk === "FRSM" || gk === "TATCL" || gk === "TLTCL" || gk === "TFTCL") return gk.replace("T","");
+        if (gk === "ABRSMInitial") return "Initial";
+        return gk.replace("G", "Grade ");
+    };
+
+    return (
+        <>
+        {showLogin && <LoginModal onClose={() => setShowLogin(false)} onSuccess={(u) => { setShowLogin(false); }} />}
+        <VideoModal modal={videoModal} onClose={closeVideo} />
+        {listModalPiece && <AddToListModal piece={listModalPiece} user={user} onClose={() => setListModalPiece(null)} onListsChanged={() => {}} />}
+        {showMyLists && <MyListsPanel user={user} onClose={() => setShowMyLists(false)} />}
+
+        {/* Shared list view — full page overlay */}
+        {sharedList && (
+            <div className="fixed inset-0 z-50 overflow-y-auto" style={{background:"#111"}}>
+                <div className="max-w-2xl mx-auto px-4 py-10">
+                    <div className="flex items-center gap-3 mb-6">
+                        <button onClick={() => { setSharedList(null); history.replaceState(null,"",location.pathname); }}
+                            className="text-[11px] font-bold" style={{color:"#d4956a"}}>← Back to Piano Butler</button>
+                    </div>
+                    <div className="rounded-2xl overflow-hidden shadow-lg" style={{background:"#1e1e1e",border:"1px solid #2a2a2a"}}>
+                        <div className="px-6 py-5" style={{borderBottom:"1px solid #2a2a2a"}}>
+                            {sharedList.list.type && (() => { const ti = listTypeInfo(sharedList.list.type); return (
+                                <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:6,background:ti.bg,color:ti.color,display:"inline-block",marginBottom:8}}>{ti.label}</span>
+                            ); })()}
+                            <div className="text-[20px] font-black" style={{color:"#e8e3dc"}}>{sharedList.list.name}</div>
+                            {sharedList.list.description && <div className="text-[12px] mt-1 italic" style={{color:"#666"}}>{sharedList.list.description}</div>}
+                            <div className="text-[12px] mt-1" style={{color:"#555"}}>{sharedList.pieces.length} piece{sharedList.pieces.length!==1?"s":""} · shared via Piano Butler</div>
+                        </div>
+                        {sharedList.pieces.map((pc, i) => (
+                            <div key={i} className="flex items-center gap-3 px-6 py-4 border-b transition-colors" style={{borderColor:"#2a2a2a"}}>
+                                <span className="text-[10px] font-black w-5 shrink-0" style={{color:"#555"}}>{i+1}</span>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex gap-1 mb-1 flex-wrap">
+                                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded text-white"
+                                            style={{background: pc.syllabus==="ABRSM"?"#7c3aed":"#4f46e5"}}>{pc.grade}</span>
+                                        {pc.era && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-100 text-slate-500">{pc.era}</span>}
+                                    </div>
+                                    <div className="text-[14px] font-bold leading-snug" style={{color:"#e8e3dc"}}>{pc.title}</div>
+                                    <div className="text-[11px] mt-0.5" style={{color:"#666"}}>{pc.composer}{pc.nat ? ` · ${pc.nat}` : ""}</div>
+                                    {pc.note && <div className="text-[11px] mt-1 italic" style={{color:"#d4956a"}}>{pc.note}</div>}
+                                </div>
+                                <button onClick={() => openVideo(pc.composer, pc.title)}
+                                    className="px-2.5 py-1 bg-red-600 text-white text-[10px] font-bold rounded-lg shrink-0">▶</button>
+                            </div>
+                        ))}
+                        <div className="px-6 py-4 text-center">
+                            <a href={location.pathname} className="text-[11px] font-bold" style={{color:"#d4956a"}}>
+                                🎹 Explore 4,500 pieces on Piano Butler →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        <div className="min-h-screen flex flex-col" style={{background:"#1a1a1a"}}>
+
+            {/* ── Nav ── */}
+            <header style={{background:"#1a1a1a",borderBottom:"1px solid #252525"}} className="sticky top-0 z-30">
+                <div className="max-w-screen-xl mx-auto px-4 h-13 flex items-center gap-3" style={{height:52}}>
+                    <button onClick={handleClear} style={{background:"none",border:"none",padding:0,cursor:"pointer",position:"relative",zIndex:40}} className="flex items-center gap-2 shrink-0 hover:opacity-70 transition-opacity">
+                        <div style={{width:3,height:20,borderRadius:2,background:"#d4956a"}}></div>
+                        <span style={{fontSize:15,fontWeight:900,color:"#e8e3dc",letterSpacing:"-0.02em"}}>Piano Butler</span>
+                    </button>
+                    {/* Right */}
+                    <div className="ml-auto flex items-center gap-2">
+                        <a href="diagnose.html"
+                            className="nav-btn nav-btn-accent" style={{fontSize:11,textDecoration:"none"}}>
+                            🔬 Diagnose
+                        </a>
+                        <a href="recommend.html"
+                            className="nav-btn" style={{fontSize:11,textDecoration:"none"}}>
+                            🎹 Recommend
+                        </a>
+                        <button onClick={() => setShowMyLists(true)}
+                            className="nav-btn" style={{}}>
+                            My Lists
+                        </button>
+                        {user ? (
+                            <span style={{fontSize:10,fontWeight:500,color:"#94a3b8",maxWidth:120,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} className="hidden md:block">{user.email}</span>
+                        ) : (
+                            <button data-signin onClick={() => setShowLogin(true)}
+                                className="nav-btn" style={{}}>
+                                Sign in
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </header>
+
+            {/* ── Body ── */}
+            <div className="flex flex-1 max-w-screen-xl mx-auto w-full">
+
+                {/* Sidebar */}
+                <aside className="hidden md:flex flex-col shrink-0 sticky top-[52px] self-start overflow-y-auto no-scrollbar"
+                    style={{width:200,height:"calc(100vh - 52px)",borderRight:"1px solid #252525",padding:"20px 12px",background:"#1a1a1a"}}>
+
+                    <div className="flex items-center justify-between mb-4">
+                        <span style={{fontSize:11,fontWeight:700,color:"#888"}}>Filters</span>
+                        {activeFilterCount > 0 && (
+                            <button onClick={handleClear}
+                                style={{fontSize:10,fontWeight:600,color:"#d4956a",background:"none",border:"none",cursor:"pointer",padding:0}}>
+                                Clear
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Syllabus */}
+                    <div style={{marginBottom:16}}>
+                        <span className="sidebar-label">Syllabus</span>
+                        {[
+                            {val:"All",           lbl:"All syllabuses"},
+                            {val:"AMEB",          lbl:"🇦🇺 AMEB Comprehensive"},
+                            {val:"AMEB Leisure",  lbl:"🎵 AMEB Leisure"},
+                            {val:"ABRSM",         lbl:"🇬🇧 ABRSM"},
+                            {val:"AMEB Diploma",  lbl:"🎓 AMEB Diploma"},
+                            {val:"ABRSM Diploma", lbl:"🎓 ABRSM Diploma"},
+                            {val:"Trinity",          lbl:"🇬🇧 Trinity"},
+                            {val:"Trinity Diploma",  lbl:"🎓 Trinity Diploma"},
+                        ].map(({val,lbl}) => (
+                            <button key={val}
+                                className={`filter-btn${syllabusFilter===val?" active":""}`}
+                                onClick={() => { setSyllabusFilter(val); setGradeFilter("All"); setListFilter("All"); setSearchTriggered(true); }}>
+                                {lbl}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Era */}
+                    <div style={{marginBottom:16}}>
+                        <span className="sidebar-label">Era</span>
+                        {ERAS.map(era => (
+                            <button key={era}
+                                className={`filter-btn${eraFilter===era?" active":""}`}
+                                onClick={() => { setEraFilter(era); setSearchTriggered(true); }}>
+                                {era==="All" ? "All eras" : era}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Grade */}
+                    <div style={{marginBottom:16}}>
+                        <span className="sidebar-label">Grade</span>
+                        {["All",...gradeKeys].map(gk => (
+                            <button key={gk}
+                                className={`filter-btn${gradeFilter===gk?" active":""}`}
+                                onClick={() => { setGradeFilter(gk); setSearchTriggered(true); }}>
+                                {gradeLabel(gk)}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Nationality */}
+                    <div style={{marginBottom:16}}>
+                        <span className="sidebar-label">Nationality</span>
+                        <select value={natFilter} onChange={e => { setNatFilter(e.target.value); setSearchTriggered(true); }}
+                            style={{width:"100%",fontSize:12,fontWeight:500,padding:"6px 8px",borderRadius:8,border:"1px solid #333",background:"#222",color:natFilter!=="All"?"#d4956a":"#555",outline:"none",cursor:"pointer"}}>
+                            {NAT_LIST.map(n => <option key={n} value={n}>{n}</option>)}
+                        </select>
+                    </div>
+                </aside>
+
+                {/* Main */}
+                <main className="flex-1 min-w-0 px-4 py-5" style={{background:"#1a1a1a"}}>
+
+                    {/* Mobile filter panel */}
+                    {(() => {
+                        const [mobileFiltersOpen, setMobileFiltersOpen] = React.useState(false);
+                        return (
+                            <div className="md:hidden mb-4">
+                                {/* Toggle row */}
+                                <div style={{display:"flex",gap:6,alignItems:"center",marginBottom: mobileFiltersOpen ? 10 : 0}}>
+                                    <button
+                                        onClick={() => setMobileFiltersOpen(v => !v)}
+                                        style={{display:"flex",alignItems:"center",gap:6,fontSize:11,fontWeight:700,padding:"6px 12px",borderRadius:8,
+                                            border: activeFilterCount > 0 ? "1.5px solid #6366f1" : "1px solid #e2e8f0",
+                                            background: activeFilterCount > 0 ? "#eef2ff" : "white",
+                                            color: activeFilterCount > 0 ? "#d4956a" : "#777",cursor:"pointer"}}>
+                                        <span style={{fontSize:13}}>⚙</span>
+                                        Filters
+                                        {activeFilterCount > 0 && <span style={{fontSize:10,fontWeight:800,background:"#6366f1",color:"white",borderRadius:99,padding:"1px 6px"}}>{activeFilterCount}</span>}
+                                        <span style={{fontSize:10,color:"#94a3b8"}}>{mobileFiltersOpen ? "▲" : "▼"}</span>
+                                    </button>
+                                    {activeFilterCount > 0 && (
+                                        <button onClick={handleClear}
+                                            style={{fontSize:11,fontWeight:600,padding:"6px 10px",borderRadius:8,border:"1px solid #fee2e2",background:"#fef2f2",color:"#ef4444",cursor:"pointer"}}>
+                                            Clear all
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Expanded filter panel */}
+                                {mobileFiltersOpen && (
+                                    <div style={{background:"#fafafa",border:"1px solid #f1f5f9",borderRadius:12,padding:"14px 14px 10px",display:"flex",flexDirection:"column",gap:12}}>
+
+                                        {/* Syllabus */}
+                                        <div>
+                                            <div style={{fontSize:9,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.1em",color:"#d1d5db",marginBottom:6}}>Syllabus</div>
+                                            <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                                                {[
+                                                    {val:"All", lbl:"All"},
+                                                    {val:"AMEB", lbl:"🇦🇺 AMEB"},
+                                                    {val:"AMEB Leisure", lbl:"🎵 Leisure"},
+                                                    {val:"ABRSM", lbl:"🇬🇧 ABRSM"},
+                                                    {val:"AMEB Diploma", lbl:"🎓 AMEB Dip"},
+                                                    {val:"ABRSM Diploma", lbl:"🎓 ABRSM Dip"},
+                                                    {val:"Trinity",         lbl:"🇬🇧 Trinity"},
+                                                    {val:"Trinity Diploma", lbl:"🎓 Trinity Dip"},
+                                                ].map(({val,lbl}) => (
+                                                    <button key={val}
+                                                        onClick={() => { setSyllabusFilter(val); setGradeFilter("All"); setSearchTriggered(true); }}
+                                                        style={{fontSize:11,fontWeight:600,padding:"5px 10px",borderRadius:20,cursor:"pointer",
+                                                            background: syllabusFilter===val ? "#b91c1c" : "white",
+                                                            color:      syllabusFilter===val ? "#1a1a1a" : "#666",
+                                                            border:     syllabusFilter===val ? "1.5px solid #b91c1c" : "1px solid #e2e8f0"}}>
+                                                        {lbl}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Era */}
+                                        <div>
+                                            <div style={{fontSize:9,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.1em",color:"#d1d5db",marginBottom:6}}>Era</div>
+                                            <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                                                {ERAS.map(era => (
+                                                    <button key={era}
+                                                        onClick={() => { setEraFilter(era); setSearchTriggered(true); }}
+                                                        style={{fontSize:11,fontWeight:600,padding:"5px 10px",borderRadius:20,cursor:"pointer",
+                                                            background: eraFilter===era ? "#4f46e5" : "white",
+                                                            color:      eraFilter===era ? "#1a1a1a" : "#666",
+                                                            border:     eraFilter===era ? "1.5px solid #4f46e5" : "1px solid #e2e8f0"}}>
+                                                        {era==="All" ? "All eras" : era}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Grade */}
+                                        <div>
+                                            <div style={{fontSize:9,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.1em",color:"#d1d5db",marginBottom:6}}>Grade</div>
+                                            <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+                                                {["All",...gradeKeys].map(gk => (
+                                                    <button key={gk}
+                                                        onClick={() => { setGradeFilter(gk); setSearchTriggered(true); }}
+                                                        style={{fontSize:11,fontWeight:600,padding:"5px 10px",borderRadius:20,cursor:"pointer",
+                                                            background: gradeFilter===gk ? "#4f46e5" : "white",
+                                                            color:      gradeFilter===gk ? "#1a1a1a" : "#666",
+                                                            border:     gradeFilter===gk ? "1.5px solid #4f46e5" : "1px solid #e2e8f0"}}>
+                                                        {gk==="All" ? "All" : gradeLabel(gk)}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Nationality */}
+                                        <div>
+                                            <div style={{fontSize:9,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.1em",color:"#d1d5db",marginBottom:6}}>Nationality</div>
+                                            <select value={natFilter} onChange={e => { setNatFilter(e.target.value); setSearchTriggered(true); }}
+                                                style={{width:"100%",fontSize:12,fontWeight:500,padding:"7px 10px",borderRadius:8,border:"1px solid #333",background:"white",
+                                                    color:natFilter!=="All"?"#4f46e5":"#94a3b8",outline:"none",cursor:"pointer"}}>
+                                                {NAT_LIST.map(n => <option key={n} value={n}>{n}</option>)}
+                                            </select>
+                                        </div>
+
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })()}
+
+                    {/* Header + search always visible */}
+                    <div style={{marginBottom:28, paddingTop:8}}>
+                        <div style={{marginBottom:14}}>
+                            <span style={{fontSize:22,fontWeight:900,color:"#e8e3dc",letterSpacing:"-0.03em"}}>Piano Butler</span>
+                            <span style={{fontSize:13,color:"#555",fontWeight:500,marginLeft:10}}>4,500 pieces · AMEB, ABRSM, Trinity & Diploma</span>
+                            <div style={{fontSize:13,color:"#555",fontWeight:400,marginTop:6,lineHeight:1.5}}>
+                                Search 4,500 piano exam pieces across AMEB, ABRSM, Trinity, and Diploma syllabuses — filter by grade, era, and nationality.
+                            </div>
+                        </div>
+                        <div style={{position:"relative", maxWidth:560}}>
+                            <span style={{position:"absolute",left:16,top:"50%",transform:"translateY(-50%)",fontSize:14,pointerEvents:"none",opacity:0.4}}>🔍</span>
+                            <input
+                                type="text" value={query}
+                                onChange={e => { setQuery(e.target.value); setShowSuggestions(true); if (!e.target.value.trim()) setSearchTriggered(false); }}
+                                onKeyDown={e => {
+                                    if (e.key==="Enter") { setSearchTriggered(true); setShowSuggestions(false); }
+                                    if (e.key==="Escape") { setQuery(""); setSearchTriggered(false); setShowSuggestions(false); }
+                                }}
+                                onFocus={e => { e.currentTarget.style.borderColor="#d4956a"; e.currentTarget.style.boxShadow="0 0 0 3px rgba(212,149,106,0.12)"; if (query.trim().length>=2) setShowSuggestions(true); }}
+                                onBlur={e => { e.currentTarget.style.borderColor="#2e2e2e"; e.currentTarget.style.boxShadow="none"; setTimeout(()=>setShowSuggestions(false),150); }}
+                                placeholder="Search composer, title, grade, era…"
+                                className="search-input" style={{padding:"14px 48px",fontSize:15,fontWeight:500,borderRadius:14}}
+                            />
+                            {query && (
+                                <button onClick={() => { setQuery(""); setSearchTriggered(false); }}
+                                    style={{position:"absolute",right:14,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#555",fontSize:18,cursor:"pointer",lineHeight:1}}>×</button>
+                            )}
+                            {showSuggestions && autoSuggestions.length > 0 && (
+                                <div style={{position:"absolute",left:0,right:0,top:"100%",marginTop:6,borderRadius:12,overflow:"hidden",zIndex:50,background:"#242424",border:"1px solid #333",boxShadow:"0 8px 32px rgba(0,0,0,0.4)"}}>
+                                    {autoSuggestions.map((s,i) => {
+                                        const badgeStyle = {
+                                            composer:    {bg:"#4f46e522", color:"#818cf8"},
+                                            title:       {bg:"#0891b222", color:"#38bdf8"},
+                                            era:         {bg:"#dc262622", color:"#f87171"},
+                                            nationality: {bg:"#d9770622", color:"#fb923c"},
+                                            focus:       {bg:"#05966922", color:"#34d399"},
+                                        }[s.type] || {bg:"#ffffff11", color:"#94a3b8"};
+                                        const icon = {
+                                            composer:"🎼", title:"🎵", era:"🕰️", nationality:"🌍", focus:"🎯"
+                                        }[s.type] || "";
+                                        return (
+                                            <button key={i} className="w-full text-left px-4 py-2.5 flex items-center gap-2 hover:bg-slate-700 transition-colors"
+                                                onMouseDown={() => { setQuery(s.query); setSearchTriggered(true); setShowSuggestions(false); }}>
+                                                <span style={{fontSize:9,fontWeight:800,textTransform:"uppercase",letterSpacing:"0.08em",padding:"2px 6px",borderRadius:4,background:badgeStyle.bg,color:badgeStyle.color,whiteSpace:"nowrap"}}>
+                                                    {icon} {s.type}
+                                                </span>
+                                                <span style={{fontSize:13,fontWeight:600,color:"white",flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.label}</span>
+                                                {s.composer && s.type==="title" && <span style={{fontSize:11,color:"#666",whiteSpace:"nowrap"}}>{s.composer}</span>}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Grade grid — always visible when not searching */}
+                    {!searchActive && (
+                        <div style={{marginBottom:32}}>
+                            <GradeGrid onGradeClick={handleGradeClick} activeSyllabus={activeSyllabus} setActiveSyllabus={setActiveSyllabus} />
+                        </div>
+                    )}
+
+                    {/* Results — inline below search bar, no page transition */}
+                    {searchActive && (
+                        <>
+                        {/* List / Group filter tabs — dynamic based on pre-list results */}
+                        {(() => {
+                            const allLists = [...new Set(
+                                preListResults.map(p=>p.l).filter(Boolean)
+                            )].sort((a,b) => {
+                                // Sort order: A B C D, then S4 S3 S2 S1 Manual, then Group A Group B, then others
+                                const ORDER = ["A","B","C","D","S4","S3","S2","S1","Manual","Group A","Group B"];
+                                const ai = ORDER.indexOf(a), bi = ORDER.indexOf(b);
+                                if (ai>=0&&bi>=0) return ai-bi;
+                                if (ai>=0) return -1;
+                                if (bi>=0) return 1;
+                                return a.localeCompare(b);
+                            });
+                            if (allLists.length <= 1) return null; // no tabs if only 1 list or no list field
+                            const listColor = {
+                                "A":"#4f46e5","B":"#7c3aed","C":"#a21caf","D":"#be185d",
+                                "S4":"#0f766e","S3":"#0891b2","S2":"#0284c7","S1":"#15803d",
+                                "Manual":"#475569","Group A":"#b45309","Group B":"#0f766e"
+                            };
+                            return (
+                                <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:16,paddingBottom:14,borderBottom:"1px solid #252525"}}>
+                                    <span style={{fontSize:10,fontWeight:700,color:"#555",alignSelf:"center",marginRight:4}}>LIST</span>
+                                    <button
+                                        onClick={() => setListFilter("All")}
+                                        style={{fontSize:11,fontWeight:700,padding:"5px 14px",borderRadius:20,cursor:"pointer",
+                                            background: listFilter==="All" ? "#d4956a" : "transparent",
+                                            color: listFilter==="All" ? "#1a1a1a" : "#888",
+                                            border: listFilter==="All" ? "1.5px solid #d4956a" : "1px solid #333",
+                                            transition:"all 0.15s"}}>
+                                        All
+                                    </button>
+                                    {allLists.map(l => {
+                                        const cnt = preListResults.filter(p=>p.l===l).length;
+                                        return (
+                                        <button key={l}
+                                            onClick={() => setListFilter(listFilter===l ? "All" : l)}
+                                            style={{fontSize:11,fontWeight:700,padding:"5px 14px",borderRadius:20,cursor:"pointer",
+                                                background: listFilter===l ? (listColor[l]||"#4f46e5") : "transparent",
+                                                color: listFilter===l ? "white" : "#888",
+                                                border: listFilter===l ? `1.5px solid ${listColor[l]||"#4f46e5"}` : "1px solid #333",
+                                                transition:"all 0.15s",display:"flex",alignItems:"center",gap:5}}>
+                                            <span>{l === "Manual" ? "Manual" : l.startsWith("Group") ? l : `List ${l}`}</span>
+                                            <span style={{fontSize:9,fontWeight:800,opacity:0.7}}>{cnt}</span>
+                                        </button>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        })()}
+                        <div className="flex items-center justify-between mb-5 flex-wrap gap-2"
+                            style={{borderBottom:"1px solid #f1f5f9", paddingBottom:14}}>
+                            <div style={{display:"flex",flexWrap:"wrap",gap:6,alignItems:"center"}}>
+                                {/* Active filter pills */}
+                                {query && (
+                                    <span style={{fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:20,background:"#4f46e5",color:"white"}}>
+                                        {query}
+                                    </span>
+                                )}
+                                {eraFilter!=="All" && (
+                                    <span style={{fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:20,background:"#eef2ff",color:"#4f46e5",border:"1px solid #e0e7ff"}}>
+                                        {eraFilter}
+                                    </span>
+                                )}
+                                {gradeFilter!=="All" && (
+                                    <span style={{fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:20,background:"#f8fafc",color:"#475569",border:"1px solid #e2e8f0"}}>
+                                        {gradeLabel(gradeFilter)}
+                                    </span>
+                                )}
+                                {syllabusFilter!=="All" && (
+                                    <span style={{fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:20,background:"#f5f3ff",color:"#6d28d9",border:"1px solid #ede9fe"}}>
+                                        {syllabusFilter}
+                                    </span>
+                                )}
+                                {natFilter!=="All" && (
+                                    <span style={{fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:20,background:"#ecfeff",color:"#0e7490",border:"1px solid #cffafe"}}>
+                                        {natFilter}
+                                    </span>
+                                )}
+                                {listFilter!=="All" && (
+                                    <span style={{fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:20,background:"#1e1b4b",color:"#a5b4fc",border:"1px solid #312e81"}}>
+                                        {listFilter === "Manual" ? "Manual" : `List ${listFilter}`}
+                                    </span>
+                                )}
+                                {/* Auto-detected signals */}
+                                {parsedSignals.detectedEra      && eraFilter==="All"      && <span style={{fontSize:10,fontWeight:600,padding:"3px 8px",borderRadius:20,border:"1px dashed #c7d2fe",color:"#6366f1"}}>↳ {parsedSignals.detectedEra}</span>}
+                                {parsedSignals.detectedNat      && natFilter==="All"      && <span style={{fontSize:10,fontWeight:600,padding:"3px 8px",borderRadius:20,border:"1px dashed #a5f3fc",color:"#0891b2"}}>↳ {parsedSignals.detectedNat}</span>}
+                                {parsedSignals.detectedGrade    && gradeFilter==="All"    && <span style={{fontSize:10,fontWeight:600,padding:"3px 8px",borderRadius:20,border:"1px dashed #333",color:"#555"}}>↳ {parsedSignals.detectedGrade}</span>}
+                            </div>
+                            <div style={{display:"flex",alignItems:"center",gap:10}}>
+                                {results.length > 0 && (
+                                    <span style={{fontSize:12,fontWeight:500,color:"#94a3b8"}}>
+                                        {results.length.toLocaleString()} pieces
+                                    </span>
+                                )}
+                                {(eraFilter!=="All"||syllabusFilter!=="All"||gradeFilter!=="All"||natFilter!=="All"||listFilter!=="All"||query) && (
+                                    <button onClick={handleClear}
+                                        style={{fontSize:11,fontWeight:600,color:"#6366f1",background:"none",border:"none",cursor:"pointer",padding:0}}>
+                                        ← Back
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                        {results.length > 0
+                            ? results.map((p,i) => <PieceRow key={i} p={p} user={user} onLoginRequired={() => setShowLogin(true)} openVideo={openVideo} onAddToList={handleAddToList} />)
+                            : (
+                                <div className="py-12 text-center">
+                                    <div className="text-4xl mb-4">🎹</div>
+                                    <div style={{color:"#888"}} className="text-sm font-bold mb-1">No pieces found</div>
+                                    {query && (
+                                        <div className="text-slate-400 text-xs mb-5">
+                                            No results for <span className="font-bold text-slate-500">"{query}"</span>
+                                            {(eraFilter!=="All"||syllabusFilter!=="All"||gradeFilter!=="All"||natFilter!=="All") && " with your current filters"}
+                                        </div>
+                                    )}
+                                    <div className="flex flex-col items-center gap-2 mt-4">
+                                        {(eraFilter!=="All"||gradeFilter!=="All"||syllabusFilter!=="All"||natFilter!=="All"||listFilter!=="All") && (
+                                            <button onClick={() => { setEraFilter("All"); setGradeFilter("All"); setSyllabusFilter("All"); setNatFilter("All"); setListFilter("All"); }}
+                                                className="text-[12px] font-bold px-4 py-2 rounded-xl bg-indigo-500 text-white hover:bg-indigo-400 transition-colors">
+                                                Clear all filters
+                                            </button>
+                                        )}
+                                        <div className="text-[11px] text-slate-400 font-semibold mt-2">Try searching for:</div>
+                                        <div className="flex flex-wrap gap-2 justify-center mt-1">
+                                            {["Chopin","Bach","Beethoven","Debussy","Schubert","Brahms"].map(name => (
+                                                <button key={name} onClick={() => { setQuery(name); setSearchTriggered(true); }}
+                                                    className="text-[11px] font-bold px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600 transition-colors">
+                                                    {name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        }
+                        </>
+                    )}
+                </main>
+            </div>
+
+            {/* Footer */}
+            <footer style={{borderTop:"1px solid #f1f5f9",padding:"16px 0",textAlign:"center",fontSize:10,fontWeight:500,color:"#cbd5e1",letterSpacing:"0.05em",background:"#fafafa"}}>
+                Piano Butler · AMEB 2026 · ABRSM 2025 &amp; 2026 · Trinity · Diploma · 4,500 pieces
+            </footer>
+        </div>
+        </>
+    );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
