@@ -1701,6 +1701,7 @@ function App() {
     const [gradeFilter, setGradeFilter]     = useState("All");
     const [natFilter, setNatFilter]         = useState("All");
     const [syllabusFilter, setSyllabusFilter] = useState("All");
+    const [listFilter, setListFilter]       = useState("All");
     const [searchTriggered, setSearchTriggered] = useState(false);
     const [searchQuery, setSearchQuery] = useState(""); // debounced — drives actual filtering
     const [showLogin, setShowLogin]         = useState(false);
@@ -1759,9 +1760,9 @@ function App() {
         return () => subscription.unsubscribe();
     }, []);
 
-    const searchActive = searchTriggered || searchQuery.trim() || eraFilter!=="All" || gradeFilter!=="All" || natFilter!=="All" || syllabusFilter!=="All";
+    const searchActive = searchTriggered || searchQuery.trim() || eraFilter!=="All" || gradeFilter!=="All" || natFilter!=="All" || syllabusFilter!=="All" || listFilter!=="All";
 
-    const handleClear = () => { setQuery(""); setSearchQuery(""); setEraFilter("All"); setGradeFilter("All"); setNatFilter("All"); setSyllabusFilter("All"); setSearchTriggered(false); setShowSuggestions(false); };
+    const handleClear = () => { setQuery(""); setSearchQuery(""); setEraFilter("All"); setGradeFilter("All"); setNatFilter("All"); setSyllabusFilter("All"); setListFilter("All"); setSearchTriggered(false); setShowSuggestions(false); };
 
     /* Autocomplete suggestions — composers, titles, eras, nationalities, focus tags */
     const autoSuggestions = useMemo(() => {
@@ -1855,14 +1856,42 @@ function App() {
                 || (syllabusFilter === "ABRSM Diploma" && p._syllabus==="ABRSM Diploma")
                 || (syllabusFilter === "Trinity"         && p._syllabus==="Trinity")
                 || (syllabusFilter === "Trinity Diploma" && p._syllabus==="Trinity Diploma");
-            return mQ && mE && mG && mN && mS;
+            const mL = listFilter === "All" || (p.l && p.l === listFilter);
+            return mQ && mE && mG && mN && mS && mL;
+        });
+    }, [searchQuery, eraFilter, gradeFilter, natFilter, syllabusFilter, listFilter, searchActive]);
+
+    // Pre-list results: same as results but without listFilter — used to compute available list tabs
+    const preListResults = useMemo(() => {
+        if (!searchActive) return [];
+        return corpus.filter(p => {
+            const q = searchQuery.trim().toLowerCase();
+            if (!q && eraFilter==="All" && gradeFilter==="All" && natFilter==="All" && syllabusFilter==="All") return true;
+            const tokens = q ? q.split(/\s+/).filter(Boolean) : [];
+            const mQ = tokens.length === 0 || tokens.every(tok =>
+                (p.t&&p.t.toLowerCase().includes(tok))||(p.c&&p.c.toLowerCase().includes(tok))||
+                (p.nat&&p.nat.toLowerCase().includes(tok))||(p.era&&p.era.toLowerCase().includes(tok))||
+                (p.focus&&p.focus.join(" ").toLowerCase().includes(tok))
+            );
+            const mE = eraFilter==="All" || p.era===eraFilter;
+            const mG = gradeFilter==="All" || p._gradeKey===gradeFilter;
+            const mN = natFilter==="All" || (p.nat&&p.nat.toLowerCase().includes(natFilter.toLowerCase()));
+            const mS = syllabusFilter==="All"
+                ||(syllabusFilter==="AMEB"&&p._syllabus==="AMEB"&&p._type==="General")
+                ||(syllabusFilter==="AMEB Leisure"&&p._syllabus==="AMEB"&&p._type==="Leisure")
+                ||(syllabusFilter==="ABRSM"&&p._syllabus==="ABRSM")
+                ||(syllabusFilter==="AMEB Diploma"&&p._syllabus==="AMEB Diploma")
+                ||(syllabusFilter==="ABRSM Diploma"&&p._syllabus==="ABRSM Diploma")
+                ||(syllabusFilter==="Trinity"&&p._syllabus==="Trinity")
+                ||(syllabusFilter==="Trinity Diploma"&&p._syllabus==="Trinity Diploma");
+            return mQ&&mE&&mG&&mN&&mS;
         });
     }, [searchQuery, eraFilter, gradeFilter, natFilter, syllabusFilter, searchActive]);
 
     const parsedSignals = {};
 
     const ERAS = ["All","Baroque","Classical","Romantic","Modern","Contemporary"];
-    const activeFilterCount = [eraFilter!=="All", gradeFilter!=="All", natFilter!=="All", syllabusFilter!=="All"].filter(Boolean).length;
+    const activeFilterCount = [eraFilter!=="All", gradeFilter!=="All", natFilter!=="All", syllabusFilter!=="All", listFilter!=="All"].filter(Boolean).length;
 
     // Grade keys shown in grade filter — depends on active syllabus filter
     const gradeKeys = useMemo(() => {
@@ -2008,7 +2037,7 @@ function App() {
                         ].map(({val,lbl}) => (
                             <button key={val}
                                 className={`filter-btn${syllabusFilter===val?" active":""}`}
-                                onClick={() => { setSyllabusFilter(val); setGradeFilter("All"); setSearchTriggered(true); }}>
+                                onClick={() => { setSyllabusFilter(val); setGradeFilter("All"); setListFilter("All"); setSearchTriggered(true); }}>
                                 {lbl}
                             </button>
                         ))}
@@ -2223,6 +2252,55 @@ function App() {
                     {/* Results — inline below search bar, no page transition */}
                     {searchActive && (
                         <>
+                        {/* List / Group filter tabs — dynamic based on pre-list results */}
+                        {(() => {
+                            const allLists = [...new Set(
+                                preListResults.map(p=>p.l).filter(Boolean)
+                            )].sort((a,b) => {
+                                // Sort order: A B C D, then S4 S3 S2 S1 Manual, then Group A Group B, then others
+                                const ORDER = ["A","B","C","D","S4","S3","S2","S1","Manual","Group A","Group B"];
+                                const ai = ORDER.indexOf(a), bi = ORDER.indexOf(b);
+                                if (ai>=0&&bi>=0) return ai-bi;
+                                if (ai>=0) return -1;
+                                if (bi>=0) return 1;
+                                return a.localeCompare(b);
+                            });
+                            if (allLists.length <= 1) return null; // no tabs if only 1 list or no list field
+                            const listColor = {
+                                "A":"#4f46e5","B":"#7c3aed","C":"#a21caf","D":"#be185d",
+                                "S4":"#0f766e","S3":"#0891b2","S2":"#0284c7","S1":"#15803d",
+                                "Manual":"#475569","Group A":"#b45309","Group B":"#0f766e"
+                            };
+                            return (
+                                <div style={{display:"flex",flexWrap:"wrap",gap:6,marginBottom:16,paddingBottom:14,borderBottom:"1px solid #252525"}}>
+                                    <span style={{fontSize:10,fontWeight:700,color:"#555",alignSelf:"center",marginRight:4}}>LIST</span>
+                                    <button
+                                        onClick={() => setListFilter("All")}
+                                        style={{fontSize:11,fontWeight:700,padding:"5px 14px",borderRadius:20,cursor:"pointer",
+                                            background: listFilter==="All" ? "#d4956a" : "transparent",
+                                            color: listFilter==="All" ? "#1a1a1a" : "#888",
+                                            border: listFilter==="All" ? "1.5px solid #d4956a" : "1px solid #333",
+                                            transition:"all 0.15s"}}>
+                                        All
+                                    </button>
+                                    {allLists.map(l => {
+                                        const cnt = preListResults.filter(p=>p.l===l).length;
+                                        return (
+                                        <button key={l}
+                                            onClick={() => setListFilter(listFilter===l ? "All" : l)}
+                                            style={{fontSize:11,fontWeight:700,padding:"5px 14px",borderRadius:20,cursor:"pointer",
+                                                background: listFilter===l ? (listColor[l]||"#4f46e5") : "transparent",
+                                                color: listFilter===l ? "white" : "#888",
+                                                border: listFilter===l ? `1.5px solid ${listColor[l]||"#4f46e5"}` : "1px solid #333",
+                                                transition:"all 0.15s",display:"flex",alignItems:"center",gap:5}}>
+                                            <span>{l === "Manual" ? "Manual" : l.startsWith("Group") ? l : `List ${l}`}</span>
+                                            <span style={{fontSize:9,fontWeight:800,opacity:0.7}}>{cnt}</span>
+                                        </button>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        })()}
                         <div className="flex items-center justify-between mb-5 flex-wrap gap-2"
                             style={{borderBottom:"1px solid #f1f5f9", paddingBottom:14}}>
                             <div style={{display:"flex",flexWrap:"wrap",gap:6,alignItems:"center"}}>
@@ -2252,6 +2330,11 @@ function App() {
                                         {natFilter}
                                     </span>
                                 )}
+                                {listFilter!=="All" && (
+                                    <span style={{fontSize:11,fontWeight:600,padding:"3px 10px",borderRadius:20,background:"#1e1b4b",color:"#a5b4fc",border:"1px solid #312e81"}}>
+                                        {listFilter === "Manual" ? "Manual" : `List ${listFilter}`}
+                                    </span>
+                                )}
                                 {/* Auto-detected signals */}
                                 {parsedSignals.detectedEra      && eraFilter==="All"      && <span style={{fontSize:10,fontWeight:600,padding:"3px 8px",borderRadius:20,border:"1px dashed #c7d2fe",color:"#6366f1"}}>↳ {parsedSignals.detectedEra}</span>}
                                 {parsedSignals.detectedNat      && natFilter==="All"      && <span style={{fontSize:10,fontWeight:600,padding:"3px 8px",borderRadius:20,border:"1px dashed #a5f3fc",color:"#0891b2"}}>↳ {parsedSignals.detectedNat}</span>}
@@ -2263,7 +2346,7 @@ function App() {
                                         {results.length.toLocaleString()} pieces
                                     </span>
                                 )}
-                                {(eraFilter!=="All"||syllabusFilter!=="All"||gradeFilter!=="All"||natFilter!=="All"||query) && (
+                                {(eraFilter!=="All"||syllabusFilter!=="All"||gradeFilter!=="All"||natFilter!=="All"||listFilter!=="All"||query) && (
                                     <button onClick={handleClear}
                                         style={{fontSize:11,fontWeight:600,color:"#6366f1",background:"none",border:"none",cursor:"pointer",padding:0}}>
                                         ← Back
@@ -2284,8 +2367,8 @@ function App() {
                                         </div>
                                     )}
                                     <div className="flex flex-col items-center gap-2 mt-4">
-                                        {(eraFilter!=="All"||gradeFilter!=="All"||syllabusFilter!=="All"||natFilter!=="All") && (
-                                            <button onClick={() => { setEraFilter("All"); setGradeFilter("All"); setSyllabusFilter("All"); setNatFilter("All"); }}
+                                        {(eraFilter!=="All"||gradeFilter!=="All"||syllabusFilter!=="All"||natFilter!=="All"||listFilter!=="All") && (
+                                            <button onClick={() => { setEraFilter("All"); setGradeFilter("All"); setSyllabusFilter("All"); setNatFilter("All"); setListFilter("All"); }}
                                                 className="text-[12px] font-bold px-4 py-2 rounded-xl bg-indigo-500 text-white hover:bg-indigo-400 transition-colors">
                                                 Clear all filters
                                             </button>
