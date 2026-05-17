@@ -272,7 +272,8 @@ function scorepiece(p, prefs) {
     const charLabel = { technical:'Technical focus', expressive:'Expressive depth', playful:'Student appeal', virtuosic:'Impressive & showy', lyrical:'Beautiful melody' }[prefs.character];
     const charBg    = { technical:'#f0fdf4', expressive:'#fdf4ff', playful:'#fff7ed', virtuosic:'#fff1f2', lyrical:'#fdf2f8' }[prefs.character];
     const charCol   = { technical:'#166534', expressive:'#7e22ce', playful:'#c2410c', virtuosic:'#9f1239', lyrical:'#86198f' }[prefs.character];
-    reasons.push({ label:charLabel, icon:CHARACTERS.find(c=>c.id===prefs.character)?.label.split(' ')[0]||'✓', bg:charBg, color:charCol });
+    const charMatch = CHARACTERS.find(c=>c.id===prefs.character);
+    reasons.push({ label:charLabel, icon:charMatch ? charMatch.label.split(' ')[0] : '✓', bg:charBg, color:charCol });
   }
 
   // Nationality
@@ -312,7 +313,7 @@ function pickDiverse(scored, count, prefs) {
   if (sorted.length) { result.push(sorted[0]); usedEras.add(sorted[0].era); usedNats.add(sorted[0].nat); }
 
   // For 'diverse' nationality pref, strongly prefer new nationalities
-  const natBonus = prefs?.natDiversity === 'diverse' ? 20 : 10;
+  const natBonus = (prefs && prefs.natDiversity === 'diverse') ? 20 : 10;
 
   for (const p of sorted) {
     if (result.length >= count) break;
@@ -370,7 +371,7 @@ function useVideoModal() {
       const q = encodeURIComponent(composer.split(',')[0].trim()+' '+title+' piano');
       const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}&type=video&maxResults=1&key=${YT_API_KEY}`);
       const data = await res.json();
-      const item = data.items?.[0];
+      const item = data.items && data.items[0];
       if (item) setModal({ videoId:item.id.videoId, title:item.snippet.title, loading:false });
       else { setModal(null); window.open('https://www.youtube.com/results?search_query='+q,'_blank'); }
     } catch { setModal(null); }
@@ -848,7 +849,7 @@ function App() {
                 <p style={{ fontSize:12, color:'#64748b', margin:0 }}>
                   {mode==='free'
                     ? `Free discovery · ${comboType==='lesson6'?'6':'4'} pieces`
-                    : `${syllabus} · ${grade} · ${comboOptions.find(c=>c.id===comboType)?.label||comboType}`}
+                    : `${syllabus} · ${grade} · ${(comboOptions.find(c=>c.id===comboType)||{label:comboType}).label}`}
                 </p>
               </div>
               <div style={{ display:'flex', gap:6, flexShrink:0 }} className="no-print">
@@ -938,7 +939,23 @@ function App() {
   );
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null }; }
+  static getDerivedStateFromError(err) { return { error: err }; }
+  render() {
+    if (this.state.error) return (
+      <div style={{padding:40,color:'#ef4444',fontFamily:'monospace',fontSize:13}}>
+        <b>Error:</b> {this.state.error.message}<br/>
+        <small style={{color:'#94a3b8'}}>Please refresh the page.</small>
+      </div>
+    );
+    return this.props.children;
+  }
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <ErrorBoundary><App/></ErrorBoundary>
+);
 </script>
 </body>
 </html>
