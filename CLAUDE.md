@@ -1686,3 +1686,39 @@ recommend.html (dark theme, 4-step wizard)
 - connect.html: placeholder teacher cards — real info needed before public promotion.
 - YouTube API key (`AIzaSyDR9BQfybtyS2e-H9wgtFgWbfqlQWpLCW8`) is unrestricted — add referrer restriction in Google Cloud Console.
 - jsPDF radar chart in diagnose.html: uses `doc.moveTo/lineTo` — verify renders correctly in browser before selling reports.
+
+---
+
+### Phase 39 Updates (2026-05-18 — diagnose.html UX fixes + security)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Landing cards — directly clickable | `diagnose.html` | 🌱 / 🔄 preview cards replaced with proper `<button>` elements. Click goes directly to correct flow — no intermediate background question. 🌱 → `beginner_quiz` immediately. 🔄 → `quiz` at phase 1 (Purpose), skipping phase 0. "Start →" single button removed. |
+| 2 | ShareResultButton component | `diagnose.html` | New component added. "🔗 Share my result" button appears at bottom of both result screens (returner + beginner). Encodes result to base64 URL param (`?result=…`). Uses `navigator.share` on mobile, clipboard copy on desktop. Shows "✓ Link copied!" confirmation for 2.5s. |
+| 3 | SharedResultView component | `diagnose.html` | Read-only result page rendered when `?result=` URL param detected on load. Shows returner result (levelLabel + overallPct + weak areas) or beginner profile (profile name + genre + timeline + teacherFormat). CTAs: "Take my own diagnosis" + "Find a teacher". No login required to view. |
+| 4 | YouTube API key rotated — security | All 21 HTML files | Old key `AIzaSyDR9BQfybtyS2e-H9wgtFgWbfqlQWpLCW8` exposed in GitHub history (GitGuardian alert). New key `AIzaSyAUydn17tJCoduix-iv7f7bKfXweIrR6Mg` applied across all 21 HTML files. Old key deleted from Google Cloud Console. New key restricted to `thepianobutler.com/*` + `www.thepianobutler.com/*` referrers. |
+
+### Build Status — Last updated 2026-05-18
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–75 | All previously completed features (Phases 1–38) | ✅ Done |
+| 76 | diagnose.html — clickable landing cards (direct flow entry) | ✅ Done (Phase 39) |
+| 77 | diagnose.html — share result link (URL-encoded, no login) | ✅ Done (Phase 39) |
+| 78 | YouTube API key rotation — all 21 HTML files | ✅ Done (Phase 39) |
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | Gumroad product setup | High | Create product at gumroad.com → complete diagnose quiz → download PDF → upload as product → replace `GUMROAD_URL` in diagnose.html → push to main. |
+| 2 | connect.html — real teacher info | High | Replace placeholder teacher cards with real photo, booking link, and price. |
+| 3 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify. |
+| 4 | Sitewide UX review | Medium | Open thepianobutler.com as a real teacher/student. Note friction. |
+| 5 | Ad integration | Low | Google AdSense or direct piano brand deals. Requires traffic first. |
+| 6 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available from abrsm.org. |
+
+### Known Issues (as of 2026-05-18)
+- `GUMROAD_URL` in diagnose.html is a placeholder — must be replaced with real Gumroad link before promoting publicly.
+- connect.html: placeholder teacher cards — real info needed before public promotion.
+- jsPDF radar chart in diagnose.html: uses `doc.moveTo/lineTo` — verify renders correctly in browser before selling reports.
