@@ -1572,3 +1572,117 @@ diagnose.html
 | 3 | YouTube API key referrer restriction | High — set in Google Cloud Console |
 | 4 | Google Search Console — submit sitemap | Quick win |
 | 5 | Ad integration | Low — after traffic |
+
+---
+
+### Phase 37 Updates (2026-05-17 — index.html overhaul + new files)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | List/Group filter tabs in search results | `index.html` | `listFilter` state added (All/A/B/C/D/S1–S4/Manual/Group A/Group B). Dynamic tabs appear only when results contain 2+ distinct list values. Each tab shows piece count, colour-coded by list type. `preListResults` useMemo computes pre-filter set for tab counts. `listFilter` pill in results header; resets on syllabus change. All clear/back buttons reset `listFilter`. |
+| 2 | Role-picker homepage redesign | `index.html` | Major rewrite: homepage presents two role-based entry paths (Teacher / Student/Self-learner). Each path leads to a tailored grade picker and filtered search. `activeSyllabus` state drives AMEB/ABRSM/Trinity grade grid tabs. |
+| 3 | Diploma + AMEB Leisure in teacher grade picker | `index.html` | Grade picker for teacher flow expanded to include Diploma levels (CertP, AMusA, LMusA, LRSM, FRSM, ATCL, LTCL, FTCL) and AMEB Leisure grades (Prelim–G8). |
+| 4 | admin-search.html — full-featured admin search | `admin-search.html` | New file (`noindex, nofollow`). Password-gated (`pianobutler2026`, sessionStorage). Full corpus search with all filters: syllabus, era, grade, nationality, list (A/B/C/D), text. Lists functionality (AddToListModal, MyListsPanel, ShareListModal). Supabase auth + favourites. Full piece cards with ▶ Listen, Score, ★ Save, + List buttons. Linked from index.html footer as "Full search ↗". |
+| 5 | robots.txt — admin-search.html blocked | `robots.txt` | `Disallow: /admin-search.html` added. |
+| 6 | Search-first homepage (second iteration) | `index.html` | Further simplified: single search bar always visible, grade grid removed from homepage, tool cards (Recommend + Diagnose) shown below hint chips, stats footer with "Full search ↗" link. Dark theme throughout. |
+| 7 | UX iterations — homepage tool cards | `index.html` | Multiple passes: tool cards removed → hint chips expanded → tool cards restored → syllabus filter chips removed → final: hint chips + 2 tool cards (🎹 Recommend, 🔬 Diagnose). |
+| 8 | 2-col results grid | `index.html` | Results changed to `repeat(auto-fill,minmax(340px,1fr))` — 2 columns on desktop. Bigger titles (17px, 800 weight). List/Diploma badges removed from piece cards (cleaner). Butler-tone copy in results count and no-results messages. |
+| 9 | Dark theme — connect.html, diagnose.html, recommend.html | `connect.html`, `diagnose.html`, `recommend.html` | All three pages updated to match index.html dark aesthetic: `#1a1a1a` bg, `#e8e3dc` text, `#d4956a` orange accent. Dark cards, dark nav, dark modals. |
+
+### Phase 38 Updates (2026-05-17 — recommend.html redesign + Safari fixes)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | recommend.html — simplified 4-step flow | `recommend.html` | Full redesign. Previous 6-step wizard replaced with cleaner flow: **Step 0** character (Expressive/Technical/Playful/Balanced/Adventurous) → **Step 1** level (Beginner/Early/Intermediate/Advanced/Diploma) → **Step 2** era preference (multi-select chips, optional) → **Step 3** exam optional (Yes/No → if Yes: syllabus + grade). Results generated from scoring engine. |
+| 2 | recommend.html — scoring engine update | `recommend.html` | `scorepiece()` updated: character keyword match (+25 per hit), era match (+30), grade range match (+20), random variety seed (+10). `pickDiverse()` selects pieces with era and nationality diversity bonus. `CHAR_WORDS` expanded per character type. `LEVEL_GRADE_KEYS` maps level → `_gradeKey` array. |
+| 3 | recommend.html — Safari compatibility fixes | `recommend.html` | Three separate fixes: (1) `color-mix()` CSS function removed → replaced with static hex; (2) TypeScript `as any` casts removed from JSX (Babel standalone rejects them); (3) optional chaining `?.` → explicit null checks; (4) `ErrorBoundary` class component added to catch render crashes. |
+| 4 | recommend.html — progress bar + step dots | `recommend.html` | `progress-fill` CSS bar advances through 4 steps (0–3). 4 step dots below progress bar (done = orange filled, active = scaled). Back button appears from step 1 onward. "Generate" button only on final step. |
+
+### index.html Architecture (as of Phase 37)
+
+```
+index.html (minimal public search — dark theme)
+├── buildCorpus()           — 4,500 pieces from all data files
+├── searchCorpus()          — multi-token AND search (title/composer/nat/era/focus)
+├── useVideoModal()         — YouTube Data API v3 in-page modal
+├── VideoModal              — dark overlay iframe
+├── PieceCard               — piece card: syllabus badge, era tag, title, composer Wikipedia link, ▶ Listen, Score
+├── HINT_CHIPS (12)         — Chopin, Bach, Debussy, Baroque, Romantic, Australian, Waltz, Sonatina…
+├── SYLLABUS_BADGE          — colour mapping for all 6 syllabus types
+├── ERAS / ERA_TAG_CLASS    — 5 eras, CSS class per era
+└── App
+    ├── query / searchQuery — debounced 200ms (input instant, filter delayed)
+    ├── eraFilter           — era chip filter
+    ├── gradeFilter         — grade chip filter (shown only when searching)
+    ├── syllabusFilter      — All / AMEB / Leisure / ABRSM / Trinity (no UI — available in state)
+    ├── isSearching         — true when any filter or query active
+    ├── results             — filtered corpus, max 60
+    ├── suggestions         — autocomplete (composer + title, max 8)
+    ├── Homepage (not searching): hint chips + 2 tool cards + stats footer
+    └── Results: count + grid of PieceCard
+```
+
+### admin-search.html Architecture
+
+```
+admin-search.html (password-gated, noindex)
+├── Password gate           — sessionStorage('pb_admin_auth'), pw: pianobutler2026
+├── Full buildCorpus()      — all 4,500 pieces
+├── Full filter set         — syllabus + era + grade + nationality + list (A/B/C/D)
+├── listFilter tabs         — dynamic tabs from result set
+├── AddToListModal          — local-first list creation
+├── MyListsPanel            — slide-in panel, share/export/delete
+├── Supabase auth           — Magic Link, session-aware
+├── Full PieceRow           — ★ Save + + List + ▶ Listen + Score
+└── GradeGrid               — AMEB/ABRSM/Trinity tab toggle + grade cards
+```
+
+### recommend.html Architecture (as of Phase 38)
+
+```
+recommend.html (dark theme, 4-step wizard)
+├── buildCorpus()           — all 4,500 pieces
+├── CHARACTERS (5)          — Expressive / Technical / Playful / Balanced / Adventurous
+├── LEVELS (5)              — Beginner / Early / Intermediate / Advanced / Diploma
+├── CHAR_WORDS              — keyword arrays per character (used in scorepiece)
+├── LEVEL_GRADE_KEYS        — level → _gradeKey array (corpus filter)
+├── scorepiece(p, prefs)    — scores each piece by character/era/grade match
+├── pickDiverse(scored, n)  — picks n pieces with era + nationality diversity
+├── ErrorBoundary           — crash-safe wrapper
+└── App (5 screens: 0–3 + results)
+    ├── Step 0: character picker (5 cards)
+    ├── Step 1: level picker (5 options)
+    ├── Step 2: era preference (multi-select chips, optional)
+    ├── Step 3: exam optional (Yes/No → syllabus + grade if Yes)
+    └── Results: scored combination, regenerate button, YouTube modal
+```
+
+### Build Status — Last updated 2026-05-18
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–69 | All previously completed features (Phases 1–36) | ✅ Done |
+| 70 | List/Group filter tabs in search results | ✅ Done (Phase 37) |
+| 71 | admin-search.html — full-featured admin search | ✅ Done (Phase 37) |
+| 72 | index.html — search-first homepage, dark theme, tool cards | ✅ Done (Phase 37) |
+| 73 | Dark theme — connect.html + recommend.html + diagnose.html | ✅ Done (Phase 37) |
+| 74 | recommend.html — simplified 4-step flow | ✅ Done (Phase 38) |
+| 75 | recommend.html — Safari compatibility (color-mix, optional chaining, ErrorBoundary) | ✅ Done (Phase 38) |
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | YouTube API key — referrer restriction | High | Set allowed referrers to `thepianobutler.com/*` in Google Cloud Console → Credentials → API key restrictions. Currently unrestricted. |
+| 2 | Gumroad product setup | High | Create product at gumroad.com → upload sample PDF from diagnose.html → replace `GUMROAD_URL` constant in diagnose.html → push to main. |
+| 3 | connect.html — real teacher info | High | Replace placeholder teacher cards with real photo, booking link, and price. |
+| 4 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify. |
+| 5 | Sitewide UX review | Medium | Open live site at thepianobutler.com, use as a real teacher/student. Note friction. |
+| 6 | Ad integration | Low | Google AdSense application or direct piano brand deals. Requires traffic first. |
+| 7 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available from abrsm.org. |
+
+### Known Issues (as of 2026-05-18)
+- `GUMROAD_URL` in diagnose.html is a placeholder — must be replaced with real Gumroad link before promoting publicly.
+- connect.html: placeholder teacher cards — real info needed before public promotion.
+- YouTube API key (`AIzaSyDR9BQfybtyS2e-H9wgtFgWbfqlQWpLCW8`) is unrestricted — add referrer restriction in Google Cloud Console.
+- jsPDF radar chart in diagnose.html: uses `doc.moveTo/lineTo` — verify renders correctly in browser before selling reports.
