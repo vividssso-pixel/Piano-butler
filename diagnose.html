@@ -992,6 +992,106 @@ function ScoreBar({ domain, score }) {
 /* ─────────────────────────────────────────────
    BEGINNER RESULT SCREEN
 ───────────────────────────────────────────── */
+/* ── Share Result Button ── */
+function ShareResultButton({ type, data }) {
+  const [copied, setCopied] = React.useState(false);
+
+  function buildUrl() {
+    const payload = { type, ...data };
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+    return window.location.origin + window.location.pathname + '?result=' + encoded;
+  }
+
+  function handleShare() {
+    const url = buildUrl();
+    if (navigator.share) {
+      navigator.share({
+        title: 'My Piano Diagnosis — Piano Butler',
+        text: type === 'returner'
+          ? `I just took the Piano Butler skill assessment. My result: ${data.levelLabel} (${data.overallPct}%)`
+          : `I just created my Piano Butler learner profile. I want to play: ${data.genreStr}`,
+        url,
+      }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(url).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      }).catch(() => {
+        // Fallback: select a temp input
+        const inp = document.createElement('input');
+        inp.value = url;
+        document.body.appendChild(inp);
+        inp.select();
+        document.execCommand('copy');
+        document.body.removeChild(inp);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      });
+    }
+  }
+
+  return (
+    <div style={{ textAlign:'center', marginTop:24, paddingTop:20, borderTop:'1px solid #252525' }}>
+      <button onClick={handleShare}
+        style={{ padding:'10px 24px', borderRadius:10, border:'1px solid #333',
+          background: copied ? '#1e2d1e' : '#242424', color: copied ? '#84c484' : '#888',
+          fontSize:13, fontWeight:700, cursor:'pointer', transition:'all 0.2s', fontFamily:'inherit' }}>
+        {copied ? '✓ Link copied!' : '🔗 Share my result'}
+      </button>
+      <p style={{ fontSize:11, color:'#444', marginTop:8 }}>
+        Share this link with your teacher or friends
+      </p>
+    </div>
+  );
+}
+
+/* ── Shared result view (read from URL) ── */
+function SharedResultView({ payload, onClose }) {
+  const isReturner = payload.type === 'returner';
+  return (
+    <div style={{ minHeight:'100vh', background:'#1a1a1a', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'40px 20px', textAlign:'center' }}>
+      <a href="index.html" style={{ position:'absolute', top:20, left:20, color:'#888', textDecoration:'none', fontSize:13, fontWeight:600 }}>← Piano Butler</a>
+      <div style={{ fontSize:42, marginBottom:12 }}>🎹</div>
+      <div style={{ fontSize:11, fontWeight:800, color:'#555', letterSpacing:'0.08em', marginBottom:8 }}>SHARED PIANO DIAGNOSIS</div>
+
+      {isReturner ? (
+        <div style={{ maxWidth:400 }}>
+          <div style={{ padding:'8px 20px', borderRadius:20, display:'inline-block',
+            background:'#2d1e10', border:'1.5px solid #d4956a', marginBottom:12 }}>
+            <span style={{ fontSize:14, fontWeight:800, color:'#d4956a' }}>{payload.levelLabel}</span>
+          </div>
+          <p style={{ fontSize:13, color:'#aaa49e', lineHeight:1.65, marginBottom:16 }}>
+            Overall score: <strong style={{color:'#e8e3dc'}}>{payload.overallPct}%</strong>
+          </p>
+          {payload.weakest && payload.weakest.length > 0 && (
+            <p style={{ fontSize:12, color:'#666' }}>
+              Focus areas: {payload.weakest.join(', ')}
+            </p>
+          )}
+        </div>
+      ) : (
+        <div style={{ maxWidth:400 }}>
+          <div style={{ padding:'8px 20px', borderRadius:20, display:'inline-block',
+            background:'#1e2d1e', border:'1.5px solid #84c484', marginBottom:12 }}>
+            <span style={{ fontSize:14, fontWeight:800, color:'#84c484' }}>{payload.profile}</span>
+          </div>
+          <p style={{ fontSize:13, color:'#aaa49e', lineHeight:1.65, marginBottom:8 }}>
+            Wants to play: <strong style={{color:'#e8e3dc'}}>{payload.genreStr}</strong>
+          </p>
+          <p style={{ fontSize:12, color:'#666' }}>
+            Learning format: {payload.teacherFormat} · Timeline: {payload.timeline}
+          </p>
+        </div>
+      )}
+
+      <div style={{ marginTop:28, display:'flex', gap:10, flexWrap:'wrap', justifyContent:'center' }}>
+        <a href="diagnose.html" className="cta-primary">Take my own diagnosis</a>
+        <a href="connect.html" className="cta-ghost">Find a teacher</a>
+      </div>
+    </div>
+  );
+}
+
 function BeginnerResults({ bResult, onRestart }) {
   const { profile, genreStr, pace, goalNote, teacherFormat, instrNote, timeline, pieces } = bResult;
   const [openSection, setOpenSection] = useState(null);
@@ -1113,6 +1213,9 @@ function BeginnerResults({ bResult, onRestart }) {
           <a href="index.html" className="cta-ghost">🎹 Browse repertoire</a>
         </div>
 
+        {/* Share */}
+        <ShareResultButton type="beginner" data={{ profile: profile.label, genreStr, timeline: timeline.label, teacherFormat }} />
+
       </div>
     </div>
   );
@@ -1124,6 +1227,15 @@ function BeginnerResults({ bResult, onRestart }) {
 const PHASE_LABELS = ['Background','Purpose','Technique','Ear Training','Theory','Sight-Reading'];
 
 function App() {
+  // ── Check for shared result in URL ──
+  const [sharedPayload] = useState(() => {
+    try {
+      const p = new URLSearchParams(window.location.search).get('result');
+      if (p) return JSON.parse(decodeURIComponent(escape(atob(p))));
+    } catch(e) {}
+    return null;
+  });
+
   const [screen, setScreen]         = useState('landing');
   const [background, setBackground] = useState(null);
 
@@ -1254,6 +1366,9 @@ function App() {
 
   const bProgressPct = Math.round(((bqIdx + 1) / BEGINNER_QUESTIONS.length) * 100);
 
+  /* ── SHARED RESULT VIEW ── */
+  if (sharedPayload) return <SharedResultView payload={sharedPayload} />;
+
   /* ── LANDING ── */
   if (screen === 'landing') return (
     <div style={{ minHeight:'100vh', background:'#1a1a1a',
@@ -1272,33 +1387,40 @@ function App() {
         <strong style={{color:'#e8e3dc'}}> clear, honest picture</strong> of where you are and what to do next.
       </p>
 
-      {/* Two paths preview */}
-      <div style={{ display:'flex', gap:12, justifyContent:'center', flexWrap:'wrap', margin:'0 0 28px', maxWidth:480 }}>
-        <div style={{ background:'#1e2d1e', border:'1px solid #2a4a2a', borderRadius:10,
-          padding:'10px 16px', textAlign:'left', minWidth:180 }}>
-          <div style={{ fontSize:12, fontWeight:800, color:'#84c484', marginBottom:4 }}>🌱 First-time learner</div>
-          <div style={{ fontSize:11, color:'#666', lineHeight:1.5 }}>
+      {/* Two clickable path cards */}
+      <div style={{ display:'flex', gap:14, justifyContent:'center', flexWrap:'wrap', margin:'0 0 20px', maxWidth:520, width:'100%' }}>
+        <button
+          onClick={() => { setBackground('beginner'); setBqIdx(0); setBAnswers({}); setBPendingMulti([]); setScreen('beginner_quiz'); }}
+          style={{ flex:'1 1 200px', background:'#1e2d1e', border:'2px solid #2a4a2a', borderRadius:14,
+            padding:'18px 20px', textAlign:'left', cursor:'pointer', transition:'all 0.18s',
+            outline:'none', maxWidth:240 }}
+          onMouseOver={e=>{ e.currentTarget.style.borderColor='#84c484'; e.currentTarget.style.background='#1e3320'; }}
+          onMouseOut={e=>{ e.currentTarget.style.borderColor='#2a4a2a'; e.currentTarget.style.background='#1e2d1e'; }}>
+          <div style={{ fontSize:22, marginBottom:8 }}>🌱</div>
+          <div style={{ fontSize:14, fontWeight:800, color:'#84c484', marginBottom:6 }}>First-time learner</div>
+          <div style={{ fontSize:12, color:'#666', lineHeight:1.6 }}>
             Tell us what you want to play, your goals, and how you learn best — we'll build your teacher profile.
           </div>
-        </div>
-        <div style={{ background:'#2d1e10', border:'1px solid #4a2e10', borderRadius:10,
-          padding:'10px 16px', textAlign:'left', minWidth:180 }}>
-          <div style={{ fontSize:12, fontWeight:800, color:'#d4956a', marginBottom:4 }}>🔄 Returning player</div>
-          <div style={{ fontSize:11, color:'#666', lineHeight:1.5 }}>
+          <div style={{ marginTop:12, fontSize:11, fontWeight:700, color:'#84c484' }}>Start → </div>
+        </button>
+
+        <button
+          onClick={() => { setBackground('returner'); setScreen('quiz'); setPhase(1); }}
+          style={{ flex:'1 1 200px', background:'#2d1e10', border:'2px solid #4a2e10', borderRadius:14,
+            padding:'18px 20px', textAlign:'left', cursor:'pointer', transition:'all 0.18s',
+            outline:'none', maxWidth:240 }}
+          onMouseOver={e=>{ e.currentTarget.style.borderColor='#d4956a'; e.currentTarget.style.background='#321d0a'; }}
+          onMouseOut={e=>{ e.currentTarget.style.borderColor='#4a2e10'; e.currentTarget.style.background='#2d1e10'; }}>
+          <div style={{ fontSize:22, marginBottom:8 }}>🔄</div>
+          <div style={{ fontSize:14, fontWeight:800, color:'#d4956a', marginBottom:6 }}>Returning player</div>
+          <div style={{ fontSize:12, color:'#666', lineHeight:1.6 }}>
             4-domain skill assessment across technique, ear, theory, and sight-reading. Know exactly what to rebuild first.
           </div>
-        </div>
+          <div style={{ marginTop:12, fontSize:11, fontWeight:700, color:'#d4956a' }}>Start → </div>
+        </button>
       </div>
 
-      <button onClick={() => setScreen('quiz')}
-        style={{ padding:'15px 44px', borderRadius:13, border:'none', cursor:'pointer',
-          background:'#d4956a', color:'#1a1a1a', fontSize:16, fontWeight:800,
-          transition:'all 0.2s' }}
-        onMouseOver={e=>e.currentTarget.style.transform='translateY(-2px)'}
-        onMouseOut={e=>e.currentTarget.style.transform='translateY(0)'}>
-        Start →
-      </button>
-      <p style={{ marginTop:14, fontSize:11, color:'#555' }}>
+      <p style={{ marginTop:6, fontSize:11, color:'#444' }}>
         Free · No login · 3–5 minutes
       </p>
     </div>
@@ -1731,6 +1853,10 @@ function App() {
               🎹 Get piece recommendations
             </a>
           </div>
+
+          {/* ── Share result ── */}
+          <ShareResultButton type="returner" data={{ scores, levelLabel, overallPct,
+            weakest: weakest.map(d=>d.id), strongest: strongest.map(d=>d.id) }} />
 
         </div>
       </div>
