@@ -1520,24 +1520,55 @@ diagnose.html
 | 3 | Supabase Magic Link email template | Supabase dashboard | Subject: "🎹 Your Piano Butler sign-in link". Body: branded HTML email with Piano Butler header, gradient CTA button, footer with thepianobutler.com link. |
 | 4 | Dark theme redesign — Claude-inspired | `index.html` | Full dark aesthetic: `#1a1a1a` body, `#e8e3dc` text, `#d4956a` orange accent, Inter font. Nav, sidebar, grade cards, piece rows, search bar, modals, autocomplete all updated. Grade cards: dark bg + subtle accent border. Search input: dark with orange focus glow. Star/save: orange. All filter states use warm orange instead of indigo. |
 
-### Build Status — Last updated 2026-05-15 (Phase 36)
+### Phase 36 Updates (2026-05-18 — diagnosis redesign)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | diagnose.html — full redesign (returner flow) | `diagnose.html` | Replaced 8-question flat quiz with domain-based skill assessment. 16 questions across 4 domains (Technique/Ear/Theory/Sight-Reading), 4 per domain scored 0–3. Results: SVG radar chart, score bars per domain, weak/strong analysis, 8-week personalised roadmap (accordion), 6 corpus-matched piece recommendations. |
+| 2 | diagnose.html — beginner flow added | `diagnose.html` | Separate branch for first-time learners. 8 preference questions: genre, dream piece, goal, practice time, timeline, teacher format preference, instrument access, learning style. Result: learner profile card (The Planner / Explorer / Achiever / Thinker), teaching direction note, instrument advice, "what to tell your teacher" summary, 4 starter pieces to listen to. localStorage key: `pb_beginner_v1`. |
+| 3 | Landing page updated | `diagnose.html` | New landing copy: "Where are you on your piano journey?" — two-path preview cards (🌱 First-time / 🔄 Returning). |
+
+### diagnose.html Architecture (Phase 36 — dual flow)
+
+```
+diagnose.html
+├── buildCorpus()              — loads AMEB/ABRSM/Trinity early grades
+├── DOMAINS (4)                — Technique / Ear / Theory / Sight-Reading, 4 questions each
+├── BACKGROUNDS (2)            — returner / beginner (determines flow branch)
+├── PURPOSES (4)               — hobby / exam / perform / teach (returner only)
+├── BEGINNER_QUESTIONS (8)     — genre, dream, goal, practice, timeline, teacher, instrument, style
+│
+├── computeResult()            — returner: domain scores → level + roadmap + recs
+├── computeBeginnerResult()    — beginner: answers → learner profile + teaching direction + recs
+│
+├── RadarChart                 — pure SVG, 4-axis polygon, colour-coded by score
+├── ScoreBar                   — per-domain progress bar with ✓/△/! indicator
+├── PieceCard                  — piece card with era badge + focus chips
+├── BeginnerResults            — beginner result screen component
+│
+└── App (screens)
+    ├── landing                — two-path preview + Start button
+    ├── quiz (returner)        — phase 0: background, phase 1: purpose, phases 2–5: domains
+    ├── beginner_quiz          — 8 questions, single/multi-select, step dots
+    ├── processing             — spin animation (returner only)
+    ├── results                — radar + score bars + weak/strong + roadmap + pieces
+    └── beginner_results       — profile card + teaching direction + "tell your teacher" + pieces
+```
+
+### Build Status — Last updated 2026-05-18
 
 | # | Feature | Status |
 |---|---------|--------|
-| 1–63 | All previously completed features | ✅ Done |
-| 64 | Domain thepianobutler.com — DNS + HTTPS | ✅ Done (Phase 35) |
-| 65 | 2-step onboarding modal | ✅ Done (Phase 35) |
-| 66 | Magic Link email template | ✅ Done (Phase 35) |
-| 67 | Dark theme redesign | ✅ Done (Phase 36) |
+| 1–67 | All previously completed features | ✅ Done |
+| 68 | diagnose.html — returner domain-based redesign | ✅ Done (Phase 36) |
+| 69 | diagnose.html — beginner preference flow | ✅ Done (Phase 36) |
 
 ### Pending Work (next session)
 
 | # | Task | Priority |
 |---|------|----------|
-| 1 | CLAUDE.md update | ✅ Done this session |
-| 2 | connect.html dark theme | Medium — still light theme |
-| 3 | diagnose.html dark theme | Medium — still light theme |
-| 4 | recommend.html dark theme | Medium — still light theme |
-| 5 | YouTube API key referrer restriction | High — set in Google Cloud Console |
-| 6 | Google Search Console — submit sitemap | Quick win |
-| 7 | Ad integration | Low — after traffic |
+| 1 | connect.html dark theme | Medium — still light theme |
+| 2 | recommend.html dark theme | Medium — still light theme |
+| 3 | YouTube API key referrer restriction | High — set in Google Cloud Console |
+| 4 | Google Search Console — submit sitemap | Quick win |
+| 5 | Ad integration | Low — after traffic |
