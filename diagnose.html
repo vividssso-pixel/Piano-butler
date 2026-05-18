@@ -1045,48 +1045,257 @@ function ShareResultButton({ type, data }) {
   );
 }
 
-/* ── Shared result view (read from URL) ── */
-function SharedResultView({ payload, onClose }) {
-  const isReturner = payload.type === 'returner';
-  return (
-    <div style={{ minHeight:'100vh', background:'#1a1a1a', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'40px 20px', textAlign:'center' }}>
-      <a href="index.html" style={{ position:'absolute', top:20, left:20, color:'#888', textDecoration:'none', fontSize:13, fontWeight:600 }}>← Piano Butler</a>
-      <div style={{ fontSize:42, marginBottom:12 }}>🎹</div>
-      <div style={{ fontSize:11, fontWeight:800, color:'#555', letterSpacing:'0.08em', marginBottom:8 }}>SHARED PIANO DIAGNOSIS</div>
+/* ── YouTube helpers (for shared view) ── */
+const YT_API_KEY_D = "AIzaSyAUydn17tJCoduix-iv7f7bKfXweIrR6Mg";
 
-      {isReturner ? (
-        <div style={{ maxWidth:400 }}>
-          <div style={{ padding:'8px 20px', borderRadius:20, display:'inline-block',
-            background:'#2d1e10', border:'1.5px solid #d4956a', marginBottom:12 }}>
-            <span style={{ fontSize:14, fontWeight:800, color:'#d4956a' }}>{payload.levelLabel}</span>
+function useSharedVideoModal() {
+  const [modal, setModal] = React.useState(null);
+  const open = React.useCallback(async (composer, title) => {
+    setModal({ loading: true, title });
+    try {
+      const q = encodeURIComponent((composer||'').split(',')[0].trim() + ' ' + title + ' piano');
+      const res = await fetch('https://www.googleapis.com/youtube/v3/search?part=snippet&q=' + q + '&type=video&maxResults=1&key=' + YT_API_KEY_D);
+      const data = await res.json();
+      const item = data.items && data.items[0];
+      if (item) setModal({ videoId: item.id.videoId, title: item.snippet.title });
+      else setModal(null);
+    } catch(e) { setModal(null); }
+  }, []);
+  const close = React.useCallback(() => setModal(null), []);
+  return { modal, open, close };
+}
+
+function SharedVideoModal({ modal, onClose }) {
+  if (!modal) return null;
+  return (
+    <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.88)',
+      zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <div onClick={e=>e.stopPropagation()} style={{ background:'#111', borderRadius:14,
+        overflow:'hidden', maxWidth:680, width:'92%', boxShadow:'0 30px 80px rgba(0,0,0,0.8)' }}>
+        {modal.loading ? (
+          <div style={{ padding:40, textAlign:'center', color:'#888', fontSize:13 }}>Loading…</div>
+        ) : (
+          <>
+            <div style={{ position:'relative', paddingBottom:'56.25%', height:0 }}>
+              <iframe src={`https://www.youtube.com/embed/${modal.videoId}?autoplay=1`}
+                style={{ position:'absolute', inset:0, width:'100%', height:'100%', border:'none' }}
+                allow="autoplay; encrypted-media" allowFullScreen />
+            </div>
+            <div style={{ padding:'10px 16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <span style={{ fontSize:11, color:'#666', fontWeight:600 }}>{modal.title}</span>
+              <button onClick={onClose} style={{ background:'none', border:'none', color:'#888',
+                fontSize:18, cursor:'pointer', lineHeight:1 }}>✕</button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Shared result view (read from URL) ── */
+function SharedResultView({ payload }) {
+  const isReturner = payload.type === 'returner';
+  const { modal, open: openVideo, close: closeVideo } = useSharedVideoModal();
+
+  const ERA_COL = {
+    Baroque:      { bg:'#2d1f3d', text:'#c084fc' },
+    Classical:    { bg:'#2a1f0a', text:'#fbbf24' },
+    Romantic:     { bg:'#2d0f1e', text:'#f472b6' },
+    Modern:       { bg:'#0d2318', text:'#4ade80' },
+    Contemporary: { bg:'#0c2233', text:'#38bdf8' },
+  };
+
+  /* ── Beginner shared view ── */
+  if (!isReturner) {
+    const pieces = payload.pieces || [];
+    return (
+      <div style={{ minHeight:'100vh', background:'#1a1a1a' }}>
+        <SharedVideoModal modal={modal} onClose={closeVideo} />
+        {/* Nav */}
+        <div style={{ background:'#1e1e1e', borderBottom:'1px solid #2a2a2a',
+          padding:'14px 20px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+          <a href="index.html" style={{ color:'#888', textDecoration:'none', fontSize:13, fontWeight:600 }}>← Piano Butler</a>
+          <span style={{ fontSize:11, fontWeight:800, color:'#555', letterSpacing:'0.08em' }}>SHARED PIANO DIAGNOSIS</span>
+          <div style={{ width:60 }} />
+        </div>
+
+        <div style={{ maxWidth:620, margin:'0 auto', padding:'24px 16px 60px' }}>
+
+          {/* Profile card */}
+          <div className="result-card fade-up" style={{ textAlign:'center', paddingBottom:22 }}>
+            <div style={{ fontSize:11, fontWeight:800, color:'#555', letterSpacing:'0.08em', marginBottom:10 }}>YOUR LEARNER PROFILE</div>
+            <div style={{ fontSize:32, marginBottom:8 }}>🌱</div>
+            <div style={{ padding:'7px 20px', borderRadius:20, display:'inline-block',
+              background:'#1e2d1e', border:'1.5px solid #84c484', marginBottom:10 }}>
+              <span style={{ fontSize:15, fontWeight:800, color:'#84c484' }}>{payload.profile}</span>
+            </div>
+            {payload.profileDesc && (
+              <p style={{ fontSize:13, color:'#aaa49e', lineHeight:1.7, maxWidth:440, margin:'10px auto 0' }}>
+                {payload.profileDesc}
+              </p>
+            )}
+            {/* Info chips */}
+            <div style={{ display:'flex', flexWrap:'wrap', gap:8, justifyContent:'center', marginTop:16 }}>
+              {payload.genreStr && (
+                <div style={{ background:'#2a2a2a', border:'1px solid #333', borderRadius:8, padding:'7px 12px', textAlign:'left' }}>
+                  <div style={{ fontSize:10, color:'#555', fontWeight:700 }}>🎵 Music you want to play</div>
+                  <div style={{ fontSize:12, color:'#e8e3dc', fontWeight:700, marginTop:2 }}>{payload.genreStr}</div>
+                </div>
+              )}
+              {payload.teacherFormat && (
+                <div style={{ background:'#2a2a2a', border:'1px solid #333', borderRadius:8, padding:'7px 12px', textAlign:'left' }}>
+                  <div style={{ fontSize:10, color:'#555', fontWeight:700 }}>👩‍🏫 Learning format</div>
+                  <div style={{ fontSize:12, color:'#e8e3dc', fontWeight:700, marginTop:2 }}>{payload.teacherFormat}</div>
+                </div>
+              )}
+              {payload.timeline && (
+                <div style={{ background:'#2a2a2a', border:'1px solid #333', borderRadius:8, padding:'7px 12px', textAlign:'left' }}>
+                  <div style={{ fontSize:10, color:'#555', fontWeight:700 }}>📅 Timeline</div>
+                  <div style={{ fontSize:12, color:'#e8e3dc', fontWeight:700, marginTop:2 }}>{payload.timeline}</div>
+                </div>
+              )}
+            </div>
           </div>
-          <p style={{ fontSize:13, color:'#aaa49e', lineHeight:1.65, marginBottom:16 }}>
-            Overall score: <strong style={{color:'#e8e3dc'}}>{payload.overallPct}%</strong>
+
+          {/* Piece recommendations */}
+          {pieces.length > 0 && (
+            <div className="result-card fade-up" style={{ animationDelay:'0.08s' }}>
+              <div style={{ fontSize:11, fontWeight:800, color:'#555', letterSpacing:'0.08em', marginBottom:4 }}>
+                PIECES AT YOUR LEVEL TO LISTEN TO
+              </div>
+              <p style={{ fontSize:12, color:'#666', marginBottom:14 }}>
+                You don't need to learn these yet — just listen and see what excites you.
+              </p>
+              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                {pieces.map((p, i) => {
+                  const ec = ERA_COL[p.era] || { bg:'#2a2a2a', text:'#888' };
+                  const surname = (p.c||'').split(',')[0];
+                  const wikiUrl = `https://en.wikipedia.org/wiki/Special:Search?search=${encodeURIComponent(surname + ' composer pianist')}`;
+                  return (
+                    <div key={i} className="piece-card" style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8 }}>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:13, fontWeight:700, color:'#e8e3dc', marginBottom:2, lineHeight:1.3 }}>{p.t}</div>
+                        <a href={wikiUrl} target="_blank" rel="noopener"
+                          style={{ fontSize:11, color:'#d4956a', fontWeight:600, textDecoration:'none' }}>{p.c}</a>
+                        {(p.focus||[]).length > 0 && (
+                          <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginTop:6 }}>
+                            {p.focus.slice(0,3).map((f,fi)=>(
+                              <span key={fi} style={{ fontSize:9, padding:'2px 6px', borderRadius:5,
+                                background:'#333', color:'#777', fontWeight:600 }}>{f}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:4, flexShrink:0 }}>
+                        <span style={{ fontSize:9, fontWeight:700, padding:'2px 7px', borderRadius:6,
+                          background:ec.bg, color:ec.text }}>{p.era}</span>
+                        <span style={{ fontSize:9, color:'#666', fontWeight:600 }}>
+                          {p._syllabus} · {p._grade || p._gradeKey}
+                        </span>
+                        <button onClick={() => openVideo(p.c, p.t)}
+                          style={{ marginTop:4, background:'#d4956a', color:'#1a1a1a', border:'none',
+                            borderRadius:6, fontSize:10, fontWeight:700, padding:'4px 9px', cursor:'pointer' }}>
+                          ▶ Listen
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* CTAs */}
+          <div style={{ display:'flex', gap:10, flexWrap:'wrap', justifyContent:'center', marginTop:20 }}>
+            <a href="diagnose.html" className="cta-primary">Take my own diagnosis</a>
+            <a href="connect.html" className="cta-ghost">Find a teacher</a>
+          </div>
+          <div style={{ textAlign:'center', marginTop:16 }}>
+            <a href="index.html" style={{ fontSize:12, color:'#555', textDecoration:'none' }}>
+              Explore all 4,500 pieces on Piano Butler →
+            </a>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Returner shared view ── */
+  const DOMAIN_COLORS = { technique:'#f97316', ear:'#a78bfa', theory:'#34d399', sightreading:'#38bdf8' };
+  const DOMAIN_LABELS = { technique:'Technique', ear:'Ear', theory:'Theory', sightreading:'Sight-reading' };
+  const scores = payload.scores || {};
+  return (
+    <div style={{ minHeight:'100vh', background:'#1a1a1a' }}>
+      <SharedVideoModal modal={modal} onClose={closeVideo} />
+      {/* Nav */}
+      <div style={{ background:'#1e1e1e', borderBottom:'1px solid #2a2a2a',
+        padding:'14px 20px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <a href="index.html" style={{ color:'#888', textDecoration:'none', fontSize:13, fontWeight:600 }}>← Piano Butler</a>
+        <span style={{ fontSize:11, fontWeight:800, color:'#555', letterSpacing:'0.08em' }}>SHARED PIANO DIAGNOSIS</span>
+        <div style={{ width:60 }} />
+      </div>
+
+      <div style={{ maxWidth:620, margin:'0 auto', padding:'24px 16px 60px' }}>
+
+        {/* Level card */}
+        <div className="result-card fade-up" style={{ textAlign:'center' }}>
+          <div style={{ fontSize:11, fontWeight:800, color:'#555', letterSpacing:'0.08em', marginBottom:10 }}>RETURNING PLAYER DIAGNOSIS</div>
+          <div style={{ fontSize:32, marginBottom:8 }}>🔄</div>
+          <div style={{ padding:'8px 20px', borderRadius:20, display:'inline-block',
+            background:'#2d1e10', border:'1.5px solid #d4956a', marginBottom:10 }}>
+            <span style={{ fontSize:15, fontWeight:800, color:'#d4956a' }}>{payload.levelLabel}</span>
+          </div>
+          <p style={{ fontSize:13, color:'#aaa49e', lineHeight:1.65, marginTop:8 }}>
+            Overall score: <strong style={{ color:'#e8e3dc' }}>{payload.overallPct}%</strong>
           </p>
+          {/* Domain score bars */}
+          {Object.keys(scores).length > 0 && (
+            <div style={{ marginTop:16, display:'flex', flexDirection:'column', gap:8, textAlign:'left' }}>
+              {Object.entries(scores).map(([key, val]) => {
+                const pct = typeof val === 'object' ? (val.pct||0) : val;
+                const col = DOMAIN_COLORS[key] || '#d4956a';
+                return (
+                  <div key={key}>
+                    <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
+                      <span style={{ fontSize:11, color:'#aaa49e', fontWeight:600 }}>{DOMAIN_LABELS[key]||key}</span>
+                      <span style={{ fontSize:11, color:col, fontWeight:700 }}>{Math.round(pct)}%</span>
+                    </div>
+                    <div style={{ height:5, background:'#2a2a2a', borderRadius:3 }}>
+                      <div style={{ height:'100%', width:`${pct}%`, background:col, borderRadius:3, transition:'width 0.6s ease' }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
           {payload.weakest && payload.weakest.length > 0 && (
-            <p style={{ fontSize:12, color:'#666' }}>
-              Focus areas: {payload.weakest.join(', ')}
-            </p>
+            <div style={{ marginTop:14, padding:'10px 14px', background:'#2a2a2a', borderRadius:8, textAlign:'left' }}>
+              <div style={{ fontSize:10, fontWeight:700, color:'#555', marginBottom:4 }}>FOCUS AREAS</div>
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                {payload.weakest.map((w,i) => (
+                  <span key={i} style={{ fontSize:11, padding:'3px 8px', borderRadius:6,
+                    background:'#d4956a22', color:'#d4956a', fontWeight:600 }}>
+                    {DOMAIN_LABELS[w]||w}
+                  </span>
+                ))}
+              </div>
+            </div>
           )}
         </div>
-      ) : (
-        <div style={{ maxWidth:400 }}>
-          <div style={{ padding:'8px 20px', borderRadius:20, display:'inline-block',
-            background:'#1e2d1e', border:'1.5px solid #84c484', marginBottom:12 }}>
-            <span style={{ fontSize:14, fontWeight:800, color:'#84c484' }}>{payload.profile}</span>
-          </div>
-          <p style={{ fontSize:13, color:'#aaa49e', lineHeight:1.65, marginBottom:8 }}>
-            Wants to play: <strong style={{color:'#e8e3dc'}}>{payload.genreStr}</strong>
-          </p>
-          <p style={{ fontSize:12, color:'#666' }}>
-            Learning format: {payload.teacherFormat} · Timeline: {payload.timeline}
-          </p>
-        </div>
-      )}
 
-      <div style={{ marginTop:28, display:'flex', gap:10, flexWrap:'wrap', justifyContent:'center' }}>
-        <a href="diagnose.html" className="cta-primary">Take my own diagnosis</a>
-        <a href="connect.html" className="cta-ghost">Find a teacher</a>
+        {/* CTAs */}
+        <div style={{ display:'flex', gap:10, flexWrap:'wrap', justifyContent:'center', marginTop:20 }}>
+          <a href="diagnose.html" className="cta-primary">Take my own diagnosis</a>
+          <a href="connect.html" className="cta-ghost">Find a teacher</a>
+        </div>
+        <div style={{ textAlign:'center', marginTop:16 }}>
+          <a href="index.html" style={{ fontSize:12, color:'#555', textDecoration:'none' }}>
+            Explore all 4,500 pieces on Piano Butler →
+          </a>
+        </div>
+
       </div>
     </div>
   );
@@ -1214,7 +1423,7 @@ function BeginnerResults({ bResult, onRestart }) {
         </div>
 
         {/* Share */}
-        <ShareResultButton type="beginner" data={{ profile: profile.label, genreStr, timeline: timeline.label, teacherFormat }} />
+        <ShareResultButton type="beginner" data={{ profile: profile.label, profileDesc: profile.desc, genreStr, timeline: timeline.label, teacherFormat, pieces: pieces.slice(0,6) }} />
 
       </div>
     </div>

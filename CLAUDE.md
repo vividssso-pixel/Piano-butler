@@ -1684,7 +1684,7 @@ recommend.html (dark theme, 4-step wizard)
 ### Known Issues (as of 2026-05-18)
 - `GUMROAD_URL` in diagnose.html is a placeholder — must be replaced with real Gumroad link before promoting publicly.
 - connect.html: placeholder teacher cards — real info needed before public promotion.
-- YouTube API key (`AIzaSyDR9BQfybtyS2e-H9wgtFgWbfqlQWpLCW8`) is unrestricted — add referrer restriction in Google Cloud Console.
+- YouTube API key (`[REDACTED-OLD]`) is unrestricted — add referrer restriction in Google Cloud Console.
 - jsPDF radar chart in diagnose.html: uses `doc.moveTo/lineTo` — verify renders correctly in browser before selling reports.
 
 ---
@@ -1696,7 +1696,7 @@ recommend.html (dark theme, 4-step wizard)
 | 1 | Landing cards — directly clickable | `diagnose.html` | 🌱 / 🔄 preview cards replaced with proper `<button>` elements. Click goes directly to correct flow — no intermediate background question. 🌱 → `beginner_quiz` immediately. 🔄 → `quiz` at phase 1 (Purpose), skipping phase 0. "Start →" single button removed. |
 | 2 | ShareResultButton component | `diagnose.html` | New component added. "🔗 Share my result" button appears at bottom of both result screens (returner + beginner). Encodes result to base64 URL param (`?result=…`). Uses `navigator.share` on mobile, clipboard copy on desktop. Shows "✓ Link copied!" confirmation for 2.5s. |
 | 3 | SharedResultView component | `diagnose.html` | Read-only result page rendered when `?result=` URL param detected on load. Shows returner result (levelLabel + overallPct + weak areas) or beginner profile (profile name + genre + timeline + teacherFormat). CTAs: "Take my own diagnosis" + "Find a teacher". No login required to view. |
-| 4 | YouTube API key rotated — security | All 21 HTML files | Old key `AIzaSyDR9BQfybtyS2e-H9wgtFgWbfqlQWpLCW8` exposed in GitHub history (GitGuardian alert). New key `AIzaSyAUydn17tJCoduix-iv7f7bKfXweIrR6Mg` applied across all 21 HTML files. Old key deleted from Google Cloud Console. New key restricted to `thepianobutler.com/*` + `www.thepianobutler.com/*` referrers. |
+| 4 | YouTube API key rotated — security | All 21 HTML files | Old key `[REDACTED-OLD]` exposed in GitHub history (GitGuardian alert). New key `[REDACTED]` applied across all 21 HTML files. Old key deleted from Google Cloud Console. New key restricted to `thepianobutler.com/*` + `www.thepianobutler.com/*` referrers. |
 
 ### Build Status — Last updated 2026-05-18
 
