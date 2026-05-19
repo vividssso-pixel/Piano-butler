@@ -5,10 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Repertoire Recommender | Piano Butler</title>
   <meta name="description" content="Find the perfect piano pieces for any student — personalised by level, personality, and musical taste.">
+  <meta property="og:title" content="Repertoire Recommender | Piano Butler">
+  <meta property="og:description" content="Find the perfect piano pieces for any student — personalised by level, personality, and musical taste.">
+  <meta property="og:url" content="https://thepianobutler.com/recommend.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Repertoire Recommender | Piano Butler">
+  <meta name="twitter:description" content="Find the perfect piano pieces for any student — personalised by level, personality, and musical taste.">
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
   <!-- AMEB Comprehensive -->
   <script src="Prelim/data_prelim.js"></script>
@@ -61,7 +68,6 @@
   <script src="Trinity/Diploma/data_trinity_ftcl.js"></script>
 
   <style>
-    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
     :root {
       --bg:      #1a1a1a;
       --surface: #242424;
@@ -70,7 +76,7 @@
       --muted:   #888880;
       --accent:  #d4956a;
     }
-    * { box-sizing: border-box; font-family: 'Pretendard', -apple-system, sans-serif; }
+    * { box-sizing: border-box; font-family: 'Inter', -apple-system, sans-serif; }
     body { background: var(--bg); margin: 0; color: var(--text); }
 
     .option-btn {
@@ -334,8 +340,8 @@ function useVideoModal() {
       const data = await res.json();
       const item = data.items && data.items[0];
       if (item) setModal({ videoId:item.id.videoId, title:item.snippet.title, loading:false });
-      else { setModal(null); window.open('https://www.youtube.com/results?search_query='+q,'_blank'); }
-    } catch(e) { setModal(null); }
+      else setModal({ error:true, title, searchUrl:'https://www.youtube.com/results?search_query='+q, loading:false });
+    } catch(e) { setModal({ error:true, title, searchUrl:'https://www.youtube.com/results?search_query='+encodeURIComponent(title+' piano'), loading:false }); }
   },[]);
   const close = useCallback(() => setModal(null),[]);
   return { modal, open, close };
@@ -355,9 +361,17 @@ function VideoModal({ modal, onClose }) {
         <div style={{position:'relative',paddingBottom:'56.25%',height:0}}>
           {modal.loading
             ? <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',color:'#888880',fontSize:13}}>🎹 Searching YouTube...</div>
-            : <iframe src={'https://www.youtube.com/embed/'+modal.videoId+'?autoplay=1&rel=0'}
-                style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',border:'none'}}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen/>
+            : modal.error
+              ? <div style={{position:'absolute',inset:0,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12,padding:24}}>
+                  <div style={{fontSize:13,color:'#aaa49e',textAlign:'center'}}>No video found for "{modal.title}"</div>
+                  <a href={modal.searchUrl} target="_blank" rel="noopener"
+                    style={{fontSize:12,color:'#d4956a',textDecoration:'none',padding:'7px 16px',border:'1px solid #d4956a44',borderRadius:8}}>
+                    Search on YouTube →
+                  </a>
+                </div>
+              : <iframe src={'https://www.youtube.com/embed/'+modal.videoId+'?autoplay=1&rel=0'}
+                  style={{position:'absolute',top:0,left:0,width:'100%',height:'100%',border:'none'}}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen/>
           }
         </div>
       </div>
@@ -457,7 +471,7 @@ function App() {
   const [level, setLevel]         = useState(null);
   const [eras, setEras]           = useState([]);
   // Optional exam fields
-  const [wantsExam, setWantsExam] = useState(null); // true/false/null
+  const [wantsExam, setWantsExam] = useState(false); // default: no exam filter
   const [syllabus, setSyllabus]   = useState(null);
   const [grade, setGrade]         = useState(null);
   const [setSize, setSetSize]     = useState(4);
