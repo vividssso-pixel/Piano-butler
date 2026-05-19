@@ -11,8 +11,6 @@
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-
   <!-- AMEB Comprehensive -->
   <script src="Prelim/data_prelim.js"></script>
   <script src="G1/data_g1.js"></script>
@@ -1214,7 +1212,7 @@ function SharedResultView({ payload }) {
           {/* CTAs */}
           <div style={{ display:'flex', gap:10, flexWrap:'wrap', justifyContent:'center', marginTop:20 }}>
             <a href="diagnose.html" className="cta-primary">Take my own diagnosis</a>
-            <a href="connect.html" className="cta-ghost">Find a teacher</a>
+            <a href="index.html" className="cta-ghost">🎹 Browse repertoire</a>
           </div>
           <div style={{ textAlign:'center', marginTop:16 }}>
             <a href="index.html" style={{ fontSize:12, color:'#555', textDecoration:'none' }}>
@@ -1290,10 +1288,31 @@ function SharedResultView({ payload }) {
           )}
         </div>
 
+        {/* Piece recommendations */}
+        {payload.pieces && payload.pieces.length > 0 && (
+          <div className="result-card fade-up" style={{ marginTop:16 }}>
+            <div style={{ fontSize:11, fontWeight:800, color:'#555', letterSpacing:'0.08em', marginBottom:12 }}>RECOMMENDED PIECES</div>
+            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+              {payload.pieces.map((p,i) => (
+                <div key={i} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 0',
+                  borderBottom: i < payload.pieces.length-1 ? '1px solid #2a2a2a' : 'none' }}>
+                  <span style={{ fontSize:11, minWidth:20, color:'#555', fontWeight:700 }}>{i+1}</span>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:13, fontWeight:700, color:'#e8e3dc' }}>{p.t}</div>
+                    <div style={{ fontSize:11, color:'#777' }}>{p.c}{p.grade ? ` · ${p.grade}` : ''}</div>
+                  </div>
+                  {p.era && <span style={{ fontSize:10, padding:'2px 7px', borderRadius:5,
+                    background:'#242424', color:'#888', fontWeight:600 }}>{p.era}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* CTAs */}
         <div style={{ display:'flex', gap:10, flexWrap:'wrap', justifyContent:'center', marginTop:20 }}>
           <a href="diagnose.html" className="cta-primary">Take my own diagnosis</a>
-          <a href="connect.html" className="cta-ghost">Find a teacher</a>
+          <a href="index.html" className="cta-ghost">🎹 Browse repertoire</a>
         </div>
         <div style={{ textAlign:'center', marginTop:16 }}>
           <a href="index.html" style={{ fontSize:12, color:'#555', textDecoration:'none' }}>
@@ -1423,8 +1442,8 @@ function BeginnerResults({ bResult, onRestart }) {
 
         {/* CTA */}
         <div style={{ display:'flex', gap:10, flexWrap:'wrap', justifyContent:'center', marginTop:8 }}>
-          <a href="connect.html" className="cta-primary">👩‍🏫 Find a matched teacher</a>
-          <a href="index.html" className="cta-ghost">🎹 Browse repertoire</a>
+          <a href="index.html" className="cta-primary">🎹 Browse repertoire</a>
+          <a href="recommend.html" className="cta-ghost">Get piece recommendations</a>
         </div>
 
         {/* Share */}
@@ -1529,7 +1548,9 @@ function App() {
 
   const goBack = () => {
     if (qIdx > 0) { setQIdx(qIdx - 1); return; }
-    if (phase > 0) { setPhase(phase - 1); setQIdx(phase >= 2 ? DOMAINS[phase-3]?.questions.length - 1 : 0); return; }
+    if (phase > 1) { setPhase(phase - 1); setQIdx(DOMAINS[phase-3]?.questions.length - 1 || 0); return; }
+    // phase 1 (purpose) — returner landed here directly from landing card, so go back to landing
+    if (phase === 1) { setScreen('landing'); setPhase(0); setBackground(null); return; }
   };
 
   // ── Beginner answer handlers ──
@@ -2060,17 +2081,18 @@ function App() {
 
           {/* ── CTA ── */}
           <div style={{ display:'flex', gap:10, flexWrap:'wrap', justifyContent:'center', marginTop:8 }}>
-            <a href="connect.html" className="cta-primary">
-              👩‍🏫 Find a matched teacher
+            <a href="index.html" className="cta-primary">
+              🎹 Browse repertoire
             </a>
             <a href="recommend.html" className="cta-ghost">
-              🎹 Get piece recommendations
+              Get piece recommendations
             </a>
           </div>
 
           {/* ── Share result ── */}
           <ShareResultButton type="returner" data={{ scores, levelLabel, overallPct,
-            weakest: weakest.map(d=>d.id), strongest: strongest.map(d=>d.id) }} />
+            weakest: weakest.map(d=>d.id), strongest: [strongest.id],
+            pieces: pieces.map(p=>({ c:p.c, t:p.t, era:p.era, grade:p._grade||'' })) }} />
 
         </div>
       </div>

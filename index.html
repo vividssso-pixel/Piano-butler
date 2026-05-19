@@ -316,6 +316,8 @@ function searchCorpus(query, eraFilter, gradeFilter, syllabusFilter) {
         if (syllabusFilter && syllabusFilter !== 'All') {
             if (syllabusFilter === 'Leisure') {
                 if (p._type !== 'Leisure') return false;
+            } else if (syllabusFilter === 'AMEB') {
+                if (p._syllabus !== 'AMEB' || p._type === 'Leisure') return false;
             } else {
                 if (p._syllabus !== syllabusFilter) return false;
             }
@@ -343,7 +345,7 @@ function PieceCard({ p, openVideo }) {
     const wikiUrl  = 'https://en.wikipedia.org/wiki/' + encodeURIComponent(p.c.split(',')[0].trim());
 
     // Show grade only for non-diploma grades (G1–G8, Prelim, Initial)
-    const showGrade = p._grade && !['AMusA','LMusA','CertP','LRSM','FRSM','ATCL','LTCL','FTCL'].includes(p._gradeKey);
+    const showGrade = p._grade && !['AMusA','LMusA','CertP','LRSM','FRSM','ATCL','LTCL','FTCL','TATCL','TLTCL','TFTCL'].includes(p._gradeKey);
 
     return (
         <div className="piece-card">
@@ -397,6 +399,7 @@ function App() {
     const [gradeFilter, setGradeFilter] = useState('All');
     const [syllabusFilter, setSyllabusFilter] = useState('All');
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [visibleCount, setVisibleCount] = useState(60);
     const inputRef = useRef(null);
     const debounceRef = useRef(null);
 
@@ -411,10 +414,15 @@ function App() {
 
     const isSearching = !!(searchQuery.trim() || eraFilter || (gradeFilter && gradeFilter !== 'All') || (syllabusFilter && syllabusFilter !== 'All'));
 
-    const results = useMemo(() => {
+    const allResults = useMemo(() => {
         if (!isSearching) return [];
-        return searchCorpus(searchQuery, eraFilter, gradeFilter, syllabusFilter).slice(0, 60);
+        return searchCorpus(searchQuery, eraFilter, gradeFilter, syllabusFilter);
     }, [searchQuery, eraFilter, gradeFilter, syllabusFilter, isSearching]);
+
+    // Reset visible count when search changes
+    useEffect(() => { setVisibleCount(60); }, [searchQuery, eraFilter, gradeFilter, syllabusFilter]);
+
+    const results = useMemo(() => allResults.slice(0, visibleCount), [allResults, visibleCount]);
 
     // Autocomplete suggestions
     const suggestions = useMemo(() => {
@@ -452,11 +460,14 @@ function App() {
     }
 
     const SYLLABUS_FILTERS = [
-        { val:'All',     label:'All' },
-        { val:'AMEB',    label:'🇦🇺 AMEB' },
-        { val:'Leisure', label:'🎵 Leisure' },
-        { val:'ABRSM',   label:'🇬🇧 ABRSM' },
-        { val:'Trinity', label:'Trinity' },
+        { val:'All',            label:'All' },
+        { val:'AMEB',           label:'🇦🇺 AMEB' },
+        { val:'Leisure',        label:'🎵 Leisure' },
+        { val:'ABRSM',          label:'🇬🇧 ABRSM' },
+        { val:'Trinity',        label:'Trinity' },
+        { val:'AMEB Diploma',   label:'🎓 AMEB Diploma' },
+        { val:'ABRSM Diploma',  label:'🎓 ABRSM Diploma' },
+        { val:'Trinity Diploma',label:'🎓 Trinity Diploma' },
     ];
 
     return (
@@ -530,6 +541,17 @@ function App() {
                     ))}
                 </div>
 
+                {/* Syllabus filter row */}
+                <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:16,alignItems:'center'}}>
+                    {SYLLABUS_FILTERS.map(sf => (
+                        <button key={sf.val}
+                            className={'chip' + (syllabusFilter===sf.val?' active':'')}
+                            onClick={() => { setSyllabusFilter(sf.val); setGradeFilter('All'); }}>
+                            {sf.label}
+                        </button>
+                    ))}
+                </div>
+
                 {/* Grade chips — only when searching */}
                 {isSearching && (
                     <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:20}}>
@@ -591,9 +613,9 @@ function App() {
                     <div>
                         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:20,flexWrap:'wrap',gap:8}}>
                             <span style={{fontSize:12,color:'#444',fontWeight:500,fontStyle:'italic'}}>
-                                {results.length === 0
+                                {allResults.length === 0
                                     ? 'Nothing found — shall I suggest something else?'
-                                    : 'I\'ve found ' + (results.length === 60 ? '60+' : results.length) + ' pieces' + (searchQuery ? ' for “' + searchQuery + '”' : '') + '.'}
+                                    : 'I\'ve found ' + allResults.length + ' piece' + (allResults.length !== 1 ? 's' : '') + (searchQuery ? ' for “' + searchQuery + '”' : '') + '.'}
                             </span>
                             <button onClick={clearAll}
                                 style={{fontSize:11,fontWeight:600,color:'#444',background:'none',border:'none',cursor:'pointer',padding:0,textDecoration:'underline',textDecorationColor:'#333'}}>
@@ -615,9 +637,20 @@ function App() {
                                 </div>
                             </div>
                         ) : (
+                            <>
                             <div style={{display:'grid',gap:14,gridTemplateColumns:'repeat(auto-fill,minmax(340px,1fr))'}}>
                                 {results.map((p,i) => <PieceCard key={i} p={p} openVideo={openVideo} />)}
                             </div>
+                            {visibleCount < allResults.length && (
+                                <div style={{textAlign:'center',marginTop:28}}>
+                                    <button
+                                        onClick={() => setVisibleCount(v => v + 60)}
+                                        style={{fontSize:12,fontWeight:600,color:'#d4956a',background:'none',border:'1px solid #d4956a44',borderRadius:8,padding:'8px 24px',cursor:'pointer'}}>
+                                        Show more ({allResults.length - visibleCount} remaining)
+                                    </button>
+                                </div>
+                            )}
+                            </>
                         )}
                     </div>
                 )}
