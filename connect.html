@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Find a Teacher | Piano Butler</title>
   <meta name="description" content="Find a piano teacher matched to your level and goals — powered by Piano Butler's diagnosis tool.">
-  <meta name="robots" content="index, follow">
+  <meta name="robots" content="noindex, nofollow">
   <meta property="og:title" content="Find a Teacher | Piano Butler">
   <meta property="og:description" content="Find a piano teacher matched to your level and goals — powered by Piano Butler's diagnosis tool.">
   <meta property="og:url" content="https://thepianobutler.com/connect.html">
@@ -126,7 +126,12 @@
 
 <footer>© 2026 Piano Butler · thepianobutler.com</footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
+const SUPABASE_URL  = "https://icefqxaccclwasnfzgnp.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImljZWZxeGFjY2Nsd2FzbmZ6Z25wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwNjgzMTgsImV4cCI6MjA5MjY0NDMxOH0.lZ8BO_L8iOtET8RtUuk9trkf9bQbLqR8K6rKEfPtmtQ";
+const _sbConnect = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
 // Show diagnosis result banner if available
 (function() {
   const DOMAIN_LABELS = { technique:'Technique', ear:'Ear training', theory:'Music theory', sightreading:'Sight-reading' };
@@ -146,14 +151,47 @@
   } catch(e) {}
 })();
 
-function submitWaitlist(e) {
+async function submitWaitlist(e) {
   e.preventDefault();
   const email = document.getElementById('waitlist-email').value.trim();
   if (!email) return;
+
+  const btn = e.target.querySelector('button[type="submit"]');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  // Read optional diagnosis context
+  let diagnosisLevel = null;
+  try {
+    const raw = localStorage.getItem('pb_diagnosis_v1');
+    if (raw) {
+      const { result } = JSON.parse(raw);
+      if (result && result.levelLabel) diagnosisLevel = result.levelLabel;
+    }
+  } catch(err) {}
+
+  const { error } = await _sbConnect
+    .from('connect_waitlist')
+    .insert({ email, diagnosis_level: diagnosisLevel, source: 'connect.html' });
+
+  if (error) {
+    // Duplicate email → still show success (idempotent UX)
+    if (error.code !== '23505') {
+      btn.disabled = false;
+      btn.textContent = 'Notify me';
+      const msg = document.getElementById('waitlist-msg');
+      msg.textContent = '⚠ Something went wrong — please try again.';
+      msg.style.color = '#e87d7d';
+      msg.style.display = 'block';
+      return;
+    }
+  }
+
   document.getElementById('waitlist-form').style.display = 'none';
-  document.getElementById('waitlist-msg').style.display = 'block';
-  // TODO: replace with real backend/Supabase insert when teacher network launches
-  console.log('Waitlist signup:', email);
+  const msg = document.getElementById('waitlist-msg');
+  msg.textContent = '✓ You\'re on the list — we\'ll be in touch soon.';
+  msg.style.color = '#7db57d';
+  msg.style.display = 'block';
 }
 </script>
 

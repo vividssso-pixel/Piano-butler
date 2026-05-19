@@ -6,57 +6,30 @@
     <title>Piano Butler — Admin Search</title>
     <meta name="robots" content="noindex, nofollow">
     <style>
-        #pb-gate {
-            position: fixed; inset: 0; z-index: 9999;
-            background: #1a1a1a;
+        #pb-auth-loading {
+            position: fixed; inset: 0; z-index: 9999; background: #1a1a1a;
             display: flex; align-items: center; justify-content: center;
+            color: #555; font-family: -apple-system, sans-serif; font-size: 13px;
         }
-        #pb-gate .box {
-            background: #242424; border: 1px solid #333; border-radius: 16px;
-            padding: 40px 36px; width: 320px; text-align: center;
-        }
-        #pb-gate h2 { color: #e8e3dc; font-size: 18px; font-weight: 800; margin: 0 0 6px; }
-        #pb-gate p  { color: #666; font-size: 12px; margin: 0 0 20px; }
-        #pb-gate input {
-            width: 100%; padding: 12px 14px; border-radius: 10px;
-            border: 1px solid #333; background: #1a1a1a; color: #e8e3dc;
-            font-size: 14px; outline: none; margin-bottom: 10px; box-sizing: border-box;
-        }
-        #pb-gate input:focus { border-color: #d4956a; }
-        #pb-gate button {
-            width: 100%; padding: 12px; border-radius: 10px; border: none;
-            background: #d4956a; color: #1a1a1a; font-size: 14px;
-            font-weight: 800; cursor: pointer;
-        }
-        #pb-gate button:hover { background: #c4845a; }
-        #pb-gate .err { color: #f87171; font-size: 12px; margin-top: 8px; display: none; }
     </style>
     <script>
-        // Simple gate — runs before React loads
-        (function() {
-            const PASS = "pianobutler2026";
-            const KEY  = "pb_admin_auth";
-            if (sessionStorage.getItem(KEY) === "1") return; // already authed this session
-            document.addEventListener("DOMContentLoaded", function() {
-                const gate = document.getElementById("pb-gate");
-                if (!gate) return;
-                const inp = gate.querySelector("input");
-                const err = gate.querySelector(".err");
-                gate.querySelector("button").addEventListener("click", function() {
-                    if (inp.value === PASS) {
-                        sessionStorage.setItem(KEY, "1");
-                        gate.style.display = "none";
-                    } else {
-                        err.style.display = "block";
-                        inp.value = "";
-                        inp.focus();
-                    }
-                });
-                inp.addEventListener("keydown", function(e) {
-                    if (e.key === "Enter") gate.querySelector("button").click();
-                });
+        // Auth gate — runs after Supabase loads; redirects to login.html if no session
+        // Replaced plaintext password gate with Supabase session check (2026-05-19)
+        document.addEventListener("DOMContentLoaded", function() {
+            // Show loading overlay while checking session
+            const loading = document.getElementById("pb-auth-loading");
+            const SUPABASE_URL  = "https://icefqxaccclwasnfzgnp.supabase.co";
+            const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImljZWZxeGFjY2Nsd2FzbmZ6Z25wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwNjgzMTgsImV4cCI6MjA5MjY0NDMxOH0.lZ8BO_L8iOtET8RtUuk9trkf9bQbLqR8K6rKEfPtmtQ";
+            const _sbAdmin = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+            _sbAdmin.auth.getSession().then(function(res) {
+                const session = res.data && res.data.session;
+                if (!session) {
+                    window.location.href = "login.html?next=admin-search.html";
+                    return;
+                }
+                if (loading) loading.style.display = "none";
             });
-        })();
+        });
     </script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -207,17 +180,8 @@
 </head>
 <body>
 
-<!-- Password gate — hidden once authenticated -->
-<div id="pb-gate">
-    <div class="box">
-        <div style="font-size:28px;margin-bottom:12px">🎹</div>
-        <h2>Piano Butler</h2>
-        <p>Admin — Full Syllabus Search</p>
-        <input type="password" placeholder="Password" autofocus />
-        <button>Enter</button>
-        <div class="err">Incorrect password</div>
-    </div>
-</div>
+<!-- Auth loading overlay — hidden once session confirmed -->
+<div id="pb-auth-loading">Checking session…</div>
 
 <div id="root"></div>
 
@@ -1314,11 +1278,13 @@ function MyListsPanel({ user, onClose }) {
         navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(()=>setCopied(false),2000); });
     };
 
+    const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
     const handlePrint = () => {
         const lst = openList;
         const ti = listTypeInfo(lst.type);
         const win = window.open("","_blank");
-        win.document.write(`<!DOCTYPE html><html><head><title>${lst.name}</title>
+        win.document.write(`<!DOCTYPE html><html><head><title>${esc(lst.name)}</title>
         <style>
           body { font-family: -apple-system, sans-serif; padding: 40px; color: #1e293b; }
           h1 { font-size: 22px; font-weight: 700; margin: 0 0 4px; }
@@ -1334,19 +1300,19 @@ function MyListsPanel({ user, onClose }) {
           .footer { margin-top: 30px; font-size: 11px; color: #cbd5e1; text-align: center; }
           @media print { body { padding: 20px; } }
         </style></head><body>
-        <h1>${lst.name}</h1>
-        <span class="badge">${ti.label}</span>
-        ${lst.description ? `<p class="desc">${lst.description}</p>` : ""}
+        <h1>${esc(lst.name)}</h1>
+        <span class="badge">${esc(ti.label)}</span>
+        ${lst.description ? `<p class="desc">${esc(lst.description)}</p>` : ""}
         <p class="meta">${lst.pieces.length} piece${lst.pieces.length!==1?"s":""} · Generated ${new Date().toLocaleDateString("en-AU",{day:"numeric",month:"long",year:"numeric"})}</p>
         <table>
           <thead><tr><th>#</th><th>Piece</th><th>Composer</th><th>Grade</th><th>Era</th></tr></thead>
           <tbody>
             ${lst.pieces.map((p,i)=>`<tr>
               <td class="num">${i+1}</td>
-              <td><strong>${p.title}</strong></td>
-              <td>${p.composer}</td>
-              <td><span class="grade">${p.grade||""}</span></td>
-              <td class="era">${p.era||""}</td>
+              <td><strong>${esc(p.title)}</strong></td>
+              <td>${esc(p.composer)}</td>
+              <td><span class="grade">${esc(p.grade||"")}</span></td>
+              <td class="era">${esc(p.era||"")}</td>
             </tr>`).join("")}
           </tbody>
         </table>
