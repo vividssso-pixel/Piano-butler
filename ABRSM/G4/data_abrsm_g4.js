@@ -3,55 +3,580 @@
 // Generated from official ABRSM Piano 2025 & 2026 Syllabus PDF
 
 const DATA_ABRSM_G4 = [
-  // LIST A — 16 pieces
-{"l":"A","c":"BENDA, G.","t":"Allegro assai (3rd movt from Sonata in G)","nat":"Czech","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
-{"l":"A","c":"CIMAROSA, D.","t":"Sonata in G, C.","nat":"Italian","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
-{"l":"A","c":"HAYDN, J.","t":"Menuet and Trio (3rd movt from Sonata in C, Hob. XVI:1)","nat":"Austrian","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
-{"l":"A","c":"ALCOCK, W.","t":"Gavot (3rd movt from Suite No. 2 in B-) Alcock: with ornaments in bb. 7, 23 & 31; all others optional","nat":"English","era":"Classical","focus":["Classical phrasing", "Dance character", "Formal structure"]},
-{"l":"A","c":"BEETHOVEN, L.","t":"Allegro assai (1st movt from Sonatina in F, Anh. 5 No. 2)","nat":"German","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
-{"l":"A","c":"BERG, G.","t":"Allegro (1st movt from Sonatina in C, Op. 3 No. 1)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Formal structure", "Character contrast"]},
-{"l":"A","c":"BURGMÜLLER, J.","t":"Ballade, Op.","nat":"German","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"A","c":"BUXTEHUDE, D.","t":"Saraband (from Suite in E minor, BuxWV 236) Baroque","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"A","c":"DRING, M.","t":"Scherzando (from 12 Pieces in the Form of Dring: Studies)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"A","c":"GAMBARINI, E.","t":"Grazioso (from Sonata No. 2) HerStory","nat":"International","era":"Modern","focus":["Rhythmic precision", "Formal structure", "Character contrast"]},
-{"l":"A","c":"GURLITT, C.","t":"Allegretto scherzando (3rd movt from Sonatina in C, Op. 188 No. 13)","nat":"German","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
-{"l":"A","c":"HAYDN, J.","t":"Allegro scherzando in F Essential","nat":"Austrian","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
-{"l":"A","c":"HELLER, S.","t":"Study in A minor, Op. 45 No. 2 S. pp. Night","nat":"International","era":"Romantic","focus":["Expressive tone", "Lyrical phrasing", "Dynamic shaping"]},
-{"l":"A","c":"HISAISHI, Joe","t":"A Town with an Ocean View (from Kiki’s Delivery)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"A","c":"KÖHLER, L.","t":"Sledging Party (from Kinderfreund, Op. 243)","nat":"German","era":"Classical","focus":["Classical phrasing", "Hand coordination", "Formal structure"]},
-{"l":"A","c":"MOZART, W.A.","t":"Rondo in F, K. 15hh Core Mozart","nat":"Austrian","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
-  // LIST B — 16 pieces
-{"l":"B","c":"GRIEG, E.","t":"Waltz (No. 2 from Lyriske småstykker, Op. 12)","nat":"Norwegian","era":"Romantic","focus":["Expressive tone", "Dance character", "Dynamic shaping"]},
-{"l":"B","c":"HARTSELL, Randall","t":"Sunsets in Savannah (from Portraits of the Sky)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"B","c":"MCDONAGH, Ailbhe","t":"Cloudscapes (No. 4 from It’s a Piano Thing)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"B","c":"KURSTIN, Adele Adkins & Greg","t":"Easy on Me","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"B","c":"GAD, John Stephens & Toby","t":"All of Me","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"B","c":"BACH, C.P.E.","t":"Andante (arr.) Lang","nat":"German","era":"Baroque","focus":["Baroque style", "Finger independence", "Keyboard clarity"]},
-{"l":"B","c":"CARROLL, W.","t":"Sunrise (No. 7 from River and Rainbow) W.","nat":"English","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"B","c":"LIVINGSTON, M. David, A. Hoffman &","t":"A Dream is a Wish Your Heart Makes (from The Cinderella)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Singing tone", "Character contrast"]},
-{"l":"B","c":"GRANADOS, E.","t":"Dedicatoria (No. 1 from Cuentos de las juventud, Op. 1)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"B","c":"HAMMOND, Heather","t":"Once Upon a Frozen Winter (from Ballads Heather Without Words)","nat":"English","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"B","c":"HUMMEL, J.N.","t":"Romance in G, Op. 52 No. 4 Hummel","nat":"Austrian","era":"Classical","focus":["Classical phrasing", "Singing tone", "Formal structure"]},
-{"l":"B","c":"KHACHATURIAN, A.","t":"A Little Song (Andantino) (No. 1 from Pictures of Khachaturian: Childhood)","nat":"Armenian","era":"Romantic","focus":["Expressive tone", "Singing tone", "Dynamic shaping"]},
-{"l":"B","c":"LISZT, F.","t":"La cloche sonne, S. 238 Chopin","nat":"Hungarian","era":"Romantic","focus":["Expressive tone", "Lyrical phrasing", "Dynamic shaping"]},
-{"l":"B","c":"MENDELSSOHN, F.","t":"Andante (2nd movt from Violin Concerto in E minor, Op. 64)","nat":"International","era":"Romantic","focus":["Expressive tone", "Formal structure", "Dynamic shaping"]},
-{"l":"B","c":"TRAD. MALAY","t":"Voyage of the Sampan","nat":"Malay","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
-{"l":"B","c":"WILLIAMS, Vaughan","t":"Valse lente (from Six Teaching Pieces) Vaughan","nat":"International","era":"Romantic","focus":["Expressive tone", "Dance character", "Dynamic shaping"]},
-  // LIST C — 16 pieces
-{"l":"C","c":"IBERT, J.","t":"Danse du cocher (No. 15 from Petite suite en 15 images)","nat":"French","era":"Modern","focus":["Rhythmic precision", "Character contrast", "Finger independence"]},
-{"l":"C","c":"NOTT, Julian","t":"Wallace and Gromit Theme, arr. L’Estrange","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Character contrast", "Musical expression"]},
-{"l":"C","c":"YIU, Raymond","t":"Canzonetta","nat":"Hong Kong","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
-{"l":"C","c":"ABBA (arr. Önaç)","t":"Dancing Queen","nat":"Swedish","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
-{"l":"C","c":"GRIEG, E.","t":"In the Hall of the Mountain King (from Peer Gynt, Suite No. 1, Op. 46)","nat":"Norwegian","era":"Romantic","focus":["Expressive tone", "Dynamic shaping", "Rhythmic precision"]},
-{"l":"C","c":"KABALEVSKY, D.","t":"Toccatina (No. 12 from 30 Children’s Pieces, Op. 27)","nat":"Russian","era":"Modern","focus":["Rhythmic precision", "Finger independence", "Character contrast"]},
-{"l":"C","c":"MAIKAPAR, S.","t":"At the Smithy, Op. 8 No. 5","nat":"Russian","era":"Romantic","focus":["Expressive tone", "Rhythmic precision", "Dynamic shaping"]},
-{"l":"C","c":"MATHEWS, Alison","t":"Buried Rubies (No. 8 from Treasure Trove)","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
-{"l":"C","c":"MIER, Martha","t":"Worrisome Blues (from Jazz, Rags & Blues, Book 3)","nat":"American","era":"Contemporary","focus":["Contemporary idiom", "Jazz/Pop style", "Rhythmic precision"]},
-{"l":"C","c":"PÄRT, Arvo","t":"Für Anna Maria","nat":"Estonian","era":"Contemporary","focus":["Contemporary idiom", "Singing tone", "Musical expression"]},
-{"l":"C","c":"PRICE, F.","t":"The Goblin and the Mosquito","nat":"American","era":"Modern","focus":["Rhythmic precision", "Character contrast", "Finger independence"]},
-{"l":"C","c":"PROKOFIEV, S.","t":"Marche (No. 10 from Musiques d’enfants, Op. 65)","nat":"Russian","era":"Modern","focus":["Rhythmic precision", "Dance character", "Character contrast"]},
-{"l":"C","c":"STOYANOV, V.","t":"Bulgarian Peasant Dance","nat":"Bulgarian","era":"Modern","focus":["Rhythmic precision", "Dance character", "Character contrast"]},
-{"l":"C","c":"TRAD.","t":"Shenandoah, arr. Bennett","nat":"American","era":"Contemporary","focus":["Contemporary idiom", "Singing tone", "Musical expression"]},
-{"l":"C","c":"WALLER, RAZAF & BROOKS","t":"Ain’t Misbehavin’, arr. Iles","nat":"American","era":"Modern","focus":["Rhythmic precision", "Jazz/Pop style", "Character contrast"]},
-{"l":"C","c":"WILLIAMS, John","t":"Star Wars (Main Theme), arr. Turner","nat":"American","era":"Contemporary","focus":["Contemporary idiom", "Character contrast", "Musical expression"]},
+  {
+    "l": "A",
+    "c": "BENDA, G.",
+    "t": "Allegro assai (3rd movt from Sonata in G)",
+    "nat": "Czech",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Formal structure",
+      "Crisp fingerwork"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "CIMAROSA, D.",
+    "t": "Sonata in G, C.",
+    "nat": "Italian",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Formal structure",
+      "Ornamentation"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "HAYDN, J.",
+    "t": "Menuet and Trio (3rd movt from Sonata in C, Hob. XVI:1)",
+    "nat": "Austrian",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Formal structure",
+      "Dance character"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "ALCOCK, W.",
+    "t": "Gavot (3rd movt from Suite No. 2 in B-) Alcock: with ornaments in bb. 7, 23 & 31; all others optional",
+    "nat": "English",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Dance character",
+      "Formal structure"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "BEETHOVEN, L.",
+    "t": "Allegro assai (1st movt from Sonatina in F, Anh. 5 No. 2)",
+    "nat": "German",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Formal structure",
+      "Dynamic contrast"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "BERG, G.",
+    "t": "Allegro (1st movt from Sonatina in C, Op. 3 No. 1)",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Formal structure",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "BURGMÜLLER, J.",
+    "t": "Ballade, Op.",
+    "nat": "German",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "BUXTEHUDE, D.",
+    "t": "Saraband (from Suite in E minor, BuxWV 236) Baroque",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "DRING, M.",
+    "t": "Scherzando (from 12 Pieces in the Form of Dring: Studies)",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "GAMBARINI, E.",
+    "t": "Grazioso (from Sonata No. 2) HerStory",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Formal structure",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "GURLITT, C.",
+    "t": "Allegretto scherzando (3rd movt from Sonatina in C, Op. 188 No. 13)",
+    "nat": "German",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Formal structure",
+      "Light staccato"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "HAYDN, J.",
+    "t": "Allegro scherzando in F Essential",
+    "nat": "Austrian",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Formal structure",
+      "Wit and humour"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "HELLER, S.",
+    "t": "Study in A minor, Op. 45 No. 2 S. pp. Night",
+    "nat": "International",
+    "era": "Romantic",
+    "focus": [
+      "Expressive tone",
+      "Lyrical phrasing",
+      "Dynamic shaping"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "HISAISHI, Joe",
+    "t": "A Town with an Ocean View (from Kiki’s Delivery)",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "KÖHLER, L.",
+    "t": "Sledging Party (from Kinderfreund, Op. 243)",
+    "nat": "German",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Hand coordination",
+      "Formal structure"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "MOZART, W.A.",
+    "t": "Rondo in F, K. 15hh Core Mozart",
+    "nat": "Austrian",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Formal structure",
+      "Rondo form"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "GRIEG, E.",
+    "t": "Waltz (No. 2 from Lyriske småstykker, Op. 12)",
+    "nat": "Norwegian",
+    "era": "Romantic",
+    "focus": [
+      "Expressive tone",
+      "Dance character",
+      "Dynamic shaping"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "HARTSELL, Randall",
+    "t": "Sunsets in Savannah (from Portraits of the Sky)",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "MCDONAGH, Ailbhe",
+    "t": "Cloudscapes (No. 4 from It’s a Piano Thing)",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "KURSTIN, Adele Adkins & Greg",
+    "t": "Easy on Me",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "GAD, John Stephens & Toby",
+    "t": "All of Me",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "BACH, C.P.E.",
+    "t": "Andante (arr.) Lang",
+    "nat": "German",
+    "era": "Baroque",
+    "focus": [
+      "Baroque style",
+      "Finger independence",
+      "Keyboard clarity"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "CARROLL, W.",
+    "t": "Sunrise (No. 7 from River and Rainbow) W.",
+    "nat": "English",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "LIVINGSTON, M. David, A. Hoffman &",
+    "t": "A Dream is a Wish Your Heart Makes (from The Cinderella)",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Singing tone",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "GRANADOS, E.",
+    "t": "Dedicatoria (No. 1 from Cuentos de las juventud, Op. 1)",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "HAMMOND, Heather",
+    "t": "Once Upon a Frozen Winter (from Ballads Heather Without Words)",
+    "nat": "English",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "HUMMEL, J.N.",
+    "t": "Romance in G, Op. 52 No. 4 Hummel",
+    "nat": "Austrian",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Singing tone",
+      "Formal structure"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "KHACHATURIAN, A.",
+    "t": "A Little Song (Andantino) (No. 1 from Pictures of Khachaturian: Childhood)",
+    "nat": "Armenian",
+    "era": "Romantic",
+    "focus": [
+      "Expressive tone",
+      "Singing tone",
+      "Dynamic shaping"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "LISZT, F.",
+    "t": "La cloche sonne, S. 238 Chopin",
+    "nat": "Hungarian",
+    "era": "Romantic",
+    "focus": [
+      "Expressive tone",
+      "Lyrical phrasing",
+      "Dynamic shaping"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "MENDELSSOHN, F.",
+    "t": "Andante (2nd movt from Violin Concerto in E minor, Op. 64)",
+    "nat": "International",
+    "era": "Romantic",
+    "focus": [
+      "Expressive tone",
+      "Formal structure",
+      "Dynamic shaping"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "TRAD. MALAY",
+    "t": "Voyage of the Sampan",
+    "nat": "Malay",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Stylistic range",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "WILLIAMS, Vaughan",
+    "t": "Valse lente (from Six Teaching Pieces) Vaughan",
+    "nat": "International",
+    "era": "Romantic",
+    "focus": [
+      "Expressive tone",
+      "Dance character",
+      "Dynamic shaping"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "IBERT, J.",
+    "t": "Danse du cocher (No. 15 from Petite suite en 15 images)",
+    "nat": "French",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Character contrast",
+      "Finger independence"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "NOTT, Julian",
+    "t": "Wallace and Gromit Theme, arr. L’Estrange",
+    "nat": "English",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Character contrast",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "YIU, Raymond",
+    "t": "Canzonetta",
+    "nat": "Hong Kong",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Stylistic range",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "ABBA (arr. Önaç)",
+    "t": "Dancing Queen",
+    "nat": "Swedish",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Stylistic range",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "GRIEG, E.",
+    "t": "In the Hall of the Mountain King (from Peer Gynt, Suite No. 1, Op. 46)",
+    "nat": "Norwegian",
+    "era": "Romantic",
+    "focus": [
+      "Expressive tone",
+      "Dynamic shaping",
+      "Rhythmic precision"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "KABALEVSKY, D.",
+    "t": "Toccatina (No. 12 from 30 Children’s Pieces, Op. 27)",
+    "nat": "Russian",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Finger independence",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "MAIKAPAR, S.",
+    "t": "At the Smithy, Op. 8 No. 5",
+    "nat": "Russian",
+    "era": "Romantic",
+    "focus": [
+      "Expressive tone",
+      "Rhythmic precision",
+      "Dynamic shaping"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "MATHEWS, Alison",
+    "t": "Buried Rubies (No. 8 from Treasure Trove)",
+    "nat": "English",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Stylistic range",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "MIER, Martha",
+    "t": "Worrisome Blues (from Jazz, Rags & Blues, Book 3)",
+    "nat": "American",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Jazz/Pop style",
+      "Rhythmic precision"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "PÄRT, Arvo",
+    "t": "Für Anna Maria",
+    "nat": "Estonian",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Singing tone",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "PRICE, F.",
+    "t": "The Goblin and the Mosquito",
+    "nat": "American",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Character contrast",
+      "Finger independence"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "PROKOFIEV, S.",
+    "t": "Marche (No. 10 from Musiques d’enfants, Op. 65)",
+    "nat": "Russian",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Dance character",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "STOYANOV, V.",
+    "t": "Bulgarian Peasant Dance",
+    "nat": "Bulgarian",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Dance character",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "TRAD.",
+    "t": "Shenandoah, arr. Bennett",
+    "nat": "American",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Singing tone",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "WALLER, RAZAF & BROOKS",
+    "t": "Ain’t Misbehavin’, arr. Iles",
+    "nat": "American",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Jazz/Pop style",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "WILLIAMS, John",
+    "t": "Star Wars (Main Theme), arr. Turner",
+    "nat": "American",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Character contrast",
+      "Musical expression"
+    ]
+  }
 ];

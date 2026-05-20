@@ -3,55 +3,580 @@
 // Generated from official ABRSM Piano 2025 & 2026 Syllabus PDF
 
 const DATA_ABRSM_G8 = [
-  // LIST A — 16 pieces
-{"l":"A","c":"MOZART, W.A.","t":"Alla Turca (3rd movt from Sonata in A, K. 331) Piano with first, third and final repeat","nat":"Austrian","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
-{"l":"A","c":"BONIS, M.","t":"Il pleut","nat":"French","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"A","c":"SCARLATTI, D.","t":"Sonata in C, Kp.","nat":"Italian","era":"Baroque","focus":["Baroque style", "Formal structure", "Keyboard clarity"]},
-{"l":"A","c":"BACH, J.S.","t":"Prelude and Fugue in G, BWV 884 J.","nat":"German","era":"Baroque","focus":["Baroque style", "Contrapuntal texture", "Keyboard clarity"]},
-{"l":"A","c":"BACH, J.S.","t":"Sarabande and Rondeaux (4th and 5th movts J. from Partita No. 2 in C minor, BWV)","nat":"German","era":"Baroque","focus":["Baroque style", "Finger independence", "Keyboard clarity"]},
-{"l":"A","c":"BEETHOVEN, L.","t":"Allegro (1st movt from Sonata in E, Op. 14 No. 1) Beethoven: Beethoven: Beethoven","nat":"German","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
-{"l":"A","c":"HANDEL, G.F.","t":"Prelude and Allegro (Fuga) (1st and 2nd movts Handel: from Suite No. 8 in F minor, HWV 433) Handel","nat":"German","era":"Baroque","focus":["Baroque style", "Contrapuntal texture", "Keyboard clarity"]},
-{"l":"A","c":"HAYDN, J.","t":"Allegro con brio (1st movt from Sonata in D, Haydn: Hob. XVI:37) Haydn","nat":"Austrian","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
-{"l":"A","c":"HAYDN, J.","t":"Allegro (1st movt from Sonata in E-, Haydn: Hob. XVI:49)","nat":"Austrian","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
-{"l":"A","c":"HOUGH, Stephen","t":"Toccatina (5th movt from Suite R-B) Stephen (Weinberger)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"A","c":"MARTÍNEZ, M. von","t":"Allegro/Moderato (1st movt from Sonata in A)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Formal structure", "Character contrast"]},
-{"l":"A","c":"MOSZKOWSKI, M.","t":"Scherzino, Op. 77 No. 2 Moszkowski","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"A","c":"MOZART, W.A.","t":"Andante grazioso and Vars. 1–6 (1st movt from Mozart: Sonata in A, K. 331) Mozart","nat":"Austrian","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
-{"l":"A","c":"RAMEAU, J.-P.","t":"Les cyclopes (from Pièces de clavecin) Rameau: Rameau","nat":"International","era":"Baroque","focus":["Baroque style", "Finger independence", "Keyboard clarity"]},
-{"l":"A","c":"SCARLATTI, D.","t":"Sonata in D, Kp. 443, L. 418 Pp. Book D.","nat":"Italian","era":"Baroque","focus":["Baroque style", "Formal structure", "Keyboard clarity"]},
-{"l":"A","c":"SCHUMANN, C.","t":"Un poco agitato (No. 2 from Quatre pièces fugitives, Op. 15)","nat":"International","era":"Romantic","focus":["Expressive tone", "Lyrical phrasing", "Dynamic shaping"]},
-  // LIST B — 16 pieces
-{"l":"B","c":"DEBUSSY, C.","t":"La fille aux cheveux de lin (No. 8 from Préludes, Book 1)","nat":"French","era":"Modern","focus":["Impressionist style", "Singing tone", "Musical expression"]},
-{"l":"B","c":"HISAISHI, Joe","t":"il porco rosso (from Porco Rosso)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"B","c":"LISZT, F.","t":"Consolation in E (No. 2 from Consolations, S.)","nat":"Hungarian","era":"Romantic","focus":["Expressive tone", "Singing tone", "Dynamic shaping"]},
-{"l":"B","c":"ARENSKY, A.","t":"Nocturne in D- (No. 3 from 24 Characteristic Pieces, Op. 36)","nat":"International","era":"Contemporary","focus":["Contemporary idiom", "Singing tone", "Musical expression"]},
-{"l":"B","c":"BEACH, A.","t":"A Hermit Thrush at Morn, Op. 92 No.","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"B","c":"BEETHOVEN, L.","t":"Adagio cantabile (2nd movt from Sonata in Beethoven: C minor ‘Pathétique’, Op. 13)","nat":"German","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
-{"l":"B","c":"CHOPIN, F.","t":"Mazurka in A minor, Op. 17 No. 4 Chopin","nat":"Polish","era":"Romantic","focus":["Expressive tone", "Dance character", "Dynamic shaping"]},
-{"l":"B","c":"HENSEL, F.M.","t":"Andante cantabile in D- Hensel","nat":"German","era":"Romantic","focus":["Expressive tone", "Lyrical phrasing", "Dynamic shaping"]},
-{"l":"B","c":"IRELAND, J.","t":"Columbine Ireland","nat":"English","era":"Romantic","focus":["Expressive tone", "Lyrical phrasing", "Dynamic shaping"]},
-{"l":"B","c":"JANÁČEK, L.","t":"Andante (No. 1 from In the Mists) Janáček","nat":"Czech","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"B","c":"RACHMANINOFF, S.","t":"Moment musical in D-, Op. 16 No. 5 Rachmaninoff","nat":"Russian","era":"Romantic","focus":["Expressive tone", "Singing tone", "Dynamic shaping"]},
-{"l":"B","c":"SCHUBERT, F.","t":"Impromptu in A- (No. 2 from Four Impromptus, Schubert: Op. 142, D. 935) Schubert","nat":"Austrian","era":"Romantic","focus":["Expressive tone", "Singing tone", "Dynamic shaping"]},
-{"l":"B","c":"SCHUMANN, R.","t":"Romanze in F+ (No. 2 from Drei Romanzen, Op. 28)","nat":"German","era":"Romantic","focus":["Expressive tone", "Lyrical phrasing", "Dynamic shaping"]},
-{"l":"B","c":"TAILLEFERRE, G.","t":"Impromptu Tailleferre","nat":"French","era":"Modern","focus":["Rhythmic precision", "Singing tone", "Character contrast"]},
-{"l":"B","c":"TCHAIKOVSKY, P.","t":"Janvier ‘Au coin du feu’ (No. 1 from The Seasons, Tchaikovsky: Op. 37bis)","nat":"Russian","era":"Romantic","focus":["Expressive tone", "Lyrical phrasing", "Dynamic shaping"]},
-{"l":"B","c":"WOLF, P. E.","t":"Hiding Rainbow (Bujkáló szivárvárny) (No. 22 Jazz from Jazz Preludes Wolf-temperiertes Klavier 2) (EMB)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Jazz/Pop style", "Character contrast"]},
-  // LIST C — 16 pieces
-{"l":"C","c":"DEBUSSY, C.","t":"Rêverie","nat":"French","era":"Modern","focus":["Impressionist style", "Singing tone", "Musical expression"]},
-{"l":"C","c":"FRANCES-HOAD, Cheryl","t":"In the Dew, a Homage to Janáček (from Piano Homages)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"C","c":"JOPLIN, S.","t":"Maple Leaf Rag","nat":"International","era":"Contemporary","focus":["Contemporary idiom", "Jazz/Pop style", "Musical expression"]},
-{"l":"C","c":"MASCHWITZ, Sherwin &","t":"A Nightingale Sang in Berkeley Square","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"C","c":"ALBERGA, Eleanor","t":"If the Silver Bird Could Speak","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"C","c":"BARTÓK, B.","t":"Dance in Bulgarian Rhythm No. 6 (No.153 from Bartók: Mikrokosmos) Bartók","nat":"Hungarian","era":"Modern","focus":["Rhythmic precision", "Singing tone", "Character contrast"]},
-{"l":"C","c":"CHAMINADE, C.","t":"Pierrette (Air de Ballet), Op. 41","nat":"International","era":"Modern","focus":["Rhythmic precision", "Singing tone", "Character contrast"]},
-{"l":"C","c":"PEIXUN, Chen","t":"Thunder in Drought Season 100 Traditional (Shanghai)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"C","c":"GARLAND, Tim","t":"Eco Warrior","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"C","c":"RAHMAN, Zoe","t":"Go with the Flow","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
-{"l":"C","c":"KHACHATURIAN, A.","t":"Toccata Khachaturian","nat":"Armenian","era":"Romantic","focus":["Expressive tone", "Contrapuntal texture", "Dynamic shaping"]},
-{"l":"C","c":"KORN, Uwe","t":"Caballos Españoles Tango","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"C","c":"MCDOWALL, Cecilia","t":"Vespers in Venice (from Four Piano Solos)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"C","c":"MCHUGH, J.","t":"On the Sunny Side of the Street","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"C","c":"TRAD. IRISH","t":"Danny Boy","nat":"Irish","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
-{"l":"C","c":"VILLA-LOBOS, H.","t":"O polichinelo (from A prole do bebê, Suite No. 1)","nat":"Brazilian","era":"Modern","focus":["Rhythmic precision", "Character contrast", "Musical expression"]},
+  {
+    "l": "A",
+    "c": "MOZART, W.A.",
+    "t": "Alla Turca (3rd movt from Sonata in A, K. 331) Piano with first, third and final repeat",
+    "nat": "Austrian",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Formal structure",
+      "Character and style"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "BONIS, M.",
+    "t": "Il pleut",
+    "nat": "French",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "SCARLATTI, D.",
+    "t": "Sonata in C, Kp.",
+    "nat": "Italian",
+    "era": "Baroque",
+    "focus": [
+      "Baroque style",
+      "Formal structure",
+      "Keyboard clarity"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "BACH, J.S.",
+    "t": "Prelude and Fugue in G, BWV 884 J.",
+    "nat": "German",
+    "era": "Baroque",
+    "focus": [
+      "Baroque style",
+      "Contrapuntal texture",
+      "Keyboard clarity"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "BACH, J.S.",
+    "t": "Sarabande and Rondeaux (4th and 5th movts J. from Partita No. 2 in C minor, BWV)",
+    "nat": "German",
+    "era": "Baroque",
+    "focus": [
+      "Baroque style",
+      "Finger independence",
+      "Keyboard clarity"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "BEETHOVEN, L.",
+    "t": "Allegro (1st movt from Sonata in E, Op. 14 No. 1) Beethoven: Beethoven: Beethoven",
+    "nat": "German",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Formal structure",
+      "Motivic development"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "HANDEL, G.F.",
+    "t": "Prelude and Allegro (Fuga) (1st and 2nd movts Handel: from Suite No. 8 in F minor, HWV 433) Handel",
+    "nat": "German",
+    "era": "Baroque",
+    "focus": [
+      "Baroque style",
+      "Contrapuntal texture",
+      "Keyboard clarity"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "HAYDN, J.",
+    "t": "Allegro con brio (1st movt from Sonata in D, Haydn: Hob. XVI:37) Haydn",
+    "nat": "Austrian",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Formal structure",
+      "Wit and humour"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "HAYDN, J.",
+    "t": "Allegro (1st movt from Sonata in E-, Haydn: Hob. XVI:49)",
+    "nat": "Austrian",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Formal structure",
+      "Dynamic contrast"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "HOUGH, Stephen",
+    "t": "Toccatina (5th movt from Suite R-B) Stephen (Weinberger)",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "MARTÍNEZ, M. von",
+    "t": "Allegro/Moderato (1st movt from Sonata in A)",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Formal structure",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "MOSZKOWSKI, M.",
+    "t": "Scherzino, Op. 77 No. 2 Moszkowski",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "MOZART, W.A.",
+    "t": "Andante grazioso and Vars. 1–6 (1st movt from Mozart: Sonata in A, K. 331) Mozart",
+    "nat": "Austrian",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Formal structure",
+      "Variation form"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "RAMEAU, J.-P.",
+    "t": "Les cyclopes (from Pièces de clavecin) Rameau: Rameau",
+    "nat": "International",
+    "era": "Baroque",
+    "focus": [
+      "Baroque style",
+      "Finger independence",
+      "Keyboard clarity"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "SCARLATTI, D.",
+    "t": "Sonata in D, Kp. 443, L. 418 Pp. Book D.",
+    "nat": "Italian",
+    "era": "Baroque",
+    "focus": [
+      "Baroque style",
+      "Formal structure",
+      "Keyboard clarity"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "SCHUMANN, C.",
+    "t": "Un poco agitato (No. 2 from Quatre pièces fugitives, Op. 15)",
+    "nat": "International",
+    "era": "Romantic",
+    "focus": [
+      "Expressive tone",
+      "Lyrical phrasing",
+      "Dynamic shaping"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "DEBUSSY, C.",
+    "t": "La fille aux cheveux de lin (No. 8 from Préludes, Book 1)",
+    "nat": "French",
+    "era": "Modern",
+    "focus": [
+      "Impressionist style",
+      "Singing tone",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "HISAISHI, Joe",
+    "t": "il porco rosso (from Porco Rosso)",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "LISZT, F.",
+    "t": "Consolation in E (No. 2 from Consolations, S.)",
+    "nat": "Hungarian",
+    "era": "Romantic",
+    "focus": [
+      "Expressive tone",
+      "Singing tone",
+      "Dynamic shaping"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "ARENSKY, A.",
+    "t": "Nocturne in D- (No. 3 from 24 Characteristic Pieces, Op. 36)",
+    "nat": "International",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Singing tone",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "BEACH, A.",
+    "t": "A Hermit Thrush at Morn, Op. 92 No.",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "BEETHOVEN, L.",
+    "t": "Adagio cantabile (2nd movt from Sonata in Beethoven: C minor ‘Pathétique’, Op. 13)",
+    "nat": "German",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Formal structure",
+      "Singing tone"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "CHOPIN, F.",
+    "t": "Mazurka in A minor, Op. 17 No. 4 Chopin",
+    "nat": "Polish",
+    "era": "Romantic",
+    "focus": [
+      "Expressive tone",
+      "Dance character",
+      "Dynamic shaping"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "HENSEL, F.M.",
+    "t": "Andante cantabile in D- Hensel",
+    "nat": "German",
+    "era": "Romantic",
+    "focus": [
+      "Expressive tone",
+      "Lyrical phrasing",
+      "Dynamic shaping"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "IRELAND, J.",
+    "t": "Columbine Ireland",
+    "nat": "English",
+    "era": "Romantic",
+    "focus": [
+      "Expressive tone",
+      "Lyrical phrasing",
+      "Dynamic shaping"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "JANÁČEK, L.",
+    "t": "Andante (No. 1 from In the Mists) Janáček",
+    "nat": "Czech",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "RACHMANINOFF, S.",
+    "t": "Moment musical in D-, Op. 16 No. 5 Rachmaninoff",
+    "nat": "Russian",
+    "era": "Romantic",
+    "focus": [
+      "Expressive tone",
+      "Singing tone",
+      "Dynamic shaping"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "SCHUBERT, F.",
+    "t": "Impromptu in A- (No. 2 from Four Impromptus, Schubert: Op. 142, D. 935) Schubert",
+    "nat": "Austrian",
+    "era": "Romantic",
+    "focus": [
+      "Expressive tone",
+      "Singing tone",
+      "Dynamic shaping"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "SCHUMANN, R.",
+    "t": "Romanze in F+ (No. 2 from Drei Romanzen, Op. 28)",
+    "nat": "German",
+    "era": "Romantic",
+    "focus": [
+      "Expressive tone",
+      "Lyrical phrasing",
+      "Dynamic shaping"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "TAILLEFERRE, G.",
+    "t": "Impromptu Tailleferre",
+    "nat": "French",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Singing tone",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "TCHAIKOVSKY, P.",
+    "t": "Janvier ‘Au coin du feu’ (No. 1 from The Seasons, Tchaikovsky: Op. 37bis)",
+    "nat": "Russian",
+    "era": "Romantic",
+    "focus": [
+      "Expressive tone",
+      "Lyrical phrasing",
+      "Dynamic shaping"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "WOLF, P. E.",
+    "t": "Hiding Rainbow (Bujkáló szivárvárny) (No. 22 Jazz from Jazz Preludes Wolf-temperiertes Klavier 2) (EMB)",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Jazz/Pop style",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "DEBUSSY, C.",
+    "t": "Rêverie",
+    "nat": "French",
+    "era": "Modern",
+    "focus": [
+      "Impressionist style",
+      "Singing tone",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "FRANCES-HOAD, Cheryl",
+    "t": "In the Dew, a Homage to Janáček (from Piano Homages)",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "JOPLIN, S.",
+    "t": "Maple Leaf Rag",
+    "nat": "International",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Jazz/Pop style",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "MASCHWITZ, Sherwin &",
+    "t": "A Nightingale Sang in Berkeley Square",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "ALBERGA, Eleanor",
+    "t": "If the Silver Bird Could Speak",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "BARTÓK, B.",
+    "t": "Dance in Bulgarian Rhythm No. 6 (No.153 from Bartók: Mikrokosmos) Bartók",
+    "nat": "Hungarian",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Singing tone",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "CHAMINADE, C.",
+    "t": "Pierrette (Air de Ballet), Op. 41",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Singing tone",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "PEIXUN, Chen",
+    "t": "Thunder in Drought Season 100 Traditional (Shanghai)",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "GARLAND, Tim",
+    "t": "Eco Warrior",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "RAHMAN, Zoe",
+    "t": "Go with the Flow",
+    "nat": "English",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Stylistic range",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "KHACHATURIAN, A.",
+    "t": "Toccata Khachaturian",
+    "nat": "Armenian",
+    "era": "Romantic",
+    "focus": [
+      "Expressive tone",
+      "Contrapuntal texture",
+      "Dynamic shaping"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "KORN, Uwe",
+    "t": "Caballos Españoles Tango",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "MCDOWALL, Cecilia",
+    "t": "Vespers in Venice (from Four Piano Solos)",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "MCHUGH, J.",
+    "t": "On the Sunny Side of the Street",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "TRAD. IRISH",
+    "t": "Danny Boy",
+    "nat": "Irish",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Stylistic range",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "VILLA-LOBOS, H.",
+    "t": "O polichinelo (from A prole do bebê, Suite No. 1)",
+    "nat": "Brazilian",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Character contrast",
+      "Musical expression"
+    ]
+  }
 ];
