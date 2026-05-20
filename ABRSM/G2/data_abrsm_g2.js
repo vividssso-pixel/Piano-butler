@@ -3,55 +3,580 @@
 // Generated from official ABRSM Piano 2025 & 2026 Syllabus PDF
 
 const DATA_ABRSM_G2 = [
-  // LIST A — 16 pieces
-{"l":"A","c":"ARENS, Barbara","t":"Sparkling Splashes & Smooth Water (from The Mermaid Challenge)","nat":"German","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
-{"l":"A","c":"ATTRIB.","t":"Moderato (1st movt from Sonatina in G, WoO Anh. 5)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Formal structure", "Character contrast"]},
-{"l":"A","c":"DAQUIN, L.","t":"Suite de la réjouissance (Gavotte en rondeau Piano from Premier livre de pièces de clavecin)","nat":"French","era":"Baroque","focus":["Baroque style", "Dance character", "Keyboard clarity"]},
-{"l":"A","c":"ANON.","t":"Corranto (from Fitzwilliam Virginal)","nat":"International","era":"Baroque","focus":["Baroque style", "Dance character", "Keyboard clarity"]},
-{"l":"A","c":"CARSE, A.","t":"Rustic Dance (No. 7 from Progressive s for Carse: Pianists)","nat":"English","era":"Classical","focus":["Classical phrasing", "Dance character", "Formal structure"]},
-{"l":"A","c":"GOEDICKE, A.","t":"Étude in A minor, Op.","nat":"International","era":"Classical","focus":["Classical phrasing", "Hand coordination", "Formal structure"]},
-{"l":"A","c":"TÜRK","t":"Allegro in C","nat":"German","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
-{"l":"A","c":"HAYDN, J.","t":"Rondino (Theme from Cello Concerto in D)","nat":"Austrian","era":"Classical","focus":["Classical phrasing", "Formal structure", "Hand coordination"]},
-{"l":"A","c":"KABALEVSKY, D.","t":"Galop/Hopping (No. 18 from 24 Little Pieces, Op. 39)","nat":"Russian","era":"Modern","focus":["Rhythmic precision", "Character contrast", "Finger independence"]},
-{"l":"A","c":"MOZART, L. (attrib.)","t":"Bourlesq (from The Wolfgang Notebook)","nat":"Austrian","era":"Classical","focus":["Classical phrasing", "Dance character", "Formal structure"]},
-{"l":"A","c":"MOZART, W.A.","t":"Minuet in D, K.","nat":"Austrian","era":"Classical","focus":["Classical phrasing", "Dance character", "Formal structure"]},
-{"l":"A","c":"PRÓSZYŃSKI","t":"Kowalczyki (Apprentice Smiths) (from Easy Prószyński)","nat":"Polish","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"A","c":"PURCELL, H.","t":"Air in D minor, Z. T676","nat":"English","era":"Baroque","focus":["Baroque style", "Singing tone", "Keyboard clarity"]},
-{"l":"A","c":"SAINT-GEORGES, Chevalier de","t":"Rondo (from Quartet for Harpischord and Strings), Chevalier","nat":"International","era":"Modern","focus":["Rhythmic precision", "Formal structure", "Character contrast"]},
-{"l":"A","c":"TELEMANN, G.P.","t":"Gavotte","nat":"German","era":"Baroque","focus":["Baroque style", "Dance character", "Keyboard clarity"]},
-{"l":"A","c":"THOMSON, Donald","t":"Haggis Hunt (from Celtic Piano Music – Initial to Grade 2)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-  // LIST B — 16 pieces
-{"l":"B","c":"FFRENCH, Alexis","t":"The Singing Swan","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
-{"l":"B","c":"KABALEVSKY, D.","t":"A Little Song (No. 2 from 30 Children’s Pieces, Op. 27)","nat":"Russian","era":"Modern","focus":["Expressive tone", "Singing tone", "Dynamic shaping"]},
-{"l":"B","c":"NORTON, Christopher","t":"Cloudy Day (No. 9 from Microjazz Collection 2)","nat":"New Zealander","era":"Contemporary","focus":["Contemporary idiom", "Jazz/Pop style", "Musical expression"]},
-{"l":"B","c":"BARTÓK, B.","t":"Sorrow (No. 7 from For Children, Vol. 2)","nat":"Hungarian","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"B","c":"DYLAN, Bob","t":"Make You Feel My Love","nat":"American","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
-{"l":"B","c":"SHEERAN, Ed","t":"The Joker and the Queen","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
-{"l":"B","c":"EL-DABH, Halim","t":"Soufiane (from Mekta’ in the Art of Kita’, Book 2)","nat":"Egyptian","era":"Modern","focus":["Modern harmony", "Rhythmic precision", "Character contrast"]},
-{"l":"B","c":"GRECHANINOV, A.","t":"Farewell (No. 4 from Children’s Album, Op. 98)","nat":"Russian","era":"Romantic","focus":["Expressive tone", "Lyrical phrasing", "Dynamic shaping"]},
-{"l":"B","c":"HAMMOND, Heather","t":"Raindrop Reflections","nat":"English","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"B","c":"RAVEL, M.","t":"Pavane de la belle au bois dormant (No. 1 from Ravel: Ma mère l’oye)","nat":"French","era":"Romantic","focus":["Expressive tone", "Singing tone", "Dynamic shaping"]},
-{"l":"B","c":"SPINDLER, F.","t":"Waltz in A minor","nat":"German","era":"Classical","focus":["Classical phrasing", "Dance character", "Formal structure"]},
-{"l":"B","c":"STEIBELT, D.","t":"Adagio in A minor (from Sonatina in C) A","nat":"German","era":"Classical","focus":["Classical phrasing", "Formal structure", "Formal structure"]},
-{"l":"B","c":"TAN, Chee-Hwa","t":"The Moon (from A Child’s Garden of Verses)","nat":"Singaporean","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
-{"l":"B","c":"TCHAIKOVSKY, P.","t":"Waltz (from The Sleeping Beauty)","nat":"Russian","era":"Romantic","focus":["Expressive tone", "Dance character", "Dynamic shaping"]},
-{"l":"B","c":"WATTS, Sarah","t":"Postcard from Paris (from Razzamajazz Sarah Repertoire Piano) Mayhew","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Jazz/Pop style", "Musical expression"]},
-{"l":"B","c":"WILLIAMS, John","t":"Hedwig’s Theme (from Harry Potter and the The Sorcerer’s/Philosopher’s Stone)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-  // LIST C — 16 pieces (was already correct)
-{"l":"C","c":"HAMMOND, Heather","t":"Spooky Wood Hollow (No. 5 from Grooves for Piano Dudes, Book 3)","nat":"English","era":"Modern","focus":["Rhythmic precision", "Jazz/Pop style", "Character contrast"]},
-{"l":"C","c":"LETANKA, Pete","t":"Way Out West","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
-{"l":"C","c":"LOUDOVÁ","t":"Šípková Růženka (No. 7 from Pohádky na dobrou Piano noc)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"C","c":"CROSLAND, Ben","t":"In My Spot","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
-{"l":"C","c":"KONECSNI, Sarah","t":"Dinosaur, Don’t!","nat":"International","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
-{"l":"C","c":"EINAUDI, Ludovico","t":"The Snow Prelude No. 3 this","nat":"Italian","era":"Contemporary","focus":["Contemporary idiom", "Contrapuntal texture", "Musical expression"]},
-{"l":"C","c":"GARŚCIA","t":"Brigands’ Dance (from Let’s Play a Piano Duet, Op. 37 Vol. 2)","nat":"International","era":"Modern","focus":["Rhythmic precision", "Dance character", "Character contrast"]},
-{"l":"C","c":"GĄSIENIEC","t":"Kukułka I Mirosław","nat":"Polish","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"C","c":"GRIEG, E.","t":"Norwegian Dance","nat":"Norwegian","era":"Romantic","focus":["Expressive tone", "Dance character", "Dynamic shaping"]},
-{"l":"C","c":"ILES, Nikki","t":"The Cheshire Cat (from Piano Tales for Alice)","nat":"English","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"C","c":"ILES, Nikki","t":"Sweet Pea","nat":"English","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"C","c":"ROBINSON, Smokey","t":"My Girl","nat":"American","era":"Contemporary","focus":["Contemporary idiom", "Stylistic range", "Musical expression"]},
-{"l":"C","c":"SCULTHORPE, P.","t":"Singing Sun (No. 6 from A Little Book of Hours) Sculthorpe","nat":"Australian","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"C","c":"SEIBER, M.","t":"Tango II (Habanera) (from Leichte Tänze I) Seiber","nat":"International","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"C","c":"SWAYNE, Giles","t":"Whistling Tune","nat":"English","era":"Modern","focus":["Rhythmic precision", "Modern harmony", "Character contrast"]},
-{"l":"C","c":"WEDGWOOD, Pam","t":"Champagne Rag (No. 11 from Easy Jazzin' About Piano)","nat":"English","era":"Contemporary","focus":["Contemporary idiom", "Jazz/Pop style", "Rhythmic precision"]},
+  {
+    "l": "A",
+    "c": "ARENS, Barbara",
+    "t": "Sparkling Splashes & Smooth Water (from The Mermaid Challenge)",
+    "nat": "German",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Stylistic range",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "ATTRIB.",
+    "t": "Moderato (1st movt from Sonatina in G, WoO Anh. 5)",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Formal structure",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "DAQUIN, L.",
+    "t": "Suite de la réjouissance (Gavotte en rondeau Piano from Premier livre de pièces de clavecin)",
+    "nat": "French",
+    "era": "Baroque",
+    "focus": [
+      "Baroque style",
+      "Dance character",
+      "Keyboard clarity"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "ANON.",
+    "t": "Corranto (from Fitzwilliam Virginal)",
+    "nat": "International",
+    "era": "Baroque",
+    "focus": [
+      "Baroque style",
+      "Dance character",
+      "Keyboard clarity"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "CARSE, A.",
+    "t": "Rustic Dance (No. 7 from Progressive s for Carse: Pianists)",
+    "nat": "English",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Dance character",
+      "Formal structure"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "GOEDICKE, A.",
+    "t": "Étude in A minor, Op.",
+    "nat": "International",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Hand coordination",
+      "Formal structure"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "TÜRK",
+    "t": "Allegro in C",
+    "nat": "German",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Formal structure",
+      "Clear articulation"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "HAYDN, J.",
+    "t": "Rondino (Theme from Cello Concerto in D)",
+    "nat": "Austrian",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Formal structure",
+      "Hand coordination"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "KABALEVSKY, D.",
+    "t": "Galop/Hopping (No. 18 from 24 Little Pieces, Op. 39)",
+    "nat": "Russian",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Character contrast",
+      "Finger independence"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "MOZART, L. (attrib.)",
+    "t": "Bourlesq (from The Wolfgang Notebook)",
+    "nat": "Austrian",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Dance character",
+      "Formal structure"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "MOZART, W.A.",
+    "t": "Minuet in D, K.",
+    "nat": "Austrian",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Dance character",
+      "Formal structure"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "PRÓSZYŃSKI",
+    "t": "Kowalczyki (Apprentice Smiths) (from Easy Prószyński)",
+    "nat": "Polish",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "PURCELL, H.",
+    "t": "Air in D minor, Z. T676",
+    "nat": "English",
+    "era": "Baroque",
+    "focus": [
+      "Baroque style",
+      "Singing tone",
+      "Keyboard clarity"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "SAINT-GEORGES, Chevalier de",
+    "t": "Rondo (from Quartet for Harpischord and Strings), Chevalier",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Formal structure",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "TELEMANN, G.P.",
+    "t": "Gavotte",
+    "nat": "German",
+    "era": "Baroque",
+    "focus": [
+      "Baroque style",
+      "Dance character",
+      "Keyboard clarity"
+    ]
+  },
+  {
+    "l": "A",
+    "c": "THOMSON, Donald",
+    "t": "Haggis Hunt (from Celtic Piano Music – Initial to Grade 2)",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "FFRENCH, Alexis",
+    "t": "The Singing Swan",
+    "nat": "English",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Stylistic range",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "KABALEVSKY, D.",
+    "t": "A Little Song (No. 2 from 30 Children’s Pieces, Op. 27)",
+    "nat": "Russian",
+    "era": "Modern",
+    "focus": [
+      "Expressive tone",
+      "Singing tone",
+      "Dynamic shaping"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "NORTON, Christopher",
+    "t": "Cloudy Day (No. 9 from Microjazz Collection 2)",
+    "nat": "New Zealander",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Jazz/Pop style",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "BARTÓK, B.",
+    "t": "Sorrow (No. 7 from For Children, Vol. 2)",
+    "nat": "Hungarian",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "DYLAN, Bob",
+    "t": "Make You Feel My Love",
+    "nat": "American",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Stylistic range",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "SHEERAN, Ed",
+    "t": "The Joker and the Queen",
+    "nat": "English",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Stylistic range",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "EL-DABH, Halim",
+    "t": "Soufiane (from Mekta’ in the Art of Kita’, Book 2)",
+    "nat": "Egyptian",
+    "era": "Modern",
+    "focus": [
+      "Modern harmony",
+      "Rhythmic precision",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "GRECHANINOV, A.",
+    "t": "Farewell (No. 4 from Children’s Album, Op. 98)",
+    "nat": "Russian",
+    "era": "Romantic",
+    "focus": [
+      "Expressive tone",
+      "Lyrical phrasing",
+      "Dynamic shaping"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "HAMMOND, Heather",
+    "t": "Raindrop Reflections",
+    "nat": "English",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "RAVEL, M.",
+    "t": "Pavane de la belle au bois dormant (No. 1 from Ravel: Ma mère l’oye)",
+    "nat": "French",
+    "era": "Romantic",
+    "focus": [
+      "Expressive tone",
+      "Singing tone",
+      "Dynamic shaping"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "SPINDLER, F.",
+    "t": "Waltz in A minor",
+    "nat": "German",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Dance character",
+      "Formal structure"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "STEIBELT, D.",
+    "t": "Adagio in A minor (from Sonatina in C) A",
+    "nat": "German",
+    "era": "Classical",
+    "focus": [
+      "Classical phrasing",
+      "Formal structure",
+      "Singing tone"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "TAN, Chee-Hwa",
+    "t": "The Moon (from A Child’s Garden of Verses)",
+    "nat": "Singaporean",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Stylistic range",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "TCHAIKOVSKY, P.",
+    "t": "Waltz (from The Sleeping Beauty)",
+    "nat": "Russian",
+    "era": "Romantic",
+    "focus": [
+      "Expressive tone",
+      "Dance character",
+      "Dynamic shaping"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "WATTS, Sarah",
+    "t": "Postcard from Paris (from Razzamajazz Sarah Repertoire Piano) Mayhew",
+    "nat": "English",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Jazz/Pop style",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "B",
+    "c": "WILLIAMS, John",
+    "t": "Hedwig’s Theme (from Harry Potter and the The Sorcerer’s/Philosopher’s Stone)",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "HAMMOND, Heather",
+    "t": "Spooky Wood Hollow (No. 5 from Grooves for Piano Dudes, Book 3)",
+    "nat": "English",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Jazz/Pop style",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "LETANKA, Pete",
+    "t": "Way Out West",
+    "nat": "English",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Stylistic range",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "LOUDOVÁ",
+    "t": "Šípková Růženka (No. 7 from Pohádky na dobrou Piano noc)",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "CROSLAND, Ben",
+    "t": "In My Spot",
+    "nat": "English",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Stylistic range",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "KONECSNI, Sarah",
+    "t": "Dinosaur, Don’t!",
+    "nat": "International",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Stylistic range",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "EINAUDI, Ludovico",
+    "t": "The Snow Prelude No. 3 this",
+    "nat": "Italian",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Contrapuntal texture",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "GARŚCIA",
+    "t": "Brigands’ Dance (from Let’s Play a Piano Duet, Op. 37 Vol. 2)",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Dance character",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "GĄSIENIEC",
+    "t": "Kukułka I Mirosław",
+    "nat": "Polish",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "GRIEG, E.",
+    "t": "Norwegian Dance",
+    "nat": "Norwegian",
+    "era": "Romantic",
+    "focus": [
+      "Expressive tone",
+      "Dance character",
+      "Dynamic shaping"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "ILES, Nikki",
+    "t": "The Cheshire Cat (from Piano Tales for Alice)",
+    "nat": "English",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "ILES, Nikki",
+    "t": "Sweet Pea",
+    "nat": "English",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "ROBINSON, Smokey",
+    "t": "My Girl",
+    "nat": "American",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Stylistic range",
+      "Musical expression"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "SCULTHORPE, P.",
+    "t": "Singing Sun (No. 6 from A Little Book of Hours) Sculthorpe",
+    "nat": "Australian",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "SEIBER, M.",
+    "t": "Tango II (Habanera) (from Leichte Tänze I) Seiber",
+    "nat": "International",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "SWAYNE, Giles",
+    "t": "Whistling Tune",
+    "nat": "English",
+    "era": "Modern",
+    "focus": [
+      "Rhythmic precision",
+      "Modern harmony",
+      "Character contrast"
+    ]
+  },
+  {
+    "l": "C",
+    "c": "WEDGWOOD, Pam",
+    "t": "Champagne Rag (No. 11 from Easy Jazzin' About Piano)",
+    "nat": "English",
+    "era": "Contemporary",
+    "focus": [
+      "Contemporary idiom",
+      "Jazz/Pop style",
+      "Rhythmic precision"
+    ]
+  }
 ];
