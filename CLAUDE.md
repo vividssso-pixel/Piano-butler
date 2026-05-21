@@ -1689,6 +1689,62 @@ recommend.html (dark theme, 4-step wizard)
 
 ---
 
+### Phase 40 Updates (2026-05-21 — data audit + UX polish)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | YouTube API key referrer restriction verified | Google Cloud Console | Confirmed `https://thepianobutler.com/*` and `https://www.thepianobutler.com/*` both registered. New key `AIzaSyAUydn17tJCoduix-iv7f7bKfXweIrR6Mg` active across all 22 HTML files. ✅ |
+| 2 | Full data audit — ABRSM (433 pieces) | All 9 `data_abrsm_*.js` files | ERA/FOCUS/NAT/duplicate check. Found 31 pieces with duplicate focus keyword (`"Formal structure"` repeated). All fixed with pedagogically appropriate 3rd keywords per piece. ✅ |
+| 3 | Full data audit — Trinity (1,565 pieces) | All 12 Trinity data files | ERA/FOCUS/NAT/duplicate check. All clean. Trinity Initial–G5 = open pool (no `l` field, uses no grouping). Trinity G6–G8 = `grp: "A"|"B"`. ✅ |
+| 4 | List A/B/C/D badge added to search results | `index.html` | `PieceCard` now shows List badge: A=blue, B=indigo, C=violet, D=purple. Trinity G6–G8 shows Group A/B badge (green). Open-pool pieces (Trinity Initial–G5, all Diploma) show no list badge. |
+| 5 | Search results → 1-column layout | `index.html` | `gridTemplateColumns` changed from `repeat(auto-fill,minmax(340px,1fr))` → `1fr`. Results now display as single full-width column. |
+| 6 | Piece cards — compact layout | `index.html` | Card padding reduced (22px → 12px 16px). Title + Composer + Listen/Score buttons on same row. Focus tags displayed inline below composer. Container maxWidth 900 → 1100. |
+| 7 | Era chips removed from homepage | `index.html` | Baroque/Classical/Romantic/Modern/Contemporary chips removed from below search bar. Era filter still available in sidebar during search. |
+| 8 | Sidebar filter restored | `index.html` | Left sidebar with Syllabus / Grade / Era sections reintroduced for search results view. Replaces the two-row filter bar (seg-bar + grade chips). Sidebar only visible when `isSearching`. |
+| 9 | ANZCA evaluated and declined | — | 2025-27 ANZCA Piano Syllabus PDF reviewed. Data structure is book-based (not piece-based) — incompatible with Piano Butler's per-piece architecture. Decision: do not add ANZCA. |
+| 10 | Product direction confirmed | — | Piano Butler = exam syllabus search tool only. No open repertoire additions. Focus: deepen existing syllabuses, improve UX, grow traffic before monetisation. |
+
+### Phase 41 Updates (2026-05-21 — Safari compatibility fix)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | `inset:0` → `top/right/bottom/left:0` | 23 HTML files | `inset` CSS shorthand not supported in Safari <14.1. Replaced across all public pages: index.html, diagnose.html, recommend.html, Prelim–G8 (9 files), ABRSM Initial–G8 (9 files), AMusA, LMusA, CertP, ABRSM LRSM/FRSM. |
+| 2 | `min(800px,95vw)` → `width:95vw; max-width:800px` | `index.html` | CSS `min()` function replaced with equivalent max-width pattern for broader Safari compatibility. |
+| 3 | Supabase script removed from index.html | `index.html` | Supabase JS library (500KB) was loaded but completely unused on index.html — auth/login code was removed in Phase 8. Removed to reduce load time and eliminate potential Safari init errors. |
+
+### Build Status — Last updated 2026-05-21
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–75 | All previously completed features (Phases 1–39) | ✅ Done |
+| 76 | YouTube API key referrer restriction verified | ✅ Done (Phase 40) |
+| 77 | ABRSM data audit + 31 focus fixes | ✅ Done (Phase 40) |
+| 78 | Trinity data audit — all clean | ✅ Done (Phase 40) |
+| 79 | List A/B/C/D badge on search results | ✅ Done (Phase 40) |
+| 80 | Compact piece cards + 1-column layout | ✅ Done (Phase 40) |
+| 81 | Sidebar filter restored | ✅ Done (Phase 40) |
+| 82 | Safari blank screen fix — inset:0 removed sitewide | ✅ Done (Phase 41) |
+| 83 | Supabase script removed from index.html | ✅ Done (Phase 41) |
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify |
+| 2 | Sitewide UX review — continue | High | index.html search UX, recommend.html, diagnose.html flows |
+| 3 | connect.html — real teacher info | Medium | Replace placeholder cards with real photo, booking link, price |
+| 4 | Gumroad product setup | Medium | Booked for after traffic grows — not urgent |
+| 5 | Ad integration | Low | After traffic grows |
+| 6 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
+
+### Known Issues (as of 2026-05-21)
+- `GUMROAD_URL` in diagnose.html is a placeholder — not urgent until traffic grows.
+- connect.html: placeholder teacher cards.
+- jsPDF radar chart: verify renders correctly before promoting $4 report.
+- teacher-dashboard.html still has `inset:0` — not public-facing, low priority.
+
+---
+
 ### Phase 39 Updates (2026-05-18 — diagnose.html UX fixes + security)
 
 | # | Change | File(s) | Detail |
