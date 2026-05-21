@@ -21,9 +21,9 @@
     <meta name="author" content="Piano Butler">
     <meta name="robots" content="index, follow">
 
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.3/babel.min.js" crossorigin="anonymous"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase not used on public index — removed for Safari compatibility -->
 
@@ -173,7 +173,7 @@
 <body>
 <div id="root"></div>
 
-<script type="text/babel">
+<script id="app-jsx" type="text/jsx-raw">
 const { useState, useMemo, useEffect, useCallback, useRef } = React;
 
 // ── YouTube modal ────────────────────────────────────────────────────────────
@@ -796,6 +796,39 @@ class ErrorBoundary extends React.Component {
 ReactDOM.createRoot(document.getElementById('root')).render(
     <ErrorBoundary><App /></ErrorBoundary>
 );
+</script>
+<script>
+// Manually compile and run the JSX after DOM + all data scripts are ready.
+// Babel standalone auto-processes type="text/babel" but can silently fail on
+// slow mobile Safari if Babel hasn't finished loading. This explicit trigger
+// ensures Babel is available before it tries to compile.
+(function() {
+    function run() {
+        if (typeof Babel === 'undefined' || typeof React === 'undefined') {
+            setTimeout(run, 50); // wait a bit more if CDN hasn't loaded yet
+            return;
+        }
+        // Babel already auto-ran on type="text/jsx-raw"? No — we use a custom type
+        // to prevent auto-run, then compile manually here.
+        var el = document.getElementById('app-jsx');
+        if (!el || el.dataset.compiled) return;
+        el.dataset.compiled = '1';
+        try {
+            var compiled = Babel.transform(el.textContent, { presets: ['react'] }).code;
+            var s = document.createElement('script');
+            s.textContent = compiled;
+            document.body.appendChild(s);
+        } catch(e) {
+            document.getElementById('root').innerHTML =
+                '<div style="padding:40px;color:#c00;font-family:monospace"><b>Compile error:</b> ' + e.message + '</div>';
+        }
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', run);
+    } else {
+        run();
+    }
+})();
 </script>
 </body>
 </html>
