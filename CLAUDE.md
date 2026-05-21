@@ -1737,11 +1737,52 @@ recommend.html (dark theme, 4-step wizard)
 | 5 | Ad integration | Low | After traffic grows |
 | 6 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
 
-### Known Issues (as of 2026-05-21)
+### Known Issues (as of 2026-05-22)
 - `GUMROAD_URL` in diagnose.html is a placeholder — not urgent until traffic grows.
 - connect.html: placeholder teacher cards.
 - jsPDF radar chart: verify renders correctly before promoting $4 report.
 - teacher-dashboard.html still has `inset:0` — not public-facing, low priority.
+
+---
+
+### Phase 42 Updates (2026-05-22 — Safari blank screen root cause fix)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | CDN migration — React + ReactDOM | `index.html` | `unpkg.com/react@18` (unversioned, unstable on mobile) → `cdnjs.cloudflare.com/ajax/libs/react/18.2.0` (pinned, fast). Same for react-dom. Added `crossorigin="anonymous"`. |
+| 2 | CDN migration — Babel Standalone | `index.html` | `unpkg.com/@babel/standalone` (unversioned = ~8MB latest) → `cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.3` (pinned, smaller). Root cause of Safari blank screen: unpkg was serving a huge Babel build that timed out or exhausted memory on mobile Safari before the app could mount. |
+| 3 | Manual Babel compile trigger | `index.html` | Changed `<script type="text/babel">` → `<script id="app-jsx" type="text/jsx-raw">` (non-standard type prevents Babel auto-run). Added inline bootstrap `<script>` that waits for `DOMContentLoaded`, checks `typeof Babel !== 'undefined'` (retries every 50ms if not ready), then calls `Babel.transform()` manually before appending compiled script to DOM. Includes `try/catch` that renders error message in `#root` on compile failure. |
+| 4 | Curly quote fix | `index.html` | Smart/curly quotes (`"` `"`) present in a JSX string literal caused Babel compile error: `Unexpected character '"' (571:70)`. Replaced all curly quotes with straight ASCII quotes throughout the file via Python script. |
+
+### index.html CDN Stack (as of Phase 42)
+
+| Library | Old CDN | New CDN | Version |
+|---------|---------|---------|---------|
+| React | unpkg.com (unversioned) | cdnjs.cloudflare.com | 18.2.0 (pinned) |
+| ReactDOM | unpkg.com (unversioned) | cdnjs.cloudflare.com | 18.2.0 (pinned) |
+| Babel Standalone | unpkg.com (unversioned, ~8MB) | cdnjs.cloudflare.com | 7.23.3 (pinned) |
+| Tailwind CSS | cdn.tailwindcss.com | cdn.tailwindcss.com | latest (unchanged) |
+
+### Build Status — Last updated 2026-05-22
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–83 | All previously completed features (Phases 1–41) | ✅ Done |
+| 84 | Safari blank screen — CDN migration to cdnjs (pinned versions) | ✅ Done (Phase 42) |
+| 85 | Safari blank screen — manual Babel compile trigger | ✅ Done (Phase 42) |
+| 86 | Curly quote Babel compile error fix | ✅ Done (Phase 42) |
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | Verify Safari fix on device | Immediate | Open thepianobutler.com in Safari private tab and confirm app renders |
+| 2 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify |
+| 3 | Sitewide UX review | High | index.html search UX, recommend.html, diagnose.html flows |
+| 4 | connect.html — real teacher info | Medium | Replace placeholder cards with real photo, booking link, price |
+| 5 | Gumroad product setup | Medium | After traffic grows |
+| 6 | Ad integration | Low | After traffic grows |
+| 7 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
 
 ---
 
