@@ -434,6 +434,126 @@ function computeResult(answers) {
 
 // --- Components ---
 
+function RadarChart(props) {
+  var domainScores = props.domainScores;
+  var size = 220;
+  var cx = size / 2;
+  var cy = size / 2;
+  var maxR = 80;
+
+  // 4 axes: top, right, bottom, left (Technique, Ear, Theory, Sight-Reading)
+  var axes = [
+    { angle: -90 },  // Technique — top
+    { angle: 0 },    // Ear — right
+    { angle: 90 },   // Theory — bottom
+    { angle: 180 }   // Sight-Reading — left
+  ];
+
+  function polarToXY(angle, r) {
+    var rad = (angle * Math.PI) / 180;
+    return {
+      x: cx + r * Math.cos(rad),
+      y: cy + r * Math.sin(rad)
+    };
+  }
+
+  // Grid rings at 33%, 66%, 100%
+  var rings = [0.33, 0.66, 1.0];
+
+  function ringPoints(scale) {
+    return axes.map(function(a) {
+      var pt = polarToXY(a.angle, maxR * scale);
+      return pt.x + ',' + pt.y;
+    }).join(' ');
+  }
+
+  // Data polygon
+  var dataPoints = domainScores.map(function(ds, i) {
+    var r = (ds.pct / 100) * maxR;
+    var pt = polarToXY(axes[i].angle, r);
+    return pt.x + ',' + pt.y;
+  }).join(' ');
+
+  // Axis end points for lines and labels
+  var axisEnds = axes.map(function(a, i) {
+    var labelPt = polarToXY(a.angle, maxR + 22);
+    var ds = domainScores[i];
+    return { line: polarToXY(a.angle, maxR), label: labelPt, ds: ds };
+  });
+
+  return (
+    <svg width={size} height={size} style={{display:'block',margin:'0 auto',overflow:'visible'}}>
+      {/* Grid rings */}
+      {rings.map(function(scale, i) {
+        return (
+          <polygon key={i}
+            points={ringPoints(scale)}
+            fill="none"
+            stroke="#e0d8cd"
+            strokeWidth={i === 2 ? 1.5 : 1}
+          />
+        );
+      })}
+
+      {/* Axis lines */}
+      {axisEnds.map(function(a, i) {
+        return (
+          <line key={i}
+            x1={cx} y1={cy}
+            x2={a.line.x} y2={a.line.y}
+            stroke={a.ds.domain.color} strokeWidth="1" strokeOpacity="0.4"
+          />
+        );
+      })}
+
+      {/* Data polygon */}
+      <polygon
+        points={dataPoints}
+        fill="#d4956a"
+        fillOpacity="0.25"
+        stroke="#d4956a"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+
+      {/* Data dots */}
+      {domainScores.map(function(ds, i) {
+        var r = (ds.pct / 100) * maxR;
+        var pt = polarToXY(axes[i].angle, r);
+        return (
+          <circle key={i}
+            cx={pt.x} cy={pt.y} r="5"
+            fill={ds.domain.color}
+            stroke="#fff" strokeWidth="2"
+          />
+        );
+      })}
+
+      {/* Labels */}
+      {axisEnds.map(function(a, i) {
+        var lx = a.label.x;
+        var ly = a.label.y;
+        var anchor = lx < cx - 10 ? 'end' : lx > cx + 10 ? 'start' : 'middle';
+        return (
+          <text key={i}
+            x={lx} y={ly + 4}
+            textAnchor={anchor}
+            fontSize="11"
+            fontWeight="600"
+            fill={a.ds.domain.color}
+            fontFamily="Inter, sans-serif"
+          >
+            {a.ds.domain.icon} {a.ds.domain.label}
+          </text>
+        );
+      })}
+
+      {/* Center dot */}
+      <circle cx={cx} cy={cy} r="3" fill="#d0c9be" />
+    </svg>
+  );
+}
+
 function ScoreBar(props) {
   return (
     <div className="score-bar-track" style={{width: '100%'}}>
@@ -708,12 +828,28 @@ function App() {
 
     return (
       <div style={{maxWidth:680,margin:'0 auto',padding:'32px 24px 60px'}}>
-        <div style={{textAlign:'center',marginBottom:32}}>
-          <div style={{display:'inline-block',background:'#fdf3eb',border:'1px solid #f0d8c0',borderRadius:12,padding:'8px 20px',marginBottom:16}}>
+        <div style={{textAlign:'center',marginBottom:28}}>
+          <div style={{display:'inline-block',background:'#fdf3eb',border:'1px solid #f0d8c0',borderRadius:12,padding:'8px 20px',marginBottom:14}}>
             <span style={{fontSize:13,fontWeight:600,color:'#a05a38'}}>Suggested level: {levelLabel}</span>
           </div>
           <h2 style={{fontSize:24,fontWeight:700,color:'#2a2825',margin:'0 0 8px'}}>Your Results</h2>
           <p style={{fontSize:15,color:'#6b6560',margin:0}}>{levelDesc}</p>
+        </div>
+
+        {/* Radar chart */}
+        <div className="card" style={{padding:'28px 16px 20px',marginBottom:28,textAlign:'center'}}>
+          <RadarChart domainScores={domainScores} />
+          <div style={{display:'flex',justifyContent:'center',gap:16,marginTop:16,flexWrap:'wrap'}}>
+            {domainScores.map(function(ds,i){
+              var band = ds.pct >= 67 ? 'Strong' : ds.pct >= 34 ? 'Developing' : 'Focus here';
+              return (
+                <div key={i} style={{display:'flex',alignItems:'center',gap:5}}>
+                  <span style={{width:10,height:10,borderRadius:'50%',background:ds.domain.color,display:'inline-block',flexShrink:0}}></span>
+                  <span style={{fontSize:12,color:'#6b6560'}}>{ds.domain.label} <strong style={{color:ds.domain.color}}>{band}</strong></span>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <div style={{display:'flex',flexDirection:'column',gap:12,marginBottom:32}}>
