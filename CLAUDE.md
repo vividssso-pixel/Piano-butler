@@ -1819,3 +1819,131 @@ recommend.html (dark theme, 4-step wizard)
 - `GUMROAD_URL` in diagnose.html is a placeholder — must be replaced with real Gumroad link before promoting publicly.
 - connect.html: placeholder teacher cards — real info needed before public promotion.
 - jsPDF radar chart in diagnose.html: uses `doc.moveTo/lineTo` — verify renders correctly in browser before selling reports.
+
+---
+
+### Phase 43 Updates (2026-05-25 — diagnose.html + recommend.html UX overhaul)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | diagnose.html — full rewrite, 8 questions | `diagnose.html` | Replaced complex dual-flow (beginner/returner, 16 questions) with a single clean 8-question flow (2 per domain). Domains: Technique 🎹, Ear Training 👂, Theory 📖, Sight-Reading 🎵. Results: score bars per domain with Strong/Developing/Focus here bands, top 2 weak domains with DOMAIN_TIPS (title + 3 actionable tips + next step), 4 corpus-matched pieces with Listen/Score/Find in Piano Butler buttons, strength callout card, CTAs to recommend.html and index.html. CDN migrated to cdnjs pinned (React 18.2.0, Babel 7.23.3) with manual Babel compile trigger. No Gumroad/jsPDF dependency — removed. |
+| 2 | recommend.html — rewrite (Phase 42 session) | `recommend.html` | Reduced from 4-step wizard to 2-step (level → style+era → results). Result cards have 3 action buttons: Listen, Score, Find in Piano Butler (links to index.html with search query). CDN migrated to cdnjs pinned versions. |
+
+### diagnose.html Architecture (as of Phase 43)
+
+```
+diagnose.html (single flow, 8 questions)
+├── buildCorpus()              — AMEB Prelim-G5 + ABRSM Initial-G4 + Trinity Initial-G4
+├── DOMAINS (4)                — Technique / Ear / Theory / Sight-Reading, 2 questions each
+├── ALL_QUESTIONS (8)          — flat array from DOMAINS
+├── DOMAIN_TIPS                — per-domain: title + 3 tips + nextStep
+├── computeResult(answers)     — domain scores (0-6 each), weakest x2, strongest, levelLabel, pieces x4
+│   ├── levelLabel             — Preliminary / Grade 1-2 / Grade 2-4 / Grade 4-5+ (from totalScore 0-24)
+│   ├── weakFocusTags          — union of weak domain focusTags (used to score corpus)
+│   └── pieces                 — 4 corpus picks with era + composer diversity
+├── DomainResult               — score bar + Strong/Developing/Focus band
+├── TipCard                    — per-domain tip card from DOMAIN_TIPS
+├── PieceCard                  — Listen + Score + Find in Piano Butler action links
+└── App screens
+    ├── landing                — 4 domain preview cards + Start button
+    ├── quiz                   — question card with 4 options, Back/Next, progress bar
+    └── results                — level label + score bars + focus tips + piece recs + strength callout + CTAs
+```
+
+### Build Status — Last updated 2026-05-25
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–86 | All previously completed features (Phases 1–42) | ✅ Done |
+| 87 | diagnose.html — 8-question single flow, clear results, cdnjs CDN | ✅ Done (Phase 43) |
+| 88 | recommend.html — 2-step wizard, actionable result cards, cdnjs CDN | ✅ Done (Phase 43) |
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | Push to main (git push origin main) | Immediate | Deploy Phase 43 changes live |
+| 2 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify |
+| 3 | connect.html — real teacher info | Medium | Replace placeholder cards with real photo, booking link, price |
+| 4 | Sitewide UX review | Medium | Open thepianobutler.com, use as real teacher/student, note friction |
+| 5 | Ad integration | Low | Google AdSense or direct piano brand deals — after traffic grows |
+| 6 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available from abrsm.org |
+
+### Known Issues (as of 2026-05-25)
+- connect.html: placeholder teacher cards — real info needed before public promotion.
+- Gumroad: no longer used in diagnose.html (jsPDF/Gumroad flow removed in Phase 43 simplification).
+
+---
+
+### Phase 44 Updates (2026-05-25 — homepage UX: two entry points)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Homepage redesign — two equal entry cards | `index.html` | Replaced search bar + TOOLS section with two side-by-side cards: 🔍 "I know what I'm looking for" (Search) and 🎹 "I'm not sure where to start" (Diagnose). Both cards equal size, same border style. Clicking Search card → transitions directly to full search screen. Clicking Diagnose card → navigates to diagnose.html. |
+| 2 | `showSearchInput` state added | `index.html` | `const [showSearchInput, setShowSearchInput] = useState(false)`. `isSearching` updated to `!!(showSearchInput \|\| searchQuery.trim() \|\| ...)`. `clearAll()` resets `showSearchInput` to false. |
+| 3 | Direct search screen transition | `index.html` | Search card click calls `setShowSearchInput(true)` only — no inline input expansion. `isSearching` becomes true → full search layout renders. Search input has `autoFocus`. |
+| 4 | Tailwind removed from diagnose.html | `diagnose.html` | Tailwind CDN (`cdn.tailwindcss.com`) was overriding inline styles with black text on `<a>`, `<button>`, `<ul>/<li>`. Removed entirely. Added explicit CSS reset in `<style>`: `a { color: inherit; }`, `button { font-family: inherit; }`, `ul,ol { margin:0; padding:0; list-style:none; }`. TipCard uses `listStyle:'disc'` inline on ul. |
+| 5 | SVG radar chart added to diagnose.html | `diagnose.html` | Pure SVG 4-axis diamond polygon. Grid rings at 33/66/100%. Data polygon filled orange. Colored domain dots at each axis endpoint. Domain icon + label outside each axis. Bug fix: `axisEnds` stores `{ ds: ds }` objects; accessed as `a.ds.domain.color` (not `a.domain.domain.color`). |
+| 6 | CDN stack standardised — diagnose.html | `diagnose.html` | React 18.2.0 + Babel 7.23.3 pinned on cdnjs. Manual Babel compile trigger: `DOMContentLoaded` → check `typeof Babel !== 'undefined'` (retry 50ms) → `Babel.transform()` → append script. `try/catch` renders error in `#root` on compile failure. |
+
+### diagnose.html Architecture (as of Phase 44 — final)
+
+```
+diagnose.html
+├── No Tailwind — explicit CSS reset only
+├── CDN: React 18.2.0 + Babel 7.23.3 (cdnjs, pinned), manual compile trigger
+├── buildCorpus()              — AMEB Prelim–G5 + ABRSM Initial–G4 + Trinity Initial–G4
+├── DOMAINS (4)                — Technique 🎹 / Ear 👂 / Theory 📖 / Sight-Reading 🎵
+│   each has: label, icon, color, bgColor, focusTags[], questions[2]
+├── ALL_QUESTIONS (8)          — flat array from DOMAINS
+├── DOMAIN_TIPS                — per domain: title + tips[3] + nextStep
+├── computeResult(answers)     — domainScores[], ranked[], weakest[2], strongest, levelLabel, pieces[4]
+├── RadarChart                 — pure SVG, polar→XY: (cx + r*cos(rad), cy + r*sin(rad))
+│   axisEnds: [{ds: {domain, score, pct}}, ...], accessed as a.ds.domain.color
+├── ScoreBar, DomainResult, TipCard, PieceCard
+├── ErrorBoundary
+└── App screens: landing → quiz → results
+```
+
+### index.html Homepage Architecture (as of Phase 44)
+
+```
+index.html homepage (not isSearching):
+├── Nav (Piano Butler title + nav buttons: Recommend / Diagnose / Sign in)
+├── Hero text ("The piano repertoire you've been looking for.")
+├── Two entry cards (flex row, equal width):
+│   ├── Search card (onClick → setShowSearchInput(true))
+│   └── Diagnose card (href="diagnose.html")
+└── Stats line ("4,500+ pieces · AMEB · ABRSM · Trinity · Diploma")
+
+index.html results (isSearching = true):
+├── Nav visible
+├── Search input (autoFocus when entering from Search card)
+├── Sidebar (Syllabus / Grade / Era filters)
+├── Results grid (1-column, compact PieceCard rows)
+└── clearAll() → resets showSearchInput + all filters → returns to homepage
+```
+
+### Build Status — Last updated 2026-05-25 (Phase 44)
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–88 | All previously completed features (Phases 1–43) | ✅ Done |
+| 89 | Homepage — two entry cards (Search vs Diagnose) | ✅ Done (Phase 44) |
+| 90 | Search card → direct full-screen transition with autoFocus | ✅ Done (Phase 44) |
+| 91 | diagnose.html — Tailwind removed, black text fixed | ✅ Done (Phase 44) |
+| 92 | diagnose.html — SVG radar chart (4-axis polygon) | ✅ Done (Phase 44) |
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | Sitewide UX review | High | Open thepianobutler.com, use as real teacher/student, note friction points |
+| 2 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify |
+| 3 | connect.html — real teacher info | Medium | Replace placeholder cards with real photo, booking link, price |
+| 4 | Ad integration | Low | Google AdSense or direct piano brand deals — after traffic grows |
+| 5 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available from abrsm.org |
+
+### Known Issues (as of 2026-05-25 Phase 44)
+- connect.html: placeholder teacher cards — real info needed before public promotion.
+- Git sandbox HEAD.lock: sandbox cannot write HEAD.lock — user must run `rm HEAD.lock && git commit && git push` in Terminal when commits fail.
