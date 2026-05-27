@@ -469,130 +469,122 @@ function PieceCard({ p, openVideo }) {
 }
 
 // ── Random Pick Modal ─────────────────────────────────────────────────────────
-const GRADE_OPTIONS = ['Prelim','G1','G2','G3','G4','G5','G6','G7','G8'];
-const LIST_OPTIONS  = ['A','B','C','D'];
+const GRADE_OPTIONS = [
+    { key:'Prelim', label:'Prelim' },
+    { key:'G1',     label:'G1' },
+    { key:'G2',     label:'G2' },
+    { key:'G3',     label:'G3' },
+    { key:'G4',     label:'G4' },
+    { key:'G5',     label:'G5' },
+    { key:'G6',     label:'G6' },
+    { key:'G7',     label:'G7' },
+    { key:'G8',     label:'G8' },
+    { key:'diploma',label:'Diploma' },
+];
+const DIPLOMA_KEYS = ['CertP','AMusA','LMusA','LRSM','FRSM','TATCL','TLTCL','TFTCL'];
+const ERA_COLORS = { Baroque:'#92400e', Classical:'#1e40af', Romantic:'#7e22ce', Modern:'#065f46', Contemporary:'#1e3a5f' };
 
 function RandomPickModal({ onClose }) {
-    const [grade, setGrade]   = useState('G1');
-    const [mode, setMode]     = useState('list'); // 'list' | 'era'
-    const [listSel, setListSel] = useState('A');
-    const [eraSel, setEraSel]   = useState('Romantic');
-    const [picks, setPicks]   = useState(null);
+    const [grade, setGrade] = useState('G1');
+    const [picks, setPicks] = useState(null);
 
     function generate() {
-        // Match AMEB + ABRSM grades (G1/G2/etc) — exclude Trinity (TG1/TG2) and Diploma
-        let pool = CORPUS.filter(p => {
-            if (!p._gradeKey) return false;
-            return p._gradeKey === grade && (p._syllabus === 'AMEB' || p._syllabus === 'ABRSM');
-        });
-        if (mode === 'list') {
-            const byList = LIST_OPTIONS.reduce((acc, l) => {
-                acc[l] = pool.filter(p => p.l === l);
-                return acc;
-            }, {});
-            const result = LIST_OPTIONS.map(l => {
-                const arr = byList[l];
-                if (!arr || arr.length === 0) return null;
-                return arr[Math.floor(Math.random() * arr.length)];
-            }).filter(Boolean);
-            setPicks(result);
+        // Build pool
+        let pool;
+        if (grade === 'diploma') {
+            pool = CORPUS.filter(p => DIPLOMA_KEYS.includes(p._gradeKey));
         } else {
-            const filtered = pool.filter(p => p.era === eraSel);
-            const src = filtered.length > 0 ? filtered : pool;
-            const shuffled = [...src].sort(() => Math.random() - 0.5);
-            setPicks(shuffled.slice(0, 4));
+            pool = CORPUS.filter(p =>
+                p._gradeKey === grade &&
+                (p._syllabus === 'AMEB' || p._syllabus === 'ABRSM')
+            );
         }
+        if (pool.length === 0) { setPicks([]); return; }
+
+        // Pick one piece per era, era order: Baroque → Classical → Romantic → Modern → Contemporary
+        const eras = ['Baroque','Classical','Romantic','Modern','Contemporary'];
+        const result = [];
+        const byEra = {};
+        eras.forEach(e => { byEra[e] = pool.filter(p => p.era === e); });
+
+        // Try to get 1 per era (skip eras with 0 pieces)
+        eras.forEach(e => {
+            const arr = byEra[e];
+            if (arr && arr.length > 0) {
+                result.push(arr[Math.floor(Math.random() * arr.length)]);
+            }
+        });
+
+        // If fewer than 3 results (e.g. Diploma is era-sparse), fill from full pool
+        if (result.length < 3) {
+            const used = new Set(result.map(p => p.t + p.c));
+            const shuffled = [...pool].sort(() => Math.random() - 0.5);
+            for (const p of shuffled) {
+                if (!used.has(p.t + p.c)) { result.push(p); used.add(p.t + p.c); }
+                if (result.length >= 5) break;
+            }
+        }
+        setPicks(result);
     }
 
-    const ERA_COLORS = { Baroque:'#92400e', Classical:'#1e40af', Romantic:'#86198f', Modern:'#065f46', Contemporary:'#1e3a5f' };
-    const LIST_COLORS = { A:'#1d4ed8', B:'#5b21b6', C:'#7e22ce', D:'#6b21a8' };
-
     return (
-        <div onClick={onClose} style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',zIndex:100,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+        <div onClick={onClose} style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.55)',zIndex:100,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
             <div onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:20,padding:28,maxWidth:520,width:'100%',maxHeight:'90vh',overflowY:'auto'}}>
+
+                {/* Header */}
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
                     <span style={{fontSize:18,fontWeight:800,color:'#1a1410'}}>🎲 Random Pick</span>
                     <button onClick={onClose} style={{background:'none',border:'none',fontSize:20,cursor:'pointer',color:'#9a8e84'}}>✕</button>
                 </div>
 
                 {/* Grade */}
-                <div style={{marginBottom:16}}>
+                <div style={{marginBottom:20}}>
                     <div style={{fontSize:11,fontWeight:700,color:'#9a8e84',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:8}}>Grade</div>
                     <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
                         {GRADE_OPTIONS.map(g => (
-                            <button key={g} onClick={()=>setGrade(g)} style={{
+                            <button key={g.key} onClick={()=>{setGrade(g.key);setPicks(null);}} style={{
                                 padding:'5px 13px',borderRadius:20,fontSize:12,fontWeight:700,cursor:'pointer',border:'1.5px solid',
-                                background: grade===g ? '#1a1410' : '#fff',
-                                color: grade===g ? '#fff' : '#6b5e54',
-                                borderColor: grade===g ? '#1a1410' : '#e8ddd4'
-                            }}>{g}</button>
+                                background: grade===g.key ? '#1a1410' : '#fff',
+                                color: grade===g.key ? '#fff' : '#6b5e54',
+                                borderColor: grade===g.key ? '#1a1410' : '#e8ddd4'
+                            }}>{g.label}</button>
                         ))}
                     </div>
-                </div>
-
-                {/* Mode toggle */}
-                <div style={{marginBottom:16}}>
-                    <div style={{fontSize:11,fontWeight:700,color:'#9a8e84',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:8}}>Pick by</div>
-                    <div style={{display:'flex',gap:6}}>
-                        {[['list','List (A/B/C/D)'],['era','Era']].map(([v,l])=>(
-                            <button key={v} onClick={()=>{setMode(v);setPicks(null);}} style={{
-                                padding:'5px 14px',borderRadius:20,fontSize:12,fontWeight:700,cursor:'pointer',border:'1.5px solid',
-                                background: mode===v ? '#c4845a' : '#fff',
-                                color: mode===v ? '#fff' : '#6b5e54',
-                                borderColor: mode===v ? '#c4845a' : '#e8ddd4'
-                            }}>{l}</button>
-                        ))}
+                    <div style={{fontSize:11,color:'#b0a898',marginTop:8}}>
+                        Picks one piece from each era available at this grade — across AMEB & ABRSM.
                     </div>
                 </div>
-
-                {/* Era selector */}
-                {mode === 'era' && (
-                    <div style={{marginBottom:16}}>
-                        <div style={{fontSize:11,fontWeight:700,color:'#9a8e84',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:8}}>Era</div>
-                        <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
-                            {ERAS.map(e=>(
-                                <button key={e} onClick={()=>setEraSel(e)} style={{
-                                    padding:'5px 13px',borderRadius:20,fontSize:12,fontWeight:700,cursor:'pointer',border:'1.5px solid',
-                                    background: eraSel===e ? (ERA_COLORS[e]||'#333') : '#fff',
-                                    color: eraSel===e ? '#fff' : '#6b5e54',
-                                    borderColor: eraSel===e ? (ERA_COLORS[e]||'#333') : '#e8ddd4'
-                                }}>{e}</button>
-                            ))}
-                        </div>
-                    </div>
-                )}
 
                 {/* Generate button */}
-                <button onClick={generate} style={{width:'100%',padding:'12px',borderRadius:12,background:'#c4845a',color:'#fff',fontWeight:800,fontSize:14,border:'none',cursor:'pointer',marginBottom:picks?20:0}}>
+                <button onClick={generate} style={{width:'100%',padding:'13px',borderRadius:12,background:'#c4845a',color:'#fff',fontWeight:800,fontSize:14,border:'none',cursor:'pointer',marginBottom:picks?20:0}}>
                     {picks ? '🔀 Shuffle again' : '🎲 Pick for me'}
                 </button>
 
                 {/* Results */}
                 {picks && picks.length > 0 && (
-                    <div style={{display:'flex',flexDirection:'column',gap:8}}>
-                        {picks.map((p,i)=>(
+                    <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:4}}>
+                        {picks.map((p,i) => (
                             <div key={i} style={{background:'#faf7f4',border:'1px solid #ede7df',borderRadius:12,padding:'12px 14px'}}>
-                                <div style={{display:'flex',gap:6,marginBottom:6,flexWrap:'wrap'}}>
-                                    {p.l && (
-                                        <span style={{fontSize:10,fontWeight:800,padding:'2px 7px',borderRadius:5,background:LIST_COLORS[p.l]||'#555',color:'#fff'}}>
-                                            List {p.l}
-                                        </span>
-                                    )}
+                                <div style={{display:'flex',gap:6,marginBottom:5,flexWrap:'wrap',alignItems:'center'}}>
                                     {p.era && (
-                                        <span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:5,background:'#f0ebe4',color:'#7a6e64'}}>
+                                        <span style={{fontSize:10,fontWeight:800,padding:'2px 8px',borderRadius:5,
+                                            background: ERA_COLORS[p.era] || '#555', color:'#fff'}}>
                                             {p.era}
                                         </span>
                                     )}
+                                    {p._grade && (
+                                        <span style={{fontSize:10,color:'#b0a898',fontWeight:600}}>{p._syllabus} {p._grade}</span>
+                                    )}
                                 </div>
-                                <div style={{fontSize:13,fontWeight:700,color:'#1a1410',marginBottom:2}}>{p.t}</div>
+                                <div style={{fontSize:13,fontWeight:700,color:'#1a1410',marginBottom:2,lineHeight:1.4}}>{p.t}</div>
                                 <div style={{fontSize:12,color:'#7a6e64'}}>{p.c}</div>
                             </div>
                         ))}
                     </div>
                 )}
                 {picks && picks.length === 0 && (
-                    <div style={{textAlign:'center',color:'#9a8e84',fontSize:13,padding:16}}>
-                        No pieces found for this combination. Try a different grade or era.
+                    <div style={{textAlign:'center',color:'#9a8e84',fontSize:13,padding:20}}>
+                        No pieces found for this grade. Try another.
                     </div>
                 )}
             </div>
@@ -917,8 +909,9 @@ function App() {
             </main>
 
             {/* Footer */}
-            <footer style={{borderTop:'1px solid #ede7df',padding:'16px 20px',textAlign:'center',fontSize:11,fontWeight:500,color:'#b0a898',letterSpacing:'0.03em'}}>
-                Piano Butler · Not affiliated with AMEB, ABRSM, or Trinity College London · Repertoire data for reference only
+            <footer style={{borderTop:'1px solid #ede7df',padding:'20px',textAlign:'center',fontSize:11,fontWeight:500,color:'#b0a898',letterSpacing:'0.03em',lineHeight:1.7}}>
+                <div>Piano Butler is an independent repertoire reference tool. Syllabus information is sourced from publicly available AMEB, ABRSM, and Trinity syllabuses.</div>
+                <div style={{marginTop:4}}>Piano Butler is not affiliated with or endorsed by AMEB, ABRSM, or Trinity College London.</div>
             </footer>
         </div>
         </>
