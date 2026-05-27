@@ -659,7 +659,7 @@ index.html (fully public, no requireAuth)
 |---|--------|---------|--------|
 | 1 | sitemap.xml — diploma pages added | `sitemap.xml` | AMusA + LMusA pages added (priority 0.8, monthly) |
 | 2 | robots.txt — admin page blocked | `robots.txt` | `Disallow: /admin-counts.html` added |
-| 3 | Admin piece-count page | `admin-counts.html` | Password-protected (`pianobutler2026`) React dashboard. Shows live piece counts from all loaded data files. Grand Total card + per-syllabus subtotals. SectionTable with list badges + ✓ OK / ⚠ MISSING status. Expected vs Actual panel compares live counts to CLAUDE.md targets — red highlight on mismatch. `noindex` meta tag. |
+| 3 | Admin piece-count page | `admin-counts.html` | Password-protected React dashboard. Shows live piece counts from all loaded data files. Grand Total card + per-syllabus subtotals. SectionTable with list badges + ✓ OK / ⚠ MISSING status. Expected vs Actual panel compares live counts to CLAUDE.md targets — red highlight on mismatch. `noindex` meta tag. |
 | 4 | SEO keywords expanded | `index.html` | Added: AMusA repertoire, LMusA repertoire, AMEB diploma piano, ABRSM diploma piano, piano exam pieces Australia, piano syllabus search |
 | 5 | Back-link added to all AMEB grade pages | `Prelim–G8/piano-repertoire_*.html` (9 files) | `← Piano Butler` link (`../index.html`) injected into header of all 9 AMEB Comprehensive/Leisure grade pages. ABRSM pages already had back-links. |
 | 6 | ABRSM Diploma task logged | Task #7 | Pending — requires ABRSM Diploma PDF (ARSM / DipABRSM / LRSM / FRSM). User to download from abrsm.org → Performance Diplomas. |
@@ -1582,7 +1582,7 @@ diagnose.html
 | 1 | List/Group filter tabs in search results | `index.html` | `listFilter` state added (All/A/B/C/D/S1–S4/Manual/Group A/Group B). Dynamic tabs appear only when results contain 2+ distinct list values. Each tab shows piece count, colour-coded by list type. `preListResults` useMemo computes pre-filter set for tab counts. `listFilter` pill in results header; resets on syllabus change. All clear/back buttons reset `listFilter`. |
 | 2 | Role-picker homepage redesign | `index.html` | Major rewrite: homepage presents two role-based entry paths (Teacher / Student/Self-learner). Each path leads to a tailored grade picker and filtered search. `activeSyllabus` state drives AMEB/ABRSM/Trinity grade grid tabs. |
 | 3 | Diploma + AMEB Leisure in teacher grade picker | `index.html` | Grade picker for teacher flow expanded to include Diploma levels (CertP, AMusA, LMusA, LRSM, FRSM, ATCL, LTCL, FTCL) and AMEB Leisure grades (Prelim–G8). |
-| 4 | admin-search.html — full-featured admin search | `admin-search.html` | New file (`noindex, nofollow`). Password-gated (`pianobutler2026`, sessionStorage). Full corpus search with all filters: syllabus, era, grade, nationality, list (A/B/C/D), text. Lists functionality (AddToListModal, MyListsPanel, ShareListModal). Supabase auth + favourites. Full piece cards with ▶ Listen, Score, ★ Save, + List buttons. Linked from index.html footer as "Full search ↗". |
+| 4 | admin-search.html — full-featured admin search | `admin-search.html` | New file (`noindex, nofollow`). Password-gated (sessionStorage). Full corpus search with all filters: syllabus, era, grade, nationality, list (A/B/C/D), text. Lists functionality (AddToListModal, MyListsPanel, ShareListModal). Supabase auth + favourites. Full piece cards with ▶ Listen, Score, ★ Save, + List buttons. |
 | 5 | robots.txt — admin-search.html blocked | `robots.txt` | `Disallow: /admin-search.html` added. |
 | 6 | Search-first homepage (second iteration) | `index.html` | Further simplified: single search bar always visible, grade grid removed from homepage, tool cards (Recommend + Diagnose) shown below hint chips, stats footer with "Full search ↗" link. Dark theme throughout. |
 | 7 | UX iterations — homepage tool cards | `index.html` | Multiple passes: tool cards removed → hint chips expanded → tool cards restored → syllabus filter chips removed → final: hint chips + 2 tool cards (🎹 Recommend, 🔬 Diagnose). |
@@ -1626,7 +1626,7 @@ index.html (minimal public search — dark theme)
 
 ```
 admin-search.html (password-gated, noindex)
-├── Password gate           — sessionStorage('pb_admin_auth'), pw: pianobutler2026
+├── Password gate           — sessionStorage('pb_admin_auth')
 ├── Full buildCorpus()      — all 4,500 pieces
 ├── Full filter set         — syllabus + era + grade + nationality + list (A/B/C/D)
 ├── listFilter tabs         — dynamic tabs from result set
