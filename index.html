@@ -468,6 +468,138 @@ function PieceCard({ p, openVideo }) {
     );
 }
 
+// ── Random Pick Modal ─────────────────────────────────────────────────────────
+const GRADE_OPTIONS = ['Prelim','G1','G2','G3','G4','G5','G6','G7','G8'];
+const LIST_OPTIONS  = ['A','B','C','D'];
+
+function RandomPickModal({ onClose }) {
+    const [grade, setGrade]   = useState('G1');
+    const [mode, setMode]     = useState('list'); // 'list' | 'era'
+    const [listSel, setListSel] = useState('A');
+    const [eraSel, setEraSel]   = useState('Romantic');
+    const [picks, setPicks]   = useState(null);
+
+    function generate() {
+        // Match AMEB + ABRSM grades (G1/G2/etc) — exclude Trinity (TG1/TG2) and Diploma
+        let pool = CORPUS.filter(p => {
+            if (!p._gradeKey) return false;
+            return p._gradeKey === grade && (p._syllabus === 'AMEB' || p._syllabus === 'ABRSM');
+        });
+        if (mode === 'list') {
+            const byList = LIST_OPTIONS.reduce((acc, l) => {
+                acc[l] = pool.filter(p => p.l === l);
+                return acc;
+            }, {});
+            const result = LIST_OPTIONS.map(l => {
+                const arr = byList[l];
+                if (!arr || arr.length === 0) return null;
+                return arr[Math.floor(Math.random() * arr.length)];
+            }).filter(Boolean);
+            setPicks(result);
+        } else {
+            const filtered = pool.filter(p => p.era === eraSel);
+            const src = filtered.length > 0 ? filtered : pool;
+            const shuffled = [...src].sort(() => Math.random() - 0.5);
+            setPicks(shuffled.slice(0, 4));
+        }
+    }
+
+    const ERA_COLORS = { Baroque:'#92400e', Classical:'#1e40af', Romantic:'#86198f', Modern:'#065f46', Contemporary:'#1e3a5f' };
+    const LIST_COLORS = { A:'#1d4ed8', B:'#5b21b6', C:'#7e22ce', D:'#6b21a8' };
+
+    return (
+        <div onClick={onClose} style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.5)',zIndex:100,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+            <div onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:20,padding:28,maxWidth:520,width:'100%',maxHeight:'90vh',overflowY:'auto'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+                    <span style={{fontSize:18,fontWeight:800,color:'#1a1410'}}>🎲 Random Pick</span>
+                    <button onClick={onClose} style={{background:'none',border:'none',fontSize:20,cursor:'pointer',color:'#9a8e84'}}>✕</button>
+                </div>
+
+                {/* Grade */}
+                <div style={{marginBottom:16}}>
+                    <div style={{fontSize:11,fontWeight:700,color:'#9a8e84',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:8}}>Grade</div>
+                    <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                        {GRADE_OPTIONS.map(g => (
+                            <button key={g} onClick={()=>setGrade(g)} style={{
+                                padding:'5px 13px',borderRadius:20,fontSize:12,fontWeight:700,cursor:'pointer',border:'1.5px solid',
+                                background: grade===g ? '#1a1410' : '#fff',
+                                color: grade===g ? '#fff' : '#6b5e54',
+                                borderColor: grade===g ? '#1a1410' : '#e8ddd4'
+                            }}>{g}</button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Mode toggle */}
+                <div style={{marginBottom:16}}>
+                    <div style={{fontSize:11,fontWeight:700,color:'#9a8e84',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:8}}>Pick by</div>
+                    <div style={{display:'flex',gap:6}}>
+                        {[['list','List (A/B/C/D)'],['era','Era']].map(([v,l])=>(
+                            <button key={v} onClick={()=>{setMode(v);setPicks(null);}} style={{
+                                padding:'5px 14px',borderRadius:20,fontSize:12,fontWeight:700,cursor:'pointer',border:'1.5px solid',
+                                background: mode===v ? '#c4845a' : '#fff',
+                                color: mode===v ? '#fff' : '#6b5e54',
+                                borderColor: mode===v ? '#c4845a' : '#e8ddd4'
+                            }}>{l}</button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Era selector */}
+                {mode === 'era' && (
+                    <div style={{marginBottom:16}}>
+                        <div style={{fontSize:11,fontWeight:700,color:'#9a8e84',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:8}}>Era</div>
+                        <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                            {ERAS.map(e=>(
+                                <button key={e} onClick={()=>setEraSel(e)} style={{
+                                    padding:'5px 13px',borderRadius:20,fontSize:12,fontWeight:700,cursor:'pointer',border:'1.5px solid',
+                                    background: eraSel===e ? (ERA_COLORS[e]||'#333') : '#fff',
+                                    color: eraSel===e ? '#fff' : '#6b5e54',
+                                    borderColor: eraSel===e ? (ERA_COLORS[e]||'#333') : '#e8ddd4'
+                                }}>{e}</button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Generate button */}
+                <button onClick={generate} style={{width:'100%',padding:'12px',borderRadius:12,background:'#c4845a',color:'#fff',fontWeight:800,fontSize:14,border:'none',cursor:'pointer',marginBottom:picks?20:0}}>
+                    {picks ? '🔀 Shuffle again' : '🎲 Pick for me'}
+                </button>
+
+                {/* Results */}
+                {picks && picks.length > 0 && (
+                    <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                        {picks.map((p,i)=>(
+                            <div key={i} style={{background:'#faf7f4',border:'1px solid #ede7df',borderRadius:12,padding:'12px 14px'}}>
+                                <div style={{display:'flex',gap:6,marginBottom:6,flexWrap:'wrap'}}>
+                                    {p.l && (
+                                        <span style={{fontSize:10,fontWeight:800,padding:'2px 7px',borderRadius:5,background:LIST_COLORS[p.l]||'#555',color:'#fff'}}>
+                                            List {p.l}
+                                        </span>
+                                    )}
+                                    {p.era && (
+                                        <span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:5,background:'#f0ebe4',color:'#7a6e64'}}>
+                                            {p.era}
+                                        </span>
+                                    )}
+                                </div>
+                                <div style={{fontSize:13,fontWeight:700,color:'#1a1410',marginBottom:2}}>{p.t}</div>
+                                <div style={{fontSize:12,color:'#7a6e64'}}>{p.c}</div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+                {picks && picks.length === 0 && (
+                    <div style={{textAlign:'center',color:'#9a8e84',fontSize:13,padding:16}}>
+                        No pieces found for this combination. Try a different grade or era.
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
 // ── Main App ─────────────────────────────────────────────────────────────────
 function App() {
     const [query, setQuery]             = useState('');
@@ -478,6 +610,7 @@ function App() {
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [visibleCount, setVisibleCount] = useState(60);
     const [showSearchInput, setShowSearchInput] = useState(false);
+    const [showRandomPick, setShowRandomPick] = useState(false);
     const inputRef = useRef(null);
     const debounceRef = useRef(null);
 
@@ -548,6 +681,7 @@ function App() {
     return (
         <>
         <VideoModal modal={videoModal} onClose={closeVideo} />
+        {showRandomPick && <RandomPickModal onClose={()=>setShowRandomPick(false)} />}
 
         <div style={{minHeight:'100vh',background:'#f5f0eb',display:'flex',flexDirection:'column'}}>
 
@@ -585,8 +719,11 @@ function App() {
                             </p>
                         </div>
 
-                        {/* Single entry point — Search */}
-                        <div style={{maxWidth:680,margin:'0 auto 36px'}}>
+                        {/* Two entry points */}
+                        <div style={{display:'grid',gap:14,maxWidth:680,margin:'0 auto 36px',
+                            gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))'}}>
+
+                            {/* Entry 1 — Search */}
                             <div
                                 style={{background:'#fff', border:'1.5px solid #e8e0d5',
                                     borderRadius:16, padding:'28px 24px', cursor:'pointer'}}
@@ -600,6 +737,23 @@ function App() {
                                 </div>
                                 <div style={{fontSize:13,fontWeight:700,color:'#c4845a'}}>
                                     Start searching →
+                                </div>
+                            </div>
+
+                            {/* Entry 2 — Random Pick */}
+                            <div
+                                style={{background:'#fff', border:'1.5px solid #e8e0d5',
+                                    borderRadius:16, padding:'28px 24px', cursor:'pointer'}}
+                                onClick={() => setShowRandomPick(true)}>
+                                <div style={{fontSize:32,marginBottom:14}}>🎲</div>
+                                <div style={{fontSize:18,fontWeight:800,color:'#1a1410',marginBottom:8,lineHeight:1.3}}>
+                                    Surprise me
+                                </div>
+                                <div style={{fontSize:13,color:'#9a8e84',lineHeight:1.7,marginBottom:20}}>
+                                    Pick a grade and filter by List (A/B/C/D) or era — get a random set instantly.
+                                </div>
+                                <div style={{fontSize:13,fontWeight:700,color:'#c4845a'}}>
+                                    Random pick →
                                 </div>
                             </div>
                         </div>
