@@ -1955,7 +1955,7 @@ index.html results (isSearching = true):
 | # | Change | File(s) | Detail |
 |---|--------|---------|--------|
 | 1 | Random Pick — Listen + Score buttons | `index.html` | Each result card now has ▶ Listen (YouTube modal) and ♩ Score (Google sheet music search) buttons. |
-| 2 | Random Pick — Listen closes modal first | `index.html` | `onClose()` called before `openVideo()` — YouTube modal no longer hidden behind Random Pick overlay. |
+| 2 | Random Pick — YouTube z-index fix | `index.html` | `.yt-modal-bg` z-index raised 100→200. Random Pick stays open; YouTube floats above it. Closing YouTube returns to Random Pick with all cards intact. `onClose()` removed from Listen button. |
 | 3 | Footer disclaimer expanded | `index.html` | Single-line "Not affiliated" → two-line independence statement: "Piano Butler is an independent repertoire reference tool. Syllabus information is sourced from publicly available AMEB, ABRSM, and Trinity syllabuses. Piano Butler is not affiliated with or endorsed by AMEB, ABRSM, or Trinity College London." |
 | 4 | Security — admin password removed from public files | `CLAUDE.md` | `pianobutler2026` password text removed from CLAUDE.md (3 occurrences). Admin files still exist but password no longer exposed in public GitHub repo. |
 | 5 | Admin link removed from footer | `index.html` | "Full search ↗" link to admin-search.html removed from homepage footer. robots.txt disallow still in place. |
@@ -1973,7 +1973,7 @@ index.html results (isSearching = true):
 |---|---------|--------|
 | 1–92 | All previously completed features (Phases 1–44) | ✅ Done |
 | 93 | Random Pick — Listen + Score buttons | ✅ Done (Phase 45) |
-| 94 | Random Pick — YouTube modal fix (close overlay first) | ✅ Done (Phase 45) |
+| 94 | Random Pick — YouTube opens above modal, stays open after close | ✅ Done (Phase 45) |
 | 95 | Footer independence disclaimer | ✅ Done (Phase 45) |
 | 96 | Admin password removed from public repo | ✅ Done (Phase 45) |
 | 97 | Site title — Exam & Repertoire Search | ✅ Done (Phase 45) |
