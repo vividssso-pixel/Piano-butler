@@ -1947,3 +1947,48 @@ index.html results (isSearching = true):
 ### Known Issues (as of 2026-05-25 Phase 44)
 - connect.html: placeholder teacher cards — real info needed before public promotion.
 - Git sandbox HEAD.lock: sandbox cannot write HEAD.lock — user must run `rm HEAD.lock && git commit && git push` in Terminal when commits fail.
+
+---
+
+### Phase 45 Updates (2026-05-27 — Random Pick polish + security + title)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Random Pick — Listen + Score buttons | `index.html` | Each result card now has ▶ Listen (YouTube modal) and ♩ Score (Google sheet music search) buttons. |
+| 2 | Random Pick — Listen closes modal first | `index.html` | `onClose()` called before `openVideo()` — YouTube modal no longer hidden behind Random Pick overlay. |
+| 3 | Footer disclaimer expanded | `index.html` | Single-line "Not affiliated" → two-line independence statement: "Piano Butler is an independent repertoire reference tool. Syllabus information is sourced from publicly available AMEB, ABRSM, and Trinity syllabuses. Piano Butler is not affiliated with or endorsed by AMEB, ABRSM, or Trinity College London." |
+| 4 | Security — admin password removed from public files | `CLAUDE.md` | `pianobutler2026` password text removed from CLAUDE.md (3 occurrences). Admin files still exist but password no longer exposed in public GitHub repo. |
+| 5 | Admin link removed from footer | `index.html` | "Full search ↗" link to admin-search.html removed from homepage footer. robots.txt disallow still in place. |
+| 6 | Site title updated | `index.html` | `Piano Butler — Piano Exam Pieces` → `Piano Butler — Exam & Repertoire Search` across title, og:title, twitter:title. |
+
+### Product Direction (confirmed 2026-05-27)
+- Goal: clean, functional site → SEO traffic → simple monetisation
+- Priority order: Google Search Console → SheetMusicPlus affiliate → AdSense (when traffic grows)
+- Diagnose/Recommend: deprioritised, not linked from nav
+- connect.html: placeholder only, not promoted
+
+### Build Status — Last updated 2026-05-27
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–92 | All previously completed features (Phases 1–44) | ✅ Done |
+| 93 | Random Pick — Listen + Score buttons | ✅ Done (Phase 45) |
+| 94 | Random Pick — YouTube modal fix (close overlay first) | ✅ Done (Phase 45) |
+| 95 | Footer independence disclaimer | ✅ Done (Phase 45) |
+| 96 | Admin password removed from public repo | ✅ Done (Phase 45) |
+| 97 | Site title — Exam & Repertoire Search | ✅ Done (Phase 45) |
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | Google Search Console — submit sitemap | First | search.google.com/search-console → add thepianobutler.com → submit sitemap.xml |
+| 2 | SheetMusicPlus affiliate | High | Once approved → replace Score button Google search URLs with affiliate links |
+| 3 | recommend.html | Medium | Still modified/uncommitted — review and either clean up or discard changes |
+| 4 | Ad integration | Low | Google AdSense — after traffic grows |
+| 5 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
+
+### Known Issues (as of 2026-05-27)
+- recommend.html: has uncommitted local changes — run `git checkout recommend.html` to discard or review before committing.
+- connect.html: placeholder teacher cards — not promoted publicly.
+- Git sandbox HEAD.lock: user must run `rm .git/HEAD.lock` in Terminal if git commit fails.
