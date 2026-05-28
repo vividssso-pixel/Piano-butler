@@ -1994,6 +1994,41 @@ index.html results (isSearching = true):
 
 ---
 
+### Phase 46 Updates (2026-05-28 — SEO + housekeeping)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | recommend.html — 2-step wizard committed | `recommend.html` | Uncommitted Phase 43 changes finalised. CDN migrated to cdnjs pinned (React 18.2.0, Babel 7.23.3). Manual Babel compile trigger. 4-step → 2-step flow (level → style+era → results). `dramatic` character added. Missing `twitter:title` + `twitter:description` meta tags added. Commit `5a6d577`. |
+| 2 | Google Search Console — domain verified | Google Search Console | `https://thepianobutler.com` verified via HTML tag method. `<meta name="google-site-verification">` added to index.html. Commit `e963922`. |
+| 3 | sitemap.xml submitted | Google Search Console | `https://thepianobutler.com/sitemap.xml` submitted. Status "Couldn't fetch" initially — normal, Google will crawl within days. |
+| 4 | SEO — title + description overhaul (28 pages) | All AMEB/ABRSM/Trinity grade HTML files + index.html | Keyword-rich titles: `"AMEB Grade 5 Piano Pieces 2026 \| Piano Butler"`, `"ABRSM Grade 5 Piano Pieces 2025 & 2026 \| Piano Butler"`, `"Trinity College Piano Grade 5 Pieces 2023 \| Piano Butler"`. Descriptions include piece counts and filter features. index.html og/twitter tags updated to match. Commit `5099a62`. |
+| 5 | .gitignore — accidental files cleaned | `.gitignore`, repo | `Anzca/`, `Piano Butler — Lesson Video Plan.md`, `main` accidentally committed in SEO commit. Removed from Git tracking, added to .gitignore. Commit `5159fe4`. |
+| 6 | CLAUDE.md — deferred features reminder table | `CLAUDE.md` | Added table of features to revive at traffic milestones: Login revival (≥1,000 visitors), Affiliate links (≥500 clicks), Gumroad PDF, connect.html real teacher info. Commit `dc9cfad`. |
+| 7 | Affiliate research completed | — | Compared Sheet Music Plus (8–12%, 30-day cookie) vs Sheet Music Direct (10% fixed) vs Musicnotes (5%). Decision: defer until Search Console clicks ≥ 500. Sheet Music Plus preferred at scale; Sheet Music Direct better at low volume. |
+
+### Build Status — Last updated 2026-05-28
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–97 | All previously completed features (Phases 1–45) | ✅ Done |
+| 98 | recommend.html — 2-step wizard + twitter meta tags | ✅ Done (Phase 46) |
+| 99 | Google Search Console — domain verified + sitemap submitted | ✅ Done (Phase 46) |
+| 100 | SEO title/description overhaul — 28 grade pages + index.html | ✅ Done (Phase 46) |
+| 101 | .gitignore cleanup + accidental files removed | ✅ Done (Phase 46) |
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | Search Console — check indexing status | Quick check | Wait 1–2 weeks, then verify pages are being indexed |
+| 2 | Sitewide UX review | Medium | Open thepianobutler.com, use as real teacher/student, note friction |
+| 3 | Affiliate signup | Deferred | Trigger: Search Console clicks ≥ 500. Sheet Music Plus (8–12%) or Sheet Music Direct (10%) |
+| 4 | Login revival | Deferred | Trigger: Search Console visitors ≥ 1,000 |
+| 5 | connect.html — real teacher info | Deferred | When Sohyun ready to take referrals |
+| 6 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
+
+---
+
 ## Deferred Features — Remind When Ready
 
 | Feature | Trigger to remind | Notes |
