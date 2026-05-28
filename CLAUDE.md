@@ -1994,6 +1994,32 @@ index.html results (isSearching = true):
 
 ---
 
+### Phase 47 Updates (2026-05-28 — contact form)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | In-site contact form modal | `index.html` | Replaced `mailto:` footer link with a `ContactModal` React component. Visitors type Name + Email + Message and submit — personal email never exposed. Powered by Web3Forms (free, 250/month). Access key: `1905cf40-5bcd-463a-87dd-c9d5ee673f56`. Submissions forwarded to vividssso@gmail.com. Success/error states handled inline. Commits: `56018b7`, `b662135`, `9ca4fff`. |
+
+### Build Status — Last updated 2026-05-28 (Phase 47)
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–101 | All previously completed features (Phases 1–46) | ✅ Done |
+| 102 | In-site contact form (Web3Forms, email hidden) | ✅ Done (Phase 47) |
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | Search Console — check indexing status | Quick check | Wait 1–2 weeks, then verify pages are being indexed |
+| 2 | Sitewide UX review | Medium | Open thepianobutler.com, use as real teacher/student, note friction |
+| 3 | Affiliate signup | Deferred | Trigger: Search Console clicks ≥ 500. Sheet Music Plus (8–12%) or Sheet Music Direct (10%) |
+| 4 | Login revival | Deferred | Trigger: Search Console visitors ≥ 1,000 |
+| 5 | connect.html — real teacher info | Deferred | When Sohyun ready to take referrals |
+| 6 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
+
+---
+
 ### Phase 46 Updates (2026-05-28 — SEO + housekeeping)
 
 | # | Change | File(s) | Detail |
@@ -2015,17 +2041,6 @@ index.html results (isSearching = true):
 | 99 | Google Search Console — domain verified + sitemap submitted | ✅ Done (Phase 46) |
 | 100 | SEO title/description overhaul — 28 grade pages + index.html | ✅ Done (Phase 46) |
 | 101 | .gitignore cleanup + accidental files removed | ✅ Done (Phase 46) |
-
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | Search Console — check indexing status | Quick check | Wait 1–2 weeks, then verify pages are being indexed |
-| 2 | Sitewide UX review | Medium | Open thepianobutler.com, use as real teacher/student, note friction |
-| 3 | Affiliate signup | Deferred | Trigger: Search Console clicks ≥ 500. Sheet Music Plus (8–12%) or Sheet Music Direct (10%) |
-| 4 | Login revival | Deferred | Trigger: Search Console visitors ≥ 1,000 |
-| 5 | connect.html — real teacher info | Deferred | When Sohyun ready to take referrals |
-| 6 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
 
 ---
 
