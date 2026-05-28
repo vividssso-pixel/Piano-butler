@@ -2037,3 +2037,4 @@ index.html results (isSearching = true):
 | **Affiliate links** (Sheet Music Plus or Direct) | Monthly Search Console clicks ≥ 500 | Score button currently links to Google search. Replace with affiliate URL once approved. Sheet Music Plus = 8–12%, Sheet Music Direct = 10% fixed. |
 | **Gumroad $4 PDF report** | After affiliate is live | diagnose.html has jsPDF generator ready. Just needs Gumroad product URL + replace GUMROAD_URL constant. |
 | **connect.html — real teacher info** | When Sohyun is ready to take referrals | Add real photo, booking link, price. Currently placeholder only. |
+| **hello@thepianobutler.com 이메일** | Monthly visitors ≥ 1,000 | Namecheap 이메일 포워딩으로 설정 (월 몇 달러). vividssso@gmail.com으로 받을 수 있음. footer Contact 링크 주소도 함께 교체. |
