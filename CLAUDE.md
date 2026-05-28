@@ -1988,7 +1988,17 @@ index.html results (isSearching = true):
 | 4 | Ad integration | Low | Google AdSense — after traffic grows |
 | 5 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
 
-### Known Issues (as of 2026-05-27)
-- recommend.html: has uncommitted local changes — run `git checkout recommend.html` to discard or review before committing.
+### Known Issues (as of 2026-05-28)
 - connect.html: placeholder teacher cards — not promoted publicly.
 - Git sandbox HEAD.lock: user must run `rm .git/HEAD.lock` in Terminal if git commit fails.
+
+---
+
+## Deferred Features — Remind When Ready
+
+| Feature | Trigger to remind | Notes |
+|---------|------------------|-------|
+| **Login revival** (Magic Link + Supabase) | Monthly Search Console visitors ≥ 1,000 | index.html had Supabase + LoginModal removed in Phase 41. auth.js + login.html still exist. Reinstate takes ~1–2h. Remind Sohyun when traffic hits this threshold. |
+| **Affiliate links** (Sheet Music Plus or Direct) | Monthly Search Console clicks ≥ 500 | Score button currently links to Google search. Replace with affiliate URL once approved. Sheet Music Plus = 8–12%, Sheet Music Direct = 10% fixed. |
+| **Gumroad $4 PDF report** | After affiliate is live | diagnose.html has jsPDF generator ready. Just needs Gumroad product URL + replace GUMROAD_URL constant. |
+| **connect.html — real teacher info** | When Sohyun is ready to take referrals | Add real photo, booking link, price. Currently placeholder only. |
