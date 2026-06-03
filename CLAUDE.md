@@ -1994,6 +1994,80 @@ index.html results (isSearching = true):
 
 ---
 
+### Phase 48 Updates (2026-06-01 — SEO: noscript fallback + keywords)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Search Console status check | — | 2 pages indexed, 37 not indexed (35 "Discovered – currently not indexed", 1 "Crawled – currently not indexed", 1 canonical). All normal 4 days after sitemap submission. ABRSM G5 identified as the crawled-but-not-indexed page — root cause: React/JS rendering invisible to Google crawler. |
+| 2 | `<noscript>` static HTML fallback — all 35 grade pages | All `piano-repertoire_*.html` files | Python + Node script extracted piece data (inline or from companion `data_*.js`) and injected a full static piece list inside `<noscript>` tags before `</body>`. Google crawler now sees all pieces without executing JavaScript. Commit `fb46e91`. |
+| 3 | SEO keywords — AMusA, LMusA | `AMusA/piano-repertoire_amusa.html`, `LMusA/piano-repertoire_lmusa.html` | `<meta name="keywords">` tag was missing. Added 5 grade-specific keywords each. Commit `c1e684c`. |
+| 4 | SEO keywords — Trinity Initial–G8 | All 9 `Trinity/*/piano-repertoire_trinity_*.html` files | Keywords expanded from 3 generic → 5 grade-specific (e.g. "Trinity College London piano Grade 5", "Trinity piano Grade 5 2023", "piano exam pieces grade 5", etc.). Commit `c1e684c`. |
+
+### Build Status — Last updated 2026-06-01 (Phase 48)
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–102 | All previously completed features (Phases 1–47) | ✅ Done |
+| 103 | `<noscript>` static HTML fallback — all 35 grade pages | ✅ Done (Phase 48) |
+| 104 | SEO keywords — AMusA, LMusA added | ✅ Done (Phase 48) |
+| 105 | SEO keywords — Trinity Initial–G8 expanded | ✅ Done (Phase 48) |
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | Sitewide UX review | High | Open thepianobutler.com as real teacher/student, note friction points |
+| 2 | Search Console — re-check in 1 week | Quick check | Verify "Discovered" pages moving to indexed. URL Inspection → Request Indexing on ABRSM G5. |
+| 3 | Affiliate signup | Deferred | Trigger: Search Console clicks ≥ 500 |
+| 4 | Login revival | Deferred | Trigger: Search Console visitors ≥ 1,000 |
+| 5 | connect.html — real teacher info | Deferred | When Sohyun ready to take referrals |
+| 6 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
+
+### Known Issues (as of 2026-06-01)
+- connect.html: placeholder teacher cards — not promoted publicly.
+- Git sandbox HEAD.lock: user must run `rm .git/HEAD.lock` in Terminal if git commit fails.
+
+---
+
+### Phase 49 Updates (2026-06-03 — UX bug fixes)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Supabase project restored | Supabase dashboard | Project auto-paused after 7 days of inactivity (free tier). Restored manually. Teacher dashboard functional again. To prevent recurrence: use dashboard weekly or upgrade to Pro ($25/mo). |
+| 2 | Trinity grade filter bug fix | `index.html` | Sidebar Grade section was always showing AMEB keys (Prelim/G1–G8). When Trinity syllabus selected, now shows Trinity keys (TInitial/TG1–TG8). `TRINITY_GRADE_KEYS` constant added. `isDiploma` check hides Grade section entirely for Diploma syllabuses. |
+| 3 | Diploma sidebar filter added | `index.html` | SYLLABUS_FILTERS expanded: added AMEB Diploma, ABRSM Diploma, Trinity Diploma. Diploma pieces were in corpus but had no way to be filtered in sidebar. |
+| 4 | Title truncation removed | `index.html` | `whiteSpace:'nowrap'` + `textOverflow:'ellipsis'` removed from PieceCard title. Long titles now wrap fully. |
+| 5 | Random Pick — Trinity included | `index.html` | Pool filter was `_syllabus === 'AMEB' \|\| _syllabus === 'ABRSM'` only. Added `\|\| _syllabus === 'Trinity'`. |
+| 6 | "Surprise me" card copy fix | `index.html` | Description said "Filter by List (A/B/C/D) or era" — List filter doesn't exist in Random Pick modal. Corrected to "Pick a grade and get one piece from each era — Baroque through Contemporary." |
+| 7 | Nav kept minimal | `index.html` | Recommend/Diagnose buttons not restored to nav — intentional decision to keep homepage simple. Diagnose exposure deferred pending further development. Recommend accessible via direct URL only for now. |
+
+### Build Status — Last updated 2026-06-03
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–105 | All previously completed features (Phases 1–48) | ✅ Done |
+| 106 | Trinity grade filter fix | ✅ Done (Phase 49) |
+| 107 | Diploma sidebar filter | ✅ Done (Phase 49) |
+| 108 | Title truncation removed | ✅ Done (Phase 49) |
+| 109 | Random Pick — Trinity included + copy fixed | ✅ Done (Phase 49) |
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | Search Console — re-check indexing | Quick check | Verify "Discovered" pages moving to indexed. URL Inspection → Request Indexing on slow pages. |
+| 2 | Affiliate signup | Deferred | Trigger: Search Console clicks ≥ 500 |
+| 3 | Login revival | Deferred | Trigger: Search Console visitors ≥ 1,000 |
+| 4 | connect.html — real teacher info | Deferred | When Sohyun ready to take referrals |
+| 5 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
+
+### Known Issues (as of 2026-06-03)
+- connect.html: placeholder teacher cards — not promoted publicly.
+- Supabase free tier auto-pauses after 7 days inactivity — restore manually from dashboard as needed.
+- Git sandbox HEAD.lock: user must run `rm .git/HEAD.lock` in Terminal if git commit fails.
+
+---
+
 ### Phase 47 Updates (2026-05-28 — contact form)
 
 | # | Change | File(s) | Detail |
