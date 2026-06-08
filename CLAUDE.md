@@ -2041,30 +2041,44 @@ index.html results (isSearching = true):
 | 6 | "Surprise me" card copy fix | `index.html` | Description said "Filter by List (A/B/C/D) or era" — List filter doesn't exist in Random Pick modal. Corrected to "Pick a grade and get one piece from each era — Baroque through Contemporary." |
 | 7 | Nav kept minimal | `index.html` | Recommend/Diagnose buttons not restored to nav — intentional decision to keep homepage simple. Diagnose exposure deferred pending further development. Recommend accessible via direct URL only for now. |
 
-### Build Status — Last updated 2026-06-03
+### Phase 50 Updates (2026-06-08 — SEO + mobile UX + cross-page search)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Search Console — ABRSM G5 Validate Fix submitted | Google Search Console | Clicked "Validate Fix" on "Crawled – currently not indexed" ABRSM G5 page. Validation started 06/06/2026. |
+| 2 | Search Console — 6× Request Indexing | Google Search Console | Manually requested indexing for: G5, G1, ABRSM G1, Trinity G1, G3, ABRSM G3. |
+| 3 | Mobile UX improvements | `index.html` | CSS media query `@media (max-width:640px)` expanded: `.hero-title` font-size 42→28px, `.hero-subtitle` 15→13px, `.entry-card` padding 28px 24px→20px 16px, `.entry-card-title` 18→15px, `.yt-iframe` height 450→220px, `.main-pad` padding reduced. Class names added to matching JSX elements. |
+| 4 | Mobile grade filter added to filter strip | `index.html` | Previously mobile strip had Syllabus + Era chips only. Now includes Grade chips (AMEB: Prelim–G8; Trinity: TInitial–TG8; hidden for Diploma). Dynamically rendered with TRINITY_GRADE_KEYS / GRADE_KEYS. |
+| 5 | `?q=` URL param support | `index.html` | `_initQ` reads `URLSearchParams(window.location.search).get('q')` on init. `query` + `searchQuery` both initialised to `_initQ`. `showSearchInput` initialised to `!!_initQ`. "Find in Piano Butler" buttons in `diagnose.html` and `recommend.html` now correctly trigger search on landing. |
+| 6 | Contact button style upgrade | `index.html` | Footer contact link upgraded from plain text underline → bordered pill button (white bg, `#e0d8d0` border, rounded-8, hover orange). |
+| 7 | Random Pick Trinity inclusion fix | `index.html` | Pool filter now includes Trinity-keyed pieces (`TInitial`, `TG1`–`TG8`) via `trinityKey` mapping. |
+| 8 | Enter key closes autocomplete | `index.html` | `onKeyDown` handler added to search input: `if (e.key === 'Enter') setShowSuggestions(false)`. |
+
+### Build Status — Last updated 2026-06-08
 
 | # | Feature | Status |
 |---|---------|--------|
-| 1–105 | All previously completed features (Phases 1–48) | ✅ Done |
-| 106 | Trinity grade filter fix | ✅ Done (Phase 49) |
-| 107 | Diploma sidebar filter | ✅ Done (Phase 49) |
-| 108 | Title truncation removed | ✅ Done (Phase 49) |
-| 109 | Random Pick — Trinity included + copy fixed | ✅ Done (Phase 49) |
+| 1–109 | All previously completed features (Phases 1–49) | ✅ Done |
+| 110 | Mobile UX — responsive font/padding/iframe fixes | ✅ Done (Phase 50) |
+| 111 | Mobile grade filter in filter strip | ✅ Done (Phase 50) |
+| 112 | `?q=` URL param — cross-page search links working | ✅ Done (Phase 50) |
+| 113 | Contact button style upgrade | ✅ Done (Phase 50) |
+| 114 | Random Pick Trinity + Enter key autocomplete fix | ✅ Done (Phase 50) |
 
 ### Pending Work (priority order for next session)
 
 | # | Task | Priority | Notes |
 |---|------|----------|-------|
-| 1 | Search Console — re-check indexing | Quick check | Verify "Discovered" pages moving to indexed. URL Inspection → Request Indexing on slow pages. |
+| 1 | Search Console — re-check indexing | Quick check (Jun 13+) | Verify "Discovered" pages moving to indexed. ABRSM G5 validation in progress. |
 | 2 | Affiliate signup | Deferred | Trigger: Search Console clicks ≥ 500 |
 | 3 | Login revival | Deferred | Trigger: Search Console visitors ≥ 1,000 |
 | 4 | connect.html — real teacher info | Deferred | When Sohyun ready to take referrals |
 | 5 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
 
-### Known Issues (as of 2026-06-03)
+### Known Issues (as of 2026-06-08)
 - connect.html: placeholder teacher cards — not promoted publicly.
 - Supabase free tier auto-pauses after 7 days inactivity — restore manually from dashboard as needed.
-- Git sandbox HEAD.lock: user must run `rm .git/HEAD.lock` in Terminal if git commit fails.
+- Git sandbox HEAD.lock: run `rm .git/HEAD.lock` + `rm .git/index.lock` in Terminal if git commit fails.
 
 ---
 
