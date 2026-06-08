@@ -163,6 +163,12 @@
             .results-layout { flex-direction: column !important; }
             .sidebar-panel { display: none !important; }
             .mobile-filters { display: flex !important; }
+            .hero-title { font-size: 28px !important; }
+            .hero-subtitle { font-size: 13px !important; }
+            .entry-card { padding: 20px 16px !important; }
+            .entry-card-title { font-size: 15px !important; }
+            .yt-iframe { height: 220px !important; }
+            .main-pad { padding: 0 14px 60px !important; }
         }
         @media (min-width: 641px) {
             .mobile-filters { display: none !important; }
@@ -220,7 +226,7 @@ function VideoModal({ modal, onClose }) {
                 {modal.loading && <div style={{padding:40,textAlign:'center',color:'#666'}}>Loading…</div>}
                 {modal.error   && <div style={{padding:40,textAlign:'center',color:'#666'}}>No video found for "{modal.title}"</div>}
                 {modal.videoId && (
-                    <iframe width="100%" height="450"
+                    <iframe className="yt-iframe" width="100%" height="450"
                         src={'https://www.youtube.com/embed/' + modal.videoId + '?autoplay=1'}
                         frameBorder="0" allow="autoplay; encrypted-media" allowFullScreen />
                 )}
@@ -696,14 +702,16 @@ function ContactModal({ onClose }) {
 
 // ── Main App ─────────────────────────────────────────────────────────────────
 function App() {
-    const [query, setQuery]             = useState('');
-    const [searchQuery, setSearchQuery] = useState('');
+    // Read ?q= URL param on load (from diagnose/recommend links)
+    const _initQ = (new URLSearchParams(window.location.search)).get('q') || '';
+    const [query, setQuery]             = useState(_initQ);
+    const [searchQuery, setSearchQuery] = useState(_initQ);
     const [eraFilter, setEraFilter]     = useState('');
     const [gradeFilter, setGradeFilter] = useState('All');
     const [syllabusFilter, setSyllabusFilter] = useState('All');
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [visibleCount, setVisibleCount] = useState(60);
-    const [showSearchInput, setShowSearchInput] = useState(false);
+    const [showSearchInput, setShowSearchInput] = useState(!!_initQ);
     const [showRandomPick, setShowRandomPick] = useState(false);
     const [showContact, setShowContact] = useState(false);
     const inputRef = useRef(null);
@@ -799,7 +807,7 @@ function App() {
             </header>
 
             {/* Main */}
-            <main style={{flex:1,maxWidth:1100,margin:'0 auto',width:'100%',padding:'0 20px 60px',
+            <main className="main-pad" style={{flex:1,maxWidth:1100,margin:'0 auto',width:'100%',padding:'0 20px 60px',
                 display:'flex',flexDirection:'column',
                 justifyContent: isSearching ? 'flex-start' : 'center',
                 minHeight:'calc(100vh - 56px)'}}>
@@ -812,9 +820,9 @@ function App() {
                         <div style={{textAlign:'center',marginBottom:40}}>
                             <div style={{display:'inline-flex',alignItems:'center',gap:12,marginBottom:14}}>
                                 <div style={{width:5,height:44,borderRadius:3,background:'#c4845a'}}></div>
-                                <span style={{fontSize:42,fontWeight:900,color:'#1a1410',letterSpacing:'-0.04em'}}>Piano Butler</span>
+                                <span className="hero-title" style={{fontSize:42,fontWeight:900,color:'#1a1410',letterSpacing:'-0.04em'}}>Piano Butler</span>
                             </div>
-                            <p style={{fontSize:15,color:'#7a6e64',margin:0,lineHeight:1.7}}>
+                            <p className="hero-subtitle" style={{fontSize:15,color:'#7a6e64',margin:0,lineHeight:1.7}}>
                                 4,500 exam pieces across AMEB, ABRSM, and Trinity.
                             </p>
                         </div>
@@ -824,12 +832,12 @@ function App() {
                             gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))'}}>
 
                             {/* Entry 1 — Search */}
-                            <div
+                            <div className="entry-card"
                                 style={{background:'#fff', border:'1.5px solid #e8e0d5',
                                     borderRadius:16, padding:'28px 24px', cursor:'pointer'}}
                                 onClick={() => setShowSearchInput(true)}>
                                 <div style={{fontSize:32,marginBottom:14}}>🔍</div>
-                                <div style={{fontSize:18,fontWeight:800,color:'#1a1410',marginBottom:8,lineHeight:1.3}}>
+                                <div className="entry-card-title" style={{fontSize:18,fontWeight:800,color:'#1a1410',marginBottom:8,lineHeight:1.3}}>
                                     Search 4,500 exam pieces
                                 </div>
                                 <div style={{fontSize:13,color:'#9a8e84',lineHeight:1.7,marginBottom:20}}>
@@ -841,12 +849,12 @@ function App() {
                             </div>
 
                             {/* Entry 2 — Random Pick */}
-                            <div
+                            <div className="entry-card"
                                 style={{background:'#fff', border:'1.5px solid #e8e0d5',
                                     borderRadius:16, padding:'28px 24px', cursor:'pointer'}}
                                 onClick={() => setShowRandomPick(true)}>
                                 <div style={{fontSize:32,marginBottom:14}}>🎲</div>
-                                <div style={{fontSize:18,fontWeight:800,color:'#1a1410',marginBottom:8,lineHeight:1.3}}>
+                                <div className="entry-card-title" style={{fontSize:18,fontWeight:800,color:'#1a1410',marginBottom:8,lineHeight:1.3}}>
                                     Surprise me
                                 </div>
                                 <div style={{fontSize:13,color:'#9a8e84',lineHeight:1.7,marginBottom:20}}>
@@ -913,6 +921,20 @@ function App() {
                                     {sf.label}
                                 </button>
                             ))}
+                            <div style={{width:1,background:'#ddd6cc',flexShrink:0,margin:'0 4px'}}/>
+                            {(() => {
+                                const isDiploma = syllabusFilter==='AMEB Diploma'||syllabusFilter==='ABRSM Diploma'||syllabusFilter==='Trinity Diploma';
+                                const isTrinity = syllabusFilter==='Trinity';
+                                if (isDiploma) return null;
+                                const gKeys = isTrinity ? TRINITY_GRADE_KEYS : GRADE_KEYS;
+                                return gKeys.map(gk => (
+                                    <button key={gk} className={'chip' + (gradeFilter===gk?' active':'')}
+                                        onClick={() => setGradeFilter(gradeFilter===gk?'All':gk)}
+                                        style={{whiteSpace:'nowrap',flexShrink:0}}>
+                                        {gk}
+                                    </button>
+                                ));
+                            })()}
                             <div style={{width:1,background:'#ddd6cc',flexShrink:0,margin:'0 4px'}}/>
                             {ERAS.map(e => (
                                 <button key={e} className={'chip' + (eraFilter===e?' active':'')}
