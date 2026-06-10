@@ -566,8 +566,16 @@ const GRADE_OPTIONS = [
 const DIPLOMA_KEYS = ['CertP','AMusA','LMusA','LRSM','FRSM','TATCL','TLTCL','TFTCL'];
 const ERA_COLORS = { Baroque:'#92400e', Classical:'#1e40af', Romantic:'#7e22ce', Modern:'#065f46', Contemporary:'#1e3a5f' };
 
+const RAND_SYLLABUSES = [
+    { key:'all',     label:'Any' },
+    { key:'AMEB',    label:'🇦🇺 AMEB' },
+    { key:'ABRSM',   label:'🇬🇧 ABRSM' },
+    { key:'Trinity', label:'🎓 Trinity' },
+];
+
 function RandomPickModal({ onClose, openVideo }) {
     const [grade, setGrade] = useState('G1');
+    const [syllabus, setSyllabus] = useState('all');
     const [picks, setPicks] = useState(null);
 
     function generate() {
@@ -576,12 +584,16 @@ function RandomPickModal({ onClose, openVideo }) {
         if (grade === 'diploma') {
             pool = CORPUS.filter(p => DIPLOMA_KEYS.includes(p._gradeKey));
         } else {
-            // Match AMEB/ABRSM (gradeKey = 'G1' etc) and Trinity (gradeKey = 'TG1' etc) and Prelim/TInitial
             const trinityKey = grade === 'Prelim' ? 'TInitial' : 'T' + grade;
             pool = CORPUS.filter(p =>
                 (p._gradeKey === grade || p._gradeKey === trinityKey) &&
                 (p._syllabus === 'AMEB' || p._syllabus === 'ABRSM' || p._syllabus === 'Trinity')
             );
+        }
+        // Apply syllabus filter
+        if (syllabus !== 'all') {
+            const filtered = pool.filter(p => (p._syllabus||'').startsWith(syllabus));
+            if (filtered.length >= 3) pool = filtered;
         }
         if (pool.length === 0) { setPicks([]); return; }
 
@@ -621,6 +633,21 @@ function RandomPickModal({ onClose, openVideo }) {
                     <button onClick={onClose} style={{background:'none',border:'none',fontSize:20,cursor:'pointer',color:'#9a8e84'}}>✕</button>
                 </div>
 
+                {/* Syllabus */}
+                <div style={{marginBottom:16}}>
+                    <div style={{fontSize:11,fontWeight:700,color:'#9a8e84',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:8}}>Syllabus</div>
+                    <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                        {RAND_SYLLABUSES.map(s => (
+                            <button key={s.key} onClick={()=>{setSyllabus(s.key);setPicks(null);}} style={{
+                                padding:'5px 13px',borderRadius:20,fontSize:12,fontWeight:700,cursor:'pointer',border:'1.5px solid',
+                                background: syllabus===s.key ? '#1a1410' : '#fff',
+                                color: syllabus===s.key ? '#fff' : '#6b5e54',
+                                borderColor: syllabus===s.key ? '#1a1410' : '#e8ddd4'
+                            }}>{s.label}</button>
+                        ))}
+                    </div>
+                </div>
+
                 {/* Grade */}
                 <div style={{marginBottom:20}}>
                     <div style={{fontSize:11,fontWeight:700,color:'#9a8e84',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:8}}>Grade</div>
@@ -635,7 +662,7 @@ function RandomPickModal({ onClose, openVideo }) {
                         ))}
                     </div>
                     <div style={{fontSize:11,color:'#b0a898',marginTop:8}}>
-                        Picks one piece from each era available at this grade — across AMEB & ABRSM.
+                        Picks one piece from each era — {syllabus==='all' ? 'across AMEB, ABRSM & Trinity' : (RAND_SYLLABUSES.find(s=>s.key===syllabus)||{}).label+' only'}.
                     </div>
                 </div>
 
