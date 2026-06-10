@@ -2082,6 +2082,79 @@ index.html results (isSearching = true):
 
 ---
 
+### Phase 51 Updates (2026-06-09 — Search Console audit + AdSense setup)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Search Console indexing audit | — | Checked URL Inspection for key pages. index.html ✅, G5 ✅, G3 ✅, G1 ✅, ABRSM G5 ✅ — all already indexed. Trinity G5 was "Discovered – not indexed" → Request Indexing submitted. Trinity G1, G8 already indexed. |
+| 2 | Google AdSense account created | — | New AdSense account created with vividssso@gmail.com. Site: thepianobutler.com. Country: Australia. Payment profile: Clara Sohyun Park, 79 Burwood Road, Concord NSW 2137. |
+| 3 | AdSense script added to index.html | `index.html` | `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6523454944716812" crossorigin="anonymous"></script>` added to `<head>`. Commit `86a3287`. |
+| 4 | AdSense site verified | Google AdSense | Site ownership confirmed. "사이트가 확인되었습니다" ✅. Google review in progress — approval typically takes days to 2 weeks. |
+
+### Build Status — Last updated 2026-06-09
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–114 | All previously completed features (Phases 1–50) | ✅ Done |
+| 115 | Google AdSense — account created + script added + site verified | ✅ Done (Phase 51) |
+| 116 | Search Console — Trinity G5 Request Indexing submitted | ✅ Done (Phase 51) |
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | AdSense approval check | Quick check (Jun 13+) | Check AdSense dashboard for approval status. Once approved, ads go live automatically. |
+| 2 | Search Console — re-check indexing | Quick check (Jun 13+) | Verify remaining "Discovered" pages moving to indexed. |
+| 3 | Community sharing for traffic | Medium | Share thepianobutler.com in piano teacher Facebook groups, Reddit r/piano, r/pianolearning. Fast way to get initial traffic. |
+| 4 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. Try again — previous attempt failed. |
+| 5 | Login revival | Deferred | Trigger: Search Console visitors ≥ 1,000 |
+| 6 | connect.html — real teacher info | Deferred | When Sohyun ready to take referrals |
+| 7 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
+
+### Phase 52 Updates (2026-06-10 — SEO + UX polish)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | SEO audit — root cause identified | `index.html` | Google이 JS 없이 index.html을 보면 `<div id="root"></div>` 하나만 보이는 문제 발견. 37개 페이지 중 2개만 인덱스된 원인. |
+| 2 | `<noscript>` static fallback added | `index.html` | AMEB/ABRSM/Trinity 각 grade별 샘플 곡 + 모든 grade 헤더 (27개) + Diploma 링크 + 설명 텍스트. Google이 JS 없이도 콘텐츠를 읽을 수 있음. Commit `92ef293`. |
+| 3 | Schema.org JSON-LD added | `index.html` | `WebSite` + `SearchAction` (sitelinks searchbox 자격) + `ItemList` (27개 grade 페이지 구조화). Commit `92ef293`. |
+| 4 | Recommender syllabus filter | `recommend.html` | Step 0 추가: 🌐 Any / 🇦🇺 AMEB only / 🇬🇧 ABRSM only / 🎓 Trinity only. 3-step 플로우 (syllabus → level → style). Commit `7c83584`. |
+| 5 | Random Pick syllabus filter | `index.html` | Syllabus 선택 행 추가 (Any / AMEB / ABRSM / Trinity). Grade 선택 위에 배치. 설명 텍스트도 동적으로 변경. Commit `396de63`. |
+| 6 | Recommend result cards — full details | `recommend.html` | Series (S19/S18/S17/Manual/AustAnth/S1–S4), List A/B/C/D, Group A/B, Nationality, Key, Focus tags 모두 표시. 색상 구분 배지. Commit `5f40a44`. |
+| 7 | Prelim → Preliminary (user-facing labels) | `index.html`, `recommend.html` | GRADE_LABEL_MAP, GRADE_OPTIONS label, buildCorpus grade label 모두 수정. 내부 key ('Prelim')는 유지. Commit `24530fd`. |
+
+### Build Status — Last updated 2026-06-10
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–115 | All previously completed features (Phases 1–51) | ✅ Done |
+| 116 | index.html noscript static fallback + Schema.org | ✅ Done (Phase 52) |
+| 117 | Recommender syllabus filter (3-step) | ✅ Done (Phase 52) |
+| 118 | Random Pick syllabus filter | ✅ Done (Phase 52) |
+| 119 | Recommend result cards full details | ✅ Done (Phase 52) |
+| 120 | Prelim → Preliminary user-facing labels | ✅ Done (Phase 52) |
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | Search Console — Request Indexing on index.html | Immediate | 오늘 SEO 작업 배포 후 재인덱싱 요청 필요. search.google.com/search-console → URL Inspection → thepianobutler.com → Request Indexing |
+| 2 | AdSense approval check | Quick check | ads.google.com — ca-pub-6523454944716812. Jun 9 신청, 1~2주 소요. |
+| 3 | Community sharing for traffic | High | Reddit r/piano, r/pianolearning + 피아노 선생님 Facebook 그룹. 트래픽 없으면 AdSense 수익 없음. |
+| 4 | Search Console — re-check indexing (Jun 17+) | Medium | 1주일 후 인덱스된 페이지 수 2→10+ 확인 |
+| 5 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500 |
+| 6 | Login revival | Deferred | Trigger: Search Console visitors ≥ 1,000 |
+| 7 | connect.html — real teacher info | Deferred | When Sohyun ready to take referrals |
+| 8 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
+
+### Known Issues (as of 2026-06-10)
+- AdSense: pending Google review — ca-pub-6523454944716812. Check dashboard ~Jun 16.
+- connect.html: placeholder teacher cards — not promoted publicly.
+- Supabase free tier auto-pauses after 7 days inactivity — restore manually from dashboard as needed.
+- Git sandbox HEAD.lock: run `rm .git/HEAD.lock` in Terminal if git commit fails.
+
+---
+
 ### Phase 47 Updates (2026-05-28 — contact form)
 
 | # | Change | File(s) | Detail |
