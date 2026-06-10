@@ -225,9 +225,13 @@ function shuffle(arr) {
   return a;
 }
 
-function generate(level, character, eras) {
+function generate(level, character, eras, syllabus) {
   const lv = LEVELS.find(l => l.id === level);
   let pool = lv ? CORPUS.filter(p => lv.gradeKeys.includes(p._gradeKey)) : CORPUS;
+  if (syllabus && syllabus !== 'all') {
+    const filtered = pool.filter(p => (p._syllabus||'').startsWith(syllabus));
+    if (filtered.length >= 5) pool = filtered;
+  }
   if (!pool.length) pool = CORPUS;
 
   const scored = shuffle(pool).map(p => {
@@ -372,9 +376,17 @@ function ResultCard({ piece, onWatch, idx }) {
 }
 
 /* ── App ── */
-// Steps: 0=level, 1=style+era, 2=results
+const SYLLABUSES = [
+  { id:'all',     label:'Any syllabus',  icon:'🌐', sub:'Mix from AMEB, ABRSM, Trinity' },
+  { id:'AMEB',    label:'AMEB only',     icon:'🇦🇺', sub:'2026 Comprehensive + Leisure' },
+  { id:'ABRSM',   label:'ABRSM only',    icon:'🇬🇧', sub:'2025 & 2026' },
+  { id:'Trinity', label:'Trinity only',  icon:'🎓', sub:'Trinity College London 2023' },
+];
+
+// Steps: 0=syllabus, 1=level, 2=style+era, 3=results
 function App() {
   const [step, setStep]           = useState(0);
+  const [syllabus, setSyllabus]   = useState(null);
   const [level, setLevel]         = useState(null);
   const [character, setCharacter] = useState(null);
   const [eras, setEras]           = useState([]);
@@ -386,20 +398,21 @@ function App() {
   }
 
   function goResults() {
-    setResults(generate(level, character||'balanced', eras));
-    setStep(2);
+    setResults(generate(level, character||'balanced', eras, syllabus));
+    setStep(3);
   }
 
   function regenerate() {
-    setResults(generate(level, character||'balanced', eras));
+    setResults(generate(level, character||'balanced', eras, syllabus));
   }
 
   function reset() {
-    setStep(0); setLevel(null); setCharacter(null); setEras([]); setResults(null);
+    setStep(0); setSyllabus(null); setLevel(null); setCharacter(null); setEras([]); setResults(null);
   }
 
-  const canGo1 = !!level;
-  const canGo2 = !!character;
+  const canGo1 = !!syllabus;
+  const canGo2 = !!level;
+  const canGo3 = !!character;
 
   return (
     <div style={{minHeight:'100vh',background:'#f5f0eb'}}>
@@ -414,28 +427,33 @@ function App() {
           Piece Recommender
         </h1>
         <p style={{color:'#9a8e84',fontSize:12,margin:'0 0 12px'}}>
-          {step===0 ? 'Step 1 of 2 — level' : step===1 ? 'Step 2 of 2 — style' : 'Your recommendations'}
+          {step===0 ? 'Step 1 of 3 — syllabus' : step===1 ? 'Step 2 of 3 — level' : step===2 ? 'Step 3 of 3 — style' : 'Your recommendations'}
         </p>
-        {step < 2 && (
+        {step < 3 && (
           <div className="progress-bar">
-            <div className="progress-fill" style={{width:(step===0?'0%':'50%')}} />
+            <div className="progress-fill" style={{width:(step===0?'0%':step===1?'33%':'66%')}} />
           </div>
         )}
       </div>
 
       <div style={{maxWidth:580,margin:'0 auto',padding:'24px 16px 80px'}}>
 
-        {/* STEP 0: Level */}
+        {/* STEP 0: Syllabus */}
         {step===0 && (
           <div className="fade-up">
-            <h2 style={{fontSize:16,fontWeight:800,color:'#1a1410',marginBottom:4}}>What level is this student?</h2>
-            <p style={{fontSize:13,color:'#9a8e84',marginBottom:16}}>Approximate is fine.</p>
+            <h2 style={{fontSize:16,fontWeight:800,color:'#1a1410',marginBottom:4}}>Which syllabus?</h2>
+            <p style={{fontSize:13,color:'#9a8e84',marginBottom:16}}>Pick one or mix from all three.</p>
             <div style={{display:'flex',flexDirection:'column',gap:9}}>
-              {LEVELS.map(lv => (
-                <button key={lv.id} onClick={()=>setLevel(lv.id)}
-                  className={'opt-btn'+(level===lv.id?' active':'')}>
-                  <div style={{fontSize:14,fontWeight:700,color:level===lv.id?'#d4956a':'#1a1410'}}>{lv.label}</div>
-                  <div style={{fontSize:12,color:'#9a8e84',marginTop:2}}>{lv.sub}</div>
+              {SYLLABUSES.map(s => (
+                <button key={s.id} onClick={()=>setSyllabus(s.id)}
+                  className={'opt-btn'+(syllabus===s.id?' active':'')}>
+                  <div style={{display:'flex',alignItems:'center',gap:10}}>
+                    <span style={{fontSize:20}}>{s.icon}</span>
+                    <div>
+                      <div style={{fontSize:14,fontWeight:700,color:syllabus===s.id?'#d4956a':'#1a1410'}}>{s.label}</div>
+                      <div style={{fontSize:12,color:'#9a8e84',marginTop:1}}>{s.sub}</div>
+                    </div>
+                  </div>
                 </button>
               ))}
             </div>
@@ -451,8 +469,38 @@ function App() {
           </div>
         )}
 
-        {/* STEP 1: Character + Era */}
+        {/* STEP 1: Level */}
         {step===1 && (
+          <div className="fade-up">
+            <h2 style={{fontSize:16,fontWeight:800,color:'#1a1410',marginBottom:4}}>What level is this student?</h2>
+            <p style={{fontSize:13,color:'#9a8e84',marginBottom:16}}>Approximate is fine.</p>
+            <div style={{display:'flex',flexDirection:'column',gap:9}}>
+              {LEVELS.map(lv => (
+                <button key={lv.id} onClick={()=>setLevel(lv.id)}
+                  className={'opt-btn'+(level===lv.id?' active':'')}>
+                  <div style={{fontSize:14,fontWeight:700,color:level===lv.id?'#d4956a':'#1a1410'}}>{lv.label}</div>
+                  <div style={{fontSize:12,color:'#9a8e84',marginTop:2}}>{lv.sub}</div>
+                </button>
+              ))}
+            </div>
+            <div style={{display:'flex',gap:10,marginTop:22}}>
+              <button onClick={()=>setStep(0)}
+                style={{padding:'12px 18px',borderRadius:12,background:'#f0ebe5',color:'#7a6e64',border:'1.5px solid #e0d8d0',cursor:'pointer',fontSize:13,fontWeight:700}}>
+                Back
+              </button>
+              <button onClick={()=>setStep(2)} disabled={!canGo2}
+                style={{flex:1,padding:'13px',borderRadius:12,
+                  background:canGo2?'#d4956a':'#e0d8d0',
+                  color:canGo2?'#fff':'#9a8e84',
+                  border:'none',cursor:canGo2?'pointer':'default',fontSize:14,fontWeight:800}}>
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 2: Character + Era */}
+        {step===2 && (
           <div className="fade-up">
             <h2 style={{fontSize:16,fontWeight:800,color:'#1a1410',marginBottom:4}}>What style suits them?</h2>
             <p style={{fontSize:13,color:'#9a8e84',marginBottom:16}}>Pick the personality that fits best.</p>
@@ -483,23 +531,23 @@ function App() {
             </div>
 
             <div style={{display:'flex',gap:10}}>
-              <button onClick={()=>setStep(0)}
+              <button onClick={()=>setStep(1)}
                 style={{padding:'12px 18px',borderRadius:12,background:'#f0ebe5',color:'#7a6e64',border:'1.5px solid #e0d8d0',cursor:'pointer',fontSize:13,fontWeight:700}}>
                 Back
               </button>
-              <button onClick={goResults} disabled={!canGo2}
+              <button onClick={goResults} disabled={!canGo3}
                 style={{flex:1,padding:'13px',borderRadius:12,
-                  background:canGo2?'#d4956a':'#e0d8d0',
-                  color:canGo2?'#fff':'#9a8e84',
-                  border:'none',cursor:canGo2?'pointer':'default',fontSize:14,fontWeight:800}}>
+                  background:canGo3?'#d4956a':'#e0d8d0',
+                  color:canGo3?'#fff':'#9a8e84',
+                  border:'none',cursor:canGo3?'pointer':'default',fontSize:14,fontWeight:800}}>
                 Find pieces
               </button>
             </div>
           </div>
         )}
 
-        {/* STEP 2: Results */}
-        {step===2 && results && (
+        {/* STEP 3: Results */}
+        {step===3 && results && (
           <div className="fade-up">
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16,flexWrap:'wrap',gap:8}}>
               <div>
@@ -507,7 +555,8 @@ function App() {
                   {results.length} pieces for you
                 </h2>
                 <p style={{fontSize:12,color:'#9a8e84',margin:0}}>
-                  {LEVELS.find(l=>l.id===level) ? LEVELS.find(l=>l.id===level).label : ''}
+                  {(SYLLABUSES.find(s=>s.id===syllabus)||{}).label||''}
+                  {LEVELS.find(l=>l.id===level) ? ' · '+(LEVELS.find(l=>l.id===level).label) : ''}
                   {character && character!=='balanced' ? ' · '+(CHARACTERS.find(c=>c.id===character)||{}).label : ''}
                   {eras.length ? ' · '+eras.join(', ') : ''}
                 </p>
