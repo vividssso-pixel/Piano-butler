@@ -2134,21 +2134,26 @@ index.html results (isSearching = true):
 | 119 | Recommend result cards full details | ✅ Done (Phase 52) |
 | 120 | Prelim → Preliminary user-facing labels | ✅ Done (Phase 52) |
 
+### Phase 53 Updates (2026-06-10 — strategy session)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Traffic strategy research | — | Researched promotion channels: MTA NSW/VIC/QLD/SA/WA (email), Piano World Teachers Forum, ABRSM Teachers Forum, TopMusic.co. Decision: defer active promotion — SEO organic growth preferred. |
+| 2 | Passive income strategy confirmed | — | Priority order: (1) AdSense auto-approval → (2) Sheet Music Plus affiliate at 500 clicks → (3) Gumroad PDF at 1,000 visitors. No active promotion for now — waiting for SEO to compound. |
+
 ### Pending Work (priority order for next session)
 
 | # | Task | Priority | Notes |
 |---|------|----------|-------|
-| 1 | Search Console — Request Indexing on index.html | Immediate | 오늘 SEO 작업 배포 후 재인덱싱 요청 필요. search.google.com/search-console → URL Inspection → thepianobutler.com → Request Indexing |
-| 2 | AdSense approval check | Quick check | ads.google.com — ca-pub-6523454944716812. Jun 9 신청, 1~2주 소요. |
-| 3 | Community sharing for traffic | High | Reddit r/piano, r/pianolearning + 피아노 선생님 Facebook 그룹. 트래픽 없으면 AdSense 수익 없음. |
-| 4 | Search Console — re-check indexing (Jun 17+) | Medium | 1주일 후 인덱스된 페이지 수 2→10+ 확인 |
-| 5 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500 |
-| 6 | Login revival | Deferred | Trigger: Search Console visitors ≥ 1,000 |
-| 7 | connect.html — real teacher info | Deferred | When Sohyun ready to take referrals |
-| 8 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
+| 1 | Search Console — re-check indexing (Jun 17+) | Quick check | Verify indexed pages increasing from 2. Request Indexing on index.html if not yet done. |
+| 2 | AdSense approval check | Quick check | ads.google.com — ca-pub-6523454944716812. Applied Jun 9, check ~Jun 16–23. |
+| 3 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500 |
+| 4 | Login revival | Deferred | Trigger: Search Console visitors ≥ 1,000 |
+| 5 | connect.html — real teacher info | Deferred | When Sohyun ready to take referrals |
+| 6 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
 
 ### Known Issues (as of 2026-06-10)
-- AdSense: pending Google review — ca-pub-6523454944716812. Check dashboard ~Jun 16.
+- AdSense: pending Google review — ca-pub-6523454944716812. Check dashboard ~Jun 16–23.
 - connect.html: placeholder teacher cards — not promoted publicly.
 - Supabase free tier auto-pauses after 7 days inactivity — restore manually from dashboard as needed.
 - Git sandbox HEAD.lock: run `rm .git/HEAD.lock` in Terminal if git commit fails.
