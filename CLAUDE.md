@@ -2219,3 +2219,79 @@ index.html results (isSearching = true):
 | **Gumroad $4 PDF report** | After affiliate is live | diagnose.html has jsPDF generator ready. Just needs Gumroad product URL + replace GUMROAD_URL constant. |
 | **connect.html — real teacher info** | When Sohyun is ready to take referrals | Add real photo, booking link, price. Currently placeholder only. |
 | **hello@thepianobutler.com 이메일** | Monthly visitors ≥ 1,000 | Namecheap 이메일 포워딩으로 설정 (월 몇 달러). vividssso@gmail.com으로 받을 수 있음. footer Contact 링크 주소도 함께 교체. |
+| **find-a-teacher.html + teach-with-us.html** | When Sohyun is ready to recruit teachers | Both pages built and tested. Add links to homepage footer when ready to go public. |
+
+---
+
+### Phase 54 Updates (2026-06-11 — UX audit + teacher matching + file cleanup)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | AdSense review re-requested | Google AdSense | adsense.google.com — "검토 요청" clicked again. Account: ca-pub-6523454944716812. Applied Jun 9. Check ~Jun 16–23. |
+| 2 | Search Console Validate Fix submitted | Google Search Console | 34 pages "Discovered – currently not indexed". Clicked "Validate Fix" to prompt re-crawl. |
+| 3 | Supabase restored | Supabase dashboard | Project auto-paused (free tier, 7 days inactivity). Restored manually. Status: Healthy ✅. Teacher dashboard functional again. |
+| 4 | G6 corpus bug fixed | `index.html` | `buildCorpus()` referenced `DATA_G6_COMP` but `G6/data_g6_comp.js` exports `DATA_G6`. Variable was always `undefined` → 160 G6 pieces silently absent from all search results. Footer showed "4,340 pieces" instead of 4,500. Fixed: `typeof DATA_G6_COMP` → `typeof DATA_G6`. Verified with node count script: total = 4,500 ✅. |
+| 5 | find-a-teacher.html created | `find-a-teacher.html` | New page — student teacher-matching request form. 4-step wizard: About you (name, email, age, phone) → Goals (level chips + goal chips) → Preferences (location, format, frequency, budget) → Summary + Submit. Web3Forms submission to vividssso@gmail.com. Success screen. NOT linked from homepage — hidden pending review. |
+| 6 | teach-with-us.html created | `teach-with-us.html` | New page — teacher application form. Fields: name, email, location, timezone chips, levels multi-chips, syllabuses multi-chips, availability multi-chips, experience, rate, bio. 3 perk cards: Online only / Pre-matched / Free to join. Web3Forms submission. NOT linked from homepage — hidden pending review. |
+| 7 | Strategic direction — online-only matching | — | Decision: Piano Butler teacher matching will be **online-only** (no in-person). Removes geographic constraints, lower operational complexity, aligns with digital-native user base. find-a-teacher.html still has "In-person" option in format field — update when launching publicly. |
+| 8 | Supply-first strategy confirmed | — | Build teacher supply (teach-with-us.html) before promoting student demand (find-a-teacher.html). Recruit teachers via Sohyun's network and piano teacher communities first. |
+| 9 | 17 unused files deleted | Multiple | Deleted session logs, old auth files, unused pages (home.html, auth.js, login.html, payments.html, teacher-plan.html, connect-stripe.html, stripe-webhook.js, test-*.html, etc.). Files no longer used since public pivot (Phase 8). Committed and pushed. |
+| 10 | Teacher pages hidden from homepage | `index.html` | find-a-teacher and teach-with-us footer links removed (Contact us remains). Pages accessible via direct URL only until ready for public launch. |
+
+### New Files (Phase 54)
+
+```
+Piano Butler/
+├── find-a-teacher.html    ← Student teacher-matching request (hidden from nav)
+└── teach-with-us.html     ← Teacher application form (hidden from nav)
+```
+
+### find-a-teacher.html Architecture
+
+```
+find-a-teacher.html (4-step wizard)
+├── Step 0: About you — name, email, age (optional), phone (optional)
+├── Step 1: Your goals — level chips + goal multi-chips (AMEB/ABRSM/Trinity exam, Hobby, Adult returner, Performance, Not sure)
+├── Step 2: Preferences — location, format chips (In-person/Online/Either), frequency chips, budget chips
+├── Step 3: Summary card + submit → Web3Forms → vividssso@gmail.com
+└── Success screen
+```
+
+### teach-with-us.html Architecture
+
+```
+teach-with-us.html (single-page form)
+├── Perk cards: Online only / Pre-matched / Free to join
+├── Your details: name, email, location, timezone chips
+├── What you teach: levels multi-chips, syllabuses multi-chips, availability multi-chips
+├── About you: experience, rate, bio textarea
+└── Submit → Web3Forms → vividssso@gmail.com (subject: "New Teacher Application — Piano Butler")
+```
+
+### Build Status — Last updated 2026-06-11
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–120 | All previously completed features (Phases 1–53) | ✅ Done |
+| 121 | G6 corpus bug fix (DATA_G6_COMP → DATA_G6, 160 pieces restored) | ✅ Done (Phase 54) |
+| 122 | find-a-teacher.html — student matching request form | ✅ Done (Phase 54) |
+| 123 | teach-with-us.html — teacher application form | ✅ Done (Phase 54) |
+| 124 | 17 unused files deleted — repo cleanup | ✅ Done (Phase 54) |
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | AdSense approval check | Quick check (Jun 16–23) | adsense.google.com — ca-pub-6523454944716812 |
+| 2 | Search Console — re-check indexing | Quick check (Jun 18+) | Verify "Discovered" pages moving to indexed after Validate Fix |
+| 3 | teach-with-us.html — recruit first teachers | High | Share with Sohyun's network. Once 3–5 teachers confirmed, add link to homepage. |
+| 4 | find-a-teacher.html — format field update | Medium | Change "In-person" → remove (online-only strategy). Update before public launch. |
+| 5 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500 |
+| 6 | Login revival | Deferred | Trigger: Search Console visitors ≥ 1,000 |
+| 7 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
+
+### Known Issues (as of 2026-06-11)
+- AdSense: pending Google review — ca-pub-6523454944716812. Check ~Jun 16–23.
+- find-a-teacher.html: format field still has "In-person" option — update before public launch (online-only strategy).
+- Supabase free tier auto-pauses after 7 days inactivity — restore manually from dashboard as needed.
+- Git sandbox HEAD.lock: run `rm .git/HEAD.lock && rm .git/index.lock` in Terminal if git commit fails.

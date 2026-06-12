@@ -1,0 +1,28 @@
+# Supabase Keep-Alive
+# Free-tier Supabase projects auto-pause after 7 days of inactivity.
+# This workflow pings the REST API twice a week (Mon & Thu) so the
+# project always registers activity. The anon key is already public
+# (shipped in client-side code) and protected by Row Level Security.
+
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    - cron: "0 22 * * 1,4" # Mon & Thu 22:00 UTC (Tue & Fri ~08:00 AEST)
+  workflow_dispatch: {} # allows manual run from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://icefqxaccclwasnfzgnp.supabase.co/rest/v1/students?select=id&limit=1" \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImljZWZxeGFjY2Nsd2FzbmZ6Z25wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwNjgzMTgsImV4cCI6MjA5MjY0NDMxOH0.lZ8BO_L8iOtET8RtUuk9trkf9bQbLqR8K6rKEfPtmtQ" \
+            -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImljZWZxeGFjY2Nsd2FzbmZ6Z25wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwNjgzMTgsImV4cCI6MjA5MjY0NDMxOH0.lZ8BO_L8iOtET8RtUuk9trkf9bQbLqR8K6rKEfPtmtQ")
+          echo "Supabase responded with HTTP $STATUS"
+          if [ "$STATUS" -ge 500 ]; then
+            echo "Supabase may be paused or down — check the dashboard."
+            exit 1
+          fi
