@@ -2295,3 +2295,51 @@ teach-with-us.html (single-page form)
 - find-a-teacher.html: format field still has "In-person" option — update before public launch (online-only strategy).
 - Supabase free tier auto-pauses after 7 days inactivity — restore manually from dashboard as needed.
 - Git sandbox HEAD.lock: run `rm .git/HEAD.lock && rm .git/index.lock` in Terminal if git commit fails.
+
+---
+
+### Phase 55 Updates (2026-06-12 — automation + content experiment)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Supabase keep-alive GitHub Action | `.github/workflows/supabase-keepalive.yml` | Cron pings Supabase REST API (`students?select=id&limit=1` with public anon key) every Mon & Thu 22:00 UTC + manual `workflow_dispatch`. Free-tier auto-pause permanently solved — no more manual dashboard restores. Deployed commit `bd67b99`. |
+| 2 | find-a-teacher.html — online-only | `find-a-teacher.html` | "In-person" format chip removed per online-only strategy. `format` hardcoded to `'Online'`, validation updated, Location field relabelled "Location / timezone" with hint "All Piano Butler lessons are online". Ready for public launch. Deployed `bd67b99`. |
+| 3 | Teacher outreach message drafts | `outreach-messages.md` (gitignored) | Copy-paste-ready recruitment messages: KR casual, KR polite, EN, + 1-week follow-up. Target: 3–5 founding teachers via Sohyun's network → then add teach-with-us link to homepage. |
+| 4 | Weekly Monday auto-check (Cowork scheduled task) | Cowork `piano-butler-monday-check` | Runs Mondays 9:05am local: site health fetch, AdSense approval status, Search Console indexing progress. Briefs only when action needed. |
+| 5 | SEO content experiment — ON HOLD | `_drafts/` (gitignored) | Generated 43 static pages: 3 guides (choosing AMEB pieces / board comparison / adult returners), 28 composer pages + hub (every piece per composer across all syllabuses, from live data), 9 grade comparison pages (AMEB vs ABRSM vs Trinity per grade), exam FAQ (FAQPage schema), best-G4-pieces article. Sohyun verdict: content feels generic/AI-ish — needs her real teaching voice before publishing. All index.html/sitemap.xml integrations reverted; site unchanged. Generator script preserved in session outputs (`gen_pages.js`). |
+
+### Content Direction (pending decision as of 2026-06-12)
+- Drafts live in `_drafts/` — restorable in minutes if direction is approved.
+- Agreed fix if revived: data/reference pages (composer tables, grade comparisons) keep minimal factual intros; editorial articles wait for Sohyun's 5-min Korean voice-memo answers (favourite/overrated G4 pieces, her selection criteria, real student-rescue stories) → rewritten with byline "by Sohyun Park" (E-E-A-T).
+- Explicitly NOT a blog — one-time evergreen reference pages, no recurring writing commitment.
+- Viva voce / General Knowledge product idea raised: per-piece fact sheets (composer, era, form, Italian terms) as free web pages + paid printable PDF pack per grade on Gumroad ($4–7). Pilot one grade with Sohyun's accuracy review before scaling.
+
+### Build Status — Last updated 2026-06-12
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–124 | All previously completed features (Phases 1–54) | ✅ Done |
+| 125 | Supabase keep-alive GitHub Action | ✅ Done (Phase 55) |
+| 126 | find-a-teacher.html online-only update | ✅ Done (Phase 55) |
+| 127 | Teacher outreach drafts (KR/EN) | ✅ Done (Phase 55) |
+| 128 | Weekly Monday auto-check scheduled task | ✅ Done (Phase 55) |
+| 129 | SEO content pages (43 static pages) | ⏸ On hold in `_drafts/` — pending Sohyun's voice/direction |
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | Send teacher outreach messages | High (Sohyun, ~10 min) | `outreach-messages.md` — 3–5 teachers from her network. Revenue path independent of traffic. |
+| 2 | AdSense approval check | Auto (Monday check) | ca-pub-6523454944716812 — review re-requested Jun 11. |
+| 3 | Search Console indexing | Auto (Monday check) | Validate Fix submitted Jun 11 for 34 pages. |
+| 4 | Content direction decision | When ready | Approve/adjust/discard `_drafts/` pages. If approved: Sohyun answers 3 Korean questions → editorial rewrite with her voice. |
+| 5 | Viva voce GK pack pilot | After content decision | Strongest paid-product candidate. One grade pilot + accuracy review. |
+| 6 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
+| 7 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
+| 8 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
+
+### Known Issues (as of 2026-06-12)
+- AdSense: pending Google review — check ~Jun 16–23 (Monday auto-check covers this).
+- `_drafts/` content pages: on hold, gitignored — do not publish without Sohyun's review.
+- Supabase auto-pause: SOLVED by keep-alive Action (verify first manual run shows green in GitHub Actions).
+- Git sandbox HEAD.lock: run `rm .git/HEAD.lock && rm .git/index.lock` in Terminal if git commit fails.
