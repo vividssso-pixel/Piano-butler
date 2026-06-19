@@ -2342,4 +2342,67 @@ teach-with-us.html (single-page form)
 - AdSense: pending Google review — check ~Jun 16–23 (Monday auto-check covers this).
 - `_drafts/` content pages: on hold, gitignored — do not publish without Sohyun's review.
 - Supabase auto-pause: SOLVED by keep-alive Action (verify first manual run shows green in GitHub Actions).
+
+---
+
+### Phase 56 Updates (2026-06-17 — viva-voce.html built + verified)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Viva Voce / General Knowledge pack generator built | `viva-voce.html` | New self-contained React 18 + Tailwind-free page (cdnjs-pinned React 18.2.0 / Babel 7.23.3, manual compile trigger — same pattern as Phase 42 fix). Teacher picks Grade (Prelim–G8, CertP, AMusA, LMusA) → Series (S19/S18/S17/Manual/AustAnth, dynamic per grade) → pieces (checkboxes, select-all/clear) → Generate → client-side jsPDF download. No backend, no login. |
+| 2 | `buildPieceQA(piece, override)` rules engine | `viva-voce.html` | Generates per-piece "story" (🎼 Meet the Composer / 🕰️ Time Machine / 🎨 Colors / 🧱 How the Music is Built) + Q&A pairs, following actual AMEB GK exam rules (≥1 Q per List piece, 6–10 total, key changes only at clear-cut points, form from allowed list, period + timeframe, style tied to period). All content built from existing corpus fields (`c`,`t`,`nat`,`era`,`key`,`focus`) — no sheet-music content reproduced. |
+| 3 | Tone — playful, not stiff | `viva-voce.html` | Per Sohyun's direction ("딱딱한 해석 보단 재밌게 풀어서 설명"): composer intro, era "time machine" narrative, key "color" framing, form "building blocks" framing — all written conversationally, not textbook-dry. |
+| 4 | "NEEDS VERIFICATION" flagging — copyright/accuracy safeguard | `viva-voce.html` | Anything not confirmable from corpus metadata alone (modulation bar/destination key, key when corpus says "Variable", one concrete period-style feature actually present in the piece) is flagged amber and labelled "NEEDS VERIFICATION" with an instruction to check the real score — never guessed. Verified via direct data trace against real G5 S19 corpus pieces: flags appear correctly when data is missing, disappear correctly when a teacher override is supplied. |
+| 5 | Optional accuracy-boost panel per piece | `viva-voce.html` | Teachers can expand a panel per selected piece to manually enter `modulation` (bar + destination key), `form` (override auto-inferred form), and `styleExample` (one concrete stylistic detail) — these override the corresponding NEEDS VERIFICATION flag in both the on-screen preview and the generated PDF. |
+| 6 | Optional score image upload per piece | `viva-voce.html` | Per Sohyun's request ("악보를 올리면 더 자세하게 만들수 있는 툴... 4곡 정도 뽑는거니까"): teachers can attach a photo/scan of the score per piece via FileReader → base64 data URL, stored in React state only (no server upload, no automated image analysis). Embedded into the generated PDF as a "Reference score page (uploaded by teacher — for your own cross-checking only)" image block via jsPDF `addImage`, with try/catch fallback if embedding fails. |
+| 7 | PDF generation — `generatePDF()` | `viva-voce.html` | jsPDF 2.5.1, A4, orange cover band + "Before you start" + bold NEEDS VERIFICATION warning note, then per piece: Part 1 (Key Points to Remember — story items) + Part 2 (Expected Q&A) + optional score image, then General reminders (`CORE_QA`) at the end. Pagination via `ensure(space)` called before every block (header, each story item, each QA item, image) — verified no block can be written without first reserving space, so nothing clips across a page break. |
+| 8 | Full verification pass | `viva-voce.html` | (a) Babel-compiled output passed `node --check` syntax validation; (b) full manual code review of override-merging, state-keying (`composer+'|'+title` consistent across `selected`/`overrides`/`generatePDF`), and corpus-loading; (c) explicitly checked `buildCorpus()`'s `typeof DATA_GX` references against actual `const` export names in all 12 loaded data files — confirmed NO repeat of the Phase 12 (`DATA_G5_1`) / Phase 54 (`DATA_G6_COMP`) silent-data-loss bug; (d) concrete data trace of `buildPieceQA` against real G5 S19 pieces (17 found), both with and without overrides — output confirmed correct and well-formed. |
+| 9 | Not yet linked from homepage | `index.html` | `viva-voce.html` is a standalone page (`noindex, follow`), not yet linked from nav/footer. Sohyun to open and spot-check in a real browser before deciding whether/how to surface it publicly. |
+
+### viva-voce.html Architecture
+
+```
+viva-voce.html
+├── CDN: React 18.2.0 + ReactDOM 18.2.0 + Babel 7.23.3 (cdnjs pinned) + jsPDF 2.5.1
+├── Manual Babel compile trigger — two raw blocks: #app-jsx (engine) + #app-main (App)
+├── ERA_TIMEFRAME / ERA_STYLE_FEATURES / ERA_TIME_MACHINE / ALLOWED_FORMS / KEY_VIBES
+├── inferForm(piece) / keyVibe(key)         — heuristic inference from focus/title/key text
+├── buildPieceQA(piece, override)           — story[] + qa[], NEEDS VERIFICATION flags
+├── CORE_QA                                  — general exam-format reminder
+├── buildCorpus()                            — Prelim–G8 + CertP + AMusA + LMusA (12 data files)
+├── generatePDF(gradeLabel, seriesLabel, pieces, overrides) — jsPDF cover + per-piece pages + image embed
+└── App()
+    ├── state: grade, series, selected{}, overrides{}, showBoost{}, generating
+    ├── gradePieces / seriesOptions / visiblePieces / selectedPieces (useMemo)
+    ├── toggle / selectAll / clearAll
+    ├── setOverrideField / handleScoreUpload (FileReader→base64) / removeScoreUpload / toggleBoost
+    └── handleGenerate → generatePDF()
+```
+
+### Build Status — Last updated 2026-06-17
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–129 | All previously completed features (Phases 1–55) | ✅ Done |
+| 130 | viva-voce.html — Viva Voce / GK pack generator, full feature set + verified | ✅ Done (Phase 56) |
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | Sohyun — open viva-voce.html in browser, spot-check a real PDF | High | All logic verified programmatically; needs one human look at actual render + downloaded PDF before wider use. |
+| 2 | Decide whether/how to surface viva-voce.html publicly | Medium | Currently standalone, unlinked, `noindex`. Consider: link from a grade page, homepage footer, or keep as teacher-only tool for now. |
+| 3 | Possible future: paid PDF pack via Gumroad | Deferred | Per Phase 55 product idea — pilot accuracy review with Sohyun first. |
+| 4 | Send teacher outreach messages | High (Sohyun, ~10 min) | `outreach-messages.md` — carried over from Phase 55. |
+| 5 | AdSense approval check | Auto (Monday check) | ca-pub-6523454944716812. |
+| 6 | Search Console indexing | Auto (Monday check) | Validate Fix submitted Jun 11 for 34 pages. |
+| 7 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
+| 8 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
+| 9 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
+
+### Known Issues (as of 2026-06-17)
+- viva-voce.html: not yet opened in an actual browser by a human — all verification so far is programmatic (compile/syntax/data-trace). Minor cosmetic edge case noted: a piece with an unusually long title could in theory wrap past its initial space reservation before the next pagination check catches it — not a functional bug, just worth a glance during spot-check.
+- AdSense: pending Google review — check ~Jun 16–23 (Monday auto-check covers this).
+- `_drafts/` content pages: on hold, gitignored — do not publish without Sohyun's review.
+- Supabase auto-pause: SOLVED by keep-alive Action (verify first manual run shows green in GitHub Actions).
 - Git sandbox HEAD.lock: run `rm .git/HEAD.lock && rm .git/index.lock` in Terminal if git commit fails.

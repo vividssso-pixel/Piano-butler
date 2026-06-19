@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Viva Voce / General Knowledge Pack Generator — Piano Butler</title>
+<meta name="description" content="Generate AMEB General Knowledge (viva voce) practice Q&A packs for any grade and series, built from the official syllabus rules.">
+<meta name="robots" content="noindex, follow">
+<link rel="canonical" href="https://thepianobutler.com/viva-voce.html">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.3/babel.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" crossorigin="anonymous"></script>
+
+<!-- AMEB Comprehensive data (where viva voce / General Knowledge applies) -->
+<script src="Prelim/data_prelim.js"></script>
+<script src="G1/data_g1.js"></script>
+<script src="G2/data_g2.js"></script>
+<script src="G3/data_g3.js"></script>
+<script src="G4/data_g4.js"></script>
+<script src="G5/data_g5_1.js"></script>
+<script src="G6/data_g6_comp.js"></script>
+<script src="G7/data_g7.js"></script>
+<script src="G8/data_g8.js"></script>
+<script src="CertP/data_certp.js"></script>
+<script src="AMusA/data_amusa.js"></script>
+<script src="LMusA/data_lmusa.js"></script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+* { box-sizing: border-box; }
+body { background:#f5f0eb; font-family:'Inter',-apple-system,sans-serif; color:#1a1410; margin:0; }
+a { color: inherit; }
+.wrap { max-width: 880px; margin: 0 auto; padding: 28px 20px 60px; }
+.back { font-size:13px; font-weight:700; color:#7a6e64; text-decoration:none; }
+.back:hover { color:#c4845a; }
+h1 { font-size:26px; font-weight:800; margin:18px 0 6px; }
+.sub { font-size:14px; color:#7a6e64; margin-bottom:28px; line-height:1.5; }
+.card { background:#fff; border:1px solid #ede7df; border-radius:14px; padding:22px; margin-bottom:18px; }
+.label { font-size:12px; font-weight:800; color:#7a6e64; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:8px; }
+.chip-row { display:flex; flex-wrap:wrap; gap:8px; }
+.chip { padding:8px 16px; border-radius:20px; border:1px solid #ddd6cc; background:#fff; color:#7a6e64;
+    font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; font-family:inherit; }
+.chip:hover { border-color:#c4845a; color:#c4845a; }
+.chip.active { background:#c4845a; color:#fff; border-color:#c4845a; }
+.piece-row { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid #f1ebe3; font-size:13.5px; }
+.piece-row:last-child { border-bottom:none; }
+.piece-row input { width:16px; height:16px; accent-color:#c4845a; cursor:pointer; flex-shrink:0; }
+.piece-row .lbl { flex:1; }
+.piece-row .badge { font-size:9px; font-weight:800; padding:2px 7px; border-radius:6px; background:#f0e8e0; color:#c4845a; }
+.btn { display:inline-flex; align-items:center; gap:8px; padding:13px 24px; border-radius:12px; border:none;
+    background:#c4845a; color:#fff; font-size:14.5px; font-weight:700; cursor:pointer; font-family:inherit; }
+.btn:hover { background:#b3733f; }
+.btn:disabled { background:#ddd6cc; cursor:not-allowed; }
+.btn.ghost { background:#fff; color:#7a6e64; border:1px solid #ddd6cc; }
+.btn.ghost:hover { border-color:#c4845a; color:#c4845a; }
+.note { font-size:12.5px; color:#9a8f84; line-height:1.6; margin-top:10px; }
+.rule-box { background:#fbf6f0; border:1px solid #ecdfd0; border-radius:10px; padding:14px 16px; font-size:12.5px;
+    color:#7a6e64; line-height:1.65; margin-top:14px; }
+.rule-box b { color:#5a4f44; }
+.flag { background:#fff4e0; color:#9a6a10; font-weight:700; }
+.select-all { font-size:12.5px; font-weight:700; color:#c4845a; cursor:pointer; background:none; border:none; padding:0; font-family:inherit; }
+.count-pill { font-size:12px; font-weight:700; color:#7a6e64; }
+.boost-toggle { font-size:11px; font-weight:700; color:#9a8f84; background:#f6f1ea; border:1px solid #ede7df;
+    border-radius:7px; padding:3px 9px; cursor:pointer; font-family:inherit; flex-shrink:0; white-space:nowrap; }
+.boost-toggle:hover { color:#c4845a; border-color:#c4845a; }
+.boost-toggle.active { color:#c4845a; background:#fbf2ea; border-color:#e7c6a8; }
+.boost-panel { background:#fbf8f4; border:1px dashed #e7ddd0; border-radius:10px; padding:14px 14px 6px;
+    margin:0 0 12px; }
+.boost-field { margin-bottom:10px; }
+.boost-field label { display:block; font-size:11px; font-weight:700; color:#9a8f84; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.03em; }
+.boost-field input[type="text"] { width:100%; padding:8px 10px; border-radius:8px; border:1px solid #ddd6cc;
+    font-size:13px; font-family:inherit; color:#1a1410; }
+.boost-field input[type="text"]:focus { outline:none; border-color:#c4845a; }
+.boost-upload { display:flex; align-items:center; gap:10px; font-size:12px; color:#7a6e64; }
+.boost-upload input[type="file"] { font-size:12px; }
+.boost-thumb { width:38px; height:38px; object-fit:cover; border-radius:6px; border:1px solid #ddd6cc; }
+.boost-remove { font-size:11px; color:#b3733f; cursor:pointer; background:none; border:none; padding:0; font-family:inherit; text-decoration:underline; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script id="app-jsx" type="text/jsx-raw">
+
+// ─────────────────────────────────────────────────────────────────────────
+// OFFICIAL AMEB "[General Knowledge]" RULES — verified verbatim from the
+// 2026 AMEB Piano Syllabus. These constraints drive everything below.
+// ─────────────────────────────────────────────────────────────────────────
+// 1. At least one question per List piece presented; 6–10 questions total.
+// 2. By referring to the score, candidates may be asked to:
+//    a. Name/explain notes, rests, signs, terms, the title, and the key/tonality.
+//    b. Identify key changes ONLY at obvious, clear-cut places — never in
+//       transitory passages. (We never invent a specific modulation bar —
+//       we flag it for the teacher's own score check instead.)
+//    c. Explain FORM — but only if the piece is one of these named types:
+//       Binary, Ternary, Rondo, Theme and Variation, First Movement (Sonata),
+//       Fugue, Minuet (Scherzo) and Trio, Through Composed (instrumental);
+//       or for vocal pieces: Strophic, Lied, Chanson, Mélodie, Art song,
+//       Recitative (secco/stromentato), Aria, Madrigal, Vocalise, Opera,
+//       Oratorio, Mass, Motet, Cantata, Ballad. If a piece doesn't clearly
+//       fit one of these, NO form question is generated.
+//    d. Name the period the piece comes from and its time frame.
+//    e. Discuss style — how the piece shows typical features of its period.
+
+const ERA_TIMEFRAME = {
+    'Baroque':       '1600 – 1750',
+    'Classical':     '1750 – 1820',
+    'Romantic':      '1820 – 1900',
+    'Modern':        '1900 – 1950',
+    'Contemporary':  '1950 – present',
+};
+
+const ERA_STYLE_FEATURES = {
+    'Baroque':      'terraced dynamics, continuous driving rhythm, ornamentation, contrapuntal texture, harpsichord/organ idiom carried into keyboard writing',
+    'Classical':    'balanced phrase structure, clear homophonic texture, Alberti bass, graceful melodic lines, contrast between themes',
+    'Romantic':     'expressive rubato, rich chromatic harmony, wide dynamic range, lyrical melody, pedal-based sustain, programmatic or emotional titles',
+    'Modern':       'expanded or ambiguous tonality, irregular rhythms, new colouristic effects, departure from strict Classical forms',
+    'Contemporary': 'eclectic style, may blend jazz/folk/popular idioms, freer treatment of form and dissonance, varied notation practice',
+};
+
+// ─────────────────────────────────────────────────────────────────────────
+// "TIME MACHINE" — playful era postcards. Each one paints a quick scene of
+// what the world/music sounded and felt like, so a student can picture it
+// instead of memorising a date range.
+// ─────────────────────────────────────────────────────────────────────────
+const ERA_TIME_MACHINE = {
+    'Baroque':      "Step out of the time machine into a candle-lit palace or church. Everyone's wearing powdered wigs, the harpsichord is clicking away non-stop, and the music never really stops moving — like a clock that's always ticking. Ornaments (those little squiggly notes) are the fancy decorations of the day, like lace on a sleeve.",
+    'Classical':    "The time machine lands in an elegant drawing room — think Mozart in a tailored coat, powdered wig optional now. Everything is balanced and tidy: phrases come in neat 4-bar sentences, like polite conversation. The new piano (not harpsichord!) can play soft AND loud, so composers start using that contrast on purpose.",
+    'Romantic':     "Now the time machine drops you into a stormy, candle-lit love story. Rules are bent for the sake of FEELINGS. Composers want you to laugh, cry, or daydream — huge dynamic swings, rich chords, melodies that swoon. The piano now has a big iron frame so it can really roar.",
+    'Modern':       "Welcome to a world being rebuilt after huge change — new machines, new wars, new ideas about what music even *is*. Composers start asking 'what if a chord didn't have to resolve?' Expect surprises: odd scales, unexpected accents, music that doesn't always behave the way your ear expects.",
+    'Contemporary': "You've landed in today (ish) — a world with radios, films, jazz clubs, and a mix of cultures all influencing each other. Composers borrow freely: a jazz chord here, a folk rhythm there, sometimes even pop influences. Anything goes, which is exactly the point.",
+};
+
+// Strict allowed form vocabulary per the syllabus wording above.
+const ALLOWED_FORMS = [
+    'Binary','Ternary','Rondo','Theme and Variation','First Movement','Sonata',
+    'Fugue','Minuet and Trio','Scherzo and Trio','Through Composed',
+    'Strophic','Lied','Chanson','Mélodie','Art song','Recitative','Aria',
+    'Madrigal','Vocalise','Opera','Oratorio','Mass','Motet','Cantata','Ballad'
+];
+
+// Focus-tag → form inference. We ONLY assign a form if we have a confident
+// signal — otherwise the piece gets no form question (per the rule).
+function inferForm(piece) {
+    const hay = ((piece.focus||[]).join(' ') + ' ' + (piece.t||'')).toLowerCase();
+    const map = [
+        [/\bminuet\b.*\btrio\b|\btrio\b.*\bminuet\b/, 'Minuet and Trio'],
+        [/\bscherzo\b.*\btrio\b/, 'Scherzo and Trio'],
+        [/\brondo\b/, 'Rondo'],
+        [/\bfugue\b|\bfugal\b/, 'Fugue'],
+        [/\btheme and variation/, 'Theme and Variation'],
+        [/\bvariation/, 'Theme and Variation'],
+        [/\bsonata\b|\bfirst movement\b/, 'First Movement (Sonata form)'],
+        [/\bternary\b|\bABA\b/, 'Ternary (ABA)'],
+        [/\bbinary\b/, 'Binary (AB)'],
+        [/\bthrough.composed\b/, 'Through Composed'],
+    ];
+    for (const [re, form] of map) if (re.test(hay)) return form;
+    return null; // genuinely unclear — no form question generated
+}
+
+// A tiny library of playful key "vibes" for the COLORS section — these are
+// just colourful, memorable framings (not music-theory claims), so a key
+// that isn't listed simply falls back to a neutral line.
+const KEY_VIBES = {
+    'C Major': 'plain and proud — no sharps, no flats, totally open and direct, like daylight.',
+    'G Major': 'sunny and a little playful — one sharp adds a bit of sparkle.',
+    'D Major': 'bright and triumphant — often used for fanfares and celebration.',
+    'A Major': 'warm and confident, a favourite for cheerful, singing melodies.',
+    'F Major': 'gentle and pastoral — calm, outdoorsy, a little nostalgic.',
+    'B-flat Major': 'rich and noble, often a touch more "grown-up" sounding.',
+    'E-flat Major': 'heroic and grand — composers often reach for this for big, bold statements.',
+    'A Minor': 'C Major\'s moodier twin — wistful rather than tragic, easy to feel at home in.',
+    'D Minor': 'serious and dramatic — often used for stormy or intense moments.',
+    'E Minor': 'tender and a little melancholy, very natural to sing.',
+    'G Minor': 'restless and passionate — Mozart\'s "tragic" key.',
+    'C Minor': 'dark and powerful — Beethoven\'s go-to key for drama (think Pathétique, 5th Symphony).',
+};
+
+function keyVibe(key) {
+    if (!key) return null;
+    const k = key.trim();
+    if (KEY_VIBES[k]) return KEY_VIBES[k];
+    if (/minor/i.test(k)) return 'a minor key — generally cooler and more thoughtful or dramatic feeling than a major key built on the same note.';
+    if (/major/i.test(k)) return 'a major key — generally bright and open feeling.';
+    return null;
+}
+
+// Build a question pack for ONE piece, following the rules above — but told
+// like a story rather than a quiz. Four "chapters" per piece, modelled on:
+// Music Dad/Mum (composer), Time Machine (era), Colors (key), and How the
+// Music is Built (form) — plus the practice Q&A pairs underneath.
+// Every fact we are not certain of is explicitly flagged "NEEDS VERIFICATION"
+// rather than guessed — the teacher checks the actual score before using it.
+// `override` (optional) lets a teacher supply confirmed facts (modulation,
+// form, a specific style example) that replace the generic flagged text.
+function buildPieceQA(piece, override) {
+    override = override || {};
+    const qa = [];
+    const story = [];
+    const composer = piece.c || 'the composer';
+    const title = piece.t || 'this piece';
+    const era = piece.era || null;
+    const key = piece.key && piece.key !== 'Variable' ? piece.key : null;
+    const nat = piece.nat || null;
+
+    // ── STORY: "Meet the composer" ──────────────────────────────────────
+    story.push({
+        label: '🎼 Meet the Composer',
+        text: `"${title}" was written by ${composer}${nat ? ' (' + nat + ')' : ''}. Before you play a note, say their name out loud and picture them — what era did they live in, what would their world have looked like? Knowing the person behind the piece makes everything else easier to remember.`
+    });
+
+    // ── STORY: "Time Machine" — era vibe ────────────────────────────────
+    if (era && ERA_TIME_MACHINE[era]) {
+        story.push({
+            label: '🕰️ Time Machine',
+            text: `Hop in the time machine and set it to the ${era} period (roughly ${ERA_TIMEFRAME[era] || '?'}). ${ERA_TIME_MACHINE[era]}`
+        });
+    }
+
+    // ── STORY: "Colors" — key / tonality ────────────────────────────────
+    if (key) {
+        const vibe = keyVibe(key);
+        story.push({
+            label: '🎨 Colors',
+            text: `This piece is painted in ${key}${vibe ? ' — ' + vibe : '.'} Play the opening chord or scale and really listen: does it match the mood you'd expect from that description?`
+        });
+    } else {
+        story.push({
+            label: '🎨 Colors',
+            text: `NEEDS VERIFICATION — look at the key signature (the sharps/flats at the start of the line) and the very last chord to work out the key. We don't have it confirmed for this piece yet.`,
+            flag: true
+        });
+    }
+
+    // ── STORY: "How the Music is Built" — form, only if confidently inferred
+    const inferredForm = override.form || inferForm(piece);
+    if (inferredForm) {
+        story.push({
+            label: '🧱 How the Music is Built',
+            text: `Think of this piece like blocks being stacked: it's built in ${inferredForm} form. Try sketching a simple map of it — A section, B section, and so on — and mark in the score exactly where each block starts. Being able to point to "this is where section B begins" is much more convincing to an examiner than just naming the form.`
+        });
+    }
+
+    // ── PRACTICE Q&A (the part to drill out loud) ───────────────────────
+    qa.push({
+        q: `What is this piece called, and who wrote it?`,
+        a: `"${title}" by ${composer}. Say it confidently — like you're introducing a friend.`
+    });
+
+    if (key) {
+        qa.push({
+            q: `What key is this piece in?`,
+            a: `${key}.${piece.l ? ' (List ' + piece.l + ')' : ''}`
+        });
+    } else {
+        qa.push({
+            q: `What key is this piece in?`,
+            a: `NEEDS VERIFICATION — check the key signature and the final chord in the score before answering this one.`,
+            flag: true
+        });
+    }
+
+    // Key changes — ONLY ask about obvious, clear-cut modulations. We never
+    // invent a bar number unless the teacher has supplied one via override.
+    if (override.modulation) {
+        qa.push({
+            q: `Does the music ever travel to a new key? Where, and to which key?`,
+            a: `Yes — it modulates to ${override.modulation}. Find that spot in the score and notice what changes (new sharps/flats, a different mood).`
+        });
+    } else {
+        qa.push({
+            q: `Does the music ever travel to a new key? Where, and to which key?`,
+            a: `NEEDS VERIFICATION — AMEB only asks about modulations at obvious, clear-cut points (e.g. the start of a new section), never in fleeting passing notes. Check the score, find the spot, and fill in the bar number and destination key before using this question with a student.`,
+            flag: true
+        });
+    }
+
+    if (inferredForm) {
+        qa.push({
+            q: `What form is this piece written in, and what are the main sections?`,
+            a: `${inferredForm}. Be ready to describe each section in your own words and show exactly where it starts in the score.`
+        });
+    }
+
+    if (era && ERA_TIMEFRAME[era]) {
+        qa.push({
+            q: `What musical period is this from, and roughly when was that?`,
+            a: `The ${era} period — roughly ${ERA_TIMEFRAME[era]}.`
+        });
+    }
+
+    if (override.styleExample) {
+        qa.push({
+            q: `What's one way this piece sounds like a typical ${era || ''} piece?`.replace('  ', ' '),
+            a: override.styleExample
+        });
+    } else if (era && ERA_STYLE_FEATURES[era]) {
+        qa.push({
+            q: `What's one way this piece sounds like a typical ${era} piece?`,
+            a: `${era} music often features: ${ERA_STYLE_FEATURES[era]}. NEEDS VERIFICATION — pick ONE of these that you can actually point to in this piece (e.g. "there's an ornament in bar 4" or "the dynamics swing from very soft to very loud here") rather than reciting the whole list.`,
+            flag: true
+        });
+    }
+
+    if (piece.focus && piece.focus.length) {
+        qa.push({
+            q: `Skim the score — any terms, signs, or directions you should be able to explain on the spot?`,
+            a: `This piece was chosen to build: ${piece.focus.join(', ')}. Those teaching-focus words are good clues for what an examiner might point at — check for matching Italian terms, dynamics, articulation marks, or pedal markings in the score.`
+        });
+    }
+
+    return { qa, story };
+}
+
+// Core general-knowledge reminders asked once per exam (not piece-specific),
+// kept generic and within the 6–10 total question allowance.
+const CORE_QA = [
+    { q: 'Heads up: examiners ask at least one question about EVERY List piece you bring in, with 6–10 questions total across the whole exam.',
+      a: 'Don\'t just prep your favourite piece — know the title, composer, key, period, and (where it applies) the form of every single piece on your program.' },
+];
+
+</script>
+
+<script>
+window.PianoButlerVivaVoceEngine = null; // placeholder, real engine lives in JSX module above after compile
+</script>
+
+<script>
+(function(){
+    function compileAndRun(){
+        if (typeof Babel === 'undefined') { setTimeout(compileAndRun, 50); return; }
+        try {
+            var jsxSrc = document.getElementById('app-jsx').textContent;
+            var appSrc = document.getElementById('app-main').textContent;
+            var compiledEngine = Babel.transform(jsxSrc, { presets: ['react'] }).code;
+            var compiledApp = Babel.transform(appSrc, { presets: ['react'] }).code;
+            var s1 = document.createElement('script'); s1.text = compiledEngine; document.body.appendChild(s1);
+            var s2 = document.createElement('script'); s2.text = compiledApp; document.body.appendChild(s2);
+        } catch (e) {
+            document.getElementById('root').innerHTML =
+                '<div style="padding:60px;text-align:center;color:#a33;font-family:monospace;white-space:pre-wrap">' +
+                'Compile error: ' + (e && e.message ? e.message : e) + '</div>';
+        }
+    }
+    document.addEventListener('DOMContentLoaded', compileAndRun);
+})();
+</script>
+
+<script id="app-main" type="text/jsx-raw">
+const { useState, useMemo, useCallback } = React;
+
+function buildCorpus() {
+    const corpus = [];
+    const push = (arr, gradeKey, gradeLabel) => {
+        if (!arr || !arr.length) return;
+        arr.forEach(p => corpus.push({ ...p, _gradeKey: gradeKey, _grade: gradeLabel }));
+    };
+    push(typeof DATA_PRELIM !== 'undefined' ? DATA_PRELIM : [], 'Prelim', 'Preliminary');
+    push(typeof DATA_G1 !== 'undefined' ? DATA_G1 : [], 'G1', 'Grade 1');
+    push(typeof DATA_G2 !== 'undefined' ? DATA_G2 : [], 'G2', 'Grade 2');
+    push(typeof DATA_G3 !== 'undefined' ? DATA_G3 : [], 'G3', 'Grade 3');
+    push(typeof DATA_G4 !== 'undefined' ? DATA_G4 : [], 'G4', 'Grade 4');
+    push(typeof DATA_G5 !== 'undefined' ? DATA_G5 : [], 'G5', 'Grade 5');
+    push(typeof DATA_G6 !== 'undefined' ? DATA_G6 : [], 'G6', 'Grade 6');
+    push(typeof DATA_G7 !== 'undefined' ? DATA_G7 : [], 'G7', 'Grade 7');
+    push(typeof DATA_G8 !== 'undefined' ? DATA_G8 : [], 'G8', 'Grade 8');
+    push(typeof DATA_CERTP !== 'undefined' ? DATA_CERTP : [], 'CertP', 'Cert. of Performance');
+    push(typeof DATA_AMUSA !== 'undefined' ? DATA_AMUSA : [], 'AMusA', 'AMusA');
+    push(typeof DATA_LMUSA !== 'undefined' ? DATA_LMUSA : [], 'LMusA', 'LMusA');
+    return corpus;
+}
+const CORPUS = buildCorpus();
+const GRADE_OPTIONS = [
+    ['Prelim','Preliminary'],['G1','Grade 1'],['G2','Grade 2'],['G3','Grade 3'],['G4','Grade 4'],
+    ['G5','Grade 5'],['G6','Grade 6'],['G7','Grade 7'],['G8','Grade 8'],
+    ['CertP','Cert. of Performance'],['AMusA','AMusA'],['LMusA','LMusA']
+];
+
+function generatePDF(gradeLabel, seriesLabel, pieces, overrides) {
+    const doc = new jspdf.jsPDF({ unit:'pt', format:'a4' });
+    const W = doc.internal.pageSize.getWidth();
+    const M = 48;
+    let y = 0;
+
+    function addPage() { doc.addPage(); y = M; }
+    function ensure(space) { if (y + space > 760) addPage(); }
+    function wrapText(text, x, maxW, lineH, opts) {
+        const lines = doc.splitTextToSize(text, maxW);
+        lines.forEach(line => { ensure(lineH); doc.text(line, x, y, opts); y += lineH; });
+    }
+
+    // Cover
+    y = M;
+    doc.setFillColor(196,132,90); doc.rect(0,0,W,140,'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(22);
+    doc.text('Viva Voce / General Knowledge', M, 70);
+    doc.setFontSize(15); doc.setFont('helvetica','normal');
+    doc.text(`${gradeLabel}${seriesLabel ? ' — ' + seriesLabel : ''} Practice Pack`, M, 96);
+    doc.setFontSize(10);
+    doc.text('Generated by Piano Butler · thepianobutler.com', M, 118);
+    doc.setTextColor(26,20,16);
+    y = 170;
+    doc.setFont('helvetica','bold'); doc.setFontSize(13);
+    doc.text('Before you start', M, y); y += 20;
+    doc.setFont('helvetica','normal'); doc.setFontSize(10.5);
+    wrapText('Examiners ask at least one question about every List piece you present, with 6–10 questions total across your whole program. This pack drafts likely questions from each piece\'s composer, era, key, and teaching focus areas.', M, W-2*M, 15);
+    y += 6;
+    doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    wrapText('Items marked "NEEDS VERIFICATION" are not guesses — check the actual printed score for these before using them. Modulation points and stylistic details vary piece to piece and must be confirmed by looking at the music.', M, W-2*M, 15, {});
+    y += 10;
+
+    pieces.forEach((piece, idx) => {
+        ensure(60);
+        doc.setFont('helvetica','bold'); doc.setFontSize(13);
+        wrapText(`${idx+1}. ${piece.c} — "${piece.t}"`, M, W-2*M, 17);
+        doc.setFont('helvetica','italic'); doc.setFontSize(9.5); doc.setTextColor(120,110,100);
+        wrapText(`List ${piece.l || '—'} · ${piece._grade}${piece.era ? ' · ' + piece.era : ''}`, M, W-2*M, 13);
+        doc.setTextColor(26,20,16);
+        y += 4;
+
+        const pieceOverride = (overrides && overrides[piece.c + '|' + piece.t]) || {};
+        const { qa, story } = buildPieceQA(piece, pieceOverride);
+
+        // Part 1: Key Points to Remember (story-style framing)
+        ensure(30);
+        doc.setFont('helvetica','bolditalic'); doc.setFontSize(11); doc.setTextColor(196,132,90);
+        doc.text('Part 1: Key Points to Remember', M, y); y += 16;
+        doc.setTextColor(26,20,16);
+        story.forEach(item => {
+            ensure(36);
+            doc.setFont('helvetica','bold'); doc.setFontSize(10.5);
+            wrapText(item.label, M, W-2*M, 14);
+            doc.setFont('helvetica','normal'); doc.setFontSize(10);
+            if (item.flag) { doc.setTextColor(154,106,16); }
+            wrapText(item.text, M+4, W-2*M-4, 13);
+            doc.setTextColor(26,20,16);
+            y += 4;
+        });
+        y += 8;
+
+        // Part 2: Expected Q&A (practice out loud)
+        ensure(26);
+        doc.setFont('helvetica','bolditalic'); doc.setFontSize(11); doc.setTextColor(196,132,90);
+        doc.text('Part 2: Expected Q&A (Practice these out loud!)', M, y); y += 16;
+        doc.setTextColor(26,20,16);
+        qa.forEach(item => {
+            ensure(40);
+            doc.setFont('helvetica','bold'); doc.setFontSize(10.5);
+            wrapText('Q: ' + item.q, M, W-2*M, 14);
+            doc.setFont('helvetica','normal'); doc.setFontSize(10.5);
+            if (item.flag) { doc.setTextColor(154,106,16); }
+            wrapText('A: ' + item.a, M+4, W-2*M-4, 14);
+            doc.setTextColor(26,20,16);
+            y += 6;
+        });
+        y += 10;
+
+        // Optional supplementary score reference image (teacher-uploaded, NOT
+        // auto-analyzed — purely for the teacher's own cross-checking while
+        // filling in the accuracy-boost fields above).
+        if (pieceOverride.scoreImage && pieceOverride.scoreImage.dataUrl && pieceOverride.scoreImage.type && pieceOverride.scoreImage.type.indexOf('image') === 0) {
+            ensure(150);
+            doc.setFont('helvetica','italic'); doc.setFontSize(9); doc.setTextColor(120,110,100);
+            doc.text('Reference score page (uploaded by teacher — for your own cross-checking only):', M, y); y += 14;
+            doc.setTextColor(26,20,16);
+            try {
+                const imgFormat = pieceOverride.scoreImage.type.indexOf('png') >= 0 ? 'PNG' : 'JPEG';
+                const maxW = 200, maxH = 130;
+                ensure(maxH + 10);
+                doc.addImage(pieceOverride.scoreImage.dataUrl, imgFormat, M, y, maxW, maxH, undefined, 'FAST');
+                y += maxH + 12;
+            } catch (e) {
+                doc.setFont('helvetica','normal'); doc.setFontSize(9);
+                wrapText('(could not embed image: ' + pieceOverride.scoreImage.name + ')', M, W-2*M, 12);
+            }
+        }
+    });
+
+    ensure(60);
+    doc.setFont('helvetica','bold'); doc.setFontSize(12);
+    doc.text('General reminders', M, y); y += 18;
+    doc.setFont('helvetica','normal'); doc.setFontSize(10.5);
+    CORE_QA.forEach(item => {
+        wrapText('• ' + item.q, M, W-2*M, 14);
+        wrapText('  ' + item.a, M, W-2*M, 14);
+        y += 4;
+    });
+
+    doc.save(`Viva_Voce_${gradeLabel.replace(/\s+/g,'_')}${seriesLabel ? '_' + seriesLabel.replace(/\s+/g,'_') : ''}.pdf`);
+}
+
+function App() {
+    const [grade, setGrade] = useState('G5');
+    const [series, setSeries] = useState('All');
+    const [selected, setSelected] = useState({});
+    const [generating, setGenerating] = useState(false);
+    // Optional accuracy-boost data, keyed by "composer|title":
+    // { modulation, form, styleExample, scoreImage: {dataUrl, name} }
+    const [overrides, setOverrides] = useState({});
+    const [showBoost, setShowBoost] = useState({});
+
+    function setOverrideField(key, field, value) {
+        setOverrides(prev => ({ ...prev, [key]: { ...(prev[key]||{}), [field]: value } }));
+    }
+    function handleScoreUpload(key, file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            setOverrideField(key, 'scoreImage', { dataUrl: e.target.result, name: file.name, type: file.type });
+        };
+        reader.readAsDataURL(file);
+    }
+    function removeScoreUpload(key) {
+        setOverrides(prev => {
+            const next = { ...prev, [key]: { ...(prev[key]||{}) } };
+            delete next[key].scoreImage;
+            return next;
+        });
+    }
+    function toggleBoost(key) {
+        setShowBoost(prev => ({ ...prev, [key]: !prev[key] }));
+    }
+
+    const gradePieces = useMemo(() => CORPUS.filter(p => p._gradeKey === grade), [grade]);
+    const seriesOptions = useMemo(() => {
+        const set = new Set();
+        gradePieces.forEach(p => { if (p.s) set.add(p.s); });
+        return ['All', ...Array.from(set).sort()];
+    }, [gradePieces]);
+    const visiblePieces = useMemo(() => {
+        if (series === 'All') return gradePieces;
+        return gradePieces.filter(p => p.s === series);
+    }, [gradePieces, series]);
+
+    const selectedPieces = useMemo(() =>
+        visiblePieces.filter(p => selected[p.c + '|' + p.t]), [visiblePieces, selected]);
+
+    const toggle = useCallback((piece) => {
+        const key = piece.c + '|' + piece.t;
+        setSelected(s => ({ ...s, [key]: !s[key] }));
+    }, []);
+    const selectAll = useCallback(() => {
+        const all = {};
+        visiblePieces.forEach(p => { all[p.c + '|' + p.t] = true; });
+        setSelected(all);
+    }, [visiblePieces]);
+    const clearAll = useCallback(() => setSelected({}), []);
+
+    const handleGenerate = useCallback(() => {
+        if (!selectedPieces.length) return;
+        setGenerating(true);
+        setTimeout(() => {
+            const gradeLabel = (GRADE_OPTIONS.find(g => g[0] === grade) || [grade, grade])[1];
+            generatePDF(gradeLabel, series !== 'All' ? series : '', selectedPieces, overrides);
+            setGenerating(false);
+        }, 50);
+    }, [selectedPieces, grade, series, overrides]);
+
+    return (
+        <div className="wrap">
+            <a className="back" href="index.html">← Piano Butler</a>
+            <h1>Viva Voce / General Knowledge Pack Generator</h1>
+            <div className="sub">
+                Select a grade and the pieces you're presenting — Piano Butler drafts a practice Q&A pack
+                from the official AMEB General Knowledge rules. Anything that needs your eyes on the actual
+                score (modulation points, specific stylistic details) is clearly flagged rather than guessed.
+            </div>
+
+            <div className="card">
+                <div className="label">1. Grade</div>
+                <div className="chip-row">
+                    {GRADE_OPTIONS.map(([key,label]) => (
+                        <button key={key} className={'chip' + (grade===key?' active':'')}
+                            onClick={() => { setGrade(key); setSeries('All'); setSelected({}); }}>{label}</button>
+                    ))}
+                </div>
+            </div>
+
+            {seriesOptions.length > 1 && (
+                <div className="card">
+                    <div className="label">2. Series (optional)</div>
+                    <div className="chip-row">
+                        {seriesOptions.map(s => (
+                            <button key={s} className={'chip' + (series===s?' active':'')}
+                                onClick={() => { setSeries(s); setSelected({}); }}>{s}</button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            <div className="card">
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                    <div className="label" style={{marginBottom:0}}>3. Pieces ({visiblePieces.length})</div>
+                    <div style={{display:'flex',gap:14,alignItems:'center'}}>
+                        <span className="count-pill">{selectedPieces.length} selected</span>
+                        <button className="select-all" onClick={selectAll}>Select all</button>
+                        <button className="select-all" onClick={clearAll}>Clear</button>
+                    </div>
+                </div>
+                {visiblePieces.length === 0 && <div style={{fontSize:13,color:'#9a8f84'}}>No pieces found for this grade/series.</div>}
+                {visiblePieces.map((p,i) => {
+                    const key = p.c + '|' + p.t;
+                    const isSel = !!selected[key];
+                    const ov = overrides[key] || {};
+                    const boostOpen = !!showBoost[key];
+                    return (
+                        <div key={key+i}>
+                            <label className="piece-row">
+                                <input type="checkbox" checked={isSel} onChange={() => toggle(p)} />
+                                <span className="lbl">{p.c} — {p.t}</span>
+                                {p.l && <span className="badge">List {p.l}</span>}
+                                {p.era && <span className="badge" style={{background:'#eee6dc',color:'#7a6e64'}}>{p.era}</span>}
+                                {isSel && (
+                                    <button type="button" className={'boost-toggle' + (boostOpen?' active':'')}
+                                        onClick={(e) => { e.preventDefault(); toggleBoost(key); }}>
+                                        {boostOpen ? '▲ Hide details' : '✏️ Add accurate details'}
+                                    </button>
+                                )}
+                            </label>
+                            {isSel && boostOpen && (
+                                <div className="boost-panel">
+                                    <div className="note" style={{marginTop:0,marginBottom:10}}>
+                                        Optional — fill these in after checking the actual score, and the generator
+                                        will use your answer instead of flagging "NEEDS VERIFICATION". Leave blank to
+                                        keep the safe default.
+                                    </div>
+                                    <div className="boost-field">
+                                        <label>Modulation (where + to which key)</label>
+                                        <input type="text" placeholder="e.g. bar 17, modulates to G major"
+                                            value={ov.modulation || ''}
+                                            onChange={(e) => setOverrideField(key, 'modulation', e.target.value)} />
+                                    </div>
+                                    <div className="boost-field">
+                                        <label>Form override (only if you've confirmed it)</label>
+                                        <input type="text" placeholder="e.g. Ternary (A-B-A)"
+                                            value={ov.form || ''}
+                                            onChange={(e) => setOverrideField(key, 'form', e.target.value)} />
+                                    </div>
+                                    <div className="boost-field">
+                                        <label>A specific style feature you can point to</label>
+                                        <input type="text" placeholder="e.g. trill ornament in bar 4, sudden dynamic shift bar 9"
+                                            value={ov.styleExample || ''}
+                                            onChange={(e) => setOverrideField(key, 'styleExample', e.target.value)} />
+                                    </div>
+                                    <div className="boost-field">
+                                        <label>Score page (optional reference image — not analyzed automatically)</label>
+                                        <div className="boost-upload">
+                                            <input type="file" accept="image/*,.pdf"
+                                                onChange={(e) => handleScoreUpload(key, e.target.files && e.target.files[0])} />
+                                            {ov.scoreImage && ov.scoreImage.dataUrl && ov.scoreImage.type && ov.scoreImage.type.indexOf('image') === 0 && (
+                                                <img className="boost-thumb" src={ov.scoreImage.dataUrl} alt="score page" />
+                                            )}
+                                            {ov.scoreImage && (
+                                                <>
+                                                    <span style={{fontSize:11}}>{ov.scoreImage.name}</span>
+                                                    <button type="button" className="boost-remove" onClick={() => removeScoreUpload(key)}>remove</button>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+
+            <button className="btn" disabled={!selectedPieces.length || generating} onClick={handleGenerate}>
+                {generating ? 'Generating…' : `📄 Generate Pack (${selectedPieces.length} piece${selectedPieces.length===1?'':'s'})`}
+            </button>
+
+            <div className="rule-box">
+                <b>Official AMEB rule encoded here:</b> examiners ask at least one question per List piece presented,
+                6–10 questions total. Key-change questions are only valid at <b>obvious, clear-cut</b> points — never
+                in transitory passages. Form is only discussed if the piece is one of the syllabus's named types
+                (Binary, Ternary, Rondo, Theme &amp; Variation, First Movement/Sonata, Fugue, Minuet/Scherzo &amp; Trio,
+                Through Composed, or the listed vocal forms) — otherwise no form question is generated.
+                Items the generator can't confirm from our data — like exact modulation bars or which specific
+                stylistic feature appears where — are marked <span className="flag">NEEDS VERIFICATION</span> so you
+                can check the score yourself before using them with a student.
+            </div>
+        </div>
+    );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
