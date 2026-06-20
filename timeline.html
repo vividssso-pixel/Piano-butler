@@ -228,34 +228,39 @@ const READINESS_QUESTIONS = [
     ] },
 ];
 
-/* ── Phase + month-focus logic (adapted from teacher-dashboard.html buildPlan) ── */
+/* ── Phase + month-focus logic ── */
 const PHASE_META = {
   foundation:    { name:'Foundation & Learning',   color:'#6366f1', bg:'#eef2ff', text:'#4338ca' },
-  development:   { name:'Development & Technique', color:'#0891b2', bg:'#ecfeff', text:'#0e7490' },
+  technical:     { name:'Technical Foundation',    color:'#0891b2', bg:'#ecfeff', text:'#0e7490' },
+  musical:       { name:'Musical Shaping',         color:'#7c3aed', bg:'#f5f3ff', text:'#6d28d9' },
   consolidation: { name:'Consolidation',           color:'#16a34a', bg:'#f0fdf4', text:'#15803d' },
   polish:        { name:'Polish & Performance',    color:'#d97706', bg:'#fffbeb', text:'#b45309' },
   exam:          { name:'Exam Preparation',        color:'#dc2626', bg:'#fef2f2', text:'#b91c1c' },
 };
+
+// {grade}/{syllabus} substituted with the chosen grade/syllabus.
+// {piece1..4} substituted with the student's actual pieces when supplied, else generic wording.
 const MONTH_FOCUS = {
-  foundation:    ['Confirm all exam repertoire. Begin hands-separate reading of each piece. Start scanning the technical list for this grade.',
-                   'Hands-together work begins on repertoire. Daily scale/arpeggio routine established.',
-                   'Technical work moves to tempo. Begin regular sight-reading practice (5–10 min/day).',
-                   'Full review of repertoire HS and HT. Identify the trickiest passages in each piece.'],
-  development:   ['Increase tempo on all pieces. Focus on tone and voicing.',
-                   'Technical demands at speed: scales, arpeggios, exercises for this grade.',
-                   'Musical shaping — dynamics, articulation, phrasing across all repertoire.',
-                   'Sight-reading and General Knowledge become a regular weekly habit.',
-                   'Targeted passage work on weak spots. Rhythm and memory check.'],
-  consolidation: ['Full run-throughs of all pieces, recorded and self-reviewed.',
-                  'Technical work at performance tempo. All required scales/arpeggios secure.',
-                  'General Knowledge: composer context, form, Italian terms — drill the gaps.',
-                  'Back-to-back repertoire run-through. Note stamina and consistency.'],
-  polish:        ['Mock exam #1 — full run in exam order, honest self (or teacher) feedback.',
-                  'Address mock exam feedback. Performance detail on each piece.',
-                  'Mock exam #2 — simulate real exam conditions. Final refinements.'],
-  exam:          ['Light maintenance only. No new learning. Trust the preparation — rest well before the exam.'],
+  foundation:    ['Confirm all {grade} exam repertoire — lock in {piece1} and the rest. Begin hands-separate reading of each piece. Skim the {syllabus} {grade} technical list so there are no surprises later.',
+                   'Hands-together work begins on {piece1} and {piece2}. Daily scale/arpeggio routine for {grade} established — little and often beats one long session.',
+                   'Technical work moves to tempo. Begin regular sight-reading practice (5–10 min/day) at {grade} level.',
+                   'Full review of all pieces hands-separate and hands-together. Mark the trickiest 2–3 bars in each piece — that\'s where this month\'s time should actually go.'],
+  technical:     ['{grade} scales, arpeggios and required exercises — work them up to speed, metronome on. This is the unglamorous month; it pays off later.',
+                   'Increase tempo on {piece1}, {piece2} and {piece3} one piece at a time, not all at once. Technical work for this grade should be close to exam speed by month end.',
+                   'Tidy fingering trouble-spots flagged earlier. Scales/arpeggios at full speed, hands separately and together.'],
+  musical:       ['Musical shaping on every piece — dynamics, articulation, phrasing. Stop playing through; start listening back.',
+                   'Voicing and tone across {piece1} and {piece4}. Sight-reading and General Knowledge become a fixed weekly habit, not an afterthought.',
+                   'Memory check on all pieces if memorising. Rhythm accuracy under tempo pressure — record yourself and compare to a metronome track.'],
+  consolidation: ['Full run-throughs of {piece1}, {piece2}, {piece3} and {piece4} (or your own choices), recorded and self-reviewed.',
+                  '{grade} technical work at performance tempo — everything required should be secure with no hesitation.',
+                  'General Knowledge: composer context, form, Italian terms for each piece — drill the actual gaps, not everything.',
+                  'Back-to-back repertoire run-through, exam order. Note stamina and where concentration slips.'],
+  polish:        ['Mock exam #1 — full run in exam order for {grade}, honest self (or teacher) feedback on {piece1} especially.',
+                  'Address mock exam feedback directly, piece by piece. Performance detail — the last 5% that separates a good mark from a great one.',
+                  'Mock exam #2 — simulate real exam conditions exactly (room, clothes, walking in cold). Final refinements only.'],
+  exam:          ['Light maintenance only. No new learning, no new fingerings. Run each piece once a day at performance tempo. Trust the preparation — rest well before the {grade} exam.'],
 };
-const EXAM_ORDER = ['foundation','development','consolidation','polish','exam'];
+const EXAM_ORDER = ['foundation','technical','musical','consolidation','polish','exam'];
 
 function monthsBetween(startDate, endDate) {
   const allMonths = [];
@@ -269,7 +274,50 @@ function monthsBetween(startDate, endDate) {
   return allMonths;
 }
 
-function buildTimeline(examDate, readinessScore) {
+// Builds an explicit phase-per-month assignment based on how many months are actually
+// available, rather than fixed percentage cutoffs (which duplicate phase labels on
+// short timelines). Lower readiness compresses the early phases since less is "done"
+// already; the exam month is always the last month.
+function allocatePhases(total, readinessScore) {
+  const readinessRatio = (readinessScore - 4) / 12; // 0 (least ready) .. 1 (most ready)
+  const lowReadiness = readinessRatio < 0.4;
+
+  if (total <= 1) return ['exam'];
+  if (total === 2) return ['polish','exam'];
+  if (total === 3) return lowReadiness ? ['technical','consolidation','exam'] : ['consolidation','polish','exam'];
+  if (total === 4) return lowReadiness ? ['technical','musical','consolidation','exam'] : ['foundation','consolidation','polish','exam'];
+  if (total === 5) return lowReadiness
+    ? ['foundation','technical','musical','consolidation','exam']
+    : ['foundation','technical','consolidation','polish','exam'];
+  if (total === 6) return ['foundation','technical','musical','consolidation','polish','exam'];
+
+  // 7+ months: build proportionally, then guarantee every phase gets ≥1 month and exam is last.
+  const nonExam = total - 1;
+  const weights = lowReadiness
+    ? { foundation:0.22, technical:0.22, musical:0.18, consolidation:0.20, polish:0.18 }
+    : { foundation:0.16, technical:0.20, musical:0.18, consolidation:0.24, polish:0.22 };
+  const order = ['foundation','technical','musical','consolidation','polish'];
+  let counts = order.map(k => Math.max(1, Math.round(weights[k]*nonExam)));
+  let diff = nonExam - counts.reduce((a,b)=>a+b,0);
+  let idx = counts.length - 1;
+  while (diff !== 0) {
+    counts[idx] = Math.max(1, counts[idx] + (diff > 0 ? 1 : -1));
+    diff += diff > 0 ? -1 : 1;
+    idx = (idx - 1 + counts.length) % counts.length;
+  }
+  const seq = [];
+  order.forEach((k,i) => { for (let n=0;n<counts[i];n++) seq.push(k); });
+  seq.push('exam');
+  return seq;
+}
+
+function fillTemplate(str, vars) {
+  return str.replace(/\{(\w+)\}/g, (m,k) => (vars[k] !== undefined && vars[k] !== '') ? vars[k] : m)
+    .replace(/\{piece1\}/g,'your first piece').replace(/\{piece2\}/g,'your second piece')
+    .replace(/\{piece3\}/g,'your third piece').replace(/\{piece4\}/g,'your fourth piece');
+}
+
+function buildTimeline(examDate, readinessScore, gradeLabel, syllabus, userPieces) {
   const today = new Date(); today.setHours(12,0,0,0);
   const end = new Date(examDate + 'T12:00:00');
   if (isNaN(end.getTime()) || end <= today) return [];
@@ -278,28 +326,18 @@ function buildTimeline(examDate, readinessScore) {
   const total = allMonths.length;
   if (total === 0) return [];
 
-  // readinessScore: 4 (low/needs work) to 16 (high/ready). Lower readiness shifts the
-  // whole plan earlier into "foundation" relative to time remaining — i.e. less margin.
-  const readinessRatio = (readinessScore - 4) / 12; // 0 (least ready) .. 1 (most ready)
-  const shift = (1 - readinessRatio) * 0.12; // up to +12% of timeline pulled into earlier phases
-
-  const getPhase = (i) => {
-    const ratio = Math.min((i / total) + shift, 1);
-    if (i === total - 1)  return 'exam';
-    if (ratio >= 0.85)    return 'polish';
-    if (ratio >= 0.60)    return 'consolidation';
-    if (ratio >= 0.30)    return 'development';
-    return 'foundation';
-  };
+  const phaseSeq = allocatePhases(total, readinessScore);
+  const vars = { grade: gradeLabel || 'this grade', syllabus: syllabus || '' };
+  (userPieces || []).slice(0,4).forEach((p,i) => { vars['piece'+(i+1)] = p; });
 
   const phaseCounter = {};
   return allMonths.map((m,i) => {
-    const phase = getPhase(i);
+    const phase = phaseSeq[i] || 'exam';
     phaseCounter[phase] = phaseCounter[phase] || 0;
     const focusArr = MONTH_FOCUS[phase] || ['Continue focused practice.'];
-    const focus = focusArr[Math.min(phaseCounter[phase], focusArr.length-1)];
+    const rawFocus = focusArr[Math.min(phaseCounter[phase], focusArr.length-1)];
     phaseCounter[phase]++;
-    return { ...m, phase, focus };
+    return { ...m, phase, focus: fillTemplate(rawFocus, vars) };
   });
 }
 
@@ -326,6 +364,14 @@ function pickRepertoire(syllabus, gradeKey) {
     picks.push(arr[Math.floor(Math.random()*arr.length)]);
   });
   return picks.slice(0,4);
+}
+
+/* ── Piece search for the chosen syllabus + grade (used by PieceInput) ── */
+function searchGradePieces(syllabus, gradeKey, query) {
+  const pool = CORPUS.filter(p => p._syllabus === syllabus && p._gradeKey === gradeKey);
+  if (!query || query.trim().length < 1) return [];
+  const q = query.trim().toLowerCase();
+  return pool.filter(p => (p.t||'').toLowerCase().includes(q) || (p.c||'').toLowerCase().includes(q)).slice(0,8);
 }
 
 /* ── Components ── */
@@ -360,6 +406,83 @@ function ReadinessQuiz({ onComplete }) {
             border:'none',cursor:allAnswered?'pointer':'default',fontSize:14,fontWeight:800}}>
           Build my timeline
         </button>
+      </div>
+    </div>
+  );
+}
+
+function PieceInput({ syllabus, gradeKey, pieces, setPieces, onContinue, onSkip, onBack }) {
+  const [query, setQuery] = useState('');
+  const [activeSlot, setActiveSlot] = useState(0);
+  const suggestions = useMemo(() => searchGradePieces(syllabus, gradeKey, query), [syllabus, gradeKey, query]);
+
+  function choose(p) {
+    const next = pieces.slice();
+    next[activeSlot] = p.t + (p.c ? ' — ' + p.c : '');
+    setPieces(next);
+    setQuery('');
+    setActiveSlot(Math.min(activeSlot+1, 3));
+  }
+  function clearSlot(i) {
+    const next = pieces.slice();
+    next[i] = '';
+    setPieces(next);
+  }
+  const anyFilled = pieces.some(p => p && p.trim());
+
+  return (
+    <div className="fade-up">
+      <h2 style={{fontSize:16,fontWeight:800,color:'#1a1410',marginBottom:4}}>What are you actually playing?</h2>
+      <p style={{fontSize:13,color:'#9a8e84',marginBottom:16}}>Optional, but it makes the monthly plan reference your real pieces instead of generic advice. Search and pick up to 4 — or skip.</p>
+
+      <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:14}}>
+        {[0,1,2,3].map(i => (
+          <div key={i} style={{display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontSize:11,fontWeight:800,color:'#b0a898',width:16}}>{i+1}</span>
+            <button onClick={()=>setActiveSlot(i)}
+              className={'opt-btn'+(activeSlot===i?' active':'')} style={{padding:'10px 12px',flex:1}}>
+              <span style={{fontSize:12.5,fontWeight:pieces[i]?700:500,color:pieces[i]?'#1a1410':'#b0a898'}}>
+                {pieces[i] || 'Tap to search & choose a piece'}
+              </span>
+            </button>
+            {pieces[i] && (
+              <button onClick={()=>clearSlot(i)} style={{background:'none',border:'none',color:'#b0a898',cursor:'pointer',fontSize:14,padding:4}}>✕</button>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <input type="text" placeholder="Search composer or title…" value={query} onChange={e=>setQuery(e.target.value)}
+        style={{width:'100%',padding:'12px 14px',borderRadius:12,border:'1.5px solid #e0d8d0',fontSize:13,outline:'none'}} />
+      {suggestions.length > 0 && (
+        <div style={{marginTop:8,border:'1px solid #e0d8d0',borderRadius:12,overflow:'hidden'}}>
+          {suggestions.map((p,i) => (
+            <button key={i} onClick={()=>choose(p)}
+              style={{display:'block',width:'100%',textAlign:'left',padding:'10px 13px',background:'#fff',border:'none',
+                borderBottom: i<suggestions.length-1 ? '1px solid #f0ebe5':'none', cursor:'pointer'}}>
+              <div style={{fontSize:12.5,fontWeight:700,color:'#1a1410'}}>{p.t}</div>
+              <div style={{fontSize:11,color:'#9a8e84'}}>{p.c}{(p.l||p.grp) ? ' · List '+(p.l||p.grp) : ''}</div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div style={{display:'flex',gap:10,marginTop:22}}>
+        <button onClick={onBack}
+          style={{padding:'12px 18px',borderRadius:12,background:'#f0ebe5',color:'#7a6e64',border:'1.5px solid #e0d8d0',cursor:'pointer',fontSize:13,fontWeight:700}}>
+          Back
+        </button>
+        {anyFilled ? (
+          <button onClick={onContinue}
+            style={{flex:1,padding:'12px',borderRadius:12,background:'#d4956a',color:'#fff',border:'none',cursor:'pointer',fontSize:13,fontWeight:800}}>
+            Continue
+          </button>
+        ) : (
+          <button onClick={onSkip}
+            style={{flex:1,padding:'12px',borderRadius:12,background:'#f0ebe5',color:'#7a6e64',border:'1.5px solid #e0d8d0',cursor:'pointer',fontSize:13,fontWeight:700}}>
+            Skip — use generic plan
+          </button>
+        )}
       </div>
     </div>
   );
@@ -418,30 +541,32 @@ function LoginPrompt({ onClose }) {
 }
 
 /* ── App ── */
-// Screens: 0=syllabus, 1=grade, 2=exam date, 3=quiz, 4=results
+// Screens: 0=syllabus, 1=grade, 2=exam date, 3=pieces, 4=quiz, 5=results
 function App() {
   const [screen, setScreen]     = useState(0);
   const [syllabus, setSyllabus] = useState(null);
   const [gradeKey, setGradeKey] = useState(null);
   const [gradeLabel, setGradeLabel] = useState(null);
   const [examDate, setExamDate] = useState('');
+  const [pieces, setPieces]     = useState(['','','','']);
   const [showLogin, setShowLogin] = useState(false);
   const [timeline, setTimeline] = useState(null);
   const [repertoire, setRepertoire] = useState([]);
 
   const gradeOptions = syllabus ? GRADE_OPTIONS_BY_SYLLABUS[syllabus] : [];
   const today = new Date().toISOString().slice(0,10);
+  const userPieces = pieces.filter(p => p && p.trim());
 
   function finishQuiz(score) {
-    const tl = buildTimeline(examDate, score);
+    const tl = buildTimeline(examDate, score, gradeLabel, syllabus, userPieces);
     setTimeline(tl);
     setRepertoire(pickRepertoire(syllabus, gradeKey));
-    setScreen(4);
+    setScreen(5);
   }
 
   function reset() {
     setScreen(0); setSyllabus(null); setGradeKey(null); setGradeLabel(null);
-    setExamDate(''); setTimeline(null); setRepertoire([]);
+    setExamDate(''); setPieces(['','','','']); setTimeline(null); setRepertoire([]);
   }
 
   const monthsLeft = examDate ? monthsUntil(examDate) : null;
@@ -460,11 +585,11 @@ function App() {
           Exam Timeline
         </h1>
         <p style={{color:'#9a8e84',fontSize:12,margin:'0 0 12px'}}>
-          {screen===0 ? 'Step 1 of 4 — syllabus' : screen===1 ? 'Step 2 of 4 — grade' : screen===2 ? 'Step 3 of 4 — exam date' : screen===3 ? 'Step 4 of 4 — readiness' : 'Your timeline'}
+          {screen===0 ? 'Step 1 of 5 — syllabus' : screen===1 ? 'Step 2 of 5 — grade' : screen===2 ? 'Step 3 of 5 — exam date' : screen===3 ? 'Step 4 of 5 — your pieces' : screen===4 ? 'Step 5 of 5 — readiness' : 'Your timeline'}
         </p>
-        {screen < 4 && (
+        {screen < 5 && (
           <div className="progress-bar">
-            <div className="progress-fill" style={{width:(screen===0?'0%':screen===1?'25%':screen===2?'50%':'75%')}} />
+            <div className="progress-fill" style={{width:(screen===0?'0%':screen===1?'20%':screen===2?'40%':screen===3?'60%':'80%')}} />
           </div>
         )}
       </div>
@@ -551,11 +676,17 @@ function App() {
           </div>
         )}
 
-        {/* STEP 3: Readiness quiz */}
-        {screen===3 && <ReadinessQuiz onComplete={finishQuiz} />}
+        {/* STEP 3: Your actual pieces (optional) */}
+        {screen===3 && (
+          <PieceInput syllabus={syllabus} gradeKey={gradeKey} pieces={pieces} setPieces={setPieces}
+            onContinue={()=>setScreen(4)} onSkip={()=>setScreen(4)} onBack={()=>setScreen(2)} />
+        )}
 
-        {/* STEP 4: Results */}
-        {screen===4 && timeline && (
+        {/* STEP 4: Readiness quiz */}
+        {screen===4 && <ReadinessQuiz onComplete={finishQuiz} />}
+
+        {/* STEP 5: Results */}
+        {screen===5 && timeline && (
           <div className="fade-up">
             <div style={{background:'#fff',border:'1px solid #e0d8d0',borderRadius:16,padding:'18px 20px',marginBottom:18}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',flexWrap:'wrap',gap:8}}>
@@ -574,10 +705,27 @@ function App() {
             <h3 style={{fontSize:14,fontWeight:800,color:'#1a1410',marginBottom:10}}>Month by month</h3>
             {timeline.map((m,i) => <MonthCard key={m.monthStr} m={m} idx={i} isPast={false} />)}
 
+            {userPieces.length > 0 && (
+              <>
+                <h3 style={{fontSize:14,fontWeight:800,color:'#1a1410',margin:'22px 0 10px'}}>Your exam pieces</h3>
+                <p style={{fontSize:12,color:'#9a8e84',marginBottom:12}}>The monthly plan above is written around these.</p>
+                {userPieces.map((p,i) => (
+                  <div key={i} className="result-card" style={{padding:'14px 16px'}}>
+                    <div style={{fontSize:11,color:'#b0a898',fontWeight:800,marginBottom:4}}>PIECE {i+1}</div>
+                    <div style={{fontSize:13.5,fontWeight:800,color:'#1a1410'}}>{p}</div>
+                  </div>
+                ))}
+              </>
+            )}
+
             {repertoire.length > 0 && (
               <>
-                <h3 style={{fontSize:14,fontWeight:800,color:'#1a1410',margin:'22px 0 10px'}}>Sample repertoire for this grade</h3>
-                <p style={{fontSize:12,color:'#9a8e84',marginBottom:12}}>One idea per list — swap freely for your own choices.</p>
+                <h3 style={{fontSize:14,fontWeight:800,color:'#1a1410',margin:'22px 0 10px'}}>
+                  {userPieces.length > 0 ? 'More repertoire ideas for this grade' : 'Sample repertoire for this grade'}
+                </h3>
+                <p style={{fontSize:12,color:'#9a8e84',marginBottom:12}}>
+                  {userPieces.length > 0 ? 'A few extra options, in case you want to round out your programme.' : 'One idea per list — swap freely for your own choices.'}
+                </p>
                 {repertoire.map((p,i) => (
                   <div key={i} className="result-card" style={{padding:'14px 16px'}}>
                     <div style={{display:'flex',gap:7,marginBottom:6}}>
@@ -607,7 +755,7 @@ function App() {
           </div>
         )}
 
-        {screen===4 && (!timeline || timeline.length===0) && (
+        {screen===5 && (!timeline || timeline.length===0) && (
           <div className="fade-up" style={{textAlign:'center',padding:'40px 0'}}>
             <p style={{fontSize:13,color:'#9a8e84'}}>That exam date doesn't leave enough room to build a timeline. Try a date further out.</p>
             <button onClick={()=>setScreen(2)} style={{marginTop:14,padding:'10px 20px',borderRadius:10,background:'#d4956a',color:'#fff',border:'none',cursor:'pointer',fontSize:13,fontWeight:700}}>
