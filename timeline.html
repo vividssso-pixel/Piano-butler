@@ -330,12 +330,25 @@ function buildTimeline(examDate, readinessScore, gradeLabel, syllabus, userPiece
   const vars = { grade: gradeLabel || 'this grade', syllabus: syllabus || '' };
   (userPieces || []).slice(0,4).forEach((p,i) => { vars['piece'+(i+1)] = p; });
 
+  // Cycle of distinct suffixes appended once a phase's MONTH_FOCUS strings run out, so
+  // long timelines (beyond ~17 months) never show the exact same paragraph two months
+  // running — each repeat lap gets a different suffix before the cycle itself repeats.
+  const OVERFLOW_SUFFIXES = [
+    ' Keep going at this pace — steady repetition is what builds reliability here.',
+    ' Use this extra time to deepen accuracy rather than rushing ahead.',
+    ' Revisit anything that still feels uneven before moving on.',
+  ];
+
   const phaseCounter = {};
   return allMonths.map((m,i) => {
     const phase = phaseSeq[i] || 'exam';
-    phaseCounter[phase] = phaseCounter[phase] || 0;
+    const count = phaseCounter[phase] = (phaseCounter[phase] || 0);
     const focusArr = MONTH_FOCUS[phase] || ['Continue focused practice.'];
-    const rawFocus = focusArr[Math.min(phaseCounter[phase], focusArr.length-1)];
+    let rawFocus = focusArr[Math.min(count, focusArr.length-1)];
+    if (count >= focusArr.length) {
+      const lap = count - focusArr.length;
+      rawFocus = rawFocus + OVERFLOW_SUFFIXES[lap % OVERFLOW_SUFFIXES.length];
+    }
     phaseCounter[phase]++;
     return { ...m, phase, focus: fillTemplate(rawFocus, vars) };
   });

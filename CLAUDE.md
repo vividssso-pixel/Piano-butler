@@ -2406,3 +2406,46 @@ viva-voce.html
 - `_drafts/` content pages: on hold, gitignored — do not publish without Sohyun's review.
 - Supabase auto-pause: SOLVED by keep-alive Action (verify first manual run shows green in GitHub Actions).
 - Git sandbox HEAD.lock: run `rm .git/HEAD.lock && rm .git/index.lock` in Terminal if git commit fails.
+
+---
+
+### Phase 57 Updates (2026-06-20 — timeline.html quality pass)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Phase pacing fixed — `allocatePhases()` | `timeline.html` | Replaced ratio-based `getPhase()` (caused duplicate phase labels on short timelines, e.g. July/August both "Development & Technique") with an explicit month-count-based allocator. Hard-coded phase sequences for 1–6 total months; proportional allocation with guaranteed minimum 1 month/phase for 7+ months. Exam month always last. |
+| 2 | Phase split — Technical Foundation / Musical Shaping | `timeline.html` | Old single "Development" phase split into `technical` (cyan) and `musical` (purple) sub-phases in `PHASE_META`, each with distinct `MONTH_FOCUS` text — addresses visually identical consecutive months. |
+| 3 | Personalized advice text — `fillTemplate()` | `timeline.html` | `MONTH_FOCUS` strings now use `{grade}`/`{syllabus}`/`{piece1–4}` placeholders, substituted with the student's actual grade/syllabus/pieces. Falls back to generic phrasing ("your first piece") when pieces aren't supplied — fully backward compatible. |
+| 4 | New Step 4 — real exam piece input | `timeline.html` | New `PieceInput` component + `searchGradePieces()` helper. Student can search/select up to 4 actual exam pieces (autocomplete against CORPUS, filtered by chosen syllabus + grade) or skip. Inserted between exam-date and readiness-quiz steps — flow is now 6 steps (was 5). |
+| 5 | Results screen — "Your exam pieces" section | `timeline.html` | When pieces were supplied, a dedicated card section shows them above the repertoire sample; the random `pickRepertoire()` sample is relabeled "More repertoire ideas for this grade" (supplementary) instead of being the only repertoire shown. |
+| 6 | Verification | — | Extracted and Babel-compiled (`@babel/standalone`, React preset) the full `#app-jsx` script block, then ran `node --check` on the compiled output — confirmed syntactically valid before deploy. |
+| 7 | Deployed | `timeline.html` | Commit `050377b` pushed to `main` by user from Terminal — live via GitHub Pages auto-deploy. |
+
+### Build Status — Last updated 2026-06-20
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–130 | All previously completed features (Phases 1–56) | ✅ Done |
+| 131 | timeline.html — fixed phase pacing (no more duplicate month labels) | ✅ Done (Phase 57) |
+| 132 | timeline.html — personalized advice via real piece input | ✅ Done (Phase 57) |
+| 133 | timeline.html — results screen shows user's actual exam pieces | ✅ Done (Phase 57) |
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | Sohyun — open timeline.html, run through the new piece-input step + results screen | High | Logic verified programmatically (Babel compile + node --check); needs one human spot-check of the actual live flow. |
+| 2 | Sohyun — open viva-voce.html, download a real PDF | High | Carried over from Phase 56 — still not opened in an actual browser. |
+| 3 | AdSense approval check | Auto (Monday check) | ca-pub-6523454944716812. |
+| 4 | Search Console indexing | Auto (Monday check) | Validate Fix submitted Jun 11 for 34 pages. |
+| 5 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
+| 6 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
+| 7 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
+
+### Known Issues (as of 2026-06-20)
+- timeline.html: not yet spot-checked in a live browser session after Phase 57 changes — only Babel-compile + syntax verified so far.
+- viva-voce.html: still not opened in an actual browser by a human (carried over from Phase 56).
+- AdSense: pending Google review — check ~Jun 16–23 (Monday auto-check covers this).
+- `_drafts/` content pages: on hold, gitignored — do not publish without Sohyun's review.
+- Supabase auto-pause: SOLVED by keep-alive Action (verify first manual run shows green in GitHub Actions).
+- Git sandbox HEAD.lock: run `rm .git/HEAD.lock && rm .git/index.lock` in Terminal if git commit fails.
