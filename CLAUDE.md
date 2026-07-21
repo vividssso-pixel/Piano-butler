@@ -8,6 +8,34 @@ You are the **"Piano Butler AI,"** a world-class Orchestrator and Creative Strat
 
 ---
 
+## Top Priority — Read This First
+
+*(Added 2026-07-21 per Sohyun's standing instruction: treat passive-income readiness as the
+top priority every session, and proactively surface critical blockers — not just execute
+isolated tasks or report status passively.)*
+
+**The single goal that matters right now: get Piano Butler generating reliable passive income,
+as fast as responsibly possible.** Traffic and AdSense approval are the two levers that move
+that goal. Everything else is secondary until one of them moves.
+
+At the start of any session, check:
+1. **`outreach-messages.md`** — has Sohyun sent any founding-teacher outreach yet? If not, say
+   so plainly. This is the highest-leverage lever sitting untouched in the backlog — real
+   teachers bring real students, independent of how long SEO/indexing takes.
+2. **AdSense status** (ca-pub-6523454944716812) — do NOT recommend requesting re-review until
+   Search Console's indexed-page count has meaningfully recovered from its last known baseline.
+   Requesting too early risks a longer rejection cooldown.
+3. **Search Console** — indexed vs. not-indexed count and click trend. If traffic is flat for
+   2+ weeks despite fixes, say so directly — don't just relay the number without comment.
+4. **Anything flagged "not yet spot-checked live"** — this project has had three separate
+   silent blank-page/rendering bugs (Phase 12, Phase 54, Phase 58) that each sat undiscovered
+   for weeks. A built tool is not a working tool until it's been opened in a real browser.
+
+Be specific and honest, not just reassuring. If something is stalling, say it's stalling — and
+say what the next concrete action is.
+
+---
+
 ## Project Overview
 
 **Piano Butler** is a public piano repertoire search tool covering AMEB, ABRSM, Trinity College London, and Diploma syllabuses. It helps pianists and teachers:
@@ -417,7 +445,13 @@ Always cross-check the **2026 AMEB Piano Syllabus PDF** before adding or removin
 
 ---
 
-## Build Status — Last updated 2026-05-02
+## Project History & Reference (Phases 7–23)
+
+*(Renamed 2026-07-21 — this was originally titled "Build Status", but it's actually a mix of
+early build-status snapshots, the Phase 7–23 changelog, and reference material that's never
+duplicated elsewhere: Supabase schema, deployment plan, helper functions, ABRSM architecture.
+Kept as-is for that reference value. For current status, see "Current Status" at the end of
+this file.)*
 
 ### Completed Features (Index.html)
 | # | Feature | Status |
@@ -529,13 +563,6 @@ slot_idx (int), day (text), time (text), created_at
 |------------|---------|
 | `"<isoMonday>/<studentId>/<slotIdx>"` | Single-week override (exact week_key match) |
 | `"from/<isoMonday>/<studentId>/<slotIdx>"` | Permanent from that week onwards |
-
-### Known Issues / Watch Points (as of 2026-05-02)
-- `from_week` column: run `NOTIFY pgrst, 'reload schema';` in Supabase SQL if saves fail silently
-- Drag cross-column: uses `grid.scrollWidth` (not `rect.width`) for `totalColW` — if layout changes, re-check `hitTest`
-- `isExamStudent()` reads `s.examDate` — if examDate not loaded from `extra`, exam section won't open in edit modal
-
----
 
 ### Phase 7 Updates (2026-05-04)
 
@@ -684,31 +711,6 @@ index.html (fully public, no requireAuth)
 
 ---
 
-### Build Status — Last updated 2026-05-05 (evening)
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–32 | All previously completed features | ✅ Done (see Phases 1–11) |
-| 33 | For You recommendation engine | ✅ Done (Phase 12) |
-| 34 | Composer Wikipedia links on index.html | ✅ Done (Phase 12) |
-| 35 | 🎓 Diploma filter bug fix | ✅ Done (Phase 12) |
-| 36 | G5 corpus bug fix (168 missing pieces) | ✅ Done (Phase 12) |
-
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | payments.html — lesson fee management | High | Per-student fee, invoice PDF, paid/unpaid toggle. For Teacher Dashboard only. |
-| 2 | Google Search Console — submit sitemap | Quick win | Go to search.google.com/search-console → add sitemap.xml URL → verify |
-| 3 | Ad integration | Medium | Google AdSense application, or direct piano brand deals. Requires traffic first. |
-| 4 | Design unification | Medium | All grade pages have slightly different styling. Deferred — not blocking. |
-| 5 | ABRSM Diploma | Low | Needs PDF from abrsm.org (ARSM / DipABRSM / LRSM / FRSM). User to download first. |
-
-### Known Issues (as of 2026-05-05)
-- None active. All bugs from today's audit session resolved and deployed.
-
----
-
 ### Phase 13 Updates (2026-05-05 — late night)
 
 | # | Change | File(s) | Detail |
@@ -761,13 +763,6 @@ Piano Butler/
 │   ├── data_certp.js                ← CertP Diploma (128 pieces: A:28, B:27, C:33, D:40)
 │   └── piano-repertoire_certp.html  ← Self-contained React app, teal theme
 ```
-
-### Known Issues (as of 2026-05-06 morning)
-- Logo button click fix deployed (commit 9277762) — awaiting user confirmation
-- CertP grid layout fixed to `grid-cols-3` — awaiting user confirmation after push
-- **Pending user action:** run `git push origin main` from Terminal to deploy Phase 14 fixes
-
----
 
 ### Phase 15 Updates (2026-05-07)
 
@@ -906,29 +901,6 @@ CREATE TABLE public.list_pieces (
 | 4 | Large search bar with glow | `index.html` | `borderRadius:28`, `fontSize:15`, indigo glow on focus. Autocomplete preserved. |
 | 5 | Hint chips — minimal | `index.html` | 8 chips (Chopin, Bach, Romantic, Australian, Grade 5, Diploma, ABRSM, Debussy). Grey default, indigo hover, no fill. |
 
-### Build Status — Last updated 2026-05-08
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–35 | All previously completed features | ✅ Done (Phases 1–19) |
-| 36 | Local-first list system (AddToListModal + MyListsPanel) | ✅ Done (Phase 21) |
-| 37 | Google-style minimal homepage | ✅ Done (Phase 22) |
-
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | payments.html — lesson fee management | High | Per-student fee, invoice PDF, paid/unpaid toggle. Teacher Dashboard only. |
-| 2 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL |
-| 3 | Ad integration | Medium | Google AdSense or direct piano brand deals. Requires traffic first. |
-| 4 | Design unification | Medium | All grade pages have slightly different styling. Deferred. |
-| 5 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. User to download from abrsm.org when ready. |
-
-### Known Issues (as of 2026-05-08)
-- None active.
-
----
-
 ### Language Rule
 - Conversation: Korean is fine
 - All code, file outputs, comments: English only
@@ -993,11 +965,6 @@ Upgrade My Lists → Teaching Lists:
 3. Build: ordered list + per-piece notes + improved share view
 4. Design: homepage "Featured Lists" section
 
-### Known Issues (as of 2026-05-10)
-- None active. All design changes deployed.
-
----
-
 ### Phase 24 Updates (2026-05-10 — search performance session)
 
 | # | Change | File(s) | Detail |
@@ -1017,11 +984,6 @@ results useMemo    → depends on [searchQuery, eraFilter, gradeFilter, natFilte
                    → simple includes() match on title/composer/nat/era
 autoSuggestions    → depends on [query] — fires on keystroke for dropdown
 ```
-
-### Known Issues (as of 2026-05-10 evening)
-- None active. Search is responsive.
-
----
 
 ### Phase 25 Updates (2026-05-13 — Trinity integration)
 
@@ -1115,34 +1077,6 @@ Trinity/                              ← NEW (Phase 25)
 | NAT not empty | ✅ All pieces have nationality |
 | Duplicates | ⚠️ 1 pending: G8 Leisure BEETHOVEN Andante appears in S4 and S1 — needs PDF verification |
 
-### Build Status — Last updated 2026-05-13 (evening)
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–40 | All previously completed features (Phases 1–26) | ✅ Done |
-| 41 | Multi-token AND search + focus field search | ✅ Done (Phase 27) |
-| 42 | Syllabus badge on piece cards | ✅ Done (Phase 27) |
-| 43 | Autocomplete era/nationality/focus hints | ✅ Done (Phase 27) |
-| 44 | AMEB data audit — ERA/FOCUS/NAT corrections | ✅ Done (Phase 27) |
-
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | G8 Leisure BEETHOVEN Andante duplicate | Quick fix | Check Piano for Leisure G8 PDF — is Andante in both S4 and S1? If not, remove one. |
-| 2 | ABRSM data audit | High | Run same automated audit (ERA/FOCUS/NAT/duplicate) across all 9 ABRSM grade files. |
-| 3 | Trinity data audit | High | Run same automated audit across all 9 Trinity grade files. |
-| 4 | C — sitewide UX review | High | Open live site, use it as a real teacher would, note friction points. |
-| 5 | Teaching Lists upgrade | High | Ordered sequence, per-piece teacher notes, grade range tag, improved share view. |
-| 6 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify. |
-| 7 | Ad integration | Medium | Google AdSense or direct piano brand deals. Requires traffic first. |
-| 8 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
-
-### Known Issues (as of 2026-05-13 evening)
-- ⚠️ G8 Leisure: BEETHOVEN Andante appears in both S4 (index 1) and S1 (index 24) — pending PDF verification before removal.
-
----
-
 ### Phase 28 Updates (2026-05-13 — Trinity Diploma integration)
 
 | # | Change | File(s) | Detail |
@@ -1197,22 +1131,6 @@ Trinity/
     └── piano-repertoire_trinity_ftcl.html
 ```
 
-### Build Status — Last updated 2026-05-13 (Phase 29)
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–44 | All previously completed features (Phases 1–27) | ✅ Done |
-| 45 | Trinity Diploma — ATCL repertoire | ✅ Done (Phase 28) |
-| 46 | Trinity Diploma — LTCL repertoire | ✅ Done (Phase 28) |
-| 47 | Trinity Diploma — FTCL repertoire | ✅ Done (Phase 28) |
-| 48 | index.html Trinity Diploma integration | ✅ Done (Phase 28) |
-| 49 | Repertoire Recommender — recommend.html | ✅ Done (Phase 29) |
-| 50 | Recommender — YouTube in-page modal | ✅ Done (Phase 29) |
-| 51 | Recommender — Free discovery mode (no syllabus/grade) | ✅ Done (Phase 29) |
-| 52 | index.html — 🎹 Recommend button in header | ✅ Done (Phase 29) |
-
----
-
 ### Phase 29 Updates (2026-05-13 — Recommender session)
 
 | # | Change | File(s) | Detail |
@@ -1244,26 +1162,6 @@ recommend.html
     ├── Step 6: nationality diversity — Any / Varied / Western / Australian
     └── Step 7: results — scored combination + 🔀 regenerate
 ```
-
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | G8 Leisure BEETHOVEN Andante duplicate | Quick fix | Check Piano for Leisure G8 PDF — is Andante in both S4 and S1? If not, remove one. |
-| 2 | Recommender UX polish | High | Test with real students. Possible improvements: show which syllabus/grade each result is from, add "exclude this piece" button, show more results with scroll. |
-| 3 | ABRSM data audit | High | Run automated audit (ERA/FOCUS/NAT/duplicate) across all 9 ABRSM grade files. |
-| 4 | Trinity data audit | High | Run same audit across all 9 Trinity grade files + 3 diploma files. |
-| 5 | Teaching Lists upgrade | High | Ordered sequence, per-piece teacher notes, grade range tag, improved share view. |
-| 6 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify. |
-| 7 | Ad integration | Medium | Google AdSense or direct piano brand deals. Requires traffic first. |
-| 8 | payments.html — teacher fee management | Low | Per-student fee, invoice PDF, paid/unpaid toggle. |
-
-### Known Issues (as of 2026-05-13 Phase 29)
-- ⚠️ G8 Leisure: BEETHOVEN Andante appears in both S4 (index 1) and S1 (index 24) — pending PDF verification before removal.
-- Trinity Diploma data parsed from PDF text extraction — some multi-line title entries may have minor formatting differences. Spot-check against source PDF if needed.
-- recommend.html Free discovery: returns pieces from all syllabuses mixed — could optionally add a syllabus filter in future.
-
----
 
 ### Phase 30 Updates (2026-05-14 — Diagnosis System MVP)
 
@@ -1332,34 +1230,6 @@ diagnose.html
 | Stage 2 | $4 Full PDF report (roadmap + teacher match) | 🔜 Stripe + jsPDF needed |
 | Stage 3 | Teacher matching page (`connect.html`) | 🔜 Planned |
 | Stage 4 | Course/affiliate connections | 🔜 After traffic grows |
-
-### Build Status — Last updated 2026-05-14
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–52 | All previously completed features (Phases 1–29) | ✅ Done |
-| 53 | Piano Diagnosis MVP — diagnose.html | ✅ Done (Phase 30) |
-| 54 | 🔬 Diagnose button in index.html nav | ✅ Done (Phase 30) |
-
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | Stripe + jsPDF for $4 full report | High | Stripe Checkout (hosted, no backend) + jsPDF or browser print-to-PDF. Unlock full PDF on payment. |
-| 2 | connect.html — teacher/course matching | High | Shows matched teachers + courses based on diagnosis result stored in localStorage. Start with 3–5 teachers Sohyun knows. |
-| 3 | G8 Leisure BEETHOVEN Andante duplicate | Quick fix | Check Piano for Leisure G8 PDF — is Andante in both S4 and S1? If not, remove one. |
-| 4 | ABRSM data audit | Medium | ERA/FOCUS/NAT/duplicate check across all 9 ABRSM grade files. |
-| 5 | Trinity data audit | Medium | Same audit across all 9 Trinity grade files + 3 diploma files. |
-| 6 | Teaching Lists upgrade | Medium | Ordered sequence, per-piece teacher notes, grade range tag, improved share view. |
-| 7 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify. |
-| 8 | Ad integration | Low | Google AdSense or direct piano brand deals. Requires traffic first. |
-
-### Known Issues (as of 2026-05-14)
-- ⚠️ G8 Leisure: BEETHOVEN Andante appears in both S4 (index 1) and S1 (index 24) — pending PDF verification before removal.
-- Trinity Diploma data: some multi-line title entries may have minor formatting differences — spot-check against source PDF if needed.
-- diagnose.html $4 report CTA: currently a coming-soon modal with waitlist email. Stripe integration pending.
-
----
 
 ### Phase 31 Updates (2026-05-14 — evening session)
 
@@ -1482,35 +1352,6 @@ diagnose.html
 | 4 | Copy the Gumroad product URL → replace `GUMROAD_URL` in diagnose.html |
 | 5 | Push to main → live |
 
-### Build Status — Last updated 2026-05-15 (Phase 34)
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–57 | All previously completed features (Phases 1–31) | ✅ Done |
-| 58 | Composer name normalisation — all 42 data files | ✅ Done (Phase 33) |
-| 59 | Data quality audit — ERA/FOCUS/NAT/duplicates | ✅ Done (Phase 33) |
-| 60 | COMPOSER_LINKS canonical keys — 16 HTML files | ✅ Done (Phase 33) |
-| 61 | diagnose.html — gapFactor bug fix + corpus fallback | ✅ Done (Phase 34) |
-| 62 | diagnose.html — jsPDF in-browser report generator | ✅ Done (Phase 34) |
-| 63 | diagnose.html — FullReportModal with PDF download + Gumroad link | ✅ Done (Phase 34) |
-
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | Gumroad product setup | First thing | Create product at gumroad.com, upload sample PDF, replace `GUMROAD_URL` in diagnose.html, push to main. |
-| 2 | connect.html — add real teacher info | High | Replace placeholder with real photo, real booking link, real price. |
-| 3 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify. |
-| 4 | Ad integration | Low | After traffic grows. |
-
-### Known Issues (as of 2026-05-15)
-- `GUMROAD_URL` in diagnose.html is a placeholder — must be replaced with real Gumroad link before promoting publicly.
-- jsPDF radar chart uses `doc.moveTo/lineTo` which may not be available in all jsPDF 2.5.1 builds — test in browser, fallback to simple score text if lines don't render.
-- connect.html teacher cards: placeholder data only.
-- connect.html teacher cards: placeholder data only. Real teacher info needed before promoting publicly.
-
----
-
 ### Phase 35 Updates (2026-05-15 — domain + onboarding session)
 
 | # | Change | File(s) | Detail |
@@ -1554,26 +1395,6 @@ diagnose.html
     ├── results                — radar + score bars + weak/strong + roadmap + pieces
     └── beginner_results       — profile card + teaching direction + "tell your teacher" + pieces
 ```
-
-### Build Status — Last updated 2026-05-18
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–67 | All previously completed features | ✅ Done |
-| 68 | diagnose.html — returner domain-based redesign | ✅ Done (Phase 36) |
-| 69 | diagnose.html — beginner preference flow | ✅ Done (Phase 36) |
-
-### Pending Work (next session)
-
-| # | Task | Priority |
-|---|------|----------|
-| 1 | connect.html dark theme | Medium — still light theme |
-| 2 | recommend.html dark theme | Medium — still light theme |
-| 3 | YouTube API key referrer restriction | High — set in Google Cloud Console |
-| 4 | Google Search Console — submit sitemap | Quick win |
-| 5 | Ad integration | Low — after traffic |
-
----
 
 ### Phase 37 Updates (2026-05-17 — index.html overhaul + new files)
 
@@ -1657,38 +1478,6 @@ recommend.html (dark theme, 4-step wizard)
     └── Results: scored combination, regenerate button, YouTube modal
 ```
 
-### Build Status — Last updated 2026-05-18
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–69 | All previously completed features (Phases 1–36) | ✅ Done |
-| 70 | List/Group filter tabs in search results | ✅ Done (Phase 37) |
-| 71 | admin-search.html — full-featured admin search | ✅ Done (Phase 37) |
-| 72 | index.html — search-first homepage, dark theme, tool cards | ✅ Done (Phase 37) |
-| 73 | Dark theme — connect.html + recommend.html + diagnose.html | ✅ Done (Phase 37) |
-| 74 | recommend.html — simplified 4-step flow | ✅ Done (Phase 38) |
-| 75 | recommend.html — Safari compatibility (color-mix, optional chaining, ErrorBoundary) | ✅ Done (Phase 38) |
-
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | YouTube API key — referrer restriction | High | Set allowed referrers to `thepianobutler.com/*` in Google Cloud Console → Credentials → API key restrictions. Currently unrestricted. |
-| 2 | Gumroad product setup | High | Create product at gumroad.com → upload sample PDF from diagnose.html → replace `GUMROAD_URL` constant in diagnose.html → push to main. |
-| 3 | connect.html — real teacher info | High | Replace placeholder teacher cards with real photo, booking link, and price. |
-| 4 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify. |
-| 5 | Sitewide UX review | Medium | Open live site at thepianobutler.com, use as a real teacher/student. Note friction. |
-| 6 | Ad integration | Low | Google AdSense application or direct piano brand deals. Requires traffic first. |
-| 7 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available from abrsm.org. |
-
-### Known Issues (as of 2026-05-18)
-- `GUMROAD_URL` in diagnose.html is a placeholder — must be replaced with real Gumroad link before promoting publicly.
-- connect.html: placeholder teacher cards — real info needed before public promotion.
-- YouTube API key (`[REDACTED-OLD]`) is unrestricted — add referrer restriction in Google Cloud Console.
-- jsPDF radar chart in diagnose.html: uses `doc.moveTo/lineTo` — verify renders correctly in browser before selling reports.
-
----
-
 ### Phase 40 Updates (2026-05-21 — data audit + UX polish)
 
 | # | Change | File(s) | Detail |
@@ -1712,39 +1501,6 @@ recommend.html (dark theme, 4-step wizard)
 | 2 | `min(800px,95vw)` → `width:95vw; max-width:800px` | `index.html` | CSS `min()` function replaced with equivalent max-width pattern for broader Safari compatibility. |
 | 3 | Supabase script removed from index.html | `index.html` | Supabase JS library (500KB) was loaded but completely unused on index.html — auth/login code was removed in Phase 8. Removed to reduce load time and eliminate potential Safari init errors. |
 
-### Build Status — Last updated 2026-05-21
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–75 | All previously completed features (Phases 1–39) | ✅ Done |
-| 76 | YouTube API key referrer restriction verified | ✅ Done (Phase 40) |
-| 77 | ABRSM data audit + 31 focus fixes | ✅ Done (Phase 40) |
-| 78 | Trinity data audit — all clean | ✅ Done (Phase 40) |
-| 79 | List A/B/C/D badge on search results | ✅ Done (Phase 40) |
-| 80 | Compact piece cards + 1-column layout | ✅ Done (Phase 40) |
-| 81 | Sidebar filter restored | ✅ Done (Phase 40) |
-| 82 | Safari blank screen fix — inset:0 removed sitewide | ✅ Done (Phase 41) |
-| 83 | Supabase script removed from index.html | ✅ Done (Phase 41) |
-
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify |
-| 2 | Sitewide UX review — continue | High | index.html search UX, recommend.html, diagnose.html flows |
-| 3 | connect.html — real teacher info | Medium | Replace placeholder cards with real photo, booking link, price |
-| 4 | Gumroad product setup | Medium | Booked for after traffic grows — not urgent |
-| 5 | Ad integration | Low | After traffic grows |
-| 6 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
-
-### Known Issues (as of 2026-05-22)
-- `GUMROAD_URL` in diagnose.html is a placeholder — not urgent until traffic grows.
-- connect.html: placeholder teacher cards.
-- jsPDF radar chart: verify renders correctly before promoting $4 report.
-- teacher-dashboard.html still has `inset:0` — not public-facing, low priority.
-
----
-
 ### Phase 42 Updates (2026-05-22 — Safari blank screen root cause fix)
 
 | # | Change | File(s) | Detail |
@@ -1763,29 +1519,6 @@ recommend.html (dark theme, 4-step wizard)
 | Babel Standalone | unpkg.com (unversioned, ~8MB) | cdnjs.cloudflare.com | 7.23.3 (pinned) |
 | Tailwind CSS | cdn.tailwindcss.com | cdn.tailwindcss.com | latest (unchanged) |
 
-### Build Status — Last updated 2026-05-22
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–83 | All previously completed features (Phases 1–41) | ✅ Done |
-| 84 | Safari blank screen — CDN migration to cdnjs (pinned versions) | ✅ Done (Phase 42) |
-| 85 | Safari blank screen — manual Babel compile trigger | ✅ Done (Phase 42) |
-| 86 | Curly quote Babel compile error fix | ✅ Done (Phase 42) |
-
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | Verify Safari fix on device | Immediate | Open thepianobutler.com in Safari private tab and confirm app renders |
-| 2 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify |
-| 3 | Sitewide UX review | High | index.html search UX, recommend.html, diagnose.html flows |
-| 4 | connect.html — real teacher info | Medium | Replace placeholder cards with real photo, booking link, price |
-| 5 | Gumroad product setup | Medium | After traffic grows |
-| 6 | Ad integration | Low | After traffic grows |
-| 7 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
-
----
-
 ### Phase 39 Updates (2026-05-18 — diagnose.html UX fixes + security)
 
 | # | Change | File(s) | Detail |
@@ -1794,33 +1527,6 @@ recommend.html (dark theme, 4-step wizard)
 | 2 | ShareResultButton component | `diagnose.html` | New component added. "🔗 Share my result" button appears at bottom of both result screens (returner + beginner). Encodes result to base64 URL param (`?result=…`). Uses `navigator.share` on mobile, clipboard copy on desktop. Shows "✓ Link copied!" confirmation for 2.5s. |
 | 3 | SharedResultView component | `diagnose.html` | Read-only result page rendered when `?result=` URL param detected on load. Shows returner result (levelLabel + overallPct + weak areas) or beginner profile (profile name + genre + timeline + teacherFormat). CTAs: "Take my own diagnosis" + "Find a teacher". No login required to view. |
 | 4 | YouTube API key rotated — security | All 21 HTML files | Old key `[REDACTED-OLD]` exposed in GitHub history (GitGuardian alert). New key `[REDACTED]` applied across all 21 HTML files. Old key deleted from Google Cloud Console. New key restricted to `thepianobutler.com/*` + `www.thepianobutler.com/*` referrers. |
-
-### Build Status — Last updated 2026-05-18
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–75 | All previously completed features (Phases 1–38) | ✅ Done |
-| 76 | diagnose.html — clickable landing cards (direct flow entry) | ✅ Done (Phase 39) |
-| 77 | diagnose.html — share result link (URL-encoded, no login) | ✅ Done (Phase 39) |
-| 78 | YouTube API key rotation — all 21 HTML files | ✅ Done (Phase 39) |
-
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | Gumroad product setup | High | Create product at gumroad.com → complete diagnose quiz → download PDF → upload as product → replace `GUMROAD_URL` in diagnose.html → push to main. |
-| 2 | connect.html — real teacher info | High | Replace placeholder teacher cards with real photo, booking link, and price. |
-| 3 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify. |
-| 4 | Sitewide UX review | Medium | Open thepianobutler.com as a real teacher/student. Note friction. |
-| 5 | Ad integration | Low | Google AdSense or direct piano brand deals. Requires traffic first. |
-| 6 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available from abrsm.org. |
-
-### Known Issues (as of 2026-05-18)
-- `GUMROAD_URL` in diagnose.html is a placeholder — must be replaced with real Gumroad link before promoting publicly.
-- connect.html: placeholder teacher cards — real info needed before public promotion.
-- jsPDF radar chart in diagnose.html: uses `doc.moveTo/lineTo` — verify renders correctly in browser before selling reports.
-
----
 
 ### Phase 43 Updates (2026-05-25 — diagnose.html + recommend.html UX overhaul)
 
@@ -1849,31 +1555,6 @@ diagnose.html (single flow, 8 questions)
     ├── quiz                   — question card with 4 options, Back/Next, progress bar
     └── results                — level label + score bars + focus tips + piece recs + strength callout + CTAs
 ```
-
-### Build Status — Last updated 2026-05-25
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–86 | All previously completed features (Phases 1–42) | ✅ Done |
-| 87 | diagnose.html — 8-question single flow, clear results, cdnjs CDN | ✅ Done (Phase 43) |
-| 88 | recommend.html — 2-step wizard, actionable result cards, cdnjs CDN | ✅ Done (Phase 43) |
-
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | Push to main (git push origin main) | Immediate | Deploy Phase 43 changes live |
-| 2 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify |
-| 3 | connect.html — real teacher info | Medium | Replace placeholder cards with real photo, booking link, price |
-| 4 | Sitewide UX review | Medium | Open thepianobutler.com, use as real teacher/student, note friction |
-| 5 | Ad integration | Low | Google AdSense or direct piano brand deals — after traffic grows |
-| 6 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available from abrsm.org |
-
-### Known Issues (as of 2026-05-25)
-- connect.html: placeholder teacher cards — real info needed before public promotion.
-- Gumroad: no longer used in diagnose.html (jsPDF/Gumroad flow removed in Phase 43 simplification).
-
----
 
 ### Phase 44 Updates (2026-05-25 — homepage UX: two entry points)
 
@@ -1924,32 +1605,6 @@ index.html results (isSearching = true):
 └── clearAll() → resets showSearchInput + all filters → returns to homepage
 ```
 
-### Build Status — Last updated 2026-05-25 (Phase 44)
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–88 | All previously completed features (Phases 1–43) | ✅ Done |
-| 89 | Homepage — two entry cards (Search vs Diagnose) | ✅ Done (Phase 44) |
-| 90 | Search card → direct full-screen transition with autoFocus | ✅ Done (Phase 44) |
-| 91 | diagnose.html — Tailwind removed, black text fixed | ✅ Done (Phase 44) |
-| 92 | diagnose.html — SVG radar chart (4-axis polygon) | ✅ Done (Phase 44) |
-
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | Sitewide UX review | High | Open thepianobutler.com, use as real teacher/student, note friction points |
-| 2 | Google Search Console — submit sitemap | Quick win | search.google.com/search-console → add sitemap.xml URL → verify |
-| 3 | connect.html — real teacher info | Medium | Replace placeholder cards with real photo, booking link, price |
-| 4 | Ad integration | Low | Google AdSense or direct piano brand deals — after traffic grows |
-| 5 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available from abrsm.org |
-
-### Known Issues (as of 2026-05-25 Phase 44)
-- connect.html: placeholder teacher cards — real info needed before public promotion.
-- Git sandbox HEAD.lock: sandbox cannot write HEAD.lock — user must run `rm HEAD.lock && git commit && git push` in Terminal when commits fail.
-
----
-
 ### Phase 45 Updates (2026-05-27 — Random Pick polish + security + title)
 
 | # | Change | File(s) | Detail |
@@ -1967,33 +1622,6 @@ index.html results (isSearching = true):
 - Diagnose/Recommend: deprioritised, not linked from nav
 - connect.html: placeholder only, not promoted
 
-### Build Status — Last updated 2026-05-27
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–92 | All previously completed features (Phases 1–44) | ✅ Done |
-| 93 | Random Pick — Listen + Score buttons | ✅ Done (Phase 45) |
-| 94 | Random Pick — YouTube opens above modal, stays open after close | ✅ Done (Phase 45) |
-| 95 | Footer independence disclaimer | ✅ Done (Phase 45) |
-| 96 | Admin password removed from public repo | ✅ Done (Phase 45) |
-| 97 | Site title — Exam & Repertoire Search | ✅ Done (Phase 45) |
-
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | Google Search Console — submit sitemap | First | search.google.com/search-console → add thepianobutler.com → submit sitemap.xml |
-| 2 | SheetMusicPlus affiliate | High | Once approved → replace Score button Google search URLs with affiliate links |
-| 3 | recommend.html | Medium | Still modified/uncommitted — review and either clean up or discard changes |
-| 4 | Ad integration | Low | Google AdSense — after traffic grows |
-| 5 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
-
-### Known Issues (as of 2026-05-28)
-- connect.html: placeholder teacher cards — not promoted publicly.
-- Git sandbox HEAD.lock: user must run `rm .git/HEAD.lock` in Terminal if git commit fails.
-
----
-
 ### Phase 48 Updates (2026-06-01 — SEO: noscript fallback + keywords)
 
 | # | Change | File(s) | Detail |
@@ -2002,32 +1630,6 @@ index.html results (isSearching = true):
 | 2 | `<noscript>` static HTML fallback — all 35 grade pages | All `piano-repertoire_*.html` files | Python + Node script extracted piece data (inline or from companion `data_*.js`) and injected a full static piece list inside `<noscript>` tags before `</body>`. Google crawler now sees all pieces without executing JavaScript. Commit `fb46e91`. |
 | 3 | SEO keywords — AMusA, LMusA | `AMusA/piano-repertoire_amusa.html`, `LMusA/piano-repertoire_lmusa.html` | `<meta name="keywords">` tag was missing. Added 5 grade-specific keywords each. Commit `c1e684c`. |
 | 4 | SEO keywords — Trinity Initial–G8 | All 9 `Trinity/*/piano-repertoire_trinity_*.html` files | Keywords expanded from 3 generic → 5 grade-specific (e.g. "Trinity College London piano Grade 5", "Trinity piano Grade 5 2023", "piano exam pieces grade 5", etc.). Commit `c1e684c`. |
-
-### Build Status — Last updated 2026-06-01 (Phase 48)
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–102 | All previously completed features (Phases 1–47) | ✅ Done |
-| 103 | `<noscript>` static HTML fallback — all 35 grade pages | ✅ Done (Phase 48) |
-| 104 | SEO keywords — AMusA, LMusA added | ✅ Done (Phase 48) |
-| 105 | SEO keywords — Trinity Initial–G8 expanded | ✅ Done (Phase 48) |
-
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | Sitewide UX review | High | Open thepianobutler.com as real teacher/student, note friction points |
-| 2 | Search Console — re-check in 1 week | Quick check | Verify "Discovered" pages moving to indexed. URL Inspection → Request Indexing on ABRSM G5. |
-| 3 | Affiliate signup | Deferred | Trigger: Search Console clicks ≥ 500 |
-| 4 | Login revival | Deferred | Trigger: Search Console visitors ≥ 1,000 |
-| 5 | connect.html — real teacher info | Deferred | When Sohyun ready to take referrals |
-| 6 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
-
-### Known Issues (as of 2026-06-01)
-- connect.html: placeholder teacher cards — not promoted publicly.
-- Git sandbox HEAD.lock: user must run `rm .git/HEAD.lock` in Terminal if git commit fails.
-
----
 
 ### Phase 49 Updates (2026-06-03 — UX bug fixes)
 
@@ -2054,34 +1656,6 @@ index.html results (isSearching = true):
 | 7 | Random Pick Trinity inclusion fix | `index.html` | Pool filter now includes Trinity-keyed pieces (`TInitial`, `TG1`–`TG8`) via `trinityKey` mapping. |
 | 8 | Enter key closes autocomplete | `index.html` | `onKeyDown` handler added to search input: `if (e.key === 'Enter') setShowSuggestions(false)`. |
 
-### Build Status — Last updated 2026-06-08
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–109 | All previously completed features (Phases 1–49) | ✅ Done |
-| 110 | Mobile UX — responsive font/padding/iframe fixes | ✅ Done (Phase 50) |
-| 111 | Mobile grade filter in filter strip | ✅ Done (Phase 50) |
-| 112 | `?q=` URL param — cross-page search links working | ✅ Done (Phase 50) |
-| 113 | Contact button style upgrade | ✅ Done (Phase 50) |
-| 114 | Random Pick Trinity + Enter key autocomplete fix | ✅ Done (Phase 50) |
-
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | Search Console — re-check indexing | Quick check (Jun 13+) | Verify "Discovered" pages moving to indexed. ABRSM G5 validation in progress. |
-| 2 | Affiliate signup | Deferred | Trigger: Search Console clicks ≥ 500 |
-| 3 | Login revival | Deferred | Trigger: Search Console visitors ≥ 1,000 |
-| 4 | connect.html — real teacher info | Deferred | When Sohyun ready to take referrals |
-| 5 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
-
-### Known Issues (as of 2026-06-08)
-- connect.html: placeholder teacher cards — not promoted publicly.
-- Supabase free tier auto-pauses after 7 days inactivity — restore manually from dashboard as needed.
-- Git sandbox HEAD.lock: run `rm .git/HEAD.lock` + `rm .git/index.lock` in Terminal if git commit fails.
-
----
-
 ### Phase 51 Updates (2026-06-09 — Search Console audit + AdSense setup)
 
 | # | Change | File(s) | Detail |
@@ -2090,26 +1664,6 @@ index.html results (isSearching = true):
 | 2 | Google AdSense account created | — | New AdSense account created with vividssso@gmail.com. Site: thepianobutler.com. Country: Australia. Payment profile: Clara Sohyun Park, 79 Burwood Road, Concord NSW 2137. |
 | 3 | AdSense script added to index.html | `index.html` | `<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6523454944716812" crossorigin="anonymous"></script>` added to `<head>`. Commit `86a3287`. |
 | 4 | AdSense site verified | Google AdSense | Site ownership confirmed. "사이트가 확인되었습니다" ✅. Google review in progress — approval typically takes days to 2 weeks. |
-
-### Build Status — Last updated 2026-06-09
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–114 | All previously completed features (Phases 1–50) | ✅ Done |
-| 115 | Google AdSense — account created + script added + site verified | ✅ Done (Phase 51) |
-| 116 | Search Console — Trinity G5 Request Indexing submitted | ✅ Done (Phase 51) |
-
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | AdSense approval check | Quick check (Jun 13+) | Check AdSense dashboard for approval status. Once approved, ads go live automatically. |
-| 2 | Search Console — re-check indexing | Quick check (Jun 13+) | Verify remaining "Discovered" pages moving to indexed. |
-| 3 | Community sharing for traffic | Medium | Share thepianobutler.com in piano teacher Facebook groups, Reddit r/piano, r/pianolearning. Fast way to get initial traffic. |
-| 4 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. Try again — previous attempt failed. |
-| 5 | Login revival | Deferred | Trigger: Search Console visitors ≥ 1,000 |
-| 6 | connect.html — real teacher info | Deferred | When Sohyun ready to take referrals |
-| 7 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
 
 ### Phase 52 Updates (2026-06-10 — SEO + UX polish)
 
@@ -2123,17 +1677,6 @@ index.html results (isSearching = true):
 | 6 | Recommend result cards — full details | `recommend.html` | Series (S19/S18/S17/Manual/AustAnth/S1–S4), List A/B/C/D, Group A/B, Nationality, Key, Focus tags 모두 표시. 색상 구분 배지. Commit `5f40a44`. |
 | 7 | Prelim → Preliminary (user-facing labels) | `index.html`, `recommend.html` | GRADE_LABEL_MAP, GRADE_OPTIONS label, buildCorpus grade label 모두 수정. 내부 key ('Prelim')는 유지. Commit `24530fd`. |
 
-### Build Status — Last updated 2026-06-10
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–115 | All previously completed features (Phases 1–51) | ✅ Done |
-| 116 | index.html noscript static fallback + Schema.org | ✅ Done (Phase 52) |
-| 117 | Recommender syllabus filter (3-step) | ✅ Done (Phase 52) |
-| 118 | Random Pick syllabus filter | ✅ Done (Phase 52) |
-| 119 | Recommend result cards full details | ✅ Done (Phase 52) |
-| 120 | Prelim → Preliminary user-facing labels | ✅ Done (Phase 52) |
-
 ### Phase 53 Updates (2026-06-10 — strategy session)
 
 | # | Change | File(s) | Detail |
@@ -2141,50 +1684,11 @@ index.html results (isSearching = true):
 | 1 | Traffic strategy research | — | Researched promotion channels: MTA NSW/VIC/QLD/SA/WA (email), Piano World Teachers Forum, ABRSM Teachers Forum, TopMusic.co. Decision: defer active promotion — SEO organic growth preferred. |
 | 2 | Passive income strategy confirmed | — | Priority order: (1) AdSense auto-approval → (2) Sheet Music Plus affiliate at 500 clicks → (3) Gumroad PDF at 1,000 visitors. No active promotion for now — waiting for SEO to compound. |
 
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | Search Console — re-check indexing (Jun 17+) | Quick check | Verify indexed pages increasing from 2. Request Indexing on index.html if not yet done. |
-| 2 | AdSense approval check | Quick check | ads.google.com — ca-pub-6523454944716812. Applied Jun 9, check ~Jun 16–23. |
-| 3 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500 |
-| 4 | Login revival | Deferred | Trigger: Search Console visitors ≥ 1,000 |
-| 5 | connect.html — real teacher info | Deferred | When Sohyun ready to take referrals |
-| 6 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
-
-### Known Issues (as of 2026-06-10)
-- AdSense: pending Google review — ca-pub-6523454944716812. Check dashboard ~Jun 16–23.
-- connect.html: placeholder teacher cards — not promoted publicly.
-- Supabase free tier auto-pauses after 7 days inactivity — restore manually from dashboard as needed.
-- Git sandbox HEAD.lock: run `rm .git/HEAD.lock` in Terminal if git commit fails.
-
----
-
 ### Phase 47 Updates (2026-05-28 — contact form)
 
 | # | Change | File(s) | Detail |
 |---|--------|---------|--------|
 | 1 | In-site contact form modal | `index.html` | Replaced `mailto:` footer link with a `ContactModal` React component. Visitors type Name + Email + Message and submit — personal email never exposed. Powered by Web3Forms (free, 250/month). Access key: `1905cf40-5bcd-463a-87dd-c9d5ee673f56`. Submissions forwarded to vividssso@gmail.com. Success/error states handled inline. Commits: `56018b7`, `b662135`, `9ca4fff`. |
-
-### Build Status — Last updated 2026-05-28 (Phase 47)
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–101 | All previously completed features (Phases 1–46) | ✅ Done |
-| 102 | In-site contact form (Web3Forms, email hidden) | ✅ Done (Phase 47) |
-
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | Search Console — check indexing status | Quick check | Wait 1–2 weeks, then verify pages are being indexed |
-| 2 | Sitewide UX review | Medium | Open thepianobutler.com, use as real teacher/student, note friction |
-| 3 | Affiliate signup | Deferred | Trigger: Search Console clicks ≥ 500. Sheet Music Plus (8–12%) or Sheet Music Direct (10%) |
-| 4 | Login revival | Deferred | Trigger: Search Console visitors ≥ 1,000 |
-| 5 | connect.html — real teacher info | Deferred | When Sohyun ready to take referrals |
-| 6 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
-
----
 
 ### Phase 46 Updates (2026-05-28 — SEO + housekeeping)
 
@@ -2197,18 +1701,6 @@ index.html results (isSearching = true):
 | 5 | .gitignore — accidental files cleaned | `.gitignore`, repo | `Anzca/`, `Piano Butler — Lesson Video Plan.md`, `main` accidentally committed in SEO commit. Removed from Git tracking, added to .gitignore. Commit `5159fe4`. |
 | 6 | CLAUDE.md — deferred features reminder table | `CLAUDE.md` | Added table of features to revive at traffic milestones: Login revival (≥1,000 visitors), Affiliate links (≥500 clicks), Gumroad PDF, connect.html real teacher info. Commit `dc9cfad`. |
 | 7 | Affiliate research completed | — | Compared Sheet Music Plus (8–12%, 30-day cookie) vs Sheet Music Direct (10% fixed) vs Musicnotes (5%). Decision: defer until Search Console clicks ≥ 500. Sheet Music Plus preferred at scale; Sheet Music Direct better at low volume. |
-
-### Build Status — Last updated 2026-05-28
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–97 | All previously completed features (Phases 1–45) | ✅ Done |
-| 98 | recommend.html — 2-step wizard + twitter meta tags | ✅ Done (Phase 46) |
-| 99 | Google Search Console — domain verified + sitemap submitted | ✅ Done (Phase 46) |
-| 100 | SEO title/description overhaul — 28 grade pages + index.html | ✅ Done (Phase 46) |
-| 101 | .gitignore cleanup + accidental files removed | ✅ Done (Phase 46) |
-
----
 
 ## Deferred Features — Remind When Ready
 
@@ -2268,36 +1760,6 @@ teach-with-us.html (single-page form)
 └── Submit → Web3Forms → vividssso@gmail.com (subject: "New Teacher Application — Piano Butler")
 ```
 
-### Build Status — Last updated 2026-06-11
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–120 | All previously completed features (Phases 1–53) | ✅ Done |
-| 121 | G6 corpus bug fix (DATA_G6_COMP → DATA_G6, 160 pieces restored) | ✅ Done (Phase 54) |
-| 122 | find-a-teacher.html — student matching request form | ✅ Done (Phase 54) |
-| 123 | teach-with-us.html — teacher application form | ✅ Done (Phase 54) |
-| 124 | 17 unused files deleted — repo cleanup | ✅ Done (Phase 54) |
-
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | AdSense approval check | Quick check (Jun 16–23) | adsense.google.com — ca-pub-6523454944716812 |
-| 2 | Search Console — re-check indexing | Quick check (Jun 18+) | Verify "Discovered" pages moving to indexed after Validate Fix |
-| 3 | teach-with-us.html — recruit first teachers | High | Share with Sohyun's network. Once 3–5 teachers confirmed, add link to homepage. |
-| 4 | find-a-teacher.html — format field update | Medium | Change "In-person" → remove (online-only strategy). Update before public launch. |
-| 5 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500 |
-| 6 | Login revival | Deferred | Trigger: Search Console visitors ≥ 1,000 |
-| 7 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available |
-
-### Known Issues (as of 2026-06-11)
-- AdSense: pending Google review — ca-pub-6523454944716812. Check ~Jun 16–23.
-- find-a-teacher.html: format field still has "In-person" option — update before public launch (online-only strategy).
-- Supabase free tier auto-pauses after 7 days inactivity — restore manually from dashboard as needed.
-- Git sandbox HEAD.lock: run `rm .git/HEAD.lock && rm .git/index.lock` in Terminal if git commit fails.
-
----
-
 ### Phase 55 Updates (2026-06-12 — automation + content experiment)
 
 | # | Change | File(s) | Detail |
@@ -2313,37 +1775,6 @@ teach-with-us.html (single-page form)
 - Agreed fix if revived: data/reference pages (composer tables, grade comparisons) keep minimal factual intros; editorial articles wait for Sohyun's 5-min Korean voice-memo answers (favourite/overrated G4 pieces, her selection criteria, real student-rescue stories) → rewritten with byline "by Sohyun Park" (E-E-A-T).
 - Explicitly NOT a blog — one-time evergreen reference pages, no recurring writing commitment.
 - Viva voce / General Knowledge product idea raised: per-piece fact sheets (composer, era, form, Italian terms) as free web pages + paid printable PDF pack per grade on Gumroad ($4–7). Pilot one grade with Sohyun's accuracy review before scaling.
-
-### Build Status — Last updated 2026-06-12
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–124 | All previously completed features (Phases 1–54) | ✅ Done |
-| 125 | Supabase keep-alive GitHub Action | ✅ Done (Phase 55) |
-| 126 | find-a-teacher.html online-only update | ✅ Done (Phase 55) |
-| 127 | Teacher outreach drafts (KR/EN) | ✅ Done (Phase 55) |
-| 128 | Weekly Monday auto-check scheduled task | ✅ Done (Phase 55) |
-| 129 | SEO content pages (43 static pages) | ⏸ On hold in `_drafts/` — pending Sohyun's voice/direction |
-
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | Send teacher outreach messages | High (Sohyun, ~10 min) | `outreach-messages.md` — 3–5 teachers from her network. Revenue path independent of traffic. |
-| 2 | AdSense approval check | Auto (Monday check) | ca-pub-6523454944716812 — review re-requested Jun 11. |
-| 3 | Search Console indexing | Auto (Monday check) | Validate Fix submitted Jun 11 for 34 pages. |
-| 4 | Content direction decision | When ready | Approve/adjust/discard `_drafts/` pages. If approved: Sohyun answers 3 Korean questions → editorial rewrite with her voice. |
-| 5 | Viva voce GK pack pilot | After content decision | Strongest paid-product candidate. One grade pilot + accuracy review. |
-| 6 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
-| 7 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
-| 8 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
-
-### Known Issues (as of 2026-06-12)
-- AdSense: pending Google review — check ~Jun 16–23 (Monday auto-check covers this).
-- `_drafts/` content pages: on hold, gitignored — do not publish without Sohyun's review.
-- Supabase auto-pause: SOLVED by keep-alive Action (verify first manual run shows green in GitHub Actions).
-
----
 
 ### Phase 56 Updates (2026-06-17 — viva-voce.html built + verified)
 
@@ -2379,36 +1810,6 @@ viva-voce.html
     └── handleGenerate → generatePDF()
 ```
 
-### Build Status — Last updated 2026-06-17
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–129 | All previously completed features (Phases 1–55) | ✅ Done |
-| 130 | viva-voce.html — Viva Voce / GK pack generator, full feature set + verified | ✅ Done (Phase 56) |
-
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | Sohyun — open viva-voce.html in browser, spot-check a real PDF | High | All logic verified programmatically; needs one human look at actual render + downloaded PDF before wider use. |
-| 2 | Decide whether/how to surface viva-voce.html publicly | Medium | Currently standalone, unlinked, `noindex`. Consider: link from a grade page, homepage footer, or keep as teacher-only tool for now. |
-| 3 | Possible future: paid PDF pack via Gumroad | Deferred | Per Phase 55 product idea — pilot accuracy review with Sohyun first. |
-| 4 | Send teacher outreach messages | High (Sohyun, ~10 min) | `outreach-messages.md` — carried over from Phase 55. |
-| 5 | AdSense approval check | Auto (Monday check) | ca-pub-6523454944716812. |
-| 6 | Search Console indexing | Auto (Monday check) | Validate Fix submitted Jun 11 for 34 pages. |
-| 7 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
-| 8 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
-| 9 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
-
-### Known Issues (as of 2026-06-17)
-- viva-voce.html: not yet opened in an actual browser by a human — all verification so far is programmatic (compile/syntax/data-trace). Minor cosmetic edge case noted: a piece with an unusually long title could in theory wrap past its initial space reservation before the next pagination check catches it — not a functional bug, just worth a glance during spot-check.
-- AdSense: pending Google review — check ~Jun 16–23 (Monday auto-check covers this).
-- `_drafts/` content pages: on hold, gitignored — do not publish without Sohyun's review.
-- Supabase auto-pause: SOLVED by keep-alive Action (verify first manual run shows green in GitHub Actions).
-- Git sandbox HEAD.lock: run `rm .git/HEAD.lock && rm .git/index.lock` in Terminal if git commit fails.
-
----
-
 ### Phase 57 Updates (2026-06-20 — timeline.html quality pass)
 
 | # | Change | File(s) | Detail |
@@ -2421,37 +1822,6 @@ viva-voce.html
 | 6 | Verification | — | Extracted and Babel-compiled (`@babel/standalone`, React preset) the full `#app-jsx` script block, then ran `node --check` on the compiled output — confirmed syntactically valid before deploy. |
 | 7 | Deployed | `timeline.html` | Commit `050377b` pushed to `main` by user from Terminal — live via GitHub Pages auto-deploy. |
 
-### Build Status — Last updated 2026-06-20
-
-| # | Feature | Status |
-|---|---------|--------|
-| 1–130 | All previously completed features (Phases 1–56) | ✅ Done |
-| 131 | timeline.html — fixed phase pacing (no more duplicate month labels) | ✅ Done (Phase 57) |
-| 132 | timeline.html — personalized advice via real piece input | ✅ Done (Phase 57) |
-| 133 | timeline.html — results screen shows user's actual exam pieces | ✅ Done (Phase 57) |
-
-### Pending Work (priority order for next session)
-
-| # | Task | Priority | Notes |
-|---|------|----------|-------|
-| 1 | Sohyun — open timeline.html, run through the new piece-input step + results screen | High | Logic verified programmatically (Babel compile + node --check); needs one human spot-check of the actual live flow. |
-| 2 | Sohyun — open viva-voce.html, download a real PDF | High | Carried over from Phase 56 — still not opened in an actual browser. |
-| 3 | AdSense approval check | Auto (Monday check) | ca-pub-6523454944716812. |
-| 4 | Search Console indexing | Auto (Monday check) | Validate Fix submitted Jun 11 for 34 pages. |
-| 5 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
-| 6 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
-| 7 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
-
-### Known Issues (as of 2026-06-20)
-- timeline.html: not yet spot-checked in a live browser session after Phase 57 changes — only Babel-compile + syntax verified so far.
-- viva-voce.html: still not opened in an actual browser by a human (carried over from Phase 56).
-- AdSense: pending Google review — check ~Jun 16–23 (Monday auto-check covers this).
-- `_drafts/` content pages: on hold, gitignored — do not publish without Sohyun's review.
-- Supabase auto-pause: SOLVED by keep-alive Action (verify first manual run shows green in GitHub Actions).
-- Git sandbox HEAD.lock: run `rm .git/HEAD.lock && rm .git/index.lock` in Terminal if git commit fails.
-
----
-
 ### Phase 58 Updates (2026-07-19 — privacy policy deploy + June backlog cleanup)
 
 | # | Change | File(s) | Detail |
@@ -2463,32 +1833,68 @@ viva-voce.html
 | 5 | timeline.html overflow-text fix (from Jun 24, now live) | `timeline.html` | `OVERFLOW_SUFFIXES` cycle appended once a phase's MONTH_FOCUS strings run out — long timelines (17+ months) no longer show the exact same paragraph two months running. |
 | 6 | Chrome extension never connected this session | — | AdSense dashboard check, Search Console check, and live browser spot-checks of timeline/viva-voce could NOT be done — Claude-in-Chrome extension unreachable throughout. All carried over to next session. |
 
-### Build Status — Last updated 2026-07-19
 
-| # | Feature | Status |
-|---|---------|--------|
-| 1–133 | All previously completed features (Phases 1–57) | ✅ Done |
-| 134 | privacy.html — minimal AdSense-compliant privacy policy, live | ✅ Done (Phase 58) |
-| 135 | index.html footer — Privacy Policy link | ✅ Done (Phase 58) |
-| 136 | timeline.html — overflow-text fix deployed | ✅ Done (Phase 58) |
+### Phase 59 Updates (2026-07-21 — blank-page bug hunt, Search Console recovery, viva-voce PDF fix)
 
-### Pending Work (priority order for next session)
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Root cause of AdSense rejection corrected | — | Previous assumption (missing privacy policy) was wrong. Live-diagnosed via Chrome: 14 of ~39 public pages (G5, G6 comprehensive, Trinity Initial–G8 × 9, Trinity Diploma ATCL/LTCL/FTCL × 3) were rendering as fully blank white pages for every visitor — almost certainly the real cause of both the AdSense "no content" rejection and the Search Console indexing stall. |
+| 2 | G5/G6 bug fixed | `G5/piano-repertoire_g5.html`, `G6/piano-repertoire_g6.html` | A single missing comma inside the `COMPOSER_LINKS` object broke the entire ~76,000-character inline `<script>` block silently — a syntax error in a classic script kills the whole tag with no hoisting and no partial execution. Fixed, verified with `node --check` and a live render (41 pieces in List A rendering correctly). |
+| 3 | Trinity Diploma bug fixed (3 files) | `Trinity/Diploma/piano-repertoire_trinity_{atcl,ftcl,ltcl}.html` | Every curly brace in the `<style>` block and the JSX script block had been doubled at some point — including already-correct `style={{...}}` becoming `style={{{{...}}}}`. Fixed via regex "halving" (each `{`/`}` run replaced with half its length) applied separately to the style and script spans, using `git show HEAD:<path>` to recover clean source since the sandbox can't `git checkout`. |
+| 4 | Trinity Initial–G8 bug fixed (9 files) | `Trinity/{Initial,G1..G8}/piano-repertoire_trinity_*.html` | Every `style={...}` JSX attribute (25 per file) was missing its inner object-literal brace — `style={maxWidth:900,...}` instead of `style={{maxWidth:900,...}}`. Fixed via regex `style=\{([^{}]*)\}` → `style={{\1}}` per file (pre-existing correct `style={{` instances on G6–G8 were correctly skipped). |
+| 5 | Full 41-file regression audit | all public HTML pages | Automated `node --check` (plain JS) + `@babel/core` transform (JSX) pass across every public page — matches the actual browser rendering pipeline rather than guessing. Confirmed no other page has this class of bug, and separately ruled out a second bug class (runtime variable-name mismatches, à la Phase 12/54's `DATA_G5_1` / `DATA_G6_COMP` silent-data-loss bugs) on `index.html`, `diagnose.html`, `recommend.html`, and the remaining un-indexed pages. |
+| 6 | Search Console access restored | Google account vividssso@gmail.com | The account had zero registered Search Console properties despite full, working AdSense access on the same account — genuinely had no prior verification on file. Added a second `google-site-verification` meta tag to `index.html` (kept the original) and re-verified via the HTML-tag method. |
+| 7 | Re-indexing requested — 19 of 23 target URLs | Search Console URL Inspection | Submitted: G5, G6, all 3 Trinity Diploma pages, all 9 Trinity Initial–G8 pages, ABRSM LRSM, ABRSM G2/G4/G6/G7, and G8 comprehensive. Hit Google's daily indexing-request quota after 19 submissions — LMusA, `diagnose.html`, and `recommend.html` are still queued; resume when the daily quota resets. |
+| 8 | `timeline.html` live-tested end to end — no bugs found | `timeline.html` | First-ever live spot-check (previously unverified since Phase 57). Full flow confirmed working: syllabus → grade → exam date → the newer piece-search step (autocomplete correctly filters by grade + syllabus) → readiness quiz → 18-month plan. Also confirmed the Phase 57 duplicate-month-text fix works live — `OVERFLOW_SUFFIXES` correctly varies repeated phase text instead of showing two identical paragraphs back to back. |
+| 9 | `viva-voce.html` live-tested — real bug found (caught by Sohyun) | `viva-voce.html` | First-ever live spot-check (previously unverified since Phase 56). Sohyun spotted it from a real generated-PDF screenshot: the 🎼🕰️🎨🧱 emoji in story-section labels were rendering as garbled bytes ("Ø<ß¼") because jsPDF's built-in Helvetica font only supports WinAnsiEncoding, not emoji — and that same broken character was also corrupting jsPDF's character-width table for the rest of that line, which is what caused the visible letter-stretching and right-edge text cutoff in the same screenshot. |
+| 10 | `viva-voce.html` fix deployed | `viva-voce.html` | Removed emoji from the 4 hard-coded story labels (`Meet the Composer` / `Time Machine` / `Colors` / `How the Music is Built`). Added a `stripEmojiForPDF()` safety net inside `wrapText()` so any future emoji — hard-coded or typed by a teacher into an accuracy-boost field — can't reintroduce this bug. Verified via Babel compile + `node --check` + a direct Node.js trace of `buildPieceQA()` output (confirmed zero non-ASCII characters in the labels), then re-verified live on the redeployed site: clean PDF regeneration, no console errors. |
+| 11 | Confirmed `viva-voce.html` / `timeline.html` are pre-launch prototypes | — | Neither is linked from site nav or footer, and both are `noindex`. `viva-voce.html`'s AMEB-only scope is intentional, not a gap — "General Knowledge" (viva voce) is specifically an AMEB Comprehensive Piano syllabus exam component; ABRSM and Trinity don't have the same requirement. |
+| 12 | Monday scheduled task rewritten | Cowork scheduled task `piano-butler-monday-check` | Updated with the 2026-07-21 baseline (20/39 indexed, 14 clicks/2mo), an explicit instruction not to click AdSense "request review" until indexing recovers, and a mandatory "partner recommendation" section that forces one concrete next action every week instead of a passive status dump. |
+| 13 | CLAUDE.md restructured | `CLAUDE.md` | Removed 73 duplicate "Build Status" / "Pending Work" / "Known Issues" sections scattered across Phases 1–58 (~690 lines of redundant, frequently stale copies) and replaced them with one consolidated, accurate "Current Status" section at the end of this file. Added a "Top Priority — Read This First" section near the top per Sohyun's explicit instruction to keep surfacing critical, revenue-focused points every session. |
+
+---
+
+## Current Status (as of 2026-07-21)
+
+*This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
+that used to repeat after almost every phase above (removed in Phase 59 for readability) — this
+is the single current source of truth. The phase-by-phase history above is preserved for
+technical context: bug root-causes, schema decisions, architecture notes.*
+
+### Build status
+All features listed across Phases 1–58 are built and were live prior to this session. This
+session additionally confirmed live, via direct browser testing: `timeline.html` (full 6-step
+flow, no bugs), and `viva-voce.html` (one real bug found and fixed — see Phase 59 above, PDF
+generation now confirmed clean). All 41 public HTML pages passed a syntax/JSX regression audit
+on 2026-07-21 — no known blank-page or silent-JS-error bugs remain as of this session.
+
+### Revenue-critical status
+
+| Lever | Status | What's blocking it |
+|---|---|---|
+| AdSense (ca-pub-6523454944716812) | Pending review | Was almost certainly blocked by the 14 blank pages found today (now fixed and resubmitted for indexing). Do not request re-review until Search Console's indexed count recovers. |
+| Search Console indexing | 20/39 pages indexed as of the 2026-07-21 baseline; 19 pages just resubmitted for re-crawl | Recovery expected over 1–2 weeks; tracked automatically by the Monday check. |
+| Organic traffic | 14 clicks over ~2 months — effectively zero | Indexing recovery alone won't fix this on its own; needs backlinks/awareness (see below). |
+| Teacher outreach (`outreach-messages.md`) | Ready to send, not yet sent | **Sohyun action required.** Currently the highest-leverage lever sitting untouched — likely faster path to real revenue than waiting on SEO. |
+
+### Pending work (priority order)
 
 | # | Task | Priority | Notes |
 |---|------|----------|-------|
-| 1 | AdSense — check status + request re-review | High, do FIRST | Privacy policy is now live, which was likely the blocker. Open adsense.google.com (ca-pub-6523454944716812) → if still "needs attention"/rejected, click request review. Needs Chrome extension connected. |
-| 2 | Search Console indexing re-check | High | Validate Fix submitted Jun 11 for 34 pages — over a month ago, results should be in. Also submit updated sitemap (about.html removed, privacy.html added). |
-| 3 | Spot-check timeline.html + viva-voce.html in live browser | High | Carried over from Phases 56–57. Run timeline piece-input flow; generate a real viva-voce PDF. |
-| 4 | Next feature/improvement work | Medium | Sohyun selected this for the Jul 19 session but Chrome blockage ended the session early — decide direction next time. |
-| 5 | Send teacher outreach messages | Sohyun (~10 min) | `outreach-messages.md` — carried over since Phase 55. |
-| 6 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
-| 7 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
-| 8 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
+| 1 | Send teacher outreach messages | High — Sohyun, ~10 min | `outreach-messages.md` is ready to copy-paste. Independent of the SEO/indexing timeline. |
+| 2 | Resume Search Console re-indexing (3 URLs left) | Quick | LMusA, `diagnose.html`, `recommend.html` — daily quota resets, submit when available. |
+| 3 | Sohyun — glance at a real downloaded viva-voce PDF | Quick | Fix is live and verified programmatically; a final human look confirms it end to end. |
+| 4 | AdSense re-review | High, but WAIT | Do not request until Search Console's indexed count has meaningfully recovered from 20/39. |
+| 5 | Refresh the File Structure section of this doc | Low | It predates Trinity/, CertP/, and the standalone tool pages (diagnose/recommend/timeline/viva-voce/connect/find-a-teacher/teach-with-us) — cosmetic staleness, not blocking anything. |
+| 6 | connect.html — real teacher info | Deferred | When Sohyun is ready to take referrals. |
+| 7 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
+| 8 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
+| 9 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
 
-### Known Issues (as of 2026-07-19)
-- Claude-in-Chrome extension: would not connect during the entire Jul 19 session — if it persists next session, restart Chrome and click the extension icon once before starting.
-- timeline.html / viva-voce.html: still not spot-checked in a live browser by a human.
-- AdSense: pending — but privacy policy (the likely blocker) is now live. Request re-review next session.
-- teach-with-us.html / find-a-teacher.html: intentionally unlinked from all public pages (about.html deletion re-confirmed this) until founding teachers are recruited.
-- `_drafts/` content pages: on hold, gitignored — do not publish without Sohyun's review.
-- Git sandbox locks: `rm -f .git/index.lock .git/HEAD.lock` fixes commit failures (needed twice this session).
+### Known issues
+- `outreach-messages.md` still unsent — the biggest lever currently sitting idle in the backlog.
+- 3 of 23 re-indexing requests still queued (LMusA, `diagnose.html`, `recommend.html`) — hit the daily quota on 2026-07-21, resume next available window.
+- File Structure section (near the top of this doc) doesn't reflect Trinity/, CertP/, or the standalone tool pages — cosmetic staleness, not urgent.
+- connect.html: placeholder teacher cards, not publicly promoted.
+- Supabase free tier auto-pauses after 7 days of inactivity — mitigated by the `supabase-keepalive.yml` GitHub Action (runs Mon & Thu).
+- Git sandbox: run `rm -f .git/index.lock .git/HEAD.lock` before committing if pushes fail from the Cowork sandbox; the actual `git push` must be run by Sohyun from her own Terminal (the sandbox has no push credentials).
