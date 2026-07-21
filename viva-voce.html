@@ -207,15 +207,20 @@ function buildPieceQA(piece, override) {
     const nat = piece.nat || null;
 
     // ── STORY: "Meet the composer" ──────────────────────────────────────
+    // NOTE: labels are plain ASCII on purpose — jsPDF's built-in fonts
+    // (Helvetica etc.) can't render emoji glyphs. Passing an emoji into
+    // doc.text() doesn't just show a missing-glyph box, it corrupts the
+    // character-width table for the rest of that string, producing both
+    // garbled bytes AND stretched-out letter spacing on the whole line.
     story.push({
-        label: '🎼 Meet the Composer',
+        label: 'Meet the Composer',
         text: `"${title}" was written by ${composer}${nat ? ' (' + nat + ')' : ''}. Before you play a note, say their name out loud and picture them — what era did they live in, what would their world have looked like? Knowing the person behind the piece makes everything else easier to remember.`
     });
 
     // ── STORY: "Time Machine" — era vibe ────────────────────────────────
     if (era && ERA_TIME_MACHINE[era]) {
         story.push({
-            label: '🕰️ Time Machine',
+            label: 'Time Machine',
             text: `Hop in the time machine and set it to the ${era} period (roughly ${ERA_TIMEFRAME[era] || '?'}). ${ERA_TIME_MACHINE[era]}`
         });
     }
@@ -224,12 +229,12 @@ function buildPieceQA(piece, override) {
     if (key) {
         const vibe = keyVibe(key);
         story.push({
-            label: '🎨 Colors',
+            label: 'Colors',
             text: `This piece is painted in ${key}${vibe ? ' — ' + vibe : '.'} Play the opening chord or scale and really listen: does it match the mood you'd expect from that description?`
         });
     } else {
         story.push({
-            label: '🎨 Colors',
+            label: 'Colors',
             text: `NEEDS VERIFICATION — look at the key signature (the sharps/flats at the start of the line) and the very last chord to work out the key. We don't have it confirmed for this piece yet.`,
             flag: true
         });
@@ -239,7 +244,7 @@ function buildPieceQA(piece, override) {
     const inferredForm = override.form || inferForm(piece);
     if (inferredForm) {
         story.push({
-            label: '🧱 How the Music is Built',
+            label: 'How the Music is Built',
             text: `Think of this piece like blocks being stacked: it's built in ${inferredForm} form. Try sketching a simple map of it — A section, B section, and so on — and mark in the score exactly where each block starts. Being able to point to "this is where section B begins" is much more convincing to an examiner than just naming the form.`
         });
     }
@@ -379,6 +384,20 @@ const GRADE_OPTIONS = [
     ['CertP','Cert. of Performance'],['AMusA','AMusA'],['LMusA','LMusA']
 ];
 
+// jsPDF's built-in fonts (Helvetica etc.) only support WinAnsiEncoding —
+// no emoji. Passing an emoji into doc.text() doesn't just drop a glyph, it
+// corrupts jsPDF's char-width table for the rest of that string (garbled
+// bytes + stretched letter-spacing). Strip emoji from every string before
+// it reaches jsPDF, regardless of source (hard-coded labels, future edits,
+// or a teacher pasting an emoji into an accuracy-boost field).
+function stripEmojiForPDF(s) {
+    if (!s) return s;
+    return String(s)
+        .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}️‍]/gu, '')
+        .replace(/[ \t]{2,}/g, ' ')
+        .trim();
+}
+
 function generatePDF(gradeLabel, seriesLabel, pieces, overrides) {
     const doc = new jspdf.jsPDF({ unit:'pt', format:'a4' });
     const W = doc.internal.pageSize.getWidth();
@@ -388,7 +407,7 @@ function generatePDF(gradeLabel, seriesLabel, pieces, overrides) {
     function addPage() { doc.addPage(); y = M; }
     function ensure(space) { if (y + space > 760) addPage(); }
     function wrapText(text, x, maxW, lineH, opts) {
-        const lines = doc.splitTextToSize(text, maxW);
+        const lines = doc.splitTextToSize(stripEmojiForPDF(text), maxW);
         lines.forEach(line => { ensure(lineH); doc.text(line, x, y, opts); y += lineH; });
     }
 
