@@ -2449,3 +2449,46 @@ viva-voce.html
 - `_drafts/` content pages: on hold, gitignored — do not publish without Sohyun's review.
 - Supabase auto-pause: SOLVED by keep-alive Action (verify first manual run shows green in GitHub Actions).
 - Git sandbox HEAD.lock: run `rm .git/HEAD.lock && rm .git/index.lock` in Terminal if git commit fails.
+
+---
+
+### Phase 58 Updates (2026-07-19 — privacy policy deploy + June backlog cleanup)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Discovered uncommitted Jun 24 session work | — | Working tree contained an entire uncommitted session from 2026-06-24: new `about.html` + `privacy.html`, footer links in `index.html`, sitemap entries, a timeline.html overflow-text fix, and the Phase 57 CLAUDE.md log itself. None of it had been deployed — meaning the site had NO privacy policy while AdSense review was pending, a likely cause of the month-long approval delay. |
+| 2 | Critical pre-deploy verification pass | `index.html`, `timeline.html`, `sitemap.xml`, `about.html`, `privacy.html` | Babel-compiled both JSX blocks + `node --check` (passed); sitemap XML validated; all internal links resolved; timeline overflow-suffix logic simulation confirmed no consecutive duplicate month text. Found 2 real errors: about.html claimed "4 exam boards" (actually 3 — AMEB/ABRSM/Trinity), and about.html linked to `teach-with-us.html`, which is strategically hidden until founding teachers are recruited (Phase 54 decision). |
+| 3 | Minimal privacy-only configuration (Sohyun's decision) | `privacy.html`, `index.html`, `sitemap.xml`, `about.html` (deleted) | Sohyun opted for the minimum required footprint: `about.html` deleted entirely (footer link + sitemap entry removed); `privacy.html` trimmed from 8 sections to the 4 that matter — (1) Information we collect, (2) Cookies and advertising incl. Google AdSense third-party-cookie disclosure + adssettings.google.com opt-out (the AdSense-mandated wording), (3) Third-party services (AdSense/YouTube/Web3Forms/GitHub Pages), (4) Contact. "Last updated" set to 19 July 2026. |
+| 4 | Deployed | commits `6f93f2b` + `3c32931` | Pushed to `main` by Sohyun from Terminal (050377b..3c32931). Verified live: privacy.html renders correctly at thepianobutler.com/privacy.html, index.html footer shows Privacy Policy button, timeline overflow fix live. |
+| 5 | timeline.html overflow-text fix (from Jun 24, now live) | `timeline.html` | `OVERFLOW_SUFFIXES` cycle appended once a phase's MONTH_FOCUS strings run out — long timelines (17+ months) no longer show the exact same paragraph two months running. |
+| 6 | Chrome extension never connected this session | — | AdSense dashboard check, Search Console check, and live browser spot-checks of timeline/viva-voce could NOT be done — Claude-in-Chrome extension unreachable throughout. All carried over to next session. |
+
+### Build Status — Last updated 2026-07-19
+
+| # | Feature | Status |
+|---|---------|--------|
+| 1–133 | All previously completed features (Phases 1–57) | ✅ Done |
+| 134 | privacy.html — minimal AdSense-compliant privacy policy, live | ✅ Done (Phase 58) |
+| 135 | index.html footer — Privacy Policy link | ✅ Done (Phase 58) |
+| 136 | timeline.html — overflow-text fix deployed | ✅ Done (Phase 58) |
+
+### Pending Work (priority order for next session)
+
+| # | Task | Priority | Notes |
+|---|------|----------|-------|
+| 1 | AdSense — check status + request re-review | High, do FIRST | Privacy policy is now live, which was likely the blocker. Open adsense.google.com (ca-pub-6523454944716812) → if still "needs attention"/rejected, click request review. Needs Chrome extension connected. |
+| 2 | Search Console indexing re-check | High | Validate Fix submitted Jun 11 for 34 pages — over a month ago, results should be in. Also submit updated sitemap (about.html removed, privacy.html added). |
+| 3 | Spot-check timeline.html + viva-voce.html in live browser | High | Carried over from Phases 56–57. Run timeline piece-input flow; generate a real viva-voce PDF. |
+| 4 | Next feature/improvement work | Medium | Sohyun selected this for the Jul 19 session but Chrome blockage ended the session early — decide direction next time. |
+| 5 | Send teacher outreach messages | Sohyun (~10 min) | `outreach-messages.md` — carried over since Phase 55. |
+| 6 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
+| 7 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
+| 8 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
+
+### Known Issues (as of 2026-07-19)
+- Claude-in-Chrome extension: would not connect during the entire Jul 19 session — if it persists next session, restart Chrome and click the extension icon once before starting.
+- timeline.html / viva-voce.html: still not spot-checked in a live browser by a human.
+- AdSense: pending — but privacy policy (the likely blocker) is now live. Request re-review next session.
+- teach-with-us.html / find-a-teacher.html: intentionally unlinked from all public pages (about.html deletion re-confirmed this) until founding teachers are recruited.
+- `_drafts/` content pages: on hold, gitignored — do not publish without Sohyun's review.
+- Git sandbox locks: `rm -f .git/index.lock .git/HEAD.lock` fixes commit failures (needed twice this session).
