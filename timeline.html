@@ -184,55 +184,200 @@ const PHASE_META = {
   exam:          { name:'Exam Preparation',        color:'#dc2626', bg:'#fef2f2', text:'#b91c1c' },
 };
 
-// {grade}/{syllabus} substituted with the chosen grade/syllabus.
-// {piece1..4} substituted with the student's actual pieces when supplied, else generic wording.
+// {grade}/{syllabus} substituted with the chosen grade/syllabus. Kept short and generic —
+// all the piece-specific and grade-specific detail now lives in the checklist/weekly builders
+// below, so it isn't duplicated between the lead sentence and the checklist underneath it.
 const MONTH_FOCUS = {
-  foundation:    ['Confirm all {grade} exam repertoire — lock in {piece1} and the rest. Begin hands-separate reading of each piece. Skim the {syllabus} {grade} technical list so there are no surprises later.',
-                   'Hands-together work begins on {piece1} and {piece2}. Daily scale/arpeggio routine for {grade} established — little and often beats one long session.',
-                   'Technical work moves to tempo. Begin regular sight-reading practice (5–10 min/day) at {grade} level.',
-                   'Full review of all pieces hands-separate and hands-together. Mark the trickiest 2–3 bars in each piece — that\'s where this month\'s time should actually go.'],
-  technical:     ['{grade} scales, arpeggios and required exercises — work them up to speed, metronome on. This is the unglamorous month; it pays off later.',
-                   'Increase tempo on {piece1}, {piece2} and {piece3} one piece at a time, not all at once. Technical work for this grade should be close to exam speed by month end.',
-                   'Tidy fingering trouble-spots flagged earlier. Scales/arpeggios at full speed, hands separately and together.'],
-  musical:       ['Musical shaping on every piece — dynamics, articulation, phrasing. Stop playing through; start listening back.',
-                   'Voicing and tone across {piece1} and {piece4}. Sight-reading and General Knowledge become a fixed weekly habit, not an afterthought.',
-                   'Memory check on all pieces if memorising. Rhythm accuracy under tempo pressure — record yourself and compare to a metronome track.'],
-  consolidation: ['Full run-throughs of {piece1}, {piece2}, {piece3} and {piece4} (or your own choices), recorded and self-reviewed.',
-                  '{grade} technical work at performance tempo — everything required should be secure with no hesitation.',
-                  'General Knowledge: composer context, form, Italian terms for each piece — drill the actual gaps, not everything.',
-                  'Back-to-back repertoire run-through, exam order. Note stamina and where concentration slips.'],
-  polish:        ['Mock exam #1 — full run in exam order for {grade}, honest self (or teacher) feedback on {piece1} especially.',
-                  'Address mock exam feedback directly, piece by piece. Performance detail — the last 5% that separates a good mark from a great one.',
-                  'Mock exam #2 — simulate real exam conditions exactly (room, clothes, walking in cold). Final refinements only.'],
-  exam:          ['Light maintenance only. No new learning, no new fingerings. Run each piece once a day at performance tempo. Trust the preparation — rest well before the {grade} exam.'],
+  foundation:    ['Get every piece under your fingers, hands-separately, and start the technical habit early.',
+                   'Move to hands-together work and lock in a daily practice rhythm.',
+                   'Build tempo gradually while sight-reading becomes a daily habit.',
+                   'Consolidate what\'s been learned before moving into focused technical work.'],
+  technical:     ['The unglamorous month — {grade} scales, arpeggios and required exercises, built from scratch.',
+                   'Technical work moves toward exam tempo, one exercise at a time.',
+                   'Technical work reaches performance speed, fully secure.'],
+  musical:       ['Musical shaping begins — dynamics, articulation, phrasing on every piece.',
+                   'Deepen tone and voicing while sight-reading and theory become weekly fixtures.',
+                   'Lock in memory (if memorising) and rhythmic accuracy under pressure.'],
+  consolidation: ['Full run-throughs, recorded and reviewed honestly.',
+                  'Technical work brought to performance tempo, no hesitation.',
+                  'General Knowledge gaps drilled — composer, form, terms.',
+                  'The full {grade} programme, back to back, in exam order.'],
+  polish:        ['First mock exam — a real dress rehearsal, with honest feedback.',
+                  'Targeted fixes from the mock, piece by piece.',
+                  'Second mock under real conditions — the final check before the exam.'],
+  exam:          ['Maintenance only. Trust the preparation and rest well before the {grade} exam.'],
 };
 const EXAM_ORDER = ['foundation','technical','musical','consolidation','polish','exam'];
 
+// Week-by-week rhythm within a phase — same 4 beats regardless of which month of the phase
+// it is (the month-to-month progression already comes from MONTH_FOCUS + the checklist below;
+// this layer answers "what does a single week inside this month actually look like").
+const WEEKLY_TEMPLATES = {
+  foundation: [
+    'Read through slowly, hands separately — accuracy over speed',
+    'Hands together at a slow, steady tempo — stop and fix, don\'t push through mistakes',
+    'Repeat the trickiest 2–3 bars in isolation, correctly 10 times in a row',
+    'Full run of everything so far — note what still needs work',
+  ],
+  technical: [
+    'Exercises hands-separately, slow — get the pattern right before speed',
+    'Exercises hands-together, still under tempo',
+    'Metronome up in small steps — only increase once it\'s clean',
+    'Full technical routine at this week\'s tempo, no stopping',
+  ],
+  musical: [
+    'Mark dynamics, articulation and phrasing directly on the score',
+    'Practise with exaggerated shape — small dynamics are easy to undercook',
+    'Record yourself and listen back critically, once per piece',
+    'Polish the details flagged this week — voicing, pedalling, tone',
+  ],
+  consolidation: [
+    'Run each piece start to finish, no stopping for mistakes',
+    'Technical work at full tempo, memory-secure',
+    'General Knowledge drill: composer, era, form and terms',
+    'Back-to-back run of the whole programme, in exam order',
+  ],
+  polish: [
+    'Mock run in exam order — note nerves, memory slips, stamina',
+    'Fix the specific issues from the mock, piece by piece',
+    'Performance detail pass — the last 5% of shaping and control',
+    'Second mock under real conditions — clothes, room, walking in cold',
+  ],
+  exam: [
+    'Light run-throughs only, performance tempo, no new fixes',
+    'Rest is part of preparation — don\'t cram right up to the exam',
+    'Pack music, check the exam venue and time, plan the morning',
+    'Trust the work — a calm, ready week beats a rushed one',
+  ],
+};
+
 // Real AMEB technical-work data for the chosen grade, if available (Prelim-G8 only —
 // not ABRSM/Trinity, not Diploma grades). Returns null otherwise so callers fall back
-// to the generic MONTH_FOCUS.technical text.
+// to generic wording.
 function getTechnicalWork(syllabus, gradeKey) {
   if (syllabus !== 'AMEB') return null;
   if (typeof DATA_TECHNICAL_AMEB === 'undefined') return null;
   return DATA_TECHNICAL_AMEB[gradeKey] || null;
 }
 
-// Builds 3 curriculum-specific paragraphs (mirrors the 3-entry shape of the generic
-// MONTH_FOCUS.technical array) referencing the grade's actual named exercises and
-// scale/arpeggio requirements, instead of generic template text.
-function buildTechnicalFocusLines(tech) {
-  if (!tech) return null;
+/* ── Per-piece helpers — used to make every phase (not just Technical) reference the
+   student's actual pieces, using the corpus's existing era/focus metadata. ── */
+// Separate, shorter copy from viva-voce.html's era content — that page explains eras for
+// General Knowledge exam answers; this is a practising cue, a different job entirely.
+const ERA_MUSICAL_TIPS = {
+  Baroque: 'even touch, light pedal — let the independent lines speak clearly',
+  Classical: 'clear phrasing in 2s and 4s, terraced dynamics, poised not rushed',
+  Romantic: 'singing tone, purposeful rubato, let the melody lead the pedal',
+  Modern: 'exact rhythm and dynamics as written — trust the markings on the page',
+  Contemporary: 'exact rhythm and dynamics as written — trust the markings on the page',
+};
+function pieceLabel(p) { return (p && p.t) ? p.t + (p.c ? ' — ' + p.c : '') : null; }
+function namedPieces(pieceObjs) { return (pieceObjs || []).filter(p => p && p.t).map(pieceLabel); }
+
+/* ── Checklist builders — one per phase. Each returns the 3-5 concrete things to do
+   this month, cycling through a "stage" array indexed the same way as MONTH_FOCUS[phase]
+   so lead sentence and checklist always describe the same month. Piece-aware when the
+   student supplied real pieces (uses their era/focus tags from the corpus); generic
+   fallback wording otherwise. ── */
+function foundationChecklist(monthIdx, pieceObjs, grade) {
+  const names = namedPieces(pieceObjs);
+  const stages = [
+    [names.length ? `Hands-separate read-through: ${names.join(', ')}` : `Choose and confirm your ${grade} exam repertoire`,
+     `Skim the ${grade} Technical Work Checklist below so nothing's a surprise later`,
+     `Set a weekly practice schedule you can actually keep — see Week by week below`],
+    [names.length ? `Hands-together, slow tempo: ${names.join(', ')}` : `Begin hands-together practice, slow tempo, on each piece`,
+     `Start a daily scale/arpeggio warm-up for ${grade}`,
+     `Flag tricky bars as you find them — don't fix them yet, just note them`],
+    [`Bring tempo up gradually, metronome on, no rushing`,
+     `Begin daily sight-reading practice at ${grade} level (5–10 min)`,
+     `Isolate and repeat last month's flagged bars`],
+    [`Full hands-together review of everything learned so far`,
+     `Mark the 2–3 trickiest bars per piece for focused work ahead`,
+     `Check the scale/arpeggio warm-up — is it becoming automatic yet?`],
+  ];
+  return stages[Math.min(monthIdx, stages.length-1)];
+}
+function technicalChecklist(monthIdx, tech, grade) {
+  if (!tech) {
+    return [`${grade} technical preparation — work with your teacher's guidance. AMEB's fixed technical-exercise list applies to Preliminary through Grade 8 only.`];
+  }
   const codes = tech.exercises.map(e => e.code).join(', ');
   const hasExtras = tech.sections.length > 1;
-
-  // Deliberately short — the full exercise purposes, piece names, and every scale/arpeggio
-  // are already laid out clearly in the Technical Work Checklist card below. Repeating that
-  // whole list inside the month-card prose just made it an unreadable wall of text.
-  return [
-    `Learn Technical Exercises ${codes} hands-separately, then begin this grade's required scales. Full details — what each exercise covers and the complete scale list — are in the Technical Work Checklist below.`,
-    `Bring the required scales up to full tempo, hands together, metronome on.${hasExtras ? ' Also work through the other scale/arpeggio groups in the checklist below.' : ''} Exercises ${codes} should be memory-secure by month end.`,
-    `Full technical routine at exam speed: everything in the checklist below plus Exercises ${codes} — memorised, no hesitation.`,
+  const stages = [
+    [`Learn Technical Exercises ${codes} hands-separately`,
+     `Begin this grade's required scales — full list in the Technical Work Checklist below`],
+    [`Bring the required scales up to full tempo, hands together, metronome on`,
+     hasExtras ? `Also work through the other scale/arpeggio groups in the checklist below` : `Keep the tempo steady and even across the full range`,
+     `Exercises ${codes} should be memory-secure by month end`],
+    [`Full technical routine at exam speed — everything in the checklist below`,
+     `Exercises ${codes}, memorised, no hesitation`],
   ];
+  return stages[Math.min(monthIdx, stages.length-1)];
+}
+function musicalChecklist(monthIdx, pieceObjs, grade) {
+  const named = (pieceObjs || []).filter(p => p && p.t);
+  if (monthIdx === 0) {
+    if (named.length) {
+      return named.slice(0,3).map(p => {
+        const tags = (p.focus||[]).slice(0,2).join(' and ').toLowerCase();
+        return tags ? `${pieceLabel(p)} — shape ${tags}` : `${pieceLabel(p)} — work on dynamics, articulation and phrasing`;
+      }).concat(['Stop playing through — start listening back after every run']);
+    }
+    return [`Dynamics, articulation and phrasing on every piece`, `Stop playing through — start listening back after every run`];
+  }
+  if (monthIdx === 1) {
+    if (named.length) {
+      const eraLines = named.slice(0,2)
+        .map(p => (p.era && ERA_MUSICAL_TIPS[p.era]) ? `${pieceLabel(p)} (${p.era}) — ${ERA_MUSICAL_TIPS[p.era]}` : null)
+        .filter(Boolean);
+      return (eraLines.length ? eraLines : [`Voicing and tone across your pieces`]).concat(['Sight-reading and General Knowledge become a fixed weekly habit']);
+    }
+    return [`Voicing and tone across your pieces`, `Sight-reading and General Knowledge become a fixed weekly habit`];
+  }
+  return [`Memory check on every piece, if memorising`, `Rhythm accuracy under tempo pressure — record and compare to a metronome track`];
+}
+function consolidationChecklist(monthIdx, pieceObjs, grade, tech) {
+  const names = namedPieces(pieceObjs);
+  const techLine = tech ? `${tech.exercises.map(e=>e.code).join(', ')} and all required scales — secure, no hesitation` : `${grade} technical work at performance tempo`;
+  const stages = [
+    [names.length ? `Full run-throughs of ${names.join(', ')}, recorded and self-reviewed` : `Full run-throughs of your programme, recorded and self-reviewed`],
+    [techLine],
+    [`General Knowledge: composer context, form, Italian terms — drill the actual gaps, not everything`],
+    [`Back-to-back repertoire run-through in exam order — note stamina and where focus slips`],
+  ];
+  return stages[Math.min(monthIdx, stages.length-1)];
+}
+function polishChecklist(monthIdx, pieceObjs, grade) {
+  const first = (pieceObjs || []).find(p => p && p.t);
+  const firstLabel = first ? pieceLabel(first) : 'your first piece';
+  const stages = [
+    [`Mock exam #1 — full run in exam order for ${grade}`, `Honest self (or teacher) feedback, especially on ${firstLabel}`],
+    [`Address mock exam feedback directly, piece by piece`, `Performance detail — the last 5% between good and great`],
+    [`Mock exam #2 under real conditions — room, clothes, walking in cold`, `Final refinements only — no new material`],
+  ];
+  return stages[Math.min(monthIdx, stages.length-1)];
+}
+function examChecklist(grade) {
+  return [`Light maintenance only — no new learning, no new fingerings`, `Run each piece once a day at performance tempo`, `Trust the preparation — rest well before the ${grade} exam`];
+}
+
+// Dispatches to the right checklist builder and pairs it with this month's lead sentence
+// and this phase's weekly rhythm.
+function buildMonthContent(phase, monthIdx, pieceObjs, tech, grade) {
+  const leadArr = MONTH_FOCUS[phase] || ['Continue focused practice.'];
+  const lead = leadArr[Math.min(monthIdx, leadArr.length-1)];
+  let checklist;
+  switch (phase) {
+    case 'foundation':    checklist = foundationChecklist(monthIdx, pieceObjs, grade); break;
+    case 'technical':     checklist = technicalChecklist(monthIdx, tech, grade); break;
+    case 'musical':       checklist = musicalChecklist(monthIdx, pieceObjs, grade); break;
+    case 'consolidation': checklist = consolidationChecklist(monthIdx, pieceObjs, grade, tech); break;
+    case 'polish':        checklist = polishChecklist(monthIdx, pieceObjs, grade); break;
+    case 'exam':          checklist = examChecklist(grade); break;
+    default:               checklist = [];
+  }
+  const weekly = WEEKLY_TEMPLATES[phase] || WEEKLY_TEMPLATES.foundation;
+  return { lead, checklist, weekly };
 }
 
 function monthsBetween(startDate, endDate) {
@@ -285,9 +430,7 @@ function allocatePhases(total, readinessScore) {
 }
 
 function fillTemplate(str, vars) {
-  return str.replace(/\{(\w+)\}/g, (m,k) => (vars[k] !== undefined && vars[k] !== '') ? vars[k] : m)
-    .replace(/\{piece1\}/g,'your first piece').replace(/\{piece2\}/g,'your second piece')
-    .replace(/\{piece3\}/g,'your third piece').replace(/\{piece4\}/g,'your fourth piece');
+  return str.replace(/\{(\w+)\}/g, (m,k) => (vars[k] !== undefined && vars[k] !== '') ? vars[k] : m);
 }
 
 function buildTimeline(examDate, readinessScore, gradeLabel, syllabus, userPieces, gradeKey) {
@@ -301,10 +444,9 @@ function buildTimeline(examDate, readinessScore, gradeLabel, syllabus, userPiece
 
   const phaseSeq = allocatePhases(total, readinessScore);
   const vars = { grade: gradeLabel || 'this grade', syllabus: syllabus || '' };
-  (userPieces || []).slice(0,4).forEach((p,i) => { vars['piece'+(i+1)] = p; });
+  const pieceObjs = (userPieces || []).filter(p => p && p.t).slice(0,4);
 
   const tech = getTechnicalWork(syllabus, gradeKey);
-  const techFocusLines = tech ? buildTechnicalFocusLines(tech) : null;
 
   // Cycle of distinct suffixes appended once a phase's MONTH_FOCUS strings run out, so
   // long timelines (beyond ~17 months) never show the exact same paragraph two months
@@ -319,14 +461,15 @@ function buildTimeline(examDate, readinessScore, gradeLabel, syllabus, userPiece
   return allMonths.map((m,i) => {
     const phase = phaseSeq[i] || 'exam';
     const count = phaseCounter[phase] = (phaseCounter[phase] || 0);
-    const focusArr = (phase === 'technical' && techFocusLines) ? techFocusLines : (MONTH_FOCUS[phase] || ['Continue focused practice.']);
-    let rawFocus = focusArr[Math.min(count, focusArr.length-1)];
-    if (count >= focusArr.length) {
-      const lap = count - focusArr.length;
-      rawFocus = rawFocus + OVERFLOW_SUFFIXES[lap % OVERFLOW_SUFFIXES.length];
+    const content = buildMonthContent(phase, count, pieceObjs, tech, gradeLabel || 'this grade');
+    const leadArr = MONTH_FOCUS[phase] || [''];
+    let lead = content.lead;
+    if (count >= leadArr.length) {
+      const lap = count - leadArr.length;
+      lead = lead + OVERFLOW_SUFFIXES[lap % OVERFLOW_SUFFIXES.length];
     }
     phaseCounter[phase]++;
-    return { ...m, phase, focus: fillTemplate(rawFocus, vars) };
+    return { ...m, phase, focus: fillTemplate(lead, vars), checklist: content.checklist, weekly: content.weekly };
   });
 }
 
@@ -422,7 +565,7 @@ function PieceInput({ syllabus, gradeKey, pieces, setPieces, onContinue, onSkip,
 
   function choose(p) {
     const next = pieces.slice();
-    next[activeSlot] = p.t + (p.c ? ' — ' + p.c : '');
+    next[activeSlot] = p;
     setPieces(next);
     setQuery('');
     setActiveSlot(Math.min(activeSlot+1, 3));
@@ -432,7 +575,7 @@ function PieceInput({ syllabus, gradeKey, pieces, setPieces, onContinue, onSkip,
     next[i] = '';
     setPieces(next);
   }
-  const anyFilled = pieces.some(p => p && p.trim());
+  const anyFilled = pieces.some(p => !!p);
 
   return (
     <div className="fade-up">
@@ -446,7 +589,7 @@ function PieceInput({ syllabus, gradeKey, pieces, setPieces, onContinue, onSkip,
             <button onClick={()=>setActiveSlot(i)}
               className={'opt-btn'+(activeSlot===i?' active':'')} style={{padding:'10px 12px',flex:1}}>
               <span style={{fontSize:12.5,fontWeight:pieces[i]?700:500,color:pieces[i]?'#1a1410':'#b0a898'}}>
-                {pieces[i] || 'Tap to search & choose a piece'}
+                {pieces[i] ? (pieces[i].t + (pieces[i].c ? ' — ' + pieces[i].c : '')) : 'Tap to search & choose a piece'}
               </span>
             </button>
             {pieces[i] && (
@@ -515,14 +658,47 @@ function PieceInput({ syllabus, gradeKey, pieces, setPieces, onContinue, onSkip,
 
 function MonthCard({ m, idx, isPast }) {
   const meta = PHASE_META[m.phase] || PHASE_META.foundation;
+  const [showWeekly, setShowWeekly] = useState(false);
   return (
     <div className="month-card" style={{opacity:isPast?0.55:1}}>
       <div className="month-rail" style={{background:meta.color}} />
-      <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',marginBottom:6,paddingLeft:8}}>
-        <span style={{fontSize:13,fontWeight:800,color:'#1a1410'}}>{m.label}</span>
-        <span style={{fontSize:9,fontWeight:800,padding:'3px 9px',borderRadius:7,background:meta.bg,color:meta.text}}>{meta.name}</span>
+      <div style={{paddingLeft:8}}>
+        <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',marginBottom:6}}>
+          <span style={{fontSize:13,fontWeight:800,color:'#1a1410'}}>{m.label}</span>
+          <span style={{fontSize:9,fontWeight:800,padding:'3px 9px',borderRadius:7,background:meta.bg,color:meta.text}}>{meta.name}</span>
+        </div>
+        <p style={{fontSize:12.5,color:'#5c5248',margin:'0 0 10px',lineHeight:1.5}}>{m.focus}</p>
+
+        {m.checklist && m.checklist.length > 0 && (
+          <div style={{display:'flex',flexDirection:'column',gap:5,marginBottom:(m.weekly && m.weekly.length) ? 10 : 0}}>
+            {m.checklist.map((item,i) => (
+              <div key={i} style={{display:'flex',gap:7,alignItems:'flex-start'}}>
+                <span style={{color:meta.color,fontSize:12,fontWeight:900,lineHeight:'18px'}}>✓</span>
+                <span style={{fontSize:12,color:'#3d362f',lineHeight:1.5}}>{item}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {m.weekly && m.weekly.length > 0 && (
+          <div>
+            <button onClick={()=>setShowWeekly(v=>!v)}
+              style={{background:'none',border:'none',padding:0,cursor:'pointer',fontSize:11,fontWeight:800,color:meta.text,display:'flex',alignItems:'center',gap:4}}>
+              <span>{showWeekly ? '▾' : '▸'}</span> Week by week
+            </button>
+            {showWeekly && (
+              <div style={{marginTop:8,background:meta.bg,borderRadius:10,padding:'10px 12px',display:'flex',flexDirection:'column',gap:6}}>
+                {m.weekly.map((w,i) => (
+                  <div key={i} style={{display:'flex',gap:8}}>
+                    <span style={{fontSize:10.5,fontWeight:800,color:meta.text,minWidth:46}}>Week {i+1}</span>
+                    <span style={{fontSize:11.5,color:'#5c5248',lineHeight:1.4}}>{w}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
-      <p style={{fontSize:12.5,color:'#5c5248',margin:0,paddingLeft:8,lineHeight:1.5}}>{m.focus}</p>
     </div>
   );
 }
@@ -580,7 +756,7 @@ function App() {
 
   const gradeOptions = GRADE_OPTIONS;
   const today = new Date().toISOString().slice(0,10);
-  const userPieces = pieces.filter(p => p && p.trim());
+  const userPieces = pieces.filter(Boolean);
 
   function finishQuiz(score) {
     const tl = buildTimeline(examDate, score, gradeLabel, SYLLABUS, userPieces, gradeKey);
@@ -739,8 +915,23 @@ function App() {
                 <p style={{fontSize:12,color:'#9a8e84',marginBottom:12}}>The monthly plan above is written around these.</p>
                 {userPieces.map((p,i) => (
                   <div key={i} className="result-card" style={{padding:'14px 16px'}}>
-                    <div style={{fontSize:11,color:'#b0a898',fontWeight:800,marginBottom:4}}>PIECE {i+1}</div>
-                    <div style={{fontSize:13.5,fontWeight:800,color:'#1a1410'}}>{p}</div>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
+                      <div>
+                        <div style={{fontSize:11,color:'#b0a898',fontWeight:800,marginBottom:4}}>
+                          PIECE {i+1}{(p.l||p.grp) ? ' · LIST '+(p.l||p.grp) : ''}
+                        </div>
+                        <div style={{fontSize:13.5,fontWeight:800,color:'#1a1410'}}>{p.t}</div>
+                        {p.c && <div style={{fontSize:12,color:'#9a8e84',marginTop:2}}>{p.c}</div>}
+                      </div>
+                      {p.era && <span style={{background:'#f0ebe5',color:'#7a6e64',fontSize:9,fontWeight:800,padding:'3px 8px',borderRadius:6,whiteSpace:'nowrap'}}>{p.era}</span>}
+                    </div>
+                    {p.focus && p.focus.length > 0 && (
+                      <div style={{display:'flex',flexWrap:'wrap',gap:5,marginTop:8}}>
+                        {p.focus.map((f,j) => (
+                          <span key={j} style={{fontSize:10,fontWeight:600,color:'#7a6e64',background:'#f7f3ee',padding:'3px 8px',borderRadius:6,border:'1px solid #ede7df'}}>{f}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </>
