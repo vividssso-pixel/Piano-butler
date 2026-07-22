@@ -223,16 +223,15 @@ function getTechnicalWork(syllabus, gradeKey) {
 function buildTechnicalFocusLines(tech) {
   if (!tech) return null;
   const codes = tech.exercises.map(e => e.code).join(', ');
-  const exerciseDetail = tech.exercises.map(e => `${e.code} (${e.purpose}: ${e.pieces.join(' / ')})`).join('; ');
-  const scaleSection = tech.sections.find(s => /^Scales$/i.test(s.title)) || tech.sections[0];
-  const scaleList = scaleSection ? scaleSection.items.join(', ') : '';
-  const restSections = tech.sections.filter(s => s !== scaleSection);
-  const restList = restSections.map(s => `${s.title}: ${s.items.join(', ')}`).join('. ');
+  const hasExtras = tech.sections.length > 1;
 
+  // Deliberately short — the full exercise purposes, piece names, and every scale/arpeggio
+  // are already laid out clearly in the Technical Work Checklist card below. Repeating that
+  // whole list inside the month-card prose just made it an unreadable wall of text.
   return [
-    `Technical Exercises ${codes} — ${exerciseDetail}. Learn each hands-separately, then start the required scale list: ${scaleList}.`,
-    `Bring the required scales up to full tempo, hands together, metronome on.${restList ? ' Also cover — ' + restList + '.' : ''} Exercises ${codes} should be memory-secure by month end.`,
-    `Full technical routine at exam speed: all scales${restSections.length ? ', arpeggios and progressions' : ''} plus Exercises ${codes} — memorised, no hesitation.`,
+    `Learn Technical Exercises ${codes} hands-separately, then begin this grade's required scales. Full details — what each exercise covers and the complete scale list — are in the Technical Work Checklist below.`,
+    `Bring the required scales up to full tempo, hands together, metronome on.${hasExtras ? ' Also work through the other scale/arpeggio groups in the checklist below.' : ''} Exercises ${codes} should be memory-secure by month end.`,
+    `Full technical routine at exam speed: everything in the checklist below plus Exercises ${codes} — memorised, no hesitation.`,
   ];
 }
 
@@ -364,6 +363,19 @@ function searchGradePieces(syllabus, gradeKey, query) {
   return pool.filter(p => (p.t||'').toLowerCase().includes(q) || (p.c||'').toLowerCase().includes(q)).slice(0,8);
 }
 
+// Grouped browse list for the chosen grade — lets a student pick a piece by tapping
+// through the list instead of having to know/type the exact title. Excludes Leisure
+// (this tool is for exam preparation) and groups by List A/B/C/D so it's scannable.
+function browseGradePieces(syllabus, gradeKey) {
+  const pool = CORPUS.filter(p => p._syllabus === syllabus && p._gradeKey === gradeKey && p._type !== 'Leisure');
+  const byList = {};
+  pool.forEach(p => { const l = p.l || p.grp || 'Open'; (byList[l] = byList[l] || []).push(p); });
+  const order = ['A','B','C','D','Collab','Open'];
+  return order
+    .filter(k => byList[k] && byList[k].length)
+    .map(k => ({ list: k, pieces: byList[k].slice().sort((a,b) => (a.c||'').localeCompare(b.c||'')) }));
+}
+
 /* ── Components ── */
 function ReadinessQuiz({ onComplete }) {
   const [answers, setAnswers] = useState({});
@@ -405,6 +417,8 @@ function PieceInput({ syllabus, gradeKey, pieces, setPieces, onContinue, onSkip,
   const [query, setQuery] = useState('');
   const [activeSlot, setActiveSlot] = useState(0);
   const suggestions = useMemo(() => searchGradePieces(syllabus, gradeKey, query), [syllabus, gradeKey, query]);
+  const browseGroups = useMemo(() => browseGradePieces(syllabus, gradeKey), [syllabus, gradeKey]);
+  const isSearching = query.trim().length > 0;
 
   function choose(p) {
     const next = pieces.slice();
@@ -423,7 +437,7 @@ function PieceInput({ syllabus, gradeKey, pieces, setPieces, onContinue, onSkip,
   return (
     <div className="fade-up">
       <h2 style={{fontSize:16,fontWeight:800,color:'#1a1410',marginBottom:4}}>What are you actually playing?</h2>
-      <p style={{fontSize:13,color:'#9a8e84',marginBottom:16}}>Optional, but it makes the monthly plan reference your real pieces instead of generic advice. Search and pick up to 4 — or skip.</p>
+      <p style={{fontSize:13,color:'#9a8e84',marginBottom:16}}>Optional, but it makes the monthly plan reference your real pieces instead of generic advice. Browse the list below and tap to pick — no need to type anything — or search if you know the title. Pick up to 4, or skip.</p>
 
       <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:14}}>
         {[0,1,2,3].map(i => (
@@ -442,20 +456,41 @@ function PieceInput({ syllabus, gradeKey, pieces, setPieces, onContinue, onSkip,
         ))}
       </div>
 
-      <input type="text" placeholder="Search composer or title…" value={query} onChange={e=>setQuery(e.target.value)}
+      <input type="text" placeholder="Search composer or title, or just browse below…" value={query} onChange={e=>setQuery(e.target.value)}
         style={{width:'100%',padding:'12px 14px',borderRadius:12,border:'1.5px solid #e0d8d0',fontSize:13,outline:'none'}} />
-      {suggestions.length > 0 && (
-        <div style={{marginTop:8,border:'1px solid #e0d8d0',borderRadius:12,overflow:'hidden'}}>
-          {suggestions.map((p,i) => (
+
+      <div style={{marginTop:8,border:'1px solid #e0d8d0',borderRadius:12,overflow:'hidden',maxHeight:280,overflowY:'auto'}}>
+        {isSearching ? (
+          suggestions.length > 0 ? suggestions.map((p,i) => (
             <button key={i} onClick={()=>choose(p)}
               style={{display:'block',width:'100%',textAlign:'left',padding:'10px 13px',background:'#fff',border:'none',
                 borderBottom: i<suggestions.length-1 ? '1px solid #f0ebe5':'none', cursor:'pointer'}}>
               <div style={{fontSize:12.5,fontWeight:700,color:'#1a1410'}}>{p.t}</div>
               <div style={{fontSize:11,color:'#9a8e84'}}>{p.c}{(p.l||p.grp) ? ' · List '+(p.l||p.grp) : ''}</div>
             </button>
-          ))}
-        </div>
-      )}
+          )) : (
+            <div style={{padding:'14px 13px',fontSize:12,color:'#9a8e84'}}>No matches — try a different spelling, or clear the search to browse the full list.</div>
+          )
+        ) : (
+          browseGroups.length > 0 ? browseGroups.map(group => (
+            <div key={group.list}>
+              <div style={{position:'sticky',top:0,background:'#faf7f3',padding:'7px 13px',fontSize:10,fontWeight:800,color:'#9a8e84',textTransform:'uppercase',letterSpacing:'0.04em',borderBottom:'1px solid #f0ebe5'}}>
+                List {group.list}
+              </div>
+              {group.pieces.map((p,i) => (
+                <button key={i} onClick={()=>choose(p)}
+                  style={{display:'block',width:'100%',textAlign:'left',padding:'10px 13px',background:'#fff',border:'none',
+                    borderBottom:'1px solid #f0ebe5',cursor:'pointer'}}>
+                  <div style={{fontSize:12.5,fontWeight:700,color:'#1a1410'}}>{p.t}</div>
+                  <div style={{fontSize:11,color:'#9a8e84'}}>{p.c}</div>
+                </button>
+              ))}
+            </div>
+          )) : (
+            <div style={{padding:'14px 13px',fontSize:12,color:'#9a8e84'}}>No repertoire list found for this grade — search above instead.</div>
+          )
+        )}
+      </div>
 
       <div style={{display:'flex',gap:10,marginTop:22}}>
         <button onClick={onBack}
@@ -672,21 +707,29 @@ function App() {
               <>
                 <h3 style={{fontSize:14,fontWeight:800,color:'#1a1410',margin:'22px 0 10px'}}>{gradeLabel} Technical Work Checklist</h3>
                 <p style={{fontSize:12,color:'#9a8e84',marginBottom:12}}>Exactly what AMEB requires for this grade, straight from the syllabus — work through this alongside the monthly plan above.</p>
-                <div className="result-card">
-                  <div style={{fontSize:11,fontWeight:800,color:'#0e7490',marginBottom:8,textTransform:'uppercase',letterSpacing:'0.03em'}}>Technical Exercises</div>
-                  {technicalWork.exercises.map((ex,i) => (
-                    <div key={i} style={{marginBottom: i < technicalWork.exercises.length-1 ? 10 : 0}}>
-                      <div style={{fontSize:12.5,fontWeight:700,color:'#1a1410'}}>{ex.code} — {ex.purpose}</div>
-                      <div style={{fontSize:12,color:'#7a6e64',marginTop:1}}>{ex.pieces.join(' · ')}</div>
+                <div className="result-card" style={{padding:'18px 18px 20px'}}>
+                  <div>
+                    <div style={{fontSize:10.5,fontWeight:800,color:'#0e7490',marginBottom:9,textTransform:'uppercase',letterSpacing:'0.04em'}}>Technical Exercises</div>
+                    <div style={{display:'flex',flexDirection:'column',gap:9}}>
+                      {technicalWork.exercises.map((ex,i) => (
+                        <div key={i} style={{fontSize:12.5,lineHeight:1.5}}>
+                          <span style={{fontWeight:800,color:'#1a1410'}}>{ex.code}</span>
+                          <span style={{color:'#7a6e64'}}> — {ex.purpose}: {ex.pieces.join(', ')}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  {technicalWork.sections.map((s,i) => (
+                    <div key={i} style={{paddingTop:14,marginTop:14,borderTop:'1px solid #f0ebe5'}}>
+                      <div style={{fontSize:10.5,fontWeight:800,color:'#0e7490',marginBottom:9,textTransform:'uppercase',letterSpacing:'0.04em'}}>{s.title}</div>
+                      <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
+                        {s.items.map((item,j) => (
+                          <span key={j} style={{fontSize:11.5,fontWeight:600,color:'#5c5248',background:'#f7f3ee',padding:'5px 10px',borderRadius:8,border:'1px solid #ede7df',whiteSpace:'nowrap'}}>{item}</span>
+                        ))}
+                      </div>
                     </div>
                   ))}
                 </div>
-                {technicalWork.sections.map((s,i) => (
-                  <div key={i} className="result-card">
-                    <div style={{fontSize:11,fontWeight:800,color:'#0e7490',marginBottom:6,textTransform:'uppercase',letterSpacing:'0.03em'}}>{s.title}</div>
-                    <div style={{fontSize:12.5,color:'#5c5248',lineHeight:1.7}}>{s.items.join(' · ')}</div>
-                  </div>
-                ))}
               </>
             )}
 

@@ -1878,6 +1878,9 @@ viva-voce.html
 | 4 | Copy updated to be explicit about scope | `timeline.html` | Title/meta tags changed to "AMEB Exam Timeline". Grade-step heading changed to "Which AMEB grade are you sitting?" with a subtitle "Built for the AMEB Piano syllabus — Preliminary through Diploma." |
 | 5 | Verification | — | Babel-compiled the `#app-jsx` block + `node --check` (clean); grepped for any leftover `DATA_ABRSM`/`DATA_TRINITY`/`SYLLABUSES` references (none found); confirmed `GRADE_OPTIONS` still lists all 12 correct AMEB grade keys. |
 | 6 | Scope decision — Sight-Reading/GK stay generic | — | Asked Sohyun whether Sight-Reading and General Knowledge/Aural requirements should get the same real-data treatment as Technical Work. Her call: unlike scales/arpeggios (discrete, enumerable items), sight-reading and aural requirements aren't cleanly itemizable per grade the same way — general prep guidance is the right level for those, not a checklist. `MONTH_FOCUS` phase text for sight-reading/GK stays as generic reminders; only Technical Work gets real per-grade syllabus data. Not a "todo, do later" — this is the intended final shape. |
+| 7 | Month-card technical text shortened | `timeline.html` | Sohyun feedback from real screenshots: the Sep/Oct 2026-style month cards were an unreadable wall of text (full exercise purposes + full comma-separated scale lists crammed into prose). `buildTechnicalFocusLines()` rewritten to name only the exercise codes and point to the Technical Work Checklist card below for full detail — removes duplication, each month card now 1-2 short sentences. |
+| 8 | Technical Work Checklist card restyled as chips | `timeline.html` | The checklist's scale/arpeggio sections were a single dense `·`-joined paragraph. Rewritten as one consolidated card with internal section dividers, each scale/arpeggio item rendered as an individual pill/chip (`flex-wrap`) instead of run-on text — verified against real Grade 5 data (41+33+38+48+8 = 168 pieces, all accounted for). |
+| 9 | Browsable piece picker added (no typing required) | `timeline.html` | Sohyun feedback: typing exact piece titles is effort. Added `browseGradePieces(syllabus, gradeKey)` — groups the grade's exam repertoire (Leisure excluded) by List A/B/C/D, sorted by composer. `PieceInput`'s suggestion panel now always shows something: the browsable grouped list by default, or live search results once the user types. Panel is a fixed-height (280px) scrollable box so it doesn't blow out page length. |
 
 ---
 
@@ -1902,7 +1905,9 @@ verified programmatically but not yet live-tested in a browser this session. Pha
 restricted `timeline.html` to AMEB only, per Sohyun's decision — she hasn't personally sat
 ABRSM/Trinity exams, and the ABRSM/Trinity path only ever showed generic (non-syllabus-specific)
 text anyway. Sight-reading/GK were confirmed to intentionally stay generic — Sohyun's call is
-that they aren't cleanly itemizable per grade the way scales/arpeggios are.
+that they aren't cleanly itemizable per grade the way scales/arpeggios are. Same session, based
+on Sohyun's real-screenshot feedback: shortened the dense month-card technical text, restyled
+the Technical Work Checklist as scannable chips, and added a no-typing browsable piece picker.
 
 ### Revenue-critical status
 
