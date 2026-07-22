@@ -1868,6 +1868,19 @@ viva-voce.html
 
 ---
 
+### Phase 61 Updates (2026-07-22 — timeline.html restricted to AMEB only)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Syllabus picker removed | `timeline.html` | Per Sohyun's explicit decision: she has taught and personally sat AMEB exams, not ABRSM/Trinity, and didn't want the planner implying expertise it doesn't have — especially since the ABRSM/Trinity path only ever showed generic template text (no real technical-work data exists for those boards). Step 0 (syllabus picker) removed entirely; the wizard now starts directly on grade selection. `SYLLABUS = 'AMEB'` is now a fixed constant, not a state value. |
+| 2 | Wizard renumbered 5 steps → 4 | `timeline.html` | Screens: 0=grade, 1=exam date, 2=pieces, 3=quiz, 4=results (was 0=syllabus…5=results). All `screen===N` checks, the progress bar percentages, "Step X of Y" header text, and Back/Next navigation targets updated and re-verified. |
+| 3 | ABRSM/Trinity data removed from this page | `timeline.html` | All 20 ABRSM/Trinity `<script src=...>` tags and their `buildCorpus()` push() calls removed — this page no longer loads or references ABRSM/Trinity data at all (full multi-syllabus search remains unaffected on `index.html`). `GRADE_OPTIONS_BY_SYLLABUS` (3-syllabus map) replaced with a flat `GRADE_OPTIONS` array (AMEB's 12 grades: Prelim–G8, CertP, AMusA, LMusA). Unused `SYLLABUSES` array and `GRADE_ORDER` constant deleted. |
+| 4 | Copy updated to be explicit about scope | `timeline.html` | Title/meta tags changed to "AMEB Exam Timeline". Grade-step heading changed to "Which AMEB grade are you sitting?" with a subtitle "Built for the AMEB Piano syllabus — Preliminary through Diploma." |
+| 5 | Verification | — | Babel-compiled the `#app-jsx` block + `node --check` (clean); grepped for any leftover `DATA_ABRSM`/`DATA_TRINITY`/`SYLLABUSES` references (none found); confirmed `GRADE_OPTIONS` still lists all 12 correct AMEB grade keys. |
+| 6 | Scope decision — Sight-Reading/GK stay generic | — | Asked Sohyun whether Sight-Reading and General Knowledge/Aural requirements should get the same real-data treatment as Technical Work. Her call: unlike scales/arpeggios (discrete, enumerable items), sight-reading and aural requirements aren't cleanly itemizable per grade the same way — general prep guidance is the right level for those, not a checklist. `MONTH_FOCUS` phase text for sight-reading/GK stays as generic reminders; only Technical Work gets real per-grade syllabus data. Not a "todo, do later" — this is the intended final shape. |
+
+---
+
 ## Current Status (as of 2026-07-22)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
@@ -1885,7 +1898,11 @@ AMEB syllabus content to `timeline.html`'s technical-work phase and a checklist 
 pricing UI to `find-a-teacher.html`. `timeline.html`'s new curriculum content was verified via
 Babel compile + `node --check` + logic trace, then live-tested post-deploy on the real site —
 confirmed working correctly (see Phase 60 #7 above). `find-a-teacher.html`'s pricing UI was
-verified programmatically but not yet live-tested in a browser this session.
+verified programmatically but not yet live-tested in a browser this session. Phase 61 (same day)
+restricted `timeline.html` to AMEB only, per Sohyun's decision — she hasn't personally sat
+ABRSM/Trinity exams, and the ABRSM/Trinity path only ever showed generic (non-syllabus-specific)
+text anyway. Sight-reading/GK were confirmed to intentionally stay generic — Sohyun's call is
+that they aren't cleanly itemizable per grade the way scales/arpeggios are.
 
 ### Revenue-critical status
 
@@ -1910,7 +1927,6 @@ verified programmatically but not yet live-tested in a browser this session.
 | 7 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
 | 8 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
 | 9 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
-| 10 | ABRSM/Trinity technical work + sight-reading curriculum data | Deferred | Explicitly out of scope for Phase 60 — AMEB technical work only, to avoid scope creep. Revisit only if Sohyun wants it extended. |
 
 ### Known issues
 - `outreach-messages.md` still unsent — the biggest lever currently sitting idle in the backlog.
