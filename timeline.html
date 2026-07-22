@@ -68,6 +68,8 @@
   <script src="Trinity/Diploma/data_trinity_atcl.js"></script>
   <script src="Trinity/Diploma/data_trinity_ltcl.js"></script>
   <script src="Trinity/Diploma/data_trinity_ftcl.js"></script>
+  <!-- AMEB Technical Work (Prelim-G8 only) -->
+  <script src="data_technical_ameb.js"></script>
 
   <style>
     :root {
@@ -262,6 +264,34 @@ const MONTH_FOCUS = {
 };
 const EXAM_ORDER = ['foundation','technical','musical','consolidation','polish','exam'];
 
+// Real AMEB technical-work data for the chosen grade, if available (Prelim-G8 only —
+// not ABRSM/Trinity, not Diploma grades). Returns null otherwise so callers fall back
+// to the generic MONTH_FOCUS.technical text.
+function getTechnicalWork(syllabus, gradeKey) {
+  if (syllabus !== 'AMEB') return null;
+  if (typeof DATA_TECHNICAL_AMEB === 'undefined') return null;
+  return DATA_TECHNICAL_AMEB[gradeKey] || null;
+}
+
+// Builds 3 curriculum-specific paragraphs (mirrors the 3-entry shape of the generic
+// MONTH_FOCUS.technical array) referencing the grade's actual named exercises and
+// scale/arpeggio requirements, instead of generic template text.
+function buildTechnicalFocusLines(tech) {
+  if (!tech) return null;
+  const codes = tech.exercises.map(e => e.code).join(', ');
+  const exerciseDetail = tech.exercises.map(e => `${e.code} (${e.purpose}: ${e.pieces.join(' / ')})`).join('; ');
+  const scaleSection = tech.sections.find(s => /^Scales$/i.test(s.title)) || tech.sections[0];
+  const scaleList = scaleSection ? scaleSection.items.join(', ') : '';
+  const restSections = tech.sections.filter(s => s !== scaleSection);
+  const restList = restSections.map(s => `${s.title}: ${s.items.join(', ')}`).join('. ');
+
+  return [
+    `Technical Exercises ${codes} — ${exerciseDetail}. Learn each hands-separately, then start the required scale list: ${scaleList}.`,
+    `Bring the required scales up to full tempo, hands together, metronome on.${restList ? ' Also cover — ' + restList + '.' : ''} Exercises ${codes} should be memory-secure by month end.`,
+    `Full technical routine at exam speed: all scales${restSections.length ? ', arpeggios and progressions' : ''} plus Exercises ${codes} — memorised, no hesitation.`,
+  ];
+}
+
 function monthsBetween(startDate, endDate) {
   const allMonths = [];
   const cursor = new Date(startDate); cursor.setDate(1);
@@ -317,7 +347,7 @@ function fillTemplate(str, vars) {
     .replace(/\{piece3\}/g,'your third piece').replace(/\{piece4\}/g,'your fourth piece');
 }
 
-function buildTimeline(examDate, readinessScore, gradeLabel, syllabus, userPieces) {
+function buildTimeline(examDate, readinessScore, gradeLabel, syllabus, userPieces, gradeKey) {
   const today = new Date(); today.setHours(12,0,0,0);
   const end = new Date(examDate + 'T12:00:00');
   if (isNaN(end.getTime()) || end <= today) return [];
@@ -329,6 +359,9 @@ function buildTimeline(examDate, readinessScore, gradeLabel, syllabus, userPiece
   const phaseSeq = allocatePhases(total, readinessScore);
   const vars = { grade: gradeLabel || 'this grade', syllabus: syllabus || '' };
   (userPieces || []).slice(0,4).forEach((p,i) => { vars['piece'+(i+1)] = p; });
+
+  const tech = getTechnicalWork(syllabus, gradeKey);
+  const techFocusLines = tech ? buildTechnicalFocusLines(tech) : null;
 
   // Cycle of distinct suffixes appended once a phase's MONTH_FOCUS strings run out, so
   // long timelines (beyond ~17 months) never show the exact same paragraph two months
@@ -343,7 +376,7 @@ function buildTimeline(examDate, readinessScore, gradeLabel, syllabus, userPiece
   return allMonths.map((m,i) => {
     const phase = phaseSeq[i] || 'exam';
     const count = phaseCounter[phase] = (phaseCounter[phase] || 0);
-    const focusArr = MONTH_FOCUS[phase] || ['Continue focused practice.'];
+    const focusArr = (phase === 'technical' && techFocusLines) ? techFocusLines : (MONTH_FOCUS[phase] || ['Continue focused practice.']);
     let rawFocus = focusArr[Math.min(count, focusArr.length-1)];
     if (count >= focusArr.length) {
       const lap = count - focusArr.length;
@@ -571,11 +604,13 @@ function App() {
   const userPieces = pieces.filter(p => p && p.trim());
 
   function finishQuiz(score) {
-    const tl = buildTimeline(examDate, score, gradeLabel, syllabus, userPieces);
+    const tl = buildTimeline(examDate, score, gradeLabel, syllabus, userPieces, gradeKey);
     setTimeline(tl);
     setRepertoire(pickRepertoire(syllabus, gradeKey));
     setScreen(5);
   }
+
+  const technicalWork = getTechnicalWork(syllabus, gradeKey);
 
   function reset() {
     setScreen(0); setSyllabus(null); setGradeKey(null); setGradeLabel(null);
@@ -717,6 +752,28 @@ function App() {
 
             <h3 style={{fontSize:14,fontWeight:800,color:'#1a1410',marginBottom:10}}>Month by month</h3>
             {timeline.map((m,i) => <MonthCard key={m.monthStr} m={m} idx={i} isPast={false} />)}
+
+            {technicalWork && (
+              <>
+                <h3 style={{fontSize:14,fontWeight:800,color:'#1a1410',margin:'22px 0 10px'}}>{gradeLabel} Technical Work Checklist</h3>
+                <p style={{fontSize:12,color:'#9a8e84',marginBottom:12}}>Exactly what AMEB requires for this grade, straight from the syllabus — work through this alongside the monthly plan above.</p>
+                <div className="result-card">
+                  <div style={{fontSize:11,fontWeight:800,color:'#0e7490',marginBottom:8,textTransform:'uppercase',letterSpacing:'0.03em'}}>Technical Exercises</div>
+                  {technicalWork.exercises.map((ex,i) => (
+                    <div key={i} style={{marginBottom: i < technicalWork.exercises.length-1 ? 10 : 0}}>
+                      <div style={{fontSize:12.5,fontWeight:700,color:'#1a1410'}}>{ex.code} — {ex.purpose}</div>
+                      <div style={{fontSize:12,color:'#7a6e64',marginTop:1}}>{ex.pieces.join(' · ')}</div>
+                    </div>
+                  ))}
+                </div>
+                {technicalWork.sections.map((s,i) => (
+                  <div key={i} className="result-card">
+                    <div style={{fontSize:11,fontWeight:800,color:'#0e7490',marginBottom:6,textTransform:'uppercase',letterSpacing:'0.03em'}}>{s.title}</div>
+                    <div style={{fontSize:12.5,color:'#5c5248',lineHeight:1.7}}>{s.items.join(' · ')}</div>
+                  </div>
+                ))}
+              </>
+            )}
 
             {userPieces.length > 0 && (
               <>
