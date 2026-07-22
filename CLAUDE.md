@@ -1854,7 +1854,20 @@ viva-voce.html
 
 ---
 
-## Current Status (as of 2026-07-21)
+### Phase 60 Updates (2026-07-22 — find-a-teacher.html pricing + timeline.html real curriculum)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Final 3 re-indexing requests submitted | Search Console URL Inspection | LMusA, `diagnose.html`, `recommend.html` — the 3 URLs still queued from Phase 59's daily-quota cutoff. All 23/23 target pages now resubmitted for re-crawl. |
+| 2 | find-a-teacher.html — pricing + payment CTA added | `find-a-teacher.html` | Per Sohyun's decision (AskUserQuestion: $25 AUD, Stripe Payment Link): added a `$25 AUD · one-off session · online` hero badge, a price line in the step-4 summary card, and a post-submit payment prompt. `STRIPE_PAYMENT_LINK` constant left empty with a TODO comment — until Sohyun creates the real Stripe Payment Link and supplies the URL, the button shows "we'll email you a payment link" instead of a dead link. Verified via Babel compile + `node --check`. |
+| 3 | AMEB Technical Work syllabus data extracted | `AMEB Syllabus/technical pre-4 list.pdf`, `AMEB Syllabus/technical 5-8 list.pdf` | Both PDFs are scanned/image-based (no text layer) — rasterized via `pdftoppm` and read visually, page by page, Preliminary through Grade 8. Transcription cross-checked against each grade's own item-numbering range (e.g. Grade 6 = "6.1–6.23" = 23 items) as an accuracy check — all 9 grades matched exactly. |
+| 4 | `data_technical_ameb.js` created | `data_technical_ameb.js` (new, root level) | Structured data: per grade (Prelim–G8), the named Technical Exercises (code + pedagogical purpose + piece names) and every scale/arpeggio/chord-progression requirement section, verbatim from the syllabus. AMEB only — ABRSM/Trinity have different technical requirements, and AMEB Diploma grades (CertP/AMusA/LMusA) have no fixed technical-exercise list in this format. |
+| 5 | `timeline.html` — real curriculum content | `timeline.html` | Per Sohyun's request to make the timeline "실라버스를 포괄해서... 커리큘럼자체로" (cover the syllabus, become a real curriculum) rather than generic template phrases. Added `getTechnicalWork(syllabus, gradeKey)` (returns real data for AMEB Prelim–G8, `null` otherwise) and `buildTechnicalFocusLines(tech)`, which replace the generic `MONTH_FOCUS.technical` template text with grade-specific paragraphs naming the actual required exercises and scales. Also added a new "Technical Work Checklist" card block on the results screen showing the full exercise list and every scale/arpeggio section for the chosen grade, straight from the syllabus. Scoped to AMEB only for this pass (ABRSM/Trinity/sight-reading data intentionally deferred, per this session's scope-discipline agreement). |
+| 6 | Verification | — | Babel-compiled the full `#app-jsx` block + `node --check` on the output (both clean); separately traced `getTechnicalWork()`/`buildTechnicalFocusLines()` in isolation for two different grade shapes (G5 — has a plain "Scales" section; G7 — has no "Scales" section, starts with "Abbreviated grand scale format", tests the fallback path) and confirmed correct output for both, plus confirmed `null` fallback for ABRSM/Trinity/Diploma grades. Live browser test not possible this session — the Claude-in-Chrome `navigate` tool cannot open local `file://` URLs (always prepends `https://`); scheduled for live spot-check after Sohyun deploys. |
+
+---
+
+## Current Status (as of 2026-07-22)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
 that used to repeat after almost every phase above (removed in Phase 59 for readability) — this
@@ -1862,38 +1875,43 @@ is the single current source of truth. The phase-by-phase history above is prese
 technical context: bug root-causes, schema decisions, architecture notes.*
 
 ### Build status
-All features listed across Phases 1–58 are built and were live prior to this session. This
-session additionally confirmed live, via direct browser testing: `timeline.html` (full 6-step
-flow, no bugs), and `viva-voce.html` (one real bug found and fixed — see Phase 59 above, PDF
-generation now confirmed clean). All 41 public HTML pages passed a syntax/JSX regression audit
-on 2026-07-21 — no known blank-page or silent-JS-error bugs remain as of this session.
+All features listed across Phases 1–58 are built and were live prior to 2026-07-21. That session
+confirmed live, via direct browser testing: `timeline.html` (full 6-step flow, no bugs at the
+time) and `viva-voce.html` (one real bug found and fixed — PDF generation confirmed clean). All
+41 public HTML pages passed a syntax/JSX regression audit on 2026-07-21 — no known blank-page or
+silent-JS-error bugs remain as of that audit. This session (Phase 60, 2026-07-22) added real
+AMEB syllabus content to `timeline.html`'s technical-work phase and a checklist card, and added
+pricing UI to `find-a-teacher.html` — both verified via Babel compile + `node --check` + logic
+trace, but **not yet live-tested in a browser** (see Pending work #1 below).
 
 ### Revenue-critical status
 
 | Lever | Status | What's blocking it |
 |---|---|---|
-| AdSense (ca-pub-6523454944716812) | Pending review | Was almost certainly blocked by the 14 blank pages found today (now fixed and resubmitted for indexing). Do not request re-review until Search Console's indexed count recovers. |
-| Search Console indexing | 20/39 pages indexed as of the 2026-07-21 baseline; 19 pages just resubmitted for re-crawl | Recovery expected over 1–2 weeks; tracked automatically by the Monday check. |
+| AdSense (ca-pub-6523454944716812) | Pending review | Was almost certainly blocked by the 14 blank pages found 2026-07-21 (now fixed and resubmitted for indexing). Do not request re-review until Search Console's indexed count recovers. |
+| Search Console indexing | 20/39 pages indexed as of the 2026-07-21 baseline; all 23/23 target pages now resubmitted for re-crawl | Recovery expected over 1–2 weeks; tracked automatically by the Monday check. |
 | Organic traffic | 14 clicks over ~2 months — effectively zero | Indexing recovery alone won't fix this on its own; needs backlinks/awareness (see below). |
 | Teacher outreach (`outreach-messages.md`) | Ready to send, not yet sent | **Sohyun action required.** Currently the highest-leverage lever sitting untouched — likely faster path to real revenue than waiting on SEO. |
+| Exam Check-Up service (`find-a-teacher.html`) | Form + pricing UI live, payment not wired up | **Sohyun action required.** Needs a real Stripe Payment Link (dashboard.stripe.com → Products → Add Product, $25 AUD one-time → Create payment link) pasted into the `STRIPE_PAYMENT_LINK` constant. |
 
 ### Pending work (priority order)
 
 | # | Task | Priority | Notes |
 |---|------|----------|-------|
-| 1 | Send teacher outreach messages | High — Sohyun, ~10 min | `outreach-messages.md` is ready to copy-paste. Independent of the SEO/indexing timeline. |
-| 2 | Resume Search Console re-indexing (3 URLs left) | Quick | LMusA, `diagnose.html`, `recommend.html` — daily quota resets, submit when available. |
-| 3 | Sohyun — glance at a real downloaded viva-voce PDF | Quick | Fix is live and verified programmatically; a final human look confirms it end to end. |
-| 4 | AdSense re-review | High, but WAIT | Do not request until Search Console's indexed count has meaningfully recovered from 20/39. |
-| 5 | Refresh the File Structure section of this doc | Low | It predates Trinity/, CertP/, and the standalone tool pages (diagnose/recommend/timeline/viva-voce/connect/find-a-teacher/teach-with-us) — cosmetic staleness, not blocking anything. |
-| 6 | connect.html — real teacher info | Deferred | When Sohyun is ready to take referrals. |
-| 7 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
-| 8 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
-| 9 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
+| 1 | Live-test `timeline.html`'s new curriculum content in a real browser | High — next session | Phase 60's technical-work rewrite was verified programmatically (Babel/node/logic trace) but never opened in an actual browser — same class of gap that caused the Phase 12/54/58 blank-page bugs. Do this before telling Sohyun it's ready. |
+| 2 | Send teacher outreach messages | High — Sohyun, ~10 min | `outreach-messages.md` is ready to copy-paste. Independent of the SEO/indexing timeline. |
+| 3 | Create the Stripe Payment Link for Exam Check-Up | High — Sohyun | $25 AUD one-time product → paste the link into `STRIPE_PAYMENT_LINK` in `find-a-teacher.html`. |
+| 4 | Sohyun — glance at a real downloaded viva-voce PDF | Quick | Fix is live and verified programmatically; a final human look confirms it end to end. |
+| 5 | AdSense re-review | High, but WAIT | Do not request until Search Console's indexed count has meaningfully recovered from 20/39. |
+| 6 | Refresh the File Structure section of this doc | Low | It predates Trinity/, CertP/, and the standalone tool pages (diagnose/recommend/timeline/viva-voce/connect/find-a-teacher/teach-with-us, `data_technical_ameb.js`) — cosmetic staleness, not blocking anything. |
+| 7 | connect.html — real teacher info | Deferred | When Sohyun is ready to take referrals. |
+| 8 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
+| 9 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
+| 10 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
+| 11 | ABRSM/Trinity technical work + sight-reading curriculum data | Deferred | Explicitly out of scope for Phase 60 — AMEB technical work only, to avoid scope creep. Revisit once AMEB version is validated live. |
 
 ### Known issues
 - `outreach-messages.md` still unsent — the biggest lever currently sitting idle in the backlog.
-- 3 of 23 re-indexing requests still queued (LMusA, `diagnose.html`, `recommend.html`) — hit the daily quota on 2026-07-21, resume next available window.
 - File Structure section (near the top of this doc) doesn't reflect Trinity/, CertP/, or the standalone tool pages — cosmetic staleness, not urgent.
 - connect.html: placeholder teacher cards, not publicly promoted.
 - Supabase free tier auto-pauses after 7 days of inactivity — mitigated by the `supabase-keepalive.yml` GitHub Action (runs Mon & Thu).
