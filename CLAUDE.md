@@ -1863,7 +1863,8 @@ viva-voce.html
 | 3 | AMEB Technical Work syllabus data extracted | `AMEB Syllabus/technical pre-4 list.pdf`, `AMEB Syllabus/technical 5-8 list.pdf` | Both PDFs are scanned/image-based (no text layer) — rasterized via `pdftoppm` and read visually, page by page, Preliminary through Grade 8. Transcription cross-checked against each grade's own item-numbering range (e.g. Grade 6 = "6.1–6.23" = 23 items) as an accuracy check — all 9 grades matched exactly. |
 | 4 | `data_technical_ameb.js` created | `data_technical_ameb.js` (new, root level) | Structured data: per grade (Prelim–G8), the named Technical Exercises (code + pedagogical purpose + piece names) and every scale/arpeggio/chord-progression requirement section, verbatim from the syllabus. AMEB only — ABRSM/Trinity have different technical requirements, and AMEB Diploma grades (CertP/AMusA/LMusA) have no fixed technical-exercise list in this format. |
 | 5 | `timeline.html` — real curriculum content | `timeline.html` | Per Sohyun's request to make the timeline "실라버스를 포괄해서... 커리큘럼자체로" (cover the syllabus, become a real curriculum) rather than generic template phrases. Added `getTechnicalWork(syllabus, gradeKey)` (returns real data for AMEB Prelim–G8, `null` otherwise) and `buildTechnicalFocusLines(tech)`, which replace the generic `MONTH_FOCUS.technical` template text with grade-specific paragraphs naming the actual required exercises and scales. Also added a new "Technical Work Checklist" card block on the results screen showing the full exercise list and every scale/arpeggio section for the chosen grade, straight from the syllabus. Scoped to AMEB only for this pass (ABRSM/Trinity/sight-reading data intentionally deferred, per this session's scope-discipline agreement). |
-| 6 | Verification | — | Babel-compiled the full `#app-jsx` block + `node --check` on the output (both clean); separately traced `getTechnicalWork()`/`buildTechnicalFocusLines()` in isolation for two different grade shapes (G5 — has a plain "Scales" section; G7 — has no "Scales" section, starts with "Abbreviated grand scale format", tests the fallback path) and confirmed correct output for both, plus confirmed `null` fallback for ABRSM/Trinity/Diploma grades. Live browser test not possible this session — the Claude-in-Chrome `navigate` tool cannot open local `file://` URLs (always prepends `https://`); scheduled for live spot-check after Sohyun deploys. |
+| 6 | Verification | — | Babel-compiled the full `#app-jsx` block + `node --check` on the output (both clean); separately traced `getTechnicalWork()`/`buildTechnicalFocusLines()` in isolation for two different grade shapes (G5 — has a plain "Scales" section; G7 — has no "Scales" section, starts with "Abbreviated grand scale format", tests the fallback path) and confirmed correct output for both, plus confirmed `null` fallback for ABRSM/Trinity/Diploma grades. |
+| 7 | Live-tested end to end post-deploy — confirmed working, one caching gotcha found | `timeline.html` | First live run (AMEB → Grade 5 → 17-month date → skip pieces → quiz → results) initially showed the OLD generic text — `typeof DATA_TECHNICAL_AMEB` was `undefined` in that tab even though a cache-busted `fetch()` of the live HTML confirmed the new `<script src="data_technical_ameb.js">` tag and code were correctly deployed. Root cause: browser/CDN cache serving a stale pre-deploy version of `timeline.html` to a tab that was opened moments before the push finished propagating — not a code bug. A hard reload (`?v=2` cache-bust) picked up the new version correctly: Nov 2026 through Jan 2027 month cards showed the real Grade 5 exercise/scale text (5A/5B/5C, full scale list, arpeggios), and the new "Grade 5 Technical Work Checklist" card rendered all exercise + scale/arpeggio sections correctly. Zero console errors throughout. |
 
 ---
 
@@ -1881,8 +1882,10 @@ time) and `viva-voce.html` (one real bug found and fixed — PDF generation conf
 41 public HTML pages passed a syntax/JSX regression audit on 2026-07-21 — no known blank-page or
 silent-JS-error bugs remain as of that audit. This session (Phase 60, 2026-07-22) added real
 AMEB syllabus content to `timeline.html`'s technical-work phase and a checklist card, and added
-pricing UI to `find-a-teacher.html` — both verified via Babel compile + `node --check` + logic
-trace, but **not yet live-tested in a browser** (see Pending work #1 below).
+pricing UI to `find-a-teacher.html`. `timeline.html`'s new curriculum content was verified via
+Babel compile + `node --check` + logic trace, then live-tested post-deploy on the real site —
+confirmed working correctly (see Phase 60 #7 above). `find-a-teacher.html`'s pricing UI was
+verified programmatically but not yet live-tested in a browser this session.
 
 ### Revenue-critical status
 
@@ -1898,17 +1901,16 @@ trace, but **not yet live-tested in a browser** (see Pending work #1 below).
 
 | # | Task | Priority | Notes |
 |---|------|----------|-------|
-| 1 | Live-test `timeline.html`'s new curriculum content in a real browser | High — next session | Phase 60's technical-work rewrite was verified programmatically (Babel/node/logic trace) but never opened in an actual browser — same class of gap that caused the Phase 12/54/58 blank-page bugs. Do this before telling Sohyun it's ready. |
-| 2 | Send teacher outreach messages | High — Sohyun, ~10 min | `outreach-messages.md` is ready to copy-paste. Independent of the SEO/indexing timeline. |
-| 3 | Create the Stripe Payment Link for Exam Check-Up | High — Sohyun | $25 AUD one-time product → paste the link into `STRIPE_PAYMENT_LINK` in `find-a-teacher.html`. |
-| 4 | Sohyun — glance at a real downloaded viva-voce PDF | Quick | Fix is live and verified programmatically; a final human look confirms it end to end. |
-| 5 | AdSense re-review | High, but WAIT | Do not request until Search Console's indexed count has meaningfully recovered from 20/39. |
-| 6 | Refresh the File Structure section of this doc | Low | It predates Trinity/, CertP/, and the standalone tool pages (diagnose/recommend/timeline/viva-voce/connect/find-a-teacher/teach-with-us, `data_technical_ameb.js`) — cosmetic staleness, not blocking anything. |
-| 7 | connect.html — real teacher info | Deferred | When Sohyun is ready to take referrals. |
-| 8 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
-| 9 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
-| 10 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
-| 11 | ABRSM/Trinity technical work + sight-reading curriculum data | Deferred | Explicitly out of scope for Phase 60 — AMEB technical work only, to avoid scope creep. Revisit once AMEB version is validated live. |
+| 1 | Send teacher outreach messages | High — Sohyun, ~10 min | `outreach-messages.md` is ready to copy-paste. Independent of the SEO/indexing timeline. |
+| 2 | Create the Stripe Payment Link for Exam Check-Up | High — Sohyun | $25 AUD one-time product → paste the link into `STRIPE_PAYMENT_LINK` in `find-a-teacher.html`. |
+| 3 | Sohyun — glance at a real downloaded viva-voce PDF | Quick | Fix is live and verified programmatically; a final human look confirms it end to end. |
+| 4 | AdSense re-review | High, but WAIT | Do not request until Search Console's indexed count has meaningfully recovered from 20/39. |
+| 5 | Refresh the File Structure section of this doc | Low | It predates Trinity/, CertP/, and the standalone tool pages (diagnose/recommend/timeline/viva-voce/connect/find-a-teacher/teach-with-us, `data_technical_ameb.js`) — cosmetic staleness, not blocking anything. |
+| 6 | connect.html — real teacher info | Deferred | When Sohyun is ready to take referrals. |
+| 7 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
+| 8 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
+| 9 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
+| 10 | ABRSM/Trinity technical work + sight-reading curriculum data | Deferred | Explicitly out of scope for Phase 60 — AMEB technical work only, to avoid scope creep. Revisit only if Sohyun wants it extended. |
 
 ### Known issues
 - `outreach-messages.md` still unsent — the biggest lever currently sitting idle in the backlog.
