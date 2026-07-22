@@ -1885,6 +1885,20 @@ viva-voce.html
 
 ---
 
+### Phase 62 Updates (2026-07-22 — every phase specific + weekly breakdowns + density)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Sohyun feedback on results page ("이렇게만은 좀 부족하게 느껴지는데") | — | Asked via `AskUserQuestion` (multi-select) what specifically felt lacking. Answer: (a) other phases should be as specific as Technical, (b) month-level is too coarse — week-level plans needed too, (c) page looks visually sparse for the amount of studying required. All three addressed this session. |
+| 2 | Piece slots now store full piece objects, not display strings | `timeline.html` | `PieceInput.choose()` now sets `pieces[slot] = p` (the whole corpus object) instead of a formatted string, so `.era`/`.focus`/`.c`/`.t`/`.l` survive into the results screen and into `buildTimeline()`. `anyFilled` / slot display / `App()`'s `userPieces` all updated accordingly (`pieces.filter(Boolean)` instead of `.filter(p=>p&&p.trim())`). |
+| 3 | Every phase now has a real checklist builder, not just Technical | `timeline.html` | New per-phase functions — `foundationChecklist`, `technicalChecklist` (replaces the old `buildTechnicalFocusLines`), `musicalChecklist`, `consolidationChecklist`, `polishChecklist`, `examChecklist` — each returns 1–3 concrete checklist items for the given month-in-phase. `musicalChecklist` and `foundationChecklist` reference the student's actual chosen pieces by name when supplied; `musicalChecklist` specifically pulls each piece's existing `focus` keywords (already curated in the corpus, 3 per piece) and a new `ERA_MUSICAL_TIPS` dictionary (Baroque/Classical/Romantic/Modern/Contemporary — separate, shorter copy from `viva-voce.html`'s era content, which serves a different purpose) to generate era-appropriate shaping cues per piece. `technicalChecklist` still uses the real `data_technical_ameb.js` exercise/scale data, now shaped as short checklist bullets instead of paragraphs; falls back to a clear "no fixed technical list at Diploma level" message for CertP/AMusA/LMusA. |
+| 4 | `MONTH_FOCUS` lead sentences shortened, piece-placeholders removed | `timeline.html` | The old `{piece1}`–`{piece4}` template substitution inside `MONTH_FOCUS` strings is gone — piece-specific detail now lives entirely in the new checklists (avoids duplicating the same piece name in both the lead sentence and the checklist below it). `fillTemplate()` simplified to just `{grade}`/`{syllabus}` substitution. |
+| 5 | Week-by-week breakdown added to every month | `timeline.html` | New `WEEKLY_TEMPLATES` — one array of exactly 4 week-level lines per phase (same 4 for every month within that phase, since the month-to-month progression is already carried by the lead sentence + checklist). `buildMonthContent()` now returns `{ lead, checklist, weekly }` per month; `MonthCard` renders `weekly` behind a collapsible "▸ Week by week" toggle (per-card local state) so the page gains real week-level structure without forcing every month open by default. |
+| 6 | Visual density — checklist bullets + chip-style badges | `timeline.html` | `MonthCard` now renders the lead sentence, then a checkmark (✓) bullet list for the checklist (phase-coloured checkmarks), then the collapsible weekly block — three distinct visual layers per month instead of one paragraph. The "Your exam pieces" card was upgraded to show era badge + full focus-tag chips per piece (previously just plain text), using the piece-object data now retained from step 2. |
+| 7 | Verification | — | Babel-compiled the full `#app-jsx` block with the browser's actual transform settings (classic runtime, matching `Babel.transform(src,{presets:['react']})`) + `node --check` on the output (both clean). Built a Node logic-test harness (stubbed `React`, loaded real `data_technical_ameb.js` + `G5/data_g5_1.js`) and directly exercised `buildTimeline()`/`buildMonthContent()`/each checklist builder against real Grade 5 corpus pieces: confirmed correct, era/focus-aware checklist output both with and without user-supplied pieces; confirmed the AMusA (Diploma, no technical data) fallback message; confirmed short (2-month) and long (20-month) timelines don't crash and correctly cap at each checklist's last stage via `Math.min`; grepped the source to confirm no leftover references to the old `buildTechnicalFocusLines`/`techFocusLines`. Not yet live-tested in a browser this session — pending Sohyun's deploy + confirmation. |
+
+---
+
 ## Current Status (as of 2026-07-22)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
@@ -1909,6 +1923,13 @@ text anyway. Sight-reading/GK were confirmed to intentionally stay generic — S
 that they aren't cleanly itemizable per grade the way scales/arpeggios are. Same session, based
 on Sohyun's real-screenshot feedback: shortened the dense month-card technical text, restyled
 the Technical Work Checklist as scannable chips, and added a no-typing browsable piece picker.
+Phase 62 (same day, next round of feedback): every phase (not just Technical) now generates a
+real per-month checklist — Foundation and Musical Shaping use the student's actual chosen pieces
+plus their existing curated `focus` tags and a new era-tip dictionary when pieces are supplied;
+every month also got a collapsible week-by-week breakdown (4 beats per phase) and denser
+checkmark/chip-style visual structure instead of a single paragraph. Verified via Babel compile
++ `node --check` + a direct Node logic trace against real Grade 5 data (with and without
+supplied pieces, short/long timelines, Diploma fallback) — not yet live-tested in a browser.
 
 ### Revenue-critical status
 
@@ -1928,11 +1949,12 @@ the Technical Work Checklist as scannable chips, and added a no-typing browsable
 | 2 | Create the Stripe Payment Link for Exam Check-Up | High — Sohyun | $25 AUD one-time product → paste the link into `STRIPE_PAYMENT_LINK` in `find-a-teacher.html`. |
 | 3 | Sohyun — glance at a real downloaded viva-voce PDF | Quick | Fix is live and verified programmatically; a final human look confirms it end to end. |
 | 4 | AdSense re-review | High, but WAIT | Do not request until Search Console's indexed count has meaningfully recovered from 20/39. |
-| 5 | Refresh the File Structure section of this doc | Low | It predates Trinity/, CertP/, and the standalone tool pages (diagnose/recommend/timeline/viva-voce/connect/find-a-teacher/teach-with-us, `data_technical_ameb.js`) — cosmetic staleness, not blocking anything. |
-| 6 | connect.html — real teacher info | Deferred | When Sohyun is ready to take referrals. |
-| 7 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
-| 8 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
-| 9 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
+| 5 | Live-test Phase 62 timeline.html changes after deploy | Medium | Weekly breakdown, per-phase checklists, and the piece-object retention change are verified programmatically only — need a real browser run (with and without pieces selected) to confirm before calling it done. |
+| 6 | Refresh the File Structure section of this doc | Low | It predates Trinity/, CertP/, and the standalone tool pages (diagnose/recommend/timeline/viva-voce/connect/find-a-teacher/teach-with-us, `data_technical_ameb.js`) — cosmetic staleness, not blocking anything. |
+| 7 | connect.html — real teacher info | Deferred | When Sohyun is ready to take referrals. |
+| 8 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
+| 9 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
+| 10 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
 
 ### Known issues
 - `outreach-messages.md` still unsent — the biggest lever currently sitting idle in the backlog.
