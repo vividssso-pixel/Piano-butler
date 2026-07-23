@@ -128,9 +128,43 @@ Piano Butler/
 │   ├── G7/
 │   │   ├── data_abrsm_g7.js         ← ABRSM G7 (46 pieces: A:16, B:15, C:15)
 │   │   └── piano-repertoire_abrsm_g7.html
-│   └── G8/
-│       ├── data_abrsm_g8.js         ← ABRSM G8 (45 pieces: A:16, B:15, C:14)
-│       └── piano-repertoire_abrsm_g8.html
+│   ├── G8/
+│   │   ├── data_abrsm_g8.js         ← ABRSM G8 (45 pieces: A:16, B:15, C:14)
+│   │   └── piano-repertoire_abrsm_g8.html
+│   └── Diploma/
+│       ├── data_abrsm_lrsm.js       ← LRSM Diploma (139 works, open pool)
+│       ├── piano-repertoire_abrsm_lrsm.html
+│       ├── data_abrsm_frsm.js       ← FRSM Diploma (97 works, open pool)
+│       └── piano-repertoire_abrsm_frsm.html
+├── Trinity/                          ← Trinity College London, Initial–G8 + Diploma
+│   ├── Initial/ … G5/                ← flat open pool (no list/group field)
+│   ├── G6/ … G8/                     ← Group A / Group B tab filter
+│   │   ├── data_trinity_gX.js
+│   │   └── piano-repertoire_trinity_gX.html
+│   └── Diploma/
+│       ├── data_trinity_atcl.js     ← ATCL (241 works)
+│       ├── piano-repertoire_trinity_atcl.html
+│       ├── data_trinity_ltcl.js     ← LTCL (306 works)
+│       ├── piano-repertoire_trinity_ltcl.html
+│       ├── data_trinity_ftcl.js     ← FTCL (155 works)
+│       └── piano-repertoire_trinity_ftcl.html
+├── CertP/                            ← AMEB Certificate of Performance (128 pieces: A:28, B:27, C:33, D:40)
+│   ├── data_certp.js
+│   └── piano-repertoire_certp.html
+├── data_technical_ameb.js            ← AMEB Technical Work syllabus data (Prelim–G8), used by timeline.html
+├── ads.txt                           ← AdSense authorized-seller record (added 2026-07-23, Phase 63)
+├── robots.txt / sitemap.xml / CNAME
+├── privacy.html                      ← minimal privacy policy (AdSense-required disclosures)
+├── recommend.html                    ← repertoire recommender wizard (standalone, not in nav)
+├── diagnose.html                     ← skill self-assessment tool (standalone, not in nav)
+├── timeline.html                     ← AMEB-only exam prep planner (standalone, not in nav)
+├── viva-voce.html                    ← General Knowledge / viva voce PDF pack generator (AMEB only, standalone)
+├── connect.html                      ← teacher/course matching (placeholder data, not promoted)
+├── find-a-teacher.html               ← student → teacher matching request form (hidden from nav)
+├── teach-with-us.html                ← teacher application form (hidden from nav)
+├── teacher-dashboard.html            ← Supabase-backed studio management (deprioritized, not promoted)
+├── admin-search.html / admin-counts.html   ← password-gated internal tools, noindex
+└── outreach-messages.md              ← gitignored — teacher recruitment message drafts
 ```
 
 ---
@@ -1900,7 +1934,23 @@ viva-voce.html
 
 ---
 
-## Current Status (as of 2026-07-22)
+### Phase 63 Updates (2026-07-23 — AdSense audit: found the real blocker)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | outreach-messages.md checked | — | Still unsent. No change since Phase 55. Flagged again as the highest-leverage idle lever. |
+| 2 | Git/deploy state checked | — | Working tree was clean, nothing uncommitted since Phase 62 — all prior work already pushed and logged. |
+| 3 | Search Console live-checked | Google Search Console | Still 20/39 indexed — unchanged from the 2026-07-21 baseline. Data shown was last updated 2026-07-10, i.e. it does **not yet reflect** the July 21 blank-page fixes or the 23 re-indexing requests submitted since — too early to read anything into the flat number. Total clicks: 15 (was 14) — essentially flat. Not-indexed breakdown: 16 "Discovered — currently not indexed", 2 "Crawled — currently not indexed", 1 duplicate/alternate-canonical page. |
+| 4 | **AdSense site status live-checked — found a real, concrete blocker** | Google AdSense → Sites | Site row for thepianobutler.com shows 승인 상태 (approval status): **주의 필요** (needs attention), reason given: "Google ads served on screens without publisher content, low-value content" — dated **2026-06-21**, i.e. this predates the July 21 blank-page-bug fixes entirely and may already be stale, but has not been refreshed since. Separately and more concretely: **Ads.txt 상태 (ads.txt status) showed 찾을 수 없음 — "not found."** The site had no `ads.txt` file at all. This is an unambiguous, independently-fixable technical gap (distinct from the "low-value content" flag, which may just be a stale artifact of the pre-fix blank pages). |
+| 5 | Policy Center checked | Google AdSense → Policy Center | "현재 정책 위반 문제 없음" — no active policy violations on the account right now. This is reassuring: the site-level "주의 필요" tag is most likely a stale snapshot from before the July 21 fixes, not a live, current violation. |
+| 6 | Payment info checked (view only — not touched) | Google AdSense → Payments | Still shows "1개/2개" — payment info has not been completed. **This requires Sohyun personally** — entering bank/address details is outside what Claude can do (financial-credentials policy). Genuinely blocks getting paid even after approval, independent of the content/indexing questions. |
+| 7 | `ads.txt` created and committed | `ads.txt` (new, repo root) | `google.com, pub-6523454944716812, DIRECT, f08c47fec0942fa0` — the standard required line for a direct AdSense publisher, using the exact `pub-` ID confirmed from the live `adsbygoogle.js` script tag in `index.html`. Committed locally (`18544d9`) but **not yet pushed** — per the standing git-sandbox limitation, Sohyun needs to run `git push` from her own Terminal. |
+| 8 | CLAUDE.md restructured — Current Status section updated | `CLAUDE.md` | Revenue-critical status table and pending-work list below updated to reflect today's findings. File Structure section (top of doc) refreshed — see #9. |
+| 9 | File Structure section refreshed | `CLAUDE.md` | The section near the top of this doc was stale since before Trinity/CertP/diploma expansion. Updated to reflect the current top-level layout (see "File Structure" near the top). |
+
+---
+
+## Current Status (as of 2026-07-23)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
 that used to repeat after almost every phase above (removed in Phase 59 for readability) — this
@@ -1938,29 +1988,32 @@ see Phase 62 #8 above.
 
 | Lever | Status | What's blocking it |
 |---|---|---|
-| AdSense (ca-pub-6523454944716812) | Pending review | Was almost certainly blocked by the 14 blank pages found 2026-07-21 (now fixed and resubmitted for indexing). Do not request re-review until Search Console's indexed count recovers. |
-| Search Console indexing | 20/39 pages indexed as of the 2026-07-21 baseline; all 23/23 target pages now resubmitted for re-crawl | Recovery expected over 1–2 weeks; tracked automatically by the Monday check. |
-| Organic traffic | 14 clicks over ~2 months — effectively zero | Indexing recovery alone won't fix this on its own; needs backlinks/awareness (see below). |
-| Teacher outreach (`outreach-messages.md`) | Ready to send, not yet sent | **Sohyun action required.** Currently the highest-leverage lever sitting untouched — likely faster path to real revenue than waiting on SEO. |
+| AdSense (ca-pub-6523454944716812) | Site status: 주의 필요 ("needs attention" — low-value content / no publisher content on some screens), dated 2026-06-21, likely stale/pre-fix. Policy Center itself shows zero active violations. Ads.txt was **missing entirely** — fixed 2026-07-23, commit `18544d9`, awaiting push. | Two separate things, don't conflate them: (a) content flag — probably resolves once Google re-crawls post-July-21 fixes; (b) ads.txt — a hard technical requirement that was simply never done. Do not request re-review until Search Console's indexed count recovers AND ads.txt is live. |
+| Payment info | Incomplete (1 of 2 AdSense setup steps done) | **Sohyun action required.** Bank/address details — Claude cannot enter these (financial-credentials policy). This blocks getting *paid* even after approval, so it's on the critical path regardless of indexing/content status. |
+| Search Console indexing | Still 20/39 as of this check (2026-07-23) — data itself last updated 2026-07-10, so it doesn't yet reflect the July 21 fixes or the 23 re-indexing requests | Too early to read signal either way; re-check in another week. Tracked automatically by the Monday check. |
+| Organic traffic | 15 clicks total (was 14) — effectively flat | Indexing recovery alone won't fix this; needs backlinks/awareness (see below). |
+| Teacher outreach (`outreach-messages.md`) | Ready to send, still not sent as of 2026-07-23 | **Sohyun action required.** Currently the highest-leverage lever sitting untouched — likely faster path to real revenue than waiting on SEO. |
 | Exam Check-Up service (`find-a-teacher.html`) | Form + pricing UI live, payment not wired up | **Sohyun action required.** Needs a real Stripe Payment Link (dashboard.stripe.com → Products → Add Product, $25 AUD one-time → Create payment link) pasted into the `STRIPE_PAYMENT_LINK` constant. |
 
 ### Pending work (priority order)
 
 | # | Task | Priority | Notes |
 |---|------|----------|-------|
-| 1 | Send teacher outreach messages | High — Sohyun, ~10 min | `outreach-messages.md` is ready to copy-paste. Independent of the SEO/indexing timeline. |
-| 2 | Create the Stripe Payment Link for Exam Check-Up | High — Sohyun | $25 AUD one-time product → paste the link into `STRIPE_PAYMENT_LINK` in `find-a-teacher.html`. |
-| 3 | Sohyun — glance at a real downloaded viva-voce PDF | Quick | Fix is live and verified programmatically; a final human look confirms it end to end. |
-| 4 | AdSense re-review | High, but WAIT | Do not request until Search Console's indexed count has meaningfully recovered from 20/39. |
-| 5 | Refresh the File Structure section of this doc | Low | It predates Trinity/, CertP/, and the standalone tool pages (diagnose/recommend/timeline/viva-voce/connect/find-a-teacher/teach-with-us, `data_technical_ameb.js`) — cosmetic staleness, not blocking anything. |
-| 6 | connect.html — real teacher info | Deferred | When Sohyun is ready to take referrals. |
-| 7 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
-| 8 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
-| 9 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
+| 1 | `git push` the ads.txt fix | High — Sohyun, ~1 min | Commit `18544d9` is local-only. Site has zero ads.txt coverage until this is pushed. |
+| 2 | Send teacher outreach messages | High — Sohyun, ~10 min | `outreach-messages.md` is ready to copy-paste. Independent of the SEO/indexing timeline. |
+| 3 | Complete AdSense payment info | High — Sohyun | Bank/address details in AdSense → Payments. Blocks payout even after approval. |
+| 4 | Create the Stripe Payment Link for Exam Check-Up | High — Sohyun | $25 AUD one-time product → paste the link into `STRIPE_PAYMENT_LINK` in `find-a-teacher.html`. |
+| 5 | Sohyun — glance at a real downloaded viva-voce PDF | Quick | Fix is live and verified programmatically; a final human look confirms it end to end. |
+| 6 | AdSense re-review | High, but WAIT | Do not request until (a) ads.txt is live and (b) Search Console's indexed count has meaningfully recovered from 20/39. |
+| 7 | connect.html — real teacher info | Deferred | When Sohyun is ready to take referrals. |
+| 8 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
+| 9 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
+| 10 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
 
 ### Known issues
 - `outreach-messages.md` still unsent — the biggest lever currently sitting idle in the backlog.
-- File Structure section (near the top of this doc) doesn't reflect Trinity/, CertP/, or the standalone tool pages — cosmetic staleness, not urgent.
+- `ads.txt` fix committed locally (`18544d9`) but not pushed — needs `git push` from Sohyun's Terminal before it takes effect on the live site.
+- AdSense payment info incomplete — needs Sohyun to enter bank/address details directly in AdSense (Claude cannot do this).
 - connect.html: placeholder teacher cards, not publicly promoted.
 - Supabase free tier auto-pauses after 7 days of inactivity — mitigated by the `supabase-keepalive.yml` GitHub Action (runs Mon & Thu).
-- Git sandbox: run `rm -f .git/index.lock .git/HEAD.lock` before committing if pushes fail from the Cowork sandbox; the actual `git push` must be run by Sohyun from her own Terminal (the sandbox has no push credentials).
+- Git sandbox: `rm -f .git/index.lock .git/HEAD.lock` may fail with "Operation not permitted" (files can't be deleted once written in this mounted folder) — if so, call `allow_cowork_file_delete` on the lock file path first, then retry the `rm`. The actual `git push` must always be run by Sohyun from her own Terminal (the sandbox has no push credentials).
