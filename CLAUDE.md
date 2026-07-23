@@ -2003,7 +2003,7 @@ see Phase 62 #8 above.
 | 2 | Send teacher outreach messages | High — Sohyun, ~10 min | `outreach-messages.md` is ready to copy-paste. Independent of the SEO/indexing timeline. |
 | 3 | Complete AdSense payment info | High — Sohyun | Bank/address details in AdSense → Payments. Blocks payout even after approval. |
 | 4 | Create the Stripe Payment Link for Exam Check-Up | High — Sohyun | $25 AUD one-time product → paste the link into `STRIPE_PAYMENT_LINK` in `find-a-teacher.html`. |
-| 5 | Sohyun — glance at a real downloaded viva-voce PDF | Quick | Fix is live and verified programmatically; a final human look confirms it end to end. |
+| 5 | Sohyun — glance at a real downloaded viva-voce PDF | Quick — deferred by Sohyun to a later session (2026-07-23) | Sample already generated live via Chrome on 2026-07-23 (Grade 5, 4 pieces, `Viva_Voce_Grade_5.pdf` in Downloads, zero console errors both generation attempts). Just needs her eyes on it whenever she gets to it — no regeneration needed unless she wants a different grade/pieces. |
 | 6 | AdSense re-review | High, but WAIT | Do not request until (a) ads.txt is live and (b) Search Console's indexed count has meaningfully recovered from 20/39. |
 | 7 | connect.html — real teacher info | Deferred | When Sohyun is ready to take referrals. |
 | 8 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
