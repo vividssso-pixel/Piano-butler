@@ -1993,6 +1993,23 @@ Rationale: Search Console's actual top queries for these pages are `lrsm piano r
 
 ---
 
+### Phase 65 Updates (2026-07-27 — full-site audit: syntax, canonical tags, data integrity, live spot-check)
+
+Requested by Sohyun as a genuine full sweep after Phase 64's targeted fixes, not just a repeat of "what changed today." Four separate checks, each automated rather than sampled by hand, plus a live-browser pass:
+
+| # | Check | Method | Result |
+|---|-------|--------|--------|
+| 1 | Inline-script syntax audit, all 47 public/gated HTML pages | Wrote a Node script (`@babel/core`, `runtime:'classic'` to match the site's actual in-browser Babel Standalone config — same method as Phase 59/62) that extracts every non-`src` `<script>` block per page and compiles it. Two false positives in the tool itself were found and fixed mid-run: (a) Babel's default automatic JSX runtime injects an ES `import` that a plain `vm.Script` check then rejects — fixed by forcing `runtime:'classic'`; (b) `<script type="application/ld+json">` blocks aren't JS and were wrongly run through the JS compiler — fixed by checking those with `JSON.parse` instead. | **0 real errors across all 47 pages.** No repeat of the Phase 12/54/58/59 blank-page bug class. |
+| 2 | `index.html` data-loading cross-check | Extracted every `typeof X` guard in `index.html` and every actual `const NAME =` export across all 44 loaded `data_*.js` files, then diffed the two sets programmatically (rather than eyeballing one file at a time, which is exactly how Phase 12's `DATA_G5_1` and Phase 54's `DATA_G6_COMP` mismatches went unnoticed for weeks). | **All 44 match.** No silent-data-loss bug present anywhere in `index.html` right now. |
+| 3 | Canonical tag audit, all 47 pages | Regex-extracted `<title>`, `<meta description>`, `<link rel=canonical>`, `<meta robots>` from every page; checked for missing tags, stale `vividssso-pixel.github.io` URLs, and duplicate titles. | Confirmed the exact scope of the gap flagged in Phase 64: **27 grade pages (all 9 AMEB + all 9 ABRSM + all 9 Trinity) had no canonical tag at all**, plus `recommend.html` (not previously flagged). **Fixed all 28** — added self-referencing `https://thepianobutler.com/<path>` canonical tags, matching the existing pattern on `index.html`/`diagnose.html`/the diploma pages. No duplicate titles found anywhere on the site. |
+| 4 | Data integrity re-check, all 44 `data_*.js` files (4,500 pieces) | Loaded every file in a Node `vm` sandbox, summed piece counts per file against the exact numbers in this file's own "Verified Piece Counts" tables, and scanned every piece for invalid `era`, `focus` arrays not exactly length 3, and empty `nat`. | **All 44 files match their documented count exactly** (grand total 4,500, incl. G6 Comprehensive's inline-only 160). **0 invalid era, 0 malformed focus arrays, 0 empty nationality** across all 4,500 pieces — the Phase 27/33/40 data-quality fixes have held. |
+| 5 | Live browser spot-check (real thepianobutler.com, not local files) | Navigated to `index.html`, `G5`, `ABRSM/Diploma/LRSM`, `Trinity/G7`, `Trinity/Diploma/ATCL`, `diagnose.html`, `recommend.html`, `timeline.html`, `viva-voce.html` and read both rendered content and the browser console. | **All render correctly with real content, zero console errors.** (Live pages still show pre-Phase-64/65 titles since none of today's 3 commits have been pushed yet — expected, not a bug.) |
+| 6 | Documentation-drift bug found | While building the file list for this audit, `connect.html` — still referenced in this file's own Pending Work as an existing deferred feature — turned out **not to exist on disk at all**, almost certainly removed in Phase 54's "17 unused files deleted" cleanup without updating the reference. Corrected below. | Pending Work item removed/corrected. |
+
+**What this audit does NOT cover** (scope boundary, stated plainly rather than implied): the `_drafts/` content-experiment pages (intentionally on hold since Phase 55, excluded here on purpose), a re-verification of every individual piece's title/composer/era against the source syllabus PDFs (last done piecemeal across Phases 1–40), and Supabase/teacher-dashboard functional testing (no Supabase-dependent flow was exercised this session).
+
+---
+
 ## Current Status (as of 2026-07-27)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
@@ -2043,27 +2060,25 @@ see Phase 62 #8 above.
 
 | # | Task | Priority | Notes |
 |---|------|----------|-------|
-| 1 | `git push` — ads.txt (already pushed) + diploma meta rewrites + butler.html | High — Sohyun, ~1 min | ads.txt (`18544d9`) was already pushed as of 2026-07-27 (0 commits ahead/behind origin). Today's 2 new commits (diploma meta rewrites, `butler.html`) are local-only and need `git push` from Sohyun's Terminal. |
+| 1 | `git push` — 4 local commits | High — Sohyun, ~1 min | `18544d9` (ads.txt) was already pushed as of 2026-07-27. Four newer commits are local-only: `57e7f5f` (butler.html), `d9e69ce` (diploma SEO fix), `1088692` (27 grade pages + recommend.html canonical tags), plus this CLAUDE.md log. All need `git push` from Sohyun's Terminal. |
 | 2 | Send teacher outreach messages | High — Sohyun, ~10 min | `outreach-messages.md` is ready to copy-paste. Independent of the SEO/indexing timeline. Still the single biggest idle lever in the backlog. |
 | 3 | Decide what `butler.html` is for | Medium — Sohyun | Private teaching tool for her own students, or a public Piano Butler feature? Determines whether it gets linked/promoted or stays a personal utility. |
 | 4 | Complete AdSense payment info | High — Sohyun | Bank/address details in AdSense → Payments. Blocks payout even after approval. |
 | 5 | Create the Stripe Payment Link for Exam Check-Up | High — Sohyun | $25 AUD one-time product → paste the link into `STRIPE_PAYMENT_LINK` in `find-a-teacher.html`. |
-| 6 | Re-check diploma page CTR after re-indexing | Medium | New titles need ~1-2 weeks to be re-crawled before CTR data is meaningful. Tracked by the Monday check. |
+| 6 | Re-check diploma + grade page CTR/indexing after re-crawl | Medium | New titles (5 diploma pages) and new canonical tags (28 pages) need ~1-2 weeks to be re-crawled before the effect is measurable. Tracked by the Monday check. |
 | 7 | Sohyun — glance at a real downloaded viva-voce PDF | Quick — deferred by Sohyun to a later session (2026-07-23) | Sample already generated live via Chrome on 2026-07-23 (Grade 5, 4 pieces, `Viva_Voce_Grade_5.pdf` in Downloads, zero console errors both generation attempts). Just needs her eyes on it whenever she gets to it. |
 | 8 | AdSense re-review | High, but WAIT | Do not request until the dashboard's own stale flags (site status, ads.txt column) refresh and Search Console's indexed count has meaningfully recovered. |
-| 9 | connect.html — real teacher info | Deferred | When Sohyun is ready to take referrals. |
-| 10 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
-| 11 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
-| 12 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
-| 13 | Audit canonical tags site-wide | Medium | Found 2026-07-27 while fixing 5 diploma pages: only 12 of ~43 public HTML pages have a `<link rel="canonical">` at all. None of the 27 grade pages (Prelim–G8, ABRSM Initial–G8, Trinity Initial–G8) have one. This is the likely source of the "1 duplicate/alternate canonical page" Search Console has been reporting since Phase 59. Not fixed this session — the 5 diploma pages with proven traffic were prioritized; the 27 grade pages need the same treatment but are a bigger, separate pass. |
+| 9 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
+| 10 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
+| 11 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
+| 12 | Rebuild `connect.html` if teacher referrals are revived | Deferred | See Known Issues below — the file no longer exists; this line item was stale until today's audit caught it. |
 
 ### Known issues
 - `outreach-messages.md` still unsent — the biggest lever currently sitting idle in the backlog.
-- Three local-only commits as of 2026-07-27 (`57e7f5f` butler.html, `d9e69ce` diploma SEO fix) need `git push` from Sohyun's Terminal. `18544d9` (ads.txt) was already pushed.
+- Four local-only commits as of 2026-07-27 (`57e7f5f` butler.html, `d9e69ce` diploma SEO fix, `1088692` grade-page canonical tags, plus this CLAUDE.md log) need `git push` from Sohyun's Terminal. `18544d9` (ads.txt) was already pushed.
 - AdSense payment info incomplete — needs Sohyun to enter bank/address details directly in AdSense (Claude cannot do this).
 - AdSense dashboard's site-status and ads.txt flags are stale (last updated 2026-06-21) relative to the actual state of the site (ads.txt has been live and verified by direct fetch since 2026-07-23) — don't read the dashboard as current truth until it refreshes.
-- connect.html: placeholder teacher cards, not publicly promoted.
+- **`connect.html` no longer exists** — found during the 2026-07-27 full-site audit. It was still listed in this file's Pending Work as an existing deferred feature ("real teacher info") despite apparently being removed in Phase 54's file cleanup. If teacher-matching is revived, it needs to be rebuilt from scratch, not edited.
 - `butler.html`: built and tested but scope undecided — private tool vs. public feature.
-- Most public pages (27 grade pages) have no canonical tag at all — see Pending Work #13.
 - Supabase free tier auto-pauses after 7 days of inactivity — mitigated by the `supabase-keepalive.yml` GitHub Action (runs Mon & Thu).
 - Git sandbox: `rm -f .git/index.lock .git/HEAD.lock` may fail with "Operation not permitted" (files can't be deleted once written in this mounted folder) — if so, call `allow_cowork_file_delete` on the lock file path first, then retry the `rm`. The actual `git push` must always be run by Sohyun from her own Terminal (the sandbox has no push credentials).
