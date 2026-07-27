@@ -1950,7 +1950,50 @@ viva-voce.html
 
 ---
 
-## Current Status (as of 2026-07-23)
+### Phase 64 Updates (2026-07-27 — traffic inflection confirmed, butler.html rescued, diploma-page CTR fix)
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | `ads.txt` confirmed live | `thepianobutler.com/ads.txt` | Fetched directly — serving correctly (`google.com, pub-6523454944716812, DIRECT, f08c47fec0942fa0`). Commit `18544d9` had already been pushed (0 commits ahead/behind `origin/main`) — the Phase 63 note that it was "not yet pushed" is now stale. AdSense's Ads.txt column still reads 찾을 수 없음 in the dashboard, but its last-updated timestamp is 2026-06-21 — over a month stale, predates the fix entirely. Not yet re-crawled, not a real problem. |
+| 2 | **Search Console — real traffic inflection found** | Google Search Console | Last 7 days (Jul 18–24): 12 clicks / 770 impressions — that's 46% of all clicks and 50% of all impressions in the entire trailing 3-month window, in one week. Weekly impressions went from a ~100/week baseline to 770, and the daily chart was still climbing on the last day, not peaking. Timing lines up exactly with the July 21 blank-page fixes going live and getting re-crawled. 35 distinct pages now earn impressions (vs. 20 in the stale indexing report). |
+| 3 | Traffic source identified — diploma pages, not grade pages | — | Top impression pages this week: Trinity ATCL (108 impr, 0 clicks), ABRSM LRSM (97 impr, 1 click), ABRSM G2 (52 impr, 1 click), Trinity LTCL (45 impr, 1 click), ABRSM G4 (37 impr), Trinity G7 (22 impr). Top queries: `lrsm piano repertoire list`, `atcl piano syllabus 2026`, `trinity atcl piano syllabus 2026` — low-competition diploma-syllabus searches nobody else has indexed as a browsable list. This is the site's actual current moat, not the grade pages the SEO effort has mostly focused on to date. |
+| 4 | Bottleneck identified: CTR, not indexing | — | Trinity ATCL at 108 impressions / 0 clicks and avg. position ~15–18 means it's ranking (page 2) but the title/snippet isn't earning the click. This is now the highest-leverage lever available — cheaper and faster than waiting on further indexing recovery. |
+| 5 | Diploma page `<title>`/`<meta description>` rewritten for CTR | `ABRSM/Diploma/piano-repertoire_abrsm_{lrsm,frsm}.html`, `Trinity/Diploma/piano-repertoire_trinity_{atcl,ltcl,ftcl}.html` | Rewrote to match actual query phrasing found in Search Console and lead with the concrete piece count, e.g. `"ATCL Piano Diploma Syllabus 2026 — Full Repertoire List (241 Works) | Piano Butler"`. See table below for the full before/after. |
+| 6 | **Rescued uncommitted local work — `butler.html`** | `butler.html`, `butler-engine.js`, `butler-engine.test.js`, `data_aural_ameb.js`, `serve-butler.py`, `Open Piano Butler.command` (all new) | Found sitting untracked in the folder, undocumented anywhere in this file, with no prior mention in chat history. Turned out to be a real, finished feature: a daily practice-rotation companion covering AMEB technical work + aural + sight-reading + viva voce coverage, least-recently-practiced-first scheduling, exam lockdown mode (last 8 weeks serves one item per area instead of rotating), and per-student exclusion switches for Leisure/untaught/exempt items. `butler-engine.js` is pure logic (no DOM) with a 67-assertion test suite (`node butler-engine.test.js`) traced against real Grade 5 syllabus data — all 67 pass. Terminal history showed Sohyun had already built and run it herself via `Open Piano Butler.command` on 2026-07-26 21:56, so it was already spot-checked live in a real browser before this session found it — not a repeat of the Phase 12/54/58 blank-page pattern. Committed (`57e7f5f`) so it can't be silently lost; not yet pushed (Sohyun pushes from her own Terminal), not yet linked from any public page, not yet decided whether it's a private teacher tool or a public feature. |
+| 7 | Verification | — | `node butler-engine.test.js` → 67 passed, 0 failed, confirmed before committing. New diploma-page meta tags checked with `node --check` (N/A — HTML, not JS) and manual diff review; confirmed each title is unique across the 5 files (no duplicate-title regression). |
+
+### butler.html Architecture
+
+```
+butler.html (private/undecided-scope local tool, noindex — not yet linked publicly)
+├── data_technical_ameb.js   — existing file, AMEB technical exercises + scales/arpeggios Prelim-G8
+├── data_aural_ameb.js       — NEW: AMEB aural test requirements Prelim-G8 (Manual of Syllabuses §21)
+├── butler-engine.js         — pure rotation/coverage logic, no DOM, usable from node or browser
+│   ├── AREAS                — aural / sightread / viva (drillable) + theory / gk (manual-only, no engine support)
+│   ├── coverageKeys()       — flattens a grade's technical exercises + scale sections + aural tests + other areas into one list
+│   ├── stalestFirst()       — the whole scheduling rule: never-practiced first, then least-recently-practiced
+│   ├── planFor()            — pinned daily technical picks (2/day) + weekly area rotation (aural/sightread/viva, no area repeats back-to-back)
+│   ├── examLocked()         — inside 8 weeks of the exam date, serves one item per area instead of rotating
+│   └── isExcluded()/toggleExcluded() — per-student switches for Leisure/untaught/exempt items; excluded items leave both the rotation and the coverage denominator
+├── butler-engine.test.js    — 67 assertions, run via `node butler-engine.test.js`, traced against real G5 data
+└── serve-butler.py + "Open Piano Butler.command" — no-cache local dev server + double-click launcher (port 8899)
+```
+
+### Diploma Page Title/Meta Rewrites (Phase 64)
+
+| Page | Old title (generic) | New title (query-matched, count-led) |
+|------|---------|-------|
+| ABRSM LRSM | ABRSM LRSM Diploma Piano Repertoire \| Piano Butler | LRSM Piano Repertoire List 2023 — 139 Diploma Works \| Piano Butler |
+| ABRSM FRSM | ABRSM FRSM Diploma Piano Repertoire \| Piano Butler | FRSM Piano Repertoire List 2023 — 97 Diploma Works \| Piano Butler |
+| Trinity ATCL | Trinity ATCL Diploma Piano Repertoire \| Piano Butler | ATCL Piano Diploma Syllabus 2026 — Full Repertoire List (241 Works) \| Piano Butler |
+| Trinity LTCL | Trinity LTCL Diploma Piano Repertoire \| Piano Butler | LTCL Piano Diploma Syllabus 2026 — Full Repertoire List (306 Works) \| Piano Butler |
+| Trinity FTCL | Trinity FTCL Diploma Piano Repertoire \| Piano Butler | FTCL Piano Diploma Syllabus 2026 — Full Repertoire List (155 Works) \| Piano Butler |
+
+Rationale: Search Console's actual top queries for these pages are `lrsm piano repertoire list`, `atcl piano syllabus 2026`, `trinity atcl piano syllabus 2026` — phrase-matching the query in the title, and leading with the concrete work count (something a generic "browse our diploma repertoire" competitor snippet won't have), is the standard high-leverage CTR fix when a page already ranks but isn't clicked.
+
+---
+
+## Current Status (as of 2026-07-27)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
 that used to repeat after almost every phase above (removed in Phase 59 for readability) — this
@@ -1988,32 +2031,37 @@ see Phase 62 #8 above.
 
 | Lever | Status | What's blocking it |
 |---|---|---|
-| AdSense (ca-pub-6523454944716812) | Site status: 주의 필요 ("needs attention" — low-value content / no publisher content on some screens), dated 2026-06-21, likely stale/pre-fix. Policy Center itself shows zero active violations. Ads.txt was **missing entirely** — fixed 2026-07-23, commit `18544d9`, awaiting push. | Two separate things, don't conflate them: (a) content flag — probably resolves once Google re-crawls post-July-21 fixes; (b) ads.txt — a hard technical requirement that was simply never done. Do not request re-review until Search Console's indexed count recovers AND ads.txt is live. |
+| Organic traffic | **Inflecting.** Last 7 days (Jul 18–24): 12 clicks / 770 impressions — 46% of all clicks and 50% of all impressions in the trailing 3-month window happened in this single week, and the daily chart was still climbing on the last day. Confirms the July 21 blank-page fixes worked. Traffic is currently diploma-syllabus-page-led (Trinity ATCL/LTCL, ABRSM LRSM), not grade-page-led. | Ranking is no longer the bottleneck for these 5 pages — CTR is (0-1 clicks on 40-100+ impressions each). Fixed 2026-07-27: rewrote title/meta on all 5 diploma pages to match real queries + lead with piece counts. Re-check CTR in ~1-2 weeks once Google re-indexes the new titles. |
+| AdSense (ca-pub-6523454944716812) | Site status still shows 주의 필요 in the dashboard, but that flag is dated 2026-06-21 — over a month stale, predates both the blank-page fixes and ads.txt. Ads.txt is **confirmed live** at thepianobutler.com/ads.txt (fetched directly 2026-07-27) even though the dashboard's Ads.txt column hasn't caught up yet. Policy Center shows zero active violations. | Nothing left to *fix* here — just waiting on Google to re-crawl and refresh both stale dashboard flags. Do not request re-review until (a) the dashboard's own ads.txt/site-status columns refresh and (b) Search Console's indexed count has meaningfully recovered from the 20/39 baseline. |
 | Payment info | Incomplete (1 of 2 AdSense setup steps done) | **Sohyun action required.** Bank/address details — Claude cannot enter these (financial-credentials policy). This blocks getting *paid* even after approval, so it's on the critical path regardless of indexing/content status. |
-| Search Console indexing | Still 20/39 as of this check (2026-07-23) — data itself last updated 2026-07-10, so it doesn't yet reflect the July 21 fixes or the 23 re-indexing requests | Too early to read signal either way; re-check in another week. Tracked automatically by the Monday check. |
-| Organic traffic | 15 clicks total (was 14) — effectively flat | Indexing recovery alone won't fix this; needs backlinks/awareness (see below). |
-| Teacher outreach (`outreach-messages.md`) | Ready to send, still not sent as of 2026-07-23 | **Sohyun action required.** Currently the highest-leverage lever sitting untouched — likely faster path to real revenue than waiting on SEO. |
+| Search Console indexing | 20/39 as of the last available count (data as of 2026-07-10, i.e. still pre-dates the July 21 fixes and the traffic inflection above) | The indexing count itself is stale relative to the impressions data — the two aren't contradictory, the count just hasn't refreshed yet. Tracked automatically by the Monday check. |
+| Teacher outreach (`outreach-messages.md`) | Ready to send, still not sent as of 2026-07-27 | **Sohyun action required.** Still the highest-leverage lever sitting untouched — likely faster path to real revenue than waiting on SEO, independent of the traffic inflection above. |
 | Exam Check-Up service (`find-a-teacher.html`) | Form + pricing UI live, payment not wired up | **Sohyun action required.** Needs a real Stripe Payment Link (dashboard.stripe.com → Products → Add Product, $25 AUD one-time → Create payment link) pasted into the `STRIPE_PAYMENT_LINK` constant. |
+| `butler.html` practice-tracker | Built, tested (67/67), already run locally by Sohyun, now committed (`57e7f5f`) so it's safe from loss | **Sohyun decision needed.** Not yet pushed, not yet linked anywhere, not yet decided whether this is a private tool for her own students or a public feature. |
 
 ### Pending work (priority order)
 
 | # | Task | Priority | Notes |
 |---|------|----------|-------|
-| 1 | `git push` the ads.txt fix | High — Sohyun, ~1 min | Commit `18544d9` is local-only. Site has zero ads.txt coverage until this is pushed. |
-| 2 | Send teacher outreach messages | High — Sohyun, ~10 min | `outreach-messages.md` is ready to copy-paste. Independent of the SEO/indexing timeline. |
-| 3 | Complete AdSense payment info | High — Sohyun | Bank/address details in AdSense → Payments. Blocks payout even after approval. |
-| 4 | Create the Stripe Payment Link for Exam Check-Up | High — Sohyun | $25 AUD one-time product → paste the link into `STRIPE_PAYMENT_LINK` in `find-a-teacher.html`. |
-| 5 | Sohyun — glance at a real downloaded viva-voce PDF | Quick — deferred by Sohyun to a later session (2026-07-23) | Sample already generated live via Chrome on 2026-07-23 (Grade 5, 4 pieces, `Viva_Voce_Grade_5.pdf` in Downloads, zero console errors both generation attempts). Just needs her eyes on it whenever she gets to it — no regeneration needed unless she wants a different grade/pieces. |
-| 6 | AdSense re-review | High, but WAIT | Do not request until (a) ads.txt is live and (b) Search Console's indexed count has meaningfully recovered from 20/39. |
-| 7 | connect.html — real teacher info | Deferred | When Sohyun is ready to take referrals. |
-| 8 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
-| 9 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
-| 10 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
+| 1 | `git push` — ads.txt (already pushed) + diploma meta rewrites + butler.html | High — Sohyun, ~1 min | ads.txt (`18544d9`) was already pushed as of 2026-07-27 (0 commits ahead/behind origin). Today's 2 new commits (diploma meta rewrites, `butler.html`) are local-only and need `git push` from Sohyun's Terminal. |
+| 2 | Send teacher outreach messages | High — Sohyun, ~10 min | `outreach-messages.md` is ready to copy-paste. Independent of the SEO/indexing timeline. Still the single biggest idle lever in the backlog. |
+| 3 | Decide what `butler.html` is for | Medium — Sohyun | Private teaching tool for her own students, or a public Piano Butler feature? Determines whether it gets linked/promoted or stays a personal utility. |
+| 4 | Complete AdSense payment info | High — Sohyun | Bank/address details in AdSense → Payments. Blocks payout even after approval. |
+| 5 | Create the Stripe Payment Link for Exam Check-Up | High — Sohyun | $25 AUD one-time product → paste the link into `STRIPE_PAYMENT_LINK` in `find-a-teacher.html`. |
+| 6 | Re-check diploma page CTR after re-indexing | Medium | New titles need ~1-2 weeks to be re-crawled before CTR data is meaningful. Tracked by the Monday check. |
+| 7 | Sohyun — glance at a real downloaded viva-voce PDF | Quick — deferred by Sohyun to a later session (2026-07-23) | Sample already generated live via Chrome on 2026-07-23 (Grade 5, 4 pieces, `Viva_Voce_Grade_5.pdf` in Downloads, zero console errors both generation attempts). Just needs her eyes on it whenever she gets to it. |
+| 8 | AdSense re-review | High, but WAIT | Do not request until the dashboard's own stale flags (site status, ads.txt column) refresh and Search Console's indexed count has meaningfully recovered. |
+| 9 | connect.html — real teacher info | Deferred | When Sohyun is ready to take referrals. |
+| 10 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
+| 11 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
+| 12 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
 
 ### Known issues
 - `outreach-messages.md` still unsent — the biggest lever currently sitting idle in the backlog.
-- `ads.txt` fix committed locally (`18544d9`) but not pushed — needs `git push` from Sohyun's Terminal before it takes effect on the live site.
+- Two local-only commits as of 2026-07-27 (diploma meta rewrites, `butler.html`) need `git push` from Sohyun's Terminal.
 - AdSense payment info incomplete — needs Sohyun to enter bank/address details directly in AdSense (Claude cannot do this).
+- AdSense dashboard's site-status and ads.txt flags are stale (last updated 2026-06-21) relative to the actual state of the site (ads.txt has been live and verified by direct fetch since 2026-07-23) — don't read the dashboard as current truth until it refreshes.
 - connect.html: placeholder teacher cards, not publicly promoted.
+- `butler.html`: built and tested but scope undecided — private tool vs. public feature.
 - Supabase free tier auto-pauses after 7 days of inactivity — mitigated by the `supabase-keepalive.yml` GitHub Action (runs Mon & Thu).
 - Git sandbox: `rm -f .git/index.lock .git/HEAD.lock` may fail with "Operation not permitted" (files can't be deleted once written in this mounted folder) — if so, call `allow_cowork_file_delete` on the lock file path first, then retry the `rm`. The actual `git push` must always be run by Sohyun from her own Terminal (the sandbox has no push credentials).
