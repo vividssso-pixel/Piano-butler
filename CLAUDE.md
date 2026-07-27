@@ -2055,13 +2055,15 @@ see Phase 62 #8 above.
 | 10 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
 | 11 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
 | 12 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
+| 13 | Audit canonical tags site-wide | Medium | Found 2026-07-27 while fixing 5 diploma pages: only 12 of ~43 public HTML pages have a `<link rel="canonical">` at all. None of the 27 grade pages (Prelim–G8, ABRSM Initial–G8, Trinity Initial–G8) have one. This is the likely source of the "1 duplicate/alternate canonical page" Search Console has been reporting since Phase 59. Not fixed this session — the 5 diploma pages with proven traffic were prioritized; the 27 grade pages need the same treatment but are a bigger, separate pass. |
 
 ### Known issues
 - `outreach-messages.md` still unsent — the biggest lever currently sitting idle in the backlog.
-- Two local-only commits as of 2026-07-27 (diploma meta rewrites, `butler.html`) need `git push` from Sohyun's Terminal.
+- Three local-only commits as of 2026-07-27 (`57e7f5f` butler.html, `d9e69ce` diploma SEO fix) need `git push` from Sohyun's Terminal. `18544d9` (ads.txt) was already pushed.
 - AdSense payment info incomplete — needs Sohyun to enter bank/address details directly in AdSense (Claude cannot do this).
 - AdSense dashboard's site-status and ads.txt flags are stale (last updated 2026-06-21) relative to the actual state of the site (ads.txt has been live and verified by direct fetch since 2026-07-23) — don't read the dashboard as current truth until it refreshes.
 - connect.html: placeholder teacher cards, not publicly promoted.
 - `butler.html`: built and tested but scope undecided — private tool vs. public feature.
+- Most public pages (27 grade pages) have no canonical tag at all — see Pending Work #13.
 - Supabase free tier auto-pauses after 7 days of inactivity — mitigated by the `supabase-keepalive.yml` GitHub Action (runs Mon & Thu).
 - Git sandbox: `rm -f .git/index.lock .git/HEAD.lock` may fail with "Operation not permitted" (files can't be deleted once written in this mounted folder) — if so, call `allow_cowork_file_delete` on the lock file path first, then retry the `rm`. The actual `git push` must always be run by Sohyun from her own Terminal (the sandbox has no push credentials).
