@@ -2028,7 +2028,45 @@ Live session in Google Search Console (Chrome connected, account vividssso@gmail
 
 ---
 
-## Current Status (as of 2026-08-03)
+### Phase 67 Updates (2026-08-13 — AdSense root cause found, ABRSM data repair, homepage content grid)
+
+Started as a routine daily pulse check; the AdSense finding turned it into a build session.
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | **AdSense flag is no longer stale — and it's diagnosable** | Google AdSense → Sites | The site row still reads 주의 필요 ("ads served on screens without publisher content, low-value content"), but its **last-updated stamp is now 2026-08-08** (was 2026-06-21). Google re-assessed *after* the July 21 blank-page fixes and the verdict stood. The previous "wait for the stale flag to refresh" plan has resolved, and it resolved against us. Ads.txt separately flipped to **승인됨** — that gap is closed. Policy Center still shows zero active violations. |
+| 2 | **Root cause identified: the ad script was on the thinnest page on the site, and nowhere else** | `index.html` (was the only match) | `grep -rl adsbygoogle --include="*.html"` returned exactly one file. Two consequences: (a) the one ad-bearing page renders a logo, one subtitle line, three cards and a footer — about 70 visible words, a literal match for "screens without publisher content"; (b) every page that actually earns traffic (LRSM 708 impressions, Trinity ATCL 417, G5 242, G3 168) carried no ad slot at all and could never earn revenue even after approval. |
+| 3 | **Rendered homepage linked to nothing** | `index.html` | The `<noscript>` fallback is full of links to all 35 repertoire pages, but the *rendered* DOM — what Googlebot sees after executing the JS — linked only to Contact and Privacy. Content pages were reachable via `sitemap.xml` alone. Plausible contributor to the recurring "crawled – currently not indexed" stalls despite correct canonical tags. |
+| 4 | `GradeDirectory` component added | `index.html` | New `SYLLABUS_PAGES` constant (3 boards × all pages, with piece counts) plus a `GradeDirectory` component rendered below the entry cards on the homepage. **35 real `<a href>` links**, grouped by board, each with its piece count. Adds ~200 visible words of genuine content and gives crawlers a path to every content page. Render-tested with `react-dom/server` (not just compiled): 35 anchors emitted, all 35 targets confirmed to exist on disk. |
+| 5 | Ad unit added to all 35 content pages | all `piano-repertoire_*.html` | AdSense loader in `<head>` + one responsive display unit **below the repertoire list** (placement chosen by Sohyun via AskUserQuestion). Injected after the app root in static HTML, so no JSX was touched — zero blank-page risk. The unit is **inert until `PB_AD_SLOT` is filled in**: with an empty slot the script returns early, appends nothing, and requests nothing. |
+| 6 | **ABRSM inline data was stale — pages rendered fewer pieces than they claimed** | all 9 `ABRSM/*/piano-repertoire_abrsm_*.html` | Found while opening the files for the title cleanup. The inline `const DATA_ABRSM_*` arrays pre-dated **both** the Phase 9 piece recovery **and** the Phase 33 composer normalisation: pages rendered **42–47 pieces while their own meta descriptions and noscript blocks said 48**, with pre-normalisation composer names (`MOZART` not `MOZART, W.A.`). Same bug class as Phase 12/54 — authoritative `.js` updated, downstream copy not. Inline arrays and noscript blocks are now regenerated from the `.js` files; all three layers verified byte-identical. |
+| 7 | ABRSM title repair — composer-name leakage | all 9 `data_abrsm_*.js` | 54 titles had the composer's own name injected by the original Phase 7 PDF extraction — e.g. `Allegro (1st movt from Sonata in E, Op. 14 No. 1) Beethoven: Beethoven: Beethoven`, `Csardas Carse`, `Rondo in F, K. 15hh Core Mozart`. Removed by matching each piece's own composer surname (both the trailing form and the mid-title `Surname:` form). 3 apparent remainders are false positives — `Jazz Preludes Wolf-temperiertes Klavier 2` really is the book title. |
+| 8 | ABRSM title repair — 21 catalogue numbers restored **from the PDF, not guessed** | all 9 `data_abrsm_*.js` | Titles ending in a dangling reference (`Melody in F, Op.`, `Sonata in C, Kp.`, `Invention No. 14 in B flat, BWV`) had lost their numbers. Extracted the syllabus PDF with `pdftotext` and read each one off directly: Op. 190 No. 27, Kp. 513, BWV 785, BWV 814, BWV 826, HWV 437, K. 487, K. 7, D. 145 No. 6, S. 172, Op. 92 No. 2, Op. 36 No. 13, Op. 100 No. 15, and so on. **The PDF also corrected one of my own assumptions** — I was about to write Carse's *Progressive Pieces for Pianists*; the syllabus says *Progressive Duets for Pianists, Book 1*. |
+| 9 | ABRSM title repair — publisher/page bleed | all 9 `data_abrsm_*.js` | 13 titles had absorbed the following edition line from the PDF layout (`Pp. 24–27 from Ben Crosland: Cool Beans!, Vol. 1 (Editions Musica Ferrum)` → `... Pp. Vol. 1) (Editions)`). All 13 verified against the PDF and truncated to the real title. |
+| 10 | ABRSM title repair — lost accidentals | all 9 `data_abrsm_*.js` | The original extraction dropped ♭/♯ glyphs, leaving `Sonata in E-` and `Romanze in F+`. 10 flats and 1 sharp restored via a note-letter-anchored pattern (`\b[A-G]-` followed by punctuation/end only, so hyphenated words are untouched). |
+| 11 | ABRSM nationality placeholders | all 9 `data_abrsm_*.js` | 135 pieces carried `nat: "International"`, which broke the nationality filter for a fifth of the ABRSM corpus. Resolved 117 from a hand-checked composer map (Chaminade → French, Moszkowski → Polish, Joplin → American, Hisaishi → Japanese, Guastavino → Argentine, P. E. Wolf → Hungarian, …). **The remaining 18 were deliberately left alone**: multi-songwriter pop credits (`ANDERSON-LOPEZ, Kristen & Robert`, `ROMAN, Capaldi, Kohn, Kelleher, Barnes &`) plus `ANON.` and `ATTRIB.`, where a single nationality would be a fabrication. |
+| 12 | Verification | — | (a) All **105 inline script blocks across 48 HTML files** extracted and compiled with `@babel/core` using `runtime:'classic'` — matching the site's own in-browser Babel Standalone config — then instantiated via `new vm.Script`; JSON-LD blocks checked with `JSON.parse` rather than the JS compiler. **0 errors.** (b) Full corpus recount: **still exactly 4,500**. (c) ABRSM `.js` ↔ inline HTML ↔ noscript parity: byte-identical across all 9 grades. (d) `GradeDirectory` render-tested with `react-dom/server`. (e) Post-fix data scan: composer-in-title 54→3 (all false positives), dangling catalogue refs 21→0, publisher bleed 13→0, `nat=International` 135→18, focus arrays ≠3 → 0, invalid era → 0. |
+| 13 | Committed | commit `0e9029c` | 45 files. **Not yet pushed** — Sohyun runs `git push` from her own Terminal. |
+| 14 | Pre-existing uncommitted work left untouched | `diagnose.html`, `.gitignore`, `practice-challenge.html`, 2 `.docx` files | Found in the working tree at session start, from a session not logged here (same recurring pattern as Phase 58 and Phase 64). `diagnose.html` has a large uncommitted rewrite (−308/+41 lines) and there is a new untracked `practice-challenge.html`. **Deliberately not staged** — not reviewed, not mine to commit. Sohyun should decide whether to keep or discard. |
+| 15 | Search Console re-index requests | — | The "crawled – not indexed" set has *changed membership*: G3 and G4 are out (G3 is now the #2 page at 6 clicks / 168 impressions). New members: **LMusA, ABRSM G5, ABRSM G8**. Requested re-indexing for ABRSM G5 and G8 — both last crawled *before* the Phase 65 canonical fix shipped (22 Jul and 11 Jun), and URL Inspection confirmed the canonical tag is live on them now. LMusA left alone: it is already earning 6 clicks, so its status is most likely report lag. |
+| 16 | Documentation drift noted | `CLAUDE.md` | The live site is a **light theme**; this file still describes the Phase 35/37 dark theme (`#1a1a1a` background). Also `connect.html`, corrected in Phase 65, remains referenced in older phase sections. Not rewritten here — flagged for a future consolidation pass. |
+
+### Traffic snapshot (2026-08-13, live from Search Console)
+
+| Metric | 2026-08-03 | 2026-08-13 |
+|---|---|---|
+| Clicks (3-month) | 38 | **53** |
+| Impressions (3-month) | 3.36k | **4.59k** |
+| Avg CTR / position | 1.1% / 17.3 | 1.2% / 16.5 |
+| Australia | 17 clicks / 662 impr | **25 clicks / 1,004 impr** |
+| UK | 3 clicks / 560 impr | 5 clicks / 687 impr |
+| Indexed | 35 / 40 | 35 / 40 (report last refreshed 8 Aug) |
+
+Top pages: ABRSM LRSM (6 clicks / 708 impr), G3 (6 / 168), LMusA (6 / 97), G5 (4 / 242), G1 (3 / 87), ABRSM FRSM (3 / 81), Trinity ATCL (2 / 417). Australia is now ~47% of all clicks — the AMEB-first pivot is being confirmed by the data.
+
+---
+
+## Current Status (as of 2026-08-13)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
 that used to repeat after almost every phase above (removed in Phase 59 for readability) — this
@@ -2066,11 +2104,13 @@ see Phase 62 #8 above.
 
 | Lever | Status | What's blocking it |
 |---|---|---|
-| Organic traffic | **Confirmed recovering, AMEB-first pivot now underway.** 3-month totals as of 2026-08-03: 38 clicks / 3.36k impressions, avg CTR 1.1%, avg position 17.3. **Australia is the #1 country by clicks (17 of 38, ~45%, 662 impressions)** — validates Sohyun's 2026-08-03 decision to prioritize AMEB over ABRSM/Trinity. UK is #2 by impressions (560) but converts poorly (3 clicks) — diploma-page-driven, addressed via Phase 64's title rewrite, still awaiting re-crawl. | G3, G4 (AMEB) and ABRSM G5 are stuck "crawled — not indexed" despite correct live canonical tags — re-indexing requested 2026-08-03, needs days-to-2-weeks to show. 12-page AMEB internal-linking pass deployed 2026-08-03 (commit `ea87edb`, live-verified) to reinforce the AMEB cluster; too early to measure effect. |
-| AdSense (ca-pub-6523454944716812) | Unchanged since 2026-07-27 — site status still shows 주의 필요 in the dashboard (flag dated 2026-06-21, stale, predates the blank-page fixes and ads.txt). Ads.txt confirmed live. Policy Center shows zero active violations. | Same as before: waiting on Google to refresh both stale dashboard flags. Do not request re-review until (a) dashboard flags refresh and (b) indexed count meaningfully recovers further from 35/40. |
+| Organic traffic | **Inflecting, and the AMEB bet is confirmed.** 3-month totals as of 2026-08-13: **53 clicks / 4.59k impressions** (was 38 / 3.36k ten days earlier), avg CTR 1.2%, avg position 16.5. **Australia is now 25 of 53 clicks (~47%, 1,004 impressions)**, up from 17 / 662. UK is #2 by impressions (687) but still converts poorly (5 clicks). Top pages: ABRSM LRSM (6 clicks / 708 impr), G3 (6 / 168), LMusA (6 / 97), G5 (4 / 242), Trinity ATCL (2 / 417). | G3 and G4 have recovered and are indexed (G3 is now the #2 page). New stalls: **LMusA, ABRSM G5, ABRSM G8** — re-index requested for G5 and G8 on 2026-08-13. Phase 67's homepage `GradeDirectory` (35 internal links) is committed but **not yet pushed**; effect on crawl depth unmeasurable until it ships. |
+| AdSense (ca-pub-6523454944716812) | **Flag refreshed 2026-08-08 and still reads 주의 필요** — no longer stale, no longer dismissible. Ads.txt now **승인됨**. Policy Center shows zero active violations. Root cause identified in Phase 67: the ad script was on `index.html` only, and that page rendered ~70 visible words. | Phase 67 fixes both halves (homepage content + ad units on all 35 content pages) but is **not yet pushed**. Do not request re-review until it is live, has been re-crawled, and `PB_AD_SLOT` is filled in. |
 | Payment info | Incomplete (1 of 2 AdSense setup steps done) | **Sohyun action required.** Bank/address details — Claude cannot enter these (financial-credentials policy). Blocks getting *paid* even after approval. |
-| Search Console indexing | **35/40 indexed** (confirmed live 2026-08-03, up from the 20/39 baseline). Remaining 5: 1 alternate-canonical (expected/fine), `privacy.html` (low priority, discovered-not-indexed), and **G3, G4, ABRSM G5** (crawled-not-indexed, re-indexing requested 2026-08-03). | Now tracked by a **daily** pulse check (upgraded from weekly Monday-only on 2026-08-03, per Sohyun's request for closer monitoring — true real-time isn't possible since Search Console itself lags 2-3 days). |
-| Teacher outreach (`outreach-messages.md`) | Ready to send, **still not sent as of 2026-08-03** | **Sohyun action required.** Still the single highest-leverage lever sitting untouched in the whole project — flagged every session since Phase 55. |
+| Ad units on content pages | **Built 2026-08-13** — loader + one responsive unit below the repertoire list on all 35 content pages, placement chosen by Sohyun. | **Sohyun action required.** Create a Display ad unit in AdSense → Ads → By ad unit, then paste its ID into the `PB_AD_SLOT` constant. Until then every unit is inert by design (returns early, requests nothing). |
+| Search Console indexing | **35/40 indexed** (report last refreshed 2026-08-07). Remaining 5: 1 alternate-canonical (expected/fine), `privacy.html` (low priority), and **LMusA, ABRSM G5, ABRSM G8** (crawled-not-indexed). | Tracked by the **daily** pulse check. LMusA is already earning 6 clicks, so its status is probably report lag rather than a real stall. |
+| Teacher outreach (`outreach-messages.md`) | Ready to send, **still not sent as of 2026-08-13** | **Sohyun action required.** Still the single highest-leverage lever sitting untouched in the whole project — flagged every session since Phase 55, now five sessions running. |
+| ABRSM data quality | **Repaired 2026-08-13 (Phase 67).** 54 leaked composer names, 21 missing catalogue numbers, 13 publisher fragments, 11 lost accidentals, 117 placeholder nationalities. Inline HTML data (which had silently drifted to 42–47 pieces per page) resynced to the authoritative `.js`. | Nothing blocking. Committed as `0e9029c`, **not yet pushed**. |
 | Exam Check-Up service (`find-a-teacher.html`) | Form + pricing UI live, payment not wired up | **Sohyun action required.** Needs a real Stripe Payment Link pasted into the `STRIPE_PAYMENT_LINK` constant. |
 | `butler.html` practice-tracker | Built, tested (67/67), committed (`57e7f5f`), pushed as of 2026-07-27 | **Sohyun decision needed.** Not yet linked anywhere, scope (private tool vs. public feature) still undecided. |
 | AMEB internal linking | **Done, deployed, live-verified 2026-08-03** (commit `ea87edb`). All 12 AMEB pages (Prelim–G8, CertP, AMusA, LMusA) now cross-link via a grade-nav strip. | Nothing blocking — effect on crawl/indexing signals will take time to show, tracked by the daily pulse check. |
@@ -2079,24 +2119,30 @@ see Phase 62 #8 above.
 
 | # | Task | Priority | Notes |
 |---|------|----------|-------|
-| 1 | Send teacher outreach messages | High — Sohyun, ~10 min | `outreach-messages.md` is ready to copy-paste. Still the single biggest idle lever in the backlog, unsent for 3+ sessions running. |
-| 2 | Monitor G3/G4/ABRSM G5 re-indexing outcome | Medium — automatic | Requested 2026-08-03. Daily pulse check will flag if/when they move into the indexed count. |
-| 3 | Decide what `butler.html` is for | Medium — Sohyun | Private teaching tool vs. public Piano Butler feature — determines whether it gets linked/promoted. |
-| 4 | Complete AdSense payment info | High — Sohyun | Bank/address details in AdSense → Payments. Blocks payout even after approval. |
-| 5 | Create the Stripe Payment Link for Exam Check-Up | High — Sohyun | $25 AUD one-time product → paste the link into `STRIPE_PAYMENT_LINK` in `find-a-teacher.html`. |
-| 6 | Re-check diploma-page CTR after re-crawl | Medium | 5 diploma pages retitled 2026-07-27 for CTR — still awaiting re-crawl to show effect. |
-| 7 | Sohyun — glance at a real downloaded viva-voce PDF | Quick — deferred by Sohyun since 2026-07-23 | Sample already generated live, zero console errors. Just needs her eyes on it. |
-| 8 | AdSense re-review | High, but WAIT | Do not request until dashboard's stale flags refresh and indexing recovers further. |
-| 9 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
-| 10 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
-| 11 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
-| 12 | Rebuild `connect.html` if teacher referrals are revived | Deferred | File no longer exists (removed in Phase 54 cleanup) — would need rebuilding from scratch. |
-| 13 | Diploma pages (LRSM/FRSM/ATCL/LTCL/FTCL) — outbound link to official syllabus | Low, optional | Raised and consciously declined as full content 2026-08-03 (out of "search tool" scope) — if revisited, keep it to a single link out, not reproduced requirements. |
+| 1 | **`git push` the Phase 67 commit (`0e9029c`)** | Highest — Sohyun, 1 min | 45 files: ABRSM data repair, homepage `GradeDirectory`, ad units. Nothing else in this list can progress until it is live. |
+| 2 | Create an AdSense Display ad unit and paste its ID into `PB_AD_SLOT` | High — Sohyun | AdSense → Ads → By ad unit → Display ad. The constant appears once per content page; a single find-and-replace across `piano-repertoire_*.html` does it. Units stay inert until then. |
+| 3 | Send teacher outreach messages | High — Sohyun, ~10 min | `outreach-messages.md` is ready to copy-paste. Still the single biggest idle lever in the backlog, unsent for 5 sessions running. |
+| 4 | Decide what to do with the uncommitted `diagnose.html` rewrite + `practice-challenge.html` | Medium — Sohyun | Found uncommitted again at Phase 67 start (−308/+41 on `diagnose.html`, plus a new untracked page and 2 `.docx` files). Deliberately not staged. Keep or discard. |
+| 5 | Monitor LMusA / ABRSM G5 / ABRSM G8 re-indexing | Medium — automatic | G5 and G8 re-requested 2026-08-13. Daily pulse check will flag movement. |
+| 6 | Decide what `butler.html` is for | Medium — Sohyun | Private teaching tool vs. public Piano Butler feature — determines whether it gets linked/promoted. |
+| 7 | Complete AdSense payment info | High — Sohyun | Bank/address details in AdSense → Payments. Blocks payout even after approval. |
+| 8 | Create the Stripe Payment Link for Exam Check-Up | High — Sohyun | $25 AUD one-time product → paste the link into `STRIPE_PAYMENT_LINK` in `find-a-teacher.html`. |
+| 9 | Re-check diploma-page CTR after re-crawl | Medium | 5 diploma pages retitled 2026-07-27 for CTR — still awaiting re-crawl to show effect. |
+| 10 | Sohyun — glance at a real downloaded viva-voce PDF | Quick — deferred by Sohyun since 2026-07-23 | Sample already generated live, zero console errors. Just needs her eyes on it. |
+| 11 | AdSense re-review | High, but WAIT | Do not request until Phase 67 is live, re-crawled, and `PB_AD_SLOT` is set. The 2026-08-08 flag is current, not stale — re-requesting against the old page would likely fail again. |
+| 12 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
+| 13 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
+| 14 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
+| 15 | Rebuild `connect.html` if teacher referrals are revived | Deferred | File no longer exists (removed in Phase 54 cleanup) — would need rebuilding from scratch. |
+| 16 | Diploma pages (LRSM/FRSM/ATCL/LTCL/FTCL) — outbound link to official syllabus | Low, optional | Raised and consciously declined as full content 2026-08-03 (out of "search tool" scope) — if revisited, keep it to a single link out, not reproduced requirements. |
 
 ### Known issues
-- `outreach-messages.md` still unsent — the biggest lever currently sitting idle in the backlog, now flagged for 3+ consecutive sessions.
+- **Phase 67 (`0e9029c`) is committed but not pushed.** Everything in it — the ABRSM repair, the homepage links, the ad units — is inert until Sohyun runs `git push`.
+- `outreach-messages.md` still unsent — the biggest lever currently sitting idle in the backlog, now flagged for 5 consecutive sessions.
 - AdSense payment info incomplete — needs Sohyun to enter bank/address details directly in AdSense (Claude cannot do this).
-- AdSense dashboard's site-status and ads.txt flags are stale (last updated 2026-06-21) — don't read the dashboard as current truth until it refreshes.
+- **The AdSense flag is current, not stale.** Corrected 2026-08-13: the dashboard refreshed on 2026-08-08 and still shows 주의 필요. Earlier notes calling it a leftover from 2026-06-21 are obsolete. Ads.txt is now 승인됨.
+- **Recurring pattern: uncommitted work sitting in the working tree between sessions.** Hit again at Phase 67 (`diagnose.html`, `practice-challenge.html`), as in Phase 58 and Phase 64. Worth running `git status` at the start of every session.
+- **Recurring pattern: authoritative `.js` updated, inline HTML copy not.** Phase 12 (`DATA_G5_1`), Phase 54 (`DATA_G6_COMP`), and now Phase 67 (all 9 ABRSM pages rendering 42–47 of 48 pieces). Any page that embeds data inline needs an explicit parity check, not an assumption.
 - `butler.html`: built, tested, and pushed, but scope undecided — private tool vs. public feature.
 - Diploma pages (LRSM/FRSM/ATCL/LTCL/FTCL) intentionally have no exam-requirement content (performance duration, own-choice rules, etc.) — this is a deliberate scope decision (2026-08-03), not a gap to fill. Piano Butler is a search tool, not a syllabus-content site.
 - Supabase free tier auto-pauses after 7 days of inactivity — mitigated by the `supabase-keepalive.yml` GitHub Action (runs Mon & Thu).
