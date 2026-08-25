@@ -19,17 +19,19 @@ as fast as responsibly possible.** Traffic and AdSense approval are the two leve
 that goal. Everything else is secondary until one of them moves.
 
 At the start of any session, check:
-1. **`outreach-messages.md`** — has Sohyun sent any founding-teacher outreach yet? If not, say
-   so plainly. This is the highest-leverage lever sitting untouched in the backlog — real
-   teachers bring real students, independent of how long SEO/indexing takes.
-2. **AdSense status** (ca-pub-6523454944716812) — do NOT recommend requesting re-review until
+1. **AdSense status** (ca-pub-6523454944716812) — do NOT recommend requesting re-review until
    Search Console's indexed-page count has meaningfully recovered from its last known baseline.
    Requesting too early risks a longer rejection cooldown.
-3. **Search Console** — indexed vs. not-indexed count and click trend. If traffic is flat for
+2. **Search Console** — indexed vs. not-indexed count and click trend. If traffic is flat for
    2+ weeks despite fixes, say so directly — don't just relay the number without comment.
-4. **Anything flagged "not yet spot-checked live"** — this project has had three separate
+3. **Anything flagged "not yet spot-checked live"** — this project has had three separate
    silent blank-page/rendering bugs (Phase 12, Phase 54, Phase 58) that each sat undiscovered
    for weeks. A built tool is not a working tool until it's been opened in a real browser.
+
+**Teacher outreach note (2026-08-17):** Sohyun has decided she will not send the
+`outreach-messages.md` founding-teacher outreach. Do not flag this as a pending action or
+recommend sending it — it's a settled decision, not an oversight. `outreach-messages.md` stays
+in the repo as reference only.
 
 Be specific and honest, not just reassuring. If something is stalling, say it's stalling — and
 say what the next concrete action is.
@@ -2066,7 +2068,137 @@ Top pages: ABRSM LRSM (6 clicks / 708 impr), G3 (6 / 168), LMusA (6 / 97), G5 (4
 
 ---
 
-## Current Status (as of 2026-08-13)
+### Phase 68 Updates (2026-08-14 — SECURITY INCIDENT, service design doc, score-reader, practice puzzle)
+
+#### ⚠️ 1. Malware incident — read this first
+
+**What happened.** While researching PDF→MusicXML conversion, Claude cited `audiveris.com` as a
+source without verifying it was the official project. **It is not** — the real Audiveris lives at
+`github.com/Audiveris/audiveris`. `audiveris.com` is an impersonation site that served a
+base64-obfuscated `curl … | zsh` command. Sohyun copied it from Claude's own Sources list and ran
+it at 17:12.
+
+**Confirmed compromise.** Identified as a **ClickFix campaign delivering an AMOS-family
+infostealer** — the file-name and behaviour match Microsoft's published IoCs exactly (`curl -o
+/tmp/helper` → `chmod +x` → execute). Payload found at `/private/tmp/helper`, 330,592 bytes,
+timestamped 17:12. A fake macOS password dialog appeared and **the login password was entered**,
+so the login keychain, browser-stored passwords, session cookies, wallets and Notes must all be
+treated as exfiltrated.
+
+**What was checked and found clean.** `/Library/LaunchAgents`, `/Library/LaunchDaemons`,
+`~/Library/LaunchAgents` (Zoom/Google/Grammarly only, directory mtimes all pre-date the incident),
+login items (empty), `/var/tmp`, `~/Downloads`, running processes (`ps aux` showed only Claude,
+Spotify, Grammarly and Apple system helpers). `ChatGPT.app` was verified genuine via `codesign`
+(Developer ID: OpenAI OpCo, LLC). **No persistence was installed** — consistent with a run-once
+stealer.
+
+**Remediation.** `helper` hashed (`daf57240a9216e6dd9ea0550c999eeded344ebf262cd457d4a2f043af044072d`)
+and deleted; machine rebooted. Gmail: all devices signed out except her phone. **Remaining account
+work was still outstanding when the session ended — see Known issues.**
+
+**Rules adopted.** (a) Never paste a `curl … | zsh` / `| bash` command from any site — legitimate
+software ships an installer. (b) Claude must verify that any install/download link is the official
+repository before citing it.
+
+#### 2. Service design document — `Piano-Butler-Service-Design.docx` (new)
+
+Session opened with "이 프로젝트에 내가 뭘 코어로 반영하고 싶은지 찾고 싶어". Investigation of the
+repo (including gitignored files) found the answer was already written but invisible: the voice in
+`challenge-welcome-guide.md`, `outreach-messages.md` and the uncommitted `diagnose.html` rewrite is
+one consistent character — *notices you, never grades you, lowers the bar, has taste*. **Piano
+Butler is a voice; the tools are what it carries.** 7-page doc covers: the value ("a butler who
+remembers you"), nine design rules drawn from Sohyun's own writing (R8/R9 were taken from comments
+inside `butler-engine.js`), the 부담 question resolved by separating arrival from expectation, one
+engine / four profiles (verified: `butler-engine.js` is `{grade, examDate, coverage, excluded}`,
+67/67 tests pass), the four system layers, and a staged arrival plan.
+
+#### 3. `score-reader.html` (new) — MusicXML information layer
+
+Reads a MusicXML file with plain `DOMParser` (no notation rendered, so it stays clear of
+reproduction) and reports key, time signature, note names, rhythm, dynamics, articulations,
+ornaments and range — per bar and as six pivoted **study sheets** (rhythm / note names / intervals
+/ dynamics / articulation / signs and words), each printable. 79-term dictionary written in the
+butler's voice. Auto-detects OMR-produced files by reading `<software>` and flags everything as a
+draft.
+
+Two real bugs found by cross-checking against `music21`:
+- Key reported as **E major** for a piece in **C♯ minor** — the file gives a signature but no
+  `<mode>`, and the code silently assumed major. Now shows both with a "worth checking" note.
+- **73 bars counted where music21 counts 75** — measure number `0` appears three times (pickup
+  bars) and keying by printed number merged distinct bars. Now keyed by position.
+- Rhythm counts differed by 6 from music21; investigation showed **the parser was right** —
+  music21 absorbs padding rests in incomplete bars. Rests are now labelled separately.
+
+#### 4. `puzzle.html` (new) — practice puzzle, rebuilt three times
+
+Evolved as the real requirement surfaced. Final form: **photograph the score → drag a box round the
+bars → mark it up → attach the demo clip → send both to the student.**
+
+| Round | Source | Why it changed |
+|---|---|---|
+| 1 | MusicXML + Verovio | Exact bar numbers, but Sohyun has PDFs, not MusicXML |
+| 2 | PDF via PDF.js | Realised the viewer never needs to *understand* the notes — only crop a picture. No OMR, no server |
+| 3 | **Photo via camera** | "레슨 때마다 신속하게해야하니까" — opening a PDF mid-lesson is too slow. Photo is now the primary entry; PDF remains for home prep |
+
+Features: freehand annotation (pencil / red / highlighter, undo, clear) stored in crop-relative
+coordinates; a one-line note; **seams** — the join between two pieces is its own practisable item,
+and two pieces only count as joined once the seam is learned; a **practice log** (not yet / got it /
+comfortable, one entry per day, "learned" derives from the *last* entry so it decays honestly);
+image export that renders bars + markings + note and hands it to the phone's share sheet; and
+video/audio attachment shared together with the score image.
+
+Bugs caught in verification:
+- **Verovio silently renders the entire score when a measure range is out of bounds** (requesting
+  bars 76–76 of a 75-bar piece returned all 536 notes). Ranges are now clamped; verified across
+  five edge cases.
+- Auto-detection of staff systems was attempted and **abandoned on evidence** — gaps within a
+  system (20–24 px) and between systems (20–33 px) are indistinguishable, so it would have cut
+  wrongly on some scores. Manual drag is both reliable and what Sohyun originally described.
+
+Architecture notes: clips are session-only (video is far too large for browser storage, and the
+workflow is film → attach → send → done); progress is keyed to a sampled hash of the file bytes +
+name; v1 saved data still loads; the layout is two columns with the page pinned on the left so
+cutting never costs a scroll.
+
+#### 5. Competitive research
+
+`digitalScore` and `forScore` cover score cropping and annotation. `Practice Space` ($9.99/mo),
+`Better Practice` and `My Music Staff` all do teacher→student assignments with video, annotated
+sheet music and progress dashboards. **Tonara — the best-known player — shut down in December
+2023.**
+
+The category is crowded, but every competitor is a **platform**: teacher signs up, student signs
+up, both migrate. Piano Butler's approach requires **no account from the student at all** — it
+rides the WhatsApp channel that already works. Sohyun's own words explain why that matters: "애들이
+그정도의 열정은 없지". The seam concept was not found in any competitor. Nothing here is a business
+case yet; it is a strong case for a tool she uses herself.
+
+#### 6. Not committed
+
+Everything from this session is **untracked**. Also still uncommitted from earlier sessions:
+`diagnose.html` (−308/+41), `practice-challenge.html`, `.gitignore`, and the two 30-day-challenge
+`.docx` files. Nothing was staged or pushed — and the GitHub token should be rotated before any
+push (see Known issues).
+
+---
+
+### Phase 69 Updates (2026-08-17 — puzzle.html: voluntary-practice game framing)
+
+Sohyun asked for a shift in framing for `puzzle.html`: game-like, exploratory, with nothing that
+forces or grades practice. Two additions, both built on the existing `pieces`/`seams`/log data —
+no new storage format, no schema change.
+
+| # | Change | Detail |
+|---|--------|--------|
+| 1 | `Trail` component — "the route so far" | A row of numbered circular nodes (one per cut piece), connected by short lines. Node fill reflects the *last* log entry only (grey = not yet touched, amber = got it, green = comfortable) — same honest-decay logic as `isLearned()`/`sinceText()`, not a permanent badge. The line between two nodes turns green only once that specific seam is marked done. Every node is clickable at any time — nothing is locked or sequenced, matching the "autonomy over gating" direction from the earlier brainstorm. Rendered inside the existing "Your pieces" card, above the thumbnail strip. |
+| 2 | "Surprise me" suggestion card | Shown whenever 2+ pieces exist. Idle state: one line ("Not sure what to open today? No pressure either way — just a place to start.") plus a single button. Pressed: picks a piece at random — weighted toward pieces not yet marked comfortable, falling back to the full set if everything is — and shows a small preview with three equal-weight actions: **Open it** / **Show me another** / **Not today**. Declining costs nothing and is offered as a real option, not a dismiss-only "×". |
+| 3 | Deliberately excluded | No streak counter, no points, no comparison between pieces or between students, no daily requirement, no red/warning state for time gaps — consistent with the project's existing progress-tracking design principle (documented earlier for the practice log) of showing gaps as neutral information rather than failure. |
+| 4 | Verification | Extracted `#app-jsx`, compiled with `@babel/core` (`runtime:'classic'`, matching the page's own in-browser Babel Standalone config) + `new Function()` on the output — compiles clean. Separately traced the `Trail` state-classification and the `Surprise me` weighted-random selection logic against 4 mock pieces (comfortable / got-it / never-touched / not-yet) in a standalone Node script — confirmed: comfortable pieces are excluded from the random pool, the pool correctly falls back to the full set when everything is already comfortable, and seam-line coloring only lights up for the exact pair that was marked done. |
+| 5 | Not committed | Same as the rest of this session's `puzzle.html` work — sitting in the working tree, not staged. |
+
+---
+
+## Current Status (as of 2026-08-17)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
 that used to repeat after almost every phase above (removed in Phase 59 for readability) — this
@@ -2104,43 +2236,140 @@ see Phase 62 #8 above.
 
 | Lever | Status | What's blocking it |
 |---|---|---|
-| Organic traffic | **Inflecting, and the AMEB bet is confirmed.** 3-month totals as of 2026-08-13: **53 clicks / 4.59k impressions** (was 38 / 3.36k ten days earlier), avg CTR 1.2%, avg position 16.5. **Australia is now 25 of 53 clicks (~47%, 1,004 impressions)**, up from 17 / 662. UK is #2 by impressions (687) but still converts poorly (5 clicks). Top pages: ABRSM LRSM (6 clicks / 708 impr), G3 (6 / 168), LMusA (6 / 97), G5 (4 / 242), Trinity ATCL (2 / 417). | G3 and G4 have recovered and are indexed (G3 is now the #2 page). New stalls: **LMusA, ABRSM G5, ABRSM G8** — re-index requested for G5 and G8 on 2026-08-13. Phase 67's homepage `GradeDirectory` (35 internal links) is committed but **not yet pushed**; effect on crawl depth unmeasurable until it ships. |
-| AdSense (ca-pub-6523454944716812) | **Flag refreshed 2026-08-08 and still reads 주의 필요** — no longer stale, no longer dismissible. Ads.txt now **승인됨**. Policy Center shows zero active violations. Root cause identified in Phase 67: the ad script was on `index.html` only, and that page rendered ~70 visible words. | Phase 67 fixes both halves (homepage content + ad units on all 35 content pages) but is **not yet pushed**. Do not request re-review until it is live, has been re-crawled, and `PB_AD_SLOT` is filled in. |
-| Payment info | Incomplete (1 of 2 AdSense setup steps done) | **Sohyun action required.** Bank/address details — Claude cannot enter these (financial-credentials policy). Blocks getting *paid* even after approval. |
-| Ad units on content pages | **Built 2026-08-13** — loader + one responsive unit below the repertoire list on all 35 content pages, placement chosen by Sohyun. | **Sohyun action required.** Create a Display ad unit in AdSense → Ads → By ad unit, then paste its ID into the `PB_AD_SLOT` constant. Until then every unit is inert by design (returns early, requests nothing). |
-| Search Console indexing | **35/40 indexed** (report last refreshed 2026-08-07). Remaining 5: 1 alternate-canonical (expected/fine), `privacy.html` (low priority), and **LMusA, ABRSM G5, ABRSM G8** (crawled-not-indexed). | Tracked by the **daily** pulse check. LMusA is already earning 6 clicks, so its status is probably report lag rather than a real stall. |
-| Teacher outreach (`outreach-messages.md`) | Ready to send, **still not sent as of 2026-08-13** | **Sohyun action required.** Still the single highest-leverage lever sitting untouched in the whole project — flagged every session since Phase 55, now five sessions running. |
-| ABRSM data quality | **Repaired 2026-08-13 (Phase 67).** 54 leaked composer names, 21 missing catalogue numbers, 13 publisher fragments, 11 lost accidentals, 117 placeholder nationalities. Inline HTML data (which had silently drifted to 42–47 pieces per page) resynced to the authoritative `.js`. | Nothing blocking. Committed as `0e9029c`, **not yet pushed**. |
+| Organic traffic | **Still climbing.** 3-month totals as of 2026-08-17: **63 clicks / 5.26k impressions** (was 53 / 4.59k on 8/13), avg CTR 1.2%, avg position 15.7. **Australia is now 27 of 63 clicks (~43%, 1,188 impressions)**, up from 25 / 1,004. UK #2 by impressions (811, 6 clicks). Top query is still `lrsm piano repertoire list`. | Indexing unchanged at 35/40 (see below) — the not-indexed set wasn't individually re-checked page-by-page on 8/17, just the total. |
+| AdSense (ca-pub-6523454944716812) | Dashboard flag **unchanged since 2026-08-08** — still reads 주의 필요, and Ads.txt column still shows 찾을 수 없음 in the dashboard (stale display; the actual file has been live and correct since Phase 64). **But the underlying Phase 67 fix is now confirmed live in production** — see next two rows. Google's own assessment just hasn't been re-run since the fix shipped. | Wait for AdSense to re-crawl and refresh its own flag before requesting re-review — the dashboard is looking at outdated information right now. |
+| Payment info | **Now shows complete** — AdSense onboarding screen (checked live 2026-08-17) shows "지급: 프로필 작성이 완료되었습니다" with a green check, vs. the "1 of 2 steps" note from earlier sessions. | Worth Sohyun double-checking there's no residual step (e.g. a bank verification email) — but nothing currently blocking on this front from what's visible in the dashboard. |
+| Ad units on content pages | **Confirmed LIVE 2026-08-17.** Directly inspected the rendered G5 page: `<ins class="adsbygoogle">` present with `data-ad-slot="5406851832"` and `data-adsbygoogle-status="done"` — the unit is real and serving, not a placeholder. | Nothing blocking. Account isn't approved yet, so no earnings dashboard is visible regardless of whether ads are technically serving. |
+| Search Console indexing | **35/40 indexed, unchanged from 2026-08-13.** Breakdown unchanged: 1 alternate-canonical (expected/fine), 3 "discovered — not indexed", 1 "crawled — not indexed". | Flat for 4+ days now — worth watching for whether it's genuinely stuck or just report lag. Specific stuck page names not re-verified individually on 8/17. |
+| Teacher outreach | **Closed — Sohyun's decision (2026-08-17): not sending it.** No longer a pending item. | N/A — settled, not a blocker. |
+| ABRSM data quality | Repaired 2026-08-13 (Phase 67): 54 leaked composer names, 21 missing catalogue numbers, 13 publisher fragments, 11 lost accidentals, 117 placeholder nationalities, inline-HTML/`.js` parity restored. **Confirmed pushed and live 2026-08-17.** | Nothing blocking. |
 | Exam Check-Up service (`find-a-teacher.html`) | Form + pricing UI live, payment not wired up | **Sohyun action required.** Needs a real Stripe Payment Link pasted into the `STRIPE_PAYMENT_LINK` constant. |
 | `butler.html` practice-tracker | Built, tested (67/67), committed (`57e7f5f`), pushed as of 2026-07-27 | **Sohyun decision needed.** Not yet linked anywhere, scope (private tool vs. public feature) still undecided. |
-| AMEB internal linking | **Done, deployed, live-verified 2026-08-03** (commit `ea87edb`). All 12 AMEB pages (Prelim–G8, CertP, AMusA, LMusA) now cross-link via a grade-nav strip. | Nothing blocking — effect on crawl/indexing signals will take time to show, tracked by the daily pulse check. |
+| AMEB internal linking | **Done, deployed, live-verified 2026-08-03 and re-confirmed live 2026-08-17** (commit `ea87edb`). All 12 AMEB pages (Prelim–G8, CertP, AMusA, LMusA) cross-link via a grade-nav strip; homepage also carries a 35-link `GradeDirectory` (Phase 67). | Nothing blocking — effect on crawl/indexing signals will take time to show. |
+
+### Idea map — consolidating what's scattered across files (2026-08-17)
+
+Sohyun asked to consolidate before organizing further — several files turned out to be pieces of
+the *same* idea, built in sessions not logged here, and never connected back to each other. This
+section is the single place to look instead of re-discovering it file by file. **No priority
+decision has been made** (Sohyun: "아직 모르겠음, 다음에") — this is a map, not a plan.
+
+**Cluster 1 — the 30-Day Challenge, a plan half-executed.** `30-Day-Challenge-Community-Proposal.docx`
+(+ Korean twin, both 2026-08-05) is a real strategic proposal, not a stray note: a paid,
+subscription-style accountability community for adult returning pianists, deliberately hosted as
+a "hidden sub-brand" on thepianobutler.com — same unlinked-page pattern as `find-a-teacher.html`.
+It explicitly designs the build to **reuse existing engines** — `diagnose.html`'s "returning
+player" flow as the front door, the AMEB Leisure corpus (no exam pressure), and **`butler.html`'s
+rotation logic as the daily-mission engine**. It also names two decisions as required *before*
+building: (A) proof-of-completion format (checkbox vs. photo/video), (B) platform (Discord vs. a
+custom Supabase dashboard). What actually got built (2026-08-05 to 08-10, also undocumented until
+now): `practice-challenge.html` (a real, working signup landing page — pilot free, Web3Forms
+signup, `PILOT_MODE` flag, empty `STRIPE_PAYMENT_LINK` waiting for pilot validation) and a local,
+uncommitted rewrite of `diagnose.html` scoped to AMEB Leisure only with softer question wording,
+bridging to the challenge page via a `?level=` param. **What's still missing**: decisions A and B
+were never made, and the mission content in `practice-challenge.html` is hard-coded example text —
+`butler.html`'s rotation logic was never actually wired in. This is a stalled mid-build, not a
+finished, dormant feature.
+
+**Cluster 2 — Sohyun's own lesson-time toolkit, unrelated to the Challenge.** `puzzle.html`,
+`score-reader.html`, `viva-voce.html`, and `butler.html` (in its original, standalone framing) all
+serve a different purpose: things Sohyun uses herself to prepare for or run a lesson, not a
+packaged product sold to strangers. These don't need to be merged with each other or with Cluster
+1 — they're already distinct tools for distinct moments (crop/annotate/send a score during a
+lesson; extract study info from a MusicXML file; generate a General Knowledge PDF pack; track
+daily technical/aural/sight-reading rotation for a student). `butler.html` is the one file that
+sits in both clusters — its rotation engine was *proposed for reuse* in Cluster 1 but was built and
+tested as a private per-student tool in Cluster 2's spirit. That double-appearance is exactly why
+it's been stuck undecided since Phase 64.
+
+**Cluster 3 — two competing "second income stream" ideas sitting side by side, unresolved.**
+Exam Check-Up (`find-a-teacher.html`, $25 one-off, 1:1, needs only a Stripe link to go live) and
+the 30-Day Challenge (Cluster 1, pilot-free, group/subscription, still missing two build decisions)
+are both aimed at the same slot — a paid offer beyond ad revenue — and neither has been chosen
+over the other. This is most likely the actual source of the scattered feeling: not too many
+tools, but two unresolved plans quietly competing for the same next step. Revisit when ready;
+no need to decide both at once, and no harm in leaving both parked exactly as they are.
+
+### Strategic direction — teacher directory/marketplace (decided 2026-08-25)
+
+Sohyun asked directly: should Piano Butler move toward a teacher-matching/directory model
+(MusicTeachers.com-style — teachers self-list profiles/ads, parents search and contact directly,
+no curation from Sohyun) instead of, or alongside, the search-tool + personalization-tools
+direction? Full reasoning given to her, decision below.
+
+**Why not now:** this is a two-sided marketplace, a structurally different business from either
+the search tool or the curated 1:1 matching in `find-a-teacher.html`. A directory only has value
+to searchers once it has real supply — tens to hundreds of teacher listings, not the 3–5 founding
+teachers `outreach-messages.md` was scoped for. Sohyun has already declined to send that outreach
+(2026-08-17) — a directory model needs *more* supply to be useful, not less, so it's a taller
+order than the thing already parked. Search intent is also unproven and unrelated to current
+traffic: every query in Search Console today is repertoire/syllabus lookup ("lrsm piano
+repertoire list"), never "piano teacher near me" — none of the current SEO asset transfers.
+Established directories (MusicTeachers.com and similar) already own that keyword territory,
+including competing against Google's local pack/Maps listings — a much harder fight than the
+low-competition diploma-page long-tail Piano Butler actually won (Phase 64).
+
+**The one angle worth keeping alive:** a generic directory competing head-on with MusicTeachers.com
+is a bad bet, but a **syllabus-specific angle — "find an AMEB/ABRSM/Trinity-experienced teacher"**
+— is a real differentiator generic directories don't have, and it's the one version that actually
+builds on Piano Butler's existing data/traffic instead of starting a second business from zero.
+
+**Decision:** not now — revisit once the site has meaningfully more scale/traffic (rough trigger:
+same order of magnitude as the existing "login revival ≥1,000 visitors/mo" threshold — no need to
+pick an exact number today). Until then, keep it alive at zero ongoing cost rather than shelving
+it completely: `teach-with-us.html` stays live and unpromoted (not linked from nav) so any organic
+teacher interest is still captured passively; no active recruitment, no build work, no new pages.
+When revisited, build the AMEB/ABRSM/Trinity-specific angle, not a generic directory clone.
 
 ### Pending work (priority order)
 
 | # | Task | Priority | Notes |
 |---|------|----------|-------|
-| 1 | **`git push` the Phase 67 commit (`0e9029c`)** | Highest — Sohyun, 1 min | 45 files: ABRSM data repair, homepage `GradeDirectory`, ad units. Nothing else in this list can progress until it is live. |
-| 2 | Create an AdSense Display ad unit and paste its ID into `PB_AD_SLOT` | High — Sohyun | AdSense → Ads → By ad unit → Display ad. The constant appears once per content page; a single find-and-replace across `piano-repertoire_*.html` does it. Units stay inert until then. |
-| 3 | Send teacher outreach messages | High — Sohyun, ~10 min | `outreach-messages.md` is ready to copy-paste. Still the single biggest idle lever in the backlog, unsent for 5 sessions running. |
-| 4 | Decide what to do with the uncommitted `diagnose.html` rewrite + `practice-challenge.html` | Medium — Sohyun | Found uncommitted again at Phase 67 start (−308/+41 on `diagnose.html`, plus a new untracked page and 2 `.docx` files). Deliberately not staged. Keep or discard. |
-| 5 | Monitor LMusA / ABRSM G5 / ABRSM G8 re-indexing | Medium — automatic | G5 and G8 re-requested 2026-08-13. Daily pulse check will flag movement. |
-| 6 | Decide what `butler.html` is for | Medium — Sohyun | Private teaching tool vs. public Piano Butler feature — determines whether it gets linked/promoted. |
-| 7 | Complete AdSense payment info | High — Sohyun | Bank/address details in AdSense → Payments. Blocks payout even after approval. |
-| 8 | Create the Stripe Payment Link for Exam Check-Up | High — Sohyun | $25 AUD one-time product → paste the link into `STRIPE_PAYMENT_LINK` in `find-a-teacher.html`. |
-| 9 | Re-check diploma-page CTR after re-crawl | Medium | 5 diploma pages retitled 2026-07-27 for CTR — still awaiting re-crawl to show effect. |
-| 10 | Sohyun — glance at a real downloaded viva-voce PDF | Quick — deferred by Sohyun since 2026-07-23 | Sample already generated live, zero console errors. Just needs her eyes on it. |
-| 11 | AdSense re-review | High, but WAIT | Do not request until Phase 67 is live, re-crawled, and `PB_AD_SLOT` is set. The 2026-08-08 flag is current, not stale — re-requesting against the old page would likely fail again. |
-| 12 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
-| 13 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
-| 14 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
-| 15 | Rebuild `connect.html` if teacher referrals are revived | Deferred | File no longer exists (removed in Phase 54 cleanup) — would need rebuilding from scratch. |
-| 16 | Diploma pages (LRSM/FRSM/ATCL/LTCL/FTCL) — outbound link to official syllabus | Low, optional | Raised and consciously declined as full content 2026-08-03 (out of "search tool" scope) — if revisited, keep it to a single link out, not reproduced requirements. |
+| 1 | Decide what to do with the uncommitted `diagnose.html` rewrite + `practice-challenge.html` | Medium — Sohyun | Found uncommitted at Phase 67 start (−308/+41 on `diagnose.html`, plus a new untracked page and 2 `.docx` files) — status as of 2026-08-17 not re-checked, may still be sitting there. Keep or discard. |
+| 2 | Monitor Search Console indexing (35/40, flat since 8/13) | Medium — automatic | Daily pulse check will flag movement. |
+| 3 | Decide what `butler.html` is for | Medium — Sohyun | Private teaching tool vs. public Piano Butler feature — determines whether it gets linked/promoted. |
+| 4 | Create the Stripe Payment Link for Exam Check-Up | High — Sohyun | $25 AUD one-time product → paste the link into `STRIPE_PAYMENT_LINK` in `find-a-teacher.html`. |
+| 5 | Re-check diploma-page CTR after re-crawl | Medium | 5 diploma pages retitled 2026-07-27 for CTR — still awaiting re-crawl to show effect. |
+| 6 | Sohyun — glance at a real downloaded viva-voce PDF | Quick — deferred by Sohyun since 2026-07-23 | Sample already generated live, zero console errors. Just needs her eyes on it. |
+| 7 | AdSense re-review | High, but WAIT | The Phase 67 fix (ad units + homepage content) is confirmed live as of 2026-08-17, but AdSense's own dashboard flag hasn't refreshed since 2026-08-08 — it's evaluating the old, thin homepage. Wait for the dashboard to re-crawl and update its own status before requesting review; requesting against stale data risks a rejection. |
+| 8 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500. |
+| 9 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
+| 10 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
+| 11 | Rebuild `connect.html` if teacher referrals are revived | Deferred | File no longer exists (removed in Phase 54 cleanup) — would need rebuilding from scratch. |
+| 12 | Diploma pages (LRSM/FRSM/ATCL/LTCL/FTCL) — outbound link to official syllabus | Low, optional | Raised and consciously declined as full content 2026-08-03 (out of "search tool" scope) — if revisited, keep it to a single link out, not reproduced requirements. |
+
+*Removed from this list 2026-08-17: `git push` the Phase 67 commit, create the AdSense ad unit +
+set `PB_AD_SLOT`, and complete AdSense payment info — all three confirmed done via direct
+live-site/dashboard checks this session. Teacher outreach also removed — Sohyun has decided not
+to send it; see Known issues and the Top Priority section for the standing note.*
 
 ### Known issues
-- **Phase 67 (`0e9029c`) is committed but not pushed.** Everything in it — the ABRSM repair, the homepage links, the ad units — is inert until Sohyun runs `git push`.
-- `outreach-messages.md` still unsent — the biggest lever currently sitting idle in the backlog, now flagged for 5 consecutive sessions.
-- AdSense payment info incomplete — needs Sohyun to enter bank/address details directly in AdSense (Claude cannot do this).
-- **The AdSense flag is current, not stale.** Corrected 2026-08-13: the dashboard refreshed on 2026-08-08 and still shows 주의 필요. Earlier notes calling it a leftover from 2026-06-21 are obsolete. Ads.txt is now 승인됨.
+
+- 🔴 **SECURITY — credential rotation from the 2026-08-14 malware incident is partly done.**
+  The machine was clean as of 8/14 (payload deleted, no persistence, verified), but the login
+  keychain and browser cookies were exfiltrated. **GitHub personal access token rotated
+  2026-08-17**: old `piano-butler` classic token (no expiration, last used within 3 months —
+  plausibly the one exposed) deleted, new `piano-butler` classic token generated with the same
+  `repo`+`workflow` scopes and a hard 1-year expiration (2027-08-17), done live in Sohyun's own
+  authenticated GitHub session via browser automation with her present and approving each step.
+  It's still unconfirmed whether the Phase 67 push (`0e9029c`, confirmed live 8/17) happened
+  before or after this rotation — low residual risk now that the old token is deleted either way.
+  **Still outstanding, all from her phone, not the Mac**: Gmail password (confirm it was actually
+  changed, not just signed out) · GitHub account password itself (only the token was rotated, not
+  the password) · bank and card · Namecheap · Apple ID · Supabase · AdSense · Anthropic. Also
+  worth enabling 2FA on GitHub if not already on, and checking GitHub account security log for
+  any unfamiliar sign-ins during the exposure window.
+- **Never paste a `curl … | zsh` or `| bash` command from a website**, and Claude must verify that
+  any install link is the official repository before citing it. That is what caused the incident:
+  a Sources list in Claude's own reply pointed at `audiveris.com`, an impersonation of the real
+  project at `github.com/Audiveris/audiveris`.
+- **Teacher outreach — closed, not a gap.** Sohyun decided 2026-08-17 not to send
+  `outreach-messages.md`. Do not flag this again.
+- **The AdSense dashboard flag is stale relative to the live site, not the other way around.**
+  As of 2026-08-17 the dashboard still shows 주의 필요 / Ads.txt 찾을 수 없음, last refreshed
+  2026-08-08 — but the actual fix (ad units + homepage content) has been live since sometime
+  between 8/13 and 8/17, confirmed by direct inspection. The dashboard just hasn't re-crawled yet.
+  Don't request re-review until it does.
 - **Recurring pattern: uncommitted work sitting in the working tree between sessions.** Hit again at Phase 67 (`diagnose.html`, `practice-challenge.html`), as in Phase 58 and Phase 64. Worth running `git status` at the start of every session.
 - **Recurring pattern: authoritative `.js` updated, inline HTML copy not.** Phase 12 (`DATA_G5_1`), Phase 54 (`DATA_G6_COMP`), and now Phase 67 (all 9 ABRSM pages rendering 42–47 of 48 pieces). Any page that embeds data inline needs an explicit parity check, not an assumption.
 - `butler.html`: built, tested, and pushed, but scope undecided — private tool vs. public feature.
