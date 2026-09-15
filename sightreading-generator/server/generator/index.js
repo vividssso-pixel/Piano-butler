@@ -1569,7 +1569,12 @@ ${beamGroupingOverride(timeSig)}${(lhLinesBroken || []).map((l) => '  ' + l).joi
 // instead of matching -- a minor cosmetic concession for not breaking
 // generation entirely on some installs.
 function headerBlock(subtitle) {
-  return `\\version "2.24.3"
+  // 2026-09-15: declared as 2.24.1, not this sandbox's 2.24.3, because the
+  // Dockerfile's `apt-get install lilypond` on node:20-bookworm-slim only
+  // gets Debian bookworm's packaged 2.24.1 -- LilyPond refuses to compile
+  // a file declaring a newer \version than the binary running it ("program
+  // too old"). See lilypondCompiler.js's matching 2026-09-15 comment.
+  return `\\version "2.24.1"
 
 \\header {
   title = \\markup { \\override #'(font-name . "Liberation Sans") \\fontsize #2 \\normal-text "Sight-Reading Excerpt" }
