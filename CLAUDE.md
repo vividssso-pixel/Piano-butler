@@ -2215,6 +2215,25 @@ asked to work through in order.
 
 ---
 
+### Phase 71 Updates (2026-09-15 — stickiness brainstorm → local-first Lists rebuilt on Random Pick)
+
+Sohyun asked for the best 5 feature ideas to make the site something people keep coming back to
+(current traffic is mostly one-shot "look up the list, leave" repertoire searches). Landed on
+reviving the Phase 21 local-list concept (removed from `index.html` during later homepage
+rewrites) as the fastest lever, scoped first onto the existing Random Pick tool.
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Local-first Lists rebuilt from scratch | `index.html` | The Phase 21 `pb_lists_v1` localStorage list system no longer existed anywhere in `index.html` — removed at some point during the Phase 22/37/44 homepage rewrites without being carried forward. Rebuilt: `loadLists()`/`saveLists()`/`pieceKey()`/`createLocalList()`/`addPieceToList()`/`removePieceFromList()`/`deleteList()` — same no-login, browser-only design as the original (Sohyun confirmed this is fine at current traffic; Deferred Features table's "login revival ≥1,000 visitors/mo" trigger still hasn't fired). `saveLists()` dispatches a `pb_lists_changed` window event so open panels/nav stay in sync without prop-drilling. |
+| 2 | `AddToListModal` + `MyListsPanel` components (new) | `index.html` | `AddToListModal`: shows existing lists with one-tap "+ Add" (dedupes by composer+title), plus an inline create-new-list field. `MyListsPanel`: slide-in right panel, list of lists → drill into a list → Listen/Score/Remove per piece, delete-list with confirm. Both styled to match the site's current light theme (not the Phase 35 dark theme these components originally shipped in — that theme is no longer live, see Phase 67 #16 documentation-drift note). |
+| 3 | Random Pick — click-to-expand detail | `index.html`, `RandomPickModal` | Piece cards were previously flat (era badge, grade, title, composer, Listen/Score only) despite the corpus already carrying nationality, key, list/series code, and 3 focus keywords per piece. Clicking a card now toggles an inline expand (▼/▲) showing that existing metadata as inline text + focus-tag chips, without navigating away from the modal — chosen over "click → go to the grade page" specifically to keep the Random Pick flow uninterrupted. |
+| 4 | Random Pick — "+ List" button | `index.html`, `RandomPickModal` | Added next to Listen/Score. Opens `AddToListModal` for that piece. Fixed one event-bubbling bug during build: `AddToListModal`'s own backdrop-click-to-close was bubbling up through the React tree to `RandomPickModal`'s backdrop handler too, closing the whole Random Pick modal underneath it — fixed with `e.stopPropagation()` on `AddToListModal`'s outer click handler. |
+| 5 | "📋 My Lists" nav button | `index.html`, `App` | Added to the header, right-aligned. Only renders once `hasLists` is true (checked on mount + kept live via the `pb_lists_changed` listener) — avoids showing an empty-state button to every first-time visitor. |
+| 6 | Verification | — | All 4 inline `<script>` blocks (JS + JSX + the one JSON-LD block) in `index.html` extracted and compiled with `@babel/core transformSync`, `runtime:'classic'` (matching the page's actual `Babel.transform(..., {presets:['react']})` in-browser call) + `new Function()` on the output — 0 errors. Separately traced the list helpers in an isolated Node script with a stubbed `localStorage`/`window`: confirmed dedup-on-re-add, remove, empty-name→"Untitled list" fallback, and delete all behave correctly. Not yet live-tested in a real browser this session — flag for Sohyun to spot-check before treating this as done, per this project's standing "a built tool isn't a working tool until opened in a real browser" rule. |
+| 7 | Committed, not pushed | commit pending | Only `index.html` and this `CLAUDE.md` entry staged — several other files were already modified/untracked in the working tree at session start (`admin-counts.html`, `admin-search.html`, `.gitignore`, `.github/workflows/supabase-keepalive.yml`, plus untracked `puzzle.html`, `score-reader.html`, `practice-challenge.html`, `sightreading-generator/`, and Word docs) and were deliberately left unstaged — not reviewed this session, not mine to commit, same policy as Phase 67 #14. Sohyun runs `git push` from her own Terminal as always. |
+
+---
+
 ## Current Status (as of 2026-08-17, traffic/indexing numbers refreshed 2026-09-02 — see Phase 70)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
@@ -2354,6 +2373,7 @@ When revisited, build the AMEB/ABRSM/Trinity-specific angle, not a generic direc
 | 10 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
 | 11 | Rebuild `connect.html` if teacher referrals are revived | Deferred | File no longer exists (removed in Phase 54 cleanup) — would need rebuilding from scratch. |
 | 12 | Diploma pages (LRSM/FRSM/ATCL/LTCL/FTCL) — outbound link to official syllabus | Low, optional | Raised and consciously declined as full content 2026-08-03 (out of "search tool" scope) — if revisited, keep it to a single link out, not reproduced requirements. |
+| 13 | Add AMEB Series 16 and earlier repertoire (Prelim–G8) | Low — whenever time permits, Sohyun to add pieces incrementally | Raised 2026-09-15 to broaden repertoire choice. Sohyun has an old physical syllabus/grade book she's checking for full piece lists — current syllabus PDF only covers S19/S18/S17 (Series 16 and earlier pieces are **not currently exam-valid** unless they also appear on the Manual List, per live web research this session). Sohyun's direction: show both — keep the current-valid search as-is, and add legacy/reference-only pieces with a clear badge/filter separating them (not mixed in with exam-eligible results). Build as incremental, grade-by-grade additions from her source material — cross-check each against her real syllabus before adding (no memory-only entries, per Reference Integrity rule), tag with a new `legacy:true`-style field or a series code (e.g. `S16`, `S15`) distinct from current codes, and add a "Legacy / reference only — not on the current exam list" badge in the UI. |
 
 *Removed from this list 2026-08-17: `git push` the Phase 67 commit, create the AdSense ad unit +
 set `PB_AD_SLOT`, and complete AdSense payment info — all three confirmed done via direct
