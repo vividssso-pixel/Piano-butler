@@ -109,7 +109,12 @@ app.post('/api/generate-sightreading', async (req, res) => {
 
     res.json({
       id,
+      // 2026-09-15: the full-page PDF compile also no longer finishes
+      // before this response -- see lilypondCompiler.js's compileExcerpt.
+      // pdfUrl is its eventual path; pdfPending tells the client to poll
+      // it (app.js's pollForPdf) rather than link it immediately.
       pdfUrl: `/output/${id}.pdf`,
+      pdfPending: compiled.pdfPending,
       pngUrl: `/output/${id}.png`,
       // Only set when the piece actually has a second staff (see
       // generator/index.js) -- lets the hands-view toggle hide itself for
