@@ -292,7 +292,7 @@ async function shareExcerpt() {
 // after Sohyun reported this happening live). We detect it and retry once
 // automatically before ever showing the person an error.
 function isGatewayStyleError(err) {
-  return err instanceof SyntaxError || /Unexpected token|is not valid JSON/i.test(err.message || '');
+  return !!(err && err.isGatewayError) || err instanceof SyntaxError || /Unexpected token|is not valid JSON/i.test(err.message || '');
 }
 
 async function requestExcerpt(grade) {
@@ -308,9 +308,24 @@ async function requestExcerpt(grade) {
     }),
   });
   if (!res.ok) {
-    let serverMsg = 'generation failed';
-    try { serverMsg = (await res.json()).error || serverMsg; } catch (_) { /* non-JSON error body -- fall through */ }
-    throw new Error(serverMsg);
+    // 2026-09-15: on a slow/cold compile, Render's own proxy can time out and
+    // hand back a 502/504 with an HTML error body instead of anything our
+    // Express app wrote -- res.json() then throws a raw parse error. That used
+    // to be silently swallowed here and replaced with a generic "generation
+    // failed" message, which meant the gateway-retry logic in generate() never
+    // saw the SyntaxError it was designed to catch and never actually retried.
+    // Now we tag these as isGatewayError so they flow into the existing retry
+    // + friendly "still waking up" message instead of a dead-end error.
+    let body = null;
+    try { body = await res.json(); } catch (_) { /* non-JSON error body */ }
+    if (!body) {
+      const err = new Error(`Unexpected non-JSON error response (status ${res.status})`);
+      err.isGatewayError = true;
+      throw err;
+    }
+    const err = new Error(body.error || 'generation failed');
+    if (res.status >= 500) err.isGatewayError = true;
+    throw err;
   }
   return res.json();
 }
@@ -320,21 +335,30 @@ async function generate() {
   generateBtn.disabled = true;
   renderSpinner();
   try {
+    // 2026-09-15: on Render's free tier a cold/slow compile can trip the
+    // platform's own proxy timeout even after our server-side optimizations
+    // (Phases 75-78), so one retry isn't always enough -- retry up to twice
+    // more with a longer pause each time before giving up.
+    const RETRY_DELAYS_MS = [4000, 8000];
     let data;
-    try {
-      data = await requestExcerpt(grade);
-    } catch (err) {
-      if (!isGatewayStyleError(err)) throw err;
-      // One silent retry after a short pause -- this is almost always the
-      // service finishing its boot, not a real problem with the excerpt.
-      previewArea.innerHTML = `<div class="spinner">Still warming up — trying again…<br><span class="spinner-note">This only happens right after the generator has been idle.</span></div>`;
-      await new Promise((r) => setTimeout(r, 4000));
-      data = await requestExcerpt(grade);
+    let lastErr;
+    for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+      try {
+        data = await requestExcerpt(grade);
+        lastErr = null;
+        break;
+      } catch (err) {
+        lastErr = err;
+        if (!isGatewayStyleError(err) || attempt === RETRY_DELAYS_MS.length) throw err;
+        previewArea.innerHTML = `<div class="spinner">Still warming up — trying again…<br><span class="spinner-note">This only happens right after the generator has been idle.</span></div>`;
+        await new Promise((r) => setTimeout(r, RETRY_DELAYS_MS[attempt]));
+      }
     }
+    if (lastErr) throw lastErr;
     renderResult(data);
   } catch (err) {
     if (isGatewayStyleError(err)) {
-      renderError("the generator is still waking up. Please wait a few seconds and click Generate again.");
+      renderError("the generator is taking unusually long to wake up. Please wait a bit and click Generate again.");
     } else {
       renderError(err.message);
     }
