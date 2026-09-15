@@ -666,10 +666,185 @@ const RAND_SYLLABUSES = [
     { key:'Trinity', label:'🎓 Trinity' },
 ];
 
+// ── Local-first Lists (no login — browser localStorage only) ───────────────────
+const LISTS_KEY = 'pb_lists_v1';
+function loadLists() {
+    try { return JSON.parse(localStorage.getItem(LISTS_KEY)) || []; } catch(e) { return []; }
+}
+function saveLists(lists) {
+    try {
+        localStorage.setItem(LISTS_KEY, JSON.stringify(lists));
+        window.dispatchEvent(new Event('pb_lists_changed'));
+    } catch(e) { /* localStorage unavailable — fail silently, nothing to save to */ }
+}
+function pieceKey(p) { return (p.c||'') + '|' + (p.t||''); }
+function createLocalList(name) {
+    const lists = loadLists();
+    const list = { id: 'l_' + Date.now() + '_' + Math.random().toString(36).slice(2,8), name: (name||'').trim() || 'Untitled list', pieces: [], createdAt: Date.now() };
+    lists.push(list);
+    saveLists(lists);
+    return list;
+}
+function addPieceToList(listId, piece) {
+    const lists = loadLists();
+    const list = lists.find(l => l.id === listId);
+    if (!list) return;
+    const key = pieceKey(piece);
+    if (!list.pieces.some(p => pieceKey(p) === key)) {
+        list.pieces.push({
+            c: piece.c, t: piece.t, era: piece.era, nat: piece.nat, key: piece.key,
+            _syllabus: piece._syllabus, _grade: piece._grade, l: piece.l, s: piece.s,
+            focus: piece.focus || [], addedAt: Date.now()
+        });
+    }
+    saveLists(lists);
+}
+function removePieceFromList(listId, key) {
+    const lists = loadLists();
+    const list = lists.find(l => l.id === listId);
+    if (!list) return;
+    list.pieces = list.pieces.filter(p => pieceKey(p) !== key);
+    saveLists(lists);
+}
+function deleteList(listId) {
+    saveLists(loadLists().filter(l => l.id !== listId));
+}
+
+function AddToListModal({ piece, onClose }) {
+    const [lists, setLists] = useState(() => loadLists());
+    const [newName, setNewName] = useState('');
+    const [addedTo, setAddedTo] = useState(new Set());
+
+    function handleAdd(listId) {
+        addPieceToList(listId, piece);
+        setAddedTo(prev => new Set(prev).add(listId));
+        setLists(loadLists());
+    }
+    function handleCreateAndAdd() {
+        const list = createLocalList(newName);
+        setNewName('');
+        setLists(loadLists());
+        handleAdd(list.id);
+    }
+
+    return (
+        <div onClick={e=>{ e.stopPropagation(); onClose(); }} style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.55)',zIndex:220,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+            <div onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:16,padding:24,maxWidth:420,width:'100%',maxHeight:'85vh',overflowY:'auto'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                    <span style={{fontSize:16,fontWeight:800,color:'#1a1410'}}>Add to a list</span>
+                    <button onClick={onClose} style={{background:'none',border:'none',fontSize:18,cursor:'pointer',color:'#9a8e84'}}>✕</button>
+                </div>
+                <div style={{fontSize:12,color:'#9a8e84',marginBottom:16,lineHeight:1.5}}>
+                    {piece.t} — {piece.c}. Saved to this browser only — no login needed.
+                </div>
+
+                {lists.length > 0 && (
+                    <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:16}}>
+                        {lists.map(l => (
+                            <button key={l.id} onClick={()=>handleAdd(l.id)} disabled={addedTo.has(l.id)} style={{
+                                display:'flex',justifyContent:'space-between',alignItems:'center',
+                                padding:'10px 12px',borderRadius:10,border:'1px solid #e8ddd4',
+                                background: addedTo.has(l.id) ? '#f0fdf4' : '#faf7f4',
+                                cursor: addedTo.has(l.id) ? 'default' : 'pointer', textAlign:'left'
+                            }}>
+                                <span style={{fontSize:13,fontWeight:700,color:'#1a1410'}}>{l.name}</span>
+                                <span style={{fontSize:12,fontWeight:700,color: addedTo.has(l.id) ? '#16a34a' : '#c4845a'}}>
+                                    {addedTo.has(l.id) ? '✓ Added' : '+ Add'}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                <div style={{fontSize:11,fontWeight:700,color:'#9a8e84',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:8}}>
+                    {lists.length > 0 ? 'Or create a new list' : 'Create your first list'}
+                </div>
+                <div style={{display:'flex',gap:8}}>
+                    <input value={newName} onChange={e=>setNewName(e.target.value)} placeholder="e.g. Student — Grade 3"
+                        style={{flex:1,padding:'10px 12px',borderRadius:10,border:'1px solid #e8ddd4',fontSize:13,outline:'none',fontFamily:'inherit'}} />
+                    <button onClick={handleCreateAndAdd} style={{padding:'10px 16px',borderRadius:10,background:'#c4845a',color:'#fff',fontWeight:700,fontSize:13,border:'none',cursor:'pointer',whiteSpace:'nowrap'}}>
+                        Create & add
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function MyListsPanel({ onClose, openVideo }) {
+    const [lists, setLists] = useState(() => loadLists());
+    const [activeId, setActiveId] = useState(null);
+
+    useEffect(() => {
+        const refresh = () => setLists(loadLists());
+        window.addEventListener('pb_lists_changed', refresh);
+        return () => window.removeEventListener('pb_lists_changed', refresh);
+    }, []);
+
+    const active = lists.find(l => l.id === activeId);
+
+    return (
+        <div onClick={onClose} style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.45)',zIndex:210,display:'flex',justifyContent:'flex-end'}}>
+            <div onClick={e=>e.stopPropagation()} style={{background:'#fff',width:'100%',maxWidth:420,height:'100%',overflowY:'auto',padding:24,boxShadow:'-8px 0 24px rgba(0,0,0,0.1)'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+                    <span style={{fontSize:17,fontWeight:800,color:'#1a1410'}}>
+                        {active ? '← ' : ''}{active ? active.name : 'My Lists'}
+                    </span>
+                    <button onClick={active ? ()=>setActiveId(null) : onClose} style={{background:'none',border:'none',fontSize:18,cursor:'pointer',color:'#9a8e84'}}>✕</button>
+                </div>
+
+                {!active && lists.length === 0 && (
+                    <div style={{fontSize:13,color:'#9a8e84',lineHeight:1.6}}>
+                        No lists yet. Save a piece from Random Pick or search results with "+ List" to start one.
+                        Lists are saved to this browser only.
+                    </div>
+                )}
+
+                {!active && lists.map(l => (
+                    <div key={l.id} onClick={()=>setActiveId(l.id)} style={{
+                        display:'flex',justifyContent:'space-between',alignItems:'center',
+                        padding:'14px 14px',borderRadius:12,border:'1px solid #ede7df',marginBottom:8,cursor:'pointer'
+                    }}>
+                        <div>
+                            <div style={{fontSize:14,fontWeight:700,color:'#1a1410'}}>{l.name}</div>
+                            <div style={{fontSize:12,color:'#9a8e84'}}>{l.pieces.length} piece{l.pieces.length===1?'':'s'}</div>
+                        </div>
+                        <button onClick={(e)=>{e.stopPropagation(); if(confirm('Delete "'+l.name+'"?')){ deleteList(l.id); setLists(loadLists()); }}} style={{background:'none',border:'none',color:'#c88',fontSize:13,cursor:'pointer'}}>Delete</button>
+                    </div>
+                ))}
+
+                {active && (
+                    <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                        {active.pieces.length === 0 && (
+                            <div style={{fontSize:13,color:'#9a8e84'}}>No pieces in this list yet.</div>
+                        )}
+                        {active.pieces.map((p,i) => (
+                            <div key={i} style={{background:'#faf7f4',border:'1px solid #ede7df',borderRadius:12,padding:'12px 14px'}}>
+                                <div style={{fontSize:13,fontWeight:700,color:'#1a1410',marginBottom:2}}>{p.t}</div>
+                                <div style={{fontSize:12,color:'#7a6e64',marginBottom:6}}>{p.c}</div>
+                                <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                                    {openVideo && (
+                                        <button onClick={() => openVideo(p.c, p.t)} style={{fontSize:11,fontWeight:700,padding:'4px 11px',borderRadius:6,background:'#fdf8f4',color:'#c4845a',border:'1px solid #e8ddd4',cursor:'pointer'}}>▶ Listen</button>
+                                    )}
+                                    <a href={'https://www.google.com/search?q=' + encodeURIComponent(p.c.split(',')[0].trim() + ' ' + p.t + ' sheet music')}
+                                        target="_blank" rel="noopener noreferrer" style={{fontSize:11,fontWeight:700,padding:'4px 11px',borderRadius:6,background:'#fdf8f4',color:'#6b5e54',border:'1px solid #e8ddd4',textDecoration:'none',display:'inline-flex',alignItems:'center'}}>♩ Score</a>
+                                    <button onClick={()=>{ removePieceFromList(active.id, pieceKey(p)); setLists(loadLists()); }} style={{fontSize:11,fontWeight:700,padding:'4px 11px',borderRadius:6,background:'#fff',color:'#c88',border:'1px solid #e8ddd4',cursor:'pointer',marginLeft:'auto'}}>Remove</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
 function RandomPickModal({ onClose, openVideo }) {
     const [grade, setGrade] = useState('G1');
     const [syllabus, setSyllabus] = useState('all');
     const [picks, setPicks] = useState(null);
+    const [expandedKey, setExpandedKey] = useState(null);
+    const [listPiece, setListPiece] = useState(null);
 
     function generate() {
         // Build pool
@@ -767,8 +942,11 @@ function RandomPickModal({ onClose, openVideo }) {
                 {/* Results */}
                 {picks && picks.length > 0 && (
                     <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:4}}>
-                        {picks.map((p,i) => (
-                            <div key={i} style={{background:'#faf7f4',border:'1px solid #ede7df',borderRadius:12,padding:'12px 14px'}}>
+                        {picks.map((p,i) => {
+                            const pk = pieceKey(p);
+                            const isOpen = expandedKey === pk;
+                            return (
+                            <div key={i} onClick={()=>setExpandedKey(isOpen ? null : pk)} style={{background:'#faf7f4',border:'1px solid #ede7df',borderRadius:12,padding:'12px 14px',cursor:'pointer'}}>
                                 <div style={{display:'flex',gap:6,marginBottom:5,flexWrap:'wrap',alignItems:'center'}}>
                                     {p.era && (
                                         <span style={{fontSize:10,fontWeight:800,padding:'2px 8px',borderRadius:5,
@@ -779,10 +957,29 @@ function RandomPickModal({ onClose, openVideo }) {
                                     {p._grade && (
                                         <span style={{fontSize:10,color:'#b0a898',fontWeight:600}}>{p._syllabus} {p._grade}</span>
                                     )}
+                                    <span style={{marginLeft:'auto',fontSize:11,color:'#c4a892'}}>{isOpen ? '▲' : '▼'}</span>
                                 </div>
                                 <div style={{fontSize:13,fontWeight:700,color:'#1a1410',marginBottom:2,lineHeight:1.4}}>{p.t}</div>
                                 <div style={{fontSize:12,color:'#7a6e64',marginBottom:6}}>{p.c}</div>
-                                <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+
+                                {isOpen && (
+                                    <div onClick={e=>e.stopPropagation()} style={{margin:'2px 0 10px',padding:'10px 12px',background:'#fff',border:'1px solid #ede7df',borderRadius:10}}>
+                                        <div style={{display:'flex',flexWrap:'wrap',gap:'4px 14px',fontSize:12,color:'#6b5e54',marginBottom: (p.focus&&p.focus.length) ? 8 : 0}}>
+                                            {p.nat && <span><b style={{color:'#9a8e84'}}>Nationality</b> {p.nat}</span>}
+                                            {p.key && p.key !== 'Variable' && <span><b style={{color:'#9a8e84'}}>Key</b> {p.key}</span>}
+                                            {(p.l || p.s) && <span><b style={{color:'#9a8e84'}}>List</b> {[p.l,p.s].filter(Boolean).join(' · ')}</span>}
+                                        </div>
+                                        {p.focus && p.focus.length > 0 && (
+                                            <div style={{display:'flex',flexWrap:'wrap',gap:5}}>
+                                                {p.focus.map((f,fi) => (
+                                                    <span key={fi} style={{fontSize:10,fontWeight:600,padding:'3px 9px',borderRadius:20,background:'#f0e9e0',color:'#7a6e64'}}>{f}</span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                <div onClick={e=>e.stopPropagation()} style={{display:'flex',gap:6,flexWrap:'wrap'}}>
                                     {openVideo && (
                                         <button onClick={() => openVideo(p.c, p.t)} style={{
                                             fontSize:11,fontWeight:700,padding:'4px 11px',borderRadius:6,
@@ -795,9 +992,14 @@ function RandomPickModal({ onClose, openVideo }) {
                                             background:'#fdf8f4',color:'#6b5e54',border:'1px solid #e8ddd4',
                                             textDecoration:'none',display:'inline-flex',alignItems:'center'
                                         }}>♩ Score</a>
+                                    <button onClick={() => setListPiece(p)} style={{
+                                        fontSize:11,fontWeight:700,padding:'4px 11px',borderRadius:6,
+                                        background:'#fdf8f4',color:'#6b5e54',border:'1px solid #e8ddd4',cursor:'pointer'
+                                    }}>+ List</button>
                                 </div>
                             </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
                 {picks && picks.length === 0 && (
@@ -806,6 +1008,7 @@ function RandomPickModal({ onClose, openVideo }) {
                     </div>
                 )}
             </div>
+            {listPiece && <AddToListModal piece={listPiece} onClose={()=>setListPiece(null)} />}
         </div>
     );
 }
@@ -892,8 +1095,17 @@ function App() {
     const [showSearchInput, setShowSearchInput] = useState(!!_initQ);
     const [showRandomPick, setShowRandomPick] = useState(false);
     const [showContact, setShowContact] = useState(false);
+    const [showMyLists, setShowMyLists] = useState(false);
+    const [hasLists, setHasLists] = useState(false);
     const inputRef = useRef(null);
     const debounceRef = useRef(null);
+
+    useEffect(() => {
+        const refresh = () => setHasLists(loadLists().length > 0);
+        refresh();
+        window.addEventListener('pb_lists_changed', refresh);
+        return () => window.removeEventListener('pb_lists_changed', refresh);
+    }, []);
 
     const { modal: videoModal, open: openVideo, close: closeVideo } = useVideoModal();
 
@@ -968,6 +1180,7 @@ function App() {
         <VideoModal modal={videoModal} onClose={closeVideo} />
         {showRandomPick && <RandomPickModal onClose={()=>setShowRandomPick(false)} openVideo={openVideo} />}
         {showContact && <ContactModal onClose={()=>setShowContact(false)} />}
+        {showMyLists && <MyListsPanel onClose={()=>setShowMyLists(false)} openVideo={openVideo} />}
 
         <div style={{minHeight:'100vh',background:'#f5f0eb',display:'flex',flexDirection:'column'}}>
 
@@ -980,6 +1193,12 @@ function App() {
                         <span style={{fontSize:16,fontWeight:900,color:'#1a1410',letterSpacing:'-0.02em'}}>Piano Butler</span>
                     </button>
                     <div style={{marginLeft:'auto',display:'flex',gap:8,alignItems:'center'}}>
+                        {hasLists && (
+                            <button onClick={()=>setShowMyLists(true)} style={{
+                                background:'none',border:'1px solid #e8ddd4',borderRadius:20,padding:'6px 14px',
+                                fontSize:12,fontWeight:700,color:'#6b5e54',cursor:'pointer'
+                            }}>📋 My Lists</button>
+                        )}
                     </div>
                 </div>
             </header>
