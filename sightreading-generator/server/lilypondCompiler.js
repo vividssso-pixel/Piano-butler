@@ -26,9 +26,20 @@ const os = require('os');
 const path = require('path');
 const { execFile } = require('child_process');
 
+// 2026-09-15: bumped from 30s after the Render free-tier deploy started
+// failing every generate with "Command failed: lilypond ...ly" and empty
+// stderr -- classic execFile timeout-kill signature. Render's free Web
+// Service is only 0.1 CPU (a tenth of a core), and LilyPond in particular
+// builds its font cache on its very first run in a fresh container, which
+// is a well-known slow step even on normal hardware -- on 0.1 CPU it alone
+// can blow past 30s before a single note is engraved. 90s gives enough
+// headroom for that cold-start cache build; subsequent compiles are much
+// faster once the cache is warm.
+const DEFAULT_TIMEOUT_MS = 90000;
+
 function run(cmd, args, opts = {}) {
   return new Promise((resolve, reject) => {
-    execFile(cmd, args, { timeout: 30000, ...opts }, (err, stdout, stderr) => {
+    execFile(cmd, args, { timeout: DEFAULT_TIMEOUT_MS, ...opts }, (err, stdout, stderr) => {
       if (err) {
         reject(new Error(`${cmd} failed: ${stderr || err.message}`));
         return;
@@ -248,9 +259,9 @@ async function compileExcerpt(lySource, outDir, id, variants) {
   let mp3PathResult = null;
   if (fs.existsSync(midiPath)) {
     try {
-      await run('fluidsynth', ['-ni', SOUNDFONT, midiPath, '-F', wavPath, '-r', '44100'], { timeout: 30000 });
+      await run('fluidsynth', ['-ni', SOUNDFONT, midiPath, '-F', wavPath, '-r', '44100'], { timeout: DEFAULT_TIMEOUT_MS });
       if (fs.existsSync(wavPath)) {
-        await run('ffmpeg', ['-y', '-i', wavPath, '-codec:a', 'libmp3lame', '-qscale:a', '4', mp3Path], { timeout: 30000 });
+        await run('ffmpeg', ['-y', '-i', wavPath, '-codec:a', 'libmp3lame', '-qscale:a', '4', mp3Path], { timeout: DEFAULT_TIMEOUT_MS });
         if (fs.existsSync(mp3Path)) {
           mp3PathResult = mp3Path;
         }
