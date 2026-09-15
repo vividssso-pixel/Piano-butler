@@ -62,17 +62,44 @@ function renderError(msg) {
 // reset to 'both' on every fresh generate/regenerate.
 let currentView = 'both';
 
-function pngUrlForView(data, view) {
-  if (view === 'treble') return data.pngUrlTreble;
-  if (view === 'bass') return data.pngUrlBass;
-  return data.pngUrl;
+// 2026-09-15: treble/bass preview images are no longer pre-built by the
+// server on every generate (see lilypondCompiler.js's 2026-09-15 note) --
+// most visitors never touch this toggle, so building both hand-only views
+// up front on every single excerpt was pure wasted compute on Render's
+// CPU-starved free tier. They're now fetched on demand, the first time a
+// visitor actually clicks "Right hand" / "Left hand", and cached here per
+// generated excerpt so flipping back and forth doesn't re-request it.
+let viewPngCache = {};
+
+async function getPngUrlForView(data, view) {
+  if (view === 'both') return data.pngUrl;
+  if (viewPngCache[view]) return viewPngCache[view];
+  const lySource = view === 'treble' ? data.lySourceTreble : data.lySourceBass;
+  const res = await fetch('/api/sightreading-view', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: data.id, view, lySource }),
+  });
+  if (!res.ok) {
+    let msg = 'could not render this view';
+    try { msg = (await res.json()).error || msg; } catch (_) { /* non-JSON error body */ }
+    throw new Error(msg);
+  }
+  const json = await res.json();
+  viewPngCache[view] = json.pngUrl;
+  return json.pngUrl;
 }
 
 function renderResult(data) {
   current = data;
   currentView = 'both';
-  const { pdfUrl, mp3Url, meta, pngUrlTreble, pngUrlBass } = data;
-  const hasHandsView = !!(pngUrlTreble && pngUrlBass);
+  viewPngCache = {};
+  const { pdfUrl, pngUrl, mp3Url, meta, lySourceTreble, lySourceBass } = data;
+  // Whether this piece even HAS a hands-view toggle no longer depends on a
+  // preview image existing yet (there may be none built for treble/bass
+  // at this point) -- it depends on whether the piece has two staves at
+  // all, which the treble/bass .ly source text already tells us.
+  const hasHandsView = !!(lySourceTreble && lySourceBass);
 
   previewArea.innerHTML = `
     ${hasHandsView ? `
@@ -81,7 +108,7 @@ function renderResult(data) {
       <button data-view="treble">Right hand</button>
       <button data-view="bass">Left hand</button>
     </div>` : ''}
-    <div class="sheet-wrap"><img id="previewImg" src="${pngUrlForView(data, 'both')}?t=${Date.now()}" alt="Generated sight-reading excerpt" /></div>
+    <div class="sheet-wrap"><img id="previewImg" src="${pngUrl}?t=${Date.now()}" alt="Generated sight-reading excerpt" /></div>
     <div class="meta-row">
       <span class="pill">${meta.gradeLabel}</span>
       <span class="pill">${capitalize(meta.realm)}</span>
@@ -106,12 +133,32 @@ function renderResult(data) {
 
   if (hasHandsView) {
     const toggle = document.getElementById('handsViewToggle');
-    toggle.addEventListener('click', (e) => {
+    toggle.addEventListener('click', async (e) => {
       const btn = e.target.closest('button[data-view]');
       if (!btn) return;
-      currentView = btn.dataset.view;
+      const view = btn.dataset.view;
+      currentView = view;
       toggle.querySelectorAll('button').forEach((b) => b.classList.toggle('selected', b === btn));
-      document.getElementById('previewImg').src = `${pngUrlForView(current, currentView)}?t=${Date.now()}`;
+      const img = document.getElementById('previewImg');
+      if (view === 'both') {
+        img.src = `${current.pngUrl}?t=${Date.now()}`;
+        return;
+      }
+      img.style.opacity = '0.4';
+      try {
+        const url = await getPngUrlForView(current, view);
+        if (currentView !== view) return; // user toggled again before this resolved
+        img.src = `${url}?t=${Date.now()}`;
+      } catch (err) {
+        // Fall back to 'both' rather than leaving a broken image -- a
+        // lazy-view render failing shouldn't take down the excerpt the
+        // person already has.
+        currentView = 'both';
+        toggle.querySelectorAll('button').forEach((b) => b.classList.toggle('selected', b.dataset.view === 'both'));
+        img.src = `${current.pngUrl}?t=${Date.now()}`;
+      } finally {
+        img.style.opacity = '1';
+      }
     });
   }
 

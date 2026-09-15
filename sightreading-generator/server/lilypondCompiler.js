@@ -49,6 +49,28 @@ function run(cmd, args, opts = {}) {
   });
 }
 
+// One-time LilyPond font-cache warm-up -- call once when the server boots
+// (see DEFAULT_TIMEOUT_MS's comment above: LilyPond builds its font cache
+// on its very first invocation in a fresh container, and that alone can
+// take 20-30s+ on Render's free-tier 0.1 CPU). render-keepalive.yml stops
+// an already-warm instance from sleeping, but it can't help the moment
+// right after a fresh deploy/restart, before a real visitor's first
+// generate -- this closes that specific gap for free, no cost decision
+// needed. Never throws past the caller -- a failed warm-up just means the
+// first real request pays the cache-build cost instead, same as before
+// this existed.
+async function warmUp() {
+  const scratchDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ly-warmup-'));
+  try {
+    const lyPath = path.join(scratchDir, 'warmup.ly');
+    fs.writeFileSync(lyPath, '\\version "2.24.1"\n\\markup "warm"\n', 'utf8');
+    await run('lilypond', ['-dcrop', '-o', scratchDir, lyPath]);
+    console.log('LilyPond font cache warmed up.');
+  } finally {
+    fs.rmSync(scratchDir, { recursive: true, force: true });
+  }
+}
+
 // General MIDI soundfont installed via `fluid-soundfont-gm`. Used to render
 // the LilyPond-generated .midi file to actual audio so a teacher/student can
 // listen back and check the excerpt reads/sounds correctly, not just look at
@@ -184,6 +206,31 @@ async function buildComposedPreviews({ lySource, variants, outDir, id }) {
   }
 }
 
+// On-demand ("lazy") single-view hands-toggle preview -- companion to the
+// eager 'both' preview built in compileExcerpt. Takes the already-known
+// treble-only or bass-only .ly source (the client already has this text,
+// returned as lySourceTreble/lySourceBass by the original generate call)
+// and renders just that one composed preview, writing "<id>.<view>.png"
+// into the same output dir the original excerpt's files live in. Reuses
+// the exact same header+compose pipeline as the eager path so a lazily
+// rendered view looks identical to one that would have been pre-built.
+async function renderLazyView(lySourceForView, outDir, id, view) {
+  const scratchDir = fs.mkdtempSync(path.join(os.tmpdir(), `lyprev-${id}-${view}-`));
+  try {
+    const titleText = extractHeaderText(lySourceForView, 'title') || 'Sight-Reading Excerpt';
+    const subtitleText = extractHeaderText(lySourceForView, 'subtitle') || '';
+    const [headerPng, scorePng] = await Promise.all([
+      renderHeaderOnly(titleText, subtitleText, scratchDir),
+      renderCroppedMarkupOrScore(blankHeader(lySourceForView), scratchDir, `score-${view}`),
+    ]);
+    const finalPath = path.join(outDir, `${id}.${view}.png`);
+    await run('python3', [COMPOSE_SCRIPT, headerPng, scorePng, finalPath]);
+    return finalPath;
+  } finally {
+    fs.rmSync(scratchDir, { recursive: true, force: true });
+  }
+}
+
 // Fallback for content that isn't in our own generator's header format
 // (Explorer Bank uploads): a single crop of the whole page, same approach
 // as the previous (2026-08-27, pre-compose) fix -- still much tighter than
@@ -237,7 +284,13 @@ async function compileExcerpt(lySource, outDir, id, variants) {
     (async () => {
       try {
         if (isOwnGeneratedFormat(lySource)) {
-          return await buildComposedPreviews({ lySource, variants, outDir, id });
+          // 2026-09-15: treble/bass hands-view previews used to be built here
+          // unconditionally on every single generate, even though most
+          // visitors never touch the hands-view toggle -- pure wasted
+          // compute on an already CPU-starved free-tier instance. They're
+          // now rendered lazily (see renderLazyView below) only if/when a
+          // visitor actually clicks "Right hand" / "Left hand".
+          return await buildComposedPreviews({ lySource, variants: null, outDir, id });
         }
         return await buildFallbackPreview({ lySource, outDir, id });
       } catch (err) {
@@ -289,4 +342,4 @@ async function compileExcerpt(lySource, outDir, id, variants) {
   };
 }
 
-module.exports = { compileExcerpt };
+module.exports = { compileExcerpt, warmUp, renderLazyView };
