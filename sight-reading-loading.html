@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Opening the Sight-Reading Generator — Piano Butler</title>
+<style>
+  body { background:#f5f0eb; font-family:'Inter',-apple-system,sans-serif; color:#1a1410; margin:0;
+    display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px; box-sizing:border-box; }
+  .card { max-width:420px; width:100%; text-align:center; }
+  .logo { font-size:15px; font-weight:800; color:#1a1410; margin-bottom:36px; }
+  .logo span { color:#c4845a; }
+  .spinner { width:34px; height:34px; margin:0 auto 22px; border-radius:50%;
+    border:3px solid #e0d8d0; border-top-color:#c4845a; animation:spin 0.8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  h1 { font-size:17px; font-weight:700; margin:0 0 10px; }
+  p { font-size:13px; color:#7a6e64; line-height:1.7; margin:0; }
+  .fallback { display:none; margin-top:26px; }
+  .fallback a { display:inline-block; padding:10px 20px; border-radius:10px; background:#c4845a;
+    color:#fff; text-decoration:none; font-size:13px; font-weight:700; }
+  .fallback a:hover { background:#b3733f; }
+  .fallback p { margin-bottom:14px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">Piano <span>Butler</span></div>
+    <div class="spinner"></div>
+    <h1 id="statusTitle">Opening the sight-reading generator…</h1>
+    <p id="statusNote">This only takes a few seconds — a little longer if it's been idle for a while.</p>
+    <div class="fallback" id="fallback">
+      <p>Still not ready. You can try opening it directly instead:</p>
+      <a href="https://piano-butler-sightreading.onrender.com/sight-reading-generator">Open Sight-Reading Generator</a>
+    </div>
+  </div>
+<script>
+// 2026-09-15: the Render free-tier instance shows Render's OWN branded
+// "waking up" splash page (not Piano Butler's) for the first several
+// seconds after being idle -- a visitor clicking straight through from
+// index.html would see a stranger's branding before ever reaching Piano
+// Butler's tool. This page is Piano Butler's own loading screen instead:
+// it polls the generator's real health endpoint in the background (a
+// route only OUR Express app answers, not Render's edge) and only
+// redirects once the real app -- not Render's placeholder -- is actually
+// up. A visitor who lands on an already-warm instance barely sees this
+// screen at all; one hitting a cold instance gets a Piano Butler-branded
+// wait instead of Render's.
+const TARGET = 'https://piano-butler-sightreading.onrender.com/sight-reading-generator';
+const HEALTH_URL = 'https://piano-butler-sightreading.onrender.com/api/health';
+const POLL_INTERVAL_MS = 1800;
+const GIVE_UP_AFTER_MS = 90000;
+
+const startedAt = Date.now();
+const titleEl = document.getElementById('statusTitle');
+const noteEl = document.getElementById('statusNote');
+const fallbackEl = document.getElementById('fallback');
+
+async function isAppReady() {
+  try {
+    const res = await fetch(HEALTH_URL, { cache: 'no-store' });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return data && data.ok === true;
+  } catch (err) {
+    return false; // network error / CORS / Render's own splash body -- just keep waiting
+  }
+}
+
+async function poll() {
+  if (await isAppReady()) {
+    window.location.href = TARGET;
+    return;
+  }
+  const elapsed = Date.now() - startedAt;
+  if (elapsed > GIVE_UP_AFTER_MS) {
+    titleEl.textContent = "Taking longer than usual";
+    noteEl.textContent = "The generator hasn't responded yet.";
+    fallbackEl.style.display = 'block';
+    return;
+  }
+  if (elapsed > 15000) {
+    noteEl.textContent = "Still waking up — thanks for your patience.";
+  }
+  setTimeout(poll, POLL_INTERVAL_MS);
+}
+
+poll();
+</script>
+</body>
+</html>

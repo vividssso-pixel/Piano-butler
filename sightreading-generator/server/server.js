@@ -60,6 +60,20 @@ app.get('/sight-reading-generator', (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+// Health check (2026-09-15) -- CORS-open on purpose: this is the one route
+// thepianobutler.com's sight-reading-loading.html page (a different origin,
+// onrender.com vs. the main GitHub Pages domain) needs to poll from outside
+// this app, to tell "our Express app is actually up" apart from Render's
+// own "waking up" splash page, which answers every route while the real
+// app is still booting but never returns this JSON shape. No sensitive
+// data here, so open CORS is fine.
+// ---------------------------------------------------------------------------
+app.get('/api/health', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.json({ ok: true, ts: Date.now() });
+});
+
+// ---------------------------------------------------------------------------
 // Grade taxonomy
 // ---------------------------------------------------------------------------
 app.get('/api/grades', (req, res) => {
