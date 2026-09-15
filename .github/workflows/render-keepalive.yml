@@ -1,0 +1,42 @@
+# Render Keep-Alive — Sight-Reading Generator
+#
+# Render's free tier spins the service down after ~15 minutes of no traffic.
+# The next visitor then hits Render's own "waking up" splash page (their
+# branding, not Piano Butler's) for 10-15s, then the app itself takes another
+# 30-50s to boot (Node + LilyPond/FluidSynth on a slow free-tier CPU) before
+# it can even start generating an excerpt — a visitor sees ~40-60s of a
+# stranger's loading screen before anything Piano Butler-branded shows up.
+#
+# Added 2026-09-15 after Sohyun reported exactly this happening live. This
+# workflow pings the service every 10 minutes (comfortably inside the 15-min
+# sleep window) so a real visitor almost always lands on an already-warm
+# instance instead. It does not eliminate the LilyPond compile time itself
+# (that's real work, not a cold start) — see the loading-message fix noted
+# in CLAUDE.md's Pending Work for that half of the problem.
+#
+# This does NOT fully guarantee zero cold starts (Render can still redeploy
+# or restart the instance outside this workflow's control), and it does not
+# solve the underlying "40-50s to generate" compile time — only the "Render's
+# own splash page" part. If cold-start sightings continue after this, the
+# next option is Render's paid Starter plan (~$7/mo), which removes sleep
+# entirely — that's a cost decision, not something to switch to on its own.
+
+name: Render Keep-Alive (Sight-Reading Generator)
+
+on:
+  schedule:
+    - cron: "*/10 * * * *" # every 10 minutes, comfortably inside Render's 15-min sleep window
+  workflow_dispatch: {} # allows manual run from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Sight-Reading Generator
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 \
+            "https://piano-butler-sightreading.onrender.com/sight-reading-generator")
+          echo "Render service responded with HTTP $STATUS"
+          if [ "$STATUS" -lt 200 ] || [ "$STATUS" -ge 400 ]; then
+            echo "::warning::Sight-Reading Generator returned HTTP $STATUS"
+          fi

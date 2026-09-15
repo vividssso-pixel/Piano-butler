@@ -51,7 +51,7 @@ function renderPlaceholder(text) {
 }
 
 function renderSpinner() {
-  previewArea.innerHTML = `<div class="spinner">Engraving your excerpt…</div>`;
+  previewArea.innerHTML = `<div class="spinner">Engraving your excerpt…<br><span class="spinner-note">This can take up to a minute the first time — thanks for waiting.</span></div>`;
 }
 
 function renderError(msg) {
