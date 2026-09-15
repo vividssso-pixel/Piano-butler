@@ -98,7 +98,13 @@ function blankHeader(lySource) {
 // through this same compiler).
 async function renderHeaderOnly(titleText, subtitleText, scratchDir) {
   const esc = (s) => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-  const ly = `\\version "2.24.3"
+  // 2026-09-15: this dev sandbox has LilyPond 2.24.3, but the Dockerfile's
+  // `apt-get install lilypond` on node:20-bookworm-slim pulls whatever
+  // Debian bookworm ships, which is 2.24.1 -- and LilyPond hard-refuses to
+  // compile a file declaring a newer \version than the running binary
+  // ("program too old"). 2.24.1 -> 2.24.3 is a patch bump with no syntax
+  // changes, so declaring 2.24.1 here compiles identically on both.
+  const ly = `\\version "2.24.1"
 
 \\paper {
   indent = 0
