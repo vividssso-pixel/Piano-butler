@@ -1,0 +1,41 @@
+\version "2.24.3"
+
+\header {
+  title = \markup { \override #'(font-name . "Liberation Sans") \fontsize #2 \normal-text "Sight-Reading Excerpt" }
+  subtitle = \markup { \override #'(font-name . "Liberation Sans") \fontsize #-1 \normal-text \with-color #(x11-color 'gray40) "Preliminary — Reading" }
+  tagline = ##f
+}
+
+\paper {
+  indent = 0
+  ragged-bottom = ##t
+  ragged-right = ##t
+  top-margin = 6\mm
+  bottom-margin = 6\mm
+  left-margin = 8\mm
+  right-margin = 8\mm
+}
+
+melody = {
+  \key c \major
+  \time 2/4
+  g'2 |
+  a'2 |
+  g'4 f'4 |
+  c'2 |
+  \bar "|."
+}
+
+\score {
+  \new Staff \with { instrumentName = "Piano" } {
+    \clef treble
+    \melody
+  }
+  \layout {
+    \context {
+      \Score
+      \override SpacingSpanner.uniform-stretching = ##t
+    }
+  }
+  \midi { \tempo 4 = 76 }
+}
