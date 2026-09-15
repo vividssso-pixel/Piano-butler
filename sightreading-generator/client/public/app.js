@@ -158,27 +158,62 @@ async function shareExcerpt() {
   }
 }
 
+// A "gateway-style" failure is what we see when Render's proxy answers
+// before the app itself is ready to (or the app briefly restarts) --
+// the body is an HTML error page ("<!DOCTYPE ...") instead of JSON, so
+// res.json() throws a generic "Unexpected token '<'... is not valid
+// JSON" parse error. That message is technically true but meaningless to
+// a teacher/student seeing it, and -- unlike a real generation failure --
+// it's usually gone if you just wait a few seconds and try again (2026-09-15,
+// after Sohyun reported this happening live). We detect it and retry once
+// automatically before ever showing the person an error.
+function isGatewayStyleError(err) {
+  return err instanceof SyntaxError || /Unexpected token|is not valid JSON/i.test(err.message || '');
+}
+
+async function requestExcerpt(grade) {
+  const res = await fetch('/api/generate-sightreading', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      grade,
+      realm: REALM,
+      hands: 'auto',
+      feel: null,
+      feelSource: null,
+    }),
+  });
+  if (!res.ok) {
+    let serverMsg = 'generation failed';
+    try { serverMsg = (await res.json()).error || serverMsg; } catch (_) { /* non-JSON error body -- fall through */ }
+    throw new Error(serverMsg);
+  }
+  return res.json();
+}
+
 async function generate() {
   const grade = gradeSelect.value;
   generateBtn.disabled = true;
   renderSpinner();
   try {
-    const res = await fetch('/api/generate-sightreading', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        grade,
-        realm: REALM,
-        hands: 'auto',
-        feel: null,
-        feelSource: null,
-      }),
-    });
-    if (!res.ok) throw new Error((await res.json()).error || 'generation failed');
-    const data = await res.json();
+    let data;
+    try {
+      data = await requestExcerpt(grade);
+    } catch (err) {
+      if (!isGatewayStyleError(err)) throw err;
+      // One silent retry after a short pause -- this is almost always the
+      // service finishing its boot, not a real problem with the excerpt.
+      previewArea.innerHTML = `<div class="spinner">Still warming up — trying again…<br><span class="spinner-note">This only happens right after the generator has been idle.</span></div>`;
+      await new Promise((r) => setTimeout(r, 4000));
+      data = await requestExcerpt(grade);
+    }
     renderResult(data);
   } catch (err) {
-    renderError(err.message);
+    if (isGatewayStyleError(err)) {
+      renderError("the generator is still waking up. Please wait a few seconds and click Generate again.");
+    } else {
+      renderError(err.message);
+    }
   } finally {
     generateBtn.disabled = false;
   }
