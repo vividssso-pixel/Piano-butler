@@ -774,6 +774,7 @@ function AddToListModal({ piece, onClose }) {
 function MyListsPanel({ onClose, openVideo }) {
     const [lists, setLists] = useState(() => loadLists());
     const [activeId, setActiveId] = useState(null);
+    const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
     useEffect(() => {
         const refresh = () => setLists(loadLists());
@@ -801,7 +802,7 @@ function MyListsPanel({ onClose, openVideo }) {
                 )}
 
                 {!active && lists.map(l => (
-                    <div key={l.id} onClick={()=>setActiveId(l.id)} style={{
+                    <div key={l.id} onClick={()=>{ if(confirmDeleteId!==l.id) setActiveId(l.id); }} style={{
                         display:'flex',justifyContent:'space-between',alignItems:'center',
                         padding:'14px 14px',borderRadius:12,border:'1px solid #ede7df',marginBottom:8,cursor:'pointer'
                     }}>
@@ -809,7 +810,15 @@ function MyListsPanel({ onClose, openVideo }) {
                             <div style={{fontSize:14,fontWeight:700,color:'#1a1410'}}>{l.name}</div>
                             <div style={{fontSize:12,color:'#9a8e84'}}>{l.pieces.length} piece{l.pieces.length===1?'':'s'}</div>
                         </div>
-                        <button onClick={(e)=>{e.stopPropagation(); if(confirm('Delete "'+l.name+'"?')){ deleteList(l.id); setLists(loadLists()); }}} style={{background:'none',border:'none',color:'#c88',fontSize:13,cursor:'pointer'}}>Delete</button>
+                        {confirmDeleteId === l.id ? (
+                            <div onClick={e=>e.stopPropagation()} style={{display:'flex',alignItems:'center',gap:8}}>
+                                <span style={{fontSize:12,color:'#9a8e84'}}>Delete?</span>
+                                <button onClick={()=>{ deleteList(l.id); setLists(loadLists()); setConfirmDeleteId(null); }} style={{background:'#c88',border:'none',color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',padding:'4px 10px',borderRadius:8}}>Delete</button>
+                                <button onClick={()=>setConfirmDeleteId(null)} style={{background:'none',border:'1px solid #ede7df',color:'#7a6e64',fontSize:12,cursor:'pointer',padding:'4px 10px',borderRadius:8}}>Cancel</button>
+                            </div>
+                        ) : (
+                            <button onClick={(e)=>{e.stopPropagation(); setConfirmDeleteId(l.id);}} style={{background:'none',border:'none',color:'#c88',fontSize:13,cursor:'pointer'}}>Delete</button>
+                        )}
                     </div>
                 ))}
 
