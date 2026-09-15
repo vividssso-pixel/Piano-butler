@@ -116,10 +116,15 @@ app.post('/api/generate-sightreading', async (req, res) => {
       // one-hand grades instead of pointing at a nonexistent image.
       pngUrlTreble: compiled.pngPathTreble ? `/output/${id}.treble.png` : null,
       pngUrlBass: compiled.pngPathBass ? `/output/${id}.bass.png` : null,
-      // Audio is best-effort (see lilypondCompiler.js) -- null when
-      // fluidsynth/ffmpeg rendering didn't succeed, so the frontend can
-      // hide the player instead of pointing at a missing file.
-      mp3Url: compiled.mp3Path ? `/output/${id}.mp3` : null,
+      // 2026-09-15: audio is no longer generated before this response goes
+      // out (see lilypondCompiler.js's 2026-09-15 note on compileExcerpt).
+      // mp3Url is the file's EVENTUAL path even though it doesn't exist
+      // yet when audioPending is true -- the client polls exactly this
+      // URL until it 200s (see app.js's pollForAudio) rather than needing
+      // a separate status route. Null only when this piece never gets
+      // audio at all (no \midi block emitted).
+      mp3Url: compiled.audioPending ? `/output/${id}.mp3` : null,
+      audioPending: compiled.audioPending,
       lySource,
       lySourceTreble,
       lySourceBass,
