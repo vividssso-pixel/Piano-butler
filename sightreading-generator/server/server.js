@@ -35,17 +35,18 @@
 
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 
 const { generateExcerpt, REALMS } = require('./generator');
 const { GRADES } = require('./generator/gradeParams');
-const { compileExcerpt } = require('./lilypondCompiler');
+const { compileExcerpt, renderLazyView, warmUp } = require('./lilypondCompiler');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 const OUTPUT_DIR = path.join(__dirname, 'output');
-require('fs').mkdirSync(OUTPUT_DIR, { recursive: true });
+fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
 app.use(express.json({ limit: '2mb' }));
 app.use('/output', express.static(OUTPUT_DIR));
@@ -56,6 +57,20 @@ app.use(express.static(path.join(__dirname, '..', 'client', 'public')));
 // ---------------------------------------------------------------------------
 app.get('/sight-reading-generator', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'client', 'public', 'index.html'));
+});
+
+// ---------------------------------------------------------------------------
+// Health check (2026-09-15) -- CORS-open on purpose: this is the one route
+// thepianobutler.com's sight-reading-loading.html page (a different origin,
+// onrender.com vs. the main GitHub Pages domain) needs to poll from outside
+// this app, to tell "our Express app is actually up" apart from Render's
+// own "waking up" splash page, which answers every route while the real
+// app is still booting but never returns this JSON shape. No sensitive
+// data here, so open CORS is fine.
+// ---------------------------------------------------------------------------
+app.get('/api/health', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.json({ ok: true, ts: Date.now() });
 });
 
 // ---------------------------------------------------------------------------
@@ -120,7 +135,47 @@ app.post('/api/generate-sightreading', async (req, res) => {
 // the same {grade, realm, hands} -- no server-side state needed, since
 // generation is cheap/fast/free per spec (no caching required).
 
+// ---------------------------------------------------------------------------
+// Lazy hands-view preview (2026-09-15)
+// ---------------------------------------------------------------------------
+// The original generate call always used to also pre-render the "Right
+// hand only" / "Left hand only" preview images, even though most visitors
+// never touch that toggle -- wasted LilyPond/compose work on an already
+// CPU-starved free-tier instance, on every single excerpt. Now the client
+// only asks for one of these when a visitor actually clicks the toggle,
+// passing back the treble/bass .ly source text it already received from
+// the original generate response (nothing new to remember server-side).
+app.post('/api/sightreading-view', async (req, res) => {
+  try {
+    const { id, view, lySource } = req.body || {};
+    if (!id || typeof id !== 'string' || !/^[a-f0-9-]{10,60}$/i.test(id)) {
+      return res.status(400).json({ error: 'invalid id' });
+    }
+    // The id must belong to an excerpt this instance actually generated --
+    // cheap guard against using this route to compile arbitrary LilyPond
+    // source under a made-up id.
+    if (!fs.existsSync(path.join(OUTPUT_DIR, `${id}.ly`))) {
+      return res.status(404).json({ error: 'unknown excerpt id' });
+    }
+    if (view !== 'treble' && view !== 'bass') {
+      return res.status(400).json({ error: 'view must be "treble" or "bass"' });
+    }
+    if (!lySource || typeof lySource !== 'string' || lySource.length > 20000) {
+      return res.status(400).json({ error: 'invalid lySource' });
+    }
+    const pngPath = await renderLazyView(lySource, OUTPUT_DIR, id, view);
+    if (!fs.existsSync(pngPath)) throw new Error('preview render did not produce a PNG');
+    res.json({ pngUrl: `/output/${id}.${view}.png` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Piano Butler Sight-Reading Generator running at http://localhost:${PORT}`);
   console.log(`  -> Generator: http://localhost:${PORT}/sight-reading-generator`);
+  // Fire-and-forget: don't delay opening the port (Render's health check
+  // needs that promptly) -- see warmUp()'s own comment for what this buys.
+  warmUp().catch((err) => console.error('LilyPond warm-up failed (non-fatal):', err.message));
 });
