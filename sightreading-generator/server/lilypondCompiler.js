@@ -275,7 +275,7 @@ async function buildFallbackPreview({ lySource, outDir, id }) {
  *   hands-view toggle -- only meaningful when the piece actually has two
  *   staves. Each, if present, also gets a composed preview PNG written to
  *   "<id>.treble.png" / "<id>.bass.png".
- * @returns {Promise<{lyPath:string, pdfPath:string, pngPath:string, pngPathTreble:string|null, pngPathBass:string|null, midiPath:string|null, mp3Path:string|null}>}
+ * @returns {Promise<{lyPath:string, pdfPath:string, pdfPending:boolean, pngPath:string, pngPathTreble:string|null, pngPathBass:string|null, audioPending:boolean}>} pdfPending/audioPending mean the full PDF and mp3 are still compiling in the background when this resolves -- see the 2026-09-15 comments inside.
  */
 async function compileExcerpt(lySource, outDir, id, variants) {
   fs.mkdirSync(outDir, { recursive: true });
@@ -287,64 +287,80 @@ async function compileExcerpt(lySource, outDir, id, variants) {
 
   fs.writeFileSync(lyPath, lySource, 'utf8');
 
-  // The normal (uncropped) full-page compile -- used for the Download PDF
-  // button, the print page, and the MIDI/audio pipeline -- and the preview
-  // PNG pipeline are entirely independent of each other (different output
-  // files, different scratch dirs), so run them concurrently rather than
-  // waiting for the full-page compile before starting on previews.
-  const [, previews] = await Promise.all([
-    run('lilypond', ['-o', outDir, lyPath]).then(() => {
-      if (!fs.existsSync(pdfPath)) {
-        throw new Error('LilyPond did not produce a PDF');
-      }
-    }),
-    (async () => {
-      try {
-        if (isOwnGeneratedFormat(lySource)) {
-          // 2026-09-15: treble/bass hands-view previews used to be built here
-          // unconditionally on every single generate, even though most
-          // visitors never touch the hands-view toggle -- pure wasted
-          // compute on an already CPU-starved free-tier instance. They're
-          // now rendered lazily (see renderLazyView below) only if/when a
-          // visitor actually clicks "Right hand" / "Left hand".
-          return await buildComposedPreviews({ lySource, variants: null, outDir, id });
-        }
-        return await buildFallbackPreview({ lySource, outDir, id });
-      } catch (err) {
-        // Never let a preview-image problem block an otherwise-working PDF
-        // -- fall back to the simplest possible raster (whole page, no
-        // crop) so the caller still gets SOME preview rather than a hard
-        // failure. Needs the full-page PDF to exist first, so this
-        // fallback path is awaited separately below rather than raced.
-        console.error('Composed preview failed, falling back to plain raster:', err.message);
-        return null;
-      }
-    })(),
-  ]);
+  // 2026-09-15: the full-page (uncropped) compile used to be raced against
+  // the preview build via Promise.all -- which sounds parallel, but the
+  // caller still had to wait for BOTH before getting a response, so the
+  // visible excerpt was gated on whichever of the two finished last. The
+  // preview build never actually needed the full-page PDF (buildComposed
+  // Previews/buildFallbackPreview both compile straight from lySource
+  // itself, independently, at their own crop) -- the full compile is only
+  // needed for the Download PDF button and as the source of the .midi
+  // file for audio, NEITHER of which the visitor needs before they can
+  // see and start reading their excerpt. So it's kicked off here but
+  // deliberately not awaited on the common path: the response now depends
+  // on ONE LilyPond compile (the cropped preview) instead of two.
+  const fullCompilePromise = run('lilypond', ['-o', outDir, lyPath]).then(() => {
+    if (!fs.existsSync(pdfPath)) {
+      throw new Error('LilyPond did not produce a PDF');
+    }
+  });
+
+  let previews;
+  try {
+    if (isOwnGeneratedFormat(lySource)) {
+      // 2026-09-15: treble/bass hands-view previews used to be built here
+      // unconditionally on every single generate, even though most
+      // visitors never touch the hands-view toggle -- pure wasted
+      // compute on an already CPU-starved free-tier instance. They're
+      // now rendered lazily (see renderLazyView below) only if/when a
+      // visitor actually clicks "Right hand" / "Left hand".
+      previews = await buildComposedPreviews({ lySource, variants: null, outDir, id });
+    } else {
+      previews = await buildFallbackPreview({ lySource, outDir, id });
+    }
+  } catch (err) {
+    // Never let a preview-image problem block an otherwise-working PDF --
+    // fall back to the simplest possible raster (whole page, no crop) so
+    // the caller still gets SOME preview rather than a hard failure. This
+    // rare path DOES need the full-page PDF, so it's the one place that
+    // still waits on fullCompilePromise.
+    console.error('Composed preview failed, falling back to plain raster:', err.message);
+    previews = null;
+  }
 
   let finalPreviews = previews;
   if (!finalPreviews) {
+    await fullCompilePromise;
     await run('pdftoppm', ['-png', '-r', '150', '-singlefile', pdfPath, path.join(outDir, id)]);
     finalPreviews = { both: path.join(outDir, `${id}.png`) };
   }
 
+  // Everything below -- the full-page PDF finishing, and audio on top of
+  // it -- happens in the background from here on. The response the caller
+  // is about to send goes out as soon as this function returns, before
+  // either of these necessarily finish.
+  //
   // Audio playback is best-effort AND, as of 2026-09-15, no longer part of
   // the critical path the visitor waits on. fluidsynth has to load the
   // whole General MIDI soundfont from disk into memory on every single
   // invocation (there's no way to keep it warm across separate process
   // launches), which on Render's slow free-tier disk/CPU can itself take
-  // several real seconds -- time a visitor was previously waiting through
-  // before ever seeing their notation, even though the audio player is a
-  // secondary feature they may not even use right away. compileExcerpt now
-  // returns as soon as the PDF/PNG are ready and kicks audio off in the
-  // background; the client polls for the mp3 to appear (see app.js's
-  // pollForAudio). A \midi block is only emitted when the .ly source
-  // includes one (see index.js), and fluidsynth/ffmpeg rendering can fail
-  // independently of the notation itself compiling fine -- never let an
-  // audio problem affect the (already-returned) PDF/PNG result.
-  const audioPending = fs.existsSync(midiPath);
-  if (audioPending) {
-    (async () => {
+  // several real seconds. A \midi block is only emitted when the .ly
+  // source includes one (see index.js) -- checked here as a plain string
+  // test rather than waiting for the compile to find out, since index.js
+  // always emits it the same way regardless of compile outcome. The client
+  // polls for both the PDF and the mp3 to appear (see app.js's
+  // pollForPdf/pollForAudio) -- never let either failing affect the
+  // (already-returned) preview result.
+  const audioPending = lySource.includes('\\midi');
+  (async () => {
+    try {
+      await fullCompilePromise;
+    } catch (err) {
+      console.error('Background full-page PDF compile failed (Download PDF / audio unavailable for this excerpt):', err.message);
+      return;
+    }
+    if (audioPending && fs.existsSync(midiPath)) {
       try {
         await run('fluidsynth', ['-ni', SOUNDFONT, midiPath, '-F', wavPath, '-r', '44100'], { timeout: DEFAULT_TIMEOUT_MS });
         if (fs.existsSync(wavPath)) {
@@ -354,16 +370,16 @@ async function compileExcerpt(lySource, outDir, id, variants) {
       } catch (err) {
         console.error('Background audio render failed (non-fatal):', err.message);
       }
-    })();
-  }
+    }
+  })();
 
   return {
     lyPath,
     pdfPath,
+    pdfPending: true,
     pngPath: finalPreviews.both,
     pngPathTreble: finalPreviews.treble || null,
     pngPathBass: finalPreviews.bass || null,
-    midiPath: fs.existsSync(midiPath) ? midiPath : null,
     audioPending,
   };
 }

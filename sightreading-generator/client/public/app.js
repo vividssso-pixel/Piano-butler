@@ -94,7 +94,7 @@ function renderResult(data) {
   current = data;
   currentView = 'both';
   viewPngCache = {};
-  const { pdfUrl, pngUrl, mp3Url, audioPending, meta, lySourceTreble, lySourceBass } = data;
+  const { pdfUrl, pngUrl, mp3Url, audioPending, pdfPending, meta, lySourceTreble, lySourceBass } = data;
   // Whether this piece even HAS a hands-view toggle no longer depends on a
   // preview image existing yet (there may be none built for treble/bass
   // at this point) -- it depends on whether the piece has two staves at
@@ -123,8 +123,12 @@ function renderResult(data) {
       <span class="player-label" style="color:#9a8e84">Rendering audio…</span>
     </div>` : ''}
     <div class="action-row">
-      <a class="secondary" style="text-decoration:none;display:inline-block;text-align:center" href="${pdfUrl}" download>Download PDF</a>
-      <button class="secondary" id="shareBtn">Share</button>
+      <span id="downloadSlot" data-pdf-url="${pdfUrl}">
+        ${pdfPending
+          ? '<span class="secondary" style="display:inline-block;padding:8px 14px;opacity:0.6;color:#9a8e84">Preparing PDF…</span>'
+          : `<a class="secondary" style="text-decoration:none;display:inline-block;text-align:center" href="${pdfUrl}" download>Download PDF</a>`}
+      </span>
+      <button class="secondary" id="shareBtn"${pdfPending ? ' disabled' : ''}>Share</button>
       <button class="secondary" id="regenerateBtn">Regenerate</button>
       <span id="shareStatus" style="margin-left:2px;font-size:13px;color:#1f9d63;align-self:center"></span>
     </div>
@@ -165,6 +169,41 @@ function renderResult(data) {
   document.getElementById('shareBtn').addEventListener('click', shareExcerpt);
 
   if (audioPending && mp3Url) pollForAudio(mp3Url);
+  if (pdfPending && pdfUrl) pollForPdf(pdfUrl);
+}
+
+// 2026-09-15: the full-page PDF (Download PDF / Share button, and the
+// source of the audio's .midi file) also now finishes in the background
+// after the visible excerpt shows up -- see lilypondCompiler.js's
+// compileExcerpt for why waiting on it was pure wasted time for someone
+// who just wants to read the notation. Same polling shape as
+// pollForAudio: check the eventual url until it's really there, then
+// swap the "Preparing PDF..." placeholder for a real download link and
+// re-enable Share.
+function pollForPdf(pdfUrl) {
+  const POLL_MS = 1500;
+  const MAX_MS = 30000;
+  const startedAt = Date.now();
+
+  async function check() {
+    const slot = document.getElementById('downloadSlot');
+    if (!slot || slot.dataset.pdfUrl !== pdfUrl) return;
+    try {
+      const res = await fetch(pdfUrl, { method: 'HEAD', cache: 'no-store' });
+      if (res.ok) {
+        slot.innerHTML = `<a class="secondary" style="text-decoration:none;display:inline-block;text-align:center" href="${pdfUrl}" download>Download PDF</a>`;
+        const shareBtn = document.getElementById('shareBtn');
+        if (shareBtn) shareBtn.disabled = false;
+        return;
+      }
+    } catch (err) { /* not ready yet -- keep polling */ }
+    if (Date.now() - startedAt > MAX_MS) {
+      slot.innerHTML = '<span class="secondary" style="display:inline-block;padding:8px 14px;opacity:0.6;color:#9a8e84">PDF is taking longer than usual.</span>';
+      return;
+    }
+    setTimeout(check, POLL_MS);
+  }
+  check();
 }
 
 // 2026-09-15: audio is generated in the background now (see
