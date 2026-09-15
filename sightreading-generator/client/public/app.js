@@ -94,7 +94,7 @@ function renderResult(data) {
   current = data;
   currentView = 'both';
   viewPngCache = {};
-  const { pdfUrl, pngUrl, mp3Url, meta, lySourceTreble, lySourceBass } = data;
+  const { pdfUrl, pngUrl, mp3Url, audioPending, meta, lySourceTreble, lySourceBass } = data;
   // Whether this piece even HAS a hands-view toggle no longer depends on a
   // preview image existing yet (there may be none built for treble/bass
   // at this point) -- it depends on whether the piece has two staves at
@@ -118,10 +118,9 @@ function renderResult(data) {
       <span class="pill">${HANDS_LABELS[meta.hands] || 'One hand'}</span>
       ${meta.feelSource ? `<span class="pill">🎯 ${escapeHtml(meta.feelSource)}</span>` : ''}
     </div>
-    ${mp3Url ? `
-    <div class="player-row">
-      <span class="player-label">Listen back (practice tempo)</span>
-      <audio controls src="${mp3Url}?t=${Date.now()}" style="width:100%"></audio>
+    ${audioPending ? `
+    <div class="player-row" id="audioSlot" data-mp3-url="${mp3Url}">
+      <span class="player-label" style="color:#9a8e84">Rendering audio…</span>
     </div>` : ''}
     <div class="action-row">
       <a class="secondary" style="text-decoration:none;display:inline-block;text-align:center" href="${pdfUrl}" download>Download PDF</a>
@@ -164,6 +163,45 @@ function renderResult(data) {
 
   document.getElementById('regenerateBtn').addEventListener('click', generate);
   document.getElementById('shareBtn').addEventListener('click', shareExcerpt);
+
+  if (audioPending && mp3Url) pollForAudio(mp3Url);
+}
+
+// 2026-09-15: audio is generated in the background now (see
+// lilypondCompiler.js's compileExcerpt) so the visible excerpt shows up
+// without waiting on fluidsynth loading its whole soundfont from disk.
+// This polls for the mp3 this excerpt's response already told us the
+// EVENTUAL url of, swapping in the real <audio> player once it exists.
+function pollForAudio(mp3Url) {
+  const POLL_MS = 1500;
+  const MAX_MS = 30000;
+  const startedAt = Date.now();
+
+  async function check() {
+    const slot = document.getElementById('audioSlot');
+    // Slot is gone -- or belongs to a LATER excerpt that reused the same
+    // element id (Regenerate re-renders the whole preview area) -- if the
+    // person moved on from the excerpt this poll started for. Compare
+    // against the url this specific poll call owns, not just the id.
+    if (!slot || slot.dataset.mp3Url !== mp3Url) return;
+    try {
+      const res = await fetch(mp3Url, { method: 'HEAD', cache: 'no-store' });
+      if (res.ok) {
+        slot.outerHTML = `
+          <div class="player-row">
+            <span class="player-label">Listen back (practice tempo)</span>
+            <audio controls src="${mp3Url}?t=${Date.now()}" style="width:100%"></audio>
+          </div>`;
+        return;
+      }
+    } catch (err) { /* not ready yet -- keep polling */ }
+    if (Date.now() - startedAt > MAX_MS) {
+      slot.innerHTML = '<span class="player-label" style="color:#9a8e84">Audio is taking longer than usual.</span>';
+      return;
+    }
+    setTimeout(check, POLL_MS);
+  }
+  check();
 }
 
 // 2026-09-15: replaces the old "Save to Mission Bank" flow (removed --

@@ -118,7 +118,24 @@ function blankHeader(lySource) {
 // since this file intentionally has no dependency on the generator module
 // (Explorer Bank uploads, which never go through the generator, still flow
 // through this same compiler).
+// Cache of rendered header PNGs, keyed by "title\x00subtitle" -- see the
+// big comment above renderHeaderOnly for why this is safe and worthwhile.
+const headerPngCache = new Map();
+
 async function renderHeaderOnly(titleText, subtitleText, scratchDir) {
+  const cacheKey = `${titleText}\x00${subtitleText || ''}`;
+  const pngPath = path.join(scratchDir, 'header.png');
+  const cached = headerPngCache.get(cacheKey);
+  if (cached) {
+    fs.writeFileSync(pngPath, cached);
+    return pngPath;
+  }
+  const renderedPath = await renderHeaderOnlyUncached(titleText, subtitleText, scratchDir);
+  headerPngCache.set(cacheKey, fs.readFileSync(renderedPath));
+  return renderedPath;
+}
+
+async function renderHeaderOnlyUncached(titleText, subtitleText, scratchDir) {
   const esc = (s) => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   // 2026-09-15: this dev sandbox has LilyPond 2.24.3, but the Dockerfile's
   // `apt-get install lilypond` on node:20-bookworm-slim pulls whatever
@@ -311,24 +328,33 @@ async function compileExcerpt(lySource, outDir, id, variants) {
     finalPreviews = { both: path.join(outDir, `${id}.png`) };
   }
 
-  // Audio playback is best-effort: a \midi block is only emitted when the
-  // .ly source includes one (see index.js), and fluidsynth/ffmpeg rendering
-  // can fail independently of the notation itself compiling fine. Never let
-  // an audio problem block the (already-working) PDF/PNG result.
-  let mp3PathResult = null;
-  if (fs.existsSync(midiPath)) {
-    try {
-      await run('fluidsynth', ['-ni', SOUNDFONT, midiPath, '-F', wavPath, '-r', '44100'], { timeout: DEFAULT_TIMEOUT_MS });
-      if (fs.existsSync(wavPath)) {
-        await run('ffmpeg', ['-y', '-i', wavPath, '-codec:a', 'libmp3lame', '-qscale:a', '4', mp3Path], { timeout: DEFAULT_TIMEOUT_MS });
-        if (fs.existsSync(mp3Path)) {
-          mp3PathResult = mp3Path;
+  // Audio playback is best-effort AND, as of 2026-09-15, no longer part of
+  // the critical path the visitor waits on. fluidsynth has to load the
+  // whole General MIDI soundfont from disk into memory on every single
+  // invocation (there's no way to keep it warm across separate process
+  // launches), which on Render's slow free-tier disk/CPU can itself take
+  // several real seconds -- time a visitor was previously waiting through
+  // before ever seeing their notation, even though the audio player is a
+  // secondary feature they may not even use right away. compileExcerpt now
+  // returns as soon as the PDF/PNG are ready and kicks audio off in the
+  // background; the client polls for the mp3 to appear (see app.js's
+  // pollForAudio). A \midi block is only emitted when the .ly source
+  // includes one (see index.js), and fluidsynth/ffmpeg rendering can fail
+  // independently of the notation itself compiling fine -- never let an
+  // audio problem affect the (already-returned) PDF/PNG result.
+  const audioPending = fs.existsSync(midiPath);
+  if (audioPending) {
+    (async () => {
+      try {
+        await run('fluidsynth', ['-ni', SOUNDFONT, midiPath, '-F', wavPath, '-r', '44100'], { timeout: DEFAULT_TIMEOUT_MS });
+        if (fs.existsSync(wavPath)) {
+          await run('ffmpeg', ['-y', '-i', wavPath, '-codec:a', 'libmp3lame', '-qscale:a', '4', mp3Path], { timeout: DEFAULT_TIMEOUT_MS });
+          fs.unlinkSync(wavPath);
         }
-        fs.unlinkSync(wavPath);
+      } catch (err) {
+        console.error('Background audio render failed (non-fatal):', err.message);
       }
-    } catch (err) {
-      console.error('Audio render failed (non-fatal):', err.message);
-    }
+    })();
   }
 
   return {
@@ -338,7 +364,7 @@ async function compileExcerpt(lySource, outDir, id, variants) {
     pngPathTreble: finalPreviews.treble || null,
     pngPathBass: finalPreviews.bass || null,
     midiPath: fs.existsSync(midiPath) ? midiPath : null,
-    mp3Path: mp3PathResult,
+    audioPending,
   };
 }
 
