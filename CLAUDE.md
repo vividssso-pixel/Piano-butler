@@ -2273,6 +2273,20 @@ and re-launch later.
 | 7 | Verification | — | `node --check` on `app.js` (clean). `git status` re-confirmed after each change to keep the "what's tracked vs. not" picture accurate before committing. |
 | 8 | Committed, not pushed | commit pending | `.github/workflows/render-keepalive.yml`, `sightreading-generator/client/public/app.js`, `sightreading-generator/client/public/style.css`. Sohyun pushes from her own Terminal as always — both the keep-alive Action and the loading-copy fix are inert until then. |
 
+### Phase 74 Updates (2026-09-15 — same-day: Sight-Reading Generator JSON-parse error diagnosed + fixed, butler.html decision closed)
+
+Same director session, continued again. Sohyun then sent two screenshots of a *different* error
+from the cold-start splash already addressed in Phase 73: a red banner reading "Couldn't generate
+an excerpt: Unexpected token '<', \"<!DOCTYPE \"... is not valid JSON".
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Diagnosed live | `sightreading-generator/client/public/app.js`, Render | `generate()` did `if (!res.ok) throw new Error((await res.json()).error ...)` — when Render's proxy answers a request with its own HTML error page (typically right at the edge of a cold start, before/while the Node process finishes binding the port) instead of the app's JSON, `res.json()` itself throws a generic "Unexpected token '<'... is not valid JSON" parse error, which was then shown to the user verbatim. Reproduced the real request live in Chrome: a cold `POST /api/generate-sightreading` took ~50s and *did* succeed once fully warm — confirming the failure window is specifically the boot/race moment, not the generation logic itself. |
+| 2 | Retry + friendly-message fix | `sightreading-generator/client/public/app.js` | Added `isGatewayStyleError()` to recognize this exact failure signature, and `requestExcerpt()` as a reusable single-attempt helper. `generate()` now retries once automatically after a 4s pause when it hits this signature, and only falls back to a friendly "the generator is still waking up, please wait a few seconds and click Generate again" message if the retry also fails — the raw JS parse error is never shown to a real user anymore. A genuine generation failure (e.g. a real 500 with a JSON error body) still surfaces its real message unchanged. |
+| 3 | Verification | — | `node --check app.js` passes. Live-reproduced a cold generate end-to-end in Chrome (network tab confirmed `pending` → `200` over ~50s) to confirm the underlying request path still works correctly under the new code path. Not yet feasible to force the exact HTML-error-body race on demand (it depends on Render's boot timing), so the retry path itself is verified by code review + syntax check rather than a live repro of the failure — flagged here rather than overstated as fully live-tested. |
+| 4 | Committed | `37c1aa5` | "Phase 74: retry + friendly message for sight-reading gateway-style JSON parse errors". Not yet pushed — Sohyun pushes from her own Terminal as always. |
+| 5 | `butler.html` decision closed | none (decision only) | Sohyun confirmed (2026-09-15): keep `butler.html` private for now, per Claude's recommendation — not built out into a public feature. Pending Work item removed; Known Issues line updated to reflect the decision instead of listing it as undecided. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
@@ -2405,7 +2419,6 @@ When revisited, build the AMEB/ABRSM/Trinity-specific angle, not a generic direc
 | 1 | Decide what `AGENTS.md` is for | Medium — Sohyun | Found 2026-09-15: an untracked, stale (138-line-diff) mirror of this file, apparently read by a different AI coding tool (naming convention + one "Codex API" substitution suggest OpenAI Codex or similar). Decide: keep it and have future sessions maintain both in sync, or delete it if it's a stray leftover from a one-off experiment. |
 | 2 | Push this session's commits | High — Sohyun | `index.html` (confirm() bug fix — live site still has the old blocking-dialog behavior until this is pushed), `admin-counts.html`/`admin-search.html` (password-gate restore), `.gitignore`, `.github/workflows/supabase-keepalive.yml`. Live-verify the My Lists delete flow once pushed. |
 | 3 | Decide what to do with the uncommitted `diagnose.html` rewrite + `practice-challenge.html` | Medium — Sohyun | Found uncommitted at Phase 67 start, still sitting there as of 2026-09-15 along with several other untouched files (`puzzle.html`, `score-reader.html`, `AGENTS.md`, Word docs, a sample MusicXML) — see Phase 71 #7 / Phase 72 #10 for the full list. Keep or discard. |
-| 4 | Decide what `butler.html` is for | Medium — Sohyun | Private teaching tool vs. public Piano Butler feature — determines whether it gets linked/promoted. |
 | 5 | Create the Stripe Payment Link for Exam Check-Up | High — Sohyun | $25 AUD one-time product → paste the link into `STRIPE_PAYMENT_LINK` in `find-a-teacher.html`. |
 | 6 | Re-check diploma-page CTR after re-crawl | Medium | 5 diploma pages retitled 2026-07-27 for CTR — still awaiting re-crawl to show effect. |
 | 7 | Sohyun — glance at a real downloaded viva-voce PDF | Quick — deferred by Sohyun since 2026-07-23 | Sample already generated live, zero console errors. Just needs her eyes on it. |
@@ -2454,7 +2467,7 @@ section for the standing note.*
   Don't request re-review until it does.
 - **Recurring pattern: uncommitted work sitting in the working tree between sessions.** Hit again at Phase 67 (`diagnose.html`, `practice-challenge.html`), as in Phase 58 and Phase 64. Worth running `git status` at the start of every session.
 - **Recurring pattern: authoritative `.js` updated, inline HTML copy not.** Phase 12 (`DATA_G5_1`), Phase 54 (`DATA_G6_COMP`), and now Phase 67 (all 9 ABRSM pages rendering 42–47 of 48 pieces). Any page that embeds data inline needs an explicit parity check, not an assumption.
-- `butler.html`: built, tested, and pushed, but scope undecided — private tool vs. public feature.
+- `butler.html`: built, tested, and pushed. **Decided 2026-09-15: stays private** — not linked or promoted as a public feature.
 - Diploma pages (LRSM/FRSM/ATCL/LTCL/FTCL) intentionally have no exam-requirement content (performance duration, own-choice rules, etc.) — this is a deliberate scope decision (2026-08-03), not a gap to fill. Piano Butler is a search tool, not a syllabus-content site.
 - Supabase free tier auto-pauses after 7 days of inactivity — mitigated by the `supabase-keepalive.yml` GitHub Action (runs Mon & Thu).
 - Git sandbox: `rm -f .git/index.lock .git/HEAD.lock` may fail with "Operation not permitted" — call `allow_cowork_file_delete` on the lock file path first, then retry. The actual `git push` must always be run by Sohyun from her own Terminal (the sandbox has no push credentials).
