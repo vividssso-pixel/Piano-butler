@@ -5,31 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Piano Butler — Admin Search</title>
     <meta name="robots" content="noindex, nofollow">
-    <style>
-        #pb-auth-loading {
-            position: fixed; inset: 0; z-index: 9999; background: #1a1a1a;
-            display: flex; align-items: center; justify-content: center;
-            color: #555; font-family: -apple-system, sans-serif; font-size: 13px;
-        }
-    </style>
     <script>
-        // Auth gate — runs after Supabase loads; redirects to login.html if no session
-        // Replaced plaintext password gate with Supabase session check (2026-05-19)
-        document.addEventListener("DOMContentLoaded", function() {
-            // Show loading overlay while checking session
-            const loading = document.getElementById("pb-auth-loading");
-            const SUPABASE_URL  = "https://icefqxaccclwasnfzgnp.supabase.co";
-            const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImljZWZxeGFjY2Nsd2FzbmZ6Z25wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwNjgzMTgsImV4cCI6MjA5MjY0NDMxOH0.lZ8BO_L8iOtET8RtUuk9trkf9bQbLqR8K6rKEfPtmtQ";
-            const _sbAdmin = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-            _sbAdmin.auth.getSession().then(function(res) {
-                const session = res.data && res.data.session;
-                if (!session) {
-                    window.location.href = "login.html?next=admin-search.html";
-                    return;
-                }
-                if (loading) loading.style.display = "none";
-            });
-        });
+        // Password gate — soft protection only (client-side check, not true security).
+        // Restored 2026-09-14: the previous Supabase-session gate redirected to login.html,
+        // which was deleted in the Phase 54 file cleanup, leaving this page unreachable by anyone.
+        (function() {
+            var PW_KEY = "pb_admin_auth_v2";
+            var PASSWORD = "ButlerKeys-2026!";
+            try {
+                if (sessionStorage.getItem(PW_KEY) === "ok") return;
+            } catch (e) {}
+            var entered = window.prompt("Piano Butler Admin — enter password:");
+            if (entered === PASSWORD) {
+                try { sessionStorage.setItem(PW_KEY, "ok"); } catch (e) {}
+            } else {
+                document.documentElement.innerHTML = "";
+                window.location.href = "index.html";
+                window.stop();
+            }
+        })();
     </script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -179,9 +173,6 @@
     </style>
 </head>
 <body>
-
-<!-- Auth loading overlay — hidden once session confirmed -->
-<div id="pb-auth-loading">Checking session…</div>
 
 <div id="root"></div>
 
