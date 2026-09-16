@@ -2387,8 +2387,16 @@ warmUp() racing the first refill).
 |---|--------|---------|--------|
 | 4 | Added a fairness gate so only one compile runs at a time, live-priority | `sightreading-generator/server/compileGate.js` (new), `server.js`, `excerptPool.js` | `runGated(task, priority)` queues every LilyPond-driving unit of work (a live generate, a lazy hands-view render, a background pool refill, boot-time warm-up) through a single-slot queue; `'live'` priority jumps ahead of any queued `'background'` work. Stated limit: it cannot preempt a job that has *already started* — a click landing the instant a background compile begins still waits for it — and it doesn't reach into compileExcerpt's own fire-and-forget follow-up work (deferred PDF/audio from Phases 77/78), which can still overlap with a next gated job. It does stop the specific compounding case this live test caught: two full preview compiles actively racing for the CPU at once. |
 
-**Live-verified (gate fix)**: pending Sohyun's push (commit `9d76a89`) — needs a fresh redeploy + a
-few more live Generate attempts right after boot to confirm compiles no longer overlap.
+**Live-verified (gate fix)**: Sohyun pushed (`9d76a89`, `24f73e9`); confirmed redeployed and
+healthy (health check OK, `app.js` fix present). While checking on it, Sohyun forwarded a Render
+"server failure — Exited with status 1" email, which turned out to be a real, serious bug, not a
+benign redeploy artifact — see #5.
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 5 | **Critical fix**: a failed background PDF compile could crash the whole server, not just one request | `sightreading-generator/server/lilypondCompiler.js` | Sohyun forwarded Render's crash email; her screenshot of the actual Render dashboard logs showed the smoking gun: an uncaught `Error: lilypond failed: ... /app/server/output/<id>.ly` stack trace ending in the Node process re-announcing "running at http://localhost:10000" — i.e. the process died and Render auto-restarted it. Root cause: `compileExcerpt`'s `fullCompilePromise` (the deferred full-page PDF compile added in Phase 78) is only ever `await`ed later — in the rare fallback branch, or inside a background IIFE further down — so if it rejects before either of those await points is reached, Node sees no attached handler at the end of that microtask turn, fires `unhandledRejection`, and (Node 15+ default behavior, confirmed running Node 20.20.2 from the logs) **crashes the entire process** — taking down every visitor currently being served, not just the one excerpt whose PDF compile happened to fail. This has almost certainly existed since Phase 78 shipped, just hadn't been caught live before. Fix: attach a no-op `.catch(() => {})` to `fullCompilePromise` immediately at creation so Node marks the rejection "handled" right away; the real error handling (logging, fallback raster, etc.) is unaffected since a promise can have more than one `.then`/`.catch` consumer. Audited the rest of the file for the same pattern (`grep .then(` ) — this was the only bare, non-immediately-awaited promise in it. |
+
+**Live-verified (crash fix)**: pending Sohyun's push (commit `04ea904`).
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
@@ -2519,7 +2527,7 @@ When revisited, build the AMEB/ABRSM/Trinity-specific angle, not a generic direc
 
 | # | Task | Priority | Notes |
 |---|------|----------|-------|
-| 1 | Live-verify Phase 80's compile-gate fix once pushed | High | Sohyun needs to `git push` commit `9d76a89` (+ CLAUDE.md log) first, then Render redeploys. Re-test Generate a few times right after boot/idle: confirm compiles no longer visibly overlap/slow each other down the way the previous live test caught, and that the pool still serves near-instant hits once it's had time to fill. |
+| 1 | Live-verify Phase 80's crash fix once pushed | Critical | Sohyun needs to `git push` commit `04ea904` (+ CLAUDE.md log) first, then Render redeploys. Watch Render's logs/email for a while afterward to confirm no more "Exited with status 1" crashes, especially during/after a burst of Generate clicks (the condition most likely to trigger a failed background PDF compile). |
 | 2 | Decide what `AGENTS.md` is for | Medium — Sohyun | Found 2026-09-15: an untracked, stale (138-line-diff) mirror of this file, apparently read by a different AI coding tool (naming convention + one "Codex API" substitution suggest OpenAI Codex or similar). Decide: keep it and have future sessions maintain both in sync, or delete it if it's a stray leftover from a one-off experiment. |
 | 3 | Decide what to do with the uncommitted `diagnose.html` rewrite + `practice-challenge.html` | Medium — Sohyun | Found uncommitted at Phase 67 start, still sitting there as of 2026-09-15 along with several other untouched files (`puzzle.html`, `score-reader.html`, `AGENTS.md`, Word docs, a sample MusicXML) — see Phase 71 #7 / Phase 72 #10 for the full list. Keep or discard. |
 | 4 | Create the Stripe Payment Link for Exam Check-Up | High — Sohyun | $25 AUD one-time product → paste the link into `STRIPE_PAYMENT_LINK` in `find-a-teacher.html`. |
