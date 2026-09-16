@@ -41,6 +41,7 @@ const { v4: uuidv4 } = require('uuid');
 const { generateExcerpt, REALMS } = require('./generator');
 const { GRADES } = require('./generator/gradeParams');
 const { compileExcerpt, renderLazyView, warmUp } = require('./lilypondCompiler');
+const excerptPool = require('./excerptPool');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -89,52 +90,75 @@ app.post('/api/generate-sightreading', async (req, res) => {
     const { grade, realm, hands, feel, feelSource } = req.body || {};
     if (!grade) return res.status(400).json({ error: 'grade is required' });
 
-    // `feel` (optional) is the Generator page's "Style" dropdown hint --
-    // { timeSig?, leftHandStyle?, character? }, built client-side from a
-    // fixed preset list (see app.js's STYLE_PRESETS -- this used to come
-    // from a curated Explorer Bank piece's tags instead; that page was
-    // retired 2026-09-03). generateExcerpt only ever applies
-    // timeSig/leftHandStyle when they fall within THIS grade's own
-    // confirmed pools, so a mismatched hint degrades to the grade's normal
-    // random behavior rather than erroring.
-    const { lySource, lySourceTreble, lySourceBass, meta } = generateExcerpt({
-      gradeId: grade,
-      realm,
-      hands,
-      feel: feel && typeof feel === 'object' ? feel : null,
-      feelSource: typeof feelSource === 'string' ? feelSource.slice(0, 120) : null,
-    });
-    const id = uuidv4();
-    const compiled = await compileExcerpt(lySource, OUTPUT_DIR, id, { treble: lySourceTreble, bass: lySourceBass });
+    // 2026-09-16: the generator page always sends the exact same fixed
+    // shape (realm 'reading', hands 'auto', no feel) -- only `grade`
+    // varies -- so most requests can be served instantly from a small
+    // background-refilled pool of already-compiled excerpts instead of
+    // paying the ~10-40s+ LilyPond compile live while the visitor waits.
+    // See excerptPool.js for the full rationale. Anything outside that
+    // fixed shape (a custom feel/hands/realm) always falls through to a
+    // live compile below, same as before this change.
+    if (excerptPool.isPoolableRequest({ realm, hands, feel, feelSource })) {
+      const pooled = excerptPool.takeFromPool(grade);
+      if (pooled) {
+        res.json(pooled);
+        return;
+      }
+      // Pool empty for this grade (cold boot, or a burst of clicks) --
+      // fall through to the normal live-compile path below.
+    }
 
-    res.json({
-      id,
-      // 2026-09-15: the full-page PDF compile also no longer finishes
-      // before this response -- see lilypondCompiler.js's compileExcerpt.
-      // pdfUrl is its eventual path; pdfPending tells the client to poll
-      // it (app.js's pollForPdf) rather than link it immediately.
-      pdfUrl: `/output/${id}.pdf`,
-      pdfPending: compiled.pdfPending,
-      pngUrl: `/output/${id}.png`,
-      // Only set when the piece actually has a second staff (see
-      // generator/index.js) -- lets the hands-view toggle hide itself for
-      // one-hand grades instead of pointing at a nonexistent image.
-      pngUrlTreble: compiled.pngPathTreble ? `/output/${id}.treble.png` : null,
-      pngUrlBass: compiled.pngPathBass ? `/output/${id}.bass.png` : null,
-      // 2026-09-15: audio is no longer generated before this response goes
-      // out (see lilypondCompiler.js's 2026-09-15 note on compileExcerpt).
-      // mp3Url is the file's EVENTUAL path even though it doesn't exist
-      // yet when audioPending is true -- the client polls exactly this
-      // URL until it 200s (see app.js's pollForAudio) rather than needing
-      // a separate status route. Null only when this piece never gets
-      // audio at all (no \midi block emitted).
-      mp3Url: compiled.audioPending ? `/output/${id}.mp3` : null,
-      audioPending: compiled.audioPending,
-      lySource,
-      lySourceTreble,
-      lySourceBass,
-      meta,
-    });
+    excerptPool.markLiveRequestStart();
+    try {
+      // `feel` (optional) is the Generator page's "Style" dropdown hint --
+      // { timeSig?, leftHandStyle?, character? }, built client-side from a
+      // fixed preset list (see app.js's STYLE_PRESETS -- this used to come
+      // from a curated Explorer Bank piece's tags instead; that page was
+      // retired 2026-09-03). generateExcerpt only ever applies
+      // timeSig/leftHandStyle when they fall within THIS grade's own
+      // confirmed pools, so a mismatched hint degrades to the grade's normal
+      // random behavior rather than erroring.
+      const { lySource, lySourceTreble, lySourceBass, meta } = generateExcerpt({
+        gradeId: grade,
+        realm,
+        hands,
+        feel: feel && typeof feel === 'object' ? feel : null,
+        feelSource: typeof feelSource === 'string' ? feelSource.slice(0, 120) : null,
+      });
+      const id = uuidv4();
+      const compiled = await compileExcerpt(lySource, OUTPUT_DIR, id, { treble: lySourceTreble, bass: lySourceBass });
+
+      res.json({
+        id,
+        // 2026-09-15: the full-page PDF compile also no longer finishes
+        // before this response -- see lilypondCompiler.js's compileExcerpt.
+        // pdfUrl is its eventual path; pdfPending tells the client to poll
+        // it (app.js's pollForPdf) rather than link it immediately.
+        pdfUrl: `/output/${id}.pdf`,
+        pdfPending: compiled.pdfPending,
+        pngUrl: `/output/${id}.png`,
+        // Only set when the piece actually has a second staff (see
+        // generator/index.js) -- lets the hands-view toggle hide itself for
+        // one-hand grades instead of pointing at a nonexistent image.
+        pngUrlTreble: compiled.pngPathTreble ? `/output/${id}.treble.png` : null,
+        pngUrlBass: compiled.pngPathBass ? `/output/${id}.bass.png` : null,
+        // 2026-09-15: audio is no longer generated before this response goes
+        // out (see lilypondCompiler.js's 2026-09-15 note on compileExcerpt).
+        // mp3Url is the file's EVENTUAL path even though it doesn't exist
+        // yet when audioPending is true -- the client polls exactly this
+        // URL until it 200s (see app.js's pollForAudio) rather than needing
+        // a separate status route. Null only when this piece never gets
+        // audio at all (no \midi block emitted).
+        mp3Url: compiled.audioPending ? `/output/${id}.mp3` : null,
+        audioPending: compiled.audioPending,
+        lySource,
+        lySourceTreble,
+        lySourceBass,
+        meta,
+      });
+    } finally {
+      excerptPool.markLiveRequestEnd();
+    }
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
@@ -188,4 +212,10 @@ app.listen(PORT, () => {
   // Fire-and-forget: don't delay opening the port (Render's health check
   // needs that promptly) -- see warmUp()'s own comment for what this buys.
   warmUp().catch((err) => console.error('LilyPond warm-up failed (non-fatal):', err.message));
+  // 2026-09-16: also fire-and-forget -- keeps topping up excerptPool's
+  // per-grade pools forever in the background, stepping aside whenever a
+  // real visitor's request is in flight. Never resolves; errors inside it
+  // are already caught per-iteration (see excerptPool.js), so nothing here
+  // should ever actually reject, but we guard anyway.
+  excerptPool.refillLoop(OUTPUT_DIR).catch((err) => console.error('excerptPool refill loop crashed:', err.message));
 });
