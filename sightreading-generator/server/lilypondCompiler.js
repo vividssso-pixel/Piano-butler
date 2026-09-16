@@ -304,6 +304,21 @@ async function compileExcerpt(lySource, outDir, id, variants) {
       throw new Error('LilyPond did not produce a PDF');
     }
   });
+  // 2026-09-16: CRITICAL -- found via a real production crash (Render's
+  // "Exited with status 1" alert + a full Node stack trace in the logs
+  // pointing at this exact compile). fullCompilePromise is only actually
+  // awaited later (either in the rare fallback branch below, or inside the
+  // background IIFE further down) -- but if it rejects before either of
+  // those await points is reached, Node has no attached handler yet at the
+  // end of that microtask turn, fires 'unhandledRejection', and (Node 15+
+  // default) crashes the ENTIRE process -- not just this one request, every
+  // visitor currently being served. This no-op .catch marks the rejection
+  // "handled" immediately so Node never does that; the real error handling
+  // (logging, fallback to a plain raster, etc.) still happens wherever this
+  // same promise is awaited below -- a promise can have more than one
+  // .then/.catch consumer, so nothing about the actual error handling
+  // changes, this purely prevents the crash.
+  fullCompilePromise.catch(() => {});
 
   let previews;
   try {
