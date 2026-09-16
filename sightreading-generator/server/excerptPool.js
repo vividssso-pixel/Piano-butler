@@ -93,7 +93,25 @@ async function refillLoop(outputDir) {
   for (;;) {
     try {
       if (liveRequestsInFlight === 0) {
-        const needy = GRADE_IDS.find((id) => pools[id].length < TARGET_PER_GRADE);
+        // 2026-09-16: this used to be GRADE_IDS.find(...) -- the FIRST
+        // grade (in fixed prelim..grade8 order) still under target -- which
+        // meant every grade fully behind it had to reach TARGET_PER_GRADE
+        // before the next one got ANY attention at all. Right after a boot
+        // (all pools empty), that filled Preliminary twice before Grade 1
+        // got its first item, before Grade 2 got its first, and so on --
+        // Sohyun caught this live: Preliminary was instant, but switching
+        // to Grade 6 right after still meant a full live-compile wait,
+        // because Grade 6's pool hadn't been touched yet. Now we always
+        // pick whichever grade currently has the SMALLEST pool (ties go to
+        // the earlier grade in GRADE_IDS, so behavior is still
+        // deterministic) -- every grade reaches its first pooled item
+        // before any grade gets a second, spreading coverage evenly
+        // instead of exhausting one grade at a time.
+        let needy = null;
+        for (const id of GRADE_IDS) {
+          if (pools[id].length >= TARGET_PER_GRADE) continue;
+          if (needy === null || pools[id].length < pools[needy].length) needy = id;
+        }
         if (needy) {
           const item = await buildOne(needy, outputDir);
           pools[needy].push(item);
