@@ -42,6 +42,7 @@ const { generateExcerpt, REALMS } = require('./generator');
 const { GRADES } = require('./generator/gradeParams');
 const { compileExcerpt, renderLazyView, warmUp } = require('./lilypondCompiler');
 const excerptPool = require('./excerptPool');
+const { runGated } = require('./compileGate');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -126,7 +127,7 @@ app.post('/api/generate-sightreading', async (req, res) => {
         feelSource: typeof feelSource === 'string' ? feelSource.slice(0, 120) : null,
       });
       const id = uuidv4();
-      const compiled = await compileExcerpt(lySource, OUTPUT_DIR, id, { treble: lySourceTreble, bass: lySourceBass });
+      const compiled = await runGated(() => compileExcerpt(lySource, OUTPUT_DIR, id, { treble: lySourceTreble, bass: lySourceBass }), 'live');
 
       res.json({
         id,
@@ -197,7 +198,7 @@ app.post('/api/sightreading-view', async (req, res) => {
     if (!lySource || typeof lySource !== 'string' || lySource.length > 20000) {
       return res.status(400).json({ error: 'invalid lySource' });
     }
-    const pngPath = await renderLazyView(lySource, OUTPUT_DIR, id, view);
+    const pngPath = await runGated(() => renderLazyView(lySource, OUTPUT_DIR, id, view), 'live');
     if (!fs.existsSync(pngPath)) throw new Error('preview render did not produce a PNG');
     res.json({ pngUrl: `/output/${id}.${view}.png` });
   } catch (err) {
@@ -211,7 +212,7 @@ app.listen(PORT, () => {
   console.log(`  -> Generator: http://localhost:${PORT}/sight-reading-generator`);
   // Fire-and-forget: don't delay opening the port (Render's health check
   // needs that promptly) -- see warmUp()'s own comment for what this buys.
-  warmUp().catch((err) => console.error('LilyPond warm-up failed (non-fatal):', err.message));
+  runGated(() => warmUp(), 'background').catch((err) => console.error('LilyPond warm-up failed (non-fatal):', err.message));
   // 2026-09-16: also fire-and-forget -- keeps topping up excerptPool's
   // per-grade pools forever in the background, stepping aside whenever a
   // real visitor's request is in flight. Never resolves; errors inside it

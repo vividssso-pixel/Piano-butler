@@ -22,6 +22,7 @@
 const { v4: uuidv4 } = require('uuid');
 const { generateExcerpt } = require('./generator');
 const { compileExcerpt } = require('./lilypondCompiler');
+const { runGated } = require('./compileGate');
 const { GRADES } = require('./generator/gradeParams');
 
 const GRADE_IDS = GRADES.map((g) => g.id);
@@ -66,7 +67,7 @@ async function buildOne(gradeId, outputDir) {
     feelSource: null,
   });
   const id = uuidv4();
-  const compiled = await compileExcerpt(lySource, outputDir, id, { treble: lySourceTreble, bass: lySourceBass });
+  const compiled = await runGated(() => compileExcerpt(lySource, outputDir, id, { treble: lySourceTreble, bass: lySourceBass }), 'background');
   return {
     id,
     pdfUrl: `/output/${id}.pdf`,
