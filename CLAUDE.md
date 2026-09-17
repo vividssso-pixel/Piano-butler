@@ -2459,21 +2459,6 @@ taught/sat) fully intact.
 |---|--------|---------|--------|
 | 1 | Button title generalized | `timeline.html` | The mode-choice button's title changed from "AMEB Piano exam" to "Piano exam". Its description line underneath is unchanged ("Grade-specific plan using the real AMEB syllabus — technical work and repertoire included.") so the page stays honest about what's actually inside once picked. No other AMEB-specific copy or logic touched. Verified via `@babel/parser` (jsx plugin) -- 0 errors. Committed as `21214f4`, not yet pushed. |
 
-### Phase 85 Updates (2026-09-17 — sight-reading.html now auto-redirects to the generator)
-
-Sohyun sent screenshots again showing `sight-reading.html`'s own landing content (title, FAQ,
-feature cards) and said it should go straight to the generator, this page shouldn't show. Since
-Phase 83 already confirmed the homepage card bypasses this page correctly, this meant she was
-landing on `sight-reading.html` itself (direct URL / bookmark / search result), not going through
-the homepage. Asked her directly whether to keep it as a static SEO landing page (its original
-Phase 81 purpose) or make it also auto-redirect (which trades away that SEO purpose) -- she chose
-auto-redirect.
-
-| # | Change | File(s) | Detail |
-|---|--------|---------|--------|
-| 1 | Immediate redirect to the generator | `sight-reading.html` | Added a `<script>` at the very top of `<head>` (before the charset meta tag) calling `window.location.replace('https://piano-butler-sightreading.onrender.com/sight-reading-generator')`. Anyone who now opens this page -- from a bookmark, direct URL, or a Google search result -- bounces straight into the generator instead of seeing any of this page's own content. This deliberately undoes part of Phase 81's SEO intent (an indexable landing page for organic search). Verified the file is still well-formed HTML (structure spot-checked, no broken tags). |
-| 2 | Removed from sitemap | `sitemap.xml` | Removed `sight-reading.html`'s `<url>` entry -- a page that only redirects shouldn't be submitted to Google for indexing. This was Claude's own inference from decision #1, not something Sohyun explicitly asked for -- flagged to her directly. |
-
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
@@ -2603,7 +2588,7 @@ When revisited, build the AMEB/ABRSM/Trinity-specific angle, not a generic direc
 
 | # | Task | Priority | Notes |
 |---|------|----------|-------|
-| 1 | Live-verify Phase 84 and 85 once pushed | High | Phase 83 (homepage card) already confirmed live. Still need to confirm once Sohyun pushes: timeline.html's entry button reads "Piano exam" (not "AMEB Piano exam", `21214f4`), and `sight-reading.html` now redirects straight into the generator instead of showing its own landing content (`2aa68e7`). |
+| 1 | Live-verify Phase 83 and 84 once pushed | High | Both committed locally (`43e52f8` homepage card, `21214f4` button label), not yet pushed -- confirm on the live site: homepage's sight-reading card opens the generator in one click, and timeline.html's entry button reads "Piano exam" (not "AMEB Piano exam"). |
 | 2 | Decide what `AGENTS.md` is for | Medium — Sohyun | Found 2026-09-15: an untracked, stale (138-line-diff) mirror of this file, apparently read by a different AI coding tool (naming convention + one "Codex API" substitution suggest OpenAI Codex or similar). Decide: keep it and have future sessions maintain both in sync, or delete it if it's a stray leftover from a one-off experiment. |
 | 3 | Create the Stripe Payment Link for Exam Check-Up | High — Sohyun | $25 AUD one-time product → paste the link into `STRIPE_PAYMENT_LINK` in `find-a-teacher.html`. |
 | 4 | Re-check diploma-page CTR after re-crawl | Medium | 5 diploma pages retitled 2026-07-27 for CTR — still awaiting re-crawl to show effect. |
