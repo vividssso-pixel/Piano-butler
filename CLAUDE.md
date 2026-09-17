@@ -2446,6 +2446,19 @@ second click.
 | 1 | Homepage card links straight to the generator again | `index.html` | The "Practice sight-reading" entry card's `onClick` changed from `window.location.href = 'sight-reading.html'` to `window.location.href = 'https://piano-butler-sightreading.onrender.com/sight-reading-generator'`. `sight-reading.html` itself is untouched and stays live/indexed for organic search traffic landing on it directly from Google -- only the homepage's own click-through path changed. Verified with `@babel/core transformSync` (`runtime:'classic'`) + `new Function()` on the inline script -- 0 errors. Committed as `43e52f8`, not yet pushed. |
 | 2 | Note on concurrent editing | -- | Hit a real (not stale) git lock contention while committing this -- another session was actively committing to this same repo at the same time (`ea7b4f9`, "Unify Sight-Reading Generator design with Ink & Brass", landed on `sightreading-generator/client/public/*` and `sight-reading.html` mid-way through this session's own commit attempts). Waited for `ps aux` to show no running git process and the working tree to settle before removing the resulting stale lock files and retrying -- did not touch any of the other session's in-flight files. Worth keeping in mind: this repo can have more than one Claude session working in it concurrently now (a "design room" session appears to exist alongside this Director session). |
 
+### Phase 84 Updates (2026-09-17 — timeline.html mode-choice button generalized)
+
+Sohyun saw the new mode-choice screen (Phase 81/82's "What are you preparing for?") and asked
+not to lead with "AMEB" on the entry button. Asked her directly whether she wanted the label
+generalized only, or the underlying AMEB grade/technical-work/repertoire data actually broadened
+to other syllabuses (ABRSM/Trinity) inside that option -- she confirmed label only, keeping the
+Phase 61 Reference Integrity restriction (AMEB-only, since that's the syllabus she's personally
+taught/sat) fully intact.
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Button title generalized | `timeline.html` | The mode-choice button's title changed from "AMEB Piano exam" to "Piano exam". Its description line underneath is unchanged ("Grade-specific plan using the real AMEB syllabus — technical work and repertoire included.") so the page stays honest about what's actually inside once picked. No other AMEB-specific copy or logic touched. Verified via `@babel/parser` (jsx plugin) -- 0 errors. Committed as `21214f4`, not yet pushed. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
@@ -2575,7 +2588,7 @@ When revisited, build the AMEB/ABRSM/Trinity-specific angle, not a generic direc
 
 | # | Task | Priority | Notes |
 |---|------|----------|-------|
-| 1 | Live-verify Phase 83's homepage sight-reading card once pushed | High | Committed locally (`43e52f8`), not yet pushed -- need to confirm the homepage's "Practice sight-reading" card goes straight to the generator in one click on the real site. |
+| 1 | Live-verify Phase 83 and 84 once pushed | High | Both committed locally (`43e52f8` homepage card, `21214f4` button label), not yet pushed -- confirm on the live site: homepage's sight-reading card opens the generator in one click, and timeline.html's entry button reads "Piano exam" (not "AMEB Piano exam"). |
 | 2 | Decide what `AGENTS.md` is for | Medium — Sohyun | Found 2026-09-15: an untracked, stale (138-line-diff) mirror of this file, apparently read by a different AI coding tool (naming convention + one "Codex API" substitution suggest OpenAI Codex or similar). Decide: keep it and have future sessions maintain both in sync, or delete it if it's a stray leftover from a one-off experiment. |
 | 3 | Create the Stripe Payment Link for Exam Check-Up | High — Sohyun | $25 AUD one-time product → paste the link into `STRIPE_PAYMENT_LINK` in `find-a-teacher.html`. |
 | 4 | Re-check diploma-page CTR after re-crawl | Medium | 5 diploma pages retitled 2026-07-27 for CTR — still awaiting re-crawl to show effect. |
