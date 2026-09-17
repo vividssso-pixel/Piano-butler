@@ -183,6 +183,40 @@ const READINESS_QUESTIONS = [
     ] },
 ];
 
+// Same shape/scoring as READINESS_QUESTIONS above (buildTimeline() only ever consumes
+// the summed score), reworded for the generic (non-AMEB) performance-countdown mode so
+// it doesn't reference AMEB-specific terms like "this grade" or "General Knowledge".
+const READINESS_QUESTIONS_GENERIC = [
+  { id:'pieces',     q:'Where are your performance pieces right now?',
+    options:[
+      { label:'Not chosen yet',                 score:1 },
+      { label:'Chosen, learning hands separately', score:2 },
+      { label:'Hands together, slow tempo',     score:3 },
+      { label:'Up to tempo, just need polishing', score:4 },
+    ] },
+  { id:'technical',  q:'How comfortable are you with the technical demands of your pieces?',
+    options:[
+      { label:'Haven’t started',            score:1 },
+      { label:'Know some, shaky',                score:2 },
+      { label:'Mostly solid',                    score:3 },
+      { label:'Confident, just need speed/evenness', score:4 },
+    ] },
+  { id:'sightread',  q:'How is your sight-reading at the moment?',
+    options:[
+      { label:'Needs a lot of work',             score:1 },
+      { label:'Okay with simple rhythms',        score:2 },
+      { label:'Generally fine',                  score:3 },
+      { label:'Strong — rarely an issue',        score:4 },
+    ] },
+  { id:'theory',     q:'How confident are you with general music knowledge (theory, context, terms)?',
+    options:[
+      { label:'Haven’t looked at it',        score:1 },
+      { label:'Know the basics',                 score:2 },
+      { label:'Comfortable with most of it',     score:3 },
+      { label:'Confident — just need review',    score:4 },
+    ] },
+];
+
 /* ── Phase + month-focus logic ── */
 const PHASE_META = {
   foundation:    { name:'Foundation & Learning',   color:'#6366f1', bg:'#eef2ff', text:'#4338ca' },
@@ -288,11 +322,14 @@ function namedPieces(pieceObjs) { return (pieceObjs || []).filter(p => p && p.t)
    so lead sentence and checklist always describe the same month. Piece-aware when the
    student supplied real pieces (uses their era/focus tags from the corpus); generic
    fallback wording otherwise. ── */
-function foundationChecklist(monthIdx, pieceObjs, grade) {
+function foundationChecklist(monthIdx, pieceObjs, grade, tech) {
   const names = namedPieces(pieceObjs);
+  // Only point at the "Technical Work Checklist" section below when it actually exists
+  // (AMEB Prelim-G8) — the generic performance mode and AMEB Diploma grades have no such
+  // section, so this would otherwise reference a heading that isn't on the page.
   const stages = [
-    [names.length ? `Hands-separate read-through: ${names.join(', ')}` : `Choose and confirm your ${grade} exam repertoire`,
-     `Skim the ${grade} Technical Work Checklist below so nothing's a surprise later`,
+    [names.length ? `Hands-separate read-through: ${names.join(', ')}` : `Choose and confirm your ${grade} repertoire`,
+     tech ? `Skim the ${grade} Technical Work Checklist below so nothing's a surprise later` : `Get a sense of the technical demands ahead so nothing's a surprise later`,
      `Set a weekly practice schedule you can actually keep — see Week by week below`],
     [names.length ? `Hands-together, slow tempo: ${names.join(', ')}` : `Begin hands-together practice, slow tempo, on each piece`,
      `Start a daily scale/arpeggio warm-up for ${grade}`,
@@ -308,7 +345,7 @@ function foundationChecklist(monthIdx, pieceObjs, grade) {
 }
 function technicalChecklist(monthIdx, tech, grade) {
   if (!tech) {
-    return [`${grade} technical preparation — work with your teacher's guidance. AMEB's fixed technical-exercise list applies to Preliminary through Grade 8 only.`];
+    return [`${grade} technical preparation — work through scales, arpeggios and technical exercises with your teacher's guidance.`];
   }
   const codes = tech.exercises.map(e => e.code).join(', ');
   const hasExtras = tech.sections.length > 1;
@@ -377,7 +414,7 @@ function buildMonthContent(phase, monthIdx, pieceObjs, tech, grade) {
   const lead = leadArr[Math.min(monthIdx, leadArr.length-1)];
   let checklist;
   switch (phase) {
-    case 'foundation':    checklist = foundationChecklist(monthIdx, pieceObjs, grade); break;
+    case 'foundation':    checklist = foundationChecklist(monthIdx, pieceObjs, grade, tech); break;
     case 'technical':     checklist = technicalChecklist(monthIdx, tech, grade); break;
     case 'musical':       checklist = musicalChecklist(monthIdx, pieceObjs, grade); break;
     case 'consolidation': checklist = consolidationChecklist(monthIdx, pieceObjs, grade, tech); break;
@@ -529,15 +566,16 @@ function browseGradePieces(syllabus, gradeKey) {
 }
 
 /* ── Components ── */
-function ReadinessQuiz({ onComplete }) {
+function ReadinessQuiz({ onComplete, questions }) {
+  const qs = questions || READINESS_QUESTIONS;
   const [answers, setAnswers] = useState({});
-  const allAnswered = READINESS_QUESTIONS.every(q => answers[q.id] !== undefined);
+  const allAnswered = qs.every(q => answers[q.id] !== undefined);
   return (
     <div className="fade-up">
       <h2 style={{fontSize:16,fontWeight:800,color:'#241f1a',marginBottom:4}}>A few quick questions</h2>
       <p style={{fontSize:13,color:'#a49b8f',marginBottom:16}}>This helps shape how much time to allow for each phase.</p>
       <div style={{display:'flex',flexDirection:'column',gap:18}}>
-        {READINESS_QUESTIONS.map(q => (
+        {qs.map(q => (
           <div key={q.id}>
             <div style={{fontSize:13,fontWeight:700,color:'#241f1a',marginBottom:8}}>{q.q}</div>
             <div style={{display:'flex',flexDirection:'column',gap:7}}>
@@ -665,6 +703,55 @@ function PieceInput({ syllabus, gradeKey, pieces, setPieces, onContinue, onSkip,
   );
 }
 
+// Free-text piece entry for the generic (non-AMEB) performance-countdown mode — there is
+// no CORPUS to search/browse for HSC/school-performance repertoire, so this just takes
+// up to 4 typed titles. Shares the pieces/setPieces state shape with the wizard (an array
+// of 4 slots), but each slot is a plain string here instead of a CORPUS piece object.
+function GenericPieceInput({ pieces, setPieces, onContinue, onSkip, onBack }) {
+  function setSlot(i, value) {
+    const next = pieces.slice();
+    next[i] = value;
+    setPieces(next);
+  }
+  const anyFilled = pieces.some(p => !!(p && p.trim && p.trim()));
+
+  return (
+    <div className="fade-up">
+      <h2 style={{fontSize:16,fontWeight:800,color:'#241f1a',marginBottom:4}}>What are you actually playing?</h2>
+      <p style={{fontSize:13,color:'#a49b8f',marginBottom:16}}>Optional, but it makes the monthly plan reference your real pieces instead of generic advice. Type up to 4 titles, or skip.</p>
+
+      <div style={{display:'flex',flexDirection:'column',gap:8,marginBottom:14}}>
+        {[0,1,2,3].map(i => (
+          <div key={i} style={{display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontSize:11,fontWeight:800,color:'#a49b8f',width:16}}>{i+1}</span>
+            <input type="text" value={pieces[i] || ''} onChange={e=>setSlot(i, e.target.value)}
+              placeholder="e.g. Clair de Lune — Debussy"
+              style={{flex:1,padding:'10px 12px',borderRadius:10,border:'1.5px solid #e8dcc0',fontSize:12.5,outline:'none'}} />
+          </div>
+        ))}
+      </div>
+
+      <div style={{display:'flex',gap:10,marginTop:22}}>
+        <button onClick={onBack}
+          style={{padding:'12px 18px',borderRadius:12,background:'#efe7d8',color:'#6b6259',border:'1.5px solid #e8dcc0',cursor:'pointer',fontSize:13,fontWeight:700}}>
+          Back
+        </button>
+        {anyFilled ? (
+          <button onClick={onContinue}
+            style={{flex:1,padding:'12px',borderRadius:12,background:'#241f1a',color:'#fff',border:'none',cursor:'pointer',fontSize:13,fontWeight:800}}>
+            Continue
+          </button>
+        ) : (
+          <button onClick={onSkip}
+            style={{flex:1,padding:'12px',borderRadius:12,background:'#efe7d8',color:'#6b6259',border:'1.5px solid #e8dcc0',cursor:'pointer',fontSize:13,fontWeight:700}}>
+            Skip — use generic plan
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function MonthCard({ m, idx, isPast }) {
   const meta = PHASE_META[m.phase] || PHASE_META.foundation;
   const [showWeekly, setShowWeekly] = useState(false);
@@ -754,9 +841,14 @@ function LoginPrompt({ onClose }) {
 // Screens: 0=grade, 1=exam date, 2=pieces, 3=quiz, 4=results
 // AMEB only — no syllabus picker (see head comment / GRADE_OPTIONS above).
 function App() {
+  // mode: null (not chosen yet) | 'ameb' (existing AMEB-specific flow, untouched) |
+  // 'generic' (new performance-countdown mode for HSC/school/other performances — see
+  // Phase 81 note near the top of this file).
+  const [mode, setMode]         = useState(null);
   const [screen, setScreen]     = useState(0);
   const [gradeKey, setGradeKey] = useState(null);
   const [gradeLabel, setGradeLabel] = useState(null);
+  const [performanceLabel, setPerformanceLabel] = useState('');
   const [examDate, setExamDate] = useState('');
   const [pieces, setPieces]     = useState(['','','','']);
   const [showLogin, setShowLogin] = useState(false);
@@ -765,19 +857,30 @@ function App() {
 
   const gradeOptions = GRADE_OPTIONS;
   const today = new Date().toISOString().slice(0,10);
-  const userPieces = pieces.filter(Boolean);
+  const isGeneric = mode === 'generic';
+  // buildTimeline()/getTechnicalWork() already treat any non-'AMEB' syllabus as "no
+  // syllabus-specific data available" and fall back to generic wording, so 'GENERIC'
+  // here doesn't need any new branching inside those functions.
+  const effectiveSyllabus = isGeneric ? 'GENERIC' : SYLLABUS;
+  const effectiveGradeLabel = isGeneric ? (performanceLabel.trim() || 'your performance') : gradeLabel;
+  // AMEB pieces are CORPUS objects chosen via PieceInput; generic pieces are plain
+  // typed strings from GenericPieceInput — normalise both to {t: title} for the
+  // shared checklist builders (namedPieces/pieceLabel only ever read p.t).
+  const userPieces = isGeneric
+    ? pieces.filter(Boolean).map(t => ({ t }))
+    : pieces.filter(Boolean);
 
   function finishQuiz(score) {
-    const tl = buildTimeline(examDate, score, gradeLabel, SYLLABUS, userPieces, gradeKey);
+    const tl = buildTimeline(examDate, score, effectiveGradeLabel, effectiveSyllabus, userPieces, gradeKey);
     setTimeline(tl);
-    setRepertoire(pickRepertoire(SYLLABUS, gradeKey));
+    setRepertoire(isGeneric ? [] : pickRepertoire(SYLLABUS, gradeKey));
     setScreen(4);
   }
 
-  const technicalWork = getTechnicalWork(SYLLABUS, gradeKey);
+  const technicalWork = isGeneric ? null : getTechnicalWork(SYLLABUS, gradeKey);
 
   function reset() {
-    setScreen(0); setGradeKey(null); setGradeLabel(null);
+    setMode(null); setScreen(0); setGradeKey(null); setGradeLabel(null); setPerformanceLabel('');
     setExamDate(''); setPieces(['','','','']); setTimeline(null); setRepertoire([]);
   }
 
@@ -794,12 +897,15 @@ function App() {
           Back to Piano Butler
         </a>
         <h1 style={{color:'#241f1a',fontSize:19,fontWeight:900,margin:'0 0 2px',letterSpacing:'-0.02em'}}>
-          AMEB Exam Timeline
+          {mode === null ? 'Exam & Performance Timeline' : mode === 'ameb' ? 'AMEB Exam Timeline' : 'Performance Countdown'}
         </h1>
         <p style={{color:'#a49b8f',fontSize:12,margin:'0 0 12px'}}>
-          {screen===0 ? 'Step 1 of 4 — grade' : screen===1 ? 'Step 2 of 4 — exam date' : screen===2 ? 'Step 3 of 4 — your pieces' : screen===3 ? 'Step 4 of 4 — readiness' : 'Your timeline'}
+          {mode === null ? 'Choose what you\'re preparing for' :
+           screen===0 ? (mode==='ameb' ? 'Step 1 of 4 — grade' : 'Step 1 of 4 — performance') :
+           screen===1 ? (mode==='ameb' ? 'Step 2 of 4 — exam date' : 'Step 2 of 4 — date') :
+           screen===2 ? 'Step 3 of 4 — your pieces' : screen===3 ? 'Step 4 of 4 — readiness' : 'Your timeline'}
         </p>
-        {screen < 4 && (
+        {mode !== null && screen < 4 && (
           <div className="progress-bar">
             <div className="progress-fill" style={{width:(screen===0?'0%':screen===1?'25%':screen===2?'50%':'75%')}} />
           </div>
@@ -808,9 +914,30 @@ function App() {
 
       <div style={{maxWidth:600,margin:'0 auto',padding:'24px 16px 80px'}}>
 
-        {/* STEP 0: Grade */}
-        {screen===0 && (
+        {/* STEP -1: Mode choice — AMEB exam (existing, untouched flow) vs a generic
+            performance countdown (new — Phase 81) for HSC/school performances/recitals
+            that aren't tied to a real, verifiable syllabus we can make claims about. */}
+        {mode === null && (
           <div className="fade-up">
+            <h2 style={{fontSize:16,fontWeight:800,color:'#241f1a',marginBottom:4}}>What are you preparing for?</h2>
+            <p style={{fontSize:13,color:'#a49b8f',marginBottom:16}}>Pick the option that matches — both build a month-by-month practice plan.</p>
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              <button onClick={()=>setMode('ameb')} className="opt-btn" style={{padding:'16px',textAlign:'left'}}>
+                <div style={{fontSize:14,fontWeight:800,color:'#241f1a',marginBottom:3}}>AMEB Piano exam</div>
+                <div style={{fontSize:12,color:'#a49b8f',fontWeight:500}}>Grade-specific plan using the real AMEB syllabus — technical work and repertoire included.</div>
+              </button>
+              <button onClick={()=>setMode('generic')} className="opt-btn" style={{padding:'16px',textAlign:'left'}}>
+                <div style={{fontSize:14,fontWeight:800,color:'#241f1a',marginBottom:3}}>Other performance</div>
+                <div style={{fontSize:12,color:'#a49b8f',fontWeight:500}}>HSC performance, school concert, recital or any other date to prepare for.</div>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 0: Grade (AMEB) */}
+        {mode==='ameb' && screen===0 && (
+          <div className="fade-up">
+            <button onClick={()=>setMode(null)} style={{background:'none',border:'none',padding:0,margin:'0 0 10px',cursor:'pointer',fontSize:11,fontWeight:700,color:'#a49b8f'}}>← choose a different type</button>
             <h2 style={{fontSize:16,fontWeight:800,color:'#241f1a',marginBottom:4}}>Which AMEB grade are you sitting?</h2>
             <p style={{fontSize:13,color:'#a49b8f',marginBottom:16}}>Built for the AMEB Piano syllabus — Preliminary through Diploma.</p>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:9}}>
@@ -832,10 +959,30 @@ function App() {
           </div>
         )}
 
-        {/* STEP 1: Exam date */}
-        {screen===1 && (
+        {/* STEP 0: Performance name (generic mode) — optional label used only for copy
+            substitution ({grade} in MONTH_FOCUS etc.) and the results-screen header. No
+            grade/syllabus data lookup happens for this mode. */}
+        {mode==='generic' && screen===0 && (
           <div className="fade-up">
-            <h2 style={{fontSize:16,fontWeight:800,color:'#241f1a',marginBottom:4}}>When is the exam?</h2>
+            <button onClick={()=>setMode(null)} style={{background:'none',border:'none',padding:0,margin:'0 0 10px',cursor:'pointer',fontSize:11,fontWeight:700,color:'#a49b8f'}}>← choose a different type</button>
+            <h2 style={{fontSize:16,fontWeight:800,color:'#241f1a',marginBottom:4}}>What's the performance called?</h2>
+            <p style={{fontSize:13,color:'#a49b8f',marginBottom:16}}>Optional — used to personalise your plan. e.g. "HSC Performance Exam", "School Concert".</p>
+            <input type="text" value={performanceLabel} onChange={e=>setPerformanceLabel(e.target.value)}
+              placeholder="e.g. HSC Performance Exam"
+              style={{width:'100%',padding:'13px 14px',borderRadius:12,border:'1.5px solid #e8dcc0',fontSize:14,outline:'none'}} />
+            <div style={{marginTop:22}}>
+              <button onClick={()=>setScreen(1)}
+                style={{width:'100%',padding:'13px',borderRadius:12,background:'#241f1a',color:'#fff',border:'none',cursor:'pointer',fontSize:14,fontWeight:800}}>
+                Next
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 1: Exam / performance date */}
+        {mode !== null && screen===1 && (
+          <div className="fade-up">
+            <h2 style={{fontSize:16,fontWeight:800,color:'#241f1a',marginBottom:4}}>When is the {mode==='ameb' ? 'exam' : 'performance'}?</h2>
             <p style={{fontSize:13,color:'#a49b8f',marginBottom:16}}>An estimate is fine — you can adjust later.</p>
             <input type="date" value={examDate} min={today} onChange={e=>setExamDate(e.target.value)}
               style={{width:'100%',padding:'13px 14px',borderRadius:12,border:'1.5px solid #e8dcc0',fontSize:14,outline:'none'}} />
@@ -860,22 +1007,26 @@ function App() {
         )}
 
         {/* STEP 2: Your actual pieces (optional) */}
-        {screen===2 && (
+        {mode==='ameb' && screen===2 && (
           <PieceInput syllabus={SYLLABUS} gradeKey={gradeKey} pieces={pieces} setPieces={setPieces}
+            onContinue={()=>setScreen(3)} onSkip={()=>setScreen(3)} onBack={()=>setScreen(1)} />
+        )}
+        {mode==='generic' && screen===2 && (
+          <GenericPieceInput pieces={pieces} setPieces={setPieces}
             onContinue={()=>setScreen(3)} onSkip={()=>setScreen(3)} onBack={()=>setScreen(1)} />
         )}
 
         {/* STEP 3: Readiness quiz */}
-        {screen===3 && <ReadinessQuiz onComplete={finishQuiz} />}
+        {mode !== null && screen===3 && <ReadinessQuiz onComplete={finishQuiz} questions={isGeneric ? READINESS_QUESTIONS_GENERIC : READINESS_QUESTIONS} />}
 
         {/* STEP 4: Results */}
-        {screen===4 && timeline && (
+        {mode !== null && screen===4 && timeline && (
           <div className="fade-up">
             <div style={{background:'#fff',border:'1px solid #e8dcc0',borderRadius:16,padding:'18px 20px',marginBottom:18}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',flexWrap:'wrap',gap:8}}>
                 <div>
                   <div style={{fontSize:11,color:'#a49b8f',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.03em'}}>
-                    {SYLLABUS} · {gradeLabel}
+                    {isGeneric ? 'PERFORMANCE' : SYLLABUS} · {effectiveGradeLabel}
                   </div>
                   <div style={{fontSize:18,fontWeight:900,color:'#241f1a',marginTop:2}}>
                     {daysLeft} day{daysLeft===1?'':'s'} to go
@@ -920,7 +1071,7 @@ function App() {
 
             {userPieces.length > 0 && (
               <>
-                <h3 style={{fontSize:14,fontWeight:800,color:'#241f1a',margin:'22px 0 10px'}}>Your exam pieces</h3>
+                <h3 style={{fontSize:14,fontWeight:800,color:'#241f1a',margin:'22px 0 10px'}}>{isGeneric ? 'Your pieces' : 'Your exam pieces'}</h3>
                 <p style={{fontSize:12,color:'#a49b8f',marginBottom:12}}>The monthly plan above is written around these.</p>
                 {userPieces.map((p,i) => (
                   <div key={i} className="result-card" style={{padding:'14px 16px'}}>
