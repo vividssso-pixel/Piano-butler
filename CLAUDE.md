@@ -2406,6 +2406,21 @@ code-level fix being correct (the exact unhandled-rejection pattern Node crashes
 having reproduced the original crash and shown it no longer occurs. Sohyun should keep an eye on
 Render's email/logs for any further "Exited with status 1" alerts as normal usage continues.
 
+### Phase 81 Updates (2026-09-17 — Sight-Reading Generator: SEO landing page)
+
+Sohyun asked whether the Sight-Reading Generator had moved the needle on traffic. Live check
+(Search Console + GA4) showed no — the tool is only reachable via a homepage click, so it can't
+show up as organic search traffic, and it didn't appear in GA4's top-7 pages by views over the
+last 28 days either. She asked to fix that.
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | New indexable landing page | `sight-reading.html` (new) | Plain static HTML (no React/JSX — avoids the Babel-compile risk class entirely for a page this simple), matching the site's light theme. Real crawlable content: what the tool does, the 9 AMEB grades covered, an FAQ block, and CTA buttons — targets `AMEB sight reading generator`, `free piano sight reading exercises`, `sight reading exercises by grade` and similar long-tail terms, following the same "phrase-match the query, lead with something concrete" pattern that worked for the diploma-page CTR fixes (Phase 64/70). Carries the same `<title>`/description/canonical/OG/Twitter/keywords tag set as other indexed pages, the site's GA4 tag, and the standard ad-unit snippet (same `PB_AD_SLOT`, matching the pattern used on all 35 other content pages). |
+| 2 | Homepage entry card now routes through it | `index.html` | "Practice sight-reading" card's `onClick` changed from `window.open('sight-reading-loading.html', '_blank')` to `window.location.href = 'sight-reading.html'` — same-tab navigation to a real page instead of popping the loading/redirect screen directly, matching how the "Plan for an exam" card links to `timeline.html`. `sight-reading-loading.html` itself is unchanged and stays `noindex` — it's a pure redirect/wait screen with no content, correctly excluded from search; the new page's own CTA buttons link to it to continue the existing warm-up flow. |
+| 3 | Added to sitemap | `sitemap.xml` | `sight-reading.html` added, priority 0.9 (matching `diagnose.html`/`recommend.html`'s tool-page priority), monthly changefreq. |
+| 4 | Verification | — | `index.html`'s inline script block re-compiled via `@babel/core transformSync` (`runtime:'classic'`) + `new Function()` — 0 errors. `sight-reading.html`'s two inline `<script>` blocks (gtag init + ad-unit loader) checked with `new Function()` as plain JS — 0 errors. Confirmed the file has a matching DOCTYPE/closing tag. **Not yet live-tested** — not pushed this session, so nothing to spot-check live yet; flag for a live click-through (homepage card → `sight-reading.html` → Generate button → loading page → tool) once Sohyun pushes, per this project's standing "not a working tool until opened in a real browser" rule. |
+| 5 | Committed, not pushed | `4cfff82` | "Add SEO landing page for the Sight-Reading Generator (sight-reading.html), wire homepage card + sitemap to it". Once live, will need a Search Console "request indexing" pass like every other new page has gotten (see Phase 59/60/64/70 pattern) — results won't show for at least a few days after that. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
