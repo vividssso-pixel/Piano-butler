@@ -2459,6 +2459,15 @@ taught/sat) fully intact.
 |---|--------|---------|--------|
 | 1 | Button title generalized | `timeline.html` | The mode-choice button's title changed from "AMEB Piano exam" to "Piano exam". Its description line underneath is unchanged ("Grade-specific plan using the real AMEB syllabus — technical work and repertoire included.") so the page stays honest about what's actually inside once picked. No other AMEB-specific copy or logic touched. Verified via `@babel/parser` (jsx plugin) -- 0 errors. Committed as `21214f4`, not yet pushed. |
 
+### Phase 85 Updates (2026-09-17 — Sight-Reading Generator header logo now links home)
+
+Sohyun sent screenshots of the generator app noting the "Piano Butler" logo/button in the
+header didn't do anything when clicked -- she expected it to go back to the homepage.
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Header brand mark is now a real link | `sightreading-generator/client/public/index.html`, `.../style.css` | The header's "Piano Butler" mark was a plain `<div class="brand">` -- never a link, so clicking it did nothing. Changed it to `<a class="brand" href="https://thepianobutler.com/index.html">` (absolute URL, since this app is hosted on a separate Render domain, not thepianobutler.com itself). Added `color: inherit; text-decoration: none; cursor: pointer;` to `.brand` in `style.css` so it keeps its existing look instead of turning into a plain blue underlined link. Verified both files are still well-formed (diff reviewed line by line). Committed as `1e214e3`, on top of a concurrent commit from another session (`5f3e8e1`, unrelated font/layout fixes to the same app) -- confirmed via `git diff` that neither commit touched the other's changes. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
@@ -2588,7 +2597,7 @@ When revisited, build the AMEB/ABRSM/Trinity-specific angle, not a generic direc
 
 | # | Task | Priority | Notes |
 |---|------|----------|-------|
-| 1 | Live-verify Phase 83 and 84 once pushed | High | Both committed locally (`43e52f8` homepage card, `21214f4` button label), not yet pushed -- confirm on the live site: homepage's sight-reading card opens the generator in one click, and timeline.html's entry button reads "Piano exam" (not "AMEB Piano exam"). |
+| 1 | Live-verify Phase 84 and 85 once pushed | High | Not yet pushed -- confirm on the live site: timeline.html's entry button reads "Piano exam" (not "AMEB Piano exam", `21214f4`), and the Sight-Reading Generator's header "Piano Butler" logo now navigates to the homepage when clicked (`1e214e3`). |
 | 2 | Revisit: should `sight-reading.html` auto-redirect to the generator? | Medium — Sohyun | 2026-09-17: built and committed an auto-redirect version (Sohyun had asked for it), then she said she didn't like the result and asked to shelve it for now and revise later -- reverted locally (`81b724d`/`f4551b9`), never pushed, so the live site was never affected. `sight-reading.html` is back to its original static SEO landing page. Revisit when she's ready to say what she wants it to do/look like instead. |
 | 3 | Decide what `AGENTS.md` is for | Medium — Sohyun | Found 2026-09-15: an untracked, stale (138-line-diff) mirror of this file, apparently read by a different AI coding tool (naming convention + one "Codex API" substitution suggest OpenAI Codex or similar). Decide: keep it and have future sessions maintain both in sync, or delete it if it's a stray leftover from a one-off experiment. |
 | 4 | Create the Stripe Payment Link for Exam Check-Up | High — Sohyun | $25 AUD one-time product → paste the link into `STRIPE_PAYMENT_LINK` in `find-a-teacher.html`. |
