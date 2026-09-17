@@ -116,7 +116,7 @@
 <div id="root"></div>
 
 <script id="app-jsx" type="text/jsx-raw">
-const { useState, useCallback, useMemo } = React;
+const { useState, useCallback, useMemo, useEffect } = React;
 
 /* ── Corpus (same loader pattern as recommend.html) ── */
 function buildCorpus() {
@@ -255,7 +255,7 @@ const MONTH_FOCUS = {
   polish:        ['First mock exam — a real dress rehearsal, with honest feedback.',
                   'Targeted fixes from the mock, piece by piece.',
                   'Second mock under real conditions — the final check before the exam.'],
-  exam:          ['Maintenance only. Trust the preparation and rest well before the {grade} exam.'],
+  exam:          ['Maintenance only. Trust the preparation and rest well before {grade}.'],
 };
 const EXAM_ORDER = ['foundation','technical','musical','consolidation','polish','exam'];
 
@@ -568,6 +568,63 @@ function daysUntil(dateStr) {
   return Math.max(diff, 0);
 }
 
+// Phase 88: local-only progress tracking, per Sohyun's decision -- no login/backend,
+// matching the "local-first" pattern already used elsewhere on the site (pb_lists_v1,
+// pb_interests_v2 on index.html). Persists the inputs needed to rebuild the exact same
+// plan via buildTimeline(), plus which checklist items are ticked off (keyed by month +
+// item index), so it survives reloads on this browser but never leaves the device.
+const TIMELINE_STORAGE_KEY = 'pb_timeline_v1';
+
+function saveTimelineState(state) {
+  try {
+    localStorage.setItem(TIMELINE_STORAGE_KEY, JSON.stringify({ ...state, savedAt: Date.now() }));
+  } catch (e) { /* storage unavailable (private mode, quota, etc.) -- nothing to track, fail silently */ }
+}
+
+function loadTimelineState() {
+  try {
+    const raw = localStorage.getItem(TIMELINE_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !parsed.examDate) return null;
+    return parsed;
+  } catch (e) { return null; }
+}
+
+function clearTimelineState() {
+  try { localStorage.removeItem(TIMELINE_STORAGE_KEY); } catch (e) { /* ignore */ }
+}
+
+// Builds a mailto: link with a plaintext copy of the plan, so a user can keep a portable
+// backup in their own inbox without any login/backend -- the local-storage tracking above
+// is what actually persists checked-off progress; this is just a reference snapshot from
+// the moment it was generated. Kept deliberately short (lead sentence + checklist per
+// month, no week-by-week detail) and capped, since mailto bodies can silently truncate in
+// some mail clients well before this length.
+const EMAIL_BODY_CHAR_LIMIT = 1800;
+
+function buildEmailHref(timeline, gradeLabel, examDate) {
+  if (!timeline || timeline.length === 0) return 'mailto:';
+  const lines = [];
+  lines.push(`Your practice timeline for: ${gradeLabel}`);
+  lines.push(`Exam/performance date: ${examDate}`);
+  lines.push('');
+  timeline.forEach(m => {
+    const phaseName = (PHASE_META[m.phase] || PHASE_META.foundation).name;
+    lines.push(`${m.label} -- ${phaseName}`);
+    lines.push(m.focus);
+    (m.checklist || []).forEach(item => lines.push(`- ${item}`));
+    lines.push('');
+  });
+  lines.push('Saved from thepianobutler.com/timeline.html -- open the tool again on this device to check items off.');
+  let body = lines.join('\n');
+  if (body.length > EMAIL_BODY_CHAR_LIMIT) {
+    body = body.slice(0, EMAIL_BODY_CHAR_LIMIT) + '\n\n...(truncated -- open the tool on your saved device for the full plan)';
+  }
+  const subject = `My Piano Butler practice timeline -- ${gradeLabel}`;
+  return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
 /* ── Repertoire picks for the chosen grade (light-weight, deterministic-ish) ── */
 function pickRepertoire(syllabus, gradeKey) {
   const pool = CORPUS.filter(p => p._syllabus === syllabus && p._gradeKey === gradeKey && p._type !== 'Leisure');
@@ -790,7 +847,7 @@ function GenericPieceInput({ pieces, setPieces, onContinue, onSkip, onBack }) {
   );
 }
 
-function MonthCard({ m, idx, isPast }) {
+function MonthCard({ m, idx, isPast, isCurrent, checkedItems, onToggleItem }) {
   const meta = PHASE_META[m.phase] || PHASE_META.foundation;
   const [showWeekly, setShowWeekly] = useState(false);
   return (
@@ -798,19 +855,26 @@ function MonthCard({ m, idx, isPast }) {
       <div className="month-rail" style={{background:meta.color}} />
       <div style={{paddingLeft:8}}>
         <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',marginBottom:6}}>
-          <span style={{fontSize:13,fontWeight:800,color:'#241f1a'}}>{m.label}</span>
+          <span style={{fontSize:13,fontWeight:800,color:'#241f1a'}}>
+            {m.label}
+            {isCurrent && <span style={{marginLeft:8,fontSize:9,fontWeight:800,color:'#241f1a',background:'#f8edd4',padding:'2px 7px',borderRadius:6}}>THIS MONTH</span>}
+          </span>
           <span style={{fontSize:9,fontWeight:800,padding:'3px 9px',borderRadius:7,background:meta.bg,color:meta.text}}>{meta.name}</span>
         </div>
         <p style={{fontSize:12.5,color:'#6b6259',margin:'0 0 10px',lineHeight:1.5}}>{m.focus}</p>
 
         {m.checklist && m.checklist.length > 0 && (
           <div style={{display:'flex',flexDirection:'column',gap:5,marginBottom:(m.weekly && m.weekly.length) ? 10 : 0}}>
-            {m.checklist.map((item,i) => (
-              <div key={i} style={{display:'flex',gap:7,alignItems:'flex-start'}}>
-                <span style={{color:meta.color,fontSize:12,fontWeight:900,lineHeight:'18px'}}>✓</span>
-                <span style={{fontSize:12,color:'#3d362f',lineHeight:1.5}}>{item}</span>
-              </div>
-            ))}
+            {m.checklist.map((item,i) => {
+              const isChecked = !!(checkedItems && checkedItems[i]);
+              return (
+                <div key={i} onClick={()=>onToggleItem && onToggleItem(i)}
+                  style={{display:'flex',gap:7,alignItems:'flex-start',cursor:onToggleItem?'pointer':'default'}}>
+                  <span style={{color:isChecked?'#8f8579':meta.color,fontSize:13,fontWeight:900,lineHeight:'18px'}}>{isChecked?'☑':'☐'}</span>
+                  <span style={{fontSize:12,color:isChecked?'#a49b8f':'#3d362f',lineHeight:1.5,textDecoration:isChecked?'line-through':'none'}}>{item}</span>
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -837,44 +901,6 @@ function MonthCard({ m, idx, isPast }) {
   );
 }
 
-function LoginPrompt({ onClose }) {
-  const [email, setEmail] = useState('');
-  const [sent, setSent]   = useState(false);
-  return (
-    <div onClick={onClose} style={{position:'fixed',top:0,right:0,bottom:0,left:0,background:'rgba(0,0,0,0.5)',zIndex:9999,display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:'#fff',borderRadius:16,padding:24,width:'100%',maxWidth:360}}>
-        {!sent ? (
-          <>
-            <h3 style={{fontSize:15,fontWeight:800,color:'#241f1a',margin:'0 0 4px'}}>Save &amp; track progress</h3>
-            <p style={{fontSize:12.5,color:'#a49b8f',margin:'0 0 16px',lineHeight:1.5}}>
-              Sign in with a magic link to save this timeline and check off months as you go. No password needed.
-            </p>
-            <input type="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)}
-              style={{width:'100%',padding:'11px 13px',borderRadius:10,border:'1.5px solid #e8dcc0',fontSize:13,marginBottom:10,outline:'none'}} />
-            <button onClick={()=>email.includes('@') && setSent(true)}
-              style={{width:'100%',padding:'11px',borderRadius:10,background:email.includes('@')?'#241f1a':'#e8dcc0',
-                color:email.includes('@')?'#fff':'#a49b8f',border:'none',cursor:'pointer',fontSize:13,fontWeight:800}}>
-              Send magic link
-            </button>
-            <p style={{fontSize:10.5,color:'#a49b8f',margin:'10px 0 0',textAlign:'center'}}>Tracking is coming soon — this gets you on the list.</p>
-          </>
-        ) : (
-          <>
-            <div style={{fontSize:28,marginBottom:8}}>✉️</div>
-            <h3 style={{fontSize:15,fontWeight:800,color:'#241f1a',margin:'0 0 4px'}}>Check your email</h3>
-            <p style={{fontSize:12.5,color:'#a49b8f',margin:0,lineHeight:1.5}}>
-              We'll let you know as soon as saved timelines and progress tracking are live.
-            </p>
-          </>
-        )}
-        <button onClick={onClose} style={{marginTop:14,width:'100%',padding:'9px',borderRadius:10,background:'#efe7d8',color:'#6b6259',border:'none',cursor:'pointer',fontSize:12,fontWeight:700}}>
-          Close
-        </button>
-      </div>
-    </div>
-  );
-}
-
 /* ── App ── */
 // Screens: 0=grade, 1=exam date, 2=pieces, 3=quiz, 4=results
 // AMEB only — no syllabus picker (see head comment / GRADE_OPTIONS above).
@@ -889,8 +915,12 @@ function App() {
   const [focus, setFocus] = useState({ pieces:false, technical:false, sightread:false, theory:false });
   const [examDate, setExamDate] = useState('');
   const [pieces, setPieces]     = useState(['','','','']);
-  const [showLogin, setShowLogin] = useState(false);
   const [timeline, setTimeline] = useState(null);
+  // Phase 88: local progress tracking -- checked[monthStr][itemIdx] = true/false.
+  // scaledScore is kept so a saved plan can be rebuilt exactly (buildTimeline needs it),
+  // not just displayed.
+  const [checked, setChecked] = useState({});
+  const [scaledScore, setScaledScore] = useState(null);
 
   const today = new Date().toISOString().slice(0,10);
   const anyFocus = Object.values(focus).some(Boolean);
@@ -899,6 +929,42 @@ function App() {
   // READINESS_QUESTIONS_GENERIC ids (pieces/technical/sightread/theory) match the focus
   // keys exactly, so this filters the quiz down to only what the user said they need.
   const quizQuestions = READINESS_QUESTIONS_GENERIC.filter(q => focus[q.id]);
+  const todayMonthStr = today.slice(0,7);
+
+  // Restore a saved plan (if any) on first mount. A saved plan whose exam date has
+  // already passed is discarded rather than shown, since buildTimeline() can't produce
+  // a timeline for a past date anyway.
+  useEffect(() => {
+    const saved = loadTimelineState();
+    if (!saved) return;
+    const end = new Date(saved.examDate + 'T12:00:00');
+    if (isNaN(end.getTime()) || end <= new Date()) { clearTimelineState(); return; }
+    const restoredFocus = saved.focus || { pieces:false, technical:false, sightread:false, theory:false };
+    const restoredPieces = saved.pieces || ['','','',''];
+    const restoredLabel = saved.performanceLabel || '';
+    const restoredUserPieces = restoredPieces.filter(Boolean).map(t => ({ t }));
+    const restoredGradeLabel = restoredLabel.trim() || 'your performance';
+    const tl = buildTimeline(saved.examDate, saved.scaledScore, restoredGradeLabel, 'GENERIC', restoredUserPieces, null, restoredFocus);
+    if (!tl || tl.length === 0) { clearTimelineState(); return; }
+    setPerformanceLabel(restoredLabel);
+    setFocus(restoredFocus);
+    setExamDate(saved.examDate);
+    setPieces(restoredPieces);
+    setScaledScore(saved.scaledScore);
+    setChecked(saved.checked || {});
+    setTimeline(tl);
+    setScreen(4);
+  }, []);
+
+  function toggleChecklistItem(monthStr, itemIdx) {
+    setChecked(prev => {
+      const monthChecks = { ...(prev[monthStr] || {}) };
+      monthChecks[itemIdx] = !monthChecks[itemIdx];
+      const next = { ...prev, [monthStr]: monthChecks };
+      saveTimelineState({ performanceLabel, examDate, pieces, focus, scaledScore, checked: next });
+      return next;
+    });
+  }
 
   function finishQuiz(rawScore, qCount) {
     // Re-scale the raw sum (qCount questions, each scored 1-4) onto the same 4..16 range
@@ -906,6 +972,9 @@ function App() {
     const scaledScore = qCount > 0 ? 4 + ((rawScore - qCount) / (qCount * 3)) * 12 : 10;
     const tl = buildTimeline(examDate, scaledScore, effectiveGradeLabel, 'GENERIC', userPieces, null, focus);
     setTimeline(tl);
+    setChecked({});
+    setScaledScore(scaledScore);
+    saveTimelineState({ performanceLabel, examDate, pieces, focus, scaledScore, checked: {} });
     setScreen(4);
   }
 
@@ -913,6 +982,8 @@ function App() {
     setScreen(0); setPerformanceLabel('');
     setFocus({ pieces:false, technical:false, sightread:false, theory:false });
     setExamDate(''); setPieces(['','','','']); setTimeline(null);
+    setChecked({}); setScaledScore(null);
+    clearTimelineState();
   }
 
   const monthsLeft = examDate ? monthsUntil(examDate) : null;
@@ -920,8 +991,6 @@ function App() {
 
   return (
     <div style={{minHeight:'100vh',background:'#f8edd4'}}>
-      {showLogin && <LoginPrompt onClose={()=>setShowLogin(false)} />}
-
       {/* Header */}
       <div style={{background:'#fff',borderBottom:'1px solid #e8dcc0',padding:'16px 20px 18px'}}>
         <a href="index.html" style={{color:'#a49b8f',fontSize:12,textDecoration:'none',display:'block',marginBottom:6}}>
@@ -1036,7 +1105,13 @@ function App() {
             </div>
 
             <h3 style={{fontSize:14,fontWeight:800,color:'#241f1a',marginBottom:10}}>Month by month</h3>
-            {timeline.map((m,i) => <MonthCard key={m.monthStr} m={m} idx={i} isPast={false} />)}
+            {timeline.map((m,i) => (
+              <MonthCard key={m.monthStr} m={m} idx={i}
+                isPast={m.monthStr < todayMonthStr}
+                isCurrent={m.monthStr === todayMonthStr}
+                checkedItems={checked[m.monthStr]}
+                onToggleItem={(itemIdx)=>toggleChecklistItem(m.monthStr, itemIdx)} />
+            ))}
 
             {userPieces.length > 0 && (
               <>
@@ -1066,11 +1141,14 @@ function App() {
               </>
             )}
 
-            <div style={{display:'flex',flexDirection:'column',gap:10,marginTop:26}}>
-              <button onClick={()=>setShowLogin(true)}
-                style={{width:'100%',padding:'13px',borderRadius:12,background:'#241f1a',color:'#fff',border:'none',cursor:'pointer',fontSize:14,fontWeight:800}}>
-                Save &amp; track progress
-              </button>
+            <div style={{display:'flex',alignItems:'center',gap:6,justifyContent:'center',margin:'26px 0 14px',fontSize:11.5,color:'#a49b8f',textAlign:'center'}}>
+              <span>Progress is saved automatically on this device -- tick off checklist items above as you go.</span>
+            </div>
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
+              <a href={buildEmailHref(timeline, effectiveGradeLabel, examDate)}
+                style={{width:'100%',padding:'13px',borderRadius:12,background:'#241f1a',color:'#fff',border:'none',cursor:'pointer',fontSize:14,fontWeight:800,textAlign:'center',textDecoration:'none',boxSizing:'border-box',display:'block'}}>
+                Email me this plan
+              </a>
               <button onClick={reset}
                 style={{width:'100%',padding:'12px',borderRadius:12,background:'#efe7d8',color:'#6b6259',border:'1.5px solid #e8dcc0',cursor:'pointer',fontSize:13,fontWeight:700}}>
                 Start over
