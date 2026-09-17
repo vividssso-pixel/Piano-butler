@@ -123,14 +123,16 @@ function renderResult(data) {
       <span class="player-label" style="color:#6b6259">Rendering audio…</span>
     </div>` : ''}
     <div class="action-row">
-      <span id="downloadSlot" data-pdf-url="${pdfUrl}">
-        ${pdfPending
-          ? '<span class="secondary" style="display:inline-block;padding:8px 14px;opacity:0.6;color:#6b6259">Preparing PDF…</span>'
-          : `<a class="secondary" style="text-decoration:none;display:inline-block;text-align:center" href="${pdfUrl}" download>Download PDF</a>`}
-      </span>
-      <button class="secondary" id="shareBtn"${pdfPending ? ' disabled' : ''}>Share</button>
       <button class="secondary" id="regenerateBtn">Regenerate</button>
-      <span id="shareStatus" style="margin-left:2px;font-size:13px;color:#1f9d63;align-self:center"></span>
+      <div class="action-row-right">
+        <span id="downloadSlot" data-pdf-url="${pdfUrl}">
+          ${pdfPending
+            ? '<span class="secondary" style="display:inline-block;padding:8px 14px;opacity:0.6;color:#6b6259">Preparing PDF…</span>'
+            : `<a class="secondary" style="text-decoration:none;display:inline-block;text-align:center" href="${pdfUrl}" download>Download PDF</a>`}
+        </span>
+        <button class="secondary" id="shareBtn"${pdfPending ? ' disabled' : ''}>Share</button>
+        <span id="shareStatus" style="font-size:13px;color:#1f9d63;align-self:center"></span>
+      </div>
     </div>
   `;
 

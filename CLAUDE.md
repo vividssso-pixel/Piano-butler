@@ -2459,21 +2459,6 @@ taught/sat) fully intact.
 |---|--------|---------|--------|
 | 1 | Button title generalized | `timeline.html` | The mode-choice button's title changed from "AMEB Piano exam" to "Piano exam". Its description line underneath is unchanged ("Grade-specific plan using the real AMEB syllabus — technical work and repertoire included.") so the page stays honest about what's actually inside once picked. No other AMEB-specific copy or logic touched. Verified via `@babel/parser` (jsx plugin) -- 0 errors. Committed as `21214f4`, not yet pushed. |
 
-### Phase 85 Updates (2026-09-17 — sight-reading.html now auto-redirects to the generator)
-
-Sohyun sent screenshots again showing `sight-reading.html`'s own landing content (title, FAQ,
-feature cards) and said it should go straight to the generator, this page shouldn't show. Since
-Phase 83 already confirmed the homepage card bypasses this page correctly, this meant she was
-landing on `sight-reading.html` itself (direct URL / bookmark / search result), not going through
-the homepage. Asked her directly whether to keep it as a static SEO landing page (its original
-Phase 81 purpose) or make it also auto-redirect (which trades away that SEO purpose) -- she chose
-auto-redirect.
-
-| # | Change | File(s) | Detail |
-|---|--------|---------|--------|
-| 1 | Immediate redirect to the generator | `sight-reading.html` | Added a `<script>` at the very top of `<head>` (before the charset meta tag) calling `window.location.replace('https://piano-butler-sightreading.onrender.com/sight-reading-generator')`. Anyone who now opens this page -- from a bookmark, direct URL, or a Google search result -- bounces straight into the generator instead of seeing any of this page's own content. This deliberately undoes part of Phase 81's SEO intent (an indexable landing page for organic search). Verified the file is still well-formed HTML (structure spot-checked, no broken tags). |
-| 2 | Removed from sitemap | `sitemap.xml` | Removed `sight-reading.html`'s `<url>` entry -- a page that only redirects shouldn't be submitted to Google for indexing. This was Claude's own inference from decision #1, not something Sohyun explicitly asked for -- flagged to her directly. |
-
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
@@ -2603,19 +2588,21 @@ When revisited, build the AMEB/ABRSM/Trinity-specific angle, not a generic direc
 
 | # | Task | Priority | Notes |
 |---|------|----------|-------|
-| 1 | Live-verify Phase 84 and 85 once pushed | High | Phase 83 (homepage card) already confirmed live. Still need to confirm once Sohyun pushes: timeline.html's entry button reads "Piano exam" (not "AMEB Piano exam", `21214f4`), and `sight-reading.html` now redirects straight into the generator instead of showing its own landing content (`2aa68e7`). |
-| 2 | Decide what `AGENTS.md` is for | Medium — Sohyun | Found 2026-09-15: an untracked, stale (138-line-diff) mirror of this file, apparently read by a different AI coding tool (naming convention + one "Codex API" substitution suggest OpenAI Codex or similar). Decide: keep it and have future sessions maintain both in sync, or delete it if it's a stray leftover from a one-off experiment. |
-| 3 | Create the Stripe Payment Link for Exam Check-Up | High — Sohyun | $25 AUD one-time product → paste the link into `STRIPE_PAYMENT_LINK` in `find-a-teacher.html`. |
-| 4 | Re-check diploma-page CTR after re-crawl | Medium | 5 diploma pages retitled 2026-07-27 for CTR — still awaiting re-crawl to show effect. |
-| 5 | Sohyun — glance at a real downloaded viva-voce PDF | Quick — deferred by Sohyun since 2026-07-23 | Sample already generated live, zero console errors. Just needs her eyes on it. |
-| 6 | AdSense — check back in a few days, don't request re-review yet | High, but WAIT | The 주의 필요 flag is gone as of 2026-09-15 (site now reads 준비 중 — "in progress"), which is real forward movement, but it's Google actively re-assessing, not an approval. Give it 1–2 weeks; if still 준비 중 with no change, that's the moment to consider a manual nudge. |
-| 7 | Consider Render's paid Starter plan (~$7/mo) for the Sight-Reading Generator | Low — cost decision, Sohyun | Removes free-tier sleep entirely and gives real CPU (vs. today's 0.1 vCPU) — the one remaining lever that would meaningfully cut generation time further after Phase 73/74/75's free fixes. Only worth it if cold starts/slowness are still bothering visitors after those land. |
-| 8 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500 (now at 319, 3-month). |
-| 9 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
-| 10 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
-| 11 | Rebuild `connect.html` if teacher referrals are revived | Deferred | File no longer exists (removed in Phase 54 cleanup) — would need rebuilding from scratch. |
-| 12 | Diploma pages (LRSM/FRSM/ATCL/LTCL/FTCL) — outbound link to official syllabus | Low, optional | Raised and consciously declined as full content 2026-08-03 (out of "search tool" scope) — if revisited, keep it to a single link out, not reproduced requirements. |
-| 13 | Add AMEB Series 16 and earlier repertoire (Prelim–G8) | Low — whenever time permits, Sohyun to add pieces incrementally | Raised 2026-09-15 to broaden repertoire choice. Sohyun has an old physical syllabus/grade book she's checking for full piece lists — current syllabus PDF only covers S19/S18/S17 (Series 16 and earlier pieces are **not currently exam-valid** unless they also appear on the Manual List, per live web research this session). Sohyun's direction: show both — keep the current-valid search as-is, and add legacy/reference-only pieces with a clear badge/filter separating them (not mixed in with exam-eligible results). Build as incremental, grade-by-grade additions from her source material — cross-check each against her real syllabus before adding (no memory-only entries, per Reference Integrity rule), tag with a new `legacy:true`-style field or a series code (e.g. `S16`, `S15`) distinct from current codes, and add a "Legacy / reference only — not on the current exam list" badge in the UI. |
+| 1 | Live-verify Phase 83 and 84 once pushed | High | Both committed locally (`43e52f8` homepage card, `21214f4` button label), not yet pushed -- confirm on the live site: homepage's sight-reading card opens the generator in one click, and timeline.html's entry button reads "Piano exam" (not "AMEB Piano exam"). |
+| 2 | Revisit: should `sight-reading.html` auto-redirect to the generator? | Medium — Sohyun | 2026-09-17: built and committed an auto-redirect version (Sohyun had asked for it), then she said she didn't like the result and asked to shelve it for now and revise later -- reverted locally (`81b724d`/`f4551b9`), never pushed, so the live site was never affected. `sight-reading.html` is back to its original static SEO landing page. Revisit when she's ready to say what she wants it to do/look like instead. |
+| 3 | Decide what `AGENTS.md` is for | Medium — Sohyun | Found 2026-09-15: an untracked, stale (138-line-diff) mirror of this file, apparently read by a different AI coding tool (naming convention + one "Codex API" substitution suggest OpenAI Codex or similar). Decide: keep it and have future sessions maintain both in sync, or delete it if it's a stray leftover from a one-off experiment. |
+| 4 | Create the Stripe Payment Link for Exam Check-Up | High — Sohyun | $25 AUD one-time product → paste the link into `STRIPE_PAYMENT_LINK` in `find-a-teacher.html`. |
+| 5 | Re-check diploma-page CTR after re-crawl | Medium | 5 diploma pages retitled 2026-07-27 for CTR — still awaiting re-crawl to show effect. |
+| 6 | Sohyun — glance at a real downloaded viva-voce PDF | Quick — deferred by Sohyun since 2026-07-23 | Sample already generated live, zero console errors. Just needs her eyes on it. |
+| 7 | AdSense — check back in a few days, don't request re-review yet | High, but WAIT | The 주의 필요 flag is gone as of 2026-09-15 (site now reads 준비 중 — "in progress"), which is real forward movement, but it's Google actively re-assessing, not an approval. Give it 1–2 weeks; if still 준비 중 with no change, that's the moment to consider a manual nudge. |
+| 8 | Consider Render's paid Starter plan (~$7/mo) for the Sight-Reading Generator | Low — cost decision, Sohyun | Removes free-tier sleep entirely and gives real CPU (vs. today's 0.1 vCPU) — the one remaining lever that would meaningfully cut generation time further after Phase 73/74/75's free fixes. Only worth it if cold starts/slowness are still bothering visitors after those land. |
+| 9 | Affiliate signup (Sheet Music Plus) | Deferred | Trigger: Search Console clicks ≥ 500 (now at 319, 3-month). |
+| 10 | Login revival | Deferred | Trigger: visitors ≥ 1,000/mo. |
+| 11 | ABRSM Diploma — ARSM / DipABRSM | Low | PDFs not yet available. |
+| 12 | Rebuild `connect.html` if teacher referrals are revived | Deferred | File no longer exists (removed in Phase 54 cleanup) — would need rebuilding from scratch. |
+| 13 | Diploma pages (LRSM/FRSM/ATCL/LTCL/FTCL) — outbound link to official syllabus | Low, optional | Raised and consciously declined as full content 2026-08-03 (out of "search tool" scope) — if revisited, keep it to a single link out, not reproduced requirements. |
+| 14 | Add AMEB Series 16 and earlier repertoire (Prelim–G8) | Low — whenever time permits, Sohyun to add pieces incrementally | Raised 2026-09-15 to broaden repertoire choice. Sohyun has an old physical syllabus/grade book she's checking for full piece lists — current syllabus PDF only covers S19/S18/S17 (Series 16 and earlier pieces are **not currently exam-valid** unless they also appear on the Manual List, per live web research this session). Sohyun's direction: show both — keep the current-valid search as-is, and add legacy/reference-only pieces with a clear badge/filter separating them (not mixed in with exam-eligible results). Build as incremental, grade-by-grade additions from her source material — cross-check each against her real syllabus before adding (no memory-only entries, per Reference Integrity rule), tag with a new `legacy:true`-style field or a series code (e.g. `S16`, `S15`) distinct from current codes, and add a "Legacy / reference only — not on the current exam list" badge in the UI. |
+
 
 | 13 | Fixed: pool filled grades one at a time instead of round-robin | `sightreading-generator/server/excerptPool.js` | Sohyun caught this live: Preliminary was fast right after boot, but switching to Grade 6 right after still meant a full wait. Root cause: the refill loop always picked the FIRST grade (in fixed prelim..grade8 order) still under target, so a grade near the end of that list got zero attention until every grade ahead of it was fully filled to `TARGET_PER_GRADE` (2) -- right after a cold boot that could be 5+ grades × 2 builds before Grade 6 got even one. Now it always picks whichever grade currently has the smallest pool, so every grade reaches its first pooled item before any grade gets a second. |
 

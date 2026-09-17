@@ -1626,7 +1626,7 @@ function scoreBlock({ view, hasBass, timeSig, bpm, clef = 'treble' }) {
   }
   if (!hasBass) {
     return `\\score {
-  \\new Staff \\with { instrumentName = "Piano" } {
+  \\new Staff \\with { instrumentName = \\markup { \\override #'(font-name . "Liberation Sans") \\normal-text "Piano" } } {
     \\clef ${clef}
     \\melody
   }

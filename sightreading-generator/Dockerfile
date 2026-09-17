@@ -26,6 +26,12 @@ FROM node:20-bookworm-slim
 # ffmpeg        -- .wav -> .mp3 for the browser <audio> player
 # fluid-soundfont-gm -- provides /usr/share/sounds/sf2/FluidR3_GM.sf2,
 #   the exact soundfont path lilypondCompiler.js's SOUNDFONT constant expects
+# fonts-liberation -- provides the "Liberation Sans" family that the title/
+#   subtitle/instrument-name markup blocks explicitly request via
+#   \override #'(font-name . "Liberation Sans") -- without this package
+#   installed, LilyPond silently falls back to whatever serif font
+#   fontconfig resolves instead, which is why those labels rendered in a
+#   mismatched serif font on the first deploy.
 RUN apt-get update && apt-get install -y --no-install-recommends \
       lilypond \
       poppler-utils \
@@ -34,6 +40,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       fluidsynth \
       fluid-soundfont-gm \
       ffmpeg \
+      fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
