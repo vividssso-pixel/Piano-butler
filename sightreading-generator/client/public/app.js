@@ -120,12 +120,12 @@ function renderResult(data) {
     </div>
     ${audioPending ? `
     <div class="player-row" id="audioSlot" data-mp3-url="${mp3Url}">
-      <span class="player-label" style="color:#9a8e84">Rendering audio…</span>
+      <span class="player-label" style="color:#6b6259">Rendering audio…</span>
     </div>` : ''}
     <div class="action-row">
       <span id="downloadSlot" data-pdf-url="${pdfUrl}">
         ${pdfPending
-          ? '<span class="secondary" style="display:inline-block;padding:8px 14px;opacity:0.6;color:#9a8e84">Preparing PDF…</span>'
+          ? '<span class="secondary" style="display:inline-block;padding:8px 14px;opacity:0.6;color:#6b6259">Preparing PDF…</span>'
           : `<a class="secondary" style="text-decoration:none;display:inline-block;text-align:center" href="${pdfUrl}" download>Download PDF</a>`}
       </span>
       <button class="secondary" id="shareBtn"${pdfPending ? ' disabled' : ''}>Share</button>
@@ -198,7 +198,7 @@ function pollForPdf(pdfUrl) {
       }
     } catch (err) { /* not ready yet -- keep polling */ }
     if (Date.now() - startedAt > MAX_MS) {
-      slot.innerHTML = '<span class="secondary" style="display:inline-block;padding:8px 14px;opacity:0.6;color:#9a8e84">PDF is taking longer than usual.</span>';
+      slot.innerHTML = '<span class="secondary" style="display:inline-block;padding:8px 14px;opacity:0.6;color:#6b6259">PDF is taking longer than usual.</span>';
       return;
     }
     setTimeout(check, POLL_MS);
@@ -235,7 +235,7 @@ function pollForAudio(mp3Url) {
       }
     } catch (err) { /* not ready yet -- keep polling */ }
     if (Date.now() - startedAt > MAX_MS) {
-      slot.innerHTML = '<span class="player-label" style="color:#9a8e84">Audio is taking longer than usual.</span>';
+      slot.innerHTML = '<span class="player-label" style="color:#6b6259">Audio is taking longer than usual.</span>';
       return;
     }
     setTimeout(check, POLL_MS);
@@ -275,7 +275,7 @@ async function shareExcerpt() {
       return;
     }
     await navigator.clipboard.writeText(new URL(current.pdfUrl, window.location.href).href);
-    setStatus('Link copied (works while this page stays open)', '#6b7280');
+    setStatus('Link copied (works while this page stays open)', '#6b6259');
   } catch (err) {
     if (err.name === 'AbortError') return; // user cancelled the native share sheet -- not an error
     setStatus(`Couldn't share: ${err.message}`, '#a3271a');
