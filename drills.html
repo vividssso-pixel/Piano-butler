@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M3 6 L16 16 L3 26 Z' fill='none' stroke='%23241f1a' stroke-width='2.4' stroke-linejoin='round'/%3E%3Cpath d='M29 6 L16 16 L29 26 Z' fill='none' stroke='%23241f1a' stroke-width='2.4' stroke-linejoin='round'/%3E%3Ccircle cx='16' cy='16' r='2.6' fill='%23a8823f'/%3E%3C/svg%3E">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Practice Drills | Piano Butler</title>
+  <meta name="description" content="Quick lesson-side drills for whatever a student keeps mixing up -- starting with a letter-name interval chain.">
+  <meta property="og:title" content="Practice Drills | Piano Butler">
+  <meta property="og:description" content="Quick lesson-side drills for whatever a student keeps mixing up.">
+  <meta property="og:url" content="https://thepianobutler.com/drills.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Practice Drills | Piano Butler">
+  <meta name="twitter:description" content="Quick lesson-side drills for whatever a student keeps mixing up.">
+  <meta name="robots" content="noindex, follow">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.3/babel.min.js" crossorigin="anonymous"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Phase 89 (2026-09-18): the first entry in an intentionally open-ended "drill toolbox" --
+       small, revisitable exercises for whatever a student keeps mixing up (note names, rhythm,
+       key signatures, etc.), picked one at a time by a teacher mid-lesson rather than worked
+       through in a fixed order. Sohyun's own teaching habit: she and a student alternate turns
+       naming the next letter (forward or, harder, backward -- G F E D C B A), and sometimes
+       apply an interval instead of a single step (e.g. "3rd down": C, A, F, D...). This first
+       drill digitizes the setup/answer-checking side of that -- it doesn't replace the spoken
+       back-and-forth, it just removes the mental-arithmetic burden of computing the next letter
+       so the teacher can keep the exchange going without stopping to work it out. Built as a
+       DRILLS registry (see below) so future drills (rhythm chunking, key signatures, intervals,
+       keyboard<->note-name matching, etc.) can be added as additional entries without reshaping
+       this page.
+  -->
+  <style>
+    :root {
+      --bg:      #f8edd4;
+      --surface: #ffffff;
+      --border:  #e8dcc0;
+      --text:    #241f1a;
+      --muted:   #a49b8f;
+      --accent:  #241f1a;
+      --brass:   #a8823f;
+      --brass-bg:#f3ead8;
+    }
+    * { box-sizing: border-box; font-family: 'Inter', -apple-system, sans-serif; }
+    body { background: var(--bg); margin: 0; color: var(--text); }
+
+    .chip {
+      padding: 8px 16px; border-radius: 20px; border: 1.5px solid var(--border);
+      background: var(--surface); cursor: pointer; font-size: 13px; font-weight: 600;
+      color: var(--muted); transition: all 0.15s; white-space: nowrap;
+    }
+    .chip:hover { border-color: var(--accent); color: var(--accent); }
+    .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    .card {
+      background: var(--surface); border-radius: 16px; padding: 20px;
+      border: 1px solid var(--border);
+    }
+
+    .primary-btn {
+      width: 100%; padding: 16px; border-radius: 14px; border: none;
+      background: var(--accent); color: #fff; font-size: 16px; font-weight: 800;
+      cursor: pointer; transition: opacity 0.15s;
+    }
+    .primary-btn:active { opacity: 0.85; }
+
+    .ghost-btn {
+      padding: 10px 16px; border-radius: 12px; border: 1.5px solid var(--border);
+      background: var(--surface); color: var(--muted); font-size: 13px; font-weight: 700;
+      cursor: pointer;
+    }
+    .ghost-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+    .fade-up { animation: fadeUp 0.18s ease both; }
+  </style>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D232EW4QWF"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D232EW4QWF');
+  </script>
+</head>
+<body>
+<div id="root"></div>
+
+<script id="app-jsx" type="text/jsx-raw">
+const { useState, useEffect } = React;
+
+const LETTERS = ['A','B','C','D','E','F','G'];
+
+// Interval "size" here is the traditional inclusive count (a 3rd = 2 letter-steps away,
+// since C-B-A counts as 1st-2nd-3rd), matching how a teacher would actually say it aloud.
+const INTERVALS = [
+  { size: 2, label: '2nd' },
+  { size: 3, label: '3rd' },
+  { size: 4, label: '4th' },
+  { size: 5, label: '5th' },
+  { size: 6, label: '6th' },
+  { size: 7, label: '7th' },
+  { size: 8, label: '8ve' },
+];
+
+function nextLetter(current, intervalSize, direction) {
+  const idx = LETTERS.indexOf(current);
+  const step = (intervalSize - 1) % 7;
+  const delta = direction === 'up' ? step : -step;
+  const nextIdx = ((idx + delta) % 7 + 7) % 7;
+  return LETTERS[nextIdx];
+}
+
+function randomLetter() {
+  return LETTERS[Math.floor(Math.random() * LETTERS.length)];
+}
+
+// Phase 89: the first drill. Screen shows one letter; the student says the next one out
+// loud (by ear/mental math, not typed in), then the teacher taps to reveal and confirm
+// before moving on -- this is a live spoken exchange the tool supports, not a typed quiz.
+function LetterChainDrill() {
+  const [direction, setDirection] = useState('up');
+  const [interval, setIntervalSize] = useState(2);
+  const [current, setCurrent] = useState(() => randomLetter());
+  const [revealed, setRevealed] = useState(null);
+  const [history, setHistory] = useState(() => [current]);
+
+  function handleAction() {
+    if (revealed === null) {
+      setRevealed(nextLetter(current, interval, direction));
+    } else {
+      setHistory(h => [...h, revealed]);
+      setCurrent(revealed);
+      setRevealed(null);
+    }
+  }
+
+  function newStart() {
+    const letter = randomLetter();
+    setCurrent(letter);
+    setHistory([letter]);
+    setRevealed(null);
+  }
+
+  return (
+    <div className="fade-up">
+      <p style={{fontSize:13,color:'var(--muted)',lineHeight:1.6,margin:'0 0 20px'}}>
+        Say the next letter out loud -- alternate turns with the student, then tap to check before moving on.
+      </p>
+
+      <div style={{display:'flex',gap:8,marginBottom:12,flexWrap:'wrap'}}>
+        <button className={'chip'+(direction==='up'?' active':'')} onClick={()=>setDirection('up')}>Ascending</button>
+        <button className={'chip'+(direction==='down'?' active':'')} onClick={()=>setDirection('down')}>Descending</button>
+      </div>
+
+      <div style={{display:'flex',gap:8,marginBottom:22,flexWrap:'wrap'}}>
+        {INTERVALS.map(iv => (
+          <button key={iv.size} className={'chip'+(interval===iv.size?' active':'')} onClick={()=>setIntervalSize(iv.size)}>
+            {iv.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="card" style={{textAlign:'center',padding:'36px 20px'}}>
+        <div style={{fontSize:96,fontWeight:900,color:'var(--text)',lineHeight:1,letterSpacing:'-0.02em'}}>
+          {current}
+        </div>
+        <div style={{minHeight:28,marginTop:10}}>
+          {revealed !== null && (
+            <span style={{fontSize:17,fontWeight:800,color:'var(--brass)'}}>&rarr; {revealed}</span>
+          )}
+        </div>
+      </div>
+
+      <div style={{marginTop:16}}>
+        <button className="primary-btn" onClick={handleAction}>
+          {revealed === null ? 'Show answer' : 'Next →'}
+        </button>
+      </div>
+
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:16}}>
+        <div style={{fontSize:12,color:'var(--muted)',lineHeight:1.6,wordBreak:'break-word'}}>
+          {history.join(' → ')}
+        </div>
+        <button className="ghost-btn" onClick={newStart} style={{flexShrink:0,marginLeft:12}}>New starting note</button>
+      </div>
+    </div>
+  );
+}
+
+// Registry of drills -- add a new { id, label, render } entry here for each future drill
+// (rhythm chunking, key signatures, interval distance, keyboard<->note-name matching, ...)
+// rather than restructuring this page.
+const DRILLS = [
+  { id: 'letter-chain', label: 'Letter Chain', render: () => <LetterChainDrill /> },
+];
+
+function App() {
+  const [activeId, setActiveId] = useState(DRILLS[0].id);
+  const active = DRILLS.find(d => d.id === activeId) || DRILLS[0];
+
+  return (
+    <div style={{minHeight:'100vh',background:'var(--bg)'}}>
+      <div style={{background:'#fff',borderBottom:'1px solid var(--border)',padding:'16px 20px 18px'}}>
+        <a href="index.html" style={{color:'var(--muted)',fontSize:12,textDecoration:'none',display:'block',marginBottom:6}}>
+          Back to Piano Butler
+        </a>
+        <h1 style={{color:'var(--text)',fontSize:19,fontWeight:900,margin:'0 0 2px',letterSpacing:'-0.02em'}}>
+          Practice Drills
+        </h1>
+        <p style={{color:'var(--muted)',fontSize:12,margin:0}}>
+          Quick exercises to pull back out whenever a student needs to revisit something.
+        </p>
+      </div>
+
+      <div style={{maxWidth:480,margin:'0 auto',padding:'24px 20px 60px'}}>
+        <div style={{display:'flex',gap:8,marginBottom:20,flexWrap:'wrap'}}>
+          {DRILLS.map(d => (
+            <button key={d.id} className={'chip'+(activeId===d.id?' active':'')} onClick={()=>setActiveId(d.id)}>
+              {d.label}
+            </button>
+          ))}
+        </div>
+
+        {active.render()}
+      </div>
+    </div>
+  );
+}
+
+class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false }; }
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) return (
+      <div style={{padding:40,textAlign:'center',fontFamily:'Inter,sans-serif'}}>
+        <p style={{color:'#241f1a',fontWeight:700}}>Something went wrong loading this page.</p>
+        <small style={{color:'#a49b8f'}}>Please refresh the page.</small>
+      </div>
+    );
+    return this.props.children;
+  }
+}
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <ErrorBoundary><App/></ErrorBoundary>
+);
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  function tryCompile() {
+    if (typeof Babel === 'undefined') { setTimeout(tryCompile, 50); return; }
+    try {
+      var src = document.getElementById('app-jsx').textContent;
+      var compiled = Babel.transform(src, { presets: ['react'] }).code;
+      var s = document.createElement('script');
+      s.textContent = compiled;
+      document.body.appendChild(s);
+    } catch(e) {
+      document.getElementById('root').innerHTML = '<div style="padding:40px;color:#ef4444;font-family:monospace;font-size:13px"><b>Compile error:</b> ' + e.message + '</div>';
+    }
+  }
+  tryCompile();
+});
+</script>
+</body>
+</html>
