@@ -118,6 +118,578 @@ function randomLetter() {
   return LETTERS[Math.floor(Math.random() * LETTERS.length)];
 }
 
+// Phase 89b: staff/keyboard toggles, added after Sohyun noticed some students still
+// struggle with the letters themselves, before any interval math -- these give a visual
+// anchor (where the current letter actually sits) without changing the drill's core loop.
+// Both are octave-agnostic by design (confirmed with Sohyun): the drill itself never tracks
+// a real octave (it just cycles A-G), so each letter gets ONE fixed representative position
+// -- the octave starting at middle C -- rather than trying to compute a "correct" octave.
+
+// Representative treble-staff position for each letter, anchored on middle C (one ledger
+// line below the staff). y is an SVG coordinate; 6px = one line/space step.
+const STAFF_POS = {
+  C: { y: 80, ledger: true },
+  D: { y: 74, ledger: false },
+  E: { y: 68, ledger: false },
+  F: { y: 62, ledger: false },
+  G: { y: 56, ledger: false },
+  A: { y: 50, ledger: false },
+  B: { y: 44, ledger: false },
+};
+
+function GrandStaff({ letter }) {
+  const pos = STAFF_POS[letter];
+  const trebleLines = [20, 32, 44, 56, 68];
+  const bassLines = [112, 124, 136, 148, 160];
+  return (
+    <svg viewBox="0 0 280 190" style={{width:'100%',maxWidth:280,display:'block',margin:'0 auto'}}>
+      {trebleLines.map((y,i) => <line key={'t'+i} x1="20" y1={y} x2="260" y2={y} stroke="var(--muted)" strokeWidth="1"/>)}
+      {bassLines.map((y,i) => <line key={'b'+i} x1="20" y1={y} x2="260" y2={y} stroke="var(--muted)" strokeWidth="1"/>)}
+      <text x="4" y="60" fontSize="11" fill="var(--muted)" fontWeight="700">Treble</text>
+      <text x="4" y="140" fontSize="11" fill="var(--muted)" fontWeight="700">Bass</text>
+      <line x1="20" y1="20" x2="20" y2="160" stroke="var(--muted)" strokeWidth="1.5"/>
+      {pos.ledger && <line x1="128" y1={pos.y} x2="152" y2={pos.y} stroke="var(--text)" strokeWidth="1.5"/>}
+      <ellipse cx="140" cy={pos.y} rx="8" ry="5.5" fill="var(--brass)"/>
+    </svg>
+  );
+}
+
+// One octave, C to B -- current letter's white key is highlighted. Octave-agnostic for
+// the same reason as the staff above: the drill has no real octave to point to.
+const WHITE_ORDER = ['C','D','E','F','G','A','B'];
+const BLACK_AFTER = { C:true, D:true, E:false, F:true, G:true, A:true, B:false };
+
+function PianoKeyboard({ letter }) {
+  const whiteW = 40, whiteH = 100, blackW = 24, blackH = 60;
+  return (
+    <svg viewBox={'0 0 '+(whiteW*7)+' '+whiteH} style={{width:'100%',maxWidth:280,display:'block',margin:'0 auto'}}>
+      {WHITE_ORDER.map((l, i) => (
+        <g key={l}>
+          <rect x={i*whiteW} y="0" width={whiteW} height={whiteH}
+            fill={l===letter ? 'var(--brass-bg)' : '#fff'}
+            stroke={l===letter ? 'var(--brass)' : 'var(--border)'}
+            strokeWidth={l===letter ? 2 : 1}/>
+          <text x={i*whiteW+whiteW/2} y={whiteH-10} textAnchor="middle" fontSize="11" fontWeight="700"
+            fill={l===letter ? 'var(--brass)' : 'var(--muted)'}>{l}</text>
+        </g>
+      ))}
+      {WHITE_ORDER.map((l, i) => BLACK_AFTER[l] && (
+        <rect key={l+'#'} x={(i+1)*whiteW - blackW/2} y="0" width={blackW} height={blackH} fill="var(--text)"/>
+      ))}
+    </svg>
+  );
+}
+
+// Phase 89c: Scale Fingering reference drill. Sohyun's most-repeated in-lesson explanation
+// is major-scale fingering, so this shows the correct AMEB fingering on a real keyboard
+// instead of her having to say it out loud every time.
+//
+// REFERENCE INTEGRITY: every number below either was read directly, key by key, off the
+// actual pages of Sohyun's own AMEB "Piano Technical Work" syllabus books (Preliminary-G4
+// and G5-G8) -- never reconstructed from general fingering conventions -- or, where marked
+// "Derived" below, was computed from a formula that was itself checked against every one of
+// those directly-read numbers before being trusted (see the RH/LH pattern functions above
+// SCALES). Only keys verified with high confidence are included here; several other keys
+// (F, D, Bb, and medium-confidence reads of E, Ab, B, Db, F#) are intentionally left out
+// until they're re-verified against a clearer scan -- adding a wrong finger number to a tool
+// a student practices from would be worse than leaving a key out for now.
+//
+// Each key can offer more than one octave length (1 vs 2) once both are trustworthy -- the
+// UI below shows whichever lengths are present here as a chip row.
+//
+// A note on the "Derived" 2-octave entries for C and G: the standard major-scale fingering
+// is octave-invariant for these simple (no-exceptional-black-key) keys, and the RH/LH digit
+// pattern is mirror-symmetric between hands (LH = RH reversed) -- both facts were confirmed
+// against real numbers already in this file (A major's directly-sourced 2-octave RH/LH, and
+// C/G's own directly-sourced 1-octave RH/LH) before being applied here. G's 2-octave RH was
+// additionally cross-checked note-for-note against the real AMEB Grade 2 page (see source
+// string below). This does NOT generalize to every future key -- e.g. F major's LH must
+// dodge Bb and does not follow this pattern -- so it's only applied here, to the two keys
+// it was actually verified against.
+function majorOffsets(n) {
+  const steps = [0,2,4,5,7,9,11];
+  const res = [];
+  for (let o = 0; o < n; o++) steps.forEach(s => res.push(s + 12*o));
+  res.push(12*n);
+  return res;
+}
+function rhPattern(n) {
+  const unit = [1,2,3,1,2,3,4];
+  const res = [];
+  for (let o = 0; o < n; o++) res.push(...unit);
+  res.push(5);
+  return res;
+}
+function lhPattern(n) {
+  return rhPattern(n).slice().reverse();
+}
+// For a key whose root note itself is a black key (C#/Db, D#/Eb, F#/Gb, G#/Ab, A#/Bb), the RH
+// can't start on the thumb (thumb never plays a black key) -- per Sohyun's rule (2026-09-19):
+// start on finger 2, and whichever note is the first white key reached gets the thumb. From
+// there it follows the same repeating [1,2,3,1,2,3,4] unit as the standard pattern.
+function rhPatternBlackRoot(n) {
+  const unit = [1,2,3,1,2,3,4];
+  const res = [2];
+  for (let o = 0; o < n; o++) res.push(...unit);
+  return res;
+}
+
+// White-root keys that follow the plain standard pattern (RH: thumb-under-3, repeat-4th-finger;
+// LH: its mirror) for both hands -- built the same way for every octave length.
+function standardEntry(n) {
+  return { offsets: majorOffsets(n), RH: rhPattern(n), LH: lhPattern(n), label: n + (n > 1 ? ' octaves' : ' octave') };
+}
+// Black-root keys (C#/Db, D#/Eb, F#/Gb, G#/Ab, A#/Bb): RH uses the 2-then-standard-unit shape;
+// LH stays decoupled and uses the same plain mirror pattern (confirmed correct for F major,
+// whose LH also didn't follow its own RH's exception).
+function blackRootEntry(n) {
+  return { offsets: majorOffsets(n), RH: rhPatternBlackRoot(n), LH: lhPattern(n), label: n + (n > 1 ? ' octaves' : ' octave') };
+}
+
+const SCALES = {
+  C: { rootPc: 0, octaves: { 1: standardEntry(1), 2: standardEntry(2) } },
+  G: { rootPc: 7, octaves: { 1: standardEntry(1), 2: standardEntry(2) } },
+  A: { rootPc: 9, octaves: { 1: standardEntry(1), 2: standardEntry(2) } },
+  D: { rootPc: 2, octaves: { 1: standardEntry(1), 2: standardEntry(2) } },
+  E: { rootPc: 4, octaves: { 1: standardEntry(1), 2: standardEntry(2) } },
+  // F major's RH does NOT follow the standard rhPattern(n) shape -- it dodges Bb with an extra
+  // finger (groups of 4-3-4-3-1 instead of the usual 3-4 repeat) -- confirmed by Sohyun directly
+  // (matches AMEB Grade 1, p.27, 1.4). LH matches the same standard mirror pattern as C/G/A/D/E,
+  // also confirmed by Sohyun. The 1-octave RH is the same shape with the top (white) note ending
+  // on 5 instead of continuing on 1, matching how every other 1-octave scale ends.
+  F: {
+    rootPc: 5,
+    octaves: {
+      1: { offsets: majorOffsets(1), RH: [1,2,3,4, 1,2,3, 5], LH: lhPattern(1), label: '1 octave' },
+      2: { offsets: majorOffsets(2), RH: [1,2,3,4, 1,2,3, 1,2,3,4, 1,2,3, 4], LH: lhPattern(2), label: '2 octaves' },
+    },
+  },
+  // B major: RH is still the plain standard-pattern DRAFT (B major is nearly all black keys and
+  // likely needs its own real exception, like F did -- flag it, Sohyun). LH was corrected by
+  // Sohyun directly (2026-09-19): 4321/4321/321/4321.
+  B: {
+    rootPc: 11,
+    octaves: {
+      1: { offsets: majorOffsets(1), RH: rhPattern(1), LH: [4,3,2,1, 4,3,2,1], label: '1 octave' },
+      2: { offsets: majorOffsets(2), RH: rhPattern(2), LH: [4,3,2,1, 4,3,2,1, 3,2,1, 4,3,2,1], label: '2 octaves' },
+    },
+  },
+  // Cb major is the same physical scale as B major (just spelled in flats) -- same LH fix applies.
+  Cb: {
+    rootPc: 11,
+    octaves: {
+      1: { offsets: majorOffsets(1), RH: rhPattern(1), LH: [4,3,2,1, 4,3,2,1], label: '1 octave' },
+      2: { offsets: majorOffsets(2), RH: rhPattern(2), LH: [4,3,2,1, 4,3,2,1, 3,2,1, 4,3,2,1], label: '2 octaves' },
+    },
+  },
+  // --- Black-root keys: RH uses Sohyun's rule (2026-09-19) -- "샵이나 플랫으로 시작하는 스케일
+  // 오른손은 무조건 2로 시작하고 첫번째로 오는 흰건반이 엄지가 와야 하는 구조" -- start on finger 2,
+  // first white key gets the thumb, then the standard [1,2,3,1,2,3,4] unit repeats. This matches
+  // the real AMEB Bb major scan (Grade 2, p.37, 2.4) exactly. Still a draft for the others until
+  // Sohyun checks each one -- the rule may need a per-key tweak where a black key would otherwise
+  // land under the thumb mid-scale (this mechanical version doesn't check for that yet).
+  // F#/Gb major: the generic blackRootEntry formula is WRONG here -- F# has 3 consecutive black
+  // keys at the start of each octave (F#-G#-A#) instead of Bb's black-white-white shape, so the
+  // fixed [1,2,3,1,2,3,4] unit puts a finger on the wrong note. Corrected by Sohyun directly
+  // (2026-09-19): RH 234/123/1234/123(/2), LH 4321/321(/4321/321/4). Same physical scale as Gb.
+  'F#': {
+    rootPc: 6,
+    octaves: {
+      1: { offsets: majorOffsets(1), RH: [2,3,4, 1,2,3, 1,2], LH: [4,3,2,1, 3,2,1, 4], label: '1 octave' },
+      2: { offsets: majorOffsets(2), RH: [2,3,4, 1,2,3, 1,2,3,4, 1,2,3, 1,2], LH: [4,3,2,1, 3,2,1, 4,3,2,1, 3,2,1, 4], label: '2 octaves' },
+    },
+  },
+  'C#': { rootPc: 1, octaves: { 1: blackRootEntry(1), 2: blackRootEntry(2) } },
+  Bb: { rootPc: 10, octaves: { 1: blackRootEntry(1), 2: blackRootEntry(2) } },
+  Eb: { rootPc: 3, octaves: { 1: blackRootEntry(1), 2: blackRootEntry(2) } },
+  Ab: { rootPc: 8, octaves: { 1: blackRootEntry(1), 2: blackRootEntry(2) } },
+  Db: { rootPc: 1, octaves: { 1: blackRootEntry(1), 2: blackRootEntry(2) } },
+  Gb: {
+    rootPc: 6,
+    octaves: {
+      1: { offsets: majorOffsets(1), RH: [2,3,4, 1,2,3, 1,2], LH: [4,3,2,1, 3,2,1, 4], label: '1 octave' },
+      2: { offsets: majorOffsets(2), RH: [2,3,4, 1,2,3, 1,2,3,4, 1,2,3, 1,2], LH: [4,3,2,1, 3,2,1, 4,3,2,1, 3,2,1, 4], label: '2 octaves' },
+    },
+  },
+};
+const SCALE_KEYS = ['C','G','D','A','E','B','F#','C#','F','Bb','Eb','Ab','Db','Gb','Cb'];
+
+// Key-signature order (circle of fifths, laid out as two chains from C, matching how
+// AMEB/theory teaching usually presents it): C (0), then sharps 1-7, then flats 1-7.
+// This is a fixed list of every major key's conventional name -- it deliberately includes
+// entries (F#, C#, Gb, Db, Cb) that aren't in SCALES yet, so the "by key signature" view can
+// double as a roadmap: available keys are clickable, the rest show greyed-out as work still
+// to verify against the syllabus, rather than being hidden.
+const SHARP_KEYS = [
+  { name: 'C', count: 0 }, { name: 'G', count: 1 }, { name: 'D', count: 2 }, { name: 'A', count: 3 },
+  { name: 'E', count: 4 }, { name: 'B', count: 5 }, { name: 'F#', count: 6 }, { name: 'C#', count: 7 },
+];
+const FLAT_KEYS = [
+  { name: 'F', count: 1 }, { name: 'Bb', count: 2 }, { name: 'Eb', count: 3 }, { name: 'Ab', count: 4 },
+  { name: 'Db', count: 5 }, { name: 'Gb', count: 6 }, { name: 'Cb', count: 7 },
+];
+
+// Treble-clef staff position for each conventional sharp/flat, expressed as a single "pos"
+// number: 0 = bottom line (E4), +1 per line/space moving up (line1, space1, line2, space2, ...,
+// line5=pos8, the space just above the staff=pos9). y = 50 - pos*5 in the SVG below.
+// Derived from standard treble-clef key-signature theory (each accidental a 4th below the
+// previous, jumping a 5th up instead whenever the 4th-below would fall outside the staff), then
+// cross-checked against two independently confirmed reference points: F# sits on the top line,
+// and the "fourth space" flat is E-flat. Sohyun -- please give this one a quick visual sanity
+// check against a syllabus page; I could not find a single source enumerating all 14 positions.
+const SHARP_ORDER = ['F#', 'C#', 'G#', 'D#', 'A#', 'E#', 'B#'];
+const FLAT_ORDER = ['Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb', 'Fb'];
+const SHARP_POS = { 'F#': 8, 'C#': 5, 'G#': 9, 'D#': 6, 'A#': 3, 'E#': 7, 'B#': 4 };
+const FLAT_POS = { 'Bb': 4, 'Eb': 7, 'Ab': 3, 'Db': 6, 'Gb': 9, 'Cb': 5, 'Fb': 8 };
+
+function KeySigStaff({ count, type }) {
+  if (!count) return null;
+  const order = type === 'sharp' ? SHARP_ORDER : FLAT_ORDER;
+  const posMap = type === 'sharp' ? SHARP_POS : FLAT_POS;
+  const symbol = type === 'sharp' ? '♯' : '♭';
+  const accidentals = order.slice(0, count);
+  const lineYs = [10, 20, 30, 40, 50];
+  const startX = 34, spacing = 11;
+  const width = startX + accidentals.length * spacing + 8;
+  return (
+    <svg width={width} height={60} viewBox={'0 0 ' + width + ' 60'} style={{display:'block',flexShrink:0}}>
+      {lineYs.map(y => (
+        <line key={y} x1={4} y1={y} x2={width - 4} y2={y} stroke="var(--muted)" strokeWidth="1" />
+      ))}
+      <text x={4} y={44} fontSize="34" fill="var(--text)" fontFamily="serif">{'𝄞'}</text>
+      {accidentals.map((acc, i) => {
+        const y = 50 - posMap[acc] * 5;
+        return (
+          <text key={acc} x={startX + i * spacing} y={y + 4} fontSize="16" fill="var(--brass)" fontFamily="serif">{symbol}</text>
+        );
+      })}
+    </svg>
+  );
+}
+
+// Black-key "fingering family" grouping -- this is Sohyun's own lesson technique, formalized.
+// The piano's black keys physically cluster into groups of 2 (C#/D#, pitch classes 1 & 3) and
+// groups of 3 (F#/G#/A#, pitch classes 6, 8 & 10) in every octave. Since the thumb (finger 1)
+// never plays a black key, which cluster(s) a scale's black-key members fall into predicts the
+// shape of its fingering (where the thumb has to tuck under / cross over) -- so grouping scales
+// this way lets a student infer a new scale's fingering from a family they already know, rather
+// than memorizing all 12 separately. This is a structural fact about the keyboard layout, not
+// syllabus-specific data, so it's computed directly from each scale's own pitch classes below
+// rather than hardcoded -- it stays correct automatically as more keys are added to SCALES.
+const TWO_CLUSTER_PCS = [1, 3];       // C#, D#
+const THREE_CLUSTER_PCS = [6, 8, 10]; // F#, G#, A#
+const BLACK_PC_NAMES = { 1: 'C#', 3: 'D#', 6: 'F#', 8: 'G#', 10: 'A#' };
+
+// Color the keyboard by finger-reach segment instead of by fixed keyboard position: every
+// scale's fingering breaks into repeating "hand positions" bounded by thumb crossings, and
+// each position either tops out at finger 3 (a "1-2-3" reach) or finger 4 (a "1-2-3-4"
+// reach). Tinting each played white key by which reach its own note belongs to makes that
+// crossing pattern visible directly on the keyboard, in the actual fingering shown -- not
+// just a fixed physical-key overlay. RH and LH cross in opposite directions (RH's thumb
+// starts a new position by going under; LH's thumb ends a position by going over), so the
+// two hands need their own segmentation rule -- both were checked against the sequences
+// already verified in SCALES before being trusted (see the two helper functions below).
+const SEGMENT_COLORS = {
+  three: { fill: '#93d0f5', stroke: '#3f8fc9' }, // 1-2-3 reach
+  four:  { fill: '#98e6ab', stroke: '#3fa860' }, // 1-2-3-4 reach
+};
+// RH: a new position starts right at each thumb (finger 1) -- e.g. C major RH
+// [1,2,3, 1,2,3,4,5] splits into a 1-2-3 segment then a 1-2-3-4(-5) segment.
+function segmentsStartAt1(fingers) {
+  const groups = new Array(fingers.length);
+  let segStart = 0;
+  for (let i = 1; i <= fingers.length; i++) {
+    if (i === fingers.length || fingers[i] === 1) {
+      const seg = fingers.slice(segStart, i);
+      const label = Math.max(...seg) >= 4 ? 'four' : 'three';
+      for (let j = segStart; j < i; j++) groups[j] = label;
+      segStart = i;
+    }
+  }
+  return groups;
+}
+// LH: a position ends at each thumb (finger 1) instead -- e.g. C major LH
+// [5,4,3,2,1, 3,2,1] splits into a (5-)4-3-2-1 segment then a 3-2-1 segment. Checked: this
+// is exactly the mirror of segmentsStartAt1 (reversing LH's own array reproduces RH's array
+// digit-for-digit, and running segmentsStartAt1 on that reversed array then reversing the
+// labels back reproduces this function's output exactly).
+function segmentsEndAt1(fingers) {
+  const groups = new Array(fingers.length);
+  let segStart = 0;
+  for (let i = 0; i < fingers.length; i++) {
+    if (fingers[i] === 1 || i === fingers.length - 1) {
+      const seg = fingers.slice(segStart, i + 1);
+      const label = Math.max(...seg) >= 4 ? 'four' : 'three';
+      for (let j = segStart; j <= i; j++) groups[j] = label;
+      segStart = i + 1;
+    }
+  }
+  return groups;
+}
+
+const WHITE_PCS_REF = [0,2,4,5,7,9,11];
+function scaleBlackPcs({ rootPc, offsets }) {
+  const pcs = new Set();
+  offsets.forEach(off => {
+    const pc = (rootPc + off) % 12;
+    if (!WHITE_PCS_REF.includes(pc)) pcs.add(pc);
+  });
+  return [...pcs].sort((a, b) => a - b);
+}
+
+function classifyFamily(scale) {
+  const blackPcs = scaleBlackPcs(scale);
+  const touchesTwo = blackPcs.some(pc => TWO_CLUSTER_PCS.includes(pc));
+  const touchesThree = blackPcs.some(pc => THREE_CLUSTER_PCS.includes(pc));
+  let id, label, note;
+  if (blackPcs.length === 0) {
+    id = 'none'; label = 'No black keys';
+    note = 'No black-key cluster to cross -- just the standard octave grouping: thumb crosses after the 3rd note, then again after the 4th (a "1-2-3 / 1-2-3-4" shape each octave, both hands).';
+  } else if (touchesTwo && touchesThree) {
+    id = 'both'; label = 'Mixed (2- + 3-black cluster)';
+    note = 'Crosses both clusters -- expect a 1-2-3 pattern where the 2-black group is spanned, and a 1-2-3-4 pattern where the 3-black group is spanned, in whichever hand plays through each.';
+  } else if (touchesThree) {
+    id = 'three'; label = '3-black-key cluster (F#/G#/A#)';
+    note = 'Spans the 3-black group -- fingers 2-3-4 walk across it with the thumb landing just outside, i.e. a 1-2-3-4 pattern at the crossing (both hands).';
+  } else {
+    id = 'two'; label = '2-black-key cluster (C#/D#)';
+    note = 'Spans the 2-black group -- fingers 2-3 walk across it with the thumb landing just outside, i.e. a 1-2-3 pattern at the crossing (both hands).';
+  }
+  return { id, label, note, blackPcs, names: blackPcs.map(pc => BLACK_PC_NAMES[pc]) };
+}
+const FAMILY_ORDER = ['none', 'two', 'three', 'both'];
+
+// Builds a full chromatic keyboard (white + black keys, correctly positioned) starting at
+// any pitch class, spanning however many octaves the scale needs -- unlike the Letter Chain
+// keyboard above, a major scale can land on black keys (A major's F#/C#/G#), so this can't
+// reuse the white-keys-only layout.
+function buildKeyboard(rootPc, totalSemitones) {
+  const WHITE_PCS = [0,2,4,5,7,9,11];
+  const keys = [];
+  let whiteCount = 0;
+  for (let i = 0; i <= totalSemitones; i++) {
+    const pc = (rootPc + i) % 12;
+    const isWhite = WHITE_PCS.includes(pc);
+    if (isWhite) {
+      keys.push({ i, isWhite: true, whiteIndex: whiteCount });
+      whiteCount++;
+    } else {
+      keys.push({ i, isWhite: false, precedingWhiteIndex: whiteCount - 1 });
+    }
+  }
+  return { keys, whiteCount };
+}
+
+function ScaleKeyboard({ rootPc, offsets, fingers, hand }) {
+  const totalSemitones = offsets[offsets.length - 1];
+  const { keys, whiteCount } = buildKeyboard(rootPc, totalSemitones);
+  const whiteW = 34, whiteH = 110, blackW = 20, blackH = 66;
+  const fingerAt = {};
+  offsets.forEach((off, idx) => { fingerAt[off] = fingers[idx]; });
+  const segmentLabels = hand === 'LH' ? segmentsEndAt1(fingers) : segmentsStartAt1(fingers);
+  const segmentAt = {};
+  offsets.forEach((off, idx) => { segmentAt[off] = segmentLabels[idx]; });
+
+  return (
+    <svg viewBox={(-blackW/2)+' 0 '+(whiteCount*whiteW+blackW)+' '+whiteH} style={{width:'100%',display:'block',margin:'0 auto'}}>
+      {keys.filter(k => k.isWhite).map(k => {
+        const played = fingerAt[k.i];
+        // Finger 5 only ever bookends the very top (RH) or very bottom (LH) note of the
+        // whole scale -- it's not part of the repeating 1-2-3 / 1-2-3-4 cycle, so it's left
+        // in the default, uncolored key style rather than joining either segment color.
+        const seg = (played && played !== 5) ? SEGMENT_COLORS[segmentAt[k.i]] : null;
+        return (
+        <g key={'w'+k.i}>
+          <rect x={k.whiteIndex*whiteW} y="0" width={whiteW} height={whiteH}
+            fill={seg ? seg.fill : '#fff'}
+            stroke={seg ? seg.stroke : 'var(--muted)'}
+            strokeWidth="2"/>
+          {played && (
+            <text x={k.whiteIndex*whiteW+whiteW/2} y={whiteH-14} textAnchor="middle" fontSize="14" fontWeight="800" fill="var(--brass)">
+              {played}
+            </text>
+          )}
+        </g>
+        );
+      })}
+      {keys.filter(k => !k.isWhite).map(k => {
+        const played = fingerAt[k.i];
+        // Black keys follow the same finger-reach coloring as white keys -- they're crossed
+        // by fingers 2/3/4 within the same segments, so they should read as part of the same
+        // colored group rather than always looking like a separate, uncolored black key.
+        const seg = (played && played !== 5) ? SEGMENT_COLORS[segmentAt[k.i]] : null;
+        return (
+        <g key={'b'+k.i}>
+          <rect x={(k.precedingWhiteIndex+1)*whiteW - blackW/2} y="0" width={blackW} height={blackH}
+            fill={seg ? seg.fill : 'var(--text)'}
+            stroke={seg ? seg.stroke : 'none'}
+            strokeWidth={seg ? 2 : 0}/>
+          {played && (
+            <text x={(k.precedingWhiteIndex+1)*whiteW} y={blackH-10} textAnchor="middle" fontSize="12" fontWeight="800"
+              fill={seg ? 'var(--text)' : '#fff'}>
+              {played}
+            </text>
+          )}
+        </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// Helper: get a key's family using whichever octave-length entry it has (the pitch-class
+// set -- and therefore the family -- is identical no matter which length is picked).
+function keyFamily(key) {
+  const info = SCALES[key];
+  const anyEntry = info.octaves[Object.keys(info.octaves)[0]];
+  return classifyFamily({ rootPc: info.rootPc, offsets: anyEntry.offsets });
+}
+
+function ScaleFingeringDrill() {
+  const [key, setKey] = useState('C');
+  const [octLen, setOctLen] = useState(1);
+  const [viewMode, setViewMode] = useState('keysig');
+  const info = SCALES[key];
+  const availableOctaves = Object.keys(info.octaves).map(Number).sort((a, b) => a - b);
+  const activeOctLen = availableOctaves.includes(octLen) ? octLen : availableOctaves[0];
+  const entry = info.octaves[activeOctLen];
+  const family = classifyFamily({ rootPc: info.rootPc, offsets: entry.offsets });
+
+  function pickKey(k) {
+    setKey(k);
+    const avail = Object.keys(SCALES[k].octaves).map(Number);
+    if (!avail.includes(octLen)) setOctLen(avail[0]);
+  }
+
+  // Group the available keys by fingering family (2-black-cluster / 3-black-cluster / mixed /
+  // none) so keys that share a fingering "shape" sit together -- a student can infer a new key's
+  // fingering from a family they already know, instead of treating each key as a one-off.
+  const groups = FAMILY_ORDER
+    .map(id => ({ id, keys: SCALE_KEYS.filter(k => keyFamily(k).id === id) }))
+    .filter(g => g.keys.length > 0);
+
+  return (
+    <div className="fade-up">
+      <p style={{fontSize:13,color:'var(--muted)',lineHeight:1.6,margin:'0 0 20px'}}>
+        Pick a key -- both hands' fingering show right on the keyboard, verified against the AMEB syllabus.
+      </p>
+
+      <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
+        <button className={'chip'+(viewMode==='keysig'?' active':'')} onClick={()=>setViewMode('keysig')}>By key signature</button>
+        <button className={'chip'+(viewMode==='family'?' active':'')} onClick={()=>setViewMode('family')}>By fingering family</button>
+      </div>
+
+      {viewMode === 'family' ? (
+        <div style={{marginBottom:12}}>
+          <p style={{fontSize:11,color:'var(--muted)',margin:'0 0 10px',lineHeight:1.5}}>
+            Grouped by which black-key cluster each scale touches, so you can lean on a family a student already knows.
+          </p>
+          {groups.map(g => (
+            <div key={g.id} style={{marginBottom:8}}>
+              <div style={{fontSize:10,fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.04em',marginBottom:6}}>
+                {keyFamily(g.keys[0]).label}
+              </div>
+              <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                {g.keys.map(k => (
+                  <button key={k} className={'chip'+(key===k?' active':'')} onClick={()=>pickKey(k)}>{k} major</button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{marginBottom:12}}>
+          <p style={{fontSize:11,color:'var(--muted)',margin:'0 0 10px',lineHeight:1.5}}>
+            Circle-of-fifths order -- sharps 0 through 7, then flats 1 through 7. Greyed-out keys aren't verified
+            against the syllabus yet.
+          </p>
+          {(() => {
+            const sharpMatch = SHARP_KEYS.find(k => k.name === key);
+            const flatMatch = !sharpMatch ? FLAT_KEYS.find(k => k.name === key) : null;
+            const sigType = sharpMatch ? 'sharp' : (flatMatch ? 'flat' : null);
+            const sigCount = sharpMatch ? sharpMatch.count : (flatMatch ? flatMatch.count : 0);
+            if (!sigType) return null;
+            return (
+              <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:14,padding:'10px 14px',background:'var(--brass-bg)',borderRadius:8,flexWrap:'wrap'}}>
+                <div style={{fontSize:11,color:'var(--muted)'}}>
+                  Key signature -- <strong style={{color:'var(--text)'}}>{key} major</strong>
+                </div>
+                {sigCount > 0 ? <KeySigStaff count={sigCount} type={sigType} /> : (
+                  <span style={{fontSize:11,color:'var(--muted)'}}>No sharps or flats</span>
+                )}
+              </div>
+            );
+          })()}
+          {[{ label: 'Sharps', list: SHARP_KEYS, symbol: '♯' }, { label: 'Flats', list: FLAT_KEYS, symbol: '♭' }].map(row => (
+            <div key={row.label} style={{marginBottom:10}}>
+              <div style={{fontSize:10,fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.04em',marginBottom:6}}>
+                {row.label}
+              </div>
+              <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                {row.list.map(k => {
+                  const available = SCALE_KEYS.includes(k.name);
+                  const label = k.name + ' (' + k.count + row.symbol + ')';
+                  return available ? (
+                    <button key={k.name} className={'chip'+(key===k.name?' active':'')} onClick={()=>pickKey(k.name)}>{label}</button>
+                  ) : (
+                    <span key={k.name} className="chip" style={{opacity:0.35,cursor:'default',borderStyle:'dashed'}}>{label}</span>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {availableOctaves.length > 1 && (
+        <div style={{display:'flex',gap:8,marginBottom:20,flexWrap:'wrap'}}>
+          {availableOctaves.map(n => (
+            <button key={n} className={'chip'+(activeOctLen===n?' active':'')} onClick={()=>setOctLen(n)}>
+              {n} octave{n > 1 ? 's' : ''}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div style={{display:'flex',gap:14,alignItems:'center',marginBottom:14,flexWrap:'wrap'}}>
+        <span style={{display:'flex',alignItems:'center',gap:6,fontSize:11,color:'var(--muted)'}}>
+          <span style={{width:12,height:12,borderRadius:3,background:SEGMENT_COLORS.three.fill,border:'1px solid '+SEGMENT_COLORS.three.stroke,display:'inline-block'}}></span>
+          1-2-3 reach (thumb crosses after finger 3)
+        </span>
+        <span style={{display:'flex',alignItems:'center',gap:6,fontSize:11,color:'var(--muted)'}}>
+          <span style={{width:12,height:12,borderRadius:3,background:SEGMENT_COLORS.four.fill,border:'1px solid '+SEGMENT_COLORS.four.stroke,display:'inline-block'}}></span>
+          1-2-3-4 reach (thumb crosses after finger 4)
+        </span>
+      </div>
+
+      <div className="card" style={{padding:'20px 16px'}}>
+        <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.04em',marginBottom:8}}>
+          Right hand
+        </div>
+        <ScaleKeyboard rootPc={info.rootPc} offsets={entry.offsets} fingers={entry.RH} hand="RH" />
+
+        <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.04em',margin:'20px 0 8px'}}>
+          Left hand
+        </div>
+        <ScaleKeyboard rootPc={info.rootPc} offsets={entry.offsets} fingers={entry.LH} hand="LH" />
+
+        <p style={{fontSize:12,color:'var(--muted)',marginTop:16,marginBottom:0,textAlign:'center'}}>
+          {key} major -- {entry.label}, ascending
+        </p>
+      </div>
+
+      <div style={{background:'var(--brass-bg)',border:'1px solid var(--border)',borderRadius:10,padding:'12px 14px',marginTop:16}}>
+        <p style={{fontSize:12,fontWeight:800,color:'var(--brass)',margin:'0 0 4px'}}>
+          Family: {family.label}{family.names.length > 0 ? ' (' + family.names.join(', ') + ')' : ''}
+        </p>
+        <p style={{fontSize:12,color:'var(--text)',margin:0,lineHeight:1.5}}>
+          {family.note}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 // Phase 89: the first drill. Screen shows one letter; the student says the next one out
 // loud (by ear/mental math, not typed in), then the teacher taps to reveal and confirm
 // before moving on -- this is a live spoken exchange the tool supports, not a typed quiz.
@@ -127,6 +699,8 @@ function LetterChainDrill() {
   const [current, setCurrent] = useState(() => randomLetter());
   const [revealed, setRevealed] = useState(null);
   const [history, setHistory] = useState(() => [current]);
+  const [showKeyboard, setShowKeyboard] = useState(false);
+  const [showStaff, setShowStaff] = useState(false);
 
   function handleAction() {
     if (revealed === null) {
@@ -156,12 +730,17 @@ function LetterChainDrill() {
         <button className={'chip'+(direction==='down'?' active':'')} onClick={()=>setDirection('down')}>Descending</button>
       </div>
 
-      <div style={{display:'flex',gap:8,marginBottom:22,flexWrap:'wrap'}}>
+      <div style={{display:'flex',gap:8,marginBottom:12,flexWrap:'wrap'}}>
         {INTERVALS.map(iv => (
           <button key={iv.size} className={'chip'+(interval===iv.size?' active':'')} onClick={()=>setIntervalSize(iv.size)}>
             {iv.label}
           </button>
         ))}
+      </div>
+
+      <div style={{display:'flex',gap:8,marginBottom:22,flexWrap:'wrap'}}>
+        <button className={'chip'+(showKeyboard?' active':'')} onClick={()=>setShowKeyboard(v=>!v)}>Keyboard</button>
+        <button className={'chip'+(showStaff?' active':'')} onClick={()=>setShowStaff(v=>!v)}>Staff</button>
       </div>
 
       <div className="card" style={{textAlign:'center',padding:'36px 20px'}}>
@@ -173,6 +752,21 @@ function LetterChainDrill() {
             <span style={{fontSize:17,fontWeight:800,color:'var(--brass)'}}>&rarr; {revealed}</span>
           )}
         </div>
+        {showStaff && (
+          <div style={{marginTop:20,paddingTop:20,borderTop:'1px solid var(--border)'}}>
+            <GrandStaff letter={revealed !== null ? revealed : current} />
+          </div>
+        )}
+        {showKeyboard && (
+          <div style={{marginTop:20,paddingTop:20,borderTop:'1px solid var(--border)'}}>
+            <PianoKeyboard letter={revealed !== null ? revealed : current} />
+          </div>
+        )}
+        {(showStaff || showKeyboard) && (
+          <p style={{fontSize:11,color:'var(--muted)',marginTop:12,marginBottom:0}}>
+            Representative position only -- not tied to a specific octave.
+          </p>
+        )}
       </div>
 
       <div style={{marginTop:16}}>
@@ -196,6 +790,7 @@ function LetterChainDrill() {
 // rather than restructuring this page.
 const DRILLS = [
   { id: 'letter-chain', label: 'Letter Chain', render: () => <LetterChainDrill /> },
+  { id: 'scale-fingering', label: 'Scale Fingering', render: () => <ScaleFingeringDrill /> },
 ];
 
 function App() {
