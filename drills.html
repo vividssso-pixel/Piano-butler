@@ -291,12 +291,16 @@ const SCALES = {
   // F#/Gb major: the generic blackRootEntry formula is WRONG here -- F# has 3 consecutive black
   // keys at the start of each octave (F#-G#-A#) instead of Bb's black-white-white shape, so the
   // fixed [1,2,3,1,2,3,4] unit puts a finger on the wrong note. Corrected by Sohyun directly
-  // (2026-09-19): RH 234/123/1234/123(/2), LH 4321/321(/4321/321/4). Same physical scale as Gb.
+  // (2026-09-19): RH 234/123/1234/123(/2), LH 4321/321(/4321/321). Same physical scale as Gb.
+  // RH's trailing "2" is the start of a truncated 1-2-3-4 reach (colored accordingly -- see
+  // segmentsStartAt1's truncation handling); LH's trailing "2" is just a plain bookend note
+  // marking where the hand lands, not part of any crossing, so it's left uncolored like finger
+  // 5 elsewhere (per Sohyun's correction, 2026-09-20).
   'F#': {
     rootPc: 6,
     octaves: {
-      1: { offsets: majorOffsets(1), RH: [2,3,4, 1,2,3, 1,2], LH: [4,3,2,1, 3,2,1, 4], label: '1 octave' },
-      2: { offsets: majorOffsets(2), RH: [2,3,4, 1,2,3, 1,2,3,4, 1,2,3, 1,2], LH: [4,3,2,1, 3,2,1, 4,3,2,1, 3,2,1, 4], label: '2 octaves' },
+      1: { offsets: majorOffsets(1), RH: [2,3,4, 1,2,3, 1,2], LH: [4,3,2,1, 3,2,1, 2], label: '1 octave' },
+      2: { offsets: majorOffsets(2), RH: [2,3,4, 1,2,3, 1,2,3,4, 1,2,3, 1,2], LH: [4,3,2,1, 3,2,1, 4,3,2,1, 3,2,1, 2], label: '2 octaves' },
     },
   },
   'C#': { rootPc: 1, octaves: { 1: blackRootEntry(1), 2: blackRootEntry(2) } },
@@ -307,8 +311,8 @@ const SCALES = {
   Gb: {
     rootPc: 6,
     octaves: {
-      1: { offsets: majorOffsets(1), RH: [2,3,4, 1,2,3, 1,2], LH: [4,3,2,1, 3,2,1, 4], label: '1 octave' },
-      2: { offsets: majorOffsets(2), RH: [2,3,4, 1,2,3, 1,2,3,4, 1,2,3, 1,2], LH: [4,3,2,1, 3,2,1, 4,3,2,1, 3,2,1, 4], label: '2 octaves' },
+      1: { offsets: majorOffsets(1), RH: [2,3,4, 1,2,3, 1,2], LH: [4,3,2,1, 3,2,1, 2], label: '1 octave' },
+      2: { offsets: majorOffsets(2), RH: [2,3,4, 1,2,3, 1,2,3,4, 1,2,3, 1,2], LH: [4,3,2,1, 3,2,1, 4,3,2,1, 3,2,1, 2], label: '2 octaves' },
     },
   },
 };
@@ -395,14 +399,32 @@ const SEGMENT_COLORS = {
 };
 // RH: a new position starts right at each thumb (finger 1) -- e.g. C major RH
 // [1,2,3, 1,2,3,4,5] splits into a 1-2-3 segment then a 1-2-3-4(-5) segment.
+//
+// One edge case (found via Sohyun's F# major correction, 2026-09-20): a hand-authored scale
+// can end mid-crossing -- e.g. F# major 1-octave RH ends "...,1,2" with only 2 notes after
+// the last thumb, not a full 3 or 4 -- because the octave view stops before the position
+// resolves. That truncated tail is still the START of what would be a 1-2-3-4 reach if the
+// scale kept going, so it should be colored the same as a real "four" segment, not judged by
+// its own (incomplete) note count. Detected as: the final segment, closed only because the
+// array ran out (not because it hit another thumb), and too short (<3 notes) to be a real
+// complete group on its own -- in that case it inherits the alternate of the previous
+// segment's label instead of being computed from Math.max on itself.
 function segmentsStartAt1(fingers) {
   const groups = new Array(fingers.length);
   let segStart = 0;
+  let prevLabel = null;
   for (let i = 1; i <= fingers.length; i++) {
-    if (i === fingers.length || fingers[i] === 1) {
+    const closedByThumb = fingers[i] === 1;
+    if (i === fingers.length || closedByThumb) {
       const seg = fingers.slice(segStart, i);
-      const label = Math.max(...seg) >= 4 ? 'four' : 'three';
+      let label;
+      if (!closedByThumb && segStart > 0 && seg.length < 3) {
+        label = prevLabel === 'four' ? 'three' : 'four';
+      } else {
+        label = Math.max(...seg) >= 4 ? 'four' : 'three';
+      }
       for (let j = segStart; j < i; j++) groups[j] = label;
+      prevLabel = label;
       segStart = i;
     }
   }
@@ -413,12 +435,25 @@ function segmentsStartAt1(fingers) {
 // is exactly the mirror of segmentsStartAt1 (reversing LH's own array reproduces RH's array
 // digit-for-digit, and running segmentsStartAt1 on that reversed array then reversing the
 // labels back reproduces this function's output exactly).
+//
+// Second edge case (Sohyun, 2026-09-20): F# major's LH ends on a single reference note (finger
+// 2) tacked on AFTER the scale's last real thumb-crossing closes, purely to mark where the hand
+// lands -- it isn't part of any 1-2-3/1-2-3-4 reach, so unlike the RH case above it should be
+// left in the plain, uncolored key style (same treatment finger 5 already gets elsewhere).
+// Detected as: a dangling single-note tail, closed only because the array ran out right after a
+// segment had already closed normally on the previous note.
 function segmentsEndAt1(fingers) {
   const groups = new Array(fingers.length);
   let segStart = 0;
   for (let i = 0; i < fingers.length; i++) {
-    if (fingers[i] === 1 || i === fingers.length - 1) {
+    const closedByThumb = fingers[i] === 1;
+    if (closedByThumb || i === fingers.length - 1) {
       const seg = fingers.slice(segStart, i + 1);
+      if (!closedByThumb && segStart > 0 && seg.length === 1) {
+        groups[segStart] = undefined; // dangling bookend note -- left uncolored
+        segStart = i + 1;
+        continue;
+      }
       const label = Math.max(...seg) >= 4 ? 'four' : 'three';
       for (let j = segStart; j <= i; j++) groups[j] = label;
       segStart = i + 1;
