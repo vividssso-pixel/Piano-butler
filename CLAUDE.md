@@ -33,6 +33,13 @@ At the start of any session, check:
 recommend sending it — it's a settled decision, not an oversight. `outreach-messages.md` stays
 in the repo as reference only.
 
+**Push hold note (2026-09-20):** 7 commits are sitting local-only right now (`d2f2946` button
+outline redesign through `a8c1130` F#/Gb scale-fingering fix) -- Sohyun explicitly asked to hold
+off on pushing ANY of them, including a partial push of just the design commit, until she's
+finished reviewing everything together. Do not suggest `git push origin d2f2946:main` or any
+other partial-push workaround unless she asks for one again -- the standing instruction right now
+is: wait for her, then she pushes everything in one go from her Terminal.
+
 Be specific and honest, not just reassuring. If something is stalling, say it's stalling — and
 say what the next concrete action is.
 
