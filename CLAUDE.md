@@ -2611,6 +2611,36 @@ ahead and resolve both.
 | 1 | `admin-search.html` hangs indefinitely on load | **Fixed** | Root cause: the password gate called `window.prompt()`, a native blocking browser dialog. A native dialog freezes the page's JS thread entirely until a human answers it, and isn't visible to browser-automation screenshots (they only capture the page's own rendered content, not native browser chrome). Reproduced live via Claude-in-Chrome: the page showed as an endless blank screen and the JS thread was fully frozen (even a trivial `1+1` eval timed out) -- this is almost certainly what Sohyun saw too, whether or not the native dialog was visibly registering for her. Fixed by replacing `window.prompt()` with a plain in-page HTML form (`#pbAdminGate`, a fixed full-screen overlay) that never blocks JS -- same password and `sessionStorage` key as before. Verified via Babel/`new Function()` syntax check, and via an isolated Playwright test of the extracted gate markup covering all 4 cases (fresh load never blocks JS; wrong password shows an inline error and doesn't crash; correct password removes the overlay, reveals the app, and sets `sessionStorage`; a returning session skips the gate instantly on reload). Committed as `b55d69e`, not pushed. |
 | 2 | `G5/data_g5.js` vs `G5/data_g5_1.js` | **Not a bug -- already self-documented** | Opening `data_g5.js` shows it already carries its own header: `"DEPRECATED -- This is an old skeleton file... Use data_g5_1.js (DATA_G5) as the authoritative Grade 5 Comprehensive data source... kept for reference only and is NOT used by any HTML page."` Confirmed via `grep` across every `.html` file that only `data_g5_1.js` is ever `<script>`-included -- `data_g5.js` is inert. Git history shows both files already existed at this repo's very first commit, so whatever the original reason for keeping the old skeleton was, it predates this project's tracked history and was a deliberate decision by someone (labeled "kept for reference," not an oversight). Left untouched -- did not delete or move it, since removing a file explicitly marked "kept for reference" without being asked crosses this project's standing rule against deleting data Claude didn't create itself. No code or data change made. |
 
+### Phase 93 Updates (2026-09-22 -- admin-counts.html rebuilt into Sohyun's piece-count dashboard)
+
+Sohyun wants a real working dashboard for tracking piece counts across syllabuses/editions as the
+catalogue grows (more exam boards, and older AMEB syllabus editions kept alongside 2026 since
+AMEB allows some older-syllabus pieces as exam "extra" selections even under the current
+syllabus). `admin-counts.html` already existed and is almost exactly this -- a per-syllabus,
+per-grade piece-count table with an Expected-vs-Actual check against this file's own targets --
+but it turned out to be completely unusable.
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Same `window.prompt()` hang as `admin-search.html` | `admin-counts.html` | Identical bug, identical fix: replaced with the same in-page `#pbAdminGate` HTML form. |
+| 2 | Dead second gate removed | `admin-counts.html` | Past the password gate, a `LoginGate` component required a Supabase login session and redirected to `login.html` if absent -- but `login.html` was deleted in an earlier cleanup, so this always redirected to a dead page. Removed `LoginGate` entirely (the password gate is this page's real access control) and the now-pointless unconditional `supabase.createClient()` call with it, which was also a latent crash risk: it threw if the Supabase CDN script was ever slow/blocked, for a client the page didn't even use anymore. |
+| 3 | Real data bug found while verifying: Grade 5 always showed 0 / MISSING | `admin-counts.html` | The code checked `typeof DATA_G5_1 !== "undefined"`, but `G5/data_g5_1.js` declares `const DATA_G5 = [...]` -- the `_1` is only in the filename, not the variable name. Every Grade 5 lookup silently fell through to an empty array. This exactly accounted for the dashboard's 168-piece gap from the true total (4,332 vs. 4,500 -- 168 is exactly G5's piece count). Fixed the variable name. |
+| 4 | Verification | -- | CDN libraries (unpkg/jsdelivr/Tailwind) aren't reachable from this sandbox, so real React/ReactDOM/Babel-standalone builds were pulled from the npm registry and used to run a full Playwright test against a local copy with all real grade/syllabus data files staged in -- not just a syntax check. Confirmed: fresh load never blocks JS; wrong password shows an inline error and stays gated; correct password actually mounts the React dashboard (checked via real rendered DOM content, not raw script text); no redirect to the dead `login.html`; and after the Grade 5 fix, Grand Total reads exactly 4,500 with 0 MISSING rows, matching every row of the page's own Expected-vs-Actual table. |
+| 5 | Committed, not pushed | `62ac7d9` | Ready for Sohyun to push from her Terminal. |
+
+**Roadmap discussion, not yet built:** Sohyun is considering adding other exam boards (RCM, LCM,
+etc. -- looked at pianosyllabus.com as a reference, which covers ~14 boards, tracks multiple
+syllabus editions per board, and cross-references the same piece's grade across boards) and older
+AMEB syllabus editions alongside 2026. Advised: new boards fit the current architecture cleanly
+(same pattern as AMEB/ABRSM/Trinity coexisting today) and are lower-risk to add; older editions
+are lower priority to consider carefully first since (a) the Reference-Integrity verification
+burden scales with data volume and this project has already hit real data-accuracy issues at the
+current size, and (b) meaningfully cross-referencing "same piece, different board/edition" (the
+part of pianosyllabus.com that's actually valuable, not just row count) would need a canonical
+piece-identity field (e.g. a catalog number like BWV/Op.) that the current schema doesn't have --
+worth adding deliberately if/when this expansion happens, rather than bolting on after the fact.
+No schema or data changes made yet; this is queued for whenever Sohyun decides the concrete scope.
+
 
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
