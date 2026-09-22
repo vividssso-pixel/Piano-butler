@@ -2601,13 +2601,16 @@ pieces too ("이거 클릭했는데 상관없는 유투브 뜨고 이런것도 �
 | 3 | Verification | -- | Babel `transformSync` (`preset-react`, `runtime:'classic'`) + `new Function()` syntax check passed on the full `app-jsx` block. Live-verified via Claude-in-Chrome, replicating the app's exact query logic in-page against the real YouTube API for two cases: the reported bad case ("Sky dive samba" -> now correctly returns no match, previously showed the Ed Sheeran clip) and a well-known piece ("Chopin Nocturne Op.9 No.2" -> still correctly matches the right video, confirming the fix doesn't break legitimate matches). |
 | 4 | Committed, not pushed | `6659b7e` | Ready for Sohyun to push from her Terminal. |
 
-**Not yet investigated/reported in depth this session (flagged, not acted on):**
-- `admin-search.html` hung indefinitely when opened directly in a browser while investigating an
-  unrelated report -- not root-caused yet.
-- `G5/data_g5.js` vs `G5/data_g5_1.js`: two files both declaring `const DATA_G5`, only ~36%
-  of entries overlap, and only `data_g5_1.js` is actually `<script>`-included anywhere. The other
-  file sits unused in the repo -- worth understanding why it exists before deciding whether to
-  remove or reconcile it.
+### Phase 92 Updates (2026-09-22 -- admin-search.html hang, G5 data-file question)
+
+Follow-up on the two items flagged (not yet acted on) at the end of Phase 91. Sohyun said to go
+ahead and resolve both.
+
+| # | Item | Resolution | Detail |
+|---|------|-----------|--------|
+| 1 | `admin-search.html` hangs indefinitely on load | **Fixed** | Root cause: the password gate called `window.prompt()`, a native blocking browser dialog. A native dialog freezes the page's JS thread entirely until a human answers it, and isn't visible to browser-automation screenshots (they only capture the page's own rendered content, not native browser chrome). Reproduced live via Claude-in-Chrome: the page showed as an endless blank screen and the JS thread was fully frozen (even a trivial `1+1` eval timed out) -- this is almost certainly what Sohyun saw too, whether or not the native dialog was visibly registering for her. Fixed by replacing `window.prompt()` with a plain in-page HTML form (`#pbAdminGate`, a fixed full-screen overlay) that never blocks JS -- same password and `sessionStorage` key as before. Verified via Babel/`new Function()` syntax check, and via an isolated Playwright test of the extracted gate markup covering all 4 cases (fresh load never blocks JS; wrong password shows an inline error and doesn't crash; correct password removes the overlay, reveals the app, and sets `sessionStorage`; a returning session skips the gate instantly on reload). Committed as `b55d69e`, not pushed. |
+| 2 | `G5/data_g5.js` vs `G5/data_g5_1.js` | **Not a bug -- already self-documented** | Opening `data_g5.js` shows it already carries its own header: `"DEPRECATED -- This is an old skeleton file... Use data_g5_1.js (DATA_G5) as the authoritative Grade 5 Comprehensive data source... kept for reference only and is NOT used by any HTML page."` Confirmed via `grep` across every `.html` file that only `data_g5_1.js` is ever `<script>`-included -- `data_g5.js` is inert. Git history shows both files already existed at this repo's very first commit, so whatever the original reason for keeping the old skeleton was, it predates this project's tracked history and was a deliberate decision by someone (labeled "kept for reference," not an oversight). Left untouched -- did not delete or move it, since removing a file explicitly marked "kept for reference" without being asked crosses this project's standing rule against deleting data Claude didn't create itself. No code or data change made. |
+
 
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
