@@ -11,21 +11,14 @@
     // Added 2026-09-14: this page previously had no access control at all beyond
     // robots.txt/noindex — anyone with the direct URL could view it. Same shared
     // password as admin-search.html.
-    (function() {
-        var PW_KEY = "pb_admin_auth_v2";
-        var PASSWORD = "ButlerKeys-2026!";
-        try {
-            if (sessionStorage.getItem(PW_KEY) === "ok") return;
-        } catch (e) {}
-        var entered = window.prompt("Piano Butler Admin — enter password:");
-        if (entered === PASSWORD) {
-            try { sessionStorage.setItem(PW_KEY, "ok"); } catch (e) {}
-        } else {
-            document.documentElement.innerHTML = "";
-            window.location.href = "index.html";
-            window.stop();
-        }
-    })();
+    //
+    // Rewritten 2026-09-22 (same fix as admin-search.html, see its own comment for the
+    // full story): this used to call window.prompt(), a native blocking browser dialog
+    // that freezes the JS thread until answered and is invisible to automated screenshots
+    // -- from the outside this page looked like it just hung forever loading. Replaced
+    // with a plain in-page HTML form (#pbAdminGate) that never blocks JS.
+    window.__PB_ADMIN_PW_KEY = "pb_admin_auth_v2";
+    window.__PB_ADMIN_PASSWORD = "ButlerKeys-2026!";
   </script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -89,14 +82,53 @@
   </style>
 </head>
 <body>
+
+<div id="pbAdminGate" style="position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;background:#f8edd4;font-family:system-ui,-apple-system,sans-serif;">
+    <form id="pbAdminGateForm" style="background:#fff;border:1px solid #e8dcc0;border-radius:12px;padding:32px;max-width:340px;width:calc(100% - 32px);box-shadow:0 2px 12px rgba(36,31,26,0.08);">
+        <h1 style="font-size:16px;margin:0 0 16px;color:#241f1a;">Piano Butler Admin</h1>
+        <input id="pbAdminGateInput" type="password" placeholder="Enter password" autocomplete="off"
+            style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #e8dcc0;border-radius:8px;font-size:14px;margin-bottom:12px;" />
+        <div id="pbAdminGateError" style="display:none;color:#c00;font-size:12px;margin-bottom:12px;">Incorrect password.</div>
+        <button type="submit" style="width:100%;padding:10px;background:#241f1a;color:#f8edd4;border:none;border-radius:8px;font-size:14px;cursor:pointer;">Enter</button>
+    </form>
+</div>
+<script>
+(function() {
+    var overlay = document.getElementById('pbAdminGate');
+    try {
+        if (sessionStorage.getItem(window.__PB_ADMIN_PW_KEY) === "ok") {
+            overlay.remove();
+            return;
+        }
+    } catch (e) {}
+    document.getElementById('pbAdminGateInput').focus();
+    document.getElementById('pbAdminGateForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        var entered = document.getElementById('pbAdminGateInput').value;
+        if (entered === window.__PB_ADMIN_PASSWORD) {
+            try { sessionStorage.setItem(window.__PB_ADMIN_PW_KEY, "ok"); } catch (e) {}
+            overlay.remove();
+        } else {
+            document.getElementById('pbAdminGateError').style.display = 'block';
+            document.getElementById('pbAdminGateInput').value = '';
+            document.getElementById('pbAdminGateInput').focus();
+        }
+    });
+})();
+</script>
+
 <div id="root"></div>
 
 <script type="text/babel">
-const { useState, useMemo, useEffect } = React;
-
-const SUPABASE_URL  = "https://icefqxaccclwasnfzgnp.supabase.co";
-const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImljZWZxeGFjY2Nsd2FzbmZ6Z25wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwNjgzMTgsImV4cCI6MjA5MjY0NDMxOH0.lZ8BO_L8iOtET8RtUuk9trkf9bQbLqR8K6rKEfPtmtQ";
-const _sbCounts = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+const { useState, useMemo } = React;
+// Note (2026-09-22): this page no longer uses Supabase at all -- it used to gate
+// itself behind a Supabase login session (see the removed LoginGate below the
+// Dashboard component), which is gone now that the password gate above is the
+// only access control. Removing the unconditional supabase.createClient() call
+// also removes a real crash risk: it threw if the Supabase CDN script was ever
+// slow/blocked, taking down the whole dashboard for a dependency the page didn't
+// even use. The <script src=".../supabase-js...">` tag in <head> can go too next
+// time this file is touched -- left for now to keep this diff focused.
 
 // ── Data catalogue ──────────────────────────────────────────────────────────
 const AMEB_COMP = [
@@ -105,7 +137,7 @@ const AMEB_COMP = [
   { label:"Grade 2",     data: typeof DATA_G2          !=="undefined" ? DATA_G2          : [] },
   { label:"Grade 3",     data: typeof DATA_G3          !=="undefined" ? DATA_G3          : [] },
   { label:"Grade 4",     data: typeof DATA_G4          !=="undefined" ? DATA_G4          : [] },
-  { label:"Grade 5",     data: typeof DATA_G5_1        !=="undefined" ? DATA_G5_1        : [] },
+  { label:"Grade 5",     data: typeof DATA_G5          !=="undefined" ? DATA_G5          : [] },
   { label:"Grade 6",     data: typeof DATA_G6          !=="undefined" ? DATA_G6          : [] },
   { label:"Grade 7",     data: typeof DATA_G7          !=="undefined" ? DATA_G7          : [] },
   { label:"Grade 8",     data: typeof DATA_G8          !=="undefined" ? DATA_G8          : [] },
@@ -323,28 +355,14 @@ function Dashboard() {
   );
 }
 
-function LoginGate() {
-  const [status, setStatus] = useState('checking'); // 'checking' | 'ok' | 'redirect'
-
-  useEffect(() => {
-    _sbCounts.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setStatus('ok');
-      } else {
-        window.location.href = 'login.html?next=admin-counts.html';
-      }
-    });
-  }, []);
-
-  if (status === 'checking') return (
-    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',color:'#555',fontSize:13}}>
-      Checking session…
-    </div>
-  );
-  return <Dashboard />;
-}
-
-ReactDOM.createRoot(document.getElementById('root')).render(<LoginGate />);
+// Note (2026-09-22): this used to gate the dashboard behind a second, separate
+// Supabase-session check (LoginGate) that redirected to login.html on no session.
+// login.html was deleted in an earlier cleanup pass, so that redirect went to a
+// dead page -- on top of the password-gate bug above, this page had two separate
+// ways to become totally unreachable. The password gate above is this page's
+// actual access control (same as admin-search.html); this extra login layer was
+// redundant, so it's removed and the dashboard renders directly.
+ReactDOM.createRoot(document.getElementById('root')).render(<Dashboard />);
 </script>
 </body>
 </html>
