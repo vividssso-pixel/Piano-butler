@@ -2641,6 +2641,15 @@ piece-identity field (e.g. a catalog number like BWV/Op.) that the current schem
 worth adding deliberately if/when this expansion happens, rather than bolting on after the fact.
 No schema or data changes made yet; this is queued for whenever Sohyun decides the concrete scope.
 
+**Follow-up same day:** Sohyun spotted "AMEB Leisure 705 != 706" on the live dashboard right after
+this shipped. Checked -- the data (705) was already correct; the dashboard's own hardcoded target
+was stale. Phase 33 (2026-05-15) had legitimately fixed a real duplicate (BEETHOVEN's Andante in
+both S4 and S1 of G8 Leisure, PDF confirmed S4 only) and dropped the true count 706->705, but this
+dashboard's comparison target was never updated to match at the time. Fixed the target to 705 with
+a code comment explaining the history, committed as `4cb8ea3`, not pushed. Lesson for next time a
+mismatch shows up here: check whether the *data* is wrong or whether it's the *target* that's
+stale -- this file has now had one of each.
+
 
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
