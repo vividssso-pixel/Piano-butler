@@ -33,12 +33,12 @@ At the start of any session, check:
 recommend sending it — it's a settled decision, not an oversight. `outreach-messages.md` stays
 in the repo as reference only.
 
-**Push hold note (2026-09-20):** 7 commits are sitting local-only right now (`d2f2946` button
-outline redesign through `a8c1130` F#/Gb scale-fingering fix) -- Sohyun explicitly asked to hold
-off on pushing ANY of them, including a partial push of just the design commit, until she's
-finished reviewing everything together. Do not suggest `git push origin d2f2946:main` or any
-other partial-push workaround unless she asks for one again -- the standing instruction right now
-is: wait for her, then she pushes everything in one go from her Terminal.
+**Push hold note -- resolved (2026-09-22):** the 2026-09-20 hold is over. Sohyun renewed her
+expired GitHub token and pushed everything in one go on 2026-09-22 (`0492fb4..f3349cb`), including
+the button/design commits that were held back. There is no standing push hold right now -- go back
+to the normal rule: commit locally as usual, never `git push` (that's still always Sohyun's call
+from her own Terminal), and just mention once per session if there's anything committed but
+unpushed.
 
 Be specific and honest, not just reassuring. If something is stalling, say it's stalling — and
 say what the next concrete action is.
@@ -2586,6 +2586,31 @@ before shipping, scoped to just this one sub-task.
 | 7 | Removed per-entry "Source: ..." UI text | `drills.html` | Sohyun asked for the citation footer removed from the live view (kept only as code comments for internal tracking, since Reference Integrity still matters for future edits -- just not shown to her while she's reviewing quickly). |
 | 8 | Verification | — | Babel parse + full-compile check (`@babel/parser` + `@babel/core transformSync`, `preset-react`, `runtime:'classic'`, then `new Function()`) on both `drills.html` and its mirrored Artifact-tool copy -- 0 errors both times. Playwright screenshots in headless Chromium of F# major (1-octave and 2-octave, both hands) confirmed the corrected RH/LH sequences render exactly as Sohyun specified, digit for digit. The device file was re-staged after being written and MD5-diffed against the already-verified working copy (`d5e9f5a664db3cc5f3f17a6da884ffc0`) to confirm an exact match before committing, per this project's standing lesson about trusting a staging copy over the real device file. |
 | 9 | Committed, not pushed | `cbf9e3b` | Ready for Sohyun to push from her Terminal. |
+
+### Phase 91 Updates (2026-09-22 -- YouTube "Listen" button relevance fix)
+
+Sohyun flagged (with a screenshot) that clicking "Listen" on the AMEB Grade 7 Manual-list piece
+"Sky dive samba" (R. KEANE) played a completely unrelated YouTube Shorts clip (an Ed Sheeran/Lewis
+Capaldi friendship video from Warner Music Canada), and noted this happens occasionally on other
+pieces too ("이거 클릭했는데 상관없는 유투브 뜨고 이런것도 간혹 있더라구").
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Root cause confirmed | `index.html` (`useVideoModal`) | The Listen button did a live YouTube Data API v3 search (`composer surname + title + "piano"`) and blindly embedded the #1 raw result with `maxResults=1` and zero relevance checking. Reproduced live via Claude-in-Chrome on the real site, then replicated the exact API call in-page (to use the referrer-restricted key) with `maxResults=5`: for "Sky dive samba" the top 3 real results are all genuinely unrelated content -- this is a YouTube search-relevance failure for obscure/niche pieces, not a data or logic bug elsewhere in the app. |
+| 2 | Fix: keyword-overlap relevance filter | `index.html` (`useVideoModal`, new `ytKeywords`/`pickBestYtMatch` helpers) | Now fetches the top 5 candidates instead of 1. Each candidate's YouTube title is scored against the piece's own title (stopword-filtered keyword overlap, e.g. "sky"/"dive"/"samba") plus a small bonus for composer-surname match. A candidate is only accepted if it clears roughly 50% keyword overlap with the piece title; otherwise the modal falls back to the existing "No video found" state instead of embedding a wrong video. |
+| 3 | Verification | -- | Babel `transformSync` (`preset-react`, `runtime:'classic'`) + `new Function()` syntax check passed on the full `app-jsx` block. Live-verified via Claude-in-Chrome, replicating the app's exact query logic in-page against the real YouTube API for two cases: the reported bad case ("Sky dive samba" -> now correctly returns no match, previously showed the Ed Sheeran clip) and a well-known piece ("Chopin Nocturne Op.9 No.2" -> still correctly matches the right video, confirming the fix doesn't break legitimate matches). |
+| 4 | Committed, not pushed | `6659b7e` | Ready for Sohyun to push from her Terminal. |
+
+### Phase 92 Updates (2026-09-22 -- admin-search.html hang, G5 data-file question)
+
+Follow-up on the two items flagged (not yet acted on) at the end of Phase 91. Sohyun said to go
+ahead and resolve both.
+
+| # | Item | Resolution | Detail |
+|---|------|-----------|--------|
+| 1 | `admin-search.html` hangs indefinitely on load | **Fixed** | Root cause: the password gate called `window.prompt()`, a native blocking browser dialog. A native dialog freezes the page's JS thread entirely until a human answers it, and isn't visible to browser-automation screenshots (they only capture the page's own rendered content, not native browser chrome). Reproduced live via Claude-in-Chrome: the page showed as an endless blank screen and the JS thread was fully frozen (even a trivial `1+1` eval timed out) -- this is almost certainly what Sohyun saw too, whether or not the native dialog was visibly registering for her. Fixed by replacing `window.prompt()` with a plain in-page HTML form (`#pbAdminGate`, a fixed full-screen overlay) that never blocks JS -- same password and `sessionStorage` key as before. Verified via Babel/`new Function()` syntax check, and via an isolated Playwright test of the extracted gate markup covering all 4 cases (fresh load never blocks JS; wrong password shows an inline error and doesn't crash; correct password removes the overlay, reveals the app, and sets `sessionStorage`; a returning session skips the gate instantly on reload). Committed as `b55d69e`, not pushed. |
+| 2 | `G5/data_g5.js` vs `G5/data_g5_1.js` | **Not a bug -- already self-documented** | Opening `data_g5.js` shows it already carries its own header: `"DEPRECATED -- This is an old skeleton file... Use data_g5_1.js (DATA_G5) as the authoritative Grade 5 Comprehensive data source... kept for reference only and is NOT used by any HTML page."` Confirmed via `grep` across every `.html` file that only `data_g5_1.js` is ever `<script>`-included -- `data_g5.js` is inert. Git history shows both files already existed at this repo's very first commit, so whatever the original reason for keeping the old skeleton was, it predates this project's tracked history and was a deliberate decision by someone (labeled "kept for reference," not an oversight). Left untouched -- did not delete or move it, since removing a file explicitly marked "kept for reference" without being asked crosses this project's standing rule against deleting data Claude didn't create itself. No code or data change made. |
+
 
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)

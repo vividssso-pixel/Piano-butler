@@ -274,16 +274,49 @@ const { useState, useMemo, useEffect, useCallback, useRef } = React;
 
 // ── YouTube modal ────────────────────────────────────────────────────────────
 const YT_API_KEY = "AIzaSyAUydn17tJCoduix-iv7f7bKfXweIrR6Mg";
+const YT_STOPWORDS = new Set(['the','and','of','in','a','an','to','for','on','no','op','with','from','arr','major','minor','op.']);
+
+function ytKeywords(title) {
+    return (title || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .split(/\s+/)
+        .filter(w => w.length >= 3 && !YT_STOPWORDS.has(w));
+}
+
+function pickBestYtMatch(items, title, composerSurname) {
+    const titleWords = ytKeywords(title);
+    const surname = (composerSurname || '').toLowerCase();
+    let best = null;
+    let bestScore = -1;
+    for (const item of items) {
+        const candidateTitle = (item.snippet.title || '').toLowerCase();
+        let matched = 0;
+        titleWords.forEach(w => { if (candidateTitle.includes(w)) matched++; });
+        const composerMatch = surname.length >= 3 && candidateTitle.includes(surname);
+        const ratio = titleWords.length ? matched / titleWords.length : 0;
+        // Require meaningful overlap with the piece title, not just the composer's
+        // surname alone (a bare surname match is too weak on its own -- common
+        // surnames turn up unrelated videos), so composerMatch only adds a bonus.
+        const passes = ratio >= 0.5 || (titleWords.length <= 1 && matched >= 1);
+        if (!passes) continue;
+        const score = matched * 10 + (composerMatch ? 1 : 0);
+        if (score > bestScore) { bestScore = score; best = item; }
+    }
+    return best;
+}
 
 function useVideoModal() {
     const [modal, setModal] = useState(null);
     const open = useCallback(async (composer, title) => {
         setModal({ loading: true, title });
         try {
-            const q = encodeURIComponent(composer.split(',')[0].trim() + ' ' + title + ' piano');
-            const res = await fetch('https://www.googleapis.com/youtube/v3/search?part=snippet&q=' + q + '&type=video&maxResults=1&key=' + YT_API_KEY);
+            const surname = composer.split(',')[0].trim();
+            const q = encodeURIComponent(surname + ' ' + title + ' piano');
+            const res = await fetch('https://www.googleapis.com/youtube/v3/search?part=snippet&q=' + q + '&type=video&maxResults=5&key=' + YT_API_KEY);
             const data = await res.json();
-            const item = data.items && data.items[0];
+            const items = data.items || [];
+            const item = pickBestYtMatch(items, title, surname);
             if (item) setModal({ videoId: item.id.videoId, title: item.snippet.title });
             else setModal({ error: true, title });
         } catch(e) { setModal({ error: true, title }); }
