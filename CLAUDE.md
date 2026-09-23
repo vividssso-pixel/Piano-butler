@@ -2763,6 +2763,30 @@ for grade placement when building them.
 | 5 | Verification | -- | Babel 0 errors; Node pattern/offset check; Playwright on the exact device file (MD5 matched): grouped chips, explorer E→F = 1 semitone, all Tones levels answer, L7 A major and L8 E harmonic minor built correctly = Correct, a wrong second key ends with the full scale shown, zero page errors. |
 | 6 | Committed, not pushed | see git log | |
 
+### Phase 100 Updates (2026-09-23 -- full basics curriculum plan, Time Signatures chapter)
+
+Sohyun: this can be both a curriculum and a site of moving, fun music teaching tools -- put in all
+the basics, decide the order (keyboard first or staff first), and add topics one at a time
+starting with time signatures.
+
+**Decided order (three tracks, shown grouped in the picker):**
+- **Pitch** -- keyboard first (hands-on, instant), then the staff tied straight back to the
+  keyboard: 1 Note Names ✓ → 2 **Reading the Staff** (treble/bass clef, lines & spaces, landmark
+  notes, ledger lines, grand staff ↔ keyboard) -- the biggest remaining gap → 3 Tones & Semitones ✓
+  → 4 Scales ✓ → 5 Key Signatures ✓ → 6 Intervals → 7 Chords (numerals + letters).
+- **Rhythm** -- 1 Notes & Rests ✓ → 2 Time Signatures ✓ (this phase) → 3 Rhythm Cards ✓ (later:
+  3/4 and 6/8 cards) → ties, dots, triplets as they come up.
+- **Reading the music** -- 1 Tempo Race ✓ → Dynamics (pp–ff, cresc./dim.) → Articulation
+  (staccato, legato, accent, tenuto) → Signs (repeats, D.C./D.S./Fine, fermata, 8va).
+Build next in this order: Reading the Staff, Dynamics & Articulation, Signs, Intervals, Chords.
+Check the AMEB theory syllabus for grade placement when building Intervals/Chords.
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Time Signatures chapter | `drills.html` (`TIME_SIGS`, `TSig`, `playTimeSig`, `fillBar`, `TIMESIG_DRILL`) | Learn: top number = beats per bar, bottom = beat note (4 crotchet, 2 minim, 8 quaver); simple 2/4 3/4 4/4 2/2 3/8 and compound 6/8 9/8 12/8, each with "N × beat glyph", a one-line use, and tap-to-hear with the strong beat accented. Drill: L1 meaning, L2 which signature fits a drawn bar (only one of 2/4 3/4 4/4 3/8 fits; dotted quavers left out for readable bars), L3 listen 2/3/4 beats, L4 how many beats you feel (6/8 → 2). |
+| 2 | Picker in three tracks | `drills.html` (`DRILLS` `track`) | Pitch / Rhythm / Reading the music, numbered within each. |
+| 3 | Verification | -- | Babel 0 errors; 400 rounds per level: answer always present, no duplicate choices, "fits" bars sum exactly and only one signature fits; Playwright on the exact device file: groups render, Learn tap-to-hear, all 4 levels answer; zero page errors. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
