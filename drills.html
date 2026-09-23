@@ -107,6 +107,7 @@
     @keyframes blink { 50% { opacity: 0.35; } }
     .blink { animation: blink 1s steps(1) infinite; }
 
+    @keyframes drawArc { to { stroke-dashoffset: 0; } }
     @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
     .fade-up { animation: fadeUp 0.18s ease both; }
   </style>
@@ -1045,7 +1046,7 @@ const GROUP_TINT = { two: '#f3ead8', three: '#e3ebe0' };
 
 // Tappable keyboard. Key index i = octave*12 + pc, starting on C.
 // marks: { [i]: 'target'|'good'|'bad' }, labels: null | 'white' | 'all', tint: shade C-D-E / F-G-A-B groups.
-function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, pixel = false }) {
+function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, pixel = false, names = null }) {
   const whiteW = 36, whiteH = 132, blackW = 22, blackH = 82;
   const whites = [], blacks = [];
   let w = 0;
@@ -1065,9 +1066,13 @@ function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, 
         const fill = m ? m.white : (tint ? GROUP_TINT[whiteGroup(k.info.pc)] : '#fff');
         return (
           <g key={k.i} onClick={tap(k.i)} style={{cursor:onTap?'pointer':'default'}} data-key={k.i}>
-            <rect x={k.x} y="0" width={whiteW} height={whiteH} fill={fill}
+            <rect x={k.x} y="0" width={whiteW} height={whiteH} fill={fill} style={{transition:'fill 0.25s'}}
               stroke={m ? m.stroke : (pixel ? '#241f1a' : '#d9cdb0')} strokeWidth={m ? 2.5 : (pixel ? 2 : 1)}
               rx={pixel ? 0 : 3}/>
+            {names && names[k.i] && (
+              <text x={k.x + whiteW / 2} y={whiteH - 12} textAnchor="middle" fontSize="15" fontWeight="900"
+                fill={m ? m.stroke : '#241f1a'} style={{pointerEvents:'none',animation:'fadeUp 0.3s both'}}>{names[k.i]}</text>
+            )}
             {labels && (
               <text x={k.x + whiteW / 2} y={whiteH - 12} textAnchor="middle" fontSize="13" fontWeight="800"
                 fill={m ? m.stroke : '#6f665b'} style={{pointerEvents:'none'}}>{k.info.names[0]}</text>
@@ -1174,6 +1179,217 @@ function NoteNameQuestion({ q, level, given, locked, onAnswer, pixel }) {
   );
 }
 
+// ─── Note Names: hands-on activities (Phase 104) ─────────────────────────────────
+// Same idea as the key-signature round: every rule gets something to tap and watch.
+function playKey(i, len = 0.35) {
+  const ctx = getAudio(); if (!ctx) return;
+  blip(ctx, ctx.currentTime + 0.01, 440 * Math.pow(2, (60 + i - 69) / 12), len, 0.18, 'triangle');
+}
+// x-centre of key i in TapKeyboard's coordinates (white 36 wide, black centred on the white-key boundary).
+function keyCenterX(i) {
+  const oct = Math.floor(i / 12), pc = i % 12;
+  const whitesBefore = oct * 7 + PC_INFO.slice(0, pc).filter(p => p.white).length;
+  return PC_INFO[pc].white ? whitesBefore * 36 + 18 : whitesBefore * 36;
+}
+const actBox = { background:'var(--brass-bg)', borderRadius:10, padding:'10px', margin:'6px 0 16px' };
+const actTitle = { fontSize:14, fontWeight:800 };
+const actNote = { fontSize:12, color:'#6f665b', lineHeight:1.5, margin:'2px 0 8px' };
+
+// 1. Find every C (or any letter) on three octaves, against the clock.
+function FindAll() {
+  const [letter, setLetter] = useState('C');
+  const [found, setFound] = useState([]);
+  const [bad, setBad] = useState(null);
+  const [t0, setT0] = useState(null);
+  const [time, setTime] = useState(null);
+  const [best, setBest] = useState(() => { try { return JSON.parse(localStorage.getItem('pb_findall_v1')) || {}; } catch (e) { return {}; } });
+  const OCT = 3;
+  const pc = letterPc(letter);
+  const targets = Array.from({ length: OCT }, (_, o) => o * 12 + pc);
+  const done = found.length === targets.length;
+  function reset(l) { setLetter(l); setFound([]); setBad(null); setT0(null); setTime(null); }
+  function tap(i) {
+    if (done) return;
+    const start = t0 || Date.now(); if (!t0) setT0(start);
+    if (i % 12 === pc && !found.includes(i)) {
+      playKey(i);
+      const f = [...found, i]; setFound(f);
+      if (f.length === targets.length) {
+        const s = (Date.now() - start) / 1000; setTime(s);
+        if (!best[letter] || s < best[letter]) { const b = { ...best, [letter]: s }; setBest(b); try { localStorage.setItem('pb_findall_v1', JSON.stringify(b)); } catch (e) {} }
+      }
+    } else if (i % 12 !== pc) { setBad(i); setTimeout(() => setBad(b => (b === i ? null : b)), 500); }
+  }
+  const marks = {}; found.forEach(i => { marks[i] = 'good'; }); if (bad !== null) marks[bad] = 'bad';
+  const where = { C: 'just left of the 2 black keys', D: 'between the 2 black keys', E: 'just right of the 2 black keys',
+    F: 'just left of the 3 black keys', G: 'between the 1st and 2nd of the 3', A: 'between the 2nd and 3rd of the 3', B: 'just right of the 3 black keys' }[letter];
+  return (
+    <div style={actBox}>
+      <div style={actTitle}>Find every {letter}</div>
+      <div style={actNote}>Tap all three {letter}s as fast as you can. Look for the black-key groups, not the letters.</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:8}}>
+        {['C', 'D', 'E', 'F', 'G', 'A', 'B'].map(l => <button key={l} className={'chip' + (l === letter ? ' active' : '')} style={{padding:'3px 11px',fontSize:13}} onClick={() => reset(l)}>{l}</button>)}
+      </div>
+      <TapKeyboard octaves={OCT} marks={marks} onTap={tap} tint={done}/>
+      <div style={{textAlign:'center',fontSize:13,fontWeight:800,marginTop:8,minHeight:40}}>
+        {done
+          ? <><span style={{color:'#4f7a45'}}>All {targets.length} in {time.toFixed(1)} s</span>{best[letter] === time ? ' -- new best!' : ' (best ' + best[letter].toFixed(1) + ' s)'}
+              <div style={{fontSize:12,fontWeight:600,color:'#6f665b'}}>Every {letter} sits {where}.</div>
+              <button className="ghost-btn" style={{marginTop:6}} onClick={() => reset(letter)}>Again</button></>
+          : <>{found.length} of {targets.length} found{best[letter] ? <span style={{color:'var(--muted)',fontWeight:600}}> · best {best[letter].toFixed(1)} s</span> : null}</>}
+      </div>
+    </div>
+  );
+}
+
+// 2. Watch the names land on the keys one by one -- and see the letters restart after G.
+function NameReveal() {
+  const OCT = 2;
+  const whites = []; for (let i = 0; i < OCT * 12; i++) if (PC_INFO[i % 12].white) whites.push(i);
+  const [n, setN] = useState(0);
+  const [auto, setAuto] = useState(false);
+  useEffect(() => {
+    if (!auto) return;
+    if (n >= whites.length) { setAuto(false); return; }
+    const t = setTimeout(() => { playKey(whites[n], 0.25); setN(x => x + 1); }, n === 0 ? 150 : 520);
+    return () => clearTimeout(t);
+  }, [auto, n]);
+  const names = {}; whites.slice(0, n).forEach(i => { names[i] = PC_INFO[i % 12].names[0]; });
+  const marks = {}; if (n) marks[whites[n - 1]] = 'target';
+  const last = n ? PC_INFO[whites[n - 1] % 12].names[0] : null;
+  const seq = whites.slice(0, n).map(i => PC_INFO[i % 12].names[0]);
+  return (
+    <div style={actBox}>
+      <div style={actTitle}>Name them in order</div>
+      <div style={actNote}>Only seven letters, A to G. Watch what happens after G.</div>
+      <TapKeyboard octaves={OCT} marks={marks} names={names} onTap={(i) => { playKey(i); if (PC_INFO[i % 12].white) { const k = whites.indexOf(i); setAuto(false); setN(Math.max(n, k + 1)); } }}/>
+      <div style={{textAlign:'center',fontSize:15,fontWeight:900,letterSpacing:'0.12em',margin:'8px 0 2px',minHeight:22}}>
+        {seq.map((l, j) => <span key={j} style={{color:l === 'A' ? '#b5483b' : 'var(--text)'}}>{l}</span>)}
+      </div>
+      <div style={{textAlign:'center',fontSize:12,fontWeight:700,color:'#b5483b',minHeight:18}}>
+        {last === 'A' ? 'After G the letters start again at A!' : last === 'C' && n > 1 ? 'Another C -- same place, one octave higher.' : ''}
+      </div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:6}}>
+        <button className="ghost-btn" onClick={() => { setN(0); setAuto(true); }}>▶ Play</button>
+        <button className="ghost-btn" disabled={n >= whites.length} onClick={() => { setAuto(false); playKey(whites[n], 0.25); setN(n + 1); }}>+ Next key</button>
+        <button className="ghost-btn" disabled={!n} onClick={() => { setAuto(false); setN(0); }}>Clear</button>
+      </div>
+    </div>
+  );
+}
+
+// 3. Sharp = one key right, flat = one key left. Pick a key, then push it.
+function SharpFlatMover() {
+  const OCT = 2;
+  const [from, setFrom] = useState(2); // D
+  const [dir, setDir] = useState(null); // 1 sharp, -1 flat
+  const [nonce, setNonce] = useState(0);
+  const to = dir ? from + dir : null;
+  const valid = to !== null && to >= 0 && to < OCT * 12;
+  const base = PC_INFO[from % 12];
+  const baseName = base.white ? base.names[0] : null;
+  function push(d) {
+    if (!base.white) return;
+    setDir(d); setNonce(x => x + 1);
+    const t = from + d; if (t >= 0 && t < OCT * 12) setTimeout(() => playKey(t), 350);
+  }
+  const marks = { [from]: 'target' }; if (valid) marks[to] = 'good';
+  const W = OCT * 7 * 36;
+  const x1 = keyCenterX(from), x2 = valid ? keyCenterX(to) : x1;
+  let msg = 'Tap a white key, then push it up or down.';
+  if (!base.white) msg = 'Pick a white key to start from.';
+  else if (dir && !valid) msg = 'Off the end of this keyboard -- pick another key.';
+  else if (dir) {
+    const name = baseName + (dir > 0 ? '♯' : '♭');
+    const land = PC_INFO[to % 12];
+    msg = land.white
+      ? <><b>{name}</b> lands on a <b>white</b> key -- it sounds the same as <b>{land.names[0]}</b>. No black key between {dir > 0 ? baseName + ' and ' + land.names[0] : land.names[0] + ' and ' + baseName}!</>
+      : <><b>{name}</b> = the black key just to the {dir > 0 ? 'right' : 'left'}. Its other name: <b>{pcLabel(to % 12).split(' / ').find(x => x !== name)}</b>.</>;
+  }
+  return (
+    <div style={actBox}>
+      <div style={actTitle}>Push a key: sharp or flat</div>
+      <div style={actNote}>Sharp (♯) moves one key to the <b>right</b> (higher). Flat (♭) moves one key to the <b>left</b> (lower). Try E and B too.</div>
+      <svg viewBox={`-1 0 ${W + 2} 30`} style={{width:'100%',display:'block'}}>
+        {valid && dir && (
+          <g key={nonce}>
+            <path d={`M${x1},26 Q${(x1 + x2) / 2},${-2} ${x2},26`} fill="none" stroke="#4f7a45" strokeWidth="2.5" strokeLinecap="round"
+              strokeDasharray="120" strokeDashoffset="120" style={{animation:'drawArc 0.45s ease-out forwards'}}/>
+            <text x={(x1 + x2) / 2} y="10" textAnchor="middle" fontSize="13" fontWeight="900" fill="#4f7a45" style={{animation:'fadeUp 0.4s both 0.3s'}}>{dir > 0 ? '♯' : '♭'}</text>
+          </g>
+        )}
+      </svg>
+      <TapKeyboard octaves={OCT} marks={marks} labels="white" onTap={(i) => { playKey(i); setFrom(i); setDir(null); }}/>
+      <div style={{display:'flex',gap:6,justifyContent:'center',margin:'8px 0 4px'}}>
+        <button className="ghost-btn" disabled={!base.white} onClick={() => push(-1)}>← ♭ flat</button>
+        <button className="ghost-btn" disabled={!base.white} onClick={() => push(1)}>sharp ♯ →</button>
+      </div>
+      <div style={{textAlign:'center',fontSize:13,lineHeight:1.5,minHeight:40}}>{msg}</div>
+    </div>
+  );
+}
+
+// 4. Hop round the letter circle: count the start as 1.
+function LetterWalker() {
+  const [from, setFrom] = useState('C');
+  const [up, setUp] = useState(true);
+  const [size, setSize] = useState(3);
+  const [step, setStep] = useState(-1); // -1 idle, 0..size-1 animating/done
+  const R = 62, cx = 90, cy = 80;
+  const pos = (i) => { const a = -Math.PI / 2 + i * 2 * Math.PI / 7; return [cx + R * Math.cos(a), cy + R * Math.sin(a)]; };
+  const fi = LETTERS.indexOf(from);
+  const path = Array.from({ length: size }, (_, k) => LETTERS[((fi + (up ? k : -k)) % 7 + 7) % 7]);
+  useEffect(() => {
+    if (step < 0 || step >= size - 1) return;
+    const t = setTimeout(() => setStep(s => s + 1), 480);
+    return () => clearTimeout(t);
+  }, [step, size]);
+  const keys = []; path.forEach((l, k) => { let v = letterPc(l) + 12; if (k) { const p = keys[k - 1]; if (up) { while (v <= p) v += 12; while (v - p > 12) v -= 12; } else { while (v >= p) v -= 12; while (p - v > 12) v += 12; } } keys.push(v); });
+  useEffect(() => { if (step >= 0) playKey(keys[step], 0.22); }, [step]);
+  const done = step === size - 1;
+  const ord = (x) => x + (x === 2 ? 'nd' : x === 3 ? 'rd' : 'th');
+  const word = size === 8 ? 'an octave' : 'a ' + ord(size);
+  const visited = step >= 0 ? path.slice(0, step + 1) : [];
+  const cur = step >= 0 ? path[step] : from;
+  const [tx, ty] = pos(LETTERS.indexOf(cur));
+  return (
+    <div style={actBox}>
+      <div style={actTitle}>Hop round the letters</div>
+      <div style={actNote}>Tap a starting letter, choose a step, press Go. The start counts as <b>1</b> -- so a 3rd is three letters, not three hops.</div>
+      <svg viewBox="-14 -22 208 200" style={{width:'100%',maxWidth:240,display:'block',margin:'0 auto'}}>
+        <circle cx={cx} cy={cy} r={R} fill="none" stroke="#e0d4b8" strokeWidth="2" strokeDasharray="3 5"/>
+        <text x={cx} y={cy + 4} textAnchor="middle" fontSize="11" fontWeight="800" fill="#a49b8f">{up ? 'up ↻' : 'down ↺'}</text>
+        {LETTERS.map((l, i) => {
+          const [x, y] = pos(i);
+          const k = visited.indexOf(l);
+          const isFrom = l === from, isEnd = done && l === path[size - 1];
+          const fill = isEnd ? '#a8823f' : isFrom ? '#241f1a' : k >= 0 ? '#f3ead8' : '#fff';
+          return (
+            <g key={l} onClick={() => { setFrom(l); setStep(-1); }} style={{cursor:'pointer'}}>
+              <circle cx={x} cy={y} r="15" fill={fill} stroke="#241f1a" strokeWidth="1.5"/>
+              <text x={x} y={y + 5} textAnchor="middle" fontSize="14" fontWeight="900" fill={isFrom || isEnd ? '#fff' : '#241f1a'}>{l}</text>
+              {k >= 0 && size < 8 && <text x={cx + (x - cx) * 1.52} y={cy + (y - cy) * 1.52 + 4} textAnchor="middle" fontSize="11" fontWeight="900" fill="#b5483b" style={{animation:'fadeUp 0.3s both'}}>{k + 1}</text>}
+            </g>
+          );
+        })}
+        {step >= 0 && <circle cx={tx} cy={ty} r="19" fill="none" stroke="#b5483b" strokeWidth="2.5" style={{transition:'cx 0.35s, cy 0.35s'}}/>}
+      </svg>
+      <div style={{display:'flex',gap:4,justifyContent:'center',flexWrap:'wrap',margin:'6px 0'}}>
+        <button className={'chip' + (up ? ' active' : '')} style={{padding:'3px 10px',fontSize:12}} onClick={() => { setUp(true); setStep(-1); }}>up</button>
+        <button className={'chip' + (!up ? ' active' : '')} style={{padding:'3px 10px',fontSize:12}} onClick={() => { setUp(false); setStep(-1); }}>down</button>
+        <span style={{width:6}}/>
+        {[2, 3, 4, 5, 6, 7, 8].map(s => <button key={s} className={'chip' + (s === size ? ' active' : '')} style={{padding:'3px 8px',fontSize:12}} onClick={() => { setSize(s); setStep(-1); }}>{s === 8 ? '8ve' : ord(s)}</button>)}
+      </div>
+      <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={() => setStep(0)}>Go ▶</button></div>
+      <div style={{textAlign:'center',fontSize:14,fontWeight:800,marginTop:8,minHeight:22}}>
+        {done ? <>{from}, {up ? 'up' : 'down'} {word} → <span style={{color:'#a8823f'}}>{path[size - 1]}</span></> : step >= 0 ? path.slice(0, step + 1).join(' → ') : ' '}
+      </div>
+      {done && size < 8 && <div style={{textAlign:'center',fontSize:12,color:'#6f665b'}}>{path.map((l, k) => l + '=' + (k + 1)).join(', ')}</div>}
+      {done && size === 8 && <div style={{textAlign:'center',fontSize:12,color:'#6f665b'}}>Eight letters round and you’re back on {from} -- the same note, one octave {up ? 'higher' : 'lower'}.</div>}
+    </div>
+  );
+}
+
 function NoteNamesLearn({ onStart }) {
   const tip = (n, title, body) => (
     <div style={{display:'flex',gap:12,alignItems:'flex-start',padding:'12px 0',borderTop:'1px solid var(--border)'}}>
@@ -1196,11 +1412,13 @@ function NoteNamesLearn({ onStart }) {
       </div>
       {tip(1, 'C sits just left of the 2 black keys', 'Find any pair of black keys -- the white key right before them is always C. D is between them, E just after.')}
       {tip(2, 'F sits just left of the 3 black keys', 'Before a group of three black keys is always F, then G, A, B.')}
+      <FindAll/>
       {tip(3, 'Only seven letters, A to G', 'After G the letters start again at A. Every C on the piano looks the same -- only the octave changes.')}
+      <NameReveal/>
       {tip(4, 'Black keys borrow a neighbour’s name', 'Sharp (♯) = the key just to the right. Flat (♭) = the key just to the left. So the same black key can be C♯ or D♭.')}
+      <SharpFlatMover/>
       {tip(5, 'The letters go round in a circle', 'Forwards is easy -- practise backwards (G F E D C B A) and skipping (a 3rd up from C is E, a 3rd down is A) until they come just as fast.')}
-      <LetterCircle from="C" to="A"/>
-      <div style={{fontSize:11,textAlign:'center',color:'var(--muted)',margin:'-4px 0 14px'}}>C, down a 3rd → A</div>
+      <LetterWalker/>
       <div style={{borderTop:'1px solid var(--border)',paddingTop:14}}>
         <div style={{fontSize:14,fontWeight:800,marginBottom:4}}>Letter chain -- say it out loud together</div>
         <LetterChainDrill/>
