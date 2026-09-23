@@ -2830,6 +2830,7 @@ Sohyun: give every chapter key-signature-style activities, starting from chapter
 - `LetterWalker` (replaces the static LetterCircle picture): start letter, up/down, 2nd–8ve, Go -- a ring hops round the circle numbering 1, 2, 3... (start counts as 1).
 - `TapKeyboard` gains a `names` prop (per-key labels, fade in) and a fill transition. CSS `@keyframes drawArc`.
 - Follow-up (Sohyun): counting 2nds..octaves belongs in the Intervals chapter, not here. Tip 5 is now "Up is right, down is left" with `UpDownWalk` (Step down / Step up one white key, arc animation, letter trail, G→A and A→G wraps flagged, "Hide names" mode so the student says the letter first). `LetterWalker` is kept in the file, unused, for the Intervals chapter (plan: interval number by letter-counting first, then quality -- major 6th etc.).
+- Follow-up 2 (Sohyun): sharps/flats belong with Tones & Semitones. The Note Names tip about black-key names and `SharpFlatMover` moved to TonesLearn (after StepExplorer); the mover now speaks in semitones ("B♯ is one semitone up -- a white key, the same sound as C") and tapping a black key only plays it. TonesLearn opens with two name cards: Semitone (S) = half step, Tone (T) = whole step; StepExplorer says "1 semitone (half step)" / "2 semitones = 1 tone (whole step)". Note Names drill Level 4 (black keys) still exists -- revisit if Sohyun wants it moved too.
 
 Next on the plan: Signs (repeats, D.C./D.S./Fine, fermata already here, 8va, ties vs slurs), then Intervals, then Chords.
 

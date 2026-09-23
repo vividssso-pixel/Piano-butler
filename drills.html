@@ -1297,19 +1297,18 @@ function SharpFlatMover() {
   const W = OCT * 7 * 36;
   const x1 = keyCenterX(from), x2 = valid ? keyCenterX(to) : x1;
   let msg = 'Tap a white key, then push it up or down.';
-  if (!base.white) msg = 'Pick a white key to start from.';
-  else if (dir && !valid) msg = 'Off the end of this keyboard -- pick another key.';
+  if (dir && !valid) msg = 'Off the end of this keyboard -- pick another key.';
   else if (dir) {
     const name = baseName + (dir > 0 ? '♯' : '♭');
     const land = PC_INFO[to % 12];
     msg = land.white
-      ? <><b>{name}</b> lands on a <b>white</b> key -- it sounds the same as <b>{land.names[0]}</b>. No black key between {dir > 0 ? baseName + ' and ' + land.names[0] : land.names[0] + ' and ' + baseName}!</>
-      : <><b>{name}</b> = the black key just to the {dir > 0 ? 'right' : 'left'}. Its other name: <b>{pcLabel(to % 12).split(' / ').find(x => x !== name)}</b>.</>;
+      ? <><b>{name}</b> is one semitone {dir > 0 ? 'up' : 'down'} -- a <b>white</b> key, the same sound as <b>{land.names[0]}</b>. No black key between {dir > 0 ? baseName + ' and ' + land.names[0] : land.names[0] + ' and ' + baseName}!</>
+      : <><b>{name}</b> = one semitone {dir > 0 ? 'up' : 'down'}: the black key just to the {dir > 0 ? 'right' : 'left'}. Its other name: <b>{pcLabel(to % 12).split(' / ').find(x => x !== name)}</b>.</>;
   }
   return (
     <div style={actBox}>
       <div style={actTitle}>Push a key: sharp or flat</div>
-      <div style={actNote}>Sharp (♯) moves one key to the <b>right</b> (higher). Flat (♭) moves one key to the <b>left</b> (lower). Try E and B too.</div>
+      <div style={actNote}>A sharp (♯) raises a note by <b>one semitone</b> -- one key to the <b>right</b>. A flat (♭) lowers it by one semitone -- one key to the <b>left</b>. Tap a white key, then push. Try E and B too.</div>
       <svg viewBox={`-1 0 ${W + 2} 30`} style={{width:'100%',display:'block'}}>
         {valid && dir && (
           <g key={nonce}>
@@ -1319,7 +1318,7 @@ function SharpFlatMover() {
           </g>
         )}
       </svg>
-      <TapKeyboard octaves={OCT} marks={marks} labels="white" onTap={(i) => { playKey(i); setFrom(i); setDir(null); }}/>
+      <TapKeyboard octaves={OCT} marks={marks} labels="white" onTap={(i) => { playKey(i); if (PC_INFO[i % 12].white) { setFrom(i); setDir(null); } }}/>
       <div style={{display:'flex',gap:6,justifyContent:'center',margin:'8px 0 4px'}}>
         <button className="ghost-btn" disabled={!base.white} onClick={() => push(-1)}>← ♭ flat</button>
         <button className="ghost-btn" disabled={!base.white} onClick={() => push(1)}>sharp ♯ →</button>
@@ -1470,9 +1469,7 @@ function NoteNamesLearn({ onStart }) {
       <FindAll/>
       {tip(3, 'Only seven letters, A to G', 'After G the letters start again at A. Every C on the piano looks the same -- only the octave changes.')}
       <NameReveal/>
-      {tip(4, 'Black keys borrow a neighbour’s name', 'Sharp (♯) = the key just to the right. Flat (♭) = the key just to the left. So the same black key can be C♯ or D♭.')}
-      <SharpFlatMover/>
-      {tip(5, 'Up is right, down is left', 'Going up the keyboard (to the right) the sound gets higher and the letters go forwards: C D E F G A B C. Going down (to the left) they go backwards: C B A G F E D C. Practise backwards until it comes as quickly as forwards.')}
+      {tip(4, 'Up is right, down is left', 'Going up the keyboard (to the right) the sound gets higher and the letters go forwards: C D E F G A B C. Going down (to the left) they go backwards: C B A G F E D C. Practise backwards until it comes as quickly as forwards.')}
       <UpDownWalk/>
       <div style={{borderTop:'1px solid var(--border)',paddingTop:14}}>
         <div style={{fontSize:14,fontWeight:800,marginBottom:4}}>Letter chain -- say it out loud together</div>
@@ -3257,7 +3254,7 @@ function StepExplorer() {
   const [next, setNext] = useState('a');
   const n = Math.abs(b - a);
   const marks = { [a]: 'target', [b]: 'good' };
-  const say = n === 0 ? 'the same key' : n === 1 ? '1 semitone' : n === 2 ? '2 semitones = 1 tone' : n + ' semitones';
+  const say = n === 0 ? 'the same key' : n === 1 ? '1 semitone (half step)' : n === 2 ? '2 semitones = 1 tone (whole step)' : n + ' semitones';
   return (
     <div style={{background:'var(--brass-bg)',borderRadius:10,padding:'10px 10px 12px',margin:'12px 0'}}>
       <div style={{fontSize:12,fontWeight:800,marginBottom:6}}>Try it: tap any two keys</div>
@@ -3280,11 +3277,21 @@ function TonesLearn({ onStart }) {
     <div className="card fade-up">
       <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Semitones and tones</h2>
       <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 8px'}}>The smallest step on the piano, and the step made of two of them. Scales, key signatures, intervals and chords are all counted in these.</p>
-      {tip('A semitone is the very next key', 'Black or white, whichever key is right next door. C to C♯ is a semitone.')}
+      <div style={{display:'flex',gap:8,margin:'4px 0 12px'}}>
+        {[['Semitone', 'half step', 'S', '1 key'], ['Tone', 'whole step', 'T', '2 keys']].map(([a, b, c, d]) => (
+          <div key={a} style={{flex:1,border:'1.5px solid var(--border)',borderRadius:10,padding:'8px 10px',background:'#fff',textAlign:'center'}}>
+            <div style={{fontSize:15,fontWeight:900}}>{a} <span style={{color:'var(--brass)'}}>({c})</span></div>
+            <div style={{fontSize:12,color:'#6f665b'}}>also called a <b>{b}</b></div>
+            <div style={{fontSize:11,color:'var(--muted)',marginTop:2}}>{d} along</div>
+          </div>
+        ))}
+      </div>
+      {tip('A semitone is the very next key', 'Black or white, whichever key is right next door. C to C♯ is a semitone. In American books it’s called a half step.')}
       {tip('Two white keys can be a semitone', 'E–F and B–C have no black key between them, so they are only a semitone apart. These two spots are what make scales work.')}
-      {tip('A tone is two semitones', 'Skip one key. C to D is a tone (C♯ is in between); E to F♯ is a tone too.')}
-      {tip('Sharps and flats move by a semitone', '♯ raises a note a semitone, ♭ lowers it. That’s why one key can have two names: C♯ = D♭, and even E♯ = F and C♭ = B.')}
+      {tip('A tone is two semitones', 'Skip one key. C to D is a tone (C♯ is in between); E to F♯ is a tone too. Also called a whole step.')}
       <StepExplorer/>
+      {tip('Sharps and flats move by a semitone', '♯ raises a note a semitone, ♭ lowers it. That’s why one key can have two names: C♯ = D♭, and even E♯ = F and C♭ = B.')}
+      <SharpFlatMover/>
       <button className="primary-btn" style={{marginTop:6}} onClick={onStart}>Start the drill →</button>
     </div>
   );
