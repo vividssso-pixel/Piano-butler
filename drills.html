@@ -374,31 +374,15 @@ const FLAT_KEYS = [
 const SHARP_ORDER = ['F#', 'C#', 'G#', 'D#', 'A#', 'E#', 'B#'];
 const FLAT_ORDER = ['Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb', 'Fb'];
 const SHARP_POS = { 'F#': 8, 'C#': 5, 'G#': 9, 'D#': 6, 'A#': 3, 'E#': 7, 'B#': 4 };
-const FLAT_POS = { 'Bb': 4, 'Eb': 7, 'Ab': 3, 'Db': 6, 'Gb': 9, 'Cb': 5, 'Fb': 8 };
+// Positions on the treble staff (0 = bottom line E4, +1 per line/space). Standard engraving:
+// sharps F5 C5 G5 D5 A4 E5 B4; flats B4 E5 A4 D5 G4 C5 F4. The bass clef uses the same shape
+// two steps lower (a 3rd), e.g. bass F#3 on the 4th line, bass Gb2 on the bottom line.
+// Phase 102b fix: Gb and Fb were wrongly placed above the staff (G5/F5); correct is G4 and F4.
+const FLAT_POS = { 'Bb': 4, 'Eb': 7, 'Ab': 3, 'Db': 6, 'Gb': 2, 'Cb': 5, 'Fb': 1 };
 
 function KeySigStaff({ count, type }) {
   if (!count) return null;
-  const order = type === 'sharp' ? SHARP_ORDER : FLAT_ORDER;
-  const posMap = type === 'sharp' ? SHARP_POS : FLAT_POS;
-  const symbol = type === 'sharp' ? '♯' : '♭';
-  const accidentals = order.slice(0, count);
-  const lineYs = [10, 20, 30, 40, 50];
-  const startX = 34, spacing = 11;
-  const width = startX + accidentals.length * spacing + 8;
-  return (
-    <svg width={width} height={60} viewBox={'0 0 ' + width + ' 60'} style={{display:'block',flexShrink:0}}>
-      {lineYs.map(y => (
-        <line key={y} x1={4} y1={y} x2={width - 4} y2={y} stroke="var(--muted)" strokeWidth="1" />
-      ))}
-      <text x={4} y={44} fontSize="34" fill="var(--text)" fontFamily="serif">{'𝄞'}</text>
-      {accidentals.map((acc, i) => {
-        const y = 50 - posMap[acc] * 5;
-        return (
-          <text key={acc} x={startX + i * spacing} y={y + 4} fontSize="16" fill="var(--brass)" fontFamily="serif">{symbol}</text>
-        );
-      })}
-    </svg>
-  );
+  return <div style={{width:170,flexShrink:0}}><KSStaff count={count} type={type} width={170}/></div>;
 }
 
 // Black-key "fingering family" grouping -- this is Sohyun's own lesson technique, formalized.
@@ -2391,20 +2375,44 @@ function minName(k) { return prettyNote(k.minor) + ' minor'; }
 const ORDINALS = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th'];
 
 // Treble staff with any key signature (0-7), fixed width so different keys compare side by side.
-function KSStaff({ count, type, width = 170, ink = '#241f1a', accent = '#a8823f', upto }) {
+// Accidentals drawn as shapes (not font glyphs) so their centre sits exactly on the line or
+// space: a sharp's box, a flat's bowl. Staff space = 10px, one position = 5px.
+function SharpShape({ x, y, color }) {
+  const bar = (dy) => <polygon points={`${x - 6.5},${y + dy + 2} ${x + 6.5},${y + dy - 1.5} ${x + 6.5},${y + dy + 1.5} ${x - 6.5},${y + dy + 5}`} fill={color}/>;
+  return (
+    <g>
+      <line x1={x - 2.6} x2={x - 2.6} y1={y - 11} y2={y + 14} stroke={color} strokeWidth="1.4"/>
+      <line x1={x + 2.6} x2={x + 2.6} y1={y - 14} y2={y + 11} stroke={color} strokeWidth="1.4"/>
+      {bar(-6.2)}{bar(2.8)}
+    </g>
+  );
+}
+function FlatShape({ x, y, color }) {
+  return (
+    <g>
+      <line x1={x - 3.5} x2={x - 3.5} y1={y - 17} y2={y + 5} stroke={color} strokeWidth="1.5"/>
+      <path d={`M${x - 3.5},${y + 5} C${x + 1},${y + 1.5} ${x + 8},${y - 3.5} ${x + 3.5},${y - 5.5} C${x + 1},${y - 6.5} ${x - 2},${y - 4} ${x - 3.5},${y - 1.5}
+               L${x - 3.5},${y + 1} C${x - 1.5},${y - 1.5} ${x + 1.5},${y - 3.5} ${x + 2.5},${y - 3} C${x + 4.5},${y - 2} ${x + 1},${y + 1.5} ${x - 3.5},${y + 5} Z`} fill={color}/>
+    </g>
+  );
+}
+function KSStaff({ count, type, width = 170, ink = '#241f1a', accent = '#a8823f', upto, clef = 'treble' }) {
   const order = type === 'sharp' ? SHARP_ORDER : FLAT_ORDER;
   const posMap = type === 'sharp' ? SHARP_POS : FLAT_POS;
-  const symbol = type === 'sharp' ? '♯' : '♭';
   const accs = type ? order.slice(0, count) : [];
-  const lineYs = [22, 32, 42, 52, 62];
+  const base = 70; // y of the bottom line
+  const shift = clef === 'bass' ? -2 : 0;
+  const yPos = (pos) => base - (pos + shift) * 5;
+  const lowD = clef === 'bass' ? 18 : 30;
+  const yOf = (d) => base - (d - lowD) * 5;
   return (
-    <svg viewBox={'0 0 ' + width + ' 80'} style={{width:'100%',maxWidth:width * 1.6,display:'block',margin:'0 auto'}}>
-      {lineYs.map(y => <line key={y} x1="4" y1={y} x2={width - 4} y2={y} stroke={ink} strokeOpacity="0.45" strokeWidth="1"/>)}
-      <text x="6" y="60" fontSize="46" fill={ink} fontFamily="'Noto Music','Apple Symbols','Segoe UI Symbol',serif">{'𝄞'}</text>
+    <svg viewBox={`0 ${base - 60} ${width} 76`} style={{width:'100%',maxWidth:width * 1.6,display:'block',margin:'0 auto'}}>
+      {[0, 2, 4, 6, 8].map(p => <line key={p} x1="4" x2={width - 4} y1={base - p * 5} y2={base - p * 5} stroke={ink} strokeOpacity="0.5" strokeWidth="1.1"/>)}
+      <ClefGlyph clef={clef} st={clef} yOf={yOf} ink={ink}/>
       {accs.map((acc, i) => {
-        const y = 62 - posMap[acc] * 5;
-        const hi = upto !== undefined && i === upto;
-        return <text key={acc} x={44 + i * 15} y={y + 5} fontSize="20" fontWeight="700" fill={hi ? '#b5483b' : accent} fontFamily="serif">{symbol}</text>;
+        const x = 56 + i * 15, y = yPos(posMap[acc]);
+        const col = upto !== undefined && i === upto ? '#b5483b' : accent;
+        return type === 'sharp' ? <SharpShape key={acc} x={x} y={y} color={col}/> : <FlatShape key={acc} x={x} y={y} color={col}/>;
       })}
     </svg>
   );
@@ -2489,6 +2497,7 @@ function KeySigLearn({ onStart }) {
     <div style={{marginBottom:14}}>
       <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:4}}>{label}</div>
       <KSStaff count={7} type={type} width={170}/>
+      <KSStaff count={7} type={type} width={170} clef="bass"/>
       <div style={{display:'flex',justifyContent:'center',gap:10,fontSize:15,fontWeight:900,marginTop:2}}>
         {list.map(n => <span key={n}>{prettyNote(n)}</span>)}
       </div>
@@ -3732,6 +3741,213 @@ const STAFF_DRILL = {
   Question: StaffQuestion, Learn: StaffLearn,
 };
 
+// ─── Concept: Dynamics & Articulation (Phase 102, 2026-09-23) ────────────────────
+// "Reading the music" track. How loud, and how each note is played.
+const DYNAMICS = [
+  { id: 'pp', it: 'pianissimo',  meaning: 'very soft',        vol: 0.05 },
+  { id: 'p',  it: 'piano',       meaning: 'soft',             vol: 0.09 },
+  { id: 'mp', it: 'mezzo piano', meaning: 'moderately soft',  vol: 0.15 },
+  { id: 'mf', it: 'mezzo forte', meaning: 'moderately loud',  vol: 0.24 },
+  { id: 'f',  it: 'forte',       meaning: 'loud',             vol: 0.36 },
+  { id: 'ff', it: 'fortissimo',  meaning: 'very loud',        vol: 0.55 },
+];
+const CHANGES = [
+  { id: 'cresc', sign: '<', it: 'crescendo (cresc.)', meaning: 'gradually louder' },
+  { id: 'dim', sign: '>', it: 'diminuendo (dim.) / decrescendo', meaning: 'gradually softer' },
+  { id: 'sfz', text: 'sfz', it: 'sforzando', meaning: 'a sudden strong accent on one note' },
+  { id: 'fp', text: 'fp', it: 'forte-piano', meaning: 'loud, then immediately soft' },
+];
+const ARTICS = [
+  { id: 'staccato', name: 'Staccato', mark: 'dot', meaning: 'short and detached' },
+  { id: 'legato', name: 'Legato (slur)', mark: 'slur', meaning: 'smooth and connected' },
+  { id: 'accent', name: 'Accent', mark: 'accent', meaning: 'play that note stronger' },
+  { id: 'tenuto', name: 'Tenuto', mark: 'tenuto', meaning: 'hold for its full length, a little weight' },
+  { id: 'staccatissimo', name: 'Staccatissimo', mark: 'wedge', meaning: 'very short and sharp' },
+  { id: 'fermata', name: 'Fermata (pause)', mark: 'fermata', meaning: 'hold the note longer than written' },
+];
+const DYN_FONT = "Georgia,'Times New Roman',serif";
+
+function DynMark({ id, size = 30, color = 'currentColor' }) {
+  return <span style={{fontFamily:DYN_FONT,fontStyle:'italic',fontWeight:900,fontSize:size,color,letterSpacing:'-0.02em'}}>{id}</span>;
+}
+function Hairpin({ dir, w = 90, h = 22, color = 'currentColor' }) {
+  const open = dir === 'cresc';
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} style={{display:'inline-block',verticalAlign:'middle'}}>
+      <polyline points={open ? `${w - 2},2 2,${h / 2} ${w - 2},${h - 2}` : `2,2 ${w - 2},${h / 2} 2,${h - 2}`} fill="none" stroke={color} strokeWidth="2.2"/>
+    </svg>
+  );
+}
+function ChangeMark({ c, color, size = 26 }) {
+  return c.sign ? <Hairpin dir={c.id} color={color}/> : <DynMark id={c.text} size={size} color={color}/>;
+}
+
+// Four crotchets with an articulation drawn on them (stems up, marks below the heads... kept above for clarity).
+function ArticBar({ mark, ink = '#241f1a', width = 220 }) {
+  const xs = [40, 90, 140, 190], y = 62;
+  const marks = xs.map((x, i) => {
+    const my = y + 16;
+    if (mark === 'dot') return <circle key={i} cx={x} cy={my} r="2.6" fill={ink}/>;
+    if (mark === 'wedge') return <path key={i} d={`M${x - 3},${my - 4} L${x + 3},${my - 4} L${x},${my + 5} Z`} fill={ink}/>;
+    if (mark === 'tenuto') return <line key={i} x1={x - 7} x2={x + 7} y1={my} y2={my} stroke={ink} strokeWidth="2.4"/>;
+    if (mark === 'accent') return i === 0 || i === 2 ? <polyline key={i} points={`${x - 8},${my - 4} ${x + 8},${my} ${x - 8},${my + 4}`} fill="none" stroke={ink} strokeWidth="2"/> : null;
+    return null;
+  });
+  return (
+    <svg viewBox={`0 6 ${width} 86`} style={{width:'100%',maxWidth:width * 1.4,display:'block',margin:'0 auto'}}>
+      {[46, 54, 62, 70, 78].map(ly => <line key={ly} x1="8" x2={width - 8} y1={ly - 8} y2={ly - 8} stroke={ink} strokeOpacity="0.35"/>)}
+      {xs.map((x, i) => <NoteShape key={i} base={mark === 'fermata' && i === 3 ? 2 : 1} cx={x} ink={ink}/>)}
+      {marks}
+      {mark === 'slur' && <path d={`M${xs[0] - 4},${y + 14} Q${(xs[0] + xs[3]) / 2},${y + 34} ${xs[3] + 4},${y + 14}`} fill="none" stroke={ink} strokeWidth="2"/>}
+      {mark === 'fermata' && <g><path d={`M${xs[3] - 11},${16} Q${xs[3]},${2} ${xs[3] + 11},${16}`} fill="none" stroke={ink} strokeWidth="2.4"/><circle cx={xs[3]} cy={13} r="2.4" fill={ink}/></g>}
+    </svg>
+  );
+}
+
+// ── sound ──
+function playDyn(vol, n = 4) {
+  const ctx = getAudio(); if (!ctx) return; stopClicks();
+  const t0 = ctx.currentTime + 0.08, notes = [523, 587, 659, 698, 784];
+  for (let i = 0; i < n; i++) blip(ctx, t0 + i * 0.42, notes[i % 5], 0.36, vol, 'triangle');
+}
+function playChange(id) {
+  const ctx = getAudio(); if (!ctx) return; stopClicks();
+  const t0 = ctx.currentTime + 0.08, notes = [523, 587, 659, 698, 784, 698, 659, 587];
+  notes.forEach((f, i) => {
+    let v = id === 'cresc' ? 0.04 + i * 0.07 : id === 'dim' ? 0.53 - i * 0.07 : 0.12;
+    if (id === 'sfz' && i === 3) v = 0.6;
+    if (id === 'fp') v = i === 0 ? 0.55 : 0.07;
+    blip(ctx, t0 + i * 0.32, f, 0.28, v, 'triangle');
+  });
+}
+function playArtic(mark) {
+  const ctx = getAudio(); if (!ctx) return; stopClicks();
+  const t0 = ctx.currentTime + 0.08, beat = 0.5, notes = [523, 587, 659, 523];
+  notes.forEach((f, i) => {
+    let len = beat * 0.55, v = 0.22;
+    if (mark === 'dot') len = beat * 0.22;
+    if (mark === 'wedge') { len = beat * 0.1; v = 0.3; }
+    if (mark === 'slur' || mark === 'tenuto') len = beat * 1.02;
+    if (mark === 'tenuto') v = 0.28;
+    if (mark === 'accent' && (i === 0 || i === 2)) v = 0.55;
+    if (mark === 'accent' && (i === 1 || i === 3)) v = 0.14;
+    if (mark === 'fermata' && i === 3) len = beat * 3.2;
+    blip(ctx, t0 + i * beat, f, len, v, 'triangle');
+  });
+}
+
+function DynLearn({ onStart }) {
+  const [on, setOn] = useState(null);
+  useEffect(() => () => stopClicks(), []);
+  const pick = (id, fn) => { fn(); setOn(id); setTimeout(() => setOn(o => (o === id ? null : o)), 2200); };
+  const cell = (id, top, bottom, onClick) => (
+    <button key={id} onClick={onClick} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2,padding:'8px 4px',cursor:'pointer',
+      background:'#fff',border:'1.5px solid ' + (on === id ? 'var(--brass)' : 'var(--border)'),borderRadius:10,color:'var(--text)'}}>
+      {top}<span style={{fontSize:11,fontWeight:800}}>{bottom}</span>
+    </button>
+  );
+  return (
+    <div className="card fade-up">
+      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>How loud, and how to play each note</h2>
+      <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 12px'}}>Dynamics are Italian words (written in bold italics) that tell you how loud to play. Tap any one to hear it.</p>
+      <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>Soft → loud</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6,marginBottom:6}}>
+        {DYNAMICS.map((d, i) => cell(d.id, <span style={{fontSize:16 + i * 3,lineHeight:1.1}}><DynMark id={d.id} size={16 + i * 3}/></span>, d.it + ' · ' + d.meaning, () => pick(d.id, () => playDyn(d.vol))))}
+      </div>
+      <p style={{fontSize:12,color:'#6f665b',margin:'0 0 12px',lineHeight:1.5}}><b>p</b> = piano (soft), <b>f</b> = forte (loud), <b>m</b> = mezzo (“half”, moderately). Doubling the letter makes it more so.</p>
+      <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>Changing the volume</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:14}}>
+        {CHANGES.map(c => cell(c.id, <span style={{height:30,display:'flex',alignItems:'center'}}><ChangeMark c={c}/></span>, c.it + ' · ' + c.meaning, () => pick(c.id, () => playChange(c.id))))}
+      </div>
+      <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>Articulation -- how each note is played</div>
+      <div style={{display:'flex',flexDirection:'column',gap:6}}>
+        {ARTICS.map(a => (
+          <button key={a.id} onClick={() => pick(a.id, () => playArtic(a.mark))} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 10px',cursor:'pointer',
+            background:'#fff',border:'1.5px solid ' + (on === a.id ? 'var(--brass)' : 'var(--border)'),borderRadius:10,color:'var(--text)',textAlign:'left'}}>
+            <span style={{flex:'0 0 130px'}}><ArticBar mark={a.mark} width={220}/></span>
+            <span><b style={{fontSize:14}}>{a.name}</b><br/><span style={{fontSize:12,color:'#6f665b'}}>{a.meaning}</span></span>
+          </button>
+        ))}
+      </div>
+      <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
+    </div>
+  );
+}
+
+const DYN_LEVELS = [
+  { n: 1, label: 'Dynamics: what does it mean?',       kind: 'dynMeaning', time: 8 },
+  { n: 2, label: 'Which is louder?',                    kind: 'louder', time: 6 },
+  { n: 3, label: 'Signs for changing volume',            kind: 'change', time: 8 },
+  { n: 4, label: 'Articulation: name the marking',       kind: 'artic', time: 9 },
+  { n: 5, label: 'Listen: louder, softer, short or smooth?', kind: 'listen', time: 12 },
+];
+function genDynQuestion(lv, prev) {
+  const uid = Math.random();
+  const notPrev = (list, key) => { let x = pick(list), n = 0; while (prev && prev.key === key(x) && n++ < 10) x = pick(list); return x; };
+  if (lv.kind === 'dynMeaning') {
+    const d = notPrev(DYNAMICS, x => x.id);
+    const answer = d.it + ' -- ' + d.meaning;
+    return { kind: lv.kind, key: d.id, d, answer, choices: shuffle([answer, ...sampleN(DYNAMICS.filter(x => x !== d).map(x => x.it + ' -- ' + x.meaning), 3)]), uid };
+  }
+  if (lv.kind === 'louder') {
+    const pair = sampleN(DYNAMICS, 2);
+    const answer = DYNAMICS.indexOf(pair[0]) > DYNAMICS.indexOf(pair[1]) ? pair[0].id : pair[1].id;
+    return { kind: lv.kind, key: pair.map(p => p.id).join(), pair, answer, choices: pair.map(p => p.id), uid };
+  }
+  if (lv.kind === 'change') {
+    const c = notPrev(CHANGES, x => x.id);
+    return { kind: lv.kind, key: c.id, c, answer: c.meaning, choices: shuffle(CHANGES.map(x => x.meaning)), uid };
+  }
+  if (lv.kind === 'artic') {
+    const a = notPrev(ARTICS, x => x.id);
+    return { kind: lv.kind, key: a.id, a, answer: a.name, choices: shuffle([a.name, ...sampleN(ARTICS.filter(x => x !== a).map(x => x.name), 3)]), uid };
+  }
+  const opts = [
+    { id: 'cresc', label: 'Getting louder', play: () => playChange('cresc') },
+    { id: 'dim', label: 'Getting softer', play: () => playChange('dim') },
+    { id: 'staccato', label: 'Short (staccato)', play: () => playArtic('dot') },
+    { id: 'legato', label: 'Smooth (legato)', play: () => playArtic('slur') },
+  ];
+  const o = notPrev(opts, x => x.id);
+  return { kind: 'listen', key: o.id, o, answer: o.label, choices: opts.map(x => x.label), uid };
+}
+function DynQuestion({ q, level, given, locked, onAnswer, pixel }) {
+  const done = !!given;
+  const ink = pixel ? '#f8edd4' : '#241f1a';
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const st = (c) => !done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '';
+  const prompt = (t, px) => <p style={pixel ? {fontSize:10,textAlign:'center',margin:'0 0 10px'} : {fontSize:14,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? px : t}</p>;
+  useEffect(() => {
+    if (q.kind !== 'listen') return;
+    const t = setTimeout(() => q.o.play(), 250);
+    return () => { clearTimeout(t); stopClicks(); };
+  }, [q.uid]);
+  const grid = (render, cols = 2) => (
+    <div style={{display:'grid',gridTemplateColumns:'repeat(' + cols + ',1fr)',gap:8}}>
+      {q.choices.map(c => <button key={c} disabled={locked} onClick={() => { stopClicks(); onAnswer(c); }} className={btnCls + st(c)} style={{padding:'12px 6px'}}>{render(c)}</button>)}
+    </div>
+  );
+  const big = (node) => <div style={{textAlign:'center',margin:'4px 0 16px',color:ink,minHeight:50,display:'flex',justifyContent:'center',alignItems:'center'}}>{node}</div>;
+  if (q.kind === 'dynMeaning') return <div>{prompt('What does this mean?', 'WHAT DOES IT MEAN?')}{big(<DynMark id={q.d.id} size={56} color={ink}/>)}{grid(c => c)}</div>;
+  if (q.kind === 'louder') return <div>{prompt('Which one is louder?', 'WHICH IS LOUDER?')}{grid(c => <DynMark id={c} size={pixel ? 22 : 34}/>)}</div>;
+  if (q.kind === 'change') return <div>{prompt('What does this sign mean?', 'WHAT DOES IT MEAN?')}{big(<span style={{transform:'scale(1.6)',display:'inline-block'}}><ChangeMark c={q.c} color={ink} size={40}/></span>)}{grid(c => c)}</div>;
+  if (q.kind === 'artic') return <div>{prompt('What is this marking called?', 'NAME THE MARKING')}<div style={{background:pixel ? 'transparent' : '#fff',borderRadius:8,margin:'0 0 12px'}}><ArticBar mark={q.a.mark} ink={ink}/></div>{grid(c => c)}</div>;
+  return (<div>
+    {prompt('Listen -- what do you hear?', 'LISTEN! WHAT DO YOU HEAR?')}
+    <div style={{textAlign:'center',margin:'0 0 14px'}}>
+      <button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => q.o.play()} style={pixel ? {fontSize:9} : {fontSize:14,padding:'10px 18px'}}>{pixel ? '♪ PLAY AGAIN' : '♪ Play again'}</button>
+    </div>
+    {grid(c => c)}
+  </div>);
+}
+const DYN_DRILL = {
+  id: 'dynamics', label: 'Dynamics & Articulation', levels: DYN_LEVELS, generate: genDynQuestion,
+  check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
+  answerLabel: (q) => q.kind === 'artic' ? q.a.name + ' -- ' + q.a.meaning : q.kind === 'change' ? q.c.it + ' -- ' + q.c.meaning
+    : q.kind === 'louder' ? q.answer : q.answer,
+  Question: DynQuestion, Learn: DynLearn,
+};
+
 // Registry of drills. Two shapes:
 //   { id, label, render }            -- original single-screen drills (Phase 89/90)
 //   { id, label, concept }           -- Phase 94 concept sets (Learn + Drill on the shared engine)
@@ -3748,6 +3964,7 @@ const DRILLS = [
   { id: 'time-signatures', label: 'Time Signatures', concept: TIMESIG_DRILL, track: 'rhythm' },
   { id: 'rhythm', label: 'Rhythm Cards', concept: RHYTHM_DRILL, track: 'rhythm' },
   { id: 'tempo', label: 'Tempo Race', concept: TEMPO_DRILL, track: 'reading' },
+  { id: 'dynamics', label: 'Dynamics & Articulation', concept: DYN_DRILL, track: 'reading' },
 ];
 
 // URL state: ?drill=<id>&tab=learn|drill&level=<n>&mode=lesson|game&lock=1
