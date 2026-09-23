@@ -2822,6 +2822,14 @@ Sohyun: flats looked broken; number the accidentals; animate adding them one by 
 - `CircleOfFifths`: 12 tappable slots, relative minors inside (follow the chosen enharmonic), enharmonic chips (B/C♭, F♯/G♭, D♭/C♯), numbered staff, "Walk the sharps" C→…→C♯ and "Walk the flats" C→…→C♭ animations (sequence verified in Playwright).
 - Drill Level 6 "Circle of fifths: next key round" (one step clockwise/anticlockwise; generator fuzzed 300x).
 
+### Phase 104 -- Note Names: hands-on round
+Sohyun: give every chapter key-signature-style activities, starting from chapter 1. Four new activities in the Note Names Learn tab, each after the rule it teaches (keys now play a tone when tapped via `playKey`):
+- `FindAll`: pick a letter, tap all three on a 3-octave keyboard against the clock; best times per letter in localStorage `pb_findall_v1`; the group tint appears when done.
+- `NameReveal`: ▶ Play / + Next key -- letters land on the white keys one by one across two octaves; the restart at A is flagged in red ("After G the letters start again at A!").
+- `SharpFlatMover`: tap a white key, push ♭ left / ♯ right; an animated arc shows the move; E♯/B♯/C♭/F♭ explain the white-key landing.
+- `LetterWalker` (replaces the static LetterCircle picture): start letter, up/down, 2nd–8ve, Go -- a ring hops round the circle numbering 1, 2, 3... (start counts as 1).
+- `TapKeyboard` gains a `names` prop (per-key labels, fade in) and a fill transition. CSS `@keyframes drawArc`.
+
 Next on the plan: Signs (repeats, D.C./D.S./Fine, fermata already here, 8va, ties vs slurs), then Intervals, then Chords.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
