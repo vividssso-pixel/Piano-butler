@@ -2726,6 +2726,20 @@ Chain into Note Names (A-G forwards is easy; backwards and skipping inside the 7
 | 6 | Pushed and live-verified | `d6e3a4a`, `c4f6ee5` | Sohyun pushed (`7aeaaff..f8d1690`). Live on thepianobutler.com: Scales tab with the landmark table, E♭ data matches the book (RH 212341231234123, LH 321432132143213), old `?drill=letter-chain` link lands on Note Names with the letter circle and chain, zero console errors. Phase 94-96 also spot-checked live: pixel font loads, locked student link hides the picker. |
 | 7 | Follow-up: patterns instead of the finger-4 table | `drills.html` (`ScalePatterns`, `FingerGroups`, `SCALE_PATTERNS`) | Sohyun: the finger-4 table was hard to follow -- "패턴으로 설명해주는게 낫지 않아?". Replaced with five pattern cards: 1 standard (C G D A E), 2 F (RH swaps), 3 B (LH swaps), 4 black-key starts B♭ E♭ A♭ D♭ (thumbs only on white keys; RH thumbs on C and F; one LH shape), 5 G♭/F♯. Finger rows are drawn from `SCALES` (one octave), split at the thumb into group-of-3 / group-of-4 boxes in the keyboard's colours, finger 5 and lead-in notes shown plain, note names under each finger. Viewer box renamed "Where the thumbs and finger 4 go". Babel check 0 errors; Playwright screenshot reviewed on the exact device file; no page errors. Committed, not pushed. |
 
+### Phase 98 Updates (2026-09-23 -- minor scales, harmonic minor first)
+
+Sohyun: add a minor group, and decide how to introduce natural / harmonic / melodic minor --
+harmonic minor comes up most, so lead with it.
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Harmonic minor data from the AMEB books | `drills.html` (`MINOR_2OCT`, `MINOR_SCALES`) | Read every key off the Technical Work books: A P.3 (1 octave only; standard shape), E 1.3, D 1.6, B 2.3, G 2.6, F♯ 3.3, C 3.6, C♯ 4.3, F 4.7 (Level 1); G♯ 5.2, B♭ 5.5, D♯ 6.2 (Level 2). 1-octave = first octave of the printed 2-octave fingering (RH finishes on 5 where it would carry on with the thumb, as in Prelim A minor). No thumb on a black key in any key. |
+| 2 | Honest limit found and handled | `drills.html` (`MinorViewer`) | Checking the data showed the harmonic fingers do NOT transfer to every other form: F♯ and C♯ melodic (raised 6th) and G♯ natural (lowered 7th) would put a thumb on a black key. The viewer therefore shows finger numbers for natural/melodic only when there is no clash (matches what the books print for E, D, G, C, F, B, F♯/C♯ natural, G♯/B♭/D♯ melodic) and otherwise says "the fingers change for this form -- practise it from your book". |
+| 3 | Minor Learn | `drills.html` (`MinorFormsCard`, `MINOR_PATTERNS`, `ScalePatterns mode`, `ScalePath keys/prefix`) | Major/Minor switch at the top of Scales Learn. "Three kinds of minor" on A minor with gold changed notes: natural (relative major's notes), harmonic -- "the one you'll play most" (raised 7th both ways; the 3-semitone F-G♯ step), melodic (raise 6th & 7th going up, natural coming down), then "learn the harmonic fingering first". Five minor patterns: standard (A E D G C), F (RH swaps), B (LH swaps), F♯/C♯/G♯ (one RH shape; C♯/G♯ LH = flat-major LH; F♯ LH starts on 4), B♭/D♯ (both hands start on 2). 36 minor stamp cards (`m:` prefix). Viewer: 12 keys × 3 forms × 1/2 octaves, spelled notes with changed notes in gold (double sharps shown as ♯♯). |
+| 4 | Drill | `drills.html` (`SCALE_LEVELS` 5-6) | L5 harmonic minor: which finger; L6 tap the raised 7th (scale dots hidden so the answer isn't given away). |
+| 5 | Verification | -- | Babel compile 0 errors; Node data run printed spelled harmonic minors + 1-octave fingers for all 12 and the thumb-on-black check; Playwright on the exact device file: Minor switch, C♯ melodic shows the clash message, C♯ harmonic shows the AMEB line, A natural "same fingers", minor stamps saved as `m:` ids, L5/L6 answer correctly, major pattern labels intact, zero page errors. |
+| 6 | Committed, not pushed | see git log | Ready for Sohyun to push. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
