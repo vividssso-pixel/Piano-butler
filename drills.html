@@ -1045,7 +1045,7 @@ function DrillEngine({ drill, level, mode }) {
         </div>
       )}
 
-      <Q q={q} level={lv} given={given} locked={phase !== 'ask'} onAnswer={answer} pixel={isGame} />
+      <Q q={q} level={lv} given={given} locked={phase !== 'ask'} onAnswer={answer} pixel={isGame} stats={{ correct, asked, streak }} />
 
       <div style={{minHeight:isGame?34:44,marginTop:14,textAlign:'center'}}>
         {feedback && (given.ok ? (
@@ -1325,12 +1325,320 @@ function ShareLink({ drillId, level, mode }) {
   );
 }
 
+// ─── Concept 2: Tempo Race (Italian tempo terms) ─────────────────────────────────
+// Phase 95 (2026-09-23). Idea borrowed from a classroom "tempo cars on a racetrack" teaching aid
+// Sohyun showed -- the CONCEPT only (terms lined up slowest-to-fastest like lanes/cars); every
+// visual here is original, nothing from that product's artwork or characters is reproduced.
+// Scope: the 7 core terms she chose to start with ("제일 적은것부터"). Meanings are the standard
+// textbook glosses; BPM ranges are APPROXIMATE (sources and metronome markings disagree -- shown
+// as "about" in the UI), and `demo` is just a representative speed used for the listening level.
+// Andantino is historically ambiguous; modern teaching convention (used here) = a little faster
+// than Andante.
+const TEMPO_TERMS = [
+  { term: 'Adagio',     meaning: 'slow, at ease',                bpm: [66, 76],   demo: 70 },
+  { term: 'Andante',    meaning: 'at a walking pace',            bpm: [76, 108],  demo: 88 },
+  { term: 'Andantino',  meaning: 'a little faster than andante', bpm: [80, 108],  demo: 100 },
+  { term: 'Moderato',   meaning: 'at a moderate speed',          bpm: [108, 120], demo: 112 },
+  { term: 'Allegretto', meaning: 'fairly quick',                 bpm: [112, 120], demo: 120 },
+  { term: 'Allegro',    meaning: 'fast and lively',              bpm: [120, 156], demo: 140 },
+  { term: 'Presto',     meaning: 'very fast',                    bpm: [168, 200], demo: 184 },
+];
+const TEMPO_RANK = {};
+TEMPO_TERMS.forEach((t, i) => { TEMPO_RANK[t.term] = i; });
+const LANE_COLORS = ['#6d8fb3', '#8a7fb8', '#6fa58c', '#c9a24a', '#d18a52', '#c46a5a', '#b04a6a'];
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function sampleN(arr, n, exclude) {
+  return shuffle(arr.filter(x => !(exclude || []).includes(x))).slice(0, n);
+}
+
+// Tiny metronome with Web Audio (no files). One shared context, created on first user gesture.
+let _audioCtx = null;
+let _clickNodes = [];
+function stopClicks() {
+  _clickNodes.forEach(o => { try { o.stop(); } catch (e) {} });
+  _clickNodes = [];
+}
+function playClicks(bpm, count) {
+  try {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
+    stopClicks();
+    const gap = 60 / bpm;
+    const t0 = _audioCtx.currentTime + 0.08;
+    for (let i = 0; i < (count || 8); i++) {
+      const osc = _audioCtx.createOscillator();
+      const gain = _audioCtx.createGain();
+      osc.frequency.value = i % 4 === 0 ? 1320 : 880;
+      const t = t0 + i * gap;
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(0.35, t + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
+      osc.connect(gain); gain.connect(_audioCtx.destination);
+      osc.start(t); osc.stop(t + 0.08);
+      _clickNodes.push(osc);
+    }
+    return true;
+  } catch (e) { return false; }
+}
+
+const TEMPO_LEVELS = [
+  { n: 1, label: 'Term → meaning',            kind: 'meaning', time: 8 },
+  { n: 2, label: 'Which one is faster?',       kind: 'faster',  time: 6 },
+  { n: 3, label: 'Put 4 in order, slow → fast', kind: 'order',  time: 15 },
+  { n: 4, label: 'Listen: which tempo is it?', kind: 'listen',  time: 14 },
+];
+
+function genTempoQuestion(lv, prev) {
+  const uid = Math.random();
+  const names = TEMPO_TERMS.map(t => t.term);
+  const pickNew = () => { let x = pick(names), n = 0; while (prev && prev.key === x && n++ < 10) x = pick(names); return x; };
+  if (lv.kind === 'meaning') {
+    const term = pickNew();
+    const wrong = sampleN(TEMPO_TERMS.map(t => t.meaning), 3, [TEMPO_TERMS[TEMPO_RANK[term]].meaning]);
+    return { kind: 'meaning', key: term, term, choices: shuffle([TEMPO_TERMS[TEMPO_RANK[term]].meaning, ...wrong]), uid };
+  }
+  if (lv.kind === 'faster') {
+    const pair = sampleN(names, 2);
+    return { kind: 'faster', key: pair.join('|'), pair, uid };
+  }
+  if (lv.kind === 'order') {
+    const four = sampleN(names, 4);
+    return { kind: 'order', key: four.join('|'), items: four, uid };
+  }
+  // listen: answer + 2 distractors that are clearly different in speed (>= 30 bpm apart)
+  const term = pickNew();
+  const bpm = TEMPO_TERMS[TEMPO_RANK[term]].demo;
+  const far = TEMPO_TERMS.filter(t => Math.abs(t.demo - bpm) >= 30).map(t => t.term);
+  const distract = sampleN(far, 2);
+  return { kind: 'listen', key: term, term, bpm, choices: shuffle([term, ...distract]), uid };
+}
+
+function checkTempo(q, ans) {
+  if (ans === null || ans === undefined) return false;
+  if (q.kind === 'meaning') return ans === TEMPO_TERMS[TEMPO_RANK[q.term]].meaning;
+  if (q.kind === 'faster') return ans === q.pair.slice().sort((a, b) => TEMPO_RANK[b] - TEMPO_RANK[a])[0];
+  if (q.kind === 'order') {
+    const right = q.items.slice().sort((a, b) => TEMPO_RANK[a] - TEMPO_RANK[b]);
+    return Array.isArray(ans) && ans.length === right.length && ans.every((x, i) => x === right[i]);
+  }
+  return ans === q.term;
+}
+
+function tempoAnswerLabel(q) {
+  if (q.kind === 'meaning') return q.term + ' = ' + TEMPO_TERMS[TEMPO_RANK[q.term]].meaning;
+  if (q.kind === 'faster') return q.pair.slice().sort((a, b) => TEMPO_RANK[b] - TEMPO_RANK[a])[0];
+  if (q.kind === 'order') return q.items.slice().sort((a, b) => TEMPO_RANK[a] - TEMPO_RANK[b]).join(' → ');
+  return q.term + ' (about ' + q.bpm + ' bpm)';
+}
+
+// Race track: the car moves one step per correct answer (both modes). Original simple shapes.
+function RaceTrack({ steps, pos, pixel }) {
+  const W = 300, H = 34, pad = 14;
+  const x = pad + Math.min(pos, steps) / steps * (W - pad * 2 - 26);
+  const ink = pixel ? '#f8edd4' : '#241f1a';
+  return (
+    <svg viewBox={'0 0 ' + W + ' ' + H} shapeRendering={pixel ? 'crispEdges' : 'auto'} style={{width:'100%',display:'block',marginBottom:12}}>
+      <rect x="0" y="12" width={W} height="14" fill={pixel ? 'rgba(248,237,212,0.12)' : '#efe6d2'} rx={pixel ? 0 : 7}/>
+      {Array.from({ length: 14 }).map((_, i) => (
+        <rect key={i} x={10 + i * 20} y="18" width="10" height="2" fill={pixel ? 'rgba(248,237,212,0.35)' : '#d9cdb0'}/>
+      ))}
+      {[0, 1, 2, 3].map(r => [0, 1].map(c => (
+        <rect key={r + '-' + c} x={W - 12 + c * 5} y={12 + r * 3.5} width="5" height="3.5" fill={(r + c) % 2 ? ink : (pixel ? '#241f1a' : '#fff')}/>
+      )))}
+      <g transform={'translate(' + x + ',7)'} style={{transition:'transform 0.35s ease'}}>
+        <rect x="2" y="4" width="22" height="10" fill="var(--brass)" rx={pixel ? 0 : 3}/>
+        <rect x="7" y="0" width="11" height="6" fill="var(--brass)" rx={pixel ? 0 : 2}/>
+        <rect x="9" y="1.5" width="7" height="3.5" fill={pixel ? '#241f1a' : '#fff'}/>
+        <rect x="4" y="13" width="5" height="5" fill={ink} rx={pixel ? 0 : 2.5}/>
+        <rect x="17" y="13" width="5" height="5" fill={ink} rx={pixel ? 0 : 2.5}/>
+      </g>
+    </svg>
+  );
+}
+
+function TempoQuestion({ q, level, given, locked, onAnswer, pixel, stats }) {
+  const [seq, setSeq] = useState([]);
+  useEffect(() => { setSeq([]); }, [q.uid]);
+  useEffect(() => {
+    if (q.kind === 'listen') playClicks(q.bpm, 8);
+    return () => { if (q.kind === 'listen') stopClicks(); };
+  }, [q.uid]);
+
+  const done = !!given;
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const prompt = (txt, px) => (
+    <p style={pixel ? {fontSize:10,textAlign:'center',margin:'0 0 12px',lineHeight:1.7}
+                    : {fontSize:14,fontWeight:700,textAlign:'center',margin:'0 0 12px',color:'var(--muted)'}}>
+      {pixel ? px : txt}
+    </p>
+  );
+  const bigTerm = (t) => (
+    <div style={{textAlign:'center',fontSize:pixel?22:44,fontWeight:900,margin:'4px 0 16px',
+      color:pixel?'var(--brass)':'var(--text)',fontStyle:pixel?'normal':'italic',letterSpacing:'-0.01em'}}>{t}</div>
+  );
+  const stateFor = (val, correctVal) => {
+    if (!done) return '';
+    if (val === correctVal) return ' good';
+    if (given.ans === val) return ' bad';
+    return '';
+  };
+
+  const track = <RaceTrack steps={pixel ? 15 : LESSON_TOTAL} pos={stats ? stats.correct : 0} pixel={pixel} />;
+
+  if (q.kind === 'meaning') {
+    const right = TEMPO_TERMS[TEMPO_RANK[q.term]].meaning;
+    return (
+      <div>
+        {track}
+        {prompt('What does this term mean?', 'WHAT DOES IT MEAN?')}
+        {bigTerm(q.term)}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+          {q.choices.map(c => (
+            <button key={c} disabled={locked} onClick={() => onAnswer(c)} className={btnCls + stateFor(c, right)}
+              style={{padding:'12px 8px'}}>{c}</button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (q.kind === 'faster') {
+    const right = checkTempo(q, q.pair[0]) ? q.pair[0] : q.pair[1];
+    return (
+      <div>
+        {track}
+        {prompt('Which one is faster?', 'WHICH IS FASTER?')}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+          {q.pair.map(t => (
+            <button key={t} disabled={locked} onClick={() => onAnswer(t)} className={btnCls + stateFor(t, right)}
+              style={{padding:'22px 6px',fontSize:pixel?10:18,fontStyle:pixel?'normal':'italic'}}>{t}</button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (q.kind === 'order') {
+    const right = q.items.slice().sort((a, b) => TEMPO_RANK[a] - TEMPO_RANK[b]);
+    function tap(t) {
+      if (locked || seq.includes(t)) return;
+      const next = [...seq, t];
+      setSeq(next);
+      if (next.length === q.items.length) onAnswer(next);
+    }
+    return (
+      <div>
+        {track}
+        {prompt('Tap them from slowest to fastest', 'SLOWEST → FASTEST')}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+          {q.items.map(t => {
+            const idx = seq.indexOf(t);
+            let st = '';
+            if (done) st = right.indexOf(t) === idx ? ' good' : ' bad';
+            return (
+              <button key={t} disabled={locked || idx >= 0} onClick={() => tap(t)} className={btnCls + st}
+                style={{padding:'14px 6px',opacity:!done && idx >= 0 ? 0.55 : 1,fontStyle:pixel?'normal':'italic'}}>
+                {idx >= 0 ? (idx + 1) + '. ' : ''}{t}
+              </button>
+            );
+          })}
+        </div>
+        {!done && seq.length > 0 && (
+          <div style={{textAlign:'center',marginTop:10}}>
+            <button className={pixel ? 'pixel-btn' : 'ghost-btn'} style={pixel ? {fontSize:8,padding:'8px 10px'} : {}}
+              onClick={() => setSeq(seq.slice(0, -1))}>{pixel ? 'UNDO' : 'Undo'}</button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // listen
+  return (
+    <div>
+      {track}
+      {prompt('Listen to the beat -- which tempo is it?', 'LISTEN! WHICH TEMPO?')}
+      <div style={{textAlign:'center',margin:'0 0 16px'}}>
+        <button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => playClicks(q.bpm, 8)}
+          style={pixel ? {fontSize:9} : {fontSize:14,padding:'12px 20px'}}>{pixel ? '♪ PLAY AGAIN' : '♪ Play again'}</button>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
+        {q.choices.map(t => (
+          <button key={t} disabled={locked} onClick={() => { stopClicks(); onAnswer(t); }} className={btnCls + stateFor(t, q.term)}
+            style={{padding:'16px 4px',fontStyle:pixel?'normal':'italic'}}>{t}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TempoLearn({ onStart }) {
+  const [playing, setPlaying] = useState(null);
+  useEffect(() => () => stopClicks(), []);
+  function hear(t) {
+    if (playing === t.term) { stopClicks(); setPlaying(null); return; }
+    playClicks(t.demo, 8); setPlaying(t.term);
+    setTimeout(() => setPlaying(p => (p === t.term ? null : p)), (60 / t.demo) * 8 * 1000 + 200);
+  }
+  return (
+    <div className="card fade-up">
+      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>The tempo race</h2>
+      <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 16px'}}>
+        Italian tempo words, lined up from the slowest lane to the fastest. Tap one to hear its beat.
+      </p>
+      <div style={{display:'flex',justifyContent:'space-between',fontSize:10,fontWeight:800,color:'var(--muted)',
+        textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>
+        <span>🐢 Slow</span><span>Fast 🏁</span>
+      </div>
+      <div style={{display:'flex',flexDirection:'column',gap:6}}>
+        {TEMPO_TERMS.map((t, i) => (
+          <button key={t.term} onClick={() => hear(t)} style={{
+            display:'flex',alignItems:'center',gap:10,textAlign:'left',cursor:'pointer',
+            border:'1.5px solid ' + (playing === t.term ? LANE_COLORS[i] : 'var(--border)'),
+            background:'#fff',borderRadius:10,padding:'8px 10px',
+            marginLeft: (i * 4) + '%', transition:'border-color 0.15s'}}>
+            <span style={{flex:'0 0 8px',alignSelf:'stretch',borderRadius:4,background:LANE_COLORS[i]}}/>
+            <span style={{flex:1}}>
+              <span style={{display:'block',fontSize:16,fontWeight:900,fontStyle:'italic',color:'var(--text)'}}>{t.term}</span>
+              <span style={{display:'block',fontSize:12,color:'#6f665b'}}>{t.meaning}</span>
+            </span>
+            <span style={{fontSize:11,fontWeight:700,color:'var(--muted)',whiteSpace:'nowrap'}}>
+              {playing === t.term ? '♪ playing' : 'about ' + t.bpm[0] + '–' + t.bpm[1]}
+            </span>
+          </button>
+        ))}
+      </div>
+      <p style={{fontSize:11,color:'var(--muted)',margin:'12px 0 0',lineHeight:1.5}}>
+        Beats per minute are approximate -- books and metronomes don't all agree. What matters is the order.
+      </p>
+      <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
+    </div>
+  );
+}
+
+const TEMPO_DRILL = {
+  id: 'tempo',
+  label: 'Tempo Race',
+  levels: TEMPO_LEVELS,
+  generate: genTempoQuestion,
+  check: checkTempo,
+  answerLabel: tempoAnswerLabel,
+  Question: TempoQuestion,
+  Learn: TempoLearn,
+};
+
 // Registry of drills. Two shapes:
 //   { id, label, render }            -- original single-screen drills (Phase 89/90)
 //   { id, label, concept }           -- Phase 94 concept sets (Learn + Drill on the shared engine)
-// Planned next concept (agreed 2026-09-23): key signatures (infographic + drill).
+// Next concept after Tempo Race (agreed 2026-09-23): key signatures (infographic + drill).
 const DRILLS = [
   { id: 'note-names', label: 'Note Names', concept: NOTE_NAMES_DRILL },
+  { id: 'tempo', label: 'Tempo Race', concept: TEMPO_DRILL },
   { id: 'letter-chain', label: 'Letter Chain', render: () => <LetterChainDrill /> },
   { id: 'scale-fingering', label: 'Scale Fingering', render: () => <ScaleFingeringDrill /> },
 ];
