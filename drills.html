@@ -3819,6 +3819,66 @@ function ScalePatterns({ sel, onPick, mode = 'major' }) {
   );
 }
 
+// ─── Scales: build it step by step (Phase 107) ───────────────────────────────────
+// Hands-on round for the Scales chapter: the student builds the scale from the step pattern
+// (T/S, and T+S for harmonic minor) instead of just reading it.
+function pcOfName(nm) { const base = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[nm[0]]; const acc = nm.slice(1); return ((base + (acc === '#' ? 1 : acc === 'b' ? -1 : acc === 'x' ? 2 : 0)) % 12 + 12) % 12; }
+const STEP_SIZE = { T: 2, S: 1, 'T+S': 3 };
+const STEP_WORD = { T: 'a tone', S: 'a semitone', 'T+S': 'a tone and a half' };
+function ScaleBuilder({ mode = 'major' }) {
+  const KEYS = mode === 'major' ? ['C', 'G', 'D', 'A', 'F', 'Bb', 'Eb'] : ['A', 'E', 'D', 'G', 'C', 'B'];
+  const [key, setKey] = useState(KEYS[0]);
+  const [n, setN] = useState(0);
+  const [wrong, setWrong] = useState(0);
+  const [flash, setFlash] = useState(null);
+  const pat = STEP_PATTERNS[mode === 'major' ? 'major' : 'harmonic'];
+  const names = (mode === 'major' ? spellScale(key) : spellMinor(key, 'harmonic')).concat([key]);
+  const r = pcOfName(key);
+  const offs = [0]; pat.forEach(s => offs.push(offs[offs.length - 1] + STEP_SIZE[s]));
+  useEffect(() => { setN(0); setWrong(0); setFlash(null); }, [key]);
+  function choose(s) {
+    if (n >= pat.length) return;
+    if (s === pat[n]) { playKey(r + offs[n + 1], 0.3); setN(n + 1); setWrong(0); setFlash(null); }
+    else { setWrong(w => w + 1); setFlash(s); playKey(r + offs[n] + STEP_SIZE[s], 0.15); setTimeout(() => setFlash(f => (f === s ? null : f)), 700); }
+  }
+  const marks = {}, keyNames = {};
+  for (let i = 0; i <= n; i++) { marks[r + offs[i]] = i === 0 || i === pat.length ? 'target' : 'good'; keyNames[r + offs[i]] = prettyAny(names[i]); }
+  if (flash) marks[r + offs[n] + STEP_SIZE[flash]] = 'bad';
+  const done = n === pat.length;
+  const accs = names.slice(0, 7).filter(x => x.length > 1);
+  const buttons = mode === 'major' ? ['T', 'S'] : ['T', 'S', 'T+S'];
+  return (
+    <div style={{...actBox, background:'#fff', border:'1px solid var(--border)', marginBottom:16}}>
+      <div style={actTitle}>Build it yourself</div>
+      <div style={actNote}>Pick a starting note and build the {mode === 'major' ? 'major' : 'harmonic minor'} scale one step at a time: is the next step a tone (T) or a semitone (S){mode === 'major' ? '' : ' -- or the tone and a half (T+S)'}?</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6}}>
+        {KEYS.map(k => <button key={k} className={'chip' + (k === key ? ' active' : '')} style={{padding:'3px 10px',fontSize:12}} onClick={() => setKey(k)}>{prettyNote(k)}{mode === 'major' ? '' : 'm'}</button>)}
+      </div>
+      <div style={{display:'flex',justifyContent:'center',gap:3,margin:'0 0 6px',flexWrap:'wrap'}}>
+        {pat.map((s, i) => (
+          <span key={i} style={{minWidth:30,textAlign:'center',padding:'3px 4px',borderRadius:6,fontSize:13,fontWeight:900,
+            background:i < n ? (s === 'T' ? '#e3ebe0' : '#f3ead8') : i === n ? '#241f1a' : '#f4f1ea',
+            color:i < n ? '#241f1a' : i === n ? '#fff' : '#c7bca8',transition:'background 0.25s'}}>{i < n || (i === n && wrong >= 2) ? s : i === n ? '?' : '·'}</span>
+        ))}
+      </div>
+      <TapKeyboard octaves={2} marks={marks} names={keyNames} onTap={(i) => playKey(i)}/>
+      <div style={{display:'flex',gap:6,justifyContent:'center',margin:'8px 0 4px'}}>
+        {buttons.map(b => <button key={b} className="ghost-btn" disabled={done} onClick={() => choose(b)} style={{minWidth:70,fontWeight:900}}>{b}</button>)}
+        <button className="ghost-btn" disabled={!n} onClick={() => { setN(0); setWrong(0); }}>Restart</button>
+      </div>
+      <div style={{textAlign:'center',fontSize:13,minHeight:40,lineHeight:1.5}}>
+        {done
+          ? <><b>{names.map(prettyAny).join(' ')}</b><div style={{color:'#4f7a45',fontWeight:700}}>
+              {mode === 'major'
+                ? (accs.length ? prettyNote(key) + ' major needs ' + accs.map(prettyAny).join(' ') + ' -- that’s its key signature.' : 'C major: no sharps or flats at all.')
+                : 'The raised 7th (' + prettyAny(names[6]) + ') makes the tone-and-a-half step -- it isn’t in the key signature, so it’s written in each time.'}</div></>
+          : flash ? <span style={{color:'#b5483b',fontWeight:700}}>Not {STEP_WORD[flash]} here{wrong >= 2 ? ' -- the pattern is ' + pat.join(' ') : ''}.</span>
+          : <span style={{color:'var(--muted)'}}>Step {n + 1}: from {prettyAny(names[n])}, which step comes next?</span>}
+      </div>
+    </div>
+  );
+}
+
 function ScalesLearn({ onStart }) {
   const [mode, setMode] = useState('major');
   const [sel, setSel] = useState('C');
@@ -3831,11 +3891,13 @@ function ScalesLearn({ onStart }) {
       </div>
       {mode === 'major' ? <>
         <MajorShapeCard/>
+        <ScaleBuilder mode="major"/>
         <ScalePatterns sel={sel} onPick={setSel}/>
         <ScalePath sel={sel} onPick={setSel}/>
         <ScaleFingeringDrill controlledKey={sel} onPickKey={setSel}/>
       </> : <>
         <MinorFormsCard/>
+        <ScaleBuilder key="minor" mode="minor"/>
         <ScalePatterns sel={minSel} onPick={setMinSel} mode="minor"/>
         <ScalePath sel={minSel} onPick={setMinSel} keys={MINOR_PATH} prefix="m:" mode="minor"/>
         <MinorViewer sel={minSel} onPick={setMinSel}/>
