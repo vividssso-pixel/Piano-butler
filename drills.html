@@ -1086,6 +1086,10 @@ function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, 
           <g key={k.i} onClick={tap(k.i)} style={{cursor:onTap?'pointer':'default'}} data-key={k.i}>
             <rect x={k.x} y="0" width={blackW} height={blackH} fill={m ? m.black : '#241f1a'}
               stroke={m ? m.stroke : '#241f1a'} strokeWidth={m ? 2 : 1} rx={pixel ? 0 : 2}/>
+            {names && names[k.i] && (
+              <text x={k.x + blackW / 2} y={blackH - 12} textAnchor="middle" fontSize="11" fontWeight="900"
+                fill="#fff" style={{pointerEvents:'none',animation:'fadeUp 0.3s both'}}>{names[k.i]}</text>
+            )}
             {labels === 'all' && k.info.names.map((n, j) => (
               <text key={n} x={k.x + blackW / 2} y={blackH - 22 + j * 12} textAnchor="middle" fontSize="8.5"
                 fontWeight="700" fill="#f8edd4" style={{pointerEvents:'none'}}>{prettyNote(n)}</text>
@@ -3001,6 +3005,345 @@ const KEYSIG_DRILL = {
   Learn: KeySigLearn,
 };
 
+// ─── Concept: Intervals (Phase 105, 2026-09-24) ──────────────────────────────────
+// Placement checked against the 2026 AMEB Manual: Music Craft Prelim = M3/m3, P4, P5, P8 by number;
+// Grade 1 = all diatonic intervals by number; Grade 2 = major/minor 2, 3, 6, 7 + perfect 1, 4, 5, 8
+// (and consonant/dissonant); Grade 3 = inversions + A4/d5. Theory of Music: Grade 1 = number above
+// the tonic, Grade 2 = number and quality. Aural: Musicianship Grade 1 = major vs minor 3rd.
+// Teaching order (Sohyun): number first (count the letters, the bottom note is 1), then quality
+// (count the semitones -- Tones & Semitones comes first for exactly this reason).
+// A note is { d, acc }: d = diatonic number from the Reading the Staff chapter (middle C = 28), acc = -1/0/+1.
+const IV_WHITE = [0, 2, 4, 5, 7, 9, 11];
+function ivMidi(n) { return (dOct(n.d) + 1) * 12 + IV_WHITE[((n.d % 7) + 7) % 7] + (n.acc || 0); }
+function ivName(n) { return dName(n.d) + (n.acc > 0 ? '♯' : n.acc < 0 ? '♭' : ''); }
+const IV_BASE = { 1: 0, 2: 2, 3: 4, 4: 5, 5: 7, 6: 9, 7: 11, 8: 12 };
+const IV_PERFECT = { 1: true, 4: true, 5: true, 8: true };
+const IV_QWORD = { P: 'perfect', M: 'major', m: 'minor', A: 'augmented', d: 'diminished' };
+function ivOrd(n) { return n === 1 ? 'unison' : n === 8 ? 'octave' : n + (n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'); }
+function ivNum(a, b) { return b.d - a.d + 1; }
+function ivQuality(a, b) {
+  const n = ivNum(a, b), diff = ivMidi(b) - ivMidi(a) - IV_BASE[n];
+  if (IV_PERFECT[n]) return diff === 0 ? 'P' : diff === 1 ? 'A' : diff === -1 ? 'd' : '?';
+  return diff === 0 ? 'M' : diff === -1 ? 'm' : diff === 1 ? 'A' : diff === -2 ? 'd' : '?';
+}
+function ivLong(q, n) { return IV_QWORD[q] + ' ' + ivOrd(n); }
+function ivBuild(a, n, q) {
+  const d = a.d + n - 1;
+  const shift = q === 'm' ? -1 : q === 'A' ? 1 : q === 'd' ? (IV_PERFECT[n] ? -1 : -2) : 0;
+  return { d, acc: ivMidi(a) + IV_BASE[n] + shift - ivMidi({ d, acc: 0 }) };
+}
+function ivFreq(n) { return 440 * Math.pow(2, (ivMidi(n) - 69) / 12); }
+function playIv(a, b, mode = 'both') {
+  const ctx = getAudio(); if (!ctx) return;
+  const t = ctx.currentTime + 0.03;
+  if (mode !== 'harmonic') { blip(ctx, t, ivFreq(a), 0.6, 0.18, 'triangle'); blip(ctx, t + 0.65, ivFreq(b), 0.6, 0.18, 'triangle'); }
+  if (mode !== 'melodic') { const h = mode === 'harmonic' ? t : t + 1.45; blip(ctx, h, ivFreq(a), 1.0, 0.14, 'triangle'); blip(ctx, h, ivFreq(b), 1.0, 0.14, 'triangle'); }
+}
+// The eleven intervals up to an octave that AMEB Grade 2 asks for, smallest first.
+const IV_LIST = [[2, 'm'], [2, 'M'], [3, 'm'], [3, 'M'], [4, 'P'], [5, 'P'], [6, 'm'], [6, 'M'], [7, 'm'], [7, 'M'], [8, 'P']];
+const IV_SEMIS = (n, q) => IV_BASE[n] + (q === 'm' ? -1 : 0);
+
+// A staff with notes spread left to right (melodic), accidentals drawn to the left of each note.
+// ladder: { from, to } draws the counting stairs 1, 2, 3 ... between the first two notes.
+function IntervalStaff({ clef = 'treble', notes, colors = [], labels, width = 240, ladder, tapRange, onTapD, ink = '#241f1a' }) {
+  const c = CLEFS[clef];
+  const ys = [dY(c.high) - 18, dY(c.low) + 16];
+  notes.forEach(n => ys.push(dY(n.d) - 16, dY(n.d) + 12));
+  if (tapRange) ys.push(dY(tapRange[1]) - 8, dY(tapRange[0]) + 8);
+  const y0 = Math.min(...ys), y1 = Math.max(...ys) + (labels ? 20 : 0);
+  const n = notes.length;
+  const xOf = (i) => n === 1 ? width * 0.6 : n === 2 ? width * (i === 0 ? 0.42 : 0.78) : 70 + i * ((width - 88) / (n - 1));
+  const lx1 = xOf(0), lx2 = xOf(1);
+  return (
+    <svg viewBox={`0 ${y0} ${width} ${y1 - y0}`} style={{width:'100%',maxWidth:width * 1.6,display:'block',margin:'0 auto',touchAction:'manipulation'}}>
+      {c.lines.map(l => <line key={l} x1="4" x2={width - 4} y1={dY(l)} y2={dY(l)} stroke={ink} strokeOpacity="0.55" strokeWidth="1.2"/>)}
+      <ClefGlyph clef={clef} st={clef} yOf={(d) => dY(d)} ink={ink}/>
+      {ladder && Array.from({ length: ladder.to - ladder.from + 1 }, (_, k) => {
+        const cnt = ladder.to - ladder.from;
+        const x = cnt ? lx1 + 14 + (k / cnt) * (lx2 - lx1 - 28) : lx1;
+        return <text key={(ladder.nonce || 0) + ':' + ladder.from + ':' + k} x={x} y={dY(ladder.from + k) + 4} textAnchor="middle" fontSize="10" fontWeight="900" fill="#b5483b"
+          style={{animation:'fadeUp 0.25s both', animationDelay: (k * 0.14) + 's'}}>{k + 1}</text>;
+      })}
+      {notes.map((nt, i) => {
+        const x = xOf(i), y = dY(nt.d), col = colors[i] || ink;
+        return (
+          <g key={i + ':' + nt.d + ':' + nt.acc}>
+            {ledgersFor(nt.d, c.low, c.high).map(p => <line key={p} x1={x - 12} x2={x + 12} y1={dY(p)} y2={dY(p)} stroke={ink} strokeWidth="1.4"/>)}
+            {nt.acc > 0 && <SharpShape x={x - 17} y={y} color={col}/>}
+            {nt.acc < 0 && <FlatShape x={x - 16} y={y} color={col}/>}
+            <ellipse cx={x} cy={y} rx="7" ry="5" transform={`rotate(-20 ${x} ${y})`} fill={col} style={{animation:'fadeUp 0.25s both'}}/>
+            {labels && labels[i] && <text x={x} y={y1 - 5} textAnchor="middle" fontSize="11" fontWeight="800" fill={col}>{labels[i]}</text>}
+          </g>
+        );
+      })}
+      {tapRange && onTapD && Array.from({ length: tapRange[1] - tapRange[0] + 1 }, (_, k) => tapRange[0] + k).map(d => (
+        <rect key={'t' + d} x={width * 0.55} y={dY(d) - 2.5} width={width * 0.45 - 4} height="5" fill="transparent" style={{cursor:'pointer'}} onClick={() => onTapD(d)}/>
+      ))}
+    </svg>
+  );
+}
+
+// 1. The interval ruler: tap anywhere above the bottom note; the stairs count up to it.
+function IntervalRuler() {
+  const [bot, setBot] = useState(28);
+  const [top, setTop] = useState(32);
+  const [nonce, setNonce] = useState(0);
+  const a = { d: bot, acc: 0 }, b = { d: top, acc: 0 };
+  const num = top - bot + 1;
+  const line = (d) => d % 2 === 0;
+  function tapD(d) { if (d <= bot) return; setTop(d); setNonce(x => x + 1); playIv(a, { d, acc: 0 }, 'melodic'); }
+  const pattern = num % 2 === 1
+    ? (line(bot) ? 'line to line' : 'space to space')
+    : (line(bot) ? 'line to space' : 'space to line');
+  return (
+    <div style={actBox}>
+      <div style={actTitle}>The interval ruler</div>
+      <div style={actNote}>Pick a bottom note, then tap anywhere on the staff above it. Count every line and space -- the bottom note is <b>1</b>.</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:4}}>
+        {[28, 29, 30, 31, 32, 33].map(d => <button key={d} className={'chip' + (d === bot ? ' active' : '')} style={{padding:'3px 10px',fontSize:12}} onClick={() => { setBot(d); setTop(Math.min(d + 4, d + 7)); setNonce(x => x + 1); }}>{dName(d)}</button>)}
+      </div>
+      <IntervalStaff notes={[a, b]} colors={['#241f1a', '#a8823f']} labels={[dName(bot), dName(top)]} ladder={{ from: bot, to: top, nonce }}
+        tapRange={[bot + 1, bot + 7]} onTapD={tapD} width={240}/>
+      <div style={{textAlign:'center',fontSize:16,fontWeight:900,marginTop:4}}>{dName(bot)} up to {dName(top)} = <span style={{color:'#a8823f'}}>{num === 8 ? 'an octave' : 'a ' + ivOrd(num)}</span></div>
+      <div style={{textAlign:'center',fontSize:12,color:'#6f665b',marginTop:2}}>{pattern} -- {num % 2 ? 'odd numbers (3rd, 5th, 7th) stay on lines or stay in spaces' : 'even numbers (2nd, 4th, 6th, 8ve) swap between line and space'}</div>
+      <div style={{textAlign:'center',marginTop:6}}><button className="ghost-btn" onClick={() => playIv(a, b)}>♪ Hear it</button></div>
+    </div>
+  );
+}
+
+// 2. Same number, different size: count the semitones on the keyboard.
+function SemitoneCounter() {
+  const [bot, setBot] = useState(28);
+  const [num, setNum] = useState(3);
+  const [q, setQ] = useState('M');
+  const [step, setStep] = useState(0);
+  const a = { d: bot, acc: 0 };
+  const b = ivBuild(a, num, q);
+  const s = ivMidi(b) - ivMidi(a);
+  const k0 = ivMidi(a) - 60;
+  useEffect(() => { setStep(0); }, [bot, num, q]);
+  useEffect(() => {
+    if (step <= 0 || step >= s) return;
+    const t = setTimeout(() => { playKey(k0 + step + 1, 0.16); setStep(x => x + 1); }, 260);
+    return () => clearTimeout(t);
+  }, [step, s]);
+  function count() { playKey(k0 + 1, 0.16); setStep(1); }
+  const names = {}; for (let k = 1; k <= step; k++) names[k0 + k] = String(k);
+  const marks = { [k0]: 'target', [k0 + s]: step >= s ? 'good' : 'target' };
+  const quals = IV_PERFECT[num] ? ['P'] : ['m', 'M'];
+  return (
+    <div style={actBox}>
+      <div style={actTitle}>Same number, different size</div>
+      <div style={actNote}>C–E and C–E♭ are both 3rds (C D E -- three letters), but one is a semitone bigger. Count the semitones to find out which kind.</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:4}}>
+        {[28, 29, 30, 31, 32, 33, 34].map(d => <button key={d} className={'chip' + (d === bot ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => setBot(d)}>{dName(d)}</button>)}
+      </div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:4}}>
+        {[2, 3, 4, 5, 6, 7, 8].map(n => <button key={n} className={'chip' + (n === num ? ' active' : '')} style={{padding:'3px 8px',fontSize:12}} onClick={() => { setNum(n); setQ(IV_PERFECT[n] ? 'P' : q === 'P' ? 'M' : q); }}>{n === 8 ? '8ve' : ivOrd(n)}</button>)}
+        <span style={{width:6}}/>
+        {quals.map(x => <button key={x} className={'chip' + (x === q ? ' active' : '')} style={{padding:'3px 10px',fontSize:12}} onClick={() => setQ(x)}>{IV_QWORD[x]}</button>)}
+      </div>
+      <IntervalStaff notes={[a, b]} colors={['#241f1a', '#a8823f']} labels={[ivName(a), ivName(b)]} width={220}/>
+      <TapKeyboard octaves={2} marks={marks} names={names} labels={step ? null : 'white'} onTap={(i) => playKey(i)}/>
+      <div style={{textAlign:'center',margin:'8px 0 4px'}}><button className="ghost-btn" onClick={count}>Count the semitones ▶</button> <button className="ghost-btn" onClick={() => playIv(a, b)}>♪ Hear</button></div>
+      <div style={{textAlign:'center',fontSize:15,fontWeight:900,minHeight:22}}>
+        {ivName(a)} → {ivName(b)}: {step >= s ? <>{s} semitones = <span style={{color:'#a8823f'}}>{ivLong(q, num)}</span></> : <span style={{color:'var(--muted)'}}>{ivOrd(num) === 'octave' ? 'an octave' : 'a ' + ivOrd(num)} -- how many semitones?</span>}
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'auto 1fr 1fr',gap:'2px 10px',fontSize:12,marginTop:10,background:'#fff',borderRadius:8,padding:'8px 10px'}}>
+        <b style={{color:'var(--muted)'}}>number</b><b style={{color:'var(--muted)'}}>minor</b><b style={{color:'var(--muted)'}}>major / perfect</b>
+        {[2, 3, 4, 5, 6, 7, 8].map(n => {
+          const on = n === num;
+          const cell = (x) => <span style={{fontWeight:on && x === q ? 900 : 600,color:on && x === q ? '#a8823f' : on ? 'var(--text)' : '#6f665b'}}>{IV_SEMIS(n, x)} semitone{IV_SEMIS(n, x) === 1 ? '' : 's'}{x === 'P' ? ' (P)' : ''}</span>;
+          return (
+            <React.Fragment key={n}>
+              <span style={{fontWeight:on ? 900 : 700}}>{n === 8 ? '8ve' : ivOrd(n)}</span>
+              {IV_PERFECT[n] ? <span style={{color:'#c7bca8'}}>--</span> : cell('m')}
+              {cell(IV_PERFECT[n] ? 'P' : 'M')}
+            </React.Fragment>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// 3. The major-scale shortcut: every note of the major scale above the tonic is major or perfect.
+function MajorScaleIntervals() {
+  const KEYS = ['C', 'G', 'D', 'A', 'F', 'Bb', 'Eb'];
+  const [key, setKey] = useState('C');
+  const [n, setN] = useState(0);
+  const [auto, setAuto] = useState(false);
+  const names = spellScale(key);
+  const tonicD = 28 + STAFF_LETTERS.indexOf(key[0]);
+  const notes = names.map((nm, i) => ({ d: tonicD + i, acc: nm.endsWith('#') ? 1 : nm.endsWith('b') ? -1 : 0 })).concat([{ d: tonicD + 7, acc: key.endsWith('b') ? -1 : 0 }]);
+  useEffect(() => { setN(0); setAuto(false); }, [key]);
+  useEffect(() => {
+    if (!auto) return;
+    if (n >= 7) { setAuto(false); return; }
+    const t = setTimeout(() => { playIv(notes[0], notes[n + 1], 'harmonic'); setN(x => x + 1); }, n === 0 ? 100 : 1100);
+    return () => clearTimeout(t);
+  }, [auto, n]);
+  const lab = notes.map((nt, i) => i === 0 ? '1' : i <= n ? ivQuality(notes[0], nt) + (i + 1) : '');
+  const colors = notes.map((nt, i) => i === 0 ? '#241f1a' : i === n ? '#a8823f' : i < n ? '#4f7a45' : '#c7bca8');
+  return (
+    <div style={actBox}>
+      <div style={actTitle}>The major-scale shortcut</div>
+      <div style={actNote}>Measure every note of a major scale from its first note. The 4th, 5th and octave come out <b>perfect</b>; all the others come out <b>major</b>. Make a major interval one semitone smaller and it becomes <b>minor</b>.</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:4}}>
+        {KEYS.map(k => <button key={k} className={'chip' + (k === key ? ' active' : '')} style={{padding:'3px 10px',fontSize:12}} onClick={() => setKey(k)}>{prettyNote(k)}</button>)}
+      </div>
+      <IntervalStaff notes={notes} colors={colors} labels={lab} width={360}/>
+      <div style={{textAlign:'center',fontSize:14,fontWeight:800,minHeight:22,marginTop:2}}>
+        {n ? <>{prettyNote(key)} up to {ivName(notes[n])} = <span style={{color:'#a8823f'}}>{ivLong(ivQuality(notes[0], notes[n]), n + 1)}</span></> : 'Press play: the tonic sounds with each note in turn.'}
+      </div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:6}}>
+        <button className="ghost-btn" onClick={() => { setN(0); setAuto(true); }}>▶ Play</button>
+        <button className="ghost-btn" disabled={n >= 7} onClick={() => { setAuto(false); playIv(notes[0], notes[n + 1], 'harmonic'); setN(n + 1); }}>+ Next</button>
+      </div>
+      {n >= 7 && <div style={{textAlign:'center',fontSize:12,color:'#4f7a45',fontWeight:700,marginTop:6}}>M2 M3 P4 P5 M6 M7 P8 -- the same in every major key.</div>}
+    </div>
+  );
+}
+
+// 4. Hear them: every interval up to an octave from C, with a tune that starts with it.
+const IV_SONGS = { m2: 'Jaws', M2: 'Happy Birthday (“-py birth-”)', m3: 'Greensleeves', M3: 'Oh When the Saints', P4: 'Here Comes the Bride', P5: 'Twinkle Twinkle', M6: 'My Bonnie', m7: 'Somewhere (West Side Story)', P8: 'Somewhere Over the Rainbow' };
+const IV_DISSONANT = { m2: true, M2: true, m7: true, M7: true };
+function IntervalEar() {
+  const [sel, setSel] = useState(null);
+  const a = { d: 28, acc: 0 };
+  return (
+    <div style={actBox}>
+      <div style={actTitle}>Hear them</div>
+      <div style={actNote}>Tap to hear each one from C: first the notes one after the other, then together. <b>Consonant</b> intervals blend; <b>dissonant</b> ones (2nds and 7ths) clash and want to move.</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:5}}>
+        {IV_LIST.map(([n, q]) => {
+          const id = q + n;
+          return <button key={id} className={'chip' + (sel === id ? ' active' : '')} style={{padding:'6px 0',fontSize:13,borderColor:IV_DISSONANT[id] ? '#e0b3ab' : undefined}}
+            onClick={() => { setSel(id); playIv(a, ivBuild(a, n, q)); }}>{id}</button>;
+        })}
+      </div>
+      <div style={{textAlign:'center',fontSize:13,minHeight:40,marginTop:8}}>
+        {sel && (() => { const n = +sel.slice(1), q = sel[0], b = ivBuild(a, n, q); return <>
+          <b>{ivLong(q, n)}</b>: C → {ivName(b)}, {IV_SEMIS(n, q)} semitone{IV_SEMIS(n, q) === 1 ? '' : 's'} · <span style={{color:IV_DISSONANT[sel] ? '#b5483b' : '#4f7a45',fontWeight:700}}>{IV_DISSONANT[sel] ? 'dissonant' : 'consonant'}</span>
+          {IV_SONGS[sel] && <div style={{fontSize:12,color:'#6f665b'}}>Sounds like the start of: {IV_SONGS[sel]}</div>}
+        </>; })()}
+      </div>
+    </div>
+  );
+}
+
+function IntervalsLearn({ onStart }) {
+  const tip = (title, body) => (
+    <div style={{padding:'10px 0',borderTop:'1px solid var(--border)'}}>
+      <div style={{fontSize:14,fontWeight:800,marginBottom:2}}>{title}</div>
+      <div style={{fontSize:13,color:'#6f665b',lineHeight:1.55}}>{body}</div>
+    </div>
+  );
+  return (
+    <div className="card fade-up">
+      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Intervals</h2>
+      <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 8px'}}>The distance between two notes. Every interval has a <b>number</b> (count the letters) and a <b>quality</b> (count the semitones): <b>major 3rd</b>, <b>perfect 5th</b>.</p>
+      {tip('1 · The number: count the letters', 'Start on the bottom note and call it 1, then count every letter (every line and space) up to the top note. C up to G: C D E F G = a 5th. Sharps and flats don’t change the number.')}
+      <IntervalRuler/>
+      <LetterWalker/>
+      {tip('2 · The quality: count the semitones', '2nds, 3rds, 6ths and 7ths come in two sizes: major (bigger) and minor (one semitone smaller). Unisons, 4ths, 5ths and octaves have one normal size: perfect.')}
+      <SemitoneCounter/>
+      {tip('3 · The shortcut: think of the major scale', 'If the top note is in the major scale of the bottom note, the interval is major (2, 3, 6, 7) or perfect (4, 5, 8). One semitone smaller than major = minor.')}
+      <MajorScaleIntervals/>
+      {tip('4 · Train your ear', 'Intervals have a sound of their own. Link each one to a tune you know and you’ll hear them in the music you play.')}
+      <IntervalEar/>
+      <button className="primary-btn" style={{marginTop:6}} onClick={onStart}>Start the drill →</button>
+    </div>
+  );
+}
+
+// Drill. Bottom notes are natural, so every answer needs at most one sharp or flat.
+const IV_LEVELS = [
+  { n: 1, label: 'Number only · treble',                    kind: 'num',   clefs: ['treble'], time: 8 },
+  { n: 2, label: 'Number only · treble and bass',           kind: 'num',   clefs: ['treble', 'bass'], time: 8 },
+  { n: 3, label: 'Major or minor 3rd, perfect 4th, 5th, 8ve', kind: 'q5',  clefs: ['treble'], time: 10 },
+  { n: 4, label: 'Above the tonic in major keys',           kind: 'tonic', clefs: ['treble'], time: 10 },
+  { n: 5, label: 'Any interval · number and quality',       kind: 'any',   clefs: ['treble', 'bass'], time: 12 },
+  { n: 6, label: 'Build it on the keyboard',                kind: 'build', time: 12 },
+  { n: 7, label: 'By ear: 3rds, 4th, 5th, octave',          kind: 'ear',   time: 12 },
+];
+const IV_Q5 = [[3, 'm'], [3, 'M'], [4, 'P'], [5, 'P'], [8, 'P']];
+const IV_TONICS = ['C', 'G', 'D', 'A', 'E', 'F', 'Bb', 'Eb', 'Ab'];
+function ivLabelOf(pair) { return ivLong(pair[1], pair[0]); }
+function genIntervalQuestion(lv, prev) {
+  const uid = Math.random();
+  for (let tries = 0; tries < 40; tries++) {
+    const clef = lv.clefs ? pick(lv.clefs) : 'treble';
+    const off = clef === 'bass' ? -10 : 0; // bass: bottom notes G2..C3, inside the bass staff
+    let a, b, n, q;
+    if (lv.kind === 'tonic') {
+      const key = pick(IV_TONICS), names = spellScale(key);
+      a = { d: 28 + STAFF_LETTERS.indexOf(key[0]), acc: key.endsWith('b') ? -1 : 0 };
+      n = 2 + Math.floor(Math.random() * 7);
+      const nm = n === 8 ? key : names[n - 1];
+      b = { d: a.d + n - 1, acc: nm.endsWith('#') ? 1 : nm.endsWith('b') ? -1 : 0 };
+      q = ivQuality(a, b);
+    } else {
+      const pair = lv.kind === 'q5' || lv.kind === 'ear' ? pick(IV_Q5) : lv.kind === 'num' ? [2 + Math.floor(Math.random() * 7), null] : pick(IV_LIST);
+      n = pair[0];
+      a = { d: 28 + Math.floor(Math.random() * 6) + off, acc: 0 };
+      if (pair[1]) { q = pair[1]; b = ivBuild(a, n, q); } else { b = { d: a.d + n - 1, acc: 0 }; q = ivQuality(a, b); }
+      if (Math.abs(b.acc) > 1) continue;
+    }
+    if (lv.kind === 'build' && ivMidi(b) - 60 > 23) continue;
+    const key = a.d + ':' + a.acc + ':' + b.d + ':' + b.acc;
+    if (prev && prev.key === key) continue;
+    const answer = lv.kind === 'num' ? ivOrd(n) : ivLong(q, n);
+    const choices = lv.kind === 'num' ? [2, 3, 4, 5, 6, 7, 8].map(ivOrd)
+      : lv.kind === 'q5' || lv.kind === 'ear' ? IV_Q5.map(ivLabelOf) : IV_LIST.map(ivLabelOf);
+    if (lv.kind !== 'num' && !choices.includes(answer)) continue;
+    return { kind: lv.kind, key, clef, a, b, n, q, answer, choices, target: ivMidi(b) - 60, uid };
+  }
+  const a = { d: 28, acc: 0 }, b = { d: 32, acc: 0 };
+  return { kind: 'num', key: 'fallback', clef: 'treble', a, b, n: 5, q: 'P', answer: '5th', choices: [2, 3, 4, 5, 6, 7, 8].map(ivOrd), target: 7, uid };
+}
+function IntervalQuestion({ q, level, given, locked, onAnswer, pixel }) {
+  const done = !!given;
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const prompt = (t, px) => <p style={pixel ? {fontSize:10,textAlign:'center',margin:'0 0 10px'} : {fontSize:14,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? px : t}</p>;
+  useEffect(() => { if (q.kind === 'ear') { const t = setTimeout(() => playIv(q.a, q.b), 250); return () => clearTimeout(t); } }, [q.uid]);
+  const ink = pixel ? '#f3ead8' : '#241f1a';
+  const staffBg = pixel ? { background:'#f3ead8', borderRadius:4, padding:'4px 0' } : {};
+  const grid = (cols, fs) => (
+    <div style={{display:'grid',gridTemplateColumns:'repeat(' + cols + ',1fr)',gap:6,marginTop:12}}>
+      {q.choices.map(c => <button key={c} disabled={locked} onClick={() => onAnswer(c)} className={btnCls + (!done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '')} style={{padding:'11px 2px',fontSize:pixel ? 8 : fs,lineHeight:1.2}}>{pixel ? c.toUpperCase() : c}</button>)}
+    </div>
+  );
+  if (q.kind === 'build') {
+    const marks = { [ivMidi(q.a) - 60]: 'target' };
+    if (done) { marks[q.target] = 'good'; if (!given.ok && given.ans !== null && given.ans !== undefined && given.ans !== q.target) marks[given.ans] = 'bad'; }
+    return (<div>
+      {prompt('Tap the key a ' + q.answer + ' above ' + ivName(q.a), ('TAP A ' + q.answer + ' ABOVE ' + ivName(q.a)).toUpperCase())}
+      <div style={staffBg}><IntervalStaff notes={done ? [q.a, q.b] : [q.a]} colors={['#241f1a', '#4f7a45']} width={200}/></div>
+      <div style={{marginTop:8}}><TapKeyboard octaves={2} labels="white" marks={marks} pixel={pixel} onTap={locked ? null : (i) => { playKey(i); onAnswer(i); }}/></div>
+    </div>);
+  }
+  if (q.kind === 'ear') {
+    return (<div>
+      {prompt('Listen: which interval?', 'WHICH INTERVAL?')}
+      <div style={{textAlign:'center'}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => playIv(q.a, q.b)} style={pixel ? {fontSize:9} : {fontSize:14,padding:'10px 18px'}}>{pixel ? '♪ PLAY AGAIN' : '♪ Play again'}</button></div>
+      {done && <div style={staffBg}><IntervalStaff notes={[q.a, q.b]} colors={['#241f1a', '#4f7a45']} labels={[ivName(q.a), ivName(q.b)]} width={200}/></div>}
+      {grid(2, 15)}
+    </div>);
+  }
+  return (<div>
+    {prompt(q.kind === 'num' ? 'What number is this interval?' : q.kind === 'tonic' ? 'In ' + prettyNote(ivName(q.a)) + ' major: name the interval above the tonic' : 'Name the interval', q.kind === 'num' ? 'WHAT NUMBER?' : 'NAME IT')}
+    <div style={staffBg}><IntervalStaff clef={q.clef} notes={[q.a, q.b]} colors={done ? ['#241f1a', '#4f7a45'] : []} labels={done ? [ivName(q.a), ivName(q.b)] : null} width={200}/></div>
+    {grid(q.kind === 'num' ? 4 : q.choices.length > 6 ? 3 : 2, q.choices.length > 6 ? 13 : 15)}
+  </div>);
+}
+const INTERVALS_DRILL = {
+  id: 'intervals', label: 'Intervals', levels: IV_LEVELS, generate: genIntervalQuestion,
+  check: (q, ans) => ans !== null && ans !== undefined && (q.kind === 'build' ? ans === q.target : ans === q.answer),
+  answerLabel: (q) => q.kind === 'build' ? ivName(q.b) + ' (' + q.answer + ' above ' + ivName(q.a) + ')' : q.answer + ' (' + ivName(q.a) + ' → ' + ivName(q.b) + ')',
+  Question: IntervalQuestion, Learn: IntervalsLearn,
+};
+
 // ─── Concept 6: Scales (Phase 97, 2026-09-23) ────────────────────────────────────
 // Rebuilt from Sohyun's Scale Fingering tool + her scale-card idea. The one idea a student
 // actually has to hold per scale: the thumb tucks after 3 and after 4, so in each octave finger 4
@@ -4424,6 +4767,7 @@ const DRILLS = [
   { id: 'tones', label: 'Tones & Semitones', concept: TONES_DRILL, track: 'pitch' },
   { id: 'scales', label: 'Scales', concept: SCALES_DRILL, track: 'pitch' },
   { id: 'key-signatures', label: 'Key Signatures', concept: KEYSIG_DRILL, track: 'pitch' },
+  { id: 'intervals', label: 'Intervals', concept: INTERVALS_DRILL, track: 'pitch' },
   { id: 'note-values', label: 'Notes & Rests', concept: NOTEVAL_DRILL, track: 'rhythm' },
   { id: 'time-signatures', label: 'Time Signatures', concept: TIMESIG_DRILL, track: 'rhythm' },
   { id: 'rhythm', label: 'Rhythm Cards', concept: RHYTHM_DRILL, track: 'rhythm' },

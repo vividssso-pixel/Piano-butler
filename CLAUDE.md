@@ -2832,7 +2832,15 @@ Sohyun: give every chapter key-signature-style activities, starting from chapter
 - Follow-up (Sohyun): counting 2nds..octaves belongs in the Intervals chapter, not here. Tip 5 is now "Up is right, down is left" with `UpDownWalk` (Step down / Step up one white key, arc animation, letter trail, G→A and A→G wraps flagged, "Hide names" mode so the student says the letter first). `LetterWalker` is kept in the file, unused, for the Intervals chapter (plan: interval number by letter-counting first, then quality -- major 6th etc.).
 - Follow-up 2 (Sohyun): sharps/flats belong with Tones & Semitones. The Note Names tip about black-key names and `SharpFlatMover` moved to TonesLearn (after StepExplorer); the mover now speaks in semitones ("B♯ is one semitone up -- a white key, the same sound as C") and tapping a black key only plays it. TonesLearn opens with two name cards: Semitone (S) = half step, Tone (T) = whole step; StepExplorer says "1 semitone (half step)" / "2 semitones = 1 tone (whole step)". Note Names drill Level 4 (black keys) still exists -- revisit if Sohyun wants it moved too.
 
-Next on the plan: Signs (repeats, D.C./D.S./Fine, fermata already here, 8va, ties vs slurs), then Intervals, then Chords.
+### Phase 105 -- Intervals chapter (pitch track #6)
+Sohyun asked for Intervals before Signs. Placement from the 2026 AMEB Manual: Music Craft Prelim = M3/m3, P4, P5, P8 by number; Grade 1 = all diatonic by number; Grade 2 = major/minor 2, 3, 6, 7 + perfect 1, 4, 5, 8 and consonant/dissonant; Grade 3 = inversions + A4/d5 (not built yet). Theory of Music Grade 1 = number above the tonic, Grade 2 = number + quality. Musicianship Grade 1 aural = major vs minor 3rd.
+- Model: note = { d, acc } (d = staff diatonic number, middle C 28). Helpers ivMidi/ivName/ivNum/ivQuality/ivBuild/ivLong, playIv (melodic then harmonic). `IntervalStaff` draws a single staff with spread notes, sharps/flats, ledger lines, optional counting "ladder" and tap rows.
+- Learn: (1) number -- `IntervalRuler` (tap the staff above a bottom note; red 1-2-3 stairs climb; line/space rule for odd vs even numbers) + `LetterWalker` (moved here from Note Names); (2) quality -- `SemitoneCounter` (bottom note, number, minor/major; "Count the semitones" numbers each key on the keyboard, table of semitone sizes); (3) `MajorScaleIntervals` shortcut (C G D A F B♭ E♭; tonic sounds with each degree, labels M2 M3 P4 P5 M6 M7 P8); (4) `IntervalEar` (all 11 from C, consonant/dissonant, song hooks: Jaws, Happy Birthday, Greensleeves, Oh When the Saints, Here Comes the Bride, Twinkle Twinkle, My Bonnie, Somewhere, Over the Rainbow).
+- Drill levels: 1 number treble, 2 number treble+bass, 3 m3/M3/P4/P5/P8, 4 above the tonic in major keys (C G D A E F B♭ E♭ A♭), 5 any of the 11 (treble+bass), 6 build it on the keyboard, 7 by ear (m3/M3/P4/P5/P8). Bottom notes natural (except tonics) so answers need at most one accidental. Generator fuzzed 2000x per level: 0 fallbacks, 0 mismatches.
+- `TapKeyboard` `names` now also labels black keys.
+- Next here: inversions and A4/d5 (Grade 3), then Chords.
+
+Next on the plan: Signs (repeats, D.C./D.S./Fine, fermata already here, 8va, ties vs slurs), then Chords (Intervals done in Phase 105).
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
