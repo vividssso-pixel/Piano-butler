@@ -3517,6 +3517,31 @@ const FOLD_PAIRS = [
   { d: 42, color: '#4f7a45', label: 'High C ↔ Low C' },
 ];
 const FOLD_LINE_COLOR = '#3f8fc9';
+
+// Phase 101c: Sohyun's clef story -- the Queen of G and the King of F. Grounded in the real
+// history (both clefs began as the letters G and F), told as a story.
+function ClefStory() {
+  const card = (title, clef, d, body) => (
+    <div style={{background:'#fff',border:'1px solid var(--border)',borderRadius:10,padding:'10px 12px'}}>
+      <div style={{fontSize:14,fontWeight:900,marginBottom:2}}>{title}</div>
+      <StaffView clef={clef} notes={[{ d, color: '#3f8fc9' }]} width={220}/>
+      <div style={{fontSize:13,color:'#6f665b',lineHeight:1.55,marginTop:4}}>{body}</div>
+    </div>
+  );
+  return (
+    <div style={{margin:'12px 0',display:'flex',flexDirection:'column',gap:10}}>
+      <div style={{fontSize:14,fontWeight:800}}>Why they’re called the G clef and the F clef</div>
+      {card('The Queen lives on G', 'treble', 32,
+        <>Long ago the treble clef was simply a written letter <b>G</b>. Over the centuries it grew more and more elegant, until it became a spiral -- a winding path that closes in on one line and one line only: the second line up. That line is the Queen’s home. Follow the swirl inward and you arrive at her door, so any note sitting on that line is <b>G</b>. That’s why musicians call it the <b>G clef</b>.</>)}
+      {card('The King lives on F', 'bass', 24,
+        <>The bass clef began as a letter <b>F</b>. The King’s house is the fourth line up, and he never goes unguarded: the clef’s two dots are his guards, one standing just above his line, one just below. Find the two guards and the line between them is <b>F</b> -- the <b>F clef</b>.</>)}
+      <div style={{fontSize:13,color:'#6f665b',lineHeight:1.55}}>
+        The two palaces mirror each other: the Queen’s G is five notes above middle C, the King’s F is five notes below. Fold the staff at middle C (below) and her line lands exactly on his.
+      </div>
+    </div>
+  );
+}
+
 function FoldStaff() {
   const [phase, setPhase] = useState('open'); // open | folding | printed
   const timers = useRef([]);
@@ -3560,19 +3585,23 @@ function FoldStaff() {
           {FOLD_PAIRS.map((p, i) => ink(p.d, p.color, 150 + i * 60))}
         </g>
         <line x1="4" x2={W - 4} y1={foldY} y2={foldY} stroke="#a8823f" strokeWidth="1.6" strokeDasharray="6 5"/>
-        <text x={W - 6} y={foldY - 4} textAnchor="end" fontSize="9" fontWeight="800" fill="#a8823f">fold · middle C</text>
+        <text x={W - 6} y={foldY - 4} textAnchor="end" fontSize="9" fontWeight="800" fill="#a8823f">fold</text>
         <g style={bottomStyle}>
           <rect x="0" y={foldY + 1} width={W} height={botY - foldY} fill="var(--brass-bg)"/>
           {[18, 20, 22, 24, 26].map(d => line(d, printed && d === 24 ? FOLD_LINE_COLOR : null))}
           <ClefGlyph clef="bass" st="bass" yOf={(d) => dY(d)} ink="#241f1a"/>
           {printed && FOLD_PAIRS.map((p, i) => ink(56 - p.d, p.color, 150 + i * 60))}
         </g>
+        <line x1={90 - 12} x2={90 + 12} y1={foldY} y2={foldY} stroke="#241f1a" strokeWidth="1.6"/>
+        <ellipse cx={90} cy={foldY} rx="7.5" ry="5.5" transform={`rotate(-20 90 ${foldY})`} fill="#241f1a"/>
+        <text x={90} y={foldY - 9} textAnchor="middle" fontSize="8.5" fontWeight="800" fill="#241f1a">middle C</text>
       </svg>
       <div style={{display:'flex',gap:8,justifyContent:'center',margin:'8px 0 6px'}}>
         <button className="ghost-btn" onClick={fold} disabled={phase === 'folding'}>{printed ? 'Fold again' : 'Fold it'}</button>
         {phase !== 'open' && <button className="ghost-btn" onClick={() => setPhase('open')}>Wipe</button>}
       </div>
       <div style={{fontSize:12,lineHeight:1.7,opacity:printed ? 1 : 0.45,transition:'opacity 0.4s'}}>
+        <div><span style={{display:'inline-block',width:10,height:10,borderRadius:5,background:'#241f1a',marginRight:6}}/>Middle C sits right on the fold -- it is its own mirror.</div>
         {FOLD_PAIRS.map(p => <div key={p.d}><span style={{display:'inline-block',width:10,height:10,borderRadius:5,background:p.color,marginRight:6}}/>{p.label}</div>)}
         <div><span style={{display:'inline-block',width:10,height:3,background:FOLD_LINE_COLOR,margin:'0 6px 3px 0'}}/>Treble G line ↔ Bass F line -- the G clef curls round one, the F clef’s dots hug the other.</div>
       </div>
@@ -3595,16 +3624,22 @@ function LedgerMirror() {
     <div style={{margin:'10px 0'}}>
       <div style={{fontSize:14,fontWeight:800,marginBottom:2}}>The gap is really one missing line</div>
       <div style={{fontSize:12,color:'#6f665b',marginBottom:6,lineHeight:1.5}}>
-        Put the two staves together and there’s room for exactly one line between them -- middle C’s ledger line. So ledger lines below the treble staff land on the bass staff: an A with two ledger lines under the treble staff is the <b>same note</b> as the A on the bass staff’s top line.
+        Put the two staves together and there’s room for exactly one line between them -- middle C’s ledger line. Middle C written under the treble staff and middle C written above the bass staff are the same key. So ledger lines below the treble staff land on the bass staff: an A with two ledger lines under the treble staff is the <b>same note</b> as the A on the bass staff’s top line.
       </div>
       <svg viewBox={`0 ${topY} ${W} ${botY - topY}`} style={{width:'100%',maxWidth:450,display:'block',margin:'0 auto'}}>
         {[30, 32, 34, 36, 38].map(d => <line key={'t' + d} x1="4" x2={W * 0.46} y1={dY(d)} y2={dY(d)} stroke="#241f1a" strokeOpacity="0.55" strokeWidth="1.2"/>)}
         {[18, 20, 22, 24, 26].map(d => <line key={'b' + d} x1={W * 0.54} x2={W - 4} y1={dY(d)} y2={dY(d)} stroke="#241f1a" strokeOpacity="0.55" strokeWidth="1.2"/>)}
-        {guide(28, 'middle C line')}
+        {guide(28, '')}
         {guide(26, 'A = bass staff top line', true)}
         {[28, 26].map(p => <line key={'l' + p} x1={W * 0.3 - 12} x2={W * 0.3 + 12} y1={dY(p)} y2={dY(p)} stroke="#241f1a" strokeWidth="1.5"/>)}
         {head(W * 0.3, 26, '#a8823f')}
         {head(W * 0.72, 26, '#a8823f')}
+        <line x1={W * 0.13 - 12} x2={W * 0.13 + 12} y1={dY(28)} y2={dY(28)} stroke="#241f1a" strokeWidth="1.5"/>
+        {head(W * 0.13, 28, '#241f1a')}
+        <line x1={W * 0.88 - 12} x2={W * 0.88 + 12} y1={dY(28)} y2={dY(28)} stroke="#241f1a" strokeWidth="1.5"/>
+        {head(W * 0.88, 28, '#241f1a')}
+        <text x={W * 0.13} y={dY(28) - 9} textAnchor="middle" fontSize="8.5" fontWeight="800" fill="#241f1a">middle C</text>
+        <text x={W * 0.88} y={dY(28) - 9} textAnchor="middle" fontSize="8.5" fontWeight="800" fill="#241f1a">middle C</text>
         <text x={W * 0.3} y={dY(38) - 6} textAnchor="middle" fontSize="9" fontWeight="800" fill="#6f665b">treble staff</text>
         <text x={W * 0.72} y={dY(16) - 2} textAnchor="middle" fontSize="9" fontWeight="800" fill="#6f665b">bass staff</text>
       </svg>
@@ -3634,6 +3669,7 @@ function StaffLearn({ onStart }) {
       <StaffLetters clef="bass"/>
       {tip('Read from landmarks', 'The rhymes help at first, but fluent readers jump from a landmark: middle C, treble G, bass F, the two C’s in the spaces. From a landmark, count up or down by step.')}
       {tip('Ledger lines extend the staff', 'Short lines above or below the staff carry on the same line-space pattern -- middle C sits on one.')}
+      <ClefStory/>
       <FoldStaff/>
       <LedgerMirror/>
       <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
