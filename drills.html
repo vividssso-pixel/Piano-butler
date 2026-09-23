@@ -713,10 +713,10 @@ function ScaleFingeringDrill({ controlledKey, onPickKey } = {}) {
       </div>
 
       <div style={{background:'var(--brass-bg)',border:'1px solid var(--border)',borderRadius:10,padding:'12px 14px',marginTop:16}}>
-        <p style={{fontSize:12,fontWeight:800,color:'var(--brass)',margin:'0 0 6px'}}>Landmarks -- {prettyNote(key)} major (two octaves)</p>
+        <p style={{fontSize:12,fontWeight:800,color:'var(--brass)',margin:'0 0 6px'}}>Where the thumbs and finger 4 go -- {prettyNote(key)} major</p>
         {['RH', 'LH'].map(h => (
           <p key={h} style={{fontSize:12,color:'var(--text)',margin:'0 0 3px',lineHeight:1.5}}>
-            <b>{h === 'RH' ? 'Right hand' : 'Left hand'}:</b> finger 4 on {prettyList(fingerNotes(key, h, 4)) || '--'} · thumb on {prettyList(fingerNotes(key, h, 1))}
+            <b>{h === 'RH' ? 'Right hand' : 'Left hand'}:</b> thumb on {prettyList(fingerNotes(key, h, 1))} · finger 4 on {prettyList(fingerNotes(key, h, 4)) || '--'}
           </p>
         ))}
       </div>
@@ -2599,36 +2599,112 @@ function ScalePath({ sel, onPick }) {
   );
 }
 
+// Phase 97b: Sohyun found the finger-4 table hard to read ("패턴으로 설명해주는게 낫지 않아?").
+// Replaced with the five fingering PATTERNS. Each finger row is drawn straight from SCALES
+// (one octave, going up), split at the thumb into the same 1-2-3 / 1-2-3-4 groups (and colours)
+// the keyboard view uses, with the note names underneath -- so the cards can't disagree with the data.
+function FingerGroups({ keyName, hand }) {
+  const e = SCALES[keyName].octaves[1], names = spellScale(keyName);
+  const f = e[hand];
+  const groups = [];
+  let cur = [];
+  f.forEach((d, i) => {
+    const x = { d, n: names[i % 7] };
+    // Finger 5 only bookends the scale (RH top, LH bottom) -- give it its own plain box.
+    if (d === 5) { if (cur.length) groups.push(cur); groups.push([x]); cur = []; return; }
+    if (hand === 'RH' && d === 1 && cur.length) { groups.push(cur); cur = []; }
+    cur.push(x);
+    if (hand === 'LH' && d === 1) { groups.push(cur); cur = []; }
+  });
+  if (cur.length) groups.push(cur);
+  // A full group starts (RH) or ends (LH) on the thumb and has 3 or 4 notes; anything else is a
+  // lead-in or the last notes before the top/bottom, shown plain.
+  const kind = (g) => {
+    const thumbEnd = hand === 'RH' ? g[0].d === 1 : g[g.length - 1].d === 1;
+    return !thumbEnd ? null : g.length === 4 ? 'four' : g.length === 3 ? 'three' : null;
+  };
+  return (
+    <div style={{display:'flex',alignItems:'flex-start',gap:6,flexWrap:'wrap'}}>
+      <span style={{fontSize:11,fontWeight:800,color:'var(--muted)',width:22,paddingTop:5}}>{hand}</span>
+      {groups.map((g, gi) => {
+        const k = kind(g);
+        const c = k ? SEGMENT_COLORS[k] : { fill: '#fff', stroke: '#d9cdb0' };
+        return (
+          <span key={gi} style={{display:'inline-flex',gap:2,padding:'3px 5px',borderRadius:7,background:c.fill,border:'1.5px solid ' + c.stroke}}>
+            {g.map((x, xi) => (
+              <span key={xi} style={{display:'inline-flex',flexDirection:'column',alignItems:'center',minWidth:18}}>
+                <b style={{fontSize:15,lineHeight:1.1}}>{x.d}</b>
+                <span style={{fontSize:9,fontWeight:700,color:'#5c544a'}}>{prettyNote(x.n)}</span>
+              </span>
+            ))}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
+const SCALE_PATTERNS = [
+  { keys: ['C', 'G', 'D', 'A', 'E'], title: 'The standard shape', show: { RH: ['C'], LH: ['C'] },
+    text: 'Start on the thumb. Right hand: a group of 3, then a group of 4, finger 5 on top. Left hand is the mirror: 5 at the bottom, then 4 fingers, then 3. Same fingers for all five keys.' },
+  { keys: ['F'], title: 'F: the right hand swaps', show: { RH: ['F'], LH: ['F'] },
+    text: 'Right hand plays the group of 4 first, so finger 4 takes the B♭ and the thumb stays off it. Left hand is the standard shape.' },
+  { keys: ['B'], title: 'B: the left hand swaps', show: { RH: ['B'], LH: ['B'] },
+    text: 'Right hand is the standard shape. Left hand starts on finger 4 and plays two groups of 4, so its thumb lands on the white keys E and B.' },
+  { keys: ['Bb', 'Eb', 'Ab', 'Db'], title: 'Starting on a black key', show: { LH: ['Eb'], RH: ['Bb', 'Eb', 'Ab', 'Db'] },
+    text: 'The thumb only ever plays white keys. In all four keys the right-hand thumbs go on C and F, and the left hand is one shape for all four: 3-2-1, 4-3-2-1, 3.' },
+  { keys: ['Gb'], title: 'G♭ / F♯: three black keys in a row', show: { RH: ['Gb'], LH: ['Gb'] },
+    text: 'Fingers 2-3-4 cover the three black keys; both thumbs land on the only two white keys, C♭ (B) and F.' },
+];
+
+function ScalePatterns({ sel, onPick }) {
+  return (
+    <div className="card" style={{marginBottom:16}}>
+      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Five patterns cover every major scale</h2>
+      <p style={{fontSize:13,color:'#6f665b',margin:'0 0 10px',lineHeight:1.55}}>
+        Every scale is built from the same two hand shapes -- a <b>group of 3</b> (1-2-3) and a <b>group of 4</b> (1-2-3-4) --
+        and the thumb never plays a black key. Only where the groups start changes.
+      </p>
+      <div style={{display:'flex',gap:12,flexWrap:'wrap',fontSize:11,color:'var(--muted)',marginBottom:6}}>
+        <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:12,height:12,borderRadius:3,background:SEGMENT_COLORS.three.fill,border:'1px solid ' + SEGMENT_COLORS.three.stroke}}/>group of 3</span>
+        <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:12,height:12,borderRadius:3,background:SEGMENT_COLORS.four.fill,border:'1px solid ' + SEGMENT_COLORS.four.stroke}}/>group of 4</span>
+        <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:12,height:12,borderRadius:3,background:'#fff',border:'1px solid #d9cdb0'}}/>start / end notes</span>
+        <span>one octave, going up</span>
+      </div>
+      {SCALE_PATTERNS.map((p, pi) => (
+        <div key={pi} style={{borderTop:'1px solid var(--border)',padding:'12px 0 4px'}}>
+          <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',gap:8,flexWrap:'wrap'}}>
+            <div style={{fontSize:15,fontWeight:900}}>{pi + 1}. {p.title}</div>
+            <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
+              {p.keys.map(k => (
+                <button key={k} className={'chip' + (sel === k ? ' active' : '')} style={{padding:'4px 10px',fontSize:12}}
+                  onClick={() => onPick(k)}>{prettyNote(k)}</button>
+              ))}
+            </div>
+          </div>
+          <p style={{fontSize:13,color:'#6f665b',margin:'6px 0 8px',lineHeight:1.5}}>{p.text}</p>
+          <div style={{display:'flex',flexDirection:'column',gap:6}}>
+            {['RH', 'LH'].map(h => p.show[h].map(k => (
+              <div key={h + k}>
+                {p.keys.length > 1 && p.show[h].length === 1 && p.keys.length > 1 && pi > 0
+                  ? <div style={{fontSize:10,fontWeight:800,color:'var(--brass)',margin:'4px 0 2px 28px'}}>Left hand -- the same for all four</div>
+                  : p.show[h].length > 1 && <div style={{fontSize:10,fontWeight:800,color:'var(--brass)',margin:'2px 0 2px 28px'}}>{prettyNote(k)} major</div>}
+                <FingerGroups keyName={k} hand={h}/>
+              </div>
+            )))}
+          </div>
+        </div>
+      ))}
+      <p style={{fontSize:11,color:'var(--muted)',margin:'8px 0 0'}}>Tap a key to see it on the keyboard below. C♯ is played like D♭, and C♭ like B.</p>
+    </div>
+  );
+}
+
 function ScalesLearn({ onStart }) {
   const [sel, setSel] = useState('C');
   return (
     <div className="fade-up">
-      <div className="card" style={{marginBottom:16}}>
-        <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>One landmark per scale: finger 4</h2>
-        <p style={{fontSize:13,color:'#6f665b',margin:'0 0 12px',lineHeight:1.55}}>
-          The thumb tucks under after finger 3 and after finger 4, so in every octave <b>finger 4 plays just once</b>.
-          Remember where it lands and the rest of the fingering falls into place (two-octave scales, as in the AMEB books).
-        </p>
-        <div style={{overflowX:'auto'}}>
-          <table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}>
-            <thead><tr style={{color:'var(--muted)',fontSize:11,textAlign:'left'}}>
-              <th style={{padding:'4px 6px'}}>Key</th><th style={{padding:'4px 6px'}}>RH finger 4</th><th style={{padding:'4px 6px'}}>LH finger 4</th></tr></thead>
-            <tbody>
-              {SCALE_PATH.map(k => (
-                <tr key={k} onClick={() => setSel(k)} style={{cursor:'pointer',background:sel === k ? 'var(--brass-bg)' : 'transparent',borderTop:'1px solid var(--border)'}}>
-                  <td style={{padding:'6px',fontWeight:900}}>{prettyNote(k)} major</td>
-                  <td style={{padding:'6px',fontWeight:700}}>{prettyList(fingerNotes(k, 'RH', 4))}</td>
-                  <td style={{padding:'6px',fontWeight:700}}>{prettyList(fingerNotes(k, 'LH', 4))}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p style={{fontSize:12,color:'#6f665b',margin:'10px 0 0',lineHeight:1.5}}>
-          Spot the shortcut: every flat key from F to G♭ puts <b>RH finger 4 on B♭</b>, and the black-key starts
-          (B♭ E♭ A♭ D♭) all begin the left hand on finger 3.
-        </p>
-      </div>
+      <ScalePatterns sel={sel} onPick={setSel}/>
       <ScalePath sel={sel} onPick={setSel}/>
       <ScaleFingeringDrill controlledKey={sel} onPickKey={setSel}/>
       <button className="primary-btn" style={{marginTop:16}} onClick={onStart}>Start the drill →</button>
