@@ -1390,6 +1390,61 @@ function LetterWalker() {
   );
 }
 
+// 4. Up = right = higher = forwards through the letters. Down = left = lower = backwards.
+// (LetterWalker above is kept for the Intervals chapter -- counting 2nds to octaves belongs there.)
+function UpDownWalk() {
+  const OCT = 2;
+  const whites = []; for (let i = 0; i < OCT * 12; i++) if (PC_INFO[i % 12].white) whites.push(i);
+  const [w, setW] = useState(7); // index into whites: middle C of the two octaves
+  const [trail, setTrail] = useState(['C']);
+  const [last, setLast] = useState(null); // { from, dir, nonce }
+  const [hide, setHide] = useState(false);
+  const name = (k) => PC_INFO[whites[k] % 12].names[0];
+  function move(d) {
+    const nw = w + d; if (nw < 0 || nw >= whites.length) return;
+    playKey(whites[nw], 0.3);
+    setLast({ from: w, dir: d, nonce: (last ? last.nonce : 0) + 1 });
+    setW(nw); setTrail(t => [...t, name(nw)].slice(-7));
+  }
+  function start(k) { playKey(whites[k], 0.3); setW(k); setTrail([name(k)]); setLast(null); }
+  const W = OCT * 7 * 36;
+  const names = {};
+  whites.forEach((i, k) => { if (!hide || k === w) names[i] = PC_INFO[i % 12].names[0]; });
+  const marks = { [whites[w]]: 'target' };
+  const x1 = last ? keyCenterX(whites[last.from]) : 0, x2 = keyCenterX(whites[w]);
+  const cur = name(w), prev = last ? name(last.from) : null;
+  let note = 'Tap a key to start from, then step up or down.';
+  if (last && last.dir > 0) note = prev === 'G' ? 'G → A: after G the alphabet starts again.' : 'Up: one key to the right -- the sound gets higher, the letter goes forwards.';
+  if (last && last.dir < 0) note = prev === 'A' ? 'A → G: below A the alphabet wraps round to G.' : 'Down: one key to the left -- the sound gets lower, the letter goes backwards.';
+  return (
+    <div style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>Step up, step down</div>
+        <button className={'chip' + (hide ? ' active' : '')} style={{padding:'3px 10px',fontSize:11}} onClick={() => setHide(h => !h)}>{hide ? 'Names hidden' : 'Hide names'}</button>
+      </div>
+      <div style={actNote}>On the piano, <b>up</b> means to the <b>right</b> and <b>down</b> means to the <b>left</b>. Say the next letter out loud before you press{hide ? ' -- the key shows its name once you land on it' : ''}.</div>
+      <svg viewBox={`-1 0 ${W + 2} 30`} style={{width:'100%',display:'block'}}>
+        {last && (
+          <g key={last.nonce}>
+            <path d={`M${x1},28 Q${(x1 + x2) / 2},${-4} ${x2},28`} fill="none" stroke={last.dir > 0 ? '#a8823f' : '#6d8fb3'} strokeWidth="2.5" strokeLinecap="round"
+              strokeDasharray="80" strokeDashoffset="80" style={{animation:'drawArc 0.35s ease-out forwards'}}/>
+            <text x={x2 + (last.dir > 0 ? 10 : -10)} y="14" textAnchor="middle" fontSize="16" fontWeight="900" fill={last.dir > 0 ? '#a8823f' : '#6d8fb3'} style={{animation:'fadeUp 0.3s both 0.2s'}}>{last.dir > 0 ? '↗' : '↖'}</text>
+          </g>
+        )}
+      </svg>
+      <TapKeyboard octaves={OCT} marks={marks} names={names} onTap={(i) => { const k = whites.indexOf(i); if (k >= 0) start(k); else playKey(i); }}/>
+      <div style={{display:'flex',gap:6,justifyContent:'center',margin:'8px 0 4px'}}>
+        <button className="ghost-btn" disabled={w === 0} onClick={() => move(-1)} style={{color:'#6d8fb3'}}>← Step down</button>
+        <button className="ghost-btn" disabled={w === whites.length - 1} onClick={() => move(1)} style={{color:'#a8823f'}}>Step up →</button>
+      </div>
+      <div style={{textAlign:'center',fontSize:16,fontWeight:900,letterSpacing:'0.06em',minHeight:24}}>
+        {trail.map((l, j) => <span key={j} style={{opacity:0.35 + 0.65 * (j + 1) / trail.length}}>{j ? ' → ' : ''}{l}</span>)}
+      </div>
+      <div style={{textAlign:'center',fontSize:12,color:(prev === 'G' && last.dir > 0) || (prev === 'A' && last && last.dir < 0) ? '#b5483b' : '#6f665b',fontWeight:600,minHeight:18,marginTop:2}}>{note}</div>
+    </div>
+  );
+}
+
 function NoteNamesLearn({ onStart }) {
   const tip = (n, title, body) => (
     <div style={{display:'flex',gap:12,alignItems:'flex-start',padding:'12px 0',borderTop:'1px solid var(--border)'}}>
@@ -1417,8 +1472,8 @@ function NoteNamesLearn({ onStart }) {
       <NameReveal/>
       {tip(4, 'Black keys borrow a neighbour’s name', 'Sharp (♯) = the key just to the right. Flat (♭) = the key just to the left. So the same black key can be C♯ or D♭.')}
       <SharpFlatMover/>
-      {tip(5, 'The letters go round in a circle', 'Forwards is easy -- practise backwards (G F E D C B A) and skipping (a 3rd up from C is E, a 3rd down is A) until they come just as fast.')}
-      <LetterWalker/>
+      {tip(5, 'Up is right, down is left', 'Going up the keyboard (to the right) the sound gets higher and the letters go forwards: C D E F G A B C. Going down (to the left) they go backwards: C B A G F E D C. Practise backwards until it comes as quickly as forwards.')}
+      <UpDownWalk/>
       <div style={{borderTop:'1px solid var(--border)',paddingTop:14}}>
         <div style={{fontSize:14,fontWeight:800,marginBottom:4}}>Letter chain -- say it out loud together</div>
         <LetterChainDrill/>
