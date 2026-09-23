@@ -2811,6 +2811,8 @@ Reading-the-music track: 1 Tempo Race → 2 Dynamics & Articulation.
 | 2 | Drill | `drills.html` (`DYN_DRILL`) | L1 dynamic → meaning, L2 which is louder, L3 volume-change signs, L4 name the articulation marking, L5 listen: getting louder / softer / staccato / legato. |
 | 3 | Verification | -- | Babel 0 errors; 400 rounds per level (answer present, no duplicates); Playwright on the exact device file: Learn plays, all 5 levels answer, zero page errors. |
 
+**Follow-up (2026-09-24): key signature drawing fixed.** Sohyun spotted that key signatures looked wrong. Real data bug: `FLAT_POS` had G♭ and F♭ above the staff (G5, F5) -- standard engraving is G4 (2nd line) and F4 (1st space); the Phase 90 note claiming a PDF match was wrong for these two. Sharps (F5 C5 G5 D5 A4 E5 B4) were correct. Accidentals are now drawn shapes (`SharpShape`, `FlatShape`) centred on their line/space, clefs use the fitted `ClefGlyph`, and the order of sharps/flats is shown on both clefs (bass = same shape a 3rd lower; bass F♭ in the space below the staff). `KeySigStaff` (Scale Fingering) now reuses `KSStaff`. Checked by screenshot, every accidental against its line/space.
+
 Next on the plan: Signs (repeats, D.C./D.S./Fine, fermata already here, 8va, ties vs slurs), then Intervals, then Chords.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
