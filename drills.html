@@ -3177,6 +3177,193 @@ const SCALES_DRILL = {
   Learn: ScalesLearn,
 };
 
+// ─── Concept: Time Signatures (Phase 100, 2026-09-23) ────────────────────────────
+// Rhythm track, right after Notes & Rests. Beats are counted in crotchets, like the rest of the
+// file (crotchet = 1). Simple times 2/4 3/4 4/4 (+ 2/2, 3/8); compound 6/8 9/8 12/8 = dotted-crotchet beats.
+const TIME_SIGS = [
+  { id: '2/4', top: 2, bottom: 4, feel: 2, kind: 'simple', beats: 2, unit: 'crotchet', use: 'marches -- ONE two, ONE two', pattern: [1, 0] },
+  { id: '3/4', top: 3, bottom: 4, feel: 3, kind: 'simple', beats: 3, unit: 'crotchet', use: 'waltzes and minuets -- ONE two three', pattern: [1, 0, 0] },
+  { id: '4/4', top: 4, bottom: 4, feel: 4, kind: 'simple', beats: 4, unit: 'crotchet', use: 'the most common of all -- also written C (common time)', pattern: [1, 0, 0.5, 0] },
+  { id: '2/2', top: 2, bottom: 2, feel: 2, kind: 'simple', beats: 4, unit: 'minim', use: 'two minim beats -- also written ¢ (cut time)', pattern: [1, 0] },
+  { id: '3/8', top: 3, bottom: 8, feel: 3, kind: 'simple', beats: 1.5, unit: 'quaver', use: 'three light quaver beats', pattern: [1, 0, 0] },
+  { id: '6/8', top: 6, bottom: 8, feel: 2, kind: 'compound', beats: 3, unit: 'dotted crotchet', use: 'six quavers felt as TWO swinging beats -- ONE-and-a TWO-and-a', pattern: [1, 0, 0, 0.5, 0, 0] },
+  { id: '9/8', top: 9, bottom: 8, feel: 3, kind: 'compound', beats: 4.5, unit: 'dotted crotchet', use: 'nine quavers felt as three beats', pattern: [1, 0, 0, 0.5, 0, 0, 0.5, 0, 0] },
+  { id: '12/8', top: 12, bottom: 8, feel: 4, kind: 'compound', beats: 6, unit: 'dotted crotchet', use: 'twelve quavers felt as four beats', pattern: [1, 0, 0, 0.5, 0, 0, 0.5, 0, 0, 0.5, 0, 0] },
+];
+const TS = {}; TIME_SIGS.forEach(t => { TS[t.id] = t; });
+const BEAT_GLYPH = {
+  crotchet: NV_NOTES.find(n => n.id === 'crotchet'),
+  minim: NV_NOTES.find(n => n.id === 'minim'),
+  quaver: NV_NOTES.find(n => n.id === 'quaver'),
+  'dotted crotchet': NV_DOTTED.find(n => n.id === 'crotchet'),
+};
+
+function TSig({ top, bottom, size = 40, ink = 'currentColor' }) {
+  return (
+    <span style={{display:'inline-flex',flexDirection:'column',alignItems:'center',lineHeight:0.82,fontFamily:"Georgia,'Times New Roman',serif",
+      fontWeight:900,fontSize:size,color:ink}}>
+      <span>{top}</span><span>{bottom}</span>
+    </span>
+  );
+}
+
+// Play two bars with the strong beat accented (compound: pulse on every quaver, beat on the dotted crotchet).
+function playTimeSig(t, bpm) {
+  const ctx = getAudio(); if (!ctx) return;
+  stopClicks();
+  const pulse = t.bottom === 8 ? 60 / (bpm * 2) : t.bottom === 2 ? 60 / (bpm / 1.4) : 60 / bpm;
+  const start = ctx.currentTime + 0.1;
+  for (let bar = 0; bar < 2; bar++) t.pattern.forEach((acc, i) => {
+    const at = start + (bar * t.pattern.length + i) * pulse;
+    blip(ctx, at, acc === 1 ? 1320 : acc === 0.5 ? 1040 : 880, 0.05, acc === 1 ? 0.4 : acc === 0.5 ? 0.22 : 0.12);
+  });
+}
+
+function TimeSigLearn({ onStart }) {
+  const [playing, setPlaying] = useState(null);
+  useEffect(() => () => stopClicks(), []);
+  function hear(t) { playTimeSig(t, 90); setPlaying(t.id); setTimeout(() => setPlaying(p => (p === t.id ? null : p)), 3200); }
+  const row = (t) => (
+    <button key={t.id} onClick={() => hear(t)} style={{display:'flex',alignItems:'center',gap:12,width:'100%',textAlign:'left',cursor:'pointer',
+      background:'#fff',border:'1.5px solid ' + (playing === t.id ? 'var(--brass)' : 'var(--border)'),borderRadius:10,padding:'8px 10px',color:'var(--text)'}}>
+      <TSig top={t.top} bottom={t.bottom} size={26}/>
+      <span style={{flex:1}}>
+        <span style={{display:'flex',alignItems:'center',gap:4,fontSize:14,fontWeight:900}}>
+          {t.feel} × <Glyph item={BEAT_GLYPH[t.unit]} size={30}/> <span style={{fontWeight:700,color:'#6f665b',fontSize:12}}>{t.unit} beats</span>
+        </span>
+        <span style={{display:'block',fontSize:12,color:'#6f665b'}}>{t.use}</span>
+      </span>
+      <span style={{fontSize:11,fontWeight:700,color:'var(--muted)'}}>{playing === t.id ? '♪' : 'hear'}</span>
+    </button>
+  );
+  return (
+    <div className="card fade-up">
+      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Reading a time signature</h2>
+      <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 12px'}}>Two numbers at the start of the music tell you how the beats are grouped into bars.</p>
+      <div style={{display:'flex',alignItems:'center',gap:14,background:'var(--brass-bg)',borderRadius:10,padding:'10px 14px',marginBottom:14}}>
+        <TSig top={3} bottom={4} size={46}/>
+        <div style={{fontSize:13,lineHeight:1.6}}>
+          <b>Top number</b> = how many beats in each bar.<br/>
+          <b>Bottom number</b> = which note is one beat: <b>4</b> crotchet, <b>2</b> minim, <b>8</b> quaver.
+        </div>
+      </div>
+      <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',margin:'0 0 6px'}}>Simple time -- each beat splits into 2 -- tap to hear</div>
+      <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:14}}>{TIME_SIGS.filter(t => t.kind === 'simple').map(row)}</div>
+      <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',margin:'0 0 6px'}}>Compound time -- each beat splits into 3</div>
+      <p style={{fontSize:12,color:'#6f665b',margin:'0 0 6px',lineHeight:1.5}}>When the top number is 6, 9 or 12 over 8, group the quavers in threes: each group is one dotted-crotchet beat. So 6/8 has <b>two</b> beats, not six.</p>
+      <div style={{display:'flex',flexDirection:'column',gap:6}}>{TIME_SIGS.filter(t => t.kind === 'compound').map(row)}</div>
+      <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
+    </div>
+  );
+}
+
+// Fill a bar of `total` crotchet beats with symbols that fit the time (quaver-based bars use small values).
+function fillBar(total, small) {
+  const pool = small
+    ? [...NV_NOTES.filter(n => n.beats <= 1 && n.beats >= 0.5), NV_RESTS.find(r => r.id === 'quaver'), NV_DOTTED.find(d => d.id === 'crotchet')]
+    : [...NV_NOTES.filter(n => n.beats >= 0.5 && n.beats <= 3), ...NV_RESTS.filter(r => r.beats === 1), ...NV_DOTTED.filter(d => d.beats >= 1.5 && d.beats <= 3)];
+  for (let tries = 0; tries < 60; tries++) {
+    let rem = total; const out = [];
+    while (rem > 1e-9 && out.length < 6) {
+      const x = pick(pool.filter(p => p.beats <= rem + 1e-9)); if (!x) break;
+      out.push(x); rem -= x.beats;
+    }
+    if (rem < 1e-9 && out.length >= 2 && out.some(o => !o.rest)) return out;
+  }
+  return [NV_NOTES.find(n => n.id === 'crotchet')];
+}
+
+const TIMESIG_LEVELS = [
+  { n: 1, label: 'What do the numbers mean?',        kind: 'meaning', time: 9 },
+  { n: 2, label: 'Which time signature fits the bar?', kind: 'fits',  time: 12 },
+  { n: 3, label: 'Listen: 2, 3 or 4 beats in a bar?', kind: 'listen', time: 12 },
+  { n: 4, label: 'Simple or compound -- how many beats do you feel?', kind: 'feel', time: 9 },
+];
+function genTimeSigQuestion(lv, prev) {
+  const uid = Math.random();
+  if (lv.kind === 'meaning') {
+    const t = pick(TIME_SIGS.filter(x => x.kind === 'simple' || x.id === '6/8'));
+    const label = (x) => x.feel + ' ' + x.unit + ' beat' + (x.feel > 1 ? 's' : '');
+    const answer = label(t);
+    const wrong = [...new Set([
+      t.top + ' ' + (t.unit === 'crotchet' ? 'quaver' : 'crotchet') + ' beats',
+      (t.top + 1) + ' ' + t.unit + ' beats',
+      t.bottom + ' ' + t.unit + ' beats',
+      ...TIME_SIGS.map(label),
+    ])].filter(x => x !== answer);
+    return { kind: 'meaning', key: t.id, t, answer, choices: shuffle([answer, ...sampleN(wrong, 3)]), uid };
+  }
+  if (lv.kind === 'fits') {
+    const opts = ['2/4', '3/4', '4/4', '3/8'];
+    let id = pick(opts), n = 0; while (prev && prev.key === id && n++ < 8) id = pick(opts);
+    const t = TS[id];
+    return { kind: 'fits', key: id, t, bar: fillBar(t.beats, t.bottom === 8), answer: id, choices: opts, uid };
+  }
+  if (lv.kind === 'listen') {
+    const opts = ['2/4', '3/4', '4/4'];
+    const id = pick(opts);
+    return { kind: 'listen', key: id + uid, t: TS[id], answer: id, choices: opts, uid };
+  }
+  const t = pick(TIME_SIGS);
+  const answer = t.feel + ' beats';
+  const others = [...new Set([t.top, 2, 3, 4, 6, 9, 12].filter(n => n !== t.feel))];
+  const first = t.top !== t.feel ? [t.top + ' beats'] : [];
+  const rest = sampleN(others.filter(n => n !== t.top).map(n => n + ' beats'), 3 - first.length);
+  return { kind: 'feel', key: t.id, t, answer, choices: shuffle([answer, ...first, ...rest]), uid };
+}
+function TimeSigQuestion({ q, level, given, locked, onAnswer, pixel }) {
+  const done = !!given;
+  const ink = pixel ? '#f8edd4' : '#241f1a';
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const st = (c) => !done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '';
+  const prompt = (t, px) => <p style={pixel ? {fontSize:10,textAlign:'center',margin:'0 0 10px'} : {fontSize:14,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? px : t}</p>;
+  useEffect(() => {
+    if (q.kind !== 'listen') return;
+    const tm = setTimeout(() => playTimeSig(q.t, 100), 250);
+    return () => { clearTimeout(tm); stopClicks(); };
+  }, [q.uid]);
+  const grid = (items, render, cols = 2) => (
+    <div style={{display:'grid',gridTemplateColumns:'repeat(' + cols + ',1fr)',gap:8}}>
+      {items.map(c => <button key={c} disabled={locked} onClick={() => { stopClicks(); onAnswer(c); }} className={btnCls + st(c)} style={{padding:'12px 4px'}}>{render(c)}</button>)}
+    </div>
+  );
+  const sigBtn = (id) => <TSig top={TS[id].top} bottom={TS[id].bottom} size={pixel ? 16 : 24}/>;
+  if (q.kind === 'meaning') return (<div>
+    {prompt('What does this time signature mean?', 'WHAT DOES IT MEAN?')}
+    <div style={{textAlign:'center',margin:'0 0 14px',color:ink}}><TSig top={q.t.top} bottom={q.t.bottom} size={pixel ? 44 : 64}/></div>
+    {grid(q.choices, c => 'In each bar: ' + c)}
+  </div>);
+  if (q.kind === 'fits') return (<div>
+    {prompt('Which time signature fits this bar?', 'WHICH TIME FITS?')}
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:4,margin:'0 0 14px',padding:'6px 12px',borderLeft:'2px solid ' + ink,borderRight:'2px solid ' + ink,color:ink}}>
+      <span style={{display:'inline-flex',alignItems:'center',justifyContent:'center',minWidth:28,height:56,border:'2px dashed ' + (done ? 'var(--brass)' : ink),borderRadius:pixel ? 0 : 6,marginRight:6}}>
+        {done ? <TSig top={q.t.top} bottom={q.t.bottom} size={20}/> : <b>?</b>}
+      </span>
+      {q.bar.map((b, i) => <Glyph key={i} item={b} ink={ink} size={60}/>)}
+    </div>
+    {grid(q.choices, sigBtn, 4)}
+  </div>);
+  if (q.kind === 'listen') return (<div>
+    {prompt('Listen for the loud first beat -- how many beats in each bar?', 'LISTEN! COUNT THE BEATS')}
+    <div style={{textAlign:'center',margin:'0 0 14px'}}>
+      <button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => playTimeSig(q.t, 100)} style={pixel ? {fontSize:9} : {fontSize:14,padding:'10px 18px'}}>{pixel ? '♪ PLAY AGAIN' : '♪ Play again'}</button>
+    </div>
+    {grid(q.choices, sigBtn, 3)}
+  </div>);
+  return (<div>
+    {prompt('How many beats do you feel in each bar?', 'HOW MANY BEATS?')}
+    <div style={{textAlign:'center',margin:'0 0 14px',color:ink}}><TSig top={q.t.top} bottom={q.t.bottom} size={pixel ? 44 : 64}/></div>
+    {grid(q.choices, c => c)}
+  </div>);
+}
+const TIMESIG_DRILL = {
+  id: 'time-signatures', label: 'Time Signatures', levels: TIMESIG_LEVELS, generate: genTimeSigQuestion,
+  check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
+  answerLabel: (q) => q.kind === 'meaning' ? q.t.id + ' = ' + q.answer + ' in each bar'
+    : q.kind === 'feel' ? q.t.id + ' is ' + q.t.kind + ' time: ' + q.answer + ' -- ' + q.t.use : q.t.id + ' (' + q.t.use.split(' --')[0] + ')',
+  Question: TimeSigQuestion, Learn: TimeSigLearn,
+};
+
 // Registry of drills. Two shapes:
 //   { id, label, render }            -- original single-screen drills (Phase 89/90)
 //   { id, label, concept }           -- Phase 94 concept sets (Learn + Drill on the shared engine)
@@ -3184,13 +3371,14 @@ const SCALES_DRILL = {
 // note names -> tones & semitones -> scales (shape, then fingering) -> key signatures ->
 // intervals -> chords (intervals and chords still to build). Side track: rhythm and terms.
 const DRILLS = [
-  { id: 'note-names', label: 'Note Names', concept: NOTE_NAMES_DRILL, track: 'path' },
-  { id: 'tones', label: 'Tones & Semitones', concept: TONES_DRILL, track: 'path' },
-  { id: 'scales', label: 'Scales', concept: SCALES_DRILL, track: 'path' },
-  { id: 'key-signatures', label: 'Key Signatures', concept: KEYSIG_DRILL, track: 'path' },
-  { id: 'note-values', label: 'Notes & Rests', concept: NOTEVAL_DRILL, track: 'side' },
-  { id: 'rhythm', label: 'Rhythm Cards', concept: RHYTHM_DRILL, track: 'side' },
-  { id: 'tempo', label: 'Tempo Race', concept: TEMPO_DRILL, track: 'side' },
+  { id: 'note-names', label: 'Note Names', concept: NOTE_NAMES_DRILL, track: 'pitch' },
+  { id: 'tones', label: 'Tones & Semitones', concept: TONES_DRILL, track: 'pitch' },
+  { id: 'scales', label: 'Scales', concept: SCALES_DRILL, track: 'pitch' },
+  { id: 'key-signatures', label: 'Key Signatures', concept: KEYSIG_DRILL, track: 'pitch' },
+  { id: 'note-values', label: 'Notes & Rests', concept: NOTEVAL_DRILL, track: 'rhythm' },
+  { id: 'time-signatures', label: 'Time Signatures', concept: TIMESIG_DRILL, track: 'rhythm' },
+  { id: 'rhythm', label: 'Rhythm Cards', concept: RHYTHM_DRILL, track: 'rhythm' },
+  { id: 'tempo', label: 'Tempo Race', concept: TEMPO_DRILL, track: 'reading' },
 ];
 
 // URL state: ?drill=<id>&tab=learn|drill&level=<n>&mode=lesson|game&lock=1
@@ -3247,14 +3435,14 @@ function App() {
       <div style={{maxWidth:480,margin:'0 auto',padding:'24px 16px 60px'}}>
         {!st.lock && (
           <div style={{marginBottom:20}}>
-            {[['path', 'Step by step'], ['side', 'Rhythm & terms -- any time']].map(([tr, title]) => (
+            {[['pitch', 'Pitch -- keyboard, staff, scales'], ['rhythm', 'Rhythm -- beats and bars'], ['reading', 'Reading the music -- terms and signs']].map(([tr, title]) => (
               <div key={tr} style={{marginBottom:10}}>
                 <div style={{fontSize:10,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>{title}</div>
                 <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
                   {DRILLS.filter(d => d.track === tr).map((d, i) => (
                     <button key={d.id} className={'chip'+(active.id===d.id?' active':'')}
                       onClick={()=>update({ drill: d.id, tab: 'learn', level: 1 })}>
-                      {tr === 'path' ? (i + 1) + '. ' : ''}{d.label}
+                      {(i + 1) + '. '}{d.label}
                     </button>
                   ))}
                 </div>
