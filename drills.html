@@ -3364,6 +3364,189 @@ const TIMESIG_DRILL = {
   Question: TimeSigQuestion, Learn: TimeSigLearn,
 };
 
+// ─── Concept: Reading the Staff (Phase 101, 2026-09-23) ──────────────────────────
+// Pitch track, right after Note Names: keyboard first, then the staff tied straight back to it.
+// Positions use a "diatonic number" d = octave*7 + letter index (C=0 ... B=6), so C4 (middle C) = 28.
+// One coordinate system for both staves: y = 100 - (d - 30) * 5 (E4, the treble's bottom line, at y=100).
+const STAFF_LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+const CLEFS = {
+  treble: { lines: [30, 32, 34, 36, 38], low: 30, high: 38 },   // E4 G4 B4 D5 F5
+  bass:   { lines: [18, 20, 22, 24, 26], low: 18, high: 26 },   // G2 B2 D3 F3 A3
+};
+function dName(d) { return STAFF_LETTERS[((d % 7) + 7) % 7]; }
+function dOct(d) { return Math.floor(d / 7); }
+function dLabel(d) { return dName(d) + dOct(d); }
+function dY(d) { return 100 - (d - 30) * 5; }
+function ledgersFor(d, low, high) {
+  const out = [];
+  if (d < low) for (let p = low - 2; p >= d; p -= 2) out.push(p);
+  if (d > high) for (let p = high + 2; p <= d; p += 2) out.push(p);
+  return out;
+}
+const MUSIC_FONT = "'Noto Music','Apple Symbols','Segoe UI Symbol',serif";
+
+// clef: 'treble' | 'bass' | 'grand'. notes: [{ d, color, staff }]. labels: text under each note.
+// On the grand staff the bass staff is pushed down by GRAND_GAP so the two staves read as two.
+const GRAND_GAP = 20;
+const CLEF_GLYPH = { treble: { ch: '𝄞', size: 58, dx: 6, line: 32, dy: 11 }, bass: { ch: '𝄢', size: 42, dx: 8, line: 24, dy: 14 } };
+function StaffView({ clef = 'grand', notes = [], ink = '#241f1a', width = 300, labels, spread }) {
+  const staves = clef === 'grand' ? ['treble', 'bass'] : [clef];
+  const staffOf = (n) => n.staff || (clef === 'grand' ? (n.d >= 28 ? 'treble' : 'bass') : clef);
+  const yOf = (d, st) => dY(d) + (clef === 'grand' && st === 'bass' ? GRAND_GAP : 0);
+  const ys = [];
+  staves.forEach(st => { ys.push(yOf(CLEFS[st].high, st) - 14, yOf(CLEFS[st].low, st) + 14); });
+  notes.forEach(n => { const st = staffOf(n); ys.push(yOf(n.d, st) - 10, yOf(n.d, st) + 10); });
+  const y0 = Math.min(...ys) - 4, y1 = Math.max(...ys) + (labels ? 22 : 4);
+  const noteX = (i) => spread ? 72 + i * ((width - 92) / Math.max(1, notes.length - 1)) : width * 0.62;
+  return (
+    <svg viewBox={`0 ${y0} ${width} ${y1 - y0}`} style={{width:'100%',maxWidth:width * 1.5,display:'block',margin:'0 auto'}}>
+      {staves.map(st => CLEFS[st].lines.map(l => <line key={st + l} x1="4" x2={width - 4} y1={yOf(l, st)} y2={yOf(l, st)} stroke={ink} strokeOpacity="0.55" strokeWidth="1.2"/>))}
+      {clef === 'grand' && <line x1="4" x2="4" y1={yOf(38, 'treble')} y2={yOf(18, 'bass')} stroke={ink} strokeWidth="1.6"/>}
+      {staves.map(st => { const g = CLEF_GLYPH[st]; return <text key={'c' + st} x={g.dx} y={yOf(g.line, st) + g.dy} fontSize={g.size} fill={ink} fontFamily={MUSIC_FONT}>{g.ch}</text>; })}
+      {notes.map((n, i) => {
+        const x = noteX(i), st = staffOf(n), y = yOf(n.d, st);
+        const lw = ledgersFor(n.d, CLEFS[st].low, CLEFS[st].high);
+        return (
+          <g key={i}>
+            {lw.map(p => <line key={p} x1={x - 12} x2={x + 12} y1={yOf(p, st)} y2={yOf(p, st)} stroke={ink} strokeWidth="1.4"/>)}
+            <ellipse cx={x} cy={y} rx="7" ry="5" transform={`rotate(-20 ${x} ${y})`} fill={n.color || ink} data-d={n.d}/>
+            {labels && labels[i] && <text x={x} y={y1 - 6} textAnchor="middle" fontSize="11" fontWeight="800" fill={n.color || ink}>{labels[i]}</text>}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// Keyboard helpers: a 3-octave keyboard from C3 (index 0) to B5 (index 35).
+const KB_START_OCT = 3;
+function dToKey(d) { return (dOct(d) - KB_START_OCT) * 12 + [0, 2, 4, 5, 7, 9, 11][((d % 7) + 7) % 7]; }
+function keyToD(i) { const pc = i % 12, w = [0, 2, 4, 5, 7, 9, 11].indexOf(pc); return w < 0 ? null : (Math.floor(i / 12) + KB_START_OCT) * 7 + w; }
+
+const LANDMARKS = [
+  { d: 28, name: 'Middle C', tip: 'On its own little ledger line between the two staves -- the middle of the piano.' },
+  { d: 32, name: 'Treble G', tip: 'The treble clef curls around this line -- it’s also called the G clef.' },
+  { d: 24, name: 'Bass F', tip: 'The two dots of the bass clef sit either side of this line -- the F clef.' },
+  { d: 35, name: 'Treble C', tip: 'Third space of the treble staff, one octave above middle C.' },
+  { d: 21, name: 'Bass C', tip: 'Second space of the bass staff, one octave below middle C.' },
+  { d: 42, name: 'High C', tip: 'Two ledger lines above the treble staff.' },
+  { d: 14, name: 'Low C', tip: 'Two ledger lines below the bass staff.' },
+];
+
+function StaffExplorer() {
+  const [d, setD] = useState(28);
+  const lm = LANDMARKS.find(l => l.d === d);
+  const key = dToKey(d);
+  return (
+    <div style={{background:'var(--brass-bg)',borderRadius:10,padding:'10px',margin:'12px 0'}}>
+      <div style={{fontSize:12,fontWeight:800,marginBottom:6}}>Tap a landmark, or a white key</div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:6}}>
+        {LANDMARKS.map(l => <button key={l.d} className={'chip' + (l.d === d ? ' active' : '')} style={{padding:'4px 9px',fontSize:12}} onClick={() => setD(l.d)}>{l.name}</button>)}
+      </div>
+      <StaffView clef="grand" notes={[{ d, color: '#a8823f' }]}/>
+      <div style={{textAlign:'center',fontSize:15,fontWeight:900,margin:'2px 0 6px'}}>
+        {dName(d)}{lm ? ' -- ' + lm.name : ''} <span style={{fontSize:11,color:'var(--muted)',fontWeight:700}}>({dLabel(d)})</span>
+      </div>
+      {lm && <div style={{textAlign:'center',fontSize:12,color:'#6f665b',marginBottom:6}}>{lm.tip}</div>}
+      {key >= 0 && key < 36
+        ? <TapKeyboard octaves={3} labels="white" marks={{ [key]: 'target' }} onTap={(i) => { const nd = keyToD(i); if (nd !== null) setD(nd); }}/>
+        : <div style={{textAlign:'center',fontSize:11,color:'var(--muted)'}}>(off this keyboard -- {d > 41 ? 'higher' : 'lower'} than shown)</div>}
+    </div>
+  );
+}
+
+function StaffLetters({ clef }) {
+  const c = CLEFS[clef];
+  const ds = []; for (let d = c.low; d <= c.high; d++) ds.push(d);
+  return (
+    <StaffView clef={clef} spread width={300}
+      notes={ds.map(d => ({ d, color: (d - c.low) % 2 === 0 ? '#241f1a' : '#a8823f' }))}
+      labels={ds.map(dName)}/>
+  );
+}
+
+function StaffLearn({ onStart }) {
+  const tip = (title, body) => (
+    <div style={{padding:'10px 0',borderTop:'1px solid var(--border)'}}>
+      <div style={{fontSize:14,fontWeight:800,marginBottom:2}}>{title}</div>
+      <div style={{fontSize:13,color:'#6f665b',lineHeight:1.55}}>{body}</div>
+    </div>
+  );
+  return (
+    <div className="card fade-up">
+      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>From the keyboard to the staff</h2>
+      <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 8px'}}>The staff is a map of the keyboard: going up the staff is going right on the piano.</p>
+      {tip('Two staves, one piano', 'The treble clef (top) is usually the right hand and the higher notes; the bass clef (bottom) is usually the left hand. Together they make the grand staff, joined at middle C.')}
+      {tip('Every line and space is the next letter', 'Line, space, line, space -- each step up is the next letter, just like the next white key.')}
+      <StaffExplorer/>
+      <div style={{fontSize:14,fontWeight:800,margin:'8px 0 2px'}}>Treble clef</div>
+      <div style={{fontSize:12,color:'#6f665b',marginBottom:2}}>Lines (black): E G B D F -- “Every Good Boy Deserves Fruit”. Spaces (gold): F A C E.</div>
+      <StaffLetters clef="treble"/>
+      <div style={{fontSize:14,fontWeight:800,margin:'8px 0 2px'}}>Bass clef</div>
+      <div style={{fontSize:12,color:'#6f665b',marginBottom:2}}>Lines: G B D F A -- “Good Boys Deserve Fruit Always”. Spaces: A C E G -- “All Cows Eat Grass”.</div>
+      <StaffLetters clef="bass"/>
+      {tip('Read from landmarks', 'The rhymes help at first, but fluent readers jump from a landmark: middle C, treble G, bass F, the two C’s in the spaces. From a landmark, count up or down by step.')}
+      {tip('Ledger lines extend the staff', 'Short lines above or below the staff carry on the same line-space pattern -- middle C sits on one.')}
+      <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
+    </div>
+  );
+}
+
+const STAFF_LEVELS = [
+  { n: 1, label: 'Treble clef notes',               kind: 'name', range: [29, 39], clef: 'treble', time: 7 },
+  { n: 2, label: 'Bass clef notes',                 kind: 'name', range: [17, 27], clef: 'bass', time: 7 },
+  { n: 3, label: 'Both clefs + ledger lines',        kind: 'name', range: null, clef: 'mixed', time: 8 },
+  { n: 4, label: 'Find it on the keyboard (exact octave)', kind: 'key', range: [21, 41], clef: 'grand', time: 10 },
+];
+function genStaffQuestion(lv, prev) {
+  const uid = Math.random();
+  let d, clef;
+  const rnd = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  for (let n = 0; n < 12; n++) {
+    if (lv.clef === 'mixed') { clef = Math.random() < 0.5 ? 'treble' : 'bass'; d = clef === 'treble' ? rnd(26, 42) : rnd(14, 30); }
+    else { clef = lv.clef; d = rnd(lv.range[0], lv.range[1]); }
+    if (!prev || prev.d !== d) break;
+  }
+  const staff = lv.clef === 'grand' ? (d > 28 ? 'treble' : d < 28 ? 'bass' : (Math.random() < 0.5 ? 'treble' : 'bass')) : clef;
+  return { kind: lv.kind, key: clef + d, d, clef, staff, answer: lv.kind === 'key' ? dToKey(d) : dName(d), uid };
+}
+function StaffQuestion({ q, level, given, locked, onAnswer, pixel }) {
+  const done = !!given;
+  const ink = pixel ? '#f8edd4' : '#241f1a';
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  useEffect(() => {
+    if (q.kind !== 'name' || locked) return;
+    function onKey(e) { const L = (e.key || '').toUpperCase(); if (STAFF_LETTERS.includes(L)) onAnswer(L); }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [q, locked, onAnswer]);
+  const prompt = q.kind === 'key' ? ['Tap this exact note on the keyboard', 'FIND IT ON THE KEYS'] : ['Name this note', 'NAME THIS NOTE'];
+  const marks = {};
+  if (q.kind === 'key' && done) { marks[q.answer] = 'good'; if (!given.ok && given.ans !== null && given.ans !== undefined) marks[given.ans] = 'bad'; }
+  return (
+    <div>
+      <p style={pixel ? {fontSize:10,textAlign:'center',margin:'0 0 8px'} : {fontSize:14,fontWeight:700,textAlign:'center',margin:'0 0 8px',color:'var(--muted)'}}>{pixel ? prompt[1] : prompt[0]}</p>
+      <div style={{background:pixel ? 'transparent' : '#fff',borderRadius:8,margin:'0 0 12px'}}>
+        <StaffView clef={q.clef === 'mixed' ? 'grand' : q.clef} ink={ink} notes={[{ d: q.d, staff: q.staff, color: done ? (given.ok ? '#4f7a45' : '#b5483b') : ink }]}/>
+      </div>
+      {q.kind === 'name' ? (
+        <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:6}}>
+          {STAFF_LETTERS.map(l => <button key={l} disabled={locked} onClick={() => onAnswer(l)} className={btnCls + (!done ? '' : l === q.answer ? ' good' : given.ans === l ? ' bad' : '')}>{l}</button>)}
+        </div>
+      ) : (
+        <TapKeyboard octaves={3} labels={done ? 'white' : null} marks={marks} pixel={pixel} onTap={locked ? null : (i) => onAnswer(i)}/>
+      )}
+      {done && q.kind === 'name' && <div style={{marginTop:10}}><TapKeyboard octaves={3} labels="white" pixel={pixel} marks={dToKey(q.d) >= 0 && dToKey(q.d) < 36 ? { [dToKey(q.d)]: 'good' } : {}}/></div>}
+    </div>
+  );
+}
+const STAFF_DRILL = {
+  id: 'staff', label: 'Reading the Staff', levels: STAFF_LEVELS, generate: genStaffQuestion,
+  check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
+  answerLabel: (q) => dName(q.d) + ' (' + dLabel(q.d) + (q.d === 28 ? ', middle C' : '') + ')',
+  Question: StaffQuestion, Learn: StaffLearn,
+};
+
 // Registry of drills. Two shapes:
 //   { id, label, render }            -- original single-screen drills (Phase 89/90)
 //   { id, label, concept }           -- Phase 94 concept sets (Learn + Drill on the shared engine)
@@ -3372,6 +3555,7 @@ const TIMESIG_DRILL = {
 // intervals -> chords (intervals and chords still to build). Side track: rhythm and terms.
 const DRILLS = [
   { id: 'note-names', label: 'Note Names', concept: NOTE_NAMES_DRILL, track: 'pitch' },
+  { id: 'staff', label: 'Reading the Staff', concept: STAFF_DRILL, track: 'pitch' },
   { id: 'tones', label: 'Tones & Semitones', concept: TONES_DRILL, track: 'pitch' },
   { id: 'scales', label: 'Scales', concept: SCALES_DRILL, track: 'pitch' },
   { id: 'key-signatures', label: 'Key Signatures', concept: KEYSIG_DRILL, track: 'pitch' },
