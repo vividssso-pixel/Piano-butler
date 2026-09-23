@@ -4463,6 +4463,240 @@ function LedgerMirror() {
   );
 }
 
+// ─── Reading the Staff: hands-on round (Phase 106) ───────────────────────────────
+// Same idea as the key-signature and note-name rounds: every rule gets something to tap and watch.
+// Shared frame: one staff (treble/bass) or the grand staff, with tappable rows for every line/space.
+function staffStOf(clef, d) { return clef === 'grand' ? (d >= 28 ? 'treble' : 'bass') : clef; }
+function staffYOfFor(clef) { return (d) => dY(d) + (clef === 'grand' && staffStOf(clef, d) === 'bass' ? GRAND_GAP : 0); }
+function dMidiKey(d) { return (dOct(d) - 4) * 12 + [0, 2, 4, 5, 7, 9, 11][((d % 7) + 7) % 7]; } // playKey index (C4 = 0)
+function StaffFrame({ clef, lo, hi, width = 300, rows, onRow, children, ink = '#241f1a' }) {
+  const staves = clef === 'grand' ? ['treble', 'bass'] : [clef];
+  const yOf = staffYOfFor(clef);
+  const topD = Math.max(hi, clef === 'bass' ? 26 : 38), botD = Math.min(lo, clef === 'treble' ? 30 : 18);
+  const y0 = yOf(topD) - 16, y1 = yOf(botD) + 16;
+  return (
+    <svg viewBox={`0 ${y0} ${width} ${y1 - y0}`} style={{width:'100%',maxWidth:width * 1.5,display:'block',margin:'0 auto',touchAction:'manipulation',userSelect:'none'}}>
+      {staves.map(st => CLEFS[st].lines.map(l => <line key={st + l} x1="4" x2={width - 4} y1={dY(l) + (clef === 'grand' && st === 'bass' ? GRAND_GAP : 0)} y2={dY(l) + (clef === 'grand' && st === 'bass' ? GRAND_GAP : 0)} stroke={ink} strokeOpacity="0.55" strokeWidth="1.2"/>))}
+      {clef === 'grand' && <line x1="4" x2="4" y1={yOf(38)} y2={yOf(18)} stroke={ink} strokeWidth="1.6"/>}
+      {staves.map(st => <ClefGlyph key={'c' + st} clef={st} st={st} yOf={(d) => dY(d) + (clef === 'grand' && st === 'bass' ? GRAND_GAP : 0)} ink={ink}/>)}
+      {children(yOf)}
+      {rows && onRow && rows.map(d => <rect key={'r' + d} x="48" y={yOf(d) - 2.5} width={width - 52} height="5" fill="transparent" style={{cursor:'pointer'}} onClick={() => onRow(d)}/>)}
+    </svg>
+  );
+}
+// A notehead that glides to its new line/space (CSS transform, so the move animates).
+function GlideNote({ x, y, color = '#241f1a', r = 1 }) {
+  return (
+    <g style={{transform:`translate(${x}px, ${y}px)`,transition:'transform 0.28s ease-out'}}>
+      <ellipse cx="0" cy="0" rx={7 * r} ry={5 * r} transform="rotate(-20)" fill={color}/>
+    </g>
+  );
+}
+function Ledgers({ clef, d, x, yOf, ink = '#241f1a' }) {
+  const st = staffStOf(clef, d);
+  return <>{ledgersFor(d, CLEFS[st].low, CLEFS[st].high).map(p => <line key={p} x1={x - 12} x2={x + 12} y1={yOf(p)} y2={yOf(p)} stroke={ink} strokeWidth="1.4"/>)}</>;
+}
+
+// 1. Climb the staff: one step up the staff = one white key to the right.
+function StaffClimb() {
+  const [d, setD] = useState(28);
+  const [trail, setTrail] = useState(['C']);
+  const go = (nd) => { if (nd < 14 || nd > 42) return; playKey(dMidiKey(nd), 0.3); setD(nd); setTrail(t => [...t, dName(nd)].slice(-7)); };
+  const line = d % 2 === 0;
+  const key = dToKey(d);
+  return (
+    <div style={actBox}>
+      <div style={actTitle}>Climb the staff</div>
+      <div style={actNote}>Each step up the staff -- line, space, line, space -- is the next letter and the next white key to the right. Step across middle C and you walk from one staff to the other.</div>
+      <StaffFrame clef="grand" lo={14} hi={42} width={300}>
+        {(yOf) => <>
+          <Ledgers clef="grand" d={d} x={170} yOf={yOf}/>
+          <GlideNote x={170} y={yOf(d)} color="#a8823f"/>
+          <text x={196} y={yOf(d) + 4} fontSize="12" fontWeight="900" fill="#a8823f" style={{transition:'y 0.28s'}}>{dName(d)}</text>
+        </>}
+      </StaffFrame>
+      <div style={{textAlign:'center',fontSize:13,fontWeight:800,margin:'2px 0 6px'}}>{dLabel(d)}{d === 28 ? ' -- middle C' : ''} · <span style={{color:line ? '#241f1a' : '#a8823f'}}>{line ? 'on a line' : 'in a space'}</span></div>
+      {key >= 0 && key < 36
+        ? <TapKeyboard octaves={3} labels="white" marks={{ [key]: 'target' }} onTap={(i) => { const nd = keyToD(i); if (nd !== null) go(nd); else playKey(i - 12); }}/>
+        : <div style={{textAlign:'center',fontSize:11,color:'var(--muted)',padding:'10px 0'}}>(off this keyboard -- {d > 41 ? 'higher' : 'lower'} than shown)</div>}
+      <div style={{display:'flex',gap:6,justifyContent:'center',margin:'8px 0 4px'}}>
+        <button className="ghost-btn" disabled={d <= 14} onClick={() => go(d - 1)} style={{color:'#6d8fb3'}}>↓ Step down</button>
+        <button className="ghost-btn" onClick={() => { setD(28); setTrail(['C']); playKey(0, 0.3); }}>Middle C</button>
+        <button className="ghost-btn" disabled={d >= 42} onClick={() => go(d + 1)} style={{color:'#a8823f'}}>Step up ↑</button>
+      </div>
+      <div style={{textAlign:'center',fontSize:15,fontWeight:900,letterSpacing:'0.05em'}}>{trail.map((l, j) => <span key={j} style={{opacity:0.35 + 0.65 * (j + 1) / trail.length}}>{j ? ' → ' : ''}{l}</span>)}</div>
+    </div>
+  );
+}
+
+// 2. The rhymes, tap by tap: lines (Every Good Boy...) or spaces (F A C E).
+const MNEMONICS = {
+  treble: { lines: ['Every', 'Good', 'Boy', 'Deserves', 'Fun'], spaces: ['F', 'A', 'C', 'E'], spaceWord: 'FACE -- spells a word' },
+  bass:   { lines: ['Great', 'Big', 'Dragon', 'Flies', 'Away'], spaces: ['All', 'Cows', 'Eat', 'Grass'], spaceWord: 'All Cows Eat Grass' },
+};
+function MnemonicStaff() {
+  const [clef, setClef] = useState('treble');
+  const [part, setPart] = useState('lines');
+  const [shown, setShown] = useState([]);
+  const [auto, setAuto] = useState(false);
+  const c = CLEFS[clef];
+  const ds = part === 'lines' ? c.lines : c.lines.slice(0, 4).map(l => l + 1);
+  const words = MNEMONICS[clef][part];
+  useEffect(() => { setShown([]); setAuto(false); }, [clef, part]);
+  useEffect(() => {
+    if (!auto) return;
+    const next = ds.find(d => !shown.includes(d));
+    if (next === undefined) { setAuto(false); return; }
+    const t = setTimeout(() => reveal(next), shown.length ? 650 : 100);
+    return () => clearTimeout(t);
+  }, [auto, shown]);
+  function reveal(d) { if (!ds.includes(d) || shown.includes(d)) return; playKey(dMidiKey(d), 0.3); setShown(s => [...s, d]); }
+  const all = shown.length === ds.length;
+  return (
+    <div style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
+        <div style={actTitle}>Tap the {part}</div>
+        <div style={{display:'flex',gap:4}}>
+          {['treble', 'bass'].map(x => <button key={x} className={'chip' + (clef === x ? ' active' : '')} style={{padding:'3px 9px',fontSize:11}} onClick={() => setClef(x)}>{x === 'treble' ? '𝄞 treble' : '𝄢 bass'}</button>)}
+          {['lines', 'spaces'].map(x => <button key={x} className={'chip' + (part === x ? ' active' : '')} style={{padding:'3px 9px',fontSize:11}} onClick={() => setPart(x)}>{x}</button>)}
+        </div>
+      </div>
+      <div style={actNote}>Tap each {part === 'lines' ? 'line' : 'space'}, bottom to top, and watch the rhyme build.</div>
+      <StaffFrame clef={clef} lo={c.low} hi={c.high} width={300} rows={ds} onRow={reveal}>
+        {(yOf) => <>
+          {ds.map((d, i) => {
+            const x = 80 + i * (part === 'lines' ? 48 : 58);
+            const on = shown.includes(d);
+            return on ? (
+              <g key={d} style={{animation:'fadeUp 0.3s both'}}>
+                <ellipse cx={x} cy={yOf(d)} rx="7" ry="5" transform={`rotate(-20 ${x} ${yOf(d)})`} fill={part === 'lines' ? '#241f1a' : '#a8823f'}/>
+                <text x={x + 12} y={yOf(d) + 4} fontSize="12" fontWeight="900" fill={part === 'lines' ? '#241f1a' : '#a8823f'}>{dName(d)}</text>
+              </g>
+            ) : <circle key={d} cx={x} cy={yOf(d)} r="3" fill="#c7bca8"/>;
+          })}
+        </>}
+      </StaffFrame>
+      <div style={{display:'flex',justifyContent:'center',gap:8,flexWrap:'wrap',fontSize:16,fontWeight:900,minHeight:26,margin:'4px 0'}}>
+        {ds.map((d, i) => (
+          <span key={d} style={{opacity:shown.includes(d) ? 1 : 0.15,transition:'opacity 0.3s'}}>
+            <span style={{color:part === 'lines' ? '#b5483b' : '#a8823f'}}>{words[i][0]}</span>{words[i].slice(1)}
+          </span>
+        ))}
+      </div>
+      <div style={{textAlign:'center',fontSize:12,color:'#4f7a45',fontWeight:700,minHeight:18}}>{all ? (part === 'spaces' ? MNEMONICS[clef].spaceWord : words.join(' ')) : ''}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:4}}>
+        <button className="ghost-btn" onClick={() => { setShown([]); setAuto(true); }}>▶ Play</button>
+        <button className="ghost-btn" disabled={!shown.length} onClick={() => { setAuto(false); setShown([]); }}>Clear</button>
+      </div>
+    </div>
+  );
+}
+
+// 3. Landmark hop: guess the note, then watch the hop from the nearest landmark.
+const HOP_MARKS = [
+  { d: 14, name: 'Low C' }, { d: 21, name: 'Bass C' }, { d: 24, name: 'Bass F' }, { d: 28, name: 'Middle C' },
+  { d: 32, name: 'Treble G' }, { d: 35, name: 'Treble C' }, { d: 42, name: 'High C' },
+];
+function LandmarkHop() {
+  const newD = (prev) => { let d; do { d = 15 + Math.floor(Math.random() * 27); } while (d === prev || HOP_MARKS.some(m => m.d === d)); return d; };
+  const [d, setD] = useState(() => newD(null));
+  const [guess, setGuess] = useState(null);
+  const [step, setStep] = useState(-1);
+  const [score, setScore] = useState({ right: 0, tries: 0 });
+  const mark = HOP_MARKS.reduce((b, m) => Math.abs(m.d - d) < Math.abs(b.d - d) ? m : b, HOP_MARKS[0]);
+  const dist = Math.abs(d - mark.d), dir = d > mark.d ? 1 : -1;
+  useEffect(() => {
+    if (step < 0 || step >= dist) return;
+    const t = setTimeout(() => { playKey(dMidiKey(mark.d + dir * (step + 1)), 0.2); setStep(s => s + 1); }, 420);
+    return () => clearTimeout(t);
+  }, [step, dist]);
+  function pickLetter(L) {
+    if (guess) return;
+    setGuess(L); setScore(s => ({ right: s.right + (L === dName(d) ? 1 : 0), tries: s.tries + 1 }));
+    playKey(dMidiKey(mark.d), 0.2); setStep(0);
+  }
+  function next() { setD(newD(d)); setGuess(null); setStep(-1); }
+  const cur = step < 0 ? null : mark.d + dir * step;
+  const done = step >= dist && guess;
+  const ok = guess === dName(d);
+  return (
+    <div style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>Hop from a landmark</div>
+        <div style={{fontSize:12,fontWeight:800,color:'var(--muted)'}}>{score.right}/{score.tries}</div>
+      </div>
+      <div style={actNote}>Name the gold note. Then watch: find the nearest landmark and count the steps from there.</div>
+      <StaffFrame clef="grand" lo={14} hi={42} width={300}>
+        {(yOf) => <>
+          {step >= 0 && HOP_MARKS.map(m => m.d === mark.d && (
+            <g key={m.d}>
+              <Ledgers clef="grand" d={m.d} x={110} yOf={yOf}/>
+              <ellipse cx={110} cy={yOf(m.d)} rx="7" ry="5" transform={`rotate(-20 110 ${yOf(m.d)})`} fill="#4f7a45"/>
+              <text x={110} y={yOf(m.d) + (dir > 0 ? 16 : -9)} textAnchor="middle" fontSize="9" fontWeight="800" fill="#4f7a45">{m.name}</text>
+            </g>
+          ))}
+          {step > 0 && Array.from({ length: step }, (_, k) => {
+            const pd = mark.d + dir * (k + 1), x = 110 + (k + 1) * (90 / Math.max(dist, 1));
+            return <text key={k} x={x} y={yOf(pd) + 4} textAnchor="middle" fontSize="10" fontWeight="900" fill="#b5483b" style={{animation:'fadeUp 0.2s both'}}>{dName(pd)}</text>;
+          })}
+          <Ledgers clef="grand" d={d} x={230} yOf={yOf}/>
+          <ellipse cx={230} cy={yOf(d)} rx="7" ry="5" transform={`rotate(-20 230 ${yOf(d)})`} fill={done ? (ok ? '#4f7a45' : '#b5483b') : '#a8823f'}/>
+          {cur !== null && step < dist && <GlideNote x={110 + step * (90 / Math.max(dist, 1))} y={yOf(cur)} color="#b5483b" r={0.7}/>}
+        </>}
+      </StaffFrame>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:4,margin:'6px 0'}}>
+        {STAFF_LETTERS.map(L => <button key={L} className={'chip' + (guess === L ? ' active' : '')} disabled={!!guess} style={{padding:'6px 0',fontSize:14,borderColor:done && L === dName(d) ? '#4f7a45' : undefined}} onClick={() => pickLetter(L)}>{L}</button>)}
+      </div>
+      <div style={{textAlign:'center',fontSize:13,minHeight:38}}>
+        {done && <><b style={{color:ok ? '#4f7a45' : '#b5483b'}}>{ok ? 'Yes -- ' : 'It’s '}{dName(d)}</b>: {mark.name}, {dir > 0 ? 'up' : 'down'} {dist} step{dist > 1 ? 's' : ''} ({[mark.d, ...Array.from({ length: dist }, (_, k) => mark.d + dir * (k + 1))].map(dName).join(' → ')})
+          <div style={{marginTop:6}}><button className="ghost-btn" onClick={next}>Next note →</button></div></>}
+      </div>
+    </div>
+  );
+}
+
+// 4. Write it: tap the staff where the named note goes (the written side of the AMEB papers).
+function WriteTheNote() {
+  const [clef, setClef] = useState('treble');
+  const range = clef === 'treble' ? [28, 40] : [16, 28];
+  const newT = (prev) => { let L; do { L = pick(STAFF_LETTERS); } while (L === prev); return L; };
+  const [target, setTarget] = useState(() => newT(null));
+  const [miss, setMiss] = useState(null);
+  const [hit, setHit] = useState(null);
+  const [streak, setStreak] = useState(0);
+  const rows = []; for (let d = range[0]; d <= range[1]; d++) rows.push(d);
+  function tap(d) {
+    if (hit !== null) return;
+    playKey(dMidiKey(d), 0.3);
+    if (dName(d) === target) { setHit(d); setMiss(null); setStreak(s => s + 1); setTimeout(() => { setHit(null); setTarget(t => newT(t)); }, 1100); }
+    else { setMiss(d); setStreak(0); setTimeout(() => setMiss(m => (m === d ? null : m)), 800); }
+  }
+  const others = hit !== null ? rows.filter(d => dName(d) === target && d !== hit) : [];
+  return (
+    <div style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>Write it on the staff</div>
+        <div style={{display:'flex',gap:4}}>
+          {['treble', 'bass'].map(x => <button key={x} className={'chip' + (clef === x ? ' active' : '')} style={{padding:'3px 9px',fontSize:11}} onClick={() => { setClef(x); setHit(null); setMiss(null); setStreak(0); }}>{x === 'treble' ? '𝄞 treble' : '𝄢 bass'}</button>)}
+        </div>
+      </div>
+      <div style={actNote}>Tap the line or space where the note belongs. Any octave counts.</div>
+      <div style={{textAlign:'center',fontSize:36,fontWeight:900,lineHeight:1.1,margin:'2px 0 4px'}}>{target}</div>
+      <StaffFrame clef={clef} lo={range[0]} hi={range[1]} width={260} rows={rows} onRow={tap}>
+        {(yOf) => <>
+          {miss !== null && <g><Ledgers clef={clef} d={miss} x={150} yOf={yOf}/><ellipse cx={150} cy={yOf(miss)} rx="7" ry="5" transform={`rotate(-20 150 ${yOf(miss)})`} fill="#b5483b"/><text x={166} y={yOf(miss) + 4} fontSize="11" fontWeight="900" fill="#b5483b">{dName(miss)}</text></g>}
+          {hit !== null && <g style={{animation:'fadeUp 0.25s both'}}><Ledgers clef={clef} d={hit} x={150} yOf={yOf}/><ellipse cx={150} cy={yOf(hit)} rx="7" ry="5" transform={`rotate(-20 150 ${yOf(hit)})`} fill="#4f7a45"/></g>}
+          {others.map(d => <g key={d} opacity="0.4"><Ledgers clef={clef} d={d} x={200} yOf={yOf}/><ellipse cx={200} cy={yOf(d)} rx="7" ry="5" transform={`rotate(-20 200 ${yOf(d)})`} fill="#4f7a45"/></g>)}
+        </>}
+      </StaffFrame>
+      <div style={{textAlign:'center',fontSize:12,fontWeight:700,minHeight:18,color:miss !== null ? '#b5483b' : '#4f7a45'}}>
+        {miss !== null ? 'That’s ' + dName(miss) + ' -- try again' : hit !== null ? (others.length ? 'Yes! The faint one is ' + target + ' too, an octave away.' : 'Yes!') : ''}
+      </div>
+      <div style={{textAlign:'center',fontSize:12,color:'var(--muted)'}}>Streak: <b style={{color:'var(--text)'}}>{streak}</b></div>
+    </div>
+  );
+}
+
 function StaffLearn({ onStart }) {
   const tip = (title, body) => (
     <div style={{padding:'10px 0',borderTop:'1px solid var(--border)'}}>
@@ -4476,18 +4710,18 @@ function StaffLearn({ onStart }) {
       <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 8px'}}>The staff is a map of the keyboard: going up the staff is going right on the piano.</p>
       {tip('Two staves, one piano', 'The treble clef (top) is usually the right hand and the higher notes; the bass clef (bottom) is usually the left hand. Together they make the grand staff, joined at middle C.')}
       {tip('Every line and space is the next letter', 'Line, space, line, space -- each step up is the next letter, just like the next white key.')}
-      <StaffExplorer/>
-      <div style={{fontSize:14,fontWeight:800,margin:'8px 0 2px'}}>Treble clef</div>
-      <div style={{fontSize:12,color:'#6f665b',marginBottom:2}}>Lines (black): E G B D F -- “Every Good Boy Deserves Fun”. Spaces (gold): F A C E.</div>
-      <StaffLetters clef="treble"/>
-      <div style={{fontSize:14,fontWeight:800,margin:'8px 0 2px'}}>Bass clef</div>
-      <div style={{fontSize:12,color:'#6f665b',marginBottom:2}}>Lines: G B D F A -- “Great Big Dragon Flies Away”. Spaces: A C E G -- “All Cows Eat Grass”.</div>
-      <StaffLetters clef="bass"/>
+      <StaffClimb/>
+      {tip('Rhymes for the lines and spaces', 'Treble lines E G B D F: “Every Good Boy Deserves Fun”; spaces F A C E. Bass lines G B D F A: “Great Big Dragon Flies Away”; spaces A C E G: “All Cows Eat Grass”.')}
+      <MnemonicStaff/>
       {tip('Read from landmarks', 'The rhymes help at first, but fluent readers jump from a landmark: middle C, treble G, bass F, the two C’s in the spaces. From a landmark, count up or down by step.')}
+      <StaffExplorer/>
+      <LandmarkHop/>
       {tip('Ledger lines extend the staff', 'Short lines above or below the staff carry on the same line-space pattern -- middle C sits on one.')}
       <ClefStory/>
       <FoldStaff/>
       <LedgerMirror/>
+      {tip('Now write them', 'Reading and writing are two different skills -- the theory papers ask for both. Tap where each note goes.')}
+      <WriteTheNote/>
       <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
     </div>
   );
