@@ -2508,6 +2508,7 @@ function KeySigLearn({ onStart }) {
       {row('Order of flats (the sharps backwards)', FLAT_ORDER, 'flat')}
       {tip('Sharps: go up one from the last sharp', 'The last sharp is the 7th note of the major key -- step up a semitone to name it. Last sharp C♯ → D major.')}
       {tip('Flats: the second-last flat names the key', 'B♭ E♭ A♭ → the second-last is E♭, so E♭ major. One flat is the one to just remember: F major.')}
+      {tip('Where the sharps and flats come from', 'Every major scale has the same shape, T T S T T T S. Start it on D and you need F♯ and C♯ to keep that shape -- so D major has two sharps. (See the Scales chapter.)')}
       {tip('Every signature has a minor twin', 'The relative minor uses the same signature and starts on the 6th note of the major scale (three semitones down). D major ↔ B minor.')}
       <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',margin:'14px 0 8px'}}>All 15 -- tap one</div>
       <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:12}}>
@@ -2642,7 +2643,7 @@ function MinorFormsCard() {
     <div className="card" style={{marginBottom:16}}>
       <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Three kinds of minor</h2>
       <p style={{fontSize:13,color:'#6f665b',margin:'0 0 8px',lineHeight:1.55}}>
-        Shown on A minor. <span style={{background:'#f3ead8',border:'1px solid #a8823f',borderRadius:4,padding:'0 4px'}}>Gold</span> = the notes that change.
+        Shown on A minor with its steps (T = tone, S = semitone). Gold keys = the notes that change; <b>T+S</b> = the wide three-semitone step.
       </p>
       {rows.map(r => {
         const names = spellMinor('A', r.form), steps = MINOR_FORMS[r.form].steps;
@@ -2651,10 +2652,8 @@ function MinorFormsCard() {
           <div key={r.form} style={{borderTop:'1px solid var(--border)',padding:'10px 0',background:r.form === 'harmonic' ? 'linear-gradient(#fbf6ea,#fbf6ea)' : 'none'}}>
             <div style={{fontSize:15,fontWeight:900,marginBottom:2}}>{r.title}</div>
             <p style={{fontSize:13,color:'#6f665b',margin:'0 0 6px',lineHeight:1.5}}>{r.text}</p>
-            <div style={{fontSize:14,fontWeight:800,letterSpacing:'0.04em',marginBottom:6}}>
-              {names.concat(['A']).map((n, i) => <span key={i} style={{marginRight:8,color:n.length > 1 ? '#a8823f' : 'var(--text)'}}>{prettyAny(n)}</span>)}
-              {r.form === 'melodic' && <span style={{fontSize:11,fontWeight:700,color:'var(--muted)'}}>(going up)</span>}
-            </div>
+            <StepStrip names={names.concat(['A'])} steps={STEP_PATTERNS[r.form]} small/>
+            {r.form === 'melodic' && <div style={{fontSize:11,fontWeight:700,color:'var(--muted)',marginBottom:4}}>(going up; coming down = natural minor)</div>}
             <TapKeyboard octaves={2} marks={marks}/>
           </div>
         );
@@ -2783,6 +2782,158 @@ function FingerGroups({ keyName, hand, mode }) {
   );
 }
 
+// ─── Concept: Tones & Semitones (Phase 99, 2026-09-23) ───────────────────────────
+// Curriculum agreed with Sohyun: tones/semitones come right after note names, because every later
+// chapter is "count the semitones": scale shape (TTSTTTS) -> key signatures -> intervals -> chords.
+function StepExplorer() {
+  const [a, setA] = useState(0);
+  const [b, setB] = useState(4);
+  const [next, setNext] = useState('a');
+  const n = Math.abs(b - a);
+  const marks = { [a]: 'target', [b]: 'good' };
+  const say = n === 0 ? 'the same key' : n === 1 ? '1 semitone' : n === 2 ? '2 semitones = 1 tone' : n + ' semitones';
+  return (
+    <div style={{background:'var(--brass-bg)',borderRadius:10,padding:'10px 10px 12px',margin:'12px 0'}}>
+      <div style={{fontSize:12,fontWeight:800,marginBottom:6}}>Try it: tap any two keys</div>
+      <TapKeyboard octaves={1} labels="white" marks={marks} onTap={(i) => { if (next === 'a') { setA(i); setNext('b'); } else { setB(i); setNext('a'); } }}/>
+      <div style={{textAlign:'center',fontSize:15,fontWeight:900,marginTop:8}}>
+        {pcLabel(a % 12)} → {pcLabel(b % 12)}: <span style={{color:'var(--brass)'}}>{say}</span>
+      </div>
+    </div>
+  );
+}
+
+function TonesLearn({ onStart }) {
+  const tip = (title, body) => (
+    <div style={{padding:'10px 0',borderTop:'1px solid var(--border)'}}>
+      <div style={{fontSize:14,fontWeight:800,marginBottom:2}}>{title}</div>
+      <div style={{fontSize:13,color:'#6f665b',lineHeight:1.55}}>{body}</div>
+    </div>
+  );
+  return (
+    <div className="card fade-up">
+      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Semitones and tones</h2>
+      <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 8px'}}>The smallest step on the piano, and the step made of two of them. Scales, key signatures, intervals and chords are all counted in these.</p>
+      {tip('A semitone is the very next key', 'Black or white, whichever key is right next door. C to C♯ is a semitone.')}
+      {tip('Two white keys can be a semitone', 'E–F and B–C have no black key between them, so they are only a semitone apart. These two spots are what make scales work.')}
+      {tip('A tone is two semitones', 'Skip one key. C to D is a tone (C♯ is in between); E to F♯ is a tone too.')}
+      {tip('Sharps and flats move by a semitone', '♯ raises a note a semitone, ♭ lowers it. That’s why one key can have two names: C♯ = D♭, and even E♯ = F and C♭ = B.')}
+      <StepExplorer/>
+      <button className="primary-btn" style={{marginTop:6}} onClick={onStart}>Start the drill →</button>
+    </div>
+  );
+}
+
+const ENHARMONIC = [['C#','Db'],['D#','Eb'],['F#','Gb'],['G#','Ab'],['A#','Bb'],['E#','F'],['B#','C'],['Cb','B'],['Fb','E']];
+const TONES_LEVELS = [
+  { n: 1, label: 'Tone or semitone?',             kind: 'which', time: 7 },
+  { n: 2, label: 'Tap a tone or semitone away',    kind: 'find',  time: 9 },
+  { n: 3, label: 'Two names, one key',             kind: 'enh',   time: 8 },
+];
+function genTonesQuestion(lv, prev) {
+  const uid = Math.random();
+  if (lv.kind === 'enh') {
+    const pair = pick(ENHARMONIC), flip = Math.random() < 0.5;
+    const shown = flip ? pair[1] : pair[0], answer = flip ? pair[0] : pair[1];
+    const others = sampleN(ENHARMONIC.flat().filter(x => x !== answer && x !== shown), 3);
+    return { kind: 'enh', key: shown, shown, answer, choices: shuffle([answer, ...others]), uid };
+  }
+  const size = Math.random() < 0.5 ? 1 : 2;
+  if (lv.kind === 'which') {
+    let a = Math.floor(Math.random() * 11), n = 0;
+    while (a + size > 11 && n++ < 20) a = Math.floor(Math.random() * 11);
+    return { kind: 'which', key: a + ':' + size, a, b: a + size, answer: size === 1 ? 'Semitone' : 'Tone', uid };
+  }
+  const whites = [0, 2, 4, 5, 7, 9, 11];
+  const up = Math.random() < 0.5;
+  let a = pick(whites) + 12, n = 0;
+  while (prev && prev.a === a && n++ < 10) a = pick(whites) + 12;
+  return { kind: 'find', key: a + ':' + size + up, a, size, up, target: a + (up ? size : -size), uid };
+}
+function TonesQuestion({ q, level, given, locked, onAnswer, pixel }) {
+  const done = !!given;
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const prompt = (t, px) => <p style={pixel ? {fontSize:10,textAlign:'center',margin:'0 0 10px'} : {fontSize:14,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? px : t}</p>;
+  if (q.kind === 'enh') {
+    return (<div>
+      {prompt('The same key has another name -- which?', 'OTHER NAME?')}
+      <div style={{textAlign:'center',fontSize:pixel ? 34 : 64,fontWeight:900,margin:'0 0 14px',color:pixel ? 'var(--brass)' : 'var(--text)'}}>{prettyNote(q.shown)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+        {q.choices.map(c => <button key={c} disabled={locked} onClick={() => onAnswer(c)} className={btnCls + (!done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '')} style={{padding:'14px 0',fontSize:pixel ? 12 : 20}}>{prettyNote(c)}</button>)}
+      </div>
+    </div>);
+  }
+  if (q.kind === 'which') {
+    return (<div>
+      {prompt('Is this a tone or a semitone?', 'TONE OR SEMITONE?')}
+      <TapKeyboard octaves={1} marks={{ [q.a]: 'target', [q.b]: 'target' }} pixel={pixel}/>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:14}}>
+        {['Semitone', 'Tone'].map(c => <button key={c} disabled={locked} onClick={() => onAnswer(c)} className={btnCls + (!done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '')} style={{padding:'16px 0',fontSize:pixel ? 10 : 16}}>{c}</button>)}
+      </div>
+    </div>);
+  }
+  const marks = { [q.a]: 'target' };
+  if (done) { marks[q.target] = 'good'; if (!given.ok && given.ans !== null && given.ans !== undefined && given.ans !== q.target) marks[given.ans] = 'bad'; }
+  const what = (q.size === 1 ? 'a semitone ' : 'a tone ') + (q.up ? 'up' : 'down');
+  return (<div>
+    {prompt('Tap the key ' + what + ' from ' + pcLabel(q.a % 12), ('TAP ' + what + ' FROM ' + PC_INFO[q.a % 12].names[0]).toUpperCase())}
+    <TapKeyboard octaves={3} labels="white" marks={marks} pixel={pixel} onTap={locked ? null : (i) => onAnswer(i)}/>
+  </div>);
+}
+const TONES_DRILL = {
+  id: 'tones', label: 'Tones & Semitones', levels: TONES_LEVELS, generate: genTonesQuestion,
+  check: (q, ans) => ans !== null && ans !== undefined && (q.kind === 'find' ? ans === q.target : ans === q.answer),
+  answerLabel: (q) => q.kind === 'find' ? pcLabel(q.target % 12) : q.kind === 'enh' ? prettyNote(q.shown) + ' = ' + prettyNote(q.answer) : q.answer.toLowerCase(),
+  Question: TonesQuestion, Learn: TonesLearn,
+};
+
+// ─── Scale shape: the step pattern (Phase 99) ────────────────────────────────────
+const STEP_PATTERNS = {
+  major:    ['T', 'T', 'S', 'T', 'T', 'T', 'S'],
+  natural:  ['T', 'S', 'T', 'T', 'S', 'T', 'T'],
+  harmonic: ['T', 'S', 'T', 'T', 'S', 'T+S', 'S'],
+  melodic:  ['T', 'S', 'T', 'T', 'T', 'T', 'S'],
+};
+function StepStrip({ names, steps, small }) {
+  return (
+    <div style={{display:'flex',alignItems:'center',flexWrap:'wrap',gap:small ? 2 : 3,fontWeight:900,fontSize:small ? 13 : 16,margin:'4px 0'}}>
+      {names.map((n, i) => (
+        <React.Fragment key={i}>
+          <span style={{minWidth:small ? 18 : 22,textAlign:'center'}}>{prettyAny(n)}</span>
+          {i < steps.length && (
+            <span style={{fontSize:small ? 9 : 10,fontWeight:800,padding:'1px 4px',borderRadius:5,
+              background:steps[i] === 'T' ? '#e9e2d0' : '#f3ead8',color:steps[i] === 'T' ? '#6f665b' : '#a8823f',
+              border:'1px solid ' + (steps[i] === 'T' ? '#d9cdb0' : '#a8823f')}}>{steps[i]}</span>
+          )}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+function MajorShapeCard() {
+  const cNames = spellScale('C').concat(['C']);
+  const gNames = spellScale('G').concat(['G']);
+  const cMarks = {}; majorOffsets(1).forEach((o, i) => { cMarks[o] = [2, 3, 6, 7].includes(i) ? 'target' : 'good'; });
+  return (
+    <div className="card" style={{marginBottom:16}}>
+      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>The shape of every major scale</h2>
+      <p style={{fontSize:13,color:'#6f665b',margin:'0 0 8px',lineHeight:1.55}}>
+        Tone, tone, semitone, tone, tone, tone, semitone -- <b>T T S T T T S</b>. The two semitones sit between notes 3-4 and 7-8.
+      </p>
+      <StepStrip names={cNames} steps={STEP_PATTERNS.major}/>
+      <TapKeyboard octaves={1} labels="white" marks={cMarks}/>
+      <div style={{fontSize:11,color:'var(--muted)',margin:'4px 0 10px'}}>Gold = the two semitone steps (E–F and B–C on C major).</div>
+      <div style={{fontSize:14,fontWeight:800,margin:'4px 0 2px'}}>Why G major needs F♯</div>
+      <p style={{fontSize:13,color:'#6f665b',margin:'0 0 4px',lineHeight:1.5}}>
+        Start on G and keep the same shape: the 6th-to-7th step must be a tone, so F has to become F♯. That F♯ is G major’s key signature -- every key signature comes from this shape.
+      </p>
+      <StepStrip names={gNames} steps={STEP_PATTERNS.major} small/>
+    </div>
+  );
+}
+
+// Drill kind 'build': tap the scale up one note at a time from the tonic.
+
 const SCALE_PATTERNS = [
   { keys: ['C', 'G', 'D', 'A', 'E'], title: 'The standard shape', rows: [['RH', 'C'], ['LH', 'C']],
     text: 'Start on the thumb. Right hand: a group of 3, then a group of 4, finger 5 on top. Left hand is the mirror: 5 at the bottom, then 4 fingers, then 3. Same fingers for all five keys.' },
@@ -2863,6 +3014,7 @@ function ScalesLearn({ onStart }) {
         <button className={'chip' + (mode === 'minor' ? ' active' : '')} onClick={() => setMode('minor')}>Minor scales</button>
       </div>
       {mode === 'major' ? <>
+        <MajorShapeCard/>
         <ScalePatterns sel={sel} onPick={setSel}/>
         <ScalePath sel={sel} onPick={setSel}/>
         <ScaleFingeringDrill controlledKey={sel} onPickKey={setSel}/>
@@ -2917,6 +3069,8 @@ const SCALE_LEVELS = [
   { n: 4, label: 'Which finger? (all 12 keys)',     kind: 'finger', pool: SCALE_PATH, time: 9 },
   { n: 5, label: 'Harmonic minor: which finger?',   kind: 'finger', pool: MINOR_PATH, mode: 'minor', time: 9 },
   { n: 6, label: 'Harmonic minor: tap the raised 7th', kind: 'seventh', pool: MINOR_PATH, mode: 'minor', time: 9 },
+  { n: 7, label: 'Build a major scale: T T S T T T S', kind: 'build', pool: SCALE_PATH, time: 20 },
+  { n: 8, label: 'Build a harmonic minor: T S T T S T+S S', kind: 'build', pool: MINOR_PATH, mode: 'minor', time: 20 },
 ];
 function genScaleQuestion(lv, prev) {
   const uid = Math.random();
@@ -2925,6 +3079,7 @@ function genScaleQuestion(lv, prev) {
   const hand = Math.random() < 0.5 ? 'RH' : 'LH';
   const mode = lv.mode || 'major';
   const e = scaleData(key, mode).octaves[1];
+  if (lv.kind === 'build') return { kind: 'build', key: key, keyName: key, mode, hand: 'RH', answerSet: e.offsets.slice(1), uid };
   if (lv.kind === 'seventh') return { kind: 'seventh', key: key, keyName: key, mode, hand: 'RH', answerSet: [11], uid };
   if (lv.kind === 'finger') {
     const idx = Math.floor(Math.random() * e.offsets.length);
@@ -2938,6 +3093,7 @@ function genScaleQuestion(lv, prev) {
 function checkScale(q, ans) {
   if (ans === null || ans === undefined) return false;
   if (q.kind === 'finger') return ans === q.answer;
+  if (q.kind === 'build') return Array.isArray(ans) && ans.length === q.answerSet.length && ans.every((x, i) => x === q.answerSet[i]);
   if (q.kind === 'four' || q.kind === 'seventh') return q.answerSet.includes(ans);
   return Array.isArray(ans) && ans.length === q.answerSet.length && q.answerSet.every(x => ans.includes(x));
 }
@@ -2946,6 +3102,7 @@ function scaleAnswerLabel(q) {
   const nameAt = (off) => prettyAny(names[e.offsets.indexOf(off) % 7]);
   if (q.kind === 'finger') return 'finger ' + q.answer + ' on ' + nameAt(q.off);
   if (q.kind === 'seventh') return 'the raised 7th is ' + nameAt(11);
+  if (q.kind === 'build') return names.concat([names[0]]).map(prettyAny).join(' ');
   return (q.kind === 'four' ? 'finger 4 on ' : 'thumbs on ') + q.answerSet.map(nameAt).join(', ');
 }
 
@@ -2955,9 +3112,14 @@ function ScaleQuestion({ q, level, given, locked, onAnswer, pixel }) {
   const done = !!given;
   const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
   const handName = q.hand === 'RH' ? 'right hand' : 'left hand';
-  const title = scaleTitle(q.keyName, q.mode) + (q.kind === 'seventh' ? '' : ' · ' + handName);
+  const title = scaleTitle(q.keyName, q.mode) + (q.kind === 'seventh' || q.kind === 'build' ? '' : ' · ' + handName);
+  const steps = q.mode === 'minor' ? STEP_PATTERNS.harmonic : STEP_PATTERNS.major;
   const marks = {};
-  if (q.kind === 'finger') marks[q.off] = done ? (given.ok ? 'good' : 'target') : 'target';
+  if (q.kind === 'build') {
+    marks[0] = 'target';
+    picked.forEach(o => { marks[o] = 'good'; });
+    if (done && !given.ok) { q.answerSet.forEach(o => { if (!marks[o]) marks[o] = 'picked'; }); if (given.ans && given.ans.wrong !== undefined) marks[given.ans.wrong] = 'bad'; }
+  } else if (q.kind === 'finger') marks[q.off] = done ? (given.ok ? 'good' : 'target') : 'target';
   else if (q.kind === 'four' || q.kind === 'seventh') {
     if (done) { q.answerSet.forEach(o => { marks[o] = 'good'; }); if (!given.ok && given.ans !== null && given.ans !== undefined) marks[given.ans] = 'bad'; }
   } else {
@@ -2966,20 +3128,28 @@ function ScaleQuestion({ q, level, given, locked, onAnswer, pixel }) {
   }
   const prompt = q.kind === 'finger' ? ['Which finger plays the highlighted note?', 'WHICH FINGER?']
     : q.kind === 'four' ? ['Tap the note finger 4 plays', 'WHERE DOES 4 GO?']
-    : q.kind === 'seventh' ? ['Tap the 7th note -- raised a semitone', 'TAP THE RAISED 7TH'] : ['Tap every note the thumb plays, then Check', 'TAP ALL THE THUMBS'];
+    : q.kind === 'seventh' ? ['Tap the 7th note -- raised a semitone', 'TAP THE RAISED 7TH']
+    : q.kind === 'build' ? ['Tap the scale going up from the gold key, step by step', 'BUILD IT: ' + steps.join(' ')] : ['Tap every note the thumb plays, then Check', 'TAP ALL THE THUMBS'];
   return (
     <div>
       <div style={{textAlign:'center',fontSize:pixel ? 12 : 20,fontWeight:900,marginBottom:4,color:pixel ? 'var(--brass)' : 'var(--text)'}}>{pixel ? title.toUpperCase() : title}</div>
       <p style={pixel ? {fontSize:9,textAlign:'center',margin:'0 0 10px'} : {fontSize:13,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? prompt[1] : prompt[0]}</p>
       <div style={{background:pixel ? 'transparent' : '#fff',padding:pixel ? 0 : 2}}>
         <ScaleTapKeyboard keyName={q.keyName} hand={q.hand} showFingers={done && q.kind !== 'seventh'} marks={marks} pixel={pixel}
-          mode={q.mode} hideDots={q.kind === 'seventh' && !done}
+          mode={q.mode} hideDots={(q.kind === 'seventh' || q.kind === 'build') && !done}
           onTap={locked || q.kind === 'finger' ? null : (off) => {
+            if (q.kind === 'build') {
+              const want = q.answerSet[picked.length];
+              if (off === want) { const nx = [...picked, off]; setPicked(nx); if (nx.length === q.answerSet.length) onAnswer(nx); }
+              else if (off !== 0 && !picked.includes(off)) onAnswer({ wrong: off });
+              return;
+            }
             if (q.kind === 'four' || q.kind === 'seventh') onAnswer(off);
             else setPicked(p => (p.includes(off) ? p.filter(x => x !== off) : [...p, off]));
           }}/>
       </div>
-      <div style={{fontSize:pixel ? 7 : 11,textAlign:'center',margin:'6px 0 12px',color:pixel ? '#f8edd4' : 'var(--muted)'}}>{q.kind === 'seventh' && !done ? (pixel ? 'START FROM THE LEFT: THAT KEY IS THE TONIC' : 'The keyboard starts on the tonic.') : (pixel ? 'DOTS = NOTES OF THE SCALE' : 'Dots mark the notes of the scale (one octave, going up).')}</div>
+      <div style={{fontSize:pixel ? 7 : 11,textAlign:'center',margin:'6px 0 12px',color:pixel ? '#f8edd4' : 'var(--muted)'}}>{q.kind === 'build' ? (pixel ? steps.slice(0, picked.length).join(' ') + (picked.length < 7 ? ' → ' + steps[picked.length] + '?' : '') : 'Steps so far: ' + (steps.slice(0, picked.length).join(' ') || '--') + (picked.length < 7 && !done ? '   next: ' + steps[picked.length] : ''))
+      : q.kind === 'seventh' && !done ? (pixel ? 'START FROM THE LEFT: THAT KEY IS THE TONIC' : 'The keyboard starts on the tonic.') : (pixel ? 'DOTS = NOTES OF THE SCALE' : 'Dots mark the notes of the scale (one octave, going up).')}</div>
       {q.kind === 'finger' && (
         <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:8}}>
           {[1, 2, 3, 4, 5].map(f => (
@@ -3010,14 +3180,17 @@ const SCALES_DRILL = {
 // Registry of drills. Two shapes:
 //   { id, label, render }            -- original single-screen drills (Phase 89/90)
 //   { id, label, concept }           -- Phase 94 concept sets (Learn + Drill on the shared engine)
-// Chapter order (Phase 97): note names (incl. letter chain) -> notes & rests -> rhythm -> key signatures -> scales -> tempo.
+// Curriculum (agreed 2026-09-23): main path counts semitones all the way through --
+// note names -> tones & semitones -> scales (shape, then fingering) -> key signatures ->
+// intervals -> chords (intervals and chords still to build). Side track: rhythm and terms.
 const DRILLS = [
-  { id: 'note-names', label: 'Note Names', concept: NOTE_NAMES_DRILL },
-  { id: 'note-values', label: 'Notes & Rests', concept: NOTEVAL_DRILL },
-  { id: 'rhythm', label: 'Rhythm Cards', concept: RHYTHM_DRILL },
-  { id: 'key-signatures', label: 'Key Signatures', concept: KEYSIG_DRILL },
-  { id: 'scales', label: 'Scales', concept: SCALES_DRILL },
-  { id: 'tempo', label: 'Tempo Race', concept: TEMPO_DRILL },
+  { id: 'note-names', label: 'Note Names', concept: NOTE_NAMES_DRILL, track: 'path' },
+  { id: 'tones', label: 'Tones & Semitones', concept: TONES_DRILL, track: 'path' },
+  { id: 'scales', label: 'Scales', concept: SCALES_DRILL, track: 'path' },
+  { id: 'key-signatures', label: 'Key Signatures', concept: KEYSIG_DRILL, track: 'path' },
+  { id: 'note-values', label: 'Notes & Rests', concept: NOTEVAL_DRILL, track: 'side' },
+  { id: 'rhythm', label: 'Rhythm Cards', concept: RHYTHM_DRILL, track: 'side' },
+  { id: 'tempo', label: 'Tempo Race', concept: TEMPO_DRILL, track: 'side' },
 ];
 
 // URL state: ?drill=<id>&tab=learn|drill&level=<n>&mode=lesson|game&lock=1
@@ -3073,12 +3246,19 @@ function App() {
 
       <div style={{maxWidth:480,margin:'0 auto',padding:'24px 16px 60px'}}>
         {!st.lock && (
-          <div style={{display:'flex',gap:8,marginBottom:20,flexWrap:'wrap'}}>
-            {DRILLS.map(d => (
-              <button key={d.id} className={'chip'+(active.id===d.id?' active':'')}
-                onClick={()=>update({ drill: d.id, tab: 'learn', level: 1 })}>
-                {d.label}
-              </button>
+          <div style={{marginBottom:20}}>
+            {[['path', 'Step by step'], ['side', 'Rhythm & terms -- any time']].map(([tr, title]) => (
+              <div key={tr} style={{marginBottom:10}}>
+                <div style={{fontSize:10,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>{title}</div>
+                <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                  {DRILLS.filter(d => d.track === tr).map((d, i) => (
+                    <button key={d.id} className={'chip'+(active.id===d.id?' active':'')}
+                      onClick={()=>update({ drill: d.id, tab: 'learn', level: 1 })}>
+                      {tr === 'path' ? (i + 1) + '. ' : ''}{d.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}
