@@ -3388,7 +3388,50 @@ const MUSIC_FONT = "'Noto Music','Apple Symbols','Segoe UI Symbol',serif";
 // clef: 'treble' | 'bass' | 'grand'. notes: [{ d, color, staff }]. labels: text under each note.
 // On the grand staff the bass staff is pushed down by GRAND_GAP so the two staves read as two.
 const GRAND_GAP = 20;
-const CLEF_GLYPH = { treble: { ch: '𝄞', size: 58, dx: 6, line: 32, dy: 11 }, bass: { ch: '𝄢', size: 42, dx: 8, line: 24, dy: 14 } };
+// Clef glyphs come from whatever music font the device has, and fonts disagree on size and baseline,
+// so each clef's ink is measured (drawn on a canvas, pixels scanned) and scaled
+// (font set via style, not the fontFamily attribute: the page's * { font-family } rule beats SVG attributes) to a fixed box on the staff:
+// treble from 1.3 spaces above the top line to 1.6 below the bottom line, bass from the top line
+// down 3.1 spaces. That keeps the treble curl on G and the bass dots around F on any font.
+const CLEF_GLYPH = { treble: { ch: '𝄞', top: 38, topPad: 16, bottom: 30, bottomPad: 13 }, bass: { ch: '𝄢', top: 26, topPad: 1, bottom: 26, bottomPad: 31 } };
+function ClefGlyph({ clef, yOf, st, ink }) {
+  const g = CLEF_GLYPH[clef];
+  const ref = useRef(null);
+  const [tf, setTf] = useState(null);
+  const yTop = yOf(g.top, st) - g.topPad, yBot = yOf(g.bottom, st) + g.bottomPad;
+  useEffect(() => {
+    let live = true;
+    const measure = () => {
+      try {
+                // Draw the glyph on a scratch canvas and scan its pixels: text metrics alone disagree
+        // between fonts, the pixels don't.
+        const cv = document.createElement('canvas'); cv.width = 160; cv.height = 160;
+        const c = cv.getContext('2d');
+        c.font = '40px ' + MUSIC_FONT; c.fillStyle = '#000'; c.fillText(g.ch, 40, 100);
+        const px = c.getImageData(0, 0, 160, 160).data;
+        let minX = 999, minY = 999, maxY = -1;
+        for (let yy = 0; yy < 160; yy++) for (let xx = 0; xx < 160; xx++) if (px[(yy * 160 + xx) * 4 + 3] > 60) {
+          if (yy < minY) minY = yy; if (yy > maxY) maxY = yy; if (xx < minX) minX = xx;
+        }
+        if (!live || maxY < 0) return;
+        const asc = 100 - minY, desc = maxY - 100, left = 40 - minX;
+        const k = (yBot - yTop) / (asc + desc);
+        setTf(`translate(${8 + left * k} ${yTop + asc * k}) scale(${k})`);
+      } catch (e) {}
+    };
+    measure();
+    // Re-measure once the music font has actually loaded (it may arrive after first paint).
+    try { document.fonts && document.fonts.load('40px "Noto Music"', g.ch).then(measure, () => {}); } catch (e) {}
+    try { document.fonts && document.fonts.ready.then(measure); } catch (e) {}
+    const t = setTimeout(measure, 1200), t2 = setTimeout(measure, 3500);
+    return () => { live = false; clearTimeout(t); clearTimeout(t2); };
+  }, [yTop, yBot]);
+  return (
+    <g transform={tf || ''} style={{visibility: tf ? 'visible' : 'hidden'}}>
+      <text ref={ref} x="0" y="0" fontSize="40" fill={ink} style={{fontFamily: MUSIC_FONT}}>{g.ch}</text>
+    </g>
+  );
+}
 function StaffView({ clef = 'grand', notes = [], ink = '#241f1a', width = 300, labels, spread }) {
   const staves = clef === 'grand' ? ['treble', 'bass'] : [clef];
   const staffOf = (n) => n.staff || (clef === 'grand' ? (n.d >= 28 ? 'treble' : 'bass') : clef);
@@ -3402,7 +3445,7 @@ function StaffView({ clef = 'grand', notes = [], ink = '#241f1a', width = 300, l
     <svg viewBox={`0 ${y0} ${width} ${y1 - y0}`} style={{width:'100%',maxWidth:width * 1.5,display:'block',margin:'0 auto'}}>
       {staves.map(st => CLEFS[st].lines.map(l => <line key={st + l} x1="4" x2={width - 4} y1={yOf(l, st)} y2={yOf(l, st)} stroke={ink} strokeOpacity="0.55" strokeWidth="1.2"/>))}
       {clef === 'grand' && <line x1="4" x2="4" y1={yOf(38, 'treble')} y2={yOf(18, 'bass')} stroke={ink} strokeWidth="1.6"/>}
-      {staves.map(st => { const g = CLEF_GLYPH[st]; return <text key={'c' + st} x={g.dx} y={yOf(g.line, st) + g.dy} fontSize={g.size} fill={ink} fontFamily={MUSIC_FONT}>{g.ch}</text>; })}
+      {staves.map(st => <ClefGlyph key={'c' + st} clef={st} st={st} yOf={yOf} ink={ink}/>)}
       {notes.map((n, i) => {
         const x = noteX(i), st = staffOf(n), y = yOf(n.d, st);
         const lw = ledgersFor(n.d, CLEFS[st].low, CLEFS[st].high);
@@ -3465,6 +3508,110 @@ function StaffLetters({ clef }) {
   );
 }
 
+// Phase 101b (Sohyun's idea): fold the grand staff at middle C like a decalcomania print.
+// Mirror of any position d is 56 - d (middle C = 28 is the fold): treble C (35) <-> bass C (21),
+// high C (42) <-> low C (14), the G line (32) <-> the F line (24) -- so the G clef and F clef
+// sit on mirror-image lines. The staves are drawn with no gap here so the reflection is exact.
+const FOLD_PAIRS = [
+  { d: 35, color: '#a8823f', label: 'Treble C ↔ Bass C' },
+  { d: 42, color: '#4f7a45', label: 'High C ↔ Low C' },
+];
+const FOLD_LINE_COLOR = '#3f8fc9';
+function FoldStaff() {
+  const [phase, setPhase] = useState('open'); // open | folding | printed
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const reduce = (() => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } })();
+  function fold() {
+    timers.current.forEach(clearTimeout); timers.current = [];
+    if (reduce) { setPhase('printed'); return; }
+    setPhase('folding');
+    timers.current.push(setTimeout(() => setPhase('printed'), 1300));
+  }
+  const W = 300, foldY = dY(28);
+  const printed = phase === 'printed';
+  const line = (d, extra) => <line key={d} x1="4" x2={W - 4} y1={dY(d)} y2={dY(d)} stroke={extra || '#241f1a'} strokeOpacity={extra ? 1 : 0.55} strokeWidth={extra ? 2.4 : 1.2}/>;
+  const ink = (d, color, x) => {
+    const st = d >= 28 ? 'treble' : 'bass';
+    return (
+      <g key={'i' + d}>
+        {ledgersFor(d, CLEFS[st].low, CLEFS[st].high).map(p => <line key={p} x1={x - 12} x2={x + 12} y1={dY(p)} y2={dY(p)} stroke="#241f1a" strokeWidth="1.4"/>)}
+        <ellipse cx={x} cy={dY(d)} rx="7.5" ry="5.5" transform={`rotate(-20 ${x} ${dY(d)})`} fill={color}/>
+      </g>
+    );
+  };
+  const topY = dY(44), botY = dY(12);
+  const bottomStyle = {
+    transformOrigin: `0px ${foldY}px`, transformBox: 'view-box',
+    transform: phase === 'folding' ? 'scaleY(-1)' : 'scaleY(1)',
+    transition: reduce ? 'none' : 'transform 0.6s ease-in-out',
+  };
+  // fold up (0.6s), hold, then open again (the 'printed' state transitions back to scaleY(1))
+  return (
+    <div style={{background:'var(--brass-bg)',borderRadius:10,padding:'10px',margin:'12px 0'}}>
+      <div style={{fontSize:14,fontWeight:800,marginBottom:2}}>Fold the staff at middle C</div>
+      <div style={{fontSize:12,color:'#6f665b',marginBottom:6,lineHeight:1.5}}>
+        Like a paint print: put ink on the treble side, fold the paper along middle C, and open it.
+      </div>
+      <svg viewBox={`0 ${topY} ${W} ${botY - topY}`} style={{width:'100%',maxWidth:450,display:'block',margin:'0 auto',overflow:'visible'}}>
+        <g>
+          {[30, 32, 34, 36, 38].map(d => line(d, d === 32 ? FOLD_LINE_COLOR : null))}
+          <ClefGlyph clef="treble" st="treble" yOf={(d) => dY(d)} ink="#241f1a"/>
+          {FOLD_PAIRS.map((p, i) => ink(p.d, p.color, 150 + i * 60))}
+        </g>
+        <line x1="4" x2={W - 4} y1={foldY} y2={foldY} stroke="#a8823f" strokeWidth="1.6" strokeDasharray="6 5"/>
+        <text x={W - 6} y={foldY - 4} textAnchor="end" fontSize="9" fontWeight="800" fill="#a8823f">fold · middle C</text>
+        <g style={bottomStyle}>
+          <rect x="0" y={foldY + 1} width={W} height={botY - foldY} fill="var(--brass-bg)"/>
+          {[18, 20, 22, 24, 26].map(d => line(d, printed && d === 24 ? FOLD_LINE_COLOR : null))}
+          <ClefGlyph clef="bass" st="bass" yOf={(d) => dY(d)} ink="#241f1a"/>
+          {printed && FOLD_PAIRS.map((p, i) => ink(56 - p.d, p.color, 150 + i * 60))}
+        </g>
+      </svg>
+      <div style={{display:'flex',gap:8,justifyContent:'center',margin:'8px 0 6px'}}>
+        <button className="ghost-btn" onClick={fold} disabled={phase === 'folding'}>{printed ? 'Fold again' : 'Fold it'}</button>
+        {phase !== 'open' && <button className="ghost-btn" onClick={() => setPhase('open')}>Wipe</button>}
+      </div>
+      <div style={{fontSize:12,lineHeight:1.7,opacity:printed ? 1 : 0.45,transition:'opacity 0.4s'}}>
+        {FOLD_PAIRS.map(p => <div key={p.d}><span style={{display:'inline-block',width:10,height:10,borderRadius:5,background:p.color,marginRight:6}}/>{p.label}</div>)}
+        <div><span style={{display:'inline-block',width:10,height:3,background:FOLD_LINE_COLOR,margin:'0 6px 3px 0'}}/>Treble G line ↔ Bass F line -- the G clef curls round one, the F clef’s dots hug the other.</div>
+      </div>
+    </div>
+  );
+}
+
+// Why the gap between the staves is really one line: a treble A with two ledger lines sits
+// exactly on the bass staff's top line.
+function LedgerMirror() {
+  const W = 300, topY = dY(41), botY = dY(15);
+  const guide = (d, text, below) => (
+    <g key={'g' + d}>
+      <line x1="4" x2={W - 4} y1={dY(d)} y2={dY(d)} stroke="#a8823f" strokeWidth="1" strokeDasharray="3 4"/>
+      <text x={below ? 6 : W - 4} y={below ? dY(d) + 11 : dY(d) - 3} textAnchor={below ? 'start' : 'end'} fontSize="8.5" fontWeight="800" fill="#a8823f">{text}</text>
+    </g>
+  );
+  const head = (x, d, color) => <ellipse cx={x} cy={dY(d)} rx="7" ry="5" transform={`rotate(-20 ${x} ${dY(d)})`} fill={color}/>;
+  return (
+    <div style={{margin:'10px 0'}}>
+      <div style={{fontSize:14,fontWeight:800,marginBottom:2}}>The gap is really one missing line</div>
+      <div style={{fontSize:12,color:'#6f665b',marginBottom:6,lineHeight:1.5}}>
+        Put the two staves together and there’s room for exactly one line between them -- middle C’s ledger line. So ledger lines below the treble staff land on the bass staff: an A with two ledger lines under the treble staff is the <b>same note</b> as the A on the bass staff’s top line.
+      </div>
+      <svg viewBox={`0 ${topY} ${W} ${botY - topY}`} style={{width:'100%',maxWidth:450,display:'block',margin:'0 auto'}}>
+        {[30, 32, 34, 36, 38].map(d => <line key={'t' + d} x1="4" x2={W * 0.46} y1={dY(d)} y2={dY(d)} stroke="#241f1a" strokeOpacity="0.55" strokeWidth="1.2"/>)}
+        {[18, 20, 22, 24, 26].map(d => <line key={'b' + d} x1={W * 0.54} x2={W - 4} y1={dY(d)} y2={dY(d)} stroke="#241f1a" strokeOpacity="0.55" strokeWidth="1.2"/>)}
+        {guide(28, 'middle C line')}
+        {guide(26, 'A = bass staff top line', true)}
+        {[28, 26].map(p => <line key={'l' + p} x1={W * 0.3 - 12} x2={W * 0.3 + 12} y1={dY(p)} y2={dY(p)} stroke="#241f1a" strokeWidth="1.5"/>)}
+        {head(W * 0.3, 26, '#a8823f')}
+        {head(W * 0.72, 26, '#a8823f')}
+        <text x={W * 0.3} y={dY(38) - 6} textAnchor="middle" fontSize="9" fontWeight="800" fill="#6f665b">treble staff</text>
+        <text x={W * 0.72} y={dY(16) - 2} textAnchor="middle" fontSize="9" fontWeight="800" fill="#6f665b">bass staff</text>
+      </svg>
+    </div>
+  );
+}
+
 function StaffLearn({ onStart }) {
   const tip = (title, body) => (
     <div style={{padding:'10px 0',borderTop:'1px solid var(--border)'}}>
@@ -3480,13 +3627,15 @@ function StaffLearn({ onStart }) {
       {tip('Every line and space is the next letter', 'Line, space, line, space -- each step up is the next letter, just like the next white key.')}
       <StaffExplorer/>
       <div style={{fontSize:14,fontWeight:800,margin:'8px 0 2px'}}>Treble clef</div>
-      <div style={{fontSize:12,color:'#6f665b',marginBottom:2}}>Lines (black): E G B D F -- “Every Good Boy Deserves Fruit”. Spaces (gold): F A C E.</div>
+      <div style={{fontSize:12,color:'#6f665b',marginBottom:2}}>Lines (black): E G B D F -- “Every Good Boy Deserves Fun”. Spaces (gold): F A C E.</div>
       <StaffLetters clef="treble"/>
       <div style={{fontSize:14,fontWeight:800,margin:'8px 0 2px'}}>Bass clef</div>
-      <div style={{fontSize:12,color:'#6f665b',marginBottom:2}}>Lines: G B D F A -- “Good Boys Deserve Fruit Always”. Spaces: A C E G -- “All Cows Eat Grass”.</div>
+      <div style={{fontSize:12,color:'#6f665b',marginBottom:2}}>Lines: G B D F A -- “Great Big Dragon Flies Away”. Spaces: A C E G -- “All Cows Eat Grass”.</div>
       <StaffLetters clef="bass"/>
       {tip('Read from landmarks', 'The rhymes help at first, but fluent readers jump from a landmark: middle C, treble G, bass F, the two C’s in the spaces. From a landmark, count up or down by step.')}
       {tip('Ledger lines extend the staff', 'Short lines above or below the staff carry on the same line-space pattern -- middle C sits on one.')}
+      <FoldStaff/>
+      <LedgerMirror/>
       <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
     </div>
   );
