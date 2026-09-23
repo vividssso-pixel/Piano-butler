@@ -374,31 +374,15 @@ const FLAT_KEYS = [
 const SHARP_ORDER = ['F#', 'C#', 'G#', 'D#', 'A#', 'E#', 'B#'];
 const FLAT_ORDER = ['Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb', 'Fb'];
 const SHARP_POS = { 'F#': 8, 'C#': 5, 'G#': 9, 'D#': 6, 'A#': 3, 'E#': 7, 'B#': 4 };
-const FLAT_POS = { 'Bb': 4, 'Eb': 7, 'Ab': 3, 'Db': 6, 'Gb': 9, 'Cb': 5, 'Fb': 8 };
+// Positions on the treble staff (0 = bottom line E4, +1 per line/space). Standard engraving:
+// sharps F5 C5 G5 D5 A4 E5 B4; flats B4 E5 A4 D5 G4 C5 F4. The bass clef uses the same shape
+// two steps lower (a 3rd), e.g. bass F#3 on the 4th line, bass Gb2 on the bottom line.
+// Phase 102b fix: Gb and Fb were wrongly placed above the staff (G5/F5); correct is G4 and F4.
+const FLAT_POS = { 'Bb': 4, 'Eb': 7, 'Ab': 3, 'Db': 6, 'Gb': 2, 'Cb': 5, 'Fb': 1 };
 
 function KeySigStaff({ count, type }) {
   if (!count) return null;
-  const order = type === 'sharp' ? SHARP_ORDER : FLAT_ORDER;
-  const posMap = type === 'sharp' ? SHARP_POS : FLAT_POS;
-  const symbol = type === 'sharp' ? '♯' : '♭';
-  const accidentals = order.slice(0, count);
-  const lineYs = [10, 20, 30, 40, 50];
-  const startX = 34, spacing = 11;
-  const width = startX + accidentals.length * spacing + 8;
-  return (
-    <svg width={width} height={60} viewBox={'0 0 ' + width + ' 60'} style={{display:'block',flexShrink:0}}>
-      {lineYs.map(y => (
-        <line key={y} x1={4} y1={y} x2={width - 4} y2={y} stroke="var(--muted)" strokeWidth="1" />
-      ))}
-      <text x={4} y={44} fontSize="34" fill="var(--text)" fontFamily="serif">{'𝄞'}</text>
-      {accidentals.map((acc, i) => {
-        const y = 50 - posMap[acc] * 5;
-        return (
-          <text key={acc} x={startX + i * spacing} y={y + 4} fontSize="16" fill="var(--brass)" fontFamily="serif">{symbol}</text>
-        );
-      })}
-    </svg>
-  );
+  return <div style={{width:170,flexShrink:0}}><KSStaff count={count} type={type} width={170}/></div>;
 }
 
 // Black-key "fingering family" grouping -- this is Sohyun's own lesson technique, formalized.
@@ -2391,20 +2375,44 @@ function minName(k) { return prettyNote(k.minor) + ' minor'; }
 const ORDINALS = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th'];
 
 // Treble staff with any key signature (0-7), fixed width so different keys compare side by side.
-function KSStaff({ count, type, width = 170, ink = '#241f1a', accent = '#a8823f', upto }) {
+// Accidentals drawn as shapes (not font glyphs) so their centre sits exactly on the line or
+// space: a sharp's box, a flat's bowl. Staff space = 10px, one position = 5px.
+function SharpShape({ x, y, color }) {
+  const bar = (dy) => <polygon points={`${x - 6.5},${y + dy + 2} ${x + 6.5},${y + dy - 1.5} ${x + 6.5},${y + dy + 1.5} ${x - 6.5},${y + dy + 5}`} fill={color}/>;
+  return (
+    <g>
+      <line x1={x - 2.6} x2={x - 2.6} y1={y - 11} y2={y + 14} stroke={color} strokeWidth="1.4"/>
+      <line x1={x + 2.6} x2={x + 2.6} y1={y - 14} y2={y + 11} stroke={color} strokeWidth="1.4"/>
+      {bar(-6.2)}{bar(2.8)}
+    </g>
+  );
+}
+function FlatShape({ x, y, color }) {
+  return (
+    <g>
+      <line x1={x - 3.5} x2={x - 3.5} y1={y - 17} y2={y + 5} stroke={color} strokeWidth="1.5"/>
+      <path d={`M${x - 3.5},${y + 5} C${x + 1},${y + 1.5} ${x + 8},${y - 3.5} ${x + 3.5},${y - 5.5} C${x + 1},${y - 6.5} ${x - 2},${y - 4} ${x - 3.5},${y - 1.5}
+               L${x - 3.5},${y + 1} C${x - 1.5},${y - 1.5} ${x + 1.5},${y - 3.5} ${x + 2.5},${y - 3} C${x + 4.5},${y - 2} ${x + 1},${y + 1.5} ${x - 3.5},${y + 5} Z`} fill={color}/>
+    </g>
+  );
+}
+function KSStaff({ count, type, width = 170, ink = '#241f1a', accent = '#a8823f', upto, clef = 'treble' }) {
   const order = type === 'sharp' ? SHARP_ORDER : FLAT_ORDER;
   const posMap = type === 'sharp' ? SHARP_POS : FLAT_POS;
-  const symbol = type === 'sharp' ? '♯' : '♭';
   const accs = type ? order.slice(0, count) : [];
-  const lineYs = [22, 32, 42, 52, 62];
+  const base = 70; // y of the bottom line
+  const shift = clef === 'bass' ? -2 : 0;
+  const yPos = (pos) => base - (pos + shift) * 5;
+  const lowD = clef === 'bass' ? 18 : 30;
+  const yOf = (d) => base - (d - lowD) * 5;
   return (
-    <svg viewBox={'0 0 ' + width + ' 80'} style={{width:'100%',maxWidth:width * 1.6,display:'block',margin:'0 auto'}}>
-      {lineYs.map(y => <line key={y} x1="4" y1={y} x2={width - 4} y2={y} stroke={ink} strokeOpacity="0.45" strokeWidth="1"/>)}
-      <text x="6" y="60" fontSize="46" fill={ink} fontFamily="'Noto Music','Apple Symbols','Segoe UI Symbol',serif">{'𝄞'}</text>
+    <svg viewBox={`0 ${base - 60} ${width} 76`} style={{width:'100%',maxWidth:width * 1.6,display:'block',margin:'0 auto'}}>
+      {[0, 2, 4, 6, 8].map(p => <line key={p} x1="4" x2={width - 4} y1={base - p * 5} y2={base - p * 5} stroke={ink} strokeOpacity="0.5" strokeWidth="1.1"/>)}
+      <ClefGlyph clef={clef} st={clef} yOf={yOf} ink={ink}/>
       {accs.map((acc, i) => {
-        const y = 62 - posMap[acc] * 5;
-        const hi = upto !== undefined && i === upto;
-        return <text key={acc} x={44 + i * 15} y={y + 5} fontSize="20" fontWeight="700" fill={hi ? '#b5483b' : accent} fontFamily="serif">{symbol}</text>;
+        const x = 56 + i * 15, y = yPos(posMap[acc]);
+        const col = upto !== undefined && i === upto ? '#b5483b' : accent;
+        return type === 'sharp' ? <SharpShape key={acc} x={x} y={y} color={col}/> : <FlatShape key={acc} x={x} y={y} color={col}/>;
       })}
     </svg>
   );
@@ -2489,6 +2497,7 @@ function KeySigLearn({ onStart }) {
     <div style={{marginBottom:14}}>
       <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:4}}>{label}</div>
       <KSStaff count={7} type={type} width={170}/>
+      <KSStaff count={7} type={type} width={170} clef="bass"/>
       <div style={{display:'flex',justifyContent:'center',gap:10,fontSize:15,fontWeight:900,marginTop:2}}>
         {list.map(n => <span key={n}>{prettyNote(n)}</span>)}
       </div>
