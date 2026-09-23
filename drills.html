@@ -19,7 +19,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.3/babel.min.js" crossorigin="anonymous"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Press+Start+2P&family=Noto+Music&display=swap" rel="stylesheet">
 
   <!-- Phase 89 (2026-09-18): the first entry in an intentionally open-ended "drill toolbox" --
        small, revisitable exercises for whatever a student keeps mixing up (note names, rhythm,
@@ -1632,12 +1632,867 @@ const TEMPO_DRILL = {
   Learn: TempoLearn,
 };
 
+// ─── Shared notation drawing (Phase 96) ──────────────────────────────────────────
+// Font-free SVG notes and rests (no music font needed, so nothing can render as a blank box).
+// Coordinates: note heads sit at y=62, stems go up to y=20.
+const HEAD_Y = 62, STEM_TOP = 20;
+
+function RestShape({ d, cx, ink }) {
+  const s = { stroke: ink, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' };
+  if (d >= 4) return <g><line x1={cx - 12} y1="44" x2={cx + 12} y2="44" stroke={ink} strokeWidth="1.2"/><rect x={cx - 8} y="44" width="16" height="7" fill={ink}/></g>;
+  if (d >= 2) return <g><line x1={cx - 12} y1="52" x2={cx + 12} y2="52" stroke={ink} strokeWidth="1.2"/><rect x={cx - 8} y="45" width="16" height="7" fill={ink}/></g>;
+  if (d >= 1) return <path d={`M${cx - 3},30 L${cx + 5},40 L${cx - 2},49 L${cx + 6},59 Q${cx - 7},55 ${cx - 1},68`} {...s} strokeWidth="3.4"/>;
+  if (d >= 0.5) return <g><circle cx={cx - 3} cy="44" r="3.6" fill={ink}/><path d={`M${cx - 3},45 Q${cx + 2},48 ${cx + 7},41 L${cx + 1},66`} {...s} strokeWidth="2.4"/></g>;
+  return <g>
+    <circle cx={cx - 2} cy="40" r="3.4" fill={ink}/><circle cx={cx - 5} cy="50" r="3.4" fill={ink}/>
+    <path d={`M${cx - 2},41 Q${cx + 3},44 ${cx + 8},37 L${cx},68`} {...s} strokeWidth="2.4"/>
+    <path d={`M${cx - 5},51 Q${cx},54 ${cx + 5},47`} {...s} strokeWidth="2.4"/>
+  </g>;
+}
+
+// One note: head (+ stem, + flags if not beamed, + dot). base = undotted value in beats.
+function NoteShape({ base, dot, cx, ink, beamed }) {
+  const hollow = base >= 2;
+  const sx = cx + 6.4;
+  return (
+    <g>
+      <ellipse cx={cx} cy={HEAD_Y} rx={base >= 4 ? 8.5 : 7.2} ry="5.3" transform={`rotate(-20 ${cx} ${HEAD_Y})`}
+        fill={hollow ? 'none' : ink} stroke={ink} strokeWidth={hollow ? 2.2 : 1}/>
+      {base < 4 && <line x1={sx} y1={HEAD_Y - 2} x2={sx} y2={STEM_TOP} stroke={ink} strokeWidth="1.8"/>}
+      {!beamed && base <= 0.5 && <path d={`M${sx},${STEM_TOP} c 2,9 13,12 8,27`} fill="none" stroke={ink} strokeWidth="2.6" strokeLinecap="round"/>}
+      {!beamed && base <= 0.25 && <path d={`M${sx},${STEM_TOP + 9} c 2,8 13,11 8,24`} fill="none" stroke={ink} strokeWidth="2.6" strokeLinecap="round"/>}
+      {dot && <circle cx={cx + 14} cy={HEAD_Y - 2} r="2.6" fill={ink}/>}
+    </g>
+  );
+}
+
+// A single symbol in its own little box (used for note-value questions and answer buttons).
+function Glyph({ item, ink = '#241f1a', size = 56 }) {
+  const w = 44;
+  return (
+    <svg viewBox={'0 10 ' + w + ' 66'} style={{width: size * w / 66, height: size, display:'inline-block', verticalAlign:'middle'}}>
+      {item.rest ? <RestShape d={item.base} cx={w / 2} ink={ink}/> : <NoteShape base={item.base} dot={item.dot} cx={w / 2 - (item.dot ? 5 : 2)} ink={ink}/>}
+    </svg>
+  );
+}
+
+// ─── Concept 4: Note & Rest Values (Phase 96) ────────────────────────────────────
+// British names first (what AMEB uses), American names alongside -- Sohyun's call via recommendation.
+// Beats are counted in crotchet beats (crotchet = 1).
+const NOTE_VALUES = [
+  { id: 'semibreve',  us: 'whole',     base: 4 },
+  { id: 'minim',      us: 'half',      base: 2 },
+  { id: 'crotchet',   us: 'quarter',   base: 1 },
+  { id: 'quaver',     us: 'eighth',    base: 0.5 },
+  { id: 'semiquaver', us: 'sixteenth', base: 0.25 },
+];
+function nvItem(v, opts) {
+  const o = opts || {};
+  const beats = v.base * (o.dot ? 1.5 : 1);
+  const uk = (o.dot ? 'dotted ' : '') + v.id + (o.rest ? ' rest' : '');
+  const us = (o.dot ? 'dotted ' : '') + v.us + (o.rest ? ' rest' : ' note');
+  return { key: (o.rest ? 'r:' : 'n:') + (o.dot ? '.' : '') + v.id, id: v.id, base: v.base, dot: !!o.dot, rest: !!o.rest, beats, uk, us };
+}
+const NV_NOTES = NOTE_VALUES.map(v => nvItem(v));
+const NV_RESTS = NOTE_VALUES.map(v => nvItem(v, { rest: true }));
+const NV_DOTTED = NOTE_VALUES.filter(v => ['minim', 'crotchet', 'quaver'].includes(v.id)).map(v => nvItem(v, { dot: true }));
+const NV_ALL = [...NV_NOTES, ...NV_RESTS, ...NV_DOTTED];
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+function fmtBeats(v) {
+  const whole = Math.floor(v + 1e-9), frac = Math.round((v - whole) * 100) / 100;
+  const f = frac === 0.25 ? '¼' : frac === 0.5 ? '½' : frac === 0.75 ? '¾' : '';
+  const s = (whole ? String(whole) : (f ? '' : '0')) + f;
+  return s + (v === 1 ? ' beat' : ' beats');
+}
+
+const NOTEVAL_LEVELS = [
+  { n: 1, label: 'Name the note',                kind: 'name',  time: 8 },
+  { n: 2, label: 'How many beats? (rests & dots too)', kind: 'beats', time: 8 },
+  { n: 3, label: 'Find the matching rest',       kind: 'rest',  time: 8 },
+  { n: 4, label: 'Add them up',                  kind: 'sum',   time: 10 },
+  { n: 5, label: 'Finish the 4/4 bar',           kind: 'fill',  time: 12 },
+];
+
+function genNoteValQuestion(lv, prev) {
+  const uid = Math.random();
+  const notPrev = (list) => { let x = pick(list), n = 0; while (prev && prev.key === x.key && n++ < 10) x = pick(list); return x; };
+  if (lv.kind === 'name') {
+    const it = notPrev(NV_NOTES);
+    return { kind: 'name', key: it.key, item: it, answer: it.key, choices: shuffle([it, ...sampleN(NV_NOTES, 3, [it])]), uid };
+  }
+  if (lv.kind === 'beats') {
+    const it = notPrev(NV_ALL);
+    const vals = [...new Set(NV_ALL.map(x => x.beats))].filter(v => v !== it.beats);
+    return { kind: 'beats', key: it.key, item: it, answer: it.beats, choices: shuffle([it.beats, ...sampleN(vals, 3)]), uid };
+  }
+  if (lv.kind === 'rest') {
+    const it = notPrev(NV_NOTES);
+    const right = NV_RESTS.find(r => r.id === it.id);
+    return { kind: 'rest', key: it.key, item: it, answer: right.key, choices: shuffle([right, ...sampleN(NV_RESTS, 3, [right])]), uid };
+  }
+  if (lv.kind === 'sum') {
+    const src = NV_ALL.filter(x => x.beats >= 0.5 && x.beats <= 3);
+    const a = pick(src), b = pick(src);
+    const total = a.beats + b.beats;
+    const cands = [...new Set([total - 1, total - 0.5, total + 0.5, total + 1, total + 1.5, total * 2, total - 1.5].filter(v => v > 0 && v !== total))];
+    return { kind: 'sum', key: a.key + b.key, a, b, answer: total, choices: shuffle([total, ...sampleN(cands, 3)]), uid };
+  }
+  // fill: some symbols already in a 4/4 bar, pick the ONE symbol that completes it exactly
+  const fillers = [...NV_NOTES.filter(x => x.beats <= 2), ...NV_RESTS.filter(x => x.beats >= 0.5 && x.beats <= 2), ...NV_DOTTED];
+  let missing, given = [];
+  for (let tries = 0; tries < 50; tries++) {
+    missing = pick(NV_ALL.filter(x => x.beats >= 0.5 && x.beats <= 3 && !(x.rest && x.beats > 2)));
+    let rem = 4 - missing.beats; given = [];
+    while (rem > 1e-9 && given.length < 4) {
+      const opts = fillers.filter(x => x.beats <= rem + 1e-9);
+      const x = pick(opts); given.push(x); rem -= x.beats;
+    }
+    if (rem < 1e-9 && given.length >= 1 && given.length <= 4) break;
+  }
+  const pos = Math.floor(Math.random() * (given.length + 1));
+  const others = sampleN(NV_ALL.filter(x => Math.abs(x.beats - missing.beats) > 1e-9), 3);
+  return { kind: 'fill', key: missing.key + given.map(g => g.key).join(), given, pos, missing, answer: missing.beats,
+           choices: shuffle([missing, ...others]), uid };
+}
+
+function checkNoteVal(q, ans) {
+  if (ans === null || ans === undefined) return false;
+  if (q.kind === 'name' || q.kind === 'rest') return ans === q.answer;
+  if (q.kind === 'fill') return Math.abs(ans.beats - q.missing.beats) < 1e-9;
+  return Math.abs(ans - q.answer) < 1e-9;
+}
+function noteValAnswerLabel(q) {
+  if (q.kind === 'name') return cap(q.item.uk) + ' (' + q.item.us + ')';
+  if (q.kind === 'rest') { const r = NV_RESTS.find(x => x.key === q.answer); return 'a ' + r.uk; }
+  if (q.kind === 'beats') return fmtBeats(q.answer);
+  if (q.kind === 'sum') return fmtBeats(q.answer);
+  return 'something worth ' + fmtBeats(q.missing.beats) + ' (e.g. a ' + q.missing.uk + ')';
+}
+
+// Board game for this chapter: a correct answer rolls a die (1-3) and moves you on.
+// Real repeat signs are the board's rules: D.C. sends you back to the start, D.S. back to the
+// segno, each only the first time per lap -- just like in music -- and Fine ends the lap.
+const BOARD_LEN = 24, SEGNO_AT = 7, DC_AT = 12, DS_AT = 18;
+function useBoard(q, given) {
+  const [b, setB] = useState({ pos: 0, laps: 0, dcUsed: false, dsUsed: false, roll: null, msg: '' });
+  const seen = useRef(null);
+  useEffect(() => {
+    if (!given || !given.ok || seen.current === q.uid) return;
+    seen.current = q.uid;
+    setB(prev => {
+      const roll = 1 + Math.floor(Math.random() * 3);
+      let pos = prev.pos + roll, msg = '', dcUsed = prev.dcUsed, dsUsed = prev.dsUsed, laps = prev.laps;
+      if (pos >= BOARD_LEN) return { pos: 0, laps: laps + 1, dcUsed: false, dsUsed: false, roll, msg: 'Fine! Lap ' + (laps + 1) + ' done' };
+      if (pos === DC_AT && !dcUsed) { pos = 0; dcUsed = true; msg = 'D.C. -- back to the start!'; }
+      else if (pos === DS_AT && !dsUsed) { pos = SEGNO_AT; dsUsed = true; msg = 'D.S. -- back to the segno!'; }
+      return { pos, laps, dcUsed, dsUsed, roll, msg };
+    });
+  }, [given, q.uid]);
+  return b;
+}
+function BoardTrack({ b, pixel }) {
+  const cols = 8, cell = 38, gap = 3;
+  const ink = pixel ? '#f8edd4' : '#241f1a';
+  const cellsXY = [];
+  for (let i = 0; i < BOARD_LEN; i++) {
+    const r = Math.floor(i / cols), c = r % 2 === 0 ? i % cols : cols - 1 - (i % cols);
+    cellsXY.push({ x: c * (cell + gap), y: r * (cell + gap) });
+  }
+  const W = cols * (cell + gap) - gap, H = 3 * (cell + gap) - gap;
+  const special = { [SEGNO_AT]: '𝄋', [DC_AT]: 'D.C.', [DS_AT]: 'D.S.', [BOARD_LEN]: 'Fine' };
+  const here = b.pos === 0 ? null : cellsXY[b.pos - 1];
+  return (
+    <div style={{marginBottom:12}}>
+      <svg viewBox={`-2 -2 ${W + 4} ${H + 4}`} shapeRendering={pixel ? 'crispEdges' : 'auto'} style={{width:'100%',display:'block'}}>
+        {cellsXY.map((p, i) => {
+          const n = i + 1, sp = special[n];
+          return (
+            <g key={n}>
+              <rect x={p.x} y={p.y} width={cell} height={cell} rx={pixel ? 0 : 6}
+                fill={sp ? (pixel ? 'rgba(168,130,63,0.35)' : '#f3ead8') : (pixel ? 'rgba(248,237,212,0.08)' : '#fff')}
+                stroke={pixel ? 'rgba(248,237,212,0.3)' : '#e0d4b8'}/>
+              <text x={p.x + 4} y={p.y + 10} fontSize="7" fill={ink} opacity="0.5">{n}</text>
+              {sp && <text x={p.x + cell / 2} y={p.y + cell / 2 + 5} textAnchor="middle" fontSize={sp.length > 2 ? 10 : 16} fontWeight="800"
+                fontStyle={sp.length > 2 ? 'italic' : 'normal'} fill={ink} fontFamily={sp.length > 2 ? 'serif' : "'Noto Music','Apple Symbols',serif"}>{sp}</text>}
+            </g>
+          );
+        })}
+        {here && <circle cx={here.x + cell / 2} cy={here.y + cell / 2 + (special[b.pos] ? 11 : 3)} r="7" fill="var(--brass)" stroke={ink} strokeWidth="1.5"
+          style={{transition:'cx 0.3s, cy 0.3s'}}/>}
+      </svg>
+      <div style={{display:'flex',justifyContent:'space-between',fontSize:pixel?8:12,fontWeight:700,marginTop:6,color:pixel?'#f8edd4':'var(--muted)'}}>
+        <span>{b.pos === 0 ? (pixel ? 'START' : 'At the start') : (pixel ? 'SQUARE ' + b.pos : 'Square ' + b.pos)}{b.roll ? (pixel ? ' · ROLLED ' + b.roll : ' · rolled ' + b.roll) : ''}</span>
+        <span>{b.laps ? (pixel ? 'LAPS ' + b.laps : 'Laps: ' + b.laps) : ''}</span>
+      </div>
+      {b.msg && <div style={{textAlign:'center',fontSize:pixel?9:13,fontWeight:800,color:'var(--brass)',marginTop:4}}>{pixel ? b.msg.toUpperCase() : b.msg}</div>}
+    </div>
+  );
+}
+
+function NoteValQuestion({ q, level, given, locked, onAnswer, pixel }) {
+  const board = useBoard(q, given);
+  const done = !!given;
+  const ink = pixel ? '#f8edd4' : '#241f1a';
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const prompt = (txt, px) => (
+    <p style={pixel ? {fontSize:10,textAlign:'center',margin:'0 0 10px',lineHeight:1.7}
+                    : {fontSize:14,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? px : txt}</p>
+  );
+  const stKey = (k) => !done ? '' : (k === q.answer ? ' good' : (given.ans === k ? ' bad' : ''));
+  const stNum = (v) => !done ? '' : (Math.abs(v - q.answer) < 1e-9 ? ' good' : (given.ans === v ? ' bad' : ''));
+  let body;
+  if (q.kind === 'name') {
+    body = <>
+      {prompt('What is this note called?', 'NAME THIS NOTE')}
+      <div style={{textAlign:'center',margin:'0 0 12px'}}><Glyph item={q.item} ink={ink} size={96}/></div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+        {q.choices.map(c => (
+          <button key={c.key} disabled={locked} onClick={() => onAnswer(c.key)} className={btnCls + stKey(c.key)} style={{padding:'10px 4px'}}>
+            <span style={{display:'block'}}>{cap(c.uk)}</span>
+            <span style={{display:'block',fontSize:pixel?7:11,fontWeight:600,opacity:0.7,marginTop:3}}>{c.us}</span>
+          </button>
+        ))}
+      </div></>;
+  } else if (q.kind === 'beats' || q.kind === 'sum') {
+    body = <>
+      {prompt(q.kind === 'sum' ? 'How many beats altogether?' : 'How many crotchet beats does it last?', q.kind === 'sum' ? 'ADD THE BEATS!' : 'HOW MANY BEATS?')}
+      <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:6,margin:'0 0 12px',color:ink}}>
+        {q.kind === 'sum' ? <>
+          <Glyph item={q.a} ink={ink} size={84}/><span style={{fontSize:30,fontWeight:900}}>+</span><Glyph item={q.b} ink={ink} size={84}/><span style={{fontSize:30,fontWeight:900}}>= ?</span>
+        </> : <Glyph item={q.item} ink={ink} size={96}/>}
+      </div>
+      {q.kind === 'beats' && !pixel && <div style={{textAlign:'center',fontSize:12,color:'var(--muted)',margin:'-6px 0 10px'}}>{done ? cap(q.item.uk) + ' · ' + q.item.us : ' '}</div>}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+        {q.choices.map(v => (
+          <button key={v} disabled={locked} onClick={() => onAnswer(v)} className={btnCls + stNum(v)} style={{padding:'14px 4px'}}>{fmtBeats(v)}</button>
+        ))}
+      </div></>;
+  } else if (q.kind === 'rest') {
+    body = <>
+      {prompt('Which rest lasts just as long?', 'FIND ITS REST')}
+      <div style={{textAlign:'center',margin:'0 0 12px'}}><Glyph item={q.item} ink={ink} size={96}/></div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>
+        {q.choices.map(c => (
+          <button key={c.key} disabled={locked} onClick={() => onAnswer(c.key)} className={btnCls + stKey(c.key)} style={{padding:'8px 2px'}}
+            aria-label={c.uk}><Glyph item={c} size={52}/></button>
+        ))}
+      </div></>;
+  } else {
+    const slots = [...q.given];
+    slots.splice(q.pos, 0, null);
+    const right = done ? q.missing : null;
+    body = <>
+      {prompt('Which one finishes this 4/4 bar exactly?', 'FINISH THE BAR!')}
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:4,margin:'0 0 12px',padding:'6px 10px',
+        borderLeft:'2px solid ' + ink,borderRight:'2px solid ' + ink,color:ink}}>
+        <span style={{fontFamily:'serif',fontWeight:900,fontSize:18,lineHeight:0.9,textAlign:'center',marginRight:4}}>4<br/>4</span>
+        {slots.map((s, i) => s ? <Glyph key={i} item={s} ink={ink} size={64}/> : (
+          <span key={i} style={{display:'inline-flex',alignItems:'center',justifyContent:'center',minWidth:40,height:64,
+            border:'2px dashed ' + (done ? 'var(--brass)' : ink),borderRadius:pixel?0:8}}>
+            {right ? <Glyph item={right} ink={ink} size={56}/> : <span style={{fontSize:22,fontWeight:900}}>?</span>}
+          </span>
+        ))}
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>
+        {q.choices.map(c => {
+          const st = !done ? '' : (Math.abs(c.beats - q.missing.beats) < 1e-9 ? ' good' : (given.ans && given.ans.key === c.key ? ' bad' : ''));
+          return <button key={c.key} disabled={locked} onClick={() => onAnswer(c)} className={btnCls + st} style={{padding:'8px 2px'}}
+            aria-label={c.uk}><Glyph item={c} size={52}/></button>;
+        })}
+      </div></>;
+  }
+  return <div><BoardTrack b={board} pixel={pixel}/>{body}</div>;
+}
+
+function NoteValLearn({ onStart }) {
+  const rows = [
+    { it: NV_NOTES[0], n: 1 }, { it: NV_NOTES[1], n: 2 }, { it: NV_NOTES[2], n: 4 }, { it: NV_NOTES[3], n: 8 }, { it: NV_NOTES[4], n: 16 },
+  ];
+  return (
+    <div className="card fade-up">
+      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>The note-value tree</h2>
+      <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 14px'}}>Each row fills the same 4-beat bar -- every note splits into two of the next one down.</p>
+      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+        {rows.map(({ it, n }) => {
+          const rest = NV_RESTS.find(r => r.id === it.id);
+          const size = n >= 16 ? 22 : n >= 8 ? 32 : 48;
+          return (
+            <div key={it.id} style={{borderTop:'1px solid var(--border)',paddingTop:8}}>
+              <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',gap:8}}>
+                <span style={{fontSize:15,fontWeight:900}}>{cap(it.id)} <span style={{fontSize:12,fontWeight:600,color:'var(--muted)'}}>{it.us}</span></span>
+                <span style={{fontSize:12,fontWeight:800,color:'var(--brass)',whiteSpace:'nowrap'}}>{fmtBeats(it.beats)}</span>
+              </div>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6}}>
+                <div style={{display:'flex',flexWrap:'nowrap',justifyContent:'space-around',flex:1,overflow:'hidden'}}>
+                  {Array.from({ length: n }).map((_, i) => <Glyph key={i} item={it} size={size}/>)}
+                </div>
+                <div style={{flex:'0 0 auto',display:'flex',alignItems:'center',gap:2,fontSize:11,color:'var(--muted)',borderLeft:'1px solid var(--border)',paddingLeft:8}}>
+                  rest <Glyph item={rest} size={40}/>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{background:'var(--brass-bg)',borderRadius:10,padding:'12px 14px',marginTop:14}}>
+        <div style={{fontSize:14,fontWeight:800,marginBottom:6}}>A dot adds half again</div>
+        <div style={{display:'flex',flexWrap:'wrap',gap:12,alignItems:'center',fontSize:13}}>
+          {NV_DOTTED.map(d => (
+            <span key={d.key} style={{display:'inline-flex',alignItems:'center',gap:4}}>
+              <Glyph item={d} size={44}/>{fmtBeats(d.beats / 1.5)} + {fmtBeats(d.beats / 3).replace(/ beats?$/, '')} = <b>{fmtBeats(d.beats)}</b>
+            </span>
+          ))}
+        </div>
+      </div>
+      <p style={{fontSize:11,color:'var(--muted)',margin:'10px 0 0',lineHeight:1.5}}>
+        Game board rule: D.C. sends you back to the start and D.S. back to the {'𝄋'} sign -- each only once per lap, just like in real music. Reach Fine to finish a lap.
+      </p>
+      <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
+    </div>
+  );
+}
+
+const NOTEVAL_DRILL = {
+  id: 'note-values',
+  label: 'Notes & Rests',
+  levels: NOTEVAL_LEVELS,
+  generate: genNoteValQuestion,
+  check: checkNoteVal,
+  answerLabel: noteValAnswerLabel,
+  Question: NoteValQuestion,
+  Learn: NoteValLearn,
+};
+
+// ─── Concept 5: Rhythm Cards (Phase 96) ──────────────────────────────────────────
+// Inspired by numbered classroom rhythm-card sets (concept only, original drawing). One 4/4 bar
+// per card, built from one-beat / two-beat "cells" so every card is correctly beamed by beat.
+// The 40 cards are generated from a fixed seed, so card #13 is always the same card.
+const RCELLS = {
+  Q:    { beats: 1, ev: [['n', 1]] },
+  QR:   { beats: 1, ev: [['r', 1]] },
+  H:    { beats: 2, ev: [['n', 2]] },
+  W:    { beats: 4, ev: [['n', 4]] },
+  EE:   { beats: 1, ev: [['n', 0.5], ['n', 0.5]], beam: true },
+  ERE:  { beats: 1, ev: [['r', 0.5], ['n', 0.5]] },
+  DQE:  { beats: 2, ev: [['n', 1, true], ['n', 0.5]] },
+  SYN:  { beats: 2, ev: [['n', 0.5], ['n', 1], ['n', 0.5]] },
+  SSSS: { beats: 1, ev: [['n', 0.25], ['n', 0.25], ['n', 0.25], ['n', 0.25]], beam: true },
+  ESS:  { beats: 1, ev: [['n', 0.5], ['n', 0.25], ['n', 0.25]], beam: true },
+  SSE:  { beats: 1, ev: [['n', 0.25], ['n', 0.25], ['n', 0.5]], beam: true },
+  T:    { beats: 1, ev: [['n', 1 / 3], ['n', 1 / 3], ['n', 1 / 3]], beam: true, tuplet: 3 },
+  DES:  { beats: 1, ev: [['n', 0.5, true], ['n', 0.25]], beam: true },
+};
+const RHYTHM_TIERS = [
+  { n: 1, label: 'Crotchets, minims, semibreves & crotchet rests', add: ['Q', 'QR', 'H', 'W'], bpm: 72 },
+  { n: 2, label: 'Quaver pairs',                                    add: ['EE'], bpm: 72 },
+  { n: 3, label: 'Quaver rests, dotted crotchets, syncopation',     add: ['ERE', 'DQE', 'SYN'], bpm: 66 },
+  { n: 4, label: 'Semiquavers',                                     add: ['SSSS', 'ESS', 'SSE'], bpm: 60 },
+  { n: 5, label: 'Triplets & dotted quavers',                       add: ['T', 'DES'], bpm: 60 },
+];
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function buildRhythmDeck() {
+  const rnd = mulberry32(20260923);
+  const rpick = (arr) => arr[Math.floor(rnd() * arr.length)];
+  const deck = [], seen = new Set();
+  RHYTHM_TIERS.forEach(tier => {
+    const allowed = RHYTHM_TIERS.filter(t => t.n <= tier.n).flatMap(t => t.add);
+    const one = allowed.filter(c => RCELLS[c].beats === 1), two = allowed.filter(c => RCELLS[c].beats === 2);
+    let made = 0, guard = 0;
+    while (made < 8 && guard++ < 500) {
+      const nw = rpick(tier.add);
+      let cells;
+      if (nw === 'W') cells = ['W'];
+      else {
+        const half = () => (two.length && rnd() < 0.3) ? [rpick(two)] : [rpick(one), rpick(one)];
+        const withNew = RCELLS[nw].beats === 2 ? [nw] : (rnd() < 0.5 ? [nw, rpick(one)] : [rpick(one), nw]);
+        cells = rnd() < 0.5 ? [...withNew, ...half()] : [...half(), ...withNew];
+      }
+      const evs = cells.flatMap(c => RCELLS[c].ev);
+      if (evs.every(e => e[0] === 'r')) continue;
+      if (cells.filter(c => c === 'QR').length > 2) continue;
+      const k = cells.join('-');
+      if (seen.has(k)) continue;
+      seen.add(k); made++;
+      deck.push({ num: deck.length + 1, tier: tier.n, cells });
+    }
+  });
+  return deck;
+}
+const RHYTHM_DECK = buildRhythmDeck();
+
+// Flatten a card into timed events: onset/dur in crotchet beats, plus beam/tuplet grouping.
+function cardEvents(card) {
+  const out = []; let t = 0;
+  card.cells.forEach((cid, ci) => {
+    const c = RCELLS[cid];
+    c.ev.forEach(([k, base, dot]) => {
+      const dur = base * (dot ? 1.5 : 1);
+      out.push({ rest: k === 'r', base, dot: !!dot, dur, onset: t, group: c.beam ? ci : null, tuplet: c.tuplet || null });
+      t += dur;
+    });
+  });
+  return out;
+}
+function countLabel(onset) {
+  const b = Math.floor(onset + 1e-6), f = Math.round((onset - b) * 1000) / 1000;
+  if (f === 0) return String(b + 1);
+  if (f === 0.25) return 'e';
+  if (f === 0.5) return '&';
+  if (f === 0.75) return 'a';
+  if (Math.abs(f - 0.333) < 0.01) return 'trip';
+  if (Math.abs(f - 0.667) < 0.01) return 'let';
+  return '';
+}
+
+function RhythmSVG({ card, ink = '#241f1a', counts = false }) {
+  const evs = cardEvents(card);
+  let x = 16;
+  const placed = evs.map(e => {
+    const w = e.rest ? 34 + 30 * Math.min(e.dur, 2) : 26 + 34 * Math.min(e.dur, 2) + (e.dot ? 8 : 0);
+    const cx = x + 10; x += w;
+    return { ...e, cx, sx: cx + 6.4 };
+  });
+  const W = x + 4, H = counts ? 100 : 80;
+  const groups = {};
+  placed.forEach((p, i) => { if (p.group !== null && !p.rest) (groups[p.group] = groups[p.group] || []).push(i); });
+  const beams = [];
+  Object.values(groups).forEach(idx => {
+    if (idx.length < 2) return;
+    const first = placed[idx[0]], last = placed[idx[idx.length - 1]];
+    beams.push(<rect key={'b' + idx[0]} x={first.sx - 0.9} y={STEM_TOP} width={last.sx - first.sx + 1.8} height="5" fill={ink}/>);
+    for (let j = 0; j < idx.length; j++) {
+      const p = placed[idx[j]];
+      if (p.base > 0.25) continue;
+      const nx = idx[j + 1] !== undefined ? placed[idx[j + 1]] : null;
+      const pv = idx[j - 1] !== undefined ? placed[idx[j - 1]] : null;
+      if (nx && nx.base <= 0.25) beams.push(<rect key={'s' + idx[j]} x={p.sx - 0.9} y={STEM_TOP + 8} width={nx.sx - p.sx + 1.8} height="4.5" fill={ink}/>);
+      else if (!(pv && pv.base <= 0.25)) {
+        const left = !nx; // lone semiquaver: stub toward the note it belongs with
+        beams.push(<rect key={'u' + idx[j]} x={left ? p.sx - 11 : p.sx - 0.9} y={STEM_TOP + 8} width="11.8" height="4.5" fill={ink}/>);
+      }
+    }
+    if (first.tuplet) beams.push(<text key={'t' + idx[0]} x={(first.sx + last.sx) / 2} y={STEM_TOP - 5} textAnchor="middle" fontSize="12"
+      fontStyle="italic" fontWeight="800" fill={ink} fontFamily="serif">{first.tuplet}</text>);
+  });
+  return (
+    <svg viewBox={`0 ${counts ? 2 : 6} ${W} ${H}`} style={{width:'100%',maxHeight:counts ? 110 : 88,display:'block'}}>
+      {placed.map((p, i) => p.rest
+        ? <RestShape key={i} d={p.base} cx={p.cx + 2} ink={ink}/>
+        : <NoteShape key={i} base={p.base} dot={p.dot} cx={p.cx} ink={ink} beamed={p.group !== null && groups[p.group] && groups[p.group].length > 1}/>)}
+      {beams}
+      {counts && placed.map((p, i) => {
+        const l = countLabel(p.onset);
+        return <text key={'c' + i} x={p.cx} y="92" textAnchor="middle" fontSize="11" fontWeight="700" fill={ink} opacity={p.rest ? 0.45 : 0.75}>
+          {p.rest ? '(' + l + ')' : l}</text>;
+      })}
+    </svg>
+  );
+}
+
+function RhythmCard({ card, ink, counts, state, onClick, compact, playing }) {
+  const border = state === 'good' ? 'var(--good)' : state === 'bad' ? 'var(--bad)' : playing ? 'var(--brass)' : 'var(--border)';
+  const bg = state === 'good' ? '#dcebd5' : state === 'bad' ? '#f6d6cf' : '#fff';
+  const El = onClick ? 'button' : 'div';
+  return (
+    <El onClick={onClick} style={{position:'relative',display:'block',width:'100%',textAlign:'left',
+      background:bg,border:'2px solid ' + border,borderRadius:12,padding:compact ? '6px 8px 4px' : '10px 12px 6px',cursor:onClick ? 'pointer' : 'default'}}>
+      <span style={{position:'absolute',top:6,left:8,fontSize:10,fontWeight:800,color:'var(--brass)'}}>{card.num}</span>
+      <RhythmSVG card={card} ink={ink || '#241f1a'} counts={counts}/>
+    </El>
+  );
+}
+
+// Plays a card: 4 count-in clicks, then the rhythm as short tones over quiet beat clicks.
+function playCard(card, bpm, opts) {
+  const o = opts || {};
+  const ctx = getAudio();
+  if (!ctx) return null;
+  stopClicks();
+  const beat = 60 / bpm, start = ctx.currentTime + 0.12, bar = start + 4 * beat;
+  for (let i = 0; i < 8; i++) blip(ctx, start + i * beat, i % 4 === 0 ? 1320 : 880, 0.05, i < 4 ? 0.3 : 0.12);
+  if (!o.silent) cardEvents(card).forEach(e => { if (!e.rest) blip(ctx, bar + e.onset * beat, 523, Math.min(e.dur * beat * 0.85, 0.5), 0.3, 'triangle'); });
+  return { ctx, start, bar, beat };
+}
+function getAudio() {
+  try {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
+    window.__pbAudio = _audioCtx; // exposed for automated timing tests only
+    return _audioCtx;
+  } catch (e) { return null; }
+}
+function blip(ctx, t, freq, len, vol, type) {
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  if (type) o.type = type;
+  o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + 0.006);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(len, 0.03));
+  o.connect(g); g.connect(ctx.destination);
+  o.start(t); o.stop(t + len + 0.03);
+  _clickNodes.push(o);
+}
+
+const RHYTHM_LEVELS = RHYTHM_TIERS.map(t => ({ n: t.n, label: 'Cards ' + ((t.n - 1) * 8 + 1) + '–' + t.n * 8 + ': ' + t.label, tier: t.n, bpm: t.bpm, time: 18 }));
+
+function genRhythmQuestion(lv, prev) {
+  const uid = Math.random();
+  const pool = RHYTHM_DECK.filter(c => c.tier === lv.tier);
+  const lower = RHYTHM_DECK.filter(c => c.tier <= lv.tier);
+  let card = pick(Math.random() < 0.7 ? pool : lower), n = 0;
+  while (prev && prev.key === card.num && n++ < 10) card = pick(pool);
+  const kind = Math.random() < 0.5 ? 'listen' : 'tap';
+  if (kind === 'listen') {
+    const sig = (c) => cardEvents(c).map(e => (e.rest ? 'r' : 'n') + e.dur.toFixed(3)).join();
+    const others = sampleN(lower.filter(c => sig(c) !== sig(card)), 2);
+    return { kind, key: card.num, card, bpm: lv.bpm, choices: shuffle([card, ...others]), uid };
+  }
+  return { kind, key: card.num, card, bpm: lv.bpm, uid };
+}
+
+// Tap-along scoring: every note onset must get one tap within the tolerance, and no extra taps.
+function scoreTaps(card, taps, bar, beat) {
+  const onsets = cardEvents(card).filter(e => !e.rest).map(e => bar + e.onset * beat);
+  const gaps = onsets.slice(1).map((t, i) => t - onsets[i]);
+  const tol = Math.min(0.14, 0.45 * Math.min(...gaps, 10));
+  const used = new Set(); let hits = 0;
+  const detail = onsets.map(t => {
+    let best = -1, bd = 1e9;
+    taps.forEach((tp, j) => { const d = Math.abs(tp - t); if (!used.has(j) && d < bd) { bd = d; best = j; } });
+    if (best >= 0 && bd <= tol) { used.add(best); hits++; return (taps[best] - t); }
+    return null;
+  });
+  return { hits, total: onsets.length, extra: taps.length - used.size, detail };
+}
+
+function RhythmQuestion({ q, level, given, locked, onAnswer, pixel }) {
+  const ink = '#241f1a';
+  const [phase, setPhase] = useState('ready'); // ready | count | play | scoring
+  const [beatShown, setBeatShown] = useState(0);
+  const tapsRef = useRef([]);
+  const run = useRef(null);
+  const timers = useRef([]);
+  const done = !!given;
+  useEffect(() => {
+    setPhase('ready'); setBeatShown(0); tapsRef.current = [];
+    if (q.kind === 'listen') { const t = setTimeout(() => playCard(q.card, q.bpm), 250); timers.current.push(t); }
+    return () => { timers.current.forEach(clearTimeout); timers.current = []; stopClicks(); };
+  }, [q.uid]);
+
+  function startTap() {
+    const r = playCard(q.card, q.bpm, { silent: true });
+    const now = () => (r ? r.ctx.currentTime : performance.now() / 1000);
+    const t0 = now() + (r ? 0 : 0.12);
+    const info = r || { start: t0, bar: t0 + 4 * 60 / q.bpm, beat: 60 / q.bpm };
+    run.current = { ...info, now, lat: r ? (r.ctx.outputLatency || r.ctx.baseLatency || 0) : 0 };
+    window.__pbRhythmRun = { bar: info.bar, beat: info.beat, onsets: cardEvents(q.card).filter(e => !e.rest).map(e => info.bar + e.onset * info.beat) };
+    tapsRef.current = [];
+    setPhase('count');
+    for (let i = 0; i < 8; i++) {
+      const ms = (info.start + i * info.beat - now()) * 1000;
+      timers.current.push(setTimeout(() => { setBeatShown(i % 4 + 1); if (i === 4) setPhase('play'); }, Math.max(0, ms)));
+    }
+    const endMs = (info.bar + 4 * info.beat + 0.25 - now()) * 1000;
+    timers.current.push(setTimeout(() => {
+      setPhase('scoring');
+      const res = scoreTaps(q.card, tapsRef.current, info.bar, info.beat);
+      onAnswer(res);
+    }, endMs));
+  }
+  function tap() {
+    if (!run.current || (phase !== 'count' && phase !== 'play')) return;
+    const t = run.current.now() - run.current.lat;
+    if (t < run.current.bar - 0.2) return; // taps during the count-in don't count
+    tapsRef.current.push(t);
+  }
+  useEffect(() => {
+    if (q.kind !== 'tap') return;
+    function onKey(e) { if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); tap(); } }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+
+  const prompt = (txt, px) => (
+    <p style={pixel ? {fontSize:10,textAlign:'center',margin:'0 0 10px',lineHeight:1.7}
+                    : {fontSize:14,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? px : txt}</p>
+  );
+  const smallBtn = pixel ? 'pixel-btn' : 'ghost-btn';
+
+  if (q.kind === 'listen') {
+    return (
+      <div>
+        {prompt('Listen -- which card is it?', 'LISTEN! WHICH CARD?')}
+        <div style={{textAlign:'center',marginBottom:12}}>
+          <button className={smallBtn} onClick={() => playCard(q.card, q.bpm)} style={pixel ? {fontSize:9} : {fontSize:14,padding:'10px 18px'}}>
+            {pixel ? '♪ PLAY AGAIN' : '♪ Play again'}</button>
+        </div>
+        <div style={{display:'flex',flexDirection:'column',gap:8}}>
+          {q.choices.map(c => {
+            const st = !done ? null : (c.num === q.card.num ? 'good' : (given.ans === c.num ? 'bad' : null));
+            return <RhythmCard key={c.num} card={c} compact state={st} onClick={locked ? undefined : () => { stopClicks(); onAnswer(c.num); }}/>;
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  const res = done && given.ans && typeof given.ans === 'object' ? given.ans : null;
+  return (
+    <div>
+      {prompt('Tap along: 4 clicks count you in, then tap every note', 'COUNT 4, THEN TAP!')}
+      <RhythmCard card={q.card} counts={done} state={done ? (given.ok ? 'good' : 'bad') : null}/>
+      <div style={{display:'flex',justifyContent:'center',gap:8,margin:'10px 0'}}>
+        {[1, 2, 3, 4].map(n => (
+          <span key={n} style={{width:12,height:12,borderRadius:pixel ? 0 : 6,
+            background:beatShown === n ? (phase === 'count' ? '#c9a24a' : 'var(--brass)') : (pixel ? 'rgba(248,237,212,0.2)' : 'var(--border)')}}/>
+        ))}
+      </div>
+      {!done && phase === 'ready' && (
+        <div style={{display:'flex',gap:8}}>
+          <button className={pixel ? 'pixel-btn' : 'ghost-btn'} style={{flex:1,fontSize:pixel?9:13}} onClick={() => playCard(q.card, q.bpm)}>{pixel ? 'HEAR IT' : 'Hear it first'}</button>
+          <button className={pixel ? 'pixel-btn' : 'primary-btn'} style={{flex:2,fontSize:pixel?9:15}} onClick={startTap}>{pixel ? 'START' : 'Start tapping'}</button>
+        </div>
+      )}
+      {!done && (phase === 'count' || phase === 'play') && (
+        <button onPointerDown={(e) => { e.preventDefault(); tap(); }} className={pixel ? 'pixel-btn' : 'primary-btn'}
+          style={{width:'100%',padding:'34px 0',fontSize:pixel?14:22,touchAction:'manipulation',userSelect:'none'}}>
+          {phase === 'count' ? (pixel ? 'READY… ' + beatShown : 'Ready… ' + beatShown) : (pixel ? 'TAP!' : 'Tap! (or Space)')}
+        </button>
+      )}
+      {res && (
+        <div style={{textAlign:'center',fontSize:pixel?9:13,fontWeight:700,marginTop:6,color:pixel?'#f8edd4':'var(--muted)'}}>
+          {pixel ? res.hits + '/' + res.total + ' ON TIME' + (res.extra ? ' · ' + res.extra + ' EXTRA' : '')
+                 : res.hits + ' of ' + res.total + ' notes on time' + (res.extra ? ', ' + res.extra + ' extra tap' + (res.extra > 1 ? 's' : '') : '')}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RhythmLearn({ onStart }) {
+  const [tier, setTier] = useState(1);
+  const [playing, setPlaying] = useState(null);
+  const t = RHYTHM_TIERS[tier - 1];
+  useEffect(() => () => stopClicks(), []);
+  function hear(card) {
+    playCard(card, t.bpm); setPlaying(card.num);
+    setTimeout(() => setPlaying(p => (p === card.num ? null : p)), (8 * 60 / t.bpm) * 1000 + 300);
+  }
+  return (
+    <div className="card fade-up">
+      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Rhythm cards</h2>
+      <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 12px'}}>40 one-bar rhythms in 4/4, easiest first. Count along under each note -- tap a card to hear it with a 4-click count-in.</p>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:6}}>
+        {RHYTHM_TIERS.map(x => <button key={x.n} className={'chip' + (x.n === tier ? ' active' : '')} onClick={() => setTier(x.n)}>Set {x.n}</button>)}
+      </div>
+      <div style={{fontSize:12,color:'var(--muted)',marginBottom:12}}>New in this set: <b style={{color:'var(--text)'}}>{t.label}</b></div>
+      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+        {RHYTHM_DECK.filter(c => c.tier === tier).map(c => <RhythmCard key={c.num} card={c} counts playing={playing === c.num} onClick={() => hear(c)}/>)}
+      </div>
+      <p style={{fontSize:11,color:'var(--muted)',margin:'10px 0 0',lineHeight:1.5}}>Counting: 1 e & a for semiquavers, 1 trip let for triplets; rests shown in brackets.</p>
+      <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
+    </div>
+  );
+}
+
+const RHYTHM_DRILL = {
+  id: 'rhythm',
+  label: 'Rhythm Cards',
+  levels: RHYTHM_LEVELS,
+  generate: genRhythmQuestion,
+  check: (q, ans) => {
+    if (ans === null || ans === undefined) return false;
+    if (q.kind === 'listen') return ans === q.card.num;
+    return ans.hits === ans.total && ans.extra === 0;
+  },
+  answerLabel: (q) => q.kind === 'listen' ? 'card ' + q.card.num
+    : 'count it: ' + cardEvents(q.card).map(e => e.rest ? '(' + countLabel(e.onset) + ')' : countLabel(e.onset)).join(' '),
+  Question: RhythmQuestion,
+  Learn: RhythmLearn,
+};
+
+// ─── Concept 3: Key Signatures (Phase 96, 2026-09-23) ────────────────────────────
+// Shares SHARP_ORDER / FLAT_ORDER / SHARP_POS / FLAT_POS with the Scale Fingering drill -- those
+// positions were cross-checked against the AMEB PDF's "Key signatures of relative major and minor
+// keys" page in Phase 90. Relative minors are standard theory (minor tonic = 6th degree of the major).
+const KEY_SIGS = [
+  { major: 'C',  minor: 'A',  type: null,    count: 0 },
+  { major: 'G',  minor: 'E',  type: 'sharp', count: 1 },
+  { major: 'D',  minor: 'B',  type: 'sharp', count: 2 },
+  { major: 'A',  minor: 'F#', type: 'sharp', count: 3 },
+  { major: 'E',  minor: 'C#', type: 'sharp', count: 4 },
+  { major: 'B',  minor: 'G#', type: 'sharp', count: 5 },
+  { major: 'F#', minor: 'D#', type: 'sharp', count: 6 },
+  { major: 'C#', minor: 'A#', type: 'sharp', count: 7 },
+  { major: 'F',  minor: 'D',  type: 'flat',  count: 1 },
+  { major: 'Bb', minor: 'G',  type: 'flat',  count: 2 },
+  { major: 'Eb', minor: 'C',  type: 'flat',  count: 3 },
+  { major: 'Ab', minor: 'F',  type: 'flat',  count: 4 },
+  { major: 'Db', minor: 'Bb', type: 'flat',  count: 5 },
+  { major: 'Gb', minor: 'Eb', type: 'flat',  count: 6 },
+  { major: 'Cb', minor: 'Ab', type: 'flat',  count: 7 },
+];
+function sigLabel(k) { return k.count === 0 ? 'no sharps or flats' : k.count + (k.type === 'sharp' ? '♯' : '♭'); }
+function majName(k) { return prettyNote(k.major) + ' major'; }
+function minName(k) { return prettyNote(k.minor) + ' minor'; }
+const ORDINALS = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th'];
+
+// Treble staff with any key signature (0-7), fixed width so different keys compare side by side.
+function KSStaff({ count, type, width = 170, ink = '#241f1a', accent = '#a8823f', upto }) {
+  const order = type === 'sharp' ? SHARP_ORDER : FLAT_ORDER;
+  const posMap = type === 'sharp' ? SHARP_POS : FLAT_POS;
+  const symbol = type === 'sharp' ? '♯' : '♭';
+  const accs = type ? order.slice(0, count) : [];
+  const lineYs = [22, 32, 42, 52, 62];
+  return (
+    <svg viewBox={'0 0 ' + width + ' 80'} style={{width:'100%',maxWidth:width * 1.6,display:'block',margin:'0 auto'}}>
+      {lineYs.map(y => <line key={y} x1="4" y1={y} x2={width - 4} y2={y} stroke={ink} strokeOpacity="0.45" strokeWidth="1"/>)}
+      <text x="6" y="60" fontSize="46" fill={ink} fontFamily="'Noto Music','Apple Symbols','Segoe UI Symbol',serif">{'𝄞'}</text>
+      {accs.map((acc, i) => {
+        const y = 62 - posMap[acc] * 5;
+        const hi = upto !== undefined && i === upto;
+        return <text key={acc} x={44 + i * 15} y={y + 5} fontSize="20" fontWeight="700" fill={hi ? '#b5483b' : accent} fontFamily="serif">{symbol}</text>;
+      })}
+    </svg>
+  );
+}
+
+const KEYSIG_LEVELS = [
+  { n: 1, label: 'Name the major key (up to 4♯ / 4♭)', kind: 'staff2maj', pool: 'easy', time: 9 },
+  { n: 2, label: 'How many sharps or flats?',        kind: 'maj2count', pool: 'all',  time: 9 },
+  { n: 3, label: 'Name the major key (all 15)',       kind: 'staff2maj', pool: 'all',  time: 9 },
+  { n: 4, label: 'Name the relative minor',           kind: 'staff2min', pool: 'all',  time: 10 },
+  { n: 5, label: 'Order of sharps and flats',         kind: 'order',     pool: 'all',  time: 8 },
+];
+
+function genKeySigQuestion(lv, prev) {
+  const uid = Math.random();
+  const pool = lv.pool === 'easy' ? KEY_SIGS.filter(k => k.count <= 4) : KEY_SIGS;
+  if (lv.kind === 'order') {
+    const type = Math.random() < 0.5 ? 'sharp' : 'flat';
+    const order = type === 'sharp' ? SHARP_ORDER : FLAT_ORDER;
+    let i = Math.floor(Math.random() * 7), n = 0;
+    while (prev && prev.key === type + i && n++ < 10) i = Math.floor(Math.random() * 7);
+    const answer = order[i];
+    const choices = shuffle([answer, ...sampleN(order, 3, [answer])]);
+    return { kind: 'order', key: type + i, type, idx: i, answer, choices, uid };
+  }
+  let k = pick(pool), n = 0;
+  while (prev && prev.key === k.major && n++ < 12) k = pick(pool);
+  if (lv.kind === 'maj2count') {
+    const answer = sigLabel(k);
+    const choices = shuffle([answer, ...sampleN([...new Set(KEY_SIGS.map(sigLabel))], 3, [answer])]);
+    return { kind: 'maj2count', key: k.major, k, answer, choices, uid };
+  }
+  const nameOf = lv.kind === 'staff2min' ? minName : majName;
+  const answer = nameOf(k);
+  // Distractors: prefer keys with the same kind of accidental so the question isn't just "sharp or flat?"
+  const same = pool.filter(x => x !== k && (x.type === k.type || !k.type || !x.type));
+  const others = sampleN(same.length >= 3 ? same : pool.filter(x => x !== k), 3).map(nameOf);
+  return { kind: lv.kind, key: k.major, k, answer, choices: shuffle([answer, ...others]), uid };
+}
+
+function KeySigQuestion({ q, level, given, locked, onAnswer, pixel }) {
+  const done = !!given;
+  const ink = pixel ? '#f8edd4' : '#241f1a';
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const st = (c) => !done ? '' : (c === q.answer ? ' good' : (given.ans === c ? ' bad' : ''));
+  const prompt = (txt, px) => (
+    <p style={pixel ? {fontSize:10,textAlign:'center',margin:'0 0 12px',lineHeight:1.7}
+                    : {fontSize:14,fontWeight:700,textAlign:'center',margin:'0 0 12px',color:'var(--muted)'}}>{pixel ? px : txt}</p>
+  );
+  let top;
+  if (q.kind === 'maj2count') {
+    top = <>{prompt('How many sharps or flats in this key?', 'HOW MANY?')}
+      <div style={{textAlign:'center',fontSize:pixel?26:48,fontWeight:900,margin:'0 0 16px',color:pixel?'var(--brass)':'var(--text)'}}>{majName(q.k)}</div></>;
+  } else if (q.kind === 'order') {
+    const label = 'The ' + ORDINALS[q.idx] + (q.type === 'sharp' ? ' sharp' : ' flat') + ' is…';
+    top = <>{prompt('Order of ' + (q.type === 'sharp' ? 'sharps' : 'flats'), q.type === 'sharp' ? 'ORDER OF SHARPS' : 'ORDER OF FLATS')}
+      <div style={{textAlign:'center',fontSize:pixel?14:30,fontWeight:900,margin:'0 0 16px',color:pixel?'var(--brass)':'var(--text)'}}>{pixel ? label.toUpperCase() : label}</div>
+      {done && <KSStaff count={q.idx + 1} type={q.type} ink={ink} upto={q.idx}/>}</>;
+  } else {
+    top = <>{prompt(q.kind === 'staff2min' ? 'Which minor key has this signature?' : 'Which major key has this signature?',
+                    q.kind === 'staff2min' ? 'WHICH MINOR KEY?' : 'WHICH MAJOR KEY?')}
+      <div style={{margin:'0 0 14px'}}><KSStaff count={q.k.count} type={q.k.type} ink={ink} /></div></>;
+  }
+  return (
+    <div>
+      {top}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:8}}>
+        {q.choices.map(c => (
+          <button key={c} disabled={locked} onClick={() => onAnswer(c)} className={btnCls + st(c)} style={{padding:'14px 6px'}}>
+            {q.kind === 'order' ? prettyNote(c) : c}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function KeySigLearn({ onStart }) {
+  const [sel, setSel] = useState('D');
+  const k = KEY_SIGS.find(x => x.major === sel) || KEY_SIGS[0];
+  const row = (label, list, type) => (
+    <div style={{marginBottom:14}}>
+      <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:4}}>{label}</div>
+      <KSStaff count={7} type={type} width={170}/>
+      <div style={{display:'flex',justifyContent:'center',gap:10,fontSize:15,fontWeight:900,marginTop:2}}>
+        {list.map(n => <span key={n}>{prettyNote(n)}</span>)}
+      </div>
+    </div>
+  );
+  const tip = (title, body) => (
+    <div style={{padding:'10px 0',borderTop:'1px solid var(--border)'}}>
+      <div style={{fontSize:14,fontWeight:800,marginBottom:2}}>{title}</div>
+      <div style={{fontSize:13,color:'#6f665b',lineHeight:1.55}}>{body}</div>
+    </div>
+  );
+  return (
+    <div className="card fade-up">
+      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Reading a key signature</h2>
+      <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 16px'}}>Sharps and flats always arrive in the same order -- learn the order and every key falls out of it.</p>
+      {row('Order of sharps', SHARP_ORDER, 'sharp')}
+      {row('Order of flats (the sharps backwards)', FLAT_ORDER, 'flat')}
+      {tip('Sharps: go up one from the last sharp', 'The last sharp is the 7th note of the major key -- step up a semitone to name it. Last sharp C♯ → D major.')}
+      {tip('Flats: the second-last flat names the key', 'B♭ E♭ A♭ → the second-last is E♭, so E♭ major. One flat is the one to just remember: F major.')}
+      {tip('Every signature has a minor twin', 'The relative minor uses the same signature and starts on the 6th note of the major scale (three semitones down). D major ↔ B minor.')}
+      <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',margin:'14px 0 8px'}}>All 15 -- tap one</div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:12}}>
+        {KEY_SIGS.map(x => (
+          <button key={x.major} className={'chip' + (x.major === sel ? ' active' : '')} style={{padding:'6px 11px'}}
+            onClick={() => setSel(x.major)}>{prettyNote(x.major)}</button>
+        ))}
+      </div>
+      <div style={{background:'var(--brass-bg)',borderRadius:10,padding:'12px 10px'}}>
+        <KSStaff count={k.count} type={k.type}/>
+        <div style={{textAlign:'center',fontSize:15,fontWeight:900,marginTop:4}}>{majName(k)} <span style={{color:'var(--muted)',fontWeight:700}}>/ {minName(k)}</span></div>
+        <div style={{textAlign:'center',fontSize:12,color:'var(--muted)',marginTop:2}}>{sigLabel(k)}</div>
+      </div>
+      <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
+    </div>
+  );
+}
+
+const KEYSIG_DRILL = {
+  id: 'key-signatures',
+  label: 'Key Signatures',
+  levels: KEYSIG_LEVELS,
+  generate: genKeySigQuestion,
+  check: (q, ans) => ans !== null && ans === q.answer,
+  answerLabel: (q) => q.kind === 'order' ? prettyNote(q.answer) : (q.kind === 'maj2count' ? majName(q.k) + ' has ' + q.answer : q.answer),
+  Question: KeySigQuestion,
+  Learn: KeySigLearn,
+};
+
 // Registry of drills. Two shapes:
 //   { id, label, render }            -- original single-screen drills (Phase 89/90)
 //   { id, label, concept }           -- Phase 94 concept sets (Learn + Drill on the shared engine)
-// Next concept after Tempo Race (agreed 2026-09-23): key signatures (infographic + drill).
+// Chapter order (Phase 96): note names -> note values -> rhythm -> key signatures -> tempo, then the two reference tools.
 const DRILLS = [
   { id: 'note-names', label: 'Note Names', concept: NOTE_NAMES_DRILL },
+  { id: 'note-values', label: 'Notes & Rests', concept: NOTEVAL_DRILL },
+  { id: 'rhythm', label: 'Rhythm Cards', concept: RHYTHM_DRILL },
+  { id: 'key-signatures', label: 'Key Signatures', concept: KEYSIG_DRILL },
   { id: 'tempo', label: 'Tempo Race', concept: TEMPO_DRILL },
   { id: 'letter-chain', label: 'Letter Chain', render: () => <LetterChainDrill /> },
   { id: 'scale-fingering', label: 'Scale Fingering', render: () => <ScaleFingeringDrill /> },
