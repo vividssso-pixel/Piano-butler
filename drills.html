@@ -2567,10 +2567,149 @@ const STAMP_KEY = 'pb_scale_stamps_v1';
 function loadStamps() { try { return JSON.parse(localStorage.getItem(STAMP_KEY)) || {}; } catch (e) { return {}; } }
 function saveStamps(s) { try { localStorage.setItem(STAMP_KEY, JSON.stringify(s)); } catch (e) {} }
 
-function ScalePath({ sel, onPick }) {
+// ─── Minor scales (Phase 98, 2026-09-23) ─────────────────────────────────────────
+// Harmonic minor is the focus (Sohyun: it's the form that comes up most). Every 2-octave
+// fingering below was read off the AMEB Piano Technical Work books:
+//   A P.3 (1 octave), E 1.3, D 1.6, B 2.3, G 2.6, F# 3.3, C 3.6, C# 4.3, F 4.7 (Level 1 book);
+//   G# 5.2, Bb 5.5, D# 6.2 (Level 2 book). A minor is only printed as 1 octave (Prelim) and
+//   matches the standard shape used for E/D/G/C minor. The books print the natural/melodic forms
+//   with the same fingers in the keys checked (E, D, G, C, F, B, F#, C# natural, G#, Bb, D#), but
+//   NOT where a changed note would put the thumb on a black key (e.g. F#/C# melodic, G# natural) --
+//   the viewer hides finger numbers for those rather than guess.
+const MINOR_FORMS = {
+  natural:  { label: 'Natural',  steps: [0, 2, 3, 5, 7, 8, 10] },
+  harmonic: { label: 'Harmonic', steps: [0, 2, 3, 5, 7, 8, 11] },
+  melodic:  { label: 'Melodic',  steps: [0, 2, 3, 5, 7, 9, 11] },
+};
+function minorOffsets(form, n) {
+  const r = [];
+  for (let o = 0; o < n; o++) MINOR_FORMS[form].steps.forEach(s => r.push(s + 12 * o));
+  r.push(12 * n);
+  return r;
+}
+const STD_RH2 = [1,2,3,1,2,3,4,1,2,3,1,2,3,4,5], STD_LH2 = [5,4,3,2,1,3,2,1,4,3,2,1,3,2,1];
+const SHARP_START_RH2 = [2,3,1,2,3,1,2,3,4,1,2,3,1,2,3];
+const MINOR_2OCT = {
+  A:    [9,  STD_RH2, STD_LH2],
+  E:    [4,  STD_RH2, STD_LH2],
+  D:    [2,  STD_RH2, STD_LH2],
+  G:    [7,  STD_RH2, STD_LH2],
+  C:    [0,  STD_RH2, STD_LH2],
+  B:    [11, STD_RH2, [4,3,2,1,4,3,2,1,3,2,1,4,3,2,1]],
+  F:    [5,  [1,2,3,4,1,2,3,1,2,3,4,1,2,3,4], STD_LH2],
+  'F#': [6,  SHARP_START_RH2, [4,3,2,1,3,2,1,4,3,2,1,3,2,1,2]],
+  'C#': [1,  SHARP_START_RH2, [3,2,1,4,3,2,1,3,2,1,4,3,2,1,3]],
+  'G#': [8,  SHARP_START_RH2, [3,2,1,4,3,2,1,3,2,1,4,3,2,1,3]],
+  Bb:   [10, [2,1,2,3,1,2,3,4,1,2,3,1,2,3,4], [2,1,3,2,1,4,3,2,1,3,2,1,4,3,2]],
+  'D#': [3,  [2,1,2,3,4,1,2,3,1,2,3,4,1,2,3], [2,1,4,3,2,1,3,2,1,4,3,2,1,3,2]],
+};
+// One octave = the first octave of the printed two-octave fingering; where the right hand would
+// carry on with the thumb, it finishes on 5 instead (as in the Preliminary A minor).
+function oneOct(two, hand) { const a = two.slice(0, 8); if (hand === 'RH' && a[7] === 1) a[7] = 5; return a; }
+const MINOR_SCALES = {};
+Object.keys(MINOR_2OCT).forEach(k => {
+  const [rootPc, rh, lh] = MINOR_2OCT[k];
+  MINOR_SCALES[k] = { rootPc, octaves: {
+    1: { offsets: minorOffsets('harmonic', 1), RH: oneOct(rh, 'RH'), LH: oneOct(lh, 'LH'), label: '1 octave' },
+    2: { offsets: minorOffsets('harmonic', 2), RH: rh, LH: lh, label: '2 octaves' } } };
+});
+const MINOR_PATH = ['A', 'E', 'D', 'G', 'C', 'B', 'F', 'F#', 'C#', 'G#', 'Bb', 'D#'];
+function scaleData(key, mode) { return mode === 'minor' ? MINOR_SCALES[key] : SCALES[key]; }
+
+function raiseNote(n) { return n.endsWith('b') ? n.slice(0, -1) : n.endsWith('#') ? n[0] + 'x' : n + '#'; }
+function spellMinor(tonic, form) {
+  const L = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+  const ks = KEY_SIGS.find(k => k.minor === tonic);
+  const accs = !ks || !ks.type ? [] : (ks.type === 'sharp' ? SHARP_ORDER : FLAT_ORDER).slice(0, ks.count);
+  const start = L.indexOf(tonic[0]);
+  const names = Array.from({ length: 7 }, (_, i) => { const l = L[(start + i) % 7]; return accs.find(a => a[0] === l) || l; });
+  if (form === 'harmonic' || form === 'melodic') names[6] = raiseNote(names[6]);
+  if (form === 'melodic') names[5] = raiseNote(names[5]);
+  return names;
+}
+function spellFor(key, mode) { return mode === 'minor' ? spellMinor(key, 'harmonic') : spellScale(key); }
+function prettyAny(n) { return n.endsWith('x') ? n[0] + '\u266F\u266F' : prettyNote(n); } // double sharp shown as two sharps (no music font needed)
+function scaleTitle(key, mode) { return prettyNote(key) + (mode === 'minor' ? ' harmonic minor' : ' major'); }
+
+// The three forms, shown on A minor (no key signature, so every change is easy to see).
+function MinorFormsCard() {
+  const rows = [
+    { form: 'natural', title: 'Natural minor', text: 'The same notes as its relative major -- A minor uses C major’s white keys, just starting on A.' },
+    { form: 'harmonic', title: 'Harmonic minor -- the one you’ll play most', text: 'Raise the 7th note a semitone, going up and coming down. G becomes G♯: it pulls strongly back home to A, and leaves the wide three-semitone step between F and G♯ that gives harmonic minor its sound.' },
+    { form: 'melodic', title: 'Melodic minor', text: 'Going up, raise the 6th and 7th (F♯ and G♯) so the tune climbs smoothly. Coming down, play the natural minor.' },
+  ];
+  return (
+    <div className="card" style={{marginBottom:16}}>
+      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Three kinds of minor</h2>
+      <p style={{fontSize:13,color:'#6f665b',margin:'0 0 8px',lineHeight:1.55}}>
+        Shown on A minor. <span style={{background:'#f3ead8',border:'1px solid #a8823f',borderRadius:4,padding:'0 4px'}}>Gold</span> = the notes that change.
+      </p>
+      {rows.map(r => {
+        const names = spellMinor('A', r.form), steps = MINOR_FORMS[r.form].steps;
+        const marks = {}; steps.forEach((s, i) => { marks[9 + s] = names[i].length > 1 ? 'target' : 'good'; }); marks[21] = 'good';
+        return (
+          <div key={r.form} style={{borderTop:'1px solid var(--border)',padding:'10px 0',background:r.form === 'harmonic' ? 'linear-gradient(#fbf6ea,#fbf6ea)' : 'none'}}>
+            <div style={{fontSize:15,fontWeight:900,marginBottom:2}}>{r.title}</div>
+            <p style={{fontSize:13,color:'#6f665b',margin:'0 0 6px',lineHeight:1.5}}>{r.text}</p>
+            <div style={{fontSize:14,fontWeight:800,letterSpacing:'0.04em',marginBottom:6}}>
+              {names.concat(['A']).map((n, i) => <span key={i} style={{marginRight:8,color:n.length > 1 ? '#a8823f' : 'var(--text)'}}>{prettyAny(n)}</span>)}
+              {r.form === 'melodic' && <span style={{fontSize:11,fontWeight:700,color:'var(--muted)'}}>(going up)</span>}
+            </div>
+            <TapKeyboard octaves={2} marks={marks}/>
+          </div>
+        );
+      })}
+      <div style={{background:'var(--brass-bg)',borderRadius:10,padding:'10px 12px',marginTop:6,fontSize:13,lineHeight:1.5}}>
+        <b>Learn the harmonic minor fingering first.</b> In most keys the natural and melodic forms use the very same fingers. Where a changed note would put the thumb on a black key (F♯ and C♯ melodic, G♯ natural) the fingers shift -- the viewer below tells you when.
+      </div>
+    </div>
+  );
+}
+
+// Viewer for minor scales: pick a key and a form, see both hands on the keyboard.
+function MinorViewer({ sel, onPick }) {
+  const [form, setForm] = useState('harmonic');
+  const [oct, setOct] = useState(1);
+  const info = MINOR_SCALES[sel] || MINOR_SCALES.A;
+  const e = info.octaves[oct];
+  const offsets = minorOffsets(form, oct);
+  const names = spellMinor(sel, form);
+  // Harmonic-minor fingers only transfer to another form if no thumb then lands on a black key.
+  const clash = form !== 'harmonic' && ['RH', 'LH'].some(h => e[h].some((f, i) => f === 1 && [1, 3, 6, 8, 10].includes((info.rootPc + offsets[i]) % 12)));
+  const fingers = (h) => clash ? e[h].map(() => null) : e[h];
+  return (
+    <div>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:10}}>
+        {MINOR_PATH.map(k => <button key={k} className={'chip' + (sel === k ? ' active' : '')} style={{padding:'6px 11px'}} onClick={() => onPick(k)}>{prettyNote(k)} minor</button>)}
+      </div>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:10}}>
+        {Object.keys(MINOR_FORMS).map(f => <button key={f} className={'chip' + (form === f ? ' active' : '')} onClick={() => setForm(f)}>{MINOR_FORMS[f].label}</button>)}
+        {[1, 2].map(n => <button key={n} className={'chip' + (oct === n ? ' active' : '')} onClick={() => setOct(n)}>{n} octave{n > 1 ? 's' : ''}</button>)}
+      </div>
+      <div className="card" style={{padding:'16px 14px'}}>
+        <div style={{fontSize:14,fontWeight:900,marginBottom:4}}>{prettyNote(sel)} {MINOR_FORMS[form].label.toLowerCase()} minor{form === 'melodic' ? ' (going up)' : ''}</div>
+        <div style={{fontSize:13,fontWeight:800,marginBottom:10}}>
+          {names.concat([names[0]]).map((n, i) => <span key={i} style={{marginRight:7,color:(form !== 'natural' && (i === 6 || (form === 'melodic' && i === 5))) ? '#a8823f' : 'var(--text)'}}>{prettyAny(n)}</span>)}
+        </div>
+        <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.04em',marginBottom:6}}>Right hand</div>
+        <ScaleKeyboard rootPc={info.rootPc} offsets={offsets} fingers={fingers('RH')} hand="RH"/>
+        <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.04em',margin:'14px 0 6px'}}>Left hand</div>
+        <ScaleKeyboard rootPc={info.rootPc} offsets={offsets} fingers={fingers('LH')} hand="LH"/>
+        <p style={{fontSize:12,color:clash ? 'var(--bad)' : 'var(--muted)',margin:'12px 0 0',textAlign:'center',lineHeight:1.5}}>
+          {form === 'harmonic' ? 'Fingering as printed in the AMEB technical work books.'
+            : clash ? 'The fingers change for this form -- the harmonic fingering would put a thumb on a black key. Practise it from your book.'
+            : 'Same fingers as the harmonic minor.'}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ScalePath({ sel, onPick, keys = SCALE_PATH, prefix = '', mode = 'major' }) {
   const [stamps, setStamps] = useState(loadStamps);
   function toggle(id) { const n = { ...stamps }; if (n[id]) delete n[id]; else n[id] = Date.now(); setStamps(n); saveStamps(n); }
-  const done = Object.keys(stamps).length, total = SCALE_PATH.length * 3;
+  const done = keys.reduce((a, k) => a + PATH_STEPS.filter(st => stamps[prefix + k + ':' + st.id]).length, 0);
+  const total = keys.length * 3;
   return (
     <div style={{marginBottom:16}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:8}}>
@@ -2578,14 +2717,14 @@ function ScalePath({ sel, onPick }) {
         <div style={{fontSize:12,fontWeight:800,color:'var(--brass)'}}>{done}/{total}</div>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>
-        {SCALE_PATH.map((k, ki) => PATH_STEPS.map((s, si) => {
-          const id = k + ':' + s.id, on = !!stamps[id];
+        {keys.map((k, ki) => PATH_STEPS.map((s, si) => {
+          const id = prefix + k + ':' + s.id, on = !!stamps[id];
           return (
             <div key={id} style={{display:'flex',alignItems:'center',gap:4,border:'1.5px solid ' + (sel === k ? 'var(--text)' : 'var(--border)'),
               background:on ? '#dcebd5' : '#fff',borderRadius:8,padding:'5px 6px'}}>
               <button onClick={() => onPick(k)} style={{flex:1,textAlign:'left',background:'none',border:'none',padding:0,cursor:'pointer',color:'var(--text)'}}>
                 <span style={{display:'block',fontSize:9,fontWeight:800,color:'var(--brass)'}}>{ki + 1}-{si + 1}</span>
-                <span style={{display:'block',fontSize:12,fontWeight:800}}>{prettyNote(k)} <span style={{fontWeight:600,color:'var(--muted)'}}>{s.id}</span></span>
+                <span style={{display:'block',fontSize:12,fontWeight:800}}>{prettyNote(k)}{mode === 'minor' ? 'm' : ''} <span style={{fontWeight:600,color:'var(--muted)'}}>{s.id}</span></span>
               </button>
               <button onClick={() => toggle(id)} aria-label={(on ? 'Remove stamp from ' : 'Stamp ') + k + ' ' + s.label}
                 style={{flex:'0 0 26px',height:26,borderRadius:13,border:'1.5px solid ' + (on ? 'var(--good)' : 'var(--border)'),
@@ -2603,8 +2742,8 @@ function ScalePath({ sel, onPick }) {
 // Replaced with the five fingering PATTERNS. Each finger row is drawn straight from SCALES
 // (one octave, going up), split at the thumb into the same 1-2-3 / 1-2-3-4 groups (and colours)
 // the keyboard view uses, with the note names underneath -- so the cards can't disagree with the data.
-function FingerGroups({ keyName, hand }) {
-  const e = SCALES[keyName].octaves[1], names = spellScale(keyName);
+function FingerGroups({ keyName, hand, mode }) {
+  const e = scaleData(keyName, mode).octaves[1], names = spellFor(keyName, mode);
   const f = e[hand];
   const groups = [];
   let cur = [];
@@ -2634,7 +2773,7 @@ function FingerGroups({ keyName, hand }) {
             {g.map((x, xi) => (
               <span key={xi} style={{display:'inline-flex',flexDirection:'column',alignItems:'center',minWidth:18}}>
                 <b style={{fontSize:15,lineHeight:1.1}}>{x.d}</b>
-                <span style={{fontSize:9,fontWeight:700,color:'#5c544a'}}>{prettyNote(x.n)}</span>
+                <span style={{fontSize:9,fontWeight:700,color:'#5c544a'}}>{prettyAny(x.n)}</span>
               </span>
             ))}
           </span>
@@ -2645,25 +2784,40 @@ function FingerGroups({ keyName, hand }) {
 }
 
 const SCALE_PATTERNS = [
-  { keys: ['C', 'G', 'D', 'A', 'E'], title: 'The standard shape', show: { RH: ['C'], LH: ['C'] },
+  { keys: ['C', 'G', 'D', 'A', 'E'], title: 'The standard shape', rows: [['RH', 'C'], ['LH', 'C']],
     text: 'Start on the thumb. Right hand: a group of 3, then a group of 4, finger 5 on top. Left hand is the mirror: 5 at the bottom, then 4 fingers, then 3. Same fingers for all five keys.' },
-  { keys: ['F'], title: 'F: the right hand swaps', show: { RH: ['F'], LH: ['F'] },
+  { keys: ['F'], title: 'F: the right hand swaps', rows: [['RH', 'F'], ['LH', 'F']],
     text: 'Right hand plays the group of 4 first, so finger 4 takes the B♭ and the thumb stays off it. Left hand is the standard shape.' },
-  { keys: ['B'], title: 'B: the left hand swaps', show: { RH: ['B'], LH: ['B'] },
+  { keys: ['B'], title: 'B: the left hand swaps', rows: [['RH', 'B'], ['LH', 'B']],
     text: 'Right hand is the standard shape. Left hand starts on finger 4 and plays two groups of 4, so its thumb lands on the white keys E and B.' },
-  { keys: ['Bb', 'Eb', 'Ab', 'Db'], title: 'Starting on a black key', show: { LH: ['Eb'], RH: ['Bb', 'Eb', 'Ab', 'Db'] },
+  { keys: ['Bb', 'Eb', 'Ab', 'Db'], title: 'Starting on a black key',
+    rows: [['RH', 'Bb', 'B♭ major'], ['RH', 'Eb', 'E♭ major'], ['RH', 'Ab', 'A♭ major'], ['RH', 'Db', 'D♭ major'], ['LH', 'Eb', 'Left hand -- the same for all four']],
     text: 'The thumb only ever plays white keys. In all four keys the right-hand thumbs go on C and F, and the left hand is one shape for all four: 3-2-1, 4-3-2-1, 3.' },
-  { keys: ['Gb'], title: 'G♭ / F♯: three black keys in a row', show: { RH: ['Gb'], LH: ['Gb'] },
+  { keys: ['Gb'], title: 'G♭ / F♯: three black keys in a row', rows: [['RH', 'Gb'], ['LH', 'Gb']],
     text: 'Fingers 2-3-4 cover the three black keys; both thumbs land on the only two white keys, C♭ (B) and F.' },
 ];
+const MINOR_PATTERNS = [
+  { keys: ['A', 'E', 'D', 'G', 'C'], title: 'The standard shape again', rows: [['RH', 'A'], ['LH', 'A']],
+    text: 'Exactly the major’s standard shape: thumb first, group of 3, group of 4, 5 on top (left hand mirrored). The raised 7th doesn’t change a single finger.' },
+  { keys: ['F'], title: 'F minor: the right hand swaps', rows: [['RH', 'F'], ['LH', 'F']],
+    text: 'Just like F major -- right hand plays the group of 4 first so finger 4 takes the B♭. Left hand is standard.' },
+  { keys: ['B'], title: 'B minor: the left hand swaps', rows: [['RH', 'B'], ['LH', 'B']],
+    text: 'Just like B major -- right hand standard, left hand starts on 4 with two groups of 4.' },
+  { keys: ['F#', 'C#', 'G#'], title: 'F♯, C♯, G♯ minor: start on a black key', rows: [['RH', 'F#', 'Right hand -- the same shape for all three'], ['LH', 'C#', 'Left hand, C♯ and G♯ minor'], ['LH', 'F#', 'Left hand, F♯ minor']],
+    text: 'Right hand: 2-3 on the black keys, then 1-2-3 and 1-2-3-4, thumbs always on white keys. The left hand of C♯ and G♯ minor is the flat-major shape 3-2-1-4-3-2-1; F♯ minor starts on 4.' },
+  { keys: ['Bb', 'D#'], title: 'B♭ and D♯ minor: both hands start on 2', rows: [['RH', 'Bb', 'B♭ minor'], ['LH', 'Bb', 'B♭ minor'], ['RH', 'D#', 'D♯ minor'], ['LH', 'D#', 'D♯ minor']],
+    text: 'Both hands begin with finger 2 on the black tonic. Each right hand matches its major twin (B♭ major, E♭ major).' },
+];
 
-function ScalePatterns({ sel, onPick }) {
+function ScalePatterns({ sel, onPick, mode = 'major' }) {
+  const list = mode === 'minor' ? MINOR_PATTERNS : SCALE_PATTERNS;
   return (
     <div className="card" style={{marginBottom:16}}>
-      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Five patterns cover every major scale</h2>
+      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>{mode === 'minor' ? 'Five patterns for harmonic minor' : 'Five patterns cover every major scale'}</h2>
       <p style={{fontSize:13,color:'#6f665b',margin:'0 0 10px',lineHeight:1.55}}>
-        Every scale is built from the same two hand shapes -- a <b>group of 3</b> (1-2-3) and a <b>group of 4</b> (1-2-3-4) --
-        and the thumb never plays a black key. Only where the groups start changes.
+        {mode === 'minor'
+          ? <>Same two hand shapes as the majors -- a <b>group of 3</b> and a <b>group of 4</b> -- and the thumb still never plays a black key. Most minors borrow a major pattern you already know.</>
+          : <>Every scale is built from the same two hand shapes -- a <b>group of 3</b> (1-2-3) and a <b>group of 4</b> (1-2-3-4) -- and the thumb never plays a black key. Only where the groups start changes.</>}
       </p>
       <div style={{display:'flex',gap:12,flexWrap:'wrap',fontSize:11,color:'var(--muted)',marginBottom:6}}>
         <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:12,height:12,borderRadius:3,background:SEGMENT_COLORS.three.fill,border:'1px solid ' + SEGMENT_COLORS.three.stroke}}/>group of 3</span>
@@ -2671,54 +2825,65 @@ function ScalePatterns({ sel, onPick }) {
         <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:12,height:12,borderRadius:3,background:'#fff',border:'1px solid #d9cdb0'}}/>start / end notes</span>
         <span>one octave, going up</span>
       </div>
-      {SCALE_PATTERNS.map((p, pi) => (
+      {list.map((p, pi) => (
         <div key={pi} style={{borderTop:'1px solid var(--border)',padding:'12px 0 4px'}}>
           <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',gap:8,flexWrap:'wrap'}}>
             <div style={{fontSize:15,fontWeight:900}}>{pi + 1}. {p.title}</div>
             <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
               {p.keys.map(k => (
                 <button key={k} className={'chip' + (sel === k ? ' active' : '')} style={{padding:'4px 10px',fontSize:12}}
-                  onClick={() => onPick(k)}>{prettyNote(k)}</button>
+                  onClick={() => onPick(k)}>{prettyNote(k)}{mode === 'minor' ? 'm' : ''}</button>
               ))}
             </div>
           </div>
           <p style={{fontSize:13,color:'#6f665b',margin:'6px 0 8px',lineHeight:1.5}}>{p.text}</p>
           <div style={{display:'flex',flexDirection:'column',gap:6}}>
-            {['RH', 'LH'].map(h => p.show[h].map(k => (
-              <div key={h + k}>
-                {p.keys.length > 1 && p.show[h].length === 1 && p.keys.length > 1 && pi > 0
-                  ? <div style={{fontSize:10,fontWeight:800,color:'var(--brass)',margin:'4px 0 2px 28px'}}>Left hand -- the same for all four</div>
-                  : p.show[h].length > 1 && <div style={{fontSize:10,fontWeight:800,color:'var(--brass)',margin:'2px 0 2px 28px'}}>{prettyNote(k)} major</div>}
-                <FingerGroups keyName={k} hand={h}/>
+            {p.rows.map(([h, k, label], ri) => (
+              <div key={ri}>
+                {label && <div style={{fontSize:10,fontWeight:800,color:'var(--brass)',margin:'4px 0 2px 28px'}}>{label}</div>}
+                <FingerGroups keyName={k} hand={h} mode={mode}/>
               </div>
-            )))}
+            ))}
           </div>
         </div>
       ))}
-      <p style={{fontSize:11,color:'var(--muted)',margin:'8px 0 0'}}>Tap a key to see it on the keyboard below. C♯ is played like D♭, and C♭ like B.</p>
+      <p style={{fontSize:11,color:'var(--muted)',margin:'8px 0 0'}}>{mode === 'minor' ? 'Tap a key to see it on the keyboard below. D♯ minor is played like E♭ minor.' : 'Tap a key to see it on the keyboard below. C♯ is played like D♭, and C♭ like B.'}</p>
     </div>
   );
 }
 
 function ScalesLearn({ onStart }) {
+  const [mode, setMode] = useState('major');
   const [sel, setSel] = useState('C');
+  const [minSel, setMinSel] = useState('A');
   return (
     <div className="fade-up">
-      <ScalePatterns sel={sel} onPick={setSel}/>
-      <ScalePath sel={sel} onPick={setSel}/>
-      <ScaleFingeringDrill controlledKey={sel} onPickKey={setSel}/>
+      <div style={{display:'flex',gap:6,marginBottom:14}}>
+        <button className={'chip' + (mode === 'major' ? ' active' : '')} onClick={() => setMode('major')}>Major scales</button>
+        <button className={'chip' + (mode === 'minor' ? ' active' : '')} onClick={() => setMode('minor')}>Minor scales</button>
+      </div>
+      {mode === 'major' ? <>
+        <ScalePatterns sel={sel} onPick={setSel}/>
+        <ScalePath sel={sel} onPick={setSel}/>
+        <ScaleFingeringDrill controlledKey={sel} onPickKey={setSel}/>
+      </> : <>
+        <MinorFormsCard/>
+        <ScalePatterns sel={minSel} onPick={setMinSel} mode="minor"/>
+        <ScalePath sel={minSel} onPick={setMinSel} keys={MINOR_PATH} prefix="m:" mode="minor"/>
+        <MinorViewer sel={minSel} onPick={setMinSel}/>
+      </>}
       <button className="primary-btn" style={{marginTop:16}} onClick={onStart}>Start the drill →</button>
     </div>
   );
 }
 
 // Interactive one-octave keyboard for the drill. Marks/taps are keyed by semitone offset from the root.
-function ScaleTapKeyboard({ keyName, hand, showFingers, marks = {}, onTap, pixel }) {
-  const info = SCALES[keyName], entry = info.octaves[1];
+function ScaleTapKeyboard({ keyName, hand, showFingers, marks = {}, onTap, pixel, mode, hideDots }) {
+  const info = scaleData(keyName, mode), entry = info.octaves[1];
   const { keys, whiteCount } = buildKeyboard(info.rootPc, 12);
   const whiteW = 34, whiteH = 110, blackW = 20, blackH = 66;
   const fingerAt = {}; entry.offsets.forEach((off, i) => { fingerAt[off] = entry[hand][i]; });
-  const inScale = new Set(entry.offsets);
+  const inScale = new Set(hideDots ? [] : entry.offsets);
   const col = (m, white) => m === 'good' ? '#8fd18b' : m === 'bad' ? '#f08a80' : m === 'target' ? '#e9c77a' : m === 'picked' ? '#9fc3e8' : (white ? '#fff' : '#241f1a');
   const tap = (i) => (onTap ? () => onTap(i) : undefined);
   return (
@@ -2750,32 +2915,37 @@ const SCALE_LEVELS = [
   { n: 2, label: 'Tap where finger 4 goes',         kind: 'four',   pool: SCALE_PATH, time: 9 },
   { n: 3, label: 'Tap every thumb note',            kind: 'thumbs', pool: SCALE_PATH, time: 14 },
   { n: 4, label: 'Which finger? (all 12 keys)',     kind: 'finger', pool: SCALE_PATH, time: 9 },
+  { n: 5, label: 'Harmonic minor: which finger?',   kind: 'finger', pool: MINOR_PATH, mode: 'minor', time: 9 },
+  { n: 6, label: 'Harmonic minor: tap the raised 7th', kind: 'seventh', pool: MINOR_PATH, mode: 'minor', time: 9 },
 ];
 function genScaleQuestion(lv, prev) {
   const uid = Math.random();
   let key = pick(lv.pool), n = 0;
   while (prev && prev.keyName === key && lv.pool.length > 1 && n++ < 10) key = pick(lv.pool);
   const hand = Math.random() < 0.5 ? 'RH' : 'LH';
-  const e = SCALES[key].octaves[1];
+  const mode = lv.mode || 'major';
+  const e = scaleData(key, mode).octaves[1];
+  if (lv.kind === 'seventh') return { kind: 'seventh', key: key, keyName: key, mode, hand: 'RH', answerSet: [11], uid };
   if (lv.kind === 'finger') {
     const idx = Math.floor(Math.random() * e.offsets.length);
-    return { kind: 'finger', key: key + hand + idx, keyName: key, hand, off: e.offsets[idx], answer: e[hand][idx], uid };
+    return { kind: 'finger', key: key + hand + idx, keyName: key, mode, hand, off: e.offsets[idx], answer: e[hand][idx], uid };
   }
   const f = lv.kind === 'four' ? 4 : 1;
   const set = e.offsets.filter((o, i) => e[hand][i] === f);
   if (!set.length) return genScaleQuestion(lv, { keyName: key }); // e.g. A-flat RH has no 4 in one octave
-  return { kind: lv.kind, key: key + hand, keyName: key, hand, answerSet: set, uid };
+  return { kind: lv.kind, key: key + hand, keyName: key, mode, hand, answerSet: set, uid };
 }
 function checkScale(q, ans) {
   if (ans === null || ans === undefined) return false;
   if (q.kind === 'finger') return ans === q.answer;
-  if (q.kind === 'four') return q.answerSet.includes(ans);
+  if (q.kind === 'four' || q.kind === 'seventh') return q.answerSet.includes(ans);
   return Array.isArray(ans) && ans.length === q.answerSet.length && q.answerSet.every(x => ans.includes(x));
 }
 function scaleAnswerLabel(q) {
-  const names = spellScale(q.keyName), e = SCALES[q.keyName].octaves[1];
-  const nameAt = (off) => prettyNote(names[e.offsets.indexOf(off) % 7]);
+  const names = spellFor(q.keyName, q.mode), e = scaleData(q.keyName, q.mode).octaves[1];
+  const nameAt = (off) => prettyAny(names[e.offsets.indexOf(off) % 7]);
   if (q.kind === 'finger') return 'finger ' + q.answer + ' on ' + nameAt(q.off);
+  if (q.kind === 'seventh') return 'the raised 7th is ' + nameAt(11);
   return (q.kind === 'four' ? 'finger 4 on ' : 'thumbs on ') + q.answerSet.map(nameAt).join(', ');
 }
 
@@ -2785,29 +2955,31 @@ function ScaleQuestion({ q, level, given, locked, onAnswer, pixel }) {
   const done = !!given;
   const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
   const handName = q.hand === 'RH' ? 'right hand' : 'left hand';
-  const title = prettyNote(q.keyName) + ' major · ' + handName;
+  const title = scaleTitle(q.keyName, q.mode) + (q.kind === 'seventh' ? '' : ' · ' + handName);
   const marks = {};
   if (q.kind === 'finger') marks[q.off] = done ? (given.ok ? 'good' : 'target') : 'target';
-  else if (q.kind === 'four') {
+  else if (q.kind === 'four' || q.kind === 'seventh') {
     if (done) { q.answerSet.forEach(o => { marks[o] = 'good'; }); if (!given.ok && given.ans !== null && given.ans !== undefined) marks[given.ans] = 'bad'; }
   } else {
     picked.forEach(o => { marks[o] = 'picked'; });
     if (done) { q.answerSet.forEach(o => { marks[o] = 'good'; }); picked.filter(o => !q.answerSet.includes(o)).forEach(o => { marks[o] = 'bad'; }); }
   }
   const prompt = q.kind === 'finger' ? ['Which finger plays the highlighted note?', 'WHICH FINGER?']
-    : q.kind === 'four' ? ['Tap the note finger 4 plays', 'WHERE DOES 4 GO?'] : ['Tap every note the thumb plays, then Check', 'TAP ALL THE THUMBS'];
+    : q.kind === 'four' ? ['Tap the note finger 4 plays', 'WHERE DOES 4 GO?']
+    : q.kind === 'seventh' ? ['Tap the 7th note -- raised a semitone', 'TAP THE RAISED 7TH'] : ['Tap every note the thumb plays, then Check', 'TAP ALL THE THUMBS'];
   return (
     <div>
       <div style={{textAlign:'center',fontSize:pixel ? 12 : 20,fontWeight:900,marginBottom:4,color:pixel ? 'var(--brass)' : 'var(--text)'}}>{pixel ? title.toUpperCase() : title}</div>
       <p style={pixel ? {fontSize:9,textAlign:'center',margin:'0 0 10px'} : {fontSize:13,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? prompt[1] : prompt[0]}</p>
       <div style={{background:pixel ? 'transparent' : '#fff',padding:pixel ? 0 : 2}}>
-        <ScaleTapKeyboard keyName={q.keyName} hand={q.hand} showFingers={done} marks={marks} pixel={pixel}
+        <ScaleTapKeyboard keyName={q.keyName} hand={q.hand} showFingers={done && q.kind !== 'seventh'} marks={marks} pixel={pixel}
+          mode={q.mode} hideDots={q.kind === 'seventh' && !done}
           onTap={locked || q.kind === 'finger' ? null : (off) => {
-            if (q.kind === 'four') onAnswer(off);
+            if (q.kind === 'four' || q.kind === 'seventh') onAnswer(off);
             else setPicked(p => (p.includes(off) ? p.filter(x => x !== off) : [...p, off]));
           }}/>
       </div>
-      <div style={{fontSize:pixel ? 7 : 11,textAlign:'center',margin:'6px 0 12px',color:pixel ? '#f8edd4' : 'var(--muted)'}}>{pixel ? 'DOTS = NOTES OF THE SCALE' : 'Dots mark the notes of the scale (one octave, going up).'}</div>
+      <div style={{fontSize:pixel ? 7 : 11,textAlign:'center',margin:'6px 0 12px',color:pixel ? '#f8edd4' : 'var(--muted)'}}>{q.kind === 'seventh' && !done ? (pixel ? 'START FROM THE LEFT: THAT KEY IS THE TONIC' : 'The keyboard starts on the tonic.') : (pixel ? 'DOTS = NOTES OF THE SCALE' : 'Dots mark the notes of the scale (one octave, going up).')}</div>
       {q.kind === 'finger' && (
         <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:8}}>
           {[1, 2, 3, 4, 5].map(f => (
