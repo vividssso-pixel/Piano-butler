@@ -2215,6 +2215,136 @@ function NoteValQuestion({ q, level, given, locked, onAnswer, pixel }) {
   return <div><BoardTrack b={board} pixel={pixel}/>{body}</div>;
 }
 
+// ─── Notes & Rests: hands-on round (Phase 108) ───────────────────────────────────
+// Play a row of note/rest items: a tone for each note (rests silent), soft clicks on the beats,
+// and onStep(i) so the row can light up the item that is sounding.
+function playItems(items, bpm, onStep) {
+  const ctx = getAudio(); if (!ctx) return [];
+  stopClicks();
+  const spb = 60 / bpm, t0 = ctx.currentTime + 0.12;
+  const total = items.reduce((a, it) => a + it.beats, 0);
+  for (let b = 0; b < Math.ceil(total - 1e-9); b++) blip(ctx, t0 + b * spb, b === 0 ? 1500 : 1100, 0.03, 0.06, 'square');
+  const timers = [];
+  let at = 0;
+  items.forEach((it, i) => {
+    if (!it.rest) blip(ctx, t0 + at * spb, 523.25, Math.max(0.08, it.beats * spb * 0.9), 0.16, 'triangle');
+    timers.push(setTimeout(() => onStep && onStep(i), (0.12 + at * spb) * 1000));
+    at += it.beats;
+  });
+  timers.push(setTimeout(() => onStep && onStep(-1), (0.12 + at * spb) * 1000 + 150));
+  return timers;
+}
+function usePlayer() {
+  const [on, setOn] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => { timers.current.forEach(clearTimeout); stopClicks(); }, []);
+  const play = (items, bpm = 80) => { timers.current.forEach(clearTimeout); timers.current = playItems(items, bpm, setOn); };
+  return [on, play];
+}
+// A row where each item's width is proportional to its length -- you can see how long a note lasts.
+function BeatRow({ items, total, on = -1, onTap, bad = -1, size = 40 }) {
+  const beatsUsed = items.reduce((a, it) => a + it.beats, 0);
+  return (
+    <div style={{position:'relative',display:'flex',height:size + 26,border:'1.5px solid #d9cdb0',borderRadius:8,background:'#fff',overflow:'hidden'}}>
+      {Array.from({ length: Math.max(0, Math.ceil(total) - 1) }, (_, b) => (
+        <div key={'b' + b} style={{position:'absolute',left:((b + 1) / total * 100) + '%',top:0,bottom:0,borderLeft:'1px dashed #e8dcc0'}}/>
+      ))}
+      {items.map((it, i) => (
+        <div key={i + ':' + it.key} onClick={onTap ? () => onTap(i) : undefined}
+          style={{flex:'0 0 ' + (it.beats / total * 100) + '%',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',
+            cursor:onTap ? 'pointer' : 'default',position:'relative',animation:'fadeUp 0.25s both',
+            background:i === bad ? '#f6d6cf' : i === on ? '#f3ead8' : 'transparent',transition:'background 0.15s'}}>
+          <Glyph item={it} size={size} ink={i === bad ? '#b5483b' : '#241f1a'}/>
+          <div style={{position:'absolute',left:3,right:3,bottom:4,height:6,borderRadius:3,
+            background:i === bad ? '#b5483b' : it.rest ? '#d9cdb0' : i === on ? '#a8823f' : '#c9b58a'}}/>
+        </div>
+      ))}
+      {beatsUsed < total && <div style={{flex:1}}/>}
+    </div>
+  );
+}
+
+// 1. Split it: tap a note to break it into two of the next value down. The bar never changes length.
+function SplitTree() {
+  const NEXT = { semibreve: 'minim', minim: 'crotchet', crotchet: 'quaver', quaver: 'semiquaver' };
+  const byId = (id, rest) => (rest ? NV_RESTS : NV_NOTES).find(x => x.id === id);
+  const [items, setItems] = useState([NV_NOTES[0]]);
+  const [mode, setMode] = useState('split');
+  const [on, play] = usePlayer();
+  function tap(i) {
+    const it = items[i];
+    if (mode === 'rest') { const c = items.slice(); c[i] = byId(it.id, !it.rest); setItems(c); return; }
+    const nx = NEXT[it.id]; if (!nx) return;
+    const c = items.slice(); c.splice(i, 1, byId(nx, it.rest), byId(nx, it.rest)); setItems(c);
+  }
+  const count = {}; items.forEach(it => { const k = it.uk; count[k] = (count[k] || 0) + 1; });
+  return (
+    <div style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>Split it</div>
+        <div style={{display:'flex',gap:4}}>
+          <button className={'chip' + (mode === 'split' ? ' active' : '')} style={{padding:'3px 9px',fontSize:11}} onClick={() => setMode('split')}>✂ split</button>
+          <button className={'chip' + (mode === 'rest' ? ' active' : '')} style={{padding:'3px 9px',fontSize:11}} onClick={() => setMode('rest')}>note ↔ rest</button>
+        </div>
+      </div>
+      <div style={actNote}>One semibreve fills a 4-beat bar. Tap any note to split it into two of the next value -- the bar stays exactly the same length. Switch to “note ↔ rest” to turn a note into silence of the same length.</div>
+      <BeatRow items={items} total={4} on={on} onTap={tap} size={items.length > 8 ? 30 : 40}/>
+      <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'var(--muted)',fontWeight:800,padding:'2px 4px'}}>{[1, 2, 3, 4].map(b => <span key={b}>beat {b}</span>)}</div>
+      <div style={{textAlign:'center',fontSize:12,color:'#6f665b',minHeight:18,margin:'4px 0'}}>{Object.entries(count).map(([k, v]) => v + ' ' + k + (v > 1 ? 's' : '')).join(' + ')} = 4 beats</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center'}}>
+        <button className="ghost-btn" onClick={() => play(items)}>♪ Play the bar</button>
+        <button className="ghost-btn" disabled={items.length === 1} onClick={() => setItems([NV_NOTES[0]])}>Start again</button>
+      </div>
+    </div>
+  );
+}
+
+// 2. Fill the bar: build an exact bar of 2/4, 3/4 or 4/4 from a palette of notes and rests.
+function FillTheBar() {
+  const PALETTE = [NV_NOTES[0], NV_DOTTED[0], NV_NOTES[1], NV_DOTTED[1], NV_NOTES[2], NV_NOTES[3], NV_RESTS[0], NV_RESTS[1], NV_RESTS[2], NV_RESTS[3]];
+  const [top, setTop] = useState(4);
+  const [items, setItems] = useState([]);
+  const [over, setOver] = useState(null);
+  const [on, play] = usePlayer();
+  const used = items.reduce((a, it) => a + it.beats, 0);
+  const full = Math.abs(used - top) < 1e-9;
+  useEffect(() => { setItems([]); setOver(null); }, [top]);
+  useEffect(() => { if (full && items.length) { const t = setTimeout(() => play(items), 300); return () => clearTimeout(t); } }, [full, items.length]);
+  function add(it) {
+    if (full || over) return;
+    if (used + it.beats > top + 1e-9) { setOver({ it, total: used + it.beats }); setTimeout(() => setOver(null), 1100); return; }
+    setItems([...items, it]);
+  }
+  const shown = over ? [...items, over.it] : items;
+  return (
+    <div style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>Fill the bar</div>
+        <div style={{display:'flex',gap:4}}>
+          {[2, 3, 4].map(t => <button key={t} className={'chip' + (top === t ? ' active' : '')} style={{padding:'3px 9px',fontSize:12,fontWeight:900}} onClick={() => setTop(t)}>{t}/4</button>)}
+        </div>
+      </div>
+      <div style={actNote}>A {top}/4 bar holds exactly {top} crotchet beats. Tap notes and rests to fill it -- not a beat more, not a beat less.</div>
+      <BeatRow items={shown} total={over ? Math.max(top, over.total) : top} on={on} bad={over ? shown.length - 1 : -1} size={36}/>
+      <div style={{textAlign:'center',fontSize:13,fontWeight:800,minHeight:22,margin:'6px 0',color:over ? '#b5483b' : full ? '#4f7a45' : 'var(--text)'}}>
+        {over ? 'Too long -- that makes ' + fmtBeats(over.total) + ' in a ' + top + '-beat bar.' : full ? 'Full bar! Listen.' : fmtBeats(used) + ' of ' + top + ' -- ' + fmtBeats(top - used) + ' to go'}
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:4}}>
+        {PALETTE.map(it => (
+          <button key={it.key} className="chip" disabled={full} onClick={() => add(it)} style={{padding:'2px 0',display:'flex',flexDirection:'column',alignItems:'center'}}>
+            <Glyph item={it} size={34}/><span style={{fontSize:9,fontWeight:800,color:'var(--muted)'}}>{fmtBeats(it.beats).replace(' beats', '').replace(' beat', '')}</span>
+          </button>
+        ))}
+      </div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:8}}>
+        <button className="ghost-btn" disabled={!items.length} onClick={() => setItems(items.slice(0, -1))}>↶ Undo</button>
+        <button className="ghost-btn" disabled={!items.length} onClick={() => play(items)}>♪ Play</button>
+        <button className="ghost-btn" disabled={!items.length} onClick={() => setItems([])}>Clear</button>
+      </div>
+    </div>
+  );
+}
+
 function NoteValLearn({ onStart }) {
   const rows = [
     { it: NV_NOTES[0], n: 1 }, { it: NV_NOTES[1], n: 2 }, { it: NV_NOTES[2], n: 4 }, { it: NV_NOTES[3], n: 8 }, { it: NV_NOTES[4], n: 16 },
@@ -2245,6 +2375,7 @@ function NoteValLearn({ onStart }) {
           );
         })}
       </div>
+      <div style={{marginTop:14}}><SplitTree/></div>
       <div style={{background:'var(--brass-bg)',borderRadius:10,padding:'12px 14px',marginTop:14}}>
         <div style={{fontSize:14,fontWeight:800,marginBottom:6}}>A dot adds half again</div>
         <div style={{display:'flex',flexWrap:'wrap',gap:12,alignItems:'center',fontSize:13}}>
@@ -2255,6 +2386,7 @@ function NoteValLearn({ onStart }) {
           ))}
         </div>
       </div>
+      <div style={{marginTop:14}}><FillTheBar/></div>
       <p style={{fontSize:11,color:'var(--muted)',margin:'10px 0 0',lineHeight:1.5}}>
         Game board rule: D.C. sends you back to the start and D.S. back to the {'𝄋'} sign -- each only once per lap, just like in real music. Reach Fine to finish a lap.
       </p>
