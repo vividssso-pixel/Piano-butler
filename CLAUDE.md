@@ -2740,6 +2740,29 @@ harmonic minor comes up most, so lead with it.
 | 5 | Verification | -- | Babel compile 0 errors; Node data run printed spelled harmonic minors + 1-octave fingers for all 12 and the thumb-on-black check; Playwright on the exact device file: Minor switch, C♯ melodic shows the clash message, C♯ harmonic shows the AMEB line, A natural "same fingers", minor stamps saved as `m:` ids, L5/L6 answer correctly, major pattern labels intact, zero page errors. |
 | 6 | Committed, not pushed | see git log | Ready for Sohyun to push. |
 
+### Phase 99 Updates (2026-09-23 -- drills curriculum order, Tones & Semitones, scale step patterns)
+
+Sohyun asked for a curriculum order covering TTSTTTS, intervals (with tones/semitones) and chords,
+then approved all three recommendations: (1) reorder chapters, (2) build Tones & Semitones + scale
+shape next, (3) chords will show Roman numerals AND letter names (AMEB theory uses numerals).
+
+**Agreed curriculum (main path, all "count the semitones"):** 1 Note Names (+ letter chain) →
+2 Tones & Semitones → 3 Scales (shape TTSTTTS, then fingering; minor forms with step patterns) →
+4 Key Signatures (derived from the shape) → 5 Intervals (number by letters, then quality by
+semitones; major/perfect from the tonic first) → 6 Chords (stacked 3rds; major 4+3, minor 3+4;
+I IV V with numerals + letters; inversions/arpeggios; V7). Side track any time: Notes & Rests,
+Rhythm Cards, Tempo Race. Intervals and chords are NOT built yet -- check the AMEB theory syllabus
+for grade placement when building them.
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Tones & Semitones chapter | `drills.html` (`TONES_DRILL`, `TonesLearn`, `StepExplorer`) | Learn: 4 tips + tap-any-two-keys explorer. Drill: L1 tone or semitone, L2 tap a tone/semitone up/down from a white key (3-octave keyboard), L3 enharmonic other name (incl. E♯/F, B♯/C, C♭/B, F♭/E). |
+| 2 | Scale shape | `drills.html` (`STEP_PATTERNS`, `StepStrip`, `MajorShapeCard`) | Major Learn opens with T T S T T T S on C (semitone steps gold) and "why G major needs F♯". Minor forms card shows step strips (natural T S T T S T T, harmonic T S T T S T+S S, melodic up T S T T T T S). Drill L7/L8: build a major / harmonic minor by tapping each note up from the tonic (a wrong key ends the question and shows the scale). Data check: every pattern equals the offsets in `SCALES`/`minorOffsets`. |
+| 3 | Key Signatures tip | `drills.html` | "Where the sharps and flats come from" (D major needs F♯ and C♯ to keep the shape). |
+| 4 | Picker grouped | `drills.html` (`DRILLS` `track`) | "Step by step" numbered 1-4, then "Rhythm & terms -- any time". |
+| 5 | Verification | -- | Babel 0 errors; Node pattern/offset check; Playwright on the exact device file (MD5 matched): grouped chips, explorer E→F = 1 semitone, all Tones levels answer, L7 A major and L8 E harmonic minor built correctly = Correct, a wrong second key ends with the full scale shown, zero page errors. |
+| 6 | Committed, not pushed | see git log | |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
