@@ -2778,7 +2778,7 @@ starting with time signatures.
   3/4 and 6/8 cards) → ties, dots, triplets as they come up.
 - **Reading the music** -- 1 Tempo Race ✓ → Dynamics (pp–ff, cresc./dim.) → Articulation
   (staccato, legato, accent, tenuto) → Signs (repeats, D.C./D.S./Fine, fermata, 8va).
-Build next in this order: Reading the Staff, Dynamics & Articulation, Signs, Intervals, Chords.
+Build next in this order: ~~Reading the Staff~~ (Phase 101), Dynamics & Articulation, Signs, Intervals, Chords.
 Check the AMEB theory syllabus for grade placement when building Intervals/Chords.
 
 | # | Change | File(s) | Detail |
@@ -2786,6 +2786,18 @@ Check the AMEB theory syllabus for grade placement when building Intervals/Chord
 | 1 | Time Signatures chapter | `drills.html` (`TIME_SIGS`, `TSig`, `playTimeSig`, `fillBar`, `TIMESIG_DRILL`) | Learn: top number = beats per bar, bottom = beat note (4 crotchet, 2 minim, 8 quaver); simple 2/4 3/4 4/4 2/2 3/8 and compound 6/8 9/8 12/8, each with "N × beat glyph", a one-line use, and tap-to-hear with the strong beat accented. Drill: L1 meaning, L2 which signature fits a drawn bar (only one of 2/4 3/4 4/4 3/8 fits; dotted quavers left out for readable bars), L3 listen 2/3/4 beats, L4 how many beats you feel (6/8 → 2). |
 | 2 | Picker in three tracks | `drills.html` (`DRILLS` `track`) | Pitch / Rhythm / Reading the music, numbered within each. |
 | 3 | Verification | -- | Babel 0 errors; 400 rounds per level: answer always present, no duplicate choices, "fits" bars sum exactly and only one signature fits; Playwright on the exact device file: groups render, Learn tap-to-hear, all 4 levels answer; zero page errors. |
+
+### Phase 101 Updates (2026-09-23 -- Reading the Staff chapter)
+
+Next item on the Phase 100 plan. Pitch track is now 1 Note Names → 2 Reading the Staff → 3 Tones &
+Semitones → 4 Scales → 5 Key Signatures.
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Staff drawing | `drills.html` (`StaffView`, `dY`, `ledgersFor`, `CLEFS`, `GRAND_GAP`) | Positions as d = octave×7 + letter (middle C = 28); treble lines E4 G4 B4 D5 F5, bass lines G2 B2 D3 F3 A3 (checked in Node). Grand staff draws the bass staff 20px lower so the two read as separate staves; ledger lines computed per staff. Clefs are Noto Music glyphs (already loaded from Google Fonts) -- position calibrated in the sandbox with a fallback font, so **the clef placement needs a look on a real phone**. |
+| 2 | Learn | `drills.html` (`StaffLearn`, `StaffExplorer`, `StaffLetters`, `LANDMARKS`) | Tips (two staves one piano; each line/space is the next letter; read from landmarks; ledger lines), an explorer (7 landmark buttons + 3-octave keyboard C3–B5; tapping a white key moves the note), treble and bass lines/spaces drawn with letters (lines black, spaces gold) and the usual rhymes. |
+| 3 | Drill | `drills.html` (`STAFF_DRILL`) | L1 treble (D4–G5), L2 bass (F2–B3), L3 both clefs incl. ledger lines (A3–C6 treble, C2–E4 bass), L4 find the exact key (C3–B5). Naming levels accept A–G keys; feedback shows the key. |
+| 4 | Verification | -- | Babel 0 errors; Node: line names, middle C = key 12, ledger sets; Playwright on the exact device file: each level answered 10/10 by reading the drawn note's position and pressing/tapping the matching letter/key (so the drawing and the answer agree), explorer tap E4 → "E (E4)", zero page errors. |
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
