@@ -2778,7 +2778,7 @@ starting with time signatures.
   3/4 and 6/8 cards) → ties, dots, triplets as they come up.
 - **Reading the music** -- 1 Tempo Race ✓ → Dynamics (pp–ff, cresc./dim.) → Articulation
   (staccato, legato, accent, tenuto) → Signs (repeats, D.C./D.S./Fine, fermata, 8va).
-Build next in this order: ~~Reading the Staff~~ (Phase 101), Dynamics & Articulation, Signs, Intervals, Chords.
+Build next in this order: ~~Reading the Staff~~ (Phase 101), ~~Dynamics & Articulation~~ (Phase 102), Signs, Intervals, Chords.
 Check the AMEB theory syllabus for grade placement when building Intervals/Chords.
 
 | # | Change | File(s) | Detail |
@@ -2800,6 +2800,18 @@ Semitones → 4 Scales → 5 Key Signatures.
 | 4 | Verification | -- | Babel 0 errors; Node: line names, middle C = key 12, ledger sets; Playwright on the exact device file: each level answered 10/10 by reading the drawn note's position and pressing/tapping the matching letter/key (so the drawing and the answer agree), explorer tap E4 → "E (E4)", zero page errors. |
 | 5 | Follow-up: clef bug + Sohyun's fold idea | `drills.html` (`ClefGlyph`, `FoldStaff`, `LedgerMirror`) | Live check showed the clefs misplaced: the page's `* { font-family }` rule overrides SVG `fontFamily` attributes, so the Noto Music glyphs never loaded. Fixed with inline style + ink measured on a canvas and scaled into a fixed staff box (verified with Noto Music and with a fallback font). Sohyun's decalcomania idea: fold the grand staff at middle C (mirror d → 56−d; treble C↔bass C, high C↔low C, G line↔F line highlighted) with a fold animation (reduced-motion aware), plus "the gap is really one missing line" (treble A with 2 ledger lines = bass top line A). Her rhymes: Every Good Boy Deserves **Fun**; bass lines **Great Big Dragon Flies Away**. Staff drill re-run 10/10 on every level. |
 | 6 | Follow-up: middle C + clef story | `drills.html` (`ClefStory`, `FoldStaff`, `LedgerMirror`) | Sohyun asked for middle C to be visible in both diagrams (now a black note on the fold, "its own mirror", and on both the treble-side and bass-side ledger line in the gap diagram) and a clef story, plausible but not childish: the treble clef began as a letter G and grew into a spiral that closes on the second line -- the Queen's home; the bass clef began as an F, the King lives on the fourth line with the two dots as guards above and below. Ties to the fold: G is five notes above middle C, F five below. |
+
+### Phase 102 Updates (2026-09-23 -- Dynamics & Articulation chapter)
+
+Reading-the-music track: 1 Tempo Race → 2 Dynamics & Articulation.
+
+| # | Change | File(s) | Detail |
+|---|--------|---------|--------|
+| 1 | Learn | `drills.html` (`DYNAMICS`, `CHANGES`, `ARTICS`, `DynLearn`, `ArticBar`, `playDyn/playChange/playArtic`) | pp p mp mf f ff (bold italic, growing size, tap to hear at that volume; "p = piano, f = forte, m = mezzo"), cresc./dim. hairpins, sfz, fp (each playable), and six articulations drawn on a bar of crotchets -- staccato, legato (slur), accent, tenuto, staccatissimo, fermata -- each playable. |
+| 2 | Drill | `drills.html` (`DYN_DRILL`) | L1 dynamic → meaning, L2 which is louder, L3 volume-change signs, L4 name the articulation marking, L5 listen: getting louder / softer / staccato / legato. |
+| 3 | Verification | -- | Babel 0 errors; 400 rounds per level (answer present, no duplicates); Playwright on the exact device file: Learn plays, all 5 levels answer, zero page errors. |
+
+Next on the plan: Signs (repeats, D.C./D.S./Fine, fermata already here, 8va, ties vs slurs), then Intervals, then Chords.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
