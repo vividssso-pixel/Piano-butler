@@ -256,29 +256,11 @@ function rhPattern(n) {
 function lhPattern(n) {
   return rhPattern(n).slice().reverse();
 }
-// For a key whose root note itself is a black key (C#/Db, D#/Eb, F#/Gb, G#/Ab, A#/Bb), the RH
-// can't start on the thumb (thumb never plays a black key) -- per Sohyun's rule (2026-09-19):
-// start on finger 2, and whichever note is the first white key reached gets the thumb. From
-// there it follows the same repeating [1,2,3,1,2,3,4] unit as the standard pattern.
-function rhPatternBlackRoot(n) {
-  const unit = [1,2,3,1,2,3,4];
-  const res = [2];
-  for (let o = 0; o < n; o++) res.push(...unit);
-  return res;
-}
-
 // White-root keys that follow the plain standard pattern (RH: thumb-under-3, repeat-4th-finger;
 // LH: its mirror) for both hands -- built the same way for every octave length.
 function standardEntry(n) {
   return { offsets: majorOffsets(n), RH: rhPattern(n), LH: lhPattern(n), label: n + (n > 1 ? ' octaves' : ' octave') };
 }
-// Black-root keys (C#/Db, D#/Eb, F#/Gb, G#/Ab, A#/Bb): RH uses the 2-then-standard-unit shape;
-// LH stays decoupled and uses the same plain mirror pattern (confirmed correct for F major,
-// whose LH also didn't follow its own RH's exception).
-function blackRootEntry(n) {
-  return { offsets: majorOffsets(n), RH: rhPatternBlackRoot(n), LH: lhPattern(n), label: n + (n > 1 ? ' octaves' : ' octave') };
-}
-
 const SCALES = {
   C: { rootPc: 0, octaves: { 1: standardEntry(1), 2: standardEntry(2) } },
   G: { rootPc: 7, octaves: { 1: standardEntry(1), 2: standardEntry(2) } },
@@ -336,11 +318,26 @@ const SCALES = {
       2: { offsets: majorOffsets(2), RH: [2,3,4, 1,2,3, 1,2,3,4, 1,2,3, 1,2], LH: [4,3,2,1, 3,2,1, 4,3,2,1, 3,2,1, 2], label: '2 octaves' },
     },
   },
-  'C#': { rootPc: 1, octaves: { 1: blackRootEntry(1), 2: blackRootEntry(2) } },
-  Bb: { rootPc: 10, octaves: { 1: blackRootEntry(1), 2: blackRootEntry(2) } },
-  Eb: { rootPc: 3, octaves: { 1: blackRootEntry(1), 2: blackRootEntry(2) } },
-  Ab: { rootPc: 8, octaves: { 1: blackRootEntry(1), 2: blackRootEntry(2) } },
-  Db: { rootPc: 1, octaves: { 1: blackRootEntry(1), 2: blackRootEntry(2) } },
+  // Black-key starts, read directly off the AMEB Piano Technical Work books (Phase 97, 2026-09-23):
+  // Bb major Level 1 p.37 (2.4), Eb major p.48 (3.4), Ab major p.59 (4.5), Db major Level 2 p.20 (5.4).
+  // All four share one LH shape (start on 3: 3214 3213 ...). The earlier generic formula put the
+  // RH thumb on a black key for Eb/Ab/Db and gave Bb a mirrored LH -- both wrong, now replaced.
+  // C# major is the same keys as Db major, so it uses the Db fingering.
+  'C#': { rootPc: 1, octaves: {
+    1: { offsets: majorOffsets(1), RH: [2,3,1,2,3,4,1,2], LH: [3,2,1,4,3,2,1,3], label: '1 octave' },
+    2: { offsets: majorOffsets(2), RH: [2,3,1,2,3,4,1,2,3,1,2,3,4,1,2], LH: [3,2,1,4,3,2,1,3,2,1,4,3,2,1,3], label: '2 octaves' } } },
+  Bb: { rootPc: 10, octaves: {
+    1: { offsets: majorOffsets(1), RH: [2,1,2,3,1,2,3,4], LH: [3,2,1,4,3,2,1,3], label: '1 octave' },
+    2: { offsets: majorOffsets(2), RH: [2,1,2,3,1,2,3,4,1,2,3,1,2,3,4], LH: [3,2,1,4,3,2,1,3,2,1,4,3,2,1,3], label: '2 octaves' } } },
+  Eb: { rootPc: 3, octaves: {
+    1: { offsets: majorOffsets(1), RH: [2,1,2,3,4,1,2,3], LH: [3,2,1,4,3,2,1,3], label: '1 octave' },
+    2: { offsets: majorOffsets(2), RH: [2,1,2,3,4,1,2,3,1,2,3,4,1,2,3], LH: [3,2,1,4,3,2,1,3,2,1,4,3,2,1,3], label: '2 octaves' } } },
+  Ab: { rootPc: 8, octaves: {
+    1: { offsets: majorOffsets(1), RH: [2,3,1,2,3,1,2,3], LH: [3,2,1,4,3,2,1,3], label: '1 octave' },
+    2: { offsets: majorOffsets(2), RH: [2,3,1,2,3,1,2,3,4,1,2,3,1,2,3], LH: [3,2,1,4,3,2,1,3,2,1,4,3,2,1,3], label: '2 octaves' } } },
+  Db: { rootPc: 1, octaves: {
+    1: { offsets: majorOffsets(1), RH: [2,3,1,2,3,4,1,2], LH: [3,2,1,4,3,2,1,3], label: '1 octave' },
+    2: { offsets: majorOffsets(2), RH: [2,3,1,2,3,4,1,2,3,1,2,3,4,1,2], LH: [3,2,1,4,3,2,1,3,2,1,4,3,2,1,3], label: '2 octaves' } } },
   Gb: {
     rootPc: 6,
     octaves: {
@@ -613,15 +610,15 @@ function keyFamily(key) {
   return classifyFamily({ rootPc: info.rootPc, offsets: anyEntry.offsets });
 }
 
-function ScaleFingeringDrill() {
-  const [key, setKey] = useState('C');
+function ScaleFingeringDrill({ controlledKey, onPickKey } = {}) {
+  const [ownKey, setOwnKey] = useState('C');
+  const key = controlledKey || ownKey;
+  const setKey = onPickKey || setOwnKey;
   const [octLen, setOctLen] = useState(1);
-  const [viewMode, setViewMode] = useState('keysig');
   const info = SCALES[key];
   const availableOctaves = Object.keys(info.octaves).map(Number).sort((a, b) => a - b);
   const activeOctLen = availableOctaves.includes(octLen) ? octLen : availableOctaves[0];
   const entry = info.octaves[activeOctLen];
-  const family = classifyFamily({ rootPc: info.rootPc, offsets: entry.offsets });
 
   function pickKey(k) {
     setKey(k);
@@ -629,47 +626,16 @@ function ScaleFingeringDrill() {
     if (!avail.includes(octLen)) setOctLen(avail[0]);
   }
 
-  // Group the available keys by fingering family (2-black-cluster / 3-black-cluster / mixed /
-  // none) so keys that share a fingering "shape" sit together -- a student can infer a new key's
-  // fingering from a family they already know, instead of treating each key as a one-off.
-  const groups = FAMILY_ORDER
-    .map(id => ({ id, keys: SCALE_KEYS.filter(k => keyFamily(k).id === id) }))
-    .filter(g => g.keys.length > 0);
-
   return (
     <div className="fade-up">
       <p style={{fontSize:13,color:'var(--muted)',lineHeight:1.6,margin:'0 0 20px'}}>
-        Pick a key -- both hands' fingering show right on the keyboard, verified against the AMEB syllabus.
+        Pick a key -- both hands' fingering show right on the keyboard, as printed in the AMEB technical work books.
       </p>
 
-      <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
-        <button className={'chip'+(viewMode==='keysig'?' active':'')} onClick={()=>setViewMode('keysig')}>By key signature</button>
-        <button className={'chip'+(viewMode==='family'?' active':'')} onClick={()=>setViewMode('family')}>By fingering family</button>
-      </div>
-
-      {viewMode === 'family' ? (
+      {(
         <div style={{marginBottom:12}}>
           <p style={{fontSize:11,color:'var(--muted)',margin:'0 0 10px',lineHeight:1.5}}>
-            Grouped by which black-key cluster each scale touches, so you can lean on a family a student already knows.
-          </p>
-          {groups.map(g => (
-            <div key={g.id} style={{marginBottom:8}}>
-              <div style={{fontSize:10,fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.04em',marginBottom:6}}>
-                {keyFamily(g.keys[0]).label}
-              </div>
-              <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-                {g.keys.map(k => (
-                  <button key={k} className={'chip'+(key===k?' active':'')} onClick={()=>pickKey(k)}>{k} major</button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div style={{marginBottom:12}}>
-          <p style={{fontSize:11,color:'var(--muted)',margin:'0 0 10px',lineHeight:1.5}}>
-            Circle-of-fifths order -- sharps 0 through 7, then flats 1 through 7. Greyed-out keys aren't verified
-            against the syllabus yet.
+            Circle-of-fifths order -- sharps 0 through 7, then flats 1 through 7.
           </p>
           {(() => {
             const sharpMatch = SHARP_KEYS.find(k => k.name === key);
@@ -747,12 +713,12 @@ function ScaleFingeringDrill() {
       </div>
 
       <div style={{background:'var(--brass-bg)',border:'1px solid var(--border)',borderRadius:10,padding:'12px 14px',marginTop:16}}>
-        <p style={{fontSize:12,fontWeight:800,color:'var(--brass)',margin:'0 0 4px'}}>
-          Family: {family.label}{family.names.length > 0 ? ' (' + family.names.join(', ') + ')' : ''}
-        </p>
-        <p style={{fontSize:12,color:'var(--text)',margin:0,lineHeight:1.5}}>
-          {family.note}
-        </p>
+        <p style={{fontSize:12,fontWeight:800,color:'var(--brass)',margin:'0 0 6px'}}>Landmarks -- {prettyNote(key)} major (two octaves)</p>
+        {['RH', 'LH'].map(h => (
+          <p key={h} style={{fontSize:12,color:'var(--text)',margin:'0 0 3px',lineHeight:1.5}}>
+            <b>{h === 'RH' ? 'Right hand' : 'Left hand'}:</b> finger 4 on {prettyList(fingerNotes(key, h, 4)) || '--'} · thumb on {prettyList(fingerNotes(key, h, 1))}
+          </p>
+        ))}
       </div>
     </div>
   );
@@ -1147,11 +1113,14 @@ const NOTE_NAME_LEVELS = [
   { n: 2, label: 'White keys · find the key',    octaves: 1, black: false, dirs: ['name2key'], time: 8 },
   { n: 3, label: 'Two octaves · both ways',      octaves: 2, black: false, dirs: ['key2name', 'name2key'], time: 6 },
   { n: 4, label: 'Black keys too (sharps & flats)', octaves: 2, black: true, dirs: ['key2name', 'name2key'], time: 7 },
+  { n: 5, label: 'Letter steps · next letter up or down', octaves: 1, black: false, dirs: ['step'], time: 6 },
+  { n: 6, label: 'Letter jumps · 3rds to octaves, up or down', octaves: 1, black: false, dirs: ['jump'], time: 8 },
 ];
 
 function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
 function genNoteQuestion(lv, prev) {
+  if (lv.dirs[0] === 'step' || lv.dirs[0] === 'jump') return genLetterQuestion(lv, prev);
   const pool = [];
   for (let i = 0; i < lv.octaves * 12; i++) if (PC_INFO[i % 12].white || lv.black) pool.push(i);
   let idx = pick(pool), tries = 0;
@@ -1245,9 +1214,92 @@ function NoteNamesLearn({ onStart }) {
       {tip(2, 'F sits just left of the 3 black keys', 'Before a group of three black keys is always F, then G, A, B.')}
       {tip(3, 'Only seven letters, A to G', 'After G the letters start again at A. Every C on the piano looks the same -- only the octave changes.')}
       {tip(4, 'Black keys borrow a neighbour’s name', 'Sharp (♯) = the key just to the right. Flat (♭) = the key just to the left. So the same black key can be C♯ or D♭.')}
-      <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
+      {tip(5, 'The letters go round in a circle', 'Forwards is easy -- practise backwards (G F E D C B A) and skipping (a 3rd up from C is E, a 3rd down is A) until they come just as fast.')}
+      <LetterCircle from="C" to="A"/>
+      <div style={{fontSize:11,textAlign:'center',color:'var(--muted)',margin:'-4px 0 14px'}}>C, down a 3rd → A</div>
+      <div style={{borderTop:'1px solid var(--border)',paddingTop:14}}>
+        <div style={{fontSize:14,fontWeight:800,marginBottom:4}}>Letter chain -- say it out loud together</div>
+        <LetterChainDrill/>
+      </div>
+      <button className="primary-btn" style={{marginTop:18}} onClick={onStart}>Start the drill →</button>
     </div>
   );
+}
+
+// ─── Letter steps inside Note Names (Phase 97) ───────────────────────────────────
+// Sohyun's Letter Chain folded into Note Names: A-B-C-D-E-F-G comes easily forwards, but going
+// backwards or skipping (3rds, 4ths...) inside the 7-letter loop doesn't -- these levels drill
+// exactly that, and the spoken call-and-response version lives in the Learn tab.
+function letterPc(l) { return PC_INFO.find(p => p.white && p.names[0] === l).pc; }
+
+function LetterCircle({ from, to }) {
+  const R = 62, cx = 90, cy = 80;
+  const pos = (i) => { const a = -Math.PI / 2 + i * 2 * Math.PI / 7; return [cx + R * Math.cos(a), cy + R * Math.sin(a)]; };
+  return (
+    <svg viewBox="0 0 180 160" style={{width:'100%',maxWidth:220,display:'block',margin:'0 auto'}}>
+      <circle cx={cx} cy={cy} r={R} fill="none" stroke="#e0d4b8" strokeWidth="2" strokeDasharray="3 5"/>
+      <text x={cx} y={cy - 4} textAnchor="middle" fontSize="10" fontWeight="700" fill="#a49b8f">up ↻</text>
+      <text x={cx} y={cy + 12} textAnchor="middle" fontSize="10" fontWeight="700" fill="#a49b8f">down ↺</text>
+      {LETTERS.map((l, i) => {
+        const [x, y] = pos(i);
+        const on = l === from ? '#241f1a' : l === to ? '#a8823f' : '#fff';
+        return (
+          <g key={l}>
+            <circle cx={x} cy={y} r="15" fill={on} stroke="#241f1a" strokeWidth="1.5"/>
+            <text x={x} y={y + 5} textAnchor="middle" fontSize="14" fontWeight="900" fill={l === from || l === to ? '#fff' : '#241f1a'}>{l}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function genLetterQuestion(lv, prev) {
+  let letter = pick(LETTERS), n = 0;
+  while (prev && prev.letter === letter && n++ < 10) letter = pick(LETTERS);
+  const up = Math.random() < 0.5;
+  const size = lv.dirs[0] === 'step' ? 2 : pick([3, 4, 5, 6, 7, 8]);
+  const answerLetter = nextLetter(letter, size, up ? 'up' : 'down');
+  return { dir: lv.dirs[0], letter, up, size, answerLetter, uid: Math.random() };
+}
+function intervalWord(size) { return size === 2 ? 'next letter' : size === 8 ? 'octave' : (INTERVALS.find(i => i.size === size) || {}).label; }
+function withArticle(w) { return (w === 'octave' ? 'an ' : 'a ') + w; }
+
+function LetterStepQuestion({ q, level, given, locked, onAnswer, pixel }) {
+  const done = !!given;
+  useEffect(() => {
+    if (locked) return;
+    function onKey(e) { const L = (e.key || '').toUpperCase(); if (LETTERS.includes(L)) onAnswer(L); }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [q, locked, onAnswer]);
+  const dirWord = q.up ? 'up' : 'down';
+  const cue = q.size === 2 ? (q.up ? 'next letter up' : 'next letter down') : dirWord + ' ' + withArticle(intervalWord(q.size));
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const marks = {};
+  if (done) { marks[letterPc(q.letter)] = 'target'; marks[letterPc(q.answerLetter)] = 'good'; }
+  return (
+    <div>
+      <p style={pixel ? {fontSize:10,textAlign:'center',margin:'0 0 8px'} : {fontSize:14,fontWeight:700,textAlign:'center',margin:'0 0 8px',color:'var(--muted)'}}>
+        {pixel ? 'WHICH LETTER?' : 'Say it, then tap it'}</p>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:14,margin:'0 0 14px'}}>
+        <span style={{fontSize:pixel ? 40 : 72,fontWeight:900,lineHeight:1,color:pixel ? 'var(--brass)' : 'var(--text)'}}>{q.letter}</span>
+        <span style={{fontSize:pixel ? 11 : 20,fontWeight:900,color:pixel ? '#f8edd4' : 'var(--brass)',textAlign:'left',lineHeight:1.3}}>
+          {q.up ? '↑' : '↓'} {pixel ? cue.toUpperCase() : cue}</span>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:6}}>
+        {LETTERS.map(l => (
+          <button key={l} disabled={locked} onClick={() => onAnswer(l)}
+            className={btnCls + (!done ? '' : l === q.answerLetter ? ' good' : given.ans === l ? ' bad' : '')}>{l}</button>
+        ))}
+      </div>
+      {done && <div style={{marginTop:12}}><TapKeyboard octaves={1} marks={marks} labels="white" pixel={pixel}/></div>}
+    </div>
+  );
+}
+
+function NoteNamesQuestion(props) {
+  return props.q.dir === 'step' || props.q.dir === 'jump' ? <LetterStepQuestion {...props}/> : <NoteNameQuestion {...props}/>;
 }
 
 const NOTE_NAMES_DRILL = {
@@ -1255,9 +1307,10 @@ const NOTE_NAMES_DRILL = {
   label: 'Note Names',
   levels: NOTE_NAME_LEVELS,
   generate: genNoteQuestion,
-  check: (q, ans) => ans !== null && (q.dir === 'key2name' ? ans === q.pc : ans % 12 === q.pc),
-  answerLabel: (q) => q.dir === 'key2name' ? pcLabel(q.pc) : 'the key shown in green',
-  Question: NoteNameQuestion,
+  check: (q, ans) => ans !== null && ans !== undefined && (q.answerLetter ? ans === q.answerLetter : q.dir === 'key2name' ? ans === q.pc : ans % 12 === q.pc),
+  answerLabel: (q) => q.answerLetter ? (q.size === 2 ? 'one letter ' + (q.up ? 'up' : 'down') + ' from ' + q.letter : q.letter + ' ' + (q.up ? 'up' : 'down') + ' ' + withArticle(intervalWord(q.size))) + ' is ' + q.answerLetter
+    : q.dir === 'key2name' ? pcLabel(q.pc) : 'the key shown in green',
+  Question: NoteNamesQuestion,
   Learn: NoteNamesLearn,
 };
 
@@ -2484,18 +2537,239 @@ const KEYSIG_DRILL = {
   Learn: KeySigLearn,
 };
 
+// ─── Concept 6: Scales (Phase 97, 2026-09-23) ────────────────────────────────────
+// Rebuilt from Sohyun's Scale Fingering tool + her scale-card idea. The one idea a student
+// actually has to hold per scale: the thumb tucks after 3 and after 4, so in each octave finger 4
+// plays exactly once -- know where 4 lands (and where the thumbs go) and the rest follows.
+// Every "landmark" below is COMPUTED from SCALES, never typed separately, so it can't drift.
+
+// Spell the 7 notes of a major scale from its key signature (so Eb major reads Eb F G Ab Bb C D).
+function spellScale(key) {
+  const L = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+  const ks = KEY_SIGS.find(k => k.major === key);
+  const accs = !ks || !ks.type ? [] : (ks.type === 'sharp' ? SHARP_ORDER : FLAT_ORDER).slice(0, ks.count);
+  const start = L.indexOf(key[0]);
+  return Array.from({ length: 7 }, (_, i) => { const l = L[(start + i) % 7]; return accs.find(a => a[0] === l) || l; });
+}
+// Uses the 2-octave (exam) pattern: in a few keys finger 4 only appears in the second octave (e.g. A-flat RH).
+function fingerNotes(key, hand, finger) {
+  const e = SCALES[key].octaves[2], names = spellScale(key), last = e[hand].length - 1;
+  // Skip the end note each hand only lands on (RH top note, LH bottom note) -- it's a bookend, not a landmark.
+  return [...new Set(e[hand].map((f, i) => (f === finger && !(hand === 'RH' ? i === last : i === 0) ? names[i % 7] : null)).filter(Boolean))];
+}
+function prettyList(arr) { return arr.map(prettyNote).join(' & '); }
+
+// Teaching path, grouped by shared fingering: C G D A E (standard) → B → F → the black-key starts.
+// F#/C#/Cb are the same keys as Gb/Db/B, so they live in the viewer, not on the card path.
+const SCALE_PATH = ['C', 'G', 'D', 'A', 'E', 'B', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb'];
+const PATH_STEPS = [{ id: 'RH', label: 'Right hand' }, { id: 'LH', label: 'Left hand' }, { id: 'HT', label: 'Hands together' }];
+const STAMP_KEY = 'pb_scale_stamps_v1';
+function loadStamps() { try { return JSON.parse(localStorage.getItem(STAMP_KEY)) || {}; } catch (e) { return {}; } }
+function saveStamps(s) { try { localStorage.setItem(STAMP_KEY, JSON.stringify(s)); } catch (e) {} }
+
+function ScalePath({ sel, onPick }) {
+  const [stamps, setStamps] = useState(loadStamps);
+  function toggle(id) { const n = { ...stamps }; if (n[id]) delete n[id]; else n[id] = Date.now(); setStamps(n); saveStamps(n); }
+  const done = Object.keys(stamps).length, total = SCALE_PATH.length * 3;
+  return (
+    <div style={{marginBottom:16}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:8}}>
+        <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em'}}>Scale cards -- stamp each one when it's solid</div>
+        <div style={{fontSize:12,fontWeight:800,color:'var(--brass)'}}>{done}/{total}</div>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>
+        {SCALE_PATH.map((k, ki) => PATH_STEPS.map((s, si) => {
+          const id = k + ':' + s.id, on = !!stamps[id];
+          return (
+            <div key={id} style={{display:'flex',alignItems:'center',gap:4,border:'1.5px solid ' + (sel === k ? 'var(--text)' : 'var(--border)'),
+              background:on ? '#dcebd5' : '#fff',borderRadius:8,padding:'5px 6px'}}>
+              <button onClick={() => onPick(k)} style={{flex:1,textAlign:'left',background:'none',border:'none',padding:0,cursor:'pointer',color:'var(--text)'}}>
+                <span style={{display:'block',fontSize:9,fontWeight:800,color:'var(--brass)'}}>{ki + 1}-{si + 1}</span>
+                <span style={{display:'block',fontSize:12,fontWeight:800}}>{prettyNote(k)} <span style={{fontWeight:600,color:'var(--muted)'}}>{s.id}</span></span>
+              </button>
+              <button onClick={() => toggle(id)} aria-label={(on ? 'Remove stamp from ' : 'Stamp ') + k + ' ' + s.label}
+                style={{flex:'0 0 26px',height:26,borderRadius:13,border:'1.5px solid ' + (on ? 'var(--good)' : 'var(--border)'),
+                  background:on ? 'var(--good)' : '#fff',color:on ? '#fff' : 'var(--muted)',fontWeight:900,cursor:'pointer',padding:0}}>{on ? '✓' : ''}</button>
+            </div>
+          );
+        }))}
+      </div>
+      <p style={{fontSize:11,color:'var(--muted)',margin:'6px 0 0'}}>Stamps are saved on this device only.</p>
+    </div>
+  );
+}
+
+function ScalesLearn({ onStart }) {
+  const [sel, setSel] = useState('C');
+  return (
+    <div className="fade-up">
+      <div className="card" style={{marginBottom:16}}>
+        <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>One landmark per scale: finger 4</h2>
+        <p style={{fontSize:13,color:'#6f665b',margin:'0 0 12px',lineHeight:1.55}}>
+          The thumb tucks under after finger 3 and after finger 4, so in every octave <b>finger 4 plays just once</b>.
+          Remember where it lands and the rest of the fingering falls into place (two-octave scales, as in the AMEB books).
+        </p>
+        <div style={{overflowX:'auto'}}>
+          <table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}>
+            <thead><tr style={{color:'var(--muted)',fontSize:11,textAlign:'left'}}>
+              <th style={{padding:'4px 6px'}}>Key</th><th style={{padding:'4px 6px'}}>RH finger 4</th><th style={{padding:'4px 6px'}}>LH finger 4</th></tr></thead>
+            <tbody>
+              {SCALE_PATH.map(k => (
+                <tr key={k} onClick={() => setSel(k)} style={{cursor:'pointer',background:sel === k ? 'var(--brass-bg)' : 'transparent',borderTop:'1px solid var(--border)'}}>
+                  <td style={{padding:'6px',fontWeight:900}}>{prettyNote(k)} major</td>
+                  <td style={{padding:'6px',fontWeight:700}}>{prettyList(fingerNotes(k, 'RH', 4))}</td>
+                  <td style={{padding:'6px',fontWeight:700}}>{prettyList(fingerNotes(k, 'LH', 4))}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p style={{fontSize:12,color:'#6f665b',margin:'10px 0 0',lineHeight:1.5}}>
+          Spot the shortcut: every flat key from F to G♭ puts <b>RH finger 4 on B♭</b>, and the black-key starts
+          (B♭ E♭ A♭ D♭) all begin the left hand on finger 3.
+        </p>
+      </div>
+      <ScalePath sel={sel} onPick={setSel}/>
+      <ScaleFingeringDrill controlledKey={sel} onPickKey={setSel}/>
+      <button className="primary-btn" style={{marginTop:16}} onClick={onStart}>Start the drill →</button>
+    </div>
+  );
+}
+
+// Interactive one-octave keyboard for the drill. Marks/taps are keyed by semitone offset from the root.
+function ScaleTapKeyboard({ keyName, hand, showFingers, marks = {}, onTap, pixel }) {
+  const info = SCALES[keyName], entry = info.octaves[1];
+  const { keys, whiteCount } = buildKeyboard(info.rootPc, 12);
+  const whiteW = 34, whiteH = 110, blackW = 20, blackH = 66;
+  const fingerAt = {}; entry.offsets.forEach((off, i) => { fingerAt[off] = entry[hand][i]; });
+  const inScale = new Set(entry.offsets);
+  const col = (m, white) => m === 'good' ? '#8fd18b' : m === 'bad' ? '#f08a80' : m === 'target' ? '#e9c77a' : m === 'picked' ? '#9fc3e8' : (white ? '#fff' : '#241f1a');
+  const tap = (i) => (onTap ? () => onTap(i) : undefined);
+  return (
+    <svg viewBox={(-blackW / 2) + ' 0 ' + (whiteCount * whiteW + blackW) + ' ' + whiteH} shapeRendering={pixel ? 'crispEdges' : 'auto'}
+      style={{width:'100%',display:'block',touchAction:'manipulation'}}>
+      {keys.filter(k => k.isWhite).map(k => (
+        <g key={'w' + k.i} onClick={tap(k.i)} style={{cursor:onTap ? 'pointer' : 'default'}} data-off={k.i}>
+          <rect x={k.whiteIndex * whiteW} y="0" width={whiteW} height={whiteH} fill={col(marks[k.i], true)} stroke="#a49b8f" strokeWidth="1.5"/>
+          {inScale.has(k.i) && !marks[k.i] && <circle cx={k.whiteIndex * whiteW + whiteW / 2} cy={whiteH - 34} r="3" fill="#a8823f" opacity="0.5"/>}
+          {showFingers && fingerAt[k.i] && <text x={k.whiteIndex * whiteW + whiteW / 2} y={whiteH - 12} textAnchor="middle" fontSize="15" fontWeight="800" fill="#241f1a">{fingerAt[k.i]}</text>}
+        </g>
+      ))}
+      {keys.filter(k => !k.isWhite).map(k => {
+        const x = (k.precedingWhiteIndex + 1) * whiteW - blackW / 2;
+        return (
+          <g key={'b' + k.i} onClick={tap(k.i)} style={{cursor:onTap ? 'pointer' : 'default'}} data-off={k.i}>
+            <rect x={x} y="0" width={blackW} height={blackH} fill={col(marks[k.i], false)} stroke="#241f1a" strokeWidth="1"/>
+            {inScale.has(k.i) && !marks[k.i] && <circle cx={x + blackW / 2} cy={blackH - 26} r="3" fill="#e9c77a"/>}
+            {showFingers && fingerAt[k.i] && <text x={x + blackW / 2} y={blackH - 8} textAnchor="middle" fontSize="12" fontWeight="800" fill={marks[k.i] ? '#241f1a' : '#fff'}>{fingerAt[k.i]}</text>}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+const SCALE_LEVELS = [
+  { n: 1, label: 'Which finger? (C G D A E)',      kind: 'finger', pool: ['C', 'G', 'D', 'A', 'E'], time: 9 },
+  { n: 2, label: 'Tap where finger 4 goes',         kind: 'four',   pool: SCALE_PATH, time: 9 },
+  { n: 3, label: 'Tap every thumb note',            kind: 'thumbs', pool: SCALE_PATH, time: 14 },
+  { n: 4, label: 'Which finger? (all 12 keys)',     kind: 'finger', pool: SCALE_PATH, time: 9 },
+];
+function genScaleQuestion(lv, prev) {
+  const uid = Math.random();
+  let key = pick(lv.pool), n = 0;
+  while (prev && prev.keyName === key && lv.pool.length > 1 && n++ < 10) key = pick(lv.pool);
+  const hand = Math.random() < 0.5 ? 'RH' : 'LH';
+  const e = SCALES[key].octaves[1];
+  if (lv.kind === 'finger') {
+    const idx = Math.floor(Math.random() * e.offsets.length);
+    return { kind: 'finger', key: key + hand + idx, keyName: key, hand, off: e.offsets[idx], answer: e[hand][idx], uid };
+  }
+  const f = lv.kind === 'four' ? 4 : 1;
+  const set = e.offsets.filter((o, i) => e[hand][i] === f);
+  if (!set.length) return genScaleQuestion(lv, { keyName: key }); // e.g. A-flat RH has no 4 in one octave
+  return { kind: lv.kind, key: key + hand, keyName: key, hand, answerSet: set, uid };
+}
+function checkScale(q, ans) {
+  if (ans === null || ans === undefined) return false;
+  if (q.kind === 'finger') return ans === q.answer;
+  if (q.kind === 'four') return q.answerSet.includes(ans);
+  return Array.isArray(ans) && ans.length === q.answerSet.length && q.answerSet.every(x => ans.includes(x));
+}
+function scaleAnswerLabel(q) {
+  const names = spellScale(q.keyName), e = SCALES[q.keyName].octaves[1];
+  const nameAt = (off) => prettyNote(names[e.offsets.indexOf(off) % 7]);
+  if (q.kind === 'finger') return 'finger ' + q.answer + ' on ' + nameAt(q.off);
+  return (q.kind === 'four' ? 'finger 4 on ' : 'thumbs on ') + q.answerSet.map(nameAt).join(', ');
+}
+
+function ScaleQuestion({ q, level, given, locked, onAnswer, pixel }) {
+  const [picked, setPicked] = useState([]);
+  useEffect(() => { setPicked([]); }, [q.uid]);
+  const done = !!given;
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const handName = q.hand === 'RH' ? 'right hand' : 'left hand';
+  const title = prettyNote(q.keyName) + ' major · ' + handName;
+  const marks = {};
+  if (q.kind === 'finger') marks[q.off] = done ? (given.ok ? 'good' : 'target') : 'target';
+  else if (q.kind === 'four') {
+    if (done) { q.answerSet.forEach(o => { marks[o] = 'good'; }); if (!given.ok && given.ans !== null && given.ans !== undefined) marks[given.ans] = 'bad'; }
+  } else {
+    picked.forEach(o => { marks[o] = 'picked'; });
+    if (done) { q.answerSet.forEach(o => { marks[o] = 'good'; }); picked.filter(o => !q.answerSet.includes(o)).forEach(o => { marks[o] = 'bad'; }); }
+  }
+  const prompt = q.kind === 'finger' ? ['Which finger plays the highlighted note?', 'WHICH FINGER?']
+    : q.kind === 'four' ? ['Tap the note finger 4 plays', 'WHERE DOES 4 GO?'] : ['Tap every note the thumb plays, then Check', 'TAP ALL THE THUMBS'];
+  return (
+    <div>
+      <div style={{textAlign:'center',fontSize:pixel ? 12 : 20,fontWeight:900,marginBottom:4,color:pixel ? 'var(--brass)' : 'var(--text)'}}>{pixel ? title.toUpperCase() : title}</div>
+      <p style={pixel ? {fontSize:9,textAlign:'center',margin:'0 0 10px'} : {fontSize:13,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? prompt[1] : prompt[0]}</p>
+      <div style={{background:pixel ? 'transparent' : '#fff',padding:pixel ? 0 : 2}}>
+        <ScaleTapKeyboard keyName={q.keyName} hand={q.hand} showFingers={done} marks={marks} pixel={pixel}
+          onTap={locked || q.kind === 'finger' ? null : (off) => {
+            if (q.kind === 'four') onAnswer(off);
+            else setPicked(p => (p.includes(off) ? p.filter(x => x !== off) : [...p, off]));
+          }}/>
+      </div>
+      <div style={{fontSize:pixel ? 7 : 11,textAlign:'center',margin:'6px 0 12px',color:pixel ? '#f8edd4' : 'var(--muted)'}}>{pixel ? 'DOTS = NOTES OF THE SCALE' : 'Dots mark the notes of the scale (one octave, going up).'}</div>
+      {q.kind === 'finger' && (
+        <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:8}}>
+          {[1, 2, 3, 4, 5].map(f => (
+            <button key={f} disabled={locked} onClick={() => onAnswer(f)}
+              className={btnCls + (!done ? '' : f === q.answer ? ' good' : given.ans === f ? ' bad' : '')} style={{padding:'14px 0',fontSize:pixel ? 12 : 18}}>{f}</button>
+          ))}
+        </div>
+      )}
+      {q.kind === 'thumbs' && !done && (
+        <button className={pixel ? 'pixel-btn' : 'primary-btn'} style={{width:'100%'}} disabled={!picked.length}
+          onClick={() => onAnswer(picked.slice().sort((a, b) => a - b))}>{pixel ? 'CHECK' : 'Check (' + picked.length + ' picked)'}</button>
+      )}
+    </div>
+  );
+}
+
+const SCALES_DRILL = {
+  id: 'scales',
+  label: 'Scales',
+  levels: SCALE_LEVELS,
+  generate: genScaleQuestion,
+  check: checkScale,
+  answerLabel: scaleAnswerLabel,
+  Question: ScaleQuestion,
+  Learn: ScalesLearn,
+};
+
 // Registry of drills. Two shapes:
 //   { id, label, render }            -- original single-screen drills (Phase 89/90)
 //   { id, label, concept }           -- Phase 94 concept sets (Learn + Drill on the shared engine)
-// Chapter order (Phase 96): note names -> note values -> rhythm -> key signatures -> tempo, then the two reference tools.
+// Chapter order (Phase 97): note names (incl. letter chain) -> notes & rests -> rhythm -> key signatures -> scales -> tempo.
 const DRILLS = [
   { id: 'note-names', label: 'Note Names', concept: NOTE_NAMES_DRILL },
   { id: 'note-values', label: 'Notes & Rests', concept: NOTEVAL_DRILL },
   { id: 'rhythm', label: 'Rhythm Cards', concept: RHYTHM_DRILL },
   { id: 'key-signatures', label: 'Key Signatures', concept: KEYSIG_DRILL },
+  { id: 'scales', label: 'Scales', concept: SCALES_DRILL },
   { id: 'tempo', label: 'Tempo Race', concept: TEMPO_DRILL },
-  { id: 'letter-chain', label: 'Letter Chain', render: () => <LetterChainDrill /> },
-  { id: 'scale-fingering', label: 'Scale Fingering', render: () => <ScaleFingeringDrill /> },
 ];
 
 // URL state: ?drill=<id>&tab=learn|drill&level=<n>&mode=lesson|game&lock=1
@@ -2503,7 +2777,10 @@ const DRILLS = [
 function readUrlState() {
   let p;
   try { p = new URLSearchParams(location.search); } catch (e) { p = new URLSearchParams(''); }
-  const drill = DRILLS.find(d => d.id === p.get('drill')) ? p.get('drill') : DRILLS[0].id;
+  // Old links: Letter Chain now lives in Note Names, Scale Fingering in Scales (Phase 97).
+  const alias = { 'letter-chain': 'note-names', 'scale-fingering': 'scales' };
+  const asked = alias[p.get('drill')] || p.get('drill');
+  const drill = DRILLS.find(d => d.id === asked) ? asked : DRILLS[0].id;
   const level = parseInt(p.get('level'), 10);
   return {
     drill,
