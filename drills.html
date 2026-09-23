@@ -2388,15 +2388,20 @@ function SharpShape({ x, y, color }) {
   );
 }
 function FlatShape({ x, y, color }) {
+  // Stem plus a closed, filled bowl whose widest point sits on the line/space (y).
   return (
     <g>
-      <line x1={x - 3.5} x2={x - 3.5} y1={y - 17} y2={y + 5} stroke={color} strokeWidth="1.5"/>
-      <path d={`M${x - 3.5},${y + 5} C${x + 1},${y + 1.5} ${x + 8},${y - 3.5} ${x + 3.5},${y - 5.5} C${x + 1},${y - 6.5} ${x - 2},${y - 4} ${x - 3.5},${y - 1.5}
-               L${x - 3.5},${y + 1} C${x - 1.5},${y - 1.5} ${x + 1.5},${y - 3.5} ${x + 2.5},${y - 3} C${x + 4.5},${y - 2} ${x + 1},${y + 1.5} ${x - 3.5},${y + 5} Z`} fill={color}/>
+      <line x1={x - 3.6} x2={x - 3.6} y1={y - 17} y2={y + 5.5} stroke={color} strokeWidth="1.7" strokeLinecap="round"/>
+      <path d={`M${x - 3.6},${y + 5.5}
+               C${x + 2},${y + 2} ${x + 7.5},${y - 1.5} ${x + 6},${y - 4.5}
+               C${x + 4.8},${y - 7} ${x + 0.5},${y - 6} ${x - 3.6},${y - 2}
+               L${x - 3.6},${y + 0.6}
+               C${x - 0.5},${y - 3.2} ${x + 2.8},${y - 4.2} ${x + 3.3},${y - 2.6}
+               C${x + 3.8},${y - 0.8} ${x + 0.8},${y + 2.2} ${x - 3.6},${y + 5.5} Z`} fill={color}/>
     </g>
   );
 }
-function KSStaff({ count, type, width = 170, ink = '#241f1a', accent = '#a8823f', upto, clef = 'treble' }) {
+function KSStaff({ count, type, width = 170, ink = '#241f1a', accent = '#a8823f', upto, clef = 'treble', numbers }) {
   const order = type === 'sharp' ? SHARP_ORDER : FLAT_ORDER;
   const posMap = type === 'sharp' ? SHARP_POS : FLAT_POS;
   const accs = type ? order.slice(0, count) : [];
@@ -2406,7 +2411,8 @@ function KSStaff({ count, type, width = 170, ink = '#241f1a', accent = '#a8823f'
   const lowD = clef === 'bass' ? 18 : 30;
   const yOf = (d) => base - (d - lowD) * 5;
   return (
-    <svg viewBox={`0 ${base - 60} ${width} 76`} style={{width:'100%',maxWidth:width * 1.6,display:'block',margin:'0 auto'}}>
+    <svg viewBox={`0 ${base - (numbers ? 72 : 60)} ${width} ${numbers ? 88 : 76}`} style={{width:'100%',maxWidth:width * 1.6,display:'block',margin:'0 auto'}}>
+      {numbers && accs.map((acc, i) => <text key={'n' + acc} x={56 + i * 15} y={base - 62} textAnchor="middle" fontSize="8.5" fontWeight="800" fill={upto === i ? '#b5483b' : '#a49b8f'}>{i + 1}</text>)}
       {[0, 2, 4, 6, 8].map(p => <line key={p} x1="4" x2={width - 4} y1={base - p * 5} y2={base - p * 5} stroke={ink} strokeOpacity="0.5" strokeWidth="1.1"/>)}
       <ClefGlyph clef={clef} st={clef} yOf={yOf} ink={ink}/>
       {accs.map((acc, i) => {
@@ -2424,11 +2430,20 @@ const KEYSIG_LEVELS = [
   { n: 3, label: 'Name the major key (all 15)',       kind: 'staff2maj', pool: 'all',  time: 9 },
   { n: 4, label: 'Name the relative minor',           kind: 'staff2min', pool: 'all',  time: 10 },
   { n: 5, label: 'Order of sharps and flats',         kind: 'order',     pool: 'all',  time: 8 },
+  { n: 6, label: 'Circle of fifths: next key round',   kind: 'circle',    pool: 'all',  time: 8 },
 ];
 
 function genKeySigQuestion(lv, prev) {
   const uid = Math.random();
   const pool = lv.pool === 'easy' ? KEY_SIGS.filter(k => k.count <= 4) : KEY_SIGS;
+  if (lv.kind === 'circle') {
+    const i = Math.floor(Math.random() * 11) + (Math.random() < 0.5 ? 0 : 1); // avoid wrap ambiguity at the enharmonic bottom
+    const cw = Math.random() < 0.5;
+    const from = CIRCLE[i].maj[0], to = CIRCLE[(i + (cw ? 1 : 11)) % 12].maj[0];
+    const answer = prettyNote(to) + ' major';
+    const others = sampleN(CIRCLE.map(c => prettyNote(c.maj[0]) + ' major').filter(x => x !== answer && x !== prettyNote(from) + ' major'), 3);
+    return { kind: 'circle', key: from + cw, from, cw, answer, choices: shuffle([answer, ...others]), uid };
+  }
   if (lv.kind === 'order') {
     const type = Math.random() < 0.5 ? 'sharp' : 'flat';
     const order = type === 'sharp' ? SHARP_ORDER : FLAT_ORDER;
@@ -2463,7 +2478,10 @@ function KeySigQuestion({ q, level, given, locked, onAnswer, pixel }) {
                     : {fontSize:14,fontWeight:700,textAlign:'center',margin:'0 0 12px',color:'var(--muted)'}}>{pixel ? px : txt}</p>
   );
   let top;
-  if (q.kind === 'maj2count') {
+  if (q.kind === 'circle') {
+    top = <>{prompt('Circle of fifths: one step ' + (q.cw ? 'clockwise (up a 5th, one more sharp / one fewer flat)' : 'anticlockwise (down a 5th, one more flat / one fewer sharp)') + ' from', 'ONE STEP ' + (q.cw ? 'CLOCKWISE' : 'ANTICLOCKWISE'))}
+      <div style={{textAlign:'center',fontSize:pixel?26:48,fontWeight:900,margin:'0 0 16px',color:pixel?'var(--brass)':'var(--text)'}}>{prettyNote(q.from)} major {q.cw ? '↻' : '↺'}</div></>;
+  } else if (q.kind === 'maj2count') {
     top = <>{prompt('How many sharps or flats in this key?', 'HOW MANY?')}
       <div style={{textAlign:'center',fontSize:pixel?26:48,fontWeight:900,margin:'0 0 16px',color:pixel?'var(--brass)':'var(--text)'}}>{majName(q.k)}</div></>;
   } else if (q.kind === 'order') {
@@ -2485,6 +2503,169 @@ function KeySigQuestion({ q, level, given, locked, onAnswer, pixel }) {
             {q.kind === 'order' ? prettyNote(c) : c}
           </button>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Key signatures, round 2 (Phase 102c): order builder, "place it yourself", circle of fifths ──
+const KEY_BY_COUNT = (type, n) => KEY_SIGS.find(k => (n === 0 ? !k.type : k.type === type && k.count === n));
+
+// Step through the order one accidental at a time: each new sharp/flat appears with its number,
+// and the key it makes is named underneath.
+function OrderBuilder({ type }) {
+  const [n, setN] = useState(0);
+  const [clef, setClef] = useState('treble');
+  const [auto, setAuto] = useState(false);
+  useEffect(() => {
+    if (!auto) return;
+    if (n >= 7) { setAuto(false); return; }
+    const t = setTimeout(() => setN(x => x + 1), 850);
+    return () => clearTimeout(t);
+  }, [auto, n]);
+  const order = type === 'sharp' ? SHARP_ORDER : FLAT_ORDER;
+  const k = KEY_BY_COUNT(type, n);
+  const sym = type === 'sharp' ? '♯' : '♭';
+  return (
+    <div style={{marginBottom:16}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:4}}>
+        <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em'}}>
+          {type === 'sharp' ? 'Order of sharps' : 'Order of flats -- the sharps backwards'}
+        </div>
+        <div style={{display:'flex',gap:4}}>
+          {['treble', 'bass'].map(c => <button key={c} className={'chip' + (clef === c ? ' active' : '')} style={{padding:'3px 9px',fontSize:11}} onClick={() => setClef(c)}>{c === 'treble' ? '𝄞 treble' : '𝄢 bass'}</button>)}
+        </div>
+      </div>
+      <KSStaff count={n} type={type} width={170} clef={clef} upto={n ? n - 1 : undefined} numbers/>
+      <div style={{display:'flex',justifyContent:'center',gap:10,fontSize:15,fontWeight:900,margin:'2px 0 6px',minHeight:22}}>
+        {order.map((nm, i) => <span key={nm} style={{opacity:i < n ? 1 : 0.18,color:i === n - 1 ? '#b5483b' : 'var(--text)',transition:'opacity 0.3s'}}>{prettyNote(nm)}</span>)}
+      </div>
+      <div style={{textAlign:'center',fontSize:14,fontWeight:800,minHeight:22}}>
+        {n === 0 ? 'No ' + (type === 'sharp' ? 'sharps' : 'flats') + ' = C major / A minor'
+          : n + sym + ' = ' + majName(k) + ' / ' + minName(k)}
+      </div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:8}}>
+        <button className="ghost-btn" disabled={n === 0} onClick={() => { setAuto(false); setN(x => Math.max(0, x - 1)); }}>− One off</button>
+        <button className="ghost-btn" disabled={n === 7} onClick={() => { setAuto(false); setN(x => Math.min(7, x + 1)); }}>+ Next one</button>
+        <button className="ghost-btn" onClick={() => { setN(0); setAuto(true); }}>▶ Play</button>
+      </div>
+    </div>
+  );
+}
+
+// "Place it yourself": tap the line or space where the next sharp/flat goes.
+function PlaceIt() {
+  const [type, setType] = useState('sharp');
+  const [n, setN] = useState(0);
+  const [miss, setMiss] = useState(null);
+  const [tries, setTries] = useState(0);
+  const order = type === 'sharp' ? SHARP_ORDER : FLAT_ORDER;
+  const posMap = type === 'sharp' ? SHARP_POS : FLAT_POS;
+  const want = n < 7 ? posMap[order[n]] : null;
+  const base = 70, x = 56 + n * 15, W = 170;
+  function tap(pos) {
+    if (want === null) return;
+    if (pos === want) { setN(n + 1); setMiss(null); }
+    else { setMiss(pos); setTries(t => t + 1); setTimeout(() => setMiss(m => (m === pos ? null : m)), 700); }
+  }
+  function reset(t) { setType(t); setN(0); setMiss(null); setTries(0); }
+  const pos2name = (p) => ['E', 'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'A'][p + 1];
+  return (
+    <div style={{background:'var(--brass-bg)',borderRadius:10,padding:'10px',margin:'4px 0 16px'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
+        <div style={{fontSize:14,fontWeight:800}}>Your turn: place them</div>
+        <div style={{display:'flex',gap:4}}>
+          {['sharp', 'flat'].map(t => <button key={t} className={'chip' + (type === t ? ' active' : '')} style={{padding:'3px 10px',fontSize:12}} onClick={() => reset(t)}>{t === 'sharp' ? '♯' : '♭'}</button>)}
+        </div>
+      </div>
+      <div style={{fontSize:12,color:'#6f665b',marginBottom:4}}>
+        {want !== null ? <>Tap the line or space for {type === 'sharp' ? 'sharp' : 'flat'} <b>#{n + 1}</b> ({prettyNote(order[n])}).</> : <>All seven, in order{tries ? ' -- ' + tries + ' miss' + (tries > 1 ? 'es' : '') : ' -- no misses!'}</>}
+      </div>
+      <svg viewBox={`0 ${base - 64} ${W} 80`} style={{width:'100%',maxWidth:W * 1.6,display:'block',margin:'0 auto',touchAction:'manipulation'}}>
+        {[0, 2, 4, 6, 8].map(p => <line key={p} x1="4" x2={W - 4} y1={base - p * 5} y2={base - p * 5} stroke="#241f1a" strokeOpacity="0.5" strokeWidth="1.1"/>)}
+        <ClefGlyph clef="treble" st="treble" yOf={(d) => base - (d - 30) * 5} ink="#241f1a"/>
+        {order.slice(0, n).map((acc, i) => type === 'sharp'
+          ? <SharpShape key={acc} x={56 + i * 15} y={base - posMap[acc] * 5} color="#a8823f"/>
+          : <FlatShape key={acc} x={56 + i * 15} y={base - posMap[acc] * 5} color="#a8823f"/>)}
+        {miss !== null && (type === 'sharp' ? <SharpShape x={x} y={base - miss * 5} color="#b5483b"/> : <FlatShape x={x} y={base - miss * 5} color="#b5483b"/>)}
+        {want !== null && <rect x={x - 8} y={base - 62} width="16" height="72" fill="#a8823f" opacity="0.10" rx="3"/>}
+        {want !== null && Array.from({ length: 11 }, (_, i) => i - 1).map(pos => (
+          <rect key={pos} x={x - 12} y={base - pos * 5 - 2.5} width="24" height="5" fill="transparent" style={{cursor:'pointer'}} onClick={() => tap(pos)}/>
+        ))}
+      </svg>
+      {miss !== null && <div style={{textAlign:'center',fontSize:12,color:'#b5483b',fontWeight:700}}>That’s {pos2name(miss)} -- try again</div>}
+      {want === null && <div style={{textAlign:'center',marginTop:4}}><button className="ghost-btn" onClick={() => reset(type)}>Again</button></div>}
+    </div>
+  );
+}
+
+// Circle of fifths: 12 slots, C at the top. Clockwise = up a 5th = one more sharp.
+const CIRCLE = [
+  { maj: ['C'] }, { maj: ['G'] }, { maj: ['D'] }, { maj: ['A'] }, { maj: ['E'] }, { maj: ['B', 'Cb'] },
+  { maj: ['F#', 'Gb'] }, { maj: ['Db', 'C#'] }, { maj: ['Ab'] }, { maj: ['Eb'] }, { maj: ['Bb'] }, { maj: ['F'] },
+];
+function CircleOfFifths() {
+  const [slot, setSlot] = useState(0);
+  const [alt, setAlt] = useState(0);
+  const [walk, setWalk] = useState(null); // { seq, i }
+  const timer = useRef(null);
+  const WALKS = {
+    cw:  [[0,0],[1,0],[2,0],[3,0],[4,0],[5,0],[6,0],[7,1]],   // C G D A E B F# C#
+    ccw: [[0,0],[11,0],[10,0],[9,0],[8,0],[7,0],[6,1],[5,1]], // C F Bb Eb Ab Db Gb Cb
+  };
+  useEffect(() => () => clearTimeout(timer.current), []);
+  useEffect(() => {
+    if (!walk) return;
+    const [sl, al] = WALKS[walk.dir][walk.i]; setSlot(sl); setAlt(al);
+    if (walk.i >= 7) { timer.current = setTimeout(() => setWalk(null), 950); return; }
+    timer.current = setTimeout(() => setWalk({ dir: walk.dir, i: walk.i + 1 }), 950);
+    return () => clearTimeout(timer.current);
+  }, [walk]);
+  const names = CIRCLE[slot].maj;
+  const cur = names[Math.min(alt, names.length - 1)];
+  const k = KEY_SIGS.find(x => x.major === cur);
+  const R = 92, r = 60, cx = 120, cy = 118;
+  const pt = (i, rad) => { const a = -Math.PI / 2 + i * Math.PI / 6; return [cx + rad * Math.cos(a), cy + rad * Math.sin(a)]; };
+  return (
+    <div style={{background:'#fff',border:'1px solid var(--border)',borderRadius:10,padding:'10px',margin:'4px 0 16px'}}>
+      <div style={{fontSize:14,fontWeight:800,marginBottom:2}}>The circle of fifths</div>
+      <div style={{fontSize:12,color:'#6f665b',lineHeight:1.5,marginBottom:6}}>
+        Every key in one clock. Step <b>clockwise</b> and you go up a 5th and gain one sharp; step <b>anticlockwise</b> and you go down a 5th and gain one flat. Inside: each key’s relative minor. Tap any key.
+      </div>
+      <svg viewBox="0 0 240 236" style={{width:'100%',maxWidth:340,display:'block',margin:'0 auto'}}>
+        <circle cx={cx} cy={cy} r={R + 16} fill="#f8f3e6" stroke="#e8dcc0"/>
+        <circle cx={cx} cy={cy} r={r - 16} fill="#fff" stroke="#e8dcc0"/>
+        <text x="6" y="14" fontSize="9" fontWeight="800" fill="#6d8fb3">↺ flats</text>
+        <text x="234" y="14" textAnchor="end" fontSize="9" fontWeight="800" fill="#a8823f">sharps ↻</text>
+        {CIRCLE.map((c, i) => {
+          const [x, y] = pt(i, R), [ix, iy] = pt(i, r);
+          const on = i === slot;
+          const minors = c.maj.map(m => KEY_SIGS.find(q => q.major === m).minor);
+          return (
+            <g key={i} onClick={() => { setWalk(null); setSlot(i); setAlt(0); }} style={{cursor:'pointer'}}>
+              <circle cx={x} cy={y} r="15" fill={on ? '#241f1a' : '#fff'} stroke={on ? '#241f1a' : '#d9cdb0'}/>
+              <text x={x} y={y + (c.maj.length > 1 ? -1 : 4)} textAnchor="middle" fontSize={c.maj.length > 1 ? 9 : 12} fontWeight="900" fill={on ? '#fff' : '#241f1a'}>{prettyNote(c.maj[0])}</text>
+              {c.maj.length > 1 && <text x={x} y={y + 9} textAnchor="middle" fontSize="8" fontWeight="700" fill={on ? '#f3ead8' : '#a49b8f'}>{prettyNote(c.maj[1])}</text>}
+              <text x={ix} y={iy + 3} textAnchor="middle" fontSize="8.5" fontWeight="700" fill={on ? '#a8823f' : '#a49b8f'}>{prettyNote(minors[on ? Math.min(alt, minors.length - 1) : 0]).toLowerCase()}</text>
+            </g>
+          );
+        })}
+        <text x={cx} y={cy - 2} textAnchor="middle" fontSize="12" fontWeight="900" fill="#241f1a">{prettyNote(cur)}</text>
+        <text x={cx} y={cy + 12} textAnchor="middle" fontSize="9" fontWeight="700" fill="#a49b8f">{sigLabel(k)}</text>
+      </svg>
+      {names.length > 1 && (
+        <div style={{display:'flex',gap:4,justifyContent:'center',margin:'4px 0'}}>
+          {names.map((m, i) => <button key={m} className={'chip' + (alt === i ? ' active' : '')} style={{padding:'3px 10px',fontSize:12}} onClick={() => { setWalk(null); setAlt(i); }}>{prettyNote(m)} major</button>)}
+        </div>
+      )}
+      <KSStaff count={k.count} type={k.type} upto={k.count ? k.count - 1 : undefined} numbers/>
+      <div style={{textAlign:'center',fontSize:14,fontWeight:900}}>{majName(k)} <span style={{color:'var(--muted)',fontWeight:700}}>/ {minName(k)}</span></div>
+      <div style={{textAlign:'center',fontSize:12,color:'#6f665b',minHeight:18,marginTop:2}}>
+        {k.count ? 'Newest ' + (k.type === 'sharp' ? 'sharp' : 'flat') + ' (red): ' + prettyNote((k.type === 'sharp' ? SHARP_ORDER : FLAT_ORDER)[k.count - 1]) : 'The top of the circle: no sharps or flats.'}
+      </div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:8}}>
+        <button className="ghost-btn" onClick={() => setWalk({ dir: 'ccw', i: 0 })}>↺ Walk the flats</button>
+        <button className="ghost-btn" onClick={() => setWalk({ dir: 'cw', i: 0 })}>Walk the sharps ↻</button>
       </div>
     </div>
   );
@@ -2513,8 +2694,11 @@ function KeySigLearn({ onStart }) {
     <div className="card fade-up">
       <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Reading a key signature</h2>
       <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 16px'}}>Sharps and flats always arrive in the same order -- learn the order and every key falls out of it.</p>
-      {row('Order of sharps', SHARP_ORDER, 'sharp')}
-      {row('Order of flats (the sharps backwards)', FLAT_ORDER, 'flat')}
+      <OrderBuilder type="sharp"/>
+      <div style={{fontSize:12,color:'#6f665b',margin:'-6px 0 12px',lineHeight:1.5}}>A sentence to remember the sharps: <b>F</b>ather <b>C</b>harles <b>G</b>oes <b>D</b>own <b>A</b>nd <b>E</b>nds <b>B</b>attle. Read it backwards for the flats: <b>B</b>attle <b>E</b>nds <b>A</b>nd <b>D</b>own <b>G</b>oes <b>C</b>harles’ <b>F</b>ather.</div>
+      <OrderBuilder type="flat"/>
+      <PlaceIt/>
+      <CircleOfFifths/>
       {tip('Sharps: go up one from the last sharp', 'The last sharp is the 7th note of the major key -- step up a semitone to name it. Last sharp C♯ → D major.')}
       {tip('Flats: the second-last flat names the key', 'B♭ E♭ A♭ → the second-last is E♭, so E♭ major. One flat is the one to just remember: F major.')}
       {tip('Where the sharps and flats come from', 'Every major scale has the same shape, T T S T T T S. Start it on D and you need F♯ and C♯ to keep that shape -- so D major has two sharps. (See the Scales chapter.)')}

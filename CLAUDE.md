@@ -2813,6 +2813,15 @@ Reading-the-music track: 1 Tempo Race → 2 Dynamics & Articulation.
 
 **Follow-up (2026-09-24): key signature drawing fixed.** Sohyun spotted that key signatures looked wrong. Real data bug: `FLAT_POS` had G♭ and F♭ above the staff (G5, F5) -- standard engraving is G4 (2nd line) and F4 (1st space); the Phase 90 note claiming a PDF match was wrong for these two. Sharps (F5 C5 G5 D5 A4 E5 B4) were correct. Accidentals are now drawn shapes (`SharpShape`, `FlatShape`) centred on their line/space, clefs use the fitted `ClefGlyph`, and the order of sharps/flats is shown on both clefs (bass = same shape a 3rd lower; bass F♭ in the space below the staff). `KeySigStaff` (Scale Fingering) now reuses `KSStaff`. Checked by screenshot, every accidental against its line/space.
 
+### Phase 103 -- Key Signatures: hands-on round (order, place-it, circle of fifths)
+Sohyun: flats looked broken; number the accidentals; animate adding them one by one; introduce the circle of fifths; add creative touch-it activities so it sticks.
+- `FlatShape` redrawn as one closed, filled bowl on a stem (bowl centred on its line/space) -- no more gap.
+- `KSStaff` gains `numbers` (1..n above each accidental, newest in red).
+- `OrderBuilder` (sharps and flats): − One off / + Next one / ▶ Play auto-adds every 850 ms; treble/bass toggle; names light up; live "n♯ = X major / y minor". Mnemonic line between them (Father Charles Goes Down And Ends Battle / reversed).
+- `PlaceIt`: tap the line/space for sharp/flat #n; a wrong tap shows a red ghost plus "That's E -- try again"; counts misses.
+- `CircleOfFifths`: 12 tappable slots, relative minors inside (follow the chosen enharmonic), enharmonic chips (B/C♭, F♯/G♭, D♭/C♯), numbered staff, "Walk the sharps" C→…→C♯ and "Walk the flats" C→…→C♭ animations (sequence verified in Playwright).
+- Drill Level 6 "Circle of fifths: next key round" (one step clockwise/anticlockwise; generator fuzzed 300x).
+
 Next on the plan: Signs (repeats, D.C./D.S./Fine, fermata already here, 8va, ties vs slurs), then Intervals, then Chords.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
