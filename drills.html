@@ -19,7 +19,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.3/babel.min.js" crossorigin="anonymous"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
 
   <!-- Phase 89 (2026-09-18): the first entry in an intentionally open-ended "drill toolbox" --
        small, revisitable exercises for whatever a student keeps mixing up (note names, rhythm,
@@ -44,6 +44,8 @@
       --accent:  #241f1a;
       --brass:   #a8823f;
       --brass-bg:#f3ead8;
+      --good:    #4f7a45;
+      --bad:     #b5483b;
     }
     * { box-sizing: border-box; font-family: 'Inter', -apple-system, sans-serif; }
     body { background: var(--bg); margin: 0; color: var(--text); }
@@ -75,6 +77,36 @@
     }
     .ghost-btn:hover { border-color: var(--accent); color: var(--accent); }
 
+    /* Phase 94: shared drill engine -- lesson-mode answer buttons */
+    .choice-btn {
+      padding: 12px 0; border-radius: 10px; border: 1.5px solid var(--border); background: #fff;
+      font-size: 14px; font-weight: 800; color: var(--text); cursor: pointer; line-height: 1.2;
+    }
+    .choice-btn:hover:not(:disabled) { border-color: var(--text); }
+    .choice-btn:disabled { cursor: default; }
+    .choice-btn.good { background: #dcebd5; border-color: var(--good); color: var(--good); }
+    .choice-btn.bad  { background: #f6d6cf; border-color: var(--bad);  color: var(--bad); }
+
+    /* Phase 94: Game (pixel) mode */
+    .pixel, .pixel * { font-family: 'Press Start 2P', ui-monospace, monospace !important; }
+    .pixel-panel {
+      background: var(--text); color: var(--bg); border: 4px solid var(--text);
+      box-shadow: 0 0 0 4px var(--brass), 8px 8px 0 4px rgba(36,31,26,0.35); border-radius: 0;
+      image-rendering: pixelated;
+    }
+    .pixel-btn, .pixel-choice {
+      background: var(--bg); color: var(--text); border: none; border-radius: 0; cursor: pointer;
+      box-shadow: inset -3px -3px 0 rgba(0,0,0,0.25), 0 0 0 3px var(--brass);
+    }
+    .pixel-btn { padding: 14px 18px; font-size: 11px; }
+    .pixel-btn:active, .pixel-choice:active:not(:disabled) { transform: translate(2px,2px); box-shadow: 0 0 0 3px var(--brass); }
+    .pixel-choice { padding: 12px 0; font-size: 9px; line-height: 1.5; }
+    .pixel-choice:disabled { cursor: default; }
+    .pixel-choice.good { background: #8fd18b; }
+    .pixel-choice.bad  { background: #f08a80; }
+    @keyframes blink { 50% { opacity: 0.35; } }
+    .blink { animation: blink 1s steps(1) infinite; }
+
     @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
     .fade-up { animation: fadeUp 0.18s ease both; }
   </style>
@@ -91,7 +123,7 @@
 <div id="root"></div>
 
 <script id="app-jsx" type="text/jsx-raw">
-const { useState, useEffect } = React;
+const { useState, useEffect, useRef } = React;
 
 const LETTERS = ['A','B','C','D','E','F','G'];
 
@@ -821,17 +853,521 @@ function LetterChainDrill() {
   );
 }
 
-// Registry of drills -- add a new { id, label, render } entry here for each future drill
-// (rhythm chunking, key signatures, interval distance, keyboard<->note-name matching, ...)
-// rather than restructuring this page.
+// ═════════════════════════════════════════════════════════════════════════════
+// Phase 94 (2026-09-23): shared drill engine + concept sets.
+//
+// Direction agreed with Sohyun: every concept is a SET of (1) an infographic ("Learn") and
+// (2) a drill, and both read the SAME music data so they can never disagree. The drill side is
+// split into a shared game engine (DrillEngine: rounds, scoring, lives, timer, on-device
+// records) and a small per-drill question generator, so each new concept only has to supply
+// its data + generator + question view. Two modes share one engine:
+//   - Lesson: calm, 10 questions, no timer, a wrong answer waits for "Next" so the teacher can
+//     talk it through.
+//   - Game (pixel): 3 lives, per-question countdown, streak bonus, best score.
+// A drill + level + mode can be opened directly by URL (?drill=note-names&level=2&mode=game),
+// so Sohyun can send a student a link that starts straight in the drill. No login: records
+// are kept in this browser's localStorage only (try/catch everywhere -- a private window
+// simply doesn't save).
+// ═════════════════════════════════════════════════════════════════════════════
+
+const REC_KEY = 'pb_drill_records_v1';
+function loadRecords() {
+  try { return JSON.parse(localStorage.getItem(REC_KEY)) || {}; } catch (e) { return {}; }
+}
+function recordKey(drillId, level, mode) { return drillId + '|' + level + '|' + mode; }
+function getRecord(drillId, level, mode) { return loadRecords()[recordKey(drillId, level, mode)] || null; }
+function saveRecord(drillId, level, mode, result) {
+  const prev = getRecord(drillId, level, mode);
+  const prevBest = prev ? prev.best : null;
+  try {
+    const all = loadRecords();
+    const entry = {
+      plays: (prev ? prev.plays : 0) + 1,
+      best: Math.max(prevBest || 0, result.score),
+      lastAt: Date.now(),
+      history: [...((prev && prev.history) || []), { at: Date.now(), score: result.score, correct: result.correct, total: result.total }].slice(-20),
+    };
+    all[recordKey(drillId, level, mode)] = entry;
+    localStorage.setItem(REC_KEY, JSON.stringify(all));
+    return { best: entry.best, plays: entry.plays, prevBest };
+  } catch (e) {
+    return { best: result.score, plays: 1, prevBest, unsaved: true };
+  }
+}
+
+const LESSON_TOTAL = 10;
+const GAME_LIVES = 3;
+
+function pad(n, w) { return String(n).padStart(w, '0'); }
+
+// The engine knows nothing about music. A drill supplies:
+//   levels: [{ n, label, time }]            -- time = seconds per question in Game mode
+//   generate(level, prevQuestion) -> q
+//   check(q, answer) -> boolean              -- answer === null means timed out
+//   answerLabel(q) -> string                 -- what to show when the answer was wrong
+//   Question: React component({ q, level, given, locked, onAnswer, pixel })
+function DrillEngine({ drill, level, mode }) {
+  const lv = drill.levels.find(l => l.n === level) || drill.levels[0];
+  const isGame = mode === 'game';
+  const [phase, setPhase] = useState(isGame ? 'title' : 'ask'); // title | ask | feedback | over
+  const [q, setQ] = useState(() => drill.generate(lv, null));
+  const [given, setGiven] = useState(null);          // { ans, ok, timedOut }
+  const [asked, setAsked] = useState(0);
+  const [correct, setCorrect] = useState(0);
+  const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [lives, setLives] = useState(GAME_LIVES);
+  const [timeLeft, setTimeLeft] = useState(lv.time);
+  const [result, setResult] = useState(null);
+  const timers = useRef([]);
+  const record = getRecord(drill.id, lv.n, mode);
+
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  function later(fn, ms) { timers.current.push(setTimeout(fn, ms)); }
+
+  function start() {
+    timers.current.forEach(clearTimeout); timers.current = [];
+    setQ(drill.generate(lv, null)); setGiven(null); setAsked(0); setCorrect(0); setScore(0);
+    setStreak(0); setLives(GAME_LIVES); setTimeLeft(lv.time); setResult(null); setPhase('ask');
+  }
+
+  function finish(finalScore, finalCorrect, finalAsked) {
+    const saved = saveRecord(drill.id, lv.n, mode, { score: finalScore, correct: finalCorrect, total: finalAsked });
+    setResult({ score: finalScore, correct: finalCorrect, total: finalAsked, ...saved });
+    setPhase('over');
+  }
+
+  function advance(s) {
+    if (!isGame && s.asked >= LESSON_TOTAL) return finish(s.correct, s.correct, s.asked);
+    if (isGame && s.lives <= 0) return finish(s.score, s.correct, s.asked);
+    setQ(prev => drill.generate(lv, prev));
+    setGiven(null); setTimeLeft(lv.time); setPhase('ask');
+  }
+
+  function answer(ans) {
+    if (phase !== 'ask') return;
+    const timedOut = ans === null;
+    const ok = !timedOut && drill.check(q, ans);
+    const s = {
+      asked: asked + 1,
+      correct: correct + (ok ? 1 : 0),
+      streak: ok ? streak + 1 : 0,
+      lives: isGame && !ok ? lives - 1 : lives,
+      score: isGame ? (ok ? score + 10 + Math.min(streak, 5) * 2 : score) : correct + (ok ? 1 : 0),
+    };
+    setGiven({ ans, ok, timedOut });
+    setAsked(s.asked); setCorrect(s.correct); setStreak(s.streak); setLives(s.lives); setScore(s.score);
+    setPhase('feedback');
+    if (isGame) later(() => advance(s), ok ? 450 : 1200);
+    else if (ok) later(() => advance(s), 700);
+    else setPendingNext(s);
+  }
+  const [pendingNext, setPendingNext] = useState(null);
+  function goNext() { const s = pendingNext; setPendingNext(null); advance(s); }
+
+  // Game-mode countdown
+  useEffect(() => {
+    if (!isGame || phase !== 'ask') return;
+    if (timeLeft <= 0) { answer(null); return; }
+    const t = setTimeout(() => setTimeLeft(x => Math.round((x - 0.1) * 10) / 10), 100);
+    return () => clearTimeout(t);
+  }, [isGame, phase, timeLeft]);
+
+  const Q = drill.Question;
+  const cls = isGame ? 'pixel pixel-panel' : 'card';
+
+  if (phase === 'title') {
+    return (
+      <div className={cls + ' fade-up'} style={{textAlign:'center',padding:'36px 20px'}}>
+        <div style={{fontSize:16,lineHeight:1.6,marginBottom:14}}>{drill.label.toUpperCase()}</div>
+        <div style={{fontSize:10,color:'var(--brass)',marginBottom:6}}>LEVEL {lv.n}</div>
+        <div style={{fontSize:9,opacity:0.75,marginBottom:22,lineHeight:1.8}}>{lv.label}</div>
+        <div style={{fontSize:9,marginBottom:26,lineHeight:2}}>
+          {'♥'.repeat(GAME_LIVES)} LIVES · {lv.time}s EACH<br/>
+          BEST {pad(record ? record.best : 0, 5)}
+        </div>
+        <button className="pixel-btn blink" onClick={start}>PRESS START</button>
+      </div>
+    );
+  }
+
+  if (phase === 'over' && result) {
+    const newBest = result.prevBest !== null && result.score > result.prevBest;
+    return (
+      <div className={cls + ' fade-up'} style={{textAlign:'center',padding:isGame?'36px 20px':'28px 20px'}}>
+        {isGame ? (
+          <>
+            <div style={{fontSize:18,marginBottom:18}}>GAME OVER</div>
+            <div style={{fontSize:11,marginBottom:8}}>SCORE {pad(result.score, 5)}</div>
+            <div style={{fontSize:9,opacity:0.75,marginBottom:8}}>{result.correct} CORRECT</div>
+            <div style={{fontSize:9,color:'var(--brass)',marginBottom:24}}>
+              {newBest ? 'NEW BEST!' : 'BEST ' + pad(result.best, 5)}
+            </div>
+            <button className="pixel-btn" onClick={start}>PLAY AGAIN</button>
+          </>
+        ) : (
+          <>
+            <div style={{fontSize:13,color:'var(--muted)',fontWeight:700,marginBottom:6}}>Finished</div>
+            <div style={{fontSize:44,fontWeight:900,letterSpacing:'-0.03em',marginBottom:4}}>
+              {result.correct}<span style={{fontSize:22,color:'var(--muted)'}}> / {result.total}</span>
+            </div>
+            <div style={{fontSize:13,color:'var(--brass)',fontWeight:700,marginBottom:20}}>
+              {newBest ? 'New best on this device!' : 'Best on this device: ' + result.best + ' / ' + LESSON_TOTAL}
+            </div>
+            <button className="primary-btn" onClick={start}>Go again</button>
+          </>
+        )}
+        {result.unsaved && <div style={{fontSize:11,color:'var(--muted)',marginTop:12}}>(This browser isn't saving records.)</div>}
+      </div>
+    );
+  }
+
+  const feedback = phase === 'feedback' && given;
+  return (
+    <div className={cls + ' fade-up'} style={{padding:isGame?'16px 14px 20px':20}}>
+      {isGame ? (
+        <div style={{marginBottom:14}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:10}}>
+            <span style={{color:'#d9534f',letterSpacing:2}}>{'♥'.repeat(Math.max(lives,0))}<span style={{opacity:0.3}}>{'♥'.repeat(GAME_LIVES - Math.max(lives,0))}</span></span>
+            <span>{pad(score, 5)}</span>
+          </div>
+          <div style={{display:'flex',justifyContent:'space-between',fontSize:8,opacity:0.7,margin:'6px 0 8px'}}>
+            <span>LV {lv.n}</span><span>{streak >= 2 ? 'STREAK x' + streak : ''}</span>
+          </div>
+          <div style={{height:8,background:'rgba(248,237,212,0.15)'}}>
+            <div style={{height:'100%',width:(Math.max(timeLeft,0)/lv.time*100)+'%',background:timeLeft < lv.time*0.3 ? '#d9534f' : 'var(--brass)',transition:'width 0.1s linear'}}/>
+          </div>
+        </div>
+      ) : (
+        <div style={{display:'flex',justifyContent:'space-between',fontSize:12,color:'var(--muted)',fontWeight:700,marginBottom:14}}>
+          <span>Question {Math.min(asked + (phase === 'ask' ? 1 : 0), LESSON_TOTAL)} / {LESSON_TOTAL}</span>
+          <span>{correct} correct</span>
+        </div>
+      )}
+
+      <Q q={q} level={lv} given={given} locked={phase !== 'ask'} onAnswer={answer} pixel={isGame} />
+
+      <div style={{minHeight:isGame?34:44,marginTop:14,textAlign:'center'}}>
+        {feedback && (given.ok ? (
+          <div style={{color:isGame?'#8fd18b':'var(--good)',fontWeight:800,fontSize:isGame?11:15}}>{isGame ? 'NICE!' : 'Correct!'}</div>
+        ) : (
+          <div style={{color:isGame?'#f08a80':'var(--bad)',fontWeight:800,fontSize:isGame?9:14,lineHeight:1.7}}>
+            {given.timedOut ? (isGame ? 'TIME UP! ' : "Time's up -- ") : (isGame ? 'MISS! ' : 'Not quite -- ')}
+            {isGame ? 'IT WAS ' + drill.answerLabel(q).toUpperCase() : 'it was ' + drill.answerLabel(q)}
+          </div>
+        ))}
+      </div>
+      {!isGame && pendingNext && (
+        <button className="primary-btn" onClick={goNext}>Next →</button>
+      )}
+    </div>
+  );
+}
+
+// ─── Concept 1: Note names on the keyboard (Learn + Drill share PC_INFO) ─────────
+
+// One entry per pitch class. The single source of truth for both the infographic and the drill.
+const PC_INFO = [
+  { pc: 0,  white: true,  names: ['C'] },
+  { pc: 1,  white: false, names: ['C#', 'Db'] },
+  { pc: 2,  white: true,  names: ['D'] },
+  { pc: 3,  white: false, names: ['D#', 'Eb'] },
+  { pc: 4,  white: true,  names: ['E'] },
+  { pc: 5,  white: true,  names: ['F'] },
+  { pc: 6,  white: false, names: ['F#', 'Gb'] },
+  { pc: 7,  white: true,  names: ['G'] },
+  { pc: 8,  white: false, names: ['G#', 'Ab'] },
+  { pc: 9,  white: true,  names: ['A'] },
+  { pc: 10, white: false, names: ['A#', 'Bb'] },
+  { pc: 11, white: true,  names: ['B'] },
+];
+function prettyNote(n) { return n.replace('#', '♯').replace(/^([A-G])b$/, '$1♭'); }
+function pcLabel(pc) { return PC_INFO[pc].names.map(prettyNote).join(' / '); }
+// Which black-key group a white key sits beside: C D E = the 2-black group, F G A B = the 3-black group.
+function whiteGroup(pc) { return pc <= 4 ? 'two' : 'three'; }
+
+const MARK_STYLE = {
+  target: { white: '#f3ead8', black: '#a8823f', stroke: '#a8823f' },
+  good:   { white: '#dcebd5', black: '#4f7a45', stroke: '#4f7a45' },
+  bad:    { white: '#f6d6cf', black: '#b5483b', stroke: '#b5483b' },
+};
+const GROUP_TINT = { two: '#f3ead8', three: '#e3ebe0' };
+
+// Tappable keyboard. Key index i = octave*12 + pc, starting on C.
+// marks: { [i]: 'target'|'good'|'bad' }, labels: null | 'white' | 'all', tint: shade C-D-E / F-G-A-B groups.
+function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, pixel = false }) {
+  const whiteW = 36, whiteH = 132, blackW = 22, blackH = 82;
+  const whites = [], blacks = [];
+  let w = 0;
+  for (let i = 0; i < octaves * 12; i++) {
+    const info = PC_INFO[i % 12];
+    if (info.white) { whites.push({ i, x: w * whiteW, info }); w++; }
+    else blacks.push({ i, x: w * whiteW - blackW / 2, info });
+  }
+  const width = w * whiteW;
+  const tap = onTap ? (i) => () => onTap(i) : () => undefined;
+  const edge = pixel ? 'crispEdges' : 'auto';
+  return (
+    <svg viewBox={'-1 -1 ' + (width + 2) + ' ' + (whiteH + 2)} shapeRendering={edge}
+      style={{width:'100%',display:'block',touchAction:'manipulation',userSelect:'none'}}>
+      {whites.map(k => {
+        const m = marks[k.i] && MARK_STYLE[marks[k.i]];
+        const fill = m ? m.white : (tint ? GROUP_TINT[whiteGroup(k.info.pc)] : '#fff');
+        return (
+          <g key={k.i} onClick={tap(k.i)} style={{cursor:onTap?'pointer':'default'}} data-key={k.i}>
+            <rect x={k.x} y="0" width={whiteW} height={whiteH} fill={fill}
+              stroke={m ? m.stroke : (pixel ? '#241f1a' : '#d9cdb0')} strokeWidth={m ? 2.5 : (pixel ? 2 : 1)}
+              rx={pixel ? 0 : 3}/>
+            {labels && (
+              <text x={k.x + whiteW / 2} y={whiteH - 12} textAnchor="middle" fontSize="13" fontWeight="800"
+                fill={m ? m.stroke : '#6f665b'} style={{pointerEvents:'none'}}>{k.info.names[0]}</text>
+            )}
+          </g>
+        );
+      })}
+      {blacks.map(k => {
+        const m = marks[k.i] && MARK_STYLE[marks[k.i]];
+        return (
+          <g key={k.i} onClick={tap(k.i)} style={{cursor:onTap?'pointer':'default'}} data-key={k.i}>
+            <rect x={k.x} y="0" width={blackW} height={blackH} fill={m ? m.black : '#241f1a'}
+              stroke={m ? m.stroke : '#241f1a'} strokeWidth={m ? 2 : 1} rx={pixel ? 0 : 2}/>
+            {labels === 'all' && k.info.names.map((n, j) => (
+              <text key={n} x={k.x + blackW / 2} y={blackH - 22 + j * 12} textAnchor="middle" fontSize="8.5"
+                fontWeight="700" fill="#f8edd4" style={{pointerEvents:'none'}}>{prettyNote(n)}</text>
+            ))}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+const NOTE_NAME_LEVELS = [
+  { n: 1, label: 'White keys · name the key',    octaves: 1, black: false, dirs: ['key2name'], time: 8 },
+  { n: 2, label: 'White keys · find the key',    octaves: 1, black: false, dirs: ['name2key'], time: 8 },
+  { n: 3, label: 'Two octaves · both ways',      octaves: 2, black: false, dirs: ['key2name', 'name2key'], time: 6 },
+  { n: 4, label: 'Black keys too (sharps & flats)', octaves: 2, black: true, dirs: ['key2name', 'name2key'], time: 7 },
+];
+
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function genNoteQuestion(lv, prev) {
+  const pool = [];
+  for (let i = 0; i < lv.octaves * 12; i++) if (PC_INFO[i % 12].white || lv.black) pool.push(i);
+  let idx = pick(pool), tries = 0;
+  while (prev && idx % 12 === prev.pc && tries++ < 12) idx = pick(pool); // never the same note twice in a row
+  const pc = idx % 12;
+  return { idx, pc, dir: pick(lv.dirs), shownName: pick(PC_INFO[pc].names), uid: Math.random() };
+}
+
+function NoteNameQuestion({ q, level, given, locked, onAnswer, pixel }) {
+  const marks = {};
+  const done = !!given;
+  if (q.dir === 'key2name') {
+    marks[q.idx] = done ? (given.ok ? 'good' : 'target') : 'target';
+  } else if (done) {
+    for (let i = q.pc; i < level.octaves * 12; i += 12) marks[i] = 'good';
+    if (!given.ok && given.ans !== null && given.ans % 12 !== q.pc) marks[given.ans] = 'bad';
+  }
+
+  // Physical keyboard shortcut for "name the key" on white-only levels: press A-G.
+  useEffect(() => {
+    if (q.dir !== 'key2name' || level.black || locked) return;
+    function onKey(e) {
+      const L = (e.key || '').toUpperCase();
+      const info = PC_INFO.find(p => p.white && p.names[0] === L);
+      if (info) onAnswer(info.pc);
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [q, level, locked, onAnswer]);
+
+  const choices = level.black ? PC_INFO : PC_INFO.filter(p => p.white);
+  const promptStyle = pixel
+    ? { fontSize: 10, textAlign: 'center', margin: '0 0 12px', lineHeight: 1.7 }
+    : { fontSize: 14, fontWeight: 700, textAlign: 'center', margin: '0 0 12px', color: 'var(--muted)' };
+
+  if (q.dir === 'key2name') {
+    return (
+      <div>
+        <p style={promptStyle}>{pixel ? 'WHICH NOTE?' : 'Which note is the highlighted key?'}</p>
+        <TapKeyboard octaves={level.octaves} marks={marks} pixel={pixel} />
+        <div style={{display:'grid',gridTemplateColumns:'repeat(' + (level.black ? 4 : 7) + ',1fr)',gap:6,marginTop:14}}>
+          {choices.map(p => {
+            let state = '';
+            if (done && p.pc === q.pc) state = ' good';
+            else if (done && given.ans === p.pc) state = ' bad';
+            return (
+              <button key={p.pc} disabled={locked} onClick={() => onAnswer(p.pc)}
+                className={(pixel ? 'pixel-choice' : 'choice-btn') + state}>
+                {pcLabel(p.pc)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <p style={promptStyle}>{pixel ? 'FIND THIS NOTE!' : 'Tap this note on the keyboard'}</p>
+      <div style={{textAlign:'center',fontSize:pixel?34:64,fontWeight:900,lineHeight:1,margin:'0 0 16px',
+        color:pixel?'var(--brass)':'var(--text)',letterSpacing:'-0.02em'}}>
+        {prettyNote(q.shownName)}
+      </div>
+      <TapKeyboard octaves={level.octaves} marks={marks} pixel={pixel} onTap={locked ? null : onAnswer} />
+    </div>
+  );
+}
+
+function NoteNamesLearn({ onStart }) {
+  const tip = (n, title, body) => (
+    <div style={{display:'flex',gap:12,alignItems:'flex-start',padding:'12px 0',borderTop:'1px solid var(--border)'}}>
+      <div style={{flex:'0 0 26px',height:26,borderRadius:13,background:'var(--text)',color:'#fff',fontSize:12,
+        fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center'}}>{n}</div>
+      <div>
+        <div style={{fontSize:14,fontWeight:800,marginBottom:3}}>{title}</div>
+        <div style={{fontSize:13,color:'#6f665b',lineHeight:1.55}}>{body}</div>
+      </div>
+    </div>
+  );
+  return (
+    <div className="card fade-up">
+      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Finding notes on the keyboard</h2>
+      <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 16px'}}>The black keys are the map -- they come in groups of 2 and 3.</p>
+      <TapKeyboard octaves={1} labels="all" tint />
+      <div style={{display:'flex',fontSize:11,fontWeight:800,margin:'8px 0 18px'}}>
+        <div style={{flex:3,textAlign:'center',background:GROUP_TINT.two,padding:'6px 4px',borderRadius:6,marginRight:4}}>2 black keys → C D E</div>
+        <div style={{flex:4,textAlign:'center',background:GROUP_TINT.three,padding:'6px 4px',borderRadius:6}}>3 black keys → F G A B</div>
+      </div>
+      {tip(1, 'C sits just left of the 2 black keys', 'Find any pair of black keys -- the white key right before them is always C. D is between them, E just after.')}
+      {tip(2, 'F sits just left of the 3 black keys', 'Before a group of three black keys is always F, then G, A, B.')}
+      {tip(3, 'Only seven letters, A to G', 'After G the letters start again at A. Every C on the piano looks the same -- only the octave changes.')}
+      {tip(4, 'Black keys borrow a neighbour’s name', 'Sharp (♯) = the key just to the right. Flat (♭) = the key just to the left. So the same black key can be C♯ or D♭.')}
+      <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
+    </div>
+  );
+}
+
+const NOTE_NAMES_DRILL = {
+  id: 'note-names',
+  label: 'Note Names',
+  levels: NOTE_NAME_LEVELS,
+  generate: genNoteQuestion,
+  check: (q, ans) => ans !== null && (q.dir === 'key2name' ? ans === q.pc : ans % 12 === q.pc),
+  answerLabel: (q) => q.dir === 'key2name' ? pcLabel(q.pc) : 'the key shown in green',
+  Question: NoteNameQuestion,
+  Learn: NoteNamesLearn,
+};
+
+// Wrapper for a concept (Learn + Drill). Level/mode/tab live in App so they can sync to the URL.
+function ConceptView({ concept, tab, level, mode, locked, onChange }) {
+  const lv = concept.levels.find(l => l.n === level) || concept.levels[0];
+  const Learn = concept.Learn;
+  return (
+    <div>
+      <div style={{display:'flex',gap:0,marginBottom:16,background:'#fff',border:'1px solid var(--border)',borderRadius:12,padding:3}}>
+        {[['learn','Learn'],['drill','Drill']].map(([id, label]) => (
+          <button key={id} onClick={() => onChange({ tab: id })} style={{
+            flex:1,padding:'9px 0',border:'none',borderRadius:9,cursor:'pointer',fontSize:13,fontWeight:800,
+            background:tab===id?'var(--text)':'transparent',color:tab===id?'#fff':'var(--muted)'}}>{label}</button>
+        ))}
+      </div>
+      {tab === 'learn' ? (
+        <Learn onStart={() => onChange({ tab: 'drill' })} />
+      ) : (
+        <div>
+          {!locked ? (
+            <div style={{marginBottom:16}}>
+              <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:10}}>
+                {concept.levels.map(l => (
+                  <button key={l.n} className={'chip' + (l.n === lv.n ? ' active' : '')} onClick={() => onChange({ level: l.n })}
+                    title={l.label}>Level {l.n}</button>
+                ))}
+              </div>
+              <div style={{fontSize:12,color:'var(--muted)',marginBottom:10}}>{lv.label}</div>
+              <div style={{display:'flex',gap:6}}>
+                {[['lesson','Lesson mode'],['game','Game mode (pixel)']].map(([id, label]) => (
+                  <button key={id} className={'chip' + (mode === id ? ' active' : '')} onClick={() => onChange({ mode: id })}>{label}</button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div style={{fontSize:12,color:'var(--muted)',fontWeight:700,marginBottom:12}}>
+              Level {lv.n} · {lv.label} · {mode === 'game' ? 'Game mode' : 'Lesson mode'}
+            </div>
+          )}
+          <DrillEngine key={concept.id + lv.n + mode} drill={concept} level={lv.n} mode={mode} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Share link for a student: opens straight into this drill/level/mode with the picker hidden.
+function ShareLink({ drillId, level, mode }) {
+  const [state, setState] = useState(null); // null | 'copied' | url (fallback)
+  const url = location.origin + location.pathname + '?drill=' + drillId + '&tab=drill&level=' + level + '&mode=' + mode + '&lock=1';
+  async function copy() {
+    try { await navigator.clipboard.writeText(url); setState('copied'); later(); }
+    catch (e) { setState(url); }
+  }
+  function later() { setTimeout(() => setState(null), 2200); }
+  return (
+    <div style={{marginTop:22,textAlign:'center'}}>
+      <button className="ghost-btn" onClick={copy}>{state === 'copied' ? 'Link copied ✓' : 'Copy link for a student'}</button>
+      {state && state !== 'copied' && (
+        <input readOnly value={state} onFocus={e => e.target.select()} autoFocus
+          style={{display:'block',width:'100%',marginTop:10,padding:8,fontSize:12,border:'1px solid var(--border)',borderRadius:8}}/>
+      )}
+    </div>
+  );
+}
+
+// Registry of drills. Two shapes:
+//   { id, label, render }            -- original single-screen drills (Phase 89/90)
+//   { id, label, concept }           -- Phase 94 concept sets (Learn + Drill on the shared engine)
+// Planned next concept (agreed 2026-09-23): key signatures (infographic + drill).
 const DRILLS = [
+  { id: 'note-names', label: 'Note Names', concept: NOTE_NAMES_DRILL },
   { id: 'letter-chain', label: 'Letter Chain', render: () => <LetterChainDrill /> },
   { id: 'scale-fingering', label: 'Scale Fingering', render: () => <ScaleFingeringDrill /> },
 ];
 
+// URL state: ?drill=<id>&tab=learn|drill&level=<n>&mode=lesson|game&lock=1
+// lock=1 (used by the student share link) hides the drill picker and level/mode controls.
+function readUrlState() {
+  let p;
+  try { p = new URLSearchParams(location.search); } catch (e) { p = new URLSearchParams(''); }
+  const drill = DRILLS.find(d => d.id === p.get('drill')) ? p.get('drill') : DRILLS[0].id;
+  const level = parseInt(p.get('level'), 10);
+  return {
+    drill,
+    tab: p.get('tab') === 'drill' ? 'drill' : (p.get('level') || p.get('mode') ? 'drill' : 'learn'),
+    level: isNaN(level) ? 1 : level,
+    mode: p.get('mode') === 'game' ? 'game' : 'lesson',
+    lock: p.get('lock') === '1',
+  };
+}
+
 function App() {
-  const [activeId, setActiveId] = useState(DRILLS[0].id);
-  const active = DRILLS.find(d => d.id === activeId) || DRILLS[0];
+  const [st, setSt] = useState(readUrlState);
+  const active = DRILLS.find(d => d.id === st.drill) || DRILLS[0];
+  const concept = active.concept || null;
+  const level = concept ? ((concept.levels.find(l => l.n === st.level) || concept.levels[0]).n) : st.level;
+
+  useEffect(() => {
+    try {
+      const p = new URLSearchParams();
+      p.set('drill', active.id);
+      if (concept) { p.set('tab', st.tab); if (st.tab === 'drill') { p.set('level', level); p.set('mode', st.mode); } }
+      if (st.lock) p.set('lock', '1');
+      history.replaceState(null, '', location.pathname + '?' + p.toString());
+    } catch (e) { /* URL sync is a convenience only */ }
+  }, [active.id, st.tab, level, st.mode, st.lock]);
+
+  function update(patch) { setSt(prev => ({ ...prev, ...patch })); }
 
   return (
     <div style={{minHeight:'100vh',background:'var(--bg)'}}>
@@ -840,23 +1376,31 @@ function App() {
           Back to Piano Butler
         </a>
         <h1 style={{color:'var(--text)',fontSize:19,fontWeight:900,margin:'0 0 2px',letterSpacing:'-0.02em'}}>
-          Practice Drills
+          {st.lock ? active.label : 'Practice Drills'}
         </h1>
         <p style={{color:'var(--muted)',fontSize:12,margin:0}}>
           Quick exercises to pull back out whenever a student needs to revisit something.
         </p>
       </div>
 
-      <div style={{maxWidth:480,margin:'0 auto',padding:'24px 20px 60px'}}>
-        <div style={{display:'flex',gap:8,marginBottom:20,flexWrap:'wrap'}}>
-          {DRILLS.map(d => (
-            <button key={d.id} className={'chip'+(activeId===d.id?' active':'')} onClick={()=>setActiveId(d.id)}>
-              {d.label}
-            </button>
-          ))}
-        </div>
+      <div style={{maxWidth:480,margin:'0 auto',padding:'24px 16px 60px'}}>
+        {!st.lock && (
+          <div style={{display:'flex',gap:8,marginBottom:20,flexWrap:'wrap'}}>
+            {DRILLS.map(d => (
+              <button key={d.id} className={'chip'+(active.id===d.id?' active':'')}
+                onClick={()=>update({ drill: d.id, tab: 'learn', level: 1 })}>
+                {d.label}
+              </button>
+            ))}
+          </div>
+        )}
 
-        {active.render()}
+        {concept ? (
+          <>
+            <ConceptView concept={concept} tab={st.tab} level={level} mode={st.mode} locked={st.lock} onChange={update} />
+            {!st.lock && st.tab === 'drill' && <ShareLink drillId={active.id} level={level} mode={st.mode} />}
+          </>
+        ) : active.render()}
       </div>
     </div>
   );
