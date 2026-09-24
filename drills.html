@@ -1888,6 +1888,106 @@ function TempoQuestion({ q, level, given, locked, onAnswer, pixel, stats }) {
   );
 }
 
+// ─── Tempo Race: hands-on round (Phase 111) ──────────────────────────────────────
+function termForBpm(bpm) { return TEMPO_TERMS.reduce((b, t) => Math.abs(t.demo - bpm) < Math.abs(b.demo - bpm) ? t : b, TEMPO_TERMS[0]); }
+// 1. A metronome with a swinging arm: drag the speed, see which tempo word it is -- or tap your own tempo.
+function MetronomeDial() {
+  const [bpm, setBpm] = useState(88);
+  const [run, setRun] = useState(false);
+  const [side, setSide] = useState(0);
+  const taps = useRef([]);
+  const t = termForBpm(bpm), idx = TEMPO_TERMS.indexOf(t);
+  useEffect(() => {
+    if (!run) return;
+    let n = 0;
+    const tick = () => { const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime + 0.01, n % 4 === 0 ? 1320 : 900, 0.04, n % 4 === 0 ? 0.3 : 0.16); setSide(s => 1 - s); n++; };
+    tick(); const iv = setInterval(tick, 60000 / bpm);
+    return () => clearInterval(iv);
+  }, [run, bpm]);
+  function tap() {
+    const now = performance.now();
+    taps.current = taps.current.filter(x => now - x < 3000).concat(now);
+    const tt = taps.current;
+    if (tt.length >= 3) { const gaps = tt.slice(1).map((x, i) => x - tt[i]); const avg = gaps.reduce((a, b) => a + b, 0) / gaps.length; setBpm(Math.max(40, Math.min(208, Math.round(60000 / avg)))); }
+    const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime + 0.01, 700, 0.03, 0.2);
+  }
+  const dur = 60 / bpm;
+  return (
+    <div style={actBox}>
+      <div style={actTitle}>The metronome</div>
+      <div style={actNote}>Slide the speed and watch the arm swing. The tempo word changes as you go faster or slower. Or tap a steady beat on “Tap” to measure your own tempo.</div>
+      <div style={{display:'flex',alignItems:'center',gap:14}}>
+        <svg viewBox="0 0 100 120" style={{width:100,flex:'0 0 100px'}}>
+          <polygon points="20,112 80,112 64,20 36,20" fill="#241f1a"/>
+          <polygon points="26,106 74,106 62,26 38,26" fill="#3b332b"/>
+          <g style={{transformOrigin:'50px 100px',transform:'rotate(' + (run ? (side ? 24 : -24) : 0) + 'deg)',transition:'transform ' + dur + 's ease-in-out'}}>
+            <line x1="50" y1="100" x2="50" y2="14" stroke="#e8dcc0" strokeWidth="2.5"/>
+            <rect x="44" y={30 + (bpm - 40) / 168 * 50} width="12" height="10" rx="2" fill={LANE_COLORS[idx]}/>
+          </g>
+          <circle cx="50" cy="100" r="4" fill="#a8823f"/>
+        </svg>
+        <div style={{flex:1}}>
+          <div style={{fontSize:30,fontWeight:900,lineHeight:1}}>{bpm}<span style={{fontSize:13,color:'var(--muted)',fontWeight:700}}> beats a minute</span></div>
+          <div style={{fontSize:22,fontWeight:900,fontStyle:'italic',color:LANE_COLORS[idx],margin:'4px 0 0',transition:'color 0.2s'}}>{t.term}</div>
+          <div style={{fontSize:12,color:'#6f665b'}}>{t.meaning}</div>
+        </div>
+      </div>
+      <input type="range" min="40" max="208" value={bpm} onChange={e => setBpm(+e.target.value)} style={{width:'100%',margin:'10px 0 2px',accentColor:'#a8823f'}}/>
+      <div style={{display:'flex',height:6,borderRadius:3,overflow:'hidden',marginBottom:8}}>
+        {TEMPO_TERMS.map((x, i) => <div key={x.term} style={{flex:1,background:LANE_COLORS[i],opacity:i === idx ? 1 : 0.3}}/>)}
+      </div>
+      <div style={{display:'flex',gap:6,justifyContent:'center'}}>
+        <button className="ghost-btn" onClick={() => setRun(r => !r)}>{run ? '■ Stop' : '▶ Start'}</button>
+        <button className="ghost-btn" onClick={tap} style={{minWidth:90}}>Tap</button>
+      </div>
+    </div>
+  );
+}
+// 2. Speed changes: rit./rall. slow down, accel. speeds up, a tempo goes back. A ball bounces the beat.
+const SPEED_CHANGES = [
+  { id: 'rit', label: 'rit.', full: 'ritardando', meaning: 'gradually slowing down', from: 120, to: 60 },
+  { id: 'rall', label: 'rall.', full: 'rallentando', meaning: 'gradually slowing down (same as rit.)', from: 120, to: 60 },
+  { id: 'accel', label: 'accel.', full: 'accelerando', meaning: 'gradually getting faster', from: 72, to: 160 },
+  { id: 'atempo', label: 'a tempo', full: 'a tempo', meaning: 'back to the original speed', from: 60, to: 120, jump: true },
+];
+function SpeedChange() {
+  const [sel, setSel] = useState(null);
+  const [beat, setBeat] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  function play(c) {
+    timers.current.forEach(clearTimeout); timers.current = [];
+    setSel(c.id); const ctx = getAudio(); if (!ctx) return;
+    const N = 12; let at = 0; const t0 = ctx.currentTime + 0.1;
+    for (let i = 0; i < N; i++) {
+      const bpm = c.jump ? (i < 6 ? c.from : c.to) : c.from + (c.to - c.from) * (i / (N - 1));
+      blip(ctx, t0 + at, 523.25, 0.08, i % 4 === 0 ? 0.25 : 0.15, 'triangle');
+      timers.current.push(setTimeout(() => setBeat(i), (0.1 + at) * 1000));
+      at += 60 / bpm;
+    }
+    timers.current.push(setTimeout(() => setBeat(-1), (0.1 + at) * 1000));
+  }
+  const c = SPEED_CHANGES.find(x => x.id === sel);
+  return (
+    <div style={actBox}>
+      <div style={actTitle}>Speeding up, slowing down</div>
+      <div style={actNote}>Some words change the speed gradually. Tap one to hear twelve beats -- watch the gaps between the dots grow or shrink.</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:5,marginBottom:8}}>
+        {SPEED_CHANGES.map(x => <button key={x.id} className={'chip' + (sel === x.id ? ' active' : '')} style={{padding:'8px 0',fontSize:14,fontWeight:900,fontStyle:'italic'}} onClick={() => play(x)}>{x.label}</button>)}
+      </div>
+      <svg viewBox="0 0 300 40" style={{width:'100%',display:'block'}}>
+        {c && (() => {
+          const N = 12, xs = []; let at = 0;
+          for (let i = 0; i < N; i++) { xs.push(at); at += 60 / (c.jump ? (i < 6 ? c.from : c.to) : c.from + (c.to - c.from) * (i / (N - 1))); }
+          const k = 280 / xs[N - 1];
+          return xs.map((x, i) => <circle key={c.id + i} cx={10 + x * k} cy={20} r={beat === i ? 9 : 5} fill={beat >= i ? '#a8823f' : '#d9cdb0'} style={{transition:'r 0.1s'}}/>);
+        })()}
+      </svg>
+      <div style={{textAlign:'center',fontSize:13,minHeight:36}}>{c ? <><b style={{fontStyle:'italic'}}>{c.full}</b> -- {c.meaning}{c.jump ? <div style={{fontSize:12,color:'#6f665b'}}>(slow first, then straight back to speed)</div> : null}</> : <span style={{color:'var(--muted)'}}>Tap a word above.</span>}</div>
+    </div>
+  );
+}
+
 function TempoLearn({ onStart }) {
   const [playing, setPlaying] = useState(null);
   useEffect(() => () => stopClicks(), []);
@@ -1927,6 +2027,8 @@ function TempoLearn({ onStart }) {
       <p style={{fontSize:11,color:'var(--muted)',margin:'12px 0 0',lineHeight:1.5}}>
         Beats per minute are approximate -- books and metronomes don't all agree. What matters is the order.
       </p>
+      <div style={{marginTop:14}}><MetronomeDial/></div>
+      <SpeedChange/>
       <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
     </div>
   );
@@ -5290,6 +5392,94 @@ function playArtic(mark) {
   });
 }
 
+// ─── Dynamics & Articulation: hands-on round (Phase 112) ─────────────────────────
+// 1. Line them up: the six dynamics shuffled -- tap from softest to loudest (each one sounds as you tap).
+function DynOrder() {
+  const shuffled = () => { let o; do { o = shuffle(DYNAMICS.slice()); } while (o.every((d, i) => d.id === DYNAMICS[i].id)); return o; };
+  const [cards, setCards] = useState(shuffled);
+  const [got, setGot] = useState([]);
+  const [bad, setBad] = useState(null);
+  const [tries, setTries] = useState(0);
+  const done = got.length === DYNAMICS.length;
+  function tap(d) {
+    if (got.includes(d.id) || done) return;
+    playDyn(d.vol, 1);
+    if (d.id === DYNAMICS[got.length].id) setGot([...got, d.id]);
+    else { setBad(d.id); setTries(t => t + 1); setTimeout(() => setBad(b => (b === d.id ? null : b)), 600); }
+  }
+  return (
+    <div style={actBox}>
+      <div style={actTitle}>Line them up</div>
+      <div style={actNote}>Tap the dynamics from the <b>softest</b> to the <b>loudest</b>. Each one plays as you tap it -- listen to the steps.</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:4,alignItems:'end',height:74,margin:'4px 0 8px'}}>
+        {DYNAMICS.map((d, i) => (
+          <div key={d.id} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',height:'100%'}}>
+            <div style={{width:'80%',height:(i + 1) * 9,borderRadius:'4px 4px 0 0',background:i < got.length ? '#a8823f' : '#e8dcc0',transition:'background 0.25s'}}/>
+            <div style={{height:22,display:'flex',alignItems:'center'}}>{i < got.length ? <DynMark id={d.id} size={16}/> : <span style={{color:'#c7bca8',fontWeight:900}}>?</span>}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>
+        {cards.map(d => {
+          const used = got.includes(d.id);
+          return <button key={d.id} className="chip" disabled={used} onClick={() => tap(d)}
+            style={{padding:'8px 0',opacity:used ? 0.3 : 1,borderColor:bad === d.id ? '#b5483b' : undefined,background:bad === d.id ? '#f6d6cf' : undefined,transition:'all 0.2s'}}><DynMark id={d.id} size={20}/></button>;
+        })}
+      </div>
+      <div style={{textAlign:'center',fontSize:13,fontWeight:700,minHeight:22,marginTop:8,color:done ? '#4f7a45' : bad ? '#b5483b' : 'var(--muted)'}}>
+        {done ? (tries ? 'Done with ' + tries + ' slip' + (tries > 1 ? 's' : '') : 'Perfect -- no slips!') + ' pp p mp mf f ff'
+          : bad ? 'Not yet -- ' + DYNAMICS.find(x => x.id === bad).meaning + ' comes later.' : 'Next: the ' + (got.length ? 'next softest' : 'softest') + ' one'}
+      </div>
+      {done && <div style={{textAlign:'center',marginTop:4}}><button className="ghost-btn" onClick={() => { setCards(shuffled()); setGot([]); setTries(0); }}>Again</button></div>}
+    </div>
+  );
+}
+// 2. Make a hairpin: pick where it starts and where it ends; it draws itself while eight notes get louder or softer.
+function HairpinMaker() {
+  const [from, setFrom] = useState('p');
+  const [to, setTo] = useState('f');
+  const [k, setK] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const a = DYNAMICS.find(d => d.id === from), b = DYNAMICS.find(d => d.id === to);
+  const cresc = b.vol > a.vol, same = a.id === b.id;
+  function play() {
+    timers.current.forEach(clearTimeout); timers.current = [];
+    const ctx = getAudio(); if (!ctx) return; stopClicks();
+    const t0 = ctx.currentTime + 0.08, notes = [523, 587, 659, 698, 784, 698, 659, 587];
+    notes.forEach((f, i) => {
+      const v = a.vol + (b.vol - a.vol) * (i / 7);
+      blip(ctx, t0 + i * 0.34, f, 0.3, v, 'triangle');
+      timers.current.push(setTimeout(() => setK(i), (0.08 + i * 0.34) * 1000));
+    });
+    timers.current.push(setTimeout(() => setK(-1), (0.08 + 8 * 0.34) * 1000 + 300));
+  }
+  const W = 260, x0 = 40, x1 = 220, prog = k < 0 ? 1 : (k + 1) / 8, xe = x0 + (x1 - x0) * prog;
+  const hw = (x) => cresc ? (x - x0) / (x1 - x0) * 9 : (1 - (x - x0) / (x1 - x0)) * 9;
+  const chips = (val, set) => <div style={{display:'flex',gap:3,flexWrap:'wrap'}}>{DYNAMICS.map(d => <button key={d.id} className={'chip' + (d.id === val ? ' active' : '')} style={{padding:'2px 8px'}} onClick={() => set(d.id)}><DynMark id={d.id} size={15}/></button>)}</div>;
+  return (
+    <div style={actBox}>
+      <div style={actTitle}>Draw a hairpin</div>
+      <div style={actNote}>Choose where it starts and where it ends. Opening out <b>&lt;</b> = crescendo, closing in <b>&gt;</b> = diminuendo.</div>
+      <div style={{display:'flex',justifyContent:'space-between',gap:8,flexWrap:'wrap',marginBottom:6}}>
+        <div><div style={{fontSize:11,fontWeight:800,color:'var(--muted)',marginBottom:2}}>START</div>{chips(from, setFrom)}</div>
+        <div><div style={{fontSize:11,fontWeight:800,color:'var(--muted)',marginBottom:2}}>END</div>{chips(to, setTo)}</div>
+      </div>
+      <svg viewBox={`0 0 ${W} 50`} style={{width:'100%',maxWidth:360,display:'block',margin:'0 auto'}}>
+        <text x="4" y="31" fontSize="18" fontStyle="italic" fontWeight="900" fill="#241f1a" style={{fontFamily:DYN_FONT}}>{from}</text>
+        {!same && <>
+          <line x1={x0} y1={25 - hw(x0)} x2={xe} y2={25 - hw(xe)} stroke="#a8823f" strokeWidth="2.4" strokeLinecap="round"/>
+          <line x1={x0} y1={25 + hw(x0)} x2={xe} y2={25 + hw(xe)} stroke="#a8823f" strokeWidth="2.4" strokeLinecap="round"/>
+        </>}
+        {same && <line x1={x0} y1={25} x2={x1} y2={25} stroke="#c7bca8" strokeWidth="2" strokeDasharray="4 5"/>}
+        <text x={W - 4} y="31" textAnchor="end" fontSize="18" fontStyle="italic" fontWeight="900" fill="#241f1a" style={{fontFamily:DYN_FONT,opacity:k < 0 || k === 7 ? 1 : 0.25}}>{to}</text>
+      </svg>
+      <div style={{textAlign:'center',fontSize:13,fontWeight:800,margin:'2px 0 6px'}}>{same ? 'Same start and end -- no hairpin needed.' : cresc ? <>crescendo: {a.meaning} → {b.meaning}</> : <>diminuendo: {a.meaning} → {b.meaning}</>}</div>
+      <div style={{textAlign:'center'}}><button className="ghost-btn" disabled={same} onClick={play}>♪ Play it</button></div>
+    </div>
+  );
+}
+
 function DynLearn({ onStart }) {
   const [on, setOn] = useState(null);
   useEffect(() => () => stopClicks(), []);
@@ -5309,10 +5499,12 @@ function DynLearn({ onStart }) {
         {DYNAMICS.map((d, i) => cell(d.id, <span style={{fontSize:16 + i * 3,lineHeight:1.1}}><DynMark id={d.id} size={16 + i * 3}/></span>, d.it + ' · ' + d.meaning, () => pick(d.id, () => playDyn(d.vol))))}
       </div>
       <p style={{fontSize:12,color:'#6f665b',margin:'0 0 12px',lineHeight:1.5}}><b>p</b> = piano (soft), <b>f</b> = forte (loud), <b>m</b> = mezzo (“half”, moderately). Doubling the letter makes it more so.</p>
+      <DynOrder/>
       <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>Changing the volume</div>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:14}}>
         {CHANGES.map(c => cell(c.id, <span style={{height:30,display:'flex',alignItems:'center'}}><ChangeMark c={c}/></span>, c.it + ' · ' + c.meaning, () => pick(c.id, () => playChange(c.id))))}
       </div>
+      <HairpinMaker/>
       <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>Articulation -- how each note is played</div>
       <div style={{display:'flex',flexDirection:'column',gap:6}}>
         {ARTICS.map(a => (
