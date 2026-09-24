@@ -5552,7 +5552,7 @@ function StaffLearn({ onStart }) {
       <LandmarkHop/>
       </Step>
       <Step title="Middle C and ledger lines">
-      {tip('Ledger lines extend the staff', 'Short lines above or below the staff carry on the same line-space pattern -- middle C sits on one.')}
+      {tip('Ledger lines extend the staff', 'Short lines above or below the staff carry on the same line-space pattern -- middle C sits on one. The next chapter, Ledger Lines, goes further.')}
       <FoldStaff/>
       <LedgerMirror/>
       </Step>
@@ -5617,6 +5617,213 @@ const STAFF_DRILL = {
   check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
   answerLabel: (q) => dName(q.d) + ' (' + dLabel(q.d) + (q.d === 28 ? ', middle C' : '') + ')',
   Question: StaffQuestion, Learn: StaffLearn,
+};
+
+// ─── Concept: Ledger Lines (Phase 115, pitch track, after Reading the Staff) ────
+// Sohyun: ledger lines are hard to read -- give them their own chapter with more examples.
+// AMEB placement: Music Craft Prelim = one ledger line below the treble staff (middle C);
+// Grade 1 = one ledger line above and below both staves; Grade 2 = up to three; Theory of Music
+// Grade 1 = two above and below. Drill levels follow that: 1, 2, 3 ledger lines, then the keyboard.
+function ledgerDesc(clef, d) {
+  const c = CLEFS[clef];
+  if (d > c.high) { const k = d - c.high; return k % 2 ? (k === 1 ? 'in the space just above the staff (no ledger line)' : 'above ledger line ' + ((k - 1) / 2)) : 'on ledger line ' + (k / 2) + ' above'; }
+  if (d < c.low) { const k = c.low - d; return k % 2 ? (k === 1 ? 'in the space just below the staff (no ledger line)' : 'below ledger line ' + ((k - 1) / 2)) : 'on ledger line ' + (k / 2) + ' below'; }
+  return 'on the staff';
+}
+const ORD_WORD = ['', '1st', '2nd', '3rd'];
+function staffPlace(clef, d) {
+  const c = CLEFS[clef];
+  if (d < c.low || d > c.high) return ledgerDesc(clef, d).replace('(no ledger line)', '').trim() + ' the ' + clef + ' staff';
+  const ord = ['1st', '2nd', '3rd', '4th', '5th'];
+  if (d % 2 === 0) { const n = (d - c.low) / 2; return 'the ' + ord[n] + ' line of the ' + clef + ' staff' + (n === 4 ? ' (top line)' : n === 0 ? ' (bottom line)' : ''); }
+  return 'the ' + ord[(d - c.low - 1) / 2] + ' space of the ' + clef + ' staff';
+}
+
+// 1. Climb off the staff: each step out adds the next line or space; ledger lines appear as needed.
+function LedgerClimb() {
+  const [clef, setClef] = useState('treble');
+  const c = CLEFS[clef];
+  const [d, setD] = useState(c.high);
+  useEffect(() => { setD(CLEFS[clef].high); }, [clef]);
+  const lo = c.low - 7, hi = c.high + 7;
+  const go = (nd) => { if (nd < lo || nd > hi) return; playKey(dMidiKey(nd), 0.3); setD(nd); };
+  const nLedger = ledgersFor(d, c.low, c.high).length;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>Walk off the staff</div>
+        <div style={{display:'flex',gap:4}}>{['treble', 'bass'].map(x => <button key={x} className={'chip' + (clef === x ? ' active' : '')} style={{padding:'3px 9px',fontSize:11}} onClick={() => setClef(x)}>{x === 'treble' ? '𝄞 treble' : '𝄢 bass'}</button>)}</div>
+      </div>
+      <div style={actNote}>Keep stepping up (or down) past the edge of the staff. The line-space pattern carries on -- each new line is a short <b>ledger line</b> drawn just for that note.</div>
+      <StaffFrame clef={clef} lo={lo} hi={hi} width={240}>
+        {(yOf) => <>
+          <Ledgers clef={clef} d={d} x={150} yOf={yOf}/>
+          <GlideNote x={150} y={yOf(d)} color="#a8823f"/>
+          <text x={172} y={yOf(d) + 4} fontSize="13" fontWeight="900" fill="#a8823f">{dName(d)}</text>
+        </>}
+      </StaffFrame>
+      <div style={{textAlign:'center',fontSize:14,fontWeight:900,marginTop:2}}>{dName(d)} <span style={{fontWeight:700,color:'#6f665b',fontSize:13}}>-- {ledgerDesc(clef, d)}</span></div>
+      <div style={{textAlign:'center',fontSize:12,color:'var(--muted)',minHeight:18}}>{nLedger ? nLedger + ' ledger line' + (nLedger > 1 ? 's' : '') : ''}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:6}}>
+        <button className="ghost-btn" disabled={d <= lo} onClick={() => go(d - 1)} style={{color:'#3f7fb5'}}>↓ Step down</button>
+        <button className="ghost-btn" disabled={d >= hi} onClick={() => go(d + 1)} style={{color:'#a8823f'}}>Step up ↑</button>
+      </div>
+    </div>
+  );
+}
+
+// 2. Ledger lines skip a letter, just like staff lines: the three notes ON ledger lines in each direction.
+const LEDGER_SETS = [
+  { id: 'ta', clef: 'treble', ds: [40, 42, 44], title: 'Above the treble staff', word: 'A · C · E' },
+  { id: 'tb', clef: 'treble', ds: [28, 26, 24], title: 'Below the treble staff', word: 'C · A · F' },
+  { id: 'ba', clef: 'bass', ds: [28, 30, 32], title: 'Above the bass staff', word: 'C · E · G' },
+  { id: 'bb', clef: 'bass', ds: [16, 14, 12], title: 'Below the bass staff', word: 'E · C · A' },
+];
+function LedgerLandmarks() {
+  const [id, setId] = useState('ta');
+  const set = LEDGER_SETS.find(x => x.id === id);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>The notes ON ledger lines</div>
+      <div style={actNote}>Ledger lines skip a letter each time, exactly like the lines of the staff. Learn these twelve and you can read any ledger note from them.</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:5,marginBottom:6}}>
+        {LEDGER_SETS.map(x => (
+          <button key={x.id} className={'chip' + (x.id === id ? ' active' : '')} style={{padding:'6px 4px',fontSize:12,display:'flex',flexDirection:'column',alignItems:'center'}} onClick={() => { setId(x.id); x.ds.forEach((dd, i) => setTimeout(() => playKey(dMidiKey(dd), 0.3), i * 380)); }}>
+            <span>{x.title}</span><b style={{fontSize:14,letterSpacing:'0.05em'}}>{x.word}</b>
+          </button>
+        ))}
+      </div>
+      <StaffView key={id} clef={set.clef} spread width={260} notes={set.ds.map((dd, i) => ({ d: dd, color: STEP_COLORS[i] }))} labels={set.ds.map((dd, i) => dName(dd) + ' · ' + ORD_WORD[i + 1])}/>
+      <div style={{textAlign:'center',fontSize:12,color:'#6f665b',marginTop:4}}>{set.title}: 1st, 2nd and 3rd ledger lines = <b>{set.word}</b>. The notes between them are the letters in between.</div>
+    </div>
+  );
+}
+
+// 3. Borrowed lines: a ledger note below the treble staff is a normal note on the bass staff, and vice versa.
+const TWINS = [
+  { d: 27, from: 'treble' }, { d: 26, from: 'treble' }, { d: 25, from: 'treble' }, { d: 24, from: 'treble' },
+  { d: 29, from: 'bass' }, { d: 30, from: 'bass' }, { d: 31, from: 'bass' }, { d: 32, from: 'bass' },
+];
+function LedgerTwins() {
+  const [i, setI] = useState(1);
+  const t = TWINS[i];
+  const other = t.from === 'treble' ? 'bass' : 'treble';
+  const key = dToKey(t.d);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Same note, other staff</div>
+      <div style={actNote}>The ledger lines under the treble staff are really the bass staff’s top lines -- and the ones over the bass staff are the treble’s bottom lines. Tap a note: left, with ledger lines; right, the same key written on the other staff.</div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
+        {TWINS.map((x, j) => <button key={j} className={'chip' + (j === i ? ' active' : '')} style={{padding:'3px 8px',fontSize:12}} onClick={() => { setI(j); playKey(dMidiKey(x.d), 0.4); }}>{dName(x.d)} {x.from === 'treble' ? '↓𝄞' : '↑𝄢'}</button>)}
+      </div>
+      <div style={{display:'flex',gap:6,alignItems:'center'}}>
+        <div style={{flex:1,background:'#fff',borderRadius:8}}><StaffView key={'a' + i} clef={t.from} width={150} notes={[{ d: t.d, color: '#a8823f' }]}/></div>
+        <div style={{fontSize:18,fontWeight:900,color:'#a8823f'}}>=</div>
+        <div style={{flex:1,background:'#fff',borderRadius:8}}><StaffView key={'b' + i} clef={other} width={150} notes={[{ d: t.d, color: '#a8823f' }]}/></div>
+      </div>
+      <div style={{textAlign:'center',fontSize:13,fontWeight:800,margin:'6px 0',lineHeight:1.5}}>{dName(t.d)}: {ledgerDesc(t.from, t.d).replace('(no ledger line)', '')} the {t.from} staff<br/>= {staffPlace(other, t.d)}</div>
+      {key >= 0 && key < 36 && <TapKeyboard octaves={3} labels="white" marks={{ [key]: 'good' }} onTap={(k) => playKey(k - 12)}/>}
+    </div>
+  );
+}
+
+// 4. Write them: tap where the named ledger note goes.
+function LedgerWrite() {
+  const make = (prev) => {
+    for (let g = 0; g < 20; g++) {
+      const clef = Math.random() < 0.5 ? 'treble' : 'bass', up = Math.random() < 0.5, c = CLEFS[clef];
+      const d = up ? c.high + 2 + Math.floor(Math.random() * 5) : c.low - 2 - Math.floor(Math.random() * 5);
+      if (!prev || prev.d !== d) return { clef, up, d };
+    }
+    return { clef: 'treble', up: true, d: 40 };
+  };
+  const [t, setT] = useState(() => make(null));
+  const [miss, setMiss] = useState(null);
+  const [hit, setHit] = useState(false);
+  const [score, setScore] = useState({ right: 0, tries: 0 });
+  const c = CLEFS[t.clef];
+  const rows = []; if (t.up) { for (let d = c.high + 1; d <= c.high + 7; d++) rows.push(d); } else { for (let d = c.low - 7; d <= c.low - 1; d++) rows.push(d); }
+  function tap(d) {
+    if (hit) return;
+    playKey(dMidiKey(d), 0.3);
+    if (d === t.d) { setHit(true); setMiss(null); setScore(s => ({ right: s.right + 1, tries: s.tries + 1 })); setTimeout(() => { setHit(false); setT(x => make(x)); }, 1300); }
+    else { setMiss(d); setScore(s => ({ ...s, tries: s.tries + 1 })); setTimeout(() => setMiss(m => (m === d ? null : m)), 900); }
+  }
+  const lo = t.up ? c.low : c.low - 7, hi = t.up ? c.high + 7 : c.high;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>Write it with ledger lines</div>
+        <div style={{fontSize:12,fontWeight:800,color:'var(--muted)'}}>{score.right}/{score.tries}</div>
+      </div>
+      <div style={{textAlign:'center',fontSize:20,fontWeight:900,margin:'4px 0'}}>{dName(t.d)} <span style={{fontSize:14,color:'#6f665b',fontWeight:700}}>{t.up ? 'above' : 'below'} the {t.clef} staff</span></div>
+      <StaffFrame clef={t.clef} lo={lo} hi={hi} width={200} rows={rows} onRow={tap}>
+        {(yOf) => <>
+          {miss !== null && <g><Ledgers clef={t.clef} d={miss} x={130} yOf={yOf} ink="#b5483b"/><ellipse cx={130} cy={yOf(miss)} rx="7" ry="5" transform={`rotate(-20 130 ${yOf(miss)})`} fill="#b5483b"/><text x={146} y={yOf(miss) + 4} fontSize="11" fontWeight="900" fill="#b5483b">{dName(miss)}</text></g>}
+          {hit && <g style={{animation:'fadeUp 0.25s both'}}><Ledgers clef={t.clef} d={t.d} x={130} yOf={yOf}/><ellipse cx={130} cy={yOf(t.d)} rx="7" ry="5" transform={`rotate(-20 130 ${yOf(t.d)})`} fill="#4f7a45"/></g>}
+        </>}
+      </StaffFrame>
+      <div style={{textAlign:'center',fontSize:12,fontWeight:700,minHeight:18,color:miss !== null ? '#b5483b' : '#4f7a45'}}>
+        {miss !== null ? 'That’s ' + dName(miss) + ' -- count again from the staff' : hit ? 'Yes -- ' + dName(t.d) + ' ' + ledgerDesc(t.clef, t.d) + '.' : 'Tap the line or space.'}
+      </div>
+    </div>
+  );
+}
+
+function LedgerLearn({ onStart }) {
+  const tip = (title, body) => <Rule title={title}>{body}</Rule>;
+  return (
+    <Lesson id="ledger-lines" title="Ledger lines" onStart={onStart}
+      intro={<>Short lines that carry the staff on above and below. They follow exactly the same line-space pattern -- once you can count from the staff, they stop being scary.</>}>
+      <Step title="What a ledger line is">
+        {tip('The staff keeps going', 'When a note is too high or too low for the five lines, we draw a short line just for it. Above and below each ledger line is a space, just like on the staff.')}
+        {tip('Count out from the staff', 'Start on the top (or bottom) line you know, and step out one line or space at a time: line, space, line, space.')}
+        <LedgerClimb/>
+      </Step>
+      <Step title="Ledger lines skip a letter">
+        {tip('Learn the notes ON the lines', 'Above the treble staff: A, C, E. Below it: C, A, F. Above the bass staff: C, E, G. Below it: E, C, A. Every other ledger note sits in between.')}
+        <LedgerLandmarks/>
+      </Step>
+      <Step title="Borrowed from the other staff">
+        {tip('The two staves overlap', 'Middle C is one ledger line from both staves. Keep going: the A two ledger lines below the treble staff is the bass staff’s top line; the E two ledger lines above the bass staff is the treble staff’s bottom line.')}
+        <LedgerTwins/>
+      </Step>
+      <Step title="Write them">
+        {tip('Writing ledger lines neatly', 'Draw them the same distance apart as the staff lines, only as wide as the note, and never draw one further out than the note needs.')}
+        <LedgerWrite/>
+      </Step>
+    </Lesson>
+  );
+}
+
+// Drill: 1, 2, then 3 ledger lines (both clefs, above and below), then find the exact key.
+function ledgerPool(clef, maxLedger) {
+  const c = CLEFS[clef], out = [];
+  for (let k = 1; k <= 2 * maxLedger + 1; k++) { out.push(c.high + k, c.low - k); }
+  return out;
+}
+const LEDGER_LEVELS = [
+  { n: 1, label: 'One ledger line (Prelim–Grade 1)',   kind: 'name', max: 1, time: 8 },
+  { n: 2, label: 'Two ledger lines',                   kind: 'name', max: 2, time: 8 },
+  { n: 3, label: 'Three ledger lines (Grade 2)',       kind: 'name', max: 3, time: 9 },
+  { n: 4, label: 'Find it on the keyboard (exact octave)', kind: 'key', max: 3, time: 11 },
+];
+function genLedgerQuestion(lv, prev) {
+  const uid = Math.random();
+  for (let g = 0; g < 40; g++) {
+    const clef = Math.random() < 0.5 ? 'treble' : 'bass';
+    const d = pick(ledgerPool(clef, lv.max));
+    if (lv.kind === 'key' && (dToKey(d) < 0 || dToKey(d) > 35)) continue;
+    if (prev && prev.d === d && prev.clef === clef) continue;
+    return { kind: lv.kind, key: clef + d, d, clef, staff: clef, answer: lv.kind === 'key' ? dToKey(d) : dName(d), uid };
+  }
+  return { kind: 'name', key: 'treble40', d: 40, clef: 'treble', staff: 'treble', answer: 'A', uid };
+}
+const LEDGER_DRILL = {
+  id: 'ledger-lines', label: 'Ledger Lines', levels: LEDGER_LEVELS, generate: genLedgerQuestion,
+  check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
+  answerLabel: (q) => dName(q.d) + ' (' + dLabel(q.d) + ', ' + ledgerDesc(q.clef, q.d) + ')',
+  Question: StaffQuestion, Learn: LedgerLearn,
 };
 
 // ─── Concept: Dynamics & Articulation (Phase 102, 2026-09-23) ────────────────────
@@ -5916,6 +6123,323 @@ const DYN_DRILL = {
   Question: DynQuestion, Learn: DynLearn,
 };
 
+// ─── Concept: Signs -- repeats, D.C./D.S./Fine/Coda, 8va, ties vs slurs (Phase 116) ─
+// "Reading the music" track #3. The heart of it is the road map: a line of bars with signs,
+// played back with a moving marker so the jumps can be seen, then the student taps the order.
+const ROAD_MAPS = [
+  { id: 'repeat', title: 'Repeat', bars: [{}, {}, {}, { endRep: true, final: true }],
+    order: [1, 2, 3, 4, 1, 2, 3, 4], wrong: [[1, 2, 3, 4], [1, 2, 3, 4, 4, 3, 2, 1], [1, 2, 3, 4, 1, 2]],
+    tip: 'An end-repeat sign (two dots, then a thin and a thick line) sends you back to the start -- play it all twice.' },
+  { id: 'mid', title: 'Repeat part', bars: [{}, { startRep: true }, { endRep: true }, { final: true }],
+    order: [1, 2, 3, 2, 3, 4], wrong: [[1, 2, 3, 1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4, 2, 3]],
+    tip: 'With a start-repeat sign too, you only go back as far as the start-repeat.' },
+  { id: 'endings', title: '1st & 2nd time', bars: [{}, {}, { ending: 1, endRep: true }, { ending: 2, final: true }],
+    order: [1, 2, 3, 1, 2, 4], wrong: [[1, 2, 3, 4, 1, 2, 3, 4], [1, 2, 3, 1, 2, 3, 4], [1, 2, 4]],
+    tip: 'First time through, play the 1. bar and repeat. Second time, skip the 1. bar and play the 2. bar instead.' },
+  { id: 'dcfine', title: 'D.C. al Fine', bars: [{}, { fine: true }, {}, { jump: 'D.C. al Fine', final: true }],
+    order: [1, 2, 3, 4, 1, 2], wrong: [[1, 2], [1, 2, 3, 4, 1, 2, 3, 4], [1, 2, 3, 4]],
+    tip: 'D.C. (da capo) = go back to the beginning. al Fine = stop at Fine. Fine is ignored the first time through.' },
+  { id: 'dsfine', title: 'D.S. al Fine', bars: [{}, { segno: true }, { fine: true }, {}, { jump: 'D.S. al Fine', final: true }],
+    order: [1, 2, 3, 4, 5, 2, 3], wrong: [[1, 2, 3, 4, 5, 1, 2, 3], [1, 2, 3], [1, 2, 3, 4, 5, 2, 3, 4, 5]],
+    tip: 'D.S. (dal segno) = go back to the sign 𝄋, not the beginning, then stop at Fine.' },
+  { id: 'dccoda', title: 'D.C. al Coda', bars: [{}, { toCoda: true }, {}, { jump: 'D.C. al Coda' }, { coda: true }, { final: true }],
+    order: [1, 2, 3, 4, 1, 2, 5, 6], wrong: [[1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 1, 2, 3, 4, 5, 6], [1, 2, 5, 6]],
+    tip: 'Go back to the beginning; when you reach “To Coda 𝄌”, jump to the Coda at the end.' },
+];
+function RoadStrip({ map, on = -1, flash = -1, onTap, done = [] }) {
+  const BW = 46, x0 = 8, gap = 14;
+  const xs = []; let x = x0;
+  map.bars.forEach((b, i) => { if (b.coda) x += gap; xs.push(x); x += BW; });
+  const W = x + 8, top = 30, line = (k) => top + k * 6;
+  return (
+    <svg viewBox={`0 0 ${W} 80`} style={{width:'100%',maxWidth:W * 1.6,display:'block',margin:'0 auto',touchAction:'manipulation'}}>
+      {map.bars.map((b, i) => {
+        const bx = xs[i], ex = bx + BW;
+        return (
+          <g key={i}>
+            {[0, 1, 2, 3, 4].map(k => <line key={k} x1={bx} x2={ex} y1={line(k)} y2={line(k)} stroke="#241f1a" strokeOpacity="0.5" strokeWidth="0.8"/>)}
+            {(on === i || flash === i) && <rect x={bx + 1} y={line(0)} width={BW - 2} height={24} fill={flash === i ? '#f6d6cf' : '#f3ead8'}/>}
+            <text x={bx + BW / 2} y={line(2) + 5} textAnchor="middle" fontSize="13" fontWeight="900" fill={flash === i ? '#b5483b' : on === i ? '#a8823f' : '#241f1a'}>{i + 1}</text>
+            {done.includes(i) && on !== i && <circle cx={bx + BW / 2} cy={line(4) + 7} r="2" fill="#4f7a45"/>}
+            {/* bar lines */}
+            {i === 0 && <line x1={bx} x2={bx} y1={line(0)} y2={line(4)} stroke="#241f1a" strokeWidth="1"/>}
+            {b.coda && <line x1={bx} x2={bx} y1={line(0)} y2={line(4)} stroke="#241f1a" strokeWidth="1"/>}
+            {b.startRep && <><line x1={bx + 1} x2={bx + 1} y1={line(0)} y2={line(4)} stroke="#241f1a" strokeWidth="3"/><line x1={bx + 5} x2={bx + 5} y1={line(0)} y2={line(4)} stroke="#241f1a" strokeWidth="1"/>
+              <circle cx={bx + 9} cy={line(1) + 3} r="1.6" fill="#241f1a"/><circle cx={bx + 9} cy={line(2) + 3} r="1.6" fill="#241f1a"/></>}
+            {b.endRep
+              ? <><circle cx={ex - 9} cy={line(1) + 3} r="1.6" fill="#241f1a"/><circle cx={ex - 9} cy={line(2) + 3} r="1.6" fill="#241f1a"/>
+                  <line x1={ex - 5} x2={ex - 5} y1={line(0)} y2={line(4)} stroke="#241f1a" strokeWidth="1"/><line x1={ex - 1} x2={ex - 1} y1={line(0)} y2={line(4)} stroke="#241f1a" strokeWidth="3"/></>
+              : b.final || (map.bars[i + 1] && map.bars[i + 1].coda)
+                ? <><line x1={ex - 5} x2={ex - 5} y1={line(0)} y2={line(4)} stroke="#241f1a" strokeWidth="1"/><line x1={ex - 1} x2={ex - 1} y1={line(0)} y2={line(4)} stroke="#241f1a" strokeWidth={b.final ? 3 : 1}/></>
+                : <line x1={ex} x2={ex} y1={line(0)} y2={line(4)} stroke="#241f1a" strokeWidth="1"/>}
+            {/* signs */}
+            {b.ending && <><path d={`M${bx + 2},${line(0) - 2} L${bx + 2},${line(0) - 10} L${ex - 3},${line(0) - 10}${b.ending === 1 ? ` L${ex - 3},${line(0) - 2}` : ''}`} fill="none" stroke="#3f7fb5" strokeWidth="1.1"/>
+              <text x={bx + 5} y={line(0) - 3} fontSize="8" fontWeight="900" fill="#3f7fb5">{b.ending}.</text></>}
+            {b.segno && <text x={bx + 2} y={line(0) - 3} fontSize="22" fill="#b5483b" style={{fontFamily:MUSIC_FONT}}>𝄋</text>}
+            {b.coda && <text x={bx + 2} y={line(0) - 3} fontSize="22" fill="#7a64a8" style={{fontFamily:MUSIC_FONT}}>𝄌</text>}
+            {b.toCoda && <text x={ex - 2} y={line(0) - 4} textAnchor="end" fontSize="9" fontWeight="800" fontStyle="italic" fill="#7a64a8">To Coda <tspan style={{fontFamily:MUSIC_FONT}} fontSize="14" fontStyle="normal">𝄌</tspan></text>}
+            {b.fine && <text x={ex - 2} y={line(4) + 11} textAnchor="end" fontSize="10" fontWeight="900" fontStyle="italic" fill="#4f8a5b">Fine</text>}
+            {b.jump && <text x={ex - 2} y={line(4) + 11} textAnchor="end" fontSize="9" fontWeight="900" fontStyle="italic" fill="#b07d2a">{b.jump}</text>}
+            {onTap && <rect x={bx} y={line(0) - 14} width={BW} height={52} fill="transparent" style={{cursor:'pointer'}} onClick={() => onTap(i)}/>}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+function RoadMap() {
+  const [id, setId] = useState('repeat');
+  const map = ROAD_MAPS.find(m => m.id === id);
+  const [mode, setMode] = useState('watch'); // watch | turn
+  const [pos, setPos] = useState(-1);
+  const [taps, setTaps] = useState([]);
+  const [flash, setFlash] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  useEffect(() => { timers.current.forEach(clearTimeout); setPos(-1); setTaps([]); setFlash(-1); }, [id, mode]);
+  const tone = (bar) => playKey([0, 2, 4, 5, 7, 9, 11, 12][(bar - 1) % 8], 0.4);
+  function watch() {
+    timers.current.forEach(clearTimeout); timers.current = [];
+    map.order.forEach((b, k) => timers.current.push(setTimeout(() => { setPos(k); tone(b); }, 200 + k * 650)));
+    timers.current.push(setTimeout(() => setPos(-1), 200 + map.order.length * 650 + 400));
+  }
+  function tap(i) {
+    if (taps.length >= map.order.length) return;
+    const want = map.order[taps.length] - 1;
+    if (i === want) { tone(i + 1); setTaps([...taps, i]); }
+    else { setFlash(i); setTimeout(() => setFlash(f => (f === i ? -1 : f)), 600); }
+  }
+  const playedBar = mode === 'watch' ? (pos >= 0 ? map.order[pos] - 1 : -1) : (taps.length ? taps[taps.length - 1] : -1);
+  const doneTurn = mode === 'turn' && taps.length === map.order.length;
+  const seq = mode === 'watch' ? map.order.slice(0, pos + 1) : taps.map(t => t + 1);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Follow the road map</div>
+      <div style={actNote}>Pick a map. <b>Watch</b> the marker travel through the bars in the order they’re played -- then switch to <b>Your turn</b> and tap the bars in order yourself.</div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
+        {ROAD_MAPS.map(m => <button key={m.id} className={'chip' + (m.id === id ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => setId(m.id)}>{m.title}</button>)}
+      </div>
+      <div style={{background:'#fff',borderRadius:8,padding:'4px 2px'}}>
+        <RoadStrip map={map} on={playedBar} flash={flash} onTap={mode === 'turn' ? tap : null} done={mode === 'turn' ? taps : []}/>
+      </div>
+      <div style={{fontSize:12,color:'#6f665b',lineHeight:1.5,margin:'6px 0'}}>{map.tip}</div>
+      <div style={{display:'flex',justifyContent:'center',gap:4,flexWrap:'wrap',fontSize:15,fontWeight:900,minHeight:26,margin:'4px 0'}}>
+        {seq.map((b, k) => <span key={k} style={{minWidth:22,textAlign:'center',padding:'1px 5px',borderRadius:6,background:k === seq.length - 1 ? '#f3ead8' : 'transparent',animation:'fadeUp 0.2s both'}}>{b}</span>)}
+        {mode === 'turn' && !doneTurn && <span style={{color:'#c7bca8'}}>?</span>}
+      </div>
+      {doneTurn && <div style={{textAlign:'center',fontSize:13,fontWeight:800,color:'#4f7a45'}}>Right road! {map.order.join(' ')}</div>}
+      {flash >= 0 && <div style={{textAlign:'center',fontSize:12,fontWeight:700,color:'#b5483b'}}>Not that bar -- look at the signs at the end of bar {taps.length ? taps[taps.length - 1] + 1 : 1}.</div>}
+      <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:6}}>
+        <button className={'ghost-btn'} style={mode === 'watch' ? {borderColor:'var(--text)'} : {}} onClick={() => { setMode('watch'); setTimeout(watch, 50); }}>▶ Watch</button>
+        <button className={'ghost-btn'} style={mode === 'turn' ? {borderColor:'var(--text)'} : {}} onClick={() => setMode('turn')}>Your turn</button>
+        {mode === 'turn' && <button className="ghost-btn" onClick={() => setTaps([])}>Restart</button>}
+      </div>
+    </div>
+  );
+}
+
+// Ties and slurs look alike -- the test is whether the two notes are the same pitch.
+function CurvePair({ a, b, width = 200, color = '#241f1a', curve = '#241f1a' }) {
+  const x1 = width * 0.36, x2 = width * 0.66, y1 = dY(a), y2 = dY(b);
+  // Stems up below the middle line (curve under the heads), stems down from it upwards (curve over them).
+  const up = (a + b) / 2 < 34;
+  const low = Math.max(y1, y2) + 9, high = Math.min(y1, y2) - 9;
+  return (
+    <svg viewBox={`0 ${dY(40)} ${width} ${dY(26) - dY(40)}`} style={{width:'100%',maxWidth:width * 1.6,display:'block',margin:'0 auto'}}>
+      {[30, 32, 34, 36, 38].map(l => <line key={l} x1="4" x2={width - 4} y1={dY(l)} y2={dY(l)} stroke="#241f1a" strokeOpacity="0.55" strokeWidth="1.2"/>)}
+      <ClefGlyph clef="treble" st="treble" yOf={(d) => dY(d)} ink="#241f1a"/>
+      {[[x1, a], [x2, b]].map(([x, d], i) => (
+        <g key={i}>
+          {ledgersFor(d, 30, 38).map(p => <line key={p} x1={x - 12} x2={x + 12} y1={dY(p)} y2={dY(p)} stroke="#241f1a" strokeWidth="1.4"/>)}
+          <ellipse cx={x} cy={dY(d)} rx="7" ry="5" transform={`rotate(-20 ${x} ${dY(d)})`} fill={color}/>
+          {up ? <line x1={x + 6.5} x2={x + 6.5} y1={dY(d)} y2={dY(d) - 32} stroke={color} strokeWidth="1.4"/>
+              : <line x1={x - 6.5} x2={x - 6.5} y1={dY(d)} y2={dY(d) + 32} stroke={color} strokeWidth="1.4"/>}
+        </g>
+      ))}
+      {up ? <path d={`M${x1 + 3},${y1 + 7} Q${(x1 + x2) / 2},${low + 10} ${x2 - 3},${y2 + 7}`} fill="none" stroke={curve} strokeWidth="2" strokeLinecap="round"/>
+          : <path d={`M${x1 + 3},${y1 - 7} Q${(x1 + x2) / 2},${high - 10} ${x2 - 3},${y2 - 7}`} fill="none" stroke={curve} strokeWidth="2" strokeLinecap="round"/>}
+    </svg>
+  );
+}
+function playTieSlur(a, b, tie) {
+  const ctx = getAudio(); if (!ctx) return;
+  const t = ctx.currentTime + 0.05, f = (d) => 440 * Math.pow(2, (dMidiKey(d) + 60 - 69) / 12);
+  if (tie) blip(ctx, t, f(a), 1.3, 0.2, 'triangle');
+  else { blip(ctx, t, f(a), 0.72, 0.2, 'triangle'); blip(ctx, t + 0.66, f(b), 0.7, 0.2, 'triangle'); }
+}
+function TieOrSlur() {
+  const make = () => { const a = 30 + Math.floor(Math.random() * 7); const tie = Math.random() < 0.5; let b = a; if (!tie) { b = a + (Math.random() < 0.5 ? -1 : 1) * (1 + Math.floor(Math.random() * 3)); } return { a, b, tie }; };
+  const [q, setQ] = useState(make);
+  const [ans, setAns] = useState(null);
+  const [score, setScore] = useState({ right: 0, tries: 0 });
+  function choose(tie) { if (ans !== null) return; setAns(tie); setScore(s => ({ right: s.right + (tie === q.tie ? 1 : 0), tries: s.tries + 1 })); playTieSlur(q.a, q.b, q.tie); }
+  const ok = ans !== null && ans === q.tie;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between'}}><div style={actTitle}>Tie or slur?</div><div style={{fontSize:12,fontWeight:800,color:'var(--muted)'}}>{score.right}/{score.tries}</div></div>
+      <div style={actNote}>Same curve, different job. Look at the two notes: <b>same pitch</b> = tie (hold it as one long note); <b>different pitches</b> = slur (play them smoothly, legato).</div>
+      <div style={{background:'#fff',borderRadius:8}}><CurvePair a={q.a} b={q.b} curve={ans === null ? '#241f1a' : q.tie ? '#3f7fb5' : '#4f8a5b'}/></div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',margin:'8px 0 4px'}}>
+        <button className="ghost-btn" disabled={ans !== null} onClick={() => choose(true)} style={{minWidth:90,borderColor:ans !== null && q.tie ? '#3f7fb5' : undefined}}>Tie</button>
+        <button className="ghost-btn" disabled={ans !== null} onClick={() => choose(false)} style={{minWidth:90,borderColor:ans !== null && !q.tie ? '#4f8a5b' : undefined}}>Slur</button>
+      </div>
+      <div style={{textAlign:'center',fontSize:13,minHeight:40,lineHeight:1.5}}>
+        {ans !== null && <><b style={{color:ok ? '#4f7a45' : '#b5483b'}}>{ok ? 'Yes -- ' : 'Look again -- '}{q.tie ? 'a tie' : 'a slur'}.</b> {q.tie ? 'Both notes are ' + dName(q.a) + ': play it once and hold it for both.' : dName(q.a) + ' to ' + dName(q.b) + ': two different notes, joined smoothly.'}
+          <div><button className="ghost-btn" style={{marginTop:6}} onClick={() => { setQ(make()); setAns(null); }}>Next →</button></div></>}
+      </div>
+    </div>
+  );
+}
+
+// 8va / 8vb: the same written notes, sounding an octave higher or lower.
+function OttavaDemo() {
+  const [mode, setMode] = useState('8va');
+  const written = [35, 36, 37, 38];
+  const shift = mode === '8va' ? 12 : mode === '8vb' ? -12 : 0;
+  const [on, setOn] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  function play() {
+    timers.current.forEach(clearTimeout); timers.current = [];
+    written.forEach((d, i) => timers.current.push(setTimeout(() => { setOn(i); playKey(dMidiKey(d) + shift, 0.4); }, 100 + i * 450)));
+    timers.current.push(setTimeout(() => setOn(-1), 100 + written.length * 450 + 300));
+  }
+  const W = 240, xs = written.map((_, i) => 90 + i * 36);
+  const marks = {};
+  written.forEach((d, i) => { const k = dMidiKey(d) + 12 + shift - 12; if (k >= 0 && k < 36) marks[k] = on === i ? 'good' : 'target'; });
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>8va and 8vb</div>
+        <div style={{display:'flex',gap:4}}>{[['none', 'as written'], ['8va', '8va'], ['8vb', '8vb']].map(([k, l]) => <button key={k} className={'chip' + (mode === k ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => setMode(k)}>{l}</button>)}</div>
+      </div>
+      <div style={actNote}><b>8va</b> (ottava) over the notes = play them an octave <b>higher</b>. <b>8vb</b> under the notes = an octave <b>lower</b>. The dotted line shows how long it lasts. It saves writing lots of ledger lines.</div>
+      <svg viewBox={`0 ${dY(46)} ${W} ${dY(22) - dY(46)}`} style={{width:'100%',maxWidth:W * 1.6,display:'block',margin:'0 auto',background:'#fff',borderRadius:8}}>
+        {[30, 32, 34, 36, 38].map(l => <line key={l} x1="4" x2={W - 4} y1={dY(l)} y2={dY(l)} stroke="#241f1a" strokeOpacity="0.55" strokeWidth="1.2"/>)}
+        <ClefGlyph clef="treble" st="treble" yOf={(d) => dY(d)} ink="#241f1a"/>
+        {written.map((d, i) => <g key={i}><ellipse cx={xs[i]} cy={dY(d)} rx="7" ry="5" transform={`rotate(-20 ${xs[i]} ${dY(d)})`} fill={on === i ? '#a8823f' : '#241f1a'}/><line x1={xs[i] - 6.5} x2={xs[i] - 6.5} y1={dY(d)} y2={dY(d) + 30} stroke={on === i ? '#a8823f' : '#241f1a'} strokeWidth="1.4"/></g>)}
+        {mode === '8va' && <g style={{animation:'fadeUp 0.3s both'}}><text x={xs[0] - 10} y={dY(43)} fontSize="12" fontWeight="900" fontStyle="italic" fill="#b5483b">8va</text><path d={`M${xs[0] + 14},${dY(43) - 4} L${xs[3] + 10},${dY(43) - 4} L${xs[3] + 10},${dY(43) + 3}`} fill="none" stroke="#b5483b" strokeWidth="1.2" strokeDasharray="3 3"/></g>}
+        {mode === '8vb' && <g style={{animation:'fadeUp 0.3s both'}}><text x={xs[0] - 10} y={dY(25)} fontSize="12" fontWeight="900" fontStyle="italic" fill="#3f7fb5">8vb</text><path d={`M${xs[0] + 14},${dY(25) - 4} L${xs[3] + 10},${dY(25) - 4} L${xs[3] + 10},${dY(25) - 11}`} fill="none" stroke="#3f7fb5" strokeWidth="1.2" strokeDasharray="3 3"/></g>}
+      </svg>
+      <div style={{textAlign:'center',fontSize:12,color:'#6f665b',margin:'6px 0 4px'}}>Written C D E F in the treble -- they sound as {mode === '8va' ? 'the C D E F an octave higher' : mode === '8vb' ? 'the C D E F an octave lower' : 'written'}. Gold keys = what you play.</div>
+      <TapKeyboard octaves={3} labels="white" marks={marks} onTap={(k) => playKey(k)}/>
+      <div style={{textAlign:'center',marginTop:6}}><button className="ghost-btn" onClick={play}>♪ Play it</button></div>
+    </div>
+  );
+}
+
+function SignsLearn({ onStart }) {
+  const tip = (title, body) => <Rule title={title}>{body}</Rule>;
+  return (
+    <Lesson id="signs" title="Signs: repeats, jumps, 8va, ties and slurs" onStart={onStart}
+      intro={<>The signs that tell you where to go next and how long to hold. Music is read like a road map -- these are the road signs.</>}>
+      <Step title="Repeat signs">
+        {tip('The repeat sign', 'Two dots before a thin and a thick bar line mean “go back”. Go back to the start-repeat sign (dots after the thick line) -- or, if there isn’t one, to the very beginning.')}
+        {tip('1st and 2nd time bars', 'Bars under a bracket marked 1. are played the first time only. On the repeat, skip them and play the 2. bar instead.')}
+        <RoadMap/>
+      </Step>
+      <Step title="D.C., D.S., Fine and Coda">
+        {tip('D.C. -- da capo', '“From the head”: go back to the beginning.')}
+        {tip('D.S. -- dal segno', '“From the sign”: go back to the sign 𝄋.')}
+        {tip('Fine and Coda', 'Fine = the end (ignore it the first time through). al Fine = play until Fine. al Coda = play until “To Coda”, then jump to the Coda 𝄌 -- the ending section.')}
+        <div style={{fontSize:12,color:'#6f665b',margin:'4px 0 8px'}}>Try the D.C. al Fine, D.S. al Fine and D.C. al Coda maps in the road map above.</div>
+      </Step>
+      <Step title="Ties and slurs">
+        {tip('Tie', 'A curve joining two notes of the SAME pitch: play the note once and hold it for the length of both.')}
+        {tip('Slur', 'A curve over or under DIFFERENT notes: play them smoothly, joined -- legato.')}
+        <TieOrSlur/>
+      </Step>
+      <Step title="8va and 8vb">
+        <OttavaDemo/>
+      </Step>
+    </Lesson>
+  );
+}
+
+// Drill
+const SIGN_LIST = [
+  // Meanings leave the sign's own name out, so the picture can't give the answer away.
+  { id: 'repeat', name: 'Repeat sign', meaning: 'Go back and play the section again' },
+  { id: 'endings', name: '1st and 2nd time bars', meaning: 'Play one bar the first time, a different bar the second time' },
+  { id: 'dc', name: 'D.C. (da capo)', meaning: 'Go back to the beginning' },
+  { id: 'ds', name: 'D.S. (dal segno)', meaning: 'Go back to the sign' },
+  { id: 'segno', name: 'Segno', meaning: 'The sign that D.S. sends you back to' },
+  { id: 'fine', name: 'Fine', meaning: 'The end' },
+  { id: 'coda', name: 'Coda sign', meaning: 'The ending section -- jump here from “To Coda”' },
+  { id: '8va', name: '8va', meaning: 'Play an octave higher' },
+  { id: '8vb', name: '8vb', meaning: 'Play an octave lower' },
+  { id: 'tie', name: 'Tie', meaning: 'Hold the note for the length of both -- play it once' },
+  { id: 'slur', name: 'Slur', meaning: 'Play the notes smoothly, joined (legato)' },
+];
+function SignPic({ id, ink = '#241f1a' }) {
+  if (id === 'tie') return <CurvePair a={34} b={34} color={ink} curve={ink}/>;
+  if (id === 'slur') return <CurvePair a={32} b={35} color={ink} curve={ink}/>;
+  const W = 200, L = (k) => 30 + k * 7;
+  const staff = [0, 1, 2, 3, 4].map(k => <line key={k} x1="10" x2={W - 10} y1={L(k)} y2={L(k)} stroke={ink} strokeOpacity="0.55" strokeWidth="1"/>);
+  const txt = (t, x, y, anchor = 'middle', size = 16, italic = true) => <text x={x} y={y} textAnchor={anchor} fontSize={size} fontWeight="900" fontStyle={italic ? 'italic' : 'normal'} fill={ink}>{t}</text>;
+  const glyph = (g, x, y, size = 30) => <text x={x} y={y} textAnchor="middle" fontSize={size} fill={ink} style={{fontFamily:MUSIC_FONT}}>{g}</text>;
+  let extra = null;
+  if (id === 'repeat') extra = <><circle cx={W - 24} cy={L(1) + 3.5} r="2.2" fill={ink}/><circle cx={W - 24} cy={L(2) + 3.5} r="2.2" fill={ink}/><line x1={W - 18} x2={W - 18} y1={L(0)} y2={L(4)} stroke={ink} strokeWidth="1.3"/><line x1={W - 12} x2={W - 12} y1={L(0)} y2={L(4)} stroke={ink} strokeWidth="4"/></>;
+  if (id === 'endings') extra = <><path d={`M20,${L(0) - 3} L20,${L(0) - 15} L96,${L(0) - 15} L96,${L(0) - 3}`} fill="none" stroke={ink} strokeWidth="1.3"/>{txt('1.', 26, L(0) - 5, 'start', 12, false)}<path d={`M104,${L(0) - 3} L104,${L(0) - 15} L186,${L(0) - 15}`} fill="none" stroke={ink} strokeWidth="1.3"/>{txt('2.', 110, L(0) - 5, 'start', 12, false)}</>;
+  if (id === 'dc') extra = txt('D.C.', W - 16, L(4) + 22, 'end');
+  if (id === 'ds') extra = txt('D.S.', W - 16, L(4) + 22, 'end');
+  if (id === 'fine') extra = txt('Fine', W - 16, L(4) + 22, 'end');
+  if (id === 'segno') extra = glyph('𝄋', 40, L(0) - 4);
+  if (id === 'coda') extra = glyph('𝄌', 40, L(0) - 4);
+  if (id === '8va') extra = <>{txt('8va', 30, L(0) - 8, 'start', 15)}<path d={`M62,${L(0) - 13} L180,${L(0) - 13} L180,${L(0) - 5}`} fill="none" stroke={ink} strokeWidth="1.3" strokeDasharray="4 4"/></>;
+  if (id === '8vb') extra = <>{txt('8vb', 30, L(4) + 20, 'start', 15)}<path d={`M62,${L(4) + 15} L180,${L(4) + 15} L180,${L(4) + 7}`} fill="none" stroke={ink} strokeWidth="1.3" strokeDasharray="4 4"/></>;
+  return <svg viewBox={`0 0 ${W} 90`} style={{width:'100%',maxWidth:320,display:'block',margin:'0 auto'}}>{staff}{extra}</svg>;
+}
+const SIGNS_LEVELS = [
+  { n: 1, label: 'What does this sign mean?', kind: 'sign', time: 9 },
+  { n: 2, label: 'Tie or slur?',              kind: 'tieslur', time: 6 },
+  { n: 3, label: 'Road map: the playing order', kind: 'road', time: 15 },
+];
+function genSignsQuestion(lv, prev) {
+  const uid = Math.random();
+  if (lv.kind === 'sign') {
+    let s = pick(SIGN_LIST), g = 0; while (prev && prev.key === s.id && g++ < 10) s = pick(SIGN_LIST);
+    const others = sampleN(SIGN_LIST.filter(x => x.id !== s.id).map(x => x.meaning), 3);
+    return { kind: 'sign', key: s.id, id: s.id, answer: s.meaning, choices: shuffle([s.meaning, ...others]), uid };
+  }
+  if (lv.kind === 'tieslur') {
+    const a = 30 + Math.floor(Math.random() * 7), tie = Math.random() < 0.5;
+    const b = tie ? a : a + (Math.random() < 0.5 ? -1 : 1) * (1 + Math.floor(Math.random() * 3));
+    return { kind: 'tieslur', key: a + ':' + b, a, b, tie, answer: tie ? 'Tie' : 'Slur', choices: ['Tie', 'Slur'], uid };
+  }
+  let m = pick(ROAD_MAPS), g = 0; while (prev && prev.key === m.id && g++ < 10) m = pick(ROAD_MAPS);
+  const answer = m.order.join(' ');
+  return { kind: 'road', key: m.id, map: m, answer, choices: shuffle([answer, ...m.wrong.map(w => w.join(' '))]), uid };
+}
+function SignsQuestion({ q, level, given, locked, onAnswer, pixel }) {
+  const done = !!given;
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const prompt = (t, px) => <p style={pixel ? {fontSize:10,textAlign:'center',margin:'0 0 10px'} : {fontSize:14,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? px : t}</p>;
+  const panel = { background:'#fff', borderRadius:pixel ? 0 : 8, padding:'4px 0', marginBottom:10 };
+  const cls = (c) => btnCls + (!done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '');
+  if (q.kind === 'tieslur') return (<div>
+    {prompt('Tie or slur?', 'TIE OR SLUR?')}
+    <div style={panel}><CurvePair a={q.a} b={q.b}/></div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>{q.choices.map(c => <button key={c} disabled={locked} className={cls(c)} style={{padding:'16px 0',fontSize:pixel ? 10 : 16}} onClick={() => { onAnswer(c); playTieSlur(q.a, q.b, q.tie); }}>{c}</button>)}</div>
+  </div>);
+  if (q.kind === 'road') return (<div>
+    {prompt('In what order are the bars played?', 'PLAYING ORDER?')}
+    <div style={panel}><RoadStrip map={q.map}/></div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr',gap:6}}>{q.choices.map(c => <button key={c} disabled={locked} className={cls(c)} style={{padding:'10px 0',fontSize:pixel ? 9 : 16,letterSpacing:'0.12em'}} onClick={() => onAnswer(c)}>{c}</button>)}</div>
+  </div>);
+  return (<div>
+    {prompt('What does this sign mean?', 'WHAT DOES IT MEAN?')}
+    <div style={panel}><SignPic id={q.id}/></div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr',gap:6}}>{q.choices.map(c => <button key={c} disabled={locked} className={cls(c)} style={{padding:'10px 8px',fontSize:pixel ? 8 : 14,lineHeight:1.3}} onClick={() => onAnswer(c)}>{c}</button>)}</div>
+  </div>);
+}
+const SIGNS_DRILL = {
+  id: 'signs', label: 'Signs', levels: SIGNS_LEVELS, generate: genSignsQuestion,
+  check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
+  answerLabel: (q) => q.kind === 'road' ? q.answer + ' (' + q.map.title + ')' : q.kind === 'sign' ? SIGN_LIST.find(x => x.id === q.id).name + ': ' + q.answer.toLowerCase() : q.answer,
+  Question: SignsQuestion, Learn: SignsLearn,
+};
+
 // Registry of drills. Two shapes:
 //   { id, label, render }            -- original single-screen drills (Phase 89/90)
 //   { id, label, concept }           -- Phase 94 concept sets (Learn + Drill on the shared engine)
@@ -5925,6 +6449,7 @@ const DYN_DRILL = {
 const DRILLS = [
   { id: 'note-names', label: 'Note Names', concept: NOTE_NAMES_DRILL, track: 'pitch' },
   { id: 'staff', label: 'Reading the Staff', concept: STAFF_DRILL, track: 'pitch' },
+  { id: 'ledger-lines', label: 'Ledger Lines', concept: LEDGER_DRILL, track: 'pitch' },
   { id: 'tones', label: 'Tones & Semitones', concept: TONES_DRILL, track: 'pitch' },
   { id: 'scales', label: 'Scales', concept: SCALES_DRILL, track: 'pitch' },
   { id: 'key-signatures', label: 'Key Signatures', concept: KEYSIG_DRILL, track: 'pitch' },
@@ -5934,6 +6459,7 @@ const DRILLS = [
   { id: 'rhythm', label: 'Rhythm Cards', concept: RHYTHM_DRILL, track: 'rhythm' },
   { id: 'tempo', label: 'Tempo Race', concept: TEMPO_DRILL, track: 'reading' },
   { id: 'dynamics', label: 'Dynamics & Articulation', concept: DYN_DRILL, track: 'reading' },
+  { id: 'signs', label: 'Signs', concept: SIGNS_DRILL, track: 'reading' },
 ];
 
 // URL state: ?drill=<id>&tab=learn|drill&level=<n>&mode=lesson|game&lock=1
