@@ -2862,6 +2862,9 @@ Shared helpers: `playItems(items, bpm, onStep)` (tone per note, rests silent, so
 - `RegroupQuavers` ("Same notes, different beat"): six quavers beamed 2+2+2 (3/4) or 3+3 (6/8), labelled beat 1/2/3, played with the matching accents.
 - `fmtBeats` now says "½ beat" / "1 beat" (singular up to one beat).
 
+### Phase 110 -- Rhythm Cards: make your own card
+`RhythmComposer` (end of RhythmLearn): choose Set 1-5 (unlocks the same RCELLS building blocks the 40 cards use), tap blocks to fill one 4/4 bar (progress bar; blocks that would overflow are disabled), the card renders with RhythmCard and shows counts once full; ♪ Play (count-in + rhythm), ↻ Loop / ■ Stop, ↶ Undo, Surprise me (random full bar from the set's blocks).
+
 Next on the plan: Signs (repeats, D.C./D.S./Fine, fermata already here, 8va, ties vs slurs), then Chords (Intervals done in Phase 105).
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
@@ -3010,7 +3013,7 @@ When revisited, build the AMEB/ABRSM/Trinity-specific angle, not a generic direc
 | 15 | ~~Verify remaining DRAFT black-root scale fingerings~~ | Done (Phase 97) | B♭, E♭, A♭, D♭ read off the AMEB books and fixed; C♯ = D♭. Sohyun may still eyeball them in the Scales tab. |
 | 16 | drills.html chapters built (Phases 94-105) | Done -- review | Sohyun to try every chapter in the preview and flag anything off. Latest (2026-09-24): Key Signatures hands-on round (103), Note Names activities (104), sharps/flats + half/whole step moved to Tones & Semitones, new Intervals chapter (105). |
 | 18 | drills.html -- open questions for Sohyun (asked 2026-09-24, not yet answered) | Quick -- Sohyun | (a) Note Names "Letter chain" (2nd-8ve chips): keep in Note Names or move to Intervals? (b) Note Names drill Level 4 "Black keys too (sharps & flats)": keep or move to Tones & Semitones? (c) Interval song hooks (Jaws, Happy Birthday, Greensleeves, Oh When the Saints, Here Comes the Bride, Twinkle Twinkle, My Bonnie, Somewhere, Over the Rainbow) -- swap for tunes Australian students know? |
-| 19 | drills.html -- NEXT SESSION START HERE | Next | Sohyun's direction (2026-09-24): give every chapter key-signature-style hands-on, animated activities, going in curriculum order (Note Names done; Tones & Semitones partly -- has StepExplorer + SharpFlatMover; Reading the Staff done (Phase 106); Scales done (Phase 107); Notes & Rests done (Phase 108); Time Signatures done (Phase 109); next Rhythm Cards, Tempo Race, Dynamics). New chapters still to build: Signs (repeats, D.C./D.S./Fine, 8va, ties vs slurs), Intervals Grade 3 add-on (inversions, A4/d5), then Chords (Roman numerals + letter names; check AMEB grade placement first -- Music Craft Prelim = tonic triad I in C/G/F, Grade 1 = I and V). |
+| 19 | drills.html -- NEXT SESSION START HERE | Next | Sohyun's direction (2026-09-24): give every chapter key-signature-style hands-on, animated activities, going in curriculum order (Note Names done; Tones & Semitones partly -- has StepExplorer + SharpFlatMover; Reading the Staff done (Phase 106); Scales done (Phase 107); Notes & Rests done (Phase 108); Time Signatures done (Phase 109); Rhythm Cards done (Phase 110); next Tempo Race, Dynamics). New chapters still to build: Signs (repeats, D.C./D.S./Fine, 8va, ties vs slurs), Intervals Grade 3 add-on (inversions, A4/d5), then Chords (Roman numerals + letter names; check AMEB grade placement first -- Music Craft Prelim = tonic triad I in C/G/F, Grade 1 = I and V). |
 | 17 | Tap-along timing on a real phone (Rhythm Cards) | Quick -- after Sohyun pushes `7072051` | Especially Game (pixel) mode: the Press Start 2P font could not load in the sandbox test. Also try a `lock=1` student link on a phone. |
 
 

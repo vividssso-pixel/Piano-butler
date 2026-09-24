@@ -2712,6 +2712,67 @@ function RhythmQuestion({ q, level, given, locked, onAnswer, pixel }) {
   );
 }
 
+// ─── Rhythm Cards: compose your own (Phase 110) ──────────────────────────────────
+// Build a one-bar 4/4 rhythm from the same cells the 40 cards use, see the counting, hear it (looped).
+function RhythmComposer() {
+  const [tier, setTier] = useState(2);
+  const [cells, setCells] = useState([]);
+  const [loop, setLoop] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const timer = useRef(null);
+  const allowed = RHYTHM_TIERS.filter(t => t.n <= tier).flatMap(t => t.add);
+  const used = cells.reduce((a, c) => a + RCELLS[c].beats, 0);
+  const full = used === 4;
+  const bpm = RHYTHM_TIERS[tier - 1].bpm;
+  useEffect(() => () => { clearTimeout(timer.current); stopClicks(); }, []);
+  useEffect(() => { setCells(cs => cs.filter(c => allowed.includes(c))); }, [tier]);
+  function play(again) {
+    clearTimeout(timer.current);
+    if (!full) return;
+    playCard({ cells }, bpm); setPlaying(true);
+    const ms = (8 * 60 / bpm) * 1000;
+    timer.current = setTimeout(() => { if (again) play(true); else setPlaying(false); }, ms + 100);
+  }
+  function stop() { clearTimeout(timer.current); stopClicks(); setPlaying(false); setLoop(false); }
+  function add(c) { if (used + RCELLS[c].beats > 4) return; setCells([...cells, c]); }
+  function surprise() {
+    for (let g = 0; g < 50; g++) {
+      const out = []; let u = 0;
+      while (u < 4) { const opts = allowed.filter(c => c !== 'W' && u + RCELLS[c].beats <= 4); const c = pick(opts); out.push(c); u += RCELLS[c].beats; }
+      if (!out.every(c => c === 'QR')) { setCells(out); return; }
+    }
+  }
+  return (
+    <div style={{...actBox, background:'#fff', border:'1px solid var(--border)'}}>
+      <div>
+        <div style={actTitle}>Make your own card</div>
+        <div style={{display:'flex',gap:3,flexWrap:'wrap',margin:'4px 0'}}>{RHYTHM_TIERS.map(t => <button key={t.n} className={'chip' + (t.n === tier ? ' active' : '')} style={{padding:'2px 8px',fontSize:11}} onClick={() => setTier(t.n)}>Set {t.n}</button>)}</div>
+      </div>
+      <div style={actNote}>Tap the building blocks to fill one 4/4 bar. When the bar is full, play it -- count out loud with the numbers under the notes. Swap a friend’s card for yours!</div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:8}}>
+        {allowed.map(c => (
+          <button key={c} className="chip" disabled={used + RCELLS[c].beats > 4} onClick={() => add(c)} style={{padding:'0 4px',height:54,display:'flex',alignItems:'center'}}>
+            <div style={{width:Math.min(RCELLS[c].beats, 2) * 26 + 24,pointerEvents:'none'}}><RhythmSVG card={{ cells: [c] }}/></div>
+          </button>
+        ))}
+      </div>
+      <div style={{height:8,borderRadius:4,background:'#f4f1ea',overflow:'hidden',marginBottom:6}}>
+        <div style={{height:'100%',width:(used / 4 * 100) + '%',background:full ? '#4f7a45' : '#a8823f',transition:'width 0.25s'}}/>
+      </div>
+      {cells.length
+        ? <div style={{animation:'fadeUp 0.25s both'}}><RhythmCard card={{ num: '★', cells }} counts={full} playing={playing}/></div>
+        : <div style={{textAlign:'center',fontSize:12,color:'var(--muted)',padding:'18px 0',border:'2px dashed var(--border)',borderRadius:12}}>Your card appears here</div>}
+      <div style={{textAlign:'center',fontSize:12,fontWeight:700,color:full ? '#4f7a45' : 'var(--muted)',margin:'6px 0'}}>{full ? 'Full bar -- 4 beats.' : used + ' of 4 beats'}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap'}}>
+        <button className="ghost-btn" disabled={!full} onClick={() => { setLoop(false); play(false); }}>♪ Play</button>
+        <button className="ghost-btn" disabled={!full} onClick={() => { if (loop) stop(); else { setLoop(true); play(true); } }}>{loop ? '■ Stop' : '↻ Loop'}</button>
+        <button className="ghost-btn" disabled={!cells.length} onClick={() => { stop(); setCells(cells.slice(0, -1)); }}>↶ Undo</button>
+        <button className="ghost-btn" onClick={() => { stop(); surprise(); }}>Surprise me</button>
+      </div>
+    </div>
+  );
+}
+
 function RhythmLearn({ onStart }) {
   const [tier, setTier] = useState(1);
   const [playing, setPlaying] = useState(null);
@@ -2732,7 +2793,8 @@ function RhythmLearn({ onStart }) {
       <div style={{display:'flex',flexDirection:'column',gap:8}}>
         {RHYTHM_DECK.filter(c => c.tier === tier).map(c => <RhythmCard key={c.num} card={c} counts playing={playing === c.num} onClick={() => hear(c)}/>)}
       </div>
-      <p style={{fontSize:11,color:'var(--muted)',margin:'10px 0 0',lineHeight:1.5}}>Counting: 1 e & a for semiquavers, 1 trip let for triplets; rests shown in brackets.</p>
+      <p style={{fontSize:11,color:'var(--muted)',margin:'10px 0 14px',lineHeight:1.5}}>Counting: 1 e & a for semiquavers, 1 trip let for triplets; rests shown in brackets.</p>
+      <RhythmComposer/>
       <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
     </div>
   );
