@@ -2894,7 +2894,15 @@ Sohyun agreed ledger lines need their own chapter with more examples. AMEB place
 - Drill (`LEDGER_DRILL`, reuses StaffQuestion): L1 one ledger line, L2 two, L3 three (both clefs, above and below, incl. the spaces beyond), L4 find the exact key. Generator fuzzed 1000x per level: never exceeds the level's ledger count; keyboard answers always on the 3-octave keyboard.
 - `ledgerDesc(clef, d)` describes any position ("in the space just above the staff", "on ledger line 2 below", "above ledger line 1").
 
-Next on the plan: Signs (repeats, D.C./D.S./Fine, fermata already here, 8va, ties vs slurs), then Chords (Intervals done in Phase 105).
+### Phase 116 -- Signs chapter (reading track #3)
+- Learn (Lesson, 4 steps): Repeat signs, D.C./D.S./Fine/Coda, Ties and slurs, 8va and 8vb.
+- `RoadMap` + `RoadStrip`: six maps (Repeat, Repeat part, 1st & 2nd time, D.C. al Fine, D.S. al Fine, D.C. al Coda) drawn with real repeat bar lines/dots, 1./2. brackets, 𝄋, 𝄌, To Coda, Fine and jump words. ▶ Watch: a highlight travels the bars in playing order (each bar has its own pitch so repeats are audible) while the order builds underneath; Your turn: tap the bars in order, a wrong bar flashes with "look at the signs at the end of bar n". Orders hand-written and checked: 12341234 / 123234 / 123124 / 123412 / 1234523 / 12341256.
+- `TieOrSlur` (same pitch = tie, different = slur; tie plays one long note, slur two joined notes), `CurvePair` draws stems/curve by the standard rule (stems up + curve under below the middle line, stems down + curve over from it).
+- `OttavaDemo`: written C D E F in the treble; as written / 8va / 8vb with the dashed bracket; keyboard shows the keys actually played.
+- Drill: L1 what does this sign mean (11 signs; meanings don't contain the sign's name), L2 tie or slur, L3 road map playing order (correct + 3 typical mistakes). Fuzzed 500x per level.
+- Still to do in this area: Intervals Grade 3 add-on (inversions, A4/d5), Chords.
+
+Next on the plan: Chords (Signs done in Phase 116, Intervals in Phase 105).
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
