@@ -2879,6 +2879,9 @@ Shared helpers: `playItems(items, bpm, onStep)` (tone per note, rests silent, so
 3. `BoxLabel` (text on a filled box): FoldStaff's "middle C" and "fold" now sit ON the dashed fold line in boxes; LedgerMirror's "middle C" and "A = bass staff top line" labels boxed so lines don't run through them.
 4. Open question to Sohyun: ledger lines -- expand inside Reading the Staff or split into its own chapter? (recommended: own chapter, graded by AMEB ledger-line limits).
 
+### Phase 113b -- Queen/King crowns land exactly in the clefs
+Sohyun: crowns must sit inside the clef on their line, look different, and the King must pass between his guards. `ClefHome` rewritten: glyph ink measured at 4x (Noto Music as ClefGlyph scales it) -- treble curl's inner hole centre x 21 on the G line; bass dots centred x 34.2 at y 125 / 134 (gap 127.2-132); pocket inside the bass clef on the F line centre x 21. The camera zooms onto the clef (viewBox 70 wide), the `QueenCrown` (tiara, pearls, pink jewel) spirals two turns into the curl and sits on the G line; the `KingCrown` (red cap, square points, cross) walks in along the F line, straight through the gap between the two dots (red rings when he passes), into the clef; then the camera pulls back to a 175-wide view (whole clef + note + letter) with the line gold and the note sounding. Crowns are vertically centred on the line so the King fits the guards' gap.
+
 Next on the plan: Signs (repeats, D.C./D.S./Fine, fermata already here, 8va, ties vs slurs), then Chords (Intervals done in Phase 105).
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)

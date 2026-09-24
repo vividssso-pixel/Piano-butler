@@ -4853,14 +4853,31 @@ const FOLD_LINE_COLOR = '#3f8fc9';
 
 // Phase 101c: Sohyun's clef story -- the Queen of G and the King of F. Grounded in the real
 // history (both clefs began as the letters G and F), told as a story.
-// Phase 113 (Sohyun): animate "the Queen lives on G / the King lives on F". A small crown travels
-// in: the Queen's spirals down the treble clef's curl onto the G line; the King's walks along the
-// F line and stops between his two guards (the bass clef's dots), which stand to attention.
-function Crown({ x, y, color = '#c9a24a', s = 1 }) {
+// Phase 113b (Sohyun): the crowns must land exactly inside the clefs, on their own line, and the King
+// must walk in BETWEEN his two guards. Positions measured from the Noto Music glyphs as ClefGlyph
+// scales them (viewBox units, 220-wide staff): treble curl's inner hole centre x 21 on the G line
+// (y 90); bass clef dots centred x 34.2 at y 125 and 134 (gap 127.2-132), the pocket inside the clef
+// on the F line between the head (ends x 17.4) and the body stroke (starts x 24.5) centre x 21.
+// The camera zooms in on the clef for the walk, then back out.
+function QueenCrown({ x, y, s = 1 }) {
+  // A tiara: five rounded points with pearls, a curved band and a rose-pink jewel.
   return (
     <g transform={`translate(${x} ${y}) scale(${s})`}>
-      <polygon points="-7,3 -7,-4 -3.5,-0.5 0,-6 3.5,-0.5 7,-4 7,3" fill={color} stroke="#8a6a2a" strokeWidth="0.8" strokeLinejoin="round"/>
-      <circle cx="0" cy="-6.5" r="1.3" fill="#b5483b"/>
+      <path d="M-6,2.5 Q0,4.2 6,2.5 L6.4,-2.2 L4,-0.6 L3,-4.4 L1.2,-1 L0,-5.6 L-1.2,-1 L-3,-4.4 L-4,-0.6 L-6.4,-2.2 Z" fill="#e3c26b" stroke="#8a6a2a" strokeWidth="0.5" strokeLinejoin="round"/>
+      {[[-6.4, -2.2], [-3, -4.4], [0, -5.6], [3, -4.4], [6.4, -2.2]].map(([px, py], i) => <circle key={i} cx={px} cy={py} r="0.9" fill="#fff8ec" stroke="#8a6a2a" strokeWidth="0.3"/>)}
+      <ellipse cx="0" cy="1.4" rx="1.2" ry="0.9" fill="#d46a8c"/>
+    </g>
+  );
+}
+function KingCrown({ x, y, s = 1 }) {
+  // A heavier crown: red velvet cap, three square points, a cross on top, jewelled band.
+  return (
+    <g transform={`translate(${x} ${y}) scale(${s})`}>
+      <path d="M-4.6,-1 Q0,-6.5 4.6,-1 Z" fill="#a8323a"/>
+      <path d="M-6,3 L-6,-3.2 L-4,-3.2 L-4,-1 L-1,-1 L-1,-3.6 L1,-3.6 L1,-1 L4,-1 L4,-3.2 L6,-3.2 L6,3 Z" fill="#d9b24c" stroke="#7a5a1e" strokeWidth="0.5" strokeLinejoin="miter"/>
+      <rect x="-0.45" y="-7.4" width="0.9" height="3.2" fill="#d9b24c"/><rect x="-1.4" y="-6.6" width="2.8" height="0.9" fill="#d9b24c"/>
+      <rect x="-6" y="1" width="12" height="2" fill="#b8912f"/>
+      {[-3.5, 0, 3.5].map(px => <circle key={px} cx={px} cy="2" r="0.7" fill={px ? '#3f6fb3' : '#b5483b'}/>)}
     </g>
   );
 }
@@ -4868,44 +4885,61 @@ function ClefHome({ kind }) {
   const queen = kind === 'queen';
   const W = 220, lineD = queen ? 32 : 24, ly = dY(lineD), clef = queen ? 'treble' : 'bass';
   const noteX = W * 0.62;
-  const [t, setT] = useState(-1); // -1 idle, 0..1 animating, 1 = home
+  const top = dY(CLEFS[clef].high) - 26, H = dY(CLEFS[clef].low) - dY(CLEFS[clef].high) + 50;
+  const HOME = queen ? { x: 21, y: 89.6 } : { x: 21, y: 129.5 };
+  const GUARDS = [{ x: 34.2, y: 125 }, { x: 34.2, y: 134 }];
+  const [t, setT] = useState(-1);
   const raf = useRef(null);
   useEffect(() => () => cancelAnimationFrame(raf.current), []);
   function go() {
     cancelAnimationFrame(raf.current);
-    const start = performance.now(), dur = queen ? 2600 : 2200;
-    const step = (now) => { const u = Math.min(1, (now - start) / dur); setT(u); if (u < 1) raf.current = requestAnimationFrame(step); else playKey(dMidiKey(lineD), 0.8); };
+    const start = performance.now(), dur = 4200;
+    const step = (now) => { const u = Math.min(1, (now - start) / dur); setT(u); if (u < 1) raf.current = requestAnimationFrame(step); };
     raf.current = requestAnimationFrame(step);
   }
-  // Crown path. Queen: spiral into the curl (centre ~ x 24 on the G line), then glide along the line to the note.
-  // King: walk in from the right along the F line and stop just right of the guards (x ~ 44).
+  const ease = (u) => u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
+  // Camera: zoom in (0-0.15), hold, zoom out (0.82-1).
+  const zw = 70, zh = zw * H / W;
+  // After the walk the camera pulls back only to a 150-wide view (clef + note), so the crown stays visible (175 wide keeps the whole clef, the note and its letter).
+  const lerp = (p, q, u) => p + (q - p) * u;
+  const FULL = { y: top, w: W, h: H }, ZOOM = { y: HOME.y - zh / 2, w: zw, h: zh };
+  const WIDE = { w: 175, h: 175 * H / W, y: (queen ? 78.5 : 135.5) - 175 * H / W / 2 };
+  let cam = FULL;
+  if (t >= 0 && t < 0.15) { const u = ease(t / 0.15); cam = { y: lerp(FULL.y, ZOOM.y, u), w: lerp(FULL.w, ZOOM.w, u), h: lerp(FULL.h, ZOOM.h, u) }; }
+  else if (t >= 0.15 && t < 0.82) cam = ZOOM;
+  else if (t >= 0.82) { const u = ease((t - 0.82) / 0.18); cam = { y: lerp(ZOOM.y, WIDE.y, u), w: lerp(ZOOM.w, WIDE.w, u), h: lerp(ZOOM.h, WIDE.h, u) }; }
+  const vx = 0, vy = cam.y, vw = cam.w, vh = cam.h;
+  // Crown path, 0.18-0.75.
   let cx = null, cy = null;
-  if (t >= 0) {
+  if (t >= 0.15) {
+    const u = Math.min(1, Math.max(0, (t - 0.18) / 0.57));
     if (queen) {
-      const CX = 24;
-      if (t < 0.7) { const u = t / 0.7, r = 26 * (1 - u), a = -Math.PI / 2 + u * 4 * Math.PI; cx = CX + r * Math.cos(a); cy = ly + r * Math.sin(a) - 7; }
-      else { const u = (t - 0.7) / 0.3; cx = CX + (noteX - CX) * u; cy = ly - 7; }
+      // Spiral into the curl: two turns, radius 15 -> 0, ending on the G line at the curl's centre.
+      const r = 15 * (1 - ease(u)), a = Math.PI * 0.2 + ease(u) * 4 * Math.PI;
+      cx = HOME.x + r * Math.cos(a); cy = HOME.y + r * Math.sin(a);
     } else {
-      const u = Math.min(1, t / 0.85), ease = 1 - Math.pow(1 - u, 2);
-      cx = W - 10 + (46 - (W - 10)) * ease; cy = ly - 8 - Math.abs(Math.sin(u * Math.PI * 6)) * 2.5;
+      // Walk in along the F line from the right, straight between the guards, into the clef.
+      cx = 68 + (HOME.x - 68) * ease(u); cy = HOME.y;
     }
   }
-  const home = t >= 1;
-  const guardsUp = !queen && t >= 0.85;
+  const home = t >= 0.75;
+  const guardsAlert = !queen && cx !== null && cx < 46;
+  const s = 0.38;
   return (
     <div>
-      <svg viewBox={`0 ${dY(CLEFS[clef].high) - 26} ${W} ${dY(CLEFS[clef].low) - dY(CLEFS[clef].high) + 50}`} style={{width:'100%',maxWidth:W * 1.5,display:'block',margin:'0 auto'}}>
-        {CLEFS[clef].lines.map(l => <line key={l} x1="4" x2={W - 4} y1={dY(l)} y2={dY(l)} stroke={l === lineD && home ? '#c9a24a' : '#241f1a'} strokeOpacity={l === lineD && home ? 1 : 0.55} strokeWidth={l === lineD && home ? 3 : 1.2} style={{transition:'stroke 0.3s, stroke-width 0.3s'}}/>)}
+      <svg viewBox={`${vx} ${vy} ${vw} ${vh}`} style={{width:'100%',maxWidth:W * 1.5,display:'block',margin:'0 auto'}}>
+        {CLEFS[clef].lines.map(l => <line key={l} x1="4" x2={W - 4} y1={dY(l)} y2={dY(l)} stroke={l === lineD && home ? '#c9a24a' : '#241f1a'} strokeOpacity={l === lineD && home ? 1 : 0.55} strokeWidth={l === lineD && home ? 2.2 : 1.2} style={{transition:'stroke 0.3s'}}/>)}
         <ClefGlyph clef={clef} st={clef} yOf={(d) => dY(d)} ink="#241f1a"/>
-        {guardsUp && [-4.6, 4.6].map((dy, i) => (
-          <circle key={i} cx={35} cy={ly + dy} r="4.5" fill="none" stroke="#b5483b" strokeWidth="1.4" style={{animation:'fadeUp 0.3s both', animationDelay: (i * 0.15) + 's'}}/>
-        ))}
+        {guardsAlert && GUARDS.map((g, i) => <circle key={i} cx={g.x} cy={g.y} r="2.6" fill="none" stroke="#b5483b" strokeWidth="0.5" style={{animation:'fadeUp 0.25s both'}}/>)}
         <ellipse cx={noteX} cy={ly} rx="7" ry="5" transform={`rotate(-20 ${noteX} ${ly})`} fill={home ? '#c9a24a' : '#3f8fc9'} style={{transition:'fill 0.3s'}}/>
-        {home && <text x={noteX + 14} y={ly + 4} fontSize="12" fontWeight="900" fill="#8a6a2a" style={{animation:'fadeUp 0.3s both'}}>{queen ? 'G' : 'F'}</text>}
-        {cx !== null && <Crown x={queen || !home ? cx : 46} y={queen || !home ? cy : ly - 8}/>}
+        {home && <text x={noteX + 14} y={ly + 4} fontSize="12" fontWeight="900" fill="#8a6a2a">{queen ? 'G' : 'F'}</text>}
+        {cx !== null && (queen ? <QueenCrown x={cx} y={cy + 1.1 * s} s={s}/> : <KingCrown x={cx} y={cy + 2.2 * s} s={s}/>)}
       </svg>
+      <div style={{textAlign:'center',fontSize:12,color:'#6f665b',minHeight:18,marginTop:2}}>
+        {t < 0 ? '' : !home ? (queen ? 'Following the swirl…' : cx !== null && cx < 40 ? 'Past the two guards…' : 'Walking along the fourth line…') : (queen ? 'Home: the Queen sits on G, the second line.' : 'Home: the King sits on F, the fourth line, between his guards.')}
+      </div>
       <div style={{textAlign:'center',marginTop:4}}>
-        <button className="ghost-btn" style={{fontSize:13,padding:'6px 14px'}} onClick={go}>{queen ? '♛ Take the Queen home' : '♚ Take the King home'}</button>
+        <button className="ghost-btn" style={{fontSize:13,padding:'6px 14px'}} onClick={() => { go(); setTimeout(() => playKey(dMidiKey(lineD), 0.8), 3200); }}>{queen ? 'Take the Queen home' : 'Take the King home'}</button>
       </div>
     </div>
   );
