@@ -4817,7 +4817,9 @@ function StaffExplorer() {
       <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:6}}>
         {LANDMARKS.map(l => <button key={l.d} className={'chip' + (l.d === d ? ' active' : '')} style={{padding:'4px 9px',fontSize:12}} onClick={() => setD(l.d)}>{l.name}</button>)}
       </div>
-      <StaffView clef="grand" notes={[{ d, color: '#a8823f' }]}/>
+      {d === 28
+        ? <StaffView clef="grand" spread notes={[{ d, color: '#a8823f', staff: 'treble' }, { d, color: '#a8823f', staff: 'bass' }]} labels={['treble', 'bass']}/>
+        : <StaffView clef="grand" notes={[{ d, color: '#a8823f' }]}/>}
       <div style={{textAlign:'center',fontSize:15,fontWeight:900,margin:'2px 0 6px'}}>
         {dName(d)}{lm ? ' -- ' + lm.name : ''} <span style={{fontSize:11,color:'var(--muted)',fontWeight:700}}>({dLabel(d)})</span>
       </div>
@@ -4851,11 +4853,81 @@ const FOLD_LINE_COLOR = '#3f8fc9';
 
 // Phase 101c: Sohyun's clef story -- the Queen of G and the King of F. Grounded in the real
 // history (both clefs began as the letters G and F), told as a story.
+// Phase 113 (Sohyun): animate "the Queen lives on G / the King lives on F". A small crown travels
+// in: the Queen's spirals down the treble clef's curl onto the G line; the King's walks along the
+// F line and stops between his two guards (the bass clef's dots), which stand to attention.
+function Crown({ x, y, color = '#c9a24a', s = 1 }) {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${s})`}>
+      <polygon points="-7,3 -7,-4 -3.5,-0.5 0,-6 3.5,-0.5 7,-4 7,3" fill={color} stroke="#8a6a2a" strokeWidth="0.8" strokeLinejoin="round"/>
+      <circle cx="0" cy="-6.5" r="1.3" fill="#b5483b"/>
+    </g>
+  );
+}
+function ClefHome({ kind }) {
+  const queen = kind === 'queen';
+  const W = 220, lineD = queen ? 32 : 24, ly = dY(lineD), clef = queen ? 'treble' : 'bass';
+  const noteX = W * 0.62;
+  const [t, setT] = useState(-1); // -1 idle, 0..1 animating, 1 = home
+  const raf = useRef(null);
+  useEffect(() => () => cancelAnimationFrame(raf.current), []);
+  function go() {
+    cancelAnimationFrame(raf.current);
+    const start = performance.now(), dur = queen ? 2600 : 2200;
+    const step = (now) => { const u = Math.min(1, (now - start) / dur); setT(u); if (u < 1) raf.current = requestAnimationFrame(step); else playKey(dMidiKey(lineD), 0.8); };
+    raf.current = requestAnimationFrame(step);
+  }
+  // Crown path. Queen: spiral into the curl (centre ~ x 24 on the G line), then glide along the line to the note.
+  // King: walk in from the right along the F line and stop just right of the guards (x ~ 44).
+  let cx = null, cy = null;
+  if (t >= 0) {
+    if (queen) {
+      const CX = 24;
+      if (t < 0.7) { const u = t / 0.7, r = 26 * (1 - u), a = -Math.PI / 2 + u * 4 * Math.PI; cx = CX + r * Math.cos(a); cy = ly + r * Math.sin(a) - 7; }
+      else { const u = (t - 0.7) / 0.3; cx = CX + (noteX - CX) * u; cy = ly - 7; }
+    } else {
+      const u = Math.min(1, t / 0.85), ease = 1 - Math.pow(1 - u, 2);
+      cx = W - 10 + (46 - (W - 10)) * ease; cy = ly - 8 - Math.abs(Math.sin(u * Math.PI * 6)) * 2.5;
+    }
+  }
+  const home = t >= 1;
+  const guardsUp = !queen && t >= 0.85;
+  return (
+    <div>
+      <svg viewBox={`0 ${dY(CLEFS[clef].high) - 26} ${W} ${dY(CLEFS[clef].low) - dY(CLEFS[clef].high) + 50}`} style={{width:'100%',maxWidth:W * 1.5,display:'block',margin:'0 auto'}}>
+        {CLEFS[clef].lines.map(l => <line key={l} x1="4" x2={W - 4} y1={dY(l)} y2={dY(l)} stroke={l === lineD && home ? '#c9a24a' : '#241f1a'} strokeOpacity={l === lineD && home ? 1 : 0.55} strokeWidth={l === lineD && home ? 3 : 1.2} style={{transition:'stroke 0.3s, stroke-width 0.3s'}}/>)}
+        <ClefGlyph clef={clef} st={clef} yOf={(d) => dY(d)} ink="#241f1a"/>
+        {guardsUp && [-4.6, 4.6].map((dy, i) => (
+          <circle key={i} cx={35} cy={ly + dy} r="4.5" fill="none" stroke="#b5483b" strokeWidth="1.4" style={{animation:'fadeUp 0.3s both', animationDelay: (i * 0.15) + 's'}}/>
+        ))}
+        <ellipse cx={noteX} cy={ly} rx="7" ry="5" transform={`rotate(-20 ${noteX} ${ly})`} fill={home ? '#c9a24a' : '#3f8fc9'} style={{transition:'fill 0.3s'}}/>
+        {home && <text x={noteX + 14} y={ly + 4} fontSize="12" fontWeight="900" fill="#8a6a2a" style={{animation:'fadeUp 0.3s both'}}>{queen ? 'G' : 'F'}</text>}
+        {cx !== null && <Crown x={queen || !home ? cx : 46} y={queen || !home ? cy : ly - 8}/>}
+      </svg>
+      <div style={{textAlign:'center',marginTop:4}}>
+        <button className="ghost-btn" style={{fontSize:13,padding:'6px 14px'}} onClick={go}>{queen ? '♛ Take the Queen home' : '♚ Take the King home'}</button>
+      </div>
+    </div>
+  );
+}
+
+// A small text label on a filled box, so it stays readable when it sits on a staff line.
+function BoxLabel({ x, y, text, anchor = 'middle', color = '#241f1a', bg = '#f3ead8', size = 8.5 }) {
+  const w = text.length * size * 0.56 + 8, h = size + 5;
+  const left = anchor === 'middle' ? x - w / 2 : anchor === 'end' ? x - w : x;
+  return (
+    <g>
+      <rect x={left} y={y - h / 2} width={w} height={h} rx="3" fill={bg} stroke={color} strokeOpacity="0.35" strokeWidth="0.8"/>
+      <text x={left + w / 2} y={y + size * 0.35} textAnchor="middle" fontSize={size} fontWeight="800" fill={color}>{text}</text>
+    </g>
+  );
+}
+
 function ClefStory() {
   const card = (title, clef, d, body) => (
     <div style={{background:'#fff',border:'1px solid var(--border)',borderRadius:10,padding:'10px 12px'}}>
       <div style={{fontSize:14,fontWeight:900,marginBottom:2}}>{title}</div>
-      <StaffView clef={clef} notes={[{ d, color: '#3f8fc9' }]} width={220}/>
+      <ClefHome kind={clef === 'treble' ? 'queen' : 'king'}/>
       <div style={{fontSize:13,color:'#6f665b',lineHeight:1.55,marginTop:4}}>{body}</div>
     </div>
   );
@@ -4916,7 +4988,7 @@ function FoldStaff() {
           {FOLD_PAIRS.map((p, i) => ink(p.d, p.color, 150 + i * 60))}
         </g>
         <line x1="4" x2={W - 4} y1={foldY} y2={foldY} stroke="#a8823f" strokeWidth="1.6" strokeDasharray="6 5"/>
-        <text x={W - 6} y={foldY - 4} textAnchor="end" fontSize="9" fontWeight="800" fill="#a8823f">fold</text>
+
         <g style={bottomStyle}>
           <rect x="0" y={foldY + 1} width={W} height={botY - foldY} fill="var(--brass-bg)"/>
           {[18, 20, 22, 24, 26].map(d => line(d, printed && d === 24 ? FOLD_LINE_COLOR : null))}
@@ -4925,7 +4997,8 @@ function FoldStaff() {
         </g>
         <line x1={90 - 12} x2={90 + 12} y1={foldY} y2={foldY} stroke="#241f1a" strokeWidth="1.6"/>
         <ellipse cx={90} cy={foldY} rx="7.5" ry="5.5" transform={`rotate(-20 90 ${foldY})`} fill="#241f1a"/>
-        <text x={90} y={foldY - 9} textAnchor="middle" fontSize="8.5" fontWeight="800" fill="#241f1a">middle C</text>
+        <BoxLabel x={104} y={foldY} text="middle C" anchor="start"/>
+        <BoxLabel x={W - 6} y={foldY} text="fold" anchor="end" color="#a8823f"/>
       </svg>
       <div style={{display:'flex',gap:8,justifyContent:'center',margin:'8px 0 6px'}}>
         <button className="ghost-btn" onClick={fold} disabled={phase === 'folding'}>{printed ? 'Fold again' : 'Fold it'}</button>
@@ -4947,7 +5020,7 @@ function LedgerMirror() {
   const guide = (d, text, below) => (
     <g key={'g' + d}>
       <line x1="4" x2={W - 4} y1={dY(d)} y2={dY(d)} stroke="#a8823f" strokeWidth="1" strokeDasharray="3 4"/>
-      <text x={below ? 6 : W - 4} y={below ? dY(d) + 11 : dY(d) - 3} textAnchor={below ? 'start' : 'end'} fontSize="8.5" fontWeight="800" fill="#a8823f">{text}</text>
+      {text && <BoxLabel x={below ? 4 : W - 4} y={below ? dY(d) + 17 : dY(d) - 9} text={text} anchor={below ? 'start' : 'end'} color="#a8823f" bg="#fff"/>}
     </g>
   );
   const head = (x, d, color) => <ellipse cx={x} cy={dY(d)} rx="7" ry="5" transform={`rotate(-20 ${x} ${dY(d)})`} fill={color}/>;
@@ -4969,8 +5042,8 @@ function LedgerMirror() {
         {head(W * 0.13, 28, '#241f1a')}
         <line x1={W * 0.88 - 12} x2={W * 0.88 + 12} y1={dY(28)} y2={dY(28)} stroke="#241f1a" strokeWidth="1.5"/>
         {head(W * 0.88, 28, '#241f1a')}
-        <text x={W * 0.13} y={dY(28) - 9} textAnchor="middle" fontSize="8.5" fontWeight="800" fill="#241f1a">middle C</text>
-        <text x={W * 0.88} y={dY(28) - 9} textAnchor="middle" fontSize="8.5" fontWeight="800" fill="#241f1a">middle C</text>
+        <BoxLabel x={W * 0.13} y={dY(28) - 11} text="middle C" bg="#fff"/>
+        <BoxLabel x={W * 0.88} y={dY(28) - 11} text="middle C" bg="#fff"/>
         <text x={W * 0.3} y={dY(38) - 6} textAnchor="middle" fontSize="9" fontWeight="800" fill="#6f665b">treble staff</text>
         <text x={W * 0.72} y={dY(16) - 2} textAnchor="middle" fontSize="9" fontWeight="800" fill="#6f665b">bass staff</text>
       </svg>
@@ -5016,8 +5089,10 @@ function Ledgers({ clef, d, x, yOf, ink = '#241f1a' }) {
 function StaffClimb() {
   const [d, setD] = useState(28);
   const [trail, setTrail] = useState(['C']);
-  const go = (nd) => { if (nd < 14 || nd > 42) return; playKey(dMidiKey(nd), 0.3); setD(nd); setTrail(t => [...t, dName(nd)].slice(-7)); };
+  const [via, setVia] = useState('treble'); // which staff's middle C is showing
+  const go = (nd) => { if (nd < 14 || nd > 42) return; playKey(dMidiKey(nd), 0.3); if (nd === 28) setVia(d < 28 ? 'bass' : 'treble'); setD(nd); setTrail(t => [...t, dName(nd)].slice(-7)); };
   const line = d % 2 === 0;
+  const mcT = dY(28), mcB = dY(28) + GRAND_GAP;
   const key = dToKey(d);
   return (
     <div style={actBox}>
@@ -5025,18 +5100,28 @@ function StaffClimb() {
       <div style={actNote}>Each step up the staff -- line, space, line, space -- is the next letter and the next white key to the right. Step across middle C and you walk from one staff to the other.</div>
       <StaffFrame clef="grand" lo={14} hi={42} width={300}>
         {(yOf) => <>
-          <Ledgers clef="grand" d={d} x={170} yOf={yOf}/>
-          <GlideNote x={170} y={yOf(d)} color="#a8823f"/>
-          <text x={196} y={yOf(d) + 4} fontSize="12" fontWeight="900" fill="#a8823f" style={{transition:'y 0.28s'}}>{dName(d)}</text>
+          {d === 28 ? <>
+            {[mcT, mcB].map(y => <line key={y} x1={158} x2={182} y1={y} y2={y} stroke="#241f1a" strokeWidth="1.4"/>)}
+            <ellipse cx={170} cy={via === 'treble' ? mcB : mcT} rx="7" ry="5" transform={`rotate(-20 170 ${via === 'treble' ? mcB : mcT})`} fill="none" stroke="#a8823f" strokeWidth="1.6" strokeDasharray="2 2"/>
+            <GlideNote x={170} y={via === 'treble' ? mcT : mcB} color="#a8823f"/>
+            <BoxLabel x={188} y={mcT} text="treble middle C · RH" anchor="start" size={8} color={via === 'treble' ? '#241f1a' : '#a49b8f'} bg="#f3ead8"/>
+            <BoxLabel x={188} y={mcB} text="bass middle C · LH" anchor="start" size={8} color={via === 'bass' ? '#241f1a' : '#a49b8f'} bg="#f3ead8"/>
+            <text x={150} y={(mcT + mcB) / 2 + 3} textAnchor="end" fontSize="8" fontWeight="800" fill="#a8823f">same key ↕</text>
+          </> : <>
+            <Ledgers clef="grand" d={d} x={170} yOf={yOf}/>
+            <GlideNote x={170} y={yOf(d)} color="#a8823f"/>
+            <text x={196} y={yOf(d) + 4} fontSize="12" fontWeight="900" fill="#a8823f">{dName(d)}</text>
+          </>}
         </>}
       </StaffFrame>
+      {d === 28 && <div style={{textAlign:'center',fontSize:12,color:'#6f665b',margin:'0 0 4px'}}>Middle C can be written just below the treble staff <i>or</i> just above the bass staff -- it’s the same key. Tap “Middle C” again to switch.</div>}
       <div style={{textAlign:'center',fontSize:13,fontWeight:800,margin:'2px 0 6px'}}>{dLabel(d)}{d === 28 ? ' -- middle C' : ''} · <span style={{color:line ? '#241f1a' : '#a8823f'}}>{line ? 'on a line' : 'in a space'}</span></div>
       {key >= 0 && key < 36
         ? <TapKeyboard octaves={3} labels="white" marks={{ [key]: 'target' }} onTap={(i) => { const nd = keyToD(i); if (nd !== null) go(nd); else playKey(i - 12); }}/>
         : <div style={{textAlign:'center',fontSize:11,color:'var(--muted)',padding:'10px 0'}}>(off this keyboard -- {d > 41 ? 'higher' : 'lower'} than shown)</div>}
       <div style={{display:'flex',gap:6,justifyContent:'center',margin:'8px 0 4px'}}>
         <button className="ghost-btn" disabled={d <= 14} onClick={() => go(d - 1)} style={{color:'#6d8fb3'}}>↓ Step down</button>
-        <button className="ghost-btn" onClick={() => { setD(28); setTrail(['C']); playKey(0, 0.3); }}>Middle C</button>
+        <button className="ghost-btn" onClick={() => { setD(28); setVia(v => d === 28 ? (v === 'treble' ? 'bass' : 'treble') : 'treble'); setTrail(['C']); playKey(0, 0.3); }}>Middle C</button>
         <button className="ghost-btn" disabled={d >= 42} onClick={() => go(d + 1)} style={{color:'#a8823f'}}>Step up ↑</button>
       </div>
       <div style={{textAlign:'center',fontSize:15,fontWeight:900,letterSpacing:'0.05em'}}>{trail.map((l, j) => <span key={j} style={{opacity:0.35 + 0.65 * (j + 1) / trail.length}}>{j ? ' → ' : ''}{l}</span>)}</div>

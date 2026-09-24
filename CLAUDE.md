@@ -2873,6 +2873,12 @@ Shared helpers: `playItems(items, bpm, onStep)` (tone per note, rests silent, so
 - `DynOrder` ("Line them up"): the six dynamics shuffled; tap softest to loudest (each plays at its volume), bars grow as you go, wrong tap flashes red ("very loud comes later"), slip count.
 - `HairpinMaker` ("Draw a hairpin"): pick start and end dynamics; the hairpin draws itself while eight notes ramp in volume; labels crescendo/diminuendo.
 
+### Phase 113 -- Reading the Staff fixes from Sohyun's review
+1. Middle C shown in both places: `StaffClimb` draws middle C under the treble staff AND above the bass staff (solid = the one you arrived at -- from above = treble/RH, from below = bass/LH; the other dashed), boxed labels, "same key ↕", and "Middle C" toggles between them. `StaffExplorer` shows both (labels treble / bass) when Middle C is picked.
+2. `ClefHome` animation in ClefStory: "♛ Take the Queen home" -- a crown spirals down the treble clef's curl onto the G line and glides to the note, the G line turns gold, G sounds. "♚ Take the King home" -- the crown walks in along the F line to the clef, the two guards (dots) get red rings, F line gold. Dot/curl positions measured from Noto Music (curl centre x~24, dots x~35 at F-line ±4.6).
+3. `BoxLabel` (text on a filled box): FoldStaff's "middle C" and "fold" now sit ON the dashed fold line in boxes; LedgerMirror's "middle C" and "A = bass staff top line" labels boxed so lines don't run through them.
+4. Open question to Sohyun: ledger lines -- expand inside Reading the Staff or split into its own chapter? (recommended: own chapter, graded by AMEB ledger-line limits).
+
 Next on the plan: Signs (repeats, D.C./D.S./Fine, fermata already here, 8va, ties vs slurs), then Chords (Intervals done in Phase 105).
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
