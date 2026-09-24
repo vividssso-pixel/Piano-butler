@@ -107,6 +107,8 @@
     @keyframes blink { 50% { opacity: 0.35; } }
     .blink { animation: blink 1s steps(1) infinite; }
 
+    .try-box { position: relative; }
+    .try-box::before { content: 'TRY IT'; position: absolute; top: -8px; right: 10px; background: #241f1a; color: #fff; font-size: 9px; font-weight: 800; letter-spacing: 0.1em; padding: 2px 8px; border-radius: 8px; }
     @keyframes drawArc { to { stroke-dashoffset: 0; } }
     @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
     .fade-up { animation: fadeUp 0.18s ease both; }
@@ -1196,6 +1198,82 @@ function keyCenterX(i) {
   return PC_INFO[pc].white ? whitesBefore * 36 + 18 : whitesBefore * 36;
 }
 const actBox = { background:'var(--brass-bg)', borderRadius:10, padding:'10px', margin:'6px 0 16px' };
+// ─── Lesson layout (Phase 114) ───────────────────────────────────────────────────
+// Sohyun: each chapter's Learn page should read as small steps in learning order, each clearly set
+// apart. A Lesson = title + intro + a step map (numbered, coloured pills; tap to jump) + Steps.
+// Each Step has its own colour, a big number, a title, a coloured rail, and a "Got it" button that
+// ticks it off (saved on this device) and folds it away. Key facts use <Rule>, activities carry a
+// "TRY IT" tag (the .try-box class), so explanation and hands-on look different at a glance.
+const STEP_COLORS = ['#3f7fb5', '#4f8a5b', '#b07d2a', '#b5483b', '#7a64a8', '#2f8a86', '#c46a3a'];
+const StepCtx = React.createContext('#a8823f');
+const LESSON_KEY = 'pb_lesson_steps_v1';
+function loadDone() { try { return JSON.parse(localStorage.getItem(LESSON_KEY)) || {}; } catch (e) { return {}; } }
+function saveDone(v) { try { localStorage.setItem(LESSON_KEY, JSON.stringify(v)); } catch (e) {} }
+function Rule({ title, children }) {
+  const color = React.useContext(StepCtx);
+  return (
+    <div style={{background:'#fff',borderRadius:8,borderLeft:'4px solid ' + color,padding:'9px 12px',margin:'8px 0'}}>
+      {title && <div style={{fontSize:15,fontWeight:900,marginBottom:2,color:'var(--text)'}}>{title}</div>}
+      <div style={{fontSize:13.5,color:'#5c544a',lineHeight:1.55}}>{children}</div>
+    </div>
+  );
+}
+function Step({ n, total, title, color, open, done, onToggle, onDone, children, id }) {
+  return (
+    <section id={id} style={{margin:'14px 0 6px',scrollMarginTop:12}}>
+      <button onClick={onToggle} style={{display:'flex',alignItems:'center',gap:10,width:'100%',background:'none',border:'none',padding:'4px 0',cursor:'pointer',textAlign:'left',color:'var(--text)'}}>
+        <span style={{flex:'0 0 34px',height:34,borderRadius:17,background:done ? '#fff' : color,border:'2.5px solid ' + color,color:done ? color : '#fff',
+          fontSize:16,fontWeight:900,display:'flex',alignItems:'center',justifyContent:'center'}}>{done ? '✓' : n}</span>
+        <span style={{flex:1}}>
+          <span style={{display:'block',fontSize:10,fontWeight:800,color:color,textTransform:'uppercase',letterSpacing:'0.08em'}}>Step {n} of {total}</span>
+          <span style={{display:'block',fontSize:18,fontWeight:900,letterSpacing:'-0.02em',lineHeight:1.2}}>{title}</span>
+        </span>
+        <span style={{fontSize:14,color:'var(--muted)',transform:open ? 'rotate(90deg)' : 'none',transition:'transform 0.2s'}}>›</span>
+      </button>
+      {open && (
+        <div style={{marginLeft:16,paddingLeft:16,borderLeft:'3px solid ' + color + '55',paddingTop:4,animation:'fadeUp 0.25s both'}}>
+          <StepCtx.Provider value={color}>{children}</StepCtx.Provider>
+          <div style={{textAlign:'right',margin:'4px 0 2px'}}>
+            <button className="ghost-btn" style={{fontSize:12,padding:'5px 12px',borderColor:color,color:color}} onClick={onDone}>{done ? 'Done ✓' : 'Got it ✓'}</button>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+function Lesson({ id, title, intro, children, onStart, startLabel = 'Start the drill →', head }) {
+  const steps = React.Children.toArray(children).filter(Boolean);
+  const [done, setDone] = useState(() => loadDone()[id] || {});
+  const [open, setOpen] = useState(() => { const d = loadDone()[id] || {}; const o = {}; steps.forEach((s, i) => { o[i] = !d[i]; }); return o; });
+  useEffect(() => { const d = loadDone()[id] || {}; setDone(d); const o = {}; steps.forEach((s, i) => { o[i] = !d[i]; }); setOpen(o); }, [id]);
+  const markDone = (i) => {
+    const all = loadDone(); const mine = { ...(all[id] || {}) }; mine[i] = !mine[i]; all[id] = mine; saveDone(all); setDone(mine);
+    if (mine[i]) { setOpen(o => ({ ...o, [i]: false, [i + 1]: true })); setTimeout(() => { const el = document.getElementById(id + '-step-' + (i + 1)); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120); }
+  };
+  const jump = (i) => { setOpen(o => ({ ...o, [i]: true })); setTimeout(() => { const el = document.getElementById(id + '-step-' + i); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); };
+  const count = steps.filter((s, i) => done[i]).length;
+  return (
+    <div className="card fade-up">
+      {head}
+      <h2 style={{fontSize:21,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>{title}</h2>
+      {intro && <p style={{fontSize:13.5,color:'var(--muted)',margin:'0 0 10px',lineHeight:1.5}}>{intro}</p>}
+      <div style={{display:'flex',flexWrap:'wrap',gap:5,margin:'4px 0 2px'}}>
+        {steps.map((s, i) => {
+          const c = STEP_COLORS[i % STEP_COLORS.length];
+          return <button key={i} onClick={() => jump(i)} style={{display:'inline-flex',alignItems:'center',gap:5,border:'1.5px solid ' + c,background:done[i] ? c : '#fff',color:done[i] ? '#fff' : c,
+            borderRadius:14,padding:'3px 10px 3px 4px',fontSize:12,fontWeight:800,cursor:'pointer'}}>
+            <span style={{width:18,height:18,borderRadius:9,background:done[i] ? '#fff' : c,color:done[i] ? c : '#fff',fontSize:10,display:'inline-flex',alignItems:'center',justifyContent:'center'}}>{done[i] ? '✓' : i + 1}</span>{s.props.title}</button>;
+        })}
+      </div>
+      <div style={{fontSize:11,color:'var(--muted)',fontWeight:700,margin:'2px 0 4px'}}>{count} of {steps.length} steps done</div>
+      {steps.map((s, i) => React.cloneElement(s, {
+        key: i, n: i + 1, total: steps.length, id: id + '-step-' + i, color: STEP_COLORS[i % STEP_COLORS.length],
+        open: !!open[i], done: !!done[i], onToggle: () => setOpen(o => ({ ...o, [i]: !o[i] })), onDone: () => markDone(i),
+      }))}
+      {onStart && <button className="primary-btn" style={{marginTop:16}} onClick={onStart}>{startLabel}</button>}
+    </div>
+  );
+}
 const actTitle = { fontSize:14, fontWeight:800 };
 const actNote = { fontSize:12, color:'#6f665b', lineHeight:1.5, margin:'2px 0 8px' };
 
@@ -1228,7 +1306,7 @@ function FindAll() {
   const where = { C: 'just left of the 2 black keys', D: 'between the 2 black keys', E: 'just right of the 2 black keys',
     F: 'just left of the 3 black keys', G: 'between the 1st and 2nd of the 3', A: 'between the 2nd and 3rd of the 3', B: 'just right of the 3 black keys' }[letter];
   return (
-    <div style={actBox}>
+    <div className="try-box" style={actBox}>
       <div style={actTitle}>Find every {letter}</div>
       <div style={actNote}>Tap all three {letter}s as fast as you can. Look for the black-key groups, not the letters.</div>
       <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:8}}>
@@ -1263,7 +1341,7 @@ function NameReveal() {
   const last = n ? PC_INFO[whites[n - 1] % 12].names[0] : null;
   const seq = whites.slice(0, n).map(i => PC_INFO[i % 12].names[0]);
   return (
-    <div style={actBox}>
+    <div className="try-box" style={actBox}>
       <div style={actTitle}>Name them in order</div>
       <div style={actNote}>Only seven letters, A to G. Watch what happens after G.</div>
       <TapKeyboard octaves={OCT} marks={marks} names={names} onTap={(i) => { playKey(i); if (PC_INFO[i % 12].white) { const k = whites.indexOf(i); setAuto(false); setN(Math.max(n, k + 1)); } }}/>
@@ -1288,20 +1366,22 @@ function SharpFlatMover() {
   const [from, setFrom] = useState(2); // D
   const [dir, setDir] = useState(null); // 1 sharp, -1 flat
   const [nonce, setNonce] = useState(0);
+  const [back, setBack] = useState(false); // ♮ pressed: back to the plain note
   const to = dir ? from + dir : null;
   const valid = to !== null && to >= 0 && to < OCT * 12;
   const base = PC_INFO[from % 12];
   const baseName = base.white ? base.names[0] : null;
   function push(d) {
     if (!base.white) return;
-    setDir(d); setNonce(x => x + 1);
+    setDir(d); setBack(false); setNonce(x => x + 1);
     const t = from + d; if (t >= 0 && t < OCT * 12) setTimeout(() => playKey(t), 350);
   }
-  const marks = { [from]: 'target' }; if (valid) marks[to] = 'good';
+  const marks = { [from]: back ? 'good' : 'target' }; if (valid && !back) marks[to] = 'good';
   const W = OCT * 7 * 36;
-  const x1 = keyCenterX(from), x2 = valid ? keyCenterX(to) : x1;
+  const x1 = back && valid ? keyCenterX(to) : keyCenterX(from), x2 = back ? keyCenterX(from) : valid ? keyCenterX(to) : x1;
   let msg = 'Tap a white key, then push it up or down.';
   if (dir && !valid) msg = 'Off the end of this keyboard -- pick another key.';
+  else if (dir && back) msg = <><b>♮ natural</b> cancels the {dir > 0 ? 'sharp' : 'flat'}: back to plain <b>{baseName}</b>.</>;
   else if (dir) {
     const name = baseName + (dir > 0 ? '♯' : '♭');
     const land = PC_INFO[to % 12];
@@ -1310,22 +1390,23 @@ function SharpFlatMover() {
       : <><b>{name}</b> = one semitone {dir > 0 ? 'up' : 'down'}: the black key just to the {dir > 0 ? 'right' : 'left'}. Its other name: <b>{pcLabel(to % 12).split(' / ').find(x => x !== name)}</b>.</>;
   }
   return (
-    <div style={actBox}>
+    <div className="try-box" style={actBox}>
       <div style={actTitle}>Push a key: sharp or flat</div>
-      <div style={actNote}>A sharp (♯) raises a note by <b>one semitone</b> -- one key to the <b>right</b>. A flat (♭) lowers it by one semitone -- one key to the <b>left</b>. Tap a white key, then push. Try E and B too.</div>
+      <div style={actNote}>A sharp (♯) raises a note by <b>one semitone</b> -- one key to the <b>right</b>. A flat (♭) lowers it by one semitone -- one key to the <b>left</b>. A natural (♮) cancels it. Tap a white key, push, then press ♮. Try E and B too.</div>
       <svg viewBox={`-1 0 ${W + 2} 30`} style={{width:'100%',display:'block'}}>
         {valid && dir && (
           <g key={nonce}>
-            <path d={`M${x1},26 Q${(x1 + x2) / 2},${-2} ${x2},26`} fill="none" stroke="#4f7a45" strokeWidth="2.5" strokeLinecap="round"
+            <path d={`M${x1},26 Q${(x1 + x2) / 2},${-2} ${x2},26`} fill="none" stroke={back ? '#3f7fb5' : '#4f7a45'} strokeWidth="2.5" strokeLinecap="round"
               strokeDasharray="120" strokeDashoffset="120" style={{animation:'drawArc 0.45s ease-out forwards'}}/>
-            <text x={(x1 + x2) / 2} y="10" textAnchor="middle" fontSize="13" fontWeight="900" fill="#4f7a45" style={{animation:'fadeUp 0.4s both 0.3s'}}>{dir > 0 ? '♯' : '♭'}</text>
+            <text x={(x1 + x2) / 2} y="10" textAnchor="middle" fontSize="13" fontWeight="900" fill={back ? '#3f7fb5' : '#4f7a45'} style={{animation:'fadeUp 0.4s both 0.3s'}}>{back ? '♮' : dir > 0 ? '♯' : '♭'}</text>
           </g>
         )}
       </svg>
-      <TapKeyboard octaves={OCT} marks={marks} labels="white" onTap={(i) => { playKey(i); if (PC_INFO[i % 12].white) { setFrom(i); setDir(null); } }}/>
+      <TapKeyboard octaves={OCT} marks={marks} labels="white" onTap={(i) => { playKey(i); if (PC_INFO[i % 12].white) { setFrom(i); setDir(null); setBack(false); } }}/>
       <div style={{display:'flex',gap:6,justifyContent:'center',margin:'8px 0 4px'}}>
-        <button className="ghost-btn" disabled={!base.white} onClick={() => push(-1)}>← ♭ flat</button>
-        <button className="ghost-btn" disabled={!base.white} onClick={() => push(1)}>sharp ♯ →</button>
+        <button className="ghost-btn" style={{padding:'8px 10px',fontSize:13}} disabled={!base.white} onClick={() => push(-1)}>← ♭ flat</button>
+        <button className="ghost-btn" style={{padding:'8px 10px',fontSize:13}} disabled={!base.white} onClick={() => push(1)}>♯ sharp →</button>
+        <button className="ghost-btn" style={{padding:'8px 10px',fontSize:13}} disabled={!dir || !valid || back} onClick={() => { setBack(true); setNonce(x => x + 1); setTimeout(() => playKey(from), 350); }}>♮ natural</button>
       </div>
       <div style={{textAlign:'center',fontSize:13,lineHeight:1.5,minHeight:40}}>{msg}</div>
     </div>
@@ -1356,7 +1437,7 @@ function LetterWalker() {
   const cur = step >= 0 ? path[step] : from;
   const [tx, ty] = pos(LETTERS.indexOf(cur));
   return (
-    <div style={actBox}>
+    <div className="try-box" style={actBox}>
       <div style={actTitle}>Hop round the letters</div>
       <div style={actNote}>Tap a starting letter, choose a step, press Go. The start counts as <b>1</b> -- so a 3rd is three letters, not three hops.</div>
       <svg viewBox="-14 -22 208 200" style={{width:'100%',maxWidth:240,display:'block',margin:'0 auto'}}>
@@ -1420,7 +1501,7 @@ function UpDownWalk() {
   if (last && last.dir > 0) note = prev === 'G' ? 'G → A: after G the alphabet starts again.' : 'Up: one key to the right -- the sound gets higher, the letter goes forwards.';
   if (last && last.dir < 0) note = prev === 'A' ? 'A → G: below A the alphabet wraps round to G.' : 'Down: one key to the left -- the sound gets lower, the letter goes backwards.';
   return (
-    <div style={actBox}>
+    <div className="try-box" style={actBox}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div style={actTitle}>Step up, step down</div>
         <button className={'chip' + (hide ? ' active' : '')} style={{padding:'3px 10px',fontSize:11}} onClick={() => setHide(h => !h)}>{hide ? 'Names hidden' : 'Hide names'}</button>
@@ -1449,20 +1530,10 @@ function UpDownWalk() {
 }
 
 function NoteNamesLearn({ onStart }) {
-  const tip = (n, title, body) => (
-    <div style={{display:'flex',gap:12,alignItems:'flex-start',padding:'12px 0',borderTop:'1px solid var(--border)'}}>
-      <div style={{flex:'0 0 26px',height:26,borderRadius:13,background:'var(--text)',color:'#fff',fontSize:12,
-        fontWeight:800,display:'flex',alignItems:'center',justifyContent:'center'}}>{n}</div>
-      <div>
-        <div style={{fontSize:14,fontWeight:800,marginBottom:3}}>{title}</div>
-        <div style={{fontSize:13,color:'#6f665b',lineHeight:1.55}}>{body}</div>
-      </div>
-    </div>
-  );
+  const tip = (n, title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <div className="card fade-up">
-      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Finding notes on the keyboard</h2>
-      <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 16px'}}>The black keys are the map -- they come in groups of 2 and 3.</p>
+    <Lesson id="note-names" title="Finding notes on the keyboard" intro={<>The black keys are the map -- they come in groups of 2 and 3.</>} onStart={onStart}>
+      <Step title="The black-key map">
       <TapKeyboard octaves={1} labels="all" tint />
       <div style={{display:'flex',fontSize:11,fontWeight:800,margin:'8px 0 18px'}}>
         <div style={{flex:3,textAlign:'center',background:GROUP_TINT.two,padding:'6px 4px',borderRadius:6,marginRight:4}}>2 black keys → C D E</div>
@@ -1471,16 +1542,25 @@ function NoteNamesLearn({ onStart }) {
       {tip(1, 'C sits just left of the 2 black keys', 'Find any pair of black keys -- the white key right before them is always C. D is between them, E just after.')}
       {tip(2, 'F sits just left of the 3 black keys', 'Before a group of three black keys is always F, then G, A, B.')}
       <FindAll/>
+
+      </Step>
+      <Step title="Seven letters, A to G">
       {tip(3, 'Only seven letters, A to G', 'After G the letters start again at A. Every C on the piano looks the same -- only the octave changes.')}
       <NameReveal/>
+
+      </Step>
+      <Step title="Up and down">
       {tip(4, 'Up is right, down is left', 'Going up the keyboard (to the right) the sound gets higher and the letters go forwards: C D E F G A B C. Going down (to the left) they go backwards: C B A G F E D C. Practise backwards until it comes as quickly as forwards.')}
       <UpDownWalk/>
-      <div style={{borderTop:'1px solid var(--border)',paddingTop:14}}>
-        <div style={{fontSize:14,fontWeight:800,marginBottom:4}}>Letter chain -- say it out loud together</div>
+
+      </Step>
+      <Step title="Letter chain, out loud">
+      <div>
+        <div style={{fontSize:14,fontWeight:800,marginBottom:4}}>Say it out loud together</div>
         <LetterChainDrill/>
       </div>
-      <button className="primary-btn" style={{marginTop:18}} onClick={onStart}>Start the drill →</button>
-    </div>
+      </Step>
+    </Lesson>
   );
 }
 
@@ -1913,7 +1993,7 @@ function MetronomeDial() {
   }
   const dur = 60 / bpm;
   return (
-    <div style={actBox}>
+    <div className="try-box" style={actBox}>
       <div style={actTitle}>The metronome</div>
       <div style={actNote}>Slide the speed and watch the arm swing. The tempo word changes as you go faster or slower. Or tap a steady beat on “Tap” to measure your own tempo.</div>
       <div style={{display:'flex',alignItems:'center',gap:14}}>
@@ -1969,7 +2049,7 @@ function SpeedChange() {
   }
   const c = SPEED_CHANGES.find(x => x.id === sel);
   return (
-    <div style={actBox}>
+    <div className="try-box" style={actBox}>
       <div style={actTitle}>Speeding up, slowing down</div>
       <div style={actNote}>Some words change the speed gradually. Tap one to hear twelve beats -- watch the gaps between the dots grow or shrink.</div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:5,marginBottom:8}}>
@@ -1997,11 +2077,8 @@ function TempoLearn({ onStart }) {
     setTimeout(() => setPlaying(p => (p === t.term ? null : p)), (60 / t.demo) * 8 * 1000 + 200);
   }
   return (
-    <div className="card fade-up">
-      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>The tempo race</h2>
-      <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 16px'}}>
-        Italian tempo words, lined up from the slowest lane to the fastest. Tap one to hear its beat.
-      </p>
+    <Lesson id="tempo" title="The tempo race" intro={<>Italian tempo words, lined up from the slowest lane to the fastest. Tap one to hear its beat.</>} onStart={onStart}>
+      <Step title="Slow to fast">
       <div style={{display:'flex',justifyContent:'space-between',fontSize:10,fontWeight:800,color:'var(--muted)',
         textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>
         <span>🐢 Slow</span><span>Fast 🏁</span>
@@ -2027,10 +2104,15 @@ function TempoLearn({ onStart }) {
       <p style={{fontSize:11,color:'var(--muted)',margin:'12px 0 0',lineHeight:1.5}}>
         Beats per minute are approximate -- books and metronomes don't all agree. What matters is the order.
       </p>
-      <div style={{marginTop:14}}><MetronomeDial/></div>
+
+      </Step>
+      <Step title="The metronome">
+      <MetronomeDial/>
+      </Step>
+      <Step title="Changing speed">
       <SpeedChange/>
-      <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
-    </div>
+      </Step>
+    </Lesson>
   );
 }
 
@@ -2381,7 +2463,7 @@ function SplitTree() {
   }
   const count = {}; items.forEach(it => { const k = it.uk; count[k] = (count[k] || 0) + 1; });
   return (
-    <div style={actBox}>
+    <div className="try-box" style={actBox}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div style={actTitle}>Split it</div>
         <div style={{display:'flex',gap:4}}>
@@ -2419,7 +2501,7 @@ function FillTheBar() {
   }
   const shown = over ? [...items, over.it] : items;
   return (
-    <div style={actBox}>
+    <div className="try-box" style={actBox}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div style={actTitle}>Fill the bar</div>
         <div style={{display:'flex',gap:4}}>
@@ -2452,9 +2534,8 @@ function NoteValLearn({ onStart }) {
     { it: NV_NOTES[0], n: 1 }, { it: NV_NOTES[1], n: 2 }, { it: NV_NOTES[2], n: 4 }, { it: NV_NOTES[3], n: 8 }, { it: NV_NOTES[4], n: 16 },
   ];
   return (
-    <div className="card fade-up">
-      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>The note-value tree</h2>
-      <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 14px'}}>Each row fills the same 4-beat bar -- every note splits into two of the next one down.</p>
+    <Lesson id="note-values" title="Notes and rests" intro={<>Each row fills the same 4-beat bar -- every note splits into two of the next one down.</>} onStart={onStart}>
+      <Step title="The note-value tree">
       <div style={{display:'flex',flexDirection:'column',gap:8}}>
         {rows.map(({ it, n }) => {
           const rest = NV_RESTS.find(r => r.id === it.id);
@@ -2477,8 +2558,13 @@ function NoteValLearn({ onStart }) {
           );
         })}
       </div>
-      <div style={{marginTop:14}}><SplitTree/></div>
-      <div style={{background:'var(--brass-bg)',borderRadius:10,padding:'12px 14px',marginTop:14}}>
+
+      </Step>
+      <Step title="Split it">
+      <SplitTree/>
+      </Step>
+      <Step title="Dotted notes">
+      <div style={{background:'#fff',borderRadius:10,padding:'12px 14px',marginTop:4}}>
         <div style={{fontSize:14,fontWeight:800,marginBottom:6}}>A dot adds half again</div>
         <div style={{display:'flex',flexWrap:'wrap',gap:12,alignItems:'center',fontSize:13}}>
           {NV_DOTTED.map(d => (
@@ -2488,12 +2574,15 @@ function NoteValLearn({ onStart }) {
           ))}
         </div>
       </div>
-      <div style={{marginTop:14}}><FillTheBar/></div>
+
+      </Step>
+      <Step title="Fill the bar">
+      <FillTheBar/>
       <p style={{fontSize:11,color:'var(--muted)',margin:'10px 0 0',lineHeight:1.5}}>
         Game board rule: D.C. sends you back to the start and D.S. back to the {'𝄋'} sign -- each only once per lap, just like in real music. Reach Fine to finish a lap.
       </p>
-      <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
-    </div>
+      </Step>
+    </Lesson>
   );
 }
 
@@ -2845,7 +2934,7 @@ function RhythmComposer() {
     }
   }
   return (
-    <div style={{...actBox, background:'#fff', border:'1px solid var(--border)'}}>
+    <div className="try-box" style={{...actBox, background:'#fff', border:'1px solid var(--border)'}}>
       <div>
         <div style={actTitle}>Make your own card</div>
         <div style={{display:'flex',gap:3,flexWrap:'wrap',margin:'4px 0'}}>{RHYTHM_TIERS.map(t => <button key={t.n} className={'chip' + (t.n === tier ? ' active' : '')} style={{padding:'2px 8px',fontSize:11}} onClick={() => setTier(t.n)}>Set {t.n}</button>)}</div>
@@ -2885,9 +2974,8 @@ function RhythmLearn({ onStart }) {
     setTimeout(() => setPlaying(p => (p === card.num ? null : p)), (8 * 60 / t.bpm) * 1000 + 300);
   }
   return (
-    <div className="card fade-up">
-      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Rhythm cards</h2>
-      <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 12px'}}>40 one-bar rhythms in 4/4, easiest first. Count along under each note -- tap a card to hear it with a 4-click count-in.</p>
+    <Lesson id="rhythm" title="Rhythm cards" intro={<>40 one-bar rhythms in 4/4, easiest first. Count along under each note -- tap a card to hear it with a 4-click count-in.</>} onStart={onStart}>
+      <Step title="The 40 cards">
       <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:6}}>
         {RHYTHM_TIERS.map(x => <button key={x.n} className={'chip' + (x.n === tier ? ' active' : '')} onClick={() => setTier(x.n)}>Set {x.n}</button>)}
       </div>
@@ -2896,9 +2984,12 @@ function RhythmLearn({ onStart }) {
         {RHYTHM_DECK.filter(c => c.tier === tier).map(c => <RhythmCard key={c.num} card={c} counts playing={playing === c.num} onClick={() => hear(c)}/>)}
       </div>
       <p style={{fontSize:11,color:'var(--muted)',margin:'10px 0 14px',lineHeight:1.5}}>Counting: 1 e & a for semiquavers, 1 trip let for triplets; rests shown in brackets.</p>
+
+      </Step>
+      <Step title="Make your own">
       <RhythmComposer/>
-      <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
-    </div>
+      </Step>
+    </Lesson>
   );
 }
 
@@ -3141,7 +3232,7 @@ function PlaceIt() {
   function reset(t) { setType(t); setN(0); setMiss(null); setTries(0); }
   const pos2name = (p) => ['E', 'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'A'][p + 1];
   return (
-    <div style={{background:'var(--brass-bg)',borderRadius:10,padding:'10px',margin:'4px 0 16px'}}>
+    <div className="try-box" style={{background:'var(--brass-bg)',borderRadius:10,padding:'10px',margin:'4px 0 16px'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
         <div style={{fontSize:14,fontWeight:800}}>Your turn: place them</div>
         <div style={{display:'flex',gap:4}}>
@@ -3197,7 +3288,7 @@ function CircleOfFifths() {
   const R = 92, r = 60, cx = 120, cy = 118;
   const pt = (i, rad) => { const a = -Math.PI / 2 + i * Math.PI / 6; return [cx + rad * Math.cos(a), cy + rad * Math.sin(a)]; };
   return (
-    <div style={{background:'#fff',border:'1px solid var(--border)',borderRadius:10,padding:'10px',margin:'4px 0 16px'}}>
+    <div className="try-box" style={{background:'#fff',border:'1px solid var(--border)',borderRadius:10,padding:'10px',margin:'4px 0 16px'}}>
       <div style={{fontSize:14,fontWeight:800,marginBottom:2}}>The circle of fifths</div>
       <div style={{fontSize:12,color:'#6f665b',lineHeight:1.5,marginBottom:6}}>
         Every key in one clock. Step <b>clockwise</b> and you go up a 5th and gain one sharp; step <b>anticlockwise</b> and you go down a 5th and gain one flat. Inside: each key’s relative minor. Tap any key.
@@ -3254,26 +3345,30 @@ function KeySigLearn({ onStart }) {
       </div>
     </div>
   );
-  const tip = (title, body) => (
-    <div style={{padding:'10px 0',borderTop:'1px solid var(--border)'}}>
-      <div style={{fontSize:14,fontWeight:800,marginBottom:2}}>{title}</div>
-      <div style={{fontSize:13,color:'#6f665b',lineHeight:1.55}}>{body}</div>
-    </div>
-  );
+  const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <div className="card fade-up">
-      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Reading a key signature</h2>
-      <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 16px'}}>Sharps and flats always arrive in the same order -- learn the order and every key falls out of it.</p>
+    <Lesson id="key-signatures" title="Reading a key signature" intro={<>Sharps and flats always arrive in the same order -- learn the order and every key falls out of it.</>} onStart={onStart}>
+      <Step title="The order of sharps">
       <OrderBuilder type="sharp"/>
       <div style={{fontSize:12,color:'#6f665b',margin:'-6px 0 12px',lineHeight:1.5}}>A sentence to remember the sharps: <b>F</b>ather <b>C</b>harles <b>G</b>oes <b>D</b>own <b>A</b>nd <b>E</b>nds <b>B</b>attle. Read it backwards for the flats: <b>B</b>attle <b>E</b>nds <b>A</b>nd <b>D</b>own <b>G</b>oes <b>C</b>harles’ <b>F</b>ather.</div>
+      </Step>
+      <Step title="The order of flats">
       <OrderBuilder type="flat"/>
+      </Step>
+      <Step title="Place them yourself">
       <PlaceIt/>
-      <CircleOfFifths/>
+      </Step>
+      <Step title="Name the key">
       {tip('Sharps: go up one from the last sharp', 'The last sharp is the 7th note of the major key -- step up a semitone to name it. Last sharp C♯ → D major.')}
       {tip('Flats: the second-last flat names the key', 'B♭ E♭ A♭ → the second-last is E♭, so E♭ major. One flat is the one to just remember: F major.')}
       {tip('Where the sharps and flats come from', 'Every major scale has the same shape, T T S T T T S. Start it on D and you need F♯ and C♯ to keep that shape -- so D major has two sharps. (See the Scales chapter.)')}
       {tip('Every signature has a minor twin', 'The relative minor uses the same signature and starts on the 6th note of the major scale (three semitones down). D major ↔ B minor.')}
-      <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',margin:'14px 0 8px'}}>All 15 -- tap one</div>
+      </Step>
+      <Step title="The circle of fifths">
+      <CircleOfFifths/>
+      </Step>
+      <Step title="All 15 keys">
+      <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',margin:'6px 0 8px'}}>Tap one</div>
       <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:12}}>
         {KEY_SIGS.map(x => (
           <button key={x.major} className={'chip' + (x.major === sel ? ' active' : '')} style={{padding:'6px 11px'}}
@@ -3285,8 +3380,8 @@ function KeySigLearn({ onStart }) {
         <div style={{textAlign:'center',fontSize:15,fontWeight:900,marginTop:4}}>{majName(k)} <span style={{color:'var(--muted)',fontWeight:700}}>/ {minName(k)}</span></div>
         <div style={{textAlign:'center',fontSize:12,color:'var(--muted)',marginTop:2}}>{sigLabel(k)}</div>
       </div>
-      <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
-    </div>
+      </Step>
+    </Lesson>
   );
 }
 
@@ -3392,7 +3487,7 @@ function IntervalRuler() {
     ? (line(bot) ? 'line to line' : 'space to space')
     : (line(bot) ? 'line to space' : 'space to line');
   return (
-    <div style={actBox}>
+    <div className="try-box" style={actBox}>
       <div style={actTitle}>The interval ruler</div>
       <div style={actNote}>Pick a bottom note, then tap anywhere on the staff above it. Count every line and space -- the bottom note is <b>1</b>.</div>
       <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:4}}>
@@ -3428,7 +3523,7 @@ function SemitoneCounter() {
   const marks = { [k0]: 'target', [k0 + s]: step >= s ? 'good' : 'target' };
   const quals = IV_PERFECT[num] ? ['P'] : ['m', 'M'];
   return (
-    <div style={actBox}>
+    <div className="try-box" style={actBox}>
       <div style={actTitle}>Same number, different size</div>
       <div style={actNote}>C–E and C–E♭ are both 3rds (C D E -- three letters), but one is a semitone bigger. Count the semitones to find out which kind.</div>
       <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:4}}>
@@ -3482,7 +3577,7 @@ function MajorScaleIntervals() {
   const lab = notes.map((nt, i) => i === 0 ? '1' : i <= n ? ivQuality(notes[0], nt) + (i + 1) : '');
   const colors = notes.map((nt, i) => i === 0 ? '#241f1a' : i === n ? '#a8823f' : i < n ? '#4f7a45' : '#c7bca8');
   return (
-    <div style={actBox}>
+    <div className="try-box" style={actBox}>
       <div style={actTitle}>The major-scale shortcut</div>
       <div style={actNote}>Measure every note of a major scale from its first note. The 4th, 5th and octave come out <b>perfect</b>; all the others come out <b>major</b>. Make a major interval one semitone smaller and it becomes <b>minor</b>.</div>
       <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:4}}>
@@ -3508,7 +3603,7 @@ function IntervalEar() {
   const [sel, setSel] = useState(null);
   const a = { d: 28, acc: 0 };
   return (
-    <div style={actBox}>
+    <div className="try-box" style={actBox}>
       <div style={actTitle}>Hear them</div>
       <div style={actNote}>Tap to hear each one from C: first the notes one after the other, then together. <b>Consonant</b> intervals blend; <b>dissonant</b> ones (2nds and 7ths) clash and want to move.</div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:5}}>
@@ -3529,27 +3624,27 @@ function IntervalEar() {
 }
 
 function IntervalsLearn({ onStart }) {
-  const tip = (title, body) => (
-    <div style={{padding:'10px 0',borderTop:'1px solid var(--border)'}}>
-      <div style={{fontSize:14,fontWeight:800,marginBottom:2}}>{title}</div>
-      <div style={{fontSize:13,color:'#6f665b',lineHeight:1.55}}>{body}</div>
-    </div>
-  );
+  const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <div className="card fade-up">
-      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Intervals</h2>
-      <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 8px'}}>The distance between two notes. Every interval has a <b>number</b> (count the letters) and a <b>quality</b> (count the semitones): <b>major 3rd</b>, <b>perfect 5th</b>.</p>
-      {tip('1 · The number: count the letters', 'Start on the bottom note and call it 1, then count every letter (every line and space) up to the top note. C up to G: C D E F G = a 5th. Sharps and flats don’t change the number.')}
+    <Lesson id="intervals" title="Intervals" intro={<>The distance between two notes. Every interval has a <b>number</b> (count the letters) and a <b>quality</b> (count the semitones): <b>major 3rd</b>, <b>perfect 5th</b>.</>} onStart={onStart}>
+      <Step title="The number">
+      {tip('Count the letters', 'Start on the bottom note and call it 1, then count every letter (every line and space) up to the top note. C up to G: C D E F G = a 5th. Sharps and flats don’t change the number.')}
       <IntervalRuler/>
       <LetterWalker/>
-      {tip('2 · The quality: count the semitones', '2nds, 3rds, 6ths and 7ths come in two sizes: major (bigger) and minor (one semitone smaller). Unisons, 4ths, 5ths and octaves have one normal size: perfect.')}
+      </Step>
+      <Step title="The quality">
+      {tip('Count the semitones', '2nds, 3rds, 6ths and 7ths come in two sizes: major (bigger) and minor (one semitone smaller). Unisons, 4ths, 5ths and octaves have one normal size: perfect.')}
       <SemitoneCounter/>
-      {tip('3 · The shortcut: think of the major scale', 'If the top note is in the major scale of the bottom note, the interval is major (2, 3, 6, 7) or perfect (4, 5, 8). One semitone smaller than major = minor.')}
+      </Step>
+      <Step title="The major-scale shortcut">
+      {tip('Think of the major scale', 'If the top note is in the major scale of the bottom note, the interval is major (2, 3, 6, 7) or perfect (4, 5, 8). One semitone smaller than major = minor.')}
       <MajorScaleIntervals/>
-      {tip('4 · Train your ear', 'Intervals have a sound of their own. Link each one to a tune you know and you’ll hear them in the music you play.')}
+      </Step>
+      <Step title="Train your ear">
+      {tip('Link each one to a tune', 'Intervals have a sound of their own. Link each one to a tune you know and you’ll hear them in the music you play.')}
       <IntervalEar/>
-      <button className="primary-btn" style={{marginTop:6}} onClick={onStart}>Start the drill →</button>
-    </div>
+      </Step>
+    </Lesson>
   );
 }
 
@@ -3895,7 +3990,7 @@ function StepExplorer() {
   const marks = { [a]: 'target', [b]: 'good' };
   const say = n === 0 ? 'the same key' : n === 1 ? '1 semitone (half step)' : n === 2 ? '2 semitones = 1 tone (whole step)' : n + ' semitones';
   return (
-    <div style={{background:'var(--brass-bg)',borderRadius:10,padding:'10px 10px 12px',margin:'12px 0'}}>
+    <div className="try-box" style={{background:'var(--brass-bg)',borderRadius:10,padding:'10px 10px 12px',margin:'12px 0'}}>
       <div style={{fontSize:12,fontWeight:800,marginBottom:6}}>Try it: tap any two keys</div>
       <TapKeyboard octaves={1} labels="white" marks={marks} onTap={(i) => { if (next === 'a') { setA(i); setNext('b'); } else { setB(i); setNext('a'); } }}/>
       <div style={{textAlign:'center',fontSize:15,fontWeight:900,marginTop:8}}>
@@ -3905,17 +4000,109 @@ function StepExplorer() {
   );
 }
 
-function TonesLearn({ onStart }) {
-  const tip = (title, body) => (
-    <div style={{padding:'10px 0',borderTop:'1px solid var(--border)'}}>
-      <div style={{fontSize:14,fontWeight:800,marginBottom:2}}>{title}</div>
-      <div style={{fontSize:13,color:'#6f665b',lineHeight:1.55}}>{body}</div>
+// ─── Accidentals (Phase 114, Tones & Semitones) ──────────────────────────────────
+function NaturalShape({ x, y, color }) {
+  return (
+    <g>
+      <line x1={x - 2.8} x2={x - 2.8} y1={y - 11} y2={y + 5.5} stroke={color} strokeWidth="1.4"/>
+      <line x1={x + 2.8} x2={x + 2.8} y1={y - 5.5} y2={y + 11} stroke={color} strokeWidth="1.4"/>
+      <polygon points={`${x - 2.8},${y - 2.2} ${x + 2.8},${y - 4.4} ${x + 2.8},${y - 1.6} ${x - 2.8},${y + 0.6}`} fill={color}/>
+      <polygon points={`${x - 2.8},${y + 3.6} ${x + 2.8},${y + 1.4} ${x + 2.8},${y + 4.2} ${x - 2.8},${y + 6.4}`} fill={color}/>
+    </g>
+  );
+}
+function AccidentalCards() {
+  const cards = [
+    { sym: '♯', name: 'Sharp', what: 'raises a note by one semitone', ex: 'F → F♯', col: '#b5483b' },
+    { sym: '♭', name: 'Flat', what: 'lowers a note by one semitone', ex: 'B → B♭', col: '#3f7fb5' },
+    { sym: '♮', name: 'Natural', what: 'cancels a sharp or flat -- back to the plain note', ex: 'F♯ → F', col: '#4f8a5b' },
+  ];
+  return (
+    <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6,margin:'6px 0 8px'}}>
+      {cards.map(c => (
+        <div key={c.name} style={{background:'#fff',border:'2px solid ' + c.col,borderRadius:10,padding:'8px 6px',textAlign:'center'}}>
+          <div style={{fontSize:34,lineHeight:1,color:c.col,fontFamily:MUSIC_FONT}}>{c.sym}</div>
+          <div style={{fontSize:14,fontWeight:900,marginTop:2}}>{c.name}</div>
+          <div style={{fontSize:11,color:'#6f665b',lineHeight:1.35,margin:'2px 0'}}>{c.what}</div>
+          <div style={{fontSize:12,fontWeight:800,color:c.col}}>{c.ex}</div>
+        </div>
+      ))}
     </div>
   );
+}
+// A bar of music showing that an accidental lasts until the bar line, and a natural cancels it.
+const ACC_EXAMPLES = {
+  sharp: { label: 'Sharp', notes: [
+    { d: 31, sign: 1, snd: 1, say: 'F♯ -- the sharp sign raises F one semitone.' },
+    { d: 31, sign: 0, snd: 1, say: 'No sign, but it’s STILL F♯: an accidental lasts to the end of the bar.' },
+    { d: 31, sign: 2, snd: 0, say: 'The natural sign cancels the sharp: plain F.' },
+    { bar: true },
+    { d: 31, sign: 0, snd: 0, say: 'New bar: the bar line wipes it clean -- plain F.' },
+  ] },
+  flat: { label: 'Flat', notes: [
+    { d: 34, sign: -1, snd: -1, say: 'B♭ -- the flat sign lowers B one semitone.' },
+    { d: 33, sign: 0, snd: 0, say: 'A -- a different line or space isn’t affected.' },
+    { d: 34, sign: 0, snd: -1, say: 'Back on the B line, no sign: still B♭ until the bar line.' },
+    { bar: true },
+    { d: 34, sign: 0, snd: 0, say: 'New bar: plain B again.' },
+  ] },
+};
+function AccidentalBar() {
+  const [ex, setEx] = useState('sharp');
+  const [on, setOn] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  useEffect(() => { setOn(-1); timers.current.forEach(clearTimeout); }, [ex]);
+  const notes = ACC_EXAMPLES[ex].notes;
+  const W = 300, base = 70;
+  const y = (d) => dY(d) - 30; // staff drawn with its bottom line at y=70
+  let x = 70;
+  const placed = notes.map(n => { const px = x; x += n.bar ? 26 : 44; return { ...n, x: px + (n.bar ? 0 : 12) }; });
+  const sound = (n) => dMidiKey(n.d) + n.snd;
+  function tap(i) { const n = placed[i]; if (n.bar) return; setOn(i); playKey(sound(n), 0.5); }
+  function playAll() {
+    timers.current.forEach(clearTimeout); timers.current = [];
+    placed.forEach((n, i) => { if (!n.bar) timers.current.push(setTimeout(() => tap(i), 150 + i * 700)); });
+  }
+  const cur = on >= 0 ? placed[on] : null;
+  const key = cur ? sound(cur) : null;
   return (
-    <div className="card fade-up">
-      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Semitones and tones</h2>
-      <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 8px'}}>The smallest step on the piano, and the step made of two of them. Scales, key signatures, intervals and chords are all counted in these.</p>
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>How long does an accidental last?</div>
+        <div style={{display:'flex',gap:4}}>{Object.keys(ACC_EXAMPLES).map(k => <button key={k} className={'chip' + (k === ex ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => setEx(k)}>{ACC_EXAMPLES[k].label}</button>)}</div>
+      </div>
+      <div style={actNote}>Tap each note (or play the bar) and watch which key it really is.</div>
+      <svg viewBox={`0 ${base - 60} ${W} 80`} style={{width:'100%',maxWidth:420,display:'block',margin:'0 auto'}}>
+        {[30, 32, 34, 36, 38].map(d => <line key={d} x1="4" x2={W - 4} y1={y(d)} y2={y(d)} stroke="#241f1a" strokeOpacity="0.55" strokeWidth="1.2"/>)}
+        <ClefGlyph clef="treble" st="treble" yOf={(d) => y(d)} ink="#241f1a"/>
+        <line x1={W - 4} x2={W - 4} y1={y(38)} y2={y(30)} stroke="#241f1a" strokeWidth="2.5"/>
+        {placed.map((n, i) => n.bar
+          ? <line key={i} x1={n.x} x2={n.x} y1={y(38)} y2={y(30)} stroke="#241f1a" strokeWidth="1.4"/>
+          : (
+            <g key={i} onClick={() => tap(i)} style={{cursor:'pointer'}}>
+              <rect x={n.x - 20} y={y(40)} width="34" height={y(28) - y(40)} fill="transparent"/>
+              {n.sign === 1 && <SharpShape x={n.x - 15} y={y(n.d)} color={on === i ? '#b5483b' : '#241f1a'}/>}
+              {n.sign === -1 && <FlatShape x={n.x - 14} y={y(n.d)} color={on === i ? '#3f7fb5' : '#241f1a'}/>}
+              {n.sign === 2 && <NaturalShape x={n.x - 14} y={y(n.d)} color={on === i ? '#4f8a5b' : '#241f1a'}/>}
+              <ellipse cx={n.x} cy={y(n.d)} rx="6.5" ry="4.7" transform={`rotate(-20 ${n.x} ${y(n.d)})`} fill={on === i ? '#a8823f' : '#241f1a'}/>
+              <line x1={n.x + 6} x2={n.x + 6} y1={y(n.d)} y2={y(n.d) - 28} stroke={on === i ? '#a8823f' : '#241f1a'} strokeWidth="1.3"/>
+              <text x={n.x} y={base + 16} textAnchor="middle" fontSize="11" fontWeight="900" fill={on === i ? '#a8823f' : '#a49b8f'}>{PC_INFO[((sound(n) % 12) + 12) % 12].white ? dName(n.d) : dName(n.d) + (n.snd > 0 ? '♯' : '♭')}</text>
+            </g>
+          ))}
+      </svg>
+      <div style={{textAlign:'center',fontSize:13,lineHeight:1.5,minHeight:40,margin:'2px 0 6px',fontWeight:cur ? 700 : 400,color:cur ? 'var(--text)' : 'var(--muted)'}}>{cur ? cur.say : 'Tap a note.'}</div>
+      <TapKeyboard octaves={1} labels="white" marks={key !== null ? { [((key % 12) + 12) % 12]: 'good' } : {}} onTap={(i) => playKey(i)}/>
+      <div style={{textAlign:'center',marginTop:6}}><button className="ghost-btn" onClick={playAll}>♪ Play the bar</button></div>
+    </div>
+  );
+}
+
+function TonesLearn({ onStart }) {
+  const tip = (title, body) => <Rule title={title}>{body}</Rule>;
+  return (
+    <Lesson id="tones" title="Semitones, tones and accidentals" intro={<>The smallest step on the piano, and the step made of two of them. Scales, key signatures, intervals and chords are all counted in these.</>} onStart={onStart}>
+      <Step title="Semitones and tones">
       <div style={{display:'flex',gap:8,margin:'4px 0 12px'}}>
         {[['Semitone', 'half step', 'S', '1 key'], ['Tone', 'whole step', 'T', '2 keys']].map(([a, b, c, d]) => (
           <div key={a} style={{flex:1,border:'1.5px solid var(--border)',borderRadius:10,padding:'8px 10px',background:'#fff',textAlign:'center'}}>
@@ -3929,10 +4116,16 @@ function TonesLearn({ onStart }) {
       {tip('Two white keys can be a semitone', 'E–F and B–C have no black key between them, so they are only a semitone apart. These two spots are what make scales work.')}
       {tip('A tone is two semitones', 'Skip one key. C to D is a tone (C♯ is in between); E to F♯ is a tone too. Also called a whole step.')}
       <StepExplorer/>
-      {tip('Sharps and flats move by a semitone', '♯ raises a note a semitone, ♭ lowers it. That’s why one key can have two names: C♯ = D♭, and even E♯ = F and C♭ = B.')}
+      </Step>
+      <Step title="Accidentals: sharp, flat, natural">
+      <AccidentalCards/>
+      {tip('Accidentals move by a semitone', 'Sharps, flats and naturals are called accidentals. ♯ raises a note a semitone, ♭ lowers it, ♮ cancels either. That’s why one key can have two names: C♯ = D♭, and even E♯ = F and C♭ = B.')}
       <SharpFlatMover/>
-      <button className="primary-btn" style={{marginTop:6}} onClick={onStart}>Start the drill →</button>
-    </div>
+      {tip('Written before the note, on its line or space', 'The sign goes just in front of the notehead, on exactly the same line or space -- the sharp’s box, the flat’s bowl and the natural’s box sit on it.')}
+      {tip('An accidental lasts until the bar line', 'Every later note on that same line or space in the bar is changed too. A natural cancels it; the next bar line wipes it clean.')}
+      <AccidentalBar/>
+      </Step>
+    </Lesson>
   );
 }
 
@@ -4144,7 +4337,7 @@ function ScaleBuilder({ mode = 'major' }) {
   const accs = names.slice(0, 7).filter(x => x.length > 1);
   const buttons = mode === 'major' ? ['T', 'S'] : ['T', 'S', 'T+S'];
   return (
-    <div style={{...actBox, background:'#fff', border:'1px solid var(--border)', marginBottom:16}}>
+    <div className="try-box" style={{...actBox, background:'#fff', border:'1px solid var(--border)', marginBottom:16}}>
       <div style={actTitle}>Build it yourself</div>
       <div style={actNote}>Pick a starting note and build the {mode === 'major' ? 'major' : 'harmonic minor'} scale one step at a time: is the next step a tone (T) or a semitone (S){mode === 'major' ? '' : ' -- or the tone and a half (T+S)'}?</div>
       <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6}}>
@@ -4179,27 +4372,30 @@ function ScalesLearn({ onStart }) {
   const [mode, setMode] = useState('major');
   const [sel, setSel] = useState('C');
   const [minSel, setMinSel] = useState('A');
-  return (
-    <div className="fade-up">
-      <div style={{display:'flex',gap:6,marginBottom:14}}>
-        <button className={'chip' + (mode === 'major' ? ' active' : '')} onClick={() => setMode('major')}>Major scales</button>
-        <button className={'chip' + (mode === 'minor' ? ' active' : '')} onClick={() => setMode('minor')}>Minor scales</button>
-      </div>
-      {mode === 'major' ? <>
-        <MajorShapeCard/>
-        <ScaleBuilder mode="major"/>
-        <ScalePatterns sel={sel} onPick={setSel}/>
-        <ScalePath sel={sel} onPick={setSel}/>
-        <ScaleFingeringDrill controlledKey={sel} onPickKey={setSel}/>
-      </> : <>
-        <MinorFormsCard/>
-        <ScaleBuilder key="minor" mode="minor"/>
-        <ScalePatterns sel={minSel} onPick={setMinSel} mode="minor"/>
-        <ScalePath sel={minSel} onPick={setMinSel} keys={MINOR_PATH} prefix="m:" mode="minor"/>
-        <MinorViewer sel={minSel} onPick={setMinSel}/>
-      </>}
-      <button className="primary-btn" style={{marginTop:16}} onClick={onStart}>Start the drill →</button>
+  const tabs = (
+    <div style={{display:'flex',gap:6,marginBottom:12}}>
+      <button className={'chip' + (mode === 'major' ? ' active' : '')} onClick={() => setMode('major')}>Major scales</button>
+      <button className={'chip' + (mode === 'minor' ? ' active' : '')} onClick={() => setMode('minor')}>Minor scales</button>
     </div>
+  );
+  return mode === 'major' ? (
+    <Lesson key="major" id="scales-major" title="Major scales" head={tabs} onStart={onStart}
+      intro={<>One shape builds every major scale. Learn the shape, build it yourself, then learn the fingering patterns.</>}>
+      <Step title="The shape"><MajorShapeCard/></Step>
+      <Step title="Build it yourself"><ScaleBuilder mode="major"/></Step>
+      <Step title="Fingering patterns"><ScalePatterns sel={sel} onPick={setSel}/></Step>
+      <Step title="Your scale path"><ScalePath sel={sel} onPick={setSel}/></Step>
+      <Step title="Practise the fingering"><ScaleFingeringDrill controlledKey={sel} onPickKey={setSel}/></Step>
+    </Lesson>
+  ) : (
+    <Lesson key="minor" id="scales-minor" title="Minor scales" head={tabs} onStart={onStart}
+      intro={<>Three forms of the minor scale -- the harmonic minor is the one you’ll meet most.</>}>
+      <Step title="Three forms"><MinorFormsCard/></Step>
+      <Step title="Build it yourself"><ScaleBuilder key="minor" mode="minor"/></Step>
+      <Step title="Fingering patterns"><ScalePatterns sel={minSel} onPick={setMinSel} mode="minor"/></Step>
+      <Step title="Your scale path"><ScalePath sel={minSel} onPick={setMinSel} keys={MINOR_PATH} prefix="m:" mode="minor"/></Step>
+      <Step title="See every form"><MinorViewer sel={minSel} onPick={setMinSel}/></Step>
+    </Lesson>
   );
 }
 
@@ -4417,7 +4613,7 @@ function BeatPulse() {
     return () => { clearInterval(iv); setBeat(-1); };
   }, [run, id]);
   return (
-    <div style={actBox}>
+    <div className="try-box" style={actBox}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div style={actTitle}>Count along</div>
         <div style={{display:'flex',gap:4}}>{IDS.map(x => <button key={x} className={'chip' + (x === id ? ' active' : '')} style={{padding:'3px 9px',fontSize:12,fontWeight:900}} onClick={() => setId(x)}>{x}</button>)}</div>
@@ -4464,7 +4660,7 @@ function RegroupQuavers() {
   const W = 260, xs = [0, 1, 2, 3, 4, 5].map(i => 30 + i * 36 + (id === '6/8' ? (i >= 3 ? 14 : 0) : Math.floor(i / 2) * 10));
   let start = 0;
   return (
-    <div style={actBox}>
+    <div className="try-box" style={actBox}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div style={actTitle}>Same notes, different beat</div>
         <div style={{display:'flex',gap:4}}>{['3/4', '6/8'].map(x => <button key={x} className={'chip' + (x === id ? ' active' : '')} style={{padding:'3px 9px',fontSize:12,fontWeight:900}} onClick={() => setId(x)}>{x}</button>)}</div>
@@ -4514,7 +4710,7 @@ function BarLineBuilder() {
   }
   let beatSoFar = 0;
   return (
-    <div style={actBox}>
+    <div className="try-box" style={actBox}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div style={actTitle}>Put in the bar lines</div>
         <div style={{display:'flex',gap:4}}>{IDS.map(x => <button key={x} className={'chip' + (x === id ? ' active' : '')} style={{padding:'3px 9px',fontSize:12,fontWeight:900}} onClick={() => reset(x)}>{x}</button>)}</div>
@@ -4565,10 +4761,9 @@ function TimeSigLearn({ onStart }) {
     </button>
   );
   return (
-    <div className="card fade-up">
-      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Reading a time signature</h2>
-      <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 12px'}}>Two numbers at the start of the music tell you how the beats are grouped into bars.</p>
-      <div style={{display:'flex',alignItems:'center',gap:14,background:'var(--brass-bg)',borderRadius:10,padding:'10px 14px',marginBottom:14}}>
+    <Lesson id="time-signatures" title="Reading a time signature" intro={<>Two numbers at the start of the music tell you how the beats are grouped into bars.</>} onStart={onStart}>
+      <Step title="The two numbers">
+      <div style={{display:'flex',alignItems:'center',gap:14,background:'#fff',borderRadius:10,padding:'10px 14px',marginBottom:14}}>
         <TSig top={3} bottom={4} size={46}/>
         <div style={{fontSize:13,lineHeight:1.6}}>
           <b>Top number</b> = how many beats in each bar.<br/>
@@ -4578,13 +4773,17 @@ function TimeSigLearn({ onStart }) {
       <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',margin:'0 0 6px'}}>Simple time -- each beat splits into 2 -- tap to hear</div>
       <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:14}}>{TIME_SIGS.filter(t => t.kind === 'simple').map(row)}</div>
       <BeatPulse/>
+      </Step>
+      <Step title="Bar lines">
       <BarLineBuilder/>
+      </Step>
+      <Step title="Compound time">
       <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',margin:'0 0 6px'}}>Compound time -- each beat splits into 3</div>
       <p style={{fontSize:12,color:'#6f665b',margin:'0 0 6px',lineHeight:1.5}}>When the top number is 6, 9 or 12 over 8, group the quavers in threes: each group is one dotted-crotchet beat. So 6/8 has <b>two</b> beats, not six.</p>
       <div style={{display:'flex',flexDirection:'column',gap:6}}>{TIME_SIGS.filter(t => t.kind === 'compound').map(row)}</div>
       <div style={{marginTop:14}}><RegroupQuavers/></div>
-      <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
-    </div>
+      </Step>
+    </Lesson>
   );
 }
 
@@ -4812,7 +5011,7 @@ function StaffExplorer() {
   const lm = LANDMARKS.find(l => l.d === d);
   const key = dToKey(d);
   return (
-    <div style={{background:'var(--brass-bg)',borderRadius:10,padding:'10px',margin:'12px 0'}}>
+    <div className="try-box" style={{background:'var(--brass-bg)',borderRadius:10,padding:'10px',margin:'12px 0'}}>
       <div style={{fontSize:12,fontWeight:800,marginBottom:6}}>Tap a landmark, or a white key</div>
       <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:6}}>
         {LANDMARKS.map(l => <button key={l.d} className={'chip' + (l.d === d ? ' active' : '')} style={{padding:'4px 9px',fontSize:12}} onClick={() => setD(l.d)}>{l.name}</button>)}
@@ -4853,14 +5052,31 @@ const FOLD_LINE_COLOR = '#3f8fc9';
 
 // Phase 101c: Sohyun's clef story -- the Queen of G and the King of F. Grounded in the real
 // history (both clefs began as the letters G and F), told as a story.
-// Phase 113 (Sohyun): animate "the Queen lives on G / the King lives on F". A small crown travels
-// in: the Queen's spirals down the treble clef's curl onto the G line; the King's walks along the
-// F line and stops between his two guards (the bass clef's dots), which stand to attention.
-function Crown({ x, y, color = '#c9a24a', s = 1 }) {
+// Phase 113b (Sohyun): the crowns must land exactly inside the clefs, on their own line, and the King
+// must walk in BETWEEN his two guards. Positions measured from the Noto Music glyphs as ClefGlyph
+// scales them (viewBox units, 220-wide staff): treble curl's inner hole centre x 21 on the G line
+// (y 90); bass clef dots centred x 34.2 at y 125 and 134 (gap 127.2-132), the pocket inside the clef
+// on the F line between the head (ends x 17.4) and the body stroke (starts x 24.5) centre x 21.
+// The camera zooms in on the clef for the walk, then back out.
+function QueenCrown({ x, y, s = 1 }) {
+  // A tiara: five rounded points with pearls, a curved band and a rose-pink jewel.
   return (
     <g transform={`translate(${x} ${y}) scale(${s})`}>
-      <polygon points="-7,3 -7,-4 -3.5,-0.5 0,-6 3.5,-0.5 7,-4 7,3" fill={color} stroke="#8a6a2a" strokeWidth="0.8" strokeLinejoin="round"/>
-      <circle cx="0" cy="-6.5" r="1.3" fill="#b5483b"/>
+      <path d="M-6,2.5 Q0,4.2 6,2.5 L6.4,-2.2 L4,-0.6 L3,-4.4 L1.2,-1 L0,-5.6 L-1.2,-1 L-3,-4.4 L-4,-0.6 L-6.4,-2.2 Z" fill="#e3c26b" stroke="#8a6a2a" strokeWidth="0.5" strokeLinejoin="round"/>
+      {[[-6.4, -2.2], [-3, -4.4], [0, -5.6], [3, -4.4], [6.4, -2.2]].map(([px, py], i) => <circle key={i} cx={px} cy={py} r="0.9" fill="#fff8ec" stroke="#8a6a2a" strokeWidth="0.3"/>)}
+      <ellipse cx="0" cy="1.4" rx="1.2" ry="0.9" fill="#d46a8c"/>
+    </g>
+  );
+}
+function KingCrown({ x, y, s = 1 }) {
+  // A heavier crown: red velvet cap, three square points, a cross on top, jewelled band.
+  return (
+    <g transform={`translate(${x} ${y}) scale(${s})`}>
+      <path d="M-4.6,-1 Q0,-6.5 4.6,-1 Z" fill="#a8323a"/>
+      <path d="M-6,3 L-6,-3.2 L-4,-3.2 L-4,-1 L-1,-1 L-1,-3.6 L1,-3.6 L1,-1 L4,-1 L4,-3.2 L6,-3.2 L6,3 Z" fill="#d9b24c" stroke="#7a5a1e" strokeWidth="0.5" strokeLinejoin="miter"/>
+      <rect x="-0.45" y="-7.4" width="0.9" height="3.2" fill="#d9b24c"/><rect x="-1.4" y="-6.6" width="2.8" height="0.9" fill="#d9b24c"/>
+      <rect x="-6" y="1" width="12" height="2" fill="#b8912f"/>
+      {[-3.5, 0, 3.5].map(px => <circle key={px} cx={px} cy="2" r="0.7" fill={px ? '#3f6fb3' : '#b5483b'}/>)}
     </g>
   );
 }
@@ -4868,44 +5084,61 @@ function ClefHome({ kind }) {
   const queen = kind === 'queen';
   const W = 220, lineD = queen ? 32 : 24, ly = dY(lineD), clef = queen ? 'treble' : 'bass';
   const noteX = W * 0.62;
-  const [t, setT] = useState(-1); // -1 idle, 0..1 animating, 1 = home
+  const top = dY(CLEFS[clef].high) - 26, H = dY(CLEFS[clef].low) - dY(CLEFS[clef].high) + 50;
+  const HOME = queen ? { x: 21, y: 89.6 } : { x: 21, y: 129.5 };
+  const GUARDS = [{ x: 34.2, y: 125 }, { x: 34.2, y: 134 }];
+  const [t, setT] = useState(-1);
   const raf = useRef(null);
   useEffect(() => () => cancelAnimationFrame(raf.current), []);
   function go() {
     cancelAnimationFrame(raf.current);
-    const start = performance.now(), dur = queen ? 2600 : 2200;
-    const step = (now) => { const u = Math.min(1, (now - start) / dur); setT(u); if (u < 1) raf.current = requestAnimationFrame(step); else playKey(dMidiKey(lineD), 0.8); };
+    const start = performance.now(), dur = 4200;
+    const step = (now) => { const u = Math.min(1, (now - start) / dur); setT(u); if (u < 1) raf.current = requestAnimationFrame(step); };
     raf.current = requestAnimationFrame(step);
   }
-  // Crown path. Queen: spiral into the curl (centre ~ x 24 on the G line), then glide along the line to the note.
-  // King: walk in from the right along the F line and stop just right of the guards (x ~ 44).
+  const ease = (u) => u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
+  // Camera: zoom in (0-0.15), hold, zoom out (0.82-1).
+  const zw = 70, zh = zw * H / W;
+  // After the walk the camera pulls back only to a 150-wide view (clef + note), so the crown stays visible (175 wide keeps the whole clef, the note and its letter).
+  const lerp = (p, q, u) => p + (q - p) * u;
+  const FULL = { y: top, w: W, h: H }, ZOOM = { y: HOME.y - zh / 2, w: zw, h: zh };
+  const WIDE = { w: 175, h: 175 * H / W, y: (queen ? 78.5 : 135.5) - 175 * H / W / 2 };
+  let cam = FULL;
+  if (t >= 0 && t < 0.15) { const u = ease(t / 0.15); cam = { y: lerp(FULL.y, ZOOM.y, u), w: lerp(FULL.w, ZOOM.w, u), h: lerp(FULL.h, ZOOM.h, u) }; }
+  else if (t >= 0.15 && t < 0.82) cam = ZOOM;
+  else if (t >= 0.82) { const u = ease((t - 0.82) / 0.18); cam = { y: lerp(ZOOM.y, WIDE.y, u), w: lerp(ZOOM.w, WIDE.w, u), h: lerp(ZOOM.h, WIDE.h, u) }; }
+  const vx = 0, vy = cam.y, vw = cam.w, vh = cam.h;
+  // Crown path, 0.18-0.75.
   let cx = null, cy = null;
-  if (t >= 0) {
+  if (t >= 0.15) {
+    const u = Math.min(1, Math.max(0, (t - 0.18) / 0.57));
     if (queen) {
-      const CX = 24;
-      if (t < 0.7) { const u = t / 0.7, r = 26 * (1 - u), a = -Math.PI / 2 + u * 4 * Math.PI; cx = CX + r * Math.cos(a); cy = ly + r * Math.sin(a) - 7; }
-      else { const u = (t - 0.7) / 0.3; cx = CX + (noteX - CX) * u; cy = ly - 7; }
+      // Spiral into the curl: two turns, radius 15 -> 0, ending on the G line at the curl's centre.
+      const r = 15 * (1 - ease(u)), a = Math.PI * 0.2 + ease(u) * 4 * Math.PI;
+      cx = HOME.x + r * Math.cos(a); cy = HOME.y + r * Math.sin(a);
     } else {
-      const u = Math.min(1, t / 0.85), ease = 1 - Math.pow(1 - u, 2);
-      cx = W - 10 + (46 - (W - 10)) * ease; cy = ly - 8 - Math.abs(Math.sin(u * Math.PI * 6)) * 2.5;
+      // Walk in along the F line from the right, straight between the guards, into the clef.
+      cx = 68 + (HOME.x - 68) * ease(u); cy = HOME.y;
     }
   }
-  const home = t >= 1;
-  const guardsUp = !queen && t >= 0.85;
+  const home = t >= 0.75;
+  const guardsAlert = !queen && cx !== null && cx < 46;
+  const s = 0.38;
   return (
     <div>
-      <svg viewBox={`0 ${dY(CLEFS[clef].high) - 26} ${W} ${dY(CLEFS[clef].low) - dY(CLEFS[clef].high) + 50}`} style={{width:'100%',maxWidth:W * 1.5,display:'block',margin:'0 auto'}}>
-        {CLEFS[clef].lines.map(l => <line key={l} x1="4" x2={W - 4} y1={dY(l)} y2={dY(l)} stroke={l === lineD && home ? '#c9a24a' : '#241f1a'} strokeOpacity={l === lineD && home ? 1 : 0.55} strokeWidth={l === lineD && home ? 3 : 1.2} style={{transition:'stroke 0.3s, stroke-width 0.3s'}}/>)}
+      <svg viewBox={`${vx} ${vy} ${vw} ${vh}`} style={{width:'100%',maxWidth:W * 1.5,display:'block',margin:'0 auto'}}>
+        {CLEFS[clef].lines.map(l => <line key={l} x1="4" x2={W - 4} y1={dY(l)} y2={dY(l)} stroke={l === lineD && home ? '#c9a24a' : '#241f1a'} strokeOpacity={l === lineD && home ? 1 : 0.55} strokeWidth={l === lineD && home ? 2.2 : 1.2} style={{transition:'stroke 0.3s'}}/>)}
         <ClefGlyph clef={clef} st={clef} yOf={(d) => dY(d)} ink="#241f1a"/>
-        {guardsUp && [-4.6, 4.6].map((dy, i) => (
-          <circle key={i} cx={35} cy={ly + dy} r="4.5" fill="none" stroke="#b5483b" strokeWidth="1.4" style={{animation:'fadeUp 0.3s both', animationDelay: (i * 0.15) + 's'}}/>
-        ))}
+        {guardsAlert && GUARDS.map((g, i) => <circle key={i} cx={g.x} cy={g.y} r="2.6" fill="none" stroke="#b5483b" strokeWidth="0.5" style={{animation:'fadeUp 0.25s both'}}/>)}
         <ellipse cx={noteX} cy={ly} rx="7" ry="5" transform={`rotate(-20 ${noteX} ${ly})`} fill={home ? '#c9a24a' : '#3f8fc9'} style={{transition:'fill 0.3s'}}/>
-        {home && <text x={noteX + 14} y={ly + 4} fontSize="12" fontWeight="900" fill="#8a6a2a" style={{animation:'fadeUp 0.3s both'}}>{queen ? 'G' : 'F'}</text>}
-        {cx !== null && <Crown x={queen || !home ? cx : 46} y={queen || !home ? cy : ly - 8}/>}
+        {home && <text x={noteX + 14} y={ly + 4} fontSize="12" fontWeight="900" fill="#8a6a2a">{queen ? 'G' : 'F'}</text>}
+        {cx !== null && (queen ? <QueenCrown x={cx} y={cy + 1.1 * s} s={s}/> : <KingCrown x={cx} y={cy + 2.2 * s} s={s}/>)}
       </svg>
+      <div style={{textAlign:'center',fontSize:12,color:'#6f665b',minHeight:18,marginTop:2}}>
+        {t < 0 ? '' : !home ? (queen ? 'Following the swirl…' : cx !== null && cx < 40 ? 'Past the two guards…' : 'Walking along the fourth line…') : (queen ? 'Home: the Queen sits on G, the second line.' : 'Home: the King sits on F, the fourth line, between his guards.')}
+      </div>
       <div style={{textAlign:'center',marginTop:4}}>
-        <button className="ghost-btn" style={{fontSize:13,padding:'6px 14px'}} onClick={go}>{queen ? '♛ Take the Queen home' : '♚ Take the King home'}</button>
+        <button className="ghost-btn" style={{fontSize:13,padding:'6px 14px'}} onClick={() => { go(); setTimeout(() => playKey(dMidiKey(lineD), 0.8), 3200); }}>{queen ? 'Take the Queen home' : 'Take the King home'}</button>
       </div>
     </div>
   );
@@ -4976,7 +5209,7 @@ function FoldStaff() {
   };
   // fold up (0.6s), hold, then open again (the 'printed' state transitions back to scaleY(1))
   return (
-    <div style={{background:'var(--brass-bg)',borderRadius:10,padding:'10px',margin:'12px 0'}}>
+    <div className="try-box" style={{background:'var(--brass-bg)',borderRadius:10,padding:'10px',margin:'12px 0'}}>
       <div style={{fontSize:14,fontWeight:800,marginBottom:2}}>Fold the staff at middle C</div>
       <div style={{fontSize:12,color:'#6f665b',marginBottom:6,lineHeight:1.5}}>
         Like a paint print: put ink on the treble side, fold the paper along middle C, and open it.
@@ -5095,7 +5328,7 @@ function StaffClimb() {
   const mcT = dY(28), mcB = dY(28) + GRAND_GAP;
   const key = dToKey(d);
   return (
-    <div style={actBox}>
+    <div className="try-box" style={actBox}>
       <div style={actTitle}>Climb the staff</div>
       <div style={actNote}>Each step up the staff -- line, space, line, space -- is the next letter and the next white key to the right. Step across middle C and you walk from one staff to the other.</div>
       <StaffFrame clef="grand" lo={14} hi={42} width={300}>
@@ -5153,7 +5386,7 @@ function MnemonicStaff() {
   function reveal(d) { if (!ds.includes(d) || shown.includes(d)) return; playKey(dMidiKey(d), 0.3); setShown(s => [...s, d]); }
   const all = shown.length === ds.length;
   return (
-    <div style={actBox}>
+    <div className="try-box" style={actBox}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
         <div style={actTitle}>Tap the {part}</div>
         <div style={{display:'flex',gap:4}}>
@@ -5220,7 +5453,7 @@ function LandmarkHop() {
   const done = step >= dist && guess;
   const ok = guess === dName(d);
   return (
-    <div style={actBox}>
+    <div className="try-box" style={actBox}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div style={actTitle}>Hop from a landmark</div>
         <div style={{fontSize:12,fontWeight:800,color:'var(--muted)'}}>{score.right}/{score.tries}</div>
@@ -5273,7 +5506,7 @@ function WriteTheNote() {
   }
   const others = hit !== null ? rows.filter(d => dName(d) === target && d !== hit) : [];
   return (
-    <div style={actBox}>
+    <div className="try-box" style={actBox}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div style={actTitle}>Write it on the staff</div>
         <div style={{display:'flex',gap:4}}>
@@ -5298,32 +5531,36 @@ function WriteTheNote() {
 }
 
 function StaffLearn({ onStart }) {
-  const tip = (title, body) => (
-    <div style={{padding:'10px 0',borderTop:'1px solid var(--border)'}}>
-      <div style={{fontSize:14,fontWeight:800,marginBottom:2}}>{title}</div>
-      <div style={{fontSize:13,color:'#6f665b',lineHeight:1.55}}>{body}</div>
-    </div>
-  );
+  const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <div className="card fade-up">
-      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>From the keyboard to the staff</h2>
-      <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 8px'}}>The staff is a map of the keyboard: going up the staff is going right on the piano.</p>
+    <Lesson id="staff" title="From the keyboard to the staff" intro={<>The staff is a map of the keyboard: going up the staff is going right on the piano.</>} onStart={onStart}>
+      <Step title="Two staves, two clefs">
       {tip('Two staves, one piano', 'The treble clef (top) is usually the right hand and the higher notes; the bass clef (bottom) is usually the left hand. Together they make the grand staff, joined at middle C.')}
+      <ClefStory/>
+      </Step>
+      <Step title="Line, space, line, space">
       {tip('Every line and space is the next letter', 'Line, space, line, space -- each step up is the next letter, just like the next white key.')}
       <StaffClimb/>
+      </Step>
+      <Step title="The rhymes">
       {tip('Rhymes for the lines and spaces', 'Treble lines E G B D F: “Every Good Boy Deserves Fun”; spaces F A C E. Bass lines G B D F A: “Great Big Dragon Flies Away”; spaces A C E G: “All Cows Eat Grass”.')}
       <MnemonicStaff/>
+      </Step>
+      <Step title="Landmarks">
       {tip('Read from landmarks', 'The rhymes help at first, but fluent readers jump from a landmark: middle C, treble G, bass F, the two C’s in the spaces. From a landmark, count up or down by step.')}
       <StaffExplorer/>
       <LandmarkHop/>
+      </Step>
+      <Step title="Middle C and ledger lines">
       {tip('Ledger lines extend the staff', 'Short lines above or below the staff carry on the same line-space pattern -- middle C sits on one.')}
-      <ClefStory/>
       <FoldStaff/>
       <LedgerMirror/>
+      </Step>
+      <Step title="Write them">
       {tip('Now write them', 'Reading and writing are two different skills -- the theory papers ask for both. Tap where each note goes.')}
       <WriteTheNote/>
-      <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
-    </div>
+      </Step>
+    </Lesson>
   );
 }
 
@@ -5493,7 +5730,7 @@ function DynOrder() {
     else { setBad(d.id); setTries(t => t + 1); setTimeout(() => setBad(b => (b === d.id ? null : b)), 600); }
   }
   return (
-    <div style={actBox}>
+    <div className="try-box" style={actBox}>
       <div style={actTitle}>Line them up</div>
       <div style={actNote}>Tap the dynamics from the <b>softest</b> to the <b>loudest</b>. Each one plays as you tap it -- listen to the steps.</div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:4,alignItems:'end',height:74,margin:'4px 0 8px'}}>
@@ -5543,7 +5780,7 @@ function HairpinMaker() {
   const hw = (x) => cresc ? (x - x0) / (x1 - x0) * 9 : (1 - (x - x0) / (x1 - x0)) * 9;
   const chips = (val, set) => <div style={{display:'flex',gap:3,flexWrap:'wrap'}}>{DYNAMICS.map(d => <button key={d.id} className={'chip' + (d.id === val ? ' active' : '')} style={{padding:'2px 8px'}} onClick={() => set(d.id)}><DynMark id={d.id} size={15}/></button>)}</div>;
   return (
-    <div style={actBox}>
+    <div className="try-box" style={actBox}>
       <div style={actTitle}>Draw a hairpin</div>
       <div style={actNote}>Choose where it starts and where it ends. Opening out <b>&lt;</b> = crescendo, closing in <b>&gt;</b> = diminuendo.</div>
       <div style={{display:'flex',justifyContent:'space-between',gap:8,flexWrap:'wrap',marginBottom:6}}>
@@ -5576,21 +5813,21 @@ function DynLearn({ onStart }) {
     </button>
   );
   return (
-    <div className="card fade-up">
-      <h2 style={{fontSize:18,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>How loud, and how to play each note</h2>
-      <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 12px'}}>Dynamics are Italian words (written in bold italics) that tell you how loud to play. Tap any one to hear it.</p>
-      <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>Soft → loud</div>
+    <Lesson id="dynamics" title="How loud, and how to play each note" intro={<>Dynamics are Italian words (written in bold italics) that tell you how loud to play. Tap any one to hear it.</>} onStart={onStart}>
+      <Step title="Soft to loud">
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6,marginBottom:6}}>
         {DYNAMICS.map((d, i) => cell(d.id, <span style={{fontSize:16 + i * 3,lineHeight:1.1}}><DynMark id={d.id} size={16 + i * 3}/></span>, d.it + ' · ' + d.meaning, () => pick(d.id, () => playDyn(d.vol))))}
       </div>
       <p style={{fontSize:12,color:'#6f665b',margin:'0 0 12px',lineHeight:1.5}}><b>p</b> = piano (soft), <b>f</b> = forte (loud), <b>m</b> = mezzo (“half”, moderately). Doubling the letter makes it more so.</p>
       <DynOrder/>
-      <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>Changing the volume</div>
+      </Step>
+      <Step title="Getting louder and softer">
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:14}}>
         {CHANGES.map(c => cell(c.id, <span style={{height:30,display:'flex',alignItems:'center'}}><ChangeMark c={c}/></span>, c.it + ' · ' + c.meaning, () => pick(c.id, () => playChange(c.id))))}
       </div>
       <HairpinMaker/>
-      <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>Articulation -- how each note is played</div>
+      </Step>
+      <Step title="Articulation">
       <div style={{display:'flex',flexDirection:'column',gap:6}}>
         {ARTICS.map(a => (
           <button key={a.id} onClick={() => pick(a.id, () => playArtic(a.mark))} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 10px',cursor:'pointer',
@@ -5600,8 +5837,8 @@ function DynLearn({ onStart }) {
           </button>
         ))}
       </div>
-      <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
-    </div>
+      </Step>
+    </Lesson>
   );
 }
 
