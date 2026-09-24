@@ -1888,6 +1888,106 @@ function TempoQuestion({ q, level, given, locked, onAnswer, pixel, stats }) {
   );
 }
 
+// ─── Tempo Race: hands-on round (Phase 111) ──────────────────────────────────────
+function termForBpm(bpm) { return TEMPO_TERMS.reduce((b, t) => Math.abs(t.demo - bpm) < Math.abs(b.demo - bpm) ? t : b, TEMPO_TERMS[0]); }
+// 1. A metronome with a swinging arm: drag the speed, see which tempo word it is -- or tap your own tempo.
+function MetronomeDial() {
+  const [bpm, setBpm] = useState(88);
+  const [run, setRun] = useState(false);
+  const [side, setSide] = useState(0);
+  const taps = useRef([]);
+  const t = termForBpm(bpm), idx = TEMPO_TERMS.indexOf(t);
+  useEffect(() => {
+    if (!run) return;
+    let n = 0;
+    const tick = () => { const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime + 0.01, n % 4 === 0 ? 1320 : 900, 0.04, n % 4 === 0 ? 0.3 : 0.16); setSide(s => 1 - s); n++; };
+    tick(); const iv = setInterval(tick, 60000 / bpm);
+    return () => clearInterval(iv);
+  }, [run, bpm]);
+  function tap() {
+    const now = performance.now();
+    taps.current = taps.current.filter(x => now - x < 3000).concat(now);
+    const tt = taps.current;
+    if (tt.length >= 3) { const gaps = tt.slice(1).map((x, i) => x - tt[i]); const avg = gaps.reduce((a, b) => a + b, 0) / gaps.length; setBpm(Math.max(40, Math.min(208, Math.round(60000 / avg)))); }
+    const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime + 0.01, 700, 0.03, 0.2);
+  }
+  const dur = 60 / bpm;
+  return (
+    <div style={actBox}>
+      <div style={actTitle}>The metronome</div>
+      <div style={actNote}>Slide the speed and watch the arm swing. The tempo word changes as you go faster or slower. Or tap a steady beat on “Tap” to measure your own tempo.</div>
+      <div style={{display:'flex',alignItems:'center',gap:14}}>
+        <svg viewBox="0 0 100 120" style={{width:100,flex:'0 0 100px'}}>
+          <polygon points="20,112 80,112 64,20 36,20" fill="#241f1a"/>
+          <polygon points="26,106 74,106 62,26 38,26" fill="#3b332b"/>
+          <g style={{transformOrigin:'50px 100px',transform:'rotate(' + (run ? (side ? 24 : -24) : 0) + 'deg)',transition:'transform ' + dur + 's ease-in-out'}}>
+            <line x1="50" y1="100" x2="50" y2="14" stroke="#e8dcc0" strokeWidth="2.5"/>
+            <rect x="44" y={30 + (bpm - 40) / 168 * 50} width="12" height="10" rx="2" fill={LANE_COLORS[idx]}/>
+          </g>
+          <circle cx="50" cy="100" r="4" fill="#a8823f"/>
+        </svg>
+        <div style={{flex:1}}>
+          <div style={{fontSize:30,fontWeight:900,lineHeight:1}}>{bpm}<span style={{fontSize:13,color:'var(--muted)',fontWeight:700}}> beats a minute</span></div>
+          <div style={{fontSize:22,fontWeight:900,fontStyle:'italic',color:LANE_COLORS[idx],margin:'4px 0 0',transition:'color 0.2s'}}>{t.term}</div>
+          <div style={{fontSize:12,color:'#6f665b'}}>{t.meaning}</div>
+        </div>
+      </div>
+      <input type="range" min="40" max="208" value={bpm} onChange={e => setBpm(+e.target.value)} style={{width:'100%',margin:'10px 0 2px',accentColor:'#a8823f'}}/>
+      <div style={{display:'flex',height:6,borderRadius:3,overflow:'hidden',marginBottom:8}}>
+        {TEMPO_TERMS.map((x, i) => <div key={x.term} style={{flex:1,background:LANE_COLORS[i],opacity:i === idx ? 1 : 0.3}}/>)}
+      </div>
+      <div style={{display:'flex',gap:6,justifyContent:'center'}}>
+        <button className="ghost-btn" onClick={() => setRun(r => !r)}>{run ? '■ Stop' : '▶ Start'}</button>
+        <button className="ghost-btn" onClick={tap} style={{minWidth:90}}>Tap</button>
+      </div>
+    </div>
+  );
+}
+// 2. Speed changes: rit./rall. slow down, accel. speeds up, a tempo goes back. A ball bounces the beat.
+const SPEED_CHANGES = [
+  { id: 'rit', label: 'rit.', full: 'ritardando', meaning: 'gradually slowing down', from: 120, to: 60 },
+  { id: 'rall', label: 'rall.', full: 'rallentando', meaning: 'gradually slowing down (same as rit.)', from: 120, to: 60 },
+  { id: 'accel', label: 'accel.', full: 'accelerando', meaning: 'gradually getting faster', from: 72, to: 160 },
+  { id: 'atempo', label: 'a tempo', full: 'a tempo', meaning: 'back to the original speed', from: 60, to: 120, jump: true },
+];
+function SpeedChange() {
+  const [sel, setSel] = useState(null);
+  const [beat, setBeat] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  function play(c) {
+    timers.current.forEach(clearTimeout); timers.current = [];
+    setSel(c.id); const ctx = getAudio(); if (!ctx) return;
+    const N = 12; let at = 0; const t0 = ctx.currentTime + 0.1;
+    for (let i = 0; i < N; i++) {
+      const bpm = c.jump ? (i < 6 ? c.from : c.to) : c.from + (c.to - c.from) * (i / (N - 1));
+      blip(ctx, t0 + at, 523.25, 0.08, i % 4 === 0 ? 0.25 : 0.15, 'triangle');
+      timers.current.push(setTimeout(() => setBeat(i), (0.1 + at) * 1000));
+      at += 60 / bpm;
+    }
+    timers.current.push(setTimeout(() => setBeat(-1), (0.1 + at) * 1000));
+  }
+  const c = SPEED_CHANGES.find(x => x.id === sel);
+  return (
+    <div style={actBox}>
+      <div style={actTitle}>Speeding up, slowing down</div>
+      <div style={actNote}>Some words change the speed gradually. Tap one to hear twelve beats -- watch the gaps between the dots grow or shrink.</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:5,marginBottom:8}}>
+        {SPEED_CHANGES.map(x => <button key={x.id} className={'chip' + (sel === x.id ? ' active' : '')} style={{padding:'8px 0',fontSize:14,fontWeight:900,fontStyle:'italic'}} onClick={() => play(x)}>{x.label}</button>)}
+      </div>
+      <svg viewBox="0 0 300 40" style={{width:'100%',display:'block'}}>
+        {c && (() => {
+          const N = 12, xs = []; let at = 0;
+          for (let i = 0; i < N; i++) { xs.push(at); at += 60 / (c.jump ? (i < 6 ? c.from : c.to) : c.from + (c.to - c.from) * (i / (N - 1))); }
+          const k = 280 / xs[N - 1];
+          return xs.map((x, i) => <circle key={c.id + i} cx={10 + x * k} cy={20} r={beat === i ? 9 : 5} fill={beat >= i ? '#a8823f' : '#d9cdb0'} style={{transition:'r 0.1s'}}/>);
+        })()}
+      </svg>
+      <div style={{textAlign:'center',fontSize:13,minHeight:36}}>{c ? <><b style={{fontStyle:'italic'}}>{c.full}</b> -- {c.meaning}{c.jump ? <div style={{fontSize:12,color:'#6f665b'}}>(slow first, then straight back to speed)</div> : null}</> : <span style={{color:'var(--muted)'}}>Tap a word above.</span>}</div>
+    </div>
+  );
+}
+
 function TempoLearn({ onStart }) {
   const [playing, setPlaying] = useState(null);
   useEffect(() => () => stopClicks(), []);
@@ -1927,6 +2027,8 @@ function TempoLearn({ onStart }) {
       <p style={{fontSize:11,color:'var(--muted)',margin:'12px 0 0',lineHeight:1.5}}>
         Beats per minute are approximate -- books and metronomes don't all agree. What matters is the order.
       </p>
+      <div style={{marginTop:14}}><MetronomeDial/></div>
+      <SpeedChange/>
       <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
     </div>
   );
@@ -2013,7 +2115,7 @@ function fmtBeats(v) {
   const whole = Math.floor(v + 1e-9), frac = Math.round((v - whole) * 100) / 100;
   const f = frac === 0.25 ? '¼' : frac === 0.5 ? '½' : frac === 0.75 ? '¾' : '';
   const s = (whole ? String(whole) : (f ? '' : '0')) + f;
-  return s + (v === 1 ? ' beat' : ' beats');
+  return s + (v <= 1 ? ' beat' : ' beats');
 }
 
 const NOTEVAL_LEVELS = [
@@ -2712,6 +2814,67 @@ function RhythmQuestion({ q, level, given, locked, onAnswer, pixel }) {
   );
 }
 
+// ─── Rhythm Cards: compose your own (Phase 110) ──────────────────────────────────
+// Build a one-bar 4/4 rhythm from the same cells the 40 cards use, see the counting, hear it (looped).
+function RhythmComposer() {
+  const [tier, setTier] = useState(2);
+  const [cells, setCells] = useState([]);
+  const [loop, setLoop] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const timer = useRef(null);
+  const allowed = RHYTHM_TIERS.filter(t => t.n <= tier).flatMap(t => t.add);
+  const used = cells.reduce((a, c) => a + RCELLS[c].beats, 0);
+  const full = used === 4;
+  const bpm = RHYTHM_TIERS[tier - 1].bpm;
+  useEffect(() => () => { clearTimeout(timer.current); stopClicks(); }, []);
+  useEffect(() => { setCells(cs => cs.filter(c => allowed.includes(c))); }, [tier]);
+  function play(again) {
+    clearTimeout(timer.current);
+    if (!full) return;
+    playCard({ cells }, bpm); setPlaying(true);
+    const ms = (8 * 60 / bpm) * 1000;
+    timer.current = setTimeout(() => { if (again) play(true); else setPlaying(false); }, ms + 100);
+  }
+  function stop() { clearTimeout(timer.current); stopClicks(); setPlaying(false); setLoop(false); }
+  function add(c) { if (used + RCELLS[c].beats > 4) return; setCells([...cells, c]); }
+  function surprise() {
+    for (let g = 0; g < 50; g++) {
+      const out = []; let u = 0;
+      while (u < 4) { const opts = allowed.filter(c => c !== 'W' && u + RCELLS[c].beats <= 4); const c = pick(opts); out.push(c); u += RCELLS[c].beats; }
+      if (!out.every(c => c === 'QR')) { setCells(out); return; }
+    }
+  }
+  return (
+    <div style={{...actBox, background:'#fff', border:'1px solid var(--border)'}}>
+      <div>
+        <div style={actTitle}>Make your own card</div>
+        <div style={{display:'flex',gap:3,flexWrap:'wrap',margin:'4px 0'}}>{RHYTHM_TIERS.map(t => <button key={t.n} className={'chip' + (t.n === tier ? ' active' : '')} style={{padding:'2px 8px',fontSize:11}} onClick={() => setTier(t.n)}>Set {t.n}</button>)}</div>
+      </div>
+      <div style={actNote}>Tap the building blocks to fill one 4/4 bar. When the bar is full, play it -- count out loud with the numbers under the notes. Swap a friend’s card for yours!</div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:8}}>
+        {allowed.map(c => (
+          <button key={c} className="chip" disabled={used + RCELLS[c].beats > 4} onClick={() => add(c)} style={{padding:'0 4px',height:54,display:'flex',alignItems:'center'}}>
+            <div style={{width:Math.min(RCELLS[c].beats, 2) * 26 + 24,pointerEvents:'none'}}><RhythmSVG card={{ cells: [c] }}/></div>
+          </button>
+        ))}
+      </div>
+      <div style={{height:8,borderRadius:4,background:'#f4f1ea',overflow:'hidden',marginBottom:6}}>
+        <div style={{height:'100%',width:(used / 4 * 100) + '%',background:full ? '#4f7a45' : '#a8823f',transition:'width 0.25s'}}/>
+      </div>
+      {cells.length
+        ? <div style={{animation:'fadeUp 0.25s both'}}><RhythmCard card={{ num: '★', cells }} counts={full} playing={playing}/></div>
+        : <div style={{textAlign:'center',fontSize:12,color:'var(--muted)',padding:'18px 0',border:'2px dashed var(--border)',borderRadius:12}}>Your card appears here</div>}
+      <div style={{textAlign:'center',fontSize:12,fontWeight:700,color:full ? '#4f7a45' : 'var(--muted)',margin:'6px 0'}}>{full ? 'Full bar -- 4 beats.' : used + ' of 4 beats'}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap'}}>
+        <button className="ghost-btn" disabled={!full} onClick={() => { setLoop(false); play(false); }}>♪ Play</button>
+        <button className="ghost-btn" disabled={!full} onClick={() => { if (loop) stop(); else { setLoop(true); play(true); } }}>{loop ? '■ Stop' : '↻ Loop'}</button>
+        <button className="ghost-btn" disabled={!cells.length} onClick={() => { stop(); setCells(cells.slice(0, -1)); }}>↶ Undo</button>
+        <button className="ghost-btn" onClick={() => { stop(); surprise(); }}>Surprise me</button>
+      </div>
+    </div>
+  );
+}
+
 function RhythmLearn({ onStart }) {
   const [tier, setTier] = useState(1);
   const [playing, setPlaying] = useState(null);
@@ -2732,7 +2895,8 @@ function RhythmLearn({ onStart }) {
       <div style={{display:'flex',flexDirection:'column',gap:8}}>
         {RHYTHM_DECK.filter(c => c.tier === tier).map(c => <RhythmCard key={c.num} card={c} counts playing={playing === c.num} onClick={() => hear(c)}/>)}
       </div>
-      <p style={{fontSize:11,color:'var(--muted)',margin:'10px 0 0',lineHeight:1.5}}>Counting: 1 e & a for semiquavers, 1 trip let for triplets; rests shown in brackets.</p>
+      <p style={{fontSize:11,color:'var(--muted)',margin:'10px 0 14px',lineHeight:1.5}}>Counting: 1 e & a for semiquavers, 1 trip let for triplets; rests shown in brackets.</p>
+      <RhythmComposer/>
       <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
     </div>
   );
@@ -4229,6 +4393,160 @@ function playTimeSig(t, bpm) {
   });
 }
 
+// ─── Time Signatures: hands-on round (Phase 109) ─────────────────────────────────
+// 1. Count along: the beats light up in time, strong beat biggest, and loop until stopped.
+function BeatPulse() {
+  const IDS = ['2/4', '3/4', '4/4', '6/8'];
+  const [id, setId] = useState('3/4');
+  const [beat, setBeat] = useState(-1);
+  const [run, setRun] = useState(false);
+  const t = TS[id];
+  const n = t.pattern.length;
+  const words = t.id === '6/8' ? ['ONE', 'and', 'a', 'TWO', 'and', 'a'] : ['ONE', 'two', 'three', 'four'].slice(0, n);
+  useEffect(() => { setRun(false); setBeat(-1); }, [id]);
+  useEffect(() => {
+    if (!run) return;
+    const bpm = t.bottom === 8 ? 150 : 84, ms = 60000 / bpm;
+    let i = 0;
+    const tick = () => {
+      const ctx = getAudio(); const acc = t.pattern[i % n];
+      if (ctx) blip(ctx, ctx.currentTime + 0.01, acc === 1 ? 1320 : acc === 0.5 ? 1040 : 880, 0.05, acc === 1 ? 0.4 : acc === 0.5 ? 0.22 : 0.12);
+      setBeat(i % n); i++;
+    };
+    tick(); const iv = setInterval(tick, ms);
+    return () => { clearInterval(iv); setBeat(-1); };
+  }, [run, id]);
+  return (
+    <div style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>Count along</div>
+        <div style={{display:'flex',gap:4}}>{IDS.map(x => <button key={x} className={'chip' + (x === id ? ' active' : '')} style={{padding:'3px 9px',fontSize:12,fontWeight:900}} onClick={() => setId(x)}>{x}</button>)}</div>
+      </div>
+      <div style={actNote}>Press start and count out loud with the lights. The first beat of every bar is the strongest{t.id === '6/8' ? '; in 6/8 the 4th quaver gets a smaller push -- that’s the second beat' : ''}.</div>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:12,padding:'10px 0'}}>
+        <TSig top={t.top} bottom={t.bottom} size={40}/>
+        <div style={{display:'flex',gap:t.id === '6/8' ? 6 : 12,alignItems:'center'}}>
+          {t.pattern.map((acc, i) => {
+            const size = acc === 1 ? 40 : acc === 0.5 ? 30 : 22, lit = beat === i;
+            return (
+              <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,marginLeft:t.id === '6/8' && i === 3 ? 10 : 0}}>
+                <div style={{width:size,height:size,borderRadius:size / 2,background:lit ? (acc === 1 ? '#b5483b' : '#a8823f') : '#fff',
+                  border:'2px solid ' + (acc === 1 ? '#b5483b' : '#a8823f'),transform:lit ? 'scale(1.18)' : 'scale(1)',transition:'transform 0.08s, background 0.08s'}}/>
+                <span style={{fontSize:11,fontWeight:lit ? 900 : 700,color:lit ? 'var(--text)' : 'var(--muted)'}}>{words[i]}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={() => setRun(r => !r)}>{run ? '■ Stop' : '▶ Start'}</button></div>
+    </div>
+  );
+}
+
+// 2. Same six quavers, two different times: 3/4 groups them in 2s (three beats), 6/8 in 3s (two beats).
+function RegroupQuavers() {
+  const [id, setId] = useState('6/8');
+  const groups = id === '6/8' ? [3, 3] : [2, 2, 2];
+  const [on, setOn] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  function play() {
+    timers.current.forEach(clearTimeout); timers.current = [];
+    const ctx = getAudio(); if (!ctx) return;
+    const q = 60 / 160, t0 = ctx.currentTime + 0.1;
+    for (let bar = 0; bar < 2; bar++) for (let i = 0; i < 6; i++) {
+      const strong = i === 0, beat = id === '6/8' ? i % 3 === 0 : i % 2 === 0;
+      blip(ctx, t0 + (bar * 6 + i) * q, 523.25, q * 0.8, strong ? 0.26 : beat ? 0.17 : 0.07, 'triangle');
+      timers.current.push(setTimeout(() => setOn(i), (0.1 + (bar * 6 + i) * q) * 1000));
+    }
+    timers.current.push(setTimeout(() => setOn(-1), (0.1 + 12 * q) * 1000 + 200));
+  }
+  const W = 260, xs = [0, 1, 2, 3, 4, 5].map(i => 30 + i * 36 + (id === '6/8' ? (i >= 3 ? 14 : 0) : Math.floor(i / 2) * 10));
+  let start = 0;
+  return (
+    <div style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>Same notes, different beat</div>
+        <div style={{display:'flex',gap:4}}>{['3/4', '6/8'].map(x => <button key={x} className={'chip' + (x === id ? ' active' : '')} style={{padding:'3px 9px',fontSize:12,fontWeight:900}} onClick={() => setId(x)}>{x}</button>)}</div>
+      </div>
+      <div style={actNote}>Six quavers fill both bars. In <b>3/4</b> they’re beamed in pairs -- three crotchet beats. In <b>6/8</b> they’re beamed in threes -- two dotted-crotchet beats. Switch and listen.</div>
+      <svg viewBox={`0 0 ${W + 20} 90`} style={{width:'100%',maxWidth:360,display:'block',margin:'0 auto'}}>
+        {groups.map((g, gi) => {
+          const idx = Array.from({ length: g }, (_, k) => start + k); start += g;
+          const x1 = xs[idx[0]] + 6, x2 = xs[idx[idx.length - 1]] + 6;
+          return (
+            <g key={id + gi} style={{animation:'fadeUp 0.3s both'}}>
+              <rect x={x1} y={14} width={x2 - x1 + 1.6} height={6} fill="#241f1a"/>
+              {idx.map(i => (
+                <g key={i}>
+                  <line x1={xs[i] + 6.8} x2={xs[i] + 6.8} y1={16} y2={60} stroke="#241f1a" strokeWidth="1.6"/>
+                  <ellipse cx={xs[i]} cy={62} rx="7.5" ry="5.5" transform={`rotate(-20 ${xs[i]} 62)`} fill={on === i ? '#a8823f' : '#241f1a'}/>
+                </g>
+              ))}
+              <text x={(x1 + x2) / 2} y={84} textAnchor="middle" fontSize="11" fontWeight="900" fill="#a8823f">beat {gi + 1}</text>
+            </g>
+          );
+        })}
+      </svg>
+      <div style={{textAlign:'center',fontSize:13,fontWeight:800,margin:'2px 0 6px'}}>{id === '6/8' ? '2 beats: ONE-and-a TWO-and-a' : '3 beats: ONE-and two-and three-and'}</div>
+      <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={play}>♪ Hear two bars</button></div>
+    </div>
+  );
+}
+
+// 3. Put in the bar lines: a line of music with none, tap the gaps where each bar ends (AMEB written task).
+function BarLineBuilder() {
+  const IDS = ['2/4', '3/4', '4/4'];
+  const make = (tid) => { const t = TS[tid]; const out = []; for (let b = 0; b < 3; b++) out.push(...fillBar(t.beats, false)); return out; };
+  const [id, setId] = useState('3/4');
+  const [items, setItems] = useState(() => make('3/4'));
+  const [placed, setPlaced] = useState([]);
+  const [bad, setBad] = useState(null);
+  const t = TS[id];
+  const cum = []; items.reduce((a, it, i) => { cum[i] = a + it.beats; return cum[i]; }, 0);
+  const targets = cum.map((c, i) => i).filter(i => i < items.length - 1 && Math.abs(cum[i] / t.beats - Math.round(cum[i] / t.beats)) < 1e-9);
+  const done = targets.every(i => placed.includes(i));
+  function reset(tid) { setId(tid); setItems(make(tid)); setPlaced([]); setBad(null); }
+  function tapGap(i) {
+    if (placed.includes(i) || done) return;
+    if (targets.includes(i)) { setPlaced([...placed, i]); const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime + 0.01, 1320, 0.06, 0.25); }
+    else { setBad(i); setTimeout(() => setBad(b => (b === i ? null : b)), 900); }
+  }
+  let beatSoFar = 0;
+  return (
+    <div style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>Put in the bar lines</div>
+        <div style={{display:'flex',gap:4}}>{IDS.map(x => <button key={x} className={'chip' + (x === id ? ' active' : '')} style={{padding:'3px 9px',fontSize:12,fontWeight:900}} onClick={() => reset(x)}>{x}</button>)}</div>
+      </div>
+      <div style={actNote}>Count the beats and tap the gap where each bar is full -- {t.beats} crotchet beats per bar.</div>
+      <div style={{display:'flex',alignItems:'center',flexWrap:'wrap',rowGap:8,background:'#fff',borderRadius:8,padding:'8px 6px',border:'1.5px solid #d9cdb0'}}>
+        <span style={{marginRight:6}}><TSig top={t.top} bottom={t.bottom} size={24}/></span>
+        {items.map((it, i) => {
+          beatSoFar += it.beats;
+          const isPlaced = placed.includes(i), isBad = bad === i;
+          return (
+            <React.Fragment key={i}>
+              <span style={{display:'inline-flex',flexDirection:'column',alignItems:'center'}}><Glyph item={it} size={34}/></span>
+              {i < items.length - 1 && (
+                <span onClick={() => tapGap(i)} style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:18,height:44,cursor:'pointer',position:'relative'}}>
+                  <span style={{width:isPlaced || isBad ? 2.5 : 1,height:isPlaced || isBad ? 40 : 14,background:isPlaced ? '#241f1a' : isBad ? '#b5483b' : '#d9cdb0',transition:'all 0.2s',borderRadius:1}}/>
+                  {isBad && <span style={{position:'absolute',top:-6,fontSize:10,fontWeight:900,color:'#b5483b',whiteSpace:'nowrap'}}>{fmtBeats(cum[i] % t.beats || t.beats)}</span>}
+                </span>
+              )}
+            </React.Fragment>
+          );
+        })}
+        <span style={{width:5,height:40,borderLeft:'2.5px solid #241f1a',borderRight:'5px solid #241f1a',marginLeft:4}}/>
+      </div>
+      <div style={{textAlign:'center',fontSize:13,fontWeight:700,minHeight:22,margin:'6px 0',color:bad !== null ? '#b5483b' : done ? '#4f7a45' : 'var(--muted)'}}>
+        {bad !== null ? 'Not yet -- that bar only has ' + fmtBeats(cum[bad] % t.beats) + ' so far.' : done ? 'Every bar has exactly ' + fmtBeats(t.beats) + '.' : placed.length + ' of ' + targets.length + ' bar lines'}
+      </div>
+      <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={() => reset(id)}>New line</button></div>
+    </div>
+  );
+}
+
 function TimeSigLearn({ onStart }) {
   const [playing, setPlaying] = useState(null);
   useEffect(() => () => stopClicks(), []);
@@ -4259,9 +4577,12 @@ function TimeSigLearn({ onStart }) {
       </div>
       <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',margin:'0 0 6px'}}>Simple time -- each beat splits into 2 -- tap to hear</div>
       <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:14}}>{TIME_SIGS.filter(t => t.kind === 'simple').map(row)}</div>
+      <BeatPulse/>
+      <BarLineBuilder/>
       <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',margin:'0 0 6px'}}>Compound time -- each beat splits into 3</div>
       <p style={{fontSize:12,color:'#6f665b',margin:'0 0 6px',lineHeight:1.5}}>When the top number is 6, 9 or 12 over 8, group the quavers in threes: each group is one dotted-crotchet beat. So 6/8 has <b>two</b> beats, not six.</p>
       <div style={{display:'flex',flexDirection:'column',gap:6}}>{TIME_SIGS.filter(t => t.kind === 'compound').map(row)}</div>
+      <div style={{marginTop:14}}><RegroupQuavers/></div>
       <button className="primary-btn" style={{marginTop:14}} onClick={onStart}>Start the drill →</button>
     </div>
   );
@@ -4496,7 +4817,9 @@ function StaffExplorer() {
       <div style={{display:'flex',flexWrap:'wrap',gap:5,marginBottom:6}}>
         {LANDMARKS.map(l => <button key={l.d} className={'chip' + (l.d === d ? ' active' : '')} style={{padding:'4px 9px',fontSize:12}} onClick={() => setD(l.d)}>{l.name}</button>)}
       </div>
-      <StaffView clef="grand" notes={[{ d, color: '#a8823f' }]}/>
+      {d === 28
+        ? <StaffView clef="grand" spread notes={[{ d, color: '#a8823f', staff: 'treble' }, { d, color: '#a8823f', staff: 'bass' }]} labels={['treble', 'bass']}/>
+        : <StaffView clef="grand" notes={[{ d, color: '#a8823f' }]}/>}
       <div style={{textAlign:'center',fontSize:15,fontWeight:900,margin:'2px 0 6px'}}>
         {dName(d)}{lm ? ' -- ' + lm.name : ''} <span style={{fontSize:11,color:'var(--muted)',fontWeight:700}}>({dLabel(d)})</span>
       </div>
@@ -4530,11 +4853,81 @@ const FOLD_LINE_COLOR = '#3f8fc9';
 
 // Phase 101c: Sohyun's clef story -- the Queen of G and the King of F. Grounded in the real
 // history (both clefs began as the letters G and F), told as a story.
+// Phase 113 (Sohyun): animate "the Queen lives on G / the King lives on F". A small crown travels
+// in: the Queen's spirals down the treble clef's curl onto the G line; the King's walks along the
+// F line and stops between his two guards (the bass clef's dots), which stand to attention.
+function Crown({ x, y, color = '#c9a24a', s = 1 }) {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${s})`}>
+      <polygon points="-7,3 -7,-4 -3.5,-0.5 0,-6 3.5,-0.5 7,-4 7,3" fill={color} stroke="#8a6a2a" strokeWidth="0.8" strokeLinejoin="round"/>
+      <circle cx="0" cy="-6.5" r="1.3" fill="#b5483b"/>
+    </g>
+  );
+}
+function ClefHome({ kind }) {
+  const queen = kind === 'queen';
+  const W = 220, lineD = queen ? 32 : 24, ly = dY(lineD), clef = queen ? 'treble' : 'bass';
+  const noteX = W * 0.62;
+  const [t, setT] = useState(-1); // -1 idle, 0..1 animating, 1 = home
+  const raf = useRef(null);
+  useEffect(() => () => cancelAnimationFrame(raf.current), []);
+  function go() {
+    cancelAnimationFrame(raf.current);
+    const start = performance.now(), dur = queen ? 2600 : 2200;
+    const step = (now) => { const u = Math.min(1, (now - start) / dur); setT(u); if (u < 1) raf.current = requestAnimationFrame(step); else playKey(dMidiKey(lineD), 0.8); };
+    raf.current = requestAnimationFrame(step);
+  }
+  // Crown path. Queen: spiral into the curl (centre ~ x 24 on the G line), then glide along the line to the note.
+  // King: walk in from the right along the F line and stop just right of the guards (x ~ 44).
+  let cx = null, cy = null;
+  if (t >= 0) {
+    if (queen) {
+      const CX = 24;
+      if (t < 0.7) { const u = t / 0.7, r = 26 * (1 - u), a = -Math.PI / 2 + u * 4 * Math.PI; cx = CX + r * Math.cos(a); cy = ly + r * Math.sin(a) - 7; }
+      else { const u = (t - 0.7) / 0.3; cx = CX + (noteX - CX) * u; cy = ly - 7; }
+    } else {
+      const u = Math.min(1, t / 0.85), ease = 1 - Math.pow(1 - u, 2);
+      cx = W - 10 + (46 - (W - 10)) * ease; cy = ly - 8 - Math.abs(Math.sin(u * Math.PI * 6)) * 2.5;
+    }
+  }
+  const home = t >= 1;
+  const guardsUp = !queen && t >= 0.85;
+  return (
+    <div>
+      <svg viewBox={`0 ${dY(CLEFS[clef].high) - 26} ${W} ${dY(CLEFS[clef].low) - dY(CLEFS[clef].high) + 50}`} style={{width:'100%',maxWidth:W * 1.5,display:'block',margin:'0 auto'}}>
+        {CLEFS[clef].lines.map(l => <line key={l} x1="4" x2={W - 4} y1={dY(l)} y2={dY(l)} stroke={l === lineD && home ? '#c9a24a' : '#241f1a'} strokeOpacity={l === lineD && home ? 1 : 0.55} strokeWidth={l === lineD && home ? 3 : 1.2} style={{transition:'stroke 0.3s, stroke-width 0.3s'}}/>)}
+        <ClefGlyph clef={clef} st={clef} yOf={(d) => dY(d)} ink="#241f1a"/>
+        {guardsUp && [-4.6, 4.6].map((dy, i) => (
+          <circle key={i} cx={35} cy={ly + dy} r="4.5" fill="none" stroke="#b5483b" strokeWidth="1.4" style={{animation:'fadeUp 0.3s both', animationDelay: (i * 0.15) + 's'}}/>
+        ))}
+        <ellipse cx={noteX} cy={ly} rx="7" ry="5" transform={`rotate(-20 ${noteX} ${ly})`} fill={home ? '#c9a24a' : '#3f8fc9'} style={{transition:'fill 0.3s'}}/>
+        {home && <text x={noteX + 14} y={ly + 4} fontSize="12" fontWeight="900" fill="#8a6a2a" style={{animation:'fadeUp 0.3s both'}}>{queen ? 'G' : 'F'}</text>}
+        {cx !== null && <Crown x={queen || !home ? cx : 46} y={queen || !home ? cy : ly - 8}/>}
+      </svg>
+      <div style={{textAlign:'center',marginTop:4}}>
+        <button className="ghost-btn" style={{fontSize:13,padding:'6px 14px'}} onClick={go}>{queen ? '♛ Take the Queen home' : '♚ Take the King home'}</button>
+      </div>
+    </div>
+  );
+}
+
+// A small text label on a filled box, so it stays readable when it sits on a staff line.
+function BoxLabel({ x, y, text, anchor = 'middle', color = '#241f1a', bg = '#f3ead8', size = 8.5 }) {
+  const w = text.length * size * 0.56 + 8, h = size + 5;
+  const left = anchor === 'middle' ? x - w / 2 : anchor === 'end' ? x - w : x;
+  return (
+    <g>
+      <rect x={left} y={y - h / 2} width={w} height={h} rx="3" fill={bg} stroke={color} strokeOpacity="0.35" strokeWidth="0.8"/>
+      <text x={left + w / 2} y={y + size * 0.35} textAnchor="middle" fontSize={size} fontWeight="800" fill={color}>{text}</text>
+    </g>
+  );
+}
+
 function ClefStory() {
   const card = (title, clef, d, body) => (
     <div style={{background:'#fff',border:'1px solid var(--border)',borderRadius:10,padding:'10px 12px'}}>
       <div style={{fontSize:14,fontWeight:900,marginBottom:2}}>{title}</div>
-      <StaffView clef={clef} notes={[{ d, color: '#3f8fc9' }]} width={220}/>
+      <ClefHome kind={clef === 'treble' ? 'queen' : 'king'}/>
       <div style={{fontSize:13,color:'#6f665b',lineHeight:1.55,marginTop:4}}>{body}</div>
     </div>
   );
@@ -4595,7 +4988,7 @@ function FoldStaff() {
           {FOLD_PAIRS.map((p, i) => ink(p.d, p.color, 150 + i * 60))}
         </g>
         <line x1="4" x2={W - 4} y1={foldY} y2={foldY} stroke="#a8823f" strokeWidth="1.6" strokeDasharray="6 5"/>
-        <text x={W - 6} y={foldY - 4} textAnchor="end" fontSize="9" fontWeight="800" fill="#a8823f">fold</text>
+
         <g style={bottomStyle}>
           <rect x="0" y={foldY + 1} width={W} height={botY - foldY} fill="var(--brass-bg)"/>
           {[18, 20, 22, 24, 26].map(d => line(d, printed && d === 24 ? FOLD_LINE_COLOR : null))}
@@ -4604,7 +4997,8 @@ function FoldStaff() {
         </g>
         <line x1={90 - 12} x2={90 + 12} y1={foldY} y2={foldY} stroke="#241f1a" strokeWidth="1.6"/>
         <ellipse cx={90} cy={foldY} rx="7.5" ry="5.5" transform={`rotate(-20 90 ${foldY})`} fill="#241f1a"/>
-        <text x={90} y={foldY - 9} textAnchor="middle" fontSize="8.5" fontWeight="800" fill="#241f1a">middle C</text>
+        <BoxLabel x={104} y={foldY} text="middle C" anchor="start"/>
+        <BoxLabel x={W - 6} y={foldY} text="fold" anchor="end" color="#a8823f"/>
       </svg>
       <div style={{display:'flex',gap:8,justifyContent:'center',margin:'8px 0 6px'}}>
         <button className="ghost-btn" onClick={fold} disabled={phase === 'folding'}>{printed ? 'Fold again' : 'Fold it'}</button>
@@ -4626,7 +5020,7 @@ function LedgerMirror() {
   const guide = (d, text, below) => (
     <g key={'g' + d}>
       <line x1="4" x2={W - 4} y1={dY(d)} y2={dY(d)} stroke="#a8823f" strokeWidth="1" strokeDasharray="3 4"/>
-      <text x={below ? 6 : W - 4} y={below ? dY(d) + 11 : dY(d) - 3} textAnchor={below ? 'start' : 'end'} fontSize="8.5" fontWeight="800" fill="#a8823f">{text}</text>
+      {text && <BoxLabel x={below ? 4 : W - 4} y={below ? dY(d) + 17 : dY(d) - 9} text={text} anchor={below ? 'start' : 'end'} color="#a8823f" bg="#fff"/>}
     </g>
   );
   const head = (x, d, color) => <ellipse cx={x} cy={dY(d)} rx="7" ry="5" transform={`rotate(-20 ${x} ${dY(d)})`} fill={color}/>;
@@ -4648,8 +5042,8 @@ function LedgerMirror() {
         {head(W * 0.13, 28, '#241f1a')}
         <line x1={W * 0.88 - 12} x2={W * 0.88 + 12} y1={dY(28)} y2={dY(28)} stroke="#241f1a" strokeWidth="1.5"/>
         {head(W * 0.88, 28, '#241f1a')}
-        <text x={W * 0.13} y={dY(28) - 9} textAnchor="middle" fontSize="8.5" fontWeight="800" fill="#241f1a">middle C</text>
-        <text x={W * 0.88} y={dY(28) - 9} textAnchor="middle" fontSize="8.5" fontWeight="800" fill="#241f1a">middle C</text>
+        <BoxLabel x={W * 0.13} y={dY(28) - 11} text="middle C" bg="#fff"/>
+        <BoxLabel x={W * 0.88} y={dY(28) - 11} text="middle C" bg="#fff"/>
         <text x={W * 0.3} y={dY(38) - 6} textAnchor="middle" fontSize="9" fontWeight="800" fill="#6f665b">treble staff</text>
         <text x={W * 0.72} y={dY(16) - 2} textAnchor="middle" fontSize="9" fontWeight="800" fill="#6f665b">bass staff</text>
       </svg>
@@ -4695,8 +5089,10 @@ function Ledgers({ clef, d, x, yOf, ink = '#241f1a' }) {
 function StaffClimb() {
   const [d, setD] = useState(28);
   const [trail, setTrail] = useState(['C']);
-  const go = (nd) => { if (nd < 14 || nd > 42) return; playKey(dMidiKey(nd), 0.3); setD(nd); setTrail(t => [...t, dName(nd)].slice(-7)); };
+  const [via, setVia] = useState('treble'); // which staff's middle C is showing
+  const go = (nd) => { if (nd < 14 || nd > 42) return; playKey(dMidiKey(nd), 0.3); if (nd === 28) setVia(d < 28 ? 'bass' : 'treble'); setD(nd); setTrail(t => [...t, dName(nd)].slice(-7)); };
   const line = d % 2 === 0;
+  const mcT = dY(28), mcB = dY(28) + GRAND_GAP;
   const key = dToKey(d);
   return (
     <div style={actBox}>
@@ -4704,18 +5100,28 @@ function StaffClimb() {
       <div style={actNote}>Each step up the staff -- line, space, line, space -- is the next letter and the next white key to the right. Step across middle C and you walk from one staff to the other.</div>
       <StaffFrame clef="grand" lo={14} hi={42} width={300}>
         {(yOf) => <>
-          <Ledgers clef="grand" d={d} x={170} yOf={yOf}/>
-          <GlideNote x={170} y={yOf(d)} color="#a8823f"/>
-          <text x={196} y={yOf(d) + 4} fontSize="12" fontWeight="900" fill="#a8823f" style={{transition:'y 0.28s'}}>{dName(d)}</text>
+          {d === 28 ? <>
+            {[mcT, mcB].map(y => <line key={y} x1={158} x2={182} y1={y} y2={y} stroke="#241f1a" strokeWidth="1.4"/>)}
+            <ellipse cx={170} cy={via === 'treble' ? mcB : mcT} rx="7" ry="5" transform={`rotate(-20 170 ${via === 'treble' ? mcB : mcT})`} fill="none" stroke="#a8823f" strokeWidth="1.6" strokeDasharray="2 2"/>
+            <GlideNote x={170} y={via === 'treble' ? mcT : mcB} color="#a8823f"/>
+            <BoxLabel x={188} y={mcT} text="treble middle C · RH" anchor="start" size={8} color={via === 'treble' ? '#241f1a' : '#a49b8f'} bg="#f3ead8"/>
+            <BoxLabel x={188} y={mcB} text="bass middle C · LH" anchor="start" size={8} color={via === 'bass' ? '#241f1a' : '#a49b8f'} bg="#f3ead8"/>
+            <text x={150} y={(mcT + mcB) / 2 + 3} textAnchor="end" fontSize="8" fontWeight="800" fill="#a8823f">same key ↕</text>
+          </> : <>
+            <Ledgers clef="grand" d={d} x={170} yOf={yOf}/>
+            <GlideNote x={170} y={yOf(d)} color="#a8823f"/>
+            <text x={196} y={yOf(d) + 4} fontSize="12" fontWeight="900" fill="#a8823f">{dName(d)}</text>
+          </>}
         </>}
       </StaffFrame>
+      {d === 28 && <div style={{textAlign:'center',fontSize:12,color:'#6f665b',margin:'0 0 4px'}}>Middle C can be written just below the treble staff <i>or</i> just above the bass staff -- it’s the same key. Tap “Middle C” again to switch.</div>}
       <div style={{textAlign:'center',fontSize:13,fontWeight:800,margin:'2px 0 6px'}}>{dLabel(d)}{d === 28 ? ' -- middle C' : ''} · <span style={{color:line ? '#241f1a' : '#a8823f'}}>{line ? 'on a line' : 'in a space'}</span></div>
       {key >= 0 && key < 36
         ? <TapKeyboard octaves={3} labels="white" marks={{ [key]: 'target' }} onTap={(i) => { const nd = keyToD(i); if (nd !== null) go(nd); else playKey(i - 12); }}/>
         : <div style={{textAlign:'center',fontSize:11,color:'var(--muted)',padding:'10px 0'}}>(off this keyboard -- {d > 41 ? 'higher' : 'lower'} than shown)</div>}
       <div style={{display:'flex',gap:6,justifyContent:'center',margin:'8px 0 4px'}}>
         <button className="ghost-btn" disabled={d <= 14} onClick={() => go(d - 1)} style={{color:'#6d8fb3'}}>↓ Step down</button>
-        <button className="ghost-btn" onClick={() => { setD(28); setTrail(['C']); playKey(0, 0.3); }}>Middle C</button>
+        <button className="ghost-btn" onClick={() => { setD(28); setVia(v => d === 28 ? (v === 'treble' ? 'bass' : 'treble') : 'treble'); setTrail(['C']); playKey(0, 0.3); }}>Middle C</button>
         <button className="ghost-btn" disabled={d >= 42} onClick={() => go(d + 1)} style={{color:'#a8823f'}}>Step up ↑</button>
       </div>
       <div style={{textAlign:'center',fontSize:15,fontWeight:900,letterSpacing:'0.05em'}}>{trail.map((l, j) => <span key={j} style={{opacity:0.35 + 0.65 * (j + 1) / trail.length}}>{j ? ' → ' : ''}{l}</span>)}</div>
@@ -5071,6 +5477,94 @@ function playArtic(mark) {
   });
 }
 
+// ─── Dynamics & Articulation: hands-on round (Phase 112) ─────────────────────────
+// 1. Line them up: the six dynamics shuffled -- tap from softest to loudest (each one sounds as you tap).
+function DynOrder() {
+  const shuffled = () => { let o; do { o = shuffle(DYNAMICS.slice()); } while (o.every((d, i) => d.id === DYNAMICS[i].id)); return o; };
+  const [cards, setCards] = useState(shuffled);
+  const [got, setGot] = useState([]);
+  const [bad, setBad] = useState(null);
+  const [tries, setTries] = useState(0);
+  const done = got.length === DYNAMICS.length;
+  function tap(d) {
+    if (got.includes(d.id) || done) return;
+    playDyn(d.vol, 1);
+    if (d.id === DYNAMICS[got.length].id) setGot([...got, d.id]);
+    else { setBad(d.id); setTries(t => t + 1); setTimeout(() => setBad(b => (b === d.id ? null : b)), 600); }
+  }
+  return (
+    <div style={actBox}>
+      <div style={actTitle}>Line them up</div>
+      <div style={actNote}>Tap the dynamics from the <b>softest</b> to the <b>loudest</b>. Each one plays as you tap it -- listen to the steps.</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:4,alignItems:'end',height:74,margin:'4px 0 8px'}}>
+        {DYNAMICS.map((d, i) => (
+          <div key={d.id} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',height:'100%'}}>
+            <div style={{width:'80%',height:(i + 1) * 9,borderRadius:'4px 4px 0 0',background:i < got.length ? '#a8823f' : '#e8dcc0',transition:'background 0.25s'}}/>
+            <div style={{height:22,display:'flex',alignItems:'center'}}>{i < got.length ? <DynMark id={d.id} size={16}/> : <span style={{color:'#c7bca8',fontWeight:900}}>?</span>}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>
+        {cards.map(d => {
+          const used = got.includes(d.id);
+          return <button key={d.id} className="chip" disabled={used} onClick={() => tap(d)}
+            style={{padding:'8px 0',opacity:used ? 0.3 : 1,borderColor:bad === d.id ? '#b5483b' : undefined,background:bad === d.id ? '#f6d6cf' : undefined,transition:'all 0.2s'}}><DynMark id={d.id} size={20}/></button>;
+        })}
+      </div>
+      <div style={{textAlign:'center',fontSize:13,fontWeight:700,minHeight:22,marginTop:8,color:done ? '#4f7a45' : bad ? '#b5483b' : 'var(--muted)'}}>
+        {done ? (tries ? 'Done with ' + tries + ' slip' + (tries > 1 ? 's' : '') : 'Perfect -- no slips!') + ' pp p mp mf f ff'
+          : bad ? 'Not yet -- ' + DYNAMICS.find(x => x.id === bad).meaning + ' comes later.' : 'Next: the ' + (got.length ? 'next softest' : 'softest') + ' one'}
+      </div>
+      {done && <div style={{textAlign:'center',marginTop:4}}><button className="ghost-btn" onClick={() => { setCards(shuffled()); setGot([]); setTries(0); }}>Again</button></div>}
+    </div>
+  );
+}
+// 2. Make a hairpin: pick where it starts and where it ends; it draws itself while eight notes get louder or softer.
+function HairpinMaker() {
+  const [from, setFrom] = useState('p');
+  const [to, setTo] = useState('f');
+  const [k, setK] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const a = DYNAMICS.find(d => d.id === from), b = DYNAMICS.find(d => d.id === to);
+  const cresc = b.vol > a.vol, same = a.id === b.id;
+  function play() {
+    timers.current.forEach(clearTimeout); timers.current = [];
+    const ctx = getAudio(); if (!ctx) return; stopClicks();
+    const t0 = ctx.currentTime + 0.08, notes = [523, 587, 659, 698, 784, 698, 659, 587];
+    notes.forEach((f, i) => {
+      const v = a.vol + (b.vol - a.vol) * (i / 7);
+      blip(ctx, t0 + i * 0.34, f, 0.3, v, 'triangle');
+      timers.current.push(setTimeout(() => setK(i), (0.08 + i * 0.34) * 1000));
+    });
+    timers.current.push(setTimeout(() => setK(-1), (0.08 + 8 * 0.34) * 1000 + 300));
+  }
+  const W = 260, x0 = 40, x1 = 220, prog = k < 0 ? 1 : (k + 1) / 8, xe = x0 + (x1 - x0) * prog;
+  const hw = (x) => cresc ? (x - x0) / (x1 - x0) * 9 : (1 - (x - x0) / (x1 - x0)) * 9;
+  const chips = (val, set) => <div style={{display:'flex',gap:3,flexWrap:'wrap'}}>{DYNAMICS.map(d => <button key={d.id} className={'chip' + (d.id === val ? ' active' : '')} style={{padding:'2px 8px'}} onClick={() => set(d.id)}><DynMark id={d.id} size={15}/></button>)}</div>;
+  return (
+    <div style={actBox}>
+      <div style={actTitle}>Draw a hairpin</div>
+      <div style={actNote}>Choose where it starts and where it ends. Opening out <b>&lt;</b> = crescendo, closing in <b>&gt;</b> = diminuendo.</div>
+      <div style={{display:'flex',justifyContent:'space-between',gap:8,flexWrap:'wrap',marginBottom:6}}>
+        <div><div style={{fontSize:11,fontWeight:800,color:'var(--muted)',marginBottom:2}}>START</div>{chips(from, setFrom)}</div>
+        <div><div style={{fontSize:11,fontWeight:800,color:'var(--muted)',marginBottom:2}}>END</div>{chips(to, setTo)}</div>
+      </div>
+      <svg viewBox={`0 0 ${W} 50`} style={{width:'100%',maxWidth:360,display:'block',margin:'0 auto'}}>
+        <text x="4" y="31" fontSize="18" fontStyle="italic" fontWeight="900" fill="#241f1a" style={{fontFamily:DYN_FONT}}>{from}</text>
+        {!same && <>
+          <line x1={x0} y1={25 - hw(x0)} x2={xe} y2={25 - hw(xe)} stroke="#a8823f" strokeWidth="2.4" strokeLinecap="round"/>
+          <line x1={x0} y1={25 + hw(x0)} x2={xe} y2={25 + hw(xe)} stroke="#a8823f" strokeWidth="2.4" strokeLinecap="round"/>
+        </>}
+        {same && <line x1={x0} y1={25} x2={x1} y2={25} stroke="#c7bca8" strokeWidth="2" strokeDasharray="4 5"/>}
+        <text x={W - 4} y="31" textAnchor="end" fontSize="18" fontStyle="italic" fontWeight="900" fill="#241f1a" style={{fontFamily:DYN_FONT,opacity:k < 0 || k === 7 ? 1 : 0.25}}>{to}</text>
+      </svg>
+      <div style={{textAlign:'center',fontSize:13,fontWeight:800,margin:'2px 0 6px'}}>{same ? 'Same start and end -- no hairpin needed.' : cresc ? <>crescendo: {a.meaning} → {b.meaning}</> : <>diminuendo: {a.meaning} → {b.meaning}</>}</div>
+      <div style={{textAlign:'center'}}><button className="ghost-btn" disabled={same} onClick={play}>♪ Play it</button></div>
+    </div>
+  );
+}
+
 function DynLearn({ onStart }) {
   const [on, setOn] = useState(null);
   useEffect(() => () => stopClicks(), []);
@@ -5090,10 +5584,12 @@ function DynLearn({ onStart }) {
         {DYNAMICS.map((d, i) => cell(d.id, <span style={{fontSize:16 + i * 3,lineHeight:1.1}}><DynMark id={d.id} size={16 + i * 3}/></span>, d.it + ' · ' + d.meaning, () => pick(d.id, () => playDyn(d.vol))))}
       </div>
       <p style={{fontSize:12,color:'#6f665b',margin:'0 0 12px',lineHeight:1.5}}><b>p</b> = piano (soft), <b>f</b> = forte (loud), <b>m</b> = mezzo (“half”, moderately). Doubling the letter makes it more so.</p>
+      <DynOrder/>
       <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>Changing the volume</div>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:14}}>
         {CHANGES.map(c => cell(c.id, <span style={{height:30,display:'flex',alignItems:'center'}}><ChangeMark c={c}/></span>, c.it + ' · ' + c.meaning, () => pick(c.id, () => playChange(c.id))))}
       </div>
+      <HairpinMaker/>
       <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>Articulation -- how each note is played</div>
       <div style={{display:'flex',flexDirection:'column',gap:6}}>
         {ARTICS.map(a => (

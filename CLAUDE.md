@@ -2856,6 +2856,29 @@ Shared helpers: `playItems(items, bpm, onStep)` (tone per note, rests silent, so
 - `SplitTree` (after the value tree): start with one semibreve; tap a note to split it into two of the next value, or switch to "note ↔ rest"; the bar never changes length; running sum ("2 crotchets + 1 crotchet rest + 2 quavers = 4 beats"); ♪ Play the bar.
 - `FillTheBar` (after "A dot adds half again"): 2/4, 3/4, 4/4; palette of semibreve, dotted minim, minim, dotted crotchet, crotchet, quaver and their rests; overfilling shows the extra in red ("Too long -- that makes 6 beats in a 3-beat bar") and removes it; a full bar plays itself; Undo / Play / Clear.
 
+### Phase 109 -- Time Signatures: hands-on round
+- `BeatPulse` ("Count along"): 2/4, 3/4, 4/4, 6/8; ▶ Start loops the pulse with lights (strong beat biggest and red, 6/8's second beat medium) and ONE/two/three words; ■ Stop.
+- `BarLineBuilder` ("Put in the bar lines" -- the AMEB written task): three bars of 2/4, 3/4 or 4/4 from `fillBar` with no bar lines; tap the gap where each bar is full; a wrong gap flashes red with "that bar only has 1½ beats so far"; final double bar; New line.
+- `RegroupQuavers` ("Same notes, different beat"): six quavers beamed 2+2+2 (3/4) or 3+3 (6/8), labelled beat 1/2/3, played with the matching accents.
+- `fmtBeats` now says "½ beat" / "1 beat" (singular up to one beat).
+
+### Phase 110 -- Rhythm Cards: make your own card
+`RhythmComposer` (end of RhythmLearn): choose Set 1-5 (unlocks the same RCELLS building blocks the 40 cards use), tap blocks to fill one 4/4 bar (progress bar; blocks that would overflow are disabled), the card renders with RhythmCard and shows counts once full; ♪ Play (count-in + rhythm), ↻ Loop / ■ Stop, ↶ Undo, Surprise me (random full bar from the set's blocks).
+
+### Phase 111 -- Tempo Race: metronome and speed changes
+- `MetronomeDial`: slider 40-208 bpm, a drawn metronome whose arm swings in time (weight slides down as it gets faster, like a real one), the matching tempo word (`termForBpm` = nearest demo tempo) and its lane colour; ▶ Start/■ Stop clicks; "Tap" measures the user's own tempo from the last taps.
+- `SpeedChange`: rit., rall., accel., a tempo -- twelve beats played with the tempo changing, dots spaced by real time light up as they sound.
+
+### Phase 112 -- Dynamics & Articulation: hands-on round
+- `DynOrder` ("Line them up"): the six dynamics shuffled; tap softest to loudest (each plays at its volume), bars grow as you go, wrong tap flashes red ("very loud comes later"), slip count.
+- `HairpinMaker` ("Draw a hairpin"): pick start and end dynamics; the hairpin draws itself while eight notes ramp in volume; labels crescendo/diminuendo.
+
+### Phase 113 -- Reading the Staff fixes from Sohyun's review
+1. Middle C shown in both places: `StaffClimb` draws middle C under the treble staff AND above the bass staff (solid = the one you arrived at -- from above = treble/RH, from below = bass/LH; the other dashed), boxed labels, "same key ↕", and "Middle C" toggles between them. `StaffExplorer` shows both (labels treble / bass) when Middle C is picked.
+2. `ClefHome` animation in ClefStory: "♛ Take the Queen home" -- a crown spirals down the treble clef's curl onto the G line and glides to the note, the G line turns gold, G sounds. "♚ Take the King home" -- the crown walks in along the F line to the clef, the two guards (dots) get red rings, F line gold. Dot/curl positions measured from Noto Music (curl centre x~24, dots x~35 at F-line ±4.6).
+3. `BoxLabel` (text on a filled box): FoldStaff's "middle C" and "fold" now sit ON the dashed fold line in boxes; LedgerMirror's "middle C" and "A = bass staff top line" labels boxed so lines don't run through them.
+4. Open question to Sohyun: ledger lines -- expand inside Reading the Staff or split into its own chapter? (recommended: own chapter, graded by AMEB ledger-line limits).
+
 Next on the plan: Signs (repeats, D.C./D.S./Fine, fermata already here, 8va, ties vs slurs), then Chords (Intervals done in Phase 105).
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
@@ -3004,7 +3027,7 @@ When revisited, build the AMEB/ABRSM/Trinity-specific angle, not a generic direc
 | 15 | ~~Verify remaining DRAFT black-root scale fingerings~~ | Done (Phase 97) | B♭, E♭, A♭, D♭ read off the AMEB books and fixed; C♯ = D♭. Sohyun may still eyeball them in the Scales tab. |
 | 16 | drills.html chapters built (Phases 94-105) | Done -- review | Sohyun to try every chapter in the preview and flag anything off. Latest (2026-09-24): Key Signatures hands-on round (103), Note Names activities (104), sharps/flats + half/whole step moved to Tones & Semitones, new Intervals chapter (105). |
 | 18 | drills.html -- open questions for Sohyun (asked 2026-09-24, not yet answered) | Quick -- Sohyun | (a) Note Names "Letter chain" (2nd-8ve chips): keep in Note Names or move to Intervals? (b) Note Names drill Level 4 "Black keys too (sharps & flats)": keep or move to Tones & Semitones? (c) Interval song hooks (Jaws, Happy Birthday, Greensleeves, Oh When the Saints, Here Comes the Bride, Twinkle Twinkle, My Bonnie, Somewhere, Over the Rainbow) -- swap for tunes Australian students know? |
-| 19 | drills.html -- NEXT SESSION START HERE | Next | Sohyun's direction (2026-09-24): give every chapter key-signature-style hands-on, animated activities, going in curriculum order (Note Names done; Tones & Semitones partly -- has StepExplorer + SharpFlatMover; Reading the Staff done (Phase 106); Scales done (Phase 107); Notes & Rests done (Phase 108); next Time Signatures, Rhythm Cards, Tempo Race, Dynamics). New chapters still to build: Signs (repeats, D.C./D.S./Fine, 8va, ties vs slurs), Intervals Grade 3 add-on (inversions, A4/d5), then Chords (Roman numerals + letter names; check AMEB grade placement first -- Music Craft Prelim = tonic triad I in C/G/F, Grade 1 = I and V). |
+| 19 | drills.html -- NEXT SESSION START HERE | Next | Sohyun's direction (2026-09-24): give every chapter key-signature-style hands-on, animated activities, going in curriculum order (Note Names done; Tones & Semitones partly -- has StepExplorer + SharpFlatMover; Reading the Staff done (Phase 106); Scales done (Phase 107); Notes & Rests done (Phase 108); Time Signatures done (Phase 109); Rhythm Cards done (Phase 110); Tempo Race (111) and Dynamics (112) done -- every existing chapter now has a hands-on round). New chapters still to build: Signs (repeats, D.C./D.S./Fine, 8va, ties vs slurs), Intervals Grade 3 add-on (inversions, A4/d5), then Chords (Roman numerals + letter names; check AMEB grade placement first -- Music Craft Prelim = tonic triad I in C/G/F, Grade 1 = I and V). |
 | 17 | Tap-along timing on a real phone (Rhythm Cards) | Quick -- after Sohyun pushes `7072051` | Especially Game (pixel) mode: the Press Start 2P font could not load in the sandbox test. Also try a `lock=1` student link on a phone. |
 
 
