@@ -5552,7 +5552,7 @@ function StaffLearn({ onStart }) {
       <LandmarkHop/>
       </Step>
       <Step title="Middle C and ledger lines">
-      {tip('Ledger lines extend the staff', 'Short lines above or below the staff carry on the same line-space pattern -- middle C sits on one.')}
+      {tip('Ledger lines extend the staff', 'Short lines above or below the staff carry on the same line-space pattern -- middle C sits on one. The next chapter, Ledger Lines, goes further.')}
       <FoldStaff/>
       <LedgerMirror/>
       </Step>
@@ -5617,6 +5617,213 @@ const STAFF_DRILL = {
   check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
   answerLabel: (q) => dName(q.d) + ' (' + dLabel(q.d) + (q.d === 28 ? ', middle C' : '') + ')',
   Question: StaffQuestion, Learn: StaffLearn,
+};
+
+// ─── Concept: Ledger Lines (Phase 115, pitch track, after Reading the Staff) ────
+// Sohyun: ledger lines are hard to read -- give them their own chapter with more examples.
+// AMEB placement: Music Craft Prelim = one ledger line below the treble staff (middle C);
+// Grade 1 = one ledger line above and below both staves; Grade 2 = up to three; Theory of Music
+// Grade 1 = two above and below. Drill levels follow that: 1, 2, 3 ledger lines, then the keyboard.
+function ledgerDesc(clef, d) {
+  const c = CLEFS[clef];
+  if (d > c.high) { const k = d - c.high; return k % 2 ? (k === 1 ? 'in the space just above the staff (no ledger line)' : 'above ledger line ' + ((k - 1) / 2)) : 'on ledger line ' + (k / 2) + ' above'; }
+  if (d < c.low) { const k = c.low - d; return k % 2 ? (k === 1 ? 'in the space just below the staff (no ledger line)' : 'below ledger line ' + ((k - 1) / 2)) : 'on ledger line ' + (k / 2) + ' below'; }
+  return 'on the staff';
+}
+const ORD_WORD = ['', '1st', '2nd', '3rd'];
+function staffPlace(clef, d) {
+  const c = CLEFS[clef];
+  if (d < c.low || d > c.high) return ledgerDesc(clef, d).replace('(no ledger line)', '').trim() + ' the ' + clef + ' staff';
+  const ord = ['1st', '2nd', '3rd', '4th', '5th'];
+  if (d % 2 === 0) { const n = (d - c.low) / 2; return 'the ' + ord[n] + ' line of the ' + clef + ' staff' + (n === 4 ? ' (top line)' : n === 0 ? ' (bottom line)' : ''); }
+  return 'the ' + ord[(d - c.low - 1) / 2] + ' space of the ' + clef + ' staff';
+}
+
+// 1. Climb off the staff: each step out adds the next line or space; ledger lines appear as needed.
+function LedgerClimb() {
+  const [clef, setClef] = useState('treble');
+  const c = CLEFS[clef];
+  const [d, setD] = useState(c.high);
+  useEffect(() => { setD(CLEFS[clef].high); }, [clef]);
+  const lo = c.low - 7, hi = c.high + 7;
+  const go = (nd) => { if (nd < lo || nd > hi) return; playKey(dMidiKey(nd), 0.3); setD(nd); };
+  const nLedger = ledgersFor(d, c.low, c.high).length;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>Walk off the staff</div>
+        <div style={{display:'flex',gap:4}}>{['treble', 'bass'].map(x => <button key={x} className={'chip' + (clef === x ? ' active' : '')} style={{padding:'3px 9px',fontSize:11}} onClick={() => setClef(x)}>{x === 'treble' ? '𝄞 treble' : '𝄢 bass'}</button>)}</div>
+      </div>
+      <div style={actNote}>Keep stepping up (or down) past the edge of the staff. The line-space pattern carries on -- each new line is a short <b>ledger line</b> drawn just for that note.</div>
+      <StaffFrame clef={clef} lo={lo} hi={hi} width={240}>
+        {(yOf) => <>
+          <Ledgers clef={clef} d={d} x={150} yOf={yOf}/>
+          <GlideNote x={150} y={yOf(d)} color="#a8823f"/>
+          <text x={172} y={yOf(d) + 4} fontSize="13" fontWeight="900" fill="#a8823f">{dName(d)}</text>
+        </>}
+      </StaffFrame>
+      <div style={{textAlign:'center',fontSize:14,fontWeight:900,marginTop:2}}>{dName(d)} <span style={{fontWeight:700,color:'#6f665b',fontSize:13}}>-- {ledgerDesc(clef, d)}</span></div>
+      <div style={{textAlign:'center',fontSize:12,color:'var(--muted)',minHeight:18}}>{nLedger ? nLedger + ' ledger line' + (nLedger > 1 ? 's' : '') : ''}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:6}}>
+        <button className="ghost-btn" disabled={d <= lo} onClick={() => go(d - 1)} style={{color:'#3f7fb5'}}>↓ Step down</button>
+        <button className="ghost-btn" disabled={d >= hi} onClick={() => go(d + 1)} style={{color:'#a8823f'}}>Step up ↑</button>
+      </div>
+    </div>
+  );
+}
+
+// 2. Ledger lines skip a letter, just like staff lines: the three notes ON ledger lines in each direction.
+const LEDGER_SETS = [
+  { id: 'ta', clef: 'treble', ds: [40, 42, 44], title: 'Above the treble staff', word: 'A · C · E' },
+  { id: 'tb', clef: 'treble', ds: [28, 26, 24], title: 'Below the treble staff', word: 'C · A · F' },
+  { id: 'ba', clef: 'bass', ds: [28, 30, 32], title: 'Above the bass staff', word: 'C · E · G' },
+  { id: 'bb', clef: 'bass', ds: [16, 14, 12], title: 'Below the bass staff', word: 'E · C · A' },
+];
+function LedgerLandmarks() {
+  const [id, setId] = useState('ta');
+  const set = LEDGER_SETS.find(x => x.id === id);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>The notes ON ledger lines</div>
+      <div style={actNote}>Ledger lines skip a letter each time, exactly like the lines of the staff. Learn these twelve and you can read any ledger note from them.</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:5,marginBottom:6}}>
+        {LEDGER_SETS.map(x => (
+          <button key={x.id} className={'chip' + (x.id === id ? ' active' : '')} style={{padding:'6px 4px',fontSize:12,display:'flex',flexDirection:'column',alignItems:'center'}} onClick={() => { setId(x.id); x.ds.forEach((dd, i) => setTimeout(() => playKey(dMidiKey(dd), 0.3), i * 380)); }}>
+            <span>{x.title}</span><b style={{fontSize:14,letterSpacing:'0.05em'}}>{x.word}</b>
+          </button>
+        ))}
+      </div>
+      <StaffView key={id} clef={set.clef} spread width={260} notes={set.ds.map((dd, i) => ({ d: dd, color: STEP_COLORS[i] }))} labels={set.ds.map((dd, i) => dName(dd) + ' · ' + ORD_WORD[i + 1])}/>
+      <div style={{textAlign:'center',fontSize:12,color:'#6f665b',marginTop:4}}>{set.title}: 1st, 2nd and 3rd ledger lines = <b>{set.word}</b>. The notes between them are the letters in between.</div>
+    </div>
+  );
+}
+
+// 3. Borrowed lines: a ledger note below the treble staff is a normal note on the bass staff, and vice versa.
+const TWINS = [
+  { d: 27, from: 'treble' }, { d: 26, from: 'treble' }, { d: 25, from: 'treble' }, { d: 24, from: 'treble' },
+  { d: 29, from: 'bass' }, { d: 30, from: 'bass' }, { d: 31, from: 'bass' }, { d: 32, from: 'bass' },
+];
+function LedgerTwins() {
+  const [i, setI] = useState(1);
+  const t = TWINS[i];
+  const other = t.from === 'treble' ? 'bass' : 'treble';
+  const key = dToKey(t.d);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Same note, other staff</div>
+      <div style={actNote}>The ledger lines under the treble staff are really the bass staff’s top lines -- and the ones over the bass staff are the treble’s bottom lines. Tap a note: left, with ledger lines; right, the same key written on the other staff.</div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
+        {TWINS.map((x, j) => <button key={j} className={'chip' + (j === i ? ' active' : '')} style={{padding:'3px 8px',fontSize:12}} onClick={() => { setI(j); playKey(dMidiKey(x.d), 0.4); }}>{dName(x.d)} {x.from === 'treble' ? '↓𝄞' : '↑𝄢'}</button>)}
+      </div>
+      <div style={{display:'flex',gap:6,alignItems:'center'}}>
+        <div style={{flex:1,background:'#fff',borderRadius:8}}><StaffView key={'a' + i} clef={t.from} width={150} notes={[{ d: t.d, color: '#a8823f' }]}/></div>
+        <div style={{fontSize:18,fontWeight:900,color:'#a8823f'}}>=</div>
+        <div style={{flex:1,background:'#fff',borderRadius:8}}><StaffView key={'b' + i} clef={other} width={150} notes={[{ d: t.d, color: '#a8823f' }]}/></div>
+      </div>
+      <div style={{textAlign:'center',fontSize:13,fontWeight:800,margin:'6px 0',lineHeight:1.5}}>{dName(t.d)}: {ledgerDesc(t.from, t.d).replace('(no ledger line)', '')} the {t.from} staff<br/>= {staffPlace(other, t.d)}</div>
+      {key >= 0 && key < 36 && <TapKeyboard octaves={3} labels="white" marks={{ [key]: 'good' }} onTap={(k) => playKey(k - 12)}/>}
+    </div>
+  );
+}
+
+// 4. Write them: tap where the named ledger note goes.
+function LedgerWrite() {
+  const make = (prev) => {
+    for (let g = 0; g < 20; g++) {
+      const clef = Math.random() < 0.5 ? 'treble' : 'bass', up = Math.random() < 0.5, c = CLEFS[clef];
+      const d = up ? c.high + 2 + Math.floor(Math.random() * 5) : c.low - 2 - Math.floor(Math.random() * 5);
+      if (!prev || prev.d !== d) return { clef, up, d };
+    }
+    return { clef: 'treble', up: true, d: 40 };
+  };
+  const [t, setT] = useState(() => make(null));
+  const [miss, setMiss] = useState(null);
+  const [hit, setHit] = useState(false);
+  const [score, setScore] = useState({ right: 0, tries: 0 });
+  const c = CLEFS[t.clef];
+  const rows = []; if (t.up) { for (let d = c.high + 1; d <= c.high + 7; d++) rows.push(d); } else { for (let d = c.low - 7; d <= c.low - 1; d++) rows.push(d); }
+  function tap(d) {
+    if (hit) return;
+    playKey(dMidiKey(d), 0.3);
+    if (d === t.d) { setHit(true); setMiss(null); setScore(s => ({ right: s.right + 1, tries: s.tries + 1 })); setTimeout(() => { setHit(false); setT(x => make(x)); }, 1300); }
+    else { setMiss(d); setScore(s => ({ ...s, tries: s.tries + 1 })); setTimeout(() => setMiss(m => (m === d ? null : m)), 900); }
+  }
+  const lo = t.up ? c.low : c.low - 7, hi = t.up ? c.high + 7 : c.high;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>Write it with ledger lines</div>
+        <div style={{fontSize:12,fontWeight:800,color:'var(--muted)'}}>{score.right}/{score.tries}</div>
+      </div>
+      <div style={{textAlign:'center',fontSize:20,fontWeight:900,margin:'4px 0'}}>{dName(t.d)} <span style={{fontSize:14,color:'#6f665b',fontWeight:700}}>{t.up ? 'above' : 'below'} the {t.clef} staff</span></div>
+      <StaffFrame clef={t.clef} lo={lo} hi={hi} width={200} rows={rows} onRow={tap}>
+        {(yOf) => <>
+          {miss !== null && <g><Ledgers clef={t.clef} d={miss} x={130} yOf={yOf} ink="#b5483b"/><ellipse cx={130} cy={yOf(miss)} rx="7" ry="5" transform={`rotate(-20 130 ${yOf(miss)})`} fill="#b5483b"/><text x={146} y={yOf(miss) + 4} fontSize="11" fontWeight="900" fill="#b5483b">{dName(miss)}</text></g>}
+          {hit && <g style={{animation:'fadeUp 0.25s both'}}><Ledgers clef={t.clef} d={t.d} x={130} yOf={yOf}/><ellipse cx={130} cy={yOf(t.d)} rx="7" ry="5" transform={`rotate(-20 130 ${yOf(t.d)})`} fill="#4f7a45"/></g>}
+        </>}
+      </StaffFrame>
+      <div style={{textAlign:'center',fontSize:12,fontWeight:700,minHeight:18,color:miss !== null ? '#b5483b' : '#4f7a45'}}>
+        {miss !== null ? 'That’s ' + dName(miss) + ' -- count again from the staff' : hit ? 'Yes -- ' + dName(t.d) + ' ' + ledgerDesc(t.clef, t.d) + '.' : 'Tap the line or space.'}
+      </div>
+    </div>
+  );
+}
+
+function LedgerLearn({ onStart }) {
+  const tip = (title, body) => <Rule title={title}>{body}</Rule>;
+  return (
+    <Lesson id="ledger-lines" title="Ledger lines" onStart={onStart}
+      intro={<>Short lines that carry the staff on above and below. They follow exactly the same line-space pattern -- once you can count from the staff, they stop being scary.</>}>
+      <Step title="What a ledger line is">
+        {tip('The staff keeps going', 'When a note is too high or too low for the five lines, we draw a short line just for it. Above and below each ledger line is a space, just like on the staff.')}
+        {tip('Count out from the staff', 'Start on the top (or bottom) line you know, and step out one line or space at a time: line, space, line, space.')}
+        <LedgerClimb/>
+      </Step>
+      <Step title="Ledger lines skip a letter">
+        {tip('Learn the notes ON the lines', 'Above the treble staff: A, C, E. Below it: C, A, F. Above the bass staff: C, E, G. Below it: E, C, A. Every other ledger note sits in between.')}
+        <LedgerLandmarks/>
+      </Step>
+      <Step title="Borrowed from the other staff">
+        {tip('The two staves overlap', 'Middle C is one ledger line from both staves. Keep going: the A two ledger lines below the treble staff is the bass staff’s top line; the E two ledger lines above the bass staff is the treble staff’s bottom line.')}
+        <LedgerTwins/>
+      </Step>
+      <Step title="Write them">
+        {tip('Writing ledger lines neatly', 'Draw them the same distance apart as the staff lines, only as wide as the note, and never draw one further out than the note needs.')}
+        <LedgerWrite/>
+      </Step>
+    </Lesson>
+  );
+}
+
+// Drill: 1, 2, then 3 ledger lines (both clefs, above and below), then find the exact key.
+function ledgerPool(clef, maxLedger) {
+  const c = CLEFS[clef], out = [];
+  for (let k = 1; k <= 2 * maxLedger + 1; k++) { out.push(c.high + k, c.low - k); }
+  return out;
+}
+const LEDGER_LEVELS = [
+  { n: 1, label: 'One ledger line (Prelim–Grade 1)',   kind: 'name', max: 1, time: 8 },
+  { n: 2, label: 'Two ledger lines',                   kind: 'name', max: 2, time: 8 },
+  { n: 3, label: 'Three ledger lines (Grade 2)',       kind: 'name', max: 3, time: 9 },
+  { n: 4, label: 'Find it on the keyboard (exact octave)', kind: 'key', max: 3, time: 11 },
+];
+function genLedgerQuestion(lv, prev) {
+  const uid = Math.random();
+  for (let g = 0; g < 40; g++) {
+    const clef = Math.random() < 0.5 ? 'treble' : 'bass';
+    const d = pick(ledgerPool(clef, lv.max));
+    if (lv.kind === 'key' && (dToKey(d) < 0 || dToKey(d) > 35)) continue;
+    if (prev && prev.d === d && prev.clef === clef) continue;
+    return { kind: lv.kind, key: clef + d, d, clef, staff: clef, answer: lv.kind === 'key' ? dToKey(d) : dName(d), uid };
+  }
+  return { kind: 'name', key: 'treble40', d: 40, clef: 'treble', staff: 'treble', answer: 'A', uid };
+}
+const LEDGER_DRILL = {
+  id: 'ledger-lines', label: 'Ledger Lines', levels: LEDGER_LEVELS, generate: genLedgerQuestion,
+  check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
+  answerLabel: (q) => dName(q.d) + ' (' + dLabel(q.d) + ', ' + ledgerDesc(q.clef, q.d) + ')',
+  Question: StaffQuestion, Learn: LedgerLearn,
 };
 
 // ─── Concept: Dynamics & Articulation (Phase 102, 2026-09-23) ────────────────────
@@ -5925,6 +6132,7 @@ const DYN_DRILL = {
 const DRILLS = [
   { id: 'note-names', label: 'Note Names', concept: NOTE_NAMES_DRILL, track: 'pitch' },
   { id: 'staff', label: 'Reading the Staff', concept: STAFF_DRILL, track: 'pitch' },
+  { id: 'ledger-lines', label: 'Ledger Lines', concept: LEDGER_DRILL, track: 'pitch' },
   { id: 'tones', label: 'Tones & Semitones', concept: TONES_DRILL, track: 'pitch' },
   { id: 'scales', label: 'Scales', concept: SCALES_DRILL, track: 'pitch' },
   { id: 'key-signatures', label: 'Key Signatures', concept: KEYSIG_DRILL, track: 'pitch' },
