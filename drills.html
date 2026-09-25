@@ -3471,6 +3471,7 @@ function KeySigLearn({ onStart }) {
       {tip('Flats: the second-last flat names the key', 'B♭ E♭ A♭ → the second-last is E♭, so E♭ major. One flat is the one to just remember: F major.')}
       {tip('Where the sharps and flats come from', 'Every major scale has the same shape, T T S T T T S. Start it on D and you need F♯ and C♯ to keep that shape -- so D major has two sharps. (See the Scales chapter.)')}
       {tip('Every signature has a minor twin', 'The relative minor uses the same signature and starts on the 6th note of the major scale (three semitones down). D major ↔ B minor.')}
+      <RelativeMinor/>
       </Step>
       <Step title="The circle of fifths">
       <CircleOfFifths/>
@@ -6703,6 +6704,9 @@ function DynLearn({ onStart }) {
         ))}
       </div>
       </Step>
+      <Step title="Train your ear">
+      <TouchEar/>
+      </Step>
     </Lesson>
   );
 }
@@ -7997,7 +8001,7 @@ const TERMS = [
   ['Dolce', '', 'soft and sweet', 'Other', 3, { vol: 0.1, len: 1.02, bpm: 80 }], ['Risoluto', '', 'with resolution', 'Other', 3], ['Ben marcato', '', 'well marked', 'Other', 3, { vol: 0.4, len: 0.7 }],
   ['Main droite', 'M.D.', 'right hand', 'Other', 3], ['Main gauche', 'M.G.', 'left hand', 'Other', 3], ['Una corda', '', 'with the soft pedal', 'Other', 3], ['Tre corde', '', 'release the soft pedal', 'Other', 3],
   ['Ad libitum', 'ad lib.', 'at pleasure, quite freely', 'Other', 3], ['Opus', 'Op.', 'a work or group of works', 'Other', 3], ['Loco', '', 'at normal pitch (after an 8va sign)', 'Other', 3], ['M.M.', '', 'Maelzel’s Metronome', 'Other', 3],
-  // Grade 4 (piano terms; the string-playing terms are left out)
+  // Grade 4 (piano terms)
   ['Tempo commodo', '', 'at a comfortable speed', 'Speed', 4, { bpm: 96 }], ['Tempo giusto', '', 'at a consistent speed', 'Speed', 4], ['L’istesso tempo', '', 'at the same speed', 'Speed', 4], ['Non troppo', '', 'not too much', 'Speed', 4], ['Grave', '', 'slow and solemn', 'Speed', 4, { bpm: 44, vol: 0.3 }],
   ['Rubato', '', 'with some freedom in the time', 'Changing speed', 4, { rubato: true }], ['Stringendo', '', 'pressing on faster', 'Changing speed', 4, { from: 90, to: 180 }],
   ['Perdendosi', '', 'fading away', 'Volume', 4, { vFrom: 0.3, vTo: 0.02, from: 100, to: 76 }], ['Smorzando', '', 'dying away', 'Volume', 4, { vFrom: 0.3, vTo: 0.02, from: 100, to: 76 }], ['Rinforzando', 'rfz, rf', 'reinforcing the tone', 'Volume', 4, { vFrom: 0.15, vTo: 0.45 }], ['Pesante', '', 'heavily', 'Volume', 4, { vol: 0.5, len: 0.9, bpm: 76 }],
@@ -8126,6 +8130,7 @@ function TermsLearn({ onStart }) {
       <Step title="Grade 2"><TermCards grade={2}/></Step>
       <Step title="Grade 3"><TermCards grade={3}/></Step>
       <Step title="Grade 4"><TermCards grade={4}/></Step>
+      <Step title="Match them up"><TermMatch/></Step>
     </Lesson>
   );
 }
@@ -8235,6 +8240,200 @@ const DRILLS = [
 // middle of a lesson. Every hands-on activity is registered here so it can be opened on its own:
 // ?tool=<id> (add &lock=1 for a student link that shows only that tool). The chapters still hold
 // the same tools in teaching order; the Toolbox is the quick-grab drawer.
+// ─── Phase 124: three more mini tools ──────────────────────────────────────────
+// 1. Relative minor: same key signature, tonic 3 semitones (and 3 letters) lower. Or the 6th note of the major scale.
+const REL_KEYS = ['C', 'G', 'D', 'A', 'E', 'F', 'Bb', 'Eb', 'Ab'];
+function RelativeMinor() {
+  const [key, setKey] = useState('C');
+  const [dir, setDir] = useState('down'); // 'down' = major -> minor, 'up' = minor -> major
+  const [step, setStep] = useState(0);
+  const ks = KEY_SIGS.find(k => k.major === key);
+  const scale = spellScale(key);
+  const majI = 12 + pcOfName(key), minI = majI - 3;
+  const from = dir === 'down' ? majI : minI, to = dir === 'down' ? minI : majI, sgn = dir === 'down' ? -1 : 1;
+  const fromName = dir === 'down' ? key : ks.minor, toName = dir === 'down' ? ks.minor : key;
+  useEffect(() => { setStep(0); }, [key, dir]);
+  useEffect(() => {
+    if (step <= 0 || step >= 3) return;
+    const t = setTimeout(() => { playKey(from + sgn * (step + 1), 0.2); setStep(x => x + 1); }, 380);
+    return () => clearTimeout(t);
+  }, [step]);
+  function walk() { playKey(from, 0.2); setTimeout(() => { playKey(from + sgn, 0.2); setStep(1); }, 380); }
+  const names = {}; for (let k = 1; k <= step; k++) names[from + sgn * k] = String(k);
+  const marks = { [from]: 'target', [to]: step >= 3 ? 'good' : undefined };
+  const L = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+  const li = L.indexOf(fromName[0]);
+  const letterWalk = [0, 1, 2].map(k => L[(li + sgn * k + 7) % 7]);
+  function hearBoth() {
+    const ctx = getAudio(); if (!ctx) return; stopClicks();
+    const f = (i) => 440 * Math.pow(2, (60 + i - 69) / 12);
+    const maj = [majI, majI + 4, majI + 7], min = [minI, minI + 3, minI + 7];
+    maj.forEach(i => blip(ctx, ctx.currentTime + 0.05, f(i), 1.1, 0.14, 'triangle'));
+    min.forEach(i => blip(ctx, ctx.currentTime + 1.35, f(i), 1.3, 0.14, 'triangle'));
+  }
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Relative major and minor</div>
+      <div style={actNote}>Every key signature belongs to two keys: a major key and its <b>relative minor</b>. From the major tonic, go <b>down 3 semitones</b> (and 3 letter names). From the minor, go <b>up 3</b>.</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:4}}>
+        {REL_KEYS.map(k => <button key={k} className={'chip' + (k === key ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => setKey(k)}>{dir === 'down' ? prettyNote(k) + ' major' : prettyNote(KEY_SIGS.find(x => x.major === k).minor) + ' minor'}</button>)}
+      </div>
+      <div style={{display:'flex',gap:4,marginBottom:6}}>
+        {[['down', 'Major → minor'], ['up', 'Minor → major']].map(([k, l]) => <button key={k} className={'chip' + (dir === k ? ' active' : '')} style={{padding:'2px 9px',fontSize:11}} onClick={() => setDir(k)}>{l}</button>)}
+      </div>
+      <div style={{display:'flex',justifyContent:'center'}}><KSStaff count={ks.count} type={ks.type} width={170}/></div>
+      <div style={{textAlign:'center',fontSize:12,color:'var(--muted)',fontWeight:700,margin:'-2px 0 6px'}}>{sigLabel(ks)}</div>
+      <TapKeyboard octaves={2} marks={marks} names={names} labels={step ? null : 'white'} onTap={(i) => playKey(i)}/>
+      <div style={{textAlign:'center',margin:'8px 0 4px'}}>
+        <button className="ghost-btn" onClick={walk}>{dir === 'down' ? 'Walk down 3 semitones ▶' : 'Walk up 3 semitones ▶'}</button>{' '}
+        <button className="ghost-btn" onClick={hearBoth}>♪ Major, then minor</button>
+      </div>
+      <div style={{textAlign:'center',fontSize:15,fontWeight:900,minHeight:22}}>
+        {step >= 3 ? <>{prettyNote(fromName)} {dir === 'down' ? 'major' : 'minor'} → <span style={{color:'#3f8a4f'}}>{prettyNote(toName)} {dir === 'down' ? 'minor' : 'major'}</span></> : <span style={{color:'var(--muted)'}}>Start on {prettyNote(fromName)} and count 3 semitones {dir}.</span>}
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginTop:8,fontSize:12}}>
+        <div style={{background:'#fff',borderRadius:8,padding:'7px 9px'}}>
+          <b>Check the letters</b>
+          <div style={{marginTop:2}}>{letterWalk.join(' → ')}: 3 letters, so the answer is some kind of <b>{letterWalk[2]}</b>. The 3 semitones tell you which: <b>{prettyNote(toName)}</b>.</div>
+        </div>
+        <div style={{background:'#fff',borderRadius:8,padding:'7px 9px'}}>
+          <b>Or: the 6th note</b>
+          <div style={{marginTop:2,display:'flex',gap:3,flexWrap:'wrap'}}>{scale.slice(0, 6).map((n, i) => <span key={i} style={{padding:'0 4px',borderRadius:4,fontWeight:i === 5 ? 900 : 600,background:i === 5 ? '#e6f2e8' : 'transparent',color:i === 5 ? '#3f8a4f' : 'inherit'}}>{i + 1}{' '}{prettyNote(n)}</span>)}</div>
+          <div style={{marginTop:2,color:'var(--muted)'}}>The 6th note of {prettyNote(key)} major is its relative minor.</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 2. Term match: memory pairs -- term cards and meaning cards, face down.
+function TermMatch() {
+  const [g, setG] = useState(1);
+  const [n, setN] = useState(6);
+  const [say, setSay] = useState(true);
+  const [deck, setDeck] = useState([]);
+  const [up, setUp] = useState([]);
+  const [done, setDone] = useState({});
+  const [moves, setMoves] = useState(0);
+  function deal(grade = g, pairs = n) {
+    const pool = shuffle(TERMS.filter(t => t.grade === grade));
+    const chosen = [], seen = new Set();
+    for (const t of pool) { if (chosen.length >= pairs) break; if (seen.has(t.meaning)) continue; seen.add(t.meaning); chosen.push(t); }
+    setDeck(shuffle(chosen.flatMap(t => [{ key: t.term + '|t', id: t.term, side: 'term', tm: t }, { key: t.term + '|m', id: t.term, side: 'meaning', tm: t }])));
+    setUp([]); setDone({}); setMoves(0);
+  }
+  useEffect(() => { deal(g, n); }, [g, n]);
+  useEffect(() => {
+    if (up.length !== 2) return;
+    const [a, b] = up.map(k => deck.find(c => c.key === k));
+    const t = setTimeout(() => {
+      if (a.id === b.id) { setDone(d => ({ ...d, [a.id]: true })); playTerm(a.tm); }
+      setUp([]);
+    }, a.id === b.id ? 350 : 1100);
+    return () => clearTimeout(t);
+  }, [up]);
+  function flip(c) {
+    if (done[c.id] || up.includes(c.key) || up.length >= 2) return;
+    if (c.side === 'term' && say) speakTerm(c.tm);
+    if (up.length === 1) setMoves(m => m + 1);
+    setUp(u => [...u, c.key]);
+  }
+  const pairsDone = Object.keys(done).length, total = deck.length / 2;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Term match</div>
+      <div style={actNote}>Turn over two cards. Find each Italian term and its meaning. Terms say themselves out loud as they turn over; a matched pair plays how it sounds.</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:4}}>
+        {[1, 2, 3, 4].map(x => <button key={x} className={'chip' + (x === g ? ' active' : '')} style={{padding:'3px 10px',fontSize:12}} onClick={() => setG(x)}>Grade {x}</button>)}
+        <span style={{width:6}}/>
+        {[4, 6, 8].map(x => <button key={x} className={'chip' + (x === n ? ' active' : '')} style={{padding:'3px 8px',fontSize:11}} onClick={() => setN(x)}>{x} pairs</button>)}
+        <button className={'chip' + (say ? ' active' : '')} style={{padding:'3px 8px',fontSize:11}} onClick={() => setSay(s => !s)}>{say ? 'Say words: on' : 'Say words: off'}</button>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(92px,1fr))',gap:6,marginTop:6}}>
+        {deck.map(c => {
+          const open = up.includes(c.key) || done[c.id];
+          const wrong = up.length === 2 && up.includes(c.key) && deck.find(x => x.key === up[0]).id !== deck.find(x => x.key === up[1]).id;
+          return (
+            <button key={c.key} onClick={() => flip(c)} style={{minHeight:70,borderRadius:10,border:'1.5px solid ' + (done[c.id] ? '#3f8a4f' : wrong ? '#b5483b' : 'var(--border)'),background:open ? (done[c.id] ? '#e6f2e8' : '#fff') : '#241f1a',color:open ? 'var(--text)' : '#a8823f',cursor:'pointer',padding:'6px 5px',fontFamily:'inherit',transition:'background 0.2s'}}>
+              {!open ? <span style={{fontSize:20}}>♪</span> : c.side === 'term'
+                ? <span style={{fontSize:13.5,fontWeight:900,fontStyle:'italic'}}>{c.tm.term}{c.tm.abbr ? <span style={{display:'block',fontSize:10,fontStyle:'normal',color:'var(--muted)'}}>{c.tm.abbr}</span> : null}</span>
+                : <span style={{fontSize:11.5,lineHeight:1.3,color:'#5c544a'}}>{c.tm.meaning}</span>}
+            </button>
+          );
+        })}
+      </div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:8,fontSize:13,fontWeight:800}}>
+        <span>{pairsDone}/{total} pairs · {moves} turns</span>
+        {pairsDone === total && total > 0 ? <span style={{color:'#3f8a4f'}}>All matched{moves <= total + 2 ? ' -- brilliant memory!' : '!'}</span> : null}
+        <button className="ghost-btn" onClick={() => deal()}>New cards</button>
+      </div>
+    </div>
+  );
+}
+
+// 3. Which touch? / How loud? -- a listening game. Now that the sound is a real piano, the touch is audible.
+const EAR_TOUCH = { easy: ['dot', 'slur', 'accent'], all: ['dot', 'slur', 'accent', 'tenuto', 'wedge'] };
+const EAR_LOUD = { easy: ['p', 'mf', 'f'], all: ['pp', 'p', 'mp', 'mf', 'f', 'ff'] };
+function TouchEar() {
+  const [mode, setMode] = useState('touch');
+  const [lv, setLv] = useState('easy');
+  const [ans, setAns] = useState(null);
+  const [given, setGiven] = useState(null);
+  const [score, setScore] = useState({ right: 0, tries: 0, streak: 0 });
+  const opts = mode === 'touch' ? EAR_TOUCH[lv] : EAR_LOUD[lv];
+  function play(x) {
+    if (mode === 'touch') playArtic(x);
+    else playDyn(DYNAMICS.find(d => d.id === x).vol, 4);
+  }
+  function next() {
+    let x; do { x = pick(opts); } while (opts.length > 1 && x === ans);
+    setAns(x); setGiven(null); play(x);
+  }
+  function answer(x) {
+    if (!ans || given) return;
+    setGiven(x);
+    const ok = x === ans;
+    setScore(s => ({ right: s.right + (ok ? 1 : 0), tries: s.tries + 1, streak: ok ? s.streak + 1 : 0 }));
+  }
+  const label = (x) => mode === 'touch' ? ARTICS.find(a => a.mark === x).name : x;
+  const sub = (x) => mode === 'touch' ? ARTICS.find(a => a.mark === x).meaning : DYNAMICS.find(d => d.id === x).meaning;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{mode === 'touch' ? 'Which touch?' : 'How loud?'}</div>
+      <div style={actNote}>{mode === 'touch' ? 'The same four notes, played with one kind of touch. Listen: short? smooth? some notes stronger?' : 'The same little tune at one dynamic. Soft, medium or loud? (Turn the device volume to a normal level first.)'}</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:8}}>
+        {[['touch', 'Touch'], ['loud', 'Loudness']].map(([k, l]) => <button key={k} className={'chip' + (mode === k ? ' active' : '')} style={{padding:'3px 10px',fontSize:12}} onClick={() => { setMode(k); setAns(null); setGiven(null); }}>{l}</button>)}
+        <span style={{width:6}}/>
+        {[['easy', mode === 'touch' ? '3 touches' : 'p · mf · f'], ['all', mode === 'touch' ? '5 touches' : 'pp to ff']].map(([k, l]) => <button key={k} className={'chip' + (lv === k ? ' active' : '')} style={{padding:'3px 9px',fontSize:11}} onClick={() => { setLv(k); setAns(null); setGiven(null); }}>{l}</button>)}
+      </div>
+      <div style={{textAlign:'center',margin:'4px 0 10px'}}>
+        <button className="ghost-btn" onClick={next} style={{fontWeight:900}}>{ans && !given ? '♪ New one' : ans ? 'Next ▶' : '♪ Play one'}</button>{' '}
+        {ans && <button className="ghost-btn" onClick={() => play(ans)}>↻ Again</button>}
+        {mode === 'loud' && <div style={{marginTop:4}}><button className="chip" style={{padding:'2px 9px',fontSize:11}} onClick={() => play('mf')}>Reference: hear mf</button></div>}
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(96px,1fr))',gap:6}}>
+        {opts.map(x => {
+          const st = !given ? '' : x === ans ? 'good' : x === given ? 'bad' : '';
+          return (
+            <button key={x} onClick={() => answer(x)} disabled={!ans} style={{borderRadius:10,border:'1.5px solid ' + (st === 'good' ? '#3f8a4f' : st === 'bad' ? '#b5483b' : 'var(--border)'),background:st === 'good' ? '#e6f2e8' : st === 'bad' ? '#f6e3df' : '#fff',padding:'7px 5px',cursor:ans ? 'pointer' : 'default',opacity:ans ? 1 : 0.55,fontFamily:'inherit'}}>
+              {mode === 'touch' ? <div style={{fontSize:13,fontWeight:900}}>{label(x)}</div> : <DynMark id={x} size={24}/>}
+              <div style={{fontSize:10.5,color:'var(--muted)',lineHeight:1.25}}>{sub(x)}</div>
+            </button>
+          );
+        })}
+      </div>
+      {given && (
+        <div style={{marginTop:8,background:'#fff',borderRadius:8,padding:'8px'}}>
+          <div style={{textAlign:'center',fontSize:14,fontWeight:900,color:given === ans ? '#3f8a4f' : '#b5483b'}}>{given === ans ? 'Yes! ' : 'Not quite -- it was '}{mode === 'touch' ? label(ans) : ans}{given === ans ? '' : '.'}</div>
+          {mode === 'touch' ? <ArticBar mark={ans}/> : <div style={{textAlign:'center',marginTop:4}}><DynMark id={ans} size={34}/> <span style={{fontSize:12,color:'var(--muted)'}}>{DYNAMICS.find(d => d.id === ans).it}</span></div>}
+          {given !== ans && <div style={{textAlign:'center',marginTop:4}}><button className="ghost-btn" onClick={() => play(given)}>♪ Hear {mode === 'touch' ? label(given) : given} to compare</button></div>}
+        </div>
+      )}
+      <div style={{textAlign:'center',marginTop:8,fontSize:13,fontWeight:800,color:'var(--muted)'}}>{score.right}/{score.tries} right{score.streak >= 3 ? ' · ' + score.streak + ' in a row!' : ''}</div>
+    </div>
+  );
+}
+
 const TOOLS = [
   { id: 'finger-numbers', ch: 'first-steps', title: 'Finger numbers', blurb: '“Show me finger 3!” -- both hands.', C: () => <FingerNumbers/> },
   { id: 'high-low', ch: 'first-steps', title: 'High or low, loud or soft', blurb: 'Listening games before reading.', C: () => <HighLowGame/> },
@@ -8247,6 +8446,7 @@ const TOOLS = [
   { id: 'five-positions', ch: 'five-finger', title: 'Five-finger positions', blurb: 'C, G, middle C and F positions.', C: () => <FivePosition/> },
   { id: 'degree-names', ch: 'scales', title: 'Scale degree names', blurb: 'Tonic, supertonic... leading note.', C: () => <DegreeNames/> },
   { id: 'transpose', ch: 'key-signatures', title: 'Transpose a tune', blurb: 'Same scale degrees, new key.', C: () => <Transposer/> },
+  { id: 'term-match', ch: 'terms', title: 'Term match', blurb: 'Memory pairs: term and meaning, spoken aloud.', C: () => <TermMatch/> },
   { id: 'term-cards', ch: 'terms', title: 'Term cards', blurb: 'AMEB terms, Grades 1-4, with sound.', C: () => <TermCards/> },
   { id: 'echo', ch: 'reading-steps', title: 'Echo the tune', blurb: 'Hear 3-5 notes, play them back.', C: () => <EchoTune/> },
   { id: 'practice-timer', ch: 'practice', title: 'Practice timer', blurb: '5 to 30 minutes, with a bell.', C: () => <PracticeTimer/> },
@@ -8276,6 +8476,7 @@ const TOOLS = [
   { id: 'sharps-order', ch: 'key-signatures', title: 'Order of sharps', blurb: 'Add them one by one, numbered.', C: () => <OrderBuilder type="sharp"/> },
   { id: 'flats-order', ch: 'key-signatures', title: 'Order of flats', blurb: 'The sharps backwards.', C: () => <OrderBuilder type="flat"/> },
   { id: 'place-it', ch: 'key-signatures', title: 'Place the key signature', blurb: 'Tap where each sharp or flat goes.', C: () => <PlaceIt/> },
+  { id: 'relative-minor', ch: 'key-signatures', title: 'Relative minor', blurb: 'Same signature: down 3 semitones, or the 6th note.', C: () => <RelativeMinor/> },
   { id: 'circle-fifths', ch: 'key-signatures', title: 'Circle of fifths', blurb: 'Every key in one clock.', C: () => <CircleOfFifths/> },
   { id: 'interval-ruler', ch: 'intervals', title: 'Interval ruler', blurb: 'Count lines and spaces from 1.', C: () => <IntervalRuler/> },
   { id: 'letter-hop', ch: 'intervals', title: 'Hop round the letters', blurb: 'The start counts as 1.', C: () => <LetterWalker/> },
@@ -8299,6 +8500,7 @@ const TOOLS = [
   { id: 'metronome', ch: 'tempo', title: 'Metronome', blurb: 'With the tempo word and tap tempo.', C: () => <MetronomeDial/> },
   { id: 'speed-change', ch: 'tempo', title: 'rit. and accel.', blurb: 'Hear the speed change.', C: () => <SpeedChange/> },
   { id: 'dyn-order', ch: 'dynamics', title: 'Line up the dynamics', blurb: 'pp to ff, by ear and eye.', C: () => <DynOrder/> },
+  { id: 'touch-ear', ch: 'dynamics', title: 'Which touch? How loud?', blurb: 'Listening game: staccato, legato, accent; p to ff.', C: () => <TouchEar/> },
   { id: 'hairpin', ch: 'dynamics', title: 'Draw a hairpin', blurb: 'Crescendo and diminuendo.', C: () => <HairpinMaker/> },
   { id: 'road-map', ch: 'signs', title: 'Road map', blurb: 'Repeats, 1st/2nd time, D.C., D.S., Coda.', C: () => <RoadMap/> },
   { id: 'tie-slur', ch: 'signs', title: 'Tie or slur?', blurb: 'Same pitch or different?', C: () => <TieOrSlur/> },

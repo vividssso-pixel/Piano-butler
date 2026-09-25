@@ -2944,6 +2944,17 @@ Sohyun: string-playing terms are in the exam too; let students hear how to say t
 - `playTerm`: Speed and Changing speed terms now play metronome clicks (steady, ramped, sudden change, rubato); tremolo = rapid repeated note; pizzicato/arco short/long.
 - `TermCards` toggle Theory of Music | Musicianship (`MUSICIANSHIP_TERMS`, Grades 1-3 from the Manual's Musicianship section).
 
+### Phase 124 -- three more mini tools (2026-09-26)
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Relative minor tool | `drills.html` `RelativeMinor`, Key Signatures "Name the key" step + TOOLS `relative-minor` | Pick a key; animated walk down 3 semitones on the keyboard (or up, minor → major), key signature shown, letter check (3 letters → which kind of that letter), and the 6th-note shortcut. Plays the major then minor chord. |
+| 2 | Term match (memory pairs) | `TermMatch`, Terms chapter new step "Match them up" + TOOLS `term-match` | Grade 1-4, 4/6/8 pairs; no two pairs share a meaning. Term cards speak themselves (toggle), matched pairs play `playTerm`. |
+| 3 | Which touch? / How loud? | `TouchEar`, Dynamics new step "Train your ear" + TOOLS `touch-ear` | Listening game on the sampled piano: 3 or 5 touches (staccato, legato, accent, tenuto, staccatissimo) or p/mf/f and pp-ff with an mf reference button; answer reveals the notation (`ArticBar` / `DynMark`), score + streak. |
+| 4 | Stale comment fixed | TERMS | Grade 4 comment no longer says string terms are left out. |
+| 5 | Verification | -- | Babel compile in Playwright; all 70 tool URLs and 19 chapters load with zero page errors; screenshots of each new tool checked. Fixed a crash when switching Touch → Loudness with an answer showing (state now reset in the click handler). |
+| 6 | Git hygiene | `.git` | Removed stale HEAD.lock / maintenance.lock / tmp_obj files left by background maintenance after e4a5e43; set `maintenance.auto false` (plus `gc.auto 0`). |
+
 Next on the plan: more mini tools (Sohyun's rule: every activity stand-alone + in TOOLS). Ideas: sight-reading flash cards, a practice-dice/timer tool, scale degree names (tonic, supertonic...), transposition. Signs 116, Chords 117, Toolbox 118, Grade 3 intervals + cadences 119 done.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
