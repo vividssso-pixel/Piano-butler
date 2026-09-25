@@ -2902,7 +2902,16 @@ Sohyun agreed ledger lines need their own chapter with more examples. AMEB place
 - Drill: L1 what does this sign mean (11 signs; meanings don't contain the sign's name), L2 tie or slur, L3 road map playing order (correct + 3 typical mistakes). Fuzzed 500x per level.
 - Still to do in this area: Intervals Grade 3 add-on (inversions, A4/d5), Chords.
 
-Next on the plan: Chords (Signs done in Phase 116, Intervals in Phase 105).
+### Phase 117 -- Chords chapter (pitch track #8)
+AMEB (2026 Manual): Music Craft Prelim = tonic triad I of C/G/F (treble, root); Grade 1 = I (i) and V root position, both staves, grade keys (C G D F B♭, A E D G harmonic minor); Grade 2 = I ii IV V root + 1st inversion, Roman numerals/figured bass; Grade 3 = all inversions, dim and aug. Musicianship Grade 2 aural = major/minor triads. Theory of Music Grade 3 = primary triads + first inversions.
+- Model reuses the interval notes {d, acc}: `scaleNotes(key, minor)` (starts G3-F4), `triadOn`, `triadQuality`, `romanFor` (capitals major, small minor, ° dim, + aug), `playChord` (arpeggio then block), `ChordStaff` (stacked semibreve chords, staggered accidentals, labels, highlight).
+- Learn (5 steps): `TriadStacker` (root/+3rd/+5th, R-3-5 on the keys, snowman), `MajorMinorFlip` (only the middle note moves; semitone counts), `KeyChords` (a triad on every degree in C G D F B♭ / Am Em Dm Gm harmonic -- verified: major I ii iii IV V vi vii°, harmonic minor i ii° III+ iv V VI vii°), `PrimaryTriads` (I IV V cards with letters and roles, play I-IV-V-I, scale notes light up), `InversionFlip` (root / 1st / 2nd, bottom-note colour, 5/3 a, 6/3 b, 6/4 c).
+- Drill: L1 tonic triads (C G F D B♭), L2 I/IV/V in a key (treble or bass), L3 major or minor (seen), L4 by ear, L5 build it (tap 3 keys), L6 root/1st/2nd inversion. Fuzzed 800x per level.
+
+### Phase 118 -- Toolbox: every activity as a stand-alone mini tool
+Sohyun's guiding idea: teaching aids cut into mini tools a teacher can pull out mid-lesson. `TOOLS` registers all 47 hands-on activities (id, chapter, title, blurb). New top switch "Chapters | Toolbox"; the Toolbox lists tools grouped by chapter (chapter colours) with search; a tool opens alone (`?tool=<id>`), with "Learn the whole chapter →" and "Copy student link" (`?tool=<id>&lock=1` shows only that tool, header = tool name). `?view=tools` opens the list. All 47 tool URLs load with zero errors. RULE going forward: every new activity must work stand-alone and be added to TOOLS.
+
+Next on the plan: Intervals Grade 3 add-on (inversions, A4/d5); cadences (perfect, plagal, imperfect/half); more mini tools. Signs 116, Chords 117, Toolbox 118 done.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
