@@ -8004,11 +8004,27 @@ const TERMS = [
   ['Cantando', '', 'in a singing style', 'Other', 4, { len: 1.05, bpm: 84 }], ['Tenuto', 'ten.', 'held', 'Other', 4, { len: 1.0 }], ['Piacevole', '', 'pleasant, agreeable', 'Other', 4], ['Portamento', '', 'a smooth gliding from one note to another', 'Other', 4],
   ['Dolente', '', 'sadly, plaintively', 'Other', 4], ['Doloroso', '', 'sadly, plaintively', 'Other', 4], ['Sotto voce', '', 'softly in an undertone', 'Other', 4, { vol: 0.06 }], ['Giocoso', '', 'gay, merry', 'Other', 4, { bpm: 132, len: 0.5 }],
   ['Grazioso', '', 'gracefully', 'Other', 4], ['Assai', '', 'very', 'Other', 4], ['Quasi', '', 'as if, as it were', 'Other', 4], ['Scherzando', '', 'playfully', 'Other', 4, { bpm: 140, len: 0.35 }], ['Subito', 'sub.', 'suddenly', 'Other', 4],
+  // Grade 4 -- terms referring to string playing (they are in the exam too)
+  ['Sul ponticello', 'sul pont.', 'bow on or near the bridge', 'Strings', 4], ['Sul tasto', '', 'bow on or near the finger board', 'Strings', 4],
+  ['Tremolo', '', 'bowing very rapidly (usually on one note at a time), to produce a shimmering or wavering effect', 'Strings', 4, { tremolo: true }],
+  ['Pizzicato', 'pizz.', 'pluck the string with the finger (instead of bowing it)', 'Strings', 4, { len: 0.12 }], ['Arco', '', 'with the bow (used after a pizz. sign)', 'Strings', 4, { len: 1.02 }],
 ].map(([term, abbr, meaning, cat, grade, hear]) => ({ term, abbr, meaning, cat, grade, hear }));
 // The same 8-note phrase, played however the term asks.
 function playTerm(tm) {
   const h = tm.hear; if (!h) return;
   const ctx = getAudio(); if (!ctx) return; stopClicks();
+  // Speed terms: metronome clicks (Sohyun) -- a steady beat, or a changing one.
+  if (tm.cat === 'Speed' || tm.cat === 'Changing speed') {
+    let at = ctx.currentTime + 0.08; const N = h.from ? 12 : 8;
+    for (let i = 0; i < N; i++) {
+      const u = i / (N - 1);
+      const bpm = h.bpm || (h.rubato ? 100 * (1 + 0.35 * Math.sin(i * 1.3)) : h.sudden ? (i < N / 2 ? h.from : h.to) : h.from + (h.to - h.from) * u) || 100;
+      blip(ctx, at, i % 4 === 0 ? 1320 : 900, 0.04, i % 4 === 0 ? 0.3 : 0.18);
+      at += 60 / bpm;
+    }
+    return;
+  }
+  if (h.tremolo) { const f = 440 * Math.pow(2, (64 - 69) / 12); for (let i = 0; i < 24; i++) blip(ctx, ctx.currentTime + 0.08 + i * 0.07, f, 0.06, 0.12 + 0.04 * Math.sin(i), 'triangle'); return; }
   const phrase = [60, 62, 64, 65, 67, 65, 64, 62, 60].map(m => 440 * Math.pow(2, (m - 69) / 12));
   let t = ctx.currentTime + 0.08;
   phrase.forEach((f, i) => {
@@ -8023,20 +8039,62 @@ function playTerm(tm) {
     t += beat;
   });
 }
-const TERM_CATS = ['Speed', 'Changing speed', 'Volume', 'Other'];
+const TERM_CATS = ['Speed', 'Changing speed', 'Volume', 'Other', 'Strings'];
+// AMEB Musicianship uses its own, shorter term lists (2026 Manual, Musicianship Grades 1-3).
+const MUSICIANSHIP_TERMS = {
+  1: ['Andante', 'Moderato', 'Allegro', 'Allegretto', 'Rallentando', 'Ritardando', 'A tempo', 'Crescendo', 'Diminuendo', 'Forte', 'Piano', 'Mezzo forte', 'Mezzo piano', 'Legato', 'Staccato'],
+  2: ['Lento', 'Vivace', 'Accelerando', 'Più mosso', 'Meno mosso', 'Decrescendo', 'Pianissimo', 'Fortissimo', 'Maestoso', 'Sostenuto', 'Sempre', 'Poco', 'Molto', 'Senza', 'Mezzo staccato'],
+  3: ['Adagio', 'Presto', 'Con moto', 'Sforzando', 'Cantabile', 'Leggiero', 'Dal segno', 'Da capo al fine', 'Con grazia', 'Dolce', 'Ben marcato', 'Una corda', 'Tre corde', 'Tenuto', 'Scherzando'],
+};
+// How to say it: stressed syllable in capitals. Spoken with the device's Italian (or French) voice.
+const PRON = {
+  'Adagio': 'ah-DAH-joh', 'Andante': 'ahn-DAHN-teh', 'Moderato': 'moh-deh-RAH-toh', 'Allegro': 'ah-LEH-groh', 'Presto': 'PREH-stoh',
+  'Accelerando': 'aht-cheh-leh-RAHN-doh', 'Rallentando': 'rahl-len-TAHN-doh', 'Ritardando': 'ree-tar-DAHN-doh', 'Ritenuto': 'ree-teh-NOO-toh', 'A tempo': 'ah TEM-poh',
+  'Crescendo': 'kreh-SHEN-doh', 'Decrescendo': 'deh-kreh-SHEN-doh', 'Diminuendo': 'dee-mee-noo-EN-doh', 'Forte': 'FOR-teh', 'Piano': 'PYAH-noh', 'Legato': 'leh-GAH-toh', 'Staccato': 'stahk-KAH-toh',
+  'Lento': 'LEN-toh', 'Largo': 'LAR-goh', 'Allegretto': 'ahl-leh-GRET-toh', 'Vivace': 'vee-VAH-cheh', 'Vivo': 'VEE-voh', 'Allargando': 'ahl-lar-GAHN-doh', 'Più mosso': 'pyoo MOHS-soh', 'Meno mosso': 'MEH-noh MOHS-soh',
+  'Pianissimo': 'pyah-NEES-see-moh', 'Fortissimo': 'for-TEES-see-moh', 'Mezzo forte': 'MET-tsoh FOR-teh', 'Mezzo piano': 'MET-tsoh PYAH-noh', 'Maestoso': 'mah-eh-STOH-zoh', 'Sostenuto': 'sos-teh-NOO-toh',
+  'Sempre': 'SEM-preh', 'Poco': 'POH-koh', 'Molto': 'MOHL-toh', 'Senza': 'SEN-tsah', 'Cantabile': 'kahn-TAH-bee-leh', 'Leggiero': 'led-JEH-roh', 'Dal segno': 'dahl SEN-yoh', 'Da capo al fine': 'dah KAH-poh ahl FEE-neh', 'Mezzo staccato': 'MET-tsoh stahk-KAH-toh',
+  'Largamente': 'lar-gah-MEN-teh', 'Larghetto': 'lar-GET-toh', 'Prestissimo': 'preh-STEES-see-moh', 'Con moto': 'kohn MOH-toh', 'Calando': 'kah-LAHN-doh', 'Morendo': 'moh-REN-doh', 'Forte-piano': 'FOR-teh PYAH-noh', 'Sforzando': 'sfor-TSAHN-doh',
+  'Agitato': 'ah-jee-TAH-toh', 'Attacca': 'aht-TAHK-kah', 'Animato': 'ah-nee-MAH-toh', 'Tranquillo': 'trahn-KWEEL-loh', 'Con anima': 'kohn AH-nee-mah', 'Con brio': 'kohn BREE-oh', 'Con grazia': 'kohn GRAH-tsyah', 'Con forza': 'kohn FOR-tsah',
+  'Dolce': 'DOHL-cheh', 'Risoluto': 'ree-zoh-LOO-toh', 'Ben marcato': 'ben mar-KAH-toh', 'Main droite': 'man DRWAHT (French)', 'Main gauche': 'man GOHSH (French)', 'Una corda': 'OO-nah KOR-dah', 'Tre corde': 'treh KOR-deh',
+  'Ad libitum': 'ahd LEE-bee-toom (Latin)', 'Opus': 'OH-poos (Latin)', 'Loco': 'LOH-koh', 'M.M.': 'MEL-tsel metronome',
+  'Tempo commodo': 'TEM-poh KOM-moh-doh', 'Tempo giusto': 'TEM-poh JOO-stoh', 'L’istesso tempo': 'lee-STES-soh TEM-poh', 'Non troppo': 'nohn TROP-poh', 'Grave': 'GRAH-veh', 'Rubato': 'roo-BAH-toh', 'Stringendo': 'streen-JEN-doh',
+  'Perdendosi': 'per-DEN-doh-see', 'Smorzando': 'smor-TSAHN-doh', 'Rinforzando': 'reen-for-TSAHN-doh', 'Pesante': 'peh-ZAHN-teh', 'Cantando': 'kahn-TAHN-doh', 'Tenuto': 'teh-NOO-toh', 'Piacevole': 'pyah-CHEH-voh-leh', 'Portamento': 'por-tah-MEN-toh',
+  'Dolente': 'doh-LEN-teh', 'Doloroso': 'doh-loh-ROH-zoh', 'Sotto voce': 'SOT-toh VOH-cheh', 'Giocoso': 'joh-KOH-zoh', 'Grazioso': 'grah-TSYOH-zoh', 'Assai': 'ahs-SAH-ee', 'Quasi': 'KWAH-zee', 'Scherzando': 'skair-TSAHN-doh', 'Subito': 'SOO-bee-toh',
+  'Sul ponticello': 'sool pon-tee-CHEL-loh', 'Sul tasto': 'sool TAH-stoh', 'Tremolo': 'TREH-moh-loh', 'Pizzicato': 'peet-tsee-KAH-toh', 'Arco': 'AR-koh',
+};
+function speakTerm(tm) {
+  try {
+    if (!window.speechSynthesis) return false;
+    window.speechSynthesis.cancel();
+    const fr = /^Main /.test(tm.term), text = tm.term === 'M.M.' ? 'Maelzel’s metronome' : tm.term.replace('’', "'");
+    const u = new SpeechSynthesisUtterance(text);
+    const vs = window.speechSynthesis.getVoices();
+    const lang = tm.term === 'M.M.' ? 'en' : fr ? 'fr' : 'it';
+    const v = vs.find(x => x.lang && x.lang.toLowerCase().startsWith(lang)); if (v) u.voice = v;
+    u.lang = lang === 'it' ? 'it-IT' : lang === 'fr' ? 'fr-FR' : 'en-AU'; u.rate = 0.8;
+    window.speechSynthesis.speak(u);
+    return true;
+  } catch (e) { return false; }
+}
 function TermCards({ grade = null, upTo = 4 }) {
   const [g, setG] = useState(grade || 1);
   const [cat, setCat] = useState('all');
   const [open, setOpen] = useState({});
   const [quiz, setQuiz] = useState(false);
-  const list = TERMS.filter(x => (grade ? x.grade === grade : x.grade === g) && (cat === 'all' || x.cat === cat));
+  const [syl, setSyl] = useState('theory');
+  const gg = grade || g;
+  const inGrade = (x) => syl === 'theory' ? x.grade === gg : (MUSICIANSHIP_TERMS[gg] || []).includes(x.term);
+  const list = TERMS.filter(x => inGrade(x) && (cat === 'all' || x.cat === cat));
   return (
     <div className="try-box" style={actBox}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
         <div style={actTitle}>{grade ? 'Grade ' + grade + ' terms' : 'Term cards'}</div>
         <button className={'chip' + (quiz ? ' active' : '')} style={{padding:'3px 9px',fontSize:11}} onClick={() => { setQuiz(q => !q); setOpen({}); }}>{quiz ? 'Quiz mode: on' : 'Quiz mode'}</button>
       </div>
-      <div style={actNote}>{quiz ? 'Meanings are hidden -- say the meaning out loud, then tap the card to check.' : 'Tap ♪ to hear the same little phrase played the way the term asks.'}</div>
+      <div style={actNote}>{quiz ? 'Meanings are hidden -- say the meaning out loud, then tap the card to check.' : <>Tap ♪ to hear it (speed words as a metronome, the rest as a little phrase played that way). Tap the gold “say:” line to hear how to <b>say</b> the word -- capitals show the stressed syllable.</>}</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:4}}>{[['theory', 'Theory of Music'], ['msc', 'Musicianship']].map(([k, l]) => <button key={k} className={'chip' + (syl === k ? ' active' : '')} style={{padding:'2px 8px',fontSize:11}} onClick={() => { setSyl(k); setOpen({}); }}>{l}</button>)}</div>
+      {syl === 'msc' && gg === 4 && <div style={{fontSize:12,color:'var(--muted)',marginBottom:6}}>Musicianship lists terms for Grades 1-3 only.</div>}
       {!grade && <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:4}}>{[1, 2, 3, 4].filter(x => x <= upTo).map(x => <button key={x} className={'chip' + (x === g ? ' active' : '')} style={{padding:'3px 10px',fontSize:12}} onClick={() => { setG(x); setOpen({}); }}>Grade {x}</button>)}</div>}
       <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:8}}>{['all', ...TERM_CATS].map(c => <button key={c} className={'chip' + (c === cat ? ' active' : '')} style={{padding:'2px 8px',fontSize:11}} onClick={() => setCat(c)}>{c === 'all' ? 'All' : c}</button>)}</div>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
@@ -8045,7 +8103,8 @@ function TermCards({ grade = null, upTo = 4 }) {
           return (
             <div key={tm.term} onClick={() => setOpen(o => ({ ...o, [tm.term]: !o[tm.term] }))} style={{background:'#fff',border:'1.5px solid var(--border)',borderRadius:10,padding:'8px 9px',cursor:'pointer',position:'relative',minHeight:58}}>
               <div style={{fontSize:14,fontWeight:900,fontStyle:'italic',paddingRight:tm.hear ? 22 : 0}}>{tm.term}</div>
-              {tm.abbr && <div style={{fontSize:10.5,fontWeight:800,color:'var(--muted)'}}>{tm.abbr}</div>}
+              {tm.abbr && <div style={{fontSize:10.5,fontWeight:800,color:'var(--muted)',paddingRight:tm.hear ? 24 : 0}}>{tm.abbr}</div>}
+              {PRON[tm.term] && <div style={{fontSize:10.5,color:'#a8823f',fontWeight:700,paddingRight:tm.hear && !tm.abbr ? 24 : 0}} onClick={(e) => { e.stopPropagation(); speakTerm(tm); }}>say: {PRON[tm.term]}</div>}
               <div style={{fontSize:12,color:shown ? '#5c544a' : 'transparent',background:shown ? 'transparent' : '#f3ead8',borderRadius:4,marginTop:2,transition:'all 0.2s'}}>{tm.meaning}</div>
               {tm.hear && <button onClick={(e) => { e.stopPropagation(); playTerm(tm); }} style={{position:'absolute',top:6,right:6,border:'none',background:'#f3ead8',borderRadius:10,width:24,height:24,cursor:'pointer',fontSize:12}}>♪</button>}
             </div>
@@ -8096,7 +8155,9 @@ function TermQuestion({ q, given, locked, onAnswer, pixel }) {
     <p style={{fontSize:14,fontWeight:700,textAlign:'center',margin:'0 0 8px',color:'var(--muted)'}}>{q.kind === 'tm' ? 'What does it mean?' : 'Which term means…'}</p>
     <div style={{textAlign:'center',fontSize:q.kind === 'tm' ? (pixel ? 18 : 30) : (pixel ? 12 : 20),fontWeight:900,fontStyle:q.kind === 'tm' ? 'italic' : 'normal',margin:'0 0 4px'}}>{q.kind === 'tm' ? q.tm.term : '“' + q.tm.meaning + '”'}</div>
     {q.kind === 'tm' && q.tm.abbr && <div style={{textAlign:'center',fontSize:12,color:'var(--muted)',fontWeight:800}}>{q.tm.abbr}</div>}
-    {done && q.tm.hear && <div style={{textAlign:'center',margin:'6px 0'}}><button className="ghost-btn" style={{fontSize:12,padding:'5px 12px'}} onClick={() => playTerm(q.tm)}>♪ Hear it</button></div>}
+    {done && <div style={{textAlign:'center',margin:'6px 0',display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap'}}>
+      {PRON[q.tm.term] && <button className="ghost-btn" style={{fontSize:12,padding:'5px 12px'}} onClick={() => speakTerm(q.tm)}>Say it: {PRON[q.tm.term]}</button>}
+      {q.tm.hear && <button className="ghost-btn" style={{fontSize:12,padding:'5px 12px'}} onClick={() => playTerm(q.tm)}>♪ Hear it</button>}</div>}
     <div style={{display:'grid',gridTemplateColumns:'1fr',gap:6,marginTop:12}}>{q.choices.map(c => <button key={c} disabled={locked} className={cls(c)} style={{padding:'11px 8px',fontSize:pixel ? 9 : 15,fontStyle:q.kind === 'mt' ? 'italic' : 'normal'}} onClick={() => onAnswer(c)}>{c}</button>)}</div>
   </div>);
 }

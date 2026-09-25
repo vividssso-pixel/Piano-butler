@@ -2937,6 +2937,13 @@ Sohyun: plain tones can't show articulation, dynamics sound thin; offer a spoken
 - `EchoTune` (Steps & Skips step 3 + Practice): hear a 3/4/5-note tune starting on C in C position, play it back on the keys.
 - 19 chapters, 67 tools: all chapter/drill/tool URLs load with zero errors.
 
+### Phase 123 -- Terms: string terms, pronunciation, metronome for speed words, Musicianship lists
+Sohyun: string-playing terms are in the exam too; let students hear how to say the Italian; speed words should sound like a metronome.
+- Added the 5 Grade 4 string terms (sul ponticello, sul tasto, tremolo, pizzicato, arco; new category Strings) -> 96 terms.
+- `PRON` respelling for every term (stressed syllable in capitals, e.g. aht-cheh-leh-RAHN-doh), shown as "say: ..." on each card; tapping it (or "Say it" after a drill answer) speaks the word with the device's Italian voice (`speakTerm`, it-IT; French voice for Main droite/gauche; M.M. read as "Maelzel's metronome").
+- `playTerm`: Speed and Changing speed terms now play metronome clicks (steady, ramped, sudden change, rubato); tremolo = rapid repeated note; pizzicato/arco short/long.
+- `TermCards` toggle Theory of Music | Musicianship (`MUSICIANSHIP_TERMS`, Grades 1-3 from the Manual's Musicianship section).
+
 Next on the plan: more mini tools (Sohyun's rule: every activity stand-alone + in TOOLS). Ideas: sight-reading flash cards, a practice-dice/timer tool, scale degree names (tonic, supertonic...), transposition. Signs 116, Chords 117, Toolbox 118, Grade 3 intervals + cadences 119 done.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
