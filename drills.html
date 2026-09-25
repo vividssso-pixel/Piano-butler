@@ -3367,6 +3367,10 @@ function KeySigLearn({ onStart }) {
       <Step title="The circle of fifths">
       <CircleOfFifths/>
       </Step>
+      <Step title="Transposing">
+      {tip('Keep the scale degrees', 'Write the degree number over each note, then write the same degrees in the new key -- and remember its key signature.')}
+      <Transposer/>
+      </Step>
       <Step title="All 15 keys">
       <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',margin:'6px 0 8px'}}>Tap one</div>
       <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:12}}>
@@ -4925,6 +4929,7 @@ function ScalesLearn({ onStart }) {
       intro={<>One shape builds every major scale. Learn the shape, build it yourself, then learn the fingering patterns.</>}>
       <Step title="The shape"><MajorShapeCard/></Step>
       <Step title="Build it yourself"><ScaleBuilder mode="major"/></Step>
+      <Step title="Degree names"><DegreeNames/></Step>
       <Step title="Fingering patterns"><ScalePatterns sel={sel} onPick={setSel}/></Step>
       <Step title="Your scale path"><ScalePath sel={sel} onPick={setSel}/></Step>
       <Step title="Practise the fingering"><ScaleFingeringDrill controlledKey={sel} onPickKey={setSel}/></Step>
@@ -6988,20 +6993,882 @@ const SIGNS_DRILL = {
 // Curriculum (agreed 2026-09-23): main path counts semitones all the way through --
 // note names -> tones & semitones -> scales (shape, then fingering) -> key signatures ->
 // intervals -> chords (intervals and chords still to build). Side track: rhythm and terms.
+// ─── Shared: a short melody on one staff with real rhythm (Phase 120) ───────────
+// notes: [{ d, dur (crotchet beats: 1, 2, 3, 4), acc, finger }]. Bar lines every `beats` beats.
+// counts: writes "1 and 2 and" under the notes (Sohyun counts 1 and 2 and); held counts in grey brackets.
+function MelodyStaff({ notes, beats = 4, clef = 'treble', width = 320, on = -1, names = false, fingers = false, counts = false, showTime = true, ink = '#241f1a', colors }) {
+  const c = CLEFS[clef];
+  const total = notes.reduce((a, n) => a + n.dur, 0);
+  const x0 = showTime ? 66 : 50, x1 = width - 12;
+  const unit = (x1 - x0) / Math.max(total, beats);
+  const ds = notes.map(n => n.d);
+  const top = Math.max(c.high + 2, ...ds.map(d => d + (d < 34 ? 7 : 1))), bot = Math.min(c.low - 2, ...ds.map(d => d - (d >= 34 ? 7 : 2)));
+  const y0 = dY(top) - (fingers ? 12 : 4), y1 = dY(bot) + (counts ? 26 : 6) + (names ? 14 : 0);
+  let t = 0;
+  const placed = notes.map(n => { const p = { ...n, t, x: x0 + (t + 0.35) * unit }; t += n.dur; return p; });
+  const bars = []; if (showTime) for (let b = beats; b < total; b += beats) bars.push(x0 + b * unit - 2);
+  const countWords = [];
+  if (counts) for (let b = 0; b < total; b++) {
+    const held = !placed.some(p => Math.abs(p.t - b) < 1e-9);
+    countWords.push({ x: x0 + (b + 0.35) * unit, w: String((b % beats) + 1), held });
+    countWords.push({ x: x0 + (b + 0.85) * unit, w: 'and', held: !placed.some(p => Math.abs(p.t - b - 0.5) < 1e-9), small: true });
+  }
+  return (
+    <svg viewBox={`0 ${y0} ${width} ${y1 - y0}`} style={{width:'100%',maxWidth:width * 1.6,display:'block',margin:'0 auto'}}>
+      {c.lines.map(l => <line key={l} x1="4" x2={width - 4} y1={dY(l)} y2={dY(l)} stroke={ink} strokeOpacity="0.55" strokeWidth="1.2"/>)}
+      <ClefGlyph clef={clef} st={clef} yOf={(d) => dY(d)} ink={ink}/>
+      {showTime && <><text x="46" y={dY(c.low + 6) + 5} textAnchor="middle" fontSize="15" fontWeight="900" fill={ink} style={{fontFamily:"Georgia,serif"}}>{beats}</text><text x="46" y={dY(c.low + 2) + 5} textAnchor="middle" fontSize="15" fontWeight="900" fill={ink} style={{fontFamily:"Georgia,serif"}}>4</text></>}
+      {bars.map((x, i) => <line key={i} x1={x} x2={x} y1={dY(c.high)} y2={dY(c.low)} stroke={ink} strokeWidth="1.2"/>)}
+      <line x1={width - 8} x2={width - 8} y1={dY(c.high)} y2={dY(c.low)} stroke={ink} strokeWidth="1.2"/><line x1={width - 4} x2={width - 4} y1={dY(c.high)} y2={dY(c.low)} stroke={ink} strokeWidth="3"/>
+      {placed.map((n, i) => {
+        const y = dY(n.d), col = (colors && colors[i]) || (on === i ? '#a8823f' : ink);
+        const hollow = n.dur >= 2, stem = n.dur < 4, up = n.d < 34;
+        return (
+          <g key={i}>
+            {ledgersFor(n.d, c.low, c.high).map(p => <line key={p} x1={n.x - 11} x2={n.x + 11} y1={dY(p)} y2={dY(p)} stroke={ink} strokeWidth="1.3"/>)}
+            {n.acc === 1 && <SharpShape x={n.x - 15} y={y} color={col}/>}
+            {n.acc === -1 && <FlatShape x={n.x - 14} y={y} color={col}/>}
+            <ellipse cx={n.x} cy={y} rx={hollow ? 6.8 : 6.4} ry={hollow ? 4.6 : 4.6} transform={`rotate(-20 ${n.x} ${y})`} fill={hollow ? 'none' : col} stroke={col} strokeWidth={hollow ? 2 : 0}/>
+            {stem && (up ? <line x1={n.x + 6} x2={n.x + 6} y1={y - 1} y2={y - 30} stroke={col} strokeWidth="1.3"/> : <line x1={n.x - 6} x2={n.x - 6} y1={y + 1} y2={y + 30} stroke={col} strokeWidth="1.3"/>)}
+            {(n.dur === 3 || n.dur === 1.5) && <circle cx={n.x + 11} cy={n.d % 2 === 0 ? y - 2.5 : y} r="1.8" fill={col}/>}
+            {n.dur === 0.5 && (up ? <path d={`M${n.x + 6},${y - 30} q 3 8 9 12 q -4 -3 -9 -5`} fill={col} stroke={col} strokeWidth="1"/> : <path d={`M${n.x - 6},${y + 30} q 3 -8 9 -12 q -4 3 -9 5`} fill={col} stroke={col} strokeWidth="1"/>)}
+            {fingers && n.finger && <text x={n.x} y={dY(top) - 2} textAnchor="middle" fontSize="11" fontWeight="900" fill="#3f7fb5">{n.finger}</text>}
+            {names && <text x={n.x} y={y1 - (counts ? 26 : 2)} textAnchor="middle" fontSize="11" fontWeight="900" fill={on === i ? '#a8823f' : '#6f665b'}>{dName(n.d)}</text>}
+          </g>
+        );
+      })}
+      {countWords.map((w, i) => <text key={i} x={w.x} y={y1 - 6} textAnchor="middle" fontSize={w.small ? 8 : 11} fontWeight={w.held && !w.small ? 600 : 800} fill={w.held ? '#b8ad9c' : '#241f1a'}>{w.held && !w.small ? '(' + w.w + ')' : w.w}</text>)}
+    </svg>
+  );
+}
+function playMelody(notes, bpm, onStep) {
+  const ctx = getAudio(); if (!ctx) return [];
+  const spb = 60 / bpm, t0 = ctx.currentTime + 0.1, timers = [];
+  let t = 0;
+  notes.forEach((n, i) => {
+    blip(ctx, t0 + t * spb, 440 * Math.pow(2, (ivMidi({ d: n.d, acc: n.acc || 0 }) - 69) / 12), n.dur * spb * 0.9, 0.17, 'triangle');
+    if (onStep) timers.push(setTimeout(() => onStep(i), (0.1 + t * spb) * 1000));
+    t += n.dur;
+  });
+  if (onStep) timers.push(setTimeout(() => onStep(-1), (0.1 + t * spb) * 1000 + 200));
+  return timers;
+}
+
+// ─── Stage 1: Me and the Piano (Phase 120) ───────────────────────────────────────
+// Sohyun's beginner order: connect the student to the piano first (no notation): finger numbers,
+// high/low and loud/soft, the black-key map as a small house (2) and a big house (3), a first song
+// on the black keys; then pulse, then reading.
+// Hands seen from above, palms down: right hand thumb on the left; left hand thumb on the right.
+function HandPic({ hand, lit = null, onTap, marks = {}, size = 150 }) {
+  const lens = [30, 50, 56, 51, 40]; // finger 1..5
+  const xs = hand === 'R' ? [14, 38, 58, 78, 97] : [106, 82, 62, 42, 23];
+  const tops = [70, 22, 16, 21, 34];
+  return (
+    <svg viewBox="0 0 120 150" style={{width:size,display:'block'}}>
+      <rect x={hand === 'R' ? 26 : 12} y="78" width="82" height="62" rx="24" fill="#f3e3cf" stroke="#c9a57e" strokeWidth="1.5"/>
+      {[0, 1, 2, 3, 4].map(i => {
+        const f = i + 1, on = lit === f, m = marks[f];
+        const fill = m === 'good' ? '#dcebd5' : m === 'bad' ? '#f6d6cf' : on ? '#f3c66b' : '#f3e3cf';
+        const rot = i === 0 ? (hand === 'R' ? -28 : 28) : 0;
+        return (
+          <g key={f} transform={`rotate(${rot} ${xs[i]} ${tops[i] + lens[i]})`} onClick={onTap ? () => onTap(f) : undefined} style={{cursor:onTap ? 'pointer' : 'default'}}>
+            <rect x={xs[i] - 9} y={tops[i]} width="18" height={lens[i] + 22} rx="9" fill={fill} stroke={on ? '#b07d2a' : '#c9a57e'} strokeWidth={on ? 2.5 : 1.5}/>
+            <text x={xs[i]} y={tops[i] + 16} textAnchor="middle" fontSize="12" fontWeight="900" fill={on || m ? '#241f1a' : '#b08e6a'}>{f}</text>
+          </g>
+        );
+      })}
+      <text x="60" y="126" textAnchor="middle" fontSize="12" fontWeight="900" fill="#8a6a4a">{hand === 'R' ? 'Right' : 'Left'}</text>
+    </svg>
+  );
+}
+function FingerNumbers() {
+  const [ask, setAsk] = useState(null); // { hand, f }
+  const [marks, setMarks] = useState({ L: {}, R: {} });
+  const [score, setScore] = useState({ right: 0, tries: 0 });
+  const [lit, setLit] = useState({ hand: 'R', f: 1 });
+  const next = () => { const a = { hand: Math.random() < 0.5 ? 'L' : 'R', f: 1 + Math.floor(Math.random() * 5) }; setAsk(a); setMarks({ L: {}, R: {} }); };
+  function tap(hand, f) {
+    const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime + 0.01, 262 * Math.pow(2, [0, 2, 4, 5, 7][f - 1] / 12) * (hand === 'L' ? 0.5 : 1), 0.25, 0.15, 'triangle');
+    if (!ask) { setLit({ hand, f }); return; }
+    const ok = hand === ask.hand && f === ask.f;
+    setMarks({ L: {}, R: {}, [hand]: { [f]: ok ? 'good' : 'bad' } });
+    setScore(s => ({ right: s.right + (ok ? 1 : 0), tries: s.tries + 1 }));
+    if (ok) setTimeout(next, 700);
+  }
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>Finger numbers</div>
+        {ask && <div style={{fontSize:12,fontWeight:800,color:'var(--muted)'}}>{score.right}/{score.tries}</div>}
+      </div>
+      <div style={actNote}>Both thumbs are <b>1</b>, both little fingers are <b>5</b>. Hold your hands up like this, wiggle each finger as you say its number -- then play the game.</div>
+      <div style={{display:'flex',justifyContent:'center',gap:10}}>
+        {['L', 'R'].map(h => <HandPic key={h} hand={h} lit={!ask && lit.hand === h ? lit.f : null} marks={marks[h]} onTap={(f) => tap(h, f)}/>)}
+      </div>
+      <div style={{textAlign:'center',fontSize:ask ? 20 : 13,fontWeight:900,minHeight:30,margin:'4px 0'}}>
+        {ask ? <>{ask.hand === 'L' ? 'Left' : 'Right'} hand, finger <span style={{color:'#b07d2a'}}>{ask.f}</span></> : <span style={{color:'#6f665b',fontWeight:700}}>{lit.hand === 'L' ? 'Left' : 'Right'} hand, finger {lit.f}</span>}
+      </div>
+      <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={() => { if (ask) { setAsk(null); setMarks({ L: {}, R: {} }); } else { setScore({ right: 0, tries: 0 }); next(); } }}>{ask ? 'Stop the game' : '▶ Play “Show me finger…”'}</button></div>
+    </div>
+  );
+}
+
+// High or low, loud or soft -- listening games before any reading.
+function HighLowGame() {
+  const [kind, setKind] = useState('pitch'); // pitch | volume
+  const [q, setQ] = useState(null);
+  const [ans, setAns] = useState(null);
+  const [score, setScore] = useState({ right: 0, tries: 0 });
+  function newQ(k = kind) {
+    const ctx = getAudio(); if (!ctx) return;
+    if (k === 'pitch') { const hi = Math.random() < 0.5; const f = hi ? 880 * Math.pow(2, Math.floor(Math.random() * 5) / 12) : 110 * Math.pow(2, Math.floor(Math.random() * 5) / 12); blip(ctx, ctx.currentTime + 0.05, f, 0.8, 0.2, 'triangle'); setQ({ k, a: hi ? 'High' : 'Low', f }); }
+    else { const loud = Math.random() < 0.5; [0, 1, 2].forEach(i => blip(ctx, ctx.currentTime + 0.05 + i * 0.35, 330, 0.3, loud ? 0.5 : 0.05, 'triangle')); setQ({ k, a: loud ? 'Loud' : 'Soft', loud }); }
+    setAns(null);
+  }
+  function replay() { const ctx = getAudio(); if (!ctx || !q) return; if (q.k === 'pitch') blip(ctx, ctx.currentTime + 0.05, q.f, 0.8, 0.2, 'triangle'); else [0, 1, 2].forEach(i => blip(ctx, ctx.currentTime + 0.05 + i * 0.35, 330, 0.3, q.loud ? 0.5 : 0.05, 'triangle')); }
+  function choose(a) { if (!q || ans) return; setAns(a); setScore(s => ({ right: s.right + (a === q.a ? 1 : 0), tries: s.tries + 1 })); }
+  const opts = kind === 'pitch' ? ['Low', 'High'] : ['Soft', 'Loud'];
+  const ok = ans && q && ans === q.a;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>Listen: {kind === 'pitch' ? 'high or low?' : 'loud or soft?'}</div>
+        <div style={{display:'flex',gap:4}}>{[['pitch', 'high/low'], ['volume', 'loud/soft']].map(([k, l]) => <button key={k} className={'chip' + (kind === k ? ' active' : '')} style={{padding:'3px 9px',fontSize:11}} onClick={() => { setKind(k); setQ(null); setAns(null); }}>{l}</button>)}</div>
+      </div>
+      <div style={actNote}>{kind === 'pitch' ? <>On the piano, <b>right = higher</b>, <b>left = lower</b>. Listen, then point: which end of the piano was it?</> : <>Loud is <b>f</b> (forte), soft is <b>p</b> (piano) -- the piano’s full name is the pianoforte: it can do both!</>}</div>
+      {kind === 'pitch' && <div style={{display:'flex',justifyContent:'space-between',fontSize:11,fontWeight:800,color:'var(--muted)',margin:'0 4px 2px'}}><span>← low</span><span>high →</span></div>}
+      {kind === 'pitch' && <TapKeyboard octaves={4} marks={q && ans ? { [q.a === 'High' ? 42 : 3]: 'good' } : {}} onTap={(k) => playKey(k - 24)}/>}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,margin:'10px 0 6px'}}>
+        {opts.map(o => <button key={o} className="ghost-btn" disabled={!q || !!ans} onClick={() => choose(o)} style={{padding:'14px 0',fontSize:18,fontWeight:900,fontStyle:kind === 'volume' ? 'italic' : 'normal',borderColor:ans && o === q.a ? '#4f7a45' : ans === o ? '#b5483b' : undefined}}>{kind === 'volume' ? (o === 'Loud' ? 'f  loud' : 'p  soft') : o}</button>)}
+      </div>
+      <div style={{textAlign:'center',fontSize:13,fontWeight:800,minHeight:20,color:ans ? (ok ? '#4f7a45' : '#b5483b') : 'var(--muted)'}}>{ans ? (ok ? 'Yes! ' : 'It was ' + q.a.toLowerCase() + '. ') + score.right + '/' + score.tries : q ? 'Which was it?' : ''}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:4}}>
+        <button className="ghost-btn" onClick={() => newQ()}>{q ? 'Next sound ▶' : '▶ Play a sound'}</button>
+        {q && <button className="ghost-btn" onClick={replay}>♪ Again</button>}
+      </div>
+    </div>
+  );
+}
+
+// The black-key map drawn as houses: 2 black keys = small house, 3 = big house. C D E live at the
+// small house (C at its left door, D inside, E at its right door); F G A B at the big house.
+function KeyHouses() {
+  const OCT = 2;
+  const [mode, setMode] = useState('houses'); // houses | small | big
+  const [lit, setLit] = useState(null);
+  const W = OCT * 7 * 36;
+  const houses = [];
+  for (let o = 0; o < OCT; o++) { houses.push({ kind: 'small', x1: o * 252 + 36 - 13, x2: o * 252 + 72 + 13 }); houses.push({ kind: 'big', x1: o * 252 + 144 - 13, x2: o * 252 + 216 + 13 }); }
+  const names = {}, marks = {};
+  const say = { houses: 'Two black keys = a small house. Three black keys = a big house. Tap a house!', small: 'C is at the small house’s left door, D is inside, E at the right door.', big: 'F is at the big house’s left door, G and A are inside, B at the right door.' }[mode];
+  for (let o = 0; o < OCT; o++) {
+    if (mode === 'small') { names[o * 12] = 'C'; names[o * 12 + 2] = 'D'; names[o * 12 + 4] = 'E'; [0, 2, 4].forEach(k => { marks[o * 12 + k] = 'target'; }); }
+    if (mode === 'big') { names[o * 12 + 5] = 'F'; names[o * 12 + 7] = 'G'; names[o * 12 + 9] = 'A'; names[o * 12 + 11] = 'B'; [5, 7, 9, 11].forEach(k => { marks[o * 12 + k] = 'target'; }); }
+  }
+  function tapHouse(h, i) { setLit(i); const base = Math.floor(i / 2) * 12; (h.kind === 'small' ? [1, 3] : [6, 8, 10]).forEach((k, j) => setTimeout(() => playKey(base + k, 0.3), j * 200)); }
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
+        <div style={actTitle}>Small house, big house</div>
+        <div style={{display:'flex',gap:4}}>{[['houses', 'houses'], ['small', 'C D E'], ['big', 'F G A B']].map(([k, l]) => <button key={k} className={'chip' + (mode === k ? ' active' : '')} style={{padding:'3px 9px',fontSize:11}} onClick={() => setMode(k)}>{l}</button>)}</div>
+      </div>
+      <div style={actNote}>{say}</div>
+      <svg viewBox={`-1 0 ${W + 2} 44`} style={{width:'100%',display:'block'}}>
+        {houses.map((h, i) => {
+          const mid = (h.x1 + h.x2) / 2, on = lit === i, col = h.kind === 'small' ? '#b07d2a' : '#4f8a5b';
+          return (
+            <g key={i} onClick={() => tapHouse(h, i)} style={{cursor:'pointer'}}>
+              <polygon points={`${h.x1},42 ${mid},${h.kind === 'small' ? 14 : 6} ${h.x2},42`} fill={on ? col : col + '33'} stroke={col} strokeWidth="2" strokeLinejoin="round" style={{transition:'fill 0.2s'}}/>
+              {h.kind === 'small' ? <rect x={mid - 3} y={26} width="6" height="8" fill={on ? '#fff' : col}/> : <><rect x={mid - 9} y={24} width="6" height="7" fill={on ? '#fff' : col}/><rect x={mid + 3} y={24} width="6" height="7" fill={on ? '#fff' : col}/></>}
+            </g>
+          );
+        })}
+      </svg>
+      <TapKeyboard octaves={OCT} marks={marks} names={names} tint={mode === 'houses'} onTap={(k) => playKey(k)}/>
+      <div style={{display:'flex',justifyContent:'center',gap:14,fontSize:12,fontWeight:800,marginTop:6}}>
+        <span style={{color:'#b07d2a'}}>▲ small house = 2</span><span style={{color:'#4f8a5b'}}>▲ big house = 3</span>
+      </div>
+    </div>
+  );
+}
+
+// A first song on the black keys (big house): watch, then play it back one key at a time.
+const BLACK_SONGS = {
+  hotcross: { title: 'Hot Cross Buns', keys: [10, 8, 6, 10, 8, 6, 6, 6, 6, 6, 8, 8, 8, 8, 10, 8, 6], durs: [1, 1, 2, 1, 1, 2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 1, 2] },
+  mary: { title: 'Mary Had a Little Lamb', keys: [10, 8, 6, 8, 10, 10, 10, 8, 8, 8, 10, 13, 13, 10, 8, 6, 8, 10, 10, 10, 10, 8, 8, 10, 8, 6], durs: [1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4] },
+};
+function BlackKeySong() {
+  const [id, setId] = useState('hotcross');
+  const song = BLACK_SONGS[id];
+  const [mode, setMode] = useState('watch');
+  const [i, setI] = useState(-1);
+  const [bad, setBad] = useState(null);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  useEffect(() => { timers.current.forEach(clearTimeout); setI(-1); setBad(null); }, [id, mode]);
+  function watch() {
+    timers.current.forEach(clearTimeout); timers.current = [];
+    let t = 0;
+    song.keys.forEach((k, j) => { timers.current.push(setTimeout(() => { setI(j); playKey(k, song.durs[j] * 0.45); }, 150 + t * 480)); t += song.durs[j]; });
+    timers.current.push(setTimeout(() => setI(-1), 150 + t * 480 + 300));
+  }
+  function tap(k) {
+    playKey(k, 0.35);
+    if (mode !== 'turn') return;
+    const want = song.keys[i + 1];
+    if (k === want) { setI(i + 1); setBad(null); } else { setBad(k); setTimeout(() => setBad(b => (b === k ? null : b)), 500); }
+  }
+  const done = mode === 'turn' && i === song.keys.length - 1;
+  const cur = mode === 'watch' ? (i >= 0 ? song.keys[i] : null) : (i + 1 < song.keys.length ? song.keys[i + 1] : null);
+  const marks = {}; if (cur !== null) marks[cur] = mode === 'watch' ? 'good' : 'target'; if (bad !== null) marks[bad] = 'bad';
+  const label = (k) => ({ 6: '1', 8: '2', 10: '3', 13: '5' }[k]);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
+        <div style={actTitle}>A first song on the black keys</div>
+        <div style={{display:'flex',gap:4}}>{Object.keys(BLACK_SONGS).map(k => <button key={k} className={'chip' + (id === k ? ' active' : '')} style={{padding:'3px 9px',fontSize:11}} onClick={() => setId(k)}>{BLACK_SONGS[k].title.split(' ').slice(0, 2).join(' ')}</button>)}</div>
+      </div>
+      <div style={actNote}>No reading yet -- just the big house. Use right-hand fingers 2, 3 and 4 on its three black keys. <b>Watch</b> first, then <b>your turn</b>: the gold key is the next one.</div>
+      <TapKeyboard octaves={2} marks={marks} onTap={tap}/>
+      <div style={{display:'flex',flexWrap:'wrap',gap:3,justifyContent:'center',margin:'8px 0',fontSize:13,fontWeight:900}}>
+        {song.keys.map((k, j) => <span key={j} style={{minWidth:14,textAlign:'center',color:(mode === 'watch' ? j === i : j <= i) ? '#a8823f' : '#c7bca8'}}>{({ 6: 'G♭', 8: 'A♭', 10: 'B♭', 13: 'D♭' })[k]}</span>)}
+      </div>
+      {done && <div style={{textAlign:'center',fontSize:14,fontWeight:900,color:'#4f7a45',marginBottom:6}}>You played {song.title}!</div>}
+      <div style={{display:'flex',gap:6,justifyContent:'center'}}>
+        <button className="ghost-btn" style={mode === 'watch' ? {borderColor:'var(--text)'} : {}} onClick={() => { setMode('watch'); setTimeout(watch, 60); }}>▶ Watch</button>
+        <button className="ghost-btn" style={mode === 'turn' ? {borderColor:'var(--text)'} : {}} onClick={() => { setMode('turn'); setI(-1); }}>Your turn</button>
+      </div>
+    </div>
+  );
+}
+function FirstStepsLearn({ onStart }) {
+  const tip = (title, body) => <Rule title={title}>{body}</Rule>;
+  return (
+    <Lesson id="first-steps" title="Me and the piano" onStart={onStart}
+      intro={<>The very first lessons -- no music to read yet. Fingers, sounds, and a map of the keyboard, so the piano feels friendly from day one.</>}>
+      <Step title="Sit and shape your hands">
+        {tip('Sitting', 'Sit on the front half of the stool, feet flat, facing middle C. Elbows just in front of the body, a little higher than the keys.')}
+        {tip('A round hand', 'Let your arms hang, then lift your hands as if holding a small ball. Play on the finger pads, the thumb on its side.')}
+      </Step>
+      <Step title="Finger numbers">
+        <FingerNumbers/>
+      </Step>
+      <Step title="High, low, loud and soft">
+        <HighLowGame/>
+      </Step>
+      <Step title="Small house, big house">
+        {tip('The black keys are the map', 'The black keys come in twos and threes. Every group of two is a small house, every group of three is a big house -- they repeat all the way along the piano.')}
+        <KeyHouses/>
+      </Step>
+      <Step title="Your first song">
+        <BlackKeySong/>
+      </Step>
+    </Lesson>
+  );
+}
+const FS_LEVELS = [
+  { n: 1, label: 'Which finger?',   kind: 'finger', time: 6 },
+  { n: 2, label: 'High or low?',    kind: 'high', time: 6 },
+  { n: 3, label: 'Loud or soft?',   kind: 'loud', time: 6 },
+  { n: 4, label: 'Small house or big house?', kind: 'house', time: 6 },
+];
+function genFsQuestion(lv, prev) {
+  const uid = Math.random();
+  if (lv.kind === 'finger') { let hand, f, g = 0; do { hand = Math.random() < 0.5 ? 'L' : 'R'; f = 1 + Math.floor(Math.random() * 5); } while (prev && prev.key === hand + f && g++ < 10); return { kind: 'finger', key: hand + f, hand, f, answer: String(f), choices: ['1', '2', '3', '4', '5'], uid }; }
+  if (lv.kind === 'high') { const hi = Math.random() < 0.5; return { kind: 'high', key: uid, hi, f: hi ? 880 * Math.pow(2, Math.floor(Math.random() * 7) / 12) : 98 * Math.pow(2, Math.floor(Math.random() * 7) / 12), answer: hi ? 'High' : 'Low', choices: ['Low', 'High'], uid }; }
+  if (lv.kind === 'loud') { const loud = Math.random() < 0.5; return { kind: 'loud', key: uid, loud, answer: loud ? 'Loud (f)' : 'Soft (p)', choices: ['Soft (p)', 'Loud (f)'], uid }; }
+  const small = Math.random() < 0.5, o = Math.floor(Math.random() * 3);
+  return { kind: 'house', key: small + ':' + o, small, keys: small ? [o * 12 + 1, o * 12 + 3] : [o * 12 + 6, o * 12 + 8, o * 12 + 10], answer: small ? 'Small house' : 'Big house', choices: ['Small house', 'Big house'], uid };
+}
+function playFs(q) {
+  const ctx = getAudio(); if (!ctx) return;
+  if (q.kind === 'high') blip(ctx, ctx.currentTime + 0.05, q.f, 0.8, 0.2, 'triangle');
+  if (q.kind === 'loud') [0, 1, 2].forEach(i => blip(ctx, ctx.currentTime + 0.05 + i * 0.35, 330, 0.3, q.loud ? 0.5 : 0.05, 'triangle'));
+}
+function FsQuestion({ q, given, locked, onAnswer, pixel }) {
+  const done = !!given;
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  useEffect(() => { if (q.kind === 'high' || q.kind === 'loud') { const t = setTimeout(() => playFs(q), 250); return () => clearTimeout(t); } }, [q.uid]);
+  const cls = (c) => btnCls + (!done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '');
+  const title = { finger: 'Which finger number is lit?', high: 'Listen: high or low?', loud: 'Listen: loud or soft?', house: 'Which house is this?' }[q.kind];
+  const marks = {}; if (q.kind === 'house') q.keys.forEach(k => { marks[k] = 'target'; });
+  return (<div>
+    <p style={pixel ? {fontSize:10,textAlign:'center'} : {fontSize:14,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? title.toUpperCase() : title}</p>
+    {q.kind === 'finger' && <div style={{display:'flex',justifyContent:'center',marginBottom:10}}><HandPic hand={q.hand} lit={q.f} size={170}/></div>}
+    {(q.kind === 'high' || q.kind === 'loud') && <div style={{textAlign:'center',marginBottom:12}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => playFs(q)}>{pixel ? '♪ AGAIN' : '♪ Play again'}</button></div>}
+    {q.kind === 'house' && <div style={{marginBottom:12}}><TapKeyboard octaves={3} marks={marks} pixel={pixel}/></div>}
+    <div style={{display:'grid',gridTemplateColumns:'repeat(' + (q.choices.length === 5 ? 5 : 2) + ',1fr)',gap:8}}>{q.choices.map(c => <button key={c} disabled={locked} className={cls(c)} style={{padding:'16px 0',fontSize:pixel ? 10 : 18}} onClick={() => onAnswer(c)}>{c}</button>)}</div>
+  </div>);
+}
+const FIRST_STEPS_DRILL = {
+  id: 'first-steps', label: 'Me and the Piano', levels: FS_LEVELS, generate: genFsQuestion,
+  check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
+  answerLabel: (q) => q.kind === 'finger' ? (q.hand === 'L' ? 'left' : 'right') + ' hand finger ' + q.f : q.answer.toLowerCase(),
+  Question: FsQuestion, Learn: FirstStepsLearn,
+};
+
+// ─── Stage 2: Pulse and counting (Phase 120) ─────────────────────────────────────
+// Sohyun counts "1 and 2 and" -- every count here uses that.
+function SteadyBeat() {
+  const [bpm, setBpm] = useState(72);
+  const [run, setRun] = useState(false);
+  const [beat, setBeat] = useState(-1);
+  const [taps, setTaps] = useState([]);
+  const start = useRef(0);
+  useEffect(() => {
+    if (!run) return;
+    let n = 0; start.current = performance.now(); setTaps([]);
+    const tick = () => { const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime + 0.01, 110, 0.12, 0.35, 'sine'); setBeat(n % 4); n++; };
+    tick(); const iv = setInterval(tick, 60000 / bpm);
+    return () => { clearInterval(iv); setBeat(-1); };
+  }, [run, bpm]);
+  function tap() {
+    if (!run) return;
+    const t = performance.now() - start.current, ms = 60000 / bpm;
+    const off = ((t + ms / 2) % ms) - ms / 2; // + late, - early
+    setTaps(x => [...x.slice(-7), off]);
+  }
+  const avg = taps.length ? taps.reduce((a, b) => a + b, 0) / taps.length : 0;
+  const verdict = taps.length < 3 ? 'Tap along with the heartbeat…' : Math.abs(avg) < 70 ? 'Right on the beat!' : avg < 0 ? 'A little early -- wait for it.' : 'A little late -- listen ahead.';
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>The steady beat</div>
+      <div style={actNote}>Music has a heartbeat called the <b>pulse</b> -- it keeps going, steady, even when the notes stop. Start it, then tap (or clap) along and count “1, 2, 3, 4”.</div>
+      <div style={{display:'flex',justifyContent:'center',gap:14,margin:'8px 0'}}>
+        {[0, 1, 2, 3].map(b => (
+          <div key={b} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+            <svg viewBox="0 0 40 36" width="44" style={{transform:beat === b ? 'scale(1.25)' : 'scale(1)',transition:'transform 0.08s'}}>
+              <path d="M20 34 C 4 22, 0 12, 8 6 C 14 2, 19 6, 20 10 C 21 6, 26 2, 32 6 C 40 12, 36 22, 20 34 Z" fill={beat === b ? '#b5483b' : '#e8cfc9'}/>
+            </svg>
+            <span style={{fontSize:16,fontWeight:900,color:beat === b ? 'var(--text)' : '#c7bca8'}}>{b + 1}</span>
+          </div>
+        ))}
+      </div>
+      <input type="range" min="50" max="120" value={bpm} onChange={e => setBpm(+e.target.value)} style={{width:'100%',accentColor:'#b5483b'}}/>
+      <div style={{textAlign:'center',fontSize:12,color:'var(--muted)',marginBottom:6}}>{bpm} beats a minute</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center'}}>
+        <button className="ghost-btn" onClick={() => setRun(r => !r)}>{run ? '■ Stop' : '▶ Start'}</button>
+        <button className="ghost-btn" disabled={!run} onClick={tap} style={{minWidth:110,fontWeight:900}}>Tap</button>
+      </div>
+      {run && <div style={{textAlign:'center',fontSize:13,fontWeight:800,marginTop:6,color:taps.length >= 3 && Math.abs(avg) < 70 ? '#4f7a45' : 'var(--text)'}}>{verdict}</div>}
+    </div>
+  );
+}
+// Count it out loud: a bar of notes with "1 and 2 and 3 and 4 and" under it, lit as it plays.
+const COUNT_BARS = [
+  { id: 'q', title: 'Crotchets', notes: [1, 1, 1, 1] },
+  { id: 'h', title: 'Minims', notes: [2, 2] },
+  { id: 'w', title: 'Semibreve', notes: [4] },
+  { id: 'hq', title: 'Minim + crotchets', notes: [2, 1, 1] },
+  { id: 'dh', title: 'Dotted minim', notes: [3, 1] },
+  { id: 'e', title: 'Quavers', notes: [0.5, 0.5, 0.5, 0.5, 1, 1] },
+];
+function CountAloud() {
+  const [id, setId] = useState('q');
+  const bar = COUNT_BARS.find(b => b.id === id);
+  const [pos, setPos] = useState(-1); // half-beat index 0..7
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const onsets = []; bar.notes.reduce((t, d) => { onsets.push(t); return t + d; }, 0);
+  function play() {
+    timers.current.forEach(clearTimeout); timers.current = [];
+    const ctx = getAudio(); if (!ctx) return;
+    const spb = 60 / 76, t0 = ctx.currentTime + 0.1;
+    bar.notes.forEach((d, i) => blip(ctx, t0 + onsets[i] * spb, 523.25, d * spb * 0.9, 0.17, 'triangle'));
+    for (let h = 0; h < 8; h++) { if (h % 2 === 0) blip(ctx, t0 + h / 2 * spb, h === 0 ? 1400 : 1000, 0.03, 0.05, 'square'); timers.current.push(setTimeout(() => setPos(h), (0.1 + h / 2 * spb) * 1000)); }
+    timers.current.push(setTimeout(() => setPos(-1), (0.1 + 4 * spb) * 1000 + 200));
+  }
+  const words = ['1', 'and', '2', 'and', '3', 'and', '4', 'and'];
+  const isOnset = (h) => onsets.some(o => Math.abs(o - h / 2) < 1e-9);
+  const items = bar.notes.map(d => d === 0.5 ? NV_NOTES[3] : d === 1 ? NV_NOTES[2] : d === 2 ? NV_NOTES[1] : d === 3 ? NV_DOTTED[0] : NV_NOTES[0]);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Count it: 1 and 2 and</div>
+      <div style={actNote}>Say the count out loud all the way through the bar. Where a note starts, the count is <b>bold</b>; while a long note is still held, keep counting quietly -- those counts are grey.</div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>{COUNT_BARS.map(b => <button key={b.id} className={'chip' + (b.id === id ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => { setId(b.id); setPos(-1); }}>{b.title}</button>)}</div>
+      <BeatRow items={items} total={4} on={pos >= 0 ? onsets.filter(o => o <= pos / 2 + 1e-9).length - 1 : -1} size={40}/>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(8,1fr)',marginTop:6}}>
+        {words.map((w, h) => (
+          <div key={h} style={{textAlign:'center',fontSize:w === 'and' ? 12 : 17,fontWeight:isOnset(h) ? 900 : 600,color:pos === h ? '#b5483b' : isOnset(h) ? 'var(--text)' : '#c7bca8',transform:pos === h ? 'scale(1.25)' : 'none',transition:'transform 0.08s'}}>{w}</div>
+        ))}
+      </div>
+      <div style={{textAlign:'center',marginTop:8}}><button className="ghost-btn" onClick={play}>♪ Play and count</button></div>
+    </div>
+  );
+}
+function PulseLearn({ onStart }) {
+  const tip = (title, body) => <Rule title={title}>{body}</Rule>;
+  return (
+    <Lesson id="pulse" title="Pulse and counting" onStart={onStart}
+      intro={<>Before reading notes, feel the beat. Every rhythm is counted against a steady pulse: 1 and 2 and 3 and 4 and.</>}>
+      <Step title="Feel the pulse">
+        <SteadyBeat/>
+      </Step>
+      <Step title="Count 1 and 2 and">
+        {tip('Long and short notes', 'A crotchet lasts one beat, a minim two, a dotted minim three, a semibreve four. Two quavers share one beat: “1 and”.')}
+        <CountAloud/>
+      </Step>
+      <Step title="Clap the rhythm cards">
+        {tip('Clap and count', 'Clap each note and count out loud. Start with the first set of rhythm cards; move on when a card is easy three times in a row.')}
+        <RhythmComposer/>
+      </Step>
+    </Lesson>
+  );
+}
+const PULSE_LEVELS = [
+  { n: 1, label: 'How many beats?', kind: 'beats', time: 6 },
+  { n: 2, label: 'Which bar did you hear?', kind: 'hear', time: 12 },
+];
+function genPulseQuestion(lv, prev) {
+  const uid = Math.random();
+  if (lv.kind === 'beats') {
+    const pool = [[NV_NOTES[2], '1'], [NV_NOTES[1], '2'], [NV_DOTTED[0], '3'], [NV_NOTES[0], '4'], [NV_NOTES[3], '½']];
+    let p = pick(pool), g = 0; while (prev && prev.key === p[1] && g++ < 8) p = pick(pool);
+    return { kind: 'beats', key: p[1], item: p[0], answer: p[1], choices: ['½', '1', '2', '3', '4'], uid };
+  }
+  const opts = sampleN(COUNT_BARS, 3), bar = pick(opts);
+  return { kind: 'hear', key: bar.id, bar, opts, answer: bar.id, choices: opts.map(o => o.id), uid };
+}
+function playCountBar(bar) {
+  const ctx = getAudio(); if (!ctx) return; const spb = 60 / 76, t0 = ctx.currentTime + 0.1;
+  for (let b = 0; b < 4; b++) blip(ctx, t0 + b * spb, b === 0 ? 1400 : 1000, 0.03, 0.05, 'square');
+  let t = 0; bar.notes.forEach(d => { blip(ctx, t0 + t * spb, 523.25, d * spb * 0.9, 0.17, 'triangle'); t += d; });
+}
+function PulseQuestion({ q, given, locked, onAnswer, pixel }) {
+  const done = !!given;
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  useEffect(() => { if (q.kind === 'hear') { const t = setTimeout(() => playCountBar(q.bar), 250); return () => clearTimeout(t); } }, [q.uid]);
+  const cls = (c) => btnCls + (!done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '');
+  const toItems = (bar) => bar.notes.map(d => d === 0.5 ? NV_NOTES[3] : d === 1 ? NV_NOTES[2] : d === 2 ? NV_NOTES[1] : d === 3 ? NV_DOTTED[0] : NV_NOTES[0]);
+  if (q.kind === 'beats') return (<div>
+    <p style={{fontSize:14,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>How many beats does it last?</p>
+    <div style={{display:'flex',justifyContent:'center',marginBottom:12}}><Glyph item={q.item} size={90}/></div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:8}}>{q.choices.map(c => <button key={c} disabled={locked} className={cls(c)} style={{padding:'16px 0',fontSize:pixel ? 10 : 20}} onClick={() => onAnswer(c)}>{c}</button>)}</div>
+  </div>);
+  return (<div>
+    <p style={{fontSize:14,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>Listen (4 clicks = one bar): which one was it?</p>
+    <div style={{textAlign:'center',marginBottom:10}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => playCountBar(q.bar)}>♪ Play again</button></div>
+    <div style={{display:'flex',flexDirection:'column',gap:8}}>{q.opts.map(o => <button key={o.id} disabled={locked} className={cls(o.id)} style={{padding:'6px'}} onClick={() => onAnswer(o.id)}><BeatRow items={toItems(o)} total={4} size={30}/></button>)}</div>
+  </div>);
+}
+const PULSE_DRILL = {
+  id: 'pulse', label: 'Pulse & Counting', levels: PULSE_LEVELS, generate: genPulseQuestion,
+  check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
+  answerLabel: (q) => q.kind === 'beats' ? q.answer + ' beat' + (q.answer === '1' || q.answer === '½' ? '' : 's') : COUNT_BARS.find(b => b.id === q.answer).title,
+  Question: PulseQuestion, Learn: PulseLearn,
+};
+
+// ─── Stage 3: Reading begins -- steps, skips and repeats (Phase 120) ─────────────
+// Read by direction and distance from a note you know, not letter by letter.
+function moveWord(a, b) { const k = b - a; return k === 0 ? 'same' : Math.abs(k) === 1 ? 'step ' + (k > 0 ? 'up' : 'down') : Math.abs(k) === 2 ? 'skip ' + (k > 0 ? 'up' : 'down') : 'leap ' + (k > 0 ? 'up' : 'down'); }
+function StepSkip() {
+  const [pair, setPair] = useState([28, 29]);
+  const [nonce, setNonce] = useState(0);
+  const [a, b] = pair;
+  const MOVES = [['same', 0], ['step up', 1], ['step down', -1], ['skip up', 2], ['skip down', -2]];
+  function go(k) { let na = 28 + Math.floor(Math.random() * 5); if (na + k < 28 || na + k > 33) na = 30; setPair([na, na + k]); setNonce(x => x + 1); playMelody([{ d: na, dur: 1 }, { d: na + k, dur: 1 }], 100); }
+  const kind = moveWord(a, b);
+  const line = (d) => d % 2 === 0;
+  const detail = b === a ? 'the same line or space -- play the same key again' : Math.abs(b - a) === 1 ? (line(a) ? 'line to the next space' : 'space to the next line') + ' -- the next key, next letter' : (line(a) ? 'line to the next line' : 'space to the next space') + ' -- skip one key, skip one letter';
+  const ka = ivMidi({ d: a, acc: 0 }) - 60, kb = ivMidi({ d: b, acc: 0 }) - 60;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Step, skip or same?</div>
+      <div style={actNote}>Don’t name every note -- watch where the next one goes. A <b>step</b> moves to the very next line or space; a <b>skip</b> jumps over one.</div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>{MOVES.map(([w, k]) => <button key={w} className={'chip' + (kind === w ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => go(k)}>{w}</button>)}</div>
+      <div key={nonce}><MelodyStaff notes={[{ d: a, dur: 2 }, { d: b, dur: 2 }]} showTime={false} width={220} colors={['#241f1a', '#a8823f']}/></div>
+      <TapKeyboard octaves={1} labels="white" marks={{ [ka]: 'target', [kb]: 'good' }} onTap={(k) => playKey(k)}/>
+      <div style={{textAlign:'center',fontSize:15,fontWeight:900,marginTop:6,color:'#a8823f'}}>{kind}</div>
+      <div style={{textAlign:'center',fontSize:12,color:'#6f665b'}}>{detail}</div>
+    </div>
+  );
+}
+// Tiny tunes in the middle C position (both thumbs on middle C) and C position.
+const MINI_TUNES = [
+  { id: 'up', title: 'Walking up', notes: [[28, 1], [29, 1], [30, 1], [31, 1], [32, 4]] },
+  { id: 'steps', title: 'Step and repeat', notes: [[28, 1], [28, 1], [29, 1], [29, 1], [30, 2], [29, 2], [28, 4]] },
+  { id: 'skips', title: 'Skipping', notes: [[28, 1], [30, 1], [32, 2], [30, 1], [28, 1], [30, 2], [28, 4]] },
+  { id: 'ode', title: 'Ode to Joy', notes: [[30, 1], [30, 1], [31, 1], [32, 1], [32, 1], [31, 1], [30, 1], [29, 1], [28, 1], [28, 1], [29, 1], [30, 1], [30, 1.5], [29, 0.5], [29, 2]] },
+];
+function MiniTune() {
+  const [id, setId] = useState('steps');
+  const tune = MINI_TUNES.find(t => t.id === id);
+  const notes = tune.notes.map(([d, dur]) => ({ d, dur, finger: d - 27 }));
+  const [on, setOn] = useState(-1);
+  const [mode, setMode] = useState('watch');
+  const [pos, setPos] = useState(-1);
+  const [bad, setBad] = useState(null);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  useEffect(() => { setOn(-1); setPos(-1); timers.current.forEach(clearTimeout); }, [id, mode]);
+  function tap(k) {
+    playKey(k, 0.35);
+    if (mode !== 'turn') return;
+    const want = ivMidi({ d: notes[pos + 1].d, acc: 0 }) - 60;
+    if (k === want) { setPos(pos + 1); setOn(pos + 1); setBad(null); } else { setBad(k); setTimeout(() => setBad(b => (b === k ? null : b)), 500); }
+  }
+  const marks = {}; if (mode === 'turn' && pos + 1 < notes.length) marks[ivMidi({ d: notes[pos + 1].d, acc: 0 }) - 60] = 'target'; if (mode === 'watch' && on >= 0) marks[ivMidi({ d: notes[on].d, acc: 0 }) - 60] = 'good'; if (bad !== null) marks[bad] = 'bad';
+  const finished = mode === 'turn' && pos === notes.length - 1;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
+        <div style={actTitle}>Read a tiny tune</div>
+        <div style={{display:'flex',flexWrap:'wrap',gap:4}}>{MINI_TUNES.map(t => <button key={t.id} className={'chip' + (t.id === id ? ' active' : '')} style={{padding:'3px 8px',fontSize:11}} onClick={() => setId(t.id)}>{t.title}</button>)}</div>
+      </div>
+      <div style={actNote}>Right hand on C D E F G (thumb on middle C). The small blue numbers are fingers. Count “1 and 2 and”, then play along.</div>
+      <MelodyStaff notes={notes} on={on} fingers counts width={Math.max(320, notes.reduce((a, n) => a + n.dur, 0) * 34 + 80)}/>
+      <TapKeyboard octaves={1} labels="white" marks={marks} onTap={tap}/>
+      {finished && <div style={{textAlign:'center',fontSize:14,fontWeight:900,color:'#4f7a45',margin:'6px 0'}}>You read it!</div>}
+      <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:8}}>
+        <button className="ghost-btn" style={mode === 'watch' ? {borderColor:'var(--text)'} : {}} onClick={() => { setMode('watch'); setTimeout(() => { timers.current = playMelody(notes, 84, setOn); }, 60); }}>▶ Hear it</button>
+        <button className="ghost-btn" style={mode === 'turn' ? {borderColor:'var(--text)'} : {}} onClick={() => setMode('turn')}>Your turn</button>
+      </div>
+    </div>
+  );
+}
+function ReadingStepsLearn({ onStart }) {
+  const tip = (title, body) => <Rule title={title}>{body}</Rule>;
+  return (
+    <Lesson id="reading-steps" title="Reading begins: steps and skips" onStart={onStart}
+      intro={<>Start from one note you know -- middle C -- and read the rest by watching where each note moves. Rhythm and notes come together from the first tune.</>}>
+      <Step title="Where does it go?">
+        {tip('Up, down or the same', 'Higher on the staff = further right on the piano. Lower = further left. On the same line or space = the same key again.')}
+        <StepSkip/>
+      </Step>
+      <Step title="Read a tiny tune">
+        {tip('Rhythm and notes together', 'First clap and count the rhythm. Then say the direction (step up, same, skip down...). Then play it.')}
+        <MiniTune/>
+      </Step>
+    </Lesson>
+  );
+}
+const RS_LEVELS = [
+  { n: 1, label: 'Up, down or same?',      kind: 'dir', time: 6 },
+  { n: 2, label: 'Step, skip or same?',    kind: 'move', time: 7 },
+  { n: 3, label: 'Name the next note (first note given)', kind: 'next', time: 8 },
+];
+function genRsQuestion(lv, prev) {
+  const uid = Math.random();
+  for (let g = 0; g < 30; g++) {
+    const a = 28 + Math.floor(Math.random() * 7), k = pick([0, 1, -1, 2, -2]), b = a + k;
+    if (b < 27 || b > 36) continue;
+    const key = a + ':' + b; if (prev && prev.key === key) continue;
+    if (lv.kind === 'dir') return { kind: 'dir', key, a, b, answer: k === 0 ? 'Same' : k > 0 ? 'Up' : 'Down', choices: ['Down', 'Same', 'Up'], uid };
+    if (lv.kind === 'move') return { kind: 'move', key, a, b, answer: k === 0 ? 'Same' : Math.abs(k) === 1 ? 'Step' : 'Skip', choices: ['Same', 'Step', 'Skip'], uid };
+    return { kind: 'next', key, a, b, answer: dName(b), choices: STAFF_LETTERS.slice(), uid };
+  }
+  return { kind: 'dir', key: 'x', a: 28, b: 29, answer: 'Up', choices: ['Down', 'Same', 'Up'], uid };
+}
+function RsQuestion({ q, given, locked, onAnswer, pixel }) {
+  const done = !!given;
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const cls = (c) => btnCls + (!done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '');
+  const title = q.kind === 'dir' ? 'Does the second note go up, down or stay the same?' : q.kind === 'move' ? 'Step, skip or same?' : 'The first note is ' + dName(q.a) + '. What is the second?';
+  return (<div>
+    <p style={{fontSize:14,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{title}</p>
+    <div style={{background:'#fff',borderRadius:8,marginBottom:10}}><MelodyStaff notes={[{ d: q.a, dur: 2 }, { d: q.b, dur: 2 }]} showTime={false} width={220} names={done} colors={done ? ['#241f1a', given.ok ? '#4f7a45' : '#b5483b'] : null}/></div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(' + q.choices.length + ',1fr)',gap:6}}>{q.choices.map(c => <button key={c} disabled={locked} className={cls(c)} style={{padding:'14px 0',fontSize:pixel ? 10 : 16}} onClick={() => { onAnswer(c); playMelody([{ d: q.a, dur: 1 }, { d: q.b, dur: 1 }], 100); }}>{c}</button>)}</div>
+  </div>);
+}
+const READING_STEPS_DRILL = {
+  id: 'reading-steps', label: 'Steps & Skips', levels: RS_LEVELS, generate: genRsQuestion,
+  check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
+  answerLabel: (q) => q.answer + ' (' + dName(q.a) + ' → ' + dName(q.b) + ', ' + moveWord(q.a, q.b) + ')',
+  Question: RsQuestion, Learn: ReadingStepsLearn,
+};
+
+// ─── Stage 4: Five-finger positions (Phase 120) ──────────────────────────────────
+const POSITIONS = [
+  { id: 'C', title: 'C position', rh: [28, 29, 30, 31, 32], lh: [21, 22, 23, 24, 25] },
+  { id: 'G', title: 'G position', rh: [32, 33, 34, 35, 36], lh: [18, 19, 20, 21, 22] },
+  { id: 'MC', title: 'Middle C position', rh: [28, 29, 30, 31, 32], lh: [24, 25, 26, 27, 28] },
+  { id: 'F', title: 'F position', rh: [31, 32, 33, 34, 35], lh: [24, 25, 26, 27, 28], acc: { 34: -1 } },
+];
+function FivePosition() {
+  const [pid, setPid] = useState('C');
+  const [hand, setHand] = useState('rh');
+  const [on, setOn] = useState(-1);
+  const pos = POSITIONS.find(p => p.id === pid);
+  const ds = pos[hand];
+  const fingers = hand === 'rh' ? [1, 2, 3, 4, 5] : [5, 4, 3, 2, 1];
+  const notes = ds.map((d, i) => ({ d, dur: 1, finger: fingers[i], acc: pid === 'F' && dName(d) === 'B' ? -1 : 0 }));
+  const clef = hand === 'rh' ? 'treble' : 'bass';
+  const keyOf = (n) => ivMidi(n) - 48; // keyboard starts at C3
+  const marks = {}, names = {};
+  notes.forEach((n, i) => { const k = keyOf(n); marks[k] = on === i ? 'good' : 'target'; names[k] = String(n.finger); });
+  function tapKey(k) { playKey(k - 12, 0.35); const i = notes.findIndex(n => keyOf(n) === k); setOn(i); }
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
+        <div style={actTitle}>Five-finger positions</div>
+        <div style={{display:'flex',gap:4}}>{[['rh', 'Right hand'], ['lh', 'Left hand']].map(([h, l]) => <button key={h} className={'chip' + (hand === h ? ' active' : '')} style={{padding:'3px 9px',fontSize:11}} onClick={() => { setHand(h); setOn(-1); }}>{l}</button>)}</div>
+      </div>
+      <div style={actNote}>One finger for each key -- five neighbouring white keys. Once the hand is in position, each note on the staff has its own finger. Tap a key (or play up and down) and watch the note.</div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>{POSITIONS.map(p => <button key={p.id} className={'chip' + (p.id === pid ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => { setPid(p.id); setOn(-1); }}>{p.title}</button>)}</div>
+      <MelodyStaff clef={clef} notes={notes} on={on} fingers names showTime={false} width={280}/>
+      <TapKeyboard octaves={3} labels="white" marks={marks} names={names} onTap={tapKey}/>
+      <div style={{textAlign:'center',marginTop:8}}><button className="ghost-btn" onClick={() => { const seq = [...notes, ...notes.slice(0, -1).reverse()]; playMelody(seq, 110, (i) => setOn(i < 0 ? -1 : i < 5 ? i : 8 - i)); }}>♪ Up and down</button></div>
+    </div>
+  );
+}
+function FiveFingerLearn({ onStart }) {
+  const tip = (title, body) => <Rule title={title}>{body}</Rule>;
+  return (
+    <Lesson id="five-finger" title="Five-finger positions" onStart={onStart}
+      intro={<>Put each finger over its own key and the hand becomes a map: finger number, key and note on the staff all line up.</>}>
+      <Step title="C position">
+        {tip('Thumbs on C', 'Right hand: thumb on middle C, fingers on C D E F G. Left hand: little finger on the C below, thumb on G.')}
+        <FivePosition/>
+      </Step>
+      <Step title="Read with your fingers">
+        {tip('Finger = note', 'In a position, a step up the staff is the next finger; a skip jumps one finger. You can read by fingers before you know every letter.')}
+        <MiniTune/>
+      </Step>
+    </Lesson>
+  );
+}
+const FF_LEVELS = [
+  { n: 1, label: 'C position: which finger? (right hand)', kind: 'ff', pos: 'C', hand: 'rh', time: 7 },
+  { n: 2, label: 'C position: which finger? (left hand)', kind: 'ff', pos: 'C', hand: 'lh', time: 7 },
+  { n: 3, label: 'Any position, either hand', kind: 'ff', pos: null, hand: null, time: 8 },
+];
+function genFfQuestion(lv, prev) {
+  const uid = Math.random();
+  for (let g = 0; g < 20; g++) {
+    const pos = lv.pos ? POSITIONS.find(p => p.id === lv.pos) : pick(POSITIONS);
+    const hand = lv.hand || pick(['rh', 'lh']);
+    const i = Math.floor(Math.random() * 5), d = pos[hand][i];
+    const finger = hand === 'rh' ? i + 1 : 5 - i;
+    const key = pos.id + hand + d; if (prev && prev.key === key) continue;
+    return { kind: 'ff', key, pos, hand, d, acc: pos.id === 'F' && dName(d) === 'B' ? -1 : 0, answer: String(finger), choices: ['1', '2', '3', '4', '5'], uid };
+  }
+}
+function FfQuestion({ q, given, locked, onAnswer, pixel }) {
+  const done = !!given;
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const cls = (c) => btnCls + (!done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '');
+  return (<div>
+    <p style={{fontSize:14,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{q.pos.title}, {q.hand === 'rh' ? 'right' : 'left'} hand: which finger plays this note?</p>
+    <div style={{background:'#fff',borderRadius:8,marginBottom:10}}><MelodyStaff clef={q.hand === 'rh' ? 'treble' : 'bass'} notes={[{ d: q.d, dur: 4, acc: q.acc }]} showTime={false} width={200} names={done}/></div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:6}}>{q.choices.map(c => <button key={c} disabled={locked} className={cls(c)} style={{padding:'14px 0',fontSize:pixel ? 10 : 18}} onClick={() => onAnswer(c)}>{c}</button>)}</div>
+  </div>);
+}
+const FIVE_FINGER_DRILL = {
+  id: 'five-finger', label: 'Five-Finger Positions', levels: FF_LEVELS, generate: genFfQuestion,
+  check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
+  answerLabel: (q) => 'finger ' + q.answer + ' (' + dName(q.d) + ')',
+  Question: FfQuestion, Learn: FiveFingerLearn,
+};
+
+// ─── Scale degree names (Scales) and transposition (Key Signatures) -- Phase 120 ─
+const DEGREE_NAMES = ['tonic', 'supertonic', 'mediant', 'subdominant', 'dominant', 'submediant', 'leading note'];
+const DEGREE_WHY = ['home -- the key’s own note', 'just above the tonic', 'halfway from tonic to dominant', 'a 5th below the tonic (sub = under)', 'the strongest pull back home', 'halfway down from tonic to subdominant', 'a semitone below the tonic -- it “leads” home'];
+function DegreeNames() {
+  const KEYS = [['C', false], ['G', false], ['F', false], ['D', false], ['A', true]];
+  const [ki, setKi] = useState(0);
+  const [on, setOn] = useState(-1);
+  const [key, minor] = KEYS[ki];
+  const sc = scaleNotes(key, minor).slice(0, 8);
+  const notes = sc.map(n => ({ d: n.d, acc: n.acc, dur: 1 }));
+  function tap(i) { setOn(i); playIv(sc[0], sc[i], 'harmonic'); }
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>The scale degrees and their names</div>
+      <div style={actNote}>Each note of the scale has a number (with a hat: 1̂ 2̂ 3̂…) and a name. Tap a degree to hear it against the tonic.</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6}}>{KEYS.map(([k, m], i) => <button key={i} className={'chip' + (i === ki ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => { setKi(i); setOn(-1); }}>{prettyNote(k)}{m ? ' minor' : ' major'}</button>)}</div>
+      <div style={{background:'#fff',borderRadius:8}}><MelodyStaff notes={notes} on={on} showTime={false} names width={320}/></div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:3,margin:'6px 0'}}>
+        {DEGREE_NAMES.map((nm, i) => <button key={i} className="chip" onClick={() => tap(i)} style={{padding:'4px 0',fontSize:13,fontWeight:900,borderColor:on === i ? '#a8823f' : undefined,color:on === i ? '#a8823f' : undefined}}>{i + 1}̂</button>)}
+      </div>
+      <div style={{textAlign:'center',fontSize:14,minHeight:44,lineHeight:1.5}}>
+        {on >= 0 && on < 7 ? <><b style={{color:'#a8823f'}}>{on + 1}̂ {DEGREE_NAMES[on]}</b> = {ivName(sc[on])}<div style={{fontSize:12,color:'#6f665b'}}>{DEGREE_WHY[on]}</div></> : <span style={{color:'var(--muted)',fontSize:12}}>Tonic, supertonic, mediant, subdominant, dominant, submediant, leading note.</span>}
+      </div>
+    </div>
+  );
+}
+// Transposition: the same tune in another key -- every note keeps its scale degree.
+const TR_TUNES = [
+  { id: 'a', title: 'Tune 1', degs: [[0, 1], [1, 1], [2, 1], [0, 1], [2, 1], [3, 1], [4, 2]] },
+  { id: 'b', title: 'Tune 2', degs: [[4, 1], [3, 1], [2, 1], [1, 1], [0, 2], [4, 2]] },
+  { id: 'c', title: 'Tune 3', degs: [[0, 1], [0, 1], [4, 1], [4, 1], [5, 1], [5, 1], [4, 2]] },
+];
+function Transposer() {
+  const TKEYS = ['C', 'G', 'F', 'D', 'Bb', 'A', 'Eb'];
+  const [tid, setTid] = useState('a');
+  const [to, setTo] = useState('G');
+  const [on, setOn] = useState(-1);
+  const [show, setShow] = useState(false);
+  const tune = TR_TUNES.find(t => t.id === tid);
+  const mk = (key) => { const sc = scaleNotes(key, false), up = sc[0].d < 28 ? 7 : 0; return tune.degs.map(([g, dur]) => ({ d: sc[g].d + up, acc: sc[g].acc, dur })); };
+  const from = mk('C'), dest = mk(to);
+  const ks = KEY_SIGS.find(k => k.major === to);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Transpose a tune</div>
+      <div style={actNote}>To transpose, keep every note on the same <b>scale degree</b> and move to a new key. Write the degree numbers over the tune first, then find those degrees in the new key.</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:4}}>{TR_TUNES.map(t => <button key={t.id} className={'chip' + (t.id === tid ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => { setTid(t.id); setShow(false); }}>{t.title}</button>)}</div>
+      <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',margin:'4px 0 2px'}}>IN C MAJOR</div>
+      <div style={{background:'#fff',borderRadius:8}}><MelodyStaff notes={from} on={on} names width={300}/></div>
+      <div style={{display:'flex',justifyContent:'center',gap:10,fontSize:14,fontWeight:900,color:'#a8823f',margin:'4px 0'}}>{tune.degs.map(([g], i) => <span key={i}>{g + 1}̂</span>)}</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',alignItems:'center',marginBottom:4}}><span style={{fontSize:11,fontWeight:800,color:'var(--muted)',marginRight:4}}>TO</span>{TKEYS.filter(k => k !== 'C').map(k => <button key={k} className={'chip' + (k === to ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => { setTo(k); setShow(false); }}>{prettyNote(k)} major</button>)}</div>
+      {show ? <div style={{background:'#fff',borderRadius:8,animation:'fadeUp 0.3s both'}}><MelodyStaff notes={dest} on={on} names width={300}/></div>
+        : <div style={{textAlign:'center',padding:'14px 0',border:'2px dashed var(--border)',borderRadius:8,fontSize:12,color:'var(--muted)'}}>Work out the notes in {prettyNote(to)} major ({sigLabel(ks)}), then show the answer.</div>}
+      <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:8}}>
+        <button className="ghost-btn" onClick={() => playMelody(from, 96, setOn)}>♪ In C</button>
+        <button className="ghost-btn" onClick={() => setShow(s => !s)}>{show ? 'Hide' : 'Show the answer'}</button>
+        {show && <button className="ghost-btn" onClick={() => playMelody(dest, 96, setOn)}>♪ In {prettyNote(to)}</button>}
+      </div>
+    </div>
+  );
+}
+
+// ─── Practice tools (Phase 120) -- for home practice and the end of a lesson ────
+const DICE_TASKS = [
+  'Play it slowly -- half speed', 'Clap and count the rhythm first', 'Hands separately, then together', 'Play it 3 times in a row with no mistakes',
+  'Say the note names out loud as you play', 'Play it loud (f), then soft (p)', 'Start from the second line', 'Eyes on the music only -- no looking at your hands',
+  'Play it with your eyes closed (just the first bar!)', 'Count “1 and 2 and” out loud while you play', 'Find the hardest bar -- play it 5 times', 'Play it for someone at home',
+];
+function PracticeDice() {
+  const [face, setFace] = useState(null);
+  const [rolling, setRolling] = useState(false);
+  const [pips, setPips] = useState(1);
+  function roll() {
+    if (rolling) return; setRolling(true);
+    let n = 0;
+    const iv = setInterval(() => { setPips(1 + Math.floor(Math.random() * 6)); if (++n > 10) { clearInterval(iv); setRolling(false); setFace(pick(DICE_TASKS.filter(t => t !== face))); const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime + 0.01, 880, 0.15, 0.15, 'triangle'); } }, 70);
+  }
+  const dots = { 1: [[2, 2]], 2: [[1, 1], [3, 3]], 3: [[1, 1], [2, 2], [3, 3]], 4: [[1, 1], [1, 3], [3, 1], [3, 3]], 5: [[1, 1], [1, 3], [2, 2], [3, 1], [3, 3]], 6: [[1, 1], [1, 2], [1, 3], [3, 1], [3, 2], [3, 3]] }[pips];
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Practice dice</div>
+      <div style={actNote}>Stuck doing the same thing over and over? Roll for a new way to practise the same piece.</div>
+      <div style={{display:'flex',justifyContent:'center',margin:'8px 0'}}>
+        <svg viewBox="0 0 80 80" width="96" onClick={roll} style={{cursor:'pointer',transform:rolling ? `rotate(${pips * 25}deg)` : 'none',transition:'transform 0.07s'}}>
+          <rect x="4" y="4" width="72" height="72" rx="14" fill="#fff" stroke="#241f1a" strokeWidth="3"/>
+          {dots.map(([r, c], i) => <circle key={i} cx={4 + c * 18} cy={4 + r * 18} r="6.5" fill="#b5483b"/>)}
+        </svg>
+      </div>
+      <div style={{textAlign:'center',fontSize:17,fontWeight:900,minHeight:48,lineHeight:1.35,padding:'0 6px',animation:face && !rolling ? 'fadeUp 0.3s both' : 'none'}}>{rolling ? '…' : face || 'Tap the dice'}</div>
+      <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={roll}>Roll</button></div>
+    </div>
+  );
+}
+function PracticeTimer() {
+  const [mins, setMins] = useState(10);
+  const [left, setLeft] = useState(null);
+  const [run, setRun] = useState(false);
+  useEffect(() => {
+    if (!run) return;
+    const iv = setInterval(() => setLeft(l => { if (l <= 1) { setRun(false); const ctx = getAudio(); if (ctx) [0, 0.25, 0.5].forEach(t => blip(ctx, ctx.currentTime + t, 1046, 0.4, 0.2, 'triangle')); return 0; } return l - 1; }), 1000);
+    return () => clearInterval(iv);
+  }, [run]);
+  const total = mins * 60, l = left === null ? total : left, frac = l / total;
+  const R = 52, C = 2 * Math.PI * R;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Practice timer</div>
+      <div style={actNote}>Short, focused practice every day beats one long session. Pick a time, start, and play until the bell.</div>
+      <div style={{display:'flex',gap:4,justifyContent:'center',marginBottom:6}}>{[5, 10, 15, 20, 30].map(m => <button key={m} className={'chip' + (m === mins ? ' active' : '')} style={{padding:'3px 10px',fontSize:12}} onClick={() => { setMins(m); setLeft(null); setRun(false); }}>{m} min</button>)}</div>
+      <div style={{display:'flex',justifyContent:'center'}}>
+        <svg viewBox="0 0 130 130" width="150">
+          <circle cx="65" cy="65" r={R} fill="none" stroke="#e8dcc0" strokeWidth="10"/>
+          <circle cx="65" cy="65" r={R} fill="none" stroke={l === 0 ? '#4f7a45' : '#a8823f'} strokeWidth="10" strokeDasharray={C} strokeDashoffset={C * (1 - frac)} transform="rotate(-90 65 65)" style={{transition:'stroke-dashoffset 1s linear'}}/>
+          <text x="65" y="72" textAnchor="middle" fontSize="24" fontWeight="900" fill="#241f1a">{l === 0 ? 'Done!' : Math.floor(l / 60) + ':' + String(l % 60).padStart(2, '0')}</text>
+        </svg>
+      </div>
+      <div style={{display:'flex',gap:6,justifyContent:'center'}}>
+        <button className="ghost-btn" onClick={() => { if (l === 0) setLeft(null); setRun(r => !r); }}>{run ? 'Pause' : l === 0 ? 'Again' : '▶ Start'}</button>
+        <button className="ghost-btn" onClick={() => { setRun(false); setLeft(null); }}>Reset</button>
+      </div>
+    </div>
+  );
+}
+function PerfectCounter() {
+  const [goal, setGoal] = useState(5);
+  const [n, setN] = useState(0);
+  const [best, setBest] = useState(0);
+  const hit = () => { const x = Math.min(goal, n + 1); setN(x); setBest(b => Math.max(b, x)); const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime + 0.01, 523 * Math.pow(2, x / 12), 0.2, 0.15, 'triangle'); };
+  const miss = () => { setN(0); const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime + 0.01, 180, 0.2, 0.15, 'triangle'); };
+  const done = n >= goal;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{goal} in a row</div>
+      <div style={actNote}>Play the tricky bit. Clean? Tap ✓ -- a bead lights up. A slip? Tap ✗ and start the row again. It counts only when you get {goal} clean in a row.</div>
+      <div style={{display:'flex',gap:4,justifyContent:'center',marginBottom:8}}>{[3, 5, 7, 10].map(g => <button key={g} className={'chip' + (g === goal ? ' active' : '')} style={{padding:'3px 10px',fontSize:12}} onClick={() => { setGoal(g); setN(0); }}>{g}</button>)}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap',margin:'6px 0 10px'}}>
+        {Array.from({ length: goal }, (_, i) => <div key={i} style={{width:26,height:26,borderRadius:13,background:i < n ? (done ? '#4f7a45' : '#a8823f') : '#fff',border:'2px solid ' + (i < n ? 'transparent' : '#d9cdb0'),transition:'background 0.2s',transform:i === n - 1 ? 'scale(1.15)' : 'none'}}/>)}
+      </div>
+      <div style={{textAlign:'center',fontSize:15,fontWeight:900,minHeight:22,color:done ? '#4f7a45' : 'var(--text)'}}>{done ? goal + ' in a row -- well done!' : n + ' of ' + goal}</div>
+      <div style={{display:'flex',gap:8,justifyContent:'center',marginTop:8}}>
+        <button className="ghost-btn" disabled={done} onClick={hit} style={{minWidth:80,fontSize:18,color:'#4f7a45'}}>✓</button>
+        <button className="ghost-btn" disabled={done} onClick={miss} style={{minWidth:80,fontSize:18,color:'#b5483b'}}>✗</button>
+        {done && <button className="ghost-btn" onClick={() => setN(0)}>Again</button>}
+      </div>
+      <div style={{textAlign:'center',fontSize:11,color:'var(--muted)',marginTop:4}}>Best today: {best}</div>
+    </div>
+  );
+}
+// Sight-reading cards: a fresh 2-bar tune in a five-finger position each time.
+function makeSightTune(level) {
+  const pos = level === 3 ? pick(POSITIONS.slice(0, 3)) : POSITIONS[0];
+  const ds = pos.rh; let i = level === 1 ? 0 : Math.floor(Math.random() * 5);
+  const rhythms = level === 1 ? [[1, 1, 1, 1], [2, 2], [1, 1, 2]] : [[1, 1, 1, 1], [2, 2], [1, 1, 2], [2, 1, 1], [3, 1], [1, 2, 1]];
+  const out = [];
+  for (let bar = 0; bar < 2; bar++) {
+    const r = bar === 1 ? pick(rhythms.filter(x => x[x.length - 1] >= 2 || x.length === 1).concat([[2, 2], [4]])) : pick(rhythms);
+    r.forEach((dur, j) => {
+      if (out.length) { const moves = level === 1 ? [-1, 0, 1] : [-2, -1, 0, 1, 2]; let k, g = 0; do { k = pick(moves); } while ((i + k < 0 || i + k > 4) && g++ < 20); i = Math.max(0, Math.min(4, i + k)); }
+      out.push({ d: ds[i], dur, finger: i + 1 });
+    });
+  }
+  out[out.length - 1] = { ...out[out.length - 1], d: ds[0], finger: 1 };
+  return { notes: out, pos };
+}
+function SightReadCards() {
+  const [level, setLevel] = useState(1);
+  const [card, setCard] = useState(() => makeSightTune(1));
+  const [on, setOn] = useState(-1);
+  const [names, setNames] = useState(false);
+  const [count, setCount] = useState(0);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const next = (lv = level) => { timers.current.forEach(clearTimeout); setCard(makeSightTune(lv)); setOn(-1); setNames(false); setCount(c => c + 1); };
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
+        <div style={actTitle}>Sight-reading card</div>
+        <div style={{display:'flex',gap:4}}>{[[1, 'steps'], [2, 'steps + skips'], [3, 'new positions']].map(([l, t]) => <button key={l} className={'chip' + (l === level ? ' active' : '')} style={{padding:'3px 8px',fontSize:11}} onClick={() => { setLevel(l); next(l); }}>{t}</button>)}</div>
+      </div>
+      <div style={actNote}>Before you play: find the first note ({card.pos.title}), tap the pulse and count one bar, look for steps and skips. Then play it through without stopping.</div>
+      <div style={{background:'#fff',borderRadius:8}}><MelodyStaff notes={card.notes} on={on} names={names} counts width={320}/></div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap',marginTop:8}}>
+        <button className="ghost-btn" onClick={() => { timers.current = playMelody(card.notes, 80, setOn); }}>♪ Check by ear</button>
+        <button className="ghost-btn" onClick={() => setNames(n => !n)}>{names ? 'Hide names' : 'Show names'}</button>
+        <button className="ghost-btn" onClick={() => next()}>New card →</button>
+      </div>
+      <div style={{textAlign:'center',fontSize:11,color:'var(--muted)',marginTop:4}}>Cards read today: {count}</div>
+    </div>
+  );
+}
+
 const DRILLS = [
+  { id: 'first-steps', label: 'Me and the Piano', concept: FIRST_STEPS_DRILL, track: 'pitch' },
   { id: 'note-names', label: 'Note Names', concept: NOTE_NAMES_DRILL, track: 'pitch' },
+  { id: 'pulse', label: 'Pulse & Counting', concept: PULSE_DRILL, track: 'rhythm' },
+  { id: 'note-values', label: 'Notes & Rests', concept: NOTEVAL_DRILL, track: 'rhythm' },
+  { id: 'rhythm', label: 'Rhythm Cards', concept: RHYTHM_DRILL, track: 'rhythm' },
   { id: 'staff', label: 'Reading the Staff', concept: STAFF_DRILL, track: 'pitch' },
+  { id: 'reading-steps', label: 'Steps & Skips', concept: READING_STEPS_DRILL, track: 'pitch' },
+  { id: 'five-finger', label: 'Five-Finger Positions', concept: FIVE_FINGER_DRILL, track: 'pitch' },
+  { id: 'time-signatures', label: 'Time Signatures', concept: TIMESIG_DRILL, track: 'rhythm' },
+  { id: 'tempo', label: 'Tempo Race', concept: TEMPO_DRILL, track: 'reading' },
+  { id: 'dynamics', label: 'Dynamics & Articulation', concept: DYN_DRILL, track: 'reading' },
   { id: 'ledger-lines', label: 'Ledger Lines', concept: LEDGER_DRILL, track: 'pitch' },
   { id: 'tones', label: 'Tones & Semitones', concept: TONES_DRILL, track: 'pitch' },
   { id: 'scales', label: 'Scales', concept: SCALES_DRILL, track: 'pitch' },
   { id: 'key-signatures', label: 'Key Signatures', concept: KEYSIG_DRILL, track: 'pitch' },
   { id: 'intervals', label: 'Intervals', concept: INTERVALS_DRILL, track: 'pitch' },
   { id: 'chords', label: 'Chords', concept: CHORDS_DRILL, track: 'pitch' },
-  { id: 'note-values', label: 'Notes & Rests', concept: NOTEVAL_DRILL, track: 'rhythm' },
-  { id: 'time-signatures', label: 'Time Signatures', concept: TIMESIG_DRILL, track: 'rhythm' },
-  { id: 'rhythm', label: 'Rhythm Cards', concept: RHYTHM_DRILL, track: 'rhythm' },
-  { id: 'tempo', label: 'Tempo Race', concept: TEMPO_DRILL, track: 'reading' },
-  { id: 'dynamics', label: 'Dynamics & Articulation', concept: DYN_DRILL, track: 'reading' },
   { id: 'signs', label: 'Signs', concept: SIGNS_DRILL, track: 'reading' },
 ];
 
@@ -7011,6 +7878,21 @@ const DRILLS = [
 // ?tool=<id> (add &lock=1 for a student link that shows only that tool). The chapters still hold
 // the same tools in teaching order; the Toolbox is the quick-grab drawer.
 const TOOLS = [
+  { id: 'finger-numbers', ch: 'first-steps', title: 'Finger numbers', blurb: '“Show me finger 3!” -- both hands.', C: () => <FingerNumbers/> },
+  { id: 'high-low', ch: 'first-steps', title: 'High or low, loud or soft', blurb: 'Listening games before reading.', C: () => <HighLowGame/> },
+  { id: 'key-houses', ch: 'first-steps', title: 'Small house, big house', blurb: 'The black-key map; where C and F live.', C: () => <KeyHouses/> },
+  { id: 'black-key-song', ch: 'first-steps', title: 'First black-key song', blurb: 'Hot Cross Buns and Mary, by rote.', C: () => <BlackKeySong/> },
+  { id: 'steady-beat', ch: 'pulse', title: 'The steady beat', blurb: 'A heartbeat pulse to tap along with.', C: () => <SteadyBeat/> },
+  { id: 'count-aloud', ch: 'pulse', title: 'Count it: 1 and 2 and', blurb: 'The count lights up as the bar plays.', C: () => <CountAloud/> },
+  { id: 'step-skip', ch: 'reading-steps', title: 'Step, skip or same?', blurb: 'Read by direction and distance.', C: () => <StepSkip/> },
+  { id: 'mini-tune', ch: 'reading-steps', title: 'Read a tiny tune', blurb: 'C position tunes with counting.', C: () => <MiniTune/> },
+  { id: 'five-positions', ch: 'five-finger', title: 'Five-finger positions', blurb: 'C, G, middle C and F positions.', C: () => <FivePosition/> },
+  { id: 'degree-names', ch: 'scales', title: 'Scale degree names', blurb: 'Tonic, supertonic... leading note.', C: () => <DegreeNames/> },
+  { id: 'transpose', ch: 'key-signatures', title: 'Transpose a tune', blurb: 'Same scale degrees, new key.', C: () => <Transposer/> },
+  { id: 'practice-timer', ch: 'practice', title: 'Practice timer', blurb: '5 to 30 minutes, with a bell.', C: () => <PracticeTimer/> },
+  { id: 'practice-dice', ch: 'practice', title: 'Practice dice', blurb: 'Roll for a new way to practise.', C: () => <PracticeDice/> },
+  { id: 'perfect-counter', ch: 'practice', title: '5 in a row', blurb: 'Only clean repetitions count.', C: () => <PerfectCounter/> },
+  { id: 'sight-reading', ch: 'practice', title: 'Sight-reading cards', blurb: 'A new 2-bar tune every time.', C: () => <SightReadCards/> },
   { id: 'find-every', ch: 'note-names', title: 'Find every C', blurb: 'Race to find all the Cs (or any letter).', C: () => <FindAll/> },
   { id: 'name-reveal', ch: 'note-names', title: 'Name them in order', blurb: 'Letters land on the keys; A comes after G.', C: () => <NameReveal/> },
   { id: 'step-updown', ch: 'note-names', title: 'Step up, step down', blurb: 'Right = up = forwards through the letters.', C: () => <UpDownWalk/> },
@@ -7062,6 +7944,84 @@ const TOOLS = [
   { id: 'tie-slur', ch: 'signs', title: 'Tie or slur?', blurb: 'Same pitch or different?', C: () => <TieOrSlur/> },
   { id: 'ottava', ch: 'signs', title: '8va and 8vb', blurb: 'An octave higher or lower.', C: () => <OttavaDemo/> },
 ];
+// ─── Lesson Path: stages in the order a beginner meets them (Phase 120) ─────────
+// Sohyun: student + piano first, then pulse, then reading (rhythm and notes together), then
+// five-finger positions, then the AMEB theory chapters. Grade tags show where AMEB asks for it.
+const STAGES = [
+  { n: 1, title: 'Me and the piano', blurb: 'Fingers, sounds, and the keyboard map -- no reading yet.', ids: ['first-steps', 'note-names'] },
+  { n: 2, title: 'Pulse and rhythm', blurb: 'Feel the beat, count 1 and 2 and, clap the cards.', ids: ['pulse', 'note-values', 'rhythm'] },
+  { n: 3, title: 'Reading begins', blurb: 'The staff, the Queen and the King, reading by steps and skips.', ids: ['staff', 'reading-steps'] },
+  { n: 4, title: 'Five-finger positions', blurb: 'Hands in position; time signatures, speed and volume.', ids: ['five-finger', 'time-signatures', 'tempo', 'dynamics'] },
+  { n: 5, title: 'Theory: Preliminary to Grade 3', blurb: 'The AMEB theory, step by step.', ids: ['ledger-lines', 'tones', 'scales', 'key-signatures', 'intervals', 'chords', 'signs'] },
+];
+const GRADE_TAGS = {
+  'first-steps': 'Beginner', 'note-names': 'Prelim', pulse: 'Beginner', 'note-values': 'Prelim', rhythm: 'Prelim–G2', staff: 'Prelim',
+  'reading-steps': 'Beginner', 'five-finger': 'Beginner', 'time-signatures': 'Prelim–G2', tempo: 'Prelim–G1', dynamics: 'Prelim–G1',
+  'ledger-lines': 'Prelim–G2', tones: 'Prelim–G1', scales: 'Prelim–G3', 'key-signatures': 'Prelim–G3', intervals: 'Prelim–G3', chords: 'Prelim–G3', signs: 'Prelim–G2',
+};
+function stageOf(id) { return STAGES.find(s => s.ids.includes(id)); }
+function stepsDone(id) { const d = loadDone()[id] || {}; return Object.values(d).filter(Boolean).length; }
+function LessonPath({ onOpen }) {
+  return (
+    <div className="fade-up">
+      <div className="card" style={{marginBottom:12}}>
+        <h2 style={{fontSize:20,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Lesson path</h2>
+        <p style={{fontSize:13,color:'var(--muted)',margin:0,lineHeight:1.5}}>From the very first lesson to Grade 3 theory, in the order a student meets it. Each chapter has a step-by-step lesson and a drill.</p>
+      </div>
+      {STAGES.map((s, si) => {
+        const col = STEP_COLORS[si % STEP_COLORS.length];
+        return (
+          <div key={s.n} className="card" style={{marginBottom:12,borderLeft:'5px solid ' + col}}>
+            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
+              <span style={{flex:'0 0 38px',height:38,borderRadius:19,background:col,color:'#fff',fontSize:18,fontWeight:900,display:'flex',alignItems:'center',justifyContent:'center'}}>{s.n}</span>
+              <span><span style={{display:'block',fontSize:10,fontWeight:800,color:col,textTransform:'uppercase',letterSpacing:'0.08em'}}>Stage {s.n}</span>
+                <span style={{display:'block',fontSize:17,fontWeight:900,lineHeight:1.2}}>{s.title}</span></span>
+            </div>
+            <div style={{fontSize:12.5,color:'#6f665b',margin:'0 0 8px'}}>{s.blurb}</div>
+            <div style={{display:'flex',flexDirection:'column',gap:5}}>
+              {s.ids.map(id => {
+                const d = DRILLS.find(x => x.id === id); if (!d) return null;
+                const n = stepsDone(id);
+                return (
+                  <button key={id} onClick={() => onOpen(id)} style={{display:'flex',alignItems:'center',gap:8,textAlign:'left',background:'#fff',border:'1.5px solid var(--border)',borderRadius:10,padding:'8px 10px',cursor:'pointer',color:'var(--text)'}}>
+                    <span style={{flex:1,fontSize:14,fontWeight:800}}>{d.label}</span>
+                    {n > 0 && <span style={{fontSize:10,fontWeight:800,color:'#4f7a45'}}>✓ {n}</span>}
+                    <span style={{fontSize:10,fontWeight:800,color:col,border:'1px solid ' + col,borderRadius:8,padding:'1px 6px'}}>{GRADE_TAGS[id]}</span>
+                    <span style={{color:'var(--muted)'}}>›</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+const PRACTICE_IDS = ['practice-timer', 'practice-dice', 'perfect-counter', 'sight-reading', 'make-card', 'count-along', 'metronome', 'find-every', 'write-note', 'fill-bar'];
+function PracticeView({ onOpen }) {
+  return (
+    <div className="fade-up">
+      <div className="card" style={{marginBottom:12}}>
+        <h2 style={{fontSize:20,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Practice</h2>
+        <p style={{fontSize:13,color:'var(--muted)',margin:0,lineHeight:1.5}}>For home practice and the last five minutes of a lesson. Send any of these to a student with its link.</p>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+        {PRACTICE_IDS.map((id, i) => {
+          const t = TOOLS.find(x => x.id === id); if (!t) return null;
+          const col = STEP_COLORS[i % STEP_COLORS.length];
+          return (
+            <button key={id} onClick={() => onOpen(id)} style={{textAlign:'left',background:'#fff',border:'1.5px solid var(--border)',borderTop:'4px solid ' + col,borderRadius:10,padding:'10px',cursor:'pointer',color:'var(--text)'}}>
+              <div style={{fontSize:14,fontWeight:900,lineHeight:1.25}}>{t.title}</div>
+              <div style={{fontSize:11,color:'#6f665b',lineHeight:1.35,marginTop:3}}>{t.blurb}</div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function Toolbox({ onOpen }) {
   const [q, setQ] = useState('');
   const match = (t) => !q || (t.title + ' ' + t.blurb).toLowerCase().includes(q.toLowerCase());
@@ -7104,11 +8064,11 @@ function ToolView({ id, locked, onBack, onChapter }) {
     <div className="fade-up">
       {!locked && <button className="ghost-btn" style={{fontSize:12,padding:'5px 12px',marginBottom:10}} onClick={onBack}>← Toolbox</button>}
       <div className="card">
-        <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:12}}>{ch ? ch.label : ''} · tool</div>
+        <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:12}}>{ch ? ch.label : 'Practice'} · tool</div>
         <t.C/>
         {!locked && (
           <div style={{display:'flex',gap:6,flexWrap:'wrap',justifyContent:'space-between',alignItems:'center',borderTop:'1px solid var(--border)',paddingTop:10,marginTop:4}}>
-            <button className="ghost-btn" style={{fontSize:12,padding:'6px 12px'}} onClick={() => onChapter(t.ch)}>Learn the whole chapter →</button>
+            {ch ? <button className="ghost-btn" style={{fontSize:12,padding:'6px 12px'}} onClick={() => onChapter(t.ch)}>Learn the whole chapter →</button> : <span/>}
             <button className="ghost-btn" style={{fontSize:12,padding:'6px 12px'}} onClick={copy}>{copied ? 'Link copied ✓' : 'Copy student link'}</button>
           </div>
         )}
@@ -7125,7 +8085,7 @@ function readUrlState() {
   // Old links: Letter Chain now lives in Note Names, Scale Fingering in Scales (Phase 97).
   const alias = { 'letter-chain': 'note-names', 'scale-fingering': 'scales' };
   const asked = alias[p.get('drill')] || p.get('drill');
-  const drill = DRILLS.find(d => d.id === asked) ? asked : DRILLS[0].id;
+  const drill = DRILLS.find(d => d.id === asked) ? asked : null;
   const level = parseInt(p.get('level'), 10);
   return {
     drill,
@@ -7134,20 +8094,22 @@ function readUrlState() {
     mode: p.get('mode') === 'game' ? 'game' : 'lesson',
     lock: p.get('lock') === '1',
     tool: TOOLS.find(t => t.id === p.get('tool')) ? p.get('tool') : null,
-    view: p.get('tool') || p.get('view') === 'tools' ? 'tools' : 'chapters',
+    view: p.get('tool') ? (PRACTICE_IDS.includes(p.get('tool')) && p.get('view') === 'practice' ? 'practice' : 'tools') : ['tools', 'practice'].includes(p.get('view')) ? p.get('view') : 'path',
   };
 }
 
 function App() {
   const [st, setSt] = useState(readUrlState);
   const active = DRILLS.find(d => d.id === st.drill) || DRILLS[0];
+  const inChapter = st.view === 'path' && !!st.drill;
   const concept = active.concept || null;
   const level = concept ? ((concept.levels.find(l => l.n === st.level) || concept.levels[0]).n) : st.level;
 
   useEffect(() => {
     try {
       const p = new URLSearchParams();
-      if (st.view === 'tools') { if (st.tool) p.set('tool', st.tool); else p.set('view', 'tools'); }
+      if (st.view === 'tools' || st.view === 'practice') { if (st.tool) p.set('tool', st.tool); if (st.view === 'practice' || !st.tool) p.set('view', st.view); }
+      else if (!st.drill) p.set('view', 'path');
       else {
         p.set('drill', active.id);
         if (concept) { p.set('tab', st.tab); if (st.tab === 'drill') { p.set('level', level); p.set('mode', st.mode); } }
@@ -7155,7 +8117,7 @@ function App() {
       if (st.lock) p.set('lock', '1');
       history.replaceState(null, '', location.pathname + '?' + p.toString());
     } catch (e) { /* URL sync is a convenience only */ }
-  }, [active.id, st.tab, level, st.mode, st.lock, st.view, st.tool]);
+  }, [active.id, st.drill, st.tab, level, st.mode, st.lock, st.view, st.tool]);
 
   function update(patch) { setSt(prev => ({ ...prev, ...patch })); }
 
@@ -7176,34 +8138,31 @@ function App() {
       <div style={{maxWidth:480,margin:'0 auto',padding:'24px 16px 60px'}}>
         {!st.lock && (
           <div style={{display:'flex',background:'#fff',border:'1.5px solid var(--border)',borderRadius:12,padding:3,marginBottom:16}}>
-            {[['chapters', 'Chapters'], ['tools', 'Toolbox']].map(([v, l]) => (
-              <button key={v} onClick={() => update({ view: v, tool: null })} style={{flex:1,border:'none',borderRadius:9,padding:'9px 0',fontSize:14,fontWeight:900,cursor:'pointer',
+            {[['path', 'Lesson Path'], ['tools', 'Toolbox'], ['practice', 'Practice']].map(([v, l]) => (
+              <button key={v} onClick={() => { update({ view: v, tool: null, drill: v === 'path' ? null : st.drill }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderRadius:9,padding:'9px 0',fontSize:14,fontWeight:900,cursor:'pointer',
                 background:st.view === v ? 'var(--text)' : 'transparent',color:st.view === v ? '#fff' : 'var(--muted)'}}>{l}</button>
             ))}
           </div>
         )}
-        {st.view === 'tools' ? (
+        {(st.view === 'tools' || st.view === 'practice') ? (
           st.tool
-            ? <ToolView id={st.tool} locked={st.lock} onBack={() => update({ tool: null })} onChapter={(id) => update({ view: 'chapters', tool: null, drill: id, tab: 'learn', level: 1 })}/>
-            : <Toolbox onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
-        ) : <>
-        {!st.lock && (
-          <div style={{marginBottom:20}}>
-            {[['pitch', 'Pitch -- keyboard, staff, scales'], ['rhythm', 'Rhythm -- beats and bars'], ['reading', 'Reading the music -- terms and signs']].map(([tr, title]) => (
-              <div key={tr} style={{marginBottom:10}}>
-                <div style={{fontSize:10,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>{title}</div>
-                <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-                  {DRILLS.filter(d => d.track === tr).map((d, i) => (
-                    <button key={d.id} className={'chip'+(active.id===d.id?' active':'')}
-                      onClick={()=>update({ drill: d.id, tab: 'learn', level: 1 })}>
-                      {(i + 1) + '. '}{d.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+            ? <ToolView id={st.tool} locked={st.lock} onBack={() => update({ tool: null })} onChapter={(id) => update({ view: 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
+            : st.view === 'tools' ? <Toolbox onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
+            : <PracticeView onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
+        ) : !inChapter && !st.lock ? <LessonPath onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/> : <>
+        {!st.lock && (() => {
+          const sg = stageOf(active.id), list = DRILLS.filter(d => stageOf(d.id)).map(d => d.id), k = list.indexOf(active.id);
+          return (
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6,marginBottom:14}}>
+              <button className="ghost-btn" style={{fontSize:12,padding:'5px 10px'}} onClick={() => update({ drill: null })}>← Lesson Path</button>
+              <span style={{fontSize:11,fontWeight:800,color:'var(--muted)',textAlign:'center'}}>{sg ? 'Stage ' + sg.n + ' · ' + sg.title : ''}</span>
+              <span style={{display:'flex',gap:4}}>
+                <button className="ghost-btn" style={{fontSize:12,padding:'5px 9px'}} disabled={k <= 0} onClick={() => update({ drill: list[k - 1], tab: 'learn', level: 1 })}>‹</button>
+                <button className="ghost-btn" style={{fontSize:12,padding:'5px 9px'}} disabled={k >= list.length - 1} onClick={() => update({ drill: list[k + 1], tab: 'learn', level: 1 })}>›</button>
+              </span>
+            </div>
+          );
+        })()}
 
         {concept ? (
           <>
