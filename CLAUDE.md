@@ -2932,6 +2932,11 @@ Sohyun: plain tones can't show articulation, dynamics sound thin; offer a spoken
 - Count: `beatTick()` replaces the beat clicks in the metronome, rhythm cards count-in, Notes & Rests playback, time-signature demos, Count along, Steady beat, Count it (+ "and"), Tempo race clicks. `SoundSettings` row under the top switch: Sound Piano | Simple, Count Click | Voice 1 2 3 4 (localStorage `pb_sound_v1`). Voice = recorded files `audio/count/1..8.mp3, and.mp3` if Sohyun adds them (sample-accurate), else the device speech voice (en-AU preferred), scheduled ~70 ms early.
 - Idea for Sohyun: record her own voice counting 1-8 and "and" -> drop into audio/count/.
 
+### Phase 122 -- Musical Terms chapter + Echo the tune
+- `terms` chapter (Stage 5, tag G1–G4): `TERMS` = 91 AMEB Theory of Music terms, Grades 1-4, with the Manual's own meanings (string-playing terms left out). `TermCards` (grade + category filter, quiz mode hides meanings, ♪ plays the same 8-note phrase at that speed / volume / touch -- `playTerm`: tempo terms at a bpm, accel./rit./rall./stringendo ramps, a tempo/più/meno mosso sudden changes, cresc./dim./morendo/calando ramps, fp, sfz, staccato/legato/mezzo staccato lengths, rubato). Lesson: one step per grade. Drill: G1, ≤G2, ≤G3, ≤G4 term→meaning, and meaning→term (≤G3); distractors never share the answer's meaning. Fuzzed 600x per level.
+- `EchoTune` (Steps & Skips step 3 + Practice): hear a 3/4/5-note tune starting on C in C position, play it back on the keys.
+- 19 chapters, 67 tools: all chapter/drill/tool URLs load with zero errors.
+
 Next on the plan: more mini tools (Sohyun's rule: every activity stand-alone + in TOOLS). Ideas: sight-reading flash cards, a practice-dice/timer tool, scale degree names (tonic, supertonic...), transposition. Signs 116, Chords 117, Toolbox 118, Grade 3 intervals + cadences 119 done.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)

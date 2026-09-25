@@ -7650,6 +7650,10 @@ function ReadingStepsLearn({ onStart }) {
         {tip('Rhythm and notes together', 'First clap and count the rhythm. Then say the direction (step up, same, skip down...). Then play it.')}
         <MiniTune/>
       </Step>
+      <Step title="Echo the tune">
+        {tip('Listen, sing, play', 'Hear a tiny tune, sing it back, then find it on the keys. Every tune starts on C.')}
+        <EchoTune/>
+      </Step>
     </Lesson>
   );
 }
@@ -7962,6 +7966,187 @@ function SightReadCards() {
   );
 }
 
+// ─── Concept: Terms (Phase 122) -- AMEB Theory of Music terms, Grades 1-4 ───────
+// Word-for-word meanings from the 2026 AMEB Manual ("the meanings given are those which the Board
+// considers to be satisfactory English equivalents"). Each grade adds to the previous ones.
+// Many terms can be HEARD: tap ♪ and the same little phrase is played at that speed/volume/touch.
+const TERMS = [
+  // Grade 1
+  ['Adagio', '', 'slowly', 'Speed', 1, { bpm: 60 }], ['Andante', '', 'at an easy walking pace', 'Speed', 1, { bpm: 84 }], ['Moderato', '', 'at a moderate speed', 'Speed', 1, { bpm: 108 }],
+  ['Allegro', '', 'lively and fast', 'Speed', 1, { bpm: 144 }], ['Presto', '', 'very fast', 'Speed', 1, { bpm: 184 }],
+  ['Accelerando', 'accel.', 'gradually becoming faster', 'Changing speed', 1, { from: 84, to: 168 }], ['Rallentando', 'rall.', 'gradually becoming slower', 'Changing speed', 1, { from: 140, to: 60 }],
+  ['Ritardando', 'ritard., rit.', 'gradually becoming slower', 'Changing speed', 1, { from: 140, to: 60 }], ['Ritenuto', 'riten., rit.', 'immediately slower, or held back', 'Changing speed', 1, { from: 140, to: 70, sudden: true }],
+  ['A tempo', '', 'return to former speed', 'Changing speed', 1, { from: 70, to: 140, sudden: true }],
+  ['Crescendo', 'cres., cresc.', 'gradually becoming louder', 'Volume', 1, { vFrom: 0.06, vTo: 0.5 }], ['Decrescendo', 'decres., decresc.', 'gradually becoming softer', 'Volume', 1, { vFrom: 0.5, vTo: 0.06 }],
+  ['Diminuendo', 'dim.', 'gradually becoming softer', 'Volume', 1, { vFrom: 0.5, vTo: 0.06 }], ['Forte', 'f', 'loud', 'Volume', 1, { vol: 0.4 }], ['Piano', 'p', 'soft', 'Volume', 1, { vol: 0.08 }],
+  ['Legato', '', 'smoothly, well connected', 'Other', 1, { len: 1.02 }], ['Staccato', '', 'detached, short', 'Other', 1, { len: 0.2 }],
+  // Grade 2
+  ['Lento', '', 'slowly', 'Speed', 2, { bpm: 56 }], ['Largo', '', 'broadly', 'Speed', 2, { bpm: 50 }], ['Allegretto', '', 'moderately fast', 'Speed', 2, { bpm: 116 }],
+  ['Vivace', '', 'lively, spirited', 'Speed', 2, { bpm: 160 }], ['Vivo', '', 'lively, spirited', 'Speed', 2, { bpm: 160 }],
+  ['Allargando', '', 'becoming broader', 'Changing speed', 2, { from: 120, to: 60, vFrom: 0.2, vTo: 0.4 }], ['Più mosso', '', 'quicker', 'Changing speed', 2, { from: 90, to: 140, sudden: true }], ['Meno mosso', '', 'slower', 'Changing speed', 2, { from: 140, to: 90, sudden: true }],
+  ['Pianissimo', 'pp', 'very soft', 'Volume', 2, { vol: 0.04 }], ['Fortissimo', 'ff', 'very loud', 'Volume', 2, { vol: 0.55 }], ['Mezzo forte', 'mf', 'moderately loud', 'Volume', 2, { vol: 0.24 }], ['Mezzo piano', 'mp', 'moderately soft', 'Volume', 2, { vol: 0.14 }],
+  ['Maestoso', '', 'majestic', 'Other', 2, { bpm: 72, vol: 0.4 }], ['Sostenuto', '', 'sustained', 'Other', 2, { len: 1.1, bpm: 80 }], ['Sempre', '', 'always', 'Other', 2], ['Poco', '', 'a little', 'Other', 2], ['Molto', '', 'very', 'Other', 2], ['Senza', '', 'without', 'Other', 2],
+  ['Cantabile', '', 'in a singing style', 'Other', 2, { len: 1.05, bpm: 84 }], ['Leggiero', '', 'lightly', 'Other', 2, { len: 0.35, vol: 0.1, bpm: 132 }], ['Dal segno', 'D.S.', 'from the sign', 'Other', 2], ['Da capo al fine', 'D.C. al fine', 'from the beginning to the word fine', 'Other', 2],
+  ['Mezzo staccato', '', 'moderately short and detached', 'Other', 2, { len: 0.55 }],
+  // Grade 3
+  ['Largamente', '', 'broadly', 'Speed', 3, { bpm: 54 }], ['Larghetto', '', 'rather broadly', 'Speed', 3, { bpm: 64 }], ['Prestissimo', '', 'extremely fast, or as fast as possible', 'Speed', 3, { bpm: 208 }], ['Con moto', '', 'with movement', 'Speed', 3, { bpm: 120 }],
+  ['Calando', '', 'getting softer and slower', 'Volume', 3, { from: 120, to: 60, vFrom: 0.35, vTo: 0.05 }], ['Morendo', '', 'dying away', 'Volume', 3, { from: 100, to: 70, vFrom: 0.3, vTo: 0.03 }],
+  ['Forte-piano', 'fp', 'loud then immediately soft', 'Volume', 3, { fp: true }], ['Sforzando', 'sf, sfz', 'a strong accent', 'Volume', 3, { sfz: true }],
+  ['Agitato', '', 'with agitation', 'Other', 3, { bpm: 150, len: 0.5, vol: 0.35 }], ['Attacca', '', 'go on at once', 'Other', 3], ['Animato', '', 'with animation', 'Other', 3, { bpm: 140 }], ['Tranquillo', '', 'calmly', 'Other', 3, { bpm: 66, vol: 0.1 }],
+  ['Con anima', '', 'with feeling', 'Other', 3], ['Con brio', '', 'with spirit', 'Other', 3, { bpm: 150, vol: 0.4 }], ['Con grazia', '', 'with grace', 'Other', 3], ['Con forza', '', 'with force', 'Other', 3, { vol: 0.5 }],
+  ['Dolce', '', 'soft and sweet', 'Other', 3, { vol: 0.1, len: 1.02, bpm: 80 }], ['Risoluto', '', 'with resolution', 'Other', 3], ['Ben marcato', '', 'well marked', 'Other', 3, { vol: 0.4, len: 0.7 }],
+  ['Main droite', 'M.D.', 'right hand', 'Other', 3], ['Main gauche', 'M.G.', 'left hand', 'Other', 3], ['Una corda', '', 'with the soft pedal', 'Other', 3], ['Tre corde', '', 'release the soft pedal', 'Other', 3],
+  ['Ad libitum', 'ad lib.', 'at pleasure, quite freely', 'Other', 3], ['Opus', 'Op.', 'a work or group of works', 'Other', 3], ['Loco', '', 'at normal pitch (after an 8va sign)', 'Other', 3], ['M.M.', '', 'Maelzel’s Metronome', 'Other', 3],
+  // Grade 4 (piano terms; the string-playing terms are left out)
+  ['Tempo commodo', '', 'at a comfortable speed', 'Speed', 4, { bpm: 96 }], ['Tempo giusto', '', 'at a consistent speed', 'Speed', 4], ['L’istesso tempo', '', 'at the same speed', 'Speed', 4], ['Non troppo', '', 'not too much', 'Speed', 4], ['Grave', '', 'slow and solemn', 'Speed', 4, { bpm: 44, vol: 0.3 }],
+  ['Rubato', '', 'with some freedom in the time', 'Changing speed', 4, { rubato: true }], ['Stringendo', '', 'pressing on faster', 'Changing speed', 4, { from: 90, to: 180 }],
+  ['Perdendosi', '', 'fading away', 'Volume', 4, { vFrom: 0.3, vTo: 0.02, from: 100, to: 76 }], ['Smorzando', '', 'dying away', 'Volume', 4, { vFrom: 0.3, vTo: 0.02, from: 100, to: 76 }], ['Rinforzando', 'rfz, rf', 'reinforcing the tone', 'Volume', 4, { vFrom: 0.15, vTo: 0.45 }], ['Pesante', '', 'heavily', 'Volume', 4, { vol: 0.5, len: 0.9, bpm: 76 }],
+  ['Cantando', '', 'in a singing style', 'Other', 4, { len: 1.05, bpm: 84 }], ['Tenuto', 'ten.', 'held', 'Other', 4, { len: 1.0 }], ['Piacevole', '', 'pleasant, agreeable', 'Other', 4], ['Portamento', '', 'a smooth gliding from one note to another', 'Other', 4],
+  ['Dolente', '', 'sadly, plaintively', 'Other', 4], ['Doloroso', '', 'sadly, plaintively', 'Other', 4], ['Sotto voce', '', 'softly in an undertone', 'Other', 4, { vol: 0.06 }], ['Giocoso', '', 'gay, merry', 'Other', 4, { bpm: 132, len: 0.5 }],
+  ['Grazioso', '', 'gracefully', 'Other', 4], ['Assai', '', 'very', 'Other', 4], ['Quasi', '', 'as if, as it were', 'Other', 4], ['Scherzando', '', 'playfully', 'Other', 4, { bpm: 140, len: 0.35 }], ['Subito', 'sub.', 'suddenly', 'Other', 4],
+].map(([term, abbr, meaning, cat, grade, hear]) => ({ term, abbr, meaning, cat, grade, hear }));
+// The same 8-note phrase, played however the term asks.
+function playTerm(tm) {
+  const h = tm.hear; if (!h) return;
+  const ctx = getAudio(); if (!ctx) return; stopClicks();
+  const phrase = [60, 62, 64, 65, 67, 65, 64, 62, 60].map(m => 440 * Math.pow(2, (m - 69) / 12));
+  let t = ctx.currentTime + 0.08;
+  phrase.forEach((f, i) => {
+    const u = i / (phrase.length - 1);
+    let bpm = h.bpm || (h.from ? (h.sudden ? (i < 4 ? h.from : h.to) : h.from + (h.to - h.from) * u) : 100);
+    if (h.rubato) bpm = 100 * (1 + 0.35 * Math.sin(i * 1.3));
+    let vol = h.vol || (h.vFrom !== undefined ? h.vFrom + (h.vTo - h.vFrom) * u : 0.2);
+    if (h.fp) vol = i === 0 ? 0.55 : 0.06;
+    if (h.sfz && i === 4) vol = 0.6; else if (h.sfz) vol = 0.12;
+    const beat = 60 / bpm, len = beat * (h.len || 0.8);
+    blip(ctx, t, f, len, vol, 'triangle');
+    t += beat;
+  });
+}
+const TERM_CATS = ['Speed', 'Changing speed', 'Volume', 'Other'];
+function TermCards({ grade = null, upTo = 4 }) {
+  const [g, setG] = useState(grade || 1);
+  const [cat, setCat] = useState('all');
+  const [open, setOpen] = useState({});
+  const [quiz, setQuiz] = useState(false);
+  const list = TERMS.filter(x => (grade ? x.grade === grade : x.grade === g) && (cat === 'all' || x.cat === cat));
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
+        <div style={actTitle}>{grade ? 'Grade ' + grade + ' terms' : 'Term cards'}</div>
+        <button className={'chip' + (quiz ? ' active' : '')} style={{padding:'3px 9px',fontSize:11}} onClick={() => { setQuiz(q => !q); setOpen({}); }}>{quiz ? 'Quiz mode: on' : 'Quiz mode'}</button>
+      </div>
+      <div style={actNote}>{quiz ? 'Meanings are hidden -- say the meaning out loud, then tap the card to check.' : 'Tap ♪ to hear the same little phrase played the way the term asks.'}</div>
+      {!grade && <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:4}}>{[1, 2, 3, 4].filter(x => x <= upTo).map(x => <button key={x} className={'chip' + (x === g ? ' active' : '')} style={{padding:'3px 10px',fontSize:12}} onClick={() => { setG(x); setOpen({}); }}>Grade {x}</button>)}</div>}
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:8}}>{['all', ...TERM_CATS].map(c => <button key={c} className={'chip' + (c === cat ? ' active' : '')} style={{padding:'2px 8px',fontSize:11}} onClick={() => setCat(c)}>{c === 'all' ? 'All' : c}</button>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+        {list.map(tm => {
+          const shown = !quiz || open[tm.term];
+          return (
+            <div key={tm.term} onClick={() => setOpen(o => ({ ...o, [tm.term]: !o[tm.term] }))} style={{background:'#fff',border:'1.5px solid var(--border)',borderRadius:10,padding:'8px 9px',cursor:'pointer',position:'relative',minHeight:58}}>
+              <div style={{fontSize:14,fontWeight:900,fontStyle:'italic',paddingRight:tm.hear ? 22 : 0}}>{tm.term}</div>
+              {tm.abbr && <div style={{fontSize:10.5,fontWeight:800,color:'var(--muted)'}}>{tm.abbr}</div>}
+              <div style={{fontSize:12,color:shown ? '#5c544a' : 'transparent',background:shown ? 'transparent' : '#f3ead8',borderRadius:4,marginTop:2,transition:'all 0.2s'}}>{tm.meaning}</div>
+              {tm.hear && <button onClick={(e) => { e.stopPropagation(); playTerm(tm); }} style={{position:'absolute',top:6,right:6,border:'none',background:'#f3ead8',borderRadius:10,width:24,height:24,cursor:'pointer',fontSize:12}}>♪</button>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+function TermsLearn({ onStart }) {
+  const tip = (title, body) => <Rule title={title}>{body}</Rule>;
+  return (
+    <Lesson id="terms" title="Musical terms" onStart={onStart}
+      intro={<>The Italian (and a few French) words in the music, grade by grade, with the meanings the AMEB accepts. Each grade adds to the one before.</>}>
+      <Step title="Grade 1">
+        {tip('Speed, changing speed, volume, touch', 'Start with the speed words, then the ones that change the speed, then loud and soft. Hear each one -- a word is easier to remember when you know what it sounds like.')}
+        <TermCards grade={1}/>
+      </Step>
+      <Step title="Grade 2"><TermCards grade={2}/></Step>
+      <Step title="Grade 3"><TermCards grade={3}/></Step>
+      <Step title="Grade 4"><TermCards grade={4}/></Step>
+    </Lesson>
+  );
+}
+const TERMS_LEVELS = [
+  { n: 1, label: 'Grade 1 terms', max: 1, dir: 'tm', time: 9 },
+  { n: 2, label: 'Up to Grade 2', max: 2, dir: 'tm', time: 9 },
+  { n: 3, label: 'Up to Grade 3', max: 3, dir: 'tm', time: 9 },
+  { n: 4, label: 'Up to Grade 4', max: 4, dir: 'tm', time: 9 },
+  { n: 5, label: 'Meaning → term (up to Grade 3)', max: 3, dir: 'mt', time: 10 },
+];
+function genTermQuestion(lv, prev) {
+  const uid = Math.random();
+  const pool = TERMS.filter(x => x.grade <= lv.max);
+  let tm, g = 0; do { tm = pick(pool); } while (prev && prev.key === tm.term && g++ < 10);
+  if (lv.dir === 'tm') {
+    const others = sampleN(pool.filter(x => x.meaning !== tm.meaning).map(x => x.meaning).filter((m, i, a) => a.indexOf(m) === i), 3);
+    return { kind: 'tm', key: tm.term, tm, answer: tm.meaning, choices: shuffle([tm.meaning, ...others]), uid };
+  }
+  const others = sampleN(pool.filter(x => x.meaning !== tm.meaning).map(x => x.term), 3);
+  return { kind: 'mt', key: tm.term, tm, answer: tm.term, choices: shuffle([tm.term, ...others]), uid };
+}
+function TermQuestion({ q, given, locked, onAnswer, pixel }) {
+  const done = !!given;
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const cls = (c) => btnCls + (!done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '');
+  return (<div>
+    <p style={{fontSize:14,fontWeight:700,textAlign:'center',margin:'0 0 8px',color:'var(--muted)'}}>{q.kind === 'tm' ? 'What does it mean?' : 'Which term means…'}</p>
+    <div style={{textAlign:'center',fontSize:q.kind === 'tm' ? (pixel ? 18 : 30) : (pixel ? 12 : 20),fontWeight:900,fontStyle:q.kind === 'tm' ? 'italic' : 'normal',margin:'0 0 4px'}}>{q.kind === 'tm' ? q.tm.term : '“' + q.tm.meaning + '”'}</div>
+    {q.kind === 'tm' && q.tm.abbr && <div style={{textAlign:'center',fontSize:12,color:'var(--muted)',fontWeight:800}}>{q.tm.abbr}</div>}
+    {done && q.tm.hear && <div style={{textAlign:'center',margin:'6px 0'}}><button className="ghost-btn" style={{fontSize:12,padding:'5px 12px'}} onClick={() => playTerm(q.tm)}>♪ Hear it</button></div>}
+    <div style={{display:'grid',gridTemplateColumns:'1fr',gap:6,marginTop:12}}>{q.choices.map(c => <button key={c} disabled={locked} className={cls(c)} style={{padding:'11px 8px',fontSize:pixel ? 9 : 15,fontStyle:q.kind === 'mt' ? 'italic' : 'normal'}} onClick={() => onAnswer(c)}>{c}</button>)}</div>
+  </div>);
+}
+const TERMS_DRILL = {
+  id: 'terms', label: 'Musical Terms', levels: TERMS_LEVELS, generate: genTermQuestion,
+  check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
+  answerLabel: (q) => q.tm.term + (q.tm.abbr ? ' (' + q.tm.abbr + ')' : '') + ': ' + q.tm.meaning,
+  Question: TermQuestion, Learn: TermsLearn,
+};
+
+// ─── Echo the tune (Phase 122): hear a short tune in C position, play it back ───
+function EchoTune() {
+  const [level, setLevel] = useState(1);
+  const make = (lv) => { const len = lv + 2, out = [0]; while (out.length < len) { const moves = lv === 1 ? [-1, 1] : [-2, -1, 1, 2, 0]; const k = pick(moves), nx = out[out.length - 1] + k; if (nx >= 0 && nx <= 4) out.push(nx); } return out; };
+  const [tune, setTune] = useState(() => make(1));
+  const [pos, setPos] = useState(0);
+  const [bad, setBad] = useState(null);
+  const [lit, setLit] = useState(-1);
+  const [score, setScore] = useState({ right: 0, tries: 0 });
+  const keys = [0, 2, 4, 5, 7];
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  function play(t = tune) { timers.current.forEach(clearTimeout); timers.current = playMelody(t.map(i => ({ d: 28 + i, dur: 1 })), 90, (i) => setLit(i >= 0 ? keys[t[i]] : -1)); }
+  function fresh(lv = level) { const t = make(lv); setTune(t); setPos(0); setBad(null); setTimeout(() => play(t), 150); }
+  function tap(k) {
+    playKey(k, 0.35);
+    if (pos >= tune.length) return;
+    if (k === keys[tune[pos]]) { const np = pos + 1; setPos(np); if (np === tune.length) setScore(s => ({ right: s.right + 1, tries: s.tries + 1 })); }
+    else { setBad(k); setScore(s => ({ ...s, tries: s.tries + (pos === 0 ? 0 : 0) })); setTimeout(() => setBad(b => (b === k ? null : b)), 500); }
+  }
+  const done = pos === tune.length;
+  const marks = {}; if (lit >= 0) marks[lit] = 'target'; if (bad !== null) marks[bad] = 'bad'; if (done) tune.forEach(i => { marks[keys[i]] = 'good'; });
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
+        <div style={actTitle}>Echo the tune</div>
+        <div style={{display:'flex',gap:4}}>{[[1, '3 notes'], [2, '4 notes'], [3, '5 notes']].map(([l, t]) => <button key={l} className={'chip' + (l === level ? ' active' : '')} style={{padding:'3px 8px',fontSize:11}} onClick={() => { setLevel(l); fresh(l); }}>{t}</button>)}</div>
+      </div>
+      <div style={actNote}>Right hand on C D E F G; every tune starts on C. Listen, sing it back, then play it back. {score.tries ? '· ' + score.right + ' echoed' : ''}</div>
+      <TapKeyboard octaves={1} labels="white" marks={marks} onTap={tap}/>
+      <div style={{display:'flex',justifyContent:'center',gap:6,margin:'8px 0'}}>{tune.map((_, i) => <span key={i} style={{width:14,height:14,borderRadius:7,background:i < pos ? '#4f7a45' : '#e8dcc0'}}/>)}</div>
+      {done && <div style={{textAlign:'center',fontSize:14,fontWeight:900,color:'#4f7a45',marginBottom:6}}>Echoed! {tune.map(i => 'CDEFG'[i]).join(' ')}</div>}
+      <div style={{display:'flex',gap:6,justifyContent:'center'}}>
+        <button className="ghost-btn" onClick={() => play()}>♪ Play it</button>
+        <button className="ghost-btn" onClick={() => fresh()}>New tune →</button>
+      </div>
+    </div>
+  );
+}
+
 const DRILLS = [
   { id: 'first-steps', label: 'Me and the Piano', concept: FIRST_STEPS_DRILL, track: 'pitch' },
   { id: 'note-names', label: 'Note Names', concept: NOTE_NAMES_DRILL, track: 'pitch' },
@@ -7981,6 +8166,7 @@ const DRILLS = [
   { id: 'intervals', label: 'Intervals', concept: INTERVALS_DRILL, track: 'pitch' },
   { id: 'chords', label: 'Chords', concept: CHORDS_DRILL, track: 'pitch' },
   { id: 'signs', label: 'Signs', concept: SIGNS_DRILL, track: 'reading' },
+  { id: 'terms', label: 'Musical Terms', concept: TERMS_DRILL, track: 'reading' },
 ];
 
 // ─── Toolbox (Phase 118) ─────────────────────────────────────────────────────────
@@ -8000,6 +8186,8 @@ const TOOLS = [
   { id: 'five-positions', ch: 'five-finger', title: 'Five-finger positions', blurb: 'C, G, middle C and F positions.', C: () => <FivePosition/> },
   { id: 'degree-names', ch: 'scales', title: 'Scale degree names', blurb: 'Tonic, supertonic... leading note.', C: () => <DegreeNames/> },
   { id: 'transpose', ch: 'key-signatures', title: 'Transpose a tune', blurb: 'Same scale degrees, new key.', C: () => <Transposer/> },
+  { id: 'term-cards', ch: 'terms', title: 'Term cards', blurb: 'AMEB terms, Grades 1-4, with sound.', C: () => <TermCards/> },
+  { id: 'echo', ch: 'reading-steps', title: 'Echo the tune', blurb: 'Hear 3-5 notes, play them back.', C: () => <EchoTune/> },
   { id: 'practice-timer', ch: 'practice', title: 'Practice timer', blurb: '5 to 30 minutes, with a bell.', C: () => <PracticeTimer/> },
   { id: 'practice-dice', ch: 'practice', title: 'Practice dice', blurb: 'Roll for a new way to practise.', C: () => <PracticeDice/> },
   { id: 'perfect-counter', ch: 'practice', title: '5 in a row', blurb: 'Only clean repetitions count.', C: () => <PerfectCounter/> },
@@ -8063,12 +8251,12 @@ const STAGES = [
   { n: 2, title: 'Pulse and rhythm', blurb: 'Feel the beat, count 1 and 2 and, clap the cards.', ids: ['pulse', 'note-values', 'rhythm'] },
   { n: 3, title: 'Reading begins', blurb: 'The staff, the Queen and the King, reading by steps and skips.', ids: ['staff', 'reading-steps'] },
   { n: 4, title: 'Five-finger positions', blurb: 'Hands in position; time signatures, speed and volume.', ids: ['five-finger', 'time-signatures', 'tempo', 'dynamics'] },
-  { n: 5, title: 'Theory: Preliminary to Grade 3', blurb: 'The AMEB theory, step by step.', ids: ['ledger-lines', 'tones', 'scales', 'key-signatures', 'intervals', 'chords', 'signs'] },
+  { n: 5, title: 'Theory: Preliminary to Grade 3', blurb: 'The AMEB theory, step by step.', ids: ['ledger-lines', 'tones', 'scales', 'key-signatures', 'intervals', 'chords', 'signs', 'terms'] },
 ];
 const GRADE_TAGS = {
   'first-steps': 'Beginner', 'note-names': 'Prelim', pulse: 'Beginner', 'note-values': 'Prelim', rhythm: 'Prelim–G2', staff: 'Prelim',
   'reading-steps': 'Beginner', 'five-finger': 'Beginner', 'time-signatures': 'Prelim–G2', tempo: 'Prelim–G1', dynamics: 'Prelim–G1',
-  'ledger-lines': 'Prelim–G2', tones: 'Prelim–G1', scales: 'Prelim–G3', 'key-signatures': 'Prelim–G3', intervals: 'Prelim–G3', chords: 'Prelim–G3', signs: 'Prelim–G2',
+  'ledger-lines': 'Prelim–G2', tones: 'Prelim–G1', scales: 'Prelim–G3', 'key-signatures': 'Prelim–G3', intervals: 'Prelim–G3', chords: 'Prelim–G3', signs: 'Prelim–G2', terms: 'G1–G4',
 };
 function stageOf(id) { return STAGES.find(s => s.ids.includes(id)); }
 function stepsDone(id) { const d = loadDone()[id] || {}; return Object.values(d).filter(Boolean).length; }
@@ -8109,7 +8297,7 @@ function LessonPath({ onOpen }) {
     </div>
   );
 }
-const PRACTICE_IDS = ['practice-timer', 'practice-dice', 'perfect-counter', 'sight-reading', 'make-card', 'count-along', 'metronome', 'find-every', 'write-note', 'fill-bar'];
+const PRACTICE_IDS = ['practice-timer', 'practice-dice', 'perfect-counter', 'sight-reading', 'echo', 'term-cards', 'make-card', 'count-along', 'metronome', 'find-every', 'write-note', 'fill-bar'];
 function PracticeView({ onOpen }) {
   return (
     <div className="fade-up">
