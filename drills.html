@@ -1748,11 +1748,116 @@ function sampleN(arr, n, exclude) {
 }
 
 // Tiny metronome with Web Audio (no files). One shared context, created on first user gesture.
+// ─── Sound engine (Phase 121) ────────────────────────────────────────────────────
+// Sohyun: use a real piano sound (articulation and dynamics can't be heard with a plain tone),
+// and let the count be spoken "1, 2, 3, 4" instead of clicks, as an option.
+// Piano: sampled grand piano (tonejs-instruments piano samples, MIT) served from audio/piano/,
+// every minor third C2-C7, pitch-shifted to the nearest sample; the louder the note, the brighter
+// the filter, so dynamics sound like a piano. Until the samples load (or if they can't), a
+// synthesised piano tone is used. All musical notes go through blip(type 'triangle').
+// Count: 'click' (as before) or 'voice' -- recorded counts in audio/count/ if present
+// (1..8, and), otherwise the device's own speech voice.
+const SOUND_KEY = 'pb_sound_v1';
+function loadSoundPrefs() { try { return Object.assign({ piano: true, count: 'click' }, JSON.parse(localStorage.getItem(SOUND_KEY)) || {}); } catch (e) { return { piano: true, count: 'click' }; } }
+let SOUND = loadSoundPrefs();
+function saveSoundPrefs(p) { SOUND = p; try { localStorage.setItem(SOUND_KEY, JSON.stringify(p)); } catch (e) {} }
+const PIANO_FILES = [];
+[2, 3, 4, 5, 6].forEach(o => [['C', 0], ['Ds', 3], ['Fs', 6], ['A', 9]].forEach(([n, pc]) => PIANO_FILES.push({ name: n + o, midi: (o + 1) * 12 + pc })));
+PIANO_FILES.push({ name: 'C7', midi: 96 }); PIANO_FILES.push({ name: 'A1', midi: 33 });
+const _piano = { buf: {}, started: false };
+function loadPiano(ctx) {
+  if (_piano.started || !ctx || typeof fetch === 'undefined') return;
+  _piano.started = true;
+  PIANO_FILES.forEach(f => {
+    fetch('audio/piano/' + f.name + '.mp3').then(r => r.ok ? r.arrayBuffer() : Promise.reject())
+      .then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej)))
+      .then(b => { _piano.buf[f.midi] = b; }).catch(() => {});
+  });
+}
+function pianoNote(ctx, t, freq, len, vol) {
+  const midi = 69 + 12 * Math.log2(freq / 440);
+  const loaded = Object.keys(_piano.buf).map(Number);
+  const vel = Math.max(0.02, Math.min(1, vol * 3.2)); // blip volumes 0.05..0.55 -> velocity
+  const out = ctx.createGain(), filt = ctx.createBiquadFilter();
+  filt.type = 'lowpass'; filt.frequency.value = 900 + vel * vel * 9000; filt.Q.value = 0.3;
+  filt.connect(out); out.connect(ctx.destination);
+  const end = t + Math.max(len, 0.08);
+  out.gain.setValueAtTime(0.9 * vel, t);
+  out.gain.setValueAtTime(0.9 * vel, end);
+  out.gain.exponentialRampToValueAtTime(0.0008, end + 0.28); // damper
+  if (loaded.length) {
+    const near = loaded.reduce((b, m) => Math.abs(m - midi) < Math.abs(b - midi) ? m : b, loaded[0]);
+    const src = ctx.createBufferSource();
+    src.buffer = _piano.buf[near]; src.playbackRate.value = Math.pow(2, (midi - near) / 12);
+    src.connect(filt); src.start(t); src.stop(end + 0.3);
+    _clickNodes.push(src);
+    return;
+  }
+  // Synthesised fallback: a few decaying partials and a soft hammer.
+  [[1, 1, 1.6], [2, 0.45, 1.1], [3, 0.2, 0.8], [4, 0.1, 0.6]].forEach(([h, a, dec]) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = 'sine'; o.frequency.value = freq * h * (1 + (h - 1) * 0.0008);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.35 * a, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0005, t + Math.min(dec * (freq < 300 ? 2 : 1.2), len + 1.2));
+    o.connect(g); g.connect(filt); o.start(t); o.stop(end + 0.3); _clickNodes.push(o);
+  });
+}
+// Count voice.
+const _count = { buf: {}, started: false };
+const COUNT_WORDS = ['1', '2', '3', '4', '5', '6', '7', '8', 'and'];
+function loadCount(ctx) {
+  if (_count.started || !ctx || typeof fetch === 'undefined') return;
+  _count.started = true;
+  COUNT_WORDS.forEach(w => fetch('audio/count/' + w + '.mp3').then(r => r.ok ? r.arrayBuffer() : Promise.reject())
+    .then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej))).then(b => { _count.buf[w] = b; }).catch(() => {}));
+}
+let _speechTimers = [];
+function pickVoice() {
+  try {
+    const vs = window.speechSynthesis.getVoices();
+    return vs.find(v => /en-AU/.test(v.lang)) || vs.find(v => /Samantha|Karen|Serena|Daniel/.test(v.name)) || vs.find(v => /^en/.test(v.lang)) || null;
+  } catch (e) { return null; }
+}
+function sayCount(ctx, when, word, vol = 1) {
+  if (_count.buf[word]) {
+    const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = _count.buf[word]; g.gain.value = vol;
+    s.connect(g); g.connect(ctx.destination); s.start(when); _clickNodes.push(s); return true;
+  }
+  try {
+    if (!window.speechSynthesis) return false;
+    const ms = Math.max(0, (when - ctx.currentTime) * 1000 - 70);
+    _speechTimers.push(setTimeout(() => {
+      const u = new SpeechSynthesisUtterance(word === 'and' ? 'and' : word);
+      const v = pickVoice(); if (v) u.voice = v;
+      u.rate = 1.5; u.volume = Math.min(1, vol); u.pitch = 1;
+      window.speechSynthesis.speak(u);
+    }, ms));
+    return true;
+  } catch (e) { return false; }
+}
+// One counted beat: a click, or the spoken number. beat = 0-based beat in the bar.
+function beatTick(ctx, t, beat, freq, len, vol, type, word) {
+  if (SOUND.count === 'voice' && sayCount(ctx, t, word || String(beat + 1), 1)) { blip(ctx, t, freq, len, vol * 0.25, type); return; }
+  blip(ctx, t, freq, len, vol, type);
+}
+function SoundSettings() {
+  const [p, setP] = useState(SOUND);
+  const set = (patch) => { const np = { ...p, ...patch }; setP(np); saveSoundPrefs(np); if (patch.count === 'voice') { const ctx = getAudio(); if (ctx) sayCount(ctx, ctx.currentTime + 0.05, '1'); } };
+  const chip = (on, label, onClick) => <button className={'chip' + (on ? ' active' : '')} style={{padding:'2px 9px',fontSize:11}} onClick={onClick}>{label}</button>;
+  return (
+    <div style={{display:'flex',flexWrap:'wrap',gap:6,alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:'var(--muted)',margin:'-6px 0 14px'}}>
+      <span>Sound</span>{chip(p.piano, 'Piano', () => set({ piano: true }))}{chip(!p.piano, 'Simple', () => set({ piano: false }))}
+      <span style={{marginLeft:8}}>Count</span>{chip(p.count === 'click', 'Click', () => set({ count: 'click' }))}{chip(p.count === 'voice', 'Voice 1 2 3 4', () => set({ count: 'voice' }))}
+    </div>
+  );
+}
+
 let _audioCtx = null;
 let _clickNodes = [];
 function stopClicks() {
   _clickNodes.forEach(o => { try { o.stop(); } catch (e) {} });
   _clickNodes = [];
+  try { _speechTimers.forEach(clearTimeout); _speechTimers = []; if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
 }
 function playClicks(bpm, count) {
   try {
@@ -1761,6 +1866,7 @@ function playClicks(bpm, count) {
     stopClicks();
     const gap = 60 / bpm;
     const t0 = _audioCtx.currentTime + 0.08;
+    if (SOUND.count === 'voice') { for (let i = 0; i < (count || 8); i++) beatTick(_audioCtx, t0 + i * gap, i % 4, i % 4 === 0 ? 1320 : 880, 0.05, 0.35); return true; }
     for (let i = 0; i < (count || 8); i++) {
       const osc = _audioCtx.createOscillator();
       const gain = _audioCtx.createGain();
@@ -1980,7 +2086,7 @@ function MetronomeDial() {
   useEffect(() => {
     if (!run) return;
     let n = 0;
-    const tick = () => { const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime + 0.01, n % 4 === 0 ? 1320 : 900, 0.04, n % 4 === 0 ? 0.3 : 0.16); setSide(s => 1 - s); n++; };
+    const tick = () => { const ctx = getAudio(); if (ctx) beatTick(ctx, ctx.currentTime + 0.01, n % 4, n % 4 === 0 ? 1320 : 900, 0.04, n % 4 === 0 ? 0.3 : 0.16); setSide(s => 1 - s); n++; };
     tick(); const iv = setInterval(tick, 60000 / bpm);
     return () => clearInterval(iv);
   }, [run, bpm]);
@@ -2407,7 +2513,7 @@ function playItems(items, bpm, onStep) {
   stopClicks();
   const spb = 60 / bpm, t0 = ctx.currentTime + 0.12;
   const total = items.reduce((a, it) => a + it.beats, 0);
-  for (let b = 0; b < Math.ceil(total - 1e-9); b++) blip(ctx, t0 + b * spb, b === 0 ? 1500 : 1100, 0.03, 0.06, 'square');
+  for (let b = 0; b < Math.ceil(total - 1e-9); b++) beatTick(ctx, t0 + b * spb, b % 4, b === 0 ? 1500 : 1100, 0.03, 0.06, 'square');
   const timers = [];
   let at = 0;
   items.forEach((it, i) => {
@@ -2743,7 +2849,7 @@ function playCard(card, bpm, opts) {
   if (!ctx) return null;
   stopClicks();
   const beat = 60 / bpm, start = ctx.currentTime + 0.12, bar = start + 4 * beat;
-  for (let i = 0; i < 8; i++) blip(ctx, start + i * beat, i % 4 === 0 ? 1320 : 880, 0.05, i < 4 ? 0.3 : 0.12);
+  for (let i = 0; i < 8; i++) beatTick(ctx, start + i * beat, i % 4, i % 4 === 0 ? 1320 : 880, 0.05, i < 4 ? 0.3 : 0.12);
   if (!o.silent) cardEvents(card).forEach(e => { if (!e.rest) blip(ctx, bar + e.onset * beat, 523, Math.min(e.dur * beat * 0.85, 0.5), 0.3, 'triangle'); });
   return { ctx, start, bar, beat };
 }
@@ -2752,10 +2858,12 @@ function getAudio() {
     if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (_audioCtx.state === 'suspended') _audioCtx.resume();
     window.__pbAudio = _audioCtx; // exposed for automated timing tests only
+    loadPiano(_audioCtx); loadCount(_audioCtx);
     return _audioCtx;
   } catch (e) { return null; }
 }
 function blip(ctx, t, freq, len, vol, type) {
+  if (type === 'triangle' && SOUND.piano) { pianoNote(ctx, t, freq, len, vol); return; }
   const o = ctx.createOscillator(), g = ctx.createGain();
   if (type) o.type = type;
   o.frequency.value = freq;
@@ -5132,7 +5240,9 @@ function playTimeSig(t, bpm) {
   const start = ctx.currentTime + 0.1;
   for (let bar = 0; bar < 2; bar++) t.pattern.forEach((acc, i) => {
     const at = start + (bar * t.pattern.length + i) * pulse;
-    blip(ctx, at, acc === 1 ? 1320 : acc === 0.5 ? 1040 : 880, 0.05, acc === 1 ? 0.4 : acc === 0.5 ? 0.22 : 0.12);
+    const beatNo = t.kind === 'compound' ? t.pattern.slice(0, i + 1).filter(a => a > 0).length - 1 : i;
+    if (t.kind === 'compound' && acc === 0) blip(ctx, at, 880, 0.05, 0.12);
+    else beatTick(ctx, at, beatNo, acc === 1 ? 1320 : acc === 0.5 ? 1040 : 880, 0.05, acc === 1 ? 0.4 : acc === 0.5 ? 0.22 : 0.12);
   });
 }
 
@@ -5153,7 +5263,8 @@ function BeatPulse() {
     let i = 0;
     const tick = () => {
       const ctx = getAudio(); const acc = t.pattern[i % n];
-      if (ctx) blip(ctx, ctx.currentTime + 0.01, acc === 1 ? 1320 : acc === 0.5 ? 1040 : 880, 0.05, acc === 1 ? 0.4 : acc === 0.5 ? 0.22 : 0.12);
+      const bn = t.id === '6/8' ? (i % n < 3 ? 0 : 1) : i % n;
+      if (ctx) { if (t.id === '6/8' && acc === 0) blip(ctx, ctx.currentTime + 0.01, 880, 0.05, 0.12); else beatTick(ctx, ctx.currentTime + 0.01, bn, acc === 1 ? 1320 : acc === 0.5 ? 1040 : 880, 0.05, acc === 1 ? 0.4 : acc === 0.5 ? 0.22 : 0.12); }
       setBeat(i % n); i++;
     };
     tick(); const iv = setInterval(tick, ms);
@@ -7318,7 +7429,7 @@ function SteadyBeat() {
   useEffect(() => {
     if (!run) return;
     let n = 0; start.current = performance.now(); setTaps([]);
-    const tick = () => { const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime + 0.01, 110, 0.12, 0.35, 'sine'); setBeat(n % 4); n++; };
+    const tick = () => { const ctx = getAudio(); if (ctx) beatTick(ctx, ctx.currentTime + 0.01, n % 4, 110, 0.12, 0.35, 'sine'); setBeat(n % 4); n++; };
     tick(); const iv = setInterval(tick, 60000 / bpm);
     return () => { clearInterval(iv); setBeat(-1); };
   }, [run, bpm]);
@@ -7375,7 +7486,7 @@ function CountAloud() {
     const ctx = getAudio(); if (!ctx) return;
     const spb = 60 / 76, t0 = ctx.currentTime + 0.1;
     bar.notes.forEach((d, i) => blip(ctx, t0 + onsets[i] * spb, 523.25, d * spb * 0.9, 0.17, 'triangle'));
-    for (let h = 0; h < 8; h++) { if (h % 2 === 0) blip(ctx, t0 + h / 2 * spb, h === 0 ? 1400 : 1000, 0.03, 0.05, 'square'); timers.current.push(setTimeout(() => setPos(h), (0.1 + h / 2 * spb) * 1000)); }
+    for (let h = 0; h < 8; h++) { if (h % 2 === 0) beatTick(ctx, t0 + h / 2 * spb, h / 2, h === 0 ? 1400 : 1000, 0.03, 0.05, 'square'); else if (SOUND.count === 'voice') sayCount(ctx, t0 + h / 2 * spb, 'and', 0.6); timers.current.push(setTimeout(() => setPos(h), (0.1 + h / 2 * spb) * 1000)); }
     timers.current.push(setTimeout(() => setPos(-1), (0.1 + 4 * spb) * 1000 + 200));
   }
   const words = ['1', 'and', '2', 'and', '3', 'and', '4', 'and'];
@@ -7431,7 +7542,7 @@ function genPulseQuestion(lv, prev) {
 }
 function playCountBar(bar) {
   const ctx = getAudio(); if (!ctx) return; const spb = 60 / 76, t0 = ctx.currentTime + 0.1;
-  for (let b = 0; b < 4; b++) blip(ctx, t0 + b * spb, b === 0 ? 1400 : 1000, 0.03, 0.05, 'square');
+  for (let b = 0; b < 4; b++) beatTick(ctx, t0 + b * spb, b, b === 0 ? 1400 : 1000, 0.03, 0.05, 'square');
   let t = 0; bar.notes.forEach(d => { blip(ctx, t0 + t * spb, 523.25, d * spb * 0.9, 0.17, 'triangle'); t += d; });
 }
 function PulseQuestion({ q, given, locked, onAnswer, pixel }) {
@@ -8144,6 +8255,7 @@ function App() {
             ))}
           </div>
         )}
+        <SoundSettings/>
         {(st.view === 'tools' || st.view === 'practice') ? (
           st.tool
             ? <ToolView id={st.tool} locked={st.lock} onBack={() => update({ tool: null })} onChapter={(id) => update({ view: 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>

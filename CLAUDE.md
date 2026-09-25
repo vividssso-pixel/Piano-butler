@@ -2926,6 +2926,12 @@ Sohyun's direction (2026-09-25): connect student and piano first, then pulse, th
 - 65 tools, 18 chapters: every chapter, drill level 1-3 and tool URL loads with zero errors.
 - Awaiting Sohyun's review of the new beginner stages before changes.
 
+### Phase 121 -- Piano sound + spoken count option
+Sohyun: plain tones can't show articulation, dynamics sound thin; offer a spoken "1 2 3 4" count.
+- `blip(..., 'triangle')` (every musical note in drills.html) now plays `pianoNote`: sampled grand piano from `audio/piano/` (22 mp3s, ~600 KB, lazy-loaded on first sound; source tonejs-instruments piano, MIT -- see audio/README.md), nearest sample pitch-shifted, velocity from the old volume with a velocity-dependent low-pass (pp dark, ff bright; offline render check: ff ≈ 6x pp RMS), damper release after the note length (so staccato/legato differ). Synth-piano fallback before samples load / if missing.
+- Count: `beatTick()` replaces the beat clicks in the metronome, rhythm cards count-in, Notes & Rests playback, time-signature demos, Count along, Steady beat, Count it (+ "and"), Tempo race clicks. `SoundSettings` row under the top switch: Sound Piano | Simple, Count Click | Voice 1 2 3 4 (localStorage `pb_sound_v1`). Voice = recorded files `audio/count/1..8.mp3, and.mp3` if Sohyun adds them (sample-accurate), else the device speech voice (en-AU preferred), scheduled ~70 ms early.
+- Idea for Sohyun: record her own voice counting 1-8 and "and" -> drop into audio/count/.
+
 Next on the plan: more mini tools (Sohyun's rule: every activity stand-alone + in TOOLS). Ideas: sight-reading flash cards, a practice-dice/timer tool, scale degree names (tonic, supertonic...), transposition. Signs 116, Chords 117, Toolbox 118, Grade 3 intervals + cadences 119 done.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
