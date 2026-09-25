@@ -3623,6 +3623,58 @@ function IntervalEar() {
   );
 }
 
+// ─── Intervals, Grade 3 add-on: inversions and the tritone (Phase 119) ──────────
+const Q_FLIP = { M: 'm', m: 'M', P: 'P', A: 'd', d: 'A' };
+function IntervalInverter() {
+  const OPTS = [[2, 'M'], [3, 'M'], [3, 'm'], [4, 'P'], [5, 'P'], [6, 'M'], [6, 'm'], [7, 'M'], [2, 'm'], [7, 'm']];
+  const [k, setK] = useState(1);
+  const [flip, setFlip] = useState(false);
+  const [n, q] = OPTS[k];
+  const a = { d: 28, acc: 0 }, b = ivBuild(a, n, q);
+  const up = { d: a.d + 7, acc: a.acc };
+  const notes = flip ? [b, up] : [a, b];
+  const inN = 9 - n, inQ = Q_FLIP[q];
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Turn an interval upside down</div>
+      <div style={actNote}>Move the bottom note up an octave and the interval <b>inverts</b>. The two numbers always add up to <b>9</b>; major ↔ minor, augmented ↔ diminished, perfect stays perfect.</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6}}>
+        {OPTS.map(([nn, qq], i) => <button key={i} className={'chip' + (i === k ? ' active' : '')} style={{padding:'3px 8px',fontSize:12}} onClick={() => { setK(i); setFlip(false); }}>{qq + nn}</button>)}
+      </div>
+      <IntervalStaff key={k + ':' + flip} notes={notes} colors={flip ? ['#241f1a', '#b5483b'] : ['#b5483b', '#241f1a']} labels={notes.map(ivName)} width={220}/>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,fontSize:15,fontWeight:900,margin:'6px 0'}}>
+        <span style={{color:flip ? 'var(--muted)' : 'var(--text)'}}>{ivLong(q, n)}</span>
+        <span style={{color:'#a8823f'}}>⇄</span>
+        <span style={{color:flip ? 'var(--text)' : 'var(--muted)'}}>{ivLong(inQ, inN)}</span>
+      </div>
+      <div style={{textAlign:'center',fontSize:12,color:'#6f665b',marginBottom:6}}>{n} + {inN} = 9 · {IV_QWORD[q]} → {IV_QWORD[inQ]}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center'}}>
+        <button className="ghost-btn" onClick={() => { const f = !flip; setFlip(f); playIv(f ? b : a, f ? up : b); }}>{flip ? '↓ Back' : '↑ Move the bottom note up'}</button>
+      </div>
+    </div>
+  );
+}
+function TritoneTool() {
+  const [which, setWhich] = useState('A4');
+  const a = { d: 31, acc: 0 }; // F
+  const b = which === 'A4' ? ivBuild(a, 4, 'A') : ivBuild({ d: 34, acc: 0 }, 5, 'd');
+  const lo = which === 'A4' ? a : { d: 34, acc: 0 };
+  const keys = [ivMidi(lo) - 60, ivMidi(b) - 60];
+  const marks = {}; keys.forEach(x => { if (x >= 0 && x < 24) marks[x] = 'good'; });
+  const names = {}; for (let s = keys[0] + 1; s < keys[1]; s++) names[s] = String(s - keys[0]);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>The tritone: augmented 4th and diminished 5th</div>
+      <div style={actNote}>Six semitones -- three whole tones, so it’s called the <b>tritone</b>. Written as a 4th it’s <b>augmented</b> (F up to B); written as a 5th it’s <b>diminished</b> (B up to F). They sound the same size -- and they invert into each other.</div>
+      <div style={{display:'flex',gap:4,marginBottom:6}}>{['A4', 'd5'].map(x => <button key={x} className={'chip' + (x === which ? ' active' : '')} style={{padding:'3px 12px',fontSize:13}} onClick={() => { setWhich(x); const bb = x === 'A4' ? ivBuild(a, 4, 'A') : ivBuild({ d: 34, acc: 0 }, 5, 'd'); playIv(x === 'A4' ? a : { d: 34, acc: 0 }, bb); }}>{x === 'A4' ? 'augmented 4th' : 'diminished 5th'}</button>)}</div>
+      <IntervalStaff key={which} notes={[lo, b]} colors={['#241f1a', '#7a64a8']} labels={[ivName(lo), ivName(b)]} width={220}/>
+      <TapKeyboard octaves={2} marks={marks} names={names} onTap={(x) => playKey(x)}/>
+      <div style={{textAlign:'center',fontSize:13,fontWeight:800,margin:'6px 0'}}>{ivName(lo)} → {ivName(b)}: {which === 'A4' ? '4 letters' : '5 letters'}, 6 semitones = <span style={{color:'#7a64a8'}}>{which === 'A4' ? 'augmented 4th' : 'diminished 5th'}</span></div>
+      <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={() => playIv(lo, b)}>♪ Hear it</button></div>
+    </div>
+  );
+}
+
 function IntervalsLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
@@ -3644,6 +3696,11 @@ function IntervalsLearn({ onStart }) {
       {tip('Link each one to a tune', 'Intervals have a sound of their own. Link each one to a tune you know and you’ll hear them in the music you play.')}
       <IntervalEar/>
       </Step>
+      <Step title="Inversions and the tritone">
+      {tip('Grade 3', 'Turn an interval upside down and the numbers add to 9: a major 3rd becomes a minor 6th. The one interval of six semitones is the tritone -- an augmented 4th or a diminished 5th.')}
+      <IntervalInverter/>
+      <TritoneTool/>
+      </Step>
     </Lesson>
   );
 }
@@ -3657,7 +3714,10 @@ const IV_LEVELS = [
   { n: 5, label: 'Any interval · number and quality',       kind: 'any',   clefs: ['treble', 'bass'], time: 12 },
   { n: 6, label: 'Build it on the keyboard',                kind: 'build', time: 12 },
   { n: 7, label: 'By ear: 3rds, 4th, 5th, octave',          kind: 'ear',   time: 12 },
+  { n: 8, label: 'Invert it (Grade 3)',                      kind: 'invert', time: 10 },
+  { n: 9, label: 'Any interval incl. aug 4th / dim 5th (Grade 3)', kind: 'any3', clefs: ['treble', 'bass'], time: 12 },
 ];
+const IV_LIST3 = [...IV_LIST.slice(0, 5), [4, 'A'], [5, 'd'], ...IV_LIST.slice(5)];
 const IV_Q5 = [[3, 'm'], [3, 'M'], [4, 'P'], [5, 'P'], [8, 'P']];
 const IV_TONICS = ['C', 'G', 'D', 'A', 'E', 'F', 'Bb', 'Eb', 'Ab'];
 function ivLabelOf(pair) { return ivLong(pair[1], pair[0]); }
@@ -3675,7 +3735,7 @@ function genIntervalQuestion(lv, prev) {
       b = { d: a.d + n - 1, acc: nm.endsWith('#') ? 1 : nm.endsWith('b') ? -1 : 0 };
       q = ivQuality(a, b);
     } else {
-      const pair = lv.kind === 'q5' || lv.kind === 'ear' ? pick(IV_Q5) : lv.kind === 'num' ? [2 + Math.floor(Math.random() * 7), null] : pick(IV_LIST);
+      const pair = lv.kind === 'q5' || lv.kind === 'ear' ? pick(IV_Q5) : lv.kind === 'num' ? [2 + Math.floor(Math.random() * 7), null] : lv.kind === 'any3' ? pick(IV_LIST3) : lv.kind === 'invert' ? pick(IV_LIST.slice(0, -1)) : pick(IV_LIST);
       n = pair[0];
       a = { d: 28 + Math.floor(Math.random() * 6) + off, acc: 0 };
       if (pair[1]) { q = pair[1]; b = ivBuild(a, n, q); } else { b = { d: a.d + n - 1, acc: 0 }; q = ivQuality(a, b); }
@@ -3684,9 +3744,9 @@ function genIntervalQuestion(lv, prev) {
     if (lv.kind === 'build' && ivMidi(b) - 60 > 23) continue;
     const key = a.d + ':' + a.acc + ':' + b.d + ':' + b.acc;
     if (prev && prev.key === key) continue;
-    const answer = lv.kind === 'num' ? ivOrd(n) : ivLong(q, n);
+    const answer = lv.kind === 'num' ? ivOrd(n) : lv.kind === 'invert' ? ivLong(Q_FLIP[q], 9 - n) : ivLong(q, n);
     const choices = lv.kind === 'num' ? [2, 3, 4, 5, 6, 7, 8].map(ivOrd)
-      : lv.kind === 'q5' || lv.kind === 'ear' ? IV_Q5.map(ivLabelOf) : IV_LIST.map(ivLabelOf);
+      : lv.kind === 'q5' || lv.kind === 'ear' ? IV_Q5.map(ivLabelOf) : lv.kind === 'any3' ? IV_LIST3.map(ivLabelOf) : lv.kind === 'invert' ? IV_LIST.slice(0, -1).map(ivLabelOf) : IV_LIST.map(ivLabelOf);
     if (lv.kind !== 'num' && !choices.includes(answer)) continue;
     return { kind: lv.kind, key, clef, a, b, n, q, answer, choices, target: ivMidi(b) - 60, uid };
   }
@@ -3723,8 +3783,10 @@ function IntervalQuestion({ q, level, given, locked, onAnswer, pixel }) {
     </div>);
   }
   return (<div>
-    {prompt(q.kind === 'num' ? 'What number is this interval?' : q.kind === 'tonic' ? 'In ' + prettyNote(ivName(q.a)) + ' major: name the interval above the tonic' : 'Name the interval', q.kind === 'num' ? 'WHAT NUMBER?' : 'NAME IT')}
+    {q.kind === 'invert' ? prompt('This is ' + ivLong(q.q, q.n).replace(/^(\w)/, 'a $1').replace(/^a ([aeiou])/, 'an $1') + '. Turn it upside down -- what does it become?', 'INVERT IT') :
+     prompt(q.kind === 'num' ? 'What number is this interval?' : q.kind === 'tonic' ? 'In ' + prettyNote(ivName(q.a)) + ' major: name the interval above the tonic' : 'Name the interval', q.kind === 'num' ? 'WHAT NUMBER?' : 'NAME IT')}
     <div style={staffBg}><IntervalStaff clef={q.clef} notes={[q.a, q.b]} colors={done ? ['#241f1a', '#4f7a45'] : []} labels={done ? [ivName(q.a), ivName(q.b)] : null} width={200}/></div>
+    {done && q.kind === 'invert' && <div style={staffBg}><IntervalStaff clef={q.clef} notes={[q.b, { d: q.a.d + 7, acc: q.a.acc }]} colors={['#241f1a', '#b5483b']} labels={[ivName(q.b), ivName(q.a)]} width={200}/></div>}
     {grid(q.kind === 'num' ? 4 : q.choices.length > 6 ? 3 : 2, q.choices.length > 6 ? 13 : 15)}
   </div>);
 }
@@ -3980,6 +4042,87 @@ function InversionFlip() {
   );
 }
 
+// ─── Cadences (Phase 119, Chords step 6) ─────────────────────────────────────────
+// AMEB Musicianship: authentic (perfect), plagal, half (imperfect), deceptive (interrupted);
+// Theory of Music: perfect and plagal. British names first, American in brackets.
+const CADENCES = [
+  { id: 'perfect', name: 'Perfect', alt: 'authentic', prog: [0, 3, 4, 0], end: 'V – I', feel: 'Finished -- a full stop.' },
+  { id: 'plagal', name: 'Plagal', alt: '“Amen”', prog: [0, 4, 3, 0], end: 'IV – I', feel: 'Finished, but softer -- the “Amen” at the end of a hymn.' },
+  { id: 'imperfect', name: 'Imperfect', alt: 'half', prog: [0, 5, 3, 4], end: '? – V', feel: 'Unfinished -- a comma. It ends on V.' },
+  { id: 'interrupted', name: 'Interrupted', alt: 'deceptive', prog: [0, 3, 4, 5], end: 'V – vi', feel: 'A surprise -- you expect I, you get vi.' },
+];
+// Simple four-part voicing: bass = chord root (octave 3); upper three notes placed as close as possible to the previous chord.
+function voiceProgression(key, minor, degrees) {
+  const sc = scaleNotes(key, minor);
+  let prev = null;
+  return degrees.map(deg => {
+    const t = triadOn(sc, deg);
+    const pcs = t.map(n => ivMidi(n) % 12);
+    const bass = { ...t[0], d: t[0].d - 7 * Math.ceil((t[0].d - 21) / 7) };
+    const cands = [];
+    for (let base = 30; base <= 36; base++) {
+      const ups = [base, base + 2, base + 4].map(d => { const L = STAFF_LETTERS[((d % 7) + 7) % 7]; const src = t.find(n => dName(n.d) === L); return src ? { d, acc: src.acc } : null; });
+      if (ups.every(Boolean)) cands.push(ups);
+    }
+    // also inversions: rotate letters
+    const all = [];
+    for (let lo = 29; lo <= 36; lo++) {
+      const L = dName(lo); if (!t.some(n => dName(n.d) === L)) continue;
+      const set = []; let d = lo;
+      while (set.length < 3 && d < lo + 8) { const Ld = dName(d); const src = t.find(n => dName(n.d) === Ld); if (src && !set.some(x => dName(x.d) === Ld)) set.push({ d, acc: src.acc }); d++; }
+      if (set.length === 3) all.push(set);
+    }
+    const score = (v) => prev ? v.reduce((s, n, i) => s + Math.abs(ivMidi(n) - ivMidi(prev[i])), 0) : Math.abs(ivMidi(v[0]) - 67);
+    const best = all.sort((x, y) => score(x) - score(y))[0];
+    prev = best;
+    return { bass, upper: best, deg, q: triadQuality(t) };
+  });
+}
+function playProgression(chords, onStep) {
+  const ctx = getAudio(); if (!ctx) return [];
+  const t0 = ctx.currentTime + 0.08, dur = 0.85, timers = [];
+  chords.forEach((c, i) => {
+    const at = t0 + i * dur, last = i === chords.length - 1;
+    [c.bass, ...c.upper].forEach(n => blip(ctx, at, ivFreq(n), last ? 1.5 : dur * 0.95, 0.1, 'triangle'));
+    if (onStep) timers.push(setTimeout(() => onStep(i), (0.08 + i * dur) * 1000));
+  });
+  if (onStep) timers.push(setTimeout(() => onStep(-1), (0.08 + chords.length * dur) * 1000 + 800));
+  return timers;
+}
+function CadencePlayer() {
+  const [ki, setKi] = useState(0);
+  const [cid, setCid] = useState('perfect');
+  const [on, setOn] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const [key, minor] = CHORD_KEYS[ki];
+  const cad = CADENCES.find(c => c.id === cid);
+  const chords = voiceProgression(key, minor, cad.prog);
+  function play(c = cad) { timers.current.forEach(clearTimeout); timers.current = playProgression(voiceProgression(key, minor, c.prog), setOn); }
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Cadences: how phrases end</div>
+      <div style={actNote}>A cadence is the last two chords of a phrase -- musical punctuation. Tap one to hear a short phrase that ends with it; the last two chords are the cadence.</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6}}>
+        {CHORD_KEYS.map(([k, m], i) => <button key={i} className={'chip' + (i === ki ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => setKi(i)}>{prettyNote(k)}{m ? 'm' : ''}</button>)}
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginBottom:8}}>
+        {CADENCES.map(c => (
+          <button key={c.id} onClick={() => { setCid(c.id); play(c); }} style={{textAlign:'left',background:cid === c.id ? '#f3ead8' : '#fff',border:'2px solid ' + (cid === c.id ? '#a8823f' : 'var(--border)'),borderRadius:10,padding:'7px 9px',cursor:'pointer',color:'var(--text)'}}>
+            <div style={{fontSize:14,fontWeight:900}}>{c.name} <span style={{fontSize:11,color:'var(--muted)',fontWeight:700}}>({c.alt})</span></div>
+            <div style={{fontSize:13,fontWeight:900,color:'#a8823f'}}>{c.end}</div>
+          </button>
+        ))}
+      </div>
+      <div style={{background:'#fff',borderRadius:8}}>
+        <ChordStaff width={300} hi={on >= 0 ? on : null} chords={chords.map((c, i) => ({ notes: c.upper, color: i >= chords.length - 2 ? '#a8823f' : '#241f1a', label: romanFor(c.deg, c.q) }))}/>
+      </div>
+      <div style={{textAlign:'center',fontSize:13,margin:'6px 0',lineHeight:1.5}}><b>{cad.name}</b>: {cad.feel}</div>
+      <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={() => play()}>♪ Play again</button></div>
+    </div>
+  );
+}
+
 function ChordsLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
@@ -4005,6 +4148,10 @@ function ChordsLearn({ onStart }) {
         {tip('Name it by the bottom note', 'Root at the bottom = root position (a). 3rd at the bottom = 1st inversion (b). 5th at the bottom = 2nd inversion (c).')}
         <InversionFlip/>
       </Step>
+      <Step title="Cadences">
+        {tip('Musical punctuation', 'Perfect (V–I) and plagal (IV–I) sound finished. Imperfect (ending on V) sounds like a comma. Interrupted (V–vi) is a surprise.')}
+        <CadencePlayer/>
+      </Step>
     </Lesson>
   );
 }
@@ -4017,9 +4164,17 @@ const CHORD_LEVELS = [
   { n: 4, label: 'By ear: major or minor?',                kind: 'ear', time: 9 },
   { n: 5, label: 'Build it on the keyboard',               kind: 'build', time: 14 },
   { n: 6, label: 'Root position, 1st or 2nd inversion?',   kind: 'inv', time: 10 },
+  { n: 7, label: 'By ear: which cadence?',                 kind: 'cadence', time: 14 },
 ];
 function genChordQuestion(lv, prev) {
   const uid = Math.random();
+  if (lv.kind === 'cadence') {
+    let c = pick(CADENCES), g = 0; while (prev && prev.cadId === c.id && g++ < 6) c = pick(CADENCES);
+    const [key, minor] = pick(CHORD_KEYS.filter(k => !k[1]));
+    const chords = voiceProgression(key, minor, c.prog);
+    const label = (x) => x.name + ' (' + x.end + ')';
+    return { kind: 'cadence', key: c.id + key, cadId: c.id, prog: chords, chord: chords[chords.length - 1].upper, answer: label(c), choices: CADENCES.map(label), uid };
+  }
   for (let g = 0; g < 40; g++) {
     if (lv.kind === 'tonic') {
       const key = pick(['C', 'G', 'F', 'D', 'Bb']);
@@ -4071,7 +4226,7 @@ function ChordQuestion({ q, level, given, locked, onAnswer, pixel }) {
   const done = !!given;
   const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
   const [sel, setSel] = useState([]);
-  useEffect(() => { setSel([]); if (q.kind === 'ear') { const t = setTimeout(() => playChord(q.chord), 250); return () => clearTimeout(t); } }, [q.uid]);
+  useEffect(() => { setSel([]); if (q.kind === 'ear') { const t = setTimeout(() => playChord(q.chord), 250); return () => clearTimeout(t); } if (q.kind === 'cadence') { const t = setTimeout(() => playProgression(q.prog), 250); return () => clearTimeout(t); } }, [q.uid]);
   const prompt = (t, px) => <p style={pixel ? {fontSize:10,textAlign:'center',margin:'0 0 10px'} : {fontSize:14,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? px : t}</p>;
   const panel = { background:'#fff', borderRadius:pixel ? 0 : 8, padding:'4px 0', marginBottom:10 };
   const cls = (c) => btnCls + (!done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '');
@@ -4093,6 +4248,12 @@ function ChordQuestion({ q, level, given, locked, onAnswer, pixel }) {
       {done && <div style={{textAlign:'center',fontSize:13,fontWeight:800,marginTop:8}}>{letters(q.chord)}</div>}
     </div>);
   }
+  if (q.kind === 'cadence') return (<div>
+    {prompt('Listen to the end of the phrase: which cadence?', 'WHICH CADENCE?')}
+    <div style={{textAlign:'center',marginBottom:12}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => playProgression(q.prog)}>{pixel ? '♪ PLAY AGAIN' : '♪ Play again'}</button></div>
+    {done && <div style={panel}><ChordStaff width={260} chords={q.prog.map((c, i) => ({ notes: c.upper, label: romanFor(c.deg, c.q), color: i >= q.prog.length - 2 ? '#a8823f' : '#241f1a' }))}/></div>}
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>{q.choices.map(c => <button key={c} disabled={locked} className={cls(c)} style={{padding:'12px 4px',fontSize:pixel ? 8 : 13}} onClick={() => onAnswer(c)}>{c}</button>)}</div>
+  </div>);
   if (q.kind === 'ear') return (<div>
     {prompt('Listen: major or minor?', 'MAJOR OR MINOR?')}
     <div style={{textAlign:'center',marginBottom:12}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => playChord(q.chord)}>{pixel ? '♪ PLAY AGAIN' : '♪ Play again'}</button></div>
@@ -4112,7 +4273,7 @@ function ChordQuestion({ q, level, given, locked, onAnswer, pixel }) {
 const CHORDS_DRILL = {
   id: 'chords', label: 'Chords', levels: CHORD_LEVELS, generate: genChordQuestion,
   check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
-  answerLabel: (q) => q.kind === 'build' ? q.name + ': ' + letters(q.chord) : q.answer + ' (' + letters(q.chord) + ')',
+  answerLabel: (q) => q.kind === 'build' ? q.name + ': ' + letters(q.chord) : q.kind === 'cadence' ? q.answer : q.answer + ' (' + letters(q.chord) + ')',
   Question: ChordQuestion, Learn: ChordsLearn,
 };
 
@@ -6879,11 +7040,14 @@ const TOOLS = [
   { id: 'semitone-counter', ch: 'intervals', title: 'Count the semitones', blurb: 'Major, minor or perfect?', C: () => <SemitoneCounter/> },
   { id: 'scale-intervals', ch: 'intervals', title: 'Major-scale shortcut', blurb: 'M2 M3 P4 P5 M6 M7 P8.', C: () => <MajorScaleIntervals/> },
   { id: 'interval-ear', ch: 'intervals', title: 'Hear the intervals', blurb: 'Each one with a tune to remember it by.', C: () => <IntervalEar/> },
+  { id: 'invert-interval', ch: 'intervals', title: 'Invert an interval', blurb: 'The numbers add up to 9.', C: () => <IntervalInverter/> },
+  { id: 'tritone', ch: 'intervals', title: 'The tritone', blurb: 'Augmented 4th = diminished 5th in sound.', C: () => <TritoneTool/> },
   { id: 'triad-stack', ch: 'chords', title: 'Stack a triad', blurb: 'Root, 3rd, 5th -- the snowman.', C: () => <TriadStacker/> },
   { id: 'major-minor', ch: 'chords', title: 'Major or minor chord', blurb: 'Flip the middle note.', C: () => <MajorMinorFlip/> },
   { id: 'key-chords', ch: 'chords', title: 'Chords in a key', blurb: 'I ii iii IV V vi vii° with letter names.', C: () => <KeyChords/> },
   { id: 'primary-triads', ch: 'chords', title: 'I, IV and V', blurb: 'Play the primary triads.', C: () => <PrimaryTriads/> },
   { id: 'inversions', ch: 'chords', title: 'Inversions', blurb: 'Move the bottom note to the top.', C: () => <InversionFlip/> },
+  { id: 'cadences', ch: 'chords', title: 'Cadences', blurb: 'Perfect, plagal, imperfect, interrupted.', C: () => <CadencePlayer/> },
   { id: 'split-it', ch: 'note-values', title: 'Split the notes', blurb: 'One semibreve into minims, crotchets...', C: () => <SplitTree/> },
   { id: 'fill-bar', ch: 'note-values', title: 'Fill the bar', blurb: 'Exactly 2, 3 or 4 beats.', C: () => <FillTheBar/> },
   { id: 'count-along', ch: 'time-signatures', title: 'Count along', blurb: 'Beat lights for 2/4, 3/4, 4/4, 6/8.', C: () => <BeatPulse/> },

@@ -2911,7 +2911,12 @@ AMEB (2026 Manual): Music Craft Prelim = tonic triad I of C/G/F (treble, root); 
 ### Phase 118 -- Toolbox: every activity as a stand-alone mini tool
 Sohyun's guiding idea: teaching aids cut into mini tools a teacher can pull out mid-lesson. `TOOLS` registers all 47 hands-on activities (id, chapter, title, blurb). New top switch "Chapters | Toolbox"; the Toolbox lists tools grouped by chapter (chapter colours) with search; a tool opens alone (`?tool=<id>`), with "Learn the whole chapter →" and "Copy student link" (`?tool=<id>&lock=1` shows only that tool, header = tool name). `?view=tools` opens the list. All 47 tool URLs load with zero errors. RULE going forward: every new activity must work stand-alone and be added to TOOLS.
 
-Next on the plan: Intervals Grade 3 add-on (inversions, A4/d5); cadences (perfect, plagal, imperfect/half); more mini tools. Signs 116, Chords 117, Toolbox 118 done.
+### Phase 119 -- Intervals Grade 3 add-on + cadences
+- Intervals step 5 "Inversions and the tritone": `IntervalInverter` (bottom note up an octave; numbers add to 9; M↔m, A↔d, P stays) and `TritoneTool` (F-B augmented 4th vs B-F diminished 5th, 6 semitones counted on the keys). Drill L8 "Invert it", L9 "Any interval incl. A4/d5" (`IV_LIST3`). Fuzzed 1500x.
+- Chords step 6 "Cadences": `CadencePlayer` -- perfect (authentic) V-I, plagal IV-I, imperfect (half) ?-V, interrupted (deceptive) V-vi, each as a 4-chord phrase in any of the chord keys; `voiceProgression` voices the upper three notes as close as possible to the previous chord over a root bass (C: G C E / A C F / G B D / G C E). Drill L7 "By ear: which cadence?".
+- Toolbox now has 50 tools (+ invert-interval, tritone, cadences). Git: `gc.auto` set to 0 in this repo after an auto-gc left undeletable .lock files (removed with delete permission 2026-09-25).
+
+Next on the plan: more mini tools (Sohyun's rule: every activity stand-alone + in TOOLS). Ideas: sight-reading flash cards, a practice-dice/timer tool, scale degree names (tonic, supertonic...), transposition. Signs 116, Chords 117, Toolbox 118, Grade 3 intervals + cadences 119 done.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
