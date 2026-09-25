@@ -3735,6 +3735,387 @@ const INTERVALS_DRILL = {
   Question: IntervalQuestion, Learn: IntervalsLearn,
 };
 
+// ─── Concept: Chords (Phase 117, pitch track #8) ─────────────────────────────────
+// AMEB placement (2026 Manual): Music Craft Prelim = tonic triad I of C, G, F (treble, root position);
+// Grade 1 = I (i) and V, root position, treble and bass, in the grade's keys (C G D F B♭ major,
+// A E D G harmonic minor); Grade 2 = I ii IV V root + 1st inversion with Roman numerals / figured bass;
+// Grade 3 = all inversions, diminished and augmented. Musicianship aural Grade 2 = major vs minor triads.
+// Theory of Music Grade 3 = primary triads I IV V + first inversions. Sohyun: chords are shown with
+// Roman numerals AND letter names. Every activity here also works on its own in a lesson.
+function nameToNote(nm, d) { return { d, acc: nm.endsWith('x') ? 2 : nm.endsWith('#') ? 1 : nm.endsWith('b') ? -1 : 0 }; }
+function scaleNotes(key, minor) {
+  const names = minor ? spellMinor(key, 'harmonic') : spellScale(key);
+  const d0 = 28 + STAFF_LETTERS.indexOf(key[0]) - (STAFF_LETTERS.indexOf(key[0]) > 3 ? 7 : 0); // start between G3 and F4
+  return Array.from({ length: 14 }, (_, i) => nameToNote(names[i % 7], d0 + i));
+}
+function triadOn(notes, i) { return [notes[i], notes[i + 2], notes[i + 4]]; }
+function triadQuality(t) {
+  const q3 = ivQuality(t[0], t[1]), q5 = ivQuality(t[0], t[2]);
+  return q3 === 'M' && q5 === 'P' ? 'major' : q3 === 'm' && q5 === 'P' ? 'minor' : q3 === 'm' && q5 === 'd' ? 'diminished' : q3 === 'M' && q5 === 'A' ? 'augmented' : '?';
+}
+const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+function romanFor(i, quality) {
+  const r = ROMAN[i];
+  return quality === 'major' ? r : quality === 'minor' ? r.toLowerCase() : quality === 'diminished' ? r.toLowerCase() + '°' : r + '+';
+}
+const Q_COL = { major: '#b07d2a', minor: '#3f7fb5', diminished: '#7a64a8', augmented: '#b5483b' };
+function playChord(notes, mode = 'both') {
+  const ctx = getAudio(); if (!ctx) return;
+  const t = ctx.currentTime + 0.04;
+  if (mode !== 'block') notes.forEach((n, i) => blip(ctx, t + i * 0.28, ivFreq(n), 0.5, 0.15, 'triangle'));
+  if (mode !== 'arp') { const b = mode === 'block' ? t : t + notes.length * 0.28 + 0.15; notes.forEach(n => blip(ctx, b, ivFreq(n), 1.2, 0.11, 'triangle')); }
+}
+function triadName(t) { return prettyAny(ivName(t[0]).replace('♯', '#').replace('♭', 'b')) + ' ' + triadQuality(t); }
+function letters(t) { return t.map(ivName).join(' '); }
+
+// Stacked (block) chords on one staff, semibreve noteheads, accidentals staggered so they don't collide.
+function ChordStaff({ clef = 'treble', chords, width = 280, hi = null }) {
+  const c = CLEFS[clef];
+  const ds = chords.flatMap(ch => ch.notes.map(n => n.d));
+  const top = Math.max(c.high, ...ds) , bot = Math.min(c.low, ...ds);
+  const y0 = dY(top) - 18, y1 = dY(bot) + 16 + (chords.some(ch => ch.label) ? 30 : 0);
+  const n = chords.length;
+  const xOf = (i) => n === 1 ? width * 0.6 : 74 + i * ((width - 96) / Math.max(1, n - 1));
+  return (
+    <svg viewBox={`0 ${y0} ${width} ${y1 - y0}`} style={{width:'100%',maxWidth:width * 1.6,display:'block',margin:'0 auto'}}>
+      {c.lines.map(l => <line key={l} x1="4" x2={width - 4} y1={dY(l)} y2={dY(l)} stroke="#241f1a" strokeOpacity="0.55" strokeWidth="1.2"/>)}
+      <ClefGlyph clef={clef} st={clef} yOf={(d) => dY(d)} ink="#241f1a"/>
+      {chords.map((ch, i) => {
+        const x = xOf(i), col = ch.color || '#241f1a', on = hi === i;
+        const sorted = ch.notes.slice().sort((a, b) => b.d - a.d);
+        let accN = 0;
+        return (
+          <g key={i} style={{opacity:hi !== null && !on ? 0.45 : 1,transition:'opacity 0.2s'}}>
+            {on && <rect x={x - 22} y={y0 + 2} width="44" height={y1 - y0 - 4} rx="6" fill="#f3ead8"/>}
+            {ch.notes.flatMap(nt => ledgersFor(nt.d, c.low, c.high)).filter((p, k, a) => a.indexOf(p) === k).map(p => <line key={'l' + p} x1={x - 12} x2={x + 12} y1={dY(p)} y2={dY(p)} stroke="#241f1a" strokeWidth="1.4"/>)}
+            {sorted.map((nt, k) => {
+              const y = dY(nt.d);
+              const ax = x - 17 - (nt.acc ? (accN++ % 2) * 13 : 0);
+              const nc = (ch.noteColors && ch.noteColors[ch.notes.indexOf(nt)]) || col;
+              return (
+                <g key={k} style={{animation:'fadeUp 0.25s both'}}>
+                  {nt.acc === 1 && <SharpShape x={ax} y={y} color={nc}/>}
+                  {nt.acc === -1 && <FlatShape x={ax + 1} y={y} color={nc}/>}
+                  <ellipse cx={x} cy={y} rx="7.2" ry="4.8" transform={`rotate(-25 ${x} ${y})`} fill="#fff" stroke={nc} strokeWidth="2.4"/>
+                </g>
+              );
+            })}
+            {ch.label && <text x={x} y={y1 - 18} textAnchor="middle" fontSize="13" fontWeight="900" fill={col}>{ch.label}</text>}
+            {ch.sub && <text x={x} y={y1 - 5} textAnchor="middle" fontSize="9" fontWeight="700" fill="#6f665b">{ch.sub}</text>}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// 1. Build a triad: root, then a 3rd above, then a 5th -- the "snowman" on the staff, skip-a-key on the keyboard.
+function TriadStacker() {
+  const [root, setRoot] = useState(28);
+  const [n, setN] = useState(1);
+  const r = { d: root, acc: 0 };
+  const full = [r, { d: root + 2, acc: 0 }, { d: root + 4, acc: 0 }];
+  // natural-letter triads: C Dm Em F G Am B°
+  const shown = full.slice(0, n);
+  const cols = ['#b5483b', '#3f7fb5', '#4f8a5b'];
+  const marks = {}, names = {};
+  shown.forEach((nt, i) => { const k = ivMidi(nt) - 60; marks[k] = 'good'; names[k] = ['R', '3', '5'][i]; });
+  function add() { if (n >= 3) return; const nt = full[n]; playKey(ivMidi(nt) - 60, 0.4); setN(n + 1); }
+  const q = n === 3 ? triadQuality(full) : null;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Stack a triad</div>
+      <div style={actNote}>A triad is three notes stacked in 3rds: the <b style={{color:cols[0]}}>root</b>, the <b style={{color:cols[1]}}>3rd</b> above it, and the <b style={{color:cols[2]}}>5th</b>. On the staff they sit line-line-line or space-space-space, like a snowman; on the keyboard, skip a white key each time.</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6}}>
+        {[28, 29, 30, 31, 32, 33, 34].map(d => <button key={d} className={'chip' + (d === root ? ' active' : '')} style={{padding:'3px 10px',fontSize:12}} onClick={() => { setRoot(d); setN(1); playKey(ivMidi({ d, acc: 0 }) - 60, 0.4); }}>{dName(d)}</button>)}
+      </div>
+      <ChordStaff chords={[{ notes: shown, noteColors: cols, label: n === 3 ? letters(full) : shown.map(ivName).join(' '), sub: n === 3 ? '' : '' }]} width={220}/>
+      <TapKeyboard octaves={2} marks={marks} names={names} onTap={(k) => playKey(k)}/>
+      <div style={{display:'flex',gap:6,justifyContent:'center',margin:'8px 0 4px'}}>
+        <button className="ghost-btn" disabled={n >= 3} onClick={add}>+ Add the {n === 1 ? '3rd' : '5th'}</button>
+        <button className="ghost-btn" disabled={n < 3} onClick={() => playChord(full)}>♪ Hear it</button>
+        <button className="ghost-btn" disabled={n === 1} onClick={() => setN(1)}>Clear</button>
+      </div>
+      <div style={{textAlign:'center',fontSize:13,fontWeight:800,minHeight:20,color:q ? Q_COL[q] : 'var(--muted)'}}>{q ? dName(root) + ' ' + q + (q === 'diminished' ? ' -- the odd one out (on B)' : '') : 'Add the 3rd, then the 5th.'}</div>
+    </div>
+  );
+}
+
+// 2. Major or minor: the same root and 5th -- only the middle note moves by a semitone.
+function MajorMinorFlip() {
+  const [root, setRoot] = useState(28);
+  const [q, setQ] = useState('major');
+  const r = { d: root, acc: 0 };
+  const t = [r, ivBuild(r, 3, q === 'major' ? 'M' : 'm'), ivBuild(r, 5, 'P')];
+  const ok = t.every(n => Math.abs(n.acc) <= 1);
+  const k = t.map(n => ivMidi(n) - 60);
+  const names = {}; names[k[0]] = 'R'; names[k[1]] = '3'; names[k[2]] = '5';
+  const marks = { [k[0]]: 'target', [k[1]]: q === 'major' ? 'good' : 'bad', [k[2]]: 'target' };
+  const flip = (nq) => { setQ(nq); const nt = [r, ivBuild(r, 3, nq === 'major' ? 'M' : 'm'), ivBuild(r, 5, 'P')]; playChord(nt); };
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Major or minor?</div>
+      <div style={actNote}>Major = a <b>major 3rd</b> (4 semitones) then a minor 3rd (3). Minor = a <b>minor 3rd</b> (3) then a major 3rd (4). Only the middle note changes -- flip it and listen: major sounds bright, minor sounds darker.</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6}}>
+        {[28, 29, 30, 31, 32, 33, 34].map(d => <button key={d} className={'chip' + (d === root ? ' active' : '')} style={{padding:'3px 10px',fontSize:12}} onClick={() => setRoot(d)}>{dName(d)}</button>)}
+      </div>
+      {ok && <ChordStaff chords={[{ notes: t, color: Q_COL[q], label: letters(t) }]} width={220}/>}
+      <TapKeyboard octaves={2} marks={marks} names={names} onTap={(x) => playKey(x)}/>
+      <div style={{textAlign:'center',fontSize:13,margin:'6px 0',fontWeight:800}}>
+        {ivName(t[0])} → {ivName(t[1])}: <span style={{color:Q_COL[q]}}>{k[1] - k[0]} semitones</span> · {ivName(t[1])} → {ivName(t[2])}: {k[2] - k[1]} semitones
+      </div>
+      <div style={{display:'flex',gap:6,justifyContent:'center'}}>
+        <button className="ghost-btn" style={{borderColor:q === 'major' ? Q_COL.major : undefined,color:Q_COL.major}} onClick={() => flip('major')}>{dName(root)} major</button>
+        <button className="ghost-btn" style={{borderColor:q === 'minor' ? Q_COL.minor : undefined,color:Q_COL.minor}} onClick={() => flip('minor')}>{dName(root)} minor</button>
+      </div>
+    </div>
+  );
+}
+
+// 3. The triads of a key, with Roman numerals and letter names.
+const CHORD_KEYS = [['C', false], ['G', false], ['D', false], ['F', false], ['Bb', false], ['A', true], ['E', true], ['D', true], ['G', true]];
+function KeyChords() {
+  const [ki, setKi] = useState(0);
+  const [hi, setHi] = useState(null);
+  const [key, minor] = CHORD_KEYS[ki];
+  const sc = scaleNotes(key, minor);
+  const tri = Array.from({ length: 7 }, (_, i) => triadOn(sc, i));
+  const qs = tri.map(triadQuality);
+  const pick_ = (i) => { setHi(i); playChord(tri[i]); };
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>A triad on every note of the scale</div>
+      <div style={actNote}>Build a triad on each note of the scale, using only the scale’s own notes. Number them with Roman numerals: capitals for <b style={{color:Q_COL.major}}>major</b>, small letters for <b style={{color:Q_COL.minor}}>minor</b>, ° for <b style={{color:Q_COL.diminished}}>diminished</b>. Tap one.</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6}}>
+        {CHORD_KEYS.map(([k, m], i) => <button key={i} className={'chip' + (i === ki ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => { setKi(i); setHi(null); }}>{prettyNote(k)}{m ? 'm' : ''}</button>)}
+      </div>
+      <div style={{background:'#fff',borderRadius:8}}>
+        <ChordStaff width={330} hi={hi} chords={tri.map((t, i) => ({ notes: t, color: Q_COL[qs[i]], label: romanFor(i, qs[i]) }))}/>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:3,margin:'6px 0'}}>
+        {tri.map((t, i) => <button key={i} className="chip" onClick={() => pick_(i)} style={{padding:'4px 0',fontSize:12,fontWeight:900,color:Q_COL[qs[i]],borderColor:hi === i ? Q_COL[qs[i]] : undefined}}>{romanFor(i, qs[i])}</button>)}
+      </div>
+      <div style={{textAlign:'center',fontSize:13,minHeight:40,lineHeight:1.5}}>
+        {hi !== null ? <><b style={{color:Q_COL[qs[hi]],fontSize:16}}>{romanFor(hi, qs[hi])}</b> in {prettyNote(key)} {minor ? 'minor' : 'major'} = <b>{letters(tri[hi])}</b> -- {ivName(tri[hi][0])} {qs[hi]}{hi === 0 ? ' (the tonic)' : hi === 3 ? ' (the subdominant)' : hi === 4 ? ' (the dominant)' : ''}</>
+          : <span style={{color:'var(--muted)'}}>{minor ? 'Harmonic minor: the raised 7th makes V major.' : 'Every major key: I, IV and V are major; ii, iii and vi are minor; vii° is diminished.'}</span>}
+      </div>
+    </div>
+  );
+}
+
+// 4. The three primary triads: I, IV, V -- play the progression, see every scale note is covered.
+function PrimaryTriads() {
+  const [ki, setKi] = useState(0);
+  const [on, setOn] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const [key, minor] = CHORD_KEYS[ki];
+  const sc = scaleNotes(key, minor);
+  const idx = [0, 3, 4];
+  const tri = idx.map(i => triadOn(sc, i));
+  const seq = [0, 1, 2, 0];
+  function play() {
+    timers.current.forEach(clearTimeout); timers.current = [];
+    seq.forEach((c, k) => timers.current.push(setTimeout(() => { setOn(c); playChord(tri[c], 'block'); }, 100 + k * 900)));
+    timers.current.push(setTimeout(() => setOn(-1), 100 + seq.length * 900 + 300));
+  }
+  const roles = ['tonic', 'subdominant', 'dominant'];
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>The primary triads: I, IV and V</div>
+      <div style={actNote}>The three most important chords in any key. Between them they use every note of the scale -- so they can harmonise almost any simple tune.</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6}}>
+        {CHORD_KEYS.map(([k, m], i) => <button key={i} className={'chip' + (i === ki ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => { setKi(i); setOn(-1); }}>{prettyNote(k)}{m ? 'm' : ''}</button>)}
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>
+        {tri.map((t, c) => {
+          const q = triadQuality(t);
+          return (
+            <button key={c} onClick={() => { setOn(c); playChord(t); }} style={{background:on === c ? '#f3ead8' : '#fff',border:'2px solid ' + (on === c ? Q_COL[q] : 'var(--border)'),borderRadius:10,padding:'6px 4px',cursor:'pointer',color:'var(--text)'}}>
+              <div style={{fontSize:22,fontWeight:900,color:Q_COL[q]}}>{romanFor(idx[c], q)}</div>
+              <div style={{fontSize:13,fontWeight:900}}>{letters(t)}</div>
+              <div style={{fontSize:10,color:'#6f665b'}}>{roles[c]}</div>
+            </button>
+          );
+        })}
+      </div>
+      <div style={{display:'flex',justifyContent:'center',gap:4,margin:'8px 0 2px',flexWrap:'wrap'}}>
+        {sc.slice(0, 7).map((nt, i) => {
+          const owner = idx.findIndex(j => [j, j + 2, j + 4].map(x => x % 7).includes(i));
+          return <span key={i} style={{fontSize:13,fontWeight:900,padding:'2px 7px',borderRadius:6,background:on >= 0 && [idx[on], idx[on] + 2, idx[on] + 4].map(x => x % 7).includes(i) ? '#f3ead8' : '#fff',border:'1px solid var(--border)'}}>{ivName(nt)}</span>;
+        })}
+      </div>
+      <div style={{textAlign:'center',fontSize:11,color:'var(--muted)',marginBottom:6}}>Scale notes -- lit when they’re in the chord that’s playing</div>
+      <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={play}>♪ Play I – IV – V – I</button></div>
+    </div>
+  );
+}
+
+// 5. Inversions: move the bottom note to the top.
+function InversionFlip() {
+  const [root, setRoot] = useState(28);
+  const [inv, setInv] = useState(0);
+  const base = [{ d: root, acc: 0 }, { d: root + 2, acc: 0 }, { d: root + 4, acc: 0 }];
+  const lift = (n) => ({ d: n.d + 7, acc: n.acc });
+  const chord = inv === 0 ? base : inv === 1 ? [base[1], base[2], lift(base[0])] : [base[2], lift(base[0]), lift(base[1])];
+  const roleOf = (nt) => { const L = dName(nt.d); return L === dName(base[0].d) ? 'root' : L === dName(base[1].d) ? '3rd' : '5th'; };
+  const cols = { root: '#b5483b', '3rd': '#3f7fb5', '5th': '#4f8a5b' };
+  const names = ['Root position', '1st inversion', '2nd inversion'];
+  const figs = ['5/3 · a', '6/3 · b', '6/4 · c'];
+  const marks = {}, labs = {};
+  chord.forEach(nt => { const k = ivMidi(nt) - 60; marks[k] = 'good'; labs[k] = roleOf(nt) === 'root' ? 'R' : roleOf(nt)[0]; });
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Turn it upside down: inversions</div>
+      <div style={actNote}>Same three letters, different bottom note. Take the lowest note and move it up an octave: root position → 1st inversion (3rd at the bottom) → 2nd inversion (5th at the bottom).</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6}}>
+        {[28, 29, 31, 32, 33].map(d => <button key={d} className={'chip' + (d === root ? ' active' : '')} style={{padding:'3px 10px',fontSize:12}} onClick={() => { setRoot(d); setInv(0); }}>{dName(d)}</button>)}
+      </div>
+      <ChordStaff key={root + ':' + inv} width={220} chords={[{ notes: chord, noteColors: chord.map(nt => cols[roleOf(nt)]), label: names[inv], sub: 'bottom note: the ' + roleOf(chord[0]) + ' · ' + figs[inv] }]}/>
+      <TapKeyboard octaves={2} marks={marks} names={labs} onTap={(x) => playKey(x)}/>
+      <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:8}}>
+        {names.map((nm, i) => <button key={i} className="ghost-btn" style={{fontSize:12,padding:'6px 10px',borderColor:inv === i ? 'var(--text)' : undefined}} onClick={() => { setInv(i); const c2 = i === 0 ? base : i === 1 ? [base[1], base[2], lift(base[0])] : [base[2], lift(base[0]), lift(base[1])]; playChord(c2); }}>{nm}</button>)}
+      </div>
+    </div>
+  );
+}
+
+function ChordsLearn({ onStart }) {
+  const tip = (title, body) => <Rule title={title}>{body}</Rule>;
+  return (
+    <Lesson id="chords" title="Chords and triads" onStart={onStart}
+      intro={<>Three notes stacked in 3rds make a triad. Every chord is named two ways: by its <b>letters</b> (G B D = G major) and by its <b>Roman numeral</b> in the key (V in C major).</>}>
+      <Step title="Stack a triad">
+        {tip('Root, 3rd, 5th', 'Start on any note (the root), add the note a 3rd above, then the note a 5th above. Line-line-line or space-space-space.')}
+        <TriadStacker/>
+      </Step>
+      <Step title="Major and minor">
+        {tip('Only the middle note moves', 'Major = major 3rd + minor 3rd. Minor = minor 3rd + major 3rd. The root and the 5th stay put.')}
+        <MajorMinorFlip/>
+      </Step>
+      <Step title="Roman numerals">
+        {tip('Number the chord by its root', 'In C major, the chord on C is I, on F is IV, on G is V. Capitals = major, small = minor.')}
+        <KeyChords/>
+      </Step>
+      <Step title="I, IV and V">
+        {tip('The primary triads', 'Tonic (I), subdominant (IV) and dominant (V). In a minor key: i, iv and V -- the raised 7th makes V major.')}
+        <PrimaryTriads/>
+      </Step>
+      <Step title="Inversions">
+        {tip('Name it by the bottom note', 'Root at the bottom = root position (a). 3rd at the bottom = 1st inversion (b). 5th at the bottom = 2nd inversion (c).')}
+        <InversionFlip/>
+      </Step>
+    </Lesson>
+  );
+}
+
+// Drill
+const CHORD_LEVELS = [
+  { n: 1, label: 'Tonic triads: C, G, F major (Prelim)',  kind: 'tonic', time: 9 },
+  { n: 2, label: 'I, IV or V? (Grades 1–2)',              kind: 'roman', time: 11 },
+  { n: 3, label: 'Major or minor triad?',                  kind: 'quality', time: 8 },
+  { n: 4, label: 'By ear: major or minor?',                kind: 'ear', time: 9 },
+  { n: 5, label: 'Build it on the keyboard',               kind: 'build', time: 14 },
+  { n: 6, label: 'Root position, 1st or 2nd inversion?',   kind: 'inv', time: 10 },
+];
+function genChordQuestion(lv, prev) {
+  const uid = Math.random();
+  for (let g = 0; g < 40; g++) {
+    if (lv.kind === 'tonic') {
+      const key = pick(['C', 'G', 'F', 'D', 'Bb']);
+      const t = triadOn(scaleNotes(key, false), 0);
+      const answer = prettyNote(key) + ' major';
+      if (prev && prev.answer === answer) continue;
+      return { kind: 'tonic', key: answer, chord: t, clef: 'treble', answer, choices: shuffle([answer, ...sampleN(['C', 'G', 'F', 'D', 'B♭', 'A', 'E'].map(x => x + ' major').filter(x => x !== answer), 3)]), uid };
+    }
+    if (lv.kind === 'roman') {
+      const [key, minor] = pick(CHORD_KEYS);
+      const i = pick([0, 3, 4]);
+      const t = triadOn(scaleNotes(key, minor), i), q = triadQuality(t);
+      const clef = Math.random() < 0.5 ? 'treble' : 'bass';
+      const sh = Math.max(...t.map(n => n.d)) - 7 <= 29 ? -7 : -14;
+      const tt = clef === 'bass' ? t.map(n => ({ d: n.d + sh, acc: n.acc })) : t;
+      const answer = romanFor(i, q);
+      const choices = [0, 3, 4].map(j => romanFor(j, triadQuality(triadOn(scaleNotes(key, minor), j))));
+      const k = key + minor + i + clef; if (prev && prev.key === k) continue;
+      return { kind: 'roman', key: k, keyName: prettyNote(key) + (minor ? ' minor' : ' major'), chord: tt, clef, answer, choices, uid };
+    }
+    const root = { d: 28 + Math.floor(Math.random() * 7), acc: 0 };
+    if (lv.kind === 'quality' || lv.kind === 'ear') {
+      const q = Math.random() < 0.5 ? 'major' : 'minor';
+      const t = [root, ivBuild(root, 3, q === 'major' ? 'M' : 'm'), ivBuild(root, 5, 'P')];
+      if (t.some(n => Math.abs(n.acc) > 1)) continue;
+      const k = letters(t); if (prev && prev.key === k) continue;
+      return { kind: lv.kind, key: k, chord: t, clef: 'treble', answer: q === 'major' ? 'Major' : 'Minor', choices: ['Major', 'Minor'], uid };
+    }
+    if (lv.kind === 'build') {
+      const q = Math.random() < 0.5 ? 'major' : 'minor';
+      const t = [root, ivBuild(root, 3, q === 'major' ? 'M' : 'm'), ivBuild(root, 5, 'P')];
+      if (t.some(n => Math.abs(n.acc) > 1)) continue;
+      const name = ivName(root) + ' ' + q; if (prev && prev.key === name) continue;
+      const target = t.map(n => ((ivMidi(n) % 12) + 12) % 12).sort((a, b) => a - b).join(',');
+      return { kind: 'build', key: name, chord: t, name, answer: target, uid };
+    }
+    const inv = Math.floor(Math.random() * 3);
+    const b = [root, { d: root.d + 2, acc: 0 }, { d: root.d + 4, acc: 0 }];
+    const lift = (n) => ({ d: n.d + 7, acc: n.acc });
+    const chord = inv === 0 ? b : inv === 1 ? [b[1], b[2], lift(b[0])] : [b[2], lift(b[0]), lift(b[1])];
+    const answer = ['Root position', '1st inversion', '2nd inversion'][inv];
+    const k = letters(chord); if (prev && prev.key === k) continue;
+    return { kind: 'inv', key: k, chord, clef: 'treble', rootName: dName(root.d), answer, choices: ['Root position', '1st inversion', '2nd inversion'], uid };
+  }
+  const t = triadOn(scaleNotes('C', false), 0);
+  return { kind: 'tonic', key: 'x', chord: t, clef: 'treble', answer: 'C major', choices: ['C major', 'G major', 'F major', 'D major'], uid };
+}
+function ChordQuestion({ q, level, given, locked, onAnswer, pixel }) {
+  const done = !!given;
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const [sel, setSel] = useState([]);
+  useEffect(() => { setSel([]); if (q.kind === 'ear') { const t = setTimeout(() => playChord(q.chord), 250); return () => clearTimeout(t); } }, [q.uid]);
+  const prompt = (t, px) => <p style={pixel ? {fontSize:10,textAlign:'center',margin:'0 0 10px'} : {fontSize:14,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? px : t}</p>;
+  const panel = { background:'#fff', borderRadius:pixel ? 0 : 8, padding:'4px 0', marginBottom:10 };
+  const cls = (c) => btnCls + (!done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '');
+  const grid = (cols, fs) => <div style={{display:'grid',gridTemplateColumns:'repeat(' + cols + ',1fr)',gap:8}}>{q.choices.map(c => <button key={c} disabled={locked} className={cls(c)} style={{padding:'14px 0',fontSize:pixel ? 10 : fs}} onClick={() => { onAnswer(c); if (q.kind !== 'ear') playChord(q.chord, 'block'); }}>{c}</button>)}</div>;
+  if (q.kind === 'build') {
+    const marks = {};
+    sel.forEach(k => { marks[k] = done ? (q.answer.split(',').includes(String(k % 12)) ? 'good' : 'bad') : 'target'; });
+    if (done) q.chord.forEach(n => { const k = ((ivMidi(n) - 60) % 12 + 12) % 12; if (!marks[k] && !marks[k + 12]) marks[k] = 'good'; });
+    const tap = (k) => {
+      if (locked) return; playKey(k, 0.3);
+      const ns = sel.includes(k) ? sel.filter(x => x !== k) : [...sel, k];
+      setSel(ns);
+      if (ns.length === 3) { const pcs = [...new Set(ns.map(x => x % 12))].sort((a, b) => a - b).join(','); setTimeout(() => onAnswer(pcs), 150); }
+    };
+    return (<div>
+      {prompt('Tap the three keys of ' + q.name.replace(/^([A-G])/, '$1'), ('TAP ' + q.name).toUpperCase())}
+      <div style={{textAlign:'center',fontSize:pixel ? 18 : 30,fontWeight:900,marginBottom:10}}>{q.name}</div>
+      <TapKeyboard octaves={2} labels="white" marks={marks} pixel={pixel} onTap={tap}/>
+      {done && <div style={{textAlign:'center',fontSize:13,fontWeight:800,marginTop:8}}>{letters(q.chord)}</div>}
+    </div>);
+  }
+  if (q.kind === 'ear') return (<div>
+    {prompt('Listen: major or minor?', 'MAJOR OR MINOR?')}
+    <div style={{textAlign:'center',marginBottom:12}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => playChord(q.chord)}>{pixel ? '♪ PLAY AGAIN' : '♪ Play again'}</button></div>
+    {done && <div style={panel}><ChordStaff chords={[{ notes: q.chord, label: letters(q.chord) }]} width={200}/></div>}
+    {grid(2, 16)}
+  </div>);
+  const title = q.kind === 'tonic' ? ['Which key’s tonic triad is this?', 'WHOSE TONIC TRIAD?']
+    : q.kind === 'roman' ? ['In ' + q.keyName + ': is this I, IV or V?', 'I, IV OR V? (' + q.keyName.toUpperCase() + ')']
+    : q.kind === 'inv' ? ['A ' + q.rootName + ' triad -- which position?', 'WHICH POSITION?']
+    : ['Major or minor triad?', 'MAJOR OR MINOR?'];
+  return (<div>
+    {prompt(title[0], title[1])}
+    <div style={panel}><ChordStaff clef={q.clef} chords={[{ notes: q.chord, label: done ? letters(q.chord) : '' }]} width={200}/></div>
+    {grid(q.choices.length === 2 ? 2 : q.choices.length === 3 ? 3 : 2, q.kind === 'inv' ? 13 : 16)}
+  </div>);
+}
+const CHORDS_DRILL = {
+  id: 'chords', label: 'Chords', levels: CHORD_LEVELS, generate: genChordQuestion,
+  check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
+  answerLabel: (q) => q.kind === 'build' ? q.name + ': ' + letters(q.chord) : q.answer + ' (' + letters(q.chord) + ')',
+  Question: ChordQuestion, Learn: ChordsLearn,
+};
+
 // ─── Concept 6: Scales (Phase 97, 2026-09-23) ────────────────────────────────────
 // Rebuilt from Sohyun's Scale Fingering tool + her scale-card idea. The one idea a student
 // actually has to hold per scale: the thumb tucks after 3 and after 4, so in each octave finger 4
@@ -6454,6 +6835,7 @@ const DRILLS = [
   { id: 'scales', label: 'Scales', concept: SCALES_DRILL, track: 'pitch' },
   { id: 'key-signatures', label: 'Key Signatures', concept: KEYSIG_DRILL, track: 'pitch' },
   { id: 'intervals', label: 'Intervals', concept: INTERVALS_DRILL, track: 'pitch' },
+  { id: 'chords', label: 'Chords', concept: CHORDS_DRILL, track: 'pitch' },
   { id: 'note-values', label: 'Notes & Rests', concept: NOTEVAL_DRILL, track: 'rhythm' },
   { id: 'time-signatures', label: 'Time Signatures', concept: TIMESIG_DRILL, track: 'rhythm' },
   { id: 'rhythm', label: 'Rhythm Cards', concept: RHYTHM_DRILL, track: 'rhythm' },
@@ -6461,6 +6843,115 @@ const DRILLS = [
   { id: 'dynamics', label: 'Dynamics & Articulation', concept: DYN_DRILL, track: 'reading' },
   { id: 'signs', label: 'Signs', concept: SIGNS_DRILL, track: 'reading' },
 ];
+
+// ─── Toolbox (Phase 118) ─────────────────────────────────────────────────────────
+// Sohyun: the whole idea is music teaching aids cut into mini tools a teacher can pull out in the
+// middle of a lesson. Every hands-on activity is registered here so it can be opened on its own:
+// ?tool=<id> (add &lock=1 for a student link that shows only that tool). The chapters still hold
+// the same tools in teaching order; the Toolbox is the quick-grab drawer.
+const TOOLS = [
+  { id: 'find-every', ch: 'note-names', title: 'Find every C', blurb: 'Race to find all the Cs (or any letter).', C: () => <FindAll/> },
+  { id: 'name-reveal', ch: 'note-names', title: 'Name them in order', blurb: 'Letters land on the keys; A comes after G.', C: () => <NameReveal/> },
+  { id: 'step-updown', ch: 'note-names', title: 'Step up, step down', blurb: 'Right = up = forwards through the letters.', C: () => <UpDownWalk/> },
+  { id: 'letter-chain', ch: 'note-names', title: 'Letter chain', blurb: 'Say the next letter out loud, in turns.', C: () => <LetterChainDrill/> },
+  { id: 'clef-story', ch: 'staff', title: 'The Queen and the King', blurb: 'Why the G clef and the F clef are called that.', C: () => <ClefStory/> },
+  { id: 'staff-climb', ch: 'staff', title: 'Climb the staff', blurb: 'Line, space, line -- mirrored on the keyboard.', C: () => <StaffClimb/> },
+  { id: 'rhymes', ch: 'staff', title: 'Line and space rhymes', blurb: 'Every Good Boy... tap by tap.', C: () => <MnemonicStaff/> },
+  { id: 'landmarks', ch: 'staff', title: 'Landmark notes', blurb: 'Middle C, treble G, bass F, the Cs.', C: () => <StaffExplorer/> },
+  { id: 'landmark-hop', ch: 'staff', title: 'Hop from a landmark', blurb: 'Guess the note, then count from a landmark.', C: () => <LandmarkHop/> },
+  { id: 'fold', ch: 'staff', title: 'Fold at middle C', blurb: 'The treble and bass staves are mirror images.', C: () => <FoldStaff/> },
+  { id: 'write-note', ch: 'staff', title: 'Write it on the staff', blurb: 'Tap where the named note goes.', C: () => <WriteTheNote/> },
+  { id: 'ledger-walk', ch: 'ledger-lines', title: 'Walk off the staff', blurb: 'Ledger lines appear one by one.', C: () => <LedgerClimb/> },
+  { id: 'ledger-landmarks', ch: 'ledger-lines', title: 'Notes on ledger lines', blurb: 'A C E, C A F, C E G, E C A.', C: () => <LedgerLandmarks/> },
+  { id: 'ledger-twins', ch: 'ledger-lines', title: 'Same note, other staff', blurb: 'Ledger notes are the other staff’s lines.', C: () => <LedgerTwins/> },
+  { id: 'ledger-write', ch: 'ledger-lines', title: 'Write with ledger lines', blurb: 'Tap the right line or space.', C: () => <LedgerWrite/> },
+  { id: 'tone-semitone', ch: 'tones', title: 'Tone or semitone', blurb: 'Tap two keys, count the steps.', C: () => <StepExplorer/> },
+  { id: 'sharp-flat', ch: 'tones', title: 'Sharp, flat, natural', blurb: 'Push a key one semitone and back.', C: () => <SharpFlatMover/> },
+  { id: 'accidental-bar', ch: 'tones', title: 'How long an accidental lasts', blurb: 'Until the bar line -- hear it.', C: () => <AccidentalBar/> },
+  { id: 'build-major', ch: 'scales', title: 'Build a major scale', blurb: 'T T S T T T S, step by step.', C: () => <ScaleBuilder mode="major"/> },
+  { id: 'build-minor', ch: 'scales', title: 'Build a harmonic minor', blurb: 'With the tone-and-a-half step.', C: () => <ScaleBuilder mode="minor"/> },
+  { id: 'sharps-order', ch: 'key-signatures', title: 'Order of sharps', blurb: 'Add them one by one, numbered.', C: () => <OrderBuilder type="sharp"/> },
+  { id: 'flats-order', ch: 'key-signatures', title: 'Order of flats', blurb: 'The sharps backwards.', C: () => <OrderBuilder type="flat"/> },
+  { id: 'place-it', ch: 'key-signatures', title: 'Place the key signature', blurb: 'Tap where each sharp or flat goes.', C: () => <PlaceIt/> },
+  { id: 'circle-fifths', ch: 'key-signatures', title: 'Circle of fifths', blurb: 'Every key in one clock.', C: () => <CircleOfFifths/> },
+  { id: 'interval-ruler', ch: 'intervals', title: 'Interval ruler', blurb: 'Count lines and spaces from 1.', C: () => <IntervalRuler/> },
+  { id: 'letter-hop', ch: 'intervals', title: 'Hop round the letters', blurb: 'The start counts as 1.', C: () => <LetterWalker/> },
+  { id: 'semitone-counter', ch: 'intervals', title: 'Count the semitones', blurb: 'Major, minor or perfect?', C: () => <SemitoneCounter/> },
+  { id: 'scale-intervals', ch: 'intervals', title: 'Major-scale shortcut', blurb: 'M2 M3 P4 P5 M6 M7 P8.', C: () => <MajorScaleIntervals/> },
+  { id: 'interval-ear', ch: 'intervals', title: 'Hear the intervals', blurb: 'Each one with a tune to remember it by.', C: () => <IntervalEar/> },
+  { id: 'triad-stack', ch: 'chords', title: 'Stack a triad', blurb: 'Root, 3rd, 5th -- the snowman.', C: () => <TriadStacker/> },
+  { id: 'major-minor', ch: 'chords', title: 'Major or minor chord', blurb: 'Flip the middle note.', C: () => <MajorMinorFlip/> },
+  { id: 'key-chords', ch: 'chords', title: 'Chords in a key', blurb: 'I ii iii IV V vi vii° with letter names.', C: () => <KeyChords/> },
+  { id: 'primary-triads', ch: 'chords', title: 'I, IV and V', blurb: 'Play the primary triads.', C: () => <PrimaryTriads/> },
+  { id: 'inversions', ch: 'chords', title: 'Inversions', blurb: 'Move the bottom note to the top.', C: () => <InversionFlip/> },
+  { id: 'split-it', ch: 'note-values', title: 'Split the notes', blurb: 'One semibreve into minims, crotchets...', C: () => <SplitTree/> },
+  { id: 'fill-bar', ch: 'note-values', title: 'Fill the bar', blurb: 'Exactly 2, 3 or 4 beats.', C: () => <FillTheBar/> },
+  { id: 'count-along', ch: 'time-signatures', title: 'Count along', blurb: 'Beat lights for 2/4, 3/4, 4/4, 6/8.', C: () => <BeatPulse/> },
+  { id: 'bar-lines', ch: 'time-signatures', title: 'Put in the bar lines', blurb: 'The written exam task.', C: () => <BarLineBuilder/> },
+  { id: 'regroup', ch: 'time-signatures', title: '3/4 or 6/8?', blurb: 'Same six quavers, different beat.', C: () => <RegroupQuavers/> },
+  { id: 'make-card', ch: 'rhythm', title: 'Make a rhythm card', blurb: 'Build a bar and loop it.', C: () => <RhythmComposer/> },
+  { id: 'metronome', ch: 'tempo', title: 'Metronome', blurb: 'With the tempo word and tap tempo.', C: () => <MetronomeDial/> },
+  { id: 'speed-change', ch: 'tempo', title: 'rit. and accel.', blurb: 'Hear the speed change.', C: () => <SpeedChange/> },
+  { id: 'dyn-order', ch: 'dynamics', title: 'Line up the dynamics', blurb: 'pp to ff, by ear and eye.', C: () => <DynOrder/> },
+  { id: 'hairpin', ch: 'dynamics', title: 'Draw a hairpin', blurb: 'Crescendo and diminuendo.', C: () => <HairpinMaker/> },
+  { id: 'road-map', ch: 'signs', title: 'Road map', blurb: 'Repeats, 1st/2nd time, D.C., D.S., Coda.', C: () => <RoadMap/> },
+  { id: 'tie-slur', ch: 'signs', title: 'Tie or slur?', blurb: 'Same pitch or different?', C: () => <TieOrSlur/> },
+  { id: 'ottava', ch: 'signs', title: '8va and 8vb', blurb: 'An octave higher or lower.', C: () => <OttavaDemo/> },
+];
+function Toolbox({ onOpen }) {
+  const [q, setQ] = useState('');
+  const match = (t) => !q || (t.title + ' ' + t.blurb).toLowerCase().includes(q.toLowerCase());
+  return (
+    <div className="fade-up">
+      <div className="card" style={{marginBottom:12}}>
+        <h2 style={{fontSize:20,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Toolbox</h2>
+        <p style={{fontSize:13,color:'var(--muted)',margin:'0 0 10px',lineHeight:1.5}}>Every hands-on tool on its own -- grab the one you need in the middle of a lesson. Each one has a link you can send to a student.</p>
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search: triad, sharp, repeat..." style={{width:'100%',boxSizing:'border-box',padding:'9px 12px',borderRadius:10,border:'1.5px solid var(--border)',fontSize:14,fontFamily:'inherit'}}/>
+      </div>
+      {DRILLS.map((d, gi) => {
+        const list = TOOLS.filter(t => t.ch === d.id && match(t));
+        if (!list.length) return null;
+        const col = STEP_COLORS[gi % STEP_COLORS.length];
+        return (
+          <div key={d.id} style={{marginBottom:14}}>
+            <div style={{fontSize:12,fontWeight:900,color:col,textTransform:'uppercase',letterSpacing:'0.06em',margin:'0 0 6px 2px'}}>{d.label}</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+              {list.map(t => (
+                <button key={t.id} onClick={() => onOpen(t.id)} style={{textAlign:'left',background:'#fff',border:'1.5px solid var(--border)',borderLeft:'4px solid ' + col,borderRadius:10,padding:'8px 10px',cursor:'pointer',color:'var(--text)'}}>
+                  <div style={{fontSize:13.5,fontWeight:900,lineHeight:1.25}}>{t.title}</div>
+                  <div style={{fontSize:11,color:'#6f665b',lineHeight:1.35,marginTop:2}}>{t.blurb}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+function ToolView({ id, locked, onBack, onChapter }) {
+  const t = TOOLS.find(x => x.id === id);
+  const [copied, setCopied] = useState(false);
+  if (!t) return <div className="card">That tool isn’t here any more. <button className="ghost-btn" onClick={onBack}>Toolbox</button></div>;
+  const ch = DRILLS.find(d => d.id === t.ch);
+  const link = (() => { try { return location.origin + location.pathname + '?tool=' + t.id + '&lock=1'; } catch (e) { return '?tool=' + t.id + '&lock=1'; } })();
+  function copy() { try { navigator.clipboard.writeText(link).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }, () => {}); } catch (e) {} }
+  return (
+    <div className="fade-up">
+      {!locked && <button className="ghost-btn" style={{fontSize:12,padding:'5px 12px',marginBottom:10}} onClick={onBack}>← Toolbox</button>}
+      <div className="card">
+        <div style={{fontSize:11,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:12}}>{ch ? ch.label : ''} · tool</div>
+        <t.C/>
+        {!locked && (
+          <div style={{display:'flex',gap:6,flexWrap:'wrap',justifyContent:'space-between',alignItems:'center',borderTop:'1px solid var(--border)',paddingTop:10,marginTop:4}}>
+            <button className="ghost-btn" style={{fontSize:12,padding:'6px 12px'}} onClick={() => onChapter(t.ch)}>Learn the whole chapter →</button>
+            <button className="ghost-btn" style={{fontSize:12,padding:'6px 12px'}} onClick={copy}>{copied ? 'Link copied ✓' : 'Copy student link'}</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // URL state: ?drill=<id>&tab=learn|drill&level=<n>&mode=lesson|game&lock=1
 // lock=1 (used by the student share link) hides the drill picker and level/mode controls.
@@ -6478,6 +6969,8 @@ function readUrlState() {
     level: isNaN(level) ? 1 : level,
     mode: p.get('mode') === 'game' ? 'game' : 'lesson',
     lock: p.get('lock') === '1',
+    tool: TOOLS.find(t => t.id === p.get('tool')) ? p.get('tool') : null,
+    view: p.get('tool') || p.get('view') === 'tools' ? 'tools' : 'chapters',
   };
 }
 
@@ -6490,12 +6983,15 @@ function App() {
   useEffect(() => {
     try {
       const p = new URLSearchParams();
-      p.set('drill', active.id);
-      if (concept) { p.set('tab', st.tab); if (st.tab === 'drill') { p.set('level', level); p.set('mode', st.mode); } }
+      if (st.view === 'tools') { if (st.tool) p.set('tool', st.tool); else p.set('view', 'tools'); }
+      else {
+        p.set('drill', active.id);
+        if (concept) { p.set('tab', st.tab); if (st.tab === 'drill') { p.set('level', level); p.set('mode', st.mode); } }
+      }
       if (st.lock) p.set('lock', '1');
       history.replaceState(null, '', location.pathname + '?' + p.toString());
     } catch (e) { /* URL sync is a convenience only */ }
-  }, [active.id, st.tab, level, st.mode, st.lock]);
+  }, [active.id, st.tab, level, st.mode, st.lock, st.view, st.tool]);
 
   function update(patch) { setSt(prev => ({ ...prev, ...patch })); }
 
@@ -6506,7 +7002,7 @@ function App() {
           Back to Piano Butler
         </a>
         <h1 style={{color:'var(--text)',fontSize:19,fontWeight:900,margin:'0 0 2px',letterSpacing:'-0.02em'}}>
-          {st.lock ? active.label : 'Practice Drills'}
+          {st.lock ? (st.tool ? (TOOLS.find(t => t.id === st.tool) || {}).title : active.label) : 'Practice Drills'}
         </h1>
         <p style={{color:'var(--muted)',fontSize:12,margin:0}}>
           Quick exercises to pull back out whenever a student needs to revisit something.
@@ -6514,6 +7010,19 @@ function App() {
       </div>
 
       <div style={{maxWidth:480,margin:'0 auto',padding:'24px 16px 60px'}}>
+        {!st.lock && (
+          <div style={{display:'flex',background:'#fff',border:'1.5px solid var(--border)',borderRadius:12,padding:3,marginBottom:16}}>
+            {[['chapters', 'Chapters'], ['tools', 'Toolbox']].map(([v, l]) => (
+              <button key={v} onClick={() => update({ view: v, tool: null })} style={{flex:1,border:'none',borderRadius:9,padding:'9px 0',fontSize:14,fontWeight:900,cursor:'pointer',
+                background:st.view === v ? 'var(--text)' : 'transparent',color:st.view === v ? '#fff' : 'var(--muted)'}}>{l}</button>
+            ))}
+          </div>
+        )}
+        {st.view === 'tools' ? (
+          st.tool
+            ? <ToolView id={st.tool} locked={st.lock} onBack={() => update({ tool: null })} onChapter={(id) => update({ view: 'chapters', tool: null, drill: id, tab: 'learn', level: 1 })}/>
+            : <Toolbox onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
+        ) : <>
         {!st.lock && (
           <div style={{marginBottom:20}}>
             {[['pitch', 'Pitch -- keyboard, staff, scales'], ['rhythm', 'Rhythm -- beats and bars'], ['reading', 'Reading the music -- terms and signs']].map(([tr, title]) => (
@@ -6538,6 +7047,7 @@ function App() {
             {!st.lock && st.tab === 'drill' && <ShareLink drillId={active.id} level={level} mode={st.mode} />}
           </>
         ) : active.render()}
+        </>}
       </div>
     </div>
   );
