@@ -429,9 +429,12 @@ const SEGMENT_COLORS = {
 // segment's label instead of being computed from Math.max on itself.
 function segmentsStartAt1(fingers) {
   const groups = new Array(fingers.length);
-  let segStart = 0;
+  // Notes before the first thumb (e.g. B-flat major starting on finger 2) are a lead-in, not a
+  // group -- left uncoloured (Sohyun, Phase 135).
+  const first1 = fingers.indexOf(1);
+  let segStart = first1 > 0 ? first1 : 0;
   let prevLabel = null;
-  for (let i = 1; i <= fingers.length; i++) {
+  for (let i = segStart + 1; i <= fingers.length; i++) {
     const closedByThumb = fingers[i] === 1;
     if (i === fingers.length || closedByThumb) {
       const seg = fingers.slice(segStart, i);
@@ -573,13 +576,13 @@ function ScaleKeyboard({ rootPc, offsets, fingers, hand }) {
         const seg = (played && played !== 5) ? SEGMENT_COLORS[segmentAt[k.i]] : null;
         return (
         <g key={'b'+k.i}>
+          {/* A black key always stays black (so a run of black keys is easy to see); its group
+              colour shows as the outline and a stripe at the bottom (Sohyun, Phase 135). */}
           <rect x={(k.precedingWhiteIndex+1)*whiteW - blackW/2} y="0" width={blackW} height={blackH}
-            fill={seg ? seg.fill : 'var(--text)'}
-            stroke={seg ? seg.stroke : 'none'}
-            strokeWidth={seg ? 2 : 0}/>
+            fill="#241f1a" stroke={seg ? seg.stroke : 'none'} strokeWidth={seg ? 3 : 0}/>
+          {seg && <rect x={(k.precedingWhiteIndex+1)*whiteW - blackW/2 + 2} y={blackH - 9} width={blackW - 4} height="7" rx="1.5" fill={seg.fill}/>}
           {played && (
-            <text x={(k.precedingWhiteIndex+1)*whiteW} y={blackH-10} textAnchor="middle" fontSize="12" fontWeight="800"
-              fill={seg ? 'var(--text)' : '#fff'}>
+            <text x={(k.precedingWhiteIndex+1)*whiteW} y={blackH-15} textAnchor="middle" fontSize="13" fontWeight="900" fill="#fff">
               {played}
             </text>
           )}
@@ -3605,6 +3608,7 @@ function PlaceIt() {
   const posMap = type === 'sharp' ? SHARP_POS : FLAT_POS;
   const want = n < 7 ? posMap[order[n]] : null;
   const base = 70, x = 56 + n * 15, W = 170;
+  const [hov, setHov] = useState(null);
   function tap(pos) {
     if (want === null) return;
     if (pos === want) { setN(n + 1); setMiss(null); }
@@ -3621,7 +3625,7 @@ function PlaceIt() {
         </div>
       </div>
       <div style={{fontSize:13,color:'#6f665b',marginBottom:4}}>
-        {want !== null ? <>Tap the line or space for {type === 'sharp' ? 'sharp' : 'flat'} <b>#{n + 1}</b> ({prettyNote(order[n])}).</> : <>All seven, in order{tries ? ' -- ' + tries + ' miss' + (tries > 1 ? 'es' : '') : ' -- no misses!'}</>}
+        {want !== null ? <>Where does {type === 'sharp' ? 'sharp' : 'flat'} <b>#{n + 1}</b> ({prettyNote(order[n])}) go? Tap its line or space in the gold column -- each dot is a line or space.</> : <>All seven, in order{tries ? ' -- ' + tries + ' miss' + (tries > 1 ? 'es' : '') : ' -- no misses!'}</>}
       </div>
       <svg viewBox={`0 ${base - 64} ${W} 80`} style={{width:'100%',maxWidth:W * 1.6,display:'block',margin:'0 auto',touchAction:'manipulation'}}>
         {[0, 2, 4, 6, 8].map(p => <line key={p} x1="4" x2={W - 4} y1={base - p * 5} y2={base - p * 5} stroke="#241f1a" strokeOpacity="0.5" strokeWidth="1.1"/>)}
@@ -3631,8 +3635,12 @@ function PlaceIt() {
           : <FlatShape key={acc} x={56 + i * 15} y={base - posMap[acc] * 5} color="#a8823f"/>)}
         {miss !== null && (type === 'sharp' ? <SharpShape x={x} y={base - miss * 5} color="#b5483b"/> : <FlatShape x={x} y={base - miss * 5} color="#b5483b"/>)}
         {want !== null && <rect x={x - 8} y={base - 62} width="16" height="72" fill="#a8823f" opacity="0.10" rx="3"/>}
+        {/* every line and space you can tap: a small dot, and a ghost sign under the pointer */}
+        {want !== null && Array.from({ length: 11 }, (_, i) => i - 1).map(pos => hov === pos
+          ? <g key={'h' + pos} opacity="0.45" pointerEvents="none">{type === 'sharp' ? <SharpShape x={x} y={base - pos * 5} color="#a8823f"/> : <FlatShape x={x} y={base - pos * 5} color="#a8823f"/>}</g>
+          : <circle key={'d' + pos} cx={x} cy={base - pos * 5} r="1.3" fill="#a8823f" opacity="0.75" pointerEvents="none"/>)}
         {want !== null && Array.from({ length: 11 }, (_, i) => i - 1).map(pos => (
-          <rect key={pos} x={x - 12} y={base - pos * 5 - 2.5} width="24" height="5" fill="transparent" style={{cursor:'pointer'}} onClick={() => tap(pos)}/>
+          <rect key={pos} x={x - 20} y={base - pos * 5 - 2.5} width="40" height="5" fill="transparent" style={{cursor:'pointer'}} onMouseEnter={() => setHov(pos)} onMouseLeave={() => setHov(h => (h === pos ? null : h))} onClick={() => tap(pos)}/>
         ))}
       </svg>
       {miss !== null && <div style={{textAlign:'center',fontSize:13,color:'#b5483b',fontWeight:700}}>That’s {pos2name(miss)} -- try again</div>}
@@ -4829,6 +4837,74 @@ function MinorViewer({ sel, onPick }) {
   );
 }
 
+// ─── Scale finder (Phase 135): any major or harmonic minor scale, straight away ───
+// Type or tap a key; shows the key signature, the notes, and both hands' fingering on the keyboard.
+function parseScaleQuery(q) {
+  let t = (q || '').toLowerCase().replace(/♭/g, 'b').replace(/♯/g, '#').replace(/\bscales?\b/g, '').trim();
+  let minor = /\bminor\b|\bmin\b|^[a-g](#|b|\s*sharp|\s*flat)?m$/.test(t);
+  t = t.replace(/\bmajor\b|\bmaj\b|\bminor\b|\bmin\b/g, '').replace(/\s*sharp\b/, '#').replace(/\s*flat\b/, 'b').replace(/\s+/g, '');
+  if (/^[a-g](#|b)?m$/.test(t)) { minor = true; t = t.slice(0, -1); }
+  const m = t.match(/^([a-g])(#|b)?$/); if (!m) return null;
+  const k = m[1].toUpperCase() + (m[2] || '');
+  if (minor) { const alias = { Db: 'C#', Gb: 'F#', Ab: 'G#', 'A#': 'Bb', Eb: 'D#' }; const kk = MINOR_SCALES[k] ? k : alias[k]; return kk ? { key: kk, mode: 'minor' } : null; }
+  const alias = { 'A#': 'Bb', 'D#': 'Eb', 'G#': 'Ab' }; const kk = SCALES[k] ? k : alias[k];
+  return kk ? { key: kk, mode: 'major' } : null;
+}
+let PENDING_SCALE = null;
+function scaleSig(key, mode) {
+  const ks = mode === 'minor' ? KEY_SIGS.find(k => k.minor === key || (key === 'D#' && k.minor === 'D#') || (key === 'Bb' && k.minor === 'Bb')) : KEY_SIGS.find(k => k.major === key);
+  return ks || KEY_SIGS[0];
+}
+function playScaleNotes(rootPc, offsets) {
+  const ctx = getAudio(); if (!ctx) return; stopClicks();
+  const base = 60 + rootPc - (rootPc > 6 ? 12 : 0), seq = [...offsets, ...offsets.slice(0, -1).reverse()];
+  seq.forEach((o, i) => blip(ctx, ctx.currentTime + 0.08 + i * 0.3, 440 * Math.pow(2, (base + o - 69) / 12), 0.28, 0.2, 'triangle'));
+}
+function ScaleFinder() {
+  const init = PENDING_SCALE || (() => { try { const p = new URLSearchParams(location.search); return parseScaleQuery((p.get('key') || '') + (p.get('mode') === 'minor' ? ' minor' : '')); } catch (e) { return null; } })() || { key: 'C', mode: 'major' };
+  PENDING_SCALE = null;
+  const [key, setKey] = useState(init.key);
+  const [mode, setMode] = useState(init.mode);
+  const [oct, setOct] = useState(1);
+  const [q, setQ] = useState('');
+  const info = scaleData(key, mode) || SCALES.C, e = info.octaves[oct];
+  const names = spellFor(key, mode), ks = scaleSig(key, mode);
+  const keys = mode === 'minor' ? MINOR_PATH : SCALE_KEYS;
+  function search(v) { setQ(v); const r = parseScaleQuery(v); if (r) { setKey(r.key); setMode(r.mode); } }
+  const miss = q && !parseScaleQuery(q);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Scale finder</div>
+      <div style={actNote}>Type a scale (<b>Bb</b>, <b>F# minor</b>, <b>E flat</b>) or tap one. Numbers are fingers; the coloured groups start on the thumb.</div>
+      <input value={q} onChange={e => search(e.target.value)} placeholder="Type a scale: Bb, c minor, f#m…" style={{width:'100%',boxSizing:'border-box',padding:'9px 12px',borderRadius:10,border:'1.5px solid ' + (miss ? '#b5483b' : 'var(--border)'),fontSize:15,fontFamily:'inherit',marginBottom:6}}/>
+      {miss && <div style={{fontSize:12,color:'#b5483b',marginBottom:6}}>No scale called “{q}” here -- try a letter with # or b, and “minor” if you need it.</div>}
+      <div style={{display:'flex',gap:4,marginBottom:6}}>{[['major', 'Major'], ['minor', 'Harmonic minor']].map(([m, l]) => <button key={m} className={'chip' + (mode === m ? ' active' : '')} style={{padding:'3px 11px',fontSize:13}} onClick={() => { setMode(m); if (!scaleData(key, m)) setKey(m === 'minor' ? 'A' : 'C'); }}>{l}</button>)}
+        <span style={{flex:1}}/>{[1, 2].map(n => <button key={n} className={'chip' + (oct === n ? ' active' : '')} style={{padding:'3px 10px',fontSize:13}} onClick={() => setOct(n)}>{n} oct</button>)}</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:10}}>{keys.map(k => <button key={k} className={'chip' + (k === key ? ' active' : '')} style={{padding:'3px 9px',fontSize:13,minWidth:40}} onClick={() => { setKey(k); setQ(''); }}>{prettyNote(k)}{mode === 'minor' ? 'm' : ''}</button>)}</div>
+      <div style={{background:'#fff',borderRadius:12,padding:'12px'}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}>
+          <div>
+            <div style={{fontSize:22,fontWeight:900}}>{prettyNote(key)} {mode === 'minor' ? 'harmonic minor' : 'major'}</div>
+            <div style={{fontSize:13,fontWeight:800,color:'var(--muted)'}}>{sigLabel(ks)}{mode === 'minor' ? ' · raised 7th: ' + prettyAny(names[6]) : ''}</div>
+          </div>
+          <div style={{width:130}}><KSStaff count={ks.count} type={ks.type} width={130}/></div>
+        </div>
+        <div style={{fontSize:16,fontWeight:800,margin:'6px 0 10px',display:'flex',gap:8,flexWrap:'wrap'}}>{names.concat([names[0]]).map((n, i) => <span key={i} style={{color:mode === 'minor' && i === 6 ? '#a8823f' : 'var(--text)'}}>{prettyAny(n)}</span>)}</div>
+        <div style={{fontSize:12,fontWeight:900,color:'var(--muted)',letterSpacing:'0.05em',marginBottom:4}}>RIGHT HAND</div>
+        <ScaleKeyboard rootPc={info.rootPc} offsets={e.offsets} fingers={e.RH} hand="RH"/>
+        <div style={{fontSize:12,fontWeight:900,color:'var(--muted)',letterSpacing:'0.05em',margin:'10px 0 4px'}}>LEFT HAND</div>
+        <ScaleKeyboard rootPc={info.rootPc} offsets={e.offsets} fingers={e.LH} hand="LH"/>
+        <div style={{display:'flex',gap:10,flexWrap:'wrap',alignItems:'center',justifyContent:'center',marginTop:8,fontSize:12,fontWeight:700,color:'#5c544a'}}>
+          <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:14,height:14,borderRadius:3,background:SEGMENT_COLORS.three.fill,border:'1.5px solid ' + SEGMENT_COLORS.three.stroke}}/>1-2-3 group</span>
+          <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:14,height:14,borderRadius:3,background:SEGMENT_COLORS.four.fill,border:'1.5px solid ' + SEGMENT_COLORS.four.stroke}}/>1-2-3-4 group</span>
+          <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:14,height:14,borderRadius:3,background:'#fff',border:'1.5px solid #8a7f70'}}/>start / end note</span>
+        </div>
+        <div style={{textAlign:'center',marginTop:8}}><button className="ghost-btn" onClick={() => playScaleNotes(info.rootPc, e.offsets)}>♪ Hear it up and down</button></div>
+      </div>
+    </div>
+  );
+}
+
 function ScalePath({ sel, onPick, keys = SCALE_PATH, prefix = '', mode = 'major' }) {
   const [stamps, setStamps] = useState(loadStamps);
   function toggle(id) { const n = { ...stamps }; if (n[id]) delete n[id]; else n[id] = Date.now(); setStamps(n); saveStamps(n); }
@@ -5315,6 +5391,7 @@ function ScalesLearn({ onStart }) {
       <Step title="Fingering patterns"><ScalePatterns sel={sel} onPick={setSel}/></Step>
       <Step title="Your scale path"><ScalePath sel={sel} onPick={setSel}/></Step>
       <Step title="Practise the fingering"><ScaleFingeringDrill controlledKey={sel} onPickKey={setSel}/></Step>
+      <Step title="Look up any scale"><ScaleFinder/></Step>
     </Lesson>
   ) : (
     <Lesson key="minor" id="scales-minor" title="Minor scales" head={tabs} onStart={onStart}
@@ -6320,7 +6397,8 @@ function LedgerMirror() {
 function staffStOf(clef, d) { return clef === 'grand' ? (d >= 28 ? 'treble' : 'bass') : clef; }
 function staffYOfFor(clef) { return (d) => dY(d) + (clef === 'grand' && staffStOf(clef, d) === 'bass' ? GRAND_GAP : 0); }
 function dMidiKey(d) { return (dOct(d) - 4) * 12 + [0, 2, 4, 5, 7, 9, 11][((d % 7) + 7) % 7]; } // playKey index (C4 = 0)
-function StaffFrame({ clef, lo, hi, width = 300, rows, onRow, children, ink = '#241f1a' }) {
+function StaffFrame({ clef, lo, hi, width = 300, rows, onRow, children, ink = '#241f1a', guideX = null }) {
+  const [hover, setHover] = useState(null);
   const staves = clef === 'grand' ? ['treble', 'bass'] : [clef];
   const yOf = staffYOfFor(clef);
   const topD = Math.max(hi, clef === 'bass' ? 26 : 38), botD = Math.min(lo, clef === 'treble' ? 30 : 18);
@@ -6331,7 +6409,18 @@ function StaffFrame({ clef, lo, hi, width = 300, rows, onRow, children, ink = '#
       {clef === 'grand' && <line x1="4" x2="4" y1={yOf(38)} y2={yOf(18)} stroke={ink} strokeWidth="1.6"/>}
       {staves.map(st => <ClefGlyph key={'c' + st} clef={st} st={st} yOf={(d) => dY(d) + (clef === 'grand' && st === 'bass' ? GRAND_GAP : 0)} ink={ink}/>)}
       {children(yOf)}
-      {rows && onRow && rows.map(d => <rect key={'r' + d} x="48" y={yOf(d) - 2.5} width={width - 52} height="5" fill="transparent" style={{cursor:'pointer'}} onClick={() => onRow(d)}/>)}
+      {/* Where you can tap (Phase 135): faint dotted ledger lines + an empty notehead on every line and space,
+          and a ghost note under the pointer -- so the target is visible before you tap. */}
+      {rows && onRow && guideX !== null && rows.map(d => {
+        const st = staffStOf(clef, d), c = CLEFS[st], isLine = (d - c.lines[0]) % 2 === 0, outside = d < c.lines[0] || d > c.lines[c.lines.length - 1];
+        return <g key={'g' + d} pointerEvents="none">
+          {isLine && outside && <line x1={guideX - 13} x2={guideX + 13} y1={yOf(d)} y2={yOf(d)} stroke={ink} strokeOpacity="0.35" strokeWidth="1.2" strokeDasharray="3 2"/>}
+          {hover === d
+            ? <ellipse cx={guideX} cy={yOf(d)} rx="7" ry="5" transform={`rotate(-20 ${guideX} ${yOf(d)})`} fill="rgba(168,130,63,0.5)"/>
+            : <circle cx={guideX} cy={yOf(d)} r="1.5" fill="#a8823f" opacity="0.7"/>}
+        </g>;
+      })}
+      {rows && onRow && rows.map(d => <rect key={'r' + d} x="48" y={yOf(d) - 2.5} width={width - 52} height="5" fill="transparent" style={{cursor:'pointer'}} onMouseEnter={() => setHover(d)} onMouseLeave={() => setHover(h => (h === d ? null : h))} onClick={() => onRow(d)}/>)}
     </svg>
   );
 }
@@ -6545,7 +6634,7 @@ function WriteTheNote() {
       </div>
       <div style={actNote}>Tap the line or space where the note belongs. Any octave counts.</div>
       <div style={{textAlign:'center',fontSize:36,fontWeight:900,lineHeight:1.1,margin:'2px 0 4px'}}>{target}</div>
-      <StaffFrame clef={clef} lo={range[0]} hi={range[1]} width={260} rows={rows} onRow={tap}>
+      <StaffFrame clef={clef} lo={range[0]} hi={range[1]} width={260} rows={rows} onRow={tap} guideX={150}>
         {(yOf) => <>
           {miss !== null && <g><Ledgers clef={clef} d={miss} x={150} yOf={yOf}/><ellipse cx={150} cy={yOf(miss)} rx="7" ry="5" transform={`rotate(-20 150 ${yOf(miss)})`} fill="#b5483b"/><text x={166} y={yOf(miss) + 4} fontSize="11" fontWeight="900" fill="#b5483b">{dName(miss)}</text></g>}
           {hit !== null && <g style={{animation:'fadeUp 0.25s both'}}><Ledgers clef={clef} d={hit} x={150} yOf={yOf}/><ellipse cx={150} cy={yOf(hit)} rx="7" ry="5" transform={`rotate(-20 150 ${yOf(hit)})`} fill="#4f7a45"/></g>}
@@ -6786,15 +6875,16 @@ function LedgerWrite() {
         <div style={actTitle}>Write it with ledger lines</div>
         <div style={{fontSize:13,fontWeight:800,color:'var(--muted)'}}>{score.right}/{score.tries}</div>
       </div>
+      <div style={actNote}>Ledger lines are short extra lines for notes above or below the staff. Find where the note goes -- the dotted lines show where ledger lines would be drawn.</div>
       <div style={{textAlign:'center',fontSize:20,fontWeight:900,margin:'4px 0'}}>{dName(t.d)} <span style={{fontSize:15,color:'#6f665b',fontWeight:700}}>{t.up ? 'above' : 'below'} the {t.clef} staff</span></div>
-      <StaffFrame clef={t.clef} lo={lo} hi={hi} width={200} rows={rows} onRow={tap}>
+      <StaffFrame clef={t.clef} lo={lo} hi={hi} width={200} rows={rows} onRow={tap} guideX={130}>
         {(yOf) => <>
           {miss !== null && <g><Ledgers clef={t.clef} d={miss} x={130} yOf={yOf} ink="#b5483b"/><ellipse cx={130} cy={yOf(miss)} rx="7" ry="5" transform={`rotate(-20 130 ${yOf(miss)})`} fill="#b5483b"/><text x={146} y={yOf(miss) + 4} fontSize="11" fontWeight="900" fill="#b5483b">{dName(miss)}</text></g>}
           {hit && <g style={{animation:'fadeUp 0.25s both'}}><Ledgers clef={t.clef} d={t.d} x={130} yOf={yOf}/><ellipse cx={130} cy={yOf(t.d)} rx="7" ry="5" transform={`rotate(-20 130 ${yOf(t.d)})`} fill="#4f7a45"/></g>}
         </>}
       </StaffFrame>
       <div style={{textAlign:'center',fontSize:13,fontWeight:700,minHeight:18,color:miss !== null ? '#b5483b' : '#4f7a45'}}>
-        {miss !== null ? 'That’s ' + dName(miss) + ' -- count again from the staff' : hit ? 'Yes -- ' + dName(t.d) + ' ' + ledgerDesc(t.clef, t.d) + '.' : 'Tap the line or space.'}
+        {miss !== null ? 'That’s ' + dName(miss) + ' -- count again from the staff' : hit ? 'Yes -- ' + dName(t.d) + ' ' + ledgerDesc(t.clef, t.d) + '.' : 'Count line, space, line… from the ' + (t.up ? 'top' : 'bottom') + ' of the staff, then tap the circle where ' + dName(t.d) + ' goes.'}
       </div>
     </div>
   );
@@ -9905,6 +9995,7 @@ const TOOLS = [
   { id: 'tone-semitone', ch: 'tones', title: 'Tone or semitone', blurb: 'Tap two keys, count the steps.', C: () => <StepExplorer/> },
   { id: 'sharp-flat', ch: 'tones', title: 'Sharp, flat, natural', blurb: 'Push a key one semitone and back.', C: () => <SharpFlatMover/> },
   { id: 'accidental-bar', ch: 'tones', title: 'How long an accidental lasts', blurb: 'Until the bar line -- hear it.', C: () => <AccidentalBar/> },
+  { id: 'scale-finder', ch: 'scales', title: 'Scale finder', blurb: 'Type any scale -- fingering for both hands, key signature, notes.', C: () => <ScaleFinder/> },
   { id: 'build-major', ch: 'scales', title: 'Build a major scale', blurb: 'T T S T T T S, step by step.', C: () => <ScaleBuilder mode="major"/> },
   { id: 'build-minor', ch: 'scales', title: 'Build a harmonic minor', blurb: 'With the tone-and-a-half step.', C: () => <ScaleBuilder mode="minor"/> },
   { id: 'sharps-order', ch: 'key-signatures', title: 'Order of sharps', blurb: 'Add them one by one, numbered.', C: () => <OrderBuilder type="sharp"/> },
@@ -10057,7 +10148,7 @@ const TOOL_META = {
   'speed-change': ['expression', 1, 2, 'show ear'], 'tie-slur': ['expression', 1, 2, 'show ear'],
   'high-low': ['ear', 0, 0, 'ear game'], 'echo': ['ear', 0, 1, 'ear game home'], 'interval-ear': ['ear', 2, 3, 'ear'],
   'tone-semitone': ['scales', 1, 1, 'show game'], 'sharp-flat': ['scales', 1, 1, 'show'], 'accidental-bar': ['scales', 1, 2, 'show write'], 'build-major': ['scales', 1, 2, 'game write'],
-  'build-minor': ['scales', 2, 3, 'game write'], 'degree-names': ['scales', 2, 3, 'show'], 'sharps-order': ['scales', 1, 3, 'game'], 'flats-order': ['scales', 1, 3, 'game'],
+  'build-minor': ['scales', 2, 3, 'game write'], 'scale-finder': ['scales', 0, 3, 'show home'], 'degree-names': ['scales', 2, 3, 'show'], 'sharps-order': ['scales', 1, 3, 'game'], 'flats-order': ['scales', 1, 3, 'game'],
   'place-it': ['scales', 1, 3, 'write'], 'relative-minor': ['scales', 2, 3, 'show'], 'circle-fifths': ['scales', 2, 3, 'show'], 'transpose': ['scales', 2, 3, 'show write'],
   'interval-ruler': ['harmony', 1, 2, 'show'], 'letter-hop': ['harmony', 1, 2, 'game'], 'semitone-counter': ['harmony', 2, 3, 'show'], 'scale-intervals': ['harmony', 2, 3, 'show'],
   'invert-interval': ['harmony', 3, 3, 'show'], 'tritone': ['harmony', 3, 3, 'show ear'], 'triad-stack': ['harmony', 1, 3, 'show'], 'major-minor': ['harmony', 2, 3, 'ear show'],
@@ -10171,7 +10262,11 @@ function Toolbox({ onOpen, onOpenKit, onStudents }) {
       <div className="card" style={{marginBottom:12}}>
         <h2 style={{fontSize:20,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Toolbox</h2>
         <p style={{fontSize:14,color:'var(--muted)',margin:'0 0 10px',lineHeight:1.5}}>Find a tool fast. ☆ puts it in the current student’s kit.</p>
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search: wrist, triad, 6/8, repeat..." style={{width:'100%',boxSizing:'border-box',padding:'9px 12px',borderRadius:10,border:'1.5px solid var(--border)',fontSize:15,fontFamily:'inherit',marginBottom:8}}/>
+        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search: wrist, triad, 6/8, Bb scale..." style={{width:'100%',boxSizing:'border-box',padding:'9px 12px',borderRadius:10,border:'1.5px solid var(--border)',fontSize:15,fontFamily:'inherit',marginBottom:8}}/>
+        {(() => { const sc = parseScaleQuery(q); return sc ? (
+          <button onClick={() => { PENDING_SCALE = sc; onOpen('scale-finder'); }} style={{width:'100%',textAlign:'left',border:'1.5px solid #8a6a2a',background:'#fbf3e2',borderRadius:10,padding:'9px 12px',marginBottom:8,cursor:'pointer',fontFamily:'inherit',color:'var(--text)'}}>
+            <b style={{fontSize:15}}>{prettyNote(sc.key)} {sc.mode === 'minor' ? 'harmonic minor' : 'major'} scale</b> <span style={{color:'#8a5a12',fontWeight:800}}>-- fingering, key signature, notes ›</span>
+          </button>) : null; })()}
         <button onClick={() => setShowProb(s => !s)} style={{width:'100%',textAlign:'left',border:'1.5px solid ' + (pset ? '#a8823f' : 'var(--border)'),background:pset ? '#fbf3e2' : '#fff',borderRadius:10,padding:'8px 12px',fontSize:14.5,fontWeight:900,cursor:'pointer',fontFamily:'inherit',color:'var(--text)'}}>
           My student… <span style={{fontWeight:700,color:pset ? '#8a5a12' : 'var(--muted)'}}>{pset ? PROBLEMS[prob][0] : 'pick what you notice'}</span><span style={{float:'right',color:'var(--muted)'}}>{showProb ? '▴' : '▾'}</span>
         </button>
@@ -10220,7 +10315,7 @@ function Toolbox({ onOpen, onOpenKit, onStudents }) {
           </div>
         );
       })}
-      {!shown && <div className="card" style={{textAlign:'center',color:'var(--muted)'}}>Nothing matches -- try fewer filters.</div>}
+      {!shown && !parseScaleQuery(q) && <div className="card" style={{textAlign:"center",color:"var(--muted)"}}>Nothing matches -- try fewer filters.</div>}
     </div>
   );
 }
