@@ -3068,6 +3068,18 @@ Sohyun: students need their own section -- write their names, edit or delete the
 | 3 | One selected student everywhere | `WHO_KEY` (`pb_who_v1`), `loadWho`/`saveWho`, student ids (`newStudentObj`; old kits get ids on load) | Plan, Toolbox and Students share the current student; choosing a student in the Plan sets its first mix from the student's group; the student's notes show under the picker. |
 | 4 | Verification | -- | Playwright: add two students with group and notes, edit a name, delete with confirm/cancel, open plan for a student, inline add in the plan, kits list in the Toolbox; 82 tools / 21 chapters load with zero page errors. |
 
+### Phase 134 -- readability pass: bigger text, stronger contrast, less clutter (2026-09-26)
+
+Sohyun: everything is small and hard to take in at a glance -- make the important things stand out.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Font floor raised everywhere | all inline `fontSize` in JSX (511 values) | 9.5→11, 10→11.5, 10.5→12, 11→12, 11.5→12.5, 12→13, 12.5→13.5, 13→14, 13.5→14.5, 14→15 (15+ unchanged; pixel-game sizes 8/9 and SVG text untouched). Tool titles (`actTitle`) 17px/900, tool notes (`actNote`) 14px darker; tool boxes get more padding. |
+| 2 | Contrast | CSS | `--muted` #a49b8f -> #7a7064 (grey text was ~2.6:1, now ~4.8:1); inactive chips #5a5248; ghost buttons 14px/800 #4a4239; body 16px. |
+| 3 | Wider column, bigger on desktop | `.pb-main` | Column 480 -> 600px; at 900px+ the column is scaled ×1.12 (`zoom`) so the iMac view isn't tiny. |
+| 4 | Less on screen | `SoundSettings`, header | Sound settings fold into one line ("♪ Sound: Piano · Woodblock click -- change"), opening a panel with Done. Header compact and aligned with the column: "← Piano Butler", title, and in teacher view a small "TEACHER VIEW · Student view" on the right. Plan, Toolbox and beat-game intros shortened. |
+| 5 | Verification | -- | Screens checked at phone and desktop width (learn, plan, students, toolbox, metronome, beat game, chapter, drill, hand shape); student-management test; 82 tools / 21 chapters load with zero page errors. |
+
 Next on the plan: more mini tools (Sohyun's rule: every activity stand-alone + in TOOLS). Ideas: sight-reading flash cards, a practice-dice/timer tool, scale degree names (tonic, supertonic...), transposition. Signs 116, Chords 117, Toolbox 118, Grade 3 intervals + cadences 119 done.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
