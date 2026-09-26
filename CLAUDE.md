@@ -3044,6 +3044,19 @@ Decision (Claude): three ways in, because a teacher arrives at the Toolbox with 
 | 5 | Clearer titles | TOOLS | Parenthetical hints where a title was cryptic: (black keys), (clefs), (grand staff), (perfect reps), (copy by ear), (repeats, D.C., D.S.), (count an interval), (intervals), (speed changes), (time signatures), (note values). ToolView header now shows the category. |
 | 6 | Verification | -- | All 82 tools have metadata; problem finder ids valid; kit create/star/open/locked student link/back tested in Playwright; 82 tools / 21 chapters load with zero page errors. |
 
+### Phase 132 -- Lesson plan by strands (no fixed order) + teacher / student views (2026-09-26)
+
+Sohyun: in the first lessons milestones 1-4 all go in together, a little at a time -- crotchets, posture and hand shape, note names, or the black-key groups first. And a link shows everything; teacher and student views should be separate.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Teacher "Lesson plan" | `PlanView`, `STRANDS`, `SKILLS` (36), `START_MIXES`, `EXAM_LADDER` | Five strands side by side: Body & hands, Keys & note names, Pulse & rhythm, Ear & expression, Reading -- ordered small "can do" steps inside each, no order between them. Per student (students = the Toolbox kits, now with `done`): tick what they can do, NEXT tag on the first gap in each strand. "A first mix for…" presets (Young 5-7, Beginner 8-12, Teen/adult, Transfer, Exam) mark START steps and fill "Today's mix" -> open those tools now, or add them to the student's kit. Each step links its tools. Exam ladder (Prelim / G1-2 / G3-4 chapters), Anytime (piano story, pitch), "All chapters" link. |
+| 2 | Chapters regrouped by topic, not stages | `STAGES` | Piano basics · Rhythm & counting · Reading music · Sound, signs & terms · Theory: scales, keys & chords · Know your instrument. "Stage n" numbering removed. `first-steps` renamed "Posture, Hands & Black Keys". |
+| 3 | Teacher / student views | `initialMode`, `UI_TEACHER`, `TeacherOnly`, App | Student view is the default: tabs Learn + Practice only; no Toolbox, kits, plan, share buttons or teacher notes (e.g. Posture check "How to use it"). Teacher view: `?teacher=1` once (remembered on that device; `?teacher=0` turns it off), tabs Lesson plan + Toolbox + Practice, "See the student view" preview with a back banner. Student links (lock=1) always show the student view. Not a password lock -- keeps the student's screen clean. |
+| 4 | Verification | -- | Playwright: student tabs = Learn/Practice; teacher plan: add student, preset, ticks, today's mix -> tools, all chapters -> chapter -> back, tool -> "← Lesson plan", student preview; 82 tools / 21 chapters load with zero page errors. |
+
+Teacher link for Sohyun: https://thepianobutler.com/drills.html?teacher=1 (bookmark once per device).
+
 Next on the plan: more mini tools (Sohyun's rule: every activity stand-alone + in TOOLS). Ideas: sight-reading flash cards, a practice-dice/timer tool, scale degree names (tonic, supertonic...), transposition. Signs 116, Chords 117, Toolbox 118, Grade 3 intervals + cadences 119 done.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
