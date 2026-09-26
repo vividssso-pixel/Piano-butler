@@ -4890,7 +4890,7 @@ function ScaleFinder() {
       {miss && <div style={{fontSize:12,color:'#b5483b',marginBottom:6}}>No scale called “{q}” here -- try a letter with # or b, and “minor” if you need it.</div>}
       <div style={{display:'flex',gap:4,marginBottom:6}}>{[['major', 'Major'], ['minor', 'Harmonic minor']].map(([m, l]) => <button key={m} className={'chip' + (mode === m ? ' active' : '')} style={{padding:'3px 11px',fontSize:13}} onClick={() => { setMode(m); if (!scaleData(key, m)) setKey(m === 'minor' ? 'A' : 'C'); }}>{l}</button>)}
         <span style={{flex:1}}/>{[1, 2].map(n => <button key={n} className={'chip' + (oct === n ? ' active' : '')} style={{padding:'3px 10px',fontSize:13}} onClick={() => setOct(n)}>{n} oct</button>)}</div>
-      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:10}}>{keys.map(k => <button key={k} className={'chip' + (k === key ? ' active' : '')} style={{padding:'3px 9px',fontSize:13,minWidth:40}} onClick={() => { setKey(k); setQ(''); }}>{prettyNote(k)}{mode === 'minor' ? 'm' : ''}</button>)}</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:10}}>{keys.map(k => <button key={k} className={'chip' + (k === key ? ' active' : '')} style={{padding:'3px 9px',fontSize:13,minWidth:40}} onClick={() => { setKey(k); setQ(''); }}>{scaleChipLabel(k, mode)}</button>)}</div>
       <div style={{background:'#fff',borderRadius:12,padding:'12px'}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}>
           <div>
@@ -6673,7 +6673,8 @@ function StaffLearn({ onStart }) {
       <StaffBasics/>
       </Step>
       <Step title="Two staves, two clefs">
-      {tip('Two staves, one piano', 'The treble clef (top) is usually the right hand and the higher notes; the bass clef (bottom) is usually the left hand. Together they make the grand staff, joined at middle C.')}
+      <ClefBasics/>
+      <div style={{fontSize:15,fontWeight:800,margin:'14px 0 2px'}}>Why they're called the G clef and the F clef</div>
       <ClefStory/>
       </Step>
       <Step title="Line, space, line, space">
@@ -10374,6 +10375,67 @@ function AnacrusisDemo() {
     </div>
   );
 }
+// ─── Phase 138: two teacher-reported gaps ───────────────────────────────────────────
+// 1. Scale finder: both spellings of the one black-key scale that only had one chip
+// (G#/Ab major, Ab/G# minor) -- the other five black-key roots already show both spellings
+// as separate chips (F#/Gb, C#/Db, B/Cb), so this one looked broken by comparison. There is
+// no separate "G# major" or "Ab minor" scale to add (both would need an 8-sharp/7-flat
+// signature nobody uses) -- the fix is to print the chip's other name alongside it, not to
+// invent new fingering data.
+const CHIP_ALSO = { major: { Ab: 'G♯' }, minor: { 'G#': 'A♭m' } };
+function scaleChipLabel(k, mode) {
+  const base = prettyNote(k) + (mode === 'minor' ? 'm' : '');
+  const also = CHIP_ALSO[mode] && CHIP_ALSO[mode][k];
+  return also ? base + ' · ' + also : base;
+}
+
+// 2. What treble and bass clef actually DO -- which notes, which hand -- as its own
+// stand-alone, practical-first explanation. The Queen/King naming story (ClefStory) is real
+// and worth keeping, but it explains where the NAMES "G clef"/"F clef" come from, not what
+// the clef is for -- so it now sits underneath this as a "by the way" extra.
+function ClefBasics() {
+  const [side, setSide] = useState('treble');
+  const W = 300;
+  const midY = dY(28);
+  const trebleTop = dY(CLEFS.treble.high) - 18, trebleBot = dY(CLEFS.treble.low) + 4;
+  const bassTop = dY(CLEFS.bass.high) - 4, bassBot = dY(CLEFS.bass.low) + 18;
+  function hear(which) {
+    const ctx = getAudio(); if (!ctx) return; stopClicks();
+    const root = which === 'treble' ? 60 : 60 - 24;
+    [0, 4, 7, 12].forEach((o, i) => blip(ctx, ctx.currentTime + 0.08 + i * 0.22, 440 * Math.pow(2, (root + o - 69) / 12), 0.3, 0.2, 'triangle'));
+  }
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Treble clef and bass clef</div>
+      <div style={actNote}>The piano has far more notes than one 5-line staff can hold, so we use <b>two staves</b>, one for the higher notes and one for the lower notes, joined at middle C. Together they're called the <b>grand staff</b>.</div>
+      <div style={{display:'flex',gap:4,marginBottom:8}}>
+        {[['treble', 'Treble clef'], ['bass', 'Bass clef']].map(([k, l]) => <button key={k} className={'chip' + (side === k ? ' active' : '')} style={{padding:'3px 11px',fontSize:13}} onClick={() => { setSide(k); hear(k); }}>{l}</button>)}
+      </div>
+      <div style={{background:'#fff',borderRadius:10,padding:'8px 6px'}}>
+        <svg viewBox={`0 ${trebleTop} ${W} ${bassBot - trebleTop}`} style={{width:'100%',maxWidth:420,display:'block',margin:'0 auto'}}>
+          <rect x="0" y={trebleTop} width={W} height={midY - trebleTop} fill={side === 'treble' ? '#fbf6ea' : '#fff'}/>
+          <rect x="0" y={midY} width={W} height={bassBot - midY} fill={side === 'bass' ? '#fbf6ea' : '#fff'}/>
+          {CLEFS.treble.lines.map(l => <line key={'t' + l} x1="10" x2={W - 10} y1={dY(l)} y2={dY(l)} stroke="#241f1a" strokeOpacity="0.6" strokeWidth="1.2"/>)}
+          {CLEFS.bass.lines.map(l => <line key={'b' + l} x1="10" x2={W - 10} y1={dY(l)} y2={dY(l)} stroke="#241f1a" strokeOpacity="0.6" strokeWidth="1.2"/>)}
+          <line x1="10" x2="10" y1={trebleTop + 4} y2={bassBot - 4} stroke="#241f1a" strokeWidth="1.6"/>
+          <ClefGlyph clef="treble" st="treble" yOf={(d) => dY(d)} ink="#241f1a"/>
+          <ClefGlyph clef="bass" st="bass" yOf={(d) => dY(d)} ink="#241f1a"/>
+          <line x1={W - 90} x2={W - 66} y1={midY} y2={midY} stroke="#241f1a" strokeWidth="1.4"/>
+          <ellipse cx={W - 78} cy={midY} rx="7" ry="5" transform={`rotate(-20 ${W - 78} ${midY})`} fill="#a8823f"/>
+          <text x={W - 78} y={midY - 12} textAnchor="middle" fontSize="10" fontWeight="800" fill="#8a7f70">middle C</text>
+        </svg>
+      </div>
+      <div style={{fontSize:13.5,margin:'8px 0'}}>
+        {side === 'treble'
+          ? <>The <b>treble clef</b> (top staff) reads the <b>higher</b> notes -- usually played by the <b>right hand</b>.</>
+          : <>The <b>bass clef</b> (bottom staff) reads the <b>lower</b> notes -- usually played by the <b>left hand</b>.</>}
+        {' '}"Usually" -- a tune can cross either hand into the other clef when it needs to.
+      </div>
+      <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={() => hear(side)}>♪ Hear a {side} chord</button></div>
+      <div style={{fontSize:12.5,color:'#5c544a',background:'#f7f2e8',borderRadius:8,padding:'6px 9px',marginTop:8,lineHeight:1.5}}>By the way -- why they're <i>called</i> the G clef and the F clef (a separate story) is below.</div>
+    </div>
+  );
+}
 const TOOLS = [
   { id: 'sit-check', ch: 'first-steps', title: 'Set up the stool', blurb: 'Height and distance: forearm level, elbows open.', C: () => <SitCheck/> },
   { id: 'hand-shape', ch: 'first-steps', title: 'The hand shape', blurb: 'Knuckle bridge, level wrist, fingertips -- and six faults.', C: () => <HandShape/> },
@@ -10409,6 +10471,7 @@ const TOOLS = [
   { id: 'name-reveal', ch: 'note-names', title: 'Name them in order', blurb: 'Letters land on the keys; A comes after G.', C: () => <NameReveal/> },
   { id: 'step-updown', ch: 'note-names', title: 'Step up, step down', blurb: 'Right = up = forwards through the letters.', C: () => <UpDownWalk/> },
   { id: 'letter-chain', ch: 'note-names', title: 'Letter chain', blurb: 'Say the next letter out loud, in turns.', C: () => <LetterChainDrill/> },
+  { id: 'clef-basics', ch: 'staff', title: 'Treble clef and bass clef', blurb: 'Which notes, which hand -- the grand staff explained.', C: () => <ClefBasics/> },
   { id: 'staff-basics', ch: 'staff', title: 'What is the staff?', blurb: '5 lines, 4 spaces -- counted from the bottom, tap to hear.', C: () => <StaffBasics/> },
   { id: 'clef-story', ch: 'staff', title: 'The Queen and the King (clefs)', blurb: 'Why the G clef and the F clef are called that.', C: () => <ClefStory/> },
   { id: 'staff-climb', ch: 'staff', title: 'Climb the staff', blurb: 'Line, space, line -- mirrored on the keyboard.', C: () => <StaffClimb/> },
@@ -10568,7 +10631,7 @@ const TOOL_CATS = [
 // cat, level range [from, to] (0 Beginner, 1 Prelim, 2 Grade 1–2, 3 Grade 3–4), kinds
 // kinds: show = show & explain, game = student does it, ear = listening, write = written theory, home = home practice
 const TOOL_META = {
-  'staff-basics': ['reading', 0, 1, 'show'], 'anacrusis': ['rhythm', 2, 3, 'show'], 'minor-forms': ['scales', 1, 2, 'show'],
+  'clef-basics': ['reading', 0, 1, 'show'], 'staff-basics': ['reading', 0, 1, 'show'], 'anacrusis': ['rhythm', 2, 3, 'show'], 'minor-forms': ['scales', 1, 2, 'show'],
   'count-more': ['rhythm', 2, 4, 'show game'], 'grouping': ['rhythm', 2, 4, 'game write'], 'pedal': ['expression', 2, 4, 'show ear'],
   'ornaments': ['words', 3, 4, 'show ear'], 'chromatic': ['scales', 2, 4, 'show'],
   'sit-check': ['body', 0, 3, 'show'], 'hand-shape': ['body', 0, 3, 'show'], 'arm-moves': ['body', 0, 3, 'home game'], 'posture-check': ['body', 0, 3, 'home'],
