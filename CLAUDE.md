@@ -3006,6 +3006,16 @@ Sohyun: change the metronome sound -- it sounds shaky ("떨려").
 | 3 | Voice count: no click underneath, choice of voice | `beatTick`, `SOUND.voice`, `loadCount`, `reloadCount` | Voice mode no longer layers a click under the spoken number (two sounds a few ms apart can sound like a flam). Three voices: Female (US) = `audio/count/` (af_heart), Female (UK) = `audio/count/emma/`, Male = `audio/count/michael/`; picking one reloads and says "1 2 3 4". |
 | 4 | Verification | -- | Offline render: every click style starts exactly on the beat (beep +4 ms); both new voices load (9 words) and line up; 80 tools / 21 chapters load with zero page errors. |
 
+### Phase 129 -- full metronome + "Tap the right beat" game (2026-09-26)
+
+Sohyun: grow the metronome -- split a beat into triplets, choose time signatures in more detail -- and a timing game like "tap on beat N".
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Metronome rebuilt | `MetronomeDial`, `METERS`, `SUBS`, `meterGrid` (Tempo chapter + TOOLS `metronome`) | Audio-clock look-ahead scheduler (was `setInterval`). Time signatures 2/4 3/4 4/4 5/4 2/2 3/8, compound 6/8 9/8 12/8, irregular 5/8 (2+3, 3+2) and 7/8 (2+2+3, 3+2+2, 2+3+2). Split each beat: beats only / quavers / triplets / semiquavers (compound: dotted beats / quavers / semiquavers). Three click levels (bar / beat / split, via `metroClick` accent 2/1/0). The bar is drawn as dots with counts ("1 trip let", "1 e & a", 6/8 quavers "1-6", 7/8 "1 2 | 1 2 | 1 2 3") lit when heard. ±1/±5 buttons, 30-240, speed unit named (crotchets, dotted crotchets, quavers…), TSig shown. Voice mode speaks beat numbers (and "and" for quavers). |
+| 2 | Tap the right beat | `BeatTarget`, `btRound` (Pulse chapter new step 2 + TOOLS `beat-target`, also in Practice) | 1 bar count-in, 2 bars to play; tap only where told. Levels: one beat / two beats / the "and" / silent bars (clicks stop after the count-in). 2/4 3/4 4/4, three speeds. Target circles ringed; each tap flashes green/red; result: hits, extra taps, average early/late ms; perfect-round counter. Scored on the audio clock with speaker latency, pointerdown + space bar. Playwright: exact taps on every level → "Perfect!". |
+| 3 | Verification | -- | 81 tools / 21 chapters load with zero page errors. |
+
 Next on the plan: more mini tools (Sohyun's rule: every activity stand-alone + in TOOLS). Ideas: sight-reading flash cards, a practice-dice/timer tool, scale degree names (tonic, supertonic...), transposition. Signs 116, Chords 117, Toolbox 118, Grade 3 intervals + cadences 119 done.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
