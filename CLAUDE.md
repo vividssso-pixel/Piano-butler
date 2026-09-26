@@ -2955,6 +2955,18 @@ Sohyun: string-playing terms are in the exam too; let students hear how to say t
 | 5 | Verification | -- | Babel compile in Playwright; all 70 tool URLs and 19 chapters load with zero page errors; screenshots of each new tool checked. Fixed a crash when switching Touch → Loudness with an answer showing (state now reset in the click handler). |
 | 6 | Git hygiene | `.git` | Removed stale HEAD.lock / maintenance.lock / tmp_obj files left by background maintenance after e4a5e43; set `maintenance.auto false` (plus `gc.auto 0`). |
 
+### Phase 125 -- timing: taps, metronome, count voice and piano now line up (2026-09-26)
+
+Sohyun's feedback: taps had to be early to count as on time; metronome, spoken count and piano didn't quite line up; and a question about counting "1 2 3 4" first vs "1 and 2 and" from the start.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Steady beat rebuilt on the audio clock | `SteadyBeat` | Was `setInterval` (drifts later every beat) + a `click` handler (fires on button *release*, ~100 ms late) + no speaker-latency allowance, so every tap scored late. Now: look-ahead scheduler on `AudioContext` time, `onPointerDown` + space bar, tap compared with scheduled time + `outLatency(ctx)`; hearts light when the sound is heard; a crisp click edge on the heartbeat; last 8 taps shown as dots; verdict from the last 4 taps. Playwright: taps exactly on the heard beat → "Right on the beat!", 180 ms early → "A little early". |
+| 2 | Piano samples start on their attack | `onsetOf`, `pianoNote` | mp3 files carry ~27 ms of silence at the front; measured at decode and skipped (`src.start(t, offset)`). |
+| 3 | Real recorded count voice, sample-accurate | `audio/count/*.wav`, `sayCount`, `loadCount` | The device speech voice can't be scheduled (100-300 ms random delay) -- that was the main mismatch. Added 9 generated voice files (Kokoro-82M, `af_heart`); `sayCount` lines up each word's vowel (measured with `onsetOf(buf, 0.4)`) with the beat, and cuts the previous word when counts come fast. Loader tries `.wav` then `.mp3`. Offline-render check: click 0 ms, piano +5 ms, voice vowel -6..+3 ms from the beat. |
+| 4 | Count it: "1 2 3 4" or "1 and 2 and" | `CountAloud`, Pulse chapter | Toggle, default "1 2 3 4"; Quavers forces "1 and 2 and" (with a one-line why). Step renamed "Count out loud"; chapter intro now says "1 2 3 4 -- and once quavers arrive, 1 and 2 and". Pending Sohyun's call on which default she wants. |
+| 5 | Verification | -- | All 70 tool URLs and 19 chapters load with zero page errors. |
+
 Next on the plan: more mini tools (Sohyun's rule: every activity stand-alone + in TOOLS). Ideas: sight-reading flash cards, a practice-dice/timer tool, scale degree names (tonic, supertonic...), transposition. Signs 116, Chords 117, Toolbox 118, Grade 3 intervals + cadences 119 done.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
