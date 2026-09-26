@@ -3370,6 +3370,9 @@ function RhythmLearn({ onStart }) {
       <p style={{fontSize:12,color:'var(--muted)',margin:'10px 0 14px',lineHeight:1.5}}>Counting: 1 e & a for semiquavers, 1 trip let for triplets; rests shown in brackets.</p>
 
       </Step>
+      <Step title="Harder rhythms: dots, semiquavers, triplets">
+      <CountHarder/>
+      </Step>
       <Step title="Make your own">
       <RhythmComposer/>
       </Step>
@@ -5129,6 +5132,9 @@ function TonesLearn({ onStart }) {
       {tip('An accidental lasts until the bar line', 'Every later note on that same line or space in the bar is changed too. A natural cancels it; the next bar line wipes it clean.')}
       <AccidentalBar/>
       </Step>
+      <Step title="The chromatic scale and double sharps">
+      <ChromaticScale/>
+      </Step>
     </Lesson>
   );
 }
@@ -5875,6 +5881,9 @@ function TimeSigLearn({ onStart }) {
       <p style={{fontSize:13,color:'#6f665b',margin:'0 0 6px',lineHeight:1.5}}>Count every quaver: 6/8 is <b>1 2 3 4 5 6</b>. The quavers are grouped in threes, so the 1 and the 4 are the strong beats (in 9/8: 1, 4, 7). Each group of three is a dotted crotchet -- when the music goes fast you feel just those: that’s why 6/8 is called <b>compound duple</b> (two groups).</p>
       <div style={{display:'flex',flexDirection:'column',gap:6}}>{TIME_SIGS.filter(t => t.kind === 'compound').map(row)}</div>
       <div style={{marginTop:14}}><RegroupQuavers/></div>
+      </Step>
+      <Step title="Grouping notes to show the beat">
+      <GroupingGame/>
       </Step>
     </Lesson>
   );
@@ -7154,6 +7163,9 @@ function DynLearn({ onStart }) {
       </div>
       <HairpinMaker/>
       </Step>
+      <Step title="The pedals">
+      <PedalDemo/>
+      </Step>
       <Step title="Articulation">
       <div style={{display:'flex',flexDirection:'column',gap:6}}>
         {ARTICS.map(a => (
@@ -7474,6 +7486,9 @@ function SignsLearn({ onStart }) {
       </Step>
       <Step title="8va and 8vb">
         <OttavaDemo/>
+      </Step>
+      <Step title="Ornaments">
+        <Ornaments/>
       </Step>
     </Lesson>
   );
@@ -9947,6 +9962,314 @@ function PostureChecklist() {
   );
 }
 
+// ─── Phase 136: filling the theory gaps -- rhythms, grouping, ornaments, pedal, chromatic ──
+// A small beamed-rhythm renderer: events in quavers (q: 0.5 semiquaver, 1 quaver, 2 crotchet,
+// 3 dotted crotchet, 4 minim, 6 dotted minim, 8 semibreve), beam groups by `g`, triplets by `tri`.
+function BeamRow({ events, width = 320, unit = null, on = -1, labels = null, ink = '#241f1a', height = 78, grid = null }) {
+  const total = events.reduce((a, e) => a + e.q, 0);
+  const u = unit || (width - 20) / total, HY = 54, ST = 16;
+  let t = 0;
+  const pos = events.map(e => { const x = 12 + t * u + 6; t += e.q; return x; });
+  const col = (i) => (i === on ? '#b5483b' : ink);
+  const groups = {};
+  events.forEach((e, i) => { if (e.g != null && !e.rest) (groups[e.g] = groups[e.g] || []).push(i); });
+  const beamed = new Set(Object.values(groups).filter(ix => ix.length > 1).flat());
+  const extra = (labels ? 18 : 0) + (grid ? 22 : 0);
+  return (
+    <svg viewBox={`0 0 ${width} ${height + extra}`} style={{width:'100%',maxWidth:width * 1.4,display:'block',margin:'0 auto'}}>
+      <line x1="4" x2={width - 4} y1={HY} y2={HY} stroke={ink} strokeOpacity="0.25"/>
+      {events.map((e, i) => {
+        const x = pos[i], c = col(i);
+        if (e.rest) {
+          if (e.q >= 2) return <rect key={i} x={x - 6} y={HY - 12} width="4" height="22" fill={c} rx="1" transform={`rotate(-12 ${x} ${HY})`}/>;
+          return <g key={i}><circle cx={x - 2} cy={HY - 8} r="2.6" fill={c}/><path d={`M${x - 2},${HY - 8} q5,2 7,-3 L${x},${HY + 10}`} fill="none" stroke={c} strokeWidth="1.8"/></g>;
+        }
+        const hollow = e.q >= 4, sx = x + 6;
+        return (
+          <g key={i}>
+            <ellipse cx={x} cy={HY} rx={e.q >= 8 ? 8 : 6.4} ry="4.8" transform={`rotate(-20 ${x} ${HY})`} fill={hollow ? 'none' : c} stroke={c} strokeWidth={hollow ? 2 : 1}/>
+            {e.q < 8 && <line x1={sx} y1={HY - 2} x2={sx} y2={ST} stroke={c} strokeWidth="1.7"/>}
+            {!beamed.has(i) && e.q <= 1 && <path d={`M${sx},${ST} c 2,8 11,10 7,22`} fill="none" stroke={c} strokeWidth="2.2"/>}
+            {!beamed.has(i) && e.q <= 0.5 && <path d={`M${sx},${ST + 8} c 2,7 11,9 7,20`} fill="none" stroke={c} strokeWidth="2.2"/>}
+            {(e.dot || e.q === 3 || e.q === 6 || e.q === 1.5) && <circle cx={x + 12} cy={HY - 2} r="2.2" fill={c}/>}
+          </g>
+        );
+      })}
+      {Object.values(groups).filter(ix => ix.length > 1).map((ix, gi) => {
+        const a = pos[ix[0]] + 6, b = pos[ix[ix.length - 1]] + 6;
+        const secondary = [];
+        ix.forEach((i, k) => { if (events[i].q <= 0.5) { const nb = ix[k + 1] != null && events[ix[k + 1]].q <= 0.5; const pb = ix[k - 1] != null && events[ix[k - 1]].q <= 0.5; if (nb) secondary.push([pos[i] + 6, pos[ix[k + 1]] + 6]); else if (!pb) secondary.push(k === ix.length - 1 ? [pos[i] + 6 - 7, pos[i] + 6] : [pos[i] + 6, pos[i] + 6 + 7]); } });
+        const tri = events[ix[0]].tri;
+        return <g key={'b' + gi}>
+          <rect x={a - 0.8} y={ST - 1} width={b - a + 1.6} height="5" fill={ink}/>
+          {secondary.map(([p, q], k) => <rect key={k} x={p - 0.8} y={ST + 6} width={q - p + 1.6} height="4.5" fill={ink}/>)}
+          {tri && <text x={(a + b) / 2} y={ST - 5} textAnchor="middle" fontSize="11" fontWeight="900" fontStyle="italic" fill={ink}>3</text>}
+        </g>;
+      })}
+      {grid && grid.map((g, k) => <text key={'gr' + k} x={12 + g.t * u + 6} y={height + 14} textAnchor="middle" fontSize={g.main ? 15 : 11.5} fontWeight={g.bold ? 900 : 600} fill={g.on ? '#b5483b' : g.bold ? ink : '#bdb2a0'}>{g.label}</text>)}
+      {labels && events.map((e, i) => <text key={'l' + i} x={pos[i]} y={height + 12} textAnchor="middle" fontSize="12" fontWeight={i === on ? 900 : 700} fill={i === on ? '#b5483b' : '#5c544a'}>{labels[i]}</text>)}
+    </svg>
+  );
+}
+
+// 1. Counting harder rhythms: dotted notes, semiquavers, triplets, syncopation.
+const TRI = 1 / 3;
+const HARD_BARS = [
+  { id: 'dot', name: 'Dotted crotchet + quaver', sub: 2, beats: [1.5, 0.5, 1, 1], note: 'The dot adds half: a dotted crotchet lasts 1½ beats, so the quaver lands on the “&” of 2.' },
+  { id: 'dot2', name: 'Two dotted pairs', sub: 2, beats: [1.5, 0.5, 1.5, 0.5], note: 'Long-short, long-short -- keep counting the “and” you don’t play.' },
+  { id: 'semi', name: 'Semiquavers', sub: 4, beats: [0.25, 0.25, 0.25, 0.25, 1, 0.25, 0.25, 0.25, 0.25, 1], note: 'Four semiquavers share one beat: “1 e & a”.' },
+  { id: 'mix', name: 'Quaver + 2 semiquavers', sub: 4, beats: [0.5, 0.25, 0.25, 1, 0.25, 0.25, 0.5, 1], note: '“1 & a” and “3 e &” -- the two common shapes.' },
+  { id: 'dq', name: 'Dotted quaver + semiquaver', sub: 4, beats: [0.75, 0.25, 0.75, 0.25, 1, 1], note: 'A skipping rhythm: the short note is on the “a”, just before the next beat.' },
+  { id: 'tri', name: 'Triplets', sub: 3, beats: [TRI, TRI, TRI, 1, TRI, TRI, TRI, 1], note: 'Three even notes in one beat: “1-trip-let”. The 3 over the beam says so.' },
+  { id: 'sync', name: 'Syncopation', sub: 2, beats: [0.5, 1, 0.5, 1, 1], note: 'The crotchet starts on an “and” -- the accent falls off the beat.' },
+];
+function hardEvents(bar) {
+  // beam the sub-beat notes that share a beat
+  let t = 0; return bar.beats.map(b => { const beat = Math.floor(t + 1e-6), e = { q: b * 2, g: b < 1 ? 'b' + beat : null, tri: bar.sub === 3 && b < 1, t }; t += b; return e; });
+}
+function syllable(t, sub) {
+  const beat = Math.floor(t + 1e-6), f = t - beat;
+  if (f < 1e-6) return String(beat + 1);
+  if (sub === 3) return Math.abs(f - TRI) < 0.01 ? 'trip' : 'let';
+  if (Math.abs(f - 0.5) < 1e-6) return '&';
+  return Math.abs(f - 0.25) < 1e-6 ? 'e' : 'a';
+}
+function CountHarder() {
+  const [id, setId] = useState('dot');
+  const [on, setOn] = useState(-1);
+  const [pos, setPos] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const bar = HARD_BARS.find(b => b.id === id), ev = hardEvents(bar);
+  const grid = []; for (let b = 0; b < 4; b++) for (let s = 0; s < bar.sub; s++) grid.push(b + s / bar.sub);
+  function play() {
+    const ctx = getAudio(); if (!ctx) return; stopClicks(); timers.current.forEach(clearTimeout); timers.current = [];
+    const spb = 60 / 72, t0 = ctx.currentTime + 0.15, lat = outLatency(ctx), at = (t) => Math.max(0, (t + lat - ctx.currentTime) * 1000);
+    for (let b = 0; b < 4; b++) metroClick(ctx, t0 + b * spb, b === 0 ? 2 : 1, 0.22);
+    ev.forEach((e, i) => { const tt = t0 + e.t * spb; blip(ctx, tt, 523.25, Math.max(0.08, e.q / 2 * spb * 0.85), 0.2, 'triangle'); timers.current.push(setTimeout(() => setOn(i), at(tt))); });
+    grid.forEach((g, k) => timers.current.push(setTimeout(() => setPos(k), at(t0 + g * spb))));
+    timers.current.push(setTimeout(() => { setOn(-1); setPos(-1); }, at(t0 + 4 * spb) + 250));
+  }
+  const onsets = new Set(ev.map(e => Math.round(e.t * 12)));
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Count harder rhythms</div>
+      <div style={actNote}>Say every syllable of the count out loud; clap only on the bold ones. Then press play and check.</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:8}}>{HARD_BARS.map(b => <button key={b.id} className={'chip' + (b.id === id ? ' active' : '')} style={{padding:'3px 9px',fontSize:13}} onClick={() => { setId(b.id); setOn(-1); setPos(-1); }}>{b.name}</button>)}</div>
+      <div style={{background:'#fff',borderRadius:10,padding:'8px 6px'}}>
+        <BeamRow events={ev} on={on} unit={296 / 8} grid={grid.map((g, k) => ({ t: g * 2, label: syllable(g, bar.sub), main: g % 1 === 0, bold: onsets.has(Math.round(g * 12)), on: pos === k }))}/>
+      </div>
+      <div style={{fontSize:13.5,margin:'8px 0 6px'}}>{bar.note}</div>
+      <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={play}>♪ Play and count</button></div>
+    </div>
+  );
+}
+
+// 2. Grouping (beaming): which bar is grouped correctly for this time signature?
+const GROUP_SIGS = {
+  '2/4': { beat: 2, bar: 4, rule: 'Group quavers in crotchet beats (pairs). All four may be joined in 2/4.' },
+  '3/4': { beat: 2, bar: 6, rule: 'Group quavers in crotchet beats (pairs) -- or all six together. Never in threes: that would look like 6/8.' },
+  '4/4': { beat: 2, bar: 8, rule: 'Group in crotchet beats, or join beats 1+2 or 3+4 -- but never across the middle of the bar (beats 2+3).' },
+  '6/8': { beat: 3, bar: 6, rule: 'Group quavers in threes -- one group per dotted-crotchet beat. Never in pairs: that would look like 3/4.' },
+};
+function groupEvents(pattern, groupSize, crossMiddle) {
+  // pattern: array of quaver counts (1 = quaver, 2 = crotchet...). Beam runs of quavers in groups of groupSize (by position).
+  let t = 0; return pattern.map(q => { const e = { q, t }; if (q === 1) { let key = Math.floor(t / groupSize); if (crossMiddle) key = Math.floor((t + 2) / 4) + 'm'; e.g = 'g' + key; } t += q; return e; });
+}
+function makeGroupingQ(sig) {
+  const S = GROUP_SIGS[sig];
+  const pats = { '2/4': [[1, 1, 1, 1], [1, 1, 2], [2, 1, 1]], '3/4': [[1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 2], [2, 1, 1, 1, 1]], '4/4': [[1, 1, 1, 1, 1, 1, 1, 1], [2, 1, 1, 1, 1, 2], [1, 1, 2, 1, 1, 1, 1]], '6/8': [[1, 1, 1, 1, 1, 1], [2, 1, 2, 1], [1, 1, 1, 3]] };
+  const pat = pick(pats[sig]);
+  const right = groupEvents(pat, S.beat);
+  const wrongSize = sig === '6/8' ? 2 : sig === '4/4' ? null : 3;
+  const wrong = wrongSize ? groupEvents(pat, wrongSize) : groupEvents(pat, 2, true);
+  const same = JSON.stringify(right.map(e => e.g)) === JSON.stringify(wrong.map(e => e.g));
+  if (same) return makeGroupingQ(sig);
+  const opts = shuffle([{ ok: true, ev: right }, { ok: false, ev: wrong }]);
+  return { sig, opts };
+}
+function GroupingGame() {
+  const [sig, setSig] = useState('3/4');
+  const [q, setQ] = useState(() => makeGroupingQ('3/4'));
+  const [picked, setPicked] = useState(null);
+  const [score, setScore] = useState({ r: 0, t: 0 });
+  function next(s = sig) { setQ(makeGroupingQ(s)); setPicked(null); }
+  function choose(i) { if (picked !== null) return; setPicked(i); setScore(sc => ({ r: sc.r + (q.opts[i].ok ? 1 : 0), t: sc.t + 1 })); }
+  const [top, bottom] = sig.split('/');
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><div style={actTitle}>Group the quavers</div><span style={{fontSize:13,fontWeight:800,color:'var(--muted)'}}>{score.r}/{score.t}</span></div>
+      <div style={actNote}>The beams show where the beats are. Which bar is grouped correctly for this time signature?</div>
+      <div style={{display:'flex',gap:4,marginBottom:8}}>{Object.keys(GROUP_SIGS).map(s => <button key={s} className={'chip' + (s === sig ? ' active' : '')} style={{padding:'3px 11px',fontSize:13}} onClick={() => { setSig(s); next(s); }}>{s}</button>)}</div>
+      {q.opts.map((o, i) => {
+        const st = picked === null ? '' : o.ok ? 'good' : picked === i ? 'bad' : '';
+        return (
+          <button key={i} onClick={() => choose(i)} style={{display:'flex',alignItems:'center',gap:8,width:'100%',marginBottom:6,background:st === 'good' ? '#e6f2e8' : st === 'bad' ? '#f6e3df' : '#fff',border:'1.5px solid ' + (st === 'good' ? POS_GOOD : st === 'bad' ? POS_BAD : 'var(--border)'),borderRadius:10,padding:'4px 8px',cursor:'pointer',fontFamily:'inherit'}}>
+            <b style={{fontSize:14,width:18}}>{'AB'[i]}</b>
+            <TSig top={top} bottom={bottom} size={24}/>
+            <div style={{flex:1}}><BeamRow events={o.ev} width={260} height={70}/></div>
+          </button>
+        );
+      })}
+      <div style={{fontSize:13.5,background:'#fff',borderRadius:8,padding:'6px 9px',minHeight:20}}>{picked === null ? <span style={{color:'var(--muted)'}}>Tap A or B.</span> : <><b style={{color:q.opts[picked].ok ? POS_GOOD : POS_BAD}}>{q.opts[picked].ok ? 'Right. ' : 'Not this one. '}</b>{GROUP_SIGS[sig].rule}</>}</div>
+      {picked !== null && <div style={{textAlign:'center',marginTop:6}}><button className="ghost-btn" onClick={() => next()}>Next ▶</button></div>}
+    </div>
+  );
+}
+
+// 3. Ornaments: what is written, and what is played.
+const ORNAMENTS = [
+  { id: 'trill', name: 'Trill', sign: 'tr', play: [[33, 0.125], [32, 0.125], [33, 0.125], [32, 0.125], [33, 0.125], [32, 0.125], [33, 0.125], [32, 0.125]], say: 'Alternate quickly between the written note and the note above for the length of the note. In Baroque and Classical music the trill usually starts on the note above.' },
+  { id: 'mordent', name: 'Upper mordent', sign: 'mord', play: [[32, 0.125], [33, 0.125], [32, 0.75]], say: 'A quick “main – upper – main” at the start of the note.' },
+  { id: 'lower', name: 'Lower mordent', sign: 'lmord', play: [[32, 0.125], [31, 0.125], [32, 0.75]], say: 'The same with the note below: “main – lower – main”. The line through the sign means “lower”.' },
+  { id: 'turn', name: 'Turn', sign: 'turn', play: [[33, 0.25], [32, 0.25], [31, 0.25], [32, 0.25]], say: 'Four notes going round the written note: upper – main – lower – main.' },
+  { id: 'acc', name: 'Acciaccatura', sign: 'acc', play: [[33, 0.06], [32, 0.94]], say: 'A tiny note with a slash: “crushed” in as fast as possible, just before the main note.' },
+  { id: 'app', name: 'Appoggiatura', sign: 'app', play: [[33, 0.5], [32, 0.5]], say: 'A small note without a slash: it “leans” -- it takes time from the main note, usually half.' },
+];
+const ORN_LETTER = { 31: 'F', 32: 'G', 33: 'A' };
+function OrnSign({ id, x, y, ink = '#241f1a' }) {
+  if (id === 'trill') return <g><text x={x - 12} y={y} fontSize="15" fontWeight="900" fontStyle="italic" fontFamily="Georgia,serif" fill={ink}>tr</text><path d={`M${x + 4},${y - 4} q3,-5 6,0 t6,0 t6,0 t6,0`} fill="none" stroke={ink} strokeWidth="1.6"/></g>;
+  if (id === 'mordent' || id === 'lower') return <g><path d={`M${x - 10},${y} l4,-6 l4,6 l4,-6 l4,6 l4,-6`} fill="none" stroke={ink} strokeWidth="2" strokeLinejoin="round"/>{id === 'lower' && <line x1={x} x2={x} y1={y - 11} y2={y + 5} stroke={ink} strokeWidth="1.6"/>}</g>;
+  if (id === 'turn') return <path d={`M${x - 11},${y - 1} c0,-7 7,-7 9,-2 c2,5 4,6 4,6 c2,5 9,5 9,-2 M${x - 11},${y - 1} c0,4 4,5 6,2 M${x + 11},${y - 1} c0,-4 -4,-5 -6,-2`} fill="none" stroke={ink} strokeWidth="1.8"/>;
+  return null;
+}
+function OrnamentStaff({ orn, mode }) {
+  const lines = [30, 32, 34, 36, 38], y = (d) => 76 - (d - 30) * 5;
+  const W = 280;
+  const small = (cx, d, slash) => <g><ellipse cx={cx} cy={y(d)} rx="4.3" ry="3.3" transform={`rotate(-20 ${cx} ${y(d)})`} fill="#241f1a"/><line x1={cx + 4} x2={cx + 4} y1={y(d)} y2={y(d) - 17} stroke="#241f1a" strokeWidth="1.2"/><path d={`M${cx + 4},${y(d) - 17} c1,5 7,6 5,13`} fill="none" stroke="#241f1a" strokeWidth="1.4"/>{slash && <line x1={cx - 3} y1={y(d) - 6} x2={cx + 10} y2={y(d) - 16} stroke="#241f1a" strokeWidth="1.3"/>}</g>;
+  const big = (cx, d, col = '#241f1a') => <g><ellipse cx={cx} cy={y(d)} rx="6.6" ry="4.9" transform={`rotate(-20 ${cx} ${y(d)})`} fill={col}/><line x1={cx + 6} x2={cx + 6} y1={y(d) - 1} y2={y(d) - 32} stroke={col} strokeWidth="1.6"/></g>;
+  return (
+    <svg viewBox={`0 8 ${W} 90`} style={{width:'100%',maxWidth:W * 1.5,display:'block',margin:'0 auto'}}>
+      {lines.map(l => <line key={l} x1="4" x2={W - 4} y1={y(l)} y2={y(l)} stroke="#241f1a" strokeOpacity="0.5"/>)}
+      <ClefGlyph clef="treble" st="treble" yOf={(d) => 76 - (d - 30) * 5} ink="#241f1a"/>
+      {mode === 'written' ? <>
+        {orn.id === 'acc' && small(118, 33, true)}
+        {orn.id === 'app' && small(118, 33, false)}
+        {big(140, 32)}
+        <OrnSign id={orn.id} x={146} y={22}/>
+      </> : (() => { let t = 0; const u = 150; return orn.play.map(([d, len], i) => { const cx = 70 + t * u; t += len; return <g key={i}>{big(cx, d, '#a8823f')}<text x={cx} y={96} textAnchor="middle" fontSize="10" fontWeight="800" fill="#8a6a2a">{ORN_LETTER[d]}</text></g>; }); })()}
+    </svg>
+  );
+}
+function playOrnament(orn, plain) {
+  const ctx = getAudio(); if (!ctx) return; stopClicks();
+  const spb = 60 / 72, t0 = ctx.currentTime + 0.1, f = (d) => 440 * Math.pow(2, ({ 31: 65, 32: 67, 33: 69 }[d] - 69) / 12);
+  if (plain) { blip(ctx, t0, f(32), spb * 0.95, 0.22, 'triangle'); return; }
+  let t = 0; orn.play.forEach(([d, len]) => { blip(ctx, t0 + t * spb, f(d), Math.max(0.06, len * spb * 0.95), 0.22, 'triangle'); t += len; });
+}
+function Ornaments() {
+  const [id, setId] = useState('mordent');
+  const O = ORNAMENTS.find(o => o.id === id);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Ornaments: written and played</div>
+      <div style={actNote}>An ornament is a small sign that decorates one note. Tap a sign, look at what is written, then what is actually played -- and hear both.</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:8}}>{ORNAMENTS.map(o => <button key={o.id} className={'chip' + (o.id === id ? ' active' : '')} style={{padding:'3px 10px',fontSize:13}} onClick={() => setId(o.id)}>{o.name}</button>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr',gap:6}}>
+        <div style={{background:'#fff',borderRadius:10,padding:'6px 8px'}}><div style={{fontSize:12,fontWeight:900,color:'var(--muted)'}}>WRITTEN</div><OrnamentStaff orn={O} mode="written"/></div>
+        <div style={{background:'#fff',borderRadius:10,padding:'6px 8px'}}><div style={{fontSize:12,fontWeight:900,color:'#8a6a2a'}}>PLAYED</div><OrnamentStaff orn={O} mode="played"/></div>
+      </div>
+      <div style={{fontSize:13.5,margin:'8px 0 6px'}}><b>{O.name}:</b> {O.say}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center'}}><button className="ghost-btn" onClick={() => playOrnament(O, true)}>♪ Plain note</button><button className="ghost-btn" onClick={() => playOrnament(O, false)}>♪ With the ornament</button></div>
+    </div>
+  );
+}
+
+// 4. The sustain pedal: none, held, and changed with each chord (legato pedalling).
+const PEDAL_CHORDS = [[48, 55, 64], [53, 57, 65], [55, 59, 67], [48, 55, 64]]; // C F G C
+const PEDAL_MODES = [
+  { id: 'none', name: 'No pedal', say: 'The fingers have to let go to move -- small gaps between the chords.' },
+  { id: 'held', name: 'Pedal held down', say: 'Every chord keeps ringing into the next -- a blur. Only good for one harmony.' },
+  { id: 'legato', name: 'Change with each chord', say: 'Legato pedalling: play the new chord, THEN lift and press the pedal again straight after. Smooth, and clean.' },
+];
+function PedalDemo() {
+  const [mode, setMode] = useState('legato');
+  const [on, setOn] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  function play(m = mode) {
+    const ctx = getAudio(); if (!ctx) return; stopClicks(); timers.current.forEach(clearTimeout); timers.current = [];
+    const spb = 60 / 60, t0 = ctx.currentTime + 0.1;
+    PEDAL_CHORDS.forEach((ch, i) => {
+      const len = m === 'none' ? spb * 0.72 : m === 'held' ? spb * (PEDAL_CHORDS.length - i) + 0.6 : spb * 1.03 + (i === PEDAL_CHORDS.length - 1 ? 0.8 : 0);
+      ch.forEach(n => blip(ctx, t0 + i * spb, 440 * Math.pow(2, (n - 69) / 12), len, 0.16, 'triangle'));
+      timers.current.push(setTimeout(() => setOn(i), (0.1 + i * spb) * 1000));
+    });
+    timers.current.push(setTimeout(() => setOn(-1), (0.1 + PEDAL_CHORDS.length * spb) * 1000 + 300));
+  }
+  const W = 300, x = (i) => 30 + i * 64;
+  const pedalPath = mode === 'none' ? null : mode === 'held' ? `M${x(0)},92 L${x(0)},100 L${x(4) - 10},100 L${x(4) - 10},92` : PEDAL_CHORDS.map((_, i) => i === 0 ? `M${x(0) + 8},92 L${x(0) + 8},100 L${x(1) + 4},100 L${x(1) + 10},93` : i < 4 ? `L${x(i) + 16},100 L${i === 3 ? x(4) - 10 : x(i + 1) + 4},100 ${i === 3 ? `L${x(4) - 10},92` : `L${x(i + 1) + 10},93`}` : '').join(' ');
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>The sustain pedal</div>
+      <div style={actNote}>The right pedal lifts all the dampers, so notes keep ringing after you let go. The bracket under the music shows when it is down; each “notch” is a quick up-and-down.</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:8}}>{PEDAL_MODES.map(m => <button key={m.id} className={'chip' + (m.id === mode ? ' active' : '')} style={{padding:'3px 10px',fontSize:13}} onClick={() => { setMode(m.id); play(m.id); }}>{m.name}</button>)}</div>
+      <div style={{background:'#fff',borderRadius:10,padding:'6px'}}>
+        <svg viewBox={`0 0 ${W} 110`} style={{width:'100%',display:'block'}}>
+          {PEDAL_CHORDS.map((ch, i) => {
+            const ring = mode === 'none' ? 44 : mode === 'held' ? x(4) - x(i) - 10 : 64;
+            return <g key={i}>
+              <rect x={x(i)} y={20} width={ring} height="44" rx="4" fill={i === on ? '#f3e3b8' : '#f3ece0'} stroke="#c9b48a" opacity={mode === 'held' ? 0.55 : 1}/>
+              <text x={x(i) + 18} y={48} textAnchor="middle" fontSize="15" fontWeight="900" fill="#241f1a">{['C', 'F', 'G', 'C'][i]}</text>
+            </g>;
+          })}
+          <text x="4" y="14" fontSize="10" fontWeight="800" fill="#8a7f70">how long each chord sounds</text>
+          {pedalPath ? <path d={pedalPath} fill="none" stroke="#241f1a" strokeWidth="2"/> : <text x={W / 2} y="98" textAnchor="middle" fontSize="11" fontWeight="800" fill="#8a7f70">(no pedal marking)</text>}
+          {pedalPath && <text x="4" y="88" fontSize="10" fontStyle="italic" fontWeight="800" fill="#241f1a">Ped.</text>}
+        </svg>
+      </div>
+      <div style={{fontSize:13.5,margin:'8px 0'}}>{PEDAL_MODES.find(m => m.id === mode).say}</div>
+      <div style={{fontSize:12.5,color:'#5c544a',background:'#f7f2e8',borderRadius:8,padding:'6px 9px',lineHeight:1.5}}>Also written <i>Ped.</i> (down) and <b>✱</b> (up). The <b>left pedal</b> is <i>una corda</i> (soft); <i>tre corde</i> means let it go. The middle pedal (sostenuto) holds only the notes already down.</div>
+      <div style={{textAlign:'center',marginTop:8}}><button className="ghost-btn" onClick={() => play()}>♪ Play</button></div>
+    </div>
+  );
+}
+
+// 5. Chromatic scale, and every name a key can have (double sharps and flats).
+const ALL_NAMES = { 0: ['C', 'B♯', 'D𝄫'], 1: ['C♯', 'D♭', 'B𝄪'], 2: ['D', 'C𝄪', 'E𝄫'], 3: ['D♯', 'E♭', 'F𝄫'], 4: ['E', 'F♭', 'D𝄪'], 5: ['F', 'E♯', 'G𝄫'], 6: ['F♯', 'G♭', 'E𝄪'], 7: ['G', 'F𝄪', 'A𝄫'], 8: ['G♯', 'A♭'], 9: ['A', 'G𝄪', 'B𝄫'], 10: ['A♯', 'B♭', 'C𝄫'], 11: ['B', 'C♭', 'A𝄪'] };
+const CHROM_UP = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'], CHROM_DOWN = ['C', 'D♭', 'D', 'E♭', 'E', 'F', 'G♭', 'G', 'A♭', 'A', 'B♭', 'B'];
+// RH: 2 on F and C (the upper key of each white pair), LH: 2 on E and B; the lowest note of the scale takes the thumb.
+function chromFinger(pc, hand, lowest) { if ([1, 3, 6, 8, 10].includes(pc)) return 3; if (lowest) return 1; if (hand === 'RH') return pc === 5 || pc === 0 ? 2 : 1; return pc === 4 || pc === 11 ? 2 : 1; }
+function ChromaticScale() {
+  const [start, setStart] = useState(0);
+  const [dir, setDir] = useState('up');
+  const [hand, setHand] = useState('RH');
+  const [step, setStep] = useState(-1);
+  const [named, setNamed] = useState(null);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const seq = Array.from({ length: 13 }, (_, i) => dir === 'up' ? start + i : start + 12 - i);
+  function play() {
+    const ctx = getAudio(); if (!ctx) return; stopClicks(); timers.current.forEach(clearTimeout); timers.current = [];
+    seq.forEach((k, i) => { playKey(k, 0.25); });
+    seq.forEach((k, i) => { timers.current.push(setTimeout(() => { playKey(k, 0.25); setStep(i); }, i * 260)); });
+    timers.current.push(setTimeout(() => setStep(-1), 13 * 260 + 300));
+    stopClicks();
+  }
+  const marks = {}; seq.forEach((k, i) => { marks[k] = i === step ? 'good' : 'target'; });
+  const names = {}; seq.forEach(k => { names[k] = String(chromFinger(k % 12, hand, k === start)); });
+  const spell = (k) => (dir === 'up' ? CHROM_UP : CHROM_DOWN)[k % 12];
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>The chromatic scale</div>
+      <div style={actNote}>Every key, black and white, one semitone at a time. Written with <b>sharps going up</b> and <b>flats coming down</b>. Fingering: <b>3</b> on every black key, thumb on the white keys, <b>2</b> where two white keys sit together.</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6}}>
+        {[['up', 'Going up'], ['down', 'Coming down']].map(([k, l]) => <button key={k} className={'chip' + (dir === k ? ' active' : '')} style={{padding:'3px 10px',fontSize:13}} onClick={() => setDir(k)}>{l}</button>)}
+        <span style={{width:6}}/>
+        {['RH', 'LH'].map(h => <button key={h} className={'chip' + (hand === h ? ' active' : '')} style={{padding:'3px 10px',fontSize:13}} onClick={() => setHand(h)}>{h === 'RH' ? 'Right hand' : 'Left hand'}</button>)}
+      </div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6,alignItems:'center'}}><span style={{fontSize:12,fontWeight:900,color:'var(--muted)'}}>START ON</span>{['C', 'D', 'E', 'F', 'G', 'A'].map((l, i) => { const k = [0, 2, 4, 5, 7, 9][i]; return <button key={l} className={'chip' + (start === k ? ' active' : '')} style={{padding:'3px 9px',fontSize:13}} onClick={() => setStart(k)}>{l}</button>; })}</div>
+      <TapKeyboard octaves={2} marks={marks} names={names} onTap={(i) => { playKey(i); setNamed(i % 12); }}/>
+      <div style={{fontSize:15,fontWeight:800,margin:'8px 0',display:'flex',gap:6,flexWrap:'wrap',fontFamily:MUSIC_FONT + ',Inter'}}>{seq.map((k, i) => <span key={i} style={{color:i === step ? '#b5483b' : 'var(--text)'}}>{spell(k)}</span>)}</div>
+      <div style={{textAlign:'center',marginBottom:8}}><button className="ghost-btn" onClick={play}>♪ Play it</button></div>
+      <div style={{background:'#fff',borderRadius:8,padding:'8px 10px',fontSize:13.5,lineHeight:1.5}}>
+        <b>One key, several names.</b> Tap any key above. {named !== null ? <span style={{fontFamily:MUSIC_FONT + ',Inter',fontSize:16,fontWeight:900,color:'#8a6a2a'}}>{ALL_NAMES[named].join('  =  ')}</span> : null}
+        <div style={{color:'#5c544a',marginTop:3}}>A <b>double sharp</b> (<span style={{fontFamily:MUSIC_FONT}}>𝄪</span>) raises a note two semitones; a <b>double flat</b> (<span style={{fontFamily:MUSIC_FONT}}>𝄫</span>) lowers it two. Names for the same key are <b>enharmonic</b>.</div>
+      </div>
+    </div>
+  );
+}
+
 const TOOLS = [
   { id: 'sit-check', ch: 'first-steps', title: 'Set up the stool', blurb: 'Height and distance: forearm level, elbows open.', C: () => <SitCheck/> },
   { id: 'hand-shape', ch: 'first-steps', title: 'The hand shape', blurb: 'Knuckle bridge, level wrist, fingertips -- and six faults.', C: () => <HandShape/> },
@@ -9994,6 +10317,7 @@ const TOOLS = [
   { id: 'ledger-write', ch: 'ledger-lines', title: 'Write with ledger lines', blurb: 'Tap the right line or space.', C: () => <LedgerWrite/> },
   { id: 'tone-semitone', ch: 'tones', title: 'Tone or semitone', blurb: 'Tap two keys, count the steps.', C: () => <StepExplorer/> },
   { id: 'sharp-flat', ch: 'tones', title: 'Sharp, flat, natural', blurb: 'Push a key one semitone and back.', C: () => <SharpFlatMover/> },
+  { id: 'chromatic', ch: 'tones', title: 'Chromatic scale & enharmonics', blurb: 'Every key, its fingering, and all its names -- double sharps too.', C: () => <ChromaticScale/> },
   { id: 'accidental-bar', ch: 'tones', title: 'How long an accidental lasts', blurb: 'Until the bar line -- hear it.', C: () => <AccidentalBar/> },
   { id: 'scale-finder', ch: 'scales', title: 'Scale finder', blurb: 'Type any scale -- fingering for both hands, key signature, notes.', C: () => <ScaleFinder/> },
   { id: 'build-major', ch: 'scales', title: 'Build a major scale', blurb: 'T T S T T T S, step by step.', C: () => <ScaleBuilder mode="major"/> },
@@ -10021,15 +10345,19 @@ const TOOLS = [
   { id: 'count-along', ch: 'time-signatures', title: 'Count along (time signatures)', blurb: 'Beat lights for 2/4, 3/4, 4/4, and 6/8 counted 1 to 6.', C: () => <BeatPulse/> },
   { id: 'bar-lines', ch: 'time-signatures', title: 'Put in the bar lines', blurb: 'The written exam task.', C: () => <BarLineBuilder/> },
   { id: 'beat-doubler', ch: 'time-signatures', title: 'When the quaver is the beat', blurb: '8 on the bottom: every note doubles; count 6/8 as 1 to 6.', C: () => <BeatDoubler/> },
+  { id: 'grouping', ch: 'time-signatures', title: 'Group the quavers', blurb: 'Which bar is beamed right for 2/4, 3/4, 4/4, 6/8?', C: () => <GroupingGame/> },
   { id: 'regroup', ch: 'time-signatures', title: '3/4 or 6/8?', blurb: 'Same six quavers, different beat.', C: () => <RegroupQuavers/> },
+  { id: 'count-more', ch: 'rhythm', title: 'Count harder rhythms', blurb: 'Dotted notes, 1 e & a, triplets, syncopation.', C: () => <CountHarder/> },
   { id: 'make-card', ch: 'rhythm', title: 'Make a rhythm card', blurb: 'Build a bar and loop it.', C: () => <RhythmComposer/> },
   { id: 'metronome', ch: 'tempo', title: 'Metronome', blurb: 'Any time signature, triplets and semiquavers, 5/8 and 7/8, tap tempo.', C: () => <MetronomeDial/> },
   { id: 'speed-change', ch: 'tempo', title: 'rit. and accel. (speed changes)', blurb: 'Hear the speed change.', C: () => <SpeedChange/> },
   { id: 'dyn-order', ch: 'dynamics', title: 'Line up the dynamics', blurb: 'pp to ff, by ear and eye.', C: () => <DynOrder/> },
   { id: 'touch-ear', ch: 'dynamics', title: 'Which touch? How loud?', blurb: 'Listening game: staccato, legato, accent; p to ff.', C: () => <TouchEar/> },
+  { id: 'pedal', ch: 'dynamics', title: 'The sustain pedal', blurb: 'No pedal, held, or changed with each chord -- hear the difference.', C: () => <PedalDemo/> },
   { id: 'hairpin', ch: 'dynamics', title: 'Draw a hairpin', blurb: 'Crescendo and diminuendo.', C: () => <HairpinMaker/> },
   { id: 'road-map', ch: 'signs', title: 'Road map (repeats, D.C., D.S.)', blurb: 'Repeats, 1st/2nd time, D.C., D.S., Coda.', C: () => <RoadMap/> },
   { id: 'tie-slur', ch: 'signs', title: 'Tie or slur?', blurb: 'Same pitch or different?', C: () => <TieOrSlur/> },
+  { id: 'ornaments', ch: 'signs', title: 'Ornaments', blurb: 'Trill, mordents, turn, acciaccatura, appoggiatura: written vs played.', C: () => <Ornaments/> },
   { id: 'ottava', ch: 'signs', title: '8va and 8vb', blurb: 'An octave higher or lower.', C: () => <OttavaDemo/> },
 ];
 // ─── Lesson Path: stages in the order a beginner meets them (Phase 120) ─────────
@@ -10133,6 +10461,8 @@ const TOOL_CATS = [
 // cat, level range [from, to] (0 Beginner, 1 Prelim, 2 Grade 1–2, 3 Grade 3–4), kinds
 // kinds: show = show & explain, game = student does it, ear = listening, write = written theory, home = home practice
 const TOOL_META = {
+  'count-more': ['rhythm', 2, 4, 'show game'], 'grouping': ['rhythm', 2, 4, 'game write'], 'pedal': ['expression', 2, 4, 'show ear'],
+  'ornaments': ['words', 3, 4, 'show ear'], 'chromatic': ['scales', 2, 4, 'show'],
   'sit-check': ['body', 0, 3, 'show'], 'hand-shape': ['body', 0, 3, 'show'], 'arm-moves': ['body', 0, 3, 'home game'], 'posture-check': ['body', 0, 3, 'home'],
   'finger-numbers': ['body', 0, 0, 'game'], 'five-positions': ['body', 0, 1, 'show'],
   'key-houses': ['keys', 0, 0, 'show game'], 'black-key-song': ['keys', 0, 0, 'ear game'], 'find-every': ['keys', 0, 1, 'game home'], 'name-reveal': ['keys', 0, 1, 'game'],

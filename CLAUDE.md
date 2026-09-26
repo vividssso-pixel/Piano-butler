@@ -3093,6 +3093,14 @@ Sohyun: (1) every scale should be searchable; in B-flat major the RH starting 2 
 | 5 | Activity audit | all 83 tools | Screenshot sheet review of every tool at phone width; remaining tools already state purpose + action. |
 | 6 | Book plan | Claude Doc "Piano Butler Books: Print & Online Plan" | 7-book series (Me and the Piano, Reading Begins, Hands on the Move, Theory Ladder Prelim-G1 and G2-4, Teacher Guide, Know Your Instrument), TOCs mapped to step codes, spread design with QR to tools, online/offline use, production (print view -> PDF builder), phased plan. |
 
+Phase 136 -- filling the theory gaps (book plan: "fill everything in first"). Five new stand-alone tools, each in TOOLS + TOOL_META and in its chapter's Learn:
+- `count-more` (CountHarder, Note values chapter): dotted crotchet+quaver, semiquavers "1 e & a", quaver+2 semis, dotted quaver+semi, triplets "1-trip-let", syncopation. New `BeamRow` renderer (beams, secondary beams, triplet 3, dots) with a time-aligned count row; play highlights note and syllable.
+- `grouping` (GroupingGame, Time signatures): "which bar is beamed right?" for 2/4, 3/4, 4/4 (never across the middle), 6/8 (threes), with the rule after each answer.
+- `ornaments` (Signs): trill, upper/lower mordent, turn, acciaccatura, appoggiatura -- written vs played staff, play plain and ornamented.
+- `pedal` (PedalDemo, Dynamics): no pedal / held (blur) / legato pedalling, bracket with notches, Ped. and star, una corda / tre corde / sostenuto.
+- `chromatic` (ChromaticScale, Tones): sharps up, flats down, RH/LH fingering (3 on black, 2 on F&C RH / E&B LH, lowest note thumb), start on C-A, tap any key for all its enharmonic names incl. double sharps/flats.
+Regression: 88 tools / 21 drills, no errors.
+
 Next on the plan: more mini tools (Sohyun's rule: every activity stand-alone + in TOOLS). Ideas: sight-reading flash cards, a practice-dice/timer tool, scale degree names (tonic, supertonic...), transposition. Signs 116, Chords 117, Toolbox 118, Grade 3 intervals + cadences 119 done.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
