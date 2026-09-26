@@ -3029,6 +3029,21 @@ Sohyun: count 6/8 as 1 2 3 4 5 6, also in the Time Signatures lessons; teach tha
 | 5 | Tap the right beat | `BeatTarget` | 6/8 option: six quaver beats counted 1-6 (the "and" level hidden). |
 | 6 | Verification | -- | 82 tools / 21 chapters load with zero page errors; time-signature generators fuzzed, 0 bad questions. |
 
+### Phase 131 -- Toolbox reorganised: by skill, filters, "My student…", student kits (2026-09-26)
+
+Sohyun: tools should be grab-and-go; chapter names like "Me and the piano" don't say "posture"; every student is different, so what categories?
+
+Decision (Claude): three ways in, because a teacher arrives at the Toolbox with three different questions -- "what area?", "what's wrong with this student?", "what does THIS student need?".
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | 12 skill categories instead of chapters | `TOOL_CATS`, `TOOL_META` (every tool: category, level range, kinds) | Posture & hands · Finding notes on the keys · Reading notes · Pulse & counting · Rhythm & note values · Touch & expression · Ear & listening · Scales & keys · Intervals & chords · Signs & terms · Practice helpers · About music. Each has a one-line "when" hint and a colour; colour jump-chips at the top scroll to a category. Chapters (Lesson Path) are unchanged -- the Toolbox no longer mirrors them. |
+| 2 | Filters | `Toolbox` | Level (Beginner / Preliminary / Grade 1–2 / Grade 3–4, by range) and kind (Show & explain / Student does it / Listening / Written theory / Home practice); search now also matches category names and hints; count + Clear filters. Cards show level and ♪ / home tags. |
+| 3 | "My student…" problem finder | `PROBLEMS` (18) | e.g. "…flat fingers or collapsing knuckles" -> hand shape, arm exercises, posture check; "…counts up from C to read every note" -> landmarks, hop, rhymes, climb; "…is confused by 6/8"; "…plays everything at one volume"; "…has a theory exam coming"; "…doesn't practise at home". |
+| 4 | Student kits | `loadKits`/`saveKits` (`pb_kits_v1`), `KitView`, App `view=kit` (`?kit=a,b,c&kn=Name`) | ☆ on any tool adds it to the selected kit ("+ New kit", named per student). Open the kit in the lesson, or "Copy student link" -> the student sees only their tools (locked, header = kit name, ← Kit back button). |
+| 5 | Clearer titles | TOOLS | Parenthetical hints where a title was cryptic: (black keys), (clefs), (grand staff), (perfect reps), (copy by ear), (repeats, D.C., D.S.), (count an interval), (intervals), (speed changes), (time signatures), (note values). ToolView header now shows the category. |
+| 6 | Verification | -- | All 82 tools have metadata; problem finder ids valid; kit create/star/open/locked student link/back tested in Playwright; 82 tools / 21 chapters load with zero page errors. |
+
 Next on the plan: more mini tools (Sohyun's rule: every activity stand-alone + in TOOLS). Ideas: sight-reading flash cards, a practice-dice/timer tool, scale degree names (tonic, supertonic...), transposition. Signs 116, Chords 117, Toolbox 118, Grade 3 intervals + cadences 119 done.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
