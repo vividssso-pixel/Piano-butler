@@ -2995,6 +2995,17 @@ Sohyun's feedback on Phase 126: (1) wrist should sit a little higher; (2) the kn
 | 7 | Stage 6 | `STAGES`, `GRADE_TAGS`, `DRILLS`, TOOLS (+6) | "Know your instrument", tagged General knowledge. Composer pages per era still to come (Sohyun: later). |
 | 8 | Verification | -- | All 80 tool URLs and 21 chapters load with zero page errors; generators fuzzed (0 bad questions); screenshots checked. |
 
+### Phase 128 -- new metronome sound, choice of click and voice (2026-09-26)
+
+Sohyun: change the metronome sound -- it sounds shaky ("떨려").
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Woodblock click | `metroClick`, `noiseBuf`, `beatTick` | Every metronome/count click now goes through `metroClick`: a short band-passed noise burst + a pitched body, like a woodblock (accent 2000 Hz, others 1450 Hz, ~50 ms). The Steady beat's 110 Hz sine "heartbeat" (the most likely source of the buzz on small speakers) and the square-wave clicks are gone. Also routed: `playClicks`, speed-term metronome in `playTerm`, 6/8 weak pulses. |
+| 2 | Choice of click | `SoundSettings`, `SOUND.click` | Woodblock (default) / Tick (a short high mechanical tick) / Beep (the old sine beep). Picking one plays four clicks. |
+| 3 | Voice count: no click underneath, choice of voice | `beatTick`, `SOUND.voice`, `loadCount`, `reloadCount` | Voice mode no longer layers a click under the spoken number (two sounds a few ms apart can sound like a flam). Three voices: Female (US) = `audio/count/` (af_heart), Female (UK) = `audio/count/emma/`, Male = `audio/count/michael/`; picking one reloads and says "1 2 3 4". |
+| 4 | Verification | -- | Offline render: every click style starts exactly on the beat (beep +4 ms); both new voices load (9 words) and line up; 80 tools / 21 chapters load with zero page errors. |
+
 Next on the plan: more mini tools (Sohyun's rule: every activity stand-alone + in TOOLS). Ideas: sight-reading flash cards, a practice-dice/timer tool, scale degree names (tonic, supertonic...), transposition. Signs 116, Chords 117, Toolbox 118, Grade 3 intervals + cadences 119 done.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
