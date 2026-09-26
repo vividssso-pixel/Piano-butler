@@ -3057,6 +3057,17 @@ Sohyun: in the first lessons milestones 1-4 all go in together, a little at a ti
 
 Teacher link for Sohyun: https://thepianobutler.com/drills.html?teacher=1 (bookmark once per device).
 
+### Phase 133 -- Students tab: add, name, edit, notes, delete (2026-09-26)
+
+Sohyun: students need their own section -- write their names, edit or delete them. (Her screenshot showed "Student 1 / Student 2": browser prompt() is blocked inside the preview, so names fell back to defaults.)
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Students tab (teacher view) | `StudentsView`, App `view=students`, tabs now Plan · Students · Toolbox · Practice | Add a student (name, "starts as" group = one of the first mixes, notes), per-student card: group + start date, notes, progress bar coloured by strand (x/36 steps), kit size; Lesson plan (opens the plan on that student), Open kit, Student link, Edit (inline form), Delete (inline two-step confirm). |
+| 2 | No more prompt()/confirm() | `AddName` inline field used in Plan and Toolbox; Toolbox "Delete" replaced by "Manage students" | Works inside embedded previews and on phones. |
+| 3 | One selected student everywhere | `WHO_KEY` (`pb_who_v1`), `loadWho`/`saveWho`, student ids (`newStudentObj`; old kits get ids on load) | Plan, Toolbox and Students share the current student; choosing a student in the Plan sets its first mix from the student's group; the student's notes show under the picker. |
+| 4 | Verification | -- | Playwright: add two students with group and notes, edit a name, delete with confirm/cancel, open plan for a student, inline add in the plan, kits list in the Toolbox; 82 tools / 21 chapters load with zero page errors. |
+
 Next on the plan: more mini tools (Sohyun's rule: every activity stand-alone + in TOOLS). Ideas: sight-reading flash cards, a practice-dice/timer tool, scale degree names (tonic, supertonic...), transposition. Signs 116, Chords 117, Toolbox 118, Grade 3 intervals + cadences 119 done.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
