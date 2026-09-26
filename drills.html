@@ -8281,6 +8281,518 @@ function EchoTune() {
   );
 }
 
+// ─── Phase 127: Know your instrument -- the piano's story, and pitch & range ─────
+// Sohyun: piano info -- Cristofori, the clavichord and harpsichord before it and how they shaped
+// Baroque playing (non legato), an era-by-era summary (composers to be added later), and pitch in
+// Hz with the piano's range next to the other instruments'.
+function mFreq(m) { return 440 * Math.pow(2, (m - 69) / 12); }
+const NOTE_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+function nm(s) { const m = s.match(/^([A-G])([#b]?)(-?\d)$/); return (+m[3] + 1) * 12 + NOTE_PC[m[1]] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0); }
+const SHARP_NAMES = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
+function midiName(m) { return SHARP_NAMES[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1); }
+function fmtHz(f) { return f >= 1000 ? (f / 1000).toFixed(f >= 10000 ? 0 : 2).replace(/\.?0+$/, '') + ' kHz' : (f < 100 ? f.toFixed(1).replace(/\.0$/, '') : Math.round(f)) + ' Hz'; }
+
+// ── Three keyboard sounds ──
+// Harpsichord: a quill plucks the string -- bright, and the same loudness however hard you press.
+function harpsiNote(ctx, t, freq, len) {
+  const out = ctx.createGain(), lp = ctx.createBiquadFilter(), hp = ctx.createBiquadFilter();
+  hp.type = 'highpass'; hp.frequency.value = 160;
+  lp.type = 'lowpass'; lp.frequency.setValueAtTime(8000, t); lp.frequency.exponentialRampToValueAtTime(2200, t + 0.5);
+  lp.connect(hp); hp.connect(out); out.connect(ctx.destination);
+  const dec = Math.min(2.2, 0.5 + 220 / freq), end = t + Math.max(0.06, len);
+  out.gain.setValueAtTime(1, t); out.gain.setValueAtTime(1, end); out.gain.exponentialRampToValueAtTime(0.001, end + 0.08); // the damper falls when the key comes up
+  [[1, 'sawtooth', 0.16], [2, 'square', 0.035], [3.01, 'sawtooth', 0.02]].forEach(([h, type, a]) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.value = freq * h;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(a, t + 0.002); g.gain.exponentialRampToValueAtTime(a * 0.08, t + dec);
+    o.connect(g); g.connect(lp); o.start(t); o.stop(end + 0.1); _clickNodes.push(o);
+  });
+}
+// Clavichord: a brass tangent strikes and stays on the string -- very quiet; shaking the key (Bebung) makes a vibrato.
+function clavNote(ctx, t, freq, len, vel, bebung) {
+  const out = ctx.createGain(), lp = ctx.createBiquadFilter();
+  lp.type = 'lowpass'; lp.frequency.value = 2400; lp.connect(out); out.connect(ctx.destination);
+  const v = 0.012 + 0.05 * vel, end = t + Math.max(0.08, len);
+  out.gain.setValueAtTime(0.0001, t); out.gain.exponentialRampToValueAtTime(v, t + 0.004); out.gain.exponentialRampToValueAtTime(v * 0.35, t + 0.9);
+  out.gain.setValueAtTime(v * 0.35, end); out.gain.exponentialRampToValueAtTime(0.0001, end + 0.05);
+  [[1, 'triangle', 1], [2, 'sine', 0.3], [3, 'sine', 0.12]].forEach(([h, type, a]) => {
+    const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.value = freq * h; g.gain.value = a;
+    if (bebung) { const l = ctx.createOscillator(), lg = ctx.createGain(); l.frequency.value = 5.5; lg.gain.value = freq * h * 0.008; l.connect(lg); lg.connect(o.frequency); l.start(t + 0.25); l.stop(end + 0.1); _clickNodes.push(l); }
+    o.connect(g); g.connect(lp); o.start(t); o.stop(end + 0.1); _clickNodes.push(o);
+  });
+}
+function instNote(inst, ctx, t, m, len, vel, opt) {
+  const f = mFreq(m);
+  if (inst === 'harpsichord') return harpsiNote(ctx, t, f, len);
+  if (inst === 'clavichord') return clavNote(ctx, t, f, len, vel, opt && opt.bebung);
+  if (inst === 'sine') { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = f; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.18, t + 0.02); g.gain.setValueAtTime(0.18, t + len); g.gain.exponentialRampToValueAtTime(0.0001, t + len + 0.08); o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + len + 0.1); _clickNodes.push(o); return; }
+  blip(ctx, t, f, len, 0.04 + 0.5 * vel * vel, 'triangle');
+}
+// events: [beatStart, midi, beats, vel?]
+function playEvents(inst, events, bpm, opt) {
+  const ctx = getAudio(); if (!ctx) return 0; stopClicks();
+  const spb = 60 / bpm, t0 = ctx.currentTime + 0.1;
+  events.forEach(([b, m, d, v]) => instNote(inst, ctx, t0 + b * spb, m, d * spb, v === undefined ? 0.5 : v, opt));
+  return Math.max(...events.map(e => e[0] + e[2])) * spb;
+}
+const LITTLE_TUNE = [60, 62, 64, 65, 67, 65, 64, 62, 60];
+
+// Key mechanism, side view: tangent (clavichord), jack + quill (harpsichord), hammer (piano).
+function Mechanism({ kind, p }) {
+  // p: 0 at rest .. 1 key fully down (the animation drives it)
+  const down = Math.min(1, p * 3), key = 6 * down;
+  const strY = 34;
+  let part = null, vib = 0;
+  if (kind === 'clavichord') {
+    const y = 58 - 24 * down; vib = down > 0.95 ? 1 : 0;
+    part = <rect x="176" y={y} width="4" height="22" fill="#b89b4a"/>;
+  } else if (kind === 'harpsichord') {
+    const y = 64 - 40 * down; vib = y < strY - 6 ? 1 : 0;
+    part = <g><rect x="174" y={y} width="7" height="34" fill="#8a6a4a"/><polygon points={`181,${y + 6} 190,${y + 9} 181,${y + 11}`} fill="#241f1a"/></g>;
+  } else {
+    // hammer flies up, strikes, and falls back (escapement) while the key is still held
+    const hit = p < 0.25 ? p / 0.25 : p < 0.45 ? 1 - (p - 0.25) / 0.2 * 0.7 : 0.3;
+    const y = 72 - 34 * hit; vib = p > 0.22 ? 1 : 0;
+    part = <g><line x1="140" y1="78" x2="176" y2={y + 8} stroke="#8a6a4a" strokeWidth="3"/><rect x="170" y={y} width="16" height="12" rx="5" fill="#e8e0d0" stroke="#8a6a4a"/></g>;
+  }
+  const wave = vib ? `M60,${strY} Q90,${strY - 3} 120,${strY} T180,${strY} T240,${strY} T300,${strY}` : `M60,${strY} L300,${strY}`;
+  return (
+    <svg viewBox="0 0 310 110" style={{width:'100%',display:'block'}}>
+      <path d={wave} stroke="#8a7a6a" strokeWidth="1.6" fill="none"/>
+      <text x="62" y={strY - 6} fontSize="8" fontWeight="800" fill="#8a7a6a">string</text>
+      {kind !== 'piano' && <rect x="186" y={strY - 10} width="3" height="8" fill={kind === 'clavichord' ? 'transparent' : '#6f665b'}/>}
+      <g transform={`rotate(${-key} 110 92)`}>
+        <rect x="10" y="86" width="190" height="10" fill="#fff" stroke="#8a7a6a"/>
+      </g>
+      <polygon points="104,104 116,104 110,94" fill="#6f665b"/>
+      <g transform={`translate(0,${-key * 1.2})`}>{part}</g>
+      <text x="14" y="82" fontSize="8" fontWeight="800" fill="#8a7a6a">key</text>
+      <text x="200" y="106" fontSize="8.5" fontWeight="900" fill="#a8823f">{kind === 'clavichord' ? 'brass tangent' : kind === 'harpsichord' ? 'jack with a quill' : 'felt hammer'}</text>
+    </svg>
+  );
+}
+const ANCESTORS = [
+  { id: 'clavichord', name: 'Clavichord', when: 'from the 1400s', how: 'A small brass blade (tangent) strikes the string and stays touching it while you hold the key.',
+    touch: 'Loud and soft by touch -- but everything is very quiet. Wobbling the key makes a vibrato (Bebung).', good: 'Home practice; very expressive, too soft for a room full of people.' },
+  { id: 'harpsichord', name: 'Harpsichord', when: 'from the 1400s; the star of 1600–1750', how: 'A jack jumps up and a quill (plectrum) plucks the string, like a finger plucking a guitar.',
+    touch: 'Press gently or hard -- the pluck is the same loudness. Players change volume by switching to another keyboard (manual) or set of strings (stop).', good: 'Bright and clear; ensembles, dances, counterpoint.' },
+  { id: 'piano', name: 'Piano', when: 'from about 1700 (Cristofori)', how: 'A felt hammer is thrown at the string and falls straight back (the escapement), so the string rings; a damper stops it when you let go.',
+    touch: 'The harder you play, the louder -- and the brighter. That’s the name: piano e forte, “soft and loud”.', good: 'Everything from a whisper to a roar; long singing lines with the pedal.' },
+];
+function KeyboardAncestors() {
+  const [sel, setSel] = useState('harpsichord');
+  const [vel, setVel] = useState(0.5);
+  const [p, setP] = useState(0);
+  const [beb, setBeb] = useState(false);
+  const raf = useRef(0);
+  const A = ANCESTORS.find(x => x.id === sel);
+  function press() {
+    const ctx = getAudio(); if (!ctx) return; stopClicks();
+    instNote(sel, ctx, ctx.currentTime + 0.05, 67, 1.4, vel, { bebung: beb });
+    cancelAnimationFrame(raf.current); const t0 = performance.now();
+    const f = (now) => { const u = (now - t0) / 1500; setP(u < 1 ? Math.min(1, u * 1.6) : 0); if (u < 1) raf.current = requestAnimationFrame(f); };
+    raf.current = requestAnimationFrame(f);
+  }
+  function tune() { playEvents(sel, LITTLE_TUNE.map((m, i) => [i * 0.5, m, 0.45, vel]), 96, { bebung: beb }); }
+  useEffect(() => () => cancelAnimationFrame(raf.current), []);
+  const heard = sel === 'harpsichord' ? 0.55 : sel === 'clavichord' ? 0.06 + 0.2 * vel : 0.1 + 0.9 * vel;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Three keyboards, three ways to make a sound</div>
+      <div style={actNote}>Before the piano, keyboard players had the clavichord and the harpsichord. Pick one, set how hard you press, and play. Watch what the key does to the string.</div>
+      <div style={{display:'flex',gap:4,marginBottom:8}}>{ANCESTORS.map(x => <button key={x.id} className={'chip' + (x.id === sel ? ' active' : '')} style={{padding:'3px 10px',fontSize:12,flex:1}} onClick={() => { setSel(x.id); setP(0); }}>{x.name}</button>)}</div>
+      <div style={{background:'#fff',borderRadius:10,padding:'4px 6px'}}><Mechanism kind={sel} p={p}/></div>
+      <div style={{display:'grid',gridTemplateColumns:'auto 1fr auto',gap:'4px 8px',alignItems:'center',fontSize:12,fontWeight:800,margin:'8px 0 4px'}}>
+        <span>Press</span>
+        <input type="range" min="0" max="100" value={Math.round(vel * 100)} onChange={e => setVel(+e.target.value / 100)} style={{accentColor:'#a8823f'}}/>
+        <span style={{width:52,color:'var(--muted)'}}>{vel < 0.34 ? 'gently' : vel < 0.67 ? 'medium' : 'hard'}</span>
+        <span>Sound</span>
+        <div style={{height:10,borderRadius:5,background:'#e8dfcf',overflow:'hidden'}}><div style={{width:(heard * 100) + '%',height:'100%',background:sel === 'harpsichord' ? '#7a64a8' : '#a8823f',transition:'width 0.2s'}}/></div>
+        <span style={{width:52,color:'var(--muted)'}}>{sel === 'harpsichord' ? 'always same' : sel === 'clavichord' ? 'very soft' : heard > 0.6 ? 'loud' : heard > 0.3 ? 'medium' : 'soft'}</span>
+      </div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap',margin:'6px 0'}}>
+        <button className="ghost-btn" onClick={press}>♪ Press one key</button>
+        <button className="ghost-btn" onClick={tune}>♪ A little tune</button>
+        {sel === 'clavichord' && <button className={'chip' + (beb ? ' active' : '')} style={{padding:'3px 9px',fontSize:11}} onClick={() => setBeb(b => !b)}>Bebung (vibrato) {beb ? 'on' : 'off'}</button>}
+      </div>
+      <div style={{background:'#fff',borderRadius:8,padding:'7px 9px',fontSize:12.5,lineHeight:1.5}}>
+        <b>{A.name}</b> <span style={{color:'var(--muted)'}}>· {A.when}</span>
+        <div><b>How:</b> {A.how}</div>
+        <div><b>Loud and soft:</b> {A.touch}</div>
+        <div><b>Good for:</b> {A.good}</div>
+      </div>
+    </div>
+  );
+}
+
+// ── Legato, non legato, staccato: how long each note really sounds ──
+const TOUCHES = [
+  { id: 'legato', name: 'Legato', frac: 1.04, desc: 'Smooth and joined: each note holds until the next one starts.' },
+  { id: 'nonlegato', name: 'Non legato', frac: 0.75, desc: 'Detached but not short -- a small breath between notes. The everyday touch for Baroque music, because on a harpsichord the gaps are what make the notes clear.' },
+  { id: 'staccato', name: 'Staccato', frac: 0.35, desc: 'Short and bouncy -- the note is let go about halfway or sooner.' },
+];
+function TouchLengths() {
+  const [sel, setSel] = useState('nonlegato');
+  const [inst, setInst] = useState('piano');
+  const [on, setOn] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const T = TOUCHES.find(x => x.id === sel);
+  const tune = [67, 65, 64, 62, 60, 62, 64, 60];
+  function play(id) {
+    setSel(id); const tt = TOUCHES.find(x => x.id === id);
+    timers.current.forEach(clearTimeout); timers.current = [];
+    const bpm = 100; playEvents(inst, tune.map((m, i) => [i * 0.5, m, 0.5 * tt.frac, 0.45]), bpm);
+    tune.forEach((_, i) => timers.current.push(setTimeout(() => setOn(i), 100 + i * 0.5 * 600)));
+    timers.current.push(setTimeout(() => setOn(-1), 100 + tune.length * 300 + 200));
+  }
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Legato, non legato, staccato</div>
+      <div style={actNote}>The bars show how long each note really sounds. <b>Non legato</b> is in between: not joined, not short.</div>
+      <div style={{display:'flex',gap:4,marginBottom:6}}>{TOUCHES.map(x => <button key={x.id} className={'chip' + (x.id === sel ? ' active' : '')} style={{padding:'3px 10px',fontSize:12,flex:1}} onClick={() => play(x.id)}>♪ {x.name}</button>)}</div>
+      <div style={{background:'#fff',borderRadius:10,padding:'10px 8px'}}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(8,1fr)',gap:0}}>
+          {tune.map((m, i) => (
+            <div key={i} style={{padding:'0 1px'}}>
+              <div style={{height:14,borderRadius:3,width:Math.min(100, T.frac * 100) + '%',background:i === on ? '#b5483b' : '#a8823f',transition:'width 0.25s'}}/>
+              <div style={{textAlign:'left',fontSize:10,fontWeight:800,color:'var(--muted)',marginTop:2}}>{midiName(m).replace(/\d/, '')}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{fontSize:12.5,marginTop:6}}><b>{T.name}:</b> {T.desc}</div>
+      <div style={{display:'flex',gap:4,alignItems:'center',marginTop:8,fontSize:11,fontWeight:800,color:'var(--muted)'}}>Play it on {[['piano', 'Piano'], ['harpsichord', 'Harpsichord']].map(([k, l]) => <button key={k} className={'chip' + (inst === k ? ' active' : '')} style={{padding:'2px 9px',fontSize:11}} onClick={() => setInst(k)}>{l}</button>)}</div>
+    </div>
+  );
+}
+
+// ── The piano's story, 1700 to today ──
+const PIANO_TIMELINE = [
+  { y: '1400s', t: 'Clavichord and harpsichord', d: 'The first keyboard string instruments. For the next 300 years, keyboard music is written for them (and the organ).' },
+  { y: '1700', t: 'Cristofori’s invention', d: 'Bartolomeo Cristofori, instrument keeper to the Medici family in Florence, builds a harpsichord-shaped instrument with hammers: the “gravicembalo col piano e forte” -- a keyboard that can play soft and loud. Its hammers fall back after striking (the escapement), so the string keeps ringing.', key: true },
+  { y: '1720s', t: 'Three survive', d: 'Three Cristofori pianos still exist, from 1720 (New York), 1722 (Rome) and 1726 (Leipzig). They have about four octaves.' },
+  { y: '1730s–40s', t: 'Silbermann and Bach', d: 'Gottfried Silbermann builds pianos in Germany. J. S. Bach tries them -- he first finds the touch heavy and the top weak, and later approves an improved one.' },
+  { y: '1770s–90s', t: 'The fortepiano', d: 'Viennese pianos (Stein, Walter) are light, quick and clear -- Mozart’s and Haydn’s pianos, about five octaves. English pianos (Broadwood) are heavier and louder.', key: true },
+  { y: '1800–1820s', t: 'Bigger and louder', d: 'Beethoven’s pianos grow to six octaves and more. In 1821 Érard patents the double escapement: a note can be repeated before the key comes all the way up.' },
+  { y: '1825–1859', t: 'Iron frame, crossed strings', d: 'A cast-iron frame (Babcock 1825; Chickering’s grand, 1843) holds much thicker, tighter strings. Steinway crosses the bass strings over the others (1859). The modern sound arrives.', key: true },
+  { y: '1880s', t: '88 keys', d: 'Seven and a quarter octaves, A0 to C8, becomes the standard -- the piano you play today.' },
+  { y: '1900s–', t: 'Today', d: 'Uprights in homes, concert grands on stage, and since the 1980s digital pianos with sampled sound.' },
+];
+function PianoTimeline() {
+  const [open, setOpen] = useState(1);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>The piano’s story</div>
+      <div style={actNote}>Tap a date. The big three: <b>1700</b> Cristofori invents it, <b>1770s</b> the fortepiano of Mozart’s time, <b>1825–1859</b> the iron frame that makes the modern piano.</div>
+      <div style={{position:'relative',paddingLeft:18}}>
+        <div style={{position:'absolute',left:6,top:4,bottom:4,width:3,background:'#e0d3bb',borderRadius:2}}/>
+        {PIANO_TIMELINE.map((e, i) => (
+          <div key={i} style={{position:'relative',marginBottom:5}}>
+            <span style={{position:'absolute',left:-17,top:8,width:11,height:11,borderRadius:6,background:e.key ? '#a8823f' : '#fff',border:'2px solid #a8823f'}}/>
+            <button onClick={() => setOpen(open === i ? -1 : i)} style={{display:'block',width:'100%',textAlign:'left',background:open === i ? '#fff' : 'transparent',border:'1.5px solid ' + (open === i ? '#a8823f' : 'transparent'),borderRadius:8,padding:'5px 8px',cursor:'pointer',fontFamily:'inherit',color:'var(--text)'}}>
+              <span style={{fontSize:12,fontWeight:900,color:'#a8823f',marginRight:8}}>{e.y}</span><b style={{fontSize:13.5}}>{e.t}</b>
+              {open === i && <div style={{fontSize:12.5,lineHeight:1.5,color:'#5c544a',marginTop:3}}>{e.d}</div>}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── The eras: what the instrument could do shaped how the music is played ──
+const ERAS = [
+  { id: 'baroque', name: 'Baroque', years: '1600–1750', color: '#7a64a8', inst: 'Harpsichord, clavichord, organ',
+    traits: ['Several independent lines at once (counterpoint)', 'Loud and soft in blocks (“terraced” dynamics) -- the harpsichord can’t crescendo', 'Non legato as the normal touch; ornaments (trills, mordents) to decorate and stress notes', 'A steady, dance-like pulse'],
+    today: 'On the piano: a clear non legato, little or no pedal, dynamics that step rather than swell, crisp ornaments.',
+    composers: ['J. S. Bach', 'Handel', 'D. Scarlatti', 'Couperin'], sound: 'harpsichord' },
+  { id: 'classical', name: 'Classical', years: '1750–1820', color: '#3f7fb5', inst: 'Fortepiano',
+    traits: ['A tune with an accompaniment (e.g. Alberti bass)', 'Balanced phrases -- question and answer', 'Crescendo, diminuendo and sf now possible', 'Short slurs, light and clear touch'],
+    today: 'On the piano: light and elegant, a quiet left hand under the tune, pedal only sparingly.',
+    composers: ['Haydn', 'Mozart', 'Clementi', 'early Beethoven'], sound: 'piano' },
+  { id: 'romantic', name: 'Romantic', years: '1820–1900', color: '#b5483b', inst: 'The modern piano: iron frame, bigger range',
+    traits: ['Long singing legato melodies', 'Rich use of the sustaining pedal', 'Huge dynamic range (ppp to fff) and the whole keyboard', 'Rubato -- the time bends with the feeling'],
+    today: 'On the piano: sing the melody, pedal to join and colour, shape the time.',
+    composers: ['late Beethoven', 'Schubert', 'Chopin', 'Schumann', 'Liszt', 'Brahms', 'Tchaikovsky'], sound: 'piano' },
+  { id: 'modern', name: '20th century & today', years: '1900–', color: '#3f8a4f', inst: 'Concert grand (and new sounds: prepared and digital pianos)',
+    traits: ['New scales and harmonies (whole-tone, modes, jazz chords)', 'Colour and atmosphere -- pedal washes (Impressionism)', 'The piano used as a percussion instrument, strong rhythm', 'Many styles side by side'],
+    today: 'On the piano: listen for colour and rhythm; follow the composer’s exact markings.',
+    composers: ['Debussy', 'Ravel', 'Bartók', 'Prokofiev', 'Kabalevsky', 'Gershwin'], sound: 'piano' },
+];
+// A few bars in each era's manner (same key, short).
+function playEra(id) {
+  const ctx = getAudio(); if (!ctx) return; stopClicks();
+  const t0 = ctx.currentTime + 0.1;
+  const P = (b, m, d, v, spb, inst = 'piano') => instNote(inst, ctx, t0 + b * spb, m, d * spb, v);
+  if (id === 'baroque') { // two voices, non legato, on the harpsichord
+    const spb = 60 / 100, rh = [72, 74, 76, 77, 79, 77, 76, 74, 72, 71, 72], lh = [48, 55, 52, 55, 48, 53, 50, 55, 48];
+    rh.forEach((m, i) => P(i * 0.5, m, 0.37, 0.5, spb, 'harpsichord')); lh.forEach((m, i) => P(i * 0.5 + 0.25 * 0, m, 0.37, 0.5, spb * 1.1, 'harpsichord'));
+  } else if (id === 'classical') { // tune over an Alberti bass, light
+    const spb = 60 / 112, rh = [[0, 76, 1], [1, 79, 1], [2, 77, 0.5], [2.5, 76, 0.5], [3, 74, 1], [4, 72, 2]];
+    rh.forEach(([b, m, d]) => P(b, m, d * 0.92, 0.42, spb));
+    [48, 55, 52, 55, 48, 55, 52, 55, 47, 55, 50, 55, 48, 55, 52, 55].forEach((m, i) => P(i * 0.25 * 1.5, m, 0.34, 0.16, spb));
+  } else if (id === 'romantic') { // legato melody, pedalled bass, a little rubato
+    let b = 0; const spb = 60 / 72, rh = [[76, 1.5], [74, 0.5], [72, 1], [79, 2], [77, 1], [76, 2]];
+    rh.forEach(([m, d], i) => { const s = spb * (1 + 0.12 * Math.sin(i * 1.4)); instNote('piano', ctx, t0 + b, m, d * s * 1.05, 0.5); b += d * s; });
+    [[0, 36], [0.5, 43], [1, 48], [1.5, 52], [2, 55], [4, 41], [4.5, 48], [5, 53], [5.5, 57]].forEach(([bb, m]) => P(bb, m, 3.6, 0.22, spb));
+  } else { // whole-tone parallel chords with a pedal wash
+    const spb = 60 / 60; [[0, [64, 68, 72]], [1, [66, 70, 74]], [2, [68, 72, 76]], [3, [66, 70, 74]], [4, [64, 68, 72]]].forEach(([bb, ch]) => ch.forEach(m => P(bb, m, 2.5, 0.2, spb)));
+    P(0, 40, 6, 0.25, spb);
+  }
+}
+function ErasTimeline() {
+  const [sel, setSel] = useState('baroque');
+  const E = ERAS.find(e => e.id === sel);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>The style eras</div>
+      <div style={actNote}>What the keyboard of each era could do shaped how its music is played. Tap an era, then hear a few bars in its style.</div>
+      <div style={{display:'flex',height:30,borderRadius:8,overflow:'hidden',marginBottom:8}}>
+        {ERAS.map((e, i) => <button key={e.id} onClick={() => setSel(e.id)} style={{flex:[150, 70, 80, 100][i],border:'none',background:e.color,opacity:sel === e.id ? 1 : 0.4,color:'#fff',fontWeight:900,fontSize:11,cursor:'pointer',fontFamily:'inherit',padding:0}}>{e.name.split(' ')[0]}</button>)}
+      </div>
+      <div style={{display:'flex',justifyContent:'space-between',fontSize:10,fontWeight:800,color:'var(--muted)',margin:'-5px 0 8px'}}><span>1600</span><span>1750</span><span>1820</span><span>1900</span><span>today</span></div>
+      <div style={{background:'#fff',borderRadius:10,padding:'9px 10px',borderLeft:'5px solid ' + E.color,fontSize:12.5,lineHeight:1.5}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',flexWrap:'wrap',gap:4}}>
+          <b style={{fontSize:16,color:E.color}}>{E.name}</b><span style={{fontWeight:800,color:'var(--muted)'}}>{E.years}</span>
+        </div>
+        <div><b>Keyboard:</b> {E.inst}</div>
+        <ul style={{margin:'4px 0',paddingLeft:18}}>{E.traits.map((t, i) => <li key={i}>{t}</li>)}</ul>
+        <div style={{background:'#f7f2e8',borderRadius:6,padding:'5px 7px'}}><b>Playing it today:</b> {E.today}</div>
+        <div style={{marginTop:5}}><b>Composers:</b> <span style={{color:'#5c544a'}}>{E.composers.join(', ')}</span></div>
+        <div style={{textAlign:'center',marginTop:8}}><button className="ghost-btn" onClick={() => playEra(E.id)}>♪ Hear the {E.name.split(' ')[0]} style{E.sound === 'harpsichord' ? ' (harpsichord)' : ''}</button></div>
+      </div>
+    </div>
+  );
+}
+
+// ── Pitch in Hz ──
+function HzExplorer() {
+  const [m, setM] = useState(69);
+  const [snd, setSnd] = useState('piano');
+  const f = mFreq(m);
+  const play = (mm) => { const ctx = getAudio(); if (!ctx) return; stopClicks(); instNote(snd === 'pure' ? 'sine' : 'piano', ctx, ctx.currentTime + 0.03, mm, 1.2, 0.5); };
+  // draw ~ cycles in a 20 ms window
+  const cycles = f * 0.02, W = 300, pts = [];
+  const shown = Math.min(cycles, 60);
+  for (let i = 0; i <= 300; i++) pts.push(i + ',' + (40 - 26 * Math.sin(2 * Math.PI * shown * i / W)).toFixed(1));
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>How high is a note? Hertz</div>
+      <div style={actNote}>A note is a vibration. <b>Hertz (Hz)</b> = vibrations per second. The faster the string vibrates, the higher the note. A4 (the A above middle C) is <b>440 Hz</b> -- the note orchestras tune to.</div>
+      <div style={{background:'#fff',borderRadius:10,padding:'6px'}}>
+        <svg viewBox="0 0 300 80" style={{width:'100%',display:'block'}}><line x1="0" x2="300" y1="40" y2="40" stroke="#e0d3bb"/><polyline points={pts.join(' ')} fill="none" stroke="#a8823f" strokeWidth={shown > 30 ? 0.8 : 1.8}/></svg>
+        <div style={{textAlign:'center'}}><span style={{fontSize:24,fontWeight:900}}>{midiName(m)}</span> <span style={{fontSize:18,fontWeight:900,color:'#a8823f'}}>{fmtHz(f)}</span></div>
+        <div style={{textAlign:'center',fontSize:11.5,color:'var(--muted)'}}>{Math.round(f)} vibrations every second{cycles > 60 ? ' -- too many to draw!' : ''}</div>
+      </div>
+      <input type="range" min="21" max="108" value={m} onChange={e => setM(+e.target.value)} onMouseUp={() => play(m)} onTouchEnd={() => play(m)} style={{width:'100%',accentColor:'#a8823f',marginTop:6}}/>
+      <div style={{display:'flex',justifyContent:'space-between',fontSize:10.5,fontWeight:800,color:'var(--muted)'}}><span>A0 · 27.5 Hz (lowest piano key)</span><span>C8 · 4186 Hz</span></div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',justifyContent:'center',margin:'8px 0 4px'}}>
+        {[45, 57, 69, 81, 93].map(x => <button key={x} className={'chip' + (x === m ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => { setM(x); play(x); }}>{midiName(x)} · {fmtHz(mFreq(x))}</button>)}
+      </div>
+      <div style={{fontSize:12.5,background:'#fff',borderRadius:8,padding:'6px 9px',lineHeight:1.5}}>
+        <b>An octave doubles it.</b> A3 = 220, A4 = 440, A5 = 880 Hz. Going up a semitone multiplies by about 1.06 (the twelfth root of 2), so 12 semitones = ×2.
+        <div style={{marginTop:3}}>People hear from about <b>20 Hz</b> to <b>20,000 Hz</b> (less as we get older). The piano’s notes go from 27.5 to 4186 Hz -- but each note also has higher overtones, which is what makes a piano sound like a piano.</div>
+      </div>
+      <div style={{display:'flex',gap:4,alignItems:'center',marginTop:8,fontSize:11,fontWeight:800,color:'var(--muted)',justifyContent:'center'}}>Sound {[['piano', 'Piano'], ['pure', 'Pure tone (no overtones)']].map(([k, l]) => <button key={k} className={'chip' + (snd === k ? ' active' : '')} style={{padding:'2px 9px',fontSize:11}} onClick={() => setSnd(k)}>{l}</button>)}</div>
+    </div>
+  );
+}
+
+// ── Ranges: the piano next to the other instruments and voices ──
+// Typical written-for ranges (sounding pitch); players at the top level can go further.
+const RANGES = [
+  { g: 'Keyboards', c: '#a8823f', rows: [['Piano (today, 88 keys)', 'A0', 'C8'], ['Harpsichord (late Baroque)', 'F1', 'F6'], ['Organ (manuals)', 'C2', 'C7'], ['Organ (with pedals)', 'C1', 'C7']] },
+  { g: 'Strings', c: '#b5483b', rows: [['Violin', 'G3', 'A7'], ['Viola', 'C3', 'E6'], ['Cello', 'C2', 'A5'], ['Double bass', 'E1', 'G4'], ['Guitar', 'E2', 'B5'], ['Harp', 'C1', 'G7']] },
+  { g: 'Woodwind', c: '#3f8a4f', rows: [['Piccolo', 'D5', 'C8'], ['Flute', 'C4', 'C7'], ['Oboe', 'Bb3', 'A6'], ['Clarinet', 'D3', 'Bb6'], ['Bassoon', 'Bb1', 'E5']] },
+  { g: 'Brass', c: '#c07a1e', rows: [['Trumpet', 'F#3', 'D6'], ['French horn', 'B1', 'F5'], ['Trombone', 'E2', 'F5'], ['Tuba', 'D1', 'F4']] },
+  { g: 'Voices', c: '#7a64a8', rows: [['Soprano', 'C4', 'C6'], ['Alto', 'F3', 'F5'], ['Tenor', 'C3', 'C5'], ['Bass', 'E2', 'E4']] },
+  { g: 'The piano through history', c: '#8a6a4a', hist: true, rows: [['Cristofori, 1720', 'C2', 'C6'], ['Mozart’s piano, 1780s', 'F1', 'G6'], ['Beethoven’s Broadwood, 1817', 'C1', 'C7'], ['Modern piano, 1880s–', 'A0', 'C8']] },
+];
+const ALL_RANGES = RANGES.flatMap(g => g.rows.map(r => ({ name: r[0], lo: nm(r[1]), hi: nm(r[2]), g: g.g, c: g.c, hist: !!g.hist })));
+function RangeChart() {
+  const [sel, setSel] = useState('Violin');
+  const [hist, setHist] = useState(false);
+  const R = ALL_RANGES.find(r => r.name === sel) || ALL_RANGES[0];
+  const x = (m) => 8 + (m - 21) * 3.9;
+  const groups = RANGES.filter(g => !!g.hist === hist);
+  let y = 0; const rowsDraw = [];
+  groups.forEach(g => { rowsDraw.push({ head: g.g, y, c: g.c }); y += 13; g.rows.forEach(r => { rowsDraw.push({ r: ALL_RANGES.find(a => a.name === r[0]), y }); y += 15; }); y += 4; });
+  const H = y + 4;
+  const play = (m) => { const ctx = getAudio(); if (!ctx) return; instNote('piano', ctx, ctx.currentTime + 0.03, m, 0.9, 0.45); };
+  function hear(r) { const ctx = getAudio(); if (!ctx) return; stopClicks(); instNote('piano', ctx, ctx.currentTime + 0.05, r.lo, 0.9, 0.45); instNote('piano', ctx, ctx.currentTime + 1.05, r.hi, 0.9, 0.45); }
+  const whites = []; for (let m = 21; m <= 108; m++) if ([0, 2, 4, 5, 7, 9, 11].includes(m % 12)) whites.push(m);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
+        <div style={actTitle}>Who plays where?</div>
+        <div style={{display:'flex',gap:3}}>{[[false, 'Instruments'], [true, 'Piano through history']].map(([v, l]) => <button key={l} className={'chip' + (hist === v ? ' active' : '')} style={{padding:'2px 9px',fontSize:11}} onClick={() => { setHist(v); setSel(v ? 'Cristofori, 1720' : 'Violin'); }}>{l}</button>)}</div>
+      </div>
+      <div style={actNote}>{hist ? 'The keyboard grew from about four octaves to seven and a quarter.' : 'Every bar is laid over the 88 keys of the piano. The piano covers almost everything in the orchestra -- only the piccolo’s very top and a few low organ pipes go further.'} Tap a bar to hear its lowest and highest note.</div>
+      <div style={{background:'#fff',borderRadius:10,padding:'6px 4px',overflowX:'hidden'}}>
+        <svg viewBox={`0 -26 360 ${H + 70}`} style={{width:'100%',display:'block'}}>
+          {/* Hz ruler at the A's, and middle C */}
+          {[21, 33, 45, 57, 69, 81, 93, 105].map(m => <g key={m}><line x1={x(m)} x2={x(m)} y1={-8} y2={H + 4} stroke="#e8dfcf"/><text x={x(m)} y={-14} fontSize="7" fontWeight="800" textAnchor="middle" fill="#8a7a6a">{midiName(m)}</text><text x={x(m)} y={-5} fontSize="6.5" textAnchor="middle" fill="#a8823f">{fmtHz(mFreq(m)).replace(' ', '')}</text></g>)}
+          <line x1={x(60)} x2={x(60)} y1={-8} y2={H + 4} stroke="#a8823f" strokeDasharray="2 2"/>
+          {rowsDraw.map((d, i) => d.head ? <text key={i} x="8" y={d.y + 9} fontSize="8" fontWeight="900" fill={d.c} letterSpacing="0.06em">{d.head.toUpperCase()}</text> : (
+            <g key={i} onClick={() => { setSel(d.r.name); hear(d.r); }} style={{cursor:'pointer'}}>
+              <rect x={x(d.r.lo) - 1.5} y={d.y + 2} width={x(d.r.hi) - x(d.r.lo) + 3} height="10" rx="5" fill={d.r.c} opacity={d.r.name === sel ? 1 : 0.55}/>
+              {(() => { const w = d.r.name.length * 3.8, right = x(d.r.hi) + 5 + w < 358, left = x(d.r.lo) - 4 - w > 0;
+                const tx = right ? x(d.r.hi) + 5 : left ? x(d.r.lo) - 4 : x(d.r.lo) + 6;
+                return <text x={tx} y={d.y + 10} fontSize="7.5" fontWeight={d.r.name === sel ? 900 : 700} textAnchor={right || !left ? 'start' : 'end'} fill={right || left ? '#241f1a' : '#fff'}>{d.r.name}</text>; })()}
+            </g>
+          ))}
+          {/* the keyboard itself */}
+          <g transform={`translate(0,${H + 8})`}>
+            {whites.map((m, i) => <rect key={m} x={x(m) - 3.3} y="0" width="6.6" height="30" fill={m >= R.lo && m <= R.hi ? '#f3e3b8' : '#fff'} stroke="#c7bca8" strokeWidth="0.5" onClick={() => play(m)}/>)}
+            {Array.from({ length: 88 }, (_, i) => 21 + i).filter(m => ![0, 2, 4, 5, 7, 9, 11].includes(m % 12)).map(m => <rect key={m} x={x(m) - 2} y="0" width="4" height="18" fill={m >= R.lo && m <= R.hi ? '#8a6a2a' : '#241f1a'} onClick={() => play(m)}/>)}
+            <text x={x(60)} y="40" fontSize="7" fontWeight="800" textAnchor="middle" fill="#a8823f">middle C</text>
+          </g>
+        </svg>
+      </div>
+      <div style={{background:'#fff',borderRadius:8,padding:'7px 9px',marginTop:6,fontSize:12.5,borderLeft:'5px solid ' + R.c}}>
+        <b>{R.name}</b>: {midiName(R.lo)} to {midiName(R.hi)} · <span style={{color:'#a8823f',fontWeight:800}}>{fmtHz(mFreq(R.lo))} – {fmtHz(mFreq(R.hi))}</span>
+        <div style={{color:'#6f665b'}}>{Math.round((R.hi - R.lo) / 12 * 10) / 10} octaves{R.hist ? '' : ' (a typical range -- experts can go further)'}. <button className="chip" style={{padding:'1px 8px',fontSize:11}} onClick={() => hear(R)}>♪ lowest, highest</button></div>
+      </div>
+    </div>
+  );
+}
+
+// ── Chapter lessons ──
+function PianoStoryLearn({ onStart }) {
+  const tip = (title, body) => <Rule title={title}>{body}</Rule>;
+  return (
+    <Lesson id="piano-story" title="The piano’s story" onStart={onStart}
+      intro={<>Where the piano came from, what came before it, and how each era’s keyboard shaped the way its music is played. Useful for exam general-knowledge questions.</>}>
+      <Step title="Before the piano">
+        {tip('Plucked, struck, hammered', 'The harpsichord plucks the string, the clavichord presses a small brass blade against it, the piano throws a hammer at it. Only the piano gives both loud and soft, and plenty of sound.')}
+        <KeyboardAncestors/>
+      </Step>
+      <Step title="Non legato">
+        {tip('Why Baroque music is played detached', 'On a harpsichord every note is the same loudness, so players make notes clear -- and give them weight -- with tiny gaps and timing. That’s why we usually play Bach non legato on the piano: detached, but not short.')}
+        <TouchLengths/>
+      </Step>
+      <Step title="Cristofori and after">
+        {tip('The name', 'Cristofori called it a gravicembalo col piano e forte -- a harpsichord with soft and loud. Pianoforte, then just piano.')}
+        <PianoTimeline/>
+      </Step>
+      <Step title="The style eras">
+        <ErasTimeline/>
+      </Step>
+    </Lesson>
+  );
+}
+function PitchRangeLearn({ onStart }) {
+  const tip = (title, body) => <Rule title={title}>{body}</Rule>;
+  return (
+    <Lesson id="pitch-range" title="Pitch, Hz and range" onStart={onStart}
+      intro={<>What makes a note high or low, and where the piano sits among the other instruments and voices.</>}>
+      <Step title="Vibrations and Hertz">
+        {tip('Faster = higher', 'Sound is vibration. The number of vibrations per second is the frequency, measured in Hertz (Hz). Double the frequency and you go up an octave.')}
+        <HzExplorer/>
+      </Step>
+      <Step title="The piano and the orchestra">
+        {tip('The widest range', 'With 88 keys -- A0 to C8, just over seven octaves -- the piano covers nearly the whole range of the orchestra. That’s why a pianist can play reductions of orchestral music.')}
+        <RangeChart/>
+      </Step>
+    </Lesson>
+  );
+}
+
+// ── Drills ──
+const STORY_QS = [
+  // level 1: the instruments
+  [1, 'Which keyboard plucks its strings?', 'Harpsichord', ['Piano', 'Clavichord', 'Organ']],
+  [1, 'Which keyboard strikes the string with a small brass tangent?', 'Clavichord', ['Harpsichord', 'Piano', 'Celesta']],
+  [1, 'What strikes the string in a piano?', 'A felt hammer', ['A quill', 'A brass tangent', 'A bow']],
+  [1, 'On a harpsichord, pressing the key harder makes the note…', 'the same loudness', ['louder', 'softer', 'longer']],
+  [1, 'What does “piano e forte” mean?', 'soft and loud', ['slow and fast', 'high and low', 'short and long']],
+  [1, 'The normal touch for Baroque keyboard music is…', 'non legato', ['legato', 'staccatissimo', 'with lots of pedal']],
+  [1, 'Non legato means…', 'detached, but not short', ['very smooth', 'very short', 'held longer than written']],
+  [1, 'Which instrument was very quiet, good for practising at home?', 'Clavichord', ['Harpsichord', 'Organ', 'Grand piano']],
+  // level 2: history
+  [2, 'Who invented the piano?', 'Bartolomeo Cristofori', ['J. S. Bach', 'Mozart', 'Steinway']],
+  [2, 'About when was the piano invented?', 'around 1700', ['around 1600', 'around 1800', 'around 1900']],
+  [2, 'Where did Cristofori build the first pianos?', 'Florence, Italy', ['Vienna, Austria', 'London, England', 'Leipzig, Germany']],
+  [2, 'How many keys does a modern piano have?', '88', ['61', '76', '100']],
+  [2, 'What is the lowest note on a modern piano?', 'A0', ['C1', 'E1', 'C0']],
+  [2, 'What made the modern piano strong enough for thick, tight strings?', 'A cast-iron frame', ['A wooden lid', 'The soft pedal', 'Quills']],
+  [2, 'What did the escapement let the hammer do?', 'fall back so the string keeps ringing', ['pluck the string', 'hold the string down', 'play two strings']],
+  [2, 'The light Viennese piano of Mozart’s time is called the…', 'fortepiano', ['harpsichord', 'clavichord', 'spinet']],
+  // level 3: eras
+  [3, 'Which years are the Baroque era?', '1600–1750', ['1750–1820', '1820–1900', '1900–today']],
+  [3, 'Which years are the Classical era?', '1750–1820', ['1600–1750', '1820–1900', '1900–today']],
+  [3, 'Which years are the Romantic era?', '1820–1900', ['1600–1750', '1750–1820', '1900–today']],
+  [3, 'Terraced dynamics (loud and soft in blocks) belong to the…', 'Baroque era', ['Classical era', 'Romantic era', '20th century']],
+  [3, 'An Alberti bass under a tune is typical of the…', 'Classical era', ['Baroque era', 'Romantic era', '20th century']],
+  [3, 'Long pedalled legato lines and rubato are typical of the…', 'Romantic era', ['Baroque era', 'Classical era', 'Renaissance']],
+  [3, 'Several independent melodies at once (counterpoint) is typical of the…', 'Baroque era', ['Classical era', 'Romantic era', '20th century']],
+  [3, 'Whole-tone scales and pedal “washes” of colour (Impressionism) are from the…', '20th century', ['Baroque era', 'Classical era', 'Romantic era']],
+  [3, 'Which composer is Baroque?', 'J. S. Bach', ['Chopin', 'Debussy', 'Mozart']],
+  [3, 'Which composer is Classical?', 'Mozart', ['Bach', 'Chopin', 'Bartók']],
+  [3, 'Which composer is Romantic?', 'Chopin', ['Handel', 'Haydn', 'Scarlatti']],
+];
+const STORY_LEVELS = [
+  { n: 1, label: 'Before the piano', lv: 1, time: 12 },
+  { n: 2, label: 'Cristofori and after', lv: 2, time: 12 },
+  { n: 3, label: 'The style eras', lv: 3, time: 12 },
+  { n: 4, label: 'Everything mixed', lv: 0, time: 12 },
+];
+function genStoryQuestion(lv, prev) {
+  const pool = STORY_QS.filter(q => !lv.lv || q[0] === lv.lv);
+  let q, g = 0; do { q = pick(pool); } while (prev && prev.key === q[1] && g++ < 10);
+  return { key: q[1], text: q[1], answer: q[2], choices: shuffle([q[2], ...q[3]]), uid: Math.random() };
+}
+function FactQuestion({ q, given, locked, onAnswer, pixel }) {
+  const done = !!given;
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const cls = (c) => btnCls + (!done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '');
+  return (<div>
+    <div style={{textAlign:'center',fontSize:pixel ? 11 : 18,fontWeight:900,margin:'4px 0 6px',lineHeight:1.35}}>{q.text}</div>
+    {q.hear && <div style={{textAlign:'center'}}><button className="ghost-btn" style={{fontSize:12,padding:'5px 12px'}} onClick={q.hear}>♪ Hear it</button></div>}
+    <div style={{display:'grid',gridTemplateColumns:'1fr',gap:6,marginTop:10}}>{q.choices.map(c => <button key={c} disabled={locked} className={cls(c)} style={{padding:'11px 8px',fontSize:pixel ? 9 : 15}} onClick={() => onAnswer(c)}>{c}</button>)}</div>
+  </div>);
+}
+const PIANO_STORY_DRILL = {
+  id: 'piano-story', label: 'The Piano’s Story', levels: STORY_LEVELS, generate: genStoryQuestion,
+  check: (q, ans) => ans === q.answer, answerLabel: (q) => q.answer, Question: FactQuestion, Learn: PianoStoryLearn,
+};
+const PITCH_LEVELS = [
+  { n: 1, label: 'Octaves double', kind: 'oct', time: 12 },
+  { n: 2, label: 'Which goes lowest?', kind: 'low', time: 12 },
+  { n: 3, label: 'Who can play this note?', kind: 'who', time: 14 },
+];
+function genPitchQuestion(lv, prev) {
+  const uid = Math.random();
+  const inst = ALL_RANGES.filter(r => !r.hist && !/Organ/.test(r.name));
+  if (lv.kind === 'oct') {
+    const n = pick([1, 2, 3, 5, 6, 7]), f = 440 * Math.pow(2, n - 4), fmt = (v) => (v < 100 ? +v.toFixed(1) : Math.round(v)) + ' Hz';
+    const wrong = [f * 2, f / 2, f + 440 * (n > 4 ? -1 : 1) * 0.5, f * 1.5].map(fmt).filter(w => w !== fmt(f));
+    const ch = shuffle([fmt(f), ...sampleN([...new Set(wrong)], 3)]);
+    return { key: 'A' + n, text: 'A4 is 440 Hz. What is A' + n + '?', answer: fmt(f), choices: ch, uid, hear: () => { const ctx = getAudio(); if (!ctx) return; stopClicks(); instNote('piano', ctx, ctx.currentTime + 0.05, 69, 0.8, 0.45); instNote('piano', ctx, ctx.currentTime + 0.95, 21 + 12 * n, 1, 0.45); } };
+  }
+  if (lv.kind === 'low') {
+    let four, g = 0; do { four = sampleN(inst, 4); g++; } while (g < 50 && four.filter(r => r.lo === Math.min(...four.map(x => x.lo))).length > 1);
+    const low = four.reduce((a, b) => b.lo < a.lo ? b : a);
+    return { key: four.map(r => r.name).join(), text: 'Which one can play the lowest note?', answer: low.name, choices: shuffle(four.map(r => r.name)), uid };
+  }
+  let tries = 0;
+  while (tries++ < 200) {
+    const m = 28 + Math.floor(Math.random() * 70);
+    const can = inst.filter(r => r.lo <= m && m <= r.hi && !/Piano/.test(r.name)), cant = inst.filter(r => !(r.lo <= m && m <= r.hi));
+    if (can.length && cant.length >= 3) {
+      const a = pick(can);
+      return { key: String(m), text: 'Which of these can play ' + midiName(m) + ' (' + fmtHz(mFreq(m)) + ')?', answer: a.name, choices: shuffle([a.name, ...sampleN(cant, 3).map(r => r.name)]), uid,
+        hear: () => { const ctx = getAudio(); if (!ctx) return; stopClicks(); instNote('piano', ctx, ctx.currentTime + 0.05, m, 1, 0.45); } };
+    }
+  }
+  return genPitchQuestion(PITCH_LEVELS[0], prev);
+}
+const PITCH_RANGE_DRILL = {
+  id: 'pitch-range', label: 'Pitch, Hz & Range', levels: PITCH_LEVELS, generate: genPitchQuestion,
+  check: (q, ans) => ans === q.answer, answerLabel: (q) => q.answer, Question: FactQuestion, Learn: PitchRangeLearn,
+};
+
 const DRILLS = [
   { id: 'first-steps', label: 'Me and the Piano', concept: FIRST_STEPS_DRILL, track: 'pitch' },
   { id: 'note-names', label: 'Note Names', concept: NOTE_NAMES_DRILL, track: 'pitch' },
@@ -8301,6 +8813,8 @@ const DRILLS = [
   { id: 'chords', label: 'Chords', concept: CHORDS_DRILL, track: 'pitch' },
   { id: 'signs', label: 'Signs', concept: SIGNS_DRILL, track: 'reading' },
   { id: 'terms', label: 'Musical Terms', concept: TERMS_DRILL, track: 'reading' },
+  { id: 'piano-story', label: 'The Piano’s Story', concept: PIANO_STORY_DRILL, track: 'reading' },
+  { id: 'pitch-range', label: 'Pitch, Hz & Range', concept: PITCH_RANGE_DRILL, track: 'pitch' },
 ];
 
 // ─── Toolbox (Phase 118) ─────────────────────────────────────────────────────────
@@ -8660,7 +9174,7 @@ function SitCheck() {
 // Segment directions (degrees, 0 = to the right, + = downwards), fingertip to elbow:
 // [nail joint, middle, base, hand (wrist to knuckle), forearm].
 const HAND_POSES = {
-  good:   { a: [80, 55, 22, -10, 0],  title: 'The good shape', see: 'Knuckles make a bridge (the highest point), fingers curve down, you play on the fingertip pad. The wrist is level with the forearm.', fix: '' },
+  good:   { a: [80, 55, 24, -3, -2],  title: 'The good shape', see: 'Knuckles make a bridge (the highest point), fingers curve down, you play on the fingertip pad. The wrist sits a little above the keys, level with the forearm -- nearly as high as the knuckles.', fix: '' },
   flat:   { a: [22, 16, 10, 4, 2],     title: 'Flat fingers', see: 'Fingers lie flat and the key is played with the soft middle of the finger.', fix: 'Hold a small ball (or a mandarin). Keep that round shape and put it on the keys.' },
   bridge: { a: [62, 38, 8, 18, 3],     title: 'Knuckles collapsed', see: 'The bridge has fallen in: the knuckles are lower than the wrist.', fix: 'Knuckle bridge (exercise 2): tap each finger while the knuckles stay up.' },
   nail:   { a: [18, 78, 30, -8, 0],    title: 'Nail joint caving in', see: 'The last joint bends backwards when the finger plays.', fix: 'Play slowly on the tip, press the key down and hold -- the tip joint stays firm like a little pillar.' },
@@ -8677,7 +9191,7 @@ function HandSide({ pose, angles, lift = 0, press = 0, balloon = false, labels =
   const a = angles || HAND_POSES[pose].a;
   const pts = handChain(a, { x: 222, y: 118 + press * 5 - lift }).map(p => ({ x: p.x, y: p.y }));
   const [tip, j1, j2, kn, wr, fa] = pts;
-  const wristOk = Math.abs(a[4]) < 6 && a[3] <= 0 && a[3] > -18;
+  const wristOk = Math.abs(a[4]) < 6 && a[3] <= 2 && a[3] > -14;
   const knuckleOk = kn.y < wr.y + 1;
   const tipOk = a[0] > 55 && a[0] > a[1] - 5;
   const path = (ps, w, col) => <polyline points={ps.map(p => p.x + ',' + p.y).join(' ')} fill="none" stroke={col} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round"/>;
@@ -8766,54 +9280,70 @@ function ExRagDoll({ u }) {
   );
 }
 function ExBridge({ u }) {
-  // front view of the hand: knuckles in an arch, fingers hanging to the keys; one finger lifts at a time
-  const f = Math.floor(u * 5), ph = (u * 5) % 1, lift = Math.sin(Math.PI * Math.min(1, ph * 1.4)) * 16;
-  const xs = [70, 110, 150, 190, 228];
-  const kn = [96, 84, 80, 84, 92];
+  // Front view (from the player's eyes). Fingertips stay ON the keys; one finger at a time presses its
+  // key to the bottom and holds, the arm's weight going through the knuckle bridge. Nothing lifts.
+  const [wrong, setWrong] = useState(false);
+  const f = Math.floor(u * 5), ph = (u * 5) % 1, down = ph < 0.15 ? ph / 0.15 : ph < 0.7 ? 1 : Math.max(0, 1 - (ph - 0.7) / 0.15);
+  const xs = [70, 110, 150, 190, 228], kn = [98, 84, 80, 84, 92], KY = 150;
+  const sink = (i) => wrong && i === f ? down * 16 : 0;
   return (
-    <svg viewBox="30 40 240 140" style={{width:'100%',maxWidth:320,display:'block',margin:'0 auto'}}>
-      <rect x="30" y="160" width="240" height="14" fill="#fff" stroke="#8a7a6a"/>
-      {[1, 2, 3, 4, 5, 6].map(i => <line key={i} x1={30 + i * 34} x2={30 + i * 34} y1="160" y2="174" stroke="#c7bca8"/>)}
-      <path d={`M50,118 Q70,70 ${xs[2]},62 Q230,70 250,112 L250,125 L50,125 Z`} fill={POS_SKIN} stroke={POS_SKIN_EDGE}/>
-      {xs.map((x, i) => {
-        const up = i === f ? lift : 0, th = i === 0;
-        const top = kn[i], bot = th ? 150 : 158 - up;
-        return <g key={i}><line x1={th ? x - 6 : x} y1={top} x2={x} y2={bot} stroke={POS_SKIN_EDGE} strokeWidth={th ? 15 : 13} strokeLinecap="round"/><line x1={th ? x - 6 : x} y1={top} x2={x} y2={bot} stroke={i === f ? '#f3c66b' : POS_SKIN} strokeWidth={th ? 12 : 10} strokeLinecap="round"/>
-          <text x={x} y={bot - 12} textAnchor="middle" fontSize="10" fontWeight="900" fill="#8a6a4a">{i + 1}</text></g>;
-      })}
-      <polyline points={xs.map((x, i) => `${x},${kn[i]}`).join(' ')} fill="none" stroke={POS_GOOD} strokeWidth="2" strokeDasharray="4 3"/>
-      {xs.map((x, i) => <circle key={i} cx={x} cy={kn[i]} r="3.5" fill="#fff" stroke={POS_GOOD} strokeWidth="2"/>)}
-      <text x="150" y="52" textAnchor="middle" fontSize="10" fontWeight="900" fill={POS_GOOD}>the bridge stays up</text>
-    </svg>
+    <div>
+      <svg viewBox="30 22 240 158" style={{width:'100%',maxWidth:320,display:'block',margin:'0 auto'}}>
+        {xs.map((x, i) => <rect key={i} x={x - 17} y={KY + (i === f ? down * 6 : 0)} width="34" height="22" fill={i === f && down > 0.5 ? '#f3e3b8' : '#fff'} stroke="#8a7a6a"/>)}
+        <path d={`M50,${122} Q70,${72} ${xs[2]},${64 + sink(2) * 0.3} Q230,72 250,116 L250,128 L50,128 Z`} fill={POS_SKIN} stroke={POS_SKIN_EDGE}/>
+        {xs.map((x, i) => {
+          const th = i === 0, top = kn[i] + sink(i), bot = KY + (i === f ? down * 6 : 0);
+          return <g key={i}>
+            <line x1={th ? x - 6 : x} y1={top} x2={x} y2={bot} stroke={POS_SKIN_EDGE} strokeWidth={th ? 15 : 13} strokeLinecap="round"/>
+            <line x1={th ? x - 6 : x} y1={top} x2={x} y2={bot} stroke={i === f ? '#f3c66b' : POS_SKIN} strokeWidth={th ? 12 : 10} strokeLinecap="round"/>
+            <text x={x} y={bot - 10} textAnchor="middle" fontSize="10" fontWeight="900" fill="#8a6a4a">{i + 1}</text>
+          </g>;
+        })}
+        <polyline points={xs.map((x, i) => `${x},${kn[i] + sink(i)}`).join(' ')} fill="none" stroke={wrong ? POS_BAD : POS_GOOD} strokeWidth="2" strokeDasharray="4 3"/>
+        {xs.map((x, i) => <circle key={i} cx={x} cy={kn[i] + sink(i)} r="3.5" fill="#fff" stroke={wrong && i === f && down > 0.3 ? POS_BAD : POS_GOOD} strokeWidth="2"/>)}
+        {/* the arm's weight arriving through the knuckle */}
+        <g opacity={down}><line x1={xs[f]} x2={xs[f]} y1={44} y2={kn[f] + sink(f) - 10} stroke="#a8823f" strokeWidth="2.5"/><path d={`M${xs[f] - 5},${kn[f] + sink(f) - 14} L${xs[f] + 5},${kn[f] + sink(f) - 14} L${xs[f]},${kn[f] + sink(f) - 6} Z`} fill="#a8823f"/></g>
+        <text x="150" y="34" textAnchor="middle" fontSize="10" fontWeight="900" fill={wrong ? POS_BAD : POS_GOOD}>{wrong ? '✗ the knuckle gives way' : 'weight in -- the bridge holds'}</text>
+      </svg>
+      <div style={{display:'flex',gap:4,justifyContent:'center',marginTop:2}}>
+        {[[false, '✓ Right'], [true, '✗ Wrong']].map(([v, l]) => <button key={l} className={'chip' + (wrong === v ? ' active' : '')} style={{padding:'2px 9px',fontSize:11}} onClick={() => setWrong(v)}>{l}</button>)}
+      </div>
+    </div>
   );
 }
 function ExGlide({ u }) {
-  // top view: the right arm carries the same hand shape from low C to high C; the elbow leads
-  const e = ease(u), hx = 70 + e * 190, hy = 70;
-  const sh = { x: 176, y: 172 }, U = 70, L = 80;
-  const wr = { x: hx - 4, y: hy + 30 };
+  // Top view: the player sits well back from the keys; the right arm carries the same hand shape
+  // from one C to the next. The elbow moves first and opens out to the side.
+  const e = ease(u), hx = 96 + e * 176, hy = 58;
+  const sh = { x: 206, y: 232 }, U = 96, L = 96;
+  const wr = { x: hx - 2, y: hy + 36 };
   const dx = wr.x - sh.x, dy = wr.y - sh.y, d = Math.min(Math.hypot(dx, dy), U + L - 1);
   const a = (U * U - L * L + d * d) / (2 * d), h = Math.sqrt(Math.max(0, U * U - a * a));
   const mx = sh.x + a * dx / d, my = sh.y + a * dy / d;
-  const el = { x: mx - h * dy / d, y: my + h * dx / d }; // elbow opens out to the side
-  const el2 = { x: mx + h * dy / d, y: my - h * dx / d };
-  const E = el.x > el2.x ? el : el2;
+  const c1 = { x: mx - h * dy / d, y: my + h * dx / d }, c2 = { x: mx + h * dy / d, y: my - h * dx / d };
+  const E = c1.x > c2.x ? c1 : c2;
+  const lsh = { x: 114, y: 232 }, lw = { x: 124, y: 150 };
   return (
-    <svg viewBox="0 0 320 210" style={{width:'100%',maxWidth:340,display:'block',margin:'0 auto'}}>
-      <rect x="10" y="20" width="300" height="62" fill="#fff" stroke="#8a7a6a"/>
-      {Array.from({ length: 21 }, (_, i) => <line key={i} x1={10 + i * 14.3} x2={10 + i * 14.3} y1="20" y2="82" stroke="#d8cdb8"/>)}
-      {Array.from({ length: 20 }, (_, i) => [1, 2, 4, 5, 6].includes(i % 7) ? <rect key={i} x={10 + i * 14.3 - 4.5} y="20" width="9" height="36" fill="#241f1a"/> : null)}
-      <rect x="110" y="150" width="80" height="60" rx="26" fill="#7b9bb8"/>
-      <line x1={sh.x} y1={sh.y} x2={E.x} y2={E.y} stroke="#7b9bb8" strokeWidth="13" strokeLinecap="round"/>
-      <line x1={E.x} y1={E.y} x2={wr.x} y2={wr.y} stroke={POS_SKIN_EDGE} strokeWidth="11" strokeLinecap="round"/>
+    <svg viewBox="0 0 320 280" style={{width:'100%',maxWidth:340,display:'block',margin:'0 auto'}}>
+      <rect x="10" y="10" width="300" height="60" fill="#fff" stroke="#8a7a6a"/>
+      {Array.from({ length: 21 }, (_, i) => <line key={i} x1={10 + i * 14.3} x2={10 + i * 14.3} y1="10" y2="70" stroke="#d8cdb8"/>)}
+      {Array.from({ length: 20 }, (_, i) => [1, 2, 4, 5, 6].includes(i % 7) ? <rect key={i} x={10 + i * 14.3 - 4.5} y="10" width="9" height="35" fill="#241f1a"/> : null)}
+      <rect x="0" y="70" width="320" height="8" fill="#3a302a"/>
+      {/* left arm resting in the lap */}
+      <polyline points={`${lsh.x},${lsh.y} ${lsh.x - 16},${196} ${lw.x},${lw.y + 40}`} fill="none" stroke="#7b9bb8" strokeWidth="14" strokeLinecap="round" strokeLinejoin="round" opacity="0.55"/>
+      {/* shoulders and head, seen from above */}
+      <ellipse cx="160" cy="236" rx="64" ry="22" fill="#7b9bb8"/>
+      <circle cx="160" cy="230" r="19" fill={POS_SKIN} stroke={POS_SKIN_EDGE} strokeWidth="1.5"/>
+      <line x1={sh.x} y1={sh.y} x2={E.x} y2={E.y} stroke="#7b9bb8" strokeWidth="15" strokeLinecap="round"/>
+      <line x1={E.x} y1={E.y} x2={wr.x} y2={wr.y} stroke={POS_SKIN_EDGE} strokeWidth="12" strokeLinecap="round"/>
       <g transform={`translate(${hx},${hy})`}>
-        <rect x="-22" y="-2" width="40" height="32" rx="10" fill={POS_SKIN} stroke={POS_SKIN_EDGE}/>
-        {[-17, -7, 3, 13].map((x, i) => <ellipse key={i} cx={x + 1} cy={-10 + Math.abs(i - 1.5) * 2} rx="4" ry="10" fill={POS_SKIN} stroke={POS_SKIN_EDGE}/>)}
-        <ellipse cx="-25" cy="16" rx="5" ry="9" transform="rotate(35 -25 16)" fill={POS_SKIN} stroke={POS_SKIN_EDGE}/>
+        <rect x="-22" y="-2" width="40" height="34" rx="11" fill={POS_SKIN} stroke={POS_SKIN_EDGE}/>
+        {[-17, -7, 3, 13].map((x, i) => <ellipse key={i} cx={x + 1} cy={-9 + Math.abs(i - 1.5) * 2} rx="4" ry="10" fill={POS_SKIN} stroke={POS_SKIN_EDGE}/>)}
+        <ellipse cx="-25" cy="17" rx="5" ry="9" transform="rotate(35 -25 17)" fill={POS_SKIN} stroke={POS_SKIN_EDGE}/>
       </g>
-      <circle cx={sh.x} cy={sh.y} r="5" fill="#fff" stroke="#6f665b" strokeWidth="2"/>
-      <circle cx={E.x} cy={E.y} r="6" fill="#fff" stroke="#a8823f" strokeWidth="2.5"/>
-      <text x={E.x + 10} y={E.y + 4} fontSize="10" fontWeight="900" fill="#a8823f">elbow leads</text>
+      <circle cx={E.x} cy={E.y} r="6.5" fill="#fff" stroke="#a8823f" strokeWidth="2.5"/>
+      <text x={E.x > 240 ? E.x - 10 : E.x + 10} y={E.y + 4} textAnchor={E.x > 240 ? 'end' : 'start'} fontSize="10" fontWeight="900" fill="#a8823f" stroke="#fff" strokeWidth="3" paintOrder="stroke">elbow leads</text>
+      <text x="160" y="274" textAnchor="middle" fontSize="9.5" fontWeight="800" fill="#6f665b">sitting back -- room for the arm to travel</text>
     </svg>
   );
 }
@@ -8836,7 +9366,7 @@ const ARM_EXERCISES = [
   { id: 'ragdoll', title: 'Rag doll', C: ExRagDoll, ms: 4200, reps: 3,
     how: ['Let both arms hang by your sides, heavy.', 'Shake them loose from the shoulders.', 'Float the hands up to the keys -- elbows open, shoulders down.'], watch: 'Shoulders stay down when the arms come up.' },
   { id: 'bridge', title: 'Knuckle bridge', C: ExBridge, ms: 3600, reps: 5,
-    how: ['Hand in the good shape on five keys.', 'Lift and play each finger, 1 to 5, slowly.', 'The knuckles stay up like a bridge -- nothing caves in.'], watch: 'The knuckle of the playing finger doesn’t sink.' },
+    how: ['All five fingertips resting ON the keys (C D E F G) -- they never leave the key surface.', 'Press one key slowly to the bottom and hold it for a count of 3: let the arm’s weight sink through the knuckle into the fingertip.', 'Knuckles stay up like a bridge. Release, then the next finger, 1 to 5.'], watch: 'No lifting -- the finger doesn’t go up to play; it presses down from the key. The knuckle stays up (switch to ✗ Wrong to see what to avoid).' },
   { id: 'glide', title: 'Arm glide', C: ExGlide, ms: 5200, reps: 3,
     how: ['Put the hand shape on middle C.', 'Carry it up to the next C, and the next -- don’t let the fingers walk, let the arm carry them.', 'Come back down. The elbow moves first and opens out.'], watch: 'The hand looks exactly the same at every C.' },
   { id: 'wings', title: 'Elbow wings', C: ExWings, ms: 3000, reps: 5,
@@ -8885,19 +9415,32 @@ function ArmExercises() {
 }
 
 // ── 4. The posture checklist: every point, one by one, saved on this device ──
+// Each point: [id, what to look for, the tool that fixes it, what to do there]
 const POSTURE_LIST = [
   { g: 'Sitting', items: [
-    ['stool', 'Stool height: forearm level with the keys'], ['dist', 'Distance: elbows just in front of the body'],
-    ['front', 'Sitting on the front half of the stool'], ['feet', 'Feet flat (or on a footstool)'], ['back', 'Back tall, leaning slightly forward'], ['shoulders', 'Shoulders down and loose'],
+    ['stool', 'Stool height: forearm level with the keys', 'sit-check', 'Set up the stool: raise or lower until the forearm is level'],
+    ['dist', 'Distance: elbows just in front of the body', 'sit-check', 'Set up the stool: move it until the elbows are just in front'],
+    ['front', 'Sitting on the front half of the stool', 'sit-check', 'Sit forward so the feet can take some weight'],
+    ['feet', 'Feet flat (or on a footstool)', 'sit-check', 'A footstool or books under the feet'],
+    ['back', 'Back tall, leaning slightly forward', 'arm-moves', 'Rag doll: hang, shake, then sit tall and float up'],
+    ['shoulders', 'Shoulders down and loose', 'arm-moves', 'Rag doll -- the shoulders stay down as the arms come up'],
   ] },
   { g: 'Arms', items: [
-    ['elbows', 'Elbows open -- a fist’s width from the body'], ['forearm', 'Forearm level, not sloping up or down'], ['wrist', 'Wrist level with the forearm (not dropped, not hunched)'],
+    ['elbows', 'Elbows open -- a fist’s width from the body', 'arm-moves', 'Elbow wings (and the Front view in Set up the stool)'],
+    ['forearm', 'Forearm level, not sloping up or down', 'sit-check', 'Set up the stool: stool height'],
+    ['wrist', 'Wrist level with the forearm (not dropped, not hunched)', 'arm-moves', 'Wrist balloon'],
   ] },
   { g: 'Hands', items: [
-    ['knuckles', 'Knuckles up -- a bridge'], ['curve', 'Fingers curved (holding a ball)'], ['tips', 'Playing on the fingertip pads'], ['nail', 'Tip joint firm, not caving in'], ['thumb', 'Thumb plays on its side corner'],
+    ['knuckles', 'Knuckles up -- a bridge', 'arm-moves', 'Knuckle bridge: press into the key and hold'],
+    ['curve', 'Fingers curved (holding a ball)', 'hand-shape', 'The hand shape: compare “Flat fingers” with the good shape'],
+    ['tips', 'Playing on the fingertip pads', 'hand-shape', 'The hand shape: find the tip'],
+    ['nail', 'Tip joint firm, not caving in', 'arm-moves', 'Arm drop onto a firm fingertip'],
+    ['thumb', 'Thumb plays on its side corner', 'hand-shape', 'Thumb on its side, near the nail corner'],
   ] },
   { g: 'Moving', items: [
-    ['carry', 'The arm carries the hand along the keys'], ['keep', 'The hand keeps its shape while moving'], ['loose', 'No tension -- the arm could wobble freely'],
+    ['carry', 'The arm carries the hand along the keys', 'arm-moves', 'Arm glide'],
+    ['keep', 'The hand keeps its shape while moving', 'arm-moves', 'Arm glide -- the hand looks the same at every C'],
+    ['loose', 'No tension -- the arm could wobble freely', 'arm-moves', 'Rag doll, then Arm drop'],
   ] },
 ];
 const POSTURE_KEY = 'pb_posture_v1';
@@ -8920,20 +9463,33 @@ function PostureChecklist() {
         <div style={actTitle}>Posture check</div>
         <span style={{fontSize:12,fontWeight:900,color:okN === all.length ? POS_GOOD : 'var(--muted)'}}>{okN}/{all.length} ✓{workN ? ' · ' + workN + ' to work on' : ''}</span>
       </div>
-      <div style={actNote}>Go through it from the top: tap once for ✓, twice for “work on it”. A phone video from the side makes it easy to check.</div>
+      <div style={actNote}>A check-up for the set-up and the hand, done the same way every time so you can see it improve.</div>
+      <details style={{background:'#fff',borderRadius:8,padding:'6px 9px',marginBottom:8,fontSize:12.5,lineHeight:1.5}}>
+        <summary style={{fontWeight:900,cursor:'pointer'}}>How to use it</summary>
+        <ol style={{margin:'4px 0 2px',paddingLeft:18}}>
+          <li><b>When:</b> in the first lessons (teacher and student together), then about once a week -- or whenever playing feels tight.</li>
+          <li>The student plays something easy (a five-finger tune). Watch, or film 20 seconds from the side on a phone.</li>
+          <li>Go down the list: tap once = ✓ fine, tap again = <b>work on it</b>.</li>
+          <li>Every “work on it” shows the exercise that fixes it -- that’s the practice for this week.</li>
+          <li>Save the check. Next time you can see what has improved.</li>
+        </ol>
+      </details>
       <div style={{height:6,borderRadius:3,background:'#e8dfcf',overflow:'hidden',display:'flex',marginBottom:8}}>
         <div style={{width:(okN / all.length * 100) + '%',background:POS_GOOD,transition:'width 0.2s'}}/><div style={{width:(workN / all.length * 100) + '%',background:'#e0a33e',transition:'width 0.2s'}}/>
       </div>
       {POSTURE_LIST.map(g => (
         <div key={g.g} style={{marginBottom:6}}>
           <div style={{fontSize:11,fontWeight:900,letterSpacing:'0.08em',textTransform:'uppercase',color:'#a8823f',margin:'2px 0 3px'}}>{g.g}</div>
-          {g.items.map(([id, text]) => {
+          {g.items.map(([id, text, tool, how]) => {
             const v = st.marks[id];
             return (
-              <button key={id} onClick={() => cycle(id)} style={{display:'flex',gap:8,alignItems:'center',width:'100%',textAlign:'left',background:v === 'ok' ? '#e6f2e8' : v === 'work' ? '#fbf0dc' : '#fff',border:'1.5px solid ' + (v === 'ok' ? POS_GOOD : v === 'work' ? '#e0a33e' : 'var(--border)'),borderRadius:8,padding:'6px 8px',marginBottom:3,cursor:'pointer',fontFamily:'inherit',fontSize:12.5,color:'var(--text)'}}>
+              <React.Fragment key={id}>
+              <button onClick={() => cycle(id)} style={{display:'flex',gap:8,alignItems:'center',width:'100%',textAlign:'left',background:v === 'ok' ? '#e6f2e8' : v === 'work' ? '#fbf0dc' : '#fff',border:'1.5px solid ' + (v === 'ok' ? POS_GOOD : v === 'work' ? '#e0a33e' : 'var(--border)'),borderRadius:8,padding:'6px 8px',marginBottom:3,cursor:'pointer',fontFamily:'inherit',fontSize:12.5,color:'var(--text)'}}>
                 <span style={{width:18,height:18,flex:'0 0 18px',borderRadius:9,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:900,color:'#fff',background:v === 'ok' ? POS_GOOD : v === 'work' ? '#e0a33e' : '#e8dfcf'}}>{v === 'ok' ? '✓' : v === 'work' ? '!' : ''}</span>
                 <span>{text}</span>
               </button>
+              {v === 'work' && <div style={{margin:'-1px 0 5px 26px',fontSize:11.5,color:'#8a5a12',display:'flex',gap:6,alignItems:'center',flexWrap:'wrap'}}><span>→ Practise: {how}</span><a href={'?tool=' + tool} style={{fontWeight:900,color:'#a8823f'}}>open</a></div>}
+              </React.Fragment>
             );
           })}
         </div>
@@ -8954,6 +9510,12 @@ const TOOLS = [
   { id: 'hand-shape', ch: 'first-steps', title: 'The hand shape', blurb: 'Knuckle bridge, level wrist, fingertips -- and six faults.', C: () => <HandShape/> },
   { id: 'arm-moves', ch: 'first-steps', title: 'Move with the whole arm', blurb: 'Six warm-up exercises with a rep counter.', C: () => <ArmExercises/> },
   { id: 'posture-check', ch: 'first-steps', title: 'Posture check', blurb: '17-point checklist, saved with a history.', C: () => <PostureChecklist/> },
+  { id: 'keyboard-ancestors', ch: 'piano-story', title: 'Clavichord, harpsichord, piano', blurb: 'Pluck, tangent or hammer -- press harder and hear.', C: () => <KeyboardAncestors/> },
+  { id: 'touch-lengths', ch: 'piano-story', title: 'Legato, non legato, staccato', blurb: 'How long each note sounds -- and why Bach is non legato.', C: () => <TouchLengths/> },
+  { id: 'piano-timeline', ch: 'piano-story', title: 'The piano’s story', blurb: 'Cristofori 1700 to the 88-key grand.', C: () => <PianoTimeline/> },
+  { id: 'eras', ch: 'piano-story', title: 'The style eras', blurb: 'Baroque to today: traits, composers, hear the style.', C: () => <ErasTimeline/> },
+  { id: 'hz-explorer', ch: 'pitch-range', title: 'How high is a note? Hz', blurb: 'Vibrations per second; octaves double.', C: () => <HzExplorer/> },
+  { id: 'range-chart', ch: 'pitch-range', title: 'Who plays where?', blurb: 'Instrument and voice ranges over the 88 keys.', C: () => <RangeChart/> },
   { id: 'finger-numbers', ch: 'first-steps', title: 'Finger numbers', blurb: '“Show me finger 3!” -- both hands.', C: () => <FingerNumbers/> },
   { id: 'high-low', ch: 'first-steps', title: 'High or low, loud or soft', blurb: 'Listening games before reading.', C: () => <HighLowGame/> },
   { id: 'key-houses', ch: 'first-steps', title: 'Small house, big house', blurb: 'The black-key map; where C and F live.', C: () => <KeyHouses/> },
@@ -9030,15 +9592,17 @@ const TOOLS = [
 // five-finger positions, then the AMEB theory chapters. Grade tags show where AMEB asks for it.
 const STAGES = [
   { n: 1, title: 'Me and the piano', blurb: 'Fingers, sounds, and the keyboard map -- no reading yet.', ids: ['first-steps', 'note-names'] },
-  { n: 2, title: 'Pulse and rhythm', blurb: 'Feel the beat, count 1 and 2 and, clap the cards.', ids: ['pulse', 'note-values', 'rhythm'] },
+  { n: 2, title: 'Pulse and rhythm', blurb: 'Feel the beat, count out loud, clap the cards.', ids: ['pulse', 'note-values', 'rhythm'] },
   { n: 3, title: 'Reading begins', blurb: 'The staff, the Queen and the King, reading by steps and skips.', ids: ['staff', 'reading-steps'] },
   { n: 4, title: 'Five-finger positions', blurb: 'Hands in position; time signatures, speed and volume.', ids: ['five-finger', 'time-signatures', 'tempo', 'dynamics'] },
   { n: 5, title: 'Theory: Preliminary to Grade 3', blurb: 'The AMEB theory, step by step.', ids: ['ledger-lines', 'tones', 'scales', 'key-signatures', 'intervals', 'chords', 'signs', 'terms'] },
+  { n: 6, title: 'Know your instrument', blurb: 'The piano’s story, the style eras, pitch in Hz and the ranges of the orchestra.', ids: ['piano-story', 'pitch-range'] },
 ];
 const GRADE_TAGS = {
   'first-steps': 'Beginner', 'note-names': 'Prelim', pulse: 'Beginner', 'note-values': 'Prelim', rhythm: 'Prelim–G2', staff: 'Prelim',
   'reading-steps': 'Beginner', 'five-finger': 'Beginner', 'time-signatures': 'Prelim–G2', tempo: 'Prelim–G1', dynamics: 'Prelim–G1',
   'ledger-lines': 'Prelim–G2', tones: 'Prelim–G1', scales: 'Prelim–G3', 'key-signatures': 'Prelim–G3', intervals: 'Prelim–G3', chords: 'Prelim–G3', signs: 'Prelim–G2', terms: 'G1–G4',
+  'piano-story': 'General knowledge', 'pitch-range': 'General knowledge',
 };
 function stageOf(id) { return STAGES.find(s => s.ids.includes(id)); }
 function stepsDone(id) { const d = loadDone()[id] || {}; return Object.values(d).filter(Boolean).length; }

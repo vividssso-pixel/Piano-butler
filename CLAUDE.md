@@ -2980,6 +2980,21 @@ Sohyun: break the first step down, show it visually -- wrist height, open elbows
 | 5 | Chapter | `FirstStepsLearn` | Step 1 became 4 steps (Sit at the piano, The hand shape, Move with the whole arm, Posture check); chapter now 8 steps. Lesson "Got it" marks are stored by step index, so earlier marks in this chapter shift by 3 (only affects anyone who had ticked them). |
 | 6 | Verification | -- | All 74 tool URLs and 19 chapters load with zero page errors; screenshots of every preset, fault and exercise checked at phone width. |
 
+### Phase 127 -- posture fixes + new Stage 6 "Know your instrument" (2026-09-26)
+
+Sohyun's feedback on Phase 126: (1) wrist should sit a little higher; (2) the knuckle-bridge picture invites lifting fingers -- show it another way; (3) arm glide: body and arm too close, unnatural; (4) purpose/use of the posture checklist unclear. New request: piano info -- Cristofori, clavichord/harpsichord and their effect on Baroque playing (non legato), an era summary (composers later), and pitch in Hz with the piano's range vs other instruments.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Wrist higher | `HAND_POSES.good` [80,55,24,-3,-2] | Wrist nearly as high as the knuckles, level with the forearm; text updated; wrist check window adjusted. |
+| 2 | Knuckle bridge redrawn | `ExBridge` | Fingertips never leave the keys: one key at a time is pressed to the bottom and held while an arrow shows arm weight arriving through the knuckle; ✓ Right / ✗ Wrong toggle shows the knuckle giving way. Steps + "watch for" rewritten (no lifting). |
+| 3 | Arm glide re-laid out | `ExGlide` | Player sits well back (top view: shoulders + head), longer arm, left arm in the lap, elbow label with halo; caption "sitting back -- room for the arm to travel". |
+| 4 | Posture check made purposeful | `PostureChecklist`, `POSTURE_LIST` | "How to use it" (when, how, what happens next); every item now maps to the tool/exercise that fixes it -- marking "work on it" shows "→ Practise: … open". |
+| 5 | Chapter "The piano's story" | `PianoStoryLearn`, drill `piano-story` | Before the piano: `KeyboardAncestors` (clavichord / harpsichord / piano, animated key mechanism -- tangent, jack+quill, hammer with escapement; "press" slider shows the harpsichord stays the same loudness; clavichord Bebung; synthesized `harpsiNote`, `clavNote`). Non legato: `TouchLengths` (legato / non legato / staccato bars + sound, piano or harpsichord). `PianoTimeline` (1400s → 1700 Cristofori → 1720s survivors → Silbermann/Bach → fortepiano → Érard 1821 → iron frame 1825/1843, Steinway 1859 → 88 keys 1880s → digital). `ErasTimeline` (Baroque / Classical / Romantic / 20th c.: keyboard, traits, "playing it today", representative composers, ♪ a few bars in each style). Drill: 27 fact questions in 3 levels + mixed. |
+| 6 | Chapter "Pitch, Hz and range" | `PitchRangeLearn`, drill `pitch-range` | `HzExplorer` (A0-C8 slider, wave drawing, octave-doubling chips, hearing range, piano vs pure tone). `RangeChart` (typical ranges of 23 instruments/voices laid over the 88 keys with an Hz ruler; tap to hear lowest/highest; "Piano through history": Cristofori 1720 C2-C6, Mozart F1-G6, Beethoven's Broadwood C1-C7, modern A0-C8). Drill: octave Hz, which goes lowest, who can play this note. |
+| 7 | Stage 6 | `STAGES`, `GRADE_TAGS`, `DRILLS`, TOOLS (+6) | "Know your instrument", tagged General knowledge. Composer pages per era still to come (Sohyun: later). |
+| 8 | Verification | -- | All 80 tool URLs and 21 chapters load with zero page errors; generators fuzzed (0 bad questions); screenshots checked. |
+
 Next on the plan: more mini tools (Sohyun's rule: every activity stand-alone + in TOOLS). Ideas: sight-reading flash cards, a practice-dice/timer tool, scale degree names (tonic, supertonic...), transposition. Signs 116, Chords 117, Toolbox 118, Grade 3 intervals + cadences 119 done.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
