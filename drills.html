@@ -7383,9 +7383,20 @@ function FirstStepsLearn({ onStart }) {
   return (
     <Lesson id="first-steps" title="Me and the piano" onStart={onStart}
       intro={<>The very first lessons -- no music to read yet. Fingers, sounds, and a map of the keyboard, so the piano feels friendly from day one.</>}>
-      <Step title="Sit and shape your hands">
-        {tip('Sitting', 'Sit on the front half of the stool, feet flat, facing middle C. Elbows just in front of the body, a little higher than the keys.')}
-        {tip('A round hand', 'Let your arms hang, then lift your hands as if holding a small ball. Play on the finger pads, the thumb on its side.')}
+      <Step title="Sit at the piano">
+        {tip('Sitting', 'Sit on the front half of the stool, feet flat, facing middle C. Stool height: forearm level with the keys. Distance: elbows just in front of the body, open a little to the side.')}
+        <SitCheck/>
+      </Step>
+      <Step title="The hand shape">
+        {tip('A round hand', 'Let your arms hang, then lift your hands as if holding a small ball. Knuckles up like a bridge, wrist level with the forearm, play on the fingertip pads, the thumb on its side.')}
+        <HandShape/>
+      </Step>
+      <Step title="Move with the whole arm">
+        {tip('The arm carries the hand', 'Fingers play the keys, but the arm takes the hand where it needs to go -- the hand keeps its shape all the way. Do these a few minutes at the start of every practice.')}
+        <ArmExercises/>
+      </Step>
+      <Step title="Posture check">
+        <PostureChecklist/>
       </Step>
       <Step title="Finger numbers">
         <FingerNumbers/>
@@ -8491,7 +8502,458 @@ function TouchEar() {
   );
 }
 
+// ─── Phase 126: Sit and shape your hands, broken down ───────────────────────────
+// 1. SitCheck: a side-view figure at the piano. Move the stool (height, distance) and the body
+//    follows (2-joint arm reaching the keys); the checks turn green when the set-up is right.
+//    Front view: how open the elbows are.
+// 2. HandShape: side view of a finger on a key -- the good shape and the six common faults.
+// 3. ArmExercises: six short exercises, animated, with a rep counter.
+// 4. PostureChecklist: a systematic check, item by item, saved on this device.
+const POS_SKIN = '#f3e3cf', POS_SKIN_EDGE = '#c9a57e', POS_GOOD = '#3f8a4f', POS_BAD = '#b5483b', POS_INK = '#241f1a';
+const SIT_K = 118, SIT_KX = 238, SIT_FLOOR = 214;
+function sitPose(S, F) {
+  const r = Math.PI / 180;
+  const H = { x: F - 30, y: S - 6 };
+  const Sh = { x: H.x + 78 * Math.sin(10 * r), y: H.y - 78 * Math.cos(10 * r) };
+  const W = { x: SIT_KX - 18, y: SIT_K - 12 }, U = 50, L = 52;
+  const dx = W.x - Sh.x, dy = W.y - Sh.y, d = Math.hypot(dx, dy);
+  let E, Wr = W, straight = false;
+  if (d >= U + L - 0.5) { straight = true; E = { x: Sh.x + dx / d * U, y: Sh.y + dy / d * U }; Wr = { x: Sh.x + dx / d * (U + L), y: Sh.y + dy / d * (U + L) }; }
+  else {
+    const a = (U * U - L * L + d * d) / (2 * d), h = Math.sqrt(Math.max(0, U * U - a * a));
+    const mx = Sh.x + a * dx / d, my = Sh.y + a * dy / d;
+    const e1 = { x: mx + h * dy / d, y: my - h * dx / d }, e2 = { x: mx - h * dy / d, y: my + h * dx / d };
+    E = e1.y > e2.y ? e1 : e2;
+  }
+  const knee = { x: H.x + 56, y: S + 2 }, shin = 74, drop = SIT_FLOOR - 6 - knee.y;
+  const feetDown = drop <= shin;
+  const ankle = feetDown ? { x: knee.x + Math.sqrt(shin * shin - drop * drop) * 0.55, y: SIT_FLOOR - 6 } : { x: knee.x + 6, y: knee.y + shin };
+  const slope = Math.atan2(Wr.y - E.y, Wr.x - E.x) / r; // + = forearm slopes down to the keys (elbow high)
+  return { H, Sh, E, W: Wr, knee, ankle, feetDown, straight, slope, ahead: E.x - Sh.x, head: { x: Sh.x + 7, y: Sh.y - 24 } };
+}
+function sitChecks(p) {
+  return [
+    { id: 'feet', label: 'Feet flat on the floor', ok: p.feetDown, fix: 'Feet can’t reach -- use a footstool or a pile of books under them.' },
+    { id: 'level', label: 'Forearm level with the keys', ok: !p.straight && p.slope > -7 && p.slope < 12,
+      fix: p.straight ? 'The arm has to stretch down to reach the keys -- move closer first.' : p.slope <= -7 ? 'Elbows are below the keys, so the hands reach up -- raise the stool.' : 'Elbows are too high, so the wrists drop down to the keys -- lower the stool.' },
+    { id: 'ahead', label: 'Elbows just in front of the body', ok: !p.straight && p.ahead > 5 && p.ahead < 32,
+      fix: p.straight || p.ahead >= 32 ? 'Arms are stretched out -- move the stool closer.' : 'Elbows are squashed behind you -- move the stool back.' },
+    { id: 'reach', label: 'Arms soft, not stretched', ok: !p.straight, fix: 'The arm is straight and still can’t reach -- move closer.' },
+  ];
+}
+function SeatedFigure({ S, F, checks }) {
+  const p = sitPose(S, F);
+  const bad = (id) => checks && !checks.find(c => c.id === id).ok;
+  const limb = (a, b, w, c) => <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={c || '#6b5a4a'} strokeWidth={w} strokeLinecap="round"/>;
+  const hand = { x: p.W.x + 10, y: p.W.y - 3 }, tip = { x: p.W.x + 26, y: SIT_K - 1 };
+  return (
+    <svg viewBox="0 0 340 228" style={{width:'100%',maxWidth:460,display:'block',margin:'0 auto'}}>
+      <line x1="0" x2="340" y1={SIT_FLOOR} y2={SIT_FLOOR} stroke="#c7bca8" strokeWidth="2"/>
+      <line x1="0" x2={SIT_KX} y1={SIT_K} y2={SIT_K} stroke="#a8823f" strokeDasharray="4 4" strokeOpacity="0.7"/>
+      <text x="6" y={SIT_K - 4} fontSize="8.5" fontWeight="800" fill="#a8823f">key level</text>
+      {/* stool */}
+      <rect x={F - 72} y={S} width="72" height="9" rx="3" fill="#8a6a4a"/>
+      <line x1={F - 64} x2={F - 64} y1={S + 9} y2={SIT_FLOOR} stroke="#8a6a4a" strokeWidth="4"/>
+      <line x1={F - 8} x2={F - 8} y1={S + 9} y2={SIT_FLOOR} stroke="#8a6a4a" strokeWidth="4"/>
+      {/* legs */}
+      {limb(p.H, p.knee, 15, '#5d6f86')}
+      {limb(p.knee, p.ankle, 12, bad('feet') ? POS_BAD : '#5d6f86')}
+      <line x1={p.ankle.x - 4} y1={p.ankle.y + 3} x2={p.ankle.x + 16} y2={p.ankle.y + 3} stroke="#3a302a" strokeWidth="7" strokeLinecap="round"/>
+      {/* piano */}
+      <rect x="262" y="38" width="78" height="80" fill="#3a302a"/>
+      <rect x="246" y="128" width="94" height={SIT_FLOOR - 128} fill="#3a302a"/>
+      <rect x={SIT_KX} y={SIT_K} width="102" height="10" fill="#fff" stroke="#8a7a6a"/>
+      <rect x={SIT_KX + 34} y={SIT_K - 3} width="68" height="4" fill="#241f1a"/>
+      {/* body */}
+      {limb(p.H, p.Sh, 26, '#7b9bb8')}
+      <circle cx={p.head.x} cy={p.head.y} r="14" fill={POS_SKIN} stroke={POS_SKIN_EDGE} strokeWidth="1.5"/>
+      {/* arm */}
+      {limb(p.Sh, p.E, 11, bad('ahead') ? POS_BAD : '#7b9bb8')}
+      {limb(p.E, p.W, 9, bad('level') ? POS_BAD : POS_SKIN_EDGE)}
+      {!p.straight && <path d={`M${p.W.x},${p.W.y} Q${hand.x},${hand.y - 5} ${hand.x + 6},${hand.y} Q${tip.x},${tip.y - 10} ${tip.x},${tip.y}`} fill="none" stroke={POS_SKIN_EDGE} strokeWidth="7" strokeLinecap="round"/>}
+      <circle cx={p.E.x} cy={p.E.y} r="5" fill="#fff" stroke={bad('level') || bad('ahead') ? POS_BAD : POS_GOOD} strokeWidth="2.5"/>
+      <circle cx={p.W.x} cy={p.W.y} r="3.5" fill="#fff" stroke={bad('level') ? POS_BAD : POS_GOOD} strokeWidth="2"/>
+      {/* forearm guide */}
+      <line x1={p.E.x - 18} x2={p.E.x + 70} y1={p.E.y} y2={p.E.y} stroke={POS_INK} strokeOpacity="0.25" strokeDasharray="2 3"/>
+      <text x={p.E.x - 4} y={p.E.y + 16} fontSize="8.5" fontWeight="900" textAnchor="middle" stroke="#fff" strokeWidth="3" paintOrder="stroke" fill={bad('level') || bad('ahead') ? POS_BAD : POS_GOOD}>elbow</text>
+    </svg>
+  );
+}
+function FrontArms({ gap }) {
+  // gap 0..1: elbows glued to the ribs .. flapping chicken wings. Good 0.3-0.65.
+  const cx = 160, shY = 64, gx = 14 + gap * 46;
+  const ok = gap >= 0.3 && gap <= 0.65;
+  const col = ok ? POS_GOOD : POS_BAD;
+  const side = (s) => {
+    const sh = { x: cx + s * 36, y: shY }, el = { x: cx + s * (34 + gx), y: 124 }, wr = { x: cx + s * 44, y: 150 };
+    return (
+      <g key={s}>
+        <line x1={sh.x} y1={sh.y} x2={el.x} y2={el.y} stroke="#7b9bb8" strokeWidth="13" strokeLinecap="round"/>
+        <line x1={el.x} y1={el.y} x2={wr.x} y2={wr.y} stroke={POS_SKIN_EDGE} strokeWidth="10" strokeLinecap="round"/>
+        <ellipse cx={wr.x} cy={wr.y + 6} rx="13" ry="7" fill={POS_SKIN} stroke={POS_SKIN_EDGE}/>
+        <circle cx={el.x} cy={el.y} r="5.5" fill="#fff" stroke={col} strokeWidth="2.5"/>
+        <line x1={cx + s * 30} x2={el.x - s * 6} y1={124} y2={124} stroke={col} strokeWidth="1.6" strokeDasharray="3 2"/>
+      </g>
+    );
+  };
+  return (
+    <svg viewBox="0 0 320 180" style={{width:'100%',maxWidth:380,display:'block',margin:'0 auto'}}>
+      <rect x="0" y="156" width="320" height="16" fill="#fff" stroke="#8a7a6a"/>
+      {Array.from({ length: 22 }, (_, i) => <line key={i} x1={i * 14.5} x2={i * 14.5} y1="156" y2="172" stroke="#c7bca8"/>)}
+      <rect x={cx - 30} y="52" width="60" height="100" rx="22" fill="#7b9bb8"/>
+      <circle cx={cx} cy="32" r="18" fill={POS_SKIN} stroke={POS_SKIN_EDGE} strokeWidth="1.5"/>
+      {side(-1)}{side(1)}
+      <text x={cx} y="112" textAnchor="middle" fontSize="9" fontWeight="900" fill="#fff">body</text>
+    </svg>
+  );
+}
+const SIT_PRESETS = [
+  { id: 'good', label: 'Just right', S: 140, F: 166 },
+  { id: 'low', label: 'Stool too low', S: 166, F: 166 },
+  { id: 'high', label: 'Stool too high', S: 125, F: 166 },
+  { id: 'close', label: 'Too close', S: 140, F: 196 },
+  { id: 'far', label: 'Too far', S: 140, F: 138 },
+];
+function SitCheck() {
+  const [S, setS] = useState(166);
+  const [F, setF] = useState(166);
+  const [view, setView] = useState('side');
+  const [gap, setGap] = useState(0.05);
+  const checks = sitChecks(sitPose(S, F));
+  const allOk = checks.every(c => c.ok);
+  const gapOk = gap >= 0.3 && gap <= 0.65;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
+        <div style={actTitle}>Set up the stool</div>
+        <div style={{display:'flex',gap:3}}>{[['side', 'Side view'], ['front', 'Front view']].map(([k, l]) => <button key={k} className={'chip' + (view === k ? ' active' : '')} style={{padding:'2px 9px',fontSize:11}} onClick={() => setView(k)}>{l}</button>)}</div>
+      </div>
+      {view === 'side' ? <>
+        <div style={actNote}>Move the stool until every check is green. The height sets the <b>forearm</b> (level with the keys); the distance sets the <b>elbows</b> (just in front of the body).</div>
+        <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6}}>{SIT_PRESETS.map(p => <button key={p.id} className={'chip' + (p.S === S && p.F === F ? ' active' : '')} style={{padding:'2px 8px',fontSize:11}} onClick={() => { setS(p.S); setF(p.F); }}>{p.label}</button>)}</div>
+        <SeatedFigure S={S} F={F} checks={checks}/>
+        <div style={{display:'grid',gridTemplateColumns:'auto 1fr',gap:'2px 8px',alignItems:'center',fontSize:12,fontWeight:800,margin:'4px 0 6px'}}>
+          <span>Height</span><input type="range" min="22" max="72" value={194 - S} onChange={e => setS(194 - +e.target.value)} style={{accentColor:'#a8823f'}}/>
+          <span>Distance</span><input type="range" min="134" max="204" value={338 - F} onChange={e => setF(338 - +e.target.value)} style={{accentColor:'#a8823f'}}/>
+        </div>
+        <div style={{display:'flex',flexDirection:'column',gap:3}}>
+          {checks.map(c => (
+            <div key={c.id} style={{display:'flex',gap:7,alignItems:'flex-start',background:'#fff',borderRadius:8,padding:'5px 8px',fontSize:12.5}}>
+              <span style={{fontWeight:900,color:c.ok ? POS_GOOD : POS_BAD,width:14}}>{c.ok ? '✓' : '✗'}</span>
+              <span><b>{c.label}</b>{!c.ok && <span style={{color:'#6f665b'}}> -- {c.fix}</span>}</span>
+            </div>
+          ))}
+        </div>
+        {allOk && <div style={{textAlign:'center',fontWeight:900,color:POS_GOOD,marginTop:6}}>That’s the set-up. Remember the stool height for next time!</div>}
+      </> : <>
+        <div style={actNote}>Seen from the front, the elbows hang <b>open</b> -- a little away from the body, about a fist’s width -- so the arm can carry the hand along the keys. Glued to the ribs, the arm can’t move; flapping out, the shoulders tense.</div>
+        <FrontArms gap={gap}/>
+        <input type="range" min="0" max="100" value={Math.round(gap * 100)} onChange={e => setGap(+e.target.value / 100)} style={{width:'100%',accentColor:'#a8823f'}}/>
+        <div style={{textAlign:'center',fontSize:13,fontWeight:900,color:gapOk ? POS_GOOD : POS_BAD}}>{gap < 0.3 ? '✗ Elbows squashed against the body' : gap > 0.65 ? '✗ Chicken wings -- the shoulders lift and tense' : '✓ Open elbows -- room for a fist between elbow and body'}</div>
+        <div style={{fontSize:12,color:'#6f665b',marginTop:6,background:'#fff',borderRadius:8,padding:'6px 8px'}}><b>Try:</b> put a fist between your elbow and your side, then take it away and keep the space.</div>
+      </>}
+    </div>
+  );
+}
+
+// ── 2. Hand shape: one finger on a key, drawn from the fingertip back to the forearm ──
+// Segment directions (degrees, 0 = to the right, + = downwards), fingertip to elbow:
+// [nail joint, middle, base, hand (wrist to knuckle), forearm].
+const HAND_POSES = {
+  good:   { a: [80, 55, 22, -10, 0],  title: 'The good shape', see: 'Knuckles make a bridge (the highest point), fingers curve down, you play on the fingertip pad. The wrist is level with the forearm.', fix: '' },
+  flat:   { a: [22, 16, 10, 4, 2],     title: 'Flat fingers', see: 'Fingers lie flat and the key is played with the soft middle of the finger.', fix: 'Hold a small ball (or a mandarin). Keep that round shape and put it on the keys.' },
+  bridge: { a: [62, 38, 8, 18, 3],     title: 'Knuckles collapsed', see: 'The bridge has fallen in: the knuckles are lower than the wrist.', fix: 'Knuckle bridge (exercise 2): tap each finger while the knuckles stay up.' },
+  nail:   { a: [18, 78, 30, -8, 0],    title: 'Nail joint caving in', see: 'The last joint bends backwards when the finger plays.', fix: 'Play slowly on the tip, press the key down and hold -- the tip joint stays firm like a little pillar.' },
+  low:    { a: [80, 55, 22, -40, -18], title: 'Wrist dropped', see: 'The wrist sinks below the keys and the hand has to push up.', fix: 'Wrist balloon (exercise 5): the wrist floats up to level with the forearm.' },
+  high:   { a: [82, 60, 36, 26, 14],   title: 'Wrist too high', see: 'The wrist is hunched up and the fingers poke straight down.', fix: 'Let the wrist sink until it’s level with the forearm -- a straight line from elbow to knuckle.' },
+};
+const HAND_LENS = [12, 15, 24, 46, 120];
+function handChain(angles, tip = { x: 222, y: 118 }) {
+  const pts = [tip]; let p = tip;
+  angles.forEach((a, i) => { const r = a * Math.PI / 180; p = { x: p.x - HAND_LENS[i] * Math.cos(r), y: p.y - HAND_LENS[i] * Math.sin(r) }; pts.push(p); });
+  return pts; // [tip, nail joint, middle joint, knuckle, wrist, elbow-side]
+}
+function HandSide({ pose, angles, lift = 0, press = 0, balloon = false, labels = true, width = 300, tall = false }) {
+  const a = angles || HAND_POSES[pose].a;
+  const pts = handChain(a, { x: 222, y: 118 + press * 5 - lift }).map(p => ({ x: p.x, y: p.y }));
+  const [tip, j1, j2, kn, wr, fa] = pts;
+  const wristOk = Math.abs(a[4]) < 6 && a[3] <= 0 && a[3] > -18;
+  const knuckleOk = kn.y < wr.y + 1;
+  const tipOk = a[0] > 55 && a[0] > a[1] - 5;
+  const path = (ps, w, col) => <polyline points={ps.map(p => p.x + ',' + p.y).join(' ')} fill="none" stroke={col} strokeWidth={w} strokeLinecap="round" strokeLinejoin="round"/>;
+  const mark = (p, ok) => <circle cx={p.x} cy={p.y} r="4" fill="#fff" stroke={ok ? POS_GOOD : POS_BAD} strokeWidth="2.2"/>;
+  return (
+    <svg viewBox={balloon ? '40 -40 250 188' : tall ? '40 14 250 134' : '40 44 250 104'} style={{width:'100%',maxWidth:width * 1.3,display:'block',margin:'0 auto'}}>
+      {/* keys */}
+      <rect x="150" y={118 + press * 5} width="130" height="16" fill="#fff" stroke="#8a7a6a"/>
+      <rect x="120" y="134" width="170" height="14" fill="#3a302a"/>
+      <line x1="40" x2="150" y1="118" y2="118" stroke="#a8823f" strokeDasharray="4 4" strokeOpacity="0.7"/>
+      {labels && <text x="44" y="114" fontSize="8" fontWeight="800" fill="#a8823f">key level</text>}
+      {/* forearm + hand */}
+      {path([fa, wr], 20, POS_SKIN_EDGE)}{path([fa, wr], 17, POS_SKIN)}
+      {path([wr, kn], 17, POS_SKIN_EDGE)}{path([wr, kn], 14, POS_SKIN)}
+      {path([kn, j2, j1, tip], 10, POS_SKIN_EDGE)}{path([kn, j2, j1, tip], 7.5, POS_SKIN)}
+      {balloon && <g><line x1={wr.x} y1={wr.y - 8} x2={wr.x + 4} y2={wr.y - 58} stroke="#6f665b" strokeWidth="1"/><ellipse cx={wr.x + 5} cy={wr.y - 70} rx="10" ry="13" fill="#e38a7a"/></g>}
+      {labels && <>
+        {mark(kn, knuckleOk)}{mark(wr, wristOk)}{mark(tip, tipOk)}
+        <text x={kn.x} y={kn.y - 12} fontSize="8.5" fontWeight="900" textAnchor="middle" fill={knuckleOk ? POS_GOOD : POS_BAD}>knuckle</text>
+        <text x={wr.x} y={wr.y - 14} fontSize="8.5" fontWeight="900" textAnchor="middle" fill={wristOk ? POS_GOOD : POS_BAD}>wrist</text>
+        <text x={tip.x + 12} y={tip.y - 6} fontSize="8.5" fontWeight="900" fill={tipOk ? POS_GOOD : POS_BAD}>tip</text>
+      </>}
+    </svg>
+  );
+}
+function HandShape() {
+  const [pose, setPose] = useState('good');
+  const P = HAND_POSES[pose];
+  const [shown, setShown] = useState(P.a);
+  const raf = useRef(0);
+  function go(id) {
+    cancelAnimationFrame(raf.current);
+    const from = shown, to = HAND_POSES[id].a, t0 = performance.now();
+    setPose(id);
+    const step = (now) => { const u = Math.min(1, (now - t0) / 450), e = u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
+      setShown(from.map((v, i) => v + (to[i] - v) * e)); if (u < 1) raf.current = requestAnimationFrame(step); };
+    raf.current = requestAnimationFrame(step);
+  }
+  useEffect(() => () => cancelAnimationFrame(raf.current), []);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>The hand shape, from the side</div>
+      <div style={actNote}>Three check points: <b>knuckles</b> up (a bridge), <b>wrist</b> level with the forearm, fingers curved onto the <b>tip</b>. Tap a fault to see it -- then tap “Good shape” to fix it.</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6}}>
+        {Object.entries(HAND_POSES).map(([k, v]) => <button key={k} className={'chip' + (k === pose ? ' active' : '')} style={{padding:'2px 8px',fontSize:11,borderColor:k === 'good' ? POS_GOOD : undefined}} onClick={() => go(k)}>{k === 'good' ? '✓ Good shape' : v.title}</button>)}
+      </div>
+      <div style={{background:'#fff',borderRadius:10,padding:'4px 0'}}><HandSide angles={shown}/></div>
+      <div style={{background:'#fff',borderRadius:8,padding:'7px 9px',marginTop:6,fontSize:12.5,lineHeight:1.45}}>
+        <b style={{color:pose === 'good' ? POS_GOOD : POS_BAD}}>{pose === 'good' ? '✓ ' : '✗ '}{P.title}</b>
+        <div style={{color:'#5c544a'}}>{P.see}</div>
+        {P.fix && <div style={{marginTop:3}}><b>Fix:</b> {P.fix}</div>}
+      </div>
+    </div>
+  );
+}
+
+// ── 3. Exercises: keep the hand shape, let the whole arm move it ──
+function useLoop(ms, on) {
+  const [u, setU] = useState(0);
+  useEffect(() => {
+    if (!on) return;
+    let raf, t0 = performance.now();
+    const f = (now) => { setU(((now - t0) % ms) / ms); raf = requestAnimationFrame(f); };
+    raf = requestAnimationFrame(f); return () => cancelAnimationFrame(raf);
+  }, [ms, on]);
+  return u;
+}
+const ease = (x) => 0.5 - 0.5 * Math.cos(Math.PI * 2 * x); // 0 -> 1 -> 0 over one loop
+function ExRagDoll({ u }) {
+  // hang and shake (first half), float up to the keys (second half)
+  const up = u < 0.45 ? 0 : Math.min(1, (u - 0.45) / 0.35), shake = u < 0.45 ? Math.sin(u * 90) * 3 : 0;
+  const cx = 160;
+  const arm = (s) => {
+    const sh = { x: cx + s * 34, y: 58 }, el = { x: cx + s * (40 + 10 * up), y: 58 + 56 - 6 * up }, wr = { x: cx + s * (42 - 2 * up) + shake * s, y: 156 - 28 * up };
+    const elb = up > 0.1 ? el : { x: cx + s * 40, y: 114 };
+    return <g key={s}><polyline points={`${sh.x},${sh.y} ${elb.x},${elb.y} ${wr.x},${wr.y}`} fill="none" stroke={POS_SKIN_EDGE} strokeWidth="11" strokeLinecap="round" strokeLinejoin="round"/><circle cx={wr.x} cy={wr.y + 7} r="9" fill={POS_SKIN} stroke={POS_SKIN_EDGE}/></g>;
+  };
+  return (
+    <svg viewBox="0 0 320 190" style={{width:'100%',maxWidth:340,display:'block',margin:'0 auto'}}>
+      <rect x="0" y="138" width="320" height="12" fill="#fff" stroke="#8a7a6a" opacity={up}/>
+      <rect x={cx - 28} y="46" width="56" height="96" rx="20" fill="#7b9bb8"/>
+      <circle cx={cx} cy="26" r="17" fill={POS_SKIN} stroke={POS_SKIN_EDGE} strokeWidth="1.5"/>
+      {arm(-1)}{arm(1)}
+      <text x={cx} y="186" textAnchor="middle" fontSize="11" fontWeight="900" fill="#6f665b">{u < 0.45 ? 'hang heavy… shake it loose' : up < 1 ? 'float up…' : 'land on the keys, still soft'}</text>
+    </svg>
+  );
+}
+function ExBridge({ u }) {
+  // front view of the hand: knuckles in an arch, fingers hanging to the keys; one finger lifts at a time
+  const f = Math.floor(u * 5), ph = (u * 5) % 1, lift = Math.sin(Math.PI * Math.min(1, ph * 1.4)) * 16;
+  const xs = [70, 110, 150, 190, 228];
+  const kn = [96, 84, 80, 84, 92];
+  return (
+    <svg viewBox="30 40 240 140" style={{width:'100%',maxWidth:320,display:'block',margin:'0 auto'}}>
+      <rect x="30" y="160" width="240" height="14" fill="#fff" stroke="#8a7a6a"/>
+      {[1, 2, 3, 4, 5, 6].map(i => <line key={i} x1={30 + i * 34} x2={30 + i * 34} y1="160" y2="174" stroke="#c7bca8"/>)}
+      <path d={`M50,118 Q70,70 ${xs[2]},62 Q230,70 250,112 L250,125 L50,125 Z`} fill={POS_SKIN} stroke={POS_SKIN_EDGE}/>
+      {xs.map((x, i) => {
+        const up = i === f ? lift : 0, th = i === 0;
+        const top = kn[i], bot = th ? 150 : 158 - up;
+        return <g key={i}><line x1={th ? x - 6 : x} y1={top} x2={x} y2={bot} stroke={POS_SKIN_EDGE} strokeWidth={th ? 15 : 13} strokeLinecap="round"/><line x1={th ? x - 6 : x} y1={top} x2={x} y2={bot} stroke={i === f ? '#f3c66b' : POS_SKIN} strokeWidth={th ? 12 : 10} strokeLinecap="round"/>
+          <text x={x} y={bot - 12} textAnchor="middle" fontSize="10" fontWeight="900" fill="#8a6a4a">{i + 1}</text></g>;
+      })}
+      <polyline points={xs.map((x, i) => `${x},${kn[i]}`).join(' ')} fill="none" stroke={POS_GOOD} strokeWidth="2" strokeDasharray="4 3"/>
+      {xs.map((x, i) => <circle key={i} cx={x} cy={kn[i]} r="3.5" fill="#fff" stroke={POS_GOOD} strokeWidth="2"/>)}
+      <text x="150" y="52" textAnchor="middle" fontSize="10" fontWeight="900" fill={POS_GOOD}>the bridge stays up</text>
+    </svg>
+  );
+}
+function ExGlide({ u }) {
+  // top view: the right arm carries the same hand shape from low C to high C; the elbow leads
+  const e = ease(u), hx = 70 + e * 190, hy = 70;
+  const sh = { x: 176, y: 172 }, U = 70, L = 80;
+  const wr = { x: hx - 4, y: hy + 30 };
+  const dx = wr.x - sh.x, dy = wr.y - sh.y, d = Math.min(Math.hypot(dx, dy), U + L - 1);
+  const a = (U * U - L * L + d * d) / (2 * d), h = Math.sqrt(Math.max(0, U * U - a * a));
+  const mx = sh.x + a * dx / d, my = sh.y + a * dy / d;
+  const el = { x: mx - h * dy / d, y: my + h * dx / d }; // elbow opens out to the side
+  const el2 = { x: mx + h * dy / d, y: my - h * dx / d };
+  const E = el.x > el2.x ? el : el2;
+  return (
+    <svg viewBox="0 0 320 210" style={{width:'100%',maxWidth:340,display:'block',margin:'0 auto'}}>
+      <rect x="10" y="20" width="300" height="62" fill="#fff" stroke="#8a7a6a"/>
+      {Array.from({ length: 21 }, (_, i) => <line key={i} x1={10 + i * 14.3} x2={10 + i * 14.3} y1="20" y2="82" stroke="#d8cdb8"/>)}
+      {Array.from({ length: 20 }, (_, i) => [1, 2, 4, 5, 6].includes(i % 7) ? <rect key={i} x={10 + i * 14.3 - 4.5} y="20" width="9" height="36" fill="#241f1a"/> : null)}
+      <rect x="110" y="150" width="80" height="60" rx="26" fill="#7b9bb8"/>
+      <line x1={sh.x} y1={sh.y} x2={E.x} y2={E.y} stroke="#7b9bb8" strokeWidth="13" strokeLinecap="round"/>
+      <line x1={E.x} y1={E.y} x2={wr.x} y2={wr.y} stroke={POS_SKIN_EDGE} strokeWidth="11" strokeLinecap="round"/>
+      <g transform={`translate(${hx},${hy})`}>
+        <rect x="-22" y="-2" width="40" height="32" rx="10" fill={POS_SKIN} stroke={POS_SKIN_EDGE}/>
+        {[-17, -7, 3, 13].map((x, i) => <ellipse key={i} cx={x + 1} cy={-10 + Math.abs(i - 1.5) * 2} rx="4" ry="10" fill={POS_SKIN} stroke={POS_SKIN_EDGE}/>)}
+        <ellipse cx="-25" cy="16" rx="5" ry="9" transform="rotate(35 -25 16)" fill={POS_SKIN} stroke={POS_SKIN_EDGE}/>
+      </g>
+      <circle cx={sh.x} cy={sh.y} r="5" fill="#fff" stroke="#6f665b" strokeWidth="2"/>
+      <circle cx={E.x} cy={E.y} r="6" fill="#fff" stroke="#a8823f" strokeWidth="2.5"/>
+      <text x={E.x + 10} y={E.y + 4} fontSize="10" fontWeight="900" fill="#a8823f">elbow leads</text>
+    </svg>
+  );
+}
+function ExWings({ u }) {
+  return <FrontArms gap={0.12 + 0.5 * ease(u)}/>;
+}
+function ExBalloon({ u }) {
+  const e = ease(u);
+  const good = HAND_POSES.good.a, up = [84, 62, 30, 28, 18];
+  const ang = good.map((v, i) => v + (up[i] - v) * e);
+  return <HandSide angles={ang} balloon labels={false}/>;
+}
+function ExDrop({ u }) {
+  // lift the whole arm (shape kept), drop into the key, bounce off
+  const lift = u < 0.5 ? Math.sin(Math.PI * u) * 34 : u < 0.62 ? 34 * (1 - (u - 0.5) / 0.12) : 0;
+  const press = u >= 0.62 && u < 0.85 ? 1 : 0;
+  return <HandSide pose="good" lift={lift} press={press} labels={false} tall/>;
+}
+const ARM_EXERCISES = [
+  { id: 'ragdoll', title: 'Rag doll', C: ExRagDoll, ms: 4200, reps: 3,
+    how: ['Let both arms hang by your sides, heavy.', 'Shake them loose from the shoulders.', 'Float the hands up to the keys -- elbows open, shoulders down.'], watch: 'Shoulders stay down when the arms come up.' },
+  { id: 'bridge', title: 'Knuckle bridge', C: ExBridge, ms: 3600, reps: 5,
+    how: ['Hand in the good shape on five keys.', 'Lift and play each finger, 1 to 5, slowly.', 'The knuckles stay up like a bridge -- nothing caves in.'], watch: 'The knuckle of the playing finger doesn’t sink.' },
+  { id: 'glide', title: 'Arm glide', C: ExGlide, ms: 5200, reps: 3,
+    how: ['Put the hand shape on middle C.', 'Carry it up to the next C, and the next -- don’t let the fingers walk, let the arm carry them.', 'Come back down. The elbow moves first and opens out.'], watch: 'The hand looks exactly the same at every C.' },
+  { id: 'wings', title: 'Elbow wings', C: ExWings, ms: 3000, reps: 5,
+    how: ['Hands resting on the keys.', 'Slowly let the elbows float out to the side, then back.', 'Stop in the middle -- open, about a fist from your body.'], watch: 'The hands stay still on the keys while the elbows move.' },
+  { id: 'balloon', title: 'Wrist balloon', C: ExBalloon, ms: 3200, reps: 5,
+    how: ['Imagine a balloon tied to your wrist.', 'It pulls the wrist up; the fingertip stays on the key.', 'Let it float back down until the wrist is level with the forearm.'], watch: 'Stop at level -- not below the keys.' },
+  { id: 'drop', title: 'Arm drop', C: ExDrop, ms: 2400, reps: 5,
+    how: ['Hand in the good shape, 3rd finger ready.', 'Lift the whole arm (the hand keeps its shape).', 'Let it drop into the key -- firm fingertip, soft wrist -- and bounce up.'], watch: 'A full, round sound -- no knocking, and the tip joint doesn’t cave in.' },
+];
+const ARM_KEY = 'pb_arm_ex_v1';
+function ArmExercises() {
+  const [open, setOpen] = useState('glide');
+  const [reps, setReps] = useState(() => { try { return JSON.parse(localStorage.getItem(ARM_KEY)) || {}; } catch (e) { return {}; } });
+  const ex = ARM_EXERCISES.find(x => x.id === open);
+  const u = useLoop(ex.ms, true);
+  const Anim = ex.C;
+  function add(id, n) {
+    setReps(r => { const nr = { ...r, [id]: Math.max(0, Math.min(ARM_EXERCISES.find(x => x.id === id).reps, (r[id] || 0) + n)) }; try { localStorage.setItem(ARM_KEY, JSON.stringify(nr)); } catch (e) {} return nr; });
+    if (n > 0) { const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime + 0.01, 660, 0.12, 0.12, 'triangle'); }
+  }
+  const done = ARM_EXERCISES.filter(x => (reps[x.id] || 0) >= x.reps).length;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>Move with the whole arm</div>
+        <span style={{fontSize:12,fontWeight:900,color:done === ARM_EXERCISES.length ? POS_GOOD : 'var(--muted)'}}>{done}/{ARM_EXERCISES.length} done</span>
+      </div>
+      <div style={actNote}>The hand holds its shape; the <b>arm</b> moves it. Six short exercises -- watch the picture, do it, then tap +1 for each time.</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:4,marginBottom:8}}>
+        {ARM_EXERCISES.map((x, i) => {
+          const full = (reps[x.id] || 0) >= x.reps;
+          return <button key={x.id} className={'chip' + (x.id === open ? ' active' : '')} style={{padding:'4px 4px',fontSize:11,borderColor:full ? POS_GOOD : undefined}} onClick={() => setOpen(x.id)}>{full ? '✓ ' : (i + 1) + '. '}{x.title}</button>;
+        })}
+      </div>
+      <div style={{background:'#fff',borderRadius:10,padding:'6px 4px'}}><Anim u={u}/></div>
+      <ol style={{margin:'8px 0 4px',paddingLeft:20,fontSize:12.5,lineHeight:1.5}}>{ex.how.map((h, i) => <li key={i}>{h}</li>)}</ol>
+      <div style={{fontSize:12,background:'#fff',borderRadius:8,padding:'5px 8px'}}><b style={{color:'#a8823f'}}>Watch for:</b> {ex.watch}</div>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginTop:8}}>
+        <button className="ghost-btn" style={{padding:'6px 12px'}} onClick={() => add(ex.id, -1)}>−</button>
+        <div style={{display:'flex',gap:4}}>{Array.from({ length: ex.reps }, (_, i) => <span key={i} style={{width:14,height:14,borderRadius:7,background:i < (reps[ex.id] || 0) ? POS_GOOD : '#e8dfcf'}}/>)}</div>
+        <button className="ghost-btn" style={{padding:'6px 14px',fontWeight:900}} onClick={() => add(ex.id, 1)}>+1</button>
+      </div>
+      <div style={{textAlign:'center',marginTop:6}}><button className="chip" style={{padding:'2px 9px',fontSize:11}} onClick={() => { setReps({}); try { localStorage.removeItem(ARM_KEY); } catch (e) {} }}>Start again</button></div>
+    </div>
+  );
+}
+
+// ── 4. The posture checklist: every point, one by one, saved on this device ──
+const POSTURE_LIST = [
+  { g: 'Sitting', items: [
+    ['stool', 'Stool height: forearm level with the keys'], ['dist', 'Distance: elbows just in front of the body'],
+    ['front', 'Sitting on the front half of the stool'], ['feet', 'Feet flat (or on a footstool)'], ['back', 'Back tall, leaning slightly forward'], ['shoulders', 'Shoulders down and loose'],
+  ] },
+  { g: 'Arms', items: [
+    ['elbows', 'Elbows open -- a fist’s width from the body'], ['forearm', 'Forearm level, not sloping up or down'], ['wrist', 'Wrist level with the forearm (not dropped, not hunched)'],
+  ] },
+  { g: 'Hands', items: [
+    ['knuckles', 'Knuckles up -- a bridge'], ['curve', 'Fingers curved (holding a ball)'], ['tips', 'Playing on the fingertip pads'], ['nail', 'Tip joint firm, not caving in'], ['thumb', 'Thumb plays on its side corner'],
+  ] },
+  { g: 'Moving', items: [
+    ['carry', 'The arm carries the hand along the keys'], ['keep', 'The hand keeps its shape while moving'], ['loose', 'No tension -- the arm could wobble freely'],
+  ] },
+];
+const POSTURE_KEY = 'pb_posture_v1';
+function PostureChecklist() {
+  const [st, setSt] = useState(() => { try { return JSON.parse(localStorage.getItem(POSTURE_KEY)) || { marks: {}, history: [] }; } catch (e) { return { marks: {}, history: [] }; } });
+  const save = (ns) => { setSt(ns); try { localStorage.setItem(POSTURE_KEY, JSON.stringify(ns)); } catch (e) {} };
+  const all = POSTURE_LIST.flatMap(g => g.items.map(i => i[0]));
+  const cycle = (id) => { const v = st.marks[id]; const nv = v === 'ok' ? 'work' : v === 'work' ? undefined : 'ok'; const m = { ...st.marks }; if (nv) m[id] = nv; else delete m[id]; save({ ...st, marks: m }); };
+  const okN = all.filter(id => st.marks[id] === 'ok').length, workN = all.filter(id => st.marks[id] === 'work').length;
+  function finish() {
+    const d = new Date(); const day = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const h = [...(st.history || []).filter(x => x.day !== day), { day, ok: okN, of: all.length, work: all.filter(id => st.marks[id] === 'work') }].slice(-8);
+    save({ marks: {}, history: h });
+  }
+  const last = (st.history || [])[st.history.length - 1];
+  const label = (id) => POSTURE_LIST.flatMap(g => g.items).find(i => i[0] === id)[1].split(' -- ')[0].split(':')[0];
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>Posture check</div>
+        <span style={{fontSize:12,fontWeight:900,color:okN === all.length ? POS_GOOD : 'var(--muted)'}}>{okN}/{all.length} ✓{workN ? ' · ' + workN + ' to work on' : ''}</span>
+      </div>
+      <div style={actNote}>Go through it from the top: tap once for ✓, twice for “work on it”. A phone video from the side makes it easy to check.</div>
+      <div style={{height:6,borderRadius:3,background:'#e8dfcf',overflow:'hidden',display:'flex',marginBottom:8}}>
+        <div style={{width:(okN / all.length * 100) + '%',background:POS_GOOD,transition:'width 0.2s'}}/><div style={{width:(workN / all.length * 100) + '%',background:'#e0a33e',transition:'width 0.2s'}}/>
+      </div>
+      {POSTURE_LIST.map(g => (
+        <div key={g.g} style={{marginBottom:6}}>
+          <div style={{fontSize:11,fontWeight:900,letterSpacing:'0.08em',textTransform:'uppercase',color:'#a8823f',margin:'2px 0 3px'}}>{g.g}</div>
+          {g.items.map(([id, text]) => {
+            const v = st.marks[id];
+            return (
+              <button key={id} onClick={() => cycle(id)} style={{display:'flex',gap:8,alignItems:'center',width:'100%',textAlign:'left',background:v === 'ok' ? '#e6f2e8' : v === 'work' ? '#fbf0dc' : '#fff',border:'1.5px solid ' + (v === 'ok' ? POS_GOOD : v === 'work' ? '#e0a33e' : 'var(--border)'),borderRadius:8,padding:'6px 8px',marginBottom:3,cursor:'pointer',fontFamily:'inherit',fontSize:12.5,color:'var(--text)'}}>
+                <span style={{width:18,height:18,flex:'0 0 18px',borderRadius:9,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:900,color:'#fff',background:v === 'ok' ? POS_GOOD : v === 'work' ? '#e0a33e' : '#e8dfcf'}}>{v === 'ok' ? '✓' : v === 'work' ? '!' : ''}</span>
+                <span>{text}</span>
+              </button>
+            );
+          })}
+        </div>
+      ))}
+      <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:6}}>
+        <button className="ghost-btn" onClick={finish} disabled={!okN && !workN}>Save today’s check</button>
+      </div>
+      {last && <div style={{fontSize:12,background:'#fff',borderRadius:8,padding:'6px 8px',marginTop:8}}>
+        <b>Last check ({last.day}):</b> {last.ok}/{last.of} ✓{last.work.length ? <> · work on: {last.work.map(label).join(', ')}</> : null}
+        {st.history.length > 1 && <div style={{display:'flex',gap:3,alignItems:'flex-end',height:28,marginTop:4}}>{st.history.map((h, i) => <div key={i} title={h.day + ': ' + h.ok + '/' + h.of} style={{width:14,height:4 + 24 * h.ok / h.of,background:POS_GOOD,opacity:0.45 + 0.55 * (i + 1) / st.history.length,borderRadius:2}}/>)}</div>}
+      </div>}
+    </div>
+  );
+}
+
 const TOOLS = [
+  { id: 'sit-check', ch: 'first-steps', title: 'Set up the stool', blurb: 'Height and distance: forearm level, elbows open.', C: () => <SitCheck/> },
+  { id: 'hand-shape', ch: 'first-steps', title: 'The hand shape', blurb: 'Knuckle bridge, level wrist, fingertips -- and six faults.', C: () => <HandShape/> },
+  { id: 'arm-moves', ch: 'first-steps', title: 'Move with the whole arm', blurb: 'Six warm-up exercises with a rep counter.', C: () => <ArmExercises/> },
+  { id: 'posture-check', ch: 'first-steps', title: 'Posture check', blurb: '17-point checklist, saved with a history.', C: () => <PostureChecklist/> },
   { id: 'finger-numbers', ch: 'first-steps', title: 'Finger numbers', blurb: '“Show me finger 3!” -- both hands.', C: () => <FingerNumbers/> },
   { id: 'high-low', ch: 'first-steps', title: 'High or low, loud or soft', blurb: 'Listening games before reading.', C: () => <HighLowGame/> },
   { id: 'key-houses', ch: 'first-steps', title: 'Small house, big house', blurb: 'The black-key map; where C and F live.', C: () => <KeyHouses/> },
@@ -8617,7 +9079,7 @@ function LessonPath({ onOpen }) {
     </div>
   );
 }
-const PRACTICE_IDS = ['practice-timer', 'practice-dice', 'perfect-counter', 'sight-reading', 'echo', 'term-cards', 'make-card', 'count-along', 'metronome', 'find-every', 'write-note', 'fill-bar'];
+const PRACTICE_IDS = ['arm-moves', 'posture-check', 'practice-timer', 'practice-dice', 'perfect-counter', 'sight-reading', 'echo', 'term-cards', 'make-card', 'count-along', 'metronome', 'find-every', 'write-note', 'fill-bar'];
 function PracticeView({ onOpen }) {
   return (
     <div className="fade-up">
