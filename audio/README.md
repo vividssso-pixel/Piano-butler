@@ -9,3 +9,5 @@
   drills.html measures that point at load time and starts the file early by that much, so the
   spoken count lands exactly on the beat. To use your own recordings, replace these files
   (`.wav`, or `.mp3` with the same names); the timing adjusts itself.
+  Two more voices from the same model: `count/emma/` (`bf_emma`, British female) and
+  `count/michael/` (`am_michael`, male). The default voice stays in `count/` itself.
