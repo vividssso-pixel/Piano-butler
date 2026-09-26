@@ -3373,6 +3373,9 @@ function RhythmLearn({ onStart }) {
       <Step title="Harder rhythms: dots, semiquavers, triplets">
       <CountHarder/>
       </Step>
+      <Step title="Anacrusis: starting before beat 1">
+      <AnacrusisDemo/>
+      </Step>
       <Step title="Make your own">
       <RhythmComposer/>
       </Step>
@@ -4750,6 +4753,10 @@ Object.keys(MINOR_2OCT).forEach(k => {
     1: { offsets: minorOffsets('harmonic', 1), RH: oneOct(rh, 'RH'), LH: oneOct(lh, 'LH'), label: '1 octave' },
     2: { offsets: minorOffsets('harmonic', 2), RH: rh, LH: lh, label: '2 octaves' } } };
 });
+// G# harmonic minor, 1 octave LH: the mechanical carry-over from the 2-octave fingering ends on
+// finger 3, but Sohyun's book has the top note on finger 2 (3213 4321 2) -- confirmed directly,
+// 2026-09-27. Only the 1-octave form changes; the printed 2-octave fingering is unaffected.
+MINOR_SCALES['G#'].octaves[1].LH = [3, 2, 1, 4, 3, 2, 1, 2];
 const MINOR_PATH = ['A', 'E', 'D', 'G', 'C', 'B', 'F', 'F#', 'C#', 'G#', 'Bb', 'D#'];
 function scaleData(key, mode) { return mode === 'minor' ? MINOR_SCALES[key] : SCALES[key]; }
 
@@ -6662,6 +6669,9 @@ function StaffLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
     <Lesson id="staff" title="From the keyboard to the staff" intro={<>The staff is a map of the keyboard: going up the staff is going right on the piano.</>} onStart={onStart}>
+      <Step title="What is the staff?">
+      <StaffBasics/>
+      </Step>
       <Step title="Two staves, two clefs">
       {tip('Two staves, one piano', 'The treble clef (top) is usually the right hand and the higher notes; the bass clef (bottom) is usually the left hand. Together they make the grand staff, joined at middle C.')}
       <ClefStory/>
@@ -10270,6 +10280,100 @@ function ChromaticScale() {
   );
 }
 
+// ─── Phase 137: what a staff actually is, and anacrusis (pickup bars) ──────────────────
+// 1. "What is the staff?" -- the one thing every later staff activity assumes the student
+// already knows, and which nothing on the site had ever said in plain words.
+function StaffBasics() {
+  const [mode, setMode] = useState('lines'); // lines | spaces | both
+  const [tap, setTap] = useState(null);
+  const W = 300, top = dY(38) - 18, bot = dY(30) + 18;
+  const lineDs = [30, 32, 34, 36, 38]; // bottom line .. top line
+  const spaceDs = [31, 33, 35, 37]; // between the lines, bottom to top
+  function play(d) { playKey(dMidiKey(d), 0.3); setTap(d); }
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>What is the staff?</div>
+      <div style={actNote}>The staff (or stave) is <b>5 lines and 4 spaces</b>. We count both from the <b>bottom up</b>: line 1 is the lowest line, line 5 the highest; space 1 sits just above line 1. Every note sits either <b>on</b> a line or <b>in</b> a space -- never floating between them.</div>
+      <div style={{display:'flex',gap:4,marginBottom:8}}>
+        {[['lines', '5 lines'], ['spaces', '4 spaces'], ['both', 'On or in?']].map(([k, l]) => <button key={k} className={'chip' + (mode === k ? ' active' : '')} style={{padding:'3px 10px',fontSize:13}} onClick={() => { setMode(k); setTap(null); }}>{l}</button>)}
+      </div>
+      <div style={{background:'#fff',borderRadius:10,padding:'8px 6px'}}>
+        <svg viewBox={`0 ${top} ${W} ${bot - top}`} style={{width:'100%',maxWidth:420,display:'block',margin:'0 auto',touchAction:'manipulation'}}>
+          {lineDs.map(d => <line key={d} x1="10" x2={W - 10} y1={dY(d)} y2={dY(d)} stroke="#241f1a" strokeOpacity="0.6" strokeWidth="1.3"/>)}
+          {mode !== 'spaces' && lineDs.map((d, i) => (
+            <g key={'ln' + d} onClick={() => play(d)} style={{cursor:'pointer'}}>
+              <rect x="10" y={dY(d) - 3} width={W - 20} height="6" fill="transparent"/>
+              <circle cx={44 + i * 4} cy={dY(d)} r={tap === d ? 8 : 6.5} fill={tap === d ? '#b5483b' : '#a8823f'} opacity={tap === d ? 1 : 0.85}/>
+              <text x={44 + i * 4} y={dY(d) + 4} textAnchor="middle" fontSize="9" fontWeight="900" fill="#fff">{i + 1}</text>
+            </g>
+          ))}
+          {mode !== 'lines' && spaceDs.map((d, i) => (
+            <g key={'sp' + d} onClick={() => play(d)} style={{cursor:'pointer'}}>
+              <rect x="10" y={dY(d) - 3} width={W - 20} height="6" fill="transparent"/>
+              <ellipse cx={180 + i * 4} cy={dY(d)} rx={tap === d ? 9 : 7.5} ry={tap === d ? 6.5 : 5.5} fill={tap === d ? '#b5483b' : '#3f7fb5'} opacity={tap === d ? 1 : 0.85}/>
+              <text x={180 + i * 4} y={dY(d) + 4} textAnchor="middle" fontSize="9" fontWeight="900" fill="#fff">{i + 1}</text>
+            </g>
+          ))}
+        </svg>
+      </div>
+      <div style={{fontSize:13.5,margin:'8px 0'}}>
+        {mode === 'lines' && 'Tap a line, bottom to top: line 1, 2, 3, 4, 5.'}
+        {mode === 'spaces' && 'Tap a space, bottom to top: space 1, 2, 3, 4 -- each one sits between two lines.'}
+        {mode === 'both' && 'Lines and spaces alternate as you go up: line, space, line, space... Stepping to the very next note always crosses from a line to a space, or a space to a line.'}
+      </div>
+      <div style={{fontSize:12.5,color:'#5c544a',background:'#f7f2e8',borderRadius:8,padding:'6px 9px',lineHeight:1.5}}>Run out of lines? Short extra lines are added above or below just for that one note -- <b>ledger lines</b> (its own activity below). And there are two different staves, treble and bass, each read from its own clef -- also below.</div>
+    </div>
+  );
+}
+
+// 2. Anacrusis: a piece that starts before beat 1. The pickup notes "borrow" from the final
+// bar, so the incomplete first bar + the incomplete last bar together add up to one full bar.
+const ANACRUSIS_EX = [
+  { name: '"Happy Birthday" (3/4)', top: 3, bottom: 4, pickup: 1, bars: [[1], [1, 1, 1], [1, 1, 1], [1, 1, 1], [1, 1]], label: ['Pickup: 1 beat', 'Full bar', 'Full bar', 'Full bar', 'Last bar: 2 beats'] },
+  { name: 'A hymn-tune shape (4/4)', top: 4, bottom: 4, pickup: 2, bars: [[1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1]], label: ['Pickup: 2 beats', 'Full bar', 'Full bar', 'Last bar: 2 beats'] },
+  { name: 'A single-beat upbeat (2/4)', top: 2, bottom: 4, pickup: 1, bars: [[1], [1, 1], [1, 1], [1]], label: ['Pickup: 1 beat', 'Full bar', 'Full bar', 'Last bar: 1 beat'] },
+];
+function AnacrusisDemo() {
+  const [ex, setEx] = useState(0);
+  const [on, setOn] = useState([-1, -1]);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const E = ANACRUSIS_EX[ex];
+  function play() {
+    const ctx = getAudio(); if (!ctx) return; stopClicks(); timers.current.forEach(clearTimeout); timers.current = [];
+    const spb = 60 / 100, t0 = ctx.currentTime + 0.15;
+    let beat = 0;
+    E.bars.forEach((bar, bi) => bar.forEach((_, ni) => {
+      const tt = t0 + beat * spb;
+      blip(ctx, tt, beat === E.pickup ? 587.33 : 523.25, spb * 0.85, 0.2, 'triangle');
+      timers.current.push(setTimeout(() => setOn([bi, ni]), Math.max(0, (tt - ctx.currentTime) * 1000)));
+      beat++;
+    }));
+    timers.current.push(setTimeout(() => setOn([-1, -1]), beat * spb * 1000 + 300));
+  }
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Anacrusis: a piece that starts before beat 1</div>
+      <div style={actNote}>Some tunes don't start on beat 1 -- they start on the last beat or two of an imaginary bar. That short first bar is the <b>anacrusis</b> (also called a <b>pickup</b> or <b>upbeat</b>). It isn't a mistake: the <b>last</b> bar of the piece is shortened by exactly the same amount, so the pickup's missing beats and the final bar's leftover beats add up to one complete bar -- as if the very first and very last bars were cut from a single bar and taped to opposite ends of the piece.</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:8}}>{ANACRUSIS_EX.map((e, i) => <button key={i} className={'chip' + (i === ex ? ' active' : '')} style={{padding:'3px 10px',fontSize:13}} onClick={() => { setEx(i); setOn([-1, -1]); }}>{e.name}</button>)}</div>
+      <div style={{background:'#fff',borderRadius:10,padding:'10px 8px',display:'flex',gap:10,flexWrap:'wrap',justifyContent:'center'}}>
+        {E.bars.map((bar, bi) => (
+          <div key={bi} style={{textAlign:'center'}}>
+            <div style={{display:'flex',alignItems:'center',gap:4,marginBottom:4}}>
+              {bi === 0 && <TSig top={E.top} bottom={E.bottom} size={22}/>}
+              <div style={{display:'flex',gap:6,padding:'6px 8px',border:'2px solid ' + (bi === 0 || bi === E.bars.length - 1 ? '#a8823f' : '#dcd3c2'),borderRadius:8,background:bi === 0 || bi === E.bars.length - 1 ? '#fbf6ea' : '#fff'}}>
+                {bar.map((_, ni) => <div key={ni} onClick={() => playKey(60, 0.3)} style={{width:20,height:20,borderRadius:'50%',background:on[0] === bi && on[1] === ni ? '#b5483b' : '#241f1a',cursor:'pointer'}}/>)}
+              </div>
+            </div>
+            <div style={{fontSize:11,fontWeight:800,color:bi === 0 || bi === E.bars.length - 1 ? '#a8823f' : '#8a7f70'}}>{E.label[bi]}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{fontSize:13.5,margin:'8px 0'}}>Count silently through the missing beats before you start: for the {E.top}/{E.bottom} pickup above, think "{Array.from({length: E.top - E.pickup}, (_, i) => i + 1).join(', ')}" in your head, then come in on beat {E.top - E.pickup + 1}.</div>
+      <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={play}>♪ Play it</button></div>
+    </div>
+  );
+}
 const TOOLS = [
   { id: 'sit-check', ch: 'first-steps', title: 'Set up the stool', blurb: 'Height and distance: forearm level, elbows open.', C: () => <SitCheck/> },
   { id: 'hand-shape', ch: 'first-steps', title: 'The hand shape', blurb: 'Knuckle bridge, level wrist, fingertips -- and six faults.', C: () => <HandShape/> },
@@ -10291,6 +10395,7 @@ const TOOLS = [
   { id: 'step-skip', ch: 'reading-steps', title: 'Step, skip or same?', blurb: 'Read by direction and distance.', C: () => <StepSkip/> },
   { id: 'mini-tune', ch: 'reading-steps', title: 'Read a tiny tune', blurb: 'C position tunes with counting.', C: () => <MiniTune/> },
   { id: 'five-positions', ch: 'five-finger', title: 'Five-finger positions', blurb: 'C, G, middle C and F positions.', C: () => <FivePosition/> },
+  { id: 'minor-forms', ch: 'scales', title: 'Three kinds of minor', blurb: 'Natural, harmonic, melodic -- side by side on A minor.', C: () => <MinorFormsCard/> },
   { id: 'degree-names', ch: 'scales', title: 'Scale degree names', blurb: 'Tonic, supertonic... leading note.', C: () => <DegreeNames/> },
   { id: 'transpose', ch: 'key-signatures', title: 'Transpose a tune', blurb: 'Same scale degrees, new key.', C: () => <Transposer/> },
   { id: 'term-match', ch: 'terms', title: 'Term match', blurb: 'Memory pairs: term and meaning, spoken aloud.', C: () => <TermMatch/> },
@@ -10304,6 +10409,7 @@ const TOOLS = [
   { id: 'name-reveal', ch: 'note-names', title: 'Name them in order', blurb: 'Letters land on the keys; A comes after G.', C: () => <NameReveal/> },
   { id: 'step-updown', ch: 'note-names', title: 'Step up, step down', blurb: 'Right = up = forwards through the letters.', C: () => <UpDownWalk/> },
   { id: 'letter-chain', ch: 'note-names', title: 'Letter chain', blurb: 'Say the next letter out loud, in turns.', C: () => <LetterChainDrill/> },
+  { id: 'staff-basics', ch: 'staff', title: 'What is the staff?', blurb: '5 lines, 4 spaces -- counted from the bottom, tap to hear.', C: () => <StaffBasics/> },
   { id: 'clef-story', ch: 'staff', title: 'The Queen and the King (clefs)', blurb: 'Why the G clef and the F clef are called that.', C: () => <ClefStory/> },
   { id: 'staff-climb', ch: 'staff', title: 'Climb the staff', blurb: 'Line, space, line -- mirrored on the keyboard.', C: () => <StaffClimb/> },
   { id: 'rhymes', ch: 'staff', title: 'Line and space rhymes', blurb: 'Every Good Boy... tap by tap.', C: () => <MnemonicStaff/> },
@@ -10347,6 +10453,7 @@ const TOOLS = [
   { id: 'beat-doubler', ch: 'time-signatures', title: 'When the quaver is the beat', blurb: '8 on the bottom: every note doubles; count 6/8 as 1 to 6.', C: () => <BeatDoubler/> },
   { id: 'grouping', ch: 'time-signatures', title: 'Group the quavers', blurb: 'Which bar is beamed right for 2/4, 3/4, 4/4, 6/8?', C: () => <GroupingGame/> },
   { id: 'regroup', ch: 'time-signatures', title: '3/4 or 6/8?', blurb: 'Same six quavers, different beat.', C: () => <RegroupQuavers/> },
+  { id: 'anacrusis', ch: 'rhythm', title: 'Anacrusis (pickup bars)', blurb: 'A tune that starts before beat 1 -- and why the last bar is short too.', C: () => <AnacrusisDemo/> },
   { id: 'count-more', ch: 'rhythm', title: 'Count harder rhythms', blurb: 'Dotted notes, 1 e & a, triplets, syncopation.', C: () => <CountHarder/> },
   { id: 'make-card', ch: 'rhythm', title: 'Make a rhythm card', blurb: 'Build a bar and loop it.', C: () => <RhythmComposer/> },
   { id: 'metronome', ch: 'tempo', title: 'Metronome', blurb: 'Any time signature, triplets and semiquavers, 5/8 and 7/8, tap tempo.', C: () => <MetronomeDial/> },
@@ -10461,6 +10568,7 @@ const TOOL_CATS = [
 // cat, level range [from, to] (0 Beginner, 1 Prelim, 2 Grade 1–2, 3 Grade 3–4), kinds
 // kinds: show = show & explain, game = student does it, ear = listening, write = written theory, home = home practice
 const TOOL_META = {
+  'staff-basics': ['reading', 0, 1, 'show'], 'anacrusis': ['rhythm', 2, 3, 'show'], 'minor-forms': ['scales', 1, 2, 'show'],
   'count-more': ['rhythm', 2, 4, 'show game'], 'grouping': ['rhythm', 2, 4, 'game write'], 'pedal': ['expression', 2, 4, 'show ear'],
   'ornaments': ['words', 3, 4, 'show ear'], 'chromatic': ['scales', 2, 4, 'show'],
   'sit-check': ['body', 0, 3, 'show'], 'hand-shape': ['body', 0, 3, 'show'], 'arm-moves': ['body', 0, 3, 'home game'], 'posture-check': ['body', 0, 3, 'home'],
