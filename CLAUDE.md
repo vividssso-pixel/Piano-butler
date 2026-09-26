@@ -3016,6 +3016,19 @@ Sohyun: grow the metronome -- split a beat into triplets, choose time signatures
 | 2 | Tap the right beat | `BeatTarget`, `btRound` (Pulse chapter new step 2 + TOOLS `beat-target`, also in Practice) | 1 bar count-in, 2 bars to play; tap only where told. Levels: one beat / two beats / the "and" / silent bars (clicks stop after the count-in). 2/4 3/4 4/4, three speeds. Target circles ringed; each tap flashes green/red; result: hits, extra taps, average early/late ms; perfect-round counter. Scored on the audio clock with speaker latency, pointerdown + space bar. Playwright: exact taps on every level → "Perfect!". |
 | 3 | Verification | -- | 81 tools / 21 chapters load with zero page errors. |
 
+### Phase 130 -- 6/8 counted 1 2 3 4 5 6; "8 on the bottom: everything doubles" (2026-09-26)
+
+Sohyun: count 6/8 as 1 2 3 4 5 6, also in the Time Signatures lessons; teach that with the quaver as the beat a crotchet is 2 beats -- the values double.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | New lesson step "When the quaver is the beat" | `BeatDoubler`, `DOUBLE_ROWS`, `EIGHT_BARS` (Time Signatures step 3 + TOOLS `beat-doubler`) | Rule: 8 on the bottom -> quaver = 1 beat, crotchet 2, dotted crotchet 3, minim 4, dotted minim 6. "4 on the bottom / 8 on the bottom" toggle re-numbers five note cards (½ 1 1½ 2 3 -> 1 2 3 4 6, "× 2 -- everything doubles"). Then four 6/8 bars counted 1-6 (bold = note starts, grey = held), played with the count lit (voice mode says 1-6). |
+| 2 | 6/8 counted in quavers everywhere | `TIME_SIGS` text, `BeatPulse` (1 2 3 4 5 6, voice), `RegroupQuavers` ("1 2 3 · 4 5 6"), `TimeSigLearn` rows ("6 × quaver beats, in groups of 3") and Compound step text (1 and 4 strongest; groups of three = dotted crotchets = compound duple when fast) | |
+| 3 | Drill | `TIMESIG_LEVELS`, `genTimeSigQuestion`, `TimeSigQuestion` | Meaning: 6/8 = "6 quaver beats". New level 4 "In 8 time, how many beats is it?" (3/8, 6/8, 9/8, 12/8 × quaver/crotchet/dotted crotchet/minim/dotted minim). Level 5 is now "Simple or compound?" (simple/compound × duple/triple/quadruple). |
+| 4 | Metronome | `meterGrid` (cmode), `MetronomeDial` | 6/8, 9/8, 12/8 default to "Every quaver: 1 2 3 4 5 6" (speed in quavers, 1 and 4 accented, split into semiquavers optional); "In dotted crotchets (fast)" keeps the old behaviour. |
+| 5 | Tap the right beat | `BeatTarget` | 6/8 option: six quaver beats counted 1-6 (the "and" level hidden). |
+| 6 | Verification | -- | 82 tools / 21 chapters load with zero page errors; time-signature generators fuzzed, 0 bad questions. |
+
 Next on the plan: more mini tools (Sohyun's rule: every activity stand-alone + in TOOLS). Ideas: sight-reading flash cards, a practice-dice/timer tool, scale degree names (tonic, supertonic...), transposition. Signs 116, Chords 117, Toolbox 118, Grade 3 intervals + cadences 119 done.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
