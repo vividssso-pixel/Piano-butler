@@ -1764,14 +1764,27 @@ function saveSoundPrefs(p) { SOUND = p; try { localStorage.setItem(SOUND_KEY, JS
 const PIANO_FILES = [];
 [2, 3, 4, 5, 6].forEach(o => [['C', 0], ['Ds', 3], ['Fs', 6], ['A', 9]].forEach(([n, pc]) => PIANO_FILES.push({ name: n + o, midi: (o + 1) * 12 + pc })));
 PIANO_FILES.push({ name: 'C7', midi: 96 }); PIANO_FILES.push({ name: 'A1', midi: 33 });
-const _piano = { buf: {}, started: false };
+const _piano = { buf: {}, on: {}, started: false };
+// Where the sound really starts in a decoded file (mp3 encoders add ~25-50 ms of silence at the front).
+// frac 0.05 = the attack (piano); 0.5 = the loud part of a spoken word (its "beat point" -- the vowel).
+function onsetOf(buf, frac) {
+  // Loudness (RMS) in 20 ms windows every 2 ms; the onset is the first window above frac x the loudest.
+  const d = buf.getChannelData(0), sr = buf.sampleRate, win = Math.round(sr * 0.02), hop = Math.round(sr * 0.002);
+  const lim = Math.min(d.length, Math.round(sr * 1.2)), env = [];
+  for (let i = 0; i + win <= lim; i += hop) { let e = 0; for (let j = i; j < i + win; j += 2) e += d[j] * d[j]; env.push(Math.sqrt(e / (win / 2))); }
+  const mx = Math.max(0, ...env); if (!mx) return 0;
+  const k = env.findIndex(e => e >= mx * frac);
+  return k <= 0 ? 0 : (k * hop + win / 2) / sr;
+}
+// How long after it is scheduled a sound actually comes out of the speaker.
+function outLatency(ctx) { return Math.min(0.3, (ctx && (ctx.outputLatency || ctx.baseLatency)) || 0); }
 function loadPiano(ctx) {
   if (_piano.started || !ctx || typeof fetch === 'undefined') return;
   _piano.started = true;
   PIANO_FILES.forEach(f => {
     fetch('audio/piano/' + f.name + '.mp3').then(r => r.ok ? r.arrayBuffer() : Promise.reject())
       .then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej)))
-      .then(b => { _piano.buf[f.midi] = b; }).catch(() => {});
+      .then(b => { _piano.on[f.midi] = onsetOf(b, 0.05); _piano.buf[f.midi] = b; }).catch(() => {});
   });
 }
 function pianoNote(ctx, t, freq, len, vol) {
@@ -1789,7 +1802,7 @@ function pianoNote(ctx, t, freq, len, vol) {
     const near = loaded.reduce((b, m) => Math.abs(m - midi) < Math.abs(b - midi) ? m : b, loaded[0]);
     const src = ctx.createBufferSource();
     src.buffer = _piano.buf[near]; src.playbackRate.value = Math.pow(2, (midi - near) / 12);
-    src.connect(filt); src.start(t); src.stop(end + 0.3);
+    src.connect(filt); src.start(t, _piano.on[near] || 0); src.stop(end + 0.3);
     _clickNodes.push(src);
     return;
   }
@@ -1803,13 +1816,14 @@ function pianoNote(ctx, t, freq, len, vol) {
   });
 }
 // Count voice.
-const _count = { buf: {}, started: false };
+const _count = { buf: {}, on: {}, started: false, last: null };
 const COUNT_WORDS = ['1', '2', '3', '4', '5', '6', '7', '8', 'and'];
 function loadCount(ctx) {
   if (_count.started || !ctx || typeof fetch === 'undefined') return;
   _count.started = true;
-  COUNT_WORDS.forEach(w => fetch('audio/count/' + w + '.mp3').then(r => r.ok ? r.arrayBuffer() : Promise.reject())
-    .then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej))).then(b => { _count.buf[w] = b; }).catch(() => {}));
+  const get = (w, ext) => fetch('audio/count/' + w + ext).then(r => r.ok ? r.arrayBuffer() : Promise.reject());
+  COUNT_WORDS.forEach(w => get(w, '.wav').catch(() => get(w, '.mp3'))
+    .then(ab => new Promise((res, rej) => ctx.decodeAudioData(ab, res, rej))).then(b => { _count.on[w] = onsetOf(b, 0.4); _count.buf[w] = b; }).catch(() => {}));
 }
 let _speechTimers = [];
 function pickVoice() {
@@ -1820,8 +1834,16 @@ function pickVoice() {
 }
 function sayCount(ctx, when, word, vol = 1) {
   if (_count.buf[word]) {
-    const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = _count.buf[word]; g.gain.value = vol;
-    s.connect(g); g.connect(ctx.destination); s.start(when); _clickNodes.push(s); return true;
+    // Line up the word's vowel (where the ear hears the beat) with the beat, not the start of the file.
+    const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = _count.buf[word];
+    const lead = _count.on[word] || 0, at = when - lead, now = ctx.currentTime;
+    g.gain.setValueAtTime(vol, Math.max(now, at));
+    s.connect(g); g.connect(ctx.destination);
+    if (at >= now) s.start(at); else s.start(now, now - at);
+    // A fast count: cut the previous word off just before this one comes in.
+    if (_count.last && _count.last.at < at) { try { _count.last.g.gain.setTargetAtTime(0, Math.max(now, at - 0.02), 0.012); } catch (e) {} }
+    _count.last = { g, at };
+    _clickNodes.push(s); return true;
   }
   try {
     if (!window.speechSynthesis) return false;
@@ -1856,7 +1878,7 @@ let _audioCtx = null;
 let _clickNodes = [];
 function stopClicks() {
   _clickNodes.forEach(o => { try { o.stop(); } catch (e) {} });
-  _clickNodes = [];
+  _clickNodes = []; _count.last = null;
   try { _speechTimers.forEach(clearTimeout); _speechTimers = []; if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
 }
 function playClicks(bpm, count) {
@@ -7429,22 +7451,42 @@ function SteadyBeat() {
   const [run, setRun] = useState(false);
   const [beat, setBeat] = useState(-1);
   const [taps, setTaps] = useState([]);
-  const start = useRef(0);
+  const clock = useRef(null); // { ctx, t0, spb, lat } -- beats are scheduled on the audio clock, not a timer
   useEffect(() => {
     if (!run) return;
-    let n = 0; start.current = performance.now(); setTaps([]);
-    const tick = () => { const ctx = getAudio(); if (ctx) beatTick(ctx, ctx.currentTime + 0.01, n % 4, 110, 0.12, 0.35, 'sine'); setBeat(n % 4); n++; };
-    tick(); const iv = setInterval(tick, 60000 / bpm);
-    return () => { clearInterval(iv); setBeat(-1); };
+    const ctx = getAudio(); if (!ctx) return;
+    stopClicks(); setTaps([]);
+    const spb = 60 / bpm, t0 = ctx.currentTime + 0.1, lat = outLatency(ctx);
+    clock.current = { ctx, t0, spb, lat };
+    let n = 0, alive = true; const vis = [];
+    // Look-ahead scheduler: every 50 ms, book any beat due in the next 0.2 s at its exact time.
+    const pump = () => {
+      while (alive && t0 + n * spb < ctx.currentTime + 0.2) {
+        const t = t0 + n * spb, b = n % 4;
+        beatTick(ctx, t, b, 110, 0.12, 0.35, 'sine');
+        blip(ctx, t, b === 0 ? 1800 : 1400, 0.012, 0.08, 'square'); // a crisp edge on the heartbeat so the beat point is clear
+        vis.push(setTimeout(() => alive && setBeat(b), Math.max(0, (t + lat - ctx.currentTime) * 1000)));
+        n++;
+      }
+    };
+    pump(); const iv = setInterval(pump, 50);
+    return () => { alive = false; clearInterval(iv); vis.forEach(clearTimeout); stopClicks(); clock.current = null; setBeat(-1); };
   }, [run, bpm]);
   function tap() {
-    if (!run) return;
-    const t = performance.now() - start.current, ms = 60000 / bpm;
-    const off = ((t + ms / 2) % ms) - ms / 2; // + late, - early
+    const c = clock.current; if (!run || !c) return;
+    // When the tap happened, against when each beat reached the ear (scheduled time + speaker latency).
+    const t = c.ctx.currentTime - (c.t0 + c.lat);
+    const off = (((t + c.spb / 2) % c.spb) - c.spb / 2) * 1000; // + late, - early (ms)
     setTaps(x => [...x.slice(-7), off]);
   }
-  const avg = taps.length ? taps.reduce((a, b) => a + b, 0) / taps.length : 0;
-  const verdict = taps.length < 3 ? 'Tap along with the heartbeat…' : Math.abs(avg) < 70 ? 'Right on the beat!' : avg < 0 ? 'A little early -- wait for it.' : 'A little late -- listen ahead.';
+  useEffect(() => {
+    if (!run) return;
+    const onKey = (e) => { if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); tap(); } };
+    window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey);
+  }, [run, bpm]);
+  const recent = taps.slice(-4);
+  const avg = recent.length ? recent.reduce((a, b) => a + b, 0) / recent.length : 0;
+  const verdict = taps.length < 3 ? 'Tap along with the heartbeat…' : Math.abs(avg) < 80 ? 'Right on the beat!' : avg < 0 ? 'A little early -- wait for it.' : 'A little late -- listen ahead.';
   return (
     <div className="try-box" style={actBox}>
       <div style={actTitle}>The steady beat</div>
@@ -7463,9 +7505,11 @@ function SteadyBeat() {
       <div style={{textAlign:'center',fontSize:12,color:'var(--muted)',marginBottom:6}}>{bpm} beats a minute</div>
       <div style={{display:'flex',gap:6,justifyContent:'center'}}>
         <button className="ghost-btn" onClick={() => setRun(r => !r)}>{run ? '■ Stop' : '▶ Start'}</button>
-        <button className="ghost-btn" disabled={!run} onClick={tap} style={{minWidth:110,fontWeight:900}}>Tap</button>
+        <button className="ghost-btn" disabled={!run} onPointerDown={(e) => { e.preventDefault(); tap(); }} style={{minWidth:110,fontWeight:900,touchAction:'manipulation'}}>Tap</button>
       </div>
-      {run && <div style={{textAlign:'center',fontSize:13,fontWeight:800,marginTop:6,color:taps.length >= 3 && Math.abs(avg) < 70 ? '#4f7a45' : 'var(--text)'}}>{verdict}</div>}
+      {run && <div style={{textAlign:'center',fontSize:13,fontWeight:800,marginTop:6,color:taps.length >= 3 && Math.abs(avg) < 80 ? '#4f7a45' : 'var(--text)'}}>{verdict}</div>}
+      {run && taps.length > 0 && <div style={{display:'flex',justifyContent:'center',gap:3,marginTop:4}}>{taps.map((o, i) => <span key={i} title={Math.round(o) + ' ms'} style={{width:8,height:8,borderRadius:4,background:Math.abs(o) < 80 ? '#4f7a45' : o < 0 ? '#3f7fb5' : '#b5483b',opacity:0.4 + 0.6 * (i + 1) / taps.length}}/>)}</div>}
+      {run && <div style={{textAlign:'center',fontSize:11,color:'var(--muted)',marginTop:4,lineHeight:1.4}}>Tap the button or press the space bar. Wired headphones or the device speaker work best -- Bluetooth adds a delay.</div>}
     </div>
   );
 }
@@ -7482,28 +7526,41 @@ function CountAloud() {
   const [id, setId] = useState('q');
   const bar = COUNT_BARS.find(b => b.id === id);
   const [pos, setPos] = useState(-1); // half-beat index 0..7
+  const [ands, setAnds] = useState(false); // count "1 2 3 4", or "1 and 2 and"
+  const useAnd = ands || id === 'e'; // quavers can't be counted without the "and"
   const timers = useRef([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   const onsets = []; bar.notes.reduce((t, d) => { onsets.push(t); return t + d; }, 0);
   function play() {
     timers.current.forEach(clearTimeout); timers.current = [];
     const ctx = getAudio(); if (!ctx) return;
-    const spb = 60 / 76, t0 = ctx.currentTime + 0.1;
+    stopClicks();
+    const spb = 60 / 76, t0 = ctx.currentTime + 0.15, lat = outLatency(ctx);
+    const at = (t) => Math.max(0, (t + lat - ctx.currentTime) * 1000); // when the ear hears time t
     bar.notes.forEach((d, i) => blip(ctx, t0 + onsets[i] * spb, 523.25, d * spb * 0.9, 0.17, 'triangle'));
-    for (let h = 0; h < 8; h++) { if (h % 2 === 0) beatTick(ctx, t0 + h / 2 * spb, h / 2, h === 0 ? 1400 : 1000, 0.03, 0.05, 'square'); else if (SOUND.count === 'voice') sayCount(ctx, t0 + h / 2 * spb, 'and', 0.6); timers.current.push(setTimeout(() => setPos(h), (0.1 + h / 2 * spb) * 1000)); }
-    timers.current.push(setTimeout(() => setPos(-1), (0.1 + 4 * spb) * 1000 + 200));
+    for (let h = 0; h < 8; h++) {
+      const t = t0 + h / 2 * spb;
+      if (h % 2 === 0) beatTick(ctx, t, h / 2, h === 0 ? 1400 : 1000, 0.03, 0.05, 'square');
+      else if (useAnd && SOUND.count === 'voice') sayCount(ctx, t, 'and', 0.6);
+      if (h % 2 === 0 || useAnd) timers.current.push(setTimeout(() => setPos(h), at(t)));
+    }
+    timers.current.push(setTimeout(() => setPos(-1), at(t0 + 4 * spb) + 200));
   }
   const words = ['1', 'and', '2', 'and', '3', 'and', '4', 'and'];
   const isOnset = (h) => onsets.some(o => Math.abs(o - h / 2) < 1e-9);
   const items = bar.notes.map(d => d === 0.5 ? NV_NOTES[3] : d === 1 ? NV_NOTES[2] : d === 2 ? NV_NOTES[1] : d === 3 ? NV_DOTTED[0] : NV_NOTES[0]);
   return (
     <div className="try-box" style={actBox}>
-      <div style={actTitle}>Count it: 1 and 2 and</div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
+        <div style={actTitle}>Count it: {useAnd ? '1 and 2 and' : '1 2 3 4'}</div>
+        <div style={{display:'flex',gap:3}}>{[[false, '1 2 3 4'], [true, '1 and 2 and']].map(([v, l]) => <button key={l} className={'chip' + (useAnd === v ? ' active' : '')} disabled={id === 'e' && !v} style={{padding:'2px 8px',fontSize:11,opacity:id === 'e' && !v ? 0.45 : 1}} onClick={() => { setAnds(v); setPos(-1); }}>{l}</button>)}</div>
+      </div>
       <div style={actNote}>Say the count out loud all the way through the bar. Where a note starts, the count is <b>bold</b>; while a long note is still held, keep counting quietly -- those counts are grey.</div>
       <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>{COUNT_BARS.map(b => <button key={b.id} className={'chip' + (b.id === id ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => { setId(b.id); setPos(-1); }}>{b.title}</button>)}</div>
       <BeatRow items={items} total={4} on={pos >= 0 ? onsets.filter(o => o <= pos / 2 + 1e-9).length - 1 : -1} size={40}/>
+      {id === 'e' && !ands && <div style={{fontSize:11.5,color:'var(--muted)',marginTop:8,lineHeight:1.4}}>Quavers are half a beat, so they need the “and” -- two quavers = “1 and”.</div>}
       <div style={{display:'grid',gridTemplateColumns:'repeat(8,1fr)',marginTop:6}}>
-        {words.map((w, h) => (
+        {words.map((w, h) => !useAnd && w === 'and' ? <div key={h}/> : (
           <div key={h} style={{textAlign:'center',fontSize:w === 'and' ? 12 : 17,fontWeight:isOnset(h) ? 900 : 600,color:pos === h ? '#b5483b' : isOnset(h) ? 'var(--text)' : '#c7bca8',transform:pos === h ? 'scale(1.25)' : 'none',transition:'transform 0.08s'}}>{w}</div>
         ))}
       </div>
@@ -7515,11 +7572,11 @@ function PulseLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
     <Lesson id="pulse" title="Pulse and counting" onStart={onStart}
-      intro={<>Before reading notes, feel the beat. Every rhythm is counted against a steady pulse: 1 and 2 and 3 and 4 and.</>}>
+      intro={<>Before reading notes, feel the beat. Every rhythm is counted against a steady pulse: 1 2 3 4 -- and once quavers arrive, 1 and 2 and 3 and 4 and.</>}>
       <Step title="Feel the pulse">
         <SteadyBeat/>
       </Step>
-      <Step title="Count 1 and 2 and">
+      <Step title="Count out loud">
         {tip('Long and short notes', 'A crotchet lasts one beat, a minim two, a dotted minim three, a semibreve four. Two quavers share one beat: “1 and”.')}
         <CountAloud/>
       </Step>
@@ -8440,7 +8497,7 @@ const TOOLS = [
   { id: 'key-houses', ch: 'first-steps', title: 'Small house, big house', blurb: 'The black-key map; where C and F live.', C: () => <KeyHouses/> },
   { id: 'black-key-song', ch: 'first-steps', title: 'First black-key song', blurb: 'Hot Cross Buns and Mary, by rote.', C: () => <BlackKeySong/> },
   { id: 'steady-beat', ch: 'pulse', title: 'The steady beat', blurb: 'A heartbeat pulse to tap along with.', C: () => <SteadyBeat/> },
-  { id: 'count-aloud', ch: 'pulse', title: 'Count it: 1 and 2 and', blurb: 'The count lights up as the bar plays.', C: () => <CountAloud/> },
+  { id: 'count-aloud', ch: 'pulse', title: 'Count it out loud', blurb: '1 2 3 4, or 1 and 2 and -- lights up as the bar plays.', C: () => <CountAloud/> },
   { id: 'step-skip', ch: 'reading-steps', title: 'Step, skip or same?', blurb: 'Read by direction and distance.', C: () => <StepSkip/> },
   { id: 'mini-tune', ch: 'reading-steps', title: 'Read a tiny tune', blurb: 'C position tunes with counting.', C: () => <MiniTune/> },
   { id: 'five-positions', ch: 'five-finger', title: 'Five-finger positions', blurb: 'C, G, middle C and F positions.', C: () => <FivePosition/> },
