@@ -2967,6 +2967,19 @@ Sohyun's feedback: taps had to be early to count as on time; metronome, spoken c
 | 4 | Count it: "1 2 3 4" or "1 and 2 and" | `CountAloud`, Pulse chapter | Toggle, default "1 2 3 4"; Quavers forces "1 and 2 and" (with a one-line why). Step renamed "Count out loud"; chapter intro now says "1 2 3 4 -- and once quavers arrive, 1 and 2 and". Pending Sohyun's call on which default she wants. |
 | 5 | Verification | -- | All 70 tool URLs and 19 chapters load with zero page errors. |
 
+### Phase 126 -- "Sit and shape your hands" broken down into four visual steps (2026-09-26)
+
+Sohyun: break the first step down, show it visually -- wrist height, open elbows, knuckle hand shape held while the whole arm moves -- with exercises, and make it systematically checkable.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Set up the stool | `SitCheck`, `SeatedFigure`, `sitPose`, `FrontArms`; TOOLS `sit-check` | Side-view figure at an upright piano; Height and Distance sliders + 5 presets (just right / too low / too high / too close / too far). The arm is a 2-joint reach to the keys, so the body really follows the stool. Live checks: feet flat, forearm level with the keys (slope -7..12°), elbows just in front of the body, arms not stretched -- each ✗ says what to change. Front view: elbow-gap slider (squashed / open, a fist's width / chicken wings). |
+| 2 | The hand shape | `HandShape`, `HandSide`, `HAND_POSES`; TOOLS `hand-shape` | One finger on a key from the side, drawn tip → nail joint → middle → knuckle → wrist → forearm. Good shape + 5 faults (flat fingers, knuckles collapsed, nail joint caving in, wrist dropped, wrist too high), animated between; knuckle / wrist / tip markers turn red when wrong; each fault has what you see + the fix (pointing to the exercise). |
+| 3 | Move with the whole arm | `ArmExercises` + `ExRagDoll`, `ExBridge`, `ExGlide`, `ExWings`, `ExBalloon`, `ExDrop`; TOOLS `arm-moves` (also Practice) | Six looping animations: rag doll, knuckle bridge (fingers 1-5 lift, knuckle line stays), arm glide (top view, same hand shape carried C to C, elbow leads), elbow wings, wrist balloon, arm drop. Steps + "watch for" + rep dots (+1/−1), saved in `pb_arm_ex_v1`. |
+| 4 | Posture check | `PostureChecklist`; TOOLS `posture-check` (also Practice) | 17 points in 4 groups (Sitting, Arms, Hands, Moving); tap = ✓, again = "work on it"; progress bar; "Save today's check" keeps the last 8 checks (`pb_posture_v1`) with a mini history bar and the items to work on. |
+| 5 | Chapter | `FirstStepsLearn` | Step 1 became 4 steps (Sit at the piano, The hand shape, Move with the whole arm, Posture check); chapter now 8 steps. Lesson "Got it" marks are stored by step index, so earlier marks in this chapter shift by 3 (only affects anyone who had ticked them). |
+| 6 | Verification | -- | All 74 tool URLs and 19 chapters load with zero page errors; screenshots of every preset, fault and exercise checked at phone width. |
+
 Next on the plan: more mini tools (Sohyun's rule: every activity stand-alone + in TOOLS). Ideas: sight-reading flash cards, a practice-dice/timer tool, scale degree names (tonic, supertonic...), transposition. Signs 116, Chords 117, Toolbox 118, Grade 3 intervals + cadences 119 done.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
