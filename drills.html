@@ -10082,8 +10082,31 @@ const PROBLEMS = [
 ];
 // Kits: a named set of tools for one student (or one lesson), saved on this device, sent as one link.
 const KITS_KEY = 'pb_kits_v1';
-function loadKits() { try { return JSON.parse(localStorage.getItem(KITS_KEY)) || []; } catch (e) { return []; } }
+function loadKits() {
+  try {
+    const k = JSON.parse(localStorage.getItem(KITS_KEY)) || [];
+    return k.map((x, i) => x.id ? x : { ...x, id: 's' + i + '_' + Date.now().toString(36), done: x.done || {}, notes: x.notes || '', group: x.group || '' });
+  } catch (e) { return []; }
+}
 function saveKits(k) { try { localStorage.setItem(KITS_KEY, JSON.stringify(k)); } catch (e) {} }
+const WHO_KEY = 'pb_who_v1';
+function loadWho(kits) { try { const id = localStorage.getItem(WHO_KEY); const i = kits.findIndex(k => k.id === id); return i >= 0 ? i : (kits.length ? 0 : -1); } catch (e) { return kits.length ? 0 : -1; } }
+function saveWho(kits, i) { try { if (kits[i]) localStorage.setItem(WHO_KEY, kits[i].id); } catch (e) {} }
+function newStudentObj(name, group, notes) { return { id: 's' + Date.now().toString(36) + Math.floor(Math.random() * 1000), name: (name || 'Student').trim().slice(0, 40), group: group || '', notes: notes || '', tools: [], done: {}, created: new Date().toISOString().slice(0, 10) }; }
+// A small inline "add a name" field (browser prompt() doesn't work inside embedded previews).
+function AddName({ onAdd, label = '+ Student', placeholder = 'Student’s name' }) {
+  const [open, setOpen] = useState(false);
+  const [v, setV] = useState('');
+  if (!open) return <button className="chip" style={{padding:'2px 9px',fontSize:11}} onClick={() => setOpen(true)}>{label}</button>;
+  const go = () => { if (v.trim()) onAdd(v.trim()); setV(''); setOpen(false); };
+  return (
+    <span style={{display:'inline-flex',gap:4,alignItems:'center'}}>
+      <input autoFocus value={v} onChange={e => setV(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') go(); if (e.key === 'Escape') setOpen(false); }} placeholder={placeholder} style={{width:130,padding:'3px 8px',borderRadius:10,border:'1.5px solid #a8823f',fontSize:12,fontFamily:'inherit'}}/>
+      <button className="chip active" style={{padding:'2px 9px',fontSize:11}} onClick={go}>Add</button>
+      <button className="chip" style={{padding:'2px 7px',fontSize:11}} onClick={() => setOpen(false)}>✕</button>
+    </span>
+  );
+}
 function kitLink(kit) { const q = '?kit=' + kit.tools.join(',') + '&kn=' + encodeURIComponent(kit.name) + '&lock=1'; try { return location.origin + location.pathname + q; } catch (e) { return q; } }
 function ToolCard({ t, color, starred, onStar, onOpen }) {
   const m = toolMeta(t.id);
@@ -10100,28 +10123,25 @@ function ToolCard({ t, color, starred, onStar, onOpen }) {
     </div>
   );
 }
-function Toolbox({ onOpen, onOpenKit }) {
+function Toolbox({ onOpen, onOpenKit, onStudents }) {
   const [q, setQ] = useState('');
   const [lv, setLv] = useState(-1);
   const [kind, setKind] = useState('all');
   const [prob, setProb] = useState(-1);
   const [showProb, setShowProb] = useState(false);
   const [kits, setKits] = useState(loadKits);
-  const [kitIdx, setKitIdx] = useState(() => (loadKits().length ? 0 : -1));
+  const [kitIdx, setKitIdx0] = useState(() => loadWho(loadKits()));
+  const setKitIdx = (i) => { setKitIdx0(i); saveWho(kits, i); };
   const [copied, setCopied] = useState(false);
   const kit = kits[kitIdx] || null;
   const upd = (nk) => { setKits(nk); saveKits(nk); };
-  function newKit() {
-    const name = (typeof prompt === 'function' ? prompt('Name this kit (e.g. a student’s name):', 'Student ' + (kits.length + 1)) : null) || ('Kit ' + (kits.length + 1));
-    const nk = [...kits, { name: name.slice(0, 40), tools: [] }]; upd(nk); setKitIdx(nk.length - 1);
-  }
+  function newKit(name) { const nk = [...kits, newStudentObj(name)]; upd(nk); setKitIdx0(nk.length - 1); saveWho(nk, nk.length - 1); }
   function star(id) {
     let nk = kits, i = kitIdx;
-    if (!kit) { nk = [...kits, { name: 'My kit', tools: [] }]; i = nk.length - 1; setKitIdx(i); }
+    if (!kit) { nk = [...kits, newStudentObj('My kit')]; i = nk.length - 1; setKitIdx0(i); saveWho(nk, i); }
     nk = nk.map((k, j) => j !== i ? k : { ...k, tools: k.tools.includes(id) ? k.tools.filter(x => x !== id) : [...k.tools, id] });
     upd(nk);
   }
-  function removeKit() { if (!kit) return; if (typeof confirm === 'function' && !confirm('Delete the kit “' + kit.name + '”?')) return; const nk = kits.filter((_, j) => j !== kitIdx); upd(nk); setKitIdx(nk.length ? 0 : -1); }
   function copyKit() { if (!kit) return; try { navigator.clipboard.writeText(kitLink(kit)).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }, () => {}); } catch (e) {} }
   const words = q.toLowerCase().split(/\s+/).filter(Boolean);
   const pset = prob >= 0 ? PROBLEMS[prob][1] : null;
@@ -10160,7 +10180,7 @@ function Toolbox({ onOpen, onOpenKit }) {
       <div className="card" style={{marginBottom:12,padding:'12px 14px'}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
           <b style={{fontSize:14}}>Student kits</b>
-          <button className="chip" style={{padding:'2px 9px',fontSize:11}} onClick={newKit}>+ New kit</button>
+          <AddName onAdd={newKit}/>
         </div>
         {!kits.length ? <div style={{fontSize:12,color:'var(--muted)',lineHeight:1.5}}>Make a kit for each student: tap ☆ on the tools they need this week. Open the kit in the lesson, or send it as one link.</div> : <>
           <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6}}>{kits.map((k, i) => chip(i === kitIdx, k.name + ' (' + k.tools.length + ')', () => setKitIdx(i), 'kit' + i))}</div>
@@ -10170,7 +10190,7 @@ function Toolbox({ onOpen, onOpenKit }) {
           {kit && <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:8}}>
             <button className="ghost-btn" style={{fontSize:12,padding:'5px 10px'}} disabled={!kit.tools.length} onClick={() => onOpenKit(kit)}>Open kit</button>
             <button className="ghost-btn" style={{fontSize:12,padding:'5px 10px'}} disabled={!kit.tools.length} onClick={copyKit}>{copied ? 'Link copied ✓' : 'Copy student link'}</button>
-            <button className="ghost-btn" style={{fontSize:12,padding:'5px 10px',marginLeft:'auto'}} onClick={removeKit}>Delete</button>
+            {onStudents && <button className="ghost-btn" style={{fontSize:12,padding:'5px 10px',marginLeft:'auto'}} onClick={onStudents}>Manage students</button>}
           </div>}
         </>}
       </div>
@@ -10311,18 +10331,84 @@ const EXAM_LADDER = [
   { name: 'Grade 1–2', ids: ['scales', 'key-signatures', 'intervals', 'chords', 'signs', 'terms'] },
   { name: 'Grade 3–4', ids: ['intervals', 'chords', 'time-signatures', 'terms', 'piano-story'] },
 ];
-function PlanView({ onOpenTool, onOpenChapter, onOpenKit, onAllChapters }) {
+// ── Students: add, rename, notes, starting group, delete; progress at a glance ──
+function StudentsView({ onPlan, onOpenKit }) {
   const [kits, setKits] = useState(loadKits);
-  const [who, setWho] = useState(() => (loadKits().length ? 0 : -1));
-  const [mix, setMix] = useState(null);
+  const [edit, setEdit] = useState(null); // id being edited
+  const [draft, setDraft] = useState({ name: '', group: '', notes: '' });
+  const [del, setDel] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const [copied, setCopied] = useState(null);
+  const upd = (nk) => { setKits(nk); saveKits(nk); };
+  const groups = START_MIXES;
+  function startEdit(k) { setEdit(k.id); setDraft({ name: k.name, group: k.group || '', notes: k.notes || '' }); setDel(null); }
+  function save() { upd(kits.map(k => k.id !== edit ? k : { ...k, name: (draft.name || k.name).trim().slice(0, 40), group: draft.group, notes: draft.notes.slice(0, 400) })); setEdit(null); }
+  function add() { if (!draft.name.trim()) return; const nk = [...kits, newStudentObj(draft.name, draft.group, draft.notes)]; upd(nk); saveWho(nk, nk.length - 1); setAdding(false); setDraft({ name: '', group: '', notes: '' }); }
+  function remove(id) { upd(kits.filter(k => k.id !== id)); setDel(null); }
+  function copy(k) { try { navigator.clipboard.writeText(kitLink(k)).then(() => { setCopied(k.id); setTimeout(() => setCopied(null), 1500); }, () => {}); } catch (e) {} }
+  const input = { width:'100%', boxSizing:'border-box', padding:'7px 10px', borderRadius:8, border:'1.5px solid var(--border)', fontSize:13.5, fontFamily:'inherit' };
+  const form = (onOk, okLabel, onCancel) => (
+    <div style={{display:'flex',flexDirection:'column',gap:6,background:'#fbf6ec',borderRadius:10,padding:10}}>
+      <input autoFocus value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} onKeyDown={e => { if (e.key === 'Enter') onOk(); }} placeholder="Name" style={input}/>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',alignItems:'center'}}><span style={{fontSize:11,fontWeight:900,color:'var(--muted)',marginRight:2}}>STARTS AS</span>
+        {groups.map(m => <button key={m.id} className={'chip' + (draft.group === m.id ? ' active' : '')} style={{padding:'2px 8px',fontSize:11}} onClick={() => setDraft({ ...draft, group: draft.group === m.id ? '' : m.id })}>{m.name}</button>)}</div>
+      <textarea value={draft.notes} onChange={e => setDraft({ ...draft, notes: e.target.value })} placeholder="Notes (age, book, exam date, things to watch…)" rows={2} style={{...input,resize:'vertical'}}/>
+      <div style={{display:'flex',gap:6}}><button className="primary-btn" style={{padding:'7px 16px',fontSize:13}} onClick={onOk}>{okLabel}</button><button className="ghost-btn" style={{padding:'6px 12px',fontSize:12}} onClick={onCancel}>Cancel</button></div>
+    </div>
+  );
+  return (
+    <div className="fade-up">
+      <div className="card" style={{marginBottom:12}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <h2 style={{fontSize:20,fontWeight:900,margin:0,letterSpacing:'-0.02em'}}>Students</h2>
+          {!adding && <button className="ghost-btn" style={{fontSize:12,padding:'6px 12px'}} onClick={() => { setAdding(true); setEdit(null); setDraft({ name: '', group: '', notes: '' }); }}>+ Add a student</button>}
+        </div>
+        <p style={{fontSize:13,color:'var(--muted)',margin:'4px 0 0',lineHeight:1.5}}>Each student has their progress in the Lesson plan and their own kit of tools. Saved on this device only.</p>
+        {adding && <div style={{marginTop:10}}>{form(add, 'Add', () => setAdding(false))}</div>}
+      </div>
+      {!kits.length && !adding && <div className="card" style={{textAlign:'center',color:'var(--muted)',fontSize:13}}>No students yet -- add the first one above.</div>}
+      {kits.map(k => {
+        const n = Object.values(k.done || {}).filter(Boolean).length, g = START_MIXES.find(m => m.id === k.group);
+        return (
+          <div key={k.id} className="card" style={{marginBottom:10,padding:'12px 14px'}}>
+            {edit === k.id ? form(save, 'Save', () => setEdit(null)) : <>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',gap:8,flexWrap:'wrap'}}>
+                <b style={{fontSize:17}}>{k.name}</b>
+                <span style={{fontSize:11,fontWeight:800,color:'var(--muted)'}}>{g ? g.name : ''}{k.created ? (g ? ' · ' : '') + 'since ' + k.created : ''}</span>
+              </div>
+              {k.notes && <div style={{fontSize:12.5,color:'#5c544a',marginTop:3,whiteSpace:'pre-wrap'}}>{k.notes}</div>}
+              <div style={{display:'flex',alignItems:'center',gap:8,margin:'8px 0 6px'}}>
+                <div style={{flex:1,height:7,borderRadius:4,background:'#e8dfcf',overflow:'hidden',display:'flex'}}>
+                  {STRANDS.map(st => { const c = SKILLS.filter(x => x.strand === st.id && (k.done || {})[x.id]).length; return <div key={st.id} title={st.name + ': ' + c} style={{width:(c / SKILLS.length * 100) + '%',background:st.color}}/>; })}
+                </div>
+                <span style={{fontSize:11,fontWeight:800,color:'var(--muted)'}}>{n}/{SKILLS.length} steps · {(k.tools || []).length} in kit</span>
+              </div>
+              {del === k.id
+                ? <div style={{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap',background:'#f6e3df',borderRadius:8,padding:'6px 8px',fontSize:12.5}}>Delete {k.name} and their progress? <button className="chip active" style={{padding:'2px 10px',fontSize:11,background:'#b5483b',borderColor:'#b5483b'}} onClick={() => remove(k.id)}>Yes, delete</button><button className="chip" style={{padding:'2px 9px',fontSize:11}} onClick={() => setDel(null)}>Cancel</button></div>
+                : <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
+                  <button className="ghost-btn" style={{fontSize:12,padding:'5px 10px'}} onClick={() => { saveWho(kits, kits.indexOf(k)); onPlan(); }}>Lesson plan</button>
+                  <button className="ghost-btn" style={{fontSize:12,padding:'5px 10px'}} disabled={!(k.tools || []).length} onClick={() => onOpenKit(k)}>Open kit</button>
+                  <button className="ghost-btn" style={{fontSize:12,padding:'5px 10px'}} disabled={!(k.tools || []).length} onClick={() => copy(k)}>{copied === k.id ? 'Copied ✓' : 'Student link'}</button>
+                  <button className="ghost-btn" style={{fontSize:12,padding:'5px 10px'}} onClick={() => startEdit(k)}>Edit</button>
+                  <button className="ghost-btn" style={{fontSize:12,padding:'5px 10px',color:'#b5483b'}} onClick={() => { setDel(k.id); setEdit(null); }}>Delete</button>
+                </div>}
+            </>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+function PlanView({ onOpenTool, onOpenChapter, onOpenKit, onAllChapters, onStudents }) {
+  const [kits, setKits] = useState(loadKits);
+  const [who, setWho0] = useState(() => loadWho(loadKits()));
+  const setWho = (i) => { setWho0(i); saveWho(kits, i); const g = kits[i] && kits[i].group; if (g) setMix(g); };
+  const [mix, setMix] = useState(() => { const k = loadKits(); const i = loadWho(k); return (k[i] && k[i].group) || null; });
   const [today, setToday] = useState([]);
   const kit = kits[who] || null;
   const done = (kit && kit.done) || {};
   const upd = (nk) => { setKits(nk); saveKits(nk); };
-  function newStudent() {
-    const name = (typeof prompt === 'function' ? prompt('Student’s name:', '') : '') || ('Student ' + (kits.length + 1));
-    const nk = [...kits, { name: name.slice(0, 40), tools: [], done: {} }]; upd(nk); setWho(nk.length - 1);
-  }
+  function newStudent(name) { const nk = [...kits, newStudentObj(name)]; upd(nk); setWho0(nk.length - 1); saveWho(nk, nk.length - 1); }
   function tick(id) { if (!kit) return; upd(kits.map((k, i) => i !== who ? k : { ...k, done: { ...(k.done || {}), [id]: !(k.done || {})[id] } })); }
   function toggleToday(id) { setToday(t => t.includes(id) ? t.filter(x => x !== id) : [...t, id]); }
   const todayTools = [...new Set(today.flatMap(id => SKILLS.find(s => s.id === id).tools))];
@@ -10337,9 +10423,11 @@ function PlanView({ onOpenTool, onOpenChapter, onOpenKit, onAllChapters }) {
         <div style={{fontSize:11,fontWeight:900,color:'var(--muted)',margin:'0 0 4px'}}>STUDENT</div>
         <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
           {kits.map((k, i) => chip(i === who, k.name + ' · ' + Object.values(k.done || {}).filter(Boolean).length + '/' + SKILLS.length, () => setWho(i), 's' + i))}
-          <button className="chip" style={{padding:'2px 9px',fontSize:11}} onClick={newStudent}>+ Student</button>
+          <AddName onAdd={newStudent}/>
+          {kits.length > 0 && onStudents && <button className="chip" style={{padding:'2px 9px',fontSize:11}} onClick={onStudents}>Edit students</button>}
         </div>
-        {!kit && <div style={{fontSize:12,color:'var(--muted)',marginTop:6}}>Add a student to tick off what they can do. (Students here are the same as the kits in the Toolbox.)</div>}
+        {kit && kit.notes && <div style={{fontSize:12,color:'#6f665b',marginTop:6,background:'#f7f2e8',borderRadius:8,padding:'5px 8px'}}><b>Notes:</b> {kit.notes}</div>}
+        {!kit && <div style={{fontSize:12,color:'var(--muted)',marginTop:6}}>Add a student to tick off what they can do. (Students are shared with the Toolbox kits and the Students tab.)</div>}
         <div style={{fontSize:11,fontWeight:900,color:'var(--muted)',margin:'10px 0 4px'}}>A FIRST MIX FOR…</div>
         <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>{START_MIXES.map(m => chip(mix === m.id, m.name, () => { setMix(mix === m.id ? null : m.id); if (m.ids.length) setToday(m.ids); }, m.id))}</div>
         {M && <div style={{fontSize:12,background:'#fbf3e2',borderRadius:8,padding:'6px 9px',marginTop:6,color:'#6b4e16'}}>{M.note}</div>}
@@ -10424,7 +10512,7 @@ function readUrlState() {
     tool: TOOLS.find(t => t.id === p.get('tool')) ? p.get('tool') : null,
     kit: p.get('kit') ? p.get('kit').split(',').filter(id => TOOLS.find(t => t.id === id)) : null,
     kn: p.get('kn') || '',
-    view: p.get('kit') ? 'kit' : p.get('view') === 'chapters' ? 'chapters' : p.get('tool') ? (PRACTICE_IDS.includes(p.get('tool')) && p.get('view') === 'practice' ? 'practice' : 'tools') : ['tools', 'practice'].includes(p.get('view')) ? p.get('view') : 'path',
+    view: p.get('kit') ? 'kit' : p.get('view') === 'chapters' ? 'chapters' : p.get('view') === 'students' ? 'students' : p.get('tool') ? (PRACTICE_IDS.includes(p.get('tool')) && p.get('view') === 'practice' ? 'practice' : 'tools') : ['tools', 'practice'].includes(p.get('view')) ? p.get('view') : 'path',
   };
 }
 
@@ -10444,6 +10532,7 @@ function App() {
       const p = new URLSearchParams();
       if (st.view === 'kit' && st.kit) { p.set('kit', st.kit.join(',')); if (st.kn) p.set('kn', st.kn); if (st.tool) p.set('tool', st.tool); }
       else if (st.view === 'tools' || st.view === 'practice') { if (st.tool) p.set('tool', st.tool); if (st.view === 'practice' || !st.tool) p.set('view', st.view); }
+      else if (st.view === 'students') p.set('view', 'students');
       else if (!st.drill) p.set('view', st.view === 'chapters' ? 'chapters' : 'path');
       else {
         p.set('drill', active.id);
@@ -10475,28 +10564,31 @@ function App() {
         {preview && <div style={{background:'#241f1a',color:'#fff',borderRadius:10,padding:'8px 12px',marginBottom:12,fontSize:12.5,display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}><span>You’re seeing what a student sees.</span><button className="chip" style={{padding:'2px 9px',fontSize:11}} onClick={() => setPreview(false)}>Back to teacher view</button></div>}
         {!st.lock && (
           <div style={{display:'flex',background:'#fff',border:'1.5px solid var(--border)',borderRadius:12,padding:3,marginBottom:16}}>
-            {(T ? [['path', 'Lesson plan'], ['tools', 'Toolbox'], ['practice', 'Practice']] : [['path', 'Learn'], ['practice', 'Practice']]).map(([v, l]) => (
-              <button key={v} onClick={() => { update({ view: v, tool: null, kit: null, drill: v === 'path' ? null : st.drill }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderRadius:9,padding:'9px 0',fontSize:14,fontWeight:900,cursor:'pointer',
+            {(T ? [['path', 'Plan'], ['students', 'Students'], ['tools', 'Toolbox'], ['practice', 'Practice']] : [['path', 'Learn'], ['practice', 'Practice']]).map(([v, l]) => (
+              <button key={v} onClick={() => { update({ view: v, tool: null, kit: null, drill: v === 'path' ? null : st.drill }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderRadius:9,padding:'9px 0',fontSize:T ? 13 : 14,fontWeight:900,cursor:'pointer',
                 background:(st.view === v || (v === 'path' && st.view === 'chapters')) ? 'var(--text)' : 'transparent',color:(st.view === v || (v === 'path' && st.view === 'chapters')) ? '#fff' : 'var(--muted)'}}>{l}</button>
             ))}
           </div>
         )}
         <SoundSettings/>
-        {st.view === 'kit' && st.kit ? (
+        {st.view === 'students' && T ? (
+          <StudentsView onPlan={() => { update({ view: 'path', drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }} onOpenKit={(k) => { update({ view: 'kit', kit: k.tools, kn: k.name, tool: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
+        ) : st.view === 'kit' && st.kit ? (
           st.tool
             ? <ToolView id={st.tool} locked={st.lock} backLabel="← Kit" onBack={() => update({ tool: null })} onChapter={(id) => update({ view: 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
             : <>{T && <button className="ghost-btn" style={{fontSize:12,padding:'5px 12px',marginBottom:10}} onClick={() => update({ view: 'tools', kit: null, kn: '' })}>← Toolbox</button>}<KitView ids={st.kit} name={st.kn} onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
         ) : (st.view === 'tools' || st.view === 'practice') ? (
           st.tool
             ? <ToolView id={st.tool} locked={st.lock} backLabel={st.ret === 'path' ? '← Lesson plan' : st.view === 'practice' ? '← Practice' : '← Toolbox'} onBack={() => update({ tool: null, view: st.ret === 'path' ? 'path' : st.view, ret: null })} onChapter={(id) => update({ view: 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
-            : st.view === 'tools' && T ? <Toolbox onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }} onOpenKit={(k) => { update({ view: 'kit', kit: k.tools, kn: k.name, tool: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
+            : st.view === 'tools' && T ? <Toolbox onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }} onOpenKit={(k) => { update({ view: 'kit', kit: k.tools, kn: k.name, tool: null }); try { window.scrollTo(0, 0); } catch (e) {} }} onStudents={() => { update({ view: 'students' }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
             : <PracticeView onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
         ) : !inChapter && !st.lock ? (
           T && st.view !== 'chapters'
             ? <PlanView onOpenTool={(id) => { update({ view: 'tools', tool: id, ret: 'path' }); try { window.scrollTo(0, 0); } catch (e) {} }}
                 onOpenChapter={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}
                 onOpenKit={(k) => { update({ view: 'kit', kit: k.tools, kn: k.name, tool: null }); try { window.scrollTo(0, 0); } catch (e) {} }}
-                onAllChapters={() => { update({ view: 'chapters' }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
+                onAllChapters={() => { update({ view: 'chapters' }); try { window.scrollTo(0, 0); } catch (e) {} }}
+                onStudents={() => { update({ view: 'students' }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
             : <LessonPath onBack={T ? () => update({ view: 'path' }) : null} onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
         ) : <>
         {!st.lock && (() => {
