@@ -1828,19 +1828,21 @@ function noiseBuf(ctx) {
   return (_noiseBuf = b);
 }
 function metroClick(ctx, t, accent, level) {
+  // accent: true / 2 = the bar's first beat, false / 1 = a beat, 0 = a subdivision
   const st = SOUND.click || 'wood';
-  if (st === 'beep') { blip(ctx, t, accent ? 1320 : 880, 0.05, level); return; }
+  const k = accent === true ? 2 : accent === false ? 1 : accent;
+  if (st === 'beep') { blip(ctx, t, [660, 880, 1320][k], 0.05, level); return; }
   const lv = Math.max(0.02, Math.min(0.5, level));
+  const fr = st === 'wood' ? [1100, 1450, 2000][k] : [2000, 2700, 3300][k];
   const src = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
   src.buffer = noiseBuf(ctx);
-  if (st === 'wood') { f.type = 'bandpass'; f.frequency.value = accent ? 2000 : 1450; f.Q.value = 5; }
-  else { f.type = 'highpass'; f.frequency.value = accent ? 3000 : 2400; }
+  if (st === 'wood') { f.type = 'bandpass'; f.frequency.value = fr; f.Q.value = 5; }
+  else { f.type = 'highpass'; f.frequency.value = fr - 300; }
   const dec = st === 'wood' ? 0.05 : 0.018;
   g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(lv * (st === 'wood' ? 4 : 1.4), t + 0.0015); g.gain.exponentialRampToValueAtTime(0.0005, t + dec);
   src.connect(f); f.connect(g); g.connect(ctx.destination); src.start(t); src.stop(t + dec + 0.02); _clickNodes.push(src);
-  // the pitched "body" of the block
   const o = ctx.createOscillator(), og = ctx.createGain();
-  o.type = 'sine'; o.frequency.value = st === 'wood' ? (accent ? 2000 : 1450) : (accent ? 3300 : 2700);
+  o.type = 'sine'; o.frequency.value = fr;
   og.gain.setValueAtTime(0, t); og.gain.linearRampToValueAtTime(lv * (st === 'wood' ? 0.7 : 0.35), t + 0.001); og.gain.exponentialRampToValueAtTime(0.0005, t + (st === 'wood' ? 0.04 : 0.015));
   o.connect(og); og.connect(ctx.destination); o.start(t); o.stop(t + 0.06); _clickNodes.push(o);
 }
@@ -2124,58 +2126,253 @@ function TempoQuestion({ q, level, given, locked, onAnswer, pixel, stats }) {
 // ─── Tempo Race: hands-on round (Phase 111) ──────────────────────────────────────
 function termForBpm(bpm) { return TEMPO_TERMS.reduce((b, t) => Math.abs(t.demo - bpm) < Math.abs(b.demo - bpm) ? t : b, TEMPO_TERMS[0]); }
 // 1. A metronome with a swinging arm: drag the speed, see which tempo word it is -- or tap your own tempo.
+// ─── Phase 129: a full metronome (metres, subdivisions, groupings) ───────────────
+const METERS = [
+  { id: '2/4', kind: 'simple', beats: 2 }, { id: '3/4', kind: 'simple', beats: 3 }, { id: '4/4', kind: 'simple', beats: 4 },
+  { id: '5/4', kind: 'simple', beats: 5 }, { id: '2/2', kind: 'simple', beats: 2 }, { id: '3/8', kind: 'simple', beats: 3 },
+  { id: '6/8', kind: 'compound', beats: 2 }, { id: '9/8', kind: 'compound', beats: 3 }, { id: '12/8', kind: 'compound', beats: 4 },
+  { id: '5/8', kind: 'odd', groups: [[2, 3], [3, 2]] }, { id: '7/8', kind: 'odd', groups: [[2, 2, 3], [3, 2, 2], [2, 3, 2]] },
+];
+const SUBS = {
+  simple: [[1, 'Beats only'], [2, 'Quavers'], [3, 'Triplets'], [4, 'Semiquavers']],
+  compound: [[1, 'Dotted beats'], [3, 'Quavers'], [6, 'Semiquavers']],
+};
+const SUB_WORDS = { 1: [], 2: ['&'], 3: ['trip', 'let'], 4: ['e', '&', 'a'], 6: ['&', '', '&', '', '&'] };
+// One bar as a list of clicks: { at (fraction of the bar's beat units), level 2 bar / 1 beat / 0 sub, label, beat }
+function meterGrid(m, sub, grp) {
+  const out = [];
+  if (m.kind === 'odd') {
+    const g = m.groups[grp] || m.groups[0]; let q = 0;
+    g.forEach((n, gi) => { for (let i = 0; i < n; i++) { out.push({ at: q, level: q === 0 ? 2 : i === 0 ? 1 : 0, label: String(i + 1), beat: gi, sub: i }); q++; } });
+    return { events: out, units: q };
+  }
+  const k = sub || 1;
+  for (let b = 0; b < m.beats; b++) for (let s = 0; s < k; s++) {
+    let label = s === 0 ? String(b + 1) : SUB_WORDS[k][s - 1];
+    if (m.kind === 'compound' && k === 3) label = String(b * 3 + s + 1); // count the quavers: 1 2 3 4 5 6
+    out.push({ at: b + s / k, level: b === 0 && s === 0 ? 2 : s === 0 ? 1 : 0, label, beat: b, sub: s });
+  }
+  return { events: out, units: m.beats };
+}
 function MetronomeDial() {
   const [bpm, setBpm] = useState(88);
   const [run, setRun] = useState(false);
+  const [mid, setMid] = useState('4/4');
+  const [sub, setSub] = useState(1);
+  const [grp, setGrp] = useState(0);
+  const [cur, setCur] = useState(-1);
   const [side, setSide] = useState(0);
   const taps = useRef([]);
-  const t = termForBpm(bpm), idx = TEMPO_TERMS.indexOf(t);
+  const m = METERS.find(x => x.id === mid);
+  const subOpts = SUBS[m.kind] || [];
+  const k = m.kind === 'odd' ? 1 : subOpts.some(([v]) => v === sub) ? sub : 1;
+  const grid = meterGrid(m, k, grp);
+  const t = termForBpm(m.kind === 'odd' ? bpm / 2.5 : bpm), idx = TEMPO_TERMS.indexOf(t);
   useEffect(() => {
     if (!run) return;
-    let n = 0;
-    const tick = () => { const ctx = getAudio(); if (ctx) beatTick(ctx, ctx.currentTime + 0.01, n % 4, n % 4 === 0 ? 1320 : 900, 0.04, n % 4 === 0 ? 0.3 : 0.16); setSide(s => 1 - s); n++; };
-    tick(); const iv = setInterval(tick, 60000 / bpm);
-    return () => clearInterval(iv);
-  }, [run, bpm]);
+    const ctx = getAudio(); if (!ctx) return;
+    stopClicks();
+    const unit = 60 / bpm, barLen = grid.units * unit, lat = outLatency(ctx), t0 = ctx.currentTime + 0.1;
+    let bar = 0, i = 0, alive = true; const vis = [];
+    const pump = () => {
+      while (alive) {
+        const e = grid.events[i], at = t0 + bar * barLen + e.at * unit;
+        if (at > ctx.currentTime + 0.25) break;
+        if (e.level > 0 && SOUND.count === 'voice' && e.sub === 0 && m.kind !== 'odd' && sayCount(ctx, at, String(e.beat + 1), 1)) {}
+        else if (e.level === 0 && SOUND.count === 'voice' && k === 2 && sayCount(ctx, at, 'and', 0.6)) {}
+        else metroClick(ctx, at, e.level, e.level === 2 ? 0.34 : e.level === 1 ? 0.24 : 0.1);
+        const idx2 = i, isBeat = e.level > 0;
+        vis.push(setTimeout(() => { if (!alive) return; setCur(idx2); if (isBeat) setSide(s => 1 - s); }, Math.max(0, (at + lat - ctx.currentTime) * 1000)));
+        i++; if (i >= grid.events.length) { i = 0; bar++; }
+      }
+    };
+    pump(); const iv = setInterval(pump, 40);
+    return () => { alive = false; clearInterval(iv); vis.forEach(clearTimeout); stopClicks(); setCur(-1); };
+  }, [run, bpm, mid, k, grp]);
   function tap() {
     const now = performance.now();
     taps.current = taps.current.filter(x => now - x < 3000).concat(now);
     const tt = taps.current;
-    if (tt.length >= 3) { const gaps = tt.slice(1).map((x, i) => x - tt[i]); const avg = gaps.reduce((a, b) => a + b, 0) / gaps.length; setBpm(Math.max(40, Math.min(208, Math.round(60000 / avg)))); }
-    const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime + 0.01, 700, 0.03, 0.2);
+    if (tt.length >= 3) { const gaps = tt.slice(1).map((x, i) => x - tt[i]); const avg = gaps.reduce((a, b) => a + b, 0) / gaps.length; setBpm(Math.max(30, Math.min(240, Math.round(60000 / avg)))); }
+    const ctx = getAudio(); if (ctx) metroClick(ctx, ctx.currentTime + 0.01, 0, 0.2);
   }
-  const dur = 60 / bpm;
+  const beatDur = (m.kind === 'odd' ? 2 : 1) * 60 / bpm;
+  const beatName = m.kind === 'compound' ? 'dotted crotchets' : m.kind === 'odd' ? 'quavers' : m.id.endsWith('/2') ? 'minims' : m.id.endsWith('/8') ? 'quavers' : 'crotchets';
+  const [top, bottom] = m.id.split('/');
   return (
     <div className="try-box" style={actBox}>
       <div style={actTitle}>The metronome</div>
-      <div style={actNote}>Slide the speed and watch the arm swing. The tempo word changes as you go faster or slower. Or tap a steady beat on “Tap” to measure your own tempo.</div>
+      <div style={actNote}>Choose the time signature and how each beat is split. The first beat of the bar is the strongest click, the split notes the softest. “Tap” measures your own tempo.</div>
       <div style={{display:'flex',alignItems:'center',gap:14}}>
-        <svg viewBox="0 0 100 120" style={{width:100,flex:'0 0 100px'}}>
+        <svg viewBox="0 0 100 120" style={{width:90,flex:'0 0 90px'}}>
           <polygon points="20,112 80,112 64,20 36,20" fill="#241f1a"/>
           <polygon points="26,106 74,106 62,26 38,26" fill="#3b332b"/>
-          <g style={{transformOrigin:'50px 100px',transform:'rotate(' + (run ? (side ? 24 : -24) : 0) + 'deg)',transition:'transform ' + dur + 's ease-in-out'}}>
+          <g style={{transformOrigin:'50px 100px',transform:'rotate(' + (run ? (side ? 24 : -24) : 0) + 'deg)',transition:'transform ' + beatDur + 's ease-in-out'}}>
             <line x1="50" y1="100" x2="50" y2="14" stroke="#e8dcc0" strokeWidth="2.5"/>
-            <rect x="44" y={30 + (bpm - 40) / 168 * 50} width="12" height="10" rx="2" fill={LANE_COLORS[idx]}/>
+            <rect x="44" y={30 + (Math.min(bpm, 208) - 40) / 168 * 50} width="12" height="10" rx="2" fill={LANE_COLORS[idx]}/>
           </g>
           <circle cx="50" cy="100" r="4" fill="#a8823f"/>
         </svg>
         <div style={{flex:1}}>
-          <div style={{fontSize:30,fontWeight:900,lineHeight:1}}>{bpm}<span style={{fontSize:13,color:'var(--muted)',fontWeight:700}}> beats a minute</span></div>
-          <div style={{fontSize:22,fontWeight:900,fontStyle:'italic',color:LANE_COLORS[idx],margin:'4px 0 0',transition:'color 0.2s'}}>{t.term}</div>
-          <div style={{fontSize:12,color:'#6f665b'}}>{t.meaning}</div>
+          <div style={{fontSize:30,fontWeight:900,lineHeight:1}}>{bpm}<span style={{fontSize:12,color:'var(--muted)',fontWeight:700}}> {beatName} a minute</span></div>
+          {m.kind !== 'odd' && <div style={{fontSize:20,fontWeight:900,fontStyle:'italic',color:LANE_COLORS[idx],margin:'4px 0 0'}}>{t.term}</div>}
+          {m.kind !== 'odd' && <div style={{fontSize:12,color:'#6f665b'}}>{t.meaning}</div>}
         </div>
+        <TSig top={top} bottom={bottom} size={34}/>
       </div>
-      <input type="range" min="40" max="208" value={bpm} onChange={e => setBpm(+e.target.value)} style={{width:'100%',margin:'10px 0 2px',accentColor:'#a8823f'}}/>
-      <div style={{display:'flex',height:6,borderRadius:3,overflow:'hidden',marginBottom:8}}>
-        {TEMPO_TERMS.map((x, i) => <div key={x.term} style={{flex:1,background:LANE_COLORS[i],opacity:i === idx ? 1 : 0.3}}/>)}
+      <input type="range" min="30" max="240" value={bpm} onChange={e => setBpm(+e.target.value)} style={{width:'100%',margin:'10px 0 2px',accentColor:'#a8823f'}}/>
+      <div style={{display:'flex',justifyContent:'center',gap:4,marginBottom:6}}>
+        {[-5, -1, 1, 5].map(d => <button key={d} className="chip" style={{padding:'2px 9px',fontSize:11}} onClick={() => setBpm(b => Math.max(30, Math.min(240, b + d)))}>{d > 0 ? '+' + d : d}</button>)}
+      </div>
+      <div style={{fontSize:11,fontWeight:900,color:'var(--muted)',margin:'4px 0 3px'}}>TIME SIGNATURE</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>{METERS.map(x => <button key={x.id} className={'chip' + (x.id === mid ? ' active' : '')} style={{padding:'3px 9px',fontSize:12,minWidth:40}} onClick={() => { setMid(x.id); setGrp(0); setSub(x.kind === 'compound' ? 3 : 1); }}>{x.id}</button>)}</div>
+      <div style={{fontSize:11,fontWeight:900,color:'var(--muted)',margin:'8px 0 3px'}}>{m.kind === 'odd' ? 'GROUPING' : 'SPLIT EACH BEAT INTO'}</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>
+        {m.kind === 'odd'
+          ? m.groups.map((g, i) => <button key={i} className={'chip' + (i === grp ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => setGrp(i)}>{g.join('+')}</button>)
+          : subOpts.map(([v, l]) => <button key={v} className={'chip' + (v === k ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => setSub(v)}>{l}</button>)}
+      </div>
+      {/* the bar, lit as it plays */}
+      <div style={{background:'#fff',borderRadius:10,padding:'10px 6px',margin:'10px 0 8px',display:'flex',flexWrap:'wrap',gap:'6px 0',justifyContent:'center'}}>
+        {grid.events.map((e, i) => {
+          const on = i === cur, big = e.level > 0;
+          const newBeat = i > 0 && e.level > 0;
+          return (
+            <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'center',width:grid.events.length > 16 ? 17 : grid.events.length > 9 ? 22 : 30,marginLeft:newBeat ? 6 : 0}}>
+              <div style={{width:big ? (e.level === 2 ? 22 : 17) : 10,height:big ? (e.level === 2 ? 22 : 17) : 10,borderRadius:'50%',margin:big ? 0 : '4px 0',background:on ? (e.level === 2 ? '#b5483b' : e.level === 1 ? '#a8823f' : '#6fa58c') : '#e8dfcf',transform:on ? 'scale(1.25)' : 'none',transition:'transform 0.06s'}}/>
+              <div style={{fontSize:big ? 12 : 10,fontWeight:big ? 900 : 700,color:on ? 'var(--text)' : '#b3a794',marginTop:3,whiteSpace:'nowrap'}}>{e.label}</div>
+            </div>
+          );
+        })}
       </div>
       <div style={{display:'flex',gap:6,justifyContent:'center'}}>
         <button className="ghost-btn" onClick={() => setRun(r => !r)}>{run ? '■ Stop' : '▶ Start'}</button>
         <button className="ghost-btn" onClick={tap} style={{minWidth:90}}>Tap</button>
       </div>
+      <div style={{fontSize:11.5,color:'var(--muted)',textAlign:'center',marginTop:6,lineHeight:1.4}}>
+        {m.kind === 'compound' ? 'Compound time: each beat is a dotted crotchet, split into three quavers.' : m.kind === 'odd' ? 'Irregular time: the quavers are grouped in 2s and 3s -- the speed counts quavers.' : k === 3 ? 'Triplets: three even notes in the time of two -- “1-trip-let”.' : k === 4 ? 'Semiquavers: “1 e & a”.' : k === 2 ? 'Quavers: “1 & 2 &”.' : ''}
+      </div>
     </div>
   );
 }
+
+// ─── Tap on the right beat: a counting game ─────────────────────────────────────
+const BT_LEVELS = [
+  { n: 1, label: 'One beat', hint: 'Count along and tap only on that beat.' },
+  { n: 2, label: 'Two beats', hint: 'Two beats to catch in every bar.' },
+  { n: 3, label: 'The “and”', hint: 'Tap in between -- on the “and”.' },
+  { n: 4, label: 'Silent bars', hint: 'After the count-in the clicks stop. Keep counting inside!' },
+];
+function btRound(level, beats, prev) {
+  const pos = []; // positions in half-beats (beat b = 2b, its "and" = 2b + 1)
+  const pickBeat = (ex) => { let b, g = 0; do { b = Math.floor(Math.random() * beats); } while ((ex.includes(b * 2) || (prev && prev.length === 1 && prev[0] === b * 2 && level === 1)) && g++ < 20); return b; };
+  if (level === 1) pos.push(pickBeat([]) * 2);
+  else if (level === 2 || level === 4) { const a = pickBeat([]); pos.push(a * 2); pos.push(pickBeat([a * 2]) * 2); }
+  else { pos.push(Math.floor(Math.random() * beats) * 2 + 1); if (Math.random() < 0.5) { const b = pickBeat(pos.map(p => p - 1)); pos.push(b * 2); } }
+  return pos.sort((a, b) => a - b);
+}
+function btLabel(p) { return p % 2 === 0 ? String(p / 2 + 1) : '& of ' + ((p - 1) / 2 + 1); }
+function BeatTarget() {
+  const [level, setLevel] = useState(1);
+  const [beats, setBeats] = useState(4);
+  const [bpm, setBpm] = useState(76);
+  const [targets, setTargets] = useState(() => btRound(1, 4));
+  const [phase, setPhase] = useState('ready'); // ready | countin | play | done
+  const [lit, setLit] = useState(-1);
+  const [flash, setFlash] = useState(null); // { p, ok }
+  const [res, setRes] = useState(null);
+  const [score, setScore] = useState({ rounds: 0, perfect: 0 });
+  const run = useRef(null), timers = useRef([]);
+  useEffect(() => () => { timers.current.forEach(clearTimeout); stopClicks(); }, []);
+  function newRound(lv = level, bt = beats) { setTargets(btRound(lv, bt, targets)); setRes(null); setPhase('ready'); setLit(-1); }
+  function start() {
+    const ctx = getAudio(); if (!ctx) return; stopClicks(); timers.current.forEach(clearTimeout); timers.current = [];
+    const spb = 60 / bpm, lat = outLatency(ctx), t0 = ctx.currentTime + 0.2, bars = 2, playStart = t0 + beats * spb;
+    for (let b = 0; b < beats * (1 + bars); b++) {
+      const at = t0 + b * spb, inBar = b % beats, counting = b < beats;
+      if (counting || level !== 4) beatTick(ctx, at, inBar, inBar === 0 ? 1320 : 880, 0.05, counting ? 0.32 : 0.22);
+      timers.current.push(setTimeout(() => { setLit(inBar * 2); if (b === beats) setPhase('play'); }, Math.max(0, (at + lat - ctx.currentTime) * 1000)));
+      if (level === 3) timers.current.push(setTimeout(() => setLit(inBar * 2 + 1), Math.max(0, (at + spb / 2 + lat - ctx.currentTime) * 1000)));
+    }
+    const tgtTimes = []; for (let bar = 0; bar < bars; bar++) targets.forEach(p => tgtTimes.push({ t: playStart + bar * beats * spb + p * spb / 2, p }));
+    run.current = { ctx, lat, spb, playStart, end: playStart + bars * beats * spb, tgtTimes, taps: [] };
+    setPhase('countin'); setRes(null);
+    timers.current.push(setTimeout(finish, Math.max(0, (run.current.end + 0.3 - ctx.currentTime) * 1000)));
+  }
+  function tap() {
+    const r = run.current; if (!r || (phase !== 'play' && phase !== 'countin')) return;
+    const t = r.ctx.currentTime - r.lat;
+    if (t < r.playStart - r.spb * 0.4) return; // count-in taps don't count
+    r.taps.push(t);
+    const tol = Math.min(0.13, r.spb * 0.28);
+    const near = r.tgtTimes.reduce((a, b) => Math.abs(b.t - t) < Math.abs(a.t - t) ? b : a);
+    const halfPos = Math.round((t - r.playStart) / (r.spb / 2));
+    setFlash({ p: ((halfPos % (beats * 2)) + beats * 2) % (beats * 2), ok: Math.abs(near.t - t) <= tol, k: Math.random() });
+  }
+  function finish() {
+    const r = run.current; if (!r) return;
+    const tol = Math.min(0.13, r.spb * 0.28), used = new Set(); let hits = 0; const offs = [];
+    r.tgtTimes.forEach(g => {
+      let best = -1, bd = 1e9; r.taps.forEach((tp, j) => { const d = Math.abs(tp - g.t); if (!used.has(j) && d < bd) { bd = d; best = j; } });
+      if (best >= 0 && bd <= tol) { used.add(best); hits++; offs.push(r.taps[best] - g.t); }
+    });
+    const extra = r.taps.length - used.size, total = r.tgtTimes.length;
+    const avg = offs.length ? offs.reduce((a, b) => a + b, 0) / offs.length * 1000 : 0;
+    const perfect = hits === total && extra === 0;
+    setRes({ hits, total, extra, avg, perfect });
+    setScore(s => ({ rounds: s.rounds + 1, perfect: s.perfect + (perfect ? 1 : 0) }));
+    setPhase('done'); setLit(-1); run.current = null;
+  }
+  useEffect(() => {
+    const onKey = (e) => { if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); tap(); } };
+    window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey);
+  });
+  const showAnds = level === 3;
+  const cells = []; for (let p = 0; p < beats * 2; p++) if (p % 2 === 0 || showAnds) cells.push(p);
+  const instr = targets.every(p => p % 2 === 0) && targets.length > 1 ? 'Tap on beats ' + targets.map(p => p / 2 + 1).join(' and ')
+    : 'Tap on ' + targets.map(p => p % 2 ? 'the “and” after ' + ((p - 1) / 2 + 1) : 'beat ' + (p / 2 + 1)).join(', then ');
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>Tap the right beat</div>
+        <span style={{fontSize:12,fontWeight:900,color:'var(--muted)'}}>{score.perfect}/{score.rounds} perfect</span>
+      </div>
+      <div style={actNote}>One bar to count in, then two bars to play. Count out loud and tap <b>only</b> where it says. {BT_LEVELS[level - 1].hint}</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:4}}>{BT_LEVELS.map(l => <button key={l.n} className={'chip' + (l.n === level ? ' active' : '')} style={{padding:'3px 9px',fontSize:11}} onClick={() => { setLevel(l.n); newRound(l.n, beats); }}>{l.n}. {l.label}</button>)}</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',alignItems:'center',marginBottom:6,fontSize:11,fontWeight:800,color:'var(--muted)'}}>
+        {[2, 3, 4].map(b => <button key={b} className={'chip' + (b === beats ? ' active' : '')} style={{padding:'2px 9px',fontSize:11}} onClick={() => { setBeats(b); newRound(level, b); }}>{b}/4</button>)}
+        <span style={{marginLeft:8}}>Speed</span>
+        {[60, 76, 96].map(v => <button key={v} className={'chip' + (v === bpm ? ' active' : '')} style={{padding:'2px 9px',fontSize:11}} onClick={() => setBpm(v)}>{v === 60 ? 'Slow' : v === 76 ? 'Medium' : 'Faster'}</button>)}
+      </div>
+      <div style={{textAlign:'center',fontSize:17,fontWeight:900,margin:'6px 0 8px',color:'#a8823f'}}>{instr}</div>
+      <div style={{display:'flex',justifyContent:'center',gap:showAnds ? 3 : 12,margin:'4px 0 8px'}}>
+        {cells.map(p => {
+          const isBeat = p % 2 === 0, tgt = targets.includes(p), on = lit === p, fl = flash && flash.p === p ? flash : null;
+          const col = fl ? (fl.ok ? POS_GOOD : POS_BAD) : on ? (isBeat ? '#b5483b' : '#6fa58c') : '#e8cfc9';
+          return (
+            <div key={p} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:9,width:isBeat ? (showAnds ? 38 : 46) : 26,paddingTop:6}}>
+              <div style={{width:isBeat ? (showAnds ? 32 : 40) : 20,height:isBeat ? (showAnds ? 32 : 40) : 20,borderRadius:'50%',background:col,boxShadow:tgt ? '0 0 0 3px #fff, 0 0 0 6px #a8823f' : 'none',transform:on ? 'scale(1.15)' : 'none',transition:'transform 0.06s, background 0.1s',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:10,fontWeight:900}}>{tgt && isBeat ? 'TAP' : ''}</div>
+              <span style={{fontSize:isBeat ? 16 : 12,fontWeight:900,color:tgt ? '#a8823f' : on ? 'var(--text)' : '#c7bca8'}}>{isBeat ? p / 2 + 1 : '&'}</span>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{display:'flex',gap:6,justifyContent:'center'}}>
+        {phase === 'ready' || phase === 'done'
+          ? <button className="primary-btn" style={{padding:'10px 22px'}} onClick={() => (phase === 'done' ? newRound() : start())}>{phase === 'done' ? 'Next round ▶' : '▶ Start'}</button>
+          : <button className="primary-btn" onPointerDown={(e) => { e.preventDefault(); tap(); }} style={{padding:'16px 40px',fontSize:18,touchAction:'manipulation'}}>{phase === 'countin' ? 'Count… ' : 'TAP'}</button>}
+        {phase === 'done' && <button className="ghost-btn" onClick={start}>↻ Same again</button>}
+      </div>
+      {res && <div style={{marginTop:8,background:'#fff',borderRadius:8,padding:'7px 9px',textAlign:'center',fontSize:13}}>
+        <div style={{fontWeight:900,color:res.perfect ? POS_GOOD : 'var(--text)',fontSize:15}}>{res.perfect ? 'Perfect!' : res.hits + ' of ' + res.total + ' on time'}{res.extra ? ' · ' + res.extra + ' extra tap' + (res.extra > 1 ? 's' : '') : ''}</div>
+        {res.hits > 0 && <div style={{color:'#6f665b'}}>{Math.abs(res.avg) < 40 ? 'Your timing was spot on.' : res.avg < 0 ? 'A little early on average (' + Math.round(-res.avg) + ' ms) -- wait for it.' : 'A little late on average (' + Math.round(res.avg) + ' ms) -- count ahead.'}</div>}
+        {res.extra > 0 && <div style={{color:'#6f665b'}}>Extra taps mean a beat you should have skipped -- keep counting, but don’t tap.</div>}
+      </div>}
+      <div style={{fontSize:11,color:'var(--muted)',textAlign:'center',marginTop:6}}>Space bar works too.</div>
+    </div>
+  );
+}
+
 // 2. Speed changes: rit./rall. slow down, accel. speeds up, a tempo goes back. A ball bounces the beat.
 const SPEED_CHANGES = [
   { id: 'rit', label: 'rit.', full: 'ritardando', meaning: 'gradually slowing down', from: 120, to: 60 },
@@ -7611,6 +7808,10 @@ function PulseLearn({ onStart }) {
       <Step title="Feel the pulse">
         <SteadyBeat/>
       </Step>
+      <Step title="Tap the right beat">
+        {tip('Count inside', 'Keep counting the whole bar, but only tap where you’re told. It trains the counting voice in your head -- the one that keeps going through long notes and rests.')}
+        <BeatTarget/>
+      </Step>
       <Step title="Count out loud">
         {tip('Long and short notes', 'A crotchet lasts one beat, a minim two, a dotted minim three, a semibreve four. Two quavers share one beat: “1 and”.')}
         <CountAloud/>
@@ -9545,6 +9746,7 @@ const TOOLS = [
   { id: 'key-houses', ch: 'first-steps', title: 'Small house, big house', blurb: 'The black-key map; where C and F live.', C: () => <KeyHouses/> },
   { id: 'black-key-song', ch: 'first-steps', title: 'First black-key song', blurb: 'Hot Cross Buns and Mary, by rote.', C: () => <BlackKeySong/> },
   { id: 'steady-beat', ch: 'pulse', title: 'The steady beat', blurb: 'A heartbeat pulse to tap along with.', C: () => <SteadyBeat/> },
+  { id: 'beat-target', ch: 'pulse', title: 'Tap the right beat', blurb: 'Count-in, then tap only beat 3, the “and”, or in silent bars.', C: () => <BeatTarget/> },
   { id: 'count-aloud', ch: 'pulse', title: 'Count it out loud', blurb: '1 2 3 4, or 1 and 2 and -- lights up as the bar plays.', C: () => <CountAloud/> },
   { id: 'step-skip', ch: 'reading-steps', title: 'Step, skip or same?', blurb: 'Read by direction and distance.', C: () => <StepSkip/> },
   { id: 'mini-tune', ch: 'reading-steps', title: 'Read a tiny tune', blurb: 'C position tunes with counting.', C: () => <MiniTune/> },
@@ -9602,7 +9804,7 @@ const TOOLS = [
   { id: 'bar-lines', ch: 'time-signatures', title: 'Put in the bar lines', blurb: 'The written exam task.', C: () => <BarLineBuilder/> },
   { id: 'regroup', ch: 'time-signatures', title: '3/4 or 6/8?', blurb: 'Same six quavers, different beat.', C: () => <RegroupQuavers/> },
   { id: 'make-card', ch: 'rhythm', title: 'Make a rhythm card', blurb: 'Build a bar and loop it.', C: () => <RhythmComposer/> },
-  { id: 'metronome', ch: 'tempo', title: 'Metronome', blurb: 'With the tempo word and tap tempo.', C: () => <MetronomeDial/> },
+  { id: 'metronome', ch: 'tempo', title: 'Metronome', blurb: 'Any time signature, triplets and semiquavers, 5/8 and 7/8, tap tempo.', C: () => <MetronomeDial/> },
   { id: 'speed-change', ch: 'tempo', title: 'rit. and accel.', blurb: 'Hear the speed change.', C: () => <SpeedChange/> },
   { id: 'dyn-order', ch: 'dynamics', title: 'Line up the dynamics', blurb: 'pp to ff, by ear and eye.', C: () => <DynOrder/> },
   { id: 'touch-ear', ch: 'dynamics', title: 'Which touch? How loud?', blurb: 'Listening game: staccato, legato, accent; p to ff.', C: () => <TouchEar/> },
@@ -9667,7 +9869,7 @@ function LessonPath({ onOpen }) {
     </div>
   );
 }
-const PRACTICE_IDS = ['arm-moves', 'posture-check', 'practice-timer', 'practice-dice', 'perfect-counter', 'sight-reading', 'echo', 'term-cards', 'make-card', 'count-along', 'metronome', 'find-every', 'write-note', 'fill-bar'];
+const PRACTICE_IDS = ['arm-moves', 'posture-check', 'beat-target', 'practice-timer', 'practice-dice', 'perfect-counter', 'sight-reading', 'echo', 'term-cards', 'make-card', 'count-along', 'metronome', 'find-every', 'write-note', 'fill-bar'];
 function PracticeView({ onOpen }) {
   return (
     <div className="fade-up">
