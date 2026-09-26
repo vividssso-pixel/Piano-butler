@@ -2926,6 +2926,35 @@ Sohyun's direction (2026-09-25): connect student and piano first, then pulse, th
 - 65 tools, 18 chapters: every chapter, drill level 1-3 and tool URL loads with zero errors.
 - Awaiting Sohyun's review of the new beginner stages before changes.
 
+### Phase 121 -- Piano sound + spoken count option
+Sohyun: plain tones can't show articulation, dynamics sound thin; offer a spoken "1 2 3 4" count.
+- `blip(..., 'triangle')` (every musical note in drills.html) now plays `pianoNote`: sampled grand piano from `audio/piano/` (22 mp3s, ~600 KB, lazy-loaded on first sound; source tonejs-instruments piano, MIT -- see audio/README.md), nearest sample pitch-shifted, velocity from the old volume with a velocity-dependent low-pass (pp dark, ff bright; offline render check: ff ≈ 6x pp RMS), damper release after the note length (so staccato/legato differ). Synth-piano fallback before samples load / if missing.
+- Count: `beatTick()` replaces the beat clicks in the metronome, rhythm cards count-in, Notes & Rests playback, time-signature demos, Count along, Steady beat, Count it (+ "and"), Tempo race clicks. `SoundSettings` row under the top switch: Sound Piano | Simple, Count Click | Voice 1 2 3 4 (localStorage `pb_sound_v1`). Voice = recorded files `audio/count/1..8.mp3, and.mp3` if Sohyun adds them (sample-accurate), else the device speech voice (en-AU preferred), scheduled ~70 ms early.
+- Idea for Sohyun: record her own voice counting 1-8 and "and" -> drop into audio/count/.
+
+### Phase 122 -- Musical Terms chapter + Echo the tune
+- `terms` chapter (Stage 5, tag G1–G4): `TERMS` = 91 AMEB Theory of Music terms, Grades 1-4, with the Manual's own meanings (string-playing terms left out). `TermCards` (grade + category filter, quiz mode hides meanings, ♪ plays the same 8-note phrase at that speed / volume / touch -- `playTerm`: tempo terms at a bpm, accel./rit./rall./stringendo ramps, a tempo/più/meno mosso sudden changes, cresc./dim./morendo/calando ramps, fp, sfz, staccato/legato/mezzo staccato lengths, rubato). Lesson: one step per grade. Drill: G1, ≤G2, ≤G3, ≤G4 term→meaning, and meaning→term (≤G3); distractors never share the answer's meaning. Fuzzed 600x per level.
+- `EchoTune` (Steps & Skips step 3 + Practice): hear a 3/4/5-note tune starting on C in C position, play it back on the keys.
+- 19 chapters, 67 tools: all chapter/drill/tool URLs load with zero errors.
+
+### Phase 123 -- Terms: string terms, pronunciation, metronome for speed words, Musicianship lists
+Sohyun: string-playing terms are in the exam too; let students hear how to say the Italian; speed words should sound like a metronome.
+- Added the 5 Grade 4 string terms (sul ponticello, sul tasto, tremolo, pizzicato, arco; new category Strings) -> 96 terms.
+- `PRON` respelling for every term (stressed syllable in capitals, e.g. aht-cheh-leh-RAHN-doh), shown as "say: ..." on each card; tapping it (or "Say it" after a drill answer) speaks the word with the device's Italian voice (`speakTerm`, it-IT; French voice for Main droite/gauche; M.M. read as "Maelzel's metronome").
+- `playTerm`: Speed and Changing speed terms now play metronome clicks (steady, ramped, sudden change, rubato); tremolo = rapid repeated note; pizzicato/arco short/long.
+- `TermCards` toggle Theory of Music | Musicianship (`MUSICIANSHIP_TERMS`, Grades 1-3 from the Manual's Musicianship section).
+
+### Phase 124 -- three more mini tools (2026-09-26)
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Relative minor tool | `drills.html` `RelativeMinor`, Key Signatures "Name the key" step + TOOLS `relative-minor` | Pick a key; animated walk down 3 semitones on the keyboard (or up, minor → major), key signature shown, letter check (3 letters → which kind of that letter), and the 6th-note shortcut. Plays the major then minor chord. |
+| 2 | Term match (memory pairs) | `TermMatch`, Terms chapter new step "Match them up" + TOOLS `term-match` | Grade 1-4, 4/6/8 pairs; no two pairs share a meaning. Term cards speak themselves (toggle), matched pairs play `playTerm`. |
+| 3 | Which touch? / How loud? | `TouchEar`, Dynamics new step "Train your ear" + TOOLS `touch-ear` | Listening game on the sampled piano: 3 or 5 touches (staccato, legato, accent, tenuto, staccatissimo) or p/mf/f and pp-ff with an mf reference button; answer reveals the notation (`ArticBar` / `DynMark`), score + streak. |
+| 4 | Stale comment fixed | TERMS | Grade 4 comment no longer says string terms are left out. |
+| 5 | Verification | -- | Babel compile in Playwright; all 70 tool URLs and 19 chapters load with zero page errors; screenshots of each new tool checked. Fixed a crash when switching Touch → Loudness with an answer showing (state now reset in the click handler). |
+| 6 | Git hygiene | `.git` | Removed stale HEAD.lock / maintenance.lock / tmp_obj files left by background maintenance after e4a5e43; set `maintenance.auto false` (plus `gc.auto 0`). |
+
 Next on the plan: more mini tools (Sohyun's rule: every activity stand-alone + in TOOLS). Ideas: sight-reading flash cards, a practice-dice/timer tool, scale degree names (tonic, supertonic...), transposition. Signs 116, Chords 117, Toolbox 118, Grade 3 intervals + cadences 119 done.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
