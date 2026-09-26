@@ -3080,6 +3080,19 @@ Sohyun: everything is small and hard to take in at a glance -- make the importan
 | 4 | Less on screen | `SoundSettings`, header | Sound settings fold into one line ("♪ Sound: Piano · Woodblock click -- change"), opening a panel with Done. Header compact and aligned with the column: "← Piano Butler", title, and in teacher view a small "TEACHER VIEW · Student view" on the right. Plan, Toolbox and beat-game intros shortened. |
 | 5 | Verification | -- | Screens checked at phone and desktop width (learn, plan, students, toolbox, metronome, beat game, chapter, drill, hand shape); student-management test; 82 tools / 21 chapters load with zero page errors. |
 
+### Phase 135 -- scale finder + fingering display fix, visible tap targets, book plan (2026-09-26)
+
+Sohyun: (1) every scale should be searchable; in B-flat major the RH starting 2 isn't part of the pattern so it should look plain, and black keys tinted blue/green hide that e.g. F# starts on three black keys -- double-check every scale's numbers; (2) activities like ledger-line writing give no guide where to tap -- audit all activities so the purpose and the action are clear; (3) plan the course as printable PDFs / a book series, online + offline.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Scale finder | `ScaleFinder`, `parseScaleQuery`, `PENDING_SCALE`; TOOLS `scale-finder`; Scales chapter step "Look up any scale"; Toolbox search | Type "bb", "B flat", "e flat major", "f#m", "c minor" (or tap a key): key signature, notes (raised 7th for harmonic minor), both hands on the keyboard (1/2 octaves), legend, hear it up and down. Typing a scale in the Toolbox search shows a direct "E♭ major scale ›" card. |
+| 2 | Fingering display | `segmentsStartAt1`, `ScaleKeyboard` | RH notes before the first thumb (Bb/Eb start on 2, Ab/Db on 2-3, F# on 2-3-4) are a lead-in: uncoloured. Black keys always stay black; their group shows as a coloured outline + stripe, number in white -- runs of black keys are visible again. Applies to every scale keyboard (finder, fingering drill, minor viewer). |
+| 3 | Fingering audit | SCALES, MINOR_2OCT | Programmatic check of all 15 majors + 12 harmonic minors, 1 and 2 octaves: array lengths match, no thumb on a black key, no finger 5 mid-scale -- all pass. Compared with standard fingerings: all majors match. Two points for Sohyun to confirm against her books: F#/Gb major LH top note printed as 2 (a continuing LH would use 4); G# harmonic minor LH 3214 3213 (thumbs on B and F##) vs the common 3213 2143 (thumbs on B and E). Data left as read from the AMEB books. |
+| 4 | Visible tap targets | `StaffFrame` (`guideX`), `LedgerWrite`, `WriteTheNote`, `PlaceIt` | Every tappable line/space shows a small dot; ledger positions show dotted ledger lines; a ghost note (or ghost sharp/flat) follows the pointer. Ledger writing got a purpose line and a step-by-step hint ("count line, space, line… then tap where F goes"). Place-it hit area widened. |
+| 5 | Activity audit | all 83 tools | Screenshot sheet review of every tool at phone width; remaining tools already state purpose + action. |
+| 6 | Book plan | Claude Doc "Piano Butler Books: Print & Online Plan" | 7-book series (Me and the Piano, Reading Begins, Hands on the Move, Theory Ladder Prelim-G1 and G2-4, Teacher Guide, Know Your Instrument), TOCs mapped to step codes, spread design with QR to tools, online/offline use, production (print view -> PDF builder), phased plan. |
+
 Next on the plan: more mini tools (Sohyun's rule: every activity stand-alone + in TOOLS). Ideas: sight-reading flash cards, a practice-dice/timer tool, scale degree names (tonic, supertonic...), transposition. Signs 116, Chords 117, Toolbox 118, Grade 3 intervals + cadences 119 done.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
