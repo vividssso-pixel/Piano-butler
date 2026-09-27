@@ -3123,6 +3123,9 @@ Phase 140 -- rest grouping and duplets, next off the Content Coverage table. Reg
 - `duplets` (DupletDemo, Time signatures chapter, after Grouping notes/GroupingGame): 2 equal notes in the time of 3 in compound time, the mirror of a triplet -- toggle between the normal 3-quaver beat and the bracketed "2" duplet, both playable so the timing difference is audible, not just visual.
 - `BeamRow` (the shared beamed-notation renderer from Phase 136) extended: a tuplet bracket can now show "2" (`dup: true`) as well as "3" (`tri: true`), and a `noDot: true` flag on an event suppresses the automatic augmentation-dot the renderer would otherwise draw for a q=1.5 duration -- needed because a duplet's notes are an untied odd duration, not a dotted note.
 
+Phase 141 -- complete-the-melody ending, next off the Content Coverage table. Regression: 97 tools / 21 drills, no errors.
+- `complete-melody` (CompleteMelody, Reading steps chapter, after Echo the tune): a short scale-shaped tune (C, G, or F major) climbs up and back down but stops one note short of home -- three candidate endings, all playable, so the resolution is heard, not just read. Correct answer is always the tonic ("settles -- home"); wrong answers are a step-short-of-home (still wants to fall) and a leap that breaks the stepwise shape. Verified live via screenshots: at-rest render (ghost end-note + C/E/A buttons), wrong-answer path (red colouring on the final note, "Listen again" explanation, no Next button), correct-answer path (green colouring, "Yes --" explanation, "Next tune ->" button appears).
+
 Next on the plan: more mini tools (Sohyun's rule: every activity stand-alone + in TOOLS). Content Coverage table in the book-plan doc tracks real gaps going forward -- check it before proposing new ones.
 
 

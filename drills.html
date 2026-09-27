@@ -8207,6 +8207,10 @@ function ReadingStepsLearn({ onStart }) {
         {tip('Listen, sing, play', 'Hear a tiny tune, sing it back, then find it on the keys. Every tune starts on C.')}
         <EchoTune/>
       </Step>
+      <Step title="Complete the melody">
+        {tip('Ending on the tonic', 'A scale-shaped tune almost always settles back on its starting note -- the tonic. That’s what makes an ending sound finished rather than left hanging.')}
+        <CompleteMelody/>
+      </Step>
     </Lesson>
   );
 }
@@ -10616,6 +10620,52 @@ function DupletDemo() {
     </div>
   );
 }
+// ─── Phase 141: complete the melody ending -- pick the note that resolves it ────────
+// Classic scale-shaped exercise: a short tune climbs up and comes back down but stops one
+// note short of home. Three candidate endings, all playable, so the "why" is heard, not just
+// read -- landing on the tonic is the one that resolves; the others are deliberately left
+// hanging so the difference is obvious by ear.
+const MELODY_TASKS = [
+  { key: 'C', tonic: 28, up: [28, 29, 30, 31, 32], down: [31, 30, 29], choices: [{ d: 28, why: 'the tonic -- home. The tune settles.' }, { d: 30, why: 'a step short of home -- it still wants to fall further.' }, { d: 33, why: 'a leap away -- it doesn’t follow the stepwise shape at all.' }] },
+  { key: 'G', tonic: 32, up: [32, 33, 34, 35, 36], down: [35, 34, 33], choices: [{ d: 32, why: 'the tonic -- home. The tune settles.' }, { d: 34, why: 'a step short of home -- it still wants to fall further.' }, { d: 37, why: 'a leap away -- it doesn’t follow the stepwise shape at all.' }] },
+  { key: 'F', tonic: 26, up: [26, 27, 28, 29, 30], down: [29, 28, 27], choices: [{ d: 26, why: 'the tonic -- home. The tune settles.' }, { d: 28, why: 'a step short of home -- it still wants to fall further.' }, { d: 31, why: 'a leap away -- it doesn’t follow the stepwise shape at all.' }] },
+];
+function CompleteMelody() {
+  const [i, setI] = useState(0);
+  const [pick, setPick] = useState(null);
+  const [on, setOn] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const T = MELODY_TASKS[i];
+  const given = [...T.up, ...T.down].map(d => ({ d, dur: 1 }));
+  function playIt(withEnd) {
+    timers.current.forEach(clearTimeout); timers.current = [];
+    const notes = withEnd != null ? [...given, { d: withEnd, dur: 2 }] : given;
+    timers.current = playMelody(notes, 132, setOn);
+  }
+  function choose(d) { setPick(d); playIt(d); }
+  function next() { setI((i + 1) % MELODY_TASKS.length); setPick(null); setOn(-1); }
+  const shownNotes = pick === null ? [...given, { d: T.tonic, dur: 2, ghost: true }] : [...given, { d: pick, dur: 2 }];
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Complete the melody</div>
+      <div style={actNote}>The tune climbs the scale and comes back down -- but stops one note short of home. Listen to each ending, then pick the one that sounds finished.</div>
+      <div style={{background:'#fff',borderRadius:10,padding:'8px 6px'}}>
+        <MelodyStaff notes={shownNotes.map((n,idx)=>({d:n.d,dur:n.dur}))} beats={4} clef="treble" width={300} on={on} colors={shownNotes.map((n,idx)=> n.ghost ? '#c9bda3' : (pick !== null && idx === shownNotes.length-1 ? (pick===T.tonic?'#4f7a45':'#b5483b') : undefined))}/>
+      </div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',margin:'8px 0'}}>
+        {T.choices.map((c, k) => <button key={k} className={'chip' + (pick === c.d ? ' active' : '')} style={{padding:'5px 12px',fontSize:14}} onClick={() => choose(c.d)}>{dName(c.d)}</button>)}
+      </div>
+      <div style={{textAlign:'center',fontSize:14,minHeight:40,margin:'4px 0'}}>
+        {pick !== null && <><b style={{color:pick===T.tonic?'#4f7a45':'#b5483b'}}>{pick===T.tonic?'Yes -- ':'Listen again: '}{dName(pick)}</b>: {T.choices.find(c=>c.d===pick).why}</>}
+      </div>
+      <div style={{display:'flex',gap:8,justifyContent:'center'}}>
+        <button className="ghost-btn" onClick={() => playIt(pick)}>♪ Play</button>
+        {pick === T.tonic && <button className="ghost-btn" onClick={next}>Next tune →</button>}
+      </div>
+    </div>
+  );
+}
 const TOOLS = [
   { id: 'sit-check', ch: 'first-steps', title: 'Set up the stool', blurb: 'Height and distance: forearm level, elbows open.', C: () => <SitCheck/> },
   { id: 'hand-shape', ch: 'first-steps', title: 'The hand shape', blurb: 'Knuckle bridge, level wrist, fingertips -- and six faults.', C: () => <HandShape/> },
@@ -10642,6 +10692,7 @@ const TOOLS = [
   { id: 'transpose', ch: 'key-signatures', title: 'Transpose a tune', blurb: 'Same scale degrees, new key.', C: () => <Transposer/> },
   { id: 'term-match', ch: 'terms', title: 'Term match', blurb: 'Memory pairs: term and meaning, spoken aloud.', C: () => <TermMatch/> },
   { id: 'term-cards', ch: 'terms', title: 'Term cards', blurb: 'AMEB terms, Grades 1-4, with sound.', C: () => <TermCards/> },
+  { id: 'complete-melody', ch: 'reading-steps', title: 'Complete the melody', blurb: 'Pick the ending note that resolves the tune.', C: () => <CompleteMelody/> },
   { id: 'echo', ch: 'reading-steps', title: 'Echo the tune (copy by ear)', blurb: 'Hear 3-5 notes, play them back.', C: () => <EchoTune/> },
   { id: 'practice-timer', ch: 'practice', title: 'Practice timer', blurb: '5 to 30 minutes, with a bell.', C: () => <PracticeTimer/> },
   { id: 'practice-dice', ch: 'practice', title: 'Practice dice', blurb: 'Roll for a new way to practise.', C: () => <PracticeDice/> },
@@ -10815,6 +10866,7 @@ const TOOL_CATS = [
 // cat, level range [from, to] (0 Beginner, 1 Prelim, 2 Grade 1–2, 3 Grade 3–4), kinds
 // kinds: show = show & explain, game = student does it, ear = listening, write = written theory, home = home practice
 const TOOL_META = {
+  'complete-melody': ['reading', 1, 2, 'game ear'],
   'rest-grouping': ['rhythm', 2, 4, 'show'], 'duplets': ['rhythm', 3, 4, 'show'],
   'flash-cards': ['reading', 1, 2, 'game'], 'grace-write': ['words', 3, 4, 'write'],
   'clef-basics': ['reading', 0, 1, 'show'], 'staff-basics': ['reading', 0, 1, 'show'], 'anacrusis': ['rhythm', 2, 3, 'show'], 'minor-forms': ['scales', 1, 2, 'show'],
