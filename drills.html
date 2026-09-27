@@ -1229,7 +1229,7 @@ function Step({ n, total, title, color, open, done, onToggle, onDone, children, 
         <span style={{flex:'0 0 34px',height:34,borderRadius:17,background:done ? '#fff' : color,border:'2.5px solid ' + color,color:done ? color : '#fff',
           fontSize:16,fontWeight:900,display:'flex',alignItems:'center',justifyContent:'center'}}>{done ? '✓' : n}</span>
         <span style={{flex:1}}>
-          <span style={{display:'block',fontSize:11.5,fontWeight:800,color:color,textTransform:'uppercase',letterSpacing:'0.08em'}}>Step {n} of {total}</span>
+          <span style={{display:'block',fontSize:11.5,fontWeight:800,color:color,textTransform:'uppercase',letterSpacing:'0.08em'}}>{t('Step ' + n + ' of ' + total, n + ' / ' + total + ' 단계')}</span>
           <span style={{display:'block',fontSize:18,fontWeight:900,letterSpacing:'-0.02em',lineHeight:1.2}}>{title}</span>
         </span>
         <span style={{fontSize:15,color:'var(--muted)',transform:open ? 'rotate(90deg)' : 'none',transition:'transform 0.2s'}}>›</span>
@@ -1238,14 +1238,14 @@ function Step({ n, total, title, color, open, done, onToggle, onDone, children, 
         <div style={{marginLeft:16,paddingLeft:16,borderLeft:'3px solid ' + color + '55',paddingTop:4,animation:'fadeUp 0.25s both'}}>
           <StepCtx.Provider value={color}>{children}</StepCtx.Provider>
           <div style={{textAlign:'right',margin:'4px 0 2px'}}>
-            <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',borderColor:color,color:color}} onClick={onDone}>{done ? 'Done ✓' : 'Got it ✓'}</button>
+            <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',borderColor:color,color:color}} onClick={onDone}>{done ? t('Done ✓', '완료 ✓') : t('Got it ✓', '이해했어요 ✓')}</button>
           </div>
         </div>
       )}
     </section>
   );
 }
-function Lesson({ id, title, intro, children, onStart, startLabel = 'Start the drill →', head }) {
+function Lesson({ id, title, intro, children, onStart, startLabel, head }) {
   const steps = React.Children.toArray(children).filter(Boolean);
   const [done, setDone] = useState(() => loadDone()[id] || {});
   const [open, setOpen] = useState(() => { const d = loadDone()[id] || {}; const o = {}; steps.forEach((s, i) => { o[i] = !d[i]; }); return o; });
@@ -1269,12 +1269,12 @@ function Lesson({ id, title, intro, children, onStart, startLabel = 'Start the d
             <span style={{width:18,height:18,borderRadius:9,background:done[i] ? '#fff' : c,color:done[i] ? c : '#fff',fontSize:11.5,display:'inline-flex',alignItems:'center',justifyContent:'center'}}>{done[i] ? '✓' : i + 1}</span>{s.props.title}</button>;
         })}
       </div>
-      <div style={{fontSize:12,color:'var(--muted)',fontWeight:700,margin:'2px 0 4px'}}>{count} of {steps.length} steps done</div>
+      <div style={{fontSize:12,color:'var(--muted)',fontWeight:700,margin:'2px 0 4px'}}>{t(count + ' of ' + steps.length + ' steps done', steps.length + '개 중 ' + count + '개 완료')}</div>
       {steps.map((s, i) => React.cloneElement(s, {
         key: i, n: i + 1, total: steps.length, id: id + '-step-' + i, color: STEP_COLORS[i % STEP_COLORS.length],
         open: !!open[i], done: !!done[i], onToggle: () => setOpen(o => ({ ...o, [i]: !o[i] })), onDone: () => markDone(i),
       }))}
-      {onStart && <button className="primary-btn" style={{marginTop:16}} onClick={onStart}>{startLabel}</button>}
+      {onStart && <button className="primary-btn" style={{marginTop:16}} onClick={onStart}>{startLabel || t('Start the drill →', '드릴 시작하기 →')}</button>}
     </div>
   );
 }
@@ -1972,21 +1972,21 @@ function SoundSettings() {
   };
   const [open, setOpen] = useState(false);
   const chip = (on, label, onClick) => <button className={'chip' + (on ? ' active' : '')} style={{padding:'3px 10px',fontSize:13}} onClick={onClick}>{label}</button>;
-  const summary = (p.piano ? 'Piano' : 'Simple') + ' · ' + (p.count === 'voice' ? 'Voice count' : ({ wood: 'Woodblock', tick: 'Tick', beep: 'Beep' })[p.click || 'wood'] + ' click');
+  const summary = (p.piano ? t('Piano', '피아노') : t('Simple', '심플')) + ' · ' + (p.count === 'voice' ? t('Voice count', '음성 카운트') : ({ wood: t('Woodblock', '우드블록'), tick: t('Tick', '틱'), beep: t('Beep', '삐') })[p.click || 'wood'] + t(' click', ' 클릭'));
   if (!open) return (
     <div style={{display:'flex',justifyContent:'flex-end',margin:'-6px 0 10px'}}>
-      <button onClick={() => setOpen(true)} style={{border:'none',background:'transparent',fontSize:13,fontWeight:800,color:'#5a5248',cursor:'pointer',fontFamily:'inherit',padding:'2px 4px'}}>♪ Sound: {summary} <span style={{color:'#a8823f'}}>change</span></button>
+      <button onClick={() => setOpen(true)} style={{border:'none',background:'transparent',fontSize:13,fontWeight:800,color:'#5a5248',cursor:'pointer',fontFamily:'inherit',padding:'2px 4px'}}>♪ {t('Sound', '소리')}: {summary} <span style={{color:'#a8823f'}}>{t('change', '변경')}</span></button>
     </div>
   );
   return (
     <div style={{display:'flex',flexWrap:'wrap',gap:6,alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:800,color:'#5a5248',margin:'-6px 0 14px',background:'#fff',border:'1.5px solid var(--border)',borderRadius:12,padding:'10px'}}>
-      <span>Sound</span>{chip(p.piano, 'Piano', () => set({ piano: true }))}{chip(!p.piano, 'Simple', () => set({ piano: false }))}
-      <span style={{marginLeft:8}}>Count</span>{chip(p.count === 'click', 'Click', () => set({ count: 'click' }))}{chip(p.count === 'voice', 'Voice 1 2 3 4', () => set({ count: 'voice' }))}
+      <span>{t('Sound', '소리')}</span>{chip(p.piano, t('Piano', '피아노'), () => set({ piano: true }))}{chip(!p.piano, t('Simple', '심플'), () => set({ piano: false }))}
+      <span style={{marginLeft:8}}>{t('Count', '카운트')}</span>{chip(p.count === 'click', t('Click', '클릭'), () => set({ count: 'click' }))}{chip(p.count === 'voice', t('Voice 1 2 3 4', '음성 1 2 3 4'), () => set({ count: 'voice' }))}
       <span style={{flexBasis:'100%',height:0}}/>
-      {p.count === 'click' ? <><span>Click</span>{[['wood', 'Woodblock'], ['tick', 'Tick'], ['beep', 'Beep']].map(([k, l]) => <React.Fragment key={k}>{chip((p.click || 'wood') === k, l, () => set({ click: k }))}</React.Fragment>)}</>
-        : <><span>Voice</span>{[['heart', 'Female (US)'], ['emma', 'Female (UK)'], ['michael', 'Male']].map(([k, l]) => <React.Fragment key={k}>{chip((p.voice || 'heart') === k, l, () => set({ voice: k }))}</React.Fragment>)}</>}
+      {p.count === 'click' ? <><span>{t('Click', '클릭')}</span>{[['wood', t('Woodblock', '우드블록')], ['tick', t('Tick', '틱')], ['beep', t('Beep', '삐')]].map(([k, l]) => <React.Fragment key={k}>{chip((p.click || 'wood') === k, l, () => set({ click: k }))}</React.Fragment>)}</>
+        : <><span>{t('Voice', '음성')}</span>{[['heart', t('Female (US)', '여성 (US)')], ['emma', t('Female (UK)', '여성 (UK)')], ['michael', t('Male', '남성')]].map(([k, l]) => <React.Fragment key={k}>{chip((p.voice || 'heart') === k, l, () => set({ voice: k }))}</React.Fragment>)}</>}
       <span style={{flexBasis:'100%',height:0}}/>
-      <button className="ghost-btn" style={{padding:'5px 14px',fontSize:13}} onClick={() => setOpen(false)}>Done</button>
+      <button className="ghost-btn" style={{padding:'5px 14px',fontSize:13}} onClick={() => setOpen(false)}>{t('Done', '완료')}</button>
     </div>
   );
 }
@@ -2988,8 +2988,8 @@ function NoteRestNaming() {
   }
   return (
     <div className="try-box" style={actBox}>
-      <div style={actTitle}>Same name, note or rest</div>
-      <div style={actNote}>Every note value and its matching rest share exactly the same name -- a semibreve rest is silence for as long as a semibreve note would sound.</div>
+      <div style={actTitle}>{t('Same name, note or rest', '음표와 쉼표, 이름이 같아요')}</div>
+      <div style={actNote}>{t('Every note value and its matching rest share exactly the same name -- a semibreve rest is silence for as long as a semibreve note would sound.', '모든 음표는 짝이 되는 쉼표와 이름이 완전히 같아요 -- 온쉼표는 온음표가 울리는 것과 같은 길이만큼 조용히 쉬는 거예요.')}</div>
       <div style={{display:'flex',flexDirection:'column',gap:5}}>
         {NOTE_VALUES.map(v => {
           const note = NV_NOTES.find(n => n.id === v.id), rest = NV_RESTS.find(r => r.id === v.id);
@@ -2998,18 +2998,18 @@ function NoteRestNaming() {
               <button onClick={() => playPair(v, false)} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:1,background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',padding:'8px 2px'}}>
                 <Glyph item={note} size={30}/>
                 <span style={{fontSize:13,fontWeight:900,color:'var(--brass)'}}>{cap(v.id)}</span>
-                <span style={{fontSize:10.5,fontWeight:600,color:'var(--muted)'}}>note</span>
+                <span style={{fontSize:10.5,fontWeight:600,color:'var(--muted)'}}>{t('note', '음표')}</span>
               </button>
               <button onClick={() => playPair(v, true)} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:1,background:'none',border:'none',borderLeft:'1px dashed var(--border)',cursor:'pointer',fontFamily:'inherit',padding:'8px 2px'}}>
                 <Glyph item={rest} size={30}/>
                 <span style={{fontSize:13,fontWeight:900,color:'var(--brass)'}}>{cap(v.id)}</span>
-                <span style={{fontSize:10.5,fontWeight:600,color:'var(--muted)'}}>rest</span>
+                <span style={{fontSize:10.5,fontWeight:600,color:'var(--muted)'}}>{t('rest', '쉼표')}</span>
               </button>
             </div>
           );
         })}
       </div>
-      <div style={{fontSize:12.5,color:'#5c544a',marginTop:8,lineHeight:1.5}}>Tap a note to hear it sound, or tap a rest to hear it stay silent for the same length of time.</div>
+      <div style={{fontSize:12.5,color:'#5c544a',marginTop:8,lineHeight:1.5}}>{t('Tap a note to hear it sound, or tap a rest to hear it stay silent for the same length of time.', '음표를 누르면 소리가 나고, 쉼표를 누르면 같은 길이만큼 조용해져요.')}</div>
     </div>
   );
 }
@@ -3032,19 +3032,19 @@ function WholeBarRest() {
   }
   return (
     <div className="try-box" style={actBox}>
-      <div style={actTitle}>The semibreve rest also means "rest the whole bar"</div>
-      <div style={actNote}>On its own, a semibreve rest is worth exactly 4 beats. But it has a second job too: composers use that same symbol as a shortcut for "rest for however many beats this bar holds" -- so in 3/4 it means rest for 3 beats, and in 2/4 it means rest for 2 beats, even though a semibreve rest by itself is 4 beats long. Look at the time signature to know how long it really lasts.</div>
+      <div style={actTitle}>{t('The semibreve rest also means "rest the whole bar"', '온쉼표에는 "이 마디를 통째로 쉬어라"라는 뜻도 있어요')}</div>
+      <div style={actNote}>{t('On its own, a semibreve rest is worth exactly 4 beats. But it has a second job too: composers use that same symbol as a shortcut for "rest for however many beats this bar holds" -- so in 3/4 it means rest for 3 beats, and in 2/4 it means rest for 2 beats, even though a semibreve rest by itself is 4 beats long. Look at the time signature to know how long it really lasts.', '온쉼표 하나만 보면 정확히 4박이에요. 하지만 작곡가들은 같은 기호를 "이 마디에 있는 박자만큼 쉬어라"라는 줄임 표시로도 써요 -- 그래서 3/4박자에서는 3박, 2/4박자에서는 2박을 쉬라는 뜻이 되죠, 온쉼표 자체는 4박이지만요. 실제로 얼마나 쉬어야 하는지는 박자표를 보고 알 수 있어요.')}</div>
       <div style={{display:'flex',gap:10,justifyContent:'space-around',flexWrap:'wrap',marginTop:6}}>
         {BARS.map(b => (
           <div key={b.label} style={{background:'#fff',borderRadius:10,padding:'10px 14px',textAlign:'center',minWidth:92}}>
             <TSig top={b.top} bottom={b.bottom} size={24}/>
             <div style={{margin:'6px 0'}}><Glyph item={{ id: 'semibreve', base: 4, rest: true }} size={34}/></div>
-            <div style={{fontSize:12,fontWeight:800,color:'var(--brass)'}}>= {b.top} beat{b.top === 1 ? '' : 's'} rest<br/>(the whole bar)</div>
-            <button className="ghost-btn" style={{marginTop:6,fontSize:12,padding:'3px 9px'}} onClick={() => play(b)}>{playing === b.label ? 'Counting…' : '♪ Count it'}</button>
+            <div style={{fontSize:12,fontWeight:800,color:'var(--brass)'}}>{t('= ' + b.top + ' beat' + (b.top === 1 ? '' : 's') + ' rest', '= ' + b.top + '박 쉼')}<br/>{t('(the whole bar)', '(마디 전체)')}</div>
+            <button className="ghost-btn" style={{marginTop:6,fontSize:12,padding:'3px 9px'}} onClick={() => play(b)}>{playing === b.label ? t('Counting…', '세는 중…') : t('♪ Count it', '♪ 세어보기')}</button>
           </div>
         ))}
       </div>
-      <div style={{fontSize:12.5,color:'#5c544a',marginTop:8,lineHeight:1.5}}>Away from a whole empty bar, a semibreve rest still means its literal 4 beats -- for example, resting for exactly 4 beats out of a longer bar.</div>
+      <div style={{fontSize:12.5,color:'#5c544a',marginTop:8,lineHeight:1.5}}>{t('Away from a whole empty bar, a semibreve rest still means its literal 4 beats -- for example, resting for exactly 4 beats out of a longer bar.', '마디 전체를 쉬는 경우가 아니라면, 온쉼표는 여전히 문자 그대로 4박을 뜻해요 -- 예를 들어 더 긴 마디 안에서 정확히 4박만 쉬는 경우처럼요.')}</div>
     </div>
   );
 }
@@ -3086,16 +3086,16 @@ function NoteRestMatch() {
   const pairsDone = Object.keys(done).length, total = deck.length / 2;
   return (
     <div className="try-box" style={actBox}>
-      <div style={actTitle}>Note ↔ rest match</div>
-      <div style={actNote}>Turn over two cards. Find each note value and the rest with the same name.</div>
+      <div style={actTitle}>{t('Note ↔ rest match', '음표 ↔ 쉼표 짝맞추기')}</div>
+      <div style={actNote}>{t('Turn over two cards. Find each note value and the rest with the same name.', '카드 두 장을 뒤집으세요. 같은 이름을 가진 음표와 쉼표를 찾아보세요.')}</div>
       <div style={{display:'flex',gap:4,marginBottom:6}}>
-        {[3, 4, 5].map(x => <button key={x} className={'chip' + (x === n ? ' active' : '')} style={{padding:'3px 10px',fontSize:13}} onClick={() => setN(x)}>{x} pairs</button>)}
+        {[3, 4, 5].map(x => <button key={x} className={'chip' + (x === n ? ' active' : '')} style={{padding:'3px 10px',fontSize:13}} onClick={() => setN(x)}>{t(x + ' pairs', x + '쌍')}</button>)}
       </div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(78px,1fr))',gap:6,marginTop:4}}>
         {deck.map(c => {
           const open = up.includes(c.key) || done[c.id];
           const wrong = up.length === 2 && up.includes(c.key) && deck.find(x => x.key === up[0]).id !== deck.find(x => x.key === up[1]).id;
-          const label = cap(c.v.id) + (c.side === 'rest' ? ' rest' : '');
+          const label = cap(c.v.id) + (c.side === 'rest' ? t(' rest', ' 쉼표') : '');
           return (
             <button key={c.key} onClick={() => flip(c)} style={{minHeight:76,borderRadius:10,border:'1.5px solid ' + (done[c.id] ? '#3f8a4f' : wrong ? '#b5483b' : 'var(--border)'),background:open ? (done[c.id] ? '#e6f2e8' : '#fff') : '#241f1a',color:open ? 'var(--text)' : '#a8823f',cursor:'pointer',padding:'6px 4px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:3,fontFamily:'inherit',transition:'background 0.2s'}}>
               {!open ? <span style={{fontSize:20}}>♪</span> : (
@@ -3109,9 +3109,9 @@ function NoteRestMatch() {
         })}
       </div>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:8,fontSize:14,fontWeight:800}}>
-        <span>{pairsDone}/{total} pairs · {moves} turns</span>
-        {pairsDone === total && total > 0 ? <span style={{color:'#3f8a4f'}}>All matched{moves <= total + 2 ? ' -- great memory!' : '!'}</span> : null}
-        <button className="ghost-btn" onClick={() => deal()}>New cards</button>
+        <span>{t(pairsDone + '/' + total + ' pairs · ' + moves + ' turns', pairsDone + '/' + total + '쌍 · ' + moves + '번 시도')}</span>
+        {pairsDone === total && total > 0 ? <span style={{color:'#3f8a4f'}}>{t('All matched' + (moves <= total + 2 ? ' -- great memory!' : '!'), '모두 맞췄어요' + (moves <= total + 2 ? ' -- 기억력이 대단해요!' : '!'))}</span> : null}
+        <button className="ghost-btn" onClick={() => deal()}>{t('New cards', '새 카드')}</button>
       </div>
     </div>
   );
@@ -3122,8 +3122,8 @@ function NoteValLearn({ onStart }) {
     { it: NV_NOTES[0], n: 1 }, { it: NV_NOTES[1], n: 2 }, { it: NV_NOTES[2], n: 4 }, { it: NV_NOTES[3], n: 8 }, { it: NV_NOTES[4], n: 16 },
   ];
   return (
-    <Lesson id="note-values" title="Notes and rests" intro={<>Each row fills the same 4-beat bar -- every note splits into two of the next one down.</>} onStart={onStart}>
-      <Step title="The note-value tree">
+    <Lesson id="note-values" title={t('Notes and rests', '음표와 쉼표')} intro={<>{t('Each row fills the same 4-beat bar -- every note splits into two of the next one down.', '각 줄은 같은 4박 마디를 채워요 -- 모든 음표는 한 단계 아래 음표 두 개로 나뉘어요.')}</>} onStart={onStart}>
+      <Step title={t('The note-value tree', '음표 나무')}>
       <div style={{display:'flex',flexDirection:'column',gap:8}}>
         {rows.map(({ it, n }) => {
           const rest = NV_RESTS.find(r => r.id === it.id);
@@ -3139,7 +3139,7 @@ function NoteValLearn({ onStart }) {
                   {Array.from({ length: n }).map((_, i) => <Glyph key={i} item={it} size={size}/>)}
                 </div>
                 <div style={{flex:'0 0 auto',display:'flex',alignItems:'center',gap:2,fontSize:12,color:'var(--muted)',borderLeft:'1px solid var(--border)',paddingLeft:8}}>
-                  rest <Glyph item={rest} size={40}/>
+                  {t('rest', '쉼표')} <Glyph item={rest} size={40}/>
                 </div>
               </div>
             </div>
@@ -3148,15 +3148,15 @@ function NoteValLearn({ onStart }) {
       </div>
 
       </Step>
-      <Step title="Same name for the note and the rest">
+      <Step title={t('Same name for the note and the rest', '음표와 쉼표, 이름이 같아요')}>
       <NoteRestNaming/>
       </Step>
-      <Step title="Split it">
+      <Step title={t('Split it', '나눠보기')}>
       <SplitTree/>
       </Step>
-      <Step title="Dotted notes">
+      <Step title={t('Dotted notes', '점음표')}>
       <div style={{background:'#fff',borderRadius:10,padding:'12px 14px',marginTop:4}}>
-        <div style={{fontSize:15,fontWeight:800,marginBottom:6}}>A dot adds half again</div>
+        <div style={{fontSize:15,fontWeight:800,marginBottom:6}}>{t('A dot adds half again', '점은 원래 길이의 절반을 더해요')}</div>
         <div style={{display:'flex',flexWrap:'wrap',gap:12,alignItems:'center',fontSize:14}}>
           {NV_DOTTED.map(d => (
             <span key={d.key} style={{display:'inline-flex',alignItems:'center',gap:4}}>
@@ -3167,19 +3167,19 @@ function NoteValLearn({ onStart }) {
       </div>
 
       </Step>
-      <Step title="Fill the bar">
+      <Step title={t('Fill the bar', '마디 채우기')}>
       <FillTheBar/>
       <p style={{fontSize:12,color:'var(--muted)',margin:'10px 0 0',lineHeight:1.5}}>
-        Game board rule: D.C. sends you back to the start and D.S. back to the {'𝄋'} sign -- each only once per lap, just like in real music. Reach Fine to finish a lap.
+        {t('Game board rule: D.C. sends you back to the start and D.S. back to the ' + '𝄋' + ' sign -- each only once per lap, just like in real music. Reach Fine to finish a lap.', '게임판 규칙: D.C.는 처음으로, D.S.는 ' + '𝄋' + ' 기호로 되돌아가요 -- 실제 악보처럼 한 바퀴에 한 번씩만요. Fine에 도착하면 한 바퀴가 끝나요.')}
       </p>
       </Step>
-      <Step title="Writing rests correctly">
+      <Step title={t('Writing rests correctly', '쉼표를 올바르게 쓰기')}>
       <RestGrouping/>
       </Step>
-      <Step title="The whole-bar rest">
+      <Step title={t('The whole-bar rest', '온마디 쉼표')}>
       <WholeBarRest/>
       </Step>
-      <Step title="Match note names to rest names">
+      <Step title={t('Match note names to rest names', '음표 이름과 쉼표 이름 짝짓기')}>
       <NoteRestMatch/>
       </Step>
     </Lesson>
@@ -11410,6 +11410,19 @@ function ToolView({ id, locked, onBack, onChapter, backLabel = '← Toolbox' }) 
 // is not a password lock (a static page can't be one).
 const MODE_KEY = 'pb_mode_v1';
 let UI_TEACHER = false;
+// ─── Language (Phase 145) ─────────────────────────────────────────────────────────
+// Sohyun: a Korean translation option / language toggle, since her mother (a piano-academy
+// teacher in Korea) will be trying the app. Full-site translation is a multi-session effort
+// (her explicit choice) -- this phase adds the toggle + shared chrome + the Notes & Rests
+// chapter; every later phase should translate more chapters the same way.
+// Pattern: mirrors UI_TEACHER above -- a plain module-level variable written once per App()
+// render (see App()'s `LANG = lang;` line) and read anywhere via t(en, ko). Because App() owns
+// the top-level state and every descendant is a plain (non-memoized) function component, a
+// language switch re-renders the whole tree top-down, so every t() call picks up the new value.
+const LANG_KEY = 'pb_lang_v1';
+let LANG = 'en';
+try { LANG = localStorage.getItem(LANG_KEY) === 'ko' ? 'ko' : 'en'; } catch (e) {}
+function t(en, ko) { return LANG === 'ko' ? ko : en; }
 function initialMode() {
   try {
     const p = new URLSearchParams(location.search);
@@ -11709,6 +11722,9 @@ function App() {
   const [st, setSt] = useState(readUrlState);
   const [teacher, setTeacher] = useState(initialMode);
   const [preview, setPreview] = useState(false);
+  const [lang, setLang] = useState(LANG);
+  LANG = lang;
+  function toggleLang() { const next = lang === 'ko' ? 'en' : 'ko'; try { localStorage.setItem(LANG_KEY, next); } catch (e) {} setLang(next); }
   const T = teacher && !preview && !st.lock;
   UI_TEACHER = T;
   const active = DRILLS.find(d => d.id === st.drill) || DRILLS[0];
@@ -11739,15 +11755,18 @@ function App() {
       <div style={{background:'#fff',borderBottom:'1px solid var(--border)',padding:'12px 16px'}}>
         <div className="pb-main" style={{maxWidth:600,margin:'0 auto',display:'flex',alignItems:'center',justifyContent:'space-between',gap:10}}>
           <div style={{minWidth:0}}>
-            <a href="index.html" style={{color:'var(--muted)',fontSize:13,textDecoration:'none',display:'block',marginBottom:2}}>← Piano Butler</a>
+            <a href="index.html" style={{color:'var(--muted)',fontSize:13,textDecoration:'none',display:'block',marginBottom:2}}>{t('← Piano Butler', '← 피아노 버틀러')}</a>
             <h1 style={{color:'var(--text)',fontSize:21,fontWeight:900,margin:0,letterSpacing:'-0.02em',lineHeight:1.2}}>
-              {st.lock ? (st.view === 'kit' ? (st.kn || 'Your tools') : st.tool ? (TOOLS.find(t => t.id === st.tool) || {}).title : active.label) : 'Practice Drills'}
+              {st.lock ? (st.view === 'kit' ? (st.kn || t('Your tools', '내 도구')) : st.tool ? (TOOLS.find(tl => tl.id === st.tool) || {}).title : active.label) : t('Practice Drills', '연습 드릴')}
             </h1>
           </div>
-          {T && <div style={{textAlign:'right',flex:'0 0 auto'}}>
-            <div style={{fontSize:11,fontWeight:900,color:'#a8823f',letterSpacing:'0.06em'}}>TEACHER VIEW</div>
-            <button className="chip" style={{padding:'3px 10px',fontSize:12,marginTop:3}} onClick={() => setPreview(true)}>Student view</button>
-          </div>}
+          <div style={{display:'flex',alignItems:'center',gap:8,flex:'0 0 auto'}}>
+            <button className="chip" style={{padding:'3px 9px',fontSize:12}} onClick={toggleLang} title={t('한국어로 보기', 'View in English')}>{lang === 'ko' ? 'EN' : '한국어'}</button>
+            {T && <div style={{textAlign:'right'}}>
+              <div style={{fontSize:11,fontWeight:900,color:'#a8823f',letterSpacing:'0.06em'}}>{t('TEACHER VIEW', '교사 화면')}</div>
+              <button className="chip" style={{padding:'3px 10px',fontSize:12,marginTop:3}} onClick={() => setPreview(true)}>{t('Student view', '학생 화면')}</button>
+            </div>}
+          </div>
         </div>
       </div>
 
@@ -11755,7 +11774,7 @@ function App() {
         {preview && <div style={{background:'#241f1a',color:'#fff',borderRadius:10,padding:'8px 12px',marginBottom:12,fontSize:13.5,display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}><span>You’re seeing what a student sees.</span><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setPreview(false)}>Back to teacher view</button></div>}
         {!st.lock && (
           <div style={{display:'flex',background:'#fff',border:'1.5px solid var(--border)',borderRadius:12,padding:3,marginBottom:16}}>
-            {(T ? [['path', 'Plan'], ['students', 'Students'], ['tools', 'Toolbox'], ['practice', 'Practice']] : [['path', 'Learn'], ['practice', 'Practice']]).map(([v, l]) => (
+            {(T ? [['path', t('Plan', '계획')], ['students', t('Students', '학생')], ['tools', t('Toolbox', '도구함')], ['practice', t('Practice', '연습')]] : [['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]]).map(([v, l]) => (
               <button key={v} onClick={() => { update({ view: v, tool: null, kit: null, drill: v === 'path' ? null : st.drill }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderRadius:9,padding:'9px 0',fontSize:T ? 13 : 14,fontWeight:900,cursor:'pointer',
                 background:(st.view === v || (v === 'path' && st.view === 'chapters')) ? 'var(--text)' : 'transparent',color:(st.view === v || (v === 'path' && st.view === 'chapters')) ? '#fff' : 'var(--muted)'}}>{l}</button>
             ))}
@@ -11786,7 +11805,7 @@ function App() {
           const sg = stageOf(active.id), list = DRILLS.filter(d => stageOf(d.id)).map(d => d.id), k = list.indexOf(active.id);
           return (
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6,marginBottom:14}}>
-              <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => update({ drill: null })}>{T ? '← Back' : '← Learn'}</button>
+              <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => update({ drill: null })}>{T ? t('← Back', '← 뒤로') : t('← Learn', '← 배우기')}</button>
               <span style={{fontSize:12,fontWeight:800,color:'var(--muted)',textAlign:'center'}}>{sg ? sg.title : ''}</span>
               <span style={{display:'flex',gap:4}}>
                 <button className="ghost-btn" style={{fontSize:13,padding:'5px 9px'}} disabled={k <= 0} onClick={() => update({ drill: list[k - 1], tab: 'learn', level: 1 })}>‹</button>
