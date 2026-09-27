@@ -127,7 +127,7 @@
 <div id="root"></div>
 
 <script id="app-jsx" type="text/jsx-raw">
-const { useState, useEffect, useRef } = React;
+const { useState, useEffect, useRef, useMemo } = React;
 
 const LETTERS = ['A','B','C','D','E','F','G'];
 
@@ -1716,6 +1716,71 @@ function ShareLink({ drillId, level, mode }) {
         <input readOnly value={state} onFocus={e => e.target.select()} autoFocus
           style={{display:'block',width:'100%',marginTop:10,padding:8,fontSize:13,border:'1px solid var(--border)',borderRadius:8}}/>
       )}
+    </div>
+  );
+}
+
+// ─── Phase 142: print view / PDF worksheets (Content Coverage: "Print view (?print=1)
+// and PDF worksheets"). Rather than a separate PDF library (jsPDF is only used elsewhere
+// for the viva-voce report, which needs precise pagination) this reuses the browser's own
+// Print dialog -- "Save as PDF" is a built-in destination in every modern browser, no extra
+// dependency, and it reuses each drill's own Question component (rendered locked/unanswered)
+// so the worksheet always matches what the drill itself actually asks.
+function PrintLink({ drillId, level }) {
+  const url = location.pathname + '?print=1&drill=' + drillId + '&level=' + level + '&n=12';
+  return <div style={{marginTop:10,textAlign:'center'}}><a className="ghost-btn" style={{textDecoration:'none',display:'inline-block'}} href={url} target="_blank" rel="noopener">🖨 Print worksheet</a></div>;
+}
+function PrintWorksheet({ drillId, level, count }) {
+  const drill = DRILLS.find(d => d.id === drillId);
+  const concept = drill && drill.concept;
+  const n = Math.max(1, Math.min(30, count || 12));
+  const lv = concept ? (concept.levels.find(l => l.n === level) || concept.levels[0]) : null;
+  const qs = useMemo(() => {
+    if (!concept) return [];
+    const out = []; let prev = null;
+    for (let i = 0; i < n; i++) { const q = concept.generate(lv, prev); out.push(q); prev = q; }
+    return out;
+  }, [drillId, level, n]);
+  if (!concept) {
+    return (
+      <div style={{maxWidth:600,margin:'40px auto',padding:'0 20px',fontFamily:'Inter,sans-serif',textAlign:'center',color:'#241f1a'}}>
+        <p>No printable worksheet for this activity yet -- it's a hands-on tool, not a set of questions.</p>
+        <a href={location.pathname} style={{color:'#a8823f'}}>← Back to Piano Butler</a>
+      </div>
+    );
+  }
+  const Q = concept.Question;
+  const today = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+  return (
+    <div style={{maxWidth:720,margin:'0 auto',padding:'24px 20px 60px',fontFamily:'Inter,sans-serif',color:'#241f1a',background:'#fff'}}>
+      <style>{'@media print{.no-print{display:none !important}body{background:#fff !important}.ws-q{break-inside:avoid}}'}</style>
+      <div className="no-print" style={{textAlign:'center',marginBottom:20}}>
+        <button onClick={() => window.print()} style={{padding:'10px 22px',fontSize:15,fontWeight:800,background:'#241f1a',color:'#fff',border:'none',borderRadius:8,cursor:'pointer'}}>🖨 Print / Save as PDF</button>
+      </div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',borderBottom:'2px solid #241f1a',paddingBottom:8,marginBottom:4}}>
+        <div style={{fontSize:20,fontWeight:900}}>Piano Butler -- {drill.label}</div>
+        <div style={{fontSize:12,color:'#7a7064'}}>{today}</div>
+      </div>
+      <div style={{fontSize:12,color:'#7a7064',marginBottom:18}}>Level {lv.n} -- {lv.label}</div>
+      <div style={{display:'flex',gap:26,fontSize:13,marginBottom:24}}>
+        <div>Name: <span style={{display:'inline-block',width:180,borderBottom:'1px solid #241f1a'}}>&nbsp;</span></div>
+        <div>Score: <span style={{display:'inline-block',width:50,borderBottom:'1px solid #241f1a'}}>&nbsp;</span> / {n}</div>
+      </div>
+      {qs.map((q, i) => (
+        <div key={i} className="ws-q" style={{marginBottom:22,paddingBottom:14,borderBottom:'1px solid #e8dcc0'}}>
+          <div style={{fontSize:13,fontWeight:900,color:'#a8823f',marginBottom:4}}>Question {i + 1}</div>
+          <Q q={q} level={lv} given={null} locked={true} onAnswer={() => {}} pixel={false}/>
+        </div>
+      ))}
+      <div className="no-print" style={{textAlign:'center',margin:'8px 0 8px'}}>
+        <button onClick={() => window.print()} style={{padding:'10px 22px',fontSize:15,fontWeight:800,background:'#241f1a',color:'#fff',border:'none',borderRadius:8,cursor:'pointer'}}>🖨 Print / Save as PDF</button>
+      </div>
+      <div style={{marginTop:30,paddingTop:14,borderTop:'2px solid #241f1a'}}>
+        <div style={{fontSize:15,fontWeight:900,marginBottom:8}}>Answer key</div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(150px, 1fr))',gap:6,fontSize:13}}>
+          {qs.map((q, i) => <div key={i}>{i + 1}. {concept.answerLabel(q)}</div>)}
+        </div>
+      </div>
     </div>
   );
 }
@@ -6031,6 +6096,7 @@ const STAFF_LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 const CLEFS = {
   treble: { lines: [30, 32, 34, 36, 38], low: 30, high: 38 },   // E4 G4 B4 D5 F5
   bass:   { lines: [18, 20, 22, 24, 26], low: 18, high: 26 },   // G2 B2 D3 F3 A3
+  alto:   { lines: [24, 26, 28, 30, 32], low: 24, high: 32 },   // F3 A3 C4(middle C) E4 G4 -- the C clef, centred on middle C
 };
 function dName(d) { return STAFF_LETTERS[((d % 7) + 7) % 7]; }
 function dOct(d) { return Math.floor(d / 7); }
@@ -6052,7 +6118,7 @@ const GRAND_GAP = 20;
 // (font set via style, not the fontFamily attribute: the page's * { font-family } rule beats SVG attributes) to a fixed box on the staff:
 // treble from 1.3 spaces above the top line to 1.6 below the bottom line, bass from the top line
 // down 3.1 spaces. That keeps the treble curl on G and the bass dots around F on any font.
-const CLEF_GLYPH = { treble: { ch: '𝄞', top: 38, topPad: 16, bottom: 30, bottomPad: 13 }, bass: { ch: '𝄢', top: 26, topPad: 1, bottom: 26, bottomPad: 31 } };
+const CLEF_GLYPH = { treble: { ch: '𝄞', top: 38, topPad: 16, bottom: 30, bottomPad: 13 }, bass: { ch: '𝄢', top: 26, topPad: 1, bottom: 26, bottomPad: 31 }, alto: { ch: '𝄡', top: 28, topPad: 13, bottom: 28, bottomPad: 13 } };
 function ClefGlyph({ clef, yOf, st, ink }) {
   const g = CLEF_GLYPH[clef];
   const ref = useRef(null);
@@ -6423,7 +6489,8 @@ function StaffFrame({ clef, lo, hi, width = 300, rows, onRow, children, ink = '#
   const [hover, setHover] = useState(null);
   const staves = clef === 'grand' ? ['treble', 'bass'] : [clef];
   const yOf = staffYOfFor(clef);
-  const topD = Math.max(hi, clef === 'bass' ? 26 : 38), botD = Math.min(lo, clef === 'treble' ? 30 : 18);
+  const topHigh = clef === 'bass' ? 26 : clef === 'alto' ? 32 : 38, botLow = clef === 'treble' ? 30 : clef === 'alto' ? 24 : 18;
+  const topD = Math.max(hi, topHigh), botD = Math.min(lo, botLow);
   const y0 = yOf(topD) - 16, y1 = yOf(botD) + 16;
   return (
     <svg viewBox={`0 ${y0} ${width} ${y1 - y0}`} style={{width:'100%',maxWidth:width * 1.5,display:'block',margin:'0 auto',touchAction:'manipulation',userSelect:'none'}}>
@@ -6708,6 +6775,10 @@ function StaffLearn({ onStart }) {
       <Step title="Write them">
       {tip('Now write them', 'Reading and writing are two different skills -- the theory papers ask for both. Tap where each note goes.')}
       <WriteTheNote/>
+      </Step>
+      <Step title="A third clef">
+      {tip('C clefs move -- alto clef stays put on middle C', "Not needed at the piano, but worth knowing it exists: the alto clef is a C clef, always centred on middle C, and it's what viola reads.")}
+      <AltoClef/>
       </Step>
     </Lesson>
   );
@@ -10453,6 +10524,33 @@ function ClefBasics() {
     </div>
   );
 }
+// ─── Phase 142: alto clef (Content Coverage: "Alto clef", AMEB Theory of Music G4+) ──
+// A third clef, built on top of the same CLEFS/ClefGlyph/StaffFrame machinery treble and
+// bass already use (CLEFS.alto + CLEF_GLYPH.alto added above). Alto clef is a "C clef" --
+// the clef symbol itself is centred on the line it names, and that line is always middle C.
+// Not used at the piano, but it's what viola (and sometimes cello/trombone in their higher
+// range) reads, and AMEB's Theory of Music syllabus expects it recognised from Grade 4.
+const ALTO_ROWS = [24, 25, 26, 27, 28, 29, 30, 31, 32]; // F3 .. G4, lines and spaces, bottom to top
+function AltoClef() {
+  const [tap, setTap] = useState(28);
+  function play(d) { playKey(dMidiKey(d), 0.3); setTap(d); }
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Alto clef -- the third clef</div>
+      <div style={actNote}>Treble and bass aren't the only clefs. The <b>alto clef</b> is a <b>C clef</b>: instead of curling round a line (treble) or sitting between two dots (bass), its two curves pinch together right on the line it names -- and that line is always <b>middle C</b>. On the piano's grand staff, middle C sits on a ledger line between the two staves; on the alto clef it sits in the exact <b>middle line</b> of one single staff.</div>
+      <div style={{background:'#fff',borderRadius:10,padding:'8px 6px'}}>
+        <StaffFrame clef="alto" lo={24} hi={32} width={260} rows={ALTO_ROWS} onRow={play} guideX={130}>
+          {(yOf) => <>
+            <ellipse cx={130} cy={yOf(tap)} rx="8" ry="6" transform={`rotate(-20 130 ${yOf(tap)})`} fill={tap === 28 ? '#a8823f' : '#3f7fb5'}/>
+            <text x={130} y={yOf(tap) - 12} textAnchor="middle" fontSize="11" fontWeight="900" fill="#241f1a">{dName(tap)}{tap === 28 ? ' (middle C)' : ''}</text>
+          </>}
+        </StaffFrame>
+      </div>
+      <div style={{fontSize:13.5,margin:'8px 0'}}>Tap any line or space -- notice the clef's pinch always lands on the <b>middle line</b>, and that middle line is always <b>C</b>. Count up or down from there the same way you'd count from any other landmark.</div>
+      <div style={{fontSize:12.5,color:'#5c544a',background:'#f7f2e8',borderRadius:8,padding:'6px 9px',lineHeight:1.5}}>Who reads it? The <b>viola</b> uses alto clef all the time -- its range sits right in the middle, too high to be comfortable in bass clef and too low for treble. Cello and trombone borrow it too, for their higher passages, switching back to bass clef when the line dips low again.</div>
+    </div>
+  );
+}
 // ─── Phase 139: sight-reading flash cards, grace-note writing exercise ─────────────
 // 1. Fast flash cards -- no landmark scaffolding, no counting steps: just name the note as
 // fast as you can, on a running timer, to build automatic recognition instead of reasoning.
@@ -10703,6 +10801,7 @@ const TOOLS = [
   { id: 'step-updown', ch: 'note-names', title: 'Step up, step down', blurb: 'Right = up = forwards through the letters.', C: () => <UpDownWalk/> },
   { id: 'letter-chain', ch: 'note-names', title: 'Letter chain', blurb: 'Say the next letter out loud, in turns.', C: () => <LetterChainDrill/> },
   { id: 'clef-basics', ch: 'staff', title: 'Treble clef and bass clef', blurb: 'Which notes, which hand -- the grand staff explained.', C: () => <ClefBasics/> },
+  { id: 'alto-clef', ch: 'staff', title: 'Alto clef', blurb: 'A third clef, always centred on middle C -- what viola reads.', C: () => <AltoClef/> },
   { id: 'staff-basics', ch: 'staff', title: 'What is the staff?', blurb: '5 lines, 4 spaces -- counted from the bottom, tap to hear.', C: () => <StaffBasics/> },
   { id: 'clef-story', ch: 'staff', title: 'The Queen and the King (clefs)', blurb: 'Why the G clef and the F clef are called that.', C: () => <ClefStory/> },
   { id: 'staff-climb', ch: 'staff', title: 'Climb the staff', blurb: 'Line, space, line -- mirrored on the keyboard.', C: () => <StaffClimb/> },
@@ -10869,7 +10968,7 @@ const TOOL_META = {
   'complete-melody': ['reading', 1, 2, 'game ear'],
   'rest-grouping': ['rhythm', 2, 4, 'show'], 'duplets': ['rhythm', 3, 4, 'show'],
   'flash-cards': ['reading', 1, 2, 'game'], 'grace-write': ['words', 3, 4, 'write'],
-  'clef-basics': ['reading', 0, 1, 'show'], 'staff-basics': ['reading', 0, 1, 'show'], 'anacrusis': ['rhythm', 2, 3, 'show'], 'minor-forms': ['scales', 1, 2, 'show'],
+  'clef-basics': ['reading', 0, 1, 'show'], 'alto-clef': ['reading', 3, 4, 'show'], 'staff-basics': ['reading', 0, 1, 'show'], 'anacrusis': ['rhythm', 2, 3, 'show'], 'minor-forms': ['scales', 1, 2, 'show'],
   'count-more': ['rhythm', 2, 4, 'show game'], 'grouping': ['rhythm', 2, 4, 'game write'], 'pedal': ['expression', 2, 4, 'show ear'],
   'ornaments': ['words', 3, 4, 'show ear'], 'chromatic': ['scales', 2, 4, 'show'],
   'sit-check': ['body', 0, 3, 'show'], 'hand-shape': ['body', 0, 3, 'show'], 'arm-moves': ['body', 0, 3, 'home game'], 'posture-check': ['body', 0, 3, 'home'],
@@ -11455,6 +11554,7 @@ function App() {
           <>
             <ConceptView concept={concept} tab={st.tab} level={level} mode={st.mode} locked={st.lock} onChange={update} />
             {T && st.tab === 'drill' && <ShareLink drillId={active.id} level={level} mode={st.mode} />}
+            {T && st.tab === 'drill' && <PrintLink drillId={active.id} level={level} />}
           </>
         ) : active.render()}
         </>}
@@ -11476,8 +11576,20 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
+function Root() {
+  let printParams = null;
+  try { printParams = new URLSearchParams(location.search); } catch (e) {}
+  if (printParams && printParams.get('print') === '1') {
+    const alias = { 'letter-chain': 'note-names', 'scale-fingering': 'scales' };
+    const drillId = alias[printParams.get('drill')] || printParams.get('drill') || (DRILLS[0] && DRILLS[0].id);
+    const lvl = parseInt(printParams.get('level'), 10);
+    const n = parseInt(printParams.get('n'), 10);
+    return <PrintWorksheet drillId={drillId} level={isNaN(lvl) ? 1 : lvl} count={isNaN(n) ? 12 : n}/>;
+  }
+  return <App/>;
+}
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <ErrorBoundary><App/></ErrorBoundary>
+  <ErrorBoundary><Root/></ErrorBoundary>
 );
 </script>
 
