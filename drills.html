@@ -2976,6 +2976,146 @@ function FillTheBar() {
   );
 }
 
+// Same name, note or rest -- Sohyun: since note-value names and rest names are identical, make
+// that explicit and easy to remember (Phase 144).
+function NoteRestNaming() {
+  function playPair(v, isRest) {
+    const ctx = getAudio(); if (!ctx) return; stopClicks();
+    const t0 = ctx.currentTime + 0.08;
+    const dur = v.base * 0.5; // crotchet = 0.5s (bpm 120), so a semibreve is 2s etc.
+    if (!isRest) blip(ctx, t0, 523.25, dur * 0.92, 0.22, 'triangle');
+    else setTimeout(() => { const c2 = getAudio(); if (c2) metroClick(c2, c2.currentTime, false, 0.12); }, dur * 1000);
+  }
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Same name, note or rest</div>
+      <div style={actNote}>Every note value and its matching rest share exactly the same name -- a semibreve rest is silence for as long as a semibreve note would sound. Learn one name and you already know the other.</div>
+      <div style={{display:'flex',flexDirection:'column',gap:6}}>
+        {NOTE_VALUES.map(v => {
+          const note = NV_NOTES.find(n => n.id === v.id), rest = NV_RESTS.find(r => r.id === v.id);
+          return (
+            <div key={v.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',background:'#fff',borderRadius:10,padding:'7px 10px',gap:8}}>
+              <button onClick={() => playPair(v, false)} style={{display:'flex',alignItems:'center',gap:6,background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',padding:0}}>
+                <Glyph item={note} size={36}/>
+                <span style={{fontSize:13.5,fontWeight:900,textAlign:'left'}}>{cap(v.id)}<span style={{display:'block',fontSize:11,fontWeight:600,color:'var(--muted)'}}>{v.us} note</span></span>
+              </button>
+              <span style={{fontSize:11.5,fontWeight:800,color:'var(--brass)',whiteSpace:'nowrap'}}>same name</span>
+              <button onClick={() => playPair(v, true)} style={{display:'flex',alignItems:'center',gap:6,background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',padding:0}}>
+                <span style={{fontSize:13.5,fontWeight:900,textAlign:'right'}}>{cap(v.id)} rest<span style={{display:'block',fontSize:11,fontWeight:600,color:'var(--muted)'}}>{v.us} rest</span></span>
+                <Glyph item={rest} size={36}/>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{fontSize:12.5,color:'#5c544a',marginTop:8,lineHeight:1.5}}>Tap a note to hear it sound, or tap a rest to hear it stay silent for the same length of time.</div>
+    </div>
+  );
+}
+
+// The semibreve rest as "rest the whole bar", whatever the bar actually holds -- Sohyun: explain
+// this usage separately from the rest's normal literal 4-beat duration (Phase 144).
+function WholeBarRest() {
+  const [playing, setPlaying] = useState(null);
+  const BARS = [
+    { top: 4, bottom: 4, label: '4/4' },
+    { top: 3, bottom: 4, label: '3/4' },
+    { top: 2, bottom: 4, label: '2/4' },
+  ];
+  function play(b) {
+    const ctx = getAudio(); if (!ctx) return; stopClicks();
+    setPlaying(b.label);
+    const spb = 60 / 92, t0 = ctx.currentTime + 0.1;
+    for (let i = 0; i < b.top; i++) metroClick(ctx, t0 + i * spb, i === 0, i === 0 ? 0.35 : 0.15);
+    setTimeout(() => setPlaying(null), b.top * spb * 1000 + 300);
+  }
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>The semibreve rest also means "rest the whole bar"</div>
+      <div style={actNote}>On its own, a semibreve rest is worth exactly 4 beats. But it has a second job too: composers use that same symbol as a shortcut for "rest for however many beats this bar holds" -- so in 3/4 it means rest for 3 beats, and in 2/4 it means rest for 2 beats, even though a semibreve rest by itself is 4 beats long. Look at the time signature to know how long it really lasts.</div>
+      <div style={{display:'flex',gap:10,justifyContent:'space-around',flexWrap:'wrap',marginTop:6}}>
+        {BARS.map(b => (
+          <div key={b.label} style={{background:'#fff',borderRadius:10,padding:'10px 14px',textAlign:'center',minWidth:92}}>
+            <TSig top={b.top} bottom={b.bottom} size={24}/>
+            <div style={{margin:'6px 0'}}><Glyph item={{ id: 'semibreve', base: 4, rest: true }} size={34}/></div>
+            <div style={{fontSize:12,fontWeight:800,color:'var(--brass)'}}>= {b.top} beat{b.top === 1 ? '' : 's'} rest<br/>(the whole bar)</div>
+            <button className="ghost-btn" style={{marginTop:6,fontSize:12,padding:'3px 9px'}} onClick={() => play(b)}>{playing === b.label ? 'Counting…' : '♪ Count it'}</button>
+          </div>
+        ))}
+      </div>
+      <div style={{fontSize:12.5,color:'#5c544a',marginTop:8,lineHeight:1.5}}>Away from a whole empty bar, a semibreve rest still means its literal 4 beats -- for example, resting for exactly 4 beats out of a longer bar.</div>
+    </div>
+  );
+}
+
+// Note <-> rest name matching game -- Sohyun: build a matching activity to reinforce the shared
+// names (Phase 144). Adapted from the Phase 124 TermMatch memory-pairs pattern.
+function NoteRestMatch() {
+  const [n, setN] = useState(5);
+  const [deck, setDeck] = useState([]);
+  const [up, setUp] = useState([]);
+  const [done, setDone] = useState({});
+  const [moves, setMoves] = useState(0);
+  function deal(pairs = n) {
+    const chosen = NOTE_VALUES.slice(0, Math.min(pairs, NOTE_VALUES.length));
+    setDeck(shuffle(chosen.flatMap(v => [
+      { key: v.id + '|n', id: v.id, side: 'note', v },
+      { key: v.id + '|r', id: v.id, side: 'rest', v },
+    ])));
+    setUp([]); setDone({}); setMoves(0);
+  }
+  useEffect(() => { deal(n); }, [n]);
+  useEffect(() => {
+    if (up.length !== 2) return;
+    const [a, b] = up.map(k => deck.find(c => c.key === k));
+    const t = setTimeout(() => {
+      if (a.id === b.id) {
+        setDone(d => ({ ...d, [a.id]: true }));
+        const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime + 0.02, 523.25, Math.min(a.v.base, 2) * 0.4, 0.2, 'triangle');
+      }
+      setUp([]);
+    }, a.id === b.id ? 350 : 1000);
+    return () => clearTimeout(t);
+  }, [up]);
+  function flip(c) {
+    if (done[c.id] || up.includes(c.key) || up.length >= 2) return;
+    if (up.length === 1) setMoves(m => m + 1);
+    setUp(u => [...u, c.key]);
+  }
+  const pairsDone = Object.keys(done).length, total = deck.length / 2;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Note ↔ rest match</div>
+      <div style={actNote}>Turn over two cards. Find each note value and the rest with the same name.</div>
+      <div style={{display:'flex',gap:4,marginBottom:6}}>
+        {[3, 4, 5].map(x => <button key={x} className={'chip' + (x === n ? ' active' : '')} style={{padding:'3px 10px',fontSize:13}} onClick={() => setN(x)}>{x} pairs</button>)}
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(78px,1fr))',gap:6,marginTop:4}}>
+        {deck.map(c => {
+          const open = up.includes(c.key) || done[c.id];
+          const wrong = up.length === 2 && up.includes(c.key) && deck.find(x => x.key === up[0]).id !== deck.find(x => x.key === up[1]).id;
+          const label = cap(c.v.id) + (c.side === 'rest' ? ' rest' : '');
+          return (
+            <button key={c.key} onClick={() => flip(c)} style={{minHeight:76,borderRadius:10,border:'1.5px solid ' + (done[c.id] ? '#3f8a4f' : wrong ? '#b5483b' : 'var(--border)'),background:open ? (done[c.id] ? '#e6f2e8' : '#fff') : '#241f1a',color:open ? 'var(--text)' : '#a8823f',cursor:'pointer',padding:'6px 4px',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:3,fontFamily:'inherit',transition:'background 0.2s'}}>
+              {!open ? <span style={{fontSize:20}}>♪</span> : (
+                <React.Fragment>
+                  <Glyph item={c.side === 'rest' ? { id: c.v.id, base: c.v.base, rest: true } : NV_NOTES.find(nn => nn.id === c.v.id)} size={30}/>
+                  <span style={{fontSize:11,fontWeight:800,textAlign:'center',lineHeight:1.2}}>{label}</span>
+                </React.Fragment>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:8,fontSize:14,fontWeight:800}}>
+        <span>{pairsDone}/{total} pairs · {moves} turns</span>
+        {pairsDone === total && total > 0 ? <span style={{color:'#3f8a4f'}}>All matched{moves <= total + 2 ? ' -- great memory!' : '!'}</span> : null}
+        <button className="ghost-btn" onClick={() => deal()}>New cards</button>
+      </div>
+    </div>
+  );
+}
+
 function NoteValLearn({ onStart }) {
   const rows = [
     { it: NV_NOTES[0], n: 1 }, { it: NV_NOTES[1], n: 2 }, { it: NV_NOTES[2], n: 4 }, { it: NV_NOTES[3], n: 8 }, { it: NV_NOTES[4], n: 16 },
@@ -3007,6 +3147,9 @@ function NoteValLearn({ onStart }) {
       </div>
 
       </Step>
+      <Step title="Same name for the note and the rest">
+      <NoteRestNaming/>
+      </Step>
       <Step title="Split it">
       <SplitTree/>
       </Step>
@@ -3031,6 +3174,12 @@ function NoteValLearn({ onStart }) {
       </Step>
       <Step title="Writing rests correctly">
       <RestGrouping/>
+      </Step>
+      <Step title="The whole-bar rest">
+      <WholeBarRest/>
+      </Step>
+      <Step title="Match note names to rest names">
+      <NoteRestMatch/>
       </Step>
     </Lesson>
   );
@@ -10892,7 +11041,10 @@ const TOOLS = [
   { id: 'inversions', ch: 'chords', title: 'Inversions', blurb: 'Move the bottom note to the top.', C: () => <InversionFlip/> },
   { id: 'cadences', ch: 'chords', title: 'Cadences', blurb: 'Perfect, plagal, imperfect, interrupted.', C: () => <CadencePlayer/> },
   { id: 'split-it', ch: 'note-values', title: 'Split the notes (note values)', blurb: 'One semibreve into minims, crotchets...', C: () => <SplitTree/> },
+  { id: 'note-rest-naming', ch: 'note-values', title: 'Same name, note or rest', blurb: 'Every note value and its rest share the same name.', C: () => <NoteRestNaming/> },
   { id: 'rest-grouping', ch: 'note-values', title: 'Writing rests correctly', blurb: "Never hide beat 3 with one long rest.", C: () => <RestGrouping/> },
+  { id: 'whole-bar-rest', ch: 'note-values', title: 'The whole-bar rest', blurb: 'A semibreve rest can mean "rest this whole bar" -- any time signature.', C: () => <WholeBarRest/> },
+  { id: 'note-rest-match', ch: 'note-values', title: 'Note ↔ rest match', blurb: 'Memory-pairs game: match each note name to its rest.', C: () => <NoteRestMatch/> },
   { id: 'fill-bar', ch: 'note-values', title: 'Fill the bar', blurb: 'Exactly 2, 3 or 4 beats.', C: () => <FillTheBar/> },
   { id: 'count-along', ch: 'time-signatures', title: 'Count along (time signatures)', blurb: 'Beat lights for 2/4, 3/4, 4/4, and 6/8 counted 1 to 6.', C: () => <BeatPulse/> },
   { id: 'bar-lines', ch: 'time-signatures', title: 'Put in the bar lines', blurb: 'The written exam task.', C: () => <BarLineBuilder/> },
@@ -11032,7 +11184,8 @@ const TOOL_META = {
   'mini-tune': ['reading', 0, 1, 'game'], 'sight-reading': ['reading', 1, 3, 'home game'], 'ottava': ['reading', 2, 3, 'show'],
   'steady-beat': ['beat', 0, 1, 'game'], 'beat-target': ['beat', 0, 2, 'game home'], 'count-aloud': ['beat', 0, 1, 'show'], 'count-along': ['beat', 1, 2, 'show home'],
   'beat-doubler': ['beat', 1, 3, 'show'], 'metronome': ['beat', 0, 3, 'home'],
-  'split-it': ['rhythm', 1, 1, 'show'], 'fill-bar': ['rhythm', 1, 2, 'game write home'], 'make-card': ['rhythm', 1, 2, 'game home'], 'bar-lines': ['rhythm', 1, 2, 'write'], 'regroup': ['rhythm', 2, 3, 'show ear'],
+  'split-it': ['rhythm', 1, 1, 'show'], 'note-rest-naming': ['rhythm', 0, 1, 'show ear'], 'whole-bar-rest': ['rhythm', 1, 2, 'show ear'], 'note-rest-match': ['rhythm', 0, 1, 'game'],
+  'fill-bar': ['rhythm', 1, 2, 'game write home'], 'make-card': ['rhythm', 1, 2, 'game home'], 'bar-lines': ['rhythm', 1, 2, 'write'], 'regroup': ['rhythm', 2, 3, 'show ear'],
   'dyn-order': ['expression', 0, 1, 'game'], 'hairpin': ['expression', 1, 2, 'show'], 'touch-ear': ['expression', 0, 2, 'ear game'], 'touch-lengths': ['expression', 1, 3, 'show ear'],
   'speed-change': ['expression', 1, 2, 'show ear'], 'tie-slur': ['expression', 1, 2, 'show ear'],
   'high-low': ['ear', 0, 0, 'ear game'], 'echo': ['ear', 0, 1, 'ear game home'], 'interval-ear': ['ear', 2, 3, 'ear'],
