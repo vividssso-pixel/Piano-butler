@@ -3290,6 +3290,37 @@ only -- no new keyframes invented.
 | 6 | Verification | -- | `<script id="app-jsx">` extracted from `drills.html` and compiled with `@babel/core` (`preset-react`, `runtime:'classic'`) -- clean compile, then `node --check` on the output -- 0 syntax errors. Live Playwright test in headless Chromium against `drills.html?tool=piano-timeline&lock=1`, served locally with locally-installed React 18.2.0/ReactDOM/Babel-standalone 7.23.3 (cdnjs unreachable from the sandbox): all 9 timeline rows render, 20 elements carry the new `animation` styles, tap-to-expand confirmed working both directions (clicking a closed row opens it and closes the previously-open one; clicking an open row collapses it), full-page screenshot visually confirmed layout and gold-dot styling intact. Only console messages were two blocked-by-sandbox-network requests (Google Fonts, Google Tag Manager) and a Babel "deoptimised styling" size note -- both pre-existing and unrelated to this change, zero real errors. |
 | 7 | Committed, not pushed | see git log | Ready for Sohyun to push from her Terminal. |
 
+### Phase 164 -- Teacher view is now the default (2026-09-28)
+
+Sohyun: easiest for her own day-to-day testing if the app opens straight into the teacher view
+(Plan / Students / Toolbox / Practice tabs) instead of the clean student view (Learn / Practice)
+-- the student-facing default can be revisited once that side is polished. Found already applied,
+uncommitted, in the working tree this session (no author note attached) -- reviewed against the
+existing `?teacher=1`/`?teacher=0`/`lock=1` mechanism before committing; it's correct and matches
+exactly what Sohyun asked for, so it's logged and committed here rather than redone.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | `UI_TEACHER` default flipped | `drills.html`, the `Mode: teacher/student` block right before `initialMode()` | `let UI_TEACHER = false` -> `true`. `initialMode()` now returns `true` unless `?teacher=0` was ever set on this device (remembered in `localStorage` under `pb_mode_v1`) or the URL explicitly says `?teacher=0`. `?teacher=1` still works exactly as before. |
+| 2 | Student links unaffected | same block | `lock=1` links always force the student view regardless of the remembered mode -- unchanged, still the right behaviour for anything sent to an actual student. |
+| 3 | Verification | -- | Re-ran this session's own Babel compile + `node --check` + Playwright pass (see Phase 165 below, same verification run) confirms `drills.html` with no query string at all now shows the Plan/Students/Toolbox/Practice tab row. |
+
+### Phase 165 -- Modes and chord extensions, two new Toolbox tools (2026-09-28)
+
+Sohyun: modes (선법) and chord extensions (9th/11th/13th chords) are hard for her to hold onto,
+not just students -- asked for something to help her own understanding today, reference-style
+rather than a scored quiz, so it goes in the Toolbox next to the other explainer tools
+(`triad-stack`, `key-chords`, `scale-finder`, etc.) rather than as a new graded chapter.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | "The seven modes" tool | `drills.html`, new `MODES`/`modeNotes`/`Modes()`, registered as `modes` under `ch: 'scales'` | Relative framing for the actual pitches (rotates `spellScale(parentKey)`, so spelling can't drift from the rest of the app), listed brightest (Lydian) to darkest (Locrian) rather than by scale degree -- Sohyun's own teaching instinct is usually "relate it to something already known," and the brightness ladder is the one idea that tends to make the whole system click. Each mode shows its formula against major/minor, a one-line character description, the scale on a horizontal staff (`MelodyStaff`, reused as-is), and playback with note-by-note highlighting (`playMelody`, reused as-is). Parent major choices kept to a small, familiar set (C, G, D, F, Bb). |
+| 2 | "Build a 7th chord" tool | `drills.html`, new `SEVENTH_TYPES`/`seventhChord`/`SeventhChords()`, registered as `seventh-chords` under `ch: 'chords'` | Major 7th, Dominant 7th, Minor 7th, Half-diminished (m7♭5) and Diminished 7th (°7), each built from the same triad-quality + interval-quality machinery (`ivBuild`) already used for plain triads elsewhere in the file, so these chords can't disagree with the rest of the app's theory. Follows the exact defensive pattern `MajorMinorFlip` already uses: only renders the staff when every note is a single sharp/flat, otherwise falls back to plain letter+accidental text -- this is what lets diminished 7th's enharmonic top note (a double flat, e.g. C°7's B𝄫) be included safely without a broken staff render. |
+| 3 | "Beyond the 7th: 9, 11, 13" tool | `drills.html`, new `EXT_STACK`/`ChordExtensions()`, registered as `chord-extensions` under `ch: 'chords'` | A plain stack-of-3rds reference kept diatonic on C (every note a white key, root through the 13th: C E G B D F A) so only the counting pattern needs reading -- directly answers "why 9 and not 2": the 9th/11th/13th are just the 2nd/4th/6th scale degrees an octave up, and there's no "15th" because that's the root again. |
+| 4 | Verification | -- | `<script id="app-jsx">` extracted and compiled with `@babel/core` (`preset-react`, `runtime:'classic'`) after every edit (including a fix, see #5) -- clean compile, then `node --check` -- 0 syntax errors each time. Live Playwright pass in headless Chromium against a locally-served copy (React 18.2.0 / ReactDOM / Babel-standalone 7.23.3, cdnjs unreachable from the sandbox): confirmed the default (no query string) view now shows the Plan/Students/Toolbox/Practice tabs (Phase 164); opened all three new tools directly by URL (`?tool=modes`, `?tool=seventh-chords`, `?tool=chord-extensions`) and clicked through every chip/button in each (parent-key and mode rows, all 7 root chips × all 5 seventh-chord types, all 7 extension-stack steps) with zero JS exceptions; full-page screenshots confirm correct rendering (modes' scale staff and brightness list, the 7th-chord keyboard/staff with correct chord-tone highlighting, the 9/11/13 stack diagram). |
+| 5 | Bug caught and fixed during verification | `drills.html`, the three new "Hear it" buttons | First pass wrote the ♪ note character as a `\u266A` escape sequence directly inside JSX child text -- JSX text content isn't a JS string literal, so escapes aren't interpreted there (unlike inside a quoted string), and the button literally read "\u266A Hear it" in the browser. Confirmed via screenshot, fixed by using the literal ♪ character in the JSX text (matching how every other "♪ ..." button in the file already does it), recompiled and re-screenshotted to confirm the fix. |
+| 6 | Committed, not pushed | see git log | Ready for Sohyun to push from her Terminal. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
