@@ -3113,6 +3113,11 @@ Phase 138 -- two teacher-reported gaps, fixed live. Regression: 92 tools / 21 dr
 - `clef-basics` (ClefBasics, new -- first in the Staff chapter's "Two staves, two clefs" step, and its own Toolbox tool): what treble and bass clef actually mean in practice -- two staves because the piano's range doesn't fit one, treble = higher notes/usually right hand, bass = lower notes/usually left hand, grand staff joined at middle C, tap to hear either register. The existing Queen/King naming story (ClefStory) was real content but was standing in as the ONLY clef explanation; it's now clearly framed as "by the way, why they're called that" underneath this, per Sohyun's note that the practical explanation was missing and the Queen/King bit is secondary.
 - Verification note: the first clef-basics layout had the bass clef's dots colliding with the middle-C marker (both drawn near the same x) -- caught on the screenshot pass before committing, moved the middle-C notehead to its own ledger position clear of both clefs.
 
+Phase 139 -- next two items off the book-plan Content Coverage table. Regression: 94 tools / 21 drills, no errors.
+- `flash-cards` (FlashCards, Staff chapter, after Landmark Hop): fast note-ID drill with no scaffolding -- no landmark to count from, no ledger lines, just the letter as fast as it's recognised, with a running streak/best-streak and rolling average response time. Framed explicitly as the next stage after Landmark Hop ("from reasoning to recognition").
+- `grace-write` (GraceWrite, Signs chapter, after Ornaments): the missing write-it-yourself half of the ornaments tool (Phase 136 only showed written vs played) -- tap where the small grace note goes, acciaccatura (with slash) or appoggiatura, checked against the target.
+- Verified live: flash-cards' right/wrong colouring and streak counter, and grace-write's tap-then-check flow (including its wrong-answer state), both screenshotted mid-interaction, not just at rest.
+
 Next on the plan: more mini tools (Sohyun's rule: every activity stand-alone + in TOOLS). Content Coverage table in the book-plan doc tracks real gaps going forward -- check it before proposing new ones.
 
 

@@ -6690,6 +6690,10 @@ function StaffLearn({ onStart }) {
       <StaffExplorer/>
       <LandmarkHop/>
       </Step>
+      <Step title="Fast flash cards">
+      {tip('From reasoning to recognition', 'Landmark-hopping is how you work a note out. Flash cards are the next stage: no time to count, just recognise it -- the way a fluent reader actually reads.')}
+      <FlashCards/>
+      </Step>
       <Step title="Middle C and ledger lines">
       {tip('Ledger lines extend the staff', 'Short lines above or below the staff carry on the same line-space pattern -- middle C sits on one. The next chapter, Ledger Lines, goes further.')}
       <FoldStaff/>
@@ -7500,6 +7504,9 @@ function SignsLearn({ onStart }) {
       </Step>
       <Step title="Ornaments">
         <Ornaments/>
+      </Step>
+      <Step title="Write a grace note">
+        <GraceWrite/>
       </Step>
     </Lesson>
   );
@@ -10436,6 +10443,106 @@ function ClefBasics() {
     </div>
   );
 }
+// ─── Phase 139: sight-reading flash cards, grace-note writing exercise ─────────────
+// 1. Fast flash cards -- no landmark scaffolding, no counting steps: just name the note as
+// fast as you can, on a running timer, to build automatic recognition instead of reasoning.
+const FLASH_RANGES = {
+  treble: { lo: 28, hi: 38, label: 'Treble clef' },
+  bass:   { lo: 18, hi: 28, label: 'Bass clef' },
+  grand:  { lo: 18, hi: 38, label: 'Both clefs (mixed)' },
+};
+function FlashCards() {
+  const [which, setWhich] = useState('treble');
+  const [running, setRunning] = useState(false);
+  const [d, setD] = useState(null);
+  const [clefNow, setClefNow] = useState('treble');
+  const [guess, setGuess] = useState(null);
+  const [stats, setStats] = useState({ right: 0, total: 0, streak: 0, best: 0 });
+  const [t0, setT0] = useState(0);
+  const [avgMs, setAvgMs] = useState(null);
+  function newCard() {
+    const R = FLASH_RANGES[which];
+    let clef = which === 'grand' ? (Math.random() < 0.5 ? 'treble' : 'bass') : which;
+    const range = clef === 'treble' ? [28, 38] : [18, 28];
+    let nd; do { nd = range[0] + Math.floor(Math.random() * (range[1] - range[0] + 1)); } while (nd === d);
+    setD(nd); setClefNow(clef); setGuess(null); setT0(performance.now());
+  }
+  function start() { setRunning(true); setStats({ right: 0, total: 0, streak: 0, best: 0 }); setAvgMs(null); newCard(); }
+  function pickLetter(L) {
+    if (guess !== null || !running) return;
+    const ms = performance.now() - t0, ok = L === dName(d);
+    setGuess(L);
+    setStats(s => { const streak = ok ? s.streak + 1 : 0; return { right: s.right + (ok ? 1 : 0), total: s.total + 1, streak, best: Math.max(s.best, streak) }; });
+    setAvgMs(a => a === null ? ms : a * 0.7 + ms * 0.3);
+    playKey(dMidiKey(d), 0.22);
+    setTimeout(newCard, ok ? 380 : 900);
+  }
+  const ok = guess !== null && guess === dName(d);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>Sight-reading flash cards</div>
+        {running && <div style={{fontSize:13,fontWeight:800,color:'var(--muted)'}}>{stats.right}/{stats.total} · streak {stats.streak} (best {stats.best})</div>}
+      </div>
+      <div style={actNote}>No counting from a landmark this time -- just say the letter as fast as you recognise it. No ledger lines, so every note is a note you already know.</div>
+      {!running ? <>
+        <div style={{display:'flex',gap:4,marginBottom:8}}>{Object.entries(FLASH_RANGES).map(([k, r]) => <button key={k} className={'chip' + (which === k ? ' active' : '')} style={{padding:'3px 11px',fontSize:13}} onClick={() => setWhich(k)}>{r.label}</button>)}</div>
+        <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={start}>▶ Start</button></div>
+      </> : <>
+        <StaffFrame clef={clefNow} lo={clefNow === 'treble' ? 28 : 18} hi={clefNow === 'treble' ? 38 : 28} width={220}>
+          {(yOf) => <ellipse cx={140} cy={yOf(d)} rx="8" ry="6" transform={`rotate(-20 140 ${yOf(d)})`} fill={guess === null ? '#241f1a' : (ok ? '#4f7a45' : '#b5483b')}/>}
+        </StaffFrame>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:4,margin:'6px 0'}}>
+          {STAFF_LETTERS.map(L => <button key={L} className={'chip' + (guess === L ? ' active' : '')} style={{padding:'6px 0',fontSize:15}} onClick={() => pickLetter(L)}>{L}</button>)}
+        </div>
+        <div style={{textAlign:'center',fontSize:13,color:'var(--muted)',minHeight:18}}>{avgMs !== null && <>Average: {(avgMs / 1000).toFixed(1)}s a card</>}</div>
+        <div style={{textAlign:'center',marginTop:4}}><button className="ghost-btn" onClick={() => setRunning(false)}>Stop</button></div>
+      </>}
+    </div>
+  );
+}
+
+// 2. Writing exercise for grace notes -- the ornaments tool (Phase 136) showed written vs
+// played; this is the missing half, tapping the SMALL note in yourself, slash included for
+// the acciaccatura. Same StaffFrame tap pattern as WriteTheNote/LedgerWrite.
+const GRACE_TASKS = [
+  { id: 'acc-above', kind: 'acc', main: 32, grace: 33, say: 'Write an acciaccatura (crushed note) one step ABOVE the main note, with the slash through its stem.' },
+  { id: 'acc-below', kind: 'acc', main: 34, grace: 33, say: 'Write an acciaccatura one step BELOW the main note.' },
+  { id: 'app-above', kind: 'app', main: 30, grace: 31, say: 'Write an appoggiatura (no slash) one step ABOVE the main note.' },
+];
+function GraceWrite() {
+  const [i, setI] = useState(0);
+  const [tap, setTap] = useState(null);
+  const [checked, setChecked] = useState(false);
+  const T = GRACE_TASKS[i];
+  const ok = tap === T.grace;
+  function place(d) { if (checked) return; setTap(d); }
+  function check() { if (tap === null) return; setChecked(true); if (tap === T.grace) playKey(dMidiKey(T.grace), 0.15); }
+  function next() { setI((i + 1) % GRACE_TASKS.length); setTap(null); setChecked(false); }
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Write a grace note</div>
+      <div style={actNote}>{T.say} Tap the line or space where the small note goes.</div>
+      <StaffFrame clef="treble" lo={28} hi={36} width={260} rows={[28,29,30,31,32,33,34,35,36]} onRow={place} guideX={110}>
+        {(yOf) => <>
+          <ellipse cx={170} cy={yOf(T.main)} rx="8" ry="6" transform={`rotate(-20 170 ${yOf(T.main)})`} fill="#241f1a"/>
+          <line x1={178} x2={178} y1={yOf(T.main)} y2={yOf(T.main) - 32} stroke="#241f1a" strokeWidth="1.6"/>
+          {tap !== null && <g>
+            <ellipse cx={110} cy={yOf(tap)} rx="5.5" ry="4.2" transform={`rotate(-20 110 ${yOf(tap)})`} fill={checked ? (ok ? '#4f7a45' : '#b5483b') : '#a8823f'}/>
+            <line x1={115} x2={115} y1={yOf(tap)} y2={yOf(tap) - 20} stroke={checked ? (ok ? '#4f7a45' : '#b5483b') : '#a8823f'} strokeWidth="1.3"/>
+            {T.kind === 'acc' && <line x1={106} y1={yOf(tap) - 5} x2={119} y2={yOf(tap) - 16} stroke={checked ? (ok ? '#4f7a45' : '#b5483b') : '#a8823f'} strokeWidth="1.2"/>}
+          </g>}
+        </>}
+      </StaffFrame>
+      <div style={{textAlign:'center',fontSize:14,minHeight:24,margin:'6px 0'}}>
+        {checked && <b style={{color:ok ? '#4f7a45' : '#b5483b'}}>{ok ? 'Yes -- that’s it.' : 'Not quite -- the grace note should be on ' + dName(T.grace) + '.'}</b>}
+      </div>
+      <div style={{display:'flex',gap:8,justifyContent:'center'}}>
+        {!checked ? <button className="ghost-btn" onClick={check} disabled={tap === null}>Check</button> : <button className="ghost-btn" onClick={next}>Next →</button>}
+      </div>
+    </div>
+  );
+}
 const TOOLS = [
   { id: 'sit-check', ch: 'first-steps', title: 'Set up the stool', blurb: 'Height and distance: forearm level, elbows open.', C: () => <SitCheck/> },
   { id: 'hand-shape', ch: 'first-steps', title: 'The hand shape', blurb: 'Knuckle bridge, level wrist, fingertips -- and six faults.', C: () => <HandShape/> },
@@ -10477,6 +10584,7 @@ const TOOLS = [
   { id: 'staff-climb', ch: 'staff', title: 'Climb the staff', blurb: 'Line, space, line -- mirrored on the keyboard.', C: () => <StaffClimb/> },
   { id: 'rhymes', ch: 'staff', title: 'Line and space rhymes', blurb: 'Every Good Boy... tap by tap.', C: () => <MnemonicStaff/> },
   { id: 'landmarks', ch: 'staff', title: 'Landmark notes', blurb: 'Middle C, treble G, bass F, the Cs.', C: () => <StaffExplorer/> },
+  { id: 'flash-cards', ch: 'staff', title: 'Sight-reading flash cards', blurb: 'Name the note as fast as you can -- no counting from a landmark.', C: () => <FlashCards/> },
   { id: 'landmark-hop', ch: 'staff', title: 'Hop from a landmark', blurb: 'Guess the note, then count from a landmark.', C: () => <LandmarkHop/> },
   { id: 'fold', ch: 'staff', title: 'Fold at middle C (grand staff)', blurb: 'The treble and bass staves are mirror images.', C: () => <FoldStaff/> },
   { id: 'write-note', ch: 'staff', title: 'Write it on the staff', blurb: 'Tap where the named note goes.', C: () => <WriteTheNote/> },
@@ -10527,6 +10635,7 @@ const TOOLS = [
   { id: 'hairpin', ch: 'dynamics', title: 'Draw a hairpin', blurb: 'Crescendo and diminuendo.', C: () => <HairpinMaker/> },
   { id: 'road-map', ch: 'signs', title: 'Road map (repeats, D.C., D.S.)', blurb: 'Repeats, 1st/2nd time, D.C., D.S., Coda.', C: () => <RoadMap/> },
   { id: 'tie-slur', ch: 'signs', title: 'Tie or slur?', blurb: 'Same pitch or different?', C: () => <TieOrSlur/> },
+  { id: 'grace-write', ch: 'signs', title: 'Write a grace note', blurb: 'Tap where the acciaccatura or appoggiatura goes.', C: () => <GraceWrite/> },
   { id: 'ornaments', ch: 'signs', title: 'Ornaments', blurb: 'Trill, mordents, turn, acciaccatura, appoggiatura: written vs played.', C: () => <Ornaments/> },
   { id: 'ottava', ch: 'signs', title: '8va and 8vb', blurb: 'An octave higher or lower.', C: () => <OttavaDemo/> },
 ];
@@ -10631,6 +10740,7 @@ const TOOL_CATS = [
 // cat, level range [from, to] (0 Beginner, 1 Prelim, 2 Grade 1–2, 3 Grade 3–4), kinds
 // kinds: show = show & explain, game = student does it, ear = listening, write = written theory, home = home practice
 const TOOL_META = {
+  'flash-cards': ['reading', 1, 2, 'game'], 'grace-write': ['words', 3, 4, 'write'],
   'clef-basics': ['reading', 0, 1, 'show'], 'staff-basics': ['reading', 0, 1, 'show'], 'anacrusis': ['rhythm', 2, 3, 'show'], 'minor-forms': ['scales', 1, 2, 'show'],
   'count-more': ['rhythm', 2, 4, 'show game'], 'grouping': ['rhythm', 2, 4, 'game write'], 'pedal': ['expression', 2, 4, 'show ear'],
   'ornaments': ['words', 3, 4, 'show ear'], 'chromatic': ['scales', 2, 4, 'show'],
