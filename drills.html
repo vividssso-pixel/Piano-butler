@@ -7883,6 +7883,52 @@ const BLACK_SONGS = {
   hotcross: { title: 'Hot Cross Buns', keys: [10, 8, 6, 10, 8, 6, 6, 6, 6, 6, 8, 8, 8, 8, 10, 8, 6], durs: [1, 1, 2, 1, 1, 2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 1, 2] },
   mary: { title: 'Mary Had a Little Lamb', keys: [10, 8, 6, 8, 10, 10, 10, 8, 8, 8, 10, 13, 13, 10, 8, 6, 8, 10, 10, 10, 10, 8, 8, 10, 8, 6], durs: [1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4] },
 };
+
+// Phase (2026-09-27): the "faster" branch off the black-key houses -- Sohyun's first-lesson
+// example was a quick learner going "black keys, then the white keys just below them too".
+// Not a named song (avoids reproducing anything copyrighted for a brand-new exercise) -- an
+// original walk touching each black key of the big house (F#/G#/A#) and its white neighbour
+// right after it, then the same coming back down. Chromatic indices: F=5 F#=6 G=7 G#=8 A=9
+// A#=10 B=11 (TapKeyboard's `i` is 0-based semitone from C, matching BLACK_SONGS above).
+const NEIGHBOUR_WALK = { keys: [6, 7, 8, 9, 10, 11, 10, 9, 8, 7, 6, 5], durs: [1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 2] };
+function BlackWhiteNeighbours() {
+  const [mode, setMode] = useState('watch');
+  const [i, setI] = useState(-1);
+  const [bad, setBad] = useState(null);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  useEffect(() => { timers.current.forEach(clearTimeout); setI(-1); setBad(null); }, [mode]);
+  function watch() {
+    timers.current.forEach(clearTimeout); timers.current = [];
+    let t = 0;
+    NEIGHBOUR_WALK.keys.forEach((k, j) => { timers.current.push(setTimeout(() => { setI(j); playKey(k, NEIGHBOUR_WALK.durs[j] * 0.45); }, 150 + t * 420)); t += NEIGHBOUR_WALK.durs[j]; });
+    timers.current.push(setTimeout(() => setI(-1), 150 + t * 420 + 300));
+  }
+  function tap(k) {
+    playKey(k, 0.35);
+    if (mode !== 'turn') return;
+    const want = NEIGHBOUR_WALK.keys[i + 1];
+    if (k === want) { setI(i + 1); setBad(null); } else { setBad(k); setTimeout(() => setBad(b => (b === k ? null : b)), 500); }
+  }
+  const done = mode === 'turn' && i === NEIGHBOUR_WALK.keys.length - 1;
+  const cur = mode === 'watch' ? (i >= 0 ? NEIGHBOUR_WALK.keys[i] : null) : (i + 1 < NEIGHBOUR_WALK.keys.length ? NEIGHBOUR_WALK.keys[i + 1] : null);
+  const marks = {}; if (cur !== null) marks[cur] = mode === 'watch' ? 'good' : 'target'; if (bad !== null) marks[bad] = 'bad';
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>The white keys next to the big house</div>
+      <div style={actNote}>For a student who's ready to go further: every black key has a white key right beside it. Walk up the big house (F♯ G♯ A♯) and touch the white key just after each one, then come back down. <b>Watch</b> first, then <b>your turn</b>.</div>
+      <TapKeyboard octaves={2} marks={marks} onTap={tap}/>
+      <div style={{display:'flex',flexWrap:'wrap',gap:3,justifyContent:'center',margin:'8px 0',fontSize:14,fontWeight:900}}>
+        {NEIGHBOUR_WALK.keys.map((k, j) => <span key={j} style={{minWidth:22,textAlign:'center',color:(mode === 'watch' ? j === i : j <= i) ? '#a8823f' : '#c7bca8'}}>{prettyNote(PC_INFO[k % 12].names[0])}</span>)}
+      </div>
+      {done && <div style={{textAlign:'center',fontSize:15,fontWeight:900,color:'#4f7a45',marginBottom:6}}>All the way up and back!</div>}
+      <div style={{display:'flex',gap:6,justifyContent:'center'}}>
+        <button className="ghost-btn" style={mode === 'watch' ? {borderColor:'var(--text)'} : {}} onClick={() => { setMode('watch'); setTimeout(watch, 60); }}>▶ Watch</button>
+        <button className="ghost-btn" style={mode === 'turn' ? {borderColor:'var(--text)'} : {}} onClick={() => { setMode('turn'); setI(-1); }}>Your turn</button>
+      </div>
+    </div>
+  );
+}
 function BlackKeySong() {
   const [id, setId] = useState('hotcross');
   const song = BLACK_SONGS[id];
@@ -7959,6 +8005,10 @@ function FirstStepsLearn({ onStart }) {
       </Step>
       <Step title="Your first song">
         <BlackKeySong/>
+      </Step>
+      <Step title="Ready for more? The white neighbours">
+        {tip('Not every student needs this yet', 'Some students are ready to go further in the very first lesson -- others need more time on the black-key houses first, and that’s exactly right too. This step is for the quick ones.')}
+        <BlackWhiteNeighbours/>
       </Step>
     </Lesson>
   );
@@ -10779,6 +10829,7 @@ const TOOLS = [
   { id: 'high-low', ch: 'first-steps', title: 'High or low, loud or soft', blurb: 'Listening games before reading.', C: () => <HighLowGame/> },
   { id: 'key-houses', ch: 'first-steps', title: 'Small house, big house (black keys)', blurb: 'The black-key map; where C and F live.', C: () => <KeyHouses/> },
   { id: 'black-key-song', ch: 'first-steps', title: 'First black-key song', blurb: 'Hot Cross Buns and Mary, by rote.', C: () => <BlackKeySong/> },
+  { id: 'black-white-neighbours', ch: 'first-steps', title: 'Black keys, white neighbours', blurb: 'For a quick learner: the white key right beside each black one.', C: () => <BlackWhiteNeighbours/> },
   { id: 'steady-beat', ch: 'pulse', title: 'The steady beat', blurb: 'A heartbeat pulse to tap along with.', C: () => <SteadyBeat/> },
   { id: 'beat-target', ch: 'pulse', title: 'Tap the right beat', blurb: 'Count-in, then tap only beat 3, the “and”, or in silent bars.', C: () => <BeatTarget/> },
   { id: 'count-aloud', ch: 'pulse', title: 'Count it out loud', blurb: '1 2 3 4, or 1 and 2 and -- lights up as the bar plays.', C: () => <CountAloud/> },
@@ -10973,7 +11024,7 @@ const TOOL_META = {
   'ornaments': ['words', 3, 4, 'show ear'], 'chromatic': ['scales', 2, 4, 'show'],
   'sit-check': ['body', 0, 3, 'show'], 'hand-shape': ['body', 0, 3, 'show'], 'arm-moves': ['body', 0, 3, 'home game'], 'posture-check': ['body', 0, 3, 'home'],
   'finger-numbers': ['body', 0, 0, 'game'], 'five-positions': ['body', 0, 1, 'show'],
-  'key-houses': ['keys', 0, 0, 'show game'], 'black-key-song': ['keys', 0, 0, 'ear game'], 'find-every': ['keys', 0, 1, 'game home'], 'name-reveal': ['keys', 0, 1, 'game'],
+  'key-houses': ['keys', 0, 0, 'show game'], 'black-key-song': ['keys', 0, 0, 'ear game'], 'black-white-neighbours': ['keys', 0, 1, 'ear game'], 'find-every': ['keys', 0, 1, 'game home'], 'name-reveal': ['keys', 0, 1, 'game'],
   'step-updown': ['keys', 0, 1, 'game'], 'letter-chain': ['keys', 0, 1, 'game'],
   'clef-story': ['reading', 0, 1, 'show'], 'staff-climb': ['reading', 0, 1, 'show'], 'rhymes': ['reading', 1, 1, 'show'], 'landmarks': ['reading', 1, 2, 'show'],
   'landmark-hop': ['reading', 1, 2, 'game'], 'fold': ['reading', 1, 2, 'show'], 'write-note': ['reading', 1, 2, 'write home'], 'ledger-walk': ['reading', 1, 2, 'show'],
@@ -11232,6 +11283,7 @@ const SKILLS = [
   ['b6', 'body', 'Checks their own posture', ['posture-check']],
   ['k1', 'keys', 'Finger numbers, both hands', ['finger-numbers']],
   ['k2', 'keys', 'Finds the 2s and 3s -- small house, big house', ['key-houses']],
+  ['k2b', 'keys', '(quick learners) the white key beside each black one', ['black-white-neighbours']],
   ['k3', 'keys', 'Up = right = higher; steps up and down', ['high-low', 'step-updown']],
   ['k4', 'keys', 'Names every white key, A to G', ['name-reveal', 'letter-chain']],
   ['k5', 'keys', 'Finds any C, F or G fast', ['find-every']],
@@ -11345,11 +11397,24 @@ function StudentsView({ onPlan, onOpenKit }) {
 function PlanView({ onOpenTool, onOpenChapter, onOpenKit, onAllChapters, onStudents }) {
   const [kits, setKits] = useState(loadKits);
   const [who, setWho0] = useState(() => loadWho(loadKits()));
-  const setWho = (i) => { setWho0(i); saveWho(kits, i); const g = kits[i] && kits[i].group; if (g) setMix(g); };
+  const setWho = (i) => { setWho0(i); saveWho(kits, i); const g = kits[i] && kits[i].group; if (g) setMix(g); const d = (kits[i] && kits[i].done) || {}; const first = STRANDS.find(st => SKILLS.some(s => s.strand === st.id && !d[s.id])); setOpenStrand((first || STRANDS[0]).id); };
   const [mix, setMix] = useState(() => { const k = loadKits(); const i = loadWho(k); return (k[i] && k[i].group) || null; });
   const [today, setToday] = useState([]);
   const kit = kits[who] || null;
   const done = (kit && kit.done) || {};
+  // Phase (2026-09-27): the 5 strands used to render as 5 fully-expanded cards, one under the
+  // other -- every step of every strand always visible, which meant a long scroll before an
+  // "in the middle of a lesson" glance could see the other 4 strands at all. Now: one compact
+  // overview row shows all 5 at once (color, progress, next step in one line), and only ONE
+  // strand's full step list opens at a time (accordion) -- tapping a different strand in the
+  // overview, or its own collapsed header, swaps which one is open. Defaults to the strand with
+  // the current student's next open step, so returning to a student lands somewhere useful.
+  const [openStrand, setOpenStrand] = useState(() => {
+    const k = (loadKits()[loadWho(loadKits())]) || null;
+    const d = (k && k.done) || {};
+    const first = STRANDS.find(st => SKILLS.some(s => s.strand === st.id && !d[s.id]));
+    return (first || STRANDS[0]).id;
+  });
   const upd = (nk) => { setKits(nk); saveKits(nk); };
   function newStudent(name) { const nk = [...kits, newStudentObj(name)]; upd(nk); setWho0(nk.length - 1); saveWho(nk, nk.length - 1); }
   function tick(id) { if (!kit) return; upd(kits.map((k, i) => i !== who ? k : { ...k, done: { ...(k.done || {}), [id]: !(k.done || {})[id] } })); }
@@ -11385,7 +11450,34 @@ function PlanView({ onOpenTool, onOpenChapter, onOpenKit, onAllChapters, onStude
         </div>
       </div>}
 
+      {/* Overview row -- all 5 strands at a glance, no scrolling. Tap one to open it below. */}
+      <div className="card" style={{marginBottom:10,padding:'10px 10px'}}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(5, 1fr)',gap:5}}>
+          {STRANDS.map(st => {
+            const list = SKILLS.filter(s => s.strand === st.id);
+            const c = list.filter(s => done[s.id]).length;
+            const next = list.find(s => !done[s.id]);
+            const open = openStrand === st.id;
+            return (
+              <button key={st.id} onClick={() => setOpenStrand(st.id)}
+                style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'6px 2px',borderRadius:9,border:'1.5px solid ' + (open ? st.color : 'var(--border)'),background:open ? st.color + '14' : '#fff',cursor:'pointer',fontFamily:'inherit'}}>
+                <div style={{width:22,height:22,borderRadius:11,border:'2.5px solid ' + st.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:900,color:st.color,background:'#fff'}}>{kit ? c : ''}</div>
+                <div style={{fontSize:10.5,fontWeight:800,color:st.color,textAlign:'center',lineHeight:1.15}}>{st.name}</div>
+              </button>
+            );
+          })}
+        </div>
+        {kit && (() => {
+          const st = STRANDS.find(x => x.id === openStrand);
+          const next = SKILLS.find(s => s.strand === st.id && !done[s.id]);
+          return next
+            ? <div style={{fontSize:13,marginTop:8,color:'#5c544a'}}><b style={{color:st.color}}>Next in {st.name}:</b> {next.text}</div>
+            : <div style={{fontSize:13,marginTop:8,color:'#4f7a45',fontWeight:800}}>{st.name} -- every step done ✓</div>;
+        })()}
+      </div>
+
       {STRANDS.map(st => {
+        if (openStrand !== st.id) return null;
         const list = SKILLS.filter(s => s.strand === st.id);
         const next = list.find(s => !done[s.id]);
         return (
