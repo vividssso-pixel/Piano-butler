@@ -3273,6 +3273,23 @@ Sohyun's direction: won't activate the Exam Check-Up service, so remove it outri
 | 6 | Verification | -- | `index.html`'s inline script block staged into the cloud workspace and compiled with `@babel/standalone` (`presets:['react']`) + `new Function()` on the output -- 0 errors, confirming the removed JSX block didn't leave anything broken. `grep -rl "find-a-teacher"` re-run after the edits -- only historical CLAUDE.md phase-log mentions and unrelated scratch files remain (`_workspace/challenge-idea/outreach-messages.md`, a `Claude outputs/` file), nothing live references the removed page. |
 | 7 | Committed, not pushed | see git log | Ready for Sohyun to push from her Terminal. |
 
+### Phase 163 -- Vox-style motion graphics extended to PianoTimeline (2026-09-28)
+
+Continuing the Phase 161 Vox-style treatment: applied the same staggered-animation approach to
+the `PianoTimeline` component (the "piano's story" tap-to-expand chronology, `drills.html`,
+`?tool=piano-timeline`) that Phase 161 gave `ErasTimeline`. Reused the existing Vox keyframes
+only -- no new keyframes invented.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Timeline rows fade/slide in, staggered | `PianoTimeline` row wrapper `<div>` | `animation:'voxSlideIn 0.3s ' + (i * 0.045) + 's ease both'` -- each of the 9 entries (1400s through Today) slides in in sequence rather than all appearing at once. |
+| 2 | Dot markers pop in, staggered | the gold/white dot `<span>` per row | `animation:'voxPopIn 0.3s ' + (0.05 + i * 0.045) + 's cubic-bezier(.34,1.56,.64,1) both'` -- same overshoot easing Phase 161 used for `ErasTimeline`'s composer pill chips. |
+| 3 | Vertical connector line fades/settles in | the absolute-positioned line behind the dots | `animation:'voxBlockIn 0.45s ease both'` -- `voxBarGrow` (width-based) didn't fit a vertical line, so used `voxBlockIn` (opacity + translateY + scale) instead of inventing a new keyframe. |
+| 4 | Expanded description still animates in on tap | the `open === i` detail `<div>` | `animation:'voxBlockIn 0.28s ease both'` -- fires fresh each time a row is opened, same as before but now with the Vox entrance motion. |
+| 5 | Preserved unchanged | `PIANO_TIMELINE` data array, `open`/`setOpen` tap-to-expand state, `key:true` gold-dot styling logic | No data or interaction-logic changes -- animation-only edit. |
+| 6 | Verification | -- | `<script id="app-jsx">` extracted from `drills.html` and compiled with `@babel/core` (`preset-react`, `runtime:'classic'`) -- clean compile, then `node --check` on the output -- 0 syntax errors. Live Playwright test in headless Chromium against `drills.html?tool=piano-timeline&lock=1`, served locally with locally-installed React 18.2.0/ReactDOM/Babel-standalone 7.23.3 (cdnjs unreachable from the sandbox): all 9 timeline rows render, 20 elements carry the new `animation` styles, tap-to-expand confirmed working both directions (clicking a closed row opens it and closes the previously-open one; clicking an open row collapses it), full-page screenshot visually confirmed layout and gold-dot styling intact. Only console messages were two blocked-by-sandbox-network requests (Google Fonts, Google Tag Manager) and a Babel "deoptimised styling" size note -- both pre-existing and unrelated to this change, zero real errors. |
+| 7 | Committed, not pushed | see git log | Ready for Sohyun to push from her Terminal. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
