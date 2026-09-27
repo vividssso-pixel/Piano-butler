@@ -129,6 +129,25 @@
 <script id="app-jsx" type="text/jsx-raw">
 const { useState, useEffect, useRef, useMemo } = React;
 
+// ─── Language (Phase 145) ─────────────────────────────────────────────────────────
+// Sohyun: a Korean translation option / language toggle, since her mother (a piano-academy
+// teacher in Korea) will be trying the app. Full-site translation is a multi-session effort
+// (her explicit choice) -- each phase translates more chapters the same way.
+// Pattern: a plain module-level variable written once per App() render (see App()'s
+// `LANG = lang;` line, mirroring the pre-existing UI_TEACHER pattern) and read anywhere via
+// t(en, ko). Because App() owns the top-level state and every descendant is a plain
+// (non-memoized) function component, a language switch re-renders the whole tree top-down, so
+// every t() call made INSIDE a component's render picks up the new value automatically.
+// IMPORTANT: this declaration must stay at the very top of the script, before any module-level
+// (top-of-file, outside-a-function) call to t() -- a top-level call is evaluated once when the
+// script first runs and never again, so (a) it would throw if t() weren't defined yet, and
+// (b) its result would never update when the language is later toggled. Only call t() from
+// inside a component's render body (or another function only invoked during render).
+const LANG_KEY = 'pb_lang_v1';
+let LANG = 'en';
+try { LANG = localStorage.getItem(LANG_KEY) === 'ko' ? 'ko' : 'en'; } catch (e) {}
+function t(en, ko) { return LANG === 'ko' ? ko : en; }
+
 const LETTERS = ['A','B','C','D','E','F','G'];
 
 // Interval "size" here is the traditional inclusive count (a 3rd = 2 letter-steps away,
@@ -1158,7 +1177,7 @@ function NoteNameQuestion({ q, level, given, locked, onAnswer, pixel }) {
   if (q.dir === 'key2name') {
     return (
       <div>
-        <p style={promptStyle}>{pixel ? 'WHICH NOTE?' : 'Which note is the highlighted key?'}</p>
+        <p style={promptStyle}>{pixel ? t('WHICH NOTE?', '어떤 음?') : t('Which note is the highlighted key?', '표시된 건반은 어떤 음일까요?')}</p>
         <TapKeyboard octaves={level.octaves} marks={marks} pixel={pixel} />
         <div style={{display:'grid',gridTemplateColumns:'repeat(' + (level.black ? 4 : 7) + ',1fr)',gap:6,marginTop:14}}>
           {choices.map(p => {
@@ -1179,7 +1198,7 @@ function NoteNameQuestion({ q, level, given, locked, onAnswer, pixel }) {
 
   return (
     <div>
-      <p style={promptStyle}>{pixel ? 'FIND THIS NOTE!' : 'Tap this note on the keyboard'}</p>
+      <p style={promptStyle}>{pixel ? t('FIND THIS NOTE!', '이 음을 찾아보세요!') : t('Tap this note on the keyboard', '건반에서 이 음을 눌러보세요')}</p>
       <div style={{textAlign:'center',fontSize:pixel?34:64,fontWeight:900,lineHeight:1,margin:'0 0 16px',
         color:pixel?'var(--brass)':'var(--text)',letterSpacing:'-0.02em'}}>
         {prettyNote(q.shownName)}
@@ -1536,31 +1555,31 @@ function UpDownWalk() {
 function NoteNamesLearn({ onStart }) {
   const tip = (n, title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="note-names" title="Finding notes on the keyboard" intro={<>The black keys are the map -- they come in groups of 2 and 3.</>} onStart={onStart}>
-      <Step title="The black-key map">
+    <Lesson id="note-names" title={t('Finding notes on the keyboard', '건반에서 음이름 찾기')} intro={<>{t('The black keys are the map -- they come in groups of 2 and 3.', '검은건반이 지도예요 -- 2개, 3개씩 무리지어 있어요.')}</>} onStart={onStart}>
+      <Step title={t('The black-key map', '검은건반 지도')}>
       <TapKeyboard octaves={1} labels="all" tint />
       <div style={{display:'flex',fontSize:12,fontWeight:800,margin:'8px 0 18px'}}>
-        <div style={{flex:3,textAlign:'center',background:GROUP_TINT.two,padding:'6px 4px',borderRadius:6,marginRight:4}}>2 black keys → C D E</div>
-        <div style={{flex:4,textAlign:'center',background:GROUP_TINT.three,padding:'6px 4px',borderRadius:6}}>3 black keys → F G A B</div>
+        <div style={{flex:3,textAlign:'center',background:GROUP_TINT.two,padding:'6px 4px',borderRadius:6,marginRight:4}}>{t('2 black keys → C D E', '검은건반 2개 → C D E')}</div>
+        <div style={{flex:4,textAlign:'center',background:GROUP_TINT.three,padding:'6px 4px',borderRadius:6}}>{t('3 black keys → F G A B', '검은건반 3개 → F G A B')}</div>
       </div>
-      {tip(1, 'C sits just left of the 2 black keys', 'Find any pair of black keys -- the white key right before them is always C. D is between them, E just after.')}
-      {tip(2, 'F sits just left of the 3 black keys', 'Before a group of three black keys is always F, then G, A, B.')}
+      {tip(1, t('C sits just left of the 2 black keys', 'C는 검은건반 2개 무리 바로 왼쪽에 있어요'), t('Find any pair of black keys -- the white key right before them is always C. D is between them, E just after.', '검은건반 두 개짜리 무리를 아무거나 찾아보세요 -- 바로 앞의 흰건반은 항상 C예요. D는 그 사이, E는 그 바로 다음이에요.'))}
+      {tip(2, t('F sits just left of the 3 black keys', 'F는 검은건반 3개 무리 바로 왼쪽에 있어요'), t('Before a group of three black keys is always F, then G, A, B.', '검은건반 세 개짜리 무리 앞은 항상 F, 그 다음이 G, A, B예요.'))}
       <FindAll/>
 
       </Step>
-      <Step title="Seven letters, A to G">
-      {tip(3, 'Only seven letters, A to G', 'After G the letters start again at A. Every C on the piano looks the same -- only the octave changes.')}
+      <Step title={t('Seven letters, A to G', '일곱 개 글자, A부터 G까지')}>
+      {tip(3, t('Only seven letters, A to G', 'A부터 G까지 일곱 글자뿐이에요'), t('After G the letters start again at A. Every C on the piano looks the same -- only the octave changes.', 'G 다음에는 다시 A부터 시작해요. 피아노의 모든 C는 똑같이 생겼어요 -- 옥타브만 달라져요.'))}
       <NameReveal/>
 
       </Step>
-      <Step title="Up and down">
-      {tip(4, 'Up is right, down is left', 'Going up the keyboard (to the right) the sound gets higher and the letters go forwards: C D E F G A B C. Going down (to the left) they go backwards: C B A G F E D C. Practise backwards until it comes as quickly as forwards.')}
+      <Step title={t('Up and down', '위, 아래')}>
+      {tip(4, t('Up is right, down is left', '오른쪽이 위, 왼쪽이 아래'), t('Going up the keyboard (to the right) the sound gets higher and the letters go forwards: C D E F G A B C. Going down (to the left) they go backwards: C B A G F E D C. Practise backwards until it comes as quickly as forwards.', '건반을 오른쪽으로 갈수록(위로) 소리가 높아지고 글자는 순서대로 나가요: C D E F G A B C. 왼쪽으로 갈수록(아래로) 거꾸로 가요: C B A G F E D C. 거꾸로도 순서대로만큼 빨리 나올 때까지 연습해보세요.'))}
       <UpDownWalk/>
 
       </Step>
-      <Step title="Letter chain, out loud">
+      <Step title={t('Letter chain, out loud', '소리 내어 글자 이어가기')}>
       <div>
-        <div style={{fontSize:15,fontWeight:800,marginBottom:4}}>Say it out loud together</div>
+        <div style={{fontSize:15,fontWeight:800,marginBottom:4}}>{t('Say it out loud together', '함께 소리 내어 말해요')}</div>
         <LetterChainDrill/>
       </div>
       </Step>
@@ -1580,8 +1599,8 @@ function LetterCircle({ from, to }) {
   return (
     <svg viewBox="0 0 180 160" style={{width:'100%',maxWidth:220,display:'block',margin:'0 auto'}}>
       <circle cx={cx} cy={cy} r={R} fill="none" stroke="#e0d4b8" strokeWidth="2" strokeDasharray="3 5"/>
-      <text x={cx} y={cy - 4} textAnchor="middle" fontSize="10" fontWeight="700" fill="#a49b8f">up ↻</text>
-      <text x={cx} y={cy + 12} textAnchor="middle" fontSize="10" fontWeight="700" fill="#a49b8f">down ↺</text>
+      <text x={cx} y={cy - 4} textAnchor="middle" fontSize="10" fontWeight="700" fill="#a49b8f">{t('up ↻', '위 ↻')}</text>
+      <text x={cx} y={cy + 12} textAnchor="middle" fontSize="10" fontWeight="700" fill="#a49b8f">{t('down ↺', '아래 ↺')}</text>
       {LETTERS.map((l, i) => {
         const [x, y] = pos(i);
         const on = l === from ? '#241f1a' : l === to ? '#a8823f' : '#fff';
@@ -1606,6 +1625,7 @@ function genLetterQuestion(lv, prev) {
 }
 function intervalWord(size) { return size === 2 ? 'next letter' : size === 8 ? 'octave' : (INTERVALS.find(i => i.size === size) || {}).label; }
 function withArticle(w) { return (w === 'octave' ? 'an ' : 'a ') + w; }
+function intervalWordKo(size) { return size === 8 ? '옥타브' : size + '도'; }
 
 function LetterStepQuestion({ q, level, given, locked, onAnswer, pixel }) {
   const done = !!given;
@@ -1616,14 +1636,17 @@ function LetterStepQuestion({ q, level, given, locked, onAnswer, pixel }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [q, locked, onAnswer]);
   const dirWord = q.up ? 'up' : 'down';
-  const cue = q.size === 2 ? (q.up ? 'next letter up' : 'next letter down') : dirWord + ' ' + withArticle(intervalWord(q.size));
+  const cue = t(
+    q.size === 2 ? (q.up ? 'next letter up' : 'next letter down') : dirWord + ' ' + withArticle(intervalWord(q.size)),
+    q.size === 2 ? (q.up ? '다음 글자 (위)' : '다음 글자 (아래)') : intervalWordKo(q.size) + ' ' + (q.up ? '위' : '아래')
+  );
   const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
   const marks = {};
   if (done) { marks[letterPc(q.letter)] = 'target'; marks[letterPc(q.answerLetter)] = 'good'; }
   return (
     <div>
       <p style={pixel ? {fontSize:11.5,textAlign:'center',margin:'0 0 8px'} : {fontSize:15,fontWeight:700,textAlign:'center',margin:'0 0 8px',color:'var(--muted)'}}>
-        {pixel ? 'WHICH LETTER?' : 'Say it, then tap it'}</p>
+        {pixel ? t('WHICH LETTER?', '어떤 글자?') : t('Say it, then tap it', '말하고 눌러보세요')}</p>
       <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:14,margin:'0 0 14px'}}>
         <span style={{fontSize:pixel ? 40 : 72,fontWeight:900,lineHeight:1,color:pixel ? 'var(--brass)' : 'var(--text)'}}>{q.letter}</span>
         <span style={{fontSize:pixel ? 11 : 20,fontWeight:900,color:pixel ? '#f8edd4' : 'var(--brass)',textAlign:'left',lineHeight:1.3}}>
@@ -8126,38 +8149,38 @@ function BlackKeySong() {
 function FirstStepsLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="first-steps" title="Posture, hands and black keys" onStart={onStart}
-      intro={<>The very first lessons -- no music to read yet. Fingers, sounds, and a map of the keyboard, so the piano feels friendly from day one.</>}>
-      <Step title="Sit at the piano">
-        {tip('Sitting', 'Sit on the front half of the stool, feet flat, facing middle C. Stool height: forearm level with the keys. Distance: elbows just in front of the body, open a little to the side.')}
+    <Lesson id="first-steps" title={t('Posture, hands and black keys', '자세, 손 모양, 검은건반')} onStart={onStart}
+      intro={<>{t('The very first lessons -- no music to read yet. Fingers, sounds, and a map of the keyboard, so the piano feels friendly from day one.', '아주 처음 배우는 레슨이에요 -- 아직 악보를 읽지 않아요. 손가락, 소리, 건반 지도부터 시작해서 첫날부터 피아노가 친근하게 느껴지도록 해요.')}</>}>
+      <Step title={t('Sit at the piano', '피아노 앞에 앉기')}>
+        {tip(t('Sitting', '앉는 법'), t('Sit on the front half of the stool, feet flat, facing middle C. Stool height: forearm level with the keys. Distance: elbows just in front of the body, open a little to the side.', '의자 앞쪽 절반에 앉고, 발은 바닥에 평평하게, 가운데 도(C)를 마주보게 앉아요. 의자 높이: 팔뚝이 건반과 수평이 되도록. 거리: 팔꿈치가 몸 바로 앞에, 옆으로 살짝 벌어지게.'))}
         <SitCheck/>
       </Step>
-      <Step title="The hand shape">
-        {tip('A round hand', 'Let your arms hang, then lift your hands as if holding a small ball. Knuckles up like a bridge, wrist level with the forearm, play on the fingertip pads, the thumb on its side.')}
+      <Step title={t('The hand shape', '손 모양')}>
+        {tip(t('A round hand', '둥근 손'), t('Let your arms hang, then lift your hands as if holding a small ball. Knuckles up like a bridge, wrist level with the forearm, play on the fingertip pads, the thumb on its side.', '팔을 편하게 늘어뜨렸다가, 작은 공을 쥐듯이 손을 들어올려요. 손가락 마디는 다리처럼 위로, 손목은 팔뚝과 수평으로, 손가락 끝 살로 연주하고, 엄지손가락은 옆면으로.'))}
         <HandShape/>
       </Step>
-      <Step title="Move with the whole arm">
-        {tip('The arm carries the hand', 'Fingers play the keys, but the arm takes the hand where it needs to go -- the hand keeps its shape all the way. Do these a few minutes at the start of every practice.')}
+      <Step title={t('Move with the whole arm', '팔 전체로 움직이기')}>
+        {tip(t('The arm carries the hand', '팔이 손을 데려가요'), t('Fingers play the keys, but the arm takes the hand where it needs to go -- the hand keeps its shape all the way. Do these a few minutes at the start of every practice.', '손가락이 건반을 누르지만, 손을 필요한 곳으로 데려가는 건 팔이에요 -- 손 모양은 계속 그대로 유지돼요. 연습을 시작할 때마다 몇 분씩 이 동작들을 해보세요.'))}
         <ArmExercises/>
       </Step>
-      <Step title="Posture check">
+      <Step title={t('Posture check', '자세 점검')}>
         <PostureChecklist/>
       </Step>
-      <Step title="Finger numbers">
+      <Step title={t('Finger numbers', '손가락 번호')}>
         <FingerNumbers/>
       </Step>
-      <Step title="High, low, loud and soft">
+      <Step title={t('High, low, loud and soft', '높고 낮음, 크고 작음')}>
         <HighLowGame/>
       </Step>
-      <Step title="Small house, big house">
-        {tip('The black keys are the map', 'The black keys come in twos and threes. Every group of two is a small house, every group of three is a big house -- they repeat all the way along the piano.')}
+      <Step title={t('Small house, big house', '작은 집, 큰 집')}>
+        {tip(t('The black keys are the map', '검은건반이 지도예요'), t('The black keys come in twos and threes. Every group of two is a small house, every group of three is a big house -- they repeat all the way along the piano.', '검은건반은 두 개씩, 세 개씩 무리지어 있어요. 두 개짜리 무리는 작은 집, 세 개짜리 무리는 큰 집이에요 -- 피아노 전체에서 계속 반복돼요.'))}
         <KeyHouses/>
       </Step>
-      <Step title="Your first song">
+      <Step title={t('Your first song', '첫 곡')}>
         <BlackKeySong/>
       </Step>
-      <Step title="Ready for more? The white neighbours">
-        {tip('Not every student needs this yet', 'Some students are ready to go further in the very first lesson -- others need more time on the black-key houses first, and that’s exactly right too. This step is for the quick ones.')}
+      <Step title={t('Ready for more? The white neighbours', '더 해볼까요? 옆의 흰건반')}>
+        {tip(t('Not every student needs this yet', '모든 학생이 지금 당장 필요한 건 아니에요'), t('Some students are ready to go further in the very first lesson -- others need more time on the black-key houses first, and that’s exactly right too. This step is for the quick ones.', '어떤 학생은 첫 레슨에서 바로 더 나아갈 준비가 돼 있고, 어떤 학생은 검은건반 집에 시간이 더 필요해요 -- 둘 다 맞아요. 이 단계는 빨리 배우는 학생들을 위한 거예요.'))}
         <BlackWhiteNeighbours/>
       </Step>
     </Lesson>
@@ -11410,19 +11433,7 @@ function ToolView({ id, locked, onBack, onChapter, backLabel = '← Toolbox' }) 
 // is not a password lock (a static page can't be one).
 const MODE_KEY = 'pb_mode_v1';
 let UI_TEACHER = false;
-// ─── Language (Phase 145) ─────────────────────────────────────────────────────────
-// Sohyun: a Korean translation option / language toggle, since her mother (a piano-academy
-// teacher in Korea) will be trying the app. Full-site translation is a multi-session effort
-// (her explicit choice) -- this phase adds the toggle + shared chrome + the Notes & Rests
-// chapter; every later phase should translate more chapters the same way.
-// Pattern: mirrors UI_TEACHER above -- a plain module-level variable written once per App()
-// render (see App()'s `LANG = lang;` line) and read anywhere via t(en, ko). Because App() owns
-// the top-level state and every descendant is a plain (non-memoized) function component, a
-// language switch re-renders the whole tree top-down, so every t() call picks up the new value.
-const LANG_KEY = 'pb_lang_v1';
-let LANG = 'en';
-try { LANG = localStorage.getItem(LANG_KEY) === 'ko' ? 'ko' : 'en'; } catch (e) {}
-function t(en, ko) { return LANG === 'ko' ? ko : en; }
+// (LANG / t() -- see the top of the script, right after the React hooks are destructured.)
 function initialMode() {
   try {
     const p = new URLSearchParams(location.search);
