@@ -169,7 +169,6 @@ Piano Butler/
 ├── timeline.html                     ← AMEB-only exam prep planner (standalone, not in nav)
 ├── viva-voce.html                    ← General Knowledge / viva voce PDF pack generator (AMEB only, standalone)
 ├── connect.html                      ← teacher/course matching (placeholder data, not promoted)
-├── find-a-teacher.html               ← student → teacher matching request form (hidden from nav)
 ├── teach-with-us.html                ← teacher application form (hidden from nav)
 ├── teacher-dashboard.html            ← Supabase-backed studio management (deprioritized, not promoted)
 ├── admin-search.html / admin-counts.html   ← password-gated internal tools, noindex
@@ -3258,6 +3257,21 @@ Sohyun's request: apply motion graphics to the era-background and composer-expla
 | 5 | Scope note | -- | Only `ErasTimeline` (era background + composer names) was restyled this phase, per Sohyun's own scoping ("일단 ... 만들어보고 다른것도 적용할 만 것들 추가하면 좋을것 같아" -- do this piece first, then extend to other suitable content). `PianoTimeline` (the tap-a-date timeline just above it in the same chapter) was left unchanged. Candidates to extend the same treatment to next, pending Sohyun's review of this first piece: `PianoTimeline`'s expand/collapse entries, and potentially the Musical Terms chapter's term cards (Phase 122/123), which already has a comparable "one fact revealed at a time" structure. |
 | 6 | Committed, not pushed | see git log | Ready for Sohyun to push from her Terminal. |
 
+Live-verified: Sohyun pushed Phases 142-161 together (`4f79752..eae1543`) same session -- confirmed via `git log --oneline origin/main..HEAD` returning empty (local == remote).
+
+### Phase 162 -- Exam Check-Up removed, cleanup pass (2026-09-27)
+
+Sohyun's direction: won't activate the Exam Check-Up service, so remove it outright rather than leaving it half-built; also asked to clear out anything else already built that won't be used, so the project isn't confusing to come back into.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | `find-a-teacher.html` deleted | `find-a-teacher.html` | The Exam Check-Up form (4-step wizard, $25 AUD pricing added Phase 60, payment never wired up). `git rm`. |
+| 2 | Dead homepage entry card removed | `index.html` | The "Get an exam check-up" entry card was already gated behind `{false && (...)}` (never actually live/rendered) -- removed the whole dead block rather than leaving unreachable code linking to a now-deleted file. |
+| 3 | `robots.txt` entry removed | `robots.txt` | `Disallow: /find-a-teacher.html` line removed (the file it pointed to no longer exists). |
+| 4 | CLAUDE.md live-status sections updated | `CLAUDE.md` | File Structure list, the Revenue-critical status table, and Pending Work item #3 (the Stripe Payment Link task, now moot) updated to reflect the removal. Historical phase-log entries (Phase 54/60 etc. that describe building it) left untouched, per this project's convention of not rewriting past log entries -- only the "current" sections were updated. |
+| 5 | What else was reviewed and deliberately NOT deleted | -- | Went through the other built-but-unpromoted pages before deleting only the one Sohyun explicitly named, rather than guessing broadly: `teach-with-us.html` (teacher recruitment form) -- kept live per the 2026-08-25 strategic decision to leave it as a zero-cost passive capture point, revisit later, not "won't use"; `practice-challenge.html` + the 30-Day Challenge `.docx` proposals (now under `_workspace/`) -- Sohyun's own prior note on this was "아직 모르겠음, 다음에" (undecided, later), not decided against, so left alone; `butler.html` -- decided "stays private," which means unlisted, not deleted; `diagnose.html`, `recommend.html`, `viva-voce.html`, `score-reader.html`, `puzzle.html`, `admin-*.html` -- all still actively used or pending Sohyun's own review, not dormant. If any of these should also go, flag them specifically next session rather than a blanket sweep. |
+| 6 | Verification | -- | `index.html`'s inline script block staged into the cloud workspace and compiled with `@babel/standalone` (`presets:['react']`) + `new Function()` on the output -- 0 errors, confirming the removed JSX block didn't leave anything broken. `grep -rl "find-a-teacher"` re-run after the edits -- only historical CLAUDE.md phase-log mentions and unrelated scratch files remain (`_workspace/challenge-idea/outreach-messages.md`, a `Claude outputs/` file), nothing live references the removed page. |
+| 7 | Committed, not pushed | see git log | Ready for Sohyun to push from her Terminal. |
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
@@ -3304,7 +3318,7 @@ see Phase 62 #8 above.
 | Search Console indexing | **38/40 indexed as of 2026-09-15** (was 36/40 on 9/2), only 2 pages not indexed. | Nothing blocking — moving in the right direction. |
 | Teacher outreach | **Closed — Sohyun's decision (2026-08-17): not sending it.** No longer a pending item. | N/A — settled, not a blocker. |
 | ABRSM data quality | Repaired 2026-08-13 (Phase 67): 54 leaked composer names, 21 missing catalogue numbers, 13 publisher fragments, 11 lost accidentals, 117 placeholder nationalities, inline-HTML/`.js` parity restored. **Confirmed pushed and live 2026-08-17.** | Nothing blocking. |
-| Exam Check-Up service (`find-a-teacher.html`) | Form + pricing UI live, payment not wired up | **Sohyun action required.** Needs a real Stripe Payment Link pasted into the `STRIPE_PAYMENT_LINK` constant. |
+| Exam Check-Up service | **Removed (Phase 162, 2026-09-27) — Sohyun decided not to activate it.** `find-a-teacher.html` deleted, its dead homepage entry card removed, robots.txt entry removed. | N/A — closed. |
 | `butler.html` practice-tracker | Built, tested (67/67), committed (`57e7f5f`), pushed as of 2026-07-27 | **Sohyun decision needed.** Not yet linked anywhere, scope (private tool vs. public feature) still undecided. |
 | AMEB internal linking | **Done, deployed, live-verified 2026-08-03 and re-confirmed live 2026-08-17** (commit `ea87edb`). All 12 AMEB pages (Prelim–G8, CertP, AMusA, LMusA) cross-link via a grade-nav strip; homepage also carries a 35-link `GradeDirectory` (Phase 67). | Nothing blocking — effect on crawl/indexing signals will take time to show. |
 | Random Pick + local Lists (Phase 71) | **Live-verified 2026-09-15** end to end (create list, add piece, My Lists panel) — confirmed working, no console errors. One real bug found in the same feature and fixed same session (see Sight-reading generator + Lists confirm() bug row below). | Nothing blocking -- the `window.confirm()` fix is pushed and **live-verified 2026-09-23** (inline Delete?/Cancel, no native dialog). |
@@ -3390,7 +3404,6 @@ When revisited, build the AMEB/ABRSM/Trinity-specific angle, not a generic direc
 |---|------|----------|-------|
 | 1 | Revisit: should `sight-reading.html` auto-redirect to the generator? | Medium — Sohyun | 2026-09-17: built and committed an auto-redirect version (Sohyun had asked for it), then she said she didn't like the result and asked to shelve it for now and revise later -- reverted locally (`81b724d`/`f4551b9`), never pushed, so the live site was never affected. `sight-reading.html` is back to its original static SEO landing page. Revisit when she's ready to say what she wants it to do/look like instead. |
 | 2 | Decide what `AGENTS.md` is for | Medium — Sohyun | Found 2026-09-15: an untracked, stale (138-line-diff) mirror of this file, apparently read by a different AI coding tool (naming convention + one "Codex API" substitution suggest OpenAI Codex or similar). Decide: keep it and have future sessions maintain both in sync, or delete it if it's a stray leftover from a one-off experiment. |
-| 3 | Create the Stripe Payment Link for Exam Check-Up | High — Sohyun | $25 AUD one-time product → paste the link into `STRIPE_PAYMENT_LINK` in `find-a-teacher.html`. |
 | 4 | Re-check diploma-page CTR after re-crawl | Medium | 5 diploma pages retitled 2026-07-27 for CTR — still awaiting re-crawl to show effect. |
 | 5 | Sohyun — glance at a real downloaded viva-voce PDF | Quick — deferred by Sohyun since 2026-07-23 | Sample already generated live, zero console errors. Just needs her eyes on it. |
 | 6 | AdSense — WAIT for traffic (Sohyun's decision, 2026-09-23) | Parked | Re-reviewed 2026-09-19 and rejected again: 주의 필요, "가치가 별로 없는 콘텐츠" (low-value content) — Google's three tests are unique value, ongoing curation, and real user interest. Likely main factor: traffic (~4 clicks/day). Sohyun chose to change nothing and wait for traffic to grow rather than add teacher's notes now. Do NOT tick "문제를 수정했음" / request review, and don't nag about it. Revisit when 3-month clicks roughly double (~750+). If revived, the recommended fix is short teacher's notes in Sohyun's own voice on the top 5 pages (LRSM, FRSM, ATCL, LMusA, AMEB G3). Also check the AdSense banner saying payment info still needs adding. |
