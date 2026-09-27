@@ -2964,6 +2964,9 @@ function NoteValLearn({ onStart }) {
         Game board rule: D.C. sends you back to the start and D.S. back to the {'𝄋'} sign -- each only once per lap, just like in real music. Reach Fine to finish a lap.
       </p>
       </Step>
+      <Step title="Writing rests correctly">
+      <RestGrouping/>
+      </Step>
     </Lesson>
   );
 }
@@ -5891,6 +5894,9 @@ function TimeSigLearn({ onStart }) {
       </Step>
       <Step title="Grouping notes to show the beat">
       <GroupingGame/>
+      </Step>
+      <Step title="Duplets">
+      <DupletDemo/>
       </Step>
     </Lesson>
   );
@@ -10009,7 +10015,7 @@ function BeamRow({ events, width = 320, unit = null, on = -1, labels = null, ink
             {e.q < 8 && <line x1={sx} y1={HY - 2} x2={sx} y2={ST} stroke={c} strokeWidth="1.7"/>}
             {!beamed.has(i) && e.q <= 1 && <path d={`M${sx},${ST} c 2,8 11,10 7,22`} fill="none" stroke={c} strokeWidth="2.2"/>}
             {!beamed.has(i) && e.q <= 0.5 && <path d={`M${sx},${ST + 8} c 2,7 11,9 7,20`} fill="none" stroke={c} strokeWidth="2.2"/>}
-            {(e.dot || e.q === 3 || e.q === 6 || e.q === 1.5) && <circle cx={x + 12} cy={HY - 2} r="2.2" fill={c}/>}
+            {(e.dot || (!e.noDot && (e.q === 3 || e.q === 6 || e.q === 1.5))) && <circle cx={x + 12} cy={HY - 2} r="2.2" fill={c}/>}
           </g>
         );
       })}
@@ -10017,11 +10023,11 @@ function BeamRow({ events, width = 320, unit = null, on = -1, labels = null, ink
         const a = pos[ix[0]] + 6, b = pos[ix[ix.length - 1]] + 6;
         const secondary = [];
         ix.forEach((i, k) => { if (events[i].q <= 0.5) { const nb = ix[k + 1] != null && events[ix[k + 1]].q <= 0.5; const pb = ix[k - 1] != null && events[ix[k - 1]].q <= 0.5; if (nb) secondary.push([pos[i] + 6, pos[ix[k + 1]] + 6]); else if (!pb) secondary.push(k === ix.length - 1 ? [pos[i] + 6 - 7, pos[i] + 6] : [pos[i] + 6, pos[i] + 6 + 7]); } });
-        const tri = events[ix[0]].tri;
+        const tri = events[ix[0]].tri, dup = events[ix[0]].dup;
         return <g key={'b' + gi}>
           <rect x={a - 0.8} y={ST - 1} width={b - a + 1.6} height="5" fill={ink}/>
           {secondary.map(([p, q], k) => <rect key={k} x={p - 0.8} y={ST + 6} width={q - p + 1.6} height="4.5" fill={ink}/>)}
-          {tri && <text x={(a + b) / 2} y={ST - 5} textAnchor="middle" fontSize="11" fontWeight="900" fontStyle="italic" fill={ink}>3</text>}
+          {(tri || dup) && <text x={(a + b) / 2} y={ST - 5} textAnchor="middle" fontSize="11" fontWeight="900" fontStyle="italic" fill={ink}>{dup ? '2' : '3'}</text>}
         </g>;
       })}
       {grid && grid.map((g, k) => <text key={'gr' + k} x={12 + g.t * u + 6} y={height + 14} textAnchor="middle" fontSize={g.main ? 15 : 11.5} fontWeight={g.bold ? 900 : 600} fill={g.on ? '#b5483b' : g.bold ? ink : '#bdb2a0'}>{g.label}</text>)}
@@ -10543,6 +10549,73 @@ function GraceWrite() {
     </div>
   );
 }
+// ─── Phase 140: rest grouping and duplets ───────────────────────────────────────────
+// 1. The one universally-taught rest-grouping rule: in simple time, a rest must never hide
+// where beat 3 falls (the middle of a 4/4 bar) -- exactly the same "never obscure the middle"
+// idea GroupingGame already teaches for beamed notes, applied to rests instead.
+function RestBar({ events, on = -1 }) {
+  return <BeamRow events={events} width={260} height={70} on={on}/>;
+}
+function RestGrouping() {
+  const [play1, setPlay1] = useState(-1), [play2, setPlay2] = useState(-1);
+  const good = [{ q: 2, note: true }, { q: 2, rest: true }, { q: 2, rest: true }, { q: 2, note: true }];
+  const bad = [{ q: 2, note: true }, { q: 4, rest: true }, { q: 2, note: true }];
+  function noteEvents(spec) { return spec.map(e => e.note ? { q: e.q } : { q: e.q, rest: true }); }
+  function playRow(spec, setOn) {
+    const ctx = getAudio(); if (!ctx) return; stopClicks();
+    const spb = 60 / 92, t0 = ctx.currentTime + 0.1; let t = 0;
+    spec.forEach((e, i) => { if (!e.rest) blip(ctx, t0 + t * spb / 2, 523.25, spb * e.q / 2 * 0.9, 0.2, 'triangle'); setTimeout(() => setOn(i), (t * spb / 2) * 1000); t += e.q; });
+    setTimeout(() => setOn(-1), (t * spb / 2) * 1000 + 400);
+  }
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Writing rests: don't hide beat 3</div>
+      <div style={actNote}>In simple time (2/4, 3/4, 4/4), a rest is written so the beat still shows through -- just like notes are grouped by beat, not run together. The one rule that matters most: <b>never write a single rest that spans across the middle of a 4/4 bar</b> (over beat 3). Split it into two rests instead, one per beat.</div>
+      <div style={{background:'#fff',borderRadius:10,padding:'8px 6px',marginBottom:8}}>
+        <div style={{fontSize:12,fontWeight:900,color:'#4f7a45',marginBottom:2}}>RIGHT -- two crotchet rests, beat 3 stays visible</div>
+        <RestBar events={noteEvents(good)} on={play1}/>
+        <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={() => playRow(good, setPlay1)}>♪ Play</button></div>
+      </div>
+      <div style={{background:'#fff',borderRadius:10,padding:'8px 6px'}}>
+        <div style={{fontSize:12,fontWeight:900,color:'#b5483b',marginBottom:2}}>WRONG -- one minim rest swallows beat 3</div>
+        <RestBar events={noteEvents(bad)} on={play2}/>
+        <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={() => playRow(bad, setPlay2)}>♪ Play</button></div>
+      </div>
+      <div style={{fontSize:12.5,color:'#5c544a',background:'#f7f2e8',borderRadius:8,padding:'6px 9px',marginTop:8,lineHeight:1.5}}>Both bars sound identical -- rests are silent either way. This is purely a <b>writing</b> rule, so a reader can see the beat at a glance without counting silent beats.</div>
+    </div>
+  );
+}
+
+// 2. Duplets: 2 equal notes in the time normally taken by 3 -- the mirror image of a triplet,
+// only found in compound time (6/8, 9/8, 12/8).
+function DupletDemo() {
+  const [mode, setMode] = useState('normal');
+  const [on, setOn] = useState(-1);
+  function play(m) {
+    setMode(m);
+    const ctx = getAudio(); if (!ctx) return; stopClicks();
+    const spb = 60 / 76, t0 = ctx.currentTime + 0.1;
+    const notes = m === 'normal' ? [0, 1/3, 2/3] : [0, 0.5];
+    notes.forEach((t, i) => { blip(ctx, t0 + t * spb, 523.25, spb * (m === 'normal' ? 1/3 : 0.5) * 0.9, 0.2, 'triangle'); setTimeout(() => setOn(i), t * spb * 1000); });
+    setTimeout(() => setOn(-1), spb * 1000 + 300);
+  }
+  const normalEv = [{ q: 1, g: 'a' }, { q: 1, g: 'a' }, { q: 1, g: 'a' }];
+  const dupletEv = [{ q: 1.5, g: 'b', dup: true, noDot: true }, { q: 1.5, g: 'b', noDot: true }];
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Duplets: 2 in the time of 3</div>
+      <div style={actNote}>In compound time, one beat (a dotted crotchet) naturally divides into <b>3</b> quavers. A <b>duplet</b> squeezes just <b>2</b> equal notes into that same beat instead -- marked with a bracket and a small <b>2</b>, the mirror of how a triplet marks 3 notes in a simple-time beat.</div>
+      <div style={{display:'flex',gap:4,marginBottom:8}}>
+        {[['normal', 'Normal beat (3 quavers)'], ['duplet', 'Duplet (2 notes)']].map(([k, l]) => <button key={k} className={'chip' + (mode === k ? ' active' : '')} style={{padding:'3px 10px',fontSize:13}} onClick={() => play(k)}>{l}</button>)}
+      </div>
+      <div style={{background:'#fff',borderRadius:10,padding:'8px 6px'}}>
+        <BeamRow events={mode === 'normal' ? normalEv : dupletEv} on={on} unit={200/3}/>
+      </div>
+      <div style={{textAlign:'center',margin:'8px 0'}}><button className="ghost-btn" onClick={() => play(mode)}>♪ Play</button></div>
+      <div style={{fontSize:12.5,color:'#5c544a',background:'#f7f2e8',borderRadius:8,padding:'6px 9px',lineHeight:1.5}}>Listen for the difference: the duplet's 2 notes land evenly across the beat, so the second one falls slightly late compared to where the middle quaver of a normal 3-note beat would be.</div>
+    </div>
+  );
+}
 const TOOLS = [
   { id: 'sit-check', ch: 'first-steps', title: 'Set up the stool', blurb: 'Height and distance: forearm level, elbows open.', C: () => <SitCheck/> },
   { id: 'hand-shape', ch: 'first-steps', title: 'The hand shape', blurb: 'Knuckle bridge, level wrist, fingertips -- and six faults.', C: () => <HandShape/> },
@@ -10618,11 +10691,13 @@ const TOOLS = [
   { id: 'inversions', ch: 'chords', title: 'Inversions', blurb: 'Move the bottom note to the top.', C: () => <InversionFlip/> },
   { id: 'cadences', ch: 'chords', title: 'Cadences', blurb: 'Perfect, plagal, imperfect, interrupted.', C: () => <CadencePlayer/> },
   { id: 'split-it', ch: 'note-values', title: 'Split the notes (note values)', blurb: 'One semibreve into minims, crotchets...', C: () => <SplitTree/> },
+  { id: 'rest-grouping', ch: 'note-values', title: 'Writing rests correctly', blurb: "Never hide beat 3 with one long rest.", C: () => <RestGrouping/> },
   { id: 'fill-bar', ch: 'note-values', title: 'Fill the bar', blurb: 'Exactly 2, 3 or 4 beats.', C: () => <FillTheBar/> },
   { id: 'count-along', ch: 'time-signatures', title: 'Count along (time signatures)', blurb: 'Beat lights for 2/4, 3/4, 4/4, and 6/8 counted 1 to 6.', C: () => <BeatPulse/> },
   { id: 'bar-lines', ch: 'time-signatures', title: 'Put in the bar lines', blurb: 'The written exam task.', C: () => <BarLineBuilder/> },
   { id: 'beat-doubler', ch: 'time-signatures', title: 'When the quaver is the beat', blurb: '8 on the bottom: every note doubles; count 6/8 as 1 to 6.', C: () => <BeatDoubler/> },
   { id: 'grouping', ch: 'time-signatures', title: 'Group the quavers', blurb: 'Which bar is beamed right for 2/4, 3/4, 4/4, 6/8?', C: () => <GroupingGame/> },
+  { id: 'duplets', ch: 'time-signatures', title: 'Duplets', blurb: '2 equal notes in the time of 3 -- compound time only.', C: () => <DupletDemo/> },
   { id: 'regroup', ch: 'time-signatures', title: '3/4 or 6/8?', blurb: 'Same six quavers, different beat.', C: () => <RegroupQuavers/> },
   { id: 'anacrusis', ch: 'rhythm', title: 'Anacrusis (pickup bars)', blurb: 'A tune that starts before beat 1 -- and why the last bar is short too.', C: () => <AnacrusisDemo/> },
   { id: 'count-more', ch: 'rhythm', title: 'Count harder rhythms', blurb: 'Dotted notes, 1 e & a, triplets, syncopation.', C: () => <CountHarder/> },
@@ -10740,6 +10815,7 @@ const TOOL_CATS = [
 // cat, level range [from, to] (0 Beginner, 1 Prelim, 2 Grade 1–2, 3 Grade 3–4), kinds
 // kinds: show = show & explain, game = student does it, ear = listening, write = written theory, home = home practice
 const TOOL_META = {
+  'rest-grouping': ['rhythm', 2, 4, 'show'], 'duplets': ['rhythm', 3, 4, 'show'],
   'flash-cards': ['reading', 1, 2, 'game'], 'grace-write': ['words', 3, 4, 'write'],
   'clef-basics': ['reading', 0, 1, 'show'], 'staff-basics': ['reading', 0, 1, 'show'], 'anacrusis': ['rhythm', 2, 3, 'show'], 'minor-forms': ['scales', 1, 2, 'show'],
   'count-more': ['rhythm', 2, 4, 'show game'], 'grouping': ['rhythm', 2, 4, 'game write'], 'pedal': ['expression', 2, 4, 'show ear'],

@@ -3118,6 +3118,11 @@ Phase 139 -- next two items off the book-plan Content Coverage table. Regression
 - `grace-write` (GraceWrite, Signs chapter, after Ornaments): the missing write-it-yourself half of the ornaments tool (Phase 136 only showed written vs played) -- tap where the small grace note goes, acciaccatura (with slash) or appoggiatura, checked against the target.
 - Verified live: flash-cards' right/wrong colouring and streak counter, and grace-write's tap-then-check flow (including its wrong-answer state), both screenshotted mid-interaction, not just at rest.
 
+Phase 140 -- rest grouping and duplets, next off the Content Coverage table. Regression: 96 tools / 21 drills, no errors.
+- `rest-grouping` (RestGrouping, Note values chapter, after Fill the bar): the one universally-taught rest-writing rule -- a single rest must never span across the middle of a 4/4 bar (hide beat 3) -- shown as a right/wrong pair of identical-sounding bars, both playable, with the point made explicit that this is a writing convention only (rests are silent either way). Deliberately narrow in scope: only the one rule every syllabus agrees on, not a fabricated exhaustive rest-grouping ruleset -- broader rest-grouping conventions vary enough by source that they need Sohyun's books before being asserted as quiz answers.
+- `duplets` (DupletDemo, Time signatures chapter, after Grouping notes/GroupingGame): 2 equal notes in the time of 3 in compound time, the mirror of a triplet -- toggle between the normal 3-quaver beat and the bracketed "2" duplet, both playable so the timing difference is audible, not just visual.
+- `BeamRow` (the shared beamed-notation renderer from Phase 136) extended: a tuplet bracket can now show "2" (`dup: true`) as well as "3" (`tri: true`), and a `noDot: true` flag on an event suppresses the automatic augmentation-dot the renderer would otherwise draw for a q=1.5 duration -- needed because a duplet's notes are an untied odd duration, not a dotted note.
+
 Next on the plan: more mini tools (Sohyun's rule: every activity stand-alone + in TOOLS). Content Coverage table in the book-plan doc tracks real gaps going forward -- check it before proposing new ones.
 
 
