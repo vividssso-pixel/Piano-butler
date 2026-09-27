@@ -113,6 +113,13 @@
     @keyframes drawArc { to { stroke-dashoffset: 0; } }
     @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
     .fade-up { animation: fadeUp 0.18s ease both; }
+    /* Vox-style era/composer reveal animations */
+    @keyframes voxYearIn { from { opacity:0; transform:translateX(-14px) scale(0.92); } to { opacity:1; transform:translateX(0) scale(1); } }
+    @keyframes voxNameIn { from { opacity:0; transform:scale(0.85); } to { opacity:1; transform:scale(1); } }
+    @keyframes voxSlideIn { from { opacity:0; transform:translateX(-10px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes voxPopIn { from { opacity:0; transform:scale(0.6); } to { opacity:1; transform:scale(1); } }
+    @keyframes voxBarGrow { from { width:0; } }
+    @keyframes voxBlockIn { from { opacity:0; transform:translateY(10px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }
   </style>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-D232EW4QWF"></script>
@@ -9305,6 +9312,16 @@ const ERAS = [
     today: 'On the piano: listen for colour and rhythm; follow the composer’s exact markings.',
     composers: ['Debussy', 'Ravel', 'Bartók', 'Prokofiev', 'Kabalevsky', 'Gershwin'], sound: 'piano' },
 ];
+// Rough feel guide only (not a hard rule) -- built from each era's own traits/today text above:
+// dynamics = how wide a dynamic range the era's playing style uses; pedal = how much sustaining pedal;
+// rubato = how much the tempo is allowed to bend. 1 (least) to 4 (most).
+const ERA_BARS = {
+  baroque:  { dynamics: 1, pedal: 1, rubato: 1 },
+  classical:{ dynamics: 2, pedal: 2, rubato: 1 },
+  romantic: { dynamics: 4, pedal: 4, rubato: 4 },
+  modern:   { dynamics: 3, pedal: 3, rubato: 2 },
+};
+const ERA_BAR_LABELS = [['dynamics', 'Dynamic range'], ['pedal', 'Pedal use'], ['rubato', 'Tempo flexibility']];
 // A few bars in each era's manner (same key, short).
 function playEra(id) {
   const ctx = getAudio(); if (!ctx) return; stopClicks();
@@ -9329,23 +9346,51 @@ function playEra(id) {
 function ErasTimeline() {
   const [sel, setSel] = useState('baroque');
   const E = ERAS.find(e => e.id === sel);
+  const bars = ERA_BARS[E.id];
   return (
     <div className="try-box" style={actBox}>
       <div style={actTitle}>The style eras</div>
       <div style={actNote}>What the keyboard of each era could do shaped how its music is played. Tap an era, then hear a few bars in its style.</div>
-      <div style={{display:'flex',height:30,borderRadius:8,overflow:'hidden',marginBottom:8}}>
-        {ERAS.map((e, i) => <button key={e.id} onClick={() => setSel(e.id)} style={{flex:[150, 70, 80, 100][i],border:'none',background:e.color,opacity:sel === e.id ? 1 : 0.4,color:'#fff',fontWeight:900,fontSize:12,cursor:'pointer',fontFamily:'inherit',padding:0}}>{e.name.split(' ')[0]}</button>)}
+      <div style={{display:'flex',height:34,borderRadius:8,overflow:'hidden',marginBottom:8,boxShadow:'0 1px 0 rgba(0,0,0,0.08)'}}>
+        {ERAS.map((e, i) => <button key={e.id} onClick={() => setSel(e.id)} style={{flex:[150, 70, 80, 100][i],border:'none',background:e.color,opacity:sel === e.id ? 1 : 0.4,color:'#fff',fontWeight:900,fontSize:12,letterSpacing:'0.02em',cursor:'pointer',fontFamily:'inherit',padding:0,transition:'opacity 0.15s ease',transform:sel === e.id ? 'scale(1.03)' : 'scale(1)'}}>{e.name.split(' ')[0]}</button>)}
       </div>
       <div style={{display:'flex',justifyContent:'space-between',fontSize:11.5,fontWeight:800,color:'var(--muted)',margin:'-5px 0 8px'}}><span>1600</span><span>1750</span><span>1820</span><span>1900</span><span>today</span></div>
-      <div style={{background:'#fff',borderRadius:10,padding:'9px 10px',borderLeft:'5px solid ' + E.color,fontSize:13.5,lineHeight:1.5}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',flexWrap:'wrap',gap:4}}>
-          <b style={{fontSize:16,color:E.color}}>{E.name}</b><span style={{fontWeight:800,color:'var(--muted)'}}>{E.years}</span>
+      <div key={E.id} style={{background:'#fff',borderRadius:10,padding:'12px 12px 10px',borderLeft:'6px solid ' + E.color,fontSize:13.5,lineHeight:1.5,overflow:'hidden'}}>
+        {/* Big bold Vox-style headline block */}
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',flexWrap:'wrap',gap:4,animation:'voxYearIn 0.32s cubic-bezier(.2,.8,.3,1) both'}}>
+          <b style={{fontSize:22,color:E.color,letterSpacing:'-0.01em'}}>{E.name}</b>
+          <span style={{fontWeight:900,color:'#fff',background:E.color,borderRadius:5,padding:'2px 8px',fontSize:12.5,animation:'voxPopIn 0.3s 0.08s cubic-bezier(.34,1.56,.64,1) both'}}>{E.years}</span>
         </div>
-        <div><b>Keyboard:</b> {E.inst}</div>
-        <ul style={{margin:'4px 0',paddingLeft:18}}>{E.traits.map((t, i) => <li key={i}>{t}</li>)}</ul>
-        <div style={{background:'#f7f2e8',borderRadius:6,padding:'5px 7px'}}><b>Playing it today:</b> {E.today}</div>
-        <div style={{marginTop:5}}><b>Composers:</b> <span style={{color:'#5c544a'}}>{E.composers.join(', ')}</span></div>
-        <div style={{textAlign:'center',marginTop:8}}><button className="ghost-btn" onClick={() => playEra(E.id)}>♪ Hear the {E.name.split(' ')[0]} style{E.sound === 'harpsichord' ? ' (harpsichord)' : ''}</button></div>
+        <div style={{marginTop:3,animation:'voxSlideIn 0.28s 0.05s ease both'}}><b>Keyboard:</b> {E.inst}</div>
+
+        {/* Animated "feel" bars */}
+        <div style={{margin:'9px 0',display:'flex',flexDirection:'column',gap:4}}>
+          {ERA_BAR_LABELS.map(([key, label], i) => (
+            <div key={key} style={{display:'flex',alignItems:'center',gap:6,animation:'voxSlideIn 0.28s ' + (0.08 + i * 0.05) + 's ease both'}}>
+              <span style={{fontSize:11,fontWeight:800,color:'var(--muted)',width:112,flexShrink:0}}>{label}</span>
+              <span style={{flex:1,height:7,background:'#efe6d4',borderRadius:4,overflow:'hidden'}}>
+                <span style={{display:'block',height:'100%',borderRadius:4,background:E.color,width:(bars[key] / 4 * 100) + '%',animation:'voxBarGrow 0.5s ' + (0.12 + i * 0.06) + 's cubic-bezier(.2,.8,.3,1) both'}}/>
+              </span>
+            </div>
+          ))}
+          <div style={{fontSize:10.5,color:'var(--muted)',marginTop:1}}>A rough feel, not a rule -- based on the traits below.</div>
+        </div>
+
+        <ul style={{margin:'4px 0',paddingLeft:18}}>
+          {E.traits.map((t, i) => <li key={i} style={{animation:'voxSlideIn 0.26s ' + (0.14 + i * 0.06) + 's ease both'}}>{t}</li>)}
+        </ul>
+        <div style={{background:'#f7f2e8',borderRadius:6,padding:'5px 7px',animation:'voxBlockIn 0.3s ' + (0.2 + E.traits.length * 0.06) + 's ease both'}}><b>Playing it today:</b> {E.today}</div>
+
+        <div style={{marginTop:6}}>
+          <b>Composers:</b>
+          <div style={{display:'flex',flexWrap:'wrap',gap:5,marginTop:4}}>
+            {E.composers.map((c, i) => (
+              <span key={c} style={{fontSize:12,fontWeight:800,color:E.color,background:E.color + '1a',border:'1.5px solid ' + E.color + '55',borderRadius:20,padding:'2px 9px',animation:'voxPopIn 0.28s ' + (0.28 + E.traits.length * 0.06 + i * 0.045) + 's cubic-bezier(.34,1.56,.64,1) both'}}>{c}</span>
+            ))}
+          </div>
+        </div>
+
+        <div style={{textAlign:'center',marginTop:9}}><button className="ghost-btn" onClick={() => playEra(E.id)}>♪ Hear the {E.name.split(' ')[0]} style{E.sound === 'harpsichord' ? ' (harpsichord)' : ''}</button></div>
       </div>
     </div>
   );
