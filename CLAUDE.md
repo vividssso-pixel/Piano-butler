@@ -3484,6 +3484,19 @@ expects, which is also the far more standard way modes are taught.
 | 5 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass in both languages: confirmed the 7 rows render in exact scale-degree order (1st Ionian through 7th Locrian), confirmed Ionian's badge, confirmed selecting a different mode (Dorian) still updates the staff/keyboard/example with zero console errors. |
 | 6 | Committed, not pushed | see git log | Ready for Sohyun to push from her Terminal, along with Phases 173-174. |
 
+### Phase 176 -- Friendlier, analogy-driven explanations across the Chords chapter (2026-09-28)
+
+Sohyun: "코드, 7화음, 익스텐션도, 건반화성 페다고지 교수님처럼 친절하게 잘 설명해줘 머리 뽀개지지
+않게" -- wanted every tool in the Chords chapter explained as simply and memorably as the Modes
+rework (Phases 173-175), with analogies rather than dry theory language.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Rewrote intro text with concrete analogies, bilingual (EN/KO), in all 6 remaining Chords tools | `TriadStacker`, `MajorMinorFlip`, `KeyChords`, `PrimaryTriads`, `InversionFlip`, `CadencePlayer` | Stack a triad = 3-layer cake / snowman. Major or minor = a face (smile vs. the same face with the corners of the mouth down). A triad on every note = a family photo of seven siblings built the same recipe, plus a new highlighted memory-tip box ("I, IV, V are the big siblings; ii, iii, vi are the middle ones; vii° is the odd one out"). Primary triads I/IV/V = home / stepping out for a walk / standing at the door itching to go back in. Inversions = three friends holding hands, whoever's at the front walks to the back. Cadences = sharpened the existing punctuation analogy (period / hymn's "Amen" / comma / plot twist). |
+| 2 | Real bug caught and fixed, same class flagged in Phase 146/149/159 | `MajorMinorFlip` | Had a local `const t = [...]` (the triad array) shadowing the global `t(en, ko)` translator -- the new bilingual calls would have thrown "t is not a function." Live Playwright caught it immediately on first open. Renamed the local variable to `tri` throughout (5 usages), not just the call sites. Audited the other five tools for the same risk before shipping: `KeyChords`/`PrimaryTriads` do have `.map((t, i) => ...)` callbacks with a `t` parameter, but confirmed safe -- the new `t()` calls sit in the component body above those callbacks, not inside their arrow-function bodies. |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass opened all 8 Chords-chapter tools (the 6 rewritten here plus 7th Chords/Beyond the 7th from Phase 173, spot-checked for regressions) with zero console/page errors, in both English and Korean. |
+| 4 | Committed, not pushed | see git log | Ready for Sohyun to push, along with Phases 173-175. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
