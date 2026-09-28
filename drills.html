@@ -5477,14 +5477,27 @@ function FingerGroups({ keyName, hand, mode }) {
 // that tends to make the whole system click is the brightness ladder: Lydian is one sharp
 // brighter than major, Locrian is one flat darker than minor, and each step only changes one
 // note from its neighbour -- so the seven are listed in that order here, not by scale degree.
+// Phase 175 (2026-09-28): Sohyun, twice now, expected scale-degree order (Ionian, Dorian,
+// Phrygian...) rather than the brightness-ladder order Phase 165/174 used -- the brightness idea
+// (each neighbour differs by one note) was a nice-to-know but kept reading as "wrong order" to
+// someone meeting modes for the first time. Switched to what she actually expects: built on the
+// 1st note of the major scale, then the 2nd, then the 3rd... up to the 7th. `start` already *is*
+// that scale-degree index (0-based), so this order is simply the array sorted by `start`.
 const MODES = [
-  { name: 'Lydian', start: 3, formula: 'Major scale with a raised 4th (\u266F4)', mood: 'Floating, dreamy -- even brighter than major.' },
-  { name: 'Ionian', start: 0, formula: 'The major scale itself', mood: 'Bright and resolved -- major\u2019s home base.' },
-  { name: 'Mixolydian', start: 4, formula: 'Major scale with a lowered 7th (\u266D7)', mood: 'Major, but doesn\u2019t want to resolve -- bluesy, folky.' },
-  { name: 'Dorian', start: 1, formula: 'Minor scale with a raised 6th (\u266F6)', mood: 'Minor, but hopeful -- jazzy rather than sad.' },
-  { name: 'Aeolian', start: 5, formula: 'The natural minor scale itself', mood: 'Sad and settled -- minor\u2019s home base.' },
-  { name: 'Phrygian', start: 2, formula: 'Minor scale with a lowered 2nd (\u266D2)', mood: 'Dark, tense -- a Spanish or Middle Eastern colour.' },
-  { name: 'Locrian', start: 6, formula: 'Minor scale with a lowered 2nd and 5th (\u266D2, \u266D5)', mood: 'Unstable -- almost never used as a "home", mostly a passing colour.' },
+  { name: 'Ionian', start: 0, formula: 'The major scale itself', mood: 'Bright and resolved -- major\u2019s home base.',
+    exEn: 'Sounds like: nursery rhymes, most upbeat pop songs -- this is the scale you already know.', exKo: '예: 동요, 대부분의 밝은 대중가요 -- 이미 알고 있는 그 장음계예요.' },
+  { name: 'Dorian', start: 1, formula: 'Minor scale with a raised 6th (\u266F6)', mood: 'Minor, but hopeful -- jazzy rather than sad.',
+    exEn: 'Sounds like: old English folk tunes, laid-back jazz.', exKo: '예: 옛 영국 민요, 편안한 재즈.' },
+  { name: 'Phrygian', start: 2, formula: 'Minor scale with a lowered 2nd (\u266D2)', mood: 'Dark, tense -- a Spanish or Middle Eastern colour.',
+    exEn: 'Sounds like: flamenco guitar.', exKo: '예: 플라멩코 기타.' },
+  { name: 'Lydian', start: 3, formula: 'Major scale with a raised 4th (\u266F4)', mood: 'Floating, dreamy -- even brighter than major.',
+    exEn: 'Sounds like: dreamy film scenes, magical or fantasy game music.', exKo: '예: 몽환적인 영화 장면, 판타지 게임 음악 같은 느낌.' },
+  { name: 'Mixolydian', start: 4, formula: 'Major scale with a lowered 7th (\u266D7)', mood: 'Major, but doesn\u2019t want to resolve -- bluesy, folky.',
+    exEn: 'Sounds like: classic rock guitar riffs, folk sing-alongs.', exKo: '예: 클래식 록 기타 리프, 포크송 떼창.' },
+  { name: 'Aeolian', start: 5, formula: 'The natural minor scale itself', mood: 'Sad and settled -- minor\u2019s home base.',
+    exEn: 'Sounds like: most sad pop ballads in a minor key.', exKo: '예: 단조로 된 슬픈 대중가요 대부분.' },
+  { name: 'Locrian', start: 6, formula: 'Minor scale with a lowered 2nd and 5th (\u266D2, \u266D5)', mood: 'Unstable -- almost never used as a "home", mostly a passing colour.',
+    exEn: 'Sounds like: a few tense seconds in a horror-movie score -- almost never a whole song.', exKo: '예: 공포영화에서 잠깐 흐르는 긴장감 있는 배경음 -- 노래 전체로는 거의 안 쓰여요.' },
 ];
 const MODE_PARENTS = ['C', 'G', 'D', 'F', 'Bb'];
 function modeNotes(parentKey, start) {
@@ -5495,26 +5508,27 @@ function modeNotes(parentKey, start) {
 }
 function Modes() {
   const [parent, setParent] = useState('C');
-  const [mi, setMi] = useState(1); // default: Ionian, the familiar major scale
+  const [mi, setMi] = useState(0); // default: Ionian, the familiar major scale -- now the 1st row too
   const [on, setOn] = useState(-1);
   const timers = useRef([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   const mode = MODES[mi];
   const notes = modeNotes(parent, mode.start);
   function play() { timers.current.forEach(clearTimeout); timers.current = playMelody(notes, 108, setOn); }
+  const ORDINAL = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th'];
   return (
     <div className="try-box" style={actBox}>
       <div style={actTitle}>The seven modes</div>
-      <div style={actNote}>{t('A mode is a major scale started on one of its own other notes -- same key signature, same notes, new "home." Think of the 7 white keys as stops on a loop: Ionian starts the ride at C, Dorian starts the same loop at D -- same stops, same order, just a different starting point, so it sounds different. Listed brightest to darkest below; each step down only changes one note from its neighbour.', '선법은 원래 장음계를 다른 음에서 시작한 것뿐이에요 -- 조표도 같고 음도 같은데 "출발점"만 바뀌어요. 흰건반 7개를 도는 기차 노선이라고 생각해보세요: Ionian은 C역에서 출발하고, Dorian은 같은 노선을 D역에서 출발해요 -- 똑같은 역, 똑같은 순서인데 시작점만 달라서 소리가 달라지는 거예요. 아래는 밝은 순서부터 어두운 순서로 나열했고, 한 칸씩 내려갈 때마다 이웃과 딱 한 음만 달라져요.')}</div>
+      <div style={actNote}>{t('A mode is a major scale started on one of its own other notes -- same key signature, same notes, new "home." Built in scale-degree order: starting on the 1st note of the major scale gives ', '선법은 원래 장음계를 다른 음에서 시작한 것뿐이에요 -- 조표도 같고 음도 같은데 "출발점"만 바뀌어요. 음계 순서대로 만들어요: 장음계의 1번째 음에서 시작하면 ')}<b>Ionian</b>{t(' (the ordinary major scale you already know), the 2nd note gives ', '(이미 알고 있는 그 장음계)이 되고, 2번째 음에서 시작하면 ')}<b>Dorian</b>{t(', and so on up to the 7th, ', ', 이런 식으로 7번째까지 가면 ')}<b>Locrian</b>{t('. Each has a real-music example to try below.', '이 돼요. 아래에 각 선법마다 실제로 들어볼 수 있는 예시가 있어요.')}</div>
       <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:8}}>
-        <span style={{fontSize:12,fontWeight:800,color:'var(--muted)',alignSelf:'center',marginRight:2}}>Parent major:</span>
+        <span style={{fontSize:12,fontWeight:800,color:'var(--muted)',alignSelf:'center',marginRight:2}}>{t('Parent major:','기준 장조:')}</span>
         {MODE_PARENTS.map(k => <button key={k} className={'chip' + (k === parent ? ' active' : '')} style={{padding:'3px 10px',fontSize:13}} onClick={() => { setParent(k); setOn(-1); }}>{prettyNote(k)}</button>)}
       </div>
       <div style={{display:'flex',flexDirection:'column',gap:4,marginBottom:8}}>
         {MODES.map((m, i) => (
-          <button key={m.name} onClick={() => { setMi(i); setOn(-1); }} style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,textAlign:'left',background:i === mi ? '#f3ead8' : '#fff',border:'2px solid ' + (i === mi ? '#a8823f' : 'var(--border)'),borderRadius:10,padding:'6px 10px',cursor:'pointer',color:'var(--text)'}}>
-            <span><b style={{fontSize:14.5}}>{m.name}</b> <span style={{fontSize:12.5,color:'var(--muted)'}}>on {prettyAny(spellScale(parent)[m.start])}</span></span>
-            <span style={{fontSize:11,fontWeight:800,color:'#a8823f'}}>{i === 0 ? 'brightest' : i === MODES.length - 1 ? 'darkest' : ''}</span>
+          <button key={m.name} onClick={() => { setMi(i); setOn(-1); }} style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,textAlign:'left',background:i === mi ? '#f3ead8' : (i === 0 ? '#fbf6ea' : '#fff'),border:(i === 0 && i !== mi ? '2px solid #c9a24f' : '2px solid ' + (i === mi ? '#a8823f' : 'var(--border)')),borderRadius:10,padding:'6px 10px',cursor:'pointer',color:'var(--text)'}}>
+            <span><span style={{fontSize:11,fontWeight:900,color:'var(--muted)',marginRight:6}}>{ORDINAL[i]}</span><b style={{fontSize:14.5}}>{m.name}</b> <span style={{fontSize:12.5,color:'var(--muted)'}}>on {prettyAny(spellScale(parent)[m.start])}</span></span>
+            <span style={{fontSize:11,fontWeight:800,color:'#a8823f'}}>{i === 0 ? t('\u2605 you know this one','\u2605 이미 아는 것') : ''}</span>
           </button>
         ))}
       </div>
@@ -5526,7 +5540,8 @@ function Modes() {
       </div>
       <div style={{background:'var(--brass-bg)',border:'1px solid var(--border)',borderRadius:10,padding:'12px 14px'}}>
         <p style={{fontSize:13,fontWeight:800,color:'var(--brass)',margin:'0 0 4px'}}>{mode.name} = {mode.formula}</p>
-        <p style={{fontSize:13,color:'var(--text)',margin:0,lineHeight:1.5}}>{mode.mood}</p>
+        <p style={{fontSize:13,color:'var(--text)',margin:'0 0 6px',lineHeight:1.5}}>{mode.mood}</p>
+        <p style={{fontSize:13,color:'#5c544a',margin:0,lineHeight:1.5,fontStyle:'italic'}}>{t(mode.exEn, mode.exKo)}</p>
       </div>
     </div>
   );
