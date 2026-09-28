@@ -8535,6 +8535,9 @@ function FirstStepsLearn({ onStart }) {
         {tip(t('The arm carries the hand', '팔이 손을 데려가요'), t('Fingers play the keys, but the arm takes the hand where it needs to go -- the hand keeps its shape all the way. Do these a few minutes at the start of every practice.', '손가락이 건반을 누르지만, 손을 필요한 곳으로 데려가는 건 팔이에요 -- 손 모양은 계속 그대로 유지돼요. 연습을 시작할 때마다 몇 분씩 이 동작들을 해보세요.'))}
         <ArmExercises/>
       </Step>
+      <Step title={t('Feel the arm weight', '팔 무게 느껴보기')}>
+        <ArmAlignment/>
+      </Step>
       <Step title={t('Posture check', '자세 점검')}>
         <PostureChecklist/>
       </Step>
@@ -11631,6 +11634,141 @@ function CompleteMelody() {
   );
 }
 
+// ─── Arm weight & alignment visualizer (Phase 182) ──────────────────────────────
+// Sohyun made this as a standalone Technic.html and asked for it to go into drills.html,
+// in the posture section. Ported from her vanilla-JS/SVG version into a React component
+// (inverse-kinematics elbow calc, wrist-height/seating-distance mapping, and the finger-arch
+// physics are all kept numerically identical to her original) with mouse AND touch support
+// added for tablets, and hooked into the guided First Steps lesson right after "Move with the
+// whole arm" -- the step that already teaches "the arm carries the hand" -- as well as its own
+// Toolbox card.
+const ARM_TIP = { x: 650, y: 400 };
+const ARM_W_FIXED_X = 540;
+function calcElbowIK(Sx, Sy, Wx, Wy) {
+  const L1 = 200, L2 = 230;
+  const d = Math.hypot(Wx - Sx, Wy - Sy);
+  if (d >= L1 + L2) return { x: Sx + (Wx - Sx) * (L1 / d), y: Sy + (Wy - Sy) * (L1 / d) };
+  const a = (L1 * L1 - L2 * L2 + d * d) / (2 * d);
+  const h = Math.sqrt(Math.max(0, L1 * L1 - a * a));
+  const p2x = Sx + a * (Wx - Sx) / d, p2y = Sy + a * (Wy - Sy) / d;
+  return { x: p2x - h * (Wy - Sy) / d, y: p2y + h * (Wx - Sx) / d };
+}
+function computeArmPose(mouseX, mouseY) {
+  const Sx = Math.max(100, Math.min(350, mouseX));
+  const Sy = 180;
+  const bodyEdgeX = Sx - 10;
+  const Wy = Math.max(250, Math.min(460, mouseY));
+  const Wx = ARM_W_FIXED_X;
+  const E = calcElbowIK(Sx, Sy, Wx, Wy);
+  const archFactor = (Wy - 360) / 100;
+  const McpBaseX = Wx + (ARM_TIP.x - Wx) * 0.35, McpBaseY = Wy + (ARM_TIP.y - Wy) * 0.35;
+  const PipBaseX = Wx + (ARM_TIP.x - Wx) * 0.7, PipBaseY = Wy + (ARM_TIP.y - Wy) * 0.7;
+  let McpY = McpBaseY + archFactor * 40 - 20;
+  let PipY = PipBaseY + archFactor * 20 - 10;
+  McpY = Math.min(McpY, Math.max(Wy, ARM_TIP.y) + 10);
+  PipY = Math.min(PipY, Math.max(Wy, ARM_TIP.y) + 5);
+  const dist = Math.hypot(Wx - Sx, Wy - Sy);
+  let elbowState;
+  if (E.x - bodyEdgeX < 40) elbowState = 'tucked';
+  else if (dist > 200 + 230 - 10) elbowState = 'reaching';
+  else elbowState = 'free';
+  const wristState = Wy < 320 ? 'high' : Wy > 380 ? 'collapsed' : 'good';
+  return { Sx, Sy, Wx, Wy, E, bodyEdgeX, McpBaseX, McpY, PipBaseX, PipY, Tip: ARM_TIP, elbowState, wristState };
+}
+function armDiagnosis(m) {
+  const GOOD = '#4f7a45', BAD = '#b5483b', WARN = 'var(--brass)', WARM = '#e8dcc0';
+  const { Sx, Wx, Wy, McpBaseX, McpY, Tip, elbowState, wristState } = m;
+  const elbowColor = elbowState === 'tucked' ? BAD : elbowState === 'reaching' ? WARN : GOOD;
+  const elbowText = elbowState === 'tucked'
+    ? t('Tucked against the body -- friction blocks arm weight. Sit further back.', '몸에 딱 붙었어요 -- 마찰 때문에 팔 무게가 전달되지 않아요. 조금 더 뒤로 앉아보세요.')
+    : elbowState === 'reaching'
+    ? t('Overreaching -- joints lock up, and the tone turns tense and brittle.', '팔을 너무 뻗었어요 -- 관절이 굳어서 소리가 딱딱해져요.')
+    : t('Floating freely away from the torso -- gravity can do its work.', '몸에서 자유롭게 떨어져 있어요 -- 중력이 제 역할을 할 수 있어요.');
+  let wristColor, wristText, fingerColor, fingerText, boneColor, title, titleColor, vGood = '', vBad = '', keyPressed = false;
+  if (wristState === 'high') {
+    wristColor = WARN; wristText = t('Too high -- the energy gets trapped in the forearm.', '너무 높아요 -- 무게중심이 팔뚝에 갇혀요.');
+    fingerColor = WARN; fingerText = t('Steep angle -- hard to play legato, and the tone stays shallow.', '각도가 너무 가팔라요 -- 레가토가 어렵고 소리가 얕아져요.');
+    boneColor = WARN; title = t('Tension detected -- wrist too high', '긴장 감지 -- 손목이 너무 높아요'); titleColor = WARN;
+    vBad = `M ${Wx},${Wy + 20} L ${Wx - 40},${Wy - 40}`;
+  } else if (wristState === 'collapsed') {
+    wristColor = BAD; wristText = t('Collapsed -- risky pressure on the wrist, and the energy leaks out here.', '무너졌어요 -- 손목에 위험한 압력이 실려요. 에너지가 여기서 새어나가요.');
+    fingerColor = BAD; fingerText = t('Knuckles caving in -- the bridge has failed.', '손가락 관절이 꺼졌어요 -- 아치 구조가 무너졌어요.');
+    boneColor = BAD; title = t('Structure collapsed -- injury risk', '구조 붕괴 -- 부상 위험'); titleColor = BAD;
+    vBad = `M ${Wx},${Wy} L ${Wx},${Wy + 80}`; keyPressed = true;
+  } else if (elbowState === 'free') {
+    wristColor = GOOD; wristText = t('Neutral and supple -- a flexible shock absorber.', '중립적이고 유연해요 -- 탄력 있는 완충 장치예요.');
+    fingerColor = GOOD; fingerText = t('A strong, curved bridge -- the knuckles carry the arm weight.', '튼튼하게 굽은 아치예요 -- 손가락 관절이 팔 무게를 받쳐줘요.');
+    boneColor = WARM; title = t('Good alignment', '좋은 정렬이에요'); titleColor = GOOD;
+    vGood = `M ${McpBaseX},${McpY - 60} L ${Tip.x},${Tip.y + 30}`; keyPressed = true;
+  } else {
+    wristColor = WARM; wristText = t('Height is fine, but poor seating distance affects the whole chain.', '높이는 괜찮은데, 앉은 거리가 안 좋아서 전체에 영향을 줘요.');
+    fingerColor = WARM; fingerText = t('The bridge holds, but there’s no real arm weight behind it.', '아치는 유지되지만, 진짜 팔 무게가 실리지 않았어요.');
+    boneColor = WARM; title = t('Fix your seating distance', '앉은 거리를 조정해보세요'); titleColor = WARM;
+  }
+  return { elbowColor, elbowText, wristColor, wristText, fingerColor, fingerText, boneColor, title, titleColor, vGood, vBad, keyPressed };
+}
+function ArmAlignment() {
+  const [pt, setPt] = useState({ x: 220, y: 350 });
+  const svgRef = useRef(null);
+  function moveTo(clientX, clientY) {
+    const el = svgRef.current; if (!el) return;
+    const rect = el.getBoundingClientRect(); if (!rect.width || !rect.height) return;
+    setPt({ x: (clientX - rect.left) / rect.width * 900, y: (clientY - rect.top) / rect.height * 560 });
+  }
+  function onMouseMove(e) { moveTo(e.clientX, e.clientY); }
+  function onTouch(e) { if (e.touches && e.touches[0]) { e.preventDefault(); moveTo(e.touches[0].clientX, e.touches[0].clientY); } }
+  const m = computeArmPose(pt.x, pt.y);
+  const d = armDiagnosis(m);
+  const torsoTx = m.Sx - 120;
+  const rows = [
+    [t('Elbow', '팔꿈치'), d.elbowColor, d.elbowText],
+    [t('Wrist', '손목'), d.wristColor, d.wristText],
+    [t('Fingers', '손가락'), d.fingerColor, d.fingerText],
+  ];
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><path d="M4 20 L10 12 L15 14 L20 5" fill="none" stroke="#241f1a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><circle cx="10" cy="12" r="2.1" fill="var(--brass)"/><circle cx="15" cy="14" r="2.1" fill="var(--brass)"/></svg>{t('Arm weight & alignment', '팔 무게와 정렬')}</div>
+      <div style={actNote}>{t('Move your mouse (or finger) over the diagram -- up/down changes wrist height, left/right changes how far back you’re sitting. Watch the elbow, wrist and finger joints react.', '그림 위에서 마우스나 손가락을 움직여보세요 -- 위아래는 손목 높이, 좌우는 앉은 거리를 바꿔요. 팔꿈치·손목·손가락 관절이 어떻게 반응하는지 보세요.')}</div>
+      <div onMouseMove={onMouseMove} onTouchMove={onTouch} onTouchStart={onTouch} style={{position:'relative',background:'#241f1a',borderRadius:12,overflow:'hidden',touchAction:'none',cursor:'crosshair'}}>
+        <svg ref={svgRef} viewBox="0 0 900 560" style={{width:'100%',display:'block'}}>
+          <g transform={`translate(${torsoTx},0)`}><path d="M 0,100 C 60,100 120,150 110,350 L 100,600 L -100,600 Z" fill="#2a2220"/></g>
+          <rect x="680" y="420" width="220" height="140" fill="#2a2a2a"/>
+          <rect x="650" y="400" width="250" height="20" fill="#111"/>
+          <rect x="600" y={d.keyPressed ? 404 : 400} width="150" height="28" rx="3" fill={d.keyPressed ? '#e8e8e8' : '#fff'} stroke="#7a7064" strokeWidth="2" style={{transition:'y 0.1s, fill 0.1s'}}/>
+          {d.vGood && <path d={d.vGood} fill="none" stroke="#4f7a45" strokeWidth="3" strokeDasharray="6 4" opacity="0.85" markerEnd="url(#arm-arrow-good)"/>}
+          {d.vBad && <path d={d.vBad} fill="none" stroke="#b5483b" strokeWidth="3" strokeDasharray="6 4" opacity="0.85" markerEnd="url(#arm-arrow-bad)"/>}
+          <path d={`M ${m.Sx},${m.Sy} L ${m.E.x},${m.E.y} L ${m.Wx},${m.Wy}`} fill="none" stroke={d.boneColor} strokeWidth="14" strokeLinecap="round" strokeLinejoin="round" style={{transition:'stroke 0.15s ease'}}/>
+          <path d={`M ${m.Wx},${m.Wy} L ${m.McpBaseX},${m.McpY} L ${m.PipBaseX},${m.PipY} L ${m.Tip.x},${m.Tip.y}`} fill="none" stroke={d.boneColor} strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" style={{transition:'stroke 0.15s ease'}}/>
+          <circle cx={m.Sx} cy={m.Sy} r="14" fill="#f8edd4" stroke="#241f1a" strokeWidth="4"/>
+          <text x={m.Sx - 30} y={m.Sy - 25} fill="rgba(248,237,212,0.5)" fontSize="10" fontFamily="monospace">{t('SHOULDER', '어깨')}</text>
+          <circle cx={m.E.x} cy={m.E.y} r="12" fill="#f8edd4" stroke="#241f1a" strokeWidth="4"/>
+          <text x={m.E.x - 20} y={m.E.y + 30} fill="rgba(248,237,212,0.5)" fontSize="10" fontFamily="monospace">{t('ELBOW', '팔꿈치')}</text>
+          <circle cx={m.Wx} cy={m.Wy} r="10" fill="#f8edd4" stroke="#241f1a" strokeWidth="4"/>
+          <text x={m.Wx - 20} y={m.Wy - 20} fill={d.wristColor} fontSize="10" fontWeight="900" fontFamily="monospace">{t('WRIST', '손목')}</text>
+          <circle cx={m.McpBaseX} cy={m.McpY} r="7" fill="#f8edd4" stroke="#241f1a" strokeWidth="3"/>
+          <text x={m.McpBaseX - 34} y={m.McpY - 20} fill="rgba(248,237,212,0.5)" fontSize="9" fontFamily="monospace">{t('KNUCKLE', '손가락 마디')}</text>
+          <circle cx={m.PipBaseX} cy={m.PipY} r="6" fill="#f8edd4" stroke="#241f1a" strokeWidth="3"/>
+          <circle cx={m.Tip.x} cy={m.Tip.y} r="5" fill="#241f1a" stroke="#f8edd4" strokeWidth="2"/>
+          <defs>
+            <marker id="arm-arrow-good" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#4f7a45"/></marker>
+            <marker id="arm-arrow-bad" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#b5483b"/></marker>
+          </defs>
+        </svg>
+        <div style={{position:'absolute',top:10,right:10,width:'46%',minWidth:150,maxWidth:250,background:'rgba(248,237,212,0.08)',backdropFilter:'blur(8px)',border:'1px solid rgba(248,237,212,0.15)',padding:'10px 12px',borderRadius:10,color:'#f8edd4',pointerEvents:'none'}}>
+          <div style={{fontSize:14,fontWeight:900,marginBottom:8,lineHeight:1.25,color:d.titleColor}}>{d.title}</div>
+          {rows.map(([lbl, col, txt]) => (
+            <div key={lbl} style={{display:'flex',gap:7,alignItems:'flex-start',marginBottom:7,fontSize:10.5,lineHeight:1.4}}>
+              <span style={{width:8,height:8,borderRadius:4,background:col,marginTop:3,flex:'0 0 auto'}}/>
+              <span><b style={{display:'block',fontSize:8.5,letterSpacing:'0.05em',color:'rgba(248,237,212,0.55)',textTransform:'uppercase',marginBottom:1}}>{lbl}</b>{txt}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{fontSize:12.5,color:'#5c544a',background:'#f7f2e8',borderRadius:8,padding:'6px 9px',marginTop:8,lineHeight:1.5}}>{t('This is what "arm weight" really means: a relaxed, aligned chain from shoulder to fingertip lets gravity make the tone -- tension anywhere along the chain blocks it.', '"팔 무게"가 실제로 뜻하는 게 이거예요: 어깨부터 손끝까지 편안하고 정렬된 사슬이 있어야 중력이 소리를 만들어줘요 -- 사슬 어디든 긴장이 있으면 막혀버려요.')}</div>
+    </div>
+  );
+}
+
 const TOOLS = [
   { id: 'sit-check', ch: 'first-steps', title: 'Set up the stool', blurb: 'Height and distance: forearm level, elbows open.', C: () => <SitCheck/> },
   { id: 'hand-shape', ch: 'first-steps', title: 'The hand shape', blurb: 'Knuckle bridge, level wrist, fingertips -- and six faults.', C: () => <HandShape/> },
@@ -11643,6 +11781,7 @@ const TOOLS = [
   { id: 'hz-explorer', ch: 'pitch-range', title: 'How high is a note? Hz', blurb: 'Vibrations per second; octaves double.', C: () => <HzExplorer/> },
   { id: 'range-chart', ch: 'pitch-range', title: 'Who plays where?', blurb: 'Instrument and voice ranges over the 88 keys.', C: () => <RangeChart/> },
   { id: 'finger-numbers', ch: 'first-steps', title: 'Finger numbers', blurb: '“Show me finger 3!” -- both hands.', C: () => <FingerNumbers/> },
+  { id: 'arm-alignment', ch: 'first-steps', title: 'Arm weight & alignment', blurb: 'Move over the diagram -- watch elbow, wrist and finger joints react.', C: () => <ArmAlignment/> },
   { id: 'high-low', ch: 'first-steps', title: 'High or low, loud or soft', blurb: 'Listening games before reading.', C: () => <HighLowGame/> },
   { id: 'key-houses', ch: 'first-steps', title: 'Small house, big house (black keys)', blurb: 'The black-key map; where C and F live.', C: () => <KeyHouses/> },
   { id: 'black-key-song', ch: 'first-steps', title: 'First black-key song', blurb: 'Hot Cross Buns and Mary, by rote.', C: () => <BlackKeySong/> },
@@ -11879,7 +12018,7 @@ const TOOL_META = {
   'clef-basics': ['reading', 0, 1, 'show'], 'alto-clef': ['reading', 3, 3, 'show'], 'staff-basics': ['reading', 0, 1, 'show'], 'anacrusis': ['rhythm', 2, 3, 'show'], 'minor-forms': ['scales', 1, 2, 'show'],
   'count-more': ['rhythm', 2, 3, 'show game'], 'grouping': ['rhythm', 2, 3, 'game write'], 'pedal': ['expression', 2, 3, 'show ear'],
   'ornaments': ['words', 3, 3, 'show ear'], 'chromatic': ['scales', 2, 3, 'show'],
-  'sit-check': ['body', 0, 3, 'show'], 'hand-shape': ['body', 0, 3, 'show'], 'arm-moves': ['body', 0, 3, 'home game'], 'posture-check': ['body', 0, 3, 'home'],
+  'sit-check': ['body', 0, 3, 'show'], 'hand-shape': ['body', 0, 3, 'show'], 'arm-moves': ['body', 0, 3, 'home game'], 'posture-check': ['body', 0, 3, 'home'], 'arm-alignment': ['body', 0, 3, 'show'],
   'finger-numbers': ['body', 0, 0, 'game'], 'five-positions': ['body', 0, 1, 'show'],
   'key-houses': ['keys', 0, 0, 'show game'], 'black-key-song': ['keys', 0, 0, 'ear game'], 'black-white-neighbours': ['keys', 0, 1, 'ear game'], 'find-every': ['keys', 0, 1, 'game home'], 'name-reveal': ['keys', 0, 1, 'game'],
   'step-updown': ['keys', 0, 1, 'game'], 'letter-chain': ['keys', 0, 1, 'game'],
@@ -12051,6 +12190,9 @@ const TOOL_ICON = {
   ),
   'melody-sequence': () => (
     <svg width="34" height="34" viewBox="0 0 24 24"><circle cx="4" cy="18" r="2" fill="#241f1a"/><circle cx="8" cy="15" r="2" fill="#241f1a"/><circle cx="10" cy="13" r="2" fill="var(--brass)"/><circle cx="14" cy="10" r="2" fill="var(--brass)"/><circle cx="16" cy="8" r="2" fill="#3f7fb5"/><circle cx="20" cy="5" r="2" fill="#3f7fb5"/></svg>
+  ),
+  'arm-alignment': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><path d="M4 20 L10 12 L15 14 L20 5" fill="none" stroke="#241f1a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><circle cx="10" cy="12" r="2.1" fill="var(--brass)"/><circle cx="15" cy="14" r="2.1" fill="var(--brass)"/></svg>
   ),
 };
 function ToolCard({ t, color, starred, onStar, onOpen }) {
@@ -12318,6 +12460,7 @@ const SKILLS = [
   ['b4', 'body', 'Knuckle bridge holds while pressing', ['arm-moves']],
   ['b5', 'body', 'The arm carries the hand from C to C', ['arm-moves']],
   ['b6', 'body', 'Checks their own posture', ['posture-check']],
+  ['b7', 'body', 'Feels arm weight sink through a relaxed wrist into the key', ['arm-alignment']],
   ['k1', 'keys', 'Finger numbers, both hands', ['finger-numbers']],
   ['k2', 'keys', 'Finds the 2s and 3s -- small house, big house', ['key-houses']],
   ['k2b', 'keys', '(quick learners) the white key beside each black one', ['black-white-neighbours']],
