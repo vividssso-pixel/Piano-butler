@@ -3497,6 +3497,24 @@ rework (Phases 173-175), with analogies rather than dry theory language.
 | 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass opened all 8 Chords-chapter tools (the 6 rewritten here plus 7th Chords/Beyond the 7th from Phase 173, spot-checked for regressions) with zero console/page errors, in both English and Korean. |
 | 4 | Committed, not pushed | see git log | Ready for Sohyun to push, along with Phases 173-175. |
 
+### Phase 177 -- Visual-first pedagogy: icon badges + reactive illustrations for Chords (2026-09-28)
+
+Sohyun, after seeing the visual-guide-ideas mockup: "응 단순하게 셋 다 같이 가게. 그리고 코드 뿐만이
+아니라 모든 챕터가 설명이 많은 것보다 시각적으로 딱 이해가기 쉽게 만드는게 먼저 우선순위야." --
+combine all 3 mockup concepts, and treat "show, don't just explain, with fun/memorable elements
+everywhere" as the standing top priority for every remaining chapter, not just Chords. This phase
+implements all 3 concepts in the Chords chapter as the first rollout; the wider rollout is tracked
+as its own pending item below.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Icon badges on the Toolbox list | `TOOL_ICON` lookup (new, before `ToolCard`), wired into `ToolCard` | Small inline SVGs for all 8 "Intervals & chords" tools: stacked colored blocks for Stack a triad, a smiley/frown face for Major or minor, a family-of-circles for Chords in a key, a house for I/IV/V, three linked circles for Inversions, a "." "," glyph for Cadences, stacked bars for 7th chords, dots-on-a-line for Extensions. Cards without an icon render exactly as before (conditional padding/gap). |
+| 2 | Reactive face | `MajorMinorFlip()` | A face SVG above the root-chip row whose mouth path morphs between a smile (major) and a frown (minor) on toggle, colored via `Q_COL`, with a CSS transition on both `d` and `stroke`. |
+| 3 | Reactive building cake | `TriadStacker()` | A 3-layer cake SVG above the `ChordStaff` whose layers fade/scale in as the root, 3rd, and 5th are added (`n` state), with a brass "cherry" circle appearing once the triad is complete at `n===3`. |
+| 4 | Static leading icons | `KeyChords`, `PrimaryTriads`, `InversionFlip`, `CadencePlayer` | Small SVGs added to each tool's own `actTitle` line so the icon appears both in the Toolbox list and again inside the opened tool. |
+| 5 | Verification | -- | Babel compile + `node --check` on the extracted app script (0 errors). Live headless-Chromium Playwright pass: confirmed all 8 icon badges render in the Toolbox list; opened Stack a triad and stepped through +Add the 3rd/+Add the 5th, confirming the cake layers fade/scale in correctly and the triad quality readout updates; opened Major or minor chord and toggled Major -> Minor, confirming the face's mouth path morphs from smile to frown with zero console/page errors; opened Chords in a key, I/IV/V, Inversions, and Cadences and confirmed the new static icons render without layout breakage; re-ran the triad-stacking and Major/minor tools in Korean, confirming the existing bilingual `actNote` text and new SVG text labels render correctly with zero errors. No `t()`-shadowing issues introduced (the well-documented recurring bug class from Phases 146/149/159/176) -- none of the new icon or illustration code references the translator inside a shadowed scope. |
+| 6 | Committed, not pushed | see git log | Ready for Sohyun to push, along with Phases 173-176. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
