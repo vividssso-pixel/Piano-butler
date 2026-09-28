@@ -11559,6 +11559,16 @@ const TOOL_META = {
   'keyboard-ancestors': ['about', 0, 3, 'show ear'], 'piano-timeline': ['about', 1, 3, 'show'], 'eras': ['about', 1, 3, 'show ear'], 'hz-explorer': ['about', 1, 3, 'show ear'], 'range-chart': ['about', 1, 3, 'show ear'],
 };
 function toolMeta(id) { const m = TOOL_META[id]; if (m) return { cat: m[0], lo: m[1], hi: m[2], kinds: m[3].split(' ') }; const t = TOOLS.find(x => x.id === id); return { cat: 'practice', lo: 0, hi: 3, kinds: ['show'], ch: t && t.ch }; }
+// Phase 168 (2026-09-28): shared search text for a tool -- title + blurb + its category's
+// name/when + the chapter's extra search words (CHAPTER_SEARCH_TERMS). Used by both the
+// Toolbox tab's own search box and the new always-on GlobalFind overlay below, so a query
+// like "time signature" or "minim" finds the same tools everywhere in the app, not just
+// inside the Toolbox tab.
+function toolHay(t) {
+  const m = toolMeta(t.id), cat = TOOL_CATS.find(c => c.id === m.cat) || {};
+  return (t.title + ' ' + t.blurb + ' ' + (cat.name || '') + ' ' + (cat.when || '') + ' ' + (CHAPTER_SEARCH_TERMS[t.ch] || '')).toLowerCase();
+}
+function toolMatches(t, words) { const hay = toolHay(t); return words.every(w => hay.includes(w)); }
 const LEVEL_CHIPS = [[-1, 'Any level'], [0, 'Beginner'], [1, 'Preliminary'], [2, 'Grade 1–2'], [3, 'Grade 3–4']];
 const KIND_CHIPS = [['all', 'Any kind'], ['show', 'Show & explain'], ['game', 'Student does it'], ['ear', 'Listening'], ['write', 'Written theory'], ['home', 'Home practice']];
 // "My student…": what the teacher notices -> the tools that fix it.
@@ -11648,12 +11658,11 @@ function Toolbox({ onOpen, onOpenKit, onStudents }) {
   const words = q.toLowerCase().split(/\s+/).filter(Boolean);
   const pset = prob >= 0 ? PROBLEMS[prob][1] : null;
   const match = (t) => {
-    const m = toolMeta(t.id), cat = TOOL_CATS.find(c => c.id === m.cat) || {};
+    const m = toolMeta(t.id);
     if (pset && !pset.includes(t.id)) return false;
     if (lv >= 0 && (lv < m.lo || lv > m.hi)) return false;
     if (kind !== 'all' && !m.kinds.includes(kind)) return false;
-    const hay = (t.title + ' ' + t.blurb + ' ' + (cat.name || '') + ' ' + (cat.when || '') + ' ' + (CHAPTER_SEARCH_TERMS[t.ch] || '')).toLowerCase();
-    return words.every(w => hay.includes(w));
+    return toolMatches(t, words);
   };
   const chip = (on, label, onClick, key) => <button key={key || label} className={'chip' + (on ? ' active' : '')} style={{padding:'2px 9px',fontSize:12}} onClick={onClick}>{label}</button>;
   const filtered = lv >= 0 || kind !== 'all' || words.length || pset;
@@ -11760,6 +11769,63 @@ function ToolView({ id, locked, onBack, onChapter, backLabel = '← Toolbox' }) 
         )}
       </div>
     </div>
+  );
+}
+
+// ─── Phase 168: always-on "Find a tool" search (2026-09-28) ─────────────────────────
+// Sohyun: finding a tool still takes too long, both from the Toolbox search and from a few
+// screens deep (e.g. the posture checklist -> tap a chip -> the actual tool). A single always
+// -visible round button, open from any screen, with one big search box and instantly-tappable
+// results, fixed regardless of what screen she is on. Built for a distracted teacher (or a
+// 12-year-old) to use without thinking: no filters, no categories to understand first, no
+// having to be in the right tab -- type a couple of letters, tap the result, done.
+function FindOverlay({ onJump, onClose }) {
+  const [q, setQ] = useState('');
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  const results = words.length ? TOOLS.filter(t => toolMatches(t, words)).slice(0, 40) : [];
+  return (
+    <div style={{position:'fixed',inset:0,background:'rgba(36,31,26,0.5)',zIndex:1000,display:'flex',flexDirection:'column'}} onClick={onClose}>
+      <div style={{background:'var(--bg)',margin:'0 auto',width:'100%',maxWidth:600,height:'100%',display:'flex',flexDirection:'column',boxShadow:'-2px 0 24px rgba(0,0,0,0.15)'}} onClick={e => e.stopPropagation()}>
+        <div style={{display:'flex',alignItems:'center',gap:8,padding:'14px 16px 10px',borderBottom:'1px solid var(--border)',background:'#fff'}}>
+          <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder={t('Type a word: stool, scale, chord...', '단어를 입력해보세요: 스툴, 스케일, 코드...')}
+            style={{flex:1,boxSizing:'border-box',padding:'12px 14px',borderRadius:12,border:'2px solid #a8823f',fontSize:17,fontFamily:'inherit'}}/>
+          <button onClick={onClose} aria-label={t('Close', '닫기')} style={{border:'none',background:'#f1ece1',color:'var(--text)',width:44,height:44,borderRadius:'50%',fontSize:20,fontWeight:900,cursor:'pointer',flex:'0 0 auto'}}>✕</button>
+        </div>
+        <div style={{flex:1,overflowY:'auto',padding:'10px 14px 24px'}}>
+          {!words.length ? (
+            <>
+              <div style={{fontSize:14,color:'var(--muted)',fontWeight:700,margin:'10px 4px 10px'}}>{t('Or jump to a topic:', '아니면 주제를 골라보세요:')}</div>
+              <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                {TOOL_CATS.map(c => <button key={c.id} onClick={() => setQ(c.name)} style={{border:'none',background:c.color,color:'#fff',borderRadius:16,padding:'10px 16px',fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>{c.name}</button>)}
+              </div>
+            </>
+          ) : results.length ? (
+            <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:6}}>
+              {results.map(rt => {
+                const c = TOOL_CATS.find(x => x.id === toolMeta(rt.id).cat) || {};
+                return (
+                  <button key={rt.id} onClick={() => onJump(rt.id)} style={{display:'flex',alignItems:'center',gap:12,textAlign:'left',border:'1.5px solid var(--border)',background:'#fff',borderRadius:12,padding:'12px 14px',cursor:'pointer',fontFamily:'inherit',minHeight:56}}>
+                    <span style={{width:12,height:12,borderRadius:'50%',background:c.color || '#a49b8f',flex:'0 0 auto'}}/>
+                    <span style={{minWidth:0}}>
+                      <span style={{display:'block',fontSize:16,fontWeight:900,color:'var(--text)'}}>{rt.title}</span>
+                      <span style={{display:'block',fontSize:13,color:'var(--muted)',marginTop:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{rt.blurb}</span>
+                    </span>
+                    <span style={{marginLeft:'auto',color:'var(--muted)',fontSize:18,flex:'0 0 auto'}}>›</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{textAlign:'center',color:'var(--muted)',fontSize:14,marginTop:30,lineHeight:1.6}}>{t('Nothing found -- try a shorter or different word.', '못 찾았어요 -- 더 짧거나 다른 단어로 시도해보세요.')}</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+function FindButton({ onOpen }) {
+  return (
+    <button onClick={onOpen} aria-label={t('Find a tool', '도구 찾기')} style={{position:'fixed',right:18,bottom:18,zIndex:900,width:60,height:60,borderRadius:'50%',border:'none',background:'#a8823f',color:'#fff',fontSize:26,boxShadow:'0 4px 16px rgba(0,0,0,0.25)',cursor:'pointer'}}>🔎</button>
   );
 }
 
@@ -12078,6 +12144,7 @@ function App() {
   const [teacher, setTeacher] = useState(initialMode);
   const [preview, setPreview] = useState(false);
   const [lang, setLang] = useState(LANG);
+  const [findOpen, setFindOpen] = useState(false);
   LANG = lang;
   function toggleLang() { const next = lang === 'ko' ? 'en' : 'ko'; try { localStorage.setItem(LANG_KEY, next); } catch (e) {} setLang(next); }
   const T = teacher && !preview && !st.lock;
@@ -12124,6 +12191,9 @@ function App() {
           </div>
         </div>
       </div>
+
+      {T && !findOpen && <FindButton onOpen={() => setFindOpen(true)}/>}
+      {T && findOpen && <FindOverlay onClose={() => setFindOpen(false)} onJump={(id) => { setFindOpen(false); update({ view: 'tools', tool: id, kit: null, ret: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>}
 
       <div className="pb-main" style={{maxWidth:600,margin:'0 auto',padding:'20px 16px 60px'}}>
         {preview && <div style={{background:'#241f1a',color:'#fff',borderRadius:10,padding:'8px 12px',marginBottom:12,fontSize:13.5,display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}><span>You’re seeing what a student sees.</span><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setPreview(false)}>Back to teacher view</button></div>}
