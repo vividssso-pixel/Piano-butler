@@ -3399,6 +3399,27 @@ grade with its chips underneath.
 | 4 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: confirmed the Posture & Hands category now shows one "Whole chapter" link per chapter (2 groups: "Posture, Hands & Black Keys" and "Five-Finger Positions") instead of one per card; searched "chord" in the find overlay and confirmed results split into "The Piano's Story" / "Intervals" / "Chords" / "Dynamics & Articulation" groups, each with one header; clicked a header and landed on that chapter's full Learn view; re-ran the student-kit star/add flow (add a student, star two tools) and confirmed the kit panel still groups and displays correctly. Zero console/page errors. |
 | 5 | Committed, not pushed | see git log | Ready for Sohyun to push from her Terminal. |
 
+### Phase 171 -- Toolbox visual pass: calmer, less "조잡한" (cluttered) look (2026-09-28)
+
+Sohyun: even after Phases 168-170's search/navigation fixes, the Toolbox tab overall still
+looked too cluttered ("조잡해 보여"). The root cause: the 12 TOOL_CATS colors (already used as
+informational category coding, same idea as the site's era/syllabus badges per the
+piano-butler-designer brand skill) were being used THREE times at once on one screen -- as solid
+-fill button backgrounds, as saturated all-caps section headings, and as card left-borders --
+which reads as a wall of competing hues rather than a coherent page. Brought this in line with
+the confirmed "Ink & Brass" system (ink for interactive chrome, category color as a quiet
+identifier only, brass reserved for one special action) instead of re-deriving a new palette.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Category "jump" chips: solid saturated fill -> outlined pill with a small color dot + ink text | `drills.html`, new `.cat-pill`/`.cat-dot` CSS classes, used in the Toolbox tab's top row and the find overlay's empty-state topic chips | Category color still there as a quick visual anchor, just no longer shouting as a full-color button. |
+| 2 | Category section headings: bold all-caps text in the category's own saturated color -> ink heading + small color dot + thin bottom rule | `drills.html`, Toolbox's per-category `<div>` | This was the single biggest source of the "rainbow wall" scrolling down the tab -- 12 different hues as page headings, one after another. |
+| 3 | "Whole chapter" links (Phase 169/170): inconsistent colors (category color in the Toolbox tab, hardcoded brass in the find overlay) -> one shared `.chapter-link` brass pill everywhere | `drills.html`, `ChapterGroups` and `FindOverlay` | Matches the brand rule that brass marks one special action consistently, not a different color per context. |
+| 4 | Tool cards: harder 4px color bar + flat look -> slimmer 3px bar, soft card shadow, more padding/line-height, larger gap between cards | `drills.html`, `ToolCard` | Small but repeated 30+ times per scroll, so it compounds -- matches the design skill's note that a repeated-card page needs to be tested at full-page density, not as a single swatch. |
+| 5 | Search input: browser-default blue focus ring -> ink focus ring matching the rest of the site's interactive chrome | `drills.html`, new `.search-input` CSS class, used by the Toolbox tab's search box | The find overlay's own search box keeps its brass border/ring on purpose (it's the one "special" global action, per the brand rule that brass marks something singular). |
+| 6 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: re-ran the category-pill jump, the inline Toolbox search + star-to-kit flow, and a "Whole chapter" jump -- all still work exactly as before, just restyled. Zero console/page errors. |
+| 7 | Committed, not pushed | see git log | Ready for Sohyun to push from her Terminal. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks

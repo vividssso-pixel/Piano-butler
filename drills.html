@@ -88,6 +88,33 @@
     .choice-btn.good { background: #dcebd5; border-color: var(--good); color: var(--good); }
     .choice-btn.bad  { background: #f6d6cf; border-color: var(--bad);  color: var(--bad); }
 
+    /* Phase 171 (2026-09-28): Sohyun found the Toolbox tab too visually "cluttered" -- 12
+       different saturated category colors used as solid-fill buttons, section-heading text AND
+       card borders all at once. Softer, reusable pieces for that tab: a search input with an
+       ink focus ring (not the browser's default blue, which clashed with the ink/brass system),
+       and an outlined "category pill" (small color dot + ink text) that replaces the old solid
+       -color chip buttons -- keeps the category color as a quiet identifier, not a shouting fill. */
+    .search-input {
+      width: 100%; box-sizing: border-box; padding: 11px 14px; border-radius: 12px;
+      border: 1.5px solid var(--border); font-size: 15px; font-family: inherit;
+      background: #fff; color: var(--text); transition: border-color .15s, box-shadow .15s;
+    }
+    .search-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(36,31,26,0.08); }
+    .cat-pill {
+      display: inline-flex; align-items: center; gap: 7px; border: 1.5px solid var(--border);
+      background: #fff; border-radius: 20px; padding: 7px 14px 7px 11px; font-size: 13.5px;
+      font-weight: 700; color: var(--text); cursor: pointer; font-family: inherit;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .cat-pill:hover { border-color: var(--text); }
+    .cat-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+    .chapter-link {
+      display: inline-flex; align-items: center; gap: 5px; border: none; background: var(--brass-bg);
+      color: #8a6a2a; border-radius: 8px; padding: 6px 11px; font-size: 12.5px; font-weight: 800;
+      cursor: pointer; font-family: inherit;
+    }
+    .chapter-link:hover { background: #ecdfc1; }
+
     /* Phase 94: Game (pixel) mode */
     .pixel, .pixel * { font-family: 'Press Start 2P', ui-monospace, monospace !important; }
     .pixel-panel {
@@ -11625,13 +11652,13 @@ function ToolCard({ t, color, starred, onStar, onOpen }) {
   const LO = ['Beginner', 'Prelim', 'G1', 'G3'], HI = ['Beginner', 'Prelim', 'G2', 'G4'];
   const lv = m.lo === 0 && m.hi === 3 ? 'All levels' : m.lo === m.hi ? ['Beginner', 'Prelim', 'Grade 1–2', 'Grade 3–4'][m.lo] : LO[m.lo] + '–' + HI[m.hi];
   return (
-    <div style={{position:'relative'}}>
-      <button onClick={() => onOpen(t.id)} style={{width:'100%',height:'100%',textAlign:'left',background:'#fff',border:'1.5px solid var(--border)',borderLeft:'4px solid ' + color,borderRadius:10,padding:'8px 26px 8px 10px',cursor:'pointer',color:'var(--text)',fontFamily:'inherit'}}>
-        <div style={{fontSize:14.5,fontWeight:900,lineHeight:1.25}}>{t.title}</div>
-        <div style={{fontSize:12,color:'#6f665b',lineHeight:1.35,marginTop:2}}>{t.blurb}</div>
-        <div style={{fontSize:11,fontWeight:800,color:'#a89c88',marginTop:4,textTransform:'uppercase',letterSpacing:'0.04em'}}>{lv}{m.kinds.includes('ear') ? ' · ♪' : ''}{m.kinds.includes('home') ? ' · home' : ''}</div>
+    <div style={{position:'relative',boxShadow:'0 1px 3px rgba(36,31,26,0.05)',borderRadius:12}}>
+      <button onClick={() => onOpen(t.id)} style={{width:'100%',height:'100%',textAlign:'left',background:'#fff',border:'1.5px solid var(--border)',borderLeft:'3px solid ' + color,borderRadius:12,padding:'10px 28px 10px 12px',cursor:'pointer',color:'var(--text)',fontFamily:'inherit'}}>
+        <div style={{fontSize:14.5,fontWeight:800,lineHeight:1.3}}>{t.title}</div>
+        <div style={{fontSize:12,color:'#6f665b',lineHeight:1.4,marginTop:3}}>{t.blurb}</div>
+        <div style={{fontSize:11,fontWeight:700,color:'#a89c88',marginTop:6,textTransform:'uppercase',letterSpacing:'0.04em'}}>{lv}{m.kinds.includes('ear') ? ' · ♪' : ''}{m.kinds.includes('home') ? ' · home' : ''}</div>
       </button>
-      {onStar && <button onClick={(e) => { e.stopPropagation(); onStar(t.id); }} title={starred ? 'Remove from kit' : 'Add to kit'} style={{position:'absolute',top:4,right:4,border:'none',background:'transparent',fontSize:16,cursor:'pointer',color:starred ? '#c9922a' : '#cfc4b0',padding:2,lineHeight:1}}>{starred ? '★' : '☆'}</button>}
+      {onStar && <button onClick={(e) => { e.stopPropagation(); onStar(t.id); }} title={starred ? 'Remove from kit' : 'Add to kit'} style={{position:'absolute',top:6,right:6,border:'none',background:'transparent',fontSize:16,cursor:'pointer',color:starred ? '#c9922a' : '#cfc4b0',padding:2,lineHeight:1}}>{starred ? '★' : '☆'}</button>}
     </div>
   );
 }
@@ -11651,8 +11678,8 @@ function ChapterGroups({ list, colorOf, starIds, onStar, onOpen, onChapter }) {
     <>
       {groups.map((g, i) => (
         <div key={(g.ch || 'none') + i} style={{marginBottom:i < groups.length - 1 ? 10 : 0}}>
-          {g.chapter && onChapter && <button onClick={() => onChapter(g.ch)} style={{display:'block',border:'none',background:'transparent',padding:'0 2px 6px',fontSize:12.5,fontWeight:800,color:'#8a6a2a',cursor:'pointer',fontFamily:'inherit'}}>{(LANG === 'ko' ? '전체 챕터: ' : 'Whole chapter: ') + g.chapter.label + ' →'}</button>}
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+          {g.chapter && onChapter && <button className="chapter-link" onClick={() => onChapter(g.ch)} style={{marginBottom:8}}>{(LANG === 'ko' ? '전체 챕터' : 'Whole chapter') + ': ' + g.chapter.label + ' →'}</button>}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
             {g.items.map(t => <ToolCard key={t.id} t={t} color={colorOf(t)} starred={!!starIds && starIds.includes(t.id)} onStar={onStar} onOpen={onOpen}/>)}
           </div>
         </div>
@@ -11701,10 +11728,10 @@ function Toolbox({ onOpen, onOpenKit, onStudents, onChapter }) {
             for the same at-a-glance browsing at the top of the Toolbox, since the category
             grouping below (unchanged) was easy to miss under the search/filter card. This row
             always shows every category (not filtered), same as the Learn tab's chip grid. */}
-        <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:10}}>
-          {TOOL_CATS.map(c => <button key={c.id} onClick={() => { const el = document.getElementById('cat-' + c.id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} style={{border:'none',background:c.color,color:'#fff',borderRadius:14,padding:'7px 14px',fontSize:13.5,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>{c.name}</button>)}
+        <div style={{display:'flex',gap:7,flexWrap:'wrap',marginBottom:12}}>
+          {TOOL_CATS.map(c => <button key={c.id} className="cat-pill" onClick={() => { const el = document.getElementById('cat-' + c.id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><span className="cat-dot" style={{background:c.color}}/>{c.name}</button>)}
         </div>
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search: wrist, triad, 6/8, Bb scale..." style={{width:'100%',boxSizing:'border-box',padding:'9px 12px',borderRadius:10,border:'1.5px solid var(--border)',fontSize:15,fontFamily:'inherit',marginBottom:8}}/>
+        <input className="search-input" value={q} onChange={e => setQ(e.target.value)} placeholder="Search: wrist, triad, 6/8, Bb scale..." style={{marginBottom:8}}/>
         {(() => { const sc = parseScaleQuery(q); return sc ? (
           <button onClick={() => { PENDING_SCALE = sc; onOpen('scale-finder'); }} style={{width:'100%',textAlign:'left',border:'1.5px solid #8a6a2a',background:'#fbf3e2',borderRadius:10,padding:'9px 12px',marginBottom:8,cursor:'pointer',fontFamily:'inherit',color:'var(--text)'}}>
             <b style={{fontSize:15}}>{prettyNote(sc.key)} {sc.mode === 'minor' ? 'harmonic minor' : 'major'} scale</b> <span style={{color:'#8a5a12',fontWeight:800}}>-- fingering, key signature, notes ›</span>
@@ -11741,10 +11768,11 @@ function Toolbox({ onOpen, onOpenKit, onStudents, onChapter }) {
         const list = TOOLS.filter(t => toolMeta(t.id).cat === c.id && match(t));
         if (!list.length) return null;
         return (
-          <div key={c.id} id={'cat-' + c.id} style={{marginBottom:14,scrollMarginTop:12}}>
-            <div style={{display:'flex',alignItems:'baseline',gap:8,flexWrap:'wrap',margin:'0 0 6px 2px'}}>
-              <span style={{fontSize:13.5,fontWeight:900,color:c.color,textTransform:'uppercase',letterSpacing:'0.06em'}}>{c.name}</span>
-              <span style={{fontSize:12,color:'var(--muted)'}}>{c.when}</span>
+          <div key={c.id} id={'cat-' + c.id} style={{marginBottom:18,scrollMarginTop:12}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',padding:'0 0 7px',borderBottom:'1.5px solid var(--border)',marginBottom:10}}>
+              <span style={{width:9,height:9,borderRadius:'50%',background:c.color,flex:'0 0 auto'}}/>
+              <span style={{fontSize:14,fontWeight:900,color:'var(--text)',letterSpacing:'-0.01em'}}>{c.name}</span>
+              <span style={{fontSize:12.5,color:'var(--muted)'}}>{c.when}</span>
             </div>
             <ChapterGroups list={list} colorOf={() => c.color} starIds={kit ? kit.tools : null} onStar={star} onOpen={onOpen} onChapter={onChapter}/>
           </div>
@@ -11815,7 +11843,7 @@ function FindOverlay({ onJump, onChapter, onClose }) {
             <>
               <div style={{fontSize:14,color:'var(--muted)',fontWeight:700,margin:'10px 4px 10px'}}>{t('Or jump to a topic:', '아니면 주제를 골라보세요:')}</div>
               <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-                {TOOL_CATS.map(c => <button key={c.id} onClick={() => setQ(c.name)} style={{border:'none',background:c.color,color:'#fff',borderRadius:16,padding:'10px 16px',fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>{c.name}</button>)}
+                {TOOL_CATS.map(c => <button key={c.id} className="cat-pill" style={{fontSize:14.5,padding:'8px 15px 8px 12px'}} onClick={() => setQ(c.name)}><span className="cat-dot" style={{width:10,height:10,background:c.color}}/>{c.name}</button>)}
               </div>
             </>
           ) : results.length ? (() => {
@@ -11832,7 +11860,7 @@ function FindOverlay({ onJump, onChapter, onClose }) {
               <div style={{display:'flex',flexDirection:'column',gap:10,marginTop:6}}>
                 {groups.map((g, gi) => (
                   <div key={(g.ch || 'none') + gi}>
-                    {g.chapter && onChapter && <button onClick={() => onChapter(g.ch)} style={{display:'block',border:'none',background:'transparent',padding:'0 2px 6px',fontSize:13,fontWeight:800,color:'#8a6a2a',cursor:'pointer',fontFamily:'inherit'}}>{t('Whole chapter: ', '전체 챕터: ') + g.chapter.label + ' →'}</button>}
+                    {g.chapter && onChapter && <button className="chapter-link" onClick={() => onChapter(g.ch)} style={{marginBottom:8}}>{t('Whole chapter: ', '전체 챕터: ') + g.chapter.label + ' →'}</button>}
                     <div style={{display:'flex',flexDirection:'column',gap:8}}>
                       {g.items.map(rt => {
                         const c = TOOL_CATS.find(x => x.id === toolMeta(rt.id).cat) || {};
