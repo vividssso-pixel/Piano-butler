@@ -3697,6 +3697,17 @@ Continuing "ONE BY ONE FROM THE FIRST ONE" -- second chapter in `DRILLS` order.
 | 4 | Verification | -- | Babel compile + `node --check` (0 errors) on both the clipped and corrected version. Live Playwright pass on the corrected version: full chapter opened top to bottom, all 4 new tool cards searched up and screenshotted individually in the Toolbox. Zero console/page errors. |
 | 5 | Committed, not pushed | commit `350e2dc` | Ready for Sohyun to push, along with Phases 177-186. |
 
+### Phase 188 -- Illustrated-content direction, chapter 3: Pulse & Counting (2026-09-29)
+
+Continuing "ONE BY ONE FROM THE FIRST ONE" -- third chapter in `DRILLS` order.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `PulseHero` (new component), wired into `PulseLearn`'s `<Lesson head={...}>` slot | A heartbeat/ECG-style pulse line on the dusty-rose ground assigned to `rhythm`-track chapters, two beats marked as peaks (one mustard, one rust). Directly literal -- `SteadyBeat`'s own blurb already calls it "a heartbeat pulse to tap along with," so the illustration draws that heartbeat rather than inventing a separate metaphor. |
+| 2 | 3 new Toolbox badge icons | `TOOL_ICON`: `steady-beat`, `beat-target`, `count-aloud` | None had icons before. A small pulse-line echo of the hero for Steady Beat, a bullseye with a beat number at center for Tap the right beat, a speech bubble reading "1 2" for Count it out loud. |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, both remaining new tool cards searched up and screenshotted individually in the Toolbox. Zero console/page errors. |
+| 4 | Committed, not pushed | commit `b5b2bab` | Ready for Sohyun to push, along with Phases 177-187. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
