@@ -3321,6 +3321,36 @@ rather than a scored quiz, so it goes in the Toolbox next to the other explainer
 | 5 | Bug caught and fixed during verification | `drills.html`, the three new "Hear it" buttons | First pass wrote the ♪ note character as a `\u266A` escape sequence directly inside JSX child text -- JSX text content isn't a JS string literal, so escapes aren't interpreted there (unlike inside a quoted string), and the button literally read "\u266A Hear it" in the browser. Confirmed via screenshot, fixed by using the literal ♪ character in the JSX text (matching how every other "♪ ..." button in the file already does it), recompiled and re-screenshotted to confirm the fix. |
 | 6 | Committed, not pushed | see git log | Ready for Sohyun to push from her Terminal. |
 
+### Phase 166 -- Toolbox category chips moved to the top; new tools re-categorized (2026-09-28)
+
+Sohyun pushed Phase 164-165 live herself from her Terminal, then, browsing the live site,
+compared the Toolbox to the Learn tab's category-chip overview (PITCH / RHYTHM / READING THE
+MUSIC, etc.) and asked for the same easy-to-scan category view at the top of the Toolbox --
+the Toolbox already grouped tools by category further down the page, but the only way to jump
+to a category was a small, easy-to-miss pill row buried below the search box and level/kind
+filter chips.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Category chips moved to the top of the Toolbox | `drills.html`, `Toolbox()` | The category quick-jump row (one chip per `TOOL_CATS` entry, each still scrolling to its `#cat-<id>` section) now renders directly under the "Toolbox" title/subtitle, before the search box -- it's the first thing seen, matching how the Learn tab leads with its category chips. Made larger/bolder (bigger padding and font) to read as an overview, not a filter afterthought. The old row (which only showed categories with a currently-matching tool, positioned after the level/kind filter chips) was removed rather than duplicated. |
+| 2 | Bug fix: today's 3 new tools were miscategorized | `drills.html`, `TOOL_META` | `modes`, `seventh-chords` and `chord-extensions` (added in Phase 165) were never added to `TOOL_META`, so `toolMeta()`'s fallback silently filed all three under "Practice helpers" with a default "All levels" range -- caught while verifying this change, since the new top-of-page category chips made the wrong grouping obvious immediately. Fixed: `modes` -> Scales & keys (Grade 3-4), `seventh-chords` and `chord-extensions` -> Intervals & chords (Grade 3-4, matching the rest of that chapter's advanced tools). |
+| 3 | Verification | -- | Babel compile + `node --check` -- 0 errors. Live Playwright pass: confirmed the category-chip row now renders before the search input (screenshot), and confirmed the corrected placement -- "The seven modes" now appears under the "Scales & keys" section header and "Build a 7th chord" / "Beyond the 7th: 9, 11, 13" now appear under "Intervals & chords", in that order, with zero JS errors. |
+| 4 | Committed, not pushed | see git log | Ready for Sohyun to push from her Terminal. |
+
+### Phase 167 -- Smarter Toolbox search + record-your-own-voice metronome count (2026-09-28)
+
+Sohyun: still spending time hunting for tools in the Toolbox search (typed "time signature",
+"minim" and didn't reliably land on the right tool), and asked whether the metronome's spoken
+count could use her own recorded voice instead of only the built-in voice packs, usable right
+away rather than needing new audio files uploaded to the server.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter-level search keyword aliases | `drills.html`, new `CHAPTER_SEARCH_TERMS`, used in `Toolbox()`'s `match()` | A word like "minim" or "time signature" often isn't literally in a given tool's own title/blurb even though the tool is exactly the right one -- added a small dictionary of extra search terms per chapter (British *and* American note-value names, "time signature"/"meter", etc.) and appended it into the search `hay` string alongside title/blurb/category text. Typing "minim" now surfaces every `note-values` tool; "time signature" surfaces every `time-signatures` tool, including ones whose own blurb never uses that phrase (e.g. "Put in the bar lines"). |
+| 2 | "My voice" recording for the metronome's spoken count | `drills.html`, new `MYVOICE_KEY`/`loadMyVoice`/`saveMyVoiceClip`/`loadMyVoiceBufs`/`VoiceWordRecorder`/`MyVoiceRecorder`, wired into `sayCount()`, `getAudio()` and `SoundSettings()` | A 4th "Voice" option next to the existing Female (US)/Female (UK)/Male packs. Tap a number (1-8, "and") to record with the mic (MediaRecorder), tap again to stop; stored as base64 audio in `localStorage` under `pb_myvoice_v1` -- same `pb_*_v1` convention as every other preference in this file, on-device only, no server upload or redeploy needed, usable the instant it's recorded. Playback reuses the exact same onset-alignment (`onsetOf`) the server-hosted voice packs already use in `sayCount()`, so a home-recorded count lines up with the beat exactly like the built-in voices. `loadCount()` skips its (would-be 404) fetch to a non-existent `audio/count/myvoice/` server folder once this pseudo-voice is selected. |
+| 3 | Verification | -- | Babel compile + `node --check` -- 0 errors. Live Playwright pass in headless Chromium launched with a fake microphone device (`--use-fake-device-for-media-stream`) and granted mic permission: searching "time signature" and "minim" in the Toolbox returns the expected tools (16 and 6 results respectively, including tools whose own text doesn't contain the search word); recorded all 9 words end-to-end (mic -> MediaRecorder -> blob -> `localStorage`, confirmed the actual stored clip data), then started the live metronome with Voice count + My voice selected and let it run through several beats with zero JS errors, confirming playback actually reads the recorded clips back. Confirmed no wasted network requests to a nonexistent `audio/count/myvoice/` folder. |
+| 4 | Committed, not pushed | see git log | Ready for Sohyun to push from her Terminal. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
