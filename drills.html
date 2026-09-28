@@ -10217,6 +10217,466 @@ const MELODY_DRILL = {
   Question: MelodyQuestion, Learn: MelodyLearn,
 };
 
+// ─── Concept: Musical Form -- binary, ternary, rondo, spotting sections (Phase 183) ──
+// New chapter, not in the original 21 (or the melody chapter added in Phase 181). Continues the
+// "Help Your Kids with Music" gap-fill: the book's Ch.6 Form (repeats, binary form, ternary form,
+// counterpoint, theme and variations, ostinati/loops/riffs, breaks and fills, orchestral forms)
+// had no drills.html equivalent. Repeats/D.C./D.S./Coda/Fine are already covered in depth by the
+// 'signs' chapter (Phase 116), so this chapter skips that and focuses on the genuinely new
+// content that fits a beginner-to-Grade-3 piano student: how a piece is organized into sections
+// (binary AB, ternary ABA, rondo ABACA), telling a repeated section from a new one by ear, and
+// spotting the returning "refrain" in a rondo. Counterpoint (rounds/canons/fugues), theme and
+// variations, ostinati, and full orchestral forms (symphony/sonata/concerto movements) are more
+// advanced theory/analysis topics -- left for a possible later, deeper chapter, the same scoping
+// call made for dynamics/articulation in the Melody chapter (Phase 181).
+//
+// Three short original motifs (not from the book -- avoids reproducing its copyrighted diagrams)
+// double as both the "sections" students compare and the audio for every tool in this chapter:
+// A = the "home" motif, arpeggiates up and settles back on the tonic (stable, resolved).
+// B = the "away" motif, sits higher and ends on the dominant (unstable, unresolved -- contrast).
+// C = the second rondo episode, dips into a lower register with a different contour (contrast
+//     from both A and B, so three-way comparisons in genFormQuestion stay unambiguous).
+const FORM_MOTIF = {
+  A: [{ d: 28, dur: 1 }, { d: 30, dur: 1 }, { d: 32, dur: 1 }, { d: 30, dur: 1 }, { d: 29, dur: 1 }, { d: 28, dur: 1 }, { d: 28, dur: 2 }],
+  B: [{ d: 32, dur: 1 }, { d: 34, dur: 1 }, { d: 35, dur: 1 }, { d: 34, dur: 1 }, { d: 33, dur: 1 }, { d: 32, dur: 1 }, { d: 32, dur: 2 }],
+  C: [{ d: 26, dur: 1 }, { d: 25, dur: 1 }, { d: 24, dur: 1 }, { d: 25, dur: 1 }, { d: 26, dur: 1 }, { d: 27, dur: 1 }, { d: 28, dur: 2 }],
+};
+const FORM_COLOR = { A: 'var(--brass)', B: '#3f7fb5', C: '#8a5fb0' };
+const FORM_MOTIF_MS = 3700; // ~8 beats at 132bpm, rounded up -- spacing between sequenced motifs
+const FORM_SHAPES = { binary: ['A', 'B'], ternary: ['A', 'B', 'A'], rondo: ['A', 'B', 'A', 'C', 'A'] };
+const RONDO_SEQUENCE = FORM_SHAPES.rondo;
+function playFormSeq(blocks, onBlock) {
+  const timers = [];
+  let tms = 0;
+  blocks.forEach((b, i) => {
+    timers.push(setTimeout(() => { if (onBlock) onBlock(i); playMelody(FORM_MOTIF[b], 132); }, tms));
+    tms += FORM_MOTIF_MS;
+  });
+  if (onBlock) timers.push(setTimeout(() => onBlock(-1), tms));
+  return timers;
+}
+function FormShapes() {
+  const [shape, setShape] = useState('ternary');
+  const [activeIdx, setActiveIdx] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const blocks = FORM_SHAPES[shape];
+  function playBlock(i) {
+    timers.current.forEach(clearTimeout); setActiveIdx(i);
+    timers.current.push(...playMelody(FORM_MOTIF[blocks[i]], 132, (on) => { if (on === -1) setActiveIdx(-1); }));
+  }
+  function playAll() { timers.current.forEach(clearTimeout); timers.current = playFormSeq(blocks, setActiveIdx); }
+  const SHAPE_BTNS = [
+    { id: 'binary', label: t('Binary (AB)', '두 부분 (AB)') },
+    { id: 'ternary', label: t('Ternary (ABA)', '세 부분 (ABA)') },
+    { id: 'rondo', label: t('Rondo (ABACA)', '론도 (ABACA)') },
+  ];
+  const desc = { binary: t('Two sections, A and B. B is new -- it never comes back.', '두 부분, A와 B예요. B는 새로운 내용이라 다시 돌아오지 않아요.'),
+    ternary: t('Three sections: A, then contrasting B, then A returns -- like coming home after a trip away.', '세 부분: A, 대조되는 B, 그리고 A가 다시 돌아와요 -- 여행 후 집에 돌아오는 것처럼요.'),
+    rondo: t('A keeps coming back between new episodes (B, C) -- like a chorus between verses.', 'A가 새로운 부분(B, C) 사이사이 계속 돌아와요 -- 벌스 사이의 코러스처럼요.') };
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><rect x="2" y="9" width="6" height="6" rx="1.5" fill="var(--brass)"/><rect x="9" y="9" width="6" height="6" rx="1.5" fill="#3f7fb5"/><rect x="16" y="9" width="6" height="6" rx="1.5" fill="var(--brass)"/></svg>{t('Three ways to shape a piece', '곡을 짜는 세 가지 방법')}</div>
+      <div style={actNote}>{t('Composers organize music into sections. Tap a letter to hear it, or play the whole shape.', '작곡가는 음악을 여러 부분으로 짜요. 글자를 눌러 들어보거나, 전체 모양을 재생해보세요.')}</div>
+      <div style={{display:'flex',gap:4,marginBottom:10,flexWrap:'wrap'}}>
+        {SHAPE_BTNS.map(s => <button key={s.id} className={'chip' + (shape === s.id ? ' active' : '')} style={{padding:'4px 11px',fontSize:13}} onClick={() => { timers.current.forEach(clearTimeout); setShape(s.id); setActiveIdx(-1); }}>{s.label}</button>)}
+      </div>
+      <div style={{display:'flex',gap:8,justifyContent:'center',margin:'10px 0'}}>
+        {blocks.map((b, i) => (
+          <button key={i} onClick={() => playBlock(i)} style={{width:44,height:44,borderRadius:10,border:'none',fontSize:18,fontWeight:900,color:'#fff',background:FORM_COLOR[b],cursor:'pointer',boxShadow:activeIdx === i ? '0 0 0 3px rgba(168,130,63,0.4)' : 'none',transform:activeIdx === i ? 'scale(1.08)' : 'scale(1)',transition:'all 0.15s ease'}}>{b}</button>
+        ))}
+      </div>
+      <div style={{textAlign:'center',margin:'8px 0'}}><button className="ghost-btn" onClick={playAll}>♪ {t('Play the whole shape', '전체 재생')}</button></div>
+      <div style={{fontSize:12.5,color:'#5c544a',background:'#f7f2e8',borderRadius:8,padding:'6px 9px',lineHeight:1.5}}>{desc[shape]}</div>
+    </div>
+  );
+}
+const SON_PAIRS = [
+  { first: 'A', second: 'A', answer: 'same' }, { first: 'A', second: 'B', answer: 'new' },
+  { first: 'B', second: 'B', answer: 'same' }, { first: 'A', second: 'C', answer: 'new' },
+  { first: 'C', second: 'C', answer: 'same' }, { first: 'B', second: 'C', answer: 'new' },
+];
+function SameOrNewSection() {
+  const [i, setI] = useState(0);
+  const [guess, setGuess] = useState(null);
+  const timers = useRef([]);
+  const pair = SON_PAIRS[i];
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  function play() { timers.current.forEach(clearTimeout); timers.current = playFormSeq([pair.first, pair.second]); }
+  useEffect(() => { play(); setGuess(null); }, [i]);
+  function next() { let ni = i; while (ni === i) ni = Math.floor(Math.random() * SON_PAIRS.length); setI(ni); }
+  const correct = guess === pair.answer;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><circle cx="9" cy="12" r="7" fill="none" stroke="#241f1a" strokeWidth="1.6"/><circle cx="15" cy="12" r="7" fill="none" stroke="var(--brass)" strokeWidth="1.6"/></svg>{t('Same section again, or something new?', '같은 부분이 또 나왔나요, 새로운 부분인가요?')}</div>
+      <div style={actNote}>{t('Two sections play back to back. Listen -- is the second one a repeat of the first, or different material?', '두 부분이 이어서 재생돼요. 들어보세요 -- 두 번째가 첫 번째의 반복인가요, 다른 내용인가요?')}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',margin:'8px 0'}}>
+        <button className={'chip' + (guess === 'same' ? ' active' : '')} style={{padding:'5px 12px',fontSize:14}} onClick={() => setGuess('same')}>{t('Same, repeated', '같은 부분, 반복')}</button>
+        <button className={'chip' + (guess === 'new' ? ' active' : '')} style={{padding:'5px 12px',fontSize:14}} onClick={() => setGuess('new')}>{t('New section', '새로운 부분')}</button>
+      </div>
+      <div style={{textAlign:'center',fontSize:13.5,minHeight:24,margin:'2px 0'}}>
+        {guess !== null && (correct ? <b style={{color:'#4f7a45'}}>{t('Right!', '맞았어요!')}</b> : <b style={{color:'#b5483b'}}>{t('Listen again -- did the melody change?', '다시 들어보세요 -- 선율이 바뀌었나요?')}</b>)}
+      </div>
+      <div style={{display:'flex',gap:8,justifyContent:'center',margin:'6px 0'}}>
+        <button className="ghost-btn" onClick={play}>♪ {t('Play again', '다시 듣기')}</button>
+        {guess !== null && <button className="ghost-btn" onClick={next}>{t('Next →', '다음 →')}</button>}
+      </div>
+    </div>
+  );
+}
+function RondoRefrain() {
+  const [revealed, setRevealed] = useState(1);
+  const [guess, setGuess] = useState(null);
+  const timers = useRef([]);
+  useEffect(() => { timers.current.push(...playMelody(FORM_MOTIF[RONDO_SEQUENCE[0]], 132)); return () => timers.current.forEach(clearTimeout); }, []);
+  const done = revealed >= RONDO_SEQUENCE.length;
+  const nextBlock = RONDO_SEQUENCE[revealed];
+  function playRevealed() { timers.current.forEach(clearTimeout); timers.current = playFormSeq(RONDO_SEQUENCE.slice(0, revealed)); }
+  function confirm() {
+    const idx = revealed;
+    setRevealed(r => Math.min(r + 1, RONDO_SEQUENCE.length)); setGuess(null);
+    setTimeout(() => playMelody(FORM_MOTIF[RONDO_SEQUENCE[idx]], 132), 100);
+  }
+  function reset() { timers.current.forEach(clearTimeout); setRevealed(1); setGuess(null); setTimeout(() => playMelody(FORM_MOTIF[RONDO_SEQUENCE[0]], 132), 100); }
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><path d="M18 6 A8 8 0 1 0 20 14" fill="none" stroke="#241f1a" strokeWidth="1.8" strokeLinecap="round"/><path d="M20 3 L18 6 L22 7 Z" fill="var(--brass)"/><text x="10" y="15" textAnchor="middle" fontSize="9" fontWeight="900" fill="var(--brass)">A</text></svg>{t('Rondo: the tune that keeps coming back', '론도: 계속 돌아오는 곡')}</div>
+      <div style={actNote}>{t('In a rondo, the refrain (A) keeps returning between new episodes. Guess whether the next section is the refrain or something new, then reveal it.', '론도에서는 후렴(A)이 새로운 에피소드 사이사이 계속 돌아와요. 다음 부분이 후렴일지 새로운 내용일지 맞혀보고 확인하세요.')}</div>
+      <div style={{display:'flex',gap:8,justifyContent:'center',margin:'10px 0',flexWrap:'wrap'}}>
+        {RONDO_SEQUENCE.slice(0, revealed).map((b, i) => <div key={i} style={{width:40,height:40,borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:900,fontSize:17,background:FORM_COLOR[b]}}>{b}</div>)}
+        {!done && <div style={{width:40,height:40,borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',border:'2px dashed var(--border)',color:'var(--muted)',fontSize:17}}>?</div>}
+      </div>
+      {!done ? (<>
+        <div style={{display:'flex',gap:6,justifyContent:'center',margin:'8px 0'}}>
+          <button className={'chip' + (guess === 'A' ? ' active' : '')} style={{padding:'5px 12px',fontSize:14}} onClick={() => setGuess('A')}>{t('Refrain (A)', '후렴 (A)')}</button>
+          <button className={'chip' + (guess === 'new' ? ' active' : '')} style={{padding:'5px 12px',fontSize:14}} onClick={() => setGuess('new')}>{t('New episode', '새 에피소드')}</button>
+        </div>
+        <div style={{textAlign:'center',fontSize:13.5,minHeight:22}}>
+          {guess !== null && ((guess === 'A') === (nextBlock === 'A') ? <b style={{color:'#4f7a45'}}>{t('Right!', '맞았어요!')}</b> : <b style={{color:'#b5483b'}}>{t('Listen again...', '다시 들어보세요...')}</b>)}
+        </div>
+        <div style={{display:'flex',gap:8,justifyContent:'center',margin:'6px 0'}}>
+          <button className="ghost-btn" onClick={playRevealed}>♪ {t('Play so far', '지금까지 재생')}</button>
+          {guess !== null && <button className="primary-btn" style={{padding:'6px 14px',fontSize:14}} onClick={confirm}>{t('Reveal →', '확인 →')}</button>}
+        </div>
+      </>) : (<>
+        <div style={{textAlign:'center',color:'#4f7a45',fontWeight:800,fontSize:14,margin:'8px 0'}}>{t('That’s the whole rondo -- A came back three times!', '론도 전체예요 -- A가 세 번 돌아왔어요!')}</div>
+        <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={reset}>{t('Start over', '다시하기')}</button></div>
+      </>)}
+    </div>
+  );
+}
+function genBTExample() {
+  const isTernary = Math.random() < 0.5;
+  const blocks = isTernary ? FORM_SHAPES.ternary : FORM_SHAPES.binary;
+  return { blocks, answer: isTernary ? 'ternary' : 'binary' };
+}
+function BinaryTernarySpot() {
+  const [ex, setEx] = useState(genBTExample);
+  const [guess, setGuess] = useState(null);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  function play() { timers.current.forEach(clearTimeout); timers.current = playFormSeq(ex.blocks); }
+  useEffect(() => { play(); setGuess(null); }, [ex]);
+  function next() { setEx(genBTExample()); }
+  const correct = guess === ex.answer;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><rect x="2" y="4" width="8" height="5" rx="1.3" fill="#241f1a"/><rect x="13" y="4" width="8" height="5" rx="1.3" fill="var(--brass)"/><rect x="2" y="15" width="6" height="5" rx="1.3" fill="#241f1a"/><rect x="9" y="15" width="6" height="5" rx="1.3" fill="var(--brass)"/><rect x="16" y="15" width="6" height="5" rx="1.3" fill="#241f1a"/></svg>{t('Two sections, or three?', '두 부분일까요, 세 부분일까요?')}</div>
+      <div style={actNote}>{t('Listen to the whole piece, then decide: did the opening tune come back at the end, or was it all new material?', '곡 전체를 들어보고 정해보세요: 처음 곡이 끝에 다시 나왔나요, 아니면 전부 새로운 내용이었나요?')}</div>
+      {guess !== null && (
+        <div style={{display:'flex',gap:8,justifyContent:'center',margin:'10px 0'}}>
+          {ex.blocks.map((b, i) => <div key={i} style={{width:40,height:40,borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:900,fontSize:17,background:FORM_COLOR[b]}}>{b}</div>)}
+        </div>
+      )}
+      <div style={{display:'flex',gap:6,justifyContent:'center',margin:'8px 0'}}>
+        <button className={'chip' + (guess === 'binary' ? ' active' : '')} style={{padding:'5px 12px',fontSize:14}} onClick={() => setGuess('binary')}>{t('Two sections (AB)', '두 부분 (AB)')}</button>
+        <button className={'chip' + (guess === 'ternary' ? ' active' : '')} style={{padding:'5px 12px',fontSize:14}} onClick={() => setGuess('ternary')}>{t('Three sections (ABA)', '세 부분 (ABA)')}</button>
+      </div>
+      <div style={{textAlign:'center',fontSize:13.5,minHeight:22}}>
+        {guess !== null && (correct ? <b style={{color:'#4f7a45'}}>{t('Right!', '맞았어요!')}</b> : <b style={{color:'#b5483b'}}>{t('Listen again -- did the first tune come back?', '다시 들어보세요 -- 처음 곡이 다시 나왔나요?')}</b>)}
+      </div>
+      <div style={{display:'flex',gap:8,justifyContent:'center',margin:'6px 0'}}>
+        <button className="ghost-btn" onClick={play}>♪ {t('Play again', '다시 듣기')}</button>
+        {guess !== null && <button className="ghost-btn" onClick={next}>{t('Next →', '다음 →')}</button>}
+      </div>
+    </div>
+  );
+}
+function FormLearn({ onStart }) {
+  return (
+    <Lesson id="form" title={t('How a piece is put together', '곡은 어떻게 짜여 있을까요')} intro={t('Composers organize music into sections, often labeled with letters like A and B. This chapter looks at the three most common shapes: binary, ternary, and rondo.', '작곡가는 음악을 A, B 같은 글자로 이름 붙인 여러 부분으로 짜요. 이 챕터에서는 가장 흔한 세 가지 모양인 두 부분(binary), 세 부분(ternary), 론도(rondo)를 살펴봐요.')} onStart={onStart}>
+      <Step title={t('Three ways to shape a piece', '곡을 짜는 세 가지 방법')}>
+        <FormShapes/>
+      </Step>
+      <Step title={t('Same section again, or something new?', '같은 부분인가요, 새로운 부분인가요?')}>
+        <SameOrNewSection/>
+      </Step>
+      <Step title={t('Rondo: the tune that keeps coming back', '론도: 계속 돌아오는 곡')}>
+        <RondoRefrain/>
+      </Step>
+      <Step title={t('Two sections, or three?', '두 부분일까요, 세 부분일까요?')}>
+        <BinaryTernarySpot/>
+      </Step>
+    </Lesson>
+  );
+}
+const FORM_LEVELS = [
+  { n: 1, label: 'Binary, ternary, or rondo?', kind: 'shapeName', time: 8 },
+  { n: 2, label: 'Same section or new?', kind: 'sameOrNew', time: 8 },
+  { n: 3, label: 'Spot the refrain', kind: 'rondoRefrain', time: 8 },
+  { n: 4, label: 'Two sections or three?', kind: 'binaryOrTernary', time: 9 },
+];
+const SHAPE_FACTS = [
+  { q: 1, answer: 'Binary (AB)' },
+  { q: 2, answer: 'Ternary (ABA)' },
+  { q: 3, answer: 'Rondo (ABACA)' },
+];
+function genFormQuestion(lv, prev) {
+  const uid = Math.random();
+  if (lv.kind === 'shapeName') {
+    let f = pick(SHAPE_FACTS), n = 0; while (prev && prev.key === f.answer && n++ < 10) f = pick(SHAPE_FACTS);
+    return { kind: lv.kind, key: f.answer, f, answer: f.answer, choices: shuffle(SHAPE_FACTS.map(x => x.answer)), uid };
+  }
+  if (lv.kind === 'sameOrNew') {
+    let p = pick(SON_PAIRS), n = 0; while (prev && prev.key === p.first + p.second && n++ < 10) p = pick(SON_PAIRS);
+    const answer = p.answer === 'same' ? 'Same section repeated' : 'New section';
+    return { kind: lv.kind, key: p.first + p.second, p, answer, choices: ['Same section repeated', 'New section'], uid };
+  }
+  if (lv.kind === 'rondoRefrain') {
+    let cut = 1 + Math.floor(Math.random() * (RONDO_SEQUENCE.length - 1)), n = 0;
+    while (prev && prev.key === cut && n++ < 10) cut = 1 + Math.floor(Math.random() * (RONDO_SEQUENCE.length - 1));
+    const next = RONDO_SEQUENCE[cut];
+    const answer = next === 'A' ? 'The refrain (A) returns' : 'A new episode';
+    return { kind: lv.kind, key: cut, cut, answer, choices: ['The refrain (A) returns', 'A new episode'], uid };
+  }
+  const ex = genBTExample();
+  const answer = ex.answer === 'binary' ? 'Two sections (AB)' : 'Three sections (ABA)';
+  return { kind: 'binaryOrTernary', key: ex.blocks.join(''), ex, answer, choices: ['Two sections (AB)', 'Three sections (ABA)'], uid };
+}
+function FormQuestion({ q, level, given, locked, onAnswer, pixel }) {
+  const done = !!given;
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const st = (c) => !done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '';
+  const prompt = (tx, px) => <p style={pixel ? {fontSize:11.5,textAlign:'center',margin:'0 0 10px'} : {fontSize:15,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? px : tx}</p>;
+  const grid = () => (
+    <div style={{display:'grid',gridTemplateColumns:'1fr',gap:8}}>
+      {q.choices.map(c => <button key={c} disabled={locked} onClick={() => { stopClicks(); onAnswer(c); }} className={btnCls + st(c)} style={{padding:'10px 6px',fontSize:14}}>{c}</button>)}
+    </div>
+  );
+  useEffect(() => {
+    let timers = [];
+    const tmo = setTimeout(() => {
+      if (q.kind === 'sameOrNew') timers = playFormSeq([q.p.first, q.p.second]);
+      else if (q.kind === 'rondoRefrain') timers = playFormSeq(RONDO_SEQUENCE.slice(0, q.cut));
+      else if (q.kind === 'binaryOrTernary') timers = playFormSeq(q.ex.blocks);
+    }, 250);
+    return () => { clearTimeout(tmo); timers.forEach(clearTimeout); };
+  }, [q.uid]);
+  if (q.kind === 'shapeName') {
+    const shapeQs = {
+      1: t('Two sections, A then B -- B never comes back. What form is this?', '두 부분, A 다음 B -- B는 다시 안 돌아와요. 어떤 형식일까요?'),
+      2: t('Three sections -- A, then B, then A returns. What form is this?', '세 부분 -- A, B, 그리고 A가 다시 돌아와요. 어떤 형식일까요?'),
+      3: t('A keeps returning between new episodes, like a chorus between verses. What form is this?', 'A가 새로운 부분 사이사이 계속 돌아와요, 벌스 사이의 코러스처럼요. 어떤 형식일까요?'),
+    };
+    return <div>{prompt(shapeQs[q.f.q], t('WHICH FORM IS THIS?', '어떤 형식일까요?'))}{grid()}</div>;
+  }
+  if (q.kind === 'sameOrNew') return (<div>
+    {prompt(t('Two sections play back to back. Is the second a repeat, or something new?', '두 부분이 이어서 재생돼요. 두 번째는 반복인가요, 새로운 건가요?'), t('SAME, OR NEW?', '같은가요, 새로운가요?'))}
+    <div style={{display:'flex',gap:8,justifyContent:'center',margin:'0 0 10px'}}>
+      <div style={{width:36,height:36,borderRadius:9,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:900,background:FORM_COLOR[q.p.first]}}>{q.p.first}</div>
+      <div style={{width:36,height:36,borderRadius:9,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:900,background:done ? FORM_COLOR[q.p.second] : 'var(--muted)'}}>{done ? q.p.second : '?'}</div>
+    </div>
+    <div style={{textAlign:'center',margin:'0 0 10px'}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => playFormSeq([q.p.first, q.p.second])}>{t('♪ Play again', '♪ 다시 듣기')}</button></div>
+    {grid()}
+  </div>);
+  if (q.kind === 'rondoRefrain') return (<div>
+    {prompt(t('Is the next section the refrain (A) coming back, or a new episode?', '다음 부분은 후렴(A)이 돌아오는 걸까요, 새 에피소드일까요?'), t('REFRAIN, OR NEW?', '후렴인가요, 새로운가요?'))}
+    <div style={{display:'flex',gap:6,justifyContent:'center',margin:'0 0 10px',flexWrap:'wrap'}}>
+      {RONDO_SEQUENCE.slice(0, q.cut).map((b, i) => <div key={i} style={{width:34,height:34,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:900,fontSize:14,background:FORM_COLOR[b]}}>{b}</div>)}
+      <div style={{width:34,height:34,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',border:'2px dashed var(--border)',color:'var(--muted)',fontSize:14}}>?</div>
+    </div>
+    <div style={{textAlign:'center',margin:'0 0 10px'}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => playFormSeq(RONDO_SEQUENCE.slice(0, q.cut))}>{t('♪ Play again', '♪ 다시 듣기')}</button></div>
+    {grid()}
+  </div>);
+  return (<div>
+    {prompt(t('Listen to the whole piece -- did the opening tune come back at the end?', '곡 전체를 들어보세요 -- 처음 곡이 끝에 다시 나왔나요?'), t('TWO SECTIONS, OR THREE?', '두 부분인가요, 세 부분인가요?'))}
+    <div style={{textAlign:'center',margin:'0 0 10px'}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => playFormSeq(q.ex.blocks)}>{t('♪ Play again', '♪ 다시 듣기')}</button></div>
+    {grid()}
+  </div>);
+}
+const FORM_DRILL = {
+  id: 'form', label: 'Musical Form', levels: FORM_LEVELS, generate: genFormQuestion,
+  check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
+  answerLabel: (q) => q.answer,
+  Question: FormQuestion, Learn: FormLearn,
+};
+
+// ─── Concept: Styles & Genres -- musical textures, folk/classical/jazz/pop (Phase 184) ──
+// New chapter, not in the original 21. Completes the "Help Your Kids with Music" gap-fill --
+// the last of the three chapters with no drills.html equivalent (Ch.8 Styles and Genres).
+// Scoped down deliberately: the book's four period sub-sections (Baroque, Classical, Romantic,
+// Modern) are already covered at a glance by the existing 'piano-story' chapter's `eras` tool, so
+// repeating them here would duplicate rather than deepen (noted in CLAUDE.md item #20 from the
+// start). Genuine audio identification of real folk/jazz/pop recordings is out of scope -- the
+// app has no licensed audio library for that, and fabricating "genre-typical" audio would be
+// misleading. What's left, and genuinely new: musical texture (monophony/homophony/polyphony --
+// a real, teachable, AUDIBLE distinction the app's own synth can demonstrate honestly), and the
+// defining traits that tell folk, classical, jazz & blues, and popular music apart conceptually.
+// Reuses FORM_MOTIF (from the Form chapter, Phase 183) as raw melodic material so the three
+// textures are directly comparable -- same tune, three different treatments.
+function playMonophony() { playMelody(FORM_MOTIF.A, 132); }
+function playHomophony() {
+  const ctx = getAudio(); if (!ctx) return;
+  const t0 = ctx.currentTime + 0.05, beat = 60 / 132;
+  const totalDur = FORM_MOTIF.A.reduce((s, n) => s + n.dur, 0) * beat;
+  [{ d: 21 }, { d: 23 }, { d: 25 }].forEach(n => blip(ctx, t0, ivFreq(n), totalDur * 0.92, 0.13, 'sine'));
+  let time = t0;
+  FORM_MOTIF.A.forEach(n => { blip(ctx, time, ivFreq(n), n.dur * beat * 0.9, 0.24, 'triangle'); time += n.dur * beat; });
+}
+function playPolyphony() {
+  const ctx = getAudio(); if (!ctx) return;
+  const t0 = ctx.currentTime + 0.05, beat = 60 / 132;
+  let time1 = t0;
+  FORM_MOTIF.A.forEach(n => { blip(ctx, time1, ivFreq(n), n.dur * beat * 0.9, 0.22, 'triangle'); time1 += n.dur * beat; });
+  let time2 = t0 + 2 * beat;
+  FORM_MOTIF.C.forEach(n => { blip(ctx, time2, ivFreq(n), n.dur * beat * 0.9, 0.18, 'sine'); time2 += n.dur * beat; });
+}
+const TEXTURE_TYPES = {
+  monophony: { label: t('Monophony', '모노포니'), play: playMonophony,
+    desc: t('A single melodic line, alone -- no harmony underneath. The oldest and simplest texture, heard in plainchant and unaccompanied folk song.', '반주 없이 선율 한 줄만 있는 거예요 -- 가장 오래되고 단순한 텍스처로, 그레고리안 성가나 반주 없는 민요에서 들을 수 있어요.') },
+  homophony: { label: t('Homophony', '호모포니'), play: playHomophony,
+    desc: t('A melody on top, with chords moving underneath to support it. Most hymns, pop songs, and piano pieces with a "tune and accompaniment" use this.', '위에는 선율, 아래는 받쳐주는 화음이 있어요. 대부분의 찬송가, 팝송, "선율 + 반주" 형태의 피아노 곡이 이런 구조예요.') },
+  polyphony: { label: t('Polyphony', '폴리포니'), play: playPolyphony,
+    desc: t('Two or more independent melodic lines woven together, each equally important -- like a round or a fugue. Listen for the second voice entering after the first.', '두 개 이상의 독립적인 선율이 서로 얽혀요, 각각 똑같이 중요해요 -- 돌림노래나 푸가처럼요. 첫 번째 선율 뒤에 두 번째 선율이 들어오는 걸 들어보세요.') },
+};
+function TextureTypes() {
+  const [tex, setTex] = useState('monophony');
+  const TEX_ORDER = ['monophony', 'homophony', 'polyphony'];
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><line x1="2" y1="6" x2="22" y2="6" stroke="#241f1a" strokeWidth="1.8" strokeLinecap="round"/><line x1="2" y1="12" x2="22" y2="12" stroke="var(--brass)" strokeWidth="1.8" strokeLinecap="round"/><line x1="2" y1="18" x2="14" y2="18" stroke="#3f7fb5" strokeWidth="1.8" strokeLinecap="round"/><line x1="2" y1="15" x2="10" y2="15" stroke="#8a5fb0" strokeWidth="1.8" strokeLinecap="round"/></svg>{t('Textures: how many voices, and how do they relate?', '텍스처: 목소리는 몇 개이고, 서로 어떤 관계일까요?')}</div>
+      <div style={actNote}>{t('Every piece of music has a texture -- how its melodic lines are layered. Tap each type to hear the same tune treated three different ways.', '모든 음악에는 텍스처가 있어요 -- 선율이 겹겹이 쌓이는 방식이에요. 같은 곡을 세 가지 방식으로 들어보세요.')}</div>
+      <div style={{display:'flex',gap:4,marginBottom:10,flexWrap:'wrap'}}>
+        {TEX_ORDER.map(id => <button key={id} className={'chip' + (tex === id ? ' active' : '')} style={{padding:'4px 11px',fontSize:13}} onClick={() => { setTex(id); TEXTURE_TYPES[id].play(); }}>{TEXTURE_TYPES[id].label}</button>)}
+      </div>
+      <div style={{textAlign:'center',margin:'8px 0'}}><button className="ghost-btn" onClick={() => TEXTURE_TYPES[tex].play()}>♪ {t('Play', '재생')}</button></div>
+      <div style={{fontSize:12.5,color:'#5c544a',background:'#f7f2e8',borderRadius:8,padding:'6px 9px',lineHeight:1.5}}>{TEXTURE_TYPES[tex].desc}</div>
+    </div>
+  );
+}
+function TextureSpotter() {
+  const TEX_ORDER = ['monophony', 'homophony', 'polyphony'];
+  const [tex, setTex] = useState(() => TEX_ORDER[Math.floor(Math.random() * 3)]);
+  const [guess, setGuess] = useState(null);
+  useEffect(() => { const tmo = setTimeout(() => TEXTURE_TYPES[tex].play(), 250); return () => clearTimeout(tmo); }, [tex]);
+  function next() { let nt = tex; while (nt === tex) nt = TEX_ORDER[Math.floor(Math.random() * 3)]; setTex(nt); setGuess(null); }
+  const correct = guess === tex;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><circle cx="12" cy="12" r="9" fill="none" stroke="var(--brass)" strokeWidth="1.6"/><path d="M8 12 a4 4 0 1 1 8 0" fill="none" stroke="#241f1a" strokeWidth="1.6" strokeLinecap="round"/><circle cx="12" cy="12" r="1.6" fill="#241f1a"/></svg>{t('Which texture is this?', '어떤 텍스처일까요?')}</div>
+      <div style={actNote}>{t('Listen -- is it one line alone, a melody with chords, or two independent lines woven together?', '들어보세요 -- 한 줄뿐인가요, 화음이 받쳐주는 선율인가요, 아니면 두 독립적인 선율이 얽혀있나요?')}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',margin:'8px 0',flexWrap:'wrap'}}>
+        {TEX_ORDER.map(id => <button key={id} className={'chip' + (guess === id ? ' active' : '')} style={{padding:'5px 12px',fontSize:14}} onClick={() => setGuess(id)}>{TEXTURE_TYPES[id].label}</button>)}
+      </div>
+      <div style={{textAlign:'center',fontSize:13.5,minHeight:24,margin:'2px 0'}}>
+        {guess !== null && (correct ? <b style={{color:'#4f7a45'}}>{t('Right!', '맞았어요!')}</b> : <b style={{color:'#b5483b'}}>{t('Listen again -- it was ' + TEXTURE_TYPES[tex].label + '.', '다시 들어보세요 -- 정답은 ' + TEXTURE_TYPES[tex].label + '이었어요.')}</b>)}
+      </div>
+      <div style={{display:'flex',gap:8,justifyContent:'center',margin:'6px 0'}}>
+        <button className="ghost-btn" onClick={() => TEXTURE_TYPES[tex].play()}>♪ {t('Play again', '다시 듣기')}</button>
+        {guess !== null && <button className="ghost-btn" onClick={next}>{t('Next →', '다음 →')}</button>}
+      </div>
+    </div>
+  );
+}
+const GENRE_TRAITS = [
+  { genre: t('Folk music', '포크 (민속 음악)'), trait: t('Passed down by ear from person to person, over generations -- often with no single known composer.', '세대를 거쳐 귀로 전해져요 -- 대부분 작곡가가 따로 없어요.') },
+  { genre: t('Classical music', '클래식 음악'), trait: t('Carefully written down on paper and planned in formal structures, usually for the concert hall.', '악보에 꼼꼼히 적혀 있고, 형식이 짜여 있어요 -- 보통 연주회장에서 연주돼요.') },
+  { genre: t('Jazz & blues', '재즈와 블루스'), trait: t('Built on improvisation and a swung, syncopated feel -- the performer creates as they play.', '즉흥연주와 스윙 리듬을 바탕으로 해요 -- 연주자가 연주하면서 즉석에서 만들어요.') },
+  { genre: t('Popular music', '대중음악'), trait: t('Built around short verses and a catchy, repeating chorus, made to reach a wide audience.', '짧은 벌스와 기억하기 쉬운 후렴구로 짜여 있어요 -- 많은 사람들에게 다가가려고 만들어졌어요.') },
+];
+function GenreTraits() {
+  const [i, setI] = useState(0);
+  const g = GENRE_TRAITS[i];
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><rect x="2" y="4" width="8" height="8" rx="2" fill="var(--brass)"/><rect x="14" y="4" width="8" height="8" rx="2" fill="#3f7fb5"/><rect x="2" y="14" width="8" height="8" rx="2" fill="#8a5fb0"/><rect x="14" y="14" width="8" height="8" rx="2" fill="#5f9e6f"/></svg>{t('What makes each style different?', '각 스타일은 무엇이 다를까요')}</div>
+      <div style={actNote}>{t('Four broad families of music, and what sets each one apart.', '음악의 네 가지 큰 갈래와, 각각을 구분 짓는 특징이에요.')}</div>
+      <div style={{display:'flex',gap:4,marginBottom:10,flexWrap:'wrap'}}>
+        {GENRE_TRAITS.map((x, k) => <button key={k} className={'chip' + (i === k ? ' active' : '')} style={{padding:'4px 11px',fontSize:13}} onClick={() => setI(k)}>{x.genre}</button>)}
+      </div>
+      <div style={{fontSize:14,color:'#3a352d',background:'#f7f2e8',borderRadius:8,padding:'10px 12px',lineHeight:1.5,minHeight:40}}><b>{g.genre}:</b> {g.trait}</div>
+    </div>
+  );
+}
+function StylesLearn({ onStart }) {
+  return (
+    <Lesson id="styles" title={t('Styles and genres', '스타일과 장르')} intro={t('Music can be grouped by its texture -- how its lines layer together -- and by broad style families like folk, classical, jazz, and popular music.', '음악은 텍스처(선율이 겹겹이 쌓이는 방식)로, 그리고 포크·클래식·재즈·대중음악 같은 큰 스타일 갈래로 나눌 수 있어요.')} onStart={onStart}>
+      <Step title={t('Textures: how many voices?', '텍스처: 목소리는 몇 개일까요')}>
+        <TextureTypes/>
+      </Step>
+      <Step title={t('Which texture is this?', '어떤 텍스처일까요?')}>
+        <TextureSpotter/>
+      </Step>
+      <Step title={t('What makes each style different?', '각 스타일은 무엇이 다를까요')}>
+        <GenreTraits/>
+      </Step>
+    </Lesson>
+  );
+}
+const STYLES_LEVELS = [
+  { n: 1, label: 'Name the texture', kind: 'textureName', time: 7 },
+  { n: 2, label: 'Listen and identify', kind: 'textureListen', time: 8 },
+  { n: 3, label: 'Match the style trait', kind: 'genreTrait', time: 8 },
+];
+function genStylesQuestion(lv, prev) {
+  const uid = Math.random();
+  const TEX_ORDER = ['monophony', 'homophony', 'polyphony'];
+  if (lv.kind === 'textureName') {
+    const descs = {
+      monophony: t('A single melodic line, alone, with no harmony underneath.', '반주 없이 선율 한 줄만 있어요.'),
+      homophony: t('A melody on top, with chords moving underneath to support it.', '위에는 선율, 아래는 받쳐주는 화음이 있어요.'),
+      polyphony: t('Two or more independent melodic lines woven together, equally important.', '두 개 이상의 독립적인 선율이 얽혀있어요, 똑같이 중요해요.'),
+    };
+    let id = pick(TEX_ORDER), n = 0; while (prev && prev.key === id && n++ < 10) id = pick(TEX_ORDER);
+    return { kind: lv.kind, key: id, desc: descs[id], answer: TEXTURE_TYPES[id].label, choices: shuffle(TEX_ORDER.map(x => TEXTURE_TYPES[x].label)), uid };
+  }
+  if (lv.kind === 'textureListen') {
+    let id = pick(TEX_ORDER), n = 0; while (prev && prev.key === id && n++ < 10) id = pick(TEX_ORDER);
+    return { kind: lv.kind, key: id, tex: id, answer: TEXTURE_TYPES[id].label, choices: shuffle(TEX_ORDER.map(x => TEXTURE_TYPES[x].label)), uid };
+  }
+  let gi = Math.floor(Math.random() * GENRE_TRAITS.length), n = 0;
+  while (prev && prev.key === gi && n++ < 10) gi = Math.floor(Math.random() * GENRE_TRAITS.length);
+  const g = GENRE_TRAITS[gi];
+  return { kind: 'genreTrait', key: gi, g, answer: g.genre, choices: shuffle(GENRE_TRAITS.map(x => x.genre)), uid };
+}
+function StylesQuestion({ q, level, given, locked, onAnswer, pixel }) {
+  const done = !!given;
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const st = (c) => !done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '';
+  const prompt = (tx, px) => <p style={pixel ? {fontSize:11.5,textAlign:'center',margin:'0 0 10px'} : {fontSize:15,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? px : tx}</p>;
+  const grid = () => (
+    <div style={{display:'grid',gridTemplateColumns:'1fr',gap:8}}>
+      {q.choices.map(c => <button key={c} disabled={locked} onClick={() => { stopClicks(); onAnswer(c); }} className={btnCls + st(c)} style={{padding:'10px 6px',fontSize:14}}>{c}</button>)}
+    </div>
+  );
+  useEffect(() => {
+    if (q.kind === 'textureListen') { const tmo = setTimeout(() => TEXTURE_TYPES[q.tex].play(), 250); return () => clearTimeout(tmo); }
+  }, [q.uid]);
+  if (q.kind === 'textureName') return <div>{prompt(q.desc, t('WHICH TEXTURE?', '어떤 텍스처일까요?'))}{grid()}</div>;
+  if (q.kind === 'textureListen') return (<div>
+    {prompt(t('Listen -- which texture is this?', '들어보세요 -- 어떤 텍스처일까요?'), t('LISTEN AND IDENTIFY', '듣고 맞혀보세요'))}
+    <div style={{textAlign:'center',margin:'0 0 10px'}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => TEXTURE_TYPES[q.tex].play()}>{t('♪ Play again', '♪ 다시 듣기')}</button></div>
+    {grid()}
+  </div>);
+  return (<div>{prompt(q.g.trait, t('WHICH STYLE IS THIS?', '어떤 스타일일까요?'))}{grid()}</div>);
+}
+const STYLES_DRILL = {
+  id: 'styles', label: 'Styles & Genres', levels: STYLES_LEVELS, generate: genStylesQuestion,
+  check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
+  answerLabel: (q) => q.answer,
+  Question: StylesQuestion, Learn: StylesLearn,
+};
+
 const DRILLS = [
   { id: 'first-steps', label: 'Posture, Hands & Black Keys', concept: FIRST_STEPS_DRILL, track: 'pitch' },
   { id: 'note-names', label: 'Note Names', concept: NOTE_NAMES_DRILL, track: 'pitch' },
@@ -10240,6 +10700,8 @@ const DRILLS = [
   { id: 'piano-story', label: 'The Piano’s Story', concept: PIANO_STORY_DRILL, track: 'reading' },
   { id: 'pitch-range', label: 'Pitch, Hz & Range', concept: PITCH_RANGE_DRILL, track: 'pitch' },
   { id: 'melody', label: 'Melody & Phrasing', concept: MELODY_DRILL, track: 'reading' },
+  { id: 'form', label: 'Musical Form', concept: FORM_DRILL, track: 'reading' },
+  { id: 'styles', label: 'Styles & Genres', concept: STYLES_DRILL, track: 'about' },
 ];
 
 // ─── Toolbox (Phase 118) ─────────────────────────────────────────────────────────
@@ -11880,6 +12342,13 @@ const TOOLS = [
   { id: 'phrase-marks', ch: 'melody', title: 'Phrase marks -- where to breathe', blurb: 'The rainbow arc over a musical sentence.', C: () => <PhraseBreath/> },
   { id: 'question-answer', ch: 'melody', title: 'Question or answer phrase?', blurb: 'Unstable (2, 4, 5, 7) or home (1)?', C: () => <QuestionAnswer/> },
   { id: 'melody-sequence', ch: 'melody', title: 'Sequences: same shape, new pitch', blurb: 'A pattern restated, one step higher each time.', C: () => <SequenceStepper/> },
+  { id: 'form-shapes', ch: 'form', title: 'Binary, ternary, and rondo', blurb: 'Three ways composers shape a piece into sections.', C: () => <FormShapes/> },
+  { id: 'same-or-new', ch: 'form', title: 'Same section again, or something new?', blurb: 'Two sections play back to back -- repeat, or different?', C: () => <SameOrNewSection/> },
+  { id: 'rondo-refrain', ch: 'form', title: 'Rondo: the tune that keeps coming back', blurb: 'Guess when the refrain (A) returns between new episodes.', C: () => <RondoRefrain/> },
+  { id: 'binary-ternary-spot', ch: 'form', title: 'Two sections, or three?', blurb: 'Listen for the opening tune coming back at the end.', C: () => <BinaryTernarySpot/> },
+  { id: 'texture-types', ch: 'styles', title: 'Textures: how many voices?', blurb: 'Monophony, homophony, and polyphony -- the same tune, three ways.', C: () => <TextureTypes/> },
+  { id: 'texture-spotter', ch: 'styles', title: 'Which texture is this?', blurb: 'Listen and identify -- one line, melody with chords, or two woven lines.', C: () => <TextureSpotter/> },
+  { id: 'genre-traits', ch: 'styles', title: 'What makes each style different?', blurb: 'Folk, classical, jazz and blues, popular music -- their defining traits.', C: () => <GenreTraits/> },
 ];
 // ─── Lesson Path: stages in the order a beginner meets them (Phase 120) ─────────
 // Sohyun: student + piano first, then pulse, then reading (rhythm and notes together), then
@@ -11887,16 +12356,16 @@ const TOOLS = [
 const STAGES = [
   { n: 1, title: 'Piano basics', blurb: 'Sitting and hands, finger numbers, the black-key groups, note names, five-finger positions.', ids: ['first-steps', 'note-names', 'five-finger'] },
   { n: 2, title: 'Rhythm & counting', blurb: 'The steady beat, note values, rhythm cards, time signatures, speed.', ids: ['pulse', 'note-values', 'rhythm', 'time-signatures', 'tempo'] },
-  { n: 3, title: 'Reading music', blurb: 'The staff, the Queen and the King, steps and skips, ledger lines, and how phrases shape a tune.', ids: ['staff', 'reading-steps', 'ledger-lines', 'melody'] },
+  { n: 3, title: 'Reading music', blurb: 'The staff, the Queen and the King, steps and skips, ledger lines, how phrases shape a tune, and how a piece is put together.', ids: ['staff', 'reading-steps', 'ledger-lines', 'melody', 'form'] },
   { n: 4, title: 'Sound, signs & terms', blurb: 'Loud and soft, touch, repeats and signs, Italian terms.', ids: ['dynamics', 'signs', 'terms'] },
   { n: 5, title: 'Theory: scales, keys & chords', blurb: 'Tones and semitones, scales, key signatures, intervals, chords (Preliminary to Grade 3).', ids: ['tones', 'scales', 'key-signatures', 'intervals', 'chords'] },
-  { n: 6, title: 'Know your instrument', blurb: 'The piano’s story, the style eras, pitch in Hz and the ranges of the orchestra.', ids: ['piano-story', 'pitch-range'] },
+  { n: 6, title: 'Know your instrument', blurb: 'The piano’s story, the style eras, pitch in Hz, the ranges of the orchestra, and how styles and textures differ.', ids: ['piano-story', 'pitch-range', 'styles'] },
 ];
 const GRADE_TAGS = {
   'first-steps': 'Beginner', 'note-names': 'Prelim', pulse: 'Beginner', 'note-values': 'Prelim', rhythm: 'Prelim–G2', staff: 'Prelim',
   'reading-steps': 'Beginner', 'five-finger': 'Beginner', 'time-signatures': 'Prelim–G2', tempo: 'Prelim–G1', dynamics: 'Prelim–G1',
   'ledger-lines': 'Prelim–G2', tones: 'Prelim–G1', scales: 'Prelim–G3', 'key-signatures': 'Prelim–G3', intervals: 'Prelim–G3', chords: 'Prelim–G3', signs: 'Prelim–G2', terms: 'G1–G4',
-  'piano-story': 'General knowledge', 'pitch-range': 'General knowledge', 'melody': 'Prelim–G2',
+  'piano-story': 'General knowledge', 'pitch-range': 'General knowledge', 'melody': 'Prelim–G2', 'form': 'Prelim–G3', 'styles': 'General knowledge',
 };
 function stageOf(id) { return STAGES.find(s => s.ids.includes(id)); }
 function stepsDone(id) { const d = loadDone()[id] || {}; return Object.values(d).filter(Boolean).length; }
@@ -11993,6 +12462,8 @@ const CHAPTER_SEARCH_TERMS = {
   'piano-story': 'history piano era composer',
   'pitch-range': 'pitch range hertz frequency octave instrument',
   'melody': 'melody tune phrase phrasing phrase mark question answer antecedent consequent sequence motif contour breath comma',
+  'form': 'form binary ternary rondo ABA AB ABACA section refrain episode structure same new repeat',
+  'styles': 'style genre texture monophony homophony polyphony solo melody folk classical jazz blues popular music',
 };
 const TOOL_CATS = [
   { id: 'body', name: 'Posture & hands', when: 'Sitting, hand shape, arm weight, fingers', color: '#3f7fb5' },
@@ -12008,6 +12479,8 @@ const TOOL_CATS = [
   { id: 'practice', name: 'Practice helpers', when: 'Timer, dice, perfect reps', color: '#4f7a45' },
   { id: 'about', name: 'About music', when: 'History of the piano, eras, pitch and range', color: '#8a7a6a' },
   { id: 'melody', name: 'Melody & phrasing', when: 'What a tune is, phrase marks, question and answer, sequences', color: '#9e5b8f' },
+  { id: 'form', name: 'Musical form', when: 'Binary and ternary form, rondo, spotting same vs. new sections', color: '#c26b4a' },
+  { id: 'styles', name: 'Styles & genres', when: 'Musical textures, folk/classical/jazz/pop traits', color: '#4a6fa5' },
 ];
 // cat, level range [from, to] (0 Beginner, 1 Prelim, 2 Grade 1–2, 3 Grade 3–4), kinds
 // kinds: show = show & explain, game = student does it, ear = listening, write = written theory, home = home practice
@@ -12045,6 +12518,8 @@ const TOOL_META = {
   'practice-timer': ['practice', 0, 3, 'home'], 'practice-dice': ['practice', 0, 3, 'home game'], 'perfect-counter': ['practice', 0, 3, 'home'],
   'keyboard-ancestors': ['about', 0, 3, 'show ear'], 'piano-timeline': ['about', 1, 3, 'show'], 'eras': ['about', 1, 3, 'show ear'], 'hz-explorer': ['about', 1, 3, 'show ear'], 'range-chart': ['about', 1, 3, 'show ear'],
   'tune-anatomy': ['melody', 0, 1, 'show'], 'phrase-marks': ['melody', 1, 2, 'show'], 'question-answer': ['melody', 1, 2, 'game ear'], 'melody-sequence': ['melody', 1, 2, 'show ear'],
+  'form-shapes': ['form', 0, 2, 'show'], 'same-or-new': ['form', 1, 2, 'game ear'], 'rondo-refrain': ['form', 1, 3, 'game ear'], 'binary-ternary-spot': ['form', 1, 3, 'game ear'],
+  'texture-types': ['styles', 0, 2, 'show ear'], 'texture-spotter': ['styles', 1, 3, 'game ear'], 'genre-traits': ['styles', 1, 3, 'show'],
 };
 function toolMeta(id) { const m = TOOL_META[id]; if (m) return { cat: m[0], lo: m[1], hi: m[2], kinds: m[3].split(' ') }; const t = TOOLS.find(x => x.id === id); return { cat: 'practice', lo: 0, hi: 3, kinds: ['show'], ch: t && t.ch }; }
 // Phase 168 (2026-09-28): shared search text for a tool -- title + blurb + its category's
@@ -12190,6 +12665,27 @@ const TOOL_ICON = {
   ),
   'melody-sequence': () => (
     <svg width="34" height="34" viewBox="0 0 24 24"><circle cx="4" cy="18" r="2" fill="#241f1a"/><circle cx="8" cy="15" r="2" fill="#241f1a"/><circle cx="10" cy="13" r="2" fill="var(--brass)"/><circle cx="14" cy="10" r="2" fill="var(--brass)"/><circle cx="16" cy="8" r="2" fill="#3f7fb5"/><circle cx="20" cy="5" r="2" fill="#3f7fb5"/></svg>
+  ),
+  'form-shapes': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect x="2" y="9" width="6" height="6" rx="1.5" fill="var(--brass)"/><rect x="9" y="9" width="6" height="6" rx="1.5" fill="#3f7fb5"/><rect x="16" y="9" width="6" height="6" rx="1.5" fill="var(--brass)"/></svg>
+  ),
+  'same-or-new': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><circle cx="9" cy="12" r="7" fill="none" stroke="#241f1a" strokeWidth="1.6"/><circle cx="15" cy="12" r="7" fill="none" stroke="var(--brass)" strokeWidth="1.6"/></svg>
+  ),
+  'rondo-refrain': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><path d="M18 6 A8 8 0 1 0 20 14" fill="none" stroke="#241f1a" strokeWidth="1.8" strokeLinecap="round"/><path d="M20 3 L18 6 L22 7 Z" fill="var(--brass)"/><text x="10" y="15" textAnchor="middle" fontSize="9" fontWeight="900" fill="var(--brass)">A</text></svg>
+  ),
+  'binary-ternary-spot': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect x="2" y="4" width="8" height="5" rx="1.3" fill="#241f1a"/><rect x="13" y="4" width="8" height="5" rx="1.3" fill="var(--brass)"/><rect x="2" y="15" width="6" height="5" rx="1.3" fill="#241f1a"/><rect x="9" y="15" width="6" height="5" rx="1.3" fill="var(--brass)"/><rect x="16" y="15" width="6" height="5" rx="1.3" fill="#241f1a"/></svg>
+  ),
+  'texture-types': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><line x1="2" y1="6" x2="22" y2="6" stroke="#241f1a" strokeWidth="1.8" strokeLinecap="round"/><line x1="2" y1="12" x2="22" y2="12" stroke="var(--brass)" strokeWidth="1.8" strokeLinecap="round"/><line x1="2" y1="18" x2="14" y2="18" stroke="#3f7fb5" strokeWidth="1.8" strokeLinecap="round"/><line x1="2" y1="15" x2="10" y2="15" stroke="#8a5fb0" strokeWidth="1.8" strokeLinecap="round"/></svg>
+  ),
+  'texture-spotter': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="var(--brass)" strokeWidth="1.6"/><path d="M8 12 a4 4 0 1 1 8 0" fill="none" stroke="#241f1a" strokeWidth="1.6" strokeLinecap="round"/><circle cx="12" cy="12" r="1.6" fill="#241f1a"/></svg>
+  ),
+  'genre-traits': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect x="2" y="4" width="8" height="8" rx="2" fill="var(--brass)"/><rect x="14" y="4" width="8" height="8" rx="2" fill="#3f7fb5"/><rect x="2" y="14" width="8" height="8" rx="2" fill="#8a5fb0"/><rect x="14" y="14" width="8" height="8" rx="2" fill="#5f9e6f"/></svg>
   ),
   'arm-alignment': () => (
     <svg width="34" height="34" viewBox="0 0 24 24"><path d="M4 20 L10 12 L15 14 L20 5" fill="none" stroke="#241f1a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><circle cx="10" cy="12" r="2.1" fill="var(--brass)"/><circle cx="15" cy="14" r="2.1" fill="var(--brass)"/></svg>
