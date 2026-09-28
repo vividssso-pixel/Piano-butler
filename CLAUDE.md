@@ -3367,6 +3367,22 @@ Toolbox tab.
 | 4 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: opened the app, navigated into the Plan tab (a screen away from Toolbox), confirmed the 🔎 button is visible there too, opened the overlay, searched "stool" and confirmed "Set up the stool" was the only result and tapping it landed directly on that tool; searched "minim" and got the same 6 tools as the Toolbox tab's own search; re-ran the Toolbox tab's own search box with "time signature" to confirm the shared-code refactor didn't regress it (still 16 tools, matching Phase 167). Zero console/page errors in any of these. |
 | 5 | Committed, not pushed | see git log | Ready for Sohyun to push from her Terminal. |
 
+### Phase 169 -- "Whole chapter" jump from every search result (2026-09-28)
+
+Sohyun: after Phase 168's find overlay, a search hit still only opened the one small tool --
+there was no way to also see the whole chapter around it, the way tapping a chip in the Exam
+ladder opens that chapter's full step-by-step lesson. She wanted that same one-tap access
+directly from search results, in both the Toolbox tab's own search and the new find overlay.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | "Whole chapter: <name> ->" button on every tool result card | `drills.html`, `ToolCard` (now takes an `onChapter` prop), used by the Toolbox tab's category grid, its Student-kit tool list, and `KitView` | Only shown when the tool actually belongs to a chapter (same check `ToolView`'s existing "Learn the whole chapter" link already used). Restructured the card so this is a second, separate button rather than a click target nested inside the card's main button. |
+| 2 | Same jump inside the Phase 168 find overlay | `drills.html`, `FindOverlay` | Each result row now shows the same "Whole chapter" button under it when applicable. |
+| 3 | Shared navigation helper | `drills.html`, `App()`'s new `jumpToChapter(id)` | Closes the find overlay if open, then opens that chapter's full Learn view (same place "Learn the whole chapter" already goes to from inside a single tool). |
+| 4 | Caught my own shadowing bug before shipping | `ToolCard` | Its `t` prop (the tool object) shadows the app's global `t(en, ko)` translator, so the new chapter-button label was switched to read `LANG` directly instead of calling `t()`, which would have thrown. |
+| 5 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: searched "major" in the Toolbox tab, clicked a result's "Whole chapter: Intervals ->" and landed on the full Intervals chapter; searched "minim" in the find overlay, clicked its "Whole chapter: Notes & Rests ->" and landed on the full 8-step Notes & Rests chapter. Zero console/page errors either time. |
+| 6 | Committed, not pushed | see git log | Ready for Sohyun to push from her Terminal. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
