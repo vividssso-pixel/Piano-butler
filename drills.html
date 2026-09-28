@@ -1861,6 +1861,37 @@ const SOUND_DEFAULTS = { piano: true, count: 'click', click: 'wood', voice: 'hea
 function loadSoundPrefs() { try { return Object.assign({}, SOUND_DEFAULTS, JSON.parse(localStorage.getItem(SOUND_KEY)) || {}); } catch (e) { return { ...SOUND_DEFAULTS }; } }
 let SOUND = loadSoundPrefs();
 function saveSoundPrefs(p) { SOUND = p; try { localStorage.setItem(SOUND_KEY, JSON.stringify(p)); } catch (e) {} }
+// "My voice" recordings for the count (Phase 167, 2026-09-28): Sohyun asked to record her own
+// voice for the spoken count and use it right away -- no server upload/redeploy needed. Recorded
+// in-browser with MediaRecorder (mic), stored as base64 audio in localStorage (same pb_*_v1
+// convention as everything else here), decoded and cached per word, and played back through the
+// exact same onset-alignment (onsetOf) the server-hosted voice packs already use below, so a
+// home-recorded "1, 2, 3, 4" lines up with the beat exactly like the built-in voices do.
+const MYVOICE_KEY = 'pb_myvoice_v1';
+function loadMyVoice() { try { return JSON.parse(localStorage.getItem(MYVOICE_KEY)) || {}; } catch (e) { return {}; } }
+function dataUrlToArrayBuffer(dataUrl) {
+  const bin = atob(dataUrl.split(',')[1]);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
+}
+const _myVoice = { buf: {}, on: {} };
+function saveMyVoiceClip(word, dataUrl) {
+  try {
+    const all = loadMyVoice();
+    if (dataUrl) all[word] = dataUrl; else delete all[word];
+    localStorage.setItem(MYVOICE_KEY, JSON.stringify(all));
+  } catch (e) {}
+  delete _myVoice.buf[word]; delete _myVoice.on[word];
+}
+function loadMyVoiceBufs(ctx) {
+  if (!ctx) return;
+  const all = loadMyVoice();
+  Object.keys(all).forEach(word => {
+    if (_myVoice.buf[word]) return; // already decoded and cached
+    try { ctx.decodeAudioData(dataUrlToArrayBuffer(all[word]), (b) => { _myVoice.on[word] = onsetOf(b, 0.4); _myVoice.buf[word] = b; }, () => {}); } catch (e) {}
+  });
+}
 const PIANO_FILES = [];
 [2, 3, 4, 5, 6].forEach(o => [['C', 0], ['Ds', 3], ['Fs', 6], ['A', 9]].forEach(([n, pc]) => PIANO_FILES.push({ name: n + o, midi: (o + 1) * 12 + pc })));
 PIANO_FILES.push({ name: 'C7', midi: 96 }); PIANO_FILES.push({ name: 'A1', midi: 33 });
@@ -1947,7 +1978,7 @@ function metroClick(ctx, t, accent, level) {
 }
 const COUNT_WORDS = ['1', '2', '3', '4', '5', '6', '7', '8', 'and'];
 function loadCount(ctx) {
-  if (_count.started || !ctx || typeof fetch === 'undefined') return;
+  if (_count.started || !ctx || typeof fetch === 'undefined' || SOUND.voice === 'myvoice') return;
   _count.started = true;
   const dir = 'audio/count/' + (SOUND.voice && SOUND.voice !== 'heart' ? SOUND.voice + '/' : '');
   const get = (w, ext) => fetch(dir + w + ext).then(r => r.ok ? r.arrayBuffer() : Promise.reject());
@@ -1962,10 +1993,11 @@ function pickVoice() {
   } catch (e) { return null; }
 }
 function sayCount(ctx, when, word, vol = 1) {
-  if (_count.buf[word]) {
+  const src = SOUND.voice === 'myvoice' ? _myVoice : _count;
+  if (src.buf[word]) {
     // Line up the word's vowel (where the ear hears the beat) with the beat, not the start of the file.
-    const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = _count.buf[word];
-    const lead = _count.on[word] || 0, at = when - lead, now = ctx.currentTime;
+    const s = ctx.createBufferSource(), g = ctx.createGain(); s.buffer = src.buf[word];
+    const lead = src.on[word] || 0, at = when - lead, now = ctx.currentTime;
     g.gain.setValueAtTime(vol, Math.max(now, at));
     s.connect(g); g.connect(ctx.destination);
     if (at >= now) s.start(at); else s.start(now, now - at);
@@ -1991,12 +2023,81 @@ function beatTick(ctx, t, beat, freq, len, vol, type, word) {
   if (SOUND.count === 'voice' && sayCount(ctx, t, word || String(beat + 1), 1)) return;
   metroClick(ctx, t, beat === 0 || freq >= 1300, type === 'square' ? vol * 4 : vol);
 }
+const COUNT_WORD_LABELS = ['1', '2', '3', '4', '5', '6', '7', '8', 'and'];
+// One word's record/play/clear control. Tap to start recording (mic permission prompt on first
+// use), tap again to stop -- or it auto-stops after 2.2s as a safety net for a forgotten tap.
+function VoiceWordRecorder({ word, onChange }) {
+  const [state, setState] = useState('idle'); // idle | recording | error
+  const [hasClip, setHasClip] = useState(() => !!loadMyVoice()[word]);
+  const mediaRef = useRef(null);
+  const chunksRef = useRef([]);
+  const stopTimer = useRef(null);
+  useEffect(() => () => { if (stopTimer.current) clearTimeout(stopTimer.current); }, []);
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      chunksRef.current = [];
+      mr.ondataavailable = (e) => { if (e.data.size) chunksRef.current.push(e.data); };
+      mr.onstop = () => {
+        stream.getTracks().forEach(tr => tr.stop());
+        const blob = new Blob(chunksRef.current, { type: mr.mimeType || 'audio/webm' });
+        const reader = new FileReader();
+        reader.onloadend = () => { saveMyVoiceClip(word, reader.result); setHasClip(true); setState('idle'); onChange && onChange(); };
+        reader.readAsDataURL(blob);
+      };
+      mediaRef.current = mr;
+      mr.start();
+      setState('recording');
+      stopTimer.current = setTimeout(() => { if (mediaRef.current && mediaRef.current.state === 'recording') mediaRef.current.stop(); }, 2200);
+    } catch (e) { setState('error'); setTimeout(() => setState('idle'), 2000); }
+  }
+  function stopRecording() { if (stopTimer.current) clearTimeout(stopTimer.current); if (mediaRef.current && mediaRef.current.state === 'recording') mediaRef.current.stop(); }
+  function play() {
+    const dataUrl = loadMyVoice()[word]; if (!dataUrl) return;
+    const ctx = getAudio(); if (!ctx) return;
+    try { ctx.decodeAudioData(dataUrlToArrayBuffer(dataUrl), (b) => { const s = ctx.createBufferSource(); s.buffer = b; s.connect(ctx.destination); s.start(); }, () => {}); } catch (e) {}
+  }
+  function clear() { saveMyVoiceClip(word, null); setHasClip(false); onChange && onChange(); }
+  return (
+    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2,width:42}}>
+      <div style={{fontSize:12,fontWeight:900,color:'var(--muted)'}}>{word === 'and' ? '&' : word}</div>
+      <button onClick={state === 'recording' ? stopRecording : startRecording}
+        title={hasClip ? t('Re-record', '다시 녹음') : t('Record', '녹음')}
+        style={{width:34,height:34,borderRadius:17,border:'2px solid ' + (state === 'recording' ? '#b5483b' : hasClip ? '#4f7a45' : 'var(--border)'),
+          background:state === 'recording' ? '#b5483b' : hasClip ? '#dcebd5' : '#fff',
+          color:state === 'recording' ? '#fff' : hasClip ? '#4f7a45' : 'var(--muted)',fontSize:14,cursor:'pointer'}}>
+        {state === 'recording' ? '■' : hasClip ? '✓' : '●'}
+      </button>
+      {hasClip && state !== 'recording' && <div style={{display:'flex',gap:3}}>
+        <button onClick={play} title={t('Play', '재생')} style={{border:'none',background:'transparent',fontSize:12,cursor:'pointer',color:'#a8823f',padding:0}}>▶</button>
+        <button onClick={clear} title={t('Delete', '삭제')} style={{border:'none',background:'transparent',fontSize:12,cursor:'pointer',color:'#b5483b',padding:0}}>✕</button>
+      </div>}
+      {state === 'error' && <div style={{fontSize:8.5,color:'#b5483b',textAlign:'center',lineHeight:1.2}}>{t('No mic', '마이크 없음')}</div>}
+    </div>
+  );
+}
+// "My voice" recorder panel (Phase 167, 2026-09-28): Sohyun asked to record her own count and
+// use it right away, with no server upload -- these clips stay on this device only (localStorage),
+// exactly like every other pb_*_v1 preference in this file.
+function MyVoiceRecorder() {
+  const [version, setVersion] = useState(0);
+  return (
+    <div style={{width:'100%',background:'#fbf3e2',border:'1px solid #e8dcc0',borderRadius:10,padding:'10px',marginTop:2}}>
+      <div style={{fontSize:12.5,color:'#6f665b',marginBottom:8,lineHeight:1.5}}>{t('Tap a number, say it out loud, tap again to stop -- recorded on this device only, used right away.', '숫자를 탭하고 소리 내어 말한 뒤 다시 탭해서 멈추세요 -- 이 기기에만 저장되고, 저장 즉시 바로 쓸 수 있어요.')}</div>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',justifyContent:'center'}}>
+        {COUNT_WORD_LABELS.map(w => <VoiceWordRecorder key={w + version} word={w} onChange={() => setVersion(v => v + 1)}/>)}
+      </div>
+    </div>
+  );
+}
 function SoundSettings() {
   const [p, setP] = useState(SOUND);
   const set = (patch) => {
     const np = { ...p, ...patch }; setP(np); saveSoundPrefs(np);
     const ctx = getAudio(); if (!ctx) return;
-    if (patch.voice) { reloadCount(); setTimeout(() => { stopClicks(); const c = getAudio(); [0, 1, 2, 3].forEach(i => sayCount(c, c.currentTime + 0.1 + i * 0.6, String(i + 1))); }, 600); }
+    if (patch.voice === 'myvoice') { const c = getAudio(); if (c) loadMyVoiceBufs(c); }
+    else if (patch.voice) { reloadCount(); setTimeout(() => { stopClicks(); const c = getAudio(); [0, 1, 2, 3].forEach(i => sayCount(c, c.currentTime + 0.1 + i * 0.6, String(i + 1))); }, 600); }
     else if (patch.count === 'voice') { stopClicks(); [0, 1, 2, 3].forEach(i => sayCount(ctx, ctx.currentTime + 0.1 + i * 0.6, String(i + 1))); }
     else if (patch.click || patch.count === 'click') { stopClicks(); [0, 1, 2, 3].forEach(i => metroClick(ctx, ctx.currentTime + 0.1 + i * 0.5, i === 0, 0.3)); }
   };
@@ -2014,7 +2115,8 @@ function SoundSettings() {
       <span style={{marginLeft:8}}>{t('Count', '카운트')}</span>{chip(p.count === 'click', t('Click', '클릭'), () => set({ count: 'click' }))}{chip(p.count === 'voice', t('Voice 1 2 3 4', '음성 1 2 3 4'), () => set({ count: 'voice' }))}
       <span style={{flexBasis:'100%',height:0}}/>
       {p.count === 'click' ? <><span>{t('Click', '클릭')}</span>{[['wood', t('Woodblock', '우드블록')], ['tick', t('Tick', '틱')], ['beep', t('Beep', '삐')]].map(([k, l]) => <React.Fragment key={k}>{chip((p.click || 'wood') === k, l, () => set({ click: k }))}</React.Fragment>)}</>
-        : <><span>{t('Voice', '음성')}</span>{[['heart', t('Female (US)', '여성 (US)')], ['emma', t('Female (UK)', '여성 (UK)')], ['michael', t('Male', '남성')]].map(([k, l]) => <React.Fragment key={k}>{chip((p.voice || 'heart') === k, l, () => set({ voice: k }))}</React.Fragment>)}</>}
+        : <><span>{t('Voice', '음성')}</span>{[['heart', t('Female (US)', '여성 (US)')], ['emma', t('Female (UK)', '여성 (UK)')], ['michael', t('Male', '남성')], ['myvoice', t('My voice', '내 목소리')]].map(([k, l]) => <React.Fragment key={k}>{chip((p.voice || 'heart') === k, l, () => set({ voice: k }))}</React.Fragment>)}</>}
+      {p.count === 'voice' && p.voice === 'myvoice' && <MyVoiceRecorder/>}
       <span style={{flexBasis:'100%',height:0}}/>
       <button className="ghost-btn" style={{padding:'5px 14px',fontSize:13}} onClick={() => setOpen(false)}>{t('Done', '완료')}</button>
     </div>
@@ -3382,7 +3484,7 @@ function getAudio() {
     if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (_audioCtx.state === 'suspended') _audioCtx.resume();
     window.__pbAudio = _audioCtx; // exposed for automated timing tests only
-    loadPiano(_audioCtx); loadCount(_audioCtx);
+    loadPiano(_audioCtx); loadCount(_audioCtx); loadMyVoiceBufs(_audioCtx);
     return _audioCtx;
   } catch (e) { return null; }
 }
@@ -11378,6 +11480,34 @@ function PracticeView({ onOpen }) {
 // Sohyun: tools should be grabbable in seconds, and every student is different. So the Toolbox is
 // organised by skill (what the teacher sees in the lesson), with filters for level and kind of
 // activity, a "My student…" problem finder, and per-student kits that can be sent as one link.
+// Phase 167 (2026-09-28): search keyword aliases per chapter, so typing British terminology
+// (crotchet, minim, time signature) or American terminology (quarter note, half note, meter),
+// or a related word, reliably surfaces the right chapter's tools even when that exact word
+// isn't in a given tool's own title/blurb text -- Sohyun found she still had to hunt around.
+const CHAPTER_SEARCH_TERMS = {
+  'note-values': 'semibreve whole note minim half note crotchet quarter note quaver eighth note semiquaver sixteenth note demisemiquaver thirty-second note dotted note tied note rest value duration',
+  'time-signatures': 'time signature meter simple compound duple triple quadruple beat grouping beaming 2/4 3/4 4/4 6/8 9/8 12/8',
+  'tones': 'tone semitone half step whole step tone sharp flat natural accidental enharmonic chromatic',
+  'key-signatures': 'key signature sharps flats circle of fifths relative minor transpose',
+  'intervals': 'interval second third fourth fifth sixth seventh octave unison major minor perfect augmented diminished',
+  'scales': 'scale major minor fingering octave degree mode',
+  'chords': 'chord triad inversion cadence roman numeral seventh ninth eleventh thirteenth extension',
+  'signs': 'repeat sign dal segno da capo coda fine ottava tie slur',
+  'dynamics': 'dynamics loud soft forte piano crescendo diminuendo articulation legato staccato',
+  'staff': 'staff stave clef treble bass alto space',
+  'ledger-lines': 'ledger line above below staff',
+  'note-names': 'note name letter alphabet keyboard',
+  'pulse': 'pulse beat steady tempo metronome',
+  'rhythm': 'rhythm clap count beat pattern',
+  'reading-steps': 'sight reading step skip melody',
+  'first-steps': 'posture hand shape finger number beginner',
+  'five-finger': 'five finger position hand',
+  'terms': 'italian term tempo word meaning',
+  'tempo': 'tempo speed italian term metronome mark bpm',
+  'practice': 'practice timer dice repetition',
+  'piano-story': 'history piano era composer',
+  'pitch-range': 'pitch range hertz frequency octave instrument',
+};
 const TOOL_CATS = [
   { id: 'body', name: 'Posture & hands', when: 'Sitting, hand shape, arm weight, fingers', color: '#3f7fb5' },
   { id: 'keys', name: 'Finding notes on the keys', when: 'Black-key groups, letter names, up and down', color: '#6f9a4f' },
@@ -11522,7 +11652,7 @@ function Toolbox({ onOpen, onOpenKit, onStudents }) {
     if (pset && !pset.includes(t.id)) return false;
     if (lv >= 0 && (lv < m.lo || lv > m.hi)) return false;
     if (kind !== 'all' && !m.kinds.includes(kind)) return false;
-    const hay = (t.title + ' ' + t.blurb + ' ' + (cat.name || '') + ' ' + (cat.when || '')).toLowerCase();
+    const hay = (t.title + ' ' + t.blurb + ' ' + (cat.name || '') + ' ' + (cat.when || '') + ' ' + (CHAPTER_SEARCH_TERMS[t.ch] || '')).toLowerCase();
     return words.every(w => hay.includes(w));
   };
   const chip = (on, label, onClick, key) => <button key={key || label} className={'chip' + (on ? ' active' : '')} style={{padding:'2px 9px',fontSize:12}} onClick={onClick}>{label}</button>;
