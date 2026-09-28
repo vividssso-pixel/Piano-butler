@@ -3685,6 +3685,18 @@ stay within the round-3 quieter family for consistency, or let later chapters le
 2's higher-saturation end of the same palette for more variety. Not a blocker -- noted here so it
 isn't lost, and to revisit once she's seen a handful of chapters together.
 
+### Phase 187 -- Illustrated-content direction, chapter 2: Note Names (2026-09-29)
+
+Continuing "ONE BY ONE FROM THE FIRST ONE" -- second chapter in `DRILLS` order.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `NoteNamesHero` (new component), wired into `NoteNamesLearn`'s `<Lesson head={...}>` slot | A ring of the 7 letters A-G on the same slate-blue ground assigned to `pitch`-track chapters, with C highlighted in mustard -- reuses the chapter's own "seven letters, A to G, then loop back" idea, and deliberately echoes `LetterCircle` (the existing in-tool ring diagram inside the Letter Chain drill) rather than inventing an unrelated image. |
+| 2 | 4 new Toolbox badge icons | `TOOL_ICON`: `find-every`, `name-reveal`, `step-updown`, `letter-chain` | None had icons before. Each depicts its own tool literally: a magnifying glass over a "C" for Find every C, a letter tile dropping onto a key for Name them in order, paired up/down arrows for Step up step down, three linked circles for Letter chain. |
+| 3 | Caught and fixed before commit | `NoteNamesHero` | First version clipped the ring (C and G cut off at the bottom of the frame) -- the first live screenshot showed it immediately, fixed by widening the viewBox and re-centering before re-verifying and committing. Left in the log as a reminder that a first screenshot of a new hero illustration is not optional, even for a "just geometry" SVG. |
+| 4 | Verification | -- | Babel compile + `node --check` (0 errors) on both the clipped and corrected version. Live Playwright pass on the corrected version: full chapter opened top to bottom, all 4 new tool cards searched up and screenshotted individually in the Toolbox. Zero console/page errors. |
+| 5 | Committed, not pushed | commit `350e2dc` | Ready for Sohyun to push, along with Phases 177-186. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
