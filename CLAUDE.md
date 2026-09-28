@@ -3549,6 +3549,23 @@ actually teaches it.
 | 6 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: confirmed the regrouped Toolbox listing; opened the Dynamics lesson directly (`?drill=dynamics&tab=learn`) and confirmed Legato-first ordering plus the embedded Tie-or-slur tool render correctly; confirmed the "G1-undefined" bug is fixed; zero console/page errors throughout. |
 | 7 | Committed, not pushed | see git log | Ready for Sohyun to push, along with Phases 177-178. |
 
+### Phase 180 -- Bigger, more literal icons (fixing Phase 177-179's icon pass) (2026-09-28)
+
+Sohyun, looking at the Interval ruler card specifically: "이것의 용도를 아직 잘 모르겠어. 시각화
+버튼에 해주니 좋은데 아이콘들이 더 컸으면 좋겠고, 시각적인걸 교육적으로 풀어내는 방법을 찾으라는
+말이야." Two real problems with the icon work so far: too small to read at a glance, and a few icons
+leaned on an abstract or punny metaphor instead of directly showing what the tool teaches.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Bigger everywhere | `ToolCard` badge container (26x26 -> 40x40, inner svg 22 -> 34), all 12 static `actTitle` icons (unified to 28x28, was an inconsistent 20x20/24x24 mix left over from doing 3 chapters separately) | viewBox stayed `0 0 24 24` throughout, so every existing icon just scales up cleanly -- no path redrawing needed for the 18 icons that were already clear enough to keep. |
+| 2 | Interval ruler icon redesigned | `TOOL_ICON['interval-ruler']` and its actTitle instance | Was an unlabeled ladder shape with no obvious connection to the tool. Now a vertical line with an ink dot (bottom note) and a brass dot (top note), with tick marks between -- directly depicts "measure the gap, count the steps," which is literally the tool's job. |
+| 3 | Cadences icon redesigned | `TOOL_ICON['cadences']` and its actTitle instance | Was a bare ".," text glyph -- a stretch metaphor for "punctuation" that didn't read as intended. Now a real double barline (thin + thick line), the actual notation symbol students already know means "the end." |
+| 4 | Inversions icon redesigned | `TOOL_ICON['inversions']` and its actTitle instance | Was three static circles on a flat line. Now the same three circles with a curved, arrowed line from the bottom circle arcing up and over to the top -- directly shows "move the bottom note to the top," the tool's own description, instead of just implying "these three notes are related." |
+| 5 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass across Intervals and Chords at the new sizes: confirmed no layout breakage, confirmed via cropped screenshots that the interval-ruler, cadences, and inversions icons now read as literal depictions rather than abstract shapes, zero console/page errors. |
+| 6 | Design principle updated | `piano-butler-designer` skill (proposed) | Recorded as refined guidance for the remaining chapters (Signs & terms next): icons must be sized generously, not decoratively small, and must directly depict the tool's own mechanism or the real notation symbol it teaches -- never an abstract or punny metaphor that needs its own explanation. |
+| 7 | Committed, not pushed | see git log | Ready for Sohyun to push, along with Phases 177-179. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
