@@ -3436,6 +3436,22 @@ workflow (pick a student, then find a tool for them) -- and asked for them to be
 | 6 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: confirmed the new 3-tab bar (Plan/Practice/Students); added a student, starred a tool from the bottom toolbox section, and confirmed the top "Open <name>'s kit" button updated to show it (same state, no desync); opened a tool from the merged toolbox and from the global find overlay and confirmed both back-buttons correctly return to "Lesson plan"; opened a kit and confirmed its "← Plan" back button returns correctly; confirmed Practice and Students tabs still render. Zero console/page errors. |
 | 7 | Committed, not pushed | see git log | Ready for Sohyun to push from her Terminal. |
 
+### Phase 173 -- Modes/Chord Extensions pedagogy pass + Plan/Toolbox search-first layout (2026-09-28)
+
+Sohyun: wanted Modes and Chord Extensions made understandable for a 12-year-old before moving on
+to translation, with hands-on activity filled in wherever a tool was just informational, tool
+order checked pedagogically, and -- in the merged Plan/Toolbox screen from Phase 172 -- the search
+reachable at the very top, questioning whether Lesson Plan needed to compete with it for space.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Modes: kid-friendly "stops on a loop" analogy + hands-on tap keyboard | `Modes()` | Kept the existing brightest-to-darkest explanation but added a concrete anchor: "Ionian starts the ride at C, Dorian starts the same loop at D." Added a `TapKeyboard` below the staff/Hear-it button marking the mode's 8 notes (labelled 1-8) so a student can play it themselves instead of only auto-listening -- previously the only interaction was clicking buttons and pressing play. Bilingual (EN/KO). |
+| 2 | Chord Extensions: "stacking donuts past the octave" analogy + hands-on tap keyboard | `ChordExtensions()` | Same fix, same reasoning -- this was the one tool in the Chords chapter with no way to physically try the notes (7th Chords already had one). Added a marked `TapKeyboard` for the current stack. Bilingual (EN/KO). |
+| 3 | Reordered Scales & Keys tool group | `TOOLS` array | "The seven modes" (`TOOL_META` already flags it level 3, the most advanced scales tool) was listed *before* Build a major scale, Build a harmonic minor and Scale finder -- backwards for a student meeting modes for the first time. Moved it to render after all three. Chords group's order (basic triads -> 7th chords -> extensions) was already correct, left unchanged. |
+| 4 | PlanView: search moved to the top, Lesson Plan collapsed | `PlanView` | Reordered the screen: a compact student switcher, then the full `<Toolbox/>` (search + category browse), now render first -- reachable the instant the tab opens. The strand progress tracker (today's mix, strand tracker, Exam ladder, Anytime, All chapters) is kept, since it's real curriculum-progress data with no other home, but now sits behind a "Lesson plan ▾" toggle, closed by default, instead of pushing the tool library down the page. |
+| 5 | Verification | -- | Babel compile (`@babel/standalone`) + `node --check` (0 errors). Live Playwright pass: confirmed the search input renders near the top of the Plan tab (well above the tool category list) and the Lesson Plan section is absent from the DOM until the toggle is clicked, then reappears on toggle; confirmed "The seven modes" now renders after Build a major/minor scale within Scales & Keys; opened both Modes and Chord Extensions, confirmed their new `TapKeyboard`s render and respond to a tap with zero console/page errors; re-ran the Modes tool with the Korean toggle on and confirmed the new analogy text and tap-keyboard label render correctly in Korean. |
+| 6 | Committed, not pushed | see git log | Ready for Sohyun to push from her Terminal. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
