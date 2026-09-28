@@ -3383,6 +3383,22 @@ directly from search results, in both the Toolbox tab's own search and the new f
 | 5 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: searched "major" in the Toolbox tab, clicked a result's "Whole chapter: Intervals ->" and landed on the full Intervals chapter; searched "minim" in the find overlay, clicked its "Whole chapter: Notes & Rests ->" and landed on the full 8-step Notes & Rests chapter. Zero console/page errors either time. |
 | 6 | Committed, not pushed | see git log | Ready for Sohyun to push from her Terminal. |
 
+### Phase 170 -- One "Whole chapter" link per chapter group, not per card (2026-09-28)
+
+Sohyun: Phase 169's "Whole chapter" button, repeated on every single result card, looked
+"정신없게" (overwhelming/cluttered) -- most cards in the same category or search result already
+share the same chapter, so the same button was repeating over and over. She asked for it to sit
+once at the top of each chapter's group instead, the way the Exam ladder shows one heading per
+grade with its chips underneath.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | New `ChapterGroups` helper: groups a list of tools by the chapter they belong to (`t.ch`) and renders one "Whole chapter: <name> ->" link above each group's card grid | `drills.html`, new `ChapterGroups` component | `ToolCard` itself went back to having no chapter button at all (reverted the Phase 169 per-card button) -- it's a plain card again. |
+| 2 | Applied everywhere tool grids are shown | `Toolbox`'s per-category grid, its Student-kit tool list, `KitView` | All three now render through `ChapterGroups` instead of a flat `.map` of `ToolCard`. |
+| 3 | Same grouping in the find overlay | `FindOverlay` | Search results are grouped by chapter with one header per group above its rows, instead of a button under every single row. |
+| 4 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: confirmed the Posture & Hands category now shows one "Whole chapter" link per chapter (2 groups: "Posture, Hands & Black Keys" and "Five-Finger Positions") instead of one per card; searched "chord" in the find overlay and confirmed results split into "The Piano's Story" / "Intervals" / "Chords" / "Dynamics & Articulation" groups, each with one header; clicked a header and landed on that chapter's full Learn view; re-ran the student-kit star/add flow (add a student, star two tools) and confirmed the kit panel still groups and displays correctly. Zero console/page errors. |
+| 5 | Committed, not pushed | see git log | Ready for Sohyun to push from her Terminal. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks

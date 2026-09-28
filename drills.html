@@ -11620,26 +11620,44 @@ function AddName({ onAdd, label = '+ Student', placeholder = 'Student’s name' 
   );
 }
 function kitLink(kit) { const q = '?kit=' + kit.tools.join(',') + '&kn=' + encodeURIComponent(kit.name) + '&lock=1'; try { return location.origin + location.pathname + q; } catch (e) { return q; } }
-function ToolCard({ t, color, starred, onStar, onOpen, onChapter }) {
+function ToolCard({ t, color, starred, onStar, onOpen }) {
   const m = toolMeta(t.id);
   const LO = ['Beginner', 'Prelim', 'G1', 'G3'], HI = ['Beginner', 'Prelim', 'G2', 'G4'];
   const lv = m.lo === 0 && m.hi === 3 ? 'All levels' : m.lo === m.hi ? ['Beginner', 'Prelim', 'Grade 1–2', 'Grade 3–4'][m.lo] : LO[m.lo] + '–' + HI[m.hi];
-  // Phase 169 (2026-09-28): Sohyun found a tool via search but had no direct way from the
-  // result card to open the whole chapter it belongs to (the way tapping a chip in the Exam
-  // ladder opens that full chapter) -- she had to open the single tool first, then scroll down
-  // to "Learn the whole chapter". This second, separate button does that jump right from the
-  // search results, without nesting a click target inside the card's main button.
-  const ch = onChapter ? DRILLS.find(d => d.id === t.ch) : null;
   return (
-    <div style={{position:'relative',background:'#fff',border:'1.5px solid var(--border)',borderLeft:'4px solid ' + color,borderRadius:10,overflow:'hidden'}}>
-      <button onClick={() => onOpen(t.id)} style={{display:'block',width:'100%',textAlign:'left',background:'transparent',border:'none',padding:'8px 26px 6px 10px',cursor:'pointer',color:'var(--text)',fontFamily:'inherit'}}>
+    <div style={{position:'relative'}}>
+      <button onClick={() => onOpen(t.id)} style={{width:'100%',height:'100%',textAlign:'left',background:'#fff',border:'1.5px solid var(--border)',borderLeft:'4px solid ' + color,borderRadius:10,padding:'8px 26px 8px 10px',cursor:'pointer',color:'var(--text)',fontFamily:'inherit'}}>
         <div style={{fontSize:14.5,fontWeight:900,lineHeight:1.25}}>{t.title}</div>
         <div style={{fontSize:12,color:'#6f665b',lineHeight:1.35,marginTop:2}}>{t.blurb}</div>
         <div style={{fontSize:11,fontWeight:800,color:'#a89c88',marginTop:4,textTransform:'uppercase',letterSpacing:'0.04em'}}>{lv}{m.kinds.includes('ear') ? ' · ♪' : ''}{m.kinds.includes('home') ? ' · home' : ''}</div>
       </button>
-      {ch && <button onClick={() => onChapter(t.ch)} style={{display:'block',width:'100%',textAlign:'left',border:'none',borderTop:'1px solid var(--border)',background:'#faf7f1',padding:'6px 10px',fontSize:11.5,fontWeight:800,color:color,cursor:'pointer',fontFamily:'inherit'}}>{(LANG === 'ko' ? '전체 챕터: ' : 'Whole chapter: ') + ch.label + ' →'}</button>}
       {onStar && <button onClick={(e) => { e.stopPropagation(); onStar(t.id); }} title={starred ? 'Remove from kit' : 'Add to kit'} style={{position:'absolute',top:4,right:4,border:'none',background:'transparent',fontSize:16,cursor:'pointer',color:starred ? '#c9922a' : '#cfc4b0',padding:2,lineHeight:1}}>{starred ? '★' : '☆'}</button>}
     </div>
+  );
+}
+// Phase 170 (2026-09-28): Sohyun found the Phase 169 "Whole chapter" button repeated on every
+// single card too noisy -- most cards in a group share the same chapter anyway. Groups a list of
+// tools by the chapter they belong to (t.ch) and shows the "Whole chapter" link once per group,
+// above that group's cards, instead of once per card. A group with no matching DRILLS chapter
+// (or when onChapter isn't offered) just shows its cards with no header.
+function ChapterGroups({ list, colorOf, starIds, onStar, onOpen, onChapter }) {
+  const groups = [];
+  list.forEach(t => {
+    let g = groups.find(g => g.ch === t.ch);
+    if (!g) { g = { ch: t.ch, chapter: DRILLS.find(d => d.id === t.ch), items: [] }; groups.push(g); }
+    g.items.push(t);
+  });
+  return (
+    <>
+      {groups.map((g, i) => (
+        <div key={(g.ch || 'none') + i} style={{marginBottom:i < groups.length - 1 ? 10 : 0}}>
+          {g.chapter && onChapter && <button onClick={() => onChapter(g.ch)} style={{display:'block',border:'none',background:'transparent',padding:'0 2px 6px',fontSize:12.5,fontWeight:800,color:'#8a6a2a',cursor:'pointer',fontFamily:'inherit'}}>{(LANG === 'ko' ? '전체 챕터: ' : 'Whole chapter: ') + g.chapter.label + ' →'}</button>}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+            {g.items.map(t => <ToolCard key={t.id} t={t} color={colorOf(t)} starred={!!starIds && starIds.includes(t.id)} onStar={onStar} onOpen={onOpen}/>)}
+          </div>
+        </div>
+      ))}
+    </>
   );
 }
 function Toolbox({ onOpen, onOpenKit, onStudents, onChapter }) {
@@ -11710,9 +11728,7 @@ function Toolbox({ onOpen, onOpenKit, onStudents, onChapter }) {
         </div>
         {!kits.length ? <div style={{fontSize:13,color:'var(--muted)',lineHeight:1.5}}>Make a kit for each student: tap ☆ on the tools they need this week. Open the kit in the lesson, or send it as one link.</div> : <>
           <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6}}>{kits.map((k, i) => chip(i === kitIdx, k.name + ' (' + k.tools.length + ')', () => setKitIdx(i), 'kit' + i))}</div>
-          {kit && (kit.tools.length ? <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
-            {kit.tools.map(id => { const t = TOOLS.find(x => x.id === id); if (!t) return null; const c = TOOL_CATS.find(x => x.id === toolMeta(id).cat) || {}; return <ToolCard key={id} t={t} color={c.color} starred onStar={star} onOpen={onOpen} onChapter={onChapter}/>; })}
-          </div> : <div style={{fontSize:13,color:'var(--muted)'}}>Empty -- tap ☆ on any tool below to add it to “{kit.name}”.</div>)}
+          {kit && (kit.tools.length ? <ChapterGroups list={kit.tools.map(id => TOOLS.find(x => x.id === id)).filter(Boolean)} colorOf={t => (TOOL_CATS.find(x => x.id === toolMeta(t.id).cat) || {}).color} starIds={kit.tools} onStar={star} onOpen={onOpen} onChapter={onChapter}/> : <div style={{fontSize:13,color:'var(--muted)'}}>Empty -- tap ☆ on any tool below to add it to “{kit.name}”.</div>)}
           {kit && <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:8}}>
             <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} disabled={!kit.tools.length} onClick={() => onOpenKit(kit)}>Open kit</button>
             <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} disabled={!kit.tools.length} onClick={copyKit}>{copied ? 'Link copied ✓' : 'Copy student link'}</button>
@@ -11730,9 +11746,7 @@ function Toolbox({ onOpen, onOpenKit, onStudents, onChapter }) {
               <span style={{fontSize:13.5,fontWeight:900,color:c.color,textTransform:'uppercase',letterSpacing:'0.06em'}}>{c.name}</span>
               <span style={{fontSize:12,color:'var(--muted)'}}>{c.when}</span>
             </div>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
-              {list.map(t => <ToolCard key={t.id} t={t} color={c.color} starred={!!kit && kit.tools.includes(t.id)} onStar={star} onOpen={onOpen} onChapter={onChapter}/>)}
-            </div>
+            <ChapterGroups list={list} colorOf={() => c.color} starIds={kit ? kit.tools : null} onStar={star} onOpen={onOpen} onChapter={onChapter}/>
           </div>
         );
       })}
@@ -11749,9 +11763,7 @@ function KitView({ ids, name, onOpen, onChapter }) {
         <h2 style={{fontSize:20,fontWeight:900,margin:'0 0 4px'}}>{name || 'Your tools'}</h2>
         <p style={{fontSize:14,color:'var(--muted)',margin:0}}>{list.length} tool{list.length === 1 ? '' : 's'} picked for you. Tap one to start.</p>
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
-        {list.map(t => { const c = TOOL_CATS.find(x => x.id === toolMeta(t.id).cat) || {}; return <ToolCard key={t.id} t={t} color={c.color} onOpen={onOpen} onChapter={onChapter}/>; })}
-      </div>
+      <ChapterGroups list={list} colorOf={t => (TOOL_CATS.find(x => x.id === toolMeta(t.id).cat) || {}).color} onOpen={onOpen} onChapter={onChapter}/>
     </div>
   );
 }
@@ -11806,30 +11818,41 @@ function FindOverlay({ onJump, onChapter, onClose }) {
                 {TOOL_CATS.map(c => <button key={c.id} onClick={() => setQ(c.name)} style={{border:'none',background:c.color,color:'#fff',borderRadius:16,padding:'10px 16px',fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>{c.name}</button>)}
               </div>
             </>
-          ) : results.length ? (
-            <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:6}}>
-              {results.map(rt => {
-                const c = TOOL_CATS.find(x => x.id === toolMeta(rt.id).cat) || {};
-                // Phase 169: same "jump to the whole chapter" escape hatch as the Toolbox tab's
-                // own result cards -- Sohyun wanted a search hit to also open the full chapter
-                // around it (like tapping a chip in the Exam ladder), not only the single tool.
-                const rch = onChapter ? DRILLS.find(d => d.id === rt.ch) : null;
-                return (
-                  <div key={rt.id} style={{border:'1.5px solid var(--border)',background:'#fff',borderRadius:12,overflow:'hidden'}}>
-                    <button onClick={() => onJump(rt.id)} style={{display:'flex',alignItems:'center',gap:12,width:'100%',textAlign:'left',border:'none',background:'transparent',padding:'12px 14px',cursor:'pointer',fontFamily:'inherit',minHeight:56}}>
-                      <span style={{width:12,height:12,borderRadius:'50%',background:c.color || '#a49b8f',flex:'0 0 auto'}}/>
-                      <span style={{minWidth:0}}>
-                        <span style={{display:'block',fontSize:16,fontWeight:900,color:'var(--text)'}}>{rt.title}</span>
-                        <span style={{display:'block',fontSize:13,color:'var(--muted)',marginTop:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{rt.blurb}</span>
-                      </span>
-                      <span style={{marginLeft:'auto',color:'var(--muted)',fontSize:18,flex:'0 0 auto'}}>›</span>
-                    </button>
-                    {rch && <button onClick={() => onChapter(rt.ch)} style={{display:'block',width:'100%',textAlign:'left',border:'none',borderTop:'1px solid var(--border)',background:'#faf7f1',padding:'8px 14px',fontSize:12.5,fontWeight:800,color:c.color || 'var(--text)',cursor:'pointer',fontFamily:'inherit'}}>{t('Whole chapter: ', '전체 챕터: ') + rch.label + ' →'}</button>}
+          ) : results.length ? (() => {
+            // Phase 170: group results by chapter and show one "Whole chapter" link per group
+            // (right above its rows) instead of repeating it on every single row -- Sohyun found
+            // one per card too noisy when several results share the same chapter.
+            const groups = [];
+            results.forEach(rt => {
+              let g = groups.find(g => g.ch === rt.ch);
+              if (!g) { g = { ch: rt.ch, chapter: DRILLS.find(d => d.id === rt.ch), items: [] }; groups.push(g); }
+              g.items.push(rt);
+            });
+            return (
+              <div style={{display:'flex',flexDirection:'column',gap:10,marginTop:6}}>
+                {groups.map((g, gi) => (
+                  <div key={(g.ch || 'none') + gi}>
+                    {g.chapter && onChapter && <button onClick={() => onChapter(g.ch)} style={{display:'block',border:'none',background:'transparent',padding:'0 2px 6px',fontSize:13,fontWeight:800,color:'#8a6a2a',cursor:'pointer',fontFamily:'inherit'}}>{t('Whole chapter: ', '전체 챕터: ') + g.chapter.label + ' →'}</button>}
+                    <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                      {g.items.map(rt => {
+                        const c = TOOL_CATS.find(x => x.id === toolMeta(rt.id).cat) || {};
+                        return (
+                          <button key={rt.id} onClick={() => onJump(rt.id)} style={{display:'flex',alignItems:'center',gap:12,textAlign:'left',border:'1.5px solid var(--border)',background:'#fff',borderRadius:12,padding:'12px 14px',cursor:'pointer',fontFamily:'inherit',minHeight:56}}>
+                            <span style={{width:12,height:12,borderRadius:'50%',background:c.color || '#a49b8f',flex:'0 0 auto'}}/>
+                            <span style={{minWidth:0}}>
+                              <span style={{display:'block',fontSize:16,fontWeight:900,color:'var(--text)'}}>{rt.title}</span>
+                              <span style={{display:'block',fontSize:13,color:'var(--muted)',marginTop:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{rt.blurb}</span>
+                            </span>
+                            <span style={{marginLeft:'auto',color:'var(--muted)',fontSize:18,flex:'0 0 auto'}}>›</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                );
-              })}
-            </div>
-          ) : (
+                ))}
+              </div>
+            );
+          })() : (
             <div style={{textAlign:'center',color:'var(--muted)',fontSize:14,marginTop:30,lineHeight:1.6}}>{t('Nothing found -- try a shorter or different word.', '못 찾았어요 -- 더 짧거나 다른 단어로 시도해보세요.')}</div>
           )}
         </div>
