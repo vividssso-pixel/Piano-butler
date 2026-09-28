@@ -3351,6 +3351,22 @@ away rather than needing new audio files uploaded to the server.
 | 3 | Verification | -- | Babel compile + `node --check` -- 0 errors. Live Playwright pass in headless Chromium launched with a fake microphone device (`--use-fake-device-for-media-stream`) and granted mic permission: searching "time signature" and "minim" in the Toolbox returns the expected tools (16 and 6 results respectively, including tools whose own text doesn't contain the search word); recorded all 9 words end-to-end (mic -> MediaRecorder -> blob -> `localStorage`, confirmed the actual stored clip data), then started the live metronome with Voice count + My voice selected and let it run through several beats with zero JS errors, confirming playback actually reads the recorded clips back. Confirmed no wasted network requests to a nonexistent `audio/count/myvoice/` folder. |
 | 4 | Committed, not pushed | see git log | Ready for Sohyun to push from her Terminal. |
 
+### Phase 168 -- Always-on "Find a tool" search, reachable from any screen (2026-09-28)
+
+Sohyun: even after Phase 167's smarter search, she still had to drill down several screens deep
+to reach a specific tool -- e.g. open a chapter, open the posture checklist, tap a checklist row's
+chip -- just to get to "Set up the stool". She asked for the search itself to be redesigned so a
+12-year-old could find any tool immediately, from anywhere in the app, not only from inside the
+Toolbox tab.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Small floating "find" button (🔎), visible on every teacher-mode screen | `drills.html`, new `FindButton`, rendered in `App()` right after the header, above the tab switcher | Fixed bottom-right, so it's reachable mid-checklist, mid-lesson-plan, or on a tool page -- no need to first navigate back to the Toolbox tab. |
+| 2 | Full-screen search overlay: one big input, instantly-tappable results, no filters to learn first | `drills.html`, new `FindOverlay` | Empty state shows the 12 topic chips as a browse fallback; typing shows up to 40 matching tools as large rows (title + one-line blurb + color dot); tapping a row jumps straight to that tool and closes the overlay. |
+| 3 | Search logic unified | `drills.html`, new `toolHay(t)` / `toolMatches(t, words)`, used by both `FindOverlay` and the existing Toolbox tab's own search box | The Phase 167 `CHAPTER_SEARCH_TERMS` aliases ("time signature", "minim", etc.) now work identically everywhere a tool can be searched for, not just inside the Toolbox tab. Refactor only -- the Toolbox tab's own search box behaves the same as before, re-verified below. |
+| 4 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: opened the app, navigated into the Plan tab (a screen away from Toolbox), confirmed the 🔎 button is visible there too, opened the overlay, searched "stool" and confirmed "Set up the stool" was the only result and tapping it landed directly on that tool; searched "minim" and got the same 6 tools as the Toolbox tab's own search; re-ran the Toolbox tab's own search box with "time signature" to confirm the shared-code refactor didn't regress it (still 16 tools, matching Phase 167). Zero console/page errors in any of these. |
+| 5 | Committed, not pushed | see git log | Ready for Sohyun to push from her Terminal. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
