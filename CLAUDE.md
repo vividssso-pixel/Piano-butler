@@ -3467,6 +3467,23 @@ alone ("bluesy, folky") weren't concrete enough to make each mode click.
 | 4 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass in both languages: confirmed the brighter/darker headers and Ionian badge render, confirmed the example line updates on selecting a different mode (tested Locrian), confirmed Korean renders with no mangled characters. Caught and fixed a real mistake during this pass: a first draft hand-typed `\uXXXX` escapes for the new Korean strings and mistyped one (`\ubaham` -- not valid hex), which would have thrown a JS syntax error; switched to literal Korean text (the convention the rest of the file already uses) before committing. |
 | 5 | Committed, not pushed | see git log | Ready for Sohyun to push from her Terminal, along with Phase 173. |
 
+### Phase 175 -- Switch Modes to scale-degree order (2026-09-28)
+
+Sohyun, a second time, on Phase 174's brightness-anchored list: "이게 왜 이순서야 아이오니안, 도리안
+이순서로가야하는거아냐?" -- the brightness-ladder order (each neighbour differs by one note -- a real
+theory idea from Phase 165) kept reading as wrong no matter how clearly Ionian's position was
+explained/badged. Rather than patch the explanation a third time, switched to what she actually
+expects, which is also the far more standard way modes are taught.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Reordered `MODES` to scale-degree order | `MODES` array | Ionian, Dorian, Phrygian, Lydian, Mixolydian, Aeolian, Locrian -- built on the major scale's 1st note, then 2nd, then 3rd... Each mode's `start` field already *is* its scale-degree index (0-based), so this is just the array sorted by `start`; no other data changed. |
+| 2 | Ordinal badge replaces brighter/darker headers | `Modes()` | Each row now shows "1st / 2nd / 3rd..." instead of Phase 174's "↑ brighter" / "↓ darker" group headers, which described an order the list no longer uses. Ionian keeps its "★ you know this one" star, now naturally the first row instead of needing a pivot position explained. |
+| 3 | Intro text restated | `Modes()` | Now says the actual organizing idea directly: "starting on the 1st note of the major scale gives Ionian... the 2nd note gives Dorian... up to the 7th, Locrian." |
+| 4 | Kept from Phase 173/174 | -- | The per-mode "Sounds like: ..." real-music example and the hands-on tap keyboard are unchanged -- only the ordering/framing changed. |
+| 5 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass in both languages: confirmed the 7 rows render in exact scale-degree order (1st Ionian through 7th Locrian), confirmed Ionian's badge, confirmed selecting a different mode (Dorian) still updates the staff/keyboard/example with zero console errors. |
+| 6 | Committed, not pushed | see git log | Ready for Sohyun to push from her Terminal, along with Phases 173-174. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
