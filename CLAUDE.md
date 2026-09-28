@@ -3655,6 +3655,36 @@ session).
 | 4 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass on the Toolbox: confirmed all 13 pills render with the intended labels ("Pitch", "Rhythm", "Intervals, Scales & Keys", "Chords & Harmony", "Melody", "Form", "Styles & Genres", plus the 6 unchanged pedagogy pills), clicked several to confirm filtering still works -- zero console/page errors. Screenshot-checked the pill row visually for the cleaner 4-row layout. |
 | 5 | Committed, not pushed | commit `84a1854` | Ready for Sohyun to push, along with Phases 177-184. |
 
+### Phase 186 -- Illustrated-content direction, pilot on First Steps chapter (2026-09-29)
+
+After a dedicated design conversation (3 rounds of mockups, references: an "onto z" watering-can
+collage card, a London Jazz Festival poster, and two Pinterest mood-boards of mid-century flat
+collage illustration), Sohyun confirmed a new illustration direction for drills.html content --
+recorded in full in the `piano-butler-designer` skill (palette, scope, composition principle).
+She then said to roll it out "ONE BY ONE FROM THE FIRST ONE" rather than picking a pilot chapter
+of convenience -- so this phase applies it to `first-steps` ("Posture, Hands & Black Keys"),
+DRILLS[0], exactly as it sits in chapter order.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `FirstStepsHero` (new component), wired into `FirstStepsLearn`'s `<Lesson head={...}>` slot | Depicts the chapter's own "small house, big house" black-key analogy literally -- a 2-key cluster and a 3-key cluster drawn as roof shapes, cream fill on a slate-blue ground (the color assigned to `pitch`-track chapters per the skill's rollout plan), rust "windows" standing in for the black keys themselves, one mustard accent circle. Not a generic decoration -- the same metaphor already in the chapter's own text (Phase 186 read that text before designing the image, rather than inventing an unrelated visual). |
+| 2 | 9 new Toolbox badge icons | `TOOL_ICON`: `sit-check`, `hand-shape`, `arm-moves`, `posture-check`, `finger-numbers`, `high-low`, `key-houses`, `black-key-song`, `black-white-neighbours` | These 9 first-steps tools had no badge icon before this phase (only `arm-alignment` did) -- ToolCard degrades gracefully with no icon, so this was purely additive, no risk to existing cards. Each new badge is a self-contained colored square (same slate/cream/rust/mustard palette as the hero) depicting its own tool's mechanism literally, per the existing icon-literalism rule: a stool with a height arrow for Set up the stool, a knuckle-bridge arc for The hand shape, a sweep arc for Move with the whole arm, a checklist for Posture check, a numbered fingertip for Finger numbers, paired up/down chevrons for High, low, loud and soft, a small/big roof pair for Small house big house, a note over a black key for Your first song, and a black key beside an outlined white key for Black keys, white neighbours. |
+| 3 | Scope respected | -- | Nothing outside `drills.html` content touched. Buttons, nav, tabs, category-pill colors all stay ink/brass exactly as before -- verified by diff (`git diff --stat` showed only `drills.html`, 51 insertions). |
+| 4 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: opened the full First Steps chapter end to end (hero renders correctly, all 10 lesson steps scroll with no breakage), then searched up and screenshotted each of the 9 newly-iconified tool cards individually in the Toolbox to confirm every badge renders legibly at its real 40px size, not just in isolation. Zero console/page errors throughout. |
+| 5 | Committed, not pushed | commit `cef6c7b` | Ready for Sohyun to push, along with Phases 177-185. |
+
+While this phase was in progress, Sohyun sent a follow-up reaction to an earlier mockup round
+(the bolder, more saturated "poster" palette from round 2 of the design conversation, not the
+quieter round-3 palette that was actually confirmed and shipped here): she said she also likes
+that more colorful version and wants the eventual full set of chapters to feel like a "gallery" --
+varied, colorful, something people want to keep looking through. This doesn't contradict what
+shipped this phase (the confirmed palette already varies by chapter/track -- dusty rose, forest,
+rust, slate, mustard -- so a gallery effect builds naturally as more chapters ship), but it's worth
+her explicit steer once a few more chapters are live and she can see them side by side: whether to
+stay within the round-3 quieter family for consistency, or let later chapters lean toward round
+2's higher-saturation end of the same palette for more variety. Not a blocker -- noted here so it
+isn't lost, and to revisit once she's seen a handful of chapters together.
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
