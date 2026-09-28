@@ -9982,6 +9982,238 @@ const PITCH_RANGE_DRILL = {
   check: (q, ans) => ans === q.answer, answerLabel: (q) => q.answer, Question: FactQuestion, Learn: PitchRangeLearn,
 };
 
+// ─── Concept: Melody & Phrasing -- tunes, phrase marks, question/answer, sequences (Phase 181) ──
+// New chapter, not in the original 21. Sohyun, after reviewing the "Help Your Kids with Music"
+// book's table of contents: drills.html had no chapter for Melody (Ch.4 in the book) at all --
+// phrasing, types of phrases, sequences, and melodic analysis were entirely missing. Built to the
+// Phase 180 icon standard from the start (generous size, literal depiction) rather than needing a
+// later correction pass. Dynamics/articulation/pedal/ties (also part of the book's Melody chapter)
+// were already covered by the existing 'dynamics' chapter (Phase 179), so this chapter focuses on
+// the genuinely new content: what a tune is, phrase marks, question-and-answer phrases, and
+// sequences. Reuses MelodyStaff (built for Phase 141's "Complete the melody") for real notation.
+const TUNE_TWINKLE = {
+  both:   [{ d: 28, dur: 1 }, { d: 28, dur: 1 }, { d: 32, dur: 1 }, { d: 32, dur: 1 }, { d: 33, dur: 1 }, { d: 33, dur: 1 }, { d: 32, dur: 2 }],
+  rhythm: [{ d: 32, dur: 1 }, { d: 32, dur: 1 }, { d: 32, dur: 1 }, { d: 32, dur: 1 }, { d: 32, dur: 1 }, { d: 32, dur: 1 }, { d: 32, dur: 2 }],
+  pitch:  [{ d: 28, dur: 1 }, { d: 28, dur: 1 }, { d: 32, dur: 1 }, { d: 32, dur: 1 }, { d: 33, dur: 1 }, { d: 33, dur: 1 }, { d: 32, dur: 1 }],
+};
+function TuneAnatomy() {
+  const [mode, setMode] = useState('both');
+  const [on, setOn] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  function play(m) { setMode(m); timers.current.forEach(clearTimeout); timers.current = playMelody(TUNE_TWINKLE[m], 116, setOn); }
+  const MODES = [
+    { id: 'rhythm', label: t('Rhythm only', '리듬만') },
+    { id: 'pitch', label: t('Pitches only', '음높이만') },
+    { id: 'both', label: t('Both -- the tune', '둘 다 -- 튠') },
+  ];
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><line x1="2" y1="19" x2="22" y2="19" stroke="var(--border)" strokeWidth="1.2"/><ellipse cx="5" cy="17" rx="2.4" ry="1.8" fill="#241f1a"/><line x1="7.2" y1="17" x2="7.2" y2="7" stroke="#241f1a" strokeWidth="1.3"/><ellipse cx="13" cy="11" rx="2.4" ry="1.8" fill="var(--brass)"/><line x1="15.2" y1="11" x2="15.2" y2="3" stroke="var(--brass)" strokeWidth="1.3"/><ellipse cx="20" cy="15" rx="2.4" ry="1.8" fill="none" stroke="#3f7fb5" strokeWidth="1.6"/></svg>{t('Twinkle, Twinkle, Little Star', '반짝반짝 작은 별')}</div>
+      <div style={actNote}>{t('A tune is rhythm and pitch, combined. Try each one alone -- can you still tell what it is?', '튠은 리듬과 음높이가 합쳐진 거예요. 하나씩 따로 들어보세요 -- 그래도 무슨 곡인지 알 수 있나요?')}</div>
+      <div style={{display:'flex',gap:4,marginBottom:8,flexWrap:'wrap'}}>
+        {MODES.map(m => <button key={m.id} className={'chip' + (mode === m.id ? ' active' : '')} style={{padding:'4px 11px',fontSize:13}} onClick={() => play(m.id)}>{m.label}</button>)}
+      </div>
+      <div style={{background:'#fff',borderRadius:10,padding:'8px 6px'}}>
+        <MelodyStaff notes={TUNE_TWINKLE[mode]} beats={4} width={300} on={on} showTime={mode !== 'pitch'}/>
+      </div>
+      <div style={{textAlign:'center',margin:'8px 0'}}><button className="ghost-btn" onClick={() => play(mode)}>♪ {t('Play', '재생')}</button></div>
+      <div style={{fontSize:12.5,color:'#5c544a',background:'#f7f2e8',borderRadius:8,padding:'6px 9px',lineHeight:1.5}}>{mode === 'rhythm' ? t('Same pitch throughout -- only the rhythm is real.', '음높이는 전부 같아요 -- 리듬만 진짜예요.') : mode === 'pitch' ? t('Every note is the same length -- only the pitches are real. No time signature or bar lines, because there’s no rhythm to measure.', '음 길이는 전부 같아요 -- 음높이만 진짜예요. 리듬이 없으니 박자표도 마디선도 없어요.') : t('Both together -- now it’s unmistakably "Twinkle, Twinkle".', '둘 다 합쳐지면 -- 이제 확실히 "반짝반짝 작은 별"이에요.')}</div>
+    </div>
+  );
+}
+const PHRASE1 = [{ d: 28, dur: 1 }, { d: 28, dur: 1 }, { d: 32, dur: 1 }, { d: 32, dur: 1 }, { d: 33, dur: 1 }, { d: 33, dur: 1 }, { d: 32, dur: 2 }];
+const PHRASE2 = [{ d: 31, dur: 1 }, { d: 31, dur: 1 }, { d: 30, dur: 1 }, { d: 30, dur: 1 }, { d: 29, dur: 1 }, { d: 29, dur: 1 }, { d: 28, dur: 2 }];
+function PhraseArc({ width = 300, active }) {
+  const x0 = 66, x1 = width - 12;
+  return (
+    <svg width={width} height="28" viewBox={`0 0 ${width} 28`} style={{display:'block',margin:'0 auto'}}>
+      <path d={`M${x0},26 Q${(x0 + x1) / 2},2 ${x1},26`} fill="none" stroke={active ? 'var(--brass)' : 'var(--border)'} strokeWidth={active ? 2.5 : 1.8} strokeLinecap="round" style={{transition:'stroke 0.25s ease'}}/>
+    </svg>
+  );
+}
+function PhraseBreath() {
+  const [active, setActive] = useState(null);
+  const [breathed, setBreathed] = useState({});
+  const [on, setOn] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  function play(n) {
+    setActive(n); setOn(-1); setBreathed(b => ({ ...b, [n]: false }));
+    timers.current.forEach(clearTimeout);
+    timers.current = playMelody(n === 1 ? PHRASE1 : PHRASE2, 116, (i) => { setOn(i); if (i === -1) setBreathed(b => ({ ...b, [n]: true })); });
+  }
+  const row = (n, notes, label) => (
+    <div style={{marginBottom:10}} key={n}>
+      <PhraseArc active={active === n} width={300}/>
+      <div style={{background:'#fff',borderRadius:10,padding:'6px 6px 2px',position:'relative'}}>
+        <MelodyStaff notes={notes} beats={4} width={300} on={active === n ? on : -1}/>
+        {breathed[n] && <span style={{position:'absolute',right:14,bottom:4,fontSize:22,fontWeight:900,color:'var(--brass)',animation:'fadeUp 0.3s both'}}>,</span>}
+      </div>
+      <div style={{textAlign:'center',margin:'4px 0'}}><button className="ghost-btn" style={{fontSize:13,padding:'5px 12px'}} onClick={() => play(n)}>♪ {label}</button></div>
+    </div>
+  );
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><path d="M3 15 Q12 4 21 15" fill="none" stroke="var(--brass)" strokeWidth="1.8" strokeLinecap="round"/><ellipse cx="6" cy="18" rx="2.2" ry="1.7" fill="#241f1a"/><ellipse cx="12" cy="18" rx="2.2" ry="1.7" fill="#241f1a"/><ellipse cx="18" cy="18" rx="2.2" ry="1.7" fill="#241f1a"/></svg>{t('Where does the phrase end?', '프레이즈는 어디서 끝날까요')}</div>
+      <div style={actNote}>{t('The curved line is a phrase mark -- like a comma in a sentence, it shows where a singer takes a breath. Play each line and watch the comma appear.', '곡선은 프레이즈 마크예요 -- 문장의 쉼표처럼, 가수가 숨 쉬는 곳을 보여줘요. 한 줄씩 재생해서 쉼표가 나타나는 걸 보세요.')}</div>
+      {row(1, PHRASE1, t('Phrase 1', '프레이즈 1'))}
+      {row(2, PHRASE2, t('Phrase 2', '프레이즈 2'))}
+    </div>
+  );
+}
+const QA_ENDINGS = [
+  { d: 29, kind: 'question', deg: 2 },
+  { d: 31, kind: 'question', deg: 4 },
+  { d: 32, kind: 'question', deg: 5 },
+  { d: 34, kind: 'question', deg: 7 },
+  { d: 28, kind: 'answer', deg: 1 },
+  { d: 35, kind: 'answer', deg: 8 },
+];
+function QuestionAnswer() {
+  const [i, setI] = useState(0);
+  const [guess, setGuess] = useState(null);
+  const [on, setOn] = useState(-1);
+  const timers = useRef([]);
+  const e = QA_ENDINGS[i];
+  const notes = [{ d: 28, dur: 1 }, { d: 29, dur: 1 }, { d: 30, dur: 1 }, { d: e.d, dur: 2 }];
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  function play() { timers.current.forEach(clearTimeout); timers.current = playMelody(notes, 132, setOn); }
+  useEffect(() => { play(); setGuess(null); }, [i]);
+  function choose(k) { setGuess(k); }
+  function next() { let ni = i; while (ni === i) ni = Math.floor(Math.random() * QA_ENDINGS.length); setI(ni); }
+  const correct = guess === e.kind;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><circle cx="6" cy="15" r="3.4" fill="none" stroke="#b5483b" strokeWidth="1.8" strokeDasharray="2.2,2.2"/><text x="6" y="7.5" textAnchor="middle" fontSize="9" fontWeight="900" fill="#b5483b">?</text><circle cx="18" cy="15" r="3.4" fill="#4f7a45"/><path d="M15.3 6.3 l1.8 1.8 l3.2 -3.4" fill="none" stroke="#4f7a45" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>{t('Question, or answer?', '질문일까요, 대답일까요?')}</div>
+      <div style={actNote}>{t('A question phrase ends on an unstable note (2, 4, 5 or 7) -- it wants to keep going. An answer phrase ends on the tonic (1) -- it feels finished.', '질문 프레이즈는 불안정한 음 (2, 4, 5, 7도)에서 끝나요 -- 계속되고 싶어해요. 대답 프레이즈는 으뜸음(1도)에서 끝나요 -- 끝난 느낌이에요.')}</div>
+      <div style={{background:'#fff',borderRadius:10,padding:'8px 6px'}}>
+        <MelodyStaff notes={notes} beats={4} width={280} on={on} colors={guess !== null ? notes.map((_, idx) => idx === 3 ? (correct ? '#4f7a45' : '#b5483b') : undefined) : undefined}/>
+      </div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',margin:'8px 0'}}>
+        <button className={'chip' + (guess === 'question' ? ' active' : '')} style={{padding:'5px 12px',fontSize:14}} onClick={() => choose('question')}>{t('Question', '질문')}</button>
+        <button className={'chip' + (guess === 'answer' ? ' active' : '')} style={{padding:'5px 12px',fontSize:14}} onClick={() => choose('answer')}>{t('Answer', '대답')}</button>
+      </div>
+      <div style={{textAlign:'center',fontSize:13.5,minHeight:36,margin:'2px 0'}}>
+        {guess !== null && (correct
+          ? <b style={{color:'#4f7a45'}}>{t('Yes! Scale degree ' + e.deg + (e.kind === 'answer' ? ' is the tonic -- home.' : ' is unstable -- it still wants to move.'), '맞아요! 으뜸음 기준 ' + e.deg + '도' + (e.kind === 'answer' ? '는 으뜸음, 즉 집이에요.' : '는 불안정해서 계속 움직이고 싶어해요.'))}</b>
+          : <b style={{color:'#b5483b'}}>{t('Listen again -- scale degree ' + e.deg + (e.kind === 'answer' ? ' is the tonic, so it feels finished.' : ' is unstable, so it wants to continue.'), '다시 들어보세요 -- ' + e.deg + '도는' + (e.kind === 'answer' ? ' 으뜸음이라 끝난 느낌이에요.' : ' 불안정해서 계속되고 싶어해요.'))}</b>)}
+      </div>
+      <div style={{display:'flex',gap:8,justifyContent:'center'}}>
+        <button className="ghost-btn" onClick={play}>♪ {t('Play again', '다시 듣기')}</button>
+        {guess !== null && <button className="ghost-btn" onClick={next}>{t('Next →', '다음 →')}</button>}
+      </div>
+    </div>
+  );
+}
+function SequenceStepper() {
+  const [shown, setShown] = useState(1);
+  const [on, setOn] = useState(-1);
+  const timers = useRef([]);
+  const start = 28;
+  const reps = [0, 1, 2].map(k => [{ d: start + k, dur: 1 }, { d: start + k + 2, dur: 1 }]);
+  const notes = reps.slice(0, shown).flat();
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  function play(list) { timers.current.forEach(clearTimeout); timers.current = playMelody(list, 132, setOn); }
+  function reveal() { const ns = Math.min(shown + 1, 3); setShown(ns); setTimeout(() => play(reps.slice(0, ns).flat()), 50); }
+  function reset() { setShown(1); setOn(-1); }
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><circle cx="4" cy="18" r="2" fill="#241f1a"/><circle cx="8" cy="15" r="2" fill="#241f1a"/><circle cx="10" cy="13" r="2" fill="var(--brass)"/><circle cx="14" cy="10" r="2" fill="var(--brass)"/><circle cx="16" cy="8" r="2" fill="#3f7fb5"/><circle cx="20" cy="5" r="2" fill="#3f7fb5"/></svg>{t('Same shape, new pitch', '같은 모양, 새로운 음')}</div>
+      <div style={actNote}>{t('A sequence repeats a short pattern, but starts one step higher each time. Reveal each repetition and listen for the climbing shape.', '시퀀스는 짧은 패턴을 반복하지만, 매번 한 음씩 높게 시작해요. 하나씩 열어보고 올라가는 모양을 들어보세요.')}</div>
+      <div style={{background:'#fff',borderRadius:10,padding:'8px 6px'}}>
+        <MelodyStaff notes={notes} beats={6} width={300} on={on}/>
+      </div>
+      <div style={{display:'flex',gap:8,justifyContent:'center',margin:'8px 0'}}>
+        <button className="ghost-btn" onClick={() => play(notes)}>♪ {t('Play so far', '지금까지 재생')}</button>
+        {shown < 3 ? <button className="primary-btn" style={{padding:'6px 14px',fontSize:14}} onClick={reveal}>{t('Reveal next →', '다음 열기 →')}</button> : <button className="ghost-btn" onClick={reset}>{t('Reset', '다시하기')}</button>}
+      </div>
+      <div style={{fontSize:12.5,color:'#5c544a',background:'#f7f2e8',borderRadius:8,padding:'6px 9px',lineHeight:1.5}}>{t('Each repetition (' + shown + ' of 3 so far) is the exact same two-note shape, just moved up one scale step.', '지금까지 ' + shown + '/3번 반복 -- 매번 똑같은 두 음 모양이지만, 한 음씩 위로 옮겨갔어요.')}</div>
+    </div>
+  );
+}
+function MelodyLearn({ onStart }) {
+  return (
+    <Lesson id="melody" title={t('What makes a tune', '튠(선율)이 뭘까요')} intro={t('A tune is rhythm and pitch working together. This chapter looks at how melodies are shaped -- phrases, questions and answers, and sequences.', '튠(선율)은 리듬과 음높이가 함께 만들어내요. 이 챕터에서는 프레이즈, 질문과 대답, 시퀀스처럼 선율이 어떻게 모양을 갖추는지 살펴봐요.')} onStart={onStart}>
+      <Step title={t('Rhythm + pitch = a tune', '리듬 + 음높이 = 튠')}>
+        <TuneAnatomy/>
+      </Step>
+      <Step title={t('Phrase marks -- where to breathe', '프레이즈 마크 -- 숨쉬는 곳')}>
+        <PhraseBreath/>
+      </Step>
+      <Step title={t('Question or answer?', '질문일까요, 대답일까요?')}>
+        <QuestionAnswer/>
+      </Step>
+      <Step title={t('Sequences -- same shape, new pitch', '시퀀스 -- 같은 모양, 새 음')}>
+        <SequenceStepper/>
+      </Step>
+    </Lesson>
+  );
+}
+const MELODY_LEVELS = [
+  { n: 1, label: 'What is a tune?', kind: 'tuneParts', time: 8 },
+  { n: 2, label: 'Question or answer phrase?', kind: 'qOrA', time: 8 },
+  { n: 3, label: 'Where to breathe', kind: 'phraseMark', time: 7 },
+  { n: 4, label: 'Spot the sequence', kind: 'sequence', time: 9 },
+];
+function genMelodyQuestion(lv, prev) {
+  const uid = Math.random();
+  if (lv.kind === 'tuneParts') {
+    const answer = 'Pitch + rhythm together';
+    return { kind: lv.kind, key: 'tp', answer, choices: shuffle([answer, 'Only the words', 'Only how loud it is', 'Only the tempo']), uid };
+  }
+  if (lv.kind === 'qOrA') {
+    let e = pick(QA_ENDINGS), n = 0; while (prev && prev.key === e.d && n++ < 10) e = pick(QA_ENDINGS);
+    const answer = e.kind === 'question' ? 'Question -- not finished yet' : 'Answer -- feels finished';
+    return { kind: lv.kind, key: e.d, e, answer, choices: ['Question -- not finished yet', 'Answer -- feels finished'], uid };
+  }
+  if (lv.kind === 'phraseMark') {
+    const answer = 'At the end of the phrase';
+    return { kind: lv.kind, key: 'pm', answer, choices: shuffle([answer, 'In the middle of a word', 'On the very first note', 'Nowhere -- keep singing']), uid };
+  }
+  const dir = Math.random() < 0.5 ? 1 : -1;
+  const start = 28 + Math.floor(Math.random() * 3);
+  const motif1 = [{ d: start, dur: 1 }, { d: start + 2, dur: 1 }];
+  const motif2 = [{ d: start + dir, dur: 1 }, { d: start + 2 + dir, dur: 1 }];
+  const answer = dir === 1 ? 'Same shape, higher pitch' : 'Same shape, lower pitch';
+  return { kind: 'sequence', key: dir, motif1, motif2, answer, choices: shuffle([answer, dir === 1 ? 'Same shape, lower pitch' : 'Same shape, higher pitch', 'Different shape entirely', 'Exact repeat, same pitch']), uid };
+}
+function MelodyQuestion({ q, level, given, locked, onAnswer, pixel }) {
+  const done = !!given;
+  const ink = pixel ? '#f8edd4' : '#241f1a';
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const st = (c) => !done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '';
+  const prompt = (tx, px) => <p style={pixel ? {fontSize:11.5,textAlign:'center',margin:'0 0 10px'} : {fontSize:15,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? px : tx}</p>;
+  const grid = () => (
+    <div style={{display:'grid',gridTemplateColumns:'1fr',gap:8}}>
+      {q.choices.map(c => <button key={c} disabled={locked} onClick={() => { stopClicks(); onAnswer(c); }} className={btnCls + st(c)} style={{padding:'10px 6px',fontSize:14}}>{c}</button>)}
+    </div>
+  );
+  useEffect(() => {
+    if (q.kind === 'qOrA') { const tmo = setTimeout(() => playMelody([{ d: 28, dur: 1 }, { d: 29, dur: 1 }, { d: 30, dur: 1 }, { d: q.e.d, dur: 2 }], 132), 250); return () => clearTimeout(tmo); }
+    if (q.kind === 'sequence') { const tmo = setTimeout(() => playMelody([...q.motif1, ...q.motif2], 132), 250); return () => clearTimeout(tmo); }
+  }, [q.uid]);
+  if (q.kind === 'tuneParts') return <div>{prompt(t('What makes a "tune"?', '튠(선율)을 만드는 건 무엇일까요?'), t('WHAT MAKES A TUNE?', '튠을 만드는 건?'))}{grid()}</div>;
+  if (q.kind === 'qOrA') return (<div>
+    {prompt(t('Listen -- does this phrase sound finished?', '들어보세요 -- 이 프레이즈, 끝난 느낌인가요?'), t('FINISHED, OR NOT YET?', '끝났나요, 아직인가요?'))}
+    <div style={{background:'#fff',borderRadius:10,margin:'0 0 10px'}}><MelodyStaff notes={[{ d: 28, dur: 1 }, { d: 29, dur: 1 }, { d: 30, dur: 1 }, { d: q.e.d, dur: 2 }]} beats={4} width={260} ink={ink}/></div>
+    <div style={{textAlign:'center',margin:'0 0 10px'}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => playMelody([{ d: 28, dur: 1 }, { d: 29, dur: 1 }, { d: 30, dur: 1 }, { d: q.e.d, dur: 2 }], 132)}>{t('♪ Play again', '♪ 다시 듣기')}</button></div>
+    {grid()}
+  </div>);
+  if (q.kind === 'phraseMark') return <div>{prompt(t('A phrase mark is a curved line over a musical sentence. Where does a singer breathe?', '프레이즈 마크는 음악 문장 위에 그려진 곡선이에요. 가수는 어디서 숨을 쉴까요?'), t('WHERE TO BREATHE?', '어디서 숨쉴까요?'))}{grid()}</div>;
+  return (<div>
+    {prompt(t('A short pattern repeats, starting on a new pitch. That’s a sequence.', '짧은 패턴이 새로운 음에서 다시 반복돼요. 이게 시퀀스예요.'), t('WHAT KIND OF SEQUENCE?', '어떤 시퀀스일까요?'))}
+    <div style={{textAlign:'center',margin:'0 0 10px'}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => playMelody([...q.motif1, ...q.motif2], 132)}>{t('♪ Play again', '♪ 다시 듣기')}</button></div>
+    {grid()}
+  </div>);
+}
+const MELODY_DRILL = {
+  id: 'melody', label: 'Melody & Phrasing', levels: MELODY_LEVELS, generate: genMelodyQuestion,
+  check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
+  answerLabel: (q) => q.answer,
+  Question: MelodyQuestion, Learn: MelodyLearn,
+};
+
 const DRILLS = [
   { id: 'first-steps', label: 'Posture, Hands & Black Keys', concept: FIRST_STEPS_DRILL, track: 'pitch' },
   { id: 'note-names', label: 'Note Names', concept: NOTE_NAMES_DRILL, track: 'pitch' },
@@ -10004,6 +10236,7 @@ const DRILLS = [
   { id: 'terms', label: 'Musical Terms', concept: TERMS_DRILL, track: 'reading' },
   { id: 'piano-story', label: 'The Piano’s Story', concept: PIANO_STORY_DRILL, track: 'reading' },
   { id: 'pitch-range', label: 'Pitch, Hz & Range', concept: PITCH_RANGE_DRILL, track: 'pitch' },
+  { id: 'melody', label: 'Melody & Phrasing', concept: MELODY_DRILL, track: 'reading' },
 ];
 
 // ─── Toolbox (Phase 118) ─────────────────────────────────────────────────────────
@@ -11397,6 +11630,7 @@ function CompleteMelody() {
     </div>
   );
 }
+
 const TOOLS = [
   { id: 'sit-check', ch: 'first-steps', title: 'Set up the stool', blurb: 'Height and distance: forearm level, elbows open.', C: () => <SitCheck/> },
   { id: 'hand-shape', ch: 'first-steps', title: 'The hand shape', blurb: 'Knuckle bridge, level wrist, fingertips -- and six faults.', C: () => <HandShape/> },
@@ -11503,6 +11737,10 @@ const TOOLS = [
   { id: 'grace-write', ch: 'signs', title: 'Write a grace note', blurb: 'Tap where the acciaccatura or appoggiatura goes.', C: () => <GraceWrite/> },
   { id: 'ornaments', ch: 'signs', title: 'Ornaments', blurb: 'Trill, mordents, turn, acciaccatura, appoggiatura: written vs played.', C: () => <Ornaments/> },
   { id: 'ottava', ch: 'signs', title: '8va and 8vb', blurb: 'An octave higher or lower.', C: () => <OttavaDemo/> },
+  { id: 'tune-anatomy', ch: 'melody', title: 'Rhythm + pitch = a tune', blurb: 'Hear each one alone, then together.', C: () => <TuneAnatomy/> },
+  { id: 'phrase-marks', ch: 'melody', title: 'Phrase marks -- where to breathe', blurb: 'The rainbow arc over a musical sentence.', C: () => <PhraseBreath/> },
+  { id: 'question-answer', ch: 'melody', title: 'Question or answer phrase?', blurb: 'Unstable (2, 4, 5, 7) or home (1)?', C: () => <QuestionAnswer/> },
+  { id: 'melody-sequence', ch: 'melody', title: 'Sequences: same shape, new pitch', blurb: 'A pattern restated, one step higher each time.', C: () => <SequenceStepper/> },
 ];
 // ─── Lesson Path: stages in the order a beginner meets them (Phase 120) ─────────
 // Sohyun: student + piano first, then pulse, then reading (rhythm and notes together), then
@@ -11510,7 +11748,7 @@ const TOOLS = [
 const STAGES = [
   { n: 1, title: 'Piano basics', blurb: 'Sitting and hands, finger numbers, the black-key groups, note names, five-finger positions.', ids: ['first-steps', 'note-names', 'five-finger'] },
   { n: 2, title: 'Rhythm & counting', blurb: 'The steady beat, note values, rhythm cards, time signatures, speed.', ids: ['pulse', 'note-values', 'rhythm', 'time-signatures', 'tempo'] },
-  { n: 3, title: 'Reading music', blurb: 'The staff, the Queen and the King, steps and skips, ledger lines.', ids: ['staff', 'reading-steps', 'ledger-lines'] },
+  { n: 3, title: 'Reading music', blurb: 'The staff, the Queen and the King, steps and skips, ledger lines, and how phrases shape a tune.', ids: ['staff', 'reading-steps', 'ledger-lines', 'melody'] },
   { n: 4, title: 'Sound, signs & terms', blurb: 'Loud and soft, touch, repeats and signs, Italian terms.', ids: ['dynamics', 'signs', 'terms'] },
   { n: 5, title: 'Theory: scales, keys & chords', blurb: 'Tones and semitones, scales, key signatures, intervals, chords (Preliminary to Grade 3).', ids: ['tones', 'scales', 'key-signatures', 'intervals', 'chords'] },
   { n: 6, title: 'Know your instrument', blurb: 'The piano’s story, the style eras, pitch in Hz and the ranges of the orchestra.', ids: ['piano-story', 'pitch-range'] },
@@ -11519,7 +11757,7 @@ const GRADE_TAGS = {
   'first-steps': 'Beginner', 'note-names': 'Prelim', pulse: 'Beginner', 'note-values': 'Prelim', rhythm: 'Prelim–G2', staff: 'Prelim',
   'reading-steps': 'Beginner', 'five-finger': 'Beginner', 'time-signatures': 'Prelim–G2', tempo: 'Prelim–G1', dynamics: 'Prelim–G1',
   'ledger-lines': 'Prelim–G2', tones: 'Prelim–G1', scales: 'Prelim–G3', 'key-signatures': 'Prelim–G3', intervals: 'Prelim–G3', chords: 'Prelim–G3', signs: 'Prelim–G2', terms: 'G1–G4',
-  'piano-story': 'General knowledge', 'pitch-range': 'General knowledge',
+  'piano-story': 'General knowledge', 'pitch-range': 'General knowledge', 'melody': 'Prelim–G2',
 };
 function stageOf(id) { return STAGES.find(s => s.ids.includes(id)); }
 function stepsDone(id) { const d = loadDone()[id] || {}; return Object.values(d).filter(Boolean).length; }
@@ -11615,6 +11853,7 @@ const CHAPTER_SEARCH_TERMS = {
   'practice': 'practice timer dice repetition',
   'piano-story': 'history piano era composer',
   'pitch-range': 'pitch range hertz frequency octave instrument',
+  'melody': 'melody tune phrase phrasing phrase mark question answer antecedent consequent sequence motif contour breath comma',
 };
 const TOOL_CATS = [
   { id: 'body', name: 'Posture & hands', when: 'Sitting, hand shape, arm weight, fingers', color: '#3f7fb5' },
@@ -11629,6 +11868,7 @@ const TOOL_CATS = [
   { id: 'words', name: 'Signs & terms', when: 'Italian terms, repeats and road maps, ties', color: '#5c6f86' },
   { id: 'practice', name: 'Practice helpers', when: 'Timer, dice, perfect reps', color: '#4f7a45' },
   { id: 'about', name: 'About music', when: 'History of the piano, eras, pitch and range', color: '#8a7a6a' },
+  { id: 'melody', name: 'Melody & phrasing', when: 'What a tune is, phrase marks, question and answer, sequences', color: '#9e5b8f' },
 ];
 // cat, level range [from, to] (0 Beginner, 1 Prelim, 2 Grade 1–2, 3 Grade 3–4), kinds
 // kinds: show = show & explain, game = student does it, ear = listening, write = written theory, home = home practice
@@ -11665,6 +11905,7 @@ const TOOL_META = {
   'road-map': ['words', 1, 2, 'game'], 'term-cards': ['words', 1, 3, 'home show'], 'term-match': ['words', 1, 3, 'game home'],
   'practice-timer': ['practice', 0, 3, 'home'], 'practice-dice': ['practice', 0, 3, 'home game'], 'perfect-counter': ['practice', 0, 3, 'home'],
   'keyboard-ancestors': ['about', 0, 3, 'show ear'], 'piano-timeline': ['about', 1, 3, 'show'], 'eras': ['about', 1, 3, 'show ear'], 'hz-explorer': ['about', 1, 3, 'show ear'], 'range-chart': ['about', 1, 3, 'show ear'],
+  'tune-anatomy': ['melody', 0, 1, 'show'], 'phrase-marks': ['melody', 1, 2, 'show'], 'question-answer': ['melody', 1, 2, 'game ear'], 'melody-sequence': ['melody', 1, 2, 'show ear'],
 };
 function toolMeta(id) { const m = TOOL_META[id]; if (m) return { cat: m[0], lo: m[1], hi: m[2], kinds: m[3].split(' ') }; const t = TOOLS.find(x => x.id === id); return { cat: 'practice', lo: 0, hi: 3, kinds: ['show'], ch: t && t.ch }; }
 // Phase 168 (2026-09-28): shared search text for a tool -- title + blurb + its category's
@@ -11798,6 +12039,18 @@ const TOOL_ICON = {
   ),
   'touch-ear': () => (
     <svg width="34" height="34" viewBox="0 0 24 24"><path d="M9 4 C5 4 4 8 6 11 C8 14 6 16 8 18 C10 20 12 18 12 15 C12 13 10 12 10 10 C10 7 13 7 13 5 C13 4 11 4 9 4 Z" fill="none" stroke="#241f1a" strokeWidth="1.6" strokeLinejoin="round"/><circle cx="18" cy="14" r="2.4" fill="var(--brass)"/><rect x="19.6" y="6" width="1.6" height="9" fill="var(--brass)"/></svg>
+  ),
+  'tune-anatomy': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><line x1="2" y1="19" x2="22" y2="19" stroke="var(--border)" strokeWidth="1.2"/><ellipse cx="5" cy="17" rx="2.4" ry="1.8" fill="#241f1a"/><line x1="7.2" y1="17" x2="7.2" y2="7" stroke="#241f1a" strokeWidth="1.3"/><ellipse cx="13" cy="11" rx="2.4" ry="1.8" fill="var(--brass)"/><line x1="15.2" y1="11" x2="15.2" y2="3" stroke="var(--brass)" strokeWidth="1.3"/><ellipse cx="20" cy="15" rx="2.4" ry="1.8" fill="none" stroke="#3f7fb5" strokeWidth="1.6"/></svg>
+  ),
+  'phrase-marks': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><path d="M3 15 Q12 4 21 15" fill="none" stroke="var(--brass)" strokeWidth="1.8" strokeLinecap="round"/><ellipse cx="6" cy="18" rx="2.2" ry="1.7" fill="#241f1a"/><ellipse cx="12" cy="18" rx="2.2" ry="1.7" fill="#241f1a"/><ellipse cx="18" cy="18" rx="2.2" ry="1.7" fill="#241f1a"/></svg>
+  ),
+  'question-answer': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><circle cx="6" cy="15" r="3.4" fill="none" stroke="#b5483b" strokeWidth="1.8" strokeDasharray="2.2,2.2"/><text x="6" y="7.5" textAnchor="middle" fontSize="9" fontWeight="900" fill="#b5483b">?</text><circle cx="18" cy="15" r="3.4" fill="#4f7a45"/><path d="M15.3 6.3 l1.8 1.8 l3.2 -3.4" fill="none" stroke="#4f7a45" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+  ),
+  'melody-sequence': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><circle cx="4" cy="18" r="2" fill="#241f1a"/><circle cx="8" cy="15" r="2" fill="#241f1a"/><circle cx="10" cy="13" r="2" fill="var(--brass)"/><circle cx="14" cy="10" r="2" fill="var(--brass)"/><circle cx="16" cy="8" r="2" fill="#3f7fb5"/><circle cx="20" cy="5" r="2" fill="#3f7fb5"/></svg>
   ),
 };
 function ToolCard({ t, color, starred, onStar, onOpen }) {
