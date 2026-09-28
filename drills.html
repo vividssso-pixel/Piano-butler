@@ -11620,22 +11620,29 @@ function AddName({ onAdd, label = '+ Student', placeholder = 'Student’s name' 
   );
 }
 function kitLink(kit) { const q = '?kit=' + kit.tools.join(',') + '&kn=' + encodeURIComponent(kit.name) + '&lock=1'; try { return location.origin + location.pathname + q; } catch (e) { return q; } }
-function ToolCard({ t, color, starred, onStar, onOpen }) {
+function ToolCard({ t, color, starred, onStar, onOpen, onChapter }) {
   const m = toolMeta(t.id);
   const LO = ['Beginner', 'Prelim', 'G1', 'G3'], HI = ['Beginner', 'Prelim', 'G2', 'G4'];
   const lv = m.lo === 0 && m.hi === 3 ? 'All levels' : m.lo === m.hi ? ['Beginner', 'Prelim', 'Grade 1–2', 'Grade 3–4'][m.lo] : LO[m.lo] + '–' + HI[m.hi];
+  // Phase 169 (2026-09-28): Sohyun found a tool via search but had no direct way from the
+  // result card to open the whole chapter it belongs to (the way tapping a chip in the Exam
+  // ladder opens that full chapter) -- she had to open the single tool first, then scroll down
+  // to "Learn the whole chapter". This second, separate button does that jump right from the
+  // search results, without nesting a click target inside the card's main button.
+  const ch = onChapter ? DRILLS.find(d => d.id === t.ch) : null;
   return (
-    <div style={{position:'relative'}}>
-      <button onClick={() => onOpen(t.id)} style={{width:'100%',height:'100%',textAlign:'left',background:'#fff',border:'1.5px solid var(--border)',borderLeft:'4px solid ' + color,borderRadius:10,padding:'8px 26px 8px 10px',cursor:'pointer',color:'var(--text)',fontFamily:'inherit'}}>
+    <div style={{position:'relative',background:'#fff',border:'1.5px solid var(--border)',borderLeft:'4px solid ' + color,borderRadius:10,overflow:'hidden'}}>
+      <button onClick={() => onOpen(t.id)} style={{display:'block',width:'100%',textAlign:'left',background:'transparent',border:'none',padding:'8px 26px 6px 10px',cursor:'pointer',color:'var(--text)',fontFamily:'inherit'}}>
         <div style={{fontSize:14.5,fontWeight:900,lineHeight:1.25}}>{t.title}</div>
         <div style={{fontSize:12,color:'#6f665b',lineHeight:1.35,marginTop:2}}>{t.blurb}</div>
         <div style={{fontSize:11,fontWeight:800,color:'#a89c88',marginTop:4,textTransform:'uppercase',letterSpacing:'0.04em'}}>{lv}{m.kinds.includes('ear') ? ' · ♪' : ''}{m.kinds.includes('home') ? ' · home' : ''}</div>
       </button>
+      {ch && <button onClick={() => onChapter(t.ch)} style={{display:'block',width:'100%',textAlign:'left',border:'none',borderTop:'1px solid var(--border)',background:'#faf7f1',padding:'6px 10px',fontSize:11.5,fontWeight:800,color:color,cursor:'pointer',fontFamily:'inherit'}}>{(LANG === 'ko' ? '전체 챕터: ' : 'Whole chapter: ') + ch.label + ' →'}</button>}
       {onStar && <button onClick={(e) => { e.stopPropagation(); onStar(t.id); }} title={starred ? 'Remove from kit' : 'Add to kit'} style={{position:'absolute',top:4,right:4,border:'none',background:'transparent',fontSize:16,cursor:'pointer',color:starred ? '#c9922a' : '#cfc4b0',padding:2,lineHeight:1}}>{starred ? '★' : '☆'}</button>}
     </div>
   );
 }
-function Toolbox({ onOpen, onOpenKit, onStudents }) {
+function Toolbox({ onOpen, onOpenKit, onStudents, onChapter }) {
   const [q, setQ] = useState('');
   const [lv, setLv] = useState(-1);
   const [kind, setKind] = useState('all');
@@ -11704,7 +11711,7 @@ function Toolbox({ onOpen, onOpenKit, onStudents }) {
         {!kits.length ? <div style={{fontSize:13,color:'var(--muted)',lineHeight:1.5}}>Make a kit for each student: tap ☆ on the tools they need this week. Open the kit in the lesson, or send it as one link.</div> : <>
           <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6}}>{kits.map((k, i) => chip(i === kitIdx, k.name + ' (' + k.tools.length + ')', () => setKitIdx(i), 'kit' + i))}</div>
           {kit && (kit.tools.length ? <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
-            {kit.tools.map(id => { const t = TOOLS.find(x => x.id === id); if (!t) return null; const c = TOOL_CATS.find(x => x.id === toolMeta(id).cat) || {}; return <ToolCard key={id} t={t} color={c.color} starred onStar={star} onOpen={onOpen}/>; })}
+            {kit.tools.map(id => { const t = TOOLS.find(x => x.id === id); if (!t) return null; const c = TOOL_CATS.find(x => x.id === toolMeta(id).cat) || {}; return <ToolCard key={id} t={t} color={c.color} starred onStar={star} onOpen={onOpen} onChapter={onChapter}/>; })}
           </div> : <div style={{fontSize:13,color:'var(--muted)'}}>Empty -- tap ☆ on any tool below to add it to “{kit.name}”.</div>)}
           {kit && <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:8}}>
             <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} disabled={!kit.tools.length} onClick={() => onOpenKit(kit)}>Open kit</button>
@@ -11724,7 +11731,7 @@ function Toolbox({ onOpen, onOpenKit, onStudents }) {
               <span style={{fontSize:12,color:'var(--muted)'}}>{c.when}</span>
             </div>
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
-              {list.map(t => <ToolCard key={t.id} t={t} color={c.color} starred={!!kit && kit.tools.includes(t.id)} onStar={star} onOpen={onOpen}/>)}
+              {list.map(t => <ToolCard key={t.id} t={t} color={c.color} starred={!!kit && kit.tools.includes(t.id)} onStar={star} onOpen={onOpen} onChapter={onChapter}/>)}
             </div>
           </div>
         );
@@ -11734,7 +11741,7 @@ function Toolbox({ onOpen, onOpenKit, onStudents }) {
   );
 }
 // A kit opened on its own (also what a student sees from a kit link).
-function KitView({ ids, name, onOpen }) {
+function KitView({ ids, name, onOpen, onChapter }) {
   const list = ids.map(id => TOOLS.find(t => t.id === id)).filter(Boolean);
   return (
     <div className="fade-up">
@@ -11743,7 +11750,7 @@ function KitView({ ids, name, onOpen }) {
         <p style={{fontSize:14,color:'var(--muted)',margin:0}}>{list.length} tool{list.length === 1 ? '' : 's'} picked for you. Tap one to start.</p>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
-        {list.map(t => { const c = TOOL_CATS.find(x => x.id === toolMeta(t.id).cat) || {}; return <ToolCard key={t.id} t={t} color={c.color} onOpen={onOpen}/>; })}
+        {list.map(t => { const c = TOOL_CATS.find(x => x.id === toolMeta(t.id).cat) || {}; return <ToolCard key={t.id} t={t} color={c.color} onOpen={onOpen} onChapter={onChapter}/>; })}
       </div>
     </div>
   );
@@ -11779,7 +11786,7 @@ function ToolView({ id, locked, onBack, onChapter, backLabel = '← Toolbox' }) 
 // results, fixed regardless of what screen she is on. Built for a distracted teacher (or a
 // 12-year-old) to use without thinking: no filters, no categories to understand first, no
 // having to be in the right tab -- type a couple of letters, tap the result, done.
-function FindOverlay({ onJump, onClose }) {
+function FindOverlay({ onJump, onChapter, onClose }) {
   const [q, setQ] = useState('');
   const words = q.toLowerCase().split(/\s+/).filter(Boolean);
   const results = words.length ? TOOLS.filter(t => toolMatches(t, words)).slice(0, 40) : [];
@@ -11803,15 +11810,22 @@ function FindOverlay({ onJump, onClose }) {
             <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:6}}>
               {results.map(rt => {
                 const c = TOOL_CATS.find(x => x.id === toolMeta(rt.id).cat) || {};
+                // Phase 169: same "jump to the whole chapter" escape hatch as the Toolbox tab's
+                // own result cards -- Sohyun wanted a search hit to also open the full chapter
+                // around it (like tapping a chip in the Exam ladder), not only the single tool.
+                const rch = onChapter ? DRILLS.find(d => d.id === rt.ch) : null;
                 return (
-                  <button key={rt.id} onClick={() => onJump(rt.id)} style={{display:'flex',alignItems:'center',gap:12,textAlign:'left',border:'1.5px solid var(--border)',background:'#fff',borderRadius:12,padding:'12px 14px',cursor:'pointer',fontFamily:'inherit',minHeight:56}}>
-                    <span style={{width:12,height:12,borderRadius:'50%',background:c.color || '#a49b8f',flex:'0 0 auto'}}/>
-                    <span style={{minWidth:0}}>
-                      <span style={{display:'block',fontSize:16,fontWeight:900,color:'var(--text)'}}>{rt.title}</span>
-                      <span style={{display:'block',fontSize:13,color:'var(--muted)',marginTop:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{rt.blurb}</span>
-                    </span>
-                    <span style={{marginLeft:'auto',color:'var(--muted)',fontSize:18,flex:'0 0 auto'}}>›</span>
-                  </button>
+                  <div key={rt.id} style={{border:'1.5px solid var(--border)',background:'#fff',borderRadius:12,overflow:'hidden'}}>
+                    <button onClick={() => onJump(rt.id)} style={{display:'flex',alignItems:'center',gap:12,width:'100%',textAlign:'left',border:'none',background:'transparent',padding:'12px 14px',cursor:'pointer',fontFamily:'inherit',minHeight:56}}>
+                      <span style={{width:12,height:12,borderRadius:'50%',background:c.color || '#a49b8f',flex:'0 0 auto'}}/>
+                      <span style={{minWidth:0}}>
+                        <span style={{display:'block',fontSize:16,fontWeight:900,color:'var(--text)'}}>{rt.title}</span>
+                        <span style={{display:'block',fontSize:13,color:'var(--muted)',marginTop:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{rt.blurb}</span>
+                      </span>
+                      <span style={{marginLeft:'auto',color:'var(--muted)',fontSize:18,flex:'0 0 auto'}}>›</span>
+                    </button>
+                    {rch && <button onClick={() => onChapter(rt.ch)} style={{display:'block',width:'100%',textAlign:'left',border:'none',borderTop:'1px solid var(--border)',background:'#faf7f1',padding:'8px 14px',fontSize:12.5,fontWeight:800,color:c.color || 'var(--text)',cursor:'pointer',fontFamily:'inherit'}}>{t('Whole chapter: ', '전체 챕터: ') + rch.label + ' →'}</button>}
+                  </div>
                 );
               })}
             </div>
@@ -12171,6 +12185,7 @@ function App() {
   }, [active.id, st.drill, st.tab, level, st.mode, st.lock, st.view, st.tool, st.kit, st.kn]);
 
   function update(patch) { setSt(prev => ({ ...prev, ...patch })); }
+  function jumpToChapter(id) { setFindOpen(false); update({ view: 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }
 
   return (
     <div style={{minHeight:'100vh',background:'var(--bg)'}}>
@@ -12193,7 +12208,7 @@ function App() {
       </div>
 
       {T && !findOpen && <FindButton onOpen={() => setFindOpen(true)}/>}
-      {T && findOpen && <FindOverlay onClose={() => setFindOpen(false)} onJump={(id) => { setFindOpen(false); update({ view: 'tools', tool: id, kit: null, ret: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>}
+      {T && findOpen && <FindOverlay onClose={() => setFindOpen(false)} onJump={(id) => { setFindOpen(false); update({ view: 'tools', tool: id, kit: null, ret: null }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/>}
 
       <div className="pb-main" style={{maxWidth:600,margin:'0 auto',padding:'20px 16px 60px'}}>
         {preview && <div style={{background:'#241f1a',color:'#fff',borderRadius:10,padding:'8px 12px',marginBottom:12,fontSize:13.5,display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}><span>You’re seeing what a student sees.</span><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setPreview(false)}>Back to teacher view</button></div>}
@@ -12211,11 +12226,11 @@ function App() {
         ) : st.view === 'kit' && st.kit ? (
           st.tool
             ? <ToolView id={st.tool} locked={st.lock} backLabel="← Kit" onBack={() => update({ tool: null })} onChapter={(id) => update({ view: 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
-            : <>{T && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={() => update({ view: 'tools', kit: null, kn: '' })}>← Toolbox</button>}<KitView ids={st.kit} name={st.kn} onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
+            : <>{T && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={() => update({ view: 'tools', kit: null, kn: '' })}>← Toolbox</button>}<KitView ids={st.kit} name={st.kn} onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/></>
         ) : (st.view === 'tools' || st.view === 'practice') ? (
           st.tool
             ? <ToolView id={st.tool} locked={st.lock} backLabel={st.ret === 'path' ? '← Lesson plan' : st.view === 'practice' ? '← Practice' : '← Toolbox'} onBack={() => update({ tool: null, view: st.ret === 'path' ? 'path' : st.view, ret: null })} onChapter={(id) => update({ view: 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
-            : st.view === 'tools' && T ? <Toolbox onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }} onOpenKit={(k) => { update({ view: 'kit', kit: k.tools, kn: k.name, tool: null }); try { window.scrollTo(0, 0); } catch (e) {} }} onStudents={() => { update({ view: 'students' }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
+            : st.view === 'tools' && T ? <Toolbox onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }} onOpenKit={(k) => { update({ view: 'kit', kit: k.tools, kn: k.name, tool: null }); try { window.scrollTo(0, 0); } catch (e) {} }} onStudents={() => { update({ view: 'students' }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/>
             : <PracticeView onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
         ) : !inChapter && !st.lock ? (
           T && st.view !== 'chapters'
