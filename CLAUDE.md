@@ -3708,6 +3708,17 @@ Continuing "ONE BY ONE FROM THE FIRST ONE" -- third chapter in `DRILLS` order.
 | 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, both remaining new tool cards searched up and screenshotted individually in the Toolbox. Zero console/page errors. |
 | 4 | Committed, not pushed | commit `b5b2bab` | Ready for Sohyun to push, along with Phases 177-187. |
 
+### Phase 189 -- Illustrated-content direction, chapter 4: Notes & Rests (2026-09-29)
+
+Continuing "ONE BY ONE FROM THE FIRST ONE" -- fourth chapter in `DRILLS` order.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `NoteValHero` (new component), wired into `NoteValLearn`'s `<Lesson head={...}>` slot | A binary split-tree on the dusty-rose ground shared with `pulse` (both `rhythm`-track): one whole block halving into two, then four. Directly depicts the chapter's own intro text ("every note splits into two of the next one down") and the `split-it` tool's own name. |
+| 2 | 6 new Toolbox badge icons | `TOOL_ICON`: `split-it`, `note-rest-naming`, `rest-grouping`, `whole-bar-rest`, `note-rest-match`, `fill-bar` | None had icons before. Each literal to its own tool: a splitting block for Split the notes, a note glyph "=" a rest glyph for Same name note or rest, three beat dots with the middle one accented for the beat-3 rule in Writing rests correctly, a hanging rest under a line for The whole-bar rest, two paired swatches for the memory-match game, a partly-filled bar outline for Fill the bar. |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom (8 steps, no breakage), 5 of the 6 new tool cards searched up and screenshotted individually in the Toolbox. Zero console/page errors. |
+| 4 | Committed, not pushed | commit `f33f143` | Ready for Sohyun to push, along with Phases 177-188. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
