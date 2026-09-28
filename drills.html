@@ -10511,6 +10511,172 @@ const FORM_DRILL = {
   Question: FormQuestion, Learn: FormLearn,
 };
 
+// ─── Concept: Styles & Genres -- musical textures, folk/classical/jazz/pop (Phase 184) ──
+// New chapter, not in the original 21. Completes the "Help Your Kids with Music" gap-fill --
+// the last of the three chapters with no drills.html equivalent (Ch.8 Styles and Genres).
+// Scoped down deliberately: the book's four period sub-sections (Baroque, Classical, Romantic,
+// Modern) are already covered at a glance by the existing 'piano-story' chapter's `eras` tool, so
+// repeating them here would duplicate rather than deepen (noted in CLAUDE.md item #20 from the
+// start). Genuine audio identification of real folk/jazz/pop recordings is out of scope -- the
+// app has no licensed audio library for that, and fabricating "genre-typical" audio would be
+// misleading. What's left, and genuinely new: musical texture (monophony/homophony/polyphony --
+// a real, teachable, AUDIBLE distinction the app's own synth can demonstrate honestly), and the
+// defining traits that tell folk, classical, jazz & blues, and popular music apart conceptually.
+// Reuses FORM_MOTIF (from the Form chapter, Phase 183) as raw melodic material so the three
+// textures are directly comparable -- same tune, three different treatments.
+function playMonophony() { playMelody(FORM_MOTIF.A, 132); }
+function playHomophony() {
+  const ctx = getAudio(); if (!ctx) return;
+  const t0 = ctx.currentTime + 0.05, beat = 60 / 132;
+  const totalDur = FORM_MOTIF.A.reduce((s, n) => s + n.dur, 0) * beat;
+  [{ d: 21 }, { d: 23 }, { d: 25 }].forEach(n => blip(ctx, t0, ivFreq(n), totalDur * 0.92, 0.13, 'sine'));
+  let time = t0;
+  FORM_MOTIF.A.forEach(n => { blip(ctx, time, ivFreq(n), n.dur * beat * 0.9, 0.24, 'triangle'); time += n.dur * beat; });
+}
+function playPolyphony() {
+  const ctx = getAudio(); if (!ctx) return;
+  const t0 = ctx.currentTime + 0.05, beat = 60 / 132;
+  let time1 = t0;
+  FORM_MOTIF.A.forEach(n => { blip(ctx, time1, ivFreq(n), n.dur * beat * 0.9, 0.22, 'triangle'); time1 += n.dur * beat; });
+  let time2 = t0 + 2 * beat;
+  FORM_MOTIF.C.forEach(n => { blip(ctx, time2, ivFreq(n), n.dur * beat * 0.9, 0.18, 'sine'); time2 += n.dur * beat; });
+}
+const TEXTURE_TYPES = {
+  monophony: { label: t('Monophony', '모노포니'), play: playMonophony,
+    desc: t('A single melodic line, alone -- no harmony underneath. The oldest and simplest texture, heard in plainchant and unaccompanied folk song.', '반주 없이 선율 한 줄만 있는 거예요 -- 가장 오래되고 단순한 텍스처로, 그레고리안 성가나 반주 없는 민요에서 들을 수 있어요.') },
+  homophony: { label: t('Homophony', '호모포니'), play: playHomophony,
+    desc: t('A melody on top, with chords moving underneath to support it. Most hymns, pop songs, and piano pieces with a "tune and accompaniment" use this.', '위에는 선율, 아래는 받쳐주는 화음이 있어요. 대부분의 찬송가, 팝송, "선율 + 반주" 형태의 피아노 곡이 이런 구조예요.') },
+  polyphony: { label: t('Polyphony', '폴리포니'), play: playPolyphony,
+    desc: t('Two or more independent melodic lines woven together, each equally important -- like a round or a fugue. Listen for the second voice entering after the first.', '두 개 이상의 독립적인 선율이 서로 얽혀요, 각각 똑같이 중요해요 -- 돌림노래나 푸가처럼요. 첫 번째 선율 뒤에 두 번째 선율이 들어오는 걸 들어보세요.') },
+};
+function TextureTypes() {
+  const [tex, setTex] = useState('monophony');
+  const TEX_ORDER = ['monophony', 'homophony', 'polyphony'];
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><line x1="2" y1="6" x2="22" y2="6" stroke="#241f1a" strokeWidth="1.8" strokeLinecap="round"/><line x1="2" y1="12" x2="22" y2="12" stroke="var(--brass)" strokeWidth="1.8" strokeLinecap="round"/><line x1="2" y1="18" x2="14" y2="18" stroke="#3f7fb5" strokeWidth="1.8" strokeLinecap="round"/><line x1="2" y1="15" x2="10" y2="15" stroke="#8a5fb0" strokeWidth="1.8" strokeLinecap="round"/></svg>{t('Textures: how many voices, and how do they relate?', '텍스처: 목소리는 몇 개이고, 서로 어떤 관계일까요?')}</div>
+      <div style={actNote}>{t('Every piece of music has a texture -- how its melodic lines are layered. Tap each type to hear the same tune treated three different ways.', '모든 음악에는 텍스처가 있어요 -- 선율이 겹겹이 쌓이는 방식이에요. 같은 곡을 세 가지 방식으로 들어보세요.')}</div>
+      <div style={{display:'flex',gap:4,marginBottom:10,flexWrap:'wrap'}}>
+        {TEX_ORDER.map(id => <button key={id} className={'chip' + (tex === id ? ' active' : '')} style={{padding:'4px 11px',fontSize:13}} onClick={() => { setTex(id); TEXTURE_TYPES[id].play(); }}>{TEXTURE_TYPES[id].label}</button>)}
+      </div>
+      <div style={{textAlign:'center',margin:'8px 0'}}><button className="ghost-btn" onClick={() => TEXTURE_TYPES[tex].play()}>♪ {t('Play', '재생')}</button></div>
+      <div style={{fontSize:12.5,color:'#5c544a',background:'#f7f2e8',borderRadius:8,padding:'6px 9px',lineHeight:1.5}}>{TEXTURE_TYPES[tex].desc}</div>
+    </div>
+  );
+}
+function TextureSpotter() {
+  const TEX_ORDER = ['monophony', 'homophony', 'polyphony'];
+  const [tex, setTex] = useState(() => TEX_ORDER[Math.floor(Math.random() * 3)]);
+  const [guess, setGuess] = useState(null);
+  useEffect(() => { const tmo = setTimeout(() => TEXTURE_TYPES[tex].play(), 250); return () => clearTimeout(tmo); }, [tex]);
+  function next() { let nt = tex; while (nt === tex) nt = TEX_ORDER[Math.floor(Math.random() * 3)]; setTex(nt); setGuess(null); }
+  const correct = guess === tex;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><circle cx="12" cy="12" r="9" fill="none" stroke="var(--brass)" strokeWidth="1.6"/><path d="M8 12 a4 4 0 1 1 8 0" fill="none" stroke="#241f1a" strokeWidth="1.6" strokeLinecap="round"/><circle cx="12" cy="12" r="1.6" fill="#241f1a"/></svg>{t('Which texture is this?', '어떤 텍스처일까요?')}</div>
+      <div style={actNote}>{t('Listen -- is it one line alone, a melody with chords, or two independent lines woven together?', '들어보세요 -- 한 줄뿐인가요, 화음이 받쳐주는 선율인가요, 아니면 두 독립적인 선율이 얽혀있나요?')}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',margin:'8px 0',flexWrap:'wrap'}}>
+        {TEX_ORDER.map(id => <button key={id} className={'chip' + (guess === id ? ' active' : '')} style={{padding:'5px 12px',fontSize:14}} onClick={() => setGuess(id)}>{TEXTURE_TYPES[id].label}</button>)}
+      </div>
+      <div style={{textAlign:'center',fontSize:13.5,minHeight:24,margin:'2px 0'}}>
+        {guess !== null && (correct ? <b style={{color:'#4f7a45'}}>{t('Right!', '맞았어요!')}</b> : <b style={{color:'#b5483b'}}>{t('Listen again -- it was ' + TEXTURE_TYPES[tex].label + '.', '다시 들어보세요 -- 정답은 ' + TEXTURE_TYPES[tex].label + '이었어요.')}</b>)}
+      </div>
+      <div style={{display:'flex',gap:8,justifyContent:'center',margin:'6px 0'}}>
+        <button className="ghost-btn" onClick={() => TEXTURE_TYPES[tex].play()}>♪ {t('Play again', '다시 듣기')}</button>
+        {guess !== null && <button className="ghost-btn" onClick={next}>{t('Next →', '다음 →')}</button>}
+      </div>
+    </div>
+  );
+}
+const GENRE_TRAITS = [
+  { genre: t('Folk music', '포크 (민속 음악)'), trait: t('Passed down by ear from person to person, over generations -- often with no single known composer.', '세대를 거쳐 귀로 전해져요 -- 대부분 작곡가가 따로 없어요.') },
+  { genre: t('Classical music', '클래식 음악'), trait: t('Carefully written down on paper and planned in formal structures, usually for the concert hall.', '악보에 꼼꼼히 적혀 있고, 형식이 짜여 있어요 -- 보통 연주회장에서 연주돼요.') },
+  { genre: t('Jazz & blues', '재즈와 블루스'), trait: t('Built on improvisation and a swung, syncopated feel -- the performer creates as they play.', '즉흥연주와 스윙 리듬을 바탕으로 해요 -- 연주자가 연주하면서 즉석에서 만들어요.') },
+  { genre: t('Popular music', '대중음악'), trait: t('Built around short verses and a catchy, repeating chorus, made to reach a wide audience.', '짧은 벌스와 기억하기 쉬운 후렴구로 짜여 있어요 -- 많은 사람들에게 다가가려고 만들어졌어요.') },
+];
+function GenreTraits() {
+  const [i, setI] = useState(0);
+  const g = GENRE_TRAITS[i];
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><rect x="2" y="4" width="8" height="8" rx="2" fill="var(--brass)"/><rect x="14" y="4" width="8" height="8" rx="2" fill="#3f7fb5"/><rect x="2" y="14" width="8" height="8" rx="2" fill="#8a5fb0"/><rect x="14" y="14" width="8" height="8" rx="2" fill="#5f9e6f"/></svg>{t('What makes each style different?', '각 스타일은 무엇이 다를까요')}</div>
+      <div style={actNote}>{t('Four broad families of music, and what sets each one apart.', '음악의 네 가지 큰 갈래와, 각각을 구분 짓는 특징이에요.')}</div>
+      <div style={{display:'flex',gap:4,marginBottom:10,flexWrap:'wrap'}}>
+        {GENRE_TRAITS.map((x, k) => <button key={k} className={'chip' + (i === k ? ' active' : '')} style={{padding:'4px 11px',fontSize:13}} onClick={() => setI(k)}>{x.genre}</button>)}
+      </div>
+      <div style={{fontSize:14,color:'#3a352d',background:'#f7f2e8',borderRadius:8,padding:'10px 12px',lineHeight:1.5,minHeight:40}}><b>{g.genre}:</b> {g.trait}</div>
+    </div>
+  );
+}
+function StylesLearn({ onStart }) {
+  return (
+    <Lesson id="styles" title={t('Styles and genres', '스타일과 장르')} intro={t('Music can be grouped by its texture -- how its lines layer together -- and by broad style families like folk, classical, jazz, and popular music.', '음악은 텍스처(선율이 겹겹이 쌓이는 방식)로, 그리고 포크·클래식·재즈·대중음악 같은 큰 스타일 갈래로 나눌 수 있어요.')} onStart={onStart}>
+      <Step title={t('Textures: how many voices?', '텍스처: 목소리는 몇 개일까요')}>
+        <TextureTypes/>
+      </Step>
+      <Step title={t('Which texture is this?', '어떤 텍스처일까요?')}>
+        <TextureSpotter/>
+      </Step>
+      <Step title={t('What makes each style different?', '각 스타일은 무엇이 다를까요')}>
+        <GenreTraits/>
+      </Step>
+    </Lesson>
+  );
+}
+const STYLES_LEVELS = [
+  { n: 1, label: 'Name the texture', kind: 'textureName', time: 7 },
+  { n: 2, label: 'Listen and identify', kind: 'textureListen', time: 8 },
+  { n: 3, label: 'Match the style trait', kind: 'genreTrait', time: 8 },
+];
+function genStylesQuestion(lv, prev) {
+  const uid = Math.random();
+  const TEX_ORDER = ['monophony', 'homophony', 'polyphony'];
+  if (lv.kind === 'textureName') {
+    const descs = {
+      monophony: t('A single melodic line, alone, with no harmony underneath.', '반주 없이 선율 한 줄만 있어요.'),
+      homophony: t('A melody on top, with chords moving underneath to support it.', '위에는 선율, 아래는 받쳐주는 화음이 있어요.'),
+      polyphony: t('Two or more independent melodic lines woven together, equally important.', '두 개 이상의 독립적인 선율이 얽혀있어요, 똑같이 중요해요.'),
+    };
+    let id = pick(TEX_ORDER), n = 0; while (prev && prev.key === id && n++ < 10) id = pick(TEX_ORDER);
+    return { kind: lv.kind, key: id, desc: descs[id], answer: TEXTURE_TYPES[id].label, choices: shuffle(TEX_ORDER.map(x => TEXTURE_TYPES[x].label)), uid };
+  }
+  if (lv.kind === 'textureListen') {
+    let id = pick(TEX_ORDER), n = 0; while (prev && prev.key === id && n++ < 10) id = pick(TEX_ORDER);
+    return { kind: lv.kind, key: id, tex: id, answer: TEXTURE_TYPES[id].label, choices: shuffle(TEX_ORDER.map(x => TEXTURE_TYPES[x].label)), uid };
+  }
+  let gi = Math.floor(Math.random() * GENRE_TRAITS.length), n = 0;
+  while (prev && prev.key === gi && n++ < 10) gi = Math.floor(Math.random() * GENRE_TRAITS.length);
+  const g = GENRE_TRAITS[gi];
+  return { kind: 'genreTrait', key: gi, g, answer: g.genre, choices: shuffle(GENRE_TRAITS.map(x => x.genre)), uid };
+}
+function StylesQuestion({ q, level, given, locked, onAnswer, pixel }) {
+  const done = !!given;
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const st = (c) => !done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '';
+  const prompt = (tx, px) => <p style={pixel ? {fontSize:11.5,textAlign:'center',margin:'0 0 10px'} : {fontSize:15,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? px : tx}</p>;
+  const grid = () => (
+    <div style={{display:'grid',gridTemplateColumns:'1fr',gap:8}}>
+      {q.choices.map(c => <button key={c} disabled={locked} onClick={() => { stopClicks(); onAnswer(c); }} className={btnCls + st(c)} style={{padding:'10px 6px',fontSize:14}}>{c}</button>)}
+    </div>
+  );
+  useEffect(() => {
+    if (q.kind === 'textureListen') { const tmo = setTimeout(() => TEXTURE_TYPES[q.tex].play(), 250); return () => clearTimeout(tmo); }
+  }, [q.uid]);
+  if (q.kind === 'textureName') return <div>{prompt(q.desc, t('WHICH TEXTURE?', '어떤 텍스처일까요?'))}{grid()}</div>;
+  if (q.kind === 'textureListen') return (<div>
+    {prompt(t('Listen -- which texture is this?', '들어보세요 -- 어떤 텍스처일까요?'), t('LISTEN AND IDENTIFY', '듣고 맞혀보세요'))}
+    <div style={{textAlign:'center',margin:'0 0 10px'}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => TEXTURE_TYPES[q.tex].play()}>{t('♪ Play again', '♪ 다시 듣기')}</button></div>
+    {grid()}
+  </div>);
+  return (<div>{prompt(q.g.trait, t('WHICH STYLE IS THIS?', '어떤 스타일일까요?'))}{grid()}</div>);
+}
+const STYLES_DRILL = {
+  id: 'styles', label: 'Styles & Genres', levels: STYLES_LEVELS, generate: genStylesQuestion,
+  check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
+  answerLabel: (q) => q.answer,
+  Question: StylesQuestion, Learn: StylesLearn,
+};
+
 const DRILLS = [
   { id: 'first-steps', label: 'Posture, Hands & Black Keys', concept: FIRST_STEPS_DRILL, track: 'pitch' },
   { id: 'note-names', label: 'Note Names', concept: NOTE_NAMES_DRILL, track: 'pitch' },
@@ -10535,6 +10701,7 @@ const DRILLS = [
   { id: 'pitch-range', label: 'Pitch, Hz & Range', concept: PITCH_RANGE_DRILL, track: 'pitch' },
   { id: 'melody', label: 'Melody & Phrasing', concept: MELODY_DRILL, track: 'reading' },
   { id: 'form', label: 'Musical Form', concept: FORM_DRILL, track: 'reading' },
+  { id: 'styles', label: 'Styles & Genres', concept: STYLES_DRILL, track: 'about' },
 ];
 
 // ─── Toolbox (Phase 118) ─────────────────────────────────────────────────────────
@@ -12179,6 +12346,9 @@ const TOOLS = [
   { id: 'same-or-new', ch: 'form', title: 'Same section again, or something new?', blurb: 'Two sections play back to back -- repeat, or different?', C: () => <SameOrNewSection/> },
   { id: 'rondo-refrain', ch: 'form', title: 'Rondo: the tune that keeps coming back', blurb: 'Guess when the refrain (A) returns between new episodes.', C: () => <RondoRefrain/> },
   { id: 'binary-ternary-spot', ch: 'form', title: 'Two sections, or three?', blurb: 'Listen for the opening tune coming back at the end.', C: () => <BinaryTernarySpot/> },
+  { id: 'texture-types', ch: 'styles', title: 'Textures: how many voices?', blurb: 'Monophony, homophony, and polyphony -- the same tune, three ways.', C: () => <TextureTypes/> },
+  { id: 'texture-spotter', ch: 'styles', title: 'Which texture is this?', blurb: 'Listen and identify -- one line, melody with chords, or two woven lines.', C: () => <TextureSpotter/> },
+  { id: 'genre-traits', ch: 'styles', title: 'What makes each style different?', blurb: 'Folk, classical, jazz and blues, popular music -- their defining traits.', C: () => <GenreTraits/> },
 ];
 // ─── Lesson Path: stages in the order a beginner meets them (Phase 120) ─────────
 // Sohyun: student + piano first, then pulse, then reading (rhythm and notes together), then
@@ -12189,13 +12359,13 @@ const STAGES = [
   { n: 3, title: 'Reading music', blurb: 'The staff, the Queen and the King, steps and skips, ledger lines, how phrases shape a tune, and how a piece is put together.', ids: ['staff', 'reading-steps', 'ledger-lines', 'melody', 'form'] },
   { n: 4, title: 'Sound, signs & terms', blurb: 'Loud and soft, touch, repeats and signs, Italian terms.', ids: ['dynamics', 'signs', 'terms'] },
   { n: 5, title: 'Theory: scales, keys & chords', blurb: 'Tones and semitones, scales, key signatures, intervals, chords (Preliminary to Grade 3).', ids: ['tones', 'scales', 'key-signatures', 'intervals', 'chords'] },
-  { n: 6, title: 'Know your instrument', blurb: 'The piano’s story, the style eras, pitch in Hz and the ranges of the orchestra.', ids: ['piano-story', 'pitch-range'] },
+  { n: 6, title: 'Know your instrument', blurb: 'The piano’s story, the style eras, pitch in Hz, the ranges of the orchestra, and how styles and textures differ.', ids: ['piano-story', 'pitch-range', 'styles'] },
 ];
 const GRADE_TAGS = {
   'first-steps': 'Beginner', 'note-names': 'Prelim', pulse: 'Beginner', 'note-values': 'Prelim', rhythm: 'Prelim–G2', staff: 'Prelim',
   'reading-steps': 'Beginner', 'five-finger': 'Beginner', 'time-signatures': 'Prelim–G2', tempo: 'Prelim–G1', dynamics: 'Prelim–G1',
   'ledger-lines': 'Prelim–G2', tones: 'Prelim–G1', scales: 'Prelim–G3', 'key-signatures': 'Prelim–G3', intervals: 'Prelim–G3', chords: 'Prelim–G3', signs: 'Prelim–G2', terms: 'G1–G4',
-  'piano-story': 'General knowledge', 'pitch-range': 'General knowledge', 'melody': 'Prelim–G2', 'form': 'Prelim–G3',
+  'piano-story': 'General knowledge', 'pitch-range': 'General knowledge', 'melody': 'Prelim–G2', 'form': 'Prelim–G3', 'styles': 'General knowledge',
 };
 function stageOf(id) { return STAGES.find(s => s.ids.includes(id)); }
 function stepsDone(id) { const d = loadDone()[id] || {}; return Object.values(d).filter(Boolean).length; }
@@ -12293,6 +12463,7 @@ const CHAPTER_SEARCH_TERMS = {
   'pitch-range': 'pitch range hertz frequency octave instrument',
   'melody': 'melody tune phrase phrasing phrase mark question answer antecedent consequent sequence motif contour breath comma',
   'form': 'form binary ternary rondo ABA AB ABACA section refrain episode structure same new repeat',
+  'styles': 'style genre texture monophony homophony polyphony solo melody folk classical jazz blues popular music',
 };
 const TOOL_CATS = [
   { id: 'body', name: 'Posture & hands', when: 'Sitting, hand shape, arm weight, fingers', color: '#3f7fb5' },
@@ -12309,6 +12480,7 @@ const TOOL_CATS = [
   { id: 'about', name: 'About music', when: 'History of the piano, eras, pitch and range', color: '#8a7a6a' },
   { id: 'melody', name: 'Melody & phrasing', when: 'What a tune is, phrase marks, question and answer, sequences', color: '#9e5b8f' },
   { id: 'form', name: 'Musical form', when: 'Binary and ternary form, rondo, spotting same vs. new sections', color: '#c26b4a' },
+  { id: 'styles', name: 'Styles & genres', when: 'Musical textures, folk/classical/jazz/pop traits', color: '#4a6fa5' },
 ];
 // cat, level range [from, to] (0 Beginner, 1 Prelim, 2 Grade 1–2, 3 Grade 3–4), kinds
 // kinds: show = show & explain, game = student does it, ear = listening, write = written theory, home = home practice
@@ -12347,6 +12519,7 @@ const TOOL_META = {
   'keyboard-ancestors': ['about', 0, 3, 'show ear'], 'piano-timeline': ['about', 1, 3, 'show'], 'eras': ['about', 1, 3, 'show ear'], 'hz-explorer': ['about', 1, 3, 'show ear'], 'range-chart': ['about', 1, 3, 'show ear'],
   'tune-anatomy': ['melody', 0, 1, 'show'], 'phrase-marks': ['melody', 1, 2, 'show'], 'question-answer': ['melody', 1, 2, 'game ear'], 'melody-sequence': ['melody', 1, 2, 'show ear'],
   'form-shapes': ['form', 0, 2, 'show'], 'same-or-new': ['form', 1, 2, 'game ear'], 'rondo-refrain': ['form', 1, 3, 'game ear'], 'binary-ternary-spot': ['form', 1, 3, 'game ear'],
+  'texture-types': ['styles', 0, 2, 'show ear'], 'texture-spotter': ['styles', 1, 3, 'game ear'], 'genre-traits': ['styles', 1, 3, 'show'],
 };
 function toolMeta(id) { const m = TOOL_META[id]; if (m) return { cat: m[0], lo: m[1], hi: m[2], kinds: m[3].split(' ') }; const t = TOOLS.find(x => x.id === id); return { cat: 'practice', lo: 0, hi: 3, kinds: ['show'], ch: t && t.ch }; }
 // Phase 168 (2026-09-28): shared search text for a tool -- title + blurb + its category's
@@ -12504,6 +12677,15 @@ const TOOL_ICON = {
   ),
   'binary-ternary-spot': () => (
     <svg width="34" height="34" viewBox="0 0 24 24"><rect x="2" y="4" width="8" height="5" rx="1.3" fill="#241f1a"/><rect x="13" y="4" width="8" height="5" rx="1.3" fill="var(--brass)"/><rect x="2" y="15" width="6" height="5" rx="1.3" fill="#241f1a"/><rect x="9" y="15" width="6" height="5" rx="1.3" fill="var(--brass)"/><rect x="16" y="15" width="6" height="5" rx="1.3" fill="#241f1a"/></svg>
+  ),
+  'texture-types': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><line x1="2" y1="6" x2="22" y2="6" stroke="#241f1a" strokeWidth="1.8" strokeLinecap="round"/><line x1="2" y1="12" x2="22" y2="12" stroke="var(--brass)" strokeWidth="1.8" strokeLinecap="round"/><line x1="2" y1="18" x2="14" y2="18" stroke="#3f7fb5" strokeWidth="1.8" strokeLinecap="round"/><line x1="2" y1="15" x2="10" y2="15" stroke="#8a5fb0" strokeWidth="1.8" strokeLinecap="round"/></svg>
+  ),
+  'texture-spotter': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="var(--brass)" strokeWidth="1.6"/><path d="M8 12 a4 4 0 1 1 8 0" fill="none" stroke="#241f1a" strokeWidth="1.6" strokeLinecap="round"/><circle cx="12" cy="12" r="1.6" fill="#241f1a"/></svg>
+  ),
+  'genre-traits': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect x="2" y="4" width="8" height="8" rx="2" fill="var(--brass)"/><rect x="14" y="4" width="8" height="8" rx="2" fill="#3f7fb5"/><rect x="2" y="14" width="8" height="8" rx="2" fill="#8a5fb0"/><rect x="14" y="14" width="8" height="8" rx="2" fill="#5f9e6f"/></svg>
   ),
   'arm-alignment': () => (
     <svg width="34" height="34" viewBox="0 0 24 24"><path d="M4 20 L10 12 L15 14 L20 5" fill="none" stroke="#241f1a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><circle cx="10" cy="12" r="2.1" fill="var(--brass)"/><circle cx="15" cy="14" r="2.1" fill="var(--brass)"/></svg>
