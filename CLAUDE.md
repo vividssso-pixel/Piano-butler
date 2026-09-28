@@ -3639,6 +3639,22 @@ chapters from the reference-book gap analysis (item #20): Ch.8 Styles and Genres
 start of item #20 (relative minor/circle of fifths depth, modulation/transposition depth,
 cadences/chord-symbols/harmonizing-a-melody depth) remain a lower-priority follow-up, not started.
 
+### Phase 185 -- Consolidate Toolbox filter pills to match the reference book's chapters (2026-09-28)
+
+Sohyun looked at the Toolbox's category pill list (15 pills) and said it was too fragmented to
+scan at a glance, giving a concrete example: "Pulse & counting" and "Rhythm & note values" should
+just be one "Rhythm" pill. She asked for the whole list reorganized around the reference book's
+own chapter names (the same book already used for the Melody/Form/Styles & Genres chapters this
+session).
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | 15 pills -> 13 | `TOOL_CATS` | `keys` (Finding notes on the keys) + `reading` (Reading notes) merged into a new `pitch` category, "Pitch" (book Ch.1). `beat` (Pulse & counting) merged into `rhythm`, "Rhythm" (book Ch.2) -- the example Sohyun gave. The 6 interval-identification tools moved out of `harmony` into `scales`, renamed "Intervals, Scales & Keys" (book Ch.3); `harmony` now holds only chord/cadence tools, renamed "Chords & Harmony" (book Ch.5). `melody`/`form`/`styles` renamed to their exact book titles: "Melody", "Form", "Styles & Genres" (dropping the app's own descriptive suffixes). |
+| 2 | Kept as-is | `body`, `expression`, `ear`, `words`, `practice`, `about` | These have no equivalent chapter in the reference book (posture, ear training, practice helpers, etc. are the app's own pedagogy, not book content) -- folding them into a book chapter would misrepresent what the book covers, so they stayed separate. |
+| 3 | Reassignment | `TOOL_META` | Every tool id previously tagged `keys`, `reading`, or `beat` retagged to `pitch` or `rhythm`; the 6 interval tools retagged from `harmony` to `scales`. All lookups (`toolMeta`, `TOOL_CATS.find`, pill rendering, the search overlay) are driven dynamically off the single `TOOL_CATS` array, so nothing else needed to change. |
+| 4 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass on the Toolbox: confirmed all 13 pills render with the intended labels ("Pitch", "Rhythm", "Intervals, Scales & Keys", "Chords & Harmony", "Melody", "Form", "Styles & Genres", plus the 6 unchanged pedagogy pills), clicked several to confirm filtering still works -- zero console/page errors. Screenshot-checked the pill row visually for the cleaner 4-row layout. |
+| 5 | Committed, not pushed | commit `84a1854` | Ready for Sohyun to push, along with Phases 177-184. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
