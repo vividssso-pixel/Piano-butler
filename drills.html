@@ -88,6 +88,33 @@
     .choice-btn.good { background: #dcebd5; border-color: var(--good); color: var(--good); }
     .choice-btn.bad  { background: #f6d6cf; border-color: var(--bad);  color: var(--bad); }
 
+    /* Phase 171 (2026-09-28): Sohyun found the Toolbox tab too visually "cluttered" -- 12
+       different saturated category colors used as solid-fill buttons, section-heading text AND
+       card borders all at once. Softer, reusable pieces for that tab: a search input with an
+       ink focus ring (not the browser's default blue, which clashed with the ink/brass system),
+       and an outlined "category pill" (small color dot + ink text) that replaces the old solid
+       -color chip buttons -- keeps the category color as a quiet identifier, not a shouting fill. */
+    .search-input {
+      width: 100%; box-sizing: border-box; padding: 11px 14px; border-radius: 12px;
+      border: 1.5px solid var(--border); font-size: 15px; font-family: inherit;
+      background: #fff; color: var(--text); transition: border-color .15s, box-shadow .15s;
+    }
+    .search-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(36,31,26,0.08); }
+    .cat-pill {
+      display: inline-flex; align-items: center; gap: 7px; border: 1.5px solid var(--border);
+      background: #fff; border-radius: 20px; padding: 7px 14px 7px 11px; font-size: 13.5px;
+      font-weight: 700; color: var(--text); cursor: pointer; font-family: inherit;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .cat-pill:hover { border-color: var(--text); }
+    .cat-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+    .chapter-link {
+      display: inline-flex; align-items: center; gap: 5px; border: none; background: var(--brass-bg);
+      color: #8a6a2a; border-radius: 8px; padding: 6px 11px; font-size: 12.5px; font-weight: 800;
+      cursor: pointer; font-family: inherit;
+    }
+    .chapter-link:hover { background: #ecdfc1; }
+
     /* Phase 94: Game (pixel) mode */
     .pixel, .pixel * { font-family: 'Press Start 2P', ui-monospace, monospace !important; }
     .pixel-panel {
@@ -11625,13 +11652,13 @@ function ToolCard({ t, color, starred, onStar, onOpen }) {
   const LO = ['Beginner', 'Prelim', 'G1', 'G3'], HI = ['Beginner', 'Prelim', 'G2', 'G4'];
   const lv = m.lo === 0 && m.hi === 3 ? 'All levels' : m.lo === m.hi ? ['Beginner', 'Prelim', 'Grade 1–2', 'Grade 3–4'][m.lo] : LO[m.lo] + '–' + HI[m.hi];
   return (
-    <div style={{position:'relative'}}>
-      <button onClick={() => onOpen(t.id)} style={{width:'100%',height:'100%',textAlign:'left',background:'#fff',border:'1.5px solid var(--border)',borderLeft:'4px solid ' + color,borderRadius:10,padding:'8px 26px 8px 10px',cursor:'pointer',color:'var(--text)',fontFamily:'inherit'}}>
-        <div style={{fontSize:14.5,fontWeight:900,lineHeight:1.25}}>{t.title}</div>
-        <div style={{fontSize:12,color:'#6f665b',lineHeight:1.35,marginTop:2}}>{t.blurb}</div>
-        <div style={{fontSize:11,fontWeight:800,color:'#a89c88',marginTop:4,textTransform:'uppercase',letterSpacing:'0.04em'}}>{lv}{m.kinds.includes('ear') ? ' · ♪' : ''}{m.kinds.includes('home') ? ' · home' : ''}</div>
+    <div style={{position:'relative',boxShadow:'0 1px 3px rgba(36,31,26,0.05)',borderRadius:12}}>
+      <button onClick={() => onOpen(t.id)} style={{width:'100%',height:'100%',textAlign:'left',background:'#fff',border:'1.5px solid var(--border)',borderLeft:'3px solid ' + color,borderRadius:12,padding:'10px 28px 10px 12px',cursor:'pointer',color:'var(--text)',fontFamily:'inherit'}}>
+        <div style={{fontSize:14.5,fontWeight:800,lineHeight:1.3}}>{t.title}</div>
+        <div style={{fontSize:12,color:'#6f665b',lineHeight:1.4,marginTop:3}}>{t.blurb}</div>
+        <div style={{fontSize:11,fontWeight:700,color:'#a89c88',marginTop:6,textTransform:'uppercase',letterSpacing:'0.04em'}}>{lv}{m.kinds.includes('ear') ? ' · ♪' : ''}{m.kinds.includes('home') ? ' · home' : ''}</div>
       </button>
-      {onStar && <button onClick={(e) => { e.stopPropagation(); onStar(t.id); }} title={starred ? 'Remove from kit' : 'Add to kit'} style={{position:'absolute',top:4,right:4,border:'none',background:'transparent',fontSize:16,cursor:'pointer',color:starred ? '#c9922a' : '#cfc4b0',padding:2,lineHeight:1}}>{starred ? '★' : '☆'}</button>}
+      {onStar && <button onClick={(e) => { e.stopPropagation(); onStar(t.id); }} title={starred ? 'Remove from kit' : 'Add to kit'} style={{position:'absolute',top:6,right:6,border:'none',background:'transparent',fontSize:16,cursor:'pointer',color:starred ? '#c9922a' : '#cfc4b0',padding:2,lineHeight:1}}>{starred ? '★' : '☆'}</button>}
     </div>
   );
 }
@@ -11651,8 +11678,8 @@ function ChapterGroups({ list, colorOf, starIds, onStar, onOpen, onChapter }) {
     <>
       {groups.map((g, i) => (
         <div key={(g.ch || 'none') + i} style={{marginBottom:i < groups.length - 1 ? 10 : 0}}>
-          {g.chapter && onChapter && <button onClick={() => onChapter(g.ch)} style={{display:'block',border:'none',background:'transparent',padding:'0 2px 6px',fontSize:12.5,fontWeight:800,color:'#8a6a2a',cursor:'pointer',fontFamily:'inherit'}}>{(LANG === 'ko' ? '전체 챕터: ' : 'Whole chapter: ') + g.chapter.label + ' →'}</button>}
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+          {g.chapter && onChapter && <button className="chapter-link" onClick={() => onChapter(g.ch)} style={{marginBottom:8}}>{(LANG === 'ko' ? '전체 챕터' : 'Whole chapter') + ': ' + g.chapter.label + ' →'}</button>}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
             {g.items.map(t => <ToolCard key={t.id} t={t} color={colorOf(t)} starred={!!starIds && starIds.includes(t.id)} onStar={onStar} onOpen={onOpen}/>)}
           </div>
         </div>
@@ -11660,26 +11687,18 @@ function ChapterGroups({ list, colorOf, starIds, onStar, onOpen, onChapter }) {
     </>
   );
 }
-function Toolbox({ onOpen, onOpenKit, onStudents, onChapter }) {
+// Phase 172 (2026-09-28): Sohyun didn't see why Plan and Toolbox needed to be separate tabs --
+// asked to merge them into one screen and push Practice/Students later in the tab order. The
+// "current student" is the same underlying state either way (both read/write the same kits
+// array), so rather than render two independent, possibly-out-of-sync student pickers on one
+// screen, Toolbox is now a controlled component: PlanView (the merged screen) owns the one kits
+// array and passes down the active student's kit + a star-toggle function as props.
+function Toolbox({ onOpen, onChapter, kit, onStar }) {
   const [q, setQ] = useState('');
   const [lv, setLv] = useState(-1);
   const [kind, setKind] = useState('all');
   const [prob, setProb] = useState(-1);
   const [showProb, setShowProb] = useState(false);
-  const [kits, setKits] = useState(loadKits);
-  const [kitIdx, setKitIdx0] = useState(() => loadWho(loadKits()));
-  const setKitIdx = (i) => { setKitIdx0(i); saveWho(kits, i); };
-  const [copied, setCopied] = useState(false);
-  const kit = kits[kitIdx] || null;
-  const upd = (nk) => { setKits(nk); saveKits(nk); };
-  function newKit(name) { const nk = [...kits, newStudentObj(name)]; upd(nk); setKitIdx0(nk.length - 1); saveWho(nk, nk.length - 1); }
-  function star(id) {
-    let nk = kits, i = kitIdx;
-    if (!kit) { nk = [...kits, newStudentObj('My kit')]; i = nk.length - 1; setKitIdx0(i); saveWho(nk, i); }
-    nk = nk.map((k, j) => j !== i ? k : { ...k, tools: k.tools.includes(id) ? k.tools.filter(x => x !== id) : [...k.tools, id] });
-    upd(nk);
-  }
-  function copyKit() { if (!kit) return; try { navigator.clipboard.writeText(kitLink(kit)).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }, () => {}); } catch (e) {} }
   const words = q.toLowerCase().split(/\s+/).filter(Boolean);
   const pset = prob >= 0 ? PROBLEMS[prob][1] : null;
   const match = (t) => {
@@ -11695,16 +11714,15 @@ function Toolbox({ onOpen, onOpenKit, onStudents, onChapter }) {
   return (
     <div className="fade-up">
       <div className="card" style={{marginBottom:12}}>
-        <h2 style={{fontSize:20,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Toolbox</h2>
-        <p style={{fontSize:14,color:'var(--muted)',margin:'0 0 10px',lineHeight:1.5}}>Find a tool fast. ☆ puts it in the current student’s kit.</p>
+        <p style={{fontSize:13.5,color:'var(--muted)',margin:'0 0 10px',lineHeight:1.5}}>{kit ? t('☆ puts a tool in ', '☆ 를 누르면 ') + kit.name + t('’s kit.', '의 키트에 담겨요.') : t('☆ starts a kit for the current student.', '☆ 를 누르면 지금 학생의 키트가 시작돼요.')}</p>
         {/* Phase 166 (2026-09-28): Sohyun liked the Learn tab's category-chip overview and asked
             for the same at-a-glance browsing at the top of the Toolbox, since the category
             grouping below (unchanged) was easy to miss under the search/filter card. This row
             always shows every category (not filtered), same as the Learn tab's chip grid. */}
-        <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:10}}>
-          {TOOL_CATS.map(c => <button key={c.id} onClick={() => { const el = document.getElementById('cat-' + c.id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }} style={{border:'none',background:c.color,color:'#fff',borderRadius:14,padding:'7px 14px',fontSize:13.5,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>{c.name}</button>)}
+        <div style={{display:'flex',gap:7,flexWrap:'wrap',marginBottom:12}}>
+          {TOOL_CATS.map(c => <button key={c.id} className="cat-pill" onClick={() => { const el = document.getElementById('cat-' + c.id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><span className="cat-dot" style={{background:c.color}}/>{c.name}</button>)}
         </div>
-        <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search: wrist, triad, 6/8, Bb scale..." style={{width:'100%',boxSizing:'border-box',padding:'9px 12px',borderRadius:10,border:'1.5px solid var(--border)',fontSize:15,fontFamily:'inherit',marginBottom:8}}/>
+        <input className="search-input" value={q} onChange={e => setQ(e.target.value)} placeholder="Search: wrist, triad, 6/8, Bb scale..." style={{marginBottom:8}}/>
         {(() => { const sc = parseScaleQuery(q); return sc ? (
           <button onClick={() => { PENDING_SCALE = sc; onOpen('scale-finder'); }} style={{width:'100%',textAlign:'left',border:'1.5px solid #8a6a2a',background:'#fbf3e2',borderRadius:10,padding:'9px 12px',marginBottom:8,cursor:'pointer',fontFamily:'inherit',color:'var(--text)'}}>
             <b style={{fontSize:15}}>{prettyNote(sc.key)} {sc.mode === 'minor' ? 'harmonic minor' : 'major'} scale</b> <span style={{color:'#8a5a12',fontWeight:800}}>-- fingering, key signature, notes ›</span>
@@ -11720,33 +11738,17 @@ function Toolbox({ onOpen, onOpenKit, onStudents, onChapter }) {
         {filtered && <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:8,fontSize:13,fontWeight:800,color:'var(--muted)'}}><span>{shown} tool{shown === 1 ? '' : 's'}</span><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => { setQ(''); setLv(-1); setKind('all'); setProb(-1); }}>Clear filters</button></div>}
       </div>
 
-      {/* Kits */}
-      <div className="card" style={{marginBottom:12,padding:'12px 14px'}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
-          <b style={{fontSize:15}}>Student kits</b>
-          <AddName onAdd={newKit}/>
-        </div>
-        {!kits.length ? <div style={{fontSize:13,color:'var(--muted)',lineHeight:1.5}}>Make a kit for each student: tap ☆ on the tools they need this week. Open the kit in the lesson, or send it as one link.</div> : <>
-          <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6}}>{kits.map((k, i) => chip(i === kitIdx, k.name + ' (' + k.tools.length + ')', () => setKitIdx(i), 'kit' + i))}</div>
-          {kit && (kit.tools.length ? <ChapterGroups list={kit.tools.map(id => TOOLS.find(x => x.id === id)).filter(Boolean)} colorOf={t => (TOOL_CATS.find(x => x.id === toolMeta(t.id).cat) || {}).color} starIds={kit.tools} onStar={star} onOpen={onOpen} onChapter={onChapter}/> : <div style={{fontSize:13,color:'var(--muted)'}}>Empty -- tap ☆ on any tool below to add it to “{kit.name}”.</div>)}
-          {kit && <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:8}}>
-            <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} disabled={!kit.tools.length} onClick={() => onOpenKit(kit)}>Open kit</button>
-            <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} disabled={!kit.tools.length} onClick={copyKit}>{copied ? 'Link copied ✓' : 'Copy student link'}</button>
-            {onStudents && <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px',marginLeft:'auto'}} onClick={onStudents}>Manage students</button>}
-          </div>}
-        </>}
-      </div>
-
       {TOOL_CATS.map(c => {
         const list = TOOLS.filter(t => toolMeta(t.id).cat === c.id && match(t));
         if (!list.length) return null;
         return (
-          <div key={c.id} id={'cat-' + c.id} style={{marginBottom:14,scrollMarginTop:12}}>
-            <div style={{display:'flex',alignItems:'baseline',gap:8,flexWrap:'wrap',margin:'0 0 6px 2px'}}>
-              <span style={{fontSize:13.5,fontWeight:900,color:c.color,textTransform:'uppercase',letterSpacing:'0.06em'}}>{c.name}</span>
-              <span style={{fontSize:12,color:'var(--muted)'}}>{c.when}</span>
+          <div key={c.id} id={'cat-' + c.id} style={{marginBottom:18,scrollMarginTop:12}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',padding:'0 0 7px',borderBottom:'1.5px solid var(--border)',marginBottom:10}}>
+              <span style={{width:9,height:9,borderRadius:'50%',background:c.color,flex:'0 0 auto'}}/>
+              <span style={{fontSize:14,fontWeight:900,color:'var(--text)',letterSpacing:'-0.01em'}}>{c.name}</span>
+              <span style={{fontSize:12.5,color:'var(--muted)'}}>{c.when}</span>
             </div>
-            <ChapterGroups list={list} colorOf={() => c.color} starIds={kit ? kit.tools : null} onStar={star} onOpen={onOpen} onChapter={onChapter}/>
+            <ChapterGroups list={list} colorOf={() => c.color} starIds={kit ? kit.tools : null} onStar={onStar} onOpen={onOpen} onChapter={onChapter}/>
           </div>
         );
       })}
@@ -11815,7 +11817,7 @@ function FindOverlay({ onJump, onChapter, onClose }) {
             <>
               <div style={{fontSize:14,color:'var(--muted)',fontWeight:700,margin:'10px 4px 10px'}}>{t('Or jump to a topic:', '아니면 주제를 골라보세요:')}</div>
               <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-                {TOOL_CATS.map(c => <button key={c.id} onClick={() => setQ(c.name)} style={{border:'none',background:c.color,color:'#fff',borderRadius:16,padding:'10px 16px',fontSize:15,fontWeight:800,cursor:'pointer',fontFamily:'inherit'}}>{c.name}</button>)}
+                {TOOL_CATS.map(c => <button key={c.id} className="cat-pill" style={{fontSize:14.5,padding:'8px 15px 8px 12px'}} onClick={() => setQ(c.name)}><span className="cat-dot" style={{width:10,height:10,background:c.color}}/>{c.name}</button>)}
               </div>
             </>
           ) : results.length ? (() => {
@@ -11832,7 +11834,7 @@ function FindOverlay({ onJump, onChapter, onClose }) {
               <div style={{display:'flex',flexDirection:'column',gap:10,marginTop:6}}>
                 {groups.map((g, gi) => (
                   <div key={(g.ch || 'none') + gi}>
-                    {g.chapter && onChapter && <button onClick={() => onChapter(g.ch)} style={{display:'block',border:'none',background:'transparent',padding:'0 2px 6px',fontSize:13,fontWeight:800,color:'#8a6a2a',cursor:'pointer',fontFamily:'inherit'}}>{t('Whole chapter: ', '전체 챕터: ') + g.chapter.label + ' →'}</button>}
+                    {g.chapter && onChapter && <button className="chapter-link" onClick={() => onChapter(g.ch)} style={{marginBottom:8}}>{t('Whole chapter: ', '전체 챕터: ') + g.chapter.label + ' →'}</button>}
                     <div style={{display:'flex',flexDirection:'column',gap:8}}>
                       {g.items.map(rt => {
                         const c = TOOL_CATS.find(x => x.id === toolMeta(rt.id).cat) || {};
@@ -12019,9 +12021,10 @@ function StudentsView({ onPlan, onOpenKit }) {
     </div>
   );
 }
-function PlanView({ onOpenTool, onOpenChapter, onOpenKit, onAllChapters, onStudents }) {
+function PlanView({ onOpenTool, onOpenChapter, onOpenKit, onAllChapters, onStudents, onChapter }) {
   const [kits, setKits] = useState(loadKits);
   const [who, setWho0] = useState(() => loadWho(loadKits()));
+  const [copied, setCopied] = useState(false);
   const setWho = (i) => { setWho0(i); saveWho(kits, i); const g = kits[i] && kits[i].group; if (g) setMix(g); const d = (kits[i] && kits[i].done) || {}; const first = STRANDS.find(st => SKILLS.some(s => s.strand === st.id && !d[s.id])); setOpenStrand((first || STRANDS[0]).id); };
   const [mix, setMix] = useState(() => { const k = loadKits(); const i = loadWho(k); return (k[i] && k[i].group) || null; });
   const [today, setToday] = useState([]);
@@ -12046,6 +12049,17 @@ function PlanView({ onOpenTool, onOpenChapter, onOpenKit, onAllChapters, onStude
   function toggleToday(id) { setToday(t => t.includes(id) ? t.filter(x => x !== id) : [...t, id]); }
   const todayTools = [...new Set(today.flatMap(id => SKILLS.find(s => s.id === id).tools))];
   function addTodayToKit() { if (!kit) return; upd(kits.map((k, i) => i !== who ? k : { ...k, tools: [...new Set([...(k.tools || []), ...todayTools])] })); }
+  // Phase 172 (2026-09-28): moved from the old standalone Toolbox tab -- Plan is now the one
+  // owner of "the current student", so starring a tool from the merged Toolbox section below
+  // updates the same kits/who state this whole screen already uses, instead of a second,
+  // independently-loaded copy that could drift out of sync with this one.
+  function star(id) {
+    let nk = kits, i = who;
+    if (!kit) { nk = [...kits, newStudentObj('My kit')]; i = nk.length - 1; setWho0(i); saveWho(nk, i); }
+    nk = nk.map((k, j) => j !== i ? k : { ...k, tools: k.tools.includes(id) ? k.tools.filter(x => x !== id) : [...k.tools, id] });
+    upd(nk);
+  }
+  function copyKit() { if (!kit) return; try { navigator.clipboard.writeText(kitLink(kit)).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }, () => {}); } catch (e) {} }
   const M = START_MIXES.find(m => m.id === mix);
   const chip = (on, label, onClick, key) => <button key={key || label} className={'chip' + (on ? ' active' : '')} style={{padding:'2px 9px',fontSize:12}} onClick={onClick}>{label}</button>;
   return (
@@ -12060,7 +12074,11 @@ function PlanView({ onOpenTool, onOpenChapter, onOpenKit, onAllChapters, onStude
           {kits.length > 0 && onStudents && <button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={onStudents}>Edit students</button>}
         </div>
         {kit && kit.notes && <div style={{fontSize:13,color:'#6f665b',marginTop:6,background:'#f7f2e8',borderRadius:8,padding:'5px 8px'}}><b>Notes:</b> {kit.notes}</div>}
-        {!kit && <div style={{fontSize:13,color:'var(--muted)',marginTop:6}}>Add a student to tick off what they can do. (Students are shared with the Toolbox kits and the Students tab.)</div>}
+        {!kit && <div style={{fontSize:13,color:'var(--muted)',marginTop:6}}>Add a student to tick off what they can do, and to build their kit of starred tools below.</div>}
+        {kit && kit.tools.length > 0 && <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:8}}>
+          <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => onOpenKit(kit)}>{LANG === 'ko' ? kit.name + ' 키트 열기 (' + kit.tools.length + ')' : 'Open ' + kit.name + '’s kit (' + kit.tools.length + ')'}</button>
+          <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={copyKit}>{copied ? t('Link copied ✓', '링크 복사됨 ✓') : t('Copy student link', '학생 링크 복사')}</button>
+        </div>}
         <div style={{fontSize:12,fontWeight:900,color:'var(--muted)',margin:'10px 0 4px'}}>A FIRST MIX FOR…</div>
         <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>{START_MIXES.map(m => chip(mix === m.id, m.name, () => { setMix(mix === m.id ? null : m.id); if (m.ids.length) setToday(m.ids); }, m.id))}</div>
         {M && <div style={{fontSize:13,background:'#fbf3e2',borderRadius:8,padding:'6px 9px',marginTop:6,color:'#6b4e16'}}>{M.note}</div>}
@@ -12149,6 +12167,18 @@ function PlanView({ onOpenTool, onOpenChapter, onOpenKit, onAllChapters, onStude
         <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>{['piano-story', 'pitch-range'].map(id => { const d = DRILLS.find(x => x.id === id); return d ? <button key={id} className="chip" style={{padding:'3px 9px',fontSize:13}} onClick={() => onOpenChapter(id)}>{d.label}</button> : null; })}</div>
       </div>
       <div style={{textAlign:'center',marginTop:8}}><button className="ghost-btn" onClick={onAllChapters}>All chapters (full lessons) →</button></div>
+
+      {/* Phase 172 (2026-09-28): Sohyun didn't see why "Plan" and "Toolbox" needed to be two
+          separate tabs when they're really one workflow -- pick a student, then find a tool for
+          them. Merged: the full searchable/browsable tool library now lives at the bottom of
+          this same screen instead of behind its own tab, sharing this screen's one "current
+          student" (kit/star) state instead of a second, independently-loaded copy of it. */}
+      <div style={{margin:'26px 2px 12px',display:'flex',alignItems:'center',gap:10}}>
+        <span style={{flex:1,height:1,background:'var(--border)'}}/>
+        <span style={{fontSize:12.5,fontWeight:900,color:'var(--muted)',letterSpacing:'0.05em'}}>{t('ALL TOOLS', '전체 도구')}</span>
+        <span style={{flex:1,height:1,background:'var(--border)'}}/>
+      </div>
+      <Toolbox onOpen={onOpenTool} onChapter={onChapter} kit={kit} onStar={star}/>
     </div>
   );
 }
@@ -12231,13 +12261,13 @@ function App() {
       </div>
 
       {T && !findOpen && <FindButton onOpen={() => setFindOpen(true)}/>}
-      {T && findOpen && <FindOverlay onClose={() => setFindOpen(false)} onJump={(id) => { setFindOpen(false); update({ view: 'tools', tool: id, kit: null, ret: null }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/>}
+      {T && findOpen && <FindOverlay onClose={() => setFindOpen(false)} onJump={(id) => { setFindOpen(false); update({ view: 'tools', tool: id, kit: null, ret: 'path' }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/>}
 
       <div className="pb-main" style={{maxWidth:600,margin:'0 auto',padding:'20px 16px 60px'}}>
         {preview && <div style={{background:'#241f1a',color:'#fff',borderRadius:10,padding:'8px 12px',marginBottom:12,fontSize:13.5,display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}><span>You’re seeing what a student sees.</span><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setPreview(false)}>Back to teacher view</button></div>}
         {!st.lock && (
           <div style={{display:'flex',background:'#fff',border:'1.5px solid var(--border)',borderRadius:12,padding:3,marginBottom:16}}>
-            {(T ? [['path', t('Plan', '계획')], ['students', t('Students', '학생')], ['tools', t('Toolbox', '도구함')], ['practice', t('Practice', '연습')]] : [['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]]).map(([v, l]) => (
+            {(T ? [['path', t('Plan', '계획')], ['practice', t('Practice', '연습')], ['students', t('Students', '학생')]] : [['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]]).map(([v, l]) => (
               <button key={v} onClick={() => { update({ view: v, tool: null, kit: null, drill: v === 'path' ? null : st.drill }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderRadius:9,padding:'9px 0',fontSize:T ? 13 : 14,fontWeight:900,cursor:'pointer',
                 background:(st.view === v || (v === 'path' && st.view === 'chapters')) ? 'var(--text)' : 'transparent',color:(st.view === v || (v === 'path' && st.view === 'chapters')) ? '#fff' : 'var(--muted)'}}>{l}</button>
             ))}
@@ -12249,11 +12279,10 @@ function App() {
         ) : st.view === 'kit' && st.kit ? (
           st.tool
             ? <ToolView id={st.tool} locked={st.lock} backLabel="← Kit" onBack={() => update({ tool: null })} onChapter={(id) => update({ view: 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
-            : <>{T && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={() => update({ view: 'tools', kit: null, kn: '' })}>← Toolbox</button>}<KitView ids={st.kit} name={st.kn} onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/></>
+            : <>{T && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={() => update({ view: 'path', kit: null, kn: '' })}>← Plan</button>}<KitView ids={st.kit} name={st.kn} onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/></>
         ) : (st.view === 'tools' || st.view === 'practice') ? (
           st.tool
             ? <ToolView id={st.tool} locked={st.lock} backLabel={st.ret === 'path' ? '← Lesson plan' : st.view === 'practice' ? '← Practice' : '← Toolbox'} onBack={() => update({ tool: null, view: st.ret === 'path' ? 'path' : st.view, ret: null })} onChapter={(id) => update({ view: 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
-            : st.view === 'tools' && T ? <Toolbox onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }} onOpenKit={(k) => { update({ view: 'kit', kit: k.tools, kn: k.name, tool: null }); try { window.scrollTo(0, 0); } catch (e) {} }} onStudents={() => { update({ view: 'students' }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/>
             : <PracticeView onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
         ) : !inChapter && !st.lock ? (
           T && st.view !== 'chapters'
@@ -12261,7 +12290,8 @@ function App() {
                 onOpenChapter={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}
                 onOpenKit={(k) => { update({ view: 'kit', kit: k.tools, kn: k.name, tool: null }); try { window.scrollTo(0, 0); } catch (e) {} }}
                 onAllChapters={() => { update({ view: 'chapters' }); try { window.scrollTo(0, 0); } catch (e) {} }}
-                onStudents={() => { update({ view: 'students' }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
+                onStudents={() => { update({ view: 'students' }); try { window.scrollTo(0, 0); } catch (e) {} }}
+                onChapter={jumpToChapter}/>
             : <LessonPath onBack={T ? () => update({ view: 'path' }) : null} onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
         ) : <>
         {!st.lock && (() => {
