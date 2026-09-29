@@ -3949,6 +3949,25 @@ buildable with existing assets.
 | 4 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: loaded the gallery directly (`?view=chapters`), scrolled top to bottom across all 6 stage groups (screenshots confirm every hero renders correctly as a thumbnail), clicked a card (Five-Finger Positions) and confirmed it opened that chapter's own lesson, plus a Korean-language pass. Zero console/page errors throughout. |
 | 5 | Committed, not pushed | commit `7e7185f` | Ready for Sohyun to push, along with everything since Phase 177. |
 
+### Phase 212 -- Split "Posture & Hand Shape" out of First Steps; fixed arm-alignment style and wrist bug (2026-09-29)
+
+Sohyun's review of First Steps with 5 screenshots: steps 1-6 (sitting, hand shape, arm exercises,
+arm weight, posture check, finger numbers) are what a student needs to know about their own body
+before touching the keyboard; steps 7-10 (high/low, black-key houses, first song, white
+neighbours) are keyboard-pattern content -- two different kinds of learning sharing one chapter.
+She asked to split posture out first, and separately flagged the arm-alignment tool as visually
+inconsistent with the rest of the chapter and hiding its own wrist point behind text.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | New chapter: Posture & Hand Shape (`posture-hands`) | `DRILLS`, `STAGES` ("Piano basics" group), `GRADE_TAGS`, `CHAPTER_SEARCH_TERMS`, new `PostureHandsLearn` component | The 6 posture/hand-shape/finger-number `<Step>` blocks moved out of `FirstStepsLearn` verbatim. The 6 matching `TOOLS` entries (`sit-check`, `hand-shape`, `arm-moves`, `posture-check`, `finger-numbers`, `arm-alignment`) had their `ch:` field reassigned from `first-steps` to `posture-hands`. Its own quiz level (finger numbers) split out of `FS_LEVELS` into a new `POSTURE_LEVELS`/`POSTURE_HANDS_DRILL`, sharing the existing `genFsQuestion`/`FsQuestion`. No `HERO_MAP` entry yet -- left as a text-only gallery card on purpose, since Sohyun said she'll decide the remaining regrouping (steps 7-10, and the notation-reading group after that) next rather than guessing at hero artwork now. |
+| 2 | First Steps trimmed | `FirstStepsLearn`, `FS_LEVELS`, `FIRST_STEPS_DRILL` | Now just the 4 keyboard-pattern steps (high/low loud/soft, small/big house, first song, white neighbours), retitled "The keyboard and your first song" / "건반과 첫 곡". Keeps its existing hero illustration (two black-key "houses"), which now matches its trimmed content even more directly than before. Quiz trimmed to its 3 remaining levels, renumbered. |
+| 3 | `ArmAlignment` ("Feel the arm weight") restyled | Same component | Was a dark (`#241f1a`) abstract skeletal-diagram style, visually inconsistent with the flat illustrated-character look used everywhere else in this chapter (`HandSide`/`FrontArms`: cream background, blue-body torso, skin-tone head/limb joints). Rebuilt on a light background with the same body/limb visual language and color roles (`POS_SKIN`/`POS_SKIN_EDGE`, blue torso/upper-arm, tan forearm) so it now reads as the same "character" as `SitCheck`/`HandShape`/`ArmExercises`. |
+| 4 | Fixed: wrist hidden behind text | Same component | The diagnostic panel was `position:absolute` over the top-right of the diagram; since the tracked wrist point can move into that exact region (e.g. the "wrist too high" state), it could end up completely hidden behind the tooltip box -- confirmed directly in Sohyun's screenshot. Moved the diagnosis panel out of the overlay entirely into a normal-flow card below the diagram, so no cursor position can ever cover a joint again. |
+| 5 | Confirmed, no change made | "Set up the stool" (`SitCheck`) | Sohyun's "2 screenshots overlap" note was about the tool already being one step with two tabs (Side view / Front view covering genuinely different checks), not a request to merge or delete anything -- it already counts as a single entry in the new grouping, so nothing needed to change here. |
+| 6 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: gallery render (both chapters appear as separate cards, correct hero placement), opened the new Posture & Hand Shape chapter (6 steps, 0/6 done -- confirms a clean split with no leftover progress bleed), opened the trimmed First Steps chapter (4 steps, 0/4 done), moved the cursor over the arm-alignment diagram to multiple positions confirming the wrist joint and label stay visible and joints recolor correctly, plus a Korean-language load. Zero console/page errors throughout. |
+| 7 | Committed, not pushed | commit `694c163` | Ready for Sohyun to push, along with everything since Phase 177. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
