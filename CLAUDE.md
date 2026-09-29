@@ -3846,7 +3846,18 @@ Chapters 1-16 of 24 now done. Next: chapter 17 (Chords) -- also iconified pre-ro
 | 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, broad Toolbox search screenshot confirming all 8 recolored icons render correctly with Q_COL colors intact. Zero console/page errors. |
 | 4 | Committed, not pushed | commit `b1ad6e9` | Ready for Sohyun to push, along with everything since Phase 177. |
 
-Chapters 1-17 of 24 now done. Next: chapter 18 (likely the next id in the DRILLS array after "chords" -- check before building).
+Chapters 1-17 of 24 now done. Next: chapter 18 (signs, reading track).
+
+### Phase 204 -- Illustrated-content direction, chapter 18: Signs (2026-09-29)
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `SignsHero` (new component), wired into `SignsLearn`'s `<Lesson head={...}>` slot | Teal reading-track ground: a repeat sign (thin + thick barline, two dots) with a curved arrow looping back to the start -- directly reusing the chapter's own intro framing ("Music is read like a road map -- these are the road signs") and its own Road Map tool's core idea. |
+| 2 | New icons for 4 tools (chapter had none before this rollout) | `TOOL_ICON`: `road-map`, `grace-write`, `ornaments`, `ottava` | Each depicts that tool's own literal notation symbol/mechanism: road-map = a fork in a road with a loop-back arrow; grace-write = a small grace note beside a full-size main note; ornaments = "tr" plus a wavy trill line; ottava = an "8" over a dashed octave line with a leap arrow, next to a note. All on the teal badge, cream/mustard/ink content, per the established sizing standard (34x34 badge). |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, plus individual card screenshots for all 4 tools (road map, grace note, ornaments, 8va), and a Korean-language pass. Zero console/page errors throughout. |
+| 4 | Committed, not pushed | commit `7c35e2d` | Ready for Sohyun to push, along with everything since Phase 177. |
+
+Chapters 1-18 of 24 now done. Next: chapter 19 (terms, reading track).
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
