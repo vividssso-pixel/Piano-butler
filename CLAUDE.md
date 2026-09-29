@@ -3857,7 +3857,18 @@ Chapters 1-17 of 24 now done. Next: chapter 18 (signs, reading track).
 | 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, plus individual card screenshots for all 4 tools (road map, grace note, ornaments, 8va), and a Korean-language pass. Zero console/page errors throughout. |
 | 4 | Committed, not pushed | commit `7c35e2d` | Ready for Sohyun to push, along with everything since Phase 177. |
 
-Chapters 1-18 of 24 now done. Next: chapter 19 (terms, reading track).
+Chapters 1-19 of 24 now done. Next: chapter 20 (piano-story, reading track).
+
+### Phase 205 -- Illustrated-content direction, chapter 19: Musical Terms (2026-09-29)
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `TermsHero` (new component), wired into `TermsLearn`'s `<Lesson head={...}>` slot | Teal reading-track ground: a small stack of flashcards, the front card showing an italic term ("mf" / mezzo-forte) -- literal to the chapter's own TermCards format and its "Italian words in the music, grade by grade" intro. |
+| 2 | New icons for 2 tools (chapter had none before this rollout) | `TOOL_ICON`: `term-cards`, `term-match` | term-cards = a single flashcard with an italic term, matching the hero. term-match = a face-up term card ("p") beside a face-down card-back (X pattern), with a checkmark above -- depicting the actual memory-pairs mechanic (find the matching card). First draft of term-match tried spelling out the translated word ("soft") on the second card; it clipped/overlapped at icon size, caught on a cropped close-up screenshot and redesigned to the face-up/face-down pair instead -- another case for close-up verification, not just full-page. |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass (EN + KO): full chapter opened top to bottom, Toolbox search screenshot, plus a 6x cropped close-up of both new icons to confirm legibility after the term-match redesign. Zero console/page errors. |
+| 4 | Committed, not pushed | commit `a4a9cc0` | Ready for Sohyun to push, along with everything since Phase 177. |
+
+Chapters 1-19 of 24 now done. Next: chapter 20 (piano-story, reading track).
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
