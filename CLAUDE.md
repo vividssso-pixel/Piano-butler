@@ -3857,7 +3857,82 @@ Chapters 1-17 of 24 now done. Next: chapter 18 (signs, reading track).
 | 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, plus individual card screenshots for all 4 tools (road map, grace note, ornaments, 8va), and a Korean-language pass. Zero console/page errors throughout. |
 | 4 | Committed, not pushed | commit `7c35e2d` | Ready for Sohyun to push, along with everything since Phase 177. |
 
-Chapters 1-18 of 24 now done. Next: chapter 19 (terms, reading track).
+Chapters 1-19 of 24 now done. Next: chapter 20 (piano-story, reading track).
+
+### Phase 205 -- Illustrated-content direction, chapter 19: Musical Terms (2026-09-29)
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `TermsHero` (new component), wired into `TermsLearn`'s `<Lesson head={...}>` slot | Teal reading-track ground: a small stack of flashcards, the front card showing an italic term ("mf" / mezzo-forte) -- literal to the chapter's own TermCards format and its "Italian words in the music, grade by grade" intro. |
+| 2 | New icons for 2 tools (chapter had none before this rollout) | `TOOL_ICON`: `term-cards`, `term-match` | term-cards = a single flashcard with an italic term, matching the hero. term-match = a face-up term card ("p") beside a face-down card-back (X pattern), with a checkmark above -- depicting the actual memory-pairs mechanic (find the matching card). First draft of term-match tried spelling out the translated word ("soft") on the second card; it clipped/overlapped at icon size, caught on a cropped close-up screenshot and redesigned to the face-up/face-down pair instead -- another case for close-up verification, not just full-page. |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass (EN + KO): full chapter opened top to bottom, Toolbox search screenshot, plus a 6x cropped close-up of both new icons to confirm legibility after the term-match redesign. Zero console/page errors. |
+| 4 | Committed, not pushed | commit `a4a9cc0` | Ready for Sohyun to push, along with everything since Phase 177. |
+
+Chapters 1-20 of 24 now done. Next: chapter 21 (pitch-range, pitch track).
+
+### Phase 206 -- Illustrated-content direction, chapter 20: The Piano's Story (2026-09-29)
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `PianoStoryHero` (new component), wired into `PianoStoryLearn`'s `<Lesson head={...}>` slot | Teal reading-track ground: a 3-stop timeline (1700 Cristofori -> 1800s cast-iron frame -> Today, 88 keys) -- literal to the chapter's own PianoTimeline tool and its "Cristofori 1700 to the 88-key grand" blurb. |
+| 2 | New icons for 3 tools (chapter had none before this rollout) | `TOOL_ICON`: `keyboard-ancestors`, `piano-timeline`, `eras` | keyboard-ancestors = a string with a plectrum, a tangent and a hammer above it, literally the 3 mechanisms the tool itself compares (pluck / press / strike). piano-timeline = a small keyboard over a 3-stop timeline, echoing the hero. eras = a 4-segment color-block strip standing in for the chapter's 4 style eras (Baroque/Classical/Romantic/20th-century). |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom (had to search "Cristofori", not "piano timeline", to surface the whole-chapter link -- noted for next time), broad "piano" Toolbox search screenshot, plus 6x cropped close-ups of all 3 new icons. Zero console/page errors. |
+| 4 | Committed, not pushed | commit `31862ee` | Ready for Sohyun to push, along with everything since Phase 177. |
+
+Chapters 1-21 of 24 now done. Next: chapter 22 (melody, reading track).
+
+### Phase 207 -- Illustrated-content direction, chapter 21: Pitch, Hz & Range (2026-09-29)
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `PitchRangeHero` (new component), wired into `PitchRangeLearn`'s `<Lesson head={...}>` slot | Sky-blue pitch-track ground (first pitch-track chapter since chapter 17, Chords): a sound wave whose frequency visibly compresses left to right (a chirp, built from a quadratic phase curve, not just a uniform wave), literal to the chapter's own "faster = higher" rule in its Vibrations and Hertz step, with a slice of piano keys along the bottom for the range half of the chapter. |
+| 2 | New icons for 2 tools (chapter had none before this rollout) | `TOOL_ICON`: `hz-explorer`, `range-chart` | hz-explorer = a wave compressing from cream/low to mustard/high, echoing the hero. range-chart = a keyboard strip with a highlighted mustard band showing an instrument/voice's range across the keys. |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, "range" Toolbox search screenshot, plus 6x cropped close-ups of both new icons. Zero console/page errors. |
+| 4 | Committed, not pushed | commit `43db14d` | Ready for Sohyun to push, along with everything since Phase 177. |
+
+Chapters 1-22 of 24 now done. Next: chapter 23 (form, reading track).
+
+### Phase 208 -- Illustrated-content direction, chapter 22: Melody & Phrasing (2026-09-29)
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `MelodyHero` (new component), wired into `MelodyLearn`'s `<Lesson head={...}>` slot | Teal reading-track ground: a rising melodic contour -- notes at varying heights (pitch) spaced at varying intervals (rhythm), connected by a line -- literal to the chapter's own "Rhythm + pitch = a tune" framing and its own TuneAnatomy step. |
+| 2 | Recolored 4 pre-existing icons | `TOOL_ICON`: `tune-anatomy`, `phrase-marks`, `question-answer`, `melody-sequence` | Had icons from before this rollout existed (no badge background, `var(--brass)`/mixed hues). `question-answer` keeps the app's own good/bad semantic colors (green checkmark for the resolved "answer", red "?" for the unstable "question") -- only added the teal badge background. The other 3 moved fully onto the cream/mustard/ink palette. |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, "phrase" Toolbox search screenshot confirming all 4 recolored icons render correctly (question-answer's semantic colors intact). Zero console/page errors. |
+| 4 | Committed, not pushed | commit `b263a73` | Ready for Sohyun to push, along with everything since Phase 177. |
+
+Chapters 1-23 of 24 now done. Next: chapter 24, the last one (styles, "about" track -- needs a ground color decided, per the established pattern for a new track).
+
+### Phase 209 -- Illustrated-content direction, chapter 23: Musical Form (2026-09-29)
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `FormHero` (new component), wired into `FormLearn`'s `<Lesson head={...}>` slot | Teal reading-track ground: an A-B-A ternary-form layout, three labeled blocks -- literal to the chapter's own "letters like A and B" framing and its ternary-form content. |
+| 2 | Recolored 4 pre-existing icons | `TOOL_ICON`: `form-shapes`, `same-or-new`, `rondo-refrain`, `binary-ternary-spot` | Had icons from before this rollout existed (no badge background, `var(--brass)`/mixed hues). None carried semantic meaning worth preserving (unlike Phase 208's question-answer) -- all 4 moved fully onto the cream/mustard/ink palette on the teal badge. |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, "section" Toolbox search screenshot confirming all 4 recolored icons render correctly. Zero console/page errors. |
+| 4 | Committed, not pushed | commit `3ab3a49` | Ready for Sohyun to push, along with everything since Phase 177. |
+
+All 24 of 24 chapters now done -- the illustrated-content rollout (started Phase 176) is
+complete. Every chapter has a hero illustration wired into its `<Lesson head={...}>` slot, and
+every tool in the app has a `TOOL_ICON` entry on its track's colored badge (pitch sky-blue
+#3a7bc4, rhythm coral #e2735a, reading teal #3f9e94, about sage-green #6b9b5e). Any future new
+chapter or tool should follow this same pattern from the start rather than needing a follow-up
+pass.
+
+### Phase 210 -- Illustrated-content direction, chapter 24 (final): Styles & Genres (2026-09-29)
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | New track ground color | "about" track = sage green `#6b9b5e` | The 4th and last track color needed. Matches the brightness family of the existing three (pitch sky-blue `#3a7bc4`, rhythm coral `#e2735a`, reading teal `#3f9e94`). Flagged to Sohyun for awareness/veto before use, the same way teal was introduced and flagged for the reading track in Phase 197 -- she confirmed with "응". |
+| 2 | Chapter hero illustration | `StylesHero` (new component), wired into `StylesLearn`'s `<Lesson head={...}>` slot | Sage-green ground: the chapter's own three textures side by side -- a single line (mono), a melody over chord blocks (homo), two interwoven lines (poly) -- literal to its own TextureTypes step. |
+| 3 | Recolored 3 pre-existing icons | `TOOL_ICON`: `texture-types`, `texture-spotter`, `genre-traits` | Had icons from before this rollout existed (no badge background, `var(--brass)`/mixed hues). texture-types echoes the hero's own line language; texture-spotter is an "ear" listening ring; genre-traits is a 4-quadrant swatch grid for the 4 style families. No semantic colors needed preserving -- all moved fully onto the cream/mustard/ink palette on the new sage badge. |
+| 4 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, "texture" Toolbox search screenshot confirming all 3 recolored icons and the new sage-green filter chip render correctly. Zero console/page errors. |
+| 5 | Committed, not pushed | commit `9e55fad` | Ready for Sohyun to push, along with everything since Phase 177. |
+
+**All 24 of 24 chapters are now done.** The illustrated-content rollout that began at Phase 176
+(Sohyun's direction: "시각적으로 딱 이해가기 쉽게 만드는게 먼저 우선순위야") is complete: every
+chapter has a hero illustration, and every tool in the app has a `TOOL_ICON` badge on its track's
+color. Any new chapter or tool added later should get this treatment from the start.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
