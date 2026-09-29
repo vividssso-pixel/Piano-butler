@@ -3775,6 +3775,22 @@ Continuing "ONE BY ONE FROM THE FIRST ONE" -- seventh chapter in `DRILLS` order 
 | 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, all 3 remaining new tool cards searched up individually. A broad-match search screenshot also confirmed all 6 previously shipped chapters' icons still render correctly alongside these new ones. Zero console/page errors. |
 | 4 | Committed, not pushed | commit `31d451c` | Ready for Sohyun to push, along with Phases 177-192. |
 
+### Phases 194-198 -- Illustrated-content direction: DRILLS-order correction and backfill (2026-09-29)
+
+Discovered while starting what I'd labeled "chapter 7" (Ledger Lines, Phase 193): the true `DRILLS` array order is first-steps, note-names, pulse, note-values, rhythm, staff, **reading-steps, five-finger, time-signatures, tempo, dynamics**, ledger-lines, tones, scales... -- five chapters (Steps & Skips, Five-Finger Positions, Time Signatures, Tempo Race, Dynamics & Articulation) sit between Reading the Staff and Ledger Lines and were skipped over by mistake. Ledger Lines itself (Phase 193) is fine as shipped, just built out of the strict "one by one" order. Backfilled the five skipped chapters in true DRILLS order before continuing past Ledger Lines, so the rollout is now caught up through chapter 11 with no gaps.
+
+| Phase | Chapter (DRILLS position) | Hero | Icons | Notes |
+|---|---|---|---|---|
+| 194 | Steps & Skips (7, pitch/sky-blue) | `ReadingStepsHero` -- 3 notes climbing the staff, a step then a bigger skip | `step-skip`, `mini-tune`, `complete-melody`, `echo` | Commit `7a5acdb` |
+| 195 | Five-Finger Positions (8, pitch/sky-blue) | `FiveFingerHero` -- 5 keys, 5 numbered fingers, thumb in mustard | `five-positions` | Commit `cca13ad` |
+| 196 | Time Signatures (9, rhythm/coral) | `TimeSigHero` -- big 3/4 beside one barred bar of 3 beat dots | `count-along`, `bar-lines`, `beat-doubler`, `grouping`, `duplets`, `regroup` | Commit `9d120c1` |
+| 197 | Tempo Race (10, **reading** -- new track) | `TempoHero` -- 3 race lanes sparse-to-dense, turtle + checkered flag | `metronome`, `speed-change` | Commit `e465e96`. First chapter on the "reading" track -- introduced a new ground color, **dusty teal `#3f9e94`**, distinct from pitch's sky blue and rhythm's coral, same Phase 190 brightness family. Flagging this color choice for Sohyun in case she'd rather use something else; it's one systematic hex, trivial to swap. |
+| 198 | Dynamics & Articulation (11, reading/teal) | `DynamicsHero` -- one crescendo hairpin, soft dot to loud dot | 6 tools recolored (`dyn-order`, `hairpin`, `pedal`, `touch-lengths`, `tie-slur`, `touch-ear`) from their pre-existing Phase 179 `var(--brass)`-style icons onto the new teal rounded-square badge, for gallery consistency | Commit `2f2a737` |
+
+Each phase verified individually: Babel compile + `node --check` (0 errors every time), live Playwright pass opening the full chapter plus every new/changed tool card via search, 0 console/page errors throughout. Committed, not pushed -- ready for Sohyun to push along with everything since Phase 177.
+
+Chapters 1-11 of 24 are now fully done in true DRILLS order. Next up: chapter 12 (Ledger Lines) is already done (Phase 193) -- continue from chapter 13 (Tones & Semitones) onward.
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
