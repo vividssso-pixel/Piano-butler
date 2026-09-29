@@ -3890,7 +3890,18 @@ Chapters 1-21 of 24 now done. Next: chapter 22 (melody, reading track).
 | 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, "range" Toolbox search screenshot, plus 6x cropped close-ups of both new icons. Zero console/page errors. |
 | 4 | Committed, not pushed | commit `43db14d` | Ready for Sohyun to push, along with everything since Phase 177. |
 
-Chapters 1-21 of 24 now done. Next: chapter 22 (melody, reading track).
+Chapters 1-22 of 24 now done. Next: chapter 23 (form, reading track).
+
+### Phase 208 -- Illustrated-content direction, chapter 22: Melody & Phrasing (2026-09-29)
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `MelodyHero` (new component), wired into `MelodyLearn`'s `<Lesson head={...}>` slot | Teal reading-track ground: a rising melodic contour -- notes at varying heights (pitch) spaced at varying intervals (rhythm), connected by a line -- literal to the chapter's own "Rhythm + pitch = a tune" framing and its own TuneAnatomy step. |
+| 2 | Recolored 4 pre-existing icons | `TOOL_ICON`: `tune-anatomy`, `phrase-marks`, `question-answer`, `melody-sequence` | Had icons from before this rollout existed (no badge background, `var(--brass)`/mixed hues). `question-answer` keeps the app's own good/bad semantic colors (green checkmark for the resolved "answer", red "?" for the unstable "question") -- only added the teal badge background. The other 3 moved fully onto the cream/mustard/ink palette. |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, "phrase" Toolbox search screenshot confirming all 4 recolored icons render correctly (question-answer's semantic colors intact). Zero console/page errors. |
+| 4 | Committed, not pushed | commit `b263a73` | Ready for Sohyun to push, along with everything since Phase 177. |
+
+Chapters 1-22 of 24 now done. Next: chapter 23 (form, reading track).
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
