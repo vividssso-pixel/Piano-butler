@@ -3901,7 +3901,20 @@ Chapters 1-22 of 24 now done. Next: chapter 23 (form, reading track).
 | 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, "phrase" Toolbox search screenshot confirming all 4 recolored icons render correctly (question-answer's semantic colors intact). Zero console/page errors. |
 | 4 | Committed, not pushed | commit `b263a73` | Ready for Sohyun to push, along with everything since Phase 177. |
 
-Chapters 1-22 of 24 now done. Next: chapter 23 (form, reading track).
+Chapters 1-23 of 24 now done. Next: chapter 24, the last one (styles, "about" track -- needs a ground color decided, per the established pattern for a new track).
+
+### Phase 209 -- Illustrated-content direction, chapter 23: Musical Form (2026-09-29)
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `FormHero` (new component), wired into `FormLearn`'s `<Lesson head={...}>` slot | Teal reading-track ground: an A-B-A ternary-form layout, three labeled blocks -- literal to the chapter's own "letters like A and B" framing and its ternary-form content. |
+| 2 | Recolored 4 pre-existing icons | `TOOL_ICON`: `form-shapes`, `same-or-new`, `rondo-refrain`, `binary-ternary-spot` | Had icons from before this rollout existed (no badge background, `var(--brass)`/mixed hues). None carried semantic meaning worth preserving (unlike Phase 208's question-answer) -- all 4 moved fully onto the cream/mustard/ink palette on the teal badge. |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, "section" Toolbox search screenshot confirming all 4 recolored icons render correctly. Zero console/page errors. |
+| 4 | Committed, not pushed | commit `3ab3a49` | Ready for Sohyun to push, along with everything since Phase 177. |
+
+Chapters 1-23 of 24 now done. Next: chapter 24, the last one (styles, "about" track -- needs a
+ground color decided, per the established pattern for a new track, and should be flagged to
+Sohyun for awareness/veto the way the `reading` track's teal was in Phase 197).
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
