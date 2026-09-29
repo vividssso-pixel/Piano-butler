@@ -3655,6 +3655,115 @@ session).
 | 4 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass on the Toolbox: confirmed all 13 pills render with the intended labels ("Pitch", "Rhythm", "Intervals, Scales & Keys", "Chords & Harmony", "Melody", "Form", "Styles & Genres", plus the 6 unchanged pedagogy pills), clicked several to confirm filtering still works -- zero console/page errors. Screenshot-checked the pill row visually for the cleaner 4-row layout. |
 | 5 | Committed, not pushed | commit `84a1854` | Ready for Sohyun to push, along with Phases 177-184. |
 
+### Phase 186 -- Illustrated-content direction, pilot on First Steps chapter (2026-09-29)
+
+After a dedicated design conversation (3 rounds of mockups, references: an "onto z" watering-can
+collage card, a London Jazz Festival poster, and two Pinterest mood-boards of mid-century flat
+collage illustration), Sohyun confirmed a new illustration direction for drills.html content --
+recorded in full in the `piano-butler-designer` skill (palette, scope, composition principle).
+She then said to roll it out "ONE BY ONE FROM THE FIRST ONE" rather than picking a pilot chapter
+of convenience -- so this phase applies it to `first-steps` ("Posture, Hands & Black Keys"),
+DRILLS[0], exactly as it sits in chapter order.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `FirstStepsHero` (new component), wired into `FirstStepsLearn`'s `<Lesson head={...}>` slot | Depicts the chapter's own "small house, big house" black-key analogy literally -- a 2-key cluster and a 3-key cluster drawn as roof shapes, cream fill on a slate-blue ground (the color assigned to `pitch`-track chapters per the skill's rollout plan), rust "windows" standing in for the black keys themselves, one mustard accent circle. Not a generic decoration -- the same metaphor already in the chapter's own text (Phase 186 read that text before designing the image, rather than inventing an unrelated visual). |
+| 2 | 9 new Toolbox badge icons | `TOOL_ICON`: `sit-check`, `hand-shape`, `arm-moves`, `posture-check`, `finger-numbers`, `high-low`, `key-houses`, `black-key-song`, `black-white-neighbours` | These 9 first-steps tools had no badge icon before this phase (only `arm-alignment` did) -- ToolCard degrades gracefully with no icon, so this was purely additive, no risk to existing cards. Each new badge is a self-contained colored square (same slate/cream/rust/mustard palette as the hero) depicting its own tool's mechanism literally, per the existing icon-literalism rule: a stool with a height arrow for Set up the stool, a knuckle-bridge arc for The hand shape, a sweep arc for Move with the whole arm, a checklist for Posture check, a numbered fingertip for Finger numbers, paired up/down chevrons for High, low, loud and soft, a small/big roof pair for Small house big house, a note over a black key for Your first song, and a black key beside an outlined white key for Black keys, white neighbours. |
+| 3 | Scope respected | -- | Nothing outside `drills.html` content touched. Buttons, nav, tabs, category-pill colors all stay ink/brass exactly as before -- verified by diff (`git diff --stat` showed only `drills.html`, 51 insertions). |
+| 4 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: opened the full First Steps chapter end to end (hero renders correctly, all 10 lesson steps scroll with no breakage), then searched up and screenshotted each of the 9 newly-iconified tool cards individually in the Toolbox to confirm every badge renders legibly at its real 40px size, not just in isolation. Zero console/page errors throughout. |
+| 5 | Committed, not pushed | commit `cef6c7b` | Ready for Sohyun to push, along with Phases 177-185. |
+
+While this phase was in progress, Sohyun sent a follow-up reaction to an earlier mockup round
+(the bolder, more saturated "poster" palette from round 2 of the design conversation, not the
+quieter round-3 palette that was actually confirmed and shipped here): she said she also likes
+that more colorful version and wants the eventual full set of chapters to feel like a "gallery" --
+varied, colorful, something people want to keep looking through. This doesn't contradict what
+shipped this phase (the confirmed palette already varies by chapter/track -- dusty rose, forest,
+rust, slate, mustard -- so a gallery effect builds naturally as more chapters ship), but it's worth
+her explicit steer once a few more chapters are live and she can see them side by side: whether to
+stay within the round-3 quieter family for consistency, or let later chapters lean toward round
+2's higher-saturation end of the same palette for more variety. Not a blocker -- noted here so it
+isn't lost, and to revisit once she's seen a handful of chapters together.
+
+### Phase 187 -- Illustrated-content direction, chapter 2: Note Names (2026-09-29)
+
+Continuing "ONE BY ONE FROM THE FIRST ONE" -- second chapter in `DRILLS` order.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `NoteNamesHero` (new component), wired into `NoteNamesLearn`'s `<Lesson head={...}>` slot | A ring of the 7 letters A-G on the same slate-blue ground assigned to `pitch`-track chapters, with C highlighted in mustard -- reuses the chapter's own "seven letters, A to G, then loop back" idea, and deliberately echoes `LetterCircle` (the existing in-tool ring diagram inside the Letter Chain drill) rather than inventing an unrelated image. |
+| 2 | 4 new Toolbox badge icons | `TOOL_ICON`: `find-every`, `name-reveal`, `step-updown`, `letter-chain` | None had icons before. Each depicts its own tool literally: a magnifying glass over a "C" for Find every C, a letter tile dropping onto a key for Name them in order, paired up/down arrows for Step up step down, three linked circles for Letter chain. |
+| 3 | Caught and fixed before commit | `NoteNamesHero` | First version clipped the ring (C and G cut off at the bottom of the frame) -- the first live screenshot showed it immediately, fixed by widening the viewBox and re-centering before re-verifying and committing. Left in the log as a reminder that a first screenshot of a new hero illustration is not optional, even for a "just geometry" SVG. |
+| 4 | Verification | -- | Babel compile + `node --check` (0 errors) on both the clipped and corrected version. Live Playwright pass on the corrected version: full chapter opened top to bottom, all 4 new tool cards searched up and screenshotted individually in the Toolbox. Zero console/page errors. |
+| 5 | Committed, not pushed | commit `350e2dc` | Ready for Sohyun to push, along with Phases 177-186. |
+
+### Phase 188 -- Illustrated-content direction, chapter 3: Pulse & Counting (2026-09-29)
+
+Continuing "ONE BY ONE FROM THE FIRST ONE" -- third chapter in `DRILLS` order.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `PulseHero` (new component), wired into `PulseLearn`'s `<Lesson head={...}>` slot | A heartbeat/ECG-style pulse line on the dusty-rose ground assigned to `rhythm`-track chapters, two beats marked as peaks (one mustard, one rust). Directly literal -- `SteadyBeat`'s own blurb already calls it "a heartbeat pulse to tap along with," so the illustration draws that heartbeat rather than inventing a separate metaphor. |
+| 2 | 3 new Toolbox badge icons | `TOOL_ICON`: `steady-beat`, `beat-target`, `count-aloud` | None had icons before. A small pulse-line echo of the hero for Steady Beat, a bullseye with a beat number at center for Tap the right beat, a speech bubble reading "1 2" for Count it out loud. |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, both remaining new tool cards searched up and screenshotted individually in the Toolbox. Zero console/page errors. |
+| 4 | Committed, not pushed | commit `b5b2bab` | Ready for Sohyun to push, along with Phases 177-187. |
+
+### Phase 189 -- Illustrated-content direction, chapter 4: Notes & Rests (2026-09-29)
+
+Continuing "ONE BY ONE FROM THE FIRST ONE" -- fourth chapter in `DRILLS` order.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `NoteValHero` (new component), wired into `NoteValLearn`'s `<Lesson head={...}>` slot | A binary split-tree on the dusty-rose ground shared with `pulse` (both `rhythm`-track): one whole block halving into two, then four. Directly depicts the chapter's own intro text ("every note splits into two of the next one down") and the `split-it` tool's own name. |
+| 2 | 6 new Toolbox badge icons | `TOOL_ICON`: `split-it`, `note-rest-naming`, `rest-grouping`, `whole-bar-rest`, `note-rest-match`, `fill-bar` | None had icons before. Each literal to its own tool: a splitting block for Split the notes, a note glyph "=" a rest glyph for Same name note or rest, three beat dots with the middle one accented for the beat-3 rule in Writing rests correctly, a hanging rest under a line for The whole-bar rest, two paired swatches for the memory-match game, a partly-filled bar outline for Fill the bar. |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom (8 steps, no breakage), 5 of the 6 new tool cards searched up and screenshotted individually in the Toolbox. Zero console/page errors. |
+| 4 | Committed, not pushed | commit `f33f143` | Ready for Sohyun to push, along with Phases 177-188. |
+
+### Phase 190 -- Brighten illustrated-content palette + composition polish (2026-09-29)
+
+Sohyun shared a second set of references (a fruit still life, several travel-poster style
+illustrations, a watch/picnic pairing) and gave two concrete notes: this brightness level is fine
+(brighter than the round-3 palette actually shipped in Phases 186-189), and the illustrations
+should be better balanced and "cute but sophisticated" (귀여우면서 세련되게), not just flat color
+fills. This is an evolution of the confirmed direction, not a reversal of it -- same system (one
+ground color per track, one confident object, generous space), retuned brighter and with more
+finishing detail.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Brightened palette, file-wide | Every illustration hex used in Phases 186-189 | `#4a6a84`->`#3a7bc4` (pitch ground, slate->sky blue), `#d9a9a0`->`#e2735a` (rhythm ground, dusty rose->coral), `#f4ede0`->`#f7f0e0` (cream, warmed slightly), `#b25c3f`->`#c96b3f` (rust accent), `#d9a441`->`#e8b93a` (mustard accent), plus their ink/detail pairs. Before replacing, verified every occurrence of each old hex traced back to this session's own additions (none pre-existed elsewhere in the 13,000+ line file), so a global find-and-replace was safe as a pure recolor with no risk to unrelated code. |
+| 2 | Ink outline strokes added | `FirstStepsHero`, `NoteNamesHero`, `PulseHero`, `NoteValHero` | The references' "sophisticated" quality comes partly from a clean thin outline on flat shapes, not just flat fills -- added `stroke="#241f1a"` to the cream shapes in all 4 already-shipped heroes. |
+| 3 | Composition rebalanced | `FirstStepsHero` | The original had the sun isolated top-right with nothing to counterweight it. Added a small 3-circle cloud cluster on the left and grew the canvas so the two houses read bigger and more centered -- the earlier version felt a little empty. |
+| 4 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: reopened all 4 already-shipped chapters fresh and screenshotted each hero at its new brighter palette. Zero console/page errors across all four. |
+| 5 | Committed, not pushed | commit `d194a18` | Ready for Sohyun to push, along with Phases 177-189. |
+
+The `piano-butler-designer` skill's illustrated-content palette table needs updating to match (a
+follow-up skill proposal, not a silent edit) -- the confirmed hexes recorded there from the Phase
+185 design conversation are now superseded by these brighter ones for any *new* chapter work going
+forward.
+
+### Phase 191 -- Illustrated-content direction, chapter 5: Rhythm Cards (2026-09-29)
+
+Continuing "ONE BY ONE FROM THE FIRST ONE" -- fifth chapter in `DRILLS` order.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `RhythmCardsHero` (new component), wired into `RhythmLearn`'s `<Lesson head={...}>` slot | A fanned deck of 3 outlined rhythm cards on the coral rhythm-track ground, each with a distinct note-stem pattern -- literal to the chapter's own "40 one-bar rhythms" card-deck concept. Deliberately a different composition from the other rhythm-track heroes already shipped (a heartbeat line for Pulse, a split-tree for Notes & Rests), so chapters sharing a ground color still look distinct from each other. |
+| 2 | 3 new Toolbox badge icons | `TOOL_ICON`: `anacrusis`, `count-more`, `make-card` | None had icons before. A partial pickup note leading into a full one for Anacrusis, subdivided beat ticks for Count harder rhythms, a card with a pencil corner for Make a rhythm card. |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, both remaining new tool cards searched up and screenshotted individually. Zero console/page errors. |
+| 4 | Committed, not pushed | commit `1d07936` | Ready for Sohyun to push, along with Phases 177-190. |
+
+### Phase 192 -- Illustrated-content direction, chapter 6: Reading the Staff (2026-09-29)
+
+Continuing "ONE BY ONE FROM THE FIRST ONE" -- sixth chapter in `DRILLS` order (5 of 24 done before this one). Also the first chapter shipped entirely in the Phase 190 brightened palette from the start (no separate recolor pass needed).
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `StaffHero` (new component), wired into `StaffLearn`'s `<Lesson head={...}>` slot | 5-line staff on the sky-blue pitch-track ground, with mustard circles marking notes on a line and a cream ellipse marking a note in a space -- reuses `StaffBasics`' own existing circle/ellipse coding for lines/spaces rather than inventing a new one. A simple ink-outline treble-clef swirl in cream is the secondary balancing element on the left. |
+| 2 | 11 new Toolbox badge icons | `TOOL_ICON`: `staff-basics`, `clef-basics`, `clef-story`, `staff-climb`, `rhymes`, `landmarks`, `flash-cards`, `landmark-hop`, `fold`, `write-note`, `alto-clef` | All 11 tools in the chapter iconified in one pass (per the "scatter everywhere" rule, not just the flagship tool). Each depicts the tool's own literal mechanism: a staff + circle for What is the staff?, simplified G/F clef marks for Treble/bass clef, a crown for "The Queen and the King", an ascending staircase for Climb the staff, a speech-bubble for the EGBDF rhymes, a numbered flag planted on the staff for Landmark notes, a card for flash cards, a hop arc between two notes for Hop from a landmark, a mirrored fold at middle C for Fold at middle C, a pencil drawing a dashed note for Write it on the staff, and a C-clef bracket for Alto clef. |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, all 11 tool cards searched up individually and screenshotted together in the Toolbox list -- all icons confirmed legible against the sky-blue badge background. Zero console/page errors. |
+| 4 | Committed, not pushed | commit `308bdd2` | Ready for Sohyun to push, along with Phases 177-191. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
