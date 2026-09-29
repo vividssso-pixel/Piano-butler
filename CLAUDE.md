@@ -3791,6 +3791,19 @@ Each phase verified individually: Babel compile + `node --check` (0 errors every
 
 Chapters 1-11 of 24 are now fully done in true DRILLS order. Next up: chapter 12 (Ledger Lines) is already done (Phase 193) -- continue from chapter 13 (Tones & Semitones) onward.
 
+### Phase 199 -- Illustrated-content direction, chapter 13: Semitones & Tones (2026-09-29)
+
+Continuing normally through `DRILLS` order (chapter 12, Ledger Lines, already shipped in Phase 193; the chapter 7-11 backfill finished in Phase 198).
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `TonesHero` (new component), wired into `TonesLearn`'s `<Lesson head={...}>` slot | Sky-blue pitch-track ground: a short keyboard strip with C-D (a whole step, black key between) highlighted cream and E-F (a half step, no black key between) highlighted mustard, each under a small "T"/"S" arc -- literally the chapter's own "S (1 key) / T (2 keys)" framing. First draft mistakenly drew a black key between the E-F pair -- caught on the first screenshot, fixed before committing (another "always screenshot before calling it done" catch). |
+| 2 | 4 new Toolbox badge icons | `TOOL_ICON`: `tone-semitone`, `sharp-flat`, `chromatic`, `accidental-bar` | A small keyboard segment matching the hero; a sharp sign with a bend arrow; five alternating light/mustard keys; a barred bar with a sharp curling toward a note. |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, all 4 new tool cards searched up and screenshotted. Zero console/page errors. |
+| 4 | Committed, not pushed | commit `d031320` | Ready for Sohyun to push, along with everything since Phase 177. |
+
+Chapters 1-13 of 24 now done in true DRILLS order (12 shipped Phase 193, out of strict sequence but fine as-is). Next: chapter 14 (Scales).
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
