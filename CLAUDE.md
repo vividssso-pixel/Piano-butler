@@ -3868,7 +3868,18 @@ Chapters 1-19 of 24 now done. Next: chapter 20 (piano-story, reading track).
 | 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass (EN + KO): full chapter opened top to bottom, Toolbox search screenshot, plus a 6x cropped close-up of both new icons to confirm legibility after the term-match redesign. Zero console/page errors. |
 | 4 | Committed, not pushed | commit `a4a9cc0` | Ready for Sohyun to push, along with everything since Phase 177. |
 
-Chapters 1-19 of 24 now done. Next: chapter 20 (piano-story, reading track).
+Chapters 1-20 of 24 now done. Next: chapter 21 (pitch-range, pitch track).
+
+### Phase 206 -- Illustrated-content direction, chapter 20: The Piano's Story (2026-09-29)
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `PianoStoryHero` (new component), wired into `PianoStoryLearn`'s `<Lesson head={...}>` slot | Teal reading-track ground: a 3-stop timeline (1700 Cristofori -> 1800s cast-iron frame -> Today, 88 keys) -- literal to the chapter's own PianoTimeline tool and its "Cristofori 1700 to the 88-key grand" blurb. |
+| 2 | New icons for 3 tools (chapter had none before this rollout) | `TOOL_ICON`: `keyboard-ancestors`, `piano-timeline`, `eras` | keyboard-ancestors = a string with a plectrum, a tangent and a hammer above it, literally the 3 mechanisms the tool itself compares (pluck / press / strike). piano-timeline = a small keyboard over a 3-stop timeline, echoing the hero. eras = a 4-segment color-block strip standing in for the chapter's 4 style eras (Baroque/Classical/Romantic/20th-century). |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom (had to search "Cristofori", not "piano timeline", to surface the whole-chapter link -- noted for next time), broad "piano" Toolbox search screenshot, plus 6x cropped close-ups of all 3 new icons. Zero console/page errors. |
+| 4 | Committed, not pushed | commit `31862ee` | Ready for Sohyun to push, along with everything since Phase 177. |
+
+Chapters 1-20 of 24 now done. Next: chapter 21 (pitch-range, pitch track).
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
