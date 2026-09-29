@@ -3837,6 +3837,17 @@ Chapters 1-15 of 24 now done. Next: chapter 16 (Intervals) -- note this chapter 
 
 Chapters 1-16 of 24 now done. Next: chapter 17 (Chords) -- also iconified pre-rollout (Phase 177), so expect the same hero-plus-recolor treatment.
 
+### Phase 203 -- Illustrated-content direction, chapter 17: Chords (2026-09-29)
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `ChordsHero` (new component), wired into `ChordsLearn`'s `<Lesson head={...}>` slot | Sky-blue pitch-track ground: a "snowman" triad -- three note-heads stacked in 3rds on a staff, root at the bottom in mustard -- reusing the chapter's own TriadStacker nickname ("the snowman") for root/3rd/5th. |
+| 2 | Recolored 8 pre-existing icons | `TOOL_ICON`: `triad-stack`, `major-minor`, `key-chords`, `primary-triads`, `inversions`, `cadences`, `seventh-chords`, `chord-extensions` | Had icons from Phase 177, before this rollout's badge style existed. `major-minor` and `key-chords` keep their existing `Q_COL` quality colors (major/minor/diminished), which carry real meaning elsewhere in the app -- only added the sky-blue badge background around them. The other 6 moved fully onto the cream/mustard/ink palette. |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, broad Toolbox search screenshot confirming all 8 recolored icons render correctly with Q_COL colors intact. Zero console/page errors. |
+| 4 | Committed, not pushed | commit `b1ad6e9` | Ready for Sohyun to push, along with everything since Phase 177. |
+
+Chapters 1-17 of 24 now done. Next: chapter 18 (likely the next id in the DRILLS array after "chords" -- check before building).
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
