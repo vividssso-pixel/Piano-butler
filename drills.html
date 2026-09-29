@@ -12939,13 +12939,26 @@ const GRADE_TAGS = {
 };
 function stageOf(id) { return STAGES.find(s => s.ids.includes(id)); }
 function stepsDone(id) { const d = loadDone()[id] || {}; return Object.values(d).filter(Boolean).length; }
+// Phase 211 (2026-09-29): chapter-picker gallery. Every chapter now has a hero illustration
+// (finished Phase 210), so the "All chapters" screen shows those as tappable thumbnails instead
+// of a plain text list -- Sohyun's request, inspired by a wallpaper-picker-style photo grid.
+// Reuses the existing STAGES grouping as-is: verified it already covers all 24 DRILLS ids exactly
+// once (no gaps, no duplicates), so no re-grouping work was needed before building this.
+const HERO_MAP = {
+  'first-steps': () => <FirstStepsHero/>, 'note-names': () => <NoteNamesHero/>, 'five-finger': () => <FiveFingerHero/>,
+  'pulse': () => <PulseHero/>, 'note-values': () => <NoteValHero/>, 'rhythm': () => <RhythmCardsHero/>, 'time-signatures': () => <TimeSigHero/>, 'tempo': () => <TempoHero/>,
+  'staff': () => <StaffHero/>, 'reading-steps': () => <ReadingStepsHero/>, 'ledger-lines': () => <LedgerHero/>, 'melody': () => <MelodyHero/>, 'form': () => <FormHero/>,
+  'dynamics': () => <DynamicsHero/>, 'signs': () => <SignsHero/>, 'terms': () => <TermsHero/>,
+  'tones': () => <TonesHero/>, 'scales': () => <ScalesHero/>, 'key-signatures': () => <KeySigHero/>, 'intervals': () => <IntervalsHero/>, 'chords': () => <ChordsHero/>,
+  'piano-story': () => <PianoStoryHero/>, 'pitch-range': () => <PitchRangeHero/>, 'styles': () => <StylesHero/>,
+};
 function LessonPath({ onOpen, onBack }) {
   return (
     <div className="fade-up">
       {onBack && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={onBack}>← Lesson plan</button>}
       <div className="card" style={{marginBottom:12}}>
         <h2 style={{fontSize:20,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>{UI_TEACHER ? 'All chapters' : 'Learn'}</h2>
-        <p style={{fontSize:14,color:'var(--muted)',margin:0,lineHeight:1.5}}>{UI_TEACHER ? 'Every chapter as a full lesson with a drill, grouped by topic. The groups run side by side -- the Lesson plan shows how to mix them.' : 'Pick a topic. Each one has a step-by-step lesson and a game to test yourself.'}</p>
+        <p style={{fontSize:14,color:'var(--muted)',margin:0,lineHeight:1.5}}>{UI_TEACHER ? 'Every chapter as a full lesson with a drill, grouped by topic. The groups run side by side -- the Lesson plan shows how to mix them.' : 'Pick a topic. Tap a picture to open its lesson and game.'}</p>
       </div>
       {STAGES.map((s, si) => {
         const col = STEP_COLORS[si % STEP_COLORS.length];
@@ -12955,17 +12968,21 @@ function LessonPath({ onOpen, onBack }) {
               <span style={{flex:'0 0 12px',height:30,borderRadius:6,background:col}}/>
               <span style={{display:'block',fontSize:17,fontWeight:900,lineHeight:1.2}}>{s.title}</span>
             </div>
-            <div style={{fontSize:13.5,color:'#6f665b',margin:'0 0 8px'}}>{s.blurb}</div>
-            <div style={{display:'flex',flexDirection:'column',gap:5}}>
+            <div style={{fontSize:13.5,color:'#6f665b',margin:'0 0 10px'}}>{s.blurb}</div>
+            <div style={{display:'flex',flexDirection:'column',gap:10}}>
               {s.ids.map(id => {
                 const d = DRILLS.find(x => x.id === id); if (!d) return null;
                 const n = stepsDone(id);
+                const Hero = HERO_MAP[id];
                 return (
-                  <button key={id} onClick={() => onOpen(id)} style={{display:'flex',alignItems:'center',gap:8,textAlign:'left',background:'#fff',border:'1.5px solid var(--border)',borderRadius:10,padding:'8px 10px',cursor:'pointer',color:'var(--text)'}}>
-                    <span style={{flex:1,fontSize:15,fontWeight:800}}>{d.label}</span>
-                    {n > 0 && <span style={{fontSize:11.5,fontWeight:800,color:'#4f7a45'}}>✓ {n}</span>}
-                    <span style={{fontSize:11.5,fontWeight:800,color:col,border:'1px solid ' + col,borderRadius:8,padding:'1px 6px'}}>{GRADE_TAGS[id]}</span>
-                    <span style={{color:'var(--muted)'}}>›</span>
+                  <button key={id} onClick={() => onOpen(id)} style={{display:'block',width:'100%',textAlign:'left',background:'#fff',border:'1.5px solid var(--border)',borderRadius:14,padding:0,overflow:'hidden',cursor:'pointer',color:'var(--text)'}}>
+                    {Hero && <div style={{pointerEvents:'none'}}><Hero/></div>}
+                    <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 12px 10px'}}>
+                      <span style={{flex:1,fontSize:15,fontWeight:800}}>{d.label}</span>
+                      {n > 0 && <span style={{fontSize:11.5,fontWeight:800,color:'#4f7a45'}}>✓ {n}</span>}
+                      <span style={{fontSize:11.5,fontWeight:800,color:col,border:'1px solid ' + col,borderRadius:8,padding:'1px 6px'}}>{GRADE_TAGS[id]}</span>
+                      <span style={{color:'var(--muted)'}}>›</span>
+                    </div>
                   </button>
                 );
               })}
