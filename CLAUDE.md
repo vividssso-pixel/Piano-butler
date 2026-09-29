@@ -3804,6 +3804,17 @@ Continuing normally through `DRILLS` order (chapter 12, Ledger Lines, already sh
 
 Chapters 1-13 of 24 now done in true DRILLS order (12 shipped Phase 193, out of strict sequence but fine as-is). Next: chapter 14 (Scales).
 
+### Phase 200 -- Illustrated-content direction, chapter 14: Scales (2026-09-29)
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `ScalesHero` (new component), wired into both `ScalesLearn` branches via `head={<>{scalesHero}{tabs}</>}` | Sky-blue pitch-track ground: a full 8-note run climbing evenly in one smooth line, tonic (1st/8th degree) in mustard -- "one shape builds every major scale". The `scales` DRILLS entry is actually two toggled Lessons (major/minor, existing `head={tabs}` precedent) -- the hero is built once and shown above the tabs on both, so it persists across the toggle. Deliberately a longer, smoother climb than Steps & Skips' shorter step-vs-skip contrast so the two pitch-track heroes don't read as repeats of each other. |
+| 2 | 6 new Toolbox badge icons | `TOOL_ICON`: `minor-forms`, `degree-names`, `scale-finder`, `build-major`, `build-minor`, `modes` | Three overlaid scale-shape outlines for the minor forms; a dot row with the tonic labelled "1"; a magnifying glass; a rising line to a peak (kinked lower for the minor's raised 7th); a bar chart of increasing note-counts for the seven modes. |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: chapter opened, switched between the major and minor tabs (hero confirmed present and correct in both), broad Toolbox search screenshot confirming all 6 new icons. Zero console/page errors. |
+| 4 | Committed, not pushed | commit `44814c0` | Ready for Sohyun to push, along with everything since Phase 177. |
+
+Chapters 1-14 of 24 now done. Next: chapter 15 (Key Signatures).
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
