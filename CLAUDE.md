@@ -3826,6 +3826,17 @@ Chapters 1-14 of 24 now done. Next: chapter 15 (Key Signatures).
 
 Chapters 1-15 of 24 now done. Next: chapter 16 (Intervals) -- note this chapter was already iconified in Phase 178, before this hero-illustration rollout existed, so it likely just needs a hero + a palette-consistency check on its existing icons, similar to what Dynamics needed in Phase 198.
 
+### Phase 202 -- Illustrated-content direction, chapter 16: Intervals (2026-09-29)
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `IntervalsHero` (new component), wired into `IntervalsLearn`'s `<Lesson head={...}>` slot | Sky-blue pitch-track ground: a vertical ruler between two notes with each rung numbered 1-4 -- reusing the chapter's own IntervalRuler tool as its emblem, "every interval has a number (count the letters)" from the chapter's own intro. |
+| 2 | Recolored 7 pre-existing icons | `TOOL_ICON`: `interval-ruler`, `letter-hop`, `semitone-counter`, `scale-intervals`, `interval-ear`, `invert-interval`, `tritone` | These had icons from Phase 178, before this rollout's rounded-square badge style existed. Recolored all 7 onto the sky-blue badge for gallery consistency, same treatment as Dynamics & Articulation got in Phase 198. |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, broad Toolbox search screenshot confirming all 7 recolored icons render correctly alongside every previously shipped chapter. Zero console/page errors. |
+| 4 | Committed, not pushed | commit `59eeb93` | Ready for Sohyun to push, along with everything since Phase 177. |
+
+Chapters 1-16 of 24 now done. Next: chapter 17 (Chords) -- also iconified pre-rollout (Phase 177), so expect the same hero-plus-recolor treatment.
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
