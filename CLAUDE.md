@@ -3742,6 +3742,17 @@ follow-up skill proposal, not a silent edit) -- the confirmed hexes recorded the
 185 design conversation are now superseded by these brighter ones for any *new* chapter work going
 forward.
 
+### Phase 191 -- Illustrated-content direction, chapter 5: Rhythm Cards (2026-09-29)
+
+Continuing "ONE BY ONE FROM THE FIRST ONE" -- fifth chapter in `DRILLS` order.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `RhythmCardsHero` (new component), wired into `RhythmLearn`'s `<Lesson head={...}>` slot | A fanned deck of 3 outlined rhythm cards on the coral rhythm-track ground, each with a distinct note-stem pattern -- literal to the chapter's own "40 one-bar rhythms" card-deck concept. Deliberately a different composition from the other rhythm-track heroes already shipped (a heartbeat line for Pulse, a split-tree for Notes & Rests), so chapters sharing a ground color still look distinct from each other. |
+| 2 | 3 new Toolbox badge icons | `TOOL_ICON`: `anacrusis`, `count-more`, `make-card` | None had icons before. A partial pickup note leading into a full one for Anacrusis, subdivided beat ticks for Count harder rhythms, a card with a pencil corner for Make a rhythm card. |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, both remaining new tool cards searched up and screenshotted individually. Zero console/page errors. |
+| 4 | Committed, not pushed | commit `1d07936` | Ready for Sohyun to push, along with Phases 177-190. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
