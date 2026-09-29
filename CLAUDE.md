@@ -3753,6 +3753,17 @@ Continuing "ONE BY ONE FROM THE FIRST ONE" -- fifth chapter in `DRILLS` order.
 | 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, both remaining new tool cards searched up and screenshotted individually. Zero console/page errors. |
 | 4 | Committed, not pushed | commit `1d07936` | Ready for Sohyun to push, along with Phases 177-190. |
 
+### Phase 192 -- Illustrated-content direction, chapter 6: Reading the Staff (2026-09-29)
+
+Continuing "ONE BY ONE FROM THE FIRST ONE" -- sixth chapter in `DRILLS` order (5 of 24 done before this one). Also the first chapter shipped entirely in the Phase 190 brightened palette from the start (no separate recolor pass needed).
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `StaffHero` (new component), wired into `StaffLearn`'s `<Lesson head={...}>` slot | 5-line staff on the sky-blue pitch-track ground, with mustard circles marking notes on a line and a cream ellipse marking a note in a space -- reuses `StaffBasics`' own existing circle/ellipse coding for lines/spaces rather than inventing a new one. A simple ink-outline treble-clef swirl in cream is the secondary balancing element on the left. |
+| 2 | 11 new Toolbox badge icons | `TOOL_ICON`: `staff-basics`, `clef-basics`, `clef-story`, `staff-climb`, `rhymes`, `landmarks`, `flash-cards`, `landmark-hop`, `fold`, `write-note`, `alto-clef` | All 11 tools in the chapter iconified in one pass (per the "scatter everywhere" rule, not just the flagship tool). Each depicts the tool's own literal mechanism: a staff + circle for What is the staff?, simplified G/F clef marks for Treble/bass clef, a crown for "The Queen and the King", an ascending staircase for Climb the staff, a speech-bubble for the EGBDF rhymes, a numbered flag planted on the staff for Landmark notes, a card for flash cards, a hop arc between two notes for Hop from a landmark, a mirrored fold at middle C for Fold at middle C, a pencil drawing a dashed note for Write it on the staff, and a C-clef bracket for Alto clef. |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, all 11 tool cards searched up individually and screenshotted together in the Toolbox list -- all icons confirmed legible against the sky-blue badge background. Zero console/page errors. |
+| 4 | Committed, not pushed | commit `308bdd2` | Ready for Sohyun to push, along with Phases 177-191. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
