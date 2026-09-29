@@ -3879,7 +3879,18 @@ Chapters 1-20 of 24 now done. Next: chapter 21 (pitch-range, pitch track).
 | 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom (had to search "Cristofori", not "piano timeline", to surface the whole-chapter link -- noted for next time), broad "piano" Toolbox search screenshot, plus 6x cropped close-ups of all 3 new icons. Zero console/page errors. |
 | 4 | Committed, not pushed | commit `31862ee` | Ready for Sohyun to push, along with everything since Phase 177. |
 
-Chapters 1-20 of 24 now done. Next: chapter 21 (pitch-range, pitch track).
+Chapters 1-21 of 24 now done. Next: chapter 22 (melody, reading track).
+
+### Phase 207 -- Illustrated-content direction, chapter 21: Pitch, Hz & Range (2026-09-29)
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `PitchRangeHero` (new component), wired into `PitchRangeLearn`'s `<Lesson head={...}>` slot | Sky-blue pitch-track ground (first pitch-track chapter since chapter 17, Chords): a sound wave whose frequency visibly compresses left to right (a chirp, built from a quadratic phase curve, not just a uniform wave), literal to the chapter's own "faster = higher" rule in its Vibrations and Hertz step, with a slice of piano keys along the bottom for the range half of the chapter. |
+| 2 | New icons for 2 tools (chapter had none before this rollout) | `TOOL_ICON`: `hz-explorer`, `range-chart` | hz-explorer = a wave compressing from cream/low to mustard/high, echoing the hero. range-chart = a keyboard strip with a highlighted mustard band showing an instrument/voice's range across the keys. |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, "range" Toolbox search screenshot, plus 6x cropped close-ups of both new icons. Zero console/page errors. |
+| 4 | Committed, not pushed | commit `43db14d` | Ready for Sohyun to push, along with everything since Phase 177. |
+
+Chapters 1-21 of 24 now done. Next: chapter 22 (melody, reading track).
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
