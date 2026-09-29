@@ -3912,9 +3912,27 @@ Chapters 1-23 of 24 now done. Next: chapter 24, the last one (styles, "about" tr
 | 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, "section" Toolbox search screenshot confirming all 4 recolored icons render correctly. Zero console/page errors. |
 | 4 | Committed, not pushed | commit `3ab3a49` | Ready for Sohyun to push, along with everything since Phase 177. |
 
-Chapters 1-23 of 24 now done. Next: chapter 24, the last one (styles, "about" track -- needs a
-ground color decided, per the established pattern for a new track, and should be flagged to
-Sohyun for awareness/veto the way the `reading` track's teal was in Phase 197).
+All 24 of 24 chapters now done -- the illustrated-content rollout (started Phase 176) is
+complete. Every chapter has a hero illustration wired into its `<Lesson head={...}>` slot, and
+every tool in the app has a `TOOL_ICON` entry on its track's colored badge (pitch sky-blue
+#3a7bc4, rhythm coral #e2735a, reading teal #3f9e94, about sage-green #6b9b5e). Any future new
+chapter or tool should follow this same pattern from the start rather than needing a follow-up
+pass.
+
+### Phase 210 -- Illustrated-content direction, chapter 24 (final): Styles & Genres (2026-09-29)
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | New track ground color | "about" track = sage green `#6b9b5e` | The 4th and last track color needed. Matches the brightness family of the existing three (pitch sky-blue `#3a7bc4`, rhythm coral `#e2735a`, reading teal `#3f9e94`). Flagged to Sohyun for awareness/veto before use, the same way teal was introduced and flagged for the reading track in Phase 197 -- she confirmed with "응". |
+| 2 | Chapter hero illustration | `StylesHero` (new component), wired into `StylesLearn`'s `<Lesson head={...}>` slot | Sage-green ground: the chapter's own three textures side by side -- a single line (mono), a melody over chord blocks (homo), two interwoven lines (poly) -- literal to its own TextureTypes step. |
+| 3 | Recolored 3 pre-existing icons | `TOOL_ICON`: `texture-types`, `texture-spotter`, `genre-traits` | Had icons from before this rollout existed (no badge background, `var(--brass)`/mixed hues). texture-types echoes the hero's own line language; texture-spotter is an "ear" listening ring; genre-traits is a 4-quadrant swatch grid for the 4 style families. No semantic colors needed preserving -- all moved fully onto the cream/mustard/ink palette on the new sage badge. |
+| 4 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, "texture" Toolbox search screenshot confirming all 3 recolored icons and the new sage-green filter chip render correctly. Zero console/page errors. |
+| 5 | Committed, not pushed | commit `9e55fad` | Ready for Sohyun to push, along with everything since Phase 177. |
+
+**All 24 of 24 chapters are now done.** The illustrated-content rollout that began at Phase 176
+(Sohyun's direction: "시각적으로 딱 이해가기 쉽게 만드는게 먼저 우선순위야") is complete: every
+chapter has a hero illustration, and every tool in the app has a `TOOL_ICON` badge on its track's
+color. Any new chapter or tool added later should get this treatment from the start.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
