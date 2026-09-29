@@ -3764,6 +3764,17 @@ Continuing "ONE BY ONE FROM THE FIRST ONE" -- sixth chapter in `DRILLS` order (5
 | 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, all 11 tool cards searched up individually and screenshotted together in the Toolbox list -- all icons confirmed legible against the sky-blue badge background. Zero console/page errors. |
 | 4 | Committed, not pushed | commit `308bdd2` | Ready for Sohyun to push, along with Phases 177-191. |
 
+### Phase 193 -- Illustrated-content direction, chapter 7: Ledger Lines (2026-09-29)
+
+Continuing "ONE BY ONE FROM THE FIRST ONE" -- seventh chapter in `DRILLS` order (6 of 24 done before this one).
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Chapter hero illustration | `LedgerHero` (new component), wired into `LedgerLearn`'s `<Lesson head={...}>` slot | Sky-blue pitch-track ground: a five-line staff with short ledger lines stepping out above and below, each carrying a note -- literal to the chapter's own "walk off the staff" framing (its first Step). Same mustard-circle/cream-ellipse note coding as `StaffHero`, giving the two staff-related chapters a visually related but not identical pair. |
+| 2 | 4 new Toolbox badge icons | `TOOL_ICON`: `ledger-walk`, `ledger-landmarks`, `ledger-twins`, `ledger-write` | One per tool in the chapter. Lines stepping out with notes for Walk off the staff; ACE/CAF letters beside short lines for Notes on ledger lines; two staff lines linked by a dashed connector for Same note, other staff; a dashed note + pencil corner for Write with ledger lines. |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom, all 3 remaining new tool cards searched up individually. A broad-match search screenshot also confirmed all 6 previously shipped chapters' icons still render correctly alongside these new ones. Zero console/page errors. |
+| 4 | Committed, not pushed | commit `31d451c` | Ready for Sohyun to push, along with Phases 177-192. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
