@@ -3934,6 +3934,21 @@ pass.
 chapter has a hero illustration, and every tool in the app has a `TOOL_ICON` badge on its track's
 color. Any new chapter or tool added later should get this treatment from the start.
 
+### Phase 211 -- "All chapters" screen becomes a visual gallery (2026-09-29)
+
+Sohyun's request mid-session, with a reference screenshot: a wallpaper-picker-style photo grid on
+her phone, asking whether drills.html's chapter picker could work the same way. Since all 24
+chapters now have hero illustrations (Phase 210 finished the rollout), this was directly
+buildable with existing assets.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Grouping check before building | -- | She asked how to efficiently re-review/reset the chapter grouping first. Checked `STAGES` programmatically: all 24 `DRILLS` ids appear exactly once across its 6 groups, no gaps or duplicates -- so no re-grouping was actually needed, and the existing groups (Piano basics / Rhythm & counting / Reading music / Sound, signs & terms / Theory / Know your instrument) were reused as-is. |
+| 2 | New `HERO_MAP` constant | Right above `LessonPath` | Maps each of the 24 chapter ids to its hero component (`'first-steps': () => <FirstStepsHero/>`, etc.), including the shared `ScalesHero` for the `scales` id (used by both its major/minor sub-lessons). |
+| 3 | `LessonPath` rewritten | The "All chapters" screen | Each chapter row is now a full-width tappable card: the chapter's own hero illustration on top, then title / progress checkmark / grade tag / chevron below -- replacing the old plain text-row buttons. Single column, not a multi-column grid like the reference photo, because the heroes are wide 600x160 banners; a portrait grid would have shrunk them to illegible slivers. Same `STAGES` section headers/blurbs/colors as before. |
+| 4 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: loaded the gallery directly (`?view=chapters`), scrolled top to bottom across all 6 stage groups (screenshots confirm every hero renders correctly as a thumbnail), clicked a card (Five-Finger Positions) and confirmed it opened that chapter's own lesson, plus a Korean-language pass. Zero console/page errors throughout. |
+| 5 | Committed, not pushed | commit `7e7185f` | Ready for Sohyun to push, along with everything since Phase 177. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
