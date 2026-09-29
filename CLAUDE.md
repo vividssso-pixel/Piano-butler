@@ -3719,6 +3719,29 @@ Continuing "ONE BY ONE FROM THE FIRST ONE" -- fourth chapter in `DRILLS` order.
 | 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: full chapter opened top to bottom (8 steps, no breakage), 5 of the 6 new tool cards searched up and screenshotted individually in the Toolbox. Zero console/page errors. |
 | 4 | Committed, not pushed | commit `f33f143` | Ready for Sohyun to push, along with Phases 177-188. |
 
+### Phase 190 -- Brighten illustrated-content palette + composition polish (2026-09-29)
+
+Sohyun shared a second set of references (a fruit still life, several travel-poster style
+illustrations, a watch/picnic pairing) and gave two concrete notes: this brightness level is fine
+(brighter than the round-3 palette actually shipped in Phases 186-189), and the illustrations
+should be better balanced and "cute but sophisticated" (귀여우면서 세련되게), not just flat color
+fills. This is an evolution of the confirmed direction, not a reversal of it -- same system (one
+ground color per track, one confident object, generous space), retuned brighter and with more
+finishing detail.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Brightened palette, file-wide | Every illustration hex used in Phases 186-189 | `#4a6a84`->`#3a7bc4` (pitch ground, slate->sky blue), `#d9a9a0`->`#e2735a` (rhythm ground, dusty rose->coral), `#f4ede0`->`#f7f0e0` (cream, warmed slightly), `#b25c3f`->`#c96b3f` (rust accent), `#d9a441`->`#e8b93a` (mustard accent), plus their ink/detail pairs. Before replacing, verified every occurrence of each old hex traced back to this session's own additions (none pre-existed elsewhere in the 13,000+ line file), so a global find-and-replace was safe as a pure recolor with no risk to unrelated code. |
+| 2 | Ink outline strokes added | `FirstStepsHero`, `NoteNamesHero`, `PulseHero`, `NoteValHero` | The references' "sophisticated" quality comes partly from a clean thin outline on flat shapes, not just flat fills -- added `stroke="#241f1a"` to the cream shapes in all 4 already-shipped heroes. |
+| 3 | Composition rebalanced | `FirstStepsHero` | The original had the sun isolated top-right with nothing to counterweight it. Added a small 3-circle cloud cluster on the left and grew the canvas so the two houses read bigger and more centered -- the earlier version felt a little empty. |
+| 4 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: reopened all 4 already-shipped chapters fresh and screenshotted each hero at its new brighter palette. Zero console/page errors across all four. |
+| 5 | Committed, not pushed | commit `d194a18` | Ready for Sohyun to push, along with Phases 177-189. |
+
+The `piano-butler-designer` skill's illustrated-content palette table needs updating to match (a
+follow-up skill proposal, not a silent edit) -- the confirmed hexes recorded there from the Phase
+185 design conversation are now superseded by these brighter ones for any *new* chapter work going
+forward.
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
