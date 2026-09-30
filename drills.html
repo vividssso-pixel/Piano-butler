@@ -178,8 +178,13 @@ const { useState, useEffect, useRef, useMemo } = React;
 // (b) its result would never update when the language is later toggled. Only call t() from
 // inside a component's render body (or another function only invoked during render).
 const LANG_KEY = 'pb_lang_v1';
+// Phase 216 (2026-09-30): always start in English -- Sohyun's direction ("디폴트는 영어로
+// 보여야해"). Previously this read a saved preference from localStorage, so a teacher's last
+// language choice on a given browser silently carried over to the next visit (including a
+// browser's shared file:// origin across different local copies of this file), which is why a
+// freshly-opened copy could open in Korean unexpectedly. LANG now always starts 'en'; the
+// language toggle button still switches for the current visit, it just no longer persists.
 let LANG = 'en';
-try { LANG = localStorage.getItem(LANG_KEY) === 'ko' ? 'ko' : 'en'; } catch (e) {}
 function t(en, ko) { return LANG === 'ko' ? ko : en; }
 
 const LETTERS = ['A','B','C','D','E','F','G'];
@@ -8624,26 +8629,96 @@ function playMelody(notes, bpm, onStep) {
 // high/low and loud/soft, the black-key map as a small house (2) and a big house (3), a first song
 // on the black keys; then pulse, then reading.
 // Hands seen from above, palms down: right hand thumb on the left; left hand thumb on the right.
+const FINGER_NAMES = [
+  { en: 'Captain Thumb', ko: '대장 엄지' },
+  { en: 'Pointer', ko: '가리키미' },
+  { en: 'Tall Middle', ko: '가운데 장군' },
+  { en: 'Shy Ring', ko: '수줍은 넷째' },
+  { en: 'Baby Pinky', ko: '막내 새끼' },
+];
 function HandPic({ hand, lit = null, onTap, marks = {}, size = 150 }) {
-  const lens = [30, 50, 56, 51, 40]; // finger 1..5
-  const xs = hand === 'R' ? [14, 38, 58, 78, 97] : [106, 82, 62, 42, 23];
-  const tops = [70, 22, 16, 21, 34];
+  const lens = [26, 50, 56, 51, 40]; // finger 1..5, fingertip-to-knuckle length (index 0 unused -- thumb has its own shape below)
+  const widths = [22, 16, 17, 15, 13];
+  const xs = hand === 'R' ? [16, 38, 58, 78, 97] : [104, 82, 62, 42, 23];
+  const tops = [76, 22, 16, 21, 34];
+  const R = hand === 'R';
+  // Thumb -- Phase 217 (2026-09-30): a real thumb is short and chunky with a wide base that
+  // flares smoothly out of the palm, tapering to a rounder, smaller pad at the tip -- not a
+  // fifth finger capsule rotated at an angle (that read as a stray floating blob, flagged live).
+  // Drawn as its own tapered path, rotated about its OWN base point (which sits right on the
+  // palm's outline) so the join to the palm never has a visible gap regardless of the angle.
+  const tCx = R ? 30 : 90, tBaseY = 128, tLen = 42, tTopY = tBaseY - tLen, tBaseR = 13, tTipR = 7;
+  const tAngle = R ? -32 : 32;
+  const thumbPath = `M${tCx - tBaseR},${tBaseY} C${tCx - tBaseR},${tBaseY - 16} ${tCx - tTipR - 2},${tTopY + 18} ${tCx - tTipR},${tTopY + tTipR} A${tTipR},${tTipR} 0 0 1 ${tCx + tTipR},${tTopY + tTipR} C${tCx + tTipR + 2},${tTopY + 18} ${tCx + tBaseR},${tBaseY - 16} ${tCx + tBaseR},${tBaseY} A${tBaseR},${tBaseR * 0.8} 0 0 1 ${tCx - tBaseR},${tBaseY} Z`;
+  const tOn = lit === 1, tMark = marks[1];
+  const tFill = tMark === 'good' ? '#bfe0a0' : tMark === 'bad' ? '#f0a99b' : tOn ? '#f6c343' : '#f6d7ae';
+  const tEdge = tMark === 'good' ? '#6f9c4e' : tMark === 'bad' ? '#c9604a' : tOn ? '#a8752a' : '#c9884f';
   return (
     <svg viewBox="0 0 120 150" style={{width:size,display:'block'}}>
-      <rect x={hand === 'R' ? 26 : 12} y="78" width="82" height="62" rx="24" fill="#f3e3cf" stroke="#c9a57e" strokeWidth="1.5"/>
-      {[0, 1, 2, 3, 4].map(i => {
+      <path d={hand === 'R'
+        ? 'M22,140 Q14,140 14,124 L14,100 Q14,80 34,78 L100,78 Q112,80 112,98 L112,124 Q112,140 100,140 Z'
+        : 'M98,140 Q106,140 106,124 L106,100 Q106,80 86,78 L20,78 Q8,80 8,98 L8,124 Q8,140 20,140 Z'}
+        fill="#f6d7ae" stroke="#c9884f" strokeWidth="1.8"/>
+      {/* faint permanent hint that fingers 3 and 4 share a tendon -- called out properly in TendonLink below */}
+      <path d={`M${xs[2] - (hand === 'R' ? 2 : -2)},${tops[2] + lens[2] * 0.62} Q${(xs[2]+xs[3])/2},${tops[2] + lens[2] * 0.62 + 7} ${xs[3] + (hand === 'R' ? 2 : -2)},${tops[3] + lens[3] * 0.62}`}
+        fill="none" stroke="#a8683a" strokeWidth="1.4" strokeDasharray="1 3" opacity="0.5"/>
+      <g transform={`rotate(${tAngle} ${tCx} ${tBaseY})`} onClick={onTap ? () => onTap(1) : undefined} style={{cursor:onTap ? 'pointer' : 'default'}}>
+        <path d={thumbPath} fill={tFill} stroke={tEdge} strokeWidth={tOn ? 2.5 : 1.8}/>
+        <ellipse cx={tCx} cy={tTopY + tTipR + 4} rx={tTipR * 0.55} ry={tTipR * 0.7} fill="#fff" opacity="0.4"/>
+        <text x={tCx} y={tTopY + tTipR + 6} textAnchor="middle" fontSize="12" fontWeight="900" fill="#4a2e15">1</text>
+      </g>
+      {[1, 2, 3, 4].map(i => {
         const f = i + 1, on = lit === f, m = marks[f];
-        const fill = m === 'good' ? '#dcebd5' : m === 'bad' ? '#f6d6cf' : on ? '#f3c66b' : '#f3e3cf';
-        const rot = i === 0 ? (hand === 'R' ? -28 : 28) : 0;
+        const fill = m === 'good' ? '#bfe0a0' : m === 'bad' ? '#f0a99b' : on ? '#f6c343' : '#f6d7ae';
+        const edge = m === 'good' ? '#6f9c4e' : m === 'bad' ? '#c9604a' : on ? '#a8752a' : '#c9884f';
+        const w = widths[i], len = lens[i] + 22, cx = xs[i], topY = tops[i];
+        const kx = topY + len * 0.42; // knuckle crease height
         return (
-          <g key={f} transform={`rotate(${rot} ${xs[i]} ${tops[i] + lens[i]})`} onClick={onTap ? () => onTap(f) : undefined} style={{cursor:onTap ? 'pointer' : 'default'}}>
-            <rect x={xs[i] - 9} y={tops[i]} width="18" height={lens[i] + 22} rx="9" fill={fill} stroke={on ? '#b07d2a' : '#c9a57e'} strokeWidth={on ? 2.5 : 1.5}/>
-            <text x={xs[i]} y={tops[i] + 16} textAnchor="middle" fontSize="12" fontWeight="900" fill={on || m ? '#241f1a' : '#b08e6a'}>{f}</text>
+          <g key={f} onClick={onTap ? () => onTap(f) : undefined} style={{cursor:onTap ? 'pointer' : 'default'}}>
+            <rect x={cx - w / 2} y={topY} width={w} height={len} rx={w / 2} fill={fill} stroke={edge} strokeWidth={on ? 2.5 : 1.8}/>
+            <line x1={cx - w * 0.32} x2={cx + w * 0.32} y1={kx} y2={kx} stroke="#a8683a" strokeWidth="1" opacity="0.45"/>
+            <ellipse cx={cx} cy={topY + w * 0.62} rx={w * 0.3} ry={w * 0.4} fill="#fff" opacity="0.4"/>
+            <text x={cx} y={topY + w * 0.75} textAnchor="middle" fontSize={Math.max(10, w * 0.62)} fontWeight="900" fill="#4a2e15">{f}</text>
           </g>
         );
       })}
-      <text x="60" y="126" textAnchor="middle" fontSize="12" fontWeight="900" fill="#8a6a4a">{hand === 'R' ? 'Right' : 'Left'}</text>
+      <text x="60" y="132" textAnchor="middle" fontSize="12" fontWeight="900" fill="#6b4423">{hand === 'R' ? t('Right', '오른손') : t('Left', '왼손')}</text>
     </svg>
+  );
+}
+function TendonLink() {
+  // Illustrates why finger 4 is the hardest to move alone: it shares a tendon with finger 3.
+  return (
+    <svg viewBox="0 0 160 130" style={{width:170,display:'block',margin:'6px auto'}}>
+      <rect x="52" y="18" width="20" height="72" rx="10" fill="#f3e3cf" stroke="#c9a57e" strokeWidth="1.5"/>
+      <rect x="86" y="30" width="18" height="60" rx="9" fill="#f3e3cf" stroke="#c9a57e" strokeWidth="1.5"/>
+      <path d="M70,64 Q78,74 88,68" fill="none" stroke="#b07d2a" strokeWidth="3.2" strokeLinecap="round"/>
+      <text x="62" y="102" textAnchor="middle" fontSize="12" fontWeight="900" fill="#241f1a">3</text>
+      <text x="95" y="102" textAnchor="middle" fontSize="12" fontWeight="900" fill="#241f1a">4</text>
+      <text x="79" y="118" textAnchor="middle" fontSize="9" fontWeight="800" fill="#b07d2a">{t('connected tendon', '연결된 힘줄')}</text>
+    </svg>
+  );
+}
+// Phase 217 (2026-09-30): a short, fun intro to individual finger character/anatomy, added as the
+// 4th step of Posture & Hand Shape (after hand shape, before the final posture-check review) --
+// Sohyun's "big to small" ordering for that chapter (stool -> whole arm -> hand shape -> fingers).
+// Deliberately lighter than the full FingerNumbers tool (naming/numbering drill lives in its own
+// later chapter) -- just enough to make individual fingers feel like distinct characters before
+// the numbering drill formalizes it.
+function FingerFriends() {
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Meet your fingers', '손가락과 친해지기')}</div>
+      <div style={{display:'flex',justifyContent:'center',margin:'8px 0'}}>
+        <HandPic hand="R" size={150}/>
+      </div>
+      <div style={{display:'grid',gap:7,marginTop:4}}>
+        <div style={{fontSize:13.5,lineHeight:1.5}}><b style={{color:'#b07d2a'}}>{t('2 -- Pointer', '2번 -- 가리키미')}</b>{t(': the one you already point with -- naturally quick and independent.', ': 원래 가리킬 때 쓰는 손가락이에요 -- 원래부터 빠르고 독립적으로 움직여요.')}</div>
+        <div style={{fontSize:13.5,lineHeight:1.5}}><b style={{color:'#b07d2a'}}>{t('3 -- Tall Middle', '3번 -- 가운데 장군')}</b>{t(': the longest and strongest -- naturally holds the best balance.', ': 가장 길고 힘이 세요 -- 원래부터 균형을 제일 잘 잡아요.')}</div>
+        <div style={{fontSize:13.5,lineHeight:1.5}}><b style={{color:'#b07d2a'}}>{t('4 -- Shy Ring', '4번 -- 수줍은 넷째')}</b>{t(': tied to finger 3 by a tendon, and works closely with 5 too -- the hardest to move alone, so it just needs a little extra patience.', ': 3번과 힘줄로 연결되어 있고, 5번과도 가깝게 움직여요 -- 혼자 움직이기 제일 어려운 손가락이라, 조금만 더 인내심을 가지면 돼요.')}</div>
+      </div>
+      <TendonLink/>
+    </div>
   );
 }
 function FingerNumbers() {
@@ -8660,20 +8735,41 @@ function FingerNumbers() {
     setScore(s => ({ right: s.right + (ok ? 1 : 0), tries: s.tries + 1 }));
     if (ok) setTimeout(next, 700);
   }
+  const curF = ask ? ask.f : lit.f, curHand = ask ? ask.hand : lit.hand;
+  const name = FINGER_NAMES[curF - 1];
   return (
     <div className="try-box" style={actBox}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-        <div style={actTitle}>Finger numbers</div>
+        <div style={actTitle}>{t('Finger numbers', '손가락 번호')}</div>
         {ask && <div style={{fontSize:13,fontWeight:800,color:'var(--muted)'}}>{score.right}/{score.tries}</div>}
       </div>
-      <div style={actNote}>Both thumbs are <b>1</b>, both little fingers are <b>5</b>. Hold your hands up like this, wiggle each finger as you say its number -- then play the game.</div>
-      <div style={{display:'flex',justifyContent:'center',gap:10}}>
+      <div style={actNote}>{t('Both thumbs are ', '양손 엄지는 모두 ')}<b>1</b>{t(', both little fingers are ', ', 새끼손가락은 모두 ')}<b>5</b>{t('. Hold your hands up like this, wiggle each finger as you say its number -- then play the game.', '이렇게 손을 들고, 번호를 말하면서 손가락을 하나씩 흔들어보세요 -- 그다음 게임을 해봐요.')}</div>
+      <div style={{display:'flex',justifyContent:'center',gap:34}}>
         {['L', 'R'].map(h => <HandPic key={h} hand={h} lit={!ask && lit.hand === h ? lit.f : null} marks={marks[h]} onTap={(f) => tap(h, f)}/>)}
       </div>
       <div style={{textAlign:'center',fontSize:ask ? 20 : 13,fontWeight:900,minHeight:30,margin:'4px 0'}}>
-        {ask ? <>{ask.hand === 'L' ? 'Left' : 'Right'} hand, finger <span style={{color:'#b07d2a'}}>{ask.f}</span></> : <span style={{color:'#6f665b',fontWeight:700}}>{lit.hand === 'L' ? 'Left' : 'Right'} hand, finger {lit.f}</span>}
+        {ask
+          ? (LANG === 'ko'
+              ? <>{ask.hand === 'L' ? '왼손' : '오른손'} <span style={{color:'#b07d2a'}}>{ask.f}</span>번 손가락</>
+              : <>{ask.hand === 'L' ? 'Left' : 'Right'} hand, finger <span style={{color:'#b07d2a'}}>{ask.f}</span></>)
+          : <span style={{color:'#6f665b',fontWeight:700}}>
+              {LANG === 'ko' ? <>{lit.hand === 'L' ? '왼손' : '오른손'} {lit.f}번 손가락</> : <>{lit.hand === 'L' ? 'Left' : 'Right'} hand, finger {lit.f}</>}
+            </span>}
       </div>
-      <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={() => { if (ask) { setAsk(null); setMarks({ L: {}, R: {} }); } else { setScore({ right: 0, tries: 0 }); next(); } }}>{ask ? 'Stop the game' : '▶ Play “Show me finger…”'}</button></div>
+      <div style={{textAlign:'center',fontSize:13.5,fontWeight:800,color:'#b07d2a',marginBottom:6}}>{t(name.en, name.ko)}</div>
+      <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={() => { if (ask) { setAsk(null); setMarks({ L: {}, R: {} }); } else { setScore({ right: 0, tries: 0 }); next(); } }}>{ask ? t('Stop the game', '게임 멈추기') : t('▶ Play “Show me finger…”', '▶ “몇 번 손가락인지 보여줘” 플레이')}</button></div>
+      <div style={{display:'flex',flexWrap:'wrap',justifyContent:'center',gap:5,marginTop:10}}>
+        {FINGER_NAMES.map((n, i) => (
+          <span key={i} className="chip" style={{padding:'3px 9px',fontSize:12,background: i + 1 === curF ? '#f3c66b' : '#fff'}}>
+            <b>{i + 1}</b> {t(n.en, n.ko)}
+          </span>
+        ))}
+      </div>
+      <div style={{background:'#fff',borderRadius:8,padding:'9px 12px',marginTop:10}}>
+        <div style={{fontSize:13.5,fontWeight:900,marginBottom:2}}>{t('Why is finger 4 the tricky one?', '왜 넷째 손가락이 제일 어려울까요?')}</div>
+        <TendonLink/>
+        <div style={{fontSize:13,color:'#5c544a',lineHeight:1.5,textAlign:'center'}}>{t('Fingers 3 and 4 share a tendon under the skin, so lifting finger 4 alone naturally tugs on finger 3 too. That’s not a mistake in your hand -- everyone’s hands work this way! It just needs a little extra patient practice.', '3번과 4번 손가락은 피부 밑에서 힘줄이 연결되어 있어서, 4번을 혼자 들어올리려고 하면 3번도 같이 따라와요. 손이 잘못된 게 아니라 원래 다 그래요! 그래서 4번 손가락은 조금 더 인내심 있게 연습해야 해요.')}</div>
+      </div>
     </div>
   );
 }
@@ -8861,35 +8957,99 @@ function FirstStepsHero() {
   return (
     <div style={{borderRadius:16,overflow:'hidden',marginBottom:14}}>
       <svg viewBox="0 0 600 160" width="100%" style={{display:'block'}}>
-        <rect width="600" height="160" fill="#3a7bc4"/>
+        <rect width="600" height="160" fill="#c1517c"/>
         <rect x="0" y="130" width="600" height="30" fill="#f7f0e0"/>
         <circle cx="500" cy="38" r="22" fill="#e8b93a"/>
         <circle cx="90" cy="34" r="15" fill="#f7f0e0" opacity="0.85"/>
         <circle cx="112" cy="30" r="19" fill="#f7f0e0" opacity="0.85"/>
         <circle cx="138" cy="36" r="14" fill="#f7f0e0" opacity="0.85"/>
         <path d="M195 118 L195 66 L252 32 L309 66 L309 118 Z" fill="#f7f0e0" stroke="#241f1a" strokeWidth="2"/>
-        <rect x="223" y="80" width="16" height="38" fill="#e2735a"/>
-        <rect x="255" y="80" width="16" height="38" fill="#e2735a"/>
+        <rect x="223" y="80" width="16" height="38" fill="#a8395f"/>
+        <rect x="255" y="80" width="16" height="38" fill="#a8395f"/>
         <path d="M330 118 L330 60 L410 16 L490 60 L490 118 Z" fill="#f7f0e0" stroke="#241f1a" strokeWidth="2"/>
-        <rect x="356" y="72" width="16" height="46" fill="#e2735a"/>
-        <rect x="402" y="72" width="16" height="46" fill="#e2735a"/>
-        <rect x="448" y="72" width="16" height="46" fill="#e2735a"/>
+        <rect x="356" y="72" width="16" height="46" fill="#a8395f"/>
+        <rect x="402" y="72" width="16" height="46" fill="#a8395f"/>
+        <rect x="448" y="72" width="16" height="46" fill="#a8395f"/>
       </svg>
     </div>
   );
 }
-function PostureHandsLearn({ onStart }) {
+function PostureHandsHero() {
+  // Side-view seated silhouette (same line+stool grammar as the redesigned arm-alignment
+  // diagram) at a mini keyboard, on the new pink "Getting Started" track.
+  return (
+    <div style={{borderRadius:16,overflow:'hidden',marginBottom:14}}>
+      <svg viewBox="0 0 600 160" width="100%" style={{display:'block'}}>
+        <rect width="600" height="160" fill="#c1517c"/>
+        <rect x="0" y="132" width="600" height="28" fill="#f7f0e0"/>
+        <circle cx="500" cy="36" r="20" fill="#e8b93a"/>
+        <rect x="330" y="60" width="30" height="14" rx="4" fill="#a8395f"/>
+        <line x1="345" y1="74" x2="345" y2="120" stroke="#a8395f" strokeWidth="5"/>
+        <line x1="316" y1="120" x2="374" y2="120" stroke="#a8395f" strokeWidth="6" strokeLinecap="round"/>
+        <line x1="345" y1="120" x2="315" y2="55" stroke="#f7f0e0" strokeWidth="12" strokeLinecap="round"/>
+        <circle cx="313" cy="45" r="12" fill="#f3e3cf" stroke="#f7f0e0" strokeWidth="2"/>
+        <path d="M300,55 L245,30 L245,66 L300,66 Z" fill="#f7f0e0" opacity="0.9"/>
+        <line x1="300" y1="60" x2="270" y2="46" stroke="#c1517c" strokeWidth="6" strokeLinecap="round"/>
+        <rect x="150" y="70" width="80" height="10" fill="#fff"/>
+        <rect x="164" y="67" width="8" height="7" fill="#241f1a"/>
+        <rect x="184" y="67" width="8" height="7" fill="#241f1a"/>
+        <rect x="204" y="67" width="8" height="7" fill="#241f1a"/>
+      </svg>
+    </div>
+  );
+}
+function FingerNumbersHero() {
+  // A friendly right hand with numbered fingertips, banner-scale, matching the redesigned HandPic.
+  const xs = [340, 380, 420, 460, 496], tops = [92, 44, 32, 42, 60], lens = [44, 76, 86, 78, 62], widths = [36, 26, 27, 24, 21];
+  return (
+    <div style={{borderRadius:16,overflow:'hidden',marginBottom:14}}>
+      <svg viewBox="0 0 600 160" width="100%" style={{display:'block'}}>
+        <rect width="600" height="160" fill="#c1517c"/>
+        <rect x="0" y="132" width="600" height="28" fill="#f7f0e0"/>
+        <circle cx="90" cy="36" r="20" fill="#e8b93a"/>
+        <path d="M300,150 Q300,110 340,102 L520,102 Q560,110 560,150 Z" fill="#f3e3cf" stroke="#f7f0e0" strokeWidth="2"/>
+        {[0,1,2,3,4].map(i => {
+          const rot = i === 0 ? -30 : 0;
+          return (
+            <g key={i} transform={`rotate(${rot} ${xs[i]} ${tops[i]+lens[i]})`}>
+              <rect x={xs[i]-widths[i]/2} y={tops[i]} width={widths[i]} height={lens[i]} rx={widths[i]/2} fill="#f3e3cf" stroke="#f7f0e0" strokeWidth="2"/>
+              <text x={xs[i]} y={tops[i]+widths[i]*0.66} textAnchor="middle" fontSize={widths[i]*0.6} fontWeight="900" fill="#a8395f">{i+1}</text>
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+function HandClefsHero() {
+  // A simplified grand staff with a small hand-figure beside each staff.
+  return (
+    <div style={{borderRadius:16,overflow:'hidden',marginBottom:14}}>
+      <svg viewBox="0 0 600 160" width="100%" style={{display:'block'}}>
+        <rect width="600" height="160" fill="#c1517c"/>
+        <rect x="0" y="132" width="600" height="28" fill="#f7f0e0"/>
+        <circle cx="500" cy="36" r="20" fill="#e8b93a"/>
+        {[36,46,56,66,76].map((y,i) => <line key={'t'+i} x1="150" x2="470" y1={y} y2={y} stroke="#f7f0e0" strokeWidth="2"/>)}
+        {[92,102,112,122,132].map((y,i) => <line key={'b'+i} x1="150" x2="470" y1={y} y2={y} stroke="#f7f0e0" strokeWidth="2"/>)}
+        <line x1="150" y1="36" x2="150" y2="132" stroke="#f7f0e0" strokeWidth="3"/>
+        <circle cx="105" cy="56" r="16" fill="#f3e3cf" stroke="#f7f0e0" strokeWidth="2"/>
+        <rect x="90" y="70" width="30" height="24" rx="10" fill="#f3e3cf" stroke="#f7f0e0" strokeWidth="2"/>
+        <circle cx="105" cy="112" r="16" fill="#f3e3cf" stroke="#f7f0e0" strokeWidth="2"/>
+        <rect x="90" y="126" width="30" height="24" rx="10" fill="#f3e3cf" stroke="#f7f0e0" strokeWidth="2"/>
+        <circle cx="310" cy="56" r="7" fill="#e8b93a"/>
+        <circle cx="310" cy="112" r="7" fill="#e8b93a"/>
+      </svg>
+    </div>
+  );
+}
+function PostureHandsLearn() {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="posture-hands" title={t('Posture, hand shape and finger numbers', '자세, 손 모양, 손가락 번호')} onStart={onStart}
-      intro={<>{t('Before any notes: how to sit, how the hand is shaped, and what each finger is called. Get this right first -- everything else builds on it.', '음을 배우기 전에: 어떻게 앉을지, 손 모양은 어떻게 만들지, 손가락 이름은 무엇인지부터 익혀요. 이걸 먼저 제대로 잡아야 나머지가 잘 쌓여요.')}</>}>
+    <Lesson id="posture-hands" title={t('Posture and hand shape', '자세와 손 모양')}
+      intro={<>{t('Before any notes: how to sit, and how the hand is shaped. Get this right first -- everything else builds on it.', '음을 배우기 전에: 어떻게 앉을지, 손 모양은 어떻게 만들지부터 익혀요. 이걸 먼저 제대로 잡아야 나머지가 잘 쌓여요.')}</>}>
       <Step title={t('Sit at the piano', '피아노 앞에 앉기')}>
         {tip(t('Sitting', '앉는 법'), t('Sit on the front half of the stool, feet flat, facing middle C. Stool height: forearm level with the keys. Distance: elbows just in front of the body, open a little to the side.', '의자 앞쪽 절반에 앉고, 발은 바닥에 평평하게, 가운데 도(C)를 마주보게 앉아요. 의자 높이: 팔뚝이 건반과 수평이 되도록. 거리: 팔꿈치가 몸 바로 앞에, 옆으로 살짝 벌어지게.'))}
         <SitCheck/>
-      </Step>
-      <Step title={t('The hand shape', '손 모양')}>
-        {tip(t('A round hand', '둥근 손'), t('Let your arms hang, then lift your hands as if holding a small ball. Knuckles up like a bridge, wrist level with the forearm, play on the fingertip pads, the thumb on its side.', '팔을 편하게 늘어뜨렸다가, 작은 공을 쥐듯이 손을 들어올려요. 손가락 마디는 다리처럼 위로, 손목은 팔뚝과 수평으로, 손가락 끝 살로 연주하고, 엄지손가락은 옆면으로.'))}
-        <HandShape/>
       </Step>
       <Step title={t('Move with the whole arm', '팔 전체로 움직이기')}>
         {tip(t('The arm carries the hand', '팔이 손을 데려가요'), t('Fingers play the keys, but the arm takes the hand where it needs to go -- the hand keeps its shape all the way. Do these a few minutes at the start of every practice.', '손가락이 건반을 누르지만, 손을 필요한 곳으로 데려가는 건 팔이에요 -- 손 모양은 계속 그대로 유지돼요. 연습을 시작할 때마다 몇 분씩 이 동작들을 해보세요.'))}
@@ -8898,15 +9058,98 @@ function PostureHandsLearn({ onStart }) {
       <Step title={t('Feel the arm weight', '팔 무게 느껴보기')}>
         <ArmAlignment/>
       </Step>
+      <Step title={t('The hand shape', '손 모양')}>
+        {tip(t('A round hand', '둥근 손'), t('Let your arms hang, then lift your hands as if holding a small ball. Knuckles up like a bridge, wrist level with the forearm, play on the fingertip pads, the thumb on its side.', '팔을 편하게 늘어뜨렸다가, 작은 공을 쥐듯이 손을 들어올려요. 손가락 마디는 다리처럼 위로, 손목은 팔뚝과 수평으로, 손가락 끝 살로 연주하고, 엄지손가락은 옆면으로.'))}
+        <HandShape/>
+      </Step>
+      <Step title={t('Meet your fingers', '손가락과 친해지기')}>
+        <FingerFriends/>
+      </Step>
       <Step title={t('Posture check', '자세 점검')}>
         <PostureChecklist/>
       </Step>
+    </Lesson>
+  );
+}
+function FingerNumbersLearn({ onStart }) {
+  return (
+    <Lesson id="finger-numbers" title={t('Finger numbers', '손가락 번호')} onStart={onStart}
+      intro={<>{t('Every finger has a number, 1 to 5 from the thumb, the same on both hands. Teachers use these constantly -- "put finger 2 on D" -- so they need to be automatic before reading fingerings on the page.', '엄지부터 1~5번까지, 양손 모두 똑같이 번호가 있어요. 선생님들이 항상 쓰는 말이에요 -- "2번 손가락을 레 위에 놓으세요" -- 그러니 악보의 손가락 번호를 읽기 전에 자동으로 나와야 해요.')}</>}>
       <Step title={t('Finger numbers', '손가락 번호')}>
         <FingerNumbers/>
       </Step>
     </Lesson>
   );
 }
+function HandClefMatch() {
+  const [ask, setAsk] = useState(null); // 'treble' | 'bass' | null
+  const [result, setResult] = useState(null); // 'good' | 'bad' | null
+  const [score, setScore] = useState({ right: 0, tries: 0 });
+  function next() { setAsk(Math.random() < 0.5 ? 'treble' : 'bass'); setResult(null); }
+  function answer(hand) {
+    const correct = (ask === 'treble' && hand === 'R') || (ask === 'bass' && hand === 'L');
+    setResult(correct ? 'good' : 'bad');
+    setScore(s => ({ right: s.right + (correct ? 1 : 0), tries: s.tries + 1 }));
+    if (correct) setTimeout(next, 700);
+  }
+  const noteD = ask === 'treble' ? 32 : ask === 'bass' ? 20 : null;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>{t('Which hand plays this staff?', '이 줄은 어느 손이 연주할까요?')}</div>
+        {ask && <div style={{fontSize:13,fontWeight:800,color:'var(--muted)'}}>{score.right}/{score.tries}</div>}
+      </div>
+      <div style={actNote}>{t('The top staff (treble clef -- the Queen of G) is usually the right hand. The bottom staff (bass clef -- the King of F) is usually the left hand.', '위쪽 줄(높은음자리표 -- 생대 G)은 보통 오른손이에요. 아래쪽 줄(낮은음자리표 -- 왕 F)은 보통 왼손이에요.')}</div>
+      <StaffView clef="grand" spread notes={noteD !== null ? [{ d: noteD, color: '#a8823f' }] : []}/>
+      {!ask ? (
+        <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={() => { setScore({ right: 0, tries: 0 }); next(); }}>{t('▶ Play', '▶ 시작')}</button></div>
+      ) : (
+        <>
+          <div style={{display:'flex',justifyContent:'center',gap:10,margin:'8px 0'}}>
+            <button className={'chip' + (result === 'good' && true ? '' : '')} style={{padding:'8px 18px',fontSize:15,fontWeight:800}} onClick={() => answer('L')}>{t('Left hand', '왼손')}</button>
+            <button className="chip" style={{padding:'8px 18px',fontSize:15,fontWeight:800}} onClick={() => answer('R')}>{t('Right hand', '오른손')}</button>
+          </div>
+          {result && <div style={{textAlign:'center',fontWeight:900,color: result === 'good' ? '#4f7a45' : '#b5483b'}}>{result === 'good' ? t('Yes!', '맞아요!') : t('Try again', '다시 해봐요')}</div>}
+        </>
+      )}
+    </div>
+  );
+}
+function HandClefsLearn({ onStart }) {
+  return (
+    <Lesson id="hand-clefs" title={t('Hands and clefs', '손과 음자리표')} head={<HandClefsHero/>} onStart={onStart}
+      intro={<>{t('Two staves stacked together make the Grand Staff. Each one usually belongs to a different hand.', '두 줄이 위아래로 겹쳐진 걸 그랜드 스태프라고 해요. 각 줄은 보통 다른 손이 맡아요.')}</>}>
+      <Step title={t('The Grand Staff', '그랜드 스태프')}>
+        <Rule title={t('Two staves, two hands', '두 줄, 두 손')}>{t('The top staff has the treble clef (the curly one -- the Queen of G). The bottom staff has the bass clef (two dots -- the King of F). Middle C sits right between them, on its own short line.', '위쪽 줄에는 높은음자리표(구불구불한 모양 -- 생대 G)가 있어요. 아래쪽 줄에는 낮은음자리표(점 두 개 -- 왕 F)가 있어요. 가운데 도(C)는 두 줄 사이, 자기만의 짧은 줄 위에 있어요.')}</Rule>
+        <HandClefMatch/>
+      </Step>
+    </Lesson>
+  );
+}
+const HAND_CLEF_LEVELS = [
+  { n: 1, label: 'Which hand plays which clef?', kind: 'clef', time: 6 },
+];
+function genHandClefQuestion(lv, prev) {
+  let clef, g = 0;
+  do { clef = Math.random() < 0.5 ? 'treble' : 'bass'; } while (prev && prev.key === clef && g++ < 10);
+  return { kind: 'clef', key: clef, clef, answer: clef === 'treble' ? 'Right' : 'Left', choices: ['Left', 'Right'], uid: Math.random() };
+}
+function HandClefQuestion({ q, given, locked, onAnswer, pixel }) {
+  const done = !!given;
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const cls = (c) => btnCls + (!done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '');
+  return (<div>
+    <p style={pixel ? {fontSize:11.5,textAlign:'center'} : {fontSize:15,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? 'WHICH HAND?' : 'Which hand usually plays this clef?'}</p>
+    <div style={{marginBottom:12}}><StaffView clef="grand" spread notes={[{ d: q.clef === 'treble' ? 32 : 20, color: '#a8823f' }]}/></div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8}}>{q.choices.map(c => <button key={c} disabled={locked} className={cls(c)} style={{padding:'16px 0',fontSize:pixel ? 10 : 18}} onClick={() => onAnswer(c)}>{c}</button>)}</div>
+  </div>);
+}
+const HAND_CLEFS_DRILL = {
+  id: 'hand-clefs', label: 'Hands & Clefs', levels: HAND_CLEF_LEVELS, generate: genHandClefQuestion,
+  check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
+  answerLabel: (q) => q.answer.toLowerCase() + ' hand',
+  Question: HandClefQuestion, Learn: HandClefsLearn,
+};
 function FirstStepsLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
@@ -8929,7 +9172,7 @@ function FirstStepsLearn({ onStart }) {
     </Lesson>
   );
 }
-const POSTURE_LEVELS = [
+const FINGER_LEVELS = [
   { n: 1, label: 'Which finger?', kind: 'finger', time: 6 },
 ];
 const FS_LEVELS = [
@@ -8965,11 +9208,11 @@ function FsQuestion({ q, given, locked, onAnswer, pixel }) {
     <div style={{display:'grid',gridTemplateColumns:'repeat(' + (q.choices.length === 5 ? 5 : 2) + ',1fr)',gap:8}}>{q.choices.map(c => <button key={c} disabled={locked} className={cls(c)} style={{padding:'16px 0',fontSize:pixel ? 10 : 18}} onClick={() => onAnswer(c)}>{c}</button>)}</div>
   </div>);
 }
-const POSTURE_HANDS_DRILL = {
-  id: 'posture-hands', label: 'Posture & Hand Shape', levels: POSTURE_LEVELS, generate: genFsQuestion,
+const FINGER_NUMBERS_DRILL = {
+  id: 'finger-numbers', label: 'Finger Numbers', levels: FINGER_LEVELS, generate: genFsQuestion,
   check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
   answerLabel: (q) => (q.hand === 'L' ? 'left' : 'right') + ' hand finger ' + q.f,
-  Question: FsQuestion, Learn: PostureHandsLearn,
+  Question: FsQuestion, Learn: FingerNumbersLearn,
 };
 const FIRST_STEPS_DRILL = {
   id: 'first-steps', label: 'Keyboard Patterns', levels: FS_LEVELS, generate: genFsQuestion,
@@ -11264,8 +11507,10 @@ const STYLES_DRILL = {
 };
 
 const DRILLS = [
-  { id: 'posture-hands', label: 'Posture & Hand Shape', concept: POSTURE_HANDS_DRILL, track: 'pitch' },
-  { id: 'first-steps', label: 'Black Keys & Your First Song', concept: FIRST_STEPS_DRILL, track: 'pitch' },
+  { id: 'posture-hands', label: 'Posture & Hand Shape', render: () => <PostureHandsLearn/>, track: 'start' },
+  { id: 'finger-numbers', label: 'Finger Numbers', concept: FINGER_NUMBERS_DRILL, track: 'start' },
+  { id: 'hand-clefs', label: 'Hands & Clefs', concept: HAND_CLEFS_DRILL, track: 'start' },
+  { id: 'first-steps', label: 'Black Keys & Your First Song', concept: FIRST_STEPS_DRILL, track: 'start' },
   { id: 'note-names', label: 'Note Names', concept: NOTE_NAMES_DRILL, track: 'pitch' },
   { id: 'pulse', label: 'Pulse & Counting', concept: PULSE_DRILL, track: 'rhythm' },
   { id: 'note-values', label: 'Notes & Rests', concept: NOTEVAL_DRILL, track: 'rhythm' },
@@ -12832,8 +13077,9 @@ const TOOLS = [
   { id: 'eras', ch: 'piano-story', title: 'The style eras', blurb: 'Baroque to today: traits, composers, hear the style.', C: () => <ErasTimeline/> },
   { id: 'hz-explorer', ch: 'pitch-range', title: 'How high is a note? Hz', blurb: 'Vibrations per second; octaves double.', C: () => <HzExplorer/> },
   { id: 'range-chart', ch: 'pitch-range', title: 'Who plays where?', blurb: 'Instrument and voice ranges over the 88 keys.', C: () => <RangeChart/> },
-  { id: 'finger-numbers', ch: 'posture-hands', title: 'Finger numbers', blurb: '“Show me finger 3!” -- both hands.', C: () => <FingerNumbers/> },
+  { id: 'finger-numbers', ch: 'finger-numbers', title: 'Finger numbers', blurb: '“Show me finger 3!” -- both hands.', C: () => <FingerNumbers/> },
   { id: 'arm-alignment', ch: 'posture-hands', title: 'Arm weight & alignment', blurb: 'Move over the diagram -- watch elbow, wrist and finger joints react.', C: () => <ArmAlignment/> },
+  { id: 'hand-clef-match', ch: 'hand-clefs', title: 'Which hand plays this staff?', blurb: 'Treble clef, bass clef, left hand or right.', C: () => <HandClefMatch/> },
   { id: 'high-low', ch: 'first-steps', title: 'High or low, loud or soft', blurb: 'Listening games before reading.', C: () => <HighLowGame/> },
   { id: 'key-houses', ch: 'first-steps', title: 'Small house, big house (black keys)', blurb: 'The black-key map; where C and F live.', C: () => <KeyHouses/> },
   { id: 'black-key-song', ch: 'first-steps', title: 'First black-key song', blurb: 'Hot Cross Buns and Mary, by rote.', C: () => <BlackKeySong/> },
@@ -12944,7 +13190,8 @@ const TOOLS = [
 // Sohyun: student + piano first, then pulse, then reading (rhythm and notes together), then
 // five-finger positions, then the AMEB theory chapters. Grade tags show where AMEB asks for it.
 const STAGES = [
-  { n: 1, title: 'Piano basics', blurb: 'Sitting and hands, finger numbers, the black-key groups, note names, five-finger positions.', ids: ['posture-hands', 'first-steps', 'note-names', 'five-finger'] },
+  { n: 0, title: 'Getting Started', blurb: 'Sitting at the keyboard, hand shape and finger numbers, which hand plays which clef, and the black-key map with a first little tune.', ids: ['posture-hands', 'finger-numbers', 'hand-clefs', 'first-steps'] },
+  { n: 1, title: 'Piano basics', blurb: 'Note names and five-finger positions.', ids: ['note-names', 'five-finger'] },
   { n: 2, title: 'Rhythm & counting', blurb: 'The steady beat, note values, rhythm cards, time signatures, speed.', ids: ['pulse', 'note-values', 'rhythm', 'time-signatures', 'tempo'] },
   { n: 3, title: 'Reading music', blurb: 'The staff, the Queen and the King, steps and skips, ledger lines, how phrases shape a tune, and how a piece is put together.', ids: ['staff', 'reading-steps', 'ledger-lines', 'melody', 'form'] },
   { n: 4, title: 'Sound, signs & terms', blurb: 'Loud and soft, touch, repeats and signs, Italian terms.', ids: ['dynamics', 'signs', 'terms'] },
@@ -12952,7 +13199,7 @@ const STAGES = [
   { n: 6, title: 'Know your instrument', blurb: 'The piano’s story, the style eras, pitch in Hz, the ranges of the orchestra, and how styles and textures differ.', ids: ['piano-story', 'pitch-range', 'styles'] },
 ];
 const GRADE_TAGS = {
-  'posture-hands': 'Beginner', 'first-steps': 'Beginner', 'note-names': 'Prelim', pulse: 'Beginner', 'note-values': 'Prelim', rhythm: 'Prelim–G2', staff: 'Prelim',
+  'posture-hands': 'Beginner', 'finger-numbers': 'Beginner', 'hand-clefs': 'Beginner', 'first-steps': 'Beginner', 'note-names': 'Prelim', pulse: 'Beginner', 'note-values': 'Prelim', rhythm: 'Prelim–G2', staff: 'Prelim',
   'reading-steps': 'Beginner', 'five-finger': 'Beginner', 'time-signatures': 'Prelim–G2', tempo: 'Prelim–G1', dynamics: 'Prelim–G1',
   'ledger-lines': 'Prelim–G2', tones: 'Prelim–G1', scales: 'Prelim–G3', 'key-signatures': 'Prelim–G3', intervals: 'Prelim–G3', chords: 'Prelim–G3', signs: 'Prelim–G2', terms: 'G1–G4',
   'piano-story': 'General knowledge', 'pitch-range': 'General knowledge', 'melody': 'Prelim–G2', 'form': 'Prelim–G3', 'styles': 'General knowledge',
@@ -12965,6 +13212,7 @@ function stepsDone(id) { const d = loadDone()[id] || {}; return Object.values(d)
 // Reuses the existing STAGES grouping as-is: verified it already covers all 24 DRILLS ids exactly
 // once (no gaps, no duplicates), so no re-grouping work was needed before building this.
 const HERO_MAP = {
+  'posture-hands': () => <PostureHandsHero/>, 'finger-numbers': () => <FingerNumbersHero/>, 'hand-clefs': () => <HandClefsHero/>,
   'first-steps': () => <FirstStepsHero/>, 'note-names': () => <NoteNamesHero/>, 'five-finger': () => <FiveFingerHero/>,
   'pulse': () => <PulseHero/>, 'note-values': () => <NoteValHero/>, 'rhythm': () => <RhythmCardsHero/>, 'time-signatures': () => <TimeSigHero/>, 'tempo': () => <TempoHero/>,
   'staff': () => <StaffHero/>, 'reading-steps': () => <ReadingStepsHero/>, 'ledger-lines': () => <LedgerHero/>, 'melody': () => <MelodyHero/>, 'form': () => <FormHero/>,
@@ -13061,7 +13309,9 @@ const CHAPTER_SEARCH_TERMS = {
   'pulse': 'pulse beat steady tempo metronome',
   'rhythm': 'rhythm clap count beat pattern',
   'reading-steps': 'sight reading step skip melody',
-  'posture-hands': 'posture hand shape finger number beginner sit stool arm weight alignment',
+  'posture-hands': 'posture hand shape beginner sit stool arm weight alignment',
+  'finger-numbers': 'finger number which finger hand thumb',
+  'hand-clefs': 'treble clef bass clef grand staff left hand right hand queen of g king of f which hand',
   'first-steps': 'black key small house big house first song white neighbour keyboard pattern',
   'five-finger': 'five finger position hand',
   'terms': 'italian term tempo word meaning',
@@ -13316,31 +13566,34 @@ const TOOL_ICON = {
   // Phase 186 (2026-09-29): illustrated-content badges, first-steps pilot chapter -- slate ground,
   // cream/rust object, one mustard accent, each depicting its own tool literally.
   'sit-check': () => (
-    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3a7bc4"/><rect x="6" y="14" width="12" height="3.4" rx="1.5" fill="#f7f0e0"/><rect x="7.5" y="17.4" width="2.2" height="4" fill="#c96b3f"/><rect x="14.3" y="17.4" width="2.2" height="4" fill="#c96b3f"/><path d="M12 12.5 V7" stroke="#e8b93a" strokeWidth="1.8" strokeLinecap="round"/><path d="M9.5 9 L12 6.5 L14.5 9" fill="none" stroke="#e8b93a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#c1517c"/><rect x="6" y="14" width="12" height="3.4" rx="1.5" fill="#f7f0e0"/><rect x="7.5" y="17.4" width="2.2" height="4" fill="#c96b3f"/><rect x="14.3" y="17.4" width="2.2" height="4" fill="#c96b3f"/><path d="M12 12.5 V7" stroke="#e8b93a" strokeWidth="1.8" strokeLinecap="round"/><path d="M9.5 9 L12 6.5 L14.5 9" fill="none" stroke="#e8b93a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
   ),
   'hand-shape': () => (
-    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3a7bc4"/><path d="M5 17 Q6 9 12 9 Q18 9 19 17" fill="none" stroke="#f7f0e0" strokeWidth="2.4" strokeLinecap="round"/><circle cx="6" cy="17.5" r="1.6" fill="#e8b93a"/><circle cx="10" cy="18.3" r="1.6" fill="#e8b93a"/><circle cx="14" cy="18.3" r="1.6" fill="#e8b93a"/><circle cx="18" cy="17.5" r="1.6" fill="#e8b93a"/></svg>
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#c1517c"/><path d="M5 17 Q6 9 12 9 Q18 9 19 17" fill="none" stroke="#f7f0e0" strokeWidth="2.4" strokeLinecap="round"/><circle cx="6" cy="17.5" r="1.6" fill="#e8b93a"/><circle cx="10" cy="18.3" r="1.6" fill="#e8b93a"/><circle cx="14" cy="18.3" r="1.6" fill="#e8b93a"/><circle cx="18" cy="17.5" r="1.6" fill="#e8b93a"/></svg>
   ),
   'arm-moves': () => (
-    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3a7bc4"/><path d="M5 8 Q9 20 19 15" fill="none" stroke="#f7f0e0" strokeWidth="2.4" strokeLinecap="round"/><circle cx="19" cy="15" r="2.3" fill="#c96b3f"/></svg>
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#c1517c"/><path d="M5 8 Q9 20 19 15" fill="none" stroke="#f7f0e0" strokeWidth="2.4" strokeLinecap="round"/><circle cx="19" cy="15" r="2.3" fill="#c96b3f"/></svg>
   ),
   'posture-check': () => (
-    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3a7bc4"/><rect x="6" y="4.5" width="12" height="16" rx="1.6" fill="#f7f0e0"/><path d="M8.5 10 L10.3 11.8 L14 7.8" fill="none" stroke="#c96b3f" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/><path d="M8.5 15 L10.3 16.8 L14 12.8" fill="none" stroke="#e8b93a" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#c1517c"/><rect x="6" y="4.5" width="12" height="16" rx="1.6" fill="#f7f0e0"/><path d="M8.5 10 L10.3 11.8 L14 7.8" fill="none" stroke="#c96b3f" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/><path d="M8.5 15 L10.3 16.8 L14 12.8" fill="none" stroke="#e8b93a" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>
   ),
   'finger-numbers': () => (
-    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3a7bc4"/><path d="M10 20 V10 a2 2 0 0 1 4 0 v6" fill="none" stroke="#f7f0e0" strokeWidth="2.4" strokeLinecap="round"/><circle cx="16.5" cy="7.5" r="4" fill="#e8b93a"/><text x="16.5" y="9.4" textAnchor="middle" fontSize="6" fontWeight="900" fill="#241f1a">3</text></svg>
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#c1517c"/><path d="M10 20 V10 a2 2 0 0 1 4 0 v6" fill="none" stroke="#f7f0e0" strokeWidth="2.4" strokeLinecap="round"/><circle cx="16.5" cy="7.5" r="4" fill="#e8b93a"/><text x="16.5" y="9.4" textAnchor="middle" fontSize="6" fontWeight="900" fill="#241f1a">3</text></svg>
+  ),
+  'hand-clef-match': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#c1517c"/><line x1="4" y1="8" x2="20" y2="8" stroke="#f7f0e0" strokeWidth="1.4"/><line x1="4" y1="10.6" x2="20" y2="10.6" stroke="#f7f0e0" strokeWidth="1.4"/><line x1="4" y1="14.4" x2="20" y2="14.4" stroke="#f7f0e0" strokeWidth="1.4"/><line x1="4" y1="17" x2="20" y2="17" stroke="#f7f0e0" strokeWidth="1.4"/><circle cx="9" cy="9.3" r="2.3" fill="#e8b93a"/><circle cx="15" cy="15.7" r="2.3" fill="#e8b93a"/></svg>
   ),
   'high-low': () => (
-    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3a7bc4"/><path d="M8 10 L8 3 M5.3 5.7 L8 3 L10.7 5.7" fill="none" stroke="#f7f0e0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/><path d="M17 14 L17 21 M14.3 18.3 L17 21 L19.7 18.3" fill="none" stroke="#c96b3f" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#c1517c"/><path d="M8 10 L8 3 M5.3 5.7 L8 3 L10.7 5.7" fill="none" stroke="#f7f0e0" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/><path d="M17 14 L17 21 M14.3 18.3 L17 21 L19.7 18.3" fill="none" stroke="#c96b3f" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
   ),
   'key-houses': () => (
-    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3a7bc4"/><path d="M4 18 L4 12.5 L7.5 10 L11 12.5 L11 18 Z" fill="#f7f0e0"/><rect x="5.6" y="14" width="1.8" height="4" fill="#c96b3f"/><rect x="8" y="14" width="1.8" height="4" fill="#c96b3f"/><path d="M13 18 L13 10.5 L17.5 7.5 L22 10.5 L22 18 Z" fill="#f7f0e0"/><rect x="14.7" y="12" width="1.8" height="6" fill="#c96b3f"/><rect x="16.6" y="12" width="1.8" height="6" fill="#c96b3f"/><rect x="18.5" y="12" width="1.8" height="6" fill="#c96b3f"/></svg>
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#c1517c"/><path d="M4 18 L4 12.5 L7.5 10 L11 12.5 L11 18 Z" fill="#f7f0e0"/><rect x="5.6" y="14" width="1.8" height="4" fill="#c96b3f"/><rect x="8" y="14" width="1.8" height="4" fill="#c96b3f"/><path d="M13 18 L13 10.5 L17.5 7.5 L22 10.5 L22 18 Z" fill="#f7f0e0"/><rect x="14.7" y="12" width="1.8" height="6" fill="#c96b3f"/><rect x="16.6" y="12" width="1.8" height="6" fill="#c96b3f"/><rect x="18.5" y="12" width="1.8" height="6" fill="#c96b3f"/></svg>
   ),
   'black-key-song': () => (
-    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3a7bc4"/><rect x="7" y="13" width="4" height="8" fill="#c96b3f"/><circle cx="16" cy="15" r="3" fill="#f7f0e0"/><path d="M19 15 V6 L21.5 6.6" stroke="#f7f0e0" strokeWidth="1.8" strokeLinecap="round" fill="none"/></svg>
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#c1517c"/><rect x="7" y="13" width="4" height="8" fill="#c96b3f"/><circle cx="16" cy="15" r="3" fill="#f7f0e0"/><path d="M19 15 V6 L21.5 6.6" stroke="#f7f0e0" strokeWidth="1.8" strokeLinecap="round" fill="none"/></svg>
   ),
   'black-white-neighbours': () => (
-    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3a7bc4"/><rect x="5" y="6" width="6" height="14" rx="1" fill="#f7f0e0" stroke="#241f1a" strokeWidth="1"/><rect x="12.5" y="6" width="5" height="9.5" fill="#c96b3f"/><path d="M12 17 L18.5 17" stroke="#e8b93a" strokeWidth="1.6" strokeLinecap="round" strokeDasharray="1.5 2"/></svg>
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#c1517c"/><rect x="5" y="6" width="6" height="14" rx="1" fill="#f7f0e0" stroke="#241f1a" strokeWidth="1"/><rect x="12.5" y="6" width="5" height="9.5" fill="#c96b3f"/><path d="M12 17 L18.5 17" stroke="#e8b93a" strokeWidth="1.6" strokeLinecap="round" strokeDasharray="1.5 2"/></svg>
   ),
   // Phase 187 (2026-09-29): illustrated-content badges, chapter 2 (note-names).
   'find-every': () => (
@@ -14163,7 +14416,7 @@ function App() {
   const [lang, setLang] = useState(LANG);
   const [findOpen, setFindOpen] = useState(false);
   LANG = lang;
-  function toggleLang() { const next = lang === 'ko' ? 'en' : 'ko'; try { localStorage.setItem(LANG_KEY, next); } catch (e) {} setLang(next); }
+  function toggleLang() { const next = lang === 'ko' ? 'en' : 'ko'; setLang(next); }
   const T = teacher && !preview && !st.lock;
   UI_TEACHER = T;
   const active = DRILLS.find(d => d.id === st.drill) || DRILLS[0];
