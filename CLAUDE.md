@@ -4079,6 +4079,17 @@ confirmed this choice.
 | 3 | Verification | -- | Babel compile (`@babel/core`, React preset, classic runtime) + `node --check`: 0 errors. Live Playwright pass (Chromium, React/Babel served locally because the sandbox blocks the CDN): Level 1 and 2 render, a wrong answer shows red/green plus the explanation and a Next button, Korean toggle relabels all choices and the explanation, Game mode renders the pixel labels without overflow, the Learn tab now shows "Start the drill" and Learn/Drill tabs. 0 console/page errors (only the known Babel 500KB note). |
 | 4 | Not covered | -- | The 17-point posture checklist and arm-exercise tools are unchanged. First-steps, finger-numbers and hand-clefs already had drills. |
 
+### Phase 221 -- Toolbox categories become in-place accordion bars, reordered (2026-09-30)
+
+Sohyun: category chips/sections looked mismatched; wanted long bars that open downward on the same page, order settled first, colour/design unification later.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Accordion bars | `Toolbox` | Removed the scroll-jump chip row. Each `TOOL_CATS` entry is a full-width bar (dot, name, hint, count, chevron) that opens its tools in place (`openCats` state); search/level/kind/problem filters auto-open matching categories. |
+| 2 | Category order | `TOOL_CATS` | Now teaching order: Posture & hands, Pitch, Rhythm, Intervals/Scales/Keys, Chords, Melody, Form, Touch & expression, Signs & terms, Ear, Styles, About music, Practice helpers. |
+| 3 | Deferred | -- | Colour/design unification (TOOL_CATS dots vs track-coloured icon badges vs legacy plain icons e.g. arm-alignment) left for later, as Sohyun asked. |
+| 4 | Verification | -- | Babel compile + node --check clean; Playwright: 13 bars, open/close works, search auto-opens, no page errors. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 

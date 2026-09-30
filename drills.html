@@ -13465,20 +13465,21 @@ const CHAPTER_SEARCH_TERMS = {
   'form': 'form binary ternary rondo ABA AB ABACA section refrain episode structure same new repeat',
   'styles': 'style genre texture monophony homophony polyphony solo melody folk classical jazz blues popular music',
 };
+// Phase 221: order = teaching order (body -> notes -> rhythm -> theory -> music-in-context -> helpers)
 const TOOL_CATS = [
   { id: 'body', name: 'Posture & hands', when: 'Sitting, hand shape, arm weight, fingers', color: '#3f7fb5' },
   { id: 'pitch', name: 'Pitch', when: 'Finding notes on the keys and the staff -- clefs, landmarks, ledger lines, sight-reading', color: '#6f9a4f' },
   { id: 'rhythm', name: 'Rhythm', when: 'Steady beat, counting out loud, note values, filling bars, time signatures, metronome', color: '#c07a1e' },
-  { id: 'expression', name: 'Touch & expression', when: 'Dynamics, legato and staccato, speed changes', color: '#7a64a8' },
-  { id: 'ear', name: 'Ear & listening', when: 'Copy by ear, hear intervals, high/low', color: '#2f8a86' },
   { id: 'scales', name: 'Intervals, Scales & Keys', when: 'Tones, sharps and flats, intervals, scales, key signatures', color: '#8a6a2a' },
   { id: 'harmony', name: 'Chords & Harmony', when: 'Triads, I IV V, inversions, cadences, seventh chords', color: '#b0527a' },
-  { id: 'words', name: 'Signs & terms', when: 'Italian terms, repeats and road maps, ties', color: '#5c6f86' },
-  { id: 'practice', name: 'Practice helpers', when: 'Timer, dice, perfect reps', color: '#4f7a45' },
-  { id: 'about', name: 'About music', when: 'History of the piano, eras, pitch and range', color: '#8a7a6a' },
   { id: 'melody', name: 'Melody', when: 'What a tune is, phrase marks, question and answer, sequences', color: '#9e5b8f' },
   { id: 'form', name: 'Form', when: 'Binary and ternary form, rondo, spotting same vs. new sections', color: '#c26b4a' },
+  { id: 'expression', name: 'Touch & expression', when: 'Dynamics, legato and staccato, speed changes', color: '#7a64a8' },
+  { id: 'words', name: 'Signs & terms', when: 'Italian terms, repeats and road maps, ties', color: '#5c6f86' },
+  { id: 'ear', name: 'Ear & listening', when: 'Copy by ear, hear intervals, high/low', color: '#2f8a86' },
   { id: 'styles', name: 'Styles & Genres', when: 'Musical textures, folk/classical/jazz/pop traits', color: '#4a6fa5' },
+  { id: 'about', name: 'About music', when: 'History of the piano, eras, pitch and range', color: '#8a7a6a' },
+  { id: 'practice', name: 'Practice helpers', when: 'Timer, dice, perfect reps', color: '#4f7a45' },
 ];
 // cat, level range [from, to] (0 Beginner, 1 Prelim, 2 Grade 1–2, 3 Grade 3–4), kinds
 // kinds: show = show & explain, game = student does it, ear = listening, write = written theory, home = home practice
@@ -14034,6 +14035,7 @@ function Toolbox({ onOpen, onChapter, kit, onStar }) {
   const [kind, setKind] = useState('all');
   const [prob, setProb] = useState(-1);
   const [showProb, setShowProb] = useState(false);
+  const [openCats, setOpenCats] = useState({});
   const words = q.toLowerCase().split(/\s+/).filter(Boolean);
   const pset = prob >= 0 ? PROBLEMS[prob][1] : null;
   const match = (t) => {
@@ -14054,9 +14056,6 @@ function Toolbox({ onOpen, onChapter, kit, onStar }) {
             for the same at-a-glance browsing at the top of the Toolbox, since the category
             grouping below (unchanged) was easy to miss under the search/filter card. This row
             always shows every category (not filtered), same as the Learn tab's chip grid. */}
-        <div style={{display:'flex',gap:7,flexWrap:'wrap',marginBottom:12}}>
-          {TOOL_CATS.map(c => <button key={c.id} className="cat-pill" onClick={() => { const el = document.getElementById('cat-' + c.id); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }}><span className="cat-dot" style={{background:c.color}}/>{c.name}</button>)}
-        </div>
         <input className="search-input" value={q} onChange={e => setQ(e.target.value)} placeholder="Search: wrist, triad, 6/8, Bb scale..." style={{marginBottom:8}}/>
         {(() => { const sc = parseScaleQuery(q); return sc ? (
           <button onClick={() => { PENDING_SCALE = sc; onOpen('scale-finder'); }} style={{width:'100%',textAlign:'left',border:'1.5px solid #8a6a2a',background:'#fbf3e2',borderRadius:10,padding:'9px 12px',marginBottom:8,cursor:'pointer',fontFamily:'inherit',color:'var(--text)'}}>
@@ -14076,14 +14075,21 @@ function Toolbox({ onOpen, onChapter, kit, onStar }) {
       {TOOL_CATS.map(c => {
         const list = TOOLS.filter(t => toolMeta(t.id).cat === c.id && match(t));
         if (!list.length) return null;
+        const isOpen = filtered ? true : !!openCats[c.id];
         return (
-          <div key={c.id} id={'cat-' + c.id} style={{marginBottom:18,scrollMarginTop:12}}>
-            <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',padding:'0 0 7px',borderBottom:'1.5px solid var(--border)',marginBottom:10}}>
-              <span style={{width:9,height:9,borderRadius:'50%',background:c.color,flex:'0 0 auto'}}/>
-              <span style={{fontSize:14,fontWeight:900,color:'var(--text)',letterSpacing:'-0.01em'}}>{c.name}</span>
-              <span style={{fontSize:12.5,color:'var(--muted)'}}>{c.when}</span>
-            </div>
-            <ChapterGroups list={list} colorOf={() => c.color} starIds={kit ? kit.tools : null} onStar={onStar} onOpen={onOpen} onChapter={onChapter}/>
+          <div key={c.id} id={'cat-' + c.id} style={{marginBottom:8}}>
+            <button onClick={() => setOpenCats(o => ({...o, [c.id]: !isOpen}))} aria-expanded={isOpen} style={{width:'100%',display:'flex',alignItems:'center',gap:10,textAlign:'left',background:'#fff',border:'1.5px solid var(--border)',borderRadius:12,padding:'13px 14px',cursor:'pointer',fontFamily:'inherit',color:'var(--text)',boxShadow:'0 1px 3px rgba(36,31,26,0.05)'}}>
+              <span style={{width:12,height:12,borderRadius:'50%',background:c.color,flex:'0 0 auto'}}/>
+              <span style={{flex:1,minWidth:0}}>
+                <span style={{display:'block',fontSize:16.5,fontWeight:900,letterSpacing:'-0.01em'}}>{c.name}</span>
+                <span style={{display:'block',fontSize:12.5,color:'var(--muted)',marginTop:2,lineHeight:1.35}}>{c.when}</span>
+              </span>
+              <span style={{fontSize:12.5,fontWeight:800,color:'var(--muted)',flex:'0 0 auto'}}>{list.length}</span>
+              <span style={{fontSize:15,color:'var(--muted)',flex:'0 0 auto',transform:isOpen ? 'rotate(180deg)' : 'none',transition:'transform .2s'}}>▾</span>
+            </button>
+            {isOpen && <div className="fade-up" style={{marginTop:10}}>
+              <ChapterGroups list={list} colorOf={() => c.color} starIds={kit ? kit.tools : null} onStar={onStar} onOpen={onOpen} onChapter={onChapter}/>
+            </div>}
           </div>
         );
       })}
