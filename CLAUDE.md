@@ -4100,6 +4100,12 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 | 4 | Prototype pages shelved | movement-lab.html, piano-body-atlas.html, piano-posture-detail.html, pasted-kinematic-viewer.svg stay untracked and unlinked as reference only; fold into Posture chapter only if a specific need arises. |
 | 5 | Rhythm Cards tap timing | Still needs a real-phone check (Pending #17). |
 
+### Phase 223 -- Finger Numbers merged into Posture & Hand Shape (2026-09-30)
+- Sohyun: shelve Rhythm Cards tap-timing (still needs a real-phone check, Pending #17), tidy categories in order, fold Finger Numbers into Posture & Hand Shape after step 5.
+- `drills.html`: Posture & Hand Shape now has 7 steps (new step 6 "Finger numbers" with the `<FingerNumbers/>` tool, before "Posture check") and 3 drill levels (level 3 "Which finger?" reuses `genFsQuestion`/`FsQuestion`, dispatched by `kind`).
+- Removed the standalone `finger-numbers` chapter (DRILLS, STAGES, GRADE_TAGS, HERO_MAP, search terms, `FingerNumbersLearn`, `FINGER_NUMBERS_DRILL`, `FingerNumbersHero`). Toolbox tool `finger-numbers` kept, now `ch: 'posture-hands'`; old `?drill=finger-numbers` links alias to posture-hands.
+- Verified: Babel + `new Function()` compile, live Chromium load of posture-hands / old drill link / tool link, level 3 quiz, Korean step title; zero page errors.
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
