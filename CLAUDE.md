@@ -4116,6 +4116,7 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 - `drills.html`: `CHAPTER_CAT` maps each of the 26 chapters to a `TOOL_CATS` id; `LessonPath` (student Learn + teacher All chapters) now groups by category with the category name, blurb and colour; empty categories (Ear, Practice helpers) are hidden; the chapter page header shows the category and its prev/next arrows follow category order. `STAGES` still exists for legacy data only.
 - Toolbox: every chapter group now starts with a full-width "View full page: <chapter> →" row.
 - Follow-up (same day): Five-Finger Positions moved into Intervals, Scales & Keys as the warm-up before Scales (order: Tones, Five-finger, Scales, Key signatures, Intervals; its Toolbox tool re-categorised to match). Hand & Clefs stays under Pitch. Posture & hands now holds only Posture & Hand Shape.
+- Split (same day, Sohyun: too many in one group): "Intervals, Scales & Keys" (23 tools) became **Tones & Intervals** (10 tools; chapters Tones, Intervals) and **Scales & Keys** (13 tools; chapters Five-finger warm-up, Scales, Key signatures). New category id `tones`.
 - Verified: Babel + `new Function()`, live Chromium student Learn, chapter header, teacher All chapters, Toolbox rows; zero page errors.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
