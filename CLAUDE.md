@@ -4020,6 +4020,22 @@ Sohyun: "디폴트는 영어로 보여야해" (the default must show in English)
 | 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass that specifically reproduces Sohyun's scenario: set `pb_lang_v1='ko'` in `localStorage` first (simulating a prior Korean toggle click), then reload -- toggle button correctly reads "한국어" (confirming the page is in English), not "EN". Clicked the toggle to confirm Korean still works mid-session, then reloaded again and confirmed it returned to English (no persistence), all with 0 console errors. |
 | 4 | Committed, not pushed | commit `7324e57` | Ready for Sohyun to push, along with everything since Phase 177. |
 
+
+### Phase 217 -- Natural thumb shape, Posture chapter reordered big-to-small, new finger-facts step (2026-09-30)
+
+Sohyun compared the redesigned `HandPic` against a reference hand illustration (wikiHow's "Names
+of Each Finger") and flagged the thumb specifically as looking wrong -- also asked to reorder
+Posture & Hand Shape from big body parts to small ones (stool -> whole-arm movement -> hand shape
+-> individual fingers), with a new short step giving fingers 2/3/4 quick, fun anatomical facts.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Thumb redesigned | `HandPic` | The thumb was literally the same rounded-rect finger capsule used for fingers 2-5, just shorter and rotated -- next to a reference illustration this read as a floating, disconnected blob rather than an actual thumb. Replaced with its own tapered `<path>` (a wide, rounded base that flares directly out of the palm outline, narrowing to a smaller rounded pad at the tip -- the actual shape of a thumb, not a finger), rotated about its own base point (which sits right on the palm's edge) rather than a distant pivot, so the join to the palm has no visible gap at any rotation angle. Tuned iteratively against live screenshots: first pass still showed a small gap (rotated base swinging slightly below the palm's flat bottom edge), fixed by moving the pivot further into the palm interior and reducing rotation to 32°. |
+| 2 | Posture & Hand Shape reordered | `PostureHandsLearn` | Was: sit, hand shape, whole-arm movement, arm weight, posture check. Now, big body part to small: sit at the piano (stool/space) -> move with the whole arm -> feel the arm weight (both arm-related steps now sit together) -> the hand shape -> **Meet your fingers** (new) -> posture check (kept as the final wrap-up review, unchanged). |
+| 3 | New step: Meet your fingers | New `FingerFriends` component, reusing `HandPic` and the existing `TendonLink` | A short, playful intro to individual finger character -- deliberately lighter than the full `FingerNumbers` tool (naming/numbering practice stays in its own later chapter): finger 2 "Pointer" (the one already used for pointing, naturally quick and independent), finger 3 "Tall Middle" (longest and strongest, naturally the best balance), finger 4 "Shy Ring" (tied to finger 3 by a tendon *and* works closely with 5 too -- the hardest to move alone, needs a little extra patience). Reuses the same `TendonLink` illustration already built for the Finger Numbers chapter rather than duplicating it. |
+| 4 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: confirmed the new step order renders correctly top to bottom, expanded "Meet your fingers" and screenshotted the redesigned thumb both isolated (cropped) and in context, confirmed the chapter still has 0 Drill-tab buttons (concept-less, unaffected by the reorder), a Korean-language pass on the reordered chapter, and confirmed the quiz-embedded `HandPic` inside `FsQuestion` (Finger Numbers chapter's Drill tab, rendered at a larger 170px size) still renders the new thumb correctly with 0 errors. |
+| 5 | Committed, not pushed | commit `5d048ed` | Ready for Sohyun to push, along with everything since Phase 177. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
