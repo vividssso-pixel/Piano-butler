@@ -178,8 +178,13 @@ const { useState, useEffect, useRef, useMemo } = React;
 // (b) its result would never update when the language is later toggled. Only call t() from
 // inside a component's render body (or another function only invoked during render).
 const LANG_KEY = 'pb_lang_v1';
+// Phase 216 (2026-09-30): always start in English -- Sohyun's direction ("디폴트는 영어로
+// 보여야해"). Previously this read a saved preference from localStorage, so a teacher's last
+// language choice on a given browser silently carried over to the next visit (including a
+// browser's shared file:// origin across different local copies of this file), which is why a
+// freshly-opened copy could open in Korean unexpectedly. LANG now always starts 'en'; the
+// language toggle button still switches for the current visit, it just no longer persists.
 let LANG = 'en';
-try { LANG = localStorage.getItem(LANG_KEY) === 'ko' ? 'ko' : 'en'; } catch (e) {}
 function t(en, ko) { return LANG === 'ko' ? ko : en; }
 
 const LETTERS = ['A','B','C','D','E','F','G'];
@@ -14370,7 +14375,7 @@ function App() {
   const [lang, setLang] = useState(LANG);
   const [findOpen, setFindOpen] = useState(false);
   LANG = lang;
-  function toggleLang() { const next = lang === 'ko' ? 'en' : 'ko'; try { localStorage.setItem(LANG_KEY, next); } catch (e) {} setLang(next); }
+  function toggleLang() { const next = lang === 'ko' ? 'en' : 'ko'; setLang(next); }
   const T = teacher && !preview && !st.lock;
   UI_TEACHER = T;
   const active = DRILLS.find(d => d.id === st.drill) || DRILLS[0];
