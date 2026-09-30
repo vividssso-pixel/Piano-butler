@@ -4066,6 +4066,19 @@ Step 4 ("Ready for more? The white neighbours") should go.
 | 4 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: confirmed the step count dropped from 4 to 3 ("0 of 3 steps done"), confirmed both the removed step's title and the teacher note text are gone from the rendered page in English and Korean, screenshotted the hero banner to confirm the sky reads blue, a short regression pass across the other three "Getting Started" chapters (posture-hands, finger-numbers, hand-clefs) found nothing broken, and confirmed the separate, chapter-agnostic Practice tab (a different, unrelated tool list) still renders with 0 errors. |
 | 5 | Committed, not pushed | commit `3c74ad1` | Ready for Sohyun to push, along with everything since Phase 177. |
 
+### Phase 220 -- Posture & Hand Shape gets a Drill tab: spot the stool / hand fault (2026-09-30)
+
+Sohyun asked to continue the practice-drills work (drills.html). Nothing was queued, so the
+session picked the one Getting Started chapter with no Drill tab: Posture & Hand Shape. Sohyun
+confirmed this choice.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | New two-level drill for `posture-hands` | New `POSTURE_LEVELS`, `POSTURE_SIT`, `POSTURE_HAND`, `genPostureQuestion`, `PostureQuestion`, `POSTURE_HANDS_DRILL`; `DRILLS` entry switched from `render:` to `concept:`; `PostureHandsLearn({ onStart })` + `onStart` passed to its `Lesson` | Level 1 "Is the stool set up right?" shows the existing `SeatedFigure` in one of five presets (`SIT_PRESETS`) and asks Just right / too low / too high / too close / too far. Level 2 "Spot the hand-shape fault" shows the existing `HandSide` (labels hidden so the green/red markers don't give the answer away) in one of six `HAND_POSES` and asks which fault it is. Both levels work in Lesson and Game (pixel) mode, print worksheet and share link (all via the standard `concept` contract). After an answer, a one-line "why + fix" appears in English or Korean. |
+| 2 | Visual-first | -- | Every question is a picture, not a paragraph. No new illustrations were needed: both figures are reused from the Learn steps, so the drill tests exactly what the lesson shows. |
+| 3 | Verification | -- | Babel compile (`@babel/core`, React preset, classic runtime) + `node --check`: 0 errors. Live Playwright pass (Chromium, React/Babel served locally because the sandbox blocks the CDN): Level 1 and 2 render, a wrong answer shows red/green plus the explanation and a Next button, Korean toggle relabels all choices and the explanation, Game mode renders the pixel labels without overflow, the Learn tab now shows "Start the drill" and Learn/Drill tabs. 0 console/page errors (only the known Babel 500KB note). |
+| 4 | Not covered | -- | The 17-point posture checklist and arm-exercise tools are unchanged. First-steps, finger-numbers and hand-clefs already had drills. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 

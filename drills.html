@@ -9128,10 +9128,10 @@ function HandClefsHero() {
     </div>
   );
 }
-function PostureHandsLearn() {
+function PostureHandsLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="posture-hands" title={t('Posture and hand shape', '자세와 손 모양')}
+    <Lesson id="posture-hands" title={t('Posture and hand shape', '자세와 손 모양')} onStart={onStart}
       intro={<>{t('Before any notes: how to sit, and how the hand is shaped. Get this right first -- everything else builds on it.', '음을 배우기 전에: 어떻게 앉을지, 손 모양은 어떻게 만들지부터 익혀요. 이걸 먼저 제대로 잡아야 나머지가 잘 쌓여요.')}</>}>
       <Step title={t('Sit at the piano', '피아노 앞에 앉기')}>
         {tip(t('Sitting', '앉는 법'), t('Sit on the front half of the stool, feet flat, facing middle C. Stool height: forearm level with the keys. Distance: elbows just in front of the body, open a little to the side.', '의자 앞쪽 절반에 앉고, 발은 바닥에 평평하게, 가운데 도(C)를 마주보게 앉아요. 의자 높이: 팔뚝이 건반과 수평이 되도록. 거리: 팔꿈치가 몸 바로 앞에, 옆으로 살짝 벌어지게.'))}
@@ -9157,6 +9157,59 @@ function PostureHandsLearn() {
     </Lesson>
   );
 }
+const POSTURE_LEVELS = [
+  { n: 1, label: 'Is the stool set up right?', kind: 'sit', time: 12 },
+  { n: 2, label: 'Spot the hand-shape fault', kind: 'hand', time: 12 },
+];
+const POSTURE_SIT = [
+  { id: 'good',  en: 'Just right',     ko: '딱 좋아요',       px: 'JUST RIGHT', why: ['Forearm level with the keys, elbows just in front of the body. That is the set-up.', '팔뚝이 건반과 수평이고 팔꿈치가 몸 바로 앞에 있어요. 이게 알맞은 자리예요.'] },
+  { id: 'low',   en: 'Stool too low',  ko: '의자가 너무 낮아요', px: 'TOO LOW',    why: ['The forearm slopes up to the keys and the shoulders hunch. Raise the stool.', '팔뚝이 건반 쪽으로 올라가고 어깨가 솟아요. 의자를 높여요.'] },
+  { id: 'high',  en: 'Stool too high', ko: '의자가 너무 높아요', px: 'TOO HIGH',   why: ['The forearm slopes down onto the keys. Lower the stool until the forearm is level.', '팔뚝이 건반 아래로 기울어요. 팔뚝이 수평이 되도록 의자를 낮춰요.'] },
+  { id: 'close', en: 'Too close',      ko: '너무 가까워요',     px: 'TOO CLOSE',  why: ['The elbows are tucked behind the body and the arms are cramped. Slide the stool back a little.', '팔꿈치가 몸 뒤로 들어가 팔이 답답해요. 의자를 조금 뒤로 빼요.'] },
+  { id: 'far',   en: 'Too far',        ko: '너무 멀어요',       px: 'TOO FAR',    why: ['The arms reach out ahead of the body. Slide the stool closer.', '팔이 몸 앞으로 쭉 뻗어요. 의자를 조금 가까이 당겨요.'] },
+];
+const POSTURE_HAND = [
+  { id: 'good',   en: 'The good shape',        ko: '좋은 손 모양',        px: 'GOOD SHAPE',  why: ['Knuckles make a bridge, the wrist is level with the forearm, and the finger plays on its tip.', '너클이 다리처럼 올라오고, 손목은 팔뚝과 수평이고, 손가락 끝으로 쳐요.'] },
+  { id: 'flat',   en: 'Flat fingers',          ko: '손가락이 펴졌어요',    px: 'FLAT FINGERS', why: ['The finger lies flat. Hold a small ball, then keep that round shape on the keys.', '손가락이 펴졌어요. 작은 공을 쥔 듯 둥근 모양을 건반에 그대로 올려요.'] },
+  { id: 'bridge', en: 'Knuckles collapsed',    ko: '너클이 무너졌어요',    px: 'KNUCKLES LOW', why: ['The knuckles are lower than the wrist. Rebuild the bridge: tap each finger while the knuckles stay up.', '너클이 손목보다 낮아졌어요. 너클을 올린 채 손가락을 하나씩 두드려 다리를 다시 세워요.'] },
+  { id: 'nail',   en: 'Nail joint caving in',  ko: '손톱 마디가 꺾여요',   px: 'NAIL JOINT',   why: ['The last joint bends backwards. Play slowly on the tip and keep it firm like a little pillar.', '끝마디가 뒤로 꺾여요. 천천히 끝으로 누르고, 끝마디를 작은 기둥처럼 단단하게 유지해요.'] },
+  { id: 'low',    en: 'Wrist dropped',         ko: '손목이 처졌어요',      px: 'WRIST LOW',    why: ['The wrist sinks below the keys. Float it up, level with the forearm, like a balloon.', '손목이 건반 아래로 처졌어요. 풍선처럼 띄워서 팔뚝과 수평이 되게 해요.'] },
+  { id: 'high',   en: 'Wrist too high',        ko: '손목이 너무 높아요',   px: 'WRIST HIGH',   why: ['The wrist is hunched up. Let it sink until elbow, wrist and knuckle make a straight line.', '손목이 솟았어요. 팔꿈치, 손목, 너클이 일직선이 되도록 내려요.'] },
+];
+function genPostureQuestion(lv, prev) {
+  const list = lv.kind === 'sit' ? POSTURE_SIT : POSTURE_HAND;
+  let item, g = 0;
+  do { item = list[Math.floor(Math.random() * list.length)]; } while (prev && prev.key === item.id && g++ < 10);
+  return { kind: lv.kind, key: item.id, answer: item.id, choices: list.map(x => x.id), uid: Math.random() };
+}
+function PostureQuestion({ q, given, locked, onAnswer, pixel }) {
+  const done = !!given;
+  const list = q.kind === 'sit' ? POSTURE_SIT : POSTURE_HAND;
+  const item = list.find(x => x.id === q.key);
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const cls = (c) => btnCls + (!done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '');
+  const prompt = q.kind === 'sit' ? t('Is this stool set up right?', '이 의자 자리가 알맞나요?') : t('What is wrong with this hand shape?', '이 손 모양은 무엇이 문제일까요?');
+  const preset = q.kind === 'sit' ? SIT_PRESETS.find(x => x.id === q.key) : null;
+  return (<div>
+    <p style={pixel ? {fontSize:11.5,textAlign:'center'} : {fontSize:15,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? (q.kind === 'sit' ? 'STOOL CHECK' : 'SPOT THE FAULT') : prompt}</p>
+    <div style={{marginBottom:12}}>
+      {q.kind === 'sit' ? <SeatedFigure S={preset.S} F={preset.F}/> : <HandSide pose={q.key} labels={false} tall/>}
+    </div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8}}>
+      {q.choices.map((c, i) => {
+        const it = list.find(x => x.id === c);
+        return <button key={c} disabled={locked} className={cls(c)} style={{padding: pixel ? '14px 4px' : '13px 6px', fontSize: pixel ? 9 : 15, gridColumn: q.kind === 'sit' && i === 0 ? 'span 2' : undefined}} onClick={() => onAnswer(c)}>{pixel ? it.px : t(it.en, it.ko)}</button>;
+      })}
+    </div>
+    {done && !pixel && <div style={{marginTop:10,fontSize:13.5,color:'#5c544a',background:'#fff',borderRadius:8,padding:'7px 10px',lineHeight:1.45}}><b>{t(item.en, item.ko)}.</b> {t(item.why[0], item.why[1])}</div>}
+  </div>);
+}
+const POSTURE_HANDS_DRILL = {
+  id: 'posture-hands', label: 'Posture & Hand Shape', levels: POSTURE_LEVELS, generate: genPostureQuestion,
+  check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
+  answerLabel: (q) => (q.kind === 'sit' ? POSTURE_SIT : POSTURE_HAND).find(x => x.id === q.answer).en.toLowerCase(),
+  Question: PostureQuestion, Learn: PostureHandsLearn,
+};
 function FingerNumbersLearn({ onStart }) {
   return (
     <Lesson id="finger-numbers" title={t('Finger numbers', '손가락 번호')} onStart={onStart}
@@ -11589,7 +11642,7 @@ const STYLES_DRILL = {
 };
 
 const DRILLS = [
-  { id: 'posture-hands', label: 'Posture & Hand Shape', render: () => <PostureHandsLearn/>, track: 'start' },
+  { id: 'posture-hands', label: 'Posture & Hand Shape', concept: POSTURE_HANDS_DRILL, track: 'start' },
   { id: 'finger-numbers', label: 'Finger Numbers', concept: FINGER_NUMBERS_DRILL, track: 'start' },
   { id: 'hand-clefs', label: 'Hands & Clefs', concept: HAND_CLEFS_DRILL, track: 'start' },
   { id: 'first-steps', label: 'Black Keys & Your First Song', concept: FIRST_STEPS_DRILL, track: 'start' },
