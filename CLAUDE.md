@@ -4118,6 +4118,7 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 - Follow-up (same day): Five-Finger Positions moved into Intervals, Scales & Keys as the warm-up before Scales (order: Tones, Five-finger, Scales, Key signatures, Intervals; its Toolbox tool re-categorised to match). Hand & Clefs stays under Pitch. Posture & hands now holds only Posture & Hand Shape.
 - Split (same day, Sohyun: too many in one group): "Intervals, Scales & Keys" (23 tools) became **Tones & Intervals** (10 tools; chapters Tones, Intervals) and **Scales & Keys** (13 tools; chapters Five-finger warm-up, Scales, Key signatures). New category id `tones`.
 - Pitch split (same day, approved): **Piano keys & note names** (`keys`, 7 tools; chapters Hand & Clefs, First Steps, Note Names) and **Reading the staff** (`pitch`, 20 tools; chapters Staff, Reading Steps, Ledger Lines). Rhythm (19 tools) audited: see report -- chapter merges pending her decision.
+- Polish (2026-10-01): tool "Name them in order" renamed "The seven note-name letters" (heading "The seven note-name letters, A to G"); Arm weight & alignment icon given the same pink badge as its Posture & hands siblings (it was the only bare icon). Wider colour/design unification waits for Sohyun's new references.
 - Verified: Babel + `new Function()`, live Chromium student Learn, chapter header, teacher All chapters, Toolbox rows; zero page errors.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
