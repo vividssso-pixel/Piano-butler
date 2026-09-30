@@ -4090,6 +4090,16 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 | 3 | Deferred | -- | Colour/design unification (TOOL_CATS dots vs track-coloured icon badges vs legacy plain icons e.g. arm-alignment) left for later, as Sohyun asked. |
 | 4 | Verification | -- | Babel compile + node --check clean; Playwright: 13 bars, open/close works, search auto-opens, no page errors. |
 
+### Phase 222 -- Letter Chain moved to Intervals; housekeeping decisions (2026-09-30)
+
+| # | Change | Notes |
+|---|--------|-------|
+| 1 | Letter chain (spoken next-letter game) moved from Note Names to Intervals | New step sits after "The number" (it practises counting 2nd..octave by letters). Tool `letter-chain` now `ch: intervals`, category Intervals/Scales/Keys. Note Names lesson is now 3 steps. Old `?drill=letter-chain` links redirect to Intervals. |
+| 2 | Note Names drill Level 4 (black keys) stays | Keyboard-based naming belongs in the Pitch track; the sharp/flat/natural meaning is taught in Tones & Semitones. |
+| 3 | Interval song hooks: swap approved, NOT done | Need Sohyun's 3-4 tunes (opening interval unverified from memory, so none guessed). |
+| 4 | Prototype pages shelved | movement-lab.html, piano-body-atlas.html, piano-posture-detail.html, pasted-kinematic-viewer.svg stay untracked and unlinked as reference only; fold into Posture chapter only if a specific need arises. |
+| 5 | Rhythm Cards tap timing | Still needs a real-phone check (Pending #17). |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
