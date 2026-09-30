@@ -4052,6 +4052,20 @@ to be redesigned in that labeled-diagram style, adapted to the site's own visual
 | 4 | Verification | -- | Babel compile (`@babel/standalone`, React preset) + `node --check` (0 errors). Live Playwright pass: desktop mouse-drag on `ArmAlignment` still moves the wrist marker; a separate pass using Playwright's iPad Pro 11 device emulation + real `touchscreen.tap()` calls confirmed touch taps on the diagram now move the wrist marker (previously the whole point of the bug); confirmed the title div has zero `<svg>` children (icon fully removed) via both a DOM check and a screenshot matching the other steps' plain style; screenshotted the new finger-anatomy diagram in both English and Korean (Korean text wraps to 3 lines in the label boxes with no overflow or clipping); a short regression pass across four other chapters plus the Finger Numbers Drill tab (which still uses the unrelated, unchanged `TendonLink` component) confirmed nothing else broke. Zero console/page errors throughout. |
 | 5 | Committed, not pushed | commit `c7c31a5` | Ready for Sohyun to push, along with everything since Phase 177. |
 
+### Phase 219 -- First-steps chapter: blue sky, teacher note removed from student view, "white neighbours" step dropped (2026-09-30)
+
+Sohyun flagged three things on the "The keyboard and your first song" chapter: the hero banner's
+sky should be blue (it draws clouds and a sun, but used the track's pink brand color), a
+teacher-facing pacing note ("Not every student needs this yet...") was visible to students, and
+Step 4 ("Ready for more? The white neighbours") should go.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Blue sky in the hero banner | `FirstStepsHero` | This is the only "Getting Started" hero banner that literally depicts an outdoor scene (clouds, sun, houses), so the track's pink brand color read as a wrong sky color rather than an abstract accent. Changed just this banner's background rect to a sky blue (`#6fa3cf`); the other three hero banners in the same track (posture, finger numbers, hand clefs) keep the pink brand color since they're not literal sky scenes. |
+| 2 & 3 | Teacher-facing pacing note removed, Step 4 dropped | `FirstStepsLearn` | Sohyun's point: a note written for the teacher ("Not every student needs this yet -- some are ready to go further, others need more time...") was rendering directly in the student-facing lesson flow. Since that note lived only inside Step 4 ("Ready for more? The white neighbours"), removing the step removed the note with it. The chapter now ends at Step 3 ("Your first song"). The underlying tool (`BlackWhiteNeighbours`) and its Toolbox/search entry are left in place -- a quick learner can still find it -- only the forced step in the guided lesson flow is gone. Teacher-only commentary belongs in a separate teacher manual going forward, not in-lesson notes visible to students; flag any other spot like this if it comes up. |
+| 4 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: confirmed the step count dropped from 4 to 3 ("0 of 3 steps done"), confirmed both the removed step's title and the teacher note text are gone from the rendered page in English and Korean, screenshotted the hero banner to confirm the sky reads blue, a short regression pass across the other three "Getting Started" chapters (posture-hands, finger-numbers, hand-clefs) found nothing broken, and confirmed the separate, chapter-agnostic Practice tab (a different, unrelated tool list) still renders with 0 errors. |
+| 5 | Committed, not pushed | commit `3c74ad1` | Ready for Sohyun to push, along with everything since Phase 177. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
