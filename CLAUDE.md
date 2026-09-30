@@ -4106,6 +4106,11 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 - Removed the standalone `finger-numbers` chapter (DRILLS, STAGES, GRADE_TAGS, HERO_MAP, search terms, `FingerNumbersLearn`, `FINGER_NUMBERS_DRILL`, `FingerNumbersHero`). Toolbox tool `finger-numbers` kept, now `ch: 'posture-hands'`; old `?drill=finger-numbers` links alias to posture-hands.
 - Verified: Babel + `new Function()` compile, live Chromium load of posture-hands / old drill link / tool link, level 3 quiz, Korean step title; zero page errors.
 
+### Phase 224 -- Toolbox tools as inline list rows (2026-09-30)
+- Sohyun: category groups collapsing is right, but the tools inside should be long list bars that open in place, not a 2-column card grid that navigates away.
+- `drills.html`: new `ToolRow` (full-width row: icon, title, blurb, level, star, chevron). Clicking expands the tool right under the row (one open per group); a "Learn the whole chapter" button sits inside the expanded panel. The per-group "Whole chapter" banner is hidden in the Toolbox (`ChapterGroups inline`). Kit view and search results keep the old card grid.
+- Verified: Babel + `new Function()`, live Chromium: category expands, row opens with URL unchanged, EN/KO toggle, zero page errors.
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
