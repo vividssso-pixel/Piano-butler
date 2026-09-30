@@ -4108,7 +4108,7 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 ### Phase 224 -- Toolbox tools as inline list rows (2026-09-30)
 - Sohyun: category groups collapsing is right, but the tools inside should be long list bars that open in place, not a 2-column card grid that navigates away.
-- `drills.html`: new `ToolRow` (full-width row: icon, title, blurb, level, star, chevron). Clicking expands the tool right under the row (one open per group); a "Learn the whole chapter" button sits inside the expanded panel. The per-group "Whole chapter" banner is hidden in the Toolbox (`ChapterGroups inline`). Kit view and search results keep the old card grid.
+- `drills.html`: new `ToolRow` (full-width row: icon, title, blurb, level, star, chevron). Clicking expands the tool right under the row (one open per group); a "Learn the whole chapter" button sits inside the expanded panel. The per-group "Whole chapter" banner is hidden in the Toolbox (`ChapterGroups inline`). Student kit view uses the same rows (added right after); the global search overlay was already a row list.
 - Verified: Babel + `new Function()`, live Chromium: category expands, row opens with URL unchanged, EN/KO toggle, zero page errors.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
