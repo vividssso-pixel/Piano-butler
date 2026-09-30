@@ -8637,10 +8637,22 @@ const FINGER_NAMES = [
   { en: 'Baby Pinky', ko: '막내 새끼' },
 ];
 function HandPic({ hand, lit = null, onTap, marks = {}, size = 150 }) {
-  const lens = [26, 50, 56, 51, 40]; // finger 1..5, fingertip-to-knuckle length
-  const widths = [22, 16, 17, 15, 13]; // thumb thickest, pinky thinnest
+  const lens = [26, 50, 56, 51, 40]; // finger 1..5, fingertip-to-knuckle length (index 0 unused -- thumb has its own shape below)
+  const widths = [22, 16, 17, 15, 13];
   const xs = hand === 'R' ? [16, 38, 58, 78, 97] : [104, 82, 62, 42, 23];
   const tops = [76, 22, 16, 21, 34];
+  const R = hand === 'R';
+  // Thumb -- Phase 217 (2026-09-30): a real thumb is short and chunky with a wide base that
+  // flares smoothly out of the palm, tapering to a rounder, smaller pad at the tip -- not a
+  // fifth finger capsule rotated at an angle (that read as a stray floating blob, flagged live).
+  // Drawn as its own tapered path, rotated about its OWN base point (which sits right on the
+  // palm's outline) so the join to the palm never has a visible gap regardless of the angle.
+  const tCx = R ? 30 : 90, tBaseY = 128, tLen = 42, tTopY = tBaseY - tLen, tBaseR = 13, tTipR = 7;
+  const tAngle = R ? -32 : 32;
+  const thumbPath = `M${tCx - tBaseR},${tBaseY} C${tCx - tBaseR},${tBaseY - 16} ${tCx - tTipR - 2},${tTopY + 18} ${tCx - tTipR},${tTopY + tTipR} A${tTipR},${tTipR} 0 0 1 ${tCx + tTipR},${tTopY + tTipR} C${tCx + tTipR + 2},${tTopY + 18} ${tCx + tBaseR},${tBaseY - 16} ${tCx + tBaseR},${tBaseY} A${tBaseR},${tBaseR * 0.8} 0 0 1 ${tCx - tBaseR},${tBaseY} Z`;
+  const tOn = lit === 1, tMark = marks[1];
+  const tFill = tMark === 'good' ? '#bfe0a0' : tMark === 'bad' ? '#f0a99b' : tOn ? '#f6c343' : '#f6d7ae';
+  const tEdge = tMark === 'good' ? '#6f9c4e' : tMark === 'bad' ? '#c9604a' : tOn ? '#a8752a' : '#c9884f';
   return (
     <svg viewBox="0 0 120 150" style={{width:size,display:'block'}}>
       <path d={hand === 'R'
@@ -8650,15 +8662,19 @@ function HandPic({ hand, lit = null, onTap, marks = {}, size = 150 }) {
       {/* faint permanent hint that fingers 3 and 4 share a tendon -- called out properly in TendonLink below */}
       <path d={`M${xs[2] - (hand === 'R' ? 2 : -2)},${tops[2] + lens[2] * 0.62} Q${(xs[2]+xs[3])/2},${tops[2] + lens[2] * 0.62 + 7} ${xs[3] + (hand === 'R' ? 2 : -2)},${tops[3] + lens[3] * 0.62}`}
         fill="none" stroke="#a8683a" strokeWidth="1.4" strokeDasharray="1 3" opacity="0.5"/>
-      {[0, 1, 2, 3, 4].map(i => {
+      <g transform={`rotate(${tAngle} ${tCx} ${tBaseY})`} onClick={onTap ? () => onTap(1) : undefined} style={{cursor:onTap ? 'pointer' : 'default'}}>
+        <path d={thumbPath} fill={tFill} stroke={tEdge} strokeWidth={tOn ? 2.5 : 1.8}/>
+        <ellipse cx={tCx} cy={tTopY + tTipR + 4} rx={tTipR * 0.55} ry={tTipR * 0.7} fill="#fff" opacity="0.4"/>
+        <text x={tCx} y={tTopY + tTipR + 6} textAnchor="middle" fontSize="12" fontWeight="900" fill="#4a2e15">1</text>
+      </g>
+      {[1, 2, 3, 4].map(i => {
         const f = i + 1, on = lit === f, m = marks[f];
         const fill = m === 'good' ? '#bfe0a0' : m === 'bad' ? '#f0a99b' : on ? '#f6c343' : '#f6d7ae';
         const edge = m === 'good' ? '#6f9c4e' : m === 'bad' ? '#c9604a' : on ? '#a8752a' : '#c9884f';
-        const rot = i === 0 ? (hand === 'R' ? -22 : 22) : 0;
         const w = widths[i], len = lens[i] + 22, cx = xs[i], topY = tops[i];
         const kx = topY + len * 0.42; // knuckle crease height
         return (
-          <g key={f} transform={`rotate(${rot} ${cx} ${topY + len})`} onClick={onTap ? () => onTap(f) : undefined} style={{cursor:onTap ? 'pointer' : 'default'}}>
+          <g key={f} onClick={onTap ? () => onTap(f) : undefined} style={{cursor:onTap ? 'pointer' : 'default'}}>
             <rect x={cx - w / 2} y={topY} width={w} height={len} rx={w / 2} fill={fill} stroke={edge} strokeWidth={on ? 2.5 : 1.8}/>
             <line x1={cx - w * 0.32} x2={cx + w * 0.32} y1={kx} y2={kx} stroke="#a8683a" strokeWidth="1" opacity="0.45"/>
             <ellipse cx={cx} cy={topY + w * 0.62} rx={w * 0.3} ry={w * 0.4} fill="#fff" opacity="0.4"/>
@@ -8681,6 +8697,28 @@ function TendonLink() {
       <text x="95" y="102" textAnchor="middle" fontSize="12" fontWeight="900" fill="#241f1a">4</text>
       <text x="79" y="118" textAnchor="middle" fontSize="9" fontWeight="800" fill="#b07d2a">{t('connected tendon', '연결된 힘줄')}</text>
     </svg>
+  );
+}
+// Phase 217 (2026-09-30): a short, fun intro to individual finger character/anatomy, added as the
+// 4th step of Posture & Hand Shape (after hand shape, before the final posture-check review) --
+// Sohyun's "big to small" ordering for that chapter (stool -> whole arm -> hand shape -> fingers).
+// Deliberately lighter than the full FingerNumbers tool (naming/numbering drill lives in its own
+// later chapter) -- just enough to make individual fingers feel like distinct characters before
+// the numbering drill formalizes it.
+function FingerFriends() {
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Meet your fingers', '손가락과 친해지기')}</div>
+      <div style={{display:'flex',justifyContent:'center',margin:'8px 0'}}>
+        <HandPic hand="R" size={150}/>
+      </div>
+      <div style={{display:'grid',gap:7,marginTop:4}}>
+        <div style={{fontSize:13.5,lineHeight:1.5}}><b style={{color:'#b07d2a'}}>{t('2 -- Pointer', '2번 -- 가리키미')}</b>{t(': the one you already point with -- naturally quick and independent.', ': 원래 가리킬 때 쓰는 손가락이에요 -- 원래부터 빠르고 독립적으로 움직여요.')}</div>
+        <div style={{fontSize:13.5,lineHeight:1.5}}><b style={{color:'#b07d2a'}}>{t('3 -- Tall Middle', '3번 -- 가운데 장군')}</b>{t(': the longest and strongest -- naturally holds the best balance.', ': 가장 길고 힘이 세요 -- 원래부터 균형을 제일 잘 잡아요.')}</div>
+        <div style={{fontSize:13.5,lineHeight:1.5}}><b style={{color:'#b07d2a'}}>{t('4 -- Shy Ring', '4번 -- 수줍은 넷째')}</b>{t(': tied to finger 3 by a tendon, and works closely with 5 too -- the hardest to move alone, so it just needs a little extra patience.', ': 3번과 힘줄로 연결되어 있고, 5번과도 가깝게 움직여요 -- 혼자 움직이기 제일 어려운 손가락이라, 조금만 더 인내심을 가지면 돼요.')}</div>
+      </div>
+      <TendonLink/>
+    </div>
   );
 }
 function FingerNumbers() {
@@ -9013,16 +9051,19 @@ function PostureHandsLearn() {
         {tip(t('Sitting', '앉는 법'), t('Sit on the front half of the stool, feet flat, facing middle C. Stool height: forearm level with the keys. Distance: elbows just in front of the body, open a little to the side.', '의자 앞쪽 절반에 앉고, 발은 바닥에 평평하게, 가운데 도(C)를 마주보게 앉아요. 의자 높이: 팔뚝이 건반과 수평이 되도록. 거리: 팔꿈치가 몸 바로 앞에, 옆으로 살짝 벌어지게.'))}
         <SitCheck/>
       </Step>
-      <Step title={t('The hand shape', '손 모양')}>
-        {tip(t('A round hand', '둥근 손'), t('Let your arms hang, then lift your hands as if holding a small ball. Knuckles up like a bridge, wrist level with the forearm, play on the fingertip pads, the thumb on its side.', '팔을 편하게 늘어뜨렸다가, 작은 공을 쥐듯이 손을 들어올려요. 손가락 마디는 다리처럼 위로, 손목은 팔뚝과 수평으로, 손가락 끝 살로 연주하고, 엄지손가락은 옆면으로.'))}
-        <HandShape/>
-      </Step>
       <Step title={t('Move with the whole arm', '팔 전체로 움직이기')}>
         {tip(t('The arm carries the hand', '팔이 손을 데려가요'), t('Fingers play the keys, but the arm takes the hand where it needs to go -- the hand keeps its shape all the way. Do these a few minutes at the start of every practice.', '손가락이 건반을 누르지만, 손을 필요한 곳으로 데려가는 건 팔이에요 -- 손 모양은 계속 그대로 유지돼요. 연습을 시작할 때마다 몇 분씩 이 동작들을 해보세요.'))}
         <ArmExercises/>
       </Step>
       <Step title={t('Feel the arm weight', '팔 무게 느껴보기')}>
         <ArmAlignment/>
+      </Step>
+      <Step title={t('The hand shape', '손 모양')}>
+        {tip(t('A round hand', '둥근 손'), t('Let your arms hang, then lift your hands as if holding a small ball. Knuckles up like a bridge, wrist level with the forearm, play on the fingertip pads, the thumb on its side.', '팔을 편하게 늘어뜨렸다가, 작은 공을 쥐듯이 손을 들어올려요. 손가락 마디는 다리처럼 위로, 손목은 팔뚝과 수평으로, 손가락 끝 살로 연주하고, 엄지손가락은 옆면으로.'))}
+        <HandShape/>
+      </Step>
+      <Step title={t('Meet your fingers', '손가락과 친해지기')}>
+        <FingerFriends/>
       </Step>
       <Step title={t('Posture check', '자세 점검')}>
         <PostureChecklist/>
