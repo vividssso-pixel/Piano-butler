@@ -13328,18 +13328,33 @@ const HERO_MAP = {
   'tones': () => <TonesHero/>, 'scales': () => <ScalesHero/>, 'key-signatures': () => <KeySigHero/>, 'intervals': () => <IntervalsHero/>, 'chords': () => <ChordsHero/>,
   'piano-story': () => <PianoStoryHero/>, 'pitch-range': () => <PitchRangeHero/>, 'styles': () => <StylesHero/>,
 };
+// Phase 225 (2026-09-30): one category system for every view. Each chapter belongs to one Toolbox
+// category (TOOL_CATS); the student's Learn page, the teacher's All chapters page and the chapter
+// header all group by it. Chapters keep their old learning-path order inside each category.
+const CHAPTER_CAT = {
+  'posture-hands': 'body', 'five-finger': 'body',
+  'hand-clefs': 'pitch', 'first-steps': 'pitch', 'note-names': 'pitch', 'staff': 'pitch', 'reading-steps': 'pitch', 'ledger-lines': 'pitch',
+  'pulse': 'rhythm', 'note-values': 'rhythm', 'rhythm': 'rhythm', 'time-signatures': 'rhythm', 'tempo': 'rhythm',
+  'tones': 'scales', 'scales': 'scales', 'key-signatures': 'scales', 'intervals': 'scales',
+  'chords': 'harmony', 'melody': 'melody', 'form': 'form', 'dynamics': 'expression',
+  'signs': 'words', 'terms': 'words', 'styles': 'styles', 'piano-story': 'about', 'pitch-range': 'about',
+};
+function catOfChapter(id) { return TOOL_CATS.find(c => c.id === CHAPTER_CAT[id]); }
+function catChapterIds(catId) { return STAGES.flatMap(s => s.ids).filter(id => CHAPTER_CAT[id] === catId); }
+function orderedChapterIds() { return TOOL_CATS.flatMap(c => catChapterIds(c.id)); }
 function LessonPath({ onOpen, onBack }) {
   return (
     <div className="fade-up">
       {onBack && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={onBack}>← Lesson plan</button>}
       <div className="card" style={{marginBottom:12}}>
         <h2 style={{fontSize:20,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>{UI_TEACHER ? 'All chapters' : 'Learn'}</h2>
-        <p style={{fontSize:14,color:'var(--muted)',margin:0,lineHeight:1.5}}>{UI_TEACHER ? 'Every chapter as a full lesson with a drill, grouped by topic. The groups run side by side -- the Lesson plan shows how to mix them.' : 'Pick a topic. Tap a picture to open its lesson and game.'}</p>
+        <p style={{fontSize:14,color:'var(--muted)',margin:0,lineHeight:1.5}}>{UI_TEACHER ? 'Every chapter as a full lesson with a drill, grouped by topic (same groups as the Toolbox). The groups run side by side -- the Lesson plan shows how to mix them.' : 'Pick a topic. Tap a picture to open its lesson and game.'}</p>
       </div>
-      {STAGES.map((s, si) => {
-        const col = STEP_COLORS[si % STEP_COLORS.length];
+      {TOOL_CATS.filter(c => catChapterIds(c.id).length).map(c => {
+        const s = { title: c.name, blurb: c.when, ids: catChapterIds(c.id) };
+        const col = c.color;
         return (
-          <div key={s.n} className="card" style={{marginBottom:12,borderLeft:'5px solid ' + col}}>
+          <div key={c.id} className="card" style={{marginBottom:12,borderLeft:'5px solid ' + col}}>
             <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
               <span style={{flex:'0 0 12px',height:30,borderRadius:6,background:col}}/>
               <span style={{display:'block',fontSize:17,fontWeight:900,lineHeight:1.2}}>{s.title}</span>
@@ -14008,7 +14023,7 @@ function ChapterGroups({ list, colorOf, starIds, onStar, onOpen, onChapter, inli
     <>
       {groups.map((g, i) => (
         <div key={(g.ch || 'none') + i} style={{marginBottom:i < groups.length - 1 ? 10 : 0}}>
-          {g.chapter && onChapter && !inline && <button className="chapter-link" onClick={() => onChapter(g.ch)} style={{marginBottom:8}}>{(LANG === 'ko' ? '전체 챕터' : 'Whole chapter') + ': ' + g.chapter.label + ' →'}</button>}
+          {g.chapter && onChapter && <button className="chapter-link" onClick={() => onChapter(g.ch)} style={{marginBottom:8,width:inline ? '100%' : undefined,textAlign:'left'}}>{(LANG === 'ko' ? '전체 페이지 보기' : 'View full page') + ': ' + g.chapter.label + ' →'}</button>}
           {inline ? <div style={{display:'flex',flexDirection:'column',gap:8}}>
             {g.items.map(t => <ToolRow key={t.id} t={t} color={colorOf(t)} starred={!!starIds && starIds.includes(t.id)} onStar={onStar} open={openId === t.id} onToggle={() => setOpenId(openId === t.id ? null : t.id)} onChapter={onChapter}/>)}
           </div> : <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
@@ -14642,7 +14657,7 @@ function App() {
             : <LessonPath onBack={T ? () => update({ view: 'path' }) : null} onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
         ) : <>
         {!st.lock && (() => {
-          const sg = stageOf(active.id), list = DRILLS.filter(d => stageOf(d.id)).map(d => d.id), k = list.indexOf(active.id);
+          const sg = catOfChapter(active.id) ? { title: catOfChapter(active.id).name } : null, list = orderedChapterIds(), k = list.indexOf(active.id);
           return (
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6,marginBottom:14}}>
               <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => update({ drill: null })}>{T ? t('← Back', '← 뒤로') : t('← Learn', '← 배우기')}</button>

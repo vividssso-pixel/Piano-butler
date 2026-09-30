@@ -4111,6 +4111,12 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 - `drills.html`: new `ToolRow` (full-width row: icon, title, blurb, level, star, chevron). Clicking expands the tool right under the row (one open per group); a "Learn the whole chapter" button sits inside the expanded panel. The per-group "Whole chapter" banner is hidden in the Toolbox (`ChapterGroups inline`). Student kit view uses the same rows (added right after); the global search overlay was already a row list.
 - Verified: Babel + `new Function()`, live Chromium: category expands, row opens with URL unchanged, EN/KO toggle, zero page errors.
 
+### Phase 225 -- One category system for teacher and student views (2026-09-30)
+- Sohyun found the teacher Plan/Toolbox (13 skill categories) and the student Learn / All chapters page (7 learning-path stages) grouped the same chapters differently. Decision: use the Toolbox categories everywhere (option A, which also covers matching names/colours).
+- `drills.html`: `CHAPTER_CAT` maps each of the 26 chapters to a `TOOL_CATS` id; `LessonPath` (student Learn + teacher All chapters) now groups by category with the category name, blurb and colour; empty categories (Ear, Practice helpers) are hidden; the chapter page header shows the category and its prev/next arrows follow category order. `STAGES` still exists for legacy data only.
+- Toolbox: every chapter group now starts with a full-width "View full page: <chapter> →" row.
+- Verified: Babel + `new Function()`, live Chromium student Learn, chapter header, teacher All chapters, Toolbox rows; zero page errors.
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
