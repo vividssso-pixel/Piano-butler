@@ -3970,7 +3970,22 @@ inconsistent with the rest of the chapter and hiding its own wrist point behind 
 
 **Same-day addendum (commit `df2ea71`):** Sohyun compared the new arm-alignment diagram against SitCheck's front-view tool side by side -- the shoulder joint floated visibly off the torso silhouette (should sit on its edge), no separate head was needed, and the two tools now read as the same picture despite checking different things. Replaced the filled torso + head circle with a single thick line from a hip point to the shoulder (the same line-based side-view grammar `SeatedFigure` already uses in SitCheck's own side tab, rather than `FrontArms`' front-facing blob) plus a small stool seat -- the shoulder is now the line's own endpoint (can't float away) and the diagram reads unambiguously as a side view, distinct from the front-view tool. Re-verified: Babel compile + `node --check` + live Playwright pass, zero errors.
 
+### Phase 214 -- Split Finger Numbers into its own chapter (2026-09-30)
+
+Sohyun's continued reorganization of the beginner sequence: teach finger numbers as its own
+standalone step, positioned between pure posture/hand-shape drills and the upcoming hand/clef
+assignment + keyboard-pattern content, rather than bundling it into the posture chapter.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | New chapter: Finger Numbers (`finger-numbers`) | `DRILLS`, `STAGES` ("Piano basics" group, between `posture-hands` and `first-steps`), `GRADE_TAGS`, `CHAPTER_SEARCH_TERMS`, new `FingerNumbersLearn` component and `FINGER_NUMBERS_DRILL` concept | One Learn step (the `FingerNumbers` tool) and its own quiz (the "which finger?" question, moved out of the posture-hands drill, sharing the existing `genFsQuestion`/`FsQuestion`). The `finger-numbers` `TOOLS` entry's `ch:` field now points here instead of `posture-hands`. |
+| 2 | Posture & Hand Shape trimmed further | `PostureHandsLearn`, `DRILLS` | Down to its 5 remaining steps (sit, hand shape, arm exercises, arm weight, posture check) -- none of which have quiz-testable content of their own (same as before this chapter existed: the original combined First Steps chapter never quizzed on posture either). Rather than leave an empty or orphaned "which finger?" quiz tab pointing at content no longer in this chapter's Learn page, its `DRILLS` entry now uses the app's own `render` fallback (`concept ? <ConceptView/> : active.render()`) instead of `concept` -- this path already existed in `App`'s routing but had never been exercised by any chapter before. Verified live before shipping: the chapter now shows no Learn/Drill tab bar at all, just its 5 steps, with zero console errors. |
+| 3 | Recovered a stray uncommitted draft found mid-session | -- | A prior, uncommitted attempt at this same split was found sitting on disk (id `hand-fingers`, and it had left `posture-hands` still pointing at the finger-number quiz even though the Learn step had moved out -- the exact orphaned-quiz problem row 2 above avoids). Diffed it, kept one good line from its lesson intro copy (the "put finger 2 on D" example), and replaced it with this fully tested version rather than trying to merge two divergent implementations in place. |
+| 4 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass: gallery (both chapters as separate cards, correct order), the concept-less Posture & Hand Shape page (confirmed 0 Drill-tab buttons present, 0 errors), the new Finger Numbers chapter's Learn and Drill tabs (quiz questions, print worksheet, share link all present and working), and the trimmed First Steps chapter. Zero console/page errors throughout. |
+| 5 | Committed, not pushed | commit `a0f8358` | Ready for Sohyun to push, along with everything since Phase 177. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
+
 
 *This section replaces the many duplicate "Build Status / Pending Work / Known Issues" blocks
 that used to repeat after almost every phase above (removed in Phase 59 for readability) — this
