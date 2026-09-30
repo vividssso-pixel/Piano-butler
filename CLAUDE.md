@@ -4007,6 +4007,19 @@ character/nickname, and explain the finger 3/4 tendon connection.
 | 6 | Verification | -- | Babel compile (`@babel/standalone`, React preset) + `node --check` (0 errors) on the full file. Live Playwright pass: gallery (new "Getting Started" pink group renders first with all 4 cards in the right order), Hands & Clefs chapter's Learn tab (staff diagram, Play button) and Drill tab (answered a question, correct feedback state), Finger Numbers Learn tab (redesigned hand diagram, character chips, tendon panel), played the "Show me finger..." game and tapped a finger on the redesigned `HandPic` to confirm `onTap`/`marks` still work, confirmed the quiz-embedded `HandPic` (inside `FsQuestion`) still renders with 0 errors, confirmed Posture & Hand Shape still has 0 Drill-tab buttons (unaffected by the `render`-fallback path from Phase 214), and a full Korean-language pass (toggled the actual 한국어 button, not just a URL param) on both new/changed chapters -- caught and fixed the finger/hand string bug in item 5 this way. Zero console/page errors throughout. |
 | 7 | Committed, not pushed | commit `14215f0` | Ready for Sohyun to push, along with everything since Phase 177. |
 
+
+### Phase 216 -- Default language always English, ignore stale localStorage preference (2026-09-30)
+
+Sohyun: "디폴트는 영어로 보여야해" (the default must show in English) -- opening a fresh copy of
+`drills.html` (the file sent to her in this session's chat) loaded in Korean instead of English.
+
+| # | Change | Where | Notes |
+|---|--------|-------|-------|
+| 1 | Root cause | `LANG`/`LANG_KEY` init (top of file) | The initial language was read from `localStorage.getItem('pb_lang_v1')`, set by whichever language the 한국어/EN toggle button was last clicked to. Under a browser's shared `file://` origin (all local files opened directly, not through a server, generally share one `file://` storage bucket per browser), a Korean toggle click during this session's own live-testing on the Mac could carry over silently to a freshly-sent copy of the file -- not a per-file preference, a per-browser one. |
+| 2 | Fix | Same `LANG` init, `toggleLang()` in `App()` | `LANG` now always starts `'en'`, unconditionally -- the `localStorage.getItem` read removed entirely. `toggleLang()` still flips the current visit's language via `setLang()`, but no longer writes to `localStorage` (dead write otherwise, since nothing reads it back anymore). |
+| 3 | Verification | -- | Babel compile + `node --check` (0 errors). Live Playwright pass that specifically reproduces Sohyun's scenario: set `pb_lang_v1='ko'` in `localStorage` first (simulating a prior Korean toggle click), then reload -- toggle button correctly reads "한국어" (confirming the page is in English), not "EN". Clicked the toggle to confirm Korean still works mid-session, then reloaded again and confirmed it returned to English (no persistence), all with 0 console errors. |
+| 4 | Committed, not pushed | commit `7324e57` | Ready for Sohyun to push, along with everything since Phase 177. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
