@@ -4156,6 +4156,10 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 - **Phase 239 (2026-10-01) -- Same name, note or rest: more rows.** Added demisemiquaver (new 3-flag note + 3-dot rest glyphs in `NoteShape`/`RestShape`) and dotted minim/crotchet/quaver notes and rests (rest dots drawn in `Glyph`), with beat counts shown on dotted rows. Verified by compile + Playwright screenshot.
 
+- **Phase 240 (2026-10-01) -- Rhythm activities: Dot lab + dotted/demisemi quiz.** New tool `dot-lab` (ch note-values, also a lesson step): pick value, note/rest, dot on/off, beat-ruler bar with brass dot part, beat-tick playback (rests silent). Notes & Rests drill: demisemiquaver now in name/beats/rest/sum/fill via quiz-only pools (`QZ_*`), new Level 6 'Dotted notes & dotted rests' (dotted note -> dotted rest, plain-rest trap). `fmtBeats` handles eighths. Verified by compile + Playwright, 0 errors.
+
+- **Phase 241 (2026-10-01) -- Beams + two rhythm games (Notes & rests).** New tools: `beam-apples` ('One beat = one apple': Apple SVG cut into halves/quarters = beamed quavers/semiquavers, beam on/off, plus a 4-beat 'slice a bar' with playback; uses `Apple`, `BeatNotes`, `playBeatPattern`), `fix-the-bar` (tap symbols until 4/4 adds up; many answers accepted), `heard-bar` (hear sound/silence per beat, pick the written bar). All also lesson steps in Notes & rests and in CHAPTER_TOOL_ORDER. Verified by compile + Playwright screenshots, 0 errors.
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
