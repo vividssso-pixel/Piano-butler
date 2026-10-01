@@ -4130,6 +4130,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 - Next (Sohyun approved: content before design, thinnest chapters first, in order): Hands & Clefs, Tempo, Musical Terms, Melody & Form, Styles; then the design phase (Pending #0).
 - Verified: Babel + `new Function()`, live Chromium student Learn, chapter header, teacher All chapters, Toolbox rows; zero page errors.
 
+- **Phase 227 (2026-10-01) -- Five-finger positions in all 12 keys; simple sight-reading counts; Toolbox order = chapter step order.** `POSITIONS` is now generated from `FF_ROOTS` (C, D♭, D, E♭, E, F, F♯, G, A♭, A, B♭, B; major shape tone-tone-semitone-tone; each note carries its own `acc`); Middle C position removed. Right hand sits above middle C; left-hand G/A/B roots drop an octave (tool keyboard base C2 for LH, C3 for RH) so the hand stays below middle C. Quiz levels 4-6 of Steps & Skips draw from all 12 (answer labels show ♯/♭); `MelodyStaff` name row now shows accidentals. `TapKeyboard`: finger numbers no longer overlap the letter labels (number sits above the letter). Sight-reading card level 3 = "any of 12 keys"; counts are simple `1 2 3 4` (`counts="simple"`, no "and", held beats just dimmed). `CHAPTER_TOOL_ORDER` now covers every chapter, generated from each Learn function's step order. Verified: Babel compile, live Playwright (EN), spellings of all 12 positions, 300 generated questions per ff level, zero page errors.
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
