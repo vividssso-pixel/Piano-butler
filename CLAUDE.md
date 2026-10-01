@@ -4162,6 +4162,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 - **Phase 242 (2026-10-01) -- Note/rest naming: beats on every row, full dotted set.** Every row shows its beat count; dotted rows now run semibreve to semiquaver, in the same order as the plain ones.
 
+- **Phase 243 (2026-10-01) -- Whole-bar rest merged into 'Same name, note or rest'.** `WholeBarRest` became `WholeBarRestBody`, shown under the naming table; separate tool `whole-bar-rest` and its lesson step removed (TOOLS, TOOL_META, CHAPTER_TOOL_ORDER, icon).
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
