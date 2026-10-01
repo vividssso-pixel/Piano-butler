@@ -4154,6 +4154,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 - **Phase 238 (2026-10-01) -- Count along: accents + more time signatures.** `BeatPulse` now covers 2/4, 3/4, 4/4, 2/2, 5/4 (local `BEAT_EXTRA`, not in `TIME_SIGS`), 3/8, 6/8, 9/8, 12/8. Accent marks (>) over strong/medium beats, light sizes by stress, a Strong/medium/weak caption, compound time grouped in threes, tempo per note value. Verified: Babel compile + Playwright all signatures, 0 page errors.
 
+- **Phase 239 (2026-10-01) -- Same name, note or rest: more rows.** Added demisemiquaver (new 3-flag note + 3-dot rest glyphs in `NoteShape`/`RestShape`) and dotted minim/crotchet/quaver notes and rests (rest dots drawn in `Glyph`), with beat counts shown on dotted rows. Verified by compile + Playwright screenshot.
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 

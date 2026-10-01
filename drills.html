@@ -2872,6 +2872,12 @@ function RestShape({ d, cx, ink }) {
   if (d >= 2) return <g><line x1={cx - 12} y1="52" x2={cx + 12} y2="52" stroke={ink} strokeWidth="1.2"/><rect x={cx - 8} y="45" width="16" height="7" fill={ink}/></g>;
   if (d >= 1) return <path d={`M${cx - 3},30 L${cx + 5},40 L${cx - 2},49 L${cx + 6},59 Q${cx - 7},55 ${cx - 1},68`} {...s} strokeWidth="3.4"/>;
   if (d >= 0.5) return <g><circle cx={cx - 3} cy="44" r="3.6" fill={ink}/><path d={`M${cx - 3},45 Q${cx + 2},48 ${cx + 7},41 L${cx + 1},66`} {...s} strokeWidth="2.4"/></g>;
+  if (d <= 0.125) return <g>
+    <circle cx={cx} cy="34" r="3" fill={ink}/><circle cx={cx - 3} cy="43" r="3" fill={ink}/><circle cx={cx - 6} cy="52" r="3" fill={ink}/>
+    <path d={`M${cx},35 Q${cx + 5},38 ${cx + 10},31 L${cx - 2},68`} {...s} strokeWidth="2.3"/>
+    <path d={`M${cx - 3},44 Q${cx + 2},47 ${cx + 6},41`} {...s} strokeWidth="2.3"/>
+    <path d={`M${cx - 6},53 Q${cx - 1},56 ${cx + 3},50`} {...s} strokeWidth="2.3"/>
+  </g>;
   return <g>
     <circle cx={cx - 2} cy="40" r="3.4" fill={ink}/><circle cx={cx - 5} cy="50" r="3.4" fill={ink}/>
     <path d={`M${cx - 2},41 Q${cx + 3},44 ${cx + 8},37 L${cx},68`} {...s} strokeWidth="2.4"/>
@@ -2890,6 +2896,7 @@ function NoteShape({ base, dot, cx, ink, beamed }) {
       {base < 4 && <line x1={sx} y1={HEAD_Y - 2} x2={sx} y2={STEM_TOP} stroke={ink} strokeWidth="1.8"/>}
       {!beamed && base <= 0.5 && <path d={`M${sx},${STEM_TOP} c 2,9 13,12 8,27`} fill="none" stroke={ink} strokeWidth="2.6" strokeLinecap="round"/>}
       {!beamed && base <= 0.25 && <path d={`M${sx},${STEM_TOP + 9} c 2,8 13,11 8,24`} fill="none" stroke={ink} strokeWidth="2.6" strokeLinecap="round"/>}
+      {!beamed && base <= 0.125 && <path d={`M${sx},${STEM_TOP + 17} c 2,7 13,10 8,20`} fill="none" stroke={ink} strokeWidth="2.6" strokeLinecap="round"/>}
       {dot && <circle cx={cx + 14} cy={HEAD_Y - 2} r="2.6" fill={ink}/>}
     </g>
   );
@@ -2900,7 +2907,7 @@ function Glyph({ item, ink = '#241f1a', size = 56 }) {
   const w = 44;
   return (
     <svg viewBox={'0 10 ' + w + ' 66'} style={{width: size * w / 66, height: size, display:'inline-block', verticalAlign:'middle'}}>
-      {item.rest ? <RestShape d={item.base} cx={w / 2} ink={ink}/> : <NoteShape base={item.base} dot={item.dot} cx={w / 2 - (item.dot ? 5 : 2)} ink={ink}/>}
+      {item.rest ? <g><RestShape d={item.base} cx={w / 2 - (item.dot ? 4 : 0)} ink={ink}/>{item.dot && <circle cx={w / 2 + 12} cy={item.base >= 2 ? 40 : 46} r="2.6" fill={ink}/>}</g> : <NoteShape base={item.base} dot={item.dot} cx={w / 2 - (item.dot ? 5 : 2)} ink={ink}/>}
     </svg>
   );
 }
@@ -3265,32 +3272,40 @@ function FillTheBar() {
 
 // Same name, note or rest -- Sohyun: since note-value names and rest names are identical, make
 // that explicit and easy to remember (Phase 144).
+const NN_ROWS = [
+  ...NOTE_VALUES,
+  { id: 'demisemiquaver', us: 'thirty-second', base: 0.125 },
+  { id: 'minim', us: 'half', base: 2, dot: true },
+  { id: 'crotchet', us: 'quarter', base: 1, dot: true },
+  { id: 'quaver', us: 'eighth', base: 0.5, dot: true },
+];
 function NoteRestNaming() {
   function playPair(v, isRest) {
     const ctx = getAudio(); if (!ctx) return; stopClicks();
     const t0 = ctx.currentTime + 0.08;
-    const dur = v.base * 0.5; // crotchet = 0.5s (bpm 120), so a semibreve is 2s etc.
+    const dur = v.base * (v.dot ? 1.5 : 1) * 0.5; // crotchet = 0.5s (bpm 120), so a semibreve is 2s etc.
     if (!isRest) blip(ctx, t0, 523.25, dur * 0.92, 0.22, 'triangle');
     else setTimeout(() => { const c2 = getAudio(); if (c2) metroClick(c2, c2.currentTime, false, 0.12); }, dur * 1000);
   }
   return (
     <div className="try-box" style={actBox}>
       <div style={actTitle}>{t('Same name, note or rest', '음표와 쉼표, 이름이 같아요')}</div>
-      <div style={actNote}>{t('Every note value and its matching rest share exactly the same name -- a semibreve rest is silence for as long as a semibreve note would sound.', '모든 음표는 짝이 되는 쉼표와 이름이 완전히 같아요 -- 온쉼표는 온음표가 울리는 것과 같은 길이만큼 조용히 쉬는 거예요.')}</div>
+      <div style={actNote}>{t('Every note value and its matching rest share exactly the same name -- a semibreve rest is silence for as long as a semibreve note would sound. A dot after a note or a rest adds half of its length.', '모든 음표는 짝이 되는 쉼표와 이름이 완전히 같아요 -- 온쉼표는 온음표가 울리는 것과 같은 길이만큼 조용히 쉬는 거예요. 음표든 쉼표든 점이 붙으면 원래 길이의 절반이 더해져요.')}</div>
       <div style={{display:'flex',flexDirection:'column',gap:5}}>
-        {NOTE_VALUES.map(v => {
-          const note = NV_NOTES.find(n => n.id === v.id), rest = NV_RESTS.find(r => r.id === v.id);
+        {NN_ROWS.map(v => {
+          const note = nvItem(v, { dot: v.dot }), rest = nvItem(v, { rest: true, dot: v.dot });
+          const label = (v.dot ? 'dotted ' : '') + v.id;
           return (
-            <div key={v.id} style={{display:'grid',gridTemplateColumns:'1fr 1fr',background:'#fff',borderRadius:10,overflow:'hidden'}}>
+            <div key={label} style={{display:'grid',gridTemplateColumns:'1fr 1fr',background:'#fff',borderRadius:10,overflow:'hidden'}}>
               <button onClick={() => playPair(v, false)} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:1,background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',padding:'8px 2px'}}>
                 <Glyph item={note} size={30}/>
-                <span style={{fontSize:13,fontWeight:900,color:'var(--brass)'}}>{cap(v.id)}</span>
-                <span style={{fontSize:10.5,fontWeight:600,color:'var(--muted)'}}>{t('note', '음표')}</span>
+                <span style={{fontSize:13,fontWeight:900,color:'var(--brass)'}}>{cap(label)}</span>
+                <span style={{fontSize:10.5,fontWeight:600,color:'var(--muted)'}}>{t('note', '음표')}{v.dot ? ' · ' + fmtBeats(note.beats) : ''}</span>
               </button>
               <button onClick={() => playPair(v, true)} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:1,background:'none',border:'none',borderLeft:'1px dashed var(--border)',cursor:'pointer',fontFamily:'inherit',padding:'8px 2px'}}>
                 <Glyph item={rest} size={30}/>
-                <span style={{fontSize:13,fontWeight:900,color:'var(--brass)'}}>{cap(v.id)}</span>
-                <span style={{fontSize:10.5,fontWeight:600,color:'var(--muted)'}}>{t('rest', '쉼표')}</span>
+                <span style={{fontSize:13,fontWeight:900,color:'var(--brass)'}}>{cap(label)}</span>
+                <span style={{fontSize:10.5,fontWeight:600,color:'var(--muted)'}}>{t('rest', '쉼표')}{v.dot ? ' · ' + fmtBeats(rest.beats) : ''}</span>
               </button>
             </div>
           );
