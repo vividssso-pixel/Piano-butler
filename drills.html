@@ -5900,6 +5900,36 @@ const ACC_EXAMPLES = {
     { bar: true },
     { d: 31, sign: 0, snd: 0, say: 'New bar: the bar line wipes it clean -- plain F.' },
   ] },
+  gmajor: { label: 'G major (♯)', ks: { type: 'sharp', ds: [38] }, note: 'G major has one sharp in its key signature: F♯. Every F in the piece is F♯ -- no sign needed on the note.', notes: [
+    { d: 31, sign: 0, snd: 1, say: 'F♯ -- the key signature already raised every F. No sign on the note.' },
+    { d: 38, sign: 0, snd: 1, say: 'The high F on the top line is F♯ too: a key signature covers every octave.' },
+    { d: 31, sign: 2, snd: 0, say: 'A natural sign cancels the key signature’s sharp -- plain F, for the rest of this bar.' },
+    { d: 31, sign: 0, snd: 0, say: 'Still plain F: the natural lasts until the bar line.' },
+    { bar: true },
+    { d: 31, sign: 0, snd: 1, say: 'New bar: the key signature is back in charge -- F♯ again.' },
+  ] },
+  fmajor: { label: 'F major (♭)', ks: { type: 'flat', ds: [34] }, note: 'F major has one flat in its key signature: B♭. Every B in the piece is B♭ until a natural says otherwise.', notes: [
+    { d: 34, sign: 0, snd: -1, say: 'B♭ -- the key signature already lowered every B.' },
+    { d: 33, sign: 0, snd: 0, say: 'A -- not affected by the flat.' },
+    { d: 34, sign: 2, snd: 0, say: 'The natural sign cancels the key signature’s flat -- B natural, for this bar.' },
+    { d: 34, sign: 0, snd: 0, say: 'Still B natural until the bar line.' },
+    { bar: true },
+    { d: 34, sign: 0, snd: -1, say: 'New bar: back to B♭ from the key signature.' },
+  ] },
+  visitor: { label: 'A visitor in the key', ks: { type: 'sharp', ds: [38] }, note: 'An accidental that is NOT in the key signature is a visitor: it lasts to the end of the bar, then the key signature takes over again.', notes: [
+    { d: 35, sign: 0, snd: 0, say: 'C -- the key signature of G major only changes F, so C is plain.' },
+    { d: 35, sign: 1, snd: 1, say: 'A sharp sign on C: C♯ is not in G major, so this is a visitor.' },
+    { d: 35, sign: 0, snd: 1, say: 'Still C♯ -- the visitor stays to the end of the bar.' },
+    { bar: true },
+    { d: 35, sign: 0, snd: 0, say: 'New bar: plain C again. The key signature only ever changed the F.' },
+  ] },
+  octave: { label: 'Other octave', note: 'An accidental belongs to one pitch: the same line or space in the same octave. The F an octave higher is a different note.', notes: [
+    { d: 31, sign: 1, snd: 1, say: 'F♯ on the bottom space.' },
+    { d: 38, sign: 0, snd: 0, say: 'The F an octave higher (top line) is plain F: the sharp only affected the F below.' },
+    { d: 31, sign: 0, snd: 1, say: 'Back on the low F: still F♯ until the bar line.' },
+    { bar: true },
+    { d: 31, sign: 0, snd: 0, say: 'New bar: plain F.' },
+  ] },
   flat: { label: 'Flat', notes: [
     { d: 34, sign: -1, snd: -1, say: 'B♭ -- the flat sign lowers B one semitone.' },
     { d: 33, sign: 0, snd: 0, say: 'A -- a different line or space isn’t affected.' },
@@ -5915,10 +5945,12 @@ function AccidentalBar() {
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
   useEffect(() => { setOn(-1); timers.current.forEach(clearTimeout); }, [ex]);
   const notes = ACC_EXAMPLES[ex].notes;
-  const W = 300, base = 70;
+  const base = 70;
   const y = (d) => dY(d) - 30; // staff drawn with its bottom line at y=70
-  let x = 70;
+  const ksx = ACC_EXAMPLES[ex].ks ? ACC_EXAMPLES[ex].ks.ds.length * 12 + 4 : 0;
+  let x = 70 + ksx;
   const placed = notes.map(n => { const px = x; x += n.bar ? 26 : 44; return { ...n, x: px + (n.bar ? 0 : 12) }; });
+  const W = Math.max(300, x + 18); // widen the staff when the bar is long
   const sound = (n) => dMidiKey(n.d) + n.snd;
   function tap(i) { const n = placed[i]; if (n.bar) return; setOn(i); playKey(sound(n), 0.5); }
   function playAll() {
@@ -5931,12 +5963,15 @@ function AccidentalBar() {
     <div className="try-box" style={actBox}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div style={actTitle}>How long does an accidental last?</div>
-        <div style={{display:'flex',gap:4}}>{Object.keys(ACC_EXAMPLES).map(k => <button key={k} className={'chip' + (k === ex ? ' active' : '')} style={{padding:'3px 9px',fontSize:13}} onClick={() => setEx(k)}>{ACC_EXAMPLES[k].label}</button>)}</div>
+        <div style={{display:'flex',gap:4,flexWrap:'wrap',justifyContent:'flex-end'}}>{Object.keys(ACC_EXAMPLES).map(k => <button key={k} className={'chip' + (k === ex ? ' active' : '')} style={{padding:'3px 9px',fontSize:13}} onClick={() => setEx(k)}>{ACC_EXAMPLES[k].label}</button>)}</div>
       </div>
-      <div style={actNote}>Tap each note (or play the bar) and watch which key it really is.</div>
+      <div style={actNote}>{ACC_EXAMPLES[ex].note ? ACC_EXAMPLES[ex].note + ' ' : ''}Tap each note (or play the bar) and watch which key it really is.</div>
       <svg viewBox={`0 ${base - 60} ${W} 80`} style={{width:'100%',maxWidth:420,display:'block',margin:'0 auto'}}>
         {[30, 32, 34, 36, 38].map(d => <line key={d} x1="4" x2={W - 4} y1={y(d)} y2={y(d)} stroke="#241f1a" strokeOpacity="0.55" strokeWidth="1.2"/>)}
         <ClefGlyph clef="treble" st="treble" yOf={(d) => y(d)} ink="#241f1a"/>
+        {ACC_EXAMPLES[ex].ks && ACC_EXAMPLES[ex].ks.ds.map((d, i) => ACC_EXAMPLES[ex].ks.type === 'sharp'
+          ? <SharpShape key={'ks' + i} x={50 + i * 12} y={y(d)} color="#a8823f"/>
+          : <FlatShape key={'ks' + i} x={50 + i * 12} y={y(d)} color="#a8823f"/>)}
         <line x1={W - 4} x2={W - 4} y1={y(38)} y2={y(30)} stroke="#241f1a" strokeWidth="2.5"/>
         {placed.map((n, i) => n.bar
           ? <line key={i} x1={n.x} x2={n.x} y1={y(38)} y2={y(30)} stroke="#241f1a" strokeWidth="1.4"/>
@@ -13495,12 +13530,12 @@ const HERO_MAP = {
 const CHAPTER_CAT = {
   'posture-hands': 'body',   'hand-clefs': 'body', 'first-steps': 'keys', 'note-names': 'keys', 'staff': 'pitch', 'reading-steps': 'steps', 'ledger-lines': 'pitch',
   'pulse': 'rpulse', 'note-values': 'rnotes', 'rhythm': 'rtime', 'time-signatures': 'rtime', 'tempo': 'rtempo',
-  'tones': 'tones', 'intervals': 'tones', 'scales': 'scales', 'key-signatures': 'scales',
+  'tones': 'tones', 'intervals': 'intervals', 'scales': 'scales', 'key-signatures': 'scales',
   'chords': 'harmony', 'melody': 'melody', 'form': 'melody', 'dynamics': 'expression',
   'signs': 'words', 'terms': 'words', 'styles': 'about', 'piano-story': 'about', 'pitch-range': 'about',
 };
 function catOfChapter(id) { return TOOL_CATS.find(c => c.id === CHAPTER_CAT[id]); }
-const CAT_CHAPTER_ORDER = { pitch: ['staff', 'ledger-lines'], rtime: ['time-signatures', 'rhythm'], body: ['posture-hands', 'hand-clefs'], melody: ['melody', 'form'], about: ['piano-story', 'pitch-range', 'styles'], tones: ['tones', 'intervals'], scales: ['scales', 'key-signatures'] };  // five-finger = warm-up before scales
+const CAT_CHAPTER_ORDER = { pitch: ['staff', 'ledger-lines'], rtime: ['time-signatures', 'rhythm'], body: ['posture-hands', 'hand-clefs'], melody: ['melody', 'form'], about: ['piano-story', 'pitch-range', 'styles'], scales: ['scales', 'key-signatures'] };  // five-finger = warm-up before scales
 function catChapterIds(catId) { const ids = STAGES.flatMap(s => s.ids).filter(id => CHAPTER_CAT[id] === catId), o = CAT_CHAPTER_ORDER[catId]; return o ? o.filter(id => ids.includes(id)).concat(ids.filter(id => !o.includes(id))) : ids; }
 function orderedChapterIds() { return TOOL_CATS.flatMap(c => catChapterIds(c.id)); }
 function LessonPath({ onOpen, onBack }) {
@@ -13610,12 +13645,13 @@ const TOOL_CATS = [
   { id: 'body', name: 'Posture & hands', when: 'Sitting, hand shape, arm weight, finger numbers, left and right hand', color: '#3f7fb5' },
   { id: 'keys', name: 'Piano keys & note names', when: 'Black-key groups, naming every white key, finding notes on the keyboard', color: '#6f9a4f' },
   { id: 'pitch', name: 'Reading the staff', when: 'Staff lines and spaces, clefs, rhymes, landmarks, ledger lines', color: '#4f8a7a' },
+  { id: 'tones', name: 'Tones & semitones', when: 'Tones and semitones, sharps, flats and naturals, the chromatic scale, how long an accidental lasts', color: '#a0762a' },
   { id: 'rpulse', name: 'Pulse & counting', when: 'The steady beat, tapping on the right beat, counting out loud', color: '#cf8f2e' },
   { id: 'rnotes', name: 'Note values & rests', when: 'Splitting notes, rests, filling bars, the whole-bar rest', color: '#c07a1e' },
   { id: 'rtime', name: 'Time signatures & rhythm patterns', when: 'Bar lines, grouping, 6/8, duplets, anacrusis, counting harder rhythms, rhythm cards', color: '#b8651e' },
   { id: 'steps', name: 'Reading tunes: pitch + rhythm', when: 'Reading tiny tunes, completing a melody, five-finger positions in all 12 keys, sight-reading cards', color: '#3f8f9a' },
   { id: 'rtempo', name: 'Tempo', when: 'Metronome and speed', color: '#d08a3a' },
-  { id: 'tones', name: 'Tones & Intervals', when: 'Tones and semitones, sharps and flats, measuring intervals', color: '#a0762a' },
+  { id: 'intervals', name: 'Intervals', when: 'Step or skip, counting an interval, major/minor/perfect, hearing intervals', color: '#b08a3a' },
   { id: 'scales', name: 'Scales & Keys', when: 'Major and minor scales, fingering, key signatures, minor forms', color: '#8a6a2a' },
   { id: 'harmony', name: 'Chords & Harmony', when: 'Triads, I IV V, inversions, cadences, seventh chords', color: '#b0527a' },
   { id: 'melody', name: 'Melody & Form', when: 'What a tune is, phrase marks, question and answer, sequences; binary, ternary and rondo form', color: '#9e5b8f' },
@@ -13640,7 +13676,7 @@ const TOOL_META = {
   'step-updown': ['keys', 0, 1, 'game'], 'letter-chain': ['keys', 0, 1, 'game'],
   'clef-story': ['pitch', 0, 1, 'show'], 'staff-climb': ['pitch', 0, 1, 'show'], 'rhymes': ['pitch', 1, 1, 'show'], 'landmarks': ['pitch', 1, 2, 'show'],
   'landmark-hop': ['pitch', 1, 2, 'game'], 'fold': ['pitch', 1, 2, 'show'], 'write-note': ['pitch', 1, 2, 'write home'], 'ledger-walk': ['pitch', 1, 2, 'show'],
-  'ledger-landmarks': ['pitch', 1, 2, 'show'], 'ledger-twins': ['pitch', 2, 3, 'show'], 'ledger-write': ['pitch', 1, 3, 'write'], 'step-skip': ['tones', 0, 1, 'game'],
+  'ledger-landmarks': ['pitch', 1, 2, 'show'], 'ledger-twins': ['pitch', 2, 3, 'show'], 'ledger-write': ['pitch', 1, 3, 'write'], 'step-skip': ['intervals', 0, 1, 'game'],
   'mini-tune': ['steps', 0, 1, 'game'], 'sight-reading': ['steps', 1, 3, 'home game'], 'ottava': ['words', 2, 3, 'show'],
   'steady-beat': ['rpulse', 0, 1, 'game'], 'beat-target': ['rpulse', 0, 2, 'game home'], 'count-aloud': ['rpulse', 0, 1, 'show'], 'count-along': ['rtime', 1, 2, 'show home'],
   'beat-doubler': ['rtime', 1, 3, 'show'], 'metronome': ['rtempo', 0, 3, 'home'],
@@ -13653,8 +13689,8 @@ const TOOL_META = {
   'build-minor': ['scales', 2, 3, 'game write'], 'scale-finder': ['scales', 0, 3, 'show home'], 'degree-names': ['scales', 2, 3, 'show'], 'sharps-order': ['scales', 1, 3, 'game'], 'flats-order': ['scales', 1, 3, 'game'],
   'modes': ['scales', 3, 3, 'show ear'],
   'place-it': ['scales', 1, 3, 'write'], 'relative-minor': ['scales', 2, 3, 'show'], 'circle-fifths': ['scales', 2, 3, 'show'], 'transpose': ['scales', 2, 3, 'show write'],
-  'interval-ruler': ['tones', 1, 2, 'show'], 'letter-hop': ['tones', 1, 2, 'game'], 'semitone-counter': ['tones', 2, 3, 'show'], 'scale-intervals': ['tones', 2, 3, 'show'],
-  'invert-interval': ['tones', 3, 3, 'show'], 'tritone': ['tones', 3, 3, 'show ear'], 'triad-stack': ['harmony', 1, 3, 'show'], 'major-minor': ['harmony', 2, 3, 'ear show'],
+  'interval-ruler': ['intervals', 1, 2, 'show'], 'letter-hop': ['intervals', 1, 2, 'game'], 'semitone-counter': ['intervals', 2, 3, 'show'], 'scale-intervals': ['intervals', 2, 3, 'show'],
+  'invert-interval': ['intervals', 3, 3, 'show'], 'tritone': ['intervals', 3, 3, 'show ear'], 'triad-stack': ['harmony', 1, 3, 'show'], 'major-minor': ['harmony', 2, 3, 'ear show'],
   'key-chords': ['harmony', 2, 3, 'show'], 'primary-triads': ['harmony', 2, 3, 'show ear'], 'inversions': ['harmony', 3, 3, 'show'], 'cadences': ['harmony', 3, 3, 'ear show'],
   'seventh-chords': ['harmony', 3, 3, 'show ear'], 'chord-extensions': ['harmony', 3, 3, 'show'],
   'road-map': ['words', 1, 2, 'game'], 'term-cards': ['words', 1, 3, 'home show'], 'term-match': ['words', 1, 3, 'game home'],
