@@ -4146,6 +4146,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 - **Phase 234 (2026-10-01) -- Metronome voice.** `SoundSettings` (click/voice/My voice) is now embedded in the Metronome tool. My-voice recording is now take-then-keep: record a count word, listen (▶), press ✓ to save (localStorage, device only) or ✕ to discard; nothing is saved until ✓. Verified with a fake microphone in headless Chromium (draft not stored until Keep). Not a shared/built-in voice: clips stay on that device; making it a built-in voice for all students would need audio files in audio/count/.
 
+- **Phase 235 (2026-10-01) -- Several recorded voices per device.** My-voice storage upgraded to `pb_myvoice_v2` = `{active, profiles:{id:{name, clips}}}` (auto-migrates the old single voice into "My voice"). The recorder panel (in the Metronome / Sound settings) has voice chips (name · clips recorded/9), "+ Add a voice", rename, delete (two-step). Switching a voice switches what the count says, live. **Per-student login plan:** each profile has a plain id, so an account can map to a profile id and clips can later move from localStorage to Supabase (e.g. a `student_voices` table + storage bucket) without changing the UI or `sayCount`. Verified in headless Chromium with a fake mic: migration, add, record, switch, persist across reload.
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
