@@ -4136,6 +4136,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 - **Phase 229 (2026-10-01) -- Category split.** "Reading the staff" is now two categories: **Reading the staff** (Reading the Staff + Ledger Lines) and **Steps, skips & sight-reading** (`steps`; Steps & Skips chapter, with step-skip, mini-tune, five-positions, complete-melody, sight-reading tools). Tool order fixed for the Landmarks step: the fold-at-middle-C tool now sits directly at the top (the collapsible wrapper of Phase 228 was removed). 14 categories now.
 
+- **Phase 230 (2026-10-01) -- Rests tool becomes a sound demo.** `RestGrouping` (Note Values) rewritten: tap each beat of a 4/4 bar to make it a note or a rest; Play runs a pulse click through the silence so the next note lands on time; presets; a toggle shows "two crotchet rests" vs "one minim rest" over beats 2-3 (sounds identical, only the writing differs). Tool retitled "Rests: counted, but silent". Also: Hands & Clefs "Which hand plays this staff?" moved after the Queen/King step (Phase 229+). Open decision: split Rhythm category into 3 (Beat & tempo / Note values / Time signatures & patterns).
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
