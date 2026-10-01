@@ -9232,6 +9232,39 @@ function HandClefMatch() {
     </div>
   );
 }
+function HandSplit() {
+  const [k, setK] = useState(null);
+  const d = k !== null ? keyToD(k) : null;
+  const msg = d === null ? t('Tap any white key.', '흰 건반을 눌러 보세요.')
+    : d === 28 ? t('Middle C -- the doorbell between the two houses. Either hand can answer it.', '가운데 도 -- 두 집 사이의 초인종이에요. 어느 손이든 받을 수 있어요.')
+    : d > 28 ? t('Upstairs, in the treble house: right-hand territory.', '위층, 높은음자리 집: 오른손 구역이에요.')
+    : t('Downstairs, in the bass house: left-hand territory.', '아래층, 낮은음자리 집: 왼손 구역이에요.');
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Split the keyboard', '건반을 반으로 나누기')}</div>
+      <div style={actNote}>{t('Tap a key and watch where it lands on the Grand Staff. Higher notes climb to the top staff; lower notes drop to the bottom one.', '건반을 누르면 그랜드 스태프 어디에 앉는지 보여요. 높은 음은 위 줄로, 낮은 음은 아래 줄로 가요.')}</div>
+      <TapKeyboard octaves={3} marks={k !== null ? { [k]: 'target' } : {}} onTap={(i) => { if (keyToD(i) === null) return; setK(i); playKey(i); }}/>
+      <StaffView clef="grand" notes={d !== null ? [{ d, color: '#a8823f' }] : []}/>
+      <div style={{textAlign:'center',fontWeight:800,fontSize:14.5,color:'var(--muted)',minHeight:22}}>{msg}</div>
+    </div>
+  );
+}
+function ClefCostume() {
+  const [c, setC] = useState('treble');
+  const tre = c === 'treble';
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Spot the clef', '음자리표 알아보기')}</div>
+      <div style={actNote}>{t('Each clef is a costume that tells you which note lives where.', '음자리표는 어떤 음이 어디에 사는지 알려 주는 의상이에요.')}</div>
+      <div style={{display:'flex',justifyContent:'center',gap:8,marginBottom:6}}>
+        <button className={'chip' + (tre ? ' active' : '')} style={{padding:'6px 14px',fontSize:14,fontWeight:800}} onClick={() => setC('treble')}>{t('Treble clef', '높은음자리표')}</button>
+        <button className={'chip' + (!tre ? ' active' : '')} style={{padding:'6px 14px',fontSize:14,fontWeight:800}} onClick={() => setC('bass')}>{t('Bass clef', '낮은음자리표')}</button>
+      </div>
+      <StaffView clef={c} notes={[{ d: tre ? 32 : 24, color: '#a8823f' }]}/>
+      <div style={{textAlign:'center',fontWeight:800,fontSize:14.5,color:'var(--muted)'}}>{tre ? t('The curl hugs the G line -- the Queen of G. This G is above middle C.', '소용돌이가 솔(G) 줄을 감싸요 -- 솔의 여왕. 이 솔은 가운데 도보다 위에 있어요.') : t('The two dots hug the F line -- the King of F. This F is below middle C.', '두 점이 파(F) 줄을 감싸요 -- 파의 왕. 이 파는 가운데 도보다 아래에 있어요.')}</div>
+    </div>
+  );
+}
 function HandClefsLearn({ onStart }) {
   return (
     <Lesson id="hand-clefs" title={t('Hands and clefs', '손과 음자리표')} head={<HandClefsHero/>} onStart={onStart}
@@ -9240,13 +9273,33 @@ function HandClefsLearn({ onStart }) {
         <Rule title={t('Two staves, two hands', '두 줄, 두 손')}>{t('The top staff has the treble clef (the curly one -- the Queen of G). The bottom staff has the bass clef (two dots -- the King of F). Middle C sits right between them, on its own short line.', '위쪽 줄에는 높은음자리표(구불구불한 모양 -- 생대 G)가 있어요. 아래쪽 줄에는 낮은음자리표(점 두 개 -- 왕 F)가 있어요. 가운데 도(C)는 두 줄 사이, 자기만의 짧은 줄 위에 있어요.')}</Rule>
         <HandClefMatch/>
       </Step>
+      <Step title={t('Split the keyboard', '건반 나누기')}>
+        <Rule title={t('Two houses, one doorbell', '두 집, 하나의 초인종')}>{t('Left of middle C is the basement (bass house, left hand). Right of it is upstairs (treble house, right hand). Middle C itself is the doorbell in the middle -- it is the one note either hand may play.', '가운데 도의 왼쪽은 지하(낮은음자리 집, 왼손), 오른쪽은 위층(높은음자리 집, 오른손)이에요. 가운데 도는 그 사이의 초인종 -- 어느 손이든 칠 수 있는 단 하나의 음이에요.')}</Rule>
+        <HandSplit/>
+      </Step>
+      <Step title={t('Spot the clef', '음자리표 알아보기')}>
+        <Rule title={t('Two costumes', '두 벌의 의상')}>{t('The treble clef curls around the G above middle C. The bass clef puts two dots around the F below middle C. Learn the costume and you know the neighbourhood.', '높은음자리표는 가운데 도 위의 솔을 감싸고, 낮은음자리표는 가운데 도 아래의 파를 두 점으로 감싸요. 의상만 알아보면 어느 동네인지 알 수 있어요.')}</Rule>
+        <ClefCostume/>
+      </Step>
     </Lesson>
   );
 }
 const HAND_CLEF_LEVELS = [
   { n: 1, label: 'Which hand plays which clef?', kind: 'clef', time: 6 },
+  { n: 2, label: 'Treble or bass clef?', kind: 'name', time: 6 },
+  { n: 3, label: 'Which hand plays this note?', kind: 'note', time: 7 },
 ];
 function genHandClefQuestion(lv, prev) {
+  if (lv.kind === 'name') {
+    let clef, g = 0;
+    do { clef = Math.random() < 0.5 ? 'treble' : 'bass'; } while (prev && prev.key === clef && g++ < 10);
+    return { kind: 'name', key: clef, clef, answer: clef === 'treble' ? 'Treble' : 'Bass', choices: ['Treble', 'Bass'], uid: Math.random() };
+  }
+  if (lv.kind === 'note') {
+    let d, g = 0;
+    do { d = Math.random() < 0.5 ? 29 + Math.floor(Math.random() * 8) : 20 + Math.floor(Math.random() * 8); } while (prev && prev.key === 'n' + d && g++ < 10);
+    return { kind: 'note', key: 'n' + d, d, answer: d > 28 ? 'Right' : 'Left', choices: ['Left', 'Right'], uid: Math.random() };
+  }
   let clef, g = 0;
   do { clef = Math.random() < 0.5 ? 'treble' : 'bass'; } while (prev && prev.key === clef && g++ < 10);
   return { kind: 'clef', key: clef, clef, answer: clef === 'treble' ? 'Right' : 'Left', choices: ['Left', 'Right'], uid: Math.random() };
@@ -9255,16 +9308,17 @@ function HandClefQuestion({ q, given, locked, onAnswer, pixel }) {
   const done = !!given;
   const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
   const cls = (c) => btnCls + (!done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '');
+  const title = q.kind === 'name' ? 'Which clef is this?' : q.kind === 'note' ? 'Which hand usually plays this note?' : 'Which hand usually plays this clef?';
   return (<div>
-    <p style={pixel ? {fontSize:11.5,textAlign:'center'} : {fontSize:15,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? 'WHICH HAND?' : 'Which hand usually plays this clef?'}</p>
-    <div style={{marginBottom:12}}><StaffView clef="grand" spread notes={[{ d: q.clef === 'treble' ? 32 : 20, color: '#a8823f' }]}/></div>
+    <p style={pixel ? {fontSize:11.5,textAlign:'center'} : {fontSize:15,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? (q.kind === 'name' ? 'WHICH CLEF?' : 'WHICH HAND?') : title}</p>
+    <div style={{marginBottom:12}}>{q.kind === 'name' ? <StaffView clef={q.clef} notes={[]}/> : q.kind === 'note' ? <StaffView clef="grand" notes={[{ d: q.d, color: '#a8823f' }]}/> : <StaffView clef="grand" spread notes={[{ d: q.clef === 'treble' ? 32 : 20, color: '#a8823f' }]}/>}</div>
     <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8}}>{q.choices.map(c => <button key={c} disabled={locked} className={cls(c)} style={{padding:'16px 0',fontSize:pixel ? 10 : 18}} onClick={() => onAnswer(c)}>{c}</button>)}</div>
   </div>);
 }
 const HAND_CLEFS_DRILL = {
   id: 'hand-clefs', label: 'Hands & Clefs', levels: HAND_CLEF_LEVELS, generate: genHandClefQuestion,
   check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
-  answerLabel: (q) => q.answer.toLowerCase() + ' hand',
+  answerLabel: (q) => q.kind === 'name' ? q.answer.toLowerCase() + ' clef' : q.answer.toLowerCase() + ' hand',
   Question: HandClefQuestion, Learn: HandClefsLearn,
 };
 function FirstStepsLearn({ onStart }) {
@@ -9647,6 +9701,11 @@ function ReadingStepsLearn({ onStart }) {
         {tip('Ending on the tonic', 'A scale-shaped tune almost always settles back on its starting note -- the tonic. That’s what makes an ending sound finished rather than left hanging.')}
         <CompleteMelody/>
       </Step>
+      <Step title={t('Five-finger positions', '다섯 손가락 자리')}>
+        {tip(t('Finger = note', '손가락 = 음'), t('In a position, a step up the staff is the next finger; a skip jumps one finger. You can read by fingers before you know every letter.', '한 자리 안에서는 오선보에서 한 칸/줄 올라가면 다음 손가락이고, 한 칸을 건너뛰면 손가락도 하나 건너뜁니다. 모든 음이름을 몰라도 손가락으로 먼저 읽을 수 있어요.'))}
+        {tip(t('Thumbs on C', '엄지를 도(C)에'), t('Right hand: thumb on middle C, fingers on C D E F G. Left hand: little finger on the C below, thumb on G.', '오른손: 엄지를 가운데 도에, 손가락을 도 레 미 파 솔 위에. 왼손: 새끼손가락을 아래쪽 도에, 엄지를 솔 위에.'))}
+        <FivePosition/>
+      </Step>
     </Lesson>
   );
 }
@@ -9654,6 +9713,9 @@ const RS_LEVELS = [
   { n: 1, label: 'Up, down or same?',      kind: 'dir', time: 6 },
   { n: 2, label: 'Step, skip or same?',    kind: 'move', time: 7 },
   { n: 3, label: 'Name the next note (first note given)', kind: 'next', time: 8 },
+  { n: 4, label: 'C position: which finger? (right hand)', kind: 'ff', pos: 'C', hand: 'rh', time: 7 },
+  { n: 5, label: 'C position: which finger? (left hand)', kind: 'ff', pos: 'C', hand: 'lh', time: 7 },
+  { n: 6, label: 'Any five-finger position, either hand', kind: 'ff', pos: null, hand: null, time: 8 },
 ];
 function genRsQuestion(lv, prev) {
   const uid = Math.random();
@@ -9679,10 +9741,10 @@ function RsQuestion({ q, given, locked, onAnswer, pixel }) {
   </div>);
 }
 const READING_STEPS_DRILL = {
-  id: 'reading-steps', label: 'Steps & Skips', levels: RS_LEVELS, generate: genRsQuestion,
+  id: 'reading-steps', label: 'Steps & Skips', levels: RS_LEVELS, generate: (lv, prev) => lv.kind === 'ff' ? genFfQuestion(lv, prev) : genRsQuestion(lv, prev),
   check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
-  answerLabel: (q) => q.answer + ' (' + dName(q.a) + ' → ' + dName(q.b) + ', ' + moveWord(q.a, q.b) + ')',
-  Question: RsQuestion, Learn: ReadingStepsLearn,
+  answerLabel: (q) => q.kind === 'ff' ? 'finger ' + q.answer + ' (' + dName(q.d) + ')' : q.answer + ' (' + dName(q.a) + ' → ' + dName(q.b) + ', ' + moveWord(q.a, q.b) + ')',
+  Question: (props) => props.q.kind === 'ff' ? <FfQuestion {...props}/> : <RsQuestion {...props}/>, Learn: ReadingStepsLearn,
 };
 
 // ─── Stage 4: Five-finger positions (Phase 120) ──────────────────────────────────
@@ -9722,36 +9784,7 @@ function FivePosition() {
 // Phase 195 (2026-09-29): Five-Finger Positions hero, chapter 8 of 24 (DRILLS-order backfill).
 // Five neighbouring white keys, one numbered finger over each -- literally depicting "one
 // finger for each key" from the chapter's own FivePosition tool, thumb (1) picked out in mustard.
-function FiveFingerHero() {
-  const xs = [180, 240, 300, 360, 420];
-  return (
-    <div style={{borderRadius:16,overflow:'hidden',marginBottom:14}}>
-      <svg viewBox="0 0 600 160" width="100%" style={{display:'block'}}>
-        <rect width="600" height="160" fill="#3a7bc4"/>
-        {xs.map((x, i) => <rect key={i} x={x} y="70" width="46" height="70" rx="6" fill="#f7f0e0" stroke="#241f1a" strokeWidth="1.5"/>)}
-        {xs.map((x, i) => <circle key={'f' + i} cx={x + 23} cy="45" r="16" fill={i === 0 ? '#e8b93a' : '#f7f0e0'} stroke="#241f1a" strokeWidth="1.5"/>)}
-        {xs.map((x, i) => <text key={'t' + i} x={x + 23} y="51" textAnchor="middle" fontSize="16" fontWeight="900" fill="#241f1a">{i + 1}</text>)}
-      </svg>
-    </div>
-  );
-}
 
-function FiveFingerLearn({ onStart }) {
-  const tip = (title, body) => <Rule title={title}>{body}</Rule>;
-  return (
-    <Lesson id="five-finger" title={t('Five-finger positions', '다섯 손가락 자리')} onStart={onStart} head={<FiveFingerHero/>}
-      intro={<>{t('Put each finger over its own key and the hand becomes a map: finger number, key and note on the staff all line up.', '각 손가락을 자기 건반 위에 두면 손이 하나의 지도가 됩니다: 손가락 번호, 건반, 그리고 오선보의 음이 모두 일치하게 돼요.')}</>}>
-      <Step title={t('C position', '다장조 위치')}>
-        {tip(t('Thumbs on C', '엄지를 도(C)에'), t('Right hand: thumb on middle C, fingers on C D E F G. Left hand: little finger on the C below, thumb on G.', '오른손: 엄지를 가운데 도에, 손가락을 도 레 미 파 솔 위에. 왼손: 새끼손가락을 아래쪽 도에, 엄지를 솔 위에.'))}
-        <FivePosition/>
-      </Step>
-      <Step title={t('Read with your fingers', '손가락으로 읽기')}>
-        {tip(t('Finger = note', '손가락 = 음'), t('In a position, a step up the staff is the next finger; a skip jumps one finger. You can read by fingers before you know every letter.', '한 자리 안에서는 오선보에서 한 칸/줄 올라가면 다음 손가락이고, 한 칸을 건너뛰면 손가락도 하나 건너뜁니다. 모든 음이름을 몰라도 손가락으로 먼저 읽을 수 있어요.'))}
-        <MiniTune/>
-      </Step>
-    </Lesson>
-  );
-}
 const FF_LEVELS = [
   { n: 1, label: 'C position: which finger? (right hand)', kind: 'ff', pos: 'C', hand: 'rh', time: 7 },
   { n: 2, label: 'C position: which finger? (left hand)', kind: 'ff', pos: 'C', hand: 'lh', time: 7 },
@@ -9778,12 +9811,6 @@ function FfQuestion({ q, given, locked, onAnswer, pixel }) {
     <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:6}}>{q.choices.map(c => <button key={c} disabled={locked} className={cls(c)} style={{padding:'14px 0',fontSize:pixel ? 10 : 18}} onClick={() => onAnswer(c)}>{c}</button>)}</div>
   </div>);
 }
-const FIVE_FINGER_DRILL = {
-  id: 'five-finger', label: 'Five-Finger Positions', levels: FF_LEVELS, generate: genFfQuestion,
-  check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
-  answerLabel: (q) => 'finger ' + q.answer + ' (' + dName(q.d) + ')',
-  Question: FfQuestion, Learn: FiveFingerLearn,
-};
 
 // ─── Scale degree names (Scales) and transposition (Key Signatures) -- Phase 120 ─
 const DEGREE_NAMES = ['tonic', 'supertonic', 'mediant', 'subdominant', 'dominant', 'submediant', 'leading note'];
@@ -11623,7 +11650,6 @@ const DRILLS = [
   { id: 'rhythm', label: 'Rhythm Patterns', concept: RHYTHM_DRILL, track: 'rhythm' },
   { id: 'staff', label: 'Reading the Staff', concept: STAFF_DRILL, track: 'pitch' },
   { id: 'reading-steps', label: 'Steps & Skips', concept: READING_STEPS_DRILL, track: 'pitch' },
-  { id: 'five-finger', label: 'Five-Finger Positions', concept: FIVE_FINGER_DRILL, track: 'pitch' },
   { id: 'time-signatures', label: 'Time Signatures', concept: TIMESIG_DRILL, track: 'rhythm' },
   { id: 'tempo', label: 'Tempo Race', concept: TEMPO_DRILL, track: 'reading' },
   { id: 'dynamics', label: 'Dynamics & Articulation', concept: DYN_DRILL, track: 'reading' },
@@ -13202,7 +13228,7 @@ const TOOLS = [
   { id: 'count-aloud', ch: 'pulse', title: 'Count it out loud', blurb: '1 2 3 4, or 1 and 2 and -- lights up as the bar plays.', C: () => <CountAloud/> },
   { id: 'step-skip', ch: 'reading-steps', title: 'Step, skip or same?', blurb: 'Read by direction and distance.', C: () => <StepSkip/> },
   { id: 'mini-tune', ch: 'reading-steps', title: 'Read a tiny tune', blurb: 'C position tunes with counting.', C: () => <MiniTune/> },
-  { id: 'five-positions', ch: 'five-finger', title: 'Five-finger positions', blurb: 'C, G, middle C and F positions.', C: () => <FivePosition/> },
+  { id: 'five-positions', ch: 'reading-steps', title: 'Five-finger positions', blurb: 'C, G, middle C and F positions.', C: () => <FivePosition/> },
   { id: 'minor-forms', ch: 'scales', title: 'Three kinds of minor', blurb: 'Natural, harmonic, melodic -- side by side on A minor.', C: () => <MinorFormsCard/> },
   { id: 'degree-names', ch: 'scales', title: 'Scale degree names', blurb: 'Tonic, supertonic... leading note.', C: () => <DegreeNames/> },
   { id: 'transpose', ch: 'key-signatures', title: 'Transpose a tune', blurb: 'Same scale degrees, new key.', C: () => <Transposer/> },
@@ -13277,7 +13303,7 @@ const TOOLS = [
   { id: 'count-more', ch: 'rhythm', title: 'Count harder rhythms', blurb: 'Dotted notes, 1 e & a, triplets, syncopation.', C: () => <CountHarder/> },
   { id: 'make-card', ch: 'rhythm', title: 'Make a rhythm card', blurb: 'Build a bar and loop it.', C: () => <RhythmComposer/> },
   { id: 'metronome', ch: 'tempo', title: 'Metronome', blurb: 'Any time signature, triplets and semiquavers, 5/8 and 7/8, tap tempo.', C: () => <MetronomeDial/> },
-  { id: 'speed-change', ch: 'tempo', title: 'rit. and accel. (speed changes)', blurb: 'Hear the speed change.', C: () => <SpeedChange/> },
+  { id: 'speed-change', ch: 'terms', title: 'rit. and accel. (speed changes)', blurb: 'Hear the speed change.', C: () => <SpeedChange/> },
   { id: 'dyn-order', ch: 'dynamics', title: 'Line up the dynamics', blurb: 'pp to ff, by ear and eye.', C: () => <DynOrder/> },
   { id: 'touch-ear', ch: 'dynamics', title: 'Which touch? How loud?', blurb: 'Listening game: staccato, legato, accent; p to ff.', C: () => <TouchEar/> },
   { id: 'pedal', ch: 'dynamics', title: 'The sustain pedal', blurb: 'No pedal, held, or changed with each chord -- hear the difference.', C: () => <PedalDemo/> },
@@ -13304,7 +13330,7 @@ const TOOLS = [
 // five-finger positions, then the AMEB theory chapters. Grade tags show where AMEB asks for it.
 const STAGES = [
   { n: 0, title: 'Getting Started', blurb: 'Sitting at the keyboard, hand shape and finger numbers, which hand plays which clef, and the black-key map with a first little tune.', ids: ['posture-hands', 'hand-clefs', 'first-steps'] },
-  { n: 1, title: 'Piano basics', blurb: 'Note names and five-finger positions.', ids: ['note-names', 'five-finger'] },
+  { n: 1, title: 'Piano basics', blurb: 'Note names and five-finger positions.', ids: ['note-names'] },
   { n: 2, title: 'Rhythm & counting', blurb: 'The steady beat, note values, rhythm cards, time signatures, speed.', ids: ['pulse', 'note-values', 'rhythm', 'time-signatures', 'tempo'] },
   { n: 3, title: 'Reading music', blurb: 'The staff, the Queen and the King, steps and skips, ledger lines, how phrases shape a tune, and how a piece is put together.', ids: ['staff', 'reading-steps', 'ledger-lines', 'melody', 'form'] },
   { n: 4, title: 'Sound, signs & terms', blurb: 'Loud and soft, touch, repeats and signs, Italian terms.', ids: ['dynamics', 'signs', 'terms'] },
@@ -13313,7 +13339,7 @@ const STAGES = [
 ];
 const GRADE_TAGS = {
   'posture-hands': 'Beginner', 'hand-clefs': 'Beginner', 'first-steps': 'Beginner', 'note-names': 'Prelim', pulse: 'Beginner', 'note-values': 'Prelim', rhythm: 'Prelim–G2', staff: 'Prelim',
-  'reading-steps': 'Beginner', 'five-finger': 'Beginner', 'time-signatures': 'Prelim–G2', tempo: 'Prelim–G1', dynamics: 'Prelim–G1',
+  'reading-steps': 'Beginner', 'time-signatures': 'Prelim–G2', tempo: 'Prelim–G1', dynamics: 'Prelim–G1',
   'ledger-lines': 'Prelim–G2', tones: 'Prelim–G1', scales: 'Prelim–G3', 'key-signatures': 'Prelim–G3', intervals: 'Prelim–G3', chords: 'Prelim–G3', signs: 'Prelim–G2', terms: 'G1–G4',
   'piano-story': 'General knowledge', 'pitch-range': 'General knowledge', 'melody': 'Prelim–G2', 'form': 'Prelim–G3', 'styles': 'General knowledge',
 };
@@ -13326,7 +13352,7 @@ function stepsDone(id) { const d = loadDone()[id] || {}; return Object.values(d)
 // once (no gaps, no duplicates), so no re-grouping work was needed before building this.
 const HERO_MAP = {
   'posture-hands': () => <PostureHandsHero/>, 'hand-clefs': () => <HandClefsHero/>,
-  'first-steps': () => <FirstStepsHero/>, 'note-names': () => <NoteNamesHero/>, 'five-finger': () => <FiveFingerHero/>,
+  'first-steps': () => <FirstStepsHero/>, 'note-names': () => <NoteNamesHero/>,
   'pulse': () => <PulseHero/>, 'note-values': () => <NoteValHero/>, 'rhythm': () => <RhythmCardsHero/>, 'time-signatures': () => <TimeSigHero/>, 'tempo': () => <TempoHero/>,
   'staff': () => <StaffHero/>, 'reading-steps': () => <ReadingStepsHero/>, 'ledger-lines': () => <LedgerHero/>, 'melody': () => <MelodyHero/>, 'form': () => <FormHero/>,
   'dynamics': () => <DynamicsHero/>, 'signs': () => <SignsHero/>, 'terms': () => <TermsHero/>,
@@ -13337,15 +13363,14 @@ const HERO_MAP = {
 // category (TOOL_CATS); the student's Learn page, the teacher's All chapters page and the chapter
 // header all group by it. Chapters keep their old learning-path order inside each category.
 const CHAPTER_CAT = {
-  'posture-hands': 'body', 'five-finger': 'scales',
-  'hand-clefs': 'body', 'first-steps': 'keys', 'note-names': 'keys', 'staff': 'pitch', 'reading-steps': 'pitch', 'ledger-lines': 'pitch',
+  'posture-hands': 'body',   'hand-clefs': 'body', 'first-steps': 'keys', 'note-names': 'keys', 'staff': 'pitch', 'reading-steps': 'pitch', 'ledger-lines': 'pitch',
   'pulse': 'rhythm', 'note-values': 'rhythm', 'rhythm': 'rhythm', 'time-signatures': 'rhythm', 'tempo': 'rhythm',
   'tones': 'tones', 'intervals': 'tones', 'scales': 'scales', 'key-signatures': 'scales',
   'chords': 'harmony', 'melody': 'melody', 'form': 'melody', 'dynamics': 'expression',
   'signs': 'words', 'terms': 'words', 'styles': 'about', 'piano-story': 'about', 'pitch-range': 'about',
 };
 function catOfChapter(id) { return TOOL_CATS.find(c => c.id === CHAPTER_CAT[id]); }
-const CAT_CHAPTER_ORDER = { rhythm: ['pulse', 'note-values', 'time-signatures', 'rhythm', 'tempo'], body: ['posture-hands', 'hand-clefs'], melody: ['melody', 'form'], about: ['piano-story', 'pitch-range', 'styles'], tones: ['tones', 'intervals'], scales: ['five-finger', 'scales', 'key-signatures'] };  // five-finger = warm-up before scales
+const CAT_CHAPTER_ORDER = { rhythm: ['pulse', 'note-values', 'time-signatures', 'rhythm', 'tempo'], body: ['posture-hands', 'hand-clefs'], melody: ['melody', 'form'], about: ['piano-story', 'pitch-range', 'styles'], tones: ['tones', 'intervals'], scales: ['scales', 'key-signatures'] };  // five-finger = warm-up before scales
 function catChapterIds(catId) { const ids = STAGES.flatMap(s => s.ids).filter(id => CHAPTER_CAT[id] === catId), o = CAT_CHAPTER_ORDER[catId]; return o ? o.filter(id => ids.includes(id)).concat(ids.filter(id => !o.includes(id))) : ids; }
 function orderedChapterIds() { return TOOL_CATS.flatMap(c => catChapterIds(c.id)); }
 function LessonPath({ onOpen, onBack }) {
@@ -13441,7 +13466,6 @@ const CHAPTER_SEARCH_TERMS = {
   'posture-hands': 'posture hand shape beginner sit stool arm weight alignment finger number which finger thumb',
   'hand-clefs': 'treble clef bass clef grand staff left hand right hand queen of g king of f which hand',
   'first-steps': 'black key small house big house first song white neighbour keyboard pattern',
-  'five-finger': 'five finger position hand',
   'terms': 'italian term tempo word meaning',
   'tempo': 'tempo speed italian term metronome mark bpm',
   'practice': 'practice timer dice repetition',
@@ -13458,7 +13482,7 @@ const TOOL_CATS = [
   { id: 'pitch', name: 'Reading the staff', when: 'Clefs, staff landmarks, ledger lines, sight-reading', color: '#4f8a7a' },
   { id: 'rhythm', name: 'Rhythm', when: 'Steady beat, counting out loud, note values, filling bars, time signatures, metronome', color: '#c07a1e' },
   { id: 'tones', name: 'Tones & Intervals', when: 'Tones and semitones, sharps and flats, measuring intervals', color: '#a0762a' },
-  { id: 'scales', name: 'Scales & Keys', when: 'Five-finger warm-up positions, scales, key signatures, minor forms', color: '#8a6a2a' },
+  { id: 'scales', name: 'Scales & Keys', when: 'Major and minor scales, fingering, key signatures, minor forms', color: '#8a6a2a' },
   { id: 'harmony', name: 'Chords & Harmony', when: 'Triads, I IV V, inversions, cadences, seventh chords', color: '#b0527a' },
   { id: 'melody', name: 'Melody & Form', when: 'What a tune is, phrase marks, question and answer, sequences; binary, ternary and rondo form', color: '#9e5b8f' },
   { id: 'expression', name: 'Touch & expression', when: 'Dynamics, legato and staccato, speed changes', color: '#7a64a8' },
@@ -13477,7 +13501,7 @@ const TOOL_META = {
   'count-more': ['rhythm', 2, 3, 'show game'], 'grouping': ['rhythm', 2, 3, 'game write'], 'pedal': ['expression', 2, 3, 'show ear'],
   'ornaments': ['words', 3, 3, 'show ear'], 'chromatic': ['tones', 2, 3, 'show'],
   'sit-check': ['body', 0, 3, 'show'], 'hand-shape': ['body', 0, 3, 'show'], 'arm-moves': ['body', 0, 3, 'home game'], 'posture-check': ['body', 0, 3, 'home'], 'arm-alignment': ['body', 0, 3, 'show'],
-  'finger-numbers': ['body', 0, 0, 'game'], 'five-positions': ['scales', 0, 1, 'show'],
+  'finger-numbers': ['body', 0, 0, 'game'], 'five-positions': ['pitch', 0, 1, 'show'],
   'key-houses': ['keys', 0, 0, 'show game'], 'black-key-song': ['keys', 0, 0, 'ear game'], 'black-white-neighbours': ['keys', 0, 1, 'ear game'], 'find-every': ['keys', 0, 1, 'game home'], 'name-reveal': ['keys', 0, 1, 'game'],
   'step-updown': ['keys', 0, 1, 'game'], 'letter-chain': ['keys', 0, 1, 'game'],
   'clef-story': ['pitch', 0, 1, 'show'], 'staff-climb': ['pitch', 0, 1, 'show'], 'rhymes': ['pitch', 1, 1, 'show'], 'landmarks': ['pitch', 1, 2, 'show'],
@@ -13489,7 +13513,7 @@ const TOOL_META = {
   'split-it': ['rhythm', 1, 1, 'show'], 'note-rest-naming': ['rhythm', 0, 1, 'show ear'], 'whole-bar-rest': ['rhythm', 1, 2, 'show ear'], 'note-rest-match': ['rhythm', 0, 1, 'game'],
   'fill-bar': ['rhythm', 1, 2, 'game write home'], 'make-card': ['rhythm', 1, 2, 'game home'], 'bar-lines': ['rhythm', 1, 2, 'write'], 'regroup': ['rhythm', 2, 3, 'show ear'],
   'dyn-order': ['expression', 0, 1, 'game'], 'hairpin': ['expression', 1, 2, 'show'], 'touch-ear': ['expression', 0, 2, 'ear game'], 'touch-lengths': ['expression', 1, 3, 'show ear'],
-  'speed-change': ['expression', 1, 2, 'show ear'], 'hand-clef-match': ['body', 0, 0, 'game'], 'tie-slur': ['words', 1, 2, 'show ear'],
+  'speed-change': ['words', 1, 2, 'show ear'], 'hand-clef-match': ['body', 0, 0, 'game'], 'tie-slur': ['words', 1, 2, 'show ear'],
   'high-low': ['ear', 0, 0, 'ear game'], 'echo': ['ear', 0, 1, 'ear game home'], 'interval-ear': ['ear', 2, 3, 'ear'],
   'tone-semitone': ['tones', 1, 1, 'show game'], 'sharp-flat': ['tones', 1, 1, 'show'], 'accidental-bar': ['tones', 1, 2, 'show write'], 'build-major': ['scales', 1, 2, 'game write'],
   'build-minor': ['scales', 2, 3, 'game write'], 'scale-finder': ['scales', 0, 3, 'show home'], 'degree-names': ['scales', 2, 3, 'show'], 'sharps-order': ['scales', 1, 3, 'game'], 'flats-order': ['scales', 1, 3, 'game'],
@@ -14560,7 +14584,7 @@ function readUrlState() {
   let p;
   try { p = new URLSearchParams(location.search); } catch (e) { p = new URLSearchParams(''); }
   // Old links: Letter Chain now lives in Note Names, Scale Fingering in Scales (Phase 97).
-  const alias = { 'letter-chain': 'note-names', 'finger-numbers': 'posture-hands', 'scale-fingering': 'scales' };
+  const alias = { 'letter-chain': 'note-names', 'finger-numbers': 'posture-hands', 'five-finger': 'reading-steps', 'scale-fingering': 'scales' };
   const asked = alias[p.get('drill')] || p.get('drill');
   const drill = DRILLS.find(d => d.id === asked) ? asked : null;
   const level = parseInt(p.get('level'), 10);
@@ -14709,7 +14733,7 @@ function Root() {
   let printParams = null;
   try { printParams = new URLSearchParams(location.search); } catch (e) {}
   if (printParams && printParams.get('print') === '1') {
-    const alias = { 'letter-chain': 'note-names', 'finger-numbers': 'posture-hands', 'scale-fingering': 'scales' };
+    const alias = { 'letter-chain': 'note-names', 'finger-numbers': 'posture-hands', 'five-finger': 'reading-steps', 'scale-fingering': 'scales' };
     const drillId = alias[printParams.get('drill')] || printParams.get('drill') || (DRILLS[0] && DRILLS[0].id);
     const lvl = parseInt(printParams.get('level'), 10);
     const n = parseInt(printParams.get('n'), 10);
