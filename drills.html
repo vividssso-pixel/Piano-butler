@@ -2872,6 +2872,12 @@ function RestShape({ d, cx, ink }) {
   if (d >= 2) return <g><line x1={cx - 12} y1="52" x2={cx + 12} y2="52" stroke={ink} strokeWidth="1.2"/><rect x={cx - 8} y="45" width="16" height="7" fill={ink}/></g>;
   if (d >= 1) return <path d={`M${cx - 3},30 L${cx + 5},40 L${cx - 2},49 L${cx + 6},59 Q${cx - 7},55 ${cx - 1},68`} {...s} strokeWidth="3.4"/>;
   if (d >= 0.5) return <g><circle cx={cx - 3} cy="44" r="3.6" fill={ink}/><path d={`M${cx - 3},45 Q${cx + 2},48 ${cx + 7},41 L${cx + 1},66`} {...s} strokeWidth="2.4"/></g>;
+  if (d <= 0.125) return <g>
+    <circle cx={cx} cy="34" r="3" fill={ink}/><circle cx={cx - 3} cy="43" r="3" fill={ink}/><circle cx={cx - 6} cy="52" r="3" fill={ink}/>
+    <path d={`M${cx},35 Q${cx + 5},38 ${cx + 10},31 L${cx - 2},68`} {...s} strokeWidth="2.3"/>
+    <path d={`M${cx - 3},44 Q${cx + 2},47 ${cx + 6},41`} {...s} strokeWidth="2.3"/>
+    <path d={`M${cx - 6},53 Q${cx - 1},56 ${cx + 3},50`} {...s} strokeWidth="2.3"/>
+  </g>;
   return <g>
     <circle cx={cx - 2} cy="40" r="3.4" fill={ink}/><circle cx={cx - 5} cy="50" r="3.4" fill={ink}/>
     <path d={`M${cx - 2},41 Q${cx + 3},44 ${cx + 8},37 L${cx},68`} {...s} strokeWidth="2.4"/>
@@ -2890,6 +2896,7 @@ function NoteShape({ base, dot, cx, ink, beamed }) {
       {base < 4 && <line x1={sx} y1={HEAD_Y - 2} x2={sx} y2={STEM_TOP} stroke={ink} strokeWidth="1.8"/>}
       {!beamed && base <= 0.5 && <path d={`M${sx},${STEM_TOP} c 2,9 13,12 8,27`} fill="none" stroke={ink} strokeWidth="2.6" strokeLinecap="round"/>}
       {!beamed && base <= 0.25 && <path d={`M${sx},${STEM_TOP + 9} c 2,8 13,11 8,24`} fill="none" stroke={ink} strokeWidth="2.6" strokeLinecap="round"/>}
+      {!beamed && base <= 0.125 && <path d={`M${sx},${STEM_TOP + 17} c 2,7 13,10 8,20`} fill="none" stroke={ink} strokeWidth="2.6" strokeLinecap="round"/>}
       {dot && <circle cx={cx + 14} cy={HEAD_Y - 2} r="2.6" fill={ink}/>}
     </g>
   );
@@ -2900,7 +2907,7 @@ function Glyph({ item, ink = '#241f1a', size = 56 }) {
   const w = 44;
   return (
     <svg viewBox={'0 10 ' + w + ' 66'} style={{width: size * w / 66, height: size, display:'inline-block', verticalAlign:'middle'}}>
-      {item.rest ? <RestShape d={item.base} cx={w / 2} ink={ink}/> : <NoteShape base={item.base} dot={item.dot} cx={w / 2 - (item.dot ? 5 : 2)} ink={ink}/>}
+      {item.rest ? <g><RestShape d={item.base} cx={w / 2 - (item.dot ? 4 : 0)} ink={ink}/>{item.dot && <circle cx={w / 2 + 12} cy={item.base >= 2 ? 40 : 46} r="2.6" fill={ink}/>}</g> : <NoteShape base={item.base} dot={item.dot} cx={w / 2 - (item.dot ? 5 : 2)} ink={ink}/>}
     </svg>
   );
 }
@@ -3265,32 +3272,40 @@ function FillTheBar() {
 
 // Same name, note or rest -- Sohyun: since note-value names and rest names are identical, make
 // that explicit and easy to remember (Phase 144).
+const NN_ROWS = [
+  ...NOTE_VALUES,
+  { id: 'demisemiquaver', us: 'thirty-second', base: 0.125 },
+  { id: 'minim', us: 'half', base: 2, dot: true },
+  { id: 'crotchet', us: 'quarter', base: 1, dot: true },
+  { id: 'quaver', us: 'eighth', base: 0.5, dot: true },
+];
 function NoteRestNaming() {
   function playPair(v, isRest) {
     const ctx = getAudio(); if (!ctx) return; stopClicks();
     const t0 = ctx.currentTime + 0.08;
-    const dur = v.base * 0.5; // crotchet = 0.5s (bpm 120), so a semibreve is 2s etc.
+    const dur = v.base * (v.dot ? 1.5 : 1) * 0.5; // crotchet = 0.5s (bpm 120), so a semibreve is 2s etc.
     if (!isRest) blip(ctx, t0, 523.25, dur * 0.92, 0.22, 'triangle');
     else setTimeout(() => { const c2 = getAudio(); if (c2) metroClick(c2, c2.currentTime, false, 0.12); }, dur * 1000);
   }
   return (
     <div className="try-box" style={actBox}>
       <div style={actTitle}>{t('Same name, note or rest', '음표와 쉼표, 이름이 같아요')}</div>
-      <div style={actNote}>{t('Every note value and its matching rest share exactly the same name -- a semibreve rest is silence for as long as a semibreve note would sound.', '모든 음표는 짝이 되는 쉼표와 이름이 완전히 같아요 -- 온쉼표는 온음표가 울리는 것과 같은 길이만큼 조용히 쉬는 거예요.')}</div>
+      <div style={actNote}>{t('Every note value and its matching rest share exactly the same name -- a semibreve rest is silence for as long as a semibreve note would sound. A dot after a note or a rest adds half of its length.', '모든 음표는 짝이 되는 쉼표와 이름이 완전히 같아요 -- 온쉼표는 온음표가 울리는 것과 같은 길이만큼 조용히 쉬는 거예요. 음표든 쉼표든 점이 붙으면 원래 길이의 절반이 더해져요.')}</div>
       <div style={{display:'flex',flexDirection:'column',gap:5}}>
-        {NOTE_VALUES.map(v => {
-          const note = NV_NOTES.find(n => n.id === v.id), rest = NV_RESTS.find(r => r.id === v.id);
+        {NN_ROWS.map(v => {
+          const note = nvItem(v, { dot: v.dot }), rest = nvItem(v, { rest: true, dot: v.dot });
+          const label = (v.dot ? 'dotted ' : '') + v.id;
           return (
-            <div key={v.id} style={{display:'grid',gridTemplateColumns:'1fr 1fr',background:'#fff',borderRadius:10,overflow:'hidden'}}>
+            <div key={label} style={{display:'grid',gridTemplateColumns:'1fr 1fr',background:'#fff',borderRadius:10,overflow:'hidden'}}>
               <button onClick={() => playPair(v, false)} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:1,background:'none',border:'none',cursor:'pointer',fontFamily:'inherit',padding:'8px 2px'}}>
                 <Glyph item={note} size={30}/>
-                <span style={{fontSize:13,fontWeight:900,color:'var(--brass)'}}>{cap(v.id)}</span>
-                <span style={{fontSize:10.5,fontWeight:600,color:'var(--muted)'}}>{t('note', '음표')}</span>
+                <span style={{fontSize:13,fontWeight:900,color:'var(--brass)'}}>{cap(label)}</span>
+                <span style={{fontSize:10.5,fontWeight:600,color:'var(--muted)'}}>{t('note', '음표')}{v.dot ? ' · ' + fmtBeats(note.beats) : ''}</span>
               </button>
               <button onClick={() => playPair(v, true)} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:1,background:'none',border:'none',borderLeft:'1px dashed var(--border)',cursor:'pointer',fontFamily:'inherit',padding:'8px 2px'}}>
                 <Glyph item={rest} size={30}/>
-                <span style={{fontSize:13,fontWeight:900,color:'var(--brass)'}}>{cap(v.id)}</span>
-                <span style={{fontSize:10.5,fontWeight:600,color:'var(--muted)'}}>{t('rest', '쉼표')}</span>
+                <span style={{fontSize:13,fontWeight:900,color:'var(--brass)'}}>{cap(label)}</span>
+                <span style={{fontSize:10.5,fontWeight:600,color:'var(--muted)'}}>{t('rest', '쉼표')}{v.dot ? ' · ' + fmtBeats(rest.beats) : ''}</span>
               </button>
             </div>
           );
@@ -6578,42 +6593,52 @@ function playTimeSig(t, bpm) {
 
 // ─── Time Signatures: hands-on round (Phase 109) ─────────────────────────────────
 // 1. Count along: the beats light up in time, strong beat biggest, and loop until stopped.
+const BEAT_EXTRA = { '5/4': { id: '5/4', top: 5, bottom: 4, kind: 'simple', unit: 'crotchet', use: 'five crotchet beats, grouped 3 + 2 -- ONE two three FOUR five', pattern: [1, 0, 0, 0.5, 0] } };
 function BeatPulse() {
-  const IDS = ['2/4', '3/4', '4/4', '6/8'];
+  const IDS = ['2/4', '3/4', '4/4', '2/2', '5/4', '3/8', '6/8', '9/8', '12/8'];
   const [id, setId] = useState('3/4');
   const [beat, setBeat] = useState(-1);
   const [run, setRun] = useState(false);
-  const t = TS[id];
+  const t = TS[id] || BEAT_EXTRA[id];
   const n = t.pattern.length;
-  const words = t.id === '6/8' ? ['1', '2', '3', '4', '5', '6'] : ['1', '2', '3', '4'].slice(0, n);
+  const quaverBeat = t.bottom === 8; // the quaver is the beat: count every one
+  const grouped = t.kind === 'compound'; // lights in threes
+  const words = Array.from({ length: n }, (_, k) => String(k + 1));
+  const strong = words.filter((w, k) => t.pattern[k] === 1), medium = words.filter((w, k) => t.pattern[k] === 0.5);
   useEffect(() => { setRun(false); setBeat(-1); }, [id]);
   useEffect(() => {
     if (!run) return;
-    const bpm = t.bottom === 8 ? 150 : 84, ms = 60000 / bpm;
+    const bpm = quaverBeat ? 150 : t.bottom === 2 ? 72 : 84, ms = 60000 / bpm;
     let i = 0;
     const tick = () => {
-      const ctx = getAudio(); const acc = t.pattern[i % n];
-      const bn = i % n;
-      if (ctx) { if (t.id === '6/8' && acc === 0 && !(SOUND.count === 'voice' && sayCount(ctx, ctx.currentTime + 0.01, String(bn + 1), 0.8))) metroClick(ctx, ctx.currentTime + 0.01, 0, 0.16); else if (t.id === '6/8' && acc === 0) {} else beatTick(ctx, ctx.currentTime + 0.01, bn, acc === 1 ? 1320 : acc === 0.5 ? 1040 : 880, 0.05, acc === 1 ? 0.4 : acc === 0.5 ? 0.22 : 0.12); }
-      setBeat(i % n); i++;
+      const ctx = getAudio(); const bn = i % n, acc = t.pattern[bn];
+      if (ctx) {
+        const at = ctx.currentTime + 0.01;
+        if (SOUND.count === 'voice' && bn < 8 && sayCount(ctx, at, words[bn], acc > 0 ? 1 : 0.8)) {}
+        else if (grouped && acc === 0) metroClick(ctx, at, 0, 0.16);
+        else beatTick(ctx, at, bn, acc === 1 ? 1320 : acc === 0.5 ? 1040 : 880, 0.05, acc === 1 ? 0.4 : acc === 0.5 ? 0.22 : 0.12);
+      }
+      setBeat(bn); i++;
     };
     tick(); const iv = setInterval(tick, ms);
     return () => { clearInterval(iv); setBeat(-1); };
   }, [run, id]);
+  const big = n > 6 ? [32, 25, 18] : [40, 30, 22];
   return (
     <div className="try-box" style={actBox}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:6,flexWrap:'wrap'}}>
         <div style={actTitle}>Count along</div>
-        <div style={{display:'flex',gap:4}}>{IDS.map(x => <button key={x} className={'chip' + (x === id ? ' active' : '')} style={{padding:'3px 9px',fontSize:13,fontWeight:900}} onClick={() => setId(x)}>{x}</button>)}</div>
+        <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>{IDS.map(x => <button key={x} className={'chip' + (x === id ? ' active' : '')} style={{padding:'3px 9px',fontSize:13,fontWeight:900}} onClick={() => setId(x)}>{x}</button>)}</div>
       </div>
-      <div style={actNote}>Press start and count out loud with the lights. The first beat of every bar is the strongest{t.id === '6/8' ? '. In 6/8 the quaver is the beat: count all six, 1 2 3 4 5 6 -- the 4 gets a smaller push, because the quavers go in two groups of three' : ''}.</div>
+      <div style={actNote}>Press start and count out loud with the lights. The big light is the <b>strong</b> beat (the accent <b>&gt;</b>), a middle-sized light is a <b>medium</b> beat, and the small ones are <b>weak</b>. {t.use.charAt(0).toUpperCase() + t.use.slice(1)}.{quaverBeat && t.kind === 'compound' ? ' In ' + t.id + ' the quaver is the beat, so count every quaver.' : ''}</div>
       <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:12,padding:'10px 0'}}>
         <TSig top={t.top} bottom={t.bottom} size={40}/>
-        <div style={{display:'flex',gap:t.id === '6/8' ? 6 : 12,alignItems:'center'}}>
+        <div style={{display:'flex',flexWrap:'wrap',gap:grouped ? 4 : 12,alignItems:'flex-end',justifyContent:'center',maxWidth:grouped ? 360 : 300}}>
           {t.pattern.map((acc, i) => {
-            const size = acc === 1 ? 40 : acc === 0.5 ? 30 : 22, lit = beat === i;
+            const size = acc === 1 ? big[0] : acc === 0.5 ? big[1] : big[2], lit = beat === i;
             return (
-              <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,marginLeft:t.id === '6/8' && i === 3 ? 10 : 0}}>
+              <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2,marginLeft:grouped && i % 3 === 0 && i > 0 ? 10 : 0}}>
+                <span style={{fontSize:acc === 1 ? 17 : 13,fontWeight:900,lineHeight:1,height:17,color:acc === 1 ? '#b5483b' : '#a8823f',opacity:acc > 0 ? 1 : 0}}>&gt;</span>
                 <div style={{width:size,height:size,borderRadius:size / 2,background:lit ? (acc === 1 ? '#b5483b' : '#a8823f') : '#fff',
                   border:'2px solid ' + (acc === 1 ? '#b5483b' : '#a8823f'),transform:lit ? 'scale(1.18)' : 'scale(1)',transition:'transform 0.08s, background 0.08s'}}/>
                 <span style={{fontSize:14,fontWeight:lit || acc > 0 ? 900 : 700,color:lit ? 'var(--text)' : 'var(--muted)'}}>{words[i]}</span>
@@ -6621,6 +6646,9 @@ function BeatPulse() {
             );
           })}
         </div>
+      </div>
+      <div style={{textAlign:'center',fontSize:13,color:'#5c544a',marginBottom:6}}>
+        <b style={{color:'#b5483b'}}>Strong:</b> {strong.join(', ')}{medium.length ? <> · <b style={{color:'#a8823f'}}>medium:</b> {medium.join(', ')}</> : ''} · the rest are weak
       </div>
       <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={() => setRun(r => !r)}>{run ? '■ Stop' : '▶ Start'}</button></div>
     </div>
@@ -13457,7 +13485,7 @@ const TOOLS = [
   { id: 'whole-bar-rest', ch: 'note-values', title: 'The whole-bar rest', blurb: 'A semibreve rest can mean "rest this whole bar" -- any time signature.', C: () => <WholeBarRest/> },
   { id: 'note-rest-match', ch: 'note-values', title: 'Note ↔ rest match', blurb: 'Memory-pairs game: match each note name to its rest.', C: () => <NoteRestMatch/> },
   { id: 'fill-bar', ch: 'note-values', title: 'Fill the bar', blurb: 'Exactly 2, 3 or 4 beats.', C: () => <FillTheBar/> },
-  { id: 'count-along', ch: 'time-signatures', title: 'Count along (time signatures)', blurb: 'Beat lights for 2/4, 3/4, 4/4, and 6/8 counted 1 to 6.', C: () => <BeatPulse/> },
+  { id: 'count-along', ch: 'time-signatures', title: 'Count along (time signatures)', blurb: 'Beat lights and the accent for 2/4, 3/4, 4/4, 2/2, 5/4, 3/8, 6/8, 9/8 and 12/8.', C: () => <BeatPulse/> },
   { id: 'bar-lines', ch: 'time-signatures', title: 'Put in the bar lines', blurb: 'The written exam task.', C: () => <BarLineBuilder/> },
   { id: 'beat-doubler', ch: 'time-signatures', title: 'When the quaver is the beat', blurb: '8 on the bottom: every note doubles; count 6/8 as 1 to 6.', C: () => <BeatDoubler/> },
   { id: 'grouping', ch: 'time-signatures', title: 'Group the quavers', blurb: 'Which bar is beamed right for 2/4, 3/4, 4/4, 6/8?', C: () => <GroupingGame/> },
