@@ -4140,6 +4140,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 - **Phase 231 (2026-10-01) -- Rhythm regrouped; Pulse joins the reading group.** Category `steps` renamed **"Reading tunes: pitch + rhythm"** and now holds Pulse & Counting (steady-beat, beat-target, count-aloud) + Steps & Skips (8 tools). Rhythm split into three categories: **Note values & rests** (`rnotes`, 6), **Time signatures & rhythm patterns** (`rtime`, 9: Time Signatures then Rhythm Patterns), **Tempo** (`rtempo`, 1). Note Values intro points back to Pulse & Counting. Sight-reading cards got an icon (Phase 230+). 16 categories total. Verified: Babel compile, live load, per-category tool counts.
 
+- **Phase 232 (2026-10-01) -- Category tidy.** "Reading tunes: pitch + rhythm" (`steps`) keeps 4 tools (Read a tiny tune, Complete the melody, Five-finger positions, Sight-reading cards). **Pulse & counting** is its own category (`rpulse`, before Note values & rests, Time signatures & patterns, Tempo). "Step, skip or same?" moved to the Intervals chapter/Tones & Intervals category (also shown at the start of the Intervals lesson, step 1; still used in Steps & Skips lesson). 8va/8vb moved to Signs & terms. 17 categories.
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
