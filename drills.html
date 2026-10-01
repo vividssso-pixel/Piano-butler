@@ -3684,29 +3684,7 @@ function NoteValLearn({ onStart }) {
   return (
     <Lesson id="note-values" title={t('Notes and rests', '음표와 쉼표')} head={<NoteValHero/>} intro={<>{t('Each row fills the same 4-beat bar -- every note splits into two of the next one down.', '각 줄은 같은 4박 마디를 채워요 -- 모든 음표는 한 단계 아래 음표 두 개로 나뉘어요.')}{' '}{t('(New to counting? The steady beat lives in Pulse & counting, just before this group.)', '(박 세기가 처음이라면? 일정한 박은 "음높이 + 리듬 읽기" 그룹의 Pulse & Counting에 있어요.)')}</>} onStart={onStart}>
       <Step title={t('The note-value tree', '음표 나무')}>
-      <div style={{display:'flex',flexDirection:'column',gap:8}}>
-        {rows.map(({ it, n }) => {
-          const rest = NV_RESTS.find(r => r.id === it.id);
-          const size = n >= 16 ? 22 : n >= 8 ? 32 : 48;
-          return (
-            <div key={it.id} style={{borderTop:'1px solid var(--border)',paddingTop:8}}>
-              <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',gap:8}}>
-                <span style={{fontSize:15,fontWeight:900}}>{cap(it.id)} <span style={{fontSize:13,fontWeight:600,color:'var(--muted)'}}>{it.us}</span></span>
-                <span style={{fontSize:13,fontWeight:800,color:'var(--brass)',whiteSpace:'nowrap'}}>{fmtBeats(it.beats)}</span>
-              </div>
-              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6}}>
-                <div style={{display:'flex',flexWrap:'nowrap',justifyContent:'space-around',flex:1,overflow:'hidden'}}>
-                  {Array.from({ length: n }).map((_, i) => <Glyph key={i} item={it} size={size}/>)}
-                </div>
-                <div style={{flex:'0 0 auto',display:'flex',alignItems:'center',gap:2,fontSize:12,color:'var(--muted)',borderLeft:'1px solid var(--border)',paddingLeft:8}}>
-                  {t('rest', '쉼표')} <Glyph item={rest} size={40}/>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
+      <NoteValueTree/>
       </Step>
       <Step title={t('Same name for the note and the rest (and the whole-bar rest)', '음표와 쉼표, 이름이 같아요 (온마디 쉼표 포함)')}>
       <NoteRestNaming/>
@@ -3715,17 +3693,7 @@ function NoteValLearn({ onStart }) {
       <SplitTree/>
       </Step>
       <Step title={t('Dotted notes', '점음표')}>
-      <div style={{background:'#fff',borderRadius:10,padding:'12px 14px',marginTop:4}}>
-        <div style={{fontSize:15,fontWeight:800,marginBottom:6}}>{t('A dot adds half again', '점은 원래 길이의 절반을 더해요')}</div>
-        <div style={{display:'flex',flexWrap:'wrap',gap:12,alignItems:'center',fontSize:14}}>
-          {NV_DOTTED.map(d => (
-            <span key={d.key} style={{display:'inline-flex',alignItems:'center',gap:4}}>
-              <Glyph item={d} size={44}/>{fmtBeats(d.beats / 1.5)} + {fmtBeats(d.beats / 3).replace(/ beats?$/, '')} = <b>{fmtBeats(d.beats)}</b>
-            </span>
-          ))}
-        </div>
-      </div>
-
+      <DottedNotesCard/>
       </Step>
       <Step title={t('One beat = one apple', '한 박 = 사과 한 개')}>
       <BeamApples/>
@@ -4172,15 +4140,7 @@ function RhythmLearn({ onStart }) {
   return (
     <Lesson id="rhythm" title={t('Rhythm cards', '리듬 카드')} head={<RhythmCardsHero/>} intro={<>{t('40 one-bar rhythms in 4/4, easiest first. Count along under each note -- tap a card to hear it with a 4-click count-in.', '4/4박자 한 마디짜리 리듬 40개, 쉬운 것부터. 각 음표 아래를 함께 세어보세요 -- 카드를 누르면 4번 클릭 카운트인과 함께 들려요.')}</>} onStart={onStart}>
       <Step title={t('The 40 cards', '40개의 카드')}>
-      <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:6}}>
-        {RHYTHM_TIERS.map(x => <button key={x.n} className={'chip' + (x.n === tier ? ' active' : '')} onClick={() => setTier(x.n)}>{t('Set ', '세트 ') + x.n}</button>)}
-      </div>
-      <div style={{fontSize:13,color:'var(--muted)',marginBottom:12}}>{t('New in this set: ', '이 세트의 새로운 것: ')}<b style={{color:'var(--text)'}}>{tr.label}</b></div>
-      <div style={{display:'flex',flexDirection:'column',gap:8}}>
-        {RHYTHM_DECK.filter(c => c.tier === tier).map(c => <RhythmCard key={c.num} card={c} counts playing={playing === c.num} onClick={() => hear(c)}/>)}
-      </div>
-      <p style={{fontSize:12,color:'var(--muted)',margin:'10px 0 14px',lineHeight:1.5}}>{t('Counting: 1 e & a for semiquavers, 1 trip let for triplets; rests shown in brackets.', '세는 법: 16분음표는 1 e & a, 셋잇단음표는 1 trip let; 쉼표는 괄호로 표시돼요.')}</p>
-
+      <RhythmCardsBrowser/>
       </Step>
       <Step title={t('Harder rhythms: dots, semiquavers, triplets', '더 어려운 리듬: 점음표, 16분음표, 셋잇단음표')}>
       <CountHarder/>
@@ -4607,18 +4567,7 @@ function KeySigLearn({ onStart }) {
       <Transposer/>
       </Step>
       <Step title={t('All 15 keys', '15개 조 전부')}>
-      <div style={{fontSize:12,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',margin:'6px 0 8px'}}>{t('Tap one', '하나를 눌러보세요')}</div>
-      <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:12}}>
-        {KEY_SIGS.map(x => (
-          <button key={x.major} className={'chip' + (x.major === sel ? ' active' : '')} style={{padding:'6px 11px'}}
-            onClick={() => setSel(x.major)}>{prettyNote(x.major)}</button>
-        ))}
-      </div>
-      <div style={{background:'var(--brass-bg)',borderRadius:10,padding:'12px 10px'}}>
-        <KSStaff count={k.count} type={k.type}/>
-        <div style={{textAlign:'center',fontSize:15,fontWeight:900,marginTop:4}}>{majName(k)} <span style={{color:'var(--muted)',fontWeight:700}}>/ {minName(k)}</span></div>
-        <div style={{textAlign:'center',fontSize:13,color:'var(--muted)',marginTop:2}}>{sigLabel(k)}</div>
-      </div>
+      <KeySigAllKeys/>
       </Step>
     </Lesson>
   );
@@ -7126,7 +7075,24 @@ function TimeSigHero() {
   );
 }
 
-function TimeSigLearn({ onStart }) {
+
+function MajorFingeringSet() {
+  const [sel, setSel] = useState('C');
+  return (<div style={{display:'flex',flexDirection:'column',gap:14}}>
+    <ScalePatterns sel={sel} onPick={setSel}/>
+    <ScalePath sel={sel} onPick={setSel}/>
+    <ScaleFingeringDrill controlledKey={sel} onPickKey={setSel}/>
+  </div>);
+}
+function MinorFingeringSet() {
+  const [minSel, setMinSel] = useState('A');
+  return (<div style={{display:'flex',flexDirection:'column',gap:14}}>
+    <ScalePatterns sel={minSel} onPick={setMinSel} mode="minor"/>
+    <ScalePath sel={minSel} onPick={setMinSel} keys={MINOR_PATH} prefix="m:" mode="minor"/>
+    <MinorViewer sel={minSel} onPick={setMinSel}/>
+  </div>);
+}
+function useTimeSigRows() {
   const [playing, setPlaying] = useState(null);
   useEffect(() => () => stopClicks(), []);
   function hear(t) { playTimeSig(t, 90); setPlaying(t.id); setTimeout(() => setPlaying(p => (p === t.id ? null : p)), 3200); }
@@ -7143,9 +7109,122 @@ function TimeSigLearn({ onStart }) {
       <span style={{fontSize:12,fontWeight:700,color:'var(--muted)'}}>{playing === t.id ? '♪' : 'hear'}</span>
     </button>
   );
+  return row;
+}
+function NoteValueTree() {
+  const rows = [
+    { it: NV_NOTES[0], n: 1 }, { it: NV_NOTES[1], n: 2 }, { it: NV_NOTES[2], n: 4 }, { it: NV_NOTES[3], n: 8 }, { it: NV_NOTES[4], n: 16 },
+  ];
   return (
-    <Lesson id="time-signatures" title={t('Reading a time signature', '박자표 읽기')} intro={<>{t('Two numbers at the start of the music tell you how the beats are grouped into bars.', '악보 맨 앞에 있는 두 숫자는 박이 마디 안에서 어떻게 묶이는지 알려줘요.')}</>} onStart={onStart} head={<TimeSigHero/>}>
-      <Step title={t('The two numbers', '두 숫자')}>
+    <div>
+      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+        {rows.map(({ it, n }) => {
+          const rest = NV_RESTS.find(r => r.id === it.id);
+          const size = n >= 16 ? 22 : n >= 8 ? 32 : 48;
+          return (
+            <div key={it.id} style={{borderTop:'1px solid var(--border)',paddingTop:8}}>
+              <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',gap:8}}>
+                <span style={{fontSize:15,fontWeight:900}}>{cap(it.id)} <span style={{fontSize:13,fontWeight:600,color:'var(--muted)'}}>{it.us}</span></span>
+                <span style={{fontSize:13,fontWeight:800,color:'var(--brass)',whiteSpace:'nowrap'}}>{fmtBeats(it.beats)}</span>
+              </div>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6}}>
+                <div style={{display:'flex',flexWrap:'nowrap',justifyContent:'space-around',flex:1,overflow:'hidden'}}>
+                  {Array.from({ length: n }).map((_, i) => <Glyph key={i} item={it} size={size}/>)}
+                </div>
+                <div style={{flex:'0 0 auto',display:'flex',alignItems:'center',gap:2,fontSize:12,color:'var(--muted)',borderLeft:'1px solid var(--border)',paddingLeft:8}}>
+                  {t('rest', '쉼표')} <Glyph item={rest} size={40}/>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      </div>
+  );
+}
+function DottedNotesCard() {
+  return (
+    <div>
+      <div style={{background:'#fff',borderRadius:10,padding:'12px 14px',marginTop:4}}>
+        <div style={{fontSize:15,fontWeight:800,marginBottom:6}}>{t('A dot adds half again', '점은 원래 길이의 절반을 더해요')}</div>
+        <div style={{display:'flex',flexWrap:'wrap',gap:12,alignItems:'center',fontSize:14}}>
+          {NV_DOTTED.map(d => (
+            <span key={d.key} style={{display:'inline-flex',alignItems:'center',gap:4}}>
+              <Glyph item={d} size={44}/>{fmtBeats(d.beats / 1.5)} + {fmtBeats(d.beats / 3).replace(/ beats?$/, '')} = <b>{fmtBeats(d.beats)}</b>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      </div>
+  );
+}
+function RhythmCardsBrowser() {
+  const [tier, setTier] = useState(1);
+  const [playing, setPlaying] = useState(null);
+  const tr = RHYTHM_TIERS[tier - 1];
+  useEffect(() => () => stopClicks(), []);
+  function hear(card) {
+    playCard(card, tr.bpm); setPlaying(card.num);
+    setTimeout(() => setPlaying(p => (p === card.num ? null : p)), (8 * 60 / tr.bpm) * 1000 + 300);
+  }
+  return (
+    <div>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:6}}>
+        {RHYTHM_TIERS.map(x => <button key={x.n} className={'chip' + (x.n === tier ? ' active' : '')} onClick={() => setTier(x.n)}>{t('Set ', '세트 ') + x.n}</button>)}
+      </div>
+      <div style={{fontSize:13,color:'var(--muted)',marginBottom:12}}>{t('New in this set: ', '이 세트의 새로운 것: ')}<b style={{color:'var(--text)'}}>{tr.label}</b></div>
+      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+        {RHYTHM_DECK.filter(c => c.tier === tier).map(c => <RhythmCard key={c.num} card={c} counts playing={playing === c.num} onClick={() => hear(c)}/>)}
+      </div>
+      <p style={{fontSize:12,color:'var(--muted)',margin:'10px 0 14px',lineHeight:1.5}}>{t('Counting: 1 e & a for semiquavers, 1 trip let for triplets; rests shown in brackets.', '세는 법: 16분음표는 1 e & a, 셋잇단음표는 1 trip let; 쉼표는 괄호로 표시돼요.')}</p>
+
+      </div>
+  );
+}
+function KeySigAllKeys() {
+  const [sel, setSel] = useState('D');
+  const k = KEY_SIGS.find(x => x.major === sel) || KEY_SIGS[0];
+  return (
+    <div>
+      <div style={{fontSize:12,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',margin:'6px 0 8px'}}>{t('Tap one', '하나를 눌러보세요')}</div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:12}}>
+        {KEY_SIGS.map(x => (
+          <button key={x.major} className={'chip' + (x.major === sel ? ' active' : '')} style={{padding:'6px 11px'}}
+            onClick={() => setSel(x.major)}>{prettyNote(x.major)}</button>
+        ))}
+      </div>
+      <div style={{background:'var(--brass-bg)',borderRadius:10,padding:'12px 10px'}}>
+        <KSStaff count={k.count} type={k.type}/>
+        <div style={{textAlign:'center',fontSize:15,fontWeight:900,marginTop:4}}>{majName(k)} <span style={{color:'var(--muted)',fontWeight:700}}>/ {minName(k)}</span></div>
+        <div style={{textAlign:'center',fontSize:13,color:'var(--muted)',marginTop:2}}>{sigLabel(k)}</div>
+      </div>
+      </div>
+  );
+}
+function SignsDCDS() {
+  const tip = (title, body) => <Rule title={title}>{body}</Rule>;
+  return (
+    <div>
+        {tip(t('D.C. -- da capo', 'D.C. -- 다 카포'), t('“From the head”: go back to the beginning.', '"처음부터": 맨 앞으로 돌아가요.'))}
+        {tip(t('D.S. -- dal segno', 'D.S. -- 달 세뇨'), t('“From the sign”: go back to the sign 𝄋.', '"표시부터": 기호 𝄋로 돌아가요.'))}
+        {tip(t('Fine and Coda', 'Fine과 Coda'), t('Fine = the end (ignore it the first time through). al Fine = play until Fine. al Coda = play until “To Coda”, then jump to the Coda 𝄌 -- the ending section.', 'Fine = 끝 (처음 연주할 때는 무시해요). al Fine = Fine까지 연주해요. al Coda = "To Coda"까지 연주한 다음 Coda 𝄌 -- 마무리 부분으로 건너뛰어요.'))}
+        <div style={{fontSize:13,color:'#6f665b',margin:'4px 0 8px'}}>{t('Try the D.C. al Fine, D.S. al Fine and D.C. al Coda maps in the road map above.', '위 지도에서 D.C. al Fine, D.S. al Fine, D.C. al Coda 지도를 눌러보세요.')}</div>
+      </div>
+  );
+}
+function GrandStaffIntro() {
+  return (
+    <div>
+        <Rule title={t('Two staves, two hands', '두 줄, 두 손')}>{t('The top staff has the treble clef (the curly one -- the Queen of G). The bottom staff has the bass clef (two dots -- the King of F). Middle C sits right between them, on its own short line.', '위쪽 줄에는 높은음자리표(구불구불한 모양 -- 생대 G)가 있어요. 아래쪽 줄에는 낮은음자리표(점 두 개 -- 왕 F)가 있어요. 가운데 도(C)는 두 줄 사이, 자기만의 짧은 줄 위에 있어요.')}</Rule>
+      </div>
+  );
+}
+function TimeSigNumbers() {
+  const row = useTimeSigRows();
+  return (
+    <div>
       <div style={{display:'flex',alignItems:'center',gap:14,background:'#fff',borderRadius:10,padding:'10px 14px',marginBottom:14}}>
         <TSig top={3} bottom={4} size={46}/>
         <div style={{fontSize:14,lineHeight:1.6}}>
@@ -7155,7 +7234,29 @@ function TimeSigLearn({ onStart }) {
       </div>
       <div style={{fontSize:12,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',margin:'0 0 6px'}}>{t('Simple time -- each beat splits into 2 -- tap to hear', '단순박자 -- 각 박이 2개로 나뉘어요 -- 눌러서 들어보세요')}</div>
       <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:14}}>{TIME_SIGS.filter(t => t.kind === 'simple').map(row)}</div>
-      <BeatPulse/>
+      </div>
+  );
+}
+function CompoundTimeList() {
+  const row = useTimeSigRows();
+  return (
+    <div>
+      <div style={{fontSize:12,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',margin:'0 0 6px'}}>{t('6/8, 9/8, 12/8 -- quaver beats in groups of three', '6/8, 9/8, 12/8 -- 8분음표 박이 3개씩 묶여요')}</div>
+      <p style={{fontSize:13,color:'#6f665b',margin:'0 0 6px',lineHeight:1.5}}>{t(<>Count every quaver: 6/8 is <b>1 2 3 4 5 6</b>. The quavers are grouped in threes, so the 1 and the 4 are the strong beats (in 9/8: 1, 4, 7). Each group of three is a dotted crotchet -- when the music goes fast you feel just those: that’s why 6/8 is called <b>compound duple</b> (two groups).</>,
+        <>8분음표를 하나하나 세면: 6/8은 <b>1 2 3 4 5 6</b>이에요. 8분음표가 3개씩 묶여서, 1과 4가 센박이 돼요 (9/8이면 1, 4, 7). 세 개씩 묶인 한 그룹이 점4분음표 하나와 같아요 -- 빠른 곡에서는 이 묶음만 느껴지는데, 그래서 6/8을 <b>겹2박자</b>(두 묶음)라고 불러요.</>)}</p>
+      <div style={{display:'flex',flexDirection:'column',gap:6}}>{TIME_SIGS.filter(t => t.kind === 'compound').map(row)}</div>
+      </div>
+  );
+}
+
+function TimeSigLearn({ onStart }) {
+  const [playing, setPlaying] = useState(null);
+  useEffect(() => () => stopClicks(), []);
+  function hear(t) { playTimeSig(t, 90); setPlaying(t.id); setTimeout(() => setPlaying(p => (p === t.id ? null : p)), 3200); }
+  return (
+    <Lesson id="time-signatures" title={t('Reading a time signature', '박자표 읽기')} intro={<>{t('Two numbers at the start of the music tell you how the beats are grouped into bars.', '악보 맨 앞에 있는 두 숫자는 박이 마디 안에서 어떻게 묶이는지 알려줘요.')}</>} onStart={onStart} head={<TimeSigHero/>}>
+      <Step title={t('The two numbers', '두 숫자')}>
+      <TimeSigNumbers/><BeatPulse/>
       </Step>
       <Step title={t('Common time and cut time', '보통박자와 얼라 브레베')}>
       <CommonCutTime/>
@@ -7169,11 +7270,8 @@ function TimeSigLearn({ onStart }) {
       <BeatDoubler/>
       </Step>
       <Step title={t('Compound time', '겹박자')}>
-      <div style={{fontSize:12,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',margin:'0 0 6px'}}>{t('6/8, 9/8, 12/8 -- quaver beats in groups of three', '6/8, 9/8, 12/8 -- 8분음표 박이 3개씩 묶여요')}</div>
-      <p style={{fontSize:13,color:'#6f665b',margin:'0 0 6px',lineHeight:1.5}}>{t(<>Count every quaver: 6/8 is <b>1 2 3 4 5 6</b>. The quavers are grouped in threes, so the 1 and the 4 are the strong beats (in 9/8: 1, 4, 7). Each group of three is a dotted crotchet -- when the music goes fast you feel just those: that’s why 6/8 is called <b>compound duple</b> (two groups).</>,
-        <>8분음표를 하나하나 세면: 6/8은 <b>1 2 3 4 5 6</b>이에요. 8분음표가 3개씩 묶여서, 1과 4가 센박이 돼요 (9/8이면 1, 4, 7). 세 개씩 묶인 한 그룹이 점4분음표 하나와 같아요 -- 빠른 곡에서는 이 묶음만 느껴지는데, 그래서 6/8을 <b>겹2박자</b>(두 묶음)라고 불러요.</>)}</p>
-      <div style={{display:'flex',flexDirection:'column',gap:6}}>{TIME_SIGS.filter(t => t.kind === 'compound').map(row)}</div>
-      <div style={{marginTop:14}}><RegroupQuavers/></div>
+      <CompoundTimeList/><div style={{marginTop:14}}><RegroupQuavers/></div>
+      
       </Step>
       <Step title={t('Grouping notes to show the beat', '박을 보여주는 음표 묶기')}>
       <GroupingGame/>
@@ -8879,10 +8977,7 @@ function SignsLearn({ onStart }) {
         <RoadMap/>
       </Step>
       <Step title={t('D.C., D.S., Fine and Coda', 'D.C., D.S., Fine, Coda')}>
-        {tip(t('D.C. -- da capo', 'D.C. -- 다 카포'), t('“From the head”: go back to the beginning.', '"처음부터": 맨 앞으로 돌아가요.'))}
-        {tip(t('D.S. -- dal segno', 'D.S. -- 달 세뇨'), t('“From the sign”: go back to the sign 𝄋.', '"표시부터": 기호 𝄋로 돌아가요.'))}
-        {tip(t('Fine and Coda', 'Fine과 Coda'), t('Fine = the end (ignore it the first time through). al Fine = play until Fine. al Coda = play until “To Coda”, then jump to the Coda 𝄌 -- the ending section.', 'Fine = 끝 (처음 연주할 때는 무시해요). al Fine = Fine까지 연주해요. al Coda = "To Coda"까지 연주한 다음 Coda 𝄌 -- 마무리 부분으로 건너뛰어요.'))}
-        <div style={{fontSize:13,color:'#6f665b',margin:'4px 0 8px'}}>{t('Try the D.C. al Fine, D.S. al Fine and D.C. al Coda maps in the road map above.', '위 지도에서 D.C. al Fine, D.S. al Fine, D.C. al Coda 지도를 눌러보세요.')}</div>
+      <SignsDCDS/>
       </Step>
       <Step title={t('Ties and slurs', '이음줄과 슬러')}>
         {tip(t('Tie', '이음줄'), t('A curve joining two notes of the SAME pitch: play the note once and hold it for the length of both.', '같은 음 두 개를 잇는 곡선: 음을 한 번만 치고 두 음의 길이만큼 붙잡고 있어요.'))}
@@ -9713,7 +9808,7 @@ function HandClefsLearn({ onStart }) {
     <Lesson id="hand-clefs" title={t('Hands and clefs', '손과 음자리표')} head={<HandClefsHero/>} onStart={onStart}
       intro={<>{t('Two staves stacked together make the Grand Staff. Each one usually belongs to a different hand.', '두 줄이 위아래로 겹쳐진 걸 그랜드 스태프라고 해요. 각 줄은 보통 다른 손이 맡아요.')}</>}>
       <Step title={t('The Grand Staff', '그랜드 스태프')}>
-        <Rule title={t('Two staves, two hands', '두 줄, 두 손')}>{t('The top staff has the treble clef (the curly one -- the Queen of G). The bottom staff has the bass clef (two dots -- the King of F). Middle C sits right between them, on its own short line.', '위쪽 줄에는 높은음자리표(구불구불한 모양 -- 생대 G)가 있어요. 아래쪽 줄에는 낮은음자리표(점 두 개 -- 왕 F)가 있어요. 가운데 도(C)는 두 줄 사이, 자기만의 짧은 줄 위에 있어요.')}</Rule>
+      <GrandStaffIntro/>
       </Step>
       <Step title={t('Split the keyboard', '건반 나누기')}>
         <Rule title={t('The Queen, the King and the city in the middle', '여왕, 왕, 그리고 가운데 도시')}>{t('The Queen sings high -- treble clef, usually the right hand. The King sings low -- bass clef, usually the left hand. Middle C is the Sydney CBD between their two worlds: the one spot either hand can pop into.', '여왕은 높은 목소리 -- 높은음자리표, 보통 오른손. 왕은 낮은 목소리 -- 낮은음자리표, 보통 왼손. 가운데 도는 두 세계 사이의 시드니 CBD예요: 어느 손이든 들를 수 있는 단 한 곳이에요.')}</Rule>
@@ -13904,6 +13999,22 @@ const TOOLS = [
   { id: 'bar-lines', ch: 'time-signatures', title: 'Put in the bar lines', blurb: 'The written exam task.', C: () => <BarLineBuilder/> },
   { id: 'beat-doubler', ch: 'time-signatures', title: 'The bottom number changes the beat', blurb: '8 on the bottom doubles every note; 2 on the bottom halves it.', C: () => <BeatDoubler/> },
   { id: 'grouping', ch: 'time-signatures', title: 'Group the quavers', blurb: 'Which bar is beamed right for 2/4, 3/4, 4/4, 6/8?', C: () => <GroupingGame/> },
+  { id: 'time-sig-numbers', ch: 'time-signatures', title: 'The two numbers (simple time)', blurb: 'Top = beats in a bar, bottom = which note is the beat. Tap each to hear it.', C: () => <TimeSigNumbers/> },
+  { id: 'compound-time', ch: 'time-signatures', title: 'Compound time: 6/8, 9/8, 12/8', blurb: 'Quaver beats in groups of three -- tap each to hear it.', C: () => <CompoundTimeList/> },
+  { id: 'note-value-tree', ch: 'note-values', title: 'The note-value tree', blurb: 'Every note splits into two of the next one down.', C: () => <NoteValueTree/> },
+  { id: 'dotted-notes', ch: 'note-values', title: 'Dotted notes', blurb: 'A dot adds half again.', C: () => <DottedNotesCard/> },
+  { id: 'rhythm-cards-all', ch: 'rhythm', title: 'The 40 rhythm cards', blurb: 'One-bar rhythms in 4/4, easiest first -- tap to hear.', C: () => <RhythmCardsBrowser/> },
+  { id: 'all-keys', ch: 'key-signatures', title: 'All 15 key signatures', blurb: 'Tap a key to see its signature.', C: () => <KeySigAllKeys/> },
+  { id: 'major-shape', ch: 'scales', title: 'The major scale shape', blurb: 'One shape builds every major scale.', C: () => <MajorShapeCard/> },
+  { id: 'major-fingering', ch: 'scales', title: 'Major scale fingering', blurb: 'Fingering patterns, your scale path and a fingering drill.', C: () => <MajorFingeringSet/> },
+  { id: 'minor-fingering', ch: 'scales', title: 'Minor scale fingering', blurb: 'Fingering patterns, your scale path and every form of each minor.', C: () => <MinorFingeringSet/> },
+  { id: 'dc-ds-coda', ch: 'signs', title: 'D.C., D.S., Fine and Coda', blurb: 'Where each jump sends you.', C: () => <SignsDCDS/> },
+  { id: 'grand-staff', ch: 'hand-clefs', title: 'The Grand Staff', blurb: 'Two staves, two hands, middle C between them.', C: () => <GrandStaffIntro/> },
+  { id: 'hand-split', ch: 'hand-clefs', title: 'Split the keyboard', blurb: 'Queen, King and the city in the middle.', C: () => <HandSplit/> },
+  { id: 'clef-costume', ch: 'hand-clefs', title: 'Two costumes: spot the clef', blurb: 'The treble clef curls round G; the bass clef dots round F.', C: () => <ClefCostume/> },
+  { id: 'finger-friends', ch: 'posture-hands', title: 'Meet your fingers', blurb: 'Each finger has its own personality.', C: () => <FingerFriends/> },
+  { id: 'best-friends', ch: 'tones', title: 'Best friends: semitones', blurb: 'Which neighbouring notes are best friends (semitone) and which are a tone apart.', C: () => <BestFriends/> },
+  { id: 'accidental-cards', ch: 'tones', title: 'Accidentals: sharp, flat, natural', blurb: 'What each sign does to a note.', C: () => <AccidentalCards/> },
   { id: 'common-cut', ch: 'time-signatures', title: 'Common time and cut time', blurb: 'C means 4/4, and C with a line means 2/2.', C: () => <CommonCutTime/> },
   { id: 'duplets', ch: 'time-signatures', title: 'Duplets, triplets and more', blurb: 'One beat cut 1, 2, 3, 4, 5 or 6 ways -- lined up to compare.', C: () => <DupletDemo/> },
   { id: 'regroup', ch: 'time-signatures', title: '3/4 or 6/8?', blurb: 'Same six quavers, different beat.', C: () => <RegroupQuavers/> },
@@ -14111,7 +14222,7 @@ const TOOL_CATS = [
 // kinds: show = show & explain, game = student does it, ear = listening, write = written theory, home = home practice
 const TOOL_META = {
   'complete-melody': ['steps', 1, 2, 'game ear'],
-  'rest-grouping': ['rnotes', 2, 3, 'show'], 'duplets': ['rtime', 3, 3, 'show'], 'common-cut': ['rtime', 1, 2, 'show ear'],
+  'rest-grouping': ['rnotes', 2, 3, 'show'], 'duplets': ['rtime', 3, 3, 'show'], 'common-cut': ['rtime', 1, 2, 'show ear'], 'time-sig-numbers': ['rtime', 0, 1, 'show ear'], 'compound-time': ['rtime', 2, 3, 'show ear'], 'note-value-tree': ['rnotes', 0, 1, 'show'], 'dotted-notes': ['rnotes', 1, 2, 'show'], 'rhythm-cards-all': ['rtime', 1, 3, 'show ear'], 'all-keys': ['scales', 2, 3, 'show'], 'major-shape': ['scales', 1, 2, 'show'], 'major-fingering': ['scales', 1, 3, 'game show'], 'minor-fingering': ['scales', 2, 3, 'show'], 'dc-ds-coda': ['words', 1, 2, 'show'], 'grand-staff': ['body', 0, 0, 'show'], 'hand-split': ['body', 0, 0, 'show'], 'clef-costume': ['body', 0, 0, 'show'], 'finger-friends': ['body', 0, 0, 'show'], 'best-friends': ['tones', 1, 1, 'show'], 'accidental-cards': ['tones', 1, 2, 'show'],
   'flash-cards': ['pitch', 1, 2, 'game'], 'grace-write': ['words', 3, 3, 'write'],
   'clef-basics': ['pitch', 0, 1, 'show'], 'alto-clef': ['pitch', 3, 3, 'show'], 'staff-basics': ['pitch', 0, 1, 'show'], 'anacrusis': ['rtime', 2, 3, 'show'], 'minor-forms': ['scales', 1, 2, 'show'],
   'count-more': ['rtime', 2, 3, 'show game'], 'grouping': ['rtime', 2, 3, 'game write'], 'pedal': ['expression', 2, 3, 'show ear'],
@@ -14676,32 +14787,36 @@ function ToolRow({ t, color, starred, onStar, open, onToggle, onChapter }) {
 // above that group's cards, instead of once per card. A group with no matching DRILLS chapter
 // (or when onChapter isn't offered) just shows its cards with no header.
 // Phase 226: tools inside a chapter group follow that chapter's own step order.
+// New lesson-only pieces now live in the Toolbox too; borrow a sibling's icon until the design-phase redraw.
+[['time-sig-numbers', 'count-along'], ['compound-time', 'regroup'], ['note-value-tree', 'split-it'], ['dotted-notes', 'dot-lab'], ['rhythm-cards-all', 'make-card'], ['all-keys', 'circle-fifths'],
+ ['major-shape', 'build-major'], ['major-fingering', 'scale-finder'], ['minor-fingering', 'minor-forms'], ['dc-ds-coda', 'road-map'], ['grand-staff', 'hand-clef-match'], ['hand-split', 'hand-clef-match'],
+ ['clef-costume', 'hand-clef-match'], ['finger-friends', 'finger-numbers'], ['best-friends', 'tone-semitone'], ['accidental-cards', 'sharp-flat']].forEach(([a, b]) => { if (!TOOL_ICON[a] && TOOL_ICON[b]) TOOL_ICON[a] = TOOL_ICON[b]; });
 const CHAPTER_TOOL_ORDER = {
   'chords': ['triad-stack', 'major-minor', 'key-chords', 'primary-triads', 'inversions', 'cadences', 'chord-extensions', 'seventh-chords'],
   'dynamics': ['dyn-order', 'hairpin', 'pedal', 'tie-slur', 'touch-ear', 'touch-lengths'],
   'first-steps': ['high-low', 'key-houses', 'black-key-song', 'black-white-neighbours'],
   'form': ['form-shapes', 'same-or-new', 'rondo-refrain', 'binary-ternary-spot'],
-  'hand-clefs': ['hand-clef-match'],
+  'hand-clefs': ['grand-staff', 'hand-split', 'hand-clef-match', 'clef-costume'],
   'intervals': ['step-skip', 'interval-ruler', 'letter-hop', 'semitone-counter', 'scale-intervals', 'interval-ear', 'invert-interval', 'tritone'],
-  'key-signatures': ['sharps-order', 'flats-order', 'place-it', 'relative-minor', 'circle-fifths', 'transpose'],
+  'key-signatures': ['sharps-order', 'flats-order', 'place-it', 'relative-minor', 'circle-fifths', 'transpose', 'all-keys'],
   'ledger-lines': ['ledger-walk', 'ledger-landmarks', 'ledger-twins', 'ledger-write'],
   'melody': ['tune-anatomy', 'phrase-marks', 'question-answer', 'melody-sequence'],
   'note-names': ['find-every', 'name-reveal', 'step-updown', 'letter-chain'],
-  'note-values': ['note-rest-naming', 'split-it', 'beam-apples', 'dot-lab', 'fix-the-bar', 'heard-bar', 'fill-bar', 'rest-grouping', 'note-rest-match'],
+  'note-values': ['note-value-tree', 'note-rest-naming', 'split-it', 'beam-apples', 'dotted-notes', 'dot-lab', 'fix-the-bar', 'heard-bar', 'fill-bar', 'rest-grouping', 'note-rest-match'],
   'piano-story': ['keyboard-ancestors', 'piano-timeline', 'eras'],
   'pitch-range': ['hz-explorer', 'range-chart'],
-  'posture-hands': ['sit-check', 'arm-moves', 'arm-alignment', 'hand-shape', 'finger-numbers', 'posture-check'],
+  'posture-hands': ['sit-check', 'arm-moves', 'arm-alignment', 'hand-shape', 'finger-friends', 'finger-numbers', 'posture-check'],
   'pulse': ['steady-beat', 'beat-target', 'count-aloud'],
   'reading-steps': ['mini-tune', 'echo', 'complete-melody', 'five-positions'],
-  'rhythm': ['count-more', 'anacrusis', 'make-card'],
-  'scales': ['build-major', 'build-minor', 'degree-names', 'scale-finder', 'minor-forms', 'modes'],
-  'signs': ['road-map', 'ottava', 'ornaments', 'grace-write'],
+  'rhythm': ['rhythm-cards-all', 'count-more', 'anacrusis', 'make-card'],
+  'scales': ['major-shape', 'build-major', 'degree-names', 'major-fingering', 'scale-finder', 'minor-forms', 'build-minor', 'minor-fingering', 'modes'],
+  'signs': ['road-map', 'dc-ds-coda', 'ottava', 'ornaments', 'grace-write'],
   'staff': ['staff-basics', 'rhymes', 'clef-basics', 'clef-story', 'staff-climb', 'landmarks', 'landmark-hop', 'fold', 'flash-cards', 'write-note', 'alto-clef'],
   'styles': ['texture-types', 'texture-spotter', 'genre-traits'],
   'tempo': ['tempo-race', 'speed-change', 'metronome'],
   'terms': ['term-cards', 'term-match'],
-  'time-signatures': ['count-along', 'common-cut', 'bar-lines', 'beat-doubler', 'regroup', 'grouping', 'duplets'],
-  'tones': ['tone-semitone', 'sharp-flat', 'accidental-bar', 'chromatic'],
+  'time-signatures': ['time-sig-numbers', 'count-along', 'common-cut', 'bar-lines', 'beat-doubler', 'compound-time', 'regroup', 'grouping', 'duplets'],
+  'tones': ['tone-semitone', 'best-friends', 'sharp-flat', 'accidental-bar', 'accidental-cards', 'chromatic'],
 };
 function ChapterGroups({ list, colorOf, starIds, onStar, onOpen, onChapter, inline }) {
   const [openId, setOpenId] = useState(null);
