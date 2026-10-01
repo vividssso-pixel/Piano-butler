@@ -4138,6 +4138,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 - **Phase 230 (2026-10-01) -- Rests tool becomes a sound demo.** `RestGrouping` (Note Values) rewritten: tap each beat of a 4/4 bar to make it a note or a rest; Play runs a pulse click through the silence so the next note lands on time; presets; a toggle shows "two crotchet rests" vs "one minim rest" over beats 2-3 (sounds identical, only the writing differs). Tool retitled "Rests: counted, but silent". Also: Hands & Clefs "Which hand plays this staff?" moved after the Queen/King step (Phase 229+). Open decision: split Rhythm category into 3 (Beat & tempo / Note values / Time signatures & patterns).
 
+- **Phase 231 (2026-10-01) -- Rhythm regrouped; Pulse joins the reading group.** Category `steps` renamed **"Reading tunes: pitch + rhythm"** and now holds Pulse & Counting (steady-beat, beat-target, count-aloud) + Steps & Skips (8 tools). Rhythm split into three categories: **Note values & rests** (`rnotes`, 6), **Time signatures & rhythm patterns** (`rtime`, 9: Time Signatures then Rhythm Patterns), **Tempo** (`rtempo`, 1). Note Values intro points back to Pulse & Counting. Sight-reading cards got an icon (Phase 230+). 16 categories total. Verified: Babel compile, live load, per-category tool counts.
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
