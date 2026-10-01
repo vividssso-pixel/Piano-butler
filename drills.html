@@ -9814,7 +9814,7 @@ function FivePosition() {
       <div style={actNote}>One finger for each key -- five neighbouring letters. The shape is the same in every key: tone, tone, semitone, tone. Pick any of the 12 keys, tap a key (or play up and down) and watch the note.</div>
       <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>{POSITIONS.map(p => <button key={p.id} className={'chip' + (p.id === pid ? ' active' : '')} style={{padding:'3px 9px',fontSize:13}} onClick={() => { setPid(p.id); setOn(-1); }}>{p.title}</button>)}</div>
       <MelodyStaff clef={clef} notes={notes} on={on} fingers names showTime={false} width={280}/>
-      <TapKeyboard octaves={3} labels="white" marks={marks} names={names} onTap={tapKey}/>
+      <TapKeyboard octaves={3} labels="all" marks={marks} names={names} onTap={tapKey}/>
       <div style={{textAlign:'center',marginTop:8}}><button className="ghost-btn" onClick={() => { const seq = [...notes, ...notes.slice(0, -1).reverse()]; playMelody(seq, 110, (i) => setOn(i < 0 ? -1 : i < 5 ? i : 8 - i)); }}>♪ Up and down</button></div>
     </div>
   );
@@ -10001,17 +10001,23 @@ function PerfectCounter() {
 // Sight-reading cards: a fresh 2-bar tune in a five-finger position each time.
 function makeSightTune(level) {
   const pos = level === 3 ? pick(POSITIONS) : POSITIONS[0];
-  const ds = pos.rh; let i = level === 1 ? 0 : Math.floor(Math.random() * 5);
-  const rhythms = level === 1 ? [[1, 1, 1, 1], [2, 2], [1, 1, 2]] : [[1, 1, 1, 1], [2, 2], [1, 1, 2], [2, 1, 1], [3, 1], [1, 2, 1]];
-  const out = [];
-  for (let bar = 0; bar < 2; bar++) {
-    const r = bar === 1 ? pick(rhythms.filter(x => x[x.length - 1] >= 2 || x.length === 1).concat([[2, 2], [4]])) : pick(rhythms);
-    r.forEach((dur, j) => {
-      if (out.length) { const moves = level === 1 ? [-1, 0, 1] : [-2, -1, 0, 1, 2]; let k, g = 0; do { k = pick(moves); } while ((i + k < 0 || i + k > 4) && g++ < 20); i = Math.max(0, Math.min(4, i + k)); }
-      out.push({ d: ds[i].d, acc: ds[i].acc, dur, finger: i + 1 });
-    });
+  const ds = pos.rh;
+  const rhythms = level === 1 ? [[1, 1, 1, 1], [1, 1, 2]] : [[1, 1, 1, 1], [2, 2], [1, 1, 2], [2, 1, 1], [3, 1], [1, 2, 1]];
+  let out = [];
+  // Every card uses all five notes of the position (e.g. C D E F G), so retry until it does.
+  for (let attempt = 0; attempt < 600; attempt++) {
+    let i = level === 1 ? 0 : Math.floor(Math.random() * 5);
+    out = [];
+    for (let bar = 0; bar < 2; bar++) {
+      const r = bar === 1 && level > 1 ? pick(rhythms.filter(x => x[x.length - 1] >= 2 || x.length === 1).concat([[2, 2], [4]])) : pick(rhythms);
+      r.forEach((dur, j) => {
+        if (out.length) { const moves = level === 1 ? [-1, 0, 1, 1] : [-2, -1, 0, 1, 2]; let k, g = 0; do { k = pick(moves); } while ((i + k < 0 || i + k > 4) && g++ < 20); i = Math.max(0, Math.min(4, i + k)); }
+        out.push({ d: ds[i].d, acc: ds[i].acc, dur, finger: i + 1 });
+      });
+    }
+    if (level > 1) out[out.length - 1] = { ...out[out.length - 1], d: ds[0].d, acc: ds[0].acc, finger: 1 };
+    if (new Set(out.map(n => n.finger)).size === 5) break;
   }
-  out[out.length - 1] = { ...out[out.length - 1], d: ds[0].d, acc: ds[0].acc, finger: 1 };
   return { notes: out, pos };
 }
 function SightReadCards() {
@@ -10029,7 +10035,7 @@ function SightReadCards() {
         <div style={actTitle}>Sight-reading card</div>
         <div style={{display:'flex',gap:4}}>{[[1, 'steps'], [2, 'steps + skips'], [3, 'any of 12 keys']].map(([l, t]) => <button key={l} className={'chip' + (l === level ? ' active' : '')} style={{padding:'3px 8px',fontSize:12}} onClick={() => { setLevel(l); next(l); }}>{t}</button>)}</div>
       </div>
-      <div style={actNote}>Before you play: find the first note ({card.pos.title}), tap the pulse and count one bar, look for steps and skips. Then play it through without stopping.</div>
+      <div style={actNote}>Before you play: this card uses all five notes of the {card.pos.title} -- find them under your fingers, tap the pulse and count one bar, look for steps and skips. Then play it through without stopping.</div>
       <div style={{background:'#fff',borderRadius:8}}><MelodyStaff notes={card.notes} on={on} names={names} counts="simple" width={320}/></div>
       <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap',marginTop:8}}>
         <button className="ghost-btn" onClick={() => { timers.current = playMelody(card.notes, 80, setOn); }}>♪ Check by ear</button>
