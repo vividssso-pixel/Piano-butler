@@ -12998,31 +12998,54 @@ function RestBar({ events, on = -1 }) {
   return <BeamRow events={events} width={260} height={70} on={on}/>;
 }
 function RestGrouping() {
-  const [play1, setPlay1] = useState(-1), [play2, setPlay2] = useState(-1);
-  const good = [{ q: 2, note: true }, { q: 2, rest: true }, { q: 2, rest: true }, { q: 2, note: true }];
-  const bad = [{ q: 2, note: true }, { q: 4, rest: true }, { q: 2, note: true }];
-  function noteEvents(spec) { return spec.map(e => e.note ? { q: e.q } : { q: e.q, rest: true }); }
-  function playRow(spec, setOn) {
-    const ctx = getAudio(); if (!ctx) return; stopClicks();
-    const spb = 60 / 92, t0 = ctx.currentTime + 0.1; let t = 0;
-    spec.forEach((e, i) => { if (!e.rest) blip(ctx, t0 + t * spb / 2, 523.25, spb * e.q / 2 * 0.9, 0.2, 'triangle'); setTimeout(() => setOn(i), (t * spb / 2) * 1000); t += e.q; });
-    setTimeout(() => setOn(-1), (t * spb / 2) * 1000 + 400);
+  const [slots, setSlots] = useState([true, false, false, true]); // true = note, false = rest, one per beat of a 4/4 bar
+  const [mode, setMode] = useState('right'); // right = two crotchet rests, wrong = one minim rest over beat 3
+  const [beat, setBeat] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => { timers.current.forEach(clearTimeout); stopClicks(); }, []);
+  // Writing: one crotchet event per beat. In 'wrong' mode, rests on beats 2 and 3 are merged into one minim rest.
+  const events = [], evOfBeat = [];
+  for (let b = 0; b < 4; b++) {
+    if (mode === 'wrong' && b === 1 && !slots[1] && !slots[2]) { events.push({ q: 4, rest: true }); evOfBeat[1] = events.length - 1; evOfBeat[2] = events.length - 1; b++; continue; }
+    events.push(slots[b] ? { q: 2 } : { q: 2, rest: true }); evOfBeat[b] = events.length - 1;
   }
+  const merged = events.some(ev => ev.q === 4);
+  function toggle(b) { setSlots(sl => sl.map((v, k) => k === b ? !v : v)); setBeat(-1); }
+  function play() {
+    const ctx = getAudio(); if (!ctx) return; stopClicks(); timers.current.forEach(clearTimeout); timers.current = [];
+    const spb = 60 / 80, t0 = ctx.currentTime + 0.15;
+    for (let b = 0; b < 4; b++) {
+      blip(ctx, t0 + b * spb, b === 0 ? 1200 : 900, 0.05, 0.07, 'square'); // the pulse keeps ticking through the silence
+      if (slots[b]) blip(ctx, t0 + b * spb, 523.25, spb * 0.9, 0.22, 'triangle');
+      timers.current.push(setTimeout(() => setBeat(b), 150 + b * spb * 1000));
+    }
+    timers.current.push(setTimeout(() => setBeat(-1), 150 + 4 * spb * 1000 + 200));
+  }
+  const presets = [['Rest on 2 and 3', [true, false, false, true]], ['Rest on 1', [false, true, true, true]], ['Silent last beat', [true, true, true, false]], ['Note, rest, note, rest', [true, false, true, false]]];
   return (
     <div className="try-box" style={actBox}>
-      <div style={actTitle}>Writing rests: don't hide beat 3</div>
-      <div style={actNote}>In simple time (2/4, 3/4, 4/4), a rest is written so the beat still shows through -- just like notes are grouped by beat, not run together. The one rule that matters most: <b>never write a single rest that spans across the middle of a 4/4 bar</b> (over beat 3). Split it into two rests instead, one per beat.</div>
-      <div style={{background:'#fff',borderRadius:10,padding:'8px 6px',marginBottom:8}}>
-        <div style={{fontSize:12,fontWeight:900,color:'#4f7a45',marginBottom:2}}>RIGHT -- two crotchet rests, beat 3 stays visible</div>
-        <RestBar events={noteEvents(good)} on={play1}/>
-        <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={() => playRow(good, setPlay1)}>♪ Play</button></div>
-      </div>
+      <div style={actTitle}>A rest is a beat you count but don't play</div>
+      <div style={actNote}>Tap a beat to turn it into a <b>note</b> or a <b>rest</b>, then press Play. The little click is the pulse: it keeps going through every rest, and the next note comes in exactly on time. A rest is not a pause -- it is a beat of silence <i>inside</i> the music.</div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>{presets.map(([l, v]) => <button key={l} className="chip" style={{padding:'3px 9px',fontSize:12}} onClick={() => { setSlots(v); setBeat(-1); }}>{l}</button>)}</div>
       <div style={{background:'#fff',borderRadius:10,padding:'8px 6px'}}>
-        <div style={{fontSize:12,fontWeight:900,color:'#b5483b',marginBottom:2}}>WRONG -- one minim rest swallows beat 3</div>
-        <RestBar events={noteEvents(bad)} on={play2}/>
-        <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={() => playRow(bad, setPlay2)}>♪ Play</button></div>
+        <RestBar events={events} on={beat < 0 ? -1 : evOfBeat[beat]}/>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,padding:'0 6px'}}>
+          {[0, 1, 2, 3].map(b => (
+            <button key={b} onClick={() => toggle(b)} style={{border:'2px solid ' + (beat === b ? '#a8823f' : '#e8dcc0'),background:beat === b ? '#f3ead8' : '#fff',borderRadius:10,padding:'6px 0',cursor:'pointer',fontFamily:'inherit'}}>
+              <div style={{fontSize:18,fontWeight:900,color:slots[b] ? '#241f1a' : '#b8ad9c'}}>{slots[b] ? b + 1 : '(' + (b + 1) + ')'}</div>
+              <div style={{fontSize:11.5,fontWeight:800,color:slots[b] ? '#4f7a45' : '#b5483b'}}>{slots[b] ? '♪ note' : 'rest -- silent'}</div>
+            </button>
+          ))}
+        </div>
+        <div style={{textAlign:'center',marginTop:8}}><button className="ghost-btn" onClick={play}>♪ Play with the pulse</button></div>
       </div>
-      <div style={{fontSize:12.5,color:'#5c544a',background:'#f7f2e8',borderRadius:8,padding:'6px 9px',marginTop:8,lineHeight:1.5}}>Both bars sound identical -- rests are silent either way. This is purely a <b>writing</b> rule, so a reader can see the beat at a glance without counting silent beats.</div>
+      <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',margin:'10px 0 4px'}}>
+        <span style={{fontSize:13,fontWeight:800}}>How to write rests on beats 2 and 3:</span>
+        {[['right', 'two crotchet rests'], ['wrong', 'one minim rest']].map(([k, l]) => <button key={k} className={'chip' + (mode === k ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => setMode(k)}>{l}</button>)}
+      </div>
+      <div style={{fontSize:12.5,color:'#5c544a',background:'#f7f2e8',borderRadius:8,padding:'6px 9px',lineHeight:1.5}}>
+        {merged ? <><b style={{color:'#b5483b'}}>Hides beat 3.</b> One long rest across the middle of a 4/4 bar sounds the same, but the reader can no longer see where beat 3 falls. Press Play -- it sounds identical to the right way.</> : <><b style={{color:'#4f7a45'}}>Beat 3 stays visible.</b> In simple time, write one rest per beat across the middle of the bar. {!slots[1] && !slots[2] ? 'Try "one minim rest" to see the wrong way -- it sounds exactly the same.' : 'Make beats 2 and 3 both rests to compare the two ways of writing them.'}</>}
+      </div>
     </div>
   );
 }
@@ -13333,7 +13356,7 @@ const TOOLS = [
   { id: 'chord-extensions', ch: 'chords', title: 'Beyond the 7th: 9, 11, 13', blurb: 'Why the numbers skip past the octave.', C: () => <ChordExtensions/> },
   { id: 'split-it', ch: 'note-values', title: 'Split the notes (note values)', blurb: 'One semibreve into minims, crotchets...', C: () => <SplitTree/> },
   { id: 'note-rest-naming', ch: 'note-values', title: 'Same name, note or rest', blurb: 'Every note value and its rest share the same name.', C: () => <NoteRestNaming/> },
-  { id: 'rest-grouping', ch: 'note-values', title: 'Writing rests correctly', blurb: "Never hide beat 3 with one long rest.", C: () => <RestGrouping/> },
+  { id: 'rest-grouping', ch: 'note-values', title: 'Rests: counted, but silent', blurb: 'Tap beats to make notes or rests -- the pulse keeps going through the silence.', C: () => <RestGrouping/> },
   { id: 'whole-bar-rest', ch: 'note-values', title: 'The whole-bar rest', blurb: 'A semibreve rest can mean "rest this whole bar" -- any time signature.', C: () => <WholeBarRest/> },
   { id: 'note-rest-match', ch: 'note-values', title: 'Note ↔ rest match', blurb: 'Memory-pairs game: match each note name to its rest.', C: () => <NoteRestMatch/> },
   { id: 'fill-bar', ch: 'note-values', title: 'Fill the bar', blurb: 'Exactly 2, 3 or 4 beats.', C: () => <FillTheBar/> },
