@@ -4164,6 +4164,10 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 - **Phase 243 (2026-10-01) -- Whole-bar rest merged into 'Same name, note or rest'.** `WholeBarRest` became `WholeBarRestBody`, shown under the naming table; separate tool `whole-bar-rest` and its lesson step removed (TOOLS, TOOL_META, CHAPTER_TOOL_ORDER, icon).
 
+- **Phase 244 (2026-10-01) -- Beams in MelodyStaff + bar-lines in 9 time signatures.** `MelodyStaff` now beams quavers that share a beat (group stem direction by majority, flat beam, viewBox grows to fit) instead of lone flags, so all Reading-tunes tools/tunes show real beaming. `BarLineBuilder` offers 2/4, 3/4, 4/4, 2/2, 5/4 (local `BEAT_EXTRA`), 3/8, 6/8, 9/8, 12/8 (8-bottom bars use the small pool; 9/8 and 12/8 show 2 bars); `fillBar` allows up to 8 items for the small pool. Verified compile + Playwright, 0 errors.
+
+- **Phase 245 (2026-10-01) -- Time signatures: 2/2 halving, common/cut time, grouping bug, tuplet lanes.** (1) `BeatDoubler` renamed 'The bottom number changes the beat': chips 2/4/8 on the bottom; 2 halves every value and counts a 2/2 bar as '1 & 2 &' (new `TWO_BARS`). (2) New tool `common-cut` (`CommonCutTime`, `CommonCutSign`): C = 4/4, cut time = 2/2, also a lesson step. (3) BUG FIX in 'Group the quavers' (`makeGroupingQ`): options could look identical (patterns with no beamable pairs) because the check compared raw group labels, not the visible beam structure; now compares beam structure (25x4 trials, 0 identical). (4) `DupletDemo` rebuilt as 'One beat, cut up different ways': all lanes stacked on one shared beat (compound: 1, 3, duplet 2, quadruplet 4, 6; simple: 1, 2, triplet 3, 4, quintuplet 5, sextuplet 6) with fraction labels and darker guide lines where lanes coincide. Verified compile + Playwright, 0 errors.
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
