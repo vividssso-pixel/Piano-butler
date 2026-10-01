@@ -2933,10 +2933,16 @@ const NV_NOTES = NOTE_VALUES.map(v => nvItem(v));
 const NV_RESTS = NOTE_VALUES.map(v => nvItem(v, { rest: true }));
 const NV_DOTTED = NOTE_VALUES.filter(v => ['minim', 'crotchet', 'quaver'].includes(v.id)).map(v => nvItem(v, { dot: true }));
 const NV_ALL = [...NV_NOTES, ...NV_RESTS, ...NV_DOTTED];
+// Quiz-only pools: also the demisemiquaver and the dotted rests (kept apart so lesson code that indexes NV_* is unchanged).
+const NV_DEMI = { id: 'demisemiquaver', us: 'thirty-second', base: 0.125 };
+const QZ_NOTES = [...NV_NOTES, nvItem(NV_DEMI)];
+const QZ_RESTS = [...NV_RESTS, nvItem(NV_DEMI, { rest: true })];
+const QZ_DOTRESTS = NV_DOTTED.map(d => nvItem(NOTE_VALUES.find(v => v.id === d.id), { rest: true, dot: true }));
+const QZ_ALL = [...NV_ALL, QZ_NOTES[QZ_NOTES.length - 1], QZ_RESTS[QZ_RESTS.length - 1], ...QZ_DOTRESTS];
 function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 function fmtBeats(v) {
-  const whole = Math.floor(v + 1e-9), frac = Math.round((v - whole) * 100) / 100;
-  const f = frac === 0.25 ? '¼' : frac === 0.5 ? '½' : frac === 0.75 ? '¾' : '';
+  const whole = Math.floor(v + 1e-9), e = Math.round((v - whole) * 8);
+  const f = ['', '⅛', '¼', '⅜', '½', '⅝', '¾', '⅞'][e] || '';
   const s = (whole ? String(whole) : (f ? '' : '0')) + f;
   return s + (v <= 1 ? ' beat' : ' beats');
 }
@@ -2947,37 +2953,46 @@ const NOTEVAL_LEVELS = [
   { n: 3, label: 'Find the matching rest',       kind: 'rest',  time: 8 },
   { n: 4, label: 'Add them up',                  kind: 'sum',   time: 10 },
   { n: 5, label: 'Finish the 4/4 bar',           kind: 'fill',  time: 12 },
+  { n: 6, label: 'Dotted notes & dotted rests', kind: 'dotrest', time: 10 },
 ];
 
 function genNoteValQuestion(lv, prev) {
   const uid = Math.random();
   const notPrev = (list) => { let x = pick(list), n = 0; while (prev && prev.key === x.key && n++ < 10) x = pick(list); return x; };
   if (lv.kind === 'name') {
-    const it = notPrev(NV_NOTES);
-    return { kind: 'name', key: it.key, item: it, answer: it.key, choices: shuffle([it, ...sampleN(NV_NOTES, 3, [it])]), uid };
+    const it = notPrev(QZ_NOTES);
+    return { kind: 'name', key: it.key, item: it, answer: it.key, choices: shuffle([it, ...sampleN(QZ_NOTES, 3, [it])]), uid };
   }
   if (lv.kind === 'beats') {
-    const it = notPrev(NV_ALL);
-    const vals = [...new Set(NV_ALL.map(x => x.beats))].filter(v => v !== it.beats);
+    const it = notPrev(QZ_ALL);
+    const vals = [...new Set(QZ_ALL.map(x => x.beats))].filter(v => v !== it.beats);
     return { kind: 'beats', key: it.key, item: it, answer: it.beats, choices: shuffle([it.beats, ...sampleN(vals, 3)]), uid };
   }
   if (lv.kind === 'rest') {
-    const it = notPrev(NV_NOTES);
-    const right = NV_RESTS.find(r => r.id === it.id);
-    return { kind: 'rest', key: it.key, item: it, answer: right.key, choices: shuffle([right, ...sampleN(NV_RESTS, 3, [right])]), uid };
+    const it = notPrev(QZ_NOTES);
+    const right = QZ_RESTS.find(r => r.id === it.id);
+    return { kind: 'rest', key: it.key, item: it, answer: right.key, choices: shuffle([right, ...sampleN(QZ_RESTS, 3, [right])]), uid };
+  }
+  if (lv.kind === 'dotrest') {
+    // dotted note -> its dotted rest; the plain rest of the same name is the classic trap
+    const it = notPrev(NV_DOTTED);
+    const right = QZ_DOTRESTS.find(r => r.id === it.id), plain = NV_RESTS.find(r => r.id === it.id);
+    const others = QZ_DOTRESTS.filter(r => r !== right);
+    const extra = NV_RESTS.filter(r => r !== plain && r.beats >= 0.5 && r.beats <= 2);
+    return { kind: 'rest', key: it.key, item: it, answer: right.key, choices: shuffle([right, plain, pick(others), pick(extra)]), uid };
   }
   if (lv.kind === 'sum') {
-    const src = NV_ALL.filter(x => x.beats >= 0.5 && x.beats <= 3);
+    const src = QZ_ALL.filter(x => x.beats >= 0.5 && x.beats <= 3);
     const a = pick(src), b = pick(src);
     const total = a.beats + b.beats;
     const cands = [...new Set([total - 1, total - 0.5, total + 0.5, total + 1, total + 1.5, total * 2, total - 1.5].filter(v => v > 0 && v !== total))];
     return { kind: 'sum', key: a.key + b.key, a, b, answer: total, choices: shuffle([total, ...sampleN(cands, 3)]), uid };
   }
   // fill: some symbols already in a 4/4 bar, pick the ONE symbol that completes it exactly
-  const fillers = [...NV_NOTES.filter(x => x.beats <= 2), ...NV_RESTS.filter(x => x.beats >= 0.5 && x.beats <= 2), ...NV_DOTTED];
+  const fillers = [...NV_NOTES.filter(x => x.beats <= 2), ...NV_RESTS.filter(x => x.beats >= 0.5 && x.beats <= 2), ...NV_DOTTED, ...QZ_DOTRESTS.filter(x => x.beats <= 2)];
   let missing, given = [];
   for (let tries = 0; tries < 50; tries++) {
-    missing = pick(NV_ALL.filter(x => x.beats >= 0.5 && x.beats <= 3 && !(x.rest && x.beats > 2)));
+    missing = pick(QZ_ALL.filter(x => x.beats >= 0.5 && x.beats <= 3 && !(x.rest && x.beats > 2)));
     let rem = 4 - missing.beats; given = [];
     while (rem > 1e-9 && given.length < 4) {
       const opts = fillers.filter(x => x.beats <= rem + 1e-9);
@@ -2986,7 +3001,7 @@ function genNoteValQuestion(lv, prev) {
     if (rem < 1e-9 && given.length >= 1 && given.length <= 4) break;
   }
   const pos = Math.floor(Math.random() * (given.length + 1));
-  const others = sampleN(NV_ALL.filter(x => Math.abs(x.beats - missing.beats) > 1e-9), 3);
+  const others = sampleN(QZ_ALL.filter(x => Math.abs(x.beats - missing.beats) > 1e-9), 3);
   return { kind: 'fill', key: missing.key + given.map(g => g.key).join(), given, pos, missing, answer: missing.beats,
            choices: shuffle([missing, ...others]), uid };
 }
@@ -2999,7 +3014,7 @@ function checkNoteVal(q, ans) {
 }
 function noteValAnswerLabel(q) {
   if (q.kind === 'name') return cap(q.item.uk) + ' (' + q.item.us + ')';
-  if (q.kind === 'rest') { const r = NV_RESTS.find(x => x.key === q.answer); return 'a ' + r.uk; }
+  if (q.kind === 'rest') { const r = QZ_ALL.find(x => x.key === q.answer); return 'a ' + r.uk; }
   if (q.kind === 'beats') return fmtBeats(q.answer);
   if (q.kind === 'sum') return fmtBeats(q.answer);
   return 'something worth ' + fmtBeats(q.missing.beats) + ' (e.g. a ' + q.missing.uk + ')';
@@ -3270,6 +3285,63 @@ function FillTheBar() {
   );
 }
 
+// Dot lab -- Sohyun: rhythm is what kids confuse most. Pick a value, flip note/rest, flip the dot,
+// and see (and hear) exactly how long it lasts on a beat ruler.
+function DotLab() {
+  const VALS = NOTE_VALUES;
+  const [vi, setVi] = useState(2), [rest, setRest] = useState(false), [dot, setDot] = useState(false);
+  const [head, setHead] = useState(null); // playhead position in beats, null = idle
+  const timer = useRef(null);
+  const v = VALS[vi], beats = v.base * (dot ? 1.5 : 1), item = nvItem(v, { rest, dot });
+  const SPAN = 6, bpm = 100, spb = 60 / bpm;
+  useEffect(() => () => { clearInterval(timer.current); stopClicks(); }, []);
+  function play() {
+    const ctx = getAudio(); if (!ctx) return; stopClicks(); clearInterval(timer.current);
+    const t0 = ctx.currentTime + 0.1, total = Math.ceil(beats - 1e-9);
+    for (let i = 0; i <= Math.max(total, 1); i++) metroClick(ctx, t0 + i * spb, i === 0, 0.13);
+    if (!rest) blip(ctx, t0, 523.25, beats * spb * 0.95, 0.24, 'triangle');
+    const start = performance.now() + 100;
+    setHead(0);
+    timer.current = setInterval(() => {
+      const b = (performance.now() - start) / 1000 / spb;
+      if (b >= beats) { clearInterval(timer.current); setHead(null); } else setHead(Math.max(0, b));
+    }, 30);
+  }
+  const W = 100 / SPAN;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Dot lab', '점 실험실')}</div>
+      <div style={actNote}>{t('Pick a value, switch between note and rest, then add or remove the dot. The bar shows how long it lasts, and Play lets you hear it (a rest is silent -- you only hear the beat ticks).', '음표 길이를 고르고, 음표/쉼표를 바꾸고, 점을 붙였다 떼 보세요. 막대가 길이를 보여주고, 재생하면 소리로 들을 수 있어요 (쉼표는 조용해요 -- 박 소리만 들려요).')}</div>
+      <div style={{display:'flex',gap:5,flexWrap:'wrap',justifyContent:'center',marginBottom:8}}>
+        {VALS.map((x, i) => <button key={x.id} className={'chip' + (i === vi ? ' active' : '')} style={{padding:'3px 9px',fontSize:13,fontWeight:800}} onClick={() => { setVi(i); setHead(null); }}>{cap(x.id)}</button>)}
+      </div>
+      <div style={{display:'flex',gap:8,justifyContent:'center',marginBottom:8,flexWrap:'wrap'}}>
+        <button className={'chip' + (!rest ? ' active' : '')} onClick={() => setRest(false)}>{t('Note', '음표')}</button>
+        <button className={'chip' + (rest ? ' active' : '')} onClick={() => setRest(true)}>{t('Rest', '쉼표')}</button>
+        <button className={'chip' + (dot ? ' active' : '')} onClick={() => setDot(d => !d)}>{t('Dot  ·', '점  ·')}</button>
+      </div>
+      <div style={{background:'#fff',borderRadius:10,padding:'10px 12px'}}>
+        <div style={{textAlign:'center'}}><Glyph item={item} size={70}/></div>
+        <div style={{textAlign:'center',fontSize:15,fontWeight:900,color:'var(--brass)'}}>{cap((dot ? 'dotted ' : '') + v.id)} {rest ? t('rest', '쉼표') : t('note', '음표')}</div>
+        <div style={{position:'relative',height:34,margin:'10px 0 4px',background:'repeating-linear-gradient(90deg, transparent 0, transparent calc(' + W + '% - 1px), #e0d4b8 calc(' + W + '% - 1px), #e0d4b8 ' + W + '%)',borderLeft:'1px solid #e0d4b8',borderRadius:4}}>
+          <div style={{position:'absolute',left:0,top:4,height:26,width:(v.base * W) + '%',borderRadius:dot ? '5px 0 0 5px' : 5,transition:'width 0.25s',
+            background:rest ? 'repeating-linear-gradient(45deg,#d8cdb6,#d8cdb6 5px,#efe6d2 5px,#efe6d2 10px)' : '#e2735a',border:'1.5px solid #241f1a'}}/>
+          <div style={{position:'absolute',left:(v.base * W) + '%',top:4,height:26,width:dot ? (v.base / 2 * W) + '%' : 0,overflow:'hidden',transition:'width 0.25s',borderRadius:'0 5px 5px 0',
+            background:rest ? 'repeating-linear-gradient(45deg,#e8d29a,#e8d29a 5px,#f6ecc9 5px,#f6ecc9 10px)' : '#e8b93a',border:dot ? '1.5px solid #241f1a' : 'none',borderLeft:'none',boxSizing:'border-box'}}/>
+          {head !== null && <div style={{position:'absolute',left:(head * W) + '%',top:0,height:34,width:3,background:'#241f1a',borderRadius:2}}/>}
+        </div>
+        <div style={{display:'flex'}}>{Array.from({ length: SPAN }).map((_, i) => <div key={i} style={{flex:1,fontSize:11,fontWeight:700,color:'var(--muted)',paddingLeft:3}}>{i + 1}</div>)}</div>
+        <div style={{textAlign:'center',fontSize:14,fontWeight:800,marginTop:8}}>
+          {dot ? <>{fmtBeats(v.base)} + {fmtBeats(v.base / 2).replace(/ beats?$/, '')} = <span style={{color:'#b5483b'}}>{fmtBeats(beats)}</span></> : <span style={{color:'#b5483b'}}>{fmtBeats(beats)}</span>}
+          <span style={{fontWeight:600,color:'var(--muted)'}}> · {rest ? t('silent for that long', '그만큼 쉬어요') : t('sounds for that long', '그만큼 소리 나요')}</span>
+        </div>
+      </div>
+      <div style={{textAlign:'center',marginTop:10}}><button className="ghost-btn" onClick={play}>▶ {t('Play', '재생')}</button></div>
+      <div style={{fontSize:12.5,color:'#5c544a',marginTop:8,lineHeight:1.5,textAlign:'center'}}>{t('A dot always adds HALF of what is in front of it -- the brass part of the bar. Same for notes and rests.', '점은 항상 앞에 있는 음표/쉼표 길이의 "절반"을 더해요 -- 막대의 금색 부분이에요. 음표도 쉼표도 똑같아요.')}</div>
+    </div>
+  );
+}
+
 // Same name, note or rest -- Sohyun: since note-value names and rest names are identical, make
 // that explicit and easy to remember (Phase 144).
 const NN_ROWS = [
@@ -3487,6 +3559,9 @@ function NoteValLearn({ onStart }) {
         </div>
       </div>
 
+      </Step>
+      <Step title={t('Dot lab', '점 실험실')}>
+      <DotLab/>
       </Step>
       <Step title={t('Fill the bar', '마디 채우기')}>
       <FillTheBar/>
@@ -13480,6 +13555,7 @@ const TOOLS = [
   { id: 'seventh-chords', ch: 'chords', title: 'Build a 7th chord', blurb: 'maj7, 7, m7, m7\u266D5, \u00B07 -- triad + one more 3rd.', C: () => <SeventhChords/> },
   { id: 'chord-extensions', ch: 'chords', title: 'Beyond the 7th: 9, 11, 13', blurb: 'Why the numbers skip past the octave.', C: () => <ChordExtensions/> },
   { id: 'split-it', ch: 'note-values', title: 'Split the notes (note values)', blurb: 'One semibreve into minims, crotchets...', C: () => <SplitTree/> },
+  { id: 'dot-lab', ch: 'note-values', title: 'Dot lab', blurb: 'Flip note/rest and the dot -- see and hear exactly how long it lasts.', C: () => <DotLab/> },
   { id: 'note-rest-naming', ch: 'note-values', title: 'Same name, note or rest', blurb: 'Every note value and its rest share the same name.', C: () => <NoteRestNaming/> },
   { id: 'rest-grouping', ch: 'note-values', title: 'Rests: counted, but silent', blurb: 'Tap beats to make notes or rests -- the pulse keeps going through the silence.', C: () => <RestGrouping/> },
   { id: 'whole-bar-rest', ch: 'note-values', title: 'The whole-bar rest', blurb: 'A semibreve rest can mean "rest this whole bar" -- any time signature.', C: () => <WholeBarRest/> },
@@ -13710,7 +13786,7 @@ const TOOL_META = {
   'mini-tune': ['steps', 0, 1, 'game'], 'sight-reading': ['steps', 1, 3, 'home game'], 'ottava': ['words', 2, 3, 'show'],
   'steady-beat': ['rpulse', 0, 1, 'game'], 'beat-target': ['rpulse', 0, 2, 'game home'], 'count-aloud': ['rpulse', 0, 1, 'show'], 'count-along': ['rtime', 1, 2, 'show home'],
   'beat-doubler': ['rtime', 1, 3, 'show'], 'metronome': ['rtempo', 0, 3, 'home'],
-  'split-it': ['rnotes', 1, 1, 'show'], 'note-rest-naming': ['rnotes', 0, 1, 'show ear'], 'whole-bar-rest': ['rnotes', 1, 2, 'show ear'], 'note-rest-match': ['rnotes', 0, 1, 'game'],
+  'split-it': ['rnotes', 1, 1, 'show'], 'note-rest-naming': ['rnotes', 0, 1, 'show ear'], 'dot-lab': ['rnotes', 0, 1, 'show ear'], 'whole-bar-rest': ['rnotes', 1, 2, 'show ear'], 'note-rest-match': ['rnotes', 0, 1, 'game'],
   'fill-bar': ['rnotes', 1, 2, 'game write home'], 'make-card': ['rtime', 1, 2, 'game home'], 'bar-lines': ['rtime', 1, 2, 'write'], 'regroup': ['rtime', 2, 3, 'show ear'],
   'dyn-order': ['expression', 0, 1, 'game'], 'hairpin': ['expression', 1, 2, 'show'], 'touch-ear': ['expression', 0, 2, 'ear game'], 'touch-lengths': ['expression', 1, 3, 'show ear'],
   'tempo-race': ['rtempo', 0, 2, 'show ear'], 'speed-change': ['rtempo', 1, 2, 'show ear'], 'hand-clef-match': ['body', 0, 0, 'game'], 'tie-slur': ['words', 1, 2, 'show ear'],
@@ -13974,6 +14050,9 @@ const TOOL_ICON = {
   // Phase 189 (2026-09-29): illustrated-content badges, chapter 4 (note-values).
   'split-it': () => (
     <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#e2735a"/><rect x="4" y="5" width="16" height="6" rx="1.5" fill="#e8b93a"/><path d="M12 11 V13 M12 13 H6 M12 13 H18" stroke="#7a2f1a" strokeWidth="1.6" fill="none"/><rect x="3" y="14.5" width="8" height="5.5" rx="1.3" fill="#f7f0e0"/><rect x="13" y="14.5" width="8" height="5.5" rx="1.3" fill="#f7f0e0"/></svg>
+  ),
+  'dot-lab': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#e2735a"/><rect x="3" y="7" width="11" height="6" rx="1.5" fill="#f7f0e0"/><rect x="14" y="7" width="5.5" height="6" rx="1.5" fill="#e8b93a"/><circle cx="8" cy="18" r="2.6" fill="#f7f0e0"/><circle cx="14.5" cy="18" r="1.5" fill="#e8b93a"/></svg>
   ),
   'note-rest-naming': () => (
     <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#e2735a"/><circle cx="7" cy="16" r="3.2" fill="#f7f0e0"/><path d="M10 16 V6" stroke="#f7f0e0" strokeWidth="1.8"/><text x="16.5" y="15.5" textAnchor="middle" fontSize="9" fontWeight="900" fill="#f7f0e0">=</text><rect x="18.5" y="9" width="3.2" height="5" fill="#e8b93a"/></svg>
@@ -14259,7 +14338,7 @@ const CHAPTER_TOOL_ORDER = {
   'ledger-lines': ['ledger-walk', 'ledger-landmarks', 'ledger-twins', 'ledger-write'],
   'melody': ['tune-anatomy', 'phrase-marks', 'question-answer', 'melody-sequence'],
   'note-names': ['find-every', 'name-reveal', 'step-updown', 'letter-chain'],
-  'note-values': ['note-rest-naming', 'split-it', 'fill-bar', 'rest-grouping', 'whole-bar-rest', 'note-rest-match'],
+  'note-values': ['note-rest-naming', 'split-it', 'dot-lab', 'fill-bar', 'rest-grouping', 'whole-bar-rest', 'note-rest-match'],
   'piano-story': ['keyboard-ancestors', 'piano-timeline', 'eras'],
   'pitch-range': ['hz-explorer', 'range-chart'],
   'posture-hands': ['sit-check', 'arm-moves', 'arm-alignment', 'hand-shape', 'finger-numbers', 'posture-check'],
