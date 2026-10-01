@@ -4142,6 +4142,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 - **Phase 232 (2026-10-01) -- Category tidy.** "Reading tunes: pitch + rhythm" (`steps`) keeps 4 tools (Read a tiny tune, Complete the melody, Five-finger positions, Sight-reading cards). **Pulse & counting** is its own category (`rpulse`, before Note values & rests, Time signatures & patterns, Tempo). "Step, skip or same?" moved to the Intervals chapter/Tones & Intervals category (also shown at the start of the Intervals lesson, step 1; still used in Steps & Skips lesson). 8va/8vb moved to Signs & terms. 17 categories.
 
+- **Phase 233 (2026-10-01) -- Tempo chapter tools.** "The tempo race" (Slow to fast lanes) is now a standalone Toolbox tool (`tempo-race`, component `TempoLanes`, new icon). `speed-change` ("rit. and accel.") moved from Terms to Tempo, so there is no duplicate (Terms keeps term-cards + term-match). Tempo lesson steps reordered: Slow to fast → Changing speed → The metronome. Tempo category now has 3 tools. Fixed order in `CHAPTER_TOOL_ORDER`.
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
