@@ -9232,6 +9232,39 @@ function HandClefMatch() {
     </div>
   );
 }
+function HandSplit() {
+  const [k, setK] = useState(null);
+  const d = k !== null ? keyToD(k) : null;
+  const msg = d === null ? t('Tap any white key.', '흰 건반을 눌러 보세요.')
+    : d === 28 ? t('Middle C -- the doorbell between the two houses. Either hand can answer it.', '가운데 도 -- 두 집 사이의 초인종이에요. 어느 손이든 받을 수 있어요.')
+    : d > 28 ? t('Upstairs, in the treble house: right-hand territory.', '위층, 높은음자리 집: 오른손 구역이에요.')
+    : t('Downstairs, in the bass house: left-hand territory.', '아래층, 낮은음자리 집: 왼손 구역이에요.');
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Split the keyboard', '건반을 반으로 나누기')}</div>
+      <div style={actNote}>{t('Tap a key and watch where it lands on the Grand Staff. Higher notes climb to the top staff; lower notes drop to the bottom one.', '건반을 누르면 그랜드 스태프 어디에 앉는지 보여요. 높은 음은 위 줄로, 낮은 음은 아래 줄로 가요.')}</div>
+      <TapKeyboard octaves={3} marks={k !== null ? { [k]: 'target' } : {}} onTap={(i) => { if (keyToD(i) === null) return; setK(i); playKey(i); }}/>
+      <StaffView clef="grand" notes={d !== null ? [{ d, color: '#a8823f' }] : []}/>
+      <div style={{textAlign:'center',fontWeight:800,fontSize:14.5,color:'var(--muted)',minHeight:22}}>{msg}</div>
+    </div>
+  );
+}
+function ClefCostume() {
+  const [c, setC] = useState('treble');
+  const tre = c === 'treble';
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Spot the clef', '음자리표 알아보기')}</div>
+      <div style={actNote}>{t('Each clef is a costume that tells you which note lives where.', '음자리표는 어떤 음이 어디에 사는지 알려 주는 의상이에요.')}</div>
+      <div style={{display:'flex',justifyContent:'center',gap:8,marginBottom:6}}>
+        <button className={'chip' + (tre ? ' active' : '')} style={{padding:'6px 14px',fontSize:14,fontWeight:800}} onClick={() => setC('treble')}>{t('Treble clef', '높은음자리표')}</button>
+        <button className={'chip' + (!tre ? ' active' : '')} style={{padding:'6px 14px',fontSize:14,fontWeight:800}} onClick={() => setC('bass')}>{t('Bass clef', '낮은음자리표')}</button>
+      </div>
+      <StaffView clef={c} notes={[{ d: tre ? 32 : 24, color: '#a8823f' }]}/>
+      <div style={{textAlign:'center',fontWeight:800,fontSize:14.5,color:'var(--muted)'}}>{tre ? t('The curl hugs the G line -- the Queen of G. This G is above middle C.', '소용돌이가 솔(G) 줄을 감싸요 -- 솔의 여왕. 이 솔은 가운데 도보다 위에 있어요.') : t('The two dots hug the F line -- the King of F. This F is below middle C.', '두 점이 파(F) 줄을 감싸요 -- 파의 왕. 이 파는 가운데 도보다 아래에 있어요.')}</div>
+    </div>
+  );
+}
 function HandClefsLearn({ onStart }) {
   return (
     <Lesson id="hand-clefs" title={t('Hands and clefs', '손과 음자리표')} head={<HandClefsHero/>} onStart={onStart}
@@ -9240,13 +9273,33 @@ function HandClefsLearn({ onStart }) {
         <Rule title={t('Two staves, two hands', '두 줄, 두 손')}>{t('The top staff has the treble clef (the curly one -- the Queen of G). The bottom staff has the bass clef (two dots -- the King of F). Middle C sits right between them, on its own short line.', '위쪽 줄에는 높은음자리표(구불구불한 모양 -- 생대 G)가 있어요. 아래쪽 줄에는 낮은음자리표(점 두 개 -- 왕 F)가 있어요. 가운데 도(C)는 두 줄 사이, 자기만의 짧은 줄 위에 있어요.')}</Rule>
         <HandClefMatch/>
       </Step>
+      <Step title={t('Split the keyboard', '건반 나누기')}>
+        <Rule title={t('Two houses, one doorbell', '두 집, 하나의 초인종')}>{t('Left of middle C is the basement (bass house, left hand). Right of it is upstairs (treble house, right hand). Middle C itself is the doorbell in the middle -- it is the one note either hand may play.', '가운데 도의 왼쪽은 지하(낮은음자리 집, 왼손), 오른쪽은 위층(높은음자리 집, 오른손)이에요. 가운데 도는 그 사이의 초인종 -- 어느 손이든 칠 수 있는 단 하나의 음이에요.')}</Rule>
+        <HandSplit/>
+      </Step>
+      <Step title={t('Spot the clef', '음자리표 알아보기')}>
+        <Rule title={t('Two costumes', '두 벌의 의상')}>{t('The treble clef curls around the G above middle C. The bass clef puts two dots around the F below middle C. Learn the costume and you know the neighbourhood.', '높은음자리표는 가운데 도 위의 솔을 감싸고, 낮은음자리표는 가운데 도 아래의 파를 두 점으로 감싸요. 의상만 알아보면 어느 동네인지 알 수 있어요.')}</Rule>
+        <ClefCostume/>
+      </Step>
     </Lesson>
   );
 }
 const HAND_CLEF_LEVELS = [
   { n: 1, label: 'Which hand plays which clef?', kind: 'clef', time: 6 },
+  { n: 2, label: 'Treble or bass clef?', kind: 'name', time: 6 },
+  { n: 3, label: 'Which hand plays this note?', kind: 'note', time: 7 },
 ];
 function genHandClefQuestion(lv, prev) {
+  if (lv.kind === 'name') {
+    let clef, g = 0;
+    do { clef = Math.random() < 0.5 ? 'treble' : 'bass'; } while (prev && prev.key === clef && g++ < 10);
+    return { kind: 'name', key: clef, clef, answer: clef === 'treble' ? 'Treble' : 'Bass', choices: ['Treble', 'Bass'], uid: Math.random() };
+  }
+  if (lv.kind === 'note') {
+    let d, g = 0;
+    do { d = Math.random() < 0.5 ? 29 + Math.floor(Math.random() * 8) : 20 + Math.floor(Math.random() * 8); } while (prev && prev.key === 'n' + d && g++ < 10);
+    return { kind: 'note', key: 'n' + d, d, answer: d > 28 ? 'Right' : 'Left', choices: ['Left', 'Right'], uid: Math.random() };
+  }
   let clef, g = 0;
   do { clef = Math.random() < 0.5 ? 'treble' : 'bass'; } while (prev && prev.key === clef && g++ < 10);
   return { kind: 'clef', key: clef, clef, answer: clef === 'treble' ? 'Right' : 'Left', choices: ['Left', 'Right'], uid: Math.random() };
@@ -9255,16 +9308,17 @@ function HandClefQuestion({ q, given, locked, onAnswer, pixel }) {
   const done = !!given;
   const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
   const cls = (c) => btnCls + (!done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '');
+  const title = q.kind === 'name' ? 'Which clef is this?' : q.kind === 'note' ? 'Which hand usually plays this note?' : 'Which hand usually plays this clef?';
   return (<div>
-    <p style={pixel ? {fontSize:11.5,textAlign:'center'} : {fontSize:15,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? 'WHICH HAND?' : 'Which hand usually plays this clef?'}</p>
-    <div style={{marginBottom:12}}><StaffView clef="grand" spread notes={[{ d: q.clef === 'treble' ? 32 : 20, color: '#a8823f' }]}/></div>
+    <p style={pixel ? {fontSize:11.5,textAlign:'center'} : {fontSize:15,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? (q.kind === 'name' ? 'WHICH CLEF?' : 'WHICH HAND?') : title}</p>
+    <div style={{marginBottom:12}}>{q.kind === 'name' ? <StaffView clef={q.clef} notes={[]}/> : q.kind === 'note' ? <StaffView clef="grand" notes={[{ d: q.d, color: '#a8823f' }]}/> : <StaffView clef="grand" spread notes={[{ d: q.clef === 'treble' ? 32 : 20, color: '#a8823f' }]}/>}</div>
     <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8}}>{q.choices.map(c => <button key={c} disabled={locked} className={cls(c)} style={{padding:'16px 0',fontSize:pixel ? 10 : 18}} onClick={() => onAnswer(c)}>{c}</button>)}</div>
   </div>);
 }
 const HAND_CLEFS_DRILL = {
   id: 'hand-clefs', label: 'Hands & Clefs', levels: HAND_CLEF_LEVELS, generate: genHandClefQuestion,
   check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
-  answerLabel: (q) => q.answer.toLowerCase() + ' hand',
+  answerLabel: (q) => q.kind === 'name' ? q.answer.toLowerCase() + ' clef' : q.answer.toLowerCase() + ' hand',
   Question: HandClefQuestion, Learn: HandClefsLearn,
 };
 function FirstStepsLearn({ onStart }) {
