@@ -4152,6 +4152,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 - **Phase 237 (2026-10-01) -- Metronome also in Practice helpers.** New `TOOL_ALSO_IN` map lets a tool appear in a second Toolbox category without moving its home: `metronome` stays in Tempo and is listed first in Practice helpers (4 tools). It was already on the Practice page (`PRACTICE_IDS`).
 
+- **Phase 238 (2026-10-01) -- Count along: accents + more time signatures.** `BeatPulse` now covers 2/4, 3/4, 4/4, 2/2, 5/4 (local `BEAT_EXTRA`, not in `TIME_SIGS`), 3/8, 6/8, 9/8, 12/8. Accent marks (>) over strong/medium beats, light sizes by stress, a Strong/medium/weak caption, compound time grouped in threes, tempo per note value. Verified: Babel compile + Playwright all signatures, 0 page errors.
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 

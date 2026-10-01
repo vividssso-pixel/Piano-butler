@@ -6578,42 +6578,52 @@ function playTimeSig(t, bpm) {
 
 // ─── Time Signatures: hands-on round (Phase 109) ─────────────────────────────────
 // 1. Count along: the beats light up in time, strong beat biggest, and loop until stopped.
+const BEAT_EXTRA = { '5/4': { id: '5/4', top: 5, bottom: 4, kind: 'simple', unit: 'crotchet', use: 'five crotchet beats, grouped 3 + 2 -- ONE two three FOUR five', pattern: [1, 0, 0, 0.5, 0] } };
 function BeatPulse() {
-  const IDS = ['2/4', '3/4', '4/4', '6/8'];
+  const IDS = ['2/4', '3/4', '4/4', '2/2', '5/4', '3/8', '6/8', '9/8', '12/8'];
   const [id, setId] = useState('3/4');
   const [beat, setBeat] = useState(-1);
   const [run, setRun] = useState(false);
-  const t = TS[id];
+  const t = TS[id] || BEAT_EXTRA[id];
   const n = t.pattern.length;
-  const words = t.id === '6/8' ? ['1', '2', '3', '4', '5', '6'] : ['1', '2', '3', '4'].slice(0, n);
+  const quaverBeat = t.bottom === 8; // the quaver is the beat: count every one
+  const grouped = t.kind === 'compound'; // lights in threes
+  const words = Array.from({ length: n }, (_, k) => String(k + 1));
+  const strong = words.filter((w, k) => t.pattern[k] === 1), medium = words.filter((w, k) => t.pattern[k] === 0.5);
   useEffect(() => { setRun(false); setBeat(-1); }, [id]);
   useEffect(() => {
     if (!run) return;
-    const bpm = t.bottom === 8 ? 150 : 84, ms = 60000 / bpm;
+    const bpm = quaverBeat ? 150 : t.bottom === 2 ? 72 : 84, ms = 60000 / bpm;
     let i = 0;
     const tick = () => {
-      const ctx = getAudio(); const acc = t.pattern[i % n];
-      const bn = i % n;
-      if (ctx) { if (t.id === '6/8' && acc === 0 && !(SOUND.count === 'voice' && sayCount(ctx, ctx.currentTime + 0.01, String(bn + 1), 0.8))) metroClick(ctx, ctx.currentTime + 0.01, 0, 0.16); else if (t.id === '6/8' && acc === 0) {} else beatTick(ctx, ctx.currentTime + 0.01, bn, acc === 1 ? 1320 : acc === 0.5 ? 1040 : 880, 0.05, acc === 1 ? 0.4 : acc === 0.5 ? 0.22 : 0.12); }
-      setBeat(i % n); i++;
+      const ctx = getAudio(); const bn = i % n, acc = t.pattern[bn];
+      if (ctx) {
+        const at = ctx.currentTime + 0.01;
+        if (SOUND.count === 'voice' && bn < 8 && sayCount(ctx, at, words[bn], acc > 0 ? 1 : 0.8)) {}
+        else if (grouped && acc === 0) metroClick(ctx, at, 0, 0.16);
+        else beatTick(ctx, at, bn, acc === 1 ? 1320 : acc === 0.5 ? 1040 : 880, 0.05, acc === 1 ? 0.4 : acc === 0.5 ? 0.22 : 0.12);
+      }
+      setBeat(bn); i++;
     };
     tick(); const iv = setInterval(tick, ms);
     return () => { clearInterval(iv); setBeat(-1); };
   }, [run, id]);
+  const big = n > 6 ? [32, 25, 18] : [40, 30, 22];
   return (
     <div className="try-box" style={actBox}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:6,flexWrap:'wrap'}}>
         <div style={actTitle}>Count along</div>
-        <div style={{display:'flex',gap:4}}>{IDS.map(x => <button key={x} className={'chip' + (x === id ? ' active' : '')} style={{padding:'3px 9px',fontSize:13,fontWeight:900}} onClick={() => setId(x)}>{x}</button>)}</div>
+        <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>{IDS.map(x => <button key={x} className={'chip' + (x === id ? ' active' : '')} style={{padding:'3px 9px',fontSize:13,fontWeight:900}} onClick={() => setId(x)}>{x}</button>)}</div>
       </div>
-      <div style={actNote}>Press start and count out loud with the lights. The first beat of every bar is the strongest{t.id === '6/8' ? '. In 6/8 the quaver is the beat: count all six, 1 2 3 4 5 6 -- the 4 gets a smaller push, because the quavers go in two groups of three' : ''}.</div>
+      <div style={actNote}>Press start and count out loud with the lights. The big light is the <b>strong</b> beat (the accent <b>&gt;</b>), a middle-sized light is a <b>medium</b> beat, and the small ones are <b>weak</b>. {t.use.charAt(0).toUpperCase() + t.use.slice(1)}.{quaverBeat && t.kind === 'compound' ? ' In ' + t.id + ' the quaver is the beat, so count every quaver.' : ''}</div>
       <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:12,padding:'10px 0'}}>
         <TSig top={t.top} bottom={t.bottom} size={40}/>
-        <div style={{display:'flex',gap:t.id === '6/8' ? 6 : 12,alignItems:'center'}}>
+        <div style={{display:'flex',flexWrap:'wrap',gap:grouped ? 4 : 12,alignItems:'flex-end',justifyContent:'center',maxWidth:grouped ? 360 : 300}}>
           {t.pattern.map((acc, i) => {
-            const size = acc === 1 ? 40 : acc === 0.5 ? 30 : 22, lit = beat === i;
+            const size = acc === 1 ? big[0] : acc === 0.5 ? big[1] : big[2], lit = beat === i;
             return (
-              <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,marginLeft:t.id === '6/8' && i === 3 ? 10 : 0}}>
+              <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2,marginLeft:grouped && i % 3 === 0 && i > 0 ? 10 : 0}}>
+                <span style={{fontSize:acc === 1 ? 17 : 13,fontWeight:900,lineHeight:1,height:17,color:acc === 1 ? '#b5483b' : '#a8823f',opacity:acc > 0 ? 1 : 0}}>&gt;</span>
                 <div style={{width:size,height:size,borderRadius:size / 2,background:lit ? (acc === 1 ? '#b5483b' : '#a8823f') : '#fff',
                   border:'2px solid ' + (acc === 1 ? '#b5483b' : '#a8823f'),transform:lit ? 'scale(1.18)' : 'scale(1)',transition:'transform 0.08s, background 0.08s'}}/>
                 <span style={{fontSize:14,fontWeight:lit || acc > 0 ? 900 : 700,color:lit ? 'var(--text)' : 'var(--muted)'}}>{words[i]}</span>
@@ -6621,6 +6631,9 @@ function BeatPulse() {
             );
           })}
         </div>
+      </div>
+      <div style={{textAlign:'center',fontSize:13,color:'#5c544a',marginBottom:6}}>
+        <b style={{color:'#b5483b'}}>Strong:</b> {strong.join(', ')}{medium.length ? <> · <b style={{color:'#a8823f'}}>medium:</b> {medium.join(', ')}</> : ''} · the rest are weak
       </div>
       <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={() => setRun(r => !r)}>{run ? '■ Stop' : '▶ Start'}</button></div>
     </div>
@@ -13457,7 +13470,7 @@ const TOOLS = [
   { id: 'whole-bar-rest', ch: 'note-values', title: 'The whole-bar rest', blurb: 'A semibreve rest can mean "rest this whole bar" -- any time signature.', C: () => <WholeBarRest/> },
   { id: 'note-rest-match', ch: 'note-values', title: 'Note ↔ rest match', blurb: 'Memory-pairs game: match each note name to its rest.', C: () => <NoteRestMatch/> },
   { id: 'fill-bar', ch: 'note-values', title: 'Fill the bar', blurb: 'Exactly 2, 3 or 4 beats.', C: () => <FillTheBar/> },
-  { id: 'count-along', ch: 'time-signatures', title: 'Count along (time signatures)', blurb: 'Beat lights for 2/4, 3/4, 4/4, and 6/8 counted 1 to 6.', C: () => <BeatPulse/> },
+  { id: 'count-along', ch: 'time-signatures', title: 'Count along (time signatures)', blurb: 'Beat lights and the accent for 2/4, 3/4, 4/4, 2/2, 5/4, 3/8, 6/8, 9/8 and 12/8.', C: () => <BeatPulse/> },
   { id: 'bar-lines', ch: 'time-signatures', title: 'Put in the bar lines', blurb: 'The written exam task.', C: () => <BarLineBuilder/> },
   { id: 'beat-doubler', ch: 'time-signatures', title: 'When the quaver is the beat', blurb: '8 on the bottom: every note doubles; count 6/8 as 1 to 6.', C: () => <BeatDoubler/> },
   { id: 'grouping', ch: 'time-signatures', title: 'Group the quavers', blurb: 'Which bar is beamed right for 2/4, 3/4, 4/4, 6/8?', C: () => <GroupingGame/> },
