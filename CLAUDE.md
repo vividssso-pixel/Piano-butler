@@ -4150,6 +4150,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 - **Phase 236 (2026-10-01) -- Tones & semitones moved forward; accidental examples with key signatures.** Category split: **Tones & semitones** (`tones`, 4 tools) now sits right after Reading the staff and before Pulse & counting; **Intervals** (`intervals`, 7 tools incl. Step/skip/same) sits before Scales & keys. `AccidentalBar` ("How long an accidental lasts") grew from 2 to 6 examples: Sharp, Flat, **G major (♯)** and **F major (♭)** (key signature drawn on the staff; key-signature accidental, natural cancelling it, bar line restoring it), **A visitor in the key** (C♯ in G major), **Other octave** (accidental only affects the same pitch). Staff widens for longer bars. Order now: Posture · Piano keys & note names · Reading the staff · Tones & semitones · Pulse · Note values · Time signatures & patterns · Reading tunes · Tempo · Intervals · Scales & keys · Chords · Melody & form · ... 18 categories.
 
+- **Phase 237 (2026-10-01) -- Metronome also in Practice helpers.** New `TOOL_ALSO_IN` map lets a tool appear in a second Toolbox category without moving its home: `metronome` stays in Tempo and is listed first in Practice helpers (4 tools). It was already on the Practice page (`PRACTICE_IDS`).
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
