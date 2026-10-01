@@ -4134,6 +4134,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 - **Phase 228 (2026-10-01) -- Reading the Staff restructure.** "What is the staff?" markers spread out (no overlap). "The rhymes" is now step 2 (right after lines and spaces, so notes get letter names straight away). Landmarks and "Middle C and ledger lines" merged: the middle-C fold (`FoldStaff`) now sits in a collapsible panel inside the Landmarks step (chapter is 8 steps). `LedgerMirror` ("The gap is really one missing line") moved to the Ledger Lines chapter, step 3. `CHAPTER_TOOL_ORDER` staff updated. Verified: Babel compile, live Playwright, zero errors.
 
+- **Phase 229 (2026-10-01) -- Category split.** "Reading the staff" is now two categories: **Reading the staff** (Reading the Staff + Ledger Lines) and **Steps, skips & sight-reading** (`steps`; Steps & Skips chapter, with step-skip, mini-tune, five-positions, complete-melody, sight-reading tools). Tool order fixed for the Landmarks step: the fold-at-middle-C tool now sits directly at the top (the collapsible wrapper of Phase 228 was removed). 14 categories now.
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
