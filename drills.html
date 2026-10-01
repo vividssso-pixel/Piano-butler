@@ -1929,8 +1929,29 @@ function saveSoundPrefs(p) { SOUND = p; try { localStorage.setItem(SOUND_KEY, JS
 // convention as everything else here), decoded and cached per word, and played back through the
 // exact same onset-alignment (onsetOf) the server-hosted voice packs already use below, so a
 // home-recorded "1, 2, 3, 4" lines up with the beat exactly like the built-in voices do.
-const MYVOICE_KEY = 'pb_myvoice_v1';
-function loadMyVoice() { try { return JSON.parse(localStorage.getItem(MYVOICE_KEY)) || {}; } catch (e) { return {}; } }
+// Phase 235 (2026-10-01): several voices on one device (the teacher's, each student's), each with
+// its own set of recorded count words. Store: { active: id, profiles: { id: { name, clips: { word: dataUrl } } } }.
+// Each profile has a plain id so a future per-student login can simply map account -> profile id
+// (and the clips can later move from localStorage to the server without changing anything above this block).
+const MYVOICE_KEY = 'pb_myvoice_v2';
+function readVoiceStore() {
+  try {
+    const st = JSON.parse(localStorage.getItem(MYVOICE_KEY));
+    if (st && st.profiles && Object.keys(st.profiles).length) return st;
+  } catch (e) {}
+  let old = {}; try { old = JSON.parse(localStorage.getItem('pb_myvoice_v1')) || {}; } catch (e) {}  // migrate the single-voice version
+  return { active: 'me', profiles: { me: { name: 'My voice', clips: old } } };
+}
+let _voiceStore = null;
+function voiceStore() { if (!_voiceStore) _voiceStore = readVoiceStore(); return _voiceStore; }
+function writeVoiceStore() { try { localStorage.setItem(MYVOICE_KEY, JSON.stringify(voiceStore())); } catch (e) {} }
+function activeVoice() { const st = voiceStore(); return st.profiles[st.active] || (st.active = Object.keys(st.profiles)[0], st.profiles[st.active]); }
+function loadMyVoice() { return activeVoice().clips || {}; }
+function resetVoiceCache() { _myVoice.buf = {}; _myVoice.on = {}; }
+function setActiveVoice(id) { const st = voiceStore(); if (!st.profiles[id]) return; st.active = id; writeVoiceStore(); resetVoiceCache(); const c = getAudio(); if (c) loadMyVoiceBufs(c); }
+function addVoiceProfile(name) { const st = voiceStore(); const id = 'v' + Date.now().toString(36); st.profiles[id] = { name: (name || '').trim() || 'New voice', clips: {} }; writeVoiceStore(); setActiveVoice(id); return id; }
+function renameVoiceProfile(id, name) { const st = voiceStore(); if (st.profiles[id] && name.trim()) { st.profiles[id].name = name.trim(); writeVoiceStore(); } }
+function deleteVoiceProfile(id) { const st = voiceStore(); if (Object.keys(st.profiles).length < 2) return; delete st.profiles[id]; if (st.active === id) st.active = Object.keys(st.profiles)[0]; writeVoiceStore(); resetVoiceCache(); const c = getAudio(); if (c) loadMyVoiceBufs(c); }
 function dataUrlToArrayBuffer(dataUrl) {
   const bin = atob(dataUrl.split(',')[1]);
   const bytes = new Uint8Array(bin.length);
@@ -1939,11 +1960,9 @@ function dataUrlToArrayBuffer(dataUrl) {
 }
 const _myVoice = { buf: {}, on: {} };
 function saveMyVoiceClip(word, dataUrl) {
-  try {
-    const all = loadMyVoice();
-    if (dataUrl) all[word] = dataUrl; else delete all[word];
-    localStorage.setItem(MYVOICE_KEY, JSON.stringify(all));
-  } catch (e) {}
+  const v = activeVoice(); v.clips = v.clips || {};
+  if (dataUrl) v.clips[word] = dataUrl; else delete v.clips[word];
+  writeVoiceStore();
   delete _myVoice.buf[word]; delete _myVoice.on[word];
 }
 function loadMyVoiceBufs(ctx) {
@@ -2091,6 +2110,7 @@ const COUNT_WORD_LABELS = ['1', '2', '3', '4', '5', '6', '7', '8', 'and'];
 function VoiceWordRecorder({ word, onChange }) {
   const [state, setState] = useState('idle'); // idle | recording | error
   const [hasClip, setHasClip] = useState(() => !!loadMyVoice()[word]);
+  const [draft, setDraft] = useState(null); // a fresh take, not saved until you press keep
   const mediaRef = useRef(null);
   const chunksRef = useRef([]);
   const stopTimer = useRef(null);
@@ -2105,7 +2125,7 @@ function VoiceWordRecorder({ word, onChange }) {
         stream.getTracks().forEach(tr => tr.stop());
         const blob = new Blob(chunksRef.current, { type: mr.mimeType || 'audio/webm' });
         const reader = new FileReader();
-        reader.onloadend = () => { saveMyVoiceClip(word, reader.result); setHasClip(true); setState('idle'); onChange && onChange(); };
+        reader.onloadend = () => { setDraft(reader.result); setState('idle'); };
         reader.readAsDataURL(blob);
       };
       mediaRef.current = mr;
@@ -2116,22 +2136,28 @@ function VoiceWordRecorder({ word, onChange }) {
   }
   function stopRecording() { if (stopTimer.current) clearTimeout(stopTimer.current); if (mediaRef.current && mediaRef.current.state === 'recording') mediaRef.current.stop(); }
   function play() {
-    const dataUrl = loadMyVoice()[word]; if (!dataUrl) return;
+    const dataUrl = draft || loadMyVoice()[word]; if (!dataUrl) return;
     const ctx = getAudio(); if (!ctx) return;
     try { ctx.decodeAudioData(dataUrlToArrayBuffer(dataUrl), (b) => { const s = ctx.createBufferSource(); s.buffer = b; s.connect(ctx.destination); s.start(); }, () => {}); } catch (e) {}
   }
   function clear() { saveMyVoiceClip(word, null); setHasClip(false); onChange && onChange(); }
+  function keep() { saveMyVoiceClip(word, draft); setDraft(null); setHasClip(true); onChange && onChange(); }
   return (
     <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2,width:42}}>
       <div style={{fontSize:12,fontWeight:900,color:'var(--muted)'}}>{word === 'and' ? '&' : word}</div>
       <button onClick={state === 'recording' ? stopRecording : startRecording}
         title={hasClip ? t('Re-record', '다시 녹음') : t('Record', '녹음')}
         style={{width:34,height:34,borderRadius:17,border:'2px solid ' + (state === 'recording' ? '#b5483b' : hasClip ? '#4f7a45' : 'var(--border)'),
-          background:state === 'recording' ? '#b5483b' : hasClip ? '#dcebd5' : '#fff',
-          color:state === 'recording' ? '#fff' : hasClip ? '#4f7a45' : 'var(--muted)',fontSize:14,cursor:'pointer'}}>
-        {state === 'recording' ? '■' : hasClip ? '✓' : '●'}
+          background:state === 'recording' ? '#b5483b' : draft ? '#f3ead8' : hasClip ? '#dcebd5' : '#fff',
+          color:state === 'recording' ? '#fff' : draft ? '#a8823f' : hasClip ? '#4f7a45' : 'var(--muted)',fontSize:14,cursor:'pointer'}}>
+        {state === 'recording' ? '■' : draft ? '●' : hasClip ? '✓' : '●'}
       </button>
-      {hasClip && state !== 'recording' && <div style={{display:'flex',gap:3}}>
+      {draft && state !== 'recording' && <><div style={{fontSize:9.5,fontWeight:800,color:'#a8823f',lineHeight:1.1,textAlign:'center'}}>{t('keep it?', '저장할까요?')}</div><div style={{display:'flex',gap:4}}>
+        <button onClick={play} title={t('Listen', '들어보기')} style={{border:'none',background:'transparent',fontSize:13,cursor:'pointer',color:'#a8823f',padding:0}}>▶</button>
+        <button onClick={keep} title={t('Keep this take', '이 녹음 저장')} style={{border:'none',background:'transparent',fontSize:14,fontWeight:900,cursor:'pointer',color:'#4f7a45',padding:0}}>✓</button>
+        <button onClick={() => setDraft(null)} title={t('Discard', '버리기')} style={{border:'none',background:'transparent',fontSize:13,cursor:'pointer',color:'#b5483b',padding:0}}>✕</button>
+      </div></>}
+      {!draft && hasClip && state !== 'recording' && <div style={{display:'flex',gap:3}}>
         <button onClick={play} title={t('Play', '재생')} style={{border:'none',background:'transparent',fontSize:12,cursor:'pointer',color:'#a8823f',padding:0}}>▶</button>
         <button onClick={clear} title={t('Delete', '삭제')} style={{border:'none',background:'transparent',fontSize:12,cursor:'pointer',color:'#b5483b',padding:0}}>✕</button>
       </div>}
@@ -2144,11 +2170,38 @@ function VoiceWordRecorder({ word, onChange }) {
 // exactly like every other pb_*_v1 preference in this file.
 function MyVoiceRecorder() {
   const [version, setVersion] = useState(0);
+  const [adding, setAdding] = useState(false), [newName, setNewName] = useState('');
+  const [renaming, setRenaming] = useState(false), [renameTo, setRenameTo] = useState('');
+  const [confirmDel, setConfirmDel] = useState(false);
+  const st = voiceStore(), ids = Object.keys(st.profiles), cur = activeVoice();
+  const bump = () => setVersion(v => v + 1);
+  const small = { padding:'3px 10px', fontSize:12.5 };
   return (
     <div style={{width:'100%',background:'#fbf3e2',border:'1px solid #e8dcc0',borderRadius:10,padding:'10px',marginTop:2}}>
-      <div style={{fontSize:12.5,color:'#6f665b',marginBottom:8,lineHeight:1.5}}>{t('Tap a number, say it out loud, tap again to stop -- recorded on this device only, used right away.', '숫자를 탭하고 소리 내어 말한 뒤 다시 탭해서 멈추세요 -- 이 기기에만 저장되고, 저장 즉시 바로 쓸 수 있어요.')}</div>
+      <div style={{fontSize:12,fontWeight:900,color:'var(--muted)',marginBottom:4}}>{t('WHOSE VOICE?', '누구의 목소리?')}</div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>
+        {ids.map(id => <button key={id} className={'chip' + (id === st.active ? ' active' : '')} style={small} onClick={() => { setActiveVoice(id); setRenaming(false); setConfirmDel(false); bump(); }}>{st.profiles[id].name} · {Object.keys(st.profiles[id].clips || {}).length}/9</button>)}
+        {!adding && <button className="chip" style={{...small,borderStyle:'dashed'}} onClick={() => { setAdding(true); setNewName(''); }}>+ {t('Add a voice', '목소리 추가')}</button>}
+      </div>
+      {adding && <div style={{display:'flex',gap:4,marginBottom:6}}>
+        <input value={newName} onChange={e => setNewName(e.target.value)} placeholder={t('Name, e.g. Emma', '이름 (예: 에마)')} style={{flex:1,minWidth:0,padding:'5px 8px',border:'1.5px solid var(--border)',borderRadius:8,fontSize:13,fontFamily:'inherit'}}/>
+        <button className="ghost-btn" style={{padding:'4px 12px',fontSize:13}} onClick={() => { addVoiceProfile(newName); setAdding(false); bump(); }}>{t('Add', '추가')}</button>
+        <button className="ghost-btn" style={{padding:'4px 10px',fontSize:13}} onClick={() => setAdding(false)}>✕</button>
+      </div>}
+      <div style={{display:'flex',gap:8,alignItems:'center',marginBottom:8,fontSize:12.5}}>
+        {renaming ? <>
+          <input value={renameTo} onChange={e => setRenameTo(e.target.value)} style={{flex:1,minWidth:0,padding:'4px 8px',border:'1.5px solid var(--border)',borderRadius:8,fontSize:13,fontFamily:'inherit'}}/>
+          <button className="ghost-btn" style={{padding:'3px 10px',fontSize:12.5}} onClick={() => { renameVoiceProfile(st.active, renameTo); setRenaming(false); bump(); }}>{t('Save name', '이름 저장')}</button>
+        </> : <>
+          <button onClick={() => { setRenaming(true); setRenameTo(cur.name); }} style={{border:'none',background:'transparent',color:'#a8823f',fontWeight:800,cursor:'pointer',fontFamily:'inherit',padding:0}}>{t('Rename', '이름 바꾸기')}</button>
+          {ids.length > 1 && (confirmDel
+            ? <button onClick={() => { deleteVoiceProfile(st.active); setConfirmDel(false); bump(); }} style={{border:'none',background:'transparent',color:'#b5483b',fontWeight:900,cursor:'pointer',fontFamily:'inherit',padding:0}}>{t('Really delete this voice?', '정말 삭제할까요?')}</button>
+            : <button onClick={() => setConfirmDel(true)} style={{border:'none',background:'transparent',color:'#b5483b',fontWeight:800,cursor:'pointer',fontFamily:'inherit',padding:0}}>{t('Delete this voice', '이 목소리 삭제')}</button>)}
+        </>}
+      </div>
+      <div style={{fontSize:12.5,color:'#6f665b',marginBottom:8,lineHeight:1.5}}>{t('Tap a number, say it out loud, tap again to stop. Listen with ▶, then press ✓ to keep it (or ✕ and try again). Kept voices are saved on this device only and used right away.', '숫자를 탭하고 소리 내어 말한 뒤 다시 탭해서 멈추세요. ▶로 들어보고 마음에 들면 ✓로 저장, 아니면 ✕로 버리고 다시 녹음하세요. 저장한 목소리는 이 기기에만 보관되고 바로 쓸 수 있어요.')}</div>
       <div style={{display:'flex',gap:6,flexWrap:'wrap',justifyContent:'center'}}>
-        {COUNT_WORD_LABELS.map(w => <VoiceWordRecorder key={w + version} word={w} onChange={() => setVersion(v => v + 1)}/>)}
+        {COUNT_WORD_LABELS.map(w => <VoiceWordRecorder key={st.active + w + version} word={w} onChange={bump}/>)}
       </div>
     </div>
   );
@@ -2484,6 +2537,7 @@ function MetronomeDial() {
   return (
     <div className="try-box" style={actBox}>
       <div style={actTitle}>The metronome</div>
+      <SoundSettings/>
       <div style={actNote}>Choose the time signature and how each beat is split. The first beat of the bar is the strongest click, the split notes the softest. “Tap” measures your own tempo.</div>
       <div style={{display:'flex',alignItems:'center',gap:14}}>
         <svg viewBox="0 0 100 120" style={{width:90,flex:'0 0 90px'}}>
