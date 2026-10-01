@@ -4160,6 +4160,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 - **Phase 241 (2026-10-01) -- Beams + two rhythm games (Notes & rests).** New tools: `beam-apples` ('One beat = one apple': Apple SVG cut into halves/quarters = beamed quavers/semiquavers, beam on/off, plus a 4-beat 'slice a bar' with playback; uses `Apple`, `BeatNotes`, `playBeatPattern`), `fix-the-bar` (tap symbols until 4/4 adds up; many answers accepted), `heard-bar` (hear sound/silence per beat, pick the written bar). All also lesson steps in Notes & rests and in CHAPTER_TOOL_ORDER. Verified by compile + Playwright screenshots, 0 errors.
 
+- **Phase 242 (2026-10-01) -- Note/rest naming: beats on every row, full dotted set.** Every row shows its beat count; dotted rows now run semibreve to semiquaver, in the same order as the plain ones.
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
