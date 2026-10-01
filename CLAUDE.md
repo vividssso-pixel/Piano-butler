@@ -4144,6 +4144,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 - **Phase 233 (2026-10-01) -- Tempo chapter tools.** "The tempo race" (Slow to fast lanes) is now a standalone Toolbox tool (`tempo-race`, component `TempoLanes`, new icon). `speed-change` ("rit. and accel.") moved from Terms to Tempo, so there is no duplicate (Terms keeps term-cards + term-match). Tempo lesson steps reordered: Slow to fast → Changing speed → The metronome. Tempo category now has 3 tools. Fixed order in `CHAPTER_TOOL_ORDER`.
 
+- **Phase 234 (2026-10-01) -- Metronome voice.** `SoundSettings` (click/voice/My voice) is now embedded in the Metronome tool. My-voice recording is now take-then-keep: record a count word, listen (▶), press ✓ to save (localStorage, device only) or ✕ to discard; nothing is saved until ✓. Verified with a fake microphone in headless Chromium (draft not stored until Keep). Not a shared/built-in voice: clips stay on that device; making it a built-in voice for all students would need audio files in audio/count/.
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 

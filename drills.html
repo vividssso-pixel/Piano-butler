@@ -2091,6 +2091,7 @@ const COUNT_WORD_LABELS = ['1', '2', '3', '4', '5', '6', '7', '8', 'and'];
 function VoiceWordRecorder({ word, onChange }) {
   const [state, setState] = useState('idle'); // idle | recording | error
   const [hasClip, setHasClip] = useState(() => !!loadMyVoice()[word]);
+  const [draft, setDraft] = useState(null); // a fresh take, not saved until you press keep
   const mediaRef = useRef(null);
   const chunksRef = useRef([]);
   const stopTimer = useRef(null);
@@ -2105,7 +2106,7 @@ function VoiceWordRecorder({ word, onChange }) {
         stream.getTracks().forEach(tr => tr.stop());
         const blob = new Blob(chunksRef.current, { type: mr.mimeType || 'audio/webm' });
         const reader = new FileReader();
-        reader.onloadend = () => { saveMyVoiceClip(word, reader.result); setHasClip(true); setState('idle'); onChange && onChange(); };
+        reader.onloadend = () => { setDraft(reader.result); setState('idle'); };
         reader.readAsDataURL(blob);
       };
       mediaRef.current = mr;
@@ -2116,22 +2117,28 @@ function VoiceWordRecorder({ word, onChange }) {
   }
   function stopRecording() { if (stopTimer.current) clearTimeout(stopTimer.current); if (mediaRef.current && mediaRef.current.state === 'recording') mediaRef.current.stop(); }
   function play() {
-    const dataUrl = loadMyVoice()[word]; if (!dataUrl) return;
+    const dataUrl = draft || loadMyVoice()[word]; if (!dataUrl) return;
     const ctx = getAudio(); if (!ctx) return;
     try { ctx.decodeAudioData(dataUrlToArrayBuffer(dataUrl), (b) => { const s = ctx.createBufferSource(); s.buffer = b; s.connect(ctx.destination); s.start(); }, () => {}); } catch (e) {}
   }
   function clear() { saveMyVoiceClip(word, null); setHasClip(false); onChange && onChange(); }
+  function keep() { saveMyVoiceClip(word, draft); setDraft(null); setHasClip(true); onChange && onChange(); }
   return (
     <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2,width:42}}>
       <div style={{fontSize:12,fontWeight:900,color:'var(--muted)'}}>{word === 'and' ? '&' : word}</div>
       <button onClick={state === 'recording' ? stopRecording : startRecording}
         title={hasClip ? t('Re-record', '다시 녹음') : t('Record', '녹음')}
         style={{width:34,height:34,borderRadius:17,border:'2px solid ' + (state === 'recording' ? '#b5483b' : hasClip ? '#4f7a45' : 'var(--border)'),
-          background:state === 'recording' ? '#b5483b' : hasClip ? '#dcebd5' : '#fff',
-          color:state === 'recording' ? '#fff' : hasClip ? '#4f7a45' : 'var(--muted)',fontSize:14,cursor:'pointer'}}>
-        {state === 'recording' ? '■' : hasClip ? '✓' : '●'}
+          background:state === 'recording' ? '#b5483b' : draft ? '#f3ead8' : hasClip ? '#dcebd5' : '#fff',
+          color:state === 'recording' ? '#fff' : draft ? '#a8823f' : hasClip ? '#4f7a45' : 'var(--muted)',fontSize:14,cursor:'pointer'}}>
+        {state === 'recording' ? '■' : draft ? '●' : hasClip ? '✓' : '●'}
       </button>
-      {hasClip && state !== 'recording' && <div style={{display:'flex',gap:3}}>
+      {draft && state !== 'recording' && <><div style={{fontSize:9.5,fontWeight:800,color:'#a8823f',lineHeight:1.1,textAlign:'center'}}>{t('keep it?', '저장할까요?')}</div><div style={{display:'flex',gap:4}}>
+        <button onClick={play} title={t('Listen', '들어보기')} style={{border:'none',background:'transparent',fontSize:13,cursor:'pointer',color:'#a8823f',padding:0}}>▶</button>
+        <button onClick={keep} title={t('Keep this take', '이 녹음 저장')} style={{border:'none',background:'transparent',fontSize:14,fontWeight:900,cursor:'pointer',color:'#4f7a45',padding:0}}>✓</button>
+        <button onClick={() => setDraft(null)} title={t('Discard', '버리기')} style={{border:'none',background:'transparent',fontSize:13,cursor:'pointer',color:'#b5483b',padding:0}}>✕</button>
+      </div></>}
+      {!draft && hasClip && state !== 'recording' && <div style={{display:'flex',gap:3}}>
         <button onClick={play} title={t('Play', '재생')} style={{border:'none',background:'transparent',fontSize:12,cursor:'pointer',color:'#a8823f',padding:0}}>▶</button>
         <button onClick={clear} title={t('Delete', '삭제')} style={{border:'none',background:'transparent',fontSize:12,cursor:'pointer',color:'#b5483b',padding:0}}>✕</button>
       </div>}
@@ -2146,7 +2153,7 @@ function MyVoiceRecorder() {
   const [version, setVersion] = useState(0);
   return (
     <div style={{width:'100%',background:'#fbf3e2',border:'1px solid #e8dcc0',borderRadius:10,padding:'10px',marginTop:2}}>
-      <div style={{fontSize:12.5,color:'#6f665b',marginBottom:8,lineHeight:1.5}}>{t('Tap a number, say it out loud, tap again to stop -- recorded on this device only, used right away.', '숫자를 탭하고 소리 내어 말한 뒤 다시 탭해서 멈추세요 -- 이 기기에만 저장되고, 저장 즉시 바로 쓸 수 있어요.')}</div>
+      <div style={{fontSize:12.5,color:'#6f665b',marginBottom:8,lineHeight:1.5}}>{t('Tap a number, say it out loud, tap again to stop. Listen with ▶, then press ✓ to keep it (or ✕ and try again). Kept voices are saved on this device only and used right away.', '숫자를 탭하고 소리 내어 말한 뒤 다시 탭해서 멈추세요. ▶로 들어보고 마음에 들면 ✓로 저장, 아니면 ✕로 버리고 다시 녹음하세요. 저장한 목소리는 이 기기에만 보관되고 바로 쓸 수 있어요.')}</div>
       <div style={{display:'flex',gap:6,flexWrap:'wrap',justifyContent:'center'}}>
         {COUNT_WORD_LABELS.map(w => <VoiceWordRecorder key={w + version} word={w} onChange={() => setVersion(v => v + 1)}/>)}
       </div>
@@ -2484,6 +2491,7 @@ function MetronomeDial() {
   return (
     <div className="try-box" style={actBox}>
       <div style={actTitle}>The metronome</div>
+      <SoundSettings/>
       <div style={actNote}>Choose the time signature and how each beat is split. The first beat of the bar is the strongest click, the split notes the softest. “Tap” measures your own tempo.</div>
       <div style={{display:'flex',alignItems:'center',gap:14}}>
         <svg viewBox="0 0 100 120" style={{width:90,flex:'0 0 90px'}}>
