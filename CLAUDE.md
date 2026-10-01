@@ -4164,6 +4164,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 - **Phase 243 (2026-10-01) -- Whole-bar rest merged into 'Same name, note or rest'.** `WholeBarRest` became `WholeBarRestBody`, shown under the naming table; separate tool `whole-bar-rest` and its lesson step removed (TOOLS, TOOL_META, CHAPTER_TOOL_ORDER, icon).
 
+- **Phase 244 (2026-10-01) -- Beams in MelodyStaff + bar-lines in 9 time signatures.** `MelodyStaff` now beams quavers that share a beat (group stem direction by majority, flat beam, viewBox grows to fit) instead of lone flags, so all Reading-tunes tools/tunes show real beaming. `BarLineBuilder` offers 2/4, 3/4, 4/4, 2/2, 5/4 (local `BEAT_EXTRA`), 3/8, 6/8, 9/8, 12/8 (8-bottom bars use the small pool; 9/8 and 12/8 show 2 bars); `fillBar` allows up to 8 items for the small pool. Verified compile + Playwright, 0 errors.
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
