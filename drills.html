@@ -6792,7 +6792,7 @@ function playTimeSig(t, bpm) {
 
 // ─── Time Signatures: hands-on round (Phase 109) ─────────────────────────────────
 // 1. Count along: the beats light up in time, strong beat biggest, and loop until stopped.
-const BEAT_EXTRA = { '5/4': { id: '5/4', top: 5, bottom: 4, kind: 'simple', beats: 5, feel: 5, unit: 'crotchet', use: 'five crotchet beats, grouped 3 + 2 -- ONE two three FOUR five', pattern: [1, 0, 0, 0.5, 0] } };
+const BEAT_EXTRA = { '3/2': { id: '3/2', top: 3, bottom: 2, kind: 'simple', beats: 6, feel: 3, unit: 'minim', use: 'three minim beats -- a slow, broad ONE two three', pattern: [1, 0, 0] }, '5/4': { id: '5/4', top: 5, bottom: 4, kind: 'simple', beats: 5, feel: 5, unit: 'crotchet', use: 'five crotchet beats, grouped 3 + 2 -- ONE two three FOUR five', pattern: [1, 0, 0, 0.5, 0] } };
 function BeatPulse() {
   const IDS = ['2/4', '3/4', '4/4', '2/2', '5/4', '3/8', '6/8', '9/8', '12/8'];
   const [id, setId] = useState('3/4');
@@ -7738,8 +7738,15 @@ function GrandStaffIntro() {
 }
 function TimeSigNumbers() {
   const row = useTimeSigRows();
+  const [mode, setMode] = useState('simple');
+  const simple = [...TIME_SIGS.filter(x => x.kind === 'simple' && x.id !== '3/8'), BEAT_EXTRA['3/2'], BEAT_EXTRA['5/4'], TS['3/8']].sort((a, b) => ['2/4', '3/4', '4/4', '2/2', '3/2', '5/4', '3/8'].indexOf(a.id) - ['2/4', '3/4', '4/4', '2/2', '3/2', '5/4', '3/8'].indexOf(b.id));
   return (
     <div>
+      <div style={{display:'flex',gap:6,marginBottom:12}}>
+        <button className={'chip' + (mode === 'simple' ? ' active' : '')} style={{padding:'4px 14px',fontSize:14,fontWeight:800}} onClick={() => setMode('simple')}>{t('Simple time', '단순박자')}</button>
+        <button className={'chip' + (mode === 'compound' ? ' active' : '')} style={{padding:'4px 14px',fontSize:14,fontWeight:800}} onClick={() => setMode('compound')}>{t('Compound time', '겹박자')}</button>
+      </div>
+      {mode === 'simple' ? <>
       <div style={{display:'flex',alignItems:'center',gap:14,background:'#fff',borderRadius:10,padding:'10px 14px',marginBottom:14}}>
         <TSig top={3} bottom={4} size={46}/>
         <div style={{fontSize:14,lineHeight:1.6}}>
@@ -7748,8 +7755,9 @@ function TimeSigNumbers() {
         </div>
       </div>
       <div style={{fontSize:12,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',margin:'0 0 6px'}}>{t('Simple time -- each beat splits into 2 -- tap to hear', '단순박자 -- 각 박이 2개로 나뉘어요 -- 눌러서 들어보세요')}</div>
-      <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:14}}>{TIME_SIGS.filter(t => t.kind === 'simple').map(row)}</div>
-      </div>
+      <div style={{display:'flex',flexDirection:'column',gap:6,marginBottom:14}}>{simple.map(row)}</div>
+      </> : <CompoundTimeList/>}
+    </div>
   );
 }
 function CompoundTimeList() {
@@ -14517,8 +14525,7 @@ const TOOLS = [
   { id: 'bar-lines', ch: 'time-signatures', title: 'Bar lines (and double bar, repeat signs)', blurb: 'What a bar line is, the other lines at the end of a bar, then put them in.', C: () => <BarLinesFull/> },
   { id: 'beat-doubler', ch: 'time-signatures', title: 'The bottom number changes the beat', blurb: '8 on the bottom doubles every note; 2 on the bottom halves it.', C: () => <BeatDoubler/> },
   { id: 'grouping', ch: 'time-signatures', title: 'Group the quavers', blurb: 'Which bar is beamed right for 2/4, 3/4, 4/4, 6/8?', C: () => <GroupingGame/> },
-  { id: 'time-sig-numbers', ch: 'time-signatures', title: 'The two numbers (simple time)', blurb: 'Top = beats in a bar, bottom = which note is the beat. Tap each to hear it.', C: () => <TimeSigNumbers/> },
-  { id: 'compound-time', ch: 'time-signatures', title: 'Compound time: 6/8, 9/8, 12/8', blurb: 'Quaver beats in groups of three -- tap each to hear it.', C: () => <CompoundTimeList/> },
+  { id: 'time-sig-numbers', ch: 'time-signatures', title: 'The two numbers: simple & compound time', blurb: 'Top = beats in a bar, bottom = which note is the beat. Switch between simple and compound; tap each to hear it.', C: () => <TimeSigNumbers/> },
   { id: 'note-value-tree', ch: 'note-values', title: 'The note-value tree', blurb: 'Every note splits into two of the next one down.', C: () => <NoteValueTree/> },
   { id: 'dotted-notes', ch: 'note-values', title: 'Dotted notes', blurb: 'A dot adds half again.', C: () => <DottedNotesCard/> },
   { id: 'rhythm-cards-all', ch: 'rhythm', title: 'The 40 rhythm cards', blurb: 'One-bar rhythms in 4/4, easiest first -- tap to hear.', C: () => <RhythmCardsBrowser/> },
@@ -14741,7 +14748,7 @@ const TOOL_CATS = [
 // kinds: show = show & explain, game = student does it, ear = listening, write = written theory, home = home practice
 const TOOL_META = {
   'complete-melody': ['steps', 1, 2, 'game ear'],
-  'rest-grouping': ['rnotes', 2, 3, 'show'], 'duplets': ['rrhythm', 3, 3, 'show'], 'common-cut': ['rtime', 1, 2, 'show ear'], 'time-sig-numbers': ['rtime', 0, 1, 'show ear'], 'compound-time': ['rrhythm', 2, 3, 'show ear'], 'note-value-tree': ['rnotes', 0, 1, 'show'], 'dotted-notes': ['rnotes', 1, 2, 'show'], 'rhythm-cards-all': ['rrhythm', 1, 3, 'show ear'], 'all-keys': ['scales', 2, 3, 'show'], 'major-shape': ['scales', 1, 2, 'show'], 'major-fingering': ['scales', 1, 3, 'game show'], 'minor-fingering': ['scales', 2, 3, 'show'], 'dc-ds-coda': ['words', 1, 2, 'show'], 'grand-staff': ['body', 0, 0, 'show'], 'hand-split': ['body', 0, 0, 'show'], 'clef-costume': ['body', 0, 0, 'show'], 'finger-friends': ['body', 0, 0, 'show'], 'best-friends': ['tones', 1, 1, 'show'], 'accidental-cards': ['tones', 1, 2, 'show'],
+  'rest-grouping': ['rnotes', 2, 3, 'show'], 'duplets': ['rrhythm', 3, 3, 'show'], 'common-cut': ['rtime', 1, 2, 'show ear'], 'time-sig-numbers': ['rtime', 0, 3, 'show ear'], 'note-value-tree': ['rnotes', 0, 1, 'show'], 'dotted-notes': ['rnotes', 1, 2, 'show'], 'rhythm-cards-all': ['rrhythm', 1, 3, 'show ear'], 'all-keys': ['scales', 2, 3, 'show'], 'major-shape': ['scales', 1, 2, 'show'], 'major-fingering': ['scales', 1, 3, 'game show'], 'minor-fingering': ['scales', 2, 3, 'show'], 'dc-ds-coda': ['words', 1, 2, 'show'], 'grand-staff': ['body', 0, 0, 'show'], 'hand-split': ['body', 0, 0, 'show'], 'clef-costume': ['body', 0, 0, 'show'], 'finger-friends': ['body', 0, 0, 'show'], 'best-friends': ['tones', 1, 1, 'show'], 'accidental-cards': ['tones', 1, 2, 'show'],
   'flash-cards': ['pitch', 1, 2, 'game'], 'grace-write': ['words', 3, 3, 'write'],
   'clef-basics': ['pitch', 0, 1, 'show'], 'alto-clef': ['pitch', 3, 3, 'show'], 'staff-basics': ['pitch', 0, 1, 'show'], 'anacrusis': ['rrhythm', 2, 3, 'show'], 'minor-forms': ['scales', 1, 2, 'show'],
   'count-more': ['rrhythm', 2, 3, 'show game'], 'grouping': ['rrhythm', 2, 3, 'game write'], 'pedal': ['expression', 2, 3, 'show ear'],
@@ -15308,7 +15315,7 @@ function ToolRow({ t, color, starred, onStar, open, onToggle, onChapter }) {
 // (or when onChapter isn't offered) just shows its cards with no header.
 // Phase 226: tools inside a chapter group follow that chapter's own step order.
 // New lesson-only pieces now live in the Toolbox too; borrow a sibling's icon until the design-phase redraw.
-[['time-sig-numbers', 'count-along'], ['compound-time', 'regroup'], ['note-value-tree', 'split-it'], ['dotted-notes', 'dot-lab'], ['rhythm-cards-all', 'make-card'], ['all-keys', 'circle-fifths'],
+[['time-sig-numbers', 'count-along'], ['note-value-tree', 'split-it'], ['dotted-notes', 'dot-lab'], ['rhythm-cards-all', 'make-card'], ['all-keys', 'circle-fifths'],
  ['major-shape', 'build-major'], ['major-fingering', 'scale-finder'], ['minor-fingering', 'minor-forms'], ['dc-ds-coda', 'road-map'], ['grand-staff', 'hand-clef-match'], ['hand-split', 'hand-clef-match'],
  ['clef-costume', 'hand-clef-match'], ['finger-friends', 'finger-numbers'], ['best-friends', 'tone-semitone'], ['accidental-cards', 'sharp-flat']].forEach(([a, b]) => { if (!TOOL_ICON[a] && TOOL_ICON[b]) TOOL_ICON[a] = TOOL_ICON[b]; });
 const CHAPTER_TOOL_ORDER = {
@@ -15335,7 +15342,7 @@ const CHAPTER_TOOL_ORDER = {
   'styles': ['texture-types', 'texture-spotter', 'genre-traits'],
   'tempo': ['tempo-race', 'speed-change', 'metronome'],
   'terms': ['term-cards', 'term-match'],
-  'time-signatures': ['time-sig-numbers', 'count-along', 'common-cut', 'bar-lines', 'beat-doubler', 'compound-time', 'regroup', 'grouping', 'duplets'],
+  'time-signatures': ['time-sig-numbers', 'count-along', 'common-cut', 'bar-lines', 'beat-doubler', 'regroup', 'grouping', 'duplets'],
   'tones': ['tone-semitone', 'best-friends', 'sharp-flat', 'accidental-bar', 'accidental-cards', 'chromatic'],
 };
 function ChapterGroups({ list, colorOf, starIds, onStar, onOpen, onChapter, inline }) {
