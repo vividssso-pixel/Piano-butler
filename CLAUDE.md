@@ -4202,6 +4202,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 | 262 | 2026-10-02 | **Design phase stage 1 (Toolbox):** Sohyun chose the "staff look" (navy #26296b + coral #e4572e, five-line staff headers with the title knocked out, Playfair Display titles, note-head bullets). drills.html: new tokens `--navy/--coral/--navy-soft/--navy-line`, Playfair font link, `.stf-head/.stf-title/.stf-count` CSS, Toolbox topic header and ToolRow restyled (level now inline after the blurb, no card boxes). Verified: Babel compile + Playwright at 390px and 1000px, no page errors. Mockups: Design artifact "Toolbox Header Options" (rows V3/V6). Not yet rolled out: page background/other screens, home, tool pages, student view. |
 
+| 263 | 2026-10-02 | **Design phase stage 2 (global colours):** drills.html palette switched file-wide from ink/brass/buttercream to navy #26296b / coral #e4572e / paper #f6f4ef (brass #a8823f -> coral, ink #241f1a -> navy, borders -> #dcdcea, muted browns -> #6d6f9c); h1-h3 use Playfair Display. Old illustration icons got the same swap (their brass accents are now coral) and are still to be redrawn. Verified: Babel compile, 390/1000px screenshots, 139-tool sweep with 0 errors. Still old-style: tool-page layouts, student view, home layout, tab bar, curve motif. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
