@@ -119,6 +119,12 @@
     .tool-art svg { display: block; width: 100%; height: 100%; }
     .tool-art svg > rect:first-child { rx: 0; ry: 0; }
     @media (max-width: 520px) { .tool-art { flex-basis: 104px; height: 118px; } }
+    .tool-art-sm { flex: 0 0 48px; width: 48px; height: 48px; display: block; overflow: hidden; border-radius: 10px; }
+    .tool-art-sm svg { display: block; width: 100%; height: 100%; }
+    .cat-art { flex: 0 0 64px; width: 64px; height: 64px; display: block; overflow: hidden; border-radius: 14px; }
+    .cat-art svg { display: block; width: 100%; height: 100%; }
+    .tool-row-btn:hover { background: #fbf6ea; }
+    @media (max-width: 520px) { .tool-lv { display: none; } }
 
     /* Phase 94: Game (pixel) mode */
     .pixel, .pixel * { font-family: 'Press Start 2P', ui-monospace, monospace !important; }
@@ -15273,19 +15279,20 @@ function ToolRow({ t, color, starred, onStar, open, onToggle, onChapter }) {
   const lv = m.lo === 0 && m.hi === 3 ? 'All levels' : m.lo === m.hi ? ['Beginner', 'Prelim', 'Grade 1–2', 'Grade 3–4'][m.lo] : LO[m.lo] + '–' + HI[m.hi];
   const Icon = TOOL_ICON[t.id];
   const chapter = DRILLS.find(d => d.id === t.ch);
+  const ell = {display:'block',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'};
   return (
-    <div style={{background:'#fff',border:'1.5px solid var(--border)',borderRadius:14,boxShadow:'0 1px 3px rgba(36,31,26,0.05)',overflow:'hidden'}}>
-      <div style={{display:'flex',alignItems:'stretch'}}>
-        <button onClick={onToggle} aria-expanded={open} style={{flex:1,minWidth:0,display:'flex',alignItems:'stretch',gap:14,textAlign:'left',background:'transparent',border:'none',padding:0,cursor:'pointer',fontFamily:'inherit',color:'inherit'}}>
-          <span className="tool-art" style={Icon ? undefined : {background:color,opacity:0.85}}>{Icon ? <Icon/> : null}</span>
-          <span style={{flex:1,minWidth:0,display:'flex',flexDirection:'column',justifyContent:'center',padding:'10px 4px 10px 0'}}>
-            <span style={{display:'block',fontSize:17,fontWeight:900,lineHeight:1.25,letterSpacing:'-0.01em'}}>{t.title}</span>
-            <span style={{display:'block',fontSize:13,color:'#6f665b',lineHeight:1.45,marginTop:4}}>{t.blurb}</span>
-            <span style={{display:'block',fontSize:11,fontWeight:800,color:'#a89c88',marginTop:8,textTransform:'uppercase',letterSpacing:'0.05em'}}>{lv}{m.kinds.includes('ear') ? ' · ♪' : ''}{m.kinds.includes('home') ? ' · home' : ''}</span>
+    <div style={{background:'#fff',border:'1.5px solid var(--border)',borderRadius:12,overflow:'hidden'}}>
+      <div style={{display:'flex',alignItems:'center'}}>
+        <button className="tool-row-btn" onClick={onToggle} aria-expanded={open} style={{flex:1,minWidth:0,display:'flex',alignItems:'center',gap:12,textAlign:'left',background:'transparent',border:'none',padding:'6px 8px 6px 6px',cursor:'pointer',fontFamily:'inherit',color:'inherit'}}>
+          <span className="tool-art-sm" style={Icon ? undefined : {background:color,opacity:0.85}}>{Icon ? <Icon/> : null}</span>
+          <span style={{flex:1,minWidth:0}}>
+            <span style={{...ell,fontSize:15,fontWeight:900,lineHeight:1.3,letterSpacing:'-0.01em'}}>{t.title}</span>
+            <span style={{...ell,fontSize:12.5,color:'#6f665b',lineHeight:1.4,marginTop:1}}>{t.blurb}</span>
           </span>
-          <span style={{flex:'0 0 auto',alignSelf:'center',fontSize:15,color:'var(--muted)',transform:open ? 'rotate(180deg)' : 'none',transition:'transform .2s'}}>▾</span>
+          <span className="tool-lv" style={{flex:'0 0 auto',fontSize:10.5,fontWeight:800,color:'#a89c88',textTransform:'uppercase',letterSpacing:'0.05em',textAlign:'right'}}>{lv}{m.kinds.includes('ear') ? ' · ♪' : ''}{m.kinds.includes('home') ? ' · home' : ''}</span>
+          <span style={{flex:'0 0 auto',fontSize:14,color:'var(--muted)',transform:open ? 'rotate(180deg)' : 'none',transition:'transform .2s'}}>▾</span>
         </button>
-        {onStar && <button onClick={() => onStar(t.id)} title={starred ? 'Remove from kit' : 'Add to kit'} style={{flex:'0 0 auto',border:'none',background:'transparent',fontSize:20,cursor:'pointer',padding:'0 12px 0 8px',color:starred ? '#a8823f' : '#c9bfae'}}>{starred ? '★' : '☆'}</button>}
+        {onStar && <button onClick={() => onStar(t.id)} title={starred ? 'Remove from kit' : 'Add to kit'} style={{flex:'0 0 auto',border:'none',background:'transparent',fontSize:19,cursor:'pointer',padding:'0 12px 0 4px',color:starred ? '#a8823f' : '#c9bfae'}}>{starred ? '★' : '☆'}</button>}
       </div>
       {open && <div className="fade-up" style={{borderTop:'1px solid var(--border)',padding:'12px 14px 14px'}}>
         <t.C/>
@@ -15361,6 +15368,8 @@ function ChapterGroups({ list, colorOf, starIds, onStar, onOpen, onChapter, inli
 // array), so rather than render two independent, possibly-out-of-sync student pickers on one
 // screen, Toolbox is now a controlled component: PlanView (the merged screen) owns the one kits
 // array and passes down the active student's kit + a star-toggle function as props.
+// Category header art: borrows a representative tool's icon until the design phase redraws chapter heroes.
+const CAT_ART = { body: 'hand-shape', keys: 'key-houses', pitch: 'staff-basics', tones: 'tone-semitone', rpulse: 'steady-beat', rnotes: 'split-it', rtime: 'count-along', rrhythm: 'regroup', steps: 'mini-tune', rtempo: 'tempo-race', intervals: 'interval-ruler', scales: 'build-major', harmony: 'triad-stack', melody: 'tune-anatomy', expression: 'hairpin', words: 'road-map', ear: 'echo', about: 'keyboard-ancestors', practice: 'practice-timer' };
 function Toolbox({ onOpen, onChapter, kit, onStar }) {
   const [q, setQ] = useState('');
   const [lv, setLv] = useState(-1);
@@ -15411,7 +15420,7 @@ function Toolbox({ onOpen, onChapter, kit, onStar }) {
         return (
           <div key={c.id} id={'cat-' + c.id} style={{marginBottom:8}}>
             <button onClick={() => setOpenCats(o => ({...o, [c.id]: !isOpen}))} aria-expanded={isOpen} style={{width:'100%',display:'flex',alignItems:'center',gap:10,textAlign:'left',background:'#fff',border:'1.5px solid var(--border)',borderRadius:12,padding:'13px 14px',cursor:'pointer',fontFamily:'inherit',color:'var(--text)',boxShadow:'0 1px 3px rgba(36,31,26,0.05)'}}>
-              <span style={{width:12,height:12,borderRadius:'50%',background:c.color,flex:'0 0 auto'}}/>
+              {(() => { const rep = (CAT_ART[c.id] && TOOL_ICON[CAT_ART[c.id]]) ? CAT_ART[c.id] : (list.find(x => TOOL_ICON[x.id]) || {}).id; const CI = rep && TOOL_ICON[rep]; return CI ? <span className="cat-art"><CI/></span> : <span style={{width:12,height:12,borderRadius:'50%',background:c.color,flex:'0 0 auto'}}/>; })()}
               <span style={{flex:1,minWidth:0}}>
                 <span style={{display:'block',fontSize:16.5,fontWeight:900,letterSpacing:'-0.01em'}}>{c.name}</span>
                 <span style={{display:'block',fontSize:12.5,color:'var(--muted)',marginTop:2,lineHeight:1.35}}>{c.when}</span>
