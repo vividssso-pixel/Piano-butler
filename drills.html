@@ -12474,6 +12474,110 @@ function PianoStoryHero() {
   );
 }
 
+// ─── Phase 285: The Piano's Story -- inside the piano ───
+// Book p.180-181: press a key -> the hammer strikes the strings and a felt damper lifts so they can
+// vibrate; let go -> the damper falls back and stops them. The sustaining pedal lifts all the
+// dampers; the una corda pedal moves the hammers sideways so they strike only one of the (usually
+// two or three) strings for each note, softening the sound. Grand strings run flat, upright strings
+// stand up.
+function actionNote(ctx, soft) {
+  const t = ctx.currentTime + 0.01, f = 261.63, g = ctx.createGain(), lp = ctx.createBiquadFilter();
+  lp.type = 'lowpass'; lp.frequency.value = soft ? 1100 : 3400;
+  g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(soft ? 0.13 : 0.3, t + 0.006); g.gain.exponentialRampToValueAtTime(0.0001, t + 4.6);
+  [[1, 'triangle', 1], [2, 'sine', 0.32], [3, 'sine', 0.12], [4, 'sine', 0.05]].forEach(([h, ty, a]) => {
+    const o = ctx.createOscillator(), og = ctx.createGain(); o.type = ty; o.frequency.value = f * h * (1 + (h - 1) * 0.0008); og.gain.value = a;
+    o.connect(og); og.connect(lp); o.start(t); o.stop(t + 4.7); _clickNodes.push(o);
+  });
+  lp.connect(g); g.connect(ctx.destination);
+  return { damp() { const n = ctx.currentTime; try { g.gain.cancelScheduledValues(n); g.gain.setValueAtTime(Math.max(0.0002, g.gain.value), n); g.gain.exponentialRampToValueAtTime(0.0001, n + 0.08); } catch (e) {} } };
+}
+function PianoAction() {
+  const [down, setDown] = useState(false), [ham, setHam] = useState('rest'); // rest | strike | held
+  const [sus, setSus] = useState(false), [una, setUna] = useState(false), [ring, setRing] = useState(0); // ring: 0 = silent, else a run id
+  const note = useRef(null), timers = useRef([]), susRef = useRef(false);
+  susRef.current = sus;
+  useEffect(() => () => { timers.current.forEach(clearTimeout); if (note.current) note.current.damp(); }, []);
+  function press() {
+    if (down) return; const ctx = getAudio(); if (!ctx) return;
+    timers.current.forEach(clearTimeout); timers.current = [];
+    if (note.current) note.current.damp();
+    note.current = actionNote(ctx, una); setDown(true); setHam('strike');
+    const id = Date.now(); setRing(id);
+    timers.current.push(setTimeout(() => setHam(h => (h === 'strike' ? 'held' : h)), 110));
+    timers.current.push(setTimeout(() => setRing(r => (r === id ? 0 : r)), 4500));
+  }
+  function release() {
+    if (!down) return; setDown(false); setHam('rest');
+    if (!susRef.current) { if (note.current) note.current.damp(); note.current = null; setRing(0); }
+  }
+  function togglePedal() {
+    const nx = !sus; setSus(nx);
+    if (!nx && !down) { if (note.current) note.current.damp(); note.current = null; setRing(0); }
+  }
+  const lifted = down || sus, angle = ham === 'strike' ? 19 : ham === 'held' ? 12 : 0;
+  const N = '#26296b', C = '#e4572e', F = '#f1e4c8';
+  const lbl = (x, y, en, ko, anchor = 'start') => <text x={x} y={y} fontSize="10.5" fontWeight="800" fill="#6d6f9c" textAnchor={anchor}>{t(en, ko)}</text>;
+  const status = down ? (sus ? t('Key down, pedal down: the damper is up -- the string sings.', '건반 누름, 페달 누름: 댐퍼가 올라가 있어요 -- 현이 울려요.') : t('Key down: the hammer hit the string and bounced back; the damper is lifted, so it rings.', '건반을 누르면: 해머가 현을 치고 튕겨 나와요. 댐퍼가 올라가 있어서 소리가 울려요.'))
+    : ring ? t('You let go, but the pedal holds every damper up -- the sound keeps ringing and slowly fades.', '손을 뗐지만 페달이 모든 댐퍼를 들고 있어요 -- 소리가 계속 울리다가 천천히 사라져요.')
+    : sus ? t('Pedal down: all the dampers are lifted. Now press the key.', '페달을 밟으면: 모든 댐퍼가 들려요. 이제 건반을 눌러 봐요.') : t('Press and hold the key, then let go. Watch the hammer and the damper.', '건반을 꾹 눌렀다가 떼 보세요. 해머와 댐퍼를 잘 봐요.');
+  return (
+    <div className="try-box" style={actBox}>
+      <style>{'@keyframes pbWob{0%,100%{transform:scaleY(1)}50%{transform:scaleY(-1)}}@keyframes pbFade{from{opacity:1}to{opacity:0}}'}</style>
+      <div style={actTitle}>{t('Inside the piano', '피아노 속을 들여다보기')}</div>
+      <p style={actNote}>{t('A piano key is a lever. Press it and a felt hammer flies up to strike the string while a felt damper lifts off it. Let go and the damper drops back and stops the sound.', '피아노 건반은 지렛대예요. 누르면 펠트 해머가 날아올라 현을 치고, 펠트 댐퍼가 현에서 들려요. 손을 떼면 댐퍼가 다시 내려와 소리를 멈춰요.')}</p>
+      <svg viewBox="0 0 320 176" width="100%" style={{display:'block',maxWidth:540,touchAction:'none',userSelect:'none'}}
+        onPointerDown={(e) => { e.preventDefault(); press(); }} onPointerUp={release} onPointerLeave={release} onPointerCancel={release}>
+        {/* string: tuning pin to bridge */}
+        <circle cx="34" cy="40" r="5" fill={N}/><path d="M296 40 l10 10 h-20 Z" fill={N}/>
+        <line x1="34" x2="296" y1="40" y2="40" stroke={N} strokeWidth="1.6" opacity={ring ? 0.25 : 1}/>
+        {ring ? <g key={ring} style={{animation:'pbFade 4.4s linear forwards'}}>
+          <path d="M34 40 Q165 31 296 40" fill="none" stroke={C} strokeWidth="1.8" style={{transformBox:'fill-box',transformOrigin:'center',animation:'pbWob 0.09s linear infinite'}}/>
+        </g> : null}
+        {lbl(34, 24, 'string (steel)', '현 (강철)')}
+        {/* damper */}
+        <g style={{transform:lifted ? 'translateY(-13px)' : 'none',transition:'transform .12s ease'}}>
+          <line x1="122" x2="122" y1="6" y2="30" stroke={N} strokeWidth="2"/>
+          <rect x="110" y="28" width="24" height="11.5" rx="2" fill={F} stroke={N} strokeWidth="1.4"/>
+        </g>
+        {lbl(140, 16, 'damper (felt)', '댐퍼 (펠트)')}
+        {/* hammer on its shank, pivoting at (236, 96) */}
+        <g style={{transform:`rotate(${angle}deg)`,transformOrigin:'236px 96px',transition:ham === 'strike' ? 'transform .05s ease-out' : 'transform .12s ease'}}>
+          <line x1="236" x2="168" y1="96" y2="78" stroke={N} strokeWidth="2.6" strokeLinecap="round"/>
+          <path d="M155 64 h22 a6 6 0 0 1 6 6 v12 h-34 v-12 a6 6 0 0 1 6 -6 Z" fill={C} stroke={N} strokeWidth="1.4"/>
+          <circle cx="236" cy="96" r="3.4" fill={N}/>
+        </g>
+        {lbl(118, 98, 'hammer (felt)', '해머 (펠트)', 'end')}
+        {/* the push-up rod from the back of the key */}
+        <rect x="212" y="100" width="5" height="34" rx="2" fill={N} style={{transform:down ? 'translateY(-7px)' : 'none',transition:'transform .06s'}}/>
+        {/* key: a lever on the balance rail at (150, 146) */}
+        <g style={{transform:down ? 'rotate(-4deg)' : 'none',transformOrigin:'150px 146px',transition:'transform .06s'}}>
+          <rect x="16" y="134" width="262" height="10" rx="2" fill="#fffefa" stroke={N} strokeWidth="1.6"/>
+          <rect x="16" y="134" width="44" height="10" rx="2" fill={down ? C : '#fffefa'} stroke={N} strokeWidth="1.6"/>
+        </g>
+        <path d="M150 146 l-6 9 h12 Z" fill={N}/>
+        {lbl(16, 168, 'key -- press here', '건반 -- 여기를 눌러요')}
+        {/* una corda inset: looking down on one note's three strings */}
+        <g transform="translate(262 62)">
+          <rect x="-4" y="-8" width="56" height="52" rx="8" fill="#fffefa" stroke="#26296b" strokeOpacity="0.25"/>
+          {[10, 22, 34].map(x => <line key={x} x1={x} x2={x} y1="-2" y2="38" stroke={N} strokeWidth="1.6"/>)}
+          <rect x={una ? 26 : 4} y="12" width={una ? 14 : 36} height="12" rx="3" fill={C} opacity="0.85" style={{transition:'all .2s'}}/>
+          <text x="24" y="52" fontSize="9" fontWeight="800" fill="#6d6f9c" textAnchor="middle">{una ? t('1 string', '현 1줄') : t('3 strings', '현 3줄')}</text>
+        </g>
+      </svg>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center',marginTop:4}}>
+        <button className="primary-btn" style={{width:'auto',padding:'9px 18px',fontSize:14,touchAction:'none'}} onPointerDown={(e) => { e.preventDefault(); press(); }} onPointerUp={release} onPointerLeave={release}>{t('Hold the key', '건반 누르고 있기')}</button>
+        <button className={'chip' + (sus ? ' active' : '')} style={{padding:'5px 12px',fontSize:13.5}} onClick={togglePedal}>{t('Right pedal (sustain)', '오른쪽 페달 (댐퍼)')}</button>
+        <button className={'chip' + (una ? ' active' : '')} style={{padding:'5px 12px',fontSize:13.5}} onClick={() => setUna(u => !u)}>{t('Left pedal (una corda)', '왼쪽 페달 (우나 코르다)')}</button>
+      </div>
+      <div style={{fontSize:14,color:'var(--navy)',lineHeight:1.5,marginTop:8,minHeight:42}}>{status}</div>
+      <div style={{fontSize:12.5,color:'var(--navy-soft)',lineHeight:1.5,marginTop:4}}>
+        {una ? t('Una corda: the hammers slide sideways and strike only one of the strings -- softer and darker. Press the key to hear it.', '우나 코르다: 해머가 옆으로 비켜서 현을 한 줄만 쳐요 -- 더 작고 어두운 소리. 건반을 눌러 들어 봐요.')
+          : t('Most notes have two or three strings tuned the same. The middle pedal (sostenuto) holds up only the dampers of notes already down. In a grand the strings lie flat; in an upright they stand up.', '대부분의 음은 같은 음으로 맞춘 현이 두세 줄이에요. 가운데 페달(소스테누토)은 이미 누르고 있는 음의 댐퍼만 들고 있어요. 그랜드 피아노는 현이 누워 있고, 업라이트 피아노는 서 있어요.')}
+      </div>
+    </div>
+  );
+}
+
 function PianoStoryLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
@@ -12490,6 +12594,9 @@ function PianoStoryLearn({ onStart }) {
       <Step title="Cristofori and after">
         <ExplPianoStory3/>
         <PianoTimeline/>
+      </Step>
+      <Step title={t('Inside the piano', '피아노 속을 들여다보기')}>
+        <PianoAction/>
       </Step>
       <Step title="The style eras">
         <ErasTimeline/>
@@ -15704,6 +15811,7 @@ const TOOLS = [
   { id: 'keyboard-ancestors', ch: 'piano-story', title: 'Clavichord, harpsichord, piano', blurb: 'Pluck, tangent or hammer -- press harder and hear.', C: () => <><ExplPianoStory1/><KeyboardAncestors/></> },
   { id: 'touch-lengths', ch: 'dynamics', title: 'Legato, non legato, staccato', blurb: 'How long each note sounds -- and why Bach is non legato.', C: () => <><ExplPianoStory2/><TouchLengths/></> },
   { id: 'piano-timeline', ch: 'piano-story', title: 'The piano’s story', blurb: 'Cristofori 1700 to the 88-key grand.', C: () => <><ExplPianoStory3/><PianoTimeline/></> },
+  { id: 'piano-action', ch: 'piano-story', title: 'Inside the piano', blurb: 'Press a key: watch the hammer strike and the damper lift. Then try the two outer pedals.', C: () => <PianoAction/> },
   { id: 'eras', ch: 'piano-story', title: 'The style eras', blurb: 'Baroque to today: traits, composers, hear the style.', C: () => <ErasTimeline/> },
   { id: 'hz-explorer', ch: 'pitch-range', title: 'How high is a note? Hz', blurb: 'Vibrations per second; octaves double.', C: () => <><ExplPitchRange1/><HzExplorer/></> },
   { id: 'string-lab', ch: 'pitch-range', title: 'Shorter, tighter, higher', blurb: 'Slide a finger along a string, change how tight it is, and pluck -- watch and hear the note change.', C: () => <StringLab/> },
@@ -15855,6 +15963,7 @@ const TOOL_KO = {
   'keyboard-ancestors': ['클라비코드, 하프시코드, 피아노', '뜯기, 탄젠트, 해머 -- 더 세게 눌러 보고 들어 봐요.'],
   'touch-lengths': ['레가토, 논 레가토, 스타카토', '음이 얼마나 길게 울리는지 -- 그리고 바흐를 왜 논 레가토로 치는지.'],
   'piano-timeline': ['피아노 이야기', '1700년 크리스토포리부터 88건반 그랜드 피아노까지.'],
+  'piano-action': ['피아노 속을 들여다보기', '건반을 누르면: 해머가 치고 댐퍼가 들려요. 양쪽 페달도 눌러 봐요.'],
   'eras': ['시대별 양식', '바로크부터 오늘날까지: 특징, 작곡가, 양식을 들어 봐요.'],
   'hz-explorer': ['음은 얼마나 높을까? 헤르츠', '1초에 몇 번 떨리는지; 한 옥타브 올라가면 두 배.'],
   'string-lab': ['짧게, 팽팽하게, 높게', '현을 따라 손가락을 밀고, 팽팽함을 바꾸고, 튕겨 봐요 -- 음이 바뀌는 걸 보고 들어요.'],
@@ -16148,7 +16257,7 @@ const CHAPTER_SEARCH_TERMS = {
   'terms': 'italian term tempo word meaning',
   'tempo': 'tempo speed italian term metronome mark bpm',
   'practice': 'practice timer dice repetition',
-  'piano-story': 'history piano era composer',
+  'piano-story': 'history piano era composer hammer damper string key action inside pedal una corda sustain sostenuto grand upright',
   'pitch-range': 'pitch range hertz frequency octave instrument string length tension shorter tighter xylophone bars violin viola cello double bass bigger smaller ladder double',
   'melody': 'melody tune phrase phrasing phrase mark question answer antecedent consequent sequence motif contour breath comma',
   'form': 'form binary ternary rondo ABA AB ABACA section refrain episode structure same new repeat',
@@ -16238,7 +16347,7 @@ const TOOL_META = {
   'seventh-chords': ['harmony', 3, 3, 'show ear'], 'chord-extensions': ['harmony', 3, 3, 'show'],
   'road-map': ['words', 1, 2, 'game'], 'term-cards': ['words', 1, 3, 'home show'], 'term-match': ['words', 1, 3, 'game home'], 'term-sort': ['words', 1, 3, 'game'], 'term-mixer': ['words', 2, 3, 'show ear'],
   'practice-timer': ['practice', 0, 3, 'home'], 'practice-dice': ['practice', 0, 3, 'home game'], 'perfect-counter': ['practice', 0, 3, 'home'],
-  'keyboard-ancestors': ['about', 0, 3, 'show ear'], 'piano-timeline': ['about', 1, 3, 'show'], 'eras': ['about', 1, 3, 'show ear'], 'hz-explorer': ['about', 1, 3, 'show ear'], 'string-lab': ['about', 0, 3, 'show ear'], 'size-pitch': ['about', 0, 2, 'game ear'], 'octave-ladder': ['about', 1, 3, 'game ear'], 'range-chart': ['about', 1, 3, 'show ear'],
+  'keyboard-ancestors': ['about', 0, 3, 'show ear'], 'piano-timeline': ['about', 1, 3, 'show'], 'piano-action': ['about', 0, 3, 'show ear'], 'eras': ['about', 1, 3, 'show ear'], 'hz-explorer': ['about', 1, 3, 'show ear'], 'string-lab': ['about', 0, 3, 'show ear'], 'size-pitch': ['about', 0, 2, 'game ear'], 'octave-ladder': ['about', 1, 3, 'game ear'], 'range-chart': ['about', 1, 3, 'show ear'],
   'tune-anatomy': ['melody', 0, 1, 'show'], 'draw-tune': ['melody', 0, 2, 'game ear'], 'phrase-marks': ['melody', 1, 2, 'show'], 'question-answer': ['melody', 1, 2, 'game ear'], 'melody-sequence': ['melody', 1, 2, 'show ear'],
   'form-shapes': ['melody', 0, 2, 'show'], 'form-builder': ['melody', 0, 2, 'game ear'], 'same-or-new': ['melody', 1, 2, 'game ear'], 'rondo-refrain': ['melody', 1, 3, 'game ear'], 'binary-ternary-spot': ['melody', 1, 3, 'game ear'],
   'texture-types': ['about', 0, 2, 'show ear'], 'texture-spotter': ['about', 1, 3, 'game ear'], 'genre-traits': ['about', 1, 3, 'show'], 'swing-feel': ['about', 1, 3, 'game ear'], 'twelve-bar-blues': ['about', 2, 3, 'game ear'],
@@ -16811,7 +16920,7 @@ const CHAPTER_TOOL_ORDER = {
   'melody': ['tune-anatomy', 'draw-tune', 'phrase-marks', 'question-answer', 'melody-sequence'],
   'note-names': ['find-every', 'name-reveal', 'step-updown', 'letter-chain'],
   'note-values': ['note-value-tree', 'rest-grouping', 'note-rest-match', 'split-it', 'beam-apples', 'dotted-notes', 'dot-lab', 'fix-the-bar', 'fill-bar', 'heard-bar'],
-  'piano-story': ['keyboard-ancestors', 'piano-timeline', 'eras'],
+  'piano-story': ['keyboard-ancestors', 'piano-timeline', 'piano-action', 'eras'],
   'pitch-range': ['hz-explorer', 'string-lab', 'size-pitch', 'octave-ladder', 'range-chart'],
   'posture-hands': ['sit-check', 'arm-moves', 'arm-alignment', 'hand-shape', 'finger-friends', 'finger-numbers', 'posture-check'],
   'pulse': ['steady-beat', 'beat-or-rhythm', 'beat-groups', 'beat-target', 'count-aloud'],
