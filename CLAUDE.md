@@ -4200,6 +4200,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 - **Phase 250 (2026-10-02) -- Simple/Compound merged into one tool.** The Toolbox tool 'The two numbers' now has a Simple time / Compound time toggle (the separate `compound-time` tool is removed from TOOLS, meta, icon alias and chapter order). Simple list now also shows 3/2 and 5/4 alongside 2/4, 3/4, 4/4, 2/2, 3/8 (`BEAT_EXTRA` gained 3/2); level widened to Beginner-G4. Lesson step 'Compound time' unchanged. Verified: compile, both screenshots, lesson page loads, 0 errors.
 
+| 262 | 2026-10-02 | **Design phase stage 1 (Toolbox):** Sohyun chose the "staff look" (navy #26296b + coral #e4572e, five-line staff headers with the title knocked out, Playfair Display titles, note-head bullets). drills.html: new tokens `--navy/--coral/--navy-soft/--navy-line`, Playfair font link, `.stf-head/.stf-title/.stf-count` CSS, Toolbox topic header and ToolRow restyled (level now inline after the blurb, no card boxes). Verified: Babel compile + Playwright at 390px and 1000px, no page errors. Mockups: Design artifact "Toolbox Header Options" (rows V3/V6). Not yet rolled out: page background/other screens, home, tool pages, student view. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
