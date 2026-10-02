@@ -1325,6 +1325,270 @@ function Step({ n, total, title, color, open, done, onToggle, onDone, children, 
     </section>
   );
 }
+// ─── Staff look (Phase 272): one wide staff-line drawing per chapter, navy + coral on paper ───
+// Replaces the old cut-paper hero pictures on lesson pages. Every drawing sits on the same five-line
+// staff band (lines at y = 34..66, 8 apart, viewBox 360x100) and shows the chapter's own idea literally.
+const ART_N = '#26296b', ART_C = '#e4572e', ART_P = '#faf6ec';
+const ART_Y = [34, 42, 50, 58, 66];
+// a note head (+ stem) at x,y. open = hollow head (minim/semibreve), stem: 1 up, -1 down, 0 none
+function ANote({ x, y, c = ART_N, open, stem = 1, s = 1 }) {
+  const rx = 5.4 * s, ry = 3.9 * s;
+  return <g>
+    <ellipse cx={x} cy={y} rx={rx} ry={ry} transform={`rotate(-20 ${x} ${y})`} fill={open ? ART_P : c} stroke={c} strokeWidth={open ? 1.8 : 0}/>
+    {stem === 1 && <rect x={x + rx - 1.4} y={y - 26 * s} width={1.6} height={26 * s} fill={c}/>}
+    {stem === -1 && <rect x={x - rx - 0.2} y={y} width={1.6} height={26 * s} fill={c}/>}
+  </g>;
+}
+const ALedger = ({ x, y, w = 18 }) => <rect x={x - w / 2} y={y - 0.7} width={w} height={1.4} fill={ART_N}/>;
+const AText = ({ x, y, children, c = ART_N, size = 14, italic, anchor = 'middle', serif = true, weight = 800 }) =>
+  <text x={x} y={y} textAnchor={anchor} fontSize={size} fontWeight={weight} fontStyle={italic ? 'italic' : 'normal'} fill={c}
+    fontFamily={serif ? "'Playfair Display', Georgia, serif" : "Inter, sans-serif"}>{children}</text>;
+const AClef = () => <g transform="translate(6 -14) scale(0.8)"><ClefGlyph clef="treble" st="treble" yOf={dY} ink={ART_N}/></g>;
+// a sharp drawn as lines (fonts disagree on glyph metrics), centred on y
+const ASharp = ({ x, y, c = ART_N }) => <g fill={c}>
+  <rect x={x - 2.9} y={y - 10} width={1.4} height={21}/><rect x={x + 1.7} y={y - 11.5} width={1.4} height={21}/>
+  <path d={`M${x - 6} ${y - 0.6} L${x + 6} ${y - 4.4} L${x + 6} ${y - 7.2} L${x - 6} ${y - 3.4} Z`}/>
+  <path d={`M${x - 6} ${y + 6.4} L${x + 6} ${y + 2.6} L${x + 6} ${y - 0.2} L${x - 6} ${y + 3.6} Z`}/>
+</g>;
+const AKnock = ({ x, y, w, h }) => <rect x={x} y={y} width={w} height={h} fill={ART_P}/>;
+const ABar = ({ x }) => <rect x={x} y={34} width={1.6} height={32} fill={ART_N}/>;
+
+const STAFF_ART = {
+  // arched hand over the keys: knuckles high, fingertip on the key
+  'posture-hands': () => <g>
+    <AKnock x={92} y={20} w={176} h={64}/>
+    {[0, 1, 2, 3, 4, 5, 6].map(i => <rect key={i} x={100 + i * 23} y={64} width={22} height={18} rx={2} fill={ART_P} stroke={ART_N} strokeWidth={1.4}/>)}
+    <path d="M118 62 C 128 34, 160 22, 196 26 C 226 29, 244 38, 252 50" fill="none" stroke={ART_N} strokeWidth={3} strokeLinecap="round"/>
+    <path d="M196 26 C 206 36, 210 48, 206 62" fill="none" stroke={ART_N} strokeWidth={3} strokeLinecap="round"/>
+    <circle cx={206} cy={63} r={4} fill={ART_C}/>
+    <AText x={150} y={20} size={11} c={ART_C} serif={false} weight={700}>{t('round, like holding a ball', '공을 쥔 것처럼 둥글게')}</AText>
+  </g>,
+  // black-key groups of two and three
+  'first-steps': () => <g>
+    <AKnock x={70} y={22} w={220} h={64}/>
+    {[0, 1, 2, 3, 4, 5, 6].map(i => <rect key={i} x={80 + i * 29} y={26} width={28} height={56} rx={2} fill={ART_P} stroke={ART_N} strokeWidth={1.4}/>)}
+    {[0, 1, 3, 4, 5].map(i => <rect key={i} x={98 + i * 29} y={26} width={16} height={34} rx={2} fill={ART_N}/>)}
+    <path d="M96 20 h 49" stroke={ART_C} strokeWidth={2.4} strokeLinecap="round"/>
+    <path d="M183 20 h 78" stroke={ART_C} strokeWidth={2.4} strokeLinecap="round"/>
+    <AText x={120} y={14} size={11} c={ART_C} serif={false} weight={700}>2</AText>
+    <AText x={222} y={14} size={11} c={ART_C} serif={false} weight={700}>3</AText>
+  </g>,
+  // the musical alphabet: seven letters, then it starts again
+  'note-names': () => <g>
+    {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'A'].map((l, i) => <g key={i}>
+      <AKnock x={44 + i * 38} y={36} w={26} h={28}/>
+      <AText x={57 + i * 38} y={58} size={22} c={i === 7 ? ART_C : ART_N}>{l}</AText>
+    </g>)}
+    <path d="M318 74 C 300 92, 70 92, 57 74" fill="none" stroke={ART_C} strokeWidth={1.8} strokeDasharray="3 4"/>
+    <path d="M57 74 l -4 7 m 4 -7 l 6 5" fill="none" stroke={ART_C} strokeWidth={1.8} strokeLinecap="round"/>
+  </g>,
+  // a steady beat: four even crotchets with the count underneath
+  'pulse': () => <g>
+    <AClef/>
+    {[0, 1, 2, 3].map(i => <g key={i}>
+      <ANote x={110 + i * 60} y={50}/>
+      <circle cx={110 + i * 60} cy={86} r={4.5} fill={i === 0 ? ART_C : ART_N}/>
+      <AText x={110 + i * 60} y={24} size={13} c={ART_C} serif={false}>{i + 1}</AText>
+    </g>)}
+    <ABar x={330}/>
+  </g>,
+  // one semibreve = two minims = four crotchets, bar by bar
+  'note-values': () => <g>
+    <ANote x={60} y={50} open stem={0}/>
+    <ABar x={100}/>
+    <ANote x={130} y={50} open/><ANote x={170} y={50} open/>
+    <ABar x={200}/>
+    {[0, 1, 2, 3].map(i => <ANote key={i} x={222 + i * 26} y={50} c={ART_C}/>)}
+    <ABar x={330}/>
+    <AText x={60} y={88} size={11} serif={false} weight={700}>{t('4 beats', '4박')}</AText>
+    <AText x={150} y={88} size={11} serif={false} weight={700}>2 + 2</AText>
+    <AText x={262} y={88} size={11} c={ART_C} serif={false} weight={700}>1 + 1 + 1 + 1</AText>
+  </g>,
+  // a one-bar rhythm card: crotchet, two quavers, crotchet, crotchet
+  'rhythm': () => <g>
+    <AClef/>
+    <ANote x={110} y={50}/>
+    <ANote x={160} y={50} c={ART_C}/><ANote x={195} y={50} c={ART_C}/>
+    <rect x={163.6} y={24} width={36.4} height={4.5} fill={ART_C}/>
+    <ANote x={245} y={50}/><ANote x={295} y={50}/>
+    <ABar x={330}/>
+    {['1', '2 &', '3', '4'].map((t, i) => <AText key={i} x={[110, 180, 245, 295][i]} y={88} size={12} serif={false} weight={700} c={i === 1 ? ART_C : ART_N}>{t}</AText>)}
+  </g>,
+  // the staff itself: treble clef, line notes and space notes
+  'staff': () => <g>
+    <AClef/>
+    {[66, 58, 50, 42, 34].map((y, i) => <ANote key={'l' + i} x={100 + i * 26} y={y} stem={0}/>)}
+    {[62, 54, 46, 38].map((y, i) => <ANote key={'s' + i} x={240 + i * 24} y={y} c={ART_C} stem={0}/>)}
+    <AText x={152} y={90} size={11} serif={false} weight={700}>{t('lines', '줄')}</AText>
+    <AText x={276} y={90} size={11} c={ART_C} serif={false} weight={700}>{t('spaces', '칸')}</AText>
+  </g>,
+  // steps move to the very next note; skips jump over one
+  'reading-steps': () => <g>
+    <AClef/>
+    {[66, 62, 58, 54].map((y, i) => <ANote key={'a' + i} x={95 + i * 28} y={y} stem={0}/>)}
+    <path d="M100 74 q 56 14 112 -8" fill="none" stroke={ART_N} strokeWidth={1.4} strokeDasharray="3 3"/>
+    {[66, 58, 50, 42].map((y, i) => <ANote key={'b' + i} x={225 + i * 30} y={y} c={ART_C} stem={0}/>)}
+    <AText x={140} y={94} size={11} serif={false} weight={700}>{t('step, step, step', '한 칸씩, 한 칸씩')}</AText>
+    <AText x={270} y={94} size={11} c={ART_C} serif={false} weight={700}>{t('skip, skip, skip', '하나씩 건너뛰기')}</AText>
+  </g>,
+  // ledger lines: short extra lines for notes above and below the staff
+  'ledger-lines': () => <g>
+    <AClef/>
+    <ALedger x={110} y={74}/><ANote x={110} y={74} c={ART_C} stem={0}/>
+    <AText x={110} y={96} size={11} c={ART_C} serif={false} weight={700}>{t('middle C', '가운데 도')}</AText>
+    <ALedger x={170} y={74}/><ALedger x={170} y={82}/><ANote x={170} y={86} stem={0}/>
+    <ALedger x={240} y={26}/><ANote x={240} y={26} stem={0}/>
+    <ALedger x={300} y={26}/><ALedger x={300} y={18}/><ANote x={300} y={14} stem={0}/>
+  </g>,
+  // the tempo race: slow to fast
+  'tempo': () => <g>
+    <AKnock x={40} y={26} w={64} h={60}/>
+    <path d="M54 82 L 72 30 L 90 82 Z" fill={ART_P} stroke={ART_N} strokeWidth={2.2} strokeLinejoin="round"/>
+    <path d="M72 74 L 86 40" stroke={ART_C} strokeWidth={2.6} strokeLinecap="round"/>
+    <circle cx={83} cy={47} r={3.6} fill={ART_C}/>
+    <AKnock x={124} y={40} w={70} h={20}/><AText x={158} y={55} size={14} italic>Adagio</AText>
+    <AKnock x={204} y={40} w={70} h={20}/><AText x={238} y={55} size={14} italic>Allegro</AText>
+    <AKnock x={284} y={40} w={64} h={20}/><AText x={316} y={55} size={14} italic c={ART_C}>Presto</AText>
+    <path d="M128 84 H 340" stroke={ART_C} strokeWidth={2} strokeLinecap="round"/><path d="M340 84 l -7 -4 m 7 4 l -7 4" stroke={ART_C} strokeWidth={2} strokeLinecap="round"/>
+  </g>,
+  // time signature: top number counts the beats in each bar
+  'time-signatures': () => <g>
+    <AClef/>
+    <AText x={74} y={49} size={22} weight={900}>4</AText><AText x={74} y={66} size={22} weight={900}>4</AText>
+    {[0, 1, 2, 3].map(i => <ANote key={i} x={112 + i * 26} y={50}/>)}
+    <ABar x={206}/>
+    {[0, 1, 2, 3].map(i => <ANote key={'b' + i} x={226 + i * 26} y={50} c={ART_C}/>)}
+    <ABar x={330}/>
+    <AText x={150} y={90} size={11} serif={false} weight={700}>{t('4 beats', '4박')}</AText>
+    <AText x={266} y={90} size={11} c={ART_C} serif={false} weight={700}>{t('4 beats', '4박')}</AText>
+  </g>,
+  // dynamics and articulation: a crescendo hairpin, staccato and legato
+  'dynamics': () => <g>
+    <AKnock x={30} y={22} w={300} h={66}/>
+    <AText x={44} y={60} size={20} italic>p</AText>
+    <path d="M64 50 L 160 38 M 64 50 L 160 62" stroke={ART_C} strokeWidth={2.4} strokeLinecap="round"/>
+    <AText x={176} y={60} size={20} italic c={ART_C}>f</AText>
+    <ANote x={220} y={58}/><circle cx={222} cy={70} r={2} fill={ART_N}/>
+    <ANote x={246} y={58}/><circle cx={248} cy={70} r={2} fill={ART_N}/>
+    <ANote x={284} y={58} c={ART_C}/><ANote x={310} y={54} c={ART_C}/>
+    <path d="M282 70 q 15 12 30 -2" fill="none" stroke={ART_C} strokeWidth={1.8}/>
+  </g>,
+  // a repeat sign sends you back to the start
+  'signs': () => <g>
+    <AClef/>
+    {[0, 1, 2].map(i => <ANote key={i} x={120 + i * 50} y={[54, 46, 50][i]}/>)}
+    <circle cx={272} cy={46} r={2.6} fill={ART_N}/><circle cx={272} cy={54} r={2.6} fill={ART_N}/>
+    <rect x={280} y={34} width={1.6} height={32} fill={ART_N}/><rect x={286} y={34} width={5} height={32} fill={ART_N}/>
+    <path d="M286 82 C 260 96, 120 96, 96 82" fill="none" stroke={ART_C} strokeWidth={2.2}/>
+    <path d="M96 82 l 4 -7 m -4 7 l 8 2" stroke={ART_C} strokeWidth={2.2} strokeLinecap="round"/>
+    <AText x={190} y={12} size={11} c={ART_C} serif={false} weight={700}>{t('play it again', '다시 한 번')}</AText>
+  </g>,
+  // Italian terms written over the music
+  'terms': () => <g>
+    {[['Allegro', 64, 30, ART_N], ['dolce', 160, 56, ART_C], ['rit.', 236, 40, ART_N], ['a tempo', 304, 62, ART_N]].map(([w, x, y, c]) =>
+      <g key={w}><AKnock x={x - w.length * 5} y={y - 15} w={w.length * 10} h={20}/><AText x={x} y={y} size={16} italic c={c}>{w}</AText></g>)}
+  </g>,
+  // tone = two semitones; a semitone is the very next key
+  'tones': () => <g>
+    <AKnock x={70} y={14} w={220} h={78}/>
+    {[0, 1, 2, 3, 4, 5].map(i => <rect key={i} x={84 + i * 32} y={30} width={31} height={56} rx={2} fill={ART_P} stroke={ART_N} strokeWidth={1.4}/>)}
+    {[0, 1, 3, 4].map(i => <rect key={i} x={105 + i * 32} y={30} width={18} height={34} rx={2} fill={ART_N}/>)}
+    <path d="M100 24 q 14 -10 28 0" fill="none" stroke={ART_C} strokeWidth={2.2}/>
+    <AText x={114} y={12} size={11} c={ART_C} serif={false} weight={700}>{t('semitone', '반음')}</AText>
+    <path d="M196 24 q 16 -12 32 0" fill="none" stroke={ART_N} strokeWidth={2.2}/>
+    <AText x={212} y={10} size={11} serif={false} weight={700}>{t('tone', '온음')}</AText>
+  </g>,
+  // a scale climbs one step at a time from home note to home note
+  'scales': () => <g>
+    <AClef/>
+    <ALedger x={92} y={74}/>
+    {[74, 70, 66, 62, 58, 54, 50, 46].map((y, i) => <ANote key={i} x={92 + i * 32} y={y} c={i === 0 || i === 7 ? ART_C : ART_N} stem={0}/>)}
+    <AText x={92} y={96} size={11} c={ART_C} serif={false} weight={700}>C</AText>
+    <AText x={316} y={30} size={11} c={ART_C} serif={false} weight={700}>C</AText>
+  </g>,
+  // key signature: sharps arrive in the same order every time
+  'key-signatures': () => <g>
+    <AClef/>
+    {[[34, 'F'], [46, 'C'], [30, 'G'], [42, 'D']].map(([y, l], i) => <g key={i}>
+      <ASharp x={84 + i * 30} y={y} c={i === 0 ? ART_C : ART_N}/>
+      <AText x={88 + i * 30} y={92} size={12} c={i === 0 ? ART_C : ART_N} serif={false} weight={700}>{l}</AText>
+    </g>)}
+    <ANote x={260} y={50} stem={0}/><ANote x={300} y={46} stem={0}/>
+  </g>,
+  // an interval: count every letter from the bottom note to the top note
+  'intervals': () => <g>
+    <AClef/>
+    <ALedger x={110} y={74}/><ANote x={110} y={74} stem={0}/>
+    {[70, 66, 62].map((y, i) => <circle key={i} cx={150 + i * 40} cy={y} r={2.6} fill={ART_N} opacity={0.45}/>)}
+    <ANote x={280} y={58} c={ART_C} stem={0}/>
+    {['1', '2', '3', '4', '5'].map((n, i) => <AText key={i} x={110 + i * 42.5} y={94} size={12} c={i === 4 ? ART_C : ART_N} serif={false} weight={700}>{n}</AText>)}
+    <AKnock x={298} y={46} w={40} h={22}/><AText x={318} y={63} size={18} c={ART_C}>{t('5th', '5도')}</AText>
+  </g>,
+  // a triad: three notes stacked line-line-line on the root
+  'chords': () => <g>
+    <AClef/>
+    {[[110, [74, 66, 58], 'C'], [200, [58, 50, 42], 'G'], [290, [62, 54, 46], 'F']].map(([x, ys, l], k) => <g key={k}>
+      {ys[0] > 70 && <ALedger x={x} y={74}/>}
+      {ys.map((y, i) => <ANote key={i} x={x} y={y} c={i === 0 ? ART_C : ART_N} stem={0}/>)}
+      <AText x={x} y={22} size={15}>{l}</AText>
+    </g>)}
+  </g>,
+  // the piano's ancestors: three keyboards, three ways to make a sound
+  'piano-story': () => <g>
+    {[[t('clavichord', '클라비코드'), 50, 70], [t('harpsichord', '하프시코드'), 165, 90], [t('piano', '피아노'), 290, 112]].map(([w, x, wd], k) => <g key={w}>
+      <AKnock x={x - wd / 2 - 6} y={22} w={wd + 12} h={68}/>
+      <rect x={x - wd / 2} y={38} width={wd} height={22} rx={3} fill={ART_P} stroke={ART_N} strokeWidth={1.6}/>
+      {Array.from({ length: Math.round(wd / 10) }, (_, i) => <rect key={i} x={x - wd / 2 + 4 + i * 10} y={38} width={1} height={22} fill={ART_N} opacity={0.5}/>)}
+      <AText x={x} y={82} size={13} italic c={k === 2 ? ART_C : ART_N}>{w}</AText>
+    </g>)}
+    <path d="M118 49 h 8 M 238 49 h 8" stroke={ART_C} strokeWidth={2} strokeLinecap="round"/>
+  </g>,
+  // pitch: slow wide waves sound low, fast narrow waves sound high
+  'pitch-range': () => <g>
+    <AKnock x={20} y={22} w={320} h={66}/>
+    <path d={'M30 50 ' + Array.from({ length: 4 }, (_, i) => `q 9 -22 18 0 q 9 22 18 0`).join(' ')} fill="none" stroke={ART_N} strokeWidth={2.2}/>
+    <path d={'M190 50 ' + Array.from({ length: 12 }, () => `q 3 -14 6 0 q 3 14 6 0`).join(' ')} fill="none" stroke={ART_C} strokeWidth={2.2}/>
+    <AText x={92} y={86} size={13} italic>{t('low', '낮은 소리')}</AText>
+    <AText x={262} y={86} size={13} italic c={ART_C}>{t('high', '높은 소리')}</AText>
+  </g>,
+  // a melody rises and falls inside one phrase
+  'melody': () => <g>
+    <AClef/>
+    {[66, 58, 50, 46, 42, 50, 58, 62].map((y, i) => <ANote key={i} x={88 + i * 31} y={y} stem={0} c={i === 4 ? ART_C : ART_N}/>)}
+    <path d="M86 26 C 140 0, 260 0, 306 28" fill="none" stroke={ART_C} strokeWidth={2}/>
+    <AText x={196} y={94} size={11} serif={false} weight={700}>{t('one phrase', '한 프레이즈')}</AText>
+  </g>,
+  // musical form: A, B, then A again
+  'form': () => <g>
+    {[['A', 60, ART_N], ['B', 180, ART_C], ['A', 300, ART_N]].map(([l, x, c], i) => <g key={i}>
+      <rect x={x - 46} y={30} width={92} height={40} rx={8} fill={ART_P} stroke={c} strokeWidth={2.2}/>
+      <AText x={x} y={59} size={26} weight={900} c={c}>{l}</AText>
+    </g>)}
+    <AText x={180} y={90} size={11} serif={false} weight={700}>{t('tune, new tune, first tune again', '선율, 새 선율, 다시 처음 선율')}</AText>
+  </g>,
+  // three textures: one line, tune with chords, two lines woven together
+  'styles': () => <g>
+    <AKnock x={14} y={20} w={332} h={70}/>
+    <path d="M24 50 q 14 -16 28 0 t 28 0 t 28 0" fill="none" stroke={ART_N} strokeWidth={2.4}/>
+    <path d="M136 40 q 14 -16 28 0 t 28 0 t 28 0" fill="none" stroke={ART_C} strokeWidth={2.4}/>
+    {[0, 1, 2].map(i => <rect key={i} x={140 + i * 28} y={56} width={18} height={14} rx={2} fill={ART_N}/>)}
+    <path d="M252 44 q 14 -14 28 0 t 28 0 t 28 0" fill="none" stroke={ART_N} strokeWidth={2.4}/>
+    <path d="M252 58 q 14 14 28 0 t 28 0 t 28 0" fill="none" stroke={ART_C} strokeWidth={2.4}/>
+    <AText x={66} y={86} size={11} serif={false} weight={700}>{t('one line', '선율 하나')}</AText>
+    <AText x={178} y={86} size={11} serif={false} weight={700}>{t('tune + chords', '선율 + 화음')}</AText>
+    <AText x={294} y={86} size={11} serif={false} weight={700}>{t('two lines', '선율 둘')}</AText>
+  </g>,
+};
+function ChapterArt({ id }) {
+  const Art = STAFF_ART[id];
+  return (
+    <svg viewBox="0 0 360 100" width="100%" style={{display:'block',maxWidth:560,margin:'4px 0 12px'}} role="img" aria-label="">
+      {ART_Y.map(y => <rect key={y} x={0} y={y - 0.7} width={360} height={1.4} fill={ART_N}/>)}
+      {Art && <Art/>}
+    </svg>
+  );
+}
+
 function Lesson({ id, title, intro, children, onStart, startLabel, head }) {
   const steps = React.Children.toArray(children).filter(Boolean);
   const [done, setDone] = useState(() => loadDone()[id] || {});
@@ -1338,10 +1602,11 @@ function Lesson({ id, title, intro, children, onStart, startLabel, head }) {
   const count = steps.filter((s, i) => done[i]).length;
   return (
     <div className="fade-up">
-      {/* Staff look (stage 4): the old per-chapter hero pictures (the `head` prop) are not shown any more -- the staff-line divider below is the lesson's graphic. Hero components stay in the file for a later redraw. */}
+      {/* Staff look: each chapter's own staff-line drawing (ChapterArt) under the title; `head` now only carries extra controls (e.g. the Scales major/minor tabs). */}
       <h2 style={{fontSize:30,fontWeight:900,margin:'0 0 6px',lineHeight:1.1,color:'var(--navy)'}}>{title}</h2>
       {intro && <p style={{fontSize:14.5,color:'var(--muted)',margin:'0 0 8px',lineHeight:1.5}}>{intro}</p>}
-      <div className="stf-head" style={{height:30,margin:'6px 0 10px',cursor:'default'}} aria-hidden="true"/>
+      <ChapterArt id={STAFF_ART[id] ? id : String(id).split('-')[0]}/>
+      {head}
       <div style={{display:'flex',flexWrap:'wrap',gap:5,margin:'4px 0 2px'}}>
         {steps.map((s, i) => {
           const c = STEP_COLORS[i % STEP_COLORS.length];
@@ -1641,7 +1906,7 @@ function NoteNamesHero() {
 function NoteNamesLearn({ onStart }) {
   const tip = (n, title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="note-names" title={t('Finding notes on the keyboard', '건반에서 음이름 찾기')} head={<NoteNamesHero/>} intro={<>{t('The black keys are the map -- they come in groups of 2 and 3.', '검은건반이 지도예요 -- 2개, 3개씩 무리지어 있어요.')}</>} onStart={onStart}>
+    <Lesson id="note-names" title={t('Finding notes on the keyboard', '건반에서 음이름 찾기')} intro={<>{t('The black keys are the map -- they come in groups of 2 and 3.', '검은건반이 지도예요 -- 2개, 3개씩 무리지어 있어요.')}</>} onStart={onStart}>
       <Step title={t('The black-key map', '검은건반 지도')}>
       <ExplNoteNames1/>
       <TapKeyboard octaves={1} labels="all" tint />
@@ -1771,7 +2036,7 @@ function ConceptView({ concept, tab, level, mode, locked, onChange }) {
   return (
     <div>
       <div style={{display:'flex',gap:8,marginBottom:16}}>
-        {[['learn','Learn'],['drill','Drill']].map(([id, label]) => (
+        {[['learn',t('Learn', '배우기')],['drill',t('Drill', '드릴')]].map(([id, label]) => (
           <button key={id} onClick={() => onChange({ tab: id })} style={{
             flex:1,padding:'9px 0',border:'1.5px solid ' + (tab===id ? 'var(--navy)' : 'var(--navy-line)'),borderRadius:999,cursor:'pointer',fontSize:14,fontWeight:800,fontFamily:'inherit',
             background:tab===id?'var(--navy)':'#fff',color:tab===id?'#fff':'var(--navy-soft)'}}>{label}</button>
@@ -1913,7 +2178,7 @@ const TEMPO_TERMS = [
 ];
 const TEMPO_RANK = {};
 TEMPO_TERMS.forEach((t, i) => { TEMPO_RANK[t.term] = i; });
-const LANE_COLORS = ['#6d78b8', '#8a7fb8', '#4fa58a', '#d9962e', '#d18a52', '#c46a5a', '#b04a6a'];
+const LANE_COLORS = ['#3b4fa8', '#5a4fa0', '#7a4f96', '#9a4f84', '#b85068', '#cf5248', '#e4572e'];  // staff theme: navy-blue (slow) to coral (fast)
 
 function shuffle(arr) {
   const a = arr.slice();
@@ -2823,7 +3088,7 @@ function TempoLanes() {
     <div>
       <div style={{display:'flex',justifyContent:'space-between',fontSize:11.5,fontWeight:800,color:'var(--muted)',
         textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>
-        <span>{t('🐢 Slow','🐢 느리게')}</span><span>{t('Fast 🏁','빠르게 🏁')}</span>
+        <span>{t('Slow','느리게')}</span><span>{t('Fast →','빠르게 →')}</span>
       </div>
       <div style={{display:'flex',flexDirection:'column',gap:6}}>
         {TEMPO_TERMS.map((tm, i) => (
@@ -2850,11 +3115,150 @@ function TempoLanes() {
     </div>
   );
 }
+// ─── Phase 279: Tempo chapter, more hands-on (content pass: thinnest chapters first) ───
+// Walk / jog / sprint: tempo is how fast the pulse goes. Each gait plays its beat and a dot bounces at that speed.
+const TEMPO_GAITS = [
+  { id: 'walk', bpm: 88, term: 'Andante', en: 'Walk', ko: '걷기', say: ['Andante means "walking" -- a calm, going-somewhere pace.', 'Andante는 "걷는" 빠르기예요 -- 차분하게 어디론가 가는 속도.'] },
+  { id: 'jog', bpm: 132, term: 'Allegro', en: 'Jog', ko: '조깅', say: ['Allegro is quick and lively -- a happy jog.', 'Allegro는 빠르고 생기 있게 -- 신나는 조깅.'] },
+  { id: 'sprint', bpm: 184, term: 'Presto', en: 'Sprint', ko: '전력 질주', say: ['Presto is very fast -- a sprint to the finish.', 'Presto는 아주 빠르게 -- 결승선까지 전력 질주.'] },
+];
+function GaitFigure({ gait, on }) {
+  // a simple stick figure: legs open wider the faster the gait
+  const spread = gait === 'walk' ? 7 : gait === 'jog' ? 11 : 15, lean = gait === 'walk' ? 0 : gait === 'jog' ? 3 : 7;
+  const c = on ? '#e4572e' : '#26296b';
+  return (
+    <svg width="54" height="64" viewBox="0 0 54 64" aria-hidden="true">
+      <circle cx={27 + lean} cy="11" r="6" fill="none" stroke={c} strokeWidth="2.6"/>
+      <path d={`M${27 + lean} 17 L27 38`} stroke={c} strokeWidth="2.6" strokeLinecap="round"/>
+      <path d={`M27 38 L${27 - spread} 58 M27 38 L${27 + spread} 56`} stroke={c} strokeWidth="2.6" strokeLinecap="round" fill="none"/>
+      <path d={`M${27 + lean * 0.6} 25 L${27 - spread + 2} 31 M${27 + lean * 0.6} 25 L${27 + spread} 22`} stroke={c} strokeWidth="2.4" strokeLinecap="round" fill="none"/>
+      <path d="M4 61 H50" stroke="#26296b" strokeOpacity="0.3" strokeWidth="1.4"/>
+    </svg>
+  );
+}
+function TempoWalk() {
+  const [on, setOn] = useState(null);
+  useEffect(() => () => stopClicks(), []);
+  const g = TEMPO_GAITS.find(x => x.id === on);
+  function go(x) {
+    if (on === x.id) { stopClicks(); setOn(null); return; }
+    playClicks(x.bpm, 8); setOn(x.id);
+    setTimeout(() => setOn(p => (p === x.id ? null : p)), (60 / x.bpm) * 8 * 1000 + 200);
+  }
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Tempo = how fast the pulse goes', '템포 = 박이 얼마나 빨리 가는지')}</div>
+      <p style={actNote}>{t('The beat is your footsteps. Walk, jog or sprint -- the steps stay even, only the speed changes. Tap one and feel it.', '박은 발걸음이에요. 걷든, 조깅하든, 전력 질주하든 -- 발걸음은 고르게, 빠르기만 달라져요. 하나를 눌러서 느껴 봐요.')}</p>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
+        {TEMPO_GAITS.map(x => (
+          <button key={x.id} onClick={() => go(x)} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,padding:'10px 4px',borderRadius:14,cursor:'pointer',fontFamily:'inherit',
+            border:'1.5px solid ' + (on === x.id ? 'var(--coral)' : 'var(--navy-line)'),background:on === x.id ? '#fbe3da' : 'var(--surface)'}}>
+            <GaitFigure gait={x.id} on={on === x.id}/>
+            <span style={{fontSize:15,fontWeight:900,color:'var(--navy)'}}>{t(x.en, x.ko)}</span>
+            <span style={{fontSize:13,fontStyle:'italic',fontWeight:800,color:on === x.id ? 'var(--coral)' : 'var(--navy-soft)',fontFamily:"'Playfair Display', Georgia, serif"}}>{x.term}</span>
+            <span style={{fontSize:11.5,color:'var(--navy-soft)'}}>{t('about ' + x.bpm + ' a minute', '1분에 약 ' + x.bpm + '번')}</span>
+          </button>
+        ))}
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:12,marginTop:12,minHeight:34}}>
+        <span style={{width:22,height:22,borderRadius:11,background:g ? 'var(--coral)' : 'var(--border)',flex:'0 0 auto',
+          animation:g ? `pbPulse ${60 / g.bpm}s ease-out infinite` : 'none'}}/>
+        <span style={{fontSize:14,color:'var(--navy)'}}>{g ? t(g.say[0], g.say[1]) : t('The dot pulses with the beat.', '점이 박에 맞춰 뛰어요.')}</span>
+      </div>
+      <style>{'@keyframes pbPulse { 0% { transform: scale(1.35); } 60% { transform: scale(0.85); } 100% { transform: scale(0.85); } }'}</style>
+    </div>
+  );
+}
+
+// Tap your own tempo: the average of your last taps becomes beats per minute, shown on the tempo ruler.
+function TapTempo() {
+  const [taps, setTaps] = useState([]);
+  const now = () => (window.performance ? performance.now() : Date.now());
+  function tap() {
+    const tm = now();
+    const ctx = getAudio(); if (ctx) try { beatTick(ctx, ctx.currentTime + 0.01, 1, 880, 0.04, 0.3); } catch (e) {}
+    setTaps(prev => { const keep = prev.filter(x => tm - x < 2500); return keep.concat(tm).slice(-6); });
+  }
+  let bpm = null;
+  if (taps.length >= 3) { const gaps = []; for (let i = 1; i < taps.length; i++) gaps.push(taps[i] - taps[i - 1]); bpm = Math.round(60000 / (gaps.reduce((a, b) => a + b, 0) / gaps.length)); }
+  const lo = 50, hi = 210, W = 320, X = (v) => 10 + (Math.min(hi, Math.max(lo, v)) - lo) / (hi - lo) * (W - 52);
+  const match = bpm ? TEMPO_TERMS.filter(tm => bpm >= tm.bpm[0] && bpm <= tm.bpm[1]).map(tm => tm.term) : [];
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Tap your own tempo', '내 템포 두드리기')}</div>
+      <p style={actNote}>{t('Tap the big button at a steady speed -- like a heartbeat, or a song in your head. After three taps you see your speed in beats per minute, and which Italian word fits it.', '큰 버튼을 일정한 빠르기로 두드려요 -- 심장 박동처럼, 아니면 머릿속 노래에 맞춰서. 세 번 두드리면 1분에 몇 박인지, 어떤 이탈리아어 단어가 맞는지 보여요.')}</p>
+      <div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}>
+        <button onClick={tap} style={{width:96,height:96,borderRadius:48,border:'none',background:'var(--coral)',color:'#fff',fontSize:18,fontWeight:900,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 6px 18px rgba(228,87,46,0.35)'}}>{t('Tap', '탭')}</button>
+        <div style={{minWidth:0}}>
+          <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:34,fontWeight:900,color:'var(--navy)',lineHeight:1}}>{bpm ? bpm : '--'}</div>
+          <div style={{fontSize:12.5,color:'var(--navy-soft)',fontWeight:700}}>{t('beats per minute', '1분당 박 수')}</div>
+          <div style={{fontSize:15,fontWeight:900,fontStyle:'italic',color:'var(--coral)',marginTop:4,minHeight:20}}>{bpm ? (match.length ? match.join(' / ') : (bpm < 66 ? t('slower than Adagio', 'Adagio보다 느려요') : bpm > 200 ? t('faster than Presto!', 'Presto보다 빨라요!') : t('in between two words', '두 단어 사이예요'))) : ''}</div>
+        </div>
+      </div>
+      <svg viewBox={`0 0 ${W} 96`} width="100%" style={{display:'block',maxWidth:480,marginTop:12}}>
+        {TEMPO_TERMS.map((tm, i) => <g key={tm.term}>
+          <rect x={X(tm.bpm[0])} y={4 + i * 11} width={Math.max(4, X(tm.bpm[1]) - X(tm.bpm[0]))} height={7} rx={3.5} fill={match.includes(tm.term) ? '#e4572e' : '#26296b'} opacity={match.includes(tm.term) ? 1 : 0.25}/>
+          <text x={X(tm.bpm[1]) + 4} y={10.5 + i * 11} fontSize="8.5" fontStyle="italic" fontWeight="800" fill={match.includes(tm.term) ? '#e4572e' : '#6d6f9c'}>{tm.term}</text>
+        </g>)}
+        <line x1="10" x2={W - 10} y1="84" y2="84" stroke="#26296b" strokeWidth="1.2"/>
+        {[60, 100, 140, 180].map(v => <text key={v} x={X(v)} y="94" textAnchor="middle" fontSize="7.5" fill="#8a8cb0">{v}</text>)}
+        {bpm && <path d={`M${X(bpm)} 0 V84`} stroke="#e4572e" strokeWidth="2.4"/>}
+      </svg>
+      {taps.length > 0 && <button className="ghost-btn" style={{fontSize:12.5,padding:'4px 12px',marginTop:6}} onClick={() => setTaps([])}>{t('Start again', '다시 하기')}</button>}
+    </div>
+  );
+}
+
+// Same tune, three tempos -- then a mystery tempo to guess.
+const TWINKLE = [28, 28, 32, 32, 33, 33, 32, 31, 31, 30, 30, 29, 29, 28].map((d, i) => ({ d, dur: i === 6 || i === 13 ? 2 : 1 }));
+const SAME_TUNE_SPEEDS = [{ term: 'Adagio', bpm: 70, en: 'slow', ko: '느리게' }, { term: 'Moderato', bpm: 112, en: 'medium', ko: '보통으로' }, { term: 'Presto', bpm: 184, en: 'fast', ko: '빠르게' }];
+function SameTuneTempo() {
+  const [on, setOn] = useState(-1), [playing, setPlaying] = useState(null), [mystery, setMystery] = useState(null), [guess, setGuess] = useState(null);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  function play(bpm, tag) { timers.current.forEach(clearTimeout); setPlaying(tag); timers.current = playMelody(TWINKLE, bpm, (i) => { setOn(i); if (i < 0) setPlaying(null); }); }
+  function newMystery() { const k = Math.floor(Math.random() * 3); setMystery(k); setGuess(null); play(SAME_TUNE_SPEEDS[k].bpm, 'mystery'); }
+  const right = mystery !== null && guess === mystery;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Same tune, different tempo', '같은 튠, 다른 템포')}</div>
+      <p style={actNote}>{t('Twinkle Twinkle three ways. The notes never change -- only the tempo. Which one sounds like a lullaby? Which one sounds like a race?', '반짝반짝 작은 별을 세 가지 빠르기로. 음은 그대로 -- 템포만 바뀌어요. 어느 것이 자장가 같고, 어느 것이 경주 같나요?')}</p>
+      <div style={{display:'flex',gap:3,margin:'2px 0 12px'}}>
+        {TWINKLE.map((n, i) => <span key={i} style={{flex:n.dur,height:26 + (n.d - 28) * 5,alignSelf:'flex-end',borderRadius:6,background:on === i ? 'var(--coral)' : '#d6d7e8',transition:'background 0.1s'}}/>)}
+      </div>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+        {SAME_TUNE_SPEEDS.map((sp, k) => <button key={sp.term} className={'chip' + (playing === sp.term ? ' active' : '')} onClick={() => play(sp.bpm, sp.term)}>
+          <span style={{fontStyle:'italic',fontWeight:900}}>{sp.term}</span> · {t(sp.en, sp.ko)}</button>)}
+      </div>
+      <div style={{borderTop:'1px solid var(--navy-line)',marginTop:14,paddingTop:12}}>
+        <div style={{fontSize:15,fontWeight:900,color:'var(--navy)'}}>{t('Mystery tempo', '수수께끼 템포')}</div>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',marginTop:8}}>
+          <button className="primary-btn" style={{width:'auto',padding:'9px 18px',fontSize:14}} onClick={newMystery}>{mystery === null ? t('Play a mystery tempo', '수수께끼 템포 듣기') : t('Another one', '하나 더')}</button>
+          {mystery !== null && SAME_TUNE_SPEEDS.map((sp, k) => <button key={k} className={'choice-btn' + (guess === k ? (k === mystery ? ' good' : ' bad') : '')} style={{padding:'9px 12px'}} disabled={guess !== null} onClick={() => setGuess(k)}>{t(sp.en, sp.ko)}</button>)}
+        </div>
+        {guess !== null && <div style={{marginTop:8,fontSize:14,fontWeight:800,color:right ? 'var(--good)' : 'var(--bad)'}}>
+          {right ? t('Yes! That was ' + SAME_TUNE_SPEEDS[mystery].term + '.', '맞았어요! ' + SAME_TUNE_SPEEDS[mystery].term + '였어요.') : t('Not quite -- it was ' + SAME_TUNE_SPEEDS[mystery].term + ' (' + SAME_TUNE_SPEEDS[mystery].en + ').', '아쉬워요 -- ' + SAME_TUNE_SPEEDS[mystery].term + ' (' + SAME_TUNE_SPEEDS[mystery].ko + ')였어요.')}
+          {mystery !== null && <button className="ghost-btn" style={{fontSize:12.5,padding:'3px 10px',marginLeft:8}} onClick={() => play(SAME_TUNE_SPEEDS[mystery].bpm, 'mystery')}>{t('Hear it again', '다시 듣기')}</button>}
+        </div>}
+      </div>
+    </div>
+  );
+}
+
 function TempoLearn({ onStart }) {
   return (
-    <Lesson id="tempo" title={t('The tempo race', '템포 경주')} intro={<>{t('Italian tempo words, lined up from the slowest lane to the fastest. Tap one to hear its beat.', '가장 느린 레인부터 가장 빠른 레인까지 늘어선 이탈리아어 템포 단어들이에요. 눌러서 박을 들어보세요.')}</>} onStart={onStart} head={<TempoHero/>}>
+    <Lesson id="tempo" title={t('The tempo race', '템포 경주')} intro={<>{t('Italian tempo words, lined up from the slowest lane to the fastest. Tap one to hear its beat.', '가장 느린 레인부터 가장 빠른 레인까지 늘어선 이탈리아어 템포 단어들이에요. 눌러서 박을 들어보세요.')}</>} onStart={onStart}>
+      <Step title={t('What is tempo?', '템포가 뭘까요?')}>
+      <TempoWalk/>
+      </Step>
       <Step title={t('Slow to fast', '느리게에서 빠르게로')}>
       <TempoLanes/>
+      </Step>
+      <Step title={t('Tap your own tempo', '내 템포 두드리기')}>
+      <TapTempo/>
+      </Step>
+      <Step title={t('Same tune, different tempo', '같은 튠, 다른 템포')}>
+      <SameTuneTempo/>
       </Step>
       <Step title={t('Changing speed', '속도 바꾸기')}>
       <SpeedChange/>
@@ -3698,7 +4102,7 @@ function NoteValLearn({ onStart }) {
     { it: NV_NOTES[0], n: 1 }, { it: NV_NOTES[1], n: 2 }, { it: NV_NOTES[2], n: 4 }, { it: NV_NOTES[3], n: 8 }, { it: NV_NOTES[4], n: 16 },
   ];
   return (
-    <Lesson id="note-values" title={t('Notes and rests', '음표와 쉼표')} head={<NoteValHero/>} intro={<>{t('Each row fills the same 4-beat bar -- every note splits into two of the next one down.', '각 줄은 같은 4박 마디를 채워요 -- 모든 음표는 한 단계 아래 음표 두 개로 나뉘어요.')}{' '}{t('(New to counting? The steady beat lives in Pulse & counting, just before this group.)', '(박 세기가 처음이라면? 일정한 박은 "음높이 + 리듬 읽기" 그룹의 Pulse & Counting에 있어요.)')}</>} onStart={onStart}>
+    <Lesson id="note-values" title={t('Notes and rests', '음표와 쉼표')} intro={<>{t('Each row fills the same 4-beat bar -- every note splits into two of the next one down.', '각 줄은 같은 4박 마디를 채워요 -- 모든 음표는 한 단계 아래 음표 두 개로 나뉘어요.')}{' '}{t('(New to counting? The steady beat lives in Pulse & counting, just before this group.)', '(박 세기가 처음이라면? 일정한 박은 "음높이 + 리듬 읽기" 그룹의 Pulse & Counting에 있어요.)')}</>} onStart={onStart}>
       <Step title={t('The note-value tree', '음표 나무')}>
       <NoteValueTree/>
       </Step>
@@ -4154,7 +4558,7 @@ function RhythmLearn({ onStart }) {
     setTimeout(() => setPlaying(p => (p === card.num ? null : p)), (8 * 60 / tr.bpm) * 1000 + 300);
   }
   return (
-    <Lesson id="rhythm" title={t('Rhythm cards', '리듬 카드')} head={<RhythmCardsHero/>} intro={<>{t('40 one-bar rhythms in 4/4, easiest first. Count along under each note -- tap a card to hear it with a 4-click count-in.', '4/4박자 한 마디짜리 리듬 40개, 쉬운 것부터. 각 음표 아래를 함께 세어보세요 -- 카드를 누르면 4번 클릭 카운트인과 함께 들려요.')}</>} onStart={onStart}>
+    <Lesson id="rhythm" title={t('Rhythm cards', '리듬 카드')} intro={<>{t('40 one-bar rhythms in 4/4, easiest first. Count along under each note -- tap a card to hear it with a 4-click count-in.', '4/4박자 한 마디짜리 리듬 40개, 쉬운 것부터. 각 음표 아래를 함께 세어보세요 -- 카드를 누르면 4번 클릭 카운트인과 함께 들려요.')}</>} onStart={onStart}>
       <Step title={t('The 40 cards', '40개의 카드')}>
       <RhythmCardsBrowser/>
       </Step>
@@ -4557,7 +4961,7 @@ function KeySigLearn({ onStart }) {
   );
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="key-signatures" title={t('Reading a key signature', '조표 읽기')} intro={<>{t('Sharps and flats always arrive in the same order -- learn the order and every key falls out of it.', '샤프와 플랫은 항상 같은 순서로 나타나요 -- 그 순서만 배우면 모든 조가 자연스럽게 나와요.')}</>} onStart={onStart} head={<KeySigHero/>}>
+    <Lesson id="key-signatures" title={t('Reading a key signature', '조표 읽기')} intro={<>{t('Sharps and flats always arrive in the same order -- learn the order and every key falls out of it.', '샤프와 플랫은 항상 같은 순서로 나타나요 -- 그 순서만 배우면 모든 조가 자연스럽게 나와요.')}</>} onStart={onStart}>
       <Step title={t('The order of sharps', '샤프의 순서')}>
       <OrderBuilder type="sharp"/>
       <div style={{fontSize:13,color:'#6d6f9c',margin:'-6px 0 12px',lineHeight:1.5}}>{t('A sentence to remember the sharps: ', '샤프 순서를 외우는 문장: ')}<b>F</b>ather <b>C</b>harles <b>G</b>oes <b>D</b>own <b>A</b>nd <b>E</b>nds <b>B</b>attle. {t('Read it backwards for the flats: ', '플랫은 거꾸로 읽으면 돼요: ')}<b>B</b>attle <b>E</b>nds <b>A</b>nd <b>D</b>own <b>G</b>oes <b>C</b>harles’ <b>F</b>ather.</div>
@@ -4921,7 +5325,7 @@ function IntervalsHero() {
 function IntervalsLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="intervals" title={t('Intervals', '음정')} intro={<>{t('The distance between two notes. Every interval has a ', '두 음 사이의 거리예요. 모든 음정은 ')}<b>{t('number','도수')}</b>{t(' (count the letters) and a ', '(음이름을 세어요)와 ')}<b>{t('quality','성질')}</b>{t(' (count the semitones): ', '(반음을 세어요)을 가져요: ')}<b>{t('major 3rd','장3도')}</b>, <b>{t('perfect 5th','완전5도')}</b>.</>} onStart={onStart} head={<IntervalsHero/>}>
+    <Lesson id="intervals" title={t('Intervals', '음정')} intro={<>{t('The distance between two notes. Every interval has a ', '두 음 사이의 거리예요. 모든 음정은 ')}<b>{t('number','도수')}</b>{t(' (count the letters) and a ', '(음이름을 세어요)와 ')}<b>{t('quality','성질')}</b>{t(' (count the semitones): ', '(반음을 세어요)을 가져요: ')}<b>{t('major 3rd','장3도')}</b>, <b>{t('perfect 5th','완전5도')}</b>.</>} onStart={onStart}>
       <Step title={t('The number', '도수')}>
       <ExplIntervals1/>
       <StepSkip/>
@@ -5519,7 +5923,7 @@ function ChordsHero() {
 function ChordsLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="chords" title={t('Chords and triads', '화음과 삼화음')} onStart={onStart} head={<ChordsHero/>}
+    <Lesson id="chords" title={t('Chords and triads', '화음과 삼화음')} onStart={onStart}
       intro={<>{t('Three notes stacked in 3rds make a triad. Every chord is named two ways: by its ', '3도씩 쌓은 세 음이 삼화음을 만들어요. 모든 화음은 두 가지로 이름 붙여요: ')}<b>{t('letters','알파벳 이름')}</b>{t(' (G B D = G major) and by its ', '(G B D = G major)과 ')}<b>{t('Roman numeral','로마 숫자')}</b>{t(' in the key (V in C major).', '로 조 안에서 (C장조의 V).')}</>}>
       <Step title={t('Stack a triad', '삼화음 쌓기')}>
         <ExplChords1/>
@@ -6291,7 +6695,7 @@ function ToneSemitoneTool() {
 function TonesLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="tones" title={t('Semitones, tones and accidentals', '반음, 온음, 임시표')} intro={<>{t('The smallest step on the piano, and the step made of two of them. Scales, key signatures, intervals and chords are all counted in these.', '피아노에서 가장 작은 걸음, 그리고 그 두 개로 이루어진 걸음이에요. 스케일, 조표, 음정, 화음은 모두 이 단위로 셉니다.')}</>} onStart={onStart} head={<TonesHero/>}>
+    <Lesson id="tones" title={t('Semitones, tones and accidentals', '반음, 온음, 임시표')} intro={<>{t('The smallest step on the piano, and the step made of two of them. Scales, key signatures, intervals and chords are all counted in these.', '피아노에서 가장 작은 걸음, 그리고 그 두 개로 이루어진 걸음이에요. 스케일, 조표, 음정, 화음은 모두 이 단위로 셉니다.')}</>} onStart={onStart}>
       <Step title={t('Semitones and tones', '반음과 온음')}>
       <div style={{display:'flex',gap:8,margin:'4px 0 12px'}}>
         {[[t('Semitone', '반음'), t('half step', '하프 스텝'), 'S', t('1 key', '건반 1칸')], [t('Tone', '온음'), t('whole step', '홀 스텝'), 'T', t('2 keys', '건반 2칸')]].map(([a, b, c, d]) => (
@@ -6598,9 +7002,8 @@ function ScalesLearn({ onStart }) {
       <button className={'chip' + (mode === 'minor' ? ' active' : '')} onClick={() => setMode('minor')}>{t('Minor scales', '단조 스케일')}</button>
     </div>
   );
-  const scalesHero = <ScalesHero/>;
   return mode === 'major' ? (
-    <Lesson key="major" id="scales-major" title={t('Major scales', '장조 스케일')} head={<>{scalesHero}{tabs}</>} onStart={onStart}
+    <Lesson key="major" id="scales-major" title={t('Major scales', '장조 스케일')} head={tabs} onStart={onStart}
       intro={<>{t('One shape builds every major scale. Learn the shape, build it yourself, then learn the fingering patterns.', '하나의 모양이 모든 장조 스케일을 만들어요. 모양을 배우고, 직접 만들어보고, 손가락 번호 패턴을 배워보세요.')}</>}>
       <Step title={t('The shape', '모양')}><MajorShapeCard/></Step>
       <Step title={t('Build it yourself', '직접 만들어보기')}><ScaleBuilder mode="major"/></Step>
@@ -6611,7 +7014,7 @@ function ScalesLearn({ onStart }) {
       <Step title={t('Look up any scale', '아무 스케일이나 찾아보기')}><ScaleFinder/></Step>
     </Lesson>
   ) : (
-    <Lesson key="minor" id="scales-minor" title={t('Minor scales', '단조 스케일')} head={<>{scalesHero}{tabs}</>} onStart={onStart}
+    <Lesson key="minor" id="scales-minor" title={t('Minor scales', '단조 스케일')} head={tabs} onStart={onStart}
       intro={<>{t('Three forms of the minor scale -- the harmonic minor is the one you’ll meet most.', '단조 스케일에는 세 가지 형태가 있어요 -- 가장 많이 만나게 될 것은 화성 단음계예요.')}</>}>
       <Step title={t('Three forms', '세 가지 형태')}><MinorFormsCard/></Step>
       <Step title={t('Build it yourself', '직접 만들어보기')}><ScaleBuilder key="minor" mode="minor"/></Step>
@@ -7807,7 +8210,7 @@ function TimeSigLearn({ onStart }) {
   useEffect(() => () => stopClicks(), []);
   function hear(t) { playTimeSig(t, 90); setPlaying(t.id); setTimeout(() => setPlaying(p => (p === t.id ? null : p)), 3200); }
   return (
-    <Lesson id="time-signatures" title={t('Reading a time signature', '박자표 읽기')} intro={<>{t('Two numbers at the start of the music tell you how the beats are grouped into bars.', '악보 맨 앞에 있는 두 숫자는 박이 마디 안에서 어떻게 묶이는지 알려줘요.')}</>} onStart={onStart} head={<TimeSigHero/>}>
+    <Lesson id="time-signatures" title={t('Reading a time signature', '박자표 읽기')} intro={<>{t('Two numbers at the start of the music tell you how the beats are grouped into bars.', '악보 맨 앞에 있는 두 숫자는 박이 마디 안에서 어떻게 묶이는지 알려줘요.')}</>} onStart={onStart}>
       <Step title={t('The two numbers', '두 숫자')}>
       <TimeSigNumbers/><BeatPulse/>
       </Step>
@@ -8637,7 +9040,7 @@ function StaffHero() {
 function StaffLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="staff" title={t('From the keyboard to the staff', '건반에서 오선보로')} intro={<>{t('The staff is a map of the keyboard: going up the staff is going right on the piano.', '오선보는 건반의 지도예요: 오선보에서 위로 올라가는 것은 피아노에서 오른쪽으로 가는 것과 같아요.')}</>} onStart={onStart} head={<StaffHero/>}>
+    <Lesson id="staff" title={t('From the keyboard to the staff', '건반에서 오선보로')} intro={<>{t('The staff is a map of the keyboard: going up the staff is going right on the piano.', '오선보는 건반의 지도예요: 오선보에서 위로 올라가는 것은 피아노에서 오른쪽으로 가는 것과 같아요.')}</>} onStart={onStart}>
       <Step title={t('What is the staff?', '오선보란 무엇일까요?')}>
       <StaffBasics/>
       </Step>
@@ -8910,7 +9313,7 @@ function LedgerHero() {
 function LedgerLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="ledger-lines" title="Ledger lines" onStart={onStart} head={<LedgerHero/>}
+    <Lesson id="ledger-lines" title="Ledger lines" onStart={onStart}
       intro={<>Short lines that carry the staff on above and below. They follow exactly the same line-space pattern -- once you can count from the staff, they stop being scary.</>}>
       <Step title="What a ledger line is">
         <ExplLedger1/>
@@ -9180,7 +9583,7 @@ function DynLearn({ onStart }) {
     </button>
   );
   return (
-    <Lesson id="dynamics" title={t('How loud, and how to play each note', '얼마나 크게, 각 음을 어떻게 칠까')} intro={<>{t('Dynamics are Italian words (written in bold italics) that tell you how loud to play. Tap any one to hear it.', '다이나믹은 얼마나 크게 칠지 알려주는 이탈리아어 단어예요 (굵은 기울임체로 써요). 눌러서 들어보세요.')}</>} onStart={onStart} head={<DynamicsHero/>}>
+    <Lesson id="dynamics" title={t('How loud, and how to play each note', '얼마나 크게, 각 음을 어떻게 칠까')} intro={<>{t('Dynamics are Italian words (written in bold italics) that tell you how loud to play. Tap any one to hear it.', '다이나믹은 얼마나 크게 칠지 알려주는 이탈리아어 단어예요 (굵은 기울임체로 써요). 눌러서 들어보세요.')}</>} onStart={onStart}>
       <Step title={t('Soft to loud', '여리게에서 세게로')}>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6,marginBottom:6}}>
         {DYNAMICS.map((d, i) => cell(d.id, <span style={{fontSize:16 + i * 3,lineHeight:1.1}}><DynMark id={d.id} size={16 + i * 3}/></span>, d.it + ' · ' + d.meaning, () => pick(d.id, () => playDyn(d.vol))))}
@@ -9521,7 +9924,7 @@ function SignsHero() {
 function SignsLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="signs" title={t('Signs: repeats, jumps, 8va, ties and slurs', '기호: 도돌이표, 건너뛰기, 8va, 이음줄과 슬러')} onStart={onStart} head={<SignsHero/>}
+    <Lesson id="signs" title={t('Signs: repeats, jumps, 8va, ties and slurs', '기호: 도돌이표, 건너뛰기, 8va, 이음줄과 슬러')} onStart={onStart}
       intro={<>{t('The signs that tell you where to go next and how long to hold. Music is read like a road map -- these are the road signs.', '다음에 어디로 갈지, 얼마나 붙잡고 있을지 알려주는 기호들이에요. 악보는 지도처럼 읽어요 -- 이것들이 그 지도의 표지판이에요.')}</>}>
       <Step title={t('Repeat signs', '도돌이표')}>
         <ExplSigns1/>
@@ -10356,7 +10759,7 @@ function ClefCostume() {
 }
 function HandClefsLearn({ onStart }) {
   return (
-    <Lesson id="hand-clefs" title={t('Hands and clefs', '손과 음자리표')} head={<HandClefsHero/>} onStart={onStart}
+    <Lesson id="hand-clefs" title={t('Hands and clefs', '손과 음자리표')} onStart={onStart}
       intro={<>{t('Two staves stacked together make the Grand Staff. Each one usually belongs to a different hand.', '두 줄이 위아래로 겹쳐진 걸 그랜드 스태프라고 해요. 각 줄은 보통 다른 손이 맡아요.')}</>}>
       <Step title={t('The Grand Staff', '그랜드 스태프')}>
       <GrandStaffIntro/>
@@ -10413,7 +10816,7 @@ const HAND_CLEFS_DRILL = {
 function FirstStepsLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="first-steps" title={t('The keyboard and your first song', '건반과 첫 곡')} head={<FirstStepsHero/>} onStart={onStart}
+    <Lesson id="first-steps" title={t('The keyboard and your first song', '건반과 첫 곡')} onStart={onStart}
       intro={<>{t('Once sitting and hand shape feel natural: a map of the black keys by ear and by eye, and a first little tune to play.', '앉는 자세와 손 모양이 자연스러워지면: 귀와 눈으로 검은건반 지도를 익히고, 짧은 첫 곡을 연주해봐요.')}</>}>
       <Step title={t('High, low, loud and soft', '높고 낮음, 크고 작음')}>
         <HighLowGame/>
@@ -10610,7 +11013,7 @@ function PulseHero() {
 function PulseLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="pulse" title={t('Pulse and counting', '박자와 세기')} head={<PulseHero/>} onStart={onStart}
+    <Lesson id="pulse" title={t('Pulse and counting', '박자와 세기')} onStart={onStart}
       intro={<>{t('Before reading notes, feel the beat. Every rhythm is counted against a steady pulse: 1 2 3 4 -- and once quavers arrive, 1 and 2 and 3 and 4 and.', '음표를 읽기 전에 먼저 박자를 느껴보세요. 모든 리듬은 일정한 박자를 기준으로 셉니다: 1 2 3 4 -- 8분음표가 나오면 1 and 2 and 3 and 4 and.')}</>}>
       <Step title={t('Feel the pulse', '박자 느끼기')}>
         <SteadyBeat/>
@@ -10772,7 +11175,7 @@ function ReadingStepsHero() {
 function ReadingStepsLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="reading-steps" title="Reading begins: steps and skips" onStart={onStart} head={<ReadingStepsHero/>}
+    <Lesson id="reading-steps" title="Reading begins: steps and skips" onStart={onStart}
       intro={<>Start from one note you know -- middle C -- and read the rest by watching where each note moves. Rhythm and notes come together from the first tune.</>}>
       <Step title="Where does it go?">
         <ExplReadingSteps1/>
@@ -11273,18 +11676,124 @@ function TermsHero() {
   );
 }
 
+// ─── Phase 280: Musical Terms, more hands-on (content pass) ───
+// Every term already carries a family (TERMS[].cat). Sorting them makes the families visible.
+const TERM_FAMILIES = [
+  { cat: 'Speed', en: 'Speed', ko: '빠르기' },
+  { cat: 'Changing speed', en: 'Changing speed', ko: '빠르기 변화' },
+  { cat: 'Volume', en: 'Loud and soft', ko: '셈여림' },
+  { cat: 'Other', en: 'Mood and touch', ko: '느낌과 터치' },
+];
+function FamilyIcon({ cat, on }) {
+  const N = on ? '#e4572e' : '#26296b', C = '#e4572e';
+  return (
+    <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
+      {cat === 'Speed' && <g><path d="M9 30 L17 4 L25 30 Z" fill="none" stroke={N} strokeWidth="2.2" strokeLinejoin="round"/><path d="M17 25 L23 10" stroke={C} strokeWidth="2.4" strokeLinecap="round"/><circle cx="21.6" cy="13.5" r="2.4" fill={C}/></g>}
+      {cat === 'Changing speed' && <g><path d="M4 27 C 12 27, 20 20, 29 7" fill="none" stroke={N} strokeWidth="2.4" strokeLinecap="round"/><path d="M29 7 l-6 1 M29 7 l-1 6" stroke={C} strokeWidth="2.4" strokeLinecap="round"/></g>}
+      {cat === 'Volume' && <g><path d="M30 8 L5 17 L30 26" fill="none" stroke={N} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/><circle cx="30" cy="17" r="2.6" fill={C}/></g>}
+      {cat === 'Other' && <g><ellipse cx="11" cy="24" rx="4.6" ry="3.4" transform="rotate(-20 11 24)" fill={N}/><rect x="14.6" y="6" width="1.8" height="18" fill={N}/><circle cx="11" cy="31" r="1.7" fill={C}/><path d="M18 8 q 7 -6 12 2" fill="none" stroke={C} strokeWidth="2" strokeLinecap="round"/></g>}
+    </svg>
+  );
+}
+// Words that modify another term, or road-map / which-hand / pedal / catalogue words, don't belong to one of the four families.
+const SORT_SKIP = new Set(['Sempre', 'Poco', 'Molto', 'Senza', 'Assai', 'Quasi', 'Non troppo', 'Subito', 'Dal segno', 'Da capo al fine', 'Attacca', 'Main droite', 'Main gauche', 'Opus', 'Loco', 'M.M.', 'Una corda', 'Tre corde', 'Ad libitum']);
+const sortPool = (g) => TERMS.filter(x => x.grade <= g && x.cat !== 'Strings' && !SORT_SKIP.has(x.term));
+function TermSort() {
+  const [grade, setGrade] = useState(1);
+  const [cur, setCur] = useState(() => pick(sortPool(1)));
+  const [ans, setAns] = useState(null), [score, setScore] = useState({ right: 0, tries: 0 });
+  function next(g = grade) { const p2 = sortPool(g); let n, k = 0; do { n = pick(p2); } while (n.term === cur.term && k++ < 10); setCur(n); setAns(null); }
+  function choose(cat) { if (ans) return; setAns(cat); setScore(s => ({ right: s.right + (cat === cur.cat ? 1 : 0), tries: s.tries + 1 })); try { playTerm(cur); } catch (e) {} }
+  const fam = TERM_FAMILIES.find(f => f.cat === cur.cat);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Four families of terms', '용어의 네 가족')}</div>
+      <p style={actNote}>{t('Almost every term answers one question: how fast? is it changing speed? how loud? or how should it feel and sound? Put each word in its family -- then hear it.', '거의 모든 용어는 한 가지 질문에 답해요: 얼마나 빠르게? 빠르기가 바뀌나? 얼마나 크게? 아니면 어떤 느낌과 소리로? 단어를 가족에 넣어 보고 -- 들어 봐요.')}</p>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:10}}>
+        {[1, 2, 3, 4].map(g => <button key={g} className={'chip' + (grade === g ? ' active' : '')} style={{padding:'4px 12px',fontSize:13}} onClick={() => { setGrade(g); next(g); }}>{t('Up to Grade ' + g, g + '급까지')}</button>)}
+      </div>
+      <div style={{textAlign:'center',padding:'14px 8px',border:'1.5px solid var(--navy-line)',borderRadius:14,background:'var(--surface)'}}>
+        <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontStyle:'italic',fontWeight:900,fontSize:28,color:'var(--navy)'}}>{cur.term}</div>
+        {cur.abbr && <div style={{fontSize:13,color:'var(--navy-soft)',fontStyle:'italic'}}>{cur.abbr}</div>}
+        <div style={{fontSize:14,color:ans ? 'var(--navy)' : 'transparent',marginTop:4,minHeight:20,transition:'color .2s'}}>{cur.meaning}</div>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:10}}>
+        {TERM_FAMILIES.map(f => {
+          const isRight = ans && f.cat === cur.cat, isWrong = ans === f.cat && f.cat !== cur.cat;
+          return <button key={f.cat} onClick={() => choose(f.cat)} disabled={!!ans} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',borderRadius:12,cursor:ans ? 'default' : 'pointer',fontFamily:'inherit',textAlign:'left',
+            border:'1.5px solid ' + (isRight ? 'var(--good)' : isWrong ? 'var(--bad)' : 'var(--navy-line)'),background:isRight ? '#dcefe7' : isWrong ? '#fbdcd2' : 'var(--surface)'}}>
+            <FamilyIcon cat={f.cat} on={isRight}/><span style={{fontSize:14.5,fontWeight:800,color:'var(--navy)'}}>{t(f.en, f.ko)}</span></button>;
+        })}
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:10,marginTop:10,minHeight:32}}>
+        {ans && <span style={{fontSize:14,fontWeight:800,color:ans === cur.cat ? 'var(--good)' : 'var(--bad)'}}>{ans === cur.cat ? t('Yes -- ' + fam.en.toLowerCase() + '.', '맞아요 -- ' + fam.ko + '.') : t('It belongs to ' + fam.en.toLowerCase() + '.', fam.ko + ' 가족이에요.')}</span>}
+        <span style={{flex:1}}/>
+        <span style={{fontSize:12.5,color:'var(--navy-soft)',fontWeight:700}}>{score.right} / {score.tries}</span>
+        {ans && <button className="primary-btn" style={{width:'auto',padding:'8px 16px',fontSize:14}} onClick={() => next()}>{t('Next', '다음')}</button>}
+      </div>
+    </div>
+  );
+}
+
+// Little words, big changes: molto / assai / poco / non troppo / sempre in front of (or after) a term.
+const TERM_MODS = [
+  { w: 'Molto', k: 1.6, pos: 'before' }, { w: 'Assai', k: 1.6, pos: 'after' },
+  { w: 'Poco', k: 0.45, pos: 'before' }, { w: 'Non troppo', k: 0.55, pos: 'after' }, { w: 'Sempre', k: 1, pos: 'before' },
+];
+const TERM_BASES = ['Allegro', 'Adagio', 'Crescendo', 'Diminuendo', 'Forte', 'Legato', 'Staccato'];
+function modHear(h, k) {
+  const cl = (v, a, b) => Math.max(a, Math.min(b, v)), out = { ...h };
+  if (h.bpm) out.bpm = cl(Math.round(100 + (h.bpm - 100) * k), 40, 220);
+  if (h.vol !== undefined) out.vol = cl(0.2 + (h.vol - 0.2) * k, 0.02, 0.6);
+  if (h.vFrom !== undefined) { out.vFrom = cl(0.2 + (h.vFrom - 0.2) * k, 0.02, 0.6); out.vTo = cl(0.2 + (h.vTo - 0.2) * k, 0.02, 0.6); }
+  if (h.len !== undefined) out.len = cl(0.8 + (h.len - 0.8) * k, 0.1, 1.1);
+  return out;
+}
+function TermMixer() {
+  const [mod, setMod] = useState('Molto'), [base, setBase] = useState('Allegro');
+  const m = TERM_MODS.find(x => x.w === mod), b = TERMS.find(x => x.term === base), mt = TERMS.find(x => x.term === mod);
+  if (!m || !b || !mt) return null;
+  const words = m.pos === 'before' ? [mod, base.toLowerCase()] : [base, mod.toLowerCase()];
+  function hear(which) { try { playTerm(which === 'base' ? b : { ...b, hear: modHear(b.hear || {}, m.k) }); } catch (e) {} }
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Little words, big changes', '작은 단어, 큰 변화')}</div>
+      <p style={actNote}>{t('Some terms never appear alone -- they change the word next to them. Pick a little word and a main word, then hear the plain word and the changed one.', '어떤 용어는 혼자 나오지 않고 -- 옆 단어를 바꿔요. 작은 단어와 주인공 단어를 골라서, 원래 단어와 바뀐 단어를 들어 봐요.')}</p>
+      <div style={{fontSize:12,fontWeight:800,color:'var(--navy-soft)',textTransform:'uppercase',letterSpacing:'0.06em'}}>{t('Little word', '작은 단어')}</div>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',margin:'4px 0 10px'}}>{TERM_MODS.map(x => <button key={x.w} className={'chip' + (mod === x.w ? ' active' : '')} style={{padding:'4px 12px',fontSize:13.5,fontStyle:'italic'}} onClick={() => setMod(x.w)}>{x.w}</button>)}</div>
+      <div style={{fontSize:12,fontWeight:800,color:'var(--navy-soft)',textTransform:'uppercase',letterSpacing:'0.06em'}}>{t('Main word', '주인공 단어')}</div>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',margin:'4px 0 12px'}}>{TERM_BASES.map(x => <button key={x} className={'chip' + (base === x ? ' active' : '')} style={{padding:'4px 12px',fontSize:13.5,fontStyle:'italic'}} onClick={() => setBase(x)}>{x}</button>)}</div>
+      <div style={{border:'1.5px solid var(--navy-line)',borderRadius:14,background:'var(--surface)',padding:'12px 14px'}}>
+        <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontStyle:'italic',fontWeight:900,fontSize:26,color:'var(--navy)'}}>
+          {m.pos === 'before' ? <><span style={{color:'var(--coral)'}}>{words[0]}</span> {words[1]}</> : <>{words[0]} <span style={{color:'var(--coral)'}}>{words[1]}</span></>}
+        </div>
+        <div style={{fontSize:14,color:'var(--navy)',marginTop:6,lineHeight:1.5}}>
+          <b style={{color:'var(--coral)'}}>{mt.term}</b> = {mt.meaning} &nbsp;+&nbsp; <b>{b.term}</b> = {b.meaning}
+        </div>
+        <div style={{display:'flex',gap:8,marginTop:10,flexWrap:'wrap'}}>
+          <button className="ghost-btn" style={{fontSize:13,padding:'6px 14px'}} onClick={() => hear('base')}>{t('Hear ', '듣기: ') + b.term}</button>
+          <button className="primary-btn" style={{width:'auto',fontSize:13,padding:'7px 16px'}} onClick={() => hear('mod')}>{t('Hear ', '듣기: ') + words.join(' ')}</button>
+        </div>
+        {mod === 'Sempre' && <div style={{fontSize:12.5,color:'var(--navy-soft)',marginTop:8}}>{t('Sempre doesn’t change how it sounds -- it means keep doing it, all the way through.', 'Sempre는 소리를 바꾸지 않아요 -- 끝까지 계속 그렇게 하라는 뜻이에요.')}</div>}
+      </div>
+    </div>
+  );
+}
+
 function TermsLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="terms" title={t('Musical terms', '음악 용어')} onStart={onStart} head={<TermsHero/>}
-      intro={<>{t('The Italian (and a few French) words in the music, grade by grade, with the meanings the AMEB accepts. Each grade adds to the one before.', '악보 속 이탈리아어(그리고 몇몇 프랑스어) 단어들을 학년별로, AMEB이 인정하는 뜻과 함께 배워요. 각 학년은 이전 학년에 더해져요.')}</>}>
-      <Step title={t('Grade 1', '1학년')}>
+    <Lesson id="terms" title={t('Musical terms', '음악 용어')} onStart={onStart}
+      intro={<>{t('The Italian (and a few French) words in the music, grade by grade, with the meanings the AMEB accepts. Each grade adds to the one before.', '악보 속 이탈리아어(그리고 몇몇 프랑스어) 단어들을 급수별로, AMEB이 인정하는 뜻과 함께 배워요. 각 급수는 이전 급수에 더해져요.')}</>}>
+      <Step title={t('Four families', '네 가족')}><TermSort/></Step>
+      <Step title={t('Grade 1', '1급')}>
         <ExplTerms1/>
         <TermCards grade={1}/>
       </Step>
-      <Step title={t('Grade 2', '2학년')}><TermCards grade={2}/></Step>
-      <Step title={t('Grade 3', '3학년')}><TermCards grade={3}/></Step>
-      <Step title={t('Grade 4', '4학년')}><TermCards grade={4}/></Step>
+      <Step title={t('Grade 2', '2급')}><TermCards grade={2}/></Step>
+      <Step title={t('Little words, big changes', '작은 단어, 큰 변화')}><TermMixer/></Step>
+      <Step title={t('Grade 3', '3급')}><TermCards grade={3}/></Step>
+      <Step title={t('Grade 4', '4급')}><TermCards grade={4}/></Step>
       <Step title={t('Match them up', '짝 맞추기')}><TermMatch/></Step>
     </Lesson>
   );
@@ -11813,7 +12322,7 @@ function PianoStoryHero() {
 function PianoStoryLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="piano-story" title="The piano’s story" onStart={onStart} head={<PianoStoryHero/>}
+    <Lesson id="piano-story" title="The piano’s story" onStart={onStart}
       intro={<>Where the piano came from, what came before it, and how each era’s keyboard shaped the way its music is played. Useful for exam general-knowledge questions.</>}>
       <Step title="Before the piano">
         <ExplPianoStory1/>
@@ -11864,14 +12373,208 @@ function PitchRangeHero() {
   );
 }
 
+// ─── Phase 283: Pitch & Range content pass ───
+// Book p.14-16 & 175: faster vibrations = higher; shorter or tighter string = higher, longer or
+// looser = lower; smaller instruments/bars play higher; an octave up vibrates exactly twice as fast
+// (the half-string vibration is the 2nd note of the harmonic series, the octave).
+const STRING_OPEN = 55; // G3, the violin's lowest string (RANGES: Violin from G3)
+const TENSION = { loose: -3, normal: 0, tight: 3 }; // semitones -- the direction is the fact, the amount is just for hearing it
+function StringLab() {
+  const [len, setLen] = useState(1), [ten, setTen] = useState('normal'), [pl, setPl] = useState(0);
+  const f = mFreq(STRING_OPEN + TENSION[ten]) / len, midi = 69 + 12 * Math.log2(f / 440);
+  function pluck(L = len, T = ten) {
+    const ff = mFreq(STRING_OPEN + TENSION[T]) / L, ctx = getAudio(); setPl(p => p + 1);
+    if (ctx) harpsiNote(ctx, ctx.currentTime + 0.03, ff, 1.4);
+  }
+  const NUT = 22, BRIDGE = 300, Y = 52, fx = NUT + (1 - len) * (BRIDGE - NUT), mid = (fx + BRIDGE) / 2;
+  const half = 25 / f; // visual half-period (s): higher note = faster wobble
+  const amps = [16, -13, 10.5, -8.5, 7, -5.5, 4.4, -3.4, 2.6, -1.8, 1.2, -0.6, 0];
+  const dVals = amps.map(a => `M${fx} ${Y} Q${mid} ${Y + a * 2} ${BRIDGE} ${Y}`).join(';');
+  const still = `M${fx} ${Y} Q${mid} ${Y} ${BRIDGE} ${Y}`;
+  const tenLabel = { loose: t('Loose', '느슨하게'), normal: t('Normal', '보통'), tight: t('Tight', '팽팽하게') };
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Shorter, tighter, higher', '짧게, 팽팽하게, 높게')}</div>
+      <p style={actNote}>{t('A string’s note changes with its length and how tight it is. Slide your finger along the string to shorten the part that vibrates, change the tightness, then pluck.', '현의 음은 길이와 팽팽한 정도에 따라 달라져요. 손가락을 밀어서 떨리는 부분을 짧게 만들고, 팽팽함을 바꾼 다음, 튕겨 봐요.')}</p>
+      <svg key={pl} viewBox="0 0 320 96" width="100%" style={{display:'block',maxWidth:520,cursor:'pointer',touchAction:'manipulation'}} onClick={() => pluck()} aria-hidden="true">
+        <rect x={NUT - 8} y={Y - 16} width="8" height="32" rx="2" fill="#26296b"/>
+        <path d={`M${BRIDGE} ${Y + 14} L${BRIDGE + 7} ${Y + 14} L${BRIDGE + 3.5} ${Y - 4} Z`} fill="#26296b"/>
+        <line x1={NUT} x2={fx} y1={Y} y2={Y} stroke="#6d6f9c" strokeOpacity="0.45" strokeWidth="2"/>
+        <path d={still} fill="none" stroke="#26296b" strokeWidth="2.6" strokeLinecap="round">
+          {pl > 0 && <animate attributeName="d" values={dVals} dur={(half * (amps.length - 1)).toFixed(3) + 's'} fill="freeze"/>}
+        </path>
+        <line x1={(NUT + BRIDGE) / 2} x2={(NUT + BRIDGE) / 2} y1={Y + 20} y2={Y + 26} stroke="#e8b93a" strokeWidth="2"/>
+        <text x={(NUT + BRIDGE) / 2} y={Y + 37} textAnchor="middle" fontSize="10" fontWeight="800" fill="#b8860b">{t('half = an octave up', '절반 = 한 옥타브 위')}</text>
+        <circle cx={fx} cy={Y} r="7.5" fill="#e4572e" stroke="#fffefa" strokeWidth="2"/>
+        <line x1={fx} x2={BRIDGE} y1={14} y2={14} stroke="#e4572e" strokeWidth="1.5"/>
+        <line x1={fx} x2={fx} y1={10} y2={18} stroke="#e4572e" strokeWidth="1.5"/><line x1={BRIDGE} x2={BRIDGE} y1={10} y2={18} stroke="#e4572e" strokeWidth="1.5"/>
+        <text x={(fx + BRIDGE) / 2} y={9} textAnchor="middle" fontSize="10" fontWeight="800" fill="#e4572e">{t('vibrating part', '떨리는 부분')} · {Math.round(len * 100)}%</text>
+      </svg>
+      <input type="range" min="50" max="100" step="1" value={Math.round((1 - len) * 100 + 50)} aria-label={t('Finger position', '손가락 위치')}
+        onChange={e => setLen(1 - (+e.target.value - 50) / 100)} onMouseUp={() => pluck()} onTouchEnd={() => pluck()} style={{width:'100%',accentColor:'#e4572e',margin:'2px 0 6px'}}/>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}>
+        {[[1, t('Whole string', '현 전체')], [0.75, '¾'], [0.5, t('Half', '절반')]].map(([L, lab]) => <button key={L} className={'chip' + (Math.abs(len - L) < 0.005 ? ' active' : '')} style={{padding:'4px 11px',fontSize:13}} onClick={() => { setLen(L); pluck(L); }}>{lab}</button>)}
+        <span style={{width:1,height:20,background:'var(--navy-line)'}}/>
+        {['loose', 'normal', 'tight'].map(k => <button key={k} className={'chip' + (ten === k ? ' active' : '')} style={{padding:'4px 11px',fontSize:13}} onClick={() => { setTen(k); pluck(len, k); }}>{tenLabel[k]}</button>)}
+      </div>
+      <div style={{display:'flex',alignItems:'baseline',gap:10,marginTop:10,flexWrap:'wrap'}}>
+        <button className="primary-btn" style={{width:'auto',padding:'8px 18px',fontSize:14}} onClick={() => pluck()}>{t('Pluck', '튕기기')}</button>
+        <span style={{fontFamily:"'Playfair Display', Georgia, serif",fontVariantNumeric:'lining-nums',fontSize:24,fontWeight:900,color:'var(--navy)'}}>{midiName(Math.round(midi))}</span>
+        <span style={{fontSize:16,fontWeight:900,color:'var(--coral)'}}>{fmtHz(f)}</span>
+      </div>
+      <div style={{fontSize:13.5,color:'var(--navy)',lineHeight:1.5,marginTop:6}}>{t('Shorter or tighter: faster vibrations, higher note. Longer or looser: slower, lower. That’s how a violinist’s fingers change the note -- and why a piano’s high strings are short and its low strings long.', '짧게 하거나 팽팽하게 하면: 더 빨리 떨리고, 음이 높아져요. 길게 하거나 느슨하게 하면: 더 느리게, 더 낮게. 바이올린 연주자의 손가락이 음을 바꾸는 방법이에요 -- 피아노의 높은 현이 짧고 낮은 현이 긴 이유이기도 해요.')}</div>
+    </div>
+  );
+}
+
+// Bigger is lower: xylophone bars, then the violin family drawn to (rough) scale.
+const XYLO = [72, 74, 76, 77, 79, 81, 83, 84];
+const VFAM = [ // lowest open string from RANGES
+  { en: 'Violin', ko: '바이올린', h: 50, low: 55 }, { en: 'Viola', ko: '비올라', h: 58, low: 48 },
+  { en: 'Cello', ko: '첼로', h: 98, low: 36 }, { en: 'Double bass', ko: '더블베이스', h: 140, low: 28 },
+];
+function StringFamilyShape({ h, x, base, on }) {
+  const s = h / 100, cx = x;
+  const body = `M${cx} ${base - 62 * s} C${cx + 16 * s} ${base - 62 * s} ${cx + 17 * s} ${base - 48 * s} ${cx + 10 * s} ${base - 42 * s} C${cx + 20 * s} ${base - 36 * s} ${cx + 21 * s} ${base - 6 * s} ${cx} ${base - 4 * s} C${cx - 21 * s} ${base - 6 * s} ${cx - 20 * s} ${base - 36 * s} ${cx - 10 * s} ${base - 42 * s} C${cx - 17 * s} ${base - 48 * s} ${cx - 16 * s} ${base - 62 * s} ${cx} ${base - 62 * s} Z`;
+  return (
+    <g>
+      {h >= 90 && <line x1={cx} x2={cx} y1={base - 4 * s} y2={base + 2} stroke="#26296b" strokeWidth="1.6"/>}
+      <rect x={cx - 2.4 * s - 0.6} y={base - 98 * s} width={4.8 * s + 1.2} height={38 * s} rx="1" fill="#26296b"/>
+      <circle cx={cx} cy={base - 99 * s} r={3.6 * s + 0.8} fill="none" stroke="#26296b" strokeWidth="1.6"/>
+      <path d={body} fill={on ? '#e4572e' : '#f3c9a8'} stroke="#26296b" strokeWidth="1.6" strokeLinejoin="round"/>
+      <path d={`M${cx - 6 * s} ${base - 34 * s} q ${-2 * s} ${5 * s} 0 ${10 * s} M${cx + 6 * s} ${base - 34 * s} q ${2 * s} ${5 * s} 0 ${10 * s}`} fill="none" stroke="#26296b" strokeWidth="1.3"/>
+      <line x1={cx - 1.4 * s} x2={cx - 1.4 * s} y1={base - 96 * s} y2={base - 12 * s} stroke="#fffefa" strokeWidth="0.6"/>
+      <line x1={cx + 1.4 * s} x2={cx + 1.4 * s} y1={base - 96 * s} y2={base - 12 * s} stroke="#fffefa" strokeWidth="0.6"/>
+    </g>
+  );
+}
+function SizePitch() {
+  const [hit, setHit] = useState(-1);
+  const [pair, setPair] = useState(() => shuffle([0, 1, 2, 3]).slice(0, 2));
+  const [ans, setAns] = useState(null), [score, setScore] = useState({ right: 0, tries: 0 });
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  function bar(i, at = 0) {
+    const ctx = getAudio(); if (!ctx) return;
+    const tt = ctx.currentTime + 0.03 + at;
+    blip(ctx, tt, mFreq(XYLO[i]), 0.45, 0.24, 'sine'); blip(ctx, tt, mFreq(XYLO[i]) * 4, 0.08, 0.05, 'sine');
+    timers.current.push(setTimeout(() => setHit(i), at * 1000 + 30), setTimeout(() => setHit(h => (h === i ? -1 : h)), at * 1000 + 260));
+  }
+  function run(up) { timers.current.forEach(clearTimeout); timers.current = []; XYLO.forEach((_, k) => bar(up ? k : XYLO.length - 1 - k, k * 0.16)); }
+  const higher = VFAM[pair[0]].h < VFAM[pair[1]].h ? pair[0] : pair[1];
+  function choose(k) {
+    if (ans !== null) return; setAns(k); setScore(s => ({ right: s.right + (k === higher ? 1 : 0), tries: s.tries + 1 }));
+    const ctx = getAudio(); if (!ctx) return;
+    const order = [...pair].sort((a, b) => VFAM[b].h - VFAM[a].h);
+    order.forEach((v, i) => instNote('piano', ctx, ctx.currentTime + 0.05 + i * 1.0, VFAM[v].low, 0.9, 0.5));
+  }
+  function next() { let p; do { p = shuffle([0, 1, 2, 3]).slice(0, 2); } while (p[0] === pair[0] && p[1] === pair[1]); setPair(p); setAns(null); }
+  const W = 320, bw = 30, gap = 6, x0 = (W - (XYLO.length * bw + (XYLO.length - 1) * gap)) / 2, xyH = (i) => 76 - i * 5.6;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Big is low, small is high', '크면 낮고, 작으면 높아요')}</div>
+      <p style={actNote}>{t('Smaller things vibrate faster, so they sound higher. A xylophone’s bars go from big (low) to small (high) -- tap them.', '작은 것일수록 빨리 떨려서 더 높은 소리가 나요. 실로폰 건반은 큰 것(낮은 음)부터 작은 것(높은 음)까지 있어요 -- 눌러 봐요.')}</p>
+      <svg viewBox={`0 0 ${W} 128`} width="100%" style={{display:'block',maxWidth:520,touchAction:'manipulation'}}>
+        <line x1={x0 - 6} x2={W - x0 + 6} y1={60 - xyH(0) / 2 + 9} y2={60 - xyH(7) / 2 + 9} stroke="#6d6f9c" strokeWidth="2" strokeLinecap="round"/>
+        <line x1={x0 - 6} x2={W - x0 + 6} y1={60 + xyH(0) / 2 - 9} y2={60 + xyH(7) / 2 - 9} stroke="#6d6f9c" strokeWidth="2" strokeLinecap="round"/>
+        {XYLO.map((m, i) => { const h = xyH(i), x = x0 + i * (bw + gap), y = 60 - h / 2;
+          return <g key={m} onClick={() => bar(i)} style={{cursor:'pointer'}}>
+            <rect x={x} y={y} width={bw} height={h} rx="5" fill={hit === i ? '#e4572e' : '#26296b'} style={{transition:'fill .1s'}}/>
+            <circle cx={x + bw / 2} cy={y + 9} r="2.2" fill="#fffefa" opacity="0.7"/><circle cx={x + bw / 2} cy={y + h - 9} r="2.2" fill="#fffefa" opacity="0.7"/>
+            <text x={x + bw / 2} y="120" textAnchor="middle" fontSize="11" fontWeight="800" fill="#6d6f9c">{'CDEFGABC'[i]}</text>
+          </g>; })}
+      </svg>
+      <div style={{display:'flex',gap:6,marginBottom:12}}>
+        <button className="ghost-btn" style={{fontSize:13}} onClick={() => run(true)}>{t('Up: big → small', '올라가기: 큰 → 작은')}</button>
+        <button className="ghost-btn" style={{fontSize:13}} onClick={() => run(false)}>{t('Down', '내려가기')}</button>
+      </div>
+      <div style={{borderTop:'1px dashed var(--navy-line)',paddingTop:10}}>
+        <div style={{fontSize:14.5,fontWeight:800,color:'var(--navy)'}}>{t('The violin family: which one plays higher?', '바이올린 가족: 어느 쪽이 더 높은 소리를 낼까요?')}</div>
+        <svg viewBox="0 0 320 168" width="100%" style={{display:'block',maxWidth:420,margin:'4px auto 0'}}>
+          <line x1="20" x2="300" y1="150" y2="150" stroke="#26296b" strokeOpacity="0.3"/>
+          {pair.map((v, i) => { const cx = i ? 220 : 100, right = ans !== null && v === higher, wrong = ans === v && v !== higher;
+            return <g key={v} onClick={() => choose(v)} style={{cursor:ans === null ? 'pointer' : 'default'}}>
+              <rect x={cx - 70} y="4" width="140" height="162" rx="12" fill={right ? '#dcefe7' : wrong ? '#fbdcd2' : 'transparent'}/>
+              <StringFamilyShape h={VFAM[v].h} x={cx} base={148} on={ans !== null && v === higher}/>
+              {ans !== null && <text x={cx} y="164" textAnchor="middle" fontSize="11.5" fontWeight="800" fill="#26296b">{t(VFAM[v].en, VFAM[v].ko)}</text>}
+            </g>; })}
+        </svg>
+        <div style={{display:'flex',alignItems:'center',gap:10,minHeight:34,flexWrap:'wrap'}}>
+          {ans === null ? <span style={{fontSize:13.5,color:'var(--navy-soft)'}}>{t('Tap the one you think plays higher.', '더 높을 것 같은 악기를 눌러 봐요.')}</span>
+            : <b style={{fontSize:14,color:ans === higher ? 'var(--good)' : 'var(--bad)'}}>{ans === higher ? t('Yes -- the smaller one. Listen: big, then small.', '맞아요 -- 작은 쪽이에요. 들어 봐요: 큰 것, 그다음 작은 것.') : t('The smaller one plays higher. Listen: big, then small.', '작은 쪽이 더 높아요. 들어 봐요: 큰 것, 그다음 작은 것.')}</b>}
+          <span style={{flex:1}}/>
+          <span style={{fontSize:12.5,color:'var(--navy-soft)',fontWeight:700}}>{score.right} / {score.tries}</span>
+          {ans !== null && <button className="primary-btn" style={{width:'auto',padding:'7px 16px',fontSize:14}} onClick={next}>{t('Next', '다음')}</button>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Octave ladder: A2..A6, each bar drawn to scale (twice as long as the one below). Find the hidden number.
+const LADDER = [45, 57, 69, 81, 93];
+function OctaveLadder() {
+  const mk = (prev) => { let k; do { k = 1 + Math.floor(Math.random() * 4); } while (k === prev); return k; };
+  const [hide, setHide] = useState(() => mk(-1)), [ans, setAns] = useState(null), [score, setScore] = useState({ right: 0, tries: 0 });
+  const hz = (k) => Math.round(mFreq(LADDER[k]));
+  const right = hz(hide);
+  const choices = useMemo(() => {
+    const lo = hz(hide - 1), hi = hide < LADDER.length - 1 ? hz(hide + 1) : null;
+    const c = [right, hi ? lo + (hi - lo) / 2 : lo * 1.5, lo + 110];
+    const uniq = [...new Set(c.map(Math.round))];
+    while (uniq.length < 3) uniq.push(Math.round(right * 1.5));
+    return shuffle(uniq.slice(0, 3));
+  }, [hide]);
+  function play(k, at = 0) { const ctx = getAudio(); if (ctx) instNote('piano', ctx, ctx.currentTime + 0.03 + at, LADDER[k], 0.8, 0.45); }
+  function choose(v) {
+    if (ans !== null) return; setAns(v); setScore(s => ({ right: s.right + (v === right ? 1 : 0), tries: s.tries + 1 }));
+    if (v === right) LADDER.forEach((_, k) => play(k, k * 0.35));
+  }
+  function next() { setHide(mk(hide)); setAns(null); }
+  const maxHz = hz(LADDER.length - 1), BW = 170;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('The octave ladder', '옥타브 사다리')}</div>
+      <p style={actNote}>{t('Each A is an octave above the one below -- it vibrates exactly twice as fast. The bars are drawn to scale. Which number is missing?', '각 A는 아래 A보다 한 옥타브 위예요 -- 정확히 두 배 빨리 떨려요. 막대 길이도 실제 비율 그대로예요. 빠진 숫자는 뭘까요?')}</p>
+      <div style={{display:'flex',flexDirection:'column-reverse',gap:6}}>
+        {LADDER.map((m, k) => { const hidden = k === hide && ans === null, w = Math.max(10, hz(k) / maxHz * BW);
+          return <button key={m} onClick={() => play(k)} style={{display:'flex',alignItems:'center',gap:8,background:'transparent',border:'none',padding:0,cursor:'pointer',fontFamily:'inherit',textAlign:'left'}}>
+            <span style={{width:30,flex:'0 0 auto',fontFamily:"'Playfair Display', Georgia, serif",fontVariantNumeric:'lining-nums',fontWeight:900,fontSize:15,color:'var(--navy)'}}>{midiName(m)}</span>
+            <span style={{height:16,width:w,borderRadius:8,background:k === hide ? (ans === null ? 'repeating-linear-gradient(90deg,#e8b93a 0 6px,transparent 6px 10px)' : ans === right ? 'var(--good)' : '#e4572e') : '#26296b',flex:'0 0 auto',transition:'background .2s'}}/>
+            <span style={{fontSize:14,fontWeight:900,whiteSpace:'nowrap',color:k === hide ? 'var(--coral)' : 'var(--navy)'}}>{hidden ? '? Hz' : hz(k) + ' Hz'}</span>
+          </button>; })}
+      </div>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',marginTop:12}}>
+        {choices.map(v => <button key={v} className="chip" disabled={ans !== null} style={{padding:'6px 14px',fontSize:15,fontWeight:800,opacity:1,
+          borderColor:ans !== null && v === right ? 'var(--good)' : ans === v ? 'var(--bad)' : undefined,background:ans !== null && v === right ? '#dcefe7' : ans === v ? '#fbdcd2' : undefined}} onClick={() => choose(v)}>{v} Hz</button>)}
+        <span style={{flex:1}}/>
+        <span style={{fontSize:12.5,color:'var(--navy-soft)',fontWeight:700}}>{score.right} / {score.tries}</span>
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:10,marginTop:8,minHeight:34,flexWrap:'wrap'}}>
+        {ans !== null && <b style={{fontSize:14,color:ans === right ? 'var(--good)' : 'var(--bad)'}}>{ans === right ? t('Yes -- ' + hz(hide - 1) + ' × 2 = ' + right + '.', '맞아요 -- ' + hz(hide - 1) + ' × 2 = ' + right + '.') : t('Double the one below: ' + hz(hide - 1) + ' × 2 = ' + right + '.', '아래 숫자를 두 배로: ' + hz(hide - 1) + ' × 2 = ' + right + '.')}</b>}
+        {ans !== null && <button className="primary-btn" style={{width:'auto',padding:'7px 16px',fontSize:14,marginLeft:'auto'}} onClick={next}>{t('Next', '다음')}</button>}
+      </div>
+    </div>
+  );
+}
+
 function PitchRangeLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="pitch-range" title="Pitch, Hz and range" onStart={onStart} head={<PitchRangeHero/>}
+    <Lesson id="pitch-range" title="Pitch, Hz and range" onStart={onStart}
       intro={<>What makes a note high or low, and where the piano sits among the other instruments and voices.</>}>
       <Step title="Vibrations and Hertz">
         <ExplPitchRange1/>
         <HzExplorer/>
+      </Step>
+      <Step title={t('Shorter, tighter, higher', '짧게, 팽팽하게, 높게')}>
+        <StringLab/>
+      </Step>
+      <Step title={t('Big is low, small is high', '크면 낮고, 작으면 높아요')}>
+        <SizePitch/>
+      </Step>
+      <Step title={t('The octave ladder', '옥타브 사다리')}>
+        <OctaveLadder/>
       </Step>
       <Step title="The piano and the orchestra">
         <ExplPitchRange2/>
@@ -12151,11 +12854,124 @@ function MelodyHero() {
   );
 }
 
+// ─── Phase 281: Melody & Form, "make your own" activities (content pass) ───
+// Draw a tune on the staff (C4..C5), hear it, and see its shape named.
+const CONTOUR_N = 8, CONTOUR_LO = 28, CONTOUR_HI = 35;
+const contourY = (d) => 110 - (d - CONTOUR_LO) * 6;
+function contourShape(ds) {
+  const up = ds.every((d, i) => i === 0 || d >= ds[i - 1]), down = ds.every((d, i) => i === 0 || d <= ds[i - 1]);
+  if (ds[ds.length - 1] === ds[0] && up && down) return 'flat';
+  if (up) return 'rising';
+  if (down) return 'falling';
+  const hi = Math.max(...ds), lo = Math.min(...ds), hiI = ds.indexOf(hi), loI = ds.indexOf(lo);
+  const upTo = (k) => ds.slice(0, k + 1).every((d, i) => i === 0 || d >= ds[i - 1]), downFrom = (k) => ds.slice(k).every((d, i, a) => i === 0 || d <= a[i - 1]);
+  if (hiI > 0 && hiI < ds.length - 1 && upTo(hiI) && downFrom(hiI)) return 'arch';
+  const downTo = (k) => ds.slice(0, k + 1).every((d, i) => i === 0 || d <= ds[i - 1]), upFrom = (k) => ds.slice(k).every((d, i, a) => i === 0 || d >= a[i - 1]);
+  if (loI > 0 && loI < ds.length - 1 && downTo(loI) && upFrom(loI)) return 'valley';
+  return 'wave';
+}
+const SHAPE_WORDS = {
+  rising: ['Rising -- it climbs all the way.', '올라가는 모양 -- 끝까지 올라가요.'],
+  falling: ['Falling -- it steps down all the way.', '내려가는 모양 -- 끝까지 내려가요.'],
+  arch: ['An arch -- up to a high point, then back down. Lots of phrases are shaped like this.', '아치 모양 -- 높은 곳까지 올라갔다 다시 내려와요. 많은 프레이즈가 이런 모양이에요.'],
+  valley: ['A valley -- down to a low point, then back up.', '골짜기 모양 -- 낮은 곳까지 내려갔다 다시 올라와요.'],
+  wave: ['A wave -- up and down, up and down.', '물결 모양 -- 올라갔다 내려갔다, 또 올라갔다 내려가요.'],
+  flat: ['All on one note -- a tune needs some ups and downs!', '모두 같은 음이에요 -- 튠에는 오르내림이 필요해요!'],
+};
+function MelodyContour() {
+  const [ds, setDs] = useState([28, 30, 32, 33, 32, 30, 29, 28]);
+  const [on, setOn] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const W = 320, colW = (W - 50) / CONTOUR_N, colX = (i) => 44 + i * colW + colW / 2;
+  function tapSvg(e) {
+    const r = e.currentTarget.getBoundingClientRect(), x = (e.clientX - r.left) * (W / r.width), y = (e.clientY - r.top) * (130 / r.height);
+    const i = Math.floor((x - 44) / colW); if (i < 0 || i >= CONTOUR_N) return;
+    const d = Math.max(CONTOUR_LO, Math.min(CONTOUR_HI, Math.round((110 - y) / 6) + CONTOUR_LO));
+    setDs(prev => prev.map((v, k) => (k === i ? d : v)));
+    const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime + 0.02, 440 * Math.pow(2, (ivMidi({ d, acc: 0 }) - 69) / 12), 0.35, 0.17, 'triangle');
+  }
+  function play() { timers.current.forEach(clearTimeout); timers.current = playMelody(ds.map((d, i) => ({ d, dur: i === CONTOUR_N - 1 ? 2 : 1 })), 108, setOn); }
+  const shape = contourShape(ds), home = ds[ds.length - 1] === 28 || ds[ds.length - 1] === 35;
+  const path = ds.map((d, i) => (i ? 'L' : 'M') + colX(i) + ' ' + contourY(d)).join(' ');
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Draw a tune', '튠 그리기')}</div>
+      <p style={actNote}>{t('Tap the staff to move each of the eight notes up or down, then play your tune. The line shows its shape -- every melody has one.', '오선을 눌러 여덟 음을 하나씩 위아래로 옮기고, 내 튠을 연주해 봐요. 선이 모양을 보여 줘요 -- 모든 선율에는 모양이 있어요.')}</p>
+      <svg viewBox={`0 0 ${W} 130`} width="100%" style={{display:'block',maxWidth:520,touchAction:'manipulation',cursor:'pointer'}} onClick={tapSvg}>
+        {[30, 32, 34, 36, 38].map(d => <line key={d} x1="6" x2={W - 6} y1={contourY(d)} y2={contourY(d)} stroke="#26296b" strokeOpacity="0.55" strokeWidth="1.2"/>)}
+        <g transform="translate(0 -22) scale(1.2)"><ClefGlyph clef="treble" st="treble" yOf={dY} ink="#26296b"/></g>
+        <path d={path} fill="none" stroke="#e4572e" strokeOpacity="0.45" strokeWidth="2.4" strokeDasharray="4 4"/>
+        {ds.map((d, i) => <g key={i}>
+          {d === 28 && <line x1={colX(i) - 11} x2={colX(i) + 11} y1={contourY(28)} y2={contourY(28)} stroke="#26296b" strokeWidth="1.3"/>}
+          <ellipse cx={colX(i)} cy={contourY(d)} rx="6.4" ry="4.6" transform={`rotate(-20 ${colX(i)} ${contourY(d)})`} fill={on === i || i === CONTOUR_N - 1 ? '#e4572e' : '#26296b'}/>
+          <text x={colX(i)} y="128" textAnchor="middle" fontSize="10" fontWeight="800" fill="#6d6f9c">{dName(d)}</text>
+        </g>)}
+      </svg>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',marginTop:8}}>
+        <button className="primary-btn" style={{width:'auto',padding:'8px 18px',fontSize:14}} onClick={play}>{t('Play my tune', '내 튠 연주하기')}</button>
+        {[[28, 30, 32, 33, 32, 30, 29, 28], [28, 29, 30, 31, 32, 33, 34, 35], [32, 30, 28, 30, 32, 34, 33, 32], [30, 32, 30, 33, 31, 34, 32, 28]].map((preset, k) =>
+          <button key={k} className="chip" style={{padding:'4px 10px',fontSize:12.5}} onClick={() => setDs(preset)}>{[t('Arch', '아치'), t('Rising', '오르막'), t('Valley', '골짜기'), t('Wave', '물결')][k]}</button>)}
+      </div>
+      <div style={{marginTop:10,fontSize:14,lineHeight:1.5,color:'var(--navy)'}}>
+        <b style={{color:'var(--coral)'}}>{t('Shape: ', '모양: ')}</b>{t(SHAPE_WORDS[shape][0], SHAPE_WORDS[shape][1])}<br/>
+        <b style={{color:'var(--coral)'}}>{t('Ending: ', '끝음: ')}</b>{home ? t('It ends on C, the home note -- it sounds finished.', '집 음인 C에서 끝나요 -- 끝난 느낌이 들어요.') : t('It ends away from C, the home note -- it sounds like it still has something to say.', '집 음인 C가 아닌 곳에서 끝나요 -- 아직 할 말이 남은 것처럼 들려요.')}
+      </div>
+    </div>
+  );
+}
+
+// Build a piece from A, B and C blocks; the known shapes get their names.
+function formName(seq) {
+  const s = seq.join('');
+  if (s === 'AB' || s === 'AABB') return 'binary';
+  if (s === 'ABA') return 'ternary';
+  if (/^A(?:[BCD]A){2,}$/.test(s) && new Set(seq).size >= 3) return 'rondo';
+  return null;
+}
+function FormBuilder() {
+  const [seq, setSeq] = useState(['A', 'B']);
+  const [on, setOn] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const name = formName(seq);
+  function add(b) { if (seq.length < 7) setSeq(seq.concat(b)); }
+  function play() { timers.current.forEach(clearTimeout); timers.current = playFormSeq(seq, setOn); }
+  const NAMES = { binary: [t('Binary form', '2부 형식'), t('Two different sections -- A, then B.', '서로 다른 두 부분 -- A 다음에 B.')],
+    ternary: [t('Ternary form', '3부 형식'), t('A, something new, then A comes home.', 'A, 새로운 부분, 그리고 A가 집으로 돌아와요.')],
+    rondo: [t('Rondo', '론도'), t('A keeps coming back between new episodes.', 'A가 새 에피소드 사이에 계속 돌아와요.')] };
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Build your own form', '나만의 형식 만들기')}</div>
+      <p style={actNote}>{t('Each letter is a short tune. Stack them into a piece and play it. Can you build binary (AB), ternary (ABA) and a rondo (ABACA)?', '글자마다 짧은 튠이에요. 쌓아서 곡을 만들고 연주해 봐요. 2부 형식(AB), 3부 형식(ABA), 론도(ABACA)를 만들 수 있나요?')}</p>
+      <div style={{display:'flex',gap:8,marginBottom:10,alignItems:'center',flexWrap:'wrap'}}>
+        {['A', 'B', 'C'].map(b => <button key={b} onClick={() => add(b)} style={{width:46,height:46,flexShrink:0,borderRadius:12,border:'none',fontSize:20,fontWeight:900,color:'#fff',background:FORM_COLOR[b],cursor:'pointer',fontFamily:"'Playfair Display', Georgia, serif"}}>{b}</button>)}
+      </div>
+      <div style={{display:'flex',gap:6,minHeight:56,alignItems:'center',flexWrap:'wrap',padding:'8px',border:'1.5px dashed var(--navy-line)',borderRadius:14,background:'var(--surface)'}}>
+        {seq.length ? seq.map((b, i) => <span key={i} style={{width:44,height:44,borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:900,color:'#fff',background:FORM_COLOR[b],
+          boxShadow:on === i ? '0 0 0 3px #26296b' : 'none',transform:on === i ? 'translateY(-3px)' : 'none',transition:'all .15s',fontFamily:"'Playfair Display', Georgia, serif"}}>{b}</span>)
+          : <span style={{fontSize:13,color:'var(--navy-soft)'}}>{t('Tap A, B or C to add a section.', 'A, B, C를 눌러 부분을 더해요.')}</span>}
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:10,marginTop:10,flexWrap:'wrap'}}>
+        <button className="primary-btn" style={{width:'auto',padding:'8px 18px',fontSize:14}} onClick={play} disabled={!seq.length}>{t('Play my piece', '내 곡 연주하기')}</button>
+        <button className="ghost-btn" style={{fontSize:13,padding:'6px 12px',whiteSpace:'nowrap'}} onClick={() => setSeq(seq.slice(0, -1))} disabled={!seq.length}>{t('Undo', '되돌리기')}</button>
+        <button className="ghost-btn" style={{fontSize:13,padding:'6px 12px',whiteSpace:'nowrap'}} onClick={() => setSeq([])}>{t('Clear', '지우기')}</button>
+      </div>
+      <div style={{marginTop:8,minHeight:21}}>
+        <span style={{fontSize:14,color:'var(--navy)'}}>{name ? <><b style={{color:'var(--coral)'}}>{NAMES[name][0]}</b> -- {NAMES[name][1]}</> : seq.length ? t('Your own shape -- composers invent new ones too.', '나만의 모양 -- 작곡가들도 새 모양을 만들어요.') : ''}</span>
+      </div>
+    </div>
+  );
+}
+
 function MelodyLearn({ onStart }) {
   return (
-    <Lesson id="melody" title={t('What makes a tune', '튠(선율)이 뭘까요')} intro={t('A tune is rhythm and pitch working together. This chapter looks at how melodies are shaped -- phrases, questions and answers, and sequences.', '튠(선율)은 리듬과 음높이가 함께 만들어내요. 이 챕터에서는 프레이즈, 질문과 대답, 시퀀스처럼 선율이 어떻게 모양을 갖추는지 살펴봐요.')} onStart={onStart} head={<MelodyHero/>}>
+    <Lesson id="melody" title={t('What makes a tune', '튠(선율)이 뭘까요')} intro={t('A tune is rhythm and pitch working together. This chapter looks at how melodies are shaped -- phrases, questions and answers, and sequences.', '튠(선율)은 리듬과 음높이가 함께 만들어내요. 이 챕터에서는 프레이즈, 질문과 대답, 시퀀스처럼 선율이 어떻게 모양을 갖추는지 살펴봐요.')} onStart={onStart}>
       <Step title={t('Rhythm + pitch = a tune', '리듬 + 음높이 = 튠')}>
         <TuneAnatomy/>
+      </Step>
+      <Step title={t('Draw a tune', '튠 그리기')}>
+        <MelodyContour/>
       </Step>
       <Step title={t('Phrase marks -- where to breathe', '프레이즈 마크 -- 숨쉬는 곳')}>
         <PhraseBreath/>
@@ -12257,7 +13073,7 @@ const FORM_MOTIF = {
   B: [{ d: 32, dur: 1 }, { d: 34, dur: 1 }, { d: 35, dur: 1 }, { d: 34, dur: 1 }, { d: 33, dur: 1 }, { d: 32, dur: 1 }, { d: 32, dur: 2 }],
   C: [{ d: 26, dur: 1 }, { d: 25, dur: 1 }, { d: 24, dur: 1 }, { d: 25, dur: 1 }, { d: 26, dur: 1 }, { d: 27, dur: 1 }, { d: 28, dur: 2 }],
 };
-const FORM_COLOR = { A: 'var(--brass)', B: '#3b4fa8', C: '#8a5fb0' };
+const FORM_COLOR = { A: 'var(--brass)', B: '#3b4fa8', C: '#2b8c8c' };
 const FORM_MOTIF_MS = 3700; // ~8 beats at 132bpm, rounded up -- spacing between sequenced motifs
 const FORM_SHAPES = { binary: ['A', 'B'], ternary: ['A', 'B', 'A'], rondo: ['A', 'B', 'A', 'C', 'A'] };
 const RONDO_SEQUENCE = FORM_SHAPES.rondo;
@@ -12444,9 +13260,12 @@ function FormHero() {
 
 function FormLearn({ onStart }) {
   return (
-    <Lesson id="form" title={t('How a piece is put together', '곡은 어떻게 짜여 있을까요')} intro={t('Composers organize music into sections, often labeled with letters like A and B. This chapter looks at the three most common shapes: binary, ternary, and rondo.', '작곡가는 음악을 A, B 같은 글자로 이름 붙인 여러 부분으로 짜요. 이 챕터에서는 가장 흔한 세 가지 모양인 두 부분(binary), 세 부분(ternary), 론도(rondo)를 살펴봐요.')} onStart={onStart} head={<FormHero/>}>
+    <Lesson id="form" title={t('How a piece is put together', '곡은 어떻게 짜여 있을까요')} intro={t('Composers organize music into sections, often labeled with letters like A and B. This chapter looks at the three most common shapes: binary, ternary, and rondo.', '작곡가는 음악을 A, B 같은 글자로 이름 붙인 여러 부분으로 짜요. 이 챕터에서는 가장 흔한 세 가지 모양인 두 부분(binary), 세 부분(ternary), 론도(rondo)를 살펴봐요.')} onStart={onStart}>
       <Step title={t('Three ways to shape a piece', '곡을 짜는 세 가지 방법')}>
         <FormShapes/>
+      </Step>
+      <Step title={t('Build your own form', '나만의 형식 만들기')}>
+        <FormBuilder/>
       </Step>
       <Step title={t('Same section again, or something new?', '같은 부분인가요, 새로운 부분인가요?')}>
         <SameOrNewSection/>
@@ -12582,72 +13401,316 @@ function playPolyphony() {
   FORM_MOTIF.C.forEach(n => { blip(ctx, time2, ivFreq(n), n.dur * beat * 0.9, 0.18, 'sine'); time2 += n.dur * beat; });
 }
 const TEXTURE_TYPES = {
-  monophony: { label: t('Monophony', '모노포니'), play: playMonophony,
-    desc: t('A single melodic line, alone -- no harmony underneath. The oldest and simplest texture, heard in plainchant and unaccompanied folk song.', '반주 없이 선율 한 줄만 있는 거예요 -- 가장 오래되고 단순한 텍스처로, 그레고리안 성가나 반주 없는 민요에서 들을 수 있어요.') },
-  homophony: { label: t('Homophony', '호모포니'), play: playHomophony,
-    desc: t('A melody on top, with chords moving underneath to support it. Most hymns, pop songs, and piano pieces with a "tune and accompaniment" use this.', '위에는 선율, 아래는 받쳐주는 화음이 있어요. 대부분의 찬송가, 팝송, "선율 + 반주" 형태의 피아노 곡이 이런 구조예요.') },
-  polyphony: { label: t('Polyphony', '폴리포니'), play: playPolyphony,
-    desc: t('Two or more independent melodic lines woven together, each equally important -- like a round or a fugue. Listen for the second voice entering after the first.', '두 개 이상의 독립적인 선율이 서로 얽혀요, 각각 똑같이 중요해요 -- 돌림노래나 푸가처럼요. 첫 번째 선율 뒤에 두 번째 선율이 들어오는 걸 들어보세요.') },
+  monophony: { get label() { return t('Monophony', '모노포니'); }, play: playMonophony,
+    get desc() { return t('A single melodic line, alone -- no harmony underneath. The oldest and simplest texture, heard in plainchant and unaccompanied folk song.', '반주 없이 선율 한 줄만 있는 거예요 -- 가장 오래되고 단순한 텍스처로, 그레고리안 성가나 반주 없는 민요에서 들을 수 있어요.'); } },
+  homophony: { get label() { return t('Homophony', '호모포니'); }, play: playHomophony,
+    get desc() { return t('A melody on top, with chords moving underneath to support it. Most hymns, pop songs, and piano pieces with a "tune and accompaniment" use this.', '위에는 선율, 아래는 받쳐주는 화음이 있어요. 대부분의 찬송가, 팝송, "선율 + 반주" 형태의 피아노 곡이 이런 구조예요.'); } },
+  polyphony: { get label() { return t('Polyphony', '폴리포니'); }, play: playPolyphony,
+    get desc() { return t('Two or more independent melodic lines woven together, each equally important -- like a round or a fugue. Listen for the second voice entering after the first.', '두 개 이상의 독립적인 선율이 서로 얽혀요, 각각 똑같이 중요해요 -- 돌림노래나 푸가처럼요. 첫 번째 선율 뒤에 두 번째 선율이 들어오는 걸 들어보세요.'); } },
 };
+const GENRE_TRAITS = [
+  { get genre() { return t('Folk music', '포크 (민속 음악)'); }, get trait() { return t('Passed down by ear from person to person, over generations -- often with no single known composer.', '세대를 거쳐 귀로 전해져요 -- 대부분 작곡가가 따로 없어요.'); } },
+  { get genre() { return t('Classical music', '클래식 음악'); }, get trait() { return t('Carefully written down on paper and planned in formal structures, usually for the concert hall.', '악보에 꼼꼼히 적혀 있고, 형식이 짜여 있어요 -- 보통 연주회장에서 연주돼요.'); } },
+  { get genre() { return t('Jazz & blues', '재즈와 블루스'); }, get trait() { return t('Built on improvisation and a swung, syncopated feel -- the performer creates as they play.', '즉흥연주와 스윙 리듬을 바탕으로 해요 -- 연주자가 연주하면서 즉석에서 만들어요.'); } },
+  { get genre() { return t('Popular music', '대중음악'); }, get trait() { return t('Built around short verses and a catchy, repeating chorus, made to reach a wide audience.', '짧은 벌스와 기억하기 쉬운 후렴구로 짜여 있어요 -- 많은 사람들에게 다가가려고 만들어졌어요.'); } },
+];
+// ─── Phase 282: Styles & Genres content pass ───
+// Texture picture: the exact notes the synth plays (FORM_MOTIF.A, plus held chords or a second
+// voice entering 2 beats later), drawn as a piano roll so the eye sees what the ear hears.
+const TEX_BEAT_PX = 28, TEX_X0 = 22;
+const TEX_BEATS = { monophony: 8, homophony: 8, polyphony: 10 }; // at 132 bpm, matching playMonophony/Homophony/Polyphony
+const texY = (d) => 78 - (d - 21) * 5;
+function texBars(notes, startBeat, colour, key) {
+  let b = startBeat;
+  return notes.map((n, i) => { const x = TEX_X0 + b * TEX_BEAT_PX; b += n.dur; return <rect key={key + i} x={x + 1.5} y={texY(n.d) - 2.6} width={n.dur * TEX_BEAT_PX - 3} height="5.2" rx="2.6" fill={colour}/>; });
+}
+function TexturePicture({ tex, run }) {
+  const fade = (on) => ({ opacity: on ? 1 : 0, transition: 'opacity .25s ease' });
+  const secs = TEX_BEATS[tex] * 60 / 132;
+  return (
+    <svg key={run} viewBox="0 0 320 96" width="100%" style={{display:'block',maxWidth:520,margin:'2px 0 4px'}} aria-hidden="true">
+      <text x={TEX_X0} y="12" fontSize="10.5" fontWeight="800" fill="#26296b">{t('tune', '선율')}</text>
+      <g>{texBars(FORM_MOTIF.A, 0, '#26296b', 'a')}</g>
+      <g style={fade(tex === 'homophony')}>
+        {[21, 23, 25].map(d => <rect key={d} x={TEX_X0 + 1.5} y={texY(d) - 2.6} width={8 * TEX_BEAT_PX - 3} height="5.2" rx="2.6" fill="#6d6f9c" opacity="0.6"/>)}
+        <text x={TEX_X0} y="94" fontSize="10.5" fontWeight="800" fill="#6d6f9c">{t('chords underneath', '아래에서 받쳐 주는 화음')}</text>
+      </g>
+      <g style={fade(tex === 'polyphony')}>
+        {texBars(FORM_MOTIF.C, 2, '#e4572e', 'c')}
+        <text x={TEX_X0 + 2 * TEX_BEAT_PX} y="80" fontSize="10.5" fontWeight="800" fill="#e4572e">{t('second voice comes in', '두 번째 선율이 들어와요')}</text>
+      </g>
+      {run > 0 && <line x1={TEX_X0} x2={TEX_X0} y1="16" y2="84" stroke="#e8b93a" strokeWidth="2" strokeLinecap="round">
+        <animateTransform attributeName="transform" type="translate" from="0 0" to={TEX_BEATS[tex] * TEX_BEAT_PX + ' 0'} dur={secs + 's'} fill="freeze"/>
+      </line>}
+    </svg>
+  );
+}
 function TextureTypes() {
-  const [tex, setTex] = useState('monophony');
+  const [tex, setTex] = useState('monophony'), [run, setRun] = useState(0);
   const TEX_ORDER = ['monophony', 'homophony', 'polyphony'];
+  function hear(id) { setTex(id); TEXTURE_TYPES[id].play(); setRun(r => r + 1); }
   return (
     <div className="try-box" style={actBox}>
-      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><line x1="2" y1="6" x2="22" y2="6" stroke="#26296b" strokeWidth="1.8" strokeLinecap="round"/><line x1="2" y1="12" x2="22" y2="12" stroke="var(--brass)" strokeWidth="1.8" strokeLinecap="round"/><line x1="2" y1="18" x2="14" y2="18" stroke="#3b4fa8" strokeWidth="1.8" strokeLinecap="round"/><line x1="2" y1="15" x2="10" y2="15" stroke="#8a5fb0" strokeWidth="1.8" strokeLinecap="round"/></svg>{t('Textures: how many voices, and how do they relate?', '텍스처: 목소리는 몇 개이고, 서로 어떤 관계일까요?')}</div>
-      <div style={actNote}>{t('Every piece of music has a texture -- how its melodic lines are layered. Tap each type to hear the same tune treated three different ways.', '모든 음악에는 텍스처가 있어요 -- 선율이 겹겹이 쌓이는 방식이에요. 같은 곡을 세 가지 방식으로 들어보세요.')}</div>
-      <div style={{display:'flex',gap:4,marginBottom:10,flexWrap:'wrap'}}>
-        {TEX_ORDER.map(id => <button key={id} className={'chip' + (tex === id ? ' active' : '')} style={{padding:'4px 11px',fontSize:13}} onClick={() => { setTex(id); TEXTURE_TYPES[id].play(); }}>{TEXTURE_TYPES[id].label}</button>)}
+      <div style={actTitle}>{t('Textures: how many voices, and how do they relate?', '텍스처: 목소리는 몇 개이고, 서로 어떤 관계일까요?')}</div>
+      <div style={actNote}>{t('Every piece of music has a texture -- how its lines are layered. Tap each one: the picture shows exactly what you hear, the same tune three ways.', '모든 음악에는 텍스처가 있어요 -- 선율이 겹겹이 쌓이는 방식이에요. 하나씩 눌러 보세요: 그림이 들리는 소리 그대로예요, 같은 튠을 세 가지 방법으로.')}</div>
+      <div style={{display:'flex',gap:6,marginBottom:6,flexWrap:'wrap',alignItems:'center'}}>
+        {TEX_ORDER.map(id => <button key={id} className={'chip' + (tex === id ? ' active' : '')} style={{padding:'4px 12px',fontSize:13.5}} onClick={() => hear(id)}>{TEXTURE_TYPES[id].label}</button>)}
+        <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginLeft:'auto'}} onClick={() => hear(tex)}>♪ {t('Play', '재생')}</button>
       </div>
-      <div style={{textAlign:'center',margin:'8px 0'}}><button className="ghost-btn" onClick={() => TEXTURE_TYPES[tex].play()}>♪ {t('Play', '재생')}</button></div>
-      <div style={{fontSize:12.5,color:'#4a4d86',background:'#f5f0e4',borderRadius:8,padding:'6px 9px',lineHeight:1.5}}>{TEXTURE_TYPES[tex].desc}</div>
+      <TexturePicture tex={tex} run={run}/>
+      <div style={{fontSize:14,color:'var(--navy)',lineHeight:1.5}}>{TEXTURE_TYPES[tex].desc}</div>
     </div>
   );
 }
 function TextureSpotter() {
   const TEX_ORDER = ['monophony', 'homophony', 'polyphony'];
   const [tex, setTex] = useState(() => TEX_ORDER[Math.floor(Math.random() * 3)]);
-  const [guess, setGuess] = useState(null);
+  const [guess, setGuess] = useState(null), [run, setRun] = useState(0), [score, setScore] = useState({ right: 0, tries: 0 });
   useEffect(() => { const tmo = setTimeout(() => TEXTURE_TYPES[tex].play(), 250); return () => clearTimeout(tmo); }, [tex]);
-  function next() { let nt = tex; while (nt === tex) nt = TEX_ORDER[Math.floor(Math.random() * 3)]; setTex(nt); setGuess(null); }
+  function again() { TEXTURE_TYPES[tex].play(); if (guess !== null) setRun(r => r + 1); }
+  function choose(id) { if (guess !== null) return; setGuess(id); setScore(s => ({ right: s.right + (id === tex ? 1 : 0), tries: s.tries + 1 })); }
+  function next() { let nt = tex; while (nt === tex) nt = TEX_ORDER[Math.floor(Math.random() * 3)]; setTex(nt); setGuess(null); setRun(0); }
   const correct = guess === tex;
   return (
     <div className="try-box" style={actBox}>
-      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><circle cx="12" cy="12" r="9" fill="none" stroke="var(--brass)" strokeWidth="1.6"/><path d="M8 12 a4 4 0 1 1 8 0" fill="none" stroke="#26296b" strokeWidth="1.6" strokeLinecap="round"/><circle cx="12" cy="12" r="1.6" fill="#26296b"/></svg>{t('Which texture is this?', '어떤 텍스처일까요?')}</div>
-      <div style={actNote}>{t('Listen -- is it one line alone, a melody with chords, or two independent lines woven together?', '들어보세요 -- 한 줄뿐인가요, 화음이 받쳐주는 선율인가요, 아니면 두 독립적인 선율이 얽혀있나요?')}</div>
+      <div style={actTitle}>{t('Which texture is this?', '어떤 텍스처일까요?')}</div>
+      <div style={actNote}>{t('Listen -- is it one line alone, a melody with chords, or two independent lines woven together? After you answer, the picture shows you what you heard.', '들어 보세요 -- 한 줄뿐인가요, 화음이 받쳐 주는 선율인가요, 아니면 두 독립적인 선율이 얽혀 있나요? 답하고 나면 들은 소리를 그림으로 보여 줘요.')}</div>
       <div style={{display:'flex',gap:6,justifyContent:'center',margin:'8px 0',flexWrap:'wrap'}}>
-        {TEX_ORDER.map(id => <button key={id} className={'chip' + (guess === id ? ' active' : '')} style={{padding:'5px 12px',fontSize:14}} onClick={() => setGuess(id)}>{TEXTURE_TYPES[id].label}</button>)}
+        {TEX_ORDER.map(id => {
+          const isRight = guess !== null && id === tex, isWrong = guess === id && id !== tex;
+          return <button key={id} className="chip" disabled={guess !== null} style={{padding:'5px 12px',fontSize:14,borderColor:isRight ? 'var(--good)' : isWrong ? 'var(--bad)' : undefined,background:isRight ? '#dcefe7' : isWrong ? '#fbdcd2' : undefined,opacity:1}} onClick={() => choose(id)}>{TEXTURE_TYPES[id].label}</button>;
+        })}
       </div>
-      <div style={{textAlign:'center',fontSize:13.5,minHeight:24,margin:'2px 0'}}>
-        {guess !== null && (correct ? <b style={{color:'#2e8a6e'}}>{t('Right!', '맞았어요!')}</b> : <b style={{color:'#c8361b'}}>{t('Listen again -- it was ' + TEXTURE_TYPES[tex].label + '.', '다시 들어보세요 -- 정답은 ' + TEXTURE_TYPES[tex].label + '이었어요.')}</b>)}
+      <div style={{textAlign:'center',fontSize:14,minHeight:22,margin:'2px 0'}}>
+        {guess !== null && (correct ? <b style={{color:'var(--good)'}}>{t('Right!', '맞았어요!')}</b> : <b style={{color:'var(--bad)'}}>{t('It was ' + TEXTURE_TYPES[tex].label + ' -- see it below.', '정답은 ' + TEXTURE_TYPES[tex].label + '예요 -- 아래 그림을 보세요.')}</b>)}
       </div>
-      <div style={{display:'flex',gap:8,justifyContent:'center',margin:'6px 0'}}>
-        <button className="ghost-btn" onClick={() => TEXTURE_TYPES[tex].play()}>♪ {t('Play again', '다시 듣기')}</button>
-        {guess !== null && <button className="ghost-btn" onClick={next}>{t('Next →', '다음 →')}</button>}
+      {guess !== null && <TexturePicture tex={tex} run={run}/>}
+      <div style={{display:'flex',gap:8,justifyContent:'center',alignItems:'center',margin:'6px 0'}}>
+        <button className="ghost-btn" onClick={again}>♪ {t('Play again', '다시 듣기')}</button>
+        {guess !== null && <button className="primary-btn" style={{width:'auto',padding:'7px 16px',fontSize:14}} onClick={next}>{t('Next', '다음')}</button>}
+        <span style={{fontSize:12.5,color:'var(--navy-soft)',fontWeight:700}}>{score.right} / {score.tries}</span>
       </div>
     </div>
   );
 }
-const GENRE_TRAITS = [
-  { genre: t('Folk music', '포크 (민속 음악)'), trait: t('Passed down by ear from person to person, over generations -- often with no single known composer.', '세대를 거쳐 귀로 전해져요 -- 대부분 작곡가가 따로 없어요.') },
-  { genre: t('Classical music', '클래식 음악'), trait: t('Carefully written down on paper and planned in formal structures, usually for the concert hall.', '악보에 꼼꼼히 적혀 있고, 형식이 짜여 있어요 -- 보통 연주회장에서 연주돼요.') },
-  { genre: t('Jazz & blues', '재즈와 블루스'), trait: t('Built on improvisation and a swung, syncopated feel -- the performer creates as they play.', '즉흥연주와 스윙 리듬을 바탕으로 해요 -- 연주자가 연주하면서 즉석에서 만들어요.') },
-  { genre: t('Popular music', '대중음악'), trait: t('Built around short verses and a catchy, repeating chorus, made to reach a wide audience.', '짧은 벌스와 기억하기 쉬운 후렴구로 짜여 있어요 -- 많은 사람들에게 다가가려고 만들어졌어요.') },
-];
+
+// One small picture per style family, each showing its own defining trait literally.
+function GenreIcon({ k }) {
+  const N = '#26296b', C = '#e4572e';
+  return (
+    <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true" style={{flex:'0 0 auto'}}>
+      {k === 0 && <g>{/* folk: a tune passed from one person to the next, by ear */}
+        <circle cx="13" cy="44" r="8" fill="none" stroke={N} strokeWidth="2.2"/>
+        <circle cx="51" cy="44" r="8" fill="none" stroke={N} strokeWidth="2.2"/>
+        <path d="M44 40.5 q-4 3 0 7" fill="none" stroke={N} strokeWidth="2" strokeLinecap="round"/>
+        <path d="M17 34 Q32 10 45 33" fill="none" stroke={C} strokeWidth="2.2" strokeLinecap="round" strokeDasharray="3 4"/>
+        <path d="M45 33 l-6 -1.5 M45 33 l0.5 -6" stroke={C} strokeWidth="2.2" strokeLinecap="round"/>
+        <ellipse cx="29" cy="20" rx="4" ry="3" transform="rotate(-20 29 20)" fill={N}/><rect x="31.9" y="7" width="1.6" height="13" fill={N}/>
+      </g>}
+      {k === 1 && <g>{/* classical: carefully written down */}
+        <path d="M12 6 H42 L52 16 V58 H12 Z" fill="#fffefa" stroke={N} strokeWidth="2.2" strokeLinejoin="round"/>
+        <path d="M42 6 V16 H52" fill={C} stroke={N} strokeWidth="1.6" strokeLinejoin="round"/>
+        {[22, 25, 28, 31, 34, 41, 44, 47, 50, 53].map(y => <line key={y} x1="17" x2="47" y1={y} y2={y} stroke={N} strokeOpacity="0.55" strokeWidth="0.9"/>)}
+        {[[22, 28], [28, 25], [34, 31], [40, 22], [22, 47], [30, 44], [38, 50]].map(([x, y], i) => <ellipse key={i} cx={x} cy={y} rx="2.4" ry="1.7" transform={`rotate(-20 ${x} ${y})`} fill={N}/>)}
+      </g>}
+      {k === 2 && <g>{/* jazz & blues: written even, played long-short (swing) */}
+        <line x1="6" x2="58" y1="30" y2="30" stroke={N} strokeOpacity="0.5" strokeWidth="1"/>
+        {[18, 44].map(x => <g key={x}><ellipse cx={x} cy="30" rx="4.6" ry="3.4" transform={`rotate(-20 ${x} 30)`} fill={N}/><rect x={x + 3.4} y="9" width="1.7" height="21" fill={N}/></g>)}
+        <rect x="21.4" y="8" width="27.7" height="4" fill={N}/>
+        <rect x="6" y="42" width="32" height="11" rx="5" fill={N}/>
+        <rect x="41" y="42" width="17" height="11" rx="5" fill={C}/>
+      </g>}
+      {k === 3 && <g>{/* popular: verse, catchy chorus, verse, the same chorus again */}
+        {[6, 20, 34, 48].map((x, i) => i % 2
+          ? <g key={x}><rect x={x} y="18" width="11" height="20" rx="3" fill={C}/><path d={`M${x + 2} 30 l2.3 -4 l2.3 4 l2.3 -4`} fill="none" stroke="#fffefa" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></g>
+          : <rect key={x} x={x} y="18" width="11" height="20" rx="3" fill="none" stroke={N} strokeWidth="2"/>)}
+        <path d="M25.5 43 Q40 58 52 44" fill="none" stroke={C} strokeWidth="2" strokeLinecap="round" strokeDasharray="3 3.5"/>
+        <path d="M52 44 l-5.5 0.5 M52 44 l-1.5 5.3" stroke={C} strokeWidth="2" strokeLinecap="round"/>
+      </g>}
+    </svg>
+  );
+}
 function GenreTraits() {
   const [i, setI] = useState(0);
   const g = GENRE_TRAITS[i];
   return (
     <div className="try-box" style={actBox}>
-      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><rect x="2" y="4" width="8" height="8" rx="2" fill="var(--brass)"/><rect x="14" y="4" width="8" height="8" rx="2" fill="#3b4fa8"/><rect x="2" y="14" width="8" height="8" rx="2" fill="#8a5fb0"/><rect x="14" y="14" width="8" height="8" rx="2" fill="#5f9e6f"/></svg>{t('What makes each style different?', '각 스타일은 무엇이 다를까요')}</div>
+      <div style={actTitle}>{t('What makes each style different?', '각 스타일은 무엇이 다를까요')}</div>
       <div style={actNote}>{t('Four broad families of music, and what sets each one apart.', '음악의 네 가지 큰 갈래와, 각각을 구분 짓는 특징이에요.')}</div>
-      <div style={{display:'flex',gap:4,marginBottom:10,flexWrap:'wrap'}}>
-        {GENRE_TRAITS.map((x, k) => <button key={k} className={'chip' + (i === k ? ' active' : '')} style={{padding:'4px 11px',fontSize:13}} onClick={() => setI(k)}>{x.genre}</button>)}
+      <div style={{display:'flex',gap:6,marginBottom:10,flexWrap:'wrap'}}>
+        {GENRE_TRAITS.map((x, k) => <button key={k} className={'chip' + (i === k ? ' active' : '')} style={{padding:'4px 12px',fontSize:13.5}} onClick={() => setI(k)}>{x.genre}</button>)}
       </div>
-      <div style={{fontSize:14,color:'#3a352d',background:'#f5f0e4',borderRadius:8,padding:'10px 12px',lineHeight:1.5,minHeight:40}}><b>{g.genre}:</b> {g.trait}</div>
+      <div style={{display:'flex',gap:12,alignItems:'center',border:'1.5px solid var(--navy-line)',borderRadius:14,background:'var(--surface)',padding:'10px 12px'}}>
+        <GenreIcon k={i}/>
+        <div style={{minWidth:0}}>
+          <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontWeight:900,fontSize:18,color:'var(--navy)',lineHeight:1.25}}>{g.genre}</div>
+          <div style={{fontSize:14,color:'var(--navy)',lineHeight:1.5,marginTop:2}}>{g.trait}</div>
+        </div>
+      </div>
     </div>
   );
 }
+
+// Straight vs swing (book p.40: swing is written in even eighth-note pairs but played long-short,
+// "as if in triplets"). Same written bar, two ways of playing it -- blocks show the real lengths.
+const SWING_TUNE = [28, 29, 30, 32, 33, 32, 30, 29];
+function SwingFeel() {
+  const [mode, setMode] = useState('straight'), [on, setOn] = useState(-1);
+  const [quiz, setQuiz] = useState(null); // { secret, ans }
+  const [score, setScore] = useState({ right: 0, tries: 0 });
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  function play(m, light = true) {
+    timers.current.forEach(clearTimeout); timers.current = []; setOn(-1);
+    const ctx = getAudio(); if (!ctx) return;
+    const beat = 60 / 112, t0 = ctx.currentTime + 0.1, long = m === 'swing' ? 2 / 3 : 1 / 2;
+    for (let rep = 0; rep < 2; rep++) SWING_TUNE.forEach((d, i) => {
+      const k = Math.floor(i / 2), off = i % 2, at = (rep * 4 + k) * beat + (off ? long * beat : 0);
+      blip(ctx, t0 + at, ivFreq({ d }), (off ? 1 - long : long) * beat * 0.9, 0.2, 'triangle');
+      if (!off) metroClick(ctx, t0 + at, k === 0, 0.08);
+      if (light) timers.current.push(setTimeout(() => setOn(i), (0.1 + at) * 1000));
+    });
+    const end = 8 * beat;
+    blip(ctx, t0 + end, ivFreq({ d: 28 }), beat * 1.6, 0.2, 'triangle'); metroClick(ctx, t0 + end, true, 0.08);
+    timers.current.push(setTimeout(() => setOn(-1), (0.1 + end + 0.3) * 1000));
+  }
+  function quizMe() { const s = Math.random() < 0.5 ? 'straight' : 'swing'; setQuiz({ secret: s, ans: null }); play(s, false); }
+  function answer(a) { setQuiz(q => ({ ...q, ans: a })); setScore(s => ({ right: s.right + (a === quiz.secret ? 1 : 0), tries: s.tries + 1 })); setMode(quiz.secret); }
+  const long = mode === 'swing' ? 2 / 3 : 1 / 2, hidden = quiz && !quiz.ans;
+  const label = (m) => m === 'swing' ? t('Swing', '스윙') : t('Straight', '스트레이트');
+  const rowLabel = { fontSize:11.5, fontWeight:800, color:'var(--navy-soft)', textTransform:'uppercase', letterSpacing:'0.06em', margin:'8px 0 3px' };
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Straight or swing?', '스트레이트일까, 스윙일까?')}</div>
+      <p style={actNote}>{t('Jazz and blues often swing. The music is written in even pairs of eighth notes, but each pair is played long-short -- as if in triplets. Switch between the two and listen.', '재즈와 블루스는 자주 스윙해요. 악보에는 8분음표가 두 개씩 고르게 적혀 있지만, 연주할 때는 길게-짧게 -- 셋잇단음표처럼 -- 쳐요. 둘을 바꿔 가며 들어 봐요.')}</p>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}>
+        {['straight', 'swing'].map(m => <button key={m} className={'chip' + (mode === m && !hidden ? ' active' : '')} style={{padding:'5px 14px',fontSize:14}} onClick={() => { setMode(m); setQuiz(null); play(m); }}>{label(m)}</button>)}
+        <button className="primary-btn" style={{width:'auto',padding:'7px 16px',fontSize:14,marginLeft:'auto'}} onClick={() => { setQuiz(null); play(mode); }}>♪ {t('Play', '재생')}</button>
+      </div>
+      <div style={{opacity:hidden ? 0.35 : 1,transition:'opacity .2s'}}>
+        <div style={rowLabel}>{t('Written', '악보에는')}</div>
+        <div style={{display:'flex',gap:4}}>
+          {[0, 1, 2, 3].map(k => <div key={k} style={{flex:1,minWidth:0}}>
+            <svg viewBox="0 0 70 38" width="100%" style={{display:'block'}} aria-hidden="true">
+              <line x1="0" x2="70" y1="29" y2="29" stroke="#26296b" strokeOpacity="0.45" strokeWidth="1"/>
+              {[17.5, 52.5].map((x, j) => <g key={j}><ellipse cx={x} cy="29" rx="5.4" ry="3.9" transform={`rotate(-20 ${x} 29)`} fill={on === k * 2 + j ? '#e4572e' : '#26296b'}/><rect x={x + 4.1} y="5" width="1.7" height="24" fill="#26296b"/></g>)}
+              <rect x="21.6" y="4" width="36.6" height="4.2" fill="#26296b"/>
+            </svg>
+          </div>)}
+        </div>
+        <div style={rowLabel}>{hidden ? t('Played', '연주하면') : t('Played', '연주하면') + ' -- ' + label(mode)}</div>
+        <div style={{display:'flex',gap:4}}>
+          {[0, 1, 2, 3].map(k => <div key={k} style={{flex:1,minWidth:0}}>
+            <div style={{display:'flex',gap:3,height:24}}>
+              {[0, 1].map(j => <div key={j} style={{flexGrow:j ? 1 - long : long,flexBasis:0,borderRadius:6,transition:'flex-grow .25s ease, background .1s',background:on === k * 2 + j ? '#e4572e' : j ? '#6d6f9c' : '#26296b'}}/>)}
+            </div>
+            <div style={{position:'relative',height:10,marginTop:2}}>
+              {[0, 1, 2].map(s => <span key={s} style={{position:'absolute',left:(s * 100 / 3) + '%',top:2,width:5,height:5,borderRadius:3,background:'#e8b93a',opacity:mode === 'swing' && !hidden ? 1 : 0,transition:'opacity .25s'}}/>)}
+            </div>
+          </div>)}
+        </div>
+        <div style={{fontSize:13,color:'var(--navy)',lineHeight:1.45,minHeight:38}}>
+          {hidden ? '' : mode === 'swing'
+            ? t('Long + short: the first note takes 2 of the 3 triplet parts (the gold dots), the second takes 1.', '길게 + 짧게: 첫 음이 셋잇단음의 세 칸(금색 점) 중 2칸, 둘째 음이 1칸을 가져가요.')
+            : t('Even: each note gets exactly half of the beat.', '고르게: 두 음이 한 박을 정확히 반씩 나눠 가져요.')}
+        </div>
+      </div>
+      <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',marginTop:6,paddingTop:10,borderTop:'1px dashed var(--navy-line)'}}>
+        {!hidden && <button className="ghost-btn" style={{fontSize:13.5}} onClick={quizMe}>{t('Ear test: which one?', '귀 테스트: 어느 쪽일까?')}</button>}
+        {hidden && <>
+          <span style={{fontSize:13.5,fontWeight:800,color:'var(--navy)'}}>{t('Which did you hear?', '어느 쪽이었나요?')}</span>
+          {['straight', 'swing'].map(m => <button key={m} className="chip" style={{padding:'5px 14px',fontSize:14}} onClick={() => answer(m)}>{label(m)}</button>)}
+          <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => play(quiz.secret, false)}>♪</button>
+        </>}
+        {quiz && quiz.ans && <b style={{fontSize:14,color:quiz.ans === quiz.secret ? 'var(--good)' : 'var(--bad)'}}>{quiz.ans === quiz.secret ? t('Yes -- ' + label(quiz.secret).toLowerCase() + '!', '맞아요 -- ' + label(quiz.secret) + '!') : t('It was ' + label(quiz.secret).toLowerCase() + ' -- see the blocks above.', '정답은 ' + label(quiz.secret) + '예요 -- 위 블록을 보세요.')}</b>}
+        <span style={{flex:1}}/>
+        {score.tries > 0 && <span style={{fontSize:12.5,color:'var(--navy-soft)',fontWeight:700}}>{score.right} / {score.tries}</span>}
+      </div>
+    </div>
+  );
+}
+
+// The 12-bar blues (book p.220): three chords, I IV V, in three lines of four bars; in C: C, F, G.
+// Chord V appears only in bar 9. Bass on beats 1 and 3, chord on 2 and 4.
+const BLUES_12 = ['I', 'I', 'I', 'I', 'IV', 'IV', 'I', 'I', 'V', 'IV', 'I', 'I'];
+const BLUES_CH = {
+  I: { name: 'C', notes: [28, 30, 32], bass: 21, col: '#26296b' },
+  IV: { name: 'F', notes: [28, 31, 33], bass: 17, col: '#e4572e' },
+  V: { name: 'G', notes: [27, 29, 32], bass: 18, col: '#2b8c8c' },
+};
+function TwelveBarBlues() {
+  const [on, setOn] = useState(-1), [gaps, setGaps] = useState(null); // gaps: { idx, guess, checked }
+  const timers = useRef([]), gapsRef = useRef(null);
+  gapsRef.current = gaps;
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const chordAt = (i, gs) => gs && gs.idx.includes(i) ? gs.guess[i] : BLUES_12[i];
+  function stop() { timers.current.forEach(clearTimeout); timers.current = []; setOn(-1); }
+  function play() {
+    stop(); const ctx = getAudio(); if (!ctx) return;
+    const beat = 60 / 120, bar = 4 * beat, T0 = ctx.currentTime + 0.15;
+    for (let i = 0; i <= 12; i++) timers.current.push(setTimeout(() => {
+      if (i === 12) { setOn(-1); BLUES_CH.I.notes.forEach(d => blip(ctx, T0 + 12 * bar, ivFreq({ d }), beat * 1.8, 0.12, 'triangle')); blip(ctx, T0 + 12 * bar, ivFreq({ d: 21 }), beat * 1.8, 0.2, 'triangle'); return; }
+      setOn(i);
+      const c = BLUES_CH[chordAt(i, gapsRef.current)]; if (!c) return;
+      const at = T0 + i * bar;
+      [0, 2].forEach(b => blip(ctx, at + b * beat, ivFreq({ d: c.bass }), beat * 0.9, 0.22, 'triangle'));
+      [1, 3].forEach(b => c.notes.forEach(d => blip(ctx, at + b * beat, ivFreq({ d }), beat * 0.55, 0.11, 'triangle')));
+    }, Math.max(0, (0.15 + i * bar) * 1000 - 120)));
+  }
+  function newGaps() {
+    stop();
+    const special = pick([4, 5, 8, 9]), rest = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter(i => i !== special)).slice(0, 2);
+    setGaps({ idx: [special, ...rest], guess: {}, checked: false });
+  }
+  function tap(i) {
+    if (gaps && gaps.idx.includes(i) && !gaps.checked) {
+      const nx = { I: 'IV', IV: 'V', V: 'I' }[gaps.guess[i]] || 'I';
+      setGaps({ ...gaps, guess: { ...gaps.guess, [i]: nx } });
+      playChord(BLUES_CH[nx].notes.map(d => ({ d })), 'block'); return;
+    }
+    const r = chordAt(i, gaps); if (r) playChord(BLUES_CH[r].notes.map(d => ({ d })), 'block');
+  }
+  const filled = gaps && gaps.idx.every(i => gaps.guess[i]);
+  const allRight = gaps && gaps.checked && gaps.idx.every(i => gaps.guess[i] === BLUES_12[i]);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('The 12-bar blues', '12마디 블루스')}</div>
+      <p style={actNote}>{t('Just three chords -- I, IV and V (in C: C, F and G) -- in three lines of four bars. Chord I is home and comes most often; chord V comes only once, in bar 9. Many blues songs are built on this pattern.', '화음 세 개 -- I, IV, V (C장조에서는 C, F, G) -- 를 네 마디씩 세 줄로 놓아요. I 화음은 집이라 가장 자주 나오고, V 화음은 9마디에 딱 한 번 나와요. 많은 블루스 곡이 이 패턴 위에 만들어져요.')}</p>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4, minmax(0, 1fr))',gap:6}}>
+        {BLUES_12.map((r, i) => {
+          const isGap = gaps && gaps.idx.includes(i), g = isGap ? gaps.guess[i] : r, c = g && BLUES_CH[g];
+          const right = isGap && gaps.checked && g === r, wrong = isGap && gaps.checked && g !== r;
+          return <button key={i} onClick={() => tap(i)} style={{position:'relative',height:58,borderRadius:10,cursor:'pointer',fontFamily:'inherit',padding:0,
+            border:isGap ? '2px dashed ' + (wrong ? 'var(--bad)' : right ? 'var(--good)' : 'var(--navy-soft)') : '2px solid transparent',
+            background:c ? c.col : 'var(--surface)',color:c ? '#fff' : 'var(--navy-soft)',
+            boxShadow:on === i ? '0 0 0 3px #e8b93a' : 'none',transform:on === i ? 'translateY(-3px)' : 'none',transition:'transform .15s, box-shadow .15s, background .15s'}}>
+            <span style={{position:'absolute',top:3,left:6,fontSize:9.5,fontWeight:800,opacity:0.75}}>{i + 1}</span>
+            {wrong && <span style={{position:'absolute',top:2,right:5,fontSize:11,fontWeight:900}}>✕</span>}
+            <span style={{display:'block',fontFamily:"'Playfair Display', Georgia, serif",fontSize:22,fontWeight:900,lineHeight:1.05}}>{c ? c.name : '?'}</span>
+            <span style={{display:'block',fontSize:11.5,fontWeight:800,opacity:0.9,minHeight:14}}>{g || ''}</span>
+          </button>;
+        })}
+      </div>
+      <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',marginTop:10}}>
+        <button className="primary-btn" style={{width:'auto',padding:'8px 18px',fontSize:14}} onClick={on >= 0 ? stop : play}>{on >= 0 ? t('Stop', '멈추기') : t('Play all 12 bars', '12마디 연주하기')}</button>
+        {!gaps && <button className="ghost-btn" style={{fontSize:13.5}} onClick={newGaps}>{t('Fill the gaps', '빈칸 채우기')}</button>}
+        {gaps && !gaps.checked && <button className="ghost-btn" style={{fontSize:13.5}} disabled={!filled} onClick={() => { stop(); setGaps({ ...gaps, checked: true }); }}>{t('Check', '확인')}</button>}
+        {gaps && gaps.checked && <button className="ghost-btn" style={{fontSize:13.5}} onClick={newGaps}>{t('New gaps', '새 빈칸')}</button>}
+        {gaps && <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => { stop(); setGaps(null); }}>{t('Show all', '모두 보기')}</button>}
+      </div>
+      <div style={{fontSize:13.5,color:'var(--navy)',lineHeight:1.5,marginTop:8,minHeight:20}}>
+        {!gaps ? t('Tap any bar to hear its chord.', '마디를 누르면 그 화음이 들려요.')
+          : !gaps.checked ? t('Tap each ? to choose I, IV or V -- then play it through, or check.', '? 를 눌러 I, IV, V 중에서 골라요 -- 그다음 끝까지 연주해 보거나 확인해요.')
+          : allRight ? <b style={{color:'var(--good)'}}>{t('You’ve got the blues -- all three right!', '블루스 완성 -- 세 개 모두 맞았어요!')}</b>
+          : <b style={{color:'var(--bad)'}}>{t('Not quite -- look again at the bars marked ✕. Remember: V only in bar 9.', '아직이에요 -- ✕ 표시된 마디를 다시 보세요. V는 9마디에만 나와요.')}</b>}
+      </div>
+      <div style={{display:'flex',gap:12,flexWrap:'wrap',marginTop:8,fontSize:12,color:'var(--navy-soft)',fontWeight:700}}>
+        {['I', 'IV', 'V'].map(r => <span key={r} style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:12,height:12,borderRadius:3,background:BLUES_CH[r].col}}/>{r} = {BLUES_CH[r].name}{r === 'I' ? t(' (home)', ' (집)') : ''}</span>)}
+      </div>
+    </div>
+  );
+}
+
 // Phase 210 (2026-09-29): Styles hero, chapter 24 of 24 (the last chapter). Three textures --
 // one line, a melody with chords underneath, two woven lines -- literal to the chapter's own
 // "how many voices layer together" framing (its own TextureTypes step). New "about" track ground:
@@ -12677,7 +13740,7 @@ function StylesHero() {
 
 function StylesLearn({ onStart }) {
   return (
-    <Lesson id="styles" title={t('Styles and genres', '스타일과 장르')} intro={t('Music can be grouped by its texture -- how its lines layer together -- and by broad style families like folk, classical, jazz, and popular music.', '음악은 텍스처(선율이 겹겹이 쌓이는 방식)로, 그리고 포크·클래식·재즈·대중음악 같은 큰 스타일 갈래로 나눌 수 있어요.')} onStart={onStart} head={<StylesHero/>}>
+    <Lesson id="styles" title={t('Styles and genres', '스타일과 장르')} intro={t('Music can be grouped by its texture -- how its lines layer together -- and by broad style families like folk, classical, jazz, and popular music.', '음악은 텍스처(선율이 겹겹이 쌓이는 방식)로, 그리고 포크·클래식·재즈·대중음악 같은 큰 스타일 갈래로 나눌 수 있어요.')} onStart={onStart}>
       <Step title={t('Textures: how many voices?', '텍스처: 목소리는 몇 개일까요')}>
         <TextureTypes/>
       </Step>
@@ -12686,6 +13749,12 @@ function StylesLearn({ onStart }) {
       </Step>
       <Step title={t('What makes each style different?', '각 스타일은 무엇이 다를까요')}>
         <GenreTraits/>
+      </Step>
+      <Step title={t('Straight or swing?', '스트레이트일까, 스윙일까?')}>
+        <SwingFeel/>
+      </Step>
+      <Step title={t('The 12-bar blues', '12마디 블루스')}>
+        <TwelveBarBlues/>
       </Step>
     </Lesson>
   );
@@ -12770,6 +13839,18 @@ const DRILLS = [
   { id: 'form', label: 'Musical Form', concept: FORM_DRILL, track: 'reading' },
   { id: 'styles', label: 'Styles & Genres', concept: STYLES_DRILL, track: 'about' },
 ];
+
+// Phase 276: Korean chapter names. `label` becomes a getter (English kept as labelEn) so every list, header and link follows LANG.
+const CHAPTER_KO = {
+  'posture-hands': '자세와 손 모양', 'first-steps': '검은건반과 첫 노래', 'note-names': '음이름', 'pulse': '박과 세기',
+  'note-values': '음표와 쉼표', 'rhythm': '리듬 패턴', 'staff': '오선보 읽기', 'reading-steps': '차례가기와 건너뛰기',
+  'time-signatures': '박자표', 'tempo': '템포 경주', 'dynamics': '다이나믹과 아티큘레이션', 'ledger-lines': '덧줄',
+  'tones': '온음과 반음', 'scales': '스케일', 'key-signatures': '조표', 'intervals': '음정', 'chords': '화음',
+  'signs': '기호', 'terms': '음악 용어', 'piano-story': '피아노 이야기', 'pitch-range': '음높이, 헤르츠와 음역',
+  'melody': '선율과 프레이즈', 'form': '음악 형식', 'styles': '스타일과 장르',
+};
+DRILLS.forEach(d => { if (!CHAPTER_KO[d.id]) return; const en = d.label; d.labelEn = en;
+  Object.defineProperty(d, 'label', { get: () => (LANG === 'ko' ? CHAPTER_KO[d.id] : en), enumerable: true, configurable: true }); });
 
 // ─── Toolbox (Phase 118) ─────────────────────────────────────────────────────────
 // Sohyun: the whole idea is music teaching aids cut into mini tools a teacher can pull out in the
@@ -14470,6 +15551,9 @@ const TOOLS = [
   { id: 'piano-timeline', ch: 'piano-story', title: 'The piano’s story', blurb: 'Cristofori 1700 to the 88-key grand.', C: () => <><ExplPianoStory3/><PianoTimeline/></> },
   { id: 'eras', ch: 'piano-story', title: 'The style eras', blurb: 'Baroque to today: traits, composers, hear the style.', C: () => <ErasTimeline/> },
   { id: 'hz-explorer', ch: 'pitch-range', title: 'How high is a note? Hz', blurb: 'Vibrations per second; octaves double.', C: () => <><ExplPitchRange1/><HzExplorer/></> },
+  { id: 'string-lab', ch: 'pitch-range', title: 'Shorter, tighter, higher', blurb: 'Slide a finger along a string, change how tight it is, and pluck -- watch and hear the note change.', C: () => <StringLab/> },
+  { id: 'size-pitch', ch: 'pitch-range', title: 'Big is low, small is high', blurb: 'Xylophone bars from big to small, then guess which of the violin family plays higher.', C: () => <SizePitch/> },
+  { id: 'octave-ladder', ch: 'pitch-range', title: 'The octave ladder', blurb: 'Every octave up, the vibrations double -- find the missing number.', C: () => <OctaveLadder/> },
   { id: 'range-chart', ch: 'pitch-range', title: 'Who plays where?', blurb: 'Instrument and voice ranges over the 88 keys.', C: () => <><ExplPitchRange2/><RangeChart/></> },
   { id: 'finger-numbers', ch: 'posture-hands', title: 'Finger numbers', blurb: '“Show me finger 3!” -- both hands.', C: () => <><ExplPostureHands4/><FingerNumbers/></> },
   { id: 'arm-alignment', ch: 'posture-hands', title: 'Arm weight & alignment', blurb: 'Move over the diagram -- watch elbow, wrist and finger joints react.', C: () => <ArmAlignment/> },
@@ -14487,6 +15571,8 @@ const TOOLS = [
   { id: 'degree-names', ch: 'scales', title: 'Scale degree names', blurb: 'Tonic, supertonic... leading note.', C: () => <DegreeNames/> },
   { id: 'transpose', ch: 'key-signatures', title: 'Transpose a tune', blurb: 'Same scale degrees, new key.', C: () => <><ExplKeySig2/><Transposer/></> },
   { id: 'term-match', ch: 'terms', title: 'Term match', blurb: 'Memory pairs: term and meaning, spoken aloud.', C: () => <TermMatch/> },
+  { id: 'term-sort', ch: 'terms', title: 'Four families of terms', blurb: 'Speed, changing speed, loud and soft, or mood and touch? Sort each word, then hear it.', C: () => <TermSort/> },
+  { id: 'term-mixer', ch: 'terms', title: 'Little words, big changes', blurb: 'Molto, assai, poco, non troppo, sempre -- hear how they change a term.', C: () => <TermMixer/> },
   { id: 'term-cards', ch: 'terms', title: 'Term cards', blurb: 'AMEB terms, Grades 1-4, with sound.', C: () => <><ExplTerms1/><TermCards/></> },
   { id: 'complete-melody', ch: 'reading-steps', title: 'Complete the melody', blurb: 'Pick the ending note that resolves the tune.', C: () => <><ExplReadingSteps4/><CompleteMelody/></> },
   { id: 'echo', ch: 'reading-steps', title: 'Echo the tune (copy by ear)', blurb: 'Hear 3-5 notes, play them back.', C: () => <><ExplReadingSteps3/><EchoTune/></> },
@@ -14572,7 +15658,10 @@ const TOOLS = [
   { id: 'count-more', ch: 'rhythm', title: 'Count harder rhythms', blurb: 'Dotted notes, 1 e & a, triplets, syncopation.', C: () => <CountHarder/> },
   { id: 'make-card', ch: 'rhythm', title: 'Make a rhythm card', blurb: 'Build a bar and loop it.', C: () => <><ExplPulse3/><RhythmComposer/></> },
   { id: 'metronome', ch: 'tempo', title: 'Metronome', blurb: 'Any time signature, triplets and semiquavers, 5/8 and 7/8, tap tempo.', C: () => <MetronomeDial/> },
+  { id: 'tempo-walk', ch: 'tempo', title: 'Walk, jog, sprint (what tempo is)', blurb: 'Tempo is how fast the pulse goes -- feel three speeds.', C: () => <TempoWalk/> },
   { id: 'tempo-race', ch: 'tempo', title: 'The tempo race', blurb: 'Italian tempo words from slowest to fastest -- tap one to hear its beat.', C: () => <TempoLanes/> },
+  { id: 'tap-tempo', ch: 'tempo', title: 'Tap your own tempo', blurb: 'Tap steadily -- see your beats per minute and its Italian word.', C: () => <TapTempo/> },
+  { id: 'same-tune-tempo', ch: 'tempo', title: 'Same tune, different tempo', blurb: 'One tune at three speeds, then guess the mystery tempo.', C: () => <SameTuneTempo/> },
   { id: 'speed-change', ch: 'tempo', title: 'rit. and accel. (speed changes)', blurb: 'Hear the speed change.', C: () => <SpeedChange/> },
   { id: 'dyn-order', ch: 'dynamics', title: 'Line up the dynamics', blurb: 'pp to ff, by ear and eye.', C: () => <DynOrder/> },
   { id: 'touch-ear', ch: 'dynamics', title: 'Which touch? How loud?', blurb: 'Listening game: staccato, legato, accent; p to ff.', C: () => <TouchEar/> },
@@ -14584,17 +15673,173 @@ const TOOLS = [
   { id: 'ornaments', ch: 'signs', title: 'Ornaments', blurb: 'Trill, mordents, turn, acciaccatura, appoggiatura: written vs played.', C: () => <Ornaments/> },
   { id: 'ottava', ch: 'signs', title: '8va and 8vb', blurb: 'An octave higher or lower.', C: () => <OttavaDemo/> },
   { id: 'tune-anatomy', ch: 'melody', title: 'Rhythm + pitch = a tune', blurb: 'Hear each one alone, then together.', C: () => <TuneAnatomy/> },
+  { id: 'draw-tune', ch: 'melody', title: 'Draw a tune', blurb: 'Tap notes onto the staff, play it, and see its shape -- arch, wave, rising...', C: () => <MelodyContour/> },
   { id: 'phrase-marks', ch: 'melody', title: 'Phrase marks -- where to breathe', blurb: 'The rainbow arc over a musical sentence.', C: () => <PhraseBreath/> },
   { id: 'question-answer', ch: 'melody', title: 'Question or answer phrase?', blurb: 'Unstable (2, 4, 5, 7) or home (1)?', C: () => <QuestionAnswer/> },
   { id: 'melody-sequence', ch: 'melody', title: 'Sequences: same shape, new pitch', blurb: 'A pattern restated, one step higher each time.', C: () => <SequenceStepper/> },
   { id: 'form-shapes', ch: 'form', title: 'Binary, ternary, and rondo', blurb: 'Three ways composers shape a piece into sections.', C: () => <FormShapes/> },
+  { id: 'form-builder', ch: 'form', title: 'Build your own form', blurb: 'Stack A, B and C blocks into a piece -- binary, ternary or rondo?', C: () => <FormBuilder/> },
   { id: 'same-or-new', ch: 'form', title: 'Same section again, or something new?', blurb: 'Two sections play back to back -- repeat, or different?', C: () => <SameOrNewSection/> },
   { id: 'rondo-refrain', ch: 'form', title: 'Rondo: the tune that keeps coming back', blurb: 'Guess when the refrain (A) returns between new episodes.', C: () => <RondoRefrain/> },
   { id: 'binary-ternary-spot', ch: 'form', title: 'Two sections, or three?', blurb: 'Listen for the opening tune coming back at the end.', C: () => <BinaryTernarySpot/> },
   { id: 'texture-types', ch: 'styles', title: 'Textures: how many voices?', blurb: 'Monophony, homophony, and polyphony -- the same tune, three ways.', C: () => <TextureTypes/> },
   { id: 'texture-spotter', ch: 'styles', title: 'Which texture is this?', blurb: 'Listen and identify -- one line, melody with chords, or two woven lines.', C: () => <TextureSpotter/> },
   { id: 'genre-traits', ch: 'styles', title: 'What makes each style different?', blurb: 'Folk, classical, jazz and blues, popular music -- their defining traits.', C: () => <GenreTraits/> },
+  { id: 'swing-feel', ch: 'styles', title: 'Straight or swing?', blurb: 'The same written eighth notes played even, then long-short -- see it, hear it, test your ear.', C: () => <SwingFeel/> },
+  { id: 'twelve-bar-blues', ch: 'styles', title: 'The 12-bar blues', blurb: 'Three chords, twelve bars -- play it through, then fill in the missing chords.', C: () => <TwelveBarBlues/> },
 ];
+
+// Phase 277: Korean tool titles and blurbs. TOOLS[].title/blurb become getters (English kept as titleEn/blurbEn; search reads both).
+const TOOL_KO = {
+  'sit-check': ['의자 맞추기', '높이와 거리: 아래팔은 수평, 팔꿈치는 편하게 벌리기.'],
+  'hand-shape': ['손 모양', '손가락 마디 다리, 수평인 손목, 손가락 끝 -- 그리고 흔한 실수 여섯 가지.'],
+  'arm-moves': ['팔 전체로 움직이기', '횟수를 세어 주는 준비 운동 여섯 가지.'],
+  'posture-check': ['자세 점검', '17가지 체크리스트, 기록이 저장돼요.'],
+  'keyboard-ancestors': ['클라비코드, 하프시코드, 피아노', '뜯기, 탄젠트, 해머 -- 더 세게 눌러 보고 들어 봐요.'],
+  'touch-lengths': ['레가토, 논 레가토, 스타카토', '음이 얼마나 길게 울리는지 -- 그리고 바흐를 왜 논 레가토로 치는지.'],
+  'piano-timeline': ['피아노 이야기', '1700년 크리스토포리부터 88건반 그랜드 피아노까지.'],
+  'eras': ['시대별 양식', '바로크부터 오늘날까지: 특징, 작곡가, 양식을 들어 봐요.'],
+  'hz-explorer': ['음은 얼마나 높을까? 헤르츠', '1초에 몇 번 떨리는지; 한 옥타브 올라가면 두 배.'],
+  'string-lab': ['짧게, 팽팽하게, 높게', '현을 따라 손가락을 밀고, 팽팽함을 바꾸고, 튕겨 봐요 -- 음이 바뀌는 걸 보고 들어요.'],
+  'size-pitch': ['크면 낮고, 작으면 높아요', '큰 실로폰 건반부터 작은 건반까지, 그리고 바이올린 가족 중 누가 더 높은지 맞혀요.'],
+  'octave-ladder': ['옥타브 사다리', '한 옥타브 올라갈 때마다 떨림이 두 배 -- 빠진 숫자를 찾아요.'],
+  'range-chart': ['누가 어디를 연주할까?', '88건반 위에 펼친 악기와 목소리의 음역.'],
+  'finger-numbers': ['손가락 번호', '"3번 손가락 보여 줘!" -- 양손 모두.'],
+  'arm-alignment': ['팔 무게와 정렬', '그림 위로 움직이며 팔꿈치, 손목, 손가락 관절이 어떻게 반응하는지 봐요.'],
+  'high-low': ['높게 낮게, 크게 작게', '악보 읽기 전에 하는 듣기 게임.'],
+  'key-houses': ['작은 집, 큰 집 (검은건반)', '검은건반 지도; 도와 파가 사는 곳.'],
+  'black-key-song': ['첫 검은건반 노래', 'Hot Cross Buns와 Mary, 듣고 따라 치기.'],
+  'black-white-neighbours': ['검은건반, 흰건반 이웃', '빨리 배우는 학생에게: 검은건반 바로 옆 흰건반.'],
+  'steady-beat': ['일정한 박', '따라 두드릴 수 있는 심장 박동 같은 박.'],
+  'beat-target': ['맞는 박에 두드리기', '예비박 다음에 3박만, "앤"만, 또는 소리 없는 마디에 두드리기.'],
+  'count-aloud': ['소리 내어 세기', '1 2 3 4, 또는 1 앤 2 앤 -- 마디가 연주되는 동안 불이 켜져요.'],
+  'step-skip': ['한 칸, 건너뛰기, 같은 음?', '방향과 거리로 읽어요.'],
+  'mini-tune': ['짧은 튠 읽기', '박을 세며 읽는 도 자리 튠.'],
+  'five-positions': ['다섯 손가락 자리', '12개 조 모두, 양손: 한 음에 한 손가락.'],
+  'minor-forms': ['단조의 세 가지 형태', '자연, 화성, 가락 -- 가단조로 나란히 비교해요.'],
+  'degree-names': ['음계 이름', '으뜸음, 윗으뜸음... 이끔음.'],
+  'transpose': ['튠 조옮김', '음계 위치는 그대로, 새로운 조로.'],
+  'term-match': ['용어 짝 맞추기', '기억력 짝 게임: 용어와 뜻을 소리 내어 읽어 줘요.'],
+  'term-cards': ['용어 카드', 'AMEB 용어, 1-4급, 소리와 함께.'],
+  'term-sort': ['용어의 네 가족', '빠르기, 빠르기 변화, 셈여림, 느낌과 터치? 단어를 나누고 들어 봐요.'],
+  'term-mixer': ['작은 단어, 큰 변화', 'Molto, assai, poco, non troppo, sempre -- 용어가 어떻게 바뀌는지 들어 봐요.'],
+  'complete-melody': ['선율 완성하기', '튠을 마무리하는 끝음을 골라요.'],
+  'echo': ['튠 따라 치기 (귀로 듣고)', '3-5개 음을 듣고 다시 쳐 봐요.'],
+  'practice-timer': ['연습 타이머', '5분에서 30분까지, 종소리와 함께.'],
+  'practice-dice': ['연습 주사위', '주사위를 굴려 새로운 연습 방법을 정해요.'],
+  'perfect-counter': ['5번 연속 (완벽한 반복)', '깨끗하게 친 반복만 세어요.'],
+  'sight-reading': ['초견 카드', '매번 새로운 2마디 튠.'],
+  'find-every': ['모든 도 찾기', '도(또는 다른 음)를 모두 찾는 경주.'],
+  'name-reveal': ['음이름 일곱 글자', 'A부터 G, 그리고 다시 A -- 글자가 건반에 내려앉는 걸 봐요.'],
+  'step-updown': ['한 칸 위로, 한 칸 아래로', '오른쪽 = 위로 = 알파벳 앞으로.'],
+  'letter-chain': ['글자 이어 말하기', '다음 글자를 차례대로 소리 내어 말해요.'],
+  'clef-basics': ['높은음자리표와 낮은음자리표', '어떤 음을, 어느 손으로 -- 큰보표 설명.'],
+  'alto-clef': ['알토음자리표', '세 번째 음자리표, 항상 가운데 도가 중심 -- 비올라가 읽어요.'],
+  'staff-basics': ['오선보란 무엇일까요?', '줄 5개, 칸 4개 -- 아래부터 세요, 눌러서 들어 봐요.'],
+  'clef-story': ['여왕과 왕 (음자리표)', '왜 G음자리표와 F음자리표라고 부를까요.'],
+  'staff-climb': ['오선 오르기', '줄, 칸, 줄 -- 건반에 그대로 비춰 봐요.'],
+  'rhymes': ['줄과 칸 외우는 문장', 'Every Good Boy... 하나씩 눌러 봐요.'],
+  'landmarks': ['기준 음', '가운데 도, 높은음자리표 솔, 낮은음자리표 파, 그리고 도들.'],
+  'flash-cards': ['초견 플래시 카드', '최대한 빨리 음이름 말하기 -- 기준 음에서 세지 않고.'],
+  'landmark-hop': ['기준 음에서 뛰어가기', '음을 맞혀 보고, 기준 음에서 세어 확인해요.'],
+  'fold': ['가운데 도에서 접기 (큰보표)', '높은음자리표와 낮은음자리표 오선은 거울처럼 마주 봐요.'],
+  'write-note': ['오선에 써 보기', '이름을 보고 음이 들어갈 자리를 눌러요.'],
+  'ledger-walk': ['오선 밖으로 걸어가기', '덧줄이 하나씩 나타나요.'],
+  'ledger-landmarks': ['덧줄 위의 음', 'A C E, C A F, C E G, E C A.'],
+  'ledger-twins': ['같은 음, 다른 오선', '덧줄 음은 다른 오선의 줄이에요.'],
+  'ledger-write': ['덧줄로 써 보기', '맞는 줄이나 칸을 눌러요.'],
+  'tone-semitone': ['온음일까, 반음일까', '두 건반을 눌러 몇 칸인지 세거나, 한 건반을 눌러 단짝 친구를 만나요.'],
+  'sharp-flat': ['샤프, 플랫, 내추럴', '건반을 반음 밀었다가 되돌려요.'],
+  'chromatic': ['반음계와 딴이름한소리', '모든 건반, 손가락 번호, 그리고 모든 이름 -- 겹샤프까지.'],
+  'accidental-bar': ['임시표는 언제까지 유효할까', '세로줄까지 -- 들어 봐요.'],
+  'scale-finder': ['스케일 찾기', '아무 스케일이나 입력 -- 양손 손가락 번호, 조표, 음.'],
+  'build-major': ['장조 스케일 만들기', '온 온 반 온 온 온 반, 한 단계씩.'],
+  'build-minor': ['화성 단조 스케일 만들기', '온음 반 간격과 함께.'],
+  'modes': ['일곱 가지 선법', '리디안부터 로크리안까지 -- 같은 음, 새로운 집, 밝음에서 어두움으로.'],
+  'sharps-order': ['샤프의 순서', '번호를 붙여 하나씩 더해요.'],
+  'flats-order': ['플랫의 순서', '샤프 순서를 거꾸로.'],
+  'place-it': ['조표 자리 찾기', '샤프나 플랫이 들어갈 자리를 눌러요.'],
+  'relative-minor': ['나란한조', '같은 조표: 반음 3개 아래, 또는 여섯 번째 음.'],
+  'circle-fifths': ['5도권', '모든 조를 시계 하나에.'],
+  'interval-ruler': ['음정 자', '1부터 줄과 칸을 세어요.'],
+  'letter-hop': ['글자 따라 뛰기 (음정 세기)', '시작 음이 1이에요.'],
+  'semitone-counter': ['반음 세기', '장음정, 단음정, 완전음정?'],
+  'scale-intervals': ['장조 스케일로 빨리 찾기 (음정)', 'M2 M3 P4 P5 M6 M7 P8.'],
+  'interval-ear': ['음정 듣기', '기억하기 쉬운 노래와 함께 하나씩.'],
+  'invert-interval': ['음정 자리바꿈', '두 숫자를 더하면 9.'],
+  'tritone': ['트라이톤', '증4도 = 감5도, 소리는 같아요.'],
+  'triad-stack': ['3화음 쌓기', '근음, 3음, 5음 -- 눈사람.'],
+  'major-minor': ['장화음일까 단화음일까', '가운데 음을 바꿔 봐요.'],
+  'key-chords': ['조 안의 화음', 'I ii iii IV V vi vii° 와 음이름.'],
+  'primary-triads': ['I, IV, V', '주요 3화음을 쳐 봐요.'],
+  'inversions': ['전위', '맨 아래 음을 맨 위로 옮겨요.'],
+  'cadences': ['케이던스', '정격, 변격, 반, 거짓 종지.'],
+  'seventh-chords': ['7화음 만들기', 'maj7, 7, m7, m7♭5, °7 -- 3화음 + 3도 하나 더.'],
+  'chord-extensions': ['7화음 너머: 9, 11, 13', '숫자가 왜 옥타브를 건너뛰는지.'],
+  'split-it': ['음표 나누기 (음표 길이)', '온음표 하나를 2분음표, 4분음표로...'],
+  'beam-apples': ['한 박 = 사과 하나 (빔)', '박 사과를 반으로, 4분의 1로 -- 빔이 조각들을 묶어 줘요.'],
+  'fix-the-bar': ['마디 고치기', '4/4 마디가 딱 4박이 되도록 음표와 쉼표를 눌러요.'],
+  'heard-bar': ['어떤 마디를 들었을까?', '소리와 쉼을 듣고, 맞는 음표·쉼표 마디를 골라요.'],
+  'dot-lab': ['점 실험실', '음표/쉼표와 점을 바꿔 보며 얼마나 길게 이어지는지 보고 들어요.'],
+  'note-rest-naming': ['같은 이름, 음표와 쉼표', '모든 음표는 짝이 되는 쉼표와 이름이 같아요.'],
+  'rest-grouping': ['쉼표: 세지만 소리는 없어요', '박을 눌러 음표나 쉼표를 만들어요 -- 쉬는 동안에도 박은 계속 가요.'],
+  'note-rest-match': ['음표 ↔ 쉼표 짝 맞추기', '기억력 짝 게임: 음표 이름과 쉼표를 맞춰요.'],
+  'fill-bar': ['마디 채우기', '딱 2, 3, 4박.'],
+  'count-along': ['따라 세기 (박자표)', '2/4, 3/4, 4/4, 2/2, 5/4, 3/8, 6/8, 9/8, 12/8의 박 불빛과 강세.'],
+  'bar-lines': ['세로줄 (겹세로줄, 도돌이표)', '세로줄이 무엇인지, 마디 끝의 다른 줄들, 그리고 직접 넣어 봐요.'],
+  'beat-doubler': ['아래 숫자가 박을 바꿔요', '아래가 8이면 모든 음표가 두 배로, 2면 반으로.'],
+  'grouping': ['8분음표 묶기', '2/4, 3/4, 4/4, 6/8에 맞게 빔이 묶인 마디는 어느 것일까요?'],
+  'time-sig-numbers': ['두 숫자: 홑박자와 겹박자', '위 = 한 마디의 박 수, 아래 = 어떤 음표가 한 박인지. 홑박자와 겹박자를 바꿔 가며 눌러서 들어 봐요.'],
+  'note-value-tree': ['음표 길이, 이름과 쉼표', '각 음표가 다음 음표 둘로 나뉘는 모습, 그리고 음표마다 짝이 되는 쉼표와 박 수.'],
+  'dotted-notes': ['점음표', '점은 원래 길이의 절반을 더해요.'],
+  'rhythm-cards-all': ['리듬 카드 40장', '4/4박자 한 마디 리듬, 쉬운 것부터 -- 눌러서 들어 봐요.'],
+  'all-keys': ['조표 15개 전부', '조를 누르면 조표가 보여요.'],
+  'major-shape': ['장조 스케일의 모양', '하나의 모양이 모든 장조 스케일을 만들어요.'],
+  'major-fingering': ['장조 스케일 손가락 번호', '손가락 번호 패턴, 나의 스케일 경로, 손가락 번호 연습.'],
+  'minor-fingering': ['단조 스케일 손가락 번호', '손가락 번호 패턴, 나의 스케일 경로, 단조마다 모든 형태.'],
+  'dc-ds-coda': ['D.C., D.S., Fine, Coda', '각 기호가 어디로 보내는지.'],
+  'finger-friends': ['손가락 친구들', '손가락마다 성격이 있어요.'],
+  'accidental-cards': ['임시표: 샤프, 플랫, 내추럴', '각 기호가 음에 무엇을 하는지.'],
+  'common-cut': ['보통박자와 얼라 브레베', 'C는 4/4, 줄이 그어진 C는 2/2.'],
+  'duplets': ['2잇단음표, 셋잇단음표 그리고 더', '한 박을 1, 2, 3, 4, 5, 6개로 나눠 나란히 비교해요.'],
+  'regroup': ['3/4일까 6/8일까?', '같은 8분음표 여섯 개, 다른 박.'],
+  'anacrusis': ['여린내기 (못갖춘마디)', '1박 전에 시작하는 튠 -- 그리고 마지막 마디도 짧은 이유.'],
+  'count-more': ['더 어려운 리듬 세기', '점음표, 1 e & a, 셋잇단음표, 당김음.'],
+  'make-card': ['리듬 카드 만들기', '한 마디를 만들어 반복해서 들어요.'],
+  'metronome': ['메트로놈', '모든 박자표, 셋잇단음표와 16분음표, 5/8과 7/8, 탭 템포.'],
+  'tempo-race': ['템포 경주', '가장 느린 것부터 가장 빠른 것까지 이탈리아어 템포 단어 -- 눌러서 박을 들어 봐요.'],
+  'tempo-walk': ['걷기, 조깅, 전력 질주 (템포란)', '템포는 박이 얼마나 빨리 가는지예요 -- 세 가지 빠르기를 느껴 봐요.'],
+  'tap-tempo': ['내 템포 두드리기', '일정하게 두드리면 1분당 박 수와 맞는 이탈리아어 단어가 보여요.'],
+  'same-tune-tempo': ['같은 튠, 다른 템포', '한 튠을 세 가지 빠르기로, 그리고 수수께끼 템포 맞히기.'],
+  'speed-change': ['rit.와 accel. (빠르기 변화)', '빠르기가 바뀌는 걸 들어 봐요.'],
+  'dyn-order': ['다이나믹 순서대로 놓기', 'pp부터 ff까지, 귀와 눈으로.'],
+  'touch-ear': ['어떤 터치? 얼마나 크게?', '듣기 게임: 스타카토, 레가토, 악센트; p부터 ff까지.'],
+  'pedal': ['댐퍼 페달', '페달 없이, 계속 밟고, 화음마다 바꿔 밟기 -- 차이를 들어 봐요.'],
+  'hairpin': ['헤어핀 그리기', '크레센도와 디미누엔도.'],
+  'road-map': ['악보 길찾기 (도돌이표, D.C., D.S.)', '도돌이표, 1·2번 괄호, D.C., D.S., Coda.'],
+  'tie-slur': ['이음줄일까요, 슬러일까요?', '같은 음일까, 다른 음일까?'],
+  'grace-write': ['꾸밈음 써 보기', '아차카투라나 아포자투라가 들어갈 자리를 눌러요.'],
+  'ornaments': ['꾸밈음', '트릴, 모르덴트, 턴, 아차카투라, 아포자투라: 악보와 실제 연주.'],
+  'ottava': ['8va와 8vb', '한 옥타브 높게 또는 낮게.'],
+  'tune-anatomy': ['리듬 + 음높이 = 튠', '하나씩 따로 듣고, 함께 들어 봐요.'],
+  'draw-tune': ['튠 그리기', '오선에 음을 눌러 놓고 연주하며 모양을 봐요 -- 아치, 물결, 오르막...'],
+  'phrase-marks': ['프레이즈 마크 -- 숨 쉬는 곳', '음악 문장 위의 무지개 아치.'],
+  'question-answer': ['묻는 프레이즈일까, 답하는 프레이즈일까?', '불안정 (2, 4, 5, 7) 아니면 집 (1)?'],
+  'melody-sequence': ['시퀀스: 같은 모양, 새 음높이', '패턴이 매번 한 칸씩 높아지며 다시 나와요.'],
+  'form-shapes': ['2부, 3부, 론도 형식', '작곡가가 곡을 부분으로 나누는 세 가지 방법.'],
+  'form-builder': ['나만의 형식 만들기', 'A, B, C 블록을 쌓아 곡을 만들어요 -- 2부, 3부, 론도?'],
+  'same-or-new': ['같은 부분 반복일까, 새로운 부분일까?', '두 부분이 이어서 연주돼요 -- 반복일까, 다를까?'],
+  'rondo-refrain': ['론도: 계속 돌아오는 튠', '새 에피소드 사이에 후렴(A)이 언제 돌아오는지 맞혀 봐요.'],
+  'binary-ternary-spot': ['두 부분일까, 세 부분일까?', '처음 튠이 끝에 다시 나오는지 들어 봐요.'],
+  'texture-types': ['텍스처: 목소리는 몇 개?', '모노포니, 호모포니, 폴리포니 -- 같은 튠, 세 가지 방법.'],
+  'texture-spotter': ['이건 어떤 텍스처?', '듣고 맞혀 봐요 -- 선율 하나, 선율과 화음, 엮인 두 선율.'],
+  'genre-traits': ['스타일마다 무엇이 다를까?', '민요, 클래식, 재즈와 블루스, 대중음악 -- 각각의 특징.'],
+  'swing-feel': ['스트레이트일까, 스윙일까?', '똑같이 적힌 8분음표를 고르게, 그리고 길게-짧게 -- 보고, 듣고, 귀를 테스트해요.'],
+  'twelve-bar-blues': ['12마디 블루스', '화음 세 개, 열두 마디 -- 끝까지 연주하고, 빠진 화음을 채워요.'],
+};
+TOOLS.forEach(tl => { const k = TOOL_KO[tl.id]; if (!k) return; const ti = tl.title, bl = tl.blurb; tl.titleEn = ti; tl.blurbEn = bl;
+  Object.defineProperty(tl, 'title', { get: () => (LANG === 'ko' ? k[0] : ti), enumerable: true, configurable: true });
+  Object.defineProperty(tl, 'blurb', { get: () => (LANG === 'ko' ? k[1] : bl), enumerable: true, configurable: true }); });
 // ─── Lesson Path: stages in the order a beginner meets them (Phase 120) ─────────
 // Sohyun: student + piano first, then pulse, then reading (rhythm and notes together), then
 // five-finger positions, then the AMEB theory chapters. Grade tags show where AMEB asks for it.
@@ -14660,11 +15905,31 @@ function SlimRow({ title, sub, tag, done, onClick, last }) {
     </button>
   );
 }
+// Phase 275: the student's Learn page opens with the chapter they were last in (browser-only memory).
+const LAST_CHAPTER_KEY = 'pb_last_chapter_v1';
+function KeepGoing({ onOpen }) {
+  let id = null;
+  try { id = localStorage.getItem(LAST_CHAPTER_KEY); } catch (e) {}
+  const d = id && CHAPTER_CAT[id] && DRILLS.find(x => x.id === id);
+  if (!d) return null;
+  const n = stepsDone(id);
+  return (
+    <div style={{background:'var(--surface)',border:'1.5px solid var(--navy-line)',borderRadius:16,padding:'14px 16px',margin:'0 0 22px',display:'flex',alignItems:'center',gap:12,boxShadow:'0 4px 18px rgba(38,41,107,0.06)'}}>
+      <span style={{flex:1,minWidth:0}}>
+        <span style={{display:'block',fontSize:11,fontWeight:800,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--coral)'}}>{t('Keep going', '이어서 하기')}</span>
+        <span style={{display:'block',fontFamily:"'Playfair Display', Georgia, serif",fontSize:20,fontWeight:800,lineHeight:1.2,color:'var(--navy)',marginTop:2}}>{d.label}</span>
+        <span style={{display:'block',fontSize:12.5,color:'var(--navy-soft)',marginTop:2}}>{n > 0 ? t(n + (n === 1 ? ' step done' : ' steps done'), n + '단계 완료') : t('Pick up where you left off', '하던 곳에서 이어서')}</span>
+      </span>
+      <button className="primary-btn" style={{width:'auto',flex:'0 0 auto',padding:'10px 18px',fontSize:14}} onClick={() => onOpen(id)}>{t('Resume', '이어하기')}</button>
+    </div>
+  );
+}
 function LessonPath({ onOpen, onBack }) {
   return (
     <div className="fade-up">
       {onBack && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={onBack}>← Lesson plan</button>}
-      <PageIntro title={UI_TEACHER ? 'All chapters' : 'Learn'} text={UI_TEACHER ? 'Every chapter as a full lesson with a drill, grouped by topic (same groups as the Toolbox). The groups run side by side -- the Lesson plan shows how to mix them.' : 'Pick a topic, then a lesson. Each one ends with a game.'}/>
+      <PageIntro title={UI_TEACHER ? t('All chapters', '전체 챕터') : t('Learn', '배우기')} text={UI_TEACHER ? t('Every chapter as a full lesson with a drill, grouped by topic (same groups as the Toolbox). The groups run side by side -- the Lesson plan shows how to mix them.', '모든 챕터를 드릴이 있는 레슨으로, 주제별로 묶었어요 (도구함과 같은 묶음). 묶음들은 나란히 진행돼요 -- 레슨 계획에서 어떻게 섞을지 볼 수 있어요.') : t('Pick a topic, then a lesson. Each one ends with a game.', '주제를 고르고, 레슨을 골라요. 레슨마다 마지막에 게임이 있어요.')}/>
+      {!UI_TEACHER && <KeepGoing onOpen={onOpen}/>}
       {TOOL_CATS.filter(c => catChapterIds(c.id).length).map(c => {
         const ids = catChapterIds(c.id).filter(id => DRILLS.find(x => x.id === id));
         return (
@@ -14686,8 +15951,8 @@ const PRACTICE_IDS = ['arm-moves', 'posture-check', 'beat-target', 'practice-tim
 function PracticeView({ onOpen }) {
   return (
     <div className="fade-up">
-      <PageIntro title="Practice" text={UI_TEACHER ? 'For home practice and the last five minutes of a lesson. Send any of these to a student with its link.' : 'Tools for practising at home.'}/>
-      <StaffHead title="Practice tools" count={PRACTICE_IDS.length}/>
+      <PageIntro title={t('Practice', '연습')} text={UI_TEACHER ? t('For home practice and the last five minutes of a lesson. Send any of these to a student with its link.', '집에서 연습할 때나 레슨 마지막 5분에 쓰세요. 링크로 학생에게 보낼 수 있어요.') : t('Tools for practising at home.', '집에서 연습할 때 쓰는 도구예요.')}/>
+      <StaffHead title={t('Practice tools', '연습 도구')} count={PRACTICE_IDS.length}/>
       <div style={{marginTop:6}}>
         {PRACTICE_IDS.map((id, i) => { const t = TOOLS.find(x => x.id === id); if (!t) return null; return <SlimRow key={id} title={t.title} sub={t.blurb} onClick={() => onOpen(id)} last={i === PRACTICE_IDS.length - 1}/>; })}
       </div>
@@ -14725,10 +15990,10 @@ const CHAPTER_SEARCH_TERMS = {
   'tempo': 'tempo speed italian term metronome mark bpm',
   'practice': 'practice timer dice repetition',
   'piano-story': 'history piano era composer',
-  'pitch-range': 'pitch range hertz frequency octave instrument',
+  'pitch-range': 'pitch range hertz frequency octave instrument string length tension shorter tighter xylophone bars violin viola cello double bass bigger smaller ladder double',
   'melody': 'melody tune phrase phrasing phrase mark question answer antecedent consequent sequence motif contour breath comma',
   'form': 'form binary ternary rondo ABA AB ABACA section refrain episode structure same new repeat',
-  'styles': 'style genre texture monophony homophony polyphony solo melody folk classical jazz blues popular music',
+  'styles': 'style genre texture monophony homophony polyphony solo melody folk classical jazz blues popular music swing straight eighth notes triplet 12-bar twelve bar blues chords I IV V',
 };
 // Phase 221: order = teaching order (body -> notes -> rhythm -> theory -> music-in-context -> helpers)
 const TOOL_CATS = [
@@ -14753,6 +16018,33 @@ const TOOL_CATS = [
   { id: 'about', name: 'General knowledge', when: 'History of the piano, style eras, pitch and range, textures and genres', color: '#e4572e' },
   { id: 'practice', name: 'Practice helpers', when: 'Metronome, timer, dice, perfect reps', color: '#e4572e' },
 ];
+
+// Phase 276: Korean topic names and one-line descriptions (name/when become getters; English kept as nameEn/whenEn for search).
+const CAT_KO = {
+  body: ['자세와 손 모양', '앉는 법, 손 모양, 팔 무게, 손가락 번호, 왼손과 오른손'],
+  keys: ['건반과 음이름', '검은건반 무리, 흰건반 이름 붙이기, 건반에서 음 찾기'],
+  pitch: ['오선보 읽기', '오선의 줄과 칸, 음자리표, 외우는 문장, 기준 음, 덧줄'],
+  ledger: ['음표 쓰기와 덧줄', '이름을 보고 오선에 음표 쓰기, 위아래 덧줄, 다른 오선의 같은 음, 알토음자리표'],
+  tones: ['온음과 반음', '온음과 반음, 샤프·플랫·내추럴, 반음계, 임시표는 어디까지 유효할까'],
+  rpulse: ['박과 세기', '일정한 박, 맞는 박에 두드리기, 소리 내어 세기'],
+  rnotes: ['음표 길이와 쉼표', '음표 나누기, 쉼표, 마디 채우기, 온마디 쉼표'],
+  rtime: ['박자표', '두 숫자의 뜻, 보통박자와 얼라 브레베, 세로줄, 아래 숫자, 따라 세기'],
+  rrhythm: ['겹박자와 리듬 패턴', '6/8과 겹박자, 8분음표 묶기, 2잇단음표와 셋잇단음표, 리듬 카드, 어려운 리듬, 여린내기'],
+  steps: ['튠 읽기: 음높이 + 리듬', '짧은 튠 읽기, 선율 완성하기, 12개 조의 다섯 손가락 자리, 초견 카드'],
+  rtempo: ['템포', '메트로놈과 빠르기'],
+  intervals: ['음정', '차례가기와 건너뛰기, 음정 세기, 장·단·완전 음정, 음정 듣기'],
+  scales: ['스케일과 조', '장조와 단조 스케일, 손가락 번호, 조표, 단조의 세 가지 형태'],
+  harmony: ['화음과 화성', '3화음, I IV V, 전위, 케이던스, 7화음'],
+  melody: ['선율과 형식', '튠이란, 프레이즈 마크, 묻고 답하기, 시퀀스; 2부·3부·론도 형식'],
+  expression: ['터치와 표현', '다이나믹, 레가토와 스타카토, 빠르기 변화'],
+  words: ['기호와 용어', '이탈리아어 용어, 도돌이표와 악보 길찾기, 이음줄'],
+  ear: ['귀로 듣기', '듣고 따라 치기, 음정 듣기, 높고 낮음'],
+  about: ['일반 상식', '피아노의 역사, 시대 양식, 음높이와 음역, 텍스처와 장르'],
+  practice: ['연습 도우미', '메트로놈, 타이머, 주사위, 완벽한 반복'],
+};
+TOOL_CATS.forEach(c => { const n = c.name, w = c.when; c.nameEn = n; c.whenEn = w;
+  Object.defineProperty(c, 'name', { get: () => (LANG === 'ko' && CAT_KO[c.id] ? CAT_KO[c.id][0] : n), enumerable: true, configurable: true });
+  Object.defineProperty(c, 'when', { get: () => (LANG === 'ko' && CAT_KO[c.id] ? CAT_KO[c.id][1] : w), enumerable: true, configurable: true }); });
 // cat, level range [from, to] (0 Beginner, 1 Prelim, 2 Grade 1–2, 3 Grade 3–4), kinds
 // kinds: show = show & explain, game = student does it, ear = listening, write = written theory, home = home practice
 const TOOL_META = {
@@ -14775,7 +16067,7 @@ const TOOL_META = {
   'split-it': ['rnotes', 1, 1, 'show'], 'note-rest-naming': ['rnotes', 0, 1, 'show ear'], 'dot-lab': ['rnotes', 1, 2, 'show ear'], 'beam-apples': ['rnotes', 0, 1, 'show'], 'fix-the-bar': ['rnotes', 1, 2, 'game'], 'heard-bar': ['rnotes', 1, 2, 'ear game'], 'note-rest-match': ['rnotes', 0, 1, 'game'],
   'fill-bar': ['rnotes', 1, 2, 'game write home'], 'make-card': ['rrhythm', 1, 2, 'game home'], 'bar-lines': ['rtime', 1, 2, 'write'], 'regroup': ['rrhythm', 2, 3, 'show ear'],
   'dyn-order': ['expression', 0, 1, 'game'], 'hairpin': ['expression', 1, 2, 'show'], 'touch-ear': ['expression', 0, 2, 'ear game'], 'touch-lengths': ['expression', 1, 3, 'show ear'],
-  'tempo-race': ['rtempo', 0, 2, 'show ear'], 'speed-change': ['rtempo', 1, 2, 'show ear'], 'tie-slur': ['words', 1, 2, 'show ear'],
+  'tempo-race': ['rtempo', 0, 2, 'show ear'], 'tempo-walk': ['rtempo', 0, 1, 'show ear'], 'tap-tempo': ['rtempo', 0, 3, 'game'], 'same-tune-tempo': ['rtempo', 0, 2, 'ear game'], 'speed-change': ['rtempo', 1, 2, 'show ear'], 'tie-slur': ['words', 1, 2, 'show ear'],
   'high-low': ['ear', 0, 0, 'ear game'], 'echo': ['ear', 0, 1, 'ear game home'], 'interval-ear': ['ear', 2, 3, 'ear'],
   'tone-semitone': ['tones', 1, 1, 'show game'], 'sharp-flat': ['tones', 1, 1, 'show'], 'accidental-bar': ['tones', 1, 2, 'show write'], 'build-major': ['scales', 1, 2, 'game write'],
   'build-minor': ['scales', 2, 3, 'game write'], 'scale-finder': ['scales', 0, 3, 'show home'], 'degree-names': ['scales', 2, 3, 'show'], 'sharps-order': ['scales', 1, 3, 'game'], 'flats-order': ['scales', 1, 3, 'game'],
@@ -14785,12 +16077,12 @@ const TOOL_META = {
   'invert-interval': ['intervals', 3, 3, 'show'], 'tritone': ['intervals', 3, 3, 'show ear'], 'triad-stack': ['harmony', 1, 3, 'show'], 'major-minor': ['harmony', 2, 3, 'ear show'],
   'key-chords': ['harmony', 2, 3, 'show'], 'primary-triads': ['harmony', 2, 3, 'show ear'], 'inversions': ['harmony', 3, 3, 'show'], 'cadences': ['harmony', 3, 3, 'ear show'],
   'seventh-chords': ['harmony', 3, 3, 'show ear'], 'chord-extensions': ['harmony', 3, 3, 'show'],
-  'road-map': ['words', 1, 2, 'game'], 'term-cards': ['words', 1, 3, 'home show'], 'term-match': ['words', 1, 3, 'game home'],
+  'road-map': ['words', 1, 2, 'game'], 'term-cards': ['words', 1, 3, 'home show'], 'term-match': ['words', 1, 3, 'game home'], 'term-sort': ['words', 1, 3, 'game'], 'term-mixer': ['words', 2, 3, 'show ear'],
   'practice-timer': ['practice', 0, 3, 'home'], 'practice-dice': ['practice', 0, 3, 'home game'], 'perfect-counter': ['practice', 0, 3, 'home'],
-  'keyboard-ancestors': ['about', 0, 3, 'show ear'], 'piano-timeline': ['about', 1, 3, 'show'], 'eras': ['about', 1, 3, 'show ear'], 'hz-explorer': ['about', 1, 3, 'show ear'], 'range-chart': ['about', 1, 3, 'show ear'],
-  'tune-anatomy': ['melody', 0, 1, 'show'], 'phrase-marks': ['melody', 1, 2, 'show'], 'question-answer': ['melody', 1, 2, 'game ear'], 'melody-sequence': ['melody', 1, 2, 'show ear'],
-  'form-shapes': ['melody', 0, 2, 'show'], 'same-or-new': ['melody', 1, 2, 'game ear'], 'rondo-refrain': ['melody', 1, 3, 'game ear'], 'binary-ternary-spot': ['melody', 1, 3, 'game ear'],
-  'texture-types': ['about', 0, 2, 'show ear'], 'texture-spotter': ['about', 1, 3, 'game ear'], 'genre-traits': ['about', 1, 3, 'show'],
+  'keyboard-ancestors': ['about', 0, 3, 'show ear'], 'piano-timeline': ['about', 1, 3, 'show'], 'eras': ['about', 1, 3, 'show ear'], 'hz-explorer': ['about', 1, 3, 'show ear'], 'string-lab': ['about', 0, 3, 'show ear'], 'size-pitch': ['about', 0, 2, 'game ear'], 'octave-ladder': ['about', 1, 3, 'game ear'], 'range-chart': ['about', 1, 3, 'show ear'],
+  'tune-anatomy': ['melody', 0, 1, 'show'], 'draw-tune': ['melody', 0, 2, 'game ear'], 'phrase-marks': ['melody', 1, 2, 'show'], 'question-answer': ['melody', 1, 2, 'game ear'], 'melody-sequence': ['melody', 1, 2, 'show ear'],
+  'form-shapes': ['melody', 0, 2, 'show'], 'form-builder': ['melody', 0, 2, 'game ear'], 'same-or-new': ['melody', 1, 2, 'game ear'], 'rondo-refrain': ['melody', 1, 3, 'game ear'], 'binary-ternary-spot': ['melody', 1, 3, 'game ear'],
+  'texture-types': ['about', 0, 2, 'show ear'], 'texture-spotter': ['about', 1, 3, 'game ear'], 'genre-traits': ['about', 1, 3, 'show'], 'swing-feel': ['about', 1, 3, 'game ear'], 'twelve-bar-blues': ['about', 2, 3, 'game ear'],
 };
 function toolMeta(id) { const m = TOOL_META[id]; if (m) return { cat: m[0], lo: m[1], hi: m[2], kinds: m[3].split(' ') }; const t = TOOLS.find(x => x.id === id); return { cat: 'practice', lo: 0, hi: 3, kinds: ['show'], ch: t && t.ch }; }
 // Phase 168 (2026-09-28): shared search text for a tool -- title + blurb + its category's
@@ -14800,10 +16092,12 @@ function toolMeta(id) { const m = TOOL_META[id]; if (m) return { cat: m[0], lo: 
 // inside the Toolbox tab.
 function toolHay(t) {
   const m = toolMeta(t.id), cat = TOOL_CATS.find(c => c.id === m.cat) || {};
-  return (t.title + ' ' + t.blurb + ' ' + (cat.name || '') + ' ' + (cat.when || '') + ' ' + (CHAPTER_SEARCH_TERMS[t.ch] || '')).toLowerCase();
+  return (t.title + ' ' + t.blurb + ' ' + (t.titleEn || '') + ' ' + (t.blurbEn || '') + ' ' + (cat.name || '') + ' ' + (cat.when || '') + ' ' + (cat.nameEn || '') + ' ' + (cat.whenEn || '') + ' ' + (CHAPTER_SEARCH_TERMS[t.ch] || '')).toLowerCase();
 }
 function toolMatches(t, words) { const hay = toolHay(t); return words.every(w => hay.includes(w)); }
 const LEVEL_CHIPS = [[-1, 'Any level'], [0, 'Beginner'], [1, 'Preliminary'], [2, 'Grade 1–2'], [3, 'Grade 3–4']];
+const CHIP_KO = { 'Any level': '모든 레벨', 'Beginner': '입문', 'Preliminary': 'Preliminary', 'Grade 1–2': 'Grade 1–2', 'Grade 3–4': 'Grade 3–4', 'Any kind': '모든 종류', 'Show & explain': '보여 주며 설명', 'Student does it': '학생이 직접', 'Listening': '듣기', 'Written theory': '이론 쓰기', 'Home practice': '집에서 연습' };
+const chipLabel = (l) => (LANG === 'ko' && CHIP_KO[l]) || l;
 const KIND_CHIPS = [['all', 'Any kind'], ['show', 'Show & explain'], ['game', 'Student does it'], ['ear', 'Listening'], ['write', 'Written theory'], ['home', 'Home practice']];
 // "My student…": what the teacher notices -> the tools that fix it.
 const PROBLEMS = [
@@ -14826,6 +16120,12 @@ const PROBLEMS = [
   ['doesn’t practise at home', ['practice-timer', 'practice-dice', 'perfect-counter']],
   ['struggles to sight-read', ['sight-reading', 'step-skip', 'mini-tune']],
 ];
+const PROBLEMS_KO = ['바르게 앉지 못하고 어깨나 손목에 힘이 들어가요', '손가락이 납작하거나 손가락 마디가 꺾여요', '손가락 번호를 헷갈려요', '건반에서 음을 못 찾아요',
+  '모든 음을 도부터 세어서 읽어요', '높은음자리표와 낮은음자리표를 헷갈려요', '덧줄에서 길을 잃어요', '서두르거나 박을 일정하게 못 지켜요',
+  '긴 음을 짧게 끊거나 쉼표를 세지 않아요', '6/8박자를 어려워해요', '모든 걸 같은 크기로 쳐요', '레가토와 스타카토를 구별하지 못해요',
+  '도돌이표와 D.C.에서 어디인지 놓쳐요', '샤프와 플랫을 헷갈려요', '이론 시험이 다가와요', '이탈리아어 용어를 잊어버려요',
+  '집에서 연습을 안 해요', '초견을 어려워해요'];
+const probLabel = (i) => (LANG === 'ko' && PROBLEMS_KO[i]) || PROBLEMS[i][0];
 // Kits: a named set of tools for one student (or one lesson), saved on this device, sent as one link.
 const KITS_KEY = 'pb_kits_v1';
 function loadKits() {
@@ -14840,7 +16140,7 @@ function loadWho(kits) { try { const id = localStorage.getItem(WHO_KEY); const i
 function saveWho(kits, i) { try { if (kits[i]) localStorage.setItem(WHO_KEY, kits[i].id); } catch (e) {} }
 function newStudentObj(name, group, notes) { return { id: 's' + Date.now().toString(36) + Math.floor(Math.random() * 1000), name: (name || 'Student').trim().slice(0, 40), group: group || '', notes: notes || '', tools: [], done: {}, created: new Date().toISOString().slice(0, 10) }; }
 // A small inline "add a name" field (browser prompt() doesn't work inside embedded previews).
-function AddName({ onAdd, label = '+ Student', placeholder = 'Student’s name' }) {
+function AddName({ onAdd, label = t('+ Student', '+ 학생'), placeholder = t('Student’s name', '학생 이름') }) {
   const [open, setOpen] = useState(false);
   const [v, setV] = useState('');
   if (!open) return <button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setOpen(true)}>{label}</button>;
@@ -14848,7 +16148,7 @@ function AddName({ onAdd, label = '+ Student', placeholder = 'Student’s name' 
   return (
     <span style={{display:'inline-flex',gap:4,alignItems:'center'}}>
       <input autoFocus value={v} onChange={e => setV(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') go(); if (e.key === 'Escape') setOpen(false); }} placeholder={placeholder} style={{width:130,padding:'3px 8px',borderRadius:10,border:'1.5px solid #e4572e',fontSize:13,fontFamily:'inherit'}}/>
-      <button className="chip active" style={{padding:'2px 9px',fontSize:12}} onClick={go}>Add</button>
+      <button className="chip active" style={{padding:'2px 9px',fontSize:12}} onClick={go}>{t('Add', '추가')}</button>
       <button className="chip" style={{padding:'2px 7px',fontSize:12}} onClick={() => setOpen(false)}>✕</button>
     </span>
   );
@@ -15345,15 +16645,15 @@ const CHAPTER_TOOL_ORDER = {
   'chords': ['triad-stack', 'major-minor', 'key-chords', 'primary-triads', 'inversions', 'cadences', 'chord-extensions', 'seventh-chords'],
   'dynamics': ['dyn-order', 'hairpin', 'pedal', 'tie-slur', 'touch-ear', 'touch-lengths'],
   'first-steps': ['high-low', 'key-houses', 'black-key-song', 'black-white-neighbours'],
-  'form': ['form-shapes', 'same-or-new', 'rondo-refrain', 'binary-ternary-spot'],
+  'form': ['form-shapes', 'form-builder', 'same-or-new', 'rondo-refrain', 'binary-ternary-spot'],
   'intervals': ['step-skip', 'interval-ruler', 'letter-hop', 'semitone-counter', 'scale-intervals', 'interval-ear', 'invert-interval', 'tritone'],
   'key-signatures': ['sharps-order', 'flats-order', 'place-it', 'relative-minor', 'circle-fifths', 'transpose', 'all-keys'],
   'ledger-lines': ['ledger-walk', 'ledger-landmarks', 'ledger-twins', 'ledger-write'],
-  'melody': ['tune-anatomy', 'phrase-marks', 'question-answer', 'melody-sequence'],
+  'melody': ['tune-anatomy', 'draw-tune', 'phrase-marks', 'question-answer', 'melody-sequence'],
   'note-names': ['find-every', 'name-reveal', 'step-updown', 'letter-chain'],
   'note-values': ['note-value-tree', 'rest-grouping', 'note-rest-match', 'split-it', 'beam-apples', 'dotted-notes', 'dot-lab', 'fix-the-bar', 'fill-bar', 'heard-bar'],
   'piano-story': ['keyboard-ancestors', 'piano-timeline', 'eras'],
-  'pitch-range': ['hz-explorer', 'range-chart'],
+  'pitch-range': ['hz-explorer', 'string-lab', 'size-pitch', 'octave-ladder', 'range-chart'],
   'posture-hands': ['sit-check', 'arm-moves', 'arm-alignment', 'hand-shape', 'finger-friends', 'finger-numbers', 'posture-check'],
   'pulse': ['steady-beat', 'beat-target', 'count-aloud'],
   'reading-steps': ['mini-tune', 'echo', 'complete-melody', 'five-positions'],
@@ -15361,9 +16661,9 @@ const CHAPTER_TOOL_ORDER = {
   'scales': ['major-shape', 'build-major', 'degree-names', 'major-fingering', 'scale-finder', 'minor-forms', 'build-minor', 'minor-fingering', 'modes'],
   'signs': ['road-map', 'dc-ds-coda', 'ottava', 'ornaments', 'grace-write'],
   'staff': ['staff-basics', 'rhymes', 'clef-basics', 'clef-story', 'staff-climb', 'fold', 'landmarks', 'landmark-hop', 'flash-cards', 'write-note', 'alto-clef'],
-  'styles': ['texture-types', 'texture-spotter', 'genre-traits'],
-  'tempo': ['tempo-race', 'speed-change', 'metronome'],
-  'terms': ['term-cards', 'term-match'],
+  'styles': ['texture-types', 'texture-spotter', 'genre-traits', 'swing-feel', 'twelve-bar-blues'],
+  'tempo': ['tempo-walk', 'tempo-race', 'tap-tempo', 'same-tune-tempo', 'speed-change', 'metronome'],
+  'terms': ['term-sort', 'term-cards', 'term-mixer', 'term-match'],
   'time-signatures': ['time-sig-numbers', 'count-along', 'common-cut', 'bar-lines', 'beat-doubler', 'regroup', 'grouping', 'duplets'],
   'tones': ['tone-semitone', 'accidental-cards', 'sharp-flat', 'accidental-bar', 'chromatic'],
 };
@@ -15428,19 +16728,19 @@ function Toolbox({ onOpen, onChapter, kit, onStar }) {
             for the same at-a-glance browsing at the top of the Toolbox, since the category
             grouping below (unchanged) was easy to miss under the search/filter card. This row
             always shows every category (not filtered), same as the Learn tab's chip grid. */}
-        <input className="search-input" value={q} onChange={e => setQ(e.target.value)} placeholder="Search: wrist, triad, 6/8, Bb scale..." style={{marginBottom:8}}/>
+        <input className="search-input" value={q} onChange={e => setQ(e.target.value)} placeholder={t('Search: wrist, triad, 6/8, Bb scale...', '검색: 손목, 3화음, 6/8, Bb 스케일...')} style={{marginBottom:8}}/>
         {(() => { const sc = parseScaleQuery(q); return sc ? (
           <button onClick={() => { PENDING_SCALE = sc; onOpen('scale-finder'); }} style={{width:'100%',textAlign:'left',border:'1.5px solid #c0431f',background:'#f6f1e6',borderRadius:10,padding:'9px 12px',marginBottom:8,cursor:'pointer',fontFamily:'inherit',color:'var(--text)'}}>
             <b style={{fontSize:15}}>{prettyNote(sc.key)} {sc.mode === 'minor' ? 'harmonic minor' : 'major'} scale</b> <span style={{color:'#8f6216',fontWeight:800}}>-- fingering, key signature, notes ›</span>
           </button>) : null; })()}
         <button onClick={() => setShowProb(s => !s)} style={{width:'100%',textAlign:'left',border:'1.5px solid ' + (pset ? '#e4572e' : 'var(--border)'),background:pset ? '#f6f1e6' : '#fff',borderRadius:10,padding:'8px 12px',fontSize:14.5,fontWeight:900,cursor:'pointer',fontFamily:'inherit',color:'var(--text)'}}>
-          My student… <span style={{fontWeight:700,color:pset ? '#8f6216' : 'var(--muted)'}}>{pset ? PROBLEMS[prob][0] : 'pick what you notice'}</span><span style={{float:'right',color:'var(--muted)'}}>{showProb ? '▴' : '▾'}</span>
+          {t('My student…', '우리 학생은…')} <span style={{fontWeight:700,color:pset ? 'var(--coral)' : 'var(--muted)'}}>{pset ? probLabel(prob) : t('pick what you notice', '눈에 띄는 것을 골라요')}</span><span style={{float:'right',color:'var(--muted)'}}>{showProb ? '▴' : '▾'}</span>
         </button>
         {showProb && <div style={{display:'flex',flexDirection:'column',gap:3,marginTop:6}}>
-          {PROBLEMS.map(([p], i) => <button key={i} onClick={() => { setProb(i === prob ? -1 : i); setShowProb(false); }} style={{textAlign:'left',border:'none',background:i === prob ? '#f6f1e6' : 'transparent',borderRadius:8,padding:'5px 10px',fontSize:14,cursor:'pointer',fontFamily:'inherit',color:'var(--text)'}}>…{p}</button>)}
+          {PROBLEMS.map(([p], i) => <button key={i} onClick={() => { setProb(i === prob ? -1 : i); setShowProb(false); }} style={{textAlign:'left',border:'none',background:i === prob ? '#f6f1e6' : 'transparent',borderRadius:8,padding:'5px 10px',fontSize:14,cursor:'pointer',fontFamily:'inherit',color:'var(--text)'}}>…{probLabel(i)}</button>)}
         </div>}
-        <div style={{display:'flex',gap:4,flexWrap:'wrap',marginTop:8}}>{LEVEL_CHIPS.map(([v, l]) => chip(lv === v, l, () => setLv(v), 'l' + v))}</div>
-        <div style={{display:'flex',gap:4,flexWrap:'wrap',marginTop:4}}>{KIND_CHIPS.map(([v, l]) => chip(kind === v, l, () => setKind(v), 'k' + v))}</div>
+        <div style={{display:'flex',gap:4,flexWrap:'wrap',marginTop:8}}>{LEVEL_CHIPS.map(([v, l]) => chip(lv === v, chipLabel(l), () => setLv(v), 'l' + v))}</div>
+        <div style={{display:'flex',gap:4,flexWrap:'wrap',marginTop:4}}>{KIND_CHIPS.map(([v, l]) => chip(kind === v, chipLabel(l), () => setKind(v), 'k' + v))}</div>
         {filtered && <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:8,fontSize:13,fontWeight:800,color:'var(--muted)'}}><span>{shown} tool{shown === 1 ? '' : 's'}</span><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => { setQ(''); setLv(-1); setKind('all'); setProb(-1); }}>Clear filters</button></div>}
       </div>
 
@@ -15693,12 +16993,12 @@ function StudentsView({ onPlan, onOpenKit }) {
       <div className="card" style={{marginBottom:12}}>
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
           <h2 style={{fontSize:20,fontWeight:900,margin:0,letterSpacing:'-0.02em'}}>Students</h2>
-          {!adding && <button className="ghost-btn" style={{fontSize:13,padding:'6px 12px'}} onClick={() => { setAdding(true); setEdit(null); setDraft({ name: '', group: '', notes: '' }); }}>+ Add a student</button>}
+          {!adding && <button className="ghost-btn" style={{fontSize:13,padding:'6px 12px'}} onClick={() => { setAdding(true); setEdit(null); setDraft({ name: '', group: '', notes: '' }); }}>{t('+ Add a student', '+ 학생 추가')}</button>}
         </div>
         <p style={{fontSize:14,color:'var(--muted)',margin:'4px 0 0',lineHeight:1.5}}>Each student has their progress in the Lesson plan and their own kit of tools. Saved on this device only.</p>
         {adding && <div style={{marginTop:10}}>{form(add, 'Add', () => setAdding(false))}</div>}
       </div>
-      {!kits.length && !adding && <div className="card" style={{textAlign:'center',color:'var(--muted)',fontSize:14}}>No students yet -- add the first one above.</div>}
+      {!kits.length && !adding && <div className="card" style={{textAlign:'center',color:'var(--muted)',fontSize:14}}>{t('No students yet -- add the first one above.', '아직 학생이 없어요 -- 위에서 첫 학생을 추가해요.')}</div>}
       {kits.map(k => {
         const n = Object.values(k.done || {}).filter(Boolean).length, g = START_MIXES.find(m => m.id === k.group);
         return (
@@ -15956,6 +17256,7 @@ function App() {
     } catch (e) { /* URL sync is a convenience only */ }
   }, [active.id, st.drill, st.tab, level, st.mode, st.lock, st.view, st.tool, st.kit, st.kn]);
 
+  useEffect(() => { if (st.drill && CHAPTER_CAT[st.drill]) { try { localStorage.setItem(LAST_CHAPTER_KEY, st.drill); } catch (e) {} } }, [st.drill]);
   function update(patch) { setSt(prev => ({ ...prev, ...patch })); }
   function jumpToChapter(id) { setFindOpen(false); update({ view: 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }
 
@@ -15983,7 +17284,7 @@ function App() {
       {T && findOpen && <FindOverlay onClose={() => setFindOpen(false)} onJump={(id) => { setFindOpen(false); update({ view: 'tools', tool: id, kit: null, ret: 'path' }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/>}
 
       <div className="pb-main" style={{maxWidth:600,margin:'0 auto',padding:'20px 16px 60px'}}>
-        {preview && <div style={{background:'#26296b',color:'#fff',borderRadius:10,padding:'8px 12px',marginBottom:12,fontSize:13.5,display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}><span>You’re seeing what a student sees.</span><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setPreview(false)}>Back to teacher view</button></div>}
+        {preview && <div style={{background:'#26296b',color:'#fff',borderRadius:10,padding:'8px 12px',marginBottom:12,fontSize:13.5,display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}><span>{t('You’re seeing what a student sees.', '학생에게 보이는 화면이에요.')}</span><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setPreview(false)}>{t('Back to teacher view', '교사 화면으로')}</button></div>}
         {!st.lock && (
           <div style={{display:'flex',gap:6,borderBottom:'1.5px solid var(--navy-line)',marginBottom:16}}>
             {(T ? [['path', t('Plan', '계획')], ['practice', t('Practice', '연습')], ['students', t('Students', '학생')]] : [['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]]).map(([v, l]) => (
