@@ -4226,6 +4226,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 | 274 | 2026-10-02 | **Screen audit after the redesign.** Clicked through screens not covered before: home search results, Random Pick (before/after picking), Contact pop-up, Recommend steps 2-3 and results, Timeline step 2, Diagnose questions and results, Viva Voce grade picker, sight-reading loading page; drills Find overlay (with a search), Students add form, a drill before/after a wrong answer, pixel game start, Plan with the add-student field. Only fix needed: the home page Contact pop-up was still a dark (#1e1e1e) panel -- now ivory/white with navy text, warm inputs and a navy pill Send button (index.html). Diagnose's per-domain chart colours and the era/list badges are informational and were left as they are. No page errors anywhere. |
 
+| 275 | 2026-10-02 | **Student 'Keep going' card.** drills.html: the App remembers the last chapter opened (`pb_last_chapter_v1` in localStorage, try/catch, only ids in CHAPTER_CAT), and the student Learn page opens with a card -- coral 'KEEP GOING' label, the chapter name in serif, 'n steps done' (or 'Pick up where you left off'), navy Resume pill -- above the topic list. Hidden for teachers and when nothing has been opened yet. Korean included (이어서 하기 / 이어하기). Verified: compile; headless run: fresh visit shows no card, open Reading the Staff -> Got it -> back shows 'Reading the Staff, 1 step done', Resume reopens the lesson; no page errors. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 

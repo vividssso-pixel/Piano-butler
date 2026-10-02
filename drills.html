@@ -14924,11 +14924,31 @@ function SlimRow({ title, sub, tag, done, onClick, last }) {
     </button>
   );
 }
+// Phase 275: the student's Learn page opens with the chapter they were last in (browser-only memory).
+const LAST_CHAPTER_KEY = 'pb_last_chapter_v1';
+function KeepGoing({ onOpen }) {
+  let id = null;
+  try { id = localStorage.getItem(LAST_CHAPTER_KEY); } catch (e) {}
+  const d = id && CHAPTER_CAT[id] && DRILLS.find(x => x.id === id);
+  if (!d) return null;
+  const n = stepsDone(id);
+  return (
+    <div style={{background:'var(--surface)',border:'1.5px solid var(--navy-line)',borderRadius:16,padding:'14px 16px',margin:'0 0 22px',display:'flex',alignItems:'center',gap:12,boxShadow:'0 4px 18px rgba(38,41,107,0.06)'}}>
+      <span style={{flex:1,minWidth:0}}>
+        <span style={{display:'block',fontSize:11,fontWeight:800,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--coral)'}}>{t('Keep going', '이어서 하기')}</span>
+        <span style={{display:'block',fontFamily:"'Playfair Display', Georgia, serif",fontSize:20,fontWeight:800,lineHeight:1.2,color:'var(--navy)',marginTop:2}}>{d.label}</span>
+        <span style={{display:'block',fontSize:12.5,color:'var(--navy-soft)',marginTop:2}}>{n > 0 ? t(n + (n === 1 ? ' step done' : ' steps done'), n + '단계 완료') : t('Pick up where you left off', '하던 곳에서 이어서')}</span>
+      </span>
+      <button className="primary-btn" style={{width:'auto',flex:'0 0 auto',padding:'10px 18px',fontSize:14}} onClick={() => onOpen(id)}>{t('Resume', '이어하기')}</button>
+    </div>
+  );
+}
 function LessonPath({ onOpen, onBack }) {
   return (
     <div className="fade-up">
       {onBack && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={onBack}>← Lesson plan</button>}
       <PageIntro title={UI_TEACHER ? t('All chapters', '전체 챕터') : t('Learn', '배우기')} text={UI_TEACHER ? t('Every chapter as a full lesson with a drill, grouped by topic (same groups as the Toolbox). The groups run side by side -- the Lesson plan shows how to mix them.', '모든 챕터를 드릴이 있는 레슨으로, 주제별로 묶었어요 (도구함과 같은 묶음). 묶음들은 나란히 진행돼요 -- 레슨 계획에서 어떻게 섞을지 볼 수 있어요.') : t('Pick a topic, then a lesson. Each one ends with a game.', '주제를 고르고, 레슨을 골라요. 레슨마다 마지막에 게임이 있어요.')}/>
+      {!UI_TEACHER && <KeepGoing onOpen={onOpen}/>}
       {TOOL_CATS.filter(c => catChapterIds(c.id).length).map(c => {
         const ids = catChapterIds(c.id).filter(id => DRILLS.find(x => x.id === id));
         return (
@@ -16220,6 +16240,7 @@ function App() {
     } catch (e) { /* URL sync is a convenience only */ }
   }, [active.id, st.drill, st.tab, level, st.mode, st.lock, st.view, st.tool, st.kit, st.kn]);
 
+  useEffect(() => { if (st.drill && CHAPTER_CAT[st.drill]) { try { localStorage.setItem(LAST_CHAPTER_KEY, st.drill); } catch (e) {} } }, [st.drill]);
   function update(patch) { setSt(prev => ({ ...prev, ...patch })); }
   function jumpToChapter(id) { setFindOpen(false); update({ view: 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }
 
