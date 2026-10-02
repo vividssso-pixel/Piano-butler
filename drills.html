@@ -1325,6 +1325,270 @@ function Step({ n, total, title, color, open, done, onToggle, onDone, children, 
     </section>
   );
 }
+// ─── Staff look (Phase 272): one wide staff-line drawing per chapter, navy + coral on paper ───
+// Replaces the old cut-paper hero pictures on lesson pages. Every drawing sits on the same five-line
+// staff band (lines at y = 34..66, 8 apart, viewBox 360x100) and shows the chapter's own idea literally.
+const ART_N = '#26296b', ART_C = '#e4572e', ART_P = '#faf6ec';
+const ART_Y = [34, 42, 50, 58, 66];
+// a note head (+ stem) at x,y. open = hollow head (minim/semibreve), stem: 1 up, -1 down, 0 none
+function ANote({ x, y, c = ART_N, open, stem = 1, s = 1 }) {
+  const rx = 5.4 * s, ry = 3.9 * s;
+  return <g>
+    <ellipse cx={x} cy={y} rx={rx} ry={ry} transform={`rotate(-20 ${x} ${y})`} fill={open ? ART_P : c} stroke={c} strokeWidth={open ? 1.8 : 0}/>
+    {stem === 1 && <rect x={x + rx - 1.4} y={y - 26 * s} width={1.6} height={26 * s} fill={c}/>}
+    {stem === -1 && <rect x={x - rx - 0.2} y={y} width={1.6} height={26 * s} fill={c}/>}
+  </g>;
+}
+const ALedger = ({ x, y, w = 18 }) => <rect x={x - w / 2} y={y - 0.7} width={w} height={1.4} fill={ART_N}/>;
+const AText = ({ x, y, children, c = ART_N, size = 14, italic, anchor = 'middle', serif = true, weight = 800 }) =>
+  <text x={x} y={y} textAnchor={anchor} fontSize={size} fontWeight={weight} fontStyle={italic ? 'italic' : 'normal'} fill={c}
+    fontFamily={serif ? "'Playfair Display', Georgia, serif" : "Inter, sans-serif"}>{children}</text>;
+const AClef = () => <g transform="translate(6 -14) scale(0.8)"><ClefGlyph clef="treble" st="treble" yOf={dY} ink={ART_N}/></g>;
+// a sharp drawn as lines (fonts disagree on glyph metrics), centred on y
+const ASharp = ({ x, y, c = ART_N }) => <g fill={c}>
+  <rect x={x - 2.9} y={y - 10} width={1.4} height={21}/><rect x={x + 1.7} y={y - 11.5} width={1.4} height={21}/>
+  <path d={`M${x - 6} ${y - 0.6} L${x + 6} ${y - 4.4} L${x + 6} ${y - 7.2} L${x - 6} ${y - 3.4} Z`}/>
+  <path d={`M${x - 6} ${y + 6.4} L${x + 6} ${y + 2.6} L${x + 6} ${y - 0.2} L${x - 6} ${y + 3.6} Z`}/>
+</g>;
+const AKnock = ({ x, y, w, h }) => <rect x={x} y={y} width={w} height={h} fill={ART_P}/>;
+const ABar = ({ x }) => <rect x={x} y={34} width={1.6} height={32} fill={ART_N}/>;
+
+const STAFF_ART = {
+  // arched hand over the keys: knuckles high, fingertip on the key
+  'posture-hands': () => <g>
+    <AKnock x={92} y={20} w={176} h={64}/>
+    {[0, 1, 2, 3, 4, 5, 6].map(i => <rect key={i} x={100 + i * 23} y={64} width={22} height={18} rx={2} fill={ART_P} stroke={ART_N} strokeWidth={1.4}/>)}
+    <path d="M118 62 C 128 34, 160 22, 196 26 C 226 29, 244 38, 252 50" fill="none" stroke={ART_N} strokeWidth={3} strokeLinecap="round"/>
+    <path d="M196 26 C 206 36, 210 48, 206 62" fill="none" stroke={ART_N} strokeWidth={3} strokeLinecap="round"/>
+    <circle cx={206} cy={63} r={4} fill={ART_C}/>
+    <AText x={150} y={20} size={11} c={ART_C} serif={false} weight={700}>round, like holding a ball</AText>
+  </g>,
+  // black-key groups of two and three
+  'first-steps': () => <g>
+    <AKnock x={70} y={22} w={220} h={64}/>
+    {[0, 1, 2, 3, 4, 5, 6].map(i => <rect key={i} x={80 + i * 29} y={26} width={28} height={56} rx={2} fill={ART_P} stroke={ART_N} strokeWidth={1.4}/>)}
+    {[0, 1, 3, 4, 5].map(i => <rect key={i} x={98 + i * 29} y={26} width={16} height={34} rx={2} fill={ART_N}/>)}
+    <path d="M96 20 h 49" stroke={ART_C} strokeWidth={2.4} strokeLinecap="round"/>
+    <path d="M183 20 h 78" stroke={ART_C} strokeWidth={2.4} strokeLinecap="round"/>
+    <AText x={120} y={14} size={11} c={ART_C} serif={false} weight={700}>2</AText>
+    <AText x={222} y={14} size={11} c={ART_C} serif={false} weight={700}>3</AText>
+  </g>,
+  // the musical alphabet: seven letters, then it starts again
+  'note-names': () => <g>
+    {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'A'].map((l, i) => <g key={i}>
+      <AKnock x={44 + i * 38} y={36} w={26} h={28}/>
+      <AText x={57 + i * 38} y={58} size={22} c={i === 7 ? ART_C : ART_N}>{l}</AText>
+    </g>)}
+    <path d="M318 74 C 300 92, 70 92, 57 74" fill="none" stroke={ART_C} strokeWidth={1.8} strokeDasharray="3 4"/>
+    <path d="M57 74 l -4 7 m 4 -7 l 6 5" fill="none" stroke={ART_C} strokeWidth={1.8} strokeLinecap="round"/>
+  </g>,
+  // a steady beat: four even crotchets with the count underneath
+  'pulse': () => <g>
+    <AClef/>
+    {[0, 1, 2, 3].map(i => <g key={i}>
+      <ANote x={110 + i * 60} y={50}/>
+      <circle cx={110 + i * 60} cy={86} r={4.5} fill={i === 0 ? ART_C : ART_N}/>
+      <AText x={110 + i * 60} y={24} size={13} c={ART_C} serif={false}>{i + 1}</AText>
+    </g>)}
+    <ABar x={330}/>
+  </g>,
+  // one semibreve = two minims = four crotchets, bar by bar
+  'note-values': () => <g>
+    <ANote x={60} y={50} open stem={0}/>
+    <ABar x={100}/>
+    <ANote x={130} y={50} open/><ANote x={170} y={50} open/>
+    <ABar x={200}/>
+    {[0, 1, 2, 3].map(i => <ANote key={i} x={222 + i * 26} y={50} c={ART_C}/>)}
+    <ABar x={330}/>
+    <AText x={60} y={88} size={11} serif={false} weight={700}>4 beats</AText>
+    <AText x={150} y={88} size={11} serif={false} weight={700}>2 + 2</AText>
+    <AText x={262} y={88} size={11} c={ART_C} serif={false} weight={700}>1 + 1 + 1 + 1</AText>
+  </g>,
+  // a one-bar rhythm card: crotchet, two quavers, crotchet, crotchet
+  'rhythm': () => <g>
+    <AClef/>
+    <ANote x={110} y={50}/>
+    <ANote x={160} y={50} c={ART_C}/><ANote x={195} y={50} c={ART_C}/>
+    <rect x={163.6} y={24} width={36.4} height={4.5} fill={ART_C}/>
+    <ANote x={245} y={50}/><ANote x={295} y={50}/>
+    <ABar x={330}/>
+    {['1', '2 &', '3', '4'].map((t, i) => <AText key={i} x={[110, 180, 245, 295][i]} y={88} size={12} serif={false} weight={700} c={i === 1 ? ART_C : ART_N}>{t}</AText>)}
+  </g>,
+  // the staff itself: treble clef, line notes and space notes
+  'staff': () => <g>
+    <AClef/>
+    {[66, 58, 50, 42, 34].map((y, i) => <ANote key={'l' + i} x={100 + i * 26} y={y} stem={0}/>)}
+    {[62, 54, 46, 38].map((y, i) => <ANote key={'s' + i} x={240 + i * 24} y={y} c={ART_C} stem={0}/>)}
+    <AText x={152} y={90} size={11} serif={false} weight={700}>lines</AText>
+    <AText x={276} y={90} size={11} c={ART_C} serif={false} weight={700}>spaces</AText>
+  </g>,
+  // steps move to the very next note; skips jump over one
+  'reading-steps': () => <g>
+    <AClef/>
+    {[66, 62, 58, 54].map((y, i) => <ANote key={'a' + i} x={95 + i * 28} y={y} stem={0}/>)}
+    <path d="M100 74 q 56 14 112 -8" fill="none" stroke={ART_N} strokeWidth={1.4} strokeDasharray="3 3"/>
+    {[66, 58, 50, 42].map((y, i) => <ANote key={'b' + i} x={225 + i * 30} y={y} c={ART_C} stem={0}/>)}
+    <AText x={140} y={94} size={11} serif={false} weight={700}>step, step, step</AText>
+    <AText x={270} y={94} size={11} c={ART_C} serif={false} weight={700}>skip, skip, skip</AText>
+  </g>,
+  // ledger lines: short extra lines for notes above and below the staff
+  'ledger-lines': () => <g>
+    <AClef/>
+    <ALedger x={110} y={74}/><ANote x={110} y={74} c={ART_C} stem={0}/>
+    <AText x={110} y={96} size={11} c={ART_C} serif={false} weight={700}>middle C</AText>
+    <ALedger x={170} y={74}/><ALedger x={170} y={82}/><ANote x={170} y={86} stem={0}/>
+    <ALedger x={240} y={26}/><ANote x={240} y={26} stem={0}/>
+    <ALedger x={300} y={26}/><ALedger x={300} y={18}/><ANote x={300} y={14} stem={0}/>
+  </g>,
+  // the tempo race: slow to fast
+  'tempo': () => <g>
+    <AKnock x={40} y={26} w={64} h={60}/>
+    <path d="M54 82 L 72 30 L 90 82 Z" fill={ART_P} stroke={ART_N} strokeWidth={2.2} strokeLinejoin="round"/>
+    <path d="M72 74 L 86 40" stroke={ART_C} strokeWidth={2.6} strokeLinecap="round"/>
+    <circle cx={83} cy={47} r={3.6} fill={ART_C}/>
+    <AKnock x={124} y={40} w={70} h={20}/><AText x={158} y={55} size={14} italic>Adagio</AText>
+    <AKnock x={204} y={40} w={70} h={20}/><AText x={238} y={55} size={14} italic>Allegro</AText>
+    <AKnock x={284} y={40} w={64} h={20}/><AText x={316} y={55} size={14} italic c={ART_C}>Presto</AText>
+    <path d="M128 84 H 340" stroke={ART_C} strokeWidth={2} strokeLinecap="round"/><path d="M340 84 l -7 -4 m 7 4 l -7 4" stroke={ART_C} strokeWidth={2} strokeLinecap="round"/>
+  </g>,
+  // time signature: top number counts the beats in each bar
+  'time-signatures': () => <g>
+    <AClef/>
+    <AText x={74} y={49} size={22} weight={900}>4</AText><AText x={74} y={66} size={22} weight={900}>4</AText>
+    {[0, 1, 2, 3].map(i => <ANote key={i} x={112 + i * 26} y={50}/>)}
+    <ABar x={206}/>
+    {[0, 1, 2, 3].map(i => <ANote key={'b' + i} x={226 + i * 26} y={50} c={ART_C}/>)}
+    <ABar x={330}/>
+    <AText x={150} y={90} size={11} serif={false} weight={700}>4 beats</AText>
+    <AText x={266} y={90} size={11} c={ART_C} serif={false} weight={700}>4 beats</AText>
+  </g>,
+  // dynamics and articulation: a crescendo hairpin, staccato and legato
+  'dynamics': () => <g>
+    <AKnock x={30} y={22} w={300} h={66}/>
+    <AText x={44} y={60} size={20} italic>p</AText>
+    <path d="M64 50 L 160 38 M 64 50 L 160 62" stroke={ART_C} strokeWidth={2.4} strokeLinecap="round"/>
+    <AText x={176} y={60} size={20} italic c={ART_C}>f</AText>
+    <ANote x={220} y={58}/><circle cx={222} cy={70} r={2} fill={ART_N}/>
+    <ANote x={246} y={58}/><circle cx={248} cy={70} r={2} fill={ART_N}/>
+    <ANote x={284} y={58} c={ART_C}/><ANote x={310} y={54} c={ART_C}/>
+    <path d="M282 70 q 15 12 30 -2" fill="none" stroke={ART_C} strokeWidth={1.8}/>
+  </g>,
+  // a repeat sign sends you back to the start
+  'signs': () => <g>
+    <AClef/>
+    {[0, 1, 2].map(i => <ANote key={i} x={120 + i * 50} y={[54, 46, 50][i]}/>)}
+    <circle cx={272} cy={46} r={2.6} fill={ART_N}/><circle cx={272} cy={54} r={2.6} fill={ART_N}/>
+    <rect x={280} y={34} width={1.6} height={32} fill={ART_N}/><rect x={286} y={34} width={5} height={32} fill={ART_N}/>
+    <path d="M286 82 C 260 96, 120 96, 96 82" fill="none" stroke={ART_C} strokeWidth={2.2}/>
+    <path d="M96 82 l 4 -7 m -4 7 l 8 2" stroke={ART_C} strokeWidth={2.2} strokeLinecap="round"/>
+    <AText x={190} y={12} size={11} c={ART_C} serif={false} weight={700}>play it again</AText>
+  </g>,
+  // Italian terms written over the music
+  'terms': () => <g>
+    {[['Allegro', 64, 30, ART_N], ['dolce', 160, 56, ART_C], ['rit.', 236, 40, ART_N], ['a tempo', 304, 62, ART_N]].map(([w, x, y, c]) =>
+      <g key={w}><AKnock x={x - w.length * 5} y={y - 15} w={w.length * 10} h={20}/><AText x={x} y={y} size={16} italic c={c}>{w}</AText></g>)}
+  </g>,
+  // tone = two semitones; a semitone is the very next key
+  'tones': () => <g>
+    <AKnock x={70} y={14} w={220} h={78}/>
+    {[0, 1, 2, 3, 4, 5].map(i => <rect key={i} x={84 + i * 32} y={30} width={31} height={56} rx={2} fill={ART_P} stroke={ART_N} strokeWidth={1.4}/>)}
+    {[0, 1, 3, 4].map(i => <rect key={i} x={105 + i * 32} y={30} width={18} height={34} rx={2} fill={ART_N}/>)}
+    <path d="M100 24 q 14 -10 28 0" fill="none" stroke={ART_C} strokeWidth={2.2}/>
+    <AText x={114} y={12} size={11} c={ART_C} serif={false} weight={700}>semitone</AText>
+    <path d="M196 24 q 16 -12 32 0" fill="none" stroke={ART_N} strokeWidth={2.2}/>
+    <AText x={212} y={10} size={11} serif={false} weight={700}>tone</AText>
+  </g>,
+  // a scale climbs one step at a time from home note to home note
+  'scales': () => <g>
+    <AClef/>
+    <ALedger x={92} y={74}/>
+    {[74, 70, 66, 62, 58, 54, 50, 46].map((y, i) => <ANote key={i} x={92 + i * 32} y={y} c={i === 0 || i === 7 ? ART_C : ART_N} stem={0}/>)}
+    <AText x={92} y={96} size={11} c={ART_C} serif={false} weight={700}>C</AText>
+    <AText x={316} y={30} size={11} c={ART_C} serif={false} weight={700}>C</AText>
+  </g>,
+  // key signature: sharps arrive in the same order every time
+  'key-signatures': () => <g>
+    <AClef/>
+    {[[34, 'F'], [46, 'C'], [30, 'G'], [42, 'D']].map(([y, l], i) => <g key={i}>
+      <ASharp x={84 + i * 30} y={y} c={i === 0 ? ART_C : ART_N}/>
+      <AText x={88 + i * 30} y={92} size={12} c={i === 0 ? ART_C : ART_N} serif={false} weight={700}>{l}</AText>
+    </g>)}
+    <ANote x={260} y={50} stem={0}/><ANote x={300} y={46} stem={0}/>
+  </g>,
+  // an interval: count every letter from the bottom note to the top note
+  'intervals': () => <g>
+    <AClef/>
+    <ALedger x={110} y={74}/><ANote x={110} y={74} stem={0}/>
+    {[70, 66, 62].map((y, i) => <circle key={i} cx={150 + i * 40} cy={y} r={2.6} fill={ART_N} opacity={0.45}/>)}
+    <ANote x={280} y={58} c={ART_C} stem={0}/>
+    {['1', '2', '3', '4', '5'].map((n, i) => <AText key={i} x={110 + i * 42.5} y={94} size={12} c={i === 4 ? ART_C : ART_N} serif={false} weight={700}>{n}</AText>)}
+    <AKnock x={298} y={46} w={40} h={22}/><AText x={318} y={63} size={18} c={ART_C}>5th</AText>
+  </g>,
+  // a triad: three notes stacked line-line-line on the root
+  'chords': () => <g>
+    <AClef/>
+    {[[110, [74, 66, 58], 'C'], [200, [58, 50, 42], 'G'], [290, [62, 54, 46], 'F']].map(([x, ys, l], k) => <g key={k}>
+      {ys[0] > 70 && <ALedger x={x} y={74}/>}
+      {ys.map((y, i) => <ANote key={i} x={x} y={y} c={i === 0 ? ART_C : ART_N} stem={0}/>)}
+      <AText x={x} y={22} size={15}>{l}</AText>
+    </g>)}
+  </g>,
+  // the piano's ancestors: three keyboards, three ways to make a sound
+  'piano-story': () => <g>
+    {[['clavichord', 50, 70], ['harpsichord', 165, 90], ['piano', 290, 112]].map(([w, x, wd], k) => <g key={w}>
+      <AKnock x={x - wd / 2 - 6} y={22} w={wd + 12} h={68}/>
+      <rect x={x - wd / 2} y={38} width={wd} height={22} rx={3} fill={ART_P} stroke={ART_N} strokeWidth={1.6}/>
+      {Array.from({ length: Math.round(wd / 10) }, (_, i) => <rect key={i} x={x - wd / 2 + 4 + i * 10} y={38} width={1} height={22} fill={ART_N} opacity={0.5}/>)}
+      <AText x={x} y={82} size={13} italic c={k === 2 ? ART_C : ART_N}>{w}</AText>
+    </g>)}
+    <path d="M118 49 h 8 M 238 49 h 8" stroke={ART_C} strokeWidth={2} strokeLinecap="round"/>
+  </g>,
+  // pitch: slow wide waves sound low, fast narrow waves sound high
+  'pitch-range': () => <g>
+    <AKnock x={20} y={22} w={320} h={66}/>
+    <path d={'M30 50 ' + Array.from({ length: 4 }, (_, i) => `q 9 -22 18 0 q 9 22 18 0`).join(' ')} fill="none" stroke={ART_N} strokeWidth={2.2}/>
+    <path d={'M190 50 ' + Array.from({ length: 12 }, () => `q 3 -14 6 0 q 3 14 6 0`).join(' ')} fill="none" stroke={ART_C} strokeWidth={2.2}/>
+    <AText x={92} y={86} size={13} italic>low</AText>
+    <AText x={262} y={86} size={13} italic c={ART_C}>high</AText>
+  </g>,
+  // a melody rises and falls inside one phrase
+  'melody': () => <g>
+    <AClef/>
+    {[66, 58, 50, 46, 42, 50, 58, 62].map((y, i) => <ANote key={i} x={88 + i * 31} y={y} stem={0} c={i === 4 ? ART_C : ART_N}/>)}
+    <path d="M86 26 C 140 0, 260 0, 306 28" fill="none" stroke={ART_C} strokeWidth={2}/>
+    <AText x={196} y={94} size={11} serif={false} weight={700}>one phrase</AText>
+  </g>,
+  // musical form: A, B, then A again
+  'form': () => <g>
+    {[['A', 60, ART_N], ['B', 180, ART_C], ['A', 300, ART_N]].map(([l, x, c], i) => <g key={i}>
+      <rect x={x - 46} y={30} width={92} height={40} rx={8} fill={ART_P} stroke={c} strokeWidth={2.2}/>
+      <AText x={x} y={59} size={26} weight={900} c={c}>{l}</AText>
+    </g>)}
+    <AText x={180} y={90} size={11} serif={false} weight={700}>tune, new tune, first tune again</AText>
+  </g>,
+  // three textures: one line, tune with chords, two lines woven together
+  'styles': () => <g>
+    <AKnock x={14} y={20} w={332} h={70}/>
+    <path d="M24 50 q 14 -16 28 0 t 28 0 t 28 0" fill="none" stroke={ART_N} strokeWidth={2.4}/>
+    <path d="M136 40 q 14 -16 28 0 t 28 0 t 28 0" fill="none" stroke={ART_C} strokeWidth={2.4}/>
+    {[0, 1, 2].map(i => <rect key={i} x={140 + i * 28} y={56} width={18} height={14} rx={2} fill={ART_N}/>)}
+    <path d="M252 44 q 14 -14 28 0 t 28 0 t 28 0" fill="none" stroke={ART_N} strokeWidth={2.4}/>
+    <path d="M252 58 q 14 14 28 0 t 28 0 t 28 0" fill="none" stroke={ART_C} strokeWidth={2.4}/>
+    <AText x={66} y={86} size={11} serif={false} weight={700}>one line</AText>
+    <AText x={178} y={86} size={11} serif={false} weight={700}>tune + chords</AText>
+    <AText x={294} y={86} size={11} serif={false} weight={700}>two lines</AText>
+  </g>,
+};
+function ChapterArt({ id }) {
+  const Art = STAFF_ART[id];
+  return (
+    <svg viewBox="0 0 360 100" width="100%" style={{display:'block',maxWidth:560,margin:'4px 0 12px'}} role="img" aria-label="">
+      {ART_Y.map(y => <rect key={y} x={0} y={y - 0.7} width={360} height={1.4} fill={ART_N}/>)}
+      {Art && <Art/>}
+    </svg>
+  );
+}
+
 function Lesson({ id, title, intro, children, onStart, startLabel, head }) {
   const steps = React.Children.toArray(children).filter(Boolean);
   const [done, setDone] = useState(() => loadDone()[id] || {});
@@ -1338,10 +1602,11 @@ function Lesson({ id, title, intro, children, onStart, startLabel, head }) {
   const count = steps.filter((s, i) => done[i]).length;
   return (
     <div className="fade-up">
-      {/* Staff look (stage 4): the old per-chapter hero pictures (the `head` prop) are not shown any more -- the staff-line divider below is the lesson's graphic. Hero components stay in the file for a later redraw. */}
+      {/* Staff look: each chapter's own staff-line drawing (ChapterArt) under the title; `head` now only carries extra controls (e.g. the Scales major/minor tabs). */}
       <h2 style={{fontSize:30,fontWeight:900,margin:'0 0 6px',lineHeight:1.1,color:'var(--navy)'}}>{title}</h2>
       {intro && <p style={{fontSize:14.5,color:'var(--muted)',margin:'0 0 8px',lineHeight:1.5}}>{intro}</p>}
-      <div className="stf-head" style={{height:30,margin:'6px 0 10px',cursor:'default'}} aria-hidden="true"/>
+      <ChapterArt id={STAFF_ART[id] ? id : String(id).split('-')[0]}/>
+      {head}
       <div style={{display:'flex',flexWrap:'wrap',gap:5,margin:'4px 0 2px'}}>
         {steps.map((s, i) => {
           const c = STEP_COLORS[i % STEP_COLORS.length];
@@ -1641,7 +1906,7 @@ function NoteNamesHero() {
 function NoteNamesLearn({ onStart }) {
   const tip = (n, title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="note-names" title={t('Finding notes on the keyboard', '건반에서 음이름 찾기')} head={<NoteNamesHero/>} intro={<>{t('The black keys are the map -- they come in groups of 2 and 3.', '검은건반이 지도예요 -- 2개, 3개씩 무리지어 있어요.')}</>} onStart={onStart}>
+    <Lesson id="note-names" title={t('Finding notes on the keyboard', '건반에서 음이름 찾기')} intro={<>{t('The black keys are the map -- they come in groups of 2 and 3.', '검은건반이 지도예요 -- 2개, 3개씩 무리지어 있어요.')}</>} onStart={onStart}>
       <Step title={t('The black-key map', '검은건반 지도')}>
       <ExplNoteNames1/>
       <TapKeyboard octaves={1} labels="all" tint />
@@ -2852,7 +3117,7 @@ function TempoLanes() {
 }
 function TempoLearn({ onStart }) {
   return (
-    <Lesson id="tempo" title={t('The tempo race', '템포 경주')} intro={<>{t('Italian tempo words, lined up from the slowest lane to the fastest. Tap one to hear its beat.', '가장 느린 레인부터 가장 빠른 레인까지 늘어선 이탈리아어 템포 단어들이에요. 눌러서 박을 들어보세요.')}</>} onStart={onStart} head={<TempoHero/>}>
+    <Lesson id="tempo" title={t('The tempo race', '템포 경주')} intro={<>{t('Italian tempo words, lined up from the slowest lane to the fastest. Tap one to hear its beat.', '가장 느린 레인부터 가장 빠른 레인까지 늘어선 이탈리아어 템포 단어들이에요. 눌러서 박을 들어보세요.')}</>} onStart={onStart}>
       <Step title={t('Slow to fast', '느리게에서 빠르게로')}>
       <TempoLanes/>
       </Step>
@@ -3698,7 +3963,7 @@ function NoteValLearn({ onStart }) {
     { it: NV_NOTES[0], n: 1 }, { it: NV_NOTES[1], n: 2 }, { it: NV_NOTES[2], n: 4 }, { it: NV_NOTES[3], n: 8 }, { it: NV_NOTES[4], n: 16 },
   ];
   return (
-    <Lesson id="note-values" title={t('Notes and rests', '음표와 쉼표')} head={<NoteValHero/>} intro={<>{t('Each row fills the same 4-beat bar -- every note splits into two of the next one down.', '각 줄은 같은 4박 마디를 채워요 -- 모든 음표는 한 단계 아래 음표 두 개로 나뉘어요.')}{' '}{t('(New to counting? The steady beat lives in Pulse & counting, just before this group.)', '(박 세기가 처음이라면? 일정한 박은 "음높이 + 리듬 읽기" 그룹의 Pulse & Counting에 있어요.)')}</>} onStart={onStart}>
+    <Lesson id="note-values" title={t('Notes and rests', '음표와 쉼표')} intro={<>{t('Each row fills the same 4-beat bar -- every note splits into two of the next one down.', '각 줄은 같은 4박 마디를 채워요 -- 모든 음표는 한 단계 아래 음표 두 개로 나뉘어요.')}{' '}{t('(New to counting? The steady beat lives in Pulse & counting, just before this group.)', '(박 세기가 처음이라면? 일정한 박은 "음높이 + 리듬 읽기" 그룹의 Pulse & Counting에 있어요.)')}</>} onStart={onStart}>
       <Step title={t('The note-value tree', '음표 나무')}>
       <NoteValueTree/>
       </Step>
@@ -4154,7 +4419,7 @@ function RhythmLearn({ onStart }) {
     setTimeout(() => setPlaying(p => (p === card.num ? null : p)), (8 * 60 / tr.bpm) * 1000 + 300);
   }
   return (
-    <Lesson id="rhythm" title={t('Rhythm cards', '리듬 카드')} head={<RhythmCardsHero/>} intro={<>{t('40 one-bar rhythms in 4/4, easiest first. Count along under each note -- tap a card to hear it with a 4-click count-in.', '4/4박자 한 마디짜리 리듬 40개, 쉬운 것부터. 각 음표 아래를 함께 세어보세요 -- 카드를 누르면 4번 클릭 카운트인과 함께 들려요.')}</>} onStart={onStart}>
+    <Lesson id="rhythm" title={t('Rhythm cards', '리듬 카드')} intro={<>{t('40 one-bar rhythms in 4/4, easiest first. Count along under each note -- tap a card to hear it with a 4-click count-in.', '4/4박자 한 마디짜리 리듬 40개, 쉬운 것부터. 각 음표 아래를 함께 세어보세요 -- 카드를 누르면 4번 클릭 카운트인과 함께 들려요.')}</>} onStart={onStart}>
       <Step title={t('The 40 cards', '40개의 카드')}>
       <RhythmCardsBrowser/>
       </Step>
@@ -4557,7 +4822,7 @@ function KeySigLearn({ onStart }) {
   );
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="key-signatures" title={t('Reading a key signature', '조표 읽기')} intro={<>{t('Sharps and flats always arrive in the same order -- learn the order and every key falls out of it.', '샤프와 플랫은 항상 같은 순서로 나타나요 -- 그 순서만 배우면 모든 조가 자연스럽게 나와요.')}</>} onStart={onStart} head={<KeySigHero/>}>
+    <Lesson id="key-signatures" title={t('Reading a key signature', '조표 읽기')} intro={<>{t('Sharps and flats always arrive in the same order -- learn the order and every key falls out of it.', '샤프와 플랫은 항상 같은 순서로 나타나요 -- 그 순서만 배우면 모든 조가 자연스럽게 나와요.')}</>} onStart={onStart}>
       <Step title={t('The order of sharps', '샤프의 순서')}>
       <OrderBuilder type="sharp"/>
       <div style={{fontSize:13,color:'#6d6f9c',margin:'-6px 0 12px',lineHeight:1.5}}>{t('A sentence to remember the sharps: ', '샤프 순서를 외우는 문장: ')}<b>F</b>ather <b>C</b>harles <b>G</b>oes <b>D</b>own <b>A</b>nd <b>E</b>nds <b>B</b>attle. {t('Read it backwards for the flats: ', '플랫은 거꾸로 읽으면 돼요: ')}<b>B</b>attle <b>E</b>nds <b>A</b>nd <b>D</b>own <b>G</b>oes <b>C</b>harles’ <b>F</b>ather.</div>
@@ -4921,7 +5186,7 @@ function IntervalsHero() {
 function IntervalsLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="intervals" title={t('Intervals', '음정')} intro={<>{t('The distance between two notes. Every interval has a ', '두 음 사이의 거리예요. 모든 음정은 ')}<b>{t('number','도수')}</b>{t(' (count the letters) and a ', '(음이름을 세어요)와 ')}<b>{t('quality','성질')}</b>{t(' (count the semitones): ', '(반음을 세어요)을 가져요: ')}<b>{t('major 3rd','장3도')}</b>, <b>{t('perfect 5th','완전5도')}</b>.</>} onStart={onStart} head={<IntervalsHero/>}>
+    <Lesson id="intervals" title={t('Intervals', '음정')} intro={<>{t('The distance between two notes. Every interval has a ', '두 음 사이의 거리예요. 모든 음정은 ')}<b>{t('number','도수')}</b>{t(' (count the letters) and a ', '(음이름을 세어요)와 ')}<b>{t('quality','성질')}</b>{t(' (count the semitones): ', '(반음을 세어요)을 가져요: ')}<b>{t('major 3rd','장3도')}</b>, <b>{t('perfect 5th','완전5도')}</b>.</>} onStart={onStart}>
       <Step title={t('The number', '도수')}>
       <ExplIntervals1/>
       <StepSkip/>
@@ -5519,7 +5784,7 @@ function ChordsHero() {
 function ChordsLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="chords" title={t('Chords and triads', '화음과 삼화음')} onStart={onStart} head={<ChordsHero/>}
+    <Lesson id="chords" title={t('Chords and triads', '화음과 삼화음')} onStart={onStart}
       intro={<>{t('Three notes stacked in 3rds make a triad. Every chord is named two ways: by its ', '3도씩 쌓은 세 음이 삼화음을 만들어요. 모든 화음은 두 가지로 이름 붙여요: ')}<b>{t('letters','알파벳 이름')}</b>{t(' (G B D = G major) and by its ', '(G B D = G major)과 ')}<b>{t('Roman numeral','로마 숫자')}</b>{t(' in the key (V in C major).', '로 조 안에서 (C장조의 V).')}</>}>
       <Step title={t('Stack a triad', '삼화음 쌓기')}>
         <ExplChords1/>
@@ -6291,7 +6556,7 @@ function ToneSemitoneTool() {
 function TonesLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="tones" title={t('Semitones, tones and accidentals', '반음, 온음, 임시표')} intro={<>{t('The smallest step on the piano, and the step made of two of them. Scales, key signatures, intervals and chords are all counted in these.', '피아노에서 가장 작은 걸음, 그리고 그 두 개로 이루어진 걸음이에요. 스케일, 조표, 음정, 화음은 모두 이 단위로 셉니다.')}</>} onStart={onStart} head={<TonesHero/>}>
+    <Lesson id="tones" title={t('Semitones, tones and accidentals', '반음, 온음, 임시표')} intro={<>{t('The smallest step on the piano, and the step made of two of them. Scales, key signatures, intervals and chords are all counted in these.', '피아노에서 가장 작은 걸음, 그리고 그 두 개로 이루어진 걸음이에요. 스케일, 조표, 음정, 화음은 모두 이 단위로 셉니다.')}</>} onStart={onStart}>
       <Step title={t('Semitones and tones', '반음과 온음')}>
       <div style={{display:'flex',gap:8,margin:'4px 0 12px'}}>
         {[[t('Semitone', '반음'), t('half step', '하프 스텝'), 'S', t('1 key', '건반 1칸')], [t('Tone', '온음'), t('whole step', '홀 스텝'), 'T', t('2 keys', '건반 2칸')]].map(([a, b, c, d]) => (
@@ -6598,9 +6863,8 @@ function ScalesLearn({ onStart }) {
       <button className={'chip' + (mode === 'minor' ? ' active' : '')} onClick={() => setMode('minor')}>{t('Minor scales', '단조 스케일')}</button>
     </div>
   );
-  const scalesHero = <ScalesHero/>;
   return mode === 'major' ? (
-    <Lesson key="major" id="scales-major" title={t('Major scales', '장조 스케일')} head={<>{scalesHero}{tabs}</>} onStart={onStart}
+    <Lesson key="major" id="scales-major" title={t('Major scales', '장조 스케일')} head={tabs} onStart={onStart}
       intro={<>{t('One shape builds every major scale. Learn the shape, build it yourself, then learn the fingering patterns.', '하나의 모양이 모든 장조 스케일을 만들어요. 모양을 배우고, 직접 만들어보고, 손가락 번호 패턴을 배워보세요.')}</>}>
       <Step title={t('The shape', '모양')}><MajorShapeCard/></Step>
       <Step title={t('Build it yourself', '직접 만들어보기')}><ScaleBuilder mode="major"/></Step>
@@ -6611,7 +6875,7 @@ function ScalesLearn({ onStart }) {
       <Step title={t('Look up any scale', '아무 스케일이나 찾아보기')}><ScaleFinder/></Step>
     </Lesson>
   ) : (
-    <Lesson key="minor" id="scales-minor" title={t('Minor scales', '단조 스케일')} head={<>{scalesHero}{tabs}</>} onStart={onStart}
+    <Lesson key="minor" id="scales-minor" title={t('Minor scales', '단조 스케일')} head={tabs} onStart={onStart}
       intro={<>{t('Three forms of the minor scale -- the harmonic minor is the one you’ll meet most.', '단조 스케일에는 세 가지 형태가 있어요 -- 가장 많이 만나게 될 것은 화성 단음계예요.')}</>}>
       <Step title={t('Three forms', '세 가지 형태')}><MinorFormsCard/></Step>
       <Step title={t('Build it yourself', '직접 만들어보기')}><ScaleBuilder key="minor" mode="minor"/></Step>
@@ -7807,7 +8071,7 @@ function TimeSigLearn({ onStart }) {
   useEffect(() => () => stopClicks(), []);
   function hear(t) { playTimeSig(t, 90); setPlaying(t.id); setTimeout(() => setPlaying(p => (p === t.id ? null : p)), 3200); }
   return (
-    <Lesson id="time-signatures" title={t('Reading a time signature', '박자표 읽기')} intro={<>{t('Two numbers at the start of the music tell you how the beats are grouped into bars.', '악보 맨 앞에 있는 두 숫자는 박이 마디 안에서 어떻게 묶이는지 알려줘요.')}</>} onStart={onStart} head={<TimeSigHero/>}>
+    <Lesson id="time-signatures" title={t('Reading a time signature', '박자표 읽기')} intro={<>{t('Two numbers at the start of the music tell you how the beats are grouped into bars.', '악보 맨 앞에 있는 두 숫자는 박이 마디 안에서 어떻게 묶이는지 알려줘요.')}</>} onStart={onStart}>
       <Step title={t('The two numbers', '두 숫자')}>
       <TimeSigNumbers/><BeatPulse/>
       </Step>
@@ -8637,7 +8901,7 @@ function StaffHero() {
 function StaffLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="staff" title={t('From the keyboard to the staff', '건반에서 오선보로')} intro={<>{t('The staff is a map of the keyboard: going up the staff is going right on the piano.', '오선보는 건반의 지도예요: 오선보에서 위로 올라가는 것은 피아노에서 오른쪽으로 가는 것과 같아요.')}</>} onStart={onStart} head={<StaffHero/>}>
+    <Lesson id="staff" title={t('From the keyboard to the staff', '건반에서 오선보로')} intro={<>{t('The staff is a map of the keyboard: going up the staff is going right on the piano.', '오선보는 건반의 지도예요: 오선보에서 위로 올라가는 것은 피아노에서 오른쪽으로 가는 것과 같아요.')}</>} onStart={onStart}>
       <Step title={t('What is the staff?', '오선보란 무엇일까요?')}>
       <StaffBasics/>
       </Step>
@@ -8910,7 +9174,7 @@ function LedgerHero() {
 function LedgerLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="ledger-lines" title="Ledger lines" onStart={onStart} head={<LedgerHero/>}
+    <Lesson id="ledger-lines" title="Ledger lines" onStart={onStart}
       intro={<>Short lines that carry the staff on above and below. They follow exactly the same line-space pattern -- once you can count from the staff, they stop being scary.</>}>
       <Step title="What a ledger line is">
         <ExplLedger1/>
@@ -9180,7 +9444,7 @@ function DynLearn({ onStart }) {
     </button>
   );
   return (
-    <Lesson id="dynamics" title={t('How loud, and how to play each note', '얼마나 크게, 각 음을 어떻게 칠까')} intro={<>{t('Dynamics are Italian words (written in bold italics) that tell you how loud to play. Tap any one to hear it.', '다이나믹은 얼마나 크게 칠지 알려주는 이탈리아어 단어예요 (굵은 기울임체로 써요). 눌러서 들어보세요.')}</>} onStart={onStart} head={<DynamicsHero/>}>
+    <Lesson id="dynamics" title={t('How loud, and how to play each note', '얼마나 크게, 각 음을 어떻게 칠까')} intro={<>{t('Dynamics are Italian words (written in bold italics) that tell you how loud to play. Tap any one to hear it.', '다이나믹은 얼마나 크게 칠지 알려주는 이탈리아어 단어예요 (굵은 기울임체로 써요). 눌러서 들어보세요.')}</>} onStart={onStart}>
       <Step title={t('Soft to loud', '여리게에서 세게로')}>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6,marginBottom:6}}>
         {DYNAMICS.map((d, i) => cell(d.id, <span style={{fontSize:16 + i * 3,lineHeight:1.1}}><DynMark id={d.id} size={16 + i * 3}/></span>, d.it + ' · ' + d.meaning, () => pick(d.id, () => playDyn(d.vol))))}
@@ -9521,7 +9785,7 @@ function SignsHero() {
 function SignsLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="signs" title={t('Signs: repeats, jumps, 8va, ties and slurs', '기호: 도돌이표, 건너뛰기, 8va, 이음줄과 슬러')} onStart={onStart} head={<SignsHero/>}
+    <Lesson id="signs" title={t('Signs: repeats, jumps, 8va, ties and slurs', '기호: 도돌이표, 건너뛰기, 8va, 이음줄과 슬러')} onStart={onStart}
       intro={<>{t('The signs that tell you where to go next and how long to hold. Music is read like a road map -- these are the road signs.', '다음에 어디로 갈지, 얼마나 붙잡고 있을지 알려주는 기호들이에요. 악보는 지도처럼 읽어요 -- 이것들이 그 지도의 표지판이에요.')}</>}>
       <Step title={t('Repeat signs', '도돌이표')}>
         <ExplSigns1/>
@@ -10356,7 +10620,7 @@ function ClefCostume() {
 }
 function HandClefsLearn({ onStart }) {
   return (
-    <Lesson id="hand-clefs" title={t('Hands and clefs', '손과 음자리표')} head={<HandClefsHero/>} onStart={onStart}
+    <Lesson id="hand-clefs" title={t('Hands and clefs', '손과 음자리표')} onStart={onStart}
       intro={<>{t('Two staves stacked together make the Grand Staff. Each one usually belongs to a different hand.', '두 줄이 위아래로 겹쳐진 걸 그랜드 스태프라고 해요. 각 줄은 보통 다른 손이 맡아요.')}</>}>
       <Step title={t('The Grand Staff', '그랜드 스태프')}>
       <GrandStaffIntro/>
@@ -10413,7 +10677,7 @@ const HAND_CLEFS_DRILL = {
 function FirstStepsLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="first-steps" title={t('The keyboard and your first song', '건반과 첫 곡')} head={<FirstStepsHero/>} onStart={onStart}
+    <Lesson id="first-steps" title={t('The keyboard and your first song', '건반과 첫 곡')} onStart={onStart}
       intro={<>{t('Once sitting and hand shape feel natural: a map of the black keys by ear and by eye, and a first little tune to play.', '앉는 자세와 손 모양이 자연스러워지면: 귀와 눈으로 검은건반 지도를 익히고, 짧은 첫 곡을 연주해봐요.')}</>}>
       <Step title={t('High, low, loud and soft', '높고 낮음, 크고 작음')}>
         <HighLowGame/>
@@ -10610,7 +10874,7 @@ function PulseHero() {
 function PulseLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="pulse" title={t('Pulse and counting', '박자와 세기')} head={<PulseHero/>} onStart={onStart}
+    <Lesson id="pulse" title={t('Pulse and counting', '박자와 세기')} onStart={onStart}
       intro={<>{t('Before reading notes, feel the beat. Every rhythm is counted against a steady pulse: 1 2 3 4 -- and once quavers arrive, 1 and 2 and 3 and 4 and.', '음표를 읽기 전에 먼저 박자를 느껴보세요. 모든 리듬은 일정한 박자를 기준으로 셉니다: 1 2 3 4 -- 8분음표가 나오면 1 and 2 and 3 and 4 and.')}</>}>
       <Step title={t('Feel the pulse', '박자 느끼기')}>
         <SteadyBeat/>
@@ -10772,7 +11036,7 @@ function ReadingStepsHero() {
 function ReadingStepsLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="reading-steps" title="Reading begins: steps and skips" onStart={onStart} head={<ReadingStepsHero/>}
+    <Lesson id="reading-steps" title="Reading begins: steps and skips" onStart={onStart}
       intro={<>Start from one note you know -- middle C -- and read the rest by watching where each note moves. Rhythm and notes come together from the first tune.</>}>
       <Step title="Where does it go?">
         <ExplReadingSteps1/>
@@ -11276,7 +11540,7 @@ function TermsHero() {
 function TermsLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="terms" title={t('Musical terms', '음악 용어')} onStart={onStart} head={<TermsHero/>}
+    <Lesson id="terms" title={t('Musical terms', '음악 용어')} onStart={onStart}
       intro={<>{t('The Italian (and a few French) words in the music, grade by grade, with the meanings the AMEB accepts. Each grade adds to the one before.', '악보 속 이탈리아어(그리고 몇몇 프랑스어) 단어들을 학년별로, AMEB이 인정하는 뜻과 함께 배워요. 각 학년은 이전 학년에 더해져요.')}</>}>
       <Step title={t('Grade 1', '1학년')}>
         <ExplTerms1/>
@@ -11813,7 +12077,7 @@ function PianoStoryHero() {
 function PianoStoryLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="piano-story" title="The piano’s story" onStart={onStart} head={<PianoStoryHero/>}
+    <Lesson id="piano-story" title="The piano’s story" onStart={onStart}
       intro={<>Where the piano came from, what came before it, and how each era’s keyboard shaped the way its music is played. Useful for exam general-knowledge questions.</>}>
       <Step title="Before the piano">
         <ExplPianoStory1/>
@@ -11867,7 +12131,7 @@ function PitchRangeHero() {
 function PitchRangeLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="pitch-range" title="Pitch, Hz and range" onStart={onStart} head={<PitchRangeHero/>}
+    <Lesson id="pitch-range" title="Pitch, Hz and range" onStart={onStart}
       intro={<>What makes a note high or low, and where the piano sits among the other instruments and voices.</>}>
       <Step title="Vibrations and Hertz">
         <ExplPitchRange1/>
@@ -12153,7 +12417,7 @@ function MelodyHero() {
 
 function MelodyLearn({ onStart }) {
   return (
-    <Lesson id="melody" title={t('What makes a tune', '튠(선율)이 뭘까요')} intro={t('A tune is rhythm and pitch working together. This chapter looks at how melodies are shaped -- phrases, questions and answers, and sequences.', '튠(선율)은 리듬과 음높이가 함께 만들어내요. 이 챕터에서는 프레이즈, 질문과 대답, 시퀀스처럼 선율이 어떻게 모양을 갖추는지 살펴봐요.')} onStart={onStart} head={<MelodyHero/>}>
+    <Lesson id="melody" title={t('What makes a tune', '튠(선율)이 뭘까요')} intro={t('A tune is rhythm and pitch working together. This chapter looks at how melodies are shaped -- phrases, questions and answers, and sequences.', '튠(선율)은 리듬과 음높이가 함께 만들어내요. 이 챕터에서는 프레이즈, 질문과 대답, 시퀀스처럼 선율이 어떻게 모양을 갖추는지 살펴봐요.')} onStart={onStart}>
       <Step title={t('Rhythm + pitch = a tune', '리듬 + 음높이 = 튠')}>
         <TuneAnatomy/>
       </Step>
@@ -12444,7 +12708,7 @@ function FormHero() {
 
 function FormLearn({ onStart }) {
   return (
-    <Lesson id="form" title={t('How a piece is put together', '곡은 어떻게 짜여 있을까요')} intro={t('Composers organize music into sections, often labeled with letters like A and B. This chapter looks at the three most common shapes: binary, ternary, and rondo.', '작곡가는 음악을 A, B 같은 글자로 이름 붙인 여러 부분으로 짜요. 이 챕터에서는 가장 흔한 세 가지 모양인 두 부분(binary), 세 부분(ternary), 론도(rondo)를 살펴봐요.')} onStart={onStart} head={<FormHero/>}>
+    <Lesson id="form" title={t('How a piece is put together', '곡은 어떻게 짜여 있을까요')} intro={t('Composers organize music into sections, often labeled with letters like A and B. This chapter looks at the three most common shapes: binary, ternary, and rondo.', '작곡가는 음악을 A, B 같은 글자로 이름 붙인 여러 부분으로 짜요. 이 챕터에서는 가장 흔한 세 가지 모양인 두 부분(binary), 세 부분(ternary), 론도(rondo)를 살펴봐요.')} onStart={onStart}>
       <Step title={t('Three ways to shape a piece', '곡을 짜는 세 가지 방법')}>
         <FormShapes/>
       </Step>
@@ -12677,7 +12941,7 @@ function StylesHero() {
 
 function StylesLearn({ onStart }) {
   return (
-    <Lesson id="styles" title={t('Styles and genres', '스타일과 장르')} intro={t('Music can be grouped by its texture -- how its lines layer together -- and by broad style families like folk, classical, jazz, and popular music.', '음악은 텍스처(선율이 겹겹이 쌓이는 방식)로, 그리고 포크·클래식·재즈·대중음악 같은 큰 스타일 갈래로 나눌 수 있어요.')} onStart={onStart} head={<StylesHero/>}>
+    <Lesson id="styles" title={t('Styles and genres', '스타일과 장르')} intro={t('Music can be grouped by its texture -- how its lines layer together -- and by broad style families like folk, classical, jazz, and popular music.', '음악은 텍스처(선율이 겹겹이 쌓이는 방식)로, 그리고 포크·클래식·재즈·대중음악 같은 큰 스타일 갈래로 나눌 수 있어요.')} onStart={onStart}>
       <Step title={t('Textures: how many voices?', '텍스처: 목소리는 몇 개일까요')}>
         <TextureTypes/>
       </Step>
