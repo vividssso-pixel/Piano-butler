@@ -12373,6 +12373,191 @@ function PitchRangeHero() {
   );
 }
 
+// ─── Phase 283: Pitch & Range content pass ───
+// Book p.14-16 & 175: faster vibrations = higher; shorter or tighter string = higher, longer or
+// looser = lower; smaller instruments/bars play higher; an octave up vibrates exactly twice as fast
+// (the half-string vibration is the 2nd note of the harmonic series, the octave).
+const STRING_OPEN = 55; // G3, the violin's lowest string (RANGES: Violin from G3)
+const TENSION = { loose: -3, normal: 0, tight: 3 }; // semitones -- the direction is the fact, the amount is just for hearing it
+function StringLab() {
+  const [len, setLen] = useState(1), [ten, setTen] = useState('normal'), [pl, setPl] = useState(0);
+  const f = mFreq(STRING_OPEN + TENSION[ten]) / len, midi = 69 + 12 * Math.log2(f / 440);
+  function pluck(L = len, T = ten) {
+    const ff = mFreq(STRING_OPEN + TENSION[T]) / L, ctx = getAudio(); setPl(p => p + 1);
+    if (ctx) harpsiNote(ctx, ctx.currentTime + 0.03, ff, 1.4);
+  }
+  const NUT = 22, BRIDGE = 300, Y = 52, fx = NUT + (1 - len) * (BRIDGE - NUT), mid = (fx + BRIDGE) / 2;
+  const half = 25 / f; // visual half-period (s): higher note = faster wobble
+  const amps = [16, -13, 10.5, -8.5, 7, -5.5, 4.4, -3.4, 2.6, -1.8, 1.2, -0.6, 0];
+  const dVals = amps.map(a => `M${fx} ${Y} Q${mid} ${Y + a * 2} ${BRIDGE} ${Y}`).join(';');
+  const still = `M${fx} ${Y} Q${mid} ${Y} ${BRIDGE} ${Y}`;
+  const tenLabel = { loose: t('Loose', '느슨하게'), normal: t('Normal', '보통'), tight: t('Tight', '팽팽하게') };
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Shorter, tighter, higher', '짧게, 팽팽하게, 높게')}</div>
+      <p style={actNote}>{t('A string’s note changes with its length and how tight it is. Slide your finger along the string to shorten the part that vibrates, change the tightness, then pluck.', '현의 음은 길이와 팽팽한 정도에 따라 달라져요. 손가락을 밀어서 떨리는 부분을 짧게 만들고, 팽팽함을 바꾼 다음, 튕겨 봐요.')}</p>
+      <svg key={pl} viewBox="0 0 320 96" width="100%" style={{display:'block',maxWidth:520,cursor:'pointer',touchAction:'manipulation'}} onClick={() => pluck()} aria-hidden="true">
+        <rect x={NUT - 8} y={Y - 16} width="8" height="32" rx="2" fill="#26296b"/>
+        <path d={`M${BRIDGE} ${Y + 14} L${BRIDGE + 7} ${Y + 14} L${BRIDGE + 3.5} ${Y - 4} Z`} fill="#26296b"/>
+        <line x1={NUT} x2={fx} y1={Y} y2={Y} stroke="#6d6f9c" strokeOpacity="0.45" strokeWidth="2"/>
+        <path d={still} fill="none" stroke="#26296b" strokeWidth="2.6" strokeLinecap="round">
+          {pl > 0 && <animate attributeName="d" values={dVals} dur={(half * (amps.length - 1)).toFixed(3) + 's'} fill="freeze"/>}
+        </path>
+        <line x1={(NUT + BRIDGE) / 2} x2={(NUT + BRIDGE) / 2} y1={Y + 20} y2={Y + 26} stroke="#e8b93a" strokeWidth="2"/>
+        <text x={(NUT + BRIDGE) / 2} y={Y + 37} textAnchor="middle" fontSize="10" fontWeight="800" fill="#b8860b">{t('half = an octave up', '절반 = 한 옥타브 위')}</text>
+        <circle cx={fx} cy={Y} r="7.5" fill="#e4572e" stroke="#fffefa" strokeWidth="2"/>
+        <line x1={fx} x2={BRIDGE} y1={14} y2={14} stroke="#e4572e" strokeWidth="1.5"/>
+        <line x1={fx} x2={fx} y1={10} y2={18} stroke="#e4572e" strokeWidth="1.5"/><line x1={BRIDGE} x2={BRIDGE} y1={10} y2={18} stroke="#e4572e" strokeWidth="1.5"/>
+        <text x={(fx + BRIDGE) / 2} y={9} textAnchor="middle" fontSize="10" fontWeight="800" fill="#e4572e">{t('vibrating part', '떨리는 부분')} · {Math.round(len * 100)}%</text>
+      </svg>
+      <input type="range" min="50" max="100" step="1" value={Math.round((1 - len) * 100 + 50)} aria-label={t('Finger position', '손가락 위치')}
+        onChange={e => setLen(1 - (+e.target.value - 50) / 100)} onMouseUp={() => pluck()} onTouchEnd={() => pluck()} style={{width:'100%',accentColor:'#e4572e',margin:'2px 0 6px'}}/>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}>
+        {[[1, t('Whole string', '현 전체')], [0.75, '¾'], [0.5, t('Half', '절반')]].map(([L, lab]) => <button key={L} className={'chip' + (Math.abs(len - L) < 0.005 ? ' active' : '')} style={{padding:'4px 11px',fontSize:13}} onClick={() => { setLen(L); pluck(L); }}>{lab}</button>)}
+        <span style={{width:1,height:20,background:'var(--navy-line)'}}/>
+        {['loose', 'normal', 'tight'].map(k => <button key={k} className={'chip' + (ten === k ? ' active' : '')} style={{padding:'4px 11px',fontSize:13}} onClick={() => { setTen(k); pluck(len, k); }}>{tenLabel[k]}</button>)}
+      </div>
+      <div style={{display:'flex',alignItems:'baseline',gap:10,marginTop:10,flexWrap:'wrap'}}>
+        <button className="primary-btn" style={{width:'auto',padding:'8px 18px',fontSize:14}} onClick={() => pluck()}>{t('Pluck', '튕기기')}</button>
+        <span style={{fontFamily:"'Playfair Display', Georgia, serif",fontVariantNumeric:'lining-nums',fontSize:24,fontWeight:900,color:'var(--navy)'}}>{midiName(Math.round(midi))}</span>
+        <span style={{fontSize:16,fontWeight:900,color:'var(--coral)'}}>{fmtHz(f)}</span>
+      </div>
+      <div style={{fontSize:13.5,color:'var(--navy)',lineHeight:1.5,marginTop:6}}>{t('Shorter or tighter: faster vibrations, higher note. Longer or looser: slower, lower. That’s how a violinist’s fingers change the note -- and why a piano’s high strings are short and its low strings long.', '짧게 하거나 팽팽하게 하면: 더 빨리 떨리고, 음이 높아져요. 길게 하거나 느슨하게 하면: 더 느리게, 더 낮게. 바이올린 연주자의 손가락이 음을 바꾸는 방법이에요 -- 피아노의 높은 현이 짧고 낮은 현이 긴 이유이기도 해요.')}</div>
+    </div>
+  );
+}
+
+// Bigger is lower: xylophone bars, then the violin family drawn to (rough) scale.
+const XYLO = [72, 74, 76, 77, 79, 81, 83, 84];
+const VFAM = [ // lowest open string from RANGES
+  { en: 'Violin', ko: '바이올린', h: 50, low: 55 }, { en: 'Viola', ko: '비올라', h: 58, low: 48 },
+  { en: 'Cello', ko: '첼로', h: 98, low: 36 }, { en: 'Double bass', ko: '더블베이스', h: 140, low: 28 },
+];
+function StringFamilyShape({ h, x, base, on }) {
+  const s = h / 100, cx = x;
+  const body = `M${cx} ${base - 62 * s} C${cx + 16 * s} ${base - 62 * s} ${cx + 17 * s} ${base - 48 * s} ${cx + 10 * s} ${base - 42 * s} C${cx + 20 * s} ${base - 36 * s} ${cx + 21 * s} ${base - 6 * s} ${cx} ${base - 4 * s} C${cx - 21 * s} ${base - 6 * s} ${cx - 20 * s} ${base - 36 * s} ${cx - 10 * s} ${base - 42 * s} C${cx - 17 * s} ${base - 48 * s} ${cx - 16 * s} ${base - 62 * s} ${cx} ${base - 62 * s} Z`;
+  return (
+    <g>
+      {h >= 90 && <line x1={cx} x2={cx} y1={base - 4 * s} y2={base + 2} stroke="#26296b" strokeWidth="1.6"/>}
+      <rect x={cx - 2.4 * s - 0.6} y={base - 98 * s} width={4.8 * s + 1.2} height={38 * s} rx="1" fill="#26296b"/>
+      <circle cx={cx} cy={base - 99 * s} r={3.6 * s + 0.8} fill="none" stroke="#26296b" strokeWidth="1.6"/>
+      <path d={body} fill={on ? '#e4572e' : '#f3c9a8'} stroke="#26296b" strokeWidth="1.6" strokeLinejoin="round"/>
+      <path d={`M${cx - 6 * s} ${base - 34 * s} q ${-2 * s} ${5 * s} 0 ${10 * s} M${cx + 6 * s} ${base - 34 * s} q ${2 * s} ${5 * s} 0 ${10 * s}`} fill="none" stroke="#26296b" strokeWidth="1.3"/>
+      <line x1={cx - 1.4 * s} x2={cx - 1.4 * s} y1={base - 96 * s} y2={base - 12 * s} stroke="#fffefa" strokeWidth="0.6"/>
+      <line x1={cx + 1.4 * s} x2={cx + 1.4 * s} y1={base - 96 * s} y2={base - 12 * s} stroke="#fffefa" strokeWidth="0.6"/>
+    </g>
+  );
+}
+function SizePitch() {
+  const [hit, setHit] = useState(-1);
+  const [pair, setPair] = useState(() => shuffle([0, 1, 2, 3]).slice(0, 2));
+  const [ans, setAns] = useState(null), [score, setScore] = useState({ right: 0, tries: 0 });
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  function bar(i, at = 0) {
+    const ctx = getAudio(); if (!ctx) return;
+    const tt = ctx.currentTime + 0.03 + at;
+    blip(ctx, tt, mFreq(XYLO[i]), 0.45, 0.24, 'sine'); blip(ctx, tt, mFreq(XYLO[i]) * 4, 0.08, 0.05, 'sine');
+    timers.current.push(setTimeout(() => setHit(i), at * 1000 + 30), setTimeout(() => setHit(h => (h === i ? -1 : h)), at * 1000 + 260));
+  }
+  function run(up) { timers.current.forEach(clearTimeout); timers.current = []; XYLO.forEach((_, k) => bar(up ? k : XYLO.length - 1 - k, k * 0.16)); }
+  const higher = VFAM[pair[0]].h < VFAM[pair[1]].h ? pair[0] : pair[1];
+  function choose(k) {
+    if (ans !== null) return; setAns(k); setScore(s => ({ right: s.right + (k === higher ? 1 : 0), tries: s.tries + 1 }));
+    const ctx = getAudio(); if (!ctx) return;
+    const order = [...pair].sort((a, b) => VFAM[b].h - VFAM[a].h);
+    order.forEach((v, i) => instNote('piano', ctx, ctx.currentTime + 0.05 + i * 1.0, VFAM[v].low, 0.9, 0.5));
+  }
+  function next() { let p; do { p = shuffle([0, 1, 2, 3]).slice(0, 2); } while (p[0] === pair[0] && p[1] === pair[1]); setPair(p); setAns(null); }
+  const W = 320, bw = 30, gap = 6, x0 = (W - (XYLO.length * bw + (XYLO.length - 1) * gap)) / 2, xyH = (i) => 76 - i * 5.6;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Big is low, small is high', '크면 낮고, 작으면 높아요')}</div>
+      <p style={actNote}>{t('Smaller things vibrate faster, so they sound higher. A xylophone’s bars go from big (low) to small (high) -- tap them.', '작은 것일수록 빨리 떨려서 더 높은 소리가 나요. 실로폰 건반은 큰 것(낮은 음)부터 작은 것(높은 음)까지 있어요 -- 눌러 봐요.')}</p>
+      <svg viewBox={`0 0 ${W} 128`} width="100%" style={{display:'block',maxWidth:520,touchAction:'manipulation'}}>
+        <line x1={x0 - 6} x2={W - x0 + 6} y1={60 - xyH(0) / 2 + 9} y2={60 - xyH(7) / 2 + 9} stroke="#6d6f9c" strokeWidth="2" strokeLinecap="round"/>
+        <line x1={x0 - 6} x2={W - x0 + 6} y1={60 + xyH(0) / 2 - 9} y2={60 + xyH(7) / 2 - 9} stroke="#6d6f9c" strokeWidth="2" strokeLinecap="round"/>
+        {XYLO.map((m, i) => { const h = xyH(i), x = x0 + i * (bw + gap), y = 60 - h / 2;
+          return <g key={m} onClick={() => bar(i)} style={{cursor:'pointer'}}>
+            <rect x={x} y={y} width={bw} height={h} rx="5" fill={hit === i ? '#e4572e' : '#26296b'} style={{transition:'fill .1s'}}/>
+            <circle cx={x + bw / 2} cy={y + 9} r="2.2" fill="#fffefa" opacity="0.7"/><circle cx={x + bw / 2} cy={y + h - 9} r="2.2" fill="#fffefa" opacity="0.7"/>
+            <text x={x + bw / 2} y="120" textAnchor="middle" fontSize="11" fontWeight="800" fill="#6d6f9c">{'CDEFGABC'[i]}</text>
+          </g>; })}
+      </svg>
+      <div style={{display:'flex',gap:6,marginBottom:12}}>
+        <button className="ghost-btn" style={{fontSize:13}} onClick={() => run(true)}>{t('Up: big → small', '올라가기: 큰 → 작은')}</button>
+        <button className="ghost-btn" style={{fontSize:13}} onClick={() => run(false)}>{t('Down', '내려가기')}</button>
+      </div>
+      <div style={{borderTop:'1px dashed var(--navy-line)',paddingTop:10}}>
+        <div style={{fontSize:14.5,fontWeight:800,color:'var(--navy)'}}>{t('The violin family: which one plays higher?', '바이올린 가족: 어느 쪽이 더 높은 소리를 낼까요?')}</div>
+        <svg viewBox="0 0 320 168" width="100%" style={{display:'block',maxWidth:420,margin:'4px auto 0'}}>
+          <line x1="20" x2="300" y1="150" y2="150" stroke="#26296b" strokeOpacity="0.3"/>
+          {pair.map((v, i) => { const cx = i ? 220 : 100, right = ans !== null && v === higher, wrong = ans === v && v !== higher;
+            return <g key={v} onClick={() => choose(v)} style={{cursor:ans === null ? 'pointer' : 'default'}}>
+              <rect x={cx - 70} y="4" width="140" height="162" rx="12" fill={right ? '#dcefe7' : wrong ? '#fbdcd2' : 'transparent'}/>
+              <StringFamilyShape h={VFAM[v].h} x={cx} base={148} on={ans !== null && v === higher}/>
+              {ans !== null && <text x={cx} y="164" textAnchor="middle" fontSize="11.5" fontWeight="800" fill="#26296b">{t(VFAM[v].en, VFAM[v].ko)}</text>}
+            </g>; })}
+        </svg>
+        <div style={{display:'flex',alignItems:'center',gap:10,minHeight:34,flexWrap:'wrap'}}>
+          {ans === null ? <span style={{fontSize:13.5,color:'var(--navy-soft)'}}>{t('Tap the one you think plays higher.', '더 높을 것 같은 악기를 눌러 봐요.')}</span>
+            : <b style={{fontSize:14,color:ans === higher ? 'var(--good)' : 'var(--bad)'}}>{ans === higher ? t('Yes -- the smaller one. Listen: big, then small.', '맞아요 -- 작은 쪽이에요. 들어 봐요: 큰 것, 그다음 작은 것.') : t('The smaller one plays higher. Listen: big, then small.', '작은 쪽이 더 높아요. 들어 봐요: 큰 것, 그다음 작은 것.')}</b>}
+          <span style={{flex:1}}/>
+          <span style={{fontSize:12.5,color:'var(--navy-soft)',fontWeight:700}}>{score.right} / {score.tries}</span>
+          {ans !== null && <button className="primary-btn" style={{width:'auto',padding:'7px 16px',fontSize:14}} onClick={next}>{t('Next', '다음')}</button>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Octave ladder: A2..A6, each bar drawn to scale (twice as long as the one below). Find the hidden number.
+const LADDER = [45, 57, 69, 81, 93];
+function OctaveLadder() {
+  const mk = (prev) => { let k; do { k = 1 + Math.floor(Math.random() * 4); } while (k === prev); return k; };
+  const [hide, setHide] = useState(() => mk(-1)), [ans, setAns] = useState(null), [score, setScore] = useState({ right: 0, tries: 0 });
+  const hz = (k) => Math.round(mFreq(LADDER[k]));
+  const right = hz(hide);
+  const choices = useMemo(() => {
+    const lo = hz(hide - 1), hi = hide < LADDER.length - 1 ? hz(hide + 1) : null;
+    const c = [right, hi ? lo + (hi - lo) / 2 : lo * 1.5, lo + 110];
+    const uniq = [...new Set(c.map(Math.round))];
+    while (uniq.length < 3) uniq.push(Math.round(right * 1.5));
+    return shuffle(uniq.slice(0, 3));
+  }, [hide]);
+  function play(k, at = 0) { const ctx = getAudio(); if (ctx) instNote('piano', ctx, ctx.currentTime + 0.03 + at, LADDER[k], 0.8, 0.45); }
+  function choose(v) {
+    if (ans !== null) return; setAns(v); setScore(s => ({ right: s.right + (v === right ? 1 : 0), tries: s.tries + 1 }));
+    if (v === right) LADDER.forEach((_, k) => play(k, k * 0.35));
+  }
+  function next() { setHide(mk(hide)); setAns(null); }
+  const maxHz = hz(LADDER.length - 1), BW = 170;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('The octave ladder', '옥타브 사다리')}</div>
+      <p style={actNote}>{t('Each A is an octave above the one below -- it vibrates exactly twice as fast. The bars are drawn to scale. Which number is missing?', '각 A는 아래 A보다 한 옥타브 위예요 -- 정확히 두 배 빨리 떨려요. 막대 길이도 실제 비율 그대로예요. 빠진 숫자는 뭘까요?')}</p>
+      <div style={{display:'flex',flexDirection:'column-reverse',gap:6}}>
+        {LADDER.map((m, k) => { const hidden = k === hide && ans === null, w = Math.max(10, hz(k) / maxHz * BW);
+          return <button key={m} onClick={() => play(k)} style={{display:'flex',alignItems:'center',gap:8,background:'transparent',border:'none',padding:0,cursor:'pointer',fontFamily:'inherit',textAlign:'left'}}>
+            <span style={{width:30,flex:'0 0 auto',fontFamily:"'Playfair Display', Georgia, serif",fontVariantNumeric:'lining-nums',fontWeight:900,fontSize:15,color:'var(--navy)'}}>{midiName(m)}</span>
+            <span style={{height:16,width:w,borderRadius:8,background:k === hide ? (ans === null ? 'repeating-linear-gradient(90deg,#e8b93a 0 6px,transparent 6px 10px)' : ans === right ? 'var(--good)' : '#e4572e') : '#26296b',flex:'0 0 auto',transition:'background .2s'}}/>
+            <span style={{fontSize:14,fontWeight:900,whiteSpace:'nowrap',color:k === hide ? 'var(--coral)' : 'var(--navy)'}}>{hidden ? '? Hz' : hz(k) + ' Hz'}</span>
+          </button>; })}
+      </div>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',marginTop:12}}>
+        {choices.map(v => <button key={v} className="chip" disabled={ans !== null} style={{padding:'6px 14px',fontSize:15,fontWeight:800,opacity:1,
+          borderColor:ans !== null && v === right ? 'var(--good)' : ans === v ? 'var(--bad)' : undefined,background:ans !== null && v === right ? '#dcefe7' : ans === v ? '#fbdcd2' : undefined}} onClick={() => choose(v)}>{v} Hz</button>)}
+        <span style={{flex:1}}/>
+        <span style={{fontSize:12.5,color:'var(--navy-soft)',fontWeight:700}}>{score.right} / {score.tries}</span>
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:10,marginTop:8,minHeight:34,flexWrap:'wrap'}}>
+        {ans !== null && <b style={{fontSize:14,color:ans === right ? 'var(--good)' : 'var(--bad)'}}>{ans === right ? t('Yes -- ' + hz(hide - 1) + ' × 2 = ' + right + '.', '맞아요 -- ' + hz(hide - 1) + ' × 2 = ' + right + '.') : t('Double the one below: ' + hz(hide - 1) + ' × 2 = ' + right + '.', '아래 숫자를 두 배로: ' + hz(hide - 1) + ' × 2 = ' + right + '.')}</b>}
+        {ans !== null && <button className="primary-btn" style={{width:'auto',padding:'7px 16px',fontSize:14,marginLeft:'auto'}} onClick={next}>{t('Next', '다음')}</button>}
+      </div>
+    </div>
+  );
+}
+
 function PitchRangeLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
@@ -12381,6 +12566,15 @@ function PitchRangeLearn({ onStart }) {
       <Step title="Vibrations and Hertz">
         <ExplPitchRange1/>
         <HzExplorer/>
+      </Step>
+      <Step title={t('Shorter, tighter, higher', '짧게, 팽팽하게, 높게')}>
+        <StringLab/>
+      </Step>
+      <Step title={t('Big is low, small is high', '크면 낮고, 작으면 높아요')}>
+        <SizePitch/>
+      </Step>
+      <Step title={t('The octave ladder', '옥타브 사다리')}>
+        <OctaveLadder/>
       </Step>
       <Step title="The piano and the orchestra">
         <ExplPitchRange2/>
@@ -15357,6 +15551,9 @@ const TOOLS = [
   { id: 'piano-timeline', ch: 'piano-story', title: 'The piano’s story', blurb: 'Cristofori 1700 to the 88-key grand.', C: () => <><ExplPianoStory3/><PianoTimeline/></> },
   { id: 'eras', ch: 'piano-story', title: 'The style eras', blurb: 'Baroque to today: traits, composers, hear the style.', C: () => <ErasTimeline/> },
   { id: 'hz-explorer', ch: 'pitch-range', title: 'How high is a note? Hz', blurb: 'Vibrations per second; octaves double.', C: () => <><ExplPitchRange1/><HzExplorer/></> },
+  { id: 'string-lab', ch: 'pitch-range', title: 'Shorter, tighter, higher', blurb: 'Slide a finger along a string, change how tight it is, and pluck -- watch and hear the note change.', C: () => <StringLab/> },
+  { id: 'size-pitch', ch: 'pitch-range', title: 'Big is low, small is high', blurb: 'Xylophone bars from big to small, then guess which of the violin family plays higher.', C: () => <SizePitch/> },
+  { id: 'octave-ladder', ch: 'pitch-range', title: 'The octave ladder', blurb: 'Every octave up, the vibrations double -- find the missing number.', C: () => <OctaveLadder/> },
   { id: 'range-chart', ch: 'pitch-range', title: 'Who plays where?', blurb: 'Instrument and voice ranges over the 88 keys.', C: () => <><ExplPitchRange2/><RangeChart/></> },
   { id: 'finger-numbers', ch: 'posture-hands', title: 'Finger numbers', blurb: '“Show me finger 3!” -- both hands.', C: () => <><ExplPostureHands4/><FingerNumbers/></> },
   { id: 'arm-alignment', ch: 'posture-hands', title: 'Arm weight & alignment', blurb: 'Move over the diagram -- watch elbow, wrist and finger joints react.', C: () => <ArmAlignment/> },
@@ -15503,6 +15700,9 @@ const TOOL_KO = {
   'piano-timeline': ['피아노 이야기', '1700년 크리스토포리부터 88건반 그랜드 피아노까지.'],
   'eras': ['시대별 양식', '바로크부터 오늘날까지: 특징, 작곡가, 양식을 들어 봐요.'],
   'hz-explorer': ['음은 얼마나 높을까? 헤르츠', '1초에 몇 번 떨리는지; 한 옥타브 올라가면 두 배.'],
+  'string-lab': ['짧게, 팽팽하게, 높게', '현을 따라 손가락을 밀고, 팽팽함을 바꾸고, 튕겨 봐요 -- 음이 바뀌는 걸 보고 들어요.'],
+  'size-pitch': ['크면 낮고, 작으면 높아요', '큰 실로폰 건반부터 작은 건반까지, 그리고 바이올린 가족 중 누가 더 높은지 맞혀요.'],
+  'octave-ladder': ['옥타브 사다리', '한 옥타브 올라갈 때마다 떨림이 두 배 -- 빠진 숫자를 찾아요.'],
   'range-chart': ['누가 어디를 연주할까?', '88건반 위에 펼친 악기와 목소리의 음역.'],
   'finger-numbers': ['손가락 번호', '"3번 손가락 보여 줘!" -- 양손 모두.'],
   'arm-alignment': ['팔 무게와 정렬', '그림 위로 움직이며 팔꿈치, 손목, 손가락 관절이 어떻게 반응하는지 봐요.'],
@@ -15790,7 +15990,7 @@ const CHAPTER_SEARCH_TERMS = {
   'tempo': 'tempo speed italian term metronome mark bpm',
   'practice': 'practice timer dice repetition',
   'piano-story': 'history piano era composer',
-  'pitch-range': 'pitch range hertz frequency octave instrument',
+  'pitch-range': 'pitch range hertz frequency octave instrument string length tension shorter tighter xylophone bars violin viola cello double bass bigger smaller ladder double',
   'melody': 'melody tune phrase phrasing phrase mark question answer antecedent consequent sequence motif contour breath comma',
   'form': 'form binary ternary rondo ABA AB ABACA section refrain episode structure same new repeat',
   'styles': 'style genre texture monophony homophony polyphony solo melody folk classical jazz blues popular music swing straight eighth notes triplet 12-bar twelve bar blues chords I IV V',
@@ -15879,7 +16079,7 @@ const TOOL_META = {
   'seventh-chords': ['harmony', 3, 3, 'show ear'], 'chord-extensions': ['harmony', 3, 3, 'show'],
   'road-map': ['words', 1, 2, 'game'], 'term-cards': ['words', 1, 3, 'home show'], 'term-match': ['words', 1, 3, 'game home'], 'term-sort': ['words', 1, 3, 'game'], 'term-mixer': ['words', 2, 3, 'show ear'],
   'practice-timer': ['practice', 0, 3, 'home'], 'practice-dice': ['practice', 0, 3, 'home game'], 'perfect-counter': ['practice', 0, 3, 'home'],
-  'keyboard-ancestors': ['about', 0, 3, 'show ear'], 'piano-timeline': ['about', 1, 3, 'show'], 'eras': ['about', 1, 3, 'show ear'], 'hz-explorer': ['about', 1, 3, 'show ear'], 'range-chart': ['about', 1, 3, 'show ear'],
+  'keyboard-ancestors': ['about', 0, 3, 'show ear'], 'piano-timeline': ['about', 1, 3, 'show'], 'eras': ['about', 1, 3, 'show ear'], 'hz-explorer': ['about', 1, 3, 'show ear'], 'string-lab': ['about', 0, 3, 'show ear'], 'size-pitch': ['about', 0, 2, 'game ear'], 'octave-ladder': ['about', 1, 3, 'game ear'], 'range-chart': ['about', 1, 3, 'show ear'],
   'tune-anatomy': ['melody', 0, 1, 'show'], 'draw-tune': ['melody', 0, 2, 'game ear'], 'phrase-marks': ['melody', 1, 2, 'show'], 'question-answer': ['melody', 1, 2, 'game ear'], 'melody-sequence': ['melody', 1, 2, 'show ear'],
   'form-shapes': ['melody', 0, 2, 'show'], 'form-builder': ['melody', 0, 2, 'game ear'], 'same-or-new': ['melody', 1, 2, 'game ear'], 'rondo-refrain': ['melody', 1, 3, 'game ear'], 'binary-ternary-spot': ['melody', 1, 3, 'game ear'],
   'texture-types': ['about', 0, 2, 'show ear'], 'texture-spotter': ['about', 1, 3, 'game ear'], 'genre-traits': ['about', 1, 3, 'show'], 'swing-feel': ['about', 1, 3, 'game ear'], 'twelve-bar-blues': ['about', 2, 3, 'game ear'],
@@ -16453,7 +16653,7 @@ const CHAPTER_TOOL_ORDER = {
   'note-names': ['find-every', 'name-reveal', 'step-updown', 'letter-chain'],
   'note-values': ['note-value-tree', 'rest-grouping', 'note-rest-match', 'split-it', 'beam-apples', 'dotted-notes', 'dot-lab', 'fix-the-bar', 'fill-bar', 'heard-bar'],
   'piano-story': ['keyboard-ancestors', 'piano-timeline', 'eras'],
-  'pitch-range': ['hz-explorer', 'range-chart'],
+  'pitch-range': ['hz-explorer', 'string-lab', 'size-pitch', 'octave-ladder', 'range-chart'],
   'posture-hands': ['sit-check', 'arm-moves', 'arm-alignment', 'hand-shape', 'finger-friends', 'finger-numbers', 'posture-check'],
   'pulse': ['steady-beat', 'beat-target', 'count-aloud'],
   'reading-steps': ['mini-tune', 'echo', 'complete-melody', 'five-positions'],
