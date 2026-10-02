@@ -13207,72 +13207,316 @@ function playPolyphony() {
   FORM_MOTIF.C.forEach(n => { blip(ctx, time2, ivFreq(n), n.dur * beat * 0.9, 0.18, 'sine'); time2 += n.dur * beat; });
 }
 const TEXTURE_TYPES = {
-  monophony: { label: t('Monophony', '모노포니'), play: playMonophony,
-    desc: t('A single melodic line, alone -- no harmony underneath. The oldest and simplest texture, heard in plainchant and unaccompanied folk song.', '반주 없이 선율 한 줄만 있는 거예요 -- 가장 오래되고 단순한 텍스처로, 그레고리안 성가나 반주 없는 민요에서 들을 수 있어요.') },
-  homophony: { label: t('Homophony', '호모포니'), play: playHomophony,
-    desc: t('A melody on top, with chords moving underneath to support it. Most hymns, pop songs, and piano pieces with a "tune and accompaniment" use this.', '위에는 선율, 아래는 받쳐주는 화음이 있어요. 대부분의 찬송가, 팝송, "선율 + 반주" 형태의 피아노 곡이 이런 구조예요.') },
-  polyphony: { label: t('Polyphony', '폴리포니'), play: playPolyphony,
-    desc: t('Two or more independent melodic lines woven together, each equally important -- like a round or a fugue. Listen for the second voice entering after the first.', '두 개 이상의 독립적인 선율이 서로 얽혀요, 각각 똑같이 중요해요 -- 돌림노래나 푸가처럼요. 첫 번째 선율 뒤에 두 번째 선율이 들어오는 걸 들어보세요.') },
+  monophony: { get label() { return t('Monophony', '모노포니'); }, play: playMonophony,
+    get desc() { return t('A single melodic line, alone -- no harmony underneath. The oldest and simplest texture, heard in plainchant and unaccompanied folk song.', '반주 없이 선율 한 줄만 있는 거예요 -- 가장 오래되고 단순한 텍스처로, 그레고리안 성가나 반주 없는 민요에서 들을 수 있어요.'); } },
+  homophony: { get label() { return t('Homophony', '호모포니'); }, play: playHomophony,
+    get desc() { return t('A melody on top, with chords moving underneath to support it. Most hymns, pop songs, and piano pieces with a "tune and accompaniment" use this.', '위에는 선율, 아래는 받쳐주는 화음이 있어요. 대부분의 찬송가, 팝송, "선율 + 반주" 형태의 피아노 곡이 이런 구조예요.'); } },
+  polyphony: { get label() { return t('Polyphony', '폴리포니'); }, play: playPolyphony,
+    get desc() { return t('Two or more independent melodic lines woven together, each equally important -- like a round or a fugue. Listen for the second voice entering after the first.', '두 개 이상의 독립적인 선율이 서로 얽혀요, 각각 똑같이 중요해요 -- 돌림노래나 푸가처럼요. 첫 번째 선율 뒤에 두 번째 선율이 들어오는 걸 들어보세요.'); } },
 };
+const GENRE_TRAITS = [
+  { get genre() { return t('Folk music', '포크 (민속 음악)'); }, get trait() { return t('Passed down by ear from person to person, over generations -- often with no single known composer.', '세대를 거쳐 귀로 전해져요 -- 대부분 작곡가가 따로 없어요.'); } },
+  { get genre() { return t('Classical music', '클래식 음악'); }, get trait() { return t('Carefully written down on paper and planned in formal structures, usually for the concert hall.', '악보에 꼼꼼히 적혀 있고, 형식이 짜여 있어요 -- 보통 연주회장에서 연주돼요.'); } },
+  { get genre() { return t('Jazz & blues', '재즈와 블루스'); }, get trait() { return t('Built on improvisation and a swung, syncopated feel -- the performer creates as they play.', '즉흥연주와 스윙 리듬을 바탕으로 해요 -- 연주자가 연주하면서 즉석에서 만들어요.'); } },
+  { get genre() { return t('Popular music', '대중음악'); }, get trait() { return t('Built around short verses and a catchy, repeating chorus, made to reach a wide audience.', '짧은 벌스와 기억하기 쉬운 후렴구로 짜여 있어요 -- 많은 사람들에게 다가가려고 만들어졌어요.'); } },
+];
+// ─── Phase 282: Styles & Genres content pass ───
+// Texture picture: the exact notes the synth plays (FORM_MOTIF.A, plus held chords or a second
+// voice entering 2 beats later), drawn as a piano roll so the eye sees what the ear hears.
+const TEX_BEAT_PX = 28, TEX_X0 = 22;
+const TEX_BEATS = { monophony: 8, homophony: 8, polyphony: 10 }; // at 132 bpm, matching playMonophony/Homophony/Polyphony
+const texY = (d) => 78 - (d - 21) * 5;
+function texBars(notes, startBeat, colour, key) {
+  let b = startBeat;
+  return notes.map((n, i) => { const x = TEX_X0 + b * TEX_BEAT_PX; b += n.dur; return <rect key={key + i} x={x + 1.5} y={texY(n.d) - 2.6} width={n.dur * TEX_BEAT_PX - 3} height="5.2" rx="2.6" fill={colour}/>; });
+}
+function TexturePicture({ tex, run }) {
+  const fade = (on) => ({ opacity: on ? 1 : 0, transition: 'opacity .25s ease' });
+  const secs = TEX_BEATS[tex] * 60 / 132;
+  return (
+    <svg key={run} viewBox="0 0 320 96" width="100%" style={{display:'block',maxWidth:520,margin:'2px 0 4px'}} aria-hidden="true">
+      <text x={TEX_X0} y="12" fontSize="10.5" fontWeight="800" fill="#26296b">{t('tune', '선율')}</text>
+      <g>{texBars(FORM_MOTIF.A, 0, '#26296b', 'a')}</g>
+      <g style={fade(tex === 'homophony')}>
+        {[21, 23, 25].map(d => <rect key={d} x={TEX_X0 + 1.5} y={texY(d) - 2.6} width={8 * TEX_BEAT_PX - 3} height="5.2" rx="2.6" fill="#6d6f9c" opacity="0.6"/>)}
+        <text x={TEX_X0} y="94" fontSize="10.5" fontWeight="800" fill="#6d6f9c">{t('chords underneath', '아래에서 받쳐 주는 화음')}</text>
+      </g>
+      <g style={fade(tex === 'polyphony')}>
+        {texBars(FORM_MOTIF.C, 2, '#e4572e', 'c')}
+        <text x={TEX_X0 + 2 * TEX_BEAT_PX} y="80" fontSize="10.5" fontWeight="800" fill="#e4572e">{t('second voice comes in', '두 번째 선율이 들어와요')}</text>
+      </g>
+      {run > 0 && <line x1={TEX_X0} x2={TEX_X0} y1="16" y2="84" stroke="#e8b93a" strokeWidth="2" strokeLinecap="round">
+        <animateTransform attributeName="transform" type="translate" from="0 0" to={TEX_BEATS[tex] * TEX_BEAT_PX + ' 0'} dur={secs + 's'} fill="freeze"/>
+      </line>}
+    </svg>
+  );
+}
 function TextureTypes() {
-  const [tex, setTex] = useState('monophony');
+  const [tex, setTex] = useState('monophony'), [run, setRun] = useState(0);
   const TEX_ORDER = ['monophony', 'homophony', 'polyphony'];
+  function hear(id) { setTex(id); TEXTURE_TYPES[id].play(); setRun(r => r + 1); }
   return (
     <div className="try-box" style={actBox}>
-      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><line x1="2" y1="6" x2="22" y2="6" stroke="#26296b" strokeWidth="1.8" strokeLinecap="round"/><line x1="2" y1="12" x2="22" y2="12" stroke="var(--brass)" strokeWidth="1.8" strokeLinecap="round"/><line x1="2" y1="18" x2="14" y2="18" stroke="#3b4fa8" strokeWidth="1.8" strokeLinecap="round"/><line x1="2" y1="15" x2="10" y2="15" stroke="#8a5fb0" strokeWidth="1.8" strokeLinecap="round"/></svg>{t('Textures: how many voices, and how do they relate?', '텍스처: 목소리는 몇 개이고, 서로 어떤 관계일까요?')}</div>
-      <div style={actNote}>{t('Every piece of music has a texture -- how its melodic lines are layered. Tap each type to hear the same tune treated three different ways.', '모든 음악에는 텍스처가 있어요 -- 선율이 겹겹이 쌓이는 방식이에요. 같은 곡을 세 가지 방식으로 들어보세요.')}</div>
-      <div style={{display:'flex',gap:4,marginBottom:10,flexWrap:'wrap'}}>
-        {TEX_ORDER.map(id => <button key={id} className={'chip' + (tex === id ? ' active' : '')} style={{padding:'4px 11px',fontSize:13}} onClick={() => { setTex(id); TEXTURE_TYPES[id].play(); }}>{TEXTURE_TYPES[id].label}</button>)}
+      <div style={actTitle}>{t('Textures: how many voices, and how do they relate?', '텍스처: 목소리는 몇 개이고, 서로 어떤 관계일까요?')}</div>
+      <div style={actNote}>{t('Every piece of music has a texture -- how its lines are layered. Tap each one: the picture shows exactly what you hear, the same tune three ways.', '모든 음악에는 텍스처가 있어요 -- 선율이 겹겹이 쌓이는 방식이에요. 하나씩 눌러 보세요: 그림이 들리는 소리 그대로예요, 같은 튠을 세 가지 방법으로.')}</div>
+      <div style={{display:'flex',gap:6,marginBottom:6,flexWrap:'wrap',alignItems:'center'}}>
+        {TEX_ORDER.map(id => <button key={id} className={'chip' + (tex === id ? ' active' : '')} style={{padding:'4px 12px',fontSize:13.5}} onClick={() => hear(id)}>{TEXTURE_TYPES[id].label}</button>)}
+        <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginLeft:'auto'}} onClick={() => hear(tex)}>♪ {t('Play', '재생')}</button>
       </div>
-      <div style={{textAlign:'center',margin:'8px 0'}}><button className="ghost-btn" onClick={() => TEXTURE_TYPES[tex].play()}>♪ {t('Play', '재생')}</button></div>
-      <div style={{fontSize:12.5,color:'#4a4d86',background:'#f5f0e4',borderRadius:8,padding:'6px 9px',lineHeight:1.5}}>{TEXTURE_TYPES[tex].desc}</div>
+      <TexturePicture tex={tex} run={run}/>
+      <div style={{fontSize:14,color:'var(--navy)',lineHeight:1.5}}>{TEXTURE_TYPES[tex].desc}</div>
     </div>
   );
 }
 function TextureSpotter() {
   const TEX_ORDER = ['monophony', 'homophony', 'polyphony'];
   const [tex, setTex] = useState(() => TEX_ORDER[Math.floor(Math.random() * 3)]);
-  const [guess, setGuess] = useState(null);
+  const [guess, setGuess] = useState(null), [run, setRun] = useState(0), [score, setScore] = useState({ right: 0, tries: 0 });
   useEffect(() => { const tmo = setTimeout(() => TEXTURE_TYPES[tex].play(), 250); return () => clearTimeout(tmo); }, [tex]);
-  function next() { let nt = tex; while (nt === tex) nt = TEX_ORDER[Math.floor(Math.random() * 3)]; setTex(nt); setGuess(null); }
+  function again() { TEXTURE_TYPES[tex].play(); if (guess !== null) setRun(r => r + 1); }
+  function choose(id) { if (guess !== null) return; setGuess(id); setScore(s => ({ right: s.right + (id === tex ? 1 : 0), tries: s.tries + 1 })); }
+  function next() { let nt = tex; while (nt === tex) nt = TEX_ORDER[Math.floor(Math.random() * 3)]; setTex(nt); setGuess(null); setRun(0); }
   const correct = guess === tex;
   return (
     <div className="try-box" style={actBox}>
-      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><circle cx="12" cy="12" r="9" fill="none" stroke="var(--brass)" strokeWidth="1.6"/><path d="M8 12 a4 4 0 1 1 8 0" fill="none" stroke="#26296b" strokeWidth="1.6" strokeLinecap="round"/><circle cx="12" cy="12" r="1.6" fill="#26296b"/></svg>{t('Which texture is this?', '어떤 텍스처일까요?')}</div>
-      <div style={actNote}>{t('Listen -- is it one line alone, a melody with chords, or two independent lines woven together?', '들어보세요 -- 한 줄뿐인가요, 화음이 받쳐주는 선율인가요, 아니면 두 독립적인 선율이 얽혀있나요?')}</div>
+      <div style={actTitle}>{t('Which texture is this?', '어떤 텍스처일까요?')}</div>
+      <div style={actNote}>{t('Listen -- is it one line alone, a melody with chords, or two independent lines woven together? After you answer, the picture shows you what you heard.', '들어 보세요 -- 한 줄뿐인가요, 화음이 받쳐 주는 선율인가요, 아니면 두 독립적인 선율이 얽혀 있나요? 답하고 나면 들은 소리를 그림으로 보여 줘요.')}</div>
       <div style={{display:'flex',gap:6,justifyContent:'center',margin:'8px 0',flexWrap:'wrap'}}>
-        {TEX_ORDER.map(id => <button key={id} className={'chip' + (guess === id ? ' active' : '')} style={{padding:'5px 12px',fontSize:14}} onClick={() => setGuess(id)}>{TEXTURE_TYPES[id].label}</button>)}
+        {TEX_ORDER.map(id => {
+          const isRight = guess !== null && id === tex, isWrong = guess === id && id !== tex;
+          return <button key={id} className="chip" disabled={guess !== null} style={{padding:'5px 12px',fontSize:14,borderColor:isRight ? 'var(--good)' : isWrong ? 'var(--bad)' : undefined,background:isRight ? '#dcefe7' : isWrong ? '#fbdcd2' : undefined,opacity:1}} onClick={() => choose(id)}>{TEXTURE_TYPES[id].label}</button>;
+        })}
       </div>
-      <div style={{textAlign:'center',fontSize:13.5,minHeight:24,margin:'2px 0'}}>
-        {guess !== null && (correct ? <b style={{color:'#2e8a6e'}}>{t('Right!', '맞았어요!')}</b> : <b style={{color:'#c8361b'}}>{t('Listen again -- it was ' + TEXTURE_TYPES[tex].label + '.', '다시 들어보세요 -- 정답은 ' + TEXTURE_TYPES[tex].label + '이었어요.')}</b>)}
+      <div style={{textAlign:'center',fontSize:14,minHeight:22,margin:'2px 0'}}>
+        {guess !== null && (correct ? <b style={{color:'var(--good)'}}>{t('Right!', '맞았어요!')}</b> : <b style={{color:'var(--bad)'}}>{t('It was ' + TEXTURE_TYPES[tex].label + ' -- see it below.', '정답은 ' + TEXTURE_TYPES[tex].label + '예요 -- 아래 그림을 보세요.')}</b>)}
       </div>
-      <div style={{display:'flex',gap:8,justifyContent:'center',margin:'6px 0'}}>
-        <button className="ghost-btn" onClick={() => TEXTURE_TYPES[tex].play()}>♪ {t('Play again', '다시 듣기')}</button>
-        {guess !== null && <button className="ghost-btn" onClick={next}>{t('Next →', '다음 →')}</button>}
+      {guess !== null && <TexturePicture tex={tex} run={run}/>}
+      <div style={{display:'flex',gap:8,justifyContent:'center',alignItems:'center',margin:'6px 0'}}>
+        <button className="ghost-btn" onClick={again}>♪ {t('Play again', '다시 듣기')}</button>
+        {guess !== null && <button className="primary-btn" style={{width:'auto',padding:'7px 16px',fontSize:14}} onClick={next}>{t('Next', '다음')}</button>}
+        <span style={{fontSize:12.5,color:'var(--navy-soft)',fontWeight:700}}>{score.right} / {score.tries}</span>
       </div>
     </div>
   );
 }
-const GENRE_TRAITS = [
-  { genre: t('Folk music', '포크 (민속 음악)'), trait: t('Passed down by ear from person to person, over generations -- often with no single known composer.', '세대를 거쳐 귀로 전해져요 -- 대부분 작곡가가 따로 없어요.') },
-  { genre: t('Classical music', '클래식 음악'), trait: t('Carefully written down on paper and planned in formal structures, usually for the concert hall.', '악보에 꼼꼼히 적혀 있고, 형식이 짜여 있어요 -- 보통 연주회장에서 연주돼요.') },
-  { genre: t('Jazz & blues', '재즈와 블루스'), trait: t('Built on improvisation and a swung, syncopated feel -- the performer creates as they play.', '즉흥연주와 스윙 리듬을 바탕으로 해요 -- 연주자가 연주하면서 즉석에서 만들어요.') },
-  { genre: t('Popular music', '대중음악'), trait: t('Built around short verses and a catchy, repeating chorus, made to reach a wide audience.', '짧은 벌스와 기억하기 쉬운 후렴구로 짜여 있어요 -- 많은 사람들에게 다가가려고 만들어졌어요.') },
-];
+
+// One small picture per style family, each showing its own defining trait literally.
+function GenreIcon({ k }) {
+  const N = '#26296b', C = '#e4572e';
+  return (
+    <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true" style={{flex:'0 0 auto'}}>
+      {k === 0 && <g>{/* folk: a tune passed from one person to the next, by ear */}
+        <circle cx="13" cy="44" r="8" fill="none" stroke={N} strokeWidth="2.2"/>
+        <circle cx="51" cy="44" r="8" fill="none" stroke={N} strokeWidth="2.2"/>
+        <path d="M44 40.5 q-4 3 0 7" fill="none" stroke={N} strokeWidth="2" strokeLinecap="round"/>
+        <path d="M17 34 Q32 10 45 33" fill="none" stroke={C} strokeWidth="2.2" strokeLinecap="round" strokeDasharray="3 4"/>
+        <path d="M45 33 l-6 -1.5 M45 33 l0.5 -6" stroke={C} strokeWidth="2.2" strokeLinecap="round"/>
+        <ellipse cx="29" cy="20" rx="4" ry="3" transform="rotate(-20 29 20)" fill={N}/><rect x="31.9" y="7" width="1.6" height="13" fill={N}/>
+      </g>}
+      {k === 1 && <g>{/* classical: carefully written down */}
+        <path d="M12 6 H42 L52 16 V58 H12 Z" fill="#fffefa" stroke={N} strokeWidth="2.2" strokeLinejoin="round"/>
+        <path d="M42 6 V16 H52" fill={C} stroke={N} strokeWidth="1.6" strokeLinejoin="round"/>
+        {[22, 25, 28, 31, 34, 41, 44, 47, 50, 53].map(y => <line key={y} x1="17" x2="47" y1={y} y2={y} stroke={N} strokeOpacity="0.55" strokeWidth="0.9"/>)}
+        {[[22, 28], [28, 25], [34, 31], [40, 22], [22, 47], [30, 44], [38, 50]].map(([x, y], i) => <ellipse key={i} cx={x} cy={y} rx="2.4" ry="1.7" transform={`rotate(-20 ${x} ${y})`} fill={N}/>)}
+      </g>}
+      {k === 2 && <g>{/* jazz & blues: written even, played long-short (swing) */}
+        <line x1="6" x2="58" y1="30" y2="30" stroke={N} strokeOpacity="0.5" strokeWidth="1"/>
+        {[18, 44].map(x => <g key={x}><ellipse cx={x} cy="30" rx="4.6" ry="3.4" transform={`rotate(-20 ${x} 30)`} fill={N}/><rect x={x + 3.4} y="9" width="1.7" height="21" fill={N}/></g>)}
+        <rect x="21.4" y="8" width="27.7" height="4" fill={N}/>
+        <rect x="6" y="42" width="32" height="11" rx="5" fill={N}/>
+        <rect x="41" y="42" width="17" height="11" rx="5" fill={C}/>
+      </g>}
+      {k === 3 && <g>{/* popular: verse, catchy chorus, verse, the same chorus again */}
+        {[6, 20, 34, 48].map((x, i) => i % 2
+          ? <g key={x}><rect x={x} y="18" width="11" height="20" rx="3" fill={C}/><path d={`M${x + 2} 30 l2.3 -4 l2.3 4 l2.3 -4`} fill="none" stroke="#fffefa" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></g>
+          : <rect key={x} x={x} y="18" width="11" height="20" rx="3" fill="none" stroke={N} strokeWidth="2"/>)}
+        <path d="M25.5 43 Q40 58 52 44" fill="none" stroke={C} strokeWidth="2" strokeLinecap="round" strokeDasharray="3 3.5"/>
+        <path d="M52 44 l-5.5 0.5 M52 44 l-1.5 5.3" stroke={C} strokeWidth="2" strokeLinecap="round"/>
+      </g>}
+    </svg>
+  );
+}
 function GenreTraits() {
   const [i, setI] = useState(0);
   const g = GENRE_TRAITS[i];
   return (
     <div className="try-box" style={actBox}>
-      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><rect x="2" y="4" width="8" height="8" rx="2" fill="var(--brass)"/><rect x="14" y="4" width="8" height="8" rx="2" fill="#3b4fa8"/><rect x="2" y="14" width="8" height="8" rx="2" fill="#8a5fb0"/><rect x="14" y="14" width="8" height="8" rx="2" fill="#5f9e6f"/></svg>{t('What makes each style different?', '각 스타일은 무엇이 다를까요')}</div>
+      <div style={actTitle}>{t('What makes each style different?', '각 스타일은 무엇이 다를까요')}</div>
       <div style={actNote}>{t('Four broad families of music, and what sets each one apart.', '음악의 네 가지 큰 갈래와, 각각을 구분 짓는 특징이에요.')}</div>
-      <div style={{display:'flex',gap:4,marginBottom:10,flexWrap:'wrap'}}>
-        {GENRE_TRAITS.map((x, k) => <button key={k} className={'chip' + (i === k ? ' active' : '')} style={{padding:'4px 11px',fontSize:13}} onClick={() => setI(k)}>{x.genre}</button>)}
+      <div style={{display:'flex',gap:6,marginBottom:10,flexWrap:'wrap'}}>
+        {GENRE_TRAITS.map((x, k) => <button key={k} className={'chip' + (i === k ? ' active' : '')} style={{padding:'4px 12px',fontSize:13.5}} onClick={() => setI(k)}>{x.genre}</button>)}
       </div>
-      <div style={{fontSize:14,color:'#3a352d',background:'#f5f0e4',borderRadius:8,padding:'10px 12px',lineHeight:1.5,minHeight:40}}><b>{g.genre}:</b> {g.trait}</div>
+      <div style={{display:'flex',gap:12,alignItems:'center',border:'1.5px solid var(--navy-line)',borderRadius:14,background:'var(--surface)',padding:'10px 12px'}}>
+        <GenreIcon k={i}/>
+        <div style={{minWidth:0}}>
+          <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontWeight:900,fontSize:18,color:'var(--navy)',lineHeight:1.25}}>{g.genre}</div>
+          <div style={{fontSize:14,color:'var(--navy)',lineHeight:1.5,marginTop:2}}>{g.trait}</div>
+        </div>
+      </div>
     </div>
   );
 }
+
+// Straight vs swing (book p.40: swing is written in even eighth-note pairs but played long-short,
+// "as if in triplets"). Same written bar, two ways of playing it -- blocks show the real lengths.
+const SWING_TUNE = [28, 29, 30, 32, 33, 32, 30, 29];
+function SwingFeel() {
+  const [mode, setMode] = useState('straight'), [on, setOn] = useState(-1);
+  const [quiz, setQuiz] = useState(null); // { secret, ans }
+  const [score, setScore] = useState({ right: 0, tries: 0 });
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  function play(m, light = true) {
+    timers.current.forEach(clearTimeout); timers.current = []; setOn(-1);
+    const ctx = getAudio(); if (!ctx) return;
+    const beat = 60 / 112, t0 = ctx.currentTime + 0.1, long = m === 'swing' ? 2 / 3 : 1 / 2;
+    for (let rep = 0; rep < 2; rep++) SWING_TUNE.forEach((d, i) => {
+      const k = Math.floor(i / 2), off = i % 2, at = (rep * 4 + k) * beat + (off ? long * beat : 0);
+      blip(ctx, t0 + at, ivFreq({ d }), (off ? 1 - long : long) * beat * 0.9, 0.2, 'triangle');
+      if (!off) metroClick(ctx, t0 + at, k === 0, 0.08);
+      if (light) timers.current.push(setTimeout(() => setOn(i), (0.1 + at) * 1000));
+    });
+    const end = 8 * beat;
+    blip(ctx, t0 + end, ivFreq({ d: 28 }), beat * 1.6, 0.2, 'triangle'); metroClick(ctx, t0 + end, true, 0.08);
+    timers.current.push(setTimeout(() => setOn(-1), (0.1 + end + 0.3) * 1000));
+  }
+  function quizMe() { const s = Math.random() < 0.5 ? 'straight' : 'swing'; setQuiz({ secret: s, ans: null }); play(s, false); }
+  function answer(a) { setQuiz(q => ({ ...q, ans: a })); setScore(s => ({ right: s.right + (a === quiz.secret ? 1 : 0), tries: s.tries + 1 })); setMode(quiz.secret); }
+  const long = mode === 'swing' ? 2 / 3 : 1 / 2, hidden = quiz && !quiz.ans;
+  const label = (m) => m === 'swing' ? t('Swing', '스윙') : t('Straight', '스트레이트');
+  const rowLabel = { fontSize:11.5, fontWeight:800, color:'var(--navy-soft)', textTransform:'uppercase', letterSpacing:'0.06em', margin:'8px 0 3px' };
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Straight or swing?', '스트레이트일까, 스윙일까?')}</div>
+      <p style={actNote}>{t('Jazz and blues often swing. The music is written in even pairs of eighth notes, but each pair is played long-short -- as if in triplets. Switch between the two and listen.', '재즈와 블루스는 자주 스윙해요. 악보에는 8분음표가 두 개씩 고르게 적혀 있지만, 연주할 때는 길게-짧게 -- 셋잇단음표처럼 -- 쳐요. 둘을 바꿔 가며 들어 봐요.')}</p>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',alignItems:'center'}}>
+        {['straight', 'swing'].map(m => <button key={m} className={'chip' + (mode === m && !hidden ? ' active' : '')} style={{padding:'5px 14px',fontSize:14}} onClick={() => { setMode(m); setQuiz(null); play(m); }}>{label(m)}</button>)}
+        <button className="primary-btn" style={{width:'auto',padding:'7px 16px',fontSize:14,marginLeft:'auto'}} onClick={() => { setQuiz(null); play(mode); }}>♪ {t('Play', '재생')}</button>
+      </div>
+      <div style={{opacity:hidden ? 0.35 : 1,transition:'opacity .2s'}}>
+        <div style={rowLabel}>{t('Written', '악보에는')}</div>
+        <div style={{display:'flex',gap:4}}>
+          {[0, 1, 2, 3].map(k => <div key={k} style={{flex:1,minWidth:0}}>
+            <svg viewBox="0 0 70 38" width="100%" style={{display:'block'}} aria-hidden="true">
+              <line x1="0" x2="70" y1="29" y2="29" stroke="#26296b" strokeOpacity="0.45" strokeWidth="1"/>
+              {[17.5, 52.5].map((x, j) => <g key={j}><ellipse cx={x} cy="29" rx="5.4" ry="3.9" transform={`rotate(-20 ${x} 29)`} fill={on === k * 2 + j ? '#e4572e' : '#26296b'}/><rect x={x + 4.1} y="5" width="1.7" height="24" fill="#26296b"/></g>)}
+              <rect x="21.6" y="4" width="36.6" height="4.2" fill="#26296b"/>
+            </svg>
+          </div>)}
+        </div>
+        <div style={rowLabel}>{hidden ? t('Played', '연주하면') : t('Played', '연주하면') + ' -- ' + label(mode)}</div>
+        <div style={{display:'flex',gap:4}}>
+          {[0, 1, 2, 3].map(k => <div key={k} style={{flex:1,minWidth:0}}>
+            <div style={{display:'flex',gap:3,height:24}}>
+              {[0, 1].map(j => <div key={j} style={{flexGrow:j ? 1 - long : long,flexBasis:0,borderRadius:6,transition:'flex-grow .25s ease, background .1s',background:on === k * 2 + j ? '#e4572e' : j ? '#6d6f9c' : '#26296b'}}/>)}
+            </div>
+            <div style={{position:'relative',height:10,marginTop:2}}>
+              {[0, 1, 2].map(s => <span key={s} style={{position:'absolute',left:(s * 100 / 3) + '%',top:2,width:5,height:5,borderRadius:3,background:'#e8b93a',opacity:mode === 'swing' && !hidden ? 1 : 0,transition:'opacity .25s'}}/>)}
+            </div>
+          </div>)}
+        </div>
+        <div style={{fontSize:13,color:'var(--navy)',lineHeight:1.45,minHeight:38}}>
+          {hidden ? '' : mode === 'swing'
+            ? t('Long + short: the first note takes 2 of the 3 triplet parts (the gold dots), the second takes 1.', '길게 + 짧게: 첫 음이 셋잇단음의 세 칸(금색 점) 중 2칸, 둘째 음이 1칸을 가져가요.')
+            : t('Even: each note gets exactly half of the beat.', '고르게: 두 음이 한 박을 정확히 반씩 나눠 가져요.')}
+        </div>
+      </div>
+      <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',marginTop:6,paddingTop:10,borderTop:'1px dashed var(--navy-line)'}}>
+        {!hidden && <button className="ghost-btn" style={{fontSize:13.5}} onClick={quizMe}>{t('Ear test: which one?', '귀 테스트: 어느 쪽일까?')}</button>}
+        {hidden && <>
+          <span style={{fontSize:13.5,fontWeight:800,color:'var(--navy)'}}>{t('Which did you hear?', '어느 쪽이었나요?')}</span>
+          {['straight', 'swing'].map(m => <button key={m} className="chip" style={{padding:'5px 14px',fontSize:14}} onClick={() => answer(m)}>{label(m)}</button>)}
+          <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => play(quiz.secret, false)}>♪</button>
+        </>}
+        {quiz && quiz.ans && <b style={{fontSize:14,color:quiz.ans === quiz.secret ? 'var(--good)' : 'var(--bad)'}}>{quiz.ans === quiz.secret ? t('Yes -- ' + label(quiz.secret).toLowerCase() + '!', '맞아요 -- ' + label(quiz.secret) + '!') : t('It was ' + label(quiz.secret).toLowerCase() + ' -- see the blocks above.', '정답은 ' + label(quiz.secret) + '예요 -- 위 블록을 보세요.')}</b>}
+        <span style={{flex:1}}/>
+        {score.tries > 0 && <span style={{fontSize:12.5,color:'var(--navy-soft)',fontWeight:700}}>{score.right} / {score.tries}</span>}
+      </div>
+    </div>
+  );
+}
+
+// The 12-bar blues (book p.220): three chords, I IV V, in three lines of four bars; in C: C, F, G.
+// Chord V appears only in bar 9. Bass on beats 1 and 3, chord on 2 and 4.
+const BLUES_12 = ['I', 'I', 'I', 'I', 'IV', 'IV', 'I', 'I', 'V', 'IV', 'I', 'I'];
+const BLUES_CH = {
+  I: { name: 'C', notes: [28, 30, 32], bass: 21, col: '#26296b' },
+  IV: { name: 'F', notes: [28, 31, 33], bass: 17, col: '#e4572e' },
+  V: { name: 'G', notes: [27, 29, 32], bass: 18, col: '#2b8c8c' },
+};
+function TwelveBarBlues() {
+  const [on, setOn] = useState(-1), [gaps, setGaps] = useState(null); // gaps: { idx, guess, checked }
+  const timers = useRef([]), gapsRef = useRef(null);
+  gapsRef.current = gaps;
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const chordAt = (i, gs) => gs && gs.idx.includes(i) ? gs.guess[i] : BLUES_12[i];
+  function stop() { timers.current.forEach(clearTimeout); timers.current = []; setOn(-1); }
+  function play() {
+    stop(); const ctx = getAudio(); if (!ctx) return;
+    const beat = 60 / 120, bar = 4 * beat, T0 = ctx.currentTime + 0.15;
+    for (let i = 0; i <= 12; i++) timers.current.push(setTimeout(() => {
+      if (i === 12) { setOn(-1); BLUES_CH.I.notes.forEach(d => blip(ctx, T0 + 12 * bar, ivFreq({ d }), beat * 1.8, 0.12, 'triangle')); blip(ctx, T0 + 12 * bar, ivFreq({ d: 21 }), beat * 1.8, 0.2, 'triangle'); return; }
+      setOn(i);
+      const c = BLUES_CH[chordAt(i, gapsRef.current)]; if (!c) return;
+      const at = T0 + i * bar;
+      [0, 2].forEach(b => blip(ctx, at + b * beat, ivFreq({ d: c.bass }), beat * 0.9, 0.22, 'triangle'));
+      [1, 3].forEach(b => c.notes.forEach(d => blip(ctx, at + b * beat, ivFreq({ d }), beat * 0.55, 0.11, 'triangle')));
+    }, Math.max(0, (0.15 + i * bar) * 1000 - 120)));
+  }
+  function newGaps() {
+    stop();
+    const special = pick([4, 5, 8, 9]), rest = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter(i => i !== special)).slice(0, 2);
+    setGaps({ idx: [special, ...rest], guess: {}, checked: false });
+  }
+  function tap(i) {
+    if (gaps && gaps.idx.includes(i) && !gaps.checked) {
+      const nx = { I: 'IV', IV: 'V', V: 'I' }[gaps.guess[i]] || 'I';
+      setGaps({ ...gaps, guess: { ...gaps.guess, [i]: nx } });
+      playChord(BLUES_CH[nx].notes.map(d => ({ d })), 'block'); return;
+    }
+    const r = chordAt(i, gaps); if (r) playChord(BLUES_CH[r].notes.map(d => ({ d })), 'block');
+  }
+  const filled = gaps && gaps.idx.every(i => gaps.guess[i]);
+  const allRight = gaps && gaps.checked && gaps.idx.every(i => gaps.guess[i] === BLUES_12[i]);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('The 12-bar blues', '12마디 블루스')}</div>
+      <p style={actNote}>{t('Just three chords -- I, IV and V (in C: C, F and G) -- in three lines of four bars. Chord I is home and comes most often; chord V comes only once, in bar 9. Many blues songs are built on this pattern.', '화음 세 개 -- I, IV, V (C장조에서는 C, F, G) -- 를 네 마디씩 세 줄로 놓아요. I 화음은 집이라 가장 자주 나오고, V 화음은 9마디에 딱 한 번 나와요. 많은 블루스 곡이 이 패턴 위에 만들어져요.')}</p>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4, minmax(0, 1fr))',gap:6}}>
+        {BLUES_12.map((r, i) => {
+          const isGap = gaps && gaps.idx.includes(i), g = isGap ? gaps.guess[i] : r, c = g && BLUES_CH[g];
+          const right = isGap && gaps.checked && g === r, wrong = isGap && gaps.checked && g !== r;
+          return <button key={i} onClick={() => tap(i)} style={{position:'relative',height:58,borderRadius:10,cursor:'pointer',fontFamily:'inherit',padding:0,
+            border:isGap ? '2px dashed ' + (wrong ? 'var(--bad)' : right ? 'var(--good)' : 'var(--navy-soft)') : '2px solid transparent',
+            background:c ? c.col : 'var(--surface)',color:c ? '#fff' : 'var(--navy-soft)',
+            boxShadow:on === i ? '0 0 0 3px #e8b93a' : 'none',transform:on === i ? 'translateY(-3px)' : 'none',transition:'transform .15s, box-shadow .15s, background .15s'}}>
+            <span style={{position:'absolute',top:3,left:6,fontSize:9.5,fontWeight:800,opacity:0.75}}>{i + 1}</span>
+            {wrong && <span style={{position:'absolute',top:2,right:5,fontSize:11,fontWeight:900}}>✕</span>}
+            <span style={{display:'block',fontFamily:"'Playfair Display', Georgia, serif",fontSize:22,fontWeight:900,lineHeight:1.05}}>{c ? c.name : '?'}</span>
+            <span style={{display:'block',fontSize:11.5,fontWeight:800,opacity:0.9,minHeight:14}}>{g || ''}</span>
+          </button>;
+        })}
+      </div>
+      <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',marginTop:10}}>
+        <button className="primary-btn" style={{width:'auto',padding:'8px 18px',fontSize:14}} onClick={on >= 0 ? stop : play}>{on >= 0 ? t('Stop', '멈추기') : t('Play all 12 bars', '12마디 연주하기')}</button>
+        {!gaps && <button className="ghost-btn" style={{fontSize:13.5}} onClick={newGaps}>{t('Fill the gaps', '빈칸 채우기')}</button>}
+        {gaps && !gaps.checked && <button className="ghost-btn" style={{fontSize:13.5}} disabled={!filled} onClick={() => { stop(); setGaps({ ...gaps, checked: true }); }}>{t('Check', '확인')}</button>}
+        {gaps && gaps.checked && <button className="ghost-btn" style={{fontSize:13.5}} onClick={newGaps}>{t('New gaps', '새 빈칸')}</button>}
+        {gaps && <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => { stop(); setGaps(null); }}>{t('Show all', '모두 보기')}</button>}
+      </div>
+      <div style={{fontSize:13.5,color:'var(--navy)',lineHeight:1.5,marginTop:8,minHeight:20}}>
+        {!gaps ? t('Tap any bar to hear its chord.', '마디를 누르면 그 화음이 들려요.')
+          : !gaps.checked ? t('Tap each ? to choose I, IV or V -- then play it through, or check.', '? 를 눌러 I, IV, V 중에서 골라요 -- 그다음 끝까지 연주해 보거나 확인해요.')
+          : allRight ? <b style={{color:'var(--good)'}}>{t('You’ve got the blues -- all three right!', '블루스 완성 -- 세 개 모두 맞았어요!')}</b>
+          : <b style={{color:'var(--bad)'}}>{t('Not quite -- look again at the bars marked ✕. Remember: V only in bar 9.', '아직이에요 -- ✕ 표시된 마디를 다시 보세요. V는 9마디에만 나와요.')}</b>}
+      </div>
+      <div style={{display:'flex',gap:12,flexWrap:'wrap',marginTop:8,fontSize:12,color:'var(--navy-soft)',fontWeight:700}}>
+        {['I', 'IV', 'V'].map(r => <span key={r} style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:12,height:12,borderRadius:3,background:BLUES_CH[r].col}}/>{r} = {BLUES_CH[r].name}{r === 'I' ? t(' (home)', ' (집)') : ''}</span>)}
+      </div>
+    </div>
+  );
+}
+
 // Phase 210 (2026-09-29): Styles hero, chapter 24 of 24 (the last chapter). Three textures --
 // one line, a melody with chords underneath, two woven lines -- literal to the chapter's own
 // "how many voices layer together" framing (its own TextureTypes step). New "about" track ground:
@@ -13311,6 +13555,12 @@ function StylesLearn({ onStart }) {
       </Step>
       <Step title={t('What makes each style different?', '각 스타일은 무엇이 다를까요')}>
         <GenreTraits/>
+      </Step>
+      <Step title={t('Straight or swing?', '스트레이트일까, 스윙일까?')}>
+        <SwingFeel/>
+      </Step>
+      <Step title={t('The 12-bar blues', '12마디 블루스')}>
+        <TwelveBarBlues/>
       </Step>
     </Lesson>
   );
@@ -15238,6 +15488,8 @@ const TOOLS = [
   { id: 'texture-types', ch: 'styles', title: 'Textures: how many voices?', blurb: 'Monophony, homophony, and polyphony -- the same tune, three ways.', C: () => <TextureTypes/> },
   { id: 'texture-spotter', ch: 'styles', title: 'Which texture is this?', blurb: 'Listen and identify -- one line, melody with chords, or two woven lines.', C: () => <TextureSpotter/> },
   { id: 'genre-traits', ch: 'styles', title: 'What makes each style different?', blurb: 'Folk, classical, jazz and blues, popular music -- their defining traits.', C: () => <GenreTraits/> },
+  { id: 'swing-feel', ch: 'styles', title: 'Straight or swing?', blurb: 'The same written eighth notes played even, then long-short -- see it, hear it, test your ear.', C: () => <SwingFeel/> },
+  { id: 'twelve-bar-blues', ch: 'styles', title: 'The 12-bar blues', blurb: 'Three chords, twelve bars -- play it through, then fill in the missing chords.', C: () => <TwelveBarBlues/> },
 ];
 
 // Phase 277: Korean tool titles and blurbs. TOOLS[].title/blurb become getters (English kept as titleEn/blurbEn; search reads both).
@@ -15382,6 +15634,8 @@ const TOOL_KO = {
   'texture-types': ['텍스처: 목소리는 몇 개?', '모노포니, 호모포니, 폴리포니 -- 같은 튠, 세 가지 방법.'],
   'texture-spotter': ['이건 어떤 텍스처?', '듣고 맞혀 봐요 -- 선율 하나, 선율과 화음, 엮인 두 선율.'],
   'genre-traits': ['스타일마다 무엇이 다를까?', '민요, 클래식, 재즈와 블루스, 대중음악 -- 각각의 특징.'],
+  'swing-feel': ['스트레이트일까, 스윙일까?', '똑같이 적힌 8분음표를 고르게, 그리고 길게-짧게 -- 보고, 듣고, 귀를 테스트해요.'],
+  'twelve-bar-blues': ['12마디 블루스', '화음 세 개, 열두 마디 -- 끝까지 연주하고, 빠진 화음을 채워요.'],
 };
 TOOLS.forEach(tl => { const k = TOOL_KO[tl.id]; if (!k) return; const ti = tl.title, bl = tl.blurb; tl.titleEn = ti; tl.blurbEn = bl;
   Object.defineProperty(tl, 'title', { get: () => (LANG === 'ko' ? k[0] : ti), enumerable: true, configurable: true });
@@ -15539,7 +15793,7 @@ const CHAPTER_SEARCH_TERMS = {
   'pitch-range': 'pitch range hertz frequency octave instrument',
   'melody': 'melody tune phrase phrasing phrase mark question answer antecedent consequent sequence motif contour breath comma',
   'form': 'form binary ternary rondo ABA AB ABACA section refrain episode structure same new repeat',
-  'styles': 'style genre texture monophony homophony polyphony solo melody folk classical jazz blues popular music',
+  'styles': 'style genre texture monophony homophony polyphony solo melody folk classical jazz blues popular music swing straight eighth notes triplet 12-bar twelve bar blues chords I IV V',
 };
 // Phase 221: order = teaching order (body -> notes -> rhythm -> theory -> music-in-context -> helpers)
 const TOOL_CATS = [
@@ -15628,7 +15882,7 @@ const TOOL_META = {
   'keyboard-ancestors': ['about', 0, 3, 'show ear'], 'piano-timeline': ['about', 1, 3, 'show'], 'eras': ['about', 1, 3, 'show ear'], 'hz-explorer': ['about', 1, 3, 'show ear'], 'range-chart': ['about', 1, 3, 'show ear'],
   'tune-anatomy': ['melody', 0, 1, 'show'], 'draw-tune': ['melody', 0, 2, 'game ear'], 'phrase-marks': ['melody', 1, 2, 'show'], 'question-answer': ['melody', 1, 2, 'game ear'], 'melody-sequence': ['melody', 1, 2, 'show ear'],
   'form-shapes': ['melody', 0, 2, 'show'], 'form-builder': ['melody', 0, 2, 'game ear'], 'same-or-new': ['melody', 1, 2, 'game ear'], 'rondo-refrain': ['melody', 1, 3, 'game ear'], 'binary-ternary-spot': ['melody', 1, 3, 'game ear'],
-  'texture-types': ['about', 0, 2, 'show ear'], 'texture-spotter': ['about', 1, 3, 'game ear'], 'genre-traits': ['about', 1, 3, 'show'],
+  'texture-types': ['about', 0, 2, 'show ear'], 'texture-spotter': ['about', 1, 3, 'game ear'], 'genre-traits': ['about', 1, 3, 'show'], 'swing-feel': ['about', 1, 3, 'game ear'], 'twelve-bar-blues': ['about', 2, 3, 'game ear'],
 };
 function toolMeta(id) { const m = TOOL_META[id]; if (m) return { cat: m[0], lo: m[1], hi: m[2], kinds: m[3].split(' ') }; const t = TOOLS.find(x => x.id === id); return { cat: 'practice', lo: 0, hi: 3, kinds: ['show'], ch: t && t.ch }; }
 // Phase 168 (2026-09-28): shared search text for a tool -- title + blurb + its category's
@@ -16207,7 +16461,7 @@ const CHAPTER_TOOL_ORDER = {
   'scales': ['major-shape', 'build-major', 'degree-names', 'major-fingering', 'scale-finder', 'minor-forms', 'build-minor', 'minor-fingering', 'modes'],
   'signs': ['road-map', 'dc-ds-coda', 'ottava', 'ornaments', 'grace-write'],
   'staff': ['staff-basics', 'rhymes', 'clef-basics', 'clef-story', 'staff-climb', 'fold', 'landmarks', 'landmark-hop', 'flash-cards', 'write-note', 'alto-clef'],
-  'styles': ['texture-types', 'texture-spotter', 'genre-traits'],
+  'styles': ['texture-types', 'texture-spotter', 'genre-traits', 'swing-feel', 'twelve-bar-blues'],
   'tempo': ['tempo-walk', 'tempo-race', 'tap-tempo', 'same-tune-tempo', 'speed-change', 'metronome'],
   'terms': ['term-sort', 'term-cards', 'term-mixer', 'term-match'],
   'time-signatures': ['time-sig-numbers', 'count-along', 'common-cut', 'bar-lines', 'beat-doubler', 'regroup', 'grouping', 'duplets'],
