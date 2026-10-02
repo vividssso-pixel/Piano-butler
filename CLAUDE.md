@@ -4208,6 +4208,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 | 265 | 2026-10-02 | **Design phase stage 4 (lesson pages):** `Lesson` component restyled -- no card box, 30px serif chapter title, staff-line divider, step chips and steps alternate navy/coral (`STEP_COLORS` now 2 colours), step titles in Playfair, quiet left rule. The per-chapter `head` hero pictures are no longer rendered (Hero components kept in file for a later redraw; `HERO_MAP` unused). Verified: Babel compile + 390px screenshot of Reading the staff lesson, no page errors. Not yet: inner tool/panel colours (e.g. pink 'Try it' panels), student view layout, tab bar. |
 
+| 266 | 2026-10-02 | **Design phase stage 5 (tabs + activity panels):** top Plan/Practice/Students (student: Learn/Practice) switch is now serif text tabs with a coral underline; `actBox` (the 'Try it' panel) is white with a thin navy-line border and soft shadow instead of the pink fill. Verified: Babel compile + 390px screenshot. Still to do: bottom tab bar/staff motif and curve (not used in app), student home 'Keep going' resume card (needs progress logic), redraw of chapter heroes (optional), full 139-tool sweep after the colour work. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
