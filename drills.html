@@ -2178,7 +2178,7 @@ const TEMPO_TERMS = [
 ];
 const TEMPO_RANK = {};
 TEMPO_TERMS.forEach((t, i) => { TEMPO_RANK[t.term] = i; });
-const LANE_COLORS = ['#6d78b8', '#8a7fb8', '#4fa58a', '#d9962e', '#d18a52', '#c46a5a', '#b04a6a'];
+const LANE_COLORS = ['#3b4fa8', '#5a4fa0', '#7a4f96', '#9a4f84', '#b85068', '#cf5248', '#e4572e'];  // staff theme: navy-blue (slow) to coral (fast)
 
 function shuffle(arr) {
   const a = arr.slice();
@@ -3088,7 +3088,7 @@ function TempoLanes() {
     <div>
       <div style={{display:'flex',justifyContent:'space-between',fontSize:11.5,fontWeight:800,color:'var(--muted)',
         textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:6}}>
-        <span>{t('🐢 Slow','🐢 느리게')}</span><span>{t('Fast 🏁','빠르게 🏁')}</span>
+        <span>{t('Slow','느리게')}</span><span>{t('Fast →','빠르게 →')}</span>
       </div>
       <div style={{display:'flex',flexDirection:'column',gap:6}}>
         {TEMPO_TERMS.map((tm, i) => (
@@ -3115,11 +3115,150 @@ function TempoLanes() {
     </div>
   );
 }
+// ─── Phase 279: Tempo chapter, more hands-on (content pass: thinnest chapters first) ───
+// Walk / jog / sprint: tempo is how fast the pulse goes. Each gait plays its beat and a dot bounces at that speed.
+const TEMPO_GAITS = [
+  { id: 'walk', bpm: 88, term: 'Andante', en: 'Walk', ko: '걷기', say: ['Andante means "walking" -- a calm, going-somewhere pace.', 'Andante는 "걷는" 빠르기예요 -- 차분하게 어디론가 가는 속도.'] },
+  { id: 'jog', bpm: 132, term: 'Allegro', en: 'Jog', ko: '조깅', say: ['Allegro is quick and lively -- a happy jog.', 'Allegro는 빠르고 생기 있게 -- 신나는 조깅.'] },
+  { id: 'sprint', bpm: 184, term: 'Presto', en: 'Sprint', ko: '전력 질주', say: ['Presto is very fast -- a sprint to the finish.', 'Presto는 아주 빠르게 -- 결승선까지 전력 질주.'] },
+];
+function GaitFigure({ gait, on }) {
+  // a simple stick figure: legs open wider the faster the gait
+  const spread = gait === 'walk' ? 7 : gait === 'jog' ? 11 : 15, lean = gait === 'walk' ? 0 : gait === 'jog' ? 3 : 7;
+  const c = on ? '#e4572e' : '#26296b';
+  return (
+    <svg width="54" height="64" viewBox="0 0 54 64" aria-hidden="true">
+      <circle cx={27 + lean} cy="11" r="6" fill="none" stroke={c} strokeWidth="2.6"/>
+      <path d={`M${27 + lean} 17 L27 38`} stroke={c} strokeWidth="2.6" strokeLinecap="round"/>
+      <path d={`M27 38 L${27 - spread} 58 M27 38 L${27 + spread} 56`} stroke={c} strokeWidth="2.6" strokeLinecap="round" fill="none"/>
+      <path d={`M${27 + lean * 0.6} 25 L${27 - spread + 2} 31 M${27 + lean * 0.6} 25 L${27 + spread} 22`} stroke={c} strokeWidth="2.4" strokeLinecap="round" fill="none"/>
+      <path d="M4 61 H50" stroke="#26296b" strokeOpacity="0.3" strokeWidth="1.4"/>
+    </svg>
+  );
+}
+function TempoWalk() {
+  const [on, setOn] = useState(null);
+  useEffect(() => () => stopClicks(), []);
+  const g = TEMPO_GAITS.find(x => x.id === on);
+  function go(x) {
+    if (on === x.id) { stopClicks(); setOn(null); return; }
+    playClicks(x.bpm, 8); setOn(x.id);
+    setTimeout(() => setOn(p => (p === x.id ? null : p)), (60 / x.bpm) * 8 * 1000 + 200);
+  }
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Tempo = how fast the pulse goes', '템포 = 박이 얼마나 빨리 가는지')}</div>
+      <p style={actNote}>{t('The beat is your footsteps. Walk, jog or sprint -- the steps stay even, only the speed changes. Tap one and feel it.', '박은 발걸음이에요. 걷든, 조깅하든, 전력 질주하든 -- 발걸음은 고르게, 빠르기만 달라져요. 하나를 눌러서 느껴 봐요.')}</p>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>
+        {TEMPO_GAITS.map(x => (
+          <button key={x.id} onClick={() => go(x)} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,padding:'10px 4px',borderRadius:14,cursor:'pointer',fontFamily:'inherit',
+            border:'1.5px solid ' + (on === x.id ? 'var(--coral)' : 'var(--navy-line)'),background:on === x.id ? '#fbe3da' : 'var(--surface)'}}>
+            <GaitFigure gait={x.id} on={on === x.id}/>
+            <span style={{fontSize:15,fontWeight:900,color:'var(--navy)'}}>{t(x.en, x.ko)}</span>
+            <span style={{fontSize:13,fontStyle:'italic',fontWeight:800,color:on === x.id ? 'var(--coral)' : 'var(--navy-soft)',fontFamily:"'Playfair Display', Georgia, serif"}}>{x.term}</span>
+            <span style={{fontSize:11.5,color:'var(--navy-soft)'}}>{t('about ' + x.bpm + ' a minute', '1분에 약 ' + x.bpm + '번')}</span>
+          </button>
+        ))}
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:12,marginTop:12,minHeight:34}}>
+        <span style={{width:22,height:22,borderRadius:11,background:g ? 'var(--coral)' : 'var(--border)',flex:'0 0 auto',
+          animation:g ? `pbPulse ${60 / g.bpm}s ease-out infinite` : 'none'}}/>
+        <span style={{fontSize:14,color:'var(--navy)'}}>{g ? t(g.say[0], g.say[1]) : t('The dot pulses with the beat.', '점이 박에 맞춰 뛰어요.')}</span>
+      </div>
+      <style>{'@keyframes pbPulse { 0% { transform: scale(1.35); } 60% { transform: scale(0.85); } 100% { transform: scale(0.85); } }'}</style>
+    </div>
+  );
+}
+
+// Tap your own tempo: the average of your last taps becomes beats per minute, shown on the tempo ruler.
+function TapTempo() {
+  const [taps, setTaps] = useState([]);
+  const now = () => (window.performance ? performance.now() : Date.now());
+  function tap() {
+    const tm = now();
+    const ctx = getAudio(); if (ctx) try { beatTick(ctx, ctx.currentTime + 0.01, 1, 880, 0.04, 0.3); } catch (e) {}
+    setTaps(prev => { const keep = prev.filter(x => tm - x < 2500); return keep.concat(tm).slice(-6); });
+  }
+  let bpm = null;
+  if (taps.length >= 3) { const gaps = []; for (let i = 1; i < taps.length; i++) gaps.push(taps[i] - taps[i - 1]); bpm = Math.round(60000 / (gaps.reduce((a, b) => a + b, 0) / gaps.length)); }
+  const lo = 50, hi = 210, W = 320, X = (v) => 10 + (Math.min(hi, Math.max(lo, v)) - lo) / (hi - lo) * (W - 52);
+  const match = bpm ? TEMPO_TERMS.filter(tm => bpm >= tm.bpm[0] && bpm <= tm.bpm[1]).map(tm => tm.term) : [];
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Tap your own tempo', '내 템포 두드리기')}</div>
+      <p style={actNote}>{t('Tap the big button at a steady speed -- like a heartbeat, or a song in your head. After three taps you see your speed in beats per minute, and which Italian word fits it.', '큰 버튼을 일정한 빠르기로 두드려요 -- 심장 박동처럼, 아니면 머릿속 노래에 맞춰서. 세 번 두드리면 1분에 몇 박인지, 어떤 이탈리아어 단어가 맞는지 보여요.')}</p>
+      <div style={{display:'flex',alignItems:'center',gap:14,flexWrap:'wrap'}}>
+        <button onClick={tap} style={{width:96,height:96,borderRadius:48,border:'none',background:'var(--coral)',color:'#fff',fontSize:18,fontWeight:900,cursor:'pointer',fontFamily:'inherit',boxShadow:'0 6px 18px rgba(228,87,46,0.35)'}}>{t('Tap', '탭')}</button>
+        <div style={{minWidth:0}}>
+          <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:34,fontWeight:900,color:'var(--navy)',lineHeight:1}}>{bpm ? bpm : '--'}</div>
+          <div style={{fontSize:12.5,color:'var(--navy-soft)',fontWeight:700}}>{t('beats per minute', '1분당 박 수')}</div>
+          <div style={{fontSize:15,fontWeight:900,fontStyle:'italic',color:'var(--coral)',marginTop:4,minHeight:20}}>{bpm ? (match.length ? match.join(' / ') : (bpm < 66 ? t('slower than Adagio', 'Adagio보다 느려요') : bpm > 200 ? t('faster than Presto!', 'Presto보다 빨라요!') : t('in between two words', '두 단어 사이예요'))) : ''}</div>
+        </div>
+      </div>
+      <svg viewBox={`0 0 ${W} 96`} width="100%" style={{display:'block',maxWidth:480,marginTop:12}}>
+        {TEMPO_TERMS.map((tm, i) => <g key={tm.term}>
+          <rect x={X(tm.bpm[0])} y={4 + i * 11} width={Math.max(4, X(tm.bpm[1]) - X(tm.bpm[0]))} height={7} rx={3.5} fill={match.includes(tm.term) ? '#e4572e' : '#26296b'} opacity={match.includes(tm.term) ? 1 : 0.25}/>
+          <text x={X(tm.bpm[1]) + 4} y={10.5 + i * 11} fontSize="8.5" fontStyle="italic" fontWeight="800" fill={match.includes(tm.term) ? '#e4572e' : '#6d6f9c'}>{tm.term}</text>
+        </g>)}
+        <line x1="10" x2={W - 10} y1="84" y2="84" stroke="#26296b" strokeWidth="1.2"/>
+        {[60, 100, 140, 180].map(v => <text key={v} x={X(v)} y="94" textAnchor="middle" fontSize="7.5" fill="#8a8cb0">{v}</text>)}
+        {bpm && <path d={`M${X(bpm)} 0 V84`} stroke="#e4572e" strokeWidth="2.4"/>}
+      </svg>
+      {taps.length > 0 && <button className="ghost-btn" style={{fontSize:12.5,padding:'4px 12px',marginTop:6}} onClick={() => setTaps([])}>{t('Start again', '다시 하기')}</button>}
+    </div>
+  );
+}
+
+// Same tune, three tempos -- then a mystery tempo to guess.
+const TWINKLE = [28, 28, 32, 32, 33, 33, 32, 31, 31, 30, 30, 29, 29, 28].map((d, i) => ({ d, dur: i === 6 || i === 13 ? 2 : 1 }));
+const SAME_TUNE_SPEEDS = [{ term: 'Adagio', bpm: 70, en: 'slow', ko: '느리게' }, { term: 'Moderato', bpm: 112, en: 'medium', ko: '보통으로' }, { term: 'Presto', bpm: 184, en: 'fast', ko: '빠르게' }];
+function SameTuneTempo() {
+  const [on, setOn] = useState(-1), [playing, setPlaying] = useState(null), [mystery, setMystery] = useState(null), [guess, setGuess] = useState(null);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  function play(bpm, tag) { timers.current.forEach(clearTimeout); setPlaying(tag); timers.current = playMelody(TWINKLE, bpm, (i) => { setOn(i); if (i < 0) setPlaying(null); }); }
+  function newMystery() { const k = Math.floor(Math.random() * 3); setMystery(k); setGuess(null); play(SAME_TUNE_SPEEDS[k].bpm, 'mystery'); }
+  const right = mystery !== null && guess === mystery;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Same tune, different tempo', '같은 튠, 다른 템포')}</div>
+      <p style={actNote}>{t('Twinkle Twinkle three ways. The notes never change -- only the tempo. Which one sounds like a lullaby? Which one sounds like a race?', '반짝반짝 작은 별을 세 가지 빠르기로. 음은 그대로 -- 템포만 바뀌어요. 어느 것이 자장가 같고, 어느 것이 경주 같나요?')}</p>
+      <div style={{display:'flex',gap:3,margin:'2px 0 12px'}}>
+        {TWINKLE.map((n, i) => <span key={i} style={{flex:n.dur,height:26 + (n.d - 28) * 5,alignSelf:'flex-end',borderRadius:6,background:on === i ? 'var(--coral)' : '#d6d7e8',transition:'background 0.1s'}}/>)}
+      </div>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+        {SAME_TUNE_SPEEDS.map((sp, k) => <button key={sp.term} className={'chip' + (playing === sp.term ? ' active' : '')} onClick={() => play(sp.bpm, sp.term)}>
+          <span style={{fontStyle:'italic',fontWeight:900}}>{sp.term}</span> · {t(sp.en, sp.ko)}</button>)}
+      </div>
+      <div style={{borderTop:'1px solid var(--navy-line)',marginTop:14,paddingTop:12}}>
+        <div style={{fontSize:15,fontWeight:900,color:'var(--navy)'}}>{t('Mystery tempo', '수수께끼 템포')}</div>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',marginTop:8}}>
+          <button className="primary-btn" style={{width:'auto',padding:'9px 18px',fontSize:14}} onClick={newMystery}>{mystery === null ? t('Play a mystery tempo', '수수께끼 템포 듣기') : t('Another one', '하나 더')}</button>
+          {mystery !== null && SAME_TUNE_SPEEDS.map((sp, k) => <button key={k} className={'choice-btn' + (guess === k ? (k === mystery ? ' good' : ' bad') : '')} style={{padding:'9px 12px'}} disabled={guess !== null} onClick={() => setGuess(k)}>{t(sp.en, sp.ko)}</button>)}
+        </div>
+        {guess !== null && <div style={{marginTop:8,fontSize:14,fontWeight:800,color:right ? 'var(--good)' : 'var(--bad)'}}>
+          {right ? t('Yes! That was ' + SAME_TUNE_SPEEDS[mystery].term + '.', '맞았어요! ' + SAME_TUNE_SPEEDS[mystery].term + '였어요.') : t('Not quite -- it was ' + SAME_TUNE_SPEEDS[mystery].term + ' (' + SAME_TUNE_SPEEDS[mystery].en + ').', '아쉬워요 -- ' + SAME_TUNE_SPEEDS[mystery].term + ' (' + SAME_TUNE_SPEEDS[mystery].ko + ')였어요.')}
+          {mystery !== null && <button className="ghost-btn" style={{fontSize:12.5,padding:'3px 10px',marginLeft:8}} onClick={() => play(SAME_TUNE_SPEEDS[mystery].bpm, 'mystery')}>{t('Hear it again', '다시 듣기')}</button>}
+        </div>}
+      </div>
+    </div>
+  );
+}
+
 function TempoLearn({ onStart }) {
   return (
     <Lesson id="tempo" title={t('The tempo race', '템포 경주')} intro={<>{t('Italian tempo words, lined up from the slowest lane to the fastest. Tap one to hear its beat.', '가장 느린 레인부터 가장 빠른 레인까지 늘어선 이탈리아어 템포 단어들이에요. 눌러서 박을 들어보세요.')}</>} onStart={onStart}>
+      <Step title={t('What is tempo?', '템포가 뭘까요?')}>
+      <TempoWalk/>
+      </Step>
       <Step title={t('Slow to fast', '느리게에서 빠르게로')}>
       <TempoLanes/>
+      </Step>
+      <Step title={t('Tap your own tempo', '내 템포 두드리기')}>
+      <TapTempo/>
+      </Step>
+      <Step title={t('Same tune, different tempo', '같은 튠, 다른 템포')}>
+      <SameTuneTempo/>
       </Step>
       <Step title={t('Changing speed', '속도 바꾸기')}>
       <SpeedChange/>
@@ -14848,7 +14987,10 @@ const TOOLS = [
   { id: 'count-more', ch: 'rhythm', title: 'Count harder rhythms', blurb: 'Dotted notes, 1 e & a, triplets, syncopation.', C: () => <CountHarder/> },
   { id: 'make-card', ch: 'rhythm', title: 'Make a rhythm card', blurb: 'Build a bar and loop it.', C: () => <><ExplPulse3/><RhythmComposer/></> },
   { id: 'metronome', ch: 'tempo', title: 'Metronome', blurb: 'Any time signature, triplets and semiquavers, 5/8 and 7/8, tap tempo.', C: () => <MetronomeDial/> },
+  { id: 'tempo-walk', ch: 'tempo', title: 'Walk, jog, sprint (what tempo is)', blurb: 'Tempo is how fast the pulse goes -- feel three speeds.', C: () => <TempoWalk/> },
   { id: 'tempo-race', ch: 'tempo', title: 'The tempo race', blurb: 'Italian tempo words from slowest to fastest -- tap one to hear its beat.', C: () => <TempoLanes/> },
+  { id: 'tap-tempo', ch: 'tempo', title: 'Tap your own tempo', blurb: 'Tap steadily -- see your beats per minute and its Italian word.', C: () => <TapTempo/> },
+  { id: 'same-tune-tempo', ch: 'tempo', title: 'Same tune, different tempo', blurb: 'One tune at three speeds, then guess the mystery tempo.', C: () => <SameTuneTempo/> },
   { id: 'speed-change', ch: 'tempo', title: 'rit. and accel. (speed changes)', blurb: 'Hear the speed change.', C: () => <SpeedChange/> },
   { id: 'dyn-order', ch: 'dynamics', title: 'Line up the dynamics', blurb: 'pp to ff, by ear and eye.', C: () => <DynOrder/> },
   { id: 'touch-ear', ch: 'dynamics', title: 'Which touch? How loud?', blurb: 'Listening game: staccato, legato, accent; p to ff.', C: () => <TouchEar/> },
@@ -14986,6 +15128,9 @@ const TOOL_KO = {
   'make-card': ['리듬 카드 만들기', '한 마디를 만들어 반복해서 들어요.'],
   'metronome': ['메트로놈', '모든 박자표, 셋잇단음표와 16분음표, 5/8과 7/8, 탭 템포.'],
   'tempo-race': ['템포 경주', '가장 느린 것부터 가장 빠른 것까지 이탈리아어 템포 단어 -- 눌러서 박을 들어 봐요.'],
+  'tempo-walk': ['걷기, 조깅, 전력 질주 (템포란)', '템포는 박이 얼마나 빨리 가는지예요 -- 세 가지 빠르기를 느껴 봐요.'],
+  'tap-tempo': ['내 템포 두드리기', '일정하게 두드리면 1분당 박 수와 맞는 이탈리아어 단어가 보여요.'],
+  'same-tune-tempo': ['같은 튠, 다른 템포', '한 튠을 세 가지 빠르기로, 그리고 수수께끼 템포 맞히기.'],
   'speed-change': ['rit.와 accel. (빠르기 변화)', '빠르기가 바뀌는 걸 들어 봐요.'],
   'dyn-order': ['다이나믹 순서대로 놓기', 'pp부터 ff까지, 귀와 눈으로.'],
   'touch-ear': ['어떤 터치? 얼마나 크게?', '듣기 게임: 스타카토, 레가토, 악센트; p부터 ff까지.'],
@@ -15238,7 +15383,7 @@ const TOOL_META = {
   'split-it': ['rnotes', 1, 1, 'show'], 'note-rest-naming': ['rnotes', 0, 1, 'show ear'], 'dot-lab': ['rnotes', 1, 2, 'show ear'], 'beam-apples': ['rnotes', 0, 1, 'show'], 'fix-the-bar': ['rnotes', 1, 2, 'game'], 'heard-bar': ['rnotes', 1, 2, 'ear game'], 'note-rest-match': ['rnotes', 0, 1, 'game'],
   'fill-bar': ['rnotes', 1, 2, 'game write home'], 'make-card': ['rrhythm', 1, 2, 'game home'], 'bar-lines': ['rtime', 1, 2, 'write'], 'regroup': ['rrhythm', 2, 3, 'show ear'],
   'dyn-order': ['expression', 0, 1, 'game'], 'hairpin': ['expression', 1, 2, 'show'], 'touch-ear': ['expression', 0, 2, 'ear game'], 'touch-lengths': ['expression', 1, 3, 'show ear'],
-  'tempo-race': ['rtempo', 0, 2, 'show ear'], 'speed-change': ['rtempo', 1, 2, 'show ear'], 'tie-slur': ['words', 1, 2, 'show ear'],
+  'tempo-race': ['rtempo', 0, 2, 'show ear'], 'tempo-walk': ['rtempo', 0, 1, 'show ear'], 'tap-tempo': ['rtempo', 0, 3, 'game'], 'same-tune-tempo': ['rtempo', 0, 2, 'ear game'], 'speed-change': ['rtempo', 1, 2, 'show ear'], 'tie-slur': ['words', 1, 2, 'show ear'],
   'high-low': ['ear', 0, 0, 'ear game'], 'echo': ['ear', 0, 1, 'ear game home'], 'interval-ear': ['ear', 2, 3, 'ear'],
   'tone-semitone': ['tones', 1, 1, 'show game'], 'sharp-flat': ['tones', 1, 1, 'show'], 'accidental-bar': ['tones', 1, 2, 'show write'], 'build-major': ['scales', 1, 2, 'game write'],
   'build-minor': ['scales', 2, 3, 'game write'], 'scale-finder': ['scales', 0, 3, 'show home'], 'degree-names': ['scales', 2, 3, 'show'], 'sharps-order': ['scales', 1, 3, 'game'], 'flats-order': ['scales', 1, 3, 'game'],
@@ -15833,7 +15978,7 @@ const CHAPTER_TOOL_ORDER = {
   'signs': ['road-map', 'dc-ds-coda', 'ottava', 'ornaments', 'grace-write'],
   'staff': ['staff-basics', 'rhymes', 'clef-basics', 'clef-story', 'staff-climb', 'fold', 'landmarks', 'landmark-hop', 'flash-cards', 'write-note', 'alto-clef'],
   'styles': ['texture-types', 'texture-spotter', 'genre-traits'],
-  'tempo': ['tempo-race', 'speed-change', 'metronome'],
+  'tempo': ['tempo-walk', 'tempo-race', 'tap-tempo', 'same-tune-tempo', 'speed-change', 'metronome'],
   'terms': ['term-cards', 'term-match'],
   'time-signatures': ['time-sig-numbers', 'count-along', 'common-cut', 'bar-lines', 'beat-doubler', 'regroup', 'grouping', 'duplets'],
   'tones': ['tone-semitone', 'accidental-cards', 'sharp-flat', 'accidental-bar', 'chromatic'],
