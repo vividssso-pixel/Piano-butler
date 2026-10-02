@@ -11676,18 +11676,124 @@ function TermsHero() {
   );
 }
 
+// ─── Phase 280: Musical Terms, more hands-on (content pass) ───
+// Every term already carries a family (TERMS[].cat). Sorting them makes the families visible.
+const TERM_FAMILIES = [
+  { cat: 'Speed', en: 'Speed', ko: '빠르기' },
+  { cat: 'Changing speed', en: 'Changing speed', ko: '빠르기 변화' },
+  { cat: 'Volume', en: 'Loud and soft', ko: '셈여림' },
+  { cat: 'Other', en: 'Mood and touch', ko: '느낌과 터치' },
+];
+function FamilyIcon({ cat, on }) {
+  const N = on ? '#e4572e' : '#26296b', C = '#e4572e';
+  return (
+    <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true">
+      {cat === 'Speed' && <g><path d="M9 30 L17 4 L25 30 Z" fill="none" stroke={N} strokeWidth="2.2" strokeLinejoin="round"/><path d="M17 25 L23 10" stroke={C} strokeWidth="2.4" strokeLinecap="round"/><circle cx="21.6" cy="13.5" r="2.4" fill={C}/></g>}
+      {cat === 'Changing speed' && <g><path d="M4 27 C 12 27, 20 20, 29 7" fill="none" stroke={N} strokeWidth="2.4" strokeLinecap="round"/><path d="M29 7 l-6 1 M29 7 l-1 6" stroke={C} strokeWidth="2.4" strokeLinecap="round"/></g>}
+      {cat === 'Volume' && <g><path d="M30 8 L5 17 L30 26" fill="none" stroke={N} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/><circle cx="30" cy="17" r="2.6" fill={C}/></g>}
+      {cat === 'Other' && <g><ellipse cx="11" cy="24" rx="4.6" ry="3.4" transform="rotate(-20 11 24)" fill={N}/><rect x="14.6" y="6" width="1.8" height="18" fill={N}/><circle cx="11" cy="31" r="1.7" fill={C}/><path d="M18 8 q 7 -6 12 2" fill="none" stroke={C} strokeWidth="2" strokeLinecap="round"/></g>}
+    </svg>
+  );
+}
+// Words that modify another term, or road-map / which-hand / pedal / catalogue words, don't belong to one of the four families.
+const SORT_SKIP = new Set(['Sempre', 'Poco', 'Molto', 'Senza', 'Assai', 'Quasi', 'Non troppo', 'Subito', 'Dal segno', 'Da capo al fine', 'Attacca', 'Main droite', 'Main gauche', 'Opus', 'Loco', 'M.M.', 'Una corda', 'Tre corde', 'Ad libitum']);
+const sortPool = (g) => TERMS.filter(x => x.grade <= g && x.cat !== 'Strings' && !SORT_SKIP.has(x.term));
+function TermSort() {
+  const [grade, setGrade] = useState(1);
+  const [cur, setCur] = useState(() => pick(sortPool(1)));
+  const [ans, setAns] = useState(null), [score, setScore] = useState({ right: 0, tries: 0 });
+  function next(g = grade) { const p2 = sortPool(g); let n, k = 0; do { n = pick(p2); } while (n.term === cur.term && k++ < 10); setCur(n); setAns(null); }
+  function choose(cat) { if (ans) return; setAns(cat); setScore(s => ({ right: s.right + (cat === cur.cat ? 1 : 0), tries: s.tries + 1 })); try { playTerm(cur); } catch (e) {} }
+  const fam = TERM_FAMILIES.find(f => f.cat === cur.cat);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Four families of terms', '용어의 네 가족')}</div>
+      <p style={actNote}>{t('Almost every term answers one question: how fast? is it changing speed? how loud? or how should it feel and sound? Put each word in its family -- then hear it.', '거의 모든 용어는 한 가지 질문에 답해요: 얼마나 빠르게? 빠르기가 바뀌나? 얼마나 크게? 아니면 어떤 느낌과 소리로? 단어를 가족에 넣어 보고 -- 들어 봐요.')}</p>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:10}}>
+        {[1, 2, 3, 4].map(g => <button key={g} className={'chip' + (grade === g ? ' active' : '')} style={{padding:'4px 12px',fontSize:13}} onClick={() => { setGrade(g); next(g); }}>{t('Up to Grade ' + g, g + '급까지')}</button>)}
+      </div>
+      <div style={{textAlign:'center',padding:'14px 8px',border:'1.5px solid var(--navy-line)',borderRadius:14,background:'var(--surface)'}}>
+        <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontStyle:'italic',fontWeight:900,fontSize:28,color:'var(--navy)'}}>{cur.term}</div>
+        {cur.abbr && <div style={{fontSize:13,color:'var(--navy-soft)',fontStyle:'italic'}}>{cur.abbr}</div>}
+        <div style={{fontSize:14,color:ans ? 'var(--navy)' : 'transparent',marginTop:4,minHeight:20,transition:'color .2s'}}>{cur.meaning}</div>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:10}}>
+        {TERM_FAMILIES.map(f => {
+          const isRight = ans && f.cat === cur.cat, isWrong = ans === f.cat && f.cat !== cur.cat;
+          return <button key={f.cat} onClick={() => choose(f.cat)} disabled={!!ans} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 10px',borderRadius:12,cursor:ans ? 'default' : 'pointer',fontFamily:'inherit',textAlign:'left',
+            border:'1.5px solid ' + (isRight ? 'var(--good)' : isWrong ? 'var(--bad)' : 'var(--navy-line)'),background:isRight ? '#dcefe7' : isWrong ? '#fbdcd2' : 'var(--surface)'}}>
+            <FamilyIcon cat={f.cat} on={isRight}/><span style={{fontSize:14.5,fontWeight:800,color:'var(--navy)'}}>{t(f.en, f.ko)}</span></button>;
+        })}
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:10,marginTop:10,minHeight:32}}>
+        {ans && <span style={{fontSize:14,fontWeight:800,color:ans === cur.cat ? 'var(--good)' : 'var(--bad)'}}>{ans === cur.cat ? t('Yes -- ' + fam.en.toLowerCase() + '.', '맞아요 -- ' + fam.ko + '.') : t('It belongs to ' + fam.en.toLowerCase() + '.', fam.ko + ' 가족이에요.')}</span>}
+        <span style={{flex:1}}/>
+        <span style={{fontSize:12.5,color:'var(--navy-soft)',fontWeight:700}}>{score.right} / {score.tries}</span>
+        {ans && <button className="primary-btn" style={{width:'auto',padding:'8px 16px',fontSize:14}} onClick={() => next()}>{t('Next', '다음')}</button>}
+      </div>
+    </div>
+  );
+}
+
+// Little words, big changes: molto / assai / poco / non troppo / sempre in front of (or after) a term.
+const TERM_MODS = [
+  { w: 'Molto', k: 1.6, pos: 'before' }, { w: 'Assai', k: 1.6, pos: 'after' },
+  { w: 'Poco', k: 0.45, pos: 'before' }, { w: 'Non troppo', k: 0.55, pos: 'after' }, { w: 'Sempre', k: 1, pos: 'before' },
+];
+const TERM_BASES = ['Allegro', 'Adagio', 'Crescendo', 'Diminuendo', 'Forte', 'Legato', 'Staccato'];
+function modHear(h, k) {
+  const cl = (v, a, b) => Math.max(a, Math.min(b, v)), out = { ...h };
+  if (h.bpm) out.bpm = cl(Math.round(100 + (h.bpm - 100) * k), 40, 220);
+  if (h.vol !== undefined) out.vol = cl(0.2 + (h.vol - 0.2) * k, 0.02, 0.6);
+  if (h.vFrom !== undefined) { out.vFrom = cl(0.2 + (h.vFrom - 0.2) * k, 0.02, 0.6); out.vTo = cl(0.2 + (h.vTo - 0.2) * k, 0.02, 0.6); }
+  if (h.len !== undefined) out.len = cl(0.8 + (h.len - 0.8) * k, 0.1, 1.1);
+  return out;
+}
+function TermMixer() {
+  const [mod, setMod] = useState('Molto'), [base, setBase] = useState('Allegro');
+  const m = TERM_MODS.find(x => x.w === mod), b = TERMS.find(x => x.term === base), mt = TERMS.find(x => x.term === mod);
+  if (!m || !b || !mt) return null;
+  const words = m.pos === 'before' ? [mod, base.toLowerCase()] : [base, mod.toLowerCase()];
+  function hear(which) { try { playTerm(which === 'base' ? b : { ...b, hear: modHear(b.hear || {}, m.k) }); } catch (e) {} }
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Little words, big changes', '작은 단어, 큰 변화')}</div>
+      <p style={actNote}>{t('Some terms never appear alone -- they change the word next to them. Pick a little word and a main word, then hear the plain word and the changed one.', '어떤 용어는 혼자 나오지 않고 -- 옆 단어를 바꿔요. 작은 단어와 주인공 단어를 골라서, 원래 단어와 바뀐 단어를 들어 봐요.')}</p>
+      <div style={{fontSize:12,fontWeight:800,color:'var(--navy-soft)',textTransform:'uppercase',letterSpacing:'0.06em'}}>{t('Little word', '작은 단어')}</div>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',margin:'4px 0 10px'}}>{TERM_MODS.map(x => <button key={x.w} className={'chip' + (mod === x.w ? ' active' : '')} style={{padding:'4px 12px',fontSize:13.5,fontStyle:'italic'}} onClick={() => setMod(x.w)}>{x.w}</button>)}</div>
+      <div style={{fontSize:12,fontWeight:800,color:'var(--navy-soft)',textTransform:'uppercase',letterSpacing:'0.06em'}}>{t('Main word', '주인공 단어')}</div>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',margin:'4px 0 12px'}}>{TERM_BASES.map(x => <button key={x} className={'chip' + (base === x ? ' active' : '')} style={{padding:'4px 12px',fontSize:13.5,fontStyle:'italic'}} onClick={() => setBase(x)}>{x}</button>)}</div>
+      <div style={{border:'1.5px solid var(--navy-line)',borderRadius:14,background:'var(--surface)',padding:'12px 14px'}}>
+        <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontStyle:'italic',fontWeight:900,fontSize:26,color:'var(--navy)'}}>
+          {m.pos === 'before' ? <><span style={{color:'var(--coral)'}}>{words[0]}</span> {words[1]}</> : <>{words[0]} <span style={{color:'var(--coral)'}}>{words[1]}</span></>}
+        </div>
+        <div style={{fontSize:14,color:'var(--navy)',marginTop:6,lineHeight:1.5}}>
+          <b style={{color:'var(--coral)'}}>{mt.term}</b> = {mt.meaning} &nbsp;+&nbsp; <b>{b.term}</b> = {b.meaning}
+        </div>
+        <div style={{display:'flex',gap:8,marginTop:10,flexWrap:'wrap'}}>
+          <button className="ghost-btn" style={{fontSize:13,padding:'6px 14px'}} onClick={() => hear('base')}>{t('Hear ', '듣기: ') + b.term}</button>
+          <button className="primary-btn" style={{width:'auto',fontSize:13,padding:'7px 16px'}} onClick={() => hear('mod')}>{t('Hear ', '듣기: ') + words.join(' ')}</button>
+        </div>
+        {mod === 'Sempre' && <div style={{fontSize:12.5,color:'var(--navy-soft)',marginTop:8}}>{t('Sempre doesn’t change how it sounds -- it means keep doing it, all the way through.', 'Sempre는 소리를 바꾸지 않아요 -- 끝까지 계속 그렇게 하라는 뜻이에요.')}</div>}
+      </div>
+    </div>
+  );
+}
+
 function TermsLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
     <Lesson id="terms" title={t('Musical terms', '음악 용어')} onStart={onStart}
-      intro={<>{t('The Italian (and a few French) words in the music, grade by grade, with the meanings the AMEB accepts. Each grade adds to the one before.', '악보 속 이탈리아어(그리고 몇몇 프랑스어) 단어들을 학년별로, AMEB이 인정하는 뜻과 함께 배워요. 각 학년은 이전 학년에 더해져요.')}</>}>
-      <Step title={t('Grade 1', '1학년')}>
+      intro={<>{t('The Italian (and a few French) words in the music, grade by grade, with the meanings the AMEB accepts. Each grade adds to the one before.', '악보 속 이탈리아어(그리고 몇몇 프랑스어) 단어들을 급수별로, AMEB이 인정하는 뜻과 함께 배워요. 각 급수는 이전 급수에 더해져요.')}</>}>
+      <Step title={t('Four families', '네 가족')}><TermSort/></Step>
+      <Step title={t('Grade 1', '1급')}>
         <ExplTerms1/>
         <TermCards grade={1}/>
       </Step>
-      <Step title={t('Grade 2', '2학년')}><TermCards grade={2}/></Step>
-      <Step title={t('Grade 3', '3학년')}><TermCards grade={3}/></Step>
-      <Step title={t('Grade 4', '4학년')}><TermCards grade={4}/></Step>
+      <Step title={t('Grade 2', '2급')}><TermCards grade={2}/></Step>
+      <Step title={t('Little words, big changes', '작은 단어, 큰 변화')}><TermMixer/></Step>
+      <Step title={t('Grade 3', '3급')}><TermCards grade={3}/></Step>
+      <Step title={t('Grade 4', '4급')}><TermCards grade={4}/></Step>
       <Step title={t('Match them up', '짝 맞추기')}><TermMatch/></Step>
     </Lesson>
   );
@@ -14902,6 +15008,8 @@ const TOOLS = [
   { id: 'degree-names', ch: 'scales', title: 'Scale degree names', blurb: 'Tonic, supertonic... leading note.', C: () => <DegreeNames/> },
   { id: 'transpose', ch: 'key-signatures', title: 'Transpose a tune', blurb: 'Same scale degrees, new key.', C: () => <><ExplKeySig2/><Transposer/></> },
   { id: 'term-match', ch: 'terms', title: 'Term match', blurb: 'Memory pairs: term and meaning, spoken aloud.', C: () => <TermMatch/> },
+  { id: 'term-sort', ch: 'terms', title: 'Four families of terms', blurb: 'Speed, changing speed, loud and soft, or mood and touch? Sort each word, then hear it.', C: () => <TermSort/> },
+  { id: 'term-mixer', ch: 'terms', title: 'Little words, big changes', blurb: 'Molto, assai, poco, non troppo, sempre -- hear how they change a term.', C: () => <TermMixer/> },
   { id: 'term-cards', ch: 'terms', title: 'Term cards', blurb: 'AMEB terms, Grades 1-4, with sound.', C: () => <><ExplTerms1/><TermCards/></> },
   { id: 'complete-melody', ch: 'reading-steps', title: 'Complete the melody', blurb: 'Pick the ending note that resolves the tune.', C: () => <><ExplReadingSteps4/><CompleteMelody/></> },
   { id: 'echo', ch: 'reading-steps', title: 'Echo the tune (copy by ear)', blurb: 'Hear 3-5 notes, play them back.', C: () => <><ExplReadingSteps3/><EchoTune/></> },
@@ -15043,6 +15151,8 @@ const TOOL_KO = {
   'transpose': ['튠 조옮김', '음계 위치는 그대로, 새로운 조로.'],
   'term-match': ['용어 짝 맞추기', '기억력 짝 게임: 용어와 뜻을 소리 내어 읽어 줘요.'],
   'term-cards': ['용어 카드', 'AMEB 용어, 1-4급, 소리와 함께.'],
+  'term-sort': ['용어의 네 가족', '빠르기, 빠르기 변화, 셈여림, 느낌과 터치? 단어를 나누고 들어 봐요.'],
+  'term-mixer': ['작은 단어, 큰 변화', 'Molto, assai, poco, non troppo, sempre -- 용어가 어떻게 바뀌는지 들어 봐요.'],
   'complete-melody': ['선율 완성하기', '튠을 마무리하는 끝음을 골라요.'],
   'echo': ['튠 따라 치기 (귀로 듣고)', '3-5개 음을 듣고 다시 쳐 봐요.'],
   'practice-timer': ['연습 타이머', '5분에서 30분까지, 종소리와 함께.'],
@@ -15393,7 +15503,7 @@ const TOOL_META = {
   'invert-interval': ['intervals', 3, 3, 'show'], 'tritone': ['intervals', 3, 3, 'show ear'], 'triad-stack': ['harmony', 1, 3, 'show'], 'major-minor': ['harmony', 2, 3, 'ear show'],
   'key-chords': ['harmony', 2, 3, 'show'], 'primary-triads': ['harmony', 2, 3, 'show ear'], 'inversions': ['harmony', 3, 3, 'show'], 'cadences': ['harmony', 3, 3, 'ear show'],
   'seventh-chords': ['harmony', 3, 3, 'show ear'], 'chord-extensions': ['harmony', 3, 3, 'show'],
-  'road-map': ['words', 1, 2, 'game'], 'term-cards': ['words', 1, 3, 'home show'], 'term-match': ['words', 1, 3, 'game home'],
+  'road-map': ['words', 1, 2, 'game'], 'term-cards': ['words', 1, 3, 'home show'], 'term-match': ['words', 1, 3, 'game home'], 'term-sort': ['words', 1, 3, 'game'], 'term-mixer': ['words', 2, 3, 'show ear'],
   'practice-timer': ['practice', 0, 3, 'home'], 'practice-dice': ['practice', 0, 3, 'home game'], 'perfect-counter': ['practice', 0, 3, 'home'],
   'keyboard-ancestors': ['about', 0, 3, 'show ear'], 'piano-timeline': ['about', 1, 3, 'show'], 'eras': ['about', 1, 3, 'show ear'], 'hz-explorer': ['about', 1, 3, 'show ear'], 'range-chart': ['about', 1, 3, 'show ear'],
   'tune-anatomy': ['melody', 0, 1, 'show'], 'phrase-marks': ['melody', 1, 2, 'show'], 'question-answer': ['melody', 1, 2, 'game ear'], 'melody-sequence': ['melody', 1, 2, 'show ear'],
@@ -15979,7 +16089,7 @@ const CHAPTER_TOOL_ORDER = {
   'staff': ['staff-basics', 'rhymes', 'clef-basics', 'clef-story', 'staff-climb', 'fold', 'landmarks', 'landmark-hop', 'flash-cards', 'write-note', 'alto-clef'],
   'styles': ['texture-types', 'texture-spotter', 'genre-traits'],
   'tempo': ['tempo-walk', 'tempo-race', 'tap-tempo', 'same-tune-tempo', 'speed-change', 'metronome'],
-  'terms': ['term-cards', 'term-match'],
+  'terms': ['term-sort', 'term-cards', 'term-mixer', 'term-match'],
   'time-signatures': ['time-sig-numbers', 'count-along', 'common-cut', 'bar-lines', 'beat-doubler', 'regroup', 'grouping', 'duplets'],
   'tones': ['tone-semitone', 'accidental-cards', 'sharp-flat', 'accidental-bar', 'chromatic'],
 };
