@@ -7643,32 +7643,36 @@ function NoteValueTree() {
   const rows = [
     { it: NV_NOTES[0], n: 1 }, { it: NV_NOTES[1], n: 2 }, { it: NV_NOTES[2], n: 4 }, { it: NV_NOTES[3], n: 8 }, { it: NV_NOTES[4], n: 16 },
   ];
+  const tiny = (n) => n >= 16 ? 9 : n >= 8 ? 10.5 : 13;
   return (
     <div>
-      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+      <div style={{fontSize:13,color:'var(--muted)',lineHeight:1.5,margin:'2px 0 8px'}}>{t('Each box is one piece. Top: the note. Middle: its rest. Bottom: how many beats it lasts. Every row cuts the one above in half.', '칸 하나가 한 조각이에요. 위: 음표, 가운데: 같은 이름의 쉼표, 아래: 몇 박인지. 한 줄 내려갈 때마다 위 줄을 반으로 나눠요.')}</div>
+      <div style={{display:'flex',flexDirection:'column',gap:10}}>
         {rows.map(({ it, n }) => {
           const rest = NV_RESTS.find(r => r.id === it.id);
-          const size = n >= 16 ? 22 : n >= 8 ? 32 : 48;
+          const size = n >= 16 ? 14 : n >= 8 ? 24 : n >= 4 ? 38 : 48;
+          const rsize = n >= 16 ? 13 : n >= 8 ? 20 : n >= 4 ? 30 : 36;
+          const lab = n <= 4 ? fmtBeats(it.beats) : fmtBeats(it.beats).replace(/ beats?$/, '');
           return (
-            <div key={it.id} style={{borderTop:'1px solid var(--border)',paddingTop:8}}>
-              <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',gap:8}}>
+            <div key={it.id}>
+              <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',gap:8,marginBottom:4,flexWrap:'wrap'}}>
                 <span style={{fontSize:15,fontWeight:900}}>{cap(it.id)} <span style={{fontSize:13,fontWeight:600,color:'var(--muted)'}}>{it.us}</span></span>
-                <span style={{fontSize:13,fontWeight:800,color:'var(--brass)',whiteSpace:'nowrap'}}>{fmtBeats(it.beats)}</span>
+                <span style={{fontSize:12.5,fontWeight:800,color:'var(--brass)'}}>{n === 1 ? t('1 piece = the whole semibreve', '조각 1개 = 온음표 하나') : t(n + ' pieces = one semibreve', '조각 ' + n + '개 = 온음표 하나')}</span>
               </div>
-              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6}}>
-                <div style={{display:'flex',flexWrap:'nowrap',justifyContent:'space-around',flex:1,overflow:'hidden'}}>
-                  {Array.from({ length: n }).map((_, i) => <Glyph key={i} item={it} size={size}/>)}
-                </div>
-                <div style={{flex:'0 0 auto',display:'flex',alignItems:'center',gap:2,fontSize:12,color:'var(--muted)',borderLeft:'1px solid var(--border)',paddingLeft:8}}>
-                  {t('rest', '쉼표')} <Glyph item={rest} size={40}/>
-                </div>
+              <div style={{display:'grid',gridTemplateColumns:'repeat(' + n + ', minmax(0, 1fr))',border:'1.5px solid #d9cdb0',borderRadius:8,overflow:'hidden',background:'#fff'}}>
+                {Array.from({ length: n }).map((_, k) => (
+                  <div key={k} style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-between',padding:n >= 16 ? '4px 0' : '6px 0',minHeight:n >= 8 ? 96 : 116,borderLeft:k ? '1px solid #e8dcc0' : 'none',minWidth:0}}>
+                    <Glyph item={it} size={size}/>
+                    <Glyph item={rest} size={rsize}/>
+                    <span style={{fontSize:tiny(n),fontWeight:900,color:'var(--brass)',whiteSpace:'nowrap'}}>{lab}</span>
+                  </div>
+                ))}
               </div>
             </div>
           );
         })}
       </div>
-
-      </div>
+    </div>
   );
 }
 function DottedNotesCard() {

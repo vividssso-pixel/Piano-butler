@@ -4176,6 +4176,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 - **Phase 249 (2026-10-02) -- Toolbox layout: art on categories, thin tool rows.** Category headers now carry a 64px illustration (`CAT_ART` map borrows a representative tool icon; real chapter heroes come in the design phase) and tool rows under them are slim one-line rows (48px icon, title + one-line blurb with ellipsis, level tag right, hidden on phones). Verified by screenshot at 700px; no page errors.
 
+- **Phase 261 (2026-10-02) -- Note-value tree redrawn as a true tree**: each level is a bar cut into 1/2/4/8/16 equal boxes; every box shows the note, the matching rest under it, and its beat count under that (4 beats ... ¼), with "N pieces = one semibreve" per row. Checked at 700px and 390px.
+
 - **Phase 260 (2026-10-02) -- Notes & Rests re-sequenced again (lesson + Toolbox) per Sohyun**: values/names/rests -> Rests: counted but silent -> Note↔rest match -> Split the notes -> One beat = one apple -> Dotted notes -> Dot lab -> Fix the bar -> Fill the bar -> Which bar did you hear. Also fixed a real intermittent crash in `makeBrokenBar` (Fix the bar): when the remainder was smaller than any note (e.g. after a dotted quaver) `pick([])` returned undefined and `.beats` threw; now breaks and retries. Verified with 5000 generator runs, 0 errors.
 
 - **Phase 259 (2026-10-02) -- Merged "The note-value tree" and "Same name, note or rest" into one tool** "Note values, names & rests" (`NoteValuesTool`, chips: Splitting tree | Names, rests & dots). Old id note-rest-naming stays reachable by link but hidden from the list. Lesson steps unchanged. Notes & Rests = 10 rows.
