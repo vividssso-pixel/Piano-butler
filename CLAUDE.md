@@ -4176,6 +4176,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 - **Phase 249 (2026-10-02) -- Toolbox layout: art on categories, thin tool rows.** Category headers now carry a 64px illustration (`CAT_ART` map borrows a representative tool icon; real chapter heroes come in the design phase) and tool rows under them are slim one-line rows (48px icon, title + one-line blurb with ellipsis, level tag right, hidden on phones). Verified by screenshot at 700px; no page errors.
 
+- **Phase 254 (2026-10-02) -- Merged "Best friends: semitones" into "Tone or semitone"** (one tool, two chips: Count the steps | Best friends; `ToneSemitoneTool`; best-friends tool entry removed). Lesson steps unchanged.
+
 - **Phase 253 (2026-10-02) -- Removed 4 Hands & Clefs tools from the Toolbox** (grand-staff, hand-split, hand-clef-match, clef-costume) at Sohyun's request ("for now"). The Hands & Clefs lesson and practice drill are untouched; the components (GrandStaffIntro, HandSplit, ClefCostume, hand-clef-match icon) remain in the file so tools can be restored by re-adding TOOLS entries.
 
 - **Phase 252 (2026-10-02) -- Grand Staff tool shows the staff picture; Sydney CBD removed (neutral wording); middle C marked blue on the Split-the-keyboard keyboard.**
