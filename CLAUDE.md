@@ -4228,6 +4228,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 | 275 | 2026-10-02 | **Student 'Keep going' card.** drills.html: the App remembers the last chapter opened (`pb_last_chapter_v1` in localStorage, try/catch, only ids in CHAPTER_CAT), and the student Learn page opens with a card -- coral 'KEEP GOING' label, the chapter name in serif, 'n steps done' (or 'Pick up where you left off'), navy Resume pill -- above the topic list. Hidden for teachers and when nothing has been opened yet. Korean included (이어서 하기 / 이어하기). Verified: compile; headless run: fresh visit shows no card, open Reading the Staff -> Got it -> back shows 'Reading the Staff, 1 step done', Resume reopens the lesson; no page errors. |
 
+| 276 | 2026-10-02 | **Korean topic and chapter names.** drills.html: `CAT_KO` (20 topic names + one-line descriptions) and `CHAPTER_KO` (24 chapter names). `TOOL_CATS[].name/when` and `DRILLS[].label` (chapters only) are now getters that follow LANG, with English kept as `nameEn/whenEn/labelEn`; tool search reads both languages. Terms match the app's existing Korean (다이나믹, 이음줄, 여린내기, 보통박자와 얼라 브레베, 알토음자리표, 손가락 번호, 스케일, 튠, 시퀀스, 케이던스, 텍스처, 템포 경주); 덧줄 newly introduced for ledger lines. Tool titles/blurbs remain English-only (existing backlog). Verified: compile, KO screenshots of Plan/Toolbox, Learn and a lesson, 139-tool sweep 0 errors, device checksum-identical. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
