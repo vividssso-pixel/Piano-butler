@@ -1043,17 +1043,17 @@ function DrillEngine({ drill, level, mode }) {
           </>
         ) : (
           <>
-            <div style={{fontSize:14,color:'var(--muted)',fontWeight:700,marginBottom:6}}>Finished</div>
+            <div style={{fontSize:14,color:'var(--muted)',fontWeight:700,marginBottom:6}}>{t('Finished', '끝!')}</div>
             <div style={{fontSize:44,fontWeight:900,letterSpacing:'-0.03em',marginBottom:4}}>
               {result.correct}<span style={{fontSize:22,color:'var(--muted)'}}> / {result.total}</span>
             </div>
             <div style={{fontSize:14,color:'var(--brass)',fontWeight:700,marginBottom:20}}>
-              {newBest ? 'New best on this device!' : 'Best on this device: ' + result.best + ' / ' + LESSON_TOTAL}
+              {newBest ? t('New best on this device!', '이 기기에서 최고 기록!') : t('Best on this device: ', '이 기기 최고 기록: ') + result.best + ' / ' + LESSON_TOTAL}
             </div>
-            <button className="primary-btn" onClick={start}>Go again</button>
+            <button className="primary-btn" onClick={start}>{t('Go again', '다시 하기')}</button>
           </>
         )}
-        {result.unsaved && <div style={{fontSize:12,color:'var(--muted)',marginTop:12}}>(This browser isn't saving records.)</div>}
+        {result.unsaved && <div style={{fontSize:12,color:'var(--muted)',marginTop:12}}>{t('(This browser isn’t saving records.)', '(이 브라우저는 기록을 저장하지 않아요.)')}</div>}
       </div>
     );
   }
@@ -1076,8 +1076,8 @@ function DrillEngine({ drill, level, mode }) {
         </div>
       ) : (
         <div style={{display:'flex',justifyContent:'space-between',fontSize:13,color:'var(--muted)',fontWeight:700,marginBottom:14}}>
-          <span>Question {Math.min(asked + (phase === 'ask' ? 1 : 0), LESSON_TOTAL)} / {LESSON_TOTAL}</span>
-          <span>{correct} correct</span>
+          <span>{t('Question ', '문제 ')}{Math.min(asked + (phase === 'ask' ? 1 : 0), LESSON_TOTAL)} / {LESSON_TOTAL}</span>
+          <span>{t(correct + ' correct', '정답 ' + correct + '개')}</span>
         </div>
       )}
 
@@ -1085,16 +1085,16 @@ function DrillEngine({ drill, level, mode }) {
 
       <div style={{minHeight:isGame?34:44,marginTop:14,textAlign:'center'}}>
         {feedback && (given.ok ? (
-          <div style={{color:isGame?'#8fd3b9':'var(--good)',fontWeight:800,fontSize:isGame?11:15}}>{isGame ? 'NICE!' : 'Correct!'}</div>
+          <div style={{color:isGame?'#8fd3b9':'var(--good)',fontWeight:800,fontSize:isGame?11:15}}>{isGame ? 'NICE!' : t('Correct!', '정답!')}</div>
         ) : (
           <div style={{color:isGame?'#f08c70':'var(--bad)',fontWeight:800,fontSize:isGame?9:14,lineHeight:1.7}}>
-            {given.timedOut ? (isGame ? 'TIME UP! ' : "Time's up -- ") : (isGame ? 'MISS! ' : 'Not quite -- ')}
-            {isGame ? 'IT WAS ' + drill.answerLabel(q).toUpperCase() : 'it was ' + drill.answerLabel(q)}
+            {given.timedOut ? (isGame ? 'TIME UP! ' : t('Time’s up -- ', '시간이 다 됐어요 -- ')) : (isGame ? 'MISS! ' : t('Not quite -- ', '아쉬워요 -- '))}
+            {isGame ? 'IT WAS ' + drill.answerLabel(q).toUpperCase() : t('it was ' + drill.answerLabel(q), '정답은 ' + drill.answerLabel(q))}
           </div>
         ))}
       </div>
       {!isGame && pendingNext && (
-        <button className="primary-btn" onClick={goNext}>Next →</button>
+        <button className="primary-btn" onClick={goNext}>{t('Next →', '다음 →')}</button>
       )}
     </div>
   );
@@ -2051,19 +2051,19 @@ function ConceptView({ concept, tab, level, mode, locked, onChange }) {
               <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:10}}>
                 {concept.levels.map(l => (
                   <button key={l.n} className={'chip' + (l.n === lv.n ? ' active' : '')} onClick={() => onChange({ level: l.n })}
-                    title={l.label}>Level {l.n}</button>
+                    title={lvName(l.label)}>{t('Level ', '레벨 ')}{l.n}</button>
                 ))}
               </div>
-              <div style={{fontSize:13,color:'var(--muted)',marginBottom:10}}>{lv.label}</div>
+              <div style={{fontSize:13,color:'var(--muted)',marginBottom:10}}>{lvName(lv.label)}</div>
               <div style={{display:'flex',gap:6}}>
-                {[['lesson','Lesson mode'],['game','Game mode (pixel)']].map(([id, label]) => (
+                {[['lesson', t('Lesson mode', '레슨 모드')], ['game', t('Game mode (pixel)', '게임 모드 (픽셀)')]].map(([id, label]) => (
                   <button key={id} className={'chip' + (mode === id ? ' active' : '')} onClick={() => onChange({ mode: id })}>{label}</button>
                 ))}
               </div>
             </div>
           ) : (
             <div style={{fontSize:13,color:'var(--muted)',fontWeight:700,marginBottom:12}}>
-              Level {lv.n} · {lv.label} · {mode === 'game' ? 'Game mode' : 'Lesson mode'}
+              {t('Level ', '레벨 ')}{lv.n} · {lvName(lv.label)} · {mode === 'game' ? t('Game mode', '게임 모드') : t('Lesson mode', '레슨 모드')}
             </div>
           )}
           <DrillEngine key={concept.id + lv.n + mode} drill={concept} level={lv.n} mode={mode} />
@@ -2073,6 +2073,133 @@ function ConceptView({ concept, tab, level, mode, locked, onChange }) {
   );
 }
 
+// Phase 286: Korean names for drill levels. The English label stays the source; rhythm levels are
+// built as 'Cards 1–8: <tier>' so that prefix is translated on the fly.
+const LEVEL_KO = {
+  'White keys · name the key': '흰건반 · 이름 말하기',
+  'White keys · find the key': '흰건반 · 건반 찾기',
+  'Two octaves · both ways': '두 옥타브 · 양쪽 다',
+  'Black keys too (sharps & flats)': '검은건반까지 (샵과 플랫)',
+  'Letter steps · next letter up or down': '글자 한 칸 · 위나 아래 다음 글자',
+  'Letter jumps · 3rds to octaves, up or down': '글자 건너뛰기 · 3도부터 옥타브까지, 위나 아래로',
+  'Term → meaning': '용어 → 뜻',
+  'Which one is faster?': '어느 쪽이 더 빠를까?',
+  'Put 4 in order, slow → fast': '4개를 순서대로, 느리게 → 빠르게',
+  'Listen: which tempo is it?': '듣기: 어떤 템포일까?',
+  'One beat': '한 박',
+  'Two beats': '두 박',
+  'The “and”': '“앤드” 박',
+  'Silent bars': '조용한 마디',
+  'Name the note': '음표 이름 말하기',
+  'How many beats? (rests & dots too)': '몇 박일까? (쉼표와 점도)',
+  'Find the matching rest': '같은 길이의 쉼표 찾기',
+  'Add them up': '더해 보기',
+  'Finish the 4/4 bar': '4/4 마디 채우기',
+  'Dotted notes & dotted rests': '점음표와 점쉼표',
+  'Crotchets, minims, semibreves & crotchet rests': '4분음표, 2분음표, 온음표와 4분쉼표',
+  'Quaver pairs': '8분음표 두 개',
+  'Quaver rests, dotted crotchets, syncopation': '8분쉼표, 점4분음표, 당김음',
+  'Semiquavers': '16분음표',
+  'Triplets & dotted quavers': '셋잇단음표와 점8분음표',
+  'Name the major key (up to 4♯ / 4♭)': '장조 이름 말하기 (♯/♭ 4개까지)',
+  'How many sharps or flats?': '샵이나 플랫이 몇 개?',
+  'Name the major key (all 15)': '장조 이름 말하기 (15개 모두)',
+  'Name the relative minor': '나란한조(단조) 이름 말하기',
+  'Order of sharps and flats': '샵과 플랫의 순서',
+  'Circle of fifths: next key round': '5도권: 다음 조',
+  'Number only · treble': '숫자만 · 높은음자리표',
+  'Number only · treble and bass': '숫자만 · 높은음자리표와 낮은음자리표',
+  'Major or minor 3rd, perfect 4th, 5th, 8ve': '장3도·단3도, 완전4도, 완전5도, 완전8도',
+  'Above the tonic in major keys': '장조의 으뜸음 위로',
+  'Any interval · number and quality': '모든 음정 · 숫자와 성질',
+  'Build it on the keyboard': '건반에서 만들기',
+  'By ear: 3rds, 4th, 5th, octave': '귀로: 3도, 4도, 5도, 옥타브',
+  'Invert it (Grade 3)': '자리바꿈하기 (3급)',
+  'Any interval incl. aug 4th / dim 5th (Grade 3)': '증4도·감5도를 포함한 모든 음정 (3급)',
+  'Tonic triads: C, G, F major (Prelim)': '으뜸3화음: C, G, F장조 (예비급)',
+  'I, IV or V? (Grades 1–2)': 'I, IV, V 중 무엇? (1–2급)',
+  'Major or minor triad?': '장3화음일까, 단3화음일까?',
+  'By ear: major or minor?': '귀로: 장조일까, 단조일까?',
+  'Root position, 1st or 2nd inversion?': '근음 위치, 제1전위, 제2전위?',
+  'By ear: which cadence?': '귀로: 어떤 종지?',
+  'Tone or semitone?': '온음일까, 반음일까?',
+  'Tap a tone or semitone away': '온음이나 반음 떨어진 건반 누르기',
+  'Two names, one key': '이름 둘, 건반 하나',
+  'Which finger? (C G D A E)': '몇 번 손가락? (C G D A E)',
+  'Tap where finger 4 goes': '4번 손가락 자리 누르기',
+  'Tap every thumb note': '엄지가 치는 음 모두 누르기',
+  'Which finger? (all 12 keys)': '몇 번 손가락? (12개 조 모두)',
+  'Harmonic minor: which finger?': '화성단음계: 몇 번 손가락?',
+  'Harmonic minor: tap the raised 7th': '화성단음계: 올린 7음 누르기',
+  'Build a major scale: T T S T T T S': '장음계 만들기: 온 온 반 온 온 온 반',
+  'Build a harmonic minor: T S T T S T+S S': '화성단음계 만들기: 온 반 온 온 반 온+반 반',
+  'What do the numbers mean?': '숫자는 무슨 뜻?',
+  'Which time signature fits the bar?': '마디에 맞는 박자표는?',
+  'Listen: 2, 3 or 4 beats in a bar?': '듣기: 한 마디에 2박, 3박, 4박?',
+  'In 8 time, how many beats is it?': '8분의 박자에서는 몇 박?',
+  'Simple or compound?': '홑박자일까, 겹박자일까?',
+  'Treble clef notes': '높은음자리표 음',
+  'Bass clef notes': '낮은음자리표 음',
+  'Both clefs + ledger lines': '두 음자리표 + 덧줄',
+  'Find it on the keyboard (exact octave)': '건반에서 찾기 (정확한 옥타브)',
+  'One ledger line (Prelim–Grade 1)': '덧줄 한 개 (예비급–1급)',
+  'Two ledger lines': '덧줄 두 개',
+  'Three ledger lines (Grade 2)': '덧줄 세 개 (2급)',
+  'Dynamics: what does it mean?': '셈여림: 무슨 뜻일까?',
+  'Which is louder?': '어느 쪽이 더 클까?',
+  'Signs for changing volume': '소리 크기가 바뀌는 기호',
+  'Articulation: name the marking': '아티큘레이션: 기호 이름 말하기',
+  'Listen: louder, softer, short or smooth?': '듣기: 더 크게, 더 작게, 짧게, 부드럽게?',
+  'What does this sign mean?': '이 기호는 무슨 뜻?',
+  'Tie or slur?': '붙임줄일까, 이음줄일까?',
+  'Road map: the playing order': '길 안내: 연주 순서',
+  'Is the stool set up right?': '의자가 잘 맞춰져 있나요?',
+  'Spot the hand-shape fault': '손 모양에서 틀린 곳 찾기',
+  'Which finger?': '몇 번 손가락?',
+  'Which hand plays which clef?': '어느 손이 어느 음자리표를 칠까?',
+  'Treble or bass clef?': '높은음자리표일까, 낮은음자리표일까?',
+  'Which hand plays this note?': '이 음은 어느 손이 칠까?',
+  'High or low?': '높을까, 낮을까?',
+  'Loud or soft?': '클까, 작을까?',
+  'Small house or big house?': '작은 집일까, 큰 집일까?',
+  'How many beats?': '몇 박일까?',
+  'Which bar did you hear?': '어떤 마디를 들었나요?',
+  'Up, down or same?': '올라갈까, 내려갈까, 같을까?',
+  'Step, skip or same?': '한 칸, 건너뛰기, 같은 음?',
+  'Name the next note (first note given)': '다음 음 이름 말하기 (첫 음은 알려 줘요)',
+  'C position: which finger? (right hand)': 'C 포지션: 몇 번 손가락? (오른손)',
+  'C position: which finger? (left hand)': 'C 포지션: 몇 번 손가락? (왼손)',
+  'Any of the 12 five-finger positions, either hand': '12개 오손가락 포지션 아무거나, 양손',
+  'Any of the 12 positions, either hand': '12개 포지션 아무거나, 양손',
+  'Grade 1 terms': '1급 용어',
+  'Up to Grade 2': '2급까지',
+  'Up to Grade 3': '3급까지',
+  'Up to Grade 4': '4급까지',
+  'Meaning → term (up to Grade 3)': '뜻 → 용어 (3급까지)',
+  'Before the piano': '피아노 이전',
+  'Cristofori and after': '크리스토포리와 그 후',
+  'The style eras': '시대별 스타일',
+  'Everything mixed': '모두 섞어서',
+  'Octaves double': '옥타브는 두 배',
+  'Which goes lowest?': '누가 가장 낮게 갈까?',
+  'Who can play this note?': '이 음을 낼 수 있는 건?',
+  'What is a tune?': '튠이란?',
+  'Question or answer phrase?': '질문 프레이즈일까, 대답 프레이즈일까?',
+  'Where to breathe': '숨 쉬는 곳',
+  'Spot the sequence': '시퀀스 찾기',
+  'Binary, ternary, or rondo?': '2부, 3부, 론도 형식?',
+  'Same section or new?': '같은 부분일까, 새 부분일까?',
+  'Spot the refrain': '후렴 찾기',
+  'Two sections or three?': '두 부분일까, 세 부분일까?',
+  'Name the texture': '텍스처 이름 말하기',
+  'Listen and identify': '듣고 맞히기',
+  'Match the style trait': '스타일의 특징 짝짓기'
+};
+function lvName(label) {
+  if (LANG !== 'ko' || !label) return label;
+  const m = label.match(/^Cards (\d+–\d+): (.*)$/); if (m) return '카드 ' + m[1] + ': ' + (LEVEL_KO[m[2]] || m[2]);
+  return LEVEL_KO[label] || label;
+}
 // Share link for a student: opens straight into this drill/level/mode with the picker hidden.
 function ShareLink({ drillId, level, mode }) {
   const [state, setState] = useState(null); // null | 'copied' | url (fallback)
@@ -2084,7 +2211,7 @@ function ShareLink({ drillId, level, mode }) {
   function later() { setTimeout(() => setState(null), 2200); }
   return (
     <div style={{marginTop:22,textAlign:'center'}}>
-      <button className="ghost-btn" onClick={copy}>{state === 'copied' ? 'Link copied ✓' : 'Copy link for a student'}</button>
+      <button className="ghost-btn" onClick={copy}>{state === 'copied' ? t('Link copied ✓', '링크 복사됨 ✓') : t('Copy link for a student', '학생용 링크 복사')}</button>
       {state && state !== 'copied' && (
         <input readOnly value={state} onFocus={e => e.target.select()} autoFocus
           style={{display:'block',width:'100%',marginTop:10,padding:8,fontSize:13,border:'1px solid var(--border)',borderRadius:8}}/>
@@ -2101,7 +2228,7 @@ function ShareLink({ drillId, level, mode }) {
 // so the worksheet always matches what the drill itself actually asks.
 function PrintLink({ drillId, level }) {
   const url = location.pathname + '?print=1&drill=' + drillId + '&level=' + level + '&n=12';
-  return <div style={{marginTop:10,textAlign:'center'}}><a className="ghost-btn" style={{textDecoration:'none',display:'inline-block'}} href={url} target="_blank" rel="noopener">🖨 Print worksheet</a></div>;
+  return <div style={{marginTop:10,textAlign:'center'}}><a className="ghost-btn" style={{textDecoration:'none',display:'inline-block'}} href={url} target="_blank" rel="noopener">{t('🖨 Print worksheet', '🖨 학습지 인쇄')}</a></div>;
 }
 function PrintWorksheet({ drillId, level, count }) {
   const drill = DRILLS.find(d => d.id === drillId);
@@ -2964,7 +3091,7 @@ function BeatTarget() {
         <span style={{fontSize:13,fontWeight:900,color:'var(--muted)'}}>{score.perfect}/{score.rounds} perfect</span>
       </div>
       <div style={actNote}>One bar to count in, then two bars to play. Tap <b>only</b> where it says. {BT_LEVELS[level - 1].hint}{beats === 6 ? ' In 6/8 count every quaver: 1 2 3 4 5 6.' : ''}</div>
-      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:4}}>{BT_LEVELS.filter(l => !(beats === 6 && l.n === 3)).map(l => <button key={l.n} className={'chip' + (l.n === level ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => { setLevel(l.n); newRound(l.n, beats); }}>{l.n}. {l.label}</button>)}</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:4}}>{BT_LEVELS.filter(l => !(beats === 6 && l.n === 3)).map(l => <button key={l.n} className={'chip' + (l.n === level ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => { setLevel(l.n); newRound(l.n, beats); }}>{l.n}. {lvName(l.label)}</button>)}</div>
       <div style={{display:'flex',gap:4,flexWrap:'wrap',alignItems:'center',marginBottom:6,fontSize:12,fontWeight:800,color:'var(--muted)'}}>
         {[2, 3, 4, 6].map(b => <button key={b} className={'chip' + (b === beats ? ' active' : '')} style={{padding:'2px 9px',fontSize:12}} onClick={() => { const lv = b === 6 && level === 3 ? 1 : level; setLevel(lv); setBeats(b); newRound(lv, b); }}>{b === 6 ? '6/8' : b + '/4'}</button>)}
         <span style={{marginLeft:8}}>Speed</span>
@@ -7977,7 +8104,7 @@ function ExplPianoStory1() {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
     <>
-        {tip('Plucked, struck, hammered', 'The harpsichord plucks the string, the clavichord presses a small brass blade against it, the piano throws a hammer at it. Only the piano gives both loud and soft, and plenty of sound.')}
+        {tip(t('Plucked, struck, hammered', '뜯고, 누르고, 때리고'), t('The harpsichord plucks the string, the clavichord presses a small brass blade against it, the piano throws a hammer at it. Only the piano gives both loud and soft, and plenty of sound.', '하프시코드는 현을 뜯고, 클라비코드는 작은 놋쇠 날을 현에 대고 누르고, 피아노는 해머를 현에 던져요. 크게도 작게도, 그리고 충분히 큰 소리로 칠 수 있는 건 피아노뿐이에요.'))}
     </>
   );
 }
@@ -7986,7 +8113,7 @@ function ExplPianoStory2() {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
     <>
-        {tip('Why Baroque music is played detached', 'On a harpsichord every note is the same loudness, so players make notes clear -- and give them weight -- with tiny gaps and timing. That’s why we usually play Bach non legato on the piano: detached, but not short.')}
+        {tip(t('Why Baroque music is played detached', '바로크 음악을 떨어지게 치는 이유'), t('On a harpsichord every note is the same loudness, so players make notes clear -- and give them weight -- with tiny gaps and timing. That’s why we usually play Bach non legato on the piano: detached, but not short.', '하프시코드는 모든 음의 크기가 같아서, 연주자들은 아주 작은 틈과 타이밍으로 음을 또렷하게 하고 무게를 실어요. 그래서 피아노로 바흐를 칠 때도 보통 논 레가토로 쳐요: 떨어지게, 하지만 짧지 않게.'))}
     </>
   );
 }
@@ -7995,7 +8122,7 @@ function ExplPianoStory3() {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
     <>
-        {tip('The name', 'Cristofori called it a gravicembalo col piano e forte -- a harpsichord with soft and loud. Pianoforte, then just piano.')}
+        {tip(t('The name', '이름'), t('Cristofori called it a gravicembalo col piano e forte -- a harpsichord with soft and loud. Pianoforte, then just piano.', '크리스토포리는 이 악기를 “그라비쳄발로 콜 피아노 에 포르테”, 즉 여리게도 세게도 칠 수 있는 하프시코드라고 불렀어요. 그 이름이 피아노포르테가 되고, 다시 그냥 피아노가 됐어요.'))}
     </>
   );
 }
@@ -8004,7 +8131,7 @@ function ExplPitchRange1() {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
     <>
-        {tip('Faster = higher', 'Sound is vibration. The number of vibrations per second is the frequency, measured in Hertz (Hz). Double the frequency and you go up an octave.')}
+        {tip(t('Faster = higher', '빠를수록 = 높게'), t('Sound is vibration. The number of vibrations per second is the frequency, measured in Hertz (Hz). Double the frequency and you go up an octave.', '소리는 떨림이에요. 1초에 떨리는 횟수를 진동수라고 하고, 헤르츠(Hz)로 재요. 진동수가 두 배가 되면 한 옥타브 올라가요.'))}
     </>
   );
 }
@@ -8013,7 +8140,7 @@ function ExplPitchRange2() {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
     <>
-        {tip('The widest range', 'With 88 keys -- A0 to C8, just over seven octaves -- the piano covers nearly the whole range of the orchestra. That’s why a pianist can play reductions of orchestral music.')}
+        {tip(t('The widest range', '가장 넓은 음역'), t('With 88 keys -- A0 to C8, just over seven octaves -- the piano covers nearly the whole range of the orchestra. That’s why a pianist can play reductions of orchestral music.', '88건반 -- A0부터 C8까지, 7옥타브가 조금 넘어요 -- 으로 피아노는 오케스트라의 거의 모든 음역을 덮어요. 그래서 피아니스트가 오케스트라 곡을 피아노용으로 줄인 편곡을 칠 수 있어요.'))}
     </>
   );
 }
@@ -12110,25 +12237,25 @@ function Mechanism({ kind, p }) {
   return (
     <svg viewBox="0 0 310 110" style={{width:'100%',display:'block'}}>
       <path d={wave} stroke="#7f81a8" strokeWidth="1.6" fill="none"/>
-      <text x="62" y={strY - 6} fontSize="8" fontWeight="800" fill="#7f81a8">string</text>
+      <text x="62" y={strY - 6} fontSize="8" fontWeight="800" fill="#7f81a8">{t('string', '현')}</text>
       {kind !== 'piano' && <rect x="186" y={strY - 10} width="3" height="8" fill={kind === 'clavichord' ? 'transparent' : '#6d6f9c'}/>}
       <g transform={`rotate(${-key} 110 92)`}>
         <rect x="10" y="86" width="190" height="10" fill="#fff" stroke="#7f81a8"/>
       </g>
       <polygon points="104,104 116,104 110,94" fill="#6d6f9c"/>
       <g transform={`translate(0,${-key * 1.2})`}>{part}</g>
-      <text x="14" y="82" fontSize="8" fontWeight="800" fill="#7f81a8">key</text>
-      <text x="200" y="106" fontSize="8.5" fontWeight="900" fill="#e4572e">{kind === 'clavichord' ? 'brass tangent' : kind === 'harpsichord' ? 'jack with a quill' : 'felt hammer'}</text>
+      <text x="14" y="82" fontSize="8" fontWeight="800" fill="#7f81a8">{t('key', '건반')}</text>
+      <text x="200" y="106" fontSize="8.5" fontWeight="900" fill="#e4572e">{kind === 'clavichord' ? t('brass tangent', '놋쇠 탄젠트') : kind === 'harpsichord' ? t('jack with a quill', '깃촉 달린 잭') : t('felt hammer', '펠트 해머')}</text>
     </svg>
   );
 }
 const ANCESTORS = [
-  { id: 'clavichord', name: 'Clavichord', when: 'from the 1400s', how: 'A small brass blade (tangent) strikes the string and stays touching it while you hold the key.',
-    touch: 'Loud and soft by touch -- but everything is very quiet. Wobbling the key makes a vibrato (Bebung).', good: 'Home practice; very expressive, too soft for a room full of people.' },
-  { id: 'harpsichord', name: 'Harpsichord', when: 'from the 1400s; the star of 1600–1750', how: 'A jack jumps up and a quill (plectrum) plucks the string, like a finger plucking a guitar.',
-    touch: 'Press gently or hard -- the pluck is the same loudness. Players change volume by switching to another keyboard (manual) or set of strings (stop).', good: 'Bright and clear; ensembles, dances, counterpoint.' },
-  { id: 'piano', name: 'Piano', when: 'from about 1700 (Cristofori)', how: 'A felt hammer is thrown at the string and falls straight back (the escapement), so the string rings; a damper stops it when you let go.',
-    touch: 'The harder you play, the louder -- and the brighter. That’s the name: piano e forte, “soft and loud”.', good: 'Everything from a whisper to a roar; long singing lines with the pedal.' },
+  { id: 'clavichord', get name() { return t('Clavichord', '클라비코드'); }, get when() { return t('from the 1400s', '1400년대부터'); }, get how() { return t('A small brass blade (tangent) strikes the string and stays touching it while you hold the key.', '작은 놋쇠 날(탄젠트)이 현을 치고, 건반을 누르고 있는 동안 현에 계속 닿아 있어요.'); },
+    get touch() { return t('Loud and soft by touch -- but everything is very quiet. Wobbling the key makes a vibrato (Bebung).', '터치로 크고 작게 낼 수 있지만, 모든 소리가 아주 작아요. 건반을 흔들면 비브라토(베붕)가 나요.'); }, get good() { return t('Home practice; very expressive, too soft for a room full of people.', '집에서 연습하기 좋고 표현력이 풍부해요. 사람이 가득한 방에서는 너무 작아요.'); } },
+  { id: 'harpsichord', get name() { return t('Harpsichord', '하프시코드'); }, get when() { return t('from the 1400s; the star of 1600–1750', '1400년대부터; 1600–1750년의 주인공'); }, get how() { return t('A jack jumps up and a quill (plectrum) plucks the string, like a finger plucking a guitar.', '잭이 튀어 올라 깃촉(플렉트럼)이 현을 뜯어요. 손가락으로 기타 줄을 뜯는 것처럼요.'); },
+    get touch() { return t('Press gently or hard -- the pluck is the same loudness. Players change volume by switching to another keyboard (manual) or set of strings (stop).', '살살 누르든 세게 누르든 뜯는 소리의 크기는 같아요. 연주자는 다른 건반(매뉴얼)이나 다른 현 세트(스톱)로 바꿔서 음량을 바꿔요.'); }, get good() { return t('Bright and clear; ensembles, dances, counterpoint.', '밝고 또렷해요. 합주, 춤곡, 대위법.'); } },
+  { id: 'piano', get name() { return t('Piano', '피아노'); }, get when() { return t('from about 1700 (Cristofori)', '1700년경부터 (크리스토포리)'); }, get how() { return t('A felt hammer is thrown at the string and falls straight back (the escapement), so the string rings; a damper stops it when you let go.', '펠트 해머가 현을 향해 던져졌다가 바로 떨어져 나와(이스케이프먼트) 현이 울려요. 손을 떼면 댐퍼가 소리를 멈춰요.'); },
+    get touch() { return t('The harder you play, the louder -- and the brighter. That’s the name: piano e forte, “soft and loud”.', '세게 칠수록 더 크고 더 밝아져요. 그래서 이름도 피아노 에 포르테, “여리게 그리고 세게”예요.'); }, get good() { return t('Everything from a whisper to a roar; long singing lines with the pedal.', '속삭임부터 함성까지 모두. 페달로 길게 노래하는 선율.'); } },
 ];
 function KeyboardAncestors() {
   const [sel, setSel] = useState('harpsichord');
@@ -12149,28 +12276,28 @@ function KeyboardAncestors() {
   const heard = sel === 'harpsichord' ? 0.55 : sel === 'clavichord' ? 0.06 + 0.2 * vel : 0.1 + 0.9 * vel;
   return (
     <div className="try-box" style={actBox}>
-      <div style={actTitle}>Three keyboards, three ways to make a sound</div>
-      <div style={actNote}>Before the piano, keyboard players had the clavichord and the harpsichord. Pick one, set how hard you press, and play. Watch what the key does to the string.</div>
+      <div style={actTitle}>{t('Three keyboards, three ways to make a sound', '건반 악기 셋, 소리 내는 방법 셋')}</div>
+      <div style={actNote}>{t('Before the piano, keyboard players had the clavichord and the harpsichord. Pick one, set how hard you press, and play. Watch what the key does to the string.', '피아노가 나오기 전, 건반 연주자들은 클라비코드와 하프시코드를 썼어요. 하나를 고르고, 얼마나 세게 누를지 정한 다음 연주해 봐요. 건반이 현에 무엇을 하는지 잘 보세요.')}</div>
       <div style={{display:'flex',gap:4,marginBottom:8}}>{ANCESTORS.map(x => <button key={x.id} className={'chip' + (x.id === sel ? ' active' : '')} style={{padding:'3px 10px',fontSize:13,flex:1}} onClick={() => { setSel(x.id); setP(0); }}>{x.name}</button>)}</div>
       <div style={{background:'#fff',borderRadius:10,padding:'4px 6px'}}><Mechanism kind={sel} p={p}/></div>
       <div style={{display:'grid',gridTemplateColumns:'auto 1fr auto',gap:'4px 8px',alignItems:'center',fontSize:13,fontWeight:800,margin:'8px 0 4px'}}>
-        <span>Press</span>
+        <span>{t('Press', '누르기')}</span>
         <input type="range" min="0" max="100" value={Math.round(vel * 100)} onChange={e => setVel(+e.target.value / 100)} style={{accentColor:'#e4572e'}}/>
-        <span style={{width:52,color:'var(--muted)'}}>{vel < 0.34 ? 'gently' : vel < 0.67 ? 'medium' : 'hard'}</span>
+        <span style={{minWidth:52,whiteSpace:'nowrap',color:'var(--muted)'}}>{vel < 0.34 ? t('gently', '살살') : vel < 0.67 ? t('medium', '보통') : t('hard', '세게')}</span>
         <span>Sound</span>
         <div style={{height:10,borderRadius:5,background:'#e9e3d4',overflow:'hidden'}}><div style={{width:(heard * 100) + '%',height:'100%',background:sel === 'harpsichord' ? '#7a64a8' : '#e4572e',transition:'width 0.2s'}}/></div>
-        <span style={{width:52,color:'var(--muted)'}}>{sel === 'harpsichord' ? 'always same' : sel === 'clavichord' ? 'very soft' : heard > 0.6 ? 'loud' : heard > 0.3 ? 'medium' : 'soft'}</span>
+        <span style={{minWidth:52,whiteSpace:'nowrap',color:'var(--muted)'}}>{sel === 'harpsichord' ? t('always same', '항상 같음') : sel === 'clavichord' ? t('very soft', '아주 작게') : heard > 0.6 ? t('loud', '크게') : heard > 0.3 ? t('medium', '보통') : t('soft', '작게')}</span>
       </div>
       <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap',margin:'6px 0'}}>
-        <button className="ghost-btn" onClick={press}>♪ Press one key</button>
-        <button className="ghost-btn" onClick={tune}>♪ A little tune</button>
-        {sel === 'clavichord' && <button className={'chip' + (beb ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => setBeb(b => !b)}>Bebung (vibrato) {beb ? 'on' : 'off'}</button>}
+        <button className="ghost-btn" onClick={press}>{t('♪ Press one key', '♪ 건반 하나 누르기')}</button>
+        <button className="ghost-btn" onClick={tune}>{t('♪ A little tune', '♪ 짧은 곡')}</button>
+        {sel === 'clavichord' && <button className={'chip' + (beb ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => setBeb(b => !b)}>{t('Bebung (vibrato) ', '베붕 (비브라토) ')}{beb ? t('on', '켜짐') : t('off', '꺼짐')}</button>}
       </div>
       <div style={{background:'#fff',borderRadius:8,padding:'7px 9px',fontSize:13.5,lineHeight:1.5}}>
         <b>{A.name}</b> <span style={{color:'var(--muted)'}}>· {A.when}</span>
-        <div><b>How:</b> {A.how}</div>
-        <div><b>Loud and soft:</b> {A.touch}</div>
-        <div><b>Good for:</b> {A.good}</div>
+        <div><b>{t('How:', '방법:')}</b> {A.how}</div>
+        <div><b>{t('Loud and soft:', '셈여림:')}</b> {A.touch}</div>
+        <div><b>{t('Good for:', '어울리는 곳:')}</b> {A.good}</div>
       </div>
     </div>
   );
@@ -12178,9 +12305,9 @@ function KeyboardAncestors() {
 
 // ── Legato, non legato, staccato: how long each note really sounds ──
 const TOUCHES = [
-  { id: 'legato', name: 'Legato', frac: 1.04, desc: 'Smooth and joined: each note holds until the next one starts.' },
-  { id: 'nonlegato', name: 'Non legato', frac: 0.75, desc: 'Detached but not short -- a small breath between notes. The everyday touch for Baroque music, because on a harpsichord the gaps are what make the notes clear.' },
-  { id: 'staccato', name: 'Staccato', frac: 0.35, desc: 'Short and bouncy -- the note is let go about halfway or sooner.' },
+  { id: 'legato', get name() { return t('Legato', '레가토'); }, frac: 1.04, get desc() { return t('Smooth and joined: each note holds until the next one starts.', '부드럽게 이어서: 다음 음이 시작될 때까지 앞 음을 누르고 있어요.'); } },
+  { id: 'nonlegato', get name() { return t('Non legato', '논 레가토'); }, frac: 0.75, get desc() { return t('Detached but not short -- a small breath between notes. The everyday touch for Baroque music, because on a harpsichord the gaps are what make the notes clear.', '떨어지지만 짧지는 않게 -- 음 사이에 작은 숨이 있어요. 바로크 음악의 기본 터치예요. 하프시코드에서는 그 작은 틈이 음을 또렷하게 해 주거든요.'); } },
+  { id: 'staccato', get name() { return t('Staccato', '스타카토'); }, frac: 0.35, get desc() { return t('Short and bouncy -- the note is let go about halfway or sooner.', '짧고 통통 튀게 -- 음 길이의 절반쯤이나 그보다 빨리 손을 떼요.'); } },
 ];
 function TouchLengths() {
   const [sel, setSel] = useState('nonlegato');
@@ -12199,8 +12326,8 @@ function TouchLengths() {
   }
   return (
     <div className="try-box" style={actBox}>
-      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><path d="M3 14 Q7 8 11 14" fill="none" stroke="var(--brass)" strokeWidth="1.8"/><circle cx="4" cy="15" r="2" fill="#26296b"/><circle cx="10" cy="15" r="2" fill="#26296b"/><circle cx="18" cy="15" r="2" fill="#c8361b"/><circle cx="18" cy="10" r="1.3" fill="#c8361b"/></svg>Legato, non legato, staccato</div>
-      <div style={actNote}>The bars show how long each note really sounds. <b>Non legato</b> is in between: not joined, not short.</div>
+      <div style={{...actTitle,display:'flex',alignItems:'center',gap:8}}><svg width="28" height="28" viewBox="0 0 24 24" style={{flex:'0 0 auto'}}><path d="M3 14 Q7 8 11 14" fill="none" stroke="var(--brass)" strokeWidth="1.8"/><circle cx="4" cy="15" r="2" fill="#26296b"/><circle cx="10" cy="15" r="2" fill="#26296b"/><circle cx="18" cy="15" r="2" fill="#c8361b"/><circle cx="18" cy="10" r="1.3" fill="#c8361b"/></svg>{t('Legato, non legato, staccato', '레가토, 논 레가토, 스타카토')}</div>
+      <div style={actNote}>{t('The bars show how long each note really sounds. ', '막대는 각 음이 실제로 얼마나 길게 울리는지 보여 줘요. ')}<b>{t('Non legato', '논 레가토')}</b>{t(' is in between: not joined, not short.', '는 그 중간이에요: 이어지지도, 짧지도 않아요.')}</div>
       <div style={{display:'flex',gap:4,marginBottom:6}}>{TOUCHES.map(x => <button key={x.id} className={'chip' + (x.id === sel ? ' active' : '')} style={{padding:'3px 10px',fontSize:13,flex:1}} onClick={() => play(x.id)}>♪ {x.name}</button>)}</div>
       <div style={{background:'#fff',borderRadius:10,padding:'10px 8px'}}>
         <div style={{display:'grid',gridTemplateColumns:'repeat(8,1fr)',gap:0}}>
@@ -12213,29 +12340,29 @@ function TouchLengths() {
         </div>
       </div>
       <div style={{fontSize:13.5,marginTop:6}}><b>{T.name}:</b> {T.desc}</div>
-      <div style={{display:'flex',gap:4,alignItems:'center',marginTop:8,fontSize:12,fontWeight:800,color:'var(--muted)'}}>Play it on {[['piano', 'Piano'], ['harpsichord', 'Harpsichord']].map(([k, l]) => <button key={k} className={'chip' + (inst === k ? ' active' : '')} style={{padding:'2px 9px',fontSize:12}} onClick={() => setInst(k)}>{l}</button>)}</div>
+      <div style={{display:'flex',gap:4,alignItems:'center',marginTop:8,fontSize:12,fontWeight:800,color:'var(--muted)'}}>{t('Play it on', '연주 악기:')} {[['piano', t('Piano', '피아노')], ['harpsichord', t('Harpsichord', '하프시코드')]].map(([k, l]) => <button key={k} className={'chip' + (inst === k ? ' active' : '')} style={{padding:'2px 9px',fontSize:12}} onClick={() => setInst(k)}>{l}</button>)}</div>
     </div>
   );
 }
 
 // ── The piano's story, 1700 to today ──
 const PIANO_TIMELINE = [
-  { y: '1400s', t: 'Clavichord and harpsichord', d: 'The first keyboard string instruments. For the next 300 years, keyboard music is written for them (and the organ).' },
-  { y: '1700', t: 'Cristofori’s invention', d: 'Bartolomeo Cristofori, instrument keeper to the Medici family in Florence, builds a harpsichord-shaped instrument with hammers: the “gravicembalo col piano e forte” -- a keyboard that can play soft and loud. Its hammers fall back after striking (the escapement), so the string keeps ringing.', key: true },
-  { y: '1720s', t: 'Three survive', d: 'Three Cristofori pianos still exist, from 1720 (New York), 1722 (Rome) and 1726 (Leipzig). They have about four octaves.' },
-  { y: '1730s–40s', t: 'Silbermann and Bach', d: 'Gottfried Silbermann builds pianos in Germany. J. S. Bach tries them -- he first finds the touch heavy and the top weak, and later approves an improved one.' },
-  { y: '1770s–90s', t: 'The fortepiano', d: 'Viennese pianos (Stein, Walter) are light, quick and clear -- Mozart’s and Haydn’s pianos, about five octaves. English pianos (Broadwood) are heavier and louder.', key: true },
-  { y: '1800–1820s', t: 'Bigger and louder', d: 'Beethoven’s pianos grow to six octaves and more. In 1821 Érard patents the double escapement: a note can be repeated before the key comes all the way up.' },
-  { y: '1825–1859', t: 'Iron frame, crossed strings', d: 'A cast-iron frame (Babcock 1825; Chickering’s grand, 1843) holds much thicker, tighter strings. Steinway crosses the bass strings over the others (1859). The modern sound arrives.', key: true },
-  { y: '1880s', t: '88 keys', d: 'Seven and a quarter octaves, A0 to C8, becomes the standard -- the piano you play today.' },
-  { y: '1900s–', t: 'Today', d: 'Uprights in homes, concert grands on stage, and since the 1980s digital pianos with sampled sound.' },
+  { get y() { return t('1400s', '1400년대'); }, get t() { return t('Clavichord and harpsichord', '클라비코드와 하프시코드'); }, get d() { return t('The first keyboard string instruments. For the next 300 years, keyboard music is written for them (and the organ).', '최초의 건반 현악기예요. 이후 300년 동안 건반 음악은 이 악기들(그리고 오르간)을 위해 쓰였어요.'); } },
+  { y: '1700', get t() { return t('Cristofori’s invention', '크리스토포리의 발명'); }, get d() { return t('Bartolomeo Cristofori, instrument keeper to the Medici family in Florence, builds a harpsichord-shaped instrument with hammers: the “gravicembalo col piano e forte” -- a keyboard that can play soft and loud. Its hammers fall back after striking (the escapement), so the string keeps ringing.', '피렌체 메디치 가문의 악기 관리인이었던 바르톨로메오 크리스토포리가 해머가 달린 하프시코드 모양의 악기를 만들어요: “그라비쳄발로 콜 피아노 에 포르테” -- 여리게도 세게도 칠 수 있는 건반 악기예요. 해머가 현을 친 뒤 바로 떨어져 나와서(이스케이프먼트) 현이 계속 울려요.'); }, key: true },
+  { get y() { return t('1720s', '1720년대'); }, get t() { return t('Three survive', '세 대가 남아 있어요'); }, get d() { return t('Three Cristofori pianos still exist, from 1720 (New York), 1722 (Rome) and 1726 (Leipzig). They have about four octaves.', '크리스토포리의 피아노 세 대가 지금도 남아 있어요: 1720년(뉴욕), 1722년(로마), 1726년(라이프치히). 음역은 약 4옥타브예요.'); } },
+  { get y() { return t('1730s–40s', '1730–40년대'); }, get t() { return t('Silbermann and Bach', '질버만과 바흐'); }, get d() { return t('Gottfried Silbermann builds pianos in Germany. J. S. Bach tries them -- he first finds the touch heavy and the top weak, and later approves an improved one.', '고트프리트 질버만이 독일에서 피아노를 만들어요. J. S. 바흐가 쳐 보고 처음에는 터치가 무겁고 고음이 약하다고 했지만, 나중에 개량된 피아노는 인정했어요.'); } },
+  { get y() { return t('1770s–90s', '1770–90년대'); }, get t() { return t('The fortepiano', '포르테피아노'); }, get d() { return t('Viennese pianos (Stein, Walter) are light, quick and clear -- Mozart’s and Haydn’s pianos, about five octaves. English pianos (Broadwood) are heavier and louder.', '빈의 피아노(슈타인, 발터)는 가볍고 빠르고 또렷해요 -- 모차르트와 하이든의 피아노로, 음역은 약 5옥타브예요. 영국 피아노(브로드우드)는 더 무겁고 소리가 커요.'); }, key: true },
+  { get y() { return t('1800–1820s', '1800–1820년대'); }, get t() { return t('Bigger and louder', '더 크게, 더 우렁차게'); }, get d() { return t('Beethoven’s pianos grow to six octaves and more. In 1821 Érard patents the double escapement: a note can be repeated before the key comes all the way up.', '베토벤의 피아노는 6옥타브 이상으로 커져요. 1821년 에라르가 더블 이스케이프먼트로 특허를 받아요: 건반이 끝까지 올라오기 전에 같은 음을 다시 칠 수 있게 되었어요.'); } },
+  { y: '1825–1859', get t() { return t('Iron frame, crossed strings', '철 프레임, 교차된 현'); }, get d() { return t('A cast-iron frame (Babcock 1825; Chickering’s grand, 1843) holds much thicker, tighter strings. Steinway crosses the bass strings over the others (1859). The modern sound arrives.', '주철 프레임(배브콕 1825년, 치커링의 그랜드 1843년)이 훨씬 굵고 팽팽한 현을 버텨 줘요. 스타인웨이는 저음 현을 다른 현 위로 교차시켜요(1859년). 현대 피아노의 소리가 탄생해요.'); }, key: true },
+  { get y() { return t('1880s', '1880년대'); }, get t() { return t('88 keys', '88건반'); }, get d() { return t('Seven and a quarter octaves, A0 to C8, becomes the standard -- the piano you play today.', '7과 1/4옥타브, A0부터 C8까지가 표준이 돼요 -- 지금 여러분이 치는 바로 그 피아노예요.'); } },
+  { get y() { return t('1900s–', '1900년대–'); }, get t() { return t('Today', '오늘날'); }, get d() { return t('Uprights in homes, concert grands on stage, and since the 1980s digital pianos with sampled sound.', '집에는 업라이트, 무대에는 콘서트 그랜드, 그리고 1980년대부터는 녹음한 소리를 쓰는 디지털 피아노까지.'); } },
 ];
 function PianoTimeline() {
   const [open, setOpen] = useState(1);
   return (
     <div className="try-box" style={actBox}>
-      <div style={actTitle}>The piano’s story</div>
-      <div style={actNote}>Tap a date. The big three: <b>1700</b> Cristofori invents it, <b>1770s</b> the fortepiano of Mozart’s time, <b>1825–1859</b> the iron frame that makes the modern piano.</div>
+      <div style={actTitle}>{t('The piano’s story', '피아노 이야기')}</div>
+      <div style={actNote}>{LANG === 'ko' ? <>연도를 눌러 보세요. 가장 중요한 셋: <b>1700</b> 크리스토포리의 발명, <b>1770년대</b> 모차르트 시대의 포르테피아노, <b>1825–1859</b> 현대 피아노를 만든 철 프레임.</> : <>Tap a date. The big three: <b>1700</b> Cristofori invents it, <b>1770s</b> the fortepiano of Mozart’s time, <b>1825–1859</b> the iron frame that makes the modern piano.</>}</div>
       <div style={{position:'relative',paddingLeft:18}}>
         <div style={{position:'absolute',left:6,top:4,bottom:4,width:3,background:'#e9e2d2',borderRadius:2,animation:'voxBlockIn 0.45s ease both'}}/>
         {PIANO_TIMELINE.map((e, i) => (
@@ -12254,22 +12381,22 @@ function PianoTimeline() {
 
 // ── The eras: what the instrument could do shaped how the music is played ──
 const ERAS = [
-  { id: 'baroque', name: 'Baroque', years: '1600–1750', color: '#7a64a8', inst: 'Harpsichord, clavichord, organ',
-    traits: ['Several independent lines at once (counterpoint)', 'Loud and soft in blocks (“terraced” dynamics) -- the harpsichord can’t crescendo', 'Non legato as the normal touch; ornaments (trills, mordents) to decorate and stress notes', 'A steady, dance-like pulse'],
-    today: 'On the piano: a clear non legato, little or no pedal, dynamics that step rather than swell, crisp ornaments.',
-    composers: ['J. S. Bach', 'Handel', 'D. Scarlatti', 'Couperin'], sound: 'harpsichord' },
-  { id: 'classical', name: 'Classical', years: '1750–1820', color: '#3b4fa8', inst: 'Fortepiano',
-    traits: ['A tune with an accompaniment (e.g. Alberti bass)', 'Balanced phrases -- question and answer', 'Crescendo, diminuendo and sf now possible', 'Short slurs, light and clear touch'],
-    today: 'On the piano: light and elegant, a quiet left hand under the tune, pedal only sparingly.',
-    composers: ['Haydn', 'Mozart', 'Clementi', 'early Beethoven'], sound: 'piano' },
-  { id: 'romantic', name: 'Romantic', years: '1820–1900', color: '#c8361b', inst: 'The modern piano: iron frame, bigger range',
-    traits: ['Long singing legato melodies', 'Rich use of the sustaining pedal', 'Huge dynamic range (ppp to fff) and the whole keyboard', 'Rubato -- the time bends with the feeling'],
-    today: 'On the piano: sing the melody, pedal to join and colour, shape the time.',
-    composers: ['late Beethoven', 'Schubert', 'Chopin', 'Schumann', 'Liszt', 'Brahms', 'Tchaikovsky'], sound: 'piano' },
-  { id: 'modern', name: '20th century & today', years: '1900–', color: '#2e8a6e', inst: 'Concert grand (and new sounds: prepared and digital pianos)',
-    traits: ['New scales and harmonies (whole-tone, modes, jazz chords)', 'Colour and atmosphere -- pedal washes (Impressionism)', 'The piano used as a percussion instrument, strong rhythm', 'Many styles side by side'],
-    today: 'On the piano: listen for colour and rhythm; follow the composer’s exact markings.',
-    composers: ['Debussy', 'Ravel', 'Bartók', 'Prokofiev', 'Kabalevsky', 'Gershwin'], sound: 'piano' },
+  { id: 'baroque', get short() { return t('Baroque', '바로크'); }, get name() { return t('Baroque', '바로크'); }, years: '1600–1750', color: '#7a64a8', get inst() { return t('Harpsichord, clavichord, organ', '하프시코드, 클라비코드, 오르간'); },
+    get traits() { return LANG === 'ko' ? ['여러 개의 독립된 선율이 동시에 (대위법)', '셈여림이 계단처럼 덩어리로 바뀌어요 (“테라스 다이내믹”) -- 하프시코드는 크레셴도를 못 해요', '기본 터치는 논 레가토; 꾸밈음(트릴, 모르덴트)으로 장식하고 음을 강조해요', '춤곡 같은 일정한 박'] : ['Several independent lines at once (counterpoint)', 'Loud and soft in blocks (“terraced” dynamics) -- the harpsichord can’t crescendo', 'Non legato as the normal touch; ornaments (trills, mordents) to decorate and stress notes', 'A steady, dance-like pulse']; },
+    get today() { return t('On the piano: a clear non legato, little or no pedal, dynamics that step rather than swell, crisp ornaments.', '피아노로 칠 때: 또렷한 논 레가토, 페달은 거의 또는 전혀 쓰지 않고, 셈여림은 부풀리기보다 계단처럼, 꾸밈음은 산뜻하게.'); },
+    get composers() { return LANG === 'ko' ? ['J. S. 바흐', '헨델', 'D. 스카를라티', '쿠프랭'] : ['J. S. Bach', 'Handel', 'D. Scarlatti', 'Couperin']; }, sound: 'harpsichord' },
+  { id: 'classical', get short() { return t('Classical', '고전주의'); }, get name() { return t('Classical', '고전주의'); }, years: '1750–1820', color: '#3b4fa8', get inst() { return t('Fortepiano', '포르테피아노'); },
+    get traits() { return LANG === 'ko' ? ['반주가 붙은 선율 (예: 알베르티 베이스)', '균형 잡힌 프레이즈 -- 질문과 대답', '크레셴도, 디미누엔도, sf가 가능해져요', '짧은 슬러, 가볍고 맑은 터치'] : ['A tune with an accompaniment (e.g. Alberti bass)', 'Balanced phrases -- question and answer', 'Crescendo, diminuendo and sf now possible', 'Short slurs, light and clear touch']; },
+    get today() { return t('On the piano: light and elegant, a quiet left hand under the tune, pedal only sparingly.', '피아노로 칠 때: 가볍고 우아하게, 선율 아래 왼손은 조용히, 페달은 아껴서.'); },
+    get composers() { return LANG === 'ko' ? ['하이든', '모차르트', '클레멘티', '초기 베토벤'] : ['Haydn', 'Mozart', 'Clementi', 'early Beethoven']; }, sound: 'piano' },
+  { id: 'romantic', get short() { return t('Romantic', '낭만주의'); }, get name() { return t('Romantic', '낭만주의'); }, years: '1820–1900', color: '#c8361b', get inst() { return t('The modern piano: iron frame, bigger range', '현대 피아노: 철 프레임, 더 넓은 음역'); },
+    get traits() { return LANG === 'ko' ? ['길게 노래하는 레가토 선율', '댐퍼 페달을 풍부하게', '아주 넓은 셈여림(ppp부터 fff까지)과 건반 전체 사용', '루바토 -- 감정에 따라 시간이 휘어져요'] : ['Long singing legato melodies', 'Rich use of the sustaining pedal', 'Huge dynamic range (ppp to fff) and the whole keyboard', 'Rubato -- the time bends with the feeling']; },
+    get today() { return t('On the piano: sing the melody, pedal to join and colour, shape the time.', '피아노로 칠 때: 선율을 노래하듯, 페달로 잇고 색을 입히고, 시간을 빚어요.'); },
+    get composers() { return LANG === 'ko' ? ['후기 베토벤', '슈베르트', '쇼팽', '슈만', '리스트', '브람스', '차이콥스키'] : ['late Beethoven', 'Schubert', 'Chopin', 'Schumann', 'Liszt', 'Brahms', 'Tchaikovsky']; }, sound: 'piano' },
+  { id: 'modern', get short() { return t('20th', '20세기'); }, get name() { return t('20th century & today', '20세기와 오늘날'); }, years: '1900–', color: '#2e8a6e', get inst() { return t('Concert grand (and new sounds: prepared and digital pianos)', '콘서트 그랜드 (그리고 새로운 소리: 프리페어드 피아노, 디지털 피아노)'); },
+    get traits() { return LANG === 'ko' ? ['새로운 음계와 화성 (온음음계, 선법, 재즈 화음)', '색채와 분위기 -- 페달로 소리를 번지게 (인상주의)', '피아노를 타악기처럼, 강한 리듬', '여러 스타일이 나란히'] : ['New scales and harmonies (whole-tone, modes, jazz chords)', 'Colour and atmosphere -- pedal washes (Impressionism)', 'The piano used as a percussion instrument, strong rhythm', 'Many styles side by side']; },
+    get today() { return t('On the piano: listen for colour and rhythm; follow the composer’s exact markings.', '피아노로 칠 때: 색채와 리듬을 잘 듣고, 작곡가가 적어 둔 표시를 정확히 따라요.'); },
+    get composers() { return LANG === 'ko' ? ['드뷔시', '라벨', '바르토크', '프로코피예프', '카발레프스키', '거슈윈'] : ['Debussy', 'Ravel', 'Bartók', 'Prokofiev', 'Kabalevsky', 'Gershwin']; }, sound: 'piano' },
 ];
 // Rough feel guide only (not a hard rule) -- built from each era's own traits/today text above:
 // dynamics = how wide a dynamic range the era's playing style uses; pedal = how much sustaining pedal;
@@ -12280,7 +12407,7 @@ const ERA_BARS = {
   romantic: { dynamics: 4, pedal: 4, rubato: 4 },
   modern:   { dynamics: 3, pedal: 3, rubato: 2 },
 };
-const ERA_BAR_LABELS = [['dynamics', 'Dynamic range'], ['pedal', 'Pedal use'], ['rubato', 'Tempo flexibility']];
+const ERA_BAR_LABELS = [['dynamics', 'Dynamic range', '셈여림 폭'], ['pedal', 'Pedal use', '페달 사용'], ['rubato', 'Tempo flexibility', '템포의 유연함']];
 // A few bars in each era's manner (same key, short).
 function playEra(id) {
   const ctx = getAudio(); if (!ctx) return; stopClicks();
@@ -12308,40 +12435,40 @@ function ErasTimeline() {
   const bars = ERA_BARS[E.id];
   return (
     <div className="try-box" style={actBox}>
-      <div style={actTitle}>The style eras</div>
-      <div style={actNote}>What the keyboard of each era could do shaped how its music is played. Tap an era, then hear a few bars in its style.</div>
+      <div style={actTitle}>{t('The style eras', '시대별 스타일')}</div>
+      <div style={actNote}>{t('What the keyboard of each era could do shaped how its music is played. Tap an era, then hear a few bars in its style.', '각 시대의 건반 악기가 할 수 있었던 것이 그 시대 음악의 연주법을 만들었어요. 시대를 누르고, 그 스타일로 몇 마디 들어 보세요.')}</div>
       <div style={{display:'flex',height:34,borderRadius:8,overflow:'hidden',marginBottom:8,boxShadow:'0 1px 0 rgba(0,0,0,0.08)'}}>
-        {ERAS.map((e, i) => <button key={e.id} onClick={() => setSel(e.id)} style={{flex:[150, 70, 80, 100][i],border:'none',background:e.color,opacity:sel === e.id ? 1 : 0.4,color:'#fff',fontWeight:900,fontSize:12,letterSpacing:'0.02em',cursor:'pointer',fontFamily:'inherit',padding:0,transition:'opacity 0.15s ease',transform:sel === e.id ? 'scale(1.03)' : 'scale(1)'}}>{e.name.split(' ')[0]}</button>)}
+        {ERAS.map((e, i) => <button key={e.id} onClick={() => setSel(e.id)} style={{flex:[150, 70, 80, 100][i],border:'none',background:e.color,opacity:sel === e.id ? 1 : 0.4,color:'#fff',fontWeight:900,fontSize:12,letterSpacing:'0.02em',cursor:'pointer',fontFamily:'inherit',padding:0,transition:'opacity 0.15s ease',transform:sel === e.id ? 'scale(1.03)' : 'scale(1)'}}>{e.short}</button>)}
       </div>
-      <div style={{display:'flex',justifyContent:'space-between',fontSize:11.5,fontWeight:800,color:'var(--muted)',margin:'-5px 0 8px'}}><span>1600</span><span>1750</span><span>1820</span><span>1900</span><span>today</span></div>
+      <div style={{display:'flex',justifyContent:'space-between',fontSize:11.5,fontWeight:800,color:'var(--muted)',margin:'-5px 0 8px'}}><span>1600</span><span>1750</span><span>1820</span><span>1900</span><span>{t('today', '오늘')}</span></div>
       <div key={E.id} style={{background:'#fff',borderRadius:10,padding:'12px 12px 10px',borderLeft:'6px solid ' + E.color,fontSize:13.5,lineHeight:1.5,overflow:'hidden'}}>
         {/* Big bold Vox-style headline block */}
         <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',flexWrap:'wrap',gap:4,animation:'voxYearIn 0.32s cubic-bezier(.2,.8,.3,1) both'}}>
           <b style={{fontSize:22,color:E.color,letterSpacing:'-0.01em'}}>{E.name}</b>
           <span style={{fontWeight:900,color:'#fff',background:E.color,borderRadius:5,padding:'2px 8px',fontSize:12.5,animation:'voxPopIn 0.3s 0.08s cubic-bezier(.34,1.56,.64,1) both'}}>{E.years}</span>
         </div>
-        <div style={{marginTop:3,animation:'voxSlideIn 0.28s 0.05s ease both'}}><b>Keyboard:</b> {E.inst}</div>
+        <div style={{marginTop:3,animation:'voxSlideIn 0.28s 0.05s ease both'}}><b>{t('Keyboard:', '건반 악기:')}</b> {E.inst}</div>
 
         {/* Animated "feel" bars */}
         <div style={{margin:'9px 0',display:'flex',flexDirection:'column',gap:4}}>
-          {ERA_BAR_LABELS.map(([key, label], i) => (
+          {ERA_BAR_LABELS.map(([key, label, labelKo], i) => (
             <div key={key} style={{display:'flex',alignItems:'center',gap:6,animation:'voxSlideIn 0.28s ' + (0.08 + i * 0.05) + 's ease both'}}>
-              <span style={{fontSize:11,fontWeight:800,color:'var(--muted)',width:112,flexShrink:0}}>{label}</span>
+              <span style={{fontSize:11,fontWeight:800,color:'var(--muted)',width:112,flexShrink:0}}>{t(label, labelKo)}</span>
               <span style={{flex:1,height:7,background:'#efe6d4',borderRadius:4,overflow:'hidden'}}>
                 <span style={{display:'block',height:'100%',borderRadius:4,background:E.color,width:(bars[key] / 4 * 100) + '%',animation:'voxBarGrow 0.5s ' + (0.12 + i * 0.06) + 's cubic-bezier(.2,.8,.3,1) both'}}/>
               </span>
             </div>
           ))}
-          <div style={{fontSize:10.5,color:'var(--muted)',marginTop:1}}>A rough feel, not a rule -- based on the traits below.</div>
+          <div style={{fontSize:10.5,color:'var(--muted)',marginTop:1}}>{t('A rough feel, not a rule -- based on the traits below.', '규칙이 아니라 대략적인 느낌이에요 -- 아래 특징을 바탕으로 했어요.')}</div>
         </div>
 
         <ul style={{margin:'4px 0',paddingLeft:18}}>
           {E.traits.map((t, i) => <li key={i} style={{animation:'voxSlideIn 0.26s ' + (0.14 + i * 0.06) + 's ease both'}}>{t}</li>)}
         </ul>
-        <div style={{background:'#f5f0e4',borderRadius:6,padding:'5px 7px',animation:'voxBlockIn 0.3s ' + (0.2 + E.traits.length * 0.06) + 's ease both'}}><b>Playing it today:</b> {E.today}</div>
+        <div style={{background:'#f5f0e4',borderRadius:6,padding:'5px 7px',animation:'voxBlockIn 0.3s ' + (0.2 + E.traits.length * 0.06) + 's ease both'}}><b>{t('Playing it today:', '오늘 연주한다면:')}</b> {E.today}</div>
 
         <div style={{marginTop:6}}>
-          <b>Composers:</b>
+          <b>{t('Composers:', '작곡가:')}</b>
           <div style={{display:'flex',flexWrap:'wrap',gap:5,marginTop:4}}>
             {E.composers.map((c, i) => (
               <span key={c} style={{fontSize:12,fontWeight:800,color:E.color,background:E.color + '1a',border:'1.5px solid ' + E.color + '55',borderRadius:20,padding:'2px 9px',animation:'voxPopIn 0.28s ' + (0.28 + E.traits.length * 0.06 + i * 0.045) + 's cubic-bezier(.34,1.56,.64,1) both'}}>{c}</span>
@@ -12349,7 +12476,7 @@ function ErasTimeline() {
           </div>
         </div>
 
-        <div style={{textAlign:'center',marginTop:9}}><button className="ghost-btn" onClick={() => playEra(E.id)}>♪ Hear the {E.name.split(' ')[0]} style{E.sound === 'harpsichord' ? ' (harpsichord)' : ''}</button></div>
+        <div style={{textAlign:'center',marginTop:9}}><button className="ghost-btn" onClick={() => playEra(E.id)}>{t('♪ Hear the ' + E.short + ' style' + (E.sound === 'harpsichord' ? ' (harpsichord)' : ''), '♪ ' + E.short + ' 스타일 듣기' + (E.sound === 'harpsichord' ? ' (하프시코드)' : ''))}</button></div>
       </div>
     </div>
   );
@@ -12367,23 +12494,23 @@ function HzExplorer() {
   for (let i = 0; i <= 300; i++) pts.push(i + ',' + (40 - 26 * Math.sin(2 * Math.PI * shown * i / W)).toFixed(1));
   return (
     <div className="try-box" style={actBox}>
-      <div style={actTitle}>How high is a note? Hertz</div>
-      <div style={actNote}>A note is a vibration. <b>Hertz (Hz)</b> = vibrations per second. The faster the string vibrates, the higher the note. A4 (the A above middle C) is <b>440 Hz</b> -- the note orchestras tune to.</div>
+      <div style={actTitle}>{t('How high is a note? Hertz', '음은 얼마나 높을까? 헤르츠')}</div>
+      <div style={actNote}>{LANG === 'ko' ? <>음은 떨림이에요. <b>헤르츠(Hz)</b> = 1초에 떨리는 횟수. 현이 빨리 떨릴수록 음이 높아져요. A4(가운데 도 바로 위의 라)는 <b>440 Hz</b> -- 오케스트라가 조율할 때 맞추는 음이에요.</> : <>A note is a vibration. <b>Hertz (Hz)</b> = vibrations per second. The faster the string vibrates, the higher the note. A4 (the A above middle C) is <b>440 Hz</b> -- the note orchestras tune to.</>}</div>
       <div style={{background:'#fff',borderRadius:10,padding:'6px'}}>
         <svg viewBox="0 0 300 80" style={{width:'100%',display:'block'}}><line x1="0" x2="300" y1="40" y2="40" stroke="#e9e2d2"/><polyline points={pts.join(' ')} fill="none" stroke="#e4572e" strokeWidth={shown > 30 ? 0.8 : 1.8}/></svg>
         <div style={{textAlign:'center'}}><span style={{fontSize:24,fontWeight:900}}>{midiName(m)}</span> <span style={{fontSize:18,fontWeight:900,color:'#e4572e'}}>{fmtHz(f)}</span></div>
-        <div style={{textAlign:'center',fontSize:12.5,color:'var(--muted)'}}>{Math.round(f)} vibrations every second{cycles > 60 ? ' -- too many to draw!' : ''}</div>
+        <div style={{textAlign:'center',fontSize:12.5,color:'var(--muted)'}}>{t(Math.round(f) + ' vibrations every second' + (cycles > 60 ? ' -- too many to draw!' : ''), '1초에 ' + Math.round(f) + '번 떨려요' + (cycles > 60 ? ' -- 너무 많아서 다 그릴 수 없어요!' : ''))}</div>
       </div>
       <input type="range" min="21" max="108" value={m} onChange={e => setM(+e.target.value)} onMouseUp={() => play(m)} onTouchEnd={() => play(m)} style={{width:'100%',accentColor:'#e4572e',marginTop:6}}/>
-      <div style={{display:'flex',justifyContent:'space-between',fontSize:12,fontWeight:800,color:'var(--muted)'}}><span>A0 · 27.5 Hz (lowest piano key)</span><span>C8 · 4186 Hz</span></div>
+      <div style={{display:'flex',justifyContent:'space-between',fontSize:12,fontWeight:800,color:'var(--muted)'}}><span>{t('A0 · 27.5 Hz (lowest piano key)', 'A0 · 27.5 Hz (피아노의 가장 낮은 건반)')}</span><span>C8 · 4186 Hz</span></div>
       <div style={{display:'flex',gap:4,flexWrap:'wrap',justifyContent:'center',margin:'8px 0 4px'}}>
         {[45, 57, 69, 81, 93].map(x => <button key={x} className={'chip' + (x === m ? ' active' : '')} style={{padding:'3px 9px',fontSize:13}} onClick={() => { setM(x); play(x); }}>{midiName(x)} · {fmtHz(mFreq(x))}</button>)}
       </div>
       <div style={{fontSize:13.5,background:'#fff',borderRadius:8,padding:'6px 9px',lineHeight:1.5}}>
-        <b>An octave doubles it.</b> A3 = 220, A4 = 440, A5 = 880 Hz. Going up a semitone multiplies by about 1.06 (the twelfth root of 2), so 12 semitones = ×2.
-        <div style={{marginTop:3}}>People hear from about <b>20 Hz</b> to <b>20,000 Hz</b> (less as we get older). The piano’s notes go from 27.5 to 4186 Hz -- but each note also has higher overtones, which is what makes a piano sound like a piano.</div>
+        {LANG === 'ko' ? <><b>한 옥타브 올라가면 두 배.</b> A3 = 220, A4 = 440, A5 = 880 Hz. 반음 올라갈 때마다 약 1.06배(2의 12제곱근)가 되니, 반음 12개 = ×2예요.</> : <><b>An octave doubles it.</b> A3 = 220, A4 = 440, A5 = 880 Hz. Going up a semitone multiplies by about 1.06 (the twelfth root of 2), so 12 semitones = ×2.</>}
+        <div style={{marginTop:3}}>{LANG === 'ko' ? <>사람은 약 <b>20 Hz</b>부터 <b>20,000 Hz</b>까지 들을 수 있어요(나이가 들수록 줄어요). 피아노 음은 27.5부터 4186 Hz까지지만, 각 음에는 더 높은 배음도 함께 울려요. 그 배음 덕분에 피아노가 피아노다운 소리를 내요.</> : <>People hear from about <b>20 Hz</b> to <b>20,000 Hz</b> (less as we get older). The piano’s notes go from 27.5 to 4186 Hz -- but each note also has higher overtones, which is what makes a piano sound like a piano.</>}</div>
       </div>
-      <div style={{display:'flex',gap:4,alignItems:'center',marginTop:8,fontSize:12,fontWeight:800,color:'var(--muted)',justifyContent:'center'}}>Sound {[['piano', 'Piano'], ['pure', 'Pure tone (no overtones)']].map(([k, l]) => <button key={k} className={'chip' + (snd === k ? ' active' : '')} style={{padding:'2px 9px',fontSize:12}} onClick={() => setSnd(k)}>{l}</button>)}</div>
+      <div style={{display:'flex',gap:4,alignItems:'center',marginTop:8,fontSize:12,fontWeight:800,color:'var(--muted)',justifyContent:'center'}}>{t('Sound', '소리')} {[['piano', t('Piano', '피아노')], ['pure', t('Pure tone (no overtones)', '순음 (배음 없음)')]].map(([k, l]) => <button key={k} className={'chip' + (snd === k ? ' active' : '')} style={{padding:'2px 9px',fontSize:12}} onClick={() => setSnd(k)}>{l}</button>)}</div>
     </div>
   );
 }
@@ -12398,6 +12525,9 @@ const RANGES = [
   { g: 'Voices', c: '#7a64a8', rows: [['Soprano', 'C4', 'C6'], ['Alto', 'F3', 'F5'], ['Tenor', 'C3', 'C5'], ['Bass', 'E2', 'E4']] },
   { g: 'The piano through history', c: '#6d6f9c', hist: true, rows: [['Cristofori, 1720', 'C2', 'C6'], ['Mozart’s piano, 1780s', 'F1', 'G6'], ['Beethoven’s Broadwood, 1817', 'C1', 'C7'], ['Modern piano, 1880s–', 'A0', 'C8']] },
 ];
+// Phase 286: display names in Korean; the English name stays the id.
+const RANGE_KO = { 'Keyboards': '건반 악기', 'Strings': '현악기', 'Woodwind': '목관 악기', 'Brass': '금관 악기', 'Voices': '목소리', 'The piano through history': '시대별 피아노', 'Piano (today, 88 keys)': '피아노 (오늘날, 88건반)', 'Harpsichord (late Baroque)': '하프시코드 (후기 바로크)', 'Organ (manuals)': '오르간 (손 건반)', 'Organ (with pedals)': '오르간 (페달 포함)', 'Violin': '바이올린', 'Viola': '비올라', 'Cello': '첼로', 'Double bass': '더블베이스', 'Guitar': '기타', 'Harp': '하프', 'Piccolo': '피콜로', 'Flute': '플루트', 'Oboe': '오보에', 'Clarinet': '클라리넷', 'Bassoon': '바순', 'Trumpet': '트럼펫', 'French horn': '호른', 'Trombone': '트롬본', 'Tuba': '튜바', 'Soprano': '소프라노', 'Alto': '알토', 'Tenor': '테너', 'Bass': '베이스', 'Cristofori, 1720': '크리스토포리, 1720', 'Mozart’s piano, 1780s': '모차르트의 피아노, 1780년대', 'Beethoven’s Broadwood, 1817': '베토벤의 브로드우드, 1817', 'Modern piano, 1880s–': '현대 피아노, 1880년대–' };
+const rangeName = (n) => t(n, RANGE_KO[n] || n);
 const ALL_RANGES = RANGES.flatMap(g => g.rows.map(r => ({ name: r[0], lo: nm(r[1]), hi: nm(r[2]), g: g.g, c: g.c, hist: !!g.hist })));
 function RangeChart() {
   const [sel, setSel] = useState('Violin');
@@ -12414,34 +12544,34 @@ function RangeChart() {
   return (
     <div className="try-box" style={actBox}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
-        <div style={actTitle}>Who plays where?</div>
-        <div style={{display:'flex',gap:3}}>{[[false, 'Instruments'], [true, 'Piano through history']].map(([v, l]) => <button key={l} className={'chip' + (hist === v ? ' active' : '')} style={{padding:'2px 9px',fontSize:12}} onClick={() => { setHist(v); setSel(v ? 'Cristofori, 1720' : 'Violin'); }}>{l}</button>)}</div>
+        <div style={actTitle}>{t('Who plays where?', '누가 어디를 연주할까?')}</div>
+        <div style={{display:'flex',gap:3}}>{[[false, t('Instruments', '악기')], [true, t('Piano through history', '시대별 피아노')]].map(([v, l]) => <button key={String(v)} className={'chip' + (hist === v ? ' active' : '')} style={{padding:'2px 9px',fontSize:12}} onClick={() => { setHist(v); setSel(v ? 'Cristofori, 1720' : 'Violin'); }}>{l}</button>)}</div>
       </div>
-      <div style={actNote}>{hist ? 'The keyboard grew from about four octaves to seven and a quarter.' : 'Every bar is laid over the 88 keys of the piano. The piano covers almost everything in the orchestra -- only the piccolo’s very top and a few low organ pipes go further.'} Tap a bar to hear its lowest and highest note.</div>
+      <div style={actNote}>{hist ? t('The keyboard grew from about four octaves to seven and a quarter.', '건반은 약 4옥타브에서 7과 1/4옥타브로 넓어졌어요.') : t('Every bar is laid over the 88 keys of the piano. The piano covers almost everything in the orchestra -- only the piccolo’s very top and a few low organ pipes go further.', '모든 막대를 피아노 88건반 위에 겹쳐 놓았어요. 피아노는 오케스트라의 거의 모든 음역을 덮어요 -- 피콜로의 맨 꼭대기와 오르간의 낮은 파이프 몇 개만 더 넘어가요.')}{t(' Tap a bar to hear its lowest and highest note.', ' 막대를 누르면 가장 낮은 음과 가장 높은 음을 들려줘요.')}</div>
       <div style={{background:'#fff',borderRadius:10,padding:'6px 4px',overflowX:'hidden'}}>
         <svg viewBox={`0 -26 360 ${H + 70}`} style={{width:'100%',display:'block'}}>
           {/* Hz ruler at the A's, and middle C */}
           {[21, 33, 45, 57, 69, 81, 93, 105].map(m => <g key={m}><line x1={x(m)} x2={x(m)} y1={-8} y2={H + 4} stroke="#e9e3d4"/><text x={x(m)} y={-14} fontSize="7" fontWeight="800" textAnchor="middle" fill="#7f81a8">{midiName(m)}</text><text x={x(m)} y={-5} fontSize="6.5" textAnchor="middle" fill="#e4572e">{fmtHz(mFreq(m)).replace(' ', '')}</text></g>)}
           <line x1={x(60)} x2={x(60)} y1={-8} y2={H + 4} stroke="#e4572e" strokeDasharray="2 2"/>
-          {rowsDraw.map((d, i) => d.head ? <text key={i} x="8" y={d.y + 9} fontSize="8" fontWeight="900" fill={d.c} letterSpacing="0.06em">{d.head.toUpperCase()}</text> : (
+          {rowsDraw.map((d, i) => d.head ? <text key={i} x="8" y={d.y + 9} fontSize="8" fontWeight="900" fill={d.c} letterSpacing="0.06em">{rangeName(d.head).toUpperCase()}</text> : (
             <g key={i} onClick={() => { setSel(d.r.name); hear(d.r); }} style={{cursor:'pointer'}}>
               <rect x={x(d.r.lo) - 1.5} y={d.y + 2} width={x(d.r.hi) - x(d.r.lo) + 3} height="10" rx="5" fill={d.r.c} opacity={d.r.name === sel ? 1 : 0.55}/>
-              {(() => { const w = d.r.name.length * 3.8, right = x(d.r.hi) + 5 + w < 358, left = x(d.r.lo) - 4 - w > 0;
+              {(() => { const nm = rangeName(d.r.name), w = nm.length * (LANG === 'ko' ? 7 : 3.8), right = x(d.r.hi) + 5 + w < 358, left = x(d.r.lo) - 4 - w > 0;
                 const tx = right ? x(d.r.hi) + 5 : left ? x(d.r.lo) - 4 : x(d.r.lo) + 6;
-                return <text x={tx} y={d.y + 10} fontSize="7.5" fontWeight={d.r.name === sel ? 900 : 700} textAnchor={right || !left ? 'start' : 'end'} fill={right || left ? '#26296b' : '#fff'}>{d.r.name}</text>; })()}
+                return <text x={tx} y={d.y + 10} fontSize="7.5" fontWeight={d.r.name === sel ? 900 : 700} textAnchor={right || !left ? 'start' : 'end'} fill={right || left ? '#26296b' : '#fff'}>{nm}</text>; })()}
             </g>
           ))}
           {/* the keyboard itself */}
           <g transform={`translate(0,${H + 8})`}>
             {whites.map((m, i) => <rect key={m} x={x(m) - 3.3} y="0" width="6.6" height="30" fill={m >= R.lo && m <= R.hi ? '#f8e7c2' : '#fff'} stroke="#c9c0aa" strokeWidth="0.5" onClick={() => play(m)}/>)}
             {Array.from({ length: 88 }, (_, i) => 21 + i).filter(m => ![0, 2, 4, 5, 7, 9, 11].includes(m % 12)).map(m => <rect key={m} x={x(m) - 2} y="0" width="4" height="18" fill={m >= R.lo && m <= R.hi ? '#c0431f' : '#26296b'} onClick={() => play(m)}/>)}
-            <text x={x(60)} y="40" fontSize="7" fontWeight="800" textAnchor="middle" fill="#e4572e">middle C</text>
+            <text x={x(60)} y="40" fontSize="7" fontWeight="800" textAnchor="middle" fill="#e4572e">{t('middle C', '가운데 도')}</text>
           </g>
         </svg>
       </div>
       <div style={{background:'#fff',borderRadius:8,padding:'7px 9px',marginTop:6,fontSize:13.5,borderLeft:'5px solid ' + R.c}}>
-        <b>{R.name}</b>: {midiName(R.lo)} to {midiName(R.hi)} · <span style={{color:'#e4572e',fontWeight:800}}>{fmtHz(mFreq(R.lo))} – {fmtHz(mFreq(R.hi))}</span>
-        <div style={{color:'#6d6f9c'}}>{Math.round((R.hi - R.lo) / 12 * 10) / 10} octaves{R.hist ? '' : ' (a typical range -- experts can go further)'}. <button className="chip" style={{padding:'1px 8px',fontSize:12}} onClick={() => hear(R)}>♪ lowest, highest</button></div>
+        <b>{rangeName(R.name)}</b>: {midiName(R.lo)}{t(' to ', '부터 ')}{midiName(R.hi)}{t('', '까지')} · <span style={{color:'#e4572e',fontWeight:800}}>{fmtHz(mFreq(R.lo))} – {fmtHz(mFreq(R.hi))}</span>
+        <div style={{color:'#6d6f9c'}}>{Math.round((R.hi - R.lo) / 12 * 10) / 10}{t(' octaves', '옥타브')}{R.hist ? '' : t(' (a typical range -- experts can go further)', ' (보통의 음역 -- 전문 연주자는 더 넓게도 가요)')}. <button className="chip" style={{padding:'1px 8px',fontSize:12}} onClick={() => hear(R)}>{t('♪ lowest, highest', '♪ 가장 낮은 음, 가장 높은 음')}</button></div>
       </div>
     </div>
   );
@@ -12581,24 +12711,24 @@ function PianoAction() {
 function PianoStoryLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="piano-story" title="The piano’s story" onStart={onStart}
-      intro={<>Where the piano came from, what came before it, and how each era’s keyboard shaped the way its music is played. Useful for exam general-knowledge questions.</>}>
-      <Step title="Before the piano">
+    <Lesson id="piano-story" title={t('The piano’s story', '피아노 이야기')} onStart={onStart}
+      intro={t('Where the piano came from, what came before it, and how each era’s keyboard shaped the way its music is played. Useful for exam general-knowledge questions.', '피아노가 어디서 왔는지, 그 전에는 어떤 악기가 있었는지, 그리고 각 시대의 건반 악기가 그 시대 음악의 연주법을 어떻게 만들었는지 알아봐요. 시험의 일반 상식 문제에도 도움이 돼요.')}>
+      <Step title={t('Before the piano', '피아노 이전')}>
         <ExplPianoStory1/>
         <KeyboardAncestors/>
       </Step>
-      <Step title="Non legato">
+      <Step title={t('Non legato', '논 레가토')}>
         <ExplPianoStory2/>
         <TouchLengths/>
       </Step>
-      <Step title="Cristofori and after">
+      <Step title={t('Cristofori and after', '크리스토포리와 그 후')}>
         <ExplPianoStory3/>
         <PianoTimeline/>
       </Step>
       <Step title={t('Inside the piano', '피아노 속을 들여다보기')}>
         <PianoAction/>
       </Step>
-      <Step title="The style eras">
+      <Step title={t('The style eras', '시대별 스타일')}>
         <ErasTimeline/>
       </Step>
     </Lesson>
@@ -12823,9 +12953,9 @@ function OctaveLadder() {
 function PitchRangeLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
-    <Lesson id="pitch-range" title="Pitch, Hz and range" onStart={onStart}
-      intro={<>What makes a note high or low, and where the piano sits among the other instruments and voices.</>}>
-      <Step title="Vibrations and Hertz">
+    <Lesson id="pitch-range" title={t('Pitch, Hz and range', '음높이, 헤르츠, 음역')} onStart={onStart}
+      intro={t('What makes a note high or low, and where the piano sits among the other instruments and voices.', '음을 높게 또는 낮게 만드는 것은 무엇인지, 그리고 피아노가 다른 악기와 목소리 사이에서 어디쯤 있는지 알아봐요.')}>
+      <Step title={t('Vibrations and Hertz', '떨림과 헤르츠')}>
         <ExplPitchRange1/>
         <HzExplorer/>
       </Step>
@@ -12838,7 +12968,7 @@ function PitchRangeLearn({ onStart }) {
       <Step title={t('The octave ladder', '옥타브 사다리')}>
         <OctaveLadder/>
       </Step>
-      <Step title="The piano and the orchestra">
+      <Step title={t('The piano and the orchestra', '피아노와 오케스트라')}>
         <ExplPitchRange2/>
         <RangeChart/>
       </Step>
@@ -12879,6 +13009,35 @@ const STORY_QS = [
   [3, 'Which composer is Classical?', 'Mozart', ['Bach', 'Chopin', 'Bartók']],
   [3, 'Which composer is Romantic?', 'Chopin', ['Handel', 'Haydn', 'Scarlatti']],
 ];
+const STORY_QS_KO = [ // same order as STORY_QS (Phase 286)
+  [1, '현을 뜯어서 소리 내는 건반 악기는?', '하프시코드', ['피아노', '클라비코드', '오르간']],
+  [1, '작은 놋쇠 탄젠트로 현을 치는 건반 악기는?', '클라비코드', ['하프시코드', '피아노', '첼레스타']],
+  [1, '피아노에서 현을 치는 것은?', '펠트 해머', ['깃촉', '놋쇠 탄젠트', '활']],
+  [1, '하프시코드에서 건반을 더 세게 누르면 소리는…', '크기가 똑같아요', ['커져요', '작아져요', '길어져요']],
+  [1, '“피아노 에 포르테”의 뜻은?', '여리게 그리고 세게', ['느리게 그리고 빠르게', '높게 그리고 낮게', '짧게 그리고 길게']],
+  [1, '바로크 건반 음악의 기본 터치는…', '논 레가토', ['레가토', '스타카티시모', '페달을 많이 써서']],
+  [1, '논 레가토의 뜻은…', '떨어지게, 하지만 짧지 않게', ['아주 부드럽게', '아주 짧게', '적힌 것보다 길게']],
+  [1, '소리가 아주 작아서 집에서 연습하기 좋았던 악기는?', '클라비코드', ['하프시코드', '오르간', '그랜드 피아노']],
+  [2, '피아노를 발명한 사람은?', '바르톨로메오 크리스토포리', ['J. S. 바흐', '모차르트', '스타인웨이']],
+  [2, '피아노는 대략 언제 발명되었을까요?', '1700년경', ['1600년경', '1800년경', '1900년경']],
+  [2, '크리스토포리가 첫 피아노를 만든 곳은?', '이탈리아 피렌체', ['오스트리아 빈', '영국 런던', '독일 라이프치히']],
+  [2, '현대 피아노의 건반은 몇 개일까요?', '88', ['61', '76', '100']],
+  [2, '현대 피아노의 가장 낮은 음은?', 'A0', ['C1', 'E1', 'C0']],
+  [2, '현대 피아노가 굵고 팽팽한 현을 버틸 수 있게 해 준 것은?', '주철 프레임', ['나무 뚜껑', '소프트 페달', '깃촉']],
+  [2, '이스케이프먼트 덕분에 해머는 무엇을 할 수 있게 되었나요?', '바로 떨어져 나와 현이 계속 울리게', ['현을 뜯게', '현을 계속 누르고 있게', '현 두 줄을 치게']],
+  [2, '모차르트 시대의 가벼운 빈 피아노를 부르는 이름은…', '포르테피아노', ['하프시코드', '클라비코드', '스피넷']],
+  [3, '바로크 시대는 언제일까요?', '1600–1750', ['1750–1820', '1820–1900', '1900–오늘날']],
+  [3, '고전주의 시대는 언제일까요?', '1750–1820', ['1600–1750', '1820–1900', '1900–오늘날']],
+  [3, '낭만주의 시대는 언제일까요?', '1820–1900', ['1600–1750', '1750–1820', '1900–오늘날']],
+  [3, '테라스 다이내믹(셈여림이 덩어리로 바뀜)은 어느 시대의 특징일까요?', '바로크 시대', ['고전주의 시대', '낭만주의 시대', '20세기']],
+  [3, '선율 아래의 알베르티 베이스는 어느 시대의 특징일까요?', '고전주의 시대', ['바로크 시대', '낭만주의 시대', '20세기']],
+  [3, '페달을 쓴 긴 레가토 선율과 루바토는 어느 시대의 특징일까요?', '낭만주의 시대', ['바로크 시대', '고전주의 시대', '르네상스']],
+  [3, '여러 독립된 선율이 동시에 나오는 대위법은 어느 시대의 특징일까요?', '바로크 시대', ['고전주의 시대', '낭만주의 시대', '20세기']],
+  [3, '온음음계와 페달로 번지는 색채(인상주의)는 어느 시대일까요?', '20세기', ['바로크 시대', '고전주의 시대', '낭만주의 시대']],
+  [3, '바로크 작곡가는?', 'J. S. 바흐', ['쇼팽', '드뷔시', '모차르트']],
+  [3, '고전주의 작곡가는?', '모차르트', ['바흐', '쇼팽', '바르토크']],
+  [3, '낭만주의 작곡가는?', '쇼팽', ['헨델', '하이든', '스카를라티']],
+];
 const STORY_LEVELS = [
   { n: 1, label: 'Before the piano', lv: 1, time: 12 },
   { n: 2, label: 'Cristofori and after', lv: 2, time: 12 },
@@ -12886,9 +13045,10 @@ const STORY_LEVELS = [
   { n: 4, label: 'Everything mixed', lv: 0, time: 12 },
 ];
 function genStoryQuestion(lv, prev) {
-  const pool = STORY_QS.filter(q => !lv.lv || q[0] === lv.lv);
-  let q, g = 0; do { q = pick(pool); } while (prev && prev.key === q[1] && g++ < 10);
-  return { key: q[1], text: q[1], answer: q[2], choices: shuffle([q[2], ...q[3]]), uid: Math.random() };
+  const pool = STORY_QS.map((q, i) => i).filter(i => !lv.lv || STORY_QS[i][0] === lv.lv);
+  let k, g = 0; do { k = pick(pool); } while (prev && prev.key === STORY_QS[k][1] && g++ < 10);
+  const q = LANG === 'ko' ? STORY_QS_KO[k] : STORY_QS[k];
+  return { key: STORY_QS[k][1], text: q[1], answer: q[2], choices: shuffle([q[2], ...q[3]]), uid: Math.random() };
 }
 function FactQuestion({ q, given, locked, onAnswer, pixel }) {
   const done = !!given;
