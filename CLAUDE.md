@@ -4210,6 +4210,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 | 266 | 2026-10-02 | **Design phase stage 5 (tabs + activity panels):** top Plan/Practice/Students (student: Learn/Practice) switch is now serif text tabs with a coral underline; `actBox` (the 'Try it' panel) is white with a thin navy-line border and soft shadow instead of the pink fill. Verified: Babel compile + 390px screenshot. Still to do: bottom tab bar/staff motif and curve (not used in app), student home 'Keep going' resume card (needs progress logic), redraw of chapter heroes (optional), full 139-tool sweep after the colour work. |
 
+| 267 | 2026-10-02 | **Design phase stage 6 (full sweep, Sohyun: change everything design-related without waiting):** ~1,290 remaining hard-coded colours mapped to the staff theme -- illustration cream -> #fbfaf6, mustard -> ochre #e9a83a family, good green -> #2e8a6e, bad red -> #c8361b, sky/blue -> #3b4fa8 family, teal -> #2b8c8c, browns -> navy neutrals, beige tints/borders -> navy tints; brass/buttercream rgba too. All `TOOL_CATS` colours -> coral. Buttons are pills (primary navy, ghost navy-line), search is a navy pill, `.chapter-link` is an underlined coral text link, cards get navy-line border + soft shadow, TRY IT tag coral, lesson Learn/Drill switch is two pills. Black piano keys are now navy (deliberate, matches the two-colour look -- revert to near-black if it reads oddly). Verified: Babel compile, 139-tool sweep 0 errors, screenshots of 12 illustrated tools + Toolbox/Practice/Students/drill. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
