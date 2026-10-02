@@ -14626,7 +14626,7 @@ const CHAPTER_CAT = {
   'signs': 'words', 'terms': 'words', 'styles': 'about', 'piano-story': 'about', 'pitch-range': 'about',
 };
 function catOfChapter(id) { return TOOL_CATS.find(c => c.id === CHAPTER_CAT[id]); }
-const CAT_CHAPTER_ORDER = { pitch: ['staff', 'ledger-lines'], rtime: ['time-signatures'], rrhythm: ['rhythm'], body: ['posture-hands', 'hand-clefs'], melody: ['melody', 'form'], about: ['piano-story', 'pitch-range', 'styles'], scales: ['scales', 'key-signatures'] };  // five-finger = warm-up before scales
+const CAT_CHAPTER_ORDER = { pitch: ['staff', 'ledger-lines'], rtime: ['time-signatures'], rrhythm: ['time-signatures', 'rhythm'], body: ['posture-hands', 'hand-clefs'], melody: ['melody', 'form'], about: ['piano-story', 'pitch-range', 'styles'], scales: ['scales', 'key-signatures'] };  // five-finger = warm-up before scales
 function catChapterIds(catId) { const ids = STAGES.flatMap(s => s.ids).filter(id => CHAPTER_CAT[id] === catId), o = CAT_CHAPTER_ORDER[catId]; return o ? o.filter(id => ids.includes(id)).concat(ids.filter(id => !o.includes(id))) : ids; }
 function orderedChapterIds() { return TOOL_CATS.flatMap(c => catChapterIds(c.id)); }
 function LessonPath({ onOpen, onBack }) {
@@ -15338,7 +15338,7 @@ const CHAPTER_TOOL_ORDER = {
   'ledger-lines': ['ledger-walk', 'ledger-landmarks', 'ledger-twins', 'ledger-write'],
   'melody': ['tune-anatomy', 'phrase-marks', 'question-answer', 'melody-sequence'],
   'note-names': ['find-every', 'name-reveal', 'step-updown', 'letter-chain'],
-  'note-values': ['note-value-tree', 'note-rest-naming', 'split-it', 'beam-apples', 'dotted-notes', 'dot-lab', 'fix-the-bar', 'heard-bar', 'fill-bar', 'rest-grouping', 'note-rest-match'],
+  'note-values': ['note-value-tree', 'note-rest-naming', 'split-it', 'dotted-notes', 'beam-apples', 'dot-lab', 'fix-the-bar', 'heard-bar', 'fill-bar', 'rest-grouping', 'note-rest-match'],
   'piano-story': ['keyboard-ancestors', 'piano-timeline', 'eras'],
   'pitch-range': ['hz-explorer', 'range-chart'],
   'posture-hands': ['sit-check', 'arm-moves', 'arm-alignment', 'hand-shape', 'finger-friends', 'finger-numbers', 'posture-check'],
@@ -15347,14 +15347,14 @@ const CHAPTER_TOOL_ORDER = {
   'rhythm': ['rhythm-cards-all', 'count-more', 'anacrusis', 'make-card'],
   'scales': ['major-shape', 'build-major', 'degree-names', 'major-fingering', 'scale-finder', 'minor-forms', 'build-minor', 'minor-fingering', 'modes'],
   'signs': ['road-map', 'dc-ds-coda', 'ottava', 'ornaments', 'grace-write'],
-  'staff': ['staff-basics', 'rhymes', 'clef-basics', 'clef-story', 'staff-climb', 'landmarks', 'landmark-hop', 'fold', 'flash-cards', 'write-note', 'alto-clef'],
+  'staff': ['staff-basics', 'rhymes', 'clef-basics', 'clef-story', 'staff-climb', 'fold', 'landmarks', 'landmark-hop', 'flash-cards', 'write-note', 'alto-clef'],
   'styles': ['texture-types', 'texture-spotter', 'genre-traits'],
   'tempo': ['tempo-race', 'speed-change', 'metronome'],
   'terms': ['term-cards', 'term-match'],
   'time-signatures': ['time-sig-numbers', 'count-along', 'common-cut', 'bar-lines', 'beat-doubler', 'regroup', 'grouping', 'duplets'],
-  'tones': ['tone-semitone', 'sharp-flat', 'accidental-bar', 'accidental-cards', 'chromatic'],
+  'tones': ['tone-semitone', 'accidental-cards', 'sharp-flat', 'accidental-bar', 'chromatic'],
 };
-function ChapterGroups({ list, colorOf, starIds, onStar, onOpen, onChapter, inline }) {
+function ChapterGroups({ list, colorOf, starIds, onStar, onOpen, onChapter, inline, chapterOrder }) {
   const [openId, setOpenId] = useState(null);
   const groups = [];
   list.forEach(t => {
@@ -15362,6 +15362,7 @@ function ChapterGroups({ list, colorOf, starIds, onStar, onOpen, onChapter, inli
     if (!g) { g = { ch: t.ch, chapter: DRILLS.find(d => d.id === t.ch), items: [] }; groups.push(g); }
     g.items.push(t);
   });
+  if (chapterOrder) { const rank = (c) => { const k = chapterOrder.indexOf(c); return k < 0 ? 999 : k; }; groups.sort((a, b) => rank(a.ch) - rank(b.ch)); }
   groups.forEach(g => { const o = CHAPTER_TOOL_ORDER[g.ch]; if (o) g.items.sort((a, b) => (o.indexOf(a.id) + 99) % 99 - (o.indexOf(b.id) + 99) % 99); });
   return (
     <>
@@ -15445,7 +15446,7 @@ function Toolbox({ onOpen, onChapter, kit, onStar }) {
               <span style={{fontSize:15,color:'var(--muted)',flex:'0 0 auto',transform:isOpen ? 'rotate(180deg)' : 'none',transition:'transform .2s'}}>▾</span>
             </button>
             {isOpen && <div className="fade-up" style={{marginTop:10}}>
-              <ChapterGroups list={list} colorOf={() => c.color} starIds={kit ? kit.tools : null} onStar={onStar} onOpen={onOpen} onChapter={onChapter} inline/>
+              <ChapterGroups list={list} colorOf={() => c.color} starIds={kit ? kit.tools : null} onStar={onStar} onOpen={onOpen} onChapter={onChapter} inline chapterOrder={(CAT_CHAPTER_ORDER[c.id] || []).concat(catChapterIds(c.id))}/>
             </div>}
           </div>
         );
