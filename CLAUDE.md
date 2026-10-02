@@ -4174,6 +4174,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 - **Phase 248 (2026-10-02) -- Bar-line tool chips below title; neutral example name; reverse audit.** Time-signature chips in 'Put in the bar lines' now sit under the title (phone-friendly). Removed the 'Clara' example from the Finger Friends tool text (Sohyun undecided between Piano Butler / Clara Music branding -- keep examples neutral, no recurring named character). Reverse audit (tools whose component appears in no lesson step): only practice-page tools plus `black-white-neighbours`, `modes`, `seventh-chords`, `chord-extensions` -- advanced extras, left as tool-only. Pending her check: tuplet naming ('5 in the time of 4') and the blue beat-line reading.
 
+- **Phase 249 (2026-10-02) -- Toolbox layout: art on categories, thin tool rows.** Category headers now carry a 64px illustration (`CAT_ART` map borrows a representative tool icon; real chapter heroes come in the design phase) and tool rows under them are slim one-line rows (48px icon, title + one-line blurb with ellipsis, level tag right, hidden on phones). Verified by screenshot at 700px; no page errors.
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
