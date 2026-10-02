@@ -4206,6 +4206,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 | 264 | 2026-10-02 | **Design phase stage 3 (Learn + Practice lists):** the student Learn / teacher All-chapters screen no longer shows the big hero-picture cards; each topic is a staff-line header with slim chapter rows (note bullet, title, grade tag, tick count). Practice tab is a slim list too. New shared components `NoteBullet`, `StaffHead`, `PageIntro`, `SlimRow`; narrow-phone title size via media query. Chapter hero art (HERO_MAP) is now unused on these lists but still used inside chapter pages -- to be restyled or dropped next. Verified: Babel compile + 390px screenshots. |
 
+| 265 | 2026-10-02 | **Design phase stage 4 (lesson pages):** `Lesson` component restyled -- no card box, 30px serif chapter title, staff-line divider, step chips and steps alternate navy/coral (`STEP_COLORS` now 2 colours), step titles in Playfair, quiet left rule. The per-chapter `head` hero pictures are no longer rendered (Hero components kept in file for a later redraw; `HERO_MAP` unused). Verified: Babel compile + 390px screenshot of Reading the staff lesson, no page errors. Not yet: inner tool/panel colours (e.g. pink 'Try it' panels), student view layout, tab bar. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 
