@@ -12660,11 +12660,124 @@ function MelodyHero() {
   );
 }
 
+// ─── Phase 281: Melody & Form, "make your own" activities (content pass) ───
+// Draw a tune on the staff (C4..C5), hear it, and see its shape named.
+const CONTOUR_N = 8, CONTOUR_LO = 28, CONTOUR_HI = 35;
+const contourY = (d) => 110 - (d - CONTOUR_LO) * 6;
+function contourShape(ds) {
+  const up = ds.every((d, i) => i === 0 || d >= ds[i - 1]), down = ds.every((d, i) => i === 0 || d <= ds[i - 1]);
+  if (ds[ds.length - 1] === ds[0] && up && down) return 'flat';
+  if (up) return 'rising';
+  if (down) return 'falling';
+  const hi = Math.max(...ds), lo = Math.min(...ds), hiI = ds.indexOf(hi), loI = ds.indexOf(lo);
+  const upTo = (k) => ds.slice(0, k + 1).every((d, i) => i === 0 || d >= ds[i - 1]), downFrom = (k) => ds.slice(k).every((d, i, a) => i === 0 || d <= a[i - 1]);
+  if (hiI > 0 && hiI < ds.length - 1 && upTo(hiI) && downFrom(hiI)) return 'arch';
+  const downTo = (k) => ds.slice(0, k + 1).every((d, i) => i === 0 || d <= ds[i - 1]), upFrom = (k) => ds.slice(k).every((d, i, a) => i === 0 || d >= a[i - 1]);
+  if (loI > 0 && loI < ds.length - 1 && downTo(loI) && upFrom(loI)) return 'valley';
+  return 'wave';
+}
+const SHAPE_WORDS = {
+  rising: ['Rising -- it climbs all the way.', '올라가는 모양 -- 끝까지 올라가요.'],
+  falling: ['Falling -- it steps down all the way.', '내려가는 모양 -- 끝까지 내려가요.'],
+  arch: ['An arch -- up to a high point, then back down. Lots of phrases are shaped like this.', '아치 모양 -- 높은 곳까지 올라갔다 다시 내려와요. 많은 프레이즈가 이런 모양이에요.'],
+  valley: ['A valley -- down to a low point, then back up.', '골짜기 모양 -- 낮은 곳까지 내려갔다 다시 올라와요.'],
+  wave: ['A wave -- up and down, up and down.', '물결 모양 -- 올라갔다 내려갔다, 또 올라갔다 내려가요.'],
+  flat: ['All on one note -- a tune needs some ups and downs!', '모두 같은 음이에요 -- 튠에는 오르내림이 필요해요!'],
+};
+function MelodyContour() {
+  const [ds, setDs] = useState([28, 30, 32, 33, 32, 30, 29, 28]);
+  const [on, setOn] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const W = 320, colW = (W - 50) / CONTOUR_N, colX = (i) => 44 + i * colW + colW / 2;
+  function tapSvg(e) {
+    const r = e.currentTarget.getBoundingClientRect(), x = (e.clientX - r.left) * (W / r.width), y = (e.clientY - r.top) * (130 / r.height);
+    const i = Math.floor((x - 44) / colW); if (i < 0 || i >= CONTOUR_N) return;
+    const d = Math.max(CONTOUR_LO, Math.min(CONTOUR_HI, Math.round((110 - y) / 6) + CONTOUR_LO));
+    setDs(prev => prev.map((v, k) => (k === i ? d : v)));
+    const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime + 0.02, 440 * Math.pow(2, (ivMidi({ d, acc: 0 }) - 69) / 12), 0.35, 0.17, 'triangle');
+  }
+  function play() { timers.current.forEach(clearTimeout); timers.current = playMelody(ds.map((d, i) => ({ d, dur: i === CONTOUR_N - 1 ? 2 : 1 })), 108, setOn); }
+  const shape = contourShape(ds), home = ds[ds.length - 1] === 28 || ds[ds.length - 1] === 35;
+  const path = ds.map((d, i) => (i ? 'L' : 'M') + colX(i) + ' ' + contourY(d)).join(' ');
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Draw a tune', '튠 그리기')}</div>
+      <p style={actNote}>{t('Tap the staff to move each of the eight notes up or down, then play your tune. The line shows its shape -- every melody has one.', '오선을 눌러 여덟 음을 하나씩 위아래로 옮기고, 내 튠을 연주해 봐요. 선이 모양을 보여 줘요 -- 모든 선율에는 모양이 있어요.')}</p>
+      <svg viewBox={`0 0 ${W} 130`} width="100%" style={{display:'block',maxWidth:520,touchAction:'manipulation',cursor:'pointer'}} onClick={tapSvg}>
+        {[30, 32, 34, 36, 38].map(d => <line key={d} x1="6" x2={W - 6} y1={contourY(d)} y2={contourY(d)} stroke="#26296b" strokeOpacity="0.55" strokeWidth="1.2"/>)}
+        <g transform="translate(0 -22) scale(1.2)"><ClefGlyph clef="treble" st="treble" yOf={dY} ink="#26296b"/></g>
+        <path d={path} fill="none" stroke="#e4572e" strokeOpacity="0.45" strokeWidth="2.4" strokeDasharray="4 4"/>
+        {ds.map((d, i) => <g key={i}>
+          {d === 28 && <line x1={colX(i) - 11} x2={colX(i) + 11} y1={contourY(28)} y2={contourY(28)} stroke="#26296b" strokeWidth="1.3"/>}
+          <ellipse cx={colX(i)} cy={contourY(d)} rx="6.4" ry="4.6" transform={`rotate(-20 ${colX(i)} ${contourY(d)})`} fill={on === i || i === CONTOUR_N - 1 ? '#e4572e' : '#26296b'}/>
+          <text x={colX(i)} y="128" textAnchor="middle" fontSize="10" fontWeight="800" fill="#6d6f9c">{dName(d)}</text>
+        </g>)}
+      </svg>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',marginTop:8}}>
+        <button className="primary-btn" style={{width:'auto',padding:'8px 18px',fontSize:14}} onClick={play}>{t('Play my tune', '내 튠 연주하기')}</button>
+        {[[28, 30, 32, 33, 32, 30, 29, 28], [28, 29, 30, 31, 32, 33, 34, 35], [32, 30, 28, 30, 32, 34, 33, 32], [30, 32, 30, 33, 31, 34, 32, 28]].map((preset, k) =>
+          <button key={k} className="chip" style={{padding:'4px 10px',fontSize:12.5}} onClick={() => setDs(preset)}>{[t('Arch', '아치'), t('Rising', '오르막'), t('Valley', '골짜기'), t('Wave', '물결')][k]}</button>)}
+      </div>
+      <div style={{marginTop:10,fontSize:14,lineHeight:1.5,color:'var(--navy)'}}>
+        <b style={{color:'var(--coral)'}}>{t('Shape: ', '모양: ')}</b>{t(SHAPE_WORDS[shape][0], SHAPE_WORDS[shape][1])}<br/>
+        <b style={{color:'var(--coral)'}}>{t('Ending: ', '끝음: ')}</b>{home ? t('It ends on C, the home note -- it sounds finished.', '집 음인 C에서 끝나요 -- 끝난 느낌이 들어요.') : t('It ends away from C, the home note -- it sounds like it still has something to say.', '집 음인 C가 아닌 곳에서 끝나요 -- 아직 할 말이 남은 것처럼 들려요.')}
+      </div>
+    </div>
+  );
+}
+
+// Build a piece from A, B and C blocks; the known shapes get their names.
+function formName(seq) {
+  const s = seq.join('');
+  if (s === 'AB' || s === 'AABB') return 'binary';
+  if (s === 'ABA') return 'ternary';
+  if (/^A(?:[BCD]A){2,}$/.test(s) && new Set(seq).size >= 3) return 'rondo';
+  return null;
+}
+function FormBuilder() {
+  const [seq, setSeq] = useState(['A', 'B']);
+  const [on, setOn] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const name = formName(seq);
+  function add(b) { if (seq.length < 7) setSeq(seq.concat(b)); }
+  function play() { timers.current.forEach(clearTimeout); timers.current = playFormSeq(seq, setOn); }
+  const NAMES = { binary: [t('Binary form', '2부 형식'), t('Two different sections -- A, then B.', '서로 다른 두 부분 -- A 다음에 B.')],
+    ternary: [t('Ternary form', '3부 형식'), t('A, something new, then A comes home.', 'A, 새로운 부분, 그리고 A가 집으로 돌아와요.')],
+    rondo: [t('Rondo', '론도'), t('A keeps coming back between new episodes.', 'A가 새 에피소드 사이에 계속 돌아와요.')] };
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Build your own form', '나만의 형식 만들기')}</div>
+      <p style={actNote}>{t('Each letter is a short tune. Stack them into a piece and play it. Can you build binary (AB), ternary (ABA) and a rondo (ABACA)?', '글자마다 짧은 튠이에요. 쌓아서 곡을 만들고 연주해 봐요. 2부 형식(AB), 3부 형식(ABA), 론도(ABACA)를 만들 수 있나요?')}</p>
+      <div style={{display:'flex',gap:8,marginBottom:10,alignItems:'center',flexWrap:'wrap'}}>
+        {['A', 'B', 'C'].map(b => <button key={b} onClick={() => add(b)} style={{width:46,height:46,flexShrink:0,borderRadius:12,border:'none',fontSize:20,fontWeight:900,color:'#fff',background:FORM_COLOR[b],cursor:'pointer',fontFamily:"'Playfair Display', Georgia, serif"}}>{b}</button>)}
+      </div>
+      <div style={{display:'flex',gap:6,minHeight:56,alignItems:'center',flexWrap:'wrap',padding:'8px',border:'1.5px dashed var(--navy-line)',borderRadius:14,background:'var(--surface)'}}>
+        {seq.length ? seq.map((b, i) => <span key={i} style={{width:44,height:44,borderRadius:10,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:900,color:'#fff',background:FORM_COLOR[b],
+          boxShadow:on === i ? '0 0 0 3px #26296b' : 'none',transform:on === i ? 'translateY(-3px)' : 'none',transition:'all .15s',fontFamily:"'Playfair Display', Georgia, serif"}}>{b}</span>)
+          : <span style={{fontSize:13,color:'var(--navy-soft)'}}>{t('Tap A, B or C to add a section.', 'A, B, C를 눌러 부분을 더해요.')}</span>}
+      </div>
+      <div style={{display:'flex',alignItems:'center',gap:10,marginTop:10,flexWrap:'wrap'}}>
+        <button className="primary-btn" style={{width:'auto',padding:'8px 18px',fontSize:14}} onClick={play} disabled={!seq.length}>{t('Play my piece', '내 곡 연주하기')}</button>
+        <button className="ghost-btn" style={{fontSize:13,padding:'6px 12px',whiteSpace:'nowrap'}} onClick={() => setSeq(seq.slice(0, -1))} disabled={!seq.length}>{t('Undo', '되돌리기')}</button>
+        <button className="ghost-btn" style={{fontSize:13,padding:'6px 12px',whiteSpace:'nowrap'}} onClick={() => setSeq([])}>{t('Clear', '지우기')}</button>
+      </div>
+      <div style={{marginTop:8,minHeight:21}}>
+        <span style={{fontSize:14,color:'var(--navy)'}}>{name ? <><b style={{color:'var(--coral)'}}>{NAMES[name][0]}</b> -- {NAMES[name][1]}</> : seq.length ? t('Your own shape -- composers invent new ones too.', '나만의 모양 -- 작곡가들도 새 모양을 만들어요.') : ''}</span>
+      </div>
+    </div>
+  );
+}
+
 function MelodyLearn({ onStart }) {
   return (
     <Lesson id="melody" title={t('What makes a tune', '튠(선율)이 뭘까요')} intro={t('A tune is rhythm and pitch working together. This chapter looks at how melodies are shaped -- phrases, questions and answers, and sequences.', '튠(선율)은 리듬과 음높이가 함께 만들어내요. 이 챕터에서는 프레이즈, 질문과 대답, 시퀀스처럼 선율이 어떻게 모양을 갖추는지 살펴봐요.')} onStart={onStart}>
       <Step title={t('Rhythm + pitch = a tune', '리듬 + 음높이 = 튠')}>
         <TuneAnatomy/>
+      </Step>
+      <Step title={t('Draw a tune', '튠 그리기')}>
+        <MelodyContour/>
       </Step>
       <Step title={t('Phrase marks -- where to breathe', '프레이즈 마크 -- 숨쉬는 곳')}>
         <PhraseBreath/>
@@ -12766,7 +12879,7 @@ const FORM_MOTIF = {
   B: [{ d: 32, dur: 1 }, { d: 34, dur: 1 }, { d: 35, dur: 1 }, { d: 34, dur: 1 }, { d: 33, dur: 1 }, { d: 32, dur: 1 }, { d: 32, dur: 2 }],
   C: [{ d: 26, dur: 1 }, { d: 25, dur: 1 }, { d: 24, dur: 1 }, { d: 25, dur: 1 }, { d: 26, dur: 1 }, { d: 27, dur: 1 }, { d: 28, dur: 2 }],
 };
-const FORM_COLOR = { A: 'var(--brass)', B: '#3b4fa8', C: '#8a5fb0' };
+const FORM_COLOR = { A: 'var(--brass)', B: '#3b4fa8', C: '#2b8c8c' };
 const FORM_MOTIF_MS = 3700; // ~8 beats at 132bpm, rounded up -- spacing between sequenced motifs
 const FORM_SHAPES = { binary: ['A', 'B'], ternary: ['A', 'B', 'A'], rondo: ['A', 'B', 'A', 'C', 'A'] };
 const RONDO_SEQUENCE = FORM_SHAPES.rondo;
@@ -12956,6 +13069,9 @@ function FormLearn({ onStart }) {
     <Lesson id="form" title={t('How a piece is put together', '곡은 어떻게 짜여 있을까요')} intro={t('Composers organize music into sections, often labeled with letters like A and B. This chapter looks at the three most common shapes: binary, ternary, and rondo.', '작곡가는 음악을 A, B 같은 글자로 이름 붙인 여러 부분으로 짜요. 이 챕터에서는 가장 흔한 세 가지 모양인 두 부분(binary), 세 부분(ternary), 론도(rondo)를 살펴봐요.')} onStart={onStart}>
       <Step title={t('Three ways to shape a piece', '곡을 짜는 세 가지 방법')}>
         <FormShapes/>
+      </Step>
+      <Step title={t('Build your own form', '나만의 형식 만들기')}>
+        <FormBuilder/>
       </Step>
       <Step title={t('Same section again, or something new?', '같은 부분인가요, 새로운 부분인가요?')}>
         <SameOrNewSection/>
@@ -15110,10 +15226,12 @@ const TOOLS = [
   { id: 'ornaments', ch: 'signs', title: 'Ornaments', blurb: 'Trill, mordents, turn, acciaccatura, appoggiatura: written vs played.', C: () => <Ornaments/> },
   { id: 'ottava', ch: 'signs', title: '8va and 8vb', blurb: 'An octave higher or lower.', C: () => <OttavaDemo/> },
   { id: 'tune-anatomy', ch: 'melody', title: 'Rhythm + pitch = a tune', blurb: 'Hear each one alone, then together.', C: () => <TuneAnatomy/> },
+  { id: 'draw-tune', ch: 'melody', title: 'Draw a tune', blurb: 'Tap notes onto the staff, play it, and see its shape -- arch, wave, rising...', C: () => <MelodyContour/> },
   { id: 'phrase-marks', ch: 'melody', title: 'Phrase marks -- where to breathe', blurb: 'The rainbow arc over a musical sentence.', C: () => <PhraseBreath/> },
   { id: 'question-answer', ch: 'melody', title: 'Question or answer phrase?', blurb: 'Unstable (2, 4, 5, 7) or home (1)?', C: () => <QuestionAnswer/> },
   { id: 'melody-sequence', ch: 'melody', title: 'Sequences: same shape, new pitch', blurb: 'A pattern restated, one step higher each time.', C: () => <SequenceStepper/> },
   { id: 'form-shapes', ch: 'form', title: 'Binary, ternary, and rondo', blurb: 'Three ways composers shape a piece into sections.', C: () => <FormShapes/> },
+  { id: 'form-builder', ch: 'form', title: 'Build your own form', blurb: 'Stack A, B and C blocks into a piece -- binary, ternary or rondo?', C: () => <FormBuilder/> },
   { id: 'same-or-new', ch: 'form', title: 'Same section again, or something new?', blurb: 'Two sections play back to back -- repeat, or different?', C: () => <SameOrNewSection/> },
   { id: 'rondo-refrain', ch: 'form', title: 'Rondo: the tune that keeps coming back', blurb: 'Guess when the refrain (A) returns between new episodes.', C: () => <RondoRefrain/> },
   { id: 'binary-ternary-spot', ch: 'form', title: 'Two sections, or three?', blurb: 'Listen for the opening tune coming back at the end.', C: () => <BinaryTernarySpot/> },
@@ -15252,10 +15370,12 @@ const TOOL_KO = {
   'ornaments': ['꾸밈음', '트릴, 모르덴트, 턴, 아차카투라, 아포자투라: 악보와 실제 연주.'],
   'ottava': ['8va와 8vb', '한 옥타브 높게 또는 낮게.'],
   'tune-anatomy': ['리듬 + 음높이 = 튠', '하나씩 따로 듣고, 함께 들어 봐요.'],
+  'draw-tune': ['튠 그리기', '오선에 음을 눌러 놓고 연주하며 모양을 봐요 -- 아치, 물결, 오르막...'],
   'phrase-marks': ['프레이즈 마크 -- 숨 쉬는 곳', '음악 문장 위의 무지개 아치.'],
   'question-answer': ['묻는 프레이즈일까, 답하는 프레이즈일까?', '불안정 (2, 4, 5, 7) 아니면 집 (1)?'],
   'melody-sequence': ['시퀀스: 같은 모양, 새 음높이', '패턴이 매번 한 칸씩 높아지며 다시 나와요.'],
   'form-shapes': ['2부, 3부, 론도 형식', '작곡가가 곡을 부분으로 나누는 세 가지 방법.'],
+  'form-builder': ['나만의 형식 만들기', 'A, B, C 블록을 쌓아 곡을 만들어요 -- 2부, 3부, 론도?'],
   'same-or-new': ['같은 부분 반복일까, 새로운 부분일까?', '두 부분이 이어서 연주돼요 -- 반복일까, 다를까?'],
   'rondo-refrain': ['론도: 계속 돌아오는 튠', '새 에피소드 사이에 후렴(A)이 언제 돌아오는지 맞혀 봐요.'],
   'binary-ternary-spot': ['두 부분일까, 세 부분일까?', '처음 튠이 끝에 다시 나오는지 들어 봐요.'],
@@ -15506,8 +15626,8 @@ const TOOL_META = {
   'road-map': ['words', 1, 2, 'game'], 'term-cards': ['words', 1, 3, 'home show'], 'term-match': ['words', 1, 3, 'game home'], 'term-sort': ['words', 1, 3, 'game'], 'term-mixer': ['words', 2, 3, 'show ear'],
   'practice-timer': ['practice', 0, 3, 'home'], 'practice-dice': ['practice', 0, 3, 'home game'], 'perfect-counter': ['practice', 0, 3, 'home'],
   'keyboard-ancestors': ['about', 0, 3, 'show ear'], 'piano-timeline': ['about', 1, 3, 'show'], 'eras': ['about', 1, 3, 'show ear'], 'hz-explorer': ['about', 1, 3, 'show ear'], 'range-chart': ['about', 1, 3, 'show ear'],
-  'tune-anatomy': ['melody', 0, 1, 'show'], 'phrase-marks': ['melody', 1, 2, 'show'], 'question-answer': ['melody', 1, 2, 'game ear'], 'melody-sequence': ['melody', 1, 2, 'show ear'],
-  'form-shapes': ['melody', 0, 2, 'show'], 'same-or-new': ['melody', 1, 2, 'game ear'], 'rondo-refrain': ['melody', 1, 3, 'game ear'], 'binary-ternary-spot': ['melody', 1, 3, 'game ear'],
+  'tune-anatomy': ['melody', 0, 1, 'show'], 'draw-tune': ['melody', 0, 2, 'game ear'], 'phrase-marks': ['melody', 1, 2, 'show'], 'question-answer': ['melody', 1, 2, 'game ear'], 'melody-sequence': ['melody', 1, 2, 'show ear'],
+  'form-shapes': ['melody', 0, 2, 'show'], 'form-builder': ['melody', 0, 2, 'game ear'], 'same-or-new': ['melody', 1, 2, 'game ear'], 'rondo-refrain': ['melody', 1, 3, 'game ear'], 'binary-ternary-spot': ['melody', 1, 3, 'game ear'],
   'texture-types': ['about', 0, 2, 'show ear'], 'texture-spotter': ['about', 1, 3, 'game ear'], 'genre-traits': ['about', 1, 3, 'show'],
 };
 function toolMeta(id) { const m = TOOL_META[id]; if (m) return { cat: m[0], lo: m[1], hi: m[2], kinds: m[3].split(' ') }; const t = TOOLS.find(x => x.id === id); return { cat: 'practice', lo: 0, hi: 3, kinds: ['show'], ch: t && t.ch }; }
@@ -16071,11 +16191,11 @@ const CHAPTER_TOOL_ORDER = {
   'chords': ['triad-stack', 'major-minor', 'key-chords', 'primary-triads', 'inversions', 'cadences', 'chord-extensions', 'seventh-chords'],
   'dynamics': ['dyn-order', 'hairpin', 'pedal', 'tie-slur', 'touch-ear', 'touch-lengths'],
   'first-steps': ['high-low', 'key-houses', 'black-key-song', 'black-white-neighbours'],
-  'form': ['form-shapes', 'same-or-new', 'rondo-refrain', 'binary-ternary-spot'],
+  'form': ['form-shapes', 'form-builder', 'same-or-new', 'rondo-refrain', 'binary-ternary-spot'],
   'intervals': ['step-skip', 'interval-ruler', 'letter-hop', 'semitone-counter', 'scale-intervals', 'interval-ear', 'invert-interval', 'tritone'],
   'key-signatures': ['sharps-order', 'flats-order', 'place-it', 'relative-minor', 'circle-fifths', 'transpose', 'all-keys'],
   'ledger-lines': ['ledger-walk', 'ledger-landmarks', 'ledger-twins', 'ledger-write'],
-  'melody': ['tune-anatomy', 'phrase-marks', 'question-answer', 'melody-sequence'],
+  'melody': ['tune-anatomy', 'draw-tune', 'phrase-marks', 'question-answer', 'melody-sequence'],
   'note-names': ['find-every', 'name-reveal', 'step-updown', 'letter-chain'],
   'note-values': ['note-value-tree', 'rest-grouping', 'note-rest-match', 'split-it', 'beam-apples', 'dotted-notes', 'dot-lab', 'fix-the-bar', 'fill-bar', 'heard-bar'],
   'piano-story': ['keyboard-ancestors', 'piano-timeline', 'eras'],
