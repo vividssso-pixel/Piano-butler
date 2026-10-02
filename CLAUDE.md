@@ -4204,6 +4204,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 | 263 | 2026-10-02 | **Design phase stage 2 (global colours):** drills.html palette switched file-wide from ink/brass/buttercream to navy #26296b / coral #e4572e / paper #f6f4ef (brass #a8823f -> coral, ink #241f1a -> navy, borders -> #dcdcea, muted browns -> #6d6f9c); h1-h3 use Playfair Display. Old illustration icons got the same swap (their brass accents are now coral) and are still to be redrawn. Verified: Babel compile, 390/1000px screenshots, 139-tool sweep with 0 errors. Still old-style: tool-page layouts, student view, home layout, tab bar, curve motif. |
 
+| 264 | 2026-10-02 | **Design phase stage 3 (Learn + Practice lists):** the student Learn / teacher All-chapters screen no longer shows the big hero-picture cards; each topic is a staff-line header with slim chapter rows (note bullet, title, grade tag, tick count). Practice tab is a slim list too. New shared components `NoteBullet`, `StaffHead`, `PageIntro`, `SlimRow`; narrow-phone title size via media query. Chapter hero art (HERO_MAP) is now unused on these lists but still used inside chapter pages -- to be restyled or dropped next. Verified: Babel compile + 390px screenshots. |
+
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
 
 

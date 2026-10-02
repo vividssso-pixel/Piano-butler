@@ -134,7 +134,7 @@
       background-image: repeating-linear-gradient(to bottom, transparent 0 4.4px, var(--navy) 4.4px 6px); background-size: 100% 30px; background-repeat: no-repeat; background-position: 0 3px; }
     .stf-title { background: var(--bg); padding: 0 10px 0 4px; font-family: 'Playfair Display', Georgia, serif; font-weight: 800; font-size: 19px; letter-spacing: 0.02em; text-transform: uppercase; line-height: 1; margin-left: 12px; text-align: left; }
     .stf-count { background: var(--bg); padding: 0 6px 0 10px; font-size: 12.5px; font-weight: 800; color: var(--coral); margin-right: 8px; display: flex; align-items: center; gap: 6px; }
-    @media (max-width: 520px) { .tool-lv { display: none; } }
+    @media (max-width: 440px) { .stf-title { font-size: 15.5px; margin-left: 8px; letter-spacing: 0; } }
 
     /* Phase 94: Game (pixel) mode */
     .pixel, .pixel * { font-family: 'Press Start 2P', ui-monospace, monospace !important; }
@@ -14642,41 +14642,36 @@ function catOfChapter(id) { return TOOL_CATS.find(c => c.id === CHAPTER_CAT[id])
 const CAT_CHAPTER_ORDER = { pitch: ['staff'], ledger: ['staff', 'ledger-lines'], rtime: ['time-signatures'], rrhythm: ['time-signatures', 'rhythm'], body: ['posture-hands'], melody: ['melody', 'form'], about: ['piano-story', 'pitch-range', 'styles'], scales: ['scales', 'key-signatures'] };  // five-finger = warm-up before scales
 function catChapterIds(catId) { const ids = STAGES.flatMap(s => s.ids).filter(id => CHAPTER_CAT[id] === catId), o = CAT_CHAPTER_ORDER[catId]; return o ? o.filter(id => ids.includes(id)).concat(ids.filter(id => !o.includes(id))) : ids; }
 function orderedChapterIds() { return TOOL_CATS.flatMap(c => catChapterIds(c.id)); }
+function NoteBullet() { return <svg width="14" height="16" viewBox="-6 -17 16 22" style={{flex:'0 0 auto'}} aria-hidden="true"><g transform="scale(0.9)"><ellipse cx="0" cy="0" rx="5.2" ry="3.8" transform="rotate(-20)" fill="var(--coral)"/><rect x="3.6" y="-17" width="1.7" height="17" fill="var(--coral)"/></g></svg>; }
+function StaffHead({ title, count }) { return <div className="stf-head" style={{cursor:'default'}}><span className="stf-title">{title}</span>{count != null && <span className="stf-count">{count}</span>}</div>; }
+function PageIntro({ title, text }) { return <div style={{margin:'4px 0 18px'}}><h2 style={{fontSize:30,fontWeight:900,margin:'0 0 6px',lineHeight:1.1,color:'var(--navy)'}}>{title}</h2><p style={{fontSize:14.5,color:'var(--muted)',margin:0,lineHeight:1.5}}>{text}</p></div>; }
+function SlimRow({ title, sub, tag, done, onClick, last }) {
+  return (
+    <button className="tool-row-btn" onClick={onClick} style={{display:'flex',alignItems:'center',gap:12,width:'100%',textAlign:'left',background:'transparent',border:'none',borderBottom:last ? 'none' : '1px solid var(--navy-line)',padding:'11px 8px 11px 6px',cursor:'pointer',fontFamily:'inherit',color:'inherit'}}>
+      <NoteBullet/>
+      <span style={{flex:1,minWidth:0}}>
+        <span style={{display:'block',fontSize:15.5,fontWeight:800,lineHeight:1.3,color:'var(--navy)'}}>{title}</span>
+        {sub && <span style={{display:'block',fontSize:12.5,color:'var(--navy-soft)',lineHeight:1.4,marginTop:1}}>{sub}</span>}
+      </span>
+      {done > 0 && <span style={{fontSize:11.5,fontWeight:800,color:'var(--good)'}}>✓ {done}</span>}
+      {tag && <span style={{flex:'0 0 auto',fontSize:10.5,fontWeight:800,color:'var(--coral)',textTransform:'uppercase',letterSpacing:'0.06em'}}>{tag}</span>}
+      <span style={{color:'var(--navy-soft)'}}>›</span>
+    </button>
+  );
+}
 function LessonPath({ onOpen, onBack }) {
   return (
     <div className="fade-up">
       {onBack && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={onBack}>← Lesson plan</button>}
-      <div className="card" style={{marginBottom:12}}>
-        <h2 style={{fontSize:20,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>{UI_TEACHER ? 'All chapters' : 'Learn'}</h2>
-        <p style={{fontSize:14,color:'var(--muted)',margin:0,lineHeight:1.5}}>{UI_TEACHER ? 'Every chapter as a full lesson with a drill, grouped by topic (same groups as the Toolbox). The groups run side by side -- the Lesson plan shows how to mix them.' : 'Pick a topic. Tap a picture to open its lesson and game.'}</p>
-      </div>
+      <PageIntro title={UI_TEACHER ? 'All chapters' : 'Learn'} text={UI_TEACHER ? 'Every chapter as a full lesson with a drill, grouped by topic (same groups as the Toolbox). The groups run side by side -- the Lesson plan shows how to mix them.' : 'Pick a topic, then a lesson. Each one ends with a game.'}/>
       {TOOL_CATS.filter(c => catChapterIds(c.id).length).map(c => {
-        const s = { title: c.name, blurb: c.when, ids: catChapterIds(c.id) };
-        const col = c.color;
+        const ids = catChapterIds(c.id).filter(id => DRILLS.find(x => x.id === id));
         return (
-          <div key={c.id} className="card" style={{marginBottom:12,borderLeft:'5px solid ' + col}}>
-            <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:6}}>
-              <span style={{flex:'0 0 12px',height:30,borderRadius:6,background:col}}/>
-              <span style={{display:'block',fontSize:17,fontWeight:900,lineHeight:1.2}}>{s.title}</span>
-            </div>
-            <div style={{fontSize:13.5,color:'#6d6f9c',margin:'0 0 10px'}}>{s.blurb}</div>
-            <div style={{display:'flex',flexDirection:'column',gap:10}}>
-              {s.ids.map(id => {
-                const d = DRILLS.find(x => x.id === id); if (!d) return null;
-                const n = stepsDone(id);
-                const Hero = HERO_MAP[id];
-                return (
-                  <button key={id} onClick={() => onOpen(id)} style={{display:'block',width:'100%',textAlign:'left',background:'#fff',border:'1.5px solid var(--border)',borderRadius:14,padding:0,overflow:'hidden',cursor:'pointer',color:'var(--text)'}}>
-                    {Hero && <div style={{pointerEvents:'none'}}><Hero/></div>}
-                    <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 12px 10px'}}>
-                      <span style={{flex:1,fontSize:15,fontWeight:800}}>{d.label}</span>
-                      {n > 0 && <span style={{fontSize:11.5,fontWeight:800,color:'#4f7a45'}}>✓ {n}</span>}
-                      <span style={{fontSize:11.5,fontWeight:800,color:col,border:'1px solid ' + col,borderRadius:8,padding:'1px 6px'}}>{GRADE_TAGS[id]}</span>
-                      <span style={{color:'var(--muted)'}}>›</span>
-                    </div>
-                  </button>
-                );
-              })}
+          <div key={c.id} style={{marginBottom:22}}>
+            <StaffHead title={c.name} count={ids.length}/>
+            <div style={{padding:'3px 14px 6px',fontSize:12.5,color:'var(--navy-soft)',lineHeight:1.35}}>{c.when}</div>
+            <div>
+              {ids.map((id, i) => { const d = DRILLS.find(x => x.id === id); return <SlimRow key={id} title={d.label} tag={GRADE_TAGS[id]} done={stepsDone(id)} onClick={() => onOpen(id)} last={i === ids.length - 1}/>; })}
             </div>
           </div>
         );
@@ -14690,21 +14685,10 @@ const PRACTICE_IDS = ['arm-moves', 'posture-check', 'beat-target', 'practice-tim
 function PracticeView({ onOpen }) {
   return (
     <div className="fade-up">
-      <div className="card" style={{marginBottom:12}}>
-        <h2 style={{fontSize:20,fontWeight:900,margin:'0 0 4px',letterSpacing:'-0.02em'}}>Practice</h2>
-        <p style={{fontSize:14,color:'var(--muted)',margin:0,lineHeight:1.5}}>{UI_TEACHER ? 'For home practice and the last five minutes of a lesson. Send any of these to a student with its link.' : 'Tools for practising at home.'}</p>
-      </div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
-        {PRACTICE_IDS.map((id, i) => {
-          const t = TOOLS.find(x => x.id === id); if (!t) return null;
-          const col = STEP_COLORS[i % STEP_COLORS.length];
-          return (
-            <button key={id} onClick={() => onOpen(id)} style={{textAlign:'left',background:'#fff',border:'1.5px solid var(--border)',borderTop:'4px solid ' + col,borderRadius:10,padding:'10px',cursor:'pointer',color:'var(--text)'}}>
-              <div style={{fontSize:15,fontWeight:900,lineHeight:1.25}}>{t.title}</div>
-              <div style={{fontSize:12,color:'#6d6f9c',lineHeight:1.35,marginTop:3}}>{t.blurb}</div>
-            </button>
-          );
-        })}
+      <PageIntro title="Practice" text={UI_TEACHER ? 'For home practice and the last five minutes of a lesson. Send any of these to a student with its link.' : 'Tools for practising at home.'}/>
+      <StaffHead title="Practice tools" count={PRACTICE_IDS.length}/>
+      <div style={{marginTop:6}}>
+        {PRACTICE_IDS.map((id, i) => { const t = TOOLS.find(x => x.id === id); if (!t) return null; return <SlimRow key={id} title={t.title} sub={t.blurb} onClick={() => onOpen(id)} last={i === PRACTICE_IDS.length - 1}/>; })}
       </div>
     </div>
   );
