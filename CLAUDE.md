@@ -4176,6 +4176,8 @@ Sohyun: category chips/sections looked mismatched; wanted long bars that open do
 
 - **Phase 249 (2026-10-02) -- Toolbox layout: art on categories, thin tool rows.** Category headers now carry a 64px illustration (`CAT_ART` map borrows a representative tool icon; real chapter heroes come in the design phase) and tool rows under them are slim one-line rows (48px icon, title + one-line blurb with ellipsis, level tag right, hidden on phones). Verified by screenshot at 700px; no page errors.
 
+- **Phase 251 (2026-10-02) -- Toolbox tool rows are icon-free text lists** (title + one-line blurb, level tag right, category-colour left bar; category headers keep their art).
+
 - **Phase 250 (2026-10-02) -- Simple/Compound merged into one tool.** The Toolbox tool 'The two numbers' now has a Simple time / Compound time toggle (the separate `compound-time` tool is removed from TOOLS, meta, icon alias and chapter order). Simple list now also shows 3/2 and 5/4 alongside 2/4, 3/4, 4/4, 2/2, 3/8 (`BEAT_EXTRA` gained 3/2); level widened to Beginner-G4. Lesson step 'Compound time' unchanged. Verified: compile, both screenshots, lesson page loads, 0 errors.
 
 ## Current Status (as of 2026-08-17, traffic/indexing/AdSense numbers refreshed 2026-09-15 — see Phase 72)
