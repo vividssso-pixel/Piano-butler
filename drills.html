@@ -18517,8 +18517,8 @@ function ExCell({ n, ex, children }) {
   );
 }
 // A single note to name (or line/space to mark). ex = the worked answer, shown in coral.
-function NameCell({ d, clef, n, ex }) {
-  return <ExCell n={n} ex={ex}><div style={{padding:'8px 8px 0'}}><PaperStaff clef={clef} notes={[{ d }]} width={122}/></div><div style={{textAlign:'center',margin:'6px 0 2px'}}>{ex ? bkHand(ex, 54, 32) : bkBox(54, 32)}</div></ExCell>;
+function NameCell({ d, clef, n, ex, w = 122 }) {
+  return <ExCell n={n} ex={ex}><div style={{padding:'8px 8px 0'}}><PaperStaff clef={clef} notes={[{ d }]} width={w}/></div><div style={{textAlign:'center',margin:'6px 0 2px'}}>{ex ? bkHand(ex, 54, 32) : bkBox(54, 32)}</div></ExCell>;
 }
 function DrawCell({ task, n, ex }) {
   return (
@@ -19561,7 +19561,520 @@ function PaperQR({ text, params, label }) {
   );
 }
 
-const WORKBOOKS = { staff: StaffWorkbook, 'note-names': NoteNamesWorkbook, 'note-values': NoteValuesWorkbook };
+
+// ─── Time Signatures (chapter 'time-signatures') ───
+const TS_BEAT_NOTE = { 4: 'crotchet', 2: 'minim', 8: 'quaver' };
+const TS_RIDDLES = [
+  ['I have 3 crotchet beats in every bar. Waltzes love me.', '3/4'],
+  ['I march: ONE two, ONE two -- two crotchet beats.', '2/4'],
+  ['I am the most common of all. You can also write me as a big C.', '4/4'],
+  ['I have two minim beats. You can write me as ¢.', '2/2'],
+  ['Six quavers in two groups of three -- I like to skip and swing.', '6/8'],
+];
+// a rhythm with no bar lines yet: n bars of the time signature, run together
+function tsRun(ts, bars) { const out = []; for (let b = 0; b < bars; b++) out.push(fillBar(TS[ts].beats, false)); return out; }
+function tsWorkbook() {
+  const k = (s) => 'ts-wb-' + s;
+  const n = NVN(), d = NVD();
+  const s1 = withSeed(k('s1'), () => ({ tog: ['3/4', '2/4', '4/4', '2/2'], home: shuffle(['2/4', '3/4', '4/4', '3/4', '2/4', '4/4']).map(ts => ({ ts, items: fillBar(TS[ts].beats, false) })) }));
+  const s2 = withSeed(k('s2'), () => ({ lines: [{ ts: '3/4', bars: tsRun('3/4', 3) }, { ts: '4/4', bars: tsRun('4/4', 3) }, { ts: '2/4', bars: tsRun('2/4', 4) }] }));
+  const s4 = withSeed(k('s4'), () => ({ tog: [n.cr, d.cr, n.mn], home: shuffle([n.qv, n.cr, d.cr, n.mn, d.mn, n.sq]) }));
+  const s5 = withSeed(k('s5'), () => ({ tog: ['6/8', '3/4', '9/8', '2/4'], rows: ['6/8', '3/4', '12/8', '2/4'] }));
+  const chk = withSeed(k('chk'), () => ({
+    tn: shuffle(['2/4', '3/4', '4/4', '2/2']),
+    cb: { line: { ts: '3/4', bars: tsRun('3/4', 3) } },
+    bt: shuffle(['2/4', '3/4', '4/4', '3/4']).map(ts => ({ ts, items: fillBar(TS[ts].beats, false) })),
+    db: shuffle([n.cr, d.cr, n.mn, n.qv]),
+    cp: shuffle(['6/8', '3/4', '9/8', '4/4']),
+  }));
+  return { s1, s2, s4, s5, chk };
+}
+function tsConcepts() {
+  return [
+    { id: 'tn', name: 'What the two numbers mean', step: '1', page: '3' },
+    { id: 'cb', name: 'C, ¢ and bar lines', step: '2-3', page: '4' },
+    { id: 'bt', name: 'Which time signature fits', step: '1', page: '3' },
+    { id: 'db', name: 'When the quaver is the beat', step: '4', page: '5' },
+    { id: 'cp', name: 'Simple and compound time', step: '5-6', page: '6' },
+  ];
+}
+const tsTop = (ts) => TS[ts].top, tsBot = (ts) => TS[ts].bottom;
+function TsCell({ ts, n, ex }) {
+  const t0 = TS[ts];
+  return (
+    <ExCell n={n} ex={ex}>
+      <div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 8px 4px'}}>
+        <TSig top={t0.top} bottom={t0.bottom} size={36} ink={BK.ink}/>
+        <div style={{display:'grid',gap:5,fontSize:12,color:BK.ink}}>
+          <span style={{display:'flex',alignItems:'center',gap:6}}>{nvBox(ex, t0.top, 34, 26)} beats in a bar</span>
+          <span style={{display:'flex',alignItems:'center',gap:6}}>each beat is a {ex ? <span style={{color:BK.coral,fontWeight:900,fontStyle:'italic',borderBottom:'1.5px solid ' + BK.coral,padding:'0 4px'}}>{TS_BEAT_NOTE[t0.bottom]}</span> : <span style={{display:'inline-block',width:76,borderBottom:'1.5px solid ' + BK.line}}>&nbsp;</span>}</span>
+        </div>
+      </div>
+    </ExCell>
+  );
+}
+// a bar with an empty time-signature box in front: write the numbers in
+function FitCell({ b, n, ex, size = 34 }) {
+  const t0 = TS[b.ts];
+  return (
+    <ExCell n={n} ex={ex}>
+      <div style={{display:'grid',gridTemplateColumns:'40px 1fr',alignItems:'center',gap:8,padding:'14px 4px 4px'}}>
+        <span style={{width:36,height:52,border:'1.5px ' + (ex ? 'solid ' + BK.coral : 'dashed ' + BK.muted),borderRadius:6,display:'inline-flex',alignItems:'center',justifyContent:'center',color:BK.coral}}>{ex && <TSig top={t0.top} bottom={t0.bottom} size={22} ink={BK.coral}/>}</span>
+        <BeatRow items={b.items} total={t0.beats} size={size}/>
+      </div>
+    </ExCell>
+  );
+}
+// a rhythm with no bar lines: the student draws them (answers: showBars)
+function RunLine({ line, showBars, size = 40, n, ex }) {
+  const flat = line.bars.flat();
+  const t0 = TS[line.ts];
+  return (
+    <ExCell n={n} ex={ex}>
+      <div style={{display:'flex',alignItems:'center',gap:4,padding:'14px 6px 6px',borderBottom:'1.2px solid ' + BK.line}}>
+        <span style={{marginRight:8}}><TSig top={t0.top} bottom={t0.bottom} size={size * 0.55} ink={BK.ink}/></span>
+        {line.bars.map((bar, bi) => <React.Fragment key={bi}>
+          {bar.map((it, i) => <span key={i} style={{flex:'1 1 0',display:'flex',justifyContent:'center'}}><Glyph item={it} size={size}/></span>)}
+          {(showBars || (ex && bi === 0)) && bi < line.bars.length - 1 && <span style={{width:2,alignSelf:'stretch',background:ex && !showBars ? BK.coral : BK.ink,margin:'4px 2px'}}/>}
+        </React.Fragment>)}
+        {showBars && <span style={{width:6,alignSelf:'stretch',borderLeft:'1.5px solid ' + BK.ink,borderRight:'4px solid ' + BK.ink,margin:'4px 0 4px 4px'}}/>}
+      </div>
+    </ExCell>
+  );
+}
+function BeatOf8Cell({ it, n, ex, ts = '6/8' }) {
+  const t0 = TS[ts];
+  return (
+    <ExCell n={n} ex={ex}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'16px 4px 6px'}}>
+        <TSig top={t0.top} bottom={t0.bottom} size={28} ink={BK.muted}/>
+        <Glyph item={it} size={56}/>
+        <span style={{display:'flex',alignItems:'center',gap:5,fontSize:11,color:BK.muted}}>= {nvBox(ex, fmtNum(it.beats * 2), 36, 30)} beats</span>
+      </div>
+    </ExCell>
+  );
+}
+function SimpleCompCell({ ts, n, ex }) {
+  const t0 = TS[ts], groups = t0.kind === 'compound' ? t0.top / 3 : t0.top;
+  const opt = (label, on) => <span style={{border:'1.5px solid ' + (ex && on ? BK.coral : BK.line),borderRadius:14,padding:'2px 8px',fontSize:11.5,color:ex && on ? BK.coral : BK.ink,fontWeight:ex && on ? 900 : 600}}>{label}</span>;
+  return (
+    <ExCell n={n} ex={ex}>
+      <div style={{display:'flex',alignItems:'center',gap:12,padding:'16px 8px 6px'}}>
+        <TSig top={t0.top} bottom={t0.bottom} size={40} ink={BK.ink}/>
+        <div style={{display:'grid',gap:6}}>
+          <div style={{display:'flex',gap:5}}>{opt('simple', t0.kind === 'simple')}{opt('compound', t0.kind === 'compound')}</div>
+          <span style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:BK.ink}}>{nvBox(ex, groups, 32, 26)} beats you feel</span>
+        </div>
+      </div>
+    </ExCell>
+  );
+}
+// six/twelve quavers with no beams: the student beams them into beats
+function QuaverRow({ ts, n, answer }) {
+  const t0 = TS[ts], cnt = ts === '6/8' ? 6 : ts === '3/4' ? 6 : ts === '12/8' ? 12 : 4;
+  const qv = NV_NOTES[3];
+  return (
+    <div style={{display:'grid',gridTemplateColumns:'18px 40px 1fr',alignItems:'center',gap:8,border:'1px solid #ece6d8',borderRadius:8,padding:'6px 10px'}}>
+      <span style={{fontSize:10,fontWeight:900,color:BK.coral}}>{n}</span>
+      <TSig top={t0.top} bottom={t0.bottom} size={26} ink={BK.ink}/>
+      {answer ? <div style={{fontSize:13,fontWeight:800,color:BK.ink}}>{answer}</div>
+        : <div style={{display:'flex',justifyContent:'space-around'}}>{Array.from({ length: cnt }, (_, i) => <Glyph key={i} item={qv} size={cnt > 8 ? 40 : 50}/>)}</div>}
+    </div>
+  );
+}
+// conductor's patterns to trace (2, 3 and 4 beats)
+function ConductPatterns() {
+  const P = {
+    2: [[50, 14], [50, 92, 1], [62, 30, 2]],
+    3: [[50, 14], [50, 92, 1], [88, 66, 2], [50, 20, 3]],
+    4: [[50, 14], [50, 92, 1], [12, 62, 2], [90, 62, 3], [50, 20, 4]],
+  };
+  return (
+    <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:14}}>
+      {[2, 3, 4].map(b => { const pts = P[b]; return <div key={b} style={{textAlign:'center'}}>
+        <svg viewBox="0 0 100 106" style={{width:'100%',maxWidth:130,display:'block',margin:'0 auto'}}>
+          <polyline points={pts.map(p => p[0] + ',' + p[1]).join(' ')} fill="none" stroke={BK.muted} strokeWidth="1.6" strokeDasharray="4 4" strokeLinejoin="round"/>
+          <circle cx={pts[0][0]} cy={pts[0][1]} r="3" fill={BK.coral}/>
+          {pts.slice(1).map((p, i) => <g key={i}><circle cx={p[0]} cy={p[1]} r="7.5" fill="#fff" stroke={BK.coral} strokeWidth="1.6"/><text x={p[0]} y={p[1] + 3.6} textAnchor="middle" fontSize="10" fontWeight="900" fill={BK.coral}>{p[2]}</text></g>)}
+        </svg>
+        <div style={{fontSize:12.5,fontWeight:900,color:BK.ink}}>{b} beats <span style={{fontWeight:600,color:BK.muted}}>({b === 2 ? '2/4' : b === 3 ? '3/4' : '4/4'})</span></div>
+      </div>; })}
+    </div>
+  );
+}
+
+function TimeSigWorkbook({ startNo = 1 }) {
+  const W = useMemo(() => tsWorkbook(), [LANG]);
+  const C = tsConcepts();
+  const pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="time-signatures">{content}</WbPage>);
+  P(<WbOpener id="time-signatures" concepts={C} blurb="Two numbers at the start of the music tell you how the beats are grouped into bars."/>);
+  P(<WbLog/>);
+
+  // step 1 -- the two numbers
+  P(<>
+    <WbTop step={1}/>
+    <Part kind="together" title="Read the two numbers" how="Top number = how many beats in a bar. Bottom number = which note is one beat (4 = crotchet, 2 = minim, 8 = quaver).">
+      <BkGrid cols={2} gap="10px 12px">{W.s1.tog.map((ts, i) => <TsCell key={i} ts={ts} n={i + 1} ex={i === 0}/>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Which time signature fits?" how="Count the crotchet beats in each bar and write the time signature in the dashed box.">
+      <BkGrid cols={2} gap="8px 12px">{W.s1.home.map((b, i) => <FitCell key={i} b={b} n={i + 1}/>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Be the conductor" how="Trace each pattern with your finger, then with a pencil. Then put on some music and conduct it -- the big drop is always beat 1!">
+      <ConductPatterns/>
+    </Part>
+    <Faces/>
+  </>);
+
+  // steps 2-3 -- C, cut time, bar lines
+  const legend = [['clap', 'C'], ['stamp', 'S'], ['pat knees', 'K'], ['click', 'X']];
+  P(<>
+    <WbTop step="2-3"/>
+    <Part kind="together" title="Two ways to write it" how="C means 4/4 (common time). ¢ means 2/2 (cut time). Write the other way of showing each one.">
+      <BkGrid cols={4} gap="10px 12px">{[['C', '4/4'], ['¢', '2/2'], ['4/4', 'C'], ['2/2', '¢']].map(([a, b], i) => <ExCell key={i} n={i + 1} ex={i === 0}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'16px 4px 8px'}}>
+          {a.length === 1 ? <span style={{fontFamily:"Georgia,'Times New Roman',serif",fontSize:40,fontWeight:900,color:BK.ink}}>{a}</span> : <TSig top={+a.split('/')[0]} bottom={+a.split('/')[1]} size={30} ink={BK.ink}/>}
+          <span style={{fontSize:20,fontWeight:900,color:BK.muted}}>=</span>
+          <span style={{width:44,height:56,border:'1.5px ' + (i === 0 ? 'solid ' + BK.coral : 'dashed ' + BK.muted),borderRadius:6,display:'inline-flex',alignItems:'center',justifyContent:'center'}}>{i === 0 && <TSig top={4} bottom={4} size={26} ink={BK.coral}/>}</span>
+        </div>
+      </ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Draw the bar lines" how="Count the beats. When a bar is full, draw a bar line. Finish with a double bar line at the end. The first bar line in row 1 is done for you.">
+      <div style={{display:'grid',gap:8}}>{W.s2.lines.map((ln, i) => <RunLine key={i} line={ln} n={i + 1} ex={i === 0}/>)}</div>
+    </Part>
+    <Part kind="play" title="Body-percussion band" how="Make up a pattern in 3/4: write a letter in every beat box. Then perform it -- can you do it faster and faster?">
+      <div style={{display:'flex',gap:14,justifyContent:'center',marginBottom:8,fontSize:12.5,color:BK.ink}}>{legend.map(([w, l]) => <span key={l}><b style={{color:BK.coral}}>{l}</b> = {w}</span>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'40px 1fr 1fr',border:'1.6px solid ' + BK.ink,borderRadius:8,height:90}}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'center'}}><TSig top={3} bottom={4} size={24} ink={BK.ink}/></div>
+        {[0, 1].map(b => <div key={b} style={{borderLeft:'1.5px solid ' + BK.ink,display:'grid',gridTemplateColumns:'repeat(3,1fr)'}}>{[1, 2, 3].map(q => <div key={q} style={{borderLeft:q > 1 ? '1px dashed #e9e2d2' : 'none',display:'flex',alignItems:'flex-end',justifyContent:'center',fontSize:10,color:q === 1 ? BK.coral : BK.line,fontWeight:900,paddingBottom:3}}>{q}</div>)}</div>)}
+      </div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // step 4 -- 8 on the bottom
+  P(<>
+    <WbTop step={4}/>
+    <Part kind="together" title="When the quaver is the beat" how="In 6/8 the quaver is one beat -- so every note lasts twice as many beats as in 4/4. A crotchet is 2.">
+      <BkGrid cols={3} gap="10px 12px">{W.s4.tog.map((it, i) => <BeatOf8Cell key={i} it={it} n={i + 1} ex={i === 0}/>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Count them in quavers">
+      <BkGrid cols={3} gap="10px 12px">{W.s4.home.map((it, i) => <BeatOf8Cell key={i} it={it} n={i + 1}/>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Who am I? Time-signature riddles" how="Read each riddle and write the time signature. Then make up a riddle of your own and try it on your teacher!">
+      <div style={{display:'grid',gap:7}}>{TS_RIDDLES.map(([q], i) => <div key={i} style={{display:'grid',gridTemplateColumns:'18px 1fr 52px',alignItems:'center',gap:10,fontSize:13,color:BK.ink}}>
+        <span style={{fontSize:10,fontWeight:900,color:BK.coral}}>{i + 1}</span><span style={{fontStyle:'italic'}}>“{q}”</span>
+        <span style={{width:44,height:48,border:'1.5px dashed ' + BK.muted,borderRadius:6}}/>
+      </div>)}
+        <div style={{display:'grid',gridTemplateColumns:'18px 1fr',gap:10,marginTop:6,fontSize:13,color:BK.ink}}><span style={{fontSize:10,fontWeight:900,color:BK.coral}}>★</span><span>My riddle: <span style={{display:'inline-block',width:'78%',borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span></span></div>
+      </div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // steps 5-6 -- compound time, grouping
+  P(<>
+    <WbTop step="5-6"/>
+    <Part kind="together" title="Simple or compound?" how="Compound time has 6, 9 or 12 on top: the quavers go in groups of three, and each group is one beat you feel.">
+      <BkGrid cols={2} gap="10px 12px">{W.s5.tog.map((ts, i) => <SimpleCompCell key={i} ts={ts} n={i + 1} ex={i === 0}/>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Beam the quavers" how="Join the quavers with beams to show the beats: groups of 3 in compound time, groups of 2 in simple time.">
+      <div style={{display:'grid',gap:8}}>{W.s5.rows.map((ts, i) => <QuaverRow key={i} ts={ts} n={i + 1}/>)}</div>
+    </Part>
+    <Part kind="play" title="Word rhythms in 6/8" how="Say it: STRAW-ber-ry JEL-ly-bean -- two groups of three. Write your own 6/8 words, one syllable in each box, then clap and say them!">
+      <div style={{display:'grid',gap:10}}>{[0, 1, 2].map(r => <div key={r} style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>{[0, 1].map(g => <div key={g} style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:4}}>{[0, 1, 2].map(s => <span key={s} style={{height:40,border:'1.5px solid ' + (s === 0 ? BK.coral : BK.line),borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:s === 0 ? 900 : 600,color:BK.ink}}>{r === 0 ? (g === 0 ? ['STRAW', 'ber', 'ry'] : ['JEL', 'ly', 'bean'])[s] : ''}</span>)}</div>)}</div>)}</div>
+      <div style={{fontSize:11.5,color:BK.muted,marginTop:6}}>The coral box is the strong first beat of each group.</div>
+    </Part>
+    <Faces/>
+  </>);
+
+  P(<WbPiano step="1-7" drill="time-signatures" tasks={[
+    'Find the time signature in each of your pieces. Say what the two numbers mean.',
+    'Play your piece and count out loud -- make beat 1 of every bar a little stronger.',
+    'Conduct a song on the radio for one minute. Is it in 2, 3 or 4?',
+    'Practise online: scan the code and play the drill for this chapter.',
+  ]}/>);
+
+  // check-up
+  const cnt = { tn: 4, cb: 4, bt: 4, db: 4, cp: 4 };
+  P(<>
+    <CheckHead total={20}/>
+    {bkSec('A', 'How many beats in a bar?')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.tn.map((ts, i) => <BkCell key={i} n={i + 1}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:12,padding:'12px 4px 4px'}}><TSig top={tsTop(ts)} bottom={tsBot(ts)} size={30} ink={BK.ink}/>{bkBox(36, 28)}</div></BkCell>)}</BkGrid>
+    {bkSec('B', 'C = ? and ¢ = ? Then draw the 2 bar lines.')}
+    <div style={{display:'grid',gridTemplateColumns:'auto 1fr',gap:10,alignItems:'center'}}>
+      <div style={{display:'flex',gap:10}}>{['C', '¢'].map((s, i) => <BkCell key={s} n={i + 5}><div style={{display:'flex',alignItems:'center',gap:6,padding:'12px 6px 4px'}}><span style={{fontFamily:"Georgia,serif",fontSize:30,fontWeight:900,color:BK.ink}}>{s}</span>=<span style={{width:34,height:46,border:'1.5px dashed ' + BK.muted,borderRadius:6}}/></div></BkCell>)}</div>
+      <RunLine line={W.chk.cb.line} n="7-8" size={34}/>
+    </div>
+    {bkSec('C', 'Write the time signature for each bar.')}
+    <BkGrid cols={2} gap="6px 10px">{W.chk.bt.map((b, i) => <FitCell key={i} b={b} n={i + 9} size={28}/>)}</BkGrid>
+    {bkSec('D', 'In 6/8 the quaver is one beat. How many beats?')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.db.map((it, i) => <BkCell key={i} n={i + 13}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'10px 4px 4px'}}><Glyph item={it} size={42}/>{bkBox(36, 28)}</div></BkCell>)}</BkGrid>
+    {bkSec('E', 'Write S for simple or C for compound.')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.cp.map((ts, i) => <BkCell key={i} n={i + 17}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:12,padding:'12px 4px 4px'}}><TSig top={tsTop(ts)} bottom={tsBot(ts)} size={30} ink={BK.ink}/>{bkBox(36, 28)}</div></BkCell>)}</BkGrid>
+    <CheckTable concepts={C} cnt={cnt}/>
+  </>);
+  return <>{pages}</>;
+}
+
+function TimeSigTeacher() {
+  const W = useMemo(() => tsWorkbook(), [LANG]);
+  const pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={pages.length + 1} chId="time-signatures" teacher>{content}</WbPage>);
+  const head = <>
+    <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('time-signatures')}</div>
+    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Answers for every workbook page, the mistakes students make most, and a line to say when they get stuck.</div>
+  </>;
+  P(<>
+    {head}
+    <TcBlock page={3} title="The two numbers" answers={<>{tcAns('TOGETHER', W.s1.tog.map(ts => tsTop(ts) + ' ' + TS_BEAT_NOTE[tsBot(ts)] + (tsTop(ts) > 1 ? 's' : '')))}{tcAns('AT HOME', W.s1.home.map(b => b.ts))}<div style={{fontSize:12,color:BK.ink}}><b style={{color:BK.muted,fontSize:10.5,letterSpacing:'0.06em'}}>PLAY</b>  Beat 1 is always the big drop down. 2: down-up. 3: down-right-up. 4: down-left-right-up.</div></>}
+      watch="Reading the bottom number as a number of beats. It names the note that gets the beat."
+      say="“Top: how many. Bottom: of what. 3/4 is three crotchets.”"/>
+    <TcBlock page={4} title="C, ¢ and bar lines" answers={<>{tcAns('TOGETHER', ['4/4', '2/2', 'C', '¢'])}
+      <div style={{fontSize:10.5,fontWeight:900,color:BK.muted,letterSpacing:'0.06em',margin:'4px 0'}}>AT HOME</div>
+      <div style={{display:'grid',gap:4}}>{W.s2.lines.map((ln, i) => <RunLine key={i} line={ln} n={i + 1} showBars size={30}/>)}</div></>}
+      watch="Drawing a bar line after every note, or forgetting the double bar at the end. Bar lines go after a full bar, not before it."
+      say="“Count the beats out loud as you go -- when you reach the top number, draw the line.”"/>
+    <TcBlock page={5} title="When the quaver is the beat" answers={<>{tcAns('TOGETHER', W.s4.tog.map(it => fmtNum(it.beats * 2)))}{tcAns('AT HOME', W.s4.home.map(it => nvName(it) + ' ' + fmtNum(it.beats * 2)))}{tcAns('PLAY', TS_RIDDLES.map(r => r[1]))}</>}
+      watch="Keeping the 4/4 values (crotchet = 1) when the bottom number is 8."
+      say="“With 8 on the bottom, the quaver is the beat -- so everything counts double.”"/>
+  </>);
+  P(<>
+    <TcBlock page={6} title="Simple and compound" answers={<>{tcAns('TOGETHER', W.s5.tog.map(ts => ts + ' ' + TS[ts].kind + ', ' + (TS[ts].kind === 'compound' ? TS[ts].top / 3 : TS[ts].top)))}
+      <div style={{fontSize:10.5,fontWeight:900,color:BK.muted,letterSpacing:'0.06em',margin:'4px 0'}}>AT HOME (beams)</div>
+      <div style={{display:'grid',gap:4}}>{W.s5.rows.map((ts, i) => <QuaverRow key={i} ts={ts} n={i + 1} answer={ts === '6/8' ? '3 + 3' : ts === '3/4' ? '2 + 2 + 2' : ts === '12/8' ? '3 + 3 + 3 + 3' : '2 + 2'}/>)}</div>
+      <div style={{fontSize:12,color:BK.ink,marginTop:4}}>PLAY: any words with a strong first syllable in each group of three.</div></>}
+      watch="Beaming 3/4 in threes because it has a 3. In 3/4 the beat is the crotchet, so quavers go in pairs."
+      say="“Is the beat a crotchet (pairs of quavers) or a dotted crotchet (threes)?”"/>
+    <TcBlock page={8} title="Check-up" answers={<>{tcAns('A', W.chk.tn.map(tsTop))}{tcAns('B', ['4/4', '2/2', 'bar lines below'])}<RunLine line={W.chk.cb.line} showBars size={28}/>{tcAns('C', W.chk.bt.map(b => b.ts))}{tcAns('D', W.chk.db.map(it => fmtNum(it.beats * 2)))}{tcAns('E', W.chk.cp.map(ts => TS[ts].kind === 'compound' ? 'C' : 'S'))}
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Below the pass mark, set that concept's workbook page again.</div></>}/>
+  </>);
+  return <>{pages}</>;
+}
+
+// Lesson Book: symbol pictures for Time Signatures
+const bigSign = (txt) => <div style={{textAlign:'center',fontFamily:"Georgia,'Times New Roman',serif",fontSize:64,fontWeight:900,color:BK.ink,lineHeight:1}}>{txt}</div>;
+const bigTS = (a, b) => <div style={{display:'flex',justifyContent:'center'}}><TSig top={a} bottom={b} size={44} ink={BK.ink}/></div>;
+function barlineGlyph(kind) {
+  const ls = [20, 30, 40, 50, 60];
+  return <svg viewBox="0 12 120 56" style={{width:'100%',display:'block'}}>{ls.map(y => <line key={y} x1="4" x2="116" y1={y} y2={y} stroke={BK.ink} strokeOpacity="0.55"/>)}
+    {kind === 'bar' ? <line x1="60" x2="60" y1="20" y2="60" stroke={BK.ink} strokeWidth="2"/> : kind === 'double' ? <g><line x1="56" x2="56" y1="20" y2="60" stroke={BK.ink} strokeWidth="1.8"/><line x1="62" x2="62" y1="20" y2="60" stroke={BK.ink} strokeWidth="1.8"/></g> : <g><line x1="104" x2="104" y1="20" y2="60" stroke={BK.ink} strokeWidth="1.8"/><rect x="109" y="20" width="6" height="40" fill={BK.ink}/></g>}</svg>;
+}
+
+
+// ─── Ledger Lines (chapter 'ledger-lines') ───
+const LL1 = { treble: [40, 39, 28, 29], bass: [28, 27, 16, 17] };           // one ledger line (or the space just beyond)
+const LL23 = { treble: [41, 42, 43, 44, 26, 27, 25, 24], bass: [29, 30, 31, 32, 15, 14, 13, 12] };
+const LL_TWINS = [26, 24, 28, 30, 31, 32, 25, 27];                            // the same pitch reads on either staff
+const llLedgers = (d, clef) => ledgersFor(d, CLEFS[clef].low, CLEFS[clef].high).length;
+const llWhere = (d, clef) => { const k = llLedgers(d, clef), up = d > CLEFS[clef].high; const line = (d - (up ? CLEFS[clef].high : CLEFS[clef].low)) % 2 === 0; return { k, up, line }; };
+function llTask(clef, d) { const w = llWhere(d, clef); return { clef, d, ...w }; }
+function llWorkbook() {
+  const k = (s) => 'll-wb-' + s;
+  const it = (clef, d) => ({ clef, d });
+  const s1 = withSeed(k('s1'), () => ({ tog: [it('treble', 40), it('bass', 28), it('treble', 28), it('bass', 16)], home: shuffle([it('treble', 39), it('treble', 29), it('bass', 27), it('bass', 17), it('treble', 41), it('treble', 27), it('bass', 29), it('bass', 15)]) }));
+  const s2 = withSeed(k('s2'), () => ({ home: shuffle([it('treble', 42), it('treble', 26), it('bass', 30), it('bass', 14), it('treble', 44), it('bass', 12)]) }));
+  const code = [['ACE', 'treble', [40, 42, 44]], ['BAG', 'bass', [13, 12, 32]], ['EGG', 'bass', [30, 32, 32]]];
+  const s3 = withSeed(k('s3'), () => ({ tog: shuffle([26, 24, 30, 32]), home: shuffle([26, 30, 31, 27]), hunt: shuffle([26, 26, 30, 30, 28, 28, 32, 32, 24, 24]).map((d, i) => ({ d, staff: i % 2 ? 'treble' : 'bass' })) }));
+  const s4 = withSeed(k('s4'), () => ({ tog: [llTask('treble', 42), llTask('bass', 28), llTask('treble', 26)], home: shuffle([llTask('treble', 40), llTask('treble', 28), llTask('bass', 30), llTask('bass', 14), llTask('treble', 43), llTask('bass', 16)]) }));
+  const chk = withSeed(k('chk'), () => ({
+    l1: shuffle([it('treble', 40), it('treble', 28), it('bass', 28), it('bass', 16)]),
+    l2: shuffle([it('treble', 42), it('treble', 26), it('bass', 30), it('bass', 14)]),
+    sk: [{ clef: 'treble', up: true }, { clef: 'bass', up: false }],
+    tw: shuffle([26, 30, 24, 32]),
+    wr: [llTask('treble', 42), llTask('bass', 14), llTask('treble', 28), llTask('bass', 30)],
+  }));
+  // the hunt: make sure each twin appears once on each staff
+  s3.hunt = withSeed(k('hunt'), () => shuffle([26, 30, 32, 24, 28].flatMap(d => [{ d, staff: 'treble' }, { d, staff: 'bass' }])));
+  return { s1, s2, code, s3, s4, chk };
+}
+function llConcepts() {
+  return [
+    { id: 'l1', name: 'One ledger line', step: '1', page: '3' },
+    { id: 'sk', name: 'Ledger lines skip a letter', step: '2', page: '4' },
+    { id: 'l2', name: 'Two and three ledger lines', step: '2', page: '4' },
+    { id: 'tw', name: 'The same note on both staves', step: '3', page: '5' },
+    { id: 'wr', name: 'Writing ledger-line notes', step: '4', page: '6' },
+  ];
+}
+const LL_LINE_NAMES = {
+  'treble-up': [40, 42, 44], 'treble-down': [28, 26, 24], 'bass-up': [28, 30, 32], 'bass-down': [16, 14, 12],
+};
+const llPrompt = (task) => <span><b style={{fontSize:16}}>{dName(task.d)}</b> <span style={{fontSize:10.5,color:BK.muted}}>· {task.k} ledger line{task.k > 1 ? 's' : ''} {task.up ? 'above' : 'below'}{task.line ? '' : ' (space)'}</span></span>;
+function LlDrawCell({ task, n, ex }) {
+  const span = task.clef === 'treble' ? (task.up ? [45, 29] : [39, 23]) : (task.up ? [33, 17] : [27, 11]);
+  return (
+    <ExCell n={n} ex={ex}>
+      <div style={{textAlign:'center',margin:'14px 0 2px'}}>{llPrompt(task)}</div>
+      <div style={{padding:'0 10px 6px'}}><PaperStaff clef={task.clef} notes={ex ? [{ d: task.d, color: BK.coral }] : []} width={165} minSpan={span}/></div>
+    </ExCell>
+  );
+}
+// a stack of ledger lines beyond a staff, with a box beside each line note
+function LedgerStack({ clef, up, ex, answers }) {
+  const ds = LL_LINE_NAMES[clef + '-' + (up ? 'up' : 'down')];
+  return (
+    <div style={{display:'grid',gridTemplateColumns:'1fr 60px',alignItems:'center',gap:6}}>
+      <PaperStaff clef={clef} notes={ds.map((d, i) => ({ d, x: 80 + i * 34, color: ex && i === 0 ? BK.coral : undefined }))} width={190}/>
+      <div style={{display:'grid',gap:4}}>{(up ? ds.slice().reverse() : ds).map((d, i) => { const shown = answers || (ex && d === ds[0]); return <span key={d} style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:10,color:BK.muted}}>{d === ds[0] ? '1st' : d === ds[1] ? '2nd' : '3rd'} {shown ? bkHand(dName(d), 26, 22) : bkBox(26, 22)}</span>; })}</div>
+    </div>
+  );
+}
+
+function LedgerWorkbook({ startNo = 1 }) {
+  const W = useMemo(() => llWorkbook(), [LANG]);
+  const C = llConcepts();
+  const pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="ledger-lines">{content}</WbPage>);
+  P(<WbOpener id="ledger-lines" concepts={C} blurb="Short lines that carry the staff on above and below -- the same line, space, line, space pattern."/>);
+  P(<WbLog/>);
+
+  // step 1 -- one ledger line
+  P(<>
+    <WbTop step={1}/>
+    <Part kind="together" title="Name the notes" how="Keep counting from the staff: the next line or space is just the next letter. A ledger line is a little bit of extra staff.">
+      <BkGrid cols={4} gap="10px 12px">{W.s1.tog.map((x, i) => <NameCell key={i} d={x.d} clef={x.clef} n={i + 1} ex={i === 0 ? bkNm(x.d) : null}/>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Name them on your own">
+      <BkGrid cols={4} gap="10px 12px">{W.s1.home.map((x, i) => <NameCell key={i} d={x.d} clef={x.clef} n={i + 1}/>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Rocket launch" how="Blast off from the top line (F)! Draw a note on every rung going up -- space, ledger line, space, ledger line -- write each letter, and land on the moon.">
+      <BigStaff gap={16} h0={110} h1={26}>{(yOf) => {
+        const xs = Array.from({ length: 7 }, (_, i) => 120 + i * 70);
+        const ds = [38, 39, 40, 41, 42, 43, 44];
+        return <g>
+          {ds.map((d, i) => d >= 40 && <g key={'l' + i}>{ds.filter(dd => dd >= 40 && dd <= d && dd % 2 === 0).map(dd => <line key={dd} x1={xs[i] - 15} x2={xs[i] + 15} y1={yOf(dd)} y2={yOf(dd)} stroke={BK.ink} strokeWidth="1.3"/>)}</g>)}
+          {bkNoteHead(xs[0], yOf(38), BK.coral, 8, 5.6)}
+          {xs.map((x, i) => <g key={'b' + i}><rect x={x - 13} y={yOf(30) + 6} width="26" height="20" rx="4" fill="#fff" stroke={i === 0 ? BK.coral : BK.line} strokeWidth="1.4"/>{i === 0 && <text x={x} y={yOf(30) + 21} textAnchor="middle" fontSize="14" fontWeight="900" fontStyle="italic" fill={BK.coral}>F</text>}</g>)}
+          <circle cx={xs[6] + 62} cy={yOf(46) - 2} r="20" fill="#fff" stroke={BK.ink} strokeWidth="1.5"/><circle cx={xs[6] + 56} cy={yOf(46) - 6} r="3.5" fill="none" stroke={BK.line}/><circle cx={xs[6] + 68} cy={yOf(46) + 4} r="2.5" fill="none" stroke={BK.line}/>
+          <text x={xs[6] + 62} y={yOf(46) + 28} textAnchor="middle" fontSize="10" fontWeight="800" fill={BK.muted}>the moon</text>
+        </g>;
+      }}</BigStaff>
+    </Part>
+    <Faces/>
+  </>);
+
+  // step 2 -- skipping a letter
+  P(<>
+    <WbTop step={2}/>
+    <Part kind="together" title="Ledger lines skip a letter" how="Ledger LINES go up (or down) two letters at a time -- the space in between holds the letter you skipped. Name the line notes.">
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+        <ExCell ex><div style={{padding:'16px 6px 4px'}}><LedgerStack clef="treble" up ex/></div></ExCell>
+        <ExCell n={2}><div style={{padding:'16px 6px 4px'}}><LedgerStack clef="bass" up={false}/></div></ExCell>
+      </div>
+    </Part>
+    <Part kind="home" title="Two and three ledger lines" how="Count the ledger lines carefully. Tip: from the staff, each ledger line is two letters further.">
+      <BkGrid cols={3} gap="10px 12px">{W.s2.home.map((x, i) => <NameCell key={i} d={x.d} clef={x.clef} n={i + 1} w={235}/>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Ledger-line code" how="Every note in these words sits on or near a ledger line. Name them to spell three words -- then draw a picture of one of them!">
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>{W.code.map(([w, clef, ds], i) => <div key={i} style={{border:'1px solid #ece6d8',borderRadius:8,padding:'4px 8px'}}>
+        <PaperStaff clef={clef} notes={ds.map(d => ({ d }))} width={190}/>
+        <BkUnder n={ds.length} w={190} h={28}>{ds.map((_, j) => <span key={j}>{bkBox(24, 26)}</span>)}</BkUnder>
+      </div>)}</div>
+      <div style={{flex:1,minHeight:50,marginTop:10,border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',alignItems:'flex-end',justifyContent:'flex-end',fontSize:11,color:BK.muted,padding:'6px 10px'}}>my picture</div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // step 3 -- borrowed from the other staff
+  P(<>
+    <WbTop step={3}/>
+    <Part kind="together" title="Same note, other staff" how="Notes on ledger lines below the treble staff can also be written ON the bass staff -- same key, same sound. Name each pair.">
+      <BkGrid cols={4} gap="10px 12px">{W.s3.tog.map((d, i) => <ExCell key={i} n={i + 1} ex={i === 0}><div style={{padding:'14px 6px 4px'}}><PaperStaff clef="grand" notes={[{ d, staff: 'treble' }, { d, staff: 'bass', x: 110 }]} width={150}/></div><div style={{textAlign:'center',margin:'4px 0 2px'}}>{i === 0 ? bkHand(bkNm(d), 54, 30) : bkBox(54, 30)}</div></ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Write it on the other staff" how="Each note is written on the treble staff. Write the very same note on the bass staff underneath, then name it.">
+      <BkGrid cols={4} gap="10px 12px">{W.s3.home.map((d, i) => <ExCell key={i} n={i + 1}><div style={{padding:'14px 6px 4px'}}><PaperStaff clef="grand" notes={[{ d, staff: 'treble' }]} width={150}/></div><div style={{textAlign:'center',margin:'4px 0 2px'}}>{bkBox(54, 30)}</div></ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Twin hunt" how="Every note here has a twin -- the same key written on the other staff. Colour each pair of twins the same colour. How many pairs can you find?">
+      <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'4px 8px'}}><PaperStaff clef="grand" notes={W.s3.hunt} width={640}/></div>
+      <div style={{fontSize:12.5,color:BK.ink,marginTop:8}}>Pairs found: <span style={{display:'inline-block',width:40,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span></div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // step 4 -- write them
+  P(<>
+    <WbTop step={4}/>
+    <Part kind="together" title="Write ledger-line notes" how="Draw the ledger lines first -- short, evenly spaced, the same gap as the staff -- then the note.">
+      <BkGrid cols={3} gap="10px 12px">{W.s4.tog.map((t0, i) => <LlDrawCell key={i} task={t0} n={i + 1} ex={i === 0}/>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Write them on your own">
+      <BkGrid cols={3} gap="10px 12px">{W.s4.home.map((t0, i) => <LlDrawCell key={i} task={t0} n={i + 1}/>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="A tune in outer space" how="Write a 5-note tune that floats above the treble staff -- use at least two ledger lines. Name your notes, give it a title, and play it to your teacher!">
+      <div style={{display:'flex',gap:10,alignItems:'baseline',fontSize:13,color:BK.ink,marginBottom:2}}>Title <span style={{flex:1,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span></div>
+      <BigStaff gap={15} h0={76} h1={40}>{(yOf) => <g>{Array.from({ length: 5 }, (_, i) => <rect key={i} x={150 + i * 96 - 13} y={yOf(30) + 12} width="26" height="22" rx="4" fill="#fff" stroke={BK.line} strokeWidth="1.4"/>)}</g>}</BigStaff>
+    </Part>
+  </>);
+
+  P(<WbPiano step="1-4" drill="ledger-lines" tasks={[
+    'Find high C and low C on your piano (two ledger lines away from the staff). Play them, then middle C.',
+    'Find a ledger-line note in one of your pieces. Name it by counting from the staff.',
+    'Play the rocket from page 3: F G A B C D E, going up.',
+    'Practise online: scan the code and play the drill for this chapter.',
+  ]}/>);
+
+  const cnt = { l1: 4, sk: 4, l2: 4, tw: 4, wr: 4 };
+  P(<>
+    <CheckHead total={20}/>
+    {bkSec('A', 'Name the notes (one ledger line).')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.l1.map((x, i) => <BkCell key={i} n={i + 1}><PaperStaff clef={x.clef} notes={[{ d: x.d }]} width={200}/><div style={{textAlign:'center',marginTop:2}}>{bkBox(40, 22)}</div></BkCell>)}</BkGrid>
+    {bkSec('B', 'Name the line notes in each stack.')}
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>{W.chk.sk.map((s, i) => <BkCell key={i} n={i ? '7-8' : '5-6'}><div style={{padding:'8px 4px 2px'}}><LedgerStackSmall clef={s.clef} up={s.up}/></div></BkCell>)}</div>
+    {bkSec('C', 'Name the notes (two or three ledger lines).')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.l2.map((x, i) => <BkCell key={i} n={i + 9}><PaperStaff clef={x.clef} notes={[{ d: x.d }]} width={240}/><div style={{textAlign:'center',marginTop:2}}>{bkBox(40, 22)}</div></BkCell>)}</BkGrid>
+    {bkSec('D', 'Write the same note on the bass staff.')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.tw.map((d, i) => <BkCell key={i} n={i + 13}><div style={{paddingTop:8}}><PaperStaff clef="grand" notes={[{ d, staff: 'treble' }]} width={240}/></div></BkCell>)}</BkGrid>
+    {bkSec('E', 'Draw each note.')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.wr.map((t0, i) => <BkCell key={i} n={i + 17}><div style={{textAlign:'center',fontSize:11,paddingTop:6}}>{llPrompt(t0)}</div><PaperStaff clef={t0.clef} notes={[]} width={230} minSpan={t0.clef === 'treble' ? (t0.up ? [45, 29] : [39, 23]) : (t0.up ? [33, 17] : [27, 11])}/></BkCell>)}</BkGrid>
+    <CheckTable concepts={C} cnt={cnt}/>
+  </>);
+  return <>{pages}</>;
+}
+// check-up version: two line notes to name (the 1st and 2nd ledger lines)
+function LedgerStackSmall({ clef, up, answers }) {
+  const ds = LL_LINE_NAMES[clef + '-' + (up ? 'up' : 'down')].slice(0, 2);
+  return (
+    <div style={{display:'grid',gridTemplateColumns:'1fr 70px',alignItems:'center',gap:6}}>
+      <PaperStaff clef={clef} notes={ds.map((d, i) => ({ d, x: 90 + i * 40 }))} width={170}/>
+      <div style={{display:'grid',gap:4}}>{ds.map((d, i) => <span key={d} style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:10,color:BK.muted}}>{i ? '2nd' : '1st'} {answers ? bkHand(dName(d), 26, 22) : bkBox(26, 22)}</span>)}</div>
+    </div>
+  );
+}
+
+function LedgerTeacher() {
+  const W = useMemo(() => llWorkbook(), [LANG]);
+  const pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={pages.length + 1} chId="ledger-lines" teacher>{content}</WbPage>);
+  const nmX = (x) => bkNm(x.d);
+  P(<>
+    <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('ledger-lines')}</div>
+    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Answers for every workbook page, the mistakes students make most, and a line to say when they get stuck.</div>
+    <TcBlock page={3} title="One ledger line" answers={<>{tcAns('TOGETHER', W.s1.tog.map(nmX))}{tcAns('AT HOME', W.s1.home.map(nmX))}{tcAns('PLAY', ['F G A B C D E'])}</>}
+      watch="Counting the ledger line as if it were the next staff line, but forgetting the space between the staff and the ledger line."
+      say="“Keep counting from the top line: space, then the ledger line -- one letter each.”"/>
+    <TcBlock page={4} title="Skipping a letter · code" answers={<>{tcAns('TOGETHER', ['Treble above: A C E', 'Bass below: E C A'])}{tcAns('AT HOME', W.s2.home.map(nmX))}{tcAns('PLAY', W.code.map(c => c[0]))}</>}
+      watch="Naming every ledger line as the next letter (A B C) instead of skipping (A C E)."
+      say="“Lines skip a letter, just like on the staff: E G B D F. Above the treble: A, C, E.”"/>
+    <TcBlock page={5} title="Borrowed from the other staff" answers={<>{tcAns('TOGETHER', W.s3.tog.map(d => bkNm(d)))}{tcAns('AT HOME', W.s3.home.map(d => bkNm(d) + ' (' + (d === 27 ? 'space above bass' : d === 26 ? 'bass top line' : d === 30 ? '2 ledger lines above bass' : d === 31 ? 'space above 2nd ledger line' : '') + ')'))}{tcAns('PLAY', ['5 pairs: A, C, E, F, G'])}</>}
+      watch="Thinking a note looks different so it must sound different. The twins are the very same key."
+      say="“The Queen's ledger lines below are the King's top lines. Same key -- just written in the other palace.”"/>
+    <TcBlock page={6} title="Write them" answers={<>
+      <BkGrid cols={9} gap="4px 5px">{[...W.s4.tog, ...W.s4.home].map((t0, i) => <BkCell key={i} n={i < 3 ? 'T' + (i + 1) : 'H' + (i - 2)}><div style={{paddingTop:8}}><PaperStaff clef={t0.clef} notes={[{ d: t0.d, color: BK.coral }]} width={110}/></div></BkCell>)}</BkGrid>
+      <div style={{fontSize:12,color:BK.ink,marginTop:5}}>Check the ledger lines are short, evenly spaced and only as many as needed -- no ledger line above a space note that does not need one.</div></>}
+      watch="Ledger lines spaced wider than the staff, or a ledger line drawn through a space note."
+      say="“A ledger line is a small piece of staff -- same gap as the staff lines.”"/>
+  </>);
+  P(<>
+    <TcBlock page={8} title="Check-up" answers={<>{tcAns('A', W.chk.l1.map(nmX))}{tcAns('B', W.chk.sk.map(s => LL_LINE_NAMES[s.clef + '-' + (s.up ? 'up' : 'down')].slice(0, 2).map(dName).join(' ')))}{tcAns('C', W.chk.l2.map(nmX))}
+      <div style={{fontSize:10.5,fontWeight:900,color:BK.muted,letterSpacing:'0.06em',margin:'4px 0'}}>D and E</div>
+      <BkGrid cols={8} gap="4px 5px">{W.chk.tw.map((d, i) => <BkCell key={'d' + i} n={'D' + (i + 1)}><div style={{paddingTop:8}}><PaperStaff clef="bass" notes={[{ d, color: BK.coral }]} width={110}/></div></BkCell>)}{W.chk.wr.map((t0, i) => <BkCell key={'e' + i} n={'E' + (i + 1)}><div style={{paddingTop:8}}><PaperStaff clef={t0.clef} notes={[{ d: t0.d, color: BK.coral }]} width={110}/></div></BkCell>)}</BkGrid>
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Below the pass mark, set that concept's workbook page again.</div></>}/>
+  </>);
+  return <>{pages}</>;
+}
+
+const WORKBOOKS = { staff: StaffWorkbook, 'note-names': NoteNamesWorkbook, 'note-values': NoteValuesWorkbook, 'time-signatures': TimeSigWorkbook, 'ledger-lines': LedgerWorkbook };
 
 // ─── Teacher copy (?book=teacher&ch=staff): answers, what to watch for, what to say ───
 function TcBlock({ page, title, answers, watch, say }) {
@@ -19622,7 +20135,7 @@ function StaffTeacher() {
   </>);
   return <>{pages}</>;
 }
-const TEACHER_COPIES = { staff: StaffTeacher, 'note-names': NoteNamesTeacher, 'note-values': NoteValuesTeacher };
+const TEACHER_COPIES = { staff: StaffTeacher, 'note-names': NoteNamesTeacher, 'note-values': NoteValuesTeacher, 'time-signatures': TimeSigTeacher, 'ledger-lines': LedgerTeacher };
 
 // ─── Lesson Book extras (Phase 296): symbol cards, a Remember line, paper versions of tools ───
 // Every new sign gets a card: the symbol drawn big, its name, what it means, how to play it --
@@ -19740,6 +20253,26 @@ function bookExtras(id) {
     { swap: [[isType(HeardBar), <PaperQR text="Listening needs sound: scan the code, press play, and pick the bar you heard." params="drill=note-values&lock=1" label="Which bar?"/>]],
       remember: 'Listen for where the sound stops -- that beat is a rest.' },
   ]; }
+  if (id === 'time-signatures') return [
+    { symbols: [{ glyph: bigTS(3, 4), w: 90, name: 'Time signature', means: 'top number = beats in a bar; bottom number = which note is one beat.', play: 'count the top number in every bar.' }],
+      remember: 'Top: how many beats. Bottom: which note is the beat (4 = crotchet, 2 = minim, 8 = quaver).' },
+    { symbols: [{ glyph: bigSign('C'), w: 90, name: 'Common time', means: 'the same as 4/4.', play: 'four crotchet beats in a bar.' }, { glyph: bigSign('¢'), w: 90, name: 'Cut time', means: 'the same as 2/2.', play: 'two minim beats -- feel it in 2.' }],
+      remember: 'C = 4/4. ¢ = 2/2.' },
+    { symbols: [{ glyph: barlineGlyph('bar'), w: 150, name: 'Bar line', means: 'closes a full bar.', play: 'keep going -- no stop.' }, { glyph: barlineGlyph('double'), w: 150, name: 'Double bar line', means: 'the end of a section.', play: 'watch for a change coming.' }, { glyph: barlineGlyph('final'), w: 150, name: 'Final bar line', means: 'the end of the piece.', play: 'stop -- the piece is over.' }],
+      remember: 'Count the beats: when the bar is full, draw the bar line.' },
+    { remember: '8 on the bottom: the quaver is the beat, so every note counts double.' },
+    { symbols: [{ glyph: bigTS(6, 8), w: 90, name: 'Compound time (6/8)', means: 'six quavers in two groups of three.', play: 'count 1 2 3 4 5 6 -- feel 2 big beats.' }],
+      remember: '6, 9 or 12 on top = compound time: the quavers go in groups of three.' },
+    { remember: 'Beam notes to show the beats: pairs in 3/4, threes in 6/8.' },
+    { remember: 'A triplet squeezes three equal notes into the time of two.' },
+  ];
+  if (id === 'ledger-lines') return [
+    { symbols: [{ glyph: <PaperStaff clef="treble" notes={[{ d: 40, color: BK.coral }, { d: 28, color: BK.coral }]} width={130}/>, w: 170, name: 'Ledger line', means: 'a short extra line that carries the staff on, above or below.', play: 'count on from the staff: line, space, line...' }],
+      remember: 'A ledger line is a small piece of extra staff -- keep counting line, space, line.' },
+    { remember: 'Ledger lines skip a letter: above the treble A C E, below the bass E C A.' },
+    { remember: 'Below the treble staff = the top of the bass staff: the same keys, written two ways.' },
+    { remember: 'Draw ledger lines short, with the same gap as the staff -- only as many as the note needs.' },
+  ];
   if (id !== 'staff') return [];
   const g = (clef, notes = [], w = 150) => <PaperStaff clef={clef} notes={notes} width={w}/>;
   return [
