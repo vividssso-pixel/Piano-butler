@@ -20074,7 +20074,416 @@ function LedgerTeacher() {
   return <>{pages}</>;
 }
 
-const WORKBOOKS = { staff: StaffWorkbook, 'note-names': NoteNamesWorkbook, 'note-values': NoteValuesWorkbook, 'time-signatures': TimeSigWorkbook, 'ledger-lines': LedgerWorkbook };
+
+// ─── Intervals (chapter 'intervals') ───
+const ivOrdEn = (n) => n === 1 ? 'unison' : n === 8 ? 'octave' : n + (n === 2 ? 'nd' : n === 3 ? 'rd' : 'th');
+const ivShort = (q, n) => q + n;
+const ivLongEn = (q, n) => IV_QWORD_EN[q] + ' ' + ivOrdEn(n);
+const IV_QTABLE = [['2nd', '1 = minor · 2 = major'], ['3rd', '3 = minor · 4 = major'], ['4th', '5 = perfect'], ['5th', '7 = perfect'], ['6th', '8 = minor · 9 = major'], ['7th', '10 = minor · 11 = major']];
+const IV_FROG = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'A', 'B', 'C'];
+const ivInv = ([n, q]) => [9 - n, q === 'M' ? 'm' : q === 'm' ? 'M' : q];
+function ivWorkbook() {
+  const k = (s) => 'iv-wb-' + s;
+  const pair = (clef) => { const lo = clef === 'treble' ? 29 : 17; const a = lo + Math.floor(Math.random() * 5); const n = 2 + Math.floor(Math.random() * 7); return { clef, a, b: a + n - 1, n, harm: Math.random() < 0.4 }; };
+  const s1 = withSeed(k('s1'), () => { const mk = (clef, n) => { const lo = clef === 'treble' ? 29 : 17; const a = lo + Math.floor(Math.random() * (12 - n)); return { clef, a, b: a + n - 1, n, harm: Math.random() < 0.4 }; }; return { tog: [mk('treble', 3), mk('treble', 5), mk('bass', 2), mk('treble', 6)], home: shuffle([mk('treble', 4), mk('bass', 3), mk('treble', 7), mk('bass', 5), mk('treble', 8), mk('bass', 6), mk('treble', 2), mk('bass', 4)]) }; });
+  const frog = withSeed(k('frog'), () => shuffle([['D', 5], ['F', 3], ['G', 4], ['A', 6], ['E', 2], ['B', 3]]).map(([l, n]) => ({ l, n, a: IV_FROG[IV_FROG.indexOf(l) + n - 1] })));
+  // quality on the keyboard: white-key pairs only (white index from C)
+  const WQ = [[0, 2], [1, 3], [0, 3], [2, 4], [3, 5], [0, 4], [1, 5], [2, 3], [0, 1], [4, 6], [5, 7], [1, 2]];
+  const wpc = [0, 2, 4, 5, 7, 9, 11, 12];
+  const qOf = (a, b) => { const n = b - a + 1, s = wpc[b] - wpc[a]; const tab = { 2: { 1: 'm', 2: 'M' }, 3: { 3: 'm', 4: 'M' }, 4: { 5: 'P', 6: 'A' }, 5: { 7: 'P', 6: 'd' } }; return { n, s, q: (tab[n] || {})[s] }; };
+  const s2 = withSeed(k('s2'), () => { const ok = WQ.filter(([a, b]) => qOf(a, b).q && qOf(a, b).q !== 'A' && qOf(a, b).q !== 'd'); const sh = shuffle(ok); return { tog: [[0, 2], ...sh.filter(p => p[0] + p[1] !== 2).slice(0, 2)].map(([a, b]) => ({ a, b, ...qOf(a, b) })), home: sh.slice(0, 6).map(([a, b]) => ({ a, b, ...qOf(a, b) })) }; });
+  const s3 = withSeed(k('s3'), () => ({ tog: [[5, 'P'], ...shuffle([[3, 'M'], [6, 'M'], [4, 'P']])].map(([n, q]) => ({ n, q, b: 28 + n - 1 })), home: shuffle([['G', 3, 'M'], ['F', 4, 'P'], ['D', 3, 'M'], ['G', 7, 'M'], ['F', 6, 'M'], ['C', 5, 'P']]).map(([l, n, q]) => { const a = { d: 28 + 'CDEFGAB'.indexOf(l), acc: 0 }; return { l, n, q, a, top: ivBuild(a, n, q) }; }) }));
+  const s5 = withSeed(k('s5'), () => ({ tog: [[3, 'M'], ...shuffle([[5, 'P'], [2, 'm'], [6, 'M']])], home: shuffle([[4, 'P'], [7, 'm'], [3, 'm'], [6, 'm'], [2, 'M'], [7, 'M']]) }));
+  const chk = withSeed(k('chk'), () => {
+    const mk = (clef, n) => { const lo = clef === 'treble' ? 29 : 17; const a = lo + Math.floor(Math.random() * (12 - n)); return { clef, a, b: a + n - 1, n }; };
+    return {
+      nb: [mk('treble', 3), mk('bass', 5), mk('treble', 7), mk('bass', 4)],
+      lt: shuffle([['C', 4], ['E', 3], ['G', 6], ['B', 2]]).map(([l, n]) => ({ l, n, a: IV_FROG[IV_FROG.indexOf(l) + n - 1] })),
+      ql: [[0, 4], [1, 3], [3, 7], [2, 3]].map(([a, b]) => ({ a, b, ...qOf(a, b) })),
+      ms: shuffle([[3, 'M'], [5, 'P'], [6, 'M'], [2, 'M']]).map(([n, q]) => ({ n, q, b: 28 + n - 1 })),
+      iv: shuffle([[3, 'm'], [5, 'P'], [6, 'M'], [2, 'M']]),
+    };
+  });
+  return { s1, frog, s2, s3, s5, chk };
+}
+function ivConcepts() {
+  return [
+    { id: 'nb', name: 'The number on the staff', step: '1', page: '3' },
+    { id: 'lt', name: 'Counting up the letters', step: '1', page: '3' },
+    { id: 'ql', name: 'Major, minor and perfect', step: '2', page: '4' },
+    { id: 'ms', name: 'The major-scale shortcut', step: '3', page: '5' },
+    { id: 'iv', name: 'Inversions', step: '5', page: '6' },
+  ];
+}
+function IvStaffCell({ it, n, ex, w = 150 }) {
+  const notes = it.harm ? [{ d: it.a, x: w * 0.62 }, { d: it.b, x: w * 0.62 + (it.n === 2 ? 13 : 0) }] : [{ d: it.a }, { d: it.b }];
+  return <ExCell n={n} ex={ex}><div style={{padding:'12px 8px 0'}}><PaperStaff clef={it.clef} notes={notes} width={w}/></div><div style={{textAlign:'center',margin:'5px 0 2px',display:'flex',justifyContent:'center',alignItems:'center',gap:5,fontSize:11,color:BK.muted}}>{nvBox(ex, it.n === 8 ? '8ve' : it.n, 44, 28)}</div></ExCell>;
+}
+function IvKeysCell({ it, n, ex }) {
+  return (
+    <ExCell n={n} ex={ex}>
+      <div style={{padding:'14px 8px 2px'}}><PaperKeys start="C" whites={8} w={28} h={86} dots={[it.a, it.b]}/></div>
+      <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:6,fontSize:11,color:BK.muted,margin:'2px 0 3px'}}>{nvBox(ex, it.s, 34, 26)} semitones</div>
+      <div style={{display:'flex',justifyContent:'center',margin:'0 8px 5px'}}>{ex ? <span style={{color:BK.coral,fontWeight:900,fontStyle:'italic',borderBottom:'1.5px solid ' + BK.coral,padding:'0 4px',fontSize:13}}>{ivLongEn(it.q, it.n)}</span> : <span style={{display:'inline-block',width:'80%',height:18,borderBottom:'1.5px solid ' + BK.line}}/>}</div>
+    </ExCell>
+  );
+}
+function IvFromCCell({ it, n, ex }) {
+  return <ExCell n={n} ex={ex}><div style={{padding:'12px 8px 0'}}><PaperStaff clef="treble" notes={[{ d: 28 }, { d: it.b }]} width={150}/></div><div style={{textAlign:'center',margin:'5px 0 3px'}}>{ex ? <span style={{display:'inline-flex',alignItems:'center',justifyContent:'center',minWidth:120,height:28,border:'1.5px solid ' + BK.coral,borderRadius:6,color:BK.coral,fontWeight:900,fontStyle:'italic',fontSize:13}}>{ivLongEn(it.q, it.n)}</span> : <span style={{display:'inline-block',width:130,height:28,border:'1.5px solid ' + BK.line,borderRadius:6}}/>}</div></ExCell>;
+}
+function IvBuildCell({ it, n }) {
+  return <ExCell n={n}><div style={{textAlign:'center',margin:'14px 0 0',fontSize:13,color:BK.ink}}><b>{ivLongEn(it.q, it.n)}</b> above <b>{it.l}</b></div><div style={{padding:'0 10px 4px'}}><PaperStaff clef="treble" notes={[{ d: it.a.d }]} width={140} minSpan={[41, 27]}/></div><div style={{textAlign:'center',fontSize:10.5,color:BK.muted,marginBottom:3}}>top note {bkBox(40, 24)}</div></ExCell>;
+}
+function IvInvCell({ iv, n, ex }) {
+  const [n2, q2] = ivInv(iv);
+  return (
+    <ExCell n={n} ex={ex}>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'16px 4px 8px',fontSize:13.5,color:BK.ink}}>
+        <b>{ivLongEn(iv[1], iv[0])}</b><span style={{color:BK.muted,fontSize:16}}>⇄</span>
+        {ex ? <span style={{display:'inline-flex',alignItems:'center',justifyContent:'center',minWidth:100,height:28,border:'1.5px solid ' + BK.coral,borderRadius:6,color:BK.coral,fontWeight:900,fontStyle:'italic'}}>{ivLongEn(q2, n2)}</span> : <span style={{display:'inline-block',width:110,height:28,border:'1.5px solid ' + BK.line,borderRadius:6}}/>}
+      </div>
+    </ExCell>
+  );
+}
+// a row of lily pads (C to C to C) for the frog-jump game
+function LilyPads() {
+  return (
+    <svg viewBox="0 0 640 74" style={{width:'100%',display:'block'}}>
+      <path d="M8 46 Q320 74 632 46" fill="none" stroke={BK.line} strokeWidth="1.2" strokeDasharray="3 5"/>
+      {IV_FROG.map((l, i) => { const x = 24 + i * 42.5, y = 44 + Math.sin(i * 1.3) * 4; return <g key={i}><ellipse cx={x} cy={y} rx="19" ry="12" fill={l === 'C' ? '#fdeee8' : '#fff'} stroke={BK.ink} strokeWidth="1.4"/><path d={`M${x} ${y} L${x + 12} ${y - 9}`} stroke="#fff" strokeWidth="4"/><text x={x} y={y + 5} textAnchor="middle" fontSize="14" fontWeight="900" fill={BK.ink}>{l}</text></g>; })}
+    </svg>
+  );
+}
+
+function IntervalsWorkbook({ startNo = 1 }) {
+  const W = useMemo(() => ivWorkbook(), [LANG]);
+  const C = ivConcepts();
+  const pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="intervals">{content}</WbPage>);
+  P(<WbOpener id="intervals" concepts={C} blurb="An interval is the distance between two notes: a number (count the letters) and a quality (major, minor, perfect)."/>);
+  P(<WbLog/>);
+
+  // step 1 -- the number
+  P(<>
+    <WbTop step={1}/>
+    <Part kind="together" title="What number is it?" how="Count the letters from the bottom note to the top note, counting BOTH notes. C to E: C D E = a 3rd.">
+      <BkGrid cols={4} gap="10px 12px">{W.s1.tog.map((it, i) => <IvStaffCell key={i} it={it} n={i + 1} ex={i === 0}/>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Count them on your own" how="Some notes are side by side, some are stacked -- count them the same way.">
+      <BkGrid cols={4} gap="10px 12px">{W.s1.home.map((it, i) => <IvStaffCell key={i} it={it} n={i + 1}/>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Frog jumps" how="The frog counts the pad it sits on as 1. Draw each jump as an arc and write the pad it lands on.">
+      <LilyPads/>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,marginTop:10}}>{W.frog.map((f, i) => <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,border:'1px solid #ece6d8',borderRadius:8,padding:'6px 10px',fontSize:13,color:BK.ink,whiteSpace:'nowrap'}}><span><span style={{fontSize:10,fontWeight:900,color:BK.coral,marginRight:6}}>{i + 1}</span><b>{f.l}</b> up a <b>{ivOrdEn(f.n)}</b></span>{bkBox(32, 28)}</div>)}</div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // step 2 -- quality
+  P(<>
+    <WbTop step={2}/>
+    <Part kind="together" title="Count the semitones" how={<>Count every key from the bottom dot to the top dot -- black keys too. Then use the table: {IV_QTABLE.slice(0, 4).map(([a, b]) => <span key={a} style={{whiteSpace:'nowrap',marginRight:8}}><b>{a}</b>: {b}.</span>)}</>}>
+      <BkGrid cols={3} gap="10px 12px">{W.s2.tog.map((it, i) => <IvKeysCell key={i} it={it} n={i + 1} ex={i === 0}/>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Count and name on your own">
+      <BkGrid cols={3} gap="10px 12px">{W.s2.home.map((it, i) => <IvKeysCell key={i} it={it} n={i + 1}/>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Happy or sad?" how="Play C-E (a major 3rd), then C-E♭ (a minor 3rd). Draw the face each one sounds like. Then write a tiny story with a happy part and a sad part -- and play the right 3rd for each part!">
+      <div style={{display:'grid',gridTemplateColumns:'130px 130px 1fr',gap:14,alignItems:'stretch'}}>
+        {['C - E', 'C - E♭'].map(l => <div key={l} style={{border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-between',padding:'6px 4px'}}><span style={{width:84,height:84,border:'1.5px dashed ' + BK.line,borderRadius:42}}/><b style={{fontSize:13,color:BK.ink}}>{l}</b></div>)}
+        <div style={{border:'1.5px solid ' + BK.line,borderRadius:10,padding:'6px 10px',fontSize:11,color:BK.muted,display:'grid',gridTemplateRows:'auto 1fr 1fr 1fr',gap:2}}>My story<span style={{borderBottom:'1px solid ' + BK.line}}/><span style={{borderBottom:'1px solid ' + BK.line}}/><span style={{borderBottom:'1px solid ' + BK.line}}/></div>
+      </div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // step 3 -- the major-scale shortcut
+  P(<>
+    <WbTop step={3}/>
+    <Part kind="together" title="Name it from C" how="Every note of C major is major or perfect above C: 2nd, 3rd, 6th and 7th are major; 4th, 5th and octave are perfect.">
+      <BkGrid cols={4} gap="10px 12px">{W.s3.tog.map((it, i) => <IvFromCCell key={i} it={it} n={i + 1} ex={i === 0}/>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Write the top note" how="Think of the major scale of the bottom note. Draw the top note and write its name -- remember any sharp or flat in that key!">
+      <BkGrid cols={3} gap="10px 12px">{W.s3.home.map((it, i) => <IvBuildCell key={i} it={it} n={i + 1}/>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Song detective" how="These songs start with a famous interval. Hum each start, then join the song to its interval. Can you play them on the piano?">
+      <div style={{display:'grid',gridTemplateColumns:'1fr 90px 1fr',alignItems:'center',rowGap:8}}>
+        {[['Twinkle Twinkle Little Star', 'perfect 5th'], ['Here Comes the Bride', 'perfect 4th'], ['Oh When the Saints', 'major 3rd'], ['Jaws (the shark!)', 'minor 2nd'], ['Somewhere Over the Rainbow', 'octave']].map(([song], i) => <React.Fragment key={i}>
+          <div style={{display:'flex',alignItems:'center',gap:8,justifyContent:'flex-end',fontSize:13,fontWeight:800,color:BK.ink}}>{song}<span style={{width:9,height:9,borderRadius:5,background:BK.ink}}/></div><div/>
+          <div style={{display:'flex',alignItems:'center',gap:8,fontSize:13,color:BK.ink}}><span style={{width:9,height:9,borderRadius:5,background:BK.ink}}/>{['octave', 'major 3rd', 'minor 2nd', 'perfect 5th', 'perfect 4th'][i]}</div>
+        </React.Fragment>)}
+      </div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // step 5 -- inversions
+  P(<>
+    <WbTop step="4-5"/>
+    <Part kind="together" title="Turn it upside down" how="Inverting = moving the bottom note up an octave. The numbers always add to 9. Major ⇄ minor; perfect stays perfect.">
+      <BkGrid cols={2} gap="10px 12px">{W.s5.tog.map((iv, i) => <IvInvCell key={i} iv={iv} n={i + 1} ex={i === 0}/>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Invert them on your own">
+      <BkGrid cols={2} gap="10px 12px">{W.s5.home.map((iv, i) => <IvInvCell key={i} iv={iv} n={i + 1}/>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="The magic number 9" how="Join every pair of numbers that adds up to 9, each pair in a different colour. Those are inversion partners -- a 3rd turns into a 6th! Then colour the pair that means unison and octave.">
+      <svg viewBox="0 0 640 170" style={{width:'100%',display:'block'}}>
+        {[[2, 60, 40], [7, 520, 130], [3, 230, 120], [6, 410, 30], [4, 120, 135], [5, 330, 80], [8, 590, 45], [1, 40, 100]].map(([v, x, y]) => <g key={v}><circle cx={x} cy={y} r="22" fill="#fff" stroke={BK.ink} strokeWidth="1.6"/><text x={x} y={y + 7} textAnchor="middle" fontSize="20" fontWeight="900" fill={BK.ink}>{v}</text></g>)}
+      </svg>
+    </Part>
+    <Faces/>
+  </>);
+
+  P(<WbPiano step="1-5" drill="intervals" tasks={[
+    'Play a 3rd, a 5th and an octave up from C. Say each one as you play it.',
+    'Play C-E and C-E♭ with your eyes closed. Can you hear which is happy and which is sad?',
+    'Ear training: scan the code, open the Lesson and try "Train your ear" (step 4).',
+    'Find a 5th in one of your pieces. What letters are the two notes?',
+  ]}/>);
+
+  const cnt = { nb: 4, lt: 4, ql: 4, ms: 4, iv: 4 };
+  P(<>
+    <CheckHead total={20}/>
+    {bkSec('A', 'Write the number of each interval.')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.nb.map((it, i) => <BkCell key={i} n={i + 1}><div style={{paddingTop:8}}><PaperStaff clef={it.clef} notes={[{ d: it.a }, { d: it.b }]} width={140}/></div><div style={{textAlign:'center',marginTop:2}}>{bkBox(40, 22)}</div></BkCell>)}</BkGrid>
+    {bkSec('B', 'Which letter do you land on?')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.lt.map((f, i) => <BkCell key={i} n={i + 5}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'12px 4px 6px',fontSize:13,color:BK.ink}}><b>{f.l}</b> up a <b>{ivOrdEn(f.n)}</b> {bkBox(32, 24)}</div></BkCell>)}</BkGrid>
+    {bkSec('C', 'Count the semitones, then write major, minor or perfect.')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.ql.map((it, i) => <BkCell key={i} n={i + 9}><div style={{padding:'10px 4px 0'}}><PaperKeys start="C" whites={8} w={26} h={68} dots={[it.a, it.b]}/></div><div style={{display:'flex',justifyContent:'center',gap:5,alignItems:'center',margin:'4px 0 2px',fontSize:10,color:BK.muted}}>{bkBox(28, 22)}<span style={{display:'inline-block',width:70,borderBottom:'1.5px solid ' + BK.line}}>&nbsp;</span></div></BkCell>)}</BkGrid>
+    {bkSec('D', 'Name each interval above C.')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.ms.map((it, i) => <BkCell key={i} n={i + 13}><div style={{paddingTop:8}}><PaperStaff clef="treble" notes={[{ d: 28 }, { d: it.b }]} width={140}/></div><div style={{textAlign:'center',marginTop:2}}><span style={{display:'inline-block',width:110,height:22,border:'1.5px solid ' + BK.line,borderRadius:6}}/></div></BkCell>)}</BkGrid>
+    {bkSec('E', 'Write the inversion.')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.iv.map((iv, i) => <BkCell key={i} n={i + 17}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'12px 4px 6px',fontSize:12.5,color:BK.ink}}><b>{ivLongEn(iv[1], iv[0])}</b> ⇄ <span style={{display:'inline-block',width:60,borderBottom:'1.5px solid ' + BK.line}}>&nbsp;</span></div></BkCell>)}</BkGrid>
+    <CheckTable concepts={C} cnt={cnt}/>
+  </>);
+  return <>{pages}</>;
+}
+
+function IntervalsTeacher() {
+  const W = useMemo(() => ivWorkbook(), [LANG]);
+  const pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={pages.length + 1} chId="intervals" teacher>{content}</WbPage>);
+  const num = (it) => ivOrdEn(it.n);
+  P(<>
+    <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('intervals')}</div>
+    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Answers for every workbook page, the mistakes students make most, and a line to say when they get stuck.</div>
+    <TcBlock page={3} title="The number" answers={<>{tcAns('TOGETHER', W.s1.tog.map(num))}{tcAns('AT HOME', W.s1.home.map(num))}{tcAns('PLAY', W.frog.map(f => f.a))}</>}
+      watch="Counting the gaps instead of the notes, so every answer comes out one too small (C to E called a 2nd)."
+      say="“Count the note you start on as 1 -- like the frog sitting on its pad.”"/>
+    <TcBlock page={4} title="Major, minor and perfect" answers={<>{tcAns('TOGETHER', W.s2.tog.map(it => it.s + ' = ' + ivLongEn(it.q, it.n)))}{tcAns('AT HOME', W.s2.home.map(it => it.s + ' = ' + ivLongEn(it.q, it.n)))}<div style={{fontSize:12,color:BK.ink}}>PLAY: C-E happy (major), C-E♭ sad (minor) -- any story.</div></>}
+      watch="Not counting the black keys, or counting the starting key as 1 semitone. Semitones are the steps between keys."
+      say="“A semitone is your very best friend -- the very next key, black or white. Count the steps, not the keys.”"/>
+    <TcBlock page={5} title="The major-scale shortcut" answers={<>{tcAns('TOGETHER', W.s3.tog.map(it => ivLongEn(it.q, it.n)))}{tcAns('AT HOME', W.s3.home.map(it => ivName(it.top)))}{tcAns('PLAY', ['Twinkle: P5', 'Bride: P4', 'Saints: M3', 'Jaws: m2', 'Rainbow: octave'])}</>}
+      watch="Forgetting the key's sharp or flat: D up a major 3rd is F♯, not F."
+      say="“Sing the major scale of the bottom note -- the interval lands on one of its notes.”"/>
+    <TcBlock page={6} title="Inversions" answers={<>{tcAns('TOGETHER', W.s5.tog.map(iv => ivLongEn(...ivInv(iv).reverse())))}{tcAns('AT HOME', W.s5.home.map(iv => ivLongEn(...ivInv(iv).reverse())))}{tcAns('PLAY', ['1-8, 2-7, 3-6, 4-5 -- every number has a partner (1 = unison, 8 = octave)'])}</>}
+      watch="Adding to 8 instead of 9. Turning perfect into something else."
+      say="“Numbers add to 9. Major and minor swap. Perfect stays perfect.”"/>
+  </>);
+  P(<>
+    <TcBlock page={8} title="Check-up" answers={<>{tcAns('A', W.chk.nb.map(num))}{tcAns('B', W.chk.lt.map(f => f.a))}{tcAns('C', W.chk.ql.map(it => it.s + ', ' + IV_QWORD_EN[it.q]))}{tcAns('D', W.chk.ms.map(it => ivLongEn(it.q, it.n)))}{tcAns('E', W.chk.iv.map(iv => ivLongEn(...ivInv(iv).reverse())))}
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Below the pass mark, set that concept's workbook page again.</div></>}/>
+  </>);
+  return <>{pages}</>;
+}
+
+
+// ─── Key Signatures (chapter 'key-signatures') ───
+const KS_SHARPS = ['F', 'C', 'G', 'D', 'A', 'E', 'B'];
+const KS_FLATS = ['B', 'E', 'A', 'D', 'G', 'C', 'F'];
+const ksOf = (major) => KEY_SIGS.find(k => k.major === major);
+const ksAcc = (k) => k.type ? (k.type === 'sharp' ? KS_SHARPS : KS_FLATS).slice(0, k.count).map(l => l + (k.type === 'sharp' ? '♯' : '♭')) : [];
+const ksMaj = (k) => prettyNote(k.major) + ' major', ksMin = (k) => prettyNote(k.minor) + ' minor';
+const ksLbl = (k) => k.count === 0 ? 'none' : k.count + (k.type === 'sharp' ? '♯' : '♭');
+function ksOrderRow(type, given) {
+  const L = type === 'sharp' ? KS_SHARPS : KS_FLATS;
+  const blanks = shuffle([1, 2, 3, 4, 5, 6]).slice(0, 7 - given).sort((a, b) => a - b);
+  return { type, seq: L.map(l => l + (type === 'sharp' ? '♯' : '♭')), pos: blanks };
+}
+const KS_CIRCLE = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'Db', 'Ab', 'Eb', 'Bb', 'F'];
+function ksWorkbook() {
+  const k = (s) => 'ks-wb-' + s;
+  const s1 = withSeed(k('s1'), () => ({ tog: [ksOrderRow('sharp', 4), ksOrderRow('flat', 4)], home: shuffle(['D', 'Eb', 'A', 'F', 'E', 'Ab']).map(ksOf) }));
+  const s3 = withSeed(k('s3'), () => ({ tog: [ksOf('D'), ksOf('F'), ksOf('Bb')], home: [ksOf('A'), ksOf('Eb'), { ...ksOf('G'), clef: 'bass' }, { ...ksOf('Bb'), clef: 'bass' }], cards: shuffle(['G', 'D', 'A', 'F', 'Bb', 'Eb'].map(ksOf)) }));
+  const s4 = withSeed(k('s4'), () => ({ tog: [ksOf('E'), ksOf('Bb'), ksOf('A')], home: shuffle(['G', 'F', 'D', 'Eb', 'B', 'Ab'].map(ksOf)) }));
+  const circleShown = new Set(['C', 'G', 'F', 'D']);
+  const chk = withSeed(k('chk'), () => ({ so: ksOrderRow('sharp', 3), fl: ksOrderRow('flat', 3), nk: shuffle(['A', 'Bb', 'E', 'F'].map(ksOf)), rm: shuffle(['G', 'D', 'F', 'Eb'].map(ksOf)), wr: [ksOf('D'), ksOf('Bb'), ksOf('A'), ksOf('F')] }));
+  return { s1, s3, s4, circleShown, chk };
+}
+function ksConcepts() {
+  return [
+    { id: 'so', name: 'The order of sharps', step: '1', page: '3' },
+    { id: 'fl', name: 'The order of flats', step: '2', page: '3' },
+    { id: 'wr', name: 'Writing a key signature', step: '3', page: '4' },
+    { id: 'nk', name: 'Naming the major key', step: '4', page: '5' },
+    { id: 'rm', name: 'The relative minor', step: '4', page: '5' },
+  ];
+}
+const ksRowCells = (r, ex) => r.seq.map((l, i) => r.pos.includes(i) ? (ex ? { ex: l } : {}) : { given: l });
+function KsStaffCell({ ks, n, ex, ask = 'which', clef = 'treble' }) {
+  return (
+    <ExCell n={n} ex={ex}>
+      <div style={{padding:'12px 10px 0'}}><KSStaff count={ks.count} type={ks.type} width={170} clef={ks.clef || clef} accent={BK.ink} ink={BK.ink}/></div>
+      {ask === 'which' && <div style={{display:'flex',justifyContent:'center',gap:4,margin:'4px 0 4px'}}>{Array.from({ length: Math.max(ks.count, 1) }, (_, i) => ex ? <span key={i}>{bkHand(ksAcc(ks)[i], 34, 26)}</span> : <span key={i}>{bkBox(34, 26)}</span>)}</div>}
+      {ask === 'name' && <div style={{display:'grid',gap:4,margin:'4px 10px 6px',fontSize:11,color:BK.muted}}>
+        <span style={{display:'flex',alignItems:'center',gap:6}}>major {ex ? <span style={{flex:1,color:BK.coral,fontWeight:900,fontStyle:'italic',borderBottom:'1.5px solid ' + BK.coral}}>{ksMaj(ks)}</span> : <span style={{flex:1,borderBottom:'1.5px solid ' + BK.line}}>&nbsp;</span>}</span>
+        <span style={{display:'flex',alignItems:'center',gap:6}}>minor {ex ? <span style={{flex:1,color:BK.coral,fontWeight:900,fontStyle:'italic',borderBottom:'1.5px solid ' + BK.coral}}>{ksMin(ks)}</span> : <span style={{flex:1,borderBottom:'1.5px solid ' + BK.line}}>&nbsp;</span>}</span>
+      </div>}
+    </ExCell>
+  );
+}
+function KsWriteCell({ ks, n, ex, clef }) {
+  const c = ks.clef || clef || 'treble';
+  return (
+    <ExCell n={n} ex={ex}>
+      <div style={{textAlign:'center',margin:'14px 0 0',fontSize:13,color:BK.ink}}><b>{ksMaj(ks)}</b> <span style={{color:BK.muted,fontSize:11}}>({ksLbl(ks)}{c === 'bass' ? ', bass clef' : ''})</span></div>
+      <div style={{padding:'0 10px 6px'}}><KSStaff count={ex ? ks.count : 0} type={ex ? ks.type : null} width={170} clef={c} accent={BK.coral} ink={BK.ink}/></div>
+    </ExCell>
+  );
+}
+// the circle of fifths as a clock: some keys given, the rest to fill in
+function FifthsClock({ shown, all }) {
+  const R = 118, c = 150;
+  return (
+    <svg viewBox="0 0 300 300" style={{width:'100%',maxWidth:236,display:'block',margin:'0 auto'}}>
+      <circle cx={c} cy={c} r={R} fill="none" stroke={BK.line} strokeWidth="1.4"/>
+      <circle cx={c} cy={c} r="4" fill={BK.ink}/>
+      <path d={`M${c} ${c} L${c} ${c - 70}`} stroke={BK.ink} strokeWidth="3" strokeLinecap="round"/><path d={`M${c} ${c} L${c + 46} ${c + 20}`} stroke={BK.ink} strokeWidth="2" strokeLinecap="round"/>
+      <text x={c + 40} y={c - 40} fontSize="10" fontWeight="800" fill={BK.coral}>sharps →</text><text x={c - 92} y={c - 40} fontSize="10" fontWeight="800" fill={BK.coral}>← flats</text>
+      {KS_CIRCLE.map((key, i) => { const a = 2 * Math.PI * i / 12, x = c + R * Math.sin(a), y = c - R * Math.cos(a); const show = all || shown.has(key); return <g key={key}><circle cx={x} cy={y} r="21" fill={show ? BK.soft : '#fff'} stroke={show ? BK.ink : BK.coral} strokeWidth="1.5" strokeDasharray={show ? '' : '3 3'}/>{show && <text x={x} y={y + 6} textAnchor="middle" fontSize="16" fontWeight="900" fill={all && !shown.has(key) ? BK.coral : BK.ink}>{prettyNote(key)}</text>}</g>; })}
+    </svg>
+  );
+}
+
+function PaperOrder({ type }) {
+  const L = type === 'sharp' ? KS_SHARPS : KS_FLATS, s = type === 'sharp' ? '♯' : '♭';
+  return (
+    <div style={{border:'1px solid #ece6d8',borderRadius:10,padding:'8px 14px',margin:'8px 0',breakInside:'avoid'}}>
+      <div style={{fontSize:13,fontWeight:900,color:BK.ink,marginBottom:2}}>The order of {type}s -- all seven</div>
+      <div style={{maxWidth:420,margin:'0 auto'}}><KSStaff count={7} type={type} width={190} numbers accent={BK.coral} ink={BK.ink}/></div>
+      <div style={{display:'flex',justifyContent:'center',gap:14,fontSize:15,fontWeight:900,color:BK.ink,marginTop:4}}>{L.map((l, i) => <span key={l}><span style={{fontSize:10,color:BK.muted,marginRight:2}}>{i + 1}</span>{l}{s}</span>)}</div>
+    </div>
+  );
+}
+function KeySigWorkbook({ startNo = 1 }) {
+  const W = useMemo(() => ksWorkbook(), [LANG]);
+  const C = ksConcepts();
+  const pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="key-signatures">{content}</WbPage>);
+  P(<WbOpener id="key-signatures" concepts={C} blurb="Sharps and flats always arrive in the same order -- learn the order and every key falls out of it."/>);
+  P(<WbLog/>);
+
+  // steps 1-2 -- the orders
+  P(<>
+    <WbTop step="1-2"/>
+    <Part kind="together" title="Finish the order" how="Sharps: Father Charles Goes Down And Ends Battle. Flats: the same sentence backwards -- Battle Ends And Down Goes Charles' Father.">
+      <div style={{display:'grid',gap:8}}>{W.s1.tog.map((r, i) => <LetterRow key={i} n={i + 1} ex={i === 0} cells={ksRowCells(r, i === 0)}/>)}</div>
+    </Part>
+    <Part kind="home" title="Which sharps or flats?" how="Write every sharp or flat in the key signature, in order.">
+      <BkGrid cols={3} gap="10px 12px">{W.s1.home.map((ks, i) => <KsStaffCell key={i} ks={ks} n={i + 1}/>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="My own silly sentence" how="Make up your own sentence to remember the sharps -- the words must start with F C G D A E B. The sillier the better! Then draw a picture of it.">
+      <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:6}}>{KS_SHARPS.map(l => <div key={l} style={{border:'1.5px solid ' + BK.line,borderRadius:8,height:56,padding:'4px 6px',fontSize:18,fontWeight:900,color:BK.coral}}>{l}</div>)}</div>
+      <div style={{flex:1,minHeight:80,marginTop:10,border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',alignItems:'flex-end',justifyContent:'flex-end',fontSize:11,color:BK.muted,padding:'6px 10px'}}>my picture</div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // step 3 -- place them
+  const Card = ({ children }) => <div style={{border:'1.6px dashed ' + BK.muted,height:96,display:'flex',alignItems:'center',justifyContent:'center',padding:'4px 8px'}}>{children}</div>;
+  P(<>
+    <WbTop step={3}/>
+    <Part kind="together" title="Write the key signature" how="Write the sharps or flats in order, right after the clef, each on its own line or space -- exactly where the example puts them.">
+      <BkGrid cols={3} gap="10px 12px">{W.s3.tog.map((ks, i) => <KsWriteCell key={i} ks={ks} n={i + 1} ex={i === 0}/>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Write them on your own" how="Careful with the bass clef: every sharp and flat sits one line or space lower than in the treble.">
+      <BkGrid cols={2} gap="10px 12px">{W.s3.home.map((ks, i) => <KsWriteCell key={i} ks={ks} n={i + 1}/>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Key signature pairs" how="Cut out the 12 cards. Turn them face down and play Pairs: match each key signature to its key name.">
+      <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)'}}>
+        {W.s3.cards.map((ks, i) => <Card key={'s' + i}><KSStaff count={ks.count} type={ks.type} width={150} accent={BK.ink} ink={BK.ink}/></Card>)}
+        {withSeed('ks-cards', () => shuffle(W.s3.cards)).map((ks, i) => <Card key={'n' + i}><span style={{fontSize:15,fontWeight:900,color:BK.ink,textAlign:'center'}}>{ksMaj(ks)}</span></Card>)}
+      </div>
+      <div style={{fontSize:11,color:BK.muted,marginTop:4}}>✂ Cut on the dashed lines.</div>
+    </Part>
+  </>);
+
+  // steps 4-5 -- name the key, the circle
+  P(<>
+    <WbTop step="4-5"/>
+    <Part kind="together" title="Name the key" how="Sharps: the last sharp is the 7th note -- go up one letter to find the key. Flats: the second-last flat is the key. Relative minor: go down 3 letters (a minor 3rd).">
+      <BkGrid cols={3} gap="10px 12px">{W.s4.tog.map((ks, i) => <KsStaffCell key={i} ks={ks} n={i + 1} ex={i === 0} ask="name"/>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Name them on your own">
+      <BkGrid cols={3} gap="10px 12px">{W.s4.home.map((ks, i) => <KsStaffCell key={i} ks={ks} n={i + 1} ask="name"/>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="The circle of fifths clock" how="Going clockwise, each key is a 5th higher and has one more sharp. Going the other way, one more flat. Fill in the empty circles!">
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,alignItems:'center'}}>
+        <FifthsClock shown={W.circleShown}/>
+        <div style={{fontSize:12.5,color:BK.ink,lineHeight:1.6}}>
+          <div><b>Hint 1:</b> count 5 letters up from each key: C D E F <b>G</b>.</div>
+          <div><b>Hint 2:</b> at the bottom, the sharp and flat keys meet.</div>
+          <div style={{marginTop:10}}>How many keys did you fill in? <span style={{display:'inline-block',width:36,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span></div>
+        </div>
+      </div>
+    </Part>
+  </>);
+
+  P(<WbPiano step="1-7" drill="key-signatures" tasks={[
+    'Say the order of sharps, then flats, out loud -- three times each, faster every time.',
+    'Look at the key signature of each of your pieces. Name the key.',
+    'Play the scale of a key from this week. Which notes need a sharp or a flat?',
+    'Practise online: scan the code and play the drill for this chapter.',
+  ]}/>);
+
+  const cnt = { so: 4, fl: 4, wr: 4, nk: 4, rm: 4 };
+  P(<>
+    <CheckHead total={20}/>
+    {bkSec('A', 'Finish the order of sharps.')}
+    <LetterRow n="1-4" cells={ksRowCells(W.chk.so, false)}/>
+    {bkSec('B', 'Finish the order of flats.')}
+    <LetterRow n="5-8" cells={ksRowCells(W.chk.fl, false)}/>
+    {bkSec('C', 'Write each key signature.')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.wr.map((ks, i) => <BkCell key={i} n={i + 9}><div style={{textAlign:'center',fontSize:12,fontWeight:800,paddingTop:6}}>{ksMaj(ks)}</div><KSStaff count={0} type={null} width={150} ink={BK.ink}/></BkCell>)}</BkGrid>
+    {bkSec('D', 'Name the major key.')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.nk.map((ks, i) => <BkCell key={i} n={i + 13}><div style={{paddingTop:8}}><KSStaff count={ks.count} type={ks.type} width={150} accent={BK.ink} ink={BK.ink}/></div><div style={{textAlign:'center',marginTop:2}}><span style={{display:'inline-block',width:100,height:22,border:'1.5px solid ' + BK.line,borderRadius:6}}/></div></BkCell>)}</BkGrid>
+    {bkSec('E', 'Write the relative minor.')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.rm.map((ks, i) => <BkCell key={i} n={i + 17}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'12px 4px 6px',fontSize:13,color:BK.ink}}><b>{ksMaj(ks)}</b> → <span style={{display:'inline-block',width:70,borderBottom:'1.5px solid ' + BK.line}}>&nbsp;</span></div></BkCell>)}</BkGrid>
+    <CheckTable concepts={C} cnt={cnt}/>
+  </>);
+  return <>{pages}</>;
+}
+
+function KeySigTeacher() {
+  const W = useMemo(() => ksWorkbook(), [LANG]);
+  const pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={pages.length + 1} chId="key-signatures" teacher>{content}</WbPage>);
+  const rowAns = (r) => r.pos.map(p => r.seq[p]).join(' ');
+  P(<>
+    <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('key-signatures')}</div>
+    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Answers for every workbook page, the mistakes students make most, and a line to say when they get stuck.</div>
+    <TcBlock page={3} title="The order of sharps and flats" answers={<>{tcAns('TOGETHER', W.s1.tog.map(rowAns))}{tcAns('AT HOME', W.s1.home.map(ks => ksAcc(ks).join(' ')))}<div style={{fontSize:12,color:BK.ink}}>PLAY: any sentence on F C G D A E B.</div></>}
+      watch="Writing the sharps in alphabetical order, or in the order they appear in the scale, instead of F C G D A E B."
+      say="“The order never changes -- Father Charles Goes Down And Ends Battle. Flats are the sentence backwards.”"/>
+    <TcBlock page={4} title="Writing a key signature" answers={<>
+      <BkGrid cols={4} gap="4px 6px">{[...W.s3.tog, ...W.s3.home].map((ks, i) => <BkCell key={i} n={i < 3 ? 'T' + (i + 1) : 'H' + (i - 2)}><div style={{paddingTop:8,textAlign:'center',fontSize:10.5,fontWeight:800}}>{ksMaj(ks)}</div><KSStaff count={ks.count} type={ks.type} width={150} clef={ks.clef || 'treble'} accent={BK.coral} ink={BK.ink}/></BkCell>)}</BkGrid>
+      <div style={{fontSize:12,color:BK.ink,marginTop:4}}>PLAY: Pairs -- {W.s3.cards.map(ks => ksMaj(ks) + ' ' + ksLbl(ks)).join(', ')}.</div></>}
+      watch="Sharps in the right order but on the wrong octave (F♯ low in the space instead of on the top line). In bass clef, copying the treble positions."
+      say="“Each sharp has its own home on the staff -- copy the example, then trace it until the shape is automatic.”"/>
+    <TcBlock page={5} title="Name the key · circle of fifths" answers={<>{tcAns('TOGETHER', W.s4.tog.map(ks => ksMaj(ks) + ' / ' + ksMin(ks)))}{tcAns('AT HOME', W.s4.home.map(ks => ksMaj(ks) + ' / ' + ksMin(ks)))}<div style={{fontSize:12,color:BK.ink}}>PLAY: clockwise from C -- C G D A E B F♯/G♭ D♭ A♭ E♭ B♭ F.</div></>}
+      watch="Using the last flat as the key name (it's the second-last). Forgetting that F major (one flat) has no second-last flat: just learn it."
+      say="“Last sharp -- up one letter. Second-last flat -- that's the key.”"/>
+  </>);
+  P(<>
+    <TcBlock page={7} title="Check-up" answers={<>{tcAns('A', [rowAns(W.chk.so)])}{tcAns('B', [rowAns(W.chk.fl)])}
+      <BkGrid cols={4} gap="4px 6px">{W.chk.wr.map((ks, i) => <BkCell key={i} n={'C' + (i + 1)}><div style={{paddingTop:8}}><KSStaff count={ks.count} type={ks.type} width={150} accent={BK.coral} ink={BK.ink}/></div></BkCell>)}</BkGrid>
+      {tcAns('D', W.chk.nk.map(ksMaj))}{tcAns('E', W.chk.rm.map(ksMin))}
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Below the pass mark, set that concept's workbook page again.</div></>}/>
+  </>);
+  return <>{pages}</>;
+}
+
+const WORKBOOKS = { staff: StaffWorkbook, 'note-names': NoteNamesWorkbook, 'note-values': NoteValuesWorkbook, 'time-signatures': TimeSigWorkbook, 'ledger-lines': LedgerWorkbook, intervals: IntervalsWorkbook, 'key-signatures': KeySigWorkbook };
 
 // ─── Teacher copy (?book=teacher&ch=staff): answers, what to watch for, what to say ───
 function TcBlock({ page, title, answers, watch, say }) {
@@ -20135,7 +20544,7 @@ function StaffTeacher() {
   </>);
   return <>{pages}</>;
 }
-const TEACHER_COPIES = { staff: StaffTeacher, 'note-names': NoteNamesTeacher, 'note-values': NoteValuesTeacher, 'time-signatures': TimeSigTeacher, 'ledger-lines': LedgerTeacher };
+const TEACHER_COPIES = { staff: StaffTeacher, 'note-names': NoteNamesTeacher, 'note-values': NoteValuesTeacher, 'time-signatures': TimeSigTeacher, 'ledger-lines': LedgerTeacher, intervals: IntervalsTeacher, 'key-signatures': KeySigTeacher };
 
 // ─── Lesson Book extras (Phase 296): symbol cards, a Remember line, paper versions of tools ───
 // Every new sign gets a card: the symbol drawn big, its name, what it means, how to play it --
@@ -20272,6 +20681,28 @@ function bookExtras(id) {
     { remember: 'Ledger lines skip a letter: above the treble A C E, below the bass E C A.' },
     { remember: 'Below the treble staff = the top of the bass staff: the same keys, written two ways.' },
     { remember: 'Draw ledger lines short, with the same gap as the staff -- only as many as the note needs.' },
+  ];
+  const accGlyph = (Shape) => <svg viewBox="0 0 40 44" style={{width:'100%',display:'block'}}><g transform="scale(1.6) translate(-0.5 -4)"><Shape x={12.5} y={20} color={BK.ink}/></g></svg>;
+  if (id === 'intervals') return [
+    { remember: 'Count BOTH notes: C to E is C D E -- a 3rd.' },
+    { remember: '3rds: 3 semitones = minor, 4 = major. 4th = 5 semitones, 5th = 7 -- both perfect.' },
+    { remember: 'Above the bottom note, its major scale gives major 2nds, 3rds, 6ths, 7ths and perfect 4ths, 5ths and octaves.' },
+    { swap: [[isType(IntervalEar), <PaperQR text="Ear training needs sound: scan the code, open the Lesson and try “Train your ear” -- then sing each interval back." params="drill=intervals&lock=1" label="Train your ear"/>]],
+      remember: 'Song starts help: Twinkle Twinkle = perfect 5th, Here Comes the Bride = perfect 4th.' },
+    { remember: 'Inverting: the numbers add to 9; major ⇄ minor; perfect stays perfect.' },
+  ];
+  if (id === 'key-signatures') return [
+    { symbols: [{ glyph: accGlyph(SharpShape), w: 46, name: 'Sharp', means: 'play the note one semitone higher.', play: 'usually the black key just to the right.' }],
+      swap: [[isType(OrderBuilder), <PaperOrder type="sharp"/>]],
+      remember: 'Sharps always come in this order: F C G D A E B -- Father Charles Goes Down And Ends Battle.' },
+    { symbols: [{ glyph: accGlyph(FlatShape), w: 46, name: 'Flat', means: 'play the note one semitone lower.', play: 'usually the black key just to the left.' }],
+      swap: [[isType(OrderBuilder), <PaperOrder type="flat"/>]],
+      remember: 'Flats are the same order backwards: B E A D G C F.' },
+    { remember: 'Each sharp or flat has its own place on the staff -- and every one lasts the whole piece.' },
+    { remember: 'Last sharp: go up one letter for the key. Flats: the second-last flat is the key. Relative minor: down a minor 3rd.' },
+    { remember: 'Clockwise round the circle, each key is a 5th higher with one more sharp.' },
+    { remember: 'Transposing moves every note by the same interval -- the tune stays the same.' },
+    { remember: '15 keys: 7 with sharps, 7 with flats, and C with none.' },
   ];
   if (id !== 'staff') return [];
   const g = (clef, notes = [], w = 150) => <PaperStaff clef={clef} notes={notes} width={w}/>;
