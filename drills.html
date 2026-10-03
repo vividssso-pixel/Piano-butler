@@ -20483,7 +20483,422 @@ function KeySigTeacher() {
   return <>{pages}</>;
 }
 
-const WORKBOOKS = { staff: StaffWorkbook, 'note-names': NoteNamesWorkbook, 'note-values': NoteValuesWorkbook, 'time-signatures': TimeSigWorkbook, 'ledger-lines': LedgerWorkbook, intervals: IntervalsWorkbook, 'key-signatures': KeySigWorkbook };
+
+// ─── First Steps (chapter 'first-steps') -- with legato brought in early (Sohyun teaches it from the start) ───
+// Hot Cross Buns on the big house, right hand: A♯ = finger 4, G♯ = 3, F♯ = 2
+const FS_SONG = [4, 3, 2, 4, 3, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 3, 2];
+const FS_SONG_GAPS = [1, 4, 7, 11, 14, 16];
+function fsWorkbook() {
+  const k = (s) => 'fs-wb-' + s;
+  const pair = () => { let a, b; do { a = Math.floor(Math.random() * 10); b = Math.floor(Math.random() * 10); } while (Math.abs(a - b) < 2); return [a, b]; };
+  const s1 = withSeed(k('s1'), () => ({ tog: [[1, 6], pair(), pair()], home: Array.from({ length: 6 }, pair) }));
+  const chk = withSeed(k('chk'), () => ({ hl: Array.from({ length: 4 }, pair), fn: shuffle([2, 4, 1, 5]), sg: shuffle([3, 4, 5, 3]), lg: shuffle([true, false, true, false]) }));
+  return { s1, chk };
+}
+function fsConcepts() {
+  return [
+    { id: 'hl', name: 'High and low on the piano', step: '1', page: '3' },
+    { id: 'hs', name: 'Small houses and big houses', step: '2-3', page: '4, 5' },
+    { id: 'fn', name: 'Finger numbers', step: '4', page: '6' },
+    { id: 'sg', name: 'My first song on the big house', step: '4', page: '6' },
+    { id: 'lg', name: 'Legato -- smooth playing', step: '4', page: '6' },
+  ];
+}
+function HighCell({ p, n, ex }) {
+  const hi = p[0] > p[1] ? p[0] : p[1];
+  return <ExCell n={n} ex={ex}><div style={{padding:'16px 8px 6px'}}><PaperKeys start="C" whites={10} w={26} h={80} dots={p} stars={ex ? [hi] : []}/></div><div style={{textAlign:'center',fontSize:10.5,color:BK.muted,marginBottom:3}}>{ex ? <span style={{color:BK.coral,fontWeight:900}}>★ marks the higher one</span> : 'put a star on the higher dot'}</div></ExCell>;
+}
+// a line of notes: smooth (joined, legato) or bumpy (separate hops)
+function LegatoLine({ smooth, w = 200, color = BK.ink }) {
+  const xs = [20, 70, 120, 170], ys = [40, 30, 22, 30];
+  return (
+    <svg viewBox={`0 0 ${w} 56`} style={{width:'100%',display:'block'}}>
+      {smooth ? <path d={`M${xs[0]} ${ys[0] - 10} Q${(xs[0] + xs[3]) / 2} ${-4} ${xs[3]} ${ys[3] - 10}`} fill="none" stroke={color} strokeWidth="2"/>
+        : xs.slice(0, 3).map((x, i) => <path key={i} d={`M${x + 8} ${ys[i] - 6} Q${(x + xs[i + 1]) / 2} ${ys[i] - 26} ${xs[i + 1] - 8} ${ys[i + 1] - 6}`} fill="none" stroke={color} strokeWidth="1.6" strokeDasharray="3 3"/>)}
+      {xs.map((x, i) => <ellipse key={i} cx={x} cy={ys[i]} rx="7" ry="5" fill={color}/>)}
+    </svg>
+  );
+}
+function SongRow({ gaps, ex, answers }) {
+  return (
+    <div style={{display:'flex',flexWrap:'wrap',gap:5,alignItems:'center'}}>
+      {FS_SONG.map((f, i) => { const blank = gaps.includes(i) && !answers; const sp = [2, 5, 9, 13].includes(i); return <React.Fragment key={i}>
+        <span style={{width:30,height:34,borderRadius:6,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:17,fontWeight:900,border:'1.5px solid ' + (blank ? (ex && i === gaps[0] ? BK.coral : BK.line) : 'transparent'),background:blank ? '#fff' : BK.soft,color:ex && i === gaps[0] ? BK.coral : BK.ink,fontStyle:ex && i === gaps[0] ? 'italic' : 'normal'}}>{blank ? (ex && i === gaps[0] ? f : '') : f}</span>
+        {sp && <span style={{width:12}}/>}
+      </React.Fragment>; })}
+    </div>
+  );
+}
+
+function FirstStepsWorkbook({ startNo = 1 }) {
+  const W = useMemo(() => fsWorkbook(), [LANG]);
+  const C = fsConcepts();
+  const pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="first-steps">{content}</WbPage>);
+  P(<WbOpener id="first-steps" concepts={C} blurb="The black keys are a map of the piano -- and your very first song lives on them. You'll also learn to play smoothly: legato."/>);
+  P(<WbLog/>);
+
+  // step 1 -- high and low, loud and soft
+  P(<>
+    <WbTop step={1}/>
+    <Part kind="together" title="Which is higher?" how="Higher sounds are to the RIGHT. Put a star on the dot that sounds higher.">
+      <BkGrid cols={3} gap="10px 12px">{W.s1.tog.map((p, i) => <HighCell key={i} p={p} n={i + 1} ex={i === 0}/>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Star the higher one">
+      <BkGrid cols={3} gap="10px 12px">{W.s1.home.map((p, i) => <HighCell key={i} p={p} n={i + 1}/>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Sound pictures" how="Draw something for each box -- what is high and soft? Low and loud? Then play each one on the piano!">
+      <div style={{display:'grid',gridTemplateColumns:'60px 1fr 1fr',gridTemplateRows:'24px 1fr 1fr',gap:8,flex:1,minHeight:220}}>
+        <span/><b style={{fontSize:12.5,color:BK.ink,textAlign:'center'}}>soft</b><b style={{fontSize:12.5,color:BK.ink,textAlign:'center'}}>loud</b>
+        <b style={{fontSize:12.5,color:BK.ink,alignSelf:'center'}}>high</b><span style={{border:'1.5px solid ' + BK.line,borderRadius:10}}/><span style={{border:'1.5px solid ' + BK.line,borderRadius:10}}/>
+        <b style={{fontSize:12.5,color:BK.ink,alignSelf:'center'}}>low</b><span style={{border:'1.5px solid ' + BK.line,borderRadius:10}}/><span style={{border:'1.5px solid ' + BK.line,borderRadius:10}}/>
+      </div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // step 2 -- small house, big house
+  P(<>
+    <WbTop step={2}/>
+    <Part kind="together" title="Draw the roofs" how="Two black keys = a small house. Three black keys = a big house. Draw a roof over every house -- the first one is done.">
+      <KeysCell ex><div style={{position:'relative'}}><PaperKeys start="C" whites={14} w={40} h={120} roofs/><svg viewBox="0 0 564 150" style={{position:'absolute',inset:0,width:'100%'}}><path d="M26 24 L62 6 L98 24" fill="none" stroke={BK.coral} strokeWidth="2.6" strokeLinejoin="round"/></svg></div></KeysCell>
+    </Part>
+    <Part kind="home" title="Colour the houses" how="Colour the small houses one colour and the big houses another. Then count them.">
+      <PaperKeys start="C" whites={21} w={30} h={110}/>
+      <div style={{display:'flex',gap:28,justifyContent:'center',marginTop:8,fontSize:13,color:BK.ink,alignItems:'center'}}>
+        <span>Small houses: {bkBox(36, 28)}</span><span>Big houses: {bkBox(36, 28)}</span>
+      </div>
+    </Part>
+    <Part kind="play" title="Who lives here?" how="Draw who lives in the small house and who lives in the big house -- a family, animals, monsters... Give them names!">
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1.4fr',gap:14,flex:1,minHeight:200}}>
+        {['Small house (2 black keys)', 'Big house (3 black keys)'].map(l => <div key={l} style={{border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',flexDirection:'column',justifyContent:'flex-end',padding:'6px 10px',fontSize:11.5,color:BK.muted}}>{l}</div>)}
+      </div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // step 3 -- the whole piano
+  P(<>
+    <WbTop step={3}/>
+    <Part kind="together" title="Count the houses on a real piano" how="A real piano has 88 keys. Count the small houses together, from left to right, ticking each one.">
+      <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'8px 6px'}}><PaperKeys start="A" whites={52} w={12} h={64}/></div>
+      <div style={{display:'flex',gap:28,justifyContent:'center',marginTop:8,fontSize:13,color:BK.ink,alignItems:'center'}}><span>Small houses: {bkHand('7', 36, 28)}</span></div>
+    </Part>
+    <Part kind="home" title="Your turn on the big piano" how="Use the keyboard above. Count the big houses. Then find the lonely black key at the very bottom that has no house at all!">
+      <div style={{display:'flex',gap:28,justifyContent:'center',fontSize:13,color:BK.ink,alignItems:'center'}}><span>Big houses: {bkBox(36, 28)}</span><span>Lonely black key -- circle it on the keyboard</span></div>
+    </Part>
+    <Part kind="play" title="From the bottom to the top" how="On your piano, play the very lowest key and the very highest key. What do they sound like? Draw an animal for each end.">
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,flex:1,minHeight:200}}>
+        {['The lowest key sounds like...', 'The highest key sounds like...'].map(l => <div key={l} style={{border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',flexDirection:'column',justifyContent:'flex-end',padding:'6px 10px',fontSize:11.5,color:BK.muted}}>{l}</div>)}
+      </div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // step 4 -- first song + legato
+  P(<>
+    <WbTop step={4}/>
+    <Part kind="together" title="Fingers on the big house" how="Right hand: finger 2 on the first black key of the big house, 3 on the middle one, 4 on the top one. Write the finger number on each black key.">
+      <KeysCell ex><div style={{display:'grid',gridTemplateColumns:'1fr 150px',gap:16,alignItems:'center'}}>
+        <div style={{position:'relative'}}><PaperKeys start="C" whites={7} w={60} h={150} blackDots={[3, 4, 5]}/><div style={{position:'absolute',left:(4 * 60 + 2) / (7 * 60 + 4) * 100 + '%',top:44,transform:'translateX(-50%)'}}>{bkHand('2', 26, 26)}</div><div style={{position:'absolute',left:(5 * 60 + 2) / (7 * 60 + 4) * 100 + '%',top:44,transform:'translateX(-50%)'}}>{bkBox(26, 26)}</div><div style={{position:'absolute',left:(6 * 60 + 2) / (7 * 60 + 4) * 100 + '%',top:44,transform:'translateX(-50%)'}}>{bkBox(26, 26)}</div></div>
+        <HandPic hand="R" size={140}/>
+      </div></KeysCell>
+    </Part>
+    <Part kind="home" title="Hot Cross Buns" how="Here is the song in finger numbers. Fill in the missing numbers, then play it every day this week.">
+      <SongRow gaps={FS_SONG_GAPS} ex/>
+    </Part>
+    <Part kind="play" title="Smooth as honey: legato" how="LEGATO means smooth -- one finger lets go just as the next one plays, like walking: one foot is always on the ground. Draw a smooth snake joining the honey pots without lifting your pencil. Then play Hot Cross Buns legato!">
+      <svg viewBox="0 0 640 150" style={{width:'100%',display:'block'}}>
+        {[[40, 110], [150, 60], [260, 100], [370, 45], [480, 95], [590, 55]].map(([x, y], i) => <g key={i}><path d={`M${x - 18} ${y - 14} Q${x - 22} ${y + 22} ${x} ${y + 22} Q${x + 22} ${y + 22} ${x + 18} ${y - 14} Z`} fill="#fff" stroke={BK.ink} strokeWidth="1.6"/><rect x={x - 20} y={y - 20} width="40" height="7" rx="2" fill={BK.ink}/><text x={x} y={y + 10} textAnchor="middle" fontSize="13" fontWeight="900" fill={BK.coral}>{i + 1}</text></g>)}
+        <path d="M40 132 Q50 140 62 130" fill="none" stroke={BK.coral} strokeWidth="2.4" strokeLinecap="round"/>
+        <text x="70" y="140" fontSize="10.5" fontWeight="800" fill={BK.coral}>start here</text>
+      </svg>
+    </Part>
+    <Faces/>
+  </>);
+
+  // step 5 -- make up your own
+  P(<>
+    <WbTop step={5}/>
+    <Part kind="together" title="Echo me" how="Your teacher plays a little tune on the black keys. You copy it. Tick a box for every echo you get right.">
+      <div style={{display:'flex',gap:10,alignItems:'center'}}>{Array.from({ length: 8 }, (_, i) => <span key={i} style={{width:32,height:32,border:'1.6px solid ' + BK.ink,borderRadius:6,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,color:BK.muted}}>{i + 1}</span>)}</div>
+    </Part>
+    <Part kind="home" title="Write your own black-key tune" how="Make up a tune on the black keys. Write a dot on the key for each note, in order -- 1 to 8 -- under the keyboard. Play it smoothly (legato)!">
+      <PaperKeys start="C" whites={14} w={44} h={130}/>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(8,1fr)',gap:8,marginTop:10}}>{Array.from({ length: 8 }, (_, i) => <div key={i} style={{textAlign:'center'}}><div style={{fontSize:10,fontWeight:900,color:BK.coral}}>note {i + 1}</div>{bkBox(46, 34)}</div>)}</div>
+      <div style={{fontSize:11.5,color:BK.muted,marginTop:4}}>Write the finger number (2, 3 or 4) or draw an arrow up or down in each box.</div>
+    </Part>
+    <Part kind="play" title="Design the cover" how="Give your tune a name and draw its album cover!">
+      <div style={{display:'flex',gap:10,alignItems:'baseline',fontSize:13,color:BK.ink,marginBottom:8}}>Title <span style={{flex:1,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span><span style={{marginLeft:12}}>by</span><span style={{width:140,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span></div>
+      <div style={{flex:1,minHeight:140,border:'1.5px solid ' + BK.line,borderRadius:10}}/>
+    </Part>
+  </>);
+
+  P(<WbPiano step="1-5" drill="first-steps" tasks={[
+    'Find every small house and every big house on your piano, from the bottom to the top.',
+    'Play Hot Cross Buns with fingers 2, 3, 4 on the big house -- legato, smooth as honey.',
+    'Play your own tune from page 7 to someone at home.',
+    'Practise online: scan the code and play the drill for this chapter.',
+  ]}/>);
+
+  const cnt = { hl: 4, hs: 4, fn: 4, sg: 4, lg: 4 };
+  P(<>
+    <CheckHead total={20}/>
+    {bkSec('A', 'Put a star on the higher dot.')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.hl.map((p, i) => <BkCell key={i} n={i + 1}><div style={{padding:'12px 6px 6px'}}><PaperKeys start="C" whites={10} w={22} h={64} dots={p}/></div></BkCell>)}</BkGrid>
+    {bkSec('B', 'Write S under each small house and B under each big house.')}
+    <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'8px 10px'}}><PaperKeys start="C" whites={14} w={34} h={96} boxes={[1, 4, 8, 11]}/></div>
+    {bkSec('C', 'Which finger is it? Write the number.')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.fn.map((f, i) => <BkCell key={i} n={i + 9}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'8px 4px 4px'}}><HandPic hand="R" lit={f} size={84}/>{bkBox(34, 28)}</div></BkCell>)}</BkGrid>
+    {bkSec('D', 'Hot Cross Buns: which finger plays the dotted key?')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.sg.map((f, i) => <BkCell key={i} n={i + 13}><div style={{padding:'12px 6px 2px'}}><PaperKeys start="C" whites={7} w={26} h={64} blackDots={[f + 1 - 1]}/></div><div style={{textAlign:'center',marginBottom:3}}>{bkBox(34, 24)}</div></BkCell>)}</BkGrid>
+    {bkSec('E', 'Which one is legato (smooth)? Tick it.')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.lg.map((first, i) => <BkCell key={i} n={i + 17}><div style={{display:'grid',gap:2,padding:'10px 6px 4px'}}>{[first, !first].map((sm, j) => <div key={j} style={{display:'grid',gridTemplateColumns:'1fr 20px',alignItems:'center',gap:4}}><LegatoLine smooth={sm}/><span style={{width:16,height:16,border:'1.5px solid ' + BK.line,borderRadius:4}}/></div>)}</div></BkCell>)}</BkGrid>
+    <CheckTable concepts={C} cnt={cnt}/>
+  </>);
+  return <>{pages}</>;
+}
+
+function FirstStepsTeacher() {
+  const W = useMemo(() => fsWorkbook(), [LANG]);
+  const pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={pages.length + 1} chId="first-steps" teacher>{content}</WbPage>);
+  const hiL = (p) => nnLet('C', Math.max(p[0], p[1])) + ' (the right-hand dot)';
+  const finger = { 3: 2, 4: 3, 5: 4 };
+  P(<>
+    <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('first-steps')}</div>
+    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>For pre-readers: everything is on the keyboard. Legato starts here, on the first song.</div>
+    <TcBlock page={3} title="High and low" answers={<>{tcAns('TOGETHER', W.s1.tog.map(hiL))}{tcAns('AT HOME', W.s1.home.map(hiL))}<div style={{fontSize:12,color:BK.ink}}>The higher dot is always the one further right. PLAY: any pictures (a bird for high and soft, thunder for low and loud...).</div></>}
+      watch="Thinking “higher” means further up the piano lid, or confusing high with loud."
+      say="“High and low is WHERE on the piano. Loud and soft is HOW HARD you play.”"/>
+    <TcBlock page={4} title="Small and big houses" answers={<>{tcAns('AT HOME', ['3 small houses, 3 big houses (3 octaves)'])}<div style={{fontSize:12,color:BK.ink}}>PLAY: any drawing.</div></>}
+      watch="Counting black keys one by one instead of seeing the groups."
+      say="“Look for the shapes, not the keys -- two together, three together.”"/>
+    <TcBlock page={5} title="The whole piano" answers={<>{tcAns('TOGETHER', ['7 small houses'])}{tcAns('AT HOME', ['7 big houses', 'the lonely black key is the second key from the bottom (A♯0/B♭0)'])}</>}
+      watch="Losing count on a long keyboard -- encourage ticking each house."
+      say="“Tick each house as you count it, so you never count one twice.”"/>
+    <TcBlock page={6} title="First song · legato" answers={<>{tcAns('TOGETHER', ['2 3 4 (left to right)'])}{tcAns('AT HOME', [FS_SONG.join(' ')])}<div style={{fontSize:12,color:BK.ink}}>PLAY: one unbroken line through all six pots. Then check the song is played legato: each finger lets go exactly as the next plays.</div></>}
+      watch="Lifting the hand between notes (a gap), or holding both keys down (a blur). Legato is the exact hand-over."
+      say="“Walk with your fingers: one foot is always on the ground -- never both feet in the air, never both on the ground for long.”"/>
+  </>);
+  P(<>
+    <TcBlock page={9} title="Check-up" answers={<>{tcAns('A', W.chk.hl.map(p => nnLet('C', Math.max(p[0], p[1])) + ' (right dot)'))}{tcAns('B', ['S B S B'])}{tcAns('C', W.chk.fn)}{tcAns('D', W.chk.sg.map(i => finger[i]))}{tcAns('E', W.chk.lg.map(f => f ? 'top' : 'bottom'))}
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Below the pass mark, set that concept's workbook page again.</div></>}/>
+  </>);
+  return <>{pages}</>;
+}
+// Lesson Book: the first song on paper, and the legato card
+function PaperBlackSong() {
+  return (
+    <div style={{border:'1px solid #ece6d8',borderRadius:10,padding:'10px 14px',margin:'8px 0',breakInside:'avoid'}}>
+      <div style={{fontSize:13,fontWeight:900,color:BK.ink,marginBottom:6}}>Hot Cross Buns -- right hand on the big house</div>
+      <div style={{display:'grid',gridTemplateColumns:'240px 1fr',gap:18,alignItems:'center'}}>
+        <div style={{position:'relative'}}><PaperKeys start="C" whites={7} w={34} h={100} blackDots={[3, 4, 5]}/>{[2, 3, 4].map((f, i) => <div key={f} style={{position:'absolute',left:((4 + i) * 34 + 2) / (7 * 34 + 4) * 100 + '%',top:6,transform:'translateX(-50%)',fontSize:14,fontWeight:900,color:'#fff'}}>{f}</div>)}</div>
+        <SongRow gaps={[]} answers/>
+      </div>
+      <div style={{fontSize:11.5,color:BK.muted,marginTop:6}}>Numbers are fingers: 2 = pointer, 3 = middle, 4 = ring. Play it smoothly -- legato.</div>
+    </div>
+  );
+}
+
+
+// ─── Pulse & counting (chapter 'pulse') ───
+const PL_STEADY = [['a ticking clock', true], ['talking to a friend', false], ['your heartbeat', true], ['birds singing', false], ['marching feet', true], ['rain on the roof', false], ['a dripping tap', true], ['a dog barking', false], ['a swing going back and forth', true], ['the words of a song', false], ['windscreen wipers', true], ['popcorn popping', false]];
+function plWorkbook() {
+  const k = (s) => 'pl-wb-' + s;
+  const n = NVN(), d = NVD();
+  const qq = { beats: 1, pair: true };
+  const bar = (items) => items;
+  const s1 = withSeed(k('s1'), () => { const all = shuffle(PL_STEADY); return { tog: [PL_STEADY[0], ...all.filter(x => x !== PL_STEADY[0]).slice(0, 3)], home: all.filter(x => x !== PL_STEADY[0]).slice(3, 11) }; });
+  const s5 = withSeed(k('s5'), () => ({ tog: [[n.mn, n.cr, n.cr], [n.cr, 'QQ', n.mn]], home: shuffle([[d.mn, n.cr], [n.cr, n.cr, n.mn], ['QQ', n.cr, 'QQ', n.cr], [n.sb], [n.cr, n.mn, n.cr], [n.mn, 'QQ', 'QQ']]).slice(0, 4) }));
+  const chk = withSeed(k('chk'), () => ({
+    bt: shuffle(PL_STEADY).slice(0, 4),
+    sw: shuffle([2, 3, 4, 3]),
+    ct: [[n.mn, n.cr, n.cr], [d.mn, n.cr], [n.cr, 'QQ', n.mn], [n.sb]],
+    nb: shuffle([n.cr, n.mn, d.mn, n.sb]),
+    br: shuffle([true, false, true, false]),
+  }));
+  return { s1, s5, chk };
+}
+function plConcepts() {
+  return [
+    { id: 'bt', name: 'A steady beat', step: '1', page: '3' },
+    { id: 'br', name: 'Beat or rhythm', step: '2', page: '3' },
+    { id: 'sw', name: 'Strong and weak beats', step: '3', page: '4' },
+    { id: 'nb', name: 'How long each note lasts', step: '5', page: '5' },
+    { id: 'ct', name: 'Counting out loud', step: '4-5', page: '5' },
+  ];
+}
+// items may include 'QQ' = two quavers in one beat
+const plItems = (bar) => bar.flatMap(x => x === 'QQ' ? [NV_NOTES[3], NV_NOTES[3]] : [x]);
+function plCounts(bar) {
+  const out = []; let beat = 1;
+  bar.forEach(x => {
+    if (x === 'QQ') { out.push(beat + ' &'); beat += 1; return; }
+    const b = x.beats; out.push(String(beat)); for (let i = 1; i < b; i++) out.push('(' + (beat + i) + ')'); beat += b;
+  });
+  return out;
+}
+function CountBar({ bar, n, ex, answers, size = 36 }) {
+  const counts = plCounts(bar);
+  return (
+    <ExCell n={n} ex={ex}>
+      <div style={{display:'grid',gridTemplateColumns:'26px 1fr',alignItems:'center',gap:8,padding:'14px 8px 4px'}}>
+        <div style={{fontFamily:MUSIC_FONT,fontSize:13,fontWeight:900,lineHeight:0.95,textAlign:'center',color:BK.ink}}>4<br/>4</div>
+        <div>
+          <BeatRow items={plItems(bar)} total={4} size={size}/>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',marginTop:5}}>{counts.map((c, i) => <div key={i} style={{display:'flex',justifyContent:'center'}}>{(ex || answers) ? bkHand(c, 46, 26) : bkBox(46, 26)}</div>)}</div>
+        </div>
+      </div>
+    </ExCell>
+  );
+}
+function HeartRow({ steady, w = 220, color = BK.coral }) {
+  const xs = steady ? [0, 1, 2, 3, 4, 5, 6, 7].map(i => 16 + i * 27) : [16, 30, 70, 84, 98, 150, 170, 205];
+  const heart = (x, y) => <path key={x} d={`M${x} ${y + 6} C${x - 9} ${y - 1} ${x - 6} ${y - 9} ${x} ${y - 4} C${x + 6} ${y - 9} ${x + 9} ${y - 1} ${x} ${y + 6} Z`} fill={color}/>;
+  return <svg viewBox={`0 0 ${w} 26`} style={{width:'100%',display:'block'}}>{xs.map(x => heart(x, 13))}</svg>;
+}
+function BeatCircles({ group, bars, show }) {
+  const tot = group * bars;
+  return <svg viewBox={`0 0 ${tot * 34 + 10} 44`} style={{width:'100%',maxWidth:tot * 34 + 10,display:'block'}}>{Array.from({ length: tot }, (_, i) => { const strong = i % group === 0; return <g key={i}>{(show || i < group) && <circle cx={20 + i * 34} cy={22} r={strong ? 15 : 8} fill={strong ? BK.coral : '#fff'} stroke={BK.coral} strokeWidth="1.6"/>}{!(show || i < group) && <circle cx={20 + i * 34} cy={22} r={4} fill="none" stroke={BK.line} strokeDasharray="2 2"/>}<text x={20 + i * 34} y={42} textAnchor="middle" fontSize="9" fontWeight="800" fill={BK.muted}>{(i % group) + 1}</text></g>; })}</svg>;
+}
+
+function PulseWorkbook({ startNo = 1 }) {
+  const W = useMemo(() => plWorkbook(), [LANG]);
+  const C = plConcepts();
+  const pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="pulse">{content}</WbPage>);
+  P(<WbOpener id="pulse" concepts={C} blurb="Music has a heartbeat -- the pulse. It keeps going, steady, even when the notes stop."/>);
+  P(<WbLog/>);
+  const tick = (ok, ex) => <span style={{display:'inline-flex',gap:6}}>{['steady', 'not steady'].map((l, j) => <span key={l} style={{border:'1.5px solid ' + (ex && ((j === 0) === ok) ? BK.coral : BK.line),borderRadius:14,padding:'2px 9px',fontSize:11.5,color:ex && ((j === 0) === ok) ? BK.coral : BK.ink,fontWeight:ex && ((j === 0) === ok) ? 900 : 600}}>{l}</span>)}</span>;
+
+  // steps 1-2 -- steady beat, beat or rhythm
+  P(<>
+    <WbTop step="1-2"/>
+    <Part kind="together" title="Steady or not?" how="A pulse is steady, like a clock: tick, tick, tick. Is each sound a steady beat? Circle your answer.">
+      <BkGrid cols={2} gap="8px 12px">{W.s1.tog.map(([w, ok], i) => <ExCell key={i} n={i + 1} ex={i === 0}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,padding:'16px 8px 6px',fontSize:13.5,fontWeight:800,color:BK.ink}}>{w}{tick(ok, i === 0)}</div></ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Listen at home" how="Listen for each one if you can! Then circle steady or not steady.">
+      <BkGrid cols={2} gap="8px 12px">{W.s1.home.map(([w, ok], i) => <ExCell key={i} n={i + 1}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,padding:'16px 8px 6px',fontSize:13.5,fontWeight:800,color:BK.ink}}>{w}{tick(ok, false)}</div></ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Heartbeat hunt" how="Find 4 steady beats in your house or garden -- something that ticks, drips, swings or thumps. Draw each one and write what it is. Clap along with it!">
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,flex:1,minHeight:160}}>{[1, 2, 3, 4].map(i => <div key={i} style={{border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',flexDirection:'column',justifyContent:'flex-end',padding:'6px 8px'}}><span style={{borderBottom:'1px solid ' + BK.line,height:18}}/></div>)}</div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // step 3 -- strong and weak
+  P(<>
+    <WbTop step={3}/>
+    <Part kind="together" title="Strong and weak" how="Beat 1 is the strong one -- a big circle. The others are weak -- small circles. Finish each row: the first group is drawn for you.">
+      <div style={{display:'grid',gap:8}}>{[[2, 4], [3, 3], [4, 2]].map(([g, b], i) => <ExCell key={i} n={i + 1} ex={i === 0}><div style={{display:'grid',gridTemplateColumns:'90px 1fr',alignItems:'center',gap:8,padding:'14px 8px 4px'}}><b style={{fontSize:12.5,color:BK.ink}}>groups of {g}</b><BeatCircles group={g} bars={b} show={i === 0}/></div></ExCell>)}</div>
+    </Part>
+    <Part kind="home" title="Pat and clap" how="Pat your knees on the strong beat, clap on the weak ones. Write P or C in each box, then do it along with a song!">
+      <div style={{display:'grid',gap:8}}>{[3, 4, 2, 3].map((g, i) => <div key={i} style={{display:'grid',gridTemplateColumns:'90px 1fr',alignItems:'center',gap:10,border:'1px solid #ece6d8',borderRadius:8,padding:'8px 10px'}}><b style={{fontSize:12.5,color:BK.ink}}><span style={{color:BK.coral,marginRight:6,fontSize:10}}>{i + 1}</span>in {g}s</b><div style={{display:'flex',gap:5}}>{Array.from({ length: g * (g === 2 ? 4 : g === 3 ? 3 : 2) }, (_, j) => <span key={j} style={{marginLeft:j && j % g === 0 ? 10 : 0}}>{bkBox(30, 30)}</span>)}</div></div>)}</div>
+    </Part>
+    <Part kind="play" title="Invent a dance move" how="Make up a 4-beat dance. Draw a stick person doing a move for each beat -- make beat 1 the biggest move! Then teach it to someone at home.">
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,flex:1,minHeight:150}}>{[1, 2, 3, 4].map(i => <div key={i} style={{border:'1.6px solid ' + (i === 1 ? BK.coral : BK.line),borderRadius:10,display:'flex',alignItems:'flex-end',justifyContent:'center',fontSize:14,fontWeight:900,color:i === 1 ? BK.coral : BK.muted,paddingBottom:4}}>{i}</div>)}</div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // steps 4-5 -- counting
+  const fruit = [['pear', 'crotchet -- 1 beat'], ['ap-ple', 'two quavers -- 1 beat'], ['plu-um', 'minim -- 2 beats'], ['wa-ter-mel-on', 'four semiquavers -- 1 beat']];
+  P(<>
+    <WbTop step="4-5"/>
+    <Part kind="together" title="Count it out loud" how="Write the count under every beat. When a long note is still sounding, put the count in brackets: a minim is 1 (2).">
+      <div style={{display:'grid',gap:8}}>{W.s5.tog.map((b, i) => <CountBar key={i} bar={b} n={i + 1} ex={i === 0}/>)}</div>
+    </Part>
+    <Part kind="home" title="Count them on your own" how="Two quavers share one beat: count them “3 &”.">
+      <BkGrid cols={2} gap="8px 12px">{W.s5.home.map((b, i) => <CountBar key={i} bar={b} n={i + 1} size={30}/>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Fruit-salad rhythms" how="Fill each beat with a fruit word, then say it and clap it, keeping the beat steady. Watch out: plu-um takes TWO boxes!">
+      <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap',marginBottom:10}}>{fruit.map(([w, m]) => <span key={w} style={{border:'1.4px solid ' + BK.line,borderRadius:8,padding:'3px 10px',fontSize:12,color:BK.ink,background:BK.soft}}><b>{w}</b> <span style={{color:BK.muted}}>= {m}</span></span>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>{[0, 1].map(bb => <div key={bb} style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',border:'1.6px solid ' + BK.ink,borderRadius:8,height:70}}>{[1, 2, 3, 4].map(q => <div key={q} style={{borderLeft:q > 1 ? '1px dashed #e9e2d2' : 'none',display:'flex',alignItems:'flex-end',justifyContent:'center',fontSize:10,color:BK.line,fontWeight:900,paddingBottom:3}}>{q}</div>)}</div>)}</div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // step 6 -- rhythm cards
+  const Card = ({ children }) => <div style={{border:'1.6px dashed ' + BK.muted,height:104,display:'flex',alignItems:'center',justifyContent:'center',padding:'4px 8px'}}>{children}</div>;
+  const n = NVN();
+  P(<>
+    <WbTop step={6}/>
+    <Part kind="together" title="Clap the cards" how="Count 1 2 3 4 out loud, then clap each card with your teacher. Tick it when it's steady three times in a row.">
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>{[[n.cr, n.cr, n.cr, n.cr], [n.mn, n.cr, n.cr], [n.cr, n.qv, n.qv, n.mn]].map((it, i) => <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 24px',alignItems:'center',gap:6,border:'1px solid #ece6d8',borderRadius:8,padding:'8px'}}><BeatRow items={it} total={4} size={30}/><span style={{width:20,height:20,border:'1.5px solid ' + BK.line,borderRadius:5}}/></div>)}</div>
+    </Part>
+    <Part kind="home" title="Make your own rhythm cards" how="Cut out the cards. On the empty ones, write your own 4-beat rhythms (crotchets, minims, quaver pairs). Clap each one to someone at home.">
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)'}}>
+        {[[n.mn, n.mn], [n.cr, n.cr, n.mn], [n.qv, n.qv, n.cr, n.qv, n.qv, n.cr], [NV_DOTTED[0], n.cr]].map((it, i) => <Card key={'p' + i}><div style={{width:'100%'}}><BeatRow items={it} total={4} size={28}/></div></Card>)}
+        {[0, 1, 2, 3].map(i => <Card key={'e' + i}><div style={{width:'100%',display:'grid',gridTemplateColumns:'repeat(4,1fr)',height:60,border:'1.2px solid ' + BK.line,borderRadius:6}}>{[1, 2, 3, 4].map(q => <div key={q} style={{borderLeft:q > 1 ? '1px dashed #e9e2d2' : 'none',display:'flex',alignItems:'flex-end',justifyContent:'center',fontSize:9,color:BK.line}}>{q}</div>)}</div></Card>)}
+      </div>
+      <div style={{fontSize:11,color:BK.muted,marginTop:4}}>✂ Cut on the dashed lines.</div>
+    </Part>
+    <Part kind="play" title="Rhythm chain" how="A game for 2 or more: shuffle the cards. Player 1 claps a card; player 2 claps it back and adds the next card -- keep going until someone drops the beat!">
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:12,fontSize:13,color:BK.ink}}>Longest chain we made: {bkBox(44, 36)} cards <span style={{marginLeft:20}}>Best clapper:</span><span style={{width:140,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span></div>
+    </Part>
+    <Faces/>
+  </>);
+
+  P(<WbPiano step="1-6" drill="pulse" tasks={[
+    'Walk around the room to a song, one step per beat. Can you keep it steady?',
+    'Play your piece and count out loud the whole way through -- don\'t stop the count!',
+    'Pat on beat 1 and clap on the other beats along with a song on the radio.',
+    'Practise online: scan the code and play the drill for this chapter.',
+  ]}/>);
+
+  const cnt = { bt: 4, br: 4, sw: 4, nb: 4, ct: 4 };
+  P(<>
+    <CheckHead total={20}/>
+    {bkSec('A', 'Steady beat or not? Circle one.')}
+    <BkGrid cols={2} gap="6px 10px">{W.chk.bt.map(([w], i) => <BkCell key={i} n={i + 1}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,padding:'12px 6px 4px',fontSize:13,fontWeight:800,color:BK.ink}}>{w}{tick(true, false)}</div></BkCell>)}</BkGrid>
+    {bkSec('B', 'Which row is the steady beat? Tick it.')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.br.map((first, i) => <BkCell key={i} n={i + 5}><div style={{display:'grid',gap:6,padding:'12px 6px 4px'}}>{[first, !first].map((st, j) => <div key={j} style={{display:'grid',gridTemplateColumns:'1fr 18px',alignItems:'center',gap:4}}><HeartRow steady={st}/><span style={{width:16,height:16,border:'1.5px solid ' + BK.line,borderRadius:4}}/></div>)}</div></BkCell>)}</BkGrid>
+    {bkSec('C', 'How many beats in each group?')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.sw.map((g, i) => <BkCell key={i} n={i + 9}><div style={{display:'flex',alignItems:'center',gap:6,padding:'12px 6px 4px'}}><div style={{flex:1}}><BeatCirclesPlain group={g}/></div>{bkBox(32, 26)}</div></BkCell>)}</BkGrid>
+    {bkSec('D', 'How many beats does each note last?')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.nb.map((it, i) => <BkCell key={i} n={i + 13}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'8px 4px 4px'}}><Glyph item={it} size={42}/>{bkBox(32, 26)}</div></BkCell>)}</BkGrid>
+    {bkSec('E', 'Write the counts under each bar.')}
+    <BkGrid cols={2} gap="6px 10px">{W.chk.ct.map((b, i) => <CountBar key={i} bar={b} n={i + 17} size={26}/>)}</BkGrid>
+    <CheckTable concepts={C} cnt={cnt}/>
+  </>);
+  return <>{pages}</>;
+}
+// strong beat big, weak small: two groups, no numbers (check-up)
+function BeatCirclesPlain({ group }) {
+  const tot = group * 2;
+  return <svg viewBox={`0 0 ${tot * 20 + 8} 30`} style={{width:'100%',display:'block'}}>{Array.from({ length: tot }, (_, i) => { const s = i % group === 0; return <circle key={i} cx={12 + i * 20} cy={15} r={s ? 9 : 5} fill={s ? BK.coral : '#fff'} stroke={BK.coral} strokeWidth="1.4"/>; })}</svg>;
+}
+
+function PulseTeacher() {
+  const W = useMemo(() => plWorkbook(), [LANG]);
+  const pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={pages.length + 1} chId="pulse" teacher>{content}</WbPage>);
+  const st = ([w, ok]) => (ok ? 'steady' : 'not steady');
+  P(<>
+    <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('pulse')}</div>
+    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Answers for every workbook page, the mistakes students make most, and a line to say when they get stuck.</div>
+    <TcBlock page={3} title="Steady beat · beat or rhythm" answers={<>{tcAns('TOGETHER', W.s1.tog.map(st))}{tcAns('AT HOME', W.s1.home.map(st))}<div style={{fontSize:12,color:BK.ink}}>PLAY: anything regular -- clock, tap, washing machine, swing.</div></>}
+      watch="Mixing up the beat with the rhythm: clapping the words of a song instead of the steady pulse under it."
+      say="“The rhythm is the tune's words. The beat is your heartbeat underneath -- it never speeds up for long notes.”"/>
+    <TcBlock page={4} title="Strong and weak beats" answers={<>{tcAns('TOGETHER', ['big circle on every 1, small on the rest'])}{tcAns('AT HOME', ['P on the first box of each group, C on the others'])}<div style={{fontSize:12,color:BK.ink}}>PLAY: any 4 moves; check beat 1 is the biggest.</div></>}
+      watch="Making every beat equally loud, or putting the strong beat at the end of the group."
+      say="“1 is the boss beat -- it always comes first.”"/>
+    <TcBlock page={5} title="Counting out loud" answers={<>{tcAns('TOGETHER', W.s5.tog.map(b => plCounts(b).join(' ')))}{tcAns('AT HOME', W.s5.home.map(b => plCounts(b).join(' ')))}<div style={{fontSize:12,color:BK.ink}}>PLAY: plu-um must fill two boxes; any order otherwise.</div></>}
+      watch="Stopping the count during long notes, so the minim is only one beat long."
+      say="“Keep counting while the note sings -- the count in brackets is you holding on.”"/>
+    <TcBlock page={6} title="Rhythm cards" answers={<div style={{fontSize:12,color:BK.ink}}>Check each home-made card adds up to exactly 4 beats. Use them in the next lesson for sight-clapping.</div>}
+      watch="Speeding up through quavers and slowing on minims."
+      say="“Count first, clap second -- the count is the boss.”"/>
+  </>);
+  P(<>
+    <TcBlock page={8} title="Check-up" answers={<>{tcAns('A', W.chk.bt.map(st))}{tcAns('B', W.chk.br.map(f => f ? 'top' : 'bottom'))}{tcAns('C', W.chk.sw)}{tcAns('D', W.chk.nb.map(it => fmtNum(it.beats)))}{tcAns('E', W.chk.ct.map(b => plCounts(b).join(' ')))}
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Below the pass mark, set that concept's workbook page again.</div></>}/>
+  </>);
+  return <>{pages}</>;
+}
+
+const WORKBOOKS = { staff: StaffWorkbook, 'note-names': NoteNamesWorkbook, 'note-values': NoteValuesWorkbook, 'time-signatures': TimeSigWorkbook, 'ledger-lines': LedgerWorkbook, intervals: IntervalsWorkbook, 'key-signatures': KeySigWorkbook, 'first-steps': FirstStepsWorkbook, pulse: PulseWorkbook };
 
 // ─── Teacher copy (?book=teacher&ch=staff): answers, what to watch for, what to say ───
 function TcBlock({ page, title, answers, watch, say }) {
@@ -20544,7 +20959,7 @@ function StaffTeacher() {
   </>);
   return <>{pages}</>;
 }
-const TEACHER_COPIES = { staff: StaffTeacher, 'note-names': NoteNamesTeacher, 'note-values': NoteValuesTeacher, 'time-signatures': TimeSigTeacher, 'ledger-lines': LedgerTeacher, intervals: IntervalsTeacher, 'key-signatures': KeySigTeacher };
+const TEACHER_COPIES = { staff: StaffTeacher, 'note-names': NoteNamesTeacher, 'note-values': NoteValuesTeacher, 'time-signatures': TimeSigTeacher, 'ledger-lines': LedgerTeacher, intervals: IntervalsTeacher, 'key-signatures': KeySigTeacher, 'first-steps': FirstStepsTeacher, pulse: PulseTeacher };
 
 // ─── Lesson Book extras (Phase 296): symbol cards, a Remember line, paper versions of tools ───
 // Every new sign gets a card: the symbol drawn big, its name, what it means, how to play it --
@@ -20703,6 +21118,25 @@ function bookExtras(id) {
     { remember: 'Clockwise round the circle, each key is a 5th higher with one more sharp.' },
     { remember: 'Transposing moves every note by the same interval -- the tune stays the same.' },
     { remember: '15 keys: 7 with sharps, 7 with flats, and C with none.' },
+  ];
+  if (id === 'first-steps') return [
+    { remember: 'Right = higher, left = lower. Loud and soft is how hard you play.' },
+    { remember: '2 black keys = a small house. 3 black keys = a big house.' },
+    { remember: '88 keys -- and the small and big houses repeat all the way up.' },
+    { swap: [[isType(BlackKeySong), <PaperBlackSong/>]],
+      symbols: [{ glyph: <LegatoLine smooth color={BK.coral}/>, w: 230, name: 'Legato', means: 'smooth and joined -- no gaps between the notes.', play: 'one finger lets go just as the next one plays.' }],
+      remember: 'Legato: like walking -- one foot is always on the ground.' },
+    { swap: [[isType(BlackKeyJam), <PaperQR text={<>Any black keys sound good together. Make up your own tune and write it on <b>Workbook page 7</b> -- or scan the code to jam with a backing band in the app.</>} params="drill=first-steps&lock=1" label="Black-key jam"/>]],
+      remember: 'The five black keys always sound good together -- a pentatonic scale.' },
+  ];
+  if (id === 'pulse') return [
+    { remember: 'The pulse is music\'s heartbeat: steady, and it never stops -- even on long notes.' },
+    { remember: 'The rhythm is the tune\'s long and short notes. The beat is the steady pulse underneath.' },
+    { remember: 'Beat 1 is the strong beat. The others are weaker.' },
+    { remember: 'Count inside your head the whole time -- even when you are not playing.' },
+    { remember: 'Keep counting through long notes: a minim is 1 (2).' },
+    { swap: [[isType(RhythmComposer), <PaperQR text={<>Make your own rhythm cards on <b>Workbook page 6</b> -- or scan the code to build a card in the app and hear it played.</>} params="drill=pulse&lock=1" label="Rhythm cards"/>]],
+      remember: 'Count first, clap second: say 1 2 3 4, then clap the card.' },
   ];
   if (id !== 'staff') return [];
   const g = (clef, notes = [], w = 150) => <PaperStaff clef={clef} notes={notes} width={w}/>;
