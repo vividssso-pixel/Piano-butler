@@ -20207,7 +20207,7 @@ const bkSec = (letter, title) => <div style={{display:'flex',alignItems:'baselin
 // worked example), boxes [i] (a write-in box on the key), dots [i] (a coral dot marks the key to name),
 // fills {i: colour}, roofs: draw a little roof over each black-key group (for the "houses" picture).
 const BK_LET = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
-function PaperKeys({ start = 'C', whites = 14, w = 30, h = 112, labels = {}, ex = {}, boxes = [], dots = [], fills = {}, stars = [], blackDots = [], roofs = false, arrows = null }) {
+function PaperKeys({ start = 'C', whites = 14, w = 30, h = 112, labels = {}, ex = {}, boxes = [], dots = [], fills = {}, stars = [], blackDots = [], roofs = false, arrows = null, boxNos = null, dotR = 0.14 }) {
   const s0 = BK_LET.indexOf(start), letter = (i) => BK_LET[(s0 + i) % 7];
   const hasBlack = (i) => ['C', 'D', 'F', 'G', 'A'].includes(letter(i)) && i < whites - 1;
   const bw = w * 0.6, bh = h * 0.6, top = roofs ? 26 : (arrows ? 30 : 2);
@@ -20224,11 +20224,12 @@ function PaperKeys({ start = 'C', whites = 14, w = 30, h = 112, labels = {}, ex 
           <rect x={x} y={top} width={w} height={h} rx="3" fill={fills[i] || '#fff'} stroke={BK.ink} strokeWidth="1.3"/>
           {labels[i] != null && <text x={x + w / 2} y={top + h - 12} textAnchor="middle" fontSize={w * 0.5} fontWeight="900" fontStyle={ex[i] ? 'italic' : 'normal'} fill={ex[i] ? BK.coral : BK.ink}>{labels[i]}</text>}
           {boxes.includes(i) && labels[i] == null && <rect x={x + w * 0.14} y={top + h - w * 0.86 - 6} width={w * 0.72} height={w * 0.86} rx="3" fill="#fff" stroke={BK.coral} strokeWidth="1.2"/>}
-          {dots.includes(i) && <circle cx={x + w / 2} cy={top + bh + 9} r={w * 0.14} fill={BK.coral}/>}
+          {boxes.includes(i) && labels[i] == null && boxNos && boxNos[i] != null && <text x={x + w * 0.14 + 2.5} y={top + h - w * 0.86 - 6 + w * 0.3} fontSize={w * 0.27} fontWeight="900" fill={BK.coral}>{boxNos[i]}</text>}
+          {dots.includes(i) && <circle cx={x + w / 2} cy={top + bh + 9 + (dotR > 0.14 ? w * 0.08 : 0)} r={w * dotR} fill={BK.coral}/>}
           {stars.includes(i) && <g transform={`translate(${x + w / 2 - 8} ${top + bh + 6})`}><BkStarG size={16}/></g>}
         </g>;
       })}
-      {Array.from({ length: whites }, (_, i) => hasBlack(i) && <g key={'b' + i}><rect x={(i + 1) * w + 2 - bw / 2} y={top} width={bw} height={bh} rx="2" fill={BK.ink}/>{blackDots.includes(i) && <circle cx={(i + 1) * w + 2} cy={top + bh - 10} r={w * 0.13} fill="#fff"/>}</g>)}
+      {Array.from({ length: whites }, (_, i) => hasBlack(i) && <g key={'b' + i}><rect x={(i + 1) * w + 2 - bw / 2} y={top} width={bw} height={bh} rx="2" fill={BK.ink}/>{blackDots.includes(i) && <circle cx={(i + 1) * w + 2} cy={top + bh - 10} r={w * (dotR > 0.14 ? dotR * 0.9 : 0.13)} fill="#fff"/>}</g>)}
     </svg>
   );
 }
@@ -20264,8 +20265,9 @@ const SECRET_MSG = ['DAD', 'FED', 'A', 'BEE'];
 const MAZE_R = 3, MAZE_C = 5;
 function staffWorkbook() {
   const k = (s) => 'staff-wb2-' + s;
-  const tre = []; for (let d = 29; d <= 39; d++) tre.push(d);
-  const bas = []; for (let d = 17; d <= 27; d++) bas.push(d);
+  // only notes inside the five lines (d 30-38 treble, 18-26 bass): the mnemonics on pages 4-5 cover exactly these
+  const tre = []; for (let d = 30; d <= 38; d++) tre.push(d);
+  const bas = []; for (let d = 18; d <= 26; d++) bas.push(d);
   const lsItem = (clef, isLine) => { const d = pick((isLine ? STAFF_LINE_DS : STAFF_SPACE_DS)[clef]); return { d, clef, isLine }; };
   const s1 = withSeed(k('ls'), () => ({
     tog: [lsItem('treble', true), lsItem('treble', false), lsItem('treble', true), lsItem('treble', false)],
@@ -20280,13 +20282,13 @@ function staffWorkbook() {
     while (r < MAZE_R - 1 || c < MAZE_C - 1) { if (r === MAZE_R - 1 || (c < MAZE_C - 1 && Math.random() < 0.55)) c++; else r++; path.push([r, c]); }
     const on = new Set(path.map(([a, b]) => a + ',' + b));
     const notF = bas.filter(d => dName(d) !== 'F');
-    const cells = []; for (let i = 0; i < MAZE_R; i++) for (let j = 0; j < MAZE_C; j++) cells.push({ r: i, c: j, path: on.has(i + ',' + j), d: on.has(i + ',' + j) ? pick([24, 24, 17]) : pick(notF) });
+    const cells = []; for (let i = 0; i < MAZE_R; i++) for (let j = 0; j < MAZE_C; j++) cells.push({ r: i, c: j, path: on.has(i + ',' + j), d: on.has(i + ',' + j) ? 24 : pick(notF) });
     return { cells, path };
   });
-  const s4 = withSeed(k('hi'), () => Array.from({ length: 9 }, (_, i) => { const clef = i % 2 ? 'bass' : 'treble', lo = clef === 'treble' ? 29 : 17; let a, b; do { a = lo + Math.floor(Math.random() * 11); b = lo + Math.floor(Math.random() * 11); } while (Math.abs(a - b) < 2); return { clef, a, b }; }));
+  const s4 = withSeed(k('hi'), () => Array.from({ length: 9 }, (_, i) => { const clef = i % 2 ? 'bass' : 'treble', lo = clef === 'treble' ? 30 : 18; let a, b; do { a = lo + Math.floor(Math.random() * 9); b = lo + Math.floor(Math.random() * 9); } while (Math.abs(a - b) < 2); return { clef, a, b }; }));
   const marks = withSeed(k('lm'), () => shuffle([28, 32, 24, 35, 21]));
   const markNames = withSeed(k('lmn'), () => { let o; do { o = shuffle([28, 32, 24, 35, 21]); } while (o[0] === marks[0]); return o; });
-  const mid = withSeed(k('mc'), () => { let l; do { l = shuffle([28, 28, 28, 28, 27, 29, 35, 21, 26, 30, 31, 25]); } while (l[0] !== 28); return l.map(d => ({ d, staff: d === 28 ? (Math.random() < 0.5 ? 'treble' : 'bass') : undefined })); });
+  const mid = withSeed(k('mc'), () => { let l; do { l = shuffle([28, 28, 28, 28, 33, 23, 35, 21, 26, 30, 31, 25]); } while (l[0] !== 28); let c = 0; return l.map(d => ({ d, staff: d === 28 ? (c++ % 2 ? 'bass' : 'treble') : undefined })); });
   const flash = withSeed(k('fl'), () => [{ clef: 'treble', d: pick(tre) }, { clef: 'bass', d: pick(bas) }, { clef: 'treble', d: pick(tre) }, { clef: 'bass', d: pick(bas) }]);
   const s7 = withSeed(k('dr'), () => ({ tog: drawTasks(['treble', 'treble', 'bass']), home: drawTasks(['treble', 'bass', 'treble', 'bass', 'treble', 'bass']) }));
   const chk = withSeed(k('test'), () => ({
@@ -20352,14 +20354,15 @@ function StaffWorkbook({ startNo = 1 }) {
       <BkGrid cols={4} gap="10px 12px">{W.s2.home.map((d, i) => <NameCell key={i} d={d} clef="treble" n={i + 1}/>)}</BkGrid>
     </Part>
     <Part kind="play" title="Crack the secret message" how="Name every note to read the message. Then draw a picture of what happened!">
-      <div style={{display:'flex',gap:8,justifyContent:'center'}}>{W.msg.map((w, i) => {
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,flex:1}}>{W.msg.map((w, i) => {
         const wd = 56 + 34 * w.notes.length;
-        return <div key={i} style={{flex:'0 0 auto',width:wd * 0.86,border:'1px solid #ece6d8',borderRadius:8,padding:'4px 6px'}}>
-          <PaperStaff clef="treble" notes={w.notes} width={wd}/>
-          <BkUnder n={w.notes.length} w={wd} h={28}>{w.notes.map((_, j) => <span key={j}>{bkBox(22, 26)}</span>)}</BkUnder>
+        return <div key={i} style={{border:'1px solid #ece6d8',borderRadius:8,padding:'4px 8px',display:'flex',flexDirection:'column',justifyContent:'center'}}>
+          <div style={{width:'100%',maxWidth:wd * 1.45,margin:'0 auto'}}>
+            <PaperStaff clef="treble" notes={w.notes} width={wd}/>
+            <BkUnder n={w.notes.length} w={wd} h={30}>{w.notes.map((_, j) => <span key={j}>{bkBox(26, 28)}</span>)}</BkUnder>
+          </div>
         </div>;
-      })}</div>
-      <div style={{flex:1,minHeight:120,marginTop:10,border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',alignItems:'flex-end',justifyContent:'flex-end',fontSize:11,color:BK.muted,padding:'6px 10px'}}>my picture of the message</div>
+      }).concat([<div key="pic" style={{gridColumn:'2 / 4',minHeight:100,border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',alignItems:'flex-end',justifyContent:'flex-end',fontSize:11,color:BK.muted,padding:'6px 10px'}}>my picture of the message</div>])}</div>
     </Part>
     <Faces/>
   </>);
@@ -20408,7 +20411,7 @@ function StaffWorkbook({ startNo = 1 }) {
   </>);
 
   // 7. Lesson step 5 -- landmarks, middle C, fold the staff
-  const rowH = 64, gapH = 8;
+  const rowH = 58, gapH = 7;
   const yRow = (i) => i * (rowH + gapH) + rowH / 2;
   const exTo = W.markNames.indexOf(W.marks[0]);
   P(<>
@@ -20424,24 +20427,24 @@ function StaffWorkbook({ startNo = 1 }) {
         <div style={{display:'grid',gap:gapH}}>{W.markNames.map((d, i) => <div key={i} style={{height:rowH,display:'flex',alignItems:'center',paddingLeft:8,fontSize:15,fontWeight:800,color:BK.ink}}>{LANDMARK_NAME(d)}</div>)}</div>
       </div>
     </Part>
-    <Part kind="home" title="Find every middle C" how="Circle every middle C -- just below the treble staff or just above the bass staff. Same key, same sound.">
+    <Part kind="home" title="Find every middle C" how="Circle every middle C. It always sits on its own little ledger line -- just below the treble staff, or just above the bass staff. Same key, same sound.">
       <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'4px 8px'}}><PaperStaff clef="grand" notes={W.mid.map((n, i) => i === 0 ? { ...n, circle: true } : n)} width={640}/></div>
     </Part>
-    <Part kind="play" title="Fold the staff!" how="Fold this page along the dotted line, print side in, and hold it up to the window. Which notes touch? Treble C touches ________ . Treble G touches ________ .">
+    <Part kind="play" title="Fold the staff!" how="Ask your teacher to photocopy this page first. Fold the copy along the dotted line, print side in, and hold it up to the window. Which notes touch? Treble C touches ________ . Treble G touches ________ .">
       <FoldPicture/>
     </Part>
   </>);
 
   // 8. Lesson step 6 -- make your own flash cards
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const Card = ({ children, k }) => <div key={k} style={{border:'1.6px dashed ' + BK.muted,borderRadius:4,height:140,padding:'6px 12px',position:'relative',display:'flex',flexDirection:'column',justifyContent:'center'}}>{children}</div>;
+  const Card = ({ children, k }) => <div key={k} style={{border:'1.6px dashed ' + BK.muted,borderRadius:4,height:134,padding:'6px 14px',position:'relative',display:'flex',flexDirection:'column',justifyContent:'center'}}>{children}</div>;
   P(<>
     <WbTop step={6}/>
     <Part kind="together" title="Flash card race" how="Your teacher shows you 10 cards. Tick a box for every note you name in under 3 seconds.">
       <div style={{display:'flex',gap:10,alignItems:'center'}}>{Array.from({ length: 10 }, (_, i) => <span key={i} style={{width:30,height:30,border:'1.6px solid ' + BK.ink,borderRadius:6,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,color:BK.muted}}>{i + 1}</span>)}<span style={{marginLeft:'auto',fontSize:12.5,color:BK.ink}}>Score <span style={{display:'inline-block',width:36,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span> / 10</span></div>
     </Part>
-    <Part kind="home" title="Make your own flash cards" how="Cut out the cards along the dashed lines. Write each answer on the back. On the empty cards, draw your own note -- try to catch your teacher out!">
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:0}}>
+    <Part kind="home" title="Make your own flash cards" how={<><b style={{color:BK.coral}}>Teacher: photocopy this page before cutting</b> -- there is more on the other side. Cut out the cards along the dashed lines. Write each answer on the back. On the empty cards, draw your own note -- try to catch your teacher out!</>}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:0}}>
         {W.flash.map((f, i) => <Card k={'f' + i} key={'f' + i}><PaperStaff clef={f.clef} notes={[{ d: f.d }]} width={150}/></Card>)}
         {['treble', 'bass', 'treble', 'bass'].map((c, i) => <Card k={'e' + i} key={'e' + i}><PaperStaff clef={c} notes={[]} width={150} minSpan={c === 'treble' ? [39, 29] : [27, 17]}/><div style={{position:'absolute',bottom:4,right:8,fontSize:9.5,color:BK.muted}}>draw your own</div></Card>)}
       </div>
@@ -20473,7 +20476,7 @@ function StaffWorkbook({ startNo = 1 }) {
 
   // 11. check-up
   const cnt = { ls: 4, tr: 4, ba: 4, lm: 3, dr: 5 }, total = 20;
-  const sec = (letter, title) => <div style={{display:'flex',alignItems:'baseline',gap:8,margin:'7px 0 3px'}}><span style={{fontSize:13,fontWeight:900,color:BK.coral}}>{letter}</span><span style={{fontSize:14,fontWeight:900,color:BK.ink}}>{title}</span></div>;
+  const sec = (letter, title) => <div style={{display:'flex',alignItems:'baseline',gap:8,margin:'4px 0 2px'}}><span style={{fontSize:13,fontWeight:900,color:BK.coral}}>{letter}</span><span style={{fontSize:14,fontWeight:900,color:BK.ink}}>{title}</span></div>;
   P(<>
     <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline'}}>
       <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:26,fontWeight:900,color:BK.ink}}>Chapter check-up</div>
@@ -20481,15 +20484,15 @@ function StaffWorkbook({ startNo = 1 }) {
     </div>
     <NameLine score={total}/>
     {sec('A', 'Line or space? Write L or S.')}
-    <BkGrid cols={4} gap="6px 10px">{W.chk.ls.map((it, i) => <BkCell key={i} n={i + 1}><PaperStaff clef={it.clef} notes={[{ d: it.d }]} width={130}/><div style={{textAlign:'center',marginTop:2}}>{bkBox(40, 22)}</div></BkCell>)}</BkGrid>
+    <BkGrid cols={4} gap="4px 8px">{W.chk.ls.map((it, i) => <BkCell key={i} n={i + 1}><PaperStaff clef={it.clef} notes={[{ d: it.d }]} width={165}/><div style={{textAlign:'center',marginTop:1}}>{bkBox(40, 20)}</div></BkCell>)}</BkGrid>
     {sec('B', 'Name the treble notes.')}
-    <BkGrid cols={4} gap="6px 10px">{W.chk.tr.map((d, i) => <BkCell key={i} n={i + 5}><PaperStaff clef="treble" notes={[{ d }]} width={130}/><div style={{textAlign:'center',marginTop:2}}>{bkBox(40, 22)}</div></BkCell>)}</BkGrid>
+    <BkGrid cols={4} gap="4px 8px">{W.chk.tr.map((d, i) => <BkCell key={i} n={i + 5}><PaperStaff clef="treble" notes={[{ d }]} width={165}/><div style={{textAlign:'center',marginTop:1}}>{bkBox(40, 20)}</div></BkCell>)}</BkGrid>
     {sec('C', 'Name the bass notes.')}
-    <BkGrid cols={4} gap="6px 10px">{W.chk.ba.map((d, i) => <BkCell key={i} n={i + 9}><PaperStaff clef="bass" notes={[{ d }]} width={130}/><div style={{textAlign:'center',marginTop:2}}>{bkBox(40, 22)}</div></BkCell>)}</BkGrid>
+    <BkGrid cols={4} gap="4px 8px">{W.chk.ba.map((d, i) => <BkCell key={i} n={i + 9}><PaperStaff clef="bass" notes={[{ d }]} width={165}/><div style={{textAlign:'center',marginTop:1}}>{bkBox(40, 20)}</div></BkCell>)}</BkGrid>
     {sec('D', 'Name these landmark notes.')}
-    <BkGrid cols={4} gap="6px 10px">{W.chk.lm.map((d, i) => <BkCell key={i} n={i + 13}><PaperStaff clef={d >= 28 ? 'treble' : 'bass'} notes={[{ d }]} width={130}/><div style={{textAlign:'center',marginTop:2}}>{bkBox(70, 22)}</div></BkCell>)}</BkGrid>
+    <BkGrid cols={4} gap="4px 8px">{W.chk.lm.map((d, i) => <BkCell key={i} n={i + 13}><PaperStaff clef={d >= 28 ? 'treble' : 'bass'} notes={[{ d }]} width={165}/><div style={{textAlign:'center',marginTop:1}}>{bkBox(70, 20)}</div></BkCell>)}</BkGrid>
     {sec('E', 'Draw each note.')}
-    <BkGrid cols={5} gap="6px 8px">{W.chk.dr.map((it, i) => <BkCell key={i} n={i + 16}><div style={{textAlign:'center',fontSize:12}}>{drawPrompt(it)}</div><PaperStaff clef={it.clef} notes={[]} width={120} minSpan={it.clef === 'treble' ? [39, 29] : [27, 17]}/></BkCell>)}</BkGrid>
+    <BkGrid cols={3} gap="4px 8px">{W.chk.dr.map((it, i) => <BkCell key={i} n={i + 16}><div style={{textAlign:'center',fontSize:12,marginTop:-3,lineHeight:1.2}}>{drawPrompt(it)}</div><div style={{padding:'0 10px'}}><PaperStaff clef={it.clef} notes={[]} width={196} minSpan={it.clef === 'treble' ? [39, 29] : [27, 17]}/></div></BkCell>)}</BkGrid>
     <CheckTable concepts={C} cnt={cnt}/>
   </>);
   return <>{pages}</>;
@@ -20617,7 +20620,7 @@ function NoteNamesWorkbook({ startNo = 1 }) {
       <KeysCell ex><PaperKeys start="E" whites={15} w={40} h={130} boxes={cf} labels={{ 1: 'F' }} ex={{ 1: true }}/></KeysCell>
     </Part>
     <Part kind="home" title="Name the dotted keys" how="Find the nearest group of black keys, then work it out. Write the letter in the box.">
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>{W.s1.kb.map((kb, i) => <KeysCell key={i} n={i === 0 ? '1-4' : '5-8'}><PaperKeys start={kb.start} whites={10} w={30} h={120} dots={kb.dots} boxes={kb.dots}/></KeysCell>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>{W.s1.kb.map((kb, i) => <KeysCell key={i} n={i === 0 ? '1-4' : '5-8'}><PaperKeys start={kb.start} whites={10} w={30} h={120} dots={kb.dots} boxes={kb.dots} boxNos={Object.fromEntries([...kb.dots].sort((a, b) => a - b).map((d, j) => [d, 4 * i + j + 1]))}/></KeysCell>)}</div>
     </Part>
     <Part kind="play" title="The black-key houses" how="C D E live in the little house with 2 black keys. F G A B live in the big house with 3. Draw a roof on every house, then colour each family its own colour.">
       <PaperKeys start="C" whites={21} w={32} h={128} roofs/>
@@ -20660,12 +20663,16 @@ function NoteNamesWorkbook({ startNo = 1 }) {
     <Part kind="home" title="Step on your own" how="Watch out for G and A -- that's where the letters wrap round.">
       <BkGrid cols={4} gap="10px 12px">{W.s3.home.map((it, i) => <UpDownCell key={i} it={it} n={i + 1}/>)}</BkGrid>
     </Part>
-    <Part kind="play" title="Treasure hunt" how="Start on the star (F). Follow each clue, write the letter you land on, and keep going from there. Draw a treasure chest on the last key!">
-      <PaperKeys start="C" whites={hk} w={42} h={120} stars={[hstart]}/>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:8,marginTop:10}}>{W.hunt.moves.map((mv, i) => <div key={i} style={{border:'1px solid #ece6d8',borderRadius:8,padding:'6px 4px',textAlign:'center'}}>
-        <div style={{fontSize:10,fontWeight:900,color:BK.coral}}>CLUE {i + 1}</div>
-        <div style={{fontSize:13.5,fontWeight:800,color:BK.ink,margin:'2px 0 6px'}}>{mv.m > 0 ? 'Up ' + mv.m : 'Down ' + (-mv.m)}</div>
-        {bkBox(40, 34)}
+    <Part kind="play" title="Treasure hunt" how="Start on the star (F). One step = the next white key. Follow each clue, write the letter you land on, and start the next clue from there. Clue 1 is done: the arrow shows the hop. Draw a treasure chest on the last key!">
+      <PaperKeys start="C" whites={hk} w={42} h={120} stars={[hstart]} arrows={(() => { const m0 = W.hunt.moves[0].m, x0 = (hstart + 0.5) * 42 + 2, x1 = (W.hunt.moves[0].land + 0.5) * 42 + 2, dir = m0 > 0 ? 1 : -1; return <g>
+        {Array.from({ length: Math.abs(m0) }, (_, j) => { const a = x0 + j * 42 * dir, b = a + 42 * dir; return <path key={j} d={`M${a} 26 Q${(a + b) / 2} 2 ${b} 26`} fill="none" stroke={BK.coral} strokeWidth="2.2"/>; })}
+        <path d={`M${x1 - 5 * dir} 17 L${x1} 27 L${x1 - 6 * dir} 25`} fill="none" stroke={BK.coral} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+        <text x={(x0 + x1) / 2} y={11} textAnchor="middle" fontSize="11" fontWeight="900" fill={BK.coral}>{'clue 1: ' + Math.abs(m0) + (Math.abs(m0) === 1 ? ' step ' : ' steps ') + (m0 > 0 ? 'up' : 'down')}</text>
+      </g>; })()}/>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:8,marginTop:10}}>{W.hunt.moves.map((mv, i) => <div key={i} style={{border:(i === 0 ? '1.5px solid ' + BK.coral : '1px solid #ece6d8'),background:i === 0 ? '#fff8f5' : '#fff',borderRadius:8,padding:'6px 4px',textAlign:'center'}}>
+        <div style={{fontSize:10,fontWeight:900,color:BK.coral}}>{i === 0 ? 'CLUE 1 · EXAMPLE' : 'CLUE ' + (i + 1)}</div>
+        <div style={{fontSize:13.5,fontWeight:800,color:BK.ink,margin:'2px 0 6px'}}>{Math.abs(mv.m) + (Math.abs(mv.m) === 1 ? ' step ' : ' steps ') + (mv.m > 0 ? 'up' : 'down')}</div>
+        {i === 0 ? bkHand(nnLet('C', mv.land), 40, 34) : bkBox(40, 34)}
       </div>)}</div>
     </Part>
     <Faces/>
@@ -20789,6 +20796,98 @@ function PaperLetterRing() {
 }
 
 
+// ─── Print notation fixes (Phase 296): beat boxes, beams, rests ───
+// These replace the app's RestShape and BeatRow (reassigned here, so every chapter and the app draw them this way), so every beat box in the book --
+// Pulse, Note Values, Time Signatures, Rhythm -- is drawn the same way:
+//   * a note sits at the START of its beat span, left in its box; its sound bar still stretches across the span
+//   * quavers that share one beat are beamed (two stems joined by a thick bar); 4 semiquavers get a double beam;
+//     a triplet gets a 3 above its beam; a quaver on its own keeps its flag
+//   * the semibreve rest hangs below a short line, the minim rest sits on top of one -- so they never look the same
+RestShape = function RestShape({ d, cx, ink }) {
+  const s = { stroke: ink, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' };
+  if (d >= 4) return <g><line x1={cx - 15} y1="44" x2={cx + 15} y2="44" stroke={ink} strokeWidth="2.2"/><rect x={cx - 8} y="44" width="16" height="7" fill={ink}/></g>;
+  if (d >= 2) return <g><line x1={cx - 15} y1="52" x2={cx + 15} y2="52" stroke={ink} strokeWidth="2.2"/><rect x={cx - 8} y="45" width="16" height="7" fill={ink}/></g>;
+  if (d >= 1) return <path d={`M${cx - 3},30 L${cx + 5},40 L${cx - 2},49 L${cx + 6},59 Q${cx - 7},55 ${cx - 1},68`} {...s} strokeWidth="3.4"/>;
+  if (d >= 0.5) return <g><circle cx={cx - 3} cy="44" r="3.6" fill={ink}/><path d={`M${cx - 3},45 Q${cx + 2},48 ${cx + 7},41 L${cx + 1},66`} {...s} strokeWidth="2.4"/></g>;
+  if (d <= 0.125) return <g>
+    <circle cx={cx} cy="34" r="3" fill={ink}/><circle cx={cx - 3} cy="43" r="3" fill={ink}/><circle cx={cx - 6} cy="52" r="3" fill={ink}/>
+    <path d={`M${cx},35 Q${cx + 5},38 ${cx + 10},31 L${cx - 2},68`} {...s} strokeWidth="2.3"/>
+    <path d={`M${cx - 3},44 Q${cx + 2},47 ${cx + 6},41`} {...s} strokeWidth="2.3"/>
+    <path d={`M${cx - 6},53 Q${cx - 1},56 ${cx + 3},50`} {...s} strokeWidth="2.3"/>
+  </g>;
+  return <g>
+    <circle cx={cx - 2} cy="40" r="3.4" fill={ink}/><circle cx={cx - 5} cy="50" r="3.4" fill={ink}/>
+    <path d={`M${cx - 2},41 Q${cx + 3},44 ${cx + 8},37 L${cx},68`} {...s} strokeWidth="2.4"/>
+    <path d={`M${cx - 5},51 Q${cx},54 ${cx + 5},47`} {...s} strokeWidth="2.4"/>
+  </g>;
+};
+// a note with a stem but no flag (for beaming, or for "add the beams yourself" exercises)
+function StemNote({ item, size = 40, ink = '#26296b' }) {
+  const cx = 22 - (item.dot ? 5 : 2);
+  return <svg viewBox="0 10 44 66" style={{width:size * 44 / 66,height:size,display:'block'}}><NoteShape base={item.base} dot={item.dot} cx={cx} ink={ink} beamed/></svg>;
+}
+const brStemX = (item, size) => (22 - (item.dot ? 5 : 2) + 6.4) / 66 * size;   // where the stem is, in px from the glyph's left
+const brBeamable = (x) => !x.rest && x.base <= 0.5;
+// split a bar into draw-groups: 2+ beamable notes that start and finish inside ONE beat become a beamed group
+function brGroups(items) {
+  const out = []; let pos = 0, i = 0;
+  while (i < items.length) {
+    if (brBeamable(items[i])) {
+      const end = Math.floor(pos + 1e-6) + 1; let j = i, p = pos;
+      while (j < items.length && brBeamable(items[j]) && p + items[j].beats <= end + 1e-6) { p += items[j].beats; j++; }
+      if (j - i >= 2) { out.push({ items: items.slice(i, j), at: i, beats: p - pos }); pos = p; i = j; continue; }
+    }
+    out.push({ items: [items[i]], at: i, beats: items[i].beats }); pos += items[i].beats; i++;
+  }
+  return out;
+}
+BeatRow = function BeatRow({ items, total, on = -1, onTap, bad = -1, size = 40, barAt }) {
+  const beatsUsed = items.reduce((a, it) => a + it.beats, 0);
+  const groups = brGroups(items);
+  const inkOf = (i) => i === bad ? '#c8361b' : '#26296b';
+  const bg = (g) => { const idx = g.items.map((_, k) => g.at + k); return idx.includes(bad) ? '#fbdcd2' : idx.includes(on) ? '#fbe3da' : 'transparent'; };
+  const bar = (i, it) => <div key={'s' + i} style={{position:'absolute',left:3,right:3,bottom:4,height:6,borderRadius:3,background:i === bad ? '#c8361b' : it.rest ? '#dbd2bd' : i === on ? '#e4572e' : '#c9b58a'}}/>;
+  const top = 10;   // px above the glyph: room for a triplet's 3
+  return (
+    <div style={{position:'relative',display:'flex',height:size + 26,border:'1.5px solid #dbd2bd',borderRadius:8,background:'#fff',overflow:'hidden'}}>
+      {Array.from({ length: Math.max(0, Math.ceil(total) - 1) }, (_, b) => (
+        <div key={'b' + b} style={{position:'absolute',left:((b + 1) / total * 100) + '%',top:0,bottom:0,borderLeft:'1px dashed #e9e2d2'}}/>
+      ))}
+      {barAt !== undefined && barAt < total && <div style={{position:'absolute',left:(barAt / total * 100) + '%',top:0,bottom:0,right:0,background:'#fbe3da',borderLeft:'2.5px solid #26296b'}}><span style={{position:'absolute',right:4,top:2,fontSize:9,fontWeight:900,color:'#e4572e',fontStyle:'italic',whiteSpace:'nowrap'}}>too many!</span></div>}
+      {groups.map((g, gi) => {
+        const n = g.items.length, w = (g.beats / total * 100) + '%';
+        if (n === 1) {
+          const it = g.items[0], i = g.at;
+          return <div key={gi + ':' + it.key} onClick={onTap ? () => onTap(i) : undefined}
+            style={{flex:'0 0 ' + w,position:'relative',cursor:onTap ? 'pointer' : 'default',animation:'fadeUp 0.25s both',background:bg(g),transition:'background 0.15s'}}>
+            <div style={{position:'absolute',left:4,top}}><Glyph item={it} size={size} ink={inkOf(i)}/></div>
+            {bar(i, it)}
+          </div>;
+        }
+        // beamed group: each note at the start of its own slice, one beam joining the stem tops
+        const first = g.items[0], last = g.items[n - 1];
+        const x0 = 4 + brStemX(first, size), x1 = 4 + brStemX(last, size);
+        const beamTop = top + 10 / 66 * size, beamH = Math.max(2.5, 5 / 66 * size);
+        const double = g.items.every(x => x.base <= 0.25);
+        const triplet = g.items[0].key === 'tq';
+        const ink = g.items.some((_, k) => g.at + k === bad) ? '#c8361b' : '#26296b';
+        let acc = 0;
+        return <div key={gi + ':beam'} onClick={onTap ? () => onTap(g.at) : undefined}
+          style={{flex:'0 0 ' + w,position:'relative',cursor:onTap ? 'pointer' : 'default',animation:'fadeUp 0.25s both',background:bg(g),transition:'background 0.15s'}}>
+          {g.items.map((it, k) => { const left = (acc / g.beats * 100) + '%'; acc += it.beats; return <div key={k} style={{position:'absolute',left:'calc(' + left + ' + 4px)',top}}><StemNote item={it} size={size} ink={ink}/></div>; })}
+          {(() => { const lastLeft = ((g.beats - last.beats) / g.beats * 100) + '%'; const bw = 'calc(' + lastLeft + ' + ' + (x1 - x0) + 'px)'; return <>
+            <div style={{position:'absolute',left:x0,width:bw,top:beamTop,height:beamH,background:ink}}/>
+            {double && <div style={{position:'absolute',left:x0,width:bw,top:beamTop + beamH * 1.7,height:beamH,background:ink}}/>}
+            {triplet && <div style={{position:'absolute',left:x0,width:bw,top:0,height:top,display:'flex',justifyContent:'center',alignItems:'flex-start',fontSize:Math.max(8, size * 0.24),lineHeight:1,fontWeight:900,fontStyle:'italic',color:ink}}>3</div>}
+          </>; })()}
+          {g.items.map((it, k) => { const left = ((g.items.slice(0, k).reduce((a, x) => a + x.beats, 0)) / g.beats * 100) + '%', ww = (it.beats / g.beats * 100) + '%'; return <div key={'s' + k} style={{position:'absolute',left:'calc(' + left + ' + 3px)',width:'calc(' + ww + ' - 6px)',bottom:4,height:6,borderRadius:3,background:g.at + k === bad ? '#c8361b' : g.at + k === on ? '#e4572e' : '#c9b58a'}}/>; })}
+        </div>;
+      })}
+      {beatsUsed < total && <div style={{flex:1}}/>}
+    </div>
+  );
+};
+
 // ─── Note Values (chapter 'note-values'): the tree, rests, splitting, dots, full bars ───
 const NVN = () => ({ sb: NV_NOTES[0], mn: NV_NOTES[1], cr: NV_NOTES[2], qv: NV_NOTES[3], sq: NV_NOTES[4] });
 const NVR = () => ({ sb: NV_RESTS[0], mn: NV_RESTS[1], cr: NV_RESTS[2], qv: NV_RESTS[3], sq: NV_RESTS[4] });
@@ -20799,15 +20898,16 @@ const NV_CODE_KEY = [[1, 'A'], [2, 'I'], [3, 'N'], [4, 'O'], [5, 'E'], [6, 'P']]
 function nvWorkbook() {
   const k = (s) => 'nv-wb-' + s;
   const n = NVN(), r = NVR(), d = NVD();
-  const allN = [n.sb, n.mn, n.cr, n.qv, n.sq];
-  const s1 = withSeed(k('s1'), () => ({ tog: [n.mn, ...shuffle([n.sb, n.qv, n.cr])], home: shuffle([...allN, ...shuffle(allN).slice(0, 3)]) }));
-  const s2 = withSeed(k('s2'), () => ({ tog: [n.cr, ...shuffle([n.sb, n.qv, n.mn])], match: shuffle([0, 1, 2, 3, 4]) }));
+  const allN = [n.sb, n.mn, n.cr, n.qv];   // the chapter's notes: no semiquavers here (they come in Rhythm)
+  const s1 = withSeed(k('s1'), () => ({ tog: [n.mn, ...shuffle([n.sb, n.qv, n.cr])], home: shuffle([...allN, ...shuffle(allN)]) }));
+  const s2 = withSeed(k('s2'), () => ({ tog: [n.cr, ...shuffle([n.sb, n.qv, n.mn])], match: shuffle([0, 1, 2, 3]) }));
   const eq = (big, small, cnt) => ({ big, small, cnt });
-  const s3 = withSeed(k('s3'), () => ({ tog: [eq(n.mn, n.cr, 2), eq(n.sb, n.mn, 2), eq(n.cr, n.qv, 2)], home: shuffle([eq(n.sb, n.cr, 4), eq(n.mn, n.qv, 4), eq(n.cr, n.sq, 4), eq(n.sb, n.qv, 8), eq(n.qv, n.sq, 2), eq(n.mn, n.sq, 8)]) }));
+  const s3 = withSeed(k('s3'), () => ({ tog: [eq(n.mn, n.cr, 2), eq(n.sb, n.mn, 2), eq(n.cr, n.qv, 2)], home: shuffle([eq(n.sb, n.cr, 4), eq(n.mn, n.qv, 4), eq(n.sb, n.qv, 8), eq(n.mn, n.cr, 2), eq(n.sb, n.mn, 2), eq(n.cr, n.qv, 2)]) }));
   const code = [[n.sb, n.mn], [n.cr, n.cr], [n.qv, n.qv], [n.mn, n.cr], [n.mn, n.mn]]; // = 6 2 1 3 4 = P I A N O
-  const s4 = withSeed(k('s4'), () => ({ tog: [d.mn, d.cr, d.qv], home: shuffle([d.mn, d.cr, d.qv, n.mn, n.cr]).concat([d.cr]) }));
-  // dominoes: each one = [beats of the previous note | next note]; laid in a ring
-  const domi = withSeed(k('dom'), () => shuffle([n.sb, n.mn, n.cr, n.qv, n.sq, d.mn, d.cr, d.qv]));
+  const s4 = withSeed(k('s4'), () => ({ tog: [d.mn, d.cr, n.mn], home: shuffle([d.mn, d.cr, n.mn, n.cr, d.mn]).concat([d.cr]) }));
+  // dominoes: each one = [beats of the previous note in the ring | next note]. domi is the solved ring; domiPrint is the order on the page
+  const domi = withSeed(k('dom'), () => shuffle([n.sb, n.mn, n.cr, n.qv, d.mn, d.cr]));
+  const domiPrint = withSeed(k('dom-print'), () => shuffle(domi.map((it, i) => ({ it, prev: domi[(i + domi.length - 1) % domi.length] }))));
   const bar = (items) => ({ items, total: items.reduce((a, it) => a + it.beats, 0) });
   const s5 = withSeed(k('s5'), () => ({
     tog: [bar([n.mn, n.cr, n.cr]), bar([n.mn, n.mn, n.cr]), bar([d.mn, n.cr])],
@@ -20815,12 +20915,12 @@ function nvWorkbook() {
   }));
   const chk = withSeed(k('chk'), () => ({
     nm: shuffle([n.sb, n.mn, n.cr, n.qv]),
-    bt: shuffle([n.mn, n.sq, n.qv, n.sb]),
+    bt: shuffle([n.mn, n.cr, n.qv, n.sb]),
     rs: shuffle([r.sb, r.mn, r.cr, r.qv]),
-    dt: shuffle([d.mn, d.cr, d.qv, d.mn]).slice(0, 3).concat([d.cr]),
+    dt: shuffle([d.mn, d.cr, n.mn, n.cr]),
     br: [bar([n.mn]), bar([n.cr, n.cr, n.mn]), bar([n.mn, n.qv, n.qv]), bar([d.cr, n.qv, n.mn])],
   }));
-  return { s1, s2, s3, code, s4, domi, s5, chk };
+  return { s1, s2, s3, code, s4, domi, domiPrint, s5, chk };
 }
 function nvConcepts() {
   return [
@@ -20841,7 +20941,7 @@ function GlyphCell({ it, n, ex, nameBox = true, beatBox = true }) {
     </ExCell>
   );
 }
-// a little staff line set for drawing a rest on (rests sit in the middle of the staff)
+// a little staff line set for drawing a rest on (the semibreve rest hangs below line 4, the minim rest sits on line 3)
 function RestPad({ it, ex }) {
   return (
     <svg viewBox="0 24 70 52" style={{width:'100%',display:'block'}}>
@@ -20864,7 +20964,7 @@ function BarCell({ b, n, ex, total = 4, answer, mode = 'count', size = 34 }) {
     <ExCell n={n} ex={ex}>
       <div style={{display:'grid',gridTemplateColumns:'26px 1fr auto',alignItems:'center',gap:8,padding:size < 34 ? '10px 4px 0' : '14px 4px 2px'}}>
         <div style={{fontFamily:MUSIC_FONT,fontSize:13,fontWeight:900,lineHeight:0.95,textAlign:'center',color:BK.ink}}>4<br/>4</div>
-        <BeatRow items={b.items} total={Math.max(total, b.total)} size={size}/>
+        <BeatRow items={b.items} total={Math.max(total, b.total)} size={size} barAt={b.total > total ? total : undefined}/>
         {mode === 'count' ? <div style={{display:'flex',alignItems:'center',gap:6,fontSize:11,color:BK.muted}}>{nvBox(ex, fmtNum(b.total), 38, 28)} beats {ex ? <span style={{fontSize:20,color:BK.coral,fontWeight:900}}>{b.total === 4 ? '✓' : '✗'}</span> : <span style={{width:22,height:22,border:'1.5px solid ' + BK.line,borderRadius:5}}/>}</div> : <div style={{fontSize:11,color:BK.muted,width:60}}>{answer}</div>}
       </div>
     </ExCell>
@@ -20905,15 +21005,15 @@ function NoteValuesWorkbook({ startNo = 1 }) {
   </>);
 
   // steps 2-4 -- rests
-  const cardItems = [n.sb, r.sb, n.mn, r.mn, n.cr, r.cr, n.qv, r.qv, n.sq, r.sq];
+  const cardItems = [n.sb, r.sb, n.mn, r.mn, n.cr, r.cr, n.qv, r.qv];
   P(<>
     <WbTop step="2-4"/>
-    <Part kind="together" title="Draw the matching rest" how="A note and its rest have the same name and the same length. Draw the rest on the lines -- rests sit in the middle of the staff.">
+    <Part kind="together" title="Draw the matching rest" how="A note and its rest have the same name and the same length. Draw the rest on the lines. The semibreve rest HANGS below the 4th line; the minim rest SITS on the 3rd line, like a hat.">
       <BkGrid cols={4} gap="10px 12px">{W.s2.tog.map((it, i) => <ExCell key={i} n={i + 1} ex={i === 0}><div style={{display:'grid',gridTemplateColumns:'50px 1fr',alignItems:'center',gap:6,padding:'14px 4px 4px'}}><Glyph item={it} size={52}/><RestPad it={NV_RESTS[NV_NOTES.indexOf(it)]} ex={i === 0}/></div></ExCell>)}</BkGrid>
     </Part>
     <Part kind="home" title="Join each note to its rest" how="Draw a line from each note to the rest with the same length. Then write how many beats.">
       <div style={{display:'grid',gridTemplateColumns:'1fr 1.2fr 1fr 80px',alignItems:'center',rowGap:4}}>
-        {[0, 1, 2, 3, 4].map(i => { const ri = W.s2.match[i]; return <React.Fragment key={i}>
+        {[0, 1, 2, 3].map(i => { const ri = W.s2.match[i]; return <React.Fragment key={i}>
           <div style={{display:'flex',alignItems:'center',gap:8,justifyContent:'flex-end'}}><Glyph item={NV_NOTES[i]} size={46}/><span style={{width:9,height:9,borderRadius:5,background:BK.ink}}/></div>
           <div/>
           <div style={{display:'flex',alignItems:'center',gap:8}}><span style={{width:9,height:9,borderRadius:5,background:BK.ink}}/><Glyph item={NV_RESTS[ri]} size={46}/></div>
@@ -20921,8 +21021,8 @@ function NoteValuesWorkbook({ startNo = 1 }) {
         </React.Fragment>; })}
       </div>
     </Part>
-    <Part kind="play" title="Note and rest pairs" how="Cut out the 10 cards and play Pairs with someone at home: turn them face down, turn over two at a time, and keep them if the note and rest match!">
-      <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)'}}>{withSeed('nv-cards', () => shuffle(cardItems)).map((it, i) => <div key={i} style={{border:'1.5px dashed ' + BK.muted,height:96,display:'flex',alignItems:'center',justifyContent:'center'}}><Glyph item={it} size={60}/></div>)}</div>
+    <Part kind="play" title="Note and rest pairs" how="Cut out the 8 cards and play Pairs with someone at home: turn them face down, turn over two at a time, and keep them if the note and rest match!">
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)'}}>{withSeed('nv-cards', () => shuffle(cardItems)).map((it, i) => <div key={i} style={{border:'1.5px dashed ' + BK.muted,height:96,display:'flex',alignItems:'center',justifyContent:'center'}}><Glyph item={it} size={60}/></div>)}</div>
       <div style={{fontSize:11,color:BK.muted,marginTop:4}}>✂ Cut on the dashed lines.</div>
     </Part>
     <Faces/>
@@ -20951,14 +21051,14 @@ function NoteValuesWorkbook({ startNo = 1 }) {
   // steps 7-8 -- dotted notes + dominoes
   P(<>
     <WbTop step="7-8"/>
-    <Part kind="together" title="What does the dot add?" how="A dot adds half the note again. Dotted minim: 2 + 1 = 3 beats.">
+    <Part kind="together" title="What does the dot add?" how="A dot adds half the note again. Dotted minim: 2 + 1 = 3 beats. No dot? Then nothing is added.">
       <BkGrid cols={3} gap="10px 12px">{W.s4.tog.map((it, i) => <GlyphCell key={i} it={it} n={i + 1} ex={i === 0} nameBox={false}/>)}</BkGrid>
     </Part>
     <Part kind="home" title="Dot or no dot?" how="How many beats? Look carefully -- some have a dot and some don't.">
       <BkGrid cols={6} gap="8px 8px">{W.s4.home.map((it, i) => <GlyphCell key={i} it={it} n={i + 1} nameBox={false}/>)}</BkGrid>
     </Part>
     <Part kind="play" title="Note dominoes" how="Cut out the dominoes. Match each number of beats to the note that lasts that long, and make one long ring. Race someone at home!">
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10}}>{W.domi.map((it, i) => { const prev = W.domi[(i + W.domi.length - 1) % W.domi.length]; return <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 1fr',border:'1.6px dashed ' + BK.muted,borderRadius:8,height:84}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>{W.domiPrint.map(({ it, prev }, i) => { return <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 1fr',border:'1.6px dashed ' + BK.muted,borderRadius:8,height:84}}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,fontWeight:900,color:BK.ink,borderRight:'1.5px solid ' + BK.line}}>{fmtNum(prev.beats)}</div>
         <div style={{display:'flex',alignItems:'center',justifyContent:'center'}}><Glyph item={it} size={56}/></div>
       </div>; })}</div>
@@ -20973,7 +21073,7 @@ function NoteValuesWorkbook({ startNo = 1 }) {
     <Part kind="together" title="Is the bar full?" how="A 4/4 bar holds exactly 4 beats. Add up each bar, then tick it if it is right or cross it if it isn't.">
       <div style={{display:'grid',gap:8}}>{W.s5.tog.map((b, i) => <BarCell key={i} b={b} n={i + 1} ex={i === 0}/>)}</div>
     </Part>
-    <Part kind="home" title="Finish the bar" how="Each bar is missing some beats. Draw ONE note in the gap to make 4 beats. Then draw the matching rest underneath instead.">
+    <Part kind="home" title="Finish the bar" how="Each bar is missing some beats. Count what is there, write how many beats are missing, then draw ONE note in the gap to make exactly 4.">
       <BkGrid cols={2} gap="8px 12px">{W.s5.fill.map((b, i) => <BarCell key={i} b={b} n={i + 1} mode="fill" answer={<span>missing<br/>{bkBox(34, 24)} beats</span>}/>)}</BkGrid>
     </Part>
     <Part kind="play" title="Compose a rhythm" how="Fill both bars with any notes and rests you like -- 4 beats each. Give it a name, clap it, then teach it to your teacher!">
@@ -21020,7 +21120,7 @@ function NoteValuesTeacher() {
     <TcBlock page={3} title="Name it, count it" answers={<>{tcAns('TOGETHER', W.s1.tog.map(nb))}{tcAns('AT HOME', W.s1.home.map(nb))}{tcAns('PLAY', ['1 semibreve · 2 minims · 4 crotchets · 8 quavers'])}</>}
       watch="Mixing up the minim (hollow head with a stem) and the semibreve (hollow, no stem). Counting the flag as an extra beat."
       say="“Hollow and no stem: the big one, 4 beats. Add a stem and it halves: 2.”"/>
-    <TcBlock page={4} title="Rests" answers={<>{tcAns('TOGETHER', W.s2.tog.map(it => nvName(it) + ' rest'))}{tcAns('AT HOME', NV_NOTES.map(it => nvName(it) + ' ↔ ' + nvName(it) + ' rest, ' + fmtNum(it.beats)))}</>}
+    <TcBlock page={4} title="Rests" answers={<>{tcAns('TOGETHER', W.s2.tog.map(it => nvName(it) + ' rest'))}{tcAns('AT HOME', NV_NOTES.slice(0, 4).map(it => nvName(it) + ' ↔ ' + nvName(it) + ' rest, ' + fmtNum(it.beats)))}</>}
       watch="Semibreve and minim rests swapped. The semibreve rest hangs below line 4 (it is heavy, it hangs); the minim rest sits on line 3."
       say="“The semibreve rest is heavier, so it hangs down. The minim rest is lighter, so it sits on top like a hat.”"/>
     <TcBlock page={5} title="Splitting · the code" answers={<>{tcAns('TOGETHER', W.s3.tog.map(e => e.cnt))}{tcAns('AT HOME', W.s3.home.map(e => e.cnt))}{tcAns('PLAY', ['6 2 1 3 4 = PIANO'])}</>}
@@ -21031,7 +21131,7 @@ function NoteValuesTeacher() {
       say="“A dot adds half of the note in front of it. Half of 2 is 1, so 2 + 1 = 3.”"/>
   </>);
   P(<>
-    <TcBlock page={7} title="Bars · compose" answers={<>{tcAns('TOGETHER', W.s5.tog.map(b => fmtNum(b.total) + (b.total === 4 ? ' ✓' : ' ✗')))}{tcAns('AT HOME (missing)', W.s5.fill.map(fillAns))}<div style={{fontSize:12,color:BK.ink}}>Rest version: the rest of the same name. Compose: check each bar adds up to 4 and that they can clap it steadily.</div></>}
+    <TcBlock page={7} title="Bars · compose" answers={<>{tcAns('TOGETHER', W.s5.tog.map(b => fmtNum(b.total) + (b.total === 4 ? ' ✓' : ' ✗')))}{tcAns('AT HOME (missing)', W.s5.fill.map(fillAns))}<div style={{fontSize:12,color:BK.ink}}>Compose: check each bar adds up to 4 and that they can clap it steadily.</div></>}
       watch="Filling the gap with several small notes when one note was asked. Forgetting that rests count too."
       say="“Count the beats you have, out loud. How many are left to reach 4?”"/>
     <TcBlock page={8} title="Check-up" goBack={nvConcepts()} answers={<>{tcAns('A', W.chk.nm.map(it => nvName(it)))}{tcAns('B', W.chk.bt.map(it => fmtNum(it.beats)))}{tcAns('C', W.chk.rs.map(it => nvName(it)))}{tcAns('D', W.chk.dt.map(it => fmtNum(it.beats)))}{tcAns('E', W.chk.br.map(b => fmtNum(b.total) + (b.total === 4 ? ' ✓' : ' ✗')))}
@@ -21116,7 +21216,7 @@ function tsConcepts() {
     { id: 'tn', name: 'What the two numbers mean', step: '1', page: '3' },
     { id: 'cb', name: 'C, ¢ and bar lines', step: '2-3', page: '4' },
     { id: 'bt', name: 'Which time signature fits', step: '1', page: '3' },
-    { id: 'db', name: 'When the quaver is the beat', step: '4', page: '5' },
+    { id: 'db', name: 'Counting in quavers (6/8)', step: '4', page: '5' },
     { id: 'cp', name: 'Simple and compound time', step: '5-6', page: '6' },
   ];
 }
@@ -21171,7 +21271,7 @@ function BeatOf8Cell({ it, n, ex, ts = '6/8' }) {
       <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'16px 4px 6px'}}>
         <TSig top={t0.top} bottom={t0.bottom} size={28} ink={BK.muted}/>
         <Glyph item={it} size={56}/>
-        <span style={{display:'flex',alignItems:'center',gap:5,fontSize:11,color:BK.muted}}>= {nvBox(ex, fmtNum(it.beats * 2), 36, 30)} beats</span>
+        <span style={{display:'flex',alignItems:'center',gap:5,fontSize:11,color:BK.muted}}>= {nvBox(ex, fmtNum(it.beats * 2), 36, 30)} counts</span>
       </div>
     </ExCell>
   );
@@ -21191,7 +21291,7 @@ function SimpleCompCell({ ts, n, ex }) {
     </ExCell>
   );
 }
-// six/twelve quavers with no beams: the student beams them into beats
+// six/twelve quavers drawn as bare stems (no flags, no beams): the student draws the beams to group them into beats
 function QuaverRow({ ts, n, answer }) {
   const t0 = TS[ts], cnt = ts === '6/8' ? 6 : ts === '3/4' ? 6 : ts === '12/8' ? 12 : 4;
   const qv = NV_NOTES[3];
@@ -21200,7 +21300,7 @@ function QuaverRow({ ts, n, answer }) {
       <span style={{fontSize:10,fontWeight:900,color:BK.coral}}>{n}</span>
       <TSig top={t0.top} bottom={t0.bottom} size={26} ink={BK.ink}/>
       {answer ? <div style={{fontSize:13,fontWeight:800,color:BK.ink}}>{answer}</div>
-        : <div style={{display:'flex',justifyContent:'space-around'}}>{Array.from({ length: cnt }, (_, i) => <Glyph key={i} item={qv} size={cnt > 8 ? 40 : 50}/>)}</div>}
+        : <div style={{display:'flex',justifyContent:'space-around'}}>{Array.from({ length: cnt }, (_, i) => <StemNote key={i} item={qv} size={cnt > 8 ? 40 : 50} ink={BK.ink}/>)}</div>}
     </div>
   );
 }
@@ -21244,7 +21344,7 @@ function TimeSigWorkbook({ startNo = 1 }) {
     <Part kind="together" title="Read the two numbers" how="Top number = how many beats in a bar. Bottom number = which note is one beat (4 = crotchet, 2 = minim, 8 = quaver).">
       <BkGrid cols={2} gap="10px 12px">{W.s1.tog.map((ts, i) => <TsCell key={i} ts={ts} n={i + 1} ex={i === 0}/>)}</BkGrid>
     </Part>
-    <Part kind="home" title="Which time signature fits?" how="Count the crotchet beats in each bar and write the time signature in the dashed box.">
+    <Part kind="home" title="Which time signature fits?" how="Count the crotchet beats in each bar and write the time signature in the dashed box. Use 4 on the bottom (the crotchet is the beat).">
       <BkGrid cols={2} gap="8px 12px">{W.s1.home.map((b, i) => <FitCell key={i} b={b} n={i + 1}/>)}</BkGrid>
     </Part>
     <Part kind="play" title="Be the conductor" how="Trace each pattern with your finger, then with a pencil. Then put on some music and conduct it -- the big drop is always beat 1!">
@@ -21282,7 +21382,7 @@ function TimeSigWorkbook({ startNo = 1 }) {
   // step 4 -- 8 on the bottom
   P(<>
     <WbTop step={4}/>
-    <Part kind="together" title="When the quaver is the beat" how="In 6/8 the quaver is one beat -- so every note lasts twice as many beats as in 4/4. A crotchet is 2.">
+    <Part kind="together" title="When the quaver is the count" how="6/8 has six quaver COUNTS in a bar (you FEEL 2 big beats -- more on the next page). With 8 on the bottom, count in quavers: every note is worth twice as many counts as in 4/4. A crotchet = 2 counts.">
       <BkGrid cols={3} gap="10px 12px">{W.s4.tog.map((it, i) => <BeatOf8Cell key={i} it={it} n={i + 1} ex={i === 0}/>)}</BkGrid>
     </Part>
     <Part kind="home" title="Count them in quavers">
@@ -21302,10 +21402,10 @@ function TimeSigWorkbook({ startNo = 1 }) {
   // steps 5-6 -- compound time, grouping
   P(<>
     <WbTop step="5-6"/>
-    <Part kind="together" title="Simple or compound?" how="Compound time has 6, 9 or 12 on top: the quavers go in groups of three, and each group is one beat you feel.">
+    <Part kind="together" title="Simple or compound?" how="Compound time has 6, 9 or 12 on top: the quaver counts go in groups of three, and each group of three is one big beat you FEEL (a dotted crotchet). 6/8 = six quaver counts, 2 beats you feel.">
       <BkGrid cols={2} gap="10px 12px">{W.s5.tog.map((ts, i) => <SimpleCompCell key={i} ts={ts} n={i + 1} ex={i === 0}/>)}</BkGrid>
     </Part>
-    <Part kind="home" title="Beam the quavers" how="Join the quavers with beams to show the beats: groups of 3 in compound time, groups of 2 in simple time.">
+    <Part kind="home" title="Beam the quavers" how="These quavers have lost their flags! Draw beams (thick lines joining the stem tops) to show the beats: groups of 3 in compound time, groups of 2 in simple time.">
       <div style={{display:'grid',gap:8}}>{W.s5.rows.map((ts, i) => <QuaverRow key={i} ts={ts} n={i + 1}/>)}</div>
     </Part>
     <Part kind="play" title="Word rhythms in 6/8" how="Say it: STRAW-ber-ry JEL-ly-bean -- two groups of three. Write your own 6/8 words, one syllable in each box, then clap and say them!">
@@ -21329,7 +21429,7 @@ function TimeSigWorkbook({ startNo = 1 }) {
     </div>
     {bkSec('C', 'Write the time signature for each bar.')}
     <BkGrid cols={2} gap="6px 10px">{W.chk.bt.map((b, i) => <FitCell key={i} b={b} n={i + 9} size={28}/>)}</BkGrid>
-    {bkSec('D', 'In 6/8 the quaver is one beat. How many beats?')}
+    {bkSec('D', 'In 6/8 you count in quavers. How many quaver counts?')}
     <BkGrid cols={4} gap="6px 10px">{W.chk.db.map((it, i) => <BkCell key={i} n={i + 13}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'10px 4px 4px'}}><Glyph item={it} size={42}/>{bkBox(36, 28)}</div></BkCell>)}</BkGrid>
     {bkSec('E', 'Write S for simple or C for compound.')}
     <BkGrid cols={4} gap="6px 10px">{W.chk.cp.map((ts, i) => <BkCell key={i} n={i + 17}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:12,padding:'12px 4px 4px'}}><TSig top={tsTop(ts)} bottom={tsBot(ts)} size={30} ink={BK.ink}/>{bkBox(36, 28)}</div></BkCell>)}</BkGrid>
@@ -21356,9 +21456,9 @@ function TimeSigTeacher() {
       <div style={{display:'grid',gap:4}}>{W.s2.lines.map((ln, i) => <RunLine key={i} line={ln} n={i + 1} showBars size={30}/>)}</div></>}
       watch="Drawing a bar line after every note, or forgetting the double bar at the end. Bar lines go after a full bar, not before it."
       say="“Count the beats out loud as you go -- when you reach the top number, draw the line.”"/>
-    <TcBlock page={5} title="When the quaver is the beat" answers={<>{tcAns('TOGETHER', W.s4.tog.map(it => fmtNum(it.beats * 2)))}{tcAns('AT HOME', W.s4.home.map(it => nvName(it) + ' ' + fmtNum(it.beats * 2)))}{tcAns('PLAY', TS_RIDDLES.map(r => r[1]))}</>}
-      watch="Keeping the 4/4 values (crotchet = 1) when the bottom number is 8."
-      say="“With 8 on the bottom, the quaver is the beat -- so everything counts double.”"/>
+    <TcBlock page={5} title="When the quaver is the count" answers={<>{tcAns('TOGETHER', W.s4.tog.map(it => fmtNum(it.beats * 2)))}{tcAns('AT HOME', W.s4.home.map(it => nvName(it) + ' ' + fmtNum(it.beats * 2)))}{tcAns('PLAY', TS_RIDDLES.map(r => r[1]))}</>}
+      watch="Keeping the 4/4 values (crotchet = 1) when the bottom number is 8. Mixing up the six quaver COUNTS with the 2 big beats you FEEL."
+      say="“With 8 on the bottom, count in quavers -- so everything counts double. Six counts, two big beats.”"/>
   </>);
   P(<>
     <TcBlock page={6} title="Simple and compound" answers={<>{tcAns('TOGETHER', W.s5.tog.map(ts => ts + ' ' + TS[ts].kind + ', ' + (TS[ts].kind === 'compound' ? TS[ts].top / 3 : TS[ts].top)))}
@@ -21432,13 +21532,25 @@ function LlDrawCell({ task, n, ex }) {
   );
 }
 // a stack of ledger lines beyond a staff, with a box beside each line note
+// Drawn as one SVG so each "1st / 2nd / 3rd" box sits level with its own ledger-line note (beside the staff
+// they read as labels of the staff lines).
 function LedgerStack({ clef, up, ex, answers }) {
   const ds = LL_LINE_NAMES[clef + '-' + (up ? 'up' : 'down')];
+  const yOf = (d) => dY(d), W = 300, xs = [66, 152, 238];
+  const ys = [yOf(CLEFS[clef].high) - 15, yOf(CLEFS[clef].low) + 13, ...ds.flatMap(d => [yOf(d) - 12, yOf(d) + 12])];
+  const y0 = Math.min(...ys), y1 = Math.max(...ys);
   return (
-    <div style={{display:'grid',gridTemplateColumns:'1fr 60px',alignItems:'center',gap:6}}>
-      <PaperStaff clef={clef} notes={ds.map((d, i) => ({ d, x: 80 + i * 34, color: ex && i === 0 ? BK.coral : undefined }))} width={190}/>
-      <div style={{display:'grid',gap:4}}>{(up ? ds.slice().reverse() : ds).map((d, i) => { const shown = answers || (ex && d === ds[0]); return <span key={d} style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:10,color:BK.muted}}>{d === ds[0] ? '1st' : d === ds[1] ? '2nd' : '3rd'} {shown ? bkHand(dName(d), 26, 22) : bkBox(26, 22)}</span>; })}</div>
-    </div>
+    <svg viewBox={`0 ${y0} ${W} ${y1 - y0}`} style={{width:'100%',display:'block'}}>
+      {CLEFS[clef].lines.map(l => <line key={l} x1="2" x2={W - 2} y1={yOf(l)} y2={yOf(l)} stroke={BK.ink} strokeOpacity="0.6" strokeWidth="1.1"/>)}
+      <ClefGlyph clef={clef} st={clef} yOf={yOf} ink={BK.ink}/>
+      {ds.map((d, i) => { const y = yOf(d), shown = answers || (ex && i === 0), c = ex && i === 0 ? BK.coral : BK.ink; return <g key={d}>
+        {ledgersFor(d, CLEFS[clef].low, CLEFS[clef].high).map(p => <line key={p} x1={xs[i] - 11} x2={xs[i] + 11} y1={yOf(p)} y2={yOf(p)} stroke={BK.ink} strokeWidth="1.3"/>)}
+        {bkNoteHead(xs[i], y, c, 7, 4.9)}
+        <text x={xs[i] + 15} y={y + 3.5} fontSize="9" fontWeight="800" fill={BK.muted}>{['1st', '2nd', '3rd'][i]}</text>
+        <rect x={xs[i] + 32} y={y - 9.5} width="30" height="19" rx="4" fill="#fff" stroke={shown ? BK.coral : BK.line} strokeWidth="1.4"/>
+        {shown && <text x={xs[i] + 47} y={y + 4.5} textAnchor="middle" fontSize="12" fontWeight="900" fontStyle="italic" fill={BK.coral}>{dName(d)}</text>}
+      </g>; })}
+    </svg>
   );
 }
 
@@ -21458,10 +21570,10 @@ function LedgerWorkbook({ startNo = 1 }) {
   // step 1 -- one ledger line
   P(<>
     <WbTop step={1}/>
-    <Part kind="together" title="Name the notes" how="Keep counting from the staff: the next line or space is just the next letter. A ledger line is a little bit of extra staff.">
+    <Part kind="together" title="Name the notes" how="One ledger line -- and the spaces just beside it. Keep counting from the staff: the next line or space is just the next letter. A ledger line is a little bit of extra staff.">
       <BkGrid cols={4} gap="10px 12px">{W.s1.tog.map((x, i) => <NameCell key={i} d={x.d} clef={x.clef} n={i + 1} ex={i === 0 ? bkNm(x.d) : null}/>)}</BkGrid>
     </Part>
-    <Part kind="home" title="Name them on your own">
+    <Part kind="home" title="Name them on your own" how="One ledger line -- and the spaces just beside it (those need no ledger line at all).">
       <BkGrid cols={4} gap="10px 12px">{W.s1.home.map((x, i) => <NameCell key={i} d={x.d} clef={x.clef} n={i + 1}/>)}</BkGrid>
     </Part>
     <Part kind="play" title="Rocket launch" how="Blast off from the top line (F)! Draw a note on every rung going up -- space, ledger line, space, ledger line -- write each letter, and land on the moon.">
@@ -21639,10 +21751,11 @@ function IvStaffCell({ it, n, ex, w = 150 }) {
   const notes = it.harm ? [{ d: it.a, x: w * 0.62 }, { d: it.b, x: w * 0.62 + (it.n === 2 ? 13 : 0) }] : [{ d: it.a }, { d: it.b }];
   return <ExCell n={n} ex={ex}><div style={{padding:'12px 8px 0'}}><PaperStaff clef={it.clef} notes={notes} width={w}/></div><div style={{textAlign:'center',margin:'5px 0 2px',display:'flex',justifyContent:'center',alignItems:'center',gap:5,fontSize:11,color:BK.muted}}>{nvBox(ex, it.n === 8 ? '8ve' : it.n, 44, 28)}</div></ExCell>;
 }
+const IV_KEY_LABELS = { 0: 'C', 1: 'D', 2: 'E', 3: 'F', 4: 'G', 5: 'A', 6: 'B', 7: 'C' };
 function IvKeysCell({ it, n, ex }) {
   return (
     <ExCell n={n} ex={ex}>
-      <div style={{padding:'14px 8px 2px'}}><PaperKeys start="C" whites={8} w={28} h={86} dots={[it.a, it.b]}/></div>
+      <div style={{padding:'14px 8px 2px'}}><PaperKeys start="C" whites={8} w={28} h={94} dots={[it.a, it.b]} labels={IV_KEY_LABELS} fills={{ [it.a]: '#fdeee8', [it.b]: '#fdeee8' }}/></div>
       <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:6,fontSize:11,color:BK.muted,margin:'2px 0 3px'}}>{nvBox(ex, it.s, 34, 26)} semitones</div>
       <div style={{display:'flex',justifyContent:'center',margin:'0 8px 5px'}}>{ex ? <span style={{color:BK.coral,fontWeight:900,fontStyle:'italic',borderBottom:'1.5px solid ' + BK.coral,padding:'0 4px',fontSize:13}}>{ivLongEn(it.q, it.n)}</span> : <span style={{display:'inline-block',width:'80%',height:18,borderBottom:'1.5px solid ' + BK.line}}/>}</div>
     </ExCell>
@@ -21666,11 +21779,14 @@ function IvInvCell({ iv, n, ex }) {
   );
 }
 // a row of lily pads (C to C to C) for the frog-jump game
+// The pads sit on the white keys of a keyboard strip (C to C to C), all on one baseline; the space above is for the arcs.
 function LilyPads() {
+  const kw = 42, top = 44, kh = 78, W = IV_FROG.length * kw + 4;
   return (
-    <svg viewBox="0 0 640 74" style={{width:'100%',display:'block'}}>
-      <path d="M8 46 Q320 74 632 46" fill="none" stroke={BK.line} strokeWidth="1.2" strokeDasharray="3 5"/>
-      {IV_FROG.map((l, i) => { const x = 24 + i * 42.5, y = 44 + Math.sin(i * 1.3) * 4; return <g key={i}><ellipse cx={x} cy={y} rx="19" ry="12" fill={l === 'C' ? '#fdeee8' : '#fff'} stroke={BK.ink} strokeWidth="1.4"/><path d={`M${x} ${y} L${x + 12} ${y - 9}`} stroke="#fff" strokeWidth="4"/><text x={x} y={y + 5} textAnchor="middle" fontSize="14" fontWeight="900" fill={BK.ink}>{l}</text></g>; })}
+    <svg viewBox={`0 0 ${W} ${top + kh + 4}`} style={{width:'100%',display:'block'}}>
+      {IV_FROG.map((l, i) => <rect key={'w' + i} x={2 + i * kw} y={top} width={kw} height={kh} rx="3" fill="#fff" stroke={BK.ink} strokeWidth="1.3"/>)}
+      {IV_FROG.map((l, i) => ['C', 'D', 'F', 'G', 'A'].includes(l) && i < IV_FROG.length - 1 && <rect key={'b' + i} x={2 + (i + 1) * kw - kw * 0.3} y={top} width={kw * 0.6} height={kh * 0.5} rx="2" fill={BK.ink}/>)}
+      {IV_FROG.map((l, i) => { const x = 2 + i * kw + kw / 2, y = top + kh - 20; return <g key={i}><ellipse cx={x} cy={y} rx="17" ry="11" fill={l === 'C' ? '#fdeee8' : '#fff'} stroke={BK.ink} strokeWidth="1.4"/><path d={`M${x} ${y} L${x + 11} ${y - 8}`} stroke="#fff" strokeWidth="4"/><text x={x} y={y + 5} textAnchor="middle" fontSize="14" fontWeight="900" fill={BK.ink}>{l}</text></g>; })}
     </svg>
   );
 }
@@ -21707,10 +21823,10 @@ function IntervalsWorkbook({ startNo = 1 }) {
   // step 2 -- quality
   P(<>
     <WbTop step={2}/>
-    <Part kind="together" title="Count the semitones" how={<>Count every key from the bottom dot to the top dot -- black keys too. Then use the table: {IV_QTABLE.slice(0, 4).map(([a, b]) => <span key={a} style={{whiteSpace:'nowrap',marginRight:8}}><b>{a}</b>: {b}.</span>)}</>}>
+    <Part kind="together" title="Count the semitones" how={<>Count the letters first (that gives the number: C to E is a 3rd). Then count the semitones from the bottom dot to the top dot, black keys too (that gives major, minor or perfect): {IV_QTABLE.slice(0, 4).map(([a, b]) => <span key={a} style={{whiteSpace:'nowrap',marginRight:8}}><b>{a}</b>: {b}.</span>)} <span style={{whiteSpace:'nowrap'}}><b>6</b> semitones: we meet that one later.</span></>}>
       <BkGrid cols={3} gap="10px 12px">{W.s2.tog.map((it, i) => <IvKeysCell key={i} it={it} n={i + 1} ex={i === 0}/>)}</BkGrid>
     </Part>
-    <Part kind="home" title="Count and name on your own">
+    <Part kind="home" title="Count and name on your own" how="Letters first for the number, then semitones for the quality.">
       <BkGrid cols={3} gap="10px 12px">{W.s2.home.map((it, i) => <IvKeysCell key={i} it={it} n={i + 1}/>)}</BkGrid>
     </Part>
     <Part kind="play" title="Happy or sad?" how="Play C-E (a major 3rd), then C-E♭ (a minor 3rd). Draw the face each one sounds like. Then write a tiny story with a happy part and a sad part -- and play the right 3rd for each part!">
@@ -21744,7 +21860,7 @@ function IntervalsWorkbook({ startNo = 1 }) {
 
   // step 5 -- inversions
   P(<>
-    <WbTop step="4-5"/>
+    <WbTop step={5}/>
     <Part kind="together" title="Turn it upside down" how="Inverting = moving the bottom note up an octave. The numbers always add to 9. Major ⇄ minor; perfect stays perfect.">
       <BkGrid cols={2} gap="10px 12px">{W.s5.tog.map((iv, i) => <IvInvCell key={i} iv={iv} n={i + 1} ex={i === 0}/>)}</BkGrid>
     </Part>
@@ -21767,12 +21883,12 @@ function IntervalsWorkbook({ startNo = 1 }) {
     <BkGrid cols={4} gap="6px 10px">{W.chk.nb.map((it, i) => <BkCell key={i} n={i + 1}><div style={{paddingTop:8}}><PaperStaff clef={it.clef} notes={[{ d: it.a }, { d: it.b }]} width={140}/></div><div style={{textAlign:'center',marginTop:2}}>{bkBox(40, 22)}</div></BkCell>)}</BkGrid>
     {bkSec('B', 'Which letter do you land on?')}
     <BkGrid cols={4} gap="6px 10px">{W.chk.lt.map((f, i) => <BkCell key={i} n={i + 5}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'12px 4px 6px',fontSize:13,color:BK.ink}}><b>{f.l}</b> up a <b>{ivOrdEn(f.n)}</b> {bkBox(32, 24)}</div></BkCell>)}</BkGrid>
-    {bkSec('C', 'Count the semitones, then write major, minor or perfect.')}
-    <BkGrid cols={4} gap="6px 10px">{W.chk.ql.map((it, i) => <BkCell key={i} n={i + 9}><div style={{padding:'10px 4px 0'}}><PaperKeys start="C" whites={8} w={26} h={68} dots={[it.a, it.b]}/></div><div style={{display:'flex',justifyContent:'center',gap:5,alignItems:'center',margin:'4px 0 2px',fontSize:10,color:BK.muted}}>{bkBox(28, 22)}<span style={{display:'inline-block',width:70,borderBottom:'1.5px solid ' + BK.line}}>&nbsp;</span></div></BkCell>)}</BkGrid>
+    {bkSec('C', 'Count the letters (the number), then the semitones: write major, minor or perfect.')}
+    <BkGrid cols={2} gap="6px 10px">{W.chk.ql.map((it, i) => <BkCell key={i} n={i + 9}><div style={{display:'flex',alignItems:'center',gap:10,padding:'8px 6px 2px'}}><div style={{width:156,flex:'0 0 auto'}}><PaperKeys start="C" whites={8} w={26} h={94} dots={[it.a, it.b]} labels={IV_KEY_LABELS} fills={{ [it.a]: '#fdeee8', [it.b]: '#fdeee8' }}/></div><div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:6,fontSize:10.5,color:BK.muted}}><span style={{display:'flex',alignItems:'center',gap:5}}>{bkBox(30, 24)} semitones</span><span style={{display:'inline-block',width:'90%',borderBottom:'1.5px solid ' + BK.line,height:20}}/></div></div></BkCell>)}</BkGrid>
     {bkSec('D', 'Name each interval above C.')}
     <BkGrid cols={4} gap="6px 10px">{W.chk.ms.map((it, i) => <BkCell key={i} n={i + 13}><div style={{paddingTop:8}}><PaperStaff clef="treble" notes={[{ d: 28 }, { d: it.b }]} width={140}/></div><div style={{textAlign:'center',marginTop:2}}><span style={{display:'inline-block',width:110,height:22,border:'1.5px solid ' + BK.line,borderRadius:6}}/></div></BkCell>)}</BkGrid>
     {bkSec('E', 'Write the inversion.')}
-    <BkGrid cols={4} gap="6px 10px">{W.chk.iv.map((iv, i) => <BkCell key={i} n={i + 17}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'12px 4px 6px',fontSize:12.5,color:BK.ink}}><b>{ivLongEn(iv[1], iv[0])}</b> ⇄ <span style={{display:'inline-block',width:60,borderBottom:'1.5px solid ' + BK.line}}>&nbsp;</span></div></BkCell>)}</BkGrid>
+    <BkGrid cols={4} gap="6px 10px">{W.chk.iv.map((iv, i) => <BkCell key={i} n={i + 17}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6,padding:'10px 4px 2px',fontSize:12.5,color:BK.ink}}><b>{ivLongEn(iv[1], iv[0])}</b> ⇄ <span style={{display:'inline-block',width:60,borderBottom:'1.5px solid ' + BK.line}}>&nbsp;</span></div></BkCell>)}</BkGrid>
     <CheckTable concepts={C} cnt={cnt}/>
   </>);
   return <>{pages}</>;
@@ -21823,7 +21939,7 @@ const KS_CIRCLE = ['C', 'G', 'D', 'A', 'E', 'B', 'F#', 'Db', 'Ab', 'Eb', 'Bb', '
 function ksWorkbook() {
   const k = (s) => 'ks-wb-' + s;
   const s1 = withSeed(k('s1'), () => ({ tog: [ksOrderRow('sharp', 4), ksOrderRow('flat', 4)], home: shuffle(['D', 'Eb', 'A', 'F', 'E', 'Ab']).map(ksOf) }));
-  const s3 = withSeed(k('s3'), () => ({ tog: [ksOf('D'), ksOf('F'), ksOf('Bb')], home: [ksOf('A'), ksOf('Eb'), { ...ksOf('G'), clef: 'bass' }, { ...ksOf('Bb'), clef: 'bass' }], cards: shuffle(['G', 'D', 'A', 'F', 'Bb', 'Eb'].map(ksOf)) }));
+  const s3 = withSeed(k('s3'), () => ({ tog: [ksOf('D'), ksOf('F'), ksOf('Bb')], home: [ksOf('A'), ksOf('Eb'), { ...ksOf('G'), clef: 'bass' }, { ...ksOf('Bb'), clef: 'bass' }], cards: shuffle(['G', 'D', 'F', 'Bb'].map(ksOf)) }));
   const s4 = withSeed(k('s4'), () => ({ tog: [ksOf('E'), ksOf('Bb'), ksOf('A')], home: shuffle(['G', 'F', 'D', 'Eb', 'B', 'Ab'].map(ksOf)) }));
   const circleShown = new Set(['C', 'G', 'F', 'D']);
   const chk = withSeed(k('chk'), () => ({ so: ksOrderRow('sharp', 3), fl: ksOrderRow('flat', 3), nk: shuffle(['A', 'Bb', 'E', 'F'].map(ksOf)), rm: shuffle(['G', 'D', 'F', 'Eb'].map(ksOf)), wr: [ksOf('D'), ksOf('Bb'), ksOf('A'), ksOf('F')] }));
@@ -21834,7 +21950,7 @@ function ksConcepts() {
     { id: 'so', name: 'The order of sharps', step: '1', page: '3' },
     { id: 'fl', name: 'The order of flats', step: '2', page: '3' },
     { id: 'wr', name: 'Writing a key signature', step: '3', page: '4' },
-    { id: 'nk', name: 'Naming the major key', step: '4', page: '5' },
+    { id: 'nk', name: 'Naming the major key', step: '4-5', page: '5' },
     { id: 'rm', name: 'The relative minor', step: '4', page: '5' },
   ];
 }
@@ -21851,12 +21967,12 @@ function KsStaffCell({ ks, n, ex, ask = 'which', clef = 'treble' }) {
     </ExCell>
   );
 }
-function KsWriteCell({ ks, n, ex, clef }) {
+function KsWriteCell({ ks, n, ex, clef, w = 170 }) {
   const c = ks.clef || clef || 'treble';
   return (
     <ExCell n={n} ex={ex}>
       <div style={{textAlign:'center',margin:'14px 0 0',fontSize:13,color:BK.ink}}><b>{ksMaj(ks)}</b> <span style={{color:BK.muted,fontSize:11}}>({ksLbl(ks)}{c === 'bass' ? ', bass clef' : ''})</span></div>
-      <div style={{padding:'0 10px 6px'}}><KSStaff count={ex ? ks.count : 0} type={ex ? ks.type : null} width={170} clef={c} accent={BK.coral} ink={BK.ink}/></div>
+      <div style={{padding:'0 10px 6px'}}><KSStaff count={ex ? ks.count : 0} type={ex ? ks.type : null} width={w} clef={c} accent={BK.coral} ink={BK.ink}/></div>
     </ExCell>
   );
 }
@@ -21914,19 +22030,24 @@ function KeySigWorkbook({ startNo = 1 }) {
   </>);
 
   // step 3 -- place them
-  const Card = ({ children }) => <div style={{border:'1.6px dashed ' + BK.muted,height:96,display:'flex',alignItems:'center',justifyContent:'center',padding:'4px 8px'}}>{children}</div>;
+  const Card = ({ children }) => <div style={{border:'1.6px dashed ' + BK.muted,height:88,display:'flex',alignItems:'center',justifyContent:'center',padding:'4px 10px'}}>{children}</div>;
   P(<>
     <WbTop step={3}/>
     <Part kind="together" title="Write the key signature" how="Write the sharps or flats in order, right after the clef, each on its own line or space -- exactly where the example puts them.">
-      <BkGrid cols={3} gap="10px 12px">{W.s3.tog.map((ks, i) => <KsWriteCell key={i} ks={ks} n={i + 1} ex={i === 0}/>)}</BkGrid>
+      <BkGrid cols={3} gap="10px 12px">{W.s3.tog.map((ks, i) => <KsWriteCell key={i} ks={ks} n={i + 1} ex={i === 0} w={230}/>)}</BkGrid>
     </Part>
-    <Part kind="home" title="Write them on your own" how="Careful with the bass clef: every sharp and flat sits one line or space lower than in the treble.">
-      <BkGrid cols={2} gap="10px 12px">{W.s3.home.map((ks, i) => <KsWriteCell key={i} ks={ks} n={i + 1}/>)}</BkGrid>
+    <Part kind="home" title="Write them on your own" how="Careful with the bass clef: the whole pattern moves one line lower (skip the space). Look at D major in both clefs:">
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr auto',gap:12,alignItems:'center',border:'1px solid #ece6d8',borderRadius:8,padding:'4px 10px',marginBottom:8}}>
+        <div><KSStaff count={2} type="sharp" width={240} clef="treble" accent={BK.coral} ink={BK.ink}/><div style={{textAlign:'center',fontSize:10.5,color:BK.muted}}>treble: F♯ on the top line, C♯ in the 3rd space</div></div>
+        <div><KSStaff count={2} type="sharp" width={240} clef="bass" accent={BK.coral} ink={BK.ink}/><div style={{textAlign:'center',fontSize:10.5,color:BK.muted}}>bass: F♯ on the 4th line, C♯ in the 2nd space</div></div>
+        <div style={{fontSize:12,fontWeight:800,color:BK.coral,maxWidth:110,lineHeight:1.35}}>one line lower (skip the space)</div>
+      </div>
+      <BkGrid cols={2} gap="10px 12px">{W.s3.home.map((ks, i) => <KsWriteCell key={i} ks={ks} n={i + 1} w={320}/>)}</BkGrid>
     </Part>
-    <Part kind="play" title="Key signature pairs" how="Cut out the 12 cards. Turn them face down and play Pairs: match each key signature to its key name.">
-      <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)'}}>
-        {W.s3.cards.map((ks, i) => <Card key={'s' + i}><KSStaff count={ks.count} type={ks.type} width={150} accent={BK.ink} ink={BK.ink}/></Card>)}
-        {withSeed('ks-cards', () => shuffle(W.s3.cards)).map((ks, i) => <Card key={'n' + i}><span style={{fontSize:15,fontWeight:900,color:BK.ink,textAlign:'center'}}>{ksMaj(ks)}</span></Card>)}
+    <Part kind="play" title="Key signature pairs" how="Cut out the 8 cards. Turn them face down and play Pairs: match each key signature to its key name.">
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)'}}>
+        {W.s3.cards.map((ks, i) => <Card key={'s' + i}><KSStaff count={ks.count} type={ks.type} width={130} accent={BK.ink} ink={BK.ink}/></Card>)}
+        {withSeed('ks-cards', () => shuffle(W.s3.cards)).map((ks, i) => <Card key={'n' + i}><span style={{fontSize:17,fontWeight:900,color:BK.ink,textAlign:'center'}}>{ksMaj(ks)}</span></Card>)}
       </div>
       <div style={{fontSize:11,color:BK.muted,marginTop:4}}>✂ Cut on the dashed lines.</div>
     </Part>
@@ -21935,7 +22056,7 @@ function KeySigWorkbook({ startNo = 1 }) {
   // steps 4-5 -- name the key, the circle
   P(<>
     <WbTop step="4-5"/>
-    <Part kind="together" title="Name the key" how="Sharps: the last sharp is the 7th note -- go up one letter to find the key. Flats: the second-last flat is the key. Relative minor: go down 3 letters (a minor 3rd).">
+    <Part kind="together" title="Name the key" how={<>Sharps: the last sharp is the 7th note -- go up one letter to find the key. Flats: the second-last flat is the key (one flat on its own = F major: just learn that one). Relative minor: go down 3 semitones (3 best-friend steps) from the major key -- C to A, G to E, F to D.</>}>
       <BkGrid cols={3} gap="10px 12px">{W.s4.tog.map((ks, i) => <KsStaffCell key={i} ks={ks} n={i + 1} ex={i === 0} ask="name"/>)}</BkGrid>
     </Part>
     <Part kind="home" title="Name them on your own">
@@ -21948,6 +22069,11 @@ function KeySigWorkbook({ startNo = 1 }) {
           <div><b>Hint 1:</b> count 5 letters up from each key: C D E F <b>G</b>.</div>
           <div><b>Hint 2:</b> at the bottom, the sharp and flat keys meet.</div>
           <div style={{marginTop:10}}>How many keys did you fill in? <span style={{display:'inline-block',width:36,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span></div>
+          <div style={{marginTop:12,border:'1px solid #ece6d8',borderRadius:8,padding:'6px 8px 4px'}}>
+            <div style={{fontSize:11,fontWeight:800,color:BK.coral,marginBottom:2}}>Relative minor = 3 semitones down</div>
+            <PaperKeys start="A" whites={10} w={24} h={62} ex={{ 0: true, 2: true }} labels={{ 0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E', 5: 'F', 6: 'G', 7: 'A', 8: 'B', 9: 'C' }} fills={{ 0: '#fdeee8', 2: '#fdeee8' }}/>
+            <div style={{fontSize:10.5,color:BK.muted,marginTop:2}}>C major → A minor: C, B, B♭, A -- three best-friend steps down.</div>
+          </div>
         </div>
       </div>
     </Part>
@@ -22006,6 +22132,8 @@ function KeySigTeacher() {
 // Hot Cross Buns on the big house, right hand: A♯ = finger 4, G♯ = 3, F♯ = 2
 const FS_SONG = [4, 3, 2, 4, 3, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 3, 2];
 const FS_SONG_GAPS = [1, 4, 7, 11, 14, 16];
+// check-up E: [the legato word, the not-legato word] -- all words the chapter uses for smooth playing
+const FS_LEGATO_WORDS = [['smooth', 'bumpy'], ['joined up', 'jumpy'], ['like walking', 'like hopping'], ['like honey', 'like popcorn']];
 function fsWorkbook() {
   const k = (s) => 'fs-wb-' + s;
   const pair = () => { let a, b; do { a = Math.floor(Math.random() * 10); b = Math.floor(Math.random() * 10); } while (Math.abs(a - b) < 2); return [a, b]; };
@@ -22104,7 +22232,10 @@ function FirstStepsWorkbook({ startNo = 1 }) {
   P(<>
     <WbTop step={3}/>
     <Part kind="together" title="Count the houses on a real piano" how="A real piano has 88 keys. Count the small houses together, from left to right, ticking each one.">
-      <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'8px 6px'}}><PaperKeys start="A" whites={52} w={12} h={64}/></div>
+      <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'6px 8px 8px',fontSize:10.5,fontWeight:800,color:BK.muted}}>
+        <div style={{margin:'0 0 2px'}}>Bottom half -- the low keys (the lonely black key is at the very start)</div><PaperKeys start="A" whites={26} w={24} h={76}/>
+        <div style={{margin:'6px 0 2px'}}>Top half -- the high keys (carry on counting here)</div><PaperKeys start="F" whites={26} w={24} h={76}/>
+      </div>
       <div style={{display:'flex',gap:28,justifyContent:'center',marginTop:8,fontSize:13,color:BK.ink,alignItems:'center'}}><span>Small houses: {bkHand('7', 36, 28)}</span></div>
     </Part>
     <Part kind="home" title="Your turn on the big piano" how="Use the keyboard above. Count the big houses. Then find the lonely black key at the very bottom that has no house at all!">
@@ -22121,7 +22252,7 @@ function FirstStepsWorkbook({ startNo = 1 }) {
   // step 4 -- first song + legato
   P(<>
     <WbTop step={4}/>
-    <Part kind="together" title="Fingers on the big house" how="Right hand: finger 2 on the first black key of the big house, 3 on the middle one, 4 on the top one. Write the finger number on each black key.">
+    <Part kind="together" title="Fingers on the big house" how="Right hand: finger 2 on the first black key of the big house, 3 on the middle one, 4 on the right-hand one (the highest). Write the finger number on each black key.">
       <KeysCell ex><div style={{display:'grid',gridTemplateColumns:'1fr 150px',gap:16,alignItems:'center'}}>
         <div style={{position:'relative'}}><PaperKeys start="C" whites={7} w={60} h={150} blackDots={[3, 4, 5]}/><div style={{position:'absolute',left:(4 * 60 + 2) / (7 * 60 + 4) * 100 + '%',top:44,transform:'translateX(-50%)'}}>{bkHand('2', 26, 26)}</div><div style={{position:'absolute',left:(5 * 60 + 2) / (7 * 60 + 4) * 100 + '%',top:44,transform:'translateX(-50%)'}}>{bkBox(26, 26)}</div><div style={{position:'absolute',left:(6 * 60 + 2) / (7 * 60 + 4) * 100 + '%',top:44,transform:'translateX(-50%)'}}>{bkBox(26, 26)}</div></div>
         <HandPic hand="R" size={140}/>
@@ -22166,11 +22297,11 @@ function FirstStepsWorkbook({ startNo = 1 }) {
     {bkSec('B', 'Write S under each small house and B under each big house.')}
     <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'8px 10px'}}><PaperKeys start="C" whites={14} w={34} h={96} boxes={[1, 4, 8, 11]}/></div>
     {bkSec('C', 'Which finger is it? Write the number.')}
-    <BkGrid cols={4} gap="6px 10px">{W.chk.fn.map((f, i) => <BkCell key={i} n={i + 9}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'8px 4px 4px'}}><HandPic hand="R" lit={f} size={84}/>{bkBox(34, 28)}</div></BkCell>)}</BkGrid>
+    <BkGrid cols={4} gap="6px 10px">{W.chk.fn.map((f, i) => <BkCell key={i} n={i + 9}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'8px 4px 4px'}}><BkHand hand="R" lit={f} size={84} nums={false}/>{bkBox(34, 28)}</div></BkCell>)}</BkGrid>
     {bkSec('D', 'Hot Cross Buns: which finger plays the dotted key?')}
     <BkGrid cols={4} gap="6px 10px">{W.chk.sg.map((f, i) => <BkCell key={i} n={i + 13}><div style={{padding:'12px 6px 2px'}}><PaperKeys start="C" whites={7} w={26} h={64} blackDots={[f + 1 - 1]}/></div><div style={{textAlign:'center',marginBottom:3}}>{bkBox(34, 24)}</div></BkCell>)}</BkGrid>
-    {bkSec('E', 'Which one is legato (smooth)? Tick it.')}
-    <BkGrid cols={4} gap="6px 10px">{W.chk.lg.map((first, i) => <BkCell key={i} n={i + 17}><div style={{display:'grid',gap:2,padding:'10px 6px 4px'}}>{[first, !first].map((sm, j) => <div key={j} style={{display:'grid',gridTemplateColumns:'1fr 20px',alignItems:'center',gap:4}}><LegatoLine smooth={sm}/><span style={{width:16,height:16,border:'1.5px solid ' + BK.line,borderRadius:4}}/></div>)}</div></BkCell>)}</BkGrid>
+    {bkSec('E', 'Legato means... Tick the right word in each pair.')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.lg.map((first, i) => <BkCell key={i} n={i + 17}><div style={{display:'grid',gap:3,padding:'12px 6px 4px'}}>{[first, !first].map((sm, j) => <div key={j} style={{display:'grid',gridTemplateColumns:'1fr 20px',alignItems:'center',gap:4,fontSize:12.5,fontWeight:800,color:BK.ink}}><span>{FS_LEGATO_WORDS[i][sm ? 0 : 1]}</span><span style={{width:16,height:16,border:'1.5px solid ' + BK.line,borderRadius:4}}/></div>)}</div></BkCell>)}</BkGrid>
     <CheckTable concepts={C} cnt={cnt}/>
   </>);
   return <>{pages}</>;
@@ -22220,19 +22351,19 @@ function PaperBlackSong() {
 
 
 // ─── Pulse & counting (chapter 'pulse') ───
-const PL_STEADY = [['a ticking clock', true], ['talking to a friend', false], ['your heartbeat', true], ['birds singing', false], ['marching feet', true], ['rain on the roof', false], ['a dripping tap', true], ['a dog barking', false], ['a swing going back and forth', true], ['the words of a song', false], ['windscreen wipers', true], ['popcorn popping', false]];
+const PL_STEADY = [['a ticking clock', true], ['talking to a friend', false], ['your heartbeat', true], ['birds singing', false], ['marching feet', true], ['a sneeze', false], ['a metronome', true], ['a dog barking', false], ['a horse trotting', true], ['the words of a song', false], ['windscreen wipers', true], ['popcorn popping', false]];
 function plWorkbook() {
   const k = (s) => 'pl-wb-' + s;
-  const n = NVN(), d = NVD();
+  const n = NVN();
   const qq = { beats: 1, pair: true };
   const bar = (items) => items;
   const s1 = withSeed(k('s1'), () => { const all = shuffle(PL_STEADY); return { tog: [PL_STEADY[0], ...all.filter(x => x !== PL_STEADY[0]).slice(0, 3)], home: all.filter(x => x !== PL_STEADY[0]).slice(3, 11) }; });
-  const s5 = withSeed(k('s5'), () => ({ tog: [[n.mn, n.cr, n.cr], [n.cr, 'QQ', n.mn]], home: shuffle([[d.mn, n.cr], [n.cr, n.cr, n.mn], ['QQ', n.cr, 'QQ', n.cr], [n.sb], [n.cr, n.mn, n.cr], [n.mn, 'QQ', 'QQ']]).slice(0, 4) }));
+  const s5 = withSeed(k('s5'), () => ({ tog: [[n.mn, 'QQ', n.cr], [n.cr, 'QQ', n.mn]], home: shuffle([[n.cr, n.cr, n.cr, n.cr], [n.cr, n.cr, n.mn], ['QQ', n.cr, 'QQ', n.cr], [n.sb], [n.cr, n.mn, n.cr], [n.mn, 'QQ', 'QQ']]).slice(0, 4) }));
   const chk = withSeed(k('chk'), () => ({
     bt: shuffle(PL_STEADY).slice(0, 4),
     sw: shuffle([2, 3, 4, 3]),
-    ct: [[n.mn, n.cr, n.cr], [d.mn, n.cr], [n.cr, 'QQ', n.mn], [n.sb]],
-    nb: shuffle([n.cr, n.mn, d.mn, n.sb]),
+    ct: [[n.mn, n.cr, n.cr], [n.cr, n.cr, 'QQ', n.cr], [n.cr, 'QQ', n.mn], [n.sb]],
+    nb: shuffle([n.cr, n.mn, n.qv, n.sb]),
     br: shuffle([true, false, true, false]),
   }));
   return { s1, s5, chk };
@@ -22303,7 +22434,7 @@ function PulseWorkbook({ startNo = 1 }) {
     <Part kind="home" title="Listen at home" how="Listen for each one if you can! Then circle steady or not steady.">
       <BkGrid cols={2} gap="8px 12px">{W.s1.home.map(([w, ok], i) => <ExCell key={i} n={i + 1}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,padding:'16px 8px 6px',fontSize:13.5,fontWeight:800,color:BK.ink}}>{w}{tick(ok, false)}</div></ExCell>)}</BkGrid>
     </Part>
-    <Part kind="play" title="Heartbeat hunt" how="Find 4 steady beats in your house or garden -- something that ticks, drips, swings or thumps. Draw each one and write what it is. Clap along with it!">
+    <Part kind="play" title="Heartbeat hunt" how="Find 4 steady beats in your house or garden -- something that ticks, clicks or thumps. Draw each one and write what it is. Clap along with it!">
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,flex:1,minHeight:160}}>{[1, 2, 3, 4].map(i => <div key={i} style={{border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',flexDirection:'column',justifyContent:'flex-end',padding:'6px 8px'}}><span style={{borderBottom:'1px solid ' + BK.line,height:18}}/></div>)}</div>
     </Part>
     <Faces/>
@@ -22325,16 +22456,16 @@ function PulseWorkbook({ startNo = 1 }) {
   </>);
 
   // steps 4-5 -- counting
-  const fruit = [['pear', 'crotchet -- 1 beat'], ['ap-ple', 'two quavers -- 1 beat'], ['plu-um', 'minim -- 2 beats'], ['wa-ter-mel-on', 'four semiquavers -- 1 beat']];
+  const fruit = [['pear', 'crotchet -- 1 beat'], ['ap-ple', 'two quavers -- 1 beat'], ['pluuum', 'minim -- 2 beats, hold it!']];
   P(<>
     <WbTop step="4-5"/>
-    <Part kind="together" title="Count it out loud" how="Write the count under every beat. When a long note is still sounding, put the count in brackets: a minim is 1 (2).">
+    <Part kind="together" title="Count it out loud" how="Write the count under every beat. When a long note is still sounding, put the count in brackets: a minim is 1 (2). Two quavers share one beat, so count them together: 2 &.">
       <div style={{display:'grid',gap:8}}>{W.s5.tog.map((b, i) => <CountBar key={i} bar={b} n={i + 1} ex={i === 0}/>)}</div>
     </Part>
-    <Part kind="home" title="Count them on your own" how="Two quavers share one beat: count them “3 &”.">
+    <Part kind="home" title="Count them on your own" how="Remember: two quavers share one beat -- the “&” is the second quaver.">
       <BkGrid cols={2} gap="8px 12px">{W.s5.home.map((b, i) => <CountBar key={i} bar={b} n={i + 1} size={30}/>)}</BkGrid>
     </Part>
-    <Part kind="play" title="Fruit-salad rhythms" how="Fill each beat with a fruit word, then say it and clap it, keeping the beat steady. Watch out: plu-um takes TWO boxes!">
+    <Part kind="play" title="Fruit-salad rhythms" how="Fill each beat with a fruit word, then say it and clap it, keeping the beat steady. Watch out: pluuum is held, so it takes TWO boxes!">
       <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap',marginBottom:10}}>{fruit.map(([w, m]) => <span key={w} style={{border:'1.4px solid ' + BK.line,borderRadius:8,padding:'3px 10px',fontSize:12,color:BK.ink,background:BK.soft}}><b>{w}</b> <span style={{color:BK.muted}}>= {m}</span></span>)}</div>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>{[0, 1].map(bb => <div key={bb} style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',border:'1.6px solid ' + BK.ink,borderRadius:8,height:70}}>{[1, 2, 3, 4].map(q => <div key={q} style={{borderLeft:q > 1 ? '1px dashed #e9e2d2' : 'none',display:'flex',alignItems:'flex-end',justifyContent:'center',fontSize:10,color:BK.line,fontWeight:900,paddingBottom:3}}>{q}</div>)}</div>)}</div>
     </Part>
@@ -22351,7 +22482,7 @@ function PulseWorkbook({ startNo = 1 }) {
     </Part>
     <Part kind="home" title="Make your own rhythm cards" how="Cut out the cards. On the empty ones, write your own 4-beat rhythms (crotchets, minims, quaver pairs). Clap each one to someone at home.">
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)'}}>
-        {[[n.mn, n.mn], [n.cr, n.cr, n.mn], [n.qv, n.qv, n.cr, n.qv, n.qv, n.cr], [NV_DOTTED[0], n.cr]].map((it, i) => <Card key={'p' + i}><div style={{width:'100%'}}><BeatRow items={it} total={4} size={28}/></div></Card>)}
+        {[[n.mn, n.mn], [n.cr, n.cr, n.mn], [n.qv, n.qv, n.cr, n.qv, n.qv, n.cr], [n.cr, n.cr, n.qv, n.qv, n.cr]].map((it, i) => <Card key={'p' + i}><div style={{width:'100%'}}><BeatRow items={it} total={4} size={28}/></div></Card>)}
         {[0, 1, 2, 3].map(i => <Card key={'e' + i}><div style={{width:'100%',display:'grid',gridTemplateColumns:'repeat(4,1fr)',height:60,border:'1.2px solid ' + BK.line,borderRadius:6}}>{[1, 2, 3, 4].map(q => <div key={q} style={{borderLeft:q > 1 ? '1px dashed #e9e2d2' : 'none',display:'flex',alignItems:'flex-end',justifyContent:'center',fontSize:9,color:BK.line}}>{q}</div>)}</div></Card>)}
       </div>
       <div style={{fontSize:11,color:BK.muted,marginTop:4}}>✂ Cut on the dashed lines.</div>
@@ -22394,13 +22525,13 @@ function PulseTeacher() {
   P(<>
     <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('pulse')}</div>
     <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Answers for every workbook page, the mistakes students make most, and a line to say when they get stuck.</div>
-    <TcBlock page={3} title="Steady beat · beat or rhythm" answers={<>{tcAns('TOGETHER', W.s1.tog.map(st))}{tcAns('AT HOME', W.s1.home.map(st))}<div style={{fontSize:12,color:BK.ink}}>PLAY: anything regular -- clock, tap, washing machine, swing.</div></>}
+    <TcBlock page={3} title="Steady beat · beat or rhythm" answers={<>{tcAns('TOGETHER', W.s1.tog.map(st))}{tcAns('AT HOME', W.s1.home.map(st))}<div style={{fontSize:12,color:BK.ink}}>PLAY: anything regular -- clock, metronome, washing machine, wipers.</div></>}
       watch="Mixing up the beat with the rhythm: clapping the words of a song instead of the steady pulse under it."
       say="“The rhythm is the tune's words. The beat is your heartbeat underneath -- it never speeds up for long notes.”"/>
     <TcBlock page={4} title="Strong and weak beats" answers={<>{tcAns('TOGETHER', ['big circle on every 1, small on the rest'])}{tcAns('AT HOME', ['P on the first box of each group, C on the others'])}<div style={{fontSize:12,color:BK.ink}}>PLAY: any 4 moves; check beat 1 is the biggest.</div></>}
       watch="Making every beat equally loud, or putting the strong beat at the end of the group."
       say="“1 is the boss beat -- it always comes first.”"/>
-    <TcBlock page={5} title="Counting out loud" answers={<>{tcAns('TOGETHER', W.s5.tog.map(b => plCounts(b).join(' ')))}{tcAns('AT HOME', W.s5.home.map(b => plCounts(b).join(' ')))}<div style={{fontSize:12,color:BK.ink}}>PLAY: plu-um must fill two boxes; any order otherwise.</div></>}
+    <TcBlock page={5} title="Counting out loud" answers={<>{tcAns('TOGETHER', W.s5.tog.map(b => plCounts(b).join(' ')))}{tcAns('AT HOME', W.s5.home.map(b => plCounts(b).join(' ')))}<div style={{fontSize:12,color:BK.ink}}>PLAY: pluuum must fill two boxes; any order otherwise.</div></>}
       watch="Stopping the count during long notes, so the minim is only one beat long."
       say="“Keep counting while the note sings -- the count in brackets is you holding on.”"/>
     <TcBlock page={6} title="Rhythm cards" answers={<div style={{fontSize:12,color:BK.ink}}>Check each home-made card adds up to exactly 4 beats. Use them in the next lesson for sight-clapping.</div>}
@@ -22417,7 +22548,7 @@ function PulseTeacher() {
 
 // ─── Posture and hand shape (chapter 'posture-hands') ───
 const PH_SIT = [['Sit on the front half of the chair.', true], ['Lean back like you are on a sofa.', false], ['Feet flat on the floor (or on a footstool).', true], ['Shoulders up near your ears.', false], ['Elbows level with the keys, or a little higher.', true], ['Sit tall, like a puppet on a string.', true], ['Sit so close that your elbows squash into your body.', false], ['Let your feet swing in the air.', false]];
-const PH_HAND = [['Round fingers, like holding a ball.', true], ['Flat, straight fingers.', false], ['Play on the tip of each finger.', true], ['The end joint bends backwards (collapses).', false], ['The thumb plays on its side corner.', true], ['A stiff wrist, held up high.', false]];
+const PH_HAND = [['Round fingers, like holding a ball.', true], ['Flat, straight fingers.', false], ['Play on the tip of each finger.', true], ['Finger tips that bend backwards.', false], ['The thumb plays on its side corner.', true], ['A stiff wrist, held up high.', false]];
 const PH_ARM = [['Play from the whole arm, not just the fingers.', true], ['Squeeze hard to play loud.', false], ['Let the arm feel heavy, then rest it on the keys.', true], ['Keep the wrist stiff so it can\'t move.', false]];
 function phWorkbook() {
   const k = (s) => 'ph-wb-' + s;
@@ -22435,11 +22566,46 @@ function phConcepts() {
   ];
 }
 const tfPill = (ok, ex) => <span style={{display:'inline-flex',gap:5}}>{['yes', 'no'].map((l, j) => { const on = ex && ((j === 0) === ok); return <span key={l} style={{border:'1.5px solid ' + (on ? BK.coral : BK.line),borderRadius:14,padding:'1px 10px',fontSize:11.5,color:on ? BK.coral : BK.ink,fontWeight:on ? 900 : 600}}>{l}</span>; })}</span>;
-function TFRow({ txt, ok, n, ex }) {
-  return <ExCell n={n} ex={ex}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,padding:'15px 8px 6px',fontSize:13,fontWeight:700,color:BK.ink}}><span>{txt}</span>{tfPill(ok, ex)}</div></ExCell>;
+function TFRow({ txt, ok, n, ex, pad = '15px 8px 6px' }) {
+  return <ExCell n={n} ex={ex}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,padding:pad,fontSize:13,fontWeight:700,color:BK.ink}}><span>{txt}</span>{tfPill(ok, ex)}</div></ExCell>;
+}
+// The app's HandPic, for paper: finger numbers and the Left/Right word can be switched off (on a test item the
+// answer must not be printed on the hand), and the thumb's "1" stays upright (rotated with the thumb it read as a 7).
+function BkHand({ hand, lit = null, size = 150, nums = true, label = true }) {
+  const lens = [26, 50, 56, 51, 40], widths = [22, 16, 17, 15, 13];
+  const xs = hand === 'R' ? [16, 38, 58, 78, 97] : [104, 82, 62, 42, 23];
+  const tops = [76, 22, 16, 21, 34];
+  const R = hand === 'R';
+  const tCx = R ? 30 : 90, tBaseY = 128, tLen = 42, tTopY = tBaseY - tLen, tBaseR = 13, tTipR = 7;
+  const tAngle = R ? -32 : 32;
+  const thumbPath = `M${tCx - tBaseR},${tBaseY} C${tCx - tBaseR},${tBaseY - 16} ${tCx - tTipR - 2},${tTopY + 18} ${tCx - tTipR},${tTopY + tTipR} A${tTipR},${tTipR} 0 0 1 ${tCx + tTipR},${tTopY + tTipR} C${tCx + tTipR + 2},${tTopY + 18} ${tCx + tBaseR},${tBaseY - 16} ${tCx + tBaseR},${tBaseY} A${tBaseR},${tBaseR * 0.8} 0 0 1 ${tCx - tBaseR},${tBaseY} Z`;
+  const tOn = lit === 1, tTy = tTopY + tTipR + 2;
+  return (
+    <svg viewBox="0 0 120 150" style={{width:size,display:'block'}}>
+      <path d={R ? 'M22,140 Q14,140 14,124 L14,100 Q14,80 34,78 L100,78 Q112,80 112,98 L112,124 Q112,140 100,140 Z'
+        : 'M98,140 Q106,140 106,124 L106,100 Q106,80 86,78 L20,78 Q8,80 8,98 L8,124 Q8,140 20,140 Z'} fill="#f8dcc0" stroke="#e08a52" strokeWidth="1.8"/>
+      <g transform={`rotate(${tAngle} ${tCx} ${tBaseY})`}>
+        <path d={thumbPath} fill={tOn ? '#f2b84b' : '#f8dcc0'} stroke={tOn ? '#b8801f' : '#e08a52'} strokeWidth={tOn ? 2.5 : 1.8}/>
+        <ellipse cx={tCx} cy={tTopY + tTipR + 4} rx={tTipR * 0.55} ry={tTipR * 0.7} fill="#fff" opacity="0.4"/>
+        {nums && <text x={tCx} y={tTy + 4} textAnchor="middle" fontSize="12" fontWeight="900" fill="#26296b" transform={`rotate(${-tAngle} ${tCx} ${tTy})`}>1</text>}
+      </g>
+      {[1, 2, 3, 4].map(i => {
+        const f = i + 1, on = lit === f, w = widths[i], len = lens[i] + 22, cx = xs[i], topY = tops[i], kx = topY + len * 0.42;
+        return (
+          <g key={f}>
+            <rect x={cx - w / 2} y={topY} width={w} height={len} rx={w / 2} fill={on ? '#f2b84b' : '#f8dcc0'} stroke={on ? '#b8801f' : '#e08a52'} strokeWidth={on ? 2.5 : 1.8}/>
+            <line x1={cx - w * 0.32} x2={cx + w * 0.32} y1={kx} y2={kx} stroke="#c4532c" strokeWidth="1" opacity="0.45"/>
+            <ellipse cx={cx} cy={topY + w * 0.62} rx={w * 0.3} ry={w * 0.4} fill="#fff" opacity="0.4"/>
+            {nums && <text x={cx} y={topY + w * 0.75} textAnchor="middle" fontSize={Math.max(10, w * 0.62)} fontWeight="900" fill="#26296b">{f}</text>}
+          </g>
+        );
+      })}
+      {label && <text x="60" y="132" textAnchor="middle" fontSize="12" fontWeight="900" fill="#6b4423">{R ? 'Right' : 'Left'}</text>}
+    </svg>
+  );
 }
 function FingerCell({ h, f, n, ex }) {
-  return <ExCell n={n} ex={ex}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'12px 6px 6px'}}><HandPic hand={h} lit={f} size={110}/>{nvBox(ex, f, 40, 34)}</div></ExCell>;
+  return <ExCell n={n} ex={ex}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'9px 6px 1px'}}><BkHand hand={h} lit={f} size={70} nums={!!ex}/>{nvBox(ex, f, 40, 34)}</div></ExCell>;
 }
 
 function PostureWorkbook({ startNo = 1 }) {
@@ -22477,15 +22643,14 @@ function PostureWorkbook({ startNo = 1 }) {
     <Part kind="together" title="Which finger?" how="Fingers are numbered 1 to 5 from the thumb, on BOTH hands. Write the number of the coloured finger.">
       <BkGrid cols={3} gap="10px 12px">{W.s4.tog.map(([h, f], i) => <FingerCell key={i} h={h} f={f} n={i + 1} ex={i === 0}/>)}</BkGrid>
     </Part>
-    <Part kind="home" title="Hand shape and fingers" how="Circle yes or no for each hand shape. Then write the finger numbers.">
-      <BkGrid cols={2} gap="6px 10px">{PH_HAND.slice(0, 4).map(([txt, ok], i) => <TFRow key={i} txt={txt} ok={ok} n={i + 1}/>)}</BkGrid>
-      <div style={{height:8}}/>
-      <BkGrid cols={6} gap="6px 8px">{W.s4.home.map(([h, f], i) => <ExCell key={i} n={i + 5}><div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,padding:'12px 2px 4px'}}><HandPic hand={h} lit={f} size={80}/>{bkBox(34, 26)}</div></ExCell>)}</BkGrid>
+    <Part kind="home" title="Hand shape and fingers" how="Circle yes or no for each hand shape. Then write the number of the coloured finger.">
+      <BkGrid cols={4} gap="5px 8px">{PH_HAND.slice(0, 4).map(([txt, ok], i) => <ExCell key={i} n={i + 1}><div style={{display:'flex',flexDirection:'column',gap:4,padding:'12px 4px 2px',fontSize:12,fontWeight:700,color:BK.ink,lineHeight:1.3}}><span style={{minHeight:31}}>{txt}</span><span style={{alignSelf:'flex-end'}}>{tfPill(ok, false)}</span></div></ExCell>)}</BkGrid>
+      <div style={{height:5}}/>
+      <BkGrid cols={6} gap="6px 8px">{W.s4.home.map(([h, f], i) => <ExCell key={i} n={i + 5}><div style={{display:'flex',alignItems:'flex-end',justifyContent:'center',gap:4,padding:'9px 2px 2px'}}><BkHand hand={h} lit={f} size={52} nums={false}/>{bkBox(28, 24)}</div></ExCell>)}</BkGrid>
     </Part>
-    <Part kind="play" title="Trace your hands" how="Put each hand flat in its box and draw round it. Write the finger numbers on every finger -- remember, the thumb is 1 on both hands! Then draw a ring on each finger 4.">
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,flex:1,minHeight:180}}>{['Left hand', 'Right hand'].map(l => <div key={l} style={{border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',alignItems:'flex-end',justifyContent:'center',fontSize:11.5,fontWeight:800,color:BK.muted,paddingBottom:6}}>{l}</div>)}</div>
+    <Part kind="play" title="Trace your hands" how="Put each hand flat in its box and draw round it. Write the finger numbers on every finger -- the thumb is 1 on both hands! Then draw a ring on each finger 4." style={{padding:'7px 12px 8px'}}>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,flex:1,minHeight:180}}>{['Left hand', 'Right hand'].map(l => <div key={l} style={{border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',alignItems:'flex-end',justifyContent:'center',fontSize:11.5,fontWeight:800,color:BK.muted,paddingBottom:4}}>{l}</div>)}</div>
     </Part>
-    <Faces/>
   </>);
 
   P(<>
@@ -22516,7 +22681,7 @@ function PostureWorkbook({ startNo = 1 }) {
     {bkSec('C', 'Good hand shape? Circle yes or no.')}
     <BkGrid cols={2} gap="6px 10px">{W.chk.hs.map((x, i) => tfCell(x, i + 9))}</BkGrid>
     {bkSec('D', 'Left or right hand? Write L or R.  E  Which finger is coloured?')}
-    <BkGrid cols={4} gap="6px 10px">{W.chk.fn.map(([h, f], i) => <BkCell key={i} n={(13 + i) + ' · ' + (17 + i)}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'12px 4px 4px'}}><HandPic hand={W.chk.lr[i]} lit={f} size={84}/><div style={{display:'grid',gap:6}}>{bkBox(30, 26)}{bkBox(30, 26)}</div></div></BkCell>)}</BkGrid>
+    <BkGrid cols={4} gap="6px 10px">{W.chk.fn.map(([h, f], i) => <BkCell key={i} n={(13 + i) + ' · ' + (17 + i)}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'12px 4px 4px'}}><BkHand hand={W.chk.lr[i]} lit={f} size={84} nums={false} label={false}/><div style={{display:'grid',gap:6,fontSize:10,fontWeight:900,color:BK.coral}}><span>D {bkBox(30, 26)}</span><span>E {bkBox(30, 26)}</span></div></div></BkCell>)}</BkGrid>
     <CheckTable concepts={C} cnt={cnt}/>
   </>);
   return <>{pages}</>;
@@ -22571,7 +22736,7 @@ function rhWorkbook() {
   const k = (s) => 'rh-wb-' + s;
   const basic = [['cr', 'cr', 'mn'], ['mn', 'QQ', 'cr'], ['QQ', 'QQ', 'cr', 'cr'], ['cr', 'QQ', 'mn'], ['dm', 'cr'], ['QQ', 'cr', 'QQ', 'cr'], ['mn', 'mn'], ['cr', 'cr', 'QQ', 'cr'], ['sb']];
   const hard = [['DQ', 'cr', 'cr'], ['SS', 'cr', 'mn'], ['cr', 'TR', 'mn'], ['DQ', 'DQ'], ['cr', 'SS', 'QQ', 'cr'], ['TR', 'TR', 'mn']];
-  const s1 = withSeed(k('s1'), () => ({ tog: [['mn', 'cr', 'cr'], ['QQ', 'cr', 'mn']], home: shuffle(basic).slice(0, 4), bingo: shuffle(basic) }));
+  const s1 = withSeed(k('s1'), () => ({ tog: [['mn', 'QQ', 'cr'], ['QQ', 'cr', 'mn']], home: shuffle(basic).slice(0, 4), bingo: shuffle(basic) }));
   const s2 = withSeed(k('s2'), () => ({ tog: [['DQ', 'cr', 'cr'], ['SS', 'cr', 'mn']], home: shuffle(hard).slice(0, 4) }));
   const s3 = { tog: [{ up: ['cr'], bar: ['cr', 'cr', 'mn'] }, { up: ['QQ'], bar: ['mn', 'mn'] }], home: [{ up: ['cr', 'cr'], bar: ['mn', 'cr', 'cr'] }, { up: ['cr'], bar: ['dm', 'cr'] }, { up: ['QQ', 'cr'], bar: ['cr', 'QQ', 'mn'] }] };
   const chk = withSeed(k('chk'), () => ({ cr: shuffle(basic).slice(0, 2), dq: [['DQ', 'mn'], ['cr', 'DQ', 'cr']], sq: [['SS', 'cr', 'mn'], ['TR', 'cr', 'mn']], an: [{ up: ['cr'], bar: ['mn', 'mn'] }, { up: ['QQ'], bar: ['cr', 'cr', 'mn'] }], cp: [['mn', 'cr'], ['cr', 'QQ'], ['dm'], ['QQ', 'cr', 'cr']] }));
@@ -22581,19 +22746,22 @@ function rhConcepts() {
   return [
     { id: 'cr', name: 'Counting crotchets, minims and quavers', step: '1', page: '3' },
     { id: 'dq', name: 'Dotted rhythms', step: '2', page: '4' },
-    { id: 'sq', name: 'Semiquavers and triplets', step: '2', page: '4' },
+    { id: 'sq', name: 'Semiquavers and triplets (bonus)', step: '2', page: '4' },
     { id: 'an', name: 'Anacrusis (pick-up)', step: '3', page: '5' },
     { id: 'cp', name: 'Completing a bar', step: '4', page: '6' },
   ];
 }
+const rhBonus = (bar) => bar.includes('SS') || bar.includes('TR');   // semiquavers and triplets are a BONUS in this chapter
+const BonusPill = () => <span style={{position:'absolute',top:3,right:6,fontSize:8.5,fontWeight:900,letterSpacing:'0.08em',color:'#fff',background:BK.coral,borderRadius:8,padding:'1px 6px'}}>BONUS</span>;
 function RhBar({ bar, n, ex, answers, size = 34, start = 1, total = 4 }) {
   const counts = rhCounts(bar, start), cols = Math.round(rhBeats(bar));
   return (
     <ExCell n={n} ex={ex}>
+      {rhBonus(bar) && <BonusPill/>}
       <div style={{display:'grid',gridTemplateColumns:'26px 1fr',alignItems:'center',gap:8,padding:'14px 8px 4px'}}>
         <div style={{fontFamily:MUSIC_FONT,fontSize:13,fontWeight:900,lineHeight:0.95,textAlign:'center',color:BK.ink}}>4<br/>4</div>
         <div>
-          <div style={{position:'relative'}}><BeatRow items={rhItems(bar)} total={total} size={size}/>{(() => { let bt = 0; return bar.map((tk, i) => { const at = bt; bt += RH_TOK()[tk].beats; return tk === 'TR' ? <span key={i} style={{position:'absolute',top:-2,left:(at + 0.5) / total * 100 + '%',transform:'translateX(-50%)',fontSize:11,fontWeight:900,fontStyle:'italic',color:BK.ink,borderTop:'1.2px solid ' + BK.ink,padding:'0 8px',lineHeight:1.1}}>3</span> : null; }); })()}</div>
+          <BeatRow items={rhItems(bar)} total={total} size={size}/>
           <div style={{display:'grid',gridTemplateColumns:'repeat(' + total + ',1fr)',marginTop:5}}>{counts.map((c, i) => <div key={i} style={{display:'flex',justifyContent:'center'}}>{(ex || answers) ? bkHand(c, c.length > 4 ? 76 : 50, 26) : bkBox(c.length > 4 ? 76 : 50, 26)}</div>)}</div>
         </div>
       </div>
@@ -22645,13 +22813,13 @@ function RhythmWorkbook({ startNo = 1 }) {
 
   P(<>
     <WbTop step={2}/>
-    <Part kind="together" title="Harder rhythms" how={<>Dotted crotchet + quaver: “1 (2) &”. Four semiquavers in one beat: “1 e & a”. A triplet squeezes 3 into one beat: “1 trip-let”.</>}>
+    <Part kind="together" title="Harder rhythms" how={<>Dotted crotchet + quaver: “1 (2) &”. <b style={{color:BK.coral}}>BONUS</b> (only if you're ready): four semiquavers in one beat: “1 e & a”. A triplet squeezes 3 into one beat: “1 trip-let”.</>}>
       <div style={{display:'grid',gap:8}}>{W.s2.tog.map((b, i) => <RhBar key={i} bar={b} n={i + 1} ex={i === 0}/>)}</div>
     </Part>
-    <Part kind="home" title="Count the harder ones">
+    <Part kind="home" title="Count the harder ones" how={<>Bars with a <b style={{color:BK.coral}}>BONUS</b> tag use semiquavers or triplets -- have a go, or save them for later.</>}>
       <BkGrid cols={2} gap="8px 12px">{W.s2.home.map((b, i) => <RhBar key={i} bar={b} n={i + 1} size={28}/>)}</BkGrid>
     </Part>
-    <Part kind="play" title="Animal rhythms" how="Say each animal in rhythm: el-e-phant is a triplet, hip-po-pot-a-mus is semiquavers, CAT is a crotchet. Make up a 4-beat animal parade in the boxes, then say and clap it!">
+    <Part kind="play" title="Animal rhythms" how="Say each animal in rhythm: CAT is a crotchet, ti-ger is two quavers, el-e-phant is a triplet and hip-po-pot-a is four semiquavers (BONUS). Make up a 4-beat animal parade in the boxes, then say and clap it!">
       <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap',marginBottom:10}}>{[['CAT', 'crotchet'], ['ti-ger', 'two quavers'], ['el-e-phant', 'triplet'], ['hip-po-pot-a', 'four semiquavers']].map(([w, m]) => <span key={w} style={{border:'1.4px solid ' + BK.line,borderRadius:8,padding:'3px 10px',fontSize:12,color:BK.ink,background:BK.soft}}><b>{w}</b> <span style={{color:BK.muted}}>= {m}</span></span>)}</div>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>{[0, 1].map(bb => <div key={bb} style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',border:'1.6px solid ' + BK.ink,borderRadius:8,height:70}}>{[1, 2, 3, 4].map(q => <div key={q} style={{borderLeft:q > 1 ? '1px dashed #e9e2d2' : 'none',display:'flex',alignItems:'flex-end',justifyContent:'center',fontSize:10,color:BK.line,fontWeight:900,paddingBottom:3}}>{q}</div>)}</div>)}</div>
     </Part>
@@ -22660,7 +22828,7 @@ function RhythmWorkbook({ startNo = 1 }) {
 
   P(<>
     <WbTop step={3}/>
-    <Part kind="together" title="Start before beat 1" how="An anacrusis (pick-up) is a little start before the first full bar. Count backwards from 4 to find its numbers, then write all the counts.">
+    <Part kind="together" title="Start before beat 1" how="An anacrusis (pick-up) is a little start before the first full bar. Count backwards from 4 to find its numbers, then write all the counts. (In a real piece the LAST bar is often short -- it lends the pick-up its missing beats.)">
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>{W.s3.tog.map((a, i) => <AnaLine key={i} a={a} n={i + 1} ex={i === 0}/>)}</div>
     </Part>
     <Part kind="home" title="Pick-ups on your own">
@@ -22674,8 +22842,8 @@ function RhythmWorkbook({ startNo = 1 }) {
 
   P(<>
     <WbTop step={4}/>
-    <Part kind="together" title="Clap it back" how="Your teacher claps a 4-beat rhythm. Clap it back, then try to write it down together. Tick each one you clap back right.">
-      <div style={{display:'flex',gap:10,alignItems:'center'}}>{Array.from({ length: 6 }, (_, i) => <span key={i} style={{width:32,height:32,border:'1.6px solid ' + BK.ink,borderRadius:6,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,color:BK.muted}}>{i + 1}</span>)}</div>
+    <Part kind="together" title="Clap it back" how="Your teacher claps a 4-beat rhythm. Clap it back, then write it in the box together. Tick each one you clap back right.">
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>{Array.from({ length: 6 }, (_, i) => <div key={i} style={{display:'grid',gridTemplateColumns:'14px 1fr 18px',alignItems:'center',gap:5}}><span style={{fontSize:10,fontWeight:900,color:BK.coral}}>{i + 1}</span><div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',border:'1.5px solid ' + BK.ink,borderRadius:6,height:52}}>{[1, 2, 3, 4].map(q => <div key={q} style={{borderLeft:q > 1 ? '1px dashed #e9e2d2' : 'none',display:'flex',alignItems:'flex-end',justifyContent:'center',fontSize:9,color:BK.line,paddingBottom:2}}>{q}</div>)}</div><span style={{width:16,height:16,border:'1.5px solid ' + BK.ink,borderRadius:4}}/></div>)}</div>
     </Part>
     <Part kind="home" title="Compose a 4-bar rhythm" how="Write a rhythm in 4/4: exactly 4 beats in every bar. Write the counts underneath, then clap it with the counting out loud.">
       <div style={{display:'grid',gridTemplateColumns:'26px repeat(4,1fr)',border:'1.6px solid ' + BK.ink,borderRadius:8,height:120}}>
@@ -22696,7 +22864,7 @@ function RhythmWorkbook({ startNo = 1 }) {
     <BkGrid cols={2} gap="6px 10px">{W.chk.cr.map((b, i) => <RhBar key={i} bar={b} n={i ? '3-4' : '1-2'} size={24}/>)}</BkGrid>
     {bkSec('B', 'Dotted rhythms: write the counts.')}
     <BkGrid cols={2} gap="6px 10px">{W.chk.dq.map((b, i) => <RhBar key={i} bar={b} n={i ? '7-8' : '5-6'} size={24}/>)}</BkGrid>
-    {bkSec('C', 'Semiquavers and triplets: write the counts.')}
+    {bkSec('C', 'BONUS -- semiquavers and triplets: write the counts.')}
     <BkGrid cols={2} gap="6px 10px">{W.chk.sq.map((b, i) => <RhBar key={i} bar={b} n={i ? '11-12' : '9-10'} size={24}/>)}</BkGrid>
     {bkSec('D', 'How many beats in the pick-up, and what number does it start on?')}
     <BkGrid cols={2} gap="6px 10px">{W.chk.an.map((a, i) => <BkCell key={i} n={i ? '15-16' : '13-14'}><div style={{display:'grid',gridTemplateColumns:rhBeats(a.up) + 'fr 4fr',padding:'12px 6px 2px'}}><BeatRow items={rhItems(a.up)} total={rhBeats(a.up)} size={24}/><div style={{borderLeft:'2.5px solid ' + BK.ink,paddingLeft:3}}><BeatRow items={rhItems(a.bar)} total={4} size={24}/></div></div><div style={{display:'flex',gap:12,justifyContent:'center',fontSize:11,color:BK.muted,margin:'4px 0'}}><span>beats {bkBox(30, 22)}</span><span>starts on {bkBox(30, 22)}</span></div></BkCell>)}</BkGrid>
@@ -22743,10 +22911,17 @@ const RS_POS = { C: 28, G: 32 };   // RH five-finger positions start: C4, G4
 const rsKind = (a, b) => a === b ? 'same' : Math.abs(a - b) === 1 ? 'step' : 'skip';
 const rsDir = (a, b) => a === b ? '→' : b > a ? '↑' : '↓';
 function rsTune(len, lo, hi) { const out = [lo + Math.floor(Math.random() * (hi - lo + 1))]; while (out.length < len) { const p = out[out.length - 1]; const mv = pick([-2, -1, -1, 0, 1, 1, 2]); const q = p + mv; if (q >= lo && q <= hi) out.push(q); } return out; }
+// PLAY "What shape is this tune?": four deliberately shaped 9-note tunes, all inside the staff (d 30-38)
+const RS_SHAPES = [
+  { name: 'mountain', ds: [30, 31, 32, 34, 36, 34, 32, 31, 30] },
+  { name: 'valley', ds: [36, 35, 34, 32, 30, 32, 34, 35, 36] },
+  { name: 'stairs', ds: [30, 31, 32, 33, 34, 35, 36, 37, 38] },
+  { name: 'roller-coaster', ds: [31, 33, 35, 33, 31, 33, 36, 34, 32] },
+];
 function rsWorkbook() {
   const k = (s) => 'rs-wb-' + s;
   const pr = () => { const a = 29 + Math.floor(Math.random() * 7); const b = a + pick([-2, -1, 0, 1, 2]); return [a, b]; };
-  const s1 = withSeed(k('s1'), () => ({ tog: [[30, 31], [32, 30], [31, 31], [34, 32]], home: Array.from({ length: 8 }, pr), shape: rsTune(9, 28, 35) }));
+  const s1 = withSeed(k('s1'), () => ({ tog: [[30, 31], [32, 30], [31, 31], [34, 32]], home: Array.from({ length: 8 }, pr), shape: pick(RS_SHAPES) }));
   const s2 = withSeed(k('s2'), () => ({ tog: [[28, 29, 30, 29, 28], rsTune(6, 28, 32)], home: [rsTune(6, 28, 32), rsTune(6, 28, 32), rsTune(6, 28, 32)] }));
   const tunes = [['Hot Cross Buns', [30, 29, 28, 30, 29, 28]], ['Mary Had a Little Lamb', [30, 29, 28, 29, 30, 30, 30]], ['Ode to Joy', [30, 30, 31, 32, 32, 31, 30, 29]]];
   const s5 = withSeed(k('s5'), () => ({ end: [rsTune(7, 28, 32), rsTune(7, 28, 32), rsTune(7, 28, 32)] }));
@@ -22763,17 +22938,17 @@ function rsConcepts() {
   ];
 }
 const rsFinger = (d, pos = 'C') => d - RS_POS[pos] + 1;
-function SkipCell({ p, n, ex }) {
+function SkipCell({ p, n, ex, arrowBox }) {
   const kind = rsKind(p[0], p[1]);
   const opt = (l) => <span key={l} style={{border:'1.5px solid ' + (ex && l === kind ? BK.coral : BK.line),borderRadius:14,padding:'1px 7px',fontSize:11,color:ex && l === kind ? BK.coral : BK.ink,fontWeight:ex && l === kind ? 900 : 600}}>{l}</span>;
-  return <ExCell n={n} ex={ex}><div style={{padding:'12px 10px 0'}}><PaperStaff clef="treble" notes={[{ d: p[0] }, { d: p[1] }]} width={140}/></div><div style={{display:'flex',justifyContent:'center',gap:4,margin:'4px 0 5px'}}>{['step', 'skip', 'same'].map(opt)}</div></ExCell>;
+  return <ExCell n={n} ex={ex}>{arrowBox && <span style={{position:'absolute',top:4,right:5,width:20,height:20,border:'1.5px solid ' + BK.coral,borderRadius:5,background:'#fff'}}/>}<div style={{padding:'12px 14px 0'}}><PaperStaff clef="treble" notes={[{ d: p[0] }, { d: p[1] }]} width={104}/></div><div style={{display:'flex',justifyContent:'center',gap:4,margin:'4px 0 5px'}}>{['step', 'skip', 'same'].map(opt)}</div></ExCell>;
 }
 function TuneCell({ ds, n, ex, mode = 'finger', w = 300, answers }) {
   const ans = (d) => mode === 'finger' ? rsFinger(d) : dName(d);
   return (
     <ExCell n={n} ex={ex}>
       <div style={{padding:'12px 10px 0'}}><PaperStaff clef="treble" notes={ds.map(d => ({ d }))} width={w}/></div>
-      <BkUnder n={ds.length} w={w} h={32}>{ds.map((d, j) => <span key={j}>{(answers || (ex && j < 2)) ? bkHand(ans(d), 26, 26) : bkBox(26, 26)}</span>)}</BkUnder>
+      <BkUnder n={ds.length} w={w} h={30}>{ds.map((d, j) => <span key={j}>{(answers || (ex && j < 2)) ? bkHand(ans(d), 26, 25) : bkBox(26, 25)}</span>)}</BkUnder>
     </ExCell>
   );
 }
@@ -22796,11 +22971,11 @@ function ReadingStepsWorkbook({ startNo = 1 }) {
     <Part kind="together" title="Step, skip or same?" how="A step goes from a line to the next space (or space to line). A skip jumps over one. Same = the very same note.">
       <BkGrid cols={4} gap="10px 12px">{W.s1.tog.map((p, i) => <SkipCell key={i} p={p} n={i + 1} ex={i === 0}/>)}</BkGrid>
     </Part>
-    <Part kind="home" title="Step, skip or same? On your own" how="Circle one -- then draw an arrow (↑ ↓ →) in the corner to show which way it goes.">
-      <BkGrid cols={4} gap="10px 12px">{W.s1.home.map((p, i) => <SkipCell key={i} p={p} n={i + 1}/>)}</BkGrid>
+    <Part kind="home" title="Step, skip or same? On your own" how="Circle one -- then draw an arrow (↑ ↓ →) in the little corner box to show which way it goes.">
+      <BkGrid cols={4} gap="10px 12px">{W.s1.home.map((p, i) => <SkipCell key={i} p={p} n={i + 1} arrowBox/>)}</BkGrid>
     </Part>
     <Part kind="play" title="What shape is this tune?" how="Join the note heads with a smooth line. Is it a mountain, a valley, stairs or a roller-coaster? Then draw something along your line!">
-      <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'4px 10px'}}><PaperStaff clef="treble" notes={W.s1.shape.map(d => ({ d }))} width={640}/></div>
+      <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'4px 10px'}}><PaperStaff clef="treble" notes={W.s1.shape.ds.map(d => ({ d }))} width={640}/></div>
       <div style={{display:'flex',alignItems:'center',gap:10,marginTop:10,fontSize:13,color:BK.ink}}>My tune looks like a <span style={{flex:1,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span></div>
       <div style={{flex:1,minHeight:90,marginTop:10,border:'1.5px solid ' + BK.line,borderRadius:10,position:'relative'}}><span style={{position:'absolute',top:6,left:10,fontSize:11,fontWeight:900,color:BK.coral}}>DRAW IT HERE</span></div>
     </Part>
@@ -22810,15 +22985,14 @@ function ReadingStepsWorkbook({ startNo = 1 }) {
   P(<>
     <WbTop step="2-3"/>
     <Part kind="together" title="Read a tiny tune" how="Right hand in C position: thumb (1) on middle C, then 2 on D, 3 on E, 4 on F, 5 on G. Write the finger number under each note.">
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>{W.s2.tog.map((ds, i) => <TuneCell key={i} ds={ds} n={i + 1} ex={i === 0} w={260}/>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>{W.s2.tog.map((ds, i) => <TuneCell key={i} ds={ds} n={i + 1} ex={i === 0} w={290}/>)}</div>
     </Part>
     <Part kind="home" title="Finger numbers, then play" how="Write the finger numbers. Then play each tune -- say step, skip or same as you go.">
-      <div style={{display:'grid',gap:5}}>{W.s2.home.map((ds, i) => <TuneCell key={i} ds={ds} n={i + 1} w={620}/>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'4px 10px'}}>{W.s2.home.map((ds, i) => <TuneCell key={i} ds={ds} n={i + 1} w={290}/>)}</div>
     </Part>
     <Part kind="play" title="Name that tune" how="Write the letter under every note. Then play it -- do you know this tune? Write its name!">
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>{W.tunes.map(([, ds], i) => <div key={i} style={{border:'1px solid #ece6d8',borderRadius:8,padding:'6px 8px'}}><PaperStaff clef="treble" notes={ds.map(d => ({ d }))} width={260}/><BkUnder n={ds.length} w={260} h={26}>{ds.map((_, j) => <span key={j}>{bkBox(18, 22)}</span>)}</BkUnder><div style={{borderBottom:'1px solid ' + BK.ink,height:22,marginTop:6}}/></div>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'6px 10px'}}>{W.tunes.map(([, ds], i) => <div key={i} style={{border:'1px solid #ece6d8',borderRadius:8,padding:'6px 10px'}}><PaperStaff clef="treble" notes={ds.map(d => ({ d }))} width={238}/><BkUnder n={ds.length} w={290} h={28}>{ds.map((_, j) => <span key={j}>{bkBox(22, 24)}</span>)}</BkUnder><div style={{display:'flex',gap:8,alignItems:'baseline',fontSize:11,color:BK.muted,marginTop:2}}>name <span style={{flex:1,borderBottom:'1px solid ' + BK.ink,height:15}}/></div></div>)}</div>
     </Part>
-    <Faces/>
   </>);
 
   P(<>
@@ -22845,9 +23019,9 @@ function ReadingStepsWorkbook({ startNo = 1 }) {
     {bkSec('A', 'Step, skip or same? Circle one.')}
     <BkGrid cols={4} gap="6px 10px">{W.chk.sk.map((p, i) => <SkipCell key={i} p={p} n={i + 1}/>)}</BkGrid>
     {bkSec('B', 'Up, down or the same? Draw ↑ ↓ or →.')}
-    <BkGrid cols={4} gap="6px 10px">{W.chk.dr.map((p, i) => <BkCell key={i} n={i + 5}><div style={{paddingTop:8}}><PaperStaff clef="treble" notes={[{ d: p[0] }, { d: p[1] }]} width={190}/></div><div style={{textAlign:'center',marginTop:2}}>{bkBox(36, 24)}</div></BkCell>)}</BkGrid>
+    <BkGrid cols={4} gap="6px 10px">{W.chk.dr.map((p, i) => <BkCell key={i} n={i + 5}><div style={{padding:'9px 12px 0'}}><PaperStaff clef="treble" notes={[{ d: p[0] }, { d: p[1] }]} width={124}/></div><div style={{textAlign:'center',marginTop:1}}>{bkBox(36, 22)}</div></BkCell>)}</BkGrid>
     {bkSec('C', 'C position, right hand: which finger plays each note?')}
-    <BkGrid cols={4} gap="6px 10px">{W.chk.fn.map((d, i) => <BkCell key={i} n={i + 9}><div style={{paddingTop:8}}><PaperStaff clef="treble" notes={[{ d }]} width={190}/></div><div style={{textAlign:'center',marginTop:2}}>{bkBox(36, 24)}</div></BkCell>)}</BkGrid>
+    <BkGrid cols={4} gap="6px 10px">{W.chk.fn.map((d, i) => <BkCell key={i} n={i + 9}><div style={{padding:'9px 12px 0'}}><PaperStaff clef="treble" notes={[{ d }]} width={124}/></div><div style={{textAlign:'center',marginTop:1}}>{bkBox(36, 22)}</div></BkCell>)}</BkGrid>
     {bkSec('D', 'G position, right hand: which key does each finger play?')}
     <BkGrid cols={4} gap="6px 10px">{W.chk.gp.map((f, i) => <BkCell key={i} n={i + 13}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'12px 4px 6px',fontSize:13,color:BK.ink}}>finger <b>{f}</b> = {bkBox(36, 26)}</div></BkCell>)}</BkGrid>
     {bkSec('E', 'Name each note of the tune.')}
@@ -22866,7 +23040,7 @@ function ReadingStepsTeacher() {
   P(<>
     <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('reading-steps')}</div>
     <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Answers for every workbook page, the mistakes students make most, and a line to say when they get stuck.</div>
-    <TcBlock page={3} title="Step, skip or same" answers={<>{tcAns('TOGETHER', W.s1.tog.map(sk))}{tcAns('AT HOME', W.s1.home.map(sk))}<div style={{fontSize:12,color:BK.ink}}>PLAY: any shape name that matches the line.</div></>}
+    <TcBlock page={3} title="Step, skip or same" answers={<>{tcAns('TOGETHER', W.s1.tog.map(sk))}{tcAns('AT HOME', W.s1.home.map(sk))}<div style={{fontSize:12,color:BK.ink}}>PLAY: it is a {W.s1.shape.name} -- any name that matches the line is fine.</div></>}
       watch="Calling a line-to-line move a step. Line to line (or space to space) is a skip."
       say="“Line to space, or space to line -- that's a step. Line to line is a skip: you jumped over a space.”"/>
     <TcBlock page={4} title="Tiny tunes · name that tune" answers={<>{tcAns('TOGETHER', W.s2.tog.map(fingers))}{tcAns('AT HOME', W.s2.home.map(fingers))}{tcAns('PLAY', W.tunes.map(([t0, ds]) => ds.map(dName).join(' ') + ' = ' + t0))}</>}
@@ -22903,7 +23077,7 @@ function dyConcepts() {
     { id: 'mn', name: 'What the dynamics mean', step: '1', page: '3' },
     { id: 'hp', name: 'Getting louder and softer', step: '2', page: '3' },
     { id: 'ar', name: 'Naming articulation signs', step: '4', page: '4' },
-    { id: 'dr', name: 'Writing articulation', step: '4', page: '4' },
+    { id: 'dr', name: 'Writing articulation · the pedal sign', step: '3-4', page: '4' },
   ];
 }
 const BkHairpin = ({ kind, w = 120, color = BK.ink }) => <svg viewBox={`0 0 ${w} 30`} style={{width:'100%',maxWidth:w,display:'block',margin:'0 auto'}}>{kind === 'cresc' ? <path d={`M6 15 L${w - 6} 4 M6 15 L${w - 6} 26`} stroke={color} strokeWidth="2" fill="none"/> : <path d={`M6 4 L${w - 6} 15 M6 26 L${w - 6} 15`} stroke={color} strokeWidth="2" fill="none"/>}</svg>;
@@ -22948,10 +23122,10 @@ function DynamicsWorkbook({ startNo = 1 }) {
       <BkGrid cols={2} gap="8px 12px">{DY_ARTIC_EN.slice(0, 4).map(([mark, name], i) => <ExCell key={mark} n={i + 1} ex={i === 0}><div style={{display:'grid',gridTemplateColumns:'1fr 140px',alignItems:'center',gap:8,padding:'12px 8px 4px'}}><ArticBar mark={mark} width={220}/>{i === 0 ? <span style={{color:BK.coral,fontWeight:900,fontStyle:'italic',borderBottom:'1.5px solid ' + BK.coral,fontSize:13}}>{name}</span> : <span style={{borderBottom:'1.5px solid ' + BK.line,height:20}}/>}</div></ExCell>)}</BkGrid>
     </Part>
     <Part kind="home" title="Write the signs" how="Read the job, then draw the right sign on the notes: dots, accents, a slur or tenuto lines.">
-      <BkGrid cols={2} gap="8px 12px">{W.s3.jobs.map(([mark, job], i) => <ExCell key={i} n={i + 1}><div style={{fontSize:12.5,fontWeight:800,color:BK.ink,padding:'14px 8px 0'}}>{job}</div><div style={{padding:'0 8px 4px'}}><ArticBar mark="none" width={220}/></div></ExCell>)}</BkGrid>
-      <div style={{display:'flex',alignItems:'center',gap:10,marginTop:10,fontSize:12.5,color:BK.ink,border:'1px solid #ece6d8',borderRadius:8,padding:'8px 10px'}}><b style={{color:BK.coral}}>Pedal</b> “Ped.” means press the sustain pedal (right foot); “*” means let it go. What happens to the sound while it's down? <span style={{flex:1,borderBottom:'1px solid ' + BK.ink,height:18}}/></div>
+      <BkGrid cols={2} gap="8px 12px">{W.s3.jobs.map(([mark, job], i) => <ExCell key={i} n={i + 1}><div style={{fontSize:12.5,fontWeight:800,color:BK.ink,padding:'14px 8px 0'}}>{job}</div><div style={{padding:'0 36px 2px'}}><ArticBar mark="none" width={220}/></div></ExCell>)}</BkGrid>
+      <div style={{marginTop:10,fontSize:12.5,color:BK.ink,border:'1px solid #ece6d8',borderRadius:8,padding:'8px 10px'}}><b style={{color:BK.coral}}>Pedal</b> “Ped.” means press the sustain pedal (right foot); “*” means let it go. What happens to the sound while it's down?<div style={{display:'flex',alignItems:'center',gap:8,marginTop:6}}><span style={{fontSize:11,color:BK.muted}}>The sound</span><span style={{flex:1,borderBottom:'1px solid ' + BK.ink,height:20}}/></div></div>
     </Part>
-    <Part kind="play" title="Animal articulation" how="How would each animal sound on the piano? Write staccato, legato, accent or fermata -- then play each one for someone at home and see if they guess the animal!">
+    <Part kind="play" title="Animal articulation" how={<>How would each animal sound on the piano? Write staccato, legato, accent or fermata -- then play each one for someone at home and see if they guess the animal! (A <b>fermata</b> <span style={{fontFamily:MUSIC_FONT}}>𝄐</span> is a little eye over a note: hold it longer than written.)</>}>
       <BkGrid cols={2} gap="8px 12px">{W.s3.animals.map(([a], i) => <div key={i} style={{display:'grid',gridTemplateColumns:'1fr 120px',alignItems:'center',gap:10,border:'1px solid #ece6d8',borderRadius:8,padding:'10px 10px',fontSize:13.5,fontWeight:800,color:BK.ink}}>{a}<span style={{borderBottom:'1.5px solid ' + BK.line,height:20}}/></div>)}</BkGrid>
     </Part>
     <Faces/>
@@ -22970,7 +23144,7 @@ function DynamicsWorkbook({ startNo = 1 }) {
     {bkSec('D', 'Name each sign.')}
     <BkGrid cols={4} gap="6px 10px">{W.chk.ar.map((m, i) => <BkCell key={m} n={i + 13}><div style={{padding:'10px 6px 2px'}}><ArticBar mark={m} width={220}/></div><div style={{textAlign:'center',marginBottom:4}}><span style={{display:'inline-block',width:110,borderBottom:'1.5px solid ' + BK.line,height:18}}/></div></BkCell>)}</BkGrid>
     {bkSec('E', 'Draw the sign on the notes.')}
-    <BkGrid cols={4} gap="6px 10px">{W.chk.dr.map(([m, job], i) => <BkCell key={i} n={i + 17}><div style={{fontSize:11,fontWeight:800,color:BK.ink,padding:'10px 6px 0'}}>{job}</div><div style={{padding:'0 6px 2px'}}><ArticBar mark="none" width={220}/></div></BkCell>)}</BkGrid>
+    <BkGrid cols={2} gap="6px 10px">{W.chk.dr.map(([m, job], i) => <BkCell key={i} n={i + 17}><div style={{fontSize:12,fontWeight:800,color:BK.ink,padding:'10px 6px 0 28px'}}>{job}</div><div style={{padding:'0 40px 2px'}}><ArticBar mark="none" width={220}/></div></BkCell>)}</BkGrid>
     <CheckTable concepts={C} cnt={cnt}/>
   </>);
   return <>{pages}</>;
@@ -23052,7 +23226,7 @@ function sgWorkbook() {
   const k = (s) => 'sg-wb-' + s;
   const s1 = withSeed(k('s1'), () => ({ tog: [SG_MAPS[0], SG_MAPS[2]], home: [SG_MAPS[1], SG_MAPS[3], SG_MAPS[4]] }));
   const s3 = withSeed(k('s3'), () => ({ tog: [[32, 32], [30, 32], [34, 34], [31, 32, 33]], home: shuffle([[33, 33], [32, 34], [30, 31, 32], [36, 36], [35, 34], [31, 31]]), rope: [30, 30, 32, 34, 34, 33, 31, 31, 31, 35, 36, 36] }));
-  const chk = withSeed(k('chk'), () => ({ rp: [SG_MAPS[1]], dc: [SG_MAPS[3]], ts: shuffle([[32, 32], [31, 33], [34, 34], [30, 32]]), ov: shuffle([['8va', 'higher'], ['8vb', 'lower'], ['8va', 'higher'], ['8vb', 'lower']]), or: shuffle(SG_ORN) }));
+  const chk = withSeed(k('chk'), () => ({ rp: [SG_MAPS[1]], dc: [SG_MAPS[3]], ts: shuffle([[32, 32], [31, 33], [34, 34], [30, 32]]), ov: [...shuffle([['8va', 'H'], ['8vb', 'L']]), ['8va is short for ottava, which means an...', 'octave'], ['An octave is how many letter names apart (count both ends)?', '8']], or: shuffle(SG_ORN) }));
   return { s1, s3, chk };
 }
 function sgConcepts() {
@@ -23082,10 +23256,10 @@ function SignsWorkbook({ startNo = 1 }) {
 
   P(<>
     <WbTop step="1-2"/>
-    <Part kind="together" title="Follow the road map" how=":‖ means go back to the matching ‖: (or the start). D.C. = back to the beginning. D.S. = back to the 𝄋 sign. Fine = the end. ⊕ = jump to the Coda.">
+    <Part kind="together" title="Follow the road map" how=":‖ means go back to the matching ‖: (or the start). D.C. = back to the beginning. D.S. = back to the 𝄋 sign. Fine = the end. To Coda ⊕ = finish that bar, then jump to the ⊕ Coda -- only on the way back, after the D.C.">
       <BkGrid cols={2} gap="10px 12px">{W.s1.tog.map((m, i) => <ExCell key={i} n={i + 1} ex={i === 0}><div style={{padding:'14px 8px 0'}}><RoadMapPaper map={m}/></div>{order(m, i === 0)}</ExCell>)}</BkGrid>
     </Part>
-    <Part kind="home" title="Which way now?" how="Write the order the bars are played in.">
+    <Part kind="home" title="Which way now?" how="Write the order the bars are played in. Remember: at To Coda ⊕ you play to the end of that bar, then jump.">
       <div style={{display:'grid',gap:8}}>{W.s1.home.map((m, i) => <ExCell key={i} n={i + 1}><div style={{display:'grid',gridTemplateColumns:'1.2fr 1fr',alignItems:'center',gap:10,padding:'14px 8px 4px'}}><RoadMapPaper map={m}/>{order(m, false)}</div></ExCell>)}</div>
     </Part>
     <Part kind="play" title="Design a road map" how="Draw your own 6-bar road map with a repeat and a D.C. al Fine (or a Coda!). Can someone at home work out the order? Write the answer on the back.">
@@ -23100,7 +23274,7 @@ function SignsWorkbook({ startNo = 1 }) {
       <BkGrid cols={4} gap="10px 12px">{W.s3.tog.map((ds, i) => <ExCell key={i} n={i + 1} ex={i === 0}><div style={{padding:'12px 8px 0'}}><ArcNotes ds={ds}/></div><div style={{textAlign:'center',margin:'2px 0 5px'}}>{i === 0 ? bkHand('tie', 54, 26) : bkBox(54, 26)}</div></ExCell>)}</BkGrid>
     </Part>
     <Part kind="home" title="Tie or slur? And 8va" how="Write tie or slur. Then answer the 8va questions.">
-      <BkGrid cols={6} gap="8px 8px">{W.s3.home.map((ds, i) => <ExCell key={i} n={i + 1}><div style={{padding:'12px 4px 0'}}><ArcNotes ds={ds} w={130}/></div><div style={{textAlign:'center',margin:'2px 0 5px'}}>{bkBox(48, 24)}</div></ExCell>)}</BkGrid>
+      <BkGrid cols={3} gap="8px 10px">{W.s3.home.map((ds, i) => <ExCell key={i} n={i + 1}><div style={{display:'flex',alignItems:'center',gap:8,padding:'10px 6px 2px 10px'}}><div style={{width:122,flex:'0 0 auto'}}><ArcNotes ds={ds} w={150}/></div><div style={{flex:1,textAlign:'center'}}>{bkBox(46, 26)}</div></div></ExCell>)}</BkGrid>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginTop:10}}>{[['8va- - - - ┐ over the notes means play them...', 'higher / lower'], ['8vb- - - - ┘ under the notes means play them...', 'higher / lower']].map(([q, o], i) => <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,border:'1px solid #ece6d8',borderRadius:8,padding:'8px 10px',fontSize:12.5,color:BK.ink}}><span><b style={{color:BK.coral,fontStyle:'italic'}}>{q.split(' ')[0]}</b> {q.split(' ').slice(1).join(' ')}</span><b style={{color:BK.muted}}>{o}</b></div>)}</div>
     </Part>
     <Part kind="play" title="Tie the rope bridge" how="Some notes next to each other are the same -- tie them together with a curved line to fix the bridge. How many ties did you need?">
@@ -23138,8 +23312,8 @@ function SignsWorkbook({ startNo = 1 }) {
     <BkCell n="5-8"><div style={{display:'grid',gridTemplateColumns:'1.2fr 1fr',alignItems:'center',gap:10,padding:'12px 8px 4px'}}><RoadMapPaper map={W.chk.dc[0]}/>{order(W.chk.dc[0], false)}</div></BkCell>
     {bkSec('C', 'Tie or slur?')}
     <BkGrid cols={4} gap="6px 10px">{W.chk.ts.map((ds, i) => <BkCell key={i} n={i + 9}><div style={{padding:'10px 6px 0'}}><ArcNotes ds={ds} w={140}/></div><div style={{textAlign:'center',marginBottom:3}}>{bkBox(48, 22)}</div></BkCell>)}</BkGrid>
-    {bkSec('D', 'Higher or lower? Write H or L.')}
-    <BkGrid cols={4} gap="6px 10px">{W.chk.ov.map(([m], i) => <BkCell key={i} n={i + 13}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'12px 4px 6px',fontSize:18,fontWeight:900,fontStyle:'italic',color:BK.ink}}>{m}{bkBox(32, 26)}</div></BkCell>)}</BkGrid>
+    {bkSec('D', '8va and 8vb. 13-14: higher or lower? Write H or L. 15-16: write the answer.')}
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 2fr 2fr',gap:'6px 10px'}}>{W.chk.ov.map(([m], i) => <BkCell key={i} n={i + 13}>{i < 2 ? <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'12px 4px 6px',fontSize:18,fontWeight:900,fontStyle:'italic',color:BK.ink}}>{m}{bkBox(32, 26)}</div> : <div style={{display:'flex',alignItems:'center',gap:8,padding:'12px 6px 6px',fontSize:11.5,color:BK.ink,lineHeight:1.3}}><span style={{flex:1}}>{m}</span>{bkBox(44, 26)}</div>}</BkCell>)}</div>
     {bkSec('E', 'Name each ornament.')}
     <BkGrid cols={4} gap="6px 10px">{W.chk.or.map((o, i) => <BkCell key={o} n={i + 17}><div style={{padding:'10px 6px 0'}}><OrnGlyph id={o}/></div><div style={{textAlign:'center',margin:'2px 0 4px'}}><span style={{display:'inline-block',width:100,borderBottom:'1.5px solid ' + BK.line,height:18}}/></div></BkCell>)}</BkGrid>
     <CheckTable concepts={C} cnt={cnt}/>
@@ -23165,7 +23339,7 @@ function SignsTeacher() {
       say="“Ornaments are sparkles -- quick and light, then back to the main note.”"/>
   </>);
   P(<>
-    <TcBlock page={6} title="Check-up" goBack={sgConcepts()} answers={<>{tcAns('A', [W.chk.rp[0].order])}{tcAns('B', [W.chk.dc[0].order])}{tcAns('C', W.chk.ts.map(tieOrSlur))}{tcAns('D', W.chk.ov.map(([m]) => m === '8va' ? 'H' : 'L'))}{tcAns('E', W.chk.or.map(o => SG_ORN_NAME[o]))}
+    <TcBlock page={6} title="Check-up" goBack={sgConcepts()} answers={<>{tcAns('A', [W.chk.rp[0].order])}{tcAns('B', [W.chk.dc[0].order])}{tcAns('C', W.chk.ts.map(tieOrSlur))}{tcAns('D', W.chk.ov.map(([, a]) => a))}{tcAns('E', W.chk.or.map(o => SG_ORN_NAME[o]))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>A and B: 4 marks each (take 1 off per mistake in the order). Score each concept on its own (pass 3+).</div></>}/>
   </>);
   return <>{pages}</>;
@@ -23173,10 +23347,10 @@ function SignsTeacher() {
 
 
 // ─── Tempo (chapter 'tempo') and Musical Terms (chapter 'terms') ───
-const TP_ORDER = ['Adagio', 'Andante', 'Moderato', 'Allegro', 'Presto'];
-const TP_MEAN = { Adagio: 'slow, at ease', Andante: 'at a walking pace', Moderato: 'at a moderate speed', Allegro: 'fast and lively', Presto: 'very fast', Lento: 'slowly', Largo: 'broadly', Allegretto: 'fairly quick', Vivace: 'lively' };
+const TP_ORDER = ['Largo', 'Adagio', 'Andante', 'Moderato', 'Allegro', 'Presto'];
+const TP_MEAN = { Adagio: 'slow, at ease', Andante: 'at a walking pace', Moderato: 'at a moderate speed', Allegro: 'fast and lively', Presto: 'very fast', Lento: 'slowly', Largo: 'very slow and wide', Allegretto: 'fairly quick', Vivace: 'lively' };
 const TP_CHANGE = [['accel.', 'gradually faster'], ['rit.', 'gradually slower'], ['rall.', 'gradually slower'], ['a tempo', 'back to the speed before']];
-const TP_ANIMALS = ['a snail', 'a tortoise', 'a dog going for a walk', 'a galloping horse', 'a cheetah'];
+const TP_ANIMALS = ['a snail', 'a tortoise', 'someone walking', 'a bike ride', 'a running dog', 'a cheetah'];   // Largo, Adagio, Andante, Moderato, Allegro, Presto
 function tpWorkbook() {
   const k = (s) => 'tp-wb-' + s;
   const s1 = withSeed(k('s1'), () => ({ tog: shuffle(TP_ORDER), mean: shuffle(['Adagio', 'Andante', 'Moderato', 'Allegro', 'Presto', 'Largo']) }));
@@ -23193,7 +23367,8 @@ function tpConcepts() {
     { id: 'mm', name: 'The metronome mark', step: '6', page: '4' },
   ];
 }
-const mmMark = (n) => <span style={{whiteSpace:'nowrap',fontWeight:900,color:BK.ink}}><span style={{fontFamily:MUSIC_FONT}}>♩</span> = {n}</span>;
+// the metronome mark: a proper drawn crotchet (the music-font glyph printed too small to read)
+const mmMark = (n) => <span style={{whiteSpace:'nowrap',fontWeight:900,color:BK.ink,display:'inline-flex',alignItems:'center',gap:3}}><svg viewBox="8 16 26 54" style={{height:'1.45em',width:'0.7em',display:'inline-block'}}><NoteShape base={1} cx={16} ink={BK.ink}/></svg>= {n}</span>;
 
 function TempoWorkbook({ startNo = 1 }) {
   const W = useMemo(() => tpWorkbook(), [LANG]);
@@ -23210,10 +23385,10 @@ function TempoWorkbook({ startNo = 1 }) {
 
   P(<>
     <WbTop step="1-2"/>
-    <Part kind="together" title="The tempo race" how="Put the five words in order, from the slowest lane to the fastest. Say each one out loud and clap its speed!">
+    <Part kind="together" title="The tempo race" how="Put the six words in order, from the slowest lane to the fastest. Say each one out loud and clap its speed!">
       <ExCell ex><div style={{padding:'16px 10px 8px'}}>
         <div style={{display:'flex',justifyContent:'center',gap:16,marginBottom:10,fontSize:16,fontWeight:900,fontStyle:'italic',color:BK.ink}}>{W.s1.tog.map(w => <span key={w}>{w}</span>)}</div>
-        <div style={{display:'grid',gap:5}}>{TP_ORDER.map((w, i) => <div key={w} style={{display:'grid',gridTemplateColumns:'70px 1fr',alignItems:'center',gap:8}}><span style={{fontSize:10.5,fontWeight:900,color:BK.muted}}>lane {i + 1}{i === 0 ? ' (slow)' : i === 4 ? ' (fast)' : ''}</span><span style={{height:30,border:'1.5px solid ' + (i === 0 ? BK.coral : BK.line),borderRadius:15,display:'flex',alignItems:'center',paddingLeft:12,color:BK.coral,fontWeight:900,fontStyle:'italic'}}>{i === 0 ? 'Adagio' : ''}</span></div>)}</div>
+        <div style={{display:'grid',gap:5}}>{TP_ORDER.map((w, i) => <div key={w} style={{display:'grid',gridTemplateColumns:'70px 1fr',alignItems:'center',gap:8}}><span style={{fontSize:10.5,fontWeight:900,color:BK.muted}}>lane {i + 1}{i === 0 ? ' (slow)' : i === TP_ORDER.length - 1 ? ' (fast)' : ''}</span><span style={{height:28,border:'1.5px solid ' + (i === 0 ? BK.coral : BK.line),borderRadius:15,display:'flex',alignItems:'center',paddingLeft:12,color:BK.coral,fontWeight:900,fontStyle:'italic'}}>{i === 0 ? TP_ORDER[0] : ''}</span></div>)}</div>
       </div></ExCell>
     </Part>
     <Part kind="home" title="What does it mean?" how="Join each word to its meaning.">
@@ -23222,7 +23397,7 @@ function TempoWorkbook({ startNo = 1 }) {
       </div>
     </Part>
     <Part kind="play" title="Tempo animals" how="Which tempo word goes with each animal? Write it in, then draw the animal moving. Play a note to match each one!">
-      <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:8,flex:1,minHeight:150}}>{TP_ANIMALS.map(a => <div key={a} style={{border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',flexDirection:'column',justifyContent:'flex-end',padding:'6px 8px',fontSize:11.5,fontWeight:800,color:BK.ink}}>{a}<span style={{borderBottom:'1px solid ' + BK.line,height:18,marginTop:4}}/></div>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:8,flex:1,minHeight:150}}>{TP_ANIMALS.map(a => <div key={a} style={{border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',flexDirection:'column',justifyContent:'flex-end',padding:'6px 8px',fontSize:11.5,fontWeight:800,color:BK.ink}}>{a}<span style={{borderBottom:'1px solid ' + BK.line,height:18,marginTop:4}}/></div>)}</div>
     </Part>
     <Faces/>
   </>);
@@ -23240,7 +23415,7 @@ function TempoWorkbook({ startNo = 1 }) {
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>{['Resting', 'After 20 star jumps'].map(l => <div key={l} style={{border:'1.5px solid ' + BK.line,borderRadius:10,padding:'10px 12px',fontSize:13,color:BK.ink,display:'grid',gap:10}}><b>{l}</b><span>Beats in a minute: <span style={{display:'inline-block',width:60,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span></span><span>Tempo word: <span style={{display:'inline-block',width:120,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span></span></div>)}</div>
       <div style={{fontSize:12.5,color:BK.muted,margin:'14px 0 4px'}}>Draw a heart on the tempo ruler for each number. Then add your family's heartbeats too!</div>
       <svg viewBox="0 0 640 120" style={{width:'100%',display:'block'}}>
-        {[['Largo', 40, 60], ['Adagio', 66, 76], ['Andante', 76, 108], ['Moderato', 108, 120], ['Allegro', 120, 156], ['Presto', 168, 200]].map(([w, a, b], i) => { const X = (v) => 20 + (v - 40) * 600 / 160; return <g key={w}><rect x={X(a)} y="34" width={X(b) - X(a)} height="30" fill={i % 2 ? '#fff' : BK.soft} stroke={BK.ink} strokeWidth="1.2"/><text x={(X(a) + X(b)) / 2} y="26" textAnchor="middle" fontSize="12" fontStyle="italic" fontWeight="800" fill={BK.ink}>{w}</text></g>; })}
+        {[['Largo', 40, 60], ['Adagio', 60, 76], ['Andante', 76, 108], ['Moderato', 108, 120], ['Allegro', 120, 168], ['Presto', 168, 200]].map(([w, a, b], i) => { const X = (v) => 20 + (v - 40) * 600 / 160; return <g key={w}><rect x={X(a)} y="34" width={X(b) - X(a)} height="30" fill={i % 2 ? '#fff' : BK.soft} stroke={BK.ink} strokeWidth="1.2"/><text x={(X(a) + X(b)) / 2} y="26" textAnchor="middle" fontSize="12" fontStyle="italic" fontWeight="800" fill={BK.ink}>{w}</text></g>; })}
         {[40, 60, 80, 100, 120, 140, 160, 180, 200].map(v => { const x = 20 + (v - 40) * 600 / 160; return <g key={v}><line x1={x} x2={x} y1="64" y2="72" stroke={BK.ink} strokeWidth="1.2"/><text x={x} y="86" textAnchor="middle" fontSize="11" fill={BK.muted}>{v}</text></g>; })}
         <text x="20" y="108" fontSize="10.5" fill={BK.muted}>slow</text><text x="620" y="108" textAnchor="end" fontSize="10.5" fill={BK.muted}>fast</text><text x="320" y="108" textAnchor="middle" fontSize="10.5" fill={BK.muted}>beats in a minute (about)</text>
       </svg>
@@ -23253,7 +23428,7 @@ function TempoWorkbook({ startNo = 1 }) {
   P(<>
     <CheckHead total={20}/>
     {bkSec('A', 'Fill in the missing words, slowest to fastest.')}
-    <div style={{display:'flex',justifyContent:'center',gap:8}}>{TP_ORDER.map((w, i) => <span key={w} style={{width:110,height:36,border:'1.5px solid ' + BK.line,borderRadius:18,display:'inline-flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontStyle:'italic',color:BK.ink}}>{i === 2 ? w : ''}</span>)}</div>
+    <div style={{display:'flex',justifyContent:'center',gap:8}}>{TP_ORDER.map((w, i) => <span key={w} style={{width:100,height:36,border:'1.5px solid ' + BK.line,borderRadius:18,display:'inline-flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontStyle:'italic',color:BK.ink}}>{i === 3 ? w : ''}</span>)}</div>
     {bkSec('B', 'What does each word mean?')}
     <BkGrid cols={2} gap="6px 10px">{W.chk.mn.map((w, i) => <BkCell key={w} n={i + 5}><div style={{display:'flex',alignItems:'center',gap:10,padding:'12px 8px 6px'}}><b style={{fontStyle:'italic',width:90}}>{w}</b><span style={{flex:1,borderBottom:'1.5px solid ' + BK.line,height:20}}/></div></BkCell>)}</BkGrid>
     {bkSec('C', 'Which is faster? Circle it.')}
@@ -23274,15 +23449,15 @@ function TempoTeacher() {
   P(<>
     <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('tempo')}</div>
     <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Answers for every workbook page, the mistakes students make most, and a line to say when they get stuck.</div>
-    <TcBlock page={3} title="The tempo race" answers={<>{tcAns('TOGETHER', [TP_ORDER.join(' < ')])}{tcAns('AT HOME', W.s1.mean.map(w => w + ' = ' + TP_MEAN[w]))}{tcAns('PLAY', ['snail Adagio, tortoise Andante (or Adagio), dog walking Andante/Moderato, horse Allegro, cheetah Presto -- accept sensible answers'])}</>}
+    <TcBlock page={3} title="The tempo race" answers={<>{tcAns('TOGETHER', [TP_ORDER.join(' < ')])}{tcAns('AT HOME', W.s1.mean.map(w => w + ' = ' + TP_MEAN[w]))}{tcAns('PLAY', ['snail Largo, tortoise Adagio, walking Andante, bike Moderato, running dog Allegro, cheetah Presto'])}</>}
       watch="Mixing up Andante and Allegro (both start with A)."
       say="“Andante = walking (and-ante… and on we walk). Allegro = happy and fast.”"/>
-    <TcBlock page={4} title="Changing speed · metronome" answers={<>{tcAns('TOGETHER', TP_CHANGE.map(([w, m]) => w + ' = ' + m))}{tcAns('AT HOME', W.s4.mm.map(([a, b]) => Math.max(a, b)))}<div style={{fontSize:12,color:BK.ink}}>PLAY: resting pulse is often 70-100 (Andante-Moderato); after exercise often 120+ (Allegro).</div></>}
+    <TcBlock page={4} title="Changing speed · metronome" answers={<>{tcAns('TOGETHER', TP_CHANGE.map(([w, m]) => w + ' = ' + m))}{tcAns('AT HOME', W.s4.mm.map(([a, b]) => Math.max(a, b)))}<div style={{fontSize:12,color:BK.ink}}>PLAY: resting pulse is often 70-100 (Andante); after exercise often 120+ (Allegro or Presto).</div></>}
       watch="Thinking a bigger metronome number means slower (it's more beats per minute)."
       say="“The number is how many beats fit in one minute -- more beats, faster music.”"/>
   </>);
   P(<>
-    <TcBlock page={5} title="Check-up" goBack={tpConcepts()} answers={<>{tcAns('A', ['Adagio, Andante, (Moderato), Allegro, Presto'])}{tcAns('B', W.chk.mn.map(w => TP_MEAN[w]))}{tcAns('C', W.chk.fs.map(faster))}{tcAns('D', W.chk.ch.map(([, m]) => m))}{tcAns('E', W.chk.mm.map(([a, b]) => Math.max(a, b)))}
+    <TcBlock page={5} title="Check-up" goBack={tpConcepts()} answers={<>{tcAns('A', ['Largo, Adagio, Andante, (Moderato), Allegro, Presto'])}{tcAns('B', W.chk.mn.map(w => TP_MEAN[w]))}{tcAns('C', W.chk.fs.map(faster))}{tcAns('D', W.chk.ch.map(([, m]) => m))}{tcAns('E', W.chk.mm.map(([a, b]) => Math.max(a, b)))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Below the pass mark, set that concept's workbook page again.</div></>}/>
   </>);
   return <>{pages}</>;
@@ -23312,7 +23487,7 @@ function tmWorkbook() {
   const s1 = withSeed(k('s1'), () => ({ bank: shuffle(g1.filter(x => x.term !== 'Rallentando' && x.term !== 'Decrescendo').slice(0, 14)) }));
   const s2 = withSeed(k('s2'), () => ({ tog: shuffle(g1).slice(0, 4), home: shuffle(g2).slice(0, 8), search: wordSearch(TM_SEARCH, 10), cards: shuffle(g1).slice(0, 8) }));
   const s4 = withSeed(k('s4'), () => ({ combos: shuffle(TM_COMBOS) }));
-  const chk = withSeed(k('chk'), () => ({ fm: shuffle(g1).slice(0, 4), g1: shuffle(g1).slice(0, 4), g2: shuffle(g2).slice(0, 4), lw: shuffle(TM_LITTLE).slice(0, 4), ab: shuffle([['cresc.', 'crescendo -- gradually louder'], ['rit.', 'ritardando -- gradually slower'], ['dim.', 'diminuendo -- gradually softer'], ['accel.', 'accelerando -- gradually faster']]) }));
+  const chk = withSeed(k('chk'), () => ({ fm: shuffle(g1).slice(0, 4), g1: shuffle(g1).slice(0, 4), g2: shuffle(g2).slice(0, 4), lw: shuffle(TM_LITTLE).slice(0, 4), ab: shuffle([['cresc.', 'crescendo -- gradually louder'], ['rall.', 'rallentando -- gradually slower'], ['dim.', 'diminuendo -- gradually softer'], ['accel.', 'accelerando -- gradually faster']]) }));
   return { s1, s2, s4, chk };
 }
 function tmConcepts() {
@@ -23348,7 +23523,7 @@ function TermsWorkbook({ startNo = 1 }) {
     </Part>
     <Part kind="play" title="Term charades" how="Cut out the cards. Take turns to pick one and ACT it out without talking -- tiptoe for piano, run for presto! The others guess the word.">
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)'}}>{W.s2.cards.map(x => <Card key={x.term}>{x.term}</Card>)}{[1, 2, 3, 4].map(i => <Card key={'b' + i}><span style={{fontSize:11,fontWeight:600,fontStyle:'normal',color:BK.muted}}>your own word</span></Card>)}</div>
-      <div style={{fontSize:11,color:BK.muted,marginTop:4}}>✂ Cut on the dashed lines.</div>
+      <div style={{fontSize:11,color:BK.muted,marginTop:4}}>✂ Cut on the dashed lines. <b>Teacher:</b> photocopy this page before cutting -- there is a page on the back!</div>
     </Part>
     <Faces/>
   </>);
@@ -23356,15 +23531,19 @@ function TermsWorkbook({ startNo = 1 }) {
   P(<>
     <WbTop step="2-3"/>
     <Part kind="together" title="Grade 1 words" how="Write what each term means. Say the Italian word out loud -- it sounds great!">
-      <BkGrid cols={1} gap="6px">{W.s2.tog.map((x, i) => <ExCell key={x.term} n={i + 1} ex={i === 0}><div style={{display:'grid',gridTemplateColumns:'190px 1fr',alignItems:'center',gap:10,padding:'14px 10px 6px'}}><b style={{fontStyle:'italic',fontSize:14,color:BK.ink}}>{termW(x)}</b>{i === 0 ? <span style={{color:BK.coral,fontWeight:900,fontStyle:'italic',borderBottom:'1.5px solid ' + BK.coral}}>{x.meaningEn}</span> : <span style={{borderBottom:'1.5px solid ' + BK.line,height:20}}/>}</div></ExCell>)}</BkGrid>
+      <BkGrid cols={1} gap="6px">{W.s2.tog.map((x, i) => <ExCell key={x.term} n={i + 1} ex={i === 0}><div style={{display:'grid',gridTemplateColumns:'190px 1fr',alignItems:'center',gap:10,padding:'10px 10px 4px'}}><b style={{fontStyle:'italic',fontSize:14,color:BK.ink}}>{termW(x)}</b>{i === 0 ? <span style={{color:BK.coral,fontWeight:900,fontStyle:'italic',borderBottom:'1.5px solid ' + BK.coral}}>{x.meaningEn}</span> : <span style={{borderBottom:'1.5px solid ' + BK.line,height:20}}/>}</div></ExCell>)}</BkGrid>
     </Part>
     <Part kind="home" title="Grade 2 words" how="Look them up in your Lesson Book if you need to.">
-      <BkGrid cols={2} gap="6px 10px">{W.s2.home.map((x, i) => <ExCell key={x.term} n={i + 1}><div style={{display:'grid',gridTemplateColumns:'130px 1fr',alignItems:'center',gap:8,padding:'10px 8px 4px'}}><b style={{fontStyle:'italic',fontSize:13,color:BK.ink}}>{termW(x)}</b><span style={{borderBottom:'1.5px solid ' + BK.line,height:20}}/></div></ExCell>)}</BkGrid>
+      <BkGrid cols={2} gap="6px 10px">{W.s2.home.map((x, i) => <ExCell key={x.term} n={i + 1}><div style={{display:'grid',gridTemplateColumns:'130px 1fr',alignItems:'center',gap:8,padding:'8px 8px 2px'}}><b style={{fontStyle:'italic',fontSize:13,color:BK.ink}}>{termW(x)}</b><span style={{borderBottom:'1.5px solid ' + BK.line,height:20}}/></div></ExCell>)}</BkGrid>
     </Part>
+    <div style={{border:'1px solid #ece6d8',borderRadius:10,padding:'6px 12px 7px',margin:'10px 0 0',background:BK.soft,display:'flex',flexWrap:'wrap',alignItems:'center',gap:'4px 12px',fontSize:12,color:BK.ink,lineHeight:1.4}}>
+      <b style={{color:BK.coral,fontSize:11,letterSpacing:'0.08em'}}>SHORT FORMS</b>
+      {[['cresc.', 'crescendo'], ['dim.', 'diminuendo'], ['rall.', 'rallentando'], ['rit.', 'ritardando (or ritenuto)'], ['accel.', 'accelerando'], ['pp', 'pianissimo'], ['p', 'piano'], ['mp', 'mezzo piano'], ['mf', 'mezzo forte'], ['f', 'forte'], ['ff', 'fortissimo']].map(([a, w]) => <span key={a} style={{whiteSpace:'nowrap'}}><b style={{fontStyle:'italic'}}>{a}</b> = {w}</span>)}
+    </div>
     <Part kind="play" title="Italian word search" how="Find these musical words -- across or down. Ring each one and tick it off!">
       <div style={{display:'grid',gridTemplateColumns:'auto 1fr',gap:18,alignItems:'center'}}>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(10, 26px)',gap:2}}>{W.s2.search.g.flat().map((l, i) => <span key={i} style={{width:24,height:24,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:13.5,fontWeight:800,color:BK.ink,border:'1px solid #ece6d8',borderRadius:4}}>{l}</span>)}</div>
-        <div style={{display:'grid',gap:5}}>{TM_SEARCH.map(w => <div key={w} style={{display:'flex',alignItems:'center',gap:8,fontSize:13.5,fontWeight:900,color:BK.ink,letterSpacing:'0.08em'}}><span style={{width:16,height:16,border:'1.5px solid ' + BK.line,borderRadius:4}}/>{w}</div>)}</div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(10, 22px)',gap:2}}>{W.s2.search.g.flat().map((l, i) => <span key={i} style={{width:20,height:20,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:13.5,fontWeight:800,color:BK.ink,border:'1px solid #ece6d8',borderRadius:4}}>{l}</span>)}</div>
+        <div style={{display:'grid',gap:3}}>{TM_SEARCH.map(w => <div key={w} style={{display:'flex',alignItems:'center',gap:8,fontSize:13,fontWeight:900,color:BK.ink,letterSpacing:'0.08em'}}><span style={{width:16,height:16,border:'1.5px solid ' + BK.line,borderRadius:4}}/>{w}</div>)}</div>
       </div>
     </Part>
     <Faces/>
@@ -23372,7 +23551,7 @@ function TermsWorkbook({ startNo = 1 }) {
 
   P(<>
     <WbTop step="4-7"/>
-    <Part kind="together" title="Little words, big changes" how={<>Little words change the word next to them: {TM_LITTLE.map(([w, m]) => <span key={w} style={{whiteSpace:'nowrap',marginRight:8}}><b><i>{w}</i></b> = {m}.</span>)}</>}>
+    <Part kind="together" title="Little words, big changes" how={<>Little words change the word next to them: {TM_LITTLE.map(([w, m]) => <span key={w} style={{whiteSpace:'nowrap',marginRight:8}}><b><i>{w}</i></b> = {m}.</span>)} <span style={{whiteSpace:'nowrap'}}>And <b><i>mosso</i></b> = movement, so <i>più mosso</i> = quicker, <i>meno mosso</i> = slower.</span></>}>
       <BkGrid cols={2} gap="6px 10px">{W.s4.combos.slice(0, 2).map(([c, m], i) => <ExCell key={c} n={i + 1} ex={i === 0}><div style={{display:'grid',gridTemplateColumns:'150px 1fr',alignItems:'center',gap:8,padding:'14px 8px 6px'}}><b style={{fontStyle:'italic',fontSize:14,color:BK.ink}}>{c}</b>{i === 0 ? <span style={{color:BK.coral,fontWeight:900,fontStyle:'italic',borderBottom:'1.5px solid ' + BK.coral}}>{m}</span> : <span style={{borderBottom:'1.5px solid ' + BK.line,height:20}}/>}</div></ExCell>)}</BkGrid>
     </Part>
     <Part kind="home" title="What do they mean together?">
@@ -23417,7 +23596,7 @@ function TermsTeacher() {
   P(<>
     <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('terms')}</div>
     <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Meanings follow the AMEB theory lists used in the app.</div>
-    <TcBlock page={3} title="Four families" answers={<>{TM_FAM.map(f => <div key={f} style={{fontSize:12,color:BK.ink,lineHeight:1.6}}><b style={{color:BK.coral}}>{f}:</b> {W.s1.bank.filter(x => x.cat === f).map(x => x.term).join(', ')}</div>)}</>}
+    <TcBlock page={3} title="Four families" answers={<>{TM_FAM.map(f => <div key={f} style={{fontSize:12,color:BK.ink,lineHeight:1.6}}><b style={{color:BK.coral}}>{f}:</b> {W.s1.bank.filter(x => x.cat === f).map(x => x.term).join(', ')}</div>)}<div style={{fontSize:12,color:BK.ink,lineHeight:1.6}}><b>A tempo</b> goes in <b>Changing speed</b>: it changes the speed back to what it was. Ritenuto too -- a sudden change, but still a change.</div></>}
       watch="Putting crescendo in Speed, or ritardando in Volume -- the two ‘changing’ families get swapped."
       say="“Is it about HOW FAST or HOW LOUD? Then: does it stay the same, or change?”"/>
     <TcBlock page={4} title="Grade 1 and 2 words" answers={<>{tcAns('TOGETHER', W.s2.tog.map(x => x.term + ' = ' + x.meaningEn))}{tcAns('AT HOME', W.s2.home.map(x => x.term + ' = ' + x.meaningEn))}{tcAns('PLAY', [W.s2.search.placed.map(p => p.w + ' ' + (p.hz ? 'across' : 'down') + ' r' + (p.r + 1) + 'c' + (p.c + 1)).join(' · ')])}</>}
@@ -23443,7 +23622,7 @@ function mlWorkbook() {
   const tw = (shape) => { const b = ML_SHAPES[shape]; const sh = pick([-1, 0, 1]); return { shape, ds: b.map(d => d + sh) }; };
   const s1 = withSeed(k('s1'), () => ({ tog: [tw('arch'), tw('rising'), tw('valley')], home: shuffle(['rising', 'falling', 'arch', 'valley']).map(tw) }));
   const qa = (ans) => { const ds = [pick([30, 32]), pick([29, 31]), pick([30, 31, 32])]; ds.push(ans ? 28 : pick([29, 32])); return { ans, ds }; };
-  const s3 = withSeed(k('s3'), () => ({ tog: [qa(false), qa(true)], home: shuffle([qa(true), qa(false), qa(true), qa(false)]), rhyme: ML_RHYMES[0], q: [30, 32, 31, 29] }));
+  const s3 = withSeed(k('s3'), () => ({ tog: [qa(false), qa(true)], home: shuffle([qa(true), qa(false), qa(true)]), rhyme: ML_RHYMES[0], q: [30, 32, 31, 29] }));
   const sq = (pat, dir) => ({ pat, dir, groups: [0, 1, 2].map(g => pat.map(d => d + g * dir)) });
   const s5 = withSeed(k('s5'), () => ({ tog: [sq([28, 29, 30], 1), sq([33, 32, 30], -1)], home: [sq([29, 28, 31], 1), sq([35, 33, 34], -1)] }));
   const chk = withSeed(k('chk'), () => ({ sh: shuffle(['rising', 'falling', 'arch', 'valley', 'arch']).map(tw), qa: shuffle([qa(true), qa(false), qa(true), qa(false), qa(false)]), sq: [sq([28, 29, 31], 1), sq([34, 33, 31], -1)], ph: ML_RHYMES[1] }));
@@ -23511,12 +23690,12 @@ function MelodyWorkbook({ startNo = 1 }) {
   P(<>
     <WbTop step="3-4"/>
     <Part kind="together" title="Breathe with the phrases" how="A phrase is a musical sentence. Read the rhyme out loud and put a breath mark (’) at the end of each phrase. The first one is done. Then: question or answer? An answer ends on home (C).">
-      <ExCell ex><div style={{padding:'14px 12px 4px'}}>{breathLine(W.s3.rhyme, true)}</div></ExCell>
+      <ExCell n={1}><div style={{padding:'14px 12px 4px'}}>{breathLine(W.s3.rhyme, true)}</div></ExCell>
       <div style={{height:8}}/>
       <BkGrid cols={2} gap="10px 12px">{W.s3.tog.map((it, i) => <QACell key={i} it={it} n={i + 2} ex={i === 0}/>)}</BkGrid>
     </Part>
     <Part kind="home" title="Question or answer?" how="Play each phrase. Does it sound finished (answer) or does it want more (question)?">
-      <BkGrid cols={4} gap="10px 12px">{W.s3.home.map((it, i) => <QACell key={i} it={it} n={i + 1}/>)}</BkGrid>
+      <BkGrid cols={3} gap="10px 12px">{W.s3.home.map((it, i) => <QACell key={i} it={it} n={i + 1}/>)}</BkGrid>
     </Part>
     <Part kind="play" title="Answer the question" how="Here is a question phrase. Write an answer phrase of 4 notes that ends on C. Play them together -- does it sound like a conversation?">
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
@@ -23551,10 +23730,10 @@ function MelodyWorkbook({ startNo = 1 }) {
     <CheckHead total={20}/>
     {bkSec('A', 'Circle the shape of each tune.')}
     <BkGrid cols={5} gap="6px 8px">{W.chk.sh.map((it, i) => <BkCell key={i} n={i + 1}><div style={{padding:'8px 4px 0'}}><PaperStaff clef="treble" notes={it.ds.map(d => ({ d }))} width={200}/></div><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:2,margin:'2px 4px 4px'}}>{ML_SHAPE_WORDS.map(w => <span key={w} style={{border:'1px solid ' + BK.line,borderRadius:10,fontSize:9.5,textAlign:'center'}}>{w}</span>)}</div></BkCell>)}</BkGrid>
-    {bkSec('B', 'Put a breath mark at the end of every phrase (5 marks, including the end).')}
+    {bkSec('B', 'Put a breath mark at the end of every phrase: 4 breath marks + 1 for the very end = 5 marks.')}
     <BkCell n="6-10"><div style={{padding:'10px 12px 2px'}}>{breathLine(W.chk.ph, false)}</div></BkCell>
     {bkSec('C', 'Question or answer? Write Q or A.')}
-    <BkGrid cols={5} gap="6px 8px">{W.chk.qa.map((it, i) => <BkCell key={i} n={i + 11}><div style={{padding:'8px 4px 0'}}><PaperStaff clef="treble" notes={it.ds.map(d => ({ d }))} width={180}/></div><div style={{textAlign:'center',marginBottom:3}}>{bkBox(32, 22)}</div></BkCell>)}</BkGrid>
+    <BkGrid cols={3} gap="6px 8px">{W.chk.qa.map((it, i) => <BkCell key={i} n={i + 11}><div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 8px 2px'}}><div style={{flex:1}}><PaperStaff clef="treble" notes={it.ds.map(d => ({ d }))} width={220}/></div>{bkBox(32, 24)}</div></BkCell>)}</BkGrid>
     {bkSec('D', 'Continue each sequence (2 or 3 marks each).')}
     <div style={{display:'grid',gap:6}}>{W.chk.sq.map((it, i) => <SeqCell key={i} it={it} n={i ? '19-20' : '16-18'}/>)}</div>
     <CheckTable concepts={C} cnt={cnt}/>
@@ -23594,7 +23773,7 @@ const kName = (k) => k.b != null ? BK_LET[k.b % 7] + '♯' : BK_LET[k.w % 7];
 function KeyPairCell({ a, b, n, ex, w = 26, whites = 8, answer }) {
   const dots = [a, b].filter(k => k.w != null).map(k => k.w), bdots = [a, b].filter(k => k.b != null).map(k => k.b);
   const st = Math.abs(kPc(a) - kPc(b)) === 1 ? 'S' : 'T';
-  return <ExCell n={n} ex={ex}><div style={{padding:'14px 8px 2px'}}><PaperKeys start="C" whites={whites} w={w} h={84} dots={dots} blackDots={bdots}/></div><div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:6,fontSize:11,color:BK.muted,margin:'3px 0 4px'}}>{nvBox(ex || answer, st, 36, 26)} S or T</div></ExCell>;
+  return <ExCell n={n} ex={ex}><div style={{padding:'14px 8px 2px'}}><PaperKeys start="C" whites={whites} w={w} h={84} dots={dots} blackDots={bdots} dotR={0.25}/></div><div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:6,fontSize:11,color:BK.muted,margin:'3px 0 4px'}}>{nvBox(ex || answer, st, 36, 26)} S or T</div></ExCell>;
 }
 // a few notes on a treble staff, each with an optional accidental: [{ d, acc: '#'|'b'|'n' }]
 function AccNotes({ notes, w = 240, bar = true }) {
@@ -23604,6 +23783,7 @@ function AccNotes({ notes, w = 240, bar = true }) {
       {[30, 32, 34, 36, 38].map(l => <line key={l} x1="4" x2={w - 4} y1={dY(l)} y2={dY(l)} stroke={BK.ink} strokeOpacity="0.5"/>)}
       <ClefGlyph clef="treble" st="treble" yOf={(d) => dY(d)} ink={BK.ink}/>
       {bar && <line x1={w - 4} x2={w - 4} y1={dY(38)} y2={dY(30)} stroke={BK.ink} strokeWidth="1.4"/>}
+      {notes.map((n0, i) => n0.barBefore && i > 0 && <line key={'bar' + i} x1={(xs[i - 1] + xs[i]) / 2 - 4} x2={(xs[i - 1] + xs[i]) / 2 - 4} y1={dY(38)} y2={dY(30)} stroke={BK.ink} strokeWidth="1.4"/>)}
       {notes.map((n0, i) => { const x = xs[i], y = dY(n0.d); return <g key={i}>
         {n0.acc === '#' && <SharpShape x={x - 16} y={y} color={n0.col || BK.ink}/>}
         {n0.acc === 'b' && <FlatShape x={x - 15} y={y} color={n0.col || BK.ink}/>}
@@ -23621,13 +23801,16 @@ function tnWorkbook() {
   const W_ = (i) => ({ w: i }), B_ = (i) => ({ b: i });
   const pairs = [[W_(0), B_(0)], [W_(2), W_(3)], [W_(0), W_(1)], [B_(0), B_(1)], [W_(6), W_(7)], [W_(2), B_(3)], [W_(4), W_(5)], [B_(3), W_(4)], [W_(3), B_(3)], [W_(1), W_(2)], [B_(5), W_(6)], [W_(5), B_(5)]];
   const s1 = withSeed(k('s1'), () => { const sh = shuffle(pairs.slice(1)); return { tog: [pairs[0], ...sh.slice(0, 3)], home: sh.slice(3, 11) }; });
+  // bars[0] is the worked example: the "?" sits in a NEW bar, so the sharp is gone. cross = the ? comes after a bar line.
   const s2 = withSeed(k('s2'), () => ({ bars: [
+    { notes: [{ d: 33, acc: '#' }, { d: 33 }, { d: 33, q: '?', barBefore: true }], ans: 'A (new bar -- the sharp is gone, natural again)', cross: true, ex: 'A' },
     { notes: [{ d: 31, acc: '#' }, { d: 32 }, { d: 31, q: '?' }], ans: 'F♯ (the sharp lasts to the bar line)' },
     { notes: [{ d: 35, acc: 'b' }, { d: 35, q: '?' }, { d: 34 }], ans: 'B♭' },
+    { notes: [{ d: 35, acc: 'b' }, { d: 34 }, { d: 35, q: '?', barBefore: true }], ans: 'B (new bar -- the flat is gone, natural again)', cross: true },
     { notes: [{ d: 31, acc: '#' }, { d: 31, acc: 'n' }, { d: 31, q: '?' }], ans: 'F (cancelled by the natural)' },
     { notes: [{ d: 33, acc: 'b' }, { d: 32 }, { d: 35, q: '?' }], ans: 'C (a different letter -- not affected)' },
   ] }));
-  const chk = withSeed(k('chk'), () => ({ st: shuffle(pairs).slice(0, 4), ac: shuffle([['♯', 'raises a note a semitone'], ['♭', 'lowers a note a semitone'], ['♮', 'cancels a sharp or flat'], ['♯', 'raises a note a semitone']]), en: shuffle([['C♯', 'D♭'], ['F♯', 'G♭'], ['A♭', 'G♯'], ['E♭', 'D♯']]), br: shuffle(s2.bars).slice(0, 4), cs: { seq: TN_CHROM_UP, pos: [2, 5, 8, 11] } }));
+  const chk = withSeed(k('chk'), () => ({ st: shuffle(pairs).slice(0, 4), ac: shuffle([['♯', 'raises a note a semitone'], ['♭', 'lowers a note a semitone'], ['♮', 'cancels a sharp or flat'], ['♯ ♮', 'the natural cancels the sharp -- back to the plain note']]), en: shuffle([['C♯', 'D♭'], ['F♯', 'G♭'], ['A♭', 'G♯'], ['E♭', 'D♯']]), br: shuffle([pick(s2.bars.filter(b => b.cross)), ...shuffle(s2.bars.filter(b => !b.cross)).slice(0, 3)]), cs: { seq: TN_CHROM_UP, pos: [2, 5, 8, 11] } }));
   return { s1, s2, chk };
 }
 function tnConcepts() {
@@ -23660,7 +23843,7 @@ function TonesWorkbook({ startNo = 1 }) {
     <Part kind="home" title="S or T on your own">
       <BkGrid cols={4} gap="10px 12px">{W.s1.home.map(([a, b], i) => <KeyPairCell key={i} a={a} b={b} n={i + 1}/>)}</BkGrid>
     </Part>
-    <Part kind="play" title="The friendship race" how="Race from C to the next C two ways. Draw a little hop on every key you land on. Semitone hops: how many? Tone hops: how many?">
+    <Part kind="play" title="The friendship race" how="Race from the first C (on the left) to the next C, two ways -- both races start on that first C. Draw a little hop on every key you land on. Semitone hops: how many? Tone hops: how many?">
       <PaperKeys start="C" whites={8} w={70} h={120}/>
       <div style={{display:'flex',gap:30,justifyContent:'center',marginTop:8,fontSize:13,color:BK.ink}}><span>Semitone hops: {bkBox(40, 30)}</span><span>Tone hops: {bkBox(40, 30)}</span></div>
     </Part>
@@ -23672,10 +23855,10 @@ function TonesWorkbook({ startNo = 1 }) {
     <Part kind="together" title="What do they do?" how="♯ sharp raises a note one semitone. ♭ flat lowers it one semitone. ♮ natural cancels a sharp or flat. Every black key has two names!">
       <BkGrid cols={4} gap="10px 12px">{[['C♯', 'D♭'], ['F♯', 'G♭'], ['A♭', 'G♯'], ['E♭', 'D♯']].map(([a, b], i) => <ExCell key={a} n={i + 1} ex={i === 0}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'16px 6px 8px',fontSize:18,fontWeight:900,color:BK.ink}}>{a} = {i === 0 ? bkHand(b, 50, 34) : bkBox(50, 34)}</div></ExCell>)}</BkGrid>
     </Part>
-    <Part kind="home" title="Does the accidental still count?" how="An accidental lasts until the bar line -- for that line or space only. Name the note marked “?”.">
-      <BkGrid cols={2} gap="10px 12px">{W.s2.bars.map((b, i) => <ExCell key={i} n={i + 1}><div style={{display:'grid',gridTemplateColumns:'1fr 60px',alignItems:'center',gap:8,padding:'14px 8px 6px'}}><AccNotes notes={b.notes}/>{bkBox(54, 32)}</div></ExCell>)}</BkGrid>
+    <Part kind="home" title="Does the accidental still count?" how="An accidental lasts until the bar line -- for that line or space only. After the bar line it is gone: the note is natural again. Name the note marked “?”.">
+      <BkGrid cols={3} gap="8px 10px">{W.s2.bars.map((b, i) => <ExCell key={i} n={i} ex={!!b.ex}><div style={{display:'grid',gridTemplateColumns:'1fr 46px',alignItems:'center',gap:6,padding:'14px 6px 4px'}}><AccNotes notes={b.notes} w={200}/>{b.ex ? bkHand(b.ex, 44, 30) : bkBox(44, 30)}</div>{b.ex && <div style={{fontSize:10,color:BK.coral,fontWeight:800,textAlign:'center',margin:'-2px 0 2px'}}>new bar: the ♯ is gone</div>}</ExCell>)}</BkGrid>
     </Part>
-    <Part kind="play" title="Sharp and flat treasure hunt" how="Start on the star. Each ♯ moves you one key RIGHT, each ♭ one key LEFT (black keys count!). Follow the clues and write where you land.">
+    <Part kind="play" title="Sharp and flat treasure hunt" how="Start on the star. Each ♯ moves you one key RIGHT, each ♭ one key LEFT (black keys count!). Each clue carries on from where the last one landed. Write where you land -- a black key has two names, and either name is right.">
       <PaperKeys start="C" whites={10} w={58} h={120} stars={[2]}/>
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8,marginTop:10}}>{['♯ ♯', '♭', '♯ ♯ ♯', '♭ ♭'].map((c, i) => <div key={i} style={{border:'1px solid #ece6d8',borderRadius:8,padding:'6px',textAlign:'center'}}><div style={{fontSize:10,fontWeight:900,color:BK.coral}}>CLUE {i + 1}</div><div style={{fontSize:18,fontWeight:900,color:BK.ink,margin:'2px 0 6px'}}>{c}</div>{bkBox(48, 30)}</div>)}</div>
     </Part>
@@ -23708,9 +23891,9 @@ function TonesWorkbook({ startNo = 1 }) {
   P(<>
     <CheckHead total={20}/>
     {bkSec('A', 'Semitone (S) or tone (T)?')}
-    <BkGrid cols={4} gap="6px 10px">{W.chk.st.map(([a, b], i) => <BkCell key={i} n={i + 1}><div style={{padding:'10px 6px 2px'}}><PaperKeys start="C" whites={8} w={22} h={64} dots={[a, b].filter(k => k.w != null).map(k => k.w)} blackDots={[a, b].filter(k => k.b != null).map(k => k.b)}/></div><div style={{textAlign:'center',marginBottom:3}}>{bkBox(32, 22)}</div></BkCell>)}</BkGrid>
+    <BkGrid cols={4} gap="6px 10px">{W.chk.st.map(([a, b], i) => <BkCell key={i} n={i + 1}><div style={{padding:'10px 6px 2px'}}><PaperKeys start="C" whites={8} w={22} h={64} dots={[a, b].filter(k => k.w != null).map(k => k.w)} blackDots={[a, b].filter(k => k.b != null).map(k => k.b)} dotR={0.25}/></div><div style={{textAlign:'center',marginBottom:3}}>{bkBox(32, 22)}</div></BkCell>)}</BkGrid>
     {bkSec('B', 'What does each sign do?')}
-    <BkGrid cols={2} gap="6px 10px">{W.chk.ac.map(([s], i) => <BkCell key={i} n={i + 5}><div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 8px 6px'}}><b style={{fontSize:22,width:24}}>{s}</b><span style={{flex:1,borderBottom:'1.5px solid ' + BK.line,height:20}}/></div></BkCell>)}</BkGrid>
+    <BkGrid cols={2} gap="6px 10px">{W.chk.ac.map(([s], i) => <BkCell key={i} n={i + 5}><div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 8px 6px'}}><b style={{fontSize:22,minWidth:24,whiteSpace:'nowrap'}}>{s}</b><span style={{flex:1,borderBottom:'1.5px solid ' + BK.line,height:20}}/></div></BkCell>)}</BkGrid>
     {bkSec('C', 'Give the other name for each black key.')}
     <BkGrid cols={4} gap="6px 10px">{W.chk.en.map(([a], i) => <BkCell key={i} n={i + 9}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'10px 6px 6px',fontSize:17,fontWeight:900}}>{a} = {bkBox(44, 28)}</div></BkCell>)}</BkGrid>
     {bkSec('D', 'Name the note marked “?”.')}
@@ -23732,7 +23915,7 @@ function TonesTeacher() {
     <TcBlock page={3} title="Semitones and tones" answers={<>{tcAns('TOGETHER', W.s1.tog.map(st))}{tcAns('AT HOME', W.s1.home.map(st))}{tcAns('PLAY', ['12 semitone hops', '6 tone hops'])}</>}
       watch="Calling every pair of neighbouring white keys a tone -- E-F and B-C are semitones."
       say="“Best friend = the very next key, nobody in between. Friend of a friend = one key in between.”"/>
-    <TcBlock page={4} title="Accidentals" answers={<>{tcAns('TOGETHER', ['D♭', 'G♭', 'G♯', 'D♯'])}{tcAns('AT HOME', W.s2.bars.map(b => b.ans))}{tcAns('PLAY', ['F♯, F, G♯, F♯ (each clue starts from the last answer)'])}</>}
+    <TcBlock page={4} title="Accidentals" answers={<>{tcAns('TOGETHER', ['D♭', 'G♭', 'G♯', 'D♯'])}{tcAns('AT HOME', W.s2.bars.map(b => b.ans))}{tcAns('PLAY', ['F♯ (or G♭), F, G♯ (or A♭), F♯ (or G♭) -- each clue carries on from the last answer; either name of a black key is right'])}</>}
       watch="Forgetting that an accidental carries through the bar, or applying it to a different line/space."
       say="“The sign sticks to its line or space until the bar line wipes it away.”"/>
     <TcBlock page={5} title="Chromatic scale" answers={<>{tcAns('TOGETHER', ['C♯, E, F♯, A'])}{tcAns('AT HOME', ['up: D♯ F♯ G♯ A♯', 'down: B♭ A♭ G♭ E♭ D♭'])}</>}
@@ -23772,13 +23955,41 @@ function ScaleKeysCell({ key0, ex, n }) {
     </ExCell>
   );
 }
+// A staircase of 8 treads: tall riser = tone, short riser = semitone. wrong = index of a riser drawn the wrong height
+// (the child finds and fixes it). letters = text printed on a tread (the rest get a box to write in).
+// template: no staircase, just the 8 tread columns and faint rows one small step apart, to draw on.
+function ScStair({ wrong = -1, letters = {}, template = false, tw = 70, unit = 13 }) {
+  if (!template) tw = 46;
+  const x0 = 12, N = 8, W = x0 * 2 + N * tw, base = 14 * unit + 8, H = base + 12;
+  const hs = [0]; SC_SHAPE.forEach((sh, i) => { let r = sh === 'T' ? 2 : 1; if (i === wrong) r = 3 - r; hs.push(hs[hs.length - 1] + r); });
+  const y = (u) => base - u * unit;
+  if (template) return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',display:'block'}}>
+      {Array.from({ length: 15 }, (_, u) => <line key={u} x1={x0} x2={W - x0} y1={y(u)} y2={y(u)} stroke={BK.line} strokeWidth={u === 0 ? 1.6 : 0.8} strokeDasharray={u === 0 ? '' : '2 4'}/>)}
+      {Array.from({ length: N + 1 }, (_, i) => <line key={'v' + i} x1={x0 + i * tw} x2={x0 + i * tw} y1={y(0)} y2={y(14)} stroke={BK.line} strokeWidth="0.8" strokeDasharray="2 4"/>)}
+      {Array.from({ length: N }, (_, i) => <text key={'n' + i} x={x0 + i * tw + tw / 2} y={base + 10} textAnchor="middle" fontSize="9" fontWeight="800" fill={BK.muted}>{i + 1}</text>)}
+      <text x={x0 + 4} y={y(1) - 3} fontSize="8.5" fontWeight="700" fill={BK.muted}>tiny step = 1 row · BIG step = 2 rows</text>
+    </svg>
+  );
+  let d = `M${x0} ${y(0)}`;
+  for (let i = 0; i < N; i++) d += ` L${x0 + i * tw} ${y(hs[i])} L${x0 + (i + 1) * tw} ${y(hs[i])}`;
+  d += ` L${x0 + N * tw} ${y(0)} Z`;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:'100%',display:'block'}}>
+      <path d={d} fill={BK.soft} stroke={BK.ink} strokeWidth="1.8" strokeLinejoin="round"/>
+      {Array.from({ length: N }, (_, i) => { const cx = x0 + i * tw + tw / 2, cy = y(hs[i]) - 13; return letters[i] != null
+        ? <text key={i} x={cx} y={cy + 6} textAnchor="middle" fontSize="16" fontWeight="900" fill={BK.ink}>{letters[i]}</text>
+        : <rect key={i} x={cx - 12} y={cy - 10} width="24" height="22" rx="4" fill="#fff" stroke={BK.coral} strokeWidth="1.2"/>; })}
+    </svg>
+  );
+}
 function ScalesWorkbook({ startNo = 1 }) {
   const W = useMemo(() => scWorkbook(), [LANG]);
   const C = scConcepts();
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="scales">{content}</WbPage>);
   P(<WbOpener id="scales" concepts={C} blurb="One shape builds every major scale: tone, tone, semitone, tone, tone, tone, semitone."/>);
-  P(<WbMap id="scales" concepts={C} checkPage={startNo + 6} tasks={[
+  P(<WbMap id="scales" concepts={C} steps={7} checkPage={startNo + 6} tasks={[
     'Play C, G and F major hands separately with the right fingers -- slowly, evenly.',
     'Play A harmonic minor and listen for the raised 7th (G♯).',
     'Sing the degree names while you play C major: tonic, supertonic...',
@@ -23794,8 +24005,8 @@ function ScalesWorkbook({ startNo = 1 }) {
     <Part kind="home" title="Build it yourself" how="Use the shape (and a piano!) to write the notes of each scale. Remember the sharps and flats.">
       <div style={{display:'grid',gap:8}}>{['G', 'F', 'D'].map((k0, i) => <ScaleKeysCell key={k0} key0={k0} n={i + 1}/>)}</div>
     </Part>
-    <Part kind="play" title="The scale staircase" how="Draw a staircase for the major scale: a BIG step for every tone and a tiny step for every semitone. Walk your fingers up it, then play it!">
-      <div style={{flex:1,minHeight:130,border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',alignItems:'flex-end',justifyContent:'flex-start',padding:8,fontSize:11,color:BK.muted}}>start here ↗</div>
+    <Part kind="play" title="The scale staircase" how="Draw a staircase for C major on the grid: a BIG step (2 rows) for every tone and a tiny step (1 row) for every semitone. Write the letters on the treads. Walk your fingers up it, then play it!">
+      <div style={{border:'1.5px solid ' + BK.line,borderRadius:10,padding:'6px 8px 2px'}}><ScStair template/></div>
     </Part>
     <Faces/>
   </>);
@@ -23826,11 +24037,11 @@ function ScalesWorkbook({ startNo = 1 }) {
     <Part kind="home" title="G and F major" how="G major uses the same fingers as C. F major's right hand is different -- it puts finger 4 on B♭!">
       <div style={{display:'grid',gap:8}}>{[['G major RH', fG.RH, [2, 3, 6]], ['G major LH', fG.LH, [3, 5, 6]], ['F major RH', fF.RH, [3, 4, 7]]].map(([l, fs, g], i) => <ExCell key={l} n={i + 1}><div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 10px 6px'}}><b style={{width:110,fontSize:12.5}}>{l}</b>{fRow(fs, g, false)}</div></ExCell>)}</div>
     </Part>
-    <Part kind="play" title="Scale star chart" how="Play each scale hands separately every day. Colour a star when it's smooth, even and with the right fingers. Can you fill the whole chart?">
-      <div style={{display:'grid',gridTemplateColumns:'90px repeat(7,1fr)',gap:4,fontSize:12,color:BK.ink,alignItems:'center'}}>
-        <span/>{BK_DAYS.map(d => <b key={d} style={{textAlign:'center',color:BK.muted,fontSize:10.5}}>{d}</b>)}
-        {['C major', 'G major', 'F major', 'A minor'].map(s => <React.Fragment key={s}><b>{s}</b>{BK_DAYS.map(d => <span key={d} style={{justifySelf:'center'}}><BkStar size={20}/></span>)}</React.Fragment>)}
+    <Part kind="play" title="Broken staircase" how="A builder made these staircases -- tall riser = tone, short riser = semitone -- but ONE riser on each is the wrong height! Find it, circle it and draw it the right height. Then write the letters on the treads (watch for the F♯ in G major).">
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
+        {[['C major', 5, { 0: 'C', 7: 'C' }], ['G major', 2, { 0: 'G', 7: 'G' }]].map(([name, wrong, letters]) => <div key={name} style={{border:'1.5px solid ' + BK.line,borderRadius:10,padding:'6px 8px 4px'}}><div style={{fontSize:12.5,fontWeight:900,color:BK.ink,marginBottom:2}}>{name}</div><ScStair wrong={wrong} letters={letters}/></div>)}
       </div>
+      <div style={{fontSize:11.5,color:BK.muted,marginTop:8}}>Check with the shape: T T S T T T S. Then play each scale and feel the tiny steps under your fingers.</div>
     </Part>
     <Faces/>
   </>);
@@ -23879,13 +24090,13 @@ function ScalesTeacher() {
   P(<>
     <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('scales')}</div>
     <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Fingerings are the ones in the app (AMEB technical work, as confirmed by Sohyun).</div>
-    <TcBlock page={3} title="Shape · build" answers={<>{tcAns('AT HOME', ['G: ' + scNotes('G').join(' '), 'F: ' + scNotes('F').join(' '), 'D: ' + scNotes('D').join(' ')])}</>}
+    <TcBlock page={3} title="Shape · build" answers={<>{tcAns('AT HOME', ['G: ' + scNotes('G').join(' '), 'F: ' + scNotes('F').join(' '), 'D: ' + scNotes('D').join(' ')])}{tcAns('PLAY', ['staircase risers 2 2 1 2 2 2 1 rows (T T S T T T S), treads C D E F G A B C'])}</>}
       watch="Writing the sharp on the wrong note (e.g. G major with C♯ instead of F♯). Check the semitones land between 3-4 and 7-8."
       say="“Walk the shape on the keys: tone, tone, semitone... the semitones are the tiny steps at 3-4 and 7-8.”"/>
     <TcBlock page={4} title="Degree names" answers={<>{tcAns('TOGETHER', DEGREE_NAMES.map((n0, i) => (i + 1) + ' ' + n0))}{tcAns('AT HOME', [4, 3, 6, 2, 1, 5].map(d => DEGREE_NAMES[d] + ' = ' + scNotes('G')[d]))}</>}
       watch="Mixing up dominant (5) and subdominant (4) -- ‘sub’ means below the dominant."
       say="“Subdominant sits just below the dominant, submediant just below the... well, it's the 6th!”"/>
-    <TcBlock page={5} title="Fingering" answers={<>{tcAns('C RH', [fC.RH.join(' ')])}{tcAns('C LH', [fC.LH.join(' ')])}{tcAns('G RH / LH', [fG.RH.join(' '), fG.LH.join(' ')])}{tcAns('F RH', [fF.RH.join(' ')])}</>}
+    <TcBlock page={5} title="Fingering" answers={<>{tcAns('C RH', [fC.RH.join(' ')])}{tcAns('C LH', [fC.LH.join(' ')])}{tcAns('G RH / LH', [fG.RH.join(' '), fG.LH.join(' ')])}{tcAns('F RH', [fF.RH.join(' ')])}{tcAns('PLAY', ['C major: the A-B riser is short, should be tall (a tone)', 'G major: the B-C riser is tall, should be short (a semitone); treads G A B C D E F♯ G'])}</>}
       watch="Tucking the thumb late and twisting the wrist."
       say="“Thumb starts moving under as soon as finger 2 plays -- a smooth tunnel, no bump.”"/>
     <TcBlock page={6} title="Minor scales" answers={<>{tcAns('AT HOME', ['E harmonic minor: E F♯ G A B C D♯ E', 'D harmonic minor: D E F G A B♭ C♯ D'])}</>}
@@ -23926,6 +24137,10 @@ const INV_NAME = ['root position', '1st inversion', '2nd inversion'];
 function ChordCell({ ds, n, ex, children, w = 120 }) {
   return <ExCell n={n} ex={ex}><div style={{padding:'12px 10px 0'}}><PaperStaff clef="treble" notes={ds.map(d => ({ d, x: w * 0.62 + ((d % 2) && ds.includes(d - 1) ? 13 : 0) }))} width={w} minSpan={[40, 27]}/></div>{children}</ExCell>;
 }
+// The same, laid out sideways: staff on the left, the answer beside it -- so rows of 3 still fit the page.
+function ChordRowCell({ ds, n, ex, children, w = 120, sw = 108, clefOn = true }) {
+  return <ExCell n={n} ex={ex}><div style={{display:'flex',alignItems:'center',gap:8,padding:'10px 4px 2px 8px'}}><div style={{width:sw,flex:'0 0 auto'}}><PaperStaff clef="treble" clefOn={clefOn} notes={ds.map(d => ({ d, x: clefOn ? w * 0.62 + ((d % 2) && ds.includes(d - 1) ? 13 : 0) : w * 0.5 + ((d % 2) && ds.includes(d - 1) ? 13 : 0) }))} width={w} minSpan={[40, 27]}/></div><div style={{flex:1,display:'flex',justifyContent:'center',alignItems:'center'}}>{children}</div></div></ExCell>;
+}
 function ChordsWorkbook({ startNo = 1 }) {
   const W = useMemo(() => chWorkbook(), [LANG]);
   const C = chConcepts();
@@ -23945,7 +24160,7 @@ function ChordsWorkbook({ startNo = 1 }) {
       <BkGrid cols={3} gap="10px 12px">{W.s1.tog.map((r, i) => <ChordCell key={r} ds={i === 0 ? chTriad(r) : [r]} n={i + 1} ex={i === 0}><div style={{textAlign:'center',margin:'2px 0 5px',fontSize:12,color:BK.muted}}>{i === 0 ? bkHand(chTriad(r).map(dName).join(' '), 80, 26) : bkBox(80, 26)}</div></ChordCell>)}</BkGrid>
     </Part>
     <Part kind="home" title="Stack them on your own" how="The root is given. Draw the 3rd and the 5th, then write the letters.">
-      <BkGrid cols={6} gap="8px 8px">{W.s1.home.map((r, i) => <ChordCell key={r} ds={[r]} n={i + 1} w={110}><div style={{textAlign:'center',margin:'2px 0 5px'}}>{bkBox(70, 24)}</div></ChordCell>)}</BkGrid>
+      <BkGrid cols={3} gap="8px 10px">{W.s1.home.map((r, i) => <ChordRowCell key={r} ds={[r]} n={i + 1}>{bkBox(64, 28)}</ChordRowCell>)}</BkGrid>
     </Part>
     <Part kind="play" title="Snowman chords" how="Each triad is a snowman: the root is the big bottom ball. Draw snowmen on the staff for C, F and G -- then give each one a hat, a scarf and a name!">
       <div style={{display:'flex',alignItems:'center',gap:18,marginBottom:10}}>
@@ -23956,7 +24171,7 @@ function ChordsWorkbook({ startNo = 1 }) {
         </svg>
         <div style={{fontSize:13,color:BK.ink,lineHeight:1.7}}><b style={{color:BK.coral}}>Meet C major!</b><br/>Bottom ball = the root (C)<br/>Middle ball = the 3rd (E)<br/>Top ball = the 5th (G)</div>
       </div>
-      <BigStaff gap={18} h0={40} h1={40}/>
+      <BigStaff gap={16} h0={26} h1={26}/>
     </Part>
     <Faces/>
   </>);
@@ -23967,7 +24182,7 @@ function ChordsWorkbook({ startNo = 1 }) {
       <BkGrid cols={3} gap="10px 12px">{W.s2.tog.map((deg, i) => <ChordCell key={deg} ds={chTriad(28 + deg)} n={i + 1} ex={i === 0}><div style={{display:'flex',justifyContent:'center',gap:5,margin:'2px 0 5px'}}>{['major', 'minor'].map(q => <span key={q} style={{border:'1.5px solid ' + (i === 0 && q === CH_QUAL[deg] ? BK.coral : BK.line),borderRadius:14,padding:'1px 8px',fontSize:11.5,color:i === 0 && q === CH_QUAL[deg] ? BK.coral : BK.ink,fontWeight:i === 0 && q === CH_QUAL[deg] ? 900 : 600}}>{q}</span>)}</div></ChordCell>)}</BkGrid>
     </Part>
     <Part kind="home" title="Happy or sad on your own" how="Play each one too -- your ears will help!">
-      <BkGrid cols={6} gap="8px 8px">{W.s2.home.map((deg, i) => <ChordCell key={i} ds={chTriad(28 + deg)} n={i + 1} w={110}><div style={{display:'flex',justifyContent:'center',gap:3,margin:'2px 0 5px'}}>{['M', 'm'].map(q => <span key={q} style={{border:'1.5px solid ' + BK.line,borderRadius:12,padding:'0 7px',fontSize:11}}>{q}</span>)}</div></ChordCell>)}</BkGrid>
+      <BkGrid cols={3} gap="8px 10px">{W.s2.home.map((deg, i) => <ChordRowCell key={i} ds={chTriad(28 + deg)} n={i + 1}><div style={{display:'flex',flexDirection:'column',gap:5}}>{['major', 'minor'].map(q => <span key={q} style={{border:'1.5px solid ' + BK.line,borderRadius:14,padding:'1px 10px',fontSize:11.5,color:BK.ink,fontWeight:600,textAlign:'center'}}>{q}</span>)}</div></ChordRowCell>)}</BkGrid>
     </Part>
     <Part kind="play" title="Chord moods" how="Play each chord and draw the face it makes you feel. Then make up your own 4-chord mood story: happy, happy, sad, happy...">
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,flex:1,minHeight:140}}>{['C major', 'A minor', 'F major', 'D minor'].map(c => <div key={c} style={{border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-between',padding:'10px 6px'}}><span style={{width:70,height:70,border:'1.5px dashed ' + BK.line,borderRadius:35}}/><b style={{fontSize:12.5,color:BK.ink}}>{c}</b></div>)}</div>
@@ -23978,17 +24193,17 @@ function ChordsWorkbook({ startNo = 1 }) {
   P(<>
     <WbTop step="3-4"/>
     <Part kind="together" title="Roman numerals in C major" how="Each note of the scale builds a triad. Write its Roman numeral: big for major (I, IV, V), small for minor (ii, iii, vi), vii° for diminished.">
-      <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:6}}>{CH_ROOTS.map((r, i) => <ExCell key={r} n={dName(r)} ex={i === 0}><div style={{padding:'12px 2px 0'}}><PaperStaff clef="treble" notes={chTriad(r).map(d => ({ d, x: 60 }))} width={90} clefOn={false} minSpan={[40, 27]}/></div><div style={{textAlign:'center',margin:'2px 0 5px'}}>{i === 0 ? bkHand('I', 40, 26) : bkBox(40, 26)}</div></ExCell>)}</div>
+      <BkGrid cols={3} gap="6px 10px">{CH_ROOTS.map((r, i) => <ChordRowCell key={r} ds={chTriad(r)} n={'on ' + dName(r)} ex={i === 0} sw={100} w={100} clefOn={false}>{i === 0 ? bkHand('I', 44, 28) : bkBox(44, 28)}</ChordRowCell>)}</BkGrid>
     </Part>
     <Part kind="home" title="I, IV and V in other keys" how="I, IV and V are the three major chords (primary triads). Write their notes.">
-      <div style={{display:'grid',gap:8}}>{['G', 'F'].map((k0, i) => { const sc = scNotes(k0); return <ExCell key={k0} n={i + 1}><div style={{display:'grid',gridTemplateColumns:'90px repeat(3,1fr)',alignItems:'center',gap:10,padding:'14px 10px 6px'}}><b style={{fontSize:13}}>{prettyNote(k0)} major</b>{[['I', 0], ['IV', 3], ['V', 4]].map(([rn, d]) => <div key={rn} style={{display:'flex',alignItems:'center',gap:6,fontSize:13}}><b style={{color:BK.coral}}>{rn}</b> = {bkBox(90, 28)}</div>)}</div></ExCell>; })}</div>
+      <div style={{display:'grid',gap:8}}>{['G', 'F'].map((k0, i) => { const sc = scNotes(k0); return <ExCell key={k0} n={i + 1}><div style={{display:'grid',gridTemplateColumns:'90px repeat(3,1fr)',alignItems:'center',gap:10,padding:'12px 10px 4px'}}><b style={{fontSize:13}}>{prettyNote(k0)} major</b>{[['I', 0], ['IV', 3], ['V', 4]].map(([rn, d]) => <div key={rn} style={{display:'flex',alignItems:'center',gap:6,fontSize:13}}><b style={{color:BK.coral}}>{rn}</b> = {bkBox(90, 28)}</div>)}</div></ExCell>; })}</div>
     </Part>
     <Part kind="play" title="A three-chord song" how="Write a chord pattern using only I, IV and V -- one per box. Play it with your left hand while you hum a tune on top. Lots of famous songs use only these three!">
-      <div style={{display:'grid',gridTemplateColumns:'repeat(8,1fr)',gap:6}}>{Array.from({ length: 8 }, (_, i) => <span key={i} style={{height:56,border:'1.6px solid ' + (i === 0 || i === 7 ? BK.coral : BK.ink),borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:900,color:BK.coral}}>{i === 0 || i === 7 ? 'I' : ''}</span>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(8,1fr)',gap:6}}>{Array.from({ length: 8 }, (_, i) => <span key={i} style={{height:40,border:'1.6px solid ' + (i === 0 || i === 7 ? BK.coral : BK.ink),borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:900,color:BK.coral}}>{i === 0 || i === 7 ? 'I' : ''}</span>)}</div>
       <div style={{fontSize:11.5,color:BK.muted,marginTop:6}}>Start and end on I -- it sounds like home.</div>
       <div style={{display:'flex',gap:8,alignItems:'center',margin:'14px 0 12px',fontSize:12,color:BK.muted}}>In C major:{[['I', 'C E G'], ['IV', 'F A C'], ['V', 'G B D']].map(([c, ns]) => ((c, ns) => <span key={c} style={{border:'1.5px solid ' + BK.line,borderRadius:14,padding:'3px 12px',fontSize:13,color:BK.ink,background:'#fff'}}><b style={{color:BK.coral}}>{c}</b> = {ns}</span>)(c, ns))}</div>
       <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 6px'}}>Song 2: this time, end on V. Does it sound finished -- or like a question?</div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(8,1fr)',gap:6}}>{Array.from({ length: 8 }, (_, i) => <span key={i} style={{height:56,border:'1.6px solid ' + (i === 0 || i === 7 ? BK.coral : BK.ink),borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:900,color:BK.coral}}>{i === 0 ? 'I' : i === 7 ? 'V' : ''}</span>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(8,1fr)',gap:6}}>{Array.from({ length: 8 }, (_, i) => <span key={i} style={{height:40,border:'1.6px solid ' + (i === 0 || i === 7 ? BK.coral : BK.ink),borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:900,color:BK.coral}}>{i === 0 ? 'I' : i === 7 ? 'V' : ''}</span>)}</div>
       <div style={{display:'flex',alignItems:'center',gap:10,marginTop:12,fontSize:13,color:BK.ink}}>My song's name: <span style={{flex:1,borderBottom:'1px solid ' + BK.ink,height:20}}/></div>
     </Part>
     <Faces/>
@@ -24122,18 +24337,18 @@ function fmWorkbook() {
   const k = (s) => 'fm-wb-' + s;
   const other = (x) => pick(['B', 'C', 'D'].filter(y => y !== x));
   const pair = (same) => { const a = pick(['A', 'B', 'C', 'D']); return [a, same ? a : pick(['A', 'B', 'C', 'D'].filter(y => y !== a))]; };
-  const s1 = withSeed(k('s1'), () => ({ tog: [['A', 'B', 'A'], ['A', 'B'], ['A', 'B', 'A', 'C', 'A']], home: shuffle([['A', 'A', 'B', 'B'], ['A', 'B', 'A'], ['A', 'B', 'A', 'C', 'A', 'D', 'A'], ['A', 'B'], ['A', 'C', 'A', 'B', 'A'], ['A', 'B', 'A']]) }));
+  const s1 = withSeed(k('s1'), () => ({ tog: [['A', 'B', 'A'], ['A', 'B'], ['A', 'B', 'A', 'C', 'A']], home: shuffle([['A', 'A', 'B', 'B'], ['A', 'B', 'A'], ['A', 'B', 'A', 'C', 'A', 'D', 'A'], ['A', 'B'], ['A', 'B', 'A', 'C', 'A'], ['A', 'B', 'A']]) }));
   const s3 = withSeed(k('s3'), () => {
     const row = (pat) => { const map = {}; const pool = shuffle(['A', 'B', 'C', 'D']); return pat.map(l => map[l] || (map[l] = pool[Object.keys(map).length])); };
-    return { tog: [['A', 'A'], pair(false)], lab: row(['A', 'B', 'A', 'B']), home: shuffle([pair(true), pair(false), pair(false), pair(true)]), hlab: [row(['A', 'B', 'C', 'A'])] };
+    return { tog: [['A', 'A'], pair(false)], lab: row(['A', 'B', 'A', 'B']), home: shuffle([pair(true), pair(false), pair(false)]), hlab: [row(['A', 'B', 'C', 'A'])] };
   });
-  const s4 = withSeed(k('s4'), () => ({ tog: [{ seq: ['A', 'B', 'A', 'C', 'A'], gaps: [2] }, { seq: ['A', 'C', 'A', 'B', 'A'], gaps: [1, 4] }], home: [{ seq: ['A', 'B', 'A', 'C', 'A'], gaps: [3, 4] }, { seq: ['A', 'B', 'A', 'C', 'A', 'D', 'A'], gaps: [2, 4, 6] }, { seq: ['A', 'D', 'A', 'B', 'A'], gaps: [0, 2] }] }));
+  const s4 = withSeed(k('s4'), () => ({ tog: [{ seq: ['A', 'B', 'A', 'C', 'A'], gaps: [2] }, { seq: ['A', 'B', 'A', 'C', 'A'], gaps: [1, 4] }], home: [{ seq: ['A', 'B', 'A', 'C', 'A'], gaps: [3, 4] }, { seq: ['A', 'B', 'A', 'C', 'A', 'D', 'A'], gaps: [2, 4, 6] }, { seq: ['A', 'B', 'A', 'C', 'A'], gaps: [0, 2] }] }));
   const bt = (tern) => { const a = pick(['A', 'C', 'D']), b = other(a); return tern ? [a, b, a] : pick([[a, b], [a, a, b, b]]); };
   const s5 = withSeed(k('s5'), () => ({ tog: [bt(true), bt(false)], home: shuffle([bt(true), bt(false), bt(false), bt(true)]) }));
   const chk = withSeed(k('chk'), () => ({
-    sh: shuffle([['A', 'B'], ['A', 'B', 'A'], ['A', 'B', 'A', 'C', 'A'], ['A', 'A', 'B', 'B'], ['A', 'C', 'A', 'D', 'A']]),
+    sh: shuffle([['A', 'B'], ['A', 'B', 'A'], ['A', 'B', 'A', 'C', 'A'], ['A', 'A', 'B', 'B'], ['A', 'B', 'A', 'C', 'A', 'D', 'A']]),
     lab: ['C', 'D', 'C', 'B', 'D'],
-    ro: [{ seq: ['A', 'B', 'A', 'C', 'A'], gaps: [1, 2] }, { seq: ['A', 'C', 'A', 'D', 'A', 'B', 'A'], gaps: [2, 4, 6] }],
+    ro: [{ seq: ['A', 'B', 'A', 'C', 'A'], gaps: [1, 2] }, { seq: ['A', 'B', 'A', 'C', 'A', 'D', 'A'], gaps: [1, 2, 5] }],
     bt: shuffle([bt(true), bt(false), bt(true), bt(false), bt(true)]),
   }));
   return { s1, s3, s4, s5, chk };
@@ -24190,8 +24405,8 @@ function MusicalFormWorkbook({ startNo = 1 }) {
       <LabelRow list={W.s3.lab} n={3}/>
     </Part>
     <Part kind="home" title="Your turn">
-      <BkGrid cols={4} gap="8px 10px">{W.s3.home.map(([a, b], i) => <PairCell key={i} a={a} b={b} n={i + 1}/>)}</BkGrid>
-      <div style={{display:'grid',gap:8,marginTop:8}}>{W.s3.hlab.map((list, i) => <LabelRow key={i} list={list} n={i + 5}/>)}</div>
+      <BkGrid cols={3} gap="8px 10px">{W.s3.home.map(([a, b], i) => <PairCell key={i} a={a} b={b} n={i + 1}/>)}</BkGrid>
+      <div style={{display:'grid',gap:8,marginTop:8}}>{W.s3.hlab.map((list, i) => <LabelRow key={i} list={list} n={i + 4}/>)}</div>
     </Part>
     <Part kind="play" title="Twinkle's secret shape" how="Sing Twinkle, Twinkle, Little Star. Write a letter in each box -- is the line new, or one you have heard before? Colour the boxes with the same letter the same colour. What form is it?">
       <div style={{display:'grid',gap:6}}>{FM_TWINKLE.map((ln, i) => <div key={i} style={{display:'flex',alignItems:'center',gap:12,fontSize:14.5,color:BK.ink}}>{i === 0 ? <FmBlock l="A" s={30}/> : <FmBlock blank s={30}/>}<span>{ln[0]} <span style={{color:BK.muted}}>{ln[1]}</span></span></div>)}</div>
@@ -24240,7 +24455,7 @@ function MusicalFormWorkbook({ startNo = 1 }) {
   P(<>
     <CheckHead total={20}/>
     {bkSec('A', 'Circle the form of each piece.')}
-    <BkGrid cols={5} gap="6px 8px">{W.chk.sh.map((seq, i) => <BkCell key={i} n={i + 1}><div style={{display:'flex',gap:3,justifyContent:'center',padding:'16px 2px 6px'}}>{seq.map((l, j) => <FmBlock key={j} l={l} s={20}/>)}</div><div style={{display:'flex',justifyContent:'center',gap:2,marginBottom:3}}>{FM_FORMS.map(w => <span key={w} style={{border:'1px solid ' + BK.line,borderRadius:10,fontSize:9.5,padding:'0 4px'}}>{w}</span>)}</div></BkCell>)}</BkGrid>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(5,minmax(0,1fr))',gap:'6px 6px'}}>{W.chk.sh.map((seq, i) => <BkCell key={i} n={i + 1}><div style={{display:'flex',gap:seq.length > 5 ? 2 : 3,justifyContent:'center',padding:seq.length > 5 ? '17px 0 6px' : '16px 2px 6px'}}>{seq.map((l, j) => <FmBlock key={j} l={l} s={seq.length > 5 ? 15 : 20}/>)}</div><div style={{display:'flex',justifyContent:'center',gap:2,marginBottom:3}}>{FM_FORMS.map(w => <span key={w} style={{border:'1px solid ' + BK.line,borderRadius:10,fontSize:9.5,padding:'0 3px'}}>{w}</span>)}</div></BkCell>)}</div>
     {bkSec('B', 'Write a letter under each phrase (the first is done).')}
     <LabelRow list={W.chk.lab} n="6-10" w={110}/>
     {bkSec('C', 'Fill in the missing letters of each rondo.')}
@@ -24425,7 +24640,7 @@ function StylesWorkbook({ startNo = 1 }) {
     <Part kind="together" title="How many voices?" how="Each bar in the picture is a note -- higher bars are higher notes. One tune alone = monophony. A tune with chords underneath = homophony. Two or more tunes woven together = polyphony. Circle one.">
       <BkGrid cols={3} gap="10px 12px">{W.s1.tog.map((it, i) => <TexCell key={i} it={it} n={i + 1} ex={i === 0}/>)}</BkGrid>
     </Part>
-    <Part kind="home" title="Pictures and stories">
+    <Part kind="home" title="Pictures and stories" how="In the pictures, a long bar = a held chord under the tune. Short bars in a row = a tune.">
       <BkGrid cols={3} gap="10px 12px">{W.s1.home.map((it, i) => <TexCell key={i} it={it} n={i + 1}/>)}</BkGrid>
     </Part>
     <Part kind="play" title="Be the texture" how="Sing Row, Row, Row Your Boat three ways with someone at home. Tick each one, then draw your own picture of it -- one line, a line with chords, or two lines.">
@@ -24442,7 +24657,7 @@ function StylesWorkbook({ startNo = 1 }) {
 
   P(<>
     <WbTop step="story 5"/>
-    <Part kind="together" title="Travel through time" how="Write each era's name on the timeline -- Baroque, Classical, Romantic, 20th century. Then circle the era for each clue. What the keyboard could do shaped how its music is played.">
+    <Part kind="together" title="Travel through time" how="This page goes with The Piano's Story lesson, step 5 (the strip's code opens it). Write each era's name on the timeline -- Baroque, Classical, Romantic, 20th century. Then circle the era for each clue. What the keyboard could do shaped how its music is played.">
       <EraTimeline ex/>
       <div style={{height:10}}/>
       <BkGrid cols={2} gap="10px 12px">{W.s2.tog.map((it, i) => <EraCell key={i} it={it} n={i + 1} ex={i === 0}/>)}</BkGrid>
@@ -24453,7 +24668,7 @@ function StylesWorkbook({ startNo = 1 }) {
       <BkGrid cols={4} gap="8px 10px">{W.s2.comps.map((it, i) => <EraCell key={i} it={it} n={i + 5} small/>)}</BkGrid>
     </Part>
     <Part kind="play" title="Time-travel your tune" how="Play one short tune you know (Twinkle is fine) in each era's style. Tick it, and give yourself a star for the one you liked best.">
-      {[[0, 'crisp and detached (non legato), no pedal, loud or soft in blocks'], [1, 'light and elegant, a quiet left hand, very little pedal'], [2, 'smooth and singing, lots of pedal, let the time stretch'], [3, 'try it with pedal held down -- a misty wash of sound']].map(([e, how]) => <div key={e} style={{display:'grid',gridTemplateColumns:'22px 120px 1fr 24px',gap:8,alignItems:'center',padding:'7px 0',borderBottom:'1px solid #ece6d8'}}>
+      {[[0, 'crisp and detached (non legato), no pedal, loud or soft in blocks'], [1, 'light and elegant, a quiet left hand, very little pedal'], [2, 'smooth and singing, lots of pedal, let the time stretch'], [3, 'two ways: pedal held down for a misty wash (Debussy), or sharp and spiky with no pedal (Bartók)']].map(([e, how]) => <div key={e} style={{display:'grid',gridTemplateColumns:'22px 120px 1fr 24px',gap:8,alignItems:'center',padding:'7px 0',borderBottom:'1px solid #ece6d8'}}>
         <span style={{width:18,height:18,border:'1.5px solid ' + BK.ink,borderRadius:4}}/>
         <b style={{fontSize:13,color:BK.ink}}>{ST_ERA_NAMES[e]}</b>
         <span style={{fontSize:12.5,color:BK.ink}}>{how}</span>
@@ -24482,7 +24697,7 @@ function StylesWorkbook({ startNo = 1 }) {
 
   P(<>
     <WbTop step={5}/>
-    <Part kind="together" title="Fill in the blues" how="Twelve bars, three chords: I, IV and V. I is home and comes most often; V comes only once, in bar 9. Write the missing numerals.">
+    <Part kind="together" title="Fill in the blues" how="Twelve bars, three chords: I, IV and V. I is home and comes most often; in this simple blues, V comes only once, in bar 9. Write the missing numerals.">
       <BluesGrid gaps={W.s5.tog} ex={[W.s5.tog[0]]}/>
       <div style={{display:'flex',gap:14,marginTop:6,fontSize:11.5,color:BK.muted,fontWeight:700}}>{['I', 'IV', 'V'].map(r => <span key={r} style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:12,height:12,borderRadius:3,background:ST_BL_COL[r]}}/>{r} = {ST_KEYS.C[r]}{r === 'I' ? ' (home)' : ''}</span>)}<span>in C major</span></div>
     </Part>
