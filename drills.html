@@ -24945,12 +24945,137 @@ function tmConcepts() {
 }
 const termW = (x) => x.term + (x.abbr ? ' (' + x.abbr + ')' : '');
 
+// ─── Phase 313 (pass 3, chunk 4b): metaphor pictures for Musical Terms, Musical Form and Styles ───
+// A speedometer-style dial: a = 0 (far left, slow) .. 1 (far right, fast).
+function Gauge({ a = 0.5, size = 70, ticks = true }) {
+  const cx = 30, cy = 34, r = 24, th = Math.PI * (1 - a);
+  const ex = cx + r * Math.cos(th), ey = cy - r * Math.sin(th);
+  const nx = cx + 19 * Math.cos(th), ny = cy - 19 * Math.sin(th);
+  return <svg viewBox="0 0 60 40" style={{width:size,height:size * 40 / 60,display:'block'}}>
+    <path d={`M${cx - r} ${cy} A${r} ${r} 0 0 1 ${cx + r} ${cy}`} fill="none" stroke={BK.line} strokeWidth="3.2" strokeLinecap="round"/>
+    {a > 0.03 && <path d={`M${cx - r} ${cy} A${r} ${r} 0 0 1 ${ex} ${ey}`} fill="none" stroke={BK.coral} strokeWidth="3.2" strokeLinecap="round"/>}
+    {ticks && [0, 0.25, 0.5, 0.75, 1].map(v => { const t = Math.PI * (1 - v); return <line key={v} x1={cx + (r - 6.5) * Math.cos(t)} y1={cy - (r - 6.5) * Math.sin(t)} x2={cx + (r - 3.5) * Math.cos(t)} y2={cy - (r - 3.5) * Math.sin(t)} stroke={BK.ink} strokeWidth="1.2"/>; })}
+    <line x1={cx} y1={cy} x2={nx} y2={ny} stroke={BK.ink} strokeWidth="2.2" strokeLinecap="round"/>
+    <circle cx={cx} cy={cy} r="3.2" fill={BK.ink}/>
+  </svg>;
+}
+// The four families of terms, each as the everyday thing it is: a speedometer, two pedals, a volume knob, a luggage tag.
+function TermIcon({ f, size = 56 }) {
+  const h = size * 44 / 64;
+  if (f === 0) return <Gauge a={0.72} size={size}/>;
+  if (f === 1) return <svg viewBox="0 0 64 44" style={{width:size,height:h,display:'block'}}>
+    <rect x="8" y="12" width="24" height="26" rx="5" fill="#fff" stroke={BK.ink} strokeWidth="2.2"/>
+    {[19, 25, 31].map(y => <line key={y} x1="13" x2="27" y1={y} y2={y} stroke={BK.ink} strokeWidth="1.6" strokeLinecap="round"/>)}
+    <rect x="40" y="5" width="16" height="33" rx="5" fill="#fff" stroke={BK.coral} strokeWidth="2.2"/>
+    {[13, 19, 25].map(y => <line key={y} x1="44" x2="52" y1={y} y2={y} stroke={BK.coral} strokeWidth="1.6" strokeLinecap="round"/>)}
+  </svg>;
+  if (f === 2) return <svg viewBox="0 0 64 44" style={{width:size,height:h,display:'block'}}>
+    <circle cx="32" cy="23" r="14" fill="#fff" stroke={BK.ink} strokeWidth="2.2"/>
+    {[-120, -80, -40, 0, 40, 80, 120].map(d => { const t = d * Math.PI / 180; return <line key={d} x1={32 + 17.5 * Math.sin(t)} y1={23 - 17.5 * Math.cos(t)} x2={32 + 21 * Math.sin(t)} y2={23 - 21 * Math.cos(t)} stroke={BK.ink} strokeWidth="1.5" strokeLinecap="round"/>; })}
+    <line x1="32" y1="23" x2="39.6" y2="14.8" stroke={BK.coral} strokeWidth="2.8" strokeLinecap="round"/>
+    <text x="6" y="43" fontSize="10" fontWeight="900" fontStyle="italic" fill={BK.ink}>p</text><text x="54" y="43" fontSize="10" fontWeight="900" fontStyle="italic" fill={BK.ink}>f</text>
+  </svg>;
+  return <svg viewBox="0 0 64 44" style={{width:size,height:h,display:'block'}}>
+    <path d="M14 22 L25 9 H57 V36 H25 Z" fill="#fff" stroke={BK.ink} strokeWidth="2.2" strokeLinejoin="round"/>
+    <circle cx="24" cy="22.5" r="2.4" fill={BK.coral}/>
+    <path d="M24 22.5 C13 24 8 17 11 6" fill="none" stroke={BK.coral} strokeWidth="1.6" strokeLinecap="round"/>
+    <path d="M31 23 q4.5 -8 9 0 t9 0" fill="none" stroke={BK.coral} strokeWidth="2.4" strokeLinecap="round"/>
+  </svg>;
+}
+function TermDials() {
+  const fam = [['Speed', 'How fast?', 'largo · andante · allegro · presto'], ['Changing speed', 'Faster or slower?', 'accelerando · rit. · a tempo'], ['Volume', 'How loud?', 'pp · p · mf · f · ff · cresc.'], ['Other', 'What mood or touch?', 'legato · staccato · dolce · cantabile']];
+  return <div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10}}>{fam.map(([n, q, w], i) => <div key={n} style={{border:'1.5px solid ' + BK.line,borderRadius:12,background:BK.soft,padding:'14px 8px 12px',textAlign:'center',display:'flex',flexDirection:'column',alignItems:'center',gap:7}}>
+      <TermIcon f={i} size={86}/>
+      <div style={{fontSize:11,fontWeight:900,letterSpacing:'0.08em',color:BK.coral,textTransform:'uppercase'}}>{n}</div>
+      <div style={{fontSize:15,fontWeight:900,color:BK.ink,lineHeight:1.2}}>{q}</div>
+      <div style={{fontSize:11.5,fontStyle:'italic',color:BK.muted,lineHeight:1.45}}>{w}</div>
+    </div>)}</div>
+    <div style={{textAlign:'center',fontSize:13,fontWeight:800,color:BK.ink,marginTop:12}}>Italian is the language of music -- like “pizza” and “espresso”, musicians everywhere understand it.</div>
+  </div>;
+}
+// little words turn the dial
+function DialTrio() {
+  return <div style={{display:'flex',gap:14}}>{[['poco allegro', 'a little fast', 0.5], ['allegro', 'fast', 0.68], ['molto allegro', 'very fast', 0.93]].map(([w, m, a]) => <div key={w} style={{textAlign:'center'}}>
+    <Gauge a={a} size={62}/><div style={{fontSize:11,fontWeight:900,fontStyle:'italic',color:BK.ink,marginTop:1}}>{w}</div><div style={{fontSize:10,color:BK.muted}}>{m}</div>
+  </div>)}</div>;
+}
+
+// Musical Form: one train for every form -- binary, ternary, rondo
+function FmEngine({ x = 0, y = 0 }) {
+  return <g transform={`translate(${x} ${y})`}>
+    <rect x="4" y="12" width="32" height="20" rx="3" fill={BK.ink}/><rect x="22" y="4" width="10" height="10" fill={BK.ink}/><rect x="8" y="2" width="6" height="11" fill={BK.ink}/>
+    <circle cx="12" cy="35" r="4" fill="#fff" stroke={BK.ink} strokeWidth="2"/><circle cx="28" cy="35" r="4" fill="#fff" stroke={BK.ink} strokeWidth="2"/>
+  </g>;
+}
+function FormTrains() {
+  const rows = [['binary', ['A', 'B'], 'two carriages: A, then B'], ['ternary', ['A', 'B', 'A'], 'A, something new, then A comes home'], ['rondo', ['A', 'B', 'A', 'C', 'A'], 'A keeps coming back after every new carriage']];
+  return <svg viewBox="0 0 640 206" style={{width:'100%',maxWidth:660,display:'block',margin:'0 auto'}}>
+    {rows.map(([name, seq, cap], r) => { const y0 = r * 68 + 4; return <g key={name}>
+      <line x1="0" x2="282" y1={y0 + 44} y2={y0 + 44} stroke={BK.ink} strokeWidth="2"/><line x1="0" x2="282" y1={y0 + 48} y2={y0 + 48} stroke={BK.ink} strokeWidth="1"/>
+      <FmEngine x={0} y={y0 + 4}/>
+      {seq.map((l, i) => { const x = 52 + i * 44; return <g key={i}>
+        <line x1={x - 10} x2={x} y1={y0 + 24} y2={y0 + 24} stroke={BK.ink} strokeWidth="2"/>
+        <rect x={x} y={y0 + 6} width="34" height="32" rx="7" fill={FM_COL[l]} stroke={BK.ink} strokeWidth="1.6"/>
+        <text x={x + 17} y={y0 + 29} textAnchor="middle" fontFamily="'Playfair Display', Georgia, serif" fontWeight="900" fontSize="18" fill={FM_FG[l]}>{l}</text>
+        <circle cx={x + 8} cy={y0 + 40} r="3.6" fill="#fff" stroke={BK.ink} strokeWidth="1.8"/><circle cx={x + 26} cy={y0 + 40} r="3.6" fill="#fff" stroke={BK.ink} strokeWidth="1.8"/>
+      </g>; })}
+      <text x="306" y={y0 + 22} fontFamily="'Playfair Display', Georgia, serif" fontWeight="900" fontSize="20" fill={BK.ink}>{name}</text>
+      <text x="306" y={y0 + 40} fontSize="12.5" fontWeight="700" fill={BK.muted}>{cap}</text>
+    </g>; })}
+  </svg>;
+}
+function FmDepotRow() {
+  return <div style={{display:'grid',gridTemplateColumns:'1.05fr 2.4fr 0.85fr',gap:14,alignItems:'end',padding:'12px 6px 8px',borderTop:'1px dashed #ece6d8'}}>
+    <span style={{borderBottom:'1px solid ' + BK.line,height:26}}/>
+    <div style={{position:'relative',display:'flex',alignItems:'flex-end',gap:8,paddingBottom:3}}>
+      <svg width="44" height="40" viewBox="0 0 44 40" style={{flex:'0 0 auto'}}><FmEngine/></svg>
+      {[0, 1, 2, 3, 4].map(b => <span key={b} style={{width:32,height:30,border:'1.5px dashed ' + BK.line,borderRadius:7,flex:'0 0 auto',marginBottom:6}}/>)}
+      <span style={{position:'absolute',left:0,right:0,bottom:0,borderBottom:'2px solid ' + BK.ink}}/>
+    </div>
+    <span style={{borderBottom:'1px solid ' + BK.line,height:26}}/>
+  </div>;
+}
+
+// Styles: a passport page for each era, and walking vs skipping for straight vs swing
+function EraSound({ e }) {
+  return <svg viewBox="0 0 120 36" style={{width:'100%',height:30,display:'block'}}>
+    {e === 0 && [[0, 28], [1, 28], [2, 28], [3, 10], [4, 10], [5, 10], [6, 28], [7, 28], [8, 28]].map(([i, y]) => <circle key={i} cx={12 + i * 12} cy={y} r="3.4" fill={i > 2 && i < 6 ? BK.coral : BK.ink}/>)}
+    {e === 1 && [0, 1, 2].map(i => <path key={i} d={`M${10 + i * 36} 28 q13 -26 26 0`} fill="none" stroke={BK.ink} strokeWidth="2.4" strokeLinecap="round"/>)}
+    {e === 2 && <path d="M4 24 C22 -4 44 38 64 14 S100 6 116 22" fill="none" stroke={BK.coral} strokeWidth="3.2" strokeLinecap="round"/>}
+    {e === 3 && <g><path d="M8 26 C4 20 10 14 16 17 C18 8 30 8 32 16 C40 14 44 24 38 27 Z" fill="#fff" stroke={BK.ink} strokeWidth="2" strokeLinejoin="round"/><polyline points="60,28 70,8 80,28 90,8 100,28 110,8" fill="none" stroke={BK.coral} strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round"/></g>}
+  </svg>;
+}
+function PassportCard({ e, how }) {
+  return <div style={{border:'1.5px dashed ' + BK.coral,borderRadius:10,padding:'7px 9px 7px',display:'flex',flexDirection:'column',gap:3,background:'#fff'}}>
+    <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:15,fontWeight:900,color:BK.ink,lineHeight:1.15}}>{ST_ERA_NAMES[e]}</div>
+    <div style={{fontSize:10,fontWeight:800,color:BK.coral}}>{ST_ERA_YEARS[e]}</div>
+    <EraSound e={e}/>
+    <div style={{fontSize:11,color:BK.ink,lineHeight:1.35,flex:1}}>{how}</div>
+    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:2}}>
+      <span style={{display:'flex',alignItems:'center',gap:5,fontSize:10,fontWeight:800,color:BK.muted}}><span style={{width:28,height:28,borderRadius:14,border:'1.8px dashed ' + BK.muted}}/>stamp</span>
+      <BkStar size={19}/>
+    </div>
+  </div>;
+}
+function WalkSkip() {
+  return <svg viewBox="0 0 168 58" style={{width:140,height:48,display:'block'}}>
+    <g stroke={BK.ink} strokeWidth="2.4" strokeLinecap="round" fill="none">
+      <circle cx="24" cy="9" r="5.5" fill={BK.ink} stroke="none"/><path d="M24 15 V34 M24 20 L16 29 M24 20 L33 27 M24 34 L16 52 M24 34 L33 52"/>
+    </g>
+    <g stroke={BK.coral} strokeWidth="2.4" strokeLinecap="round" fill="none">
+      <circle cx="116" cy="8" r="5.5" fill={BK.coral} stroke="none"/><path d="M116 14 V33 M116 19 L106 9 M116 19 L127 9 M116 33 L108 52 M116 33 L128 38 L126 50"/>
+      <path d="M137 52 q6 -4 12 0 M148 40 q6 -4 12 0" strokeDasharray="2 3" strokeWidth="1.8"/>
+    </g>
+  </svg>;
+}
+
 function TermsWorkbook({ startNo = 1 }) {
   const W = useMemo(() => tmWorkbook(), [LANG]);
   const C = tmConcepts();
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="terms">{content}</WbPage>);
-  P(<WbOpener id="terms" concepts={C} blurb="Musical terms are mostly Italian words that tell you how to play: how fast, how loud, and in what style."/>);
+  P(<WbOpener id="terms" concepts={C} hero={<TermDials/>} blurb="Musical terms are mostly Italian words that tell you how to play: how fast, how loud, and in what style."/>);
   P(<WbMap id="terms" concepts={C} steps={7} checkPage={startNo + 5} tasks={[
     'Find every Italian word in one of your pieces. Say what each one means.',
     'Play a short tune legato, then staccato, then cantabile.',
@@ -24963,7 +25088,7 @@ function TermsWorkbook({ startNo = 1 }) {
     <WbTop step={1}/>
     <Part kind="together" title="Four families" how="Every term belongs to a family: Speed, Changing speed, Volume or Other. Write each word from the bank into its family -- the first one is done.">
       <div style={{display:'flex',flexWrap:'wrap',gap:6,justifyContent:'center',marginBottom:10}}>{W.s1.bank.map((x, i) => <span key={x.term} style={{border:'1.4px solid ' + BK.line,borderRadius:14,padding:'2px 10px',fontSize:12.5,fontWeight:800,fontStyle:'italic',color:i === 0 ? BK.muted : BK.ink,textDecoration:i === 0 ? 'line-through' : 'none',background:BK.soft}}>{x.term}</span>)}</div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>{TM_FAM.map(f => <div key={f} style={{border:'1.5px solid ' + (f === W.s1.bank[0].cat ? BK.coral : BK.line),borderRadius:10,minHeight:150,padding:'6px 8px'}}><div style={{fontSize:12,fontWeight:900,color:BK.coral,marginBottom:4}}>{f}</div>{f === W.s1.bank[0].cat && <div style={{fontSize:13,fontWeight:900,fontStyle:'italic',color:BK.coral}}>{W.s1.bank[0].term}</div>}</div>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>{TM_FAM.map((f, fi) => <div key={f} style={{border:'1.5px solid ' + (f === W.s1.bank[0].cat ? BK.coral : BK.line),borderRadius:10,minHeight:150,padding:'6px 8px'}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:4,marginBottom:4}}><span style={{fontSize:12,fontWeight:900,color:BK.coral}}>{f}</span><TermIcon f={fi} size={40}/></div>{f === W.s1.bank[0].cat && <div style={{fontSize:13,fontWeight:900,fontStyle:'italic',color:BK.coral}}>{W.s1.bank[0].term}</div>}</div>)}</div>
     </Part>
     <Part kind="play" title="Term charades" how="Cut out the cards. Take turns to pick one and ACT it out without talking -- tiptoe for piano, run for presto! The others guess the word.">
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)'}}>{W.s2.cards.map(x => <Card key={x.term}>{x.term}</Card>)}{[1, 2, 3, 4].map(i => <Card key={'b' + i}><span style={{fontSize:11,fontWeight:600,fontStyle:'normal',color:BK.muted}}>your own word</span></Card>)}</div>
@@ -24996,6 +25121,7 @@ function TermsWorkbook({ startNo = 1 }) {
   P(<>
     <WbTop step="4-7"/>
     <Part kind="together" title="Little words, big changes" how={<>Little words change the word next to them: {TM_LITTLE.map(([w, m]) => <span key={w} style={{whiteSpace:'nowrap',marginRight:8}}><b><i>{w}</i></b> = {m}.</span>)} <span style={{whiteSpace:'nowrap'}}>And <b><i>mosso</i></b> = movement, so <i>più mosso</i> = quicker, <i>meno mosso</i> = slower.</span></>}>
+      <ArtLead pic={<DialTrio/>} text="Little words turn the dial: molto = very, poco = a little, più = more, meno = less."/>
       <BkGrid cols={2} gap="6px 10px">{W.s4.combos.slice(0, 2).map(([c, m], i) => <ExCell key={c} n={i + 1} ex={i === 0}><div style={{display:'grid',gridTemplateColumns:'150px 1fr',alignItems:'center',gap:8,padding:'14px 8px 6px'}}><b style={{fontStyle:'italic',fontSize:14,color:BK.ink}}>{c}</b>{i === 0 ? <span style={{color:BK.coral,fontWeight:900,fontStyle:'italic',borderBottom:'1.5px solid ' + BK.coral}}>{m}</span> : <span style={{borderBottom:'1.5px solid ' + BK.line,height:20}}/>}</div></ExCell>)}</BkGrid>
     </Part>
     <Part kind="home" title="What do they mean together?">
@@ -25819,7 +25945,7 @@ function MusicalFormWorkbook({ startNo = 1 }) {
   const C = fmConcepts();
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="form">{content}</WbPage>);
-  P(<WbOpener id="form" concepts={C} blurb="A piece is built from sections, like rooms in a house. We give each section a letter: the same music keeps its letter, and something new gets the next one."/>);
+  P(<WbOpener id="form" concepts={C} hero={<FormTrains/>} blurb="A piece is a train: each section is a carriage. We give each carriage a letter -- the same music keeps its letter, and something new gets the next one."/>);
   P(<WbMap id="form" concepts={C} steps={5} checkPage={startNo + 6} tasks={[
     'Play your piece and say the letter out loud each time a new section starts.',
     'Play just the A section of a ternary piece -- then play it again at the end, like coming home.',
@@ -25893,11 +26019,9 @@ function MusicalFormWorkbook({ startNo = 1 }) {
     <Part kind="home" title="Your turn">
       <BkGrid cols={2} gap="8px 10px">{W.s5.home.map((list, i) => <BTCell key={i} list={list} n={i + 1} sw={84}/>)}</BkGrid>
     </Part>
-    <Part kind="play" title="Form detective" how="Look at three pieces you are learning. Find where each section starts (look for a double bar line, a new tune or a repeat sign) and colour a block for each section. What form is it?">
-      <div style={{border:'1.5px solid ' + BK.ink,borderRadius:10,overflow:'hidden'}}>
-        <div style={{display:'grid',gridTemplateColumns:'1.2fr 1.6fr 0.8fr',background:BK.ink,color:'#fff',fontSize:12,fontWeight:800,padding:'6px 12px'}}><span>Piece</span><span>Sections (colour a block for each)</span><span>Form</span></div>
-        {[0, 1, 2].map(r => <div key={r} style={{display:'grid',gridTemplateColumns:'1.2fr 1.6fr 0.8fr',padding:'10px 12px',borderTop:'1px solid #ece6d8',alignItems:'center'}}><span style={{borderBottom:'1px solid ' + BK.line,height:20,marginRight:12}}/><span style={{display:'flex',gap:5}}>{[0, 1, 2, 3, 4].map(b => <span key={b} style={{width:30,height:30,border:'1.5px dashed ' + BK.line,borderRadius:7}}/>)}</span><span style={{borderBottom:'1px solid ' + BK.line,height:20}}/></div>)}
-      </div>
+    <Part kind="play" title="Form detective" how="Look at three pieces you are learning. Find where each section starts (look for a double bar line, a new tune or a repeat sign). Write the piece, colour one carriage for each section -- then name the form.">
+      <div style={{display:'grid',gridTemplateColumns:'1.05fr 2.4fr 0.85fr',gap:14,padding:'0 6px 2px',fontSize:10.5,fontWeight:900,letterSpacing:'0.08em',color:BK.coral}}><span>PIECE</span><span>TRAIN: one carriage per section</span><span>FORM</span></div>
+      {[0, 1, 2].map(r => <FmDepotRow key={r}/>)}
     </Part>
     <Faces/>
   </>);
@@ -26018,7 +26142,7 @@ function FamCell({ it, n, ex }) {
 function SwRow({ swing, n, ex, show = true }) {
   const long = swing ? 2 / 3 : 1 / 2;
   return <ExCell n={n} ex={ex}>
-    <div style={{display:'grid',gridTemplateColumns:'64px repeat(4,1fr) 120px',gap:6,alignItems:'center',padding:'16px 6px 4px'}}>
+    <div style={{display:'grid',gridTemplateColumns:'64px repeat(4,1fr) 120px',gap:6,alignItems:'center',padding:'14px 6px 3px'}}>
       <span style={{fontSize:10.5,fontWeight:800,color:BK.muted}}>played</span>
       {[0, 1, 2, 3].map(k => <div key={k} style={{display:'flex',gap:3,height:18}}>{[0, 1].map(j => <div key={j} style={{flexGrow:j ? 1 - long : long,flexBasis:0,borderRadius:5,background:j ? '#8a8cb5' : BK.ink}}/>)}</div>)}
       <span style={{display:'flex',gap:4,justifyContent:'flex-end'}}>{['straight', 'swing'].map(w => { const on = ex && (w === 'swing') === swing; return <span key={w} style={{border:'1.5px solid ' + (on ? BK.coral : BK.line),borderRadius:14,padding:'1px 7px',fontSize:11,color:on ? BK.coral : BK.ink,fontWeight:on ? 900 : 600}}>{w}</span>; })}</span>
@@ -26119,13 +26243,8 @@ function StylesWorkbook({ startNo = 1 }) {
       <div style={{height:8}}/>
       <BkGrid cols={4} gap="8px 10px">{W.s2.comps.map((it, i) => <EraCell key={i} it={it} n={i + 5} small/>)}</BkGrid>
     </Part>
-    <Part kind="play" title="Time-travel your tune" how="Play one short tune you know (Twinkle is fine) in each era's style. Tick it, and give yourself a star for the one you liked best.">
-      {[[0, 'crisp and detached (non legato), no pedal, loud or soft in blocks'], [1, 'light and elegant, a quiet left hand, very little pedal'], [2, 'smooth and singing, lots of pedal, let the time stretch'], [3, 'two ways: pedal held down for a misty wash (Debussy), or sharp and spiky with no pedal (Bartók)']].map(([e, how]) => <div key={e} style={{display:'grid',gridTemplateColumns:'22px 120px 1fr 24px',gap:8,alignItems:'center',padding:'7px 0',borderBottom:'1px solid #ece6d8'}}>
-        <span style={{width:18,height:18,border:'1.5px solid ' + BK.ink,borderRadius:4}}/>
-        <b style={{fontSize:13,color:BK.ink}}>{ST_ERA_NAMES[e]}</b>
-        <span style={{fontSize:12.5,color:BK.ink}}>{how}</span>
-        <BkStar size={18}/>
-      </div>)}
+    <Part kind="play" title="Time-travel passport" how="Play one short tune you know (Twinkle is fine) in each era's style. Stamp each page of your passport when you have played it, and give a star to the one you liked best.">
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>{[[0, 'crisp and detached, no pedal, loud or soft in blocks'], [1, 'light and elegant, quiet left hand, little pedal'], [2, 'smooth and singing, lots of pedal, time stretches'], [3, 'two ways: misty pedal wash (Debussy) or sharp, spiky, no pedal (Bartók)']].map(([e, how]) => <PassportCard key={e} e={e} how={how}/>)}</div>
     </Part>
     <Faces/>
   </>);
@@ -26134,6 +26253,7 @@ function StylesWorkbook({ startNo = 1 }) {
     <WbTop step="3-4"/>
     <Part kind="together" title="Which style family?" how="Folk, classical, jazz & blues, or popular? Circle the family for each clue. Then look at how the eighth notes are played: even blocks are straight, long-short blocks are swing.">
       <BkGrid cols={2} gap="10px 12px">{W.s3.tog.map((it, i) => <FamCell key={i} it={it} n={i + 1} ex={i === 0}/>)}</BkGrid>
+      <ArtLead pic={<WalkSkip/>} text="Straight eighths are like walking: step, step, step, step. Swing is like skipping: long-short, long-short!" style={{margin:'8px 0 0',padding:'4px 14px'}}/>
       <div style={{display:'grid',gridTemplateColumns:'64px 1fr 120px',gap:6,margin:'10px 6px 2px',alignItems:'center'}}><span style={{fontSize:10.5,fontWeight:800,color:BK.muted}}>written</span><EighthPairs/><span/></div>
       <div style={{display:'grid',gap:6}}>{W.s3.sw.tog.map((sw, i) => <SwRow key={i} swing={sw} n={i + 3} ex={i === 0}/>)}</div>
     </Part>
@@ -26142,7 +26262,7 @@ function StylesWorkbook({ startNo = 1 }) {
       <div style={{display:'grid',gap:6,marginTop:8}}>{W.s3.sw.home.map((sw, i) => <SwRow key={i} swing={sw} n={i + 5}/>)}</div>
     </Part>
     <Part kind="play" title="Swing your name" how="Say your name and your friends' names in even pairs: “Ma-ya Ma-ya”. Now swing them: long-short, “Maaa-ya Maaa-ya”. Write three names, clap them straight, then swing. Which sounds more like jazz?">
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>{[0, 1, 2].map(i => <div key={i} style={{border:'1.5px dashed ' + BK.coral,borderRadius:8,padding:'10px',display:'flex',flexDirection:'column',gap:8}}><span style={{borderBottom:'1px solid ' + BK.ink,height:22}}/><span style={{display:'flex',gap:10,fontSize:11.5,color:BK.ink}}><span style={{display:'flex',alignItems:'center',gap:4}}><span style={{width:14,height:14,border:'1.5px solid ' + BK.ink,borderRadius:3}}/>straight</span><span style={{display:'flex',alignItems:'center',gap:4}}><span style={{width:14,height:14,border:'1.5px solid ' + BK.ink,borderRadius:3}}/>swing</span></span></div>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>{[0, 1, 2].map(i => <div key={i} style={{border:'1.5px dashed ' + BK.coral,borderRadius:8,padding:'7px 10px',display:'flex',flexDirection:'column',gap:6}}><span style={{borderBottom:'1px solid ' + BK.ink,height:22}}/><span style={{display:'flex',gap:10,fontSize:11.5,color:BK.ink}}><span style={{display:'flex',alignItems:'center',gap:4}}><span style={{width:14,height:14,border:'1.5px solid ' + BK.ink,borderRadius:3}}/>straight</span><span style={{display:'flex',alignItems:'center',gap:4}}><span style={{width:14,height:14,border:'1.5px solid ' + BK.ink,borderRadius:3}}/>swing</span></span></div>)}</div>
     </Part>
     <Faces/>
   </>);
