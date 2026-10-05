@@ -1330,7 +1330,7 @@ function Rule({ title, children }) {
   );
 }
 function Step({ n, total, title, color, open, done, onToggle, onDone, children, id, bookExtra }) {
-  if (BOOK) { const x = bookExtra || {}; const kids = React.Children.toArray(children).map(c => { const r = (x.swap || []).find(([test]) => test(c)); return r ? (r[1] && React.cloneElement(r[1], { key: c.key })) : c; }); return (
+  if (BOOK) { const x = bookExtra || {}; if (x.foot) return x.foot; const kids = React.Children.toArray(children).map(c => { const r = (x.swap || []).find(([test]) => test(c)); return r ? (r[1] && React.cloneElement(r[1], { key: c.key })) : c; }); return (
     <section style={{margin:'18px 0 6px'}}>
       <div style={{display:'flex',alignItems:'center',gap:10,breakAfter:'avoid'}}>
         <span style={{flex:'0 0 30px',height:30,borderRadius:15,background:color,color:'#fff',fontSize:15,fontWeight:900,display:'flex',alignItems:'center',justifyContent:'center'}}>{n}</span>
@@ -26074,7 +26074,7 @@ function MusicalFormTeacher() {
 }
 // Lesson Book: the three shapes side by side (the app's tool shows one at a time)
 function PaperFormShapes() {
-  const rows = [['Binary', ['A', 'B'], 'Two different sections. B never comes back.'], ['Ternary', ['A', 'B', 'A'], 'A, something new, then A comes home -- like a trip away and back.'], ['Rondo', ['A', 'B', 'A', 'C', 'A'], 'A keeps coming back between new episodes -- like a chorus between verses.']];
+  const rows = [['Binary', ['A', 'B'], 'Two different sections. B never comes back. Each can be played twice (A A B B) -- still binary.'], ['Ternary', ['A', 'B', 'A'], 'A, something new, then A comes home -- like a trip away and back.'], ['Rondo', ['A', 'B', 'A', 'C', 'A'], 'A keeps coming back between new episodes -- like a chorus between verses.']];
   return <div style={{border:'1px solid #ece6d8',borderRadius:10,padding:'10px 14px',margin:'8px 0',breakInside:'avoid'}}>
     {rows.map(([name, seq, txt]) => <div key={name} style={{display:'grid',gridTemplateColumns:'90px 200px 1fr',gap:12,alignItems:'center',padding:'7px 0',borderBottom:'1px solid #f1ece0'}}>
       <b style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:17,color:BK.ink}}>{name}</b>
@@ -26428,7 +26428,7 @@ const TEACHER_COPIES = { staff: StaffTeacher, 'note-names': NoteNamesTeacher, 'n
 // are swapped for a static paper picture.
 function SymbolCards({ list }) {
   return (
-    <div style={{display:'grid',gridTemplateColumns:'repeat(' + Math.min(3, list.length) + ',1fr)',gap:10,margin:'8px 0 10px',breakInside:'avoid'}}>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(' + Math.min(list.length === 4 ? 4 : 3, list.length) + ',1fr)',gap:10,margin:'8px 0 10px',breakInside:'avoid'}}>
       {list.map((s, i) => (
         <div key={i} style={{border:'1.6px solid ' + BK.coral,borderRadius:12,overflow:'hidden',background:'#fff',breakInside:'avoid'}}>
           <div style={{background:'#fdeee8',height:112,display:'flex',alignItems:'center',justifyContent:'center',padding:'6px 12px'}}><div style={{width:'100%',maxWidth:s.w || 180}}>{s.glyph}</div></div>
@@ -26590,15 +26590,17 @@ function bookExtras(id) {
     { swap: [[isType(BlackKeyJam), <PaperQR text={<>Any black keys sound good together. Make up your own tune and write it on <b>Workbook page 7</b> -- or scan the code to jam with a backing band in the app.</>} params="drill=first-steps&lock=1" label="Black-key jam"/>]],
       remember: 'The five black keys always sound good together -- a pentatonic scale.' },
   ];
-  if (id === 'pulse') return [
-    { remember: 'The pulse is music\'s heartbeat: steady, and it never stops -- even on long notes.' },
-    { remember: 'The rhythm is the tune\'s long and short notes. The beat is the steady pulse underneath.' },
+  if (id === 'pulse') { const n = NVN(), d = NVD(); return [
+    { remember: 'The pulse is music\'s heartbeat: steady, and it never stops -- even on long notes. “72 beats a minute” means 72 pulses in one minute, about a resting heartbeat.' },
+    { swap: [[isType(BeatOrRhythm), <PaperBeatRhythm/>]], remember: 'The rhythm is the tune\'s long and short notes. The beat is the steady pulse underneath.' },
     { remember: 'Beat 1 is the strong beat. The others are weaker.' },
-    { remember: 'Count inside your head the whole time -- even when you are not playing.' },
-    { remember: 'Keep counting through long notes: a minim is 1 (2).' },
+    { swap: [[isType(BeatTarget), <PaperBeatTarget/>]], remember: 'Count inside your head the whole time -- even when you are not playing.' },
+    { symbols: nvCards([[n.cr, '1 beat.', 'one count.'], [n.mn, '2 beats.', 'two counts: 1 (2).'], [d.mn, '3 beats: a minim plus half again.', 'three counts: 1 (2 3).'], [n.sb, '4 beats -- the longest.', 'four counts: 1 (2 3 4).']]),
+      remember: 'Keep counting through long notes: a minim is 1 (2).' },
     { swap: [[isType(RhythmComposer), <PaperQR text={<>Make your own rhythm cards on <b>Workbook page 6</b> -- or scan the code to build a card in the app and hear it played.</>} params="drill=pulse&lock=1" label="Rhythm cards"/>]],
       remember: 'Count first, clap second: say 1 2 3 4, then clap the card.' },
   ];
+  }
   if (id === 'posture-hands') return [
     { remember: 'Sit on the front half of the chair, feet flat, back tall.' },
     { remember: 'Move from the whole arm -- shoulder, elbow, wrist -- not just the fingers.' },
@@ -26693,10 +26695,10 @@ function bookExtras(id) {
   ];
   if (id === 'form') return [
     { swap: [[isType(FormShapes), <PaperFormShapes/>]], remember: 'Binary = A B. Ternary = A B A. Rondo = A B A C A -- A keeps coming home.' },
-    { swap: [[isType(FormBuilder), <PaperQR text={<>Build your own piece on <b>Workbook page 3</b>: write tune A and tune B, then play AB, ABA and ABACA. Or scan the code to stack blocks and hear them.</>} params="drill=form&lock=1" label="Build a form"/>]], remember: 'Same letter = the same music. A new letter = something new.' },
-    { swap: [[isType(SameOrNewSection), <PaperQR text="Listening needs sound: scan the code, hear two sections, and decide -- same or new? No phone? Your teacher plays two phrases and you call it." params="drill=form&lock=1" label="Same or new?"/>]], remember: 'The first section is always A; every new idea gets the next letter.' },
-    { swap: [[isType(RondoRefrain), <PaperQR text="Scan the code to hear a rondo one section at a time -- guess whether the refrain comes back before you reveal it." params="drill=form&lock=1" label="Rondo"/>]], remember: 'In a rondo, the refrain (A) comes back between new episodes.' },
-    { swap: [[isType(BinaryTernarySpot), <PaperQR text="Scan the code, listen to a whole piece, and decide: did the opening tune come back at the end?" params="drill=form&lock=1" label="Two or three?"/>]], remember: 'If the opening tune comes back at the end, it is ternary (ABA).' },
+    { swap: [[isType(FormBuilder), <PaperFormBuild/>]], remember: 'Same letter = the same music. A new letter = something new.' },
+    { swap: [[isType(SameOrNewSection), <PaperFormSame/>]], remember: 'The first section is always A; every new idea gets the next letter.' },
+    { swap: [[isType(RondoRefrain), <PaperFormRondo/>]], remember: 'In a rondo, the refrain (A) comes back between new episodes.' },
+    { swap: [[isType(BinaryTernarySpot), <PaperFormTwoThree/>]], remember: 'If the opening tune comes back at the end, it is ternary (ABA).' },
   ];
   if (id === 'styles') return [
     { swap: [[isType(TextureTypes), <PaperTextures/>]], remember: 'Monophony = one tune alone. Homophony = a tune with chords. Polyphony = two or more tunes woven together.' },
@@ -26716,8 +26718,7 @@ function bookExtras(id) {
   if (id !== 'staff') return [];
   const g = (clef, notes = [], w = 150) => <PaperStaff clef={clef} notes={notes} width={w}/>;
   return [
-    { symbols: [{ glyph: <PaperStaff clef="treble" clefOn={false} notes={[]} width={140}/>, w: 230, name: 'The staff', means: 'five lines and four spaces that show how high or low a note is.', play: 'higher on the staff = further right on the piano.' }],
-      remember: 'Five lines, four spaces -- always count from the bottom.' },
+    { remember: 'Five lines, four spaces -- always count from the bottom.' },
     { swap: [[isType(MnemonicStaff), <PaperRhymes/>]], remember: 'Lines and spaces each have their own rhyme -- check which one the note sits on first.' },
     { symbols: [
         { glyph: g('treble', [], 110), w: 150, name: 'Treble clef (G clef)', means: 'the high notes. Its curl wraps round line 2, the note G.', play: 'usually the right hand.' },
@@ -26731,8 +26732,7 @@ function bookExtras(id) {
       remember: 'Learn five landmarks -- Bass C, Bass F, Middle C, Treble G, Treble C -- and count from the nearest one.' },
     { swap: [[isType(FlashCards), <PaperFlash/>]], remember: 'Aim to name every note in under 3 seconds -- that is reading, not counting.' },
     { swap: [[isType(WriteTheNote), <PaperDrawHow/>]], remember: 'Line note: the line runs through the middle. Space note: it fills the space between two lines.' },
-    { symbols: [{ glyph: g('alto', [{ d: 28, color: BK.coral }], 120), w: 190, name: 'Alto clef (C clef)', means: 'its centre points to middle C, on the middle line.', play: 'not used for piano -- the viola reads it.' }],
-      remember: 'The alto clef always points to middle C.' },
+    { foot: <BkFoot><div style={{flex:'0 0 150px'}}><PaperStaff clef="alto" notes={[{ d: 28, color: BK.coral }]} width={150}/></div><div><b style={{color:BK.ink}}>Beyond the piano: the alto clef.</b> A third clef, a “C clef”, points to middle C on the middle line. Violas read it -- you will not need it at the piano.</div></BkFoot> },
   ];
 }
 
@@ -26751,6 +26751,214 @@ function LessonBookChapter({ id }) {
     </div>
   );
 }
+
+// ─── Phase 314 (pass 4, chunk 1): Lesson Book print curation ───
+// The Lesson Book re-uses the app's Learn pages, so some sentences still talk about tapping, pressing and scores.
+// LessonFix rewrites those on the page itself (text nodes), hides screen-only counters, and keeps headings with their cards.
+const PAPER_TXT = [
+  // posture-hands
+  [/then tap \+1 for each time/, 'then add a tally mark each time'],
+  [/^Move your mouse \(or finger\) over the diagram -- up\/down changes wrist height, left\/right changes how far back you’re sitting\. Watch/, 'Study the diagram: wrist height and sitting distance both change the picture. Watch'],
+  [/^\. Tap a fault to see it -- then tap “Good shape” to fix it\./, '. Spot the fault, then fix it to reach the “Good shape”.'],
+  [/Go down the list: tap once = ✓ fine, tap again =/, 'Go down the list: tick ✓ = fine, cross ✗ ='],
+  // first-steps
+  [/\s*Tap a house!/, ''],
+  // staff
+  [/^Tap a line, bottom to top: /, 'Count the lines from the bottom up: '],
+  [/\s*Tap “Middle C” again to switch\./, ''],
+  [/^Reading and writing are two different skills -- the theory papers ask for both\. Tap where each note goes\./, 'Reading and writing are two different skills -- AMEB theory papers ask for both. Here is how each note must be written.'],
+  [/^Tap any line or space -- notice/, 'Notice'],
+  // ledger-lines
+  [/Tap a note: left, with ledger lines; right,/, 'Each pair shows one key written two ways: left, with ledger lines; right,'],
+  [/then tap the circle where (\w+) goes\./, 'then work out where $1 goes.'],
+  // pulse
+  [/^Tap the right beat$/, 'Clap the right beat'],
+  [/Start it, then tap \(or clap\) along and count/, 'Clap along and count'],
+  [/Listen to both, then try tapping just one of them\./, 'Try it: pat the beat with one hand while you clap the rhythm with the other.'],
+  [/only tap where you’re told/, 'only clap where you’re told'],
+  [/Tap only where it says\./, 'Clap only where it says.'],
+  [/Count along and tap only on that beat\./, 'Count along and clap only on that beat.'],
+  // note-values
+  [/^Tap a note to hear it sound, or tap a rest to hear it stay silent for the same length of time\./, 'Each rest is silence for the same length as its note: the note sounds, the rest stays silent.'],
+  [/^Tap a beat to turn it into a(\s*)$/, 'Every beat is either a$1'],
+  [/^, then press Play\. The little click is the pulse: it keeps going/, '. The pulse keeps going'],
+  [/^A 4\/4 bar has four apples\. Tap an apple to slice it differently, then press play\./, 'A 4/4 bar has four apples. Slice an apple into smaller pieces -- the bar still adds up to four.'],
+  [/Tap a note or rest to change it \(the order is short to long, notes then rests\) until/, 'Change a note or rest until'],
+  // time-signatures
+  [/ -- tap to hear$/i, ''],
+  [/^Press start and count out loud with the lights\./, 'Count out loud with the lights.'],
+  [/Count the beats and tap the gap where each bar is full/, 'Count the beats and draw a bar line in the gap where each bar is full'],
+  [/^Tap A or B\.$/, 'Circle A or B.'],
+  [/Tap a lane to hear it\.\s*/, ''],
+  // rhythm
+  [/Count along under each note -- tap a card to hear it with a 4-click count-in\./, 'Count along under each note -- then clap it.'],
+  [/\s*Then press play and check\./, ''],
+  // reading-steps
+  [/tap a key \(or play up and down\) and watch the note/, 'play up and down and watch the note'],
+  // tempo
+  [/\s*Tap one to hear its beat\./, ''],
+  [/Tap one and feel it\./, 'Walk along to each one and feel it.'],
+  // intervals
+  [/^Pick a bottom note, then tap anywhere on the staff above it\. Count every line and space/, 'Count every line and space from the bottom note up to the top note'],
+  [/^Tap a starting letter, choose a step, press Go\./, 'Start on any letter and hop up.'],
+  [/^Press play: the tonic sounds with each note in turn\./, 'Play the key note, then each note in turn against it.'],
+  // scales
+  [/Tap a degree to hear it against the tonic\./, 'Play each degree against the tonic (the key note).'],
+  [/^Tap a key to see it on the keyboard below\.\s*/, ''],
+  [/^\) or tap one\. /, '). '],
+  // key-signatures
+  [/Tap its line or space in the shaded column/, 'Find its line or space in the shaded column'],
+  [/ Tap any key\.$/, ''],
+  // chords
+  [/^\. Tap one\.$/, '.'],
+  [/ Tap one to hear a short phrase end with it\.$/, ''],
+  // tones
+  [/^Try it: tap any two keys$/, 'Try it: pick any two keys'],
+  [/Tap a white key, push, then press ♮\./, 'Take a white key, push it up or down, then cancel it with ♮.'],
+  [/^Tap a white key, then push it up or down\./, 'Take a white key, then push it up or down.'],
+  [/^Tap each note \(or play the bar\) and watch which key it really is\./, 'Play each note and watch which key it really is.'],
+  [/^Tap a note\.$/, 'Look at each note.'],
+  [/^Tap any key above\./, 'Look at the key above.'],
+  // melody
+  [/^Tap the staff to move each of the eight notes up or down, then play your tune\./, 'Move each of the eight notes up or down, then play your tune.'],
+  // dynamics
+  [/Tap any one to hear it\./, 'Play them one at a time.'],
+  [/-- or scan the code to hear each one as you tap it\./, '-- or scan the code to hear each one.'],
+  // signs
+  [/and tap the bars in order yourself\./, 'and follow the bars in order yourself.'],
+  [/Tap a sign, look at what is written, then what is actually played -- and hear both\./, 'Look at what is written, then at what is actually played.'],
+  [/\s*Tap the line or space where the small note goes\./, ''],
+  // terms
+  [/^Tap ♪ to hear it \(speed words as a metronome, the rest as a little phrase played that way\)\. Tap the orange “say:” line to hear how to(\s*)$/, 'Read the orange “say:” line to learn how to$1'],
+  // styles
+  [/^Tap any bar to hear its chord\.$/, ''],
+  // pitch-range
+  [/ -- tap them\.$/, '.'],
+  [/^Tap the one you think plays higher\./, 'Circle the one you think plays higher.'],
+  [/\s*Tap a bar to hear its lowest and highest note\./, ''],
+  // composers
+  [/ -- tap one to hear them$/i, ''],
+  [/Each bar shows when a movement was strongest\. Tap one\./, 'Each bar shows when a movement was strongest.'],
+  [/Pick a period, then tap a picture to open the card\./, 'Each period has its own composer cards.'],
+];
+const PAPER_HIDE = [
+  /^\s*\d+\s*\/\s*\d+\s*(perfect|done|✓)\s*$/,
+  /^\s*0\s*\/\s*0\s*$/,
+  /^\s*Score: \d+ points in \d+ rounds\s*$/,
+  /^\s*Space bar works too\.\s*$/,
+];
+function paperFix(root) {
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = []; let nd; while ((nd = w.nextNode())) nodes.push(nd);
+  nodes.forEach(n => { const o = n.nodeValue; let v = o; PAPER_TXT.forEach(([re, rep]) => { v = v.replace(re, rep); }); if (v !== o) n.nodeValue = v; });
+  root.querySelectorAll('span,div,p,b').forEach(el => {
+    if (el.children.length) return;
+    const tx = el.textContent;
+    if (PAPER_HIDE.some(re => re.test(tx))) el.style.display = 'none';
+    else if (/^Why they’re called the G clef and the F clef$/.test(tx)) el.style.breakAfter = 'avoid';
+  });
+  // keep a short step (heading, text and picture) on one page; long steps flow
+  root.querySelectorAll('section').forEach(sec => { if (sec.offsetHeight <= 500) sec.style.breakInside = 'avoid'; });
+}
+function LessonFix({ children }) {
+  const ref = React.useRef(null);
+  React.useLayoutEffect(() => {
+    const r = ref.current; if (!r) return;
+    const cfg = { childList: true, subtree: true, characterData: true };
+    let mo = null;
+    const run = () => { if (mo) mo.disconnect(); try { paperFix(r); } catch (e) {} if (mo) mo.observe(r, cfg); };
+    mo = new MutationObserver(run);
+    run();
+    return () => mo.disconnect();
+  }, []);
+  return <div className="bk-lesson" ref={ref}>{children}</div>;
+}
+function BkFoot({ children }) {
+  return <div style={{margin:'16px 0 6px',padding:'8px 0 0',borderTop:'1px solid #ece6d8',display:'flex',gap:14,alignItems:'center',fontSize:12.5,color:BK.muted,lineHeight:1.5,breakInside:'avoid'}}>{children}</div>;
+}
+
+// ── Pulse: Beat or rhythm? (paper) and Tap the right beat (paper)
+const PB_HEART = (cx, cy, s) => `M${cx} ${cy + 7 * s} C${cx - 8 * s} ${cy + 1 * s} ${cx - 9 * s} ${cy - 5 * s} ${cx - 5 * s} ${cy - 7 * s} C${cx - 2 * s} ${cy - 8.5 * s} ${cx} ${cy - 6 * s} ${cx} ${cy - 4.5 * s} C${cx} ${cy - 6 * s} ${cx + 2 * s} ${cy - 8.5 * s} ${cx + 5 * s} ${cy - 7 * s} C${cx + 9 * s} ${cy - 5 * s} ${cx + 8 * s} ${cy + 1 * s} ${cx} ${cy + 7 * s} Z`;
+function PaperBeatRhythm() {
+  const BW = 19.5, X = (b) => 6 + b * BW + Math.floor(b / 4) * 2;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Beat or rhythm?</div>
+      <p style={actNote}>The rhythm is the tune’s long and short notes. The beat is the steady pulse underneath -- it keeps going even through a long note. Try it: pat the beat with one hand while you clap the rhythm with the other. The tune is “Hot Cross Buns”.</p>
+      <div style={{display:'flex',gap:12,fontSize:11.5,fontWeight:800,color:BK.muted,textTransform:'uppercase',letterSpacing:'0.05em'}}>
+        <span><span style={{display:'inline-block',width:14,height:7,borderRadius:3,background:BK.ink,marginRight:5}}/>Rhythm (the tune)</span>
+        <span style={{color:BK.coral}}>♥ Beat</span>
+      </div>
+      <svg viewBox="0 0 326 92" width="100%" style={{display:'block',maxWidth:540,margin:'4px 0'}} aria-hidden="true">
+        {[0, 1, 2, 3, 4].map(m => <line key={m} x1={m ? X(m * 4) - 1 : 4} x2={m ? X(m * 4) - 1 : 4} y1="4" y2="88" stroke={BK.ink} strokeOpacity="0.25"/>)}
+        {HCB.map(([d, dur], i) => <rect key={i} x={X(HCB_ON[i]) + 1} y={30 - (d - 28) * 7} width={dur * BW - 2.5} height="9" rx="4" fill={BK.ink}/>)}
+        {Array.from({ length: 16 }, (_, k) => <path key={k} d={PB_HEART(X(k) + BW / 2, 66, 0.9)} fill="#f4c9bb"/>)}
+      </svg>
+      <div style={{display:'flex',gap:18,fontSize:12.5,color:BK.ink,marginTop:2}}>
+        <span><b>1.</b> Pat the beat, say “beat”.</span><span><b>2.</b> Clap the rhythm, say “rhythm”.</span><span><b>3.</b> Do both at once!</span>
+      </div>
+    </div>
+  );
+}
+function PaperBeatTarget() {
+  const dot = (label, on, big) => <div key={label + on} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+    <div style={{width:big ? 34 : 18,height:big ? 34 : 18,marginTop:big ? 0 : 8,borderRadius:'50%',background:on ? BK.coral : '#f3d3c7',boxShadow:on ? '0 0 0 3px #fff, 0 0 0 5px ' + BK.coral : 'none'}}/>
+    <span style={{fontSize:big ? 15 : 12,fontWeight:900,color:on ? BK.coral : '#b9b09a'}}>{label}</span>
+  </div>;
+  const row = (title, cells) => <div style={{display:'grid',gridTemplateColumns:'150px 1fr',alignItems:'center',gap:12,padding:'8px 0',borderBottom:'1px solid #f1ece0'}}>
+    <b style={{fontSize:13.5,color:BK.coral}}>{title}</b>
+    <div style={{display:'flex',gap:cells.length > 4 ? 6 : 22,alignItems:'flex-start'}}>{cells}</div>
+  </div>;
+  const beats = (on) => [1, 2, 3, 4].map(b => dot(String(b), on.includes(b), true));
+  const ands = [1, 2, 3, 4].flatMap(b => [dot(String(b), false, true), dot('&', b === 2, false)]);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Clap the right beat</div>
+      <p style={actNote}>One bar to count in, then two bars to play. Count the whole bar out loud, but clap <b>only</b> where the coral ring is. Your teacher keeps a click going -- or scan the code for the app’s version.</p>
+      {row('Clap on beat 3', beats([3]))}
+      {row('Clap on beats 1 and 3', beats([1, 3]))}
+      {row('Clap on the “and” after 2', ands)}
+      {row('Silent bar: clap on beat 4', beats([4]))}
+    </div>
+  );
+}
+
+// ── Form (paper): the exercises from the Workbook, one worked example each
+function PaperFormBuild() {
+  return <>
+    <p style={{fontSize:13.5,color:BK.ink,lineHeight:1.5,margin:'4px 0 8px'}}>Write a 4-note tune for A (end it on C so it sounds like home) and a different one for B. Then play your piece three ways: A B, A B A and A B A C A.</p>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,breakInside:'avoid'}}>
+      {['A', 'B'].map(l => <div key={l} style={{border:'1.5px dashed ' + BK.coral,borderRadius:8,padding:'6px 10px'}}><div style={{display:'flex',alignItems:'center',gap:8}}><FmBlock l={l} s={26}/><span style={{fontSize:11,fontWeight:900,color:BK.coral}}>{l === 'A' ? 'MY HOME TUNE' : 'MY AWAY TUNE'}</span></div><PaperStaff clef="treble" notes={[]} width={380} minSpan={[39, 27]}/></div>)}
+    </div>
+    <PaperQR text={<>Prefer to stack blocks and hear them? Scan the code to build a form in the app. More on <b>Workbook page 3</b>.</>} params="drill=form&lock=1" label="Build a form"/>
+  </>;
+}
+function PaperFormSame() {
+  return <>
+    <p style={{fontSize:13.5,color:BK.ink,lineHeight:1.5,margin:'4px 0 8px'}}>Look at each pair of phrases: is the second one the same music, or something new? Then give every phrase in the row a letter -- the first is A, and each new idea gets the next letter.</p>
+    <BkGrid cols={2} gap="10px 12px"><PairCell a="A" b="A" n={1} ex/><PairCell a="B" b="C" n={2}/></BkGrid>
+    <div style={{height:8}}/>
+    <LabelRow list={['C', 'D', 'C', 'D']} n={3} w={140}/>
+    <PaperQR text="Want to hear it? Scan the code to listen to two sections and decide: same or new? No phone? Your teacher plays two phrases and you call it." params="drill=form&lock=1" label="Same or new?"/>
+  </>;
+}
+function PaperFormRondo() {
+  return <>
+    <p style={{fontSize:13.5,color:BK.ink,lineHeight:1.5,margin:'4px 0 8px'}}>In a rondo, A is the refrain -- it comes back after every new carriage. Fill in the missing letters.</p>
+    <BkGrid cols={2} gap="10px 12px"><TrainCell seq={['A', 'B', 'A', 'C', 'A']} gaps={[2]} n={1} ex/><TrainCell seq={['A', 'B', 'A', 'C', 'A']} gaps={[1, 4]} n={2}/></BkGrid>
+    <PaperQR text="Scan the code to hear a rondo one section at a time -- guess whether the refrain comes back before you reveal it." params="drill=form&lock=1" label="Rondo"/>
+  </>;
+}
+function PaperFormTwoThree() {
+  return <>
+    <p style={{fontSize:13.5,color:BK.ink,lineHeight:1.5,margin:'4px 0 8px'}}>Read the phrases in order. Does the opening tune come back at the end? Then it is ternary (ABA). If not, it is binary (AB) -- even when each section is played twice (AABB).</p>
+    <div style={{display:'grid',gap:8}}>
+      <BTCell list={['A', 'B', 'A']} n={1} ex/><BTCell list={['C', 'D']} n={2}/><BTCell list={['B', 'D', 'B']} n={3}/>
+    </div>
+    <PaperQR text="Scan the code, listen to a whole piece, and decide: did the opening tune come back at the end?" params="drill=form&lock=1" label="Two or three?"/>
+  </>;
+}
+
 
 function BookRoot({ kind, ch }) {
   BOOK = true;
@@ -26778,7 +26986,7 @@ function BookRoot({ kind, ch }) {
       </div>
       {fixed
         ? ids.map(id => { const Wb = reg[id]; return Wb ? <Wb key={id}/> : null; })
-        : <div className="bk-lesson">{ids.map(id => <LessonBookChapter key={id} id={id}/>)}</div>}
+        : <LessonFix>{ids.map(id => <LessonBookChapter key={id} id={id}/>)}</LessonFix>}
     </div>
   );
 }
