@@ -24501,12 +24501,172 @@ function dyConcepts() {
 const BkHairpin = ({ kind, w = 120, color = BK.ink }) => <svg viewBox={`0 0 ${w} 30`} style={{width:'100%',maxWidth:w,display:'block',margin:'0 auto'}}>{kind === 'cresc' ? <path d={`M6 15 L${w - 6} 4 M6 15 L${w - 6} 26`} stroke={color} strokeWidth="2" fill="none"/> : <path d={`M6 4 L${w - 6} 15 M6 26 L${w - 6} 15`} stroke={color} strokeWidth="2" fill="none"/>}</svg>;
 const dyMark = (id, size = 26, color = BK.ink) => <DynMark id={id} size={size} color={color}/>;
 
+// ─── Pass 3, chunk 4a: Melody (shapes you can see), Dynamics (the volume ladder) and Signs (road signs). Navy + coral only.
+const bez = (p0, p1, p2, t) => [(1 - t) * (1 - t) * p0[0] + 2 * (1 - t) * t * p1[0] + t * t * p2[0], (1 - t) * (1 - t) * p0[1] + 2 * (1 - t) * t * p1[1] + t * t * p2[1]];
+function ShapePics({ width = 600 }) {
+  const ts = [0, 0.25, 0.5, 0.75, 1];
+  const dot = (x, y, k) => <circle key={k} cx={x} cy={y} r="5" fill={BK.coral} stroke={BK.ink} strokeWidth="1.2"/>;
+  const panels = [
+    ['rising', 'stairs', (x0) => <g>
+      <path d={`M${x0 + 8} 112 H${x0 + 34} V92 H${x0 + 60} V72 H${x0 + 86} V52 H${x0 + 112} V32 H${x0 + 134}`} fill="none" stroke={BK.ink} strokeWidth="2.2" strokeLinejoin="round"/>
+      {[[21, 104], [47, 84], [73, 64], [99, 44], [123, 24]].map(([dx, y], i) => dot(x0 + dx, y, i))}</g>],
+    ['falling', 'a slide', (x0) => <g>
+      <path d={`M${x0 + 16} 28 V112 M${x0 + 28} 28 V112 M${x0 + 16} 50 H${x0 + 28} M${x0 + 16} 70 H${x0 + 28} M${x0 + 16} 90 H${x0 + 28}`} fill="none" stroke={BK.ink} strokeWidth="1.8" strokeLinecap="round"/>
+      <path d={`M${x0 + 28} 32 Q${x0 + 84} 60 ${x0 + 134} 108`} fill="none" stroke={BK.ink} strokeWidth="3.2" strokeLinecap="round"/>
+      {ts.map((t, i) => { const [x, y] = bez([x0 + 34, 30], [x0 + 84, 56], [x0 + 130, 100], t); return dot(x, y - 9, i); })}</g>],
+    ['arch', 'the Harbour Bridge', (x0) => <g>
+      <path d={`M${x0 + 4} 110 H${x0 + 138}`} fill="none" stroke={BK.ink} strokeWidth="2.2" strokeLinecap="round"/>
+      <path d={`M${x0 + 10} 108 Q${x0 + 71} -8 ${x0 + 132} 108`} fill="none" stroke={BK.ink} strokeWidth="2.6" strokeLinecap="round"/>
+      {[0.2, 0.4, 0.6, 0.8].map((t, i) => { const [x, y] = bez([x0 + 10, 108], [x0 + 71, -8], [x0 + 132, 108], t); return <line key={'h' + i} x1={x} y1={y + 3} x2={x} y2="110" stroke={BK.muted} strokeWidth="1"/>; })}
+      {ts.map((t, i) => { const [x, y] = bez([x0 + 10, 108], [x0 + 71, -8], [x0 + 132, 108], t); return dot(x, y - 9, i); })}</g>],
+    ['valley', 'a hammock', (x0) => <g>
+      <path d={`M${x0 + 10} 30 V112 M${x0 + 132} 30 V112`} fill="none" stroke={BK.ink} strokeWidth="2.6" strokeLinecap="round"/>
+      <path d={`M${x0 + 10} 36 Q${x0 + 71} 138 ${x0 + 132} 36`} fill="none" stroke={BK.ink} strokeWidth="2.2" strokeLinecap="round" strokeDasharray="0"/>
+      {ts.map((t, i) => { const [x, y] = bez([x0 + 14, 36], [x0 + 71, 138], [x0 + 128, 36], t); return dot(x, y - 9, i); })}</g>],
+  ];
+  return (
+    <svg viewBox="0 0 600 156" style={{width,maxWidth:'100%',display:'block',margin:'0 auto'}}>
+      {panels.map(([nm, thing, draw], i) => { const x0 = 8 + i * 148; return <g key={nm}>
+        <rect x={x0 - 2} y="4" width="144" height="148" rx="10" fill="#fff" stroke="#d9dbea" strokeWidth="1.4"/>
+        {draw(x0)}
+        <text x={x0 + 70} y="132" textAnchor="middle" fontSize="13" fontWeight="900" fill={BK.ink}>{nm}</text>
+        <text x={x0 + 70} y="146" textAnchor="middle" fontSize="10" fontWeight="700" fill={BK.muted}>{thing}</text>
+      </g>; })}
+    </svg>
+  );
+}
+// A question hangs in the air; an answer lands back home.
+function QABubbles({ width = 320 }) {
+  const house = (x, y) => <g><path d={`M${x - 11} ${y} L${x} ${y - 11} L${x + 11} ${y} Z`} fill={BK.coral} stroke={BK.ink} strokeWidth="1.3" strokeLinejoin="round"/><rect x={x - 8} y={y} width="16" height="12" fill="#fff" stroke={BK.ink} strokeWidth="1.3"/></g>;
+  return (
+    <svg viewBox="0 0 340 92" style={{width,maxWidth:'100%',display:'block'}}>
+      {bkFace(20, 40, 12)}{bkFace(320, 40, 12)}
+      <rect x="40" y="8" width="128" height="56" rx="12" fill="#fff" stroke={BK.ink} strokeWidth="1.6"/><path d="M40 34 L31 40 L40 46" fill="#fff" stroke={BK.ink} strokeWidth="1.6" strokeLinejoin="round"/>
+      {[[58, 50], [80, 44], [102, 34], [124, 22]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r="5" fill={BK.coral} stroke={BK.ink} strokeWidth="1.2"/>)}
+      <text x="150" y="44" textAnchor="middle" fontSize="26" fontWeight="900" fill={BK.coral}>?</text>
+      <rect x="172" y="8" width="128" height="56" rx="12" fill="#fff" stroke={BK.ink} strokeWidth="1.6"/><path d="M300 34 L309 40 L300 46" fill="#fff" stroke={BK.ink} strokeWidth="1.6" strokeLinejoin="round"/>
+      {[[190, 22], [212, 30], [234, 40], [256, 50]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r="5" fill={BK.coral} stroke={BK.ink} strokeWidth="1.2"/>)}
+      {house(280, 40)}
+      <text x="104" y="80" textAnchor="middle" fontSize="10" fontWeight="900" fill={BK.ink}>question: up in the air</text>
+      <text x="236" y="80" textAnchor="middle" fontSize="10" fontWeight="900" fill={BK.ink}>answer: back home (C)</text>
+    </svg>
+  );
+}
+// A sequence: the same footprints, one stair higher each time.
+function FootStairs({ width = 230 }) {
+  const pat = [[0, 0], [15, -10], [30, -4]];
+  return (
+    <svg viewBox="0 0 240 90" style={{width,maxWidth:'100%',display:'block'}}>
+      <path d="M4 86 V66 H76 V46 H148 V26 H234" fill="none" stroke={BK.ink} strokeWidth="2.2" strokeLinejoin="round"/>
+      {[[14, 58], [86, 38], [158, 18]].map(([x, y], g) => pat.map(([dx, dy], i) => <circle key={g + '-' + i} cx={x + dx} cy={y + dy} r="5" fill={BK.coral} stroke={BK.ink} strokeWidth="1.2"/>))}
+      <path d="M52 50 q8 -10 18 -12 M124 30 q8 -10 18 -12" fill="none" stroke={BK.coral} strokeWidth="1.6" strokeDasharray="3 3" strokeLinecap="round"/>
+    </svg>
+  );
+}
+// Dynamics: a volume ladder of everyday voices.
+function VolumeLadder({ width = 600 }) {
+  const steps = [['pp', 'a whisper'], ['p', 'library voice'], ['mp', 'dinner-table chat'], ['mf', 'classroom talk'], ['f', 'playground shout'], ['ff', 'thunder!']];
+  const gy = 178, bw = 94, x0 = 8;
+  return (
+    <svg viewBox="0 0 580 190" style={{width,maxWidth:'100%',display:'block',margin:'0 auto'}}>
+      {steps.map(([m, w], i) => { const x = x0 + i * bw, h = 26 + i * 19, top = gy - h, fx = x + 22, fy = top - 15;
+        return <g key={m}>
+          <rect x={x} y={top} width={bw} height={h} fill={BK.coral} fillOpacity={0.05 + i * 0.09} stroke={BK.ink} strokeWidth="1.6"/>
+          <text x={x + bw / 2} y={gy - 8} textAnchor="middle" fontSize="9.5" fontWeight="800" fill={BK.ink}>{w}</text>
+          <circle cx={fx} cy={fy} r="10" fill="#fff" stroke={BK.ink} strokeWidth="1.5"/>
+          <circle cx={fx - 3.4} cy={fy - 3} r="1.2" fill={BK.ink}/><circle cx={fx + 3.4} cy={fy - 3} r="1.2" fill={BK.ink}/>
+          <ellipse cx={fx} cy={fy + 4} rx={1.6 + i * 0.7} ry={1 + i * 1.1} fill={BK.ink}/>
+          {Array.from({ length: i + 1 }, (_, k) => <path key={k} d={`M${fx + 15 + k * 5.5} ${fy - 3 - k * 0.8} q${3 + k * 0.4} ${3 + k * 0.8} 0 ${6 + k * 1.6}`} fill="none" stroke={BK.coral} strokeWidth="1.7" strokeLinecap="round"/>)}
+          <text x={x + bw - 24} y={top - 7} textAnchor="middle" fontSize="22" fontWeight="900" fontStyle="italic" fontFamily="'Playfair Display', Georgia, serif" fill={i > 3 ? BK.coral : BK.ink}>{m}</text>
+        </g>; })}
+    </svg>
+  );
+}
+// A hairpin is a megaphone.
+function MegaphoneLead({ width = 300 }) {
+  const arcs = (x, grow) => [0, 1, 2].map(k => { const s = grow ? 5 + k * 5 : 15 - k * 5; return <path key={k} d={`M${x + k * 9} ${34 - s} q${s * 0.6} ${s} 0 ${2 * s}`} fill="none" stroke={BK.coral} strokeWidth="1.8" strokeLinecap="round"/>; });
+  return (
+    <svg viewBox="0 0 300 80" style={{width,maxWidth:'100%',display:'block'}}>
+      <path d="M22 28 L96 6 V62 L22 40 Z" fill={BK.soft} stroke={BK.ink} strokeWidth="1.6" strokeLinejoin="round"/><rect x="10" y="27" width="12" height="14" rx="3" fill="#fff" stroke={BK.ink} strokeWidth="1.5"/>
+      {arcs(104, true)}
+      <text x="60" y="76" textAnchor="middle" fontSize="10.5" fontWeight="900" fill={BK.ink}>cresc. = louder</text>
+      <path d="M172 6 L246 28 V40 L172 62 Z" fill={BK.soft} stroke={BK.ink} strokeWidth="1.6" strokeLinejoin="round"/><rect x="246" y="27" width="12" height="14" rx="3" fill="#fff" stroke={BK.ink} strokeWidth="1.5"/>
+      {arcs(262, false).slice(0, 2)}
+      <text x="212" y="76" textAnchor="middle" fontSize="10.5" fontWeight="900" fill={BK.ink}>dim. = softer</text>
+    </svg>
+  );
+}
+// Articulation as movements: bounce, glide, poke, lean.
+function ArticStrip({ width = 600 }) {
+  const cells = [
+    ['staccato', 'bounce', (x) => <g><path d={`M${x + 6} 46 H${x + 100}`} stroke={BK.muted} strokeWidth="1"/><path d={`M${x + 10} 46 q12 -40 24 0 q12 -40 24 0 q12 -40 24 0`} fill="none" stroke={BK.ink} strokeWidth="1.6" strokeDasharray="3 3"/>{[10, 34, 58, 82].map(d => <circle key={d} cx={x + d} cy="46" r="3.4" fill={BK.coral}/>)}<circle cx={x + 46} cy="14" r="5" fill={BK.coral} stroke={BK.ink} strokeWidth="1.2"/></g>],
+    ['legato', 'glide', (x) => <g><path d={`M${x + 8} 38 q16 -30 32 0 t32 0 t24 0`} fill="none" stroke={BK.ink} strokeWidth="2"/>{[[24, 23], [56, 53], [86, 23]].map(([d, y]) => <circle key={d} cx={x + d} cy={y} r="4.5" fill={BK.coral} stroke={BK.ink} strokeWidth="1.2"/>)}<path d={`M${x + 18} 14 Q${x + 54} -4 ${x + 90} 14`} fill="none" stroke={BK.coral} strokeWidth="2" strokeLinecap="round"/></g>],
+    ['accent', 'poke', (x) => <g>{[16, 50, 84].map((d, i) => <circle key={d} cx={x + d} cy="36" r={i === 1 ? 8 : 4.5} fill={BK.coral} stroke={BK.ink} strokeWidth="1.2"/>)}<path d={`M${x + 38} 14 L${x + 62} 20 L${x + 38} 26`} fill="none" stroke={BK.ink} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/><path d={`M${x + 50} 46 v8 M${x + 38} 44 l-5 6 M${x + 62} 44 l5 6`} stroke={BK.coral} strokeWidth="1.8" strokeLinecap="round"/></g>],
+    ['tenuto', 'lean', (x) => <g>{[18, 50, 82].map(d => <g key={d}><circle cx={x + d} cy="28" r="4.5" fill={BK.coral} stroke={BK.ink} strokeWidth="1.2"/><path d={`M${x + d - 11} 44 H${x + d + 11}`} stroke={BK.ink} strokeWidth="3.6" strokeLinecap="round"/></g>)}<path d={`M${x + 6} 54 H${x + 94}`} stroke={BK.muted} strokeWidth="1"/></g>],
+  ];
+  return (
+    <svg viewBox="0 0 600 78" style={{width,maxWidth:'100%',display:'block',margin:'6px auto 0'}}>
+      {cells.map(([nm, mv, draw], i) => { const x = 10 + i * 148; return <g key={nm}>
+        <rect x={x - 4} y="2" width="140" height="74" rx="10" fill="#fff" stroke="#d9dbea" strokeWidth="1.4"/>
+        {draw(x + 8)}
+        <text x={x + 66} y="70" textAnchor="middle" fontSize="11.5" fontWeight="900" fill={BK.ink}>{nm} <tspan fill={BK.coral}>= {mv}</tspan></text>
+      </g>; })}
+    </svg>
+  );
+}
+// Signs: a road with four road signs.
+function SignRoad({ width = 600 }) {
+  const sign = (x, draw) => <g><line x1={x} y1="84" x2={x} y2="132" stroke={BK.ink} strokeWidth="2.4"/>{draw(x)}</g>;
+  return (
+    <svg viewBox="0 0 610 196" style={{width,maxWidth:'100%',display:'block',margin:'0 auto'}}>
+      <text x="305" y="14" textAnchor="middle" fontSize="12.5" fontWeight="800" fill={BK.ink}>Signs are road signs for music: they tell you where to go next.</text>
+      <path d="M8 142 H602" stroke="#d9dbea" strokeWidth="22" strokeLinecap="round"/><path d="M20 142 H590" stroke="#fff" strokeWidth="2.6" strokeDasharray="12 10"/>
+      {sign(80, (x) => <g><circle cx={x} cy="56" r="28" fill="#fff" stroke={BK.ink} strokeWidth="2.2"/><path d={`M${x + 11} 47 A14 14 0 1 0 ${x + 13} 62`} fill="none" stroke={BK.coral} strokeWidth="3" strokeLinecap="round"/><path d={`M${x + 4} 64 L${x + 14} 66 L${x + 14} 55`} fill="none" stroke={BK.coral} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></g>)}
+      {sign(228, (x) => <g><path d={`M${x} 26 L${x + 30} 56 L${x} 86 L${x - 30} 56 Z`} fill="#fff" stroke={BK.ink} strokeWidth="2.2" strokeLinejoin="round"/><path d={`M${x - 8} 74 V54 a8 8 0 0 1 16 0 V66`} fill="none" stroke={BK.coral} strokeWidth="3" strokeLinecap="round"/><path d={`M${x + 3} 61 L${x + 8} 69 L${x + 13} 61`} fill="none" stroke={BK.coral} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></g>)}
+      {sign(378, (x) => <g><rect x={x - 32} y="32" width="64" height="48" rx="7" fill="#fff" stroke={BK.ink} strokeWidth="2.2"/><path d={`M${x - 16} 70 V54 q0 -9 9 -9 H${x + 14}`} fill="none" stroke={BK.coral} strokeWidth="3" strokeLinecap="round"/><path d={`M${x + 9} 38 L${x + 18} 45 L${x + 9} 52`} fill="none" stroke={BK.coral} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></g>)}
+      {sign(530, (x) => <g>{[0, 1].map(r => [0, 1, 2, 3].map(c => <rect key={r + '' + c} x={x - 20 + c * 13} y={30 + r * 13} width="13" height="13" fill={(r + c) % 2 ? BK.ink : '#fff'} stroke={BK.ink} strokeWidth="1.4"/>))}</g>)}
+      {[[80, 'repeat', 'go round again'], [228, 'D.C. · D.S.', 'U-turn, back to the start'], [378, 'To Coda → Coda', 'take the exit ramp'], [530, 'Fine', 'the finish line']].map(([x, a, b]) => <g key={a}><text x={x} y="170" textAnchor="middle" fontSize="12.5" fontWeight="900" fill={BK.ink}>{a}</text><text x={x} y="185" textAnchor="middle" fontSize="10.5" fontWeight="700" fill={BK.coral}>{b}</text></g>)}
+    </svg>
+  );
+}
+// Tie = a rope joining two of the same note; slur = a rainbow over different notes.
+function TieSlurPic({ width = 270 }) {
+  return (
+    <svg viewBox="0 0 300 86" style={{width,maxWidth:'100%',display:'block',margin:'0 auto'}}>
+      <circle cx="46" cy="30" r="6" fill={BK.ink}/><circle cx="96" cy="30" r="6" fill={BK.ink}/>
+      <path d="M46 36 q25 22 50 0" fill="none" stroke={BK.coral} strokeWidth="2.6" strokeLinecap="round"/><circle cx="71" cy="46" r="3" fill={BK.coral}/>
+      <text x="71" y="66" textAnchor="middle" fontSize="11" fontWeight="900" fill={BK.coral}>TIE</text><text x="71" y="79" textAnchor="middle" fontSize="10.5" fontWeight="900" fill={BK.ink}>same note = a rope</text>
+      <circle cx="194" cy="40" r="6" fill={BK.ink}/><circle cx="226" cy="24" r="6" fill={BK.ink}/><circle cx="258" cy="34" r="6" fill={BK.ink}/>
+      <path d="M190 32 q38 -42 74 0" fill="none" stroke={BK.coral} strokeWidth="2.6" strokeLinecap="round"/>
+      <text x="226" y="66" textAnchor="middle" fontSize="11" fontWeight="900" fill={BK.coral}>SLUR</text><text x="226" y="79" textAnchor="middle" fontSize="10.5" fontWeight="900" fill={BK.ink}>different notes = a rainbow</text>
+    </svg>
+  );
+}
+function LiftIcon({ up = true, size = 34 }) {
+  return (
+    <svg viewBox="0 0 34 34" style={{width:size,height:size,flex:`0 0 ${size}px`}}>
+      <rect x="5" y="3" width="24" height="28" rx="3" fill="#fff" stroke={BK.ink} strokeWidth="1.6"/><path d="M17 3 V31" stroke={BK.ink} strokeWidth="1"/>
+      <path d={up ? 'M17 24 V11 M11 17 L17 10 L23 17' : 'M17 10 V23 M11 17 L17 24 L23 17'} fill="none" stroke={BK.coral} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+const ORN_LIKE = { trill: 'hummingbird wings', mordent: 'a quick hiccup', turn: 'a loop-the-loop', acc: 'a flick!' };
+function OrnPic({ id }) {
+  const art = {
+    trill: <g><ellipse cx="30" cy="26" rx="11" ry="7" fill="#fff" stroke={BK.ink} strokeWidth="1.6"/><circle cx="44" cy="22" r="5" fill="#fff" stroke={BK.ink} strokeWidth="1.6"/><path d="M49 22 L58 21 M20 28 L10 33" stroke={BK.ink} strokeWidth="1.6" strokeLinecap="round"/><circle cx="45" cy="21" r="1" fill={BK.ink}/><path d="M18 16 q4 -6 8 0 t8 0 t8 0" fill="none" stroke={BK.coral} strokeWidth="1.8" strokeLinecap="round"/><path d="M20 10 q4 -5 8 0 t8 0" fill="none" stroke={BK.coral} strokeWidth="1.4" strokeLinecap="round"/></g>,
+    mordent: <g><path d="M6 36 H24 L32 12 L40 36 H64" fill="none" stroke={BK.ink} strokeWidth="2" strokeLinejoin="round"/><circle cx="6" cy="36" r="3.4" fill={BK.coral}/><text x="46" y="16" fontSize="11" fontWeight="900" fill={BK.coral}>hic!</text></g>,
+    turn: <g><path d="M4 36 H18 C34 36 36 8 25 8 C14 8 18 36 36 36 H66" fill="none" stroke={BK.ink} strokeWidth="2" strokeLinecap="round"/><circle cx="8" cy="36" r="3.6" fill={BK.coral}/></g>,
+    acc: <g><circle cx="48" cy="28" r="8" fill={BK.ink}/><circle cx="26" cy="20" r="3.2" fill={BK.coral}/><path d="M12 24 q6 -6 12 -4" fill="none" stroke={BK.coral} strokeWidth="1.4" strokeLinecap="round" strokeDasharray="2 2"/><path d="M34 14 L40 8 M38 18 L46 12 M52 16 L54 8" stroke={BK.coral} strokeWidth="1.8" strokeLinecap="round"/></g>,
+  };
+  return <svg viewBox="0 0 70 44" style={{width:62,height:39,display:'block'}}>{art[id]}</svg>;
+}
+
 function DynamicsWorkbook({ startNo = 1 }) {
   const W = useMemo(() => dyWorkbook(), [LANG]);
   const C = dyConcepts();
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="dynamics">{content}</WbPage>);
-  P(<WbOpener id="dynamics" concepts={C} blurb="Dynamics tell you how loud to play. Articulation tells you how to play each note: smooth, short, strong or held."/>);
+  P(<WbOpener id="dynamics" concepts={C} hero={<><VolumeLadder/><ArticStrip/></>} blurb="Dynamics are the volume knob: how loud or soft. Articulation is how each note is played -- bouncy, smooth, poked or leaned on."/>);
   P(<WbMap id="dynamics" concepts={C} steps={5} checkPage={startNo + 4} tasks={[
     'Play one note at every dynamic, pp to ff. Can someone at home hear six different volumes?',
     'Play your piece once very softly (pp) and once loudly (f). Which part should be which?',
@@ -24526,10 +24686,11 @@ function DynamicsWorkbook({ startNo = 1 }) {
       <div style={{display:'grid',gridTemplateColumns:'70px 1fr 160px',alignItems:'center',rowGap:4}}>
         {W.s1.mean.map((id, i) => <React.Fragment key={id}><div style={{display:'flex',alignItems:'center',gap:8,justifyContent:'flex-end'}}>{dyMark(id, 22)}<span style={{width:8,height:8,borderRadius:4,background:BK.ink}}/></div><div/><div style={{display:'flex',alignItems:'center',gap:8,fontSize:13,color:BK.ink}}><span style={{width:8,height:8,borderRadius:4,background:BK.ink}}/>{dyMeaning(DY_IDS[i])}</div></React.Fragment>)}
       </div>
+      <ArtLead pic={<MegaphoneLead width={290}/>} picW={290} text={<>A hairpin is a <span style={{color:BK.coral}}>megaphone</span>: it opens up to get louder, and closes up to get softer.</>} style={{padding:'2px 14px',margin:'8px 0 0'}}/>
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginTop:10}}>{W.s1.hp.map((h, i) => <div key={i} style={{border:'1px solid #ece6d8',borderRadius:8,padding:'8px 8px 6px',textAlign:'center'}}><BkHairpin kind={h}/><div style={{marginTop:6}}><span style={{display:'inline-block',width:80,borderBottom:'1.5px solid ' + BK.line,height:18}}/></div></div>)}</div>
     </Part>
     <Part kind="play" title="A story in dynamics" how="Draw a 4-picture story -- a storm, a monster, a sleepy cat. Under each picture write the dynamic it would be (pp to ff). Then play it on the piano: same note, changing the volume!">
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,flex:1,minHeight:140}}>{[1, 2, 3, 4].map(i => <div key={i} style={{border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}><div style={{borderTop:'1px solid ' + BK.line,height:30,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,color:BK.muted}}>dynamic</div></div>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,flex:1,minHeight:90}}>{[1, 2, 3, 4].map(i => <div key={i} style={{border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}><div style={{borderTop:'1px solid ' + BK.line,height:30,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,color:BK.muted}}>dynamic</div></div>)}</div>
     </Part>
     <Faces/>
   </>);
@@ -24663,7 +24824,7 @@ function SignsWorkbook({ startNo = 1 }) {
   const C = sgConcepts();
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="signs">{content}</WbPage>);
-  P(<WbOpener id="signs" concepts={C} blurb="Signs are the music's road map: go back, jump ahead, hold on, play an octave higher -- or add a little sparkle."/>);
+  P(<WbOpener id="signs" concepts={C} hero={<><SignRoad/><div style={{marginTop:10}}><TieSlurPic width={400}/></div></>} blurb="Signs are the music's road signs: go round again, make a U-turn, take the exit, stop at the finish line -- or add a little sparkle."/>);
   P(<WbMap id="signs" concepts={C} steps={6} checkPage={startNo + 5} tasks={[
     'Find a repeat sign in one of your pieces. Show someone where you go back to.',
     'Find a tie and a slur in your music. Play each one and say which is which.',
@@ -24693,7 +24854,7 @@ function SignsWorkbook({ startNo = 1 }) {
     </Part>
     <Part kind="home" title="Tie or slur? And 8va" how="Write tie or slur. Then answer the 8va questions.">
       <BkGrid cols={3} gap="8px 10px">{W.s3.home.map((ds, i) => <ExCell key={i} n={i + 1}><div style={{display:'flex',alignItems:'center',gap:8,padding:'10px 6px 2px 10px'}}><div style={{width:122,flex:'0 0 auto'}}><ArcNotes ds={ds} w={150}/></div><div style={{flex:1,textAlign:'center'}}>{bkBox(46, 26)}</div></div></ExCell>)}</BkGrid>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginTop:10}}>{[['8va- - - - ┐ over the notes means play them...', 'higher / lower'], ['8vb- - - - ┘ under the notes means play them...', 'higher / lower']].map(([q, o], i) => <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,border:'1px solid #ece6d8',borderRadius:8,padding:'8px 10px',fontSize:12.5,color:BK.ink}}><span><b style={{color:BK.coral,fontStyle:'italic'}}>{q.split(' ')[0]}</b> {q.split(' ').slice(1).join(' ')}</span><b style={{color:BK.muted}}>{o}</b></div>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginTop:10}}>{[['8va- - - - ┐ over the notes means play them...', 'higher / lower'], ['8vb- - - - ┘ under the notes means play them...', 'higher / lower']].map(([q, o], i) => <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,border:'1px solid #ece6d8',borderRadius:8,padding:'8px 10px',fontSize:12.5,color:BK.ink}}><span style={{display:'flex',alignItems:'center',gap:8}}><LiftIcon up={i === 0}/><span><b style={{color:BK.coral,fontStyle:'italic'}}>{q.split(' ')[0]}</b> {q.split(' ').slice(1).join(' ')}</span></span><b style={{color:BK.muted}}>{o}</b></div>)}</div>
     </Part>
     <Part kind="play" title="Tie the rope bridge" how="Some notes next to each other are the same -- tie them together with a curved line to fix the bridge. How many ties did you need?">
       <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'4px 10px'}}><PaperStaff clef="treble" notes={W.s3.rope.map(d => ({ d }))} width={640}/></div>
@@ -24714,8 +24875,8 @@ function SignsWorkbook({ startNo = 1 }) {
     </Part>
     <Part kind="play" title="Sparkle a tune" how="Here is a plain tune. Add 3 ornaments wherever you like -- a trill, a turn, a grace note. Then play it with all your sparkles!">
       <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'18px 10px 4px'}}><PaperStaff clef="treble" notes={[30, 32, 34, 32, 35, 34, 32, 30].map(d => ({ d }))} width={640}/></div>
-      <div style={{fontSize:12.5,color:BK.muted,margin:'14px 0 6px'}}>Ornament spotting: look through your pieces and your teacher's books. Make a tally mark each time you find one!</div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4, 1fr)',gap:10}}>{SG_ORN.map(o => [SG_ORN_NAME[o], <OrnGlyph key={o} id={o}/>]).map(([w, g]) => <div key={w} style={{border:'1px solid #ece6d8',borderRadius:8,padding:'6px 8px',textAlign:'center'}}><div style={{height:44,display:'flex',alignItems:'center',justifyContent:'center'}}>{g}</div><div style={{fontSize:12,fontWeight:900,color:BK.ink}}>{w}</div><div style={{height:46,marginTop:6,borderTop:'1px dashed ' + BK.line}}/></div>)}</div>
+      <div style={{fontSize:12.5,color:BK.muted,margin:'14px 0 6px'}}>Ornament spotting: look through your pieces and your teacher's books. Fill a circle each time you find one!</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4, 1fr)',gap:10}}>{SG_ORN.map(o => <div key={o} style={{border:'1px solid #ece6d8',borderRadius:8,padding:'6px 8px',textAlign:'center'}}><div style={{height:40,display:'flex',alignItems:'center',justifyContent:'center'}}><OrnGlyph id={o}/></div><div style={{display:'flex',justifyContent:'center',marginTop:2}}><OrnPic id={o}/></div><div style={{fontSize:12,fontWeight:900,color:BK.ink,marginTop:2}}>{SG_ORN_NAME[o]}</div><div style={{fontSize:10.5,color:BK.muted,fontStyle:'italic'}}>sounds like {ORN_LIKE[o]}</div><div style={{display:'flex',justifyContent:'center',gap:6,marginTop:8,paddingTop:8,borderTop:'1px dashed ' + BK.line}}>{[0, 1, 2, 3].map(k => <span key={k} style={{width:18,height:18,borderRadius:9,border:'1.5px solid ' + BK.line}}/>)}</div></div>)}</div>
     </Part>
     <Faces/>
   </>);
@@ -25081,7 +25242,7 @@ function MelodyWorkbook({ startNo = 1 }) {
   const C = mlConcepts();
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="melody">{content}</WbPage>);
-  P(<WbOpener id="melody" concepts={C} blurb="A tune is rhythm and pitch working together. Tunes have shapes, they breathe in phrases, and they ask and answer questions."/>);
+  P(<WbOpener id="melody" concepts={C} hero={<ShapePics/>} blurb="A tune is a journey. It has a shape you can see -- stairs up, a slide down, a bridge, a hammock -- it breathes in phrases, and it asks and answers questions."/>);
   P(<WbMap id="melody" concepts={C} steps={5} checkPage={startNo + 5} tasks={[
     'Play one of your pieces and draw its shape in the air with your other hand.',
     'Find the phrases in your piece. Lift gently (breathe) at the end of each one.',
@@ -25091,7 +25252,8 @@ function MelodyWorkbook({ startNo = 1 }) {
 
   P(<>
     <WbTop step="1-2"/>
-    <Part kind="together" title="What shape is it?" how="Join the note heads with a line. Does the tune go up (rising), down (falling), up and down (arch) or down and up (valley)?">
+    <Part kind="together" title="What shape is it?" how="Join the note heads with a line. Which picture does the line look like: stairs, a slide, a bridge or a hammock?">
+      <Lead max={380}><ShapePics width={380}/></Lead>
       <BkGrid cols={3} gap="10px 12px">{W.s1.tog.map((it, i) => <ShapeCell key={i} it={it} n={i + 1} ex={i === 0}/>)}</BkGrid>
     </Part>
     <Part kind="home" title="Shapes on your own">
@@ -25099,7 +25261,7 @@ function MelodyWorkbook({ startNo = 1 }) {
     </Part>
     <Part kind="play" title="A tune from a picture" how="Draw a landscape -- hills, a castle, a dragon's back. Then write notes on the staff that follow its outline, and play your picture!">
       <BigStaff gap={14} h0={24} h1={20}/>
-      <div style={{flex:1,minHeight:90,marginTop:8,border:'1.5px solid ' + BK.line,borderRadius:10}}/>
+      <div style={{flex:1,minHeight:50,marginTop:8,border:'1.5px solid ' + BK.line,borderRadius:10}}/>
     </Part>
     <Faces/>
   </>);
@@ -25108,7 +25270,7 @@ function MelodyWorkbook({ startNo = 1 }) {
     <WbTop step="3-4"/>
     <Part kind="together" title="Breathe with the phrases" how="A phrase is a musical sentence. Read the rhyme out loud and put a breath mark (’) at the end of each phrase. The first one is done. Then: question or answer? An answer ends on home (C).">
       <ExCell n={1}><div style={{padding:'14px 12px 4px'}}>{breathLine(W.s3.rhyme, true)}</div></ExCell>
-      <div style={{height:8}}/>
+      <ArtLead pic={<QABubbles width={270}/>} picW={270} text={<>A <span style={{color:BK.coral}}>question</span> leaves you hanging in the air. An <span style={{color:BK.coral}}>answer</span> lands back home on C.</>} style={{padding:'1px 14px',margin:'6px 0 6px'}}/>
       <BkGrid cols={2} gap="10px 12px">{W.s3.tog.map((it, i) => <QACell key={i} it={it} n={i + 2} ex={i === 0}/>)}</BkGrid>
     </Part>
     <Part kind="home" title="Question or answer?" how="Play each phrase. Does it sound finished (answer) or does it want more (question)?">
@@ -25116,13 +25278,13 @@ function MelodyWorkbook({ startNo = 1 }) {
     </Part>
     <Part kind="play" title="Answer the question" how="Here is a question phrase. Write an answer phrase of 4 notes that ends on C. Play them together -- does it sound like a conversation?">
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-        <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'6px 10px'}}><div style={{fontSize:11,fontWeight:900,color:BK.coral}}>QUESTION</div><PaperStaff clef="treble" notes={W.s3.q.map(d => ({ d }))} width={260}/></div>
-        <div style={{border:'1.5px dashed ' + BK.coral,borderRadius:8,padding:'6px 10px'}}><div style={{fontSize:11,fontWeight:900,color:BK.coral}}>MY ANSWER</div><PaperStaff clef="treble" notes={[]} width={260} minSpan={[39, 27]}/></div>
+        <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'6px 10px'}}><div style={{fontSize:11,fontWeight:900,color:BK.coral}}>QUESTION</div><PaperStaff clef="treble" notes={W.s3.q.map(d => ({ d }))} width={380}/></div>
+        <div style={{border:'1.5px dashed ' + BK.coral,borderRadius:8,padding:'6px 10px'}}><div style={{fontSize:11,fontWeight:900,color:BK.coral}}>MY ANSWER</div><PaperStaff clef="treble" notes={[]} width={380} minSpan={[39, 27]}/></div>
       </div>
-      <div style={{fontSize:12.5,color:BK.muted,margin:'12px 0 6px'}}>Now swap! Write your own question, and ask someone at home to play an answer (you can write it in for them).</div>
+      <div style={{fontSize:12.5,color:BK.muted,margin:'8px 0 4px'}}>Now swap! Write your own question, and ask someone at home to play an answer (you can write it in for them).</div>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-        <div style={{border:'1.5px dashed ' + BK.coral,borderRadius:8,padding:'6px 10px'}}><div style={{fontSize:11,fontWeight:900,color:BK.coral}}>MY QUESTION</div><PaperStaff clef="treble" notes={[]} width={260} minSpan={[39, 27]}/></div>
-        <div style={{border:'1.5px dashed ' + BK.coral,borderRadius:8,padding:'6px 10px'}}><div style={{fontSize:11,fontWeight:900,color:BK.coral}}>THEIR ANSWER</div><PaperStaff clef="treble" notes={[]} width={260} minSpan={[39, 27]}/></div>
+        <div style={{border:'1.5px dashed ' + BK.coral,borderRadius:8,padding:'6px 10px'}}><div style={{fontSize:11,fontWeight:900,color:BK.coral}}>MY QUESTION</div><PaperStaff clef="treble" notes={[]} width={380} minSpan={[39, 27]}/></div>
+        <div style={{border:'1.5px dashed ' + BK.coral,borderRadius:8,padding:'6px 10px'}}><div style={{fontSize:11,fontWeight:900,color:BK.coral}}>THEIR ANSWER</div><PaperStaff clef="treble" notes={[]} width={380} minSpan={[39, 27]}/></div>
       </div>
     </Part>
     <Faces/>
@@ -25131,13 +25293,14 @@ function MelodyWorkbook({ startNo = 1 }) {
   P(<>
     <WbTop step={5}/>
     <Part kind="together" title="Continue the sequence" how="A sequence repeats the same shape starting on a new note. Draw the third group -- the first one is done.">
+      <ArtLead pic={<FootStairs width={170}/>} picW={170} text={<>A sequence is the same <span style={{color:BK.coral}}>footprints</span>, one stair higher each time.</>} style={{padding:'2px 14px'}}/>
       <div style={{display:'grid',gap:8}}>{W.s5.tog.map((it, i) => <SeqCell key={i} it={it} n={i + 1} ex={i === 0}/>)}</div>
     </Part>
     <Part kind="home" title="Your turn">
       <div style={{display:'grid',gap:8}}>{W.s5.home.map((it, i) => <SeqCell key={i} it={it} n={i + 1}/>)}</div>
     </Part>
-    <Part kind="play" title="Sequence staircase" how="Make up a 3-note pattern and write its letter names on the bottom step. Repeat it one step higher on each stair. Play your staircase -- up and back down!">
-      <svg viewBox="0 0 640 150" style={{width:'100%',display:'block'}}>{[0, 1, 2, 3].map(i => <g key={i}><rect x={20 + i * 150} y={110 - i * 30} width="150" height={30 + i * 30} fill={i % 2 ? '#fff' : BK.soft} stroke={BK.ink} strokeWidth="1.4"/><text x={30 + i * 150} y={130 - i * 30 + (i ? 0 : 0)} fontSize="11" fontWeight="900" fill={BK.coral}>step {i + 1}</text></g>)}</svg>
+    <Part kind="play" title="Sequence staircase" how="Make up a 3-note pattern and write its letters on step 1. Repeat it one step higher on each stair, then play it up and down!">
+      <svg viewBox="0 0 640 104" style={{width:'100%',display:'block'}}>{[0, 1, 2, 3].map(i => <g key={i}><rect x={20 + i * 150} y={78 - i * 22} width="150" height={24 + i * 22} fill={i % 2 ? '#fff' : BK.soft} stroke={BK.ink} strokeWidth="1.4"/><text x={30 + i * 150} y={96 - i * 22} fontSize="11" fontWeight="900" fill={BK.coral}>step {i + 1}</text></g>)}</svg>
     </Part>
   </>);
 
@@ -25808,7 +25971,7 @@ function MusicalFormWorkbook({ startNo = 1 }) {
     </Part>
     <Part kind="play" title="Build your own piece" how="Write a 4-note tune for A (end it on C so it sounds like home) and a different one for B. Then play your piece three ways and tick each one.">
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-        {['A', 'B'].map(l => <div key={l} style={{border:'1.5px dashed ' + BK.coral,borderRadius:8,padding:'6px 10px'}}><div style={{display:'flex',alignItems:'center',gap:8}}><FmBlock l={l} s={26}/><span style={{fontSize:11,fontWeight:900,color:BK.coral}}>{l === 'A' ? 'MY HOME TUNE' : 'MY AWAY TUNE'}</span></div><PaperStaff clef="treble" notes={[]} width={260} minSpan={[39, 27]}/></div>)}
+        {['A', 'B'].map(l => <div key={l} style={{border:'1.5px dashed ' + BK.coral,borderRadius:8,padding:'6px 10px'}}><div style={{display:'flex',alignItems:'center',gap:8}}><FmBlock l={l} s={26}/><span style={{fontSize:11,fontWeight:900,color:BK.coral}}>{l === 'A' ? 'MY HOME TUNE' : 'MY AWAY TUNE'}</span></div><PaperStaff clef="treble" notes={[]} width={380} minSpan={[39, 27]}/></div>)}
       </div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginTop:12}}>
         {[['A', 'B'], ['A', 'B', 'A'], ['A', 'B', 'A', null, 'A']].map((seq, k) => <div key={k} style={{border:'1px solid #ece6d8',borderRadius:8,padding:'8px 6px',textAlign:'center'}}>
