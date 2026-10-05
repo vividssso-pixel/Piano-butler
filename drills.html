@@ -1647,6 +1647,7 @@ function Lesson({ id, title, intro, children, onStart, startLabel, head }) {
   };
   const jump = (i) => { setOpen(o => ({ ...o, [i]: true })); setTimeout(() => { const el = document.getElementById(id + '-step-' + i); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); };
   const count = steps.filter((s, i) => done[i]).length;
+  useEffect(() => { try { const m = loadStepTotals(); if (m[id] !== steps.length) { m[id] = steps.length; localStorage.setItem(STEPS_TOTAL_KEY, JSON.stringify(m)); } } catch (e) {} }, [id, steps.length]);
   if (BOOK) return (
     <div>
       <h2 style={{fontSize:30,fontWeight:900,margin:'0 0 6px',lineHeight:1.1,color:'var(--navy)'}}>{title}</h2>
@@ -2261,6 +2262,7 @@ const LEVEL_KO = {
   'Listen and identify': '듣고 맞히기',
   'Match the style trait': '스타일의 특징 짝짓기',
   'Which era?': '어느 시대?',
+  'Which movement?': '어떤 사조?',
   'Who am I?': '나는 누구일까요?',
   'Name that tune': '어떤 곡일까요?',
   'Who was born first?': '누가 먼저 태어났을까?'
@@ -14724,41 +14726,100 @@ const STYLES_DRILL = {
   Question: StylesQuestion, Learn: StylesLearn,
 };
 
-// ─── Concept: Famous Composers -- the world of each era, who lived when, each composer's musical
-// fingerprint (Phase 304). Sohyun (2026-10-04): a chapter where students can see the famous composers
-// against the background of their era, and what makes each one's music their own. Era ids and colours
-// reuse ERAS (the piano-story chapter's style-era tool) so both chapters speak the same language.
-// Facts were checked against outside sources before shipping (see CLAUDE.md, Phase 304).
-// Every text field is [English, Korean].
-const CMP_ERA_IDS = ['baroque', 'classical', 'romantic', 'modern'];
-const cmpEra = (id) => ERAS.find(e => e.id === id);
-// The world of each era: where music was heard, who paid the composer, the keyboard, what else was new.
-const CMP_WORLD = {
-  baroque: {
+// ─── Concept: Famous Composers (Phases 304-305) -- the periods of music history, the movements inside
+// them, who lived when, and each composer's musical fingerprint. Sohyun (2026-10-04): "as detailed as
+// possible -- Impressionism, Nationalism and so on". Facts checked against outside sources before
+// shipping (CLAUDE.md, Phases 304-305). Every text field is [English, Korean].
+const CMP_ERA_IDS = ['renaissance', 'baroque', 'classical', 'romantic', 'modern', 'contemporary'];
+const CMP_PERIODS = {
+  renaissance: { years: [1400, 1600], name: ['Renaissance', '르네상스'], short: ['Renaissance', '르네상스'],
+    sound: [['Several voices weaving together, each one a real tune (polyphony)', '여러 성부가 얽혀요, 모두 진짜 선율이에요 (폴리포니)'], ['Smooth, calm singing lines that move mostly by step', '주로 차례로 움직이는 부드럽고 차분한 노래 선율']],
+    where: ['In churches and cathedrals, and at the courts of kings and nobles.', '교회와 대성당, 그리고 왕과 귀족의 궁정에서.'],
+    job: ['Most composers were singers or organists working for a church or a royal chapel.', '작곡가 대부분은 교회나 왕실 예배당에서 일하는 가수나 오르간 연주자였어요.'],
+    keys: ['The organ, and small keyboards such as the virginals and the harpsichord.', '오르간, 그리고 버지널과 하프시코드 같은 작은 건반 악기.'],
+    world: ['The printing press (about 1450) -- and in 1501 the first book of music for several voices is printed, so songs can travel.', '인쇄기(1450년쯤) -- 그리고 1501년에는 여러 성부 음악을 담은 첫 악보집이 인쇄되어 노래가 멀리 퍼질 수 있게 돼요.'] },
+  baroque: { years: [1600, 1750], name: ['Baroque', '바로크'], short: ['Baroque', '바로크'],
+    sound: [['Several independent lines at once (counterpoint)', '여러 개의 독립된 선율이 동시에 (대위법)'], ['A steady, busy pulse, and loud and soft in blocks', '일정하고 바쁜 박, 덩어리로 바뀌는 셈여림'], ['Ornaments -- trills and mordents -- decorating the tune', '선율을 꾸미는 꾸밈음 -- 트릴과 모르덴트']],
     where: ['In churches, royal palaces and the first opera houses.', '교회, 왕궁, 그리고 처음 생긴 오페라 극장에서.'],
-    job: ['Composers worked for a church, a town or a prince -- almost like a servant in uniform. Bach had to write new music for church nearly every week.', '작곡가는 교회나 도시, 귀족에게 고용되어 일했어요 -- 제복 입은 하인과 비슷했죠. 바흐는 거의 매주 교회에서 연주할 새 곡을 써야 했어요.'],
+    job: ['Composers worked for a church, a town or a prince -- almost like a servant in uniform. In his first years in Leipzig, Bach wrote new music for church nearly every week.', '작곡가는 교회나 도시, 귀족에게 고용되어 일했어요 -- 제복 입은 하인과 비슷했죠. 라이프치히에서 처음 몇 년 동안 바흐는 거의 매주 교회에서 연주할 새 곡을 썼어요.'],
     keys: ['Harpsichord, organ and clavichord. The piano was only invented around 1700, and hardly anyone had one yet.', '하프시코드, 오르간, 클라비코드. 피아노는 1700년쯤에야 발명되었고, 가진 사람이 거의 없었어요.'],
-    world: ['Isaac Newton explains gravity (1687). Every concert is lit by candles.', '아이작 뉴턴이 중력을 설명해요 (1687). 연주회는 모두 촛불 아래에서 열려요.'],
-  },
-  classical: {
+    world: ['Isaac Newton explains gravity (1687). Every concert is lit by candles.', '아이작 뉴턴이 중력을 설명해요 (1687). 연주회는 모두 촛불 아래에서 열려요.'] },
+  classical: { years: [1750, 1820], name: ['Classical', '고전주의'], short: ['Classical', '고전'],
+    sound: [['A clear tune with a light accompaniment (such as the Alberti bass)', '가벼운 반주(알베르티 베이스 같은) 위의 또렷한 선율'], ['Balanced phrases -- question and answer', '균형 잡힌 프레이즈 -- 질문과 대답'], ['Crescendos, diminuendos and sudden sf accents', '크레셴도, 디미누엔도, 갑작스러운 sf']],
     where: ['Still in palaces -- but now also at public concerts, where anyone with a ticket can come in.', '여전히 궁전에서 -- 하지만 이제는 표만 사면 누구나 들어갈 수 있는 공개 연주회에서도.'],
     job: ['Haydn worked for one princely family for about 30 years. Mozart and Beethoven tried something new: earning a living on their own, from concerts, teaching and selling their music.', '하이든은 한 귀족 가문에서 약 30년을 일했어요. 모차르트와 베토벤은 새로운 길을 택했어요: 연주회, 레슨, 악보 판매로 스스로 돈을 벌었죠.'],
     keys: ['The fortepiano -- an early piano that can play both soft (piano) and loud (forte).', '포르테피아노 -- 여리게(피아노)도 세게(포르테)도 칠 수 있는 초기 피아노.'],
-    world: ['The first hot-air balloon flight (1783). American independence (1776) and the French Revolution (1789).', '첫 열기구 비행 (1783). 미국 독립 선언(1776)과 프랑스 혁명(1789).'],
-  },
-  romantic: {
+    world: ['The first hot-air balloon flight (1783). American independence (1776) and the French Revolution (1789).', '첫 열기구 비행 (1783). 미국 독립 선언(1776)과 프랑스 혁명(1789).'] },
+  romantic: { years: [1820, 1900], name: ['Romantic', '낭만주의'], short: ['Romantic', '낭만'],
+    sound: [['Long, singing melodies full of feeling', '감정이 가득한, 길게 노래하는 선율'], ['Rich harmony, lots of pedal, a huge range of loud and soft', '풍부한 화음, 많은 페달, 아주 넓은 셈여림'], ['Rubato -- the time bends with the feeling', '루바토 -- 감정에 따라 시간이 휘어져요']],
     where: ['In big new concert halls -- and at home, because every family wanted a piano in the living room.', '새로 지은 큰 연주회장에서 -- 그리고 집에서. 집집마다 거실에 피아노를 들이고 싶어 했거든요.'],
     job: ['Composers became free artists, and some became stars. They earned money from concerts, teaching and printed music, and wrote to show their own feelings.', '작곡가는 자유로운 예술가가 되었고, 스타가 된 사람도 있었어요. 연주회, 레슨, 악보 출판으로 돈을 벌며 자기 감정을 표현하는 음악을 썼어요.'],
     keys: ['The modern piano: an iron frame, a bigger range and a rich sustaining pedal.', '현대 피아노: 철 프레임, 더 넓은 음역, 풍부한 댐퍼 페달.'],
-    world: ['Steam railways (1825), photography (1839) and the electric light bulb (1879).', '증기 기관차 철도 (1825), 사진 (1839), 전구 (1879).'],
-  },
-  modern: {
-    where: ['In concert halls -- and now on records, radio, film and TV, so you can hear great musicians even when they are far away.', '연주회장에서 -- 그리고 이제는 음반, 라디오, 영화, TV로도. 멀리 있는 훌륭한 연주자의 음악도 들을 수 있게 되었어요.'],
-    job: ['Composers teach, write for films and shows, and are asked (and paid) by orchestras and festivals to write new pieces.', '작곡가는 가르치고, 영화와 공연을 위해 곡을 쓰고, 오케스트라와 음악 축제의 의뢰를 받아 새 곡을 써요.'],
-    keys: ['The concert grand -- plus new sounds: the prepared piano, and electric and digital keyboards.', '콘서트 그랜드 -- 그리고 새로운 소리: 프리페어드 피아노, 전자 건반과 디지털 피아노.'],
-    world: ['Aeroplanes (1903), radio broadcasts (1920s), then computers and the internet.', '비행기 (1903), 라디오 방송 (1920년대), 그리고 컴퓨터와 인터넷.'],
-  },
+    world: ['Steam railways (1825), photography (1839) and the electric light bulb (1879).', '증기 기관차 철도 (1825), 사진 (1839), 전구 (1879).'] },
+  modern: { years: [1900, 1950], name: ['Modern (1900–1950)', '근대 (1900–1950)'], short: ['Modern', '근대'],
+    sound: [['New scales and chords -- and sometimes no home key at all', '새로운 음계와 화음 -- 때로는 으뜸음이 아예 없어요'], ['Strong, surprising rhythms and accents', '강하고 깜짝 놀랄 리듬과 악센트'], ['Jazz, folk songs and old styles mixed in new ways', '재즈, 민요, 옛 양식이 새롭게 섞여요']],
+    where: ['In concert halls -- and now on records and radio, so you can hear great musicians even when they are far away.', '연주회장에서 -- 그리고 이제는 음반과 라디오로도. 멀리 있는 훌륭한 연주자의 음악도 들을 수 있게 되었어요.'],
+    job: ['Composers teach, write for ballet, theatre and the first sound films, and are asked (and paid) to write new pieces.', '작곡가는 가르치고, 발레와 연극과 첫 유성 영화를 위해 곡을 쓰고, 의뢰를 받아 새 곡을 써요.'],
+    keys: ['The concert grand -- played in new ways: clusters of notes, and the piano used like a drum.', '콘서트 그랜드 -- 새로운 방법으로: 음을 뭉쳐 치기(클러스터), 북처럼 치는 피아노.'],
+    world: ['Aeroplanes (1903), radio broadcasts (1920s), and two world wars.', '비행기 (1903), 라디오 방송 (1920년대), 그리고 두 번의 세계 대전.'] },
+  contemporary: { years: [1950, 2026], name: ['Contemporary (1950 to today)', '현대 (1950년부터 오늘날까지)'], short: ['Contemporary', '현대'],
+    sound: [['Anything goes: silence, chance, everyday noises', '무엇이든 가능해요: 침묵, 우연, 일상의 소리'], ['Patterns repeated over and over, changing slowly (Minimalism)', '천천히 바뀌며 계속 반복되는 패턴 (미니멀리즘)'], ['Music for film, TV and games', '영화, TV, 게임을 위한 음악']],
+    where: ['Concert halls and festivals -- and films, TV, games and the internet.', '연주회장과 음악 축제 -- 그리고 영화, TV, 게임, 인터넷.'],
+    job: ['Composers teach, write for films, games and shows, and are asked by orchestras and festivals to write new pieces.', '작곡가는 가르치고, 영화와 게임과 공연을 위해 곡을 쓰고, 오케스트라와 축제의 의뢰를 받아 새 곡을 써요.'],
+    keys: ['Grand pianos -- and prepared pianos, electric and digital keyboards and computers.', '그랜드 피아노 -- 그리고 프리페어드 피아노, 전자 건반, 디지털 피아노, 컴퓨터.'],
+    world: ['Television, the first people on the Moon (1969), personal computers and the internet.', '텔레비전, 달에 처음 간 사람들 (1969), 개인용 컴퓨터와 인터넷.'] },
 };
+const cmpEra = (id) => { const p = CMP_PERIODS[id]; return { id, name: t(p.name[0], p.name[1]), short: t(p.short[0], p.short[1]), years: p.years[0] + '–' + (p.years[1] > 2025 ? '' : p.years[1]) }; };
+const CMP_WORLD = CMP_PERIODS;
+// Movements and schools inside the periods.
+const CMP_MOVES = [
+  { id: 'vienna1', years: [1770, 1827], name: ['First Viennese School', '제1 빈 악파'],
+    what: ['Haydn, Mozart and Beethoven all worked in Vienna. Together they shaped the symphony, the string quartet and the piano sonata.', '하이든, 모차르트, 베토벤은 모두 빈에서 활동했어요. 이들이 교향곡, 현악 4중주, 피아노 소나타의 모양을 만들었어요.'],
+    listen: [['Balanced question-and-answer phrases', '균형 잡힌 질문과 대답 프레이즈'], ['Sonata form: a theme, a contrasting theme, a journey, and a return home', '소나타 형식: 주제, 대조되는 주제, 여행, 그리고 집으로 돌아오기']],
+    why: ['Vienna was a rich musical city with many princes, public concerts and piano-loving families.', '빈은 귀족, 공개 연주회, 피아노를 사랑하는 가정이 많은 풍요로운 음악 도시였어요.'] },
+  { id: 'nationalism', years: [1850, 1945], name: ['Nationalism', '국민악파'],
+    what: ['Composers who wanted their music to sound like their own country -- using its folk songs, dances, legends and landscapes.', '자기 나라처럼 들리는 음악을 원한 작곡가들 -- 그 나라의 민요, 춤, 전설, 풍경을 썼어요.'],
+    listen: [['Folk-dance rhythms and old folk scales', '민속춤 리듬과 오래된 민요 음계'], ['Stories from home: rivers, mountains, heroes and trolls', '고향 이야기: 강, 산, 영웅, 트롤']],
+    why: ['In the 1800s many peoples in Europe grew proud of their own language and culture, and composers wanted music that sounded like home -- not just like Germany or Italy. In Russia, five composers known as “The Five” led the way. Chopin’s Polish dances were an early example.', '1800년대 유럽의 많은 민족이 자기 언어와 문화에 자부심을 갖게 되었고, 작곡가들도 독일이나 이탈리아가 아닌 고향처럼 들리는 음악을 원했어요. 러시아에서는 “5인조”라 불린 다섯 작곡가가 앞장섰어요. 쇼팽의 폴란드 춤곡이 그 앞선 예였어요.'] },
+  { id: 'lateromantic', years: [1880, 1920], name: ['Late Romanticism', '후기 낭만주의'],
+    what: ['Romantic music grown huge: giant orchestras, long symphonies, lush chords and big piano writing.', '거대해진 낭만주의 음악: 대규모 오케스트라, 긴 교향곡, 풍성한 화음, 웅장한 피아노곡.'],
+    listen: [['Rich, thick chords and sweeping melodies', '풍부하고 두꺼운 화음과 크게 휘몰아치는 선율'], ['An enormous range, from a whisper to a roar', '속삭임부터 포효까지 아주 넓은 범위']],
+    why: ['Orchestras and concert halls kept getting bigger, and composers pushed Romantic feeling as far as it could go.', '오케스트라와 연주회장이 점점 커졌고, 작곡가들은 낭만주의의 감정을 끝까지 밀고 나갔어요.'] },
+  { id: 'impressionism', years: [1890, 1920], name: ['Impressionism', '인상주의'],
+    what: ['Music that paints moods and colours -- light on water, mist, moonlight -- like the Impressionist painters in France.', '분위기와 색채를 그리는 음악 -- 물 위의 빛, 안개, 달빛 -- 프랑스 인상주의 화가들처럼요.'],
+    listen: [['Whole-tone and pentatonic scales', '온음음계와 5음음계'], ['Chords that float without needing to resolve, in a haze of pedal', '해결되지 않아도 되는, 페달 안개 속을 떠다니는 화음']],
+    why: ['In Paris, painters such as Monet painted light and colour instead of sharp outlines. At the 1889 World Exhibition, Debussy heard a Javanese gamelan and never forgot its shimmering sound.', '파리에서는 모네 같은 화가들이 뚜렷한 윤곽 대신 빛과 색을 그렸어요. 1889년 만국 박람회에서 드뷔시는 자바의 가믈란 음악을 듣고 그 반짝이는 소리를 잊지 못했어요.'] },
+  { id: 'american', years: [1895, 1950], name: ['Ragtime, jazz and the American sound', '래그타임, 재즈, 그리고 미국의 소리'],
+    what: ['African American ragtime and jazz gave the world syncopation and swing -- and concert composers began to borrow them, alongside American folk and cowboy tunes.', '아프리카계 미국인의 래그타임과 재즈가 세상에 당김음과 스윙을 선물했어요 -- 그리고 클래식 작곡가들이 미국 민요, 카우보이 노래와 함께 이를 가져다 썼어요.'],
+    listen: [['Syncopation, swing and blue notes', '당김음, 스윙, 블루 노트'], ['Wide, open chords like big American landscapes', '넓은 미국 풍경 같은 탁 트인 화음']],
+    why: ['Ragtime and jazz grew up in African American communities and spread through sheet music, records and radio.', '래그타임과 재즈는 아프리카계 미국인 공동체에서 자라나 악보, 음반, 라디오를 타고 퍼졌어요.'] },
+  { id: 'vienna2', years: [1908, 1951], name: ['Twelve-tone music (Second Viennese School)', '12음 기법 (제2 빈 악파)'],
+    what: ['Schoenberg and his pupils Berg and Webern left keys behind (atonal music). Later Schoenberg used all twelve notes of the octave in a fixed order, called a tone row.', '쇤베르크와 제자 베르크, 베베른은 조성을 떠났어요 (무조 음악). 나중에 쇤베르크는 옥타브의 12음을 정해진 순서로 쓰는 방법, 음렬을 만들었어요.'],
+    listen: [['No home key -- the music never settles', '으뜸음이 없어요 -- 음악이 어디에도 머물지 않아요'], ['Jagged leaps and sharp, intense sounds', '들쭉날쭉한 도약과 날카롭고 강렬한 소리']],
+    why: ['After the huge late-Romantic style, some composers felt the old major and minor keys had been used up.', '거대한 후기 낭만주의 다음, 어떤 작곡가들은 장조와 단조가 이미 다 쓰였다고 느꼈어요.'] },
+  { id: 'neoclassicism', years: [1917, 1950], name: ['Neoclassicism', '신고전주의'],
+    what: ['Composers went back to the clear shapes of Bach and Mozart -- old dances and forms, with modern “wrong-note” twists.', '작곡가들이 바흐와 모차르트의 또렷한 모양으로 돌아갔어요 -- 옛 춤곡과 형식에 현대적인 “틀린 음” 장난을 섞어서요.'],
+    listen: [['Clear forms and crisp, light rhythms', '또렷한 형식과 산뜻하고 가벼운 리듬'], ['Old-fashioned tunes with surprising clashes', '옛날풍 선율에 깜짝 놀랄 부딪힘']],
+    why: ['After the First World War, many composers wanted music that was cool, clear and witty instead of huge and emotional.', '제1차 세계 대전 뒤, 많은 작곡가들이 거대하고 감정적인 음악 대신 차분하고 또렷하며 재치 있는 음악을 원했어요.'] },
+  { id: 'experimental', years: [1950, 2026], name: ['Experimental music', '실험 음악'],
+    what: ['Composers asked: what can music be? Silence, chance, everyday noises -- even a piano with screws between its strings.', '작곡가들이 물었어요: 음악은 무엇이 될 수 있을까? 침묵, 우연, 일상의 소음 -- 현 사이에 나사를 끼운 피아노까지.'],
+    listen: [['Unusual sounds from ordinary instruments', '평범한 악기에서 나오는 낯선 소리'], ['Choices left to chance -- coins, dice, the players', '우연에 맡긴 선택 -- 동전, 주사위, 연주자']],
+    why: ['New ideas from art, philosophy and technology made composers question every rule.', '미술, 철학, 기술의 새로운 생각들이 작곡가들에게 모든 규칙을 의심하게 했어요.'] },
+  { id: 'minimalism', years: [1960, 2026], name: ['Minimalism', '미니멀리즘'],
+    what: ['A few small patterns repeated many times, changing very slowly -- the change happens almost without you noticing.', '작은 패턴 몇 개를 여러 번 반복하며 아주 천천히 바꿔요 -- 거의 눈치채지 못하게 변해요.'],
+    listen: [['Repeating patterns over a steady pulse', '일정한 박 위에서 반복되는 패턴'], ['Slow, gradual change -- like watching clouds move', '느리고 서서히 바뀌어요 -- 구름이 움직이는 걸 보는 것처럼']],
+    why: ['Some composers wanted music that was simple and hypnotic after the complicated sounds of the 1950s -- and they were inspired by African drumming and Indian music.', '1950년대의 복잡한 소리 뒤에, 어떤 작곡가들은 단순하고 최면 같은 음악을 원했어요 -- 아프리카 북과 인도 음악에서 영감을 받았어요.'] },
+  { id: 'film', years: [1930, 2026], name: ['Film, TV and game music', '영화, TV, 게임 음악'],
+    what: ['Music written to tell a story on screen -- a theme for each character, and music that makes you feel scared, excited or sad.', '화면 속 이야기를 들려주는 음악 -- 인물마다 주제가 있고, 무섭게, 신나게, 슬프게 만들어 주는 음악이에요.'],
+    listen: [['A short theme (leitmotif) for each hero, villain or place', '영웅, 악당, 장소마다 있는 짧은 주제 (라이트모티프)'], ['Huge orchestra colours -- or a single piano', '거대한 오케스트라 색채 -- 또는 피아노 한 대']],
+    why: ['When films got sound (late 1920s), composers began writing music for the screen. The idea of a theme for each character comes from Wagner’s operas.', '영화에 소리가 들어가자(1920년대 말) 작곡가들이 화면을 위한 음악을 쓰기 시작했어요. 인물마다 주제를 붙이는 생각은 바그너의 오페라에서 왔어요.'] },
+  { id: 'australian', years: [1960, 2026], name: ['Australian voices', '호주의 목소리'],
+    what: ['Australian composers looking to their own land, its birds and its closeness to Asia, rather than to Europe.', '유럽보다 자기 땅, 그곳의 새들, 아시아와의 가까움에 눈을 돌린 호주 작곡가들.'],
+    listen: [['Wide, still sounds like the outback', '오지처럼 넓고 고요한 소리'], ['Bird calls and insect sounds turned into music', '음악이 된 새소리와 벌레 소리']],
+    why: ['From the 1960s Australian composers set out to find a sound that belonged to Australia.', '1960년대부터 호주 작곡가들은 호주다운 소리를 찾아 나섰어요.'] },
+];
+const cmpMove = (id) => CMP_MOVES.find(m => m.id === id);
+// The composers (Phase 304; 24 more in Phase 305 below). span = the periods a composer bridges; moves = movements.
 // hear: { kind: 'tune' (the real opening of a famous piece, simplified) | 'style' (made up for this app),
 //   title, inst, bpm, v: [voice strings] }. Voice string tokens: NOTE:beats  (NOTE = C4, F#4, Bb3, a chord
 //   C4+E4+G4, or r = rest); NOTE:beats~len lets a note ring for len beats; @v sets loudness 0..1.
@@ -14788,13 +14849,13 @@ const CMP = [
     fun: ['He was born in the same year as Bach and Handel! He wrote many of his sonatas for his pupil, the Portuguese princess Maria Barbara, who later became Queen of Spain.', '바흐, 헨델과 같은 해에 태어났어요! 소나타 중 많은 곡을 제자인 포르투갈 공주 마리아 바르바라를 위해 썼는데, 그 공주는 나중에 스페인 왕비가 되었어요.'],
     try: ['Play: one of his gentler sonatas, such as the Sonata in D minor, K. 32 (Aria).', '쳐 보기: 잔잔한 소나타 한 곡, 예를 들면 소나타 d단조 K. 32 (아리아).'] },
 
-  { id: 'haydn', name: ['Joseph Haydn', '요제프 하이든'], sur: ['Haydn', '하이든'], born: 1732, died: 1809, era: 'classical',
+  { id: 'haydn', name: ['Joseph Haydn', '요제프 하이든'], sur: ['Haydn', '하이든'], born: 1732, died: 1809, era: 'classical', moves: ['vienna1'],
     country: ['Austria', '오스트리아'],
     known: [['More than 100 symphonies, including the “Surprise” Symphony', '“놀람” 교향곡을 포함한 100곡이 넘는 교향곡'], ['String quartets', '현악 4중주'], ['The Creation', '천지창조']],
     finger: [['Musical jokes and surprises -- a sudden loud chord, a sneaky pause', '음악 속 농담과 깜짝 놀람 -- 갑자기 꽝 하는 화음, 살금살금 쉼표'], ['Clear, balanced phrases', '또렷하고 균형 잡힌 프레이즈'], ['Cheerful tunes that sound like folk dances', '민속춤 같은 명랑한 선율']],
     fun: ['His musicians called him “Papa”, and he is known as the father of the symphony. In his Surprise Symphony a quiet tune is suddenly interrupted by a huge, loud chord -- people say it was to wake up anyone dozing, but he said he just wanted to surprise everyone with something new.', '단원들은 그를 “파파”라고 불렀고, 교향곡의 아버지로 알려져 있어요. “놀람” 교향곡에서는 조용한 선율 중간에 갑자기 아주 큰 화음이 꽝! 졸던 청중을 깨우려 했다는 이야기가 있지만, 그는 그저 새로운 것으로 모두를 놀라게 하고 싶었다고 말했어요.'],
     try: ['Play: a German Dance, or a movement from one of his sonatas.', '쳐 보기: 독일 춤곡, 또는 소나타의 한 악장.'] },
-  { id: 'mozart', name: ['Wolfgang Amadeus Mozart', '볼프강 아마데우스 모차르트'], sur: ['Mozart', '모차르트'], born: 1756, died: 1791, era: 'classical',
+  { id: 'mozart', name: ['Wolfgang Amadeus Mozart', '볼프강 아마데우스 모차르트'], sur: ['Mozart', '모차르트'], born: 1756, died: 1791, era: 'classical', moves: ['vienna1'],
     country: ['Salzburg -- now in Austria', '잘츠부르크 -- 지금의 오스트리아'],
     known: [['Eine kleine Nachtmusik', '아이네 클라이네 나흐트무지크'], ['The Magic Flute (opera)', '마술피리 (오페라)'], ['Piano Sonata in C major, K. 545', '피아노 소나타 C장조 K. 545']],
     finger: [['Elegant, singing melodies', '우아하게 노래하는 선율'], ['Balanced question-and-answer phrases', '균형 잡힌 질문과 대답 프레이즈'], ['A light left-hand accompaniment, such as the Alberti bass', '알베르티 베이스 같은 가벼운 왼손 반주']],
@@ -14806,7 +14867,7 @@ const CMP = [
     finger: [['Bright, crisp sonatinas made for pianists who are learning', '배우는 피아니스트를 위한 밝고 산뜻한 소나티네'], ['Scales and broken chords turned into music', '스케일과 분산화음이 음악이 돼요'], ['Clear Classical shapes: a tune, an accompaniment, a neat ending', '또렷한 고전주의 모양: 선율, 반주, 깔끔한 마침']],
     fun: ['In 1781 Emperor Joseph II held a piano contest in Vienna between him and Mozart -- and called it a draw! He also built pianos and printed music.', '1781년 빈에서 요제프 2세 황제가 그와 모차르트의 피아노 대결을 열었어요 -- 그리고 무승부라고 했죠! 그는 피아노를 만들고 악보를 출판하기도 했어요.'],
     try: ['Play: Sonatina in C, Op. 36 No. 1.', '쳐 보기: 소나티네 C장조 작품 36-1.'] },
-  { id: 'beethoven', name: ['Ludwig van Beethoven', '루트비히 판 베토벤'], sur: ['Beethoven', '베토벤'], born: 1770, died: 1827, era: 'classical', bridge: true,
+  { id: 'beethoven', name: ['Ludwig van Beethoven', '루트비히 판 베토벤'], sur: ['Beethoven', '베토벤'], born: 1770, died: 1827, era: 'classical', span: ['classical', 'romantic'], moves: ['vienna1'],
     country: ['Germany -- born in Bonn, lived in Vienna', '독일 -- 본에서 태어나 빈에서 활동'],
     known: [['Symphony No. 5 (da-da-da-DUM!)', '교향곡 5번 (따따따 딴!)'], ['Symphony No. 9 (“Ode to Joy”)', '교향곡 9번 (“환희의 송가”)'], ['“Moonlight” Sonata', '“월광” 소나타'], ['Für Elise', '엘리제를 위하여']],
     finger: [['Huge contrasts: sudden loud accents (sf) and whispers', '엄청난 대비: 갑작스러운 강한 악센트(sf)와 속삭임'], ['Short motifs that grow into whole pieces', '짧은 동기가 자라서 곡 전체가 돼요'], ['Stormy energy -- he is the bridge from the Classical to the Romantic era', '폭풍 같은 에너지 -- 고전주의에서 낭만주의로 가는 다리']],
@@ -14849,38 +14910,38 @@ const CMP = [
     finger: [['Warm, rich, deep sounds -- thick chords and a low bass', '따뜻하고 풍부하고 깊은 소리 -- 두꺼운 화음과 낮은 베이스'], ['Rhythms that cross the beat: two against three', '박을 가로지르는 리듬: 2 대 3'], ['Classical shapes filled with Romantic feeling', '고전주의 형식에 담긴 낭만주의 감정']],
     fun: ['His famous Lullaby was a present for a friend’s new baby. He took about 20 years to finish his First Symphony -- people say he felt the giant Beethoven was always walking behind him.', '유명한 “자장가”는 친구의 갓 태어난 아기를 위한 선물이었어요. 첫 교향곡을 끝내는 데 약 20년이 걸렸는데, 베토벤이라는 거인이 늘 뒤에서 걸어오는 것 같았다는 이야기가 있어요.'],
     try: ['Play: an arrangement of his Lullaby, or a Waltz from Op. 39.', '쳐 보기: “자장가” 편곡, 또는 왈츠 작품 39 중 한 곡.'] },
-  { id: 'tchaikovsky', name: ['Pyotr Ilyich Tchaikovsky', '표트르 일리치 차이콥스키'], sur: ['Tchaikovsky', '차이콥스키'], born: 1840, died: 1893, era: 'romantic',
+  { id: 'tchaikovsky', name: ['Pyotr Ilyich Tchaikovsky', '표트르 일리치 차이콥스키'], sur: ['Tchaikovsky', '차이콥스키'], born: 1840, died: 1893, era: 'romantic', moves: ['lateromantic'],
     country: ['Russia', '러시아'],
     known: [['The Nutcracker', '호두까기 인형'], ['Swan Lake', '백조의 호수'], ['Album for the Young, Op. 39', '어린이를 위한 앨범 작품 39']],
     finger: [['Big, sweeping melodies full of feeling', '감정이 가득한, 크게 휘몰아치는 선율'], ['Ballet music that makes you want to dance', '춤추고 싶게 만드는 발레 음악'], ['Colourful orchestra sounds -- and Russian folk tunes', '화려한 오케스트라 색채 -- 그리고 러시아 민요']],
     fun: ['For the Sugar Plum Fairy in The Nutcracker he used a brand-new instrument, the celesta, which he had found in Paris -- and he tried to keep it a secret so that no other composer would use it first.', '“호두까기 인형”의 사탕 요정에게 파리에서 찾아낸 새 악기 첼레스타를 썼어요 -- 다른 작곡가가 먼저 쓸까 봐 비밀로 하려 했대요.'],
     try: ['Play: a piece from his Album for the Young, such as “Old French Song”.', '쳐 보기: “어린이를 위한 앨범” 중 한 곡, 예를 들면 “옛 프랑스 노래”.'] },
 
-  { id: 'debussy', name: ['Claude Debussy', '클로드 드뷔시'], sur: ['Debussy', '드뷔시'], born: 1862, died: 1918, era: 'modern', bridge: true,
+  { id: 'debussy', name: ['Claude Debussy', '클로드 드뷔시'], sur: ['Debussy', '드뷔시'], born: 1862, died: 1918, era: 'modern', span: ['romantic', 'modern'], moves: ['impressionism'],
     country: ['France', '프랑스'],
     known: [['“Clair de lune” (Moonlight)', '“달빛”'], ['Children’s Corner', '어린이 차지 (Children’s Corner)'], ['Preludes, such as “The Girl with the Flaxen Hair”', '“아마빛 머리의 소녀” 같은 전주곡'], ['La mer (The Sea)', '바다']],
     finger: [['Misty, shimmering colours -- music like a painting of water and light', '안개처럼 아른거리는 색채 -- 물과 빛을 그린 그림 같은 음악'], ['New scales, such as the whole-tone and pentatonic scales', '온음음계와 5음음계 같은 새로운 음계'], ['Chords that float and drift, held together by the pedal', '페달 속에서 떠다니며 흘러가는 화음']],
     fun: ['People call his music “Impressionist”, like the paintings of Monet -- but he did not like that label at all! He wrote Children’s Corner for his little daughter, Chouchou.', '사람들은 그의 음악을 모네의 그림처럼 “인상주의”라고 부르지만, 정작 그는 그 이름을 전혀 좋아하지 않았어요! “어린이 차지”는 어린 딸 슈슈를 위해 썼어요.'],
     try: ['Play: “The Little Shepherd” from Children’s Corner. Listen: “Clair de lune”.', '쳐 보기: “어린이 차지” 중 “작은 목동”. 들어 보기: “달빛”.'] },
-  { id: 'joplin', name: ['Scott Joplin', '스콧 조플린'], sur: ['Joplin', '조플린'], born: 1868, bornApprox: true, died: 1917, era: 'modern',
+  { id: 'joplin', name: ['Scott Joplin', '스콧 조플린'], sur: ['Joplin', '조플린'], born: 1868, bornApprox: true, died: 1917, era: 'modern', moves: ['american'],
     country: ['USA', '미국'],
     known: [['“The Entertainer”', '“엔터테이너”'], ['“Maple Leaf Rag”', '“메이플 리프 래그”']],
     finger: [['Ragtime: a bouncy, syncopated tune in the right hand', '래그타임: 오른손의 통통 튀는 당김음 선율'], ['A steady “oom-pah” left hand: a bass note, then a chord', '왼손은 일정한 “쿵-짝”: 베이스 음, 그다음 화음'], ['American marches and dances with a brand-new bounce', '새로운 리듬감을 입은 미국의 행진곡과 춤곡']],
     fun: ['He is called the “King of Ragtime”. Maple Leaf Rag sold so much sheet music that it made him famous. Almost 60 years after he died, The Entertainer became a hit all over again in a film called The Sting.', '“래그타임의 왕”이라 불려요. “메이플 리프 래그” 악보가 아주 많이 팔리면서 유명해졌어요. 그가 세상을 떠나고 거의 60년 뒤, 영화 “스팅”에 “엔터테이너”가 나오면서 다시 큰 인기를 얻었어요.'],
     try: ['Play: an easy arrangement of The Entertainer -- and keep that left hand steady!', '쳐 보기: “엔터테이너” 쉬운 편곡 -- 왼손은 일정하게!'] },
-  { id: 'bartok', name: ['Béla Bartók', '벨라 바르토크'], sur: ['Bartók', '바르토크'], born: 1881, died: 1945, era: 'modern',
+  { id: 'bartok', name: ['Béla Bartók', '벨라 바르토크'], sur: ['Bartók', '바르토크'], born: 1881, died: 1945, era: 'modern', moves: ['nationalism'],
     country: ['Hungary (born in a town that is now in Romania)', '헝가리 (지금은 루마니아 땅인 도시에서 태어남)'],
     known: [['Mikrokosmos (153 piano pieces)', '미크로코스모스 (피아노곡 153곡)'], ['For Children', '어린이를 위하여'], ['Concerto for Orchestra', '관현악을 위한 협주곡']],
     finger: [['Real folk tunes from Hungarian and Romanian villages', '헝가리와 루마니아 마을에서 온 진짜 민요'], ['Unusual scales and modes', '독특한 음계와 선법'], ['Strong, punchy rhythms -- the piano played like a drum', '강하고 힘찬 리듬 -- 북처럼 치는 피아노']],
     fun: ['He travelled from village to village collecting thousands of folk songs, and recorded many of them on wax cylinders with a phonograph. He wrote Mikrokosmos to teach piano -- his son Péter learned from it.', '이 마을 저 마을 다니며 민요 수천 곡을 모았고, 그중 많은 곡을 축음기로 밀랍 원통에 녹음했어요. “미크로코스모스”는 피아노를 가르치려고 썼고, 아들 페테르도 그 곡으로 배웠어요.'],
     try: ['Play: a piece from Mikrokosmos Book 1, or from For Children.', '쳐 보기: “미크로코스모스” 1권이나 “어린이를 위하여” 중 한 곡.'] },
-  { id: 'prokofiev', name: ['Sergei Prokofiev', '세르게이 프로코피예프'], sur: ['Prokofiev', '프로코피예프'], born: 1891, died: 1953, era: 'modern',
+  { id: 'prokofiev', name: ['Sergei Prokofiev', '세르게이 프로코피예프'], sur: ['Prokofiev', '프로코피예프'], born: 1891, died: 1953, era: 'modern', moves: ['neoclassicism', 'film'],
     country: ['Russia (born in what is now Ukraine)', '러시아 (지금의 우크라이나 땅에서 태어남)'],
     known: [['Peter and the Wolf', '피터와 늑대'], ['Romeo and Juliet (ballet)', '로미오와 줄리엣 (발레)'], ['Music for Children, Op. 65', '어린이를 위한 음악 작품 65']],
     finger: [['Cheeky melodies that jump to surprising notes', '깜짝 놀랄 음으로 뛰어오르는 장난스러운 선율'], ['Sudden key changes that sound like a wink', '윙크하듯 갑자기 바뀌는 조'], ['Sharp, toy-soldier rhythms -- and lots of humour', '날카로운 장난감 병정 리듬 -- 그리고 유머 가득']],
     fun: ['In Peter and the Wolf every character is played by an instrument: Peter by the strings, the bird by the flute, the duck by the oboe -- and the wolf by three French horns.', '“피터와 늑대”에서는 등장인물마다 악기가 맡아요: 피터는 현악기, 새는 플루트, 오리는 오보에, 그리고 늑대는 호른 세 대예요.'],
     try: ['Play: “Morning” or “Promenade” from Music for Children. Listen: Peter and the Wolf.', '쳐 보기: “어린이를 위한 음악” 중 “아침”이나 “산책”. 들어 보기: “피터와 늑대”.'] },
-  { id: 'gershwin', name: ['George Gershwin', '조지 거슈윈'], sur: ['Gershwin', '거슈윈'], born: 1898, died: 1937, era: 'modern',
+  { id: 'gershwin', name: ['George Gershwin', '조지 거슈윈'], sur: ['Gershwin', '거슈윈'], born: 1898, died: 1937, era: 'modern', moves: ['american'],
     country: ['USA', '미국'],
     known: [['Rhapsody in Blue', '랩소디 인 블루'], ['Porgy and Bess (with “Summertime”)', '포기와 베스 (“서머타임” 포함)'], ['An American in Paris', '파리의 미국인']],
     finger: [['Jazz and blues mixed with classical music', '클래식과 섞인 재즈와 블루스'], ['Blue notes and swinging, syncopated rhythms', '블루 노트와 스윙하는 당김음 리듬'], ['Big, catchy tunes, like a Broadway show', '브로드웨이 뮤지컬 같은 크고 귀에 쏙 들어오는 선율']],
@@ -14892,7 +14953,7 @@ const CMP = [
     finger: [['Short, lively pieces made for young pianists', '어린 피아니스트를 위한 짧고 생기 있는 곡'], ['Clear tunes with a cheeky twist', '살짝 장난기가 섞인 또렷한 선율'], ['Bright rhythms and quick changes of mood', '밝은 리듬과 빠른 기분 변화']],
     fun: ['He loved teaching children and wrote many pieces just for them -- you will find his music in lots of exam books. He also taught music in an ordinary school.', '아이들을 가르치는 걸 정말 좋아해서 아이들만을 위한 곡을 아주 많이 썼어요 -- 시험 곡집에서도 그의 곡을 자주 만나요. 평범한 학교에서 음악을 가르치기도 했어요.'],
     try: ['Play: “Clowns” from 24 Pieces for Children, Op. 39.', '쳐 보기: 작품 39 중 “광대들”.'] },
-  { id: 'sculthorpe', name: ['Peter Sculthorpe', '피터 스컬소프'], sur: ['Sculthorpe', '스컬소프'], born: 1929, died: 2014, era: 'modern',
+  { id: 'sculthorpe', name: ['Peter Sculthorpe', '피터 스컬소프'], sur: ['Sculthorpe', '스컬소프'], born: 1929, died: 2014, era: 'contemporary', moves: ['australian'],
     country: ['Australia (born in Tasmania)', '호주 (태즈메이니아에서 태어남)'],
     known: [['Kakadu', '카카두'], ['Earth Cry', '대지의 외침 (Earth Cry)'], ['Mountains (for piano)', '산 (Mountains, 피아노곡)']],
     finger: [['The sound of the Australian landscape -- wide, open and still', '호주 풍경의 소리 -- 넓고 탁 트이고 고요해요'], ['Bird calls and insect sounds turned into music', '음악이 된 새소리와 벌레 소리'], ['Ideas from the music of Asia and the Pacific', '아시아와 태평양 음악에서 온 아이디어']],
@@ -14909,6 +14970,169 @@ const CMP_MOMENTS = [
   { y: 1853, en: 'Brahms, aged 20, knocks on the Schumanns’ door -- the start of a lifelong friendship with Clara.', ko: '스무 살 브람스가 슈만 부부의 집 문을 두드려요 -- 클라라와의 평생 우정이 시작돼요.' },
   { y: 1924, en: 'Gershwin’s Rhapsody in Blue is played for the first time, in New York.', ko: '거슈윈의 “랩소디 인 블루”가 뉴욕에서 처음 연주돼요.' },
 ];
+// Phase 305: 24 more composers -- Renaissance, more Baroque, the Romantic nationalists, Impressionism,
+// the twentieth century and today.
+CMP.push(
+  { id: 'palestrina', name: ['Giovanni Pierluigi da Palestrina', '조반니 피에를루이지 다 팔레스트리나'], sur: ['Palestrina', '팔레스트리나'], born: 1525, bornApprox: true, died: 1594, era: 'renaissance',
+    country: ['Italy (Rome)', '이탈리아 (로마)'],
+    known: [['The Pope Marcellus Mass', '교황 마르첼루스 미사'], ['More than 100 Masses', '100곡이 넘는 미사곡'], ['Motets for choir', '합창을 위한 모테트']],
+    finger: [['Smooth voices that move mostly by step', '주로 차례로 움직이는 부드러운 성부'], ['Calm, clear harmony where you can still hear the words', '가사가 또렷이 들리는 차분하고 맑은 화음'], ['No instruments needed -- just voices', '악기 없이 -- 목소리만으로']],
+    fun: ['A famous legend says his Pope Marcellus Mass saved church music, by proving that many voices could sing together and still let the words be heard. It is only a legend -- but for centuries, students learned to compose by copying his style.', '유명한 전설에 따르면 그의 “교황 마르첼루스 미사”가 교회 음악을 구했대요. 여러 목소리가 함께 노래해도 가사가 잘 들릴 수 있다는 걸 보여 줬다는 거죠. 전설일 뿐이지만 -- 수백 년 동안 학생들은 그의 양식을 따라 하며 작곡을 배웠어요.'],
+    try: ['Listen: the Kyrie from the Pope Marcellus Mass -- count how many voices you can hear.', '들어 보기: “교황 마르첼루스 미사”의 키리에 -- 몇 개의 목소리가 들리는지 세어 보세요.'] },
+  { id: 'byrd', name: ['William Byrd', '윌리엄 버드'], sur: ['Byrd', '버드'], born: 1540, bornApprox: true, died: 1623, era: 'renaissance',
+    country: ['England', '영국'],
+    known: [['My Ladye Nevells Booke (keyboard pieces)', '마이 레이디 네블스 북 (건반곡집)'], ['“The Bells” (for virginals)', '“종” (버지널을 위한 곡)'], ['Mass for Four Voices', '4성부 미사']],
+    finger: [['Keyboard variations on popular songs and dances', '유행가와 춤곡을 바탕으로 한 건반 변주곡'], ['Bell-like patterns that repeat in the bass', '베이스에서 종처럼 되풀이되는 패턴'], ['Rich church music for voices', '목소리를 위한 풍부한 교회 음악']],
+    fun: ['He was a Catholic in Protestant England, which could be dangerous -- but Queen Elizabeth I supported his music, and he kept his place in her royal chapel. She gave him and Thomas Tallis (probably his teacher) the right to print music in England.', '개신교 나라 영국에서 가톨릭 신자로 사는 건 위험할 수 있었지만, 엘리자베스 1세 여왕은 그의 음악을 아꼈고 그는 왕실 예배당에서 계속 일할 수 있었어요. 여왕은 그와 토머스 탈리스(아마도 그의 스승)에게 영국에서 악보를 인쇄할 권리를 주었어요.'],
+    try: ['Listen: “The Bells” played on a harpsichord or virginals.', '들어 보기: 하프시코드나 버지널로 연주한 “종”.'] },
+
+  { id: 'pachelbel', name: ['Johann Pachelbel', '요한 파헬벨'], sur: ['Pachelbel', '파헬벨'], born: 1653, died: 1706, era: 'baroque',
+    country: ['Germany', '독일'],
+    known: [['Canon in D', '캐논 D장조'], ['Chorale preludes for organ', '오르간을 위한 코랄 전주곡']],
+    finger: [['A repeating bass line (a ground bass) with tunes built on top', '되풀이되는 베이스(그라운드 베이스) 위에 쌓아 올린 선율'], ['Canon: the same tune entering again and again, like a round', '캐논: 돌림노래처럼 같은 선율이 계속 다시 들어와요'], ['Calm, steady organ music for church', '교회를 위한 차분하고 일정한 오르간 음악']],
+    fun: ['He taught Bach’s oldest brother, who then taught young Johann Sebastian. His Canon was almost forgotten for about 250 years -- then a 1968 recording made it one of the most played pieces in the world.', '바흐의 큰형을 가르쳤고, 그 형이 어린 요한 제바스티안을 가르쳤어요. 그의 캐논은 약 250년 동안 거의 잊혀 있다가 -- 1968년 음반 덕분에 세상에서 가장 많이 연주되는 곡 중 하나가 되었어요.'],
+    try: ['Play: the 8-note ground bass of the Canon with your left hand -- over and over!', '쳐 보기: 캐논의 8음 그라운드 베이스를 왼손으로 -- 계속 반복해서!'] },
+  { id: 'couperin', name: ['François Couperin', '프랑수아 쿠프랭'], sur: ['Couperin', '쿠프랭'], born: 1668, died: 1733, era: 'baroque',
+    country: ['France', '프랑스'],
+    known: [['Pièces de clavecin (four books of harpsichord pieces)', '클라브생 곡집 (하프시코드곡 네 권)'], ['“Les Barricades mystérieuses”', '“신비로운 바리케이드”'], ['The Art of Playing the Harpsichord (a method book)', '클라브생 연주법 (교본)']],
+    finger: [['Lots of tiny ornaments on almost every note', '거의 모든 음에 붙은 작은 꾸밈음'], ['Pieces with picture titles: butterflies, birds, mysterious barricades', '그림 같은 제목: 나비, 새, 신비로운 바리케이드'], ['Elegant French dances', '우아한 프랑스 춤곡']],
+    fun: ['People called him “Couperin le Grand” -- Couperin the Great. He wrote one of the first books on how to play the harpsichord, right down to which fingers to use.', '사람들은 그를 “위대한 쿠프랭”이라 불렀어요. 하프시코드 연주법에 관한 최초의 책 중 하나를 썼는데, 어떤 손가락을 쓸지까지 적어 두었어요.'],
+    try: ['Listen: “Les Barricades mystérieuses” on the harpsichord.', '들어 보기: 하프시코드로 연주한 “신비로운 바리케이드”.'] },
+
+  { id: 'mendelssohn', name: ['Felix Mendelssohn', '펠릭스 멘델스존'], sur: ['Mendelssohn', '멘델스존'], born: 1809, died: 1847, era: 'romantic',
+    country: ['Germany', '독일'],
+    known: [['Songs Without Words (piano)', '무언가 (피아노)'], ['A Midsummer Night’s Dream (with the Wedding March)', '한여름 밤의 꿈 (결혼 행진곡 포함)'], ['Violin Concerto in E minor', '바이올린 협주곡 e단조']],
+    finger: [['Song-like melodies for the piano -- “songs without words”', '피아노로 부르는 노래 같은 선율 -- “말 없는 노래”'], ['Light, sparkling fairy music', '가볍고 반짝이는 요정 음악'], ['Clear Classical shapes with Romantic feeling', '낭만주의 감정을 담은 또렷한 고전주의 모양']],
+    fun: ['He wrote his overture to A Midsummer Night’s Dream at just 17. At 20 he conducted Bach’s St Matthew Passion in Berlin -- music hardly anyone had heard for decades -- and helped start a Bach revival. His sister Fanny was a fine composer too.', '“한여름 밤의 꿈” 서곡을 겨우 열일곱 살에 썼어요. 스무 살에는 수십 년 동안 거의 들을 수 없던 바흐의 “마태 수난곡”을 베를린에서 지휘해 바흐 열풍을 일으키는 데 앞장섰어요. 누나 파니도 훌륭한 작곡가였어요.'],
+    try: ['Play: an easy Song Without Words. Listen: the Wedding March.', '쳐 보기: 쉬운 무언가 한 곡. 들어 보기: 결혼 행진곡.'] },
+  { id: 'smetana', name: ['Bedřich Smetana', '베드르지흐 스메타나'], sur: ['Smetana', '스메타나'], born: 1824, died: 1884, era: 'romantic', moves: ['nationalism'],
+    country: ['Bohemia -- now the Czech Republic', '보헤미아 -- 지금의 체코'],
+    known: [['Má vlast (My Homeland), with “Vltava”', '나의 조국 (“블타바” 포함)'], ['The Bartered Bride (opera)', '팔려 간 신부 (오페라)']],
+    finger: [['Music that tells about his country: a river, castles, legends', '조국을 이야기하는 음악: 강, 성, 전설'], ['Czech dance rhythms such as the polka', '폴카 같은 체코 춤곡 리듬'], ['Big, singing orchestra tunes', '크게 노래하는 오케스트라 선율']],
+    fun: ['Like Beethoven, he became completely deaf -- and afterwards wrote Vltava, music that follows a river from two little springs all the way to the city of Prague.', '베토벤처럼 그도 청력을 완전히 잃었어요 -- 그 뒤에 작은 두 샘에서 시작해 프라하까지 흘러가는 강을 따라가는 음악 “블타바”를 썼어요.'],
+    try: ['Listen: “Vltava” -- can you hear the two little streams at the start?', '들어 보기: “블타바” -- 처음에 작은 두 물줄기가 들리나요?'] },
+  { id: 'mussorgsky', name: ['Modest Mussorgsky', '모데스트 무소륵스키'], sur: ['Mussorgsky', '무소륵스키'], born: 1839, died: 1881, era: 'romantic', moves: ['nationalism'],
+    country: ['Russia', '러시아'],
+    known: [['Pictures at an Exhibition (piano)', '전람회의 그림 (피아노)'], ['Night on Bald Mountain', '민둥산의 하룻밤'], ['Boris Godunov (opera)', '보리스 고두노프 (오페라)']],
+    finger: [['Rough, powerful Russian sounds -- bells, chant, folk song', '거칠고 힘찬 러시아의 소리 -- 종, 성가, 민요'], ['Music that paints scenes and characters', '장면과 인물을 그리는 음악'], ['Uneven bars, such as 5 beats then 6', '고르지 않은 마디, 예를 들면 5박 다음 6박']],
+    fun: ['Pictures at an Exhibition is a walk through an art gallery: a Promenade tune between pictures of a gnome, chicks dancing in their eggshells, a witch’s hut on chicken legs and a great gate. He was one of “The Five”, and worked as a government clerk.', '“전람회의 그림”은 미술관 산책이에요: 그림 사이사이 “프롬나드” 선율이 나오고, 난쟁이, 껍질 속에서 춤추는 병아리, 닭발 위의 마녀 오두막, 거대한 성문이 그려져요. 그는 “5인조” 중 한 명이었고, 공무원으로 일했어요.'],
+    try: ['Play: the Promenade tune (it’s in the app -- tap the sound below). Listen: “Ballet of the Unhatched Chicks”.', '쳐 보기: 프롬나드 선율 (아래 소리를 눌러 들어 보세요). 들어 보기: “껍질을 덜 벗은 병아리의 발레”.'] },
+  { id: 'dvorak', name: ['Antonín Dvořák', '안토닌 드보르자크'], sur: ['Dvořák', '드보르자크'], born: 1841, died: 1904, era: 'romantic', moves: ['nationalism'],
+    country: ['Bohemia -- now the Czech Republic', '보헤미아 -- 지금의 체코'],
+    known: [['Symphony No. 9 “From the New World”', '교향곡 9번 “신세계로부터”'], ['Slavonic Dances', '슬라브 무곡'], ['Humoresque No. 7', '유머레스크 7번']],
+    finger: [['Czech folk-dance rhythms', '체코 민속춤 리듬'], ['Warm, singing tunes that are easy to remember', '기억하기 쉬운 따뜻하고 노래하는 선율'], ['Bright orchestra colours and lively energy', '밝은 오케스트라 색채와 생기 있는 에너지']],
+    fun: ['He went to New York to run a music school, and loved trains so much that he went to watch the locomotives. A tune from his New World Symphony later became the song “Goin’ Home”.', '음악 학교를 이끌려고 뉴욕에 갔어요. 기차를 너무 좋아해서 기관차를 구경하러 다녔대요. “신세계” 교향곡의 한 선율은 나중에 “고잉 홈(Goin’ Home)”이라는 노래가 되었어요.'],
+    try: ['Play: an easy arrangement of the Largo (“Goin’ Home”) or Humoresque.', '쳐 보기: 라르고(“고잉 홈”)나 유머레스크 쉬운 편곡.'] },
+  { id: 'grieg', name: ['Edvard Grieg', '에드바르 그리그'], sur: ['Grieg', '그리그'], born: 1843, died: 1907, era: 'romantic', moves: ['nationalism'],
+    country: ['Norway', '노르웨이'],
+    known: [['Peer Gynt (with “Morning Mood” and “In the Hall of the Mountain King”)', '페르 귄트 (“아침의 기분”, “산왕의 궁전에서” 포함)'], ['Piano Concerto in A minor', '피아노 협주곡 a단조'], ['Lyric Pieces (66 short piano pieces)', '서정 소곡집 (짧은 피아노곡 66곡)']],
+    finger: [['Norwegian folk dances and fiddle tunes', '노르웨이 민속춤과 바이올린(피들) 선율'], ['Short, colourful piano pieces', '짧고 색채가 풍부한 피아노곡'], ['Fresh harmonies, like clear mountain air', '맑은 산 공기 같은 상쾌한 화음']],
+    fun: ['“In the Hall of the Mountain King” starts quietly and slowly, then gets faster and louder until the trolls are chasing Peer! He wrote 66 Lyric Pieces -- many are perfect for young pianists.', '“산왕의 궁전에서”는 조용하고 느리게 시작해서 점점 빠르고 커지다가 결국 트롤들이 페르를 쫓아가요! 그는 서정 소곡을 66곡이나 썼는데, 어린 피아니스트에게 딱 맞는 곡이 많아요.'],
+    try: ['Play: “Arietta”, the first of his Lyric Pieces (Op. 12 No. 1).', '쳐 보기: 서정 소곡집의 첫 곡 “아리에타” (작품 12-1).'] },
+  { id: 'rimsky', name: ['Nikolai Rimsky-Korsakov', '니콜라이 림스키코르사코프'], sur: ['Rimsky-Korsakov', '림스키코르사코프'], born: 1844, died: 1908, era: 'romantic', moves: ['nationalism'],
+    country: ['Russia', '러시아'],
+    known: [['“Flight of the Bumblebee”', '“왕벌의 비행”'], ['Scheherazade', '셰에라자드'], ['Capriccio espagnol', '스페인 기상곡']],
+    finger: [['Dazzling orchestra colours', '눈부신 오케스트라 색채'], ['Fairy tales from Russia and the East', '러시아와 동방의 동화'], ['Super-fast runs that buzz and whirl', '윙윙거리며 소용돌이치는 아주 빠른 패시지']],
+    fun: ['As a young naval officer he spent nearly three years at sea, sailing as far as America and Brazil, before he became a music professor. He was one of “The Five”, and he taught Stravinsky.', '음악 교수가 되기 전, 젊은 해군 장교로 거의 3년 동안 바다를 항해하며 미국과 브라질까지 갔어요. “5인조” 중 한 명이었고, 스트라빈스키를 가르쳤어요.'],
+    try: ['Listen: “Flight of the Bumblebee” -- try to hum along at full speed!', '들어 보기: “왕벌의 비행” -- 그 빠르기로 따라 흥얼거려 보세요!'] },
+  { id: 'saintsaens', name: ['Camille Saint-Saëns', '카미유 생상스'], sur: ['Saint-Saëns', '생상스'], born: 1835, died: 1921, era: 'romantic',
+    country: ['France', '프랑스'],
+    known: [['The Carnival of the Animals (with “The Swan”)', '동물의 사육제 (“백조” 포함)'], ['Danse macabre', '죽음의 무도'], ['Symphony No. 3 “Organ”', '교향곡 3번 “오르간”']],
+    finger: [['Elegant, clear French style', '우아하고 또렷한 프랑스 양식'], ['Musical jokes and animal pictures', '음악 농담과 동물 그림'], ['Brilliant piano writing', '화려한 피아노곡']],
+    fun: ['A child prodigy, he gave his first big concert at 10. He wrote The Carnival of the Animals as a joke for friends and did not let it be published in his lifetime -- except “The Swan”. One of the “animals” in it is… pianists!', '신동이었고 열 살에 첫 큰 연주회를 열었어요. “동물의 사육제”는 친구들을 위한 농담으로 써서 살아 있는 동안은 출판하지 못하게 했어요 -- “백조”만 빼고요. 그 속의 “동물” 중 하나는… 피아니스트예요!'],
+    try: ['Listen: “The Swan”, then “Pianists” -- they practise scales very badly on purpose!', '들어 보기: “백조”, 그리고 “피아니스트” -- 일부러 스케일을 엉망으로 연습해요!'] },
+  { id: 'rachmaninoff', name: ['Sergei Rachmaninoff', '세르게이 라흐마니노프'], sur: ['Rachmaninoff', '라흐마니노프'], born: 1873, died: 1943, era: 'romantic', span: ['romantic', 'modern'], moves: ['lateromantic'],
+    country: ['Russia -- he lived in the USA from 1918', '러시아 -- 1918년부터 미국에서 살았어요'],
+    known: [['Piano Concerto No. 2', '피아노 협주곡 2번'], ['Prelude in C-sharp minor', '전주곡 c#단조'], ['Rhapsody on a Theme of Paganini', '파가니니 주제에 의한 광시곡']],
+    finger: [['Huge, rich chords and sweeping melodies', '거대하고 풍부한 화음과 크게 휘몰아치는 선율'], ['The sound of Russian church bells', '러시아 교회 종소리'], ['Long singing lines over rippling accompaniment', '물결치는 반주 위의 길게 노래하는 선율']],
+    fun: ['He had enormous hands and could stretch far more than an octave. He wrote his Prelude in C-sharp minor at 19, and it became so famous that audiences shouted for it at nearly every concert -- he grew rather tired of it!', '손이 엄청나게 커서 한 옥타브보다 훨씬 넓게 벌릴 수 있었어요. 열아홉 살에 쓴 전주곡 c#단조가 너무 유명해져서 거의 모든 연주회에서 관객이 그 곡을 외쳤대요 -- 그는 좀 지겨워했다고 해요!'],
+    try: ['Listen: the Prelude in C-sharp minor -- three loud bell notes at the start.', '들어 보기: 전주곡 c#단조 -- 처음에 크게 울리는 종소리 세 음.'] },
+
+  { id: 'satie', name: ['Erik Satie', '에릭 사티'], sur: ['Satie', '사티'], born: 1866, died: 1925, era: 'modern', span: ['romantic', 'modern'],
+    country: ['France', '프랑스'],
+    known: [['Gymnopédies (three piano pieces)', '짐노페디 (피아노곡 세 곡)'], ['Gnossiennes', '그노시엔']],
+    finger: [['Very simple, slow and calm', '아주 단순하고 느리고 고요해요'], ['Unusual chords that are in no hurry to go anywhere', '어디로도 서두르지 않는 독특한 화음'], ['Funny titles and instructions', '웃긴 제목과 지시어']],
+    fun: ['He wrote jokes into his music: pieces called “Flabby Preludes (for a dog)”, and instructions such as “like a nightingale with a toothache”. He was a friend of Debussy, who called him “the precursor” -- but later Satie led young French composers away from Impressionism, towards plainer, simpler music.', '음악 속에 농담을 적었어요: “(개를 위한) 흐물흐물한 전주곡” 같은 제목에, “이가 아픈 나이팅게일처럼” 같은 지시어까지요. 드뷔시의 친구였고 드뷔시는 그를 “선구자”라고 불렀어요 -- 하지만 나중에 사티는 젊은 프랑스 작곡가들을 인상주의에서 벗어나 더 단순하고 담백한 음악으로 이끌었어요.'],
+    try: ['Play: Gymnopédie No. 1 -- slowly, and let each chord ring.', '쳐 보기: 짐노페디 1번 -- 천천히, 화음이 울리도록.'] },
+  { id: 'ravel', name: ['Maurice Ravel', '모리스 라벨'], sur: ['Ravel', '라벨'], born: 1875, died: 1937, era: 'modern', moves: ['impressionism'],
+    country: ['France', '프랑스'],
+    known: [['Boléro', '볼레로'], ['Mother Goose (Ma mère l’Oye), for piano duet', '어미 거위 (피아노 연탄곡)'], ['Pavane for a Dead Princess', '죽은 왕녀를 위한 파반느']],
+    finger: [['Precise, sparkling textures -- like a Swiss watch', '정밀하고 반짝이는 짜임 -- 스위스 시계처럼'], ['Brilliant orchestra colours', '화려한 오케스트라 색채'], ['Dance rhythms, often Spanish', '춤곡 리듬, 특히 스페인풍']],
+    fun: ['Boléro repeats the same tune again and again, getting louder for about 15 minutes -- he called it an experiment. He wrote Mother Goose as a piano duet for two children of his friends.', '“볼레로”는 같은 선율을 계속 되풀이하며 약 15분 동안 점점 커져요 -- 그는 이 곡을 하나의 실험이라고 불렀어요. “어미 거위”는 친구의 두 아이를 위한 피아노 연탄곡으로 썼어요.'],
+    try: ['Play: a movement of Mother Goose with a duet partner. Listen: Boléro.', '쳐 보기: 짝과 함께 “어미 거위”의 한 곡. 들어 보기: 볼레로.'] },
+  { id: 'schoenberg', name: ['Arnold Schoenberg', '아르놀트 쇤베르크'], sur: ['Schoenberg', '쇤베르크'], born: 1874, died: 1951, era: 'modern', moves: ['vienna2'],
+    country: ['Austria -- he moved to the USA in 1933', '오스트리아 -- 1933년에 미국으로 갔어요'],
+    known: [['Pierrot lunaire', '달에 홀린 피에로'], ['Transfigured Night', '정화된 밤'], ['Suite for Piano, Op. 25', '피아노 모음곡 작품 25']],
+    finger: [['No home key -- atonal music', '으뜸음이 없어요 -- 무조 음악'], ['Tone rows: all twelve notes in a set order', '음렬: 열두 음 모두를 정해진 순서로'], ['Sharp, intense, very expressive sounds', '날카롭고 강렬하며 표현이 큰 소리']],
+    fun: ['He invented a new way to compose with all twelve notes of the octave: the twelve-tone method. He was very superstitious about the number 13 -- he was born on the 13th, and died on a Friday the 13th.', '옥타브의 열두 음을 모두 쓰는 새로운 작곡법, 12음 기법을 만들었어요. 숫자 13을 아주 무서워했는데 -- 13일에 태어나서, 13일의 금요일에 세상을 떠났어요.'],
+    try: ['Listen: one movement of the Suite for Piano, Op. 25 -- can you find a home key?', '들어 보기: 피아노 모음곡 작품 25의 한 곡 -- 으뜸음을 찾을 수 있나요?'] },
+  { id: 'stravinsky', name: ['Igor Stravinsky', '이고르 스트라빈스키'], sur: ['Stravinsky', '스트라빈스키'], born: 1882, died: 1971, era: 'modern', moves: ['neoclassicism'],
+    country: ['Russia -- later he lived in France and the USA', '러시아 -- 나중에 프랑스와 미국에서 살았어요'],
+    known: [['The Rite of Spring', '봄의 제전'], ['The Firebird', '불새'], ['Petrushka', '페트루슈카']],
+    finger: [['Pounding, uneven rhythms with surprise accents', '쿵쿵 울리는 고르지 않은 리듬과 깜짝 악센트'], ['Clashing chords played together', '서로 부딪히는 화음을 한꺼번에'], ['Later: clear neoclassical music that borrows from the past', '나중에는: 옛것을 빌려 온 또렷한 신고전주의 음악']],
+    fun: ['At the first performance of The Rite of Spring in Paris in 1913, the audience was so shocked that there was an uproar in the theatre. He changed style many times: Russian ballets, then neoclassicism, then even twelve-tone music in his seventies.', '1913년 파리에서 “봄의 제전”이 처음 연주되었을 때, 관객이 너무 놀라 극장이 난리가 났어요. 그는 양식을 여러 번 바꿨어요: 러시아 발레, 신고전주의, 그리고 70대에는 12음 기법까지.'],
+    try: ['Listen: the opening of The Firebird, then The Rite of Spring -- how are they different?', '들어 보기: “불새”의 시작, 그리고 “봄의 제전” -- 무엇이 다른가요?'] },
+  { id: 'copland', name: ['Aaron Copland', '에런 코플런드'], sur: ['Copland', '코플런드'], born: 1900, died: 1990, era: 'modern', moves: ['american'],
+    country: ['USA', '미국'],
+    known: [['Appalachian Spring', '애팔래치아의 봄'], ['Fanfare for the Common Man', '보통 사람을 위한 팡파르'], ['Rodeo', '로데오']],
+    finger: [['Wide, open chords that sound like big American landscapes', '넓은 미국 풍경 같은 탁 트인 화음'], ['American folk songs and cowboy tunes', '미국 민요와 카우보이 노래'], ['Clear, simple melodies', '또렷하고 단순한 선율']],
+    fun: ['Appalachian Spring uses an old Shaker song, “Simple Gifts”. It won the Pulitzer Prize for Music in 1945.', '“애팔래치아의 봄”에는 셰이커 교도의 옛 노래 “소박한 선물(Simple Gifts)”이 나와요. 1945년 퓰리처상 음악 부문을 받았어요.'],
+    try: ['Listen: the “Simple Gifts” variations in Appalachian Spring.', '들어 보기: “애팔래치아의 봄” 속 “소박한 선물” 변주.'] },
+  { id: 'shostakovich', name: ['Dmitri Shostakovich', '드미트리 쇼스타코비치'], sur: ['Shostakovich', '쇼스타코비치'], born: 1906, died: 1975, era: 'modern',
+    country: ['Russia (the Soviet Union)', '러시아 (소련)'],
+    known: [['15 symphonies', '교향곡 15곡'], ['Children’s Notebook (piano)', '어린이 노트 (피아노)'], ['Jazz Suites', '재즈 모음곡']],
+    finger: [['Biting humour -- marches and waltzes with a twist', '날카로운 유머 -- 비틀린 행진곡과 왈츠'], ['Deep sadness right next to jokes', '농담 바로 옆의 깊은 슬픔'], ['Driving rhythms and big climaxes', '몰아치는 리듬과 거대한 절정']],
+    fun: ['He wrote Children’s Notebook for his daughter Galina when she was learning the piano. He was also a huge football fan -- and a qualified referee!', '“어린이 노트”는 피아노를 배우던 딸 갈리나를 위해 썼어요. 축구를 엄청 좋아했고 -- 심판 자격증까지 있었어요!'],
+    try: ['Play: a piece from Children’s Notebook, such as “March”.', '쳐 보기: “어린이 노트” 중 한 곡, 예를 들면 “행진곡”.'] },
+
+  { id: 'cage', name: ['John Cage', '존 케이지'], sur: ['Cage', '케이지'], born: 1912, died: 1992, era: 'contemporary', moves: ['experimental'],
+    country: ['USA', '미국'],
+    known: [['4′33″', '4분 33초'], ['Sonatas and Interludes for prepared piano', '프리페어드 피아노를 위한 소나타와 간주곡'], ['In a Landscape (piano)', '풍경 속에서 (피아노)']],
+    finger: [['Prepared piano: screws, bolts and rubber placed between the strings', '프리페어드 피아노: 현 사이에 나사, 볼트, 고무를 끼워요'], ['Chance: choices made by tossing coins', '우연: 동전을 던져서 정하는 선택'], ['Silence and everyday sounds as music', '음악이 되는 침묵과 일상의 소리']],
+    fun: ['In 4′33″ the performer plays nothing at all for four minutes and 33 seconds -- the music is whatever sounds happen around you. He was also an expert on mushrooms!', '“4분 33초”에서 연주자는 4분 33초 동안 아무것도 치지 않아요 -- 그동안 주변에서 나는 모든 소리가 음악이에요. 그는 버섯 전문가이기도 했어요!'],
+    try: ['Try: sit still for one minute and write down every sound you hear. That is your own 4′33″!', '해 보기: 1분 동안 가만히 앉아 들리는 소리를 모두 적어 보세요. 그게 나만의 “4분 33초”예요!'] },
+  { id: 'reich', name: ['Steve Reich', '스티브 라이히'], sur: ['Reich', '라이히'], born: 1936, died: null, era: 'contemporary', moves: ['minimalism'],
+    country: ['USA', '미국'],
+    known: [['Clapping Music', '박수 음악'], ['Music for 18 Musicians', '18명의 음악가를 위한 음악'], ['Piano Phase', '피아노 페이즈']],
+    finger: [['Short patterns repeated many times', '여러 번 반복되는 짧은 패턴'], ['Phasing: two players drift slowly out of step', '페이징: 두 연주자가 천천히 어긋나요'], ['A steady, driving pulse', '일정하게 몰아치는 박']],
+    fun: ['Clapping Music needs no instruments -- just two people clapping. One keeps the same pattern, while the other moves it one note later every few bars, until they line up again.', '“박수 음악”에는 악기가 필요 없어요 -- 두 사람의 박수만 있으면 돼요. 한 사람은 같은 패턴을 계속 치고, 다른 사람은 몇 마디마다 한 음씩 밀어서, 결국 다시 딱 맞을 때까지 가요.'],
+    try: ['Try: clap a short pattern with a friend, then one of you starts it one note later. What happens?', '해 보기: 친구와 짧은 패턴을 손뼉으로 치다가, 한 사람이 한 음 늦게 옮겨 보세요. 어떻게 들리나요?'] },
+  { id: 'glass', name: ['Philip Glass', '필립 글래스'], sur: ['Glass', '글래스'], born: 1937, died: null, era: 'contemporary', moves: ['minimalism', 'film'],
+    country: ['USA', '미국'],
+    known: [['Einstein on the Beach (opera)', '해변의 아인슈타인 (오페라)'], ['Metamorphosis (piano)', '메타모포시스 (피아노)'], ['Film music, such as The Hours', '“디 아워스” 같은 영화 음악']],
+    finger: [['Rippling broken chords that repeat', '되풀이되는 물결 같은 분산화음'], ['Tiny changes inside long repeated patterns', '긴 반복 패턴 속의 아주 작은 변화'], ['Hypnotic and steady', '최면에 걸린 듯 일정해요']],
+    fun: ['Before he was famous, he earned a living as a plumber and a taxi driver in New York.', '유명해지기 전에는 뉴욕에서 배관공과 택시 기사로 일하며 생활비를 벌었어요.'],
+    try: ['Listen: Metamorphosis One for piano -- count how many times a pattern repeats.', '들어 보기: 피아노곡 “메타모포시스 1” -- 패턴이 몇 번 반복되는지 세어 보세요.'] },
+  { id: 'part', name: ['Arvo Pärt', '아르보 패르트'], sur: ['Pärt', '패르트'], born: 1935, died: null, era: 'contemporary', moves: ['minimalism'],
+    country: ['Estonia', '에스토니아'],
+    known: [['Spiegel im Spiegel (Mirror in the Mirror)', '거울 속의 거울'], ['Für Alina (piano)', '알리나를 위하여 (피아노)'], ['Fratres', '프라트레스']],
+    finger: [['Very simple, slow, bell-like music', '아주 단순하고 느린, 종 같은 음악'], ['Tintinnabuli: one voice steps along while another rings the notes of one chord', '틴티나불리: 한 성부는 차례로 걷고, 다른 성부는 한 화음의 음을 울려요'], ['Silence and stillness between the notes', '음과 음 사이의 침묵과 고요']],
+    fun: ['He calls his style “tintinnabuli”, from the Latin word for little bells. For many years he has been one of the most performed living composers in the world.', '자기 양식을 “틴티나불리”라고 부르는데, 라틴어로 “작은 종들”이라는 뜻이에요. 여러 해 동안 세계에서 가장 많이 연주되는 살아 있는 작곡가 중 한 명이었어요.'],
+    try: ['Play: Für Alina -- just a few notes, played very slowly and quietly.', '쳐 보기: “알리나를 위하여” -- 몇 개의 음을 아주 느리고 조용하게.'] },
+  { id: 'williams', name: ['John Williams', '존 윌리엄스'], sur: ['Williams', '윌리엄스'], born: 1932, died: null, era: 'contemporary', moves: ['film'],
+    country: ['USA', '미국'],
+    known: [['Star Wars', '스타워즈'], ['Jurassic Park', '쥬라기 공원'], ['The first three Harry Potter films (with “Hedwig’s Theme”)', '해리 포터 첫 세 편 (“헤드위그의 테마” 포함)']],
+    finger: [['A theme for every hero, villain and place (leitmotif)', '영웅, 악당, 장소마다 있는 주제 (라이트모티프)'], ['Huge orchestra fanfares', '거대한 오케스트라 팡파르'], ['Tunes you can hum after hearing them once', '한 번만 들어도 흥얼거릴 수 있는 선율']],
+    fun: ['He has more Oscar nominations than any other living person. Some of his most famous music is tiny: the shark in Jaws is just two notes, getting closer and closer.', '살아 있는 사람 중 아카데미상 후보에 가장 많이 오른 사람이에요. 그의 가장 유명한 음악 중엔 아주 짧은 것도 있어요: “죠스”의 상어는 단 두 음이 점점 가까워지는 소리예요.'],
+    try: ['Listen: the main title of Star Wars -- then hum a theme from another film he scored.', '들어 보기: “스타워즈” 메인 타이틀 -- 그리고 그가 음악을 맡은 다른 영화의 주제를 흥얼거려 보세요.'] },
+  { id: 'hisaishi', name: ['Joe Hisaishi', '히사이시 조'], sur: ['Hisaishi', '히사이시'], born: 1950, died: null, era: 'contemporary', moves: ['film', 'minimalism'],
+    country: ['Japan', '일본'],
+    known: [['Studio Ghibli films, such as My Neighbor Totoro and Spirited Away', '“이웃집 토토로”, “센과 치히로의 행방불명” 같은 지브리 영화'], ['“Summer” (from the film Kikujiro)', '“Summer” (영화 “기쿠지로의 여름”)']],
+    finger: [['Simple, warm piano melodies', '단순하고 따뜻한 피아노 선율'], ['Repeating patterns from Minimalism', '미니멀리즘에서 온 반복 패턴'], ['Orchestra and piano mixed together', '오케스트라와 피아노가 함께']],
+    fun: ['He has written the music for every Hayao Miyazaki film since Nausicaä of the Valley of the Wind (1984). His stage name is said to come from the American musician Quincy Jones.', '“바람계곡의 나우시카”(1984) 이후 미야자키 하야오 감독의 모든 영화 음악을 맡았어요. 그의 예명은 미국 음악가 퀸시 존스의 이름에서 따왔다고 해요.'],
+    try: ['Play: an easy arrangement of “Summer” or a Totoro theme.', '쳐 보기: “Summer”나 토토로 주제곡의 쉬운 편곡.'] },
+);
+CMP_MOMENTS.unshift(
+  { y: 1575, en: 'Queen Elizabeth I gives Byrd and Thomas Tallis (probably his teacher) the right to print music in England.', ko: '엘리자베스 1세 여왕이 버드와 토머스 탈리스(아마도 그의 스승)에게 영국에서 악보를 인쇄할 권리를 줘요.' },
+);
+CMP_MOMENTS.push(
+  { y: 1829, en: 'Mendelssohn, aged 20, conducts Bach’s St Matthew Passion in Berlin -- the first time it is heard outside Leipzig.', ko: '스무 살 멘델스존이 베를린에서 바흐의 “마태 수난곡”을 지휘해요 -- 라이프치히 밖에서 처음 울려 퍼진 연주예요.' },
+  { y: 1874, en: 'Smetana, now deaf, writes Vltava -- and Mussorgsky writes Pictures at an Exhibition.', ko: '청력을 잃은 스메타나가 “블타바”를 쓰고 -- 무소륵스키는 “전람회의 그림”을 써요.' },
+  { y: 1889, en: 'At the World Exhibition in Paris, Debussy hears a Javanese gamelan for the first time.', ko: '파리 만국 박람회에서 드뷔시가 처음으로 자바의 가믈란을 들어요.' },
+  { y: 1913, en: 'Stravinsky’s The Rite of Spring causes an uproar at its first performance in Paris.', ko: '스트라빈스키의 “봄의 제전”이 파리 초연에서 큰 소동을 일으켜요.' },
+  { y: 1952, en: 'John Cage’s 4′33″ is performed for the first time -- a pianist sits at the piano and plays nothing.', ko: '존 케이지의 “4분 33초”가 처음 연주돼요 -- 피아니스트가 피아노 앞에 앉아 아무것도 치지 않아요.' },
+);
+CMP_MOMENTS.sort((a, b) => a.y - b.y);
 // What each composer sounds like. kind 'tune' = the real opening of a famous piece (checked note by note
 // against published editions, Phase 304; some transposed to C, chords simplified). kind 'style' = a few
 // bars made up for this app to show the composer's fingerprint -- labelled as such on screen.
@@ -14998,270 +15222,512 @@ function cmpEvents(h, maxBars) {
 }
 // Play one sound card; returns its length in seconds.
 function cmpPlay(h, maxBars) { const ev = cmpEvents(h, maxBars); return ev.length ? playEvents(h.inst || 'piano', ev, h.bpm) : 0; }
+// Phase 305: more sounds. 'tune' = real openings checked note by note against published editions
+// (Mutopia LilyPond, public-domain MusicXML; two sources wherever possible). 'style' = a few bars made up
+// for this app (used for composers whose music is still in copyright, or where no tune could be checked).
+// 'silence' = Cage: a listening game, no notes.
+const cmpOct = (v, k) => v.replace(/([A-G][#b]?)(-?\d)/g, (m, n, o) => n + (+o + k)); // move a voice by k octaves
+const CMP_RACH_CH = ['E3+G#3+C#4+E4+G#4+C#5', 'G#3+B3+E4+G#4+B4+E5', 'G3+A#3+D#4+G4+A#4+D#5', 'F#3+C4+D4+F#4+A4+D5', 'D#3+F#3+C4+D#4+F#4+C5'];
+Object.assign(CMP_HEAR, {
+  palestrina: [{ kind: 'style', inst: 'piano', bpm: 66,
+    v: ['F4:2@0.35 G4:1@0.35 A4:1@0.35 | Bb4:2@0.35 A4:2@0.35 | G4:2@0.35 E4:2@0.35 | F4:4@0.35', 'C4:2@0.28 C4:2@0.28 | D4:2@0.28 C4:2@0.28 | C4:1@0.28 D4:1@0.28 C4:2@0.28 | C4:4@0.28', 'F3:2@0.3 E3:1@0.3 F3:1@0.3 | Bb2:2@0.3 F3:2@0.3 | C3:2@0.3 C3:2@0.3 | F2:4@0.3'] }],
+  byrd: [{ kind: 'style', inst: 'harpsichord', bpm: 96,
+    v: ['G4:1 E4:1 F4:1 D4:1 | E4:1 C4:1 D4:2 | G4:0.5 F4:0.5 E4:0.5 G4:0.5 F4:0.5 E4:0.5 D4:1 | E4:2 D4:2 | C4:4', 'C3:2 D3:2 | C3:2 D3:2 | C3:2 D3:2 | C3:2 D3:2 | C3:4'] }],
+  pachelbel: [{ kind: 'tune', title: ['Canon in D', '캐논 D장조'], inst: 'piano', bpm: 72, quiz: 4,
+    v: ['r:4 | r:4 | F#5:1 E5:1 D5:1 C#5:1 | B4:1 A4:1 B4:1 C#5:1 | D5:4', 'D3:1@0.4 A2:1@0.4 B2:1@0.4 F#2:1@0.4 | G2:1@0.4 D2:1@0.4 G2:1@0.4 A2:1@0.4 | D3:1@0.4 A2:1@0.4 B2:1@0.4 F#2:1@0.4 | G2:1@0.4 D2:1@0.4 G2:1@0.4 A2:1@0.4 | D2+D3:4@0.4'] }],
+  couperin: [{ kind: 'style', inst: 'harpsichord', bpm: 92,
+    v: ['G4:0.25 A4:0.25 G4:0.5 B4:1 C5:0.25 D5:0.25 C5:0.5 | B4:0.5 A4:0.5 G4:1 D5:1 | E5:0.25 F#5:0.25 E5:0.5 D5:0.5 C5:0.5 B4:0.25 C5:0.25 B4:0.5 | A4:3', 'G2:1 B2:1 D3:1 | G2:1 B2:1 B2:1 | C3:1 D3:1 D2:1 | D2+A2:3'] }],
+  mendelssohn: [{ kind: 'tune', title: ['Wedding March from A Midsummer Night’s Dream', '“한여름 밤의 꿈” 중 결혼 행진곡'], inst: 'piano', bpm: 120,
+    v: ['r:3 C4:0.333 C4:0.333 C4:0.333 | C4+E4:1 C4+E4:0.333 C4+E4:0.333 C4+E4:0.333 C4+E4:1 C4+E4:0.333 C4+E4:0.333 C4+E4:0.333 | C4+E4+G4:1 C4+E4+G4:0.333 C4+E4+G4:0.333 C4+E4+G4:0.333 C4+E4+G4:1 C4+E4+G4:0.333 C4+E4+G4:0.333 C4+E4+G4:0.333 | C6:2 B5:1.5 F#5:0.5 | A5:1 G5:1 F5:1 D5:1 | C5:2 D5:1 G4:0.75 D5:0.25',
+        'r:4 | r:4 | r:4 | A2:2@0.4 B2:1.5@0.4 B2:0.5@0.4 | E3:2@0.4 F3:1@0.4 F3:1@0.4 | G2:2@0.4 G3:2@0.4'] }],
+  schubert: [{ kind: 'tune', title: ['Marche militaire No. 1', '군대 행진곡 1번'], inst: 'piano', bpm: 120,
+    v: ['D4+D3:0.5 A3+A2:0.25 A3+A2:0.25 G#3+G#2:0.5 A3+A2:0.5 | D4+D3:0.5 A3+A2:0.25 A3+A2:0.25 G#3+G#2:0.5 A3+A2:0.5 | D4+D3:0.5 A3+A2:0.5 D4+D3:0.5 A3+A2:0.5 | D4+D3:0.5 A3+A2:0.5 F#3+F#2:0.5 A3+A2:0.5 | D4+D3:0.5 A3+A2:0.5 D4+D3:0.5 F#4+F#3:0.5 | A4+A3:2 | A5:1 G5:0.5 F#5:0.5 | E5:1 F#5:0.5 E5:0.5 | D5:1 E5:0.5 F#5:0.5 | A4:0.75 B4:0.25 A4:0.5 r:0.5',
+        'r:2 | r:2 | r:2 | r:2 | r:2 | r:2 | D2+D3:1@0.4 r:1 | A1+A2:1@0.4 r:1 | D2+D3:1@0.4 r:1 | A1+A2:1@0.4 r:1'] }, CMP_HEAR.schubert[0]],
+  smetana: [{ kind: 'style', inst: 'piano', bpm: 116,
+    v: ['A4:0.5 D5:0.25 F#5:0.25 A5:0.5 F#5:0.5 | G5:0.5 E5:0.25 C#5:0.25 A4:1 | B4:0.5 G5:0.25 F#5:0.25 E5:0.5 C#5:0.5 | D5:1 r:1', 'D3:0.5@0.35 A3+F#4:0.5@0.25 A2:0.5@0.35 A3+F#4:0.5@0.25 | A2:0.5@0.35 G3+C#4:0.5@0.25 E3:0.5@0.35 G3+C#4:0.5@0.25 | G2:0.5@0.35 G3+B3:0.5@0.25 A2:0.5@0.35 G3+C#4:0.5@0.25 | D3:0.5@0.35 A3+F#4:0.5@0.25 D2:1@0.35'] }],
+  mussorgsky: [{ kind: 'tune', title: ['“Promenade” from Pictures at an Exhibition', '“전람회의 그림” 중 “프롬나드”'], inst: 'piano', bpm: 88,
+    v: ['G4:1 F4:1 Bb4:1 C5:0.5 F5:0.5 D5:1 | C5:0.5 F5:0.5 D5:1 Bb4:1 C5:1 G4:1 F4:1 | G4:1 F4:1 Bb4:1 C5:0.5 F5:0.5 D5:1 | C5:0.5 F5:0.5 D5:1 Bb4:1 C5:1 G4:1 F4:1',
+        'r:5 | r:6 | G2+G3:1@0.45 A2+F3:1@0.45 G2+G3:1@0.45 F2+F3:1@0.45 D2+D3:1@0.45 | F2+F3:1@0.45 Bb2+Bb3:1@0.45 G2+G3:1@0.45 C2+C3:1@0.45 E2+E3:1@0.45 F2+F3:1@0.45'] }],
+  dvorak: [{ kind: 'tune', title: ['Largo from the “New World” Symphony (“Goin’ Home”)', '“신세계” 교향곡 라르고 (“고잉 홈”)'], inst: 'piano', bpm: 56, quiz: 2,
+    v: ['F4:0.75 Ab4:0.25 Ab4:1 F4:0.75 Eb4:0.25 Db4:1 | Eb4:0.75 F4:0.25 Ab4:0.75 F4:0.25 Eb4:2 | F4:0.75 Ab4:0.25 Ab4:1 F4:0.75 Eb4:0.25 Db4:1 | Eb4:0.5 F4:0.5 Eb4:0.75 Db4:0.25 Db4:2',
+        'Db2+Db3:4@0.3 | Db2+Db3:4@0.3 | Db2+Db3:2@0.3 F2+F3:2@0.3 | Gb2+Gb3:1@0.3 Ab2+Ab3:1@0.3 Db2+Db3:2@0.3'] }],
+  grieg: [
+    { kind: 'tune', title: ['“Morning Mood” from Peer Gynt', '“페르 귄트” 중 “아침의 기분”'], inst: 'piano', bpm: 84,
+      v: ['B5:0.5 G#5:0.5 F#5:0.5 E5:0.5 F#5:0.5 G#5:0.5 | B5:0.5 G#5:0.5 F#5:0.5 E5:0.5 F#5:0.25 G#5:0.25 F#5:0.25 G#5:0.25 | B5:0.5 G#5:0.5 B5:0.5 C#6:0.5 G#5:0.5 C#6:0.5 | B5:0.5 G#5:0.5 F#5:0.5 E5:1.5', 'E3+B3:12@0.2'] },
+    { kind: 'tune', title: ['“In the Hall of the Mountain King” from Peer Gynt', '“페르 귄트” 중 “산왕의 궁전에서”'], inst: 'piano', bpm: 132,
+      v: ['B3:0.5 C#4:0.5 D4:0.5 E4:0.5 F#4:0.5 D4:0.5 F#4:1 | F4:0.5 C#4:0.5 F4:1 E4:0.5 C4:0.5 E4:1 | B3:0.5 C#4:0.5 D4:0.5 E4:0.5 F#4:0.5 D4:0.5 F#4:0.5 B4:0.5 | A4:0.5 F#4:0.5 D4:0.5 F#4:0.5 A4:2',
+          'B2:1@0.35 F#3:1@0.35 B2:1@0.35 F#3:1@0.35 | B2:1@0.35 F#3:1@0.35 B2:1@0.35 F#3:1@0.35 | B2:1@0.35 F#3:1@0.35 B2:1@0.35 F#3:1@0.35 | D3:1@0.35 A3:1@0.35 D3:1@0.35 A3:1@0.35'] }],
+  rimsky: [{ kind: 'tune', title: ['“Flight of the Bumblebee”', '“왕벌의 비행”'], inst: 'piano', bpm: 112,
+    v: ['E6:0.25 Eb6:0.25 D6:0.25 C#6:0.25 D6:0.25 C#6:0.25 C6:0.25 B5:0.25 | C6:0.25 B5:0.25 Bb5:0.25 A5:0.25 Ab5:0.25 G5:0.25 F#5:0.25 F5:0.25 | E5:1', 'E3+B3+G#4:0.5@0.35 r:1.5 | r:2 | A2+E3+A3:1@0.35'] }],
+  saintsaens: [{ kind: 'style', inst: 'piano', bpm: 66,
+    v: ['B5:2 A5:0.5 G5:0.5 | D5:3 | E5:1 G5:1 B5:1 | A5:3', 'G2:0.5@0.25 D3:0.5@0.25 B3:0.5@0.25 G3:0.5@0.25 D3:0.5@0.25 B2:0.5@0.25 | G2:0.5@0.25 D3:0.5@0.25 B3:0.5@0.25 G3:0.5@0.25 D3:0.5@0.25 B2:0.5@0.25 | C3:0.5@0.25 G3:0.5@0.25 E4:0.5@0.25 C4:0.5@0.25 G3:0.5@0.25 E3:0.5@0.25 | D3:0.5@0.25 A3:0.5@0.25 F#4:0.5@0.25 D4:0.5@0.25 A3:0.5@0.25 F#3:0.5@0.25'] }],
+  rachmaninoff: [{ kind: 'tune', title: ['Prelude in C-sharp minor, Op. 3 No. 2', '전주곡 c#단조 작품 3-2'], inst: 'piano', bpm: 56,
+    v: ['A1+A2+A3:1@0.9 G#1+G#2+G#3:1@0.9 | C#1+C#2+C#3:4~5@1 | r:0.5 ' + CMP_RACH_CH[0] + ':0.5@0.12 ' + CMP_RACH_CH[1] + ':0.5@0.12 ' + CMP_RACH_CH[2] + ':0.5@0.12 r:0.5 ' + CMP_RACH_CH[3] + ':0.5@0.12 r:0.5 ' + CMP_RACH_CH[4] + ':0.5@0.12'] }],
+  satie: [{ kind: 'tune', title: ['Gymnopédie No. 1', '짐노페디 1번'], inst: 'piano', bpm: 66,
+    v: ['r:1 F#5:1 A5:1 | G5:1 F#5:1 C#5:1 | B4:1 C#5:1 D5:1 | A4:3 | F#4:6', 'G2:3~3@0.3 | D2:3~3@0.3 | G2:3~3@0.3 | D2:3~3@0.3 | G2:3~3@0.3 | D2:3~3@0.3', 'r:1 B3+D4+F#4:2@0.18 | r:1 A3+C#4+F#4:2@0.18 | r:1 B3+D4+F#4:2@0.18 | r:1 A3+C#4+F#4:2@0.18 | r:1 B3+D4+F#4:2@0.18 | r:1 A3+C#4+F#4:2@0.18'] }],
+  ravel: [{ kind: 'style', inst: 'piano', bpm: 72,
+    v: ['r:3 | G5:1.5 A5:0.25 G5:0.25 F5:0.5 E5:0.5 | D5:1 E5:0.25 F5:0.25 E5:0.5 D5:0.5 C5:0.5 | B4:1 C5:0.5 D5:0.5 A4:1 | G4:3', 'C3:0.5@0.3 C3:0.25@0.2 C3:0.25@0.2 C3:0.5@0.3 C3:0.25@0.2 C3:0.25@0.2 C3:0.5@0.3 C3:0.5@0.2 | G2+D3:0.5@0.3 G2:0.25@0.2 G2:0.25@0.2 G2+D3:0.5@0.3 G2:0.25@0.2 G2:0.25@0.2 G2+D3:0.5@0.3 G2:0.5@0.2 | G2+D3:0.5@0.3 G2:0.25@0.2 G2:0.25@0.2 G2+D3:0.5@0.3 G2:0.25@0.2 G2:0.25@0.2 G2+D3:0.5@0.3 G2:0.5@0.2 | F2+C3:0.5@0.3 F2:0.25@0.2 F2:0.25@0.2 D2+A2:0.5@0.3 D2:0.25@0.2 D2:0.25@0.2 D2+A2:0.5@0.3 D2:0.5@0.2 | G2+D3:3@0.3'] }],
+  schoenberg: [{ kind: 'style', inst: 'piano', bpm: 76,
+    v: ['E4:0.5@0.3 F4:0.5@0.7 C#5:1@0.5 D#4:0.5@0.2 B4:0.5@0.6 | G4:1.5@0.4 A#4:0.25@0.8 D5:0.25@0.8 F#4:1@0.3 | A4:0.5@0.5 G#4:0.5@0.25 C4:2@0.15', 'r:1 E2+F3:1@0.5 r:1 | C#3+D4:1.5@0.35 r:1.5 | G2+F#3:3@0.3'] }],
+  stravinsky: [{ kind: 'style', inst: 'piano', bpm: 152,
+    v: ['C4+E4+G4+F#4+A#4+C#5:0.5@0.35 C4+E4+G4+F#4+A#4+C#5:0.5@0.35 C4+E4+G4+F#4+A#4+C#5:0.5@0.95 | C4+E4+G4+F#4+A#4+C#5:0.5@0.35 C4+E4+G4+F#4+A#4+C#5:0.5@0.95 | C4+E4+G4+F#4+A#4+C#5:0.5@0.35 C4+E4+G4+F#4+A#4+C#5:0.5@0.35 C4+E4+G4+F#4+A#4+C#5:0.5@0.35 C4+E4+G4+F#4+A#4+C#5:0.5@0.95 C4+E4+G4+F#4+A#4+C#5:0.5@0.35 | C4+E4+G4+F#4+A#4+C#5:0.5@0.95 C4+E4+G4+F#4+A#4+C#5:0.5@0.35 C4+E4+G4+F#4+A#4+C#5:0.5@0.35',
+        'C2+G2:0.5@0.4 r:0.5 C2+G2:0.5@0.9 | r:0.5 C2+G2:0.5@0.9 | C2+G2:0.5@0.4 r:1 C2+G2:0.5@0.9 r:0.5 | C2+G2:0.5@0.9 r:1'] }],
+  copland: [{ kind: 'style', inst: 'piano', bpm: 60,
+    v: ['E5:1 G5:1 C6:2 | D6:1 C6:1 G5:2 | A5:1 G5:1 E5:1 D5:1 | C5:4', 'C3+G3+D4+G4:4@0.3 | F2+C3+G3+C4:4@0.3 | A2+E3+B3:2@0.3 G2+D3+A3:2@0.3 | C2+G2+D3+G3:4@0.3'] }],
+  shostakovich: [{ kind: 'style', inst: 'piano', bpm: 160,
+    v: ['G4:1 | C5:2 E5:1 | G5:2 Ab5:1 | G5:1 Eb5:1 C5:1 | B4:2 D5:1 | F5:2 F#5:1 | G5:1 D5:1 B4:1 | C5:3', 'r:1 | C3:1@0.35 E3+G3:1@0.25 E3+G3:1@0.25 | C3:1@0.35 Eb3+G3:1@0.25 Eb3+G3:1@0.25 | C3:1@0.35 E3+G3:1@0.25 E3+G3:1@0.25 | G2:1@0.35 D3+F3:1@0.25 D3+F3:1@0.25 | G2:1@0.35 Db3+F3:1@0.25 Db3+F3:1@0.25 | G2:1@0.35 D3+F3:1@0.25 D3+F3:1@0.25 | C3+E3+G3:3@0.3'] }],
+  cage: [{ kind: 'silence', secs: 15 }],
+  reich: [{ kind: 'style', inst: 'piano', bpm: 168,
+    v: [Array(6).fill('C5:0.5 G4:0.5 A4:0.5 E4:0.5 F4:0.5 D4:0.5').join(' | '),
+        ['C5 G4 A4 E4 F4 D4', 'C5 G4 A4 E4 F4 D4', 'G4 A4 E4 F4 D4 C5', 'G4 A4 E4 F4 D4 C5', 'A4 E4 F4 D4 C5 G4', 'A4 E4 F4 D4 C5 G4'].map(b => cmpOct(b, 1).split(' ').map(n => n + ':0.5@0.3').join(' ')).join(' | ')] }],
+  glass: [{ kind: 'style', inst: 'piano', bpm: 132,
+    v: [['A3 C4 E4', 'A3 C4 E4', 'A3 C4 F4', 'A3 C4 F4', 'G3 C4 E4', 'G3 C4 E4', 'G3 B3 D4', 'G3 B3 E4'].map(b => (b + ' ' + b).split(' ').map(n => n + ':0.333@0.32').join(' ')).join(' | '),
+        'A2:2@0.35 | A2:2@0.35 | F2:2@0.35 | F2:2@0.35 | C2:2@0.35 | C2:2@0.35 | G2:2@0.35 | E2:2@0.35'] }],
+  part: [{ kind: 'style', inst: 'piano', bpm: 50,
+    v: ['A4:2@0.3 B4:2@0.3 | C5:2@0.3 B4:2@0.3 | A4:4@0.3', 'E4:2@0.22 A4:2@0.22 | A4:2@0.22 A4:2@0.22 | E4:4@0.22', 'A2:12~12@0.25'] }],
+  williams: [{ kind: 'style', inst: 'piano', bpm: 104,
+    v: ['G4+G5:0.5 C5+C6:0.5 E5+E6:2 D5+D6:1 | C5+C6:0.5 G4+G5:0.5 A4+A5:1 G4+G5:2 | E5+E6:0.5 F5+F6:0.5 G5+G6:2 E5+E6:1 | D5+D6:4', 'C3+G3:2@0.45 C3+G3:2@0.45 | F2+C3:2@0.45 C3+G3:2@0.45 | A2+E3:2@0.45 C3+G3:2@0.45 | G2+D3:4@0.45'] }],
+  hisaishi: [{ kind: 'style', inst: 'piano', bpm: 76,
+    v: ['A4:1 C5:1 F5:2 | E5:1 D5:1 C5:2 | Bb4:1 A4:1 G4:1 A4:1 | F4:4', 'F2:0.5@0.22 C3:0.5@0.22 A3:0.5@0.22 C3:0.5@0.22 F2:0.5@0.22 C3:0.5@0.22 A3:0.5@0.22 C3:0.5@0.22 | C2:0.5@0.22 G2:0.5@0.22 E3:0.5@0.22 G2:0.5@0.22 A2:0.5@0.22 E3:0.5@0.22 C4:0.5@0.22 E3:0.5@0.22 | Bb2:0.5@0.22 F3:0.5@0.22 D4:0.5@0.22 F3:0.5@0.22 C3:0.5@0.22 G3:0.5@0.22 E4:0.5@0.22 G3:0.5@0.22 | F2:0.5@0.22 C3:0.5@0.22 A3:0.5@0.22 C4:2.5@0.22'] }],
+});
+// More real openings for composers who already had a sound
+CMP_HEAR.tchaikovsky = [
+  { kind: 'tune', title: ['“Dance of the Sugar Plum Fairy” from The Nutcracker', '“호두까기 인형” 중 “사탕 요정의 춤”'], inst: 'piano', bpm: 70,
+    v: [cmpOct('r:0.5 G5:0.25 E5:0.25 G5:0.5 F#5:0.5 | D#5:0.5 E5:0.5 D5:0.25 D5:0.25 D5:0.5 | C#5:0.25 C#5:0.25 C#5:0.5 C5:0.25 C5:0.25 C5:0.5 | B4:0.25 E5:0.25 C5:0.25 E5:0.25 B4:0.5 r:0.5', 1),
+        'E2:0.5@0.35 r:0.5 E2:0.5@0.35 r:0.5 | E2:0.5@0.35 r:0.5 E2:0.5@0.35 r:0.5 | E2:0.5@0.35 r:0.5 E2:0.5@0.35 r:0.5 | E3:0.5@0.35 E3:0.5@0.35 E3:0.5@0.35 E3:0.125@0.35 D3:0.125@0.35 C3:0.125@0.35 B2:0.125@0.35'] },
+  { kind: 'tune', title: ['“Old French Song” from Album for the Young', '“어린이를 위한 앨범” 중 “옛 프랑스 노래”'], inst: 'piano', bpm: 70,
+    v: ['D4:0.5 | G4:0.5 A4:0.5 Bb4:0.5 C5:0.5 | D5:1.5 D5:0.5 | C5:0.5 D5:0.5 Eb5:0.5 C5:0.5 | D5:1.5 r:0.5', 'r:0.5 | Bb3:0.5@0.25 C4:0.5@0.25 D4:0.5@0.25 C4:0.5@0.25 | Bb3:2@0.25 | Eb4:1@0.25 C4:1@0.25 | Bb3:1@0.25 G3:1@0.25', 'r:0.5 | G2:2@0.25 | G2:2@0.25 | G2:2@0.25 | G2:2@0.25'] }];
+CMP_HEAR.mozart.push({ kind: 'tune', title: ['“Rondo alla Turca” from Sonata K. 331', '소나타 K. 331 중 “터키 행진곡”'], inst: 'piano', bpm: 120,
+  v: ['B4:0.25 A4:0.25 G#4:0.25 A4:0.25 | C5:0.5 r:0.5 D5:0.25 C5:0.25 B4:0.25 C5:0.25 | E5:0.5 r:0.5 F5:0.25 E5:0.25 D#5:0.25 E5:0.25 | B5:0.25 A5:0.25 G#5:0.25 A5:0.25 B5:0.25 A5:0.25 G#5:0.25 A5:0.25 | C6:1 A5:0.5 C6:0.5',
+      'r:1 | A3:0.5@0.3 C4+E4:0.5@0.22 C4+E4:0.5@0.22 C4+E4:0.5@0.22 | A3:0.5@0.3 C4+E4:0.5@0.22 C4+E4:0.5@0.22 C4+E4:0.5@0.22 | A3:0.5@0.3 C4+E4:0.5@0.22 A3:0.5@0.3 C4+E4:0.5@0.22 | A3:0.5@0.3 C4+E4:0.5@0.22 C4+E4:0.5@0.22 C4+E4:0.5@0.22'] });
+CMP_HEAR.beethoven.unshift({ kind: 'tune', title: ['Symphony No. 5 -- the famous opening', '교향곡 5번 -- 유명한 시작'], inst: 'piano', bpm: 200,
+  v: ['r:0.5 G4:0.5@0.8 G4:0.5@0.8 G4:0.5@0.8 | Eb4:4@0.9 | r:0.5 F4:0.5@0.8 F4:0.5@0.8 F4:0.5@0.8 | D4:6@0.9', 'r:0.5 G2+G3:0.5@0.7 G2+G3:0.5@0.7 G2+G3:0.5@0.7 | Eb2+Eb3:4@0.8 | r:0.5 F2+F3:0.5@0.7 F2+F3:0.5@0.7 F2+F3:0.5@0.7 | D2+D3:6@0.8'] });
+CMP_HEAR.chopin.push({ kind: 'tune', title: ['“Minute” Waltz, Op. 64 No. 1', '“강아지 왈츠” 작품 64-1'], inst: 'piano', bpm: 200,
+  v: ['Ab4:1 G4:0.5 Ab4:0.5 C5:0.5 Bb4:0.5 | G4:0.5 Ab4:0.5 Bb4:0.5 Ab4:0.5 C5:0.5 Bb4:0.5 | G4:0.5 Ab4:0.5 C5:0.5 Bb4:0.5 G4:0.5 Ab4:0.5 | C5:0.5 Bb4:0.5 G4:0.5 Ab4:0.5 C5:0.5 Bb4:0.5 | Ab4:1'] });
+CMP_HEAR.liszt.unshift({ kind: 'tune', title: ['Liebestraum (Love Dream) No. 3', '“사랑의 꿈” 3번'], inst: 'piano', bpm: 96, quiz: 3,
+  v: ['Eb4:1 | C5:3 C5:3 | C5:5 C5:1 | C5:2 C5:1 Db5:2 C5:1 | C5:3 F4:1 r:1 F4:1 | F4:1 G4:1 Ab4:1 C5:2 Bb4:1 | Ab4:3 r:3', 'r:1 | Ab2:6~6@0.3 | G2:6~6@0.3 | F2:6~6@0.3 | Bb1:6~6@0.3 | Eb2:6~6@0.3 | Ab2:6~6@0.3'] });
+CMP_HEAR.brahms.push({ kind: 'tune', title: ['Hungarian Dance No. 5', '헝가리 무곡 5번'], inst: 'piano', bpm: 112,
+  v: ['D4:1.5 G4:0.5 | Bb4:1.5 G4:0.5 | F#4:1.5 G4:0.25 A4:0.25 | G4:2 | Eb4:1.5 F4:0.25 G4:0.25 | D4:2 | C4:0.25 Bb3:0.25 Bb3:0.25 A3:0.25 A3:0.75 D4:0.25 | G3:2',
+      ['G2 Bb2+D3 D2 Bb2+D3', 'G2 Bb2+D3 D2 Bb2+D3', 'G2 C3+Eb3 C2 C3+Eb3', 'G2 Bb2+D3 D2 Bb2+D3', 'G2 C3+Eb3 C2 C3+Eb3', 'G2 Bb2+D3 D2 Bb2+D3', 'F#2 C3+D3 D2 C3+D3', 'G2 Bb2+D3 D2 Bb2+D3'].map(b => b.split(' ').map(n => n + ':0.5@0.28').join(' ')).join(' | ')] });
+CMP_HEAR.debussy.unshift({ kind: 'tune', title: ['“Clair de lune” (Moonlight)', '“달빛”'], inst: 'piano', bpm: 66,
+  v: ['r:0.5 Ab4:0.5@0.3 Ab5:2@0.3 F5:2@0.3 Eb5:0.5@0.3 F5:0.5@0.3 Eb5:3.5@0.3 Db5:0.5@0.3 Eb5:0.5@0.3 Db5:0.75@0.3 F5:1.5@0.3 Db5:1.25@0.3 C5:0.5@0.3 Db5:0.5@0.3 C5:3@0.3',
+      'r:0.5 F4:0.5@0.25 F5:2@0.25 Db5:2@0.25 C5:0.5@0.25 Db5:0.5@0.25 C5:3.5@0.25 Bb4:0.5@0.25 C5:0.5@0.25 Bb4:3.5@0.25 Ab4:0.5@0.25 Bb4:0.5@0.25 Ab4:3@0.25'] });
 
+// ── Phase 305: the chapter redrawn in the app's two-colour "staff look" (navy + coral on paper) ──
 const cmpT = (p) => t(p[0], p[1]);
-const cmpYears = (c) => (c.bornApprox ? t('c. ', '약 ') : '') + c.born + '–' + c.died;
+const cmpYears = (c) => c.died ? (c.bornApprox ? t('c. ', '약 ') : '') + c.born + '–' + c.died : t('born ' + c.born, c.born + '년 출생');
 const cmpEraName = (id) => cmpEra(id).name;
+const cmpEraTag = (id) => cmpEra(id).name.replace(/ \(.*\)$/, ''); // 'Modern (1900–1950)' -> 'Modern' where the years are shown anyway
 const cmpQuote = (k) => /^“.*”$/.test(k) && k.indexOf('“', 1) < 0 ? k : '“' + k.replace(/“/g, '‘').replace(/”/g, '’') + '”';
 const cmpById = (id) => CMP.find(c => c.id === id);
-function cmpEraSpan(c) { if (!c.bridge) return [c.era]; return c.era === 'modern' ? ['romantic', 'modern'] : [c.era, CMP_ERA_IDS[CMP_ERA_IDS.indexOf(c.era) + 1]]; }
-const cmpEraLabel = (c) => cmpEraSpan(c).map(cmpEraName).join(' → ');
+const cmpEraSpan = (c) => c.span || [c.era];
+const cmpEraLabel = (c) => cmpEraSpan(c).map(cmpEraTag).join(' → ');
+const cmpMoves = (c) => (c.moves || []).map(cmpMove).filter(Boolean);
+const cmpDied = (c) => c.died || 2026;
+const cmpUpTo = (y) => y > 2025 ? t('today', '오늘') : y;
 // Hide the composer's own name inside a clue (Who am I?)
 function cmpMask(text, c) {
   return [c.name[0], c.name[1], c.sur[0], c.sur[1]].sort((a, b) => b.length - a.length).reduce((s, w) => s.split(w).join('???'), text);
 }
-const CMP_INK = '#26296b', CMP_CREAM = '#fefbf3', CMP_GOLD = '#e9a83a', CMP_CORAL = '#e4572e';
-function cmpEraOfYear(y) { return y < 1750 ? 'baroque' : y < 1820 ? 'classical' : y < 1900 ? 'romantic' : 'modern'; }
+const CN = '#26296b', CC = '#e4572e', CP = '#faf6ec', CL = '#d9dbea';
+function cmpEraOfYear(y) { return y < 1600 ? 'renaissance' : y < 1750 ? 'baroque' : y < 1820 ? 'classical' : y < 1900 ? 'romantic' : y < 1950 ? 'modern' : 'contemporary'; }
+const cmpHasSound = (h) => !!(h && h.v);
+function cmpFirstSound(c) { const l = CMP_HEAR[c.id] || []; return l.find(h => h.kind === 'tune') || l.find(h => h.kind === 'style') || null; }
 
-// ── One small picture per composer, each showing their own trait literally ──
+// ── One small line drawing per composer, each showing their own trait literally ──
 function CmpEmblem({ id, size = 64 }) {
-  const c = cmpById(id), N = CMP_INK, W = CMP_CREAM, G = CMP_GOLD, R = CMP_CORAL;
-  const sw = { stroke: N, strokeWidth: 1.6, strokeLinejoin: 'round', strokeLinecap: 'round' };
-  const keys = (x, y, w, n = 6) => <g><rect x={x} y={y} width={w} height={12} rx={1.5} fill={W} {...sw}/>{Array.from({ length: n - 1 }, (_, i) => <line key={i} x1={x + (i + 1) * w / n} x2={x + (i + 1) * w / n} y1={y} y2={y + 12} stroke={N} strokeWidth="1"/>)}{[0, 1, 3, 4].filter(i => i < n - 1).map(i => <rect key={'b' + i} x={x + (i + 1) * w / n - 2} y={y} width={4} height={7} fill={N}/>)}</g>;
+  const N = CN, C = CC, P = CP;
+  const sw = { stroke: N, strokeWidth: 2, strokeLinejoin: 'round', strokeLinecap: 'round' };
+  const o = { ...sw, fill: 'none' }, f = { ...sw, fill: P };
+  const keys = (x, y, w, n = 7, h = 13) => <g><rect x={x} y={y} width={w} height={h} rx={1.5} {...f} strokeWidth="1.6"/>{Array.from({ length: n - 1 }, (_, i) => <line key={i} x1={x + (i + 1) * w / n} x2={x + (i + 1) * w / n} y1={y} y2={y + h} stroke={N} strokeWidth="1"/>)}{[0, 1, 3, 4].filter(i => i < n - 1).map(i => <rect key={'b' + i} x={x + (i + 1) * w / n - 2} y={y} width={4} height={h * 0.58} fill={N}/>)}</g>;
+  const note = (x, y, c = N, s = 1) => <g><ellipse cx={x} cy={y} rx={4.2 * s} ry={3.1 * s} transform={`rotate(-20 ${x} ${y})`} fill={c}/><rect x={x + 3.2 * s} y={y - 13 * s} width={1.5} height={13 * s} fill={c}/></g>;
+  const spark = (x, y, r = 4, c = C) => <path d={`M${x} ${y - r} L${x + r * 0.3} ${y - r * 0.3} L${x + r} ${y} L${x + r * 0.3} ${y + r * 0.3} L${x} ${y + r} L${x - r * 0.3} ${y + r * 0.3} L${x - r} ${y} L${x - r * 0.3} ${y - r * 0.3} Z`} fill={c}/>;
+  const bell = (x, y, s = 1, c = P) => <g transform={`translate(${x} ${y}) scale(${s})`}><path d="M-9 8 C-9 -4,-6 -10,0 -10 C6 -10,9 -4,9 8 Z" fill={c} {...sw}/><line x1="-11" y1="8" x2="11" y2="8" {...sw}/><circle cx="0" cy="11" r="2.4" fill={C}/><line x1="0" y1="-10" x2="0" y2="-13" {...sw}/></g>;
+  const book = (lines) => <g><path d="M32 16 C24 12,14 12,7 15 V48 C14 45,24 45,32 50 C40 45,50 45,57 48 V15 C50 12,40 12,32 16 Z" {...f}/><line x1="32" y1="16" x2="32" y2="50" {...sw} strokeWidth="1.4"/>{lines.map(y => <g key={y}><line x1="11" x2="29" y1={y} y2={y} stroke={N} strokeWidth="0.8" opacity="0.55"/><line x1="35" x2="53" y1={y} y2={y} stroke={N} strokeWidth="0.8" opacity="0.55"/></g>)}</g>;
   const art = {
-    vivaldi: <g><circle cx="22" cy="22" r="6" fill={G} {...sw}/>{[0, 45, 90, 135, 180, 225, 270, 315].map(a => <line key={a} x1={22 + 9 * Math.cos(a * Math.PI / 180)} y1={22 + 9 * Math.sin(a * Math.PI / 180)} x2={22 + 12 * Math.cos(a * Math.PI / 180)} y2={22 + 12 * Math.sin(a * Math.PI / 180)} stroke={G} strokeWidth="2" strokeLinecap="round"/>)}
-      {[0, 72, 144, 216, 288].map(a => <circle key={a} cx={42 + 5 * Math.cos(a * Math.PI / 180)} cy={22 + 5 * Math.sin(a * Math.PI / 180)} r="3.6" fill={W} {...sw} strokeWidth="1.1"/>)}<circle cx="42" cy="22" r="2.4" fill={G}/>
-      <path d="M16 46 Q22 34 30 40 Q24 50 16 46 Z" fill={R} {...sw}/><path d="M16 46 L27 41" {...sw} fill="none"/>
-      {[0, 60, 120].map(a => <line key={a} x1={42 - 7 * Math.cos(a * Math.PI / 180)} y1={43 - 7 * Math.sin(a * Math.PI / 180)} x2={42 + 7 * Math.cos(a * Math.PI / 180)} y2={43 + 7 * Math.sin(a * Math.PI / 180)} stroke={W} strokeWidth="2.2" strokeLinecap="round"/>)}</g>,
-    bach: <g><path d="M8 26 C20 10, 30 42, 42 26 S56 18, 58 22" fill="none" stroke={W} strokeWidth="3" strokeLinecap="round"/><path d="M8 38 C20 52, 30 22, 42 38 S54 46, 58 42" fill="none" stroke={G} strokeWidth="3" strokeLinecap="round"/>
-      {[[14, 20, W], [33, 33, W], [20, 44, G], [46, 33, G]].map(([x, y, f], i) => <ellipse key={i} cx={x} cy={y} rx="4" ry="3" transform={`rotate(-20 ${x} ${y})`} fill={f} {...sw} strokeWidth="1.1"/>)}</g>,
-    handel: <g><path d="M18 30 L18 16 L25 23 L32 13 L39 23 L46 16 L46 30 Z" fill={G} {...sw}/><rect x="17" y="30" width="30" height="5" rx="1" fill={G} {...sw}/><circle cx="32" cy="13" r="1.8" fill={R}/>
-      <path d="M6 44 q6.5 -6 13 0 t13 0 t13 0 t13 0" fill="none" stroke={W} strokeWidth="2.6" strokeLinecap="round"/><path d="M6 53 q6.5 -6 13 0 t13 0 t13 0 t13 0" fill="none" stroke={W} strokeWidth="2.6" strokeLinecap="round" opacity="0.7"/></g>,
-    scarlatti: <g>{keys(8, 40, 48, 8)}<path d="M14 34 C24 10, 40 10, 50 30" fill="none" stroke={W} strokeWidth="3" strokeLinecap="round"/><path d="M50 30 l-1 -7 M50 30 l-6 -3" stroke={W} strokeWidth="3" strokeLinecap="round"/>
-      <path d="M50 34 C40 16, 24 16, 14 30" fill="none" stroke={G} strokeWidth="3" strokeLinecap="round"/><path d="M14 30 l1 -7 M14 30 l6 -3" stroke={G} strokeWidth="3" strokeLinecap="round"/></g>,
-    haydn: <g><path d={Array.from({ length: 16 }, (_, i) => { const a = i * Math.PI / 8, r = i % 2 ? 11 : 22; return (i ? 'L' : 'M') + (34 + r * Math.cos(a)).toFixed(1) + ' ' + (34 + r * Math.sin(a)).toFixed(1); }).join(' ') + ' Z'} fill={G} {...sw}/>
-      <rect x="31.8" y="22" width="4.4" height="13" rx="2" fill={N}/><circle cx="34" cy="41" r="2.4" fill={N}/><text x="10" y="17" fontSize="10" fontWeight="900" fill={W} fontFamily="Inter, sans-serif">z z</text></g>,
-    mozart: <g><path d={Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 8 : 19; return (i ? 'L' : 'M') + (32 + r * Math.cos(a)).toFixed(1) + ' ' + (30 + r * Math.sin(a)).toFixed(1); }).join(' ') + ' Z'} fill={W} {...sw}/><circle cx="32" cy="31" r="3" fill={G}/>
-      {[[12, 14], [52, 18], [50, 48], [13, 47]].map(([x, y], i) => <path key={i} d={`M${x} ${y - 4} L${x + 1.2} ${y - 1.2} L${x + 4} ${y} L${x + 1.2} ${y + 1.2} L${x} ${y + 4} L${x - 1.2} ${y + 1.2} L${x - 4} ${y} L${x - 1.2} ${y - 1.2} Z`} fill={G}/>)}</g>,
-    clementi: <g>{keys(10, 8, 44, 7)}<g transform="translate(64 64) rotate(180)">{keys(10, 8, 44, 7)}</g><path d="M36 22 L28 33 L35 33 L27 44" fill="none" stroke={G} strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round"/></g>,
-    beethoven: <g>{[10, 21, 32].map(x => <rect key={x} x={x} y="26" width="8" height="12" rx="2" fill={W} {...sw}/>)}<rect x="43" y="18" width="13" height="28" rx="2.5" fill={G} {...sw}/><path d="M8 50 H56" stroke={W} strokeWidth="1.4" strokeDasharray="2 3"/></g>,
-    schubert: <g><path d="M10 14 H54 A4 4 0 0 1 58 18 V38 A4 4 0 0 1 54 42 H26 L16 52 L18 42 H10 A4 4 0 0 1 6 38 V18 A4 4 0 0 1 10 14 Z" fill={W} {...sw}/>
-      <ellipse cx="25" cy="33" rx="5" ry="3.6" transform="rotate(-20 25 33)" fill={N}/><rect x="28.8" y="19" width="1.7" height="14" fill={N}/><ellipse cx="41" cy="30" rx="5" ry="3.6" transform="rotate(-20 41 30)" fill={R}/><rect x="44.8" y="17" width="1.7" height="13" fill={R}/><path d="M30.5 19 L46.5 17" stroke={N} strokeWidth="2.4"/></g>,
-    chopin: <g><path d="M38 8 A16 16 0 1 0 50 34 A12 12 0 1 1 38 8 Z" fill={G} {...sw}/>{keys(8, 44, 48, 8)}{[[14, 14], [24, 30], [52, 12]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r="1.6" fill={W}/>)}</g>,
-    rschumann: <g><path d="M32 18 C24 13, 14 13, 7 16 V48 C14 45, 24 45, 32 50 C40 45, 50 45, 57 48 V16 C50 13, 40 13, 32 18 Z" fill={W} {...sw}/><line x1="32" y1="18" x2="32" y2="50" stroke={N} strokeWidth="1.4"/>
-      {[24, 29, 34].map(y => <g key={y}><line x1="11" x2="28" y1={y} y2={y + 1} stroke={N} strokeWidth="0.8" opacity="0.6"/><line x1="36" x2="53" y1={y + 1} y2={y} stroke={N} strokeWidth="0.8" opacity="0.6"/></g>)}
-      <ellipse cx="18" cy="29" rx="2.6" ry="1.9" fill={R}/><ellipse cx="45" cy="25" rx="2.6" ry="1.9" fill={N}/><path d="M24 10 L27 4 L30 10" fill="none" stroke={G} strokeWidth="2" strokeLinecap="round"/></g>,
-    cschumann: <g><path d="M24 6 L8 52 H56 L40 6 Z" fill={G} opacity="0.45"/><path d="M12 48 V36 C12 30, 22 28, 30 30 C38 32, 40 26, 48 26 C54 26, 56 32, 56 36 V48 Z" fill={W} {...sw}/><rect x="12" y="44" width="44" height="4" fill={N}/><line x1="16" y1="48" x2="16" y2="56" {...sw}/><line x1="52" y1="48" x2="52" y2="56" {...sw}/><circle cx="32" cy="8" r="3" fill={W}/></g>,
-    liszt: <g>{keys(6, 42, 52, 8)}<path d="M38 4 L24 24 L33 24 L22 40" fill="none" stroke={G} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"/>{[[12, 14], [50, 20], [48, 6]].map(([x, y], i) => <path key={i} d={`M${x} ${y - 4} L${x + 1.2} ${y - 1.2} L${x + 4} ${y} L${x + 1.2} ${y + 1.2} L${x} ${y + 4} L${x - 1.2} ${y + 1.2} L${x - 4} ${y} L${x - 1.2} ${y - 1.2} Z`} fill={W}/>)}</g>,
-    brahms: <g><path d="M12 30 H52 V40 A20 10 0 0 1 12 40 Z" fill={W} {...sw}/><path d="M12 30 C12 18, 26 16, 30 26" fill={W} {...sw}/><path d="M8 52 Q32 62 56 52" fill="none" stroke={G} strokeWidth="2.6" strokeLinecap="round"/>
-      <text x="38" y="20" fontSize="11" fontWeight="900" fill={W} fontFamily="Inter, sans-serif">z</text><text x="46" y="13" fontSize="8" fontWeight="900" fill={W} fontFamily="Inter, sans-serif">z</text></g>,
-    tchaikovsky: <g><rect x="22" y="4" width="20" height="14" rx="2" fill={N}/><rect x="20" y="16" width="24" height="4" fill={G}/><rect x="23" y="20" width="18" height="15" rx="3" fill={W} {...sw}/><circle cx="28" cy="25" r="1.4" fill={N}/><circle cx="36" cy="25" r="1.4" fill={N}/>
-      <rect x="25" y="29" width="14" height="5" rx="1" fill={W} {...sw} strokeWidth="1.1"/><line x1="27" y1="31.5" x2="37" y2="31.5" stroke={N} strokeWidth="1"/><rect x="20" y="35" width="24" height="16" rx="2" fill={R} {...sw}/><line x1="32" y1="35" x2="32" y2="51" stroke={G} strokeWidth="1.6"/><rect x="23" y="51" width="7" height="8" fill={N}/><rect x="34" y="51" width="7" height="8" fill={N}/></g>,
-    debussy: <g><path d="M30 6 A12 12 0 1 0 40 26 A9 9 0 1 1 30 6 Z" fill={G} {...sw}/>{[38, 46, 54].map((y, i) => <path key={y} d={`M${6 + i * 3} ${y} q5 -4 10 0 t10 0 t10 0 t10 0 t10 0`} fill="none" stroke={W} strokeWidth="2.2" strokeLinecap="round" opacity={1 - i * 0.22}/>)}</g>,
-    joplin: <g><ellipse cx="32" cy="38" rx="25" ry="7" fill={G} {...sw}/><path d="M17 37 V24 C17 18, 47 18, 47 24 V37 Z" fill={G} {...sw}/><rect x="17" y="29" width="30" height="5" fill={N}/><ellipse cx="32" cy="24" rx="15" ry="3.6" fill={G} {...sw} strokeWidth="1.2"/>
-      <ellipse cx="50" cy="14" rx="3.6" ry="2.6" transform="rotate(-20 50 14)" fill={W}/><rect x="52.6" y="3" width="1.5" height="11" fill={W}/></g>,
-    bartok: <g><path d="M30 30 L52 8 C56 12, 58 20, 56 26 Z" fill={W} {...sw}/><rect x="10" y="34" width="34" height="18" rx="2" fill={R} {...sw}/><rect x="16" y="26" width="18" height="8" rx="4" fill={G} {...sw}/><line x1="30" y1="30" x2="25" y2="26" {...sw}/>
-      <circle cx="40" cy="43" r="2.4" fill={W}/></g>,
-    prokofiev: <g><path d="M14 18 L20 4 L28 16 L36 16 L44 4 L50 18 L48 34 L32 54 L16 34 Z" fill={W} {...sw}/><path d="M20 8 L22 15 M44 8 L42 15" stroke={R} strokeWidth="2" strokeLinecap="round"/>
-      <path d="M22 27 L28 29" stroke={N} strokeWidth="2.6" strokeLinecap="round"/><path d="M42 27 L36 29" stroke={N} strokeWidth="2.6" strokeLinecap="round"/><circle cx="32" cy="46" r="3" fill={N}/><path d="M26 38 Q32 42 38 38" fill="none" stroke={N} strokeWidth="1.4"/></g>,
-    gershwin: <g><path d="M8 54 C24 52, 40 40, 54 10" fill="none" stroke={G} strokeWidth="3" strokeLinecap="round" strokeDasharray="1 5"/><path d="M54 10 l-1.5 8 M54 10 l-7 4" stroke={G} strokeWidth="3" strokeLinecap="round"/>
-      <g transform="rotate(-40 30 36)"><rect x="12" y="33" width="34" height="6" rx="2" fill={N}/><path d="M46 31 L54 28 L54 44 L46 41 Z" fill={N}/>{[18, 24, 30, 36].map(x => <circle key={x} cx={x} cy="36" r="1.4" fill={W}/>)}</g></g>,
-    kabalevsky: <g><rect x="8" y="34" width="20" height="20" rx="2" fill={G} {...sw}/><rect x="30" y="34" width="20" height="20" rx="2" fill={W} {...sw}/><rect x="19" y="13" width="20" height="20" rx="2" fill={R} {...sw}/>
-      <ellipse cx="17" cy="46" rx="3.4" ry="2.5" fill={N}/><rect x="19.6" y="37" width="1.4" height="9" fill={N}/><ellipse cx="39" cy="46" rx="3.4" ry="2.5" fill={N}/><rect x="41.6" y="37" width="1.4" height="9" fill={N}/><text x="29" y="28" textAnchor="middle" fontSize="12" fontWeight="900" fill={W} fontFamily="Inter, sans-serif">♪</text></g>,
-    sculthorpe: <g><circle cx="44" cy="20" r="8" fill={G} {...sw}/><path d="M4 46 H60" stroke={W} strokeWidth="1.6"/><path d="M10 46 C14 32, 22 30, 32 30 C42 30, 48 34, 52 46 Z" fill={R} {...sw}/>
-      <path d="M14 18 q3 -3 6 0 q3 -3 6 0" fill="none" stroke={W} strokeWidth="1.8" strokeLinecap="round"/><path d="M8 52 q8 -2 16 0 M30 56 q10 -2 20 0" stroke={W} strokeWidth="1.4" fill="none" opacity="0.7"/></g>,
+    // Palestrina: an open choir book with square old-style notes
+    palestrina: <g>{book([22, 28, 34, 40])}{[[14, 34], [19, 31], [24, 28], [39, 28], [44, 25], [49, 31]].map(([x, y], i) => <rect key={i} x={x - 2.2} y={y - 2.2} width="4.4" height="4.4" fill={i === 2 || i === 4 ? C : N}/>)}</g>,
+    // Byrd: "The Bells" for virginals
+    byrd: <g>{bell(22, 29, 1.15)}{bell(44, 33, 0.95)}<path d="M10 52 H54" {...sw} strokeWidth="1.4" strokeDasharray="2 3"/></g>,
+    // Vivaldi: The Four Seasons -- sun, flower, leaf, snowflake
+    vivaldi: <g><circle cx="21" cy="21" r="5.5" fill={C}/>{[0, 45, 90, 135, 180, 225, 270, 315].map(a => <line key={a} x1={21 + 8.5 * Math.cos(a * Math.PI / 180)} y1={21 + 8.5 * Math.sin(a * Math.PI / 180)} x2={21 + 11.5 * Math.cos(a * Math.PI / 180)} y2={21 + 11.5 * Math.sin(a * Math.PI / 180)} stroke={C} strokeWidth="2" strokeLinecap="round"/>)}
+      {[0, 72, 144, 216, 288].map(a => <circle key={a} cx={43 + 5 * Math.cos(a * Math.PI / 180)} cy={21 + 5 * Math.sin(a * Math.PI / 180)} r="3.4" {...f} strokeWidth="1.3"/>)}<circle cx="43" cy="21" r="2" fill={C}/>
+      <path d="M14 47 Q20 34 30 40 Q24 50 14 47 Z" {...f}/><path d="M14 47 L27 41" {...o} strokeWidth="1.4"/>
+      {[0, 60, 120].map(a => <line key={a} x1={43 - 7 * Math.cos(a * Math.PI / 180)} y1={43 - 7 * Math.sin(a * Math.PI / 180)} x2={43 + 7 * Math.cos(a * Math.PI / 180)} y2={43 + 7 * Math.sin(a * Math.PI / 180)} {...sw}/>)}</g>,
+    // Pachelbel: the Canon -- the same tune going round and round
+    pachelbel: <g><path d="M47 21 A17 17 0 1 0 50 38" {...o}/><path d="M49 13 L47 22 L55 24" {...o}/>{note(32, 19, C, 0.9)}{note(17, 38, N, 0.9)}{note(38, 50, N, 0.9)}</g>,
+    // Bach: two independent lines woven together (counterpoint)
+    bach: <g><path d="M8 26 C20 10, 30 42, 42 26 S54 18, 58 22" {...o} strokeWidth="2.4"/><path d="M8 38 C20 52, 30 22, 42 38 S54 46, 58 42" fill="none" stroke={C} strokeWidth="2.4" strokeLinecap="round"/>{[[14, 20, N], [33, 33, N], [20, 44, C], [46, 33, C]].map(([x, y, c], i) => <ellipse key={i} cx={x} cy={y} rx="4" ry="3" transform={`rotate(-20 ${x} ${y})`} fill={c}/>)}</g>,
+    // Handel: a crown above the river (Water Music, music for kings)
+    handel: <g><path d="M18 31 L18 17 L25 24 L32 13 L39 24 L46 17 L46 31 Z" {...f}/><rect x="17" y="31" width="30" height="5" rx="1" fill={C} {...sw} strokeWidth="1.4"/><circle cx="32" cy="13" r="2" fill={C}/>
+      <path d="M6 45 q6.5 -6 13 0 t13 0 t13 0 t13 0" {...o}/><path d="M6 54 q6.5 -6 13 0 t13 0 t13 0 t13 0" {...o} opacity="0.55"/></g>,
+    // Scarlatti: hands crossing over on the keyboard
+    scarlatti: <g>{keys(8, 42, 48, 8)}<path d="M14 36 C24 12, 40 12, 50 32" {...o}/><path d="M50 32 l-1 -7 M50 32 l-6 -3" {...o}/><path d="M50 36 C40 18, 24 18, 14 32" fill="none" stroke={C} strokeWidth="2" strokeLinecap="round"/><path d="M14 32 l1 -7 M14 32 l6 -3" stroke={C} strokeWidth="2" strokeLinecap="round"/></g>,
+    // Couperin: a decorated bow -- the French love of ornaments
+    couperin: <g><path d="M32 30 C22 12, 8 14, 12 28 C14 36, 26 36, 32 32 C38 36, 50 36, 52 28 C56 14, 42 12, 32 30 Z" {...f}/><path d="M32 33 C24 40, 14 46, 18 52 C22 56, 30 46, 32 38 C34 46, 42 56, 46 52 C50 46, 40 40, 32 33 Z" {...f}/><circle cx="32" cy="32" r="4" fill={C} {...sw} strokeWidth="1.4"/></g>,
+    // Haydn: the "Surprise" -- a sudden loud chord wakes the sleepers
+    haydn: <g><path d={Array.from({ length: 16 }, (_, i) => { const a = i * Math.PI / 8, r = i % 2 ? 11 : 21; return (i ? 'L' : 'M') + (34 + r * Math.cos(a)).toFixed(1) + ' ' + (35 + r * Math.sin(a)).toFixed(1); }).join(' ') + ' Z'} {...f}/>
+      <rect x="31.8" y="24" width="4.4" height="12" rx="2" fill={C}/><circle cx="34" cy="41" r="2.4" fill={C}/><text x="7" y="15" fontSize="10" fontWeight="900" fill={N} fontFamily="Inter, sans-serif">z z</text></g>,
+    // Mozart: a sparkling star -- the child prodigy
+    mozart: <g><path d={Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 8 : 19; return (i ? 'L' : 'M') + (32 + r * Math.cos(a)).toFixed(1) + ' ' + (32 + r * Math.sin(a)).toFixed(1); }).join(' ') + ' Z'} {...f}/><circle cx="32" cy="33" r="3" fill={C}/>{[[12, 14], [52, 16], [51, 50], [13, 49]].map(([x, y], i) => <React.Fragment key={i}>{spark(x, y, 4)}</React.Fragment>)}</g>,
+    // Clementi: the piano contest with Mozart -- two keyboards, one spark
+    clementi: <g>{keys(10, 8, 44, 7)}<g transform="translate(64 64) rotate(180)">{keys(10, 8, 44, 7)}</g><path d="M36 22 L28 33 L35 33 L27 44" fill="none" stroke={C} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></g>,
+    // Beethoven: da-da-da-DUM -- three short, one long
+    beethoven: <g>{[9, 20, 31].map(x => <rect key={x} x={x} y="27" width="8" height="12" rx="2" {...f}/>)}<rect x="42" y="17" width="13" height="30" rx="2.5" fill={C} {...sw}/><path d="M8 53 H56" {...sw} strokeWidth="1.3" strokeDasharray="2 3"/></g>,
+    // Schubert: a song -- a speech bubble with notes
+    schubert: <g><path d="M10 13 H54 A4 4 0 0 1 58 17 V37 A4 4 0 0 1 54 41 H26 L16 51 L18 41 H10 A4 4 0 0 1 6 37 V17 A4 4 0 0 1 10 13 Z" {...f}/>{note(24, 33, N)}{note(40, 30, C)}<path d="M28.7 20 L44.7 17" stroke={N} strokeWidth="2.4"/></g>,
+    // Mendelssohn: the wedding rings (Wedding March) and a fairy sparkle (A Midsummer Night's Dream)
+    mendelssohn: <g><circle cx="25" cy="36" r="12" {...o} strokeWidth="2.6"/><circle cx="39" cy="36" r="12" fill="none" stroke={C} strokeWidth="2.6"/>{spark(48, 14, 4.5)}{spark(14, 15, 3, N)}</g>,
+    // Chopin: the moon over the keys (nocturnes, music of the night)
+    chopin: <g><path d="M38 8 A16 16 0 1 0 50 34 A12 12 0 1 1 38 8 Z" fill={C} {...sw}/>{keys(8, 44, 48, 8)}{[[14, 14], [22, 32], [52, 12]].map(([x, y], i) => <React.Fragment key={i}>{spark(x, y, 2.8, N)}</React.Fragment>)}</g>,
+    // Robert Schumann: Album for the Young -- a book with a bookmark
+    rschumann: <g>{book([24, 29, 34, 39])}<ellipse cx="18" cy="31" rx="2.6" ry="1.9" fill={C}/><ellipse cx="46" cy="27" rx="2.6" ry="1.9" fill={N}/><path d="M42 12 V24 L45 21 L48 24 V12" fill={C}/></g>,
+    // Clara Schumann: the star pianist in the spotlight
+    cschumann: <g><path d="M24 4 L11 44 M40 4 L53 44" stroke={C} strokeWidth="1.6" strokeDasharray="2 3" strokeLinecap="round"/><path d="M12 48 V36 C12 30, 22 28, 30 30 C38 32, 40 26, 48 26 C54 26, 56 32, 56 36 V48 Z" {...f}/><rect x="12" y="44" width="44" height="4" fill={N}/><line x1="16" y1="48" x2="16" y2="57" {...sw}/><line x1="52" y1="48" x2="52" y2="57" {...sw}/>{spark(32, 10, 5)}</g>,
+    // Liszt: lightning-fast virtuoso -- a bolt over the keys
+    liszt: <g>{keys(6, 44, 52, 8)}<path d="M38 4 L24 24 L33 24 L22 40" fill="none" stroke={C} strokeWidth="3.6" strokeLinecap="round" strokeLinejoin="round"/>{[[12, 14], [50, 20], [48, 6]].map(([x, y], i) => <React.Fragment key={i}>{spark(x, y, 3.6, N)}</React.Fragment>)}</g>,
+    // Smetana: Vltava -- two streams join into a river beside Prague's castle
+    smetana: <g><path d="M6 12 C14 18, 20 26, 28 33" {...o}/><path d="M6 32 C14 31, 20 32, 28 35" {...o}/><path d="M28 34 C36 38, 44 42, 58 44" fill="none" stroke={C} strokeWidth="4" strokeLinecap="round"/><path d="M28 40 C36 45, 44 50, 58 52" {...o} strokeWidth="1.4" opacity="0.5"/><path d="M40 24 V13 H44 V16 H47 V13 H50 V16 H53 V13 H56 V24 Z" {...f} strokeWidth="1.6"/></g>,
+    // Brahms: the Lullaby -- a cradle and a sleepy "z"
+    brahms: <g><path d="M12 30 H52 V39 A20 10 0 0 1 12 39 Z" {...f}/><path d="M12 30 C12 18, 26 16, 30 26" {...f}/><path d="M8 54 Q32 64 56 54" fill="none" stroke={C} strokeWidth="2.6" strokeLinecap="round"/><text x="38" y="21" fontSize="11" fontWeight="900" fill={N} fontFamily="Inter, sans-serif">z</text><text x="46" y="13" fontSize="8" fontWeight="900" fill={C} fontFamily="Inter, sans-serif">z</text></g>,
+    // Saint-Saëns: The Swan (The Carnival of the Animals)
+    saintsaens: <g><path d="M12 44 C12 54, 48 54, 56 42 C46 44, 36 42, 30 36 C25 31, 27 22, 33 18 C37 15, 37 9, 32 9 C28 9, 26 13, 27 16" {...f}/><path d="M32 9 L40 11 L32 13.5" fill={C} {...sw} strokeWidth="1.2"/><circle cx="31" cy="11.5" r="1" fill={N}/><path d="M6 58 q6 -4 12 0 t12 0 t12 0 t12 0" {...o} strokeWidth="1.4" opacity="0.6"/></g>,
+    // Mussorgsky: Pictures at an Exhibition -- a framed picture (the Great Gate of Kiev)
+    mussorgsky: <g><rect x="8" y="8" width="48" height="46" rx="2" {...f}/><rect x="13" y="13" width="38" height="36" {...o} strokeWidth="1.2"/><path d="M22 44 V30 A10 10 0 0 1 42 30 V44" fill="none" stroke={C} strokeWidth="2.4"/><path d="M18 30 H46" {...sw} strokeWidth="1.6"/><path d="M27 30 L32 21 L37 30" {...o} strokeWidth="1.6"/><path d="M18 44 H46" {...sw} strokeWidth="1.6"/></g>,
+    // Dvořák: the steam train he loved -- and the New World
+    dvorak: <g><rect x="10" y="27" width="28" height="15" rx="2" {...f}/><rect x="36" y="17" width="16" height="25" rx="2" {...f}/><rect x="40" y="21" width="8" height="8" {...o} strokeWidth="1.4"/><rect x="15" y="17" width="6" height="10" {...f}/>{[18, 32, 46].map(x => <circle key={x} cx={x} cy="46" r="5" {...f}/>)}<path d="M6 52 H58" {...sw}/><circle cx="18" cy="10" r="3.4" fill={C}/><circle cx="11" cy="6" r="2.4" fill={C} opacity="0.7"/></g>,
+    // Grieg: Morning Mood over the Norwegian mountains (and the Mountain King's hall)
+    grieg: <g><path d="M4 50 L22 20 L32 34 L42 14 L60 50 Z" {...f}/><path d="M42 14 L36 26 L40 24 L44 28 L46 22" {...o} strokeWidth="1.3"/><path d="M14 50 A10 10 0 0 1 34 50" fill={C} {...sw} strokeWidth="1.4"/>{[0, 1, 2].map(i => <line key={i} x1={24 + 14 * Math.cos(Math.PI + (i + 1) * Math.PI / 4)} y1={50 + 14 * Math.sin(Math.PI + (i + 1) * Math.PI / 4)} x2={24 + 18 * Math.cos(Math.PI + (i + 1) * Math.PI / 4)} y2={50 + 18 * Math.sin(Math.PI + (i + 1) * Math.PI / 4)} stroke={C} strokeWidth="2" strokeLinecap="round"/>)}</g>,
+    // Rimsky-Korsakov: Flight of the Bumblebee
+    rimsky: <g><ellipse cx="36" cy="38" rx="14" ry="10" {...f}/>{[31, 37, 43].map(x => <line key={x} x1={x} y1="29" x2={x} y2="47" stroke={C} strokeWidth="3"/>)}<circle cx="22" cy="35" r="4.5" fill={N}/><path d="M32 28 C28 16, 40 14, 40 26 M38 29 C40 18, 50 18, 46 29" {...f} strokeWidth="1.4"/><path d="M5 42 h8 M3 36 h8 M7 48 h7" {...o} strokeWidth="1.4" opacity="0.6"/></g>,
+    // Tchaikovsky: the Nutcracker
+    tchaikovsky: <g><rect x="22" y="4" width="20" height="14" rx="2" fill={N}/><rect x="20" y="16" width="24" height="4" fill={C}/><rect x="23" y="20" width="18" height="15" rx="3" {...f}/><circle cx="28" cy="25" r="1.4" fill={N}/><circle cx="36" cy="25" r="1.4" fill={N}/>
+      <rect x="25" y="29" width="14" height="5" rx="1" {...f} strokeWidth="1.1"/><line x1="27" y1="31.5" x2="37" y2="31.5" stroke={N} strokeWidth="1"/><rect x="20" y="35" width="24" height="16" rx="2" fill={C} {...sw}/><line x1="32" y1="35" x2="32" y2="51" stroke={P} strokeWidth="1.6"/><rect x="23" y="51" width="7" height="8" fill={N}/><rect x="34" y="51" width="7" height="8" fill={N}/></g>,
+    // Rachmaninoff: enormous hands -- a giant stretch across the keys
+    rachmaninoff: <g>{keys(4, 38, 56, 10, 16)}<path d="M9 33 C14 9, 50 9, 55 33" fill="none" stroke={C} strokeWidth="2.4" strokeLinecap="round" strokeDasharray="1 4.5"/><circle cx="9" cy="33" r="3.4" fill={C}/><circle cx="55" cy="33" r="3.4" fill={C}/></g>,
+    // Debussy: Clair de lune -- moonlight on the sea
+    debussy: <g><path d="M30 6 A12 12 0 1 0 40 26 A9 9 0 1 1 30 6 Z" fill={C} {...sw}/>{[38, 46, 54].map((y, i) => <path key={y} d={`M${6 + i * 3} ${y} q5 -4 10 0 t10 0 t10 0 t10 0 t10 0`} {...o} opacity={1 - i * 0.25}/>)}</g>,
+    // Satie: the bowler hat and umbrella he always carried
+    satie: <g><path d="M14 30 C14 15, 38 15, 38 30" {...f}/><ellipse cx="26" cy="31" rx="18" ry="4" {...f}/><path d="M15 26 H37" stroke={C} strokeWidth="3"/><path d="M47 55 V39" {...sw}/><path d="M38 41 C38 31, 56 31, 56 41 C53 39, 50 39, 47 41 C44 39, 41 39, 38 41 Z" fill={C} {...sw} strokeWidth="1.4"/><path d="M47 55 C47 58, 43 58, 43 55" {...o} strokeWidth="1.6"/></g>,
+    // Ravel: Boléro -- the snare drum that never stops
+    ravel: <g><path d="M12 28 V44 C12 52, 52 52, 52 44 V28" {...f}/><path d="M12 30 L20 48 L28 30 L36 49 L44 30 L52 46" {...o} strokeWidth="1.2"/><ellipse cx="32" cy="28" rx="20" ry="6" {...f}/><path d="M22 21 L8 9 M42 21 L56 9" stroke={C} strokeWidth="3" strokeLinecap="round"/><circle cx="8" cy="9" r="2.6" fill={C}/><circle cx="56" cy="9" r="2.6" fill={C}/></g>,
+    // Schoenberg: the twelve-tone row -- all 12 notes in a fixed order
+    schoenberg: <g><circle cx="32" cy="32" r="23" {...f}/>{Array.from({ length: 12 }, (_, i) => <circle key={i} cx={32 + 18 * Math.sin(i * Math.PI / 6)} cy={32 - 18 * Math.cos(i * Math.PI / 6)} r="2" fill={N}/>)}<path d={[4, 5, 1, 3, 11, 7, 10, 2, 6, 9, 8, 0].map((k, j) => (j ? 'L' : 'M') + (32 + 18 * Math.sin(k * Math.PI / 6)).toFixed(1) + ' ' + (32 - 18 * Math.cos(k * Math.PI / 6)).toFixed(1)).join(' ')} fill="none" stroke={C} strokeWidth="1.6" strokeLinejoin="round"/></g>,
+    // Joplin: the ragtime straw boater
+    joplin: <g><ellipse cx="30" cy="40" rx="25" ry="7" {...f}/><path d="M15 39 V26 C15 20, 45 20, 45 26 V39 Z" {...f}/><rect x="15" y="31" width="30" height="5" fill={C}/><ellipse cx="30" cy="26" rx="15" ry="3.6" {...f} strokeWidth="1.4"/>{note(50, 18, N, 0.85)}</g>,
+    // Bartók: collecting folk songs with a recording phonograph
+    bartok: <g><path d="M30 30 L52 8 C56 12, 58 20, 56 26 Z" {...f}/><rect x="10" y="34" width="34" height="18" rx="2" {...f}/><rect x="16" y="26" width="18" height="8" rx="4" fill={C} {...sw} strokeWidth="1.4"/><line x1="30" y1="30" x2="25" y2="26" {...sw}/><circle cx="38" cy="43" r="2.4" fill={N}/></g>,
+    // Stravinsky: The Firebird -- a flaming feather, and stamping accents
+    stravinsky: <g><path d="M16 56 C16 36, 32 18, 54 8 C50 26, 38 46, 20 56 Z" fill={C} {...sw}/><path d="M19 53 L50 13" stroke={P} strokeWidth="1.6"/>{[0, 1, 2].map(i => <path key={i} d={`M${27 + i * 8} ${42 - i * 10} l9 -3`} stroke={P} strokeWidth="1.3"/>)}<path d="M6 20 l7 3 l-7 3 M6 32 l7 3 l-7 3" {...o} strokeWidth="1.8"/></g>,
+    // Prokofiev: Peter and the Wolf -- the wolf
+    prokofiev: <g><path d="M14 18 L20 4 L28 16 L36 16 L44 4 L50 18 L48 34 L32 54 L16 34 Z" {...f}/><path d="M20 8 L22 15 M44 8 L42 15" stroke={C} strokeWidth="2.2" strokeLinecap="round"/><path d="M22 27 L28 29 M42 27 L36 29" {...sw} strokeWidth="2.6"/><circle cx="32" cy="46" r="3" fill={N}/><path d="M26 38 Q32 42 38 38" {...o} strokeWidth="1.4"/></g>,
+    // Gershwin: the clarinet glissando that opens Rhapsody in Blue
+    gershwin: <g><path d="M8 54 C24 52, 40 40, 54 10" fill="none" stroke={C} strokeWidth="2.6" strokeLinecap="round" strokeDasharray="1 5"/><path d="M54 10 l-1.5 8 M54 10 l-7 4" stroke={C} strokeWidth="2.6" strokeLinecap="round"/><g transform="rotate(-40 30 36)"><rect x="12" y="33" width="34" height="6" rx="2" fill={N}/><path d="M46 31 L54 28 L54 44 L46 41 Z" fill={N}/>{[18, 24, 30, 36].map(x => <circle key={x} cx={x} cy="36" r="1.4" fill={P}/>)}</g></g>,
+    // Copland: Fanfare for the Common Man -- a trumpet call and a prairie star
+    copland: <g><rect x="5" y="36" width="5" height="6" rx="1" {...f} strokeWidth="1.6"/><rect x="10" y="35" width="30" height="8" rx="2" {...f}/>{[17, 24, 31].map(x => <rect key={x} x={x} y="27" width="4" height="8" rx="1" fill={C} {...sw} strokeWidth="1.2"/>)}<path d="M40 35 C47 34, 53 29, 58 24 V54 C53 49, 47 44, 40 43 Z" {...f}/>{spark(18, 13, 5)}{spark(31, 17, 3, N)}</g>,
+    // Shostakovich: football fan with a whistle (he qualified as a referee)
+    shostakovich: <g><circle cx="28" cy="35" r="18" {...f}/><path d="M28 27 L35 32 L32 40 L24 40 L21 32 Z" fill={N}/><path d="M28 27 V17 M35 32 L45 29 M32 40 L38 49 M24 40 L18 49 M21 32 L11 29" {...o} strokeWidth="1.4"/><rect x="44" y="8" width="14" height="8" rx="4" fill={C} {...sw} strokeWidth="1.4"/><path d="M44 12 H39" {...sw} strokeWidth="1.4"/></g>,
+    // Kabalevsky: pieces for children -- building blocks of music
+    kabalevsky: <g><rect x="8" y="34" width="20" height="20" rx="2" {...f}/><rect x="30" y="34" width="20" height="20" rx="2" {...f}/><rect x="19" y="13" width="20" height="20" rx="2" fill={C} {...sw}/>{note(16, 48, N, 0.85)}{note(38, 48, N, 0.85)}<path d="M25 27 L29 19 L33 27 Z" fill={P}/></g>,
+    // Cage: 4'33" -- a stopwatch for listening to silence
+    cage: <g><circle cx="32" cy="36" r="20" {...f}/><rect x="28" y="8" width="8" height="6" rx="1.5" {...f}/><line x1="32" y1="36" x2="32" y2="22" stroke={C} strokeWidth="2.6" strokeLinecap="round"/><line x1="32" y1="36" x2="41" y2="41" {...sw}/><circle cx="32" cy="36" r="2.2" fill={N}/>{[0, 90, 180, 270].map(a => <line key={a} x1={32 + 16 * Math.sin(a * Math.PI / 180)} y1={36 - 16 * Math.cos(a * Math.PI / 180)} x2={32 + 19 * Math.sin(a * Math.PI / 180)} y2={36 - 19 * Math.cos(a * Math.PI / 180)} {...sw} strokeWidth="1.4"/>)}</g>,
+    // Sculthorpe: the Australian outback -- sun, red earth and birds
+    sculthorpe: <g><circle cx="44" cy="20" r="8" fill={C}/><path d="M4 46 H60" {...sw}/><path d="M10 46 C14 32, 22 30, 32 30 C42 30, 48 34, 52 46 Z" {...f}/><path d="M14 18 q3 -3 6 0 q3 -3 6 0" {...o} strokeWidth="1.6"/><path d="M8 53 q8 -2 16 0 M30 57 q10 -2 20 0" {...o} strokeWidth="1.3" opacity="0.6"/></g>,
+    // Williams: a film clapperboard and a star
+    williams: <g><rect x="10" y="26" width="44" height="28" rx="2" {...f}/><path d="M10 26 L12 14 L56 18 L54 30" {...f}/>{[0, 1, 2, 3].map(i => <path key={i} d={`M${16 + i * 10} ${14.5 + i * 0.9} L${21 + i * 10} ${27 + i * 0.4}`} stroke={C} strokeWidth="3.4"/>)}{spark(32, 40, 7)}</g>,
+    // Reich: Clapping Music -- the same pattern, one beat apart
+    reich: <g>{[0, 1, 2, 3, 4, 5].map(i => <circle key={i} cx={12 + i * 8} cy="22" r="3.4" fill={i % 3 === 2 ? P : N} stroke={N} strokeWidth="1.4"/>)}{[0, 1, 2, 3, 4, 5].map(i => <circle key={'b' + i} cx={20 + i * 8} cy="42" r="3.4" fill={i % 3 === 2 ? P : C} stroke={C} strokeWidth="1.4"/>)}<path d="M8 32 H58" {...sw} strokeWidth="1" strokeDasharray="2 3"/><path d="M8 52 l8 0 m-3 -3 l3 3 l-3 3" stroke={C} strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round"/></g>,
+    // Glass: little patterns repeating over and over
+    glass: <g>{[0, 1, 2].map(r => [0, 1, 2, 3].map(k => <path key={r + '-' + k} d={`M${8 + k * 13} ${23 + r * 13} l5 -8 l5 8`} fill="none" stroke={r === 1 && k === 2 ? C : N} strokeWidth={r === 1 && k === 2 ? 2.6 : 1.8} strokeLinecap="round" strokeLinejoin="round"/>))}</g>,
+    // Pärt: tintinnabuli -- "like bells"
+    part: <g><line x1="8" y1="10" x2="56" y2="10" {...sw}/>{bell(16, 27, 0.85)}{bell(32, 31, 0.85, C)}{bell(48, 27, 0.85)}<line x1="16" y1="10" x2="16" y2="16" {...sw} strokeWidth="1.2"/><line x1="32" y1="10" x2="32" y2="20" {...sw} strokeWidth="1.2"/><line x1="48" y1="10" x2="48" y2="16" {...sw} strokeWidth="1.2"/></g>,
+    // Hisaishi: a cloud with a song (Studio Ghibli skies)
+    hisaishi: <g><path d="M14 42 C6 42, 6 30, 15 30 C15 20, 28 16, 33 24 C37 18, 50 20, 49 30 C58 30, 58 42, 50 42 Z" {...f}/>{note(30, 38, C, 0.9)}<path d="M10 53 q6 -3 12 0 t12 0 t12 0" {...o} strokeWidth="1.4" opacity="0.6"/></g>,
   };
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" aria-hidden="true" style={{flex:'0 0 auto',display:'block'}}>
-      <rect width="64" height="64" rx="16" fill={cmpEra(c.era).color}/>
+      <rect x="1" y="1" width="62" height="62" rx="14" fill="#fff" stroke={CL} strokeWidth="1.5"/>
       {art[id]}
     </svg>
   );
 }
 
-// ── 1. The world of each era ──
+// ── 1. The world of each era: a line drawing for each period, on a staff ──
 function EraScene({ id }) {
-  const N = CMP_INK, W = CMP_CREAM, G = CMP_GOLD, R = CMP_CORAL, sw = { stroke: N, strokeWidth: 2, strokeLinejoin: 'round' };
-  const bg = cmpEra(id).color;
+  const N = CN, C = CC, P = '#fff', sw = { stroke: N, strokeWidth: 2.2, strokeLinejoin: 'round', strokeLinecap: 'round' }, f = { ...sw, fill: P }, o = { ...sw, fill: 'none' };
   const scenes = {
+    // a cathedral, a choir book, singers, and a small virginal
+    renaissance: <g>
+      <path d="M60 160 V70 L100 22 L140 70 V160 Z" {...f}/><path d="M100 22 V6 M94 12 H106" {...sw}/>{[80, 120].map(x => <path key={x} d={`M${x - 8} 160 V124 A8 8 0 0 1 ${x + 8} 124 V160`} {...f}/>)}<circle cx="100" cy="84" r="12" {...f}/><path d="M100 72 V96 M88 84 H112" {...sw} strokeWidth="1.4"/>
+      <path d="M230 120 C215 112, 200 112, 190 116 V150 C200 146, 215 146, 230 152 C245 146, 260 146, 270 150 V116 C260 112, 245 112, 230 120 Z" {...f}/>{[124, 132, 140].map(y => <g key={y}><line x1="196" x2="226" y1={y} y2={y} stroke={N} strokeWidth="1"/><line x1="234" x2="264" y1={y} y2={y} stroke={N} strokeWidth="1"/></g>)}{[[203, 132], [214, 124], [242, 132], [253, 124]].map(([x, y], i) => <rect key={i} x={x - 3} y={y - 3} width="6" height="6" fill={i === 1 ? C : N}/>)}<path d="M230 120 V152" {...sw} strokeWidth="1.4"/>
+      {[330, 370, 410].map((x, i) => <g key={x}><circle cx={x} cy={98} r="13" {...f}/><path d={`M${x - 20} 160 C${x - 20} 124, ${x + 20} 124, ${x + 20} 160 Z`} {...f}/><ellipse cx={x} cy="103" rx="4" ry="3" fill={i === 1 ? C : N}/></g>)}
+      <rect x="470" y="114" width="100" height="28" rx="2" {...f}/><rect x="478" y="121" width="84" height="10" {...f} strokeWidth="1.4"/>{Array.from({ length: 11 }, (_, i) => <line key={i} x1={478 + i * 7.6} x2={478 + i * 7.6} y1="121" y2="131" stroke={N} strokeWidth="0.9"/>)}<path d="M470 114 L478 104 H562 L570 114" {...f}/>{[482, 558].map(x => <line key={x} x1={x} x2={x} y1="142" y2="162" {...sw}/>)}
+    </g>,
+    // a church organ, a harpsichord, candles
     baroque: <g>
-      <path d="M70 150 V70 A55 55 0 0 1 180 70 V150 Z" fill={W} {...sw}/>
-      {[0, 1, 2, 3, 4, 5, 6].map(i => { const h = [52, 64, 76, 84, 76, 64, 52][i]; return <rect key={i} x={84 + i * 12} y={140 - h} width="9" height={h} rx="3" fill={G} {...sw} strokeWidth="1.4"/>; })}
-      <path d="M230 120 L250 82 C300 74, 380 74, 420 92 C450 104, 452 120, 430 122 Z" fill={W} {...sw}/><rect x="236" y="116" width="198" height="12" rx="2" fill={W} {...sw}/>
+      <path d="M70 160 V70 A55 55 0 0 1 180 70 V160 Z" {...f}/>
+      {[0, 1, 2, 3, 4, 5, 6].map(i => { const h = [52, 64, 76, 84, 76, 64, 52][i]; return <rect key={i} x={84 + i * 12} y={150 - h} width="9" height={h} rx="3" fill={i === 3 ? C : P} {...sw} strokeWidth="1.6"/>; })}
+      <path d="M230 120 L250 82 C300 74, 380 74, 420 92 C450 104, 452 120, 430 122 Z" {...f}/><rect x="236" y="116" width="198" height="12" rx="2" {...f}/>
       {Array.from({ length: 17 }, (_, i) => <line key={i} x1={246 + i * 11} x2={246 + i * 11} y1="116" y2="128" stroke={N} strokeWidth="1"/>)}
-      {[250, 425].map(x => <line key={x} x1={x} x2={x} y1="128" y2="152" {...sw}/>)}
-      {[490, 520, 550].map((x, i) => <g key={x}><rect x={x - 6} y={92 + i * 8} width="12" height={52 - i * 8} rx="2" fill={W} {...sw}/><path d={`M${x} ${74 + i * 8} C${x + 7} ${84 + i * 8}, ${x + 4} ${90 + i * 8}, ${x} ${90 + i * 8} C${x - 4} ${90 + i * 8}, ${x - 7} ${84 + i * 8}, ${x} ${74 + i * 8} Z`} fill={G}/><circle cx={x} cy={86 + i * 8} r="2" fill={R}/></g>)}
-      <rect x="470" y="144" width="100" height="8" rx="2" fill={W} {...sw}/>
+      {[250, 425].map(x => <line key={x} x1={x} x2={x} y1="128" y2="158" {...sw}/>)}
+      {[490, 520, 550].map((x, i) => <g key={x}><rect x={x - 6} y={92 + i * 8} width="12" height={52 - i * 8} rx="2" {...f}/><path d={`M${x} ${72 + i * 8} C${x + 7} ${82 + i * 8}, ${x + 4} ${88 + i * 8}, ${x} ${88 + i * 8} C${x - 4} ${88 + i * 8}, ${x - 7} ${82 + i * 8}, ${x} ${72 + i * 8} Z`} fill={C}/></g>)}
+      <rect x="470" y="144" width="100" height="8" rx="2" {...f}/>
     </g>,
+    // a chandelier, a fortepiano, a concert audience, a ticket, a powdered wig
     classical: <g>
-      <line x1="300" y1="0" x2="300" y2="22" stroke={W} strokeWidth="2"/><path d="M262 30 Q300 52 338 30" fill="none" stroke={W} strokeWidth="2.4"/>{[262, 281, 300, 319, 338].map((x, i) => <g key={x}><line x1={x} x2={x} y1={30 + (i === 2 ? 11 : i % 2 ? 6 : 0)} y2={22 + (i === 2 ? 11 : i % 2 ? 6 : 0)} stroke={W} strokeWidth="1.6"/><circle cx={x} cy={20 + (i === 2 ? 11 : i % 2 ? 6 : 0)} r="3.6" fill={G}/></g>)}
-      <rect x="70" y="96" width="170" height="34" rx="3" fill={W} {...sw}/><rect x="80" y="104" width="150" height="10" fill={W} {...sw} strokeWidth="1.2"/>{Array.from({ length: 14 }, (_, i) => <line key={i} x1={80 + i * 10.7} x2={80 + i * 10.7} y1="104" y2="114" stroke={N} strokeWidth="0.9"/>)}
-      {[82, 228].map(x => <line key={x} x1={x} x2={x} y1="130" y2="156" {...sw}/>)}<path d="M120 96 L128 76 L182 76 L190 96" fill={W} {...sw}/>
-      {[0, 1, 2].map(r => [0, 1, 2, 3].map(k => <rect key={r + '-' + k} x={330 + k * 36 + r * 6} y={108 + r * 16} width="26" height="12" rx="3" fill={W} {...sw} strokeWidth="1.4"/>))}
-      <g transform="rotate(-8 520 64)"><rect x="488" y="52" width="64" height="26" rx="3" fill={G} {...sw}/><circle cx="488" cy="65" r="5" fill={bg}/><circle cx="552" cy="65" r="5" fill={bg}/><line x1="530" x2="530" y1="56" y2="74" stroke={N} strokeWidth="1.4" strokeDasharray="2 2"/></g>
-      <circle cx="430" cy="38" r="20" fill={R} {...sw}/><path d="M412 46 L424 66 M448 46 L436 66" {...sw}/><rect x="422" y="64" width="16" height="10" rx="2" fill={W} {...sw}/>
+      <line x1="300" y1="0" x2="300" y2="22" {...sw}/><path d="M262 30 Q300 52 338 30" {...o}/>{[262, 281, 300, 319, 338].map((x, i) => { const dy = i === 2 ? 11 : i % 2 ? 6 : 0; return <g key={x}><line x1={x} x2={x} y1={30 + dy} y2={22 + dy} {...sw} strokeWidth="1.6"/><circle cx={x} cy={19 + dy} r="3.6" fill={i === 2 ? C : P} {...sw} strokeWidth="1.4"/></g>; })}
+      <rect x="70" y="96" width="170" height="34" rx="3" {...f}/><rect x="80" y="104" width="150" height="10" {...f} strokeWidth="1.3"/>{Array.from({ length: 14 }, (_, i) => <line key={i} x1={80 + i * 10.7} x2={80 + i * 10.7} y1="104" y2="114" stroke={N} strokeWidth="0.9"/>)}
+      {[82, 228].map(x => <line key={x} x1={x} x2={x} y1="130" y2="160" {...sw}/>)}<path d="M120 96 L128 76 L182 76 L190 96" {...f}/>
+      {[0, 1, 2].map(r => [0, 1, 2, 3].map(k => <rect key={r + '-' + k} x={330 + k * 36 + r * 6} y={112 + r * 16} width="26" height="12" rx="3" {...f} strokeWidth="1.6"/>))}
+      <g transform="rotate(-8 520 64)"><rect x="488" y="52" width="64" height="26" rx="3" fill={C} {...sw}/><line x1="530" x2="530" y1="56" y2="74" stroke={P} strokeWidth="1.6" strokeDasharray="2 2"/></g>
+      <circle cx="430" cy="40" r="20" {...f}/><path d="M412 34 Q430 24 448 34 M410 44 Q430 54 450 44" {...o} strokeWidth="1.4"/><path d="M412 50 L422 68 M448 50 L438 68" {...sw}/><rect x="420" y="66" width="20" height="10" rx="2" fill={C} {...sw}/>
     </g>,
+    // a stage: curtains, a spotlight on a grand piano, the audience, a gas lamp
     romantic: <g>
-      <path d="M0 0 H70 C62 50, 58 110, 70 170 H0 Z" fill={W} {...sw}/><path d="M600 0 H530 C538 50, 542 110, 530 170 H600 Z" fill={W} {...sw}/>
-      <path d="M300 0 L190 150 H410 Z" fill={G} opacity="0.4"/>
-      <path d="M200 124 V102 C200 88, 236 84, 262 92 C290 100, 300 80, 330 80 C364 80, 380 92, 384 106 V124 Z" fill={W} {...sw}/><path d="M262 92 L300 46 L306 52 L274 96" fill={W} {...sw}/><rect x="200" y="118" width="184" height="8" fill={N}/>
-      {[212, 372].map(x => <line key={x} x1={x} x2={x} y1="126" y2="146" {...sw}/>)}<rect x="236" y="134" width="30" height="8" rx="2" fill={W} {...sw}/>
-      {Array.from({ length: 11 }, (_, i) => <circle key={i} cx={100 + i * 40} cy={168} r="14" fill={N} opacity="0.75"/>)}
-      <g transform="translate(470 34)"><circle r="12" fill={G} {...sw}/><rect x="-6" y="10" width="12" height="8" rx="2" fill={W} {...sw}/>{[0, 1, 2, 3, 4, 5].map(i => <line key={i} x1={16 * Math.cos(i * Math.PI / 3)} y1={16 * Math.sin(i * Math.PI / 3) - 2} x2={21 * Math.cos(i * Math.PI / 3)} y2={21 * Math.sin(i * Math.PI / 3) - 2} stroke={W} strokeWidth="2" strokeLinecap="round"/>)}</g>
+      <path d="M0 0 H70 C62 50, 58 110, 70 170 H0 Z" {...f}/><path d="M600 0 H530 C538 50, 542 110, 530 170 H600 Z" {...f}/>{[22, 44].map(x => <path key={x} d={`M${x} 0 C${x - 4} 60, ${x - 6} 110, ${x} 170`} {...o} strokeWidth="1.2"/>)}{[556, 578].map(x => <path key={x} d={`M${x} 0 C${x + 4} 60, ${x + 6} 110, ${x} 170`} {...o} strokeWidth="1.2"/>)}
+      <path d="M300 6 L206 140 M300 6 L394 140" stroke={C} strokeWidth="1.8" strokeDasharray="3 5"/>
+      <path d="M200 124 V102 C200 88, 236 84, 262 92 C290 100, 300 80, 330 80 C364 80, 380 92, 384 106 V124 Z" {...f}/><path d="M262 92 L300 46 L306 52 L274 96" {...f}/><rect x="200" y="118" width="184" height="8" fill={N}/>
+      {[212, 372].map(x => <line key={x} x1={x} x2={x} y1="126" y2="150" {...sw}/>)}
+      {Array.from({ length: 11 }, (_, i) => <circle key={i} cx={100 + i * 40} cy={172} r="14" {...f}/>)}
+      <g transform="translate(470 34)"><circle r="12" {...f}/><path d="M-4 3 L0 -5 L4 3" fill="none" stroke={C} strokeWidth="1.8"/><rect x="-6" y="10" width="12" height="8" rx="2" {...f} strokeWidth="1.6"/>{[0, 1, 2, 3, 4, 5].map(i => <line key={i} x1={17 * Math.cos(i * Math.PI / 3)} y1={17 * Math.sin(i * Math.PI / 3) - 2} x2={22 * Math.cos(i * Math.PI / 3)} y2={22 * Math.sin(i * Math.PI / 3) - 2} stroke={C} strokeWidth="2" strokeLinecap="round"/>)}</g>
     </g>,
+    // a city skyline, a gramophone, a radio, an aeroplane
     modern: <g>
-      <path d="M0 150 H40 V110 H70 V130 H100 V96 H130 V150 H470 V104 H500 V124 H530 V90 H560 V150 H600 V170 H0 Z" fill={N} opacity="0.35"/>
-      <rect x="64" y="104" width="70" height="40" rx="3" fill={R} {...sw}/><path d="M98 104 L100 90 L158 34 C170 44, 174 62, 168 74 L104 98 Z" fill={G} {...sw}/><ellipse cx="164" cy="54" rx="9" ry="22" transform="rotate(42 164 54)" fill={W} {...sw}/>
-      <rect x="250" y="70" width="110" height="76" rx="14" fill={W} {...sw}/><circle cx="282" cy="108" r="20" fill={G} {...sw}/>{[-1, 0, 1].map(i => <line key={i} x1={268} x2={296} y1={108 + i * 7} y2={108 + i * 7} stroke={N} strokeWidth="1.2"/>)}<circle cx="334" cy="96" r="7" fill={R} {...sw}/><circle cx="334" cy="122" r="7" fill={W} {...sw}/><line x1="272" y1="70" x2="252" y2="40" {...sw}/>
-      <circle cx="440" cy="108" r="22" fill={W} {...sw}/><circle cx="486" cy="108" r="22" fill={W} {...sw}/>{[440, 486].map(x => [0, 1, 2, 3].map(k => <circle key={x + '-' + k} cx={x + 11 * Math.cos(k * Math.PI / 2)} cy={108 + 11 * Math.sin(k * Math.PI / 2)} r="4" fill={bg}/>))}<rect x="430" y="132" width="66" height="12" rx="3" fill={N}/>
-      <g transform="translate(510 34) rotate(-10)"><path d="M-26 0 H22 L28 4 L22 8 H-26 Z" fill={W} {...sw}/><path d="M-4 0 L-12 -16 H-4 L8 0 M-4 8 L-12 22 H-4 L8 8" fill={W} {...sw}/><path d="M-26 0 L-32 -9 H-26 L-20 0" fill={W} {...sw}/></g>
+      <path d="M0 152 H40 V112 H70 V132 H100 V98 H130 V152 H470 V106 H500 V126 H530 V92 H560 V152 H600" {...o} strokeWidth="1.6"/>
+      <rect x="64" y="110" width="70" height="40" rx="3" {...f}/><path d="M98 110 L100 96 L158 40 C170 50, 174 68, 168 80 L104 104 Z" fill={C} {...sw}/><ellipse cx="164" cy="60" rx="9" ry="22" transform="rotate(42 164 60)" {...f}/>
+      <rect x="250" y="72" width="110" height="76" rx="14" {...f}/><circle cx="282" cy="110" r="20" {...f}/>{[-1, 0, 1].map(i => <line key={i} x1={266} x2={298} y1={110 + i * 7} y2={110 + i * 7} stroke={N} strokeWidth="1.2"/>)}<circle cx="334" cy="98" r="7" fill={C} {...sw}/><circle cx="334" cy="124" r="7" {...f}/><line x1="272" y1="72" x2="252" y2="42" {...sw}/>
+      <g transform="translate(470 40) rotate(-10)"><path d="M-30 0 H24 L32 5 L24 10 H-30 Z" {...f}/><path d="M-6 0 L-14 -18 H-6 L8 0 M-6 10 L-14 28 H-6 L8 10" {...f}/><path d="M-30 0 L-36 -10 H-30 L-24 0" {...f}/></g>
+    </g>,
+    // a film clapperboard, a synthesizer screen with a sound wave, a rocket, the moon
+    contemporary: <g>
+      <rect x="60" y="68" width="130" height="84" rx="6" {...f}/><path d="M60 68 L64 46 L194 54 L190 76" {...f}/>{[0, 1, 2, 3, 4].map(i => <path key={i} d={`M${76 + i * 24} ${47 + i * 1.6} L${86 + i * 24} ${73 + i * 0.6}`} stroke={C} strokeWidth="4"/>)}
+      <rect x="250" y="74" width="120" height="70" rx="6" {...f}/><path d="M236 150 H384 L374 160 H246 Z" {...f}/><path d="M262 110 q8 -22 16 0 t16 0 t16 0 t16 0 t16 0 t16 0" fill="none" stroke={C} strokeWidth="2.2"/>
+      <circle cx="510" cy="54" r="26" {...f}/>{[[500, 44, 5], [518, 62, 4], [522, 44, 3]].map(([x, y, r], i) => <circle key={i} cx={x} cy={y} r={r} {...o} strokeWidth="1.4"/>)}
+      <g transform="translate(450 124) rotate(-35)"><path d="M0 -26 C8 -14, 8 10, 6 18 H-6 C-8 10, -8 -14, 0 -26 Z" {...f}/><path d="M-6 8 L-14 20 L-6 18 M6 8 L14 20 L6 18" {...f} strokeWidth="1.6"/><circle cx="0" cy="-6" r="3.4" fill={C}/><path d="M-4 20 L0 32 L4 20" fill={C}/></g>
     </g>,
   };
   return (
-    <div style={{borderRadius:14,overflow:'hidden',margin:'4px 0 10px'}}>
+    <div style={{margin:'4px 0 10px',border:'1.5px solid var(--navy-line)',borderRadius:14,overflow:'hidden',background:'#fff'}}>
       <svg viewBox="0 0 600 170" width="100%" style={{display:'block'}} aria-hidden="true">
-        <rect width="600" height="170" fill={bg}/>
+        {[42, 64, 86, 108, 130].map(y => <line key={y} x1="0" x2="600" y1={y} y2={y} stroke={CN} strokeOpacity="0.2" strokeWidth="1.4"/>)}
         {scenes[id]}
       </svg>
     </div>
   );
 }
 function CmpRowIcon({ k }) {
-  const N = CMP_INK, sw = { fill: 'none', stroke: N, strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  const N = CN, sw = { fill: 'none', stroke: N, strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' };
   return <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true" style={{flex:'0 0 auto',marginTop:1}}>
+    {k === 'sound' && <g><path d="M4 9 H8 L13 5 V19 L8 15 H4 Z" {...sw}/><path d="M16 8.5 C18 10.5, 18 13.5, 16 15.5 M18.5 6 C21.8 9.5, 21.8 14.5, 18.5 18" fill="none" stroke={CC} strokeWidth="1.8" strokeLinecap="round"/></g>}
     {k === 'where' && <g><path d="M3 21 H21 M5 21 V10 M19 21 V10 M3 10 L12 3 L21 10 Z" {...sw}/><path d="M10 21 V15 A2 2 0 0 1 14 15 V21" {...sw}/></g>}
     {k === 'job' && <g><circle cx="12" cy="12" r="8.5" {...sw}/><path d="M14.6 8.8 C13.6 7.6 9.4 7.6 9.4 10 C9.4 12.4 14.6 11.6 14.6 14 C14.6 16.4 10.4 16.4 9.2 15.2 M12 6.4 V17.6" {...sw}/></g>}
     {k === 'keys' && <g><rect x="2.5" y="6" width="19" height="12" rx="1.5" {...sw}/>{[6.3, 10.1, 13.9, 17.7].map(x => <line key={x} x1={x} x2={x} y1="6" y2="18" stroke={N} strokeWidth="1.1"/>)}{[5.2, 9, 15, 18.8].map(x => <rect key={x} x={x - 0.1} y="6" width="2.3" height="6.5" fill={N}/>)}</g>}
     {k === 'world' && <g><circle cx="12" cy="12" r="8.5" {...sw}/><path d="M3.5 12 H20.5 M12 3.5 C8.5 7, 8.5 17, 12 20.5 M12 3.5 C15.5 7, 15.5 17, 12 20.5" {...sw}/></g>}
   </svg>;
 }
+// One ruler for the period names, staggered on two rows so short periods never cut their names.
+function CmpEraRuler({ y0, y1, active, hot = [] }) {
+  const ids = CMP_ERA_IDS.filter(id => CMP_PERIODS[id].years[1] > y0 && CMP_PERIODS[id].years[0] < y1);
+  const pct = (y) => (Math.max(y0, Math.min(y1, y)) - y0) / (y1 - y0) * 100;
+  return <div style={{position:'relative',height:34,borderBottom:'1.5px solid ' + CN}} aria-hidden="true">
+    {ids.map((id, k) => { const p = CMP_PERIODS[id].years, a = pct(p[0]), b = pct(p[1]), on = id === active, last = k === ids.length - 1;
+      return <React.Fragment key={id}>
+        <span style={{position:'absolute',bottom:0,height:8,left:a + '%',width:(b - a) + '%',background:on ? CN : 'transparent',borderLeft:k ? '1px solid var(--navy-line)' : 'none',transition:'background .15s'}}/>
+        <span style={{position:'absolute',top:k % 2 ? 12 : 0,...(last ? { right: 0 } : { left: 'calc(' + a + '% + 3px)' }),fontSize:9.5,lineHeight:'12px',fontWeight:900,whiteSpace:'nowrap',textTransform:'uppercase',letterSpacing:'0.03em',color:on || hot.includes(id) ? CC : 'var(--navy-soft)'}}>{cmpEraTag(id)}</span>
+      </React.Fragment>; })}
+  </div>;
+}
+const cmpChip = (on, label, onClick, key) => <button key={key || label} className={'chip' + (on ? ' active' : '')} style={{padding:'4px 11px',fontSize:13}} onClick={onClick}>{label}</button>;
+const cmpHead = { fontSize:11.5, fontWeight:900, color:CC, textTransform:'uppercase', letterSpacing:'0.07em', margin:'12px 0 5px' };
+const cmpTag = (label, key, filled) => <span key={key} style={{fontSize:11.5,fontWeight:900,borderRadius:5,padding:filled ? '1px 7px' : '0 6px',whiteSpace:'nowrap',color:filled ? '#fff' : CC,background:filled ? CN : 'transparent',border:filled ? 'none' : '1.5px solid ' + CC}}>{label}</span>;
+const cmpBullet = (text, key) => <div key={key} style={{display:'flex',gap:8,fontSize:14,lineHeight:1.45,color:'var(--navy)'}}><span style={{flex:'0 0 auto',width:8,height:8,borderRadius:4,background:CC,marginTop:6}}/><span>{text}</span></div>;
+const cmpTitle = (text, years) => <div style={{display:'flex',alignItems:'baseline',gap:10,flexWrap:'wrap',margin:'6px 0 2px'}}><b style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:22,color:'var(--navy)'}}>{text}</b><span style={{fontSize:13,fontWeight:800,color:CC}}>{years[0]}–{cmpUpTo(years[1])}</span></div>;
 function EraWorlds() {
   const [era, setEra] = useState('baroque');
-  const E = cmpEra(era), W = CMP_WORLD[era];
+  const P = CMP_PERIODS[era];
   const rows = [['where', t('Where you heard music', '음악을 듣던 곳')], ['job', t('Who paid the composer', '작곡가에게 돈을 준 사람')], ['keys', t('The keyboard', '건반 악기')], ['world', t('Meanwhile in the world', '그 무렵 세상에서는')]];
-  const who = CMP.filter(c => cmpEraSpan(c).includes(era));
+  const who = CMP.filter(c => cmpEraSpan(c).includes(era)).sort((a, b) => a.born - b.born);
+  const moves = CMP_MOVES.filter(m => CMP.some(c => (c.moves || []).includes(m.id) && cmpEraSpan(c).includes(era)) && m.years[0] < P.years[1] && m.years[1] > P.years[0]);
   return (
     <div className="try-box" style={actBox}>
       <div style={actTitle}>{t('Step into each era', '시대 속으로 들어가 보기')}</div>
-      <div style={actNote}>{t('Composers wrote for the world they lived in -- the rooms, the instruments, the people who paid them. Pick an era and look around.', '작곡가는 자기가 살던 세상을 위해 곡을 썼어요 -- 공간, 악기, 돈을 내던 사람들까지. 시대를 골라 둘러보세요.')}</div>
-      <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:8}}>
-        {CMP_ERA_IDS.map(id => { const e = cmpEra(id), on = id === era; return <button key={id} className="chip" onClick={() => setEra(id)} style={{padding:'5px 12px',fontSize:13.5,fontWeight:800,borderColor:e.color,background:on ? e.color : '#fff',color:on ? '#fff' : e.color}}>{e.short} <span style={{fontWeight:600,opacity:0.85}}>{e.years}</span></button>; })}
-      </div>
+      <div style={actNote}>{t('Composers wrote for the world they lived in -- the rooms, the instruments, the people who paid them. Pick a period and look around.', '작곡가는 자기가 살던 세상을 위해 곡을 썼어요 -- 공간, 악기, 돈을 내던 사람들까지. 시대를 골라 둘러보세요.')}</div>
+      <div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:6}}>{CMP_ERA_IDS.map(id => cmpChip(id === era, cmpEra(id).short, () => setEra(id), id))}</div>
+      {cmpTitle(cmpEraTag(era), P.years)}
       <EraScene id={era}/>
-      <div key={era} style={{display:'grid',gap:8}}>
-        {rows.map(([k, label], i) => <div key={k} style={{display:'flex',gap:10,alignItems:'flex-start',animation:'voxSlideIn 0.26s ' + (i * 0.05) + 's ease both'}}>
+      <div key={era} style={{display:'grid',gap:10}}>
+        <div style={{display:'flex',gap:10,alignItems:'flex-start',animation:'voxSlideIn 0.26s ease both'}}><CmpRowIcon k="sound"/><div style={{fontSize:14,lineHeight:1.5,color:'var(--navy)'}}><b style={{color:CC}}>{t('What it sounds like', '어떤 소리일까')}</b>{P.sound.map((s, i) => <div key={i}>· {cmpT(s)}</div>)}</div></div>
+        {rows.map(([k, label], i) => <div key={k} style={{display:'flex',gap:10,alignItems:'flex-start',animation:'voxSlideIn 0.26s ' + ((i + 1) * 0.05) + 's ease both'}}>
           <CmpRowIcon k={k}/>
-          <div style={{fontSize:14,lineHeight:1.5,color:'var(--navy)'}}><b style={{color:E.color}}>{label}</b><br/>{cmpT(W[k])}</div>
+          <div style={{fontSize:14,lineHeight:1.5,color:'var(--navy)'}}><b style={{color:CC}}>{label}</b><br/>{cmpT(P[k])}</div>
         </div>)}
       </div>
-      <div style={{marginTop:10,paddingTop:10,borderTop:'1px dashed var(--navy-line)'}}>
-        <div style={{fontSize:12,fontWeight:800,color:'var(--navy-soft)',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:6}}>{t('Composers of this era', '이 시대의 작곡가')}</div>
-        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>{who.map(c => <span key={c.id} style={{display:'inline-flex',alignItems:'center',gap:6,border:'1.5px solid ' + E.color + '55',background:E.color + '12',borderRadius:22,padding:'3px 10px 3px 3px',fontSize:13,fontWeight:800,color:'var(--navy)'}}><CmpEmblem id={c.id} size={26}/>{cmpT(c.sur)} <span style={{fontWeight:600,color:'var(--navy-soft)',fontSize:11.5}}>{cmpYears(c)}</span></span>)}</div>
+      {moves.length > 0 && <><div style={cmpHead}>{t('Movements in this period -- see the next step', '이 시대의 사조 -- 다음 단계에서 자세히')}</div><div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{moves.map(m => cmpTag(cmpT(m.name), m.id))}</div></>}
+      <div style={cmpHead}>{t('Composers -- tap one to hear them', '작곡가 -- 눌러서 들어 보세요')}</div>
+      <div style={{display:'flex',gap:7,flexWrap:'wrap'}}>{who.map(c => { const h = cmpFirstSound(c), ok = cmpHasSound(h); return <button key={c.id} onClick={() => ok && cmpPlay(h)} style={{display:'inline-flex',alignItems:'center',gap:6,border:'1.5px solid var(--navy-line)',background:'#fff',borderRadius:22,padding:'3px 10px 3px 3px',fontSize:13,fontWeight:800,color:'var(--navy)',cursor:ok ? 'pointer' : 'default',fontFamily:'inherit'}}><CmpEmblem id={c.id} size={28}/>{cmpT(c.sur)} <span style={{fontWeight:600,color:'var(--navy-soft)',fontSize:11.5}}>{cmpYears(c)}</span>{ok && <span style={{color:CC}}>♪</span>}</button>; })}</div>
+    </div>
+  );
+}
+
+// ── 2. Movements and schools: Nationalism, Impressionism and more ──
+const CMP_MOVE_SHORT = { vienna1: ['First Viennese School', '제1 빈 악파'], nationalism: ['Nationalism', '국민악파'], lateromantic: ['Late Romantic', '후기 낭만주의'], impressionism: ['Impressionism', '인상주의'], american: ['Ragtime & jazz', '래그타임과 재즈'], vienna2: ['Twelve-tone', '12음 기법'], neoclassicism: ['Neoclassicism', '신고전주의'], experimental: ['Experimental', '실험 음악'], minimalism: ['Minimalism', '미니멀리즘'], film: ['Film & games', '영화와 게임'], australian: ['Australian voices', '호주의 목소리'] };
+const CMP_MV0 = 1750, CMP_MV1 = 2026;
+const cmpMvPct = (y) => ((Math.max(CMP_MV0, Math.min(CMP_MV1, y)) - CMP_MV0) / (CMP_MV1 - CMP_MV0) * 100);
+function MovementMap() {
+  const [sel, setSel] = useState('nationalism');
+  const M = cmpMove(sel), who = CMP.filter(c => (c.moves || []).includes(sel)).sort((a, b) => a.born - b.born);
+  const periods = CMP_ERA_IDS.filter(id => { const p = CMP_PERIODS[id].years; return M.years[0] < p[1] && M.years[1] > p[0]; });
+  // a real tune if any composer of the movement has one, otherwise a made-up sketch in their style
+  const soundOf = who.find(c => (CMP_HEAR[c.id] || []).some(h => h.kind === 'tune' && h.v)) || who.find(c => cmpHasSound(cmpFirstSound(c))), sound = soundOf && cmpFirstSound(soundOf);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>{t('Movements: Nationalism, Impressionism and more', '사조: 국민악파, 인상주의, 그리고 더')}</div>
+      <div style={actNote}>{t('Inside each period, groups of composers shared a big idea -- a movement. Each bar shows when a movement was strongest. Tap one.', '각 시대 안에서 같은 큰 생각을 나눈 작곡가 무리가 있었어요 -- 이것이 사조예요. 막대는 그 사조가 가장 활발했던 때예요. 하나를 눌러 보세요.')}</div>
+      <div style={{position:'relative',marginBottom:4}}>
+        <div style={{marginBottom:4}}><CmpEraRuler y0={CMP_MV0} y1={CMP_MV1} hot={periods}/></div>
+        {CMP_MOVES.map(m => {
+          const on = m.id === sel, a = cmpMvPct(m.years[0]), b = cmpMvPct(m.years[1]), right = (100 - b) > a;
+          return <button key={m.id} onClick={() => setSel(m.id)} aria-pressed={on} style={{display:'block',position:'relative',width:'100%',height:26,border:'none',background:'transparent',padding:0,cursor:'pointer',fontFamily:'inherit'}}>
+            <span style={{position:'absolute',top:6,height:14,left:a + '%',width:(b - a) + '%',borderRadius:7,border:'1.5px solid ' + (on ? CC : CN),background:on ? CC : '#fff',boxSizing:'border-box'}}/>
+            <span style={{position:'absolute',top:0,lineHeight:'26px',fontSize:12,fontWeight:on ? 900 : 700,whiteSpace:'nowrap',color:on ? CC : 'var(--navy)',...(right ? { left: 'calc(' + b + '% + 6px)' } : { right: 'calc(' + (100 - a) + '% + 6px)' })}}>{cmpT(CMP_MOVE_SHORT[m.id])}</span>
+          </button>;
+        })}
+        <div style={{position:'relative',height:16,fontSize:10.5,fontWeight:800,color:'var(--muted)',borderTop:'1.5px solid ' + CN,marginTop:4}}>{[1800, 1850, 1900, 1950, 2000].map(y => <span key={y} style={{position:'absolute',left:cmpMvPct(y) + '%',transform:'translateX(-50%)',top:1}}>{y}</span>)}</div>
+      </div>
+      <div key={sel} style={{borderTop:'1.5px solid var(--navy-line)',marginTop:10,paddingTop:8,animation:'voxBlockIn 0.28s ease both'}}>
+        {cmpTitle(cmpT(M.name), M.years)}
+        <div style={{display:'flex',gap:5,flexWrap:'wrap',margin:'4px 0 8px'}}>{periods.map(id => cmpTag(cmpEraTag(id), id, true))}</div>
+        <div style={{fontSize:14.5,lineHeight:1.5,color:'var(--navy)'}}>{cmpT(M.what)}</div>
+        <div style={cmpHead}>{t('Listen for', '이런 소리를 들어 보세요')}</div>
+        <div style={{display:'grid',gap:4}}>{M.listen.map((l, i) => cmpBullet(cmpT(l), i))}</div>
+        <div style={{background:'var(--bg)',borderLeft:'3px solid ' + CC,borderRadius:6,padding:'8px 10px',marginTop:12,fontSize:14,lineHeight:1.5,color:'var(--navy)'}}><b style={{color:CC}}>{t('Why it happened: ', '왜 생겨났을까: ')}</b>{cmpT(M.why)}</div>
+        <div style={cmpHead}>{t('Composers', '작곡가')}</div>
+        <div style={{display:'flex',gap:10,flexWrap:'wrap',alignItems:'center'}}>{who.map(c => <span key={c.id} style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:13,fontWeight:800,color:'var(--navy)'}}><CmpEmblem id={c.id} size={32}/><span>{cmpT(c.sur)}<br/><span style={{fontWeight:600,fontSize:11,color:'var(--navy-soft)'}}>{cmpYears(c)}</span></span></span>)}</div>
+        {sound && <button className="primary-btn" style={{width:'auto',padding:'7px 14px',fontSize:13.5,marginTop:12,textAlign:'left'}} onClick={() => cmpPlay(sound)}>♪ {sound.kind === 'tune' ? cmpT(sound.title) + ' -- ' + cmpT(soundOf.sur) : t('In the style of ' + cmpT(soundOf.sur) + ' (made up for this app)', cmpT(soundOf.sur) + ' 스타일로 (이 앱에서 만든 곡)')}</button>}
       </div>
     </div>
   );
 }
 
-// ── 2. Who lived when? A time machine across 1660-2020 ──
-const CMP_Y0 = 1660, CMP_Y1 = 2020;
+// ── 3. Who lived when? A time machine, 1500 to today ──
+const CMP_Y0 = 1500, CMP_Y1 = 2026;
 const cmpPct = (y) => ((y - CMP_Y0) / (CMP_Y1 - CMP_Y0) * 100) + '%';
 function ComposerTimeMachine() {
   const [year, setYear] = useState(1781);
   const [run, setRun] = useState(false);
+  const [only, setOnly] = useState('all');
   const timer = useRef(null);
   useEffect(() => () => clearInterval(timer.current), []);
   function travel() {
     if (run) { clearInterval(timer.current); setRun(false); return; }
     let y = year >= CMP_Y1 - 1 ? CMP_Y0 : year; setYear(y); setRun(true);
-    timer.current = setInterval(() => { y += 2; if (y >= CMP_Y1) { y = CMP_Y1; clearInterval(timer.current); setRun(false); } setYear(y); }, 45);
+    timer.current = setInterval(() => { y += 3; if (y >= CMP_Y1) { y = CMP_Y1; clearInterval(timer.current); setRun(false); } setYear(y); }, 45);
   }
-  const era = cmpEraOfYear(year), E = cmpEra(era);
-  const rows = CMP.slice().sort((a, b) => a.born - b.born);
-  const alive = rows.filter(c => c.born <= year && year <= c.died);
+  function jump(y) { clearInterval(timer.current); setRun(false); setYear(y); }
+  const era = cmpEraOfYear(year);
+  const rows = CMP.filter(c => only === 'all' || cmpEraSpan(c).includes(only)).sort((a, b) => a.born - b.born);
+  const alive = CMP.filter(c => c.born <= year && year <= cmpDied(c));
   const moment = CMP_MOMENTS.find(m => m.y === year);
-  const bands = [['baroque', CMP_Y0, 1750], ['classical', 1750, 1820], ['romantic', 1820, 1900], ['modern', 1900, CMP_Y1]];
-  const LBL = 86;
+  const LBL = 90;
   return (
     <div className="try-box" style={actBox}>
       <div style={actTitle}>{t('Who lived when?', '누가 언제 살았을까?')}</div>
       <div style={actNote}>{t('Each bar is one composer’s life. Slide the time machine to any year and see who was alive -- and how old they were.', '막대 하나가 작곡가 한 사람의 일생이에요. 타임머신을 아무 해로나 옮겨서 누가 살아 있었는지, 몇 살이었는지 보세요.')}</div>
       <div style={{display:'flex',alignItems:'center',gap:12,flexWrap:'wrap',margin:'2px 0 6px'}}>
-        <span style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:40,fontWeight:900,color:E.color,lineHeight:1,minWidth:100}}>{year}</span>
-        <span style={{fontSize:13,fontWeight:900,color:'#fff',background:E.color,borderRadius:6,padding:'3px 9px'}}>{E.name}</span>
+        <span style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:40,fontWeight:900,color:'var(--navy)',lineHeight:1,minWidth:100}}>{year}</span>
+        {cmpTag(cmpEraTag(era), 'era', true)}
         <span style={{fontSize:13,color:'var(--navy-soft)',fontWeight:700}}>{t(alive.length + ' of these composers alive', '이 작곡가 중 ' + alive.length + '명이 살아 있어요')}</span>
         <button className="primary-btn" style={{width:'auto',padding:'7px 16px',fontSize:14,marginLeft:'auto'}} onClick={travel}>{run ? t('Stop', '멈추기') : t('▶ Travel through time', '▶ 시간 여행')}</button>
       </div>
-      <input type="range" min={CMP_Y0} max={CMP_Y1} value={year} onChange={e => { clearInterval(timer.current); setRun(false); setYear(+e.target.value); }} style={{width:'100%',accentColor:E.color,margin:'2px 0 8px'}} aria-label={t('Year', '연도')}/>
+      <input type="range" min={CMP_Y0} max={CMP_Y1} value={year} onChange={e => jump(+e.target.value)} style={{width:'100%',accentColor:CC,margin:'2px 0 8px'}} aria-label={t('Year', '연도')}/>
       <div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:8}}>
-        {CMP_MOMENTS.map(m => <button key={m.y} className="chip" style={{padding:'2px 9px',fontSize:12.5,fontWeight:800,background:m.y === year ? 'var(--navy)' : undefined,color:m.y === year ? '#fff' : undefined}} onClick={() => { clearInterval(timer.current); setRun(false); setYear(m.y); }}>{m.y}</button>)}
+        {CMP_MOMENTS.map(m => <button key={m.y} className={'chip' + (m.y === year ? ' active' : '')} style={{padding:'2px 9px',fontSize:12.5,fontWeight:800}} onClick={() => jump(m.y)}>{m.y}</button>)}
       </div>
-      <div style={{minHeight:42,fontSize:14,lineHeight:1.45,color:'var(--navy)',background:moment ? '#fdf3dc' : 'transparent',borderRadius:8,padding:moment ? '7px 10px' : 0,marginBottom:8,transition:'background .2s'}}>{moment ? <><b style={{color:CMP_CORAL}}>{moment.y}: </b>{t(moment.en, moment.ko)}</> : <span style={{color:'var(--navy-soft)',fontSize:13}}>{t('Tap a year above for a story from that moment.', '위의 연도를 누르면 그때 있었던 이야기가 나와요.')}</span>}</div>
+      <div style={{minHeight:42,fontSize:14,lineHeight:1.45,color:'var(--navy)',background:moment ? 'var(--bg)' : 'transparent',borderLeft:'3px solid ' + (moment ? CC : 'transparent'),borderRadius:6,padding:'7px 10px',marginBottom:10}}>{moment ? <><b style={{color:CC}}>{moment.y}: </b>{t(moment.en, moment.ko)}</> : <span style={{color:'var(--navy-soft)',fontSize:13}}>{t('Tap a year above for a story from that moment.', '위의 연도를 누르면 그때 있었던 이야기가 나와요.')}</span>}</div>
+      <div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:8}}>{cmpChip(only === 'all', t('All', '전체') + ' ' + CMP.length, () => setOnly('all'), 'all')}{CMP_ERA_IDS.map(id => cmpChip(only === id, cmpEra(id).short, () => setOnly(id), id))}</div>
       <div style={{position:'relative'}}>
-        <div style={{display:'flex',marginLeft:LBL,height:18,borderRadius:'6px 6px 0 0',overflow:'hidden'}}>
-          {bands.map(([id, a, b]) => <div key={id} style={{flex:b - a,background:cmpEra(id).color,color:'#fff',fontSize:10,fontWeight:900,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden',whiteSpace:'nowrap'}}>{cmpEra(id).short}</div>)}
-        </div>
-        {rows.map(c => {
-          const on = c.born <= year && year <= c.died, col = cmpEra(c.era).color, age = year - c.born;
-          return <div key={c.id} style={{display:'flex',alignItems:'center',height:21}}>
-            <span style={{width:LBL,flex:'0 0 auto',fontSize:12,fontWeight:on ? 900 : 600,color:on ? 'var(--navy)' : 'var(--navy-soft)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',paddingRight:6,textAlign:'right'}}>{cmpT(c.sur)}</span>
-            <div style={{position:'relative',flex:1,height:'100%'}}>
-              {bands.map(([id, a, b]) => <div key={id} style={{position:'absolute',top:0,bottom:0,left:cmpPct(a),width:'calc(' + cmpPct(b) + ' - ' + cmpPct(a) + ')',background:cmpEra(id).color,opacity:0.07}}/>)}
-              <div style={{position:'absolute',top:5,height:11,left:cmpPct(c.born),width:'calc(' + cmpPct(c.died) + ' - ' + cmpPct(c.born) + ')',background:col,borderRadius:6,opacity:on ? 1 : 0.28,transition:'opacity .15s'}}/>
-              <div style={{position:'absolute',top:0,bottom:0,left:cmpPct(year),width:2,marginLeft:-1,background:CMP_GOLD}}/>
-              {on && <span style={{position:'absolute',top:2,left:cmpPct(year),transform:'translateX(-50%)',fontSize:10.5,fontWeight:900,color:'#fff',background:age === 0 ? CMP_CORAL : 'var(--navy)',borderRadius:8,padding:'1px 5px',lineHeight:'14px',whiteSpace:'nowrap'}}>{age === 0 ? t('born!', '탄생!') : age}</span>}
+        <div style={{marginLeft:LBL}}><CmpEraRuler y0={CMP_Y0} y1={CMP_Y1} active={era}/></div>
+        {rows.map((c, ri) => {
+          const on = c.born <= year && year <= cmpDied(c), age = year - c.born;
+          return <div key={c.id} style={{display:'flex',alignItems:'center',height:19}}>
+            <span style={{width:LBL,flex:'0 0 auto',fontSize:11.5,fontWeight:on ? 900 : 600,color:on ? 'var(--navy)' : 'var(--navy-soft)',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',paddingRight:6,textAlign:'right'}}>{cmpT(c.sur)}</span>
+            <div style={{position:'relative',flex:1,height:'100%',background:ri % 2 ? 'rgba(38,41,107,0.03)' : 'transparent'}}>
+              <div style={{position:'absolute',top:5,height:9,left:cmpPct(c.born),width:'calc(' + cmpPct(cmpDied(c)) + ' - ' + cmpPct(c.born) + ')',background:on ? CN : CL,borderRadius:5,transition:'background .15s'}}/>
+              <div style={{position:'absolute',top:0,bottom:0,left:cmpPct(year),width:2,marginLeft:-1,background:CC}}/>
+              {on && <span style={{position:'absolute',top:2,left:cmpPct(year),transform:'translateX(-50%)',fontSize:10,fontWeight:900,color:'#fff',background:age === 0 ? CC : CN,border:'1.5px solid #fff',borderRadius:8,padding:'0 5px',lineHeight:'12px',whiteSpace:'nowrap'}}>{age === 0 ? t('born!', '탄생!') : age}</span>}
             </div>
           </div>;
         })}
-        <div style={{display:'flex',marginLeft:LBL,position:'relative',height:16,fontSize:10.5,fontWeight:800,color:'var(--muted)'}}>
-          {[1700, 1800, 1900, 2000].map(y => <span key={y} style={{position:'absolute',left:cmpPct(y),transform:'translateX(-50%)'}}>{y}</span>)}
+        <div style={{marginLeft:LBL,position:'relative',height:16,fontSize:10.5,fontWeight:800,color:'var(--muted)',borderTop:'1.5px solid ' + CN}}>
+          {[1600, 1700, 1800, 1900, 2000].map(y => <span key={y} style={{position:'absolute',left:cmpPct(y),transform:'translateX(-50%)',top:1}}>{y}</span>)}
         </div>
       </div>
-      <div style={{fontSize:12,color:'var(--navy-soft)',marginTop:4}}>{t('The number on a bar is the age that composer turns in that year.', '막대 위 숫자는 그해에 그 작곡가가 맞는 나이예요.')}</div>
+      <div style={{fontSize:12,color:'var(--navy-soft)',marginTop:4}}>{t('The number on a bar is the age that composer turns in that year. Bars that reach the right edge belong to composers who are still alive.', '막대 위 숫자는 그해에 그 작곡가가 맞는 나이예요. 오른쪽 끝까지 닿은 막대는 지금도 살아 있는 작곡가예요.')}</div>
     </div>
   );
 }
 
-// ── 3. Meet the composers: one card each ──
+// ── 4. Meet the composers: one card each ──
 function CmpHearButtons({ c, compact }) {
   const list = CMP_HEAR[c.id] || [];
+  const [count, setCount] = useState(0);
+  const timer = useRef(null);
+  useEffect(() => () => clearInterval(timer.current), []);
+  useEffect(() => { clearInterval(timer.current); setCount(0); }, [c.id]);
   if (!list.length) return <div style={{fontSize:12.5,color:'var(--navy-soft)'}}>{t('No sound sample here -- listen to a real recording of their music.', '여기에는 소리 예시가 없어요 -- 실제 음반으로 들어 보세요.')}</div>;
+  function silence(h) { stopClicks(); clearInterval(timer.current); let n = h.secs; setCount(n); timer.current = setInterval(() => { n -= 1; setCount(n); if (n <= 0) clearInterval(timer.current); }, 1000); }
   return <div style={{display:'grid',gap:6}}>
-    {list.map((h, i) => <div key={i}>
-      <button className={h.kind === 'tune' ? 'primary-btn' : 'ghost-btn'} style={{width:'auto',padding:'7px 14px',fontSize:13.5,textAlign:'left'}} onClick={() => cmpPlay(h)}>♪ {h.kind === 'tune' ? cmpT(h.title) : t('In the style of ' + cmpT(c.sur), cmpT(c.sur) + ' 스타일로')}</button>
-      {!compact && <div style={{fontSize:11.5,color:'var(--navy-soft)',marginTop:3}}>{h.kind === 'tune' ? t('The real opening, simplified for one piano.', '실제 곡의 시작 부분을 피아노 한 대로 간단하게 옮겼어요.') : t('Not a real piece: a few bars made up for this app to show the fingerprint.', '실제 곡이 아니에요: 특징을 보여 주려고 이 앱에서 만든 몇 마디예요.')}</div>}
-    </div>)}
+    {list.map((h, i) => h.kind === 'silence'
+      ? <div key={i}><button className="ghost-btn" style={{width:'auto',padding:'7px 14px',fontSize:13.5}} onClick={() => silence(h)}>{count > 0 ? t('Listen to the room… ' + count, '주변 소리를 들어 보세요… ' + count) : t('⏱ Listen to ' + h.secs + ' seconds of “silence”', '⏱ ' + h.secs + '초 동안 “침묵” 듣기')}</button>
+          {!compact && <div style={{fontSize:11.5,color:'var(--navy-soft)',marginTop:3}}>{t('No notes on purpose: in 4′33″ the music is every sound around you.', '일부러 음이 없어요: “4분 33초”에서는 주변의 모든 소리가 음악이에요.')}</div>}</div>
+      : <div key={i}>
+        <button className={h.kind === 'tune' ? 'primary-btn' : 'ghost-btn'} style={{width:'auto',padding:'7px 14px',fontSize:13.5,textAlign:'left'}} onClick={() => cmpPlay(h)}>♪ {h.kind === 'tune' ? cmpT(h.title) : t('In the style of ' + cmpT(c.sur), cmpT(c.sur) + ' 스타일로')}</button>
+        {!compact && <div style={{fontSize:11.5,color:'var(--navy-soft)',marginTop:3}}>{h.kind === 'tune' ? t('The real opening, simplified for one piano.', '실제 곡의 시작 부분을 피아노 한 대로 간단하게 옮겼어요.') : t('Not a real piece: a few bars made up for this app to show the fingerprint.', '실제 곡이 아니에요: 특징을 보여 주려고 이 앱에서 만든 몇 마디예요.')}</div>}
+      </div>)}
   </div>;
 }
 function ComposerCard({ c }) {
-  const E = cmpEra(c.era);
-  const head = { fontSize:11.5, fontWeight:900, color:E.color, textTransform:'uppercase', letterSpacing:'0.07em', margin:'10px 0 4px' };
   return (
-    <div key={c.id} style={{border:'1.5px solid ' + E.color + '66',borderRadius:16,background:'#fff',padding:'12px 12px 14px',boxShadow:'0 6px 18px rgba(38,41,107,0.06)',animation:'voxBlockIn 0.3s ease both'}}>
+    <div key={c.id} style={{border:'1.5px solid var(--navy-line)',borderRadius:16,background:'#fff',padding:'12px 12px 14px',boxShadow:'0 6px 18px rgba(38,41,107,0.06)',animation:'voxBlockIn 0.3s ease both'}}>
       <div style={{display:'flex',gap:12,alignItems:'center'}}>
         <CmpEmblem id={c.id} size={76}/>
         <div style={{minWidth:0}}>
           <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:22,fontWeight:900,color:'var(--navy)',lineHeight:1.15}}>{cmpT(c.name)}</div>
           <div style={{fontSize:13,color:'var(--navy-soft)',fontWeight:700,margin:'3px 0 5px'}}>{cmpYears(c)} · {cmpT(c.country)}</div>
-          <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>{cmpEraSpan(c).map((id, i) => <React.Fragment key={id}>{i > 0 && <span style={{color:'var(--navy-soft)',fontWeight:900}}>→</span>}<span style={{fontSize:11.5,fontWeight:900,color:'#fff',background:cmpEra(id).color,borderRadius:5,padding:'1px 7px'}}>{cmpEra(id).name}</span></React.Fragment>)}</div>
+          <div style={{display:'flex',gap:4,flexWrap:'wrap',alignItems:'center'}}>
+            {cmpEraSpan(c).map((id, i) => <React.Fragment key={id}>{i > 0 && <span style={{color:'var(--navy-soft)',fontWeight:900}}>→</span>}{cmpTag(cmpEraTag(id), id, true)}</React.Fragment>)}
+            {cmpMoves(c).map(m => cmpTag(cmpT(CMP_MOVE_SHORT[m.id]), m.id))}
+          </div>
         </div>
       </div>
-      <div style={head}>{t('Famous for', '대표곡')}</div>
-      <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{c.known.map((k, i) => <span key={i} style={{fontSize:13,fontWeight:700,color:'var(--navy)',background:E.color + '12',border:'1px solid ' + E.color + '40',borderRadius:14,padding:'2px 9px'}}>{cmpT(k)}</span>)}</div>
-      <div style={head}>{t('Their musical fingerprint', '음악의 지문')}</div>
-      <div style={{display:'grid',gap:4}}>{c.finger.map((f, i) => <div key={i} style={{display:'flex',gap:8,fontSize:14,lineHeight:1.45,color:'var(--navy)'}}><span style={{flex:'0 0 auto',width:8,height:8,borderRadius:4,background:CMP_CORAL,marginTop:6}}/>{cmpT(f)}</div>)}</div>
-      <div style={{background:'#fdf3dc',borderRadius:10,padding:'8px 10px',marginTop:10,fontSize:14,lineHeight:1.5,color:'var(--navy)'}}><b style={{color:CMP_CORAL}}>{t('Fun fact: ', '재미있는 사실: ')}</b>{cmpT(c.fun)}</div>
-      <div style={{fontSize:13.5,color:'var(--navy)',margin:'8px 0 10px',lineHeight:1.45}}>{cmpT(c.try).split(/(Play:|Listen:|쳐 보기:|들어 보기:)/).map((s, i) => i % 2 ? <b key={i} style={{color:E.color}}>{s}</b> : s)}</div>
+      <div style={cmpHead}>{t('Famous for', '대표곡')}</div>
+      <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{c.known.map((k, i) => <span key={i} style={{fontSize:13,fontWeight:700,color:'var(--navy)',background:'var(--bg)',border:'1px solid var(--navy-line)',borderRadius:14,padding:'2px 9px'}}>{cmpT(k)}</span>)}</div>
+      <div style={cmpHead}>{t('Their musical fingerprint', '음악의 지문')}</div>
+      <div style={{display:'grid',gap:4}}>{c.finger.map((f, i) => cmpBullet(cmpT(f), i))}</div>
+      <div style={{background:'var(--bg)',borderLeft:'3px solid ' + CC,borderRadius:6,padding:'8px 10px',marginTop:12,fontSize:14,lineHeight:1.5,color:'var(--navy)'}}><b style={{color:CC}}>{t('Fun fact: ', '재미있는 사실: ')}</b>{cmpT(c.fun)}</div>
+      <div style={{fontSize:13.5,color:'var(--navy)',margin:'10px 0',lineHeight:1.45}}>{cmpT(c.try).split(/(Play:|Listen:|Try:|쳐 보기:|들어 보기:|해 보기:)/).map((s, i) => i % 2 ? <b key={i} style={{color:CC}}>{s}</b> : s)}</div>
       <CmpHearButtons c={c}/>
     </div>
   );
 }
 function ComposerCards() {
-  const [era, setEra] = useState('all');
+  const [era, setEra] = useState('baroque');
   const [sel, setSel] = useState('bach');
-  const list = CMP.filter(c => era === 'all' || cmpEraSpan(c).includes(era));
+  const list = CMP.filter(c => era === 'all' || cmpEraSpan(c).includes(era)).sort((a, b) => a.born - b.born);
   const c = cmpById(sel);
+  function pickEra(id) { setEra(id); if (id !== 'all' && !cmpEraSpan(c).includes(id)) setSel(CMP.filter(x => cmpEraSpan(x).includes(id)).sort((a, b) => a.born - b.born)[0].id); }
   return (
     <div className="try-box" style={actBox}>
       <div style={actTitle}>{t('Meet the composers', '작곡가를 만나요')}</div>
-      <div style={actNote}>{t('Every composer has a musical fingerprint -- things you can hear that make their music their own. Tap a picture to open their card.', '작곡가마다 음악의 지문이 있어요 -- 그 사람의 음악만의 들리는 특징이요. 그림을 눌러 카드를 열어 보세요.')}</div>
-      <div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:8}}>
-        <button className={'chip' + (era === 'all' ? ' active' : '')} style={{padding:'4px 11px',fontSize:13}} onClick={() => setEra('all')}>{t('All', '전체')}</button>
-        {CMP_ERA_IDS.map(id => { const e = cmpEra(id), on = era === id; return <button key={id} className="chip" style={{padding:'4px 11px',fontSize:13,fontWeight:800,borderColor:e.color,background:on ? e.color : '#fff',color:on ? '#fff' : e.color}} onClick={() => { setEra(id); if (!cmpEraSpan(c).includes(id)) setSel(CMP.find(x => cmpEraSpan(x).includes(id)).id); }}>{e.short}</button>; })}
+      <div style={actNote}>{t('Every composer has a musical fingerprint -- things you can hear that make their music their own. Pick a period, then tap a picture to open the card.', '작곡가마다 음악의 지문이 있어요 -- 그 사람의 음악만의 들리는 특징이요. 시대를 고르고, 그림을 눌러 카드를 열어 보세요.')}</div>
+      <div style={{display:'flex',gap:5,flexWrap:'wrap',marginBottom:10}}>
+        {CMP_ERA_IDS.map(id => cmpChip(era === id, cmpEra(id).short, () => pickEra(id), id))}
+        {cmpChip(era === 'all', t('All ', '전체 ') + CMP.length, () => pickEra('all'), 'all')}
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(62px, 1fr))',gap:6,marginBottom:12}}>
-        {list.map(x => <button key={x.id} onClick={() => setSel(x.id)} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,border:'none',background:'transparent',cursor:'pointer',padding:'3px 0',fontFamily:'inherit'}}>
-          <span style={{borderRadius:14,boxShadow:sel === x.id ? '0 0 0 3px ' + CMP_GOLD : 'none',transform:sel === x.id ? 'translateY(-2px)' : 'none',transition:'all .15s'}}><CmpEmblem id={x.id} size={46}/></span>
-          <span style={{fontSize:11,fontWeight:sel === x.id ? 900 : 700,color:'var(--navy)',lineHeight:1.15,textAlign:'center'}}>{cmpT(x.sur)}</span>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(70px, 1fr))',gap:6,marginBottom:12}}>
+        {list.map(x => <button key={x.id} onClick={() => setSel(x.id)} aria-pressed={sel === x.id} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,border:'none',background:'transparent',cursor:'pointer',padding:'3px 0',fontFamily:'inherit'}}>
+          <span style={{borderRadius:14,boxShadow:sel === x.id ? '0 0 0 2.5px ' + CC : 'none',transform:sel === x.id ? 'translateY(-2px)' : 'none',transition:'all .15s'}}><CmpEmblem id={x.id} size={46}/></span>
+          <span style={{fontSize:10.5,fontWeight:sel === x.id ? 900 : 700,color:sel === x.id ? CC : 'var(--navy)',lineHeight:1.15,textAlign:'center'}}>{cmpT(x.sur)}</span>
         </button>)}
       </div>
       <ComposerCard c={c}/>
@@ -15269,10 +15735,14 @@ function ComposerCards() {
   );
 }
 
-// ── 4. Who am I? Clues one at a time: the fewer you need, the more points ──
+// ── 5. Who am I? Clues one at a time: the fewer you need, the more points ──
 function cmpClues(c) {
+  const mv = cmpMoves(c).map(m => cmpT(m.name)), mvt = mv.length ? ' (' + mv.join(', ') + ')' : '';
+  const first = c.died
+    ? t('I lived ' + cmpYears(c) + ', in the ' + cmpEraLabel(c) + ' period' + mvt + '. Where: ' + cmpT(c.country) + '.', cmpYears(c) + ', ' + cmpEraLabel(c) + ' 시대' + mvt + '에 살았어요. 어디서: ' + cmpT(c.country) + '.')
+    : t('I was born in ' + c.born + ' and I am still composing today -- ' + cmpEraLabel(c) + ' period' + mvt + '. Where: ' + cmpT(c.country) + '.', c.born + '년에 태어나 지금도 작곡하고 있어요 -- ' + cmpEraLabel(c) + ' 시대' + mvt + '. 어디서: ' + cmpT(c.country) + '.');
   return [
-    t('I lived ' + cmpYears(c) + ', in the ' + cmpEraLabel(c) + ' era. Where: ' + cmpT(c.country) + '.', cmpYears(c) + '년, ' + cmpEraLabel(c) + ' 시대에 살았어요. 어디서: ' + cmpT(c.country) + '.'),
+    first,
     t('My music: ', '내 음악은: ') + cmpT(c.finger[0]).replace(/^./, s => LANG === 'ko' ? s : s.toLowerCase()) + '.',
     cmpT(c.fun),
     t('I am famous for: ', '나의 대표곡: ') + cmpT(c.known[0]) + '.',
@@ -15284,6 +15754,10 @@ function cmpRound(prevId) {
   const rest = shuffle(CMP.filter(x => x.id !== c.id && !same.includes(x))).slice(0, 3 - same.length);
   return { id: c.id, choices: shuffle([c, ...same, ...rest]).map(x => x.id), clues: 1, ans: null };
 }
+function cmpChoiceBtn(id, done, isRight, isWrong, onClick) {
+  const x = cmpById(id);
+  return <button key={id} disabled={done} onClick={onClick} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 8px',borderRadius:12,cursor:done ? 'default' : 'pointer',fontFamily:'inherit',textAlign:'left',fontSize:14,fontWeight:800,color:'var(--navy)',border:'1.5px solid ' + (isRight ? 'var(--good)' : isWrong ? 'var(--bad)' : 'var(--navy-line)'),background:isRight ? '#dcefe7' : isWrong ? '#fbdcd2' : '#fff',opacity:done && !isRight && !isWrong ? 0.55 : 1}}><CmpEmblem id={id} size={34}/>{cmpT(x.sur)}</button>;
+}
 function WhoAmI() {
   const [r, setR] = useState(() => cmpRound());
   const [score, setScore] = useState({ pts: 0, rounds: 0 });
@@ -15294,15 +15768,13 @@ function WhoAmI() {
       <div style={actTitle}>{t('Who am I?', '나는 누구일까요?')}</div>
       <div style={actNote}>{t('A mystery composer gives you clues, one at a time. Guess early for more points: 4 points on the first clue, 1 point on the last.', '수수께끼 작곡가가 단서를 하나씩 줘요. 일찍 맞힐수록 점수가 커요: 첫 단서에 맞히면 4점, 마지막 단서면 1점.')}</div>
       <div style={{display:'grid',gap:6,marginBottom:10}}>
-        {clues.slice(0, done ? 4 : r.clues).map((s, i) => <div key={r.id + i} style={{display:'flex',gap:10,alignItems:'flex-start',background:i % 2 ? '#f5f0e4' : '#fdf3dc',borderRadius:10,padding:'8px 10px',fontSize:14,lineHeight:1.45,color:'var(--navy)',animation:'voxSlideIn 0.26s ease both'}}>
-          <span style={{flex:'0 0 auto',width:22,height:22,borderRadius:11,background:'var(--navy)',color:'#fff',fontSize:12,fontWeight:900,display:'flex',alignItems:'center',justifyContent:'center'}}>{i + 1}</span><span>{s}</span>
+        {clues.slice(0, done ? 4 : r.clues).map((s, i) => <div key={r.id + i} style={{display:'flex',gap:10,alignItems:'flex-start',background:'var(--bg)',borderRadius:10,padding:'8px 10px',fontSize:14,lineHeight:1.45,color:'var(--navy)',animation:'voxSlideIn 0.26s ease both'}}>
+          <span style={{flex:'0 0 auto',width:22,height:22,borderRadius:11,background:i === 3 ? CC : CN,color:'#fff',fontSize:12,fontWeight:900,display:'flex',alignItems:'center',justifyContent:'center'}}>{i + 1}</span><span>{s}</span>
         </div>)}
       </div>
       {!done && r.clues < 4 && <button className="ghost-btn" style={{fontSize:13.5,marginBottom:10}} onClick={() => setR({ ...r, clues: r.clues + 1 })}>{t('Next clue (', '다음 단서 (') + (pts - 1) + t(' points)', '점)')}</button>}
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))',gap:6}}>
-        {r.choices.map(id => { const x = cmpById(id), isRight = done && id === r.id, isWrong = done && id === r.ans && id !== r.id;
-          return <button key={id} disabled={done} onClick={() => answer(id)} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 8px',borderRadius:12,cursor:done ? 'default' : 'pointer',fontFamily:'inherit',textAlign:'left',fontSize:14,fontWeight:800,color:'var(--navy)',border:'1.5px solid ' + (isRight ? 'var(--good)' : isWrong ? 'var(--bad)' : 'var(--navy-line)'),background:isRight ? '#dcefe7' : isWrong ? '#fbdcd2' : '#fff',opacity:done && !isRight && !isWrong ? 0.55 : 1}}>
-            <CmpEmblem id={id} size={34}/>{cmpT(x.sur)}</button>; })}
+        {r.choices.map(id => cmpChoiceBtn(id, done, done && id === r.id, done && id === r.ans && id !== r.id, () => answer(id)))}
       </div>
       <div style={{minHeight:24,marginTop:10,fontSize:14.5}}>
         {done && (right ? <b style={{color:'var(--good)'}}>{t('Yes! It’s ' + cmpT(c.name) + ' -- +' + pts + ' points.', '맞아요! ' + cmpT(c.name) + ' -- +' + pts + '점.')}</b> : <b style={{color:'var(--bad)'}}>{t('It was ' + cmpT(c.name) + '. Read all the clues again above.', '정답은 ' + cmpT(c.name) + '예요. 위의 단서를 다시 읽어 보세요.')}</b>)}
@@ -15316,8 +15788,8 @@ function WhoAmI() {
   );
 }
 
-// ── 5. Name that tune ──
-const CMP_TUNES = Object.keys(CMP_HEAR).flatMap(id => CMP_HEAR[id].filter(h => h.kind === 'tune').map(h => ({ id, h })));
+// ── 6. Name that tune ──
+const CMP_TUNES = Object.keys(CMP_HEAR).flatMap(id => CMP_HEAR[id].filter(h => h.kind === 'tune' && h.v).map(h => ({ id, h })));
 function cmpTuneRound(prev) {
   let k; do { k = Math.floor(Math.random() * CMP_TUNES.length); } while (k === prev);
   const tid = CMP_TUNES[k].id, pool = [...new Set(CMP_TUNES.map(x => x.id))].filter(id => id !== tid);
@@ -15337,24 +15809,22 @@ function NameThatTune() {
     <div className="try-box" style={actBox}>
       <style>{'@keyframes cmpSpin { to { transform: rotate(360deg) } }'}</style>
       <div style={actTitle}>{t('Name that tune', '어떤 곡일까요?')}</div>
-      <div style={actNote}>{t('Press the record to hear the opening of a famous piece. Who wrote it?', '레코드판을 눌러 유명한 곡의 시작 부분을 들어 보세요. 누가 작곡했을까요?')}</div>
+      <div style={actNote}>{t('Press the record to hear the opening of a famous piece. Who wrote it? (' + CMP_TUNES.length + ' tunes)', '레코드판을 눌러 유명한 곡의 시작 부분을 들어 보세요. 누가 작곡했을까요? (' + CMP_TUNES.length + '곡)')}</div>
       <div style={{display:'flex',alignItems:'center',gap:16,flexWrap:'wrap',margin:'4px 0 12px'}}>
         <button onClick={play} aria-label={t('Play', '재생')} style={{border:'none',background:'transparent',padding:0,cursor:'pointer',flex:'0 0 auto'}}>
           <svg width="110" height="110" viewBox="0 0 110 110" style={{display:'block',animation:spin ? 'cmpSpin 1.6s linear infinite' : 'none'}}>
-            <circle cx="55" cy="55" r="52" fill={CMP_INK}/>{[44, 37, 30].map(rr => <circle key={rr} cx="55" cy="55" r={rr} fill="none" stroke="#fefbf3" strokeOpacity="0.18" strokeWidth="1.2"/>)}
-            <circle cx="55" cy="55" r="19" fill={done ? cmpEra(c.era).color : CMP_GOLD}/><circle cx="55" cy="55" r="3" fill={CMP_INK}/><path d="M40 20 A38 38 0 0 1 72 18" fill="none" stroke="#fefbf3" strokeOpacity="0.35" strokeWidth="3" strokeLinecap="round"/>
-            {!spin && <path d="M49 45 L66 55 L49 65 Z" fill="#fefbf3"/>}
+            <circle cx="55" cy="55" r="52" fill={CN}/>{[44, 37, 30].map(rr => <circle key={rr} cx="55" cy="55" r={rr} fill="none" stroke="#fff" strokeOpacity="0.18" strokeWidth="1.2"/>)}
+            <circle cx="55" cy="55" r="19" fill={CC}/><circle cx="55" cy="55" r="3" fill={CN}/><path d="M40 20 A38 38 0 0 1 72 18" fill="none" stroke="#fff" strokeOpacity="0.35" strokeWidth="3" strokeLinecap="round"/>
+            {!spin && <path d="M49 45 L66 55 L49 65 Z" fill="#fff"/>}
           </svg>
         </button>
         <div style={{flex:1,minWidth:180,fontSize:14,color:'var(--navy)',lineHeight:1.5}}>
-          {done ? <><div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:19,fontWeight:900}}>{cmpT(tune.h.title)}</div><div style={{fontWeight:800,color:cmpEra(c.era).color}}>{cmpT(c.name)} · {cmpYears(c)}</div></>
+          {done ? <><div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:19,fontWeight:900}}>{cmpT(tune.h.title)}</div><div style={{fontWeight:800,color:CC}}>{cmpT(c.name)} · {cmpYears(c)}</div></>
             : <span style={{color:'var(--navy-soft)'}}>{spin ? t('Listening…', '듣는 중…') : t('Tap the record to play.', '레코드판을 눌러 재생해요.')}</span>}
         </div>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(150px, 1fr))',gap:6}}>
-        {r.choices.map(id => { const x = cmpById(id), isRight = done && id === tune.id, isWrong = done && id === r.ans && id !== tune.id;
-          return <button key={id} disabled={done} onClick={() => answer(id)} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 8px',borderRadius:12,cursor:done ? 'default' : 'pointer',fontFamily:'inherit',textAlign:'left',fontSize:14,fontWeight:800,color:'var(--navy)',border:'1.5px solid ' + (isRight ? 'var(--good)' : isWrong ? 'var(--bad)' : 'var(--navy-line)'),background:isRight ? '#dcefe7' : isWrong ? '#fbdcd2' : '#fff',opacity:done && !isRight && !isWrong ? 0.55 : 1}}>
-            <CmpEmblem id={id} size={34}/>{cmpT(x.sur)}</button>; })}
+        {r.choices.map(id => cmpChoiceBtn(id, done, done && id === tune.id, done && id === r.ans && id !== tune.id, () => answer(id)))}
       </div>
       <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',marginTop:10}}>
         {done && <b style={{fontSize:14.5,color:r.ans === tune.id ? 'var(--good)' : 'var(--bad)'}}>{r.ans === tune.id ? t('Right!', '맞았어요!') : t('Not this time -- listen again and remember it.', '이번엔 아니에요 -- 다시 듣고 기억해 둬요.')}</b>}
@@ -15365,25 +15835,17 @@ function NameThatTune() {
   );
 }
 
-// ── Hero: a quill writing music on a manuscript page, with its ink pot ──
+// ── Hero (registered in HERO_MAP): drawn in the staff look -- notes on a staff and a quill ──
 function ComposersHero() {
-  const N = CMP_INK, W = CMP_CREAM, G = CMP_GOLD, sw = { stroke: N, strokeWidth: 2, strokeLinejoin: 'round', strokeLinecap: 'round' };
+  const N = CN;
   return (
-    <div style={{borderRadius:16,overflow:'hidden',marginBottom:14}}>
+    <div style={{borderRadius:16,overflow:'hidden',marginBottom:14,border:'1.5px solid var(--navy-line)'}}>
       <svg viewBox="0 0 600 160" width="100%" style={{display:'block'}}>
-        <rect width="600" height="160" fill="#3f9a7e"/>
-        <g transform="rotate(-4 250 80)">
-          <rect x="150" y="22" width="210" height="120" rx="4" fill={W} {...sw}/>
-          {[0, 1].map(s => [0, 1, 2, 3, 4].map(l => <line key={s + '-' + l} x1="166" x2="344" y1={44 + s * 52 + l * 6} y2={44 + s * 52 + l * 6} stroke={N} strokeOpacity="0.45" strokeWidth="1.1"/>))}
-          {[[184, 62], [204, 56], [224, 50], [244, 56], [264, 62], [194, 110], [220, 104], [246, 116]].map(([x, y], i) => <g key={i}><ellipse cx={x} cy={y} rx="5" ry="3.6" transform={`rotate(-20 ${x} ${y})`} fill={i === 2 ? '#e4572e' : N}/><rect x={x + 3.6} y={y - 20} width="1.5" height="20" fill={i === 2 ? '#e4572e' : N}/></g>)}
-          <path d="M290 108 q8 -6 16 0" fill="none" stroke={N} strokeWidth="1.6" strokeLinecap="round"/>
-        </g>
-        <path d="M282 112 C300 70, 360 30, 430 14 C410 40, 372 80, 300 108 Z" fill={G} {...sw}/>
-        <path d="M296 104 L420 22" stroke={N} strokeWidth="1.4" opacity="0.6"/>{[0, 1, 2, 3, 4].map(i => <path key={i} d={`M${318 + i * 20} ${90 - i * 13} l14 -2`} stroke={N} strokeWidth="1.1" opacity="0.5"/>)}
-        <path d="M282 112 L276 124" stroke={N} strokeWidth="2.4" strokeLinecap="round"/>
-        <path d="M452 140 V112 C452 104, 492 104, 492 112 V140 Z" fill={N}/><rect x="462" y="98" width="20" height="10" rx="3" fill={N}/><ellipse cx="472" cy="98" rx="10" ry="3" fill="#3f9a7e" stroke={N} strokeWidth="1.6"/>
-        <path d="M60 128 q8 -14 16 0" fill="none" stroke={W} strokeWidth="2.4" strokeLinecap="round" opacity="0.8"/>
-        {[[90, 40], [110, 64], [520, 52]].map(([x, y], i) => <g key={i} opacity="0.85"><ellipse cx={x} cy={y} rx="5" ry="3.6" transform={`rotate(-20 ${x} ${y})`} fill={W}/><rect x={x + 3.6} y={y - 18} width="1.5" height="18" fill={W}/></g>)}
+        <rect width="600" height="160" fill="#fff"/>
+        {[50, 64, 78, 92, 106].map(y => <line key={y} x1="0" x2="600" y1={y} y2={y} stroke={N} strokeOpacity="0.4" strokeWidth="1.4"/>)}
+        {[[120, 92], [150, 85], [180, 78], [210, 85], [240, 92]].map(([x, y], i) => <g key={i}><ellipse cx={x} cy={y} rx="6" ry="4.4" transform={`rotate(-20 ${x} ${y})`} fill={i === 2 ? CC : N}/><rect x={x + 4.6} y={y - 26} width="1.6" height="26" fill={i === 2 ? CC : N}/></g>)}
+        <path d="M282 112 C300 70, 360 30, 430 14 C410 40, 372 80, 300 108 Z" fill="#fff" stroke={CC} strokeWidth="2.2" strokeLinejoin="round"/><path d="M296 104 L420 22" stroke={CC} strokeWidth="1.3"/><path d="M282 112 L276 124" stroke={N} strokeWidth="2.4" strokeLinecap="round"/>
+        <path d="M452 140 V112 C452 104, 492 104, 492 112 V140 Z" fill={N}/><rect x="462" y="98" width="20" height="10" rx="3" fill={N}/>
       </svg>
     </div>
   );
@@ -15392,8 +15854,9 @@ function ComposersHero() {
 function ComposersLearn({ onStart }) {
   return (
     <Lesson id="composers" title={t('Famous composers', '유명한 작곡가들')} onStart={onStart}
-      intro={t('Who wrote the music you play? Step into each era, see who was alive at the same time, meet the composers and their musical fingerprints -- then test your ears.', '내가 치는 음악은 누가 썼을까요? 각 시대 속으로 들어가 보고, 누가 같은 때에 살았는지 보고, 작곡가와 그들의 음악적 지문을 만나 본 뒤 -- 귀로 맞혀 봐요.')}>
+      intro={t('Who wrote the music you play? Step into each period of music history, discover its movements, see who was alive at the same time, meet ' + CMP.length + ' composers and their musical fingerprints -- then test your ears.', '내가 치는 음악은 누가 썼을까요? 음악사의 각 시대로 들어가 보고, 사조를 알아보고, 누가 같은 때에 살았는지 보고, 작곡가 ' + CMP.length + '명과 그들의 음악적 지문을 만나 본 뒤 -- 귀로 맞혀 봐요.')}>
       <Step title={t('Step into each era', '시대 속으로 들어가 보기')}><EraWorlds/></Step>
+      <Step title={t('Movements', '사조')}><MovementMap/></Step>
       <Step title={t('Who lived when?', '누가 언제 살았을까?')}><ComposerTimeMachine/></Step>
       <Step title={t('Meet the composers', '작곡가를 만나요')}><ComposerCards/></Step>
       <Step title={t('Who am I?', '나는 누구일까요?')}><WhoAmI/></Step>
@@ -15405,20 +15868,31 @@ function ComposersLearn({ onStart }) {
 // ── Drill ──
 const COMPOSERS_LEVELS = [
   { n: 1, label: 'Which era?', kind: 'era', time: 12 },
-  { n: 2, label: 'Who am I?', kind: 'who', time: 16 },
-  { n: 3, label: 'Name that tune', kind: 'tune', time: 18 },
-  { n: 4, label: 'Who was born first?', kind: 'first', time: 10 },
-  { n: 5, label: 'Everything mixed', kind: 'mix', time: 16 },
+  { n: 2, label: 'Which movement?', kind: 'move', time: 14 },
+  { n: 3, label: 'Who am I?', kind: 'who', time: 16 },
+  { n: 4, label: 'Name that tune', kind: 'tune', time: 18 },
+  { n: 5, label: 'Who was born first?', kind: 'first', time: 10 },
+  { n: 6, label: 'Everything mixed', kind: 'mix', time: 16 },
 ];
+// Movements a composer also touched, so they are never offered as a "wrong" answer for them.
+const CMP_MOVE_NOT = { ravel: ['neoclassicism'], copland: ['film'], gershwin: ['film'], bartok: ['neoclassicism'], williams: ['american'], tchaikovsky: ['nationalism'], stravinsky: ['nationalism'], reich: ['experimental'], cage: ['minimalism'], schoenberg: ['lateromantic'], rachmaninoff: ['nationalism'] };
+// Generic "known" items that would not point to one composer on a worksheet.
+const CMP_GENERIC = /^(\d+ |More than|Four |String quartets|Études|Nocturnes|Impromptus|Gloria|Album for the Young|Piano Concerto|Piano Trio|Motets|Chorale preludes|Film music|Suite for|Jazz Suites)/;
 function genComposersQuestion(lv, prev) {
   // a printed worksheet has no sound: listening questions become “Who wrote ...?”
   const paper = /[?&]print=1/.test(location.search);
-  const uid = Math.random(); let kind = lv.kind === 'mix' ? pick(['era', 'who', 'tune', 'first']) : lv.kind;
+  const uid = Math.random(); let kind = lv.kind === 'mix' ? pick(['era', 'move', 'who', 'tune', 'first']) : lv.kind;
   if (paper && kind === 'tune') kind = 'wrote';
   const nameOf = (c) => cmpT(c.name);
   if (kind === 'era') {
-    let c, g = 0; do { c = pick(CMP.filter(x => !x.bridge)); } while (prev && prev.key === c.id && g++ < 10);
-    return { key: c.id, text: t('Which era did ' + nameOf(c) + ' live and compose in?', nameOf(c) + ' -- 어느 시대의 작곡가일까요?'), answer: cmpEraName(c.era), choices: CMP_ERA_IDS.map(cmpEraName), uid };
+    let c, g = 0; do { c = pick(CMP.filter(x => !x.span)); } while (prev && prev.key === c.id && g++ < 10);
+    const others = shuffle(CMP_ERA_IDS.filter(id => id !== c.era)).slice(0, 3);
+    return { key: c.id, text: t('Which period did ' + nameOf(c) + ' live and compose in?', nameOf(c) + ' -- 어느 시대의 작곡가일까요?'), answer: cmpEraName(c.era), choices: CMP_ERA_IDS.filter(id => id === c.era || others.includes(id)).map(cmpEraName), uid };
+  }
+  if (kind === 'move') {
+    let c, g = 0; do { c = pick(CMP.filter(x => (x.moves || []).length === 1)); } while (prev && prev.key === c.id && g++ < 10);
+    const right = c.moves[0], wrong = shuffle(CMP_MOVES.map(m => m.id).filter(id => id !== right && !(CMP_MOVE_NOT[c.id] || []).includes(id))).slice(0, 3);
+    return { key: c.id, text: t('Which movement does ' + nameOf(c) + ' belong to?', nameOf(c) + ' -- 어떤 사조에 속할까요?'), answer: cmpT(cmpMove(right).name), choices: shuffle([right, ...wrong]).map(id => cmpT(cmpMove(id).name)), uid };
   }
   if (kind === 'who') {
     let c, g = 0; do { c = pick(CMP); } while (prev && prev.key === c.id && g++ < 10);
@@ -15427,7 +15901,7 @@ function genComposersQuestion(lv, prev) {
     return { key: c.id, text: clue, answer: nameOf(c), choices: shuffle([c, ...others]).map(nameOf), uid };
   }
   if (kind === 'wrote') {
-    const named = (x) => x.known.filter(k => !/^(\d|More than|Four |String quartets|Études|Nocturnes|Impromptus|Gloria|Album for the Young|Piano Concerto|Piano Trio)/.test(k[0]));
+    const named = (x) => x.known.filter(k => !CMP_GENERIC.test(k[0]));
     let c, g = 0; do { c = pick(CMP.filter(x => named(x).length)); } while (prev && prev.key === c.id && g++ < 10);
     const others = shuffle(CMP.filter(x => x.id !== c.id)).slice(0, 3);
     return { key: c.id, text: t('Who wrote ', '') + cmpQuote(cmpT(pick(named(c)))) + t('?', '의 작곡가는?'), answer: nameOf(c), choices: shuffle([c, ...others]).map(nameOf), uid };
@@ -17369,9 +17843,10 @@ const TOOLS = [
   { id: 'genre-traits', ch: 'styles', title: 'What makes each style different?', blurb: 'Folk, classical, jazz and blues, popular music -- their defining traits.', C: () => <GenreTraits/> },
   { id: 'swing-feel', ch: 'styles', title: 'Straight or swing?', blurb: 'The same written eighth notes played even, then long-short -- see it, hear it, test your ear.', C: () => <SwingFeel/> },
   { id: 'twelve-bar-blues', ch: 'styles', title: 'The 12-bar blues', blurb: 'Three chords, twelve bars -- play it through, then fill in the missing chords.', C: () => <TwelveBarBlues/> },
-  { id: 'era-worlds', ch: 'composers', title: 'Step into each era', blurb: 'Where music was heard, who paid the composer, the keyboard, and what else was new -- Baroque to today.', C: () => <EraWorlds/> },
-  { id: 'composer-time-machine', ch: 'composers', title: 'Who lived when?', blurb: 'A time machine from 1660 to today: slide to any year and see which composers were alive, and how old they were.', C: () => <ComposerTimeMachine/> },
-  { id: 'composer-cards', ch: 'composers', title: 'Meet the composers', blurb: '22 composer cards: famous pieces, musical fingerprint, a fun fact, and how they sound.', C: () => <ComposerCards/> },
+  { id: 'era-worlds', ch: 'composers', title: 'Step into each era', blurb: 'Six periods, Renaissance to today: what the music sounds like, where it was heard, who paid the composer, the keyboard, and what else was new.', C: () => <EraWorlds/> },
+  { id: 'movement-map', ch: 'composers', title: 'Movements', blurb: 'Nationalism, Impressionism, twelve-tone, Minimalism and more: when each movement happened, what to listen for, why it began, and who belonged to it.', C: () => <MovementMap/> },
+  { id: 'composer-time-machine', ch: 'composers', title: 'Who lived when?', blurb: 'A time machine from 1500 to today: slide to any year and see which composers were alive, and how old they were.', C: () => <ComposerTimeMachine/> },
+  { id: 'composer-cards', ch: 'composers', title: 'Meet the composers', blurb: '46 composer cards, Palestrina to Hisaishi: famous pieces, musical fingerprint, a fun fact, and how they sound.', C: () => <ComposerCards/> },
   { id: 'who-am-i', ch: 'composers', title: 'Who am I?', blurb: 'A mystery composer gives clues one at a time -- guess early for more points.', C: () => <WhoAmI/> },
   { id: 'name-that-tune', ch: 'composers', title: 'Name that tune', blurb: 'Hear the opening of a famous piece and pick the composer.', C: () => <NameThatTune/> },
 ];
@@ -17529,9 +18004,10 @@ const TOOL_KO = {
   'genre-traits': ['스타일마다 무엇이 다를까?', '민요, 클래식, 재즈와 블루스, 대중음악 -- 각각의 특징.'],
   'swing-feel': ['스트레이트일까, 스윙일까?', '똑같이 적힌 8분음표를 고르게, 그리고 길게-짧게 -- 보고, 듣고, 귀를 테스트해요.'],
   'twelve-bar-blues': ['12마디 블루스', '화음 세 개, 열두 마디 -- 끝까지 연주하고, 빠진 화음을 채워요.'],
-  'era-worlds': ['시대 속으로 들어가 보기', '음악을 듣던 곳, 작곡가에게 돈을 준 사람, 건반 악기, 그 무렵 새로웠던 것 -- 바로크부터 오늘날까지.'],
-  'composer-time-machine': ['누가 언제 살았을까?', '1660년부터 오늘날까지의 타임머신: 아무 해로나 옮겨서 누가 살아 있었는지, 몇 살이었는지 봐요.'],
-  'composer-cards': ['작곡가를 만나요', '작곡가 카드 22장: 대표곡, 음악의 지문, 재미있는 사실, 그리고 어떤 소리인지.'],
+  'era-worlds': ['시대 속으로 들어가 보기', '르네상스부터 오늘날까지 여섯 시대: 어떤 소리인지, 음악을 듣던 곳, 작곡가에게 돈을 준 사람, 건반 악기, 그 무렵 새로웠던 것.'],
+  'movement-map': ['사조', '국민악파, 인상주의, 12음 기법, 미니멀리즘 등: 각 사조가 언제였는지, 무엇을 들어야 하는지, 왜 생겨났는지, 누가 속했는지.'],
+  'composer-time-machine': ['누가 언제 살았을까?', '1500년부터 오늘날까지의 타임머신: 아무 해로나 옮겨서 누가 살아 있었는지, 몇 살이었는지 봐요.'],
+  'composer-cards': ['작곡가를 만나요', '팔레스트리나부터 히사이시까지 작곡가 카드 46장: 대표곡, 음악의 지문, 재미있는 사실, 그리고 어떤 소리인지.'],
   'who-am-i': ['나는 누구일까요?', '수수께끼 작곡가가 단서를 하나씩 줘요 -- 일찍 맞힐수록 점수가 커요.'],
   'name-that-tune': ['어떤 곡일까요?', '유명한 곡의 시작 부분을 듣고 작곡가를 골라요.'],
 };
@@ -17622,12 +18098,135 @@ function KeepGoing({ onOpen }) {
     </div>
   );
 }
+// ─── Phase 305: Start here -- one guided path through the whole app ───
+// Sohyun (2026-10-04): friends trying the app didn't know where to start or what to press. The guide
+// sits at the top of Plan (teacher) and Learn (student): how it works in three steps, the whole path
+// from the first lesson to music history (the same order as the Learn list and the ‹ › chapter arrows),
+// and one button for what to do next. Every chapter ends with "Next on your path".
+const GUIDE_KEY = 'pb_guide_v1', STEPS_TOTAL_KEY = 'pb_steps_total_v1';
+const PATH_STAGES = [
+  { cats: ['body', 'keys'], en: ['Getting started', 'Sitting well, hand shape, the black-key map and every note name.'], ko: ['시작하기', '바른 자세, 손 모양, 검은건반 지도, 그리고 모든 음이름.'] },
+  { cats: ['pitch', 'ledger', 'tones'], en: ['Reading notes', 'The staff, the two clefs, ledger lines, sharps and flats.'], ko: ['음표 읽기', '오선보, 두 음자리표, 덧줄, 샤프와 플랫.'] },
+  { cats: ['rpulse', 'rnotes', 'rtime', 'rrhythm'], en: ['Rhythm', 'A steady beat, note values, time signatures and rhythm patterns.'], ko: ['리듬', '일정한 박, 음표 길이, 박자표, 리듬 패턴.'] },
+  { cats: ['steps', 'rtempo'], en: ['Reading tunes', 'Pitch and rhythm together, five-finger positions, and speed.'], ko: ['선율 읽기', '음높이와 리듬을 함께, 다섯 손가락 자리, 그리고 빠르기.'] },
+  { cats: ['intervals', 'scales', 'harmony'], en: ['Theory', 'Intervals, scales and keys, chords -- AMEB Preliminary to Grade 3.'], ko: ['이론', '음정, 스케일과 조, 화음 -- AMEB 프렐림부터 3급까지.'] },
+  { cats: ['melody', 'expression', 'words'], en: ['Making music', 'How tunes and pieces are shaped, loud and soft, signs and Italian terms.'], ko: ['음악 만들기', '선율과 곡의 짜임, 셈여림, 기호와 이탈리아어 용어.'] },
+  { cats: ['about'], en: ['Know the music', 'The piano’s story, famous composers and their eras, pitch, styles.'], ko: ['음악 알기', '피아노 이야기, 유명한 작곡가와 시대, 음높이, 스타일.'] },
+];
+const pathStageIds = (s) => s.cats.flatMap(catChapterIds).filter(id => DRILLS.find(d => d.id === id));
+const pathIds = () => PATH_STAGES.flatMap(pathStageIds);
+function loadStepTotals() { try { return JSON.parse(localStorage.getItem(STEPS_TOTAL_KEY)) || {}; } catch (e) { return {}; } }
+// 'new' | 'started' | 'done' (every Learn step ticked)
+function chapterStatus(id, totals) {
+  const n = stepsDone(id), tot = (totals || loadStepTotals())[id];
+  return n === 0 ? 'new' : tot && n >= tot ? 'done' : 'started';
+}
+function pathNext(afterId) {
+  const ids = pathIds();
+  if (afterId) { const k = ids.indexOf(afterId); return k >= 0 && k < ids.length - 1 ? ids[k + 1] : null; }
+  const totals = loadStepTotals();
+  return ids.find(id => chapterStatus(id, totals) !== 'done') || null;
+}
+const stageOfChapter = (id) => PATH_STAGES.findIndex(s => pathStageIds(s).includes(id));
+// The one chapter the guide points at: the chapter you were last in (if not finished), else the first unfinished one.
+function guideFocus(status, ids) {
+  let last = null; try { last = localStorage.getItem(LAST_CHAPTER_KEY); } catch (e) {}
+  if (last && ids.includes(last) && status[last] === 'started') return { id: last, kind: 'resume' };
+  const nx = ids.find(id => status[id] !== 'done');
+  return nx ? { id: nx, kind: ids.some(id => status[id] !== 'new') ? 'next' : 'start' } : null;
+}
+const GuideNum = ({ n, on }) => <span style={{flex:'0 0 auto',width:30,height:30,borderRadius:15,display:'inline-flex',alignItems:'center',justifyContent:'center',fontFamily:"'Playfair Display', Georgia, serif",fontWeight:900,fontSize:16,
+  background:on ? 'var(--coral)' : 'var(--navy)',color:'#fff'}}>{n}</span>;
+function StartGuide({ onOpen }) {
+  const [open, setOpen] = useState(() => { try { return localStorage.getItem(GUIDE_KEY) !== 'closed'; } catch (e) { return true; } });
+  function setOpenSaved(v) { setOpen(v); try { localStorage.setItem(GUIDE_KEY, v ? 'open' : 'closed'); } catch (e) {} }
+  const totals = loadStepTotals(), ids = pathIds();
+  const status = Object.fromEntries(ids.map(id => [id, chapterStatus(id, totals)]));
+  const focus = guideFocus(status, ids), next = focus ? focus.id : null;
+  const curStage = next ? stageOfChapter(next) : -1;
+  const nDone = ids.filter(id => status[id] === 'done').length, nStarted = ids.filter(id => status[id] !== 'new').length;
+  const label = (id) => (DRILLS.find(d => d.id === id) || {}).label;
+  const cta = next && <button className="primary-btn" style={{width:'100%',padding:'12px 16px',fontSize:15.5,textAlign:'left',display:'flex',justifyContent:'space-between',alignItems:'center',gap:10}} onClick={() => onOpen(next)}>
+    <span><span style={{display:'block',fontSize:11.5,fontWeight:800,letterSpacing:'0.08em',textTransform:'uppercase',opacity:0.8}}>{focus.kind === 'resume' ? t('Keep going', '이어서 하기') : focus.kind === 'next' ? t('Next on your path', '나의 경로에서 다음') : t('Start at the beginning', '처음부터 시작하기')}</span>{label(next)}</span><span style={{fontSize:20}}>→</span></button>;
+  if (!open) return (
+    <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap',border:'1.5px solid var(--navy-line)',borderRadius:14,background:'var(--surface)',padding:'10px 12px',margin:'0 0 18px'}}>
+      <span style={{flex:1,minWidth:160,fontSize:13.5,color:'var(--navy)'}}><b>{t('Your path', '나의 경로')}</b> · {t(nStarted + ' of ' + ids.length + ' chapters started, ' + nDone + ' finished', ids.length + '개 챕터 중 ' + nStarted + '개 시작, ' + nDone + '개 완료')}</span>
+      {next && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px'}} onClick={() => onOpen(next)}>{(focus.kind === 'resume' ? t('Keep going: ', '이어서: ') : t('Next: ', '다음: ')) + label(next)} →</button>}
+      <button className="chip" style={{padding:'3px 10px',fontSize:12.5}} onClick={() => setOpenSaved(true)}>{t('How it works ▾', '사용법 보기 ▾')}</button>
+    </div>
+  );
+  const how = [
+    [t('Open a chapter', '챕터 열기'), t('Each chapter is one lesson: short steps to tap, hear and play. Press “Got it ✓” at the end of each step.', '챕터 하나가 레슨 하나예요: 누르고, 듣고, 쳐 보는 짧은 단계들. 단계를 마치면 “이해했어요 ✓”를 눌러요.')],
+    [t('Do the drill', '드릴 하기'), t('At the bottom of the chapter, press “Start the drill” for a quick quiz on what you learned.', '챕터 맨 아래의 “드릴 시작하기”를 누르면 배운 것을 짧은 퀴즈로 확인해요.')],
+    [t('Press Next', '다음 누르기'), t('Every chapter ends with “Next on your path” -- so you always know what comes after.', '모든 챕터 끝에 “나의 경로에서 다음”이 있어요 -- 그래서 다음에 할 일을 늘 알 수 있어요.')],
+  ];
+  return (
+    <section style={{margin:'0 0 22px'}}>
+      <StaffHead title={t('Start here', '여기서 시작')}/>
+      <div style={{padding:'10px 4px 0'}}>
+        <h2 style={{fontSize:25,fontWeight:900,margin:'0 0 6px',lineHeight:1.15,color:'var(--navy)'}}>{t('How Piano Butler Drills works', '피아노 버틀러 드릴 사용법')}</h2>
+        <p style={{fontSize:14.5,color:'var(--navy-soft)',margin:'0 0 12px',lineHeight:1.5}}>{t('Everything here follows one path: from the first lesson at the piano, through reading, rhythm and theory, to the music and composers behind it. Three things to know:', '여기 있는 모든 것은 하나의 길을 따라가요: 피아노 앞 첫 레슨부터 읽기, 리듬, 이론을 지나 음악과 작곡가 이야기까지. 알아 둘 세 가지:')}</p>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(160px, 1fr))',gap:10,marginBottom:14}}>
+          {how.map(([h, x], i) => <div key={i} style={{display:'flex',gap:10,alignItems:'flex-start',background:'var(--surface)',border:'1.5px solid var(--navy-line)',borderRadius:12,padding:'10px 11px'}}>
+            <GuideNum n={i + 1} on={i === 2}/><span><b style={{display:'block',fontSize:14.5,color:'var(--navy)',marginBottom:2}}>{h}</b><span style={{fontSize:13,color:'var(--navy-soft)',lineHeight:1.45}}>{x}</span></span>
+          </div>)}
+        </div>
+        {cta}
+        {!next && <div style={{fontSize:14.5,fontWeight:800,color:'var(--good)',textAlign:'center',margin:'6px 0'}}>{t('Every chapter on the path is done -- wonderful!', '경로의 모든 챕터를 마쳤어요 -- 멋져요!')}</div>}
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',margin:'18px 0 8px'}}>
+          <b style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:19,color:'var(--navy)'}}>{t('The whole path', '전체 경로')}</b>
+          <span style={{fontSize:12,fontWeight:800,color:'var(--muted)'}}>{t(nDone + ' of ' + ids.length + ' chapters finished', ids.length + '개 챕터 중 ' + nDone + '개 완료')}</span>
+        </div>
+        <div style={{position:'relative',paddingLeft:4}}>
+          <div style={{position:'absolute',left:18,top:14,bottom:14,width:2,background:'var(--navy-line)'}}/>
+          {PATH_STAGES.map((s, k) => { const sid = pathStageIds(s), here = k === curStage;
+            return <div key={k} style={{position:'relative',display:'flex',gap:12,alignItems:'flex-start',padding:'6px 0 12px'}}>
+              <GuideNum n={k + 1} on={here}/>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:'flex',alignItems:'baseline',gap:8,flexWrap:'wrap'}}><b style={{fontSize:15.5,color:'var(--navy)'}}>{t(s.en[0], s.ko[0])}</b>{here && <span style={{fontSize:10.5,fontWeight:900,letterSpacing:'0.08em',color:'var(--coral)'}}>{t('YOU ARE HERE', '지금 여기')}</span>}</div>
+                <div style={{fontSize:12.5,color:'var(--navy-soft)',lineHeight:1.4,margin:'1px 0 6px'}}>{t(s.en[1], s.ko[1])}</div>
+                <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{sid.map(id => { const st = status[id], isNext = id === next;
+                  return <button key={id} onClick={() => onOpen(id)} style={{display:'inline-flex',alignItems:'center',gap:5,padding:'3px 10px',borderRadius:14,fontSize:12.5,fontWeight:800,cursor:'pointer',fontFamily:'inherit',
+                    border:'1.5px solid ' + (isNext ? 'var(--coral)' : st === 'done' ? 'var(--navy)' : 'var(--navy-line)'),background:st === 'done' ? 'var(--navy)' : '#fff',color:st === 'done' ? '#fff' : isNext ? 'var(--coral)' : 'var(--navy)'}}>
+                    {st === 'done' ? '✓' : st === 'started' ? <span style={{width:7,height:7,borderRadius:4,background:'var(--coral)'}}/> : null}{label(id)}</button>; })}</div>
+              </div>
+            </div>; })}
+        </div>
+        <div style={{display:'flex',gap:14,flexWrap:'wrap',alignItems:'center',fontSize:12,color:'var(--navy-soft)',margin:'0 0 4px'}}>
+          <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:14,height:14,borderRadius:7,background:'var(--navy)'}}/>{t('finished', '완료')}</span>
+          <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:7,height:7,borderRadius:4,background:'var(--coral)'}}/>{t('started', '시작함')}</span>
+          <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:14,height:14,borderRadius:7,border:'1.5px solid var(--coral)'}}/>{t('next', '다음')}</span>
+          <span style={{flex:1}}/>
+          <button className="chip" style={{padding:'3px 10px',fontSize:12.5}} onClick={() => setOpenSaved(false)}>{t('Hide the guide ▴', '안내 접기 ▴')}</button>
+        </div>
+        {UI_TEACHER && <div style={{fontSize:12.5,color:'var(--navy-soft)',lineHeight:1.45,marginTop:8,borderTop:'1px dashed var(--navy-line)',paddingTop:8}}>{t('Teaching? Below: search the Toolbox for one activity in the middle of a lesson, or open the Lesson plan to tick off what each student can do.', '가르치는 중인가요? 아래에서 레슨 중에 쓸 활동 하나를 툴박스에서 찾거나, 레슨 플랜을 열어 학생마다 할 수 있는 것을 체크하세요.')}</div>}
+      </div>
+    </section>
+  );
+}
+// The end of every chapter: what comes next on the path.
+function PathNext({ id, onOpen, onMap }) {
+  const nx = pathNext(id), k = stageOfChapter(id), s = PATH_STAGES[k], nk = nx ? stageOfChapter(nx) : -1;
+  if (k < 0) return null;
+  const d = nx && DRILLS.find(x => x.id === nx);
+  return (
+    <div style={{marginTop:26,border:'1.5px solid var(--navy-line)',borderRadius:16,background:'var(--surface)',padding:'14px 14px 12px'}}>
+      <div style={{fontSize:11.5,fontWeight:800,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--coral)'}}>{t('Next on your path', '나의 경로에서 다음')}</div>
+      {d ? <>
+        <div style={{fontSize:13,color:'var(--navy-soft)',margin:'2px 0 8px'}}>{nk !== k ? t('You’ve reached the end of “' + s.en[0] + '”. Next stage: ' + PATH_STAGES[nk].en[0] + '.', '“' + s.ko[0] + '” 단계를 마쳤어요. 다음 단계: ' + PATH_STAGES[nk].ko[0] + '.') : t('Stage ' + (k + 1) + ' of ' + PATH_STAGES.length + ': ' + s.en[0], PATH_STAGES.length + '단계 중 ' + (k + 1) + '단계: ' + s.ko[0])}</div>
+        <button className="primary-btn" style={{width:'100%',padding:'11px 16px',fontSize:15.5,display:'flex',justifyContent:'space-between',alignItems:'center'}} onClick={() => onOpen(nx)}><span>{d.label}</span><span>→</span></button>
+      </> : <div style={{fontSize:14.5,fontWeight:800,color:'var(--navy)',margin:'4px 0 8px'}}>{t('This is the last chapter on the path -- well done!', '경로의 마지막 챕터예요 -- 잘했어요!')}</div>}
+      <div style={{textAlign:'center',marginTop:8}}><button className="chip" style={{padding:'4px 12px',fontSize:12.5}} onClick={() => { try { localStorage.setItem(GUIDE_KEY, 'open'); } catch (e) {} onMap(); }}>{t('See the whole path', '전체 경로 보기')}</button></div>
+    </div>
+  );
+}
+
 function LessonPath({ onOpen, onBack }) {
   return (
     <div className="fade-up">
       {onBack && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={onBack}>← Lesson plan</button>}
       <PageIntro title={UI_TEACHER ? t('All chapters', '전체 챕터') : t('Learn', '배우기')} text={UI_TEACHER ? t('Every chapter as a full lesson with a drill, grouped by topic (same groups as the Toolbox). The groups run side by side -- the Lesson plan shows how to mix them.', '모든 챕터를 드릴이 있는 레슨으로, 주제별로 묶었어요 (도구함과 같은 묶음). 묶음들은 나란히 진행돼요 -- 레슨 계획에서 어떻게 섞을지 볼 수 있어요.') : t('Pick a topic, then a lesson. Each one ends with a game.', '주제를 고르고, 레슨을 골라요. 레슨마다 마지막에 게임이 있어요.')}/>
-      {!UI_TEACHER && <KeepGoing onOpen={onOpen}/>}
+      {!UI_TEACHER && <StartGuide onOpen={onOpen}/>}
       {TOOL_CATS.filter(c => catChapterIds(c.id).length).map(c => {
         const ids = catChapterIds(c.id).filter(id => DRILLS.find(x => x.id === id));
         return (
@@ -17692,7 +18291,7 @@ const CHAPTER_SEARCH_TERMS = {
   'melody': 'melody tune phrase phrasing phrase mark question answer antecedent consequent sequence motif contour breath comma',
   'form': 'form binary ternary rondo ABA AB ABACA section refrain episode structure same new repeat',
   'styles': 'style genre texture monophony homophony polyphony solo melody folk classical jazz blues popular music swing straight eighth notes triplet 12-bar twelve bar blues chords I IV V',
-  'composers': 'composer composers famous history era baroque classical romantic 20th century modern timeline who lived when age vivaldi bach handel scarlatti haydn mozart clementi beethoven schubert chopin schumann clara liszt brahms tchaikovsky debussy joplin bartok prokofiev gershwin kabalevsky sculthorpe who am i name that tune listen fingerprint',
+  'composers': 'composer composers famous history era period renaissance baroque classical romantic 20th century modern contemporary movement school nationalism nationalist impressionism impressionist late romantic viennese twelve-tone serialism atonal neoclassicism neoclassical experimental minimalism minimalist film music ragtime jazz timeline who lived when age palestrina byrd pachelbel couperin mendelssohn smetana mussorgsky dvorak grieg rimsky-korsakov saint-saens rachmaninoff satie ravel schoenberg stravinsky copland shostakovich cage reich glass part williams hisaishi nutcracker vivaldi bach handel scarlatti haydn mozart clementi beethoven schubert chopin schumann clara liszt brahms tchaikovsky debussy joplin bartok prokofiev gershwin kabalevsky sculthorpe who am i name that tune listen fingerprint',
 };
 // Phase 221: order = teaching order (body -> notes -> rhythm -> theory -> music-in-context -> helpers)
 const TOOL_CATS = [
@@ -17782,7 +18381,7 @@ const TOOL_META = {
   'tune-anatomy': ['melody', 0, 1, 'show'], 'draw-tune': ['melody', 0, 2, 'game ear'], 'phrase-marks': ['melody', 1, 2, 'show'], 'question-answer': ['melody', 1, 2, 'game ear'], 'melody-sequence': ['melody', 1, 2, 'show ear'],
   'form-shapes': ['melody', 0, 2, 'show'], 'form-builder': ['melody', 0, 2, 'game ear'], 'same-or-new': ['melody', 1, 2, 'game ear'], 'rondo-refrain': ['melody', 1, 3, 'game ear'], 'binary-ternary-spot': ['melody', 1, 3, 'game ear'],
   'texture-types': ['about', 0, 2, 'show ear'], 'texture-spotter': ['about', 1, 3, 'game ear'], 'genre-traits': ['about', 1, 3, 'show'], 'swing-feel': ['about', 1, 3, 'game ear'], 'twelve-bar-blues': ['about', 2, 3, 'game ear'],
-  'era-worlds': ['about', 0, 3, 'show'], 'composer-time-machine': ['about', 0, 3, 'show game'], 'composer-cards': ['about', 0, 3, 'show ear'], 'who-am-i': ['about', 1, 3, 'game'], 'name-that-tune': ['about', 0, 3, 'game ear'],
+  'era-worlds': ['about', 0, 3, 'show'], 'movement-map': ['about', 1, 3, 'show ear'], 'composer-time-machine': ['about', 0, 3, 'show game'], 'composer-cards': ['about', 0, 3, 'show ear'], 'who-am-i': ['about', 1, 3, 'game'], 'name-that-tune': ['about', 0, 3, 'game ear'],
 };
 function toolMeta(id) { const m = TOOL_META[id]; if (m) return { cat: m[0], lo: m[1], hi: m[2], kinds: m[3].split(' ') }; const t = TOOLS.find(x => x.id === id); return { cat: 'practice', lo: 0, hi: 3, kinds: ['show'], ch: t && t.ch }; }
 // Phase 168 (2026-09-28): shared search text for a tool -- title + blurb + its category's
@@ -17978,6 +18577,9 @@ const TOOL_ICON = {
   // Phase 304: Famous Composers chapter badges (sage "about" track).
   'era-worlds': () => (
     <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3f9a7e"/><path d="M4.5 20.5 V11 A7.5 7.5 0 0 1 19.5 11 V20.5 Z" fill="#fefbf3" stroke="#26296b" strokeWidth="0.8"/>{[7.6, 10.2, 12.8, 15.4].map((x, i) => <rect key={x} x={x} y={[13, 10.5, 10.5, 13][i]} width="1.7" height={[7.5, 10, 10, 7.5][i]} rx="0.8" fill="#e9a83a"/>)}<path d="M4 20.5 H20" stroke="#26296b" strokeWidth="0.8"/></svg>
+  ),
+  'movement-map': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3f9a7e"/><rect x="2.5" y="5" width="9" height="3" rx="1.5" fill="#fefbf3"/><rect x="8" y="10.5" width="11" height="3" rx="1.5" fill="#e9a83a"/><rect x="12" y="16" width="9.5" height="3" rx="1.5" fill="#fefbf3"/><path d="M2.5 21.5 H21.5" stroke="#26296b" strokeWidth="1" strokeLinecap="round"/></svg>
   ),
   'composer-time-machine': () => (
     <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3f9a7e"/><rect x="2.5" y="4.5" width="8" height="2.6" rx="1.3" fill="#fefbf3"/><rect x="6" y="9" width="9" height="2.6" rx="1.3" fill="#fefbf3"/><rect x="10" y="13.5" width="9" height="2.6" rx="1.3" fill="#fefbf3"/><rect x="13.5" y="18" width="8" height="2.6" rx="1.3" fill="#fefbf3"/><line x1="12.2" x2="12.2" y1="2.5" y2="21.5" stroke="#e9a83a" strokeWidth="1.7" strokeLinecap="round"/></svg>
@@ -18378,7 +18980,7 @@ const CHAPTER_TOOL_ORDER = {
   'signs': ['road-map', 'dc-ds-coda', 'ottava', 'ornaments', 'grace-write'],
   'staff': ['staff-basics', 'rhymes', 'clef-basics', 'clef-story', 'staff-climb', 'fold', 'landmarks', 'landmark-hop', 'flash-cards', 'write-note', 'alto-clef'],
   'styles': ['texture-types', 'texture-spotter', 'genre-traits', 'swing-feel', 'twelve-bar-blues'],
-  'composers': ['era-worlds', 'composer-time-machine', 'composer-cards', 'who-am-i', 'name-that-tune'],
+  'composers': ['era-worlds', 'movement-map', 'composer-time-machine', 'composer-cards', 'who-am-i', 'name-that-tune'],
   'tempo': ['tempo-walk', 'tempo-race', 'tap-tempo', 'same-tune-tempo', 'speed-change', 'metronome'],
   'terms': ['term-sort', 'term-cards', 'term-mixer', 'term-match'],
   'time-signatures': ['time-sig-numbers', 'count-along', 'common-cut', 'bar-lines', 'beat-doubler', 'regroup', 'grouping', 'duplets'],
@@ -18801,6 +19403,7 @@ function PlanView({ onOpenTool, onOpenChapter, onOpenKit, onAllChapters, onStude
   const chip = (on, label, onClick, key) => <button key={key || label} className={'chip' + (on ? ' active' : '')} style={{padding:'2px 9px',fontSize:12}} onClick={onClick}>{label}</button>;
   return (
     <div className="fade-up">
+      <StartGuide onOpen={onOpenChapter}/>
       <div className="card" style={{marginBottom:10,padding:'10px 12px'}}>
         <div style={{display:'flex',gap:4,flexWrap:'wrap',alignItems:'center'}}>
           <span style={{fontSize:12,fontWeight:900,color:'var(--muted)',marginRight:2}}>{t('STUDENT','학생')}</span>
@@ -19059,6 +19662,7 @@ function App() {
             {T && st.tab === 'drill' && <PrintLink drillId={active.id} level={level} />}
           </>
         ) : active.render()}
+        {!st.lock && <PathNext id={active.id} onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }} onMap={() => { update({ view: 'path', drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>}
         </>}
       </div>
     </div>
