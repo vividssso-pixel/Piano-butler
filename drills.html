@@ -19583,6 +19583,7 @@ function App() {
   }, [active.id, st.drill, st.tab, level, st.mode, st.lock, st.view, st.tool, st.kit, st.kn]);
 
   useEffect(() => { if (st.drill && CHAPTER_CAT[st.drill]) { try { localStorage.setItem(LAST_CHAPTER_KEY, st.drill); } catch (e) {} } }, [st.drill]);
+  useEffect(() => { try { const n = parseInt(new URLSearchParams(location.search).get('step'), 10); if (!st.drill || isNaN(n)) return; const tmo = setTimeout(() => { const el = document.getElementById(st.drill + '-step-' + (n - 1)); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 700); return () => clearTimeout(tmo); } catch (e) {} }, []);
   function update(patch) { setSt(prev => ({ ...prev, ...patch })); }
   function jumpToChapter(id) { setFindOpen(false); update({ view: 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }
 
@@ -19769,18 +19770,18 @@ function BkCell({ n, children }) {
 function WbPage({ no, chId, children, bare, teacher }) {
   return (
     <section className="bk-page">
-      {!bare && <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',fontSize:10.5,color:BK.muted,fontWeight:700,borderBottom:'1.2px solid ' + BK.ink,paddingBottom:4,marginBottom:12}}>
+      {!bare && <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',fontSize:10.5,color:BK.muted,fontWeight:700,borderBottom:'1.2px solid ' + BK.ink,paddingBottom:4,marginBottom:9}}>
         <span><b style={{color:BK.ink}}>Piano Butler</b> · {teacher ? <b style={{color:BK.coral}}>Teacher copy</b> : t('Workbook', '워크북')}</span>
-        <span>{t('Chapter ', '') + bkChapterNo(chId) + t('', '장') + ' · ' + bkChapterName(chId)}</span>
+        <span>{chId === 'front' ? t('Start here', '여기서 시작') : t('Chapter ', '') + bkChapterNo(chId) + t('', '장') + ' · ' + bkChapterName(chId)}</span>
       </div>}
-      <div style={{flex:1,minHeight:0,overflow:'hidden',display:'flex',flexDirection:'column'}} className="bk-body">{children}</div>
+      <div style={{flex:1,minHeight:0,overflow:'hidden',display:'flex',flexDirection:'column'}} className="bk-body"><BkChapterCtx.Provider value={chId}>{children}</BkChapterCtx.Provider></div>
       {!bare && <div style={{textAlign:'center',fontSize:10.5,color:BK.muted,fontWeight:700,paddingTop:6}}>{no}</div>}
     </section>
   );
 }
 function NameLine({ score }) {
   return (
-    <div style={{display:'flex',gap:22,fontSize:12.5,color:BK.ink,margin:'0 0 12px'}}>
+    <div style={{display:'flex',gap:22,fontSize:12.5,color:BK.ink,margin:'0 0 6px'}}>
       <span>{t('Name', '이름')} <span style={{display:'inline-block',width:150,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span></span>
       <span>{t('Date', '날짜')} <span style={{display:'inline-block',width:90,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span></span>
       {score && <span>{t('Score', '점수')} <span style={{display:'inline-block',width:40,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span> / {score}</span>}
@@ -19841,30 +19842,14 @@ function Part({ kind, title, how, children, style, grow }) {
   const hw = how && <div style={{fontSize:12.5,color:BK.muted,margin:'-3px 0 8px',lineHeight:1.45}}>{how}</div>;
   // the PLAY box grows to fill whatever the page has left, and centres its content -- so every page ends level
   return play
-    ? <div style={{border:'1.6px dashed ' + BK.coral,borderRadius:12,padding:'10px 14px 12px',margin:'14px 0 0',flex:grow === false ? '0 0 auto' : '1 0 auto',display:'flex',flexDirection:'column',...style}}>{head}{hw}<div style={{flex:1,display:'flex',flexDirection:'column',justifyContent:'center'}}>{children}</div></div>
-    : <div style={{margin:'12px 0 0',...style}}>{head}{hw}{children}</div>;
+    ? <div style={{border:'1.6px dashed ' + BK.coral,borderRadius:12,padding:'9px 14px 10px',margin:'10px 0 0',flex:grow === false ? '0 0 auto' : '1 0 auto',display:'flex',flexDirection:'column',...style}}>{head}{hw}<div style={{flex:1,display:'flex',flexDirection:'column',justifyContent:'center'}}>{children}</div></div>
+    : <div style={{margin:'9px 0 0',...style}}>{head}{hw}{children}</div>;
 }
 function BkStar({ size = 14, fill = 'none', stroke = BK.coral }) {
   const p = []; for (let i = 0; i < 10; i++) { const r = i % 2 ? 4.2 : 10, a = Math.PI / 5 * i - Math.PI / 2; p.push((12 + r * Math.cos(a)).toFixed(2) + ',' + (12 + r * Math.sin(a)).toFixed(2)); }
   return <svg width={size} height={size} viewBox="0 0 24 24" style={{display:'inline-block',verticalAlign:'-1px'}}><polygon points={p.join(' ')} fill={fill} stroke={stroke} strokeWidth="1.8" strokeLinejoin="round"/></svg>;
 }
-// Name + the homework strip: which lesson step, when it was set and when it's due, how long it takes.
 const bkStepLabel = (st) => st === 'all' ? 'All lesson steps' : /^minor /.test(String(st)) ? 'Minor scales lesson, step ' + String(st).slice(6) : /^story /.test(String(st)) ? 'Piano\u2019s Story lesson, step ' + String(st).slice(6) : 'Lesson step ' + st;
-function WbTop({ step, mins = 10 }) {
-  const blank = (w) => <span style={{display:'inline-block',width:w,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span>;
-  return (
-    <div style={{display:'flex',alignItems:'center',gap:16,fontSize:12,color:BK.ink,margin:'0 0 4px',flexWrap:'nowrap'}}>
-      <span>Name {blank(150)}</span>
-      <span style={{flex:1}}/>
-      <span style={{display:'inline-flex',alignItems:'center',gap:12,border:'1.4px solid ' + BK.line,borderRadius:8,padding:'5px 10px',background:BK.soft}}>
-        <b style={{color:BK.coral}}>{bkStepLabel(step)}</b>
-        <span>Set {blank(46)}</span>
-        <span>Due {blank(46)}</span>
-        <span style={{color:BK.muted}}>about {mins} min</span>
-      </span>
-    </div>
-  );
-}
 // Puts each child under the matching note of a PaperStaff of the same width (same x formula).
 function BkUnder({ n, w, h, children, clefOn = true }) {
   const x0 = clefOn ? 46 : 10;
@@ -19877,7 +19862,7 @@ function Faces() {
     <svg key={key} width="30" height="30" viewBox="0 0 30 30"><circle cx="15" cy="15" r="13" fill="#fff" stroke={BK.ink} strokeWidth="1.5"/><circle cx="10.5" cy="12" r="1.6" fill={BK.ink}/><circle cx="19.5" cy="12" r="1.6" fill={BK.ink}/><path d={mouth} fill="none" stroke={BK.ink} strokeWidth="1.6" strokeLinecap="round"/></svg>
   );
   return (
-    <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:10,marginTop:12,fontSize:12,color:BK.muted}}>
+    <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:10,marginTop:8,fontSize:12,color:BK.muted}}>
       <span>How did it feel? Circle one.</span>
       {face('M9 18 Q15 24 21 18', 'a')}{face('M10 19.5 L20 19.5', 'b')}{face('M9 21.5 Q15 16 21 21.5', 'c')}
       <span style={{marginLeft:14}}>Teacher</span><span style={{width:22,height:22,border:'1.5px solid ' + BK.line,borderRadius:5}}/>
@@ -19938,7 +19923,7 @@ function WbOpener({ id, blurb, concepts }) {
   return <>
     <div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em',marginTop:4}}>{'CHAPTER ' + bkChapterNo(id)}</div>
     <h1 style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:40,fontWeight:900,color:BK.ink,margin:'2px 0 6px',lineHeight:1.05}}>{bkChapterName(id)}</h1>
-    <p style={{fontSize:14,color:BK.muted,margin:'0 0 6px',lineHeight:1.5,maxWidth:560}}>{blurb} Each page here goes with one step of the Lesson Book chapter.</p>
+    <p style={{fontSize:14,color:BK.muted,margin:'0 0 6px',lineHeight:1.5,maxWidth:560}}>{blurb} Each page goes with one step of the Lesson Book chapter.</p>
     <div style={{margin:'12px 0 4px'}}><ChapterArt id={id}/></div>
     <div style={{display:'grid',gridTemplateColumns:'1fr auto',gap:28,marginTop:18,alignItems:'start'}}>
       <div>
@@ -19956,21 +19941,9 @@ function WbOpener({ id, blurb, concepts }) {
       </div>
     </div>
     <div style={{flex:1}}/>
-    <div style={bkH(20, 8)}>How each page works</div>
-    <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:12}}>
-      {[['together', 'Do the first few with your teacher in the lesson. The first one is always an example, done for you.'],
-        ['home', 'The same thing on your own at home -- about 10 minutes. Your teacher writes when it is due at the top.'],
-        ['play', 'A puzzle, a game or something to make. Do it last, as your reward!']].map(([kind, txt]) => {
-        const g = BK_TAG[kind];
-        return <div key={kind} style={{border:'1.4px ' + (kind === 'play' ? 'dashed ' + BK.coral : 'solid ' + BK.line),borderRadius:10,padding:'10px 12px'}}>
-          <BkTag kind={kind}/>
-          <div style={{fontSize:12.5,color:BK.ink,marginTop:7,lineHeight:1.5}}>{txt}</div>
-        </div>;
-      })}
-    </div>
-    <div style={{display:'flex',alignItems:'center',gap:12,margin:'12px 0 8px',fontSize:12.5,color:BK.ink,lineHeight:1.5}}>
-      <span style={{flex:'0 0 auto',display:'inline-flex',alignItems:'center',gap:10,border:'1.4px solid ' + BK.line,borderRadius:8,padding:'4px 10px',background:BK.soft,fontSize:11.5}}><b style={{color:BK.coral}}>Lesson step 2</b><span>Set 12/3</span><span>Due 19/3</span></span>
-      <span>The strip at the top of each page says which lesson step it goes with and when it is due. Log it on the next page.</span>
+    <div style={{display:'flex',alignItems:'center',gap:14,border:'1.5px dashed ' + BK.coral,borderRadius:10,padding:'9px 14px',fontSize:13,color:BK.ink,lineHeight:1.5}}>
+      <BkStar size={18} fill={BK.coral}/>
+      <span><b>Start with the map on the next page.</b> It shows which page goes with which lesson step, the piano missions, and the online drill. Scan the code above to open the lesson in the app.</span>
     </div>
   </>;
 }
@@ -20033,18 +20006,184 @@ function WbPiano({ step, tasks, drill }) {
     </div>
   </>;
 }
+// ─── Phase 306: workbook structure v3 (Sohyun 2026-10-05: mostly activities; practice-check pages out;
+// every page tied to the online app; a "how to use it" guide). Page 2 of every chapter is now the
+// chapter's MAP (lesson step -> workbook page -> app -> check-up), the practice-week page is gone,
+// and every lesson page carries its own online strip with a QR straight to that lesson step.
+const BkChapterCtx = React.createContext('staff');
+const bkStepChapter = (chId, st) => /^minor /.test(String(st)) ? 'scales' : /^story /.test(String(st)) ? 'piano-story' : chId;
+const bkStepNo = (st) => parseInt(String(st).replace(/^(minor|story) /, ''), 10);
+function bkStepLink(chId, st) {
+  const n = bkStepNo(st), ch = bkStepChapter(chId, st);
+  return bkLink('drill=' + ch + '&lock=1' + (isNaN(n) ? '' : '&step=' + n));
+}
+const bkLevels = (chId) => { const d = DRILLS.find(x => x.id === chId); return (d && d.concept && d.concept.levels) || []; };
+// "1, 4" with "3, 6" -> {1: [3], 4: [6]}; "2-3" with "5" -> {2: [5], 3: [5]}
+function bkStepPages(concepts) {
+  const m = {};
+  concepts.forEach(c => {
+    const steps = String(c.step).split(',').map(s => s.trim()), pages = String(c.page).split(',').map(s => s.trim());
+    steps.forEach((s, i) => {
+      const pg = pages[Math.min(i, pages.length - 1)];
+      const r = s.match(/^(\d+)-(\d+)$/), lo = r ? +r[1] : parseInt(s, 10), hi = r ? +r[2] : lo;
+      if (isNaN(lo)) return;
+      for (let k = lo; k <= hi; k++) { m[k] = m[k] || []; if (!m[k].includes(pg)) m[k].push(pg); }
+    });
+  });
+  return m;
+}
+// The whole path (the same 7 stages as the app's Start-here guide), with one chapter marked.
+function BkPath({ current, compact }) {
+  return (
+    <div style={{border:'1.5px solid ' + BK.line,borderRadius:12,padding:compact ? '8px 12px 4px' : '10px 14px 6px'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline'}}><div style={bkH(compact ? 15 : 17, 4)}>The whole path</div><span style={{fontSize:10.5,color:BK.muted}}>the same order as the app and the Lesson Book</span></div>
+      {PATH_STAGES.map((st, k) => { const ids = pathStageIds(st); return <div key={k} style={{display:'flex',gap:10,alignItems:'baseline',padding:compact ? '3px 0' : '5px 0',borderTop:'1px solid #ece6d8'}}>
+        <span style={{flex:'0 0 auto',width:20,height:20,borderRadius:10,background:ids.includes(current) ? BK.coral : BK.ink,color:'#fff',fontSize:11,fontWeight:900,display:'inline-flex',alignItems:'center',justifyContent:'center'}}>{k + 1}</span>
+        <span style={{flex:'0 0 118px',fontSize:12.5,fontWeight:800,color:BK.ink}}>{st.en[0]}</span>
+        <span style={{flex:1,fontSize:11.5,color:BK.muted,lineHeight:1.45}}>{ids.map((id, i) => <span key={id}>{i > 0 && ' · '}<span style={id === current ? {color:BK.coral,fontWeight:800} : null}>{bkChapterName(id)}</span></span>)}</span>
+      </div>; })}
+    </div>
+  );
+}
+const bkTick = (s = 18) => <span style={{display:'inline-block',width:s,height:s,border:'1.5px solid ' + BK.ink,borderRadius:4,verticalAlign:'middle',background:'#fff'}}/>;
+// The route every chapter follows, drawn once: four stations and three arrows.
+function BkRoute({ compact, checkPage }) {
+  const st = [
+    ['LESSON BOOK', 'Read one step with your teacher.'],
+    ['WORKBOOK', 'Do that step’s page: TOGETHER, AT HOME, PLAY.'],
+    ['APP', 'Scan the page’s code: try the step, then play the drill.'],
+    ['CHECK-UP', checkPage ? 'Page ' + checkPage + ', in the lesson, when every step is done.' : 'The last page, in the lesson, when every step is done.'],
+  ];
+  return (
+    <div style={{display:'grid',gridTemplateColumns:'1fr 18px 1fr 18px 1fr 18px 1fr',alignItems:'stretch',gap:4,margin:compact ? '4px 0 10px' : '8px 0 14px'}}>
+      {st.map(([h, x], i) => <React.Fragment key={h}>
+        {i > 0 && <span style={{alignSelf:'center',textAlign:'center',color:BK.coral,fontSize:16,fontWeight:900}}>→</span>}
+        <div style={{border:'1.5px solid ' + (i === 3 ? BK.coral : BK.ink),borderRadius:10,padding:compact ? '6px 8px' : '8px 10px',background:i === 2 ? BK.soft : '#fff'}}>
+          <div style={{fontSize:10,fontWeight:900,letterSpacing:'0.1em',color:i === 3 ? BK.coral : BK.ink}}>{i + 1} · {h}</div>
+          <div style={{fontSize:compact ? 11 : 12,color:BK.ink,lineHeight:1.4,marginTop:2}}>{x}</div>
+        </div>
+      </React.Fragment>)}
+    </div>
+  );
+}
+// Page 2 of every chapter: the map. Which lesson step goes with which page, the online drill levels,
+// and the "at the piano" missions (ticked once per lesson, not a daily log).
+function WbMap({ id, concepts, tasks, steps, checkPage }) {
+  const total = typeof steps === 'number' ? steps : Math.max(1, ...Object.keys(bkStepPages(concepts)).map(Number));
+  const pages = bkStepPages(concepts), levels = bkLevels(id);
+  const nTicks = Math.max(1, Math.min(4, Math.ceil(total / 2)));
+  return <>
+    <div style={bkH(26, 2)}>Your map for this chapter</div>
+    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 8px',lineHeight:1.45}}>One lesson step at a time: read it, do its page, try it online. Tick each step when the page is done.</div>
+    <BkRoute compact checkPage={checkPage}/>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 190px',gap:18,alignItems:'start'}}>
+      <div>
+        <div style={{border:'1.5px solid ' + BK.ink,borderRadius:10,overflow:'hidden'}}>
+          <div style={{display:'grid',gridTemplateColumns:'110px 1fr 1fr 44px',background:BK.ink,color:'#fff',fontSize:11.5,fontWeight:800,padding:'5px 10px'}}>
+            <span>Lesson step</span><span>Workbook page</span><span>What it covers</span><span style={{textAlign:'center'}}>Done</span>
+          </div>
+          {Array.from({ length: total }, (_, k) => k + 1).map(n => {
+            const pg = pages[n], cs = concepts.filter(c => String(c.step).split(',').some(s => { const r = s.trim().match(/^(\d+)-(\d+)$/); return r ? n >= +r[1] && n <= +r[2] : parseInt(s, 10) === n; }));
+            return <div key={n} style={{display:'grid',gridTemplateColumns:'110px 1fr 1fr 44px',fontSize:12.5,color:BK.ink,padding:(total > 7 ? '3px' : '6px') + ' 10px',borderTop:'1px solid #ece6d8',alignItems:'center'}}>
+              <span><b style={{color:BK.coral}}>Step {n}</b></span>
+              <span>{pg ? 'page ' + pg.join(', ') : <span style={{color:BK.muted}}>in the app only</span>}</span>
+              <span style={{fontSize:11.5,color:BK.muted}}>{cs.map(c => c.name).join(' · ')}</span>
+              <span style={{textAlign:'center'}}>{bkTick(16)}</span>
+            </div>;
+          })}
+        </div>
+        <div style={{...bkH(17, 4), marginTop:16}}>At the piano</div>
+        <div style={{fontSize:12,color:BK.muted,marginBottom:4}}>Real-piano missions for this chapter. Tick one box each time you do it with your teacher or at home.</div>
+        {tasks.map((task, i) => <div key={i} style={{display:'grid',gridTemplateColumns:'20px 1fr ' + 'repeat(' + nTicks + ', 24px)',gap:6,alignItems:'center',padding:(total > 7 ? '4px' : '7px') + ' 0',borderBottom:'1px solid #ece6d8'}}>
+          <span style={{fontSize:12,fontWeight:900,color:BK.coral}}>{i + 1}</span>
+          <span style={{fontSize:13,color:BK.ink,lineHeight:1.4}}>{task}</span>
+          {Array.from({ length: nTicks }, (_, k) => <span key={k}>{bkTick(18)}</span>)}
+        </div>)}
+      </div>
+      <div style={{border:'1.5px solid ' + BK.line,borderRadius:12,padding:'10px 12px',background:BK.soft}}>
+        <div style={{fontSize:10,fontWeight:900,letterSpacing:'0.1em',color:BK.coral}}>ONLINE</div>
+        <div style={{...bkH(16, 6), marginTop:2}}>The drill</div>
+        <div style={{textAlign:'center'}}><div style={{display:'inline-block',padding:5,border:'1.5px solid ' + BK.line,borderRadius:10,background:'#fff'}}><QR url={bkLink('drill=' + id + '&tab=drill&level=1&lock=1')} size={92}/></div></div>
+        <div style={{fontSize:11,color:BK.muted,margin:'4px 0 8px',lineHeight:1.4,textAlign:'center'}}>Scan, then pick a level. Aim for 9 out of 10.</div>
+        {levels.map(l => <div key={l.n} style={{display:'flex',alignItems:'center',gap:6,fontSize:11.5,color:BK.ink,padding:'4px 0',borderTop:'1px solid #e6dfcf'}}>
+          <span style={{flex:'0 0 auto',width:18,height:18,borderRadius:9,background:BK.ink,color:'#fff',fontSize:10,fontWeight:900,display:'inline-flex',alignItems:'center',justifyContent:'center'}}>{l.n}</span>
+          <span style={{flex:1,lineHeight:1.25}}>{l.label}</span>
+          <span style={{fontSize:10,color:BK.muted,whiteSpace:'nowrap'}}>best <span style={{display:'inline-block',width:22,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span>/10</span>
+        </div>)}
+      </div>
+    </div>
+    <div style={{flex:1}}/>
+    {total <= 7 && levels.length <= 6 && <BkPath current={id} compact/>}
+    <div style={{display:'flex',gap:12,alignItems:'center',fontSize:12,color:BK.ink,border:'1.5px dashed ' + BK.coral,borderRadius:10,padding:'8px 12px',marginTop:10}}>
+      <BkStar size={16} fill={BK.coral}/>
+      <span><b>All steps ticked?</b> Do the Chapter check-up{checkPage ? ' on page ' + checkPage : ''} in your lesson, then colour in the badge.</span>
+    </div>
+  </>;
+}
+// The strip at the top of every lesson page: which step, the code straight to that step online, the drill line.
+function WbTop({ step, mins = 10 }) {
+  const chId = React.useContext(BkChapterCtx);
+  const blank = (w) => <span style={{display:'inline-block',width:w,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span>;
+  const n = bkStepNo(step);
+  return (
+    <div style={{display:'flex',alignItems:'center',gap:8,fontSize:11.5,color:BK.ink,margin:'0 0 4px',border:'1.4px solid ' + BK.line,borderRadius:9,padding:'3px 8px 3px 10px',background:BK.soft}}>
+      <div style={{flex:1,display:'flex',flexWrap:'wrap',alignItems:'center',gap:'1px 10px',lineHeight:1.35}}>
+        <b style={{color:BK.coral,fontSize:12.5}}>{bkStepLabel(step)}</b>
+        <span>Set {blank(36)}</span>
+        <span>Due {blank(36)}</span>
+        <span style={{color:BK.muted}}>{mins} min</span>
+        <span style={{color:BK.muted}}>· scan → {isNaN(n) ? 'the lesson' : 'step ' + n} online first · drill level {blank(20)} best {blank(20)}/10</span>
+      </div>
+      <QR url={bkStepLink(chId, step)} size={40}/>
+    </div>
+  );
+}
+// ?book=work&ch=front -- the pages that open the book: how to use it (the app guide on paper) and one homework log.
+function FrontMatter() {
+  const pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={pages.length + 1} chId="front">{content}</WbPage>);
+  const tagRow = (kind, title, txt) => <div style={{display:'flex',gap:10,alignItems:'flex-start',padding:'5px 0',borderTop:'1px solid #ece6d8'}}><BkTag kind={kind}/><div style={{fontSize:12.5,color:BK.ink,lineHeight:1.45}}><b>{title}</b> {txt}</div></div>;
+  P(<>
+    <div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em',marginTop:4}}>START HERE</div>
+    <h1 style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:36,fontWeight:900,color:BK.ink,margin:'2px 0 6px',lineHeight:1.05}}>How this book works</h1>
+    <p style={{fontSize:13.5,color:BK.muted,margin:'0 0 8px',lineHeight:1.5}}>Three things go together: the <b style={{color:BK.ink}}>Lesson Book</b> (what your teacher explains), this <b style={{color:BK.ink}}>Workbook</b> (what you do), and the <b style={{color:BK.ink}}>app</b> (where it makes sound). Every chapter follows the same four stops:</p>
+    <BkRoute/>
+    <div style={bkH(17, 2)}>Every workbook page has three parts</div>
+    {tagRow('together', 'In your lesson.', 'The first few, with your teacher. The first one is always an example, already done for you.')}
+    {tagRow('home', 'On your own.', 'The same thing at home -- about 10 minutes. Your teacher writes at the top when it is due.')}
+    {tagRow('play', 'Puzzle time.', 'A puzzle, a game or something to make. Do it last, as your reward!')}
+    <div style={{...bkH(18, 4), marginTop:10}}>The strip at the top of each page</div>
+    <div style={{fontSize:12.5,color:BK.ink,lineHeight:1.5}}>It names the lesson step the page belongs to, when it was set and when it is due. The small code opens that very step in the app: scan it <b>before</b> the page to see and hear the idea, and <b>after</b> the page to play the drill. Your teacher writes the drill level and your best score there.</div>
+    <div style={{display:'flex',alignItems:'center',gap:10,fontSize:12,color:BK.ink,margin:'8px 0 0',border:'1.4px solid ' + BK.line,borderRadius:10,padding:'5px 10px',background:BK.soft,maxWidth:520}}>
+      <div style={{flex:1,display:'flex',flexWrap:'wrap',alignItems:'center',gap:'4px 14px'}}><b style={{color:BK.coral,fontSize:13}}>Lesson step 2</b><span>Set 12/3</span><span>Due 19/3</span><span style={{color:BK.muted}}>about 10 min</span><span style={{flexBasis:'100%',height:0}}/><span style={{color:BK.muted}}>Online: scan → lesson step 2 first · then the drill: level 1 best 9/10</span></div>
+      <QR url={bkLink('drill=note-names&lock=1&step=2')} size={56}/>
+    </div>
+    <div style={{...bkH(18, 4), marginTop:10}}>In the app</div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,fontSize:12.5,color:BK.ink,lineHeight:1.5}}>
+      <div style={{border:'1.4px solid ' + BK.line,borderRadius:10,padding:'8px 10px'}}><b>Learn</b> is the lesson: short steps to tap, hear and play. Press <b>Got it ✓</b> at the end of each step.</div>
+      <div style={{border:'1.4px solid ' + BK.line,borderRadius:10,padding:'8px 10px'}}><b>Drill</b> is the quiz: 10 questions a round, in levels. A level is yours when you get 9 out of 10.</div>
+    </div>
+    <div style={{fontSize:12.5,color:BK.ink,lineHeight:1.5,margin:'8px 0 10px'}}>The app has the same path as these books, in the same order, and its <b>Start here</b> guide always shows what comes next.</div>
+    <BkPath/>
+    <div style={{flex:1}}/>
+    <div style={{display:'flex',gap:12,alignItems:'center',border:'1.5px dashed ' + BK.coral,borderRadius:10,padding:'8px 12px',fontSize:12.5,color:BK.ink}}><BkStar size={16} fill={BK.coral}/><span><b>Finished a chapter?</b> Do its check-up in your lesson, colour in the badge, and turn to the next chapter’s map.</span></div>
+  </>);
+  P(<WbLog/>);
+  return <>{pages}</>;
+}
+
 function CheckTable({ concepts, cnt }) {
   return <>
     <div style={{flex:1,minHeight:8}}/>
     <div style={{border:'1.5px solid ' + BK.ink,borderRadius:10,overflow:'hidden'}}>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 70px 60px 1.3fr',background:BK.ink,color:'#fff',fontSize:11.5,fontWeight:800,padding:'5px 10px'}}>
-        <span>Concept</span><span style={{textAlign:'center'}}>Score</span><span style={{textAlign:'center'}}>Pass</span><span>If not yet, go back to</span>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 90px 90px 1fr',background:BK.ink,color:'#fff',fontSize:11.5,fontWeight:800,padding:'5px 10px'}}>
+        <span>Concept</span><span style={{textAlign:'center'}}>Score</span><span style={{textAlign:'center'}}>Pass mark</span><span style={{textAlign:'center'}}>Passed?</span>
       </div>
-      {concepts.map((c, i) => <div key={c.id} style={{display:'grid',gridTemplateColumns:'1fr 70px 60px 1.3fr',fontSize:12.5,color:BK.ink,padding:'5px 10px',borderTop:'1px solid #ece6d8',alignItems:'center'}}>
+      {concepts.map((c, i) => <div key={c.id} style={{display:'grid',gridTemplateColumns:'1fr 90px 90px 1fr',fontSize:12.5,color:BK.ink,padding:'5px 10px',borderTop:'1px solid #ece6d8',alignItems:'center'}}>
         <span><b style={{color:BK.coral}}>{'ABCDEFG'[i]}</b> {c.name}</span>
         <span style={{textAlign:'center'}}>___ / {cnt[c.id]}</span>
         <span style={{textAlign:'center',fontSize:11.5,color:BK.muted}}>{cnt[c.id] <= 3 ? cnt[c.id] : cnt[c.id] - 1}+</span>
-        <span style={{fontSize:11.5}}>{bkStepLabel(c.step)} · Workbook page {c.page}</span>
+        <span style={{textAlign:'center'}}>{bkTick(16)}</span>
       </div>)}
     </div>
     <div style={{display:'flex',alignItems:'center',gap:14,marginTop:8}}>
@@ -20181,7 +20320,12 @@ function StaffWorkbook({ startNo = 1 }) {
   const lsAns = (it) => it.isLine ? 'L' : 'S';
 
   P(<WbOpener id="staff" concepts={C} blurb="The staff is a map of the keyboard: going up the staff is going right on the piano."/>);
-  P(<WbLog/>);
+  P(<WbMap id="staff" concepts={C} steps={7} checkPage={startNo + 9} tasks={[
+    'Play every note from page 4 on the piano and say its name out loud.',
+    'Close your eyes, find middle C, treble G and bass F -- then open your eyes and check.',
+    'Detective work: in your piece, find five notes, say each name, then play it.',
+    'Practise online: scan the code and play the drill for this chapter.',
+  ]}/>);
 
   // 3. Lesson step 1 -- lines and spaces
   P(<>
@@ -20326,12 +20470,6 @@ function StaffWorkbook({ startNo = 1 }) {
   </>);
 
   // 10. At the piano -- detective missions + the practice week
-  P(<WbPiano step="1-7" drill="staff" tasks={[
-    'Play every note from page 4 on the piano and say its name out loud.',
-    'Close your eyes, find middle C, treble G and bass F -- then open your eyes and check.',
-    'Detective work: in your piece, find five notes, say each name, then play it.',
-    'Practise online: scan the code and play the drill for this chapter.',
-  ]}/>);
 
   // 11. check-up
   const cnt = { ls: 4, tr: 4, ba: 4, lm: 3, dr: 5 }, total = 20;
@@ -20464,7 +20602,12 @@ function NoteNamesWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="note-names">{content}</WbPage>);
   P(<WbOpener id="note-names" concepts={C} blurb="The black keys are your map: groups of 2 and 3 show you where every white key is."/>);
-  P(<WbLog/>);
+  P(<WbMap id="note-names" concepts={C} steps={4} checkPage={startNo + 6} tasks={[
+    'Find every C on your piano. How many are there? Write it here: ____',
+    'Eyes closed: feel for 2 black keys and play C D E. Then 3 black keys and play F G A B.',
+    'Walk down the white keys from G to A, saying each letter backwards out loud.',
+    'Practise online: scan the code and play the drill for this chapter.',
+  ]}/>);
 
   // step 1 -- the black-key map
   const cf = [1, 5, 8, 12];
@@ -20551,12 +20694,6 @@ function NoteNamesWorkbook({ startNo = 1 }) {
     <Faces/>
   </>);
 
-  P(<WbPiano step="1-4" drill="note-names" tasks={[
-    'Find every C on your piano. How many are there? Write it here: ____',
-    'Eyes closed: feel for 2 black keys and play C D E. Then 3 black keys and play F G A B.',
-    'Walk down the white keys from G to A, saying each letter backwards out loud.',
-    'Practise online: scan the code and play the drill for this chapter.',
-  ]}/>);
 
   // check-up
   const cnt = { cf: 4, nm: 4, ab: 4, ud: 4, ch: 4 };
@@ -20600,7 +20737,7 @@ function NoteNamesTeacher() {
       say="“Skip one means jump over a friend: A, (B), C.”"/>
   </>);
   P(<>
-    <TcBlock page={8} title="Check-up" answers={<>{tcAns('A', W.chk.cf.boxes.map(i => nnLet('E', i)))}{tcAns('B', W.chk.nm.map(i => nnLet('G', i)))}{tcAns('C', rowAns(W.chk.ab))}{tcAns('D', W.chk.ud.map(it => it.a))}{tcAns('E', rowAns(W.chk.ch))}
+    <TcBlock page={7} title="Check-up" goBack={nnConcepts()} answers={<>{tcAns('A', W.chk.cf.boxes.map(i => nnLet('E', i)))}{tcAns('B', W.chk.nm.map(i => nnLet('G', i)))}{tcAns('C', rowAns(W.chk.ab))}{tcAns('D', W.chk.ud.map(it => it.a))}{tcAns('E', rowAns(W.chk.ch))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Below the pass mark, set that concept's workbook page again.</div></>}/>
   </>);
   return <>{pages}</>;
@@ -20741,7 +20878,12 @@ function NoteValuesWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="note-values">{content}</WbPage>);
   P(<WbOpener id="note-values" concepts={C} blurb="Every note has a length. Each one splits into two of the next one down, and every note has a rest of the same length."/>);
-  P(<WbLog/>);
+  P(<WbMap id="note-values" concepts={C} steps={11} checkPage={startNo + 7} tasks={[
+    'Play C and hold it: a semibreve (count 4), two minims, four crotchets. Count out loud.',
+    'Pick a bar from your piece. Clap it, saying the beat numbers. Then play it.',
+    'Find a rest in your piece. Count it out loud, but keep your hands still.',
+    'Practise online: scan the code -- "Which bar did you hear?" is waiting in the Lesson.',
+  ]}/>);
 
   // step 1 -- the tree
   const tree = [[1, 'semibreve'], [2, 'minims'], [4, 'crotchets'], [8, 'quavers']];
@@ -20845,12 +20987,6 @@ function NoteValuesWorkbook({ startNo = 1 }) {
     <Faces/>
   </>);
 
-  P(<WbPiano step="1-11" drill="note-values" tasks={[
-    'Play C and hold it: a semibreve (count 4), two minims, four crotchets. Count out loud.',
-    'Pick a bar from your piece. Clap it, saying the beat numbers. Then play it.',
-    'Find a rest in your piece. Count it out loud, but keep your hands still.',
-    'Practise online: scan the code -- "Which bar did you hear?" is waiting in the Lesson.',
-  ]}/>);
 
   // check-up
   const cnt = { nm: 4, bt: 4, rs: 4, dt: 4, br: 4 };
@@ -20898,7 +21034,7 @@ function NoteValuesTeacher() {
     <TcBlock page={7} title="Bars · compose" answers={<>{tcAns('TOGETHER', W.s5.tog.map(b => fmtNum(b.total) + (b.total === 4 ? ' ✓' : ' ✗')))}{tcAns('AT HOME (missing)', W.s5.fill.map(fillAns))}<div style={{fontSize:12,color:BK.ink}}>Rest version: the rest of the same name. Compose: check each bar adds up to 4 and that they can clap it steadily.</div></>}
       watch="Filling the gap with several small notes when one note was asked. Forgetting that rests count too."
       say="“Count the beats you have, out loud. How many are left to reach 4?”"/>
-    <TcBlock page={9} title="Check-up" answers={<>{tcAns('A', W.chk.nm.map(it => nvName(it)))}{tcAns('B', W.chk.bt.map(it => fmtNum(it.beats)))}{tcAns('C', W.chk.rs.map(it => nvName(it)))}{tcAns('D', W.chk.dt.map(it => fmtNum(it.beats)))}{tcAns('E', W.chk.br.map(b => fmtNum(b.total) + (b.total === 4 ? ' ✓' : ' ✗')))}
+    <TcBlock page={8} title="Check-up" goBack={nvConcepts()} answers={<>{tcAns('A', W.chk.nm.map(it => nvName(it)))}{tcAns('B', W.chk.bt.map(it => fmtNum(it.beats)))}{tcAns('C', W.chk.rs.map(it => nvName(it)))}{tcAns('D', W.chk.dt.map(it => fmtNum(it.beats)))}{tcAns('E', W.chk.br.map(b => fmtNum(b.total) + (b.total === 4 ? ' ✓' : ' ✗')))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Below the pass mark, set that concept's workbook page again.</div></>}/>
   </>);
   return <>{pages}</>;
@@ -21095,7 +21231,12 @@ function TimeSigWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="time-signatures">{content}</WbPage>);
   P(<WbOpener id="time-signatures" concepts={C} blurb="Two numbers at the start of the music tell you how the beats are grouped into bars."/>);
-  P(<WbLog/>);
+  P(<WbMap id="time-signatures" concepts={C} steps={7} checkPage={startNo + 6} tasks={[
+    'Find the time signature in each of your pieces. Say what the two numbers mean.',
+    'Play your piece and count out loud -- make beat 1 of every bar a little stronger.',
+    'Conduct a song on the radio for one minute. Is it in 2, 3 or 4?',
+    'Practise online: scan the code and play the drill for this chapter.',
+  ]}/>);
 
   // step 1 -- the two numbers
   P(<>
@@ -21174,12 +21315,6 @@ function TimeSigWorkbook({ startNo = 1 }) {
     <Faces/>
   </>);
 
-  P(<WbPiano step="1-7" drill="time-signatures" tasks={[
-    'Find the time signature in each of your pieces. Say what the two numbers mean.',
-    'Play your piece and count out loud -- make beat 1 of every bar a little stronger.',
-    'Conduct a song on the radio for one minute. Is it in 2, 3 or 4?',
-    'Practise online: scan the code and play the drill for this chapter.',
-  ]}/>);
 
   // check-up
   const cnt = { tn: 4, cb: 4, bt: 4, db: 4, cp: 4 };
@@ -21232,7 +21367,7 @@ function TimeSigTeacher() {
       <div style={{fontSize:12,color:BK.ink,marginTop:4}}>PLAY: any words with a strong first syllable in each group of three.</div></>}
       watch="Beaming 3/4 in threes because it has a 3. In 3/4 the beat is the crotchet, so quavers go in pairs."
       say="“Is the beat a crotchet (pairs of quavers) or a dotted crotchet (threes)?”"/>
-    <TcBlock page={8} title="Check-up" answers={<>{tcAns('A', W.chk.tn.map(tsTop))}{tcAns('B', ['4/4', '2/2', 'bar lines below'])}<RunLine line={W.chk.cb.line} showBars size={28}/>{tcAns('C', W.chk.bt.map(b => b.ts))}{tcAns('D', W.chk.db.map(it => fmtNum(it.beats * 2)))}{tcAns('E', W.chk.cp.map(ts => TS[ts].kind === 'compound' ? 'C' : 'S'))}
+    <TcBlock page={7} title="Check-up" goBack={tsConcepts()} answers={<>{tcAns('A', W.chk.tn.map(tsTop))}{tcAns('B', ['4/4', '2/2', 'bar lines below'])}<RunLine line={W.chk.cb.line} showBars size={28}/>{tcAns('C', W.chk.bt.map(b => b.ts))}{tcAns('D', W.chk.db.map(it => fmtNum(it.beats * 2)))}{tcAns('E', W.chk.cp.map(ts => TS[ts].kind === 'compound' ? 'C' : 'S'))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Below the pass mark, set that concept's workbook page again.</div></>}/>
   </>);
   return <>{pages}</>;
@@ -21313,7 +21448,12 @@ function LedgerWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="ledger-lines">{content}</WbPage>);
   P(<WbOpener id="ledger-lines" concepts={C} blurb="Short lines that carry the staff on above and below -- the same line, space, line, space pattern."/>);
-  P(<WbLog/>);
+  P(<WbMap id="ledger-lines" concepts={C} steps={4} checkPage={startNo + 6} tasks={[
+    'Find high C and low C on your piano (two ledger lines away from the staff). Play them, then middle C.',
+    'Find a ledger-line note in one of your pieces. Name it by counting from the staff.',
+    'Play the rocket from page 3: F G A B C D E, going up.',
+    'Practise online: scan the code and play the drill for this chapter.',
+  ]}/>);
 
   // step 1 -- one ledger line
   P(<>
@@ -21393,12 +21533,6 @@ function LedgerWorkbook({ startNo = 1 }) {
     </Part>
   </>);
 
-  P(<WbPiano step="1-4" drill="ledger-lines" tasks={[
-    'Find high C and low C on your piano (two ledger lines away from the staff). Play them, then middle C.',
-    'Find a ledger-line note in one of your pieces. Name it by counting from the staff.',
-    'Play the rocket from page 3: F G A B C D E, going up.',
-    'Practise online: scan the code and play the drill for this chapter.',
-  ]}/>);
 
   const cnt = { l1: 4, sk: 4, l2: 4, tw: 4, wr: 4 };
   P(<>
@@ -21452,7 +21586,7 @@ function LedgerTeacher() {
       say="“A ledger line is a small piece of staff -- same gap as the staff lines.”"/>
   </>);
   P(<>
-    <TcBlock page={8} title="Check-up" answers={<>{tcAns('A', W.chk.l1.map(nmX))}{tcAns('B', W.chk.sk.map(s => LL_LINE_NAMES[s.clef + '-' + (s.up ? 'up' : 'down')].slice(0, 2).map(dName).join(' ')))}{tcAns('C', W.chk.l2.map(nmX))}
+    <TcBlock page={7} title="Check-up" goBack={llConcepts()} answers={<>{tcAns('A', W.chk.l1.map(nmX))}{tcAns('B', W.chk.sk.map(s => LL_LINE_NAMES[s.clef + '-' + (s.up ? 'up' : 'down')].slice(0, 2).map(dName).join(' ')))}{tcAns('C', W.chk.l2.map(nmX))}
       <div style={{fontSize:10.5,fontWeight:900,color:BK.muted,letterSpacing:'0.06em',margin:'4px 0'}}>D and E</div>
       <BkGrid cols={8} gap="4px 5px">{W.chk.tw.map((d, i) => <BkCell key={'d' + i} n={'D' + (i + 1)}><div style={{paddingTop:8}}><PaperStaff clef="bass" notes={[{ d, color: BK.coral }]} width={110}/></div></BkCell>)}{W.chk.wr.map((t0, i) => <BkCell key={'e' + i} n={'E' + (i + 1)}><div style={{paddingTop:8}}><PaperStaff clef={t0.clef} notes={[{ d: t0.d, color: BK.coral }]} width={110}/></div></BkCell>)}</BkGrid>
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Below the pass mark, set that concept's workbook page again.</div></>}/>
@@ -21547,7 +21681,12 @@ function IntervalsWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="intervals">{content}</WbPage>);
   P(<WbOpener id="intervals" concepts={C} blurb="An interval is the distance between two notes: a number (count the letters) and a quality (major, minor, perfect)."/>);
-  P(<WbLog/>);
+  P(<WbMap id="intervals" concepts={C} steps={5} checkPage={startNo + 6} tasks={[
+    'Play a 3rd, a 5th and an octave up from C. Say each one as you play it.',
+    'Play C-E and C-E♭ with your eyes closed. Can you hear which is happy and which is sad?',
+    'Ear training: scan the code, open the Lesson and try "Train your ear" (step 4).',
+    'Find a 5th in one of your pieces. What letters are the two notes?',
+  ]}/>);
 
   // step 1 -- the number
   P(<>
@@ -21620,12 +21759,6 @@ function IntervalsWorkbook({ startNo = 1 }) {
     <Faces/>
   </>);
 
-  P(<WbPiano step="1-5" drill="intervals" tasks={[
-    'Play a 3rd, a 5th and an octave up from C. Say each one as you play it.',
-    'Play C-E and C-E♭ with your eyes closed. Can you hear which is happy and which is sad?',
-    'Ear training: scan the code, open the Lesson and try "Train your ear" (step 4).',
-    'Find a 5th in one of your pieces. What letters are the two notes?',
-  ]}/>);
 
   const cnt = { nb: 4, lt: 4, ql: 4, ms: 4, iv: 4 };
   P(<>
@@ -21667,7 +21800,7 @@ function IntervalsTeacher() {
       say="“Numbers add to 9. Major and minor swap. Perfect stays perfect.”"/>
   </>);
   P(<>
-    <TcBlock page={8} title="Check-up" answers={<>{tcAns('A', W.chk.nb.map(num))}{tcAns('B', W.chk.lt.map(f => f.a))}{tcAns('C', W.chk.ql.map(it => it.s + ', ' + IV_QWORD_EN[it.q]))}{tcAns('D', W.chk.ms.map(it => ivLongEn(it.q, it.n)))}{tcAns('E', W.chk.iv.map(iv => ivLongEn(...ivInv(iv).reverse())))}
+    <TcBlock page={7} title="Check-up" goBack={ivConcepts()} answers={<>{tcAns('A', W.chk.nb.map(num))}{tcAns('B', W.chk.lt.map(f => f.a))}{tcAns('C', W.chk.ql.map(it => it.s + ', ' + IV_QWORD_EN[it.q]))}{tcAns('D', W.chk.ms.map(it => ivLongEn(it.q, it.n)))}{tcAns('E', W.chk.iv.map(iv => ivLongEn(...ivInv(iv).reverse())))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Below the pass mark, set that concept's workbook page again.</div></>}/>
   </>);
   return <>{pages}</>;
@@ -21757,7 +21890,12 @@ function KeySigWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="key-signatures">{content}</WbPage>);
   P(<WbOpener id="key-signatures" concepts={C} blurb="Sharps and flats always arrive in the same order -- learn the order and every key falls out of it."/>);
-  P(<WbLog/>);
+  P(<WbMap id="key-signatures" concepts={C} steps={7} checkPage={startNo + 5} tasks={[
+    'Say the order of sharps, then flats, out loud -- three times each, faster every time.',
+    'Look at the key signature of each of your pieces. Name the key.',
+    'Play the scale of a key from this week. Which notes need a sharp or a flat?',
+    'Practise online: scan the code and play the drill for this chapter.',
+  ]}/>);
 
   // steps 1-2 -- the orders
   P(<>
@@ -21815,12 +21953,6 @@ function KeySigWorkbook({ startNo = 1 }) {
     </Part>
   </>);
 
-  P(<WbPiano step="1-7" drill="key-signatures" tasks={[
-    'Say the order of sharps, then flats, out loud -- three times each, faster every time.',
-    'Look at the key signature of each of your pieces. Name the key.',
-    'Play the scale of a key from this week. Which notes need a sharp or a flat?',
-    'Practise online: scan the code and play the drill for this chapter.',
-  ]}/>);
 
   const cnt = { so: 4, fl: 4, wr: 4, nk: 4, rm: 4 };
   P(<>
@@ -21861,7 +21993,7 @@ function KeySigTeacher() {
       say="“Last sharp -- up one letter. Second-last flat -- that's the key.”"/>
   </>);
   P(<>
-    <TcBlock page={7} title="Check-up" answers={<>{tcAns('A', [rowAns(W.chk.so)])}{tcAns('B', [rowAns(W.chk.fl)])}
+    <TcBlock page={6} title="Check-up" goBack={ksConcepts()} answers={<>{tcAns('A', [rowAns(W.chk.so)])}{tcAns('B', [rowAns(W.chk.fl)])}
       <BkGrid cols={4} gap="4px 6px">{W.chk.wr.map((ks, i) => <BkCell key={i} n={'C' + (i + 1)}><div style={{paddingTop:8}}><KSStaff count={ks.count} type={ks.type} width={150} accent={BK.coral} ink={BK.ink}/></div></BkCell>)}</BkGrid>
       {tcAns('D', W.chk.nk.map(ksMaj))}{tcAns('E', W.chk.rm.map(ksMin))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Below the pass mark, set that concept's workbook page again.</div></>}/>
@@ -21922,7 +22054,12 @@ function FirstStepsWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="first-steps">{content}</WbPage>);
   P(<WbOpener id="first-steps" concepts={C} blurb="The black keys are a map of the piano -- and your very first song lives on them. You'll also learn to play smoothly: legato."/>);
-  P(<WbLog/>);
+  P(<WbMap id="first-steps" concepts={C} steps={5} checkPage={startNo + 7} tasks={[
+    'Find every small house and every big house on your piano, from the bottom to the top.',
+    'Play Hot Cross Buns with fingers 2, 3, 4 on the big house -- legato, smooth as honey.',
+    'Play your own tune from page 7 to someone at home.',
+    'Practise online: scan the code and play the drill for this chapter.',
+  ]}/>);
 
   // step 1 -- high and low, loud and soft
   P(<>
@@ -22020,12 +22157,6 @@ function FirstStepsWorkbook({ startNo = 1 }) {
     </Part>
   </>);
 
-  P(<WbPiano step="1-5" drill="first-steps" tasks={[
-    'Find every small house and every big house on your piano, from the bottom to the top.',
-    'Play Hot Cross Buns with fingers 2, 3, 4 on the big house -- legato, smooth as honey.',
-    'Play your own tune from page 7 to someone at home.',
-    'Practise online: scan the code and play the drill for this chapter.',
-  ]}/>);
 
   const cnt = { hl: 4, hs: 4, fn: 4, sg: 4, lg: 4 };
   P(<>
@@ -22068,7 +22199,7 @@ function FirstStepsTeacher() {
       say="“Walk with your fingers: one foot is always on the ground -- never both feet in the air, never both on the ground for long.”"/>
   </>);
   P(<>
-    <TcBlock page={9} title="Check-up" answers={<>{tcAns('A', W.chk.hl.map(p => nnLet('C', Math.max(p[0], p[1])) + ' (right dot)'))}{tcAns('B', ['S B S B'])}{tcAns('C', W.chk.fn)}{tcAns('D', W.chk.sg.map(i => finger[i]))}{tcAns('E', W.chk.lg.map(f => f ? 'top' : 'bottom'))}
+    <TcBlock page={8} title="Check-up" goBack={fsConcepts()} answers={<>{tcAns('A', W.chk.hl.map(p => nnLet('C', Math.max(p[0], p[1])) + ' (right dot)'))}{tcAns('B', ['S B S B'])}{tcAns('C', W.chk.fn)}{tcAns('D', W.chk.sg.map(i => finger[i]))}{tcAns('E', W.chk.lg.map(f => f ? 'top' : 'bottom'))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Below the pass mark, set that concept's workbook page again.</div></>}/>
   </>);
   return <>{pages}</>;
@@ -22155,7 +22286,12 @@ function PulseWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="pulse">{content}</WbPage>);
   P(<WbOpener id="pulse" concepts={C} blurb="Music has a heartbeat -- the pulse. It keeps going, steady, even when the notes stop."/>);
-  P(<WbLog/>);
+  P(<WbMap id="pulse" concepts={C} steps={6} checkPage={startNo + 6} tasks={[
+    'Walk around the room to a song, one step per beat. Can you keep it steady?',
+    'Play your piece and count out loud the whole way through -- don\'t stop the count!',
+    'Pat on beat 1 and clap on the other beats along with a song on the radio.',
+    'Practise online: scan the code and play the drill for this chapter.',
+  ]}/>);
   const tick = (ok, ex) => <span style={{display:'inline-flex',gap:6}}>{['steady', 'not steady'].map((l, j) => <span key={l} style={{border:'1.5px solid ' + (ex && ((j === 0) === ok) ? BK.coral : BK.line),borderRadius:14,padding:'2px 9px',fontSize:11.5,color:ex && ((j === 0) === ok) ? BK.coral : BK.ink,fontWeight:ex && ((j === 0) === ok) ? 900 : 600}}>{l}</span>)}</span>;
 
   // steps 1-2 -- steady beat, beat or rhythm
@@ -22226,12 +22362,6 @@ function PulseWorkbook({ startNo = 1 }) {
     <Faces/>
   </>);
 
-  P(<WbPiano step="1-6" drill="pulse" tasks={[
-    'Walk around the room to a song, one step per beat. Can you keep it steady?',
-    'Play your piece and count out loud the whole way through -- don\'t stop the count!',
-    'Pat on beat 1 and clap on the other beats along with a song on the radio.',
-    'Practise online: scan the code and play the drill for this chapter.',
-  ]}/>);
 
   const cnt = { bt: 4, br: 4, sw: 4, nb: 4, ct: 4 };
   P(<>
@@ -22278,7 +22408,7 @@ function PulseTeacher() {
       say="“Count first, clap second -- the count is the boss.”"/>
   </>);
   P(<>
-    <TcBlock page={8} title="Check-up" answers={<>{tcAns('A', W.chk.bt.map(st))}{tcAns('B', W.chk.br.map(f => f ? 'top' : 'bottom'))}{tcAns('C', W.chk.sw)}{tcAns('D', W.chk.nb.map(it => fmtNum(it.beats)))}{tcAns('E', W.chk.ct.map(b => plCounts(b).join(' ')))}
+    <TcBlock page={7} title="Check-up" goBack={plConcepts()} answers={<>{tcAns('A', W.chk.bt.map(st))}{tcAns('B', W.chk.br.map(f => f ? 'top' : 'bottom'))}{tcAns('C', W.chk.sw)}{tcAns('D', W.chk.nb.map(it => fmtNum(it.beats)))}{tcAns('E', W.chk.ct.map(b => plCounts(b).join(' ')))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Below the pass mark, set that concept's workbook page again.</div></>}/>
   </>);
   return <>{pages}</>;
@@ -22318,7 +22448,12 @@ function PostureWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="posture-hands">{content}</WbPage>);
   P(<WbOpener id="posture-hands" concepts={C} blurb="How you sit and how you hold your hands makes every note easier -- and keeps your body happy."/>);
-  P(<WbLog/>);
+  P(<WbMap id="posture-hands" concepts={C} steps={7} checkPage={startNo + 5} tasks={[
+    'Before you play: front of the chair, feet flat, sit tall. Check it in a mirror.',
+    'Arm weight: let your arm hang heavy at your side, then lift it and rest it on the keys.',
+    'Make a round hand on your knee (like holding a ball), then move it to the keys.',
+    'Practise online: scan the code and play the finger-number drill.',
+  ]}/>);
 
   P(<>
     <WbTop step="1-3"/>
@@ -22369,12 +22504,6 @@ function PostureWorkbook({ startNo = 1 }) {
     </Part>
   </>);
 
-  P(<WbPiano step="1-7" drill="posture-hands" tasks={[
-    'Before you play: front of the chair, feet flat, sit tall. Check it in a mirror.',
-    'Arm weight: let your arm hang heavy at your side, then lift it and rest it on the keys.',
-    'Make a round hand on your knee (like holding a ball), then move it to the keys.',
-    'Practise online: scan the code and play the finger-number drill.',
-  ]}/>);
 
   const cnt = { st: 4, ar: 4, hs: 4, lr: 4, fn: 4 };
   const tfCell = ([txt], i) => <BkCell key={i} n={i}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,padding:'12px 6px 4px',fontSize:12.5,fontWeight:700,color:BK.ink}}><span>{txt}</span>{tfPill(true, false)}</div></BkCell>;
@@ -22412,7 +22541,7 @@ function PostureTeacher() {
       say="“Hold a little bubble in your hand -- don't pop it!”"/>
   </>);
   P(<>
-    <TcBlock page={7} title="Check-up" answers={<>{tcAns('A', W.chk.st.map(yn))}{tcAns('B', W.chk.ar.map(yn))}{tcAns('C', W.chk.hs.map(yn))}{tcAns('D', W.chk.lr)}{tcAns('E', W.chk.fn.map(([, f]) => f))}
+    <TcBlock page={6} title="Check-up" goBack={phConcepts()} answers={<>{tcAns('A', W.chk.st.map(yn))}{tcAns('B', W.chk.ar.map(yn))}{tcAns('C', W.chk.hs.map(yn))}{tcAns('D', W.chk.lr)}{tcAns('E', W.chk.fn.map(([, f]) => f))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Then check posture at the piano, not just on paper.</div></>}/>
   </>);
   return <>{pages}</>;
@@ -22493,7 +22622,12 @@ function RhythmWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="rhythm">{content}</WbPage>);
   P(<WbOpener id="rhythm" concepts={C} blurb="One-bar rhythms in 4/4, easiest first. Count along under every note -- out loud!"/>);
-  P(<WbLog/>);
+  P(<WbMap id="rhythm" concepts={C} steps={4} checkPage={startNo + 6} tasks={[
+    'Clap one rhythm card a day, counting out loud. Then play it on one note on the piano.',
+    'Find a dotted rhythm in one of your pieces. Count it out loud: “1 (2) &”.',
+    'Does any of your pieces start with a pick-up? What beat does it start on?',
+    'Practise online: scan the code and play the drill for this chapter.',
+  ]}/>);
 
   P(<>
     <WbTop step={1}/>
@@ -22554,12 +22688,6 @@ function RhythmWorkbook({ startNo = 1 }) {
     </Part>
   </>);
 
-  P(<WbPiano step="1-4" drill="rhythm" tasks={[
-    'Clap one rhythm card a day, counting out loud. Then play it on one note on the piano.',
-    'Find a dotted rhythm in one of your pieces. Count it out loud: “1 (2) &”.',
-    'Does any of your pieces start with a pick-up? What beat does it start on?',
-    'Practise online: scan the code and play the drill for this chapter.',
-  ]}/>);
 
   const cnt = { cr: 4, dq: 4, sq: 4, an: 4, cp: 4 };
   P(<>
@@ -22603,7 +22731,7 @@ function RhythmTeacher() {
       say="“Does it add up to 4? Count it on your fingers.”"/>
   </>);
   P(<>
-    <TcBlock page={8} title="Check-up" answers={<>{tcAns('A', W.chk.cr.map(cs))}{tcAns('B', W.chk.dq.map(cs))}{tcAns('C', W.chk.sq.map(cs))}{tcAns('D', W.chk.an.map(a => fmtNum(rhBeats(a.up)) + ' beat(s), starts on ' + (5 - rhBeats(a.up))))}{tcAns('E', W.chk.cp.map(b => missing[4 - rhBeats(b)]))}
+    <TcBlock page={7} title="Check-up" goBack={rhConcepts()} answers={<>{tcAns('A', W.chk.cr.map(cs))}{tcAns('B', W.chk.dq.map(cs))}{tcAns('C', W.chk.sq.map(cs))}{tcAns('D', W.chk.an.map(a => fmtNum(rhBeats(a.up)) + ' beat(s), starts on ' + (5 - rhBeats(a.up))))}{tcAns('E', W.chk.cp.map(b => missing[4 - rhBeats(b)]))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>A, B, C: 2 marks per bar (1 if one count is wrong). Score each concept on its own (pass 3+).</div></>}/>
   </>);
   return <>{pages}</>;
@@ -22656,7 +22784,12 @@ function ReadingStepsWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="reading-steps">{content}</WbPage>);
   P(<WbOpener id="reading-steps" concepts={C} blurb="Reading starts with direction: does the next note step, skip, or stay the same -- and does it go up or down?"/>);
-  P(<WbLog/>);
+  P(<WbMap id="reading-steps" concepts={C} steps={6} checkPage={startNo + 5} tasks={[
+    'Put your right hand in C position. Play C D E F G and back, saying the finger numbers.',
+    'Play the tunes from page 4, saying step, skip or same for each move.',
+    'Play your own tune from page 5 to someone at home.',
+    'Practise online: scan the code -- “Hear it, find it” trains your ears and eyes together.',
+  ]}/>);
 
   P(<>
     <WbTop step={1}/>
@@ -22705,12 +22838,6 @@ function ReadingStepsWorkbook({ startNo = 1 }) {
     </Part>
   </>);
 
-  P(<WbPiano step="1-6" drill="reading-steps" tasks={[
-    'Put your right hand in C position. Play C D E F G and back, saying the finger numbers.',
-    'Play the tunes from page 4, saying step, skip or same for each move.',
-    'Play your own tune from page 5 to someone at home.',
-    'Practise online: scan the code -- “Hear it, find it” trains your ears and eyes together.',
-  ]}/>);
 
   const cnt = { sk: 4, dr: 4, fn: 4, gp: 4, nm: 4 };
   P(<>
@@ -22750,7 +22877,7 @@ function ReadingStepsTeacher() {
       say="“Five fingers, five keys -- like five friends each sitting on their own chair.”"/>
   </>);
   P(<>
-    <TcBlock page={7} title="Check-up" answers={<>{tcAns('A', W.chk.sk.map(p => rsKind(p[0], p[1])))}{tcAns('B', W.chk.dr.map(p => rsDir(p[0], p[1])))}{tcAns('C', W.chk.fn.map(d => rsFinger(d)))}{tcAns('D', W.chk.gp.map(f => 'GABCD'[f - 1]))}{tcAns('E', W.chk.nm.map(dName))}
+    <TcBlock page={6} title="Check-up" goBack={rsConcepts()} answers={<>{tcAns('A', W.chk.sk.map(p => rsKind(p[0], p[1])))}{tcAns('B', W.chk.dr.map(p => rsDir(p[0], p[1])))}{tcAns('C', W.chk.fn.map(d => rsFinger(d)))}{tcAns('D', W.chk.gp.map(f => 'GABCD'[f - 1]))}{tcAns('E', W.chk.nm.map(dName))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Below the pass mark, set that concept's workbook page again.</div></>}/>
   </>);
   return <>{pages}</>;
@@ -22788,7 +22915,12 @@ function DynamicsWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="dynamics">{content}</WbPage>);
   P(<WbOpener id="dynamics" concepts={C} blurb="Dynamics tell you how loud to play. Articulation tells you how to play each note: smooth, short, strong or held."/>);
-  P(<WbLog/>);
+  P(<WbMap id="dynamics" concepts={C} steps={5} checkPage={startNo + 4} tasks={[
+    'Play one note at every dynamic, pp to ff. Can someone at home hear six different volumes?',
+    'Play your piece once very softly (pp) and once loudly (f). Which part should be which?',
+    'Find a staccato or a slur in one of your pieces. Play that bit, then show someone.',
+    'Ear training: scan the code, open the Lesson and try “Train your ear”.',
+  ]}/>);
 
   P(<>
     <WbTop step="1-2"/>
@@ -22825,12 +22957,6 @@ function DynamicsWorkbook({ startNo = 1 }) {
     <Faces/>
   </>);
 
-  P(<WbPiano step="1-5" drill="dynamics" tasks={[
-    'Play one note at every dynamic, pp to ff. Can someone at home hear six different volumes?',
-    'Play your piece once very softly (pp) and once loudly (f). Which part should be which?',
-    'Find a staccato or a slur in one of your pieces. Play that bit, then show someone.',
-    'Ear training: scan the code, open the Lesson and try “Train your ear”.',
-  ]}/>);
 
   const cnt = { od: 4, mn: 4, hp: 4, ar: 4, dr: 4 };
   P(<>
@@ -22867,7 +22993,7 @@ function DynamicsTeacher() {
       say="“Dots: hot stove -- touch and let go. Slur: one breath, all joined up.”"/>
   </>);
   P(<>
-    <TcBlock page={6} title="Check-up" answers={<>{tcAns('A', ['p mp mf f (between pp and ff)'])}{tcAns('B', W.chk.mn.map(dyMeaning))}{tcAns('C', W.chk.hp.map(h => h === 'cresc' ? 'L' : 'S'))}{tcAns('D', W.chk.ar.map(m => nm[m]))}{tcAns('E', W.chk.dr.map(([m]) => mk[m]))}
+    <TcBlock page={5} title="Check-up" goBack={dyConcepts()} answers={<>{tcAns('A', ['p mp mf f (between pp and ff)'])}{tcAns('B', W.chk.mn.map(dyMeaning))}{tcAns('C', W.chk.hp.map(h => h === 'cresc' ? 'L' : 'S'))}{tcAns('D', W.chk.ar.map(m => nm[m]))}{tcAns('E', W.chk.dr.map(([m]) => mk[m]))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Below the pass mark, set that concept's workbook page again.</div></>}/>
   </>);
   return <>{pages}</>;
@@ -22946,7 +23072,12 @@ function SignsWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="signs">{content}</WbPage>);
   P(<WbOpener id="signs" concepts={C} blurb="Signs are the music's road map: go back, jump ahead, hold on, play an octave higher -- or add a little sparkle."/>);
-  P(<WbLog/>);
+  P(<WbMap id="signs" concepts={C} steps={6} checkPage={startNo + 5} tasks={[
+    'Find a repeat sign in one of your pieces. Show someone where you go back to.',
+    'Find a tie and a slur in your music. Play each one and say which is which.',
+    'Play a tune you know, then play it 8va -- an octave higher.',
+    'Practise online: scan the code and play the drill for this chapter.',
+  ]}/>);
   const order = (m, ex) => <div style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:BK.muted,margin:'2px 8px 6px'}}>play order {ex ? <span style={{flex:1,color:BK.coral,fontWeight:900,fontStyle:'italic',borderBottom:'1.5px solid ' + BK.coral,letterSpacing:'0.12em',fontSize:14}}>{m.order}</span> : <span style={{flex:1,borderBottom:'1.5px solid ' + BK.line,height:20}}/>}</div>;
 
   P(<>
@@ -22997,12 +23128,6 @@ function SignsWorkbook({ startNo = 1 }) {
     <Faces/>
   </>);
 
-  P(<WbPiano step="1-6" drill="signs" tasks={[
-    'Find a repeat sign in one of your pieces. Show someone where you go back to.',
-    'Find a tie and a slur in your music. Play each one and say which is which.',
-    'Play a tune you know, then play it 8va -- an octave higher.',
-    'Practise online: scan the code and play the drill for this chapter.',
-  ]}/>);
 
   const cnt = { rp: 4, dc: 4, ts: 4, ov: 4, or: 4 };
   P(<>
@@ -23040,7 +23165,7 @@ function SignsTeacher() {
       say="“Ornaments are sparkles -- quick and light, then back to the main note.”"/>
   </>);
   P(<>
-    <TcBlock page={7} title="Check-up" answers={<>{tcAns('A', [W.chk.rp[0].order])}{tcAns('B', [W.chk.dc[0].order])}{tcAns('C', W.chk.ts.map(tieOrSlur))}{tcAns('D', W.chk.ov.map(([m]) => m === '8va' ? 'H' : 'L'))}{tcAns('E', W.chk.or.map(o => SG_ORN_NAME[o]))}
+    <TcBlock page={6} title="Check-up" goBack={sgConcepts()} answers={<>{tcAns('A', [W.chk.rp[0].order])}{tcAns('B', [W.chk.dc[0].order])}{tcAns('C', W.chk.ts.map(tieOrSlur))}{tcAns('D', W.chk.ov.map(([m]) => m === '8va' ? 'H' : 'L'))}{tcAns('E', W.chk.or.map(o => SG_ORN_NAME[o]))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>A and B: 4 marks each (take 1 off per mistake in the order). Score each concept on its own (pass 3+).</div></>}/>
   </>);
   return <>{pages}</>;
@@ -23076,7 +23201,12 @@ function TempoWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="tempo">{content}</WbPage>);
   P(<WbOpener id="tempo" concepts={C} blurb="Tempo is how fast the beat goes. Italian words tell you the speed -- from a slow snail to a racing cheetah."/>);
-  P(<WbLog/>);
+  P(<WbMap id="tempo" concepts={C} steps={6} checkPage={startNo + 4} tasks={[
+    'Play a tune you know Adagio, then Allegro. Which do you like better?',
+    'Find the tempo word at the top of your piece. Play it at that speed.',
+    'Play a scale with an accel. -- start slow and get faster. Then a rit.',
+    'Practise online: scan the code and play the tempo race.',
+  ]}/>);
 
   P(<>
     <WbTop step="1-2"/>
@@ -23118,12 +23248,6 @@ function TempoWorkbook({ startNo = 1 }) {
     <Faces/>
   </>);
 
-  P(<WbPiano step="1-6" drill="tempo" tasks={[
-    'Play a tune you know Adagio, then Allegro. Which do you like better?',
-    'Find the tempo word at the top of your piece. Play it at that speed.',
-    'Play a scale with an accel. -- start slow and get faster. Then a rit.',
-    'Practise online: scan the code and play the tempo race.',
-  ]}/>);
 
   const cnt = { od: 4, mn: 4, fs: 4, ch: 4, mm: 4 };
   P(<>
@@ -23158,7 +23282,7 @@ function TempoTeacher() {
       say="“The number is how many beats fit in one minute -- more beats, faster music.”"/>
   </>);
   P(<>
-    <TcBlock page={6} title="Check-up" answers={<>{tcAns('A', ['Adagio, Andante, (Moderato), Allegro, Presto'])}{tcAns('B', W.chk.mn.map(w => TP_MEAN[w]))}{tcAns('C', W.chk.fs.map(faster))}{tcAns('D', W.chk.ch.map(([, m]) => m))}{tcAns('E', W.chk.mm.map(([a, b]) => Math.max(a, b)))}
+    <TcBlock page={5} title="Check-up" goBack={tpConcepts()} answers={<>{tcAns('A', ['Adagio, Andante, (Moderato), Allegro, Presto'])}{tcAns('B', W.chk.mn.map(w => TP_MEAN[w]))}{tcAns('C', W.chk.fs.map(faster))}{tcAns('D', W.chk.ch.map(([, m]) => m))}{tcAns('E', W.chk.mm.map(([a, b]) => Math.max(a, b)))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Below the pass mark, set that concept's workbook page again.</div></>}/>
   </>);
   return <>{pages}</>;
@@ -23208,7 +23332,12 @@ function TermsWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="terms">{content}</WbPage>);
   P(<WbOpener id="terms" concepts={C} blurb="Musical terms are mostly Italian words that tell you how to play: how fast, how loud, and in what style."/>);
-  P(<WbLog/>);
+  P(<WbMap id="terms" concepts={C} steps={7} checkPage={startNo + 5} tasks={[
+    'Find every Italian word in one of your pieces. Say what each one means.',
+    'Play a short tune legato, then staccato, then cantabile.',
+    'Teach someone at home three terms. Can they remember them tomorrow?',
+    'Practise online: scan the code and play the terms drill.',
+  ]}/>);
   const Card = ({ children }) => <div style={{border:'1.6px dashed ' + BK.muted,height:66,display:'flex',alignItems:'center',justifyContent:'center',padding:'4px 8px',fontSize:15,fontWeight:900,fontStyle:'italic',color:BK.ink,textAlign:'center'}}>{children}</div>;
 
   P(<>
@@ -23261,12 +23390,6 @@ function TermsWorkbook({ startNo = 1 }) {
     <Faces/>
   </>);
 
-  P(<WbPiano step="1-7" drill="terms" tasks={[
-    'Find every Italian word in one of your pieces. Say what each one means.',
-    'Play a short tune legato, then staccato, then cantabile.',
-    'Teach someone at home three terms. Can they remember them tomorrow?',
-    'Practise online: scan the code and play the terms drill.',
-  ]}/>);
 
   const cnt = { fm: 4, g1: 4, g2: 4, lw: 4, ab: 4 };
   const line = (w) => <div style={{display:'flex',alignItems:'center',gap:10,padding:'12px 8px 6px'}}><b style={{fontStyle:'italic',width:120,fontSize:13}}>{w}</b><span style={{flex:1,borderBottom:'1.5px solid ' + BK.line,height:20}}/></div>;
@@ -23305,7 +23428,7 @@ function TermsTeacher() {
       say="“Little words are like adjectives for the music -- they only work with a partner.”"/>
   </>);
   P(<>
-    <TcBlock page={7} title="Check-up" answers={<>{tcAns('A', W.chk.fm.map(fam))}{tcAns('B', W.chk.g1.map(x => x.meaningEn))}{tcAns('C', W.chk.g2.map(x => x.meaningEn))}{tcAns('D', W.chk.lw.map(([, m]) => m))}{tcAns('E', W.chk.ab.map(([, m]) => m))}
+    <TcBlock page={6} title="Check-up" goBack={tmConcepts()} answers={<>{tcAns('A', W.chk.fm.map(fam))}{tcAns('B', W.chk.g1.map(x => x.meaningEn))}{tcAns('C', W.chk.g2.map(x => x.meaningEn))}{tcAns('D', W.chk.lw.map(([, m]) => m))}{tcAns('E', W.chk.ab.map(([, m]) => m))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Accept close meanings.</div></>}/>
   </>);
   return <>{pages}</>;
@@ -23363,7 +23486,12 @@ function MelodyWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="melody">{content}</WbPage>);
   P(<WbOpener id="melody" concepts={C} blurb="A tune is rhythm and pitch working together. Tunes have shapes, they breathe in phrases, and they ask and answer questions."/>);
-  P(<WbLog/>);
+  P(<WbMap id="melody" concepts={C} steps={5} checkPage={startNo + 5} tasks={[
+    'Play one of your pieces and draw its shape in the air with your other hand.',
+    'Find the phrases in your piece. Lift gently (breathe) at the end of each one.',
+    'Make up a question on the piano; let someone at home make up the answer.',
+    'Practise online: scan the code and play the drill for this chapter.',
+  ]}/>);
 
   P(<>
     <WbTop step="1-2"/>
@@ -23417,12 +23545,6 @@ function MelodyWorkbook({ startNo = 1 }) {
     </Part>
   </>);
 
-  P(<WbPiano step="1-5" drill="melody" tasks={[
-    'Play one of your pieces and draw its shape in the air with your other hand.',
-    'Find the phrases in your piece. Lift gently (breathe) at the end of each one.',
-    'Make up a question on the piano; let someone at home make up the answer.',
-    'Practise online: scan the code and play the drill for this chapter.',
-  ]}/>);
 
   const cnt = { sh: 5, ph: 5, qa: 5, sq: 5 };
   P(<>
@@ -23458,7 +23580,7 @@ function MelodyTeacher() {
       say="“Same shape, new starting step -- like walking up stairs with the same dance on each one.”"/>
   </>);
   P(<>
-    <TcBlock page={7} title="Check-up" answers={<>{tcAns('A', W.chk.sh.map(it => it.shape))}{tcAns('B', ['after: ' + W.chk.ph.join(' / ') + ' (end)'])}{tcAns('C', W.chk.qa.map(it => it.ans ? 'A' : 'Q'))}{tcAns('D', W.chk.sq.map(seqAns))}
+    <TcBlock page={6} title="Check-up" goBack={mlConcepts()} answers={<>{tcAns('A', W.chk.sh.map(it => it.shape))}{tcAns('B', ['after: ' + W.chk.ph.join(' / ') + ' (end)'])}{tcAns('C', W.chk.qa.map(it => it.ans ? 'A' : 'Q'))}{tcAns('D', W.chk.sq.map(seqAns))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>D: 1 mark per correct note (3 then 2 marks). Score each concept on its own (pass 4+ out of 5).</div></>}/>
   </>);
   return <>{pages}</>;
@@ -23523,7 +23645,12 @@ function TonesWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="tones">{content}</WbPage>);
   P(<WbOpener id="tones" concepts={C} blurb="A semitone is your very best friend -- the very next key. A tone is a friend of a friend: two semitones."/>);
-  P(<WbLog/>);
+  P(<WbMap id="tones" concepts={C} steps={3} checkPage={startNo + 5} tasks={[
+    'Play every semitone pair of white keys you can find (there are only two kinds!).',
+    'Play C, then the note a tone up, then another tone... how many tones to the next C?',
+    'Play the chromatic scale from middle C up to the next C and back.',
+    'Practise online: scan the code and play the drill for this chapter.',
+  ]}/>);
 
   P(<>
     <WbTop step={1}/>
@@ -23576,12 +23703,6 @@ function TonesWorkbook({ startNo = 1 }) {
     <Faces/>
   </>);
 
-  P(<WbPiano step="1-3" drill="tones" tasks={[
-    'Play every semitone pair of white keys you can find (there are only two kinds!).',
-    'Play C, then the note a tone up, then another tone... how many tones to the next C?',
-    'Play the chromatic scale from middle C up to the next C and back.',
-    'Practise online: scan the code and play the drill for this chapter.',
-  ]}/>);
 
   const cnt = { st: 4, ac: 4, en: 4, br: 4, cs: 4 };
   P(<>
@@ -23619,7 +23740,7 @@ function TonesTeacher() {
       say="“Every key, nobody skipped -- black, white, black, white, except at E-F and B-C.”"/>
   </>);
   P(<>
-    <TcBlock page={7} title="Check-up" answers={<>{tcAns('A', W.chk.st.map(st))}{tcAns('B', W.chk.ac.map(([, m]) => m))}{tcAns('C', W.chk.en.map(([, b]) => b))}{tcAns('D', W.chk.br.map(b => b.ans))}{tcAns('E', W.chk.cs.pos.map(p => TN_CHROM_UP[p]))}
+    <TcBlock page={6} title="Check-up" goBack={tnConcepts()} answers={<>{tcAns('A', W.chk.st.map(st))}{tcAns('B', W.chk.ac.map(([, m]) => m))}{tcAns('C', W.chk.en.map(([, b]) => b))}{tcAns('D', W.chk.br.map(b => b.ans))}{tcAns('E', W.chk.cs.pos.map(p => TN_CHROM_UP[p]))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Below the pass mark, set that concept's workbook page again.</div></>}/>
   </>);
   return <>{pages}</>;
@@ -23657,7 +23778,12 @@ function ScalesWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="scales">{content}</WbPage>);
   P(<WbOpener id="scales" concepts={C} blurb="One shape builds every major scale: tone, tone, semitone, tone, tone, tone, semitone."/>);
-  P(<WbLog/>);
+  P(<WbMap id="scales" concepts={C} checkPage={startNo + 6} tasks={[
+    'Play C, G and F major hands separately with the right fingers -- slowly, evenly.',
+    'Play A harmonic minor and listen for the raised 7th (G♯).',
+    'Sing the degree names while you play C major: tonic, supertonic...',
+    'Practise online: scan the code -- the Scale finder shows any scale\'s fingering.',
+  ]}/>);
   const fRow = (fs, gaps, ex) => <div style={{display:'flex',gap:5}}>{fs.map((f, i) => { const blank = gaps.includes(i); return <span key={i} style={{width:30,height:32,borderRadius:6,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:900,border:'1.5px solid ' + (blank ? (ex ? BK.coral : BK.line) : 'transparent'),background:blank ? '#fff' : BK.soft,color:blank && ex ? BK.coral : BK.ink}}>{blank && !ex ? '' : f}</span>; })}</div>;
 
   P(<>
@@ -23726,12 +23852,6 @@ function ScalesWorkbook({ startNo = 1 }) {
     <Faces/>
   </>);
 
-  P(<WbPiano step="all" drill="scales" tasks={[
-    'Play C, G and F major hands separately with the right fingers -- slowly, evenly.',
-    'Play A harmonic minor and listen for the raised 7th (G♯).',
-    'Sing the degree names while you play C major: tonic, supertonic...',
-    'Practise online: scan the code -- the Scale finder shows any scale\'s fingering.',
-  ]}/>);
 
   const cnt = { sh: 4, bd: 4, dg: 4, fg: 4, mn: 4 };
   P(<>
@@ -23773,7 +23893,7 @@ function ScalesTeacher() {
       say="“Harmonic: only the 7th goes up -- the leading note that pulls home.”"/>
   </>);
   P(<>
-    <TcBlock page={8} title="Check-up" answers={<>{tcAns('A', W.chk.sh.map(i => SC_SHAPE[i]))}{tcAns('B', W.chk.bd.map(([k0, deg]) => scNotes(k0)[deg - 1]))}{tcAns('C', W.chk.dg.map(d => DEGREE_NAMES[d]))}{tcAns('D', [[1, 3, 6, 7].map(i => fG.RH[i]).join(' ')])}{tcAns('E', W.chk.mn.map(k0 => raised[k0]))}
+    <TcBlock page={7} title="Check-up" goBack={scConcepts()} answers={<>{tcAns('A', W.chk.sh.map(i => SC_SHAPE[i]))}{tcAns('B', W.chk.bd.map(([k0, deg]) => scNotes(k0)[deg - 1]))}{tcAns('C', W.chk.dg.map(d => DEGREE_NAMES[d]))}{tcAns('D', [[1, 3, 6, 7].map(i => fG.RH[i]).join(' ')])}{tcAns('E', W.chk.mn.map(k0 => raised[k0]))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Fingering must also be checked at the piano.</div></>}/>
   </>);
   return <>{pages}</>;
@@ -23812,7 +23932,12 @@ function ChordsWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="chords">{content}</WbPage>);
   P(<WbOpener id="chords" concepts={C} blurb="A triad is three notes stacked in 3rds: root, 3rd and 5th -- like a snowman made of three snowballs."/>);
-  P(<WbLog/>);
+  P(<WbMap id="chords" concepts={C} steps={6} checkPage={startNo + 6} tasks={[
+    'Play the triad on every white key from C to B. Which ones are major? Which are minor?',
+    'Play I, IV, V, I in C major with your left hand. Then in G major.',
+    'Play C major in root position, 1st and 2nd inversion -- hands stay close together.',
+    'Practise online: scan the code and play the drill for this chapter.',
+  ]}/>);
 
   P(<>
     <WbTop step={1}/>
@@ -23883,12 +24008,6 @@ function ChordsWorkbook({ startNo = 1 }) {
     <Faces/>
   </>);
 
-  P(<WbPiano step="1-6" drill="chords" tasks={[
-    'Play the triad on every white key from C to B. Which ones are major? Which are minor?',
-    'Play I, IV, V, I in C major with your left hand. Then in G major.',
-    'Play C major in root position, 1st and 2nd inversion -- hands stay close together.',
-    'Practise online: scan the code and play the drill for this chapter.',
-  ]}/>);
 
   const cnt = { tr: 4, mm: 4, rn: 4, iv: 4, cd: 4 };
   P(<>
@@ -23930,7 +24049,7 @@ function ChordsTeacher() {
       say="“Look at the bass -- the lowest note decides the inversion.”"/>
   </>);
   P(<>
-    <TcBlock page={8} title="Check-up" answers={<>{tcAns('A', W.chk.tr.map(tri))}{tcAns('B', W.chk.mm.map(d => CH_QUAL[d] === 'major' ? 'M' : 'm'))}{tcAns('C', W.chk.rn.map(d => CH_RN[d]))}{tcAns('D', W.chk.iv.map(c => INV_NAME[c.inv]))}{tcAns('E', W.chk.cd.map(c => c[2]))}
+    <TcBlock page={7} title="Check-up" goBack={chConcepts()} answers={<>{tcAns('A', W.chk.tr.map(tri))}{tcAns('B', W.chk.mm.map(d => CH_QUAL[d] === 'major' ? 'M' : 'm'))}{tcAns('C', W.chk.rn.map(d => CH_RN[d]))}{tcAns('D', W.chk.iv.map(c => INV_NAME[c.inv]))}{tcAns('E', W.chk.cd.map(c => c[2]))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Cadence names follow the app (perfect, plagal, imperfect, interrupted).</div></>}/>
   </>);
   return <>{pages}</>;
@@ -24034,7 +24153,12 @@ function MusicalFormWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="form">{content}</WbPage>);
   P(<WbOpener id="form" concepts={C} blurb="A piece is built from sections, like rooms in a house. We give each section a letter: the same music keeps its letter, and something new gets the next one."/>);
-  P(<WbLog/>);
+  P(<WbMap id="form" concepts={C} steps={5} checkPage={startNo + 6} tasks={[
+    'Play your piece and say the letter out loud each time a new section starts.',
+    'Play just the A section of a ternary piece -- then play it again at the end, like coming home.',
+    'Make up a rondo on the piano: your A tune, a B, your A, a C, your A.',
+    'Practise online: scan the code and play the drill for this chapter.',
+  ]}/>);
 
   P(<>
     <WbTop step="1-2"/>
@@ -24111,12 +24235,6 @@ function MusicalFormWorkbook({ startNo = 1 }) {
     <Faces/>
   </>);
 
-  P(<WbPiano step="1-5" drill="form" tasks={[
-    'Play your piece and say the letter out loud each time a new section starts.',
-    'Play just the A section of a ternary piece -- then play it again at the end, like coming home.',
-    'Make up a rondo on the piano: your A tune, a B, your A, a C, your A.',
-    'Practise online: scan the code and play the drill for this chapter.',
-  ]}/>);
 
   const cnt = { sh: 5, sn: 5, ro: 5, bt: 5 };
   P(<>
@@ -24158,7 +24276,7 @@ function MusicalFormTeacher() {
       say="“Look at the first phrase, then the last. Twins? Then it is ABA.”"/>
   </>);
   P(<>
-    <TcBlock page={8} title="Check-up" answers={<>{tcAns('A', W.chk.sh.map(fmName))}{tcAns('B', [lab(W.chk.lab)])}{tcAns('C', W.chk.ro.map(gaps))}{tcAns('D', W.chk.bt.map(btA))}
+    <TcBlock page={7} title="Check-up" goBack={fmConcepts()} answers={<>{tcAns('A', W.chk.sh.map(fmName))}{tcAns('B', [lab(W.chk.lab)])}{tcAns('C', W.chk.ro.map(gaps))}{tcAns('D', W.chk.bt.map(btA))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>B: 1 mark per letter (the given A counts). Score each concept on its own (pass 4+ out of 5).</div></>}/>
   </>);
   return <>{pages}</>;
@@ -24294,7 +24412,13 @@ function StylesWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="styles">{content}</WbPage>);
   P(<WbOpener id="styles" concepts={C} blurb="How many tunes are playing at once? When was it written? Is it folk, classical, jazz or pop? Learn to hear -- and see -- what makes each style itself."/>);
-  P(<WbLog/>);
+  P(<WbMap id="styles" concepts={C} steps={5} checkPage={startNo + 6} tasks={[
+    'Play a piece you know. Is it monophony, homophony or polyphony? Tell someone at home.',
+    'Find out who wrote one of your pieces and when. Which era is it from?',
+    'Play a scale in swing: long-short, long-short.',
+    'Play the 12-bar blues in C with your left hand: C, F or G on beats 1 and 3.',
+    'Practise online: scan the code and play the drill for this chapter.',
+  ]}/>);
 
   P(<>
     <WbTop step="1-2"/>
@@ -24376,13 +24500,6 @@ function StylesWorkbook({ startNo = 1 }) {
     <Faces/>
   </>);
 
-  P(<WbPiano step="1-5" drill="styles" tasks={[
-    'Play a piece you know. Is it monophony, homophony or polyphony? Tell someone at home.',
-    'Find out who wrote one of your pieces and when. Which era is it from?',
-    'Play a scale in swing: long-short, long-short.',
-    'Play the 12-bar blues in C with your left hand: C, F or G on beats 1 and 3.',
-    'Practise online: scan the code and play the drill for this chapter.',
-  ]}/>);
 
   const cnt = { tx: 5, er: 5, fa: 5, bl: 5 };
   P(<>
@@ -24421,7 +24538,7 @@ function StylesTeacher() {
       say="“Four bars of home, two away and home again, then the big moment: V, IV, and home.”"/>
   </>);
   P(<>
-    <TcBlock page={8} title="Check-up" answers={<>{tcAns('A', W.chk.tx.map(tx))}{tcAns('B', W.chk.er.map(er))}{tcAns('C', W.chk.fa.map(fa))}{tcAns('D', W.chk.bl.map(bl))}
+    <TcBlock page={7} title="Check-up" goBack={stConcepts()} answers={<>{tcAns('A', W.chk.tx.map(tx))}{tcAns('B', W.chk.er.map(er))}{tcAns('C', W.chk.fa.map(fa))}{tcAns('D', W.chk.bl.map(bl))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (pass 4+ out of 5).</div></>}/>
   </>);
   return <>{pages}</>;
@@ -24454,10 +24571,10 @@ function PaperSwing() {
   </div>;
 }
 
-const WORKBOOKS = { staff: StaffWorkbook, 'note-names': NoteNamesWorkbook, 'note-values': NoteValuesWorkbook, 'time-signatures': TimeSigWorkbook, 'ledger-lines': LedgerWorkbook, intervals: IntervalsWorkbook, 'key-signatures': KeySigWorkbook, 'first-steps': FirstStepsWorkbook, pulse: PulseWorkbook, 'posture-hands': PostureWorkbook, rhythm: RhythmWorkbook, 'reading-steps': ReadingStepsWorkbook, dynamics: DynamicsWorkbook, signs: SignsWorkbook, tempo: TempoWorkbook, terms: TermsWorkbook, melody: MelodyWorkbook, tones: TonesWorkbook, scales: ScalesWorkbook, chords: ChordsWorkbook , form: MusicalFormWorkbook, styles: StylesWorkbook };
+const WORKBOOKS = { front: FrontMatter, staff: StaffWorkbook, 'note-names': NoteNamesWorkbook, 'note-values': NoteValuesWorkbook, 'time-signatures': TimeSigWorkbook, 'ledger-lines': LedgerWorkbook, intervals: IntervalsWorkbook, 'key-signatures': KeySigWorkbook, 'first-steps': FirstStepsWorkbook, pulse: PulseWorkbook, 'posture-hands': PostureWorkbook, rhythm: RhythmWorkbook, 'reading-steps': ReadingStepsWorkbook, dynamics: DynamicsWorkbook, signs: SignsWorkbook, tempo: TempoWorkbook, terms: TermsWorkbook, melody: MelodyWorkbook, tones: TonesWorkbook, scales: ScalesWorkbook, chords: ChordsWorkbook , form: MusicalFormWorkbook, styles: StylesWorkbook };
 
 // ─── Teacher copy (?book=teacher&ch=staff): answers, what to watch for, what to say ───
-function TcBlock({ page, title, answers, watch, say }) {
+function TcBlock({ page, title, answers, watch, say, goBack }) {
   return (
     <div style={{border:'1.4px solid ' + BK.line,borderRadius:10,padding:'10px 14px',marginBottom:12,breakInside:'avoid'}}>
       <div style={{display:'flex',alignItems:'baseline',gap:10,marginBottom:6}}>
@@ -24465,6 +24582,7 @@ function TcBlock({ page, title, answers, watch, say }) {
         <span style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:17,fontWeight:800,color:BK.ink}}>{title}</span>
       </div>
       {answers}
+      {goBack && <div style={{fontSize:12,color:BK.ink,lineHeight:1.5,marginTop:6}}><b style={{color:BK.coral}}>If a concept is not passed, go back to:</b> {goBack.map((c, i) => <span key={c.id}>{i > 0 && ' \u00b7 '}<b>{'ABCDEFG'[i]}</b> {bkStepLabel(c.step)}, workbook page {c.page}</span>)}</div>}
       {(watch || say) && <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginTop:6}}>
         {watch && <div style={{fontSize:12,color:BK.ink,lineHeight:1.5}}><b style={{color:BK.coral}}>Watch for</b><br/>{watch}</div>}
         {say && <div style={{fontSize:12,color:BK.ink,lineHeight:1.5,background:BK.soft,borderRadius:8,padding:'6px 9px'}}><b>If stuck, try saying</b><br/>{say}</div>}
@@ -24509,7 +24627,7 @@ function StaffTeacher() {
       <div style={{fontSize:12,color:BK.ink,marginTop:5}}>Other octaves of the same letter are also correct if they sit on the asked line/space type. Compose: any 6 notes -- check the names match the notes.</div></>}
       watch="Note heads too big (filling two spaces) or a space note drawn through a line."
       say="“A line note is a bead on a string -- the line goes through its middle. A space note sits in the gap, touching the lines above and below.”"/>
-    <TcBlock page={11} title="Check-up" answers={<>{tcAns('A', W.chk.ls.map(lsAns))}{tcAns('B', W.chk.tr.map(bkNm))}{tcAns('C', W.chk.ba.map(bkNm))}{tcAns('D', W.chk.lm.map(d => bkNm(d) + ' (' + LANDMARK_NAME(d) + ')'))}
+    <TcBlock page={10} title="Check-up" goBack={staffConcepts()} answers={<>{tcAns('A', W.chk.ls.map(lsAns))}{tcAns('B', W.chk.tr.map(bkNm))}{tcAns('C', W.chk.ba.map(bkNm))}{tcAns('D', W.chk.lm.map(d => bkNm(d) + ' (' + LANDMARK_NAME(d) + ')'))}
       <BkGrid cols={6} gap="4px 6px">{W.chk.dr.map((it, i) => <BkCell key={i} n={'E' + (i + 1)}><div style={{paddingTop:8}}><PaperStaff clef={it.clef} notes={[{ d: it.d, color: BK.coral }]} width={110}/></div></BkCell>)}</BkGrid>
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own. Below the pass mark, set that concept's workbook page again (the table on the check-up says which) before the next chapter.</div></>}/>
   </>);
