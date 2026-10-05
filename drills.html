@@ -1330,7 +1330,7 @@ function Rule({ title, children }) {
   );
 }
 function Step({ n, total, title, color, open, done, onToggle, onDone, children, id, bookExtra }) {
-  if (BOOK) { const x = bookExtra || {}; const kids = React.Children.toArray(children).map(c => { const r = (x.swap || []).find(([test]) => test(c)); return r ? (r[1] && React.cloneElement(r[1], { key: c.key })) : c; }); return (
+  if (BOOK) { const x = bookExtra || {}; if (x.foot) return x.foot; const kids = React.Children.toArray(children).map(c => { const r = (x.swap || []).find(([test]) => test(c)); return r ? (r[1] && React.cloneElement(r[1], { key: c.key })) : c; }); return (
     <section style={{margin:'18px 0 6px'}}>
       <div style={{display:'flex',alignItems:'center',gap:10,breakAfter:'avoid'}}>
         <span style={{flex:'0 0 30px',height:30,borderRadius:15,background:color,color:'#fff',fontSize:15,fontWeight:900,display:'flex',alignItems:'center',justifyContent:'center'}}>{n}</span>
@@ -18137,7 +18137,7 @@ function guideFocus(status, ids) {
 }
 const GuideNum = ({ n, on }) => <span style={{flex:'0 0 auto',width:30,height:30,borderRadius:15,display:'inline-flex',alignItems:'center',justifyContent:'center',fontFamily:"'Playfair Display', Georgia, serif",fontWeight:900,fontSize:16,
   background:on ? 'var(--coral)' : 'var(--navy)',color:'#fff'}}>{n}</span>;
-function StartGuide({ onOpen }) {
+function StartGuide({ onOpen, always }) {
   const [open, setOpen] = useState(() => { try { return localStorage.getItem(GUIDE_KEY) !== 'closed'; } catch (e) { return true; } });
   function setOpenSaved(v) { setOpen(v); try { localStorage.setItem(GUIDE_KEY, v ? 'open' : 'closed'); } catch (e) {} }
   const totals = loadStepTotals(), ids = pathIds();
@@ -18146,9 +18146,10 @@ function StartGuide({ onOpen }) {
   const curStage = next ? stageOfChapter(next) : -1;
   const nDone = ids.filter(id => status[id] === 'done').length, nStarted = ids.filter(id => status[id] !== 'new').length;
   const label = (id) => (DRILLS.find(d => d.id === id) || {}).label;
+  const closedBar = !open && !always;
   const cta = next && <button className="primary-btn" style={{width:'100%',padding:'12px 16px',fontSize:15.5,textAlign:'left',display:'flex',justifyContent:'space-between',alignItems:'center',gap:10}} onClick={() => onOpen(next)}>
     <span><span style={{display:'block',fontSize:11.5,fontWeight:800,letterSpacing:'0.08em',textTransform:'uppercase',opacity:0.8}}>{focus.kind === 'resume' ? t('Keep going', '이어서 하기') : focus.kind === 'next' ? t('Next on your path', '나의 경로에서 다음') : t('Start at the beginning', '처음부터 시작하기')}</span>{label(next)}</span><span style={{fontSize:20}}>→</span></button>;
-  if (!open) return (
+  if (closedBar) return (
     <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap',border:'1.5px solid var(--navy-line)',borderRadius:14,background:'var(--surface)',padding:'10px 12px',margin:'0 0 18px'}}>
       <span style={{flex:1,minWidth:160,fontSize:13.5,color:'var(--navy)'}}><b>{t('Your path', '나의 경로')}</b> · {t(nStarted + ' of ' + ids.length + ' chapters started, ' + nDone + ' finished', ids.length + '개 챕터 중 ' + nStarted + '개 시작, ' + nDone + '개 완료')}</span>
       {next && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px'}} onClick={() => onOpen(next)}>{(focus.kind === 'resume' ? t('Keep going: ', '이어서: ') : t('Next: ', '다음: ')) + label(next)} →</button>}
@@ -18197,9 +18198,9 @@ function StartGuide({ onOpen }) {
           <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:7,height:7,borderRadius:4,background:'var(--coral)'}}/>{t('started', '시작함')}</span>
           <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:14,height:14,borderRadius:7,border:'1.5px solid var(--coral)'}}/>{t('next', '다음')}</span>
           <span style={{flex:1}}/>
-          <button className="chip" style={{padding:'3px 10px',fontSize:12.5}} onClick={() => setOpenSaved(false)}>{t('Hide the guide ▴', '안내 접기 ▴')}</button>
+          {!always && <button className="chip" style={{padding:'3px 10px',fontSize:12.5}} onClick={() => setOpenSaved(false)}>{t('Hide the guide ▴', '안내 접기 ▴')}</button>}
         </div>
-        {UI_TEACHER && <div style={{fontSize:12.5,color:'var(--navy-soft)',lineHeight:1.45,marginTop:8,borderTop:'1px dashed var(--navy-line)',paddingTop:8}}>{t('Teaching? Below: search the Toolbox for one activity in the middle of a lesson, or open the Lesson plan to tick off what each student can do.', '가르치는 중인가요? 아래에서 레슨 중에 쓸 활동 하나를 툴박스에서 찾거나, 레슨 플랜을 열어 학생마다 할 수 있는 것을 체크하세요.')}</div>}
+        {UI_TEACHER && <div style={{fontSize:12.5,color:'var(--navy-soft)',lineHeight:1.45,marginTop:8,borderTop:'1px dashed var(--navy-line)',paddingTop:8}}>{t('Teaching? Use the Toolbox tab to find one activity in the middle of a lesson, or the Chapters tab for the full lessons.', '가르치는 중인가요? 레슨 중에 쓸 활동 하나는 도구함 탭에서 찾고, 전체 레슨은 챕터 탭에서 열어요.')}</div>}
       </div>
     </section>
   );
@@ -18224,8 +18225,8 @@ function PathNext({ id, onOpen, onMap }) {
 function LessonPath({ onOpen, onBack }) {
   return (
     <div className="fade-up">
-      {onBack && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={onBack}>← Lesson plan</button>}
-      <PageIntro title={UI_TEACHER ? t('All chapters', '전체 챕터') : t('Learn', '배우기')} text={UI_TEACHER ? t('Every chapter as a full lesson with a drill, grouped by topic (same groups as the Toolbox). The groups run side by side -- the Lesson plan shows how to mix them.', '모든 챕터를 드릴이 있는 레슨으로, 주제별로 묶었어요 (도구함과 같은 묶음). 묶음들은 나란히 진행돼요 -- 레슨 계획에서 어떻게 섞을지 볼 수 있어요.') : t('Pick a topic, then a lesson. Each one ends with a game.', '주제를 고르고, 레슨을 골라요. 레슨마다 마지막에 게임이 있어요.')}/>
+      {onBack && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={onBack}>← Guide</button>}
+      <PageIntro title={UI_TEACHER ? t('All chapters', '전체 챕터') : t('Learn', '배우기')} text={UI_TEACHER ? t('Every chapter as a full lesson with a drill, grouped by topic (same groups as the Toolbox). The groups run side by side -- mix them to suit the student.', '모든 챕터를 드릴이 있는 레슨으로, 주제별로 묶었어요 (도구함과 같은 묶음). 묶음들은 나란히 진행돼요 -- 학생에게 맞게 섞어 쓰세요.') : t('Pick a topic, then a lesson. Each one ends with a game.', '주제를 고르고, 레슨을 골라요. 레슨마다 마지막에 게임이 있어요.')}/>
       {!UI_TEACHER && <StartGuide onOpen={onOpen}/>}
       {TOOL_CATS.filter(c => catChapterIds(c.id).length).map(c => {
         const ids = catChapterIds(c.id).filter(id => DRILLS.find(x => x.id === id));
@@ -19294,7 +19295,6 @@ function StudentsView({ onPlan, onOpenKit }) {
   const [adding, setAdding] = useState(false);
   const [copied, setCopied] = useState(null);
   const upd = (nk) => { setKits(nk); saveKits(nk); };
-  const groups = START_MIXES;
   function startEdit(k) { setEdit(k.id); setDraft({ name: k.name, group: k.group || '', notes: k.notes || '' }); setDel(null); }
   function save() { upd(kits.map(k => k.id !== edit ? k : { ...k, name: (draft.name || k.name).trim().slice(0, 40), group: draft.group, notes: draft.notes.slice(0, 400) })); setEdit(null); }
   function add() { if (!draft.name.trim()) return; const nk = [...kits, newStudentObj(draft.name, draft.group, draft.notes)]; upd(nk); saveWho(nk, nk.length - 1); setAdding(false); setDraft({ name: '', group: '', notes: '' }); }
@@ -19304,8 +19304,6 @@ function StudentsView({ onPlan, onOpenKit }) {
   const form = (onOk, okLabel, onCancel) => (
     <div style={{display:'flex',flexDirection:'column',gap:6,background:'#fbf6ec',borderRadius:10,padding:10}}>
       <input autoFocus value={draft.name} onChange={e => setDraft({ ...draft, name: e.target.value })} onKeyDown={e => { if (e.key === 'Enter') onOk(); }} placeholder="Name" style={input}/>
-      <div style={{display:'flex',gap:4,flexWrap:'wrap',alignItems:'center'}}><span style={{fontSize:12,fontWeight:900,color:'var(--muted)',marginRight:2}}>STARTS AS</span>
-        {groups.map(m => <button key={m.id} className={'chip' + (draft.group === m.id ? ' active' : '')} style={{padding:'2px 8px',fontSize:12}} onClick={() => setDraft({ ...draft, group: draft.group === m.id ? '' : m.id })}>{m.name}</button>)}</div>
       <textarea value={draft.notes} onChange={e => setDraft({ ...draft, notes: e.target.value })} placeholder="Notes (age, book, exam date, things to watch…)" rows={2} style={{...input,resize:'vertical'}}/>
       <div style={{display:'flex',gap:6}}><button className="primary-btn" style={{padding:'7px 16px',fontSize:14}} onClick={onOk}>{okLabel}</button><button className="ghost-btn" style={{padding:'6px 12px',fontSize:13}} onClick={onCancel}>Cancel</button></div>
     </div>
@@ -19317,12 +19315,12 @@ function StudentsView({ onPlan, onOpenKit }) {
           <h2 style={{fontSize:20,fontWeight:900,margin:0,letterSpacing:'-0.02em'}}>Students</h2>
           {!adding && <button className="ghost-btn" style={{fontSize:13,padding:'6px 12px'}} onClick={() => { setAdding(true); setEdit(null); setDraft({ name: '', group: '', notes: '' }); }}>{t('+ Add a student', '+ 학생 추가')}</button>}
         </div>
-        <p style={{fontSize:14,color:'var(--muted)',margin:'4px 0 0',lineHeight:1.5}}>Each student has their progress in the Lesson plan and their own kit of tools. Saved on this device only.</p>
+        <p style={{fontSize:14,color:'var(--muted)',margin:'4px 0 0',lineHeight:1.5}}>{t('Each student has their own kit of tools, picked in the Toolbox. Saved on this device only.', '학생마다 도구함에서 고른 자기만의 도구 키트가 있어요. 이 기기에만 저장돼요.')}</p>
         {adding && <div style={{marginTop:10}}>{form(add, 'Add', () => setAdding(false))}</div>}
       </div>
       {!kits.length && !adding && <div className="card" style={{textAlign:'center',color:'var(--muted)',fontSize:14}}>{t('No students yet -- add the first one above.', '아직 학생이 없어요 -- 위에서 첫 학생을 추가해요.')}</div>}
       {kits.map(k => {
-        const n = Object.values(k.done || {}).filter(Boolean).length, g = START_MIXES.find(m => m.id === k.group);
+        const g = START_MIXES.find(m => m.id === k.group);
         return (
           <div key={k.id} className="card" style={{marginBottom:10,padding:'12px 14px'}}>
             {edit === k.id ? form(save, 'Save', () => setEdit(null)) : <>
@@ -19331,16 +19329,11 @@ function StudentsView({ onPlan, onOpenKit }) {
                 <span style={{fontSize:12,fontWeight:800,color:'var(--muted)'}}>{g ? g.name : ''}{k.created ? (g ? ' · ' : '') + 'since ' + k.created : ''}</span>
               </div>
               {k.notes && <div style={{fontSize:13.5,color:'#4a4d86',marginTop:3,whiteSpace:'pre-wrap'}}>{k.notes}</div>}
-              <div style={{display:'flex',alignItems:'center',gap:8,margin:'8px 0 6px'}}>
-                <div style={{flex:1,height:7,borderRadius:4,background:'#e9e3d4',overflow:'hidden',display:'flex'}}>
-                  {STRANDS.map(st => { const c = SKILLS.filter(x => x.strand === st.id && (k.done || {})[x.id]).length; return <div key={st.id} title={st.name + ': ' + c} style={{width:(c / SKILLS.length * 100) + '%',background:st.color}}/>; })}
-                </div>
-                <span style={{fontSize:12,fontWeight:800,color:'var(--muted)'}}>{n}/{SKILLS.length} steps · {(k.tools || []).length} in kit</span>
-              </div>
+              <div style={{fontSize:12,fontWeight:800,color:'var(--muted)',margin:'8px 0 6px'}}>{(k.tools || []).length} {t('in kit', '키트에 담음')}</div>
               {del === k.id
-                ? <div style={{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap',background:'#fbe6de',borderRadius:8,padding:'6px 8px',fontSize:13.5}}>Delete {k.name} and their progress? <button className="chip active" style={{padding:'2px 10px',fontSize:12,background:'#c8361b',borderColor:'#c8361b'}} onClick={() => remove(k.id)}>Yes, delete</button><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setDel(null)}>Cancel</button></div>
+                ? <div style={{display:'flex',gap:6,alignItems:'center',flexWrap:'wrap',background:'#fbe6de',borderRadius:8,padding:'6px 8px',fontSize:13.5}}>Delete {k.name} and their kit? <button className="chip active" style={{padding:'2px 10px',fontSize:12,background:'#c8361b',borderColor:'#c8361b'}} onClick={() => remove(k.id)}>Yes, delete</button><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setDel(null)}>Cancel</button></div>
                 : <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
-                  <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => { saveWho(kits, kits.indexOf(k)); onPlan(); }}>Lesson plan</button>
+                  <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => { saveWho(kits, kits.indexOf(k)); onPlan(); }}>{t('Toolbox', '도구함')}</button>
                   <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} disabled={!(k.tools || []).length} onClick={() => onOpenKit(k)}>Open kit</button>
                   <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} disabled={!(k.tools || []).length} onClick={() => copy(k)}>{copied === k.id ? (LANG === 'ko' ? '복사됨 ✓' : 'Copied ✓') : (LANG === 'ko' ? '학생 링크' : 'Student link')}</button>
                   <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => startEdit(k)}>Edit</button>
@@ -19353,38 +19346,21 @@ function StudentsView({ onPlan, onOpenKit }) {
     </div>
   );
 }
-function PlanView({ onOpenTool, onOpenChapter, onOpenKit, onAllChapters, onStudents, onChapter }) {
+// Phase 312 (2026-10-06): the teacher home used to stack the guide, the student switcher, the
+// Toolbox and a collapsed Lesson plan on one long page. Each now has its own tab (Guide /
+// Chapters / Toolbox). The Lesson plan (today's mix, strand tracker, exam ladder) was dropped:
+// Sohyun judged it unnecessary. The kit data (kits/who) is untouched.
+function GuideTab({ onOpenChapter }) {
+  return <div className="fade-up"><StartGuide onOpen={onOpenChapter} always/></div>;
+}
+function ToolboxTab({ onOpenTool, onOpenKit, onStudents, onChapter }) {
   const [kits, setKits] = useState(loadKits);
   const [who, setWho0] = useState(() => loadWho(loadKits()));
   const [copied, setCopied] = useState(false);
-  const setWho = (i) => { setWho0(i); saveWho(kits, i); const g = kits[i] && kits[i].group; if (g) setMix(g); const d = (kits[i] && kits[i].done) || {}; const first = STRANDS.find(st => SKILLS.some(s => s.strand === st.id && !d[s.id])); setOpenStrand((first || STRANDS[0]).id); };
-  const [mix, setMix] = useState(() => { const k = loadKits(); const i = loadWho(k); return (k[i] && k[i].group) || null; });
-  const [today, setToday] = useState([]);
+  const setWho = (i) => { setWho0(i); saveWho(kits, i); };
   const kit = kits[who] || null;
-  const done = (kit && kit.done) || {};
-  // Phase (2026-09-27): the 5 strands used to render as 5 fully-expanded cards, one under the
-  // other -- every step of every strand always visible, which meant a long scroll before an
-  // "in the middle of a lesson" glance could see the other 4 strands at all. Now: one compact
-  // overview row shows all 5 at once (color, progress, next step in one line), and only ONE
-  // strand's full step list opens at a time (accordion) -- tapping a different strand in the
-  // overview, or its own collapsed header, swaps which one is open. Defaults to the strand with
-  // the current student's next open step, so returning to a student lands somewhere useful.
-  const [openStrand, setOpenStrand] = useState(() => {
-    const k = (loadKits()[loadWho(loadKits())]) || null;
-    const d = (k && k.done) || {};
-    const first = STRANDS.find(st => SKILLS.some(s => s.strand === st.id && !d[s.id]));
-    return (first || STRANDS[0]).id;
-  });
   const upd = (nk) => { setKits(nk); saveKits(nk); };
   function newStudent(name) { const nk = [...kits, newStudentObj(name)]; upd(nk); setWho0(nk.length - 1); saveWho(nk, nk.length - 1); }
-  function tick(id) { if (!kit) return; upd(kits.map((k, i) => i !== who ? k : { ...k, done: { ...(k.done || {}), [id]: !(k.done || {})[id] } })); }
-  function toggleToday(id) { setToday(t => t.includes(id) ? t.filter(x => x !== id) : [...t, id]); }
-  const todayTools = [...new Set(today.flatMap(id => SKILLS.find(s => s.id === id).tools))];
-  function addTodayToKit() { if (!kit) return; upd(kits.map((k, i) => i !== who ? k : { ...k, tools: [...new Set([...(k.tools || []), ...todayTools])] })); }
-  // Phase 172 (2026-09-28): moved from the old standalone Toolbox tab -- Plan is now the one
-  // owner of "the current student", so starring a tool from the merged Toolbox section below
-  // updates the same kits/who state this whole screen already uses, instead of a second,
-  // independently-loaded copy that could drift out of sync with this one.
   function star(id) {
     let nk = kits, i = who;
     if (!kit) { nk = [...kits, newStudentObj('My kit')]; i = nk.length - 1; setWho0(i); saveWho(nk, i); }
@@ -19392,18 +19368,10 @@ function PlanView({ onOpenTool, onOpenChapter, onOpenKit, onAllChapters, onStude
     upd(nk);
   }
   function copyKit() { if (!kit) return; try { navigator.clipboard.writeText(kitLink(kit)).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }, () => {}); } catch (e) {} }
-  // Phase 173 (2026-09-28): Sohyun wanted the search reachable the instant this tab opens, and
-  // questioned whether the Lesson Plan (strand tracker) belongs mixed in with tool search at
-  // all. Kept both -- the strand tracker is real curriculum-progress data with no other home --
-  // but reordered: a compact student switcher + the full tool search/browse library (Toolbox)
-  // now render first, and the Lesson Plan (today's mix, strand tracker, exam ladder, anytime
-  // chapters) collapses behind one toggle beneath it, closed by default.
-  const [showPlan, setShowPlan] = useState(false);
-  const M = START_MIXES.find(m => m.id === mix);
   const chip = (on, label, onClick, key) => <button key={key || label} className={'chip' + (on ? ' active' : '')} style={{padding:'2px 9px',fontSize:12}} onClick={onClick}>{label}</button>;
   return (
     <div className="fade-up">
-      <StartGuide onOpen={onOpenChapter}/>
+      <PageIntro title={t('Toolbox', '도구함')} text={t('Search for one activity in the middle of a lesson, or browse by topic. Press ☆ to build a kit for the student.', '레슨 중에 쓸 활동 하나를 검색하거나 주제별로 찾아보세요. ☆ 를 눌러 학생의 키트를 만들어요.')}/>
       <div className="card" style={{marginBottom:10,padding:'10px 12px'}}>
         <div style={{display:'flex',gap:4,flexWrap:'wrap',alignItems:'center'}}>
           <span style={{fontSize:12,fontWeight:900,color:'var(--muted)',marginRight:2}}>{t('STUDENT','학생')}</span>
@@ -19419,108 +19387,6 @@ function PlanView({ onOpenTool, onOpenChapter, onOpenKit, onAllChapters, onStude
       </div>
 
       <Toolbox onOpen={onOpenTool} onChapter={onChapter} kit={kit} onStar={star}/>
-
-      <button onClick={() => setShowPlan(s => !s)} className="card" style={{marginTop:16,marginBottom:showPlan ? 10 : 18,width:'100%',textAlign:'left',display:'flex',justifyContent:'space-between',alignItems:'center',cursor:'pointer',fontFamily:'inherit',border:'1.5px solid var(--border)',background:'#fff'}}>
-        <span>
-          <b style={{fontSize:15}}>{t('Lesson plan','레슨 플랜')}</b>
-          <span style={{fontSize:13,color:'var(--muted)',marginLeft:8}}>{kit ? Object.values(done).filter(Boolean).length + '/' + SKILLS.length + ' ' + t('steps done','단계 완료') : t('curriculum tracker & exam ladder','커리큘럼 진행 · 시험 사다리')}</span>
-        </span>
-        <span style={{color:'var(--muted)',fontWeight:900,fontSize:16}}>{showPlan ? '▴' : '▾'}</span>
-      </button>
-
-      {showPlan && <>
-      <div className="card" style={{marginBottom:12}}>
-        <p style={{fontSize:14,color:'var(--muted)',margin:'0 0 10px',lineHeight:1.5}}>{t('Each lesson: pick ','매 레슨마다 ')}<b>{t('2–4 small steps','2~4개의 작은 단계')}</b>{t(' from ',' 를 ')}<b>{t('different strands','서로 다른 영역')}</b>{t('. Inside a strand, go top to bottom.','에서 골라요. 한 영역 안에서는 위에서 아래로.')}</p>
-        {!kit && <div style={{fontSize:13,color:'var(--muted)',marginBottom:6}}>{t('Add a student to tick off what they can do, and to build their kit of starred tools above.','학생을 추가하면 할 수 있는 것을 체크하고, 위에서 ☆한 도구로 키트를 만들 수 있어요.')}</div>}
-        <div style={{fontSize:12,fontWeight:900,color:'var(--muted)',margin:'0 0 4px'}}>{t('A FIRST MIX FOR…','시작 세트…')}</div>
-        <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>{START_MIXES.map(m => chip(mix === m.id, m.name, () => { setMix(mix === m.id ? null : m.id); if (m.ids.length) setToday(m.ids); }, m.id))}</div>
-        {M && <div style={{fontSize:13,background:'#f6f1e6',borderRadius:8,padding:'6px 9px',marginTop:6,color:'#6b4e16'}}>{M.note}</div>}
-      </div>
-
-      {today.length > 0 && <div className="card" style={{marginBottom:12,border:'1.5px solid #e4572e'}}>
-        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}><b style={{fontSize:15}}>Today’s mix</b><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setToday([])}>Clear</button></div>
-        <ul style={{margin:'6px 0',paddingLeft:18,fontSize:14,lineHeight:1.5}}>{today.map(id => { const s = SKILLS.find(x => x.id === id), st = STRANDS.find(x => x.id === s.strand); return <li key={id}><span style={{color:st.color,fontWeight:800}}>{st.name}:</span> {s.text}</li>; })}</ul>
-        <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-          <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => onOpenKit({ name: (kit ? kit.name + ' -- ' : '') + 'today', tools: todayTools })}>Open these {todayTools.length} tools</button>
-          {kit && <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={addTodayToKit}>Add to {kit.name}’s kit</button>}
-        </div>
-      </div>}
-
-      {/* Overview row -- all 5 strands at a glance, no scrolling. Tap one to open it below. */}
-      <div className="card" style={{marginBottom:10,padding:'10px 10px'}}>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(5, 1fr)',gap:5}}>
-          {STRANDS.map(st => {
-            const list = SKILLS.filter(s => s.strand === st.id);
-            const c = list.filter(s => done[s.id]).length;
-            const next = list.find(s => !done[s.id]);
-            const open = openStrand === st.id;
-            return (
-              <button key={st.id} onClick={() => setOpenStrand(st.id)}
-                style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'6px 2px',borderRadius:9,border:'1.5px solid ' + (open ? st.color : 'var(--border)'),background:open ? st.color + '14' : '#fff',cursor:'pointer',fontFamily:'inherit'}}>
-                <div style={{width:22,height:22,borderRadius:11,border:'2.5px solid ' + st.color,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:900,color:st.color,background:'#fff'}}>{kit ? c : ''}</div>
-                <div style={{fontSize:10.5,fontWeight:800,color:st.color,textAlign:'center',lineHeight:1.15}}>{st.name}</div>
-              </button>
-            );
-          })}
-        </div>
-        {kit && (() => {
-          const st = STRANDS.find(x => x.id === openStrand);
-          const next = SKILLS.find(s => s.strand === st.id && !done[s.id]);
-          return next
-            ? <div style={{fontSize:13,marginTop:8,color:'#4a4d86'}}><b style={{color:st.color}}>Next in {st.name}:</b> {next.text}</div>
-            : <div style={{fontSize:13,marginTop:8,color:'#2e8a6e',fontWeight:800}}>{st.name} -- every step done ✓</div>;
-        })()}
-      </div>
-
-      {STRANDS.map(st => {
-        if (openStrand !== st.id) return null;
-        const list = SKILLS.filter(s => s.strand === st.id);
-        const next = list.find(s => !done[s.id]);
-        return (
-          <div key={st.id} className="card" style={{marginBottom:10,borderLeft:'5px solid ' + st.color,padding:'12px 12px'}}>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:6}}>
-              <b style={{fontSize:15,color:st.color}}>{st.name}</b>
-              {kit && <span style={{fontSize:12,fontWeight:800,color:'var(--muted)'}}>{list.filter(s => done[s.id]).length}/{list.length}</span>}
-            </div>
-            {list.map(s => {
-              const isNext = kit && next && next.id === s.id, sug = M && M.ids.includes(s.id), inToday = today.includes(s.id);
-              return (
-                <div key={s.id} style={{display:'flex',alignItems:'flex-start',gap:8,padding:'5px 4px',borderRadius:8,background:inToday ? '#f6f1e6' : 'transparent',marginBottom:1}}>
-                  <button onClick={() => tick(s.id)} disabled={!kit} title={kit ? 'Can do it' : 'Pick a student first'} style={{flex:'0 0 20px',height:20,borderRadius:10,border:'2px solid ' + (done[s.id] ? '#2e8a6e' : '#cfc6b1'),background:done[s.id] ? '#2e8a6e' : '#fff',color:'#fff',fontSize:12,fontWeight:900,cursor:kit ? 'pointer' : 'default',padding:0,marginTop:1}}>{done[s.id] ? '✓' : ''}</button>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{fontSize:14,fontWeight:done[s.id] ? 600 : 800,color:done[s.id] ? '#7f81a8' : 'var(--text)',textDecoration:done[s.id] ? 'line-through' : 'none'}}>{s.text}
-                      {isNext && <span style={{marginLeft:6,fontSize:11,fontWeight:900,color:'#fff',background:st.color,borderRadius:6,padding:'1px 5px',textDecoration:'none',display:'inline-block'}}>NEXT</span>}
-                      {sug && <span style={{marginLeft:6,fontSize:11,fontWeight:900,color:'#8f6216',background:'#f3dfb2',borderRadius:6,padding:'1px 5px',display:'inline-block'}}>START</span>}
-                    </div>
-                    <div style={{display:'flex',gap:4,flexWrap:'wrap',marginTop:3}}>
-                      {s.tools.map(tid => { const t = TOOLS.find(x => x.id === tid); return t ? <button key={tid} onClick={() => onOpenTool(tid)} style={{border:'1px solid var(--border)',background:'#fff',borderRadius:10,padding:'1px 8px',fontSize:12,cursor:'pointer',color:'#4a4d86',fontFamily:'inherit'}}>{t.title.replace(/ \(.*\)$/, '')} ›</button> : null; })}
-                    </div>
-                  </div>
-                  <button onClick={() => toggleToday(s.id)} title="Add to today’s mix" style={{flex:'0 0 26px',height:26,borderRadius:13,border:'1.5px solid ' + (inToday ? '#e4572e' : 'var(--border)'),background:inToday ? '#e4572e' : '#fff',color:inToday ? '#fff' : '#e4572e',fontWeight:900,cursor:'pointer',padding:0}}>{inToday ? '✓' : '+'}</button>
-                </div>
-              );
-            })}
-          </div>
-        );
-      })}
-
-      <div className="card" style={{marginBottom:10,borderLeft:'5px solid #5a5f99'}}>
-        <b style={{fontSize:15,color:'#5a5f99'}}>Exam ladder -- theory by grade</b>
-        <div style={{fontSize:13,color:'var(--muted)',margin:'2px 0 8px'}}>When the reading is going, open the chapters for the student’s grade. Each has a step-by-step lesson and a drill.</div>
-        {EXAM_LADDER.map(g => (
-          <div key={g.name} style={{marginBottom:6}}>
-            <div style={{fontSize:12,fontWeight:900,color:'#5a5f99',marginBottom:3}}>{g.name.toUpperCase()}</div>
-            <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>{g.ids.map(id => { const d = DRILLS.find(x => x.id === id); return d ? <button key={id} className="chip" style={{padding:'3px 9px',fontSize:13}} onClick={() => onOpenChapter(id)}>{d.label}</button> : null; })}</div>
-          </div>
-        ))}
-      </div>
-      <div className="card" style={{marginBottom:10,borderLeft:'5px solid #7f81a8'}}>
-        <b style={{fontSize:15,color:'#7f81a8'}}>Anytime</b>
-        <div style={{fontSize:13,color:'var(--muted)',margin:'2px 0 8px'}}>For a curious student or a quiet five minutes.</div>
-        <div style={{display:'flex',gap:4,flexWrap:'wrap'}}>{['piano-story', 'pitch-range'].map(id => { const d = DRILLS.find(x => x.id === id); return d ? <button key={id} className="chip" style={{padding:'3px 9px',fontSize:13}} onClick={() => onOpenChapter(id)}>{d.label}</button> : null; })}</div>
-      </div>
-      <div style={{textAlign:'center',marginTop:8}}><button className="ghost-btn" onClick={onAllChapters}>{t('All chapters (full lessons) →','전체 챕터 (전체 레슨) →')}</button></div>
-      </>}
     </div>
   );
 }
@@ -19544,7 +19410,7 @@ function readUrlState() {
     tool: TOOLS.find(t => t.id === p.get('tool')) ? p.get('tool') : null,
     kit: p.get('kit') ? p.get('kit').split(',').filter(id => TOOLS.find(t => t.id === id)) : null,
     kn: p.get('kn') || '',
-    view: p.get('kit') ? 'kit' : p.get('view') === 'chapters' ? 'chapters' : p.get('view') === 'students' ? 'students' : p.get('tool') ? (PRACTICE_IDS.includes(p.get('tool')) && p.get('view') === 'practice' ? 'practice' : 'tools') : ['tools', 'practice'].includes(p.get('view')) ? p.get('view') : 'path',
+    view: p.get('kit') ? 'kit' : p.get('view') === 'chapters' ? 'chapters' : p.get('view') === 'toolbox' ? 'toolbox' : p.get('view') === 'students' ? 'students' : p.get('tool') ? (PRACTICE_IDS.includes(p.get('tool')) && p.get('view') === 'practice' ? 'practice' : 'tools') : ['tools', 'practice'].includes(p.get('view')) ? p.get('view') : 'path',
   };
 }
 
@@ -19562,7 +19428,7 @@ function App() {
   const T = teacher && !preview && !st.lock;
   UI_TEACHER = T;
   const active = DRILLS.find(d => d.id === st.drill) || DRILLS[0];
-  const inChapter = (st.view === 'path' || st.view === 'chapters') && !!st.drill;
+  const inChapter = (st.view === 'path' || st.view === 'chapters' || st.view === 'toolbox') && !!st.drill;
   const concept = active.concept || null;
   const level = concept ? ((concept.levels.find(l => l.n === st.level) || concept.levels[0]).n) : st.level;
 
@@ -19572,7 +19438,7 @@ function App() {
       if (st.view === 'kit' && st.kit) { p.set('kit', st.kit.join(',')); if (st.kn) p.set('kn', st.kn); if (st.tool) p.set('tool', st.tool); }
       else if (st.view === 'tools' || st.view === 'practice') { if (st.tool) p.set('tool', st.tool); if (st.view === 'practice' || !st.tool) p.set('view', st.view); }
       else if (st.view === 'students') p.set('view', 'students');
-      else if (!st.drill) p.set('view', st.view === 'chapters' ? 'chapters' : 'path');
+      else if (!st.drill) p.set('view', (st.view === 'chapters' || st.view === 'toolbox') ? st.view : 'path');
       else {
         p.set('drill', active.id);
         if (concept) { p.set('tab', st.tab); if (st.tab === 'drill') { p.set('level', level); p.set('mode', st.mode); } }
@@ -19585,7 +19451,7 @@ function App() {
   useEffect(() => { if (st.drill && CHAPTER_CAT[st.drill]) { try { localStorage.setItem(LAST_CHAPTER_KEY, st.drill); } catch (e) {} } }, [st.drill]);
   useEffect(() => { try { const n = parseInt(new URLSearchParams(location.search).get('step'), 10); if (!st.drill || isNaN(n)) return; const tmo = setTimeout(() => { const el = document.getElementById(st.drill + '-step-' + (n - 1)); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 700); return () => clearTimeout(tmo); } catch (e) {} }, []);
   function update(patch) { setSt(prev => ({ ...prev, ...patch })); }
-  function jumpToChapter(id) { setFindOpen(false); update({ view: 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }
+  function jumpToChapter(id) { setFindOpen(false); update({ view: (T && (st.view === 'toolbox' || st.view === 'chapters')) ? st.view : 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }
 
   return (
     <div style={{minHeight:'100vh',background:'var(--bg)'}}>
@@ -19609,38 +19475,38 @@ function App() {
       </div>
 
       {T && !findOpen && <FindButton onOpen={() => setFindOpen(true)}/>}
-      {T && findOpen && <FindOverlay onClose={() => setFindOpen(false)} onJump={(id) => { setFindOpen(false); update({ view: 'tools', tool: id, kit: null, ret: 'path' }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/>}
+      {T && findOpen && <FindOverlay onClose={() => setFindOpen(false)} onJump={(id) => { setFindOpen(false); update({ view: 'tools', tool: id, kit: null, ret: 'toolbox' }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/>}
 
       <div className="pb-main" style={{maxWidth:600,margin:'0 auto',padding:'20px 16px 60px'}}>
         {preview && <div style={{background:'#26296b',color:'#fff',borderRadius:10,padding:'8px 12px',marginBottom:12,fontSize:13.5,display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}><span>{t('You’re seeing what a student sees.', '학생에게 보이는 화면이에요.')}</span><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setPreview(false)}>{t('Back to teacher view', '교사 화면으로')}</button></div>}
         {!st.lock && (
           <div style={{display:'flex',gap:6,borderBottom:'1.5px solid var(--navy-line)',marginBottom:16}}>
-            {(T ? [['path', t('Plan', '계획')], ['practice', t('Practice', '연습')], ['students', t('Students', '학생')]] : [['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]]).map(([v, l]) => (
-              <button key={v} onClick={() => { update({ view: v, tool: null, kit: null, drill: v === 'path' ? null : st.drill }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderBottom:'3px solid ' + ((st.view === v || (v === 'path' && st.view === 'chapters')) ? 'var(--coral)' : 'transparent'),marginBottom:-1.5,background:'transparent',padding:'10px 0',fontFamily:"'Playfair Display', Georgia, serif",fontSize:T ? 16 : 18,fontWeight:800,cursor:'pointer',
-                color:(st.view === v || (v === 'path' && st.view === 'chapters')) ? 'var(--navy)' : 'var(--muted)'}}>{l}</button>
+            {(T ? [['path', t('Guide', '안내')], ['chapters', t('Chapters', '챕터')], ['toolbox', t('Toolbox', '도구함')], ['practice', t('Practice', '연습')], ['students', t('Students', '학생')]] : [['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]]).map(([v, l]) => (
+              <button key={v} onClick={() => { update({ view: v, tool: null, kit: null, drill: (v === 'practice' || v === 'students') ? st.drill : null }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderBottom:'3px solid ' + ((st.view === v || (!T && v === 'path' && st.view === 'chapters') || (T && v === 'toolbox' && st.view === 'tools' && st.ret === 'toolbox')) ? 'var(--coral)' : 'transparent'),marginBottom:-1.5,background:'transparent',padding:'10px 0',fontFamily:"'Playfair Display', Georgia, serif",fontSize:T ? 14.5 : 18,fontWeight:800,cursor:'pointer',
+                color:(st.view === v || (!T && v === 'path' && st.view === 'chapters') || (T && v === 'toolbox' && st.view === 'tools' && st.ret === 'toolbox')) ? 'var(--navy)' : 'var(--muted)'}}>{l}</button>
             ))}
           </div>
         )}
         <SoundSettings/>
         {st.view === 'students' && T ? (
-          <StudentsView onPlan={() => { update({ view: 'path', drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }} onOpenKit={(k) => { update({ view: 'kit', kit: k.tools, kn: k.name, tool: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
+          <StudentsView onPlan={() => { update({ view: 'toolbox', drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }} onOpenKit={(k) => { update({ view: 'kit', kit: k.tools, kn: k.name, tool: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
         ) : st.view === 'kit' && st.kit ? (
           st.tool
             ? <ToolView id={st.tool} locked={st.lock} backLabel="← Kit" onBack={() => update({ tool: null })} onChapter={(id) => update({ view: 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
-            : <>{T && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={() => update({ view: 'path', kit: null, kn: '' })}>{t('← Plan', '← 계획')}</button>}<KitView ids={st.kit} name={st.kn} onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/></>
+            : <>{T && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={() => update({ view: 'toolbox', kit: null, kn: '' })}>{t('← Toolbox', '← 도구함')}</button>}<KitView ids={st.kit} name={st.kn} onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/></>
         ) : (st.view === 'tools' || st.view === 'practice') ? (
           st.tool
-            ? <ToolView id={st.tool} locked={st.lock} backLabel={st.ret === 'path' ? '← Lesson plan' : st.view === 'practice' ? '← Practice' : '← Toolbox'} onBack={() => update({ tool: null, view: st.ret === 'path' ? 'path' : st.view, ret: null })} onChapter={(id) => update({ view: 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
+            ? <ToolView id={st.tool} locked={st.lock} backLabel={st.view === 'practice' ? '← Practice' : '← Toolbox'} onBack={() => update({ tool: null, view: st.ret || (T && st.view === 'tools' ? 'toolbox' : st.view), ret: null })} onChapter={(id) => update({ view: st.ret === 'toolbox' ? 'toolbox' : 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
             : <PracticeView onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
         ) : !inChapter && !st.lock ? (
-          T && st.view !== 'chapters'
-            ? <PlanView onOpenTool={(id) => { update({ view: 'tools', tool: id, ret: 'path' }); try { window.scrollTo(0, 0); } catch (e) {} }}
-                onOpenChapter={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}
+          T && st.view === 'toolbox'
+            ? <ToolboxTab onOpenTool={(id) => { update({ view: 'tools', tool: id, ret: 'toolbox' }); try { window.scrollTo(0, 0); } catch (e) {} }}
                 onOpenKit={(k) => { update({ view: 'kit', kit: k.tools, kn: k.name, tool: null }); try { window.scrollTo(0, 0); } catch (e) {} }}
-                onAllChapters={() => { update({ view: 'chapters' }); try { window.scrollTo(0, 0); } catch (e) {} }}
                 onStudents={() => { update({ view: 'students' }); try { window.scrollTo(0, 0); } catch (e) {} }}
                 onChapter={jumpToChapter}/>
-            : <LessonPath onBack={T ? () => update({ view: 'path' }) : null} onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
+            : T && st.view !== 'chapters'
+            ? <GuideTab onOpenChapter={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
+            : <LessonPath onBack={null} onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
         ) : <>
         {!st.lock && (() => {
           const sg = catOfChapter(active.id) ? { title: catOfChapter(active.id).name } : null, list = orderedChapterIds(), k = list.indexOf(active.id);
@@ -22614,8 +22480,8 @@ const IV_KEY_LABELS = { 0: 'C', 1: 'D', 2: 'E', 3: 'F', 4: 'G', 5: 'A', 6: 'B', 
 function IvKeysCell({ it, n, ex }) {
   return (
     <ExCell n={n} ex={ex}>
-      <div style={{padding:'14px 8px 2px'}}><PaperKeys start="C" whites={8} w={28} h={94} dots={[it.a, it.b]} labels={IV_KEY_LABELS} fills={{ [it.a]: '#fdeee8', [it.b]: '#fdeee8' }}/></div>
-      <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:6,fontSize:11,color:BK.muted,margin:'2px 0 3px'}}>{nvBox(ex, it.s, 34, 26)} semitones</div>
+      <div style={{padding:'10px 8px 0'}}><PaperKeys start="C" whites={8} w={28} h={90} dots={[it.a, it.b]} labels={IV_KEY_LABELS} fills={{ [it.a]: '#fdeee8', [it.b]: '#fdeee8' }}/></div>
+      <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:6,fontSize:11,color:BK.muted,margin:'0 0 2px'}}>{nvBox(ex, it.s, 34, 24)} semitones</div>
       <div style={{display:'flex',justifyContent:'center',margin:'0 8px 5px'}}>{ex ? <span style={{color:BK.coral,fontWeight:900,fontStyle:'italic',borderBottom:'1.5px solid ' + BK.coral,padding:'0 4px',fontSize:13}}>{ivLongEn(it.q, it.n)}</span> : <span style={{display:'inline-block',width:'80%',height:18,borderBottom:'1.5px solid ' + BK.line}}/>}</div>
     </ExCell>
   );
@@ -22624,7 +22490,7 @@ function IvFromCCell({ it, n, ex }) {
   return <ExCell n={n} ex={ex}><div style={{padding:'12px 8px 0'}}><PaperStaff clef="treble" notes={[{ d: 28 }, { d: it.b }]} width={150}/></div><div style={{textAlign:'center',margin:'5px 0 3px'}}>{ex ? <span style={{display:'inline-flex',alignItems:'center',justifyContent:'center',minWidth:120,height:28,border:'1.5px solid ' + BK.coral,borderRadius:6,color:BK.coral,fontWeight:900,fontStyle:'italic',fontSize:13}}>{ivLongEn(it.q, it.n)}</span> : <span style={{display:'inline-block',width:130,height:28,border:'1.5px solid ' + BK.line,borderRadius:6}}/>}</div></ExCell>;
 }
 function IvBuildCell({ it, n }) {
-  return <ExCell n={n}><div style={{textAlign:'center',margin:'14px 0 0',fontSize:13,color:BK.ink}}><b>{ivLongEn(it.q, it.n)}</b> above <b>{it.l}</b></div><div style={{padding:'0 10px 4px'}}><PaperStaff clef="treble" notes={[{ d: it.a.d }]} width={140} minSpan={[41, 27]}/></div><div style={{textAlign:'center',fontSize:10.5,color:BK.muted,marginBottom:3}}>top note {bkBox(40, 24)}</div></ExCell>;
+  return <ExCell n={n}><div style={{textAlign:'center',margin:'10px 0 0',fontSize:13,color:BK.ink}}><b>{ivLongEn(it.q, it.n)}</b> above <b>{it.l}</b></div><div style={{padding:'0 10px 2px'}}><PaperStaff clef="treble" notes={[{ d: it.a.d }]} width={140} minSpan={[41, 27]}/></div><div style={{textAlign:'center',fontSize:10.5,color:BK.muted,marginBottom:3}}>top note {bkBox(40, 24)}</div></ExCell>;
 }
 function IvInvCell({ iv, n, ex }) {
   const [n2, q2] = ivInv(iv);
@@ -22640,7 +22506,7 @@ function IvInvCell({ iv, n, ex }) {
 // a row of lily pads (C to C to C) for the frog-jump game
 // The pads sit on the white keys of a keyboard strip (C to C to C), all on one baseline; the space above is for the arcs.
 function LilyPads() {
-  const kw = 42, top = 44, kh = 78, W = IV_FROG.length * kw + 4;
+  const kw = 42, top = 40, kh = 62, W = IV_FROG.length * kw + 4;
   return (
     <svg viewBox={`0 0 ${W} ${top + kh + 4}`} style={{width:'100%',display:'block'}}>
       {IV_FROG.map((l, i) => <rect key={'w' + i} x={2 + i * kw} y={top} width={kw} height={kh} rx="3" fill="#fff" stroke={BK.ink} strokeWidth="1.3"/>)}
@@ -22650,12 +22516,265 @@ function LilyPads() {
   );
 }
 
+// A tape measure lying across the keyboard, measuring C to G: 5 letters (the number), 7 best-friend steps (the quality).
+function IvTapeHero({ width = 600 }) {
+  const kw = 52, kh = 96, top = 60, x0 = 34, L = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C'];
+  const xw = (i) => x0 + i * kw + kw / 2, xb = (i) => x0 + (i + 1) * kw;
+  const sx = [xw(0), xb(0), xw(1), xb(1), xw(2), xw(3), xb(3), xw(4)];
+  const ty = top + kh * 0.5, th = 22;
+  return (
+    <svg viewBox="0 0 460 198" style={{width:'100%',maxWidth:width,display:'block',margin:'0 auto'}}>
+      {L.map((l, i) => <g key={i}><rect x={x0 + i * kw} y={top} width={kw} height={kh} rx="4" fill="#fff" stroke={BK.ink} strokeWidth="1.5"/><text x={xw(i)} y={top + kh - 8} textAnchor="middle" fontSize="14" fontWeight="900" fill={i <= 4 ? BK.coral : BK.ink}>{l}</text></g>)}
+      {[0, 1, 3, 4, 5].map(i => <rect key={i} x={xb(i) - 14} y={top} width="28" height={kh * 0.58} rx="3" fill={BK.ink}/>)}
+      {[0, 1, 2, 3, 4].map(i => <g key={i}><circle cx={xw(i)} cy={top - 17} r="11" fill="#fff" stroke={BK.ink} strokeWidth="1.5"/><text x={xw(i)} y={top - 12.5} textAnchor="middle" fontSize="12" fontWeight="900" fill={BK.ink}>{i + 1}</text></g>)}
+      {[0, 1, 2, 3].map(i => <path key={i} d={`M${xw(i) + 11} ${top - 17} Q${(xw(i) + xw(i + 1)) / 2} ${top - 34} ${xw(i + 1) - 11} ${top - 17}`} fill="none" stroke={BK.ink} strokeWidth="1.2" strokeDasharray="2 3"/>)}
+      <text x={xw(2)} y={top - 42} textAnchor="middle" fontSize="12.5" fontWeight="900" fill={BK.ink}>count the letters: C D E F G = 5 = a 5th</text>
+      <rect x={sx[0] - 30} y={ty} width={sx[7] - sx[0] + 46} height={th} rx="3" fill={BK.soft} stroke={BK.ink} strokeWidth="1.6"/>
+      <rect x={sx[0] - 50} y={ty - 7} width="30" height={th + 14} rx="8" fill="#fff" stroke={BK.ink} strokeWidth="1.6"/><circle cx={sx[0] - 35} cy={ty + th / 2} r="5" fill="none" stroke={BK.ink} strokeWidth="1.5"/>
+      {sx.map((x, i) => <g key={i}><line x1={x} x2={x} y1={ty} y2={ty + (i % 2 ? 6 : 9)} stroke={BK.coral} strokeWidth="1.8"/><text x={x} y={ty + th - 4} textAnchor="middle" fontSize="9.5" fontWeight="900" fill={BK.coral}>{i}</text></g>)}
+      <text x={(sx[0] + sx[7]) / 2 + 20} y={top + kh + 22} textAnchor="middle" fontSize="12.5" fontWeight="900" fill={BK.coral}>count the best-friend steps: 7 semitones = PERFECT</text>
+      <text x={230} y={top + kh + 38} textAnchor="middle" fontSize="10" fontWeight="700" fill={BK.muted}>the number comes from the letters · the quality (major, minor, perfect) comes from the steps</text>
+    </svg>
+  );
+}
+// The frog hops on real keys: the key it sits on is 1. C D E = a 3rd.
+function IvFrogPic({ width = 260 }) {
+  const kw = 40, kh = 60, top = 50, x0 = 6, L = ['C', 'D', 'E', 'F', 'G'];
+  const xw = (i) => x0 + i * kw + kw / 2;
+  const frog = (x, y) => <g><ellipse cx={x} cy={y} rx="13" ry="9" fill={BK.soft} stroke={BK.ink} strokeWidth="1.5"/><circle cx={x - 5} cy={y - 8} r="3.6" fill="#fff" stroke={BK.ink} strokeWidth="1.3"/><circle cx={x + 5} cy={y - 8} r="3.6" fill="#fff" stroke={BK.ink} strokeWidth="1.3"/><circle cx={x - 5} cy={y - 8} r="1.4" fill={BK.ink}/><circle cx={x + 5} cy={y - 8} r="1.4" fill={BK.ink}/><path d={`M${x - 5} ${y + 2} q5 4 10 0`} fill="none" stroke={BK.ink} strokeWidth="1.2" strokeLinecap="round"/><path d={`M${x - 13} ${y + 4} l-5 5 M${x + 13} ${y + 4} l5 5`} stroke={BK.ink} strokeWidth="1.5" strokeLinecap="round"/></g>;
+  return (
+    <svg viewBox="0 12 210 108" style={{width:'100%',maxWidth:width,display:'block'}}>
+      {L.map((l, i) => <g key={i}><rect x={x0 + i * kw} y={top} width={kw} height={kh} rx="3" fill={i < 3 ? '#fdeee8' : '#fff'} stroke={BK.ink} strokeWidth="1.4"/><text x={xw(i)} y={top + kh - 7} textAnchor="middle" fontSize="13" fontWeight="900" fill={i < 3 ? BK.coral : BK.ink}>{l}</text></g>)}
+      {[0, 1, 3].map(i => <rect key={i} x={x0 + (i + 1) * kw - 11} y={top} width="22" height={kh * 0.55} rx="2" fill={BK.ink}/>)}
+      {frog(xw(0), top - 14)}
+      {[0, 1].map(i => <path key={i} d={`M${xw(i) + 10} ${top - 18} Q${(xw(i) + xw(i + 1)) / 2} ${top - 46} ${xw(i + 1) - 6} ${top - 12}`} fill="none" stroke={BK.coral} strokeWidth="1.8" strokeDasharray="3 3"/>)}
+      {[0, 1, 2].map(i => <g key={i}><circle cx={xw(i) + (i ? 0 : 22)} cy={i ? top - 16 : top - 34} r="9" fill={BK.coral}/><text x={xw(i) + (i ? 0 : 22)} y={(i ? top - 16 : top - 34) + 4} textAnchor="middle" fontSize="11" fontWeight="900" fill="#fff">{i + 1}</text></g>)}
+    </svg>
+  );
+}
+// A ruler of semitones 0-7, with the interval names hanging off the ticks.
+function IvRulerPic({ width = 330 }) {
+  const x0 = 22, u = 44, y = 22, names = { 1: 'minor 2nd', 2: 'major 2nd', 3: 'minor 3rd', 4: 'major 3rd', 5: 'perfect 4th', 7: 'perfect 5th' };
+  return (
+    <svg viewBox="0 0 356 96" style={{width:'100%',maxWidth:width,display:'block'}}>
+      <text x={x0 - 10} y="11" fontSize="9.5" fontWeight="900" fill={BK.ink}>count the semitones (best-friend steps)</text>
+      <rect x={x0 - 12} y={y} width={7 * u + 24} height="20" rx="3" fill={BK.soft} stroke={BK.ink} strokeWidth="1.5"/>
+      {[0, 1, 2, 3, 4, 5, 6, 7].map(i => { const x = x0 + i * u, hang = i % 2 ? 56 : 72; return <g key={i}><line x1={x} x2={x} y1={y} y2={y + 7} stroke={BK.coral} strokeWidth="1.8"/><text x={x} y={y + 17} textAnchor="middle" fontSize="9.5" fontWeight="900" fill={BK.ink}>{i}</text>
+        {names[i] && <g><line x1={x} x2={x} y1={y + 20} y2={hang - 9} stroke={BK.muted} strokeWidth="0.9"/><rect x={x - 25} y={hang - 9} width="50" height="12" rx="6" fill="#fff" stroke={BK.coral} strokeWidth="1.1"/><text x={x} y={hang} textAnchor="middle" fontSize="7.8" fontWeight="900" fill={BK.coral}>{names[i]}</text></g>}
+        {i === 6 && <text x={x} y={hang - 1} textAnchor="middle" fontSize="7.5" fontStyle="italic" fill={BK.muted}>later!</text>}</g>; })}
+    </svg>
+  );
+}
+// Major = a happy face on C-E (4 steps), minor = a sad face on C-E♭ (3 steps).
+function IvMoodPic({ width = 160 }) {
+  const kb = (ox, flat) => { const kw = 20, kh = 40, top = 30; const xw = (i) => ox + i * kw + kw / 2; const hx = flat ? ox + 2 * kw : xw(2), hy = flat ? top + 10 : top + 30; const fx = xw(1), fy = 12;
+    return <g>
+      {['C', 'D', 'E'].map((l, i) => <g key={i}><rect x={ox + i * kw} y={top} width={kw} height={kh} rx="2" fill="#fff" stroke={BK.ink} strokeWidth="1.2"/><text x={xw(i)} y={top + kh - 4} textAnchor="middle" fontSize="8" fontWeight="900" fill={BK.ink}>{l}</text></g>)}
+      {[0, 1].map(i => <rect key={i} x={ox + (i + 1) * kw - 6} y={top} width="12" height={kh * 0.55} rx="1.5" fill={BK.ink}/>)}
+      <circle cx={xw(0)} cy={top + 30} r="3.2" fill={BK.coral}/><circle cx={hx} cy={hy} r="3.2" fill={BK.coral} stroke={flat ? '#fff' : 'none'} strokeWidth="1"/>
+      <circle cx={fx} cy={fy} r="9" fill="#fff" stroke={BK.ink} strokeWidth="1.3"/><circle cx={fx - 3.2} cy={fy - 2} r="1.1" fill={BK.ink}/><circle cx={fx + 3.2} cy={fy - 2} r="1.1" fill={BK.ink}/>
+      <path d={flat ? `M${fx - 4} ${fy + 5} q4 -4 8 0` : `M${fx - 4} ${fy + 2} q4 4 8 0`} fill="none" stroke={BK.ink} strokeWidth="1.2" strokeLinecap="round"/>
+      <text x={xw(1)} y={top + kh + 11} textAnchor="middle" fontSize="7.8" fontWeight="900" fill={BK.coral}>{flat ? '3 steps = minor' : '4 steps = major'}</text>
+    </g>; };
+  return <svg viewBox="0 0 150 84" style={{width:'100%',maxWidth:width,display:'block'}}>{kb(8, false)}{kb(84, true)}</svg>;
+}
+// A see-saw: the bottom note flips over the top. 3rd ⇄ 6th: the numbers add to 9.
+function SeesawPic({ width = 440 }) {
+  // low note sits on the low end, high note on the high end; the bottom note flips over the top.
+  const seesaw = (ox, low, high, label) => {
+    const px = ox + 80, py = 52, L = 66, dy = 20, lowX = px - L, lowY = py + dy, hiX = px + L, hiY = py - dy;
+    const lab = (x, y, t, c) => <text x={x} y={y} textAnchor="middle" fontSize="13" fontWeight="900" fill={c}>{t}</text>;
+    return <g>
+      <path d={`M${px - 13} ${py + 28} L${px} ${py + 2} L${px + 13} ${py + 28} Z`} fill={BK.soft} stroke={BK.ink} strokeWidth="1.5" strokeLinejoin="round"/>
+      <line x1={lowX} y1={lowY} x2={hiX} y2={hiY} stroke={BK.ink} strokeWidth="3.4" strokeLinecap="round"/>
+      {bkNoteHead(lowX + 4, lowY - 9, low === 'C' ? BK.coral : BK.ink, 8, 5.6)}{bkNoteHead(hiX - 4, hiY - 9, high === 'C' ? BK.coral : BK.ink, 8, 5.6)}
+      {lab(lowX + 4, lowY - 20, low, low === 'C' ? BK.coral : BK.ink)}{lab(hiX - 4, hiY - 20, high, high === 'C' ? BK.coral : BK.ink)}
+      <text x={px} y={py + 48} textAnchor="middle" fontSize="11.5" fontWeight="900" fill={BK.ink}>{label}</text>
+    </g>;
+  };
+  return (
+    <svg viewBox="0 0 440 118" style={{width:'100%',maxWidth:width,display:'block',margin:'0 auto'}}>
+      {seesaw(0, 'C', 'E', 'C up to E = major 3rd')}
+      <path d="M176 38 q44 -34 88 0" fill="none" stroke={BK.coral} strokeWidth="2.4" strokeLinecap="round"/><path d="M256 26 L265 39 L250 41" fill="none" stroke={BK.coral} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+      <text x="220" y="14" textAnchor="middle" fontSize="11" fontWeight="900" fill={BK.coral}>C flips over the top</text>
+      <text x="220" y="64" textAnchor="middle" fontSize="13" fontWeight="900" fill={BK.coral}>3 + 6 = 9</text>
+      {seesaw(280, 'E', 'C', 'E up to C = minor 6th')}
+    </svg>
+  );
+}
+// Inversion dominoes: tiles to chain so that touching numbers add up to 9.
+const IV_DOMINOES = [[6, 7], [8, 4], [3, 4], [5, 1], [2, 5], [8, 3]];
+function IvDominoes() {
+  const tile = (a, b, i, blank) => <svg key={i} viewBox="0 0 76 40" style={{width:76,height:40,display:'block'}}><rect x="1.5" y="1.5" width="73" height="37" rx="7" fill="#fff" stroke={blank ? BK.line : BK.ink} strokeWidth="1.8" strokeDasharray={blank ? '4 3' : ''}/><line x1="38" x2="38" y1="6" y2="34" stroke={blank ? BK.line : BK.ink} strokeWidth="1.4"/>{!blank && <><text x="19.5" y="27" textAnchor="middle" fontSize="19" fontWeight="900" fill={BK.ink}>{a}</text><text x="56.5" y="27" textAnchor="middle" fontSize="19" fontWeight="900" fill={BK.coral}>{b}</text></>}</svg>;
+  return (
+    <div>
+      <div style={{display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap',marginBottom:10}}>{IV_DOMINOES.map(([a, b], i) => tile(a, b, i))}</div>
+      <div style={{fontSize:11.5,color:BK.muted,margin:'0 0 4px'}}>Draw the chain here (you may turn a tile round):</div>
+      <div style={{display:'flex',gap:0,justifyContent:'center'}}>{[0, 1, 2, 3, 4, 5].map(i => tile(0, 0, 'b' + i, true))}</div>
+    </div>
+  );
+}
+// ─── Theory metaphors (pass 3, chunk 3): the scale staircase, the sign-on-the-door and the line-up, the layered cake.
+//     Two colours only -- navy strokes, coral accents. Cake = chord layers (the app's "snowman" is drawn beside it).
+function ScaleStairs({ letters, rises = [2, 2, 1, 2, 2, 2, 1], width = 600, kb = false, u = 9, tw = 62, legend = [] }) {
+  const n = rises.length + 1, x0 = 10, topY = 44;
+  const cum = [0]; rises.forEach(r => cum.push(cum[cum.length - 1] + r));
+  const tot = cum[n - 1], gy = topY + tot * u + 16, H = gy + (kb ? 50 : 4), Wd = x0 * 2 + n * tw;
+  const ty = (i) => topY + (tot - cum[i]) * u;
+  return (
+    <svg viewBox={`0 0 ${Wd} ${H}`} style={{width,maxWidth:'100%',display:'block',margin:'0 auto'}}>
+      {legend.map(([t, c], i) => <text key={i} x="12" y={16 + i * 17} fontSize="11.5" fontWeight="800" fill={c || BK.ink}>{t}</text>)}
+      {Array.from({ length: n }, (_, i) => { const x = x0 + i * tw, y = ty(i), odd = i > 0 && rises[i - 1] !== 2;
+        return <g key={i}>
+          <rect x={x} y={y} width={tw} height={gy - y} fill={odd ? '#fdeee8' : BK.soft} stroke={BK.ink} strokeWidth="1.6" strokeLinejoin="round"/>
+          <circle cx={x + tw / 2} cy={y - 13} r="10.5" fill="#fff" stroke={BK.ink} strokeWidth="1.5"/>
+          <text x={x + tw / 2} y={y - 8.5} textAnchor="middle" fontSize="12" fontWeight="900" fill={BK.ink}>{letters[i]}</text>
+        </g>; })}
+      {rises.map((r, i) => { const bx = x0 + (i + 1) * tw, by = (ty(i) + ty(i + 1)) / 2 + (r === 1 ? 2 : 0), lab = r === 1 ? 'S' : r === 2 ? 'T' : '3';
+        return <g key={'r' + i}><circle cx={bx} cy={by} r="8.5" fill={r === 2 ? '#fff' : r === 1 ? BK.coral : BK.ink} stroke={r === 2 ? BK.ink : r === 1 ? BK.coral : BK.ink} strokeWidth="1.5"/><text x={bx} y={by + 4} textAnchor="middle" fontSize="11" fontWeight="900" fill={r === 2 ? BK.ink : '#fff'}>{lab}</text></g>; })}
+      {kb && Array.from({ length: n }, (_, i) => <rect key={'k' + i} x={x0 + i * tw} y={gy + 5} width={tw} height={42} rx="3" fill="#fff" stroke={BK.ink} strokeWidth="1.4"/>)}
+      {kb && rises.map((r, i) => r === 2 && <rect key={'b' + i} x={x0 + (i + 1) * tw - tw * 0.26} y={gy + 5} width={tw * 0.52} height="25" rx="2" fill={BK.ink}/>)}
+    </svg>
+  );
+}
+// The line-up of kids: sharps join in the order F C G D A E B, flats in the order turned round.
+function QueueKid({ x, y, letter, mark, hi }) {
+  return <g>
+    {bkFace(x, y - 24, 9)}
+    <rect x={x - 15} y={y - 13} width="30" height="32" rx="9" fill={hi ? BK.coral : '#fff'} stroke={BK.ink} strokeWidth="1.6"/>
+    <text x={x - 3} y={y + 8} textAnchor="middle" fontSize="16" fontWeight="900" fill={hi ? '#fff' : BK.ink}>{letter}</text>
+    <text x={x + 9} y={y + 2} textAnchor="middle" fontSize="13" fontWeight="900" fill={hi ? '#fff' : BK.coral}>{mark}</text>
+  </g>;
+}
+function SignatureQueues({ width = 600 }) {
+  const rows = [['SHARPS', ['F', 'C', 'G', 'D', 'A', 'E', 'B'], '♯', 62, 'D major = 2 sharps: only the first two kids step forward  (F♯ C♯)'], ['FLATS', ['B', 'E', 'A', 'D', 'G', 'C', 'F'], '♭', 182, 'B♭ major = 2 flats: the first two kids  (B♭ E♭)']];
+  return (
+    <svg viewBox="0 0 610 244" style={{width,maxWidth:'100%',display:'block',margin:'0 auto'}}>
+      <text x="305" y="12" textAnchor="middle" fontSize="12.5" fontWeight="800" fill={BK.ink}>The line-up never changes. Each new sharp or flat is the next kid in the line.</text>
+      {rows.map(([name, ls, mark, y, cap]) => <g key={name}>
+        <text x="10" y={y + 6} fontSize="12" fontWeight="900" fill={BK.coral}>{name}</text>
+        {ls.map((l, i) => <QueueKid key={l} x={118 + i * 70} y={y} letter={l} mark={mark} hi={i < 2}/>)}
+        <path d={`M103 ${y + 25} v6 H203 v-6`} fill="none" stroke={BK.coral} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+        <text x="213" y={y + 36} fontSize="11.5" fontWeight="800" fill={BK.ink}>{cap}</text>
+      </g>)}
+      <text x="305" y="128" textAnchor="middle" fontSize="12" fontWeight="800" fill={BK.muted}>flats: the same line, turned round</text>
+    </svg>
+  );
+}
+function DoorSign({ width = 118 }) {
+  return (
+    <svg viewBox="0 0 120 100" style={{width,display:'block'}}>
+      <rect x="10" y="6" width="64" height="90" rx="5" fill={BK.soft} stroke={BK.ink} strokeWidth="1.7"/>
+      <circle cx="64" cy="54" r="3.4" fill={BK.coral}/>
+      <path d="M30 6 v9 M54 6 v9" stroke={BK.ink} strokeWidth="1.3"/>
+      <rect x="18" y="15" width="48" height="36" rx="5" fill="#fff" stroke={BK.ink} strokeWidth="1.6"/>
+      <text x="42" y="27" textAnchor="middle" fontSize="7.5" fontWeight="900" fill={BK.coral}>HOUSE RULES</text>
+      <text x="42" y="43" textAnchor="middle" fontSize="14" fontWeight="900" fill={BK.ink}>F♯ C♯</text>
+      <path d="M82 40 q14 -4 26 6" fill="none" stroke={BK.coral} strokeWidth="1.8" strokeLinecap="round"/>
+      <text x="96" y="64" textAnchor="middle" fontSize="8.5" fontWeight="900" fill={BK.coral}>every F</text>
+      <text x="96" y="75" textAnchor="middle" fontSize="8.5" fontWeight="900" fill={BK.coral}>and C</text>
+      <text x="96" y="86" textAnchor="middle" fontSize="8.5" fontWeight="900" fill={BK.coral}>is sharp</text>
+    </svg>
+  );
+}
+// Chords: a three-layer cake -- the bottom layer is the root, then the 3rd, then the 5th.
+function LayerCake({ x, y, w = 78, hh = 28, letters = ['C', 'E', 'G'], names = null, cherry = true }) {
+  const els = [<ellipse key="pl" cx={x} cy={y + 2} rx={w / 2 + 14} ry="5" fill="#fff" stroke={BK.ink} strokeWidth="1.4"/>];
+  let yy = y;
+  letters.forEach((l, i) => {
+    yy -= hh; const ww = w - i * 10;
+    els.push(<g key={i}>
+      <rect x={x - ww / 2} y={yy} width={ww} height={hh} rx="5" fill={i === 0 ? BK.soft : i === 1 ? '#fdeee8' : '#fff'} stroke={BK.ink} strokeWidth="1.6"/>
+      <path d={`M${x - ww / 2 + 4} ${yy + 5} q${ww / 14} 6 ${ww / 7} 0 t${ww / 7} 0 t${ww / 7} 0 t${ww / 7} 0 t${ww / 7} 0 t${ww / 7} 0`} fill="none" stroke={BK.coral} strokeWidth="1.3" strokeLinecap="round"/>
+      <text x={x} y={yy + hh / 2 + 7} textAnchor="middle" fontSize="14" fontWeight="900" fill={BK.ink}>{l}</text>
+      {names && <text x={x + w / 2 + 8} y={yy + hh / 2 + 5} fontSize="11" fontWeight="900" fill={BK.coral}>{names[i]}</text>}
+    </g>);
+  });
+  if (cherry) els.push(<g key="ch"><path d={`M${x} ${yy - 4} q5 -9 11 -11`} fill="none" stroke={BK.ink} strokeWidth="1.3" strokeLinecap="round"/><circle cx={x} cy={yy - 4} r="5.5" fill={BK.coral} stroke={BK.ink} strokeWidth="1.3"/></g>);
+  return <g>{els}</g>;
+}
+function ChordHero({ width = 600 }) {
+  const ball = (x, y, r, l) => <g key={l}><circle cx={x} cy={y} r={r} fill="#fff" stroke={BK.ink} strokeWidth="1.6"/><text x={x} y={y + 5} textAnchor="middle" fontSize="14" fontWeight="900" fill={BK.coral}>{l}</text></g>;
+  return (
+    <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,width,maxWidth:'100%',margin:'0 auto'}}>
+      <svg viewBox="0 0 330 204" style={{width:'60%',flex:'0 0 60%'}}>
+        <text x="165" y="12" textAnchor="middle" fontSize="12.5" fontWeight="800" fill={BK.ink}>A triad is a stack of three. Skip a letter each time.</text>
+        <LayerCake x={66} y={176} names={['root', '3rd', '5th']} letters={['C', 'E', 'G']}/>
+        <rect x="204" y="38" width="30" height="16" fill={BK.ink}/><rect x="196" y="52" width="46" height="5" fill={BK.ink}/>
+        {ball(219, 74, 16, 'G')}{ball(219, 114, 21, 'E')}{ball(219, 156, 26, 'C')}
+        <path d="M205 88 q14 7 28 0" fill="none" stroke={BK.coral} strokeWidth="4.5" strokeLinecap="round"/>
+        <text x="66" y="198" textAnchor="middle" fontSize="11.5" fontWeight="900" fill={BK.ink}>a 3-layer cake</text>
+        <text x="219" y="198" textAnchor="middle" fontSize="11.5" fontWeight="900" fill={BK.ink}>or a snowman</text>
+        <text x="290" y="120" textAnchor="middle" fontSize="26" fontWeight="900" fill={BK.coral}>=</text>
+      </svg>
+      <div style={{flex:1}}>
+        <PaperStaff clef="treble" notes={chTriad(28).map(d => ({ d, x: 124 }))} width={190} minSpan={[40, 27]}/>
+        <div style={{textAlign:'center',fontSize:12,fontWeight:900,color:BK.coral,marginTop:2}}>C  E  G = root, 3rd, 5th</div>
+        <div style={{textAlign:'center',fontSize:11,color:BK.muted}}>line · line · line</div>
+      </div>
+    </div>
+  );
+}
+// The same cake, layers shuffled: that is all an inversion is.
+function ShuffleCakes({ width = 470 }) {
+  const cakes = [['root position', ['C', 'E', 'G'], 'C at the bottom'], ['1st inversion', ['E', 'G', 'C'], 'the 3rd (E) at the bottom'], ['2nd inversion', ['G', 'C', 'E'], 'the 5th (G) at the bottom']];
+  return (
+    <svg viewBox="0 0 450 98" style={{width,maxWidth:'100%',display:'block',margin:'0 auto'}}>
+      {cakes.map(([t, ls, cap], i) => <g key={t}>
+        <LayerCake x={62 + i * 150} y={62} w={60} hh={16} letters={ls}/>
+        <text x={62 + i * 150} y={82} textAnchor="middle" fontSize="11" fontWeight="900" fill={BK.ink}>{t}</text>
+        <text x={62 + i * 150} y={94} textAnchor="middle" fontSize="9.5" fontWeight="700" fill={BK.muted}>{cap}</text>
+        {i < 2 && <path d={`M${108 + i * 150} 34 q20 -16 40 0`} fill="none" stroke={BK.coral} strokeWidth="2" strokeLinecap="round"/>}
+      </g>)}
+    </svg>
+  );
+}
+// I = home, IV = the garden (a walk away), V = the gate (nearly home).
+function HomeGate({ width = 300 }) {
+  return (
+    <svg viewBox="0 0 300 94" style={{width,maxWidth:'100%',display:'block'}}>
+      <path d="M26 16 L48 -2 L70 16 Z" transform="translate(0 4)" fill={BK.coral} stroke={BK.ink} strokeWidth="1.6" strokeLinejoin="round"/>
+      <rect x="28" y="22" width="40" height="30" fill="#fff" stroke={BK.ink} strokeWidth="1.6"/><rect x="42" y="34" width="12" height="18" fill={BK.soft} stroke={BK.ink} strokeWidth="1.3"/>
+      <text x="48" y="70" textAnchor="middle" fontSize="15" fontWeight="900" fill={BK.coral}>I</text><text x="48" y="84" textAnchor="middle" fontSize="10" fontWeight="800" fill={BK.ink}>home</text>
+      <rect x="143" y="34" width="6" height="20" fill={BK.ink}/><circle cx="146" cy="28" r="14" fill="#fff" stroke={BK.ink} strokeWidth="1.6"/><circle cx="130" cy="52" r="3.2" fill={BK.coral}/><circle cx="162" cy="52" r="3.2" fill={BK.coral}/>
+      <text x="146" y="70" textAnchor="middle" fontSize="15" fontWeight="900" fill={BK.coral}>IV</text><text x="146" y="84" textAnchor="middle" fontSize="10" fontWeight="800" fill={BK.ink}>a walk away</text>
+      <path d="M232 54 V24 q0 -10 10 -10 h14 q10 0 10 10 V54" fill="none" stroke={BK.ink} strokeWidth="2"/><path d="M240 54 V28 M256 54 V28 M272 54 V28" stroke={BK.ink} strokeWidth="1.3"/><path d="M226 54 H284" stroke={BK.ink} strokeWidth="2"/>
+      <text x="257" y="70" textAnchor="middle" fontSize="15" fontWeight="900" fill={BK.coral}>V</text><text x="257" y="84" textAnchor="middle" fontSize="10" fontWeight="800" fill={BK.ink}>the gate</text>
+      <path d="M232 24 Q150 -14 76 12" fill="none" stroke={BK.coral} strokeWidth="1.8" strokeDasharray="4 3" strokeLinecap="round"/><path d="M84 3 L74 12 L86 17" fill="none" stroke={BK.coral} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+// Cadences as punctuation
+function PunctPic({ kind }) {
+  const t = (s, o = {}) => <text x="26" y="30" textAnchor="middle" fontSize="26" fontWeight="900" fill={BK.coral} {...o}>{s}</text>;
+  const art = {
+    stop: <><circle cx="26" cy="26" r="8" fill={BK.ink}/></>,
+    comma: <><circle cx="26" cy="22" r="6" fill={BK.ink}/><path d="M26 26 q2 10 -6 16" fill="none" stroke={BK.ink} strokeWidth="4" strokeLinecap="round"/></>,
+    twist: t('?!', { fontSize: 28 }),
+    amen: <><path d="M12 36 q14 -22 28 0" fill="none" stroke={BK.coral} strokeWidth="2.2" strokeLinecap="round"/><path d="M18 36 h16" stroke={BK.ink} strokeWidth="2.4" strokeLinecap="round"/><circle cx="26" cy="16" r="3" fill={BK.coral}/></>,
+  };
+  return <svg viewBox="0 0 52 46" style={{width:34,height:30,display:'block'}}>{art[kind]}</svg>;
+}
+function CadencePunct() {
+  const left = [['perfect', 'V → I'], ['plagal', 'IV → I'], ['imperfect', 'I → V'], ['interrupted', 'V → vi']];
+  const right = [['comma', '“...to be continued,”'], ['twist', '“...but then, surprise!”'], ['stop', '“...THE END.”'], ['amen', '“...Amen.”']];
+  return (
+    <div style={{display:'grid',gridTemplateColumns:'1fr 70px 1fr',alignItems:'center',rowGap:6}}>
+      {left.map(([nm, ch], i) => <React.Fragment key={i}>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:10,border:'1.5px solid ' + BK.line,borderRadius:10,padding:'4px 12px',fontSize:13.5,color:BK.ink}}><span><b>{nm}</b> <span style={{color:BK.muted}}>{ch}</span></span><span style={{width:10,height:10,borderRadius:5,background:BK.ink}}/></div>
+        <div/>
+        <div style={{display:'flex',alignItems:'center',gap:10,border:'1.5px solid ' + BK.line,borderRadius:10,padding:'1px 12px',fontSize:12.5,color:BK.ink,fontStyle:'italic'}}><span style={{width:10,height:10,borderRadius:5,background:BK.ink}}/><PunctPic kind={right[i][0]}/>{right[i][1]}</div>
+      </React.Fragment>)}
+    </div>
+  );
+}
+
 function IntervalsWorkbook({ startNo = 1 }) {
   const W = useMemo(() => ivWorkbook(), [LANG]);
   const C = ivConcepts();
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="intervals">{content}</WbPage>);
-  P(<WbOpener id="intervals" concepts={C} blurb="An interval is the distance between two notes: a number (count the letters) and a quality (major, minor, perfect)."/>);
+  P(<WbOpener id="intervals" concepts={C} hero={<IvTapeHero/>} blurb="An interval is the distance between two notes. Measure it like a tape measure: count the letters for the number, count the best-friend steps for the quality (major, minor, perfect)."/>);
   P(<WbMap id="intervals" concepts={C} steps={5} checkPage={startNo + 6} tasks={[
     'Play a 3rd, a 5th and an octave up from C. Say each one as you play it.',
     'Play C-E and C-E♭ with your eyes closed. Can you hear which is happy and which is sad?',
@@ -22666,7 +22785,8 @@ function IntervalsWorkbook({ startNo = 1 }) {
   // step 1 -- the number
   P(<>
     <WbTop step={1}/>
-    <Part kind="together" title="What number is it?" how="Count the letters from the bottom note to the top note, counting BOTH notes. C to E: C D E = a 3rd.">
+    <Part kind="together" title="What number is it?" how="Count the letters from the bottom note to the top note, counting BOTH notes.">
+      <ArtLead pic={<IvFrogPic/>} picW={185} text={<>The frog counts the key it sits on as <span style={{color:BK.coral}}>1</span>. C D E = three letters = <span style={{color:BK.coral}}>a 3rd</span>.</>} style={{padding:'2px 14px'}}/>
       <BkGrid cols={4} gap="10px 12px">{W.s1.tog.map((it, i) => <IvStaffCell key={i} it={it} n={i + 1} ex={i === 0}/>)}</BkGrid>
     </Part>
     <Part kind="home" title="Count them on your own" how="Some notes are side by side, some are stacked -- count them the same way.">
@@ -22682,7 +22802,8 @@ function IntervalsWorkbook({ startNo = 1 }) {
   // step 2 -- quality
   P(<>
     <WbTop step={2}/>
-    <Part kind="together" title="Count the semitones" how={<>Count the letters first (that gives the number: C to E is a 3rd). Then count the semitones from the bottom dot to the top dot, black keys too (that gives major, minor or perfect): {IV_QTABLE.slice(0, 4).map(([a, b]) => <span key={a} style={{whiteSpace:'nowrap',marginRight:8}}><b>{a}</b>: {b}.</span>)} <span style={{whiteSpace:'nowrap'}}><b>6</b> semitones: we meet that one later.</span></>}>
+    <Part kind="together" title="Count the semitones" how="Letters first for the number. Then count the best-friend steps from the bottom dot to the top dot, black keys too -- the ruler tells you the quality.">
+      <div style={{display:'grid',gridTemplateColumns:'200px 1fr 150px',gap:12,alignItems:'center',border:'1px solid #ece6d8',background:BK.soft,borderRadius:10,padding:'4px 12px',margin:'0 0 8px'}}><FriendKeys width={200}/><IvRulerPic width={340}/><IvMoodPic width={150}/></div>
       <BkGrid cols={3} gap="10px 12px">{W.s2.tog.map((it, i) => <IvKeysCell key={i} it={it} n={i + 1} ex={i === 0}/>)}</BkGrid>
     </Part>
     <Part kind="home" title="Count and name on your own" how="Letters first for the number, then semitones for the quality.">
@@ -22690,7 +22811,7 @@ function IntervalsWorkbook({ startNo = 1 }) {
     </Part>
     <Part kind="play" title="Happy or sad?" how="Play C-E (a major 3rd), then C-E♭ (a minor 3rd). Draw the face each one sounds like. Then write a tiny story with a happy part and a sad part -- and play the right 3rd for each part!">
       <div style={{display:'grid',gridTemplateColumns:'130px 130px 1fr',gap:14,alignItems:'stretch'}}>
-        {['C - E', 'C - E♭'].map(l => <div key={l} style={{border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-between',padding:'6px 4px'}}><span style={{width:84,height:84,border:'1.5px dashed ' + BK.line,borderRadius:42}}/><b style={{fontSize:13,color:BK.ink}}>{l}</b></div>)}
+        {['C - E', 'C - E♭'].map(l => <div key={l} style={{border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-between',padding:'6px 4px'}}><span style={{width:60,height:60,border:'1.5px dashed ' + BK.line,borderRadius:30}}/><b style={{fontSize:13,color:BK.ink}}>{l}</b></div>)}
         <div style={{border:'1.5px solid ' + BK.line,borderRadius:10,padding:'6px 10px',fontSize:11,color:BK.muted,display:'grid',gridTemplateRows:'auto 1fr 1fr 1fr',gap:2}}>My story<span style={{borderBottom:'1px solid ' + BK.line}}/><span style={{borderBottom:'1px solid ' + BK.line}}/><span style={{borderBottom:'1px solid ' + BK.line}}/></div>
       </div>
     </Part>
@@ -22706,8 +22827,8 @@ function IntervalsWorkbook({ startNo = 1 }) {
     <Part kind="home" title="Write the top note" how="Think of the major scale of the bottom note. Draw the top note and write its name -- remember any sharp or flat in that key!">
       <BkGrid cols={3} gap="10px 12px">{W.s3.home.map((it, i) => <IvBuildCell key={i} it={it} n={i + 1}/>)}</BkGrid>
     </Part>
-    <Part kind="play" title="Song detective" how="These songs start with a famous interval. Hum each start, then join the song to its interval. Can you play them on the piano?">
-      <div style={{display:'grid',gridTemplateColumns:'1fr 90px 1fr',alignItems:'center',rowGap:8}}>
+    <Part kind="play" title="Song detective" how="Hum the first two notes of each song, then join it to its interval. Then play them!">
+      <div style={{display:'grid',gridTemplateColumns:'1fr 90px 1fr',alignItems:'center',rowGap:4}}>
         {[['Twinkle Twinkle Little Star', 'perfect 5th'], ['Here Comes the Bride', 'perfect 4th'], ['Oh When the Saints', 'major 3rd'], ['Jaws (the shark!)', 'minor 2nd'], ['Somewhere Over the Rainbow', 'octave']].map(([song], i) => <React.Fragment key={i}>
           <div style={{display:'flex',alignItems:'center',gap:8,justifyContent:'flex-end',fontSize:13,fontWeight:800,color:BK.ink}}>{song}<span style={{width:9,height:9,borderRadius:5,background:BK.ink}}/></div><div/>
           <div style={{display:'flex',alignItems:'center',gap:8,fontSize:13,color:BK.ink}}><span style={{width:9,height:9,borderRadius:5,background:BK.ink}}/>{['octave', 'major 3rd', 'minor 2nd', 'perfect 5th', 'perfect 4th'][i]}</div>
@@ -22720,16 +22841,15 @@ function IntervalsWorkbook({ startNo = 1 }) {
   // step 5 -- inversions
   P(<>
     <WbTop step={5}/>
-    <Part kind="together" title="Turn it upside down" how="Inverting = moving the bottom note up an octave. The numbers always add to 9. Major ⇄ minor; perfect stays perfect.">
+    <Part kind="together" title="Turn it upside down" how="Inverting = the bottom note flips over the top (up an octave). The numbers always add to 9. Major ⇄ minor; perfect stays perfect.">
+      <Lead max={460}><SeesawPic/></Lead>
       <BkGrid cols={2} gap="10px 12px">{W.s5.tog.map((iv, i) => <IvInvCell key={i} iv={iv} n={i + 1} ex={i === 0}/>)}</BkGrid>
     </Part>
     <Part kind="home" title="Invert them on your own">
       <BkGrid cols={2} gap="10px 12px">{W.s5.home.map((iv, i) => <IvInvCell key={i} iv={iv} n={i + 1}/>)}</BkGrid>
     </Part>
-    <Part kind="play" title="The magic number 9" how="Join every pair of numbers that adds up to 9, each pair in a different colour. Those are inversion partners -- a 3rd turns into a 6th! Then colour the pair that means unison and octave.">
-      <svg viewBox="0 0 640 170" style={{width:'100%',display:'block'}}>
-        {[[2, 60, 40], [7, 520, 130], [3, 230, 120], [6, 410, 30], [4, 120, 135], [5, 330, 80], [8, 590, 45], [1, 40, 100]].map(([v, x, y]) => <g key={v}><circle cx={x} cy={y} r="22" fill="#fff" stroke={BK.ink} strokeWidth="1.6"/><text x={x} y={y + 7} textAnchor="middle" fontSize="20" fontWeight="900" fill={BK.ink}>{v}</text></g>)}
-      </svg>
+    <Part kind="play" title="Inversion dominoes" how="These six dominoes make ONE chain -- but only inversion partners may touch: the two numbers where tiles meet must add up to 9 (3 touches 6, 2 touches 7, 4 touches 5, 1 touches 8). Draw the chain in the empty tiles. Which pair is unison and octave?">
+      <IvDominoes/>
     </Part>
     <Faces/>
   </>);
@@ -22770,7 +22890,7 @@ function IntervalsTeacher() {
     <TcBlock page={5} title="The major-scale shortcut" answers={<>{tcAns('TOGETHER', W.s3.tog.map(it => ivLongEn(it.q, it.n)))}{tcAns('AT HOME', W.s3.home.map(it => ivName(it.top)))}{tcAns('PLAY', ['Twinkle: P5', 'Bride: P4', 'Saints: M3', 'Jaws: m2', 'Rainbow: octave'])}</>}
       watch="Forgetting the key's sharp or flat: D up a major 3rd is F♯, not F."
       say="“Sing the major scale of the bottom note -- the interval lands on one of its notes.”"/>
-    <TcBlock page={6} title="Inversions" answers={<>{tcAns('TOGETHER', W.s5.tog.map(iv => ivLongEn(...ivInv(iv).reverse())))}{tcAns('AT HOME', W.s5.home.map(iv => ivLongEn(...ivInv(iv).reverse())))}{tcAns('PLAY', ['1-8, 2-7, 3-6, 4-5 -- every number has a partner (1 = unison, 8 = octave)'])}</>}
+    <TcBlock page={6} title="Inversions" answers={<>{tcAns('TOGETHER', W.s5.tog.map(iv => ivLongEn(...ivInv(iv).reverse())))}{tcAns('AT HOME', W.s5.home.map(iv => ivLongEn(...ivInv(iv).reverse())))}{tcAns('PLAY', ['dominoes, one chain: 3|4 - 5|2 - 7|6 - 3|8 - 1|5 - 4|8 (tiles may be turned round; other orders that keep every join at 9 are also right)', 'unison and octave = the 1-8 pair'])}</>}
       watch="Adding to 8 instead of 9. Turning perfect into something else."
       say="“Numbers add to 9. Major and minor swap. Perfect stays perfect.”"/>
   </>);
@@ -22864,7 +22984,7 @@ function KeySigWorkbook({ startNo = 1 }) {
   const C = ksConcepts();
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="key-signatures">{content}</WbPage>);
-  P(<WbOpener id="key-signatures" concepts={C} blurb="Sharps and flats always arrive in the same order -- learn the order and every key falls out of it."/>);
+  P(<WbOpener id="key-signatures" concepts={C} hero={<SignatureQueues/>} blurb="Sharps and flats always join in the same order, like a line-up that never changes. Learn the line and every key falls out of it."/>);
   P(<WbMap id="key-signatures" concepts={C} steps={7} checkPage={startNo + 5} tasks={[
     'Say the order of sharps, then flats, out loud -- three times each, faster every time.',
     'Look at the key signature of each of your pieces. Name the key.',
@@ -22889,10 +23009,11 @@ function KeySigWorkbook({ startNo = 1 }) {
   </>);
 
   // step 3 -- place them
-  const Card = ({ children }) => <div style={{border:'1.6px dashed ' + BK.muted,height:88,display:'flex',alignItems:'center',justifyContent:'center',padding:'4px 10px'}}>{children}</div>;
+  const Card = ({ children }) => <div style={{border:'1.6px dashed ' + BK.muted,height:62,display:'flex',alignItems:'center',justifyContent:'center',padding:'4px 10px'}}>{children}</div>;
   P(<>
     <WbTop step={3}/>
-    <Part kind="together" title="Write the key signature" how="Write the sharps or flats in order, right after the clef, each on its own line or space -- exactly where the example puts them.">
+    <Part kind="together" title="Write the key signature" how="Write them in order right after the clef, each on its own line or space -- like the example.">
+      <ArtLead pic={<DoorSign width={86}/>} picW={86} text={<>A key signature is the <span style={{color:BK.coral}}>house-rules sign</span> on the door. Write it once at the start and it covers every F and C in the whole piece.</>} style={{padding:'1px 14px'}}/>
       <BkGrid cols={3} gap="10px 12px">{W.s3.tog.map((ks, i) => <KsWriteCell key={i} ks={ks} n={i + 1} ex={i === 0} w={230}/>)}</BkGrid>
     </Part>
     <Part kind="home" title="Write them on your own" how="Careful with the bass clef: the whole pattern moves one line lower (skip the space). Look at D major in both clefs:">
@@ -24246,12 +24367,172 @@ function dyConcepts() {
 const BkHairpin = ({ kind, w = 120, color = BK.ink }) => <svg viewBox={`0 0 ${w} 30`} style={{width:'100%',maxWidth:w,display:'block',margin:'0 auto'}}>{kind === 'cresc' ? <path d={`M6 15 L${w - 6} 4 M6 15 L${w - 6} 26`} stroke={color} strokeWidth="2" fill="none"/> : <path d={`M6 4 L${w - 6} 15 M6 26 L${w - 6} 15`} stroke={color} strokeWidth="2" fill="none"/>}</svg>;
 const dyMark = (id, size = 26, color = BK.ink) => <DynMark id={id} size={size} color={color}/>;
 
+// ─── Pass 3, chunk 4a: Melody (shapes you can see), Dynamics (the volume ladder) and Signs (road signs). Navy + coral only.
+const bez = (p0, p1, p2, t) => [(1 - t) * (1 - t) * p0[0] + 2 * (1 - t) * t * p1[0] + t * t * p2[0], (1 - t) * (1 - t) * p0[1] + 2 * (1 - t) * t * p1[1] + t * t * p2[1]];
+function ShapePics({ width = 600 }) {
+  const ts = [0, 0.25, 0.5, 0.75, 1];
+  const dot = (x, y, k) => <circle key={k} cx={x} cy={y} r="5" fill={BK.coral} stroke={BK.ink} strokeWidth="1.2"/>;
+  const panels = [
+    ['rising', 'stairs', (x0) => <g>
+      <path d={`M${x0 + 8} 112 H${x0 + 34} V92 H${x0 + 60} V72 H${x0 + 86} V52 H${x0 + 112} V32 H${x0 + 134}`} fill="none" stroke={BK.ink} strokeWidth="2.2" strokeLinejoin="round"/>
+      {[[21, 104], [47, 84], [73, 64], [99, 44], [123, 24]].map(([dx, y], i) => dot(x0 + dx, y, i))}</g>],
+    ['falling', 'a slide', (x0) => <g>
+      <path d={`M${x0 + 16} 28 V112 M${x0 + 28} 28 V112 M${x0 + 16} 50 H${x0 + 28} M${x0 + 16} 70 H${x0 + 28} M${x0 + 16} 90 H${x0 + 28}`} fill="none" stroke={BK.ink} strokeWidth="1.8" strokeLinecap="round"/>
+      <path d={`M${x0 + 28} 32 Q${x0 + 84} 60 ${x0 + 134} 108`} fill="none" stroke={BK.ink} strokeWidth="3.2" strokeLinecap="round"/>
+      {ts.map((t, i) => { const [x, y] = bez([x0 + 34, 30], [x0 + 84, 56], [x0 + 130, 100], t); return dot(x, y - 9, i); })}</g>],
+    ['arch', 'the Harbour Bridge', (x0) => <g>
+      <path d={`M${x0 + 4} 110 H${x0 + 138}`} fill="none" stroke={BK.ink} strokeWidth="2.2" strokeLinecap="round"/>
+      <path d={`M${x0 + 10} 108 Q${x0 + 71} -8 ${x0 + 132} 108`} fill="none" stroke={BK.ink} strokeWidth="2.6" strokeLinecap="round"/>
+      {[0.2, 0.4, 0.6, 0.8].map((t, i) => { const [x, y] = bez([x0 + 10, 108], [x0 + 71, -8], [x0 + 132, 108], t); return <line key={'h' + i} x1={x} y1={y + 3} x2={x} y2="110" stroke={BK.muted} strokeWidth="1"/>; })}
+      {ts.map((t, i) => { const [x, y] = bez([x0 + 10, 108], [x0 + 71, -8], [x0 + 132, 108], t); return dot(x, y - 9, i); })}</g>],
+    ['valley', 'a hammock', (x0) => <g>
+      <path d={`M${x0 + 10} 30 V112 M${x0 + 132} 30 V112`} fill="none" stroke={BK.ink} strokeWidth="2.6" strokeLinecap="round"/>
+      <path d={`M${x0 + 10} 36 Q${x0 + 71} 138 ${x0 + 132} 36`} fill="none" stroke={BK.ink} strokeWidth="2.2" strokeLinecap="round" strokeDasharray="0"/>
+      {ts.map((t, i) => { const [x, y] = bez([x0 + 14, 36], [x0 + 71, 138], [x0 + 128, 36], t); return dot(x, y - 9, i); })}</g>],
+  ];
+  return (
+    <svg viewBox="0 0 600 156" style={{width,maxWidth:'100%',display:'block',margin:'0 auto'}}>
+      {panels.map(([nm, thing, draw], i) => { const x0 = 8 + i * 148; return <g key={nm}>
+        <rect x={x0 - 2} y="4" width="144" height="148" rx="10" fill="#fff" stroke="#d9dbea" strokeWidth="1.4"/>
+        {draw(x0)}
+        <text x={x0 + 70} y="132" textAnchor="middle" fontSize="13" fontWeight="900" fill={BK.ink}>{nm}</text>
+        <text x={x0 + 70} y="146" textAnchor="middle" fontSize="10" fontWeight="700" fill={BK.muted}>{thing}</text>
+      </g>; })}
+    </svg>
+  );
+}
+// A question hangs in the air; an answer lands back home.
+function QABubbles({ width = 320 }) {
+  const house = (x, y) => <g><path d={`M${x - 11} ${y} L${x} ${y - 11} L${x + 11} ${y} Z`} fill={BK.coral} stroke={BK.ink} strokeWidth="1.3" strokeLinejoin="round"/><rect x={x - 8} y={y} width="16" height="12" fill="#fff" stroke={BK.ink} strokeWidth="1.3"/></g>;
+  return (
+    <svg viewBox="0 0 340 92" style={{width,maxWidth:'100%',display:'block'}}>
+      {bkFace(20, 40, 12)}{bkFace(320, 40, 12)}
+      <rect x="40" y="8" width="128" height="56" rx="12" fill="#fff" stroke={BK.ink} strokeWidth="1.6"/><path d="M40 34 L31 40 L40 46" fill="#fff" stroke={BK.ink} strokeWidth="1.6" strokeLinejoin="round"/>
+      {[[58, 50], [80, 44], [102, 34], [124, 22]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r="5" fill={BK.coral} stroke={BK.ink} strokeWidth="1.2"/>)}
+      <text x="150" y="44" textAnchor="middle" fontSize="26" fontWeight="900" fill={BK.coral}>?</text>
+      <rect x="172" y="8" width="128" height="56" rx="12" fill="#fff" stroke={BK.ink} strokeWidth="1.6"/><path d="M300 34 L309 40 L300 46" fill="#fff" stroke={BK.ink} strokeWidth="1.6" strokeLinejoin="round"/>
+      {[[190, 22], [212, 30], [234, 40], [256, 50]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r="5" fill={BK.coral} stroke={BK.ink} strokeWidth="1.2"/>)}
+      {house(280, 40)}
+      <text x="104" y="80" textAnchor="middle" fontSize="10" fontWeight="900" fill={BK.ink}>question: up in the air</text>
+      <text x="236" y="80" textAnchor="middle" fontSize="10" fontWeight="900" fill={BK.ink}>answer: back home (C)</text>
+    </svg>
+  );
+}
+// A sequence: the same footprints, one stair higher each time.
+function FootStairs({ width = 230 }) {
+  const pat = [[0, 0], [15, -10], [30, -4]];
+  return (
+    <svg viewBox="0 0 240 90" style={{width,maxWidth:'100%',display:'block'}}>
+      <path d="M4 86 V66 H76 V46 H148 V26 H234" fill="none" stroke={BK.ink} strokeWidth="2.2" strokeLinejoin="round"/>
+      {[[14, 58], [86, 38], [158, 18]].map(([x, y], g) => pat.map(([dx, dy], i) => <circle key={g + '-' + i} cx={x + dx} cy={y + dy} r="5" fill={BK.coral} stroke={BK.ink} strokeWidth="1.2"/>))}
+      <path d="M52 50 q8 -10 18 -12 M124 30 q8 -10 18 -12" fill="none" stroke={BK.coral} strokeWidth="1.6" strokeDasharray="3 3" strokeLinecap="round"/>
+    </svg>
+  );
+}
+// Dynamics: a volume ladder of everyday voices.
+function VolumeLadder({ width = 600 }) {
+  const steps = [['pp', 'a whisper'], ['p', 'library voice'], ['mp', 'dinner-table chat'], ['mf', 'classroom talk'], ['f', 'playground shout'], ['ff', 'thunder!']];
+  const gy = 178, bw = 94, x0 = 8;
+  return (
+    <svg viewBox="0 0 580 190" style={{width,maxWidth:'100%',display:'block',margin:'0 auto'}}>
+      {steps.map(([m, w], i) => { const x = x0 + i * bw, h = 26 + i * 19, top = gy - h, fx = x + 22, fy = top - 15;
+        return <g key={m}>
+          <rect x={x} y={top} width={bw} height={h} fill={BK.coral} fillOpacity={0.05 + i * 0.09} stroke={BK.ink} strokeWidth="1.6"/>
+          <text x={x + bw / 2} y={gy - 8} textAnchor="middle" fontSize="9.5" fontWeight="800" fill={BK.ink}>{w}</text>
+          <circle cx={fx} cy={fy} r="10" fill="#fff" stroke={BK.ink} strokeWidth="1.5"/>
+          <circle cx={fx - 3.4} cy={fy - 3} r="1.2" fill={BK.ink}/><circle cx={fx + 3.4} cy={fy - 3} r="1.2" fill={BK.ink}/>
+          <ellipse cx={fx} cy={fy + 4} rx={1.6 + i * 0.7} ry={1 + i * 1.1} fill={BK.ink}/>
+          {Array.from({ length: i + 1 }, (_, k) => <path key={k} d={`M${fx + 15 + k * 5.5} ${fy - 3 - k * 0.8} q${3 + k * 0.4} ${3 + k * 0.8} 0 ${6 + k * 1.6}`} fill="none" stroke={BK.coral} strokeWidth="1.7" strokeLinecap="round"/>)}
+          <text x={x + bw - 24} y={top - 7} textAnchor="middle" fontSize="22" fontWeight="900" fontStyle="italic" fontFamily="'Playfair Display', Georgia, serif" fill={i > 3 ? BK.coral : BK.ink}>{m}</text>
+        </g>; })}
+    </svg>
+  );
+}
+// A hairpin is a megaphone.
+function MegaphoneLead({ width = 300 }) {
+  const arcs = (x, grow) => [0, 1, 2].map(k => { const s = grow ? 5 + k * 5 : 15 - k * 5; return <path key={k} d={`M${x + k * 9} ${34 - s} q${s * 0.6} ${s} 0 ${2 * s}`} fill="none" stroke={BK.coral} strokeWidth="1.8" strokeLinecap="round"/>; });
+  return (
+    <svg viewBox="0 0 300 80" style={{width,maxWidth:'100%',display:'block'}}>
+      <path d="M22 28 L96 6 V62 L22 40 Z" fill={BK.soft} stroke={BK.ink} strokeWidth="1.6" strokeLinejoin="round"/><rect x="10" y="27" width="12" height="14" rx="3" fill="#fff" stroke={BK.ink} strokeWidth="1.5"/>
+      {arcs(104, true)}
+      <text x="60" y="76" textAnchor="middle" fontSize="10.5" fontWeight="900" fill={BK.ink}>cresc. = louder</text>
+      <path d="M172 6 L246 28 V40 L172 62 Z" fill={BK.soft} stroke={BK.ink} strokeWidth="1.6" strokeLinejoin="round"/><rect x="246" y="27" width="12" height="14" rx="3" fill="#fff" stroke={BK.ink} strokeWidth="1.5"/>
+      {arcs(262, false).slice(0, 2)}
+      <text x="212" y="76" textAnchor="middle" fontSize="10.5" fontWeight="900" fill={BK.ink}>dim. = softer</text>
+    </svg>
+  );
+}
+// Articulation as movements: bounce, glide, poke, lean.
+function ArticStrip({ width = 600 }) {
+  const cells = [
+    ['staccato', 'bounce', (x) => <g><path d={`M${x + 6} 46 H${x + 100}`} stroke={BK.muted} strokeWidth="1"/><path d={`M${x + 10} 46 q12 -40 24 0 q12 -40 24 0 q12 -40 24 0`} fill="none" stroke={BK.ink} strokeWidth="1.6" strokeDasharray="3 3"/>{[10, 34, 58, 82].map(d => <circle key={d} cx={x + d} cy="46" r="3.4" fill={BK.coral}/>)}<circle cx={x + 46} cy="14" r="5" fill={BK.coral} stroke={BK.ink} strokeWidth="1.2"/></g>],
+    ['legato', 'glide', (x) => <g><path d={`M${x + 8} 38 q16 -30 32 0 t32 0 t24 0`} fill="none" stroke={BK.ink} strokeWidth="2"/>{[[24, 23], [56, 53], [86, 23]].map(([d, y]) => <circle key={d} cx={x + d} cy={y} r="4.5" fill={BK.coral} stroke={BK.ink} strokeWidth="1.2"/>)}<path d={`M${x + 18} 14 Q${x + 54} -4 ${x + 90} 14`} fill="none" stroke={BK.coral} strokeWidth="2" strokeLinecap="round"/></g>],
+    ['accent', 'poke', (x) => <g>{[16, 50, 84].map((d, i) => <circle key={d} cx={x + d} cy="36" r={i === 1 ? 8 : 4.5} fill={BK.coral} stroke={BK.ink} strokeWidth="1.2"/>)}<path d={`M${x + 38} 14 L${x + 62} 20 L${x + 38} 26`} fill="none" stroke={BK.ink} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/><path d={`M${x + 50} 46 v8 M${x + 38} 44 l-5 6 M${x + 62} 44 l5 6`} stroke={BK.coral} strokeWidth="1.8" strokeLinecap="round"/></g>],
+    ['tenuto', 'lean', (x) => <g>{[18, 50, 82].map(d => <g key={d}><circle cx={x + d} cy="28" r="4.5" fill={BK.coral} stroke={BK.ink} strokeWidth="1.2"/><path d={`M${x + d - 11} 44 H${x + d + 11}`} stroke={BK.ink} strokeWidth="3.6" strokeLinecap="round"/></g>)}<path d={`M${x + 6} 54 H${x + 94}`} stroke={BK.muted} strokeWidth="1"/></g>],
+  ];
+  return (
+    <svg viewBox="0 0 600 78" style={{width,maxWidth:'100%',display:'block',margin:'6px auto 0'}}>
+      {cells.map(([nm, mv, draw], i) => { const x = 10 + i * 148; return <g key={nm}>
+        <rect x={x - 4} y="2" width="140" height="74" rx="10" fill="#fff" stroke="#d9dbea" strokeWidth="1.4"/>
+        {draw(x + 8)}
+        <text x={x + 66} y="70" textAnchor="middle" fontSize="11.5" fontWeight="900" fill={BK.ink}>{nm} <tspan fill={BK.coral}>= {mv}</tspan></text>
+      </g>; })}
+    </svg>
+  );
+}
+// Signs: a road with four road signs.
+function SignRoad({ width = 600 }) {
+  const sign = (x, draw) => <g><line x1={x} y1="84" x2={x} y2="132" stroke={BK.ink} strokeWidth="2.4"/>{draw(x)}</g>;
+  return (
+    <svg viewBox="0 0 610 196" style={{width,maxWidth:'100%',display:'block',margin:'0 auto'}}>
+      <text x="305" y="14" textAnchor="middle" fontSize="12.5" fontWeight="800" fill={BK.ink}>Signs are road signs for music: they tell you where to go next.</text>
+      <path d="M8 142 H602" stroke="#d9dbea" strokeWidth="22" strokeLinecap="round"/><path d="M20 142 H590" stroke="#fff" strokeWidth="2.6" strokeDasharray="12 10"/>
+      {sign(80, (x) => <g><circle cx={x} cy="56" r="28" fill="#fff" stroke={BK.ink} strokeWidth="2.2"/><path d={`M${x + 11} 47 A14 14 0 1 0 ${x + 13} 62`} fill="none" stroke={BK.coral} strokeWidth="3" strokeLinecap="round"/><path d={`M${x + 4} 64 L${x + 14} 66 L${x + 14} 55`} fill="none" stroke={BK.coral} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></g>)}
+      {sign(228, (x) => <g><path d={`M${x} 26 L${x + 30} 56 L${x} 86 L${x - 30} 56 Z`} fill="#fff" stroke={BK.ink} strokeWidth="2.2" strokeLinejoin="round"/><path d={`M${x - 8} 74 V54 a8 8 0 0 1 16 0 V66`} fill="none" stroke={BK.coral} strokeWidth="3" strokeLinecap="round"/><path d={`M${x + 3} 61 L${x + 8} 69 L${x + 13} 61`} fill="none" stroke={BK.coral} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></g>)}
+      {sign(378, (x) => <g><rect x={x - 32} y="32" width="64" height="48" rx="7" fill="#fff" stroke={BK.ink} strokeWidth="2.2"/><path d={`M${x - 16} 70 V54 q0 -9 9 -9 H${x + 14}`} fill="none" stroke={BK.coral} strokeWidth="3" strokeLinecap="round"/><path d={`M${x + 9} 38 L${x + 18} 45 L${x + 9} 52`} fill="none" stroke={BK.coral} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/></g>)}
+      {sign(530, (x) => <g>{[0, 1].map(r => [0, 1, 2, 3].map(c => <rect key={r + '' + c} x={x - 20 + c * 13} y={30 + r * 13} width="13" height="13" fill={(r + c) % 2 ? BK.ink : '#fff'} stroke={BK.ink} strokeWidth="1.4"/>))}</g>)}
+      {[[80, 'repeat', 'go round again'], [228, 'D.C. · D.S.', 'U-turn, back to the start'], [378, 'To Coda → Coda', 'take the exit ramp'], [530, 'Fine', 'the finish line']].map(([x, a, b]) => <g key={a}><text x={x} y="170" textAnchor="middle" fontSize="12.5" fontWeight="900" fill={BK.ink}>{a}</text><text x={x} y="185" textAnchor="middle" fontSize="10.5" fontWeight="700" fill={BK.coral}>{b}</text></g>)}
+    </svg>
+  );
+}
+// Tie = a rope joining two of the same note; slur = a rainbow over different notes.
+function TieSlurPic({ width = 270 }) {
+  return (
+    <svg viewBox="0 0 300 86" style={{width,maxWidth:'100%',display:'block',margin:'0 auto'}}>
+      <circle cx="46" cy="30" r="6" fill={BK.ink}/><circle cx="96" cy="30" r="6" fill={BK.ink}/>
+      <path d="M46 36 q25 22 50 0" fill="none" stroke={BK.coral} strokeWidth="2.6" strokeLinecap="round"/><circle cx="71" cy="46" r="3" fill={BK.coral}/>
+      <text x="71" y="66" textAnchor="middle" fontSize="11" fontWeight="900" fill={BK.coral}>TIE</text><text x="71" y="79" textAnchor="middle" fontSize="10.5" fontWeight="900" fill={BK.ink}>same note = a rope</text>
+      <circle cx="194" cy="40" r="6" fill={BK.ink}/><circle cx="226" cy="24" r="6" fill={BK.ink}/><circle cx="258" cy="34" r="6" fill={BK.ink}/>
+      <path d="M190 32 q38 -42 74 0" fill="none" stroke={BK.coral} strokeWidth="2.6" strokeLinecap="round"/>
+      <text x="226" y="66" textAnchor="middle" fontSize="11" fontWeight="900" fill={BK.coral}>SLUR</text><text x="226" y="79" textAnchor="middle" fontSize="10.5" fontWeight="900" fill={BK.ink}>different notes = a rainbow</text>
+    </svg>
+  );
+}
+function LiftIcon({ up = true, size = 34 }) {
+  return (
+    <svg viewBox="0 0 34 34" style={{width:size,height:size,flex:`0 0 ${size}px`}}>
+      <rect x="5" y="3" width="24" height="28" rx="3" fill="#fff" stroke={BK.ink} strokeWidth="1.6"/><path d="M17 3 V31" stroke={BK.ink} strokeWidth="1"/>
+      <path d={up ? 'M17 24 V11 M11 17 L17 10 L23 17' : 'M17 10 V23 M11 17 L17 24 L23 17'} fill="none" stroke={BK.coral} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+const ORN_LIKE = { trill: 'hummingbird wings', mordent: 'a quick hiccup', turn: 'a loop-the-loop', acc: 'a flick!' };
+function OrnPic({ id }) {
+  const art = {
+    trill: <g><ellipse cx="30" cy="26" rx="11" ry="7" fill="#fff" stroke={BK.ink} strokeWidth="1.6"/><circle cx="44" cy="22" r="5" fill="#fff" stroke={BK.ink} strokeWidth="1.6"/><path d="M49 22 L58 21 M20 28 L10 33" stroke={BK.ink} strokeWidth="1.6" strokeLinecap="round"/><circle cx="45" cy="21" r="1" fill={BK.ink}/><path d="M18 16 q4 -6 8 0 t8 0 t8 0" fill="none" stroke={BK.coral} strokeWidth="1.8" strokeLinecap="round"/><path d="M20 10 q4 -5 8 0 t8 0" fill="none" stroke={BK.coral} strokeWidth="1.4" strokeLinecap="round"/></g>,
+    mordent: <g><path d="M6 36 H24 L32 12 L40 36 H64" fill="none" stroke={BK.ink} strokeWidth="2" strokeLinejoin="round"/><circle cx="6" cy="36" r="3.4" fill={BK.coral}/><text x="46" y="16" fontSize="11" fontWeight="900" fill={BK.coral}>hic!</text></g>,
+    turn: <g><path d="M4 36 H18 C34 36 36 8 25 8 C14 8 18 36 36 36 H66" fill="none" stroke={BK.ink} strokeWidth="2" strokeLinecap="round"/><circle cx="8" cy="36" r="3.6" fill={BK.coral}/></g>,
+    acc: <g><circle cx="48" cy="28" r="8" fill={BK.ink}/><circle cx="26" cy="20" r="3.2" fill={BK.coral}/><path d="M12 24 q6 -6 12 -4" fill="none" stroke={BK.coral} strokeWidth="1.4" strokeLinecap="round" strokeDasharray="2 2"/><path d="M34 14 L40 8 M38 18 L46 12 M52 16 L54 8" stroke={BK.coral} strokeWidth="1.8" strokeLinecap="round"/></g>,
+  };
+  return <svg viewBox="0 0 70 44" style={{width:62,height:39,display:'block'}}>{art[id]}</svg>;
+}
+
 function DynamicsWorkbook({ startNo = 1 }) {
   const W = useMemo(() => dyWorkbook(), [LANG]);
   const C = dyConcepts();
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="dynamics">{content}</WbPage>);
-  P(<WbOpener id="dynamics" concepts={C} blurb="Dynamics tell you how loud to play. Articulation tells you how to play each note: smooth, short, strong or held."/>);
+  P(<WbOpener id="dynamics" concepts={C} hero={<><VolumeLadder/><ArticStrip/></>} blurb="Dynamics are the volume knob: how loud or soft. Articulation is how each note is played -- bouncy, smooth, poked or leaned on."/>);
   P(<WbMap id="dynamics" concepts={C} steps={5} checkPage={startNo + 4} tasks={[
     'Play one note at every dynamic, pp to ff. Can someone at home hear six different volumes?',
     'Play your piece once very softly (pp) and once loudly (f). Which part should be which?',
@@ -24271,10 +24552,11 @@ function DynamicsWorkbook({ startNo = 1 }) {
       <div style={{display:'grid',gridTemplateColumns:'70px 1fr 160px',alignItems:'center',rowGap:4}}>
         {W.s1.mean.map((id, i) => <React.Fragment key={id}><div style={{display:'flex',alignItems:'center',gap:8,justifyContent:'flex-end'}}>{dyMark(id, 22)}<span style={{width:8,height:8,borderRadius:4,background:BK.ink}}/></div><div/><div style={{display:'flex',alignItems:'center',gap:8,fontSize:13,color:BK.ink}}><span style={{width:8,height:8,borderRadius:4,background:BK.ink}}/>{dyMeaning(DY_IDS[i])}</div></React.Fragment>)}
       </div>
+      <ArtLead pic={<MegaphoneLead width={290}/>} picW={290} text={<>A hairpin is a <span style={{color:BK.coral}}>megaphone</span>: it opens up to get louder, and closes up to get softer.</>} style={{padding:'2px 14px',margin:'8px 0 0'}}/>
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginTop:10}}>{W.s1.hp.map((h, i) => <div key={i} style={{border:'1px solid #ece6d8',borderRadius:8,padding:'8px 8px 6px',textAlign:'center'}}><BkHairpin kind={h}/><div style={{marginTop:6}}><span style={{display:'inline-block',width:80,borderBottom:'1.5px solid ' + BK.line,height:18}}/></div></div>)}</div>
     </Part>
     <Part kind="play" title="A story in dynamics" how="Draw a 4-picture story -- a storm, a monster, a sleepy cat. Under each picture write the dynamic it would be (pp to ff). Then play it on the piano: same note, changing the volume!">
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,flex:1,minHeight:140}}>{[1, 2, 3, 4].map(i => <div key={i} style={{border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}><div style={{borderTop:'1px solid ' + BK.line,height:30,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,color:BK.muted}}>dynamic</div></div>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,flex:1,minHeight:90}}>{[1, 2, 3, 4].map(i => <div key={i} style={{border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',flexDirection:'column',justifyContent:'flex-end'}}><div style={{borderTop:'1px solid ' + BK.line,height:30,display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,color:BK.muted}}>dynamic</div></div>)}</div>
     </Part>
     <Faces/>
   </>);
@@ -24408,7 +24690,7 @@ function SignsWorkbook({ startNo = 1 }) {
   const C = sgConcepts();
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="signs">{content}</WbPage>);
-  P(<WbOpener id="signs" concepts={C} blurb="Signs are the music's road map: go back, jump ahead, hold on, play an octave higher -- or add a little sparkle."/>);
+  P(<WbOpener id="signs" concepts={C} hero={<><SignRoad/><div style={{marginTop:10}}><TieSlurPic width={400}/></div></>} blurb="Signs are the music's road signs: go round again, make a U-turn, take the exit, stop at the finish line -- or add a little sparkle."/>);
   P(<WbMap id="signs" concepts={C} steps={6} checkPage={startNo + 5} tasks={[
     'Find a repeat sign in one of your pieces. Show someone where you go back to.',
     'Find a tie and a slur in your music. Play each one and say which is which.',
@@ -24438,7 +24720,7 @@ function SignsWorkbook({ startNo = 1 }) {
     </Part>
     <Part kind="home" title="Tie or slur? And 8va" how="Write tie or slur. Then answer the 8va questions.">
       <BkGrid cols={3} gap="8px 10px">{W.s3.home.map((ds, i) => <ExCell key={i} n={i + 1}><div style={{display:'flex',alignItems:'center',gap:8,padding:'10px 6px 2px 10px'}}><div style={{width:122,flex:'0 0 auto'}}><ArcNotes ds={ds} w={150}/></div><div style={{flex:1,textAlign:'center'}}>{bkBox(46, 26)}</div></div></ExCell>)}</BkGrid>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginTop:10}}>{[['8va- - - - ┐ over the notes means play them...', 'higher / lower'], ['8vb- - - - ┘ under the notes means play them...', 'higher / lower']].map(([q, o], i) => <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,border:'1px solid #ece6d8',borderRadius:8,padding:'8px 10px',fontSize:12.5,color:BK.ink}}><span><b style={{color:BK.coral,fontStyle:'italic'}}>{q.split(' ')[0]}</b> {q.split(' ').slice(1).join(' ')}</span><b style={{color:BK.muted}}>{o}</b></div>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginTop:10}}>{[['8va- - - - ┐ over the notes means play them...', 'higher / lower'], ['8vb- - - - ┘ under the notes means play them...', 'higher / lower']].map(([q, o], i) => <div key={i} style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,border:'1px solid #ece6d8',borderRadius:8,padding:'8px 10px',fontSize:12.5,color:BK.ink}}><span style={{display:'flex',alignItems:'center',gap:8}}><LiftIcon up={i === 0}/><span><b style={{color:BK.coral,fontStyle:'italic'}}>{q.split(' ')[0]}</b> {q.split(' ').slice(1).join(' ')}</span></span><b style={{color:BK.muted}}>{o}</b></div>)}</div>
     </Part>
     <Part kind="play" title="Tie the rope bridge" how="Some notes next to each other are the same -- tie them together with a curved line to fix the bridge. How many ties did you need?">
       <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'4px 10px'}}><PaperStaff clef="treble" notes={W.s3.rope.map(d => ({ d }))} width={640}/></div>
@@ -24459,8 +24741,8 @@ function SignsWorkbook({ startNo = 1 }) {
     </Part>
     <Part kind="play" title="Sparkle a tune" how="Here is a plain tune. Add 3 ornaments wherever you like -- a trill, a turn, a grace note. Then play it with all your sparkles!">
       <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'18px 10px 4px'}}><PaperStaff clef="treble" notes={[30, 32, 34, 32, 35, 34, 32, 30].map(d => ({ d }))} width={640}/></div>
-      <div style={{fontSize:12.5,color:BK.muted,margin:'14px 0 6px'}}>Ornament spotting: look through your pieces and your teacher's books. Make a tally mark each time you find one!</div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4, 1fr)',gap:10}}>{SG_ORN.map(o => [SG_ORN_NAME[o], <OrnGlyph key={o} id={o}/>]).map(([w, g]) => <div key={w} style={{border:'1px solid #ece6d8',borderRadius:8,padding:'6px 8px',textAlign:'center'}}><div style={{height:44,display:'flex',alignItems:'center',justifyContent:'center'}}>{g}</div><div style={{fontSize:12,fontWeight:900,color:BK.ink}}>{w}</div><div style={{height:46,marginTop:6,borderTop:'1px dashed ' + BK.line}}/></div>)}</div>
+      <div style={{fontSize:12.5,color:BK.muted,margin:'14px 0 6px'}}>Ornament spotting: look through your pieces and your teacher's books. Fill a circle each time you find one!</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4, 1fr)',gap:10}}>{SG_ORN.map(o => <div key={o} style={{border:'1px solid #ece6d8',borderRadius:8,padding:'6px 8px',textAlign:'center'}}><div style={{height:40,display:'flex',alignItems:'center',justifyContent:'center'}}><OrnGlyph id={o}/></div><div style={{display:'flex',justifyContent:'center',marginTop:2}}><OrnPic id={o}/></div><div style={{fontSize:12,fontWeight:900,color:BK.ink,marginTop:2}}>{SG_ORN_NAME[o]}</div><div style={{fontSize:10.5,color:BK.muted,fontStyle:'italic'}}>sounds like {ORN_LIKE[o]}</div><div style={{display:'flex',justifyContent:'center',gap:6,marginTop:8,paddingTop:8,borderTop:'1px dashed ' + BK.line}}>{[0, 1, 2, 3].map(k => <span key={k} style={{width:18,height:18,borderRadius:9,border:'1.5px solid ' + BK.line}}/>)}</div></div>)}</div>
     </Part>
     <Faces/>
   </>);
@@ -24663,12 +24945,137 @@ function tmConcepts() {
 }
 const termW = (x) => x.term + (x.abbr ? ' (' + x.abbr + ')' : '');
 
+// ─── Phase 313 (pass 3, chunk 4b): metaphor pictures for Musical Terms, Musical Form and Styles ───
+// A speedometer-style dial: a = 0 (far left, slow) .. 1 (far right, fast).
+function Gauge({ a = 0.5, size = 70, ticks = true }) {
+  const cx = 30, cy = 34, r = 24, th = Math.PI * (1 - a);
+  const ex = cx + r * Math.cos(th), ey = cy - r * Math.sin(th);
+  const nx = cx + 19 * Math.cos(th), ny = cy - 19 * Math.sin(th);
+  return <svg viewBox="0 0 60 40" style={{width:size,height:size * 40 / 60,display:'block'}}>
+    <path d={`M${cx - r} ${cy} A${r} ${r} 0 0 1 ${cx + r} ${cy}`} fill="none" stroke={BK.line} strokeWidth="3.2" strokeLinecap="round"/>
+    {a > 0.03 && <path d={`M${cx - r} ${cy} A${r} ${r} 0 0 1 ${ex} ${ey}`} fill="none" stroke={BK.coral} strokeWidth="3.2" strokeLinecap="round"/>}
+    {ticks && [0, 0.25, 0.5, 0.75, 1].map(v => { const t = Math.PI * (1 - v); return <line key={v} x1={cx + (r - 6.5) * Math.cos(t)} y1={cy - (r - 6.5) * Math.sin(t)} x2={cx + (r - 3.5) * Math.cos(t)} y2={cy - (r - 3.5) * Math.sin(t)} stroke={BK.ink} strokeWidth="1.2"/>; })}
+    <line x1={cx} y1={cy} x2={nx} y2={ny} stroke={BK.ink} strokeWidth="2.2" strokeLinecap="round"/>
+    <circle cx={cx} cy={cy} r="3.2" fill={BK.ink}/>
+  </svg>;
+}
+// The four families of terms, each as the everyday thing it is: a speedometer, two pedals, a volume knob, a luggage tag.
+function TermIcon({ f, size = 56 }) {
+  const h = size * 44 / 64;
+  if (f === 0) return <Gauge a={0.72} size={size}/>;
+  if (f === 1) return <svg viewBox="0 0 64 44" style={{width:size,height:h,display:'block'}}>
+    <rect x="8" y="12" width="24" height="26" rx="5" fill="#fff" stroke={BK.ink} strokeWidth="2.2"/>
+    {[19, 25, 31].map(y => <line key={y} x1="13" x2="27" y1={y} y2={y} stroke={BK.ink} strokeWidth="1.6" strokeLinecap="round"/>)}
+    <rect x="40" y="5" width="16" height="33" rx="5" fill="#fff" stroke={BK.coral} strokeWidth="2.2"/>
+    {[13, 19, 25].map(y => <line key={y} x1="44" x2="52" y1={y} y2={y} stroke={BK.coral} strokeWidth="1.6" strokeLinecap="round"/>)}
+  </svg>;
+  if (f === 2) return <svg viewBox="0 0 64 44" style={{width:size,height:h,display:'block'}}>
+    <circle cx="32" cy="23" r="14" fill="#fff" stroke={BK.ink} strokeWidth="2.2"/>
+    {[-120, -80, -40, 0, 40, 80, 120].map(d => { const t = d * Math.PI / 180; return <line key={d} x1={32 + 17.5 * Math.sin(t)} y1={23 - 17.5 * Math.cos(t)} x2={32 + 21 * Math.sin(t)} y2={23 - 21 * Math.cos(t)} stroke={BK.ink} strokeWidth="1.5" strokeLinecap="round"/>; })}
+    <line x1="32" y1="23" x2="39.6" y2="14.8" stroke={BK.coral} strokeWidth="2.8" strokeLinecap="round"/>
+    <text x="6" y="43" fontSize="10" fontWeight="900" fontStyle="italic" fill={BK.ink}>p</text><text x="54" y="43" fontSize="10" fontWeight="900" fontStyle="italic" fill={BK.ink}>f</text>
+  </svg>;
+  return <svg viewBox="0 0 64 44" style={{width:size,height:h,display:'block'}}>
+    <path d="M14 22 L25 9 H57 V36 H25 Z" fill="#fff" stroke={BK.ink} strokeWidth="2.2" strokeLinejoin="round"/>
+    <circle cx="24" cy="22.5" r="2.4" fill={BK.coral}/>
+    <path d="M24 22.5 C13 24 8 17 11 6" fill="none" stroke={BK.coral} strokeWidth="1.6" strokeLinecap="round"/>
+    <path d="M31 23 q4.5 -8 9 0 t9 0" fill="none" stroke={BK.coral} strokeWidth="2.4" strokeLinecap="round"/>
+  </svg>;
+}
+function TermDials() {
+  const fam = [['Speed', 'How fast?', 'largo · andante · allegro · presto'], ['Changing speed', 'Faster or slower?', 'accelerando · rit. · a tempo'], ['Volume', 'How loud?', 'pp · p · mf · f · ff · cresc.'], ['Other', 'What mood or touch?', 'legato · staccato · dolce · cantabile']];
+  return <div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10}}>{fam.map(([n, q, w], i) => <div key={n} style={{border:'1.5px solid ' + BK.line,borderRadius:12,background:BK.soft,padding:'14px 8px 12px',textAlign:'center',display:'flex',flexDirection:'column',alignItems:'center',gap:7}}>
+      <TermIcon f={i} size={86}/>
+      <div style={{fontSize:11,fontWeight:900,letterSpacing:'0.08em',color:BK.coral,textTransform:'uppercase'}}>{n}</div>
+      <div style={{fontSize:15,fontWeight:900,color:BK.ink,lineHeight:1.2}}>{q}</div>
+      <div style={{fontSize:11.5,fontStyle:'italic',color:BK.muted,lineHeight:1.45}}>{w}</div>
+    </div>)}</div>
+    <div style={{textAlign:'center',fontSize:13,fontWeight:800,color:BK.ink,marginTop:12}}>Italian is the language of music -- like “pizza” and “espresso”, musicians everywhere understand it.</div>
+  </div>;
+}
+// little words turn the dial
+function DialTrio() {
+  return <div style={{display:'flex',gap:14}}>{[['poco allegro', 'a little fast', 0.5], ['allegro', 'fast', 0.68], ['molto allegro', 'very fast', 0.93]].map(([w, m, a]) => <div key={w} style={{textAlign:'center'}}>
+    <Gauge a={a} size={62}/><div style={{fontSize:11,fontWeight:900,fontStyle:'italic',color:BK.ink,marginTop:1}}>{w}</div><div style={{fontSize:10,color:BK.muted}}>{m}</div>
+  </div>)}</div>;
+}
+
+// Musical Form: one train for every form -- binary, ternary, rondo
+function FmEngine({ x = 0, y = 0 }) {
+  return <g transform={`translate(${x} ${y})`}>
+    <rect x="4" y="12" width="32" height="20" rx="3" fill={BK.ink}/><rect x="22" y="4" width="10" height="10" fill={BK.ink}/><rect x="8" y="2" width="6" height="11" fill={BK.ink}/>
+    <circle cx="12" cy="35" r="4" fill="#fff" stroke={BK.ink} strokeWidth="2"/><circle cx="28" cy="35" r="4" fill="#fff" stroke={BK.ink} strokeWidth="2"/>
+  </g>;
+}
+function FormTrains() {
+  const rows = [['binary', ['A', 'B'], 'two carriages: A, then B'], ['ternary', ['A', 'B', 'A'], 'A, something new, then A comes home'], ['rondo', ['A', 'B', 'A', 'C', 'A'], 'A keeps coming back after every new carriage']];
+  return <svg viewBox="0 0 640 206" style={{width:'100%',maxWidth:660,display:'block',margin:'0 auto'}}>
+    {rows.map(([name, seq, cap], r) => { const y0 = r * 68 + 4; return <g key={name}>
+      <line x1="0" x2="282" y1={y0 + 44} y2={y0 + 44} stroke={BK.ink} strokeWidth="2"/><line x1="0" x2="282" y1={y0 + 48} y2={y0 + 48} stroke={BK.ink} strokeWidth="1"/>
+      <FmEngine x={0} y={y0 + 4}/>
+      {seq.map((l, i) => { const x = 52 + i * 44; return <g key={i}>
+        <line x1={x - 10} x2={x} y1={y0 + 24} y2={y0 + 24} stroke={BK.ink} strokeWidth="2"/>
+        <rect x={x} y={y0 + 6} width="34" height="32" rx="7" fill={FM_COL[l]} stroke={BK.ink} strokeWidth="1.6"/>
+        <text x={x + 17} y={y0 + 29} textAnchor="middle" fontFamily="'Playfair Display', Georgia, serif" fontWeight="900" fontSize="18" fill={FM_FG[l]}>{l}</text>
+        <circle cx={x + 8} cy={y0 + 40} r="3.6" fill="#fff" stroke={BK.ink} strokeWidth="1.8"/><circle cx={x + 26} cy={y0 + 40} r="3.6" fill="#fff" stroke={BK.ink} strokeWidth="1.8"/>
+      </g>; })}
+      <text x="306" y={y0 + 22} fontFamily="'Playfair Display', Georgia, serif" fontWeight="900" fontSize="20" fill={BK.ink}>{name}</text>
+      <text x="306" y={y0 + 40} fontSize="12.5" fontWeight="700" fill={BK.muted}>{cap}</text>
+    </g>; })}
+  </svg>;
+}
+function FmDepotRow() {
+  return <div style={{display:'grid',gridTemplateColumns:'1.05fr 2.4fr 0.85fr',gap:14,alignItems:'end',padding:'12px 6px 8px',borderTop:'1px dashed #ece6d8'}}>
+    <span style={{borderBottom:'1px solid ' + BK.line,height:26}}/>
+    <div style={{position:'relative',display:'flex',alignItems:'flex-end',gap:8,paddingBottom:3}}>
+      <svg width="44" height="40" viewBox="0 0 44 40" style={{flex:'0 0 auto'}}><FmEngine/></svg>
+      {[0, 1, 2, 3, 4].map(b => <span key={b} style={{width:32,height:30,border:'1.5px dashed ' + BK.line,borderRadius:7,flex:'0 0 auto',marginBottom:6}}/>)}
+      <span style={{position:'absolute',left:0,right:0,bottom:0,borderBottom:'2px solid ' + BK.ink}}/>
+    </div>
+    <span style={{borderBottom:'1px solid ' + BK.line,height:26}}/>
+  </div>;
+}
+
+// Styles: a passport page for each era, and walking vs skipping for straight vs swing
+function EraSound({ e }) {
+  return <svg viewBox="0 0 120 36" style={{width:'100%',height:30,display:'block'}}>
+    {e === 0 && [[0, 28], [1, 28], [2, 28], [3, 10], [4, 10], [5, 10], [6, 28], [7, 28], [8, 28]].map(([i, y]) => <circle key={i} cx={12 + i * 12} cy={y} r="3.4" fill={i > 2 && i < 6 ? BK.coral : BK.ink}/>)}
+    {e === 1 && [0, 1, 2].map(i => <path key={i} d={`M${10 + i * 36} 28 q13 -26 26 0`} fill="none" stroke={BK.ink} strokeWidth="2.4" strokeLinecap="round"/>)}
+    {e === 2 && <path d="M4 24 C22 -4 44 38 64 14 S100 6 116 22" fill="none" stroke={BK.coral} strokeWidth="3.2" strokeLinecap="round"/>}
+    {e === 3 && <g><path d="M8 26 C4 20 10 14 16 17 C18 8 30 8 32 16 C40 14 44 24 38 27 Z" fill="#fff" stroke={BK.ink} strokeWidth="2" strokeLinejoin="round"/><polyline points="60,28 70,8 80,28 90,8 100,28 110,8" fill="none" stroke={BK.coral} strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round"/></g>}
+  </svg>;
+}
+function PassportCard({ e, how }) {
+  return <div style={{border:'1.5px dashed ' + BK.coral,borderRadius:10,padding:'7px 9px 7px',display:'flex',flexDirection:'column',gap:3,background:'#fff'}}>
+    <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:15,fontWeight:900,color:BK.ink,lineHeight:1.15}}>{ST_ERA_NAMES[e]}</div>
+    <div style={{fontSize:10,fontWeight:800,color:BK.coral}}>{ST_ERA_YEARS[e]}</div>
+    <EraSound e={e}/>
+    <div style={{fontSize:11,color:BK.ink,lineHeight:1.35,flex:1}}>{how}</div>
+    <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:2}}>
+      <span style={{display:'flex',alignItems:'center',gap:5,fontSize:10,fontWeight:800,color:BK.muted}}><span style={{width:28,height:28,borderRadius:14,border:'1.8px dashed ' + BK.muted}}/>stamp</span>
+      <BkStar size={19}/>
+    </div>
+  </div>;
+}
+function WalkSkip() {
+  return <svg viewBox="0 0 168 58" style={{width:140,height:48,display:'block'}}>
+    <g stroke={BK.ink} strokeWidth="2.4" strokeLinecap="round" fill="none">
+      <circle cx="24" cy="9" r="5.5" fill={BK.ink} stroke="none"/><path d="M24 15 V34 M24 20 L16 29 M24 20 L33 27 M24 34 L16 52 M24 34 L33 52"/>
+    </g>
+    <g stroke={BK.coral} strokeWidth="2.4" strokeLinecap="round" fill="none">
+      <circle cx="116" cy="8" r="5.5" fill={BK.coral} stroke="none"/><path d="M116 14 V33 M116 19 L106 9 M116 19 L127 9 M116 33 L108 52 M116 33 L128 38 L126 50"/>
+      <path d="M137 52 q6 -4 12 0 M148 40 q6 -4 12 0" strokeDasharray="2 3" strokeWidth="1.8"/>
+    </g>
+  </svg>;
+}
+
 function TermsWorkbook({ startNo = 1 }) {
   const W = useMemo(() => tmWorkbook(), [LANG]);
   const C = tmConcepts();
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="terms">{content}</WbPage>);
-  P(<WbOpener id="terms" concepts={C} blurb="Musical terms are mostly Italian words that tell you how to play: how fast, how loud, and in what style."/>);
+  P(<WbOpener id="terms" concepts={C} hero={<TermDials/>} blurb="Musical terms are mostly Italian words that tell you how to play: how fast, how loud, and in what style."/>);
   P(<WbMap id="terms" concepts={C} steps={7} checkPage={startNo + 5} tasks={[
     'Find every Italian word in one of your pieces. Say what each one means.',
     'Play a short tune legato, then staccato, then cantabile.',
@@ -24681,7 +25088,7 @@ function TermsWorkbook({ startNo = 1 }) {
     <WbTop step={1}/>
     <Part kind="together" title="Four families" how="Every term belongs to a family: Speed, Changing speed, Volume or Other. Write each word from the bank into its family -- the first one is done.">
       <div style={{display:'flex',flexWrap:'wrap',gap:6,justifyContent:'center',marginBottom:10}}>{W.s1.bank.map((x, i) => <span key={x.term} style={{border:'1.4px solid ' + BK.line,borderRadius:14,padding:'2px 10px',fontSize:12.5,fontWeight:800,fontStyle:'italic',color:i === 0 ? BK.muted : BK.ink,textDecoration:i === 0 ? 'line-through' : 'none',background:BK.soft}}>{x.term}</span>)}</div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>{TM_FAM.map(f => <div key={f} style={{border:'1.5px solid ' + (f === W.s1.bank[0].cat ? BK.coral : BK.line),borderRadius:10,minHeight:150,padding:'6px 8px'}}><div style={{fontSize:12,fontWeight:900,color:BK.coral,marginBottom:4}}>{f}</div>{f === W.s1.bank[0].cat && <div style={{fontSize:13,fontWeight:900,fontStyle:'italic',color:BK.coral}}>{W.s1.bank[0].term}</div>}</div>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>{TM_FAM.map((f, fi) => <div key={f} style={{border:'1.5px solid ' + (f === W.s1.bank[0].cat ? BK.coral : BK.line),borderRadius:10,minHeight:150,padding:'6px 8px'}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:4,marginBottom:4}}><span style={{fontSize:12,fontWeight:900,color:BK.coral}}>{f}</span><TermIcon f={fi} size={40}/></div>{f === W.s1.bank[0].cat && <div style={{fontSize:13,fontWeight:900,fontStyle:'italic',color:BK.coral}}>{W.s1.bank[0].term}</div>}</div>)}</div>
     </Part>
     <Part kind="play" title="Term charades" how="Cut out the cards. Take turns to pick one and ACT it out without talking -- tiptoe for piano, run for presto! The others guess the word.">
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)'}}>{W.s2.cards.map(x => <Card key={x.term}>{x.term}</Card>)}{[1, 2, 3, 4].map(i => <Card key={'b' + i}><span style={{fontSize:11,fontWeight:600,fontStyle:'normal',color:BK.muted}}>your own word</span></Card>)}</div>
@@ -24714,6 +25121,7 @@ function TermsWorkbook({ startNo = 1 }) {
   P(<>
     <WbTop step="4-7"/>
     <Part kind="together" title="Little words, big changes" how={<>Little words change the word next to them: {TM_LITTLE.map(([w, m]) => <span key={w} style={{whiteSpace:'nowrap',marginRight:8}}><b><i>{w}</i></b> = {m}.</span>)} <span style={{whiteSpace:'nowrap'}}>And <b><i>mosso</i></b> = movement, so <i>più mosso</i> = quicker, <i>meno mosso</i> = slower.</span></>}>
+      <ArtLead pic={<DialTrio/>} text="Little words turn the dial: molto = very, poco = a little, più = more, meno = less."/>
       <BkGrid cols={2} gap="6px 10px">{W.s4.combos.slice(0, 2).map(([c, m], i) => <ExCell key={c} n={i + 1} ex={i === 0}><div style={{display:'grid',gridTemplateColumns:'150px 1fr',alignItems:'center',gap:8,padding:'14px 8px 6px'}}><b style={{fontStyle:'italic',fontSize:14,color:BK.ink}}>{c}</b>{i === 0 ? <span style={{color:BK.coral,fontWeight:900,fontStyle:'italic',borderBottom:'1.5px solid ' + BK.coral}}>{m}</span> : <span style={{borderBottom:'1.5px solid ' + BK.line,height:20}}/>}</div></ExCell>)}</BkGrid>
     </Part>
     <Part kind="home" title="What do they mean together?">
@@ -24826,7 +25234,7 @@ function MelodyWorkbook({ startNo = 1 }) {
   const C = mlConcepts();
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="melody">{content}</WbPage>);
-  P(<WbOpener id="melody" concepts={C} blurb="A tune is rhythm and pitch working together. Tunes have shapes, they breathe in phrases, and they ask and answer questions."/>);
+  P(<WbOpener id="melody" concepts={C} hero={<ShapePics/>} blurb="A tune is a journey. It has a shape you can see -- stairs up, a slide down, a bridge, a hammock -- it breathes in phrases, and it asks and answers questions."/>);
   P(<WbMap id="melody" concepts={C} steps={5} checkPage={startNo + 5} tasks={[
     'Play one of your pieces and draw its shape in the air with your other hand.',
     'Find the phrases in your piece. Lift gently (breathe) at the end of each one.',
@@ -24836,7 +25244,8 @@ function MelodyWorkbook({ startNo = 1 }) {
 
   P(<>
     <WbTop step="1-2"/>
-    <Part kind="together" title="What shape is it?" how="Join the note heads with a line. Does the tune go up (rising), down (falling), up and down (arch) or down and up (valley)?">
+    <Part kind="together" title="What shape is it?" how="Join the note heads with a line. Which picture does the line look like: stairs, a slide, a bridge or a hammock?">
+      <Lead max={380}><ShapePics width={380}/></Lead>
       <BkGrid cols={3} gap="10px 12px">{W.s1.tog.map((it, i) => <ShapeCell key={i} it={it} n={i + 1} ex={i === 0}/>)}</BkGrid>
     </Part>
     <Part kind="home" title="Shapes on your own">
@@ -24844,7 +25253,7 @@ function MelodyWorkbook({ startNo = 1 }) {
     </Part>
     <Part kind="play" title="A tune from a picture" how="Draw a landscape -- hills, a castle, a dragon's back. Then write notes on the staff that follow its outline, and play your picture!">
       <BigStaff gap={14} h0={24} h1={20}/>
-      <div style={{flex:1,minHeight:90,marginTop:8,border:'1.5px solid ' + BK.line,borderRadius:10}}/>
+      <div style={{flex:1,minHeight:50,marginTop:8,border:'1.5px solid ' + BK.line,borderRadius:10}}/>
     </Part>
     <Faces/>
   </>);
@@ -24853,7 +25262,7 @@ function MelodyWorkbook({ startNo = 1 }) {
     <WbTop step="3-4"/>
     <Part kind="together" title="Breathe with the phrases" how="A phrase is a musical sentence. Read the rhyme out loud and put a breath mark (’) at the end of each phrase. The first one is done. Then: question or answer? An answer ends on home (C).">
       <ExCell n={1}><div style={{padding:'14px 12px 4px'}}>{breathLine(W.s3.rhyme, true)}</div></ExCell>
-      <div style={{height:8}}/>
+      <ArtLead pic={<QABubbles width={270}/>} picW={270} text={<>A <span style={{color:BK.coral}}>question</span> leaves you hanging in the air. An <span style={{color:BK.coral}}>answer</span> lands back home on C.</>} style={{padding:'1px 14px',margin:'6px 0 6px'}}/>
       <BkGrid cols={2} gap="10px 12px">{W.s3.tog.map((it, i) => <QACell key={i} it={it} n={i + 2} ex={i === 0}/>)}</BkGrid>
     </Part>
     <Part kind="home" title="Question or answer?" how="Play each phrase. Does it sound finished (answer) or does it want more (question)?">
@@ -24861,13 +25270,13 @@ function MelodyWorkbook({ startNo = 1 }) {
     </Part>
     <Part kind="play" title="Answer the question" how="Here is a question phrase. Write an answer phrase of 4 notes that ends on C. Play them together -- does it sound like a conversation?">
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-        <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'6px 10px'}}><div style={{fontSize:11,fontWeight:900,color:BK.coral}}>QUESTION</div><PaperStaff clef="treble" notes={W.s3.q.map(d => ({ d }))} width={260}/></div>
-        <div style={{border:'1.5px dashed ' + BK.coral,borderRadius:8,padding:'6px 10px'}}><div style={{fontSize:11,fontWeight:900,color:BK.coral}}>MY ANSWER</div><PaperStaff clef="treble" notes={[]} width={260} minSpan={[39, 27]}/></div>
+        <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'6px 10px'}}><div style={{fontSize:11,fontWeight:900,color:BK.coral}}>QUESTION</div><PaperStaff clef="treble" notes={W.s3.q.map(d => ({ d }))} width={380}/></div>
+        <div style={{border:'1.5px dashed ' + BK.coral,borderRadius:8,padding:'6px 10px'}}><div style={{fontSize:11,fontWeight:900,color:BK.coral}}>MY ANSWER</div><PaperStaff clef="treble" notes={[]} width={380} minSpan={[39, 27]}/></div>
       </div>
-      <div style={{fontSize:12.5,color:BK.muted,margin:'12px 0 6px'}}>Now swap! Write your own question, and ask someone at home to play an answer (you can write it in for them).</div>
+      <div style={{fontSize:12.5,color:BK.muted,margin:'8px 0 4px'}}>Now swap! Write your own question, and ask someone at home to play an answer (you can write it in for them).</div>
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-        <div style={{border:'1.5px dashed ' + BK.coral,borderRadius:8,padding:'6px 10px'}}><div style={{fontSize:11,fontWeight:900,color:BK.coral}}>MY QUESTION</div><PaperStaff clef="treble" notes={[]} width={260} minSpan={[39, 27]}/></div>
-        <div style={{border:'1.5px dashed ' + BK.coral,borderRadius:8,padding:'6px 10px'}}><div style={{fontSize:11,fontWeight:900,color:BK.coral}}>THEIR ANSWER</div><PaperStaff clef="treble" notes={[]} width={260} minSpan={[39, 27]}/></div>
+        <div style={{border:'1.5px dashed ' + BK.coral,borderRadius:8,padding:'6px 10px'}}><div style={{fontSize:11,fontWeight:900,color:BK.coral}}>MY QUESTION</div><PaperStaff clef="treble" notes={[]} width={380} minSpan={[39, 27]}/></div>
+        <div style={{border:'1.5px dashed ' + BK.coral,borderRadius:8,padding:'6px 10px'}}><div style={{fontSize:11,fontWeight:900,color:BK.coral}}>THEIR ANSWER</div><PaperStaff clef="treble" notes={[]} width={380} minSpan={[39, 27]}/></div>
       </div>
     </Part>
     <Faces/>
@@ -24876,13 +25285,14 @@ function MelodyWorkbook({ startNo = 1 }) {
   P(<>
     <WbTop step={5}/>
     <Part kind="together" title="Continue the sequence" how="A sequence repeats the same shape starting on a new note. Draw the third group -- the first one is done.">
+      <ArtLead pic={<FootStairs width={170}/>} picW={170} text={<>A sequence is the same <span style={{color:BK.coral}}>footprints</span>, one stair higher each time.</>} style={{padding:'2px 14px'}}/>
       <div style={{display:'grid',gap:8}}>{W.s5.tog.map((it, i) => <SeqCell key={i} it={it} n={i + 1} ex={i === 0}/>)}</div>
     </Part>
     <Part kind="home" title="Your turn">
       <div style={{display:'grid',gap:8}}>{W.s5.home.map((it, i) => <SeqCell key={i} it={it} n={i + 1}/>)}</div>
     </Part>
-    <Part kind="play" title="Sequence staircase" how="Make up a 3-note pattern and write its letter names on the bottom step. Repeat it one step higher on each stair. Play your staircase -- up and back down!">
-      <svg viewBox="0 0 640 150" style={{width:'100%',display:'block'}}>{[0, 1, 2, 3].map(i => <g key={i}><rect x={20 + i * 150} y={110 - i * 30} width="150" height={30 + i * 30} fill={i % 2 ? '#fff' : BK.soft} stroke={BK.ink} strokeWidth="1.4"/><text x={30 + i * 150} y={130 - i * 30 + (i ? 0 : 0)} fontSize="11" fontWeight="900" fill={BK.coral}>step {i + 1}</text></g>)}</svg>
+    <Part kind="play" title="Sequence staircase" how="Make up a 3-note pattern and write its letters on step 1. Repeat it one step higher on each stair, then play it up and down!">
+      <svg viewBox="0 0 640 104" style={{width:'100%',display:'block'}}>{[0, 1, 2, 3].map(i => <g key={i}><rect x={20 + i * 150} y={78 - i * 22} width="150" height={24 + i * 22} fill={i % 2 ? '#fff' : BK.soft} stroke={BK.ink} strokeWidth="1.4"/><text x={30 + i * 150} y={96 - i * 22} fontSize="11" fontWeight="900" fill={BK.coral}>step {i + 1}</text></g>)}</svg>
     </Part>
   </>);
 
@@ -25153,7 +25563,7 @@ function ScalesWorkbook({ startNo = 1 }) {
   const C = scConcepts();
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="scales">{content}</WbPage>);
-  P(<WbOpener id="scales" concepts={C} blurb="One shape builds every major scale: tone, tone, semitone, tone, tone, tone, semitone."/>);
+  P(<WbOpener id="scales" concepts={C} hero={<ScaleStairs letters={['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C']} kb legend={[['T = tone: a BIG step (skip a key)'], ['S = semitone: a tiny step (the very next key)', BK.coral], ['The shape: T T S T T T S']]}/>} blurb="A scale is a staircase. A big step (tone) skips a key, a tiny step (semitone) is the very next key. The same staircase -- T T S T T T S -- builds every major scale."/>);
   P(<WbMap id="scales" concepts={C} steps={7} checkPage={startNo + 6} tasks={[
     'Play C, G and F major hands separately with the right fingers -- slowly, evenly.',
     'Play A harmonic minor and listen for the raised 7th (G♯).',
@@ -25214,13 +25624,14 @@ function ScalesWorkbook({ startNo = 1 }) {
   P(<>
     <WbTop step="minor 1-2"/>
     <Part kind="together" title="Three forms of A minor" how="Natural minor = the white keys from A. Harmonic minor raises the 7th (G becomes G♯). Melodic minor raises the 6th and 7th going up, and comes down natural.">
+      <ArtLead pic={<ScaleStairs letters={['A', 'B', 'C', 'D', 'E', 'F', 'G♯', 'A']} rises={[2, 1, 2, 2, 1, 3, 1]} u={7} tw={48} width={390} legend={[['harmonic minor has one GIANT step', BK.coral], ['(3 semitones) from F up to G♯']]}/>} picW={390} text={<>That creaky stair is why harmonic minor sounds <span style={{color:BK.coral}}>spooky</span>. The raised 7th (G♯) is the leading note: it pulls you home to A.</>} style={{padding:'2px 14px'}}/>
       <div style={{display:'grid',gap:6}}>{[['natural', 'A B C D E F G A', []], ['harmonic', 'A B C D E F G♯ A', [6]], ['melodic (up)', 'A B C D E F♯ G♯ A', [5, 6]]].map(([f, s, hl], i) => <ExCell key={f} n={i + 1} ex={i === 1}><div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 10px 6px'}}><b style={{width:110,fontSize:12.5}}>{f}</b><div style={{display:'flex',gap:5}}>{s.split(' ').map((l, j) => <span key={j} style={{width:34,height:30,borderRadius:6,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:900,background:hl.includes(j) ? '#fdeee8' : BK.soft,color:hl.includes(j) ? BK.coral : BK.ink}}>{l}</span>)}</div></div></ExCell>)}</div>
     </Part>
     <Part kind="home" title="Harmonic minors" how="Write each harmonic minor scale. Start from the natural minor (its key signature) and raise the 7th.">
       <div style={{display:'grid',gap:8}}>{['E', 'D'].map((k0, i) => <ExCell key={k0} n={i + 1}><div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 10px 6px'}}><b style={{width:110,fontSize:12.5}}>{k0} harmonic minor</b><div style={{display:'flex',gap:5}}>{Array.from({ length: 8 }, (_, j) => <span key={j} style={{width:34,height:30,borderRadius:6,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:900,border:'1.5px solid ' + (j === 0 || j === 7 ? 'transparent' : BK.line),background:j === 0 || j === 7 ? BK.soft : '#fff'}}>{j === 0 || j === 7 ? k0 : ''}</span>)}</div></div></ExCell>)}</div>
     </Part>
     <Part kind="play" title="A spooky minor story" how="Play A harmonic minor slowly, up and down. What does it make you think of? Write a 3-line spooky story and draw it -- then play the scale as its soundtrack!">
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,flex:1,minHeight:130}}>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,flex:1,minHeight:70}}>
         <div style={{border:'1.5px solid ' + BK.line,borderRadius:10,padding:'8px 10px',display:'grid',gridTemplateRows:'1fr 1fr 1fr',gap:4}}>{[0, 1, 2].map(i => <span key={i} style={{borderBottom:'1px solid ' + BK.line}}/>)}</div>
         <div style={{border:'1.5px solid ' + BK.line,borderRadius:10}}/>
       </div>
@@ -25311,7 +25722,7 @@ function ChordsWorkbook({ startNo = 1 }) {
   const C = chConcepts();
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="chords">{content}</WbPage>);
-  P(<WbOpener id="chords" concepts={C} blurb="A triad is three notes stacked in 3rds: root, 3rd and 5th -- like a snowman made of three snowballs."/>);
+  P(<WbOpener id="chords" concepts={C} hero={<ChordHero/>} blurb="A triad is three notes stacked in 3rds: root, 3rd and 5th. Picture a 3-layer cake or a snowman made of three snowballs -- the notes stack the same way."/>);
   P(<WbMap id="chords" concepts={C} steps={6} checkPage={startNo + 6} tasks={[
     'Play the triad on every white key from C to B. Which ones are major? Which are minor?',
     'Play I, IV, V, I in C major with your left hand. Then in G major.',
@@ -25344,13 +25755,14 @@ function ChordsWorkbook({ startNo = 1 }) {
   P(<>
     <WbTop step={2}/>
     <Part kind="together" title="Major or minor?" how="Count the semitones from the root to the 3rd: 4 = major (happy), 3 = minor (sad). These are the triads of C major.">
+      <ArtLead pic={<IvMoodPic width={170}/>} picW={170} text={<>Same trick as in Intervals: the 3rd is the mood. Slide the cake's middle layer <span style={{color:BK.coral}}>down one key</span> and the whole chord turns sad.</>} style={{padding:'2px 14px'}}/>
       <BkGrid cols={3} gap="10px 12px">{W.s2.tog.map((deg, i) => <ChordCell key={deg} ds={chTriad(28 + deg)} n={i + 1} ex={i === 0}><div style={{display:'flex',justifyContent:'center',gap:5,margin:'2px 0 5px'}}>{['major', 'minor'].map(q => <span key={q} style={{border:'1.5px solid ' + (i === 0 && q === CH_QUAL[deg] ? BK.coral : BK.line),borderRadius:14,padding:'1px 8px',fontSize:11.5,color:i === 0 && q === CH_QUAL[deg] ? BK.coral : BK.ink,fontWeight:i === 0 && q === CH_QUAL[deg] ? 900 : 600}}>{q}</span>)}</div></ChordCell>)}</BkGrid>
     </Part>
     <Part kind="home" title="Happy or sad on your own" how="Play each one too -- your ears will help!">
       <BkGrid cols={3} gap="8px 10px">{W.s2.home.map((deg, i) => <ChordRowCell key={i} ds={chTriad(28 + deg)} n={i + 1}><div style={{display:'flex',flexDirection:'column',gap:5}}>{['major', 'minor'].map(q => <span key={q} style={{border:'1.5px solid ' + BK.line,borderRadius:14,padding:'1px 10px',fontSize:11.5,color:BK.ink,fontWeight:600,textAlign:'center'}}>{q}</span>)}</div></ChordRowCell>)}</BkGrid>
     </Part>
     <Part kind="play" title="Chord moods" how="Play each chord and draw the face it makes you feel. Then make up your own 4-chord mood story: happy, happy, sad, happy...">
-      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,flex:1,minHeight:140}}>{['C major', 'A minor', 'F major', 'D minor'].map(c => <div key={c} style={{border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-between',padding:'10px 6px'}}><span style={{width:70,height:70,border:'1.5px dashed ' + BK.line,borderRadius:35}}/><b style={{fontSize:12.5,color:BK.ink}}>{c}</b></div>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,flex:1,minHeight:100}}>{['C major', 'A minor', 'F major', 'D minor'].map(c => <div key={c} style={{border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-between',padding:'10px 6px'}}><span style={{width:56,height:56,border:'1.5px dashed ' + BK.line,borderRadius:28}}/><b style={{fontSize:12.5,color:BK.ink}}>{c}</b></div>)}</div>
     </Part>
     <Faces/>
   </>);
@@ -25358,7 +25770,7 @@ function ChordsWorkbook({ startNo = 1 }) {
   P(<>
     <WbTop step="3-4"/>
     <Part kind="together" title="Roman numerals in C major" how="Each note of the scale builds a triad. Write its Roman numeral: big for major (I, IV, V), small for minor (ii, iii, vi), vii° for diminished.">
-      <BkGrid cols={3} gap="6px 10px">{CH_ROOTS.map((r, i) => <ChordRowCell key={r} ds={chTriad(r)} n={'on ' + dName(r)} ex={i === 0} sw={100} w={100} clefOn={false}>{i === 0 ? bkHand('I', 44, 28) : bkBox(44, 28)}</ChordRowCell>)}</BkGrid>
+      <BkGrid cols={3} gap="6px 10px">{CH_ROOTS.map((r, i) => <ChordRowCell key={r} ds={chTriad(r)} n={'on ' + dName(r)} ex={i === 0} sw={100} w={100} clefOn={false}>{i === 0 ? bkHand('I', 44, 28) : bkBox(44, 28)}</ChordRowCell>).concat([<div key="hg" style={{gridColumn:'span 2',display:'flex',alignItems:'center',justifyContent:'center'}}><HomeGate width={290}/></div>])}</BkGrid>
     </Part>
     <Part kind="home" title="I, IV and V in other keys" how="I, IV and V are the three major chords (primary triads). Write their notes.">
       <div style={{display:'grid',gap:8}}>{['G', 'F'].map((k0, i) => { const sc = scNotes(k0); return <ExCell key={k0} n={i + 1}><div style={{display:'grid',gridTemplateColumns:'90px repeat(3,1fr)',alignItems:'center',gap:10,padding:'12px 10px 4px'}}><b style={{fontSize:13}}>{prettyNote(k0)} major</b>{[['I', 0], ['IV', 3], ['V', 4]].map(([rn, d]) => <div key={rn} style={{display:'flex',alignItems:'center',gap:6,fontSize:13}}><b style={{color:BK.coral}}>{rn}</b> = {bkBox(90, 28)}</div>)}</div></ExCell>; })}</div>
@@ -25376,14 +25788,15 @@ function ChordsWorkbook({ startNo = 1 }) {
 
   P(<>
     <WbTop step="5-6"/>
-    <Part kind="together" title="Inversions" how="Root position: the root at the bottom. 1st inversion: the 3rd at the bottom. 2nd inversion: the 5th at the bottom. Circle one for each chord.">
-      <BkGrid cols={3} gap="10px 12px">{W.s5.inv.map((c, i) => <ChordCell key={i} ds={invNotes(c)} n={i + 1} ex={i === 0} w={130}><div style={{display:'flex',justifyContent:'center',gap:3,margin:'2px 0 5px',flexWrap:'wrap'}}>{['root', '1st', '2nd'].map((q, j) => <span key={q} style={{border:'1.5px solid ' + (i === 0 && j === c.inv ? BK.coral : BK.line),borderRadius:12,padding:'0 7px',fontSize:11,color:i === 0 && j === c.inv ? BK.coral : BK.ink,fontWeight:i === 0 && j === c.inv ? 900 : 600}}>{q}</span>)}</div></ChordCell>)}</BkGrid>
+    <Part kind="together" title="Inversions" how="Same cake, layers shuffled: it is still C major. Look at the bottom note, then circle root, 1st or 2nd.">
+      <Lead max={470}><ShuffleCakes/></Lead>
+      <BkGrid cols={3} gap="10px 12px">{W.s5.inv.map((c, i) => <ChordCell key={i} ds={invNotes(c)} n={i + 1} ex={i === 0} w={150}><div style={{display:'flex',justifyContent:'center',gap:3,margin:'2px 0 5px',flexWrap:'wrap'}}>{['root', '1st', '2nd'].map((q, j) => <span key={q} style={{border:'1.5px solid ' + (i === 0 && j === c.inv ? BK.coral : BK.line),borderRadius:12,padding:'0 7px',fontSize:11,color:i === 0 && j === c.inv ? BK.coral : BK.ink,fontWeight:i === 0 && j === c.inv ? 900 : 600}}>{q}</span>)}</div></ChordCell>)}</BkGrid>
     </Part>
-    <Part kind="home" title="Name the cadence" how="A cadence is the ending of a phrase. Perfect V-I (full stop). Plagal IV-I (“Amen”). Imperfect ends on V (comma). Interrupted V-vi (surprise!).">
-      <BkGrid cols={4} gap="8px 10px">{W.s5.cad.map(([a, b], i) => <ExCell key={i} n={i + 1}><div style={{textAlign:'center',padding:'14px 6px 6px'}}><div style={{fontSize:20,fontWeight:900,color:BK.ink,marginBottom:6}}>{a} → {b}</div><span style={{display:'inline-block',width:110,borderBottom:'1.5px solid ' + BK.line,height:18}}/></div></ExCell>)}</BkGrid>
+    <Part kind="home" title="Name the cadence" how="A cadence is the ending of a phrase. Perfect = V-I. Plagal = IV-I. Imperfect = ends on V. Interrupted = V-vi.">
+      <BkGrid cols={4} gap="8px 10px">{W.s5.cad.map(([a, b], i) => <ExCell key={i} n={i + 1}><div style={{textAlign:'center',padding:'12px 6px 2px'}}><div style={{fontSize:20,fontWeight:900,color:BK.ink,marginBottom:2}}>{a} → {b}</div><span style={{display:'inline-block',width:110,borderBottom:'1.5px solid ' + BK.line,height:18}}/></div></ExCell>)}</BkGrid>
     </Part>
-    <Part kind="play" title="Story endings" how="Cadences are like story endings. Write a sentence ending for each one, then play the chords after reading it out!">
-      <div style={{display:'grid',gap:10}}>{[['perfect V-I', '“...and they lived happily ever after.”'], ['plagal IV-I', '“...Amen.”'], ['imperfect ?-V', '“...to be continued!”'], ['interrupted V-vi', '“...but then -- surprise!”']].map(([c, ex]) => <div key={c} style={{display:'grid',gridTemplateColumns:'200px 1fr',alignItems:'end',gap:10,fontSize:13,color:BK.ink}}><div><b>{c}</b><div style={{color:BK.muted,fontSize:11,fontStyle:'italic'}}>like {ex}</div></div><span style={{borderBottom:'1px solid ' + BK.ink,height:26}}/></div>)}</div>
+    <Part kind="play" title="Punctuation detective" how="Cadences are the punctuation of music. Join each cadence to the ending it sounds like, then play it to check!">
+      <CadencePunct/>
     </Part>
     <Faces/>
   </>);
@@ -25424,7 +25837,7 @@ function ChordsTeacher() {
     <TcBlock page={5} title="Roman numerals" answers={<>{tcAns('TOGETHER', CH_RN)}{tcAns('AT HOME', [prim('G'), prim('F')])}<div style={{fontSize:12,color:BK.ink}}>PLAY: any I/IV/V pattern starting and ending on I.</div></>}
       watch="Writing all numerals in capitals -- capitals mean major only."
       say="“Big numeral, big happy chord. Little numeral, minor.”"/>
-    <TcBlock page={6} title="Inversions · cadences" answers={<>{tcAns('TOGETHER', W.s5.inv.map(c => tri(c.r) + ' ' + INV_NAME[c.inv]))}{tcAns('AT HOME', W.s5.cad.map(c => c[0] + '-' + c[1] + ' ' + c[2]))}</>}
+    <TcBlock page={6} title="Inversions · cadences" answers={<>{tcAns('TOGETHER', W.s5.inv.map(c => tri(c.r) + ' ' + INV_NAME[c.inv]))}{tcAns('AT HOME', W.s5.cad.map(c => c[0] + '-' + c[1] + ' ' + c[2]))}{tcAns('PLAY', ['perfect = full stop (THE END.)', 'plagal = Amen', 'imperfect = comma (to be continued)', 'interrupted = surprise (?!)'])}</>}
       watch="Naming the inversion by the top note instead of the bottom note."
       say="“Look at the bass -- the lowest note decides the inversion.”"/>
   </>);
@@ -25532,7 +25945,7 @@ function MusicalFormWorkbook({ startNo = 1 }) {
   const C = fmConcepts();
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="form">{content}</WbPage>);
-  P(<WbOpener id="form" concepts={C} blurb="A piece is built from sections, like rooms in a house. We give each section a letter: the same music keeps its letter, and something new gets the next one."/>);
+  P(<WbOpener id="form" concepts={C} hero={<FormTrains/>} blurb="A piece is a train: each section is a carriage. We give each carriage a letter -- the same music keeps its letter, and something new gets the next one."/>);
   P(<WbMap id="form" concepts={C} steps={5} checkPage={startNo + 6} tasks={[
     'Play your piece and say the letter out loud each time a new section starts.',
     'Play just the A section of a ternary piece -- then play it again at the end, like coming home.',
@@ -25550,7 +25963,7 @@ function MusicalFormWorkbook({ startNo = 1 }) {
     </Part>
     <Part kind="play" title="Build your own piece" how="Write a 4-note tune for A (end it on C so it sounds like home) and a different one for B. Then play your piece three ways and tick each one.">
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-        {['A', 'B'].map(l => <div key={l} style={{border:'1.5px dashed ' + BK.coral,borderRadius:8,padding:'6px 10px'}}><div style={{display:'flex',alignItems:'center',gap:8}}><FmBlock l={l} s={26}/><span style={{fontSize:11,fontWeight:900,color:BK.coral}}>{l === 'A' ? 'MY HOME TUNE' : 'MY AWAY TUNE'}</span></div><PaperStaff clef="treble" notes={[]} width={260} minSpan={[39, 27]}/></div>)}
+        {['A', 'B'].map(l => <div key={l} style={{border:'1.5px dashed ' + BK.coral,borderRadius:8,padding:'6px 10px'}}><div style={{display:'flex',alignItems:'center',gap:8}}><FmBlock l={l} s={26}/><span style={{fontSize:11,fontWeight:900,color:BK.coral}}>{l === 'A' ? 'MY HOME TUNE' : 'MY AWAY TUNE'}</span></div><PaperStaff clef="treble" notes={[]} width={380} minSpan={[39, 27]}/></div>)}
       </div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginTop:12}}>
         {[['A', 'B'], ['A', 'B', 'A'], ['A', 'B', 'A', null, 'A']].map((seq, k) => <div key={k} style={{border:'1px solid #ece6d8',borderRadius:8,padding:'8px 6px',textAlign:'center'}}>
@@ -25606,11 +26019,9 @@ function MusicalFormWorkbook({ startNo = 1 }) {
     <Part kind="home" title="Your turn">
       <BkGrid cols={2} gap="8px 10px">{W.s5.home.map((list, i) => <BTCell key={i} list={list} n={i + 1} sw={84}/>)}</BkGrid>
     </Part>
-    <Part kind="play" title="Form detective" how="Look at three pieces you are learning. Find where each section starts (look for a double bar line, a new tune or a repeat sign) and colour a block for each section. What form is it?">
-      <div style={{border:'1.5px solid ' + BK.ink,borderRadius:10,overflow:'hidden'}}>
-        <div style={{display:'grid',gridTemplateColumns:'1.2fr 1.6fr 0.8fr',background:BK.ink,color:'#fff',fontSize:12,fontWeight:800,padding:'6px 12px'}}><span>Piece</span><span>Sections (colour a block for each)</span><span>Form</span></div>
-        {[0, 1, 2].map(r => <div key={r} style={{display:'grid',gridTemplateColumns:'1.2fr 1.6fr 0.8fr',padding:'10px 12px',borderTop:'1px solid #ece6d8',alignItems:'center'}}><span style={{borderBottom:'1px solid ' + BK.line,height:20,marginRight:12}}/><span style={{display:'flex',gap:5}}>{[0, 1, 2, 3, 4].map(b => <span key={b} style={{width:30,height:30,border:'1.5px dashed ' + BK.line,borderRadius:7}}/>)}</span><span style={{borderBottom:'1px solid ' + BK.line,height:20}}/></div>)}
-      </div>
+    <Part kind="play" title="Form detective" how="Look at three pieces you are learning. Find where each section starts (look for a double bar line, a new tune or a repeat sign). Write the piece, colour one carriage for each section -- then name the form.">
+      <div style={{display:'grid',gridTemplateColumns:'1.05fr 2.4fr 0.85fr',gap:14,padding:'0 6px 2px',fontSize:10.5,fontWeight:900,letterSpacing:'0.08em',color:BK.coral}}><span>PIECE</span><span>TRAIN: one carriage per section</span><span>FORM</span></div>
+      {[0, 1, 2].map(r => <FmDepotRow key={r}/>)}
     </Part>
     <Faces/>
   </>);
@@ -25663,7 +26074,7 @@ function MusicalFormTeacher() {
 }
 // Lesson Book: the three shapes side by side (the app's tool shows one at a time)
 function PaperFormShapes() {
-  const rows = [['Binary', ['A', 'B'], 'Two different sections. B never comes back.'], ['Ternary', ['A', 'B', 'A'], 'A, something new, then A comes home -- like a trip away and back.'], ['Rondo', ['A', 'B', 'A', 'C', 'A'], 'A keeps coming back between new episodes -- like a chorus between verses.']];
+  const rows = [['Binary', ['A', 'B'], 'Two different sections. B never comes back. Each can be played twice (A A B B) -- still binary.'], ['Ternary', ['A', 'B', 'A'], 'A, something new, then A comes home -- like a trip away and back.'], ['Rondo', ['A', 'B', 'A', 'C', 'A'], 'A keeps coming back between new episodes -- like a chorus between verses.']];
   return <div style={{border:'1px solid #ece6d8',borderRadius:10,padding:'10px 14px',margin:'8px 0',breakInside:'avoid'}}>
     {rows.map(([name, seq, txt]) => <div key={name} style={{display:'grid',gridTemplateColumns:'90px 200px 1fr',gap:12,alignItems:'center',padding:'7px 0',borderBottom:'1px solid #f1ece0'}}>
       <b style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:17,color:BK.ink}}>{name}</b>
@@ -25731,7 +26142,7 @@ function FamCell({ it, n, ex }) {
 function SwRow({ swing, n, ex, show = true }) {
   const long = swing ? 2 / 3 : 1 / 2;
   return <ExCell n={n} ex={ex}>
-    <div style={{display:'grid',gridTemplateColumns:'64px repeat(4,1fr) 120px',gap:6,alignItems:'center',padding:'16px 6px 4px'}}>
+    <div style={{display:'grid',gridTemplateColumns:'64px repeat(4,1fr) 120px',gap:6,alignItems:'center',padding:'14px 6px 3px'}}>
       <span style={{fontSize:10.5,fontWeight:800,color:BK.muted}}>played</span>
       {[0, 1, 2, 3].map(k => <div key={k} style={{display:'flex',gap:3,height:18}}>{[0, 1].map(j => <div key={j} style={{flexGrow:j ? 1 - long : long,flexBasis:0,borderRadius:5,background:j ? '#8a8cb5' : BK.ink}}/>)}</div>)}
       <span style={{display:'flex',gap:4,justifyContent:'flex-end'}}>{['straight', 'swing'].map(w => { const on = ex && (w === 'swing') === swing; return <span key={w} style={{border:'1.5px solid ' + (on ? BK.coral : BK.line),borderRadius:14,padding:'1px 7px',fontSize:11,color:on ? BK.coral : BK.ink,fontWeight:on ? 900 : 600}}>{w}</span>; })}</span>
@@ -25832,13 +26243,8 @@ function StylesWorkbook({ startNo = 1 }) {
       <div style={{height:8}}/>
       <BkGrid cols={4} gap="8px 10px">{W.s2.comps.map((it, i) => <EraCell key={i} it={it} n={i + 5} small/>)}</BkGrid>
     </Part>
-    <Part kind="play" title="Time-travel your tune" how="Play one short tune you know (Twinkle is fine) in each era's style. Tick it, and give yourself a star for the one you liked best.">
-      {[[0, 'crisp and detached (non legato), no pedal, loud or soft in blocks'], [1, 'light and elegant, a quiet left hand, very little pedal'], [2, 'smooth and singing, lots of pedal, let the time stretch'], [3, 'two ways: pedal held down for a misty wash (Debussy), or sharp and spiky with no pedal (Bartók)']].map(([e, how]) => <div key={e} style={{display:'grid',gridTemplateColumns:'22px 120px 1fr 24px',gap:8,alignItems:'center',padding:'7px 0',borderBottom:'1px solid #ece6d8'}}>
-        <span style={{width:18,height:18,border:'1.5px solid ' + BK.ink,borderRadius:4}}/>
-        <b style={{fontSize:13,color:BK.ink}}>{ST_ERA_NAMES[e]}</b>
-        <span style={{fontSize:12.5,color:BK.ink}}>{how}</span>
-        <BkStar size={18}/>
-      </div>)}
+    <Part kind="play" title="Time-travel passport" how="Play one short tune you know (Twinkle is fine) in each era's style. Stamp each page of your passport when you have played it, and give a star to the one you liked best.">
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>{[[0, 'crisp and detached, no pedal, loud or soft in blocks'], [1, 'light and elegant, quiet left hand, little pedal'], [2, 'smooth and singing, lots of pedal, time stretches'], [3, 'two ways: misty pedal wash (Debussy) or sharp, spiky, no pedal (Bartók)']].map(([e, how]) => <PassportCard key={e} e={e} how={how}/>)}</div>
     </Part>
     <Faces/>
   </>);
@@ -25847,6 +26253,7 @@ function StylesWorkbook({ startNo = 1 }) {
     <WbTop step="3-4"/>
     <Part kind="together" title="Which style family?" how="Folk, classical, jazz & blues, or popular? Circle the family for each clue. Then look at how the eighth notes are played: even blocks are straight, long-short blocks are swing.">
       <BkGrid cols={2} gap="10px 12px">{W.s3.tog.map((it, i) => <FamCell key={i} it={it} n={i + 1} ex={i === 0}/>)}</BkGrid>
+      <ArtLead pic={<WalkSkip/>} text="Straight eighths are like walking: step, step, step, step. Swing is like skipping: long-short, long-short!" style={{margin:'8px 0 0',padding:'4px 14px'}}/>
       <div style={{display:'grid',gridTemplateColumns:'64px 1fr 120px',gap:6,margin:'10px 6px 2px',alignItems:'center'}}><span style={{fontSize:10.5,fontWeight:800,color:BK.muted}}>written</span><EighthPairs/><span/></div>
       <div style={{display:'grid',gap:6}}>{W.s3.sw.tog.map((sw, i) => <SwRow key={i} swing={sw} n={i + 3} ex={i === 0}/>)}</div>
     </Part>
@@ -25855,7 +26262,7 @@ function StylesWorkbook({ startNo = 1 }) {
       <div style={{display:'grid',gap:6,marginTop:8}}>{W.s3.sw.home.map((sw, i) => <SwRow key={i} swing={sw} n={i + 5}/>)}</div>
     </Part>
     <Part kind="play" title="Swing your name" how="Say your name and your friends' names in even pairs: “Ma-ya Ma-ya”. Now swing them: long-short, “Maaa-ya Maaa-ya”. Write three names, clap them straight, then swing. Which sounds more like jazz?">
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>{[0, 1, 2].map(i => <div key={i} style={{border:'1.5px dashed ' + BK.coral,borderRadius:8,padding:'10px',display:'flex',flexDirection:'column',gap:8}}><span style={{borderBottom:'1px solid ' + BK.ink,height:22}}/><span style={{display:'flex',gap:10,fontSize:11.5,color:BK.ink}}><span style={{display:'flex',alignItems:'center',gap:4}}><span style={{width:14,height:14,border:'1.5px solid ' + BK.ink,borderRadius:3}}/>straight</span><span style={{display:'flex',alignItems:'center',gap:4}}><span style={{width:14,height:14,border:'1.5px solid ' + BK.ink,borderRadius:3}}/>swing</span></span></div>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10}}>{[0, 1, 2].map(i => <div key={i} style={{border:'1.5px dashed ' + BK.coral,borderRadius:8,padding:'7px 10px',display:'flex',flexDirection:'column',gap:6}}><span style={{borderBottom:'1px solid ' + BK.ink,height:22}}/><span style={{display:'flex',gap:10,fontSize:11.5,color:BK.ink}}><span style={{display:'flex',alignItems:'center',gap:4}}><span style={{width:14,height:14,border:'1.5px solid ' + BK.ink,borderRadius:3}}/>straight</span><span style={{display:'flex',alignItems:'center',gap:4}}><span style={{width:14,height:14,border:'1.5px solid ' + BK.ink,borderRadius:3}}/>swing</span></span></div>)}</div>
     </Part>
     <Faces/>
   </>);
@@ -26021,7 +26428,7 @@ const TEACHER_COPIES = { staff: StaffTeacher, 'note-names': NoteNamesTeacher, 'n
 // are swapped for a static paper picture.
 function SymbolCards({ list }) {
   return (
-    <div style={{display:'grid',gridTemplateColumns:'repeat(' + Math.min(3, list.length) + ',1fr)',gap:10,margin:'8px 0 10px',breakInside:'avoid'}}>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(' + Math.min(list.length === 4 ? 4 : 3, list.length) + ',1fr)',gap:10,margin:'8px 0 10px',breakInside:'avoid'}}>
       {list.map((s, i) => (
         <div key={i} style={{border:'1.6px solid ' + BK.coral,borderRadius:12,overflow:'hidden',background:'#fff',breakInside:'avoid'}}>
           <div style={{background:'#fdeee8',height:112,display:'flex',alignItems:'center',justifyContent:'center',padding:'6px 12px'}}><div style={{width:'100%',maxWidth:s.w || 180}}>{s.glyph}</div></div>
@@ -26183,15 +26590,17 @@ function bookExtras(id) {
     { swap: [[isType(BlackKeyJam), <PaperQR text={<>Any black keys sound good together. Make up your own tune and write it on <b>Workbook page 7</b> -- or scan the code to jam with a backing band in the app.</>} params="drill=first-steps&lock=1" label="Black-key jam"/>]],
       remember: 'The five black keys always sound good together -- a pentatonic scale.' },
   ];
-  if (id === 'pulse') return [
-    { remember: 'The pulse is music\'s heartbeat: steady, and it never stops -- even on long notes.' },
-    { remember: 'The rhythm is the tune\'s long and short notes. The beat is the steady pulse underneath.' },
+  if (id === 'pulse') { const n = NVN(), d = NVD(); return [
+    { remember: 'The pulse is music\'s heartbeat: steady, and it never stops -- even on long notes. “72 beats a minute” means 72 pulses in one minute, about a resting heartbeat.' },
+    { swap: [[isType(BeatOrRhythm), <PaperBeatRhythm/>]], remember: 'The rhythm is the tune\'s long and short notes. The beat is the steady pulse underneath.' },
     { remember: 'Beat 1 is the strong beat. The others are weaker.' },
-    { remember: 'Count inside your head the whole time -- even when you are not playing.' },
-    { remember: 'Keep counting through long notes: a minim is 1 (2).' },
+    { swap: [[isType(BeatTarget), <PaperBeatTarget/>]], remember: 'Count inside your head the whole time -- even when you are not playing.' },
+    { symbols: nvCards([[n.cr, '1 beat.', 'one count.'], [n.mn, '2 beats.', 'two counts: 1 (2).'], [d.mn, '3 beats: a minim plus half again.', 'three counts: 1 (2 3).'], [n.sb, '4 beats -- the longest.', 'four counts: 1 (2 3 4).']]),
+      remember: 'Keep counting through long notes: a minim is 1 (2).' },
     { swap: [[isType(RhythmComposer), <PaperQR text={<>Make your own rhythm cards on <b>Workbook page 6</b> -- or scan the code to build a card in the app and hear it played.</>} params="drill=pulse&lock=1" label="Rhythm cards"/>]],
       remember: 'Count first, clap second: say 1 2 3 4, then clap the card.' },
   ];
+  }
   if (id === 'posture-hands') return [
     { remember: 'Sit on the front half of the chair, feet flat, back tall.' },
     { remember: 'Move from the whole arm -- shoulder, elbow, wrist -- not just the fingers.' },
@@ -26286,10 +26695,10 @@ function bookExtras(id) {
   ];
   if (id === 'form') return [
     { swap: [[isType(FormShapes), <PaperFormShapes/>]], remember: 'Binary = A B. Ternary = A B A. Rondo = A B A C A -- A keeps coming home.' },
-    { swap: [[isType(FormBuilder), <PaperQR text={<>Build your own piece on <b>Workbook page 3</b>: write tune A and tune B, then play AB, ABA and ABACA. Or scan the code to stack blocks and hear them.</>} params="drill=form&lock=1" label="Build a form"/>]], remember: 'Same letter = the same music. A new letter = something new.' },
-    { swap: [[isType(SameOrNewSection), <PaperQR text="Listening needs sound: scan the code, hear two sections, and decide -- same or new? No phone? Your teacher plays two phrases and you call it." params="drill=form&lock=1" label="Same or new?"/>]], remember: 'The first section is always A; every new idea gets the next letter.' },
-    { swap: [[isType(RondoRefrain), <PaperQR text="Scan the code to hear a rondo one section at a time -- guess whether the refrain comes back before you reveal it." params="drill=form&lock=1" label="Rondo"/>]], remember: 'In a rondo, the refrain (A) comes back between new episodes.' },
-    { swap: [[isType(BinaryTernarySpot), <PaperQR text="Scan the code, listen to a whole piece, and decide: did the opening tune come back at the end?" params="drill=form&lock=1" label="Two or three?"/>]], remember: 'If the opening tune comes back at the end, it is ternary (ABA).' },
+    { swap: [[isType(FormBuilder), <PaperFormBuild/>]], remember: 'Same letter = the same music. A new letter = something new.' },
+    { swap: [[isType(SameOrNewSection), <PaperFormSame/>]], remember: 'The first section is always A; every new idea gets the next letter.' },
+    { swap: [[isType(RondoRefrain), <PaperFormRondo/>]], remember: 'In a rondo, the refrain (A) comes back between new episodes.' },
+    { swap: [[isType(BinaryTernarySpot), <PaperFormTwoThree/>]], remember: 'If the opening tune comes back at the end, it is ternary (ABA).' },
   ];
   if (id === 'styles') return [
     { swap: [[isType(TextureTypes), <PaperTextures/>]], remember: 'Monophony = one tune alone. Homophony = a tune with chords. Polyphony = two or more tunes woven together.' },
@@ -26309,8 +26718,7 @@ function bookExtras(id) {
   if (id !== 'staff') return [];
   const g = (clef, notes = [], w = 150) => <PaperStaff clef={clef} notes={notes} width={w}/>;
   return [
-    { symbols: [{ glyph: <PaperStaff clef="treble" clefOn={false} notes={[]} width={140}/>, w: 230, name: 'The staff', means: 'five lines and four spaces that show how high or low a note is.', play: 'higher on the staff = further right on the piano.' }],
-      remember: 'Five lines, four spaces -- always count from the bottom.' },
+    { remember: 'Five lines, four spaces -- always count from the bottom.' },
     { swap: [[isType(MnemonicStaff), <PaperRhymes/>]], remember: 'Lines and spaces each have their own rhyme -- check which one the note sits on first.' },
     { symbols: [
         { glyph: g('treble', [], 110), w: 150, name: 'Treble clef (G clef)', means: 'the high notes. Its curl wraps round line 2, the note G.', play: 'usually the right hand.' },
@@ -26324,8 +26732,7 @@ function bookExtras(id) {
       remember: 'Learn five landmarks -- Bass C, Bass F, Middle C, Treble G, Treble C -- and count from the nearest one.' },
     { swap: [[isType(FlashCards), <PaperFlash/>]], remember: 'Aim to name every note in under 3 seconds -- that is reading, not counting.' },
     { swap: [[isType(WriteTheNote), <PaperDrawHow/>]], remember: 'Line note: the line runs through the middle. Space note: it fills the space between two lines.' },
-    { symbols: [{ glyph: g('alto', [{ d: 28, color: BK.coral }], 120), w: 190, name: 'Alto clef (C clef)', means: 'its centre points to middle C, on the middle line.', play: 'not used for piano -- the viola reads it.' }],
-      remember: 'The alto clef always points to middle C.' },
+    { foot: <BkFoot><div style={{flex:'0 0 150px'}}><PaperStaff clef="alto" notes={[{ d: 28, color: BK.coral }]} width={150}/></div><div><b style={{color:BK.ink}}>Beyond the piano: the alto clef.</b> A third clef, a “C clef”, points to middle C on the middle line. Violas read it -- you will not need it at the piano.</div></BkFoot> },
   ];
 }
 
@@ -26344,6 +26751,214 @@ function LessonBookChapter({ id }) {
     </div>
   );
 }
+
+// ─── Phase 314 (pass 4, chunk 1): Lesson Book print curation ───
+// The Lesson Book re-uses the app's Learn pages, so some sentences still talk about tapping, pressing and scores.
+// LessonFix rewrites those on the page itself (text nodes), hides screen-only counters, and keeps headings with their cards.
+const PAPER_TXT = [
+  // posture-hands
+  [/then tap \+1 for each time/, 'then add a tally mark each time'],
+  [/^Move your mouse \(or finger\) over the diagram -- up\/down changes wrist height, left\/right changes how far back you’re sitting\. Watch/, 'Study the diagram: wrist height and sitting distance both change the picture. Watch'],
+  [/^\. Tap a fault to see it -- then tap “Good shape” to fix it\./, '. Spot the fault, then fix it to reach the “Good shape”.'],
+  [/Go down the list: tap once = ✓ fine, tap again =/, 'Go down the list: tick ✓ = fine, cross ✗ ='],
+  // first-steps
+  [/\s*Tap a house!/, ''],
+  // staff
+  [/^Tap a line, bottom to top: /, 'Count the lines from the bottom up: '],
+  [/\s*Tap “Middle C” again to switch\./, ''],
+  [/^Reading and writing are two different skills -- the theory papers ask for both\. Tap where each note goes\./, 'Reading and writing are two different skills -- AMEB theory papers ask for both. Here is how each note must be written.'],
+  [/^Tap any line or space -- notice/, 'Notice'],
+  // ledger-lines
+  [/Tap a note: left, with ledger lines; right,/, 'Each pair shows one key written two ways: left, with ledger lines; right,'],
+  [/then tap the circle where (\w+) goes\./, 'then work out where $1 goes.'],
+  // pulse
+  [/^Tap the right beat$/, 'Clap the right beat'],
+  [/Start it, then tap \(or clap\) along and count/, 'Clap along and count'],
+  [/Listen to both, then try tapping just one of them\./, 'Try it: pat the beat with one hand while you clap the rhythm with the other.'],
+  [/only tap where you’re told/, 'only clap where you’re told'],
+  [/Tap only where it says\./, 'Clap only where it says.'],
+  [/Count along and tap only on that beat\./, 'Count along and clap only on that beat.'],
+  // note-values
+  [/^Tap a note to hear it sound, or tap a rest to hear it stay silent for the same length of time\./, 'Each rest is silence for the same length as its note: the note sounds, the rest stays silent.'],
+  [/^Tap a beat to turn it into a(\s*)$/, 'Every beat is either a$1'],
+  [/^, then press Play\. The little click is the pulse: it keeps going/, '. The pulse keeps going'],
+  [/^A 4\/4 bar has four apples\. Tap an apple to slice it differently, then press play\./, 'A 4/4 bar has four apples. Slice an apple into smaller pieces -- the bar still adds up to four.'],
+  [/Tap a note or rest to change it \(the order is short to long, notes then rests\) until/, 'Change a note or rest until'],
+  // time-signatures
+  [/ -- tap to hear$/i, ''],
+  [/^Press start and count out loud with the lights\./, 'Count out loud with the lights.'],
+  [/Count the beats and tap the gap where each bar is full/, 'Count the beats and draw a bar line in the gap where each bar is full'],
+  [/^Tap A or B\.$/, 'Circle A or B.'],
+  [/Tap a lane to hear it\.\s*/, ''],
+  // rhythm
+  [/Count along under each note -- tap a card to hear it with a 4-click count-in\./, 'Count along under each note -- then clap it.'],
+  [/\s*Then press play and check\./, ''],
+  // reading-steps
+  [/tap a key \(or play up and down\) and watch the note/, 'play up and down and watch the note'],
+  // tempo
+  [/\s*Tap one to hear its beat\./, ''],
+  [/Tap one and feel it\./, 'Walk along to each one and feel it.'],
+  // intervals
+  [/^Pick a bottom note, then tap anywhere on the staff above it\. Count every line and space/, 'Count every line and space from the bottom note up to the top note'],
+  [/^Tap a starting letter, choose a step, press Go\./, 'Start on any letter and hop up.'],
+  [/^Press play: the tonic sounds with each note in turn\./, 'Play the key note, then each note in turn against it.'],
+  // scales
+  [/Tap a degree to hear it against the tonic\./, 'Play each degree against the tonic (the key note).'],
+  [/^Tap a key to see it on the keyboard below\.\s*/, ''],
+  [/^\) or tap one\. /, '). '],
+  // key-signatures
+  [/Tap its line or space in the shaded column/, 'Find its line or space in the shaded column'],
+  [/ Tap any key\.$/, ''],
+  // chords
+  [/^\. Tap one\.$/, '.'],
+  [/ Tap one to hear a short phrase end with it\.$/, ''],
+  // tones
+  [/^Try it: tap any two keys$/, 'Try it: pick any two keys'],
+  [/Tap a white key, push, then press ♮\./, 'Take a white key, push it up or down, then cancel it with ♮.'],
+  [/^Tap a white key, then push it up or down\./, 'Take a white key, then push it up or down.'],
+  [/^Tap each note \(or play the bar\) and watch which key it really is\./, 'Play each note and watch which key it really is.'],
+  [/^Tap a note\.$/, 'Look at each note.'],
+  [/^Tap any key above\./, 'Look at the key above.'],
+  // melody
+  [/^Tap the staff to move each of the eight notes up or down, then play your tune\./, 'Move each of the eight notes up or down, then play your tune.'],
+  // dynamics
+  [/Tap any one to hear it\./, 'Play them one at a time.'],
+  [/-- or scan the code to hear each one as you tap it\./, '-- or scan the code to hear each one.'],
+  // signs
+  [/and tap the bars in order yourself\./, 'and follow the bars in order yourself.'],
+  [/Tap a sign, look at what is written, then what is actually played -- and hear both\./, 'Look at what is written, then at what is actually played.'],
+  [/\s*Tap the line or space where the small note goes\./, ''],
+  // terms
+  [/^Tap ♪ to hear it \(speed words as a metronome, the rest as a little phrase played that way\)\. Tap the orange “say:” line to hear how to(\s*)$/, 'Read the orange “say:” line to learn how to$1'],
+  // styles
+  [/^Tap any bar to hear its chord\.$/, ''],
+  // pitch-range
+  [/ -- tap them\.$/, '.'],
+  [/^Tap the one you think plays higher\./, 'Circle the one you think plays higher.'],
+  [/\s*Tap a bar to hear its lowest and highest note\./, ''],
+  // composers
+  [/ -- tap one to hear them$/i, ''],
+  [/Each bar shows when a movement was strongest\. Tap one\./, 'Each bar shows when a movement was strongest.'],
+  [/Pick a period, then tap a picture to open the card\./, 'Each period has its own composer cards.'],
+];
+const PAPER_HIDE = [
+  /^\s*\d+\s*\/\s*\d+\s*(perfect|done|✓)\s*$/,
+  /^\s*0\s*\/\s*0\s*$/,
+  /^\s*Score: \d+ points in \d+ rounds\s*$/,
+  /^\s*Space bar works too\.\s*$/,
+];
+function paperFix(root) {
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const nodes = []; let nd; while ((nd = w.nextNode())) nodes.push(nd);
+  nodes.forEach(n => { const o = n.nodeValue; let v = o; PAPER_TXT.forEach(([re, rep]) => { v = v.replace(re, rep); }); if (v !== o) n.nodeValue = v; });
+  root.querySelectorAll('span,div,p,b').forEach(el => {
+    if (el.children.length) return;
+    const tx = el.textContent;
+    if (PAPER_HIDE.some(re => re.test(tx))) el.style.display = 'none';
+    else if (/^Why they’re called the G clef and the F clef$/.test(tx)) el.style.breakAfter = 'avoid';
+  });
+  // keep a short step (heading, text and picture) on one page; long steps flow
+  root.querySelectorAll('section').forEach(sec => { if (sec.offsetHeight <= 500) sec.style.breakInside = 'avoid'; });
+}
+function LessonFix({ children }) {
+  const ref = React.useRef(null);
+  React.useLayoutEffect(() => {
+    const r = ref.current; if (!r) return;
+    const cfg = { childList: true, subtree: true, characterData: true };
+    let mo = null;
+    const run = () => { if (mo) mo.disconnect(); try { paperFix(r); } catch (e) {} if (mo) mo.observe(r, cfg); };
+    mo = new MutationObserver(run);
+    run();
+    return () => mo.disconnect();
+  }, []);
+  return <div className="bk-lesson" ref={ref}>{children}</div>;
+}
+function BkFoot({ children }) {
+  return <div style={{margin:'16px 0 6px',padding:'8px 0 0',borderTop:'1px solid #ece6d8',display:'flex',gap:14,alignItems:'center',fontSize:12.5,color:BK.muted,lineHeight:1.5,breakInside:'avoid'}}>{children}</div>;
+}
+
+// ── Pulse: Beat or rhythm? (paper) and Tap the right beat (paper)
+const PB_HEART = (cx, cy, s) => `M${cx} ${cy + 7 * s} C${cx - 8 * s} ${cy + 1 * s} ${cx - 9 * s} ${cy - 5 * s} ${cx - 5 * s} ${cy - 7 * s} C${cx - 2 * s} ${cy - 8.5 * s} ${cx} ${cy - 6 * s} ${cx} ${cy - 4.5 * s} C${cx} ${cy - 6 * s} ${cx + 2 * s} ${cy - 8.5 * s} ${cx + 5 * s} ${cy - 7 * s} C${cx + 9 * s} ${cy - 5 * s} ${cx + 8 * s} ${cy + 1 * s} ${cx} ${cy + 7 * s} Z`;
+function PaperBeatRhythm() {
+  const BW = 19.5, X = (b) => 6 + b * BW + Math.floor(b / 4) * 2;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Beat or rhythm?</div>
+      <p style={actNote}>The rhythm is the tune’s long and short notes. The beat is the steady pulse underneath -- it keeps going even through a long note. Try it: pat the beat with one hand while you clap the rhythm with the other. The tune is “Hot Cross Buns”.</p>
+      <div style={{display:'flex',gap:12,fontSize:11.5,fontWeight:800,color:BK.muted,textTransform:'uppercase',letterSpacing:'0.05em'}}>
+        <span><span style={{display:'inline-block',width:14,height:7,borderRadius:3,background:BK.ink,marginRight:5}}/>Rhythm (the tune)</span>
+        <span style={{color:BK.coral}}>♥ Beat</span>
+      </div>
+      <svg viewBox="0 0 326 92" width="100%" style={{display:'block',maxWidth:540,margin:'4px 0'}} aria-hidden="true">
+        {[0, 1, 2, 3, 4].map(m => <line key={m} x1={m ? X(m * 4) - 1 : 4} x2={m ? X(m * 4) - 1 : 4} y1="4" y2="88" stroke={BK.ink} strokeOpacity="0.25"/>)}
+        {HCB.map(([d, dur], i) => <rect key={i} x={X(HCB_ON[i]) + 1} y={30 - (d - 28) * 7} width={dur * BW - 2.5} height="9" rx="4" fill={BK.ink}/>)}
+        {Array.from({ length: 16 }, (_, k) => <path key={k} d={PB_HEART(X(k) + BW / 2, 66, 0.9)} fill="#f4c9bb"/>)}
+      </svg>
+      <div style={{display:'flex',gap:18,fontSize:12.5,color:BK.ink,marginTop:2}}>
+        <span><b>1.</b> Pat the beat, say “beat”.</span><span><b>2.</b> Clap the rhythm, say “rhythm”.</span><span><b>3.</b> Do both at once!</span>
+      </div>
+    </div>
+  );
+}
+function PaperBeatTarget() {
+  const dot = (label, on, big) => <div key={label + on} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+    <div style={{width:big ? 34 : 18,height:big ? 34 : 18,marginTop:big ? 0 : 8,borderRadius:'50%',background:on ? BK.coral : '#f3d3c7',boxShadow:on ? '0 0 0 3px #fff, 0 0 0 5px ' + BK.coral : 'none'}}/>
+    <span style={{fontSize:big ? 15 : 12,fontWeight:900,color:on ? BK.coral : '#b9b09a'}}>{label}</span>
+  </div>;
+  const row = (title, cells) => <div style={{display:'grid',gridTemplateColumns:'150px 1fr',alignItems:'center',gap:12,padding:'8px 0',borderBottom:'1px solid #f1ece0'}}>
+    <b style={{fontSize:13.5,color:BK.coral}}>{title}</b>
+    <div style={{display:'flex',gap:cells.length > 4 ? 6 : 22,alignItems:'flex-start'}}>{cells}</div>
+  </div>;
+  const beats = (on) => [1, 2, 3, 4].map(b => dot(String(b), on.includes(b), true));
+  const ands = [1, 2, 3, 4].flatMap(b => [dot(String(b), false, true), dot('&', b === 2, false)]);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Clap the right beat</div>
+      <p style={actNote}>One bar to count in, then two bars to play. Count the whole bar out loud, but clap <b>only</b> where the coral ring is. Your teacher keeps a click going -- or scan the code for the app’s version.</p>
+      {row('Clap on beat 3', beats([3]))}
+      {row('Clap on beats 1 and 3', beats([1, 3]))}
+      {row('Clap on the “and” after 2', ands)}
+      {row('Silent bar: clap on beat 4', beats([4]))}
+    </div>
+  );
+}
+
+// ── Form (paper): the exercises from the Workbook, one worked example each
+function PaperFormBuild() {
+  return <>
+    <p style={{fontSize:13.5,color:BK.ink,lineHeight:1.5,margin:'4px 0 8px'}}>Write a 4-note tune for A (end it on C so it sounds like home) and a different one for B. Then play your piece three ways: A B, A B A and A B A C A.</p>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,breakInside:'avoid'}}>
+      {['A', 'B'].map(l => <div key={l} style={{border:'1.5px dashed ' + BK.coral,borderRadius:8,padding:'6px 10px'}}><div style={{display:'flex',alignItems:'center',gap:8}}><FmBlock l={l} s={26}/><span style={{fontSize:11,fontWeight:900,color:BK.coral}}>{l === 'A' ? 'MY HOME TUNE' : 'MY AWAY TUNE'}</span></div><PaperStaff clef="treble" notes={[]} width={380} minSpan={[39, 27]}/></div>)}
+    </div>
+    <PaperQR text={<>Prefer to stack blocks and hear them? Scan the code to build a form in the app. More on <b>Workbook page 3</b>.</>} params="drill=form&lock=1" label="Build a form"/>
+  </>;
+}
+function PaperFormSame() {
+  return <>
+    <p style={{fontSize:13.5,color:BK.ink,lineHeight:1.5,margin:'4px 0 8px'}}>Look at each pair of phrases: is the second one the same music, or something new? Then give every phrase in the row a letter -- the first is A, and each new idea gets the next letter.</p>
+    <BkGrid cols={2} gap="10px 12px"><PairCell a="A" b="A" n={1} ex/><PairCell a="B" b="C" n={2}/></BkGrid>
+    <div style={{height:8}}/>
+    <LabelRow list={['C', 'D', 'C', 'D']} n={3} w={140}/>
+    <PaperQR text="Want to hear it? Scan the code to listen to two sections and decide: same or new? No phone? Your teacher plays two phrases and you call it." params="drill=form&lock=1" label="Same or new?"/>
+  </>;
+}
+function PaperFormRondo() {
+  return <>
+    <p style={{fontSize:13.5,color:BK.ink,lineHeight:1.5,margin:'4px 0 8px'}}>In a rondo, A is the refrain -- it comes back after every new carriage. Fill in the missing letters.</p>
+    <BkGrid cols={2} gap="10px 12px"><TrainCell seq={['A', 'B', 'A', 'C', 'A']} gaps={[2]} n={1} ex/><TrainCell seq={['A', 'B', 'A', 'C', 'A']} gaps={[1, 4]} n={2}/></BkGrid>
+    <PaperQR text="Scan the code to hear a rondo one section at a time -- guess whether the refrain comes back before you reveal it." params="drill=form&lock=1" label="Rondo"/>
+  </>;
+}
+function PaperFormTwoThree() {
+  return <>
+    <p style={{fontSize:13.5,color:BK.ink,lineHeight:1.5,margin:'4px 0 8px'}}>Read the phrases in order. Does the opening tune come back at the end? Then it is ternary (ABA). If not, it is binary (AB) -- even when each section is played twice (AABB).</p>
+    <div style={{display:'grid',gap:8}}>
+      <BTCell list={['A', 'B', 'A']} n={1} ex/><BTCell list={['C', 'D']} n={2}/><BTCell list={['B', 'D', 'B']} n={3}/>
+    </div>
+    <PaperQR text="Scan the code, listen to a whole piece, and decide: did the opening tune come back at the end?" params="drill=form&lock=1" label="Two or three?"/>
+  </>;
+}
+
 
 function BookRoot({ kind, ch }) {
   BOOK = true;
@@ -26371,7 +26986,7 @@ function BookRoot({ kind, ch }) {
       </div>
       {fixed
         ? ids.map(id => { const Wb = reg[id]; return Wb ? <Wb key={id}/> : null; })
-        : <div className="bk-lesson">{ids.map(id => <LessonBookChapter key={id} id={id}/>)}</div>}
+        : <LessonFix>{ids.map(id => <LessonBookChapter key={id} id={id}/>)}</LessonFix>}
     </div>
   );
 }
