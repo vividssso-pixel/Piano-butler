@@ -26569,20 +26569,20 @@ function bookExtras(id) {
     { swap: [[isType(RangeChart), <PaperRanges/>]], keep: true, remember: 'The piano covers nearly the whole range of the orchestra.' },
   ];
   if (id === 'rhythm') return [
-    { remember: 'Count out loud under every card: held beats in brackets, “&” for the second quaver.' },
-    { remember: 'Dotted crotchet + quaver: 1 (2) &. Semiquavers: 1 e & a. Triplets: 1 trip-let.' },
+    { swap: [[isType(RhythmCardsBrowser), <PaperRhythmCards/>]], remember: 'Count out loud under every card: held beats in brackets, “&” for the second quaver.' },
+    { swap: [[isType(CountHarder), <PaperHarder/>]], remember: 'Dotted crotchet + quaver: 1 (2) &. Semiquavers: 1 e & a. Triplets: 1 trip-let.' },
     { remember: 'An anacrusis is a pick-up before beat 1 -- count backwards from 4 to find where it starts.' },
     { swap: [[isType(RhythmComposer), <PaperQR text={<>Write your own 4-bar rhythm on <b>Workbook page 6</b> -- or scan to build one in the app and hear it played.</>} params="drill=rhythm&lock=1" label="Make your own"/>]],
       remember: 'Every bar must add up to the top number of the time signature.' },
   ];
   const signCard = (txt, name, means, play, w = 90) => ({ glyph: <div style={{textAlign:'center',fontFamily:"Georgia,'Times New Roman',serif",fontSize:46,fontWeight:900,fontStyle:'italic',color:BK.ink,lineHeight:1}}>{txt}</div>, w, name, means, play });
   if (id === 'reading-steps') return [
-    { remember: 'Step = line to the next space (or space to line). Skip = line to line, or space to space.' },
-    { remember: 'Read the MOVE, not each note: step up = the next finger up.' },
+    { swap: [[isType(StepSkip), <PaperStepSkip/>]], remember: 'Step = line to the next space (or space to line). Skip = line to line, or space to space.' },
+    { swap: [[isType(MiniTune), <PaperTinyTunes/>]], keep: true, remember: 'Read the MOVE, not each note: step up = the next finger up.' },
     { swap: [[isType(EchoTune), <PaperQR text={<>Echo needs sound: scan the code, listen to the tiny tune, sing it back, then find it on the keys. No phone? Your teacher plays a 3-note tune -- you echo it.</>} params="drill=reading-steps&lock=1" label="Echo the tune"/>]], remember: 'Echo first with your ears, then check with your eyes.' },
     { swap: [[isType(HearFind), <PaperQR text="Listening needs sound: scan the code, press play, and pick the written tune you heard." params="drill=reading-steps&lock=1" label="Hear it, find it"/>]], remember: 'The shape you hear is the shape you see.' },
-    { remember: 'A tune that ends on its home note sounds finished.' },
-    { remember: 'Five fingers, five keys: one finger for each note of the position.' },
+    { swap: [[isType(CompleteMelody), <PaperEndings/>]], keep: true, remember: 'A tune that ends on its home note sounds finished.' },
+    { keep: true, remember: 'Five fingers, five keys: one finger for each note of the position.' },
   ];
   if (id === 'dynamics') return [
     { symbols: [signCard('p', 'piano', 'soft.', 'gentle arm weight, close to the keys.'), signCard('f', 'forte', 'loud.', 'more arm weight, from a little higher.'), signCard('mf', 'mezzo forte', 'moderately loud.', 'in between -- a comfortable, full sound.')],
@@ -27668,6 +27668,171 @@ function PaperSizePitch() {
             </g>; })}
         </svg>
         <div style={{fontSize:12,color:BK.muted,textAlign:'center',marginTop:2}}>The orange label under each name is its lowest open string.</div>
+      </div>
+    </div>
+  );
+}
+// ─── Phase 323: Reading steps and Rhythm on paper ───
+// Eight white keys C..C with up to two marked (first = navy, second = coral) or the five-finger numbers.
+function PaperKeyStrip({ a, b, fingers = false, w = 150 }) {
+  const kw = w / 8, H = 44, names = 'CDEFGABC';
+  const marks = {}; if (a != null) marks[a] = '#26296b'; if (b != null && b !== a) marks[b] = '#e4572e';
+  return (
+    <svg viewBox={`0 0 ${w} ${H + 13}`} style={{width:'100%',maxWidth:w * 1.6,display:'block',margin:'0 auto'}}>
+      {names.split('').map((n, i) => {
+        const cx = i * kw + kw / 2, on = marks[i], fin = fingers && i < 5;
+        return <g key={i}>
+          <rect x={i * kw + 0.5} y="1" width={kw - 1} height={H} rx="2" fill={on ? on + '1f' : fin ? '#e8ecfa' : '#fff'} stroke="#c9c0aa" strokeWidth="1"/>
+          <text x={cx} y={H + 11} textAnchor="middle" fontSize="9" fontWeight="800" fill="#6d6f9c">{n}</text>
+          {on && <circle cx={cx} cy={H - 10} r={kw * 0.3} fill={on} stroke={b === a && i === a ? '#e4572e' : 'none'} strokeWidth="2.2"/>}
+          {fin && <><circle cx={cx} cy={H - 10} r={kw * 0.3} fill="#3b4fa8"/><text x={cx} y={H - 6.5} textAnchor="middle" fontSize="10" fontWeight="900" fill="#fff">{i + 1}</text></>}
+        </g>;
+      })}
+      {[0, 1, 3, 4, 5].map(i => <rect key={'k' + i} x={(i + 1) * kw - kw * 0.3} y="1" width={kw * 0.6} height={H * 0.58} rx="1.5" fill="#26296b"/>)}
+    </svg>
+  );
+}
+
+// Step, skip or same: all five moves drawn at once.
+function PaperStepSkip() {
+  const cards = [
+    { w: 'same', a: 30, b: 30, why: 'same line or space, same key' },
+    { w: 'step up', a: 28, b: 29, why: 'line to space: next key, next letter' },
+    { w: 'step down', a: 30, b: 29, why: 'line to space: next key, next letter' },
+    { w: 'skip up', a: 28, b: 30, why: 'line to line: skip one key' },
+    { w: 'skip down', a: 32, b: 30, why: 'line to line: skip one key' },
+  ];
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Step, skip or same?</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3, 1fr)',gap:8,marginTop:6}}>
+        {cards.map(c => (
+          <div key={c.w} style={pmlCard}>
+            <MelodyStaff notes={[{ d: c.a, dur: 2 }, { d: c.b, dur: 2 }]} showTime={false} width={250} colors={['#26296b', '#e4572e']}/>
+            <div style={{maxWidth:128,margin:'0 auto'}}><PaperKeyStrip a={c.a - 28} b={c.b - 28} w={136}/></div>
+            <div style={{textAlign:'center',fontSize:14.5,fontWeight:900,color:BK.coral,marginTop:1}}>{c.w}</div>
+            <div style={{textAlign:'center',fontSize:11,color:BK.muted,lineHeight:1.3}}>{c.why}</div>
+          </div>
+        ))}
+        <div style={{...pmlCard,background:BK.soft,display:'flex',flexDirection:'column',justifyContent:'center'}}>
+          <div style={{fontSize:12.5,fontWeight:900,color:BK.ink,marginBottom:3}}>How to tell</div>
+          <div style={{fontSize:12,lineHeight:1.45,color:BK.ink}}>
+            Watch where the next note goes; don't name every note.<br/>
+            <b>Line to space</b> (or space to line) = a <b style={{color:BK.coral}}>step</b>.<br/>
+            <b>Line to line</b> (or space to space) = a <b style={{color:BK.coral}}>skip</b>.<br/>
+            <b>Same place</b> = same key again.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Read a tiny tune: all four tunes, fingers and counts, no blank keyboard.
+function PaperTinyTunes() {
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Read a tiny tune</div>
+      <div style={actNote}>Right hand on C D E F G (thumb on middle C). The small blue numbers are fingers. Count "1 and 2 and", then play along.</div>
+      <div style={{display:'flex',alignItems:'center',gap:12,margin:'4px 0 6px'}}>
+        <div style={{flex:'0 0 190px'}}><PaperKeyStrip fingers w={170}/></div>
+        <div style={{fontSize:12,color:BK.muted,lineHeight:1.4}}>Your hand position for every tune below: thumb (1) on middle C, then 2, 3, 4, 5 on D, E, F, G.</div>
+      </div>
+      <div style={{display:'grid',gap:6}}>
+        {MINI_TUNES.map(mt => {
+          const notes = mt.notes.map(([d, dur]) => ({ d, dur, finger: d - 27 }));
+          const total = notes.reduce((a, n) => a + n.dur, 0), hasHalf = notes.some(n => n.dur % 1 !== 0);
+          const w = Math.max(300, total * 31 + 80);
+          return (
+            <div key={mt.id} style={pmlCard}>
+              <div style={{fontSize:12.5,fontWeight:900,color:BK.ink}}>{mt.title}</div>
+              <div style={{maxWidth:w,margin:'0 auto'}}><MelodyStaff notes={notes} fingers counts={hasHalf ? true : 'simple'} width={w}/></div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Complete the melody: the tune with its three possible endings, and which one sounds finished.
+function PaperEndings() {
+  const T = MELODY_TASKS[0];
+  const given = [...T.up, ...T.down].map(d => ({ d, dur: 1 }));
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Complete the melody</div>
+      <div style={actNote}>The tune climbs the scale and comes back down -- but stops one note short of home. Here are three possible endings. Which one sounds finished?</div>
+      <div style={{display:'grid',gap:6,marginTop:6}}>
+        {T.choices.map((c, k) => {
+          const ok = c.d === T.tonic;
+          const verdict = ok ? 'Home: the tonic. The tune settles.' : k === 1 ? 'Not home yet -- it still wants to fall to the tonic.' : 'A leap away -- it does not follow the stepwise shape.';
+          const notes = [...given, { d: c.d, dur: 2 }];
+          return (
+            <div key={k} style={{...pmlCard,display:'flex',alignItems:'center',gap:10,borderColor:ok ? '#2e8a6e' : '#ece6d8',background:ok ? '#f3faf6' : '#fff'}}>
+              <div style={{flex:'0 0 60%'}}><MelodyStaff notes={notes} beats={4} width={300} colors={notes.map((n, i) => i === notes.length - 1 ? (ok ? '#2e8a6e' : '#c8361b') : undefined)}/></div>
+              <div>
+                <div style={{fontSize:13,fontWeight:900,color:ok ? '#2e8a6e' : '#c8361b'}}>{ok ? '✓ ' : '✗ '}End on {dName(c.d)}</div>
+                <div style={{fontSize:11.5,color:BK.ink,lineHeight:1.35}}>{verdict}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{fontSize:12,color:BK.muted,marginTop:6}}>The app has two more tunes (in the keys of G and F) with sound -- listen to each ending and pick the one that sounds finished.</div>
+    </div>
+  );
+}
+
+// Rhythm cards: the whole first set, then two samples from each later set.
+function PaperRhythmCards() {
+  const pick = (tier, ids) => {
+    const cs = RHYTHM_DECK.filter(c => c.tier === tier), out = [];
+    ids.forEach(id => { const c = cs.find(x => (id === null || x.cells.includes(id)) && !out.includes(x)); if (c) out.push(c); });
+    return out;
+  };
+  const sets = [[2, [null, null]], [3, ['DQE', 'SYN']], [4, ['SSSS', 'ESS']], [5, ['T', 'DES']]];
+  const card = (c) => <RhythmCard key={c.num} card={c} counts compact/>;
+  return (
+    <div>
+      <style>{'.prc svg { max-height: 84px !important }'}</style>
+      <div className="prc">
+        <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 6px'}}><b style={{color:BK.ink}}>Set 1 · cards 1–8</b> -- new: <b style={{color:BK.ink}}>{RHYTHM_TIERS[0].label}</b></div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>{RHYTHM_DECK.filter(c => c.tier === 1).map(card)}</div>
+        {sets.map(([tier, ids]) => (
+          <div key={tier} style={{breakInside:'avoid',marginTop:10}}>
+            <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 6px'}}><b style={{color:BK.ink}}>Set {tier} · cards {(tier - 1) * 8 + 1}–{tier * 8}</b> -- new: <b style={{color:BK.ink}}>{RHYTHM_TIERS[tier - 1].label}</b> <span>(two of the eight)</span></div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>{pick(tier, ids).map(card)}</div>
+          </div>
+        ))}
+        <p style={{fontSize:12,color:BK.muted,margin:'10px 0 0',lineHeight:1.5}}>Counting: 1 e & a for semiquavers, 1 trip let for triplets; rests shown in brackets. All 40 cards are in the app, with a play button and a count-in on every one.</p>
+      </div>
+    </div>
+  );
+}
+
+// Harder rhythms: every bar drawn, with its count.
+function PaperHarder() {
+  return (
+    <div className="try-box" data-flow="1" style={actBox}>
+      <div style={actTitle}>Count harder rhythms</div>
+      <div style={actNote}>Say every syllable of the count out loud; clap only on the bold ones.</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6,marginTop:6}}>
+        {HARD_BARS.map(bar => {
+          const ev = hardEvents(bar), onsets = new Set(ev.map(e => Math.round(e.t * 12)));
+          const grid = []; for (let b = 0; b < 4; b++) for (let s = 0; s < bar.sub; s++) grid.push(b + s / bar.sub);
+          return (
+            <div key={bar.id} style={pmlCard}>
+              <div style={{fontSize:12.5,fontWeight:900,color:BK.ink}}>{bar.name}</div>
+              <div style={{maxWidth:290,margin:'0 auto'}}><BeamRow events={ev} unit={296 / 8} grid={grid.map(g => ({ t: g * 2, label: syllable(g, bar.sub), main: g % 1 === 0, bold: onsets.has(Math.round(g * 12)), on: false }))}/></div>
+              <div style={{fontSize:11.5,color:BK.muted,lineHeight:1.35}}>{bar.note}</div>
+            </div>
+          );
+        })}
+        <div style={{...pmlCard,background:BK.soft,display:'flex',flexDirection:'column',justifyContent:'center'}}>
+          <div style={{fontSize:12.5,fontWeight:900,color:BK.ink,marginBottom:3}}>The counting words</div>
+          <div style={{fontSize:12,lineHeight:1.5,color:BK.ink}}>Quavers: <b>1 &</b><br/>Semiquavers: <b>1 e & a</b><br/>Triplets: <b>1 trip-let</b><br/><span style={{color:BK.muted}}>Bold = clap. Grey = say it, don't clap.</span></div>
+        </div>
       </div>
     </div>
   );
