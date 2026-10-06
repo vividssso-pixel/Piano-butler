@@ -26578,7 +26578,7 @@ function bookExtras(id) {
     { remember: 'Last sharp: go up one letter for the key. Flats: the second-last flat is the key. Relative minor: down a minor 3rd.' },
     { remember: 'Clockwise round the circle, each key is a 5th higher with one more sharp.' },
     { remember: 'Transposing moves every note by the same interval -- the tune stays the same.' },
-    { remember: '15 keys: 7 with sharps, 7 with flats, and C with none.' },
+    { swap: [[isType(KeySigAllKeys), <PaperAllKeys/>]], remember: '15 keys: 7 with sharps, 7 with flats, and C with none.' },
   ];
   if (id === 'first-steps') return [
     { remember: 'Right = higher, left = lower. Loud and soft is how hard you play.' },
@@ -26651,7 +26651,7 @@ function bookExtras(id) {
   if (id === 'tempo') return [
     { remember: 'Tempo is how fast the beat goes.' },
     { remember: 'Adagio, Andante, Moderato, Allegro, Presto -- slow to fast.' },
-    { swap: [[isType(TapTempo), <PaperQR text="Tap a steady beat on the big button and the app tells you your tempo and its Italian word. Try a march, a lullaby and a race!" params="drill=tempo&lock=1" label="Tap your tempo"/>]], remember: 'Find the beat first, then match the tempo word.' },
+    { swap: [[isType(TapTempo), <PaperTapTempo/>]], remember: 'Find the beat first, then match the tempo word.' },
     { swap: [[isType(SameTuneTempo), <PaperQR text="Hear Twinkle Twinkle at three tempos and guess the mystery one -- scan the code. Then play it yourself as a lullaby and as a race." params="drill=tempo&lock=1" label="Same tune"/>]], remember: 'The same tune can sound very different at a new tempo.' },
     { swap: [[isType(SpeedChange), <PaperQR text="Watch and hear the beats get closer (accel.) or further apart (rit.) -- scan the code and tap each word." params="drill=tempo&lock=1" label="Changing speed"/>]], remember: 'accel. = gradually faster; rit. and rall. = gradually slower; a tempo = back to the speed before.' },
     { swap: [[isType(MetronomeDial), <PaperQR text="Scan for the app's metronome: pick a speed, a time signature and a sound. Try 60 (one tick a second), then your piece's tempo." params="drill=tempo&lock=1" label="Metronome"/>]], remember: <>{mmMark(60)} means 60 beats a minute -- one every second.</> },
@@ -26699,6 +26699,18 @@ function bookExtras(id) {
     { swap: [[isType(SameOrNewSection), <PaperFormSame/>]], remember: 'The first section is always A; every new idea gets the next letter.' },
     { swap: [[isType(RondoRefrain), <PaperFormRondo/>]], remember: 'In a rondo, the refrain (A) comes back between new episodes.' },
     { swap: [[isType(BinaryTernarySpot), <PaperFormTwoThree/>]], remember: 'If the opening tune comes back at the end, it is ternary (ABA).' },
+  ];
+  if (id === 'piano-story') return [
+    { swap: [[isType(KeyboardAncestors), <PaperAncestors/>]], remember: 'Clavichord: pressed. Harpsichord: plucked. Piano: struck by a hammer -- loud and soft by touch.' },
+    { remember: 'Non legato = detached but not short -- the everyday touch for Baroque music.' },
+    { remember: 'Cristofori invented the piano around 1700; the iron frame (1825-1859) made the modern piano.' },
+    { remember: 'Press the key: the hammer strikes and the damper lifts. Let go: the damper drops back and stops the sound.' },
+    { swap: [[isType(ErasTimeline), <PaperEras/>]], remember: 'The keyboard of each era shaped how its music is played.' },
+  ];
+  if (id === 'composers') return [
+    {}, {}, {}, {},
+    { swap: [[isType(WhoAmI), <PaperQR text="A mystery composer gives clues one at a time -- guess early for more points. Scan the code to play, or take turns: one person reads a composer's card and the others guess." params="drill=composers&lock=1" label="Who am I?"/>]] },
+    { swap: [[isType(NameThatTune), <PaperQR text="Listening needs sound: scan the code, play the record and name the composer (30 tunes)." params="drill=composers&lock=1" label="Name that tune"/>]] },
   ];
   if (id === 'styles') return [
     { swap: [[isType(TextureTypes), <PaperTextures/>]], remember: 'Monophony = one tune alone. Homophony = a tune with chords. Polyphony = two or more tunes woven together.' },
@@ -26836,6 +26848,15 @@ const PAPER_TXT = [
   [/ -- tap them\.$/, '.'],
   [/^Tap the one you think plays higher\./, 'Circle the one you think plays higher.'],
   [/\s*Tap a bar to hear its lowest and highest note\./, ''],
+  // key-signatures / tempo / piano-story
+  [/^Tap your own tempo$/, 'Find your own tempo'],
+  [/Work out the notes in (.+?), then show the answer\./, 'Work out the notes in $1.'],
+  [/^Tap a date\. The big three:/, 'The big three:'],
+  [/^Press and hold the key, then let go\. Watch the hammer and the damper\./, 'Press the key and the hammer flies up to the string; let go and the damper drops back. Watch both.'],
+  [/^key -- press here$/, 'key'],
+  [/^Tap one$/i, ''],
+  [/^Play it on\s*$/, ''],
+  [/Slide the time machine to any year and see who was alive -- and how old they were\./, 'Read straight up from any year to see who was alive -- and how old they were.'],
   // composers
   [/ -- tap one to hear them$/i, ''],
   [/Each bar shows when a movement was strongest\. Tap one\./, 'Each bar shows when a movement was strongest.'],
@@ -26856,6 +26877,7 @@ function paperFix(root) {
     const tx = el.textContent;
     if (PAPER_HIDE.some(re => re.test(tx))) el.style.display = 'none';
     else if (/^Why they’re called the G clef and the F clef$/.test(tx)) el.style.breakAfter = 'avoid';
+    else if (/^The dot pulses with the beat\.$/.test(tx) && el.parentElement) el.parentElement.style.display = 'none';
   });
   // keep a short step (heading, text and picture) on one page; long steps flow
   root.querySelectorAll('section').forEach(sec => { if (sec.offsetHeight <= 500) sec.style.breakInside = 'avoid'; });
@@ -26957,6 +26979,76 @@ function PaperFormTwoThree() {
     </div>
     <PaperQR text="Scan the code, listen to a whole piece, and decide: did the opening tune come back at the end?" params="drill=form&lock=1" label="Two or three?"/>
   </>;
+}
+
+
+// ─── Phase 315 (pass 4, chunk 2): paper versions for Tempo, Key signatures, The piano's story, Famous composers ───
+function PaperTapTempo() {
+  const ex = [[15, 60, 'one clap every second'], [30, 120, 'two claps every second'], [45, 180, 'three claps every second']];
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Find your own tempo</div>
+      <p style={actNote}>Clap a steady beat -- a march, a lullaby, a race -- for exactly 15 seconds (ask a friend to watch the clock). Count your claps and multiply by 4: that is your tempo in beats a minute. Then find its Italian word in the lanes above.</p>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,breakInside:'avoid'}}>
+        {ex.map(([c, b, w]) => <div key={c} style={{border:'1px solid #ece6d8',borderRadius:8,padding:'6px 8px',textAlign:'center'}}>
+          <div style={{fontSize:15,fontWeight:900,color:BK.ink}}>{c} claps × 4 = <span style={{color:BK.coral}}>{b}</span></div>
+          <div style={{fontSize:11,color:BK.muted}}>{w}</div>
+        </div>)}
+      </div>
+      <div style={{display:'flex',gap:10,alignItems:'center',marginTop:10,fontSize:13,color:BK.ink}}>My claps: <span style={{display:'inline-block',width:60,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span> × 4 = <span style={{display:'inline-block',width:60,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span> a minute. Italian word: <span style={{display:'inline-block',width:110,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span></div>
+      <PaperQR text="Or scan the code for the app's tapper: it counts for you and names the Italian word. Try a march, a lullaby and a race!" params="drill=tempo&lock=1" label="Find your tempo"/>
+    </div>
+  );
+}
+
+const KS_ALL = [
+  ['Keys with sharps', '♯', [['C', 'A', 0], ['G', 'E', 1], ['D', 'B', 2], ['A', 'F♯', 3], ['E', 'C♯', 4], ['B', 'G♯', 5], ['F♯', 'D♯', 6], ['C♯', 'A♯', 7]]],
+  ['Keys with flats', '♭', [['F', 'D', 1], ['B♭', 'G', 2], ['E♭', 'C', 3], ['A♭', 'F', 4], ['D♭', 'B♭', 5], ['G♭', 'E♭', 6], ['C♭', 'A♭', 7]]],
+];
+function PaperAllKeys() {
+  return (
+    <div style={{border:'1px solid #ece6d8',borderRadius:10,padding:'8px 12px',margin:'8px 0',breakInside:'avoid'}}>
+      {KS_ALL.map(([title, sym, keys]) => <div key={title} style={{marginBottom:8}}>
+        <div style={{fontSize:11,fontWeight:900,letterSpacing:'0.08em',color:BK.coral,margin:'2px 0 5px',textTransform:'uppercase'}}>{title}</div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(8,1fr)',gap:6}}>
+          {keys.map(([maj, min, n]) => <div key={maj} style={{border:'1.5px solid ' + (n === 0 ? BK.coral : BK.line),borderRadius:8,padding:'5px 4px',textAlign:'center'}}>
+            <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:17,fontWeight:800,color:BK.ink,lineHeight:1.1}}>{maj}</div>
+            <div style={{fontSize:12.5,fontWeight:900,color:BK.coral}}>{n === 0 ? 'none' : n + sym}</div>
+            <div style={{fontSize:10.5,color:BK.muted}}>{min} minor</div>
+          </div>)}
+        </div>
+      </div>)}
+      <div style={{fontSize:11.5,color:BK.muted}}>Each box: the major key, how many sharps or flats it has, and its relative minor. C major has none.</div>
+    </div>
+  );
+}
+
+function PaperAncestors() {
+  return (
+    <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,margin:'8px 0'}}>
+      {ANCESTORS.map(a => <div key={a.id} style={{border:'1px solid #ece6d8',borderRadius:10,padding:'8px 10px',breakInside:'avoid'}}>
+        <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:17,fontWeight:800,color:BK.ink}}>{a.name}</div>
+        <div style={{fontSize:10.5,color:BK.muted,fontWeight:700,marginBottom:2}}>{a.when}</div>
+        <Mechanism kind={a.id} p={0}/>
+        <div style={{fontSize:11.5,color:BK.ink,lineHeight:1.45,marginTop:2}}><b>How:</b> {a.how}</div>
+        <div style={{fontSize:11.5,color:BK.ink,lineHeight:1.45,marginTop:3}}><b>Loud and soft:</b> {a.touch}</div>
+        {a.good && <div style={{fontSize:11.5,color:BK.ink,lineHeight:1.45,marginTop:3}}><b>Good for:</b> {a.good}</div>}
+      </div>)}
+    </div>
+  );
+}
+function PaperEras() {
+  return (
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,margin:'8px 0'}}>
+      {ERAS.map(e => <div key={e.id} style={{border:'1px solid #ece6d8',borderLeft:'6px solid ' + e.color,borderRadius:8,padding:'7px 10px',breakInside:'avoid'}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline'}}><b style={{fontSize:16,color:e.color}}>{e.name}</b><span style={{fontSize:11,fontWeight:900,color:'#fff',background:e.color,borderRadius:4,padding:'1px 6px'}}>{e.years}</span></div>
+        <div style={{fontSize:11.5,color:BK.ink,marginTop:2}}><b>Keyboard:</b> {e.inst}</div>
+        <ul style={{margin:'3px 0',paddingLeft:16,fontSize:11.5,color:BK.ink,lineHeight:1.4}}>{e.traits.map((x, i) => <li key={i}>{x}</li>)}</ul>
+        <div style={{fontSize:11.5,color:BK.ink,background:'#f5f0e4',borderRadius:5,padding:'3px 6px'}}><b>Playing it today:</b> {e.today}</div>
+        <div style={{fontSize:11,color:BK.muted,marginTop:3}}><b>Composers:</b> {e.composers.join(' · ')}</div>
+      </div>)}
+    </div>
+  );
 }
 
 
