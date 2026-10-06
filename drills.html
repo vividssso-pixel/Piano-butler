@@ -26624,7 +26624,7 @@ function bookExtras(id) {
   ];
   if (id === 'tones') return [
     { swap: [[isType(BestFriends), <PaperBestFriends/>]], remember: 'Semitone = the very next key (your best friend). Tone = two semitones (a friend of a friend).' },
-    { symbols: [{ glyph: accGlyph(SharpShape), w: 46, name: 'Sharp', means: 'raises a note one semitone.', play: 'the very next key to the right.' }, { glyph: accGlyph(FlatShape), w: 46, name: 'Flat', means: 'lowers a note one semitone.', play: 'the very next key to the left.' }, { glyph: <svg viewBox="0 0 40 44" style={{width:'100%',display:'block'}}><g stroke={BK.ink} strokeWidth="2.4"><line x1="14" x2="14" y1="4" y2="32"/><line x1="26" x2="26" y1="12" y2="40"/><line x1="14" x2="26" y1="17" y2="13" strokeWidth="5"/><line x1="14" x2="26" y1="30" y2="26" strokeWidth="5"/></g></svg>, w: 46, name: 'Natural', means: 'cancels a sharp or flat.', play: 'the plain white key again.' }],
+    { swap: [[isType(AccidentalBar), <PaperAccBar/>]], symbols: [{ glyph: accGlyph(SharpShape), w: 46, name: 'Sharp', means: 'raises a note one semitone.', play: 'the very next key to the right.' }, { glyph: accGlyph(FlatShape), w: 46, name: 'Flat', means: 'lowers a note one semitone.', play: 'the very next key to the left.' }, { glyph: <svg viewBox="0 0 40 44" style={{width:'100%',display:'block'}}><g stroke={BK.ink} strokeWidth="2.4"><line x1="14" x2="14" y1="4" y2="32"/><line x1="26" x2="26" y1="12" y2="40"/><line x1="14" x2="26" y1="17" y2="13" strokeWidth="5"/><line x1="14" x2="26" y1="30" y2="26" strokeWidth="5"/></g></svg>, w: 46, name: 'Natural', means: 'cancels a sharp or flat.', play: 'the plain white key again.' }],
       remember: 'An accidental lasts until the bar line -- on that line or space only.' },
     { remember: 'The chromatic scale plays every key, one semitone at a time.' },
   ];
@@ -26634,14 +26634,14 @@ function bookExtras(id) {
     { remember: 'Tonic, supertonic, mediant, subdominant, dominant, submediant, leading note.' },
     { remember: 'Thumb under after finger 3 (or 4) going up; finger 3 or 4 over the thumb coming down.' },
     { swap: [[isType(ScalePath), <PaperQR text={<>Keep your scale stamps in the app (scan the code) -- or colour the stars on the <b>Workbook page 5</b> star chart.</>} params="drill=scales&lock=1" label="Scale path"/>]], remember: 'Stamp each card when it is solid three times in a row.' },
-    { remember: 'Any scale: find the key signature, then the fingering pattern -- and practise it slowly and evenly.' },
+    { swap: [[isType(ScaleFinder), <PaperTwins/>]], remember: 'Any scale: find the key signature, then the fingering pattern -- and practise it slowly and evenly.' },
   ];
   if (id === 'scales-minor') return [
     { remember: 'Natural minor = the key signature only. Harmonic minor = raise the 7th. Melodic minor = raise 6 and 7 going up, natural coming down.' },
     { swap: [[isType(ScaleBuilder), <PaperQR text={<>Write harmonic minors on <b>Workbook page 6</b> -- or scan the code to build any minor scale and hear it.</>} params="drill=scales&lock=1" label="Build a minor"/>]], remember: 'Start from the natural minor, then raise the 7th for the harmonic.' },
     { remember: 'Minor scales use the same fingering groups as their major friends.' },
     { swap: [[isType(ScalePath), <PaperQR text="Keep stamps for your minor scales in the app -- scan the code. Stamp a scale when it is smooth three times in a row." params="drill=scales&lock=1" label="Minor path"/>]] },
-    { remember: 'The harmonic minor is the one you will meet most.' },
+    { swap: [[isType(MinorViewer), <PaperQR text="See every form of every minor scale: scan the code, pick a key and a form, and the app shows the notes and the fingering." params="drill=scales&lock=1" label="Minor forms"/>]], remember: 'The harmonic minor is the one you will meet most.' },
   ];
   if (id === 'form') return [
     { swap: [[isType(FormShapes), <PaperFormShapes/>]], remember: 'Binary = A B. Ternary = A B A. Rondo = A B A C A -- A keeps coming home.' },
@@ -26777,12 +26777,12 @@ const PAPER_TXT = [
   [/^\. Tap one\.$/, '.'],
   [/ Tap one to hear a short phrase end with it\.$/, ''],
   // tones
-  [/^Try it: tap any two keys$/, 'Try it: pick any two keys'],
+  [/^Try it: tap any two keys$/, 'Example: count the semitones from C to E'],
   [/Tap a white key, push, then press ♮\./, 'Take a white key, push it up or down, then cancel it with ♮.'],
   [/^Tap a white key, then push it up or down\./, 'Take a white key, then push it up or down.'],
   [/^Tap each note \(or play the bar\) and watch which key it really is\./, 'Play each note and watch which key it really is.'],
   [/^Tap a note\.$/, 'Look at each note.'],
-  [/^Tap any key above\./, 'Look at the key above.'],
+  [/^Tap any key above\./, 'Every black key has two names -- C♯ is also D♭.'],
   // melody
   [/^Tap the staff to move each of the eight notes up or down, then play your tune\./, 'Move each of the eight notes up or down, then play your tune.'],
   // dynamics
@@ -26819,6 +26819,9 @@ const PAPER_HIDE = [
   /^\s*0\s*\/\s*0\s*$/,
   /^\s*Score: \d+ points in \d+ rounds\s*$/,
   /^\s*Space bar works too\.\s*$/,
+  /^\s*hear\s*$/,
+  /^\s*\d+ of \d+ bar lines\s*$/,
+  /^\s*START ON\s*$/,
 ];
 function paperFix(root) {
   const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
@@ -26835,7 +26838,8 @@ function paperFix(root) {
   // never leave a REMEMBER line alone at the top of a page: its picture moves with it
   root.querySelectorAll('.bk-rem').forEach(r => { let q = r.previousElementSibling; for (let k = 0; q && k < 3; k++) { q.style.breakAfter = 'avoid'; q = q.lastElementChild; } });
   // keep a short step (heading, text and picture) on one page; long steps flow
-  root.querySelectorAll('section').forEach(sec => { if (sec.offsetHeight <= 500) sec.style.breakInside = 'avoid'; });
+  root.querySelectorAll('section').forEach(sec => { if (sec.offsetHeight <= 500 && !sec.querySelector('[data-flow]')) sec.style.breakInside = 'avoid'; });
+  root.querySelectorAll('[data-flow]').forEach(el => { el.style.breakInside = 'auto'; });
 }
 function LessonFix({ children }) {
   const ref = React.useRef(null);
@@ -27077,6 +27081,79 @@ function PaperTritone() {
         </div>
       </div>
       <div style={{textAlign:'center',fontSize:13,color:'#6d6f9c',marginTop:4}}>6 semitones, either way</div>
+    </div>
+  );
+}
+
+// Phase 319 (pass 4, chunk 4a): paper versions for Tones and Scales, plus a few screen-only leftovers.
+// Tones: "How long does an accidental last?" as a numbered, printed example (no keyboard to light up).
+function PaperAccBar() {
+  const coral = '#e4572e', ink = '#26296b';
+  const one = (k, title) => {
+    const E = ACC_EXAMPLES[k], base = 70, y = (d) => dY(d) - 30;
+    const ksx = E.ks ? E.ks.ds.length * 12 + 4 : 0;
+    let x = 70 + ksx, num = 0;
+    const placed = E.notes.map(n => { const px = x; x += n.bar ? 26 : 44; return { ...n, x: px + (n.bar ? 0 : 12), num: n.bar ? 0 : ++num }; });
+    const W = Math.max(300, x + 18);
+    return (
+      <div key={k} style={{marginTop:12,breakInside:'avoid'}}>
+        <div style={{fontSize:13,fontWeight:900,color:BK.ink}}>{title}</div>
+        {E.note && <div style={{fontSize:12.5,color:BK.muted,lineHeight:1.45,margin:'2px 0'}}>{E.note}</div>}
+        <svg viewBox={`0 ${base - 60} ${W} 92`} style={{width:'100%',maxWidth:440,display:'block',margin:'0 auto'}}>
+          {[30, 32, 34, 36, 38].map(d => <line key={d} x1="4" x2={W - 4} y1={y(d)} y2={y(d)} stroke={ink} strokeOpacity="0.55" strokeWidth="1.2"/>)}
+          <ClefGlyph clef="treble" st="treble" yOf={(d) => y(d)} ink={ink}/>
+          {E.ks && E.ks.ds.map((d, i) => E.ks.type === 'sharp' ? <SharpShape key={'ks' + i} x={50 + i * 12} y={y(d)} color={coral}/> : <FlatShape key={'ks' + i} x={50 + i * 12} y={y(d)} color={coral}/>)}
+          <line x1={W - 4} x2={W - 4} y1={y(38)} y2={y(30)} stroke={ink} strokeWidth="2.5"/>
+          {placed.map((n, i) => n.bar
+            ? <line key={i} x1={n.x} x2={n.x} y1={y(38)} y2={y(30)} stroke={ink} strokeWidth="1.4"/>
+            : (<g key={i}>
+                {n.sign === 1 && <SharpShape x={n.x - 15} y={y(n.d)} color={ink}/>}
+                {n.sign === -1 && <FlatShape x={n.x - 14} y={y(n.d)} color={ink}/>}
+                {n.sign === 2 && <NaturalShape x={n.x - 14} y={y(n.d)} color={ink}/>}
+                <ellipse cx={n.x} cy={y(n.d)} rx="6.5" ry="4.7" transform={`rotate(-20 ${n.x} ${y(n.d)})`} fill={ink}/>
+                <line x1={n.x + 6} x2={n.x + 6} y1={y(n.d)} y2={y(n.d) - 28} stroke={ink} strokeWidth="1.3"/>
+                <text x={n.x} y={base + 22} textAnchor="middle" fontSize="12" fontWeight="900" fill={coral}>{n.num}</text>
+              </g>))}
+        </svg>
+        <div style={{display:'grid',gap:2,marginTop:2}}>
+          {placed.filter(n => !n.bar).map(n => <div key={n.num} style={{display:'flex',gap:7,fontSize:12.5,lineHeight:1.4,color:BK.ink}}><b style={{color:coral,minWidth:12}}>{n.num}</b><span>{n.say}</span></div>)}
+        </div>
+      </div>
+    );
+  };
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>How long does an accidental last?</div>
+      <div style={actNote}>Follow the numbered notes from left to right, and say which key each one really is.</div>
+      {one('sharp', 'A sharp, then a natural')}
+      {one('gmajor', 'A key signature: G major')}
+    </div>
+  );
+}
+
+// Scales: the Scale finder on paper = a QR to the real finder + the one thing it adds to the printed patterns:
+// the scales that have two names (same keys on the piano, two ways to write the key signature).
+function PaperTwins() {
+  const major = [['F#', 'Gb'], ['C#', 'Db'], ['B', 'Cb']], minor = [['G#', 'Ab'], ['D#', 'Eb'], ['A#', 'Bb']];
+  const card = (mode, a, b) => {
+    const nm = (k) => mode === 'minor' ? k.minor : k.major;
+    const ka = KEY_SIGS.find(k => nm(k) === a), kb = KEY_SIGS.find(k => nm(k) === b);
+    return (
+      <div key={a} style={{border:'1.5px solid ' + BK.line,borderRadius:10,padding:'7px 7px 4px',breakInside:'avoid'}}>
+        <div style={{fontSize:13,fontWeight:900,color:BK.ink,textAlign:'center'}}>{prettyNote(a)} / {prettyNote(b)} {mode}</div>
+        <div style={{display:'flex',gap:6,marginTop:3}}>
+          {[[ka, a], [kb, b]].map(([k, n]) => <div key={n} style={{flex:1,textAlign:'center'}}><div style={{fontSize:11.5,fontWeight:800,color:BK.coral}}>{prettyNote(n)} · {sigLabel(k)}</div><KSStaff count={k.count} type={k.type} width={92}/></div>)}
+        </div>
+      </div>
+    );
+  };
+  return (
+    <div className="try-box" data-flow="1" style={actBox}>
+      <PaperQR text={<>Any scale, any key: scan the code, type a scale (<b>Bb</b>, <b>F♯ minor</b>, <b>E flat</b>) and the Scale finder shows the fingering for both hands.</>} params="tool=scale-finder" label="Scale finder"/>
+      <div style={{fontSize:12.5,color:BK.muted,lineHeight:1.4,margin:'4px 0 6px'}}><b style={{fontSize:13,color:BK.ink}}>Same keys, two names.</b> A scale that starts on a black key can be written two ways -- same keys on the piano, different key signature.</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>{major.map(([a, b]) => card('major', a, b))}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6,marginTop:6}}>{minor.map(([a, b]) => card('minor', a, b))}</div>
+      <div style={{fontSize:11.5,color:BK.muted,lineHeight:1.4,marginTop:5}}>B♭, E♭, A♭ major and F♯, C♯ minor have no written twin: it would need double sharps or flats.</div>
     </div>
   );
 }
