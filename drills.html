@@ -1337,7 +1337,7 @@ function Step({ n, total, title, color, open, done, onToggle, onDone, children, 
         <span style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:21,fontWeight:800,color:'var(--navy)',lineHeight:1.2}}>{title}</span>
       </div>
       {x.symbols && <SymbolCards list={x.symbols}/>}
-      <div style={{paddingTop:4}}><StepCtx.Provider value={color}>{kids}</StepCtx.Provider></div>
+      <div style={{paddingTop:4}}><StepCtx.Provider value={color}>{kids}{x.add}</StepCtx.Provider></div>
       {x.remember && <RememberLine text={x.remember}/>}
     </section>
   ); }
@@ -26445,7 +26445,7 @@ function SymbolCards({ list }) {
 }
 function RememberLine({ text }) {
   return (
-    <div style={{display:'flex',alignItems:'baseline',gap:10,margin:'10px 0 4px',padding:'7px 12px',borderTop:'1.5px solid ' + BK.coral,borderBottom:'1.5px solid ' + BK.coral,breakInside:'avoid',breakBefore:'avoid'}}>
+    <div className="bk-rem" style={{display:'flex',alignItems:'baseline',gap:10,margin:'10px 0 4px',padding:'7px 12px',borderTop:'1.5px solid ' + BK.coral,borderBottom:'1.5px solid ' + BK.coral,breakInside:'avoid',breakBefore:'avoid'}}>
       <span style={{fontSize:10,fontWeight:900,color:BK.coral,letterSpacing:'0.12em',flex:'0 0 auto'}}>REMEMBER</span>
       <span style={{fontSize:14.5,fontWeight:800,color:BK.ink,lineHeight:1.4}}>{text}</span>
     </div>
@@ -26513,8 +26513,8 @@ const hasText = (s) => (c) => c && c.type === 'div' && typeof c.props.children =
 const hasChild = (T) => (c) => c && c.props && React.Children.toArray(c.props.children).some(k => k && k.type === T);
 function bookExtras(id) {
   if (id === 'note-names') return [
-    { swap: [[isType(FindAll), <PaperFindC/>]], remember: 'C sits just left of the 2 black keys. F sits just left of the 3.' },
-    { swap: [[isType(NameReveal), <PaperAlphabet/>]], remember: 'Only seven letters: A B C D E F G -- then start again at A.' },
+    { add: <BkNote>The black keys have names too -- each one is a sharp (♯) or a flat (♭). You will meet them in the chapter on tones and semitones.</BkNote>, swap: [[isType(FindAll), <PaperFindC/>]], remember: 'C sits just left of the 2 black keys. F sits just left of the 3.' },
+    { add: <BkNote>From one C to the next C (or one A to the next A) is eight white-key letters: that distance is called an <b>octave</b>.</BkNote>, swap: [[isType(NameReveal), <PaperAlphabet/>]], remember: 'Only seven letters: A B C D E F G -- then start again at A.' },
     { swap: [[isType(UpDownWalk), <PaperUpDown/>]], remember: 'Right = up = the next letter. Left = down = the letter before.' },
     { swap: [[hasChild(LetterChainDrill), <PaperLetterRing/>]], remember: 'Say the letters forwards, backwards and skipping -- until each one is as quick as A B C.' },
   ];
@@ -26561,11 +26561,11 @@ function bookExtras(id) {
   const accGlyph = (Shape) => <svg viewBox="0 0 40 44" style={{width:'100%',display:'block'}}><g transform="scale(1.6) translate(-0.5 -4)"><Shape x={12.5} y={20} color={BK.ink}/></g></svg>;
   if (id === 'intervals') return [
     { remember: 'Count BOTH notes: C to E is C D E -- a 3rd.' },
-    { remember: '3rds: 3 semitones = minor, 4 = major. 4th = 5 semitones, 5th = 7 -- both perfect.' },
+    { add: <Rule title="Semitone and tone">A <b>semitone</b> is your best friend: the very next key, black or white. A <b>tone</b> is a friend of a friend: two semitones, one key skipped. Major intervals sound bright and happy; minor intervals sound darker and sadder.</Rule>, remember: '3rds: 3 semitones = minor, 4 = major. 4th = 5 semitones, 5th = 7 -- both perfect.' },
     { remember: 'Above the bottom note, its major scale gives major 2nds, 3rds, 6ths, 7ths and perfect 4ths, 5ths and octaves.' },
     { swap: [[isType(IntervalEar), <PaperQR text="Ear training needs sound: scan the code, open the Lesson and try “Train your ear” -- then sing each interval back." params="drill=intervals&lock=1" label="Train your ear"/>]],
       remember: 'Song starts help: Twinkle Twinkle = perfect 5th, Here Comes the Bride = perfect 4th.' },
-    { remember: 'Inverting: the numbers add to 9; major ⇄ minor; perfect stays perfect.' },
+    { swap: [[isType(IntervalInverter), <PaperInversion/>], [isType(TritoneTool), <PaperTritone/>]], remember: 'Inverting: the numbers add to 9; major ⇄ minor; perfect stays perfect.' },
   ];
   if (id === 'key-signatures') return [
     { symbols: [{ glyph: accGlyph(SharpShape), w: 46, name: 'Sharp', means: 'play the note one semitone higher.', play: 'usually the black key just to the right.' }],
@@ -26657,10 +26657,10 @@ function bookExtras(id) {
     { swap: [[isType(MetronomeDial), <PaperQR text="Scan for the app's metronome: pick a speed, a time signature and a sound. Try 60 (one tick a second), then your piece's tempo." params="drill=tempo&lock=1" label="Metronome"/>]], remember: <>{mmMark(60)} means 60 beats a minute -- one every second.</> },
   ];
   if (id === 'terms') return [
-    { remember: 'Every term belongs to a family: Speed, Changing speed, Volume or Other.' },
+    { swap: [[isType(TermSort), <PaperFamilies/>]], remember: 'Every term belongs to a family: Speed, Changing speed, Volume or Other.' },
     { remember: 'Say each Italian word out loud -- it helps you remember it.' },
-    {},
-    { remember: 'Little words change the word next to them: molto = very, poco = a little, sempre = always.' },
+    { add: <Rule title="Two traps in the lists so far"><b>rit.</b> can be short for <i>ritardando</i> (gradually slower) or <i>ritenuto</i> (immediately slower, held back) -- the music tells you which. <b>mosso</b> means “moved”: <i>più mosso</i> = more movement (quicker), <i>meno mosso</i> = less movement (slower).</Rule> },
+    { swap: [[isType(TermMixer), <PaperLittle/>]], remember: 'Little words change the word next to them: molto = very, poco = a little, sempre = always.' },
     {}, {},
     { swap: [[isType(TermMatch), <PaperQR text={<>Play term match in the app -- turn over two cards and find each word's meaning. Or cut out the charade cards on <b>Workbook page 3</b>!</>} params="drill=terms&lock=1" label="Term match"/>]] },
   ];
@@ -26754,7 +26754,7 @@ function LessonBookChapter({ id }) {
   const Learn = d && d.concept && d.concept.Learn;
   if (!Learn) return null;
   return (
-    <div className="bk-chapter">
+    <div className="bk-chapter" data-ch={id}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:16}}>
         <div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em'}}>{t('CHAPTER ' + bkChapterNo(id), bkChapterNo(id) + '장')}</div>
         <div style={{textAlign:'center'}}><QR url={bkLink('drill=' + id + '&lock=1')} size={70}/><div style={{fontSize:9.5,color:BK.muted,marginTop:2,width:90}}>{t('Try it in the app', '앱에서 해 보기')}</div></div>
@@ -26768,6 +26768,8 @@ function LessonBookChapter({ id }) {
 // The Lesson Book re-uses the app's Learn pages, so some sentences still talk about tapping, pressing and scores.
 // LessonFix rewrites those on the page itself (text nodes), hides screen-only counters, and keeps headings with their cards.
 const PAPER_TXT = [
+  [/^Grade 3$/, 'Turn it upside down', 'intervals'],
+  [/^[A-G][♯♭]$/, '', 'note-names'],
   // posture-hands
   [/then tap \+1 for each time/, 'then add a tally mark each time'],
   [/^Move your mouse \(or finger\) over the diagram -- up\/down changes wrist height, left\/right changes how far back you’re sitting\. Watch/, 'Study the diagram: wrist height and sitting distance both change the picture. Watch'],
@@ -26871,14 +26873,17 @@ const PAPER_HIDE = [
 function paperFix(root) {
   const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   const nodes = []; let nd; while ((nd = w.nextNode())) nodes.push(nd);
-  nodes.forEach(n => { const o = n.nodeValue; let v = o; PAPER_TXT.forEach(([re, rep]) => { v = v.replace(re, rep); }); if (v !== o) n.nodeValue = v; });
-  root.querySelectorAll('span,div,p,b').forEach(el => {
+  nodes.forEach(n => { const o = n.nodeValue; let v = o; const bc = n.parentElement && n.parentElement.closest('.bk-chapter'), ch = bc && bc.getAttribute('data-ch'); PAPER_TXT.forEach(([re, rep, only]) => { if (!only || only === ch) v = v.replace(re, rep); }); if (v !== o) n.nodeValue = v; });
+  root.querySelectorAll('span,div,p,b,button').forEach(el => {
     if (el.children.length) return;
     const tx = el.textContent;
     if (PAPER_HIDE.some(re => re.test(tx))) el.style.display = 'none';
+    else if (el.tagName === 'BUTTON' && /^[♪▶]$/.test(tx.trim())) el.style.display = 'none';
     else if (/^Why they’re called the G clef and the F clef$/.test(tx)) el.style.breakAfter = 'avoid';
     else if (/^The dot pulses with the beat\.$/.test(tx) && el.parentElement) el.parentElement.style.display = 'none';
   });
+  // never leave a REMEMBER line alone at the top of a page: its picture moves with it
+  root.querySelectorAll('.bk-rem').forEach(r => { let q = r.previousElementSibling; for (let k = 0; q && k < 3; k++) { q.style.breakAfter = 'avoid'; q = q.lastElementChild; } });
   // keep a short step (heading, text and picture) on one page; long steps flow
   root.querySelectorAll('section').forEach(sec => { if (sec.offsetHeight <= 500) sec.style.breakInside = 'avoid'; });
 }
@@ -27052,6 +27057,80 @@ function PaperEras() {
 }
 
 
+// ─── Phase 316 (pass 4, chunk 3): Intervals, Musical terms and Note names for paper ───
+const BkNote = ({ children }) => <div style={{margin:'6px 0 2px',fontSize:12.5,color:BK.muted,lineHeight:1.5,fontStyle:'italic'}}>{children}</div>;
+function PaperFamilies() {
+  const FAM = [['Speed', 'Speed'], ['Changing speed', 'Changing speed'], ['Volume', 'Loud and soft'], ['Other', 'Mood and touch']];
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Four families of terms</div>
+      <p style={actNote}>Almost every term answers one question: how fast? is it changing speed? how loud? or how should it feel and sound? Each family has its own question.</p>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+        {FAM.map(([cat, name]) => <div key={cat} style={{border:'1px solid #ece6d8',borderRadius:10,padding:'7px 10px',breakInside:'avoid'}}>
+          <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3}}><FamilyIcon cat={cat}/><b style={{fontSize:14.5,color:BK.ink}}>{name}</b></div>
+          {TERMS.filter(x => x.grade === 1 && x.cat === cat && !SORT_SKIP.has(x.term)).slice(0, 4).map(x => <div key={x.term} style={{fontSize:12,color:BK.ink,lineHeight:1.45}}><b style={{fontStyle:'italic'}}>{x.term}</b> -- {x.meaning}</div>)}
+        </div>)}
+      </div>
+    </div>
+  );
+}
+function PaperLittle() {
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Little words, big changes</div>
+      <p style={actNote}>Some terms are not used alone. A little word in front of (or after) a main word changes its meaning.</p>
+      <div style={{display:'flex',flexWrap:'wrap',gap:6,marginBottom:8}}>{TM_LITTLE.map(([w, m]) => <span key={w} style={{border:'1.5px solid ' + BK.coral,borderRadius:14,padding:'2px 10px',fontSize:12.5,color:BK.ink}}><b style={{fontStyle:'italic'}}>{w}</b> = {m}</span>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'6px 12px'}}>{TM_COMBOS.map(([c, m]) => <div key={c} style={{borderBottom:'1px solid #f1ece0',padding:'3px 0',fontSize:13,color:BK.ink}}><b style={{fontFamily:"'Playfair Display', Georgia, serif",fontStyle:'italic',fontSize:15}}>{c}</b> = {m}</div>)}</div>
+    </div>
+  );
+}
+
+
+// Phase 316: compact paper versions of the Grade 3 inversion and tritone tools
+function PaperInversion() {
+  const a = { d: 28, acc: 0 }, b = ivBuild(a, 3, 'M'), up = { d: 35, acc: 0 };
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Turn an interval upside down</div>
+      <div style={actNote}>Move the bottom note up an octave and the interval <b>inverts</b>. The two numbers always add up to <b>9</b>; major ↔ minor, augmented ↔ diminished, perfect stays perfect.</div>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:14,marginTop:6}}>
+        <div style={{flex:1,maxWidth:270}}>
+          <IntervalStaff notes={[a, b]} colors={['#e4572e', '#26296b']} labels={[ivName(a), ivName(b)]} width={220}/>
+          <div style={{textAlign:'center',fontSize:14,fontWeight:900,marginTop:2}}>major 3rd</div>
+        </div>
+        <div style={{fontSize:26,fontWeight:900,color:'#e4572e'}}>⇄</div>
+        <div style={{flex:1,maxWidth:270}}>
+          <IntervalStaff notes={[b, up]} colors={['#26296b', '#e4572e']} labels={[ivName(b), ivName(up)]} width={220}/>
+          <div style={{textAlign:'center',fontSize:14,fontWeight:900,marginTop:2}}>minor 6th</div>
+        </div>
+      </div>
+      <div style={{textAlign:'center',fontSize:13,color:'#6d6f9c',marginTop:4}}>3 + 6 = 9 · major → minor · the red note jumps from bottom to top</div>
+    </div>
+  );
+}
+function PaperTritone() {
+  const f = { d: 31, acc: 0 }, bb = ivBuild(f, 4, 'A');
+  const b0 = { d: 34, acc: 0 }, ff = ivBuild(b0, 5, 'd');
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>The tritone: augmented 4th and diminished 5th</div>
+      <div style={actNote}>Six semitones -- three whole tones, so it’s called the <b>tritone</b>. Written as a 4th it’s <b>augmented</b> (F up to B); written as a 5th it’s <b>diminished</b> (B up to F). They sound the same size -- and they invert into each other.</div>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:14,marginTop:6}}>
+        <div style={{flex:1,maxWidth:270}}>
+          <IntervalStaff notes={[f, bb]} colors={['#26296b', '#7a64a8']} labels={[ivName(f), ivName(bb)]} width={220}/>
+          <div style={{textAlign:'center',fontSize:14,fontWeight:900,marginTop:2}}>F → B: 4 letters = <span style={{color:'#7a64a8'}}>augmented 4th</span></div>
+        </div>
+        <div style={{fontSize:26,fontWeight:900,color:'#e4572e'}}>⇄</div>
+        <div style={{flex:1,maxWidth:270}}>
+          <IntervalStaff notes={[b0, ff]} colors={['#26296b', '#7a64a8']} labels={[ivName(b0), ivName(ff)]} width={220}/>
+          <div style={{textAlign:'center',fontSize:14,fontWeight:900,marginTop:2}}>B → F: 5 letters = <span style={{color:'#7a64a8'}}>diminished 5th</span></div>
+        </div>
+      </div>
+      <div style={{textAlign:'center',fontSize:13,color:'#6d6f9c',marginTop:4}}>6 semitones, either way</div>
+    </div>
+  );
+}
+
 function BookRoot({ kind, ch }) {
   BOOK = true;
   try { document.documentElement.lang = LANG; } catch (e) {} // lets the browser pick a Korean font for Hangul
@@ -27066,6 +27145,7 @@ function BookRoot({ kind, ch }) {
        .bk-lesson .try-box { break-inside: avoid; box-shadow: none !important; border-color: #d9d3c4 !important; }
        .bk-lesson .ghost-btn, .bk-lesson .primary-btn, .bk-lesson input, .bk-lesson button.chip, .bk-lesson .no-book { display: none !important; }
        .bk-lesson h2 { font-size: 34px !important; }
+       .bk-lesson .try-box { margin-bottom: 10px !important; }
        .bk-lesson .try-box::before { display: none; }
        .bk-lesson svg, .bk-lesson [style*="border-radius"] { break-inside: avoid; }
        @media print { .no-print { display: none !important } }`;
