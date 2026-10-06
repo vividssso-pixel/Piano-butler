@@ -26561,6 +26561,13 @@ function bookExtras(id) {
     { remember: 'Fingers are numbered 1 to 5 from the thumb, on both hands.' },
     { remember: 'Check your posture before every practice: chair, feet, back, elbows, hands.' },
   ];
+  if (id === 'pitch-range') return [
+    { swap: [[isType(HzExplorer), <PaperHz/>]], remember: 'Faster vibrations = a higher note. An octave doubles the frequency.' },
+    { swap: [[isType(StringLab), <PaperStrings/>]], remember: 'Shorter or tighter string: higher note. Longer or looser: lower.' },
+    { swap: [[isType(SizePitch), <PaperSizePitch/>]], remember: 'Big is low, small is high.' },
+    { swap: [[isType(OctaveLadder), <PaperLadder/>]], remember: 'Each A is an octave above the one below: exactly twice the Hz.' },
+    { swap: [[isType(RangeChart), <PaperRanges/>]], keep: true, remember: 'The piano covers nearly the whole range of the orchestra.' },
+  ];
   if (id === 'rhythm') return [
     { remember: 'Count out loud under every card: held beats in brackets, “&” for the second quaver.' },
     { remember: 'Dotted crotchet + quaver: 1 (2) &. Semiquavers: 1 e & a. Triplets: 1 trip-let.' },
@@ -27503,6 +27510,165 @@ function PaperOttava() {
       <div style={actTitle}>8va and 8vb</div>
       <div style={actNote}><b>8va</b> (ottava) over the notes = play them an octave <b>higher</b>. <b>8vb</b> under the notes = an octave <b>lower</b>. The dotted line shows how long it lasts. It saves writing lots of ledger lines.</div>
       <div style={{display:'grid',gap:10,marginTop:6}}>{card('8va')}{card('8vb')}</div>
+    </div>
+  );
+}
+// ─── Phase 322: Pitch, Hz and range on paper ───
+// Hertz: the same window of sound for three A's, so the doubling can be counted.
+function PaperHz() {
+  const W = 300;
+  const wave = (m) => { const f = mFreq(m), cycles = f * 0.02, pts = []; for (let i = 0; i <= 300; i++) pts.push(i + ',' + (40 - 26 * Math.sin(2 * Math.PI * cycles * i / W)).toFixed(1)); return pts.join(' '); };
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>How high is a note? Hertz</div>
+      <div style={actNote}>A note is a vibration. <b>Hertz (Hz)</b> = vibrations per second. The faster the string vibrates, the higher the note. A4 (the A above middle C) is <b>440 Hz</b> -- the note orchestras tune to. Here is the same slice of time (one fiftieth of a second) for three A's -- count the waves.</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3, 1fr)',gap:8,marginTop:6}}>
+        {[57, 69, 81].map(m => (
+          <div key={m} style={pmlCard}>
+            <svg viewBox="0 10 300 60" style={{width:'100%',display:'block'}}><line x1="0" x2="300" y1="40" y2="40" stroke="#e9e2d2"/><polyline points={wave(m)} fill="none" stroke="#e4572e" strokeWidth="1.8"/></svg>
+            <div style={{textAlign:'center'}}><span style={{fontSize:20,fontWeight:900,color:BK.ink}}>{midiName(m)}</span> <span style={{fontSize:16,fontWeight:900,color:BK.coral}}>{fmtHz(mFreq(m))}</span><div style={{fontSize:11.5,color:BK.muted}}>{Math.round(mFreq(m))} vibrations every second</div></div>
+          </div>
+        ))}
+      </div>
+      <div style={{fontSize:13,background:'#fff',border:'1px solid #ece6d8',borderRadius:8,padding:'6px 9px',lineHeight:1.5,marginTop:8,color:BK.ink}}>
+        <b>An octave doubles it.</b> A3 = 220, A4 = 440, A5 = 880 Hz. Going up a semitone multiplies by about 1.06 (the twelfth root of 2), so 12 semitones = ×2.
+        <div style={{marginTop:3}}>People hear from about <b>20 Hz</b> to <b>20,000 Hz</b> (less as we get older). The piano's notes go from 27.5 Hz (A0, the lowest key) to 4186 Hz (C8, the highest) -- but each note also has higher overtones, which is what makes a piano sound like a piano.</div>
+      </div>
+    </div>
+  );
+}
+
+// The string: one string, five ways.
+function PaperStrings() {
+  const NUT = 22, BRIDGE = 300, Y = 30;
+  const rows = [[1, 'normal', 'Whole string'], [0.75, 'normal', '¾ of the string'], [0.5, 'normal', 'Half the string'], [1, 'loose', 'Loose (whole string)'], [1, 'tight', 'Tight (whole string)']];
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Shorter, tighter, higher</div>
+      <div style={actNote}>A string's note changes with its length and how tight it is. A finger pressed on the string shortens the part that vibrates. Here is one string, five ways.</div>
+      <div style={{display:'grid',gap:4,marginTop:6}}>
+        {rows.map(([len, ten, label], i) => {
+          const f = mFreq(STRING_OPEN + TENSION[ten]) / len, midi = 69 + 12 * Math.log2(f / 440), fx = NUT + (1 - len) * (BRIDGE - NUT), mid = (fx + BRIDGE) / 2;
+          return (
+            <div key={i} style={{...pmlCard,display:'flex',alignItems:'center',gap:14}}>
+              <div style={{flex:'0 0 62%'}}>
+                <svg viewBox="0 -4 320 58" style={{width:'100%',display:'block'}}>
+                  <rect x={NUT - 8} y={Y - 14} width="8" height="28" rx="2" fill="#26296b"/>
+                  <path d={`M${BRIDGE} ${Y + 12} L${BRIDGE + 7} ${Y + 12} L${BRIDGE + 3.5} ${Y - 4} Z`} fill="#26296b"/>
+                  <line x1={NUT} x2={fx} y1={Y} y2={Y} stroke="#6d6f9c" strokeOpacity="0.45" strokeWidth="2"/>
+                  <path d={`M${fx} ${Y} Q${mid} ${Y - 10} ${BRIDGE} ${Y}`} fill="none" stroke="#26296b" strokeOpacity="0.35" strokeWidth="2" strokeLinecap="round"/>
+                  <path d={`M${fx} ${Y} Q${mid} ${Y + 10} ${BRIDGE} ${Y}`} fill="none" stroke="#26296b" strokeWidth="2.6" strokeLinecap="round"/>
+                  <circle cx={fx} cy={Y} r="6.5" fill="#e4572e" stroke="#fffefa" strokeWidth="2"/>
+                  <line x1={fx} x2={BRIDGE} y1={9} y2={9} stroke="#e4572e" strokeWidth="1.5"/>
+                  <line x1={fx} x2={fx} y1={5} y2={13} stroke="#e4572e" strokeWidth="1.5"/><line x1={BRIDGE} x2={BRIDGE} y1={5} y2={13} stroke="#e4572e" strokeWidth="1.5"/>
+                  <text x={(fx + BRIDGE) / 2} y={6} textAnchor="middle" fontSize="9.5" fontWeight="800" fill="#e4572e">vibrating part · {Math.round(len * 100)}%</text>
+                </svg>
+              </div>
+              <div>
+                <div style={{fontSize:13,fontWeight:900,color:BK.ink}}>{label}</div>
+                <div><span style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:21,fontWeight:900,color:BK.ink}}>{midiName(Math.round(midi))}</span> <span style={{fontSize:15,fontWeight:900,color:BK.coral}}>{fmtHz(f)}</span></div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{fontSize:13,color:BK.ink,lineHeight:1.5,marginTop:8}}>Shorter or tighter: faster vibrations, higher note. Longer or looser: slower, lower. That's how a violinist's fingers change the note -- and why a piano's high strings are short and its low strings long. Half the string = an octave up.</div>
+    </div>
+  );
+}
+
+// The octave ladder with every number showing, and the doubling written between the rungs.
+function PaperLadder() {
+  const hz = (m) => Math.round(mFreq(m)), maxHz = hz(LADDER[LADDER.length - 1]), BW = 200;
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>The octave ladder</div>
+      <div style={actNote}>Each A is an octave above the one below -- it vibrates exactly twice as fast. The bars are drawn to scale.</div>
+      <div style={{display:'flex',flexDirection:'column-reverse',gap:3,marginTop:6}}>
+        {LADDER.map((m, k) => (
+          <div key={m} style={{display:'flex',alignItems:'center',gap:10}}>
+            <span style={{width:32,fontFamily:"'Playfair Display', Georgia, serif",fontWeight:900,fontSize:15,color:BK.ink}}>{midiName(m)}</span>
+            <span style={{height:12,width:Math.max(10, hz(m) / maxHz * BW),borderRadius:6,background:BK.ink}}/>
+            <span style={{fontSize:14,fontWeight:900,color:BK.ink,whiteSpace:'nowrap'}}>{hz(m)} Hz</span>
+            {k > 0 && <span style={{fontSize:12,fontWeight:900,color:BK.coral,whiteSpace:'nowrap'}}>× 2 from {midiName(LADDER[k - 1])}</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Who plays where: the instrument ranges over the 88 keys, and (second chart) how the piano's own range grew.
+function PaperRanges() {
+  const x = (m) => 8 + (m - 21) * 3.9;
+  const whites = []; for (let m = 21; m <= 108; m++) if ([0, 2, 4, 5, 7, 9, 11].includes(m % 12)) whites.push(m);
+  const chart = (hist) => {
+    const groups = RANGES.filter(g => !!g.hist === hist);
+    let y = 0; const rowsDraw = [];
+    groups.forEach(g => { rowsDraw.push({ head: g.g, y, c: g.c }); y += 12; g.rows.forEach(r => { rowsDraw.push({ r: ALL_RANGES.find(a => a.name === r[0]), y }); y += 12; }); y += 2; });
+    const H = y + 2;
+    return (
+      <svg viewBox={`0 -26 360 ${H + 28}`} style={{width:'100%',maxWidth:hist ? '70%' : '70%',display:'block',margin:'0 auto'}}>
+        {[21, 33, 45, 57, 69, 81, 93, 105].map(m => <g key={m}><line x1={x(m)} x2={x(m)} y1={-8} y2={H + 4} stroke="#e9e3d4"/><text x={x(m)} y={-14} fontSize="7" fontWeight="800" textAnchor="middle" fill="#7f81a8">{midiName(m)}</text><text x={x(m)} y={-7} fontSize="5.5" fontWeight="700" textAnchor="middle" fill="#e4572e">{fmtHz(mFreq(m))}</text></g>)}
+        <line x1={x(60)} x2={x(60)} y1={-8} y2={H + 4} stroke="#e4572e" strokeDasharray="2 2"/>
+        {rowsDraw.map((d, i) => d.head ? <text key={i} x="8" y={d.y + 9} fontSize="8" fontWeight="900" fill={d.c} letterSpacing="0.06em">{rangeName(d.head).toUpperCase()}</text> : (
+          <g key={i}>
+            <rect x={x(d.r.lo) - 1.5} y={d.y + 2} width={x(d.r.hi) - x(d.r.lo) + 3} height="9" rx="4.5" fill={d.r.c} opacity="0.7"/>
+            {(() => { const nme = rangeName(d.r.name), w = nme.length * 3.8, right = x(d.r.hi) + 5 + w < 358, left = x(d.r.lo) - 4 - w > 0;
+              const tx = right ? x(d.r.hi) + 5 : left ? x(d.r.lo) - 4 : x(d.r.lo) + 6;
+              return <text x={tx} y={d.y + 9.5} fontSize="7.5" fontWeight="700" textAnchor={right || !left ? 'start' : 'end'} fill={right || left ? '#26296b' : '#fff'}>{nme}</text>; })()}
+          </g>
+        ))}
+        <text x={x(60)} y={H + 10} fontSize="7" fontWeight="800" textAnchor="middle" fill="#e4572e">middle C</text>
+      </svg>
+    );
+  };
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Who plays where?</div>
+      <div style={actNote}>Every bar is laid over the 88 keys of the piano. The piano covers almost everything in the orchestra -- only the piccolo's very top and a few low organ pipes go further.</div>
+      <div style={{background:'#fff',borderRadius:10,padding:'6px 4px'}}>{chart(false)}</div>
+      <div style={{fontSize:12.5,fontWeight:900,color:BK.ink,margin:'8px 2px 2px'}}>The piano through history</div>
+      <div style={{fontSize:12,color:BK.muted,margin:'0 2px 4px'}}>The keyboard grew from about four octaves to seven and a quarter.</div>
+      <div style={{background:'#fff',borderRadius:10,padding:'6px 4px'}}>{chart(true)}</div>
+    </div>
+  );
+}
+
+
+// Big is low, small is high: the xylophone and the whole violin family in one row.
+function PaperSizePitch() {
+  const W = 320, bw = 30, gap = 6, x0 = (W - (XYLO.length * bw + (XYLO.length - 1) * gap)) / 2, xyH = (i) => 76 - i * 5.6;
+  const fam = [0, 1, 2, 3];
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Big is low, small is high</div>
+      <div style={actNote}>Smaller things vibrate faster, so they sound higher. A xylophone's bars go from big (low) to small (high). The violin family does the same thing in four sizes.</div>
+      <svg viewBox="0 20 320 108" style={{width:'100%',maxWidth:400,display:'block',margin:'0 auto'}}>
+        <line x1={x0 - 6} x2={W - x0 + 6} y1={60 - xyH(0) / 2 + 9} y2={60 - xyH(7) / 2 + 9} stroke="#6d6f9c" strokeWidth="2" strokeLinecap="round"/>
+        <line x1={x0 - 6} x2={W - x0 + 6} y1={60 + xyH(0) / 2 - 9} y2={60 + xyH(7) / 2 - 9} stroke="#6d6f9c" strokeWidth="2" strokeLinecap="round"/>
+        {XYLO.map((m, i) => { const h = xyH(i), x = x0 + i * (bw + gap), y = 60 - h / 2;
+          return <g key={m}>
+            <rect x={x} y={y} width={bw} height={h} rx="5" fill="#26296b"/>
+            <circle cx={x + bw / 2} cy={y + 9} r="2.2" fill="#fffefa" opacity="0.7"/><circle cx={x + bw / 2} cy={y + h - 9} r="2.2" fill="#fffefa" opacity="0.7"/>
+            <text x={x + bw / 2} y="120" textAnchor="middle" fontSize="11" fontWeight="800" fill="#6d6f9c">{'CDEFGABC'[i]}</text>
+          </g>; })}
+      </svg>
+      <div style={{borderTop:'1px dashed #d9d3c4',marginTop:6,paddingTop:6}}>
+        <svg viewBox="0 0 320 204" style={{width:'100%',maxWidth:420,display:'block',margin:'0 auto'}}>
+          <line x1="14" x2="306" y1="150" y2="150" stroke="#26296b" strokeOpacity="0.3"/>
+          <text x="16" y="199" fontSize="10" fontWeight="800" fill="#e4572e">smallest = highest</text>
+          <text x="304" y="199" textAnchor="end" fontSize="10" fontWeight="800" fill="#e4572e">biggest = lowest</text>
+          <line x1="112" x2="206" y1="196" y2="196" stroke="#e4572e" strokeWidth="1.4"/><path d="M206 196 l-5 -3 v6 Z" fill="#e4572e"/>
+          {fam.map(v => { const cx = 48 + v * 75;
+            return <g key={v}>
+              <StringFamilyShape h={VFAM[v].h} x={cx} base={148} on={false}/>
+              <text x={cx} y="165" textAnchor="middle" fontSize="11.5" fontWeight="800" fill="#26296b">{VFAM[v].en}</text>
+              <text x={cx} y="179" textAnchor="middle" fontSize="9.5" fontWeight="800" fill="#e4572e">{midiName(VFAM[v].low)} · {fmtHz(mFreq(VFAM[v].low))}</text>
+            </g>; })}
+        </svg>
+        <div style={{fontSize:12,color:BK.muted,textAlign:'center',marginTop:2}}>The orange label under each name is its lowest open string.</div>
+      </div>
     </div>
   );
 }
