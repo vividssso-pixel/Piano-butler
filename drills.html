@@ -4740,10 +4740,16 @@ function FlatShape({ x, y, color }) {
     </g>
   );
 }
+function DoubleSharpShape({ x, y, color }) {
+  const r = 4.4;
+  return <path d={`M${x - r},${y - r} L${x + r},${y + r} M${x - r},${y + r} L${x + r},${y - r}`} stroke={color} strokeWidth="2.7" strokeLinecap="butt" fill="none"/>;
+}
 function KSStaff({ count, type, width = 170, ink = '#26296b', accent = '#e4572e', upto, clef = 'treble', numbers }) {
   const order = type === 'sharp' ? SHARP_ORDER : FLAT_ORDER;
   const posMap = type === 'sharp' ? SHARP_POS : FLAT_POS;
-  const accs = type ? order.slice(0, count) : [];
+  const dbl = type ? Math.max(0, count - 7) : 0; // paper-only keys: the first (count - 7) signs are double
+  const accs = type ? order.slice(0, Math.min(count, 7)) : [];
+  const xs = []; { let cx = 56; accs.forEach((a, i) => { const d = i < dbl; xs.push(cx + (d ? (type === 'flat' ? 6 : 3) : 0)); cx += d ? (type === 'flat' ? 25 : 19) : 15; }); }
   const base = 70; // y of the bottom line
   const shift = clef === 'bass' ? -2 : 0;
   const yPos = (pos) => base - (pos + shift) * 5;
@@ -4755,8 +4761,9 @@ function KSStaff({ count, type, width = 170, ink = '#26296b', accent = '#e4572e'
       {[0, 2, 4, 6, 8].map(p => <line key={p} x1="4" x2={width - 4} y1={base - p * 5} y2={base - p * 5} stroke={ink} strokeOpacity="0.5" strokeWidth="1.1"/>)}
       <ClefGlyph clef={clef} st={clef} yOf={yOf} ink={ink}/>
       {accs.map((acc, i) => {
-        const x = 56 + i * 15, y = yPos(posMap[acc]);
+        const x = xs[i], y = yPos(posMap[acc]);
         const col = upto !== undefined && i === upto ? '#c8361b' : accent;
+        if (i < dbl) return type === 'sharp' ? <DoubleSharpShape key={acc} x={x} y={y} color={col}/> : <g key={acc}><FlatShape x={x - 5} y={y} color={col}/><FlatShape x={x + 4.5} y={y} color={col}/></g>;
         return type === 'sharp' ? <SharpShape key={acc} x={x} y={y} color={col}/> : <FlatShape key={acc} x={x} y={y} color={col}/>;
       })}
     </svg>
@@ -6425,6 +6432,19 @@ function playScaleNotes(rootPc, offsets) {
 // Phase 317: ONE scale finder (it replaces the separate "Practise the fingering" step, which did the same job).
 // Black-key scales show BOTH spellings -- two key signatures and two sets of note names for the same keys.
 const SF_CANON = { Gb: 'F#', Db: 'C#', Cb: 'B' }; // major: one chip per pair of spellings
+// Phase 324: a key that exists only on paper (A♯ major, G♭ minor ...). Returns its scale spelling and signature size.
+function theoryKey(tonic, mode) {
+  const L = ['C', 'D', 'E', 'F', 'G', 'A', 'B'], NAT = [0, 2, 4, 5, 7, 9, 11];
+  const iv = mode === 'minor' ? [0, 2, 3, 5, 7, 8, 11] : [0, 2, 4, 5, 7, 9, 11];
+  const sigIv = mode === 'minor' ? [0, 2, 3, 5, 7, 8, 10] : iv; // the signature is the natural minor
+  const tpc = scalePcOf(tonic), start = L.indexOf(tonic[0]);
+  const dif = (i, ivs) => (((tpc + ivs[i] - NAT[(start + i) % 7] + 6) % 12) + 12) % 12 - 6;
+  const sym = { '-2': 'bb', '-1': 'b', '0': '', '1': '#', '2': 'x' };
+  const names = iv.map((_, i) => L[(start + i) % 7] + sym[dif(i, iv)]);
+  const sum = sigIv.reduce((a, _, i) => a + dif(i, sigIv), 0);
+  return { names, count: Math.abs(sum), type: sum > 0 ? 'sharp' : 'flat' };
+}
+function fmtTheory(n) { return n[0] + n.slice(1).replace(/x/g, '♯♯').replace(/bb/g, '♭♭').replace(/b/g, '♭').replace(/#/g, '♯'); }
 function scalePcOf(n) { return (({ C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 })[n[0]] + (n.indexOf('#') > 0 ? 1 : n.indexOf('b') > 0 ? -1 : 0) + 12) % 12; }
 function ScaleFinder({ ext, onKey } = {}) {
   const init = PENDING_SCALE || (() => { try { const p = new URLSearchParams(location.search); return parseScaleQuery((p.get('key') || '') + (p.get('mode') === 'minor' ? ' minor' : '')); } catch (e) { return null; } })() || (ext && SCALES[ext] ? { key: ext, mode: 'major' } : null) || { key: 'C', mode: 'major' };
@@ -6442,18 +6462,23 @@ function ScaleFinder({ ext, onKey } = {}) {
   const nameOf = (x) => mode === 'minor' ? x.minor : x.major;
   const myName = nameOf(ks), pc = scalePcOf(myName);
   const twinKs = ks.type ? KEY_SIGS.find(x => x !== ks && scalePcOf(nameOf(x)) === pc) : null;
-  const cards = twinKs ? [ks, twinKs] : [ks];
   const altRaw = (CHIP_ALSO[mode] || {})[key];
   const altName = altRaw ? altRaw.replace(/m$/, '') : '';
   const theory = !twinKs && ks.type && [1, 3, 6, 8, 10].includes(pc) && altName; // the other spelling exists only on paper
+  const thyTonic = theory ? altName.replace('♯', '#').replace('♭', 'b') : null;
+  const thy = theory ? theoryKey(thyTonic, mode) : null;
+  const cardList = twinKs ? [ks, twinKs].map(x => ({ name: nameOf(x), count: x.count, type: x.type }))
+    : thy ? [{ name: key, count: ks.count, type: ks.type }, { name: thyTonic, count: thy.count, type: thy.type, paper: true }]
+    : [{ name: key, count: ks.count, type: ks.type }];
+  const two = cardList.length === 2;
   const kindWord = mode === 'minor' ? t('minor', '단조') : t('major', '장조');
   function pick(k) { setKey(k); setQ(''); if (mode === 'major' && onKey) onKey(k); }
   function search(v) { setQ(v); const r = parseScaleQuery(v); if (r) { setKey(r.key); setMode(r.mode); if (r.mode === 'major' && onKey) onKey(r.key); } }
   const miss = q && !parseScaleQuery(q);
-  const noteRow = (nm, label) => { const ns = spellFor(nm, mode); return (
-    <div key={nm} style={{fontSize:16,fontWeight:800,margin:'4px 0',display:'flex',gap:8,flexWrap:'wrap',alignItems:'baseline'}}>
+  const noteRow = (nm, label, paper) => { const ns = paper ? thy.names : spellFor(nm, mode); return (
+    <div key={nm} style={{fontSize:paper ? 14 : 16,fontWeight:800,margin:'4px 0',display:'flex',gap:paper ? 5 : 8,flexWrap:'wrap',alignItems:'baseline',opacity:paper ? 0.62 : 1}}>
       {label && <span style={{fontSize:12,fontWeight:900,color:'var(--muted)',minWidth:34}}>{prettyNote(nm)}</span>}
-      {ns.concat([ns[0]]).map((n, i) => <span key={i} style={{color:mode === 'minor' && i === 6 ? '#e4572e' : 'var(--text)'}}>{prettyAny(n)}</span>)}
+      {ns.concat([ns[0]]).map((n, i) => <span key={i} style={{color:mode === 'minor' && i === 6 ? '#e4572e' : 'var(--text)'}}>{paper ? fmtTheory(n) : prettyAny(n)}</span>)}
     </div>); };
   return (
     <div className="try-box" style={actBox}>
@@ -6470,17 +6495,19 @@ function ScaleFinder({ ext, onKey } = {}) {
             <div style={{fontSize:22,fontWeight:900}}>{twinKs ? prettyNote(myName) + ' / ' + prettyNote(nameOf(twinKs)) : prettyNote(key)} {mode === 'minor' ? t('harmonic minor', '화성 단음계') : t('major', '장조')}</div>
             <div style={{fontSize:13,fontWeight:800,color:'var(--muted)'}}>{twinKs ? t('The same keys on the piano -- written two ways.', '피아노에서는 같은 건반 -- 적는 방법만 두 가지예요.') : (LANG === 'ko' && ks.count === 0 ? '샵·플랫 없음' : sigLabel(ks))}{mode === 'minor' && !twinKs ? t(' · raised 7th: ', ' · 올린 7음: ') + prettyAny(names[6]) : ''}</div>
           </div>
-          <div style={{display:'flex',gap:10,alignItems:'flex-start'}}>
-            {cards.map(x => (
-              <div key={nameOf(x)} style={{width:twinKs ? 112 : 130,textAlign:'center'}}>
-                {twinKs && <div style={{fontSize:12.5,fontWeight:900,color:'var(--text)'}}>{prettyNote(nameOf(x))} {kindWord} · <span style={{color:'#e4572e'}}>{sigLabel(x)}</span></div>}
-                <KSStaff count={x.count} type={x.type} width={twinKs ? 112 : 130}/>
+          <div style={two ? {display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,alignItems:'flex-start',flex:'1 1 300px',maxWidth:420} : {display:'flex',gap:10,alignItems:'flex-start'}}>
+            {cardList.map(x => (
+              <div key={x.name} style={{width:two ? 'auto' : 130,textAlign:'center',...(x.paper ? {border:'1.5px dashed #c9c0aa',borderRadius:10,padding:'3px 2px 2px'} : {})}}>
+                {two && <div style={{fontSize:12.5,fontWeight:900,color:'var(--text)'}}>{x.paper ? fmtTheory(x.name) : prettyNote(x.name)} {kindWord} · <span style={{color:'#e4572e'}}>{sigLabel(x)}</span></div>}
+                {x.paper && <div style={{fontSize:11,fontWeight:800,color:'var(--muted)'}}>{t('only on paper', '종이 위에서만')}</div>}
+                <KSStaff count={x.count} type={x.type} width={two ? 176 : 130}/>
               </div>
             ))}
           </div>
         </div>
-        <div style={{margin:'6px 0 10px'}}>{twinKs ? cards.map(x => noteRow(nameOf(x), true)) : noteRow(key, false)}</div>
-        {theory && <div style={{fontSize:12.5,color:'#6d6f9c',margin:'-4px 0 10px',lineHeight:1.5}}>{t(altName + ' ' + (mode === 'minor' ? 'minor' : 'major') + ' would need double ' + (ks.type === 'flat' ? 'sharps' : 'flats') + ', so it is always written as ' + prettyNote(key) + '.', altName + ' ' + kindWord + '은(는) 겹' + (ks.type === 'flat' ? '샵' : '플랫') + '이 필요해서, 늘 ' + prettyNote(key) + ' ' + kindWord + '으로 적어요.')}</div>}
+        <div style={{margin:'6px 0 10px'}}>{twinKs ? cardList.map(x => noteRow(x.name, true)) : thy ? [noteRow(key, true), noteRow(thyTonic, true, true)] : noteRow(key, false)}</div>
+        {thy && (() => { const sh = thy.type === 'sharp', nd = thy.count - 7, dbls = (sh ? SHARP_ORDER : FLAT_ORDER).slice(0, nd).map(a => a[0] + (sh ? '♯♯' : '♭♭')).join(', ');
+          return <div style={{fontSize:12.5,color:'#6d6f9c',margin:'-4px 0 10px',lineHeight:1.5}}>{t(altName + ' ' + (mode === 'minor' ? 'minor' : 'major') + ' would need ' + thy.count + ' ' + (sh ? 'sharps' : 'flats') + ', including ' + (nd === 1 ? 'a double ' + (sh ? 'sharp' : 'flat') : 'double ' + (sh ? 'sharps' : 'flats')) + ' (' + dbls + '), so it only exists on paper. Everyone writes ' + prettyNote(key) + ' ' + (mode === 'minor' ? 'minor' : 'major') + ' instead.', altName + ' ' + kindWord + '은(는) ' + (sh ? '샵' : '플랫') + '이 ' + thy.count + '개나 필요하고 겹' + (sh ? '샵' : '플랫') + '(' + dbls + ')까지 들어가서 종이 위에서만 존재해요. 그래서 늘 ' + prettyNote(key) + ' ' + kindWord + '으로 적어요.')}</div>; })()}
         <div style={{fontSize:12,fontWeight:900,color:'var(--muted)',letterSpacing:'0.05em',marginBottom:4}}>{t('RIGHT HAND', '오른손')}</div>
         <ScaleKeyboard rootPc={info.rootPc} offsets={e.offsets} fingers={e.RH} hand="RH"/>
         <div style={{fontSize:12,fontWeight:900,color:'var(--muted)',letterSpacing:'0.05em',margin:'10px 0 4px'}}>{t('LEFT HAND', '왼손')}</div>
@@ -27146,25 +27173,36 @@ function PaperAccBar() {
 // the scales that have two names (same keys on the piano, two ways to write the key signature).
 function PaperTwins() {
   const major = [['F#', 'Gb'], ['C#', 'Db'], ['B', 'Cb']], minor = [['G#', 'Ab'], ['D#', 'Eb'], ['A#', 'Bb']];
+  const paperOnly = [['major', 'Ab', 'G#'], ['major', 'Bb', 'A#'], ['major', 'Eb', 'D#'], ['minor', 'C#', 'Db'], ['minor', 'F#', 'Gb']];
+  const stave = (n, k, w) => <div key={n} style={{flex:1,textAlign:'center'}}><div style={{fontSize:11,fontWeight:800,color:BK.coral}}>{prettyNote(n)} · {sigLabel(k)}</div><KSStaff count={k.count} type={k.type} width={w}/></div>;
   const card = (mode, a, b) => {
     const nm = (k) => mode === 'minor' ? k.minor : k.major;
     const ka = KEY_SIGS.find(k => nm(k) === a), kb = KEY_SIGS.find(k => nm(k) === b);
+    const w = 56 + (Math.max(ka.count, kb.count) - 1) * 15 + 12; // room for every accidental
     return (
-      <div key={a} style={{border:'1.5px solid ' + BK.line,borderRadius:10,padding:'7px 7px 4px',breakInside:'avoid'}}>
-        <div style={{fontSize:13,fontWeight:900,color:BK.ink,textAlign:'center'}}>{prettyNote(a)} / {prettyNote(b)} {mode}</div>
-        <div style={{display:'flex',gap:6,marginTop:3}}>
-          {[[ka, a], [kb, b]].map(([k, n]) => <div key={n} style={{flex:1,textAlign:'center'}}><div style={{fontSize:11.5,fontWeight:800,color:BK.coral}}>{prettyNote(n)} · {sigLabel(k)}</div><KSStaff count={k.count} type={k.type} width={92}/></div>)}
-        </div>
+      <div key={a} style={{border:'1.5px solid ' + BK.line,borderRadius:10,padding:'5px 6px 3px',breakInside:'avoid'}}>
+        <div style={{fontSize:12.5,fontWeight:900,color:BK.ink,textAlign:'center'}}>{prettyNote(a)} / {prettyNote(b)} {mode}</div>
+        <div style={{display:'flex',gap:4,marginTop:1}}>{[stave(a, ka, w), stave(b, kb, w)]}</div>
+      </div>
+    );
+  };
+  const paperCard = ([mode, real, other]) => {
+    const kr = KEY_SIGS.find(k => (mode === 'minor' ? k.minor : k.major) === real), th = theoryKey(other, mode);
+    return (
+      <div key={other} style={{border:'1.5px dashed ' + BK.line,borderRadius:10,padding:'4px 4px 3px',breakInside:'avoid',textAlign:'center'}}>
+        <div style={{fontSize:11,fontWeight:900,color:BK.ink,whiteSpace:'nowrap'}}>{fmtTheory(other)} {mode === 'minor' ? 'min' : 'maj'} · <span style={{color:BK.coral}}>{th.count}{th.type === 'sharp' ? '♯' : '♭'}</span></div>
+        <KSStaff count={th.count} type={th.type} width={176}/>
+        <div style={{fontSize:10,color:BK.muted,lineHeight:1.25,whiteSpace:'nowrap'}}>= {prettyNote(real)} {mode === 'minor' ? 'min' : 'maj'} ({sigLabel(kr)})</div>
       </div>
     );
   };
   return (
     <div className="try-box" data-flow="1" style={actBox}>
       <PaperQR text={<>Any scale, any key: scan the code, type a scale (<b>Bb</b>, <b>F♯ minor</b>, <b>E flat</b>) and the Scale finder shows the fingering for both hands.</>} params="tool=scale-finder" label="Scale finder"/>
-      <div style={{fontSize:12.5,color:BK.muted,lineHeight:1.4,margin:'4px 0 6px'}}><b style={{fontSize:13,color:BK.ink}}>Same keys, two names.</b> A scale that starts on a black key can be written two ways -- same keys on the piano, different key signature.</div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>{major.map(([a, b]) => card('major', a, b))}</div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6,marginTop:6}}>{minor.map(([a, b]) => card('minor', a, b))}</div>
-      <div style={{fontSize:11.5,color:BK.muted,lineHeight:1.4,marginTop:5}}>B♭, E♭, A♭ major and F♯, C♯ minor have no written twin: it would need double sharps or flats.</div>
+      <div style={{fontSize:12.5,color:BK.muted,lineHeight:1.4,margin:'4px 0 6px'}}><b style={{fontSize:13,color:BK.ink}}>Same keys, two names.</b> A scale on a black key can be written two ways: same keys, different signature.</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>{[...major.map(([a, b]) => card('major', a, b)), ...minor.map(([a, b]) => card('minor', a, b))]}</div>
+      <div style={{fontSize:12.5,color:BK.muted,lineHeight:1.4,margin:'6px 0 4px',breakInside:'avoid'}}><b style={{fontSize:13,color:BK.ink}}>Only on paper.</b> These five twins need double sharps (×) or double flats, so nobody writes them.</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:5}}>{paperOnly.map(paperCard)}</div>
     </div>
   );
 }
@@ -27608,7 +27646,7 @@ function PaperRanges() {
     groups.forEach(g => { rowsDraw.push({ head: g.g, y, c: g.c }); y += 12; g.rows.forEach(r => { rowsDraw.push({ r: ALL_RANGES.find(a => a.name === r[0]), y }); y += 12; }); y += 2; });
     const H = y + 2;
     return (
-      <svg viewBox={`0 -26 360 ${H + 28}`} style={{width:'100%',maxWidth:hist ? '70%' : '70%',display:'block',margin:'0 auto'}}>
+      <svg viewBox={`-3 -26 366 ${H + 28}`} style={{width:'100%',maxWidth:hist ? '70%' : '70%',display:'block',margin:'0 auto'}}>
         {[21, 33, 45, 57, 69, 81, 93, 105].map(m => <g key={m}><line x1={x(m)} x2={x(m)} y1={-8} y2={H + 4} stroke="#e9e3d4"/><text x={x(m)} y={-14} fontSize="7" fontWeight="800" textAnchor="middle" fill="#7f81a8">{midiName(m)}</text><text x={x(m)} y={-7} fontSize="5.5" fontWeight="700" textAnchor="middle" fill="#e4572e">{fmtHz(mFreq(m))}</text></g>)}
         <line x1={x(60)} x2={x(60)} y1={-8} y2={H + 4} stroke="#e4572e" strokeDasharray="2 2"/>
         {rowsDraw.map((d, i) => d.head ? <text key={i} x="8" y={d.y + 9} fontSize="8" fontWeight="900" fill={d.c} letterSpacing="0.06em">{rangeName(d.head).toUpperCase()}</text> : (
