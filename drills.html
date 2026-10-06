@@ -19331,7 +19331,66 @@ function StudentsView({ onPlan, onOpenKit }) {
 function GuideTab({ onOpenChapter }) {
   return <div className="fade-up"><StartGuide onOpen={onOpenChapter} always/></div>;
 }
+// Phase 325: the printed books, one shelf. Each link opens the paper layout in a new tab (it has its own Print / Save as PDF button).
+// The books are English only (the Korean app is the screen version), so the links always ask for lang=en.
+const BOOKS_PUBLIC = false; // flip to true at publishing time: the Books tab then shows for every visitor
+function booksUnlocked() {
+  try {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get('books') === '1') localStorage.setItem('pb_books_v1', '1');
+    if (p.get('books') === '0') localStorage.removeItem('pb_books_v1');
+    return BOOKS_PUBLIC || localStorage.getItem('pb_books_v1') === '1';
+  } catch (e) { return BOOKS_PUBLIC; }
+}
+function BooksShelf() {
+  const STAGE_KO = ['시작하기', '피아노 기본', '리듬과 박 세기', '악보 읽기', '소리, 기호, 용어', '이론: 스케일, 조, 화음', '악기 알아보기'];
+  const href = (kind, ch) => '?book=' + kind + '&ch=' + ch + '&lang=en';
+  const KIND = {
+    lesson: { en: 'Lesson Book', ko: '레슨북', col: '#26296b' },
+    work: { en: 'Workbook', ko: '워크북', col: '#e4572e' },
+    teacher: { en: 'Teacher copy', ko: '교사용', col: '#8a6a2c' },
+  };
+  const pill = (kind, ch, label, on) => on
+    ? <a key={kind} href={href(kind, ch)} target="_blank" rel="noopener" style={{fontSize:11.5,fontWeight:800,color:KIND[kind].col,border:'1.5px solid ' + KIND[kind].col,borderRadius:8,padding:'3px 9px',textDecoration:'none',background:'#fff',whiteSpace:'nowrap'}}>{label || t(KIND[kind].en, KIND[kind].ko)}</a>
+    : <span key={kind} style={{fontSize:11.5,fontWeight:700,color:'#b9b4a4',border:'1.5px dashed #ddd6c4',borderRadius:8,padding:'3px 9px',whiteSpace:'nowrap'}}>{t(KIND[kind].en, KIND[kind].ko)}</span>;
+  const wholeBtn = (kind, ch, label) => <a href={href(kind, ch)} target="_blank" rel="noopener" style={{fontSize:12.5,fontWeight:800,color:KIND[kind].col,border:'1.5px solid ' + KIND[kind].col,borderRadius:10,padding:'6px 12px',textDecoration:'none',background:'#fff'}}>{label}</a>;
+  return (
+    <div>
+      <div className="card" style={{marginBottom:10,padding:'10px 12px'}}>
+        <div style={{fontSize:13,color:'var(--muted)',lineHeight:1.5,marginBottom:8}}>
+          {t('Three books go together. The ', '세 권이 한 세트예요. ')}<b style={{color:KIND.lesson.col}}>{t('Lesson Book', '레슨북')}</b>{t(' is what you explain, the ', '은 설명할 내용, ')}<b style={{color:KIND.work.col}}>{t('Workbook', '워크북')}</b>{t(' is what the student writes and draws, and the ', '은 학생이 쓰고 그리는 것, ')}<b style={{color:KIND.teacher.col}}>{t('Teacher copy', '교사용')}</b>{t(' has the answers and what to watch for. Each opens as paper pages in a new tab: press Print / Save as PDF there.', '은 정답과 지도 포인트예요. 누르면 새 탭에 종이 페이지로 열리고, 거기서 인쇄 / PDF 저장을 누르면 돼요.')}
+        </div>
+        <div style={{fontSize:11.5,fontWeight:900,color:'var(--muted)',marginBottom:5,letterSpacing:.4}}>{t('WHOLE SET', '전체 묶음')}</div>
+        <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+          {wholeBtn('lesson', 'all', t('All Lesson Books', '레슨북 전체'))}
+          {wholeBtn('work', 'front', t('Workbook front pages', '워크북 앞부분'))}
+          {wholeBtn('work', 'all', t('All Workbooks', '워크북 전체'))}
+          {wholeBtn('teacher', 'all', t('All Teacher copies', '교사용 전체'))}
+        </div>
+        <div style={{fontSize:11.5,color:'var(--muted)',marginTop:7}}>{t('The books are in English. The whole-set pages are long, so they take a moment to open.', '책은 영어로 만들어져 있어요. 전체 묶음은 길어서 열리는 데 잠깐 걸려요.')}</div>
+      </div>
+      {STAGES.map(st => (
+        <div key={st.n} className="card" style={{marginBottom:10,padding:'8px 12px'}}>
+          <div style={{fontSize:11.5,fontWeight:900,color:'var(--coral)',letterSpacing:.4,marginBottom:2}}>{t(st.title.toUpperCase(), STAGE_KO[st.n] || st.title)}</div>
+          {st.ids.map(id => (
+            <div key={id} style={{display:'flex',alignItems:'center',gap:'4px 10px',flexWrap:'wrap',padding:'6px 0',borderTop:'1px solid #efe9d9'}}>
+              <span style={{flex:'1 1 150px',fontSize:14,fontWeight:800,color:'var(--navy)'}}><span style={{color:'var(--muted)',fontWeight:700,marginRight:6}}>{bkChapterNo(id)}</span>{bkChapterName(id)}</span>
+              <span style={{display:'flex',gap:5,flexWrap:'wrap'}}>
+                {pill('lesson', id, null, true)}
+                {pill('work', id, null, !!WORKBOOKS[id])}
+                {pill('teacher', id, null, !!TEACHER_COPIES[id])}
+              </span>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ToolboxTab({ onOpenTool, onOpenKit, onStudents, onChapter }) {
+  const [booksOn] = useState(booksUnlocked);
+  const [sec, setSec] = useState(() => { try { return booksUnlocked() && new URLSearchParams(window.location.search).get('sec') === 'books' ? 'books' : 'tools'; } catch (e) { return 'tools'; } });
   const [kits, setKits] = useState(loadKits);
   const [who, setWho0] = useState(() => loadWho(loadKits()));
   const [copied, setCopied] = useState(false);
@@ -19349,8 +19408,14 @@ function ToolboxTab({ onOpenTool, onOpenKit, onStudents, onChapter }) {
   const chip = (on, label, onClick, key) => <button key={key || label} className={'chip' + (on ? ' active' : '')} style={{padding:'2px 9px',fontSize:12}} onClick={onClick}>{label}</button>;
   return (
     <div className="fade-up">
-      <PageIntro title={t('Toolbox', '도구함')} text={t('Search for one activity in the middle of a lesson, or browse by topic. Press ☆ to build a kit for the student.', '레슨 중에 쓸 활동 하나를 검색하거나 주제별로 찾아보세요. ☆ 를 눌러 학생의 키트를 만들어요.')}/>
-      <div className="card" style={{marginBottom:10,padding:'10px 12px'}}>
+      <PageIntro title={t('Toolbox', '도구함')} text={sec === 'books' ? t('The printed books: Lesson Book, Workbook and Teacher copy for every chapter.', '인쇄용 책: 챕터마다 레슨북, 워크북, 교사용.') : t('Search for one activity in the middle of a lesson, or browse by topic. Press ☆ to build a kit for the student.', '레슨 중에 쓸 활동 하나를 검색하거나 주제별로 찾아보세요. ☆ 를 눌러 학생의 키트를 만들어요.')}/>
+      {booksOn && <div style={{display:'flex',gap:6,margin:'-6px 0 12px'}}>
+        {[['tools', t('Activities', '활동')], ['books', t('Books', '책')]].map(([k, l]) => (
+          <button key={k} className={'chip' + (sec === k ? ' active' : '')} style={{padding:'6px 16px',fontSize:14,fontWeight:800}} onClick={() => setSec(k)}>{l}</button>
+        ))}
+      </div>}
+      {booksOn && sec === 'books' && <BooksShelf/>}
+      {sec === 'tools' && <div className="card" style={{marginBottom:10,padding:'10px 12px'}}>
         <div style={{display:'flex',gap:4,flexWrap:'wrap',alignItems:'center'}}>
           <span style={{fontSize:12,fontWeight:900,color:'var(--muted)',marginRight:2}}>{t('STUDENT','학생')}</span>
           {kits.map((k, i) => chip(i === who, k.name, () => setWho(i), 's' + i))}
@@ -19362,9 +19427,9 @@ function ToolboxTab({ onOpenTool, onOpenKit, onStudents, onChapter }) {
           <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => onOpenKit(kit)}>{LANG === 'ko' ? kit.name + ' 키트 열기 (' + kit.tools.length + ')' : 'Open ' + kit.name + '’s kit (' + kit.tools.length + ')'}</button>
           <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={copyKit}>{copied ? t('Link copied ✓', '링크 복사됨 ✓') : t('Copy student link', '학생 링크 복사')}</button>
         </div>}
-      </div>
+      </div>}
 
-      <Toolbox onOpen={onOpenTool} onChapter={onChapter} kit={kit} onStar={star}/>
+      {sec === 'tools' && <Toolbox onOpen={onOpenTool} onChapter={onChapter} kit={kit} onStar={star}/>}
     </div>
   );
 }
