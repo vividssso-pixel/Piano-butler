@@ -1217,7 +1217,7 @@ function Rule({ title, children }) {
 }
 function Step({ n, total, title, color, open, done, onToggle, onDone, children, id, bookExtra }) {
   if (BOOK) { const x = bookExtra || {}; if (x.foot) return x.foot; const kids = React.Children.toArray(children).map(c => { const r = (x.swap || []).find(([test]) => test(c)); return r ? (r[1] && React.cloneElement(r[1], { key: c.key })) : c; }); return (
-    <section style={{margin:'18px 0 6px'}}>
+    <section data-keep={x.keep ? '1' : undefined} style={{margin:'18px 0 6px'}}>
       <div style={{display:'flex',alignItems:'center',gap:10,breakAfter:'avoid'}}>
         <span style={{flex:'0 0 30px',height:30,borderRadius:15,background:color,color:'#fff',fontSize:15,fontWeight:900,display:'flex',alignItems:'center',justifyContent:'center'}}>{n}</span>
         <span style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:21,fontWeight:800,color:'var(--navy)',lineHeight:1.2}}>{title}</span>
@@ -13774,7 +13774,7 @@ function MelodyContour() {
       </svg>
       <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center',marginTop:8}}>
         <button className="primary-btn" style={{width:'auto',padding:'8px 18px',fontSize:14}} onClick={play}>{t('Play my tune', '내 튠 연주하기')}</button>
-        {[[28, 30, 32, 33, 32, 30, 29, 28], [28, 29, 30, 31, 32, 33, 34, 35], [32, 30, 28, 30, 32, 34, 33, 32], [30, 32, 30, 33, 31, 34, 32, 28]].map((preset, k) =>
+        {[[28, 30, 32, 33, 32, 30, 29, 28], [28, 29, 30, 31, 32, 33, 34, 35], [33, 31, 29, 28, 29, 31, 32, 34], [30, 32, 30, 33, 31, 34, 32, 28]].map((preset, k) =>
           <button key={k} className="chip" style={{padding:'4px 10px',fontSize:12.5}} onClick={() => setDs(preset)}>{[t('Arch', '아치'), t('Rising', '오르막'), t('Valley', '골짜기'), t('Wave', '물결')][k]}</button>)}
       </div>
       <div style={{marginTop:10,fontSize:14,lineHeight:1.5,color:'var(--navy)'}}>
@@ -26617,10 +26617,10 @@ function bookExtras(id) {
   ];
   if (id === 'melody') return [
     { remember: 'A tune is rhythm and pitch working together.' },
-    { remember: 'Every tune has a shape: rising, falling, arch or valley.' },
-    { remember: 'A phrase is a musical sentence -- breathe at the end of it.' },
-    { remember: 'A question leaves you waiting; an answer comes home.' },
-    { remember: 'A sequence repeats the same shape starting on a new note.' },
+    { swap: [[isType(MelodyContour), <PaperContour/>]], remember: 'Every tune has a shape: rising, falling, arch or valley.' },
+    { swap: [[isType(PhraseBreath), <PaperPhrase/>]], remember: 'A phrase is a musical sentence -- breathe at the end of it.' },
+    { swap: [[isType(QuestionAnswer), <PaperQA/>]], remember: 'A question leaves you waiting; an answer comes home.' },
+    { swap: [[isType(SequenceStepper), <PaperSequence/>]], remember: 'A sequence repeats the same shape starting on a new note.' },
   ];
   if (id === 'tones') return [
     { swap: [[isType(BestFriends), <PaperBestFriends/>]], remember: 'Semitone = the very next key (your best friend). Tone = two semitones (a friend of a friend).' },
@@ -26670,12 +26670,12 @@ function bookExtras(id) {
     { remember: 'I I I I · IV IV I I · V IV I I -- chord V comes only in bar 9.' },
   ];
   if (id === 'chords') return [
-    { remember: 'A triad is three notes stacked in 3rds: root, 3rd and 5th -- all on lines or all in spaces.' },
+    { swap: [[isType(TriadStacker), <PaperTriadStack/>]], remember: 'A triad is three notes stacked in 3rds: root, 3rd and 5th -- all on lines or all in spaces.' },
     { remember: 'Root to 3rd: 4 semitones = major (happy), 3 semitones = minor (sad).' },
     { remember: 'Capital numerals for major chords (I, IV, V), small for minor (ii, iii, vi).' },
     { remember: 'I, IV and V are the primary triads -- the three major chords of a major key.' },
-    { remember: 'The lowest note decides the inversion: root, 3rd (1st inversion) or 5th (2nd inversion).' },
-    { remember: 'Perfect V-I, plagal IV-I, imperfect ends on V, interrupted V-vi.' },
+    { swap: [[isType(InversionFlip), <PaperInversions/>]], remember: 'The lowest note decides the inversion: root, 3rd (1st inversion) or 5th (2nd inversion).' },
+    { keep: true, remember: 'Perfect V-I, plagal IV-I, imperfect ends on V, interrupted V-vi.' },
   ];
   if (id !== 'staff') return [];
   const g = (clef, notes = [], w = 150) => <PaperStaff clef={clef} notes={notes} width={w}/>;
@@ -26838,7 +26838,7 @@ function paperFix(root) {
   // never leave a REMEMBER line alone at the top of a page: its picture moves with it
   root.querySelectorAll('.bk-rem').forEach(r => { let q = r.previousElementSibling; for (let k = 0; q && k < 3; k++) { q.style.breakAfter = 'avoid'; q = q.lastElementChild; } });
   // keep a short step (heading, text and picture) on one page; long steps flow
-  root.querySelectorAll('section').forEach(sec => { if (sec.offsetHeight <= 500 && !sec.querySelector('[data-flow]')) sec.style.breakInside = 'avoid'; });
+  root.querySelectorAll('section').forEach(sec => { if ((sec.offsetHeight <= 500 || sec.hasAttribute('data-keep')) && !sec.querySelector('[data-flow]')) sec.style.breakInside = 'avoid'; });
   root.querySelectorAll('[data-flow]').forEach(el => { el.style.breakInside = 'auto'; });
 }
 function LessonFix({ children }) {
@@ -27154,6 +27154,194 @@ function PaperTwins() {
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>{major.map(([a, b]) => card('major', a, b))}</div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6,marginTop:6}}>{minor.map(([a, b]) => card('minor', a, b))}</div>
       <div style={{fontSize:11.5,color:BK.muted,lineHeight:1.4,marginTop:5}}>B♭, E♭, A♭ major and F♯, C♯ minor have no written twin: it would need double sharps or flats.</div>
+    </div>
+  );
+}
+
+// ─── Phase 320: Melody and Chords on paper ───
+// Each of these replaces a screen tool in the printed Lesson Book (isType swap): what the tool shows over time
+// (a tune that changes shape, a phrase whose comma appears, one example at a time) is laid out all at once.
+const PML_SHAPES = [
+  [28, 29, 30, 31, 32, 33, 34, 35],
+  [35, 34, 33, 32, 31, 30, 29, 28],
+  [28, 30, 32, 33, 32, 30, 29, 28],
+  [33, 31, 29, 28, 29, 31, 32, 34],
+  [30, 32, 30, 33, 31, 34, 32, 28],
+];
+const pmlCard = { border: '1px solid #ece6d8', borderRadius: 10, background: '#fff', padding: '4px 8px 5px', breakInside: 'avoid' };
+function PaperContour() {
+  const coral = '#e4572e', ink = '#26296b', W = 320, colW = (W - 50) / CONTOUR_N, colX = (i) => 44 + i * colW + colW / 2;
+  const cell = (ds, k) => {
+    const shape = contourShape(ds), last = ds.length - 1, home = ds[last] === 28 || ds[last] === 35;
+    const path = ds.map((d, i) => (i ? 'L' : 'M') + colX(i) + ' ' + contourY(d)).join(' ');
+    return (
+      <div key={k} style={pmlCard}>
+        <svg viewBox={`0 32 ${W} 102`} style={{width:'100%',display:'block'}}>
+          {[30, 32, 34, 36, 38].map(d => <line key={d} x1="6" x2={W - 6} y1={contourY(d)} y2={contourY(d)} stroke={ink} strokeOpacity="0.55" strokeWidth="1.2"/>)}
+          <g transform="translate(0 -22) scale(1.2)"><ClefGlyph clef="treble" st="treble" yOf={dY} ink={ink}/></g>
+          <path d={path} fill="none" stroke={coral} strokeOpacity="0.55" strokeWidth="2.4" strokeDasharray="4 4"/>
+          {ds.map((d, i) => <g key={i}>
+            {d === 28 && <line x1={colX(i) - 11} x2={colX(i) + 11} y1={contourY(28)} y2={contourY(28)} stroke={ink} strokeWidth="1.3"/>}
+            <ellipse cx={colX(i)} cy={contourY(d)} rx="6.4" ry="4.6" transform={`rotate(-20 ${colX(i)} ${contourY(d)})`} fill={i === last ? coral : ink}/>
+            <text x={colX(i)} y="128" textAnchor="middle" fontSize="10" fontWeight="800" fill="#6d6f9c">{dName(d)}</text>
+          </g>)}
+        </svg>
+        <div style={{fontSize:12,color:BK.ink,lineHeight:1.4}}>{SHAPE_WORDS[shape][0]}</div>
+        <div style={{fontSize:11.5,color:BK.muted,lineHeight:1.4}}><b style={{color:coral}}>Ending: </b>{home ? 'on C, home -- it sounds finished.' : 'away from C -- it still has something to say.'}</div>
+      </div>
+    );
+  };
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>The shape of a tune</div>
+      <div style={actNote}>Join the note heads with a line and you can see the tune's shape -- every melody has one. Here are five. The coral note is the last one.</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px 10px',marginTop:6}}>
+        {PML_SHAPES.map(cell)}
+        <div style={{...pmlCard,display:'flex',alignItems:'center',gap:12}}>
+          <div style={{flex:1,fontSize:12.5,color:BK.ink,lineHeight:1.5}}>Draw your own: scan the code, tap the staff to move each of the eight notes, then press play.</div>
+          <div style={{textAlign:'center'}}><QR url={bkLink('tool=draw-tune')} size={70}/><div style={{fontSize:9.5,color:BK.muted}}>Draw a tune</div></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PaperPhrase() {
+  const W = 300, x0 = 66, x1 = W - 12, brass = '#a8823f';
+  const row = (n, notes) => (
+    <div key={n} style={pmlCard}>
+      <div style={{fontSize:12.5,fontWeight:900,color:BK.ink,margin:'0 0 0 4px'}}>Phrase {n}</div>
+      <svg viewBox={`0 0 ${W} 34`} style={{width:'100%',display:'block'}}>
+        <path d={`M${x0},32 Q${(x0 + x1 - 22) / 2},0 ${x1 - 22},32`} fill="none" stroke={brass} strokeWidth="2.6" strokeLinecap="round"/>
+        <text x={x1 - 8} y="27" textAnchor="middle" fontSize="32" fontWeight="900" fill={brass} style={{fontFamily:'Georgia,serif'}}>,</text>
+      </svg>
+      <MelodyStaff notes={notes} beats={4} width={W}/>
+    </div>
+  );
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Where does the phrase end?</div>
+      <div style={actNote}>The curved line is a phrase mark -- like a comma in a sentence, it shows where a singer takes a breath. The brass comma at the end of each line is the breath: play each line and breathe there.</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'10px 12px',marginTop:6}}>{row(1, PHRASE1)}{row(2, PHRASE2)}</div>
+    </div>
+  );
+}
+
+function PaperQA() {
+  const cell = (e) => {
+    const q = e.kind === 'question', col = q ? '#c8361b' : '#2e8a6e';
+    const notes = [{ d: 28, dur: 1 }, { d: 29, dur: 1 }, { d: 30, dur: 1 }, { d: e.d, dur: 2 }];
+    return (
+      <div key={e.d} style={pmlCard}>
+        <MelodyStaff notes={notes} beats={5} width={230} showTime={false} names colors={notes.map((_, i) => i === 3 ? col : undefined)}/>
+        <div style={{fontSize:13,fontWeight:900,color:col}}>{q ? 'Question' : 'Answer'} <span style={{fontWeight:700,color:BK.muted}}>-- ends on {e.deg} ({dName(e.d)})</span></div>
+      </div>
+    );
+  };
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Question, or answer?</div>
+      <div style={{display:'flex',gap:12,alignItems:'center'}}>
+        <div style={{...actNote,flex:1}}>A question phrase ends on an unstable note (2, 4, 5 or 7) -- it wants to keep going. An answer phrase ends on the tonic (1) -- it feels finished. The coloured notes are the endings: red for questions, green for answers.</div>
+        <div style={{textAlign:'center',flex:'0 0 auto'}}><QR url={bkLink('tool=question-answer')} size={60}/><div style={{fontSize:9.5,color:BK.muted}}>Listen and guess</div></div>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3, 1fr)',gap:'10px 10px',marginTop:6}}>{QA_ENDINGS.map(cell)}</div>
+    </div>
+  );
+}
+
+function PaperSequence() {
+  const W = 320, coral = '#e4572e', ink = '#26296b';
+  const notes = [0, 1, 2].flatMap(k => [{ d: 28 + k, dur: 1 }, { d: 28 + k + 2, dur: 1 }]);
+  const x0 = 50, x1 = W - 12, unit = (x1 - x0) / 6, xs = notes.map((n, i) => x0 + (i + 0.35) * unit);
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Same shape, new pitch</div>
+      <div style={actNote}>A sequence repeats a short pattern, but starts one step higher each time. Here the same two-note shape is played three times -- look at the coral notes: they climb one step each time.</div>
+      <div style={{...pmlCard,maxWidth:520,margin:'8px auto 0'}}>
+        <svg viewBox={`0 0 ${W} 30`} style={{width:'100%',display:'block'}}>
+          {[0, 1, 2].map(g => {
+            const a = xs[2 * g] - 12, b = xs[2 * g + 1] + 12;
+            return <g key={g}>
+              <path d={`M${a},27 v-8 h${b - a} v8`} fill="none" stroke={coral} strokeWidth="1.8" strokeLinejoin="round"/>
+              <text x={(a + b) / 2} y="12" textAnchor="middle" fontSize="11" fontWeight="900" fill={coral}>{['1st time', '2nd time', '3rd time'][g]}</text>
+            </g>;
+          })}
+        </svg>
+        <MelodyStaff notes={notes} beats={6} width={W} showTime={false} names colors={notes.map((_, i) => i % 2 === 0 ? coral : undefined)}/>
+        <div style={{fontSize:12,color:BK.ink,lineHeight:1.45,margin:'4px 2px 0'}}>Each repetition is the exact same two-note shape, just moved up one scale step.</div>
+      </div>
+    </div>
+  );
+}
+
+// Chords: the cake, built layer by layer, with the same notes growing on the staff beside it.
+const PCH_COLS = ['#c8361b', '#3b4fa8', '#2e8a6e'];
+function PaperCake({ n, w = 64 }) {
+  return (
+    <svg viewBox="0 28 110 98" style={{width:w,display:'block',margin:'0 auto'}}>
+      <ellipse cx="55" cy="118" rx="34" ry="4" fill="#e8e1cf"/>
+      {n >= 1 && <g><rect x="25" y="95" width="60" height="24" rx="4" fill={PCH_COLS[0]}/><text x="55" y="111" textAnchor="middle" fontSize="12" fontWeight="900" fill="#fff">root</text></g>}
+      {n >= 2 && <g><rect x="30" y="68" width="50" height="24" rx="4" fill={PCH_COLS[1]}/><text x="55" y="84" textAnchor="middle" fontSize="12" fontWeight="900" fill="#fff">3rd</text></g>}
+      {n >= 3 && <g><rect x="35" y="41" width="40" height="24" rx="4" fill={PCH_COLS[2]}/><text x="55" y="57" textAnchor="middle" fontSize="12" fontWeight="900" fill="#fff">5th</text><circle cx="55" cy="36" r="5" fill="#a8823f"/></g>}
+    </svg>
+  );
+}
+function PaperTriadStack() {
+  const nt = (d) => ({ d, acc: 0 }), full = [nt(28), nt(30), nt(32)];
+  const k = full.map(x => ivMidi(x) - 60), marks = {}, names = {};
+  k.forEach((m, i) => { marks[m] = 'good'; names[m] = ['R', '3', '5'][i]; });
+  const steps = [['The root', 'Start on any note.'], ['Add the 3rd', 'Skip a letter.'], ['Add the 5th', 'Skip one more.']];
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Stack a triad</div>
+      <div style={actNote}>A triad is three notes stacked in 3rds -- like building a 3-layer cake, or stacking a snowman: the bottom scoop is the <b>root</b> (the foundation), then the <b>3rd</b> on top of it, and the <b>5th</b> as the top scoop. On the staff they sit line-line-line or space-space-space, like a snowman's three balls; on the keyboard, skip a white key each time.</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3, 1fr)',gap:10,marginTop:6}}>
+        {steps.map(([title, sub], i) => (
+          <div key={i} style={pmlCard}>
+            <div style={{fontSize:12.5,fontWeight:900,color:BK.ink}}>{i + 1}. {title}</div>
+            <div style={{fontSize:11.5,color:BK.muted,margin:'0 0 2px'}}>{sub}</div>
+            <PaperCake n={i + 1} w={84}/>
+            <ChordStaff chords={[{ notes: full.slice(0, i + 1), noteColors: PCH_COLS, label: full.slice(0, i + 1).map(ivName).join(' ') }]} width={170}/>
+          </div>
+        ))}
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginTop:10}}>
+        <div style={pmlCard}>
+          <div style={{fontSize:12.5,fontWeight:900,color:BK.ink,marginBottom:3}}>On the keyboard: skip a white key each time</div>
+          <TapKeyboard octaves={2} marks={marks} names={names}/>
+        </div>
+        <div style={pmlCard}>
+          <div style={{fontSize:12.5,fontWeight:900,color:BK.ink}}>On the staff: all on lines, or all in spaces</div>
+          <ChordStaff chords={[{ notes: [nt(30), nt(32), nt(34)], noteColors: PCH_COLS, label: 'E G B', sub: 'on lines' }, { notes: [nt(31), nt(33), nt(35)], noteColors: PCH_COLS, label: 'F A C', sub: 'in spaces' }]} width={250}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PaperInversions() {
+  const base = [{ d: 28, acc: 0 }, { d: 30, acc: 0 }, { d: 32, acc: 0 }], lift = (n) => ({ d: n.d + 7, acc: n.acc });
+  const chords = [base, [base[1], base[2], lift(base[0])], [base[2], lift(base[0]), lift(base[1])]];
+  const roleOf = (n) => { const L = dName(n.d); return L === dName(base[0].d) ? 'root' : L === dName(base[1].d) ? '3rd' : '5th'; };
+  const colOf = { root: PCH_COLS[0], '3rd': PCH_COLS[1], '5th': PCH_COLS[2] };
+  const names = ['Root position', '1st inversion', '2nd inversion'], figs = ['5/3 · a', '6/3 · b', '6/4 · c'];
+  return (
+    <div className="try-box" style={actBox}>
+      <div style={actTitle}>Turn it upside down: inversions</div>
+      <div style={actNote}>Same three notes, same three letters -- only the bottom one changes. Picture three friends holding hands in a line: whoever's at the front just walks around to the back. Root position {'→'} 1st inversion (the 3rd moves to the bottom) {'→'} 2nd inversion (the 5th moves to the bottom).</div>
+      <div style={{display:'grid',gap:10,marginTop:6}}>
+        {chords.map((ch, i) => {
+          const marks = {}, labs = {};
+          ch.forEach(n => { const m = ivMidi(n) - 60; marks[m] = 'good'; labs[m] = roleOf(n) === 'root' ? 'R' : roleOf(n)[0]; });
+          return (
+            <div key={i} style={{...pmlCard,display:'flex',alignItems:'center',gap:14}}>
+              <div style={{flex:'0 0 42%'}}><ChordStaff width={200} chords={[{ notes: ch, noteColors: ch.map(n => colOf[roleOf(n)]), label: names[i], sub: 'bottom note: the ' + roleOf(ch[0]) + ' · ' + figs[i] }]}/></div>
+              <div style={{flex:1}}><TapKeyboard octaves={2} marks={marks} names={labs}/></div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
