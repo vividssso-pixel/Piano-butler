@@ -28342,7 +28342,365 @@ function CutCardsTerms() {
     <CutCardSheet no={4} set="Term flashcards" title="Terms, set 2" side="back" cards={b}/>
   </>;
 }
-const CUTOUTS = { 'note-bars': CutNoteBars, 'scale-slider': CutScaleSlider, 'staff-mat': CutStaffMat, 'cards-notes': CutCardsNotes, 'cards-rhythm': CutCardsRhythm, 'cards-terms': CutCardsTerms };
+// ── Set 5: circle-of-fifths wheel. Page 1 is the wheel (stays whole); page 2 is a disc with a 3-key "mouth" to cut out and
+// fasten on top of it, plus the order-of-sharps and order-of-flats tiles. Everything is read from the app's own CIRCLE / KEY_SIGS. ──
+const FW_D = 150; // wheel and disc diameter, mm
+const fwXY = (ang, rad) => [FW_D / 2 + rad * Math.cos(ang * Math.PI / 180), FW_D / 2 + rad * Math.sin(ang * Math.PI / 180)];
+const fwSector = (a0, a1, r0, r1) => {
+  const [x0, y0] = fwXY(a0, r1), [x1, y1] = fwXY(a1, r1), [x2, y2] = fwXY(a1, r0), [x3, y3] = fwXY(a0, r0);
+  return 'M' + x0 + ' ' + y0 + ' A' + r1 + ' ' + r1 + ' 0 0 1 ' + x1 + ' ' + y1 + ' L' + x2 + ' ' + y2 + ' A' + r0 + ' ' + r0 + ' 0 0 0 ' + x3 + ' ' + y3 + ' Z';
+};
+const FW_SHARP = '#e4572e', FW_FLAT = '#4d5ba6';
+function CutFifthsWheel() {
+  const R0 = FW_D / 2, c = R0;
+  const slots = CIRCLE.map((s, i) => {
+    const ks = s.maj.map(m => KEY_SIGS.find(k => k.major === m));
+    return { i, ang: -90 + 30 * i, maj: s.maj.map(prettyNote), min: ks.map(k => prettyNote(k.minor).toLowerCase()), sig: ks.map(k => k.count === 0 ? '0' : k.count + (k.type === 'sharp' ? '♯' : '♭')), sharpSide: i >= 1 && i <= 6, flatSide: i >= 7 };
+  });
+  const T = (x, y, txt, size, fill, weight = 900, extra) => <text x={x} y={y} fontSize={size} fontWeight={weight} fill={fill} textAnchor="middle" {...extra}>{txt}</text>;
+  const base = (
+    <svg viewBox={'0 0 ' + FW_D + ' ' + FW_D} style={{width:FW_D + 'mm',height:FW_D + 'mm',display:'block',margin:'0 auto'}}>
+      <circle cx={c} cy={c} r={R0 - 0.3} fill="#fff" stroke={BK.ink} strokeWidth="0.7"/>
+      {slots.map(s => <path key={s.i} d={fwSector(s.ang - 15, s.ang + 15, 19, R0 - 0.3)} fill={s.sharpSide ? 'rgba(228,87,46,0.10)' : s.flatSide ? 'rgba(77,91,166,0.10)' : 'rgba(168,130,63,0.12)'} stroke="#fff" strokeWidth="0.5"/>)}
+      {[46, 32].map(r => <circle key={r} cx={c} cy={c} r={r} fill="none" stroke={BK.line} strokeWidth="0.4"/>)}
+      {slots.map(s => {
+        const [x, y] = fwXY(s.ang, 61), [mx, my] = fwXY(s.ang, 39), [gx, gy] = fwXY(s.ang, 26);
+        const two = s.maj.length > 1;
+        return <g key={s.i}>
+          <circle cx={x} cy={y} r="11" fill="#fff" stroke={BK.ink} strokeWidth="0.6"/>
+          {two ? <>{T(x, y - 0.8, s.maj[0], 5.4, BK.ink)}{T(x, y + 4.8, s.maj[1], 4.4, BK.muted, 800)}</> : T(x, y + 2, s.maj[0], 7, BK.ink)}
+          {two ? <>{T(mx, my - 0.6, s.min[0], 3.6, BK.ink, 800)}{T(mx, my + 3.2, s.min[1], 3.1, BK.muted, 700)}</> : T(mx, my + 1.3, s.min[0], 4.6, BK.ink, 800)}
+          {two ? <>{T(gx, gy - 0.4, s.sig[0], 3.8, s.sig[0].includes('♯') ? FW_SHARP : FW_FLAT)}{T(gx, gy + 3.4, s.sig[1], 3.2, s.sig[1].includes('♯') ? FW_SHARP : FW_FLAT, 800)}</> : T(gx, gy + 1.3, s.sig[0], 4.4, s.sig[0] === '0' ? BK.muted : s.sig[0].includes('♯') ? FW_SHARP : FW_FLAT)}
+        </g>;
+      })}
+      <circle cx={c} cy={c} r="19" fill="#fff" stroke={BK.ink} strokeWidth="0.5"/>
+      {T(c, c - 6.5, 'CIRCLE OF', 2.7, BK.muted, 800)}{T(c, c - 3.4, 'FIFTHS', 2.7, BK.muted, 800)}
+      {T(c, c + 2.6, '↻ one more ♯', 3.1, FW_SHARP, 900)}{T(c, c + 7, '↺ one more ♭', 3.1, FW_FLAT, 900)}
+    </svg>
+  );
+  // the disc: a full circle with a 90-degree mouth (3 keys wide) cut out at the top
+  const [ex1, ey1] = fwXY(-45, R0 - 0.4), [ex2, ey2] = fwXY(-135, R0 - 0.4);
+  const disc = (
+    <svg viewBox={'0 0 ' + FW_D + ' ' + FW_D} style={{width:FW_D + 'mm',height:FW_D + 'mm',display:'block',margin:'0 auto',overflow:'visible'}}>
+      <path d={'M' + c + ' ' + c + ' L' + ex1 + ' ' + ey1 + ' A' + (R0 - 0.4) + ' ' + (R0 - 0.4) + ' 0 1 1 ' + ex2 + ' ' + ey2 + ' Z'} fill="#fff4dc" stroke={CUT.cut} strokeWidth="0.6" strokeDasharray="2 1.4"/>
+      <path d={'M' + c + ' ' + c + ' L' + ex1 + ' ' + ey1} stroke={CUT.cut} strokeWidth="0.9" strokeDasharray="2 1.4"/>
+      <path d={'M' + c + ' ' + c + ' L' + ex2 + ' ' + ey2} stroke={CUT.cut} strokeWidth="0.9" strokeDasharray="2 1.4"/>
+      <g fill="none" stroke={BK.line} strokeWidth="0.4">{[24, 44, 64].map(r => <circle key={r} cx={c} cy={c} r={r} strokeDasharray="0.8 1.6"/>)}</g>
+      {(() => { const [x0, y0] = fwXY(-45, 44); const x = x0 + 6 * 0.7071, y = y0 + 6 * 0.7071; return <g transform={'rotate(-45 ' + x + ' ' + y + ')'}>{T(x, y, 'A 5th UP · one more ♯', 3.3, FW_SHARP, 900)}</g>; })()}
+      {(() => { const [x0, y0] = fwXY(-135, 44); const x = x0 - 6 * 0.7071, y = y0 + 6 * 0.7071; return <g transform={'rotate(45 ' + x + ' ' + y + ')'}>{T(x, y, 'A 5th DOWN · one more ♭', 3.3, FW_FLAT, 900)}</g>; })()}
+      {T(c, c + 22, 'Turn the disc until your key', 3.6, BK.ink, 800)}{T(c, c + 27, 'sits in the middle of the mouth.', 3.6, BK.ink, 800)}
+      {T(c, c + 36, 'The key on its left has one more flat.', 3.3, FW_FLAT, 700)}{T(c, c + 41, 'The key on its right has one more sharp.', 3.3, FW_SHARP, 700)}
+      <circle cx={c} cy={c} r="1.6" fill="none" stroke={BK.ink} strokeWidth="0.4"/><line x1={c - 3} x2={c + 3} y1={c} y2={c} stroke={BK.ink} strokeWidth="0.3"/><line x1={c} x2={c} y1={c - 3} y2={c + 3} stroke={BK.ink} strokeWidth="0.3"/>
+      {T(c, c + 52, 'centre: fastener goes here', 2.6, BK.muted, 700)}
+    </svg>
+  );
+  const tile = (txt, col, i, tint) => ({ w: 25, col: tint, beats: i + 1, node: <span style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:24,fontWeight:900,color:col,lineHeight:1}}>{txt}</span> });
+  return <>
+    <CutPage no={1} keep set="Circle-of-fifths wheel" title="Circle of fifths" intro={<>Every key on one clock. Going <b style={{color:FW_SHARP}}>clockwise</b>, each key is a 5th higher and has <b style={{color:FW_SHARP}}>one more sharp</b>. Going <b style={{color:FW_FLAT}}>anticlockwise</b>, each key has <b style={{color:FW_FLAT}}>one more flat</b>. Outer ring: major keys. Middle ring: the minor key that shares the same sharps and flats. Inner ring: how many.</>}>
+      {base}
+      <CutTry style={{marginTop:'4mm'}} items={[
+        'Put your finger on A major. How many sharps? Now find its minor on the middle ring.',
+        'Walk clockwise from C, one key at a time, and say how many sharps each key has.',
+        'Which three keys sit at the bottom, where the sharps and flats meet? (They have two names.)',
+      ]}/>
+    </CutPage>
+    <CutPage no={2} set="Circle-of-fifths wheel" title="The turning window" intro={<>Cut round the disc, then cut the two straight lines from the edge to the middle to open the <b>mouth</b>. Push a paper fastener through the centre of the disc and the centre of the wheel. The mouth shows <b>your key and the two next to it</b>.</>}>
+      {disc}
+      <div style={{height:'3mm'}}/>
+      <NvLabel col={FW_SHARP}>Order of sharps <span style={{fontWeight:600,color:BK.muted}}>· cut into tiles, mix them up, and put them back in order</span></NvLabel>
+      <CutStrip h={15} pieces={KS_SHARPS.map((l, i) => tile(l + '♯', FW_SHARP, i, FW_SHARP))}/>
+      <div style={{height:'2.5mm'}}/>
+      <NvLabel col={FW_FLAT}>Order of flats</NvLabel>
+      <CutStrip h={15} pieces={KS_FLATS.map((l, i) => tile(l + '♭', FW_FLAT, i, FW_FLAT))}/>
+    </CutPage>
+  </>;
+}
+// ── Set 6: chord cake. Page 1 = seven three-layer cakes as loose layers (root / 3rd / 5th, the app's own colours) to mix up and rebuild.
+// Page 2 = layers that are as thick as the gap they stand for (4 keys = major 3rd, 3 keys = minor 3rd), plus a keyboard ruler to read the top note. ──
+const CK_COLS = ['#c8361b', '#3b4fa8', '#2e8a6e']; // = PCH_COLS (root, 3rd, 5th)
+const CK4 = '#e2735a', CK3 = '#3f9e94'; // 4-key and 3-key layers
+const CK_SERIF = "'Playfair Display', Georgia, serif";
+function CutKeyRuler({ cells = 13, w = 16 }) {
+  return (
+    <div style={{display:'flex',flexDirection:'column-reverse',width:w + 'mm',height:cells * CUT_CELL + 'mm',outline:'1.3px dashed ' + CUT.cut,flex:'0 0 auto'}}>
+      {Array.from({ length: cells }, (_, i) => {
+        const pc = i % 12, [a, b] = CUT_PC[pc].split('|'), black = !!b;
+        return (
+          <div key={i} style={{height:CUT_CELL + 'mm',flex:'0 0 auto',boxSizing:'border-box',background:black ? BK.ink : '#fff',borderTop:'0.5px solid ' + (black ? '#ffffff55' : BK.line),display:'flex',alignItems:'center',justifyContent:'center',gap:3,color:black ? '#fff' : (pc === 0 ? BK.coral : BK.ink),fontWeight:900,lineHeight:1}}>
+            {black ? <><span style={{fontSize:9.5}}>{a}</span><span style={{fontSize:9.5,opacity:0.85}}>{b}</span></> : <span style={{fontSize:13.5}}>{a}</span>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+const CutLayer = ({ w, keys, col, children, round }) => (
+  <div style={{width:w + 'mm',height:keys * CUT_CELL + 'mm',boxSizing:'border-box',border:'1.3px dashed ' + CUT.cut,background:cutRgba(col, 0.2),display:'flex',alignItems:'center',justifyContent:'center',gap:6,borderRadius:round ? '50%' : 0,flex:'0 0 auto'}}>{children}</div>
+);
+function CutChordCake() {
+  const letters = r => chTriad(r).map(dName), roles = ['root', '3rd', '5th'], widths = [62, 52, 42];
+  const cakeRow = (ls, n, key) => (
+    <div key={key} style={{display:'flex',justifyContent:'center'}}>
+      <CutStrip h={18.5} pieces={[0, 1, 2].map(j => ({ w: widths[j], col: CK_COLS[j], beats: n, node: ls ? <span style={{display:'flex',alignItems:'center',gap:6,whiteSpace:'nowrap'}}><b style={{fontFamily:CK_SERIF,fontSize:25,fontWeight:900,color:CK_COLS[j],lineHeight:1}}>{ls[j]}</b><span style={{fontSize:8.5,fontWeight:800,color:BK.muted}}>{roles[j]}</span></span> : <span style={{fontSize:8.5,fontWeight:800,color:BK.muted}}>write the {roles[j]}</span> }))}/>
+    </div>
+  );
+  const quals = CH_ROOTS.map((r, i) => CH_QUAL[i]);
+  const names = CH_ROOTS.map(r => dName(r));
+  const listQ = q => names.filter((_, i) => quals[i] === q).join(', ');
+  const fiveth = [4, 3];
+  return <>
+    <CutPage no={1} set="Chord cake" title="Seven cakes" intro={<>A triad is a <b>3-layer cake</b>: the <b style={{color:CK_COLS[0]}}>root</b> at the bottom, the <b style={{color:CK_COLS[1]}}>3rd</b> in the middle, the <b style={{color:CK_COLS[2]}}>5th</b> on top. Cut out all the layers and mix them up. Then build each cake again: skip a letter each time. The small number tells you which cake a layer belongs to.</>}>
+      <div style={{display:'flex',flexDirection:'column',gap:'2.4mm',marginTop:'1mm'}}>
+        {CH_ROOTS.map((r, i) => cakeRow(letters(r), i + 1, i))}
+        {cakeRow(null, 8, 'blank')}
+      </div>
+      <CutTry style={{marginTop:'4mm'}} items={[
+        'Build the cakes from the bottom up. Check that each cake skips a letter, then play it on the piano.',
+        <>Sort the cakes into <b>major</b> ({listQ('major')}), <b>minor</b> ({listQ('minor')}) and <b>diminished</b> ({listQ('diminished')}). Which group sounds happy? Which sounds sad?</>,
+        'Cake 8 is yours: write the three letters of a triad you choose, and ask a friend to check it.',
+      ]}/>
+    </CutPage>
+    <CutPage no={2} set="Chord cake" title="Slide the 3rd" intro={<>Now each layer is as thick as the gap it stands for. A <b style={{color:CK4}}>4-key layer</b> is a major 3rd (happy). A <b style={{color:CK3}}>3-key layer</b> is a minor 3rd (sad). Put the root plate beside a key on the ruler, then stack the layers on top of it. The <b>top edge</b> of each layer sits beside the note it names.</>}>
+      <div style={{display:'flex',gap:'9mm',justifyContent:'center',alignItems:'flex-start',marginTop:'1mm'}}>
+        <div><NvLabel col={BK.ink}>Keyboard ruler</NvLabel><CutKeyRuler/></div>
+        <div style={{display:'flex',gap:'7mm'}}>
+          <div style={{display:'flex',flexDirection:'column',gap:'2.4mm'}}>
+            <NvLabel col={CK_COLS[0]}>Root plate</NvLabel>
+            <CutLayer w={60} keys={1} col={CK_COLS[0]}><b style={{fontSize:9,color:CK_COLS[0],letterSpacing:'0.08em'}}>ROOT</b></CutLayer>
+            <NvLabel col={CK4}>Two 4-key layers</NvLabel>
+            {[0, 1].map(i => <CutLayer key={i} w={60} keys={4} col={CK4}><b style={{fontFamily:CK_SERIF,fontSize:30,fontWeight:900,color:CK4,lineHeight:1}}>4</b><span style={{fontSize:10,fontWeight:800,color:BK.ink,lineHeight:1.2}}>keys<br/>major 3rd</span></CutLayer>)}
+          </div>
+          <div style={{display:'flex',flexDirection:'column',gap:'2.4mm'}}>
+            <NvLabel col={CK3}>Two 3-key layers</NvLabel>
+            {[0, 1].map(i => <CutLayer key={i} w={60} keys={3} col={CK3}><b style={{fontFamily:CK_SERIF,fontSize:30,fontWeight:900,color:CK3,lineHeight:1}}>3</b><span style={{fontSize:10,fontWeight:800,color:BK.ink,lineHeight:1.2}}>keys<br/>minor 3rd</span></CutLayer>)}
+            <NvLabel col={CK_COLS[0]}>Cherry</NvLabel>
+            <div style={{display:'flex',justifyContent:'center'}}><CutLayer w={8} keys={8 / CUT_CELL} col={CK_COLS[0]} round/></div>
+          </div>
+        </div>
+      </div>
+      <div style={{marginTop:'5mm'}}>
+        <NvLabel col={BK.ink}>The four recipes <span style={{fontWeight:600,color:BK.muted}}>· stack from the bottom up · notes shown for root C</span></NvLabel>
+        <div style={{border:'1.3px solid ' + BK.line,borderRadius:8,overflow:'hidden'}}>
+          {[['Major', [4, 3], 'C  E  G'], ['Minor', [3, 4], 'C  E♭  G'], ['Diminished', [3, 3], 'C  E♭  G♭'], ['Augmented', [4, 4], 'C  E  G♯']].map(([q, gaps, notes], i) => (
+            <div key={q} style={{display:'grid',gridTemplateColumns:'34mm 38mm 1fr',alignItems:'center',padding:'1.4mm 3mm',borderTop:i ? '1px solid ' + BK.line : 'none',background:i % 2 ? '#fff' : BK.soft}}>
+              <b style={{fontSize:13,color:CUT_QCOL[q.toLowerCase()]}}>{q}</b>
+              <span style={{display:'inline-flex',alignItems:'center',gap:5,fontWeight:900,fontSize:12}}>{gaps.map((g, j) => <React.Fragment key={j}>{j > 0 && <span style={{color:BK.muted}}>+</span>}<span style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:'7mm',height:'7mm',borderRadius:2,background:cutRgba(g === 4 ? CK4 : CK3, 0.25),border:'1.2px solid ' + (g === 4 ? CK4 : CK3),color:BK.ink}}>{g}</span></React.Fragment>)}</span>
+              <span style={{fontSize:14,fontWeight:900,color:BK.ink,letterSpacing:'0.04em'}}>{notes}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <CutTry style={{marginTop:'4mm'}} items={[
+        'Root plate beside C, then a 4-key layer, then a 3-key layer. Which note is beside the top of the stack? Which key is the 3rd?',
+        'Swap the two layers (3 first, then 4). Which note changed? Which note stayed the same?',
+        'Try two 3-key layers, then two 4-key layers. Check your top notes against the recipes.',
+        'Slide the whole cake up so the root plate sits beside F. Which three keys does the cake touch?',
+      ]}/>
+    </CutPage>
+  </>;
+}
+// ── Set 7: practice dice (two cut-and-fold cubes) and a weekly practice tracker. Faces use the app's own Queen/King crowns and terms. ──
+const DICE_S = 38, DICE_T = 5;
+const cutStar = (cx, cy, R, r) => Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, rad = i % 2 ? r : R; return (cx + rad * Math.cos(a)).toFixed(2) + ',' + (cy + rad * Math.sin(a)).toFixed(2); }).join(' ');
+const cutCap = x => x.charAt(0).toUpperCase() + x.slice(1);
+function CutDieNet({ faces, col }) {
+  const S = DICE_S, T = DICE_T, W = 4 * S + T, H = 3 * S + 2 * T;
+  const pos = [[1, 0], [0, 1], [1, 1], [2, 1], [3, 1], [1, 2]];
+  const has = (c, r) => pos.some(q => q[0] === c && q[1] === r);
+  const X = c => c * S, Y = r => T + r * S;
+  const tabOn = { '1,0,top': 1, '1,0,left': 1, '1,0,right': 1, '1,2,bottom': 1, '1,2,left': 1, '1,2,right': 1, '3,1,right': 1 };
+  const out = [];
+  pos.forEach(([c, r], fi) => {
+    const f = faces[fi], x = X(c), y = Y(r);
+    out.push(<rect key={'f' + fi} x={x} y={y} width={S} height={S} fill={cutRgba(col, 0.07)}/>);
+    const edges = [['top', x, y, x + S, y, 0, -1, c, r - 1], ['bottom', x, y + S, x + S, y + S, 0, 1, c, r + 1], ['left', x, y, x, y + S, -1, 0, c - 1, r], ['right', x + S, y, x + S, y + S, 1, 0, c + 1, r]];
+    edges.forEach(([nm, x0, y0, x1, y1, nx, ny, nc, nr]) => {
+      const key = fi + nm, d = 'M' + x0 + ' ' + y0 + ' L' + x1 + ' ' + y1;
+      if (has(nc, nr)) { if (nm === 'bottom' || nm === 'right') out.push(<path key={key} d={d} stroke={CUT.cut} strokeWidth="0.35" strokeDasharray="0.7 1.1" fill="none"/>); return; }
+      if (tabOn[c + ',' + r + ',' + nm]) {
+        const ux = (x1 - x0) / S, uy = (y1 - y0) / S, a = [x0 + nx * T + ux * 4, y0 + ny * T + uy * 4], b = [x1 + nx * T - ux * 4, y1 + ny * T - uy * 4];
+        out.push(<path key={key + 't'} d={'M' + x0 + ' ' + y0 + ' L' + a[0] + ' ' + a[1] + ' L' + b[0] + ' ' + b[1] + ' L' + x1 + ' ' + y1} fill={cutRgba(col, 0.14)} stroke={CUT.cut} strokeWidth="0.5" strokeDasharray="1.8 1.2"/>);
+        out.push(<path key={key} d={d} stroke={CUT.cut} strokeWidth="0.35" strokeDasharray="0.7 1.1" fill="none"/>);
+      } else out.push(<path key={key} d={d} stroke={CUT.cut} strokeWidth="0.5" strokeDasharray="1.8 1.2" fill="none"/>);
+    });
+    out.push(<g key={'c' + fi} transform={'translate(' + x + ' ' + y + ')'}>
+      <g>{f.icon}</g>
+      {f.label.map((ln, i) => <text key={i} x={S / 2} y={(f.sub ? 25.8 : 28.4) + i * 4.7} fontSize="4.2" fontWeight="900" fill={BK.ink} textAnchor="middle">{ln}</text>)}
+      {f.sub && <text x={S / 2} y={25.8 + f.label.length * 4.7 + 0.2} fontSize="2.8" fontWeight="700" fill={BK.muted} textAnchor="middle">{f.sub}</text>}
+    </g>);
+  });
+  return <svg viewBox={'0 0 ' + W + ' ' + H} style={{width:W + 'mm',height:H + 'mm',display:'block',margin:'0 auto'}}>{out}</svg>;
+}
+const termRow = n => TERMS.find(r => r.term === n) || {};
+function CutDice() {
+  const crownQ = <QueenCrown x={19} y={13} s={1.7}/>;
+  const crownK = <KingCrown x={19} y={13} s={1.5}/>;
+  const bigT = (txt, size, fill, italic) => <text x={19} y={size > 10 ? 17.2 : 15.2} fontSize={size} fontWeight="900" fill={fill} textAnchor="middle" fontFamily={CK_SERIF} fontStyle={italic ? 'italic' : 'normal'}>{txt}</text>;
+  const adagio = termRow('Adagio'), forte = termRow('Forte'), piano = termRow('Piano');
+  const how = [
+    { icon: crownQ, label: ["Queen's hand", 'only'], sub: 'right hand · treble clef' },
+    { icon: crownK, label: ["King's hand", 'only'], sub: 'left hand · bass clef' },
+    { icon: <g><QueenCrown x={11} y={13} s={1.05}/><KingCrown x={27} y={13} s={0.95}/></g>, label: ['Hands', 'together'] },
+    { icon: bigT('Adagio', 7.4, CK_COLS[1]), label: [cutCap(adagio.meaningEn || 'slowly')] },
+    { icon: bigT(forte.abbr || 'f', 17, CK_COLS[0], true), label: [cutCap(forte.meaningEn || 'loud')], sub: 'forte' },
+    { icon: bigT(piano.abbr || 'p', 17, CK_COLS[2], true), label: [cutCap(piano.meaningEn || 'soft')], sub: 'piano' },
+  ];
+  const note = (x, y) => <g><ellipse cx={x} cy={y} rx="2.7" ry="1.95" transform={'rotate(-20 ' + x + ' ' + y + ')'} fill={BK.ink}/><line x1={x + 2.5} x2={x + 2.5} y1={y - 0.4} y2={y - 11} stroke={BK.ink} strokeWidth="0.7"/></g>;
+  const first = [
+    { icon: <g>{note(13, 19)}{note(24, 19)}<polygon points="15.5,8 26.5,8 26.5,10.8 15.5,10.8" fill={BK.ink}/></g>, label: ['Clap the', 'rhythm'] },
+    { icon: <g>{['C', 'D', 'E'].map((l, i) => <g key={l}><circle cx={8 + i * 11} cy={13} r="4.4" fill="#fdece6" stroke={BK.coral} strokeWidth="0.6"/><text x={8 + i * 11} y={14.7} fontSize="4.8" fontWeight="900" fill={BK.coral} textAnchor="middle">{l}</text></g>)}</g>, label: ['Say the', 'note names'] },
+    { icon: bigT('1 2 3 4', 8.2, BK.coral), label: ['Count', 'out loud'] },
+    { icon: <polyline points="3,14 11,14 14,14 17,5 21,23 24,11 27,14 35,14" fill="none" stroke={BK.coral} strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round"/>, label: ['Tap the', 'pulse'] },
+    { icon: <g><text x={12} y={19} fontSize="13" fontWeight="900" fill={FW_SHARP} textAnchor="middle">♯</text><text x={26} y={19} fontSize="13" fontWeight="900" fill={FW_FLAT} textAnchor="middle">♭</text></g>, label: ['Find the', 'key signature'] },
+    { icon: <g stroke={BK.ink} strokeWidth="1" strokeLinecap="round" fill="none"><circle cx="16" cy="5.6" r="2.5" fill="#fff"/><line x1="16" y1="8.4" x2="16" y2="16.6"/><line x1="16" y1="16.6" x2="24.5" y2="16.6"/><line x1="24.5" y1="16.6" x2="24.5" y2="23"/><line x1="12" y1="23.6" x2="30" y2="23.6" stroke={BK.line}/><line x1="12.4" y1="9.6" x2="12.4" y2="16.6" stroke={BK.muted}/><line x1="12.4" y1="16.6" x2="26.4" y2="16.6" stroke={BK.muted}/><line x1="16" y1="10.5" x2="21.5" y2="13.6"/></g>, label: ['Sit tall,', 'feet flat'] },
+  ];
+  const make = (
+    <CutTry title="MAKING THE DIE" style={{marginTop:'5mm'}} items={[
+      'Print on thick paper or card if you can. Cut round the outside dashed line, tabs included.',
+      'Fold every dotted line away from you, so the pictures end up on the outside.',
+      'Glue each tab to the inside of the face next to it. Close the last face and let it dry.',
+    ]}/>
+  );
+  return <>
+    <CutPage no={1} set="Practice dice" title="Die 1: play it…" intro={<>Roll this die at the start of your practice. It tells you <b>how</b> to play your piece this time. Dashed line = cut. <b>Dotted line = fold.</b></>}>
+      <div style={{marginTop:'4mm'}}><CutDieNet faces={how} col={CK_COLS[0]}/></div>
+      {make}
+      <CutTry title="TRY THIS" style={{marginTop:'3mm'}} items={[
+        'Roll Die 1 and play the first line of your piece that way. Then roll again and play it a new way.',
+        'Play the same four bars loud, then soft. Which is easier to control?',
+      ]}/>
+    </CutPage>
+    <CutPage no={2} set="Practice dice" title="Die 2: before you play…" intro={<>Roll this die first. It gives you one quick job to do <b>before</b> you play a note. Make it the same way as Die 1.</>}>
+      <div style={{marginTop:'4mm'}}><CutDieNet faces={first} col={CK3}/></div>
+      <CutTry title="TRY THIS" style={{marginTop:'5mm'}} items={[
+        'Roll both dice. Do the Die 2 job first, then play the Die 1 way. Write what you rolled on your tracker.',
+        'Ask a friend to roll for you. Can you do it without stopping?',
+      ]}/>
+    </CutPage>
+    <CutTracker/>
+  </>;
+}
+function CutTracker() {
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const rows = [['Warm-up', 'scale or pattern', true], ['Piece 1', '', true], ['Piece 2', '', true], ['Dice roll', 'write what you rolled', false], ['Minutes', '', false]];
+  const colsT = '33mm repeat(7, 20.4mm)';
+  const box = (t, h) => <div style={{border:'1.4px solid ' + BK.line,borderRadius:8,padding:'2mm 3mm',height:h + 'mm',background:'#fff',flex:1}}><div style={{fontSize:10.5,fontWeight:900,color:BK.coral,letterSpacing:'0.06em'}}>{t}</div></div>;
+  return (
+    <CutPage no={3} set="Practice dice" keep title="My practice week" intro={<>Colour a star (or stick one on) each time you practise. Use the dice to choose how to play. Cut out the star stickers below if you like.</>}>
+      <div style={{display:'flex',gap:'4mm',fontSize:11,fontWeight:800,color:BK.ink,margin:'2mm 0 3mm'}}>
+        <span style={{flex:1,display:'flex',gap:6,alignItems:'baseline'}}>Name <span style={{flex:1,borderBottom:'1px solid ' + BK.ink,height:12}}/></span>
+        <span style={{flex:1,display:'flex',gap:6,alignItems:'baseline'}}>Week of <span style={{flex:1,borderBottom:'1px solid ' + BK.ink,height:12}}/></span>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:colsT,border:'1.4px solid ' + BK.ink,borderRadius:8,overflow:'hidden',background:'#fff'}}>
+        <div style={{background:BK.ink}}/>
+        {days.map(d => <div key={d} style={{background:BK.ink,color:'#fff',fontWeight:900,fontSize:11.5,textAlign:'center',padding:'2mm 0',borderLeft:'1px solid #ffffff44'}}>{d}</div>)}
+        {rows.map(([nm, sub, star], ri) => <React.Fragment key={nm}>
+          <div style={{padding:'0 2.5mm',height:'21mm',display:'flex',flexDirection:'column',justifyContent:'center',borderTop:'1px solid ' + BK.line,background:BK.soft}}>
+            <b style={{fontSize:12,color:BK.ink,lineHeight:1.1}}>{nm}</b>{sub && <span style={{fontSize:8.5,color:BK.muted,fontWeight:700,lineHeight:1.15}}>{sub}</span>}
+          </div>
+          {days.map(d => <div key={d} style={{height:'21mm',borderTop:'1px solid ' + BK.line,borderLeft:'1px solid ' + BK.line,display:'flex',alignItems:'center',justifyContent:'center'}}>
+            {star && <svg viewBox="0 0 12 12" style={{width:'9.5mm',height:'9.5mm'}}><polygon points={cutStar(6, 6.3, 5.6, 2.3)} fill="none" stroke={BK.line} strokeWidth="0.5"/></svg>}
+          </div>)}
+        </React.Fragment>)}
+      </div>
+      <div style={{display:'flex',gap:'4mm',marginTop:'4mm'}}>{box("This week's goal", 26)}{box('One thing that got better', 26)}</div>
+      <div style={{marginTop:'5mm'}}>
+        <NvLabel col={'#e8b93a'}>Star stickers <span style={{fontWeight:600,color:BK.muted}}>· cut out and stick one on each box</span></NvLabel>
+        <CutStrip h={12} pieces={Array.from({ length: 14 }, (_, i) => ({ w: 12.5, col: '#e8b93a', node: <svg viewBox="0 0 12 12" style={{width:'9.5mm',height:'9.5mm',display:'block'}}><polygon points={cutStar(6, 6.3, 5.6, 2.3)} fill="#e8b93a" stroke={BK.ink} strokeWidth="0.5" strokeLinejoin="round"/></svg> }))}/>
+      </div>
+    </CutPage>
+  );
+}
+// ── Set 8: Tempo Race, a board game. The seven tempo words and their order come from the app's TEMPO_TERMS (slowest to fastest). ──
+const TR_COLS = 5, TR_ROWS = 6, TR_S = 34;
+const TR_ACC = [7, 15, 23], TR_RALL = [11, 19, 26];
+function CutRaceBoard() {
+  const S = TR_S, cell = i => { const row = Math.floor(i / TR_COLS), k = i % TR_COLS; return [(row % 2 ? TR_COLS - 1 - k : k) * S, row * S]; };
+  const chev = (x, y, col, dir) => <g transform={'translate(' + x + ' ' + y + ') scale(' + dir + ' 1)'} fill="none" stroke={col} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M-5 -3.6 L-1.4 0 L-5 3.6"/><path d="M0.4 -3.6 L4 0 L0.4 3.6"/></g>;
+  return (
+    <svg viewBox={'0 0 ' + TR_COLS * S + ' ' + TR_ROWS * S} style={{width:TR_COLS * S + 'mm',height:TR_ROWS * S + 'mm',display:'block',margin:'0 auto'}}>
+      {Array.from({ length: 30 }, (_, i) => {
+        const n = i + 1, [x, y] = cell(i), lane = LANE_COLORS[i % 7], acc = TR_ACC.includes(n), rall = TR_RALL.includes(n);
+        return <g key={n}>
+          <rect x={x + 0.8} y={y + 0.8} width={S - 1.6} height={S - 1.6} rx="3" fill={cutRgba(lane, acc || rall ? 0.08 : 0.17)} stroke={acc ? BK.coral : rall ? '#4d5ba6' : lane} strokeWidth={acc || rall ? 1.1 : 0.5}/>
+          <text x={x + 4} y={y + 8.2} fontSize="6.4" fontWeight="900" fill={BK.ink}>{n === 1 ? '' : n === 30 ? '' : n}</text>
+          {acc && <g>{chev(x + S / 2, y + 17, BK.coral, 1)}<text x={x + S / 2} y={y + 25.4} fontSize="3.3" fontWeight="900" fill={BK.coral} textAnchor="middle">Accelerando!</text><text x={x + S / 2} y={y + 29.4} fontSize="2.9" fontWeight="700" fill={BK.muted} textAnchor="middle">jump ahead 2</text></g>}
+          {rall && <g>{chev(x + S / 2, y + 17, '#4d5ba6', -1)}<text x={x + S / 2} y={y + 25.4} fontSize="3.3" fontWeight="900" fill="#4d5ba6" textAnchor="middle">Rallentando…</text><text x={x + S / 2} y={y + 29.4} fontSize="2.9" fontWeight="700" fill={BK.muted} textAnchor="middle">go back 2</text></g>}
+          {n === 1 && <g><line x1={x + 9} x2={x + 9} y1={y + 5} y2={y + 17} stroke={BK.ink} strokeWidth="0.9"/><polygon points={(x + 9) + ',' + (y + 5) + ' ' + (x + 19) + ',' + (y + 8.5) + ' ' + (x + 9) + ',' + (y + 12)} fill={BK.coral}/><text x={x + S / 2} y={y + 27} fontSize="6.6" fontWeight="900" fill={BK.ink} textAnchor="middle">START</text></g>}
+          {n === 30 && <g>{Array.from({ length: 8 }, (_, q) => <rect key={q} x={x + 5 + (q % 4) * 6} y={y + 5 + Math.floor(q / 4) * 6} width="6" height="6" fill={(q + Math.floor(q / 4)) % 2 ? '#fff' : BK.ink} stroke={BK.ink} strokeWidth="0.3"/>)}<text x={x + S / 2} y={y + 27} fontSize="6.2" fontWeight="900" fill={BK.ink} textAnchor="middle">FINISH</text></g>}
+        </g>;
+      })}
+    </svg>
+  );
+}
+const CutCar = ({ col }) => (
+  <svg viewBox="0 0 30 16" style={{width:'30mm',height:'16mm',display:'block',outline:'1.3px dashed ' + CUT.cut,flex:'0 0 auto'}}>
+    <rect x="0" y="0" width="30" height="16" fill="#fff"/>
+    {[[6.5, 1.4], [19, 1.4], [6.5, 12.2], [19, 12.2]].map(([x, y], i) => <rect key={i} x={x} y={y} width="5.4" height="2.4" rx="0.8" fill={BK.ink}/>)}
+    <rect x="2" y="3" width="26" height="10" rx="4.2" fill={col} stroke={BK.ink} strokeWidth="0.5"/>
+    <rect x="17.5" y="4.4" width="5.8" height="7.2" rx="1.6" fill="#fff" opacity="0.88"/>
+    <rect x="6" y="4.8" width="4" height="6.4" rx="1.2" fill="#fff" opacity="0.6"/>
+    <circle cx="26" cy="5.6" r="0.9" fill="#ffe9a8"/><circle cx="26" cy="10.4" r="0.9" fill="#ffe9a8"/>
+  </svg>
+);
+function CutTempoRace() {
+  const T = TEMPO_TERMS;
+  const cards = Array.from({ length: 16 }, (_, k) => k < 14 ? T[k % 7] : null);
+  const rankMove = tm => TEMPO_RANK[tm.term] + 1;
+  const accT = termRow('Accelerando'), rallT = termRow('Rallentando');
+  return <>
+    <CutPage no={1} keep set="Tempo Race" title="Tempo Race" intro={<>Race from START to FINISH by saying tempo words. Print this board on card or stick it to card. <b>Do not cut this page.</b> The cards and cars are on the next page.</>}>
+      <div style={{marginTop:'2mm'}}><CutRaceBoard/></div>
+      <div style={{textAlign:'center',fontSize:11,fontWeight:800,color:BK.muted,marginTop:'3mm'}}>Follow the numbers from 1 to 30. The track snakes: left to right, then right to left.</div>
+    </CutPage>
+    <CutPage no={2} set="Tempo Race" title="Speed cards and cars" intro={<>Cut out the 16 speed cards and the 4 cars. Each card shows how many squares you move. The two blank cards are for a tempo word you know.</>}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4, 42mm)',gridAutoRows:'31mm',borderTop:'1.2px dashed ' + CUT.cut,borderLeft:'1.2px dashed ' + CUT.cut,width:'fit-content',margin:'2mm auto 0'}}>
+        {cards.map((tm, k) => <div key={k} style={{boxSizing:'border-box',borderRight:'1.2px dashed ' + CUT.cut,borderBottom:'1.2px dashed ' + CUT.cut,background:tm ? cutRgba(LANE_COLORS[TEMPO_RANK[tm.term]], 0.14) : '#fff',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'1.5mm'}}>
+          {tm ? <>
+            <div style={{fontFamily:CK_SERIF,fontSize:tm.term.length > 8 ? 17 : 20,fontWeight:900,color:BK.ink,lineHeight:1}}>{tm.term}</div>
+            <div style={{display:'flex',alignItems:'center',gap:3}}>{Array.from({ length: rankMove(tm) }, (_, d) => <span key={d} style={{width:'2.3mm',height:'2.3mm',borderRadius:'50%',background:LANE_COLORS[TEMPO_RANK[tm.term]]}}/>)}</div>
+            <div style={{fontSize:9,fontWeight:900,color:BK.muted,letterSpacing:'0.06em'}}>MOVE {rankMove(tm)}</div>
+          </> : <>
+            <div style={{fontSize:9,fontWeight:800,color:BK.muted}}>write a tempo word</div>
+            <div style={{width:'30mm',borderBottom:'1px solid ' + BK.ink,height:'6mm'}}/>
+            <div style={{fontSize:9,fontWeight:900,color:BK.muted}}>MOVE ___</div>
+          </>}
+        </div>)}
+      </div>
+      <div style={{marginTop:'6mm'}}>
+        <NvLabel col={BK.coral}>Cars <span style={{fontWeight:600,color:BK.muted}}>· one for each player</span></NvLabel>
+        <div style={{display:'flex',gap:'4mm',justifyContent:'center',marginTop:'1mm'}}>{[BK.coral, '#3b4fa8', '#3f9e94', '#e8b93a'].map(c => <CutCar key={c} col={c}/>)}</div>
+      </div>
+    </CutPage>
+    <CutPage no={3} keep set="Tempo Race" title="How to race" intro={<>For two to four players, or one player racing the clock. Keep this page beside the board: it is also the answer key.</>}>
+      <div style={{display:'grid',gap:'1.6mm',fontSize:12,color:BK.ink,lineHeight:1.4,marginTop:'1mm'}}>
+        {[
+          <>Each player takes a car and parks it on <b>START</b>. Shuffle the speed cards and put them face down.</>,
+          <>On your turn, turn over a card. Read the word aloud and say <b>what it means</b>. A friend (or your teacher) checks the key below.</>,
+          <>Right? Move your car as many squares as the card says. Not sure, or wrong? Move <b>1</b> square, then say the word and its meaning again.</>,
+          <><b style={{color:BK.coral}}>Accelerando</b> ({accT.meaningEn || 'gradually becoming faster'}): jump ahead 2 more squares. <b style={{color:'#4d5ba6'}}>Rallentando</b> ({rallT.meaningEn || 'gradually becoming slower'}): slide back 2. You only follow a special square if you landed on it with your own card.</>,
+          <>First car to reach <b>FINISH</b> wins. You do not need the exact number.</>,
+          <>Bonus round: when the race is over, line up the seven words from <b>slowest to fastest</b>.</>,
+        ].map((x, i) => <div key={i} style={{display:'flex',gap:9}}><b style={{color:BK.coral,flex:'0 0 auto'}}>{i + 1}</b><span>{x}</span></div>)}
+      </div>
+      <div style={{marginTop:'6mm'}}>
+        <NvLabel col={BK.ink}>Answer key <span style={{fontWeight:600,color:BK.muted}}>· slowest to fastest · beats a minute are approximate</span></NvLabel>
+        <div style={{border:'1.3px solid ' + BK.line,borderRadius:8,overflow:'hidden'}}>
+          {TEMPO_TERMS.map((tm, i) => (
+            <div key={tm.term} style={{display:'grid',gridTemplateColumns:'8mm 32mm 1fr 34mm 20mm',alignItems:'center',padding:'1.4mm 3mm',borderTop:i ? '1px solid ' + BK.line : 'none',background:i % 2 ? '#fff' : BK.soft,fontSize:12}}>
+              <span style={{width:'4mm',height:'4mm',borderRadius:'50%',background:LANE_COLORS[i]}}/>
+              <b style={{fontFamily:CK_SERIF,fontSize:15,color:BK.ink}}>{tm.term}</b>
+              <span style={{color:BK.ink,fontWeight:700}}>{tm.meaning}</span>
+              <span style={{color:BK.muted,fontWeight:700}}>about {tm.bpm[0]}–{tm.bpm[1]}</span>
+              <b style={{color:BK.coral,textAlign:'right'}}>move {i + 1}</b>
+            </div>
+          ))}
+        </div>
+      </div>
+    </CutPage>
+  </>;
+}
+const CUTOUTS = { 'note-bars': CutNoteBars, 'scale-slider': CutScaleSlider, 'staff-mat': CutStaffMat, 'cards-notes': CutCardsNotes, 'cards-rhythm': CutCardsRhythm, 'cards-terms': CutCardsTerms, 'fifths-wheel': CutFifthsWheel, 'chord-cake': CutChordCake, 'practice-dice': CutDice, 'tempo-race': CutTempoRace };
 const CUTOUT_LIST = [
   { id: 'note-bars', name: 'Note-value bars', pages: 2, blurb: 'Pieces that add up to a bar' },
   { id: 'scale-slider', name: 'Scale slider', pages: 2, blurb: 'Slide a pattern along the keys' },
@@ -28350,6 +28708,10 @@ const CUTOUT_LIST = [
   { id: 'cards-notes', name: 'Note flashcards', pages: 4, blurb: 'Treble and bass notes, double-sided' },
   { id: 'cards-rhythm', name: 'Rhythm flashcards', pages: 2, blurb: 'Notes and rests, double-sided' },
   { id: 'cards-terms', name: 'Term flashcards', pages: 4, blurb: 'Speed, volume and more, double-sided' },
+  { id: 'fifths-wheel', name: 'Circle-of-fifths wheel', pages: 2, blurb: 'A turning window on every key' },
+  { id: 'chord-cake', name: 'Chord cake', pages: 2, blurb: 'Stack layers to build every triad' },
+  { id: 'practice-dice', name: 'Practice dice and week tracker', pages: 3, blurb: 'Roll how to play, then tick off the week' },
+  { id: 'tempo-race', name: 'Tempo Race board game', pages: 3, blurb: 'Race round the track by saying tempo words' },
 ];
 
 function BookRoot({ kind, ch }) {
