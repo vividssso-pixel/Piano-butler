@@ -684,120 +684,6 @@ function keyFamily(key) {
   return classifyFamily({ rootPc: info.rootPc, offsets: anyEntry.offsets });
 }
 
-function ScaleFingeringDrill({ controlledKey, onPickKey } = {}) {
-  const [ownKey, setOwnKey] = useState('C');
-  const key = controlledKey || ownKey;
-  const setKey = onPickKey || setOwnKey;
-  const [octLen, setOctLen] = useState(1);
-  const info = SCALES[key];
-  const availableOctaves = Object.keys(info.octaves).map(Number).sort((a, b) => a - b);
-  const activeOctLen = availableOctaves.includes(octLen) ? octLen : availableOctaves[0];
-  const entry = info.octaves[activeOctLen];
-
-  function pickKey(k) {
-    setKey(k);
-    const avail = Object.keys(SCALES[k].octaves).map(Number);
-    if (!avail.includes(octLen)) setOctLen(avail[0]);
-  }
-
-  return (
-    <div className="fade-up">
-      <p style={{fontSize:14,color:'var(--muted)',lineHeight:1.6,margin:'0 0 20px'}}>
-        {t('Pick a key -- both hands’ fingering show right on the keyboard, as printed in the AMEB technical work books.', '조를 고르면 양손의 손가락 번호가 건반 위에 바로 나와요. AMEB 테크닉 교재에 나온 그대로예요.')}
-      </p>
-
-      {(
-        <div style={{marginBottom:12}}>
-          <p style={{fontSize:12,color:'var(--muted)',margin:'0 0 10px',lineHeight:1.5}}>
-            {t('Circle-of-fifths order -- sharps 0 through 7, then flats 1 through 7.', '5도권 순서예요 -- 샵 0개부터 7개까지, 그다음 플랫 1개부터 7개까지.')}
-          </p>
-          {(() => {
-            const sharpMatch = SHARP_KEYS.find(k => k.name === key);
-            const flatMatch = !sharpMatch ? FLAT_KEYS.find(k => k.name === key) : null;
-            const sigType = sharpMatch ? 'sharp' : (flatMatch ? 'flat' : null);
-            const sigCount = sharpMatch ? sharpMatch.count : (flatMatch ? flatMatch.count : 0);
-            if (!sigType) return null;
-            return (
-              <div style={{display:'flex',alignItems:'center',gap:14,marginBottom:14,padding:'10px 14px',background:'var(--brass-bg)',borderRadius:8,flexWrap:'wrap'}}>
-                <div style={{fontSize:12,color:'var(--muted)'}}>
-                  {t('Key signature -- ', '조표 -- ')}<strong style={{color:'var(--text)'}}>{key}{t(' major', ' 장조')}</strong>
-                </div>
-                {sigCount > 0 ? <KeySigStaff count={sigCount} type={sigType} /> : (
-                  <span style={{fontSize:12,color:'var(--muted)'}}>{t('No sharps or flats', '샵도 플랫도 없어요')}</span>
-                )}
-              </div>
-            );
-          })()}
-          {[{ label: t('Sharps', '샵'), list: SHARP_KEYS, symbol: '♯' }, { label: t('Flats', '플랫'), list: FLAT_KEYS, symbol: '♭' }].map(row => (
-            <div key={row.label} style={{marginBottom:10}}>
-              <div style={{fontSize:11.5,fontWeight:700,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.04em',marginBottom:6}}>
-                {row.label}
-              </div>
-              <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-                {row.list.map(k => {
-                  const available = SCALE_KEYS.includes(k.name);
-                  const label = k.name + ' (' + k.count + row.symbol + ')';
-                  return available ? (
-                    <button key={k.name} className={'chip'+(key===k.name?' active':'')} onClick={()=>pickKey(k.name)}>{label}</button>
-                  ) : (
-                    <span key={k.name} className="chip" style={{opacity:0.35,cursor:'default',borderStyle:'dashed'}}>{label}</span>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {availableOctaves.length > 1 && (
-        <div style={{display:'flex',gap:8,marginBottom:20,flexWrap:'wrap'}}>
-          {availableOctaves.map(n => (
-            <button key={n} className={'chip'+(activeOctLen===n?' active':'')} onClick={()=>setOctLen(n)}>
-              {t(n + ' octave' + (n > 1 ? 's' : ''), n + '옥타브')}
-            </button>
-          ))}
-        </div>
-      )}
-
-      <div style={{display:'flex',gap:14,alignItems:'center',marginBottom:14,flexWrap:'wrap'}}>
-        <span style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:'var(--muted)'}}>
-          <span style={{width:12,height:12,borderRadius:3,background:SEGMENT_COLORS.three.fill,border:'1px solid '+SEGMENT_COLORS.three.stroke,display:'inline-block'}}></span>
-          {t('1-2-3 reach (thumb crosses after finger 3)', '1-2-3 묶음 (3번 손가락 뒤에 엄지가 넘어가요)')}
-        </span>
-        <span style={{display:'flex',alignItems:'center',gap:6,fontSize:12,color:'var(--muted)'}}>
-          <span style={{width:12,height:12,borderRadius:3,background:SEGMENT_COLORS.four.fill,border:'1px solid '+SEGMENT_COLORS.four.stroke,display:'inline-block'}}></span>
-          {t('1-2-3-4 reach (thumb crosses after finger 4)', '1-2-3-4 묶음 (4번 손가락 뒤에 엄지가 넘어가요)')}
-        </span>
-      </div>
-
-      <div className="card" style={{padding:'20px 16px'}}>
-        <div style={{fontSize:12,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.04em',marginBottom:8}}>
-          {t('Right hand', '오른손')}
-        </div>
-        <ScaleKeyboard rootPc={info.rootPc} offsets={entry.offsets} fingers={entry.RH} hand="RH" />
-
-        <div style={{fontSize:12,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.04em',margin:'20px 0 8px'}}>
-          {t('Left hand', '왼손')}
-        </div>
-        <ScaleKeyboard rootPc={info.rootPc} offsets={entry.offsets} fingers={entry.LH} hand="LH" />
-
-        <p style={{fontSize:13,color:'var(--muted)',marginTop:16,marginBottom:0,textAlign:'center'}}>
-          {t(key + ' major -- ' + entry.label + ', ascending', key + ' 장조 -- ' + entry.label.replace(/ octaves?/, '옥타브') + ', 올라가며')}
-        </p>
-      </div>
-
-      <div style={{background:'var(--brass-bg)',border:'1px solid var(--border)',borderRadius:10,padding:'12px 14px',marginTop:16}}>
-        <p style={{fontSize:13,fontWeight:800,color:'var(--brass)',margin:'0 0 6px'}}>{t('Where the thumbs and finger 4 go -- ' + prettyNote(key) + ' major', '엄지와 4번 손가락의 자리 -- ' + prettyNote(key) + ' 장조')}</p>
-        {['RH', 'LH'].map(h => (
-          <p key={h} style={{fontSize:13,color:'var(--text)',margin:'0 0 3px',lineHeight:1.5}}>
-            <b>{h === 'RH' ? t('Right hand', '오른손') : t('Left hand', '왼손')}:</b> {t('thumb on ', '엄지 ')}{prettyList(fingerNotes(key, h, 1))} · {t('finger 4 on ', '4번 손가락 ')}{prettyList(fingerNotes(key, h, 4)) || '--'}
-          </p>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // Phase 89: the first drill. Screen shows one letter; the student says the next one out
 // loud (by ear/mental math, not typed in), then the teacher taps to reveal and confirm
 // before moving on -- this is a live spoken exchange the tool supports, not a typed quiz.
@@ -5293,6 +5179,45 @@ function IntervalStaff({ clef = 'treble', notes, colors = [], labels, width = 24
   );
 }
 
+// Phase 317: the line / space pattern for EVERY interval above the chosen bottom note, not just the one picked.
+// Odd numbers (3rd, 5th, 7th) land on the same kind of place (line to line, space to space); even numbers swap.
+function LineSpaceStrip({ bot, num, onPick }) {
+  const isLine = (d) => d % 2 === 0;
+  const ink = '#26296b', coral = '#e4572e';
+  const mini = (line, col) => (
+    <svg width="16" height="16" viewBox="0 0 16 16" style={{display:'block'}} aria-hidden="true">
+      {line
+        ? <line x1="1" x2="15" y1="8" y2="8" stroke={ink} strokeOpacity="0.9" strokeWidth="1.8"/>
+        : <><line x1="1" x2="15" y1="2.5" y2="2.5" stroke={ink} strokeOpacity="0.9" strokeWidth="1.8"/><line x1="1" x2="15" y1="13.5" y2="13.5" stroke={ink} strokeOpacity="0.9" strokeWidth="1.8"/></>}
+      <ellipse cx="8" cy="8" rx="5" ry="3.7" transform="rotate(-20 8 8)" fill={col}/>
+    </svg>
+  );
+  return (
+    <div className="bk-lsstrip" style={{margin:'12px 0 4px'}}>
+      <div style={{fontSize:12.5,fontWeight:800,color:'#4a4d86',marginBottom:6,textAlign:'center'}}>{t('Every interval above ' + dName(bot) + ' -- does it stay or swap?', dName(bot) + ' 위의 모든 도수 -- 그대로일까, 바뀔까?')}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(7,1fr)',gap:4}}>
+        {[2, 3, 4, 5, 6, 7, 8].map(n => {
+          const same = n % 2 === 1, on = n === num, col = same ? ink : coral;
+          return (
+            <button key={n} onClick={() => onPick(n)} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'6px 1px 5px',borderRadius:9,cursor:'pointer',fontFamily:'inherit',color:'var(--text)',
+              border:'1.5px solid ' + (on ? col : (same ? '#cfd1e8' : '#f3c9ba')), background:on ? (same ? '#e3e5f6' : '#fbe0d6') : '#fff',transition:'background 0.2s ease'}}>
+              <span style={{fontSize:12,fontWeight:900}}>{n === 8 ? t('8ve', '8도') : ivOrd(n)}</span>
+              <span style={{display:'flex',alignItems:'center'}}>{mini(isLine(bot), ink)}{mini(isLine(bot + n - 1), coral)}</span>
+              <span style={{fontSize:10.5,fontWeight:800,color:col}}>{same ? t('stay', '그대로') : t('swap', '바뀜')}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div style={{display:'flex',gap:14,flexWrap:'wrap',justifyContent:'center',alignItems:'center',marginTop:7,fontSize:12,color:'#4a4d86'}}>
+        <span style={{display:'inline-flex',alignItems:'center',gap:3}}>{mini(true, ink)}{t('on a line', '줄 위')}</span>
+        <span style={{display:'inline-flex',alignItems:'center',gap:3}}>{mini(false, ink)}{t('in a space', '칸 안')}</span>
+        <span><b style={{color:ink}}>{t('stay', '그대로')}</b> = {t('odd: line→line, space→space', '홀수: 줄→줄, 칸→칸')}</span>
+        <span><b style={{color:coral}}>{t('swap', '바뀜')}</b> = {t('even: line↔space', '짝수: 줄↔칸')}</span>
+      </div>
+    </div>
+  );
+}
+
 // 1. The interval ruler: tap anywhere above the bottom note; the stairs count up to it.
 function IntervalRuler() {
   const [bot, setBot] = useState(28);
@@ -5316,6 +5241,7 @@ function IntervalRuler() {
         tapRange={[bot + 1, bot + 7]} onTapD={tapD} width={240}/>
       <div style={{textAlign:'center',fontSize:16,fontWeight:900,marginTop:4}}>{dName(bot)}{t(' up to ', '에서 ')}{dName(top)}{t('', '까지')} = <span style={{color:'#e4572e'}}>{ivA(num)}</span></div>
       <div style={{textAlign:'center',fontSize:13,color:'#6d6f9c',marginTop:2}}>{pattern} -- {num % 2 ? t('odd numbers (3rd, 5th, 7th) stay on lines or stay in spaces', '홀수(3도, 5도, 7도)는 줄은 줄끼리, 칸은 칸끼리') : t('even numbers (2nd, 4th, 6th, 8ve) swap between line and space', '짝수(2도, 4도, 6도, 8도)는 줄과 칸이 바뀌어요')}</div>
+      <LineSpaceStrip bot={bot} num={num} onPick={(n) => { setTop(bot + n - 1); setNonce(x => x + 1); playIv(a, { d: bot + n - 1, acc: 0 }, 'melodic'); }}/>
       <div style={{textAlign:'center',marginTop:6}}><button className="ghost-btn" onClick={() => playIv(a, b)}>{t('♪ Hear it', '♪ 듣기')}</button></div>
     </div>
   );
@@ -6496,36 +6422,65 @@ function playScaleNotes(rootPc, offsets) {
   const base = 60 + rootPc - (rootPc > 6 ? 12 : 0), seq = [...offsets, ...offsets.slice(0, -1).reverse()];
   seq.forEach((o, i) => blip(ctx, ctx.currentTime + 0.08 + i * 0.3, 440 * Math.pow(2, (base + o - 69) / 12), 0.28, 0.2, 'triangle'));
 }
-function ScaleFinder() {
-  const init = PENDING_SCALE || (() => { try { const p = new URLSearchParams(location.search); return parseScaleQuery((p.get('key') || '') + (p.get('mode') === 'minor' ? ' minor' : '')); } catch (e) { return null; } })() || { key: 'C', mode: 'major' };
+// Phase 317: ONE scale finder (it replaces the separate "Practise the fingering" step, which did the same job).
+// Black-key scales show BOTH spellings -- two key signatures and two sets of note names for the same keys.
+const SF_CANON = { Gb: 'F#', Db: 'C#', Cb: 'B' }; // major: one chip per pair of spellings
+function scalePcOf(n) { return (({ C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 })[n[0]] + (n.indexOf('#') > 0 ? 1 : n.indexOf('b') > 0 ? -1 : 0) + 12) % 12; }
+function ScaleFinder({ ext, onKey } = {}) {
+  const init = PENDING_SCALE || (() => { try { const p = new URLSearchParams(location.search); return parseScaleQuery((p.get('key') || '') + (p.get('mode') === 'minor' ? ' minor' : '')); } catch (e) { return null; } })() || (ext && SCALES[ext] ? { key: ext, mode: 'major' } : null) || { key: 'C', mode: 'major' };
   PENDING_SCALE = null;
   const [key, setKey] = useState(init.key);
   const [mode, setMode] = useState(init.mode);
   const [oct, setOct] = useState(1);
   const [q, setQ] = useState('');
+  const lastExt = useRef(ext);
+  useEffect(() => { if (ext && ext !== lastExt.current) { lastExt.current = ext; if (SCALES[ext]) { setKey(ext); setMode('major'); setQ(''); } } }, [ext]);
   const info = scaleData(key, mode) || SCALES.C, e = info.octaves[oct];
   const names = spellFor(key, mode), ks = scaleSig(key, mode);
-  const keys = mode === 'minor' ? MINOR_PATH : SCALE_KEYS;
-  function search(v) { setQ(v); const r = parseScaleQuery(v); if (r) { setKey(r.key); setMode(r.mode); } }
+  const keys = mode === 'minor' ? MINOR_PATH : SCALE_KEYS.filter(k => !SF_CANON[k]);
+  const canon = mode === 'major' && SF_CANON[key] ? SF_CANON[key] : key;
+  const nameOf = (x) => mode === 'minor' ? x.minor : x.major;
+  const myName = nameOf(ks), pc = scalePcOf(myName);
+  const twinKs = ks.type ? KEY_SIGS.find(x => x !== ks && scalePcOf(nameOf(x)) === pc) : null;
+  const cards = twinKs ? [ks, twinKs] : [ks];
+  const altRaw = (CHIP_ALSO[mode] || {})[key];
+  const altName = altRaw ? altRaw.replace(/m$/, '') : '';
+  const theory = !twinKs && ks.type && [1, 3, 6, 8, 10].includes(pc) && altName; // the other spelling exists only on paper
+  const kindWord = mode === 'minor' ? t('minor', '단조') : t('major', '장조');
+  function pick(k) { setKey(k); setQ(''); if (mode === 'major' && onKey) onKey(k); }
+  function search(v) { setQ(v); const r = parseScaleQuery(v); if (r) { setKey(r.key); setMode(r.mode); if (r.mode === 'major' && onKey) onKey(r.key); } }
   const miss = q && !parseScaleQuery(q);
+  const noteRow = (nm, label) => { const ns = spellFor(nm, mode); return (
+    <div key={nm} style={{fontSize:16,fontWeight:800,margin:'4px 0',display:'flex',gap:8,flexWrap:'wrap',alignItems:'baseline'}}>
+      {label && <span style={{fontSize:12,fontWeight:900,color:'var(--muted)',minWidth:34}}>{prettyNote(nm)}</span>}
+      {ns.concat([ns[0]]).map((n, i) => <span key={i} style={{color:mode === 'minor' && i === 6 ? '#e4572e' : 'var(--text)'}}>{prettyAny(n)}</span>)}
+    </div>); };
   return (
     <div className="try-box" style={actBox}>
       <div style={actTitle}>{t('Scale finder', '스케일 찾기')}</div>
-      <div style={actNote}>{LANG === 'ko' ? <>스케일을 입력하거나(<b>Bb</b>, <b>F# minor</b>, <b>E flat</b>) 눌러 보세요. 숫자는 손가락 번호이고, 색칠된 묶음은 엄지에서 시작해요.</> : <>Type a scale (<b>Bb</b>, <b>F# minor</b>, <b>E flat</b>) or tap one. Numbers are fingers; the coloured groups start on the thumb.</>}</div>
+      <div style={actNote}>{LANG === 'ko' ? <>스케일을 입력하거나(<b>Bb</b>, <b>F# minor</b>, <b>E flat</b>) 눌러 보세요. 숫자는 손가락 번호이고, 색칠된 묶음은 엄지에서 시작해요. 손가락 번호는 AMEB 테크닉 교재에 나온 그대로예요.</> : <>Type a scale (<b>Bb</b>, <b>F# minor</b>, <b>E flat</b>) or tap one. Numbers are fingers; the coloured groups start on the thumb. Fingering as printed in the AMEB technical work books.</>}</div>
       <input value={q} onChange={e => search(e.target.value)} placeholder={t('Type a scale: Bb, c minor, f#m…', '스케일 입력: Bb, c minor, f#m…')} style={{width:'100%',boxSizing:'border-box',padding:'9px 12px',borderRadius:10,border:'1.5px solid ' + (miss ? '#c8361b' : 'var(--border)'),fontSize:15,fontFamily:'inherit',marginBottom:6}}/>
       {miss && <div style={{fontSize:12,color:'#c8361b',marginBottom:6}}>{t('No scale called “' + q + '” here -- try a letter with # or b, and “minor” if you need it.', '“' + q + '”(이)라는 스케일은 없어요 -- 알파벳에 # 또는 b를 붙이고, 단조면 “minor”를 써 보세요.')}</div>}
       <div style={{display:'flex',gap:4,marginBottom:6}}>{[['major', t('Major', '장조')], ['minor', t('Harmonic minor', '화성 단음계')]].map(([m, l]) => <button key={m} className={'chip' + (mode === m ? ' active' : '')} style={{padding:'3px 11px',fontSize:13}} onClick={() => { setMode(m); if (!scaleData(key, m)) setKey(m === 'minor' ? 'A' : 'C'); }}>{l}</button>)}
         <span style={{flex:1}}/>{[1, 2].map(n => <button key={n} className={'chip' + (oct === n ? ' active' : '')} style={{padding:'3px 10px',fontSize:13}} onClick={() => setOct(n)}>{t(n + ' oct', n + '옥타브')}</button>)}</div>
-      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:10}}>{keys.map(k => <button key={k} className={'chip' + (k === key ? ' active' : '')} style={{padding:'3px 9px',fontSize:13,minWidth:40}} onClick={() => { setKey(k); setQ(''); }}>{scaleChipLabel(k, mode)}</button>)}</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:10}}>{keys.map(k => <button key={k} className={'chip' + (k === canon ? ' active' : '')} style={{padding:'3px 9px',fontSize:13,minWidth:40}} onClick={() => pick(k)}>{scaleChipLabel(k, mode)}</button>)}</div>
       <div style={{background:'#fff',borderRadius:12,padding:'12px'}}>
-        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}>
-          <div>
-            <div style={{fontSize:22,fontWeight:900}}>{prettyNote(key)} {mode === 'minor' ? t('harmonic minor', '화성 단음계') : t('major', '장조')}</div>
-            <div style={{fontSize:13,fontWeight:800,color:'var(--muted)'}}>{LANG === 'ko' && ks.count === 0 ? '샵·플랫 없음' : sigLabel(ks)}{mode === 'minor' ? t(' · raised 7th: ', ' · 올린 7음: ') + prettyAny(names[6]) : ''}</div>
+        <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}>
+          <div style={{flex:'1 1 150px'}}>
+            <div style={{fontSize:22,fontWeight:900}}>{twinKs ? prettyNote(myName) + ' / ' + prettyNote(nameOf(twinKs)) : prettyNote(key)} {mode === 'minor' ? t('harmonic minor', '화성 단음계') : t('major', '장조')}</div>
+            <div style={{fontSize:13,fontWeight:800,color:'var(--muted)'}}>{twinKs ? t('The same keys on the piano -- written two ways.', '피아노에서는 같은 건반 -- 적는 방법만 두 가지예요.') : (LANG === 'ko' && ks.count === 0 ? '샵·플랫 없음' : sigLabel(ks))}{mode === 'minor' && !twinKs ? t(' · raised 7th: ', ' · 올린 7음: ') + prettyAny(names[6]) : ''}</div>
           </div>
-          <div style={{width:130}}><KSStaff count={ks.count} type={ks.type} width={130}/></div>
+          <div style={{display:'flex',gap:10,alignItems:'flex-start'}}>
+            {cards.map(x => (
+              <div key={nameOf(x)} style={{width:twinKs ? 112 : 130,textAlign:'center'}}>
+                {twinKs && <div style={{fontSize:12.5,fontWeight:900,color:'var(--text)'}}>{prettyNote(nameOf(x))} {kindWord} · <span style={{color:'#e4572e'}}>{sigLabel(x)}</span></div>}
+                <KSStaff count={x.count} type={x.type} width={twinKs ? 112 : 130}/>
+              </div>
+            ))}
+          </div>
         </div>
-        <div style={{fontSize:16,fontWeight:800,margin:'6px 0 10px',display:'flex',gap:8,flexWrap:'wrap'}}>{names.concat([names[0]]).map((n, i) => <span key={i} style={{color:mode === 'minor' && i === 6 ? '#e4572e' : 'var(--text)'}}>{prettyAny(n)}</span>)}</div>
+        <div style={{margin:'6px 0 10px'}}>{twinKs ? cards.map(x => noteRow(nameOf(x), true)) : noteRow(key, false)}</div>
+        {theory && <div style={{fontSize:12.5,color:'#6d6f9c',margin:'-4px 0 10px',lineHeight:1.5}}>{t(altName + ' ' + (mode === 'minor' ? 'minor' : 'major') + ' would need double ' + (ks.type === 'flat' ? 'sharps' : 'flats') + ', so it is always written as ' + prettyNote(key) + '.', altName + ' ' + kindWord + '은(는) 겹' + (ks.type === 'flat' ? '샵' : '플랫') + '이 필요해서, 늘 ' + prettyNote(key) + ' ' + kindWord + '으로 적어요.')}</div>}
         <div style={{fontSize:12,fontWeight:900,color:'var(--muted)',letterSpacing:'0.05em',marginBottom:4}}>{t('RIGHT HAND', '오른손')}</div>
         <ScaleKeyboard rootPc={info.rootPc} offsets={e.offsets} fingers={e.RH} hand="RH"/>
         <div style={{fontSize:12,fontWeight:900,color:'var(--muted)',letterSpacing:'0.05em',margin:'10px 0 4px'}}>{t('LEFT HAND', '왼손')}</div>
@@ -7241,8 +7196,7 @@ function ScalesLearn({ onStart }) {
       <Step title={t('Degree names', '음계 이름')}><DegreeNames/></Step>
       <Step title={t('Fingering patterns', '손가락 번호 패턴')}><ScalePatterns sel={sel} onPick={setSel}/></Step>
       <Step title={t('Your scale path', '나의 스케일 경로')}><ScalePath sel={sel} onPick={setSel}/></Step>
-      <Step title={t('Practise the fingering', '손가락 번호 연습')}><ScaleFingeringDrill controlledKey={sel} onPickKey={setSel}/></Step>
-      <Step title={t('Look up any scale', '아무 스케일이나 찾아보기')}><ScaleFinder/></Step>
+      <Step title={t('Look up any scale', '아무 스케일이나 찾아보기')}><ScaleFinder ext={sel} onKey={setSel}/></Step>
     </Lesson>
   ) : (
     <Lesson key="minor" id="scales-minor" title={t('Minor scales', '단조 스케일')} head={tabs} onStart={onStart}
@@ -8266,7 +8220,6 @@ function MajorFingeringSet() {
   return (<div style={{display:'flex',flexDirection:'column',gap:14}}>
     <ScalePatterns sel={sel} onPick={setSel}/>
     <ScalePath sel={sel} onPick={setSel}/>
-    <ScaleFingeringDrill controlledKey={sel} onPickKey={setSel}/>
   </div>);
 }
 function MinorFingeringSet() {
@@ -17759,7 +17712,7 @@ const TOOLS = [
   { id: 'sharp-flat', ch: 'tones', title: 'Sharp, flat, natural', blurb: 'Push a key one semitone and back.', C: () => <><ExplTones2/><SharpFlatMover/></> },
   { id: 'chromatic', ch: 'tones', title: 'Chromatic scale & enharmonics', blurb: 'Every key, its fingering, and all its names -- double sharps too.', C: () => <ChromaticScale/> },
   { id: 'accidental-bar', ch: 'tones', title: 'How long an accidental lasts', blurb: 'Until the bar line -- hear it.', C: () => <><ExplTones2/><AccidentalBar/></> },
-  { id: 'scale-finder', ch: 'scales', title: 'Scale finder', blurb: 'Type any scale -- fingering for both hands, key signature, notes.', C: () => <ScaleFinder/> },
+  { id: 'scale-finder', ch: 'scales', title: 'Scale finder', blurb: 'Type any scale -- fingering for both hands, key signature (both spellings for black-key scales), notes.', C: () => <ScaleFinder/> },
   { id: 'build-major', ch: 'scales', title: 'Build a major scale', blurb: 'T T S T T T S, step by step.', C: () => <ScaleBuilder mode="major"/> },
   { id: 'build-minor', ch: 'scales', title: 'Build a harmonic minor', blurb: 'With the tone-and-a-half step.', C: () => <ScaleBuilder mode="minor"/> },
   { id: 'modes', ch: 'scales', title: 'The seven modes', blurb: 'Lydian to Locrian -- same notes, new home, brighter to darker.', C: () => <Modes/> },
@@ -17802,7 +17755,7 @@ const TOOLS = [
   { id: 'rhythm-cards-all', ch: 'rhythm', title: 'The 40 rhythm cards', blurb: 'One-bar rhythms in 4/4, easiest first -- tap to hear.', C: () => <RhythmCardsBrowser/> },
   { id: 'all-keys', ch: 'key-signatures', title: 'All 15 key signatures', blurb: 'Tap a key to see its signature.', C: () => <KeySigAllKeys/> },
   { id: 'major-shape', ch: 'scales', title: 'The major scale shape', blurb: 'One shape builds every major scale.', C: () => <MajorShapeCard/> },
-  { id: 'major-fingering', ch: 'scales', title: 'Major scale fingering', blurb: 'Fingering patterns, your scale path and a fingering drill.', C: () => <MajorFingeringSet/> },
+  { id: 'major-fingering', ch: 'scales', title: 'Major scale fingering', blurb: 'Fingering patterns and your scale path -- the Scale finder shows any key on the keyboard.', C: () => <MajorFingeringSet/> },
   { id: 'minor-fingering', ch: 'scales', title: 'Minor scale fingering', blurb: 'Fingering patterns, your scale path and every form of each minor.', C: () => <MinorFingeringSet/> },
   { id: 'dc-ds-coda', ch: 'signs', title: 'D.C., D.S., Fine and Coda', blurb: 'Where each jump sends you.', C: () => <SignsDCDS/> },
   { id: 'finger-friends', ch: 'posture-hands', title: 'Meet your fingers', blurb: 'Each finger has its own personality.', C: () => <FingerFriends/> },
@@ -17920,7 +17873,7 @@ const TOOL_KO = {
   'sharp-flat': ['샤프, 플랫, 내추럴', '건반을 반음 밀었다가 되돌려요.'],
   'chromatic': ['반음계와 딴이름한소리', '모든 건반, 손가락 번호, 그리고 모든 이름 -- 겹샤프까지.'],
   'accidental-bar': ['임시표는 언제까지 유효할까', '세로줄까지 -- 들어 봐요.'],
-  'scale-finder': ['스케일 찾기', '아무 스케일이나 입력 -- 양손 손가락 번호, 조표, 음.'],
+  'scale-finder': ['스케일 찾기', '아무 스케일이나 입력 -- 양손 손가락 번호, 조표(검은건반 스케일은 두 가지 표기 모두), 음.'],
   'build-major': ['장조 스케일 만들기', '온 온 반 온 온 온 반, 한 단계씩.'],
   'build-minor': ['화성 단조 스케일 만들기', '온음 반 간격과 함께.'],
   'modes': ['일곱 가지 선법', '리디안부터 로크리안까지 -- 같은 음, 새로운 집, 밝음에서 어두움으로.'],
@@ -17963,7 +17916,7 @@ const TOOL_KO = {
   'rhythm-cards-all': ['리듬 카드 40장', '4/4박자 한 마디 리듬, 쉬운 것부터 -- 눌러서 들어 봐요.'],
   'all-keys': ['조표 15개 전부', '조를 누르면 조표가 보여요.'],
   'major-shape': ['장조 스케일의 모양', '하나의 모양이 모든 장조 스케일을 만들어요.'],
-  'major-fingering': ['장조 스케일 손가락 번호', '손가락 번호 패턴, 나의 스케일 경로, 손가락 번호 연습.'],
+  'major-fingering': ['장조 스케일 손가락 번호', '손가락 번호 패턴과 나의 스케일 경로 -- 아무 조의 건반은 스케일 찾기에서.'],
   'minor-fingering': ['단조 스케일 손가락 번호', '손가락 번호 패턴, 나의 스케일 경로, 단조마다 모든 형태.'],
   'dc-ds-coda': ['D.C., D.S., Fine, Coda', '각 기호가 어디로 보내는지.'],
   'finger-friends': ['손가락 친구들', '손가락마다 성격이 있어요.'],
@@ -18348,7 +18301,7 @@ TOOL_CATS.forEach(c => { const n = c.name, w = c.when; c.nameEn = n; c.whenEn = 
 // kinds: show = show & explain, game = student does it, ear = listening, write = written theory, home = home practice
 const TOOL_META = {
   'complete-melody': ['steps', 1, 2, 'game ear'],
-  'rest-grouping': ['rnotes', 2, 3, 'show'], 'duplets': ['rrhythm', 3, 3, 'show'], 'common-cut': ['rtime', 1, 2, 'show ear'], 'time-sig-numbers': ['rtime', 0, 3, 'show ear'], 'note-value-tree': ['rnotes', 0, 1, 'show ear'], 'dotted-notes': ['rnotes', 1, 2, 'show'], 'rhythm-cards-all': ['rrhythm', 1, 3, 'show ear'], 'all-keys': ['scales', 2, 3, 'show'], 'major-shape': ['scales', 1, 2, 'show'], 'major-fingering': ['scales', 1, 3, 'game show'], 'minor-fingering': ['scales', 2, 3, 'show'], 'dc-ds-coda': ['words', 1, 2, 'show'], 'finger-friends': ['body', 0, 0, 'show'], 'accidental-cards': ['tones', 1, 2, 'show'],
+  'rest-grouping': ['rnotes', 2, 3, 'show'], 'duplets': ['rrhythm', 3, 3, 'show'], 'common-cut': ['rtime', 1, 2, 'show ear'], 'time-sig-numbers': ['rtime', 0, 3, 'show ear'], 'note-value-tree': ['rnotes', 0, 1, 'show ear'], 'dotted-notes': ['rnotes', 1, 2, 'show'], 'rhythm-cards-all': ['rrhythm', 1, 3, 'show ear'], 'all-keys': ['scales', 2, 3, 'show'], 'major-shape': ['scales', 1, 2, 'show'], 'major-fingering': ['scales', 1, 3, 'show home'], 'minor-fingering': ['scales', 2, 3, 'show'], 'dc-ds-coda': ['words', 1, 2, 'show'], 'finger-friends': ['body', 0, 0, 'show'], 'accidental-cards': ['tones', 1, 2, 'show'],
   'flash-cards': ['pitch', 1, 2, 'game'], 'grace-write': ['words', 3, 3, 'write'],
   'clef-basics': ['pitch', 0, 1, 'show'], 'alto-clef': ['ledger', 3, 3, 'show'], 'staff-basics': ['pitch', 0, 1, 'show'], 'anacrusis': ['rrhythm', 2, 3, 'show'], 'minor-forms': ['scales', 1, 2, 'show'],
   'count-more': ['rrhythm', 2, 3, 'show game'], 'grouping': ['rrhythm', 2, 3, 'game write'], 'pedal': ['expression', 2, 3, 'show ear'],
@@ -25564,7 +25517,7 @@ function ScalesWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="scales">{content}</WbPage>);
   P(<WbOpener id="scales" concepts={C} hero={<ScaleStairs letters={['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C']} kb legend={[['T = tone: a BIG step (skip a key)'], ['S = semitone: a tiny step (the very next key)', BK.coral], ['The shape: T T S T T T S']]}/>} blurb="A scale is a staircase. A big step (tone) skips a key, a tiny step (semitone) is the very next key. The same staircase -- T T S T T T S -- builds every major scale."/>);
-  P(<WbMap id="scales" concepts={C} steps={7} checkPage={startNo + 6} tasks={[
+  P(<WbMap id="scales" concepts={C} steps={6} checkPage={startNo + 6} tasks={[
     'Play C, G and F major hands separately with the right fingers -- slowly, evenly.',
     'Play A harmonic minor and listen for the raised 7th (G♯).',
     'Sing the degree names while you play C major: tonic, supertonic...',
@@ -26683,8 +26636,7 @@ function bookExtras(id) {
     { remember: 'Tonic, supertonic, mediant, subdominant, dominant, submediant, leading note.' },
     { remember: 'Thumb under after finger 3 (or 4) going up; finger 3 or 4 over the thumb coming down.' },
     { swap: [[isType(ScalePath), <PaperQR text={<>Keep your scale stamps in the app (scan the code) -- or colour the stars on the <b>Workbook page 5</b> star chart.</>} params="drill=scales&lock=1" label="Scale path"/>]], remember: 'Stamp each card when it is solid three times in a row.' },
-    { remember: 'Slow and even beats fast and bumpy.' },
-    { remember: 'Any scale: find the key signature, then the fingering pattern.' },
+    { remember: 'Any scale: find the key signature, then the fingering pattern -- and practise it slowly and evenly.' },
   ];
   if (id === 'scales-minor') return [
     { remember: 'Natural minor = the key signature only. Harmonic minor = raise the 7th. Melodic minor = raise 6 and 7 going up, natural coming down.' },
