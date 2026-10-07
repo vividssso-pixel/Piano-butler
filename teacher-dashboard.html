@@ -1305,6 +1305,131 @@ function GeneralPlanPanel({ student, logs }) {
 /* ═══════════════════════════════════════════════════════════════════════════
    STUDENT DETAIL VIEW
 ═══════════════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   STUDENT LINK — a private link that opens the drills as this student
+   (table student_links, created by migrations/2026-10-07_phaseA1_student-links.sql)
+════════════════════════════════════════════════════════ */
+const makeToken = () => {
+  const b = new Uint8Array(27);           // 27 bytes -> 36 URL-safe characters (the table requires at least 32)
+  crypto.getRandomValues(b);
+  let bin = ""; b.forEach(x => { bin += String.fromCharCode(x); });
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+};
+const studentLinkUrl = (token) => new URL("drills.html", window.location.href).href.split("#")[0] + "#k=" + token;
+const firstNameOf = (n) => (n || "").trim().split(/\s+/)[0].slice(0, 40);
+
+function StudentLinkPanel({ student }) {
+  const [row, setRow] = useState(undefined);      // undefined = loading, null = no link yet
+  const [name, setName] = useState(firstNameOf(student.name));
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [confirmNew, setConfirmNew] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+
+  useEffect(() => {
+    let off = false;
+    setRow(undefined); setMsg(""); setConfirmNew(false); setRenaming(false); setCopied(false);
+    setName(firstNameOf(student.name));
+    _supabase.from("student_links").select("*").eq("student_id", student.id).maybeSingle().then(({ data, error }) => {
+      if (off) return;
+      if (error) { setRow(null); setMsg("Could not load the student link: " + error.message); return; }
+      setRow(data || null);
+      if (data) setName(data.display_name);
+    });
+    return () => { off = true; };
+  }, [student.id]);
+
+  const cleanName = name.trim().slice(0, 40);
+
+  async function change(patch, then) {
+    setBusy(true); setMsg("");
+    const { data, error } = await _supabase.from("student_links").update(patch).eq("student_id", student.id).select().single();
+    setBusy(false);
+    if (error) { setMsg("Could not save: " + error.message); return false; }
+    setRow(data); if (then) then(data); return true;
+  }
+  async function create() {
+    if (!cleanName) { setMsg("Enter the name the student will see."); return; }
+    setBusy(true); setMsg("");
+    const { data, error } = await _supabase.from("student_links")
+      .insert({ student_id: student.id, display_name: cleanName, token: makeToken() }).select().single();
+    setBusy(false);
+    if (error) { setMsg("Could not create the link: " + error.message); return; }
+    setRow(data);
+  }
+  async function copy() {
+    const url = studentLinkUrl(row.token);
+    try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1800); }
+    catch (e) { const el = document.getElementById("student-link-url"); if (el) { el.focus(); el.select(); } setMsg("Select the link and copy it."); }
+  }
+
+  const active = row && row.active;
+  return (
+    <div className="card p-5 mb-5 no-print">
+      <div className="flex items-center gap-2 mb-1 flex-wrap">
+        <h3 className="text-base font-bold text-slate-800">Student link</h3>
+        {row && (
+          <span className="text-xs px-2 py-0.5 rounded-full font-semibold"
+            style={active ? {background:"#f0fdf4",color:"#15803d"} : {background:"#fffbeb",color:"#92400e"}}>
+            {active ? "Active" : "Paused"}
+          </span>
+        )}
+      </div>
+      <p className="text-xs text-slate-500 mb-3">A private link that opens the drills as {row ? row.display_name : (cleanName || "this student")} and keeps their progress, on any device.</p>
+
+      {row === undefined && <p className="text-xs text-slate-400">Loading…</p>}
+
+      {row === null && (
+        <div className="flex gap-2 items-end flex-wrap">
+          <div style={{flex:"1 1 200px",maxWidth:300}}>
+            <label className="field-label text-slate-400" htmlFor="student-link-name">Name the student sees</label>
+            <input id="student-link-name" className="input" value={name} maxLength={40} onChange={e=>setName(e.target.value)} placeholder="First name or nickname"/>
+          </div>
+          <button onClick={create} disabled={busy} className="btn-primary text-xs py-2 px-4">{busy ? "Creating…" : "Create student link"}</button>
+        </div>
+      )}
+
+      {row && (
+        <>
+          <div className="flex gap-2 items-center flex-wrap mb-3">
+            <input id="student-link-url" readOnly className="input" style={{flex:"1 1 280px",fontSize:12,opacity:active?1:0.55}}
+              value={studentLinkUrl(row.token)} onFocus={e=>e.target.select()}/>
+            <button onClick={copy} className="btn-primary text-xs py-2 px-4">{copied ? "Copied" : "Copy link"}</button>
+          </div>
+          <div className="flex gap-2 flex-wrap items-center">
+            {active
+              ? <button disabled={busy} onClick={()=>change({active:false, revoked_at:new Date().toISOString()})} className="btn-ghost text-xs py-1.5 px-3">Pause link</button>
+              : <button disabled={busy} onClick={()=>change({active:true, revoked_at:null})} className="btn-ghost text-xs py-1.5 px-3">Resume link</button>}
+            {!confirmNew
+              ? <button disabled={busy} onClick={()=>setConfirmNew(true)} className="btn-ghost text-xs py-1.5 px-3">New link</button>
+              : (
+                <span className="flex gap-2 items-center flex-wrap text-xs px-3 py-1.5 rounded-xl" style={{background:"#fffbeb",color:"#92400e",border:"1px solid #fde68a"}}>
+                  The old link will stop working.
+                  <button disabled={busy} onClick={()=>change({token:makeToken(), active:true, revoked_at:null}, ()=>setConfirmNew(false))} className="font-bold underline">Make a new link</button>
+                  <button onClick={()=>setConfirmNew(false)} className="underline">Cancel</button>
+                </span>
+              )}
+            {!renaming
+              ? <button disabled={busy} onClick={()=>{setName(row.display_name);setRenaming(true);}} className="btn-ghost text-xs py-1.5 px-3">Rename</button>
+              : (
+                <span className="flex gap-2 items-center">
+                  <input className="input" style={{width:150,padding:"6px 10px",fontSize:12}} value={name} maxLength={40} onChange={e=>setName(e.target.value)} aria-label="Name the student sees"/>
+                  <button disabled={busy || !cleanName} onClick={()=>change({display_name:cleanName}, ()=>setRenaming(false))} className="btn-primary text-xs py-1.5 px-3">Save</button>
+                  <button onClick={()=>setRenaming(false)} className="btn-ghost text-xs py-1.5 px-3">Cancel</button>
+                </span>
+              )}
+          </div>
+          <p className="text-xs text-slate-400 mt-3">Anyone with this link can open this student's practice record, so send it to the student or parent only. A new link stops the old one.</p>
+          <p className="text-xs text-slate-400 mt-1">Trying it on your own computer switches that browser to the student view. To switch back, open the drills with <span style={{fontFamily:"monospace"}}>?teacher=1</span> added to the address.</p>
+        </>
+      )}
+
+      {msg && <p className="text-xs mt-3" style={{color:"#dc2626"}} role="alert">{msg}</p>}
+    </div>
+  );
+}
+
 function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAttended, onBack, onEdit, onPause, onResume }) {
   const gc = GRADE_COLOR[student.grade] || GRADE_COLOR["Grade 5"];
   // Back-fill startingPhase for older student records
@@ -1434,6 +1559,8 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
           </div>
         )}
       </div>
+
+      <StudentLinkPanel student={student}/>
 
       {/* This month plan — exam students only */}
       {isExamStudent(student) && currentPlanMonth && (
