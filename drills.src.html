@@ -14634,6 +14634,103 @@ function StylesHero() {
   );
 }
 
+// ─── Phase 358: two hands, four ways (Styles chapter) ───────────────────────────────────────────
+// How two lines move against each other -- the piano player's version of texture. Both hands on one picture: the right hand
+// (top, navy) and the left hand (bottom, coral), one dot per note, with thin lines between the hands showing the gap. Parallel
+// keeps the gap, similar changes it, contrary mirrors it, oblique keeps one hand still. Tap a way to hear it; then an ear test.
+const MOTION_TYPES = [
+  { id: 'parallel', en: 'Parallel', ko: '평행', rh: [72, 74, 76, 77, 79, 77], lh: [60, 62, 64, 65, 67, 65],
+    den: 'Both hands move the same way and keep the same distance apart -- here exactly an octave. Like two skaters holding hands.',
+    dko: '두 손이 같은 방향으로 움직이고, 사이 간격도 그대로예요 -- 여기서는 딱 한 옥타브. 손잡고 타는 스케이트처럼요. (평행 진행)' },
+  { id: 'similar', en: 'Similar', ko: '같은 방향', rh: [72, 76, 79, 84, 79, 76], lh: [60, 62, 64, 65, 64, 62],
+    den: 'Both hands go the same way, up together and down together, but the gap between them grows and shrinks.',
+    dko: '두 손이 같이 올라가고 같이 내려가요. 그런데 사이 간격은 넓어졌다 좁아졌다 해요. (동방향 진행)' },
+  { id: 'contrary', en: 'Contrary', ko: '반대 방향', rh: [72, 74, 76, 77, 79, 77], lh: [60, 59, 57, 55, 53, 55],
+    den: 'The hands move away from each other and back again, like a mirror. Contrary-motion scales start on the same note and spread out.',
+    dko: '두 손이 서로 멀어졌다가 다시 가까워져요. 거울처럼요. 반대 방향 스케일은 같은 음에서 시작해서 양쪽으로 퍼져요. (반진행)' },
+  { id: 'oblique', en: 'Oblique', ko: '한 손은 그대로', rh: [72, 74, 76, 77, 76, 74], lh: [55, 55, 55, 55, 55, 55],
+    den: 'One hand stays on its note while the other hand moves.',
+    dko: '한 손은 같은 음에 그대로 있고, 다른 손만 움직여요. (사진행)' },
+];
+const MOTION_Y = (m) => 146 - (m - 50) * 3.9;
+function MotionPicture({ type, on }) {
+  const W = 340, x = (i) => 54 + i * 54;
+  const path = (ms) => ms.map((m, i) => (i ? 'L' : 'M') + x(i) + ' ' + MOTION_Y(m)).join(' ');
+  return (
+    <svg viewBox={'0 0 ' + W + ' 156'} width="100%" style={{ display: 'block', maxWidth: 440, margin: '0 auto' }} aria-hidden="true">
+      {type.rh.map((m, i) => <line key={'g' + i} x1={x(i)} x2={x(i)} y1={MOTION_Y(m) + 6} y2={MOTION_Y(type.lh[i]) - 6} stroke={on === i ? '#e4572e' : 'rgba(38,41,107,0.22)'} strokeWidth={on === i ? 2 : 1.2} strokeDasharray={on === i ? '' : '3 3'}/>)}
+      <path d={path(type.rh)} fill="none" stroke="#26296b" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round"/>
+      <path d={path(type.lh)} fill="none" stroke="#e4572e" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round"/>
+      {type.rh.map((m, i) => <circle key={'r' + i} cx={x(i)} cy={MOTION_Y(m)} r={on === i ? 7.5 : 5.5} fill="#26296b"/>)}
+      {type.lh.map((m, i) => <circle key={'l' + i} cx={x(i)} cy={MOTION_Y(m)} r={on === i ? 7.5 : 5.5} fill="#e4572e"/>)}
+      <text x="6" y={MOTION_Y(type.rh[0]) + 4} fontSize="11" fontWeight="800" fill="#26296b">{t('RH', '오른손')}</text>
+      <text x="6" y={MOTION_Y(type.lh[0]) + 4} fontSize="11" fontWeight="800" fill="#e4572e">{t('LH', '왼손')}</text>
+    </svg>
+  );
+}
+function MotionTypes() {
+  const [sel, setSel] = useState('contrary');
+  const [on, setOn] = useState(-1);
+  const [quiz, setQuiz] = useState(null); // { secret, ans }
+  const [score, setScore] = useState({ right: 0, tries: 0 });
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  function play(id) {
+    timers.current.forEach(clearTimeout); timers.current = []; setOn(-1);
+    const ctx = getAudio(); if (!ctx) return;
+    const T = MOTION_TYPES.find(x => x.id === id), step = 0.42, t0 = ctx.currentTime + 0.1, f = (m) => 440 * Math.pow(2, (m - 69) / 12);
+    T.rh.forEach((m, i) => {
+      const held = id === 'oblique';
+      blip(ctx, t0 + i * step, f(m), step * 0.95, 0.16, 'triangle');
+      if (!held || i === 0) blip(ctx, t0 + i * step, f(T.lh[i]), held ? step * T.rh.length : step * 0.95, 0.16, 'triangle');
+      timers.current.push(setTimeout(() => setOn(i), (0.1 + i * step) * 1000));
+    });
+    timers.current.push(setTimeout(() => setOn(-1), (0.1 + T.rh.length * step) * 1000 + 150));
+  }
+  function choose(id) { setQuiz(null); setSel(id); play(id); }
+  function quizMe() { const others = MOTION_TYPES.map(x => x.id); const s = pick(others); setQuiz({ secret: s, ans: null }); play(s); }
+  function answer(id) { if (!quiz || quiz.ans) return; setQuiz({ ...quiz, ans: id }); setScore(sc => ({ right: sc.right + (id === quiz.secret ? 1 : 0), tries: sc.tries + 1 })); setSel(quiz.secret); }
+  const hidden = quiz && !quiz.ans;
+  if (BOOK) return ( // on paper: all four at once
+    <div className="try-box" style={actBox} data-testid="motion-types">
+      <div style={actTitle}>{t('Two hands, four ways', '두 손, 네 가지 움직임')}</div>
+      <p style={actNote}>{t('When both hands play, they can move together, apart, or one can stay still. Right hand on top, left hand below.', '두 손으로 칠 때, 손들은 같이 움직이거나, 서로 멀어지거나, 한 손만 그대로 있을 수 있어요. 위가 오른손, 아래가 왼손이에요.')}</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '6px 18px' }}>
+        {MOTION_TYPES.map(x => <div key={x.id} style={{ breakInside: 'avoid' }}>
+          <div style={{ fontWeight: 900, fontSize: 14, color: 'var(--navy)' }}>{t(x.en, x.ko)}</div>
+          <MotionPicture type={x} on={-1}/>
+          <div style={{ fontSize: 12, color: '#4a4d86', lineHeight: 1.4 }}>{t(x.den, x.dko)}</div>
+        </div>)}
+      </div>
+    </div>
+  );
+  const cur = MOTION_TYPES.find(x => x.id === sel), lab = (x) => t(x.en, x.ko);
+  return (
+    <div className="try-box" style={actBox} data-testid="motion-types">
+      <div style={actTitle}>{t('Two hands, four ways', '두 손, 네 가지 움직임')}</div>
+      <p style={actNote}>{t('When both hands play, they can move together, apart, or one can stay still. Tap a way to hear it: right hand on top, left hand below.', '두 손으로 칠 때, 손들은 같이 움직이거나, 서로 멀어지거나, 한 손만 그대로 있을 수 있어요. 눌러서 들어 봐요: 위가 오른손, 아래가 왼손이에요.')}</p>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 6 }}>
+        {MOTION_TYPES.map(x => <button key={x.id} data-motion={x.id} className={'chip' + (sel === x.id && !hidden ? ' active' : '')} style={{ padding: '5px 13px', fontSize: 14 }} onClick={() => choose(x.id)}>{lab(x)}</button>)}
+      </div>
+      <div style={{ opacity: hidden ? 0.25 : 1, transition: 'opacity .2s' }}>
+        <MotionPicture type={hidden ? MOTION_TYPES.find(x => x.id === quiz.secret) : cur} on={on}/>
+        <div style={{ fontSize: 13.5, color: 'var(--navy)', lineHeight: 1.5, minHeight: 40, textAlign: 'center', maxWidth: 420, margin: '2px auto 0' }}>{hidden ? '' : <><b>{lab(cur)}:</b> {t(cur.den, cur.dko)}</>}</div>
+      </div>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 8, paddingTop: 10, borderTop: '1px dashed var(--navy-line)' }}>
+        {!hidden && <button className="ghost-btn" style={{ fontSize: 13.5 }} onClick={quizMe} data-testid="motion-quiz">{t('Ear test: which way?', '귀 테스트: 어떤 움직임일까?')}</button>}
+        {hidden && <>
+          <span style={{ fontSize: 13.5, fontWeight: 800, color: 'var(--navy)' }}>{t('Which did you hear?', '어떤 움직임이었나요?')}</span>
+          {MOTION_TYPES.map(x => <button key={x.id} data-motion-answer={x.id} className="chip" style={{ padding: '5px 12px', fontSize: 13.5 }} onClick={() => answer(x.id)}>{lab(x)}</button>)}
+          <button className="ghost-btn" style={{ fontSize: 13, padding: '5px 10px' }} onClick={() => play(quiz.secret)}>♪</button>
+        </>}
+        {quiz && quiz.ans && <b data-testid="motion-result" style={{ fontSize: 14, color: quiz.ans === quiz.secret ? 'var(--good)' : 'var(--bad)' }}>{quiz.ans === quiz.secret ? t('Yes -- ' + lab(MOTION_TYPES.find(x => x.id === quiz.secret)).toLowerCase() + '!', '맞아요 -- ' + lab(MOTION_TYPES.find(x => x.id === quiz.secret)) + '!') : t('It was ' + lab(MOTION_TYPES.find(x => x.id === quiz.secret)).toLowerCase() + ' -- see the picture.', '정답은 ' + lab(MOTION_TYPES.find(x => x.id === quiz.secret)) + '예요 -- 그림을 보세요.')}</b>}
+        <span style={{ flex: 1 }}/>
+        {score.tries > 0 && <span style={{ fontSize: 12.5, color: 'var(--navy-soft)', fontWeight: 700 }}>{score.right} / {score.tries}</span>}
+      </div>
+    </div>
+  );
+}
+
 function StylesLearn({ onStart }) {
   return (
     <Lesson id="styles" title={t('Styles and genres', '스타일과 장르')} intro={t('Music can be grouped by its texture -- how its lines layer together -- and by broad style families like folk, classical, jazz, and popular music.', '음악은 텍스처(선율이 겹겹이 쌓이는 방식)로, 그리고 포크·클래식·재즈·대중음악 같은 큰 스타일 갈래로 나눌 수 있어요.')} onStart={onStart}>
@@ -14643,13 +14740,16 @@ function StylesLearn({ onStart }) {
       <Step title={t('Which texture is this?', '어떤 텍스처일까요?')}>
         <TextureSpotter/>
       </Step>
-      <Step title={t('What makes each style different?', '각 스타일은 무엇이 다를까요')}>
+      <Step storeAs={5} title={t('Two hands, four ways', '두 손, 네 가지 움직임')}>
+        <MotionTypes/>
+      </Step>
+      <Step storeAs={2} title={t('What makes each style different?', '각 스타일은 무엇이 다를까요')}>
         <GenreTraits/>
       </Step>
-      <Step title={t('Straight or swing?', '스트레이트일까, 스윙일까?')}>
+      <Step storeAs={3} title={t('Straight or swing?', '스트레이트일까, 스윙일까?')}>
         <SwingFeel/>
       </Step>
-      <Step title={t('The 12-bar blues', '12마디 블루스')}>
+      <Step storeAs={4} title={t('The 12-bar blues', '12마디 블루스')}>
         <TwelveBarBlues/>
       </Step>
     </Lesson>
