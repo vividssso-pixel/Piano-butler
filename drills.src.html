@@ -21671,7 +21671,7 @@ function WbMap({ id, concepts, tasks, steps, checkPage, minor }) {
           {[...Array.from({ length: total }, (_, k) => ({ n: k + 1, pre: '' })), ...Array.from({ length: minor || 0 }, (_, k) => ({ n: k + 1, pre: 'minor ' }))].map(({ n, pre }) => {
             const own = pre ? concepts.filter(c => String(c.step).startsWith(pre)).map(c => ({ ...c, step: String(c.step).slice(pre.length) })) : concepts;
             const pg = (pre ? bkStepPages(own) : pages)[n], cs = own.filter(c => String(c.step).split(',').some(s => { const r = s.trim().match(/^(\d+)-(\d+)$/); return r ? n >= +r[1] && n <= +r[2] : parseInt(s, 10) === n; }));
-            return <div key={pre + n} data-map-row={pre + n} style={{display:'grid',gridTemplateColumns:'110px 1fr 1fr 44px',fontSize:12.5,color:BK.ink,padding:(total + (minor || 0) > 7 ? '3px' : '6px') + ' 10px',borderTop:'1px solid #ece6d8',alignItems:'center'}}>
+            return <div key={pre + n} data-map-row={pre + n} style={{display:'grid',gridTemplateColumns:'110px 1fr 1fr 44px',fontSize:12.5,color:BK.ink,padding:(total + (minor || 0) > 7 ? '3px' : total + (minor || 0) > 6 ? '4px' : '6px') + ' 10px',borderTop:'1px solid #ece6d8',alignItems:'center'}}>
               <span><b style={{color:BK.coral}}>{pre ? 'Minor step ' + n : 'Step ' + n}</b></span>
               <span>{pg ? 'page ' + pg.join(', ') : <span style={{color:BK.muted}}>in the app only</span>}</span>
               <span style={{fontSize:11.5,color:BK.muted}}>{cs.map(c => c.name).join(' · ')}</span>
@@ -21766,7 +21766,7 @@ function CheckTable({ concepts, cnt }) {
       <div style={{display:'grid',gridTemplateColumns:'1fr 90px 90px 1fr',background:BK.ink,color:'#fff',fontSize:11.5,fontWeight:800,padding:'5px 10px'}}>
         <span>Concept</span><span style={{textAlign:'center'}}>Score</span><span style={{textAlign:'center'}}>Pass mark</span><span style={{textAlign:'center'}}>Passed?</span>
       </div>
-      {concepts.map((c, i) => <div key={c.id} style={{display:'grid',gridTemplateColumns:'1fr 90px 90px 1fr',fontSize:12.5,color:BK.ink,padding:'5px 10px',borderTop:'1px solid #ece6d8',alignItems:'center'}}>
+      {concepts.filter(c => c.chk !== false).map((c, i) => <div key={c.id} style={{display:'grid',gridTemplateColumns:'1fr 90px 90px 1fr',fontSize:12.5,color:BK.ink,padding:'5px 10px',borderTop:'1px solid #ece6d8',alignItems:'center'}}>
         <span><b style={{color:BK.coral}}>{'ABCDEFG'[i]}</b> {c.name}</span>
         <span style={{textAlign:'center'}}>___ / {cnt[c.id]}</span>
         <span style={{textAlign:'center',fontSize:11.5,color:BK.muted}}>{cnt[c.id] <= 3 ? cnt[c.id] : cnt[c.id] - 1}+</span>
@@ -27443,6 +27443,8 @@ function chConcepts() {
     { id: 'rn', name: 'Roman numerals', step: '3-4', page: '5' },
     { id: 'iv', name: 'Inversions', step: '5', page: '6' },
     { id: 'cd', name: 'Cadences', step: '6', page: '6' },
+    { id: 'fc', name: 'Four chords, one song', step: '7', page: '7', chk: false },
+    { id: 'ar', name: 'Arpeggios', step: '8', page: '7', chk: false },
   ];
 }
 const invNotes = ({ r, inv }) => { const t0 = chTriad(r); return inv === 0 ? t0 : inv === 1 ? [t0[1], t0[2], t0[0] + 7] : [t0[2], t0[0] + 7, t0[1] + 7]; };
@@ -27454,13 +27456,145 @@ function ChordCell({ ds, n, ex, children, w = 120 }) {
 function ChordRowCell({ ds, n, ex, children, w = 120, sw = 108, clefOn = true }) {
   return <ExCell n={n} ex={ex}><div style={{display:'flex',alignItems:'center',gap:8,padding:'10px 4px 2px 8px'}}><div style={{width:sw,flex:'0 0 auto'}}><PaperStaff clef="treble" clefOn={clefOn} notes={ds.map(d => ({ d, x: clefOn ? w * 0.62 + ((d % 2) && ds.includes(d - 1) ? 13 : 0) : w * 0.5 + ((d % 2) && ds.includes(d - 1) ? 13 : 0) }))} width={w} minSpan={[40, 27]}/></div><div style={{flex:1,display:'flex',justifyContent:'center',alignItems:'center'}}>{children}</div></div></ExCell>;
 }
+// ─── Phase 362: workbook pages for the lesson steps added in Phases 358-360 ───────────────────────
+// Each is one A4 page in the usual shape (strip with the step's code, TOGETHER, AT HOME, PLAY, faces) and has a teacher block.
+// New concepts carry chk: false -- they are practised on their page; the chapter check-ups stay as they were.
+
+// a row of finger boxes: the numbers, with blanks to fill in (ans = show the blanks filled in coral, for the teacher)
+function FingerRow({ label, fs, gaps = [], ans }) {
+  return <div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 10px 6px'}}><b style={{width:120,fontSize:12.5}}>{label}</b><div style={{display:'flex',gap:5}}>
+    {fs.map((f, i) => { const g = gaps.includes(i); return <span key={i} style={{width:30,height:32,borderRadius:6,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:900,color:g ? BK.coral : BK.ink,border:'1.2px solid ' + (g ? BK.coral : BK.line),background:g ? '#fff' : BK.soft}}>{g ? (ans ? f : '') : f}</span>; })}
+  </div></div>;
+}
+// ── Chords, steps 7-8: four chords, one song · arpeggios ──
+const CH_LOOP = [{ name: 'C', rn: 'I', ds: [28, 30, 32] }, { name: 'G', rn: 'V', ds: [32, 34, 36] }, { name: 'Am', rn: 'vi', ds: [33, 35, 37] }, { name: 'F', rn: 'IV', ds: [31, 33, 35] }];
+const CH_ARP = [['C major RH', [1, 2, 3, 1, 2, 3, 5], [3, 4]], ['C major LH', [5, 4, 2, 1, 4, 2, 1], [2, 3, 5]], ['G major RH', [1, 2, 3, 1, 2, 3, 5], [1, 2, 6]]];
+function ChordsLoopPage() {
+  return <>
+    <WbTop step="7-8"/>
+    <Part kind="together" title="The four-chord loop" how="These four chords, round and round, are behind lots of pop songs. Write each chord's name and its Roman numeral in C major. The first is done.">
+      <BkGrid cols={4} gap="10px 10px">{CH_LOOP.map((c, i) => <ChordCell key={c.name} ds={c.ds} n={i + 1} ex={i === 0} w={130}><div style={{textAlign:'center',margin:'2px 0 5px'}}>{i === 0 ? bkHand(c.name + ' · ' + c.rn, 78, 26) : bkBox(78, 26)}</div></ChordCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Arpeggio fingers" how="An arpeggio is a chord played one note at a time, up two octaves. Fill in the missing fingers. Then write the notes of the F major arpeggio.">
+      <div style={{display:'grid',gap:6}}>
+        {CH_ARP.map(([l, fs, g], i) => <ExCell key={l} n={i + 1}><FingerRow label={l} fs={fs} gaps={g}/></ExCell>)}
+        <ExCell n={4}><div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 10px 6px'}}><b style={{width:120,fontSize:12.5}}>F major arpeggio</b><div style={{display:'flex',gap:5}}>{['F', '', '', 'F', '', '', 'F'].map((x, i) => <span key={i} style={{width:30,height:32,borderRadius:6,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:900,color:BK.ink,border:'1.2px solid ' + (x ? BK.line : BK.coral),background:x ? BK.soft : '#fff'}}>{x}</span>)}</div></div></ExCell>
+      </div>
+    </Part>
+    <Part kind="play" title="My four-chord song" how="Pick any four chords from the list and write one in each box. Give your song a name and one line of words. Play the loop four times round with your left hand and hum a tune on top.">
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:10,fontSize:12,color:BK.ink}}>{[['C', 'C E G'], ['Dm', 'D F A'], ['F', 'F A C'], ['G', 'G B D'], ['Am', 'A C E']].map(([n0, ns]) => <span key={n0} style={{border:'1.5px solid ' + BK.line,borderRadius:14,padding:'3px 12px',background:'#fff'}}><b>{n0}</b> = {ns}</span>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10}}>{[0, 1, 2, 3].map(i => <span key={i} style={{height:62,border:'1.8px solid ' + BK.ink,borderRadius:12}}/>)}</div>
+      <div style={{display:'grid',gap:12,marginTop:14,fontSize:13,color:BK.ink}}>
+        <div style={{display:'flex',alignItems:'flex-end',gap:10}}>My song's name: <span style={{flex:1,borderBottom:'1px solid ' + BK.ink,height:20}}/></div>
+        <div style={{display:'flex',alignItems:'flex-end',gap:10}}>One line of words: <span style={{flex:1,borderBottom:'1px solid ' + BK.ink,height:20}}/></div>
+      </div>
+    </Part>
+    <Faces/>
+  </>;
+}
+function ChordsLoopTeacher() {
+  return <TcBlock page={7} title="Four-chord loop · arpeggios" answers={<>{tcAns('TOGETHER', CH_LOOP.map(c => c.name + ' · ' + c.rn))}{tcAns('AT HOME', [...CH_ARP.map(([l, fs]) => l + ': ' + fs.join(' ')), 'F major arpeggio: F A C F A C F'])}<div style={{fontSize:12,color:BK.ink}}>PLAY: any four chords; check they can play the loop steadily before humming.</div></>}
+    watch="Writing every numeral in capitals: vi is small because A minor is a minor chord. In the arpeggio, using finger 4 instead of 3 in the right hand of C major."
+    say="“Big numeral = major, small = minor. Right hand: 1 2 3, thumb under, 1 2 3 5.”"/>;
+}
+// ── Form, step 6: song shapes ──
+const FM_SONG = [['A', 'Verse'], ['B', 'Chorus'], ['A', 'Verse'], ['B', 'Chorus'], ['C', 'Bridge'], ['B', 'Chorus']];
+const FM_SHAPES = [[['A', 'B', 'A', 'B'], 'verse-chorus'], [['A', 'A', 'B', 'A'], '32-bar song (B = the bridge)'], [['A', 'B', 'C', 'A', 'B', 'C'], 'verse, pre-chorus, chorus'], [['A', 'B', 'A', 'C', 'A'], 'rondo']];
+function FormSongPage() {
+  return <>
+    <WbTop step={6}/>
+    <Part kind="together" title="Letter the song" how="Songs are built from sections too. The same section keeps its letter: every verse is A, every chorus is B, and the bridge (something new near the end) is C. Write the letters -- the first is done.">
+      <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap',padding:'4px 0'}}>{FM_SONG.map(([l, role], i) => <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>{i === 0 ? <FmBlock l={l} s={40}/> : <FmBlock blank s={40}/>}<span style={{fontSize:11.5,fontWeight:800,color:BK.muted}}>{role}</span></div>)}</div>
+    </Part>
+    <Part kind="home" title="Which song shape?" how="Write the name of each shape: verse-chorus, 32-bar song, verse-pre-chorus-chorus or rondo.">
+      <BkGrid cols={2} gap="8px 10px">{FM_SHAPES.map(([seq], i) => <ExCell key={i} n={i + 1}><div style={{display:'flex',gap:4,justifyContent:'center',padding:'16px 4px 6px'}}>{seq.map((l, j) => <FmBlock key={j} l={l} s={26}/>)}</div><div style={{textAlign:'center',margin:'4px 0 4px'}}><span style={{display:'inline-block',width:'80%',borderBottom:'1.5px solid ' + BK.line,height:18}}/></div></ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Plan your own song" how="Write V (verse), P (pre-chorus), C (chorus) or B (bridge) in each box. Colour the same sections the same colour. Which shape did you make? Then sing it -- even with la-la words!">
+      <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:8}}>{Array.from({ length: 6 }, (_, i) => <span key={i} style={{height:58,border:'2px dashed ' + BK.coral,borderRadius:10}}/>)}</div>
+      <div style={{display:'grid',gap:12,marginTop:14,fontSize:13,color:BK.ink}}>
+        <div style={{display:'flex',alignItems:'flex-end',gap:10}}>My song is called: <span style={{flex:1,borderBottom:'1px solid ' + BK.ink,height:20}}/></div>
+        <div style={{display:'flex',alignItems:'flex-end',gap:10}}>Its shape is: <span style={{flex:1,borderBottom:'1px solid ' + BK.ink,height:20}}/></div>
+      </div>
+    </Part>
+    <Faces/>
+  </>;
+}
+function FormSongTeacher() {
+  return <TcBlock page={7} title="Song shapes" answers={<>{tcAns('TOGETHER', [FM_SONG.map(x => x[0]).join(' ')])}{tcAns('AT HOME', FM_SHAPES.map(([seq, n0]) => seq.join('') + ' = ' + n0))}<div style={{fontSize:12,color:BK.ink}}>PLAY: any plan; ask them to name its shape and to sing the chorus the same way each time.</div></>}
+    watch="Giving the second verse a new letter because the words change. In songs, a verse keeps its letter -- the tune is the same."
+    say="“Same tune, same letter -- even if the words are new.”"/>;
+}
+// ── Styles, step 3: two hands, four ways ──
+const ST_MO = [['contrary', [3, 4, 5, 6, 7, 6], [1, 0, -1, -2, -3, -2]], ['parallel', [2, 3, 4, 5, 6, 5], [-2, -1, 0, 1, 2, 1]], ['oblique', [2, 3, 4, 5, 4, 3], [-2, -2, -2, -2, -2, -2]], ['similar', [1, 3, 5, 7, 5, 3], [-3, -2, -1, 0, -1, -2]]];
+const ST_MO_NAMES = ['parallel', 'similar', 'contrary', 'oblique'];
+function MoPic({ rh, lh, w = 150, blankLh }) {
+  const x = (i) => 14 + i * ((w - 28) / 5), y = (v) => 50 - v * 5.2;
+  const path = (vs) => vs.map((v, i) => (i ? 'L' : 'M') + x(i) + ' ' + y(v)).join(' ');
+  return <svg viewBox={'0 0 ' + w + ' 100'} style={{width:'100%',display:'block'}}>
+    {blankLh && Array.from({ length: 6 }, (_, i) => Array.from({ length: 9 }, (_, j) => <circle key={i + '-' + j} cx={x(i)} cy={y(-j * 0.75 + 1)} r="1.1" fill={BK.line}/>))}
+    <path d={path(rh)} fill="none" stroke={BK.ink} strokeWidth="1.8"/>
+    {rh.map((v, i) => <circle key={'r' + i} cx={x(i)} cy={y(v)} r="4" fill={BK.ink}/>)}
+    {!blankLh && <><path d={path(lh)} fill="none" stroke={BK.coral} strokeWidth="1.8"/>{lh.map((v, i) => <circle key={'l' + i} cx={x(i)} cy={y(v)} r="4" fill={BK.coral}/>)}</>}
+  </svg>;
+}
+function StylesMotionPage() {
+  return <>
+    <WbTop step={3}/>
+    <Part kind="together" title="Which way are the hands moving?" how="The navy dots are the right hand, the coral dots the left hand. Parallel: same way, same gap. Similar: same way, the gap changes. Contrary: opposite ways. Oblique: one hand stays still. Circle one.">
+      <BkGrid cols={4} gap="10px 10px">{ST_MO.map(([kind, rh, lh], i) => <ExCell key={kind} n={i + 1} ex={i === 0}><div style={{padding:'14px 4px 0'}}><MoPic rh={rh} lh={lh}/></div><div style={{display:'flex',flexWrap:'wrap',justifyContent:'center',gap:3,margin:'2px 0 4px'}}>{ST_MO_NAMES.map(n0 => <span key={n0} style={{border:'1.5px solid ' + (i === 0 && n0 === kind ? BK.coral : BK.line),borderRadius:12,padding:'1px 6px',fontSize:10.5,fontWeight:800,color:i === 0 && n0 === kind ? BK.coral : BK.ink}}>{n0}</span>)}</div></ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Draw the left hand" how="The right hand is drawn. Draw the left hand's dots on the dotted grid and join them: 1 in contrary motion (a mirror), 2 in parallel motion (keep the gap), 3 in oblique motion (stay on one note).">
+      <BkGrid cols={3} gap="10px 12px">{['contrary', 'parallel', 'oblique'].map((k0, i) => <ExCell key={k0} n={i + 1}><div style={{padding:'14px 4px 2px'}}><MoPic rh={[2, 3, 4, 5, 4, 3]} blankLh w={170}/></div><div style={{textAlign:'center',fontSize:11.5,fontWeight:800,color:BK.coral,marginBottom:3}}>{k0}</div></ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="The mirror scale" how="Put both thumbs on middle C. The right hand plays C major going up while the left hand goes down -- a mirror! Write the letters each hand plays, then play it slowly.">
+      {[['Right hand', ['C', 'D', 'E', '', '', '', '', 'C']], ['Left hand', ['C', 'B', '', '', '', '', '', 'C']]].map(([h, ls]) => <div key={h} style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}><b style={{width:90,fontSize:12.5,color:h === 'Right hand' ? BK.ink : BK.coral}}>{h}</b>{ls.map((l, i) => <span key={i} style={{width:34,height:36,borderRadius:8,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:17,fontWeight:900,color:BK.ink,border:'1.5px ' + (l ? 'solid ' + BK.line : 'dashed ' + BK.coral),background:l ? BK.soft : '#fff'}}>{l}</span>)}</div>)}
+      <div style={{display:'flex',alignItems:'center',gap:8,marginTop:4,fontSize:12.5,color:BK.ink}}>I played it hands together! <span style={{width:18,height:18,border:'1.5px solid ' + BK.ink,borderRadius:4}}/></div>
+    </Part>
+    <Faces/>
+  </>;
+}
+function StylesMotionTeacher() {
+  return <TcBlock page={4} title="Two hands, four ways" answers={<>{tcAns('TOGETHER', ST_MO.map(m => m[0]))}<div style={{fontSize:12,color:BK.ink}}>AT HOME: 1 a mirror (left hand goes down when the right goes up), 2 the same shape lower down, 3 one flat line of dots.</div>{tcAns('PLAY', ['RH: C D E F G A B C', 'LH: C B A G F E D C'])}</>}
+    watch="Mixing up parallel and similar: both move the same way, but only parallel keeps exactly the same gap."
+    say="“Look at the dashed gaps between the hands. Same size every time? Parallel.”"/>;
+}
+// ── Styles, step 7: the eight elements of music ──
+const ST_EL_MEAN = [['pitch', 'how high or low'], ['rhythm', 'long and short sounds'], ['melody', 'notes that make a tune'], ['harmony', 'notes sounding together'], ['dynamics', 'how loud or soft'], ['timbre', 'the colour of a sound'], ['texture', 'how many layers'], ['form', 'how the sections are arranged']];
+const ST_EL_ORDER = [4, 0, 6, 1, 7, 3, 2, 5]; // the meanings, mixed up, in a fixed order (so the teacher copy matches)
+function StylesElementsPage() {
+  const nm = (id) => ELEMENTS.find(e => e.id === id).en;
+  return <>
+    <WbTop step={7}/>
+    <Part kind="together" title="Match them up" how="Join each element to what it means. The first one is joined for you.">
+      <div style={{display:'grid',gridTemplateColumns:'1fr 120px 1fr',gridAutoRows:'32px',alignItems:'center',rowGap:6}}>
+        {ST_EL_MEAN.map(([id], i) => <div key={'l' + id} style={{gridColumn:1,gridRow:i + 1,display:'flex',alignItems:'center',gap:8,justifyContent:'flex-end'}}><span style={{fontSize:13.5,fontWeight:900,color:BK.ink}}>{nm(id)}</span><ElemIcon id={id} color={BK.ink}/><span style={{width:9,height:9,borderRadius:5,background:BK.ink}}/></div>)}
+        <svg viewBox={'0 0 120 ' + (8 * 38 - 6)} style={{gridColumn:2,gridRow:'1 / span 8',width:'100%',height:'100%'}} preserveAspectRatio="none"><line x1="4" y1="16" x2="116" y2={16 + ST_EL_ORDER.indexOf(0) * 38} stroke={BK.coral} strokeWidth="2"/></svg>
+        {ST_EL_ORDER.map((k, i) => <div key={'r' + k} style={{gridColumn:3,gridRow:i + 1,display:'flex',alignItems:'center',gap:8}}><span style={{width:9,height:9,borderRadius:5,background:BK.ink}}/><span style={{fontSize:13,color:BK.ink}}>{ST_EL_MEAN[k][1]}</span></div>)}
+      </div>
+    </Part>
+    <Part kind="home" title="Listen like a detective" how="Choose a piece you play or love. For each element, write one or two words about what you hear (high, fast, soft, smooth, two layers, A B A ...).">
+      <div style={{display:'flex',alignItems:'flex-end',gap:10,fontSize:13,color:BK.ink,marginBottom:6}}>The piece: <span style={{flex:1,borderBottom:'1px solid ' + BK.ink,height:18}}/></div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'6px 18px'}}>{ST_EL_MEAN.map(([id]) => <div key={id} style={{display:'flex',alignItems:'flex-end',gap:8,fontSize:12.5,color:BK.ink}}><b style={{width:70}}>{nm(id)}</b><span style={{flex:1,borderBottom:'1px solid ' + BK.line,height:18}}/></div>)}</div>
+    </Part>
+    <Part kind="play" title="Elements bingo" how="Watch a concert or a music video. Colour a square each time you notice that element -- the star is free. Three in a row? Bingo!">
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8,maxWidth:420,margin:'0 auto',width:'100%'}}>{['dynamics', 'melody', 'texture', 'pitch', 'star', 'timbre', 'rhythm', 'form', 'harmony'].map(id => <div key={id} style={{height:70,border:'1.6px solid ' + (id === 'star' ? BK.coral : BK.ink),borderRadius:10,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:3}}>{id === 'star' ? <BkStar size={30} fill={BK.coral}/> : <><ElemIcon id={id} color={BK.ink}/><span style={{fontSize:11.5,fontWeight:900,color:BK.ink}}>{nm(id)}</span></>}</div>)}</div>
+    </Part>
+    <Faces/>
+  </>;
+}
+function StylesElementsTeacher() {
+  return <TcBlock page={8} title="The eight elements" answers={<>{tcAns('TOGETHER', ST_EL_MEAN.map(([id, m]) => ELEMENTS.find(e => e.id === id).en + ' = ' + m))}<div style={{fontSize:12,color:BK.ink}}>AT HOME and PLAY: their own listening -- ask them to play or sing an example of one element they wrote about.</div></>}
+    watch="Mixing up melody and harmony: melody is one note after another (a tune), harmony is notes at the same time (chords)."
+    say="“Melody walks along; harmony stands together.”"/>;
+}
+
 function ChordsWorkbook({ startNo = 1 }) {
   const W = useMemo(() => chWorkbook(), [LANG]);
   const C = chConcepts();
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="chords">{content}</WbPage>);
   P(<WbOpener id="chords" concepts={C} hero={<ChordHero/>} blurb="A triad is three notes stacked in 3rds: root, 3rd and 5th. Picture a 3-layer cake or a snowman made of three snowballs -- the notes stack the same way."/>);
-  P(<WbMap id="chords" concepts={C} steps={8} checkPage={startNo + 6} tasks={[
+  P(<WbMap id="chords" concepts={C} steps={8} checkPage={startNo + 7} tasks={[
     'Play the triad on every white key from C to B. Which ones are major? Which are minor?',
     'Play I, IV, V, I in C major with your left hand. Then in G major.',
     'Play C major in root position, 1st and 2nd inversion -- hands stay close together.',
@@ -27539,6 +27673,7 @@ function ChordsWorkbook({ startNo = 1 }) {
   </>);
 
 
+  P(<ChordsLoopPage/>);
   const cnt = { tr: 4, mm: 4, rn: 4, iv: 4, cd: 4 };
   P(<>
     <CheckHead total={20}/>
@@ -27579,7 +27714,8 @@ function ChordsTeacher() {
       say="“Look at the bass -- the lowest note decides the inversion.”"/>
   </>);
   P(<>
-    <TcBlock page={7} title="Check-up" goBack={chConcepts()} answers={<>{tcAns('A', W.chk.tr.map(tri))}{tcAns('B', W.chk.mm.map(d => CH_QUAL[d] === 'major' ? 'M' : 'm'))}{tcAns('C', W.chk.rn.map(d => CH_RN[d]))}{tcAns('D', W.chk.iv.map(c => INV_NAME[c.inv]))}{tcAns('E', W.chk.cd.map(c => c[2]))}
+    <ChordsLoopTeacher/>
+    <TcBlock page={8} title="Check-up" goBack={chConcepts()} answers={<>{tcAns('A', W.chk.tr.map(tri))}{tcAns('B', W.chk.mm.map(d => CH_QUAL[d] === 'major' ? 'M' : 'm'))}{tcAns('C', W.chk.rn.map(d => CH_RN[d]))}{tcAns('D', W.chk.iv.map(c => INV_NAME[c.inv]))}{tcAns('E', W.chk.cd.map(c => c[2]))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Cadence names follow the app (perfect, plagal, imperfect, interrupted).</div></>}/>
   </>);
   return <>{pages}</>;
@@ -27674,6 +27810,7 @@ function fmConcepts() {
     { id: 'sn', name: 'Same section or new? Labelling', step: 3, page: '4' },
     { id: 'ro', name: 'Rondo: the refrain comes back', step: 4, page: '5' },
     { id: 'bt', name: 'Two sections or three?', step: 5, page: '6' },
+    { id: 'ss', name: 'Song shapes', step: 6, page: '7', chk: false },
   ];
 }
 const FM_TWINKLE = [['Twinkle, twinkle, little star,', 'how I wonder what you are.'], ['Up above the world so high,', 'like a diamond in the sky.'], ['Twinkle, twinkle, little star,', 'how I wonder what you are.']];
@@ -27683,7 +27820,7 @@ function MusicalFormWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="form">{content}</WbPage>);
   P(<WbOpener id="form" concepts={C} hero={<FormTrains/>} blurb="A piece is a train: each section is a carriage. We give each carriage a letter -- the same music keeps its letter, and something new gets the next one."/>);
-  P(<WbMap id="form" concepts={C} steps={6} checkPage={startNo + 6} tasks={[
+  P(<WbMap id="form" concepts={C} steps={6} checkPage={startNo + 7} tasks={[
     'Play your piece and say the letter out loud each time a new section starts.',
     'Play just the A section of a ternary piece -- then play it again at the end, like coming home.',
     'Make up a rondo on the piano: your A tune, a B, your A, a C, your A.',
@@ -27764,6 +27901,7 @@ function MusicalFormWorkbook({ startNo = 1 }) {
   </>);
 
 
+  P(<FormSongPage/>);
   const cnt = { sh: 5, sn: 5, ro: 5, bt: 5 };
   P(<>
     <CheckHead total={20}/>
@@ -27804,7 +27942,8 @@ function MusicalFormTeacher() {
       say="“Look at the first phrase, then the last. Twins? Then it is ABA.”"/>
   </>);
   P(<>
-    <TcBlock page={7} title="Check-up" goBack={fmConcepts()} answers={<>{tcAns('A', W.chk.sh.map(fmName))}{tcAns('B', [lab(W.chk.lab)])}{tcAns('C', W.chk.ro.map(gaps))}{tcAns('D', W.chk.bt.map(btA))}
+    <FormSongTeacher/>
+    <TcBlock page={8} title="Check-up" goBack={fmConcepts()} answers={<>{tcAns('A', W.chk.sh.map(fmName))}{tcAns('B', [lab(W.chk.lab)])}{tcAns('C', W.chk.ro.map(gaps))}{tcAns('D', W.chk.bt.map(btA))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>B: 1 mark per letter (the given A counts). Score each concept on its own (pass 4+ out of 5).</div></>}/>
   </>);
   return <>{pages}</>;
@@ -27929,9 +28068,11 @@ function stWorkbook() {
 function stConcepts() {
   return [
     { id: 'tx', name: 'Textures: mono, homo, poly', step: '1-2', page: '3' },
-    { id: 'er', name: 'The style eras', step: 'story 5', page: '4' },
-    { id: 'fa', name: 'Style families and swing', step: '4-5', page: '5' },
-    { id: 'bl', name: 'The 12-bar blues', step: 6, page: '6' },
+    { id: 'mo', name: 'Two hands, four ways', step: 3, page: '4', chk: false },
+    { id: 'er', name: 'The style eras', step: 'story 5', page: '5' },
+    { id: 'fa', name: 'Style families and swing', step: '4-5', page: '6' },
+    { id: 'bl', name: 'The 12-bar blues', step: 6, page: '7' },
+    { id: 'el', name: 'The eight elements of music', step: 7, page: '8', chk: false },
   ];
 }
 function StylesWorkbook({ startNo = 1 }) {
@@ -27940,7 +28081,7 @@ function StylesWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="styles">{content}</WbPage>);
   P(<WbOpener id="styles" concepts={C} blurb="How many tunes are playing at once? When was it written? Is it folk, classical, jazz or pop? Learn to hear -- and see -- what makes each style itself."/>);
-  P(<WbMap id="styles" concepts={C} steps={7} checkPage={startNo + 6} tasks={[
+  P(<WbMap id="styles" concepts={C} steps={7} checkPage={startNo + 8} tasks={[
     'Play a piece you know. Is it monophony, homophony or polyphony? Tell someone at home.',
     'Find out who wrote one of your pieces and when. Which era is it from?',
     'Play a scale in swing: long-short, long-short.',
@@ -27967,6 +28108,8 @@ function StylesWorkbook({ startNo = 1 }) {
     </Part>
     <Faces/>
   </>);
+
+  P(<StylesMotionPage/>);
 
   P(<>
     <WbTop step="story 5"/>
@@ -28025,6 +28168,7 @@ function StylesWorkbook({ startNo = 1 }) {
   </>);
 
 
+  P(<StylesElementsPage/>);
   const cnt = { tx: 5, er: 5, fa: 5, bl: 5 };
   P(<>
     <CheckHead total={20}/>
@@ -28047,22 +28191,24 @@ function StylesTeacher() {
   const tx = (it) => it.tex, er = (it) => ST_ERA_NAMES[it.era], fa = (it) => ST_FAMS[it.fam], sw = (b) => b ? 'swing' : 'straight', bl = (i) => 'bar ' + (i + 1) + ' ' + ST_BLUES[i];
   P(<>
     <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('styles')}</div>
-    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Answers for every workbook page, the mistakes students make most, and a line to say when they get stuck. Page 4 (the style eras) goes with The Piano's Story lesson, step 5.</div>
+    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Answers for every workbook page, the mistakes students make most, and a line to say when they get stuck. Page 5 (the style eras) goes with The Piano's Story lesson, step 5.</div>
     <TcBlock page={3} title="Textures" answers={<>{tcAns('TOGETHER', W.s1.tog.map(tx))}{tcAns('AT HOME', W.s1.home.map(tx))}</>}
       watch="Calling a choir ‘polyphony’ just because there are many singers. Count the tunes, not the people: a choir in chords is homophony; everyone on one tune is monophony."
       say="“How many different tunes can you hear at once? One alone, one with chords, or two chasing each other?”"/>
-    <TcBlock page={4} title="The style eras" answers={<>{tcAns('TIMELINE', ST_ERA_NAMES.map((e, i) => e + ' ' + ST_ERA_YEARS[i]))}{tcAns('TOGETHER', W.s2.tog.map(er))}{tcAns('AT HOME', [...W.s2.home, ...W.s2.comps].map(er))}</>}
+    <StylesMotionTeacher/>
+    <TcBlock page={5} title="The style eras" answers={<>{tcAns('TIMELINE', ST_ERA_NAMES.map((e, i) => e + ' ' + ST_ERA_YEARS[i]))}{tcAns('TOGETHER', W.s2.tog.map(er))}{tcAns('AT HOME', [...W.s2.home, ...W.s2.comps].map(er))}</>}
       watch="Mixing up Baroque and Classical. Ask what the keyboard could do: the harpsichord couldn't crescendo; the fortepiano could."
       say="“Bach had a harpsichord, Mozart a fortepiano, Chopin a big modern piano with a rich pedal.”"/>
-    <TcBlock page={5} title="Style families · swing" answers={<>{tcAns('TOGETHER', [...W.s3.tog.map(fa), ...W.s3.sw.tog.map(sw)])}{tcAns('AT HOME', [...W.s3.home.map(fa), ...W.s3.sw.home.map(sw)])}</>}
+    <TcBlock page={6} title="Style families · swing" answers={<>{tcAns('TOGETHER', [...W.s3.tog.map(fa), ...W.s3.sw.tog.map(sw)])}{tcAns('AT HOME', [...W.s3.home.map(fa), ...W.s3.sw.home.map(sw)])}</>}
       watch="Thinking classical means ‘old’ and pop means ‘new’. The clue is how the music is made and passed on: by ear, written down, improvised, or verse and chorus."
       say="“Swing is written even but played long-short -- like a skip instead of a walk.”"/>
-    <TcBlock page={6} title="The 12-bar blues" answers={<>{tcAns('TOGETHER', W.s5.tog.map(bl))}{tcAns('AT HOME', [ST_BLUES.map(r => ST_KEYS.G[r]).join(' ')])}<div style={{fontSize:12,color:BK.ink}}>PLAY: the blues verse repeats line 1 (A A B). Any tune using C, E♭, F, G, B♭ is right.</div></>}
-      watch="Putting V in bar 10 as well as bar 9. Bar 10 is IV -- the chords step back down to I."
-      say="“Four bars of home, two away and home again, then the big moment: V, IV, and home.”"/>
   </>);
   P(<>
-    <TcBlock page={7} title="Check-up" goBack={stConcepts()} answers={<>{tcAns('A', W.chk.tx.map(tx))}{tcAns('B', W.chk.er.map(er))}{tcAns('C', W.chk.fa.map(fa))}{tcAns('D', W.chk.bl.map(bl))}
+    <TcBlock page={7} title="The 12-bar blues" answers={<>{tcAns('TOGETHER', W.s5.tog.map(bl))}{tcAns('AT HOME', [ST_BLUES.map(r => ST_KEYS.G[r]).join(' ')])}<div style={{fontSize:12,color:BK.ink}}>PLAY: the blues verse repeats line 1 (A A B). Any tune using C, E♭, F, G, B♭ is right.</div></>}
+      watch="Putting V in bar 10 as well as bar 9. Bar 10 is IV -- the chords step back down to I."
+      say="“Four bars of home, two away and home again, then the big moment: V, IV, and home.”"/>
+    <StylesElementsTeacher/>
+    <TcBlock page={9} title="Check-up" goBack={stConcepts()} answers={<>{tcAns('A', W.chk.tx.map(tx))}{tcAns('B', W.chk.er.map(er))}{tcAns('C', W.chk.fa.map(fa))}{tcAns('D', W.chk.bl.map(bl))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (pass 4+ out of 5).</div></>}/>
   </>);
   return <>{pages}</>;
@@ -28106,7 +28252,7 @@ function TcBlock({ page, title, answers, watch, say, goBack }) {
         <span style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:17,fontWeight:800,color:BK.ink}}>{title}</span>
       </div>
       {answers}
-      {goBack && <div style={{fontSize:12,color:BK.ink,lineHeight:1.5,marginTop:6}}><b style={{color:BK.coral}}>If a concept is not passed, go back to:</b> {goBack.map((c, i) => <span key={c.id}>{i > 0 && ' \u00b7 '}<b>{'ABCDEFG'[i]}</b> {bkStepLabel(c.step)}, workbook page {c.page}</span>)}</div>}
+      {goBack && <div style={{fontSize:12,color:BK.ink,lineHeight:1.5,marginTop:6}}><b style={{color:BK.coral}}>If a concept is not passed, go back to:</b> {goBack.filter(c => c.chk !== false).map((c, i) => <span key={c.id}>{i > 0 && ' \u00b7 '}<b>{'ABCDEFG'[i]}</b> {bkStepLabel(c.step)}, workbook page {c.page}</span>)}</div>}
       {(watch || say) && <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginTop:6}}>
         {watch && <div style={{fontSize:12,color:BK.ink,lineHeight:1.5}}><b style={{color:BK.coral}}>Watch for</b><br/>{watch}</div>}
         {say && <div style={{fontSize:12,color:BK.ink,lineHeight:1.5,background:BK.soft,borderRadius:8,padding:'6px 9px'}}><b>If stuck, try saying</b><br/>{say}</div>}
