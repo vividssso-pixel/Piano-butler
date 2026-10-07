@@ -6556,7 +6556,7 @@ function ScalePath({ sel, onPick, keys = SCALE_PATH, prefix = '', mode = 'major'
           );
         }))}
       </div>
-      <p style={{fontSize:12,color:'var(--muted)',margin:'6px 0 0'}}>{t('Stamps are saved on this device only.', '도장은 이 기기에만 저장돼요.')}</p>
+      <p style={{fontSize:12,color:'var(--muted)',margin:'6px 0 0'}}>{SY.watch ? t('Stamps are saved with your progress.', '도장은 내 진도와 함께 저장돼요.') : t('Stamps are saved on this device only.', '도장은 이 기기에만 저장돼요.')}</p>
     </div>
   );
 }
@@ -20018,7 +20018,7 @@ function streakOf(set, today) {
   return n;
 }
 function loadTicks() { try { const o = JSON.parse(localStorage.getItem(TODAY_TICKS_KEY)); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }
-function TodayView({ link, onOpenChapter, onOpenTool, onAll }) {
+function TodayView({ link, onOpenChapter, onOpenTool, onAll, head, compact }) {
   const token = link.token, who = token.slice(0, 8);
   const [data, setData] = useState(() => { try { const c = JSON.parse(localStorage.getItem(TODAY_CACHE_KEY)); return c && c.token === token && c.data ? c.data : null; } catch (e) { return null; } });
   const [status, setStatus] = useState('loading'); // loading | ok | offline | invalid
@@ -20105,6 +20105,7 @@ function TodayView({ link, onOpenChapter, onOpenTool, onAll }) {
     <div data-testid="today">
       <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 900, fontSize: 32, margin: '0 0 2px', letterSpacing: '-0.02em', color: 'var(--navy)' }}>{t('Today', '오늘')}</h2>
       <div style={{ color: 'var(--muted)', fontSize: 15, marginBottom: 16 }}>{dateLabel}</div>
+      {head}
 
       {status === 'invalid' && <div role="status" style={{ ...card, color: 'var(--text)', fontSize: 14.5 }}>{t('This link isn’t active. Ask your teacher for a new one. You can keep practicing.', '이 링크는 지금 쓸 수 없어요. 선생님께 새 링크를 부탁해 보세요. 연습은 계속할 수 있어요.')}</div>}
       {status === 'offline' && <div role="status" style={{ fontSize: 13, color: 'var(--muted)', margin: '-6px 0 12px' }}>{data ? t('Offline. Showing what was saved on this device.', '오프라인이에요. 이 기기에 저장된 내용을 보여줘요.') : t('Couldn’t load your page. Check your internet and try again.', '화면을 불러오지 못했어요. 인터넷을 확인하고 다시 해 보세요.')}</div>}
@@ -20174,6 +20175,7 @@ function TodayView({ link, onOpenChapter, onOpenTool, onAll }) {
         </div>
       )}
 
+      {!compact && (
       <div style={card}>
         <div style={kicker}>{t('Keep going', '이어서 하기')}</div>
         {lastDrill ? (
@@ -20192,6 +20194,7 @@ function TodayView({ link, onOpenChapter, onOpenTool, onAll }) {
         )}
         <button onClick={onAll} style={{ display: 'block', width: '100%', marginTop: 6, background: 'none', border: 'none', color: 'var(--muted)', fontWeight: 700, fontSize: 14, padding: 8, cursor: 'pointer' }}>{t('All chapters →', '전체 챕터 →')}</button>
       </div>
+      )}
       {(() => {
         const line = syncStatus === 'saved' ? t('Your progress is saved ✓', '진도가 저장됐어요 ✓') : (syncStatus === 'offline' && syHasUnsaved()) ? t('Not saved yet. We’ll save it when you’re online.', '아직 저장 전이에요. 인터넷에 연결되면 저장할게요.') : null;
         return line ? <div data-testid="sync-line" style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--muted)', marginBottom: 8 }}>{line}</div> : null;
@@ -20224,6 +20227,239 @@ function readUrlState(studentMode) {
     kn: p.get('kn') || '',
     view: p.get('kit') ? 'kit' : p.get('view') === 'chapters' ? 'chapters' : p.get('view') === 'toolbox' ? 'toolbox' : p.get('view') === 'students' ? 'students' : p.get('tool') ? (PRACTICE_IDS.includes(p.get('tool')) && p.get('view') === 'practice' ? 'practice' : 'tools') : ['tools', 'practice'].includes(p.get('view')) ? p.get('view') : todayView ? 'today' : 'path',
   };
+}
+
+// ─── Student home (Phase 352): one simple page for a student who opened their link ───────────────
+// Sohyun 2026-10-07: "the student link should be one page", "keep it minimal". From the top: what the teacher wrote, the pieces
+// and the practice check-in (TodayView), five practice tools, the scale clock (stamps for every key; "See the fingering" opens
+// the Scale finder) and the music map (every chapter on one sheet). No tabs: other chapters open from the map or a homework link.
+const STUDENT_TOOLS = ['posture-check', 'practice-timer', 'practice-dice', 'perfect-counter', 'metronome'];
+const STUDENT_TOOL_LINE = {
+  'posture-check': ['Check how you sit and hold your hands.', '앉는 자세와 손 모양을 점검해요.'],
+  'practice-timer': ['Set the time, then just play.', '시간을 정하고 연습만 해요.'],
+  'practice-dice': ['Roll for a fun way to practise.', '주사위로 재미있는 연습 방법을 정해요.'],
+  'perfect-counter': ['Play it clean 5 times in a row.', '깨끗하게 5번 연속으로 쳐요.'],
+  'metronome': ['Keep a steady beat.', '일정한 박을 지켜요.'],
+};
+// Sohyun 2026-10-07: the page uses only the drills' two colours, navy and coral (clean and modern)
+const NV = '#26296b', CO = '#e4572e', CO_SOFT = '#fbe3da';
+function HowItWorks() {
+  const steps = [
+    [t('Read what your teacher wrote', '선생님 글 읽기'), <svg key="a" width="26" height="26" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2" fill="#fff" stroke={NV} strokeWidth="1.6"/><path d="M8 8h8M8 12h8M8 16h5" stroke={CO} strokeWidth="1.6" strokeLinecap="round"/></svg>],
+    [t('Practise at the piano', '피아노에서 연습'), <svg key="b" width="26" height="26" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="1.5" fill="#fff" stroke={NV} strokeWidth="1.6"/>{[6.5, 10.5, 14.5].map(x => <rect key={x} x={x} y="6" width="2.6" height="7" fill={NV}/>)}<path d="M18.5 6v12" stroke={NV} strokeWidth="0.8"/></svg>],
+    [t('Tap “I practised today”', '‘오늘 연습했어요’ 누르기'), <svg key="c" width="26" height="26" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="var(--coral)"/><path d="M7.5 12.3l3 3 6-6.3" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>],
+  ];
+  return (
+    <div data-testid="how-it-works" style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+      {steps.map(([label, icon], i) => (
+        <div key={i} style={{ flex: '1 1 0', minWidth: 0, background: 'var(--surface)', border: '1.5px solid var(--navy-line)', borderRadius: 12, padding: '8px 6px', textAlign: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+            <span style={{ width: 18, height: 18, borderRadius: '50%', background: 'var(--navy)', color: '#fff', fontSize: 10.5, fontWeight: 900, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</span>{icon}
+          </div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--navy)', lineHeight: 1.3, marginTop: 4 }}>{label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+const STUDENT_TOOL_ICON = {
+  'posture-check': <svg width="30" height="30" viewBox="0 0 24 24"><rect x="5.5" y="4" width="13" height="17.5" rx="2" fill="#fff" stroke={NV} strokeWidth="1.5"/><rect x="9.4" y="2.5" width="5.2" height="3.2" rx="1" fill={NV}/><path d="M8.3 10.2l1.7 1.7 2.7-2.9M8.3 15.6l1.7 1.7 2.7-2.9" fill="none" stroke={CO} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/><path d="M14.3 10.6h2.2M14.3 16h2.2" stroke={NV} strokeWidth="1.5" strokeLinecap="round"/></svg>,
+  'practice-timer': <svg width="30" height="30" viewBox="0 0 24 24"><rect x="10.4" y="2.4" width="3.2" height="2.6" rx="0.8" fill={NV}/><circle cx="12" cy="13.6" r="7.6" fill="#fff" stroke={NV} strokeWidth="1.5"/><path d="M12 13.6V8.8" stroke={NV} strokeWidth="1.6" strokeLinecap="round"/><path d="M12 13.6l3.5 2" stroke={CO} strokeWidth="1.9" strokeLinecap="round"/><circle cx="12" cy="13.6" r="1.1" fill={NV}/></svg>,
+  'practice-dice': <svg width="30" height="30" viewBox="0 0 24 24"><rect x="4.4" y="4.4" width="15.2" height="15.2" rx="3.4" fill="#fff" stroke={NV} strokeWidth="1.5" transform="rotate(-8 12 12)"/><g transform="rotate(-8 12 12)">{[[8.3, 8.3], [15.7, 8.3], [8.3, 15.7], [15.7, 15.7]].map(([x, y]) => <circle key={x + '-' + y} cx={x} cy={y} r="1.45" fill={NV}/>)}<circle cx="12" cy="12" r="1.7" fill={CO}/></g></svg>,
+  'perfect-counter': <svg width="30" height="30" viewBox="0 0 24 24"><path d="M6.8 9.4l3.3 3.3 7-7" fill="none" stroke={NV} strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"/>{[0, 1, 2, 3, 4].map(i => <circle key={i} cx={4.2 + i * 3.9} cy="18.6" r="1.7" fill={i < 4 ? CO : '#fff'} stroke={i < 4 ? CO : NV} strokeWidth="1"/>)}</svg>,
+  'metronome': <svg width="30" height="30" viewBox="0 0 24 24"><path d="M7.6 20.6 L10.1 4.6 h3.8 L16.4 20.6 Z" fill="#fff" stroke={NV} strokeWidth="1.5" strokeLinejoin="round"/><path d="M12 17.6 L16.8 7.6" stroke={CO} strokeWidth="1.9" strokeLinecap="round"/><circle cx="16.8" cy="7.6" r="1.8" fill={CO}/><path d="M6.6 20.6h10.8" stroke={NV} strokeWidth="1.5" strokeLinecap="round"/></svg>,
+};
+function StudentTools({ onOpen }) {
+  return (
+    <div data-testid="student-tools" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))', gap: 10 }}>
+      {STUDENT_TOOLS.map(id => {
+        const tl = TOOLS.find(x => x.id === id); if (!tl) return null;
+        const icon = STUDENT_TOOL_ICON[id];
+        return (
+          <button key={id} onClick={() => onOpen(id)} data-tool={id} style={{ display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', background: 'var(--surface)', border: '1.5px solid var(--navy-line)', borderRadius: 14, padding: '10px 12px', cursor: 'pointer', fontFamily: 'inherit', color: 'var(--text)', boxShadow: '0 2px 8px rgba(38,41,107,0.04)' }}>
+            <span style={{ flex: '0 0 44px', width: 44, height: 44, borderRadius: 12, background: CO_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</span>
+            <span style={{ minWidth: 0 }}>
+              <span style={{ display: 'block', fontWeight: 800, fontSize: 14.5, lineHeight: 1.25, color: 'var(--navy)' }}>{id === 'perfect-counter' ? t('5 in a row', '5번 연속') : LANG === 'ko' && TOOL_KO[id] ? TOOL_KO[id][0] : tl.title}</span>
+              <span style={{ display: 'block', fontSize: 12, color: 'var(--muted)', lineHeight: 1.35, marginTop: 2 }}>{t(STUDENT_TOOL_LINE[id][0], STUDENT_TOOL_LINE[id][1])}</span>
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+// The scale clock: the 12 keys round a clock face in the order of the circle of fifths (one more sharp each step to the right,
+// one more flat each step to the left). Each key has three stamps (right hand, left hand, hands together) -- the same stamps
+// as the Scales chapter's scale cards (pb_scale_stamps_v1: "C:RH", "m:A:HT" ...), so both always agree.
+const CLOCK_KEYS = { major: ['C', 'G', 'D', 'A', 'E', 'B', 'Gb', 'Db', 'Ab', 'Eb', 'Bb', 'F'], minor: ['A', 'E', 'B', 'F#', 'C#', 'G#', 'D#', 'Bb', 'F', 'C', 'G', 'D'] };
+const CLOCK_SIG = { major: ['0', '1♯', '2♯', '3♯', '4♯', '5♯', '6♭', '5♭', '4♭', '3♭', '2♭', '1♭'], minor: ['0', '1♯', '2♯', '3♯', '4♯', '5♯', '6♯', '5♭', '4♭', '3♭', '2♭', '1♭'] };
+const CLOCK_STEPS = [['RH', 'Right hand', '오른손'], ['LH', 'Left hand', '왼손'], ['HT', 'Hands together', '양손']];
+function ScaleClock({ onKey, onFinger }) {
+  const [mode, setMode] = useState('major');
+  const [stamps, setStamps] = useState(loadStamps);
+  const [sel, setSel] = useState('C');
+  const keys = CLOCK_KEYS[mode], prefix = mode === 'minor' ? 'm:' : '';
+  const on = (k, st) => !!stamps[prefix + k + ':' + st];
+  const count = keys.reduce((a, k) => a + CLOCK_STEPS.filter(([st]) => on(k, st)).length, 0);
+  function toggle(k, st) { const n = { ...stamps }, id = prefix + k + ':' + st; if (n[id]) delete n[id]; else n[id] = Date.now(); setStamps(n); saveStamps(n); }
+  function pick(k) { setSel(k); if (mode === 'major' && onKey) onKey(k); }
+  function switchMode(m) { setMode(m); setSel(CLOCK_KEYS[m][0]); }
+  const C = 170, R = 122, idx = Math.max(0, keys.indexOf(sel));
+  const name = (k) => prettyNote(k) + (mode === 'minor' ? 'm' : '');
+  return (
+    <div data-testid="scale-clock" style={{ background: 'var(--surface)', border: '1.5px solid var(--navy-line)', borderRadius: 16, padding: '14px 12px 16px' }}>
+      <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 6 }}>
+        <button className={'chip' + (mode === 'major' ? ' active' : '')} onClick={() => switchMode('major')}>{t('Major', '장조')}</button>
+        <button className={'chip' + (mode === 'minor' ? ' active' : '')} onClick={() => switchMode('minor')}>{t('Minor', '단조')}</button>
+      </div>
+      <svg viewBox="0 0 340 340" width="100%" style={{ display: 'block', maxWidth: 380, margin: '0 auto' }} role="img" aria-label={t('Scale clock', '스케일 시계')}>
+        <circle cx={C} cy={C} r={R} fill="none" stroke="rgba(38,41,107,0.14)" strokeWidth="1.5" strokeDasharray="3 5"/>
+        <text x={C} y={C - 26} textAnchor="middle" fontSize="11" fontWeight="900" letterSpacing="1.4" fill="var(--muted)">{mode === 'major' ? t('MAJOR', '장조') : t('MINOR', '단조')}</text>
+        <text x={C} y={C + 10} textAnchor="middle" fontSize="34" fontWeight="900" fill={NV} fontFamily="'Playfair Display', Georgia, serif">{count}<tspan fontSize="18" fill="var(--muted)">/36</tspan></text>
+        <text x={C} y={C + 30} textAnchor="middle" fontSize="11" fontWeight="800" fill="var(--muted)">{t('stamps', '도장')}</text>
+        <text x={C + 40} y={C + 54} textAnchor="middle" fontSize="10.5" fontWeight="900" fill={CO}>{t('more ♯ →', '♯ 많아짐 →')}</text>
+        <text x={C - 40} y={C + 54} textAnchor="middle" fontSize="10.5" fontWeight="900" fill={CO}>{t('← more ♭', '← ♭ 많아짐')}</text>
+        {keys.map((k, i) => {
+          const a = (-90 + i * 30) * Math.PI / 180, x = C + R * Math.cos(a), y = C + R * Math.sin(a);
+          const lx = C + (R + 37) * Math.cos(a), ly = C + (R + 37) * Math.sin(a);
+          const n = CLOCK_STEPS.filter(([st]) => on(k, st)).length, full = n === 3, isSel = k === sel;
+          return (
+            <g key={k} data-key={k} data-stamps={n} onClick={() => pick(k)} style={{ cursor: 'pointer' }}>
+              {isSel && <circle cx={x} cy={y} r="29" fill="none" stroke={CO} strokeWidth="3"/>}
+              <circle cx={x} cy={y} r="24" fill={full ? NV : '#fff'} stroke={NV} strokeWidth="1.5"/>
+              <text x={x} y={y + 2} textAnchor="middle" fontSize={name(k).length > 2 ? 12.5 : 15} fontWeight="800" fill={full ? '#fff' : NV} fontFamily="'Playfair Display', Georgia, serif">{name(k)}</text>
+              {CLOCK_STEPS.map(([st], j) => <circle key={st} cx={x - 8 + j * 8} cy={y + 12} r="2.9" fill={on(k, st) ? CO : (full ? NV : '#fff')} stroke={on(k, st) ? CO : 'rgba(38,41,107,0.35)'} strokeWidth="1"/>)}
+              <text x={lx} y={ly + 4} textAnchor="middle" fontSize="11" fontWeight="800" fill="var(--muted)">{CLOCK_SIG[mode][i]}</text>
+            </g>
+          );
+        })}
+      </svg>
+      <div style={{ borderTop: '1px solid var(--navy-line)', marginTop: 8, paddingTop: 12, textAlign: 'center' }}>
+        <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 800, fontSize: 20, color: NV }}>{prettyNote(sel)} {mode === 'major' ? t('major', '장조') : t('minor', '단조')} <span style={{ fontFamily: 'Inter, sans-serif', fontSize: 13, fontWeight: 800, color: 'var(--muted)' }}>{CLOCK_SIG[mode][idx] === '0' ? t('no sharps or flats', '♯·♭ 없음') : CLOCK_SIG[mode][idx]}</span></div>
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap', marginTop: 10 }}>
+          {CLOCK_STEPS.map(([st, en, ko]) => { const v = on(sel, st); return (
+            <button key={st} data-stamp-btn={st} aria-pressed={v} onClick={() => toggle(sel, st)} style={{ border: '1.5px solid ' + (v ? CO : 'var(--navy-line)'), background: v ? CO : '#fff', color: v ? '#fff' : NV, borderRadius: 999, padding: '7px 13px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>{v ? '✓ ' : ''}{t(en, ko)}</button>
+          ); })}
+        </div>
+        {onFinger && <button className="chapter-link" data-testid="clock-finger" style={{ marginTop: 8 }} onClick={() => onFinger(sel, mode)}>{t('See the fingering →', '손가락 번호 보기 →')}</button>}
+        <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>{t('Tap a key on the clock, then stamp it when it’s solid.', '시계에서 조를 누르고, 확실해지면 도장을 찍어요.')}</div>
+      </div>
+    </div>
+  );
+}
+function StudentScales({ onOpenTool }) {
+  return (
+    <div data-testid="student-scales">
+      <ScaleClock onFinger={(key, mode) => { PENDING_SCALE = { key, mode }; onOpenTool('scale-finder'); }}/>
+    </div>
+  );
+}
+function StudentHome({ link, onOpenChapter, onOpenTool }) {
+  const sec = { marginTop: 26 };
+  return (
+    <div data-testid="student-home">
+      <TodayView link={link} onOpenChapter={onOpenChapter} onOpenTool={onOpenTool} onAll={() => {}} head={<HowItWorks/>} compact/>
+      <div style={sec}>
+        <StaffHead title={t('My practice tools', '나의 연습 도구')}/>
+        <div style={{ height: 10 }}/>
+        <StudentTools onOpen={onOpenTool}/>
+      </div>
+      <div style={sec}>
+        <StaffHead title={t('My scales', '나의 스케일')}/>
+        <div style={{ height: 10 }}/>
+        <StudentScales onOpenTool={onOpenTool}/>
+      </div>
+      <div style={sec}>
+        <StaffHead title={t('My music map', '나의 음악 지도')}/>
+        <div style={{ height: 10 }}/>
+        <MusicMap onOpen={onOpenChapter} compact/>
+      </div>
+    </div>
+  );
+}
+
+// ─── The music map (Phase 352): every chapter on one sheet, as a small mind map ───────────────
+// Sohyun 2026-10-07: "seeing the whole picture is better -- if you see the end before you start, you can see how far you've come",
+// "it must all be on one sheet", and "don't lose the minimalism: too much information blurs what to look at".
+// So: one root ("My music map", chapters done), the 7 stages (PATH_STAGES, the same order as the Start guide and the Lesson
+// Book) branching from it, and each stage's chapters as small chips with a short name and nothing else but their state:
+// navy = done, coral ring = where you are, a coral dot = started. Tapping a chip opens the chapter (the details live there).
+// Used for Learn, the teacher's Chapters tab and the student's own page.
+const CH_SHORT = {
+  'posture-hands': ['Posture', '자세'], 'first-steps': ['Black keys', '검은건반'], 'note-names': ['Note names', '음 이름'],
+  'staff': ['The staff', '오선'], 'ledger-lines': ['Ledger lines', '덧줄'], 'tones': ['Sharps & flats', '올림·내림표'],
+  'pulse': ['Pulse', '박'], 'note-values': ['Note values', '음표 길이'], 'time-signatures': ['Time signatures', '박자표'], 'rhythm': ['Rhythm', '리듬 꼴'],
+  'reading-steps': ['Steps & skips', '이웃음·건너뛰기'], 'tempo': ['Tempo', '빠르기'],
+  'intervals': ['Intervals', '음정'], 'scales': ['Scales', '스케일'], 'key-signatures': ['Key signatures', '조표'], 'chords': ['Chords', '화음'],
+  'melody': ['Melody', '선율'], 'form': ['Form', '형식'], 'dynamics': ['Loud & soft', '셈여림'], 'signs': ['Signs', '기호'], 'terms': ['Terms', '용어'],
+  'piano-story': ['The piano', '피아노'], 'composers': ['Composers', '작곡가'], 'pitch-range': ['Pitch', '음높이'], 'styles': ['Styles', '스타일'],
+};
+// steps ticked in a chapter's lessons (a chapter may hold more than one lesson, e.g. scales-major and scales-minor)
+function chapterSteps(id) {
+  const done = loadDone(), totals = loadStepTotals();
+  let n = 0, of = 0;
+  Object.keys(Object.assign({}, done, totals)).forEach(k => {
+    if (k !== id && k.indexOf(id + '-') !== 0) return;
+    const d = done[k] || {}; n += Object.keys(d).filter(i => d[i]).length; of += +totals[k] || 0;
+  });
+  return { n, of };
+}
+function chapterState(id) { const s = chapterSteps(id); return { ...s, status: s.n === 0 ? 'new' : s.of && s.n >= s.of ? 'done' : 'started' }; }
+const MM_LINE = 'rgba(38,41,107,0.22)';
+function MusicMap({ onOpen, compact }) {
+  const stages = PATH_STAGES.map((s, i) => {
+    const ids = pathStageIds(s);
+    return { s, i, ids, st: ids.map(id => chapterState(id).status) };
+  });
+  const all = stages.flatMap(x => x.ids);
+  const finished = stages.reduce((a, x) => a + x.st.filter(v => v === 'done').length, 0);
+  let last = null; try { last = localStorage.getItem(LAST_CHAPTER_KEY); } catch (e) {}
+  const here = last && all.includes(last) && chapterState(last).status !== 'done' ? last : all.find(id => chapterState(id).status !== 'done');
+  return (
+    <div data-testid="music-map" className={compact ? '' : 'fade-up'}>
+      {!compact && <PageIntro title={UI_TEACHER ? t('Chapters', '챕터') : t('Learn', '배우기')} text={t('The whole map on one page. Tap a chapter to open it.', '전체 지도가 한 장에 있어요. 챕터를 누르면 열려요.')}/>}
+      <div style={{ background: 'var(--surface)', border: '1.5px solid var(--navy-line)', borderRadius: 18, padding: '16px 14px 14px', boxShadow: '0 4px 18px rgba(38,41,107,0.05)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <span style={{ background: 'var(--navy)', color: '#fff', borderRadius: 999, padding: '7px 14px', fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 800, fontSize: 16 }}>{t('My music map', '나의 음악 지도')}</span>
+          <span data-testid="map-count" style={{ fontSize: 13, fontWeight: 800, color: 'var(--muted)' }}>{t(finished + ' of ' + all.length + ' done', all.length + '개 중 ' + finished + '개 완료')}</span>
+        </div>
+        <div style={{ marginLeft: 18 }}>
+          {stages.map((x, k) => {
+            const full = x.st.every(v => v === 'done'), isHere = x.ids.includes(here), lastStage = k === stages.length - 1;
+            return (
+              <div key={x.i} data-map-stage={x.i} style={{ position: 'relative', paddingLeft: 24, paddingTop: 14 }}>
+                {!lastStage && <span aria-hidden="true" style={{ position: 'absolute', left: 0, top: 0, bottom: 0, borderLeft: '2px solid ' + MM_LINE }}/>}
+                <span aria-hidden="true" style={{ position: 'absolute', left: 0, top: 0, width: 22, height: 27, borderLeft: '2px solid ' + MM_LINE, borderBottom: '2px solid ' + MM_LINE, borderBottomLeftRadius: 14 }}/>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                  <span style={{ flex: '0 0 26px', width: 26, height: 26, borderRadius: '50%', boxSizing: 'border-box', background: full ? 'var(--navy)' : '#fff', border: isHere ? '2.5px solid var(--coral)' : '2px solid var(--navy)', color: full ? '#fff' : isHere ? 'var(--coral)' : 'var(--navy)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', fontWeight: 900, fontSize: 12.5 }}>{full ? '✓' : x.i + 1}</span>
+                  <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 800, fontSize: 16.5, color: 'var(--navy)', lineHeight: 1.2 }}>{t(x.s.en[0], x.s.ko[0])}</span>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, margin: '8px 0 0 35px' }}>
+                  {x.ids.map((id, j) => {
+                    const st = x.st[j], on = id === here, name = CH_SHORT[id] || [(DRILLS.find(d => d.id === id) || {}).label, ''];
+                    return (
+                      <button key={id} onClick={() => onOpen(id)} data-chapter={id} data-status={st} aria-label={t(name[0], name[1] || name[0]) + (st === 'done' ? ' ✓' : '')}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, borderRadius: 999, padding: '5px 11px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1.2,
+                          background: st === 'done' ? 'var(--navy)' : '#fff', color: st === 'done' ? '#fff' : 'var(--navy)',
+                          border: on ? '2px solid var(--coral)' : '1.5px solid ' + (st === 'done' ? 'var(--navy)' : 'var(--navy-line)') }}>
+                        {st === 'done' && <span aria-hidden="true">✓</span>}
+                        {st === 'started' && <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--coral)' }}/>}
+                        {t(name[0], name[1] || name[0])}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'flex-end', marginTop: 14, fontSize: 11.5, fontWeight: 700, color: 'var(--muted)' }}>
+          <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: 'var(--navy)', marginRight: 4, verticalAlign: '-1px' }}/>{t('done', '완료')}</span>
+          <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', border: '2px solid var(--coral)', boxSizing: 'border-box', marginRight: 4, verticalAlign: '-1px' }}/>{t('you are here', '지금 여기')}</span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function App() {
@@ -20311,7 +20547,7 @@ function App() {
       <div className="pb-main" key={mk} style={{maxWidth:600,margin:'0 auto',padding:'20px 16px 60px'}}>
         <StudentBanner sl={sl}/>
         {preview && <div style={{background:'#26296b',color:'#fff',borderRadius:10,padding:'8px 12px',marginBottom:12,fontSize:13.5,display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}><span>{t('You’re seeing what a student sees.', '학생에게 보이는 화면이에요.')}</span><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setPreview(false)}>{t('Back to teacher view', '교사 화면으로')}</button></div>}
-        {!st.lock && (
+        {!st.lock && !(showToday && !T) && (
           <div style={{display:'flex',gap:6,borderBottom:'1.5px solid var(--navy-line)',marginBottom:16}}>
             {(T ? [['path', t('Guide', '안내')], ['chapters', t('Chapters', '챕터')], ['toolbox', t('Toolbox', '도구함')], ['practice', t('Practice', '연습')], ['students', t('Students', '학생')]] : (showToday ? [['today', t('Today', '오늘')], ['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]] : [['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]])).map(([v, l]) => (
               <button key={v} onClick={() => { update({ view: v, tool: null, kit: null, from: null, drill: (v === 'practice' || v === 'students') ? st.drill : null }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderBottom:'3px solid ' + ((st.view === v || (!T && v === 'path' && st.view === 'chapters') || (T && v === 'toolbox' && st.view === 'tools' && st.ret === 'toolbox')) ? 'var(--coral)' : 'transparent'),marginBottom:-1.5,background:'transparent',padding:'10px 0',fontFamily:"'Playfair Display', Georgia, serif",fontSize:T ? 14.5 : 18,fontWeight:800,cursor:'pointer',
@@ -20321,7 +20557,7 @@ function App() {
         )}
         <SoundSettings/>
         {st.view === 'today' && !T && !st.lock && sl.link ? (
-          <TodayView link={sl.link} onOpenChapter={(id) => { update({ view: 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1, from: { drill: id } }); try { window.scrollTo(0, 0); } catch (e) {} }} onOpenTool={(id) => { update({ view: PRACTICE_IDS.includes(id) ? 'practice' : 'tools', tool: id, kit: null, drill: null, from: { tool: id } }); try { window.scrollTo(0, 0); } catch (e) {} }} onAll={() => { update({ view: 'path', tool: null, kit: null, drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
+          <StudentHome link={sl.link} onOpenChapter={(id) => { update({ view: 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1, from: { drill: id } }); try { window.scrollTo(0, 0); } catch (e) {} }} onOpenTool={(id) => { update({ view: PRACTICE_IDS.includes(id) ? 'practice' : 'tools', tool: id, kit: null, drill: null, from: { tool: id } }); try { window.scrollTo(0, 0); } catch (e) {} }} onAll={() => { update({ view: 'path', tool: null, kit: null, drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
         ) : st.view === 'students' && T ? (
           <StudentsView onPlan={() => { update({ view: 'toolbox', drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }} onOpenKit={(k) => { update({ view: 'kit', kit: k.tools, kn: k.name, tool: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
         ) : st.view === 'kit' && st.kit ? (
@@ -20340,7 +20576,7 @@ function App() {
                 onChapter={jumpToChapter}/>
             : T && st.view !== 'chapters'
             ? <GuideTab onOpenChapter={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
-            : <>{todayBack}<LessonPath onBack={null} onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
+            : <>{todayBack}<MusicMap onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
         ) : <>
         {!st.lock && (() => {
           const sg = catOfChapter(active.id) ? { title: catOfChapter(active.id).name } : null, list = orderedChapterIds(), k = list.indexOf(active.id);
