@@ -92,7 +92,7 @@ const addMonths = (dateStr, months) => {
   if (!dateStr) return "";
   const d = new Date(dateStr + "T12:00:00");
   d.setMonth(d.getMonth() + months);
-  return d.toISOString().slice(0,10);
+  return ymdLocal(d);
 };
 
 // Time allocation by lesson duration (minutes)
@@ -140,7 +140,11 @@ const GRADE_COLOR = {
    HELPERS
 ═══════════════════════════════════════════════════════════════════════════ */
 const uid = () => Math.random().toString(36).slice(2,9);
-const todayStr = () => new Date().toISOString().slice(0,10);
+// Dates are the teacher's own calendar day (not UTC: in Sydney UTC is still "yesterday" until 10-11am)
+const ymdLocal = (d) => d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+const todayStr = () => ymdLocal(new Date());
+// A week key is the Monday of that week. Keys saved before Phase 355 in a morning could be the Sunday before: read them as that Monday.
+const normWeekKey = (k) => { if (!k) return k; const d = new Date(k + "T12:00:00"); if (isNaN(d) || d.getDay() !== 0) return k; d.setDate(d.getDate() + 1); return ymdLocal(d); };
 const fmtDate = (d) => d ? new Date(d+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"}) : "—";
 const fmtShort = (d) => d ? new Date(d+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short"}) : "—";
 
@@ -200,7 +204,7 @@ function buildPlan(student) {
 
   while (cursor <= endD) {
     allMonths.push({
-      monthStr: cursor.toISOString().slice(0, 7),
+      monthStr: ymdLocal(cursor).slice(0, 7),
       label: MONTH_NAMES[cursor.getMonth()] + " " + cursor.getFullYear(),
     });
     cursor.setMonth(cursor.getMonth() + 1);
@@ -253,7 +257,7 @@ function buildPlan(student) {
 }
 
 // Current month string "YYYY-MM"
-const currentMonthStr = () => new Date().toISOString().slice(0,7);
+const currentMonthStr = () => todayStr().slice(0,7);
 const monthsSinceStart = (startDate) => {
   if (!startDate) return 0;
   const s = new Date(startDate + "T12:00:00");
@@ -620,7 +624,7 @@ function StudentModal({ initial, onSave, onClose }) {
   const gradeOptions = f.grade && !GRADES.includes(f.grade) ? [...GRADES, f.grade] : GRADES;
   // Fortnightly: the lesson weeks are counted from startDate, so "this week / next week" just moves it by 7 days
   const lessonThisWeek = isFortnightWeek(f.startDate, 0);
-  const flipFortnight = () => { const d = new Date((f.startDate || todayStr()) + "T12:00:00"); d.setDate(d.getDate() + 7); set("startDate", d.toISOString().slice(0,10)); };
+  const flipFortnight = () => { const d = new Date((f.startDate || todayStr()) + "T12:00:00"); d.setDate(d.getDate() + 7); set("startDate", ymdLocal(d)); };
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 overflow-y-auto" onClick={onClose}>
@@ -2822,7 +2826,7 @@ function ReschedulePopover({ activePopover, weekOverrides, onWeekOnly, onFromWee
     const now = new Date();
     const mon = new Date(now);
     mon.setDate(now.getDate() - ((now.getDay() + 6) % 7) + offset * 7);
-    return mon.toISOString().slice(0, 10);
+    return ymdLocal(mon);
   };
   const targetWeekKey = getWeekKeyByOffset((activePopover?.calendarWeekOffset || 0) + targetWeekOffset);
 
@@ -3102,7 +3106,7 @@ function ScheduleView({ students, logs, overrides, onLog, onAbsence, onSelect, o
     const now = new Date();
     const mon = new Date(now);
     mon.setDate(now.getDate() - ((now.getDay() + 6) % 7) + offset * 7);
-    return mon.toISOString().slice(0, 10);
+    return ymdLocal(mon);
   };
   const currentWeekKey = getWeekKey(weekOffset);
 
@@ -3565,7 +3569,7 @@ function ScheduleView({ students, logs, overrides, onLog, onAbsence, onSelect, o
                 const isOffWeek = slot.fortnightly && !slot.fortActive;
 
                 // Status for today's slot only
-                const todayStr = new Date().toISOString().slice(0,10);
+                const todayStr = ymdLocal(new Date());
                 const todayLog = isToday ? logs.filter(l => l.studentId===s.id && l.date===todayStr).sort((a,b)=>b.date.localeCompare(a.date))[0] : null;
                 const todayStatus = !isToday ? null : todayLog ? (todayLog.type==="absent" ? "absent" : "logged") : "pending";
 
@@ -3935,14 +3939,16 @@ function App() {
         (oData || []).forEach(r => {
           if (r.from_week && !r.week_key) {
             // Permanent-from override
-            const key = `from/${r.from_week}/${r.student_id}/${r.slot_idx}`;
-            const val = r.day === "__skip__" ? { skip: true, id: r.id, fromWeek: r.from_week }
-                                             : { day: r.day, time: r.time, id: r.id, fromWeek: r.from_week };
-            map[key] = val;
+            const fw = normWeekKey(r.from_week), moved = fw !== r.from_week;
+            const key = `from/${fw}/${r.student_id}/${r.slot_idx}`;
+            const val = r.day === "__skip__" ? { skip: true, id: r.id, fromWeek: fw }
+                                             : { day: r.day, time: r.time, id: r.id, fromWeek: fw };
+            if (!(moved && map[key])) map[key] = val;
           } else if (r.week_key) {
             // Single-week override (original behaviour)
-            const key = `${r.week_key}/${r.student_id}/${r.slot_idx}`;
-            map[key] = r.day === "__skip__" ? { skip: true, id: r.id }
+            const wk = normWeekKey(r.week_key), moved = wk !== r.week_key;
+            const key = `${wk}/${r.student_id}/${r.slot_idx}`;
+            if (!(moved && map[key])) map[key] = r.day === "__skip__" ? { skip: true, id: r.id }
                                             : { day: r.day, time: r.time, id: r.id };
           }
         });
