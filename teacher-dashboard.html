@@ -441,6 +441,7 @@ const rowToLog = (r) => {
     srAural: r.sr_aural || "",
     gk: r.general_k || "",
     notes: r.notes || "",
+    homework: extra.homework || "",
     mood: extra.mood || "",
     pieceRating: extra.pieceRating || "",
     type: extra.type || "regular", // "regular" | "absent" | "makeup"
@@ -460,6 +461,7 @@ const logToRow = (f, studentId, userId) => ({
   general_k: f.gk || "",
   notes: f.notes || "",
   extra: JSON.stringify({
+    ...(f.homework && f.homework.trim() ? { homework: f.homework.trim().slice(0, 1500) } : {}),
     ...(f.mood       ? { mood: f.mood }             : {}),
     ...(f.pieceRating? { pieceRating: f.pieceRating }: {}),
     ...(f.type && f.type !== "regular" ? { type: f.type } : {}),
@@ -806,7 +808,7 @@ function StudentModal({ initial, onSave, onClose }) {
    LESSON LOG MODAL
 ═══════════════════════════════════════════════════════════════════════════ */
 function LogModal({ student, existingLog, currentMonth, lastLog, onSave, onClose }) {
-  const blank = { date:todayStr(), repertoire:"", technical:"", srAural:"", gk:"", notes:"", mood:"", pieceRating:"" };
+  const blank = { date:todayStr(), repertoire:"", technical:"", srAural:"", gk:"", notes:"", homework:"", mood:"", pieceRating:"" };
   const [f, setF] = useState(existingLog ?? blank);
   const [copied, setCopied] = useState(false);
   const set = (k,v) => setF(p=>({...p,[k]:v}));
@@ -856,6 +858,13 @@ function LogModal({ student, existingLog, currentMonth, lastLog, onSave, onClose
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
+  };
+
+  // "Copy from notes": the notes box is private; only what is placed in "For the student" is ever sent to the student's page
+  const copyNotesToStudent = () => {
+    const n = (f.notes || "").trim();
+    if (!n) return;
+    setF(p => ({ ...p, homework: ((p.homework || "").trim() ? p.homework.trim() + "\n" : "") + n }));
   };
 
   const showLastHint = !existingLog && lastLog?.notes?.trim();
@@ -1019,6 +1028,33 @@ function LogModal({ student, existingLog, currentMonth, lastLog, onSave, onClose
               onFocus={e=>e.target.style.borderColor="#62649a"}
               onBlur={e=>e.target.style.borderColor="transparent"}
             />
+          </div>
+
+          {/* For the student — the only text that appears on the student's Today page */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="field-label" htmlFor="log-homework" style={{color:"#e4572e",marginBottom:0}}>For the student</label>
+              <button type="button" onClick={copyNotesToStudent} disabled={!f.notes?.trim()}
+                style={{
+                  fontSize:"10px",fontWeight:700,padding:"3px 10px",borderRadius:"99px",cursor:f.notes?.trim()?"pointer":"default",
+                  border:"1px solid #e9e2d2",background:"white",color:"#62649a",opacity:f.notes?.trim()?1:0.45,
+                }}>
+                Copy from notes
+              </button>
+            </div>
+            <textarea
+              id="log-homework"
+              value={f.homework || ""}
+              onChange={e=>set("homework",e.target.value)}
+              rows={3}
+              maxLength={1500}
+              placeholder={"Minuet in G, bars 1–8, hands together, slowly\nPractice dice, 3 rolls"}
+              className="input text-sm"
+              style={{background:"#fff5f0",borderColor:"transparent"}}
+              onFocus={e=>e.target.style.borderColor="#e4572e"}
+              onBlur={e=>e.target.style.borderColor="transparent"}
+            />
+            <p className="text-xs text-slate-400 mt-1">One item per line. Shows on the student's Today page when they have a student link. Your notes above stay private.</p>
           </div>
 
         </div>
@@ -1290,6 +1326,52 @@ const makeToken = () => {
 const studentLinkUrl = (token) => new URL("drills.html", window.location.href).href.split("#")[0] + "#k=" + token;
 const firstNameOf = (n) => (n || "").trim().split(/\s+/)[0].slice(0, 40);
 
+// Daily practice: the last 14 days of "I practised today" taps from the student's Today page (table practice_checkins,
+// read with the teacher's own login). If the table does not exist yet (SQL not run), nothing is shown.
+const localDayStr = (d) => d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+const localDayPlus = (n) => { const d = new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()+n); return d; };
+function PracticeStrip({ studentId }) {
+  const [rows, setRows] = useState(null); // null = loading, false = not available, array = ok
+  useEffect(() => {
+    let off = false;
+    setRows(null);
+    _supabase.from("practice_checkins").select("day,minutes").eq("student_id", studentId)
+      .gte("day", localDayStr(localDayPlus(-60))).order("day", { ascending: true })
+      .then(({ data, error }) => { if (!off) setRows(error ? false : (data || [])); });
+    return () => { off = true; };
+  }, [studentId]);
+  if (!rows) return null; // still loading, or the table is not there yet
+  const by = new Map(rows.map(r => [String(r.day).slice(0,10), r.minutes]));
+  const today = localDayStr(localDayPlus(0));
+  const days = Array.from({ length: 14 }, (_, i) => localDayStr(localDayPlus(i - 13)));
+  const dow = (new Date().getDay() + 6) % 7;                      // Monday = 0
+  const monday = localDayStr(localDayPlus(-dow));
+  const weekRows = rows.filter(r => String(r.day).slice(0,10) >= monday && String(r.day).slice(0,10) <= today);
+  const weekMin = weekRows.reduce((a, r) => a + (r.minutes || 0), 0);
+  const in14 = days.filter(d => by.has(d)).length;
+  const last = rows.length ? String(rows[rows.length - 1].day).slice(0,10) : null;
+  const fmt = (d) => new Date(d + "T12:00:00").toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
+  return (
+    <div className="mt-4 pt-4 no-print" style={{borderTop:"1px solid #f1ede1"}} data-testid="practice-strip">
+      <h4 className="text-sm font-bold text-slate-800 mb-2">Daily practice</h4>
+      <div className="flex gap-1 flex-wrap" aria-label="Practice check-ins, last 14 days">
+        {days.map(d => {
+          const yes = by.has(d), isToday = d === today, m = by.get(d);
+          return <span key={d} title={fmt(d) + (yes ? (m ? " · " + m + " min" : " · practised") : "")} data-day={d} data-done={yes ? "1" : "0"}
+            style={{width:18,height:18,borderRadius:"50%",display:"inline-block",boxSizing:"border-box",
+              background: yes ? "#2e8a6e" : "transparent",
+              border: yes ? "2px solid #2e8a6e" : isToday ? "2px dashed #e4572e" : "2px solid #e9e2d2"}}/>;
+        })}
+      </div>
+      <div className="flex justify-between text-[10px] text-slate-400 mt-1" style={{maxWidth:14*22}}><span>14 days ago</span><span>Today</span></div>
+      <p className="text-xs text-slate-600 mt-2">
+        This week: <b>{weekRows.length}</b> {weekRows.length === 1 ? "day" : "days"}{weekMin > 0 ? " · " + weekMin + " min logged" : ""} · Last 14 days: <b>{in14}</b> {in14 === 1 ? "day" : "days"}
+      </p>
+      <p className="text-xs text-slate-400 mt-1">{last ? "Last practised: " + fmt(last) + "." : "No check-ins yet. They appear here when the student taps “I practised today” on their Today page."}</p>
+    </div>
+  );
+}
+
 function StudentLinkPanel({ student }) {
   const [row, setRow] = useState(undefined);      // undefined = loading, null = no link yet
   const [name, setName] = useState(firstNameOf(student.name));
@@ -1348,7 +1430,7 @@ function StudentLinkPanel({ student }) {
           </span>
         )}
       </div>
-      <p className="text-xs text-slate-500 mb-3">A private link that opens the drills as {row ? row.display_name : (cleanName || "this student")} and keeps their progress, on any device.</p>
+      <p className="text-xs text-slate-500 mb-3">A private link that opens the drills as {row ? row.display_name : (cleanName || "this student")} and with a Today page: your homework and a daily practice check.</p>
 
       {row === undefined && <p className="text-xs text-slate-400">Loading…</p>}
 
@@ -1394,6 +1476,7 @@ function StudentLinkPanel({ student }) {
           </div>
           <p className="text-xs text-slate-400 mt-3">Anyone with this link can open this student's practice record, so send it to the student or parent only. A new link stops the old one.</p>
           <p className="text-xs text-slate-400 mt-1">Trying it on your own computer switches that browser to the student view. To switch back, open the drills with <span style={{fontFamily:"monospace"}}>?teacher=1</span> added to the address.</p>
+          <PracticeStrip studentId={student.id}/>
         </>
       )}
 
@@ -1431,6 +1514,7 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
     { key:"srAural",    label:"SR & Aural",           color:"#0891b2", bg:"#ecfeff" },
     { key:"gk",         label:"General Knowledge",   color:"#d97706", bg:"#fffbeb" },
     { key:"notes",      label:"Notes & Homework",    color:"#62649a", bg:"#faf6ec" },
+    { key:"homework",   label:"For the student",     color:"#e4572e", bg:"#fff5f0" },
   ];
 
   const printDate = new Date().toLocaleDateString("en-AU",{day:"numeric",month:"long",year:"numeric"});

@@ -19475,24 +19475,31 @@ function forgetStudentLink() {
   try { localStorage.removeItem(LINK_TOKEN_KEY); localStorage.removeItem(LINK_NAME_KEY); } catch (e) {}
   try { if (/(?:^#|&)k=/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
 }
-// -> { ok: true, name } | { ok: false, reason: 'invalid' } (no active link has this token) | { ok: false, reason: 'offline' } (could not ask)
-async function fetchStudentInfo(token) {
+// One call to the database: a function (rpc) with the anon key. -> { ok: true, data } | { ok: false } (offline, timeout or a server error)
+async function pbRpc(fn, args) {
   const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
   const tm = setTimeout(() => { try { if (ctl) ctl.abort(); } catch (e) {} }, 8000);
   try {
-    const r = await fetch(PB_SUPABASE_URL + '/rest/v1/rpc/pb_student_info', {
+    const r = await fetch(PB_SUPABASE_URL + '/rest/v1/rpc/' + fn, {
       method: 'POST',
       headers: { apikey: PB_SUPABASE_ANON, Authorization: 'Bearer ' + PB_SUPABASE_ANON, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ p_token: token }),
+      body: JSON.stringify(args),
       signal: ctl ? ctl.signal : undefined,
     });
-    if (!r.ok) return { ok: false, reason: 'offline' }; // a server problem is not the student's link being wrong
-    const j = await r.json();
-    if (j && typeof j.name === 'string' && j.name) return { ok: true, name: j.name.slice(0, 40) };
-    return { ok: false, reason: 'invalid' };
-  } catch (e) { return { ok: false, reason: 'offline' }; } finally { clearTimeout(tm); }
+    if (!r.ok) return { ok: false }; // a server problem is not the student's link being wrong
+    return { ok: true, data: await r.json() };
+  } catch (e) { return { ok: false }; } finally { clearTimeout(tm); }
 }
-function StudentBanner() {
+// -> { ok: true, name } | { ok: false, reason: 'invalid' } (no active link has this token) | { ok: false, reason: 'offline' } (could not ask)
+async function fetchStudentInfo(token) {
+  const r = await pbRpc('pb_student_info', { p_token: token });
+  if (!r.ok) return { ok: false, reason: 'offline' };
+  const j = r.data;
+  if (j && typeof j.name === 'string' && j.name) return { ok: true, name: j.name.slice(0, 40) };
+  return { ok: false, reason: 'invalid' };
+}
+// The link this device holds, shared by the banner and the Today page. Nothing is requested unless a link exists.
+function useStudentLink() {
   const [link, setLink] = useState(() => { const h = linkTokenFromHash(); if (h) { const old = loadStoredLink(); return { token: h, name: old && old.token === h ? old.name : '' }; } return loadStoredLink(); });
   const [state, setState] = useState(link ? 'checking' : 'none'); // none | checking | ok | invalid | offline
   const token = link ? link.token : null;
@@ -19507,6 +19514,11 @@ function StudentBanner() {
     });
     return () => { off = true; };
   }, [token]);
+  function forget() { forgetStudentLink(); setLink(null); setState('none'); }
+  return { link, state, forget };
+}
+function StudentBanner({ sl }) {
+  const { link, state, forget } = sl;
   if (!link || state === 'none') return null;
   const name = link.name;
   if (state === 'checking' && !name) return null;
@@ -19515,7 +19527,7 @@ function StudentBanner() {
   if (state === 'invalid') return (
     <div role="status" style={box}>
       <span>{t('This link isn’t active. Ask your teacher for a new one. You can keep practicing.', '이 링크는 지금 쓸 수 없어요. 선생님께 새 링크를 부탁해 보세요. 연습은 계속할 수 있어요.')}</span>
-      <button className="chip" style={small} onClick={() => { forgetStudentLink(); setLink(null); setState('none'); }}>{t('Remove', '지우기')}</button>
+      <button className="chip" style={small} onClick={forget}>{t('Remove', '지우기')}</button>
     </div>
   );
   if (state === 'offline') return (
@@ -19526,14 +19538,197 @@ function StudentBanner() {
   return (
     <div role="status" style={box}>
       <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 800, fontSize: 16, minWidth: 0, overflowWrap: 'anywhere' }}>{t('Hi, ' + name + '!', name + ' 님, 안녕하세요!')}</span>
-      <button className="chip" style={small} onClick={() => { forgetStudentLink(); setLink(null); setState('none'); }}>{t('Not me', '내가 아니에요')}</button>
+      <button className="chip" style={small} onClick={forget}>{t('Not me', '내가 아니에요')}</button>
+    </div>
+  );
+}
+
+// ─── Today (Phase 337): the first screen of a student who opened their link ───────────────────────────────
+// What the teacher wrote under Log lesson > "For the student" (homework), a one-tap "I practised today" with
+// optional minutes (the teacher sees these in the dashboard), the week at a glance, and "Keep going".
+// Only these three calls touch the database: pb_student_today, pb_checkin, pb_uncheck (the secret token is
+// the only credential). The last answer is kept on this device so the page opens at once, even offline.
+// Ticks on homework lines are this device's own memory (the teacher does not see them).
+const TODAY_CACHE_KEY = 'pb_today_cache_v1', TODAY_TICKS_KEY = 'pb_today_ticks_v1';
+const pad2 = (n) => (n < 10 ? '0' : '') + n;
+function localDay(d) { d = d || new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+function dayDate(s) { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || '')); return m ? new Date(+m[1], +m[2] - 1, +m[3], 12) : null; }
+function dayPlus(s, n) { const d = dayDate(s); d.setDate(d.getDate() + n); return localDay(d); }
+// the homework text -> up to 12 short lines, list marks removed
+function homeworkLines(text) {
+  return String(text || '').split(/\r?\n/).map(x => x.replace(/^\s*(?:[-*•·]|\d+[.)])\s+/, '').trim()).filter(Boolean).slice(0, 12).map(x => x.slice(0, 200));
+}
+function streakOf(set, today) {
+  let d = set.has(today) ? today : dayPlus(today, -1), n = 0;
+  while (set.has(d) && n < 60) { n++; d = dayPlus(d, -1); }
+  return n;
+}
+function loadTicks() { try { const o = JSON.parse(localStorage.getItem(TODAY_TICKS_KEY)); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }
+function TodayView({ link, onOpenChapter, onAll }) {
+  const token = link.token, who = token.slice(0, 8);
+  const [data, setData] = useState(() => { try { const c = JSON.parse(localStorage.getItem(TODAY_CACHE_KEY)); return c && c.token === token && c.data ? c.data : null; } catch (e) { return null; } });
+  const [status, setStatus] = useState('loading'); // loading | ok | offline | invalid
+  const [today, setToday] = useState(() => localDay());
+  const [mins, setMins] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(false);
+  const [ticks, setTicks] = useState(loadTicks);
+  const lastLoad = useRef(0);
+  function keep(d) { try { localStorage.setItem(TODAY_CACHE_KEY, JSON.stringify({ token, at: Date.now(), data: d })); } catch (e) {} }
+  useEffect(() => {
+    let off = false;
+    function load() {
+      lastLoad.current = Date.now();
+      setToday(localDay());
+      pbRpc('pb_student_today', { p_token: token }).then(r => {
+        if (off) return;
+        if (!r.ok) { setStatus('offline'); return; }
+        if (!r.data || typeof r.data !== 'object' || Array.isArray(r.data)) { setStatus('invalid'); setData(null); try { localStorage.removeItem(TODAY_CACHE_KEY); } catch (e) {} return; }
+        setData(r.data); setStatus('ok'); keep(r.data);
+      });
+    }
+    load();
+    function onVis() { if (!document.hidden && Date.now() - lastLoad.current > 30000) load(); }
+    document.addEventListener('visibilitychange', onVis);
+    return () => { off = true; document.removeEventListener('visibilitychange', onVis); };
+  }, [token]);
+
+  const checkins = (data && Array.isArray(data.checkins)) ? data.checkins : [];
+  const byDay = new Map(checkins.map(c => [String(c.day).slice(0, 10), c.minutes]));
+  const checked = byDay.has(today);
+  const selMins = checked ? byDay.get(today) : mins;
+  const set = new Set(byDay.keys());
+  const dow = (dayDate(today).getDay() + 6) % 7; // Monday = 0
+  const monday = dayPlus(today, -dow);
+  const week = [0, 1, 2, 3, 4, 5, 6].map(i => dayPlus(monday, i));
+  const weekCount = week.filter(d => set.has(d)).length;
+  const streak = streakOf(set, today);
+  const letters = LANG === 'ko' ? ['월', '화', '수', '목', '금', '토', '일'] : ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+  async function send(fn, args, after) {
+    if (busy) return;
+    setBusy(true); setErr(false);
+    const r = await pbRpc(fn, args);
+    setBusy(false);
+    if (r.ok && r.data && r.data.ok && Array.isArray(r.data.checkins)) {
+      const nd = { ...(data || {}), checkins: r.data.checkins };
+      setData(nd); keep(nd);
+      if (after) after();
+    } else setErr(true);
+  }
+  const save = (m) => send('pb_checkin', { p_token: token, p_day: today, p_minutes: m }, null);
+  const undo = () => send('pb_uncheck', { p_token: token, p_day: today }, () => setMins(null));
+  function pickMins(m) {
+    const next = selMins === m ? null : m;
+    if (checked) save(next); else setMins(next);
+  }
+  function toggleTick(k, date) {
+    const n = { ...ticks };
+    if (n[k]) delete n[k]; else n[k] = 1;
+    const keepPrefix = who + '|' + date + '|';
+    Object.keys(n).forEach(x => { if (x.indexOf(who + '|') === 0 && x.indexOf(keepPrefix) !== 0) delete n[x]; });
+    setTicks(n);
+    try { localStorage.setItem(TODAY_TICKS_KEY, JSON.stringify(n)); } catch (e) {}
+  }
+
+  const lesson = data && data.lesson && data.lesson.homework ? data.lesson : null;
+  const lines = lesson ? homeworkLines(lesson.homework) : [];
+  let dateLabel = '';
+  try { dateLabel = new Date().toLocaleDateString(LANG === 'ko' ? 'ko-KR' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' }); } catch (e) {}
+  let lessonLabel = '';
+  try { const ld = lesson && dayDate(lesson.date); if (ld) lessonLabel = ld.toLocaleDateString(LANG === 'ko' ? 'ko-KR' : 'en-GB', { day: 'numeric', month: 'short' }); } catch (e) {}
+
+  const card = { background: 'var(--surface)', border: '1.5px solid var(--navy-line)', borderRadius: 16, padding: 16, marginBottom: 14, boxShadow: '0 4px 18px rgba(38,41,107,0.05)' };
+  const kicker = { fontSize: 11, fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 10 };
+  const lastId = (() => { let id = null; try { id = localStorage.getItem(LAST_CHAPTER_KEY); } catch (e) {} return id && CHAPTER_CAT[id] && DRILLS.find(x => x.id === id) ? id : null; })();
+  const lastDrill = lastId && DRILLS.find(x => x.id === lastId);
+  const nDone = lastId ? stepsDone(lastId) : 0;
+  const no = lastId ? bkChapterNo(lastId) : 0;
+
+  return (
+    <div data-testid="today">
+      <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 900, fontSize: 32, margin: '0 0 2px', letterSpacing: '-0.02em', color: 'var(--navy)' }}>{t('Today', '오늘')}</h2>
+      <div style={{ color: 'var(--muted)', fontSize: 15, marginBottom: 16 }}>{dateLabel}</div>
+
+      {status === 'invalid' && <div role="status" style={{ ...card, color: 'var(--text)', fontSize: 14.5 }}>{t('This link isn’t active. Ask your teacher for a new one. You can keep practicing.', '이 링크는 지금 쓸 수 없어요. 선생님께 새 링크를 부탁해 보세요. 연습은 계속할 수 있어요.')}</div>}
+      {status === 'offline' && <div role="status" style={{ fontSize: 13, color: 'var(--muted)', margin: '-6px 0 12px' }}>{data ? t('Offline. Showing what was saved on this device.', '오프라인이에요. 이 기기에 저장된 내용을 보여줘요.') : t('Couldn’t load your page. Check your internet and try again.', '화면을 불러오지 못했어요. 인터넷을 확인하고 다시 해 보세요.')}</div>}
+      {status === 'loading' && !data && <div style={{ fontSize: 14, color: 'var(--muted)', margin: '0 0 14px' }}>{t('Loading your page…', '불러오는 중…')}</div>}
+
+      {status !== 'invalid' && data && (
+        <div style={card}>
+          <div style={kicker}>{lesson ? t('From your last lesson', '지난 레슨에서') + (lessonLabel ? ' · ' + lessonLabel : '') : t('From your teacher', '선생님이 올려준 것')}</div>
+          {lines.length === 0 && <div style={{ fontSize: 15, color: 'var(--muted)', lineHeight: 1.4 }}>{t('No homework yet. Your teacher will add it after your next lesson.', '아직 숙제가 없어요. 다음 레슨 후에 선생님이 올려줄 거예요.')}</div>}
+          {lines.map((ln, i) => {
+            const k = who + '|' + lesson.date + '|' + ln, on = !!ticks[k];
+            return (
+              <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '10px 0', borderTop: i ? '1px solid var(--navy-line)' : 'none', paddingTop: i ? 10 : 0 }}>
+                <button role="checkbox" aria-checked={on} aria-label={ln} onClick={() => toggleTick(k, lesson.date)} style={{ flex: '0 0 28px', width: 28, height: 28, borderRadius: 8, border: '2px solid ' + (on ? 'var(--good)' : 'var(--navy)'), background: on ? 'var(--good)' : 'transparent', color: '#fff', fontWeight: 900, fontSize: 16, lineHeight: 1, cursor: 'pointer', padding: 0, marginTop: 1 }}>{on ? '✓' : ''}</button>
+                <span style={{ fontSize: 15.5, lineHeight: 1.35, color: on ? 'var(--muted)' : 'var(--navy)', fontWeight: 600, textDecoration: on ? 'line-through' : 'none', minWidth: 0, overflowWrap: 'anywhere' }}>{ln}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {status !== 'invalid' && (
+        <div style={card}>
+          <div style={kicker}>{t('Did you practise at the piano today?', '오늘 피아노 연습했어요?')}</div>
+          <button disabled={busy || checked} aria-pressed={checked} onClick={() => save(mins)} style={{ width: '100%', border: 'none', background: checked ? 'var(--good)' : 'var(--coral)', color: '#fff', fontFamily: 'Inter, sans-serif', fontWeight: 800, fontSize: 18, padding: 16, borderRadius: 14, boxShadow: '0 4px 0 ' + (checked ? '#236a53' : '#b9421f'), cursor: checked ? 'default' : 'pointer' }}>
+            {checked ? t('Practised today ✓', '오늘 연습 완료 ✓') : t('I practised today', '오늘 연습했어요')}
+          </button>
+          <div style={{ display: 'flex', gap: 8, margin: '14px 0 4px' }}>
+            {[5, 10, 20, 30].map(m => (
+              <button key={m} disabled={busy} aria-pressed={selMins === m} onClick={() => pickMins(m)} style={{ flex: 1, textAlign: 'center', border: '1.5px solid ' + (selMins === m ? 'var(--navy)' : 'var(--navy-line)'), background: selMins === m ? 'var(--navy)' : 'var(--surface)', color: selMins === m ? '#fff' : 'var(--muted)', borderRadius: 10, padding: '8px 0', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>{m === 30 ? '30+' : m}</button>
+            ))}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+            <span>{t('minutes (optional)', '분 (선택)')}</span>
+            {checked && <button className="chip" style={{ padding: '2px 9px', fontSize: 12 }} disabled={busy} onClick={undo}>{t('Undo', '취소')}</button>}
+          </div>
+          {err && <div role="alert" style={{ marginTop: 8, fontSize: 13, color: '#b9421f', fontWeight: 600 }}>{t('Couldn’t save. Check your internet and try again.', '저장하지 못했어요. 인터넷을 확인하고 다시 눌러 주세요.')}</div>}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
+            {week.map((d, i) => {
+              const yes = set.has(d), isToday = d === today, future = d > today;
+              return (
+                <div key={d} aria-label={d + (yes ? ' practised' : '')} style={{ textAlign: 'center', fontSize: 11, fontWeight: 800, color: 'var(--muted)', opacity: future ? 0.45 : 1 }}>
+                  {letters[i]}
+                  <i style={{ display: 'block', width: 30, height: 30, borderRadius: '50%', border: '2px ' + (isToday && !yes ? 'dashed' : 'solid') + ' ' + (yes ? 'var(--good)' : isToday ? 'var(--coral)' : 'var(--navy-line)'), background: yes ? 'var(--good)' : 'transparent', margin: '5px auto 0', color: '#fff', fontStyle: 'normal', fontSize: 15, lineHeight: '26px' }}>{yes ? '✓' : ''}</i>
+                </div>
+              );
+            })}
+          </div>
+          {weekCount > 0 && <div style={{ marginTop: 12, fontSize: 14, color: 'var(--navy)', fontWeight: 700 }}>
+            {t(weekCount + (weekCount === 1 ? ' day this week' : ' days this week'), '이번 주 ' + weekCount + '일')}
+            {streak >= 2 ? t(' · ' + streak + ' days in a row', ' · ' + streak + '일 연속') : ''}
+          </div>}
+        </div>
+      )}
+
+      <div style={card}>
+        <div style={kicker}>{t('Keep going', '이어서 하기')}</div>
+        {lastDrill ? (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              {no > 0 && <span style={{ flex: '0 0 44px', height: 44, borderRadius: '50%', background: 'var(--navy)', color: '#fff', fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 800, fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{no}</span>}
+              <span style={{ minWidth: 0 }}>
+                <span style={{ display: 'block', fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 800, fontSize: 18, lineHeight: 1.2, color: 'var(--navy)', overflowWrap: 'anywhere' }}>{lastDrill.label}</span>
+                <span style={{ display: 'block', fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>{nDone > 0 ? t(nDone + (nDone === 1 ? ' step done' : ' steps done'), nDone + '단계 완료') : t('Pick up where you left off', '하던 곳에서 이어서')}</span>
+              </span>
+            </div>
+            <button className="primary-btn" style={{ marginTop: 12, borderRadius: 12, padding: 13, fontSize: 16 }} onClick={() => onOpenChapter(lastId)}>{t('Continue', '이어하기')}</button>
+          </>
+        ) : (
+          <button className="primary-btn" style={{ borderRadius: 12, padding: 13, fontSize: 16 }} onClick={onAll}>{t('Start learning', '배우기 시작')}</button>
+        )}
+        <button onClick={onAll} style={{ display: 'block', width: '100%', marginTop: 6, background: 'none', border: 'none', color: 'var(--muted)', fontWeight: 700, fontSize: 14, padding: 8, cursor: 'pointer' }}>{t('All chapters →', '전체 챕터 →')}</button>
+      </div>
     </div>
   );
 }
 
 // URL state: ?drill=<id>&tab=learn|drill&level=<n>&mode=lesson|game&lock=1
 // lock=1 (used by the student share link) hides the drill picker and level/mode controls.
-function readUrlState() {
+function readUrlState(studentMode) {
   let p;
   try { p = new URLSearchParams(location.search); } catch (e) { p = new URLSearchParams(''); }
   // Old links: Letter Chain now lives in Note Names, Scale Fingering in Scales (Phase 97).
@@ -19541,6 +19736,9 @@ function readUrlState() {
   const asked = alias[p.get('drill')] || p.get('drill');
   const drill = DRILLS.find(d => d.id === asked) ? asked : null;
   const level = parseInt(p.get('level'), 10);
+  // a student who opened their link (or has one saved on this device) lands on Today, unless the address asks for something else
+  const hasLink = !!studentMode && p.get('lock') !== '1' && !!(linkTokenFromHash() || loadStoredLink());
+  const todayView = hasLink && (p.get('view') === 'today' || (!p.get('view') && !p.get('drill') && !p.get('level') && !p.get('mode')));
   return {
     drill,
     tab: p.get('tab') === 'drill' ? 'drill' : (p.get('level') || p.get('mode') ? 'drill' : 'learn'),
@@ -19550,13 +19748,15 @@ function readUrlState() {
     tool: TOOLS.find(t => t.id === p.get('tool')) ? p.get('tool') : null,
     kit: p.get('kit') ? p.get('kit').split(',').filter(id => TOOLS.find(t => t.id === id)) : null,
     kn: p.get('kn') || '',
-    view: p.get('kit') ? 'kit' : p.get('view') === 'chapters' ? 'chapters' : p.get('view') === 'toolbox' ? 'toolbox' : p.get('view') === 'students' ? 'students' : p.get('tool') ? (PRACTICE_IDS.includes(p.get('tool')) && p.get('view') === 'practice' ? 'practice' : 'tools') : ['tools', 'practice'].includes(p.get('view')) ? p.get('view') : 'path',
+    view: p.get('kit') ? 'kit' : p.get('view') === 'chapters' ? 'chapters' : p.get('view') === 'toolbox' ? 'toolbox' : p.get('view') === 'students' ? 'students' : p.get('tool') ? (PRACTICE_IDS.includes(p.get('tool')) && p.get('view') === 'practice' ? 'practice' : 'tools') : ['tools', 'practice'].includes(p.get('view')) ? p.get('view') : todayView ? 'today' : 'path',
   };
 }
 
 function App() {
-  const [st, setSt] = useState(readUrlState);
   const [teacher, setTeacher] = useState(initialMode);
+  const [st, setSt] = useState(() => readUrlState(!teacher));
+  const sl = useStudentLink();
+  const showToday = !!sl.link && sl.state !== 'invalid';
   const [preview, setPreview] = useState(false);
   const [lang, setLang] = useState(LANG);
   const [findOpen, setFindOpen] = useState(false);
@@ -19578,6 +19778,7 @@ function App() {
       if (st.view === 'kit' && st.kit) { p.set('kit', st.kit.join(',')); if (st.kn) p.set('kn', st.kn); if (st.tool) p.set('tool', st.tool); }
       else if (st.view === 'tools' || st.view === 'practice') { if (st.tool) p.set('tool', st.tool); if (st.view === 'practice' || !st.tool) p.set('view', st.view); }
       else if (st.view === 'students') p.set('view', 'students');
+      else if (st.view === 'today') p.set('view', 'today');
       else if (!st.drill) p.set('view', (st.view === 'chapters' || st.view === 'toolbox') ? st.view : 'path');
       else {
         p.set('drill', active.id);
@@ -19588,6 +19789,8 @@ function App() {
     } catch (e) { /* URL sync is a convenience only */ }
   }, [active.id, st.drill, st.tab, level, st.mode, st.lock, st.view, st.tool, st.kit, st.kn]);
 
+  // Today needs a usable link: after "Not me" or an inactive link the student goes back to Learn
+  useEffect(() => { if (st.view === 'today' && !showToday) setSt(prev => ({ ...prev, view: 'path' })); }, [st.view, showToday]);
   useEffect(() => { if (st.drill && CHAPTER_CAT[st.drill]) { try { localStorage.setItem(LAST_CHAPTER_KEY, st.drill); } catch (e) {} } }, [st.drill]);
   useEffect(() => { try { const n = parseInt(new URLSearchParams(location.search).get('step'), 10); if (!st.drill || isNaN(n)) return; const tmo = setTimeout(() => { const el = document.getElementById(st.drill + '-step-' + (n - 1)); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 700); return () => clearTimeout(tmo); } catch (e) {} }, []);
   function update(patch) { setSt(prev => ({ ...prev, ...patch })); }
@@ -19618,18 +19821,20 @@ function App() {
       {T && findOpen && <FindOverlay onClose={() => setFindOpen(false)} onJump={(id) => { setFindOpen(false); update({ view: 'tools', tool: id, kit: null, ret: 'toolbox' }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/>}
 
       <div className="pb-main" style={{maxWidth:600,margin:'0 auto',padding:'20px 16px 60px'}}>
-        <StudentBanner/>
+        <StudentBanner sl={sl}/>
         {preview && <div style={{background:'#26296b',color:'#fff',borderRadius:10,padding:'8px 12px',marginBottom:12,fontSize:13.5,display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}><span>{t('You’re seeing what a student sees.', '학생에게 보이는 화면이에요.')}</span><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setPreview(false)}>{t('Back to teacher view', '교사 화면으로')}</button></div>}
         {!st.lock && (
           <div style={{display:'flex',gap:6,borderBottom:'1.5px solid var(--navy-line)',marginBottom:16}}>
-            {(T ? [['path', t('Guide', '안내')], ['chapters', t('Chapters', '챕터')], ['toolbox', t('Toolbox', '도구함')], ['practice', t('Practice', '연습')], ['students', t('Students', '학생')]] : [['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]]).map(([v, l]) => (
+            {(T ? [['path', t('Guide', '안내')], ['chapters', t('Chapters', '챕터')], ['toolbox', t('Toolbox', '도구함')], ['practice', t('Practice', '연습')], ['students', t('Students', '학생')]] : (showToday ? [['today', t('Today', '오늘')], ['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]] : [['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]])).map(([v, l]) => (
               <button key={v} onClick={() => { update({ view: v, tool: null, kit: null, drill: (v === 'practice' || v === 'students') ? st.drill : null }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderBottom:'3px solid ' + ((st.view === v || (!T && v === 'path' && st.view === 'chapters') || (T && v === 'toolbox' && st.view === 'tools' && st.ret === 'toolbox')) ? 'var(--coral)' : 'transparent'),marginBottom:-1.5,background:'transparent',padding:'10px 0',fontFamily:"'Playfair Display', Georgia, serif",fontSize:T ? 14.5 : 18,fontWeight:800,cursor:'pointer',
                 color:(st.view === v || (!T && v === 'path' && st.view === 'chapters') || (T && v === 'toolbox' && st.view === 'tools' && st.ret === 'toolbox')) ? 'var(--navy)' : 'var(--muted)'}}>{l}</button>
             ))}
           </div>
         )}
         <SoundSettings/>
-        {st.view === 'students' && T ? (
+        {st.view === 'today' && !T && !st.lock && sl.link ? (
+          <TodayView link={sl.link} onOpenChapter={(id) => { update({ view: 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }} onAll={() => { update({ view: 'path', tool: null, kit: null, drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
+        ) : st.view === 'students' && T ? (
           <StudentsView onPlan={() => { update({ view: 'toolbox', drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }} onOpenKit={(k) => { update({ view: 'kit', kit: k.tools, kn: k.name, tool: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
         ) : st.view === 'kit' && st.kit ? (
           st.tool
