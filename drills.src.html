@@ -7372,7 +7372,7 @@ function ScalesHero() {
 }
 
 function ScalesLearn({ onStart }) {
-  const [mode, setMode] = useState('major');
+  const [mode, setMode] = useState(() => { try { return BOOT_PARAMS.get('part') === 'minor' ? 'minor' : 'major'; } catch (e) { return 'major'; } }); // Phase 361: ?part=minor (workbook codes)
   const [sel, setSel] = useState('C');
   const [minSel, setMinSel] = useState('A');
   const tabs = (
@@ -16307,32 +16307,32 @@ const COMPOSERS_DRILL = {
   check: (q, ans) => ans === q.answer, answerLabel: (q) => q.answer, Question: ComposersQuestion, Learn: ComposersLearn,
 };
 
-const DRILLS = [
+const DRILLS = [ // Phase 361: in the music map's order
   { id: 'posture-hands', label: 'Posture & Hand Shape', concept: POSTURE_HANDS_DRILL, track: 'start' },
   { id: 'first-steps', label: 'Black Keys & Your First Song', concept: FIRST_STEPS_DRILL, track: 'start' },
   { id: 'note-names', label: 'Note Names', concept: NOTE_NAMES_DRILL, track: 'pitch' },
-  { id: 'pulse', label: 'Pulse & Counting', concept: PULSE_DRILL, track: 'rhythm' },
-  { id: 'note-values', label: 'Notes & Rests', concept: NOTEVAL_DRILL, track: 'rhythm' },
-  { id: 'rhythm', label: 'Rhythm Patterns', concept: RHYTHM_DRILL, track: 'rhythm' },
   { id: 'staff', label: 'Reading the Staff', concept: STAFF_DRILL, track: 'pitch' },
-  { id: 'reading-steps', label: 'Steps & Skips', concept: READING_STEPS_DRILL, track: 'pitch' },
-  { id: 'time-signatures', label: 'Time Signatures', concept: TIMESIG_DRILL, track: 'rhythm' },
-  { id: 'tempo', label: 'Tempo Race', concept: TEMPO_DRILL, track: 'reading' },
-  { id: 'dynamics', label: 'Dynamics & Articulation', concept: DYN_DRILL, track: 'reading' },
   { id: 'ledger-lines', label: 'Ledger Lines', concept: LEDGER_DRILL, track: 'pitch' },
   { id: 'tones', label: 'Tones & Semitones', concept: TONES_DRILL, track: 'pitch' },
+  { id: 'pulse', label: 'Pulse & Counting', concept: PULSE_DRILL, track: 'rhythm' },
+  { id: 'note-values', label: 'Notes & Rests', concept: NOTEVAL_DRILL, track: 'rhythm' },
+  { id: 'time-signatures', label: 'Time Signatures', concept: TIMESIG_DRILL, track: 'rhythm' },
+  { id: 'rhythm', label: 'Rhythm Patterns', concept: RHYTHM_DRILL, track: 'rhythm' },
+  { id: 'reading-steps', label: 'Steps & Skips', concept: READING_STEPS_DRILL, track: 'pitch' },
+  { id: 'tempo', label: 'Tempo Race', concept: TEMPO_DRILL, track: 'reading' },
+  { id: 'intervals', label: 'Intervals', concept: INTERVALS_DRILL, track: 'pitch' },
   { id: 'scales', label: 'Scales', concept: SCALES_DRILL, track: 'pitch' },
   { id: 'key-signatures', label: 'Key Signatures', concept: KEYSIG_DRILL, track: 'pitch' },
-  { id: 'intervals', label: 'Intervals', concept: INTERVALS_DRILL, track: 'pitch' },
   { id: 'chords', label: 'Chords', concept: CHORDS_DRILL, track: 'pitch' },
+  { id: 'melody', label: 'Melody & Phrasing', concept: MELODY_DRILL, track: 'reading' },
+  { id: 'form', label: 'Musical Form', concept: FORM_DRILL, track: 'reading' },
+  { id: 'dynamics', label: 'Dynamics & Articulation', concept: DYN_DRILL, track: 'reading' },
   { id: 'signs', label: 'Signs', concept: SIGNS_DRILL, track: 'reading' },
   { id: 'terms', label: 'Musical Terms', concept: TERMS_DRILL, track: 'reading' },
   { id: 'piano-story', label: 'The Piano’s Story', concept: PIANO_STORY_DRILL, track: 'reading' },
-  { id: 'pitch-range', label: 'Pitch, Hz & Range', concept: PITCH_RANGE_DRILL, track: 'pitch' },
-  { id: 'melody', label: 'Melody & Phrasing', concept: MELODY_DRILL, track: 'reading' },
-  { id: 'form', label: 'Musical Form', concept: FORM_DRILL, track: 'reading' },
-  { id: 'styles', label: 'Styles & Genres', concept: STYLES_DRILL, track: 'about' },
   { id: 'composers', label: 'Famous Composers', concept: COMPOSERS_DRILL, track: 'about' },
+  { id: 'pitch-range', label: 'Pitch, Hz & Range', concept: PITCH_RANGE_DRILL, track: 'pitch' },
+  { id: 'styles', label: 'Styles & Genres', concept: STYLES_DRILL, track: 'about' },
 ];
 
 // Phase 276: Korean chapter names. `label` becomes a getter (English kept as labelEn) so every list, header and link follows LANG.
@@ -18395,18 +18395,7 @@ const TOOL_KO = {
 TOOLS.forEach(tl => { const k = TOOL_KO[tl.id]; if (!k) return; const ti = tl.title, bl = tl.blurb; tl.titleEn = ti; tl.blurbEn = bl;
   Object.defineProperty(tl, 'title', { get: () => (LANG === 'ko' ? k[0] : ti), enumerable: true, configurable: true });
   Object.defineProperty(tl, 'blurb', { get: () => (LANG === 'ko' ? k[1] : bl), enumerable: true, configurable: true }); });
-// ─── Lesson Path: stages in the order a beginner meets them (Phase 120) ─────────
-// Sohyun: student + piano first, then pulse, then reading (rhythm and notes together), then
-// five-finger positions, then the AMEB theory chapters. Grade tags show where AMEB asks for it.
-const STAGES = [
-  { n: 0, title: 'Getting Started', blurb: 'Sitting at the keyboard, hand shape and finger numbers, and the black-key map with a first little tune.', ids: ['posture-hands', 'first-steps'] },
-  { n: 1, title: 'Piano basics', blurb: 'Note names and five-finger positions.', ids: ['note-names'] },
-  { n: 2, title: 'Rhythm & counting', blurb: 'The steady beat, note values, rhythm cards, time signatures, speed.', ids: ['pulse', 'note-values', 'rhythm', 'time-signatures', 'tempo'] },
-  { n: 3, title: 'Reading music', blurb: 'The staff, the Queen and the King, steps and skips, ledger lines, how phrases shape a tune, and how a piece is put together.', ids: ['staff', 'reading-steps', 'ledger-lines', 'melody', 'form'] },
-  { n: 4, title: 'Sound, signs & terms', blurb: 'Loud and soft, touch, repeats and signs, Italian terms.', ids: ['dynamics', 'signs', 'terms'] },
-  { n: 5, title: 'Theory: scales, keys & chords', blurb: 'Tones and semitones, scales, key signatures, intervals, chords (Preliminary to Grade 3).', ids: ['tones', 'scales', 'key-signatures', 'intervals', 'chords'] },
-  { n: 6, title: 'Know your instrument', blurb: 'The piano’s story, the style eras, famous composers, pitch in Hz, the ranges of the orchestra, and how styles and textures differ.', ids: ['piano-story', 'composers', 'pitch-range', 'styles'] },
-];
+// Phase 361: STAGES is defined right after PATH_STAGES (the music map) -- one order for the map, the books and the shelf.
 const GRADE_TAGS = {
   'posture-hands': 'Beginner', 'first-steps': 'Beginner', 'note-names': 'Prelim', pulse: 'Beginner', 'note-values': 'Prelim', rhythm: 'Prelim–G2', staff: 'Prelim',
   'reading-steps': 'Beginner', 'time-signatures': 'Prelim–G2', tempo: 'Prelim–G1', dynamics: 'Prelim–G1',
@@ -18441,7 +18430,7 @@ const CHAPTER_CAT = {
 };
 function catOfChapter(id) { return TOOL_CATS.find(c => c.id === CHAPTER_CAT[id]); }
 const CAT_CHAPTER_ORDER = { pitch: ['staff'], ledger: ['staff', 'ledger-lines'], rtime: ['time-signatures'], rrhythm: ['time-signatures', 'rhythm'], body: ['posture-hands'], melody: ['melody', 'form'], about: ['piano-story', 'composers', 'pitch-range', 'styles'], scales: ['scales', 'key-signatures'] };  // five-finger = warm-up before scales
-function catChapterIds(catId) { const ids = STAGES.flatMap(s => s.ids).filter(id => CHAPTER_CAT[id] === catId), o = CAT_CHAPTER_ORDER[catId]; return o ? o.filter(id => ids.includes(id)).concat(ids.filter(id => !o.includes(id))) : ids; }
+function catChapterIds(catId) { const ids = DRILLS.map(d => d.id).filter(id => CHAPTER_CAT[id] === catId), o = CAT_CHAPTER_ORDER[catId]; return o ? o.filter(id => ids.includes(id)).concat(ids.filter(id => !o.includes(id))) : ids; }
 function orderedChapterIds() { return TOOL_CATS.flatMap(c => catChapterIds(c.id)); }
 function NoteBullet() { return <svg width="14" height="16" viewBox="-6 -17 16 22" style={{flex:'0 0 auto'}} aria-hidden="true"><g transform="scale(0.9)"><ellipse cx="0" cy="0" rx="5.2" ry="3.8" transform="rotate(-20)" fill="var(--coral)"/><rect x="3.6" y="-17" width="1.7" height="17" fill="var(--coral)"/></g></svg>; }
 function StaffHead({ title, count }) { return <div className="stf-head" style={{cursor:'default'}}><span className="stf-title">{title}</span>{count != null && <span className="stf-count">{count}</span>}</div>; }
@@ -18496,6 +18485,8 @@ const PATH_STAGES = [
 ];
 const pathStageIds = (s) => s.cats.flatMap(catChapterIds).filter(id => DRILLS.find(d => d.id === id));
 const pathIds = () => PATH_STAGES.flatMap(pathStageIds);
+// Phase 361 (Sohyun: "지도 순서로"): the books, the Books shelf and every "Chapter n" follow the map's seven stages.
+const STAGES = PATH_STAGES.map((st, n) => ({ n, en: st.en, ko: st.ko, title: st.en[0], blurb: st.en[1], ids: pathStageIds(st) }));
 function loadStepTotals() { try { return JSON.parse(localStorage.getItem(STEPS_TOTAL_KEY)) || {}; } catch (e) { return {}; } }
 // 'new' | 'started' | 'done' (every Learn step ticked)
 function chapterStatus(id, totals) {
@@ -19665,9 +19656,9 @@ const START_MIXES = [
   { id: 'exam', name: 'Exam focus', ids: [], note: 'Go to the exam ladder below and open the chapters for their grade.' },
 ];
 const EXAM_LADDER = [
-  { name: 'Preliminary', ids: ['note-values', 'time-signatures', 'staff', 'ledger-lines', 'tones', 'scales', 'key-signatures', 'terms'] },
-  { name: 'Grade 1–2', ids: ['scales', 'key-signatures', 'intervals', 'chords', 'signs', 'terms'] },
-  { name: 'Grade 3–4', ids: ['intervals', 'chords', 'time-signatures', 'terms', 'piano-story'] },
+  { name: 'Preliminary', ids: ['staff', 'ledger-lines', 'tones', 'note-values', 'time-signatures', 'scales', 'key-signatures', 'terms'] },
+  { name: 'Grade 1–2', ids: ['intervals', 'scales', 'key-signatures', 'chords', 'signs', 'terms'] },
+  { name: 'Grade 3–4', ids: ['time-signatures', 'intervals', 'chords', 'terms', 'piano-story'] },
 ];
 // ── Students: add, rename, notes, starting group, delete; progress at a glance ──
 function StudentsView({ onPlan, onOpenKit }) {
@@ -19789,7 +19780,7 @@ function BooksShelf() {
       </div>
       {STAGES.map(st => (
         <div key={st.n} className="card" style={{marginBottom:10,padding:'8px 12px'}}>
-          <div style={{fontSize:11.5,fontWeight:900,color:'var(--coral)',letterSpacing:.4,marginBottom:2}}>{t(st.title.toUpperCase(), STAGE_KO[st.n] || st.title)}</div>
+          <div style={{fontSize:11.5,fontWeight:900,color:'var(--coral)',letterSpacing:.4,marginBottom:2}}>{t(st.en[0].toUpperCase(), st.ko[0])}</div>
           {st.ids.map(id => (
             <div key={id} style={{display:'flex',alignItems:'center',gap:'4px 10px',flexWrap:'wrap',padding:'6px 0',borderTop:'1px solid #efe9d9'}}>
               <span style={{flex:'1 1 150px',fontSize:14,fontWeight:800,color:'var(--navy)'}}><span style={{color:'var(--muted)',fontWeight:700,marginRight:6}}>{bkChapterNo(id)}</span>{bkChapterName(id)}</span>
@@ -20603,6 +20594,8 @@ function TodayView({ link, onOpenChapter, onOpenTool, onAll, head, compact }) {
 
 // URL state: ?drill=<id>&tab=learn|drill&level=<n>&mode=lesson|game&lock=1
 // lock=1 (used by the student share link) hides the drill picker and level/mode controls.
+// Phase 361: the address as the page was opened (workbook codes add &step= and &part=; the app rewrites the address on start)
+const BOOT_PARAMS = (() => { try { return new URLSearchParams(location.search); } catch (e) { return new URLSearchParams(''); } })();
 function readUrlState(studentMode) {
   let p;
   try { p = new URLSearchParams(location.search); } catch (e) { p = new URLSearchParams(''); }
@@ -21169,7 +21162,7 @@ function App() {
   // Today needs a usable link: after "Not me" or an inactive link the student goes back to Learn
   useEffect(() => { if (st.view === 'today' && !showToday) setSt(prev => ({ ...prev, view: 'path' })); }, [st.view, showToday]);
   useEffect(() => { if (st.drill && CHAPTER_CAT[st.drill]) { try { localStorage.setItem(LAST_CHAPTER_KEY, st.drill); } catch (e) {} } }, [st.drill]);
-  useEffect(() => { try { const n = parseInt(new URLSearchParams(location.search).get('step'), 10); if (!st.drill || isNaN(n)) return; const tmo = setTimeout(() => { const el = document.getElementById(st.drill + '-step-' + (n - 1)); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 700); return () => clearTimeout(tmo); } catch (e) {} }, []);
+  useEffect(() => { try { const n = parseInt(BOOT_PARAMS.get('step'), 10); if (!st.drill || isNaN(n)) return; const tmo = setTimeout(() => { const part = BOOT_PARAMS.get('part'); const el = [st.drill + '-step-', st.drill + '-' + (part === 'minor' ? 'minor' : 'major') + '-step-'].map(x => document.getElementById(x + (n - 1))).find(Boolean); /* Phase 361: Scales has two lessons */ if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 700); return () => clearTimeout(tmo); } catch (e) {} }, []);
   function update(patch) { setSt(prev => ({ ...prev, ...patch })); }
   OPEN_CH = (id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }; // Phase 360: chapter links inside a lesson
   // a student with a link always has a button back to the Today page on the Learn and Practice lists
@@ -21608,7 +21601,7 @@ const bkStepChapter = (chId, st) => /^minor /.test(String(st)) ? 'scales' : /^st
 const bkStepNo = (st) => parseInt(String(st).replace(/^(minor|story) /, ''), 10);
 function bkStepLink(chId, st) {
   const n = bkStepNo(st), ch = bkStepChapter(chId, st);
-  return bkLink('drill=' + ch + '&lock=1' + (isNaN(n) ? '' : '&step=' + n));
+  return bkLink('drill=' + ch + '&lock=1' + (isNaN(n) ? '' : '&step=' + n) + (/^minor /.test(String(st)) ? '&part=minor' : ''));
 }
 const bkLevels = (chId) => { const d = DRILLS.find(x => x.id === chId); return (d && d.concept && d.concept.levels) || []; };
 // "1, 4" with "3, 6" -> {1: [3], 4: [6]}; "2-3" with "5" -> {2: [5], 3: [5]}
@@ -21661,7 +21654,7 @@ function BkRoute({ compact, checkPage }) {
 }
 // Page 2 of every chapter: the map. Which lesson step goes with which page, the online drill levels,
 // and the "at the piano" missions (ticked once per lesson, not a daily log).
-function WbMap({ id, concepts, tasks, steps, checkPage }) {
+function WbMap({ id, concepts, tasks, steps, checkPage, minor }) {
   const total = typeof steps === 'number' ? steps : Math.max(1, ...Object.keys(bkStepPages(concepts)).map(Number));
   const pages = bkStepPages(concepts), levels = bkLevels(id);
   const nTicks = Math.max(1, Math.min(4, Math.ceil(total / 2)));
@@ -21675,10 +21668,11 @@ function WbMap({ id, concepts, tasks, steps, checkPage }) {
           <div style={{display:'grid',gridTemplateColumns:'110px 1fr 1fr 44px',background:BK.ink,color:'#fff',fontSize:11.5,fontWeight:800,padding:'5px 10px'}}>
             <span>Lesson step</span><span>Workbook page</span><span>What it covers</span><span style={{textAlign:'center'}}>Done</span>
           </div>
-          {Array.from({ length: total }, (_, k) => k + 1).map(n => {
-            const pg = pages[n], cs = concepts.filter(c => String(c.step).split(',').some(s => { const r = s.trim().match(/^(\d+)-(\d+)$/); return r ? n >= +r[1] && n <= +r[2] : parseInt(s, 10) === n; }));
-            return <div key={n} style={{display:'grid',gridTemplateColumns:'110px 1fr 1fr 44px',fontSize:12.5,color:BK.ink,padding:(total > 7 ? '3px' : '6px') + ' 10px',borderTop:'1px solid #ece6d8',alignItems:'center'}}>
-              <span><b style={{color:BK.coral}}>Step {n}</b></span>
+          {[...Array.from({ length: total }, (_, k) => ({ n: k + 1, pre: '' })), ...Array.from({ length: minor || 0 }, (_, k) => ({ n: k + 1, pre: 'minor ' }))].map(({ n, pre }) => {
+            const own = pre ? concepts.filter(c => String(c.step).startsWith(pre)).map(c => ({ ...c, step: String(c.step).slice(pre.length) })) : concepts;
+            const pg = (pre ? bkStepPages(own) : pages)[n], cs = own.filter(c => String(c.step).split(',').some(s => { const r = s.trim().match(/^(\d+)-(\d+)$/); return r ? n >= +r[1] && n <= +r[2] : parseInt(s, 10) === n; }));
+            return <div key={pre + n} data-map-row={pre + n} style={{display:'grid',gridTemplateColumns:'110px 1fr 1fr 44px',fontSize:12.5,color:BK.ink,padding:(total + (minor || 0) > 7 ? '3px' : '6px') + ' 10px',borderTop:'1px solid #ece6d8',alignItems:'center'}}>
+              <span><b style={{color:BK.coral}}>{pre ? 'Minor step ' + n : 'Step ' + n}</b></span>
               <span>{pg ? 'page ' + pg.join(', ') : <span style={{color:BK.muted}}>in the app only</span>}</span>
               <span style={{fontSize:11.5,color:BK.muted}}>{cs.map(c => c.name).join(' · ')}</span>
               <span style={{textAlign:'center'}}>{bkTick(16)}</span>
@@ -21917,7 +21911,7 @@ function StaffWorkbook({ startNo = 1 }) {
   const lsAns = (it) => it.isLine ? 'L' : 'S';
 
   P(<WbOpener id="staff" concepts={C} hero={<HarbourMap/>} blurb="The staff is a harbour map: the Queen's treble staff on the north shore, the King's bass staff on the south shore, and middle C is the bridge to the CBD."/>);
-  P(<WbMap id="staff" concepts={C} steps={7} checkPage={startNo + 9} tasks={[
+  P(<WbMap id="staff" concepts={C} steps={8} checkPage={startNo + 9} tasks={[
     'Play every note from page 4 on the piano and say its name out loud.',
     'Close your eyes, find middle C, treble G and bass F -- then open your eyes and check.',
     'Detective work: in your piece, find five notes, say each name, then play it.',
@@ -27250,11 +27244,11 @@ function scWorkbook() {
 }
 function scConcepts() {
   return [
-    { id: 'sh', name: 'The major-scale shape', step: '1', page: '3' },
-    { id: 'bd', name: 'Building a major scale', step: '2', page: '3' },
-    { id: 'dg', name: 'Degree names', step: '3', page: '4' },
-    { id: 'fg', name: 'Fingering', step: '4-6', page: '5' },
-    { id: 'mn', name: 'Harmonic minor', step: 'minor 1-2', page: '6' },
+    { id: 'sh', name: 'The major-scale shape', step: '3', page: '4' },
+    { id: 'bd', name: 'Building a major scale', step: '4', page: '4' },
+    { id: 'dg', name: 'Degree names', step: '5', page: '5' },
+    { id: 'fg', name: 'Fingering', step: '1-2', page: '3' },
+    { id: 'mn', name: 'Harmonic minor', step: 'minor 3-4', page: '6' },
   ];
 }
 function ScaleKeysCell({ key0, ex, n }) {
@@ -27294,13 +27288,18 @@ function ScStair({ wrong = -1, letters = {}, template = false, tw = 70, unit = 1
     </svg>
   );
 }
+// Phase 361: the fingering puzzle -- each row has one wrong finger (label, the right fingering, which note, the wrong number)
+function scWrongs() {
+  const fC = SCALES.C.octaves[1], fG = SCALES.G.octaves[1], bad = (v) => v === 4 ? 3 : 4;
+  return [['C major RH', fC.RH, 3, bad(fC.RH[3])], ['C major LH', fC.LH, 5, bad(fC.LH[5])], ['G major RH', fG.RH, 6, bad(fG.RH[6])]];
+}
 function ScalesWorkbook({ startNo = 1 }) {
   const W = useMemo(() => scWorkbook(), [LANG]);
   const C = scConcepts();
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="scales">{content}</WbPage>);
   P(<WbOpener id="scales" concepts={C} hero={<ScaleStairs letters={['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C']} kb legend={[['T = tone: a BIG step (skip a key)'], ['S = semitone: a tiny step (the very next key)', BK.coral], ['The shape: T T S T T T S']]}/>} blurb="A scale is a staircase. A big step (tone) skips a key, a tiny step (semitone) is the very next key. The same staircase -- T T S T T T S -- builds every major scale."/>);
-  P(<WbMap id="scales" concepts={C} steps={6} checkPage={startNo + 6} tasks={[
+  P(<WbMap id="scales" concepts={C} steps={6} minor={5} checkPage={startNo + 6} tasks={[
     'Play C, G and F major hands separately with the right fingers -- slowly, evenly.',
     'Play A harmonic minor and listen for the raised 7th (G♯).',
     'Sing the degree names while you play C major: tonic, supertonic...',
@@ -27308,8 +27307,31 @@ function ScalesWorkbook({ startNo = 1 }) {
   ]}/>);
   const fRow = (fs, gaps, ex) => <div style={{display:'flex',gap:5}}>{fs.map((f, i) => { const blank = gaps.includes(i); return <span key={i} style={{width:30,height:32,borderRadius:6,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:900,border:'1.5px solid ' + (blank ? (ex ? BK.coral : BK.line) : 'transparent'),background:blank ? '#fff' : BK.soft,color:blank && ex ? BK.coral : BK.ink}}>{blank && !ex ? '' : f}</span>; })}</div>;
 
+
+
+
+
+  const fC = SCALES.C.octaves[1], fG = SCALES.G.octaves[1], fF = SCALES.F.octaves[1];
   P(<>
     <WbTop step="1-2"/>
+    <Part kind="together" title="Fingering for C major" how="Right hand: the thumb tucks under after finger 3. Left hand: finger 3 crosses over after the thumb. Fill in the missing fingers.">
+      <div style={{display:'grid',gap:8}}>
+        <ExCell ex><div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 10px 6px'}}><b style={{width:110,fontSize:12.5}}>C major RH</b>{fRow(fC.RH, [3, 4], true)}</div></ExCell>
+        <ExCell n={2}><div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 10px 6px'}}><b style={{width:110,fontSize:12.5}}>C major LH</b>{fRow(fC.LH, [4, 5, 7], false)}</div></ExCell>
+      </div>
+    </Part>
+    <Part kind="home" title="G and F major" how="G major uses the same fingers as C. F major's right hand is different -- it puts finger 4 on B♭!">
+      <div style={{display:'grid',gap:8}}>{[['G major RH', fG.RH, [2, 3, 6]], ['G major LH', fG.LH, [3, 5, 6]], ['F major RH', fF.RH, [3, 4, 7]]].map(([l, fs, g], i) => <ExCell key={l} n={i + 1}><div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 10px 6px'}}><b style={{width:110,fontSize:12.5}}>{l}</b>{fRow(fs, g, false)}</div></ExCell>)}</div>
+    </Part>
+    <Part kind="play" title="Find the wrong finger" how="A sleepy pianist wrote these fingerings, but each row has ONE wrong finger number. Circle it and write the right finger above it. Then play each one to check.">
+      <div style={{display:'grid',gap:8}}>{scWrongs().map(([label, fs, wi, wv]) => <div key={label} style={{display:'flex',alignItems:'center',gap:12,border:'1.5px solid ' + BK.line,borderRadius:10,padding:'12px 10px 8px'}}><b style={{width:110,fontSize:12.5}}>{label}</b><div style={{display:'flex',gap:5}}>{fs.map((f, j) => <span key={j} style={{width:30,height:32,borderRadius:6,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:900,color:BK.ink,border:'1.2px solid ' + BK.line,background:'#fff'}}>{j === wi ? wv : f}</span>)}</div></div>)}</div>
+      <div style={{fontSize:11.5,color:BK.muted,marginTop:8}}>Clue: the thumb (1) tucks under, finger 3 or 4 crosses over -- and a hand never uses the same finger twice in a row.</div>
+    </Part>
+    <Faces/>
+  </>);
+
+  P(<>
+    <WbTop step="3-4"/>
     <Part kind="together" title="The major-scale shape" how="Between each note: T = tone, S = semitone. The pattern is always T T S T T T S. C major uses only white keys -- here it is with the shape filled in.">
       <ScaleKeysCell key0="C" ex/>
     </Part>
@@ -27323,7 +27345,7 @@ function ScalesWorkbook({ startNo = 1 }) {
   </>);
 
   P(<>
-    <WbTop step={3}/>
+    <WbTop step={5}/>
     <Part kind="together" title="Degree names" how="Each note of the scale has a number and a name. Join them up -- the tonic is done.">
       <div style={{display:'grid',gridTemplateColumns:'60px 1fr 160px',alignItems:'center',rowGap:4}}>{[0, 1, 2, 3, 4, 5, 6].map(i => { const r = [0, ...withSeed('sc-dg', () => shuffle([1, 2, 3, 4, 5, 6]))][i]; return <React.Fragment key={i}><div style={{display:'flex',alignItems:'center',gap:8,justifyContent:'flex-end',fontSize:15,fontWeight:900,color:BK.ink}}>{i + 1}<span style={{width:8,height:8,borderRadius:4,background:BK.ink}}/></div><svg viewBox="0 0 100 10" preserveAspectRatio="none" style={{width:'100%',height:10}}>{i === 0 && <line x1="0" y1="5" x2="100" y2="5" stroke={BK.coral} strokeWidth="1.5"/>}</svg><div style={{display:'flex',alignItems:'center',gap:8,fontSize:13,color:BK.ink}}><span style={{width:8,height:8,borderRadius:4,background:BK.ink}}/>{DEGREE_NAMES[r]}</div></React.Fragment>; })}</div>
     </Part>
@@ -27336,29 +27358,8 @@ function ScalesWorkbook({ startNo = 1 }) {
     <Faces/>
   </>);
 
-  const fC = SCALES.C.octaves[1], fG = SCALES.G.octaves[1], fF = SCALES.F.octaves[1];
   P(<>
-    <WbTop step="4-6"/>
-    <Part kind="together" title="Fingering for C major" how="Right hand: the thumb tucks under after finger 3. Left hand: finger 3 crosses over after the thumb. Fill in the missing fingers.">
-      <div style={{display:'grid',gap:8}}>
-        <ExCell ex><div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 10px 6px'}}><b style={{width:110,fontSize:12.5}}>C major RH</b>{fRow(fC.RH, [3, 4], true)}</div></ExCell>
-        <ExCell n={2}><div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 10px 6px'}}><b style={{width:110,fontSize:12.5}}>C major LH</b>{fRow(fC.LH, [4, 5, 7], false)}</div></ExCell>
-      </div>
-    </Part>
-    <Part kind="home" title="G and F major" how="G major uses the same fingers as C. F major's right hand is different -- it puts finger 4 on B♭!">
-      <div style={{display:'grid',gap:8}}>{[['G major RH', fG.RH, [2, 3, 6]], ['G major LH', fG.LH, [3, 5, 6]], ['F major RH', fF.RH, [3, 4, 7]]].map(([l, fs, g], i) => <ExCell key={l} n={i + 1}><div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 10px 6px'}}><b style={{width:110,fontSize:12.5}}>{l}</b>{fRow(fs, g, false)}</div></ExCell>)}</div>
-    </Part>
-    <Part kind="play" title="Broken staircase" how="A builder made these staircases -- tall riser = tone, short riser = semitone -- but ONE riser on each is the wrong height! Find it, circle it and draw it the right height. Then write the letters on the treads (watch for the F♯ in G major).">
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>
-        {[['C major', 5, { 0: 'C', 7: 'C' }], ['G major', 2, { 0: 'G', 7: 'G' }]].map(([name, wrong, letters]) => <div key={name} style={{border:'1.5px solid ' + BK.line,borderRadius:10,padding:'6px 8px 4px'}}><div style={{fontSize:12.5,fontWeight:900,color:BK.ink,marginBottom:2}}>{name}</div><ScStair wrong={wrong} letters={letters}/></div>)}
-      </div>
-      <div style={{fontSize:11.5,color:BK.muted,marginTop:8}}>Check with the shape: T T S T T T S. Then play each scale and feel the tiny steps under your fingers.</div>
-    </Part>
-    <Faces/>
-  </>);
-
-  P(<>
-    <WbTop step="minor 1-2"/>
+    <WbTop step="minor 3-4"/>
     <Part kind="together" title="Three forms of A minor" how="Natural minor = the white keys from A. Harmonic minor raises the 7th (G becomes G♯). Melodic minor raises the 6th and 7th going up, and comes down natural.">
       <ArtLead pic={<ScaleStairs letters={['A', 'B', 'C', 'D', 'E', 'F', 'G♯', 'A']} rises={[2, 1, 2, 2, 1, 3, 1]} u={7} tw={48} width={390} legend={[['harmonic minor has one GIANT step', BK.coral], ['(3 semitones) from F up to G♯']]}/>} picW={390} text={<>That creaky stair is why harmonic minor sounds <span style={{color:BK.coral}}>spooky</span>. The raised 7th (G♯) is the leading note: it pulls you home to A.</>} style={{padding:'2px 14px'}}/>
       <div style={{display:'grid',gap:6}}>{[['natural', 'A B C D E F G A', []], ['harmonic', 'A B C D E F G♯ A', [6]], ['melodic (up)', 'A B C D E F♯ G♯ A', [5, 6]]].map(([f, s, hl], i) => <ExCell key={f} n={i + 1} ex={i === 1}><div style={{display:'flex',alignItems:'center',gap:12,padding:'14px 10px 6px'}}><b style={{width:110,fontSize:12.5}}>{f}</b><div style={{display:'flex',gap:5}}>{s.split(' ').map((l, j) => <span key={j} style={{width:34,height:30,borderRadius:6,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:900,background:hl.includes(j) ? '#fdeee8' : BK.soft,color:hl.includes(j) ? BK.coral : BK.ink}}>{l}</span>)}</div></div></ExCell>)}</div>
@@ -27402,15 +27403,15 @@ function ScalesTeacher() {
   P(<>
     <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('scales')}</div>
     <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Fingerings are the ones in the app.</div>
-    <TcBlock page={3} title="Shape · build" answers={<>{tcAns('AT HOME', ['G: ' + scNotes('G').join(' '), 'F: ' + scNotes('F').join(' '), 'D: ' + scNotes('D').join(' ')])}{tcAns('PLAY', ['staircase risers 2 2 1 2 2 2 1 rows (T T S T T T S), treads C D E F G A B C'])}</>}
-      watch="Writing the sharp on the wrong note (e.g. G major with C♯ instead of F♯). Check the semitones land between 3-4 and 7-8."
-      say="“Walk the shape on the keys: tone, tone, semitone... the semitones are the tiny steps at 3-4 and 7-8.”"/>
-    <TcBlock page={4} title="Degree names" answers={<>{tcAns('TOGETHER', DEGREE_NAMES.map((n0, i) => (i + 1) + ' ' + n0))}{tcAns('AT HOME', [4, 3, 6, 2, 1, 5].map(d => DEGREE_NAMES[d] + ' = ' + scNotes('G')[d]))}</>}
-      watch="Mixing up dominant (5) and subdominant (4) -- ‘sub’ means below the dominant."
-      say="“Subdominant sits just below the dominant, submediant just below the... well, it's the 6th!”"/>
-    <TcBlock page={5} title="Fingering" answers={<>{tcAns('C RH', [fC.RH.join(' ')])}{tcAns('C LH', [fC.LH.join(' ')])}{tcAns('G RH / LH', [fG.RH.join(' '), fG.LH.join(' ')])}{tcAns('F RH', [fF.RH.join(' ')])}{tcAns('PLAY', ['C major: the A-B riser is short, should be tall (a tone)', 'G major: the B-C riser is tall, should be short (a semitone); treads G A B C D E F♯ G'])}</>}
+    <TcBlock page={3} title="Fingering" answers={<>{tcAns('C RH', [fC.RH.join(' ')])}{tcAns('C LH', [fC.LH.join(' ')])}{tcAns('G RH / LH', [fG.RH.join(' '), fG.LH.join(' ')])}{tcAns('F RH', [fF.RH.join(' ')])}{tcAns('PLAY', scWrongs().map(([l, fs, wi, wv]) => l + ': note ' + (wi + 1) + ' is ' + fs[wi] + ', not ' + wv))}</>}
       watch="Tucking the thumb late and twisting the wrist."
       say="“Thumb starts moving under as soon as finger 2 plays -- a smooth tunnel, no bump.”"/>
+    <TcBlock page={4} title="Shape · build" answers={<>{tcAns('AT HOME', ['G: ' + scNotes('G').join(' '), 'F: ' + scNotes('F').join(' '), 'D: ' + scNotes('D').join(' ')])}{tcAns('PLAY', ['staircase risers 2 2 1 2 2 2 1 rows (T T S T T T S), treads C D E F G A B C'])}</>}
+      watch="Writing the sharp on the wrong note (e.g. G major with C♯ instead of F♯). Check the semitones land between 3-4 and 7-8."
+      say="“Walk the shape on the keys: tone, tone, semitone... the semitones are the tiny steps at 3-4 and 7-8.”"/>
+    <TcBlock page={5} title="Degree names" answers={<>{tcAns('TOGETHER', DEGREE_NAMES.map((n0, i) => (i + 1) + ' ' + n0))}{tcAns('AT HOME', [4, 3, 6, 2, 1, 5].map(d => DEGREE_NAMES[d] + ' = ' + scNotes('G')[d]))}</>}
+      watch="Mixing up dominant (5) and subdominant (4) -- ‘sub’ means below the dominant."
+      say="“Subdominant sits just below the dominant, submediant just below the... well, it's the 6th!”"/>
     <TcBlock page={6} title="Minor scales" answers={<>{tcAns('AT HOME', ['E harmonic minor: E F♯ G A B C D♯ E', 'D harmonic minor: D E F G A B♭ C♯ D'])}</>}
       watch="Raising the 6th as well in harmonic minor (that's melodic)."
       say="“Harmonic: only the 7th goes up -- the leading note that pulls home.”"/>
@@ -27459,7 +27460,7 @@ function ChordsWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="chords">{content}</WbPage>);
   P(<WbOpener id="chords" concepts={C} hero={<ChordHero/>} blurb="A triad is three notes stacked in 3rds: root, 3rd and 5th. Picture a 3-layer cake or a snowman made of three snowballs -- the notes stack the same way."/>);
-  P(<WbMap id="chords" concepts={C} steps={6} checkPage={startNo + 6} tasks={[
+  P(<WbMap id="chords" concepts={C} steps={8} checkPage={startNo + 6} tasks={[
     'Play the triad on every white key from C to B. Which ones are major? Which are minor?',
     'Play I, IV, V, I in C major with your left hand. Then in G major.',
     'Play C major in root position, 1st and 2nd inversion -- hands stay close together.',
@@ -27682,7 +27683,7 @@ function MusicalFormWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="form">{content}</WbPage>);
   P(<WbOpener id="form" concepts={C} hero={<FormTrains/>} blurb="A piece is a train: each section is a carriage. We give each carriage a letter -- the same music keeps its letter, and something new gets the next one."/>);
-  P(<WbMap id="form" concepts={C} steps={5} checkPage={startNo + 6} tasks={[
+  P(<WbMap id="form" concepts={C} steps={6} checkPage={startNo + 6} tasks={[
     'Play your piece and say the letter out loud each time a new section starts.',
     'Play just the A section of a ternary piece -- then play it again at the end, like coming home.',
     'Make up a rondo on the piano: your A tune, a B, your A, a C, your A.',
@@ -27929,8 +27930,8 @@ function stConcepts() {
   return [
     { id: 'tx', name: 'Textures: mono, homo, poly', step: '1-2', page: '3' },
     { id: 'er', name: 'The style eras', step: 'story 5', page: '4' },
-    { id: 'fa', name: 'Style families and swing', step: '3-4', page: '5' },
-    { id: 'bl', name: 'The 12-bar blues', step: 5, page: '6' },
+    { id: 'fa', name: 'Style families and swing', step: '4-5', page: '5' },
+    { id: 'bl', name: 'The 12-bar blues', step: 6, page: '6' },
   ];
 }
 function StylesWorkbook({ startNo = 1 }) {
@@ -27939,7 +27940,7 @@ function StylesWorkbook({ startNo = 1 }) {
   const pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="styles">{content}</WbPage>);
   P(<WbOpener id="styles" concepts={C} blurb="How many tunes are playing at once? When was it written? Is it folk, classical, jazz or pop? Learn to hear -- and see -- what makes each style itself."/>);
-  P(<WbMap id="styles" concepts={C} steps={5} checkPage={startNo + 6} tasks={[
+  P(<WbMap id="styles" concepts={C} steps={7} checkPage={startNo + 6} tasks={[
     'Play a piece you know. Is it monophony, homophony or polyphony? Tell someone at home.',
     'Find out who wrote one of your pieces and when. Which era is it from?',
     'Play a scale in swing: long-short, long-short.',
@@ -27986,7 +27987,7 @@ function StylesWorkbook({ startNo = 1 }) {
   </>);
 
   P(<>
-    <WbTop step="3-4"/>
+    <WbTop step="4-5"/>
     <Part kind="together" title="Which style family?" how="Folk, classical, jazz & blues, or popular? Circle the family for each clue. Then look at how the eighth notes are played: even blocks are straight, long-short blocks are swing.">
       <BkGrid cols={2} gap="10px 12px">{W.s3.tog.map((it, i) => <FamCell key={i} it={it} n={i + 1} ex={i === 0}/>)}</BkGrid>
       <ArtLead pic={<WalkSkip/>} text="Straight eighths are like walking: step, step, step, step. Swing is like skipping: long-short, long-short!" style={{margin:'8px 0 0',padding:'4px 14px'}}/>
@@ -28004,7 +28005,7 @@ function StylesWorkbook({ startNo = 1 }) {
   </>);
 
   P(<>
-    <WbTop step={5}/>
+    <WbTop step={6}/>
     <Part kind="together" title="Fill in the blues" how="Twelve bars, three chords: I, IV and V. I is home and comes most often; in this simple blues, V comes only once, in bar 9. Write the missing numerals.">
       <BluesGrid gaps={W.s5.tog} ex={[W.s5.tog[0]]}/>
       <div style={{display:'flex',gap:14,marginTop:6,fontSize:11.5,color:BK.muted,fontWeight:700}}>{['I', 'IV', 'V'].map(r => <span key={r} style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:12,height:12,borderRadius:3,background:ST_BL_COL[r]}}/>{r} = {ST_KEYS.C[r]}{r === 'I' ? ' (home)' : ''}</span>)}<span>in C major</span></div>
