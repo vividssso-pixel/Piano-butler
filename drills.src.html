@@ -19807,6 +19807,8 @@ function App() {
   useEffect(() => { if (st.drill && CHAPTER_CAT[st.drill]) { try { localStorage.setItem(LAST_CHAPTER_KEY, st.drill); } catch (e) {} } }, [st.drill]);
   useEffect(() => { try { const n = parseInt(new URLSearchParams(location.search).get('step'), 10); if (!st.drill || isNaN(n)) return; const tmo = setTimeout(() => { const el = document.getElementById(st.drill + '-step-' + (n - 1)); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 700); return () => clearTimeout(tmo); } catch (e) {} }, []);
   function update(patch) { setSt(prev => ({ ...prev, ...patch })); }
+  // a student with a link always has a button back to the Today page on the Learn and Practice lists
+  const todayBack = showToday && !T ? <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:12}} onClick={() => { update({ view: 'today', tool: null, kit: null, drill: null, from: null }); try { window.scrollTo(0, 0); } catch (e) {} }}>{t('← Today', '← 오늘')}</button> : null;
   function jumpToChapter(id) { setFindOpen(false); update({ view: (T && (st.view === 'toolbox' || st.view === 'chapters')) ? st.view : 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }
 
   return (
@@ -19856,7 +19858,7 @@ function App() {
         ) : (st.view === 'tools' || st.view === 'practice') ? (
           st.tool
             ? <ToolView id={st.tool} locked={st.lock} backLabel={st.from && st.from.tool === st.tool ? '← Today' : st.view === 'practice' ? '← Practice' : '← Toolbox'} onBack={() => st.from && st.from.tool === st.tool ? update({ tool: null, view: 'today', from: null }) : update({ tool: null, view: st.ret || (T && st.view === 'tools' ? 'toolbox' : st.view), ret: null })} onChapter={(id) => update({ view: st.ret === 'toolbox' ? 'toolbox' : 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
-            : <PracticeView onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
+            : <>{todayBack}<PracticeView onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
         ) : !inChapter && !st.lock ? (
           T && st.view === 'toolbox'
             ? <ToolboxTab onOpenTool={(id) => { update({ view: 'tools', tool: id, ret: 'toolbox' }); try { window.scrollTo(0, 0); } catch (e) {} }}
@@ -19865,7 +19867,7 @@ function App() {
                 onChapter={jumpToChapter}/>
             : T && st.view !== 'chapters'
             ? <GuideTab onOpenChapter={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
-            : <LessonPath onBack={null} onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
+            : <>{todayBack}<LessonPath onBack={null} onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
         ) : <>
         {!st.lock && (() => {
           const sg = catOfChapter(active.id) ? { title: catOfChapter(active.id).name } : null, list = orderedChapterIds(), k = list.indexOf(active.id);
