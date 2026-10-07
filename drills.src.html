@@ -1526,22 +1526,24 @@ function ChapterArt({ id }) {
 
 function Lesson({ id, title, intro, children, onStart, startLabel, head }) {
   const steps = React.Children.toArray(children).filter(Boolean);
+  // Phase 350: a step may say storeAs={n}: its tick is stored under n (its old place), so reordering steps keeps every tick on its step
+  const sk = (i) => { const p = steps[i] && steps[i].props; return p && p.storeAs != null ? p.storeAs : i; };
   const [done, setDone] = useState(() => loadDone()[id] || {});
-  const [open, setOpen] = useState(() => { const d = loadDone()[id] || {}; const o = {}; steps.forEach((s, i) => { o[i] = !d[i]; }); return o; });
-  useEffect(() => { const d = loadDone()[id] || {}; setDone(d); const o = {}; steps.forEach((s, i) => { o[i] = !d[i]; }); setOpen(o); }, [id]);
+  const [open, setOpen] = useState(() => { const d = loadDone()[id] || {}; const o = {}; steps.forEach((s, i) => { o[i] = !d[sk(i)]; }); return o; });
+  useEffect(() => { const d = loadDone()[id] || {}; setDone(d); const o = {}; steps.forEach((s, i) => { o[i] = !d[sk(i)]; }); setOpen(o); }, [id]);
   const markDone = (i) => {
-    const all = loadDone(); const mine = { ...(all[id] || {}) }; mine[i] = !mine[i]; all[id] = mine; saveDone(all); setDone(mine);
-    if (mine[i]) { setOpen(o => ({ ...o, [i]: false, [i + 1]: true })); setTimeout(() => { const el = document.getElementById(id + '-step-' + (i + 1)); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120); }
+    const all = loadDone(); const mine = { ...(all[id] || {}) }; const k = sk(i); mine[k] = !mine[k]; all[id] = mine; saveDone(all); setDone(mine);
+    if (mine[k]) { setOpen(o => ({ ...o, [i]: false, [i + 1]: true })); setTimeout(() => { const el = document.getElementById(id + '-step-' + (i + 1)); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120); }
   };
   const jump = (i) => { setOpen(o => ({ ...o, [i]: true })); setTimeout(() => { const el = document.getElementById(id + '-step-' + i); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); };
-  const count = steps.filter((s, i) => done[i]).length;
+  const count = steps.filter((s, i) => done[sk(i)]).length;
   useEffect(() => { try { const m = loadStepTotals(); if (m[id] !== steps.length) { m[id] = steps.length; localStorage.setItem(STEPS_TOTAL_KEY, JSON.stringify(m)); } } catch (e) {} }, [id, steps.length]);
   if (BOOK) return (
     <div>
       <h2 style={{fontSize:30,fontWeight:900,margin:'0 0 6px',lineHeight:1.1,color:'var(--navy)'}}>{title}</h2>
       {intro && <p style={{fontSize:14.5,color:'var(--muted)',margin:'0 0 8px',lineHeight:1.5}}>{intro}</p>}
       <ChapterArt id={STAFF_ART[id] ? id : String(id).split('-')[0]}/>
-      {steps.map((s, i) => React.cloneElement(s, { key: i, n: i + 1, total: steps.length, id: id + '-step-' + i, color: STEP_COLORS[i % STEP_COLORS.length], open: true, done: false, onToggle: () => {}, onDone: () => {}, bookExtra: bookExtras(id)[i] }))}
+      {steps.map((s, i) => React.cloneElement(s, { key: i, n: i + 1, total: steps.length, id: id + '-step-' + i, color: STEP_COLORS[i % STEP_COLORS.length], open: true, done: false, onToggle: () => {}, onDone: () => {}, bookExtra: bookExtras(id)[sk(i)] }))}
     </div>
   );
   return (
@@ -1554,15 +1556,16 @@ function Lesson({ id, title, intro, children, onStart, startLabel, head }) {
       <div style={{display:'flex',flexWrap:'wrap',gap:5,margin:'4px 0 2px'}}>
         {steps.map((s, i) => {
           const c = STEP_COLORS[i % STEP_COLORS.length];
-          return <button key={i} onClick={() => jump(i)} style={{display:'inline-flex',alignItems:'center',gap:5,border:'1.5px solid ' + c,background:done[i] ? c : '#fff',color:done[i] ? '#fff' : c,
+          const di = !!done[sk(i)];
+          return <button key={i} onClick={() => jump(i)} style={{display:'inline-flex',alignItems:'center',gap:5,border:'1.5px solid ' + c,background:di ? c : '#fff',color:di ? '#fff' : c,
             borderRadius:14,padding:'3px 10px 3px 4px',fontSize:13,fontWeight:800,cursor:'pointer'}}>
-            <span style={{width:18,height:18,borderRadius:9,background:done[i] ? '#fff' : c,color:done[i] ? c : '#fff',fontSize:11.5,display:'inline-flex',alignItems:'center',justifyContent:'center'}}>{done[i] ? '✓' : i + 1}</span>{s.props.title}</button>;
+            <span style={{width:18,height:18,borderRadius:9,background:di ? '#fff' : c,color:di ? c : '#fff',fontSize:11.5,display:'inline-flex',alignItems:'center',justifyContent:'center'}}>{di ? '✓' : i + 1}</span>{s.props.title}</button>;
         })}
       </div>
       <div style={{fontSize:12,color:'var(--muted)',fontWeight:700,margin:'2px 0 4px'}}>{t(count + ' of ' + steps.length + ' steps done', steps.length + '개 중 ' + count + '개 완료')}</div>
       {steps.map((s, i) => React.cloneElement(s, {
         key: i, n: i + 1, total: steps.length, id: id + '-step-' + i, color: STEP_COLORS[i % STEP_COLORS.length],
-        open: !!open[i], done: !!done[i], onToggle: () => setOpen(o => ({ ...o, [i]: !o[i] })), onDone: () => markDone(i),
+        open: !!open[i], done: !!done[sk(i)], onToggle: () => setOpen(o => ({ ...o, [i]: !o[i] })), onDone: () => markDone(i),
       }))}
       {onStart && <button className="primary-btn" style={{marginTop:16}} onClick={onStart}>{startLabel || t('Start the drill →', '드릴 시작하기 →')}</button>}
     </div>
@@ -7219,22 +7222,22 @@ function ScalesLearn({ onStart }) {
   );
   const __L = (mode) => mode === 'major' ? (
     <Lesson key="major" id="scales-major" title={t('Major scales', '장조 스케일')} head={tabs} onStart={onStart}
-      intro={<>{t('One shape builds every major scale. Learn the shape, build it yourself, then learn the fingering patterns.', '하나의 모양이 모든 장조 스케일을 만들어요. 모양을 배우고, 직접 만들어보고, 손가락 번호 패턴을 배워보세요.')}</>}>
-      <Step title={t('The shape', '모양')}><MajorShapeCard/></Step>
-      <Step title={t('Build it yourself', '직접 만들어보기')}><ScaleBuilder mode="major"/></Step>
-      <Step title={t('Degree names', '음계 이름')}><DegreeNames/></Step>
-      <Step title={t('Fingering patterns', '손가락 번호 패턴')}><ScalePatterns sel={sel} onPick={setSel}/></Step>
-      <Step title={t('Your scale path', '나의 스케일 경로')}><ScalePath sel={sel} onPick={setSel}/></Step>
-      <Step title={t('Look up any scale', '아무 스케일이나 찾아보기')}><ScaleFinder ext={sel} onKey={setSel}/></Step>
+      intro={<>{t('Find any scale and its fingering first. Then see how one shape builds every major scale, and stamp each scale when it’s solid.', '먼저 아무 스케일이나 찾아서 손가락 번호를 봐요. 그다음 하나의 모양이 모든 장조 스케일을 만드는 걸 보고, 확실해진 스케일에 도장을 찍어요.')}</>}>
+      <Step storeAs={5} title={t('Find any scale', '아무 스케일이나 찾아보기')}><ScaleFinder ext={sel} onKey={setSel}/></Step>
+      <Step storeAs={3} title={t('Fingering patterns', '손가락 번호 패턴')}><ScalePatterns sel={sel} onPick={setSel}/></Step>
+      <Step storeAs={0} title={t('The shape', '모양')}><MajorShapeCard/></Step>
+      <Step storeAs={1} title={t('Build it yourself', '직접 만들어보기')}><ScaleBuilder mode="major"/></Step>
+      <Step storeAs={2} title={t('Degree names', '음계 이름')}><DegreeNames/></Step>
+      <Step storeAs={4} title={t('Stamp your scales', '스케일 도장 찍기')}><ScalePath sel={sel} onPick={setSel}/></Step>
     </Lesson>
   ) : (
     <Lesson key="minor" id="scales-minor" title={t('Minor scales', '단조 스케일')} head={tabs} onStart={onStart}
-      intro={<>{t('Three forms of the minor scale -- the harmonic minor is the one you’ll meet most.', '단조 스케일에는 세 가지 형태가 있어요 -- 가장 많이 만나게 될 것은 화성 단음계예요.')}</>}>
-      <Step title={t('Three forms', '세 가지 형태')}><MinorFormsCard/></Step>
-      <Step title={t('Build it yourself', '직접 만들어보기')}><ScaleBuilder key="minor" mode="minor"/></Step>
-      <Step title={t('Fingering patterns', '손가락 번호 패턴')}><ScalePatterns sel={minSel} onPick={setMinSel} mode="minor"/></Step>
-      <Step title={t('Your scale path', '나의 스케일 경로')}><ScalePath sel={minSel} onPick={setMinSel} keys={MINOR_PATH} prefix="m:" mode="minor"/></Step>
-      <Step title={t('See every form', '모든 형태 보기')}><MinorViewer sel={minSel} onPick={setMinSel}/></Step>
+      intro={<>{t('See every minor scale and its fingering first. Then learn the three forms -- the harmonic minor is the one you’ll meet most -- and stamp each scale when it’s solid.', '먼저 모든 단조 스케일과 손가락 번호를 봐요. 그다음 세 가지 형태를 배우고(가장 많이 만나는 것은 화성 단음계예요), 확실해진 스케일에 도장을 찍어요.')}</>}>
+      <Step storeAs={4} title={t('See every form', '모든 형태 보기')}><MinorViewer sel={minSel} onPick={setMinSel}/></Step>
+      <Step storeAs={2} title={t('Fingering patterns', '손가락 번호 패턴')}><ScalePatterns sel={minSel} onPick={setMinSel} mode="minor"/></Step>
+      <Step storeAs={0} title={t('Three forms', '세 가지 형태')}><MinorFormsCard/></Step>
+      <Step storeAs={1} title={t('Build it yourself', '직접 만들어보기')}><ScaleBuilder key="minor" mode="minor"/></Step>
+      <Step storeAs={3} title={t('Stamp your scales', '스케일 도장 찍기')}><ScalePath sel={minSel} onPick={setMinSel} keys={MINOR_PATH} prefix="m:" mode="minor"/></Step>
     </Lesson>
   );
   return BOOK ? <>{__L('major')}<div style={{breakBefore:'page'}}>{__L('minor')}</div></> : __L(mode);
