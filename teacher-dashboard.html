@@ -807,9 +807,79 @@ function StudentModal({ initial, onSave, onClose }) {
 /* ═══════════════════════════════════════════════════════════════════════════
    LESSON LOG MODAL
 ═══════════════════════════════════════════════════════════════════════════ */
+// One line of a list that grows with its text. Enter adds a new row below, Backspace on an empty row removes it.
+function AutoText({ value, onChange, onEnter, onEmptyBackspace, placeholder, label, innerRef, bg, accent }) {
+  const local = React.useRef(null);
+  React.useLayoutEffect(() => { const el = local.current; if (el) { el.style.height = "auto"; el.style.height = el.scrollHeight + "px"; } }, [value]);
+  return (
+    <textarea ref={el => { local.current = el; if (innerRef) innerRef(el); }} rows={1} value={value} aria-label={label} placeholder={placeholder}
+      onChange={e => onChange(e.target.value.replace(/\n/g, " "))}
+      onKeyDown={e => {
+        if (e.key === "Enter" && !e.shiftKey && !(e.nativeEvent && e.nativeEvent.isComposing)) { e.preventDefault(); if (onEnter) onEnter(); }
+        else if (e.key === "Backspace" && value === "" && onEmptyBackspace) { e.preventDefault(); onEmptyBackspace(); }
+      }}
+      className="input text-sm" style={{ resize: "none", overflow: "hidden", minHeight: 38, lineHeight: 1.35, background: bg, borderColor: "transparent" }}
+      onFocus={e => { e.target.style.borderColor = accent; }} onBlur={e => { e.target.style.borderColor = "transparent"; }}/>
+  );
+}
+// A numbered list of short items (rows are { t: text, r: rating }). Used for repertoire, technical work, and so on.
+const RATING_NEXT = { "": "🔴", "🔴": "🟡", "🟡": "🟢", "🟢": "" };
+const RATING_COLOR = { "🔴": "#dc2626", "🟡": "#eab308", "🟢": "#16a34a" };
+const RATING_NAME = { "": "not rated", "🔴": "needs work", "🟡": "progressing", "🟢": "solid" };
+function ListField({ label, color, bg, hint, items, onChange, max = 8, placeholder, rating, addLabel, action, testid }) {
+  const refs = React.useRef([]);
+  const [focus, setFocus] = useState(null);
+  React.useEffect(() => { if (focus && refs.current[focus.i]) { const el = refs.current[focus.i]; el.focus(); try { el.setSelectionRange(el.value.length, el.value.length); } catch (e) {} } }, [focus]);
+  const patch = (i, p) => onChange(items.map((it, j) => j === i ? { ...it, ...p } : it));
+  const add = (at) => { if (items.length >= max) return; const next = items.slice(); next.splice(at, 0, { t: "", r: "" }); onChange(next); setFocus({ i: at, k: Date.now() }); };
+  const del = (i) => {
+    if (items.length === 1) { onChange([{ t: "", r: "" }]); return; }
+    onChange(items.filter((_, j) => j !== i)); setFocus({ i: Math.max(0, i - 1), k: Date.now() });
+  };
+  return (
+    <div data-testid={testid}>
+      <div className="flex items-center justify-between mb-1 gap-2">
+        <label className="field-label" style={{ color, marginBottom: 0 }}>{label}</label>
+        {action}
+      </div>
+      {hint && <p className="text-xs text-slate-400 mb-2">{hint}</p>}
+      {items.map((it, i) => (
+        <div key={i} className="flex items-start gap-2 mb-2" data-row={i + 1}>
+          <span style={{ flex: "0 0 22px", height: 22, marginTop: 8, borderRadius: 11, background: bg, color, fontSize: 11, fontWeight: 800, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>{i + 1}</span>
+          <div className="flex-1 min-w-0">
+            <AutoText value={it.t} onChange={v => patch(i, { t: v })} placeholder={i === 0 ? placeholder : ""} label={label + " " + (i + 1)}
+              onEnter={() => add(i + 1)} onEmptyBackspace={items.length > 1 ? () => del(i) : null}
+              innerRef={el => { refs.current[i] = el; }} bg={bg} accent={color}/>
+          </div>
+          {rating && (
+            <button type="button" onClick={() => patch(i, { r: RATING_NEXT[it.r || ""] })} aria-label={"Rating: " + RATING_NAME[it.r || ""] + ". Tap to change."} title={"Tap to change: red = needs work, yellow = progressing, green = solid"} data-rating={it.r || ""}
+              style={{ flex: "0 0 22px", width: 22, height: 22, marginTop: 8, borderRadius: 11, cursor: "pointer", padding: 0, boxSizing: "border-box",
+                background: it.r ? RATING_COLOR[it.r] : "transparent", border: it.r ? "2px solid " + RATING_COLOR[it.r] : "2px solid #d9d3c4" }}/>
+          )}
+          <button type="button" onClick={() => del(i)} aria-label={"Remove " + label + " " + (i + 1)} disabled={items.length === 1 && !it.t}
+            style={{ flex: "0 0 22px", width: 22, height: 22, marginTop: 8, border: "none", background: "transparent", color: "#9b9cbd", fontSize: 18, lineHeight: 1, cursor: "pointer", padding: 0, opacity: items.length === 1 && !it.t ? 0.3 : 1 }}>×</button>
+        </div>
+      ))}
+      <button type="button" onClick={() => add(items.length)} disabled={items.length >= max} className="btn-ghost text-xs py-1.5 px-3" style={{ opacity: items.length >= max ? 0.5 : 1 }}>
+        {items.length >= max ? "Up to " + max + " items" : "+ " + (addLabel || "Add")}
+      </button>
+    </div>
+  );
+}
+// text <-> rows. One item per line; for repertoire a leading traffic-light emoji is that piece's rating.
+const parseItems = (text, rating) => {
+  const lines = String(text || "").split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+  if (!lines.length) return [{ t: "", r: "" }];
+  return lines.map(l => { const m = rating ? /^([🔴🟡🟢])\s*(.*)$/u.exec(l) : null; return m ? { t: m[2], r: m[1] } : { t: l, r: "" }; });
+};
+const joinItems = (items, rating) => items.map(it => ({ t: it.t.trim(), r: it.r })).filter(it => it.t).map(it => (rating && it.r ? it.r + " " : "") + it.t).join("\n");
+
 function LogModal({ student, existingLog, currentMonth, lastLog, onSave, onClose }) {
   const blank = { date:todayStr(), repertoire:"", technical:"", srAural:"", gk:"", notes:"", homework:"", mood:"", pieceRating:"" };
   const [f, setF] = useState(existingLog ?? blank);
+  const [lists, setLists] = useState(() => { const src = existingLog ?? blank; return { rep: parseItems(src.repertoire, true), tech: parseItems(src.technical), sr: parseItems(src.srAural), gk: parseItems(src.gk), hw: parseItems(src.homework) }; });
+  const setList = (k) => (items) => setLists(p => ({ ...p, [k]: items }));
+  const save = () => onSave({ ...f, repertoire: joinItems(lists.rep, true), technical: joinItems(lists.tech), srAural: joinItems(lists.sr), gk: joinItems(lists.gk), homework: joinItems(lists.hw) });
   const [copied, setCopied] = useState(false);
   const set = (k,v) => setF(p=>({...p,[k]:v}));
 
@@ -821,37 +891,6 @@ function LogModal({ student, existingLog, currentMonth, lastLog, onSave, onClose
     { val:"great",   emoji:"😀", label:"Great" },
   ];
 
-  // ── Piece traffic light ──
-  const TRAFFIC = [
-    { val:"🔴", label:"Needs work" },
-    { val:"🟡", label:"Progressing" },
-    { val:"🟢", label:"Solid" },
-  ];
-
-  // ── Focus tag chips ──
-  const CHIPS = {
-    repertoire: ["HS","HT","Slow practice","Voicing","Dynamics","Phrasing","Memory","Bar-by-bar","LH alone","RH alone","Full run"],
-    technical:  ["Scales","Arpeggios","Contrary motion","Broken chords","Octaves","Staccato","Legato","Fingering","Wrist","Tempo","Hands together"],
-  };
-
-  const appendChip = (key, chip) => {
-    setF(p => {
-      const cur = p[key];
-      const sep = cur && !cur.endsWith(" ") && !cur.endsWith("\n") ? " " : "";
-      return { ...p, [key]: cur + sep + chip + " " };
-    });
-  };
-
-  const insertRating = (val) => {
-    set("pieceRating", val);
-    setF(p => {
-      const cur = p.repertoire;
-      // Replace existing leading traffic light if present
-      const cleaned = cur.replace(/^[🔴🟡🟢]\s*/, "");
-      return { ...p, repertoire: val + " " + cleaned, pieceRating: val };
-    });
-  };
-
   const copyHomework = () => {
     if (!f.notes?.trim()) return;
     navigator.clipboard.writeText(f.notes.trim()).then(() => {
@@ -860,14 +899,18 @@ function LogModal({ student, existingLog, currentMonth, lastLog, onSave, onClose
     });
   };
 
-  // "Copy from notes": the notes box is private; only what is placed in "For the student" is ever sent to the student's page
-  const copyNotesToStudent = () => {
-    const n = (f.notes || "").trim();
-    if (!n) return;
-    setF(p => ({ ...p, homework: ((p.homework || "").trim() ? p.homework.trim() + "\n" : "") + n }));
+  // "From repertoire": copy the piece names (no ratings) into "For the student"; the notes box and ratings stay private
+  const fromRepertoire = () => {
+    const base = lists.hw.filter(x => x.t.trim());
+    const have = new Set(base.map(x => x.t.trim().toLowerCase()));
+    const add = lists.rep.map(x => x.t.trim()).filter(t => t && !have.has(t.toLowerCase()));
+    if (!add.length) return;
+    const next = [...base, ...add.map(t => ({ t, r: "" }))].slice(0, 12);
+    setList("hw")(next);
   };
 
-  const showLastHint = !existingLog && lastLog?.notes?.trim();
+  const lastHint = !existingLog ? ((lastLog?.homework || "").trim() || (lastLog?.notes || "").trim()) : "";
+  const showLastHint = !!lastHint;
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-start justify-center z-50 p-4 overflow-y-auto" onClick={onClose}>
@@ -907,108 +950,30 @@ function LogModal({ student, existingLog, currentMonth, lastLog, onSave, onClose
         {showLastHint && (
           <div style={{margin:"12px 20px 0",padding:"10px 14px",background:"#faf6ec",borderRadius:"10px",border:"1px dashed #e9e2d2"}}>
             <p style={{margin:"0 0 3px",fontSize:"10px",fontWeight:700,letterSpacing:"0.07em",textTransform:"uppercase",color:"#7a7ca6"}}>Last lesson homework</p>
-            <p style={{margin:0,fontSize:"12px",color:"#7a7ca6",lineHeight:1.5,whiteSpace:"pre-wrap"}}>{lastLog.notes.trim()}</p>
+            <p style={{margin:0,fontSize:"12px",color:"#7a7ca6",lineHeight:1.5,whiteSpace:"pre-wrap"}}>{lastHint}</p>
           </div>
         )}
 
-        {/* Fields */}
-        <div className="p-5 space-y-4 max-h-[55vh] overflow-y-auto">
+        {/* Fields: every section is a short numbered list */}
+        <div className="p-5 space-y-5 max-h-[60vh] overflow-y-auto">
+          <ListField testid="list-rep" label="Repertoire" color="#26296b" bg="#ecebf5" items={lists.rep} onChange={setList("rep")} rating addLabel="Add piece"
+            placeholder="e.g. Minuet in G, bars 1–8, hands together"
+            hint="One piece per row. Tap the circle to rate it: red needs work, yellow progressing, green solid."/>
+          <ListField testid="list-tech" label="Technical work" color="#7c3aed" bg="#f5f3ff" items={lists.tech} onChange={setList("tech")} placeholder="e.g. C major scale, 2 octaves"/>
+          <ListField testid="list-sr" label="Sight-reading & aural" color="#0891b2" bg="#ecfeff" items={lists.sr} onChange={setList("sr")} placeholder="e.g. SR p.14, intervals up to a 6th"/>
+          <ListField testid="list-gk" label="General knowledge" color="#d97706" bg="#fffbeb" items={lists.gk} onChange={setList("gk")} placeholder="e.g. Terms: andante, legato"/>
 
-          {/* Repertoire — with traffic light + chips */}
+          {/* For the student: the only text that appears on the student's Today page */}
+          <ListField testid="list-hw" label="For the student" color="#e4572e" bg="#fff5f0" items={lists.hw} onChange={setList("hw")} max={12} addLabel="Add"
+            placeholder="e.g. Minuet in G, bars 1–8, slowly"
+            hint="Shows on the student's Today page when they have a student link. Your notes below stay private."
+            action={<button type="button" onClick={fromRepertoire} disabled={!lists.rep.some(x => x.t.trim())}
+              style={{ fontSize: "10px", fontWeight: 700, padding: "3px 10px", borderRadius: "99px", cursor: "pointer", border: "1px solid #e9e2d2", background: "white", color: "#62649a", opacity: lists.rep.some(x => x.t.trim()) ? 1 : 0.45 }}>+ From repertoire</button>}/>
+
+          {/* Private notes */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="field-label" style={{color:"#26296b",marginBottom:0}}>Repertoire</label>
-              <div className="flex gap-1">
-                {TRAFFIC.map(t=>(
-                  <button key={t.val} onClick={()=>insertRating(t.val)}
-                    title={t.label}
-                    style={{
-                      fontSize:"15px", padding:"2px 5px", borderRadius:"6px", border:"none", cursor:"pointer", lineHeight:1,
-                      background: f.pieceRating===t.val ? "#f1ebdb" : "transparent",
-                      outline: f.pieceRating===t.val ? "2px solid #3b3f8f" : "none",
-                    }}>
-                    {t.val}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <textarea
-              value={f.repertoire}
-              onChange={e=>set("repertoire",e.target.value)}
-              rows={2}
-              placeholder="e.g. List A bars 1–16 HT, voicing in bar 8. List B HS, LH secure."
-              className="input text-sm"
-              style={{background:"#ecebf5",borderColor:"transparent"}}
-              onFocus={e=>e.target.style.borderColor="#26296b"}
-              onBlur={e=>e.target.style.borderColor="transparent"}
-            />
-            <div className="flex flex-wrap gap-1 mt-1">
-              {CHIPS.repertoire.map(c=>(
-                <button key={c} onClick={()=>appendChip("repertoire",c)}
-                  style={{fontSize:"10px",fontWeight:600,padding:"2px 8px",borderRadius:"99px",border:"1px solid #d4d5ea",background:"#ecebf5",color:"#1b1d52",cursor:"pointer"}}>
-                  {c}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Technical — with chips */}
-          <div>
-            <label className="field-label" style={{color:"#7c3aed"}}>Technical work</label>
-            <textarea
-              value={f.technical}
-              onChange={e=>set("technical",e.target.value)}
-              rows={2}
-              placeholder="e.g. 5B exercise – good. B major 4 oct, need more speed."
-              className="input text-sm"
-              style={{background:"#f5f3ff",borderColor:"transparent"}}
-              onFocus={e=>e.target.style.borderColor="#7c3aed"}
-              onBlur={e=>e.target.style.borderColor="transparent"}
-            />
-            <div className="flex flex-wrap gap-1 mt-1">
-              {CHIPS.technical.map(c=>(
-                <button key={c} onClick={()=>appendChip("technical",c)}
-                  style={{fontSize:"10px",fontWeight:600,padding:"2px 8px",borderRadius:"99px",border:"1px solid #ddd6fe",background:"#f5f3ff",color:"#6d28d9",cursor:"pointer"}}>
-                  {c}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* SR & Aural */}
-          <div>
-            <label className="field-label" style={{color:"#0891b2"}}>Sight-reading & Aural</label>
-            <textarea
-              value={f.srAural}
-              onChange={e=>set("srAural",e.target.value)}
-              rows={2}
-              placeholder="e.g. SR p.14 – hesitant bar 5. Intervals up to 6th solid."
-              className="input text-sm"
-              style={{background:"#ecfeff",borderColor:"transparent"}}
-              onFocus={e=>e.target.style.borderColor="#0891b2"}
-              onBlur={e=>e.target.style.borderColor="transparent"}
-            />
-          </div>
-
-          {/* General Knowledge */}
-          <div>
-            <label className="field-label" style={{color:"#d97706"}}>General Knowledge</label>
-            <textarea
-              value={f.gk}
-              onChange={e=>set("gk",e.target.value)}
-              rows={2}
-              placeholder="e.g. Baroque style discussed. Terms: andante, legato. Binary form."
-              className="input text-sm"
-              style={{background:"#fffbeb",borderColor:"transparent"}}
-              onFocus={e=>e.target.style.borderColor="#d97706"}
-              onBlur={e=>e.target.style.borderColor="transparent"}
-            />
-          </div>
-
-          {/* Notes & homework — with copy button */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="field-label" style={{color:"#62649a",marginBottom:0}}>Notes & homework</label>
+              <label className="field-label" htmlFor="log-notes" style={{color:"#62649a",marginBottom:0}}>Notes (private)</label>
               <button onClick={copyHomework}
                 style={{
                   fontSize:"10px",fontWeight:700,padding:"3px 10px",borderRadius:"99px",cursor:"pointer",
@@ -1019,10 +984,11 @@ function LogModal({ student, existingLog, currentMonth, lastLog, onSave, onClose
               </button>
             </div>
             <textarea
+              id="log-notes"
               value={f.notes}
               onChange={e=>set("notes",e.target.value)}
               rows={2}
-              placeholder="e.g. HW: List A bars 1–8 slowly ×3 daily. Parents updated re: exam."
+              placeholder="e.g. Parents updated re: exam. Sick last week."
               className="input text-sm"
               style={{background:"#faf6ec",borderColor:"transparent"}}
               onFocus={e=>e.target.style.borderColor="#62649a"}
@@ -1030,38 +996,11 @@ function LogModal({ student, existingLog, currentMonth, lastLog, onSave, onClose
             />
           </div>
 
-          {/* For the student — the only text that appears on the student's Today page */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="field-label" htmlFor="log-homework" style={{color:"#e4572e",marginBottom:0}}>For the student</label>
-              <button type="button" onClick={copyNotesToStudent} disabled={!f.notes?.trim()}
-                style={{
-                  fontSize:"10px",fontWeight:700,padding:"3px 10px",borderRadius:"99px",cursor:f.notes?.trim()?"pointer":"default",
-                  border:"1px solid #e9e2d2",background:"white",color:"#62649a",opacity:f.notes?.trim()?1:0.45,
-                }}>
-                Copy from notes
-              </button>
-            </div>
-            <textarea
-              id="log-homework"
-              value={f.homework || ""}
-              onChange={e=>set("homework",e.target.value)}
-              rows={3}
-              maxLength={1500}
-              placeholder={"Minuet in G, bars 1–8, hands together, slowly\nPractice dice, 3 rolls"}
-              className="input text-sm"
-              style={{background:"#fff5f0",borderColor:"transparent"}}
-              onFocus={e=>e.target.style.borderColor="#e4572e"}
-              onBlur={e=>e.target.style.borderColor="transparent"}
-            />
-            <p className="text-xs text-slate-400 mt-1">One item per line. Shows on the student's Today page when they have a student link. Your notes above stay private.</p>
-          </div>
-
         </div>
 
         <div className="p-5 flex gap-3 border-t border-slate-100">
           <button className="btn-ghost flex-1" onClick={onClose}>Cancel</button>
-          <button className="btn-primary flex-1" onClick={()=>onSave(f)}>Save lesson log</button>
+          <button className="btn-primary flex-1" onClick={save}>Save lesson log</button>
         </div>
       </div>
     </div>
