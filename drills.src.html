@@ -807,14 +807,16 @@ function saveRecord(drillId, level, mode, result) {
   const prevBest = prev ? prev.best : null;
   try {
     const all = loadRecords();
+    const now = Date.now();
     const entry = {
       plays: (prev ? prev.plays : 0) + 1,
       best: Math.max(prevBest || 0, result.score),
-      lastAt: Date.now(),
-      history: [...((prev && prev.history) || []), { at: Date.now(), score: result.score, correct: result.correct, total: result.total }].slice(-20),
+      lastAt: now,
+      history: [...((prev && prev.history) || []), { at: now, score: result.score, correct: result.correct, total: result.total }].slice(-20),
     };
     all[recordKey(drillId, level, mode)] = entry;
     localStorage.setItem(REC_KEY, JSON.stringify(all));
+    pbLogPlay({ at: now, drill: drillId, level, mode, score: result.score, correct: result.correct, total: result.total }); // only does anything on a device that holds a student link
     return { best: entry.best, plays: entry.plays, prevBest };
   } catch (e) {
     return { best: result.score, plays: 1, prevBest, unsaved: true };
@@ -19470,7 +19472,7 @@ function loadStoredLink() {
   } catch (e) { return null; }
 }
 function saveStoredLink(token, name) { try { localStorage.setItem(LINK_TOKEN_KEY, token); localStorage.setItem(LINK_NAME_KEY, name); } catch (e) {} }
-// "Not me" / "Remove": forget this link on this device. (Step B will also push and clear the synced practice data here.)
+// "Remove" (a link that is not active): forget this link on this device, the practice stays. "Not me" goes through syLeave first (Phase 346).
 function forgetStudentLink() {
   try { localStorage.removeItem(LINK_TOKEN_KEY); localStorage.removeItem(LINK_NAME_KEY); } catch (e) {}
   try { if (/(?:^#|&)k=/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
@@ -19486,7 +19488,7 @@ async function pbRpc(fn, args) {
       body: JSON.stringify(args),
       signal: ctl ? ctl.signal : undefined,
     });
-    if (!r.ok) return { ok: false }; // a server problem is not the student's link being wrong
+    if (!r.ok) return { ok: false, status: r.status }; // a server problem is not the student's link being wrong; 404 = the function is not in the database (yet)
     return { ok: true, data: await r.json() };
   } catch (e) { return { ok: false }; } finally { clearTimeout(tm); }
 }
@@ -19498,32 +19500,434 @@ async function fetchStudentInfo(token) {
   if (j && typeof j.name === 'string' && j.name) return { ok: true, name: j.name.slice(0, 40) };
   return { ok: false, reason: 'invalid' };
 }
+// ─── Progress sync (Phase 346): a linked student's progress follows them from device to device ───────────────
+// Only runs on a device that holds a student link (see useStudentLink); a visitor without one sees no change and
+// no request is made. Seven kinds of progress ("stores") live in this browser's localStorage under their usual keys;
+// the database keeps one copy per student with a revision number (table progress_store, rpc pb_get / pb_save).
+// Each drill play is also added to an append-only practice log (rpc pb_log).
+//   - A change to a synced key marks that store "dirty" and is pushed ~3 s later (and when the page is hidden).
+//   - A push says which revision it was built on. If another device saved first the answer is "conflict" and the two
+//     copies are merged (nothing is lost: best scores and plays = the larger, history = union, ticks = union).
+//   - A failure stays queued (the dirty marks and the log queue live in localStorage) and is retried later.
+//   - First time a link is opened on a device that already has practice and no owner: ask once "Add this device's
+//     practice to <name>?". Another child's link on the same device never merges: the first child's practice is pushed
+//     first, then the synced keys are cleared (if that push fails the child is warned and a backup copy is kept).
+//   - While a chapter or tool is open the page is never rewritten under the student: pulls wait until they leave it.
+//   - If the database functions are missing (SQL not run yet) everything stays silent.
+const SYNC_STORES = {
+  records: 'pb_drill_records_v1', stamps: 'pb_scale_stamps_v1', lesson_steps: 'pb_lesson_steps_v1', steps_total: 'pb_steps_total_v1',
+  posture: 'pb_posture_v1', arm_ex: 'pb_arm_ex_v1', last_chapter: 'pb_last_chapter_v1',
+};
+const SYNC_STORE_NAMES = Object.keys(SYNC_STORES);
+const SYNC_KEY_TO_STORE = {}; SYNC_STORE_NAMES.forEach(s => { SYNC_KEY_TO_STORE[SYNC_STORES[s]] = s; });
+const SYNC_OWNER_KEY = 'pb_sync_owner_v1', SYNC_REVS_KEY = 'pb_sync_revs_v1', SYNC_DIRTY_KEY = 'pb_sync_dirty_v1', SYNC_LOGQ_KEY = 'pb_sync_log_v1', SYNC_BACKUP_KEY = 'pb_sync_backup_v1';
+// live state: token = the link being synced; watch = a link exists on this device (changes are marked); busy = a chapter/tool is open;
+// deferred = a pull is waiting for the student to leave the chapter; ver = per-store change counter; appliedN = how many times remote data replaced local data
+const SY = { token: null, watch: false, timer: null, running: false, again: false, status: 'idle', prompt: null, appliedN: 0, busy: false, deferred: false, ver: {}, subs: new Set(), hooked: false, listening: false, applying: false, lastRun: 0 };
+function sySet(patch) { Object.assign(SY, patch); SY.subs.forEach(f => { try { f(); } catch (e) {} }); }
+const syIsObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+const syNum = (x) => { const n = +x; return isFinite(n) ? n : 0; };
+const syWait = (ms) => new Promise(res => setTimeout(res, ms));
+function syCanon(v) { // the same text for the same data whatever the key order (the database re-orders keys)
+  if (Array.isArray(v)) return '[' + v.map(syCanon).join(',') + ']';
+  if (v && typeof v === 'object') return '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + syCanon(v[k])).join(',') + '}';
+  return JSON.stringify(v);
+}
+function syGet(key, fallback) { try { const raw = localStorage.getItem(key); if (raw == null) return fallback; const v = JSON.parse(raw); return v == null ? fallback : v; } catch (e) { return fallback; } }
+function syPut(key, v) { try { SY.applying = true; localStorage.setItem(key, JSON.stringify(v)); } catch (e) {} finally { SY.applying = false; } }
+function syDel(key) { try { SY.applying = true; localStorage.removeItem(key); } catch (e) {} finally { SY.applying = false; } }
+const syOwner = () => { try { return localStorage.getItem(SYNC_OWNER_KEY) || ''; } catch (e) { return ''; } };
+function sySetOwner(ref) { try { SY.applying = true; localStorage.setItem(SYNC_OWNER_KEY, ref); } catch (e) {} finally { SY.applying = false; } }
+const syRevs = () => { const r = syGet(SYNC_REVS_KEY, {}); return syIsObj(r) ? r : {}; };
+const syDirty = () => { const r = syGet(SYNC_DIRTY_KEY, {}); return syIsObj(r) ? r : {}; };
+const syQueue = () => { const q = syGet(SYNC_LOGQ_KEY, []); return Array.isArray(q) ? q : []; };
+function syMarkDirty(store) { const d = syDirty(); if (!d[store]) { d[store] = 1; syPut(SYNC_DIRTY_KEY, d); } }
+function syClearDirty(store) { const d = syDirty(); if (d[store]) { delete d[store]; syPut(SYNC_DIRTY_KEY, d); } }
+// one store as it is in this browser: an object, a string (last_chapter) or null
+function syReadStore(store) {
+  try {
+    const raw = localStorage.getItem(SYNC_STORES[store]);
+    if (raw == null) return null;
+    if (store === 'last_chapter') return raw ? String(raw).slice(0, 60) : null;
+    const v = JSON.parse(raw);
+    return syIsObj(v) ? v : null;
+  } catch (e) { return null; }
+}
+// a value that came from the database -> what this browser stores (null = do not store)
+function syClean(store, v) {
+  if (v == null) return null;
+  if (store === 'last_chapter') return typeof v === 'string' && v ? v.slice(0, 60) : null;
+  if (!syIsObj(v)) return null;
+  if (store === 'posture') return { marks: syIsObj(v.marks) ? v.marks : {}, history: Array.isArray(v.history) ? v.history : [] };
+  return v;
+}
+function syWriteStore(store, v) { // does not mark the store dirty
+  try {
+    SY.applying = true;
+    if (v == null) localStorage.removeItem(SYNC_STORES[store]);
+    else localStorage.setItem(SYNC_STORES[store], store === 'last_chapter' ? String(v) : JSON.stringify(v));
+  } catch (e) {} finally { SY.applying = false; }
+}
+// has this device got real practice on it? (steps_total and last_chapter are only bookkeeping)
+function syHasProgress() {
+  const rec = syReadStore('records'); if (rec && Object.keys(rec).length) return true;
+  const sta = syReadStore('stamps'); if (sta && Object.keys(sta).length) return true;
+  const ls = syReadStore('lesson_steps'); if (ls && Object.keys(ls).some(k => syIsObj(ls[k]) && Object.keys(ls[k]).some(i => ls[k][i]))) return true;
+  const po = syReadStore('posture'); if (po && ((Array.isArray(po.history) && po.history.length) || (syIsObj(po.marks) && Object.keys(po.marks).length))) return true;
+  const ar = syReadStore('arm_ex'); if (ar && Object.keys(ar).some(k => syNum(ar[k]) > 0)) return true;
+  return false;
+}
+const syHasUnsaved = () => Object.keys(syDirty()).length > 0 || syQueue().length > 0;
+
+// ── merging two copies of one store (nothing is ever lost) ──
+function syMergeRecords(L, R, sum) {
+  const out = {};
+  new Set([...Object.keys(L || {}), ...Object.keys(R || {})]).forEach(k => {
+    const a = L && L[k], b = R && R[k];
+    if (!syIsObj(a)) { if (syIsObj(b)) out[k] = b; return; }
+    if (!syIsObj(b)) { out[k] = a; return; }
+    const seen = new Set(), hist = [];
+    [...(Array.isArray(b.history) ? b.history : []), ...(Array.isArray(a.history) ? a.history : [])].filter(syIsObj)
+      .sort((x, y) => syNum(x.at) - syNum(y.at)).forEach(h => { const id = syNum(h.at) + '|' + syNum(h.score); if (!seen.has(id)) { seen.add(id); hist.push(h); } });
+    const history = hist.slice(-20);
+    const plays = sum ? syNum(a.plays) + syNum(b.plays) : Math.max(syNum(a.plays), syNum(b.plays));
+    out[k] = { plays: Math.max(plays, history.length), best: Math.max(syNum(a.best), syNum(b.best)), lastAt: Math.max(syNum(a.lastAt), syNum(b.lastAt)), history };
+  });
+  return out;
+}
+function syMerge(store, L, R, sum) {
+  if (L == null) return R == null ? null : R;
+  if (R == null) return L;
+  if (store === 'last_chapter') return L || R;                       // the device in use is the latest
+  if (!syIsObj(L)) return R;
+  if (!syIsObj(R)) return L;
+  if (store === 'records') return syMergeRecords(L, R, !!sum);
+  if (store === 'stamps') return { ...R, ...L };                     // union of earned stamps
+  if (store === 'lesson_steps') {                                    // union of ticked steps
+    const out = {};
+    new Set([...Object.keys(R), ...Object.keys(L)]).forEach(ch => {
+      const a = syIsObj(R[ch]) ? R[ch] : {}, b = syIsObj(L[ch]) ? L[ch] : {}, m = { ...a };
+      Object.keys(b).forEach(i => { if (b[i]) m[i] = true; else if (!(i in m)) m[i] = b[i]; });
+      out[ch] = m;
+    });
+    return out;
+  }
+  if (store === 'steps_total' || store === 'arm_ex') { const out = { ...R }; Object.keys(L).forEach(k => { out[k] = Math.max(syNum(L[k]), syNum(R[k])); }); return out; }
+  if (store === 'posture') {
+    const byDay = {};
+    [...(Array.isArray(R.history) ? R.history : []), ...(Array.isArray(L.history) ? L.history : [])].filter(syIsObj).forEach(h => { const d = String(h.day); if (!byDay[d] || syNum(h.ok) >= syNum(byDay[d].ok)) byDay[d] = h; });
+    return { marks: { ...(syIsObj(R.marks) ? R.marks : {}), ...(syIsObj(L.marks) ? L.marks : {}) }, history: Object.keys(byDay).sort().map(d => byDay[d]).slice(-8) };
+  }
+  return L;
+}
+
+// ── watching this browser's own writes ──
+function syLocalChanged(store) {
+  if (!SY.watch || SY.applying) return;
+  SY.ver[store] = (SY.ver[store] || 0) + 1;
+  syMarkDirty(store);
+  if (SY.token && !SY.prompt) sySchedule(3000);
+}
+function syInstallHook() {
+  if (SY.hooked) return; SY.hooked = true;
+  try {
+    const setOrig = Storage.prototype.setItem, remOrig = Storage.prototype.removeItem;
+    Storage.prototype.setItem = function (k, v) {
+      let same = false, mine = false;
+      try { mine = this === window.localStorage && !!SYNC_KEY_TO_STORE[k]; same = mine && this.getItem(k) === String(v); } catch (e) {}
+      const r = setOrig.apply(this, arguments);
+      if (mine && !same) syLocalChanged(SYNC_KEY_TO_STORE[k]);
+      return r;
+    };
+    Storage.prototype.removeItem = function (k) {
+      let mine = false, had = false;
+      try { mine = this === window.localStorage && !!SYNC_KEY_TO_STORE[k]; had = mine && this.getItem(k) != null; } catch (e) {}
+      const r = remOrig.apply(this, arguments);
+      if (mine && had) syLocalChanged(SYNC_KEY_TO_STORE[k]);
+      return r;
+    };
+  } catch (e) {}
+}
+// a link exists on this device: from now on this browser's own changes are marked (nothing happens for visitors without a link)
+function syWatch() { if (!SY.watch) { SY.watch = true; syInstallHook(); } }
+function sySchedule(ms) { clearTimeout(SY.timer); SY.timer = setTimeout(() => { syRun(); }, ms); }
+// one drill play -> the practice log queue (sent with the next sync)
+function pbLogPlay(row) {
+  try {
+    if (!SY.watch && !loadStoredLink() && !linkTokenFromHash()) return;
+    const q = syQueue();
+    q.push({ at: Math.round(syNum(row.at)), drill: String(row.drill).slice(0, 60), level: Math.round(syNum(row.level)), mode: row.mode === 'game' ? 'game' : 'lesson', score: Math.round(syNum(row.score)), correct: Math.round(syNum(row.correct)), total: Math.round(syNum(row.total)) });
+    syPut(SYNC_LOGQ_KEY, q.slice(-300));
+    if (SY.token && !SY.prompt) sySchedule(3000);
+  } catch (e) {}
+}
+
+// ── talking to the database ──
+const syGone = (r) => r.status === 404 || r.status === 401 || r.status === 403; // the functions are not in the database (yet)
+async function syFlushLog(token) {
+  let guard = 0;
+  while (syQueue().length && guard++ < 10) {
+    const chunk = syQueue().slice(0, 50);
+    const r = await pbRpc('pb_log', { p_token: token, p_rows: chunk });
+    if (!r.ok) return syGone(r) ? 'unavailable' : 'offline';
+    if (r.data && r.data.ok === false && r.data.reason === 'link') return 'invalid';
+    syPut(SYNC_LOGQ_KEY, syQueue().slice(chunk.length)); // sent, or refused for a reason a retry cannot fix (log full)
+  }
+  return 'ok';
+}
+function syBackupLocal() {
+  try {
+    const stores = {}; SYNC_STORE_NAMES.forEach(s => { const v = syReadStore(s); if (v != null) stores[s] = v; });
+    if (Object.keys(stores).length) syPut(SYNC_BACKUP_KEY, { at: Date.now(), owner: syOwner(), stores });
+  } catch (e) {}
+}
+// forget everything that belongs to one student on this device (the synced progress, the sync bookkeeping, the Today page's own memory)
+function syClearLocal() {
+  SYNC_STORE_NAMES.forEach(s => syWriteStore(s, null));
+  [SYNC_OWNER_KEY, SYNC_REVS_KEY, SYNC_DIRTY_KEY, SYNC_LOGQ_KEY, TODAY_CACHE_KEY, TODAY_TICKS_KEY].forEach(syDel);
+}
+// bring this device and the database level for one student. -> 'ok' | 'offline' | 'unavailable' | 'invalid' | 'prompt'
+async function syPull(token, pushOnly) {
+  const r = await pbRpc('pb_get', { p_token: token });
+  if (!r.ok) return syGone(r) ? 'unavailable' : 'offline';
+  const d = r.data;
+  if (!d || typeof d !== 'object' || !d.ref) return 'invalid';
+  const owner = syOwner();
+  if (owner && owner !== d.ref) {                                          // safety net: another child's practice is never merged
+    if (pushOnly) return 'ok';
+    syBackupLocal(); syClearLocal();
+  }
+  if (!syOwner()) {
+    if (pushOnly) { sySet({ deferred: true }); return 'ok'; }               // a chapter is open: decide after the student leaves it
+    if (syHasProgress()) { sySet({ prompt: { name: String(d.name || '').slice(0, 40) } }); return 'prompt'; }
+    sySetOwner(d.ref);
+  }
+  const res = await syReconcile(token, d, false, pushOnly);
+  if (res !== 'ok') return res;
+  return await syFlushLog(token);
+}
+// importSum: this device's own practice is being added to a child's saved progress (plays add up instead of taking the larger)
+async function syReconcile(token, d, importSum, pushOnly) {
+  const revs = syRevs();
+  let changed = false, result = 'ok';
+  for (const store of SYNC_STORE_NAMES) {
+    let remote = d && d.stores && syIsObj(d.stores[store]) ? d.stores[store] : null;      // { value, rev }
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const v0 = SY.ver[store] || 0;
+      const base = syNum(revs[store]);
+      const dirtyNow = !!syDirty()[store];
+      let L = syReadStore(store);
+      if (dirtyNow && L == null && store !== 'last_chapter') L = {};                      // the student cleared it (arm exercises: Start over)
+      const isDirty = dirtyNow && L != null;
+      let toPush = null, pushBase = 0;
+      if (!remote) {
+        if (L == null) { syClearDirty(store); revs[store] = 0; break; }
+        if (isDirty) {
+          if (syIsObj(L) && !Object.keys(L).length) { syClearDirty(store); revs[store] = 0; break; } // nothing to keep
+          toPush = L; pushBase = 0;
+        } else if (base > 0) { if (!pushOnly) { syWriteStore(store, null); revs[store] = 0; changed = true; } break; } // the teacher cleared this progress: follow
+        else break;                                                                          // never synced and not changed: leave it
+      } else {
+        const rrev = syNum(remote.rev), rval = syClean(store, remote.value);
+        if (!isDirty) {
+          if (rrev !== base) {
+            if (pushOnly) { sySet({ deferred: true }); break; }
+            if (syCanon(L) !== syCanon(rval)) { syWriteStore(store, rval); changed = true; }
+            revs[store] = rrev;
+          }
+          break;
+        }
+        if (rrev === base) { toPush = L; pushBase = rrev; }
+        else {
+          const merged = syMerge(store, L, rval, importSum && attempt === 0 && base === 0);
+          if (syCanon(merged) !== syCanon(syReadStore(store))) { syWriteStore(store, merged); changed = true; }
+          toPush = merged; pushBase = rrev;
+        }
+      }
+      const r = await pbRpc('pb_save', { p_token: token, p_store: store, p_value: toPush, p_base_rev: pushBase });
+      if (!r.ok) { result = syGone(r) ? 'unavailable' : 'offline'; break; }
+      const a = r.data || {};
+      if (a.ok === true) {
+        revs[store] = syNum(a.rev);
+        if ((SY.ver[store] || 0) === v0) syClearDirty(store); else SY.again = true;          // changed again while saving: keep the mark, save once more
+        break;
+      }
+      if (a.reason === 'conflict') { remote = a.value == null ? null : { value: a.value, rev: syNum(a.rev) }; if (!remote) revs[store] = 0; continue; }
+      if (a.reason === 'link') { result = 'invalid'; break; }
+      syClearDirty(store); break;                                                            // refused for good (size / shape): do not retry forever
+    }
+    if (result !== 'ok') break;
+  }
+  syPut(SYNC_REVS_KEY, revs);
+  if (changed) sySet({ appliedN: SY.appliedN + 1 });
+  return result;
+}
+// run one sync at a time; a request that arrives meanwhile runs right after
+async function syRun() {
+  if (!SY.token || SY.prompt) return;
+  if (SY.running) { SY.again = true; return; }
+  SY.running = true; SY.lastRun = Date.now(); sySet({ status: 'syncing' });
+  let res = 'offline';
+  try { res = await syPull(SY.token, SY.busy); } catch (e) { res = 'offline'; }
+  SY.running = false;
+  sySet({ status: res === 'prompt' ? 'idle' : res === 'ok' ? 'saved' : res });
+  if (SY.again && res !== 'unavailable') { SY.again = false; sySchedule(600); } else SY.again = false;
+}
+// "Add this device's practice to <name>?" -> true when it could be answered
+async function syAnswer(yes) {
+  if (!SY.prompt || !SY.token) return false;
+  const token = SY.token;
+  const r = await pbRpc('pb_get', { p_token: token });
+  if (!r.ok || !r.data || !r.data.ref) return false;
+  const d = r.data;
+  sySetOwner(d.ref);
+  syPut(SYNC_REVS_KEY, {});
+  if (yes) {
+    const dirty = {};
+    SYNC_STORE_NAMES.forEach(s => { if (syReadStore(s) != null) dirty[s] = 1; });
+    syPut(SYNC_DIRTY_KEY, dirty);
+  } else {
+    syBackupLocal(); SYNC_STORE_NAMES.forEach(s => syWriteStore(s, null));
+    syPut(SYNC_DIRTY_KEY, {}); syDel(SYNC_LOGQ_KEY);
+  }
+  sySet({ prompt: null, status: 'syncing' });
+  let res = 'offline';
+  try { res = await syReconcile(token, d, !!yes, false); if (res === 'ok') res = await syFlushLog(token); } catch (e) { res = 'offline'; }
+  if (!yes) sySet({ appliedN: SY.appliedN + 1 });
+  sySet({ status: res === 'ok' ? 'saved' : res });
+  if (res !== 'ok' && res !== 'unavailable') sySchedule(5000);
+  return true;
+}
+// push everything for the child who holds `token`, then clear this device (for "Not me" and for opening another child's link).
+// -> 'left' | 'kept' (sync is not set up in the database, so the practice stays on the device as it always did) | 'unsaved' (their latest practice could not be saved; nothing was cleared)
+async function syLeave(token) {
+  for (let i = 0; SY.running && i < 60; i++) await syWait(100);
+  if (!syOwner() && SY.status === 'unavailable') { clearTimeout(SY.timer); SY.token = null; SY.watch = false; return 'kept'; } // the database has no sync yet: nothing to protect, nothing to clear
+  const needs = syHasUnsaved() || (!syOwner() && syHasProgress());
+  if (needs) {
+    if (!token || !syOwner()) return 'unsaved';
+    let res = 'offline';
+    try { SY.token = token; SY.running = true; res = await syPull(token, true); } catch (e) { res = 'offline'; }
+    SY.running = false;
+    if (res !== 'ok' || syHasUnsaved()) return 'unsaved';
+  }
+  clearTimeout(SY.timer); SY.token = null; SY.watch = false;
+  syClearLocal();
+  sySet({ prompt: null, status: 'idle', deferred: false, appliedN: SY.appliedN + 1 });
+  return 'left';
+}
+// "Leave anyway": the latest practice stays only in a backup copy on this device
+function syDiscard() {
+  clearTimeout(SY.timer); syBackupLocal(); SY.token = null; SY.watch = false; syClearLocal();
+  sySet({ prompt: null, status: 'idle', deferred: false, appliedN: SY.appliedN + 1 });
+}
+function syStart(token) {
+  syWatch();
+  if (SY.token === token && SY.listening) return;
+  SY.token = token;
+  if (!SY.listening) {
+    SY.listening = true;
+    try {
+      document.addEventListener('visibilitychange', () => {
+        if (!SY.token) return;
+        if (document.hidden) { if (syHasUnsaved()) syRun(); }
+        else if (Date.now() - SY.lastRun > 30000) syRun();
+      });
+      window.addEventListener('online', () => { if (SY.token) syRun(); });
+      window.addEventListener('pagehide', () => { if (SY.token && syHasUnsaved()) syRun(); });
+    } catch (e) {}
+  }
+  syRun();
+}
+function useSyncSel(sel) { // re-render a component only when the part of the sync state it shows has changed
+  const [v, setV] = useState(() => sel(SY));
+  useEffect(() => { const f = () => setV(sel(SY)); f(); SY.subs.add(f); return () => { SY.subs.delete(f); }; }, []);
+  return v;
+}
+
 // The link this device holds, shared by the banner and the Today page. Nothing is requested unless a link exists.
+// Phase 346: a link that checks out also starts the progress sync (above). "Not me" first saves this student's latest practice,
+// then clears it from the device; another student's link never mixes with the practice already on the device.
 function useStudentLink() {
-  const [link, setLink] = useState(() => { const h = linkTokenFromHash(); if (h) { const old = loadStoredLink(); return { token: h, name: old && old.token === h ? old.name : '' }; } return loadStoredLink(); });
+  const [link, setLink] = useState(() => {
+    const h = linkTokenFromHash(); let l;
+    if (h) { const old = loadStoredLink(); l = { token: h, name: old && old.token === h ? old.name : '' }; } else l = loadStoredLink();
+    if (l) syWatch(); // from now on this browser's own changes are marked, so none is lost before the first sync
+    return l;
+  });
   const [state, setState] = useState(link ? 'checking' : 'none'); // none | checking | ok | invalid | offline
+  const [ask, setAsk] = useState(null); // null | { kind: 'notme' | 'switch', busy?, failed?, from?, name? }
   const token = link ? link.token : null;
   useEffect(() => {
     if (!token) return;
     let off = false;
-    fetchStudentInfo(token).then(r => {
+    (async () => {
+      const r = await fetchStudentInfo(token);
       if (off) return;
-      if (r.ok) { saveStoredLink(token, r.name); setLink({ token, name: r.name }); setState('ok'); }
-      else if (r.reason === 'invalid') setState('invalid'); // a fresh link that is not active is not remembered; one already remembered is kept, in case the teacher resumes it
-      else setState(link && link.name ? 'ok' : 'offline');
-    });
+      if (r.ok) {
+        const stored = loadStoredLink();
+        if (stored && stored.token !== token) { // a different link than the one this device kept
+          const g = await pbRpc('pb_get', { p_token: token });
+          if (off) return;
+          const same = g.ok && g.data && g.data.ref && g.data.ref === syOwner(); // a new link for the same student (the teacher made a new one)
+          if (!same) {
+            const res = await syLeave(stored.token); // the other student's latest practice is saved first, then cleared
+            if (off) return;
+            if (res === 'unsaved') { setAsk({ kind: 'switch', from: stored, name: r.name }); return; }
+          }
+        }
+        saveStoredLink(token, r.name); setLink({ token, name: r.name }); setState('ok'); syStart(token);
+      } else if (r.reason === 'invalid') setState('invalid'); // a fresh link that is not active is not remembered; one already remembered is kept, in case the teacher resumes it
+      else if (link && link.name) { setState('ok'); syStart(token); }
+      else setState('offline');
+    })();
     return () => { off = true; };
   }, [token]);
+  // "Remove" on a link that is not active: forget the link only; the practice stays on the device
   function forget() { forgetStudentLink(); setLink(null); setState('none'); }
-  return { link, state, forget };
+  // "Not me": save this student's latest practice, then forget the link and clear the practice from this device
+  async function leave() {
+    if (ask && ask.busy) return;
+    setAsk({ kind: 'notme', busy: true });
+    const res = await syLeave(token);
+    if (res === 'unsaved') { setAsk({ kind: 'notme', failed: true }); return; }
+    forgetStudentLink(); setLink(null); setState('none'); setAsk(null);
+  }
+  function leaveAnyway() { syDiscard(); forgetStudentLink(); setLink(null); setState('none'); setAsk(null); }
+  function stay() { setAsk(null); }
+  // the other student's link was opened but the device still holds unsaved practice of the first student
+  function openAnyway() {
+    const a = ask; syDiscard();
+    saveStoredLink(token, a.name); setLink({ token, name: a.name }); setState('ok'); setAsk(null); syStart(token);
+  }
+  function goBack() {
+    const a = ask;
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    setAsk(null); setLink({ token: a.from.token, name: a.from.name }); setState('checking');
+  }
+  return { link, state, forget, leave, ask, leaveAnyway, stay, openAnyway, goBack };
 }
 function StudentBanner({ sl }) {
-  const { link, state, forget } = sl;
+  const { link, state, forget, leave, ask, leaveAnyway, stay, openAnyway, goBack } = sl;
+  const prompt = useSyncSel(s => s.prompt);
+  const [answering, setAnswering] = useState(false);
+  const [answerErr, setAnswerErr] = useState(false);
+  const box = { background: 'var(--surface)', border: '1.5px solid var(--navy-line)', borderRadius: 12, padding: '8px 12px', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, fontSize: 14, color: 'var(--text)' };
+  const small = { padding: '2px 9px', fontSize: 12, flex: '0 0 auto' };
+  const askBox = { ...box, flexDirection: 'column', alignItems: 'stretch', justifyContent: 'flex-start', gap: 10, padding: '12px 14px' };
+  const row = { display: 'flex', gap: 8, flexWrap: 'wrap' };
+  if (ask && ask.kind === 'switch') return (
+    <div role="alertdialog" data-testid="switch-confirm" style={askBox}>
+      <span>{t('This link is for a different student, and the latest practice on this device isn’t saved yet.', '다른 학생의 링크예요. 이 기기의 최근 연습이 아직 저장되지 않았어요.')}</span>
+      <div style={row}>
+        <button className="chip" style={{ padding: '5px 12px', fontSize: 13 }} onClick={goBack}>{t('Go back', '돌아가기')}</button>
+        <button className="chip" style={{ padding: '5px 12px', fontSize: 13 }} onClick={openAnyway}>{t('Open it anyway', '그래도 열기')}</button>
+      </div>
+    </div>
+  );
   if (!link || state === 'none') return null;
   const name = link.name;
   if (state === 'checking' && !name) return null;
-  const box = { background: 'var(--surface)', border: '1.5px solid var(--navy-line)', borderRadius: 12, padding: '8px 12px', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, fontSize: 14, color: 'var(--text)' };
-  const small = { padding: '2px 9px', fontSize: 12, flex: '0 0 auto' };
   if (state === 'invalid') return (
     <div role="status" style={box}>
       <span>{t('This link isn’t active. Ask your teacher for a new one. You can keep practicing.', '이 링크는 지금 쓸 수 없어요. 선생님께 새 링크를 부탁해 보세요. 연습은 계속할 수 있어요.')}</span>
@@ -19535,11 +19939,39 @@ function StudentBanner({ sl }) {
       <span>{t('Couldn’t reach your link just now. You can keep practicing.', '지금은 링크를 확인할 수 없어요. 연습은 계속할 수 있어요.')}</span>
     </div>
   );
-  return (
-    <div role="status" style={box}>
-      <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 800, fontSize: 16, minWidth: 0, overflowWrap: 'anywhere' }}>{t('Hi, ' + name + '!', name + ' 님, 안녕하세요!')}</span>
-      <button className="chip" style={small} onClick={forget}>{t('Not me', '내가 아니에요')}</button>
+  if (ask && ask.kind === 'notme' && ask.failed) return (
+    <div role="alertdialog" data-testid="leave-confirm" style={askBox}>
+      <span>{t('Your latest practice isn’t saved yet. If you leave now, it won’t be saved to your progress.', '최근 연습이 아직 저장되지 않았어요. 지금 나가면 진도에 저장되지 않아요.')}</span>
+      <div style={row}>
+        <button className="chip" style={{ padding: '5px 12px', fontSize: 13 }} onClick={stay}>{t('Stay', '머무르기')}</button>
+        <button className="chip" style={{ padding: '5px 12px', fontSize: 13 }} onClick={leaveAnyway}>{t('Leave anyway', '그래도 나가기')}</button>
+      </div>
     </div>
+  );
+  async function answer(yes) {
+    setAnswering(true); setAnswerErr(false);
+    const done = await syAnswer(yes);
+    setAnswering(false);
+    if (!done) setAnswerErr(true);
+  }
+  return (
+    <>
+      <div role="status" style={box}>
+        <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 800, fontSize: 16, minWidth: 0, overflowWrap: 'anywhere' }}>{t('Hi, ' + name + '!', name + ' 님, 안녕하세요!')}</span>
+        <button className="chip" style={small} disabled={!!(ask && ask.busy)} onClick={leave}>{ask && ask.busy ? t('Saving…', '저장 중…') : t('Not me', '내가 아니에요')}</button>
+      </div>
+      {prompt && (
+        <div role="dialog" data-testid="sync-prompt" style={askBox}>
+          <span style={{ fontWeight: 800 }}>{t('Add the practice on this device to ' + name + '’s saved progress?', name + ' 님의 저장된 진도에 이 기기의 연습을 합칠까요?')}</span>
+          <span style={{ color: 'var(--muted)', fontSize: 13 }}>{t('Your scores and stamps will be saved to your link, so you can see them on any device. Choose No if someone else used this device.', '점수와 스탬프가 내 링크에 저장돼서 다른 기기에서도 볼 수 있어요. 다른 사람이 쓴 기기라면 ‘아니요’를 눌러 주세요.')}</span>
+          <div style={row}>
+            <button className="primary-btn" style={{ width: 'auto', padding: '8px 16px', fontSize: 14, borderRadius: 10 }} disabled={answering} onClick={() => answer(true)}>{t('Yes, add it', '네, 합칠래요')}</button>
+            <button className="chip" style={{ padding: '6px 12px', fontSize: 13 }} disabled={answering} onClick={() => answer(false)}>{t('No, use my saved progress', '아니요, 저장된 진도로 할래요')}</button>
+          </div>
+          {answerErr && <span style={{ color: '#b3402a', fontSize: 13 }}>{t('Couldn’t reach your link just now. Please try again.', '지금은 링크에 연결할 수 없어요. 잠시 후 다시 눌러 주세요.')}</span>}
+        </div>
+      )}
+    </>
   );
 }
 
@@ -19592,6 +20024,7 @@ function TodayView({ link, onOpenChapter, onOpenTool, onAll }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(false);
   const [ticks, setTicks] = useState(loadTicks);
+  const syncStatus = useSyncSel(s => s.status);
   const lastLoad = useRef(0);
   function keep(d) { try { localStorage.setItem(TODAY_CACHE_KEY, JSON.stringify({ token, at: Date.now(), data: d })); } catch (e) {} }
   useEffect(() => {
@@ -19756,6 +20189,10 @@ function TodayView({ link, onOpenChapter, onOpenTool, onAll }) {
         )}
         <button onClick={onAll} style={{ display: 'block', width: '100%', marginTop: 6, background: 'none', border: 'none', color: 'var(--muted)', fontWeight: 700, fontSize: 14, padding: 8, cursor: 'pointer' }}>{t('All chapters →', '전체 챕터 →')}</button>
       </div>
+      {(() => {
+        const line = syncStatus === 'saved' ? t('Your progress is saved ✓', '진도가 저장됐어요 ✓') : (syncStatus === 'offline' && syHasUnsaved()) ? t('Not saved yet. We’ll save it when you’re online.', '아직 저장 전이에요. 인터넷에 연결되면 저장할게요.') : null;
+        return line ? <div data-testid="sync-line" style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--muted)', marginBottom: 8 }}>{line}</div> : null;
+      })()}
     </div>
   );
 }
@@ -19790,6 +20227,9 @@ function App() {
   const [teacher, setTeacher] = useState(initialMode);
   const [st, setSt] = useState(() => readUrlState(!teacher));
   const sl = useStudentLink();
+  const syncN = useSyncSel(s => s.appliedN);
+  const [mk, setMk] = useState(0);
+  const seenN = useRef(0);
   const showToday = !!sl.link && sl.state !== 'invalid';
   const [preview, setPreview] = useState(false);
   const [lang, setLang] = useState(LANG);
@@ -19823,6 +20263,15 @@ function App() {
     } catch (e) { /* URL sync is a convenience only */ }
   }, [active.id, st.drill, st.tab, level, st.mode, st.lock, st.view, st.tool, st.kit, st.kn]);
 
+  // Progress sync: while a chapter or tool is open nothing is rewritten under the student; when they leave it, a waiting pull runs
+  // and, if the database brought newer progress, the page content is rebuilt once so every list shows it.
+  useEffect(() => {
+    const busy = !!(st.drill || st.tool);
+    SY.busy = busy;
+    if (busy) return;
+    if (syncN !== seenN.current) { seenN.current = syncN; setMk(k => k + 1); }
+    if (SY.deferred && SY.token) { SY.deferred = false; syRun(); }
+  }, [st.drill, st.tool, syncN]);
   // Today needs a usable link: after "Not me" or an inactive link the student goes back to Learn
   useEffect(() => { if (st.view === 'today' && !showToday) setSt(prev => ({ ...prev, view: 'path' })); }, [st.view, showToday]);
   useEffect(() => { if (st.drill && CHAPTER_CAT[st.drill]) { try { localStorage.setItem(LAST_CHAPTER_KEY, st.drill); } catch (e) {} } }, [st.drill]);
@@ -19856,7 +20305,7 @@ function App() {
       {T && !findOpen && <FindButton onOpen={() => setFindOpen(true)}/>}
       {T && findOpen && <FindOverlay onClose={() => setFindOpen(false)} onJump={(id) => { setFindOpen(false); update({ view: 'tools', tool: id, kit: null, ret: 'toolbox' }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/>}
 
-      <div className="pb-main" style={{maxWidth:600,margin:'0 auto',padding:'20px 16px 60px'}}>
+      <div className="pb-main" key={mk} style={{maxWidth:600,margin:'0 auto',padding:'20px 16px 60px'}}>
         <StudentBanner sl={sl}/>
         {preview && <div style={{background:'#26296b',color:'#fff',borderRadius:10,padding:'8px 12px',marginBottom:12,fontSize:13.5,display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}><span>{t('You’re seeing what a student sees.', '학생에게 보이는 화면이에요.')}</span><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setPreview(false)}>{t('Back to teacher view', '교사 화면으로')}</button></div>}
         {!st.lock && (

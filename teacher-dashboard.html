@@ -1365,6 +1365,195 @@ function PracticeStrip({ studentId }) {
   );
 }
 
+// Drill progress (Phase 348): what the student did in the drills on any device they use, saved through their link
+// (tables progress_store and practice_log, created by migrations/2026-10-07_phaseB3_progress-sync.sql, read with the teacher's own login;
+// each teacher can only read and delete the rows of their own students). If the tables are not there yet (SQL not run), nothing is shown.
+const SCALE_KEYS_MAJOR = ["C","G","D","A","E","B","F","Bb","Eb","Ab","Db","Gb"];
+const SCALE_KEYS_MINOR = ["A","E","D","G","C","B","F","F#","C#","G#","Bb","D#"];
+const chapterLabel = (id) => { const x = DRILL_LINKS.chapters.find(y => y.id === id) || DRILL_LINKS.tools.find(y => y.id === id); return x ? x.label : String(id); };
+const fmtDay = (d) => d.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
+const fmtDayTime = (d) => fmtDay(d) + ", " + d.toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit", hour12: false });
+const isObj = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+function DrillProgress({ studentId }) {
+  const [data, setData] = useState(null);     // null = loading, false = not available, { st, log } = ok
+  const [tick, setTick] = useState(0);
+  const [confirmDel, setConfirmDel] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  useEffect(() => {
+    let off = false;
+    setData(null); setConfirmDel(false);
+    const since = localDayPlus(-60).toISOString();
+    Promise.all([
+      _supabase.from("progress_store").select("store,value,rev,updated_at").eq("student_id", studentId),
+      _supabase.from("practice_log").select("at,drill,level,mode,score,correct,total").eq("student_id", studentId).gte("at", since).order("at", { ascending: false }).limit(500),
+    ]).then(([a, b]) => {
+      if (off) return;
+      if (a.error || b.error) { setData(false); return; }
+      const st = {}; (a.data || []).forEach(r => { st[r.store] = r.value; });
+      setData({ st, log: b.data || [] });
+    });
+    return () => { off = true; };
+  }, [studentId, tick]);
+  if (!data) return null; // still loading, or the tables are not there yet
+
+  const { st, log } = data;
+  const recs = isObj(st.records) ? st.records : {};
+  const recList = Object.keys(recs).map(k => { const [drill, level, mode] = k.split("|"); const r = recs[k] || {}; return { drill, level: +level, mode, best: +r.best || 0, plays: +r.plays || 0, lastAt: +r.lastAt || 0 }; }).filter(r => r.drill && r.mode).sort((a, b) => b.lastAt - a.lastAt);
+  const stamps = isObj(st.stamps) ? st.stamps : {};
+  const steps = isObj(st.lesson_steps) ? st.lesson_steps : {};
+  const totals = isObj(st.steps_total) ? st.steps_total : {};
+  const posture = isObj(st.posture) ? st.posture : null;
+  const arm = isObj(st.arm_ex) ? st.arm_ex : {};
+  const armReps = Object.keys(arm).reduce((a, k) => a + (+arm[k] || 0), 0);
+  const empty = !recList.length && !log.length && !Object.keys(stamps).length && !Object.keys(steps).length && !armReps && !(posture && posture.history && posture.history.length);
+
+  // sessions per local day
+  const byDay = new Map();
+  log.forEach(r => { const d = localDayStr(new Date(r.at)); byDay.set(d, (byDay.get(d) || 0) + 1); });
+  const today = localDayStr(localDayPlus(0));
+  const days = Array.from({ length: 14 }, (_, i) => localDayStr(localDayPlus(i - 13)));
+  const dow = (new Date().getDay() + 6) % 7;
+  const monday = localDayStr(localDayPlus(-dow));
+  const weekSessions = log.filter(r => { const d = localDayStr(new Date(r.at)); return d >= monday && d <= today; }).length;
+  const weekDays = [...byDay.keys()].filter(d => d >= monday && d <= today).length;
+  const in14 = days.filter(d => byDay.has(d)).length;
+  const lastMs = Math.max(log.length ? new Date(log[0].at).getTime() : 0, recList.length ? recList[0].lastAt : 0);
+  const resultOf = (mode, correct, total, score) => mode === "game" ? score + " pts" : correct + "/" + total;
+  const bestOf = (r) => r.mode === "game" ? r.best + " pts" : r.best + "/10";
+
+  // lesson steps ticked per chapter, in the order of the chapter list
+  const stepRows = DRILL_LINKS.chapters.map(c => {
+    const o = steps[c.id]; const n = isObj(o) ? Object.keys(o).filter(i => o[i]).length : 0;
+    return n ? { id: c.id, label: c.label, n, of: +totals[c.id] || 0 } : null;
+  }).filter(Boolean);
+  const stampOn = (prefix, k, step) => !!stamps[prefix + k + ":" + step];
+  const nMajor = SCALE_KEYS_MAJOR.reduce((a, k) => a + ["RH","LH","HT"].filter(x => stampOn("", k, x)).length, 0);
+  const nMinor = SCALE_KEYS_MINOR.reduce((a, k) => a + ["RH","LH","HT"].filter(x => stampOn("m:", k, x)).length, 0);
+  const lastPosture = posture && Array.isArray(posture.history) && posture.history.length ? posture.history[posture.history.length - 1] : null;
+
+  async function wipe() {
+    setBusy(true); setMsg("");
+    const a = await _supabase.from("progress_store").delete().eq("student_id", studentId);
+    const b = await _supabase.from("practice_log").delete().eq("student_id", studentId);
+    setBusy(false);
+    if (a.error || b.error) { setMsg("Could not delete: " + (a.error || b.error).message); return; }
+    setConfirmDel(false); setMsg("Deleted. The student’s device clears its own copy the next time it connects, unless they practised in the meantime."); setTick(t => t + 1);
+  }
+
+  const th = { textAlign: "left", fontSize: 10, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.04em", padding: "2px 8px 2px 0" };
+  const td = { fontSize: 12, color: "#475569", padding: "3px 8px 3px 0", borderTop: "1px solid #f1ede1" };
+  return (
+    <div className="mt-4 pt-4 no-print" style={{borderTop:"1px solid #f1ede1"}} data-testid="drill-progress">
+      <h4 className="text-sm font-bold text-slate-800 mb-1">Drill progress</h4>
+      <p className="text-xs text-slate-400 mb-2">Saved from the student’s link, on any device they use.</p>
+      {empty ? (
+        <p className="text-xs text-slate-400" data-testid="drill-empty">Nothing yet. It appears here after the student opens their link and practises in the drills.</p>
+      ) : (
+        <>
+          <div className="flex gap-1 items-end flex-wrap" style={{height:30}} aria-label="Drill sessions, last 14 days">
+            {days.map(d => { const n = byDay.get(d) || 0;
+              return <span key={d} data-day={d} data-n={n} title={fmtDay(new Date(d + "T12:00:00")) + " · " + n + (n === 1 ? " session" : " sessions")}
+                style={{width:18,height: n ? 8 + Math.min(n, 5) * 4 : 4,borderRadius:3,display:"inline-block",background: n ? "#26296b" : "#e9e2d2",outline: d === today ? "1.5px dashed #e4572e" : "none",outlineOffset:1}}/>; })}
+          </div>
+          <div className="flex justify-between text-[10px] text-slate-400 mt-1" style={{maxWidth:14*22}}><span>14 days ago</span><span>Today</span></div>
+          <p className="text-xs text-slate-600 mt-2" data-testid="drill-summary">
+            This week: <b>{weekSessions}</b> {weekSessions === 1 ? "session" : "sessions"} on <b>{weekDays}</b> {weekDays === 1 ? "day" : "days"} · Last 14 days: <b>{in14}</b> {in14 === 1 ? "day" : "days"}
+          </p>
+          <p className="text-xs text-slate-400 mt-1">{lastMs ? "Last drill practice: " + fmtDay(new Date(lastMs)) + "." : "No finished drills yet."}</p>
+
+          {log.length > 0 && (
+            <div className="mt-3" data-testid="drill-recent">
+              <div className="text-xs font-bold text-slate-600 mb-1">Recent sessions</div>
+              <table style={{borderCollapse:"collapse",width:"100%",maxWidth:520}}>
+                <tbody>
+                  {log.slice(0, 8).map((r, i) => (
+                    <tr key={i}>
+                      <td style={td}>{fmtDayTime(new Date(r.at))}</td>
+                      <td style={td}>{chapterLabel(r.drill)}</td>
+                      <td style={td}>L{r.level} · {r.mode === "game" ? "Game" : "Lesson"}</td>
+                      <td style={{...td,fontWeight:700,color:"#26296b"}}>{resultOf(r.mode, r.correct, r.total, r.score)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {log.length > 8 && <p className="text-[11px] text-slate-400 mt-1">Showing the latest 8 of {log.length} sessions in the last 60 days.</p>}
+            </div>
+          )}
+
+          {recList.length > 0 && (
+            <details className="mt-3" data-testid="drill-best">
+              <summary className="text-xs font-bold text-slate-600 cursor-pointer">Best scores ({recList.length} {recList.length === 1 ? "drill level" : "drill levels"})</summary>
+              <table style={{borderCollapse:"collapse",width:"100%",maxWidth:520,marginTop:4}}>
+                <thead><tr><th style={th}>Drill</th><th style={th}>Level</th><th style={th}>Mode</th><th style={th}>Best</th><th style={th}>Plays</th><th style={th}>Last</th></tr></thead>
+                <tbody>
+                  {recList.map((r, i) => (
+                    <tr key={i}>
+                      <td style={td}>{chapterLabel(r.drill)}</td><td style={td}>{r.level}</td><td style={td}>{r.mode === "game" ? "Game" : "Lesson"}</td>
+                      <td style={{...td,fontWeight:700,color:"#26296b"}}>{bestOf(r)}</td><td style={td}>{r.plays}</td><td style={td}>{r.lastAt ? fmtDay(new Date(r.lastAt)) : ""}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </details>
+          )}
+
+          {stepRows.length > 0 && (
+            <div className="mt-3" data-testid="drill-steps">
+              <div className="text-xs font-bold text-slate-600 mb-1">Chapter steps done</div>
+              <div className="flex gap-1.5 flex-wrap">
+                {stepRows.map(r => (
+                  <span key={r.id} className="text-xs px-2 py-0.5 rounded-full" style={{background:"#ecebf5",color:"#26296b"}}>{r.label} {r.of ? r.n + "/" + r.of : r.n + (r.n === 1 ? " step" : " steps")}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(nMajor > 0 || nMinor > 0) && (
+            <details className="mt-3" data-testid="drill-stamps">
+              <summary className="text-xs font-bold text-slate-600 cursor-pointer">Scale stamps: major {nMajor}/36 · minor {nMinor}/36</summary>
+              <div className="flex gap-6 flex-wrap mt-2">
+                {[["Major", "", SCALE_KEYS_MAJOR], ["Minor", "m:", SCALE_KEYS_MINOR]].map(([title, prefix, keys]) => (
+                  <table key={title} style={{borderCollapse:"collapse"}}>
+                    <thead><tr><th style={th}>{title}</th><th style={th}>RH</th><th style={th}>LH</th><th style={th}>HT</th></tr></thead>
+                    <tbody>
+                      {keys.map(k => (
+                        <tr key={k}>
+                          <td style={td}>{k}</td>
+                          {["RH","LH","HT"].map(x => <td key={x} style={td}><span data-stamp={prefix + k + ":" + x} data-on={stampOn(prefix, k, x) ? "1" : "0"} style={{display:"inline-block",width:12,height:12,borderRadius:"50%",background: stampOn(prefix, k, x) ? "#2e8a6e" : "transparent",border:"1.5px solid " + (stampOn(prefix, k, x) ? "#2e8a6e" : "#e9e2d2")}}/></td>)}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ))}
+              </div>
+            </details>
+          )}
+
+          {(lastPosture || armReps > 0) && (
+            <p className="text-xs text-slate-500 mt-3" data-testid="drill-other">
+              {lastPosture ? "Posture check: last done " + fmtDay(new Date(String(lastPosture.day) + "T12:00:00")) + " (" + (+lastPosture.ok || 0) + "/" + (+lastPosture.of || 0) + " ok)." : ""}{lastPosture && armReps > 0 ? " " : ""}{armReps > 0 ? "Arm exercises: " + armReps + " reps logged." : ""}
+            </p>
+          )}
+        </>
+      )}
+
+      <div className="mt-3">
+        {!confirmDel
+          ? <button disabled={busy} onClick={() => setConfirmDel(true)} className="btn-ghost text-xs py-1.5 px-3" style={{color:"#b91c1c"}} data-testid="drill-delete">Delete drill progress</button>
+          : (
+            <span className="flex gap-2 items-center flex-wrap text-xs px-3 py-1.5 rounded-xl" style={{background:"#fef2f2",color:"#991b1b",border:"1px solid #fecaca"}} data-testid="drill-delete-confirm">
+              This deletes the student’s saved drill progress and practice log. It cannot be undone.
+              <button disabled={busy} onClick={wipe} className="font-bold underline">{busy ? "Deleting…" : "Delete everything"}</button>
+              <button disabled={busy} onClick={() => setConfirmDel(false)} className="underline">Cancel</button>
+            </span>
+          )}
+        {msg && <p className="text-xs mt-2" style={{color: /^Deleted/.test(msg) ? "#15803d" : "#dc2626"}} role="status">{msg}</p>}
+      </div>
+    </div>
+  );
+}
+
 function StudentLinkPanel({ student }) {
   const [row, setRow] = useState(undefined);      // undefined = loading, null = no link yet
   const [name, setName] = useState(firstNameOf(student.name));
@@ -1423,7 +1612,7 @@ function StudentLinkPanel({ student }) {
           </span>
         )}
       </div>
-      <p className="text-xs text-slate-500 mb-3">A private link that opens the drills as {row ? row.display_name : (cleanName || "this student")} and with a Today page: your homework, the pieces they are working on, and a daily practice check.</p>
+      <p className="text-xs text-slate-500 mb-3">A private link that opens the drills as {row ? row.display_name : (cleanName || "this student")} and with a Today page: your homework, the pieces they are working on, a daily practice check-in and a record of their drill practice.</p>
 
       {row === undefined && <p className="text-xs text-slate-400">Loading…</p>}
 
@@ -1468,8 +1657,9 @@ function StudentLinkPanel({ student }) {
               )}
           </div>
           <p className="text-xs text-slate-400 mt-3">Anyone with this link can open this student's practice record, so send it to the student or parent only. A new link stops the old one.</p>
-          <p className="text-xs text-slate-400 mt-1">Trying it on your own computer switches that browser to the student view. To switch back, open the drills with <span style={{fontFamily:"monospace"}}>?teacher=1</span> added to the address.</p>
+          <p className="text-xs text-slate-400 mt-1">Anything practised through this link is saved to this student’s progress, so use it only to look, and open it in a private window. Trying it in a normal window switches that browser to the student view. To switch back, open the drills with <span style={{fontFamily:"monospace"}}>?teacher=1</span> added to the address.</p>
           <PracticeStrip studentId={student.id}/>
+          <DrillProgress studentId={student.id}/>
         </>
       )}
 
