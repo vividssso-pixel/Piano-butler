@@ -807,6 +807,56 @@ function StudentModal({ initial, onSave, onClose }) {
 /* ═══════════════════════════════════════════════════════════════════════════
    LESSON LOG MODAL
 ═══════════════════════════════════════════════════════════════════════════ */
+// Chapters and practice activities of the drills that the teacher can attach to "For the student" (the student's Today page
+// shows an Open button). The ids are the drills' own: ?drill=<id> and ?tool=<id>. If a chapter is added to the drills,
+// add it here too; an id the drills do not know is shown to the student as plain text, so nothing breaks.
+const DRILL_LINKS = {
+  chapters: [
+  { id: "posture-hands", label: "Posture & Hand Shape" },
+  { id: "first-steps", label: "Black Keys & Your First Song" },
+  { id: "note-names", label: "Note Names" },
+  { id: "staff", label: "Reading the Staff" },
+  { id: "ledger-lines", label: "Ledger Lines" },
+  { id: "tones", label: "Tones & Semitones" },
+  { id: "pulse", label: "Pulse & Counting" },
+  { id: "note-values", label: "Notes & Rests" },
+  { id: "time-signatures", label: "Time Signatures" },
+  { id: "rhythm", label: "Rhythm Patterns" },
+  { id: "reading-steps", label: "Steps & Skips" },
+  { id: "tempo", label: "Tempo Race" },
+  { id: "intervals", label: "Intervals" },
+  { id: "scales", label: "Scales" },
+  { id: "key-signatures", label: "Key Signatures" },
+  { id: "chords", label: "Chords" },
+  { id: "melody", label: "Melody & Phrasing" },
+  { id: "form", label: "Musical Form" },
+  { id: "dynamics", label: "Dynamics & Articulation" },
+  { id: "signs", label: "Signs" },
+  { id: "terms", label: "Musical Terms" },
+  { id: "piano-story", label: "The Piano’s Story" },
+  { id: "composers", label: "Famous Composers" },
+  { id: "pitch-range", label: "Pitch, Hz & Range" },
+  { id: "styles", label: "Styles & Genres" },
+  ],
+  tools: [
+  { id: "arm-moves", label: "Move with the whole arm" },
+  { id: "posture-check", label: "Posture check" },
+  { id: "beat-target", label: "Tap the right beat" },
+  { id: "practice-timer", label: "Practice timer" },
+  { id: "practice-dice", label: "Practice dice" },
+  { id: "perfect-counter", label: "5 in a row (perfect reps)" },
+  { id: "sight-reading", label: "Sight-reading cards" },
+  { id: "echo", label: "Echo the tune (copy by ear)" },
+  { id: "term-cards", label: "Term cards" },
+  { id: "make-card", label: "Make a rhythm card" },
+  { id: "count-along", label: "Count along (time signatures)" },
+  { id: "metronome", label: "Metronome" },
+  { id: "find-every", label: "Find every C" },
+  { id: "write-note", label: "Write it on the staff" },
+  { id: "fill-bar", label: "Fill the bar" },
+  ],
+};
+const linkLabel = (k) => { const [kind, id] = String(k).split(":"); const list = kind === "tool" ? DRILL_LINKS.tools : DRILL_LINKS.chapters; const x = list.find(y => y.id === id); return x ? x.label : ""; };
 // One line of a list that grows with its text. Enter adds a new row below, Backspace on an empty row removes it.
 function AutoText({ value, onChange, onEnter, onEmptyBackspace, placeholder, label, innerRef, bg, accent }) {
   const local = React.useRef(null);
@@ -826,12 +876,19 @@ function AutoText({ value, onChange, onEnter, onEmptyBackspace, placeholder, lab
 const RATING_NEXT = { "": "🔴", "🔴": "🟡", "🟡": "🟢", "🟢": "" };
 const RATING_COLOR = { "🔴": "#dc2626", "🟡": "#eab308", "🟢": "#16a34a" };
 const RATING_NAME = { "": "not rated", "🔴": "needs work", "🟡": "progressing", "🟢": "solid" };
-function ListField({ label, color, bg, hint, items, onChange, max = 8, placeholder, rating, addLabel, action, testid }) {
+function ListField({ label, color, bg, hint, items, onChange, max = 8, placeholder, rating, addLabel, action, testid, links }) {
   const refs = React.useRef([]);
   const [focus, setFocus] = useState(null);
+  const [pick, setPick] = useState(false);
   React.useEffect(() => { if (focus && refs.current[focus.i]) { const el = refs.current[focus.i]; el.focus(); try { el.setSelectionRange(el.value.length, el.value.length); } catch (e) {} } }, [focus]);
   const patch = (i, p) => onChange(items.map((it, j) => j === i ? { ...it, ...p } : it));
   const add = (at) => { if (items.length >= max) return; const next = items.slice(); next.splice(at, 0, { t: "", r: "" }); onChange(next); setFocus({ i: at, k: Date.now() }); };
+  // a chapter / activity row: its text is the name (editable, e.g. "Scales, step 3"), k says what the Open button opens
+  const addLink = (kind, id, text) => {
+    const base = items.length === 1 && !items[0].t.trim() && !items[0].k ? [] : items;
+    if (base.length >= max) return;
+    onChange([...base, { t: text, r: "", k: kind + ":" + id }]); setPick(false); setFocus({ i: base.length, k: Date.now() });
+  };
   const del = (i) => {
     if (items.length === 1) { onChange([{ t: "", r: "" }]); return; }
     onChange(items.filter((_, j) => j !== i)); setFocus({ i: Math.max(0, i - 1), k: Date.now() });
@@ -840,9 +897,26 @@ function ListField({ label, color, bg, hint, items, onChange, max = 8, placehold
     <div data-testid={testid}>
       <div className="flex items-center justify-between mb-1 gap-2">
         <label className="field-label" style={{ color, marginBottom: 0 }}>{label}</label>
-        {action}
+        <div className="flex gap-1 flex-wrap justify-end">
+          {action}
+          {links && <button type="button" onClick={() => setPick(p => !p)} aria-expanded={pick}
+            style={{ fontSize: "10px", fontWeight: 700, padding: "3px 10px", borderRadius: "99px", cursor: "pointer", border: "1px solid " + (pick ? color : "#e9e2d2"), background: pick ? bg : "white", color: pick ? color : "#62649a" }}>+ Chapter / activity</button>}
+        </div>
       </div>
       {hint && <p className="text-xs text-slate-400 mb-2">{hint}</p>}
+      {pick && links && (
+        <div data-testid="link-picker" className="mb-2 p-2 rounded-xl" style={{ border: "1px solid #e9e2d2", background: "#fffefa", maxHeight: 220, overflowY: "auto" }}>
+          {[["Chapters", "chapter", links.chapters], ["Practice activities", "tool", links.tools]].map(([title, kind, list]) => (
+            <div key={kind} className="mb-2">
+              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: "#7a7ca6", margin: "0 0 4px" }}>{title}</p>
+              <div className="flex gap-1 flex-wrap">
+                {list.map(c => <button key={c.id} type="button" data-pick={kind + ":" + c.id} onClick={() => addLink(kind, c.id, c.label)} disabled={items.length >= max && !(items.length === 1 && !items[0].t.trim() && !items[0].k)}
+                  style={{ fontSize: 11, padding: "3px 9px", borderRadius: 99, border: "1px solid #e9e2d2", background: "white", color: "#62649a", cursor: "pointer" }}>{c.label}</button>)}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {items.map((it, i) => (
         <div key={i} className="flex items-start gap-2 mb-2" data-row={i + 1}>
           <span style={{ flex: "0 0 22px", height: 22, marginTop: 8, borderRadius: 11, background: bg, color, fontSize: 11, fontWeight: 800, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>{i + 1}</span>
@@ -850,6 +924,7 @@ function ListField({ label, color, bg, hint, items, onChange, max = 8, placehold
             <AutoText value={it.t} onChange={v => patch(i, { t: v })} placeholder={i === 0 ? placeholder : ""} label={label + " " + (i + 1)}
               onEnter={() => add(i + 1)} onEmptyBackspace={items.length > 1 ? () => del(i) : null}
               innerRef={el => { refs.current[i] = el; }} bg={bg} accent={color}/>
+            {it.k && <p style={{ margin: "2px 0 0", fontSize: 10, color: "#e4572e", fontWeight: 700 }} data-link={it.k}>↗ The student gets an Open button for this {String(it.k).startsWith("tool:") ? "activity" : "chapter"}</p>}
           </div>
           {rating && (
             <button type="button" onClick={() => patch(i, { r: RATING_NEXT[it.r || ""] })} aria-label={"Rating: " + RATING_NAME[it.r || ""] + ". Tap to change."} title={"Tap to change: red = needs work, yellow = progressing, green = solid"} data-rating={it.r || ""}
@@ -867,17 +942,23 @@ function ListField({ label, color, bg, hint, items, onChange, max = 8, placehold
   );
 }
 // text <-> rows. One item per line; for repertoire a leading traffic-light emoji is that piece's rating.
-const parseItems = (text, rating) => {
+const parseItems = (text, rating, withLinks) => {
   const lines = String(text || "").split(/\r?\n/).map(x => x.trim()).filter(Boolean);
   if (!lines.length) return [{ t: "", r: "" }];
-  return lines.map(l => { const m = rating ? /^([🔴🟡🟢])\s*(.*)$/u.exec(l) : null; return m ? { t: m[2], r: m[1] } : { t: l, r: "" }; });
+  return lines.map(l => {
+    const m = rating ? /^([🔴🟡🟢])\s*(.*)$/u.exec(l) : null;
+    if (m) return { t: m[2], r: m[1] };
+    const lk = withLinks ? /^(.*?)\s*\[(chapter|tool):([a-z0-9-]{1,40})\]$/.exec(l) : null;
+    if (lk) { const k = lk[2] + ":" + lk[3]; return { t: lk[1].trim() || linkLabel(k), r: "", k }; }
+    return { t: l, r: "" };
+  });
 };
-const joinItems = (items, rating) => items.map(it => ({ t: it.t.trim(), r: it.r })).filter(it => it.t).map(it => (rating && it.r ? it.r + " " : "") + it.t).join("\n");
+const joinItems = (items, rating) => items.map(it => ({ t: it.t.trim() || (it.k ? linkLabel(it.k) : ""), r: it.r, k: it.k })).filter(it => it.t).map(it => (rating && it.r ? it.r + " " : "") + it.t + (it.k ? " [" + it.k + "]" : "")).join("\n");
 
 function LogModal({ student, existingLog, currentMonth, lastLog, onSave, onClose }) {
   const blank = { date:todayStr(), repertoire:"", technical:"", srAural:"", gk:"", notes:"", homework:"", mood:"", pieceRating:"" };
   const [f, setF] = useState(existingLog ?? blank);
-  const [lists, setLists] = useState(() => { const src = existingLog ?? blank; return { rep: parseItems(src.repertoire, true), tech: parseItems(src.technical), sr: parseItems(src.srAural), gk: parseItems(src.gk), hw: parseItems(src.homework) }; });
+  const [lists, setLists] = useState(() => { const src = existingLog ?? blank; return { rep: parseItems(src.repertoire, true), tech: parseItems(src.technical), sr: parseItems(src.srAural), gk: parseItems(src.gk), hw: parseItems(src.homework, false, true) }; });
   const setList = (k) => (items) => setLists(p => ({ ...p, [k]: items }));
   const save = () => onSave({ ...f, repertoire: joinItems(lists.rep, true), technical: joinItems(lists.tech), srAural: joinItems(lists.sr), gk: joinItems(lists.gk), homework: joinItems(lists.hw) });
   const [copied, setCopied] = useState(false);
@@ -964,9 +1045,9 @@ function LogModal({ student, existingLog, currentMonth, lastLog, onSave, onClose
           <ListField testid="list-gk" label="General knowledge" color="#d97706" bg="#fffbeb" items={lists.gk} onChange={setList("gk")} placeholder="e.g. Terms: andante, legato"/>
 
           {/* For the student: the only text that appears on the student's Today page */}
-          <ListField testid="list-hw" label="For the student" color="#e4572e" bg="#fff5f0" items={lists.hw} onChange={setList("hw")} max={12} addLabel="Add"
+          <ListField testid="list-hw" label="For the student" color="#e4572e" bg="#fff5f0" items={lists.hw} onChange={setList("hw")} max={12} addLabel="Add" links={DRILL_LINKS}
             placeholder="e.g. Minuet in G, bars 1–8, slowly"
-            hint="Shows on the student's Today page when they have a student link. Your notes below stay private."
+            hint="Shows on the student's Today page when they have a student link. A chapter or activity gets an Open button. Your notes below stay private."
             action={<button type="button" onClick={fromRepertoire} disabled={!lists.rep.some(x => x.t.trim())}
               style={{ fontSize: "10px", fontWeight: 700, padding: "3px 10px", borderRadius: "99px", cursor: "pointer", border: "1px solid #e9e2d2", background: "white", color: "#62649a", opacity: lists.rep.some(x => x.t.trim()) ? 1 : 0.45 }}>+ From repertoire</button>}/>
 
@@ -1892,7 +1973,7 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
                 {LOG_SECTIONS.filter(s=>log[s.key]?.trim()).map(s=>(
                   <div key={s.key}>
                     <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{color:s.color}}>{s.label}</p>
-                    <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{log[s.key]}</p>
+                    <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{s.key === "homework" ? String(log[s.key]).replace(/\s*\[(?:chapter|tool):[a-z0-9-]+\]/g, " ↗") : log[s.key]}</p>
                   </div>
                 ))}
                 {LOG_SECTIONS.every(s=>!log[s.key]?.trim()) && (

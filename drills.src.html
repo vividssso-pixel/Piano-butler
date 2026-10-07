@@ -19085,7 +19085,7 @@ function ToolView({ id, locked, onBack, onChapter, backLabel = '← Toolbox' }) 
   function copy() { try { navigator.clipboard.writeText(link).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }, () => {}); } catch (e) {} }
   return (
     <div className="fade-up">
-      {(!locked || backLabel !== '← Toolbox') && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={onBack}>{LANG === 'ko' ? ({ '← Toolbox': '← 도구 모음', '← Lesson plan': '← 계획', '← Practice': '← 연습', '← Kit': '← 키트' })[backLabel] || backLabel : backLabel}</button>}
+      {(!locked || backLabel !== '← Toolbox') && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={onBack}>{LANG === 'ko' ? ({ '← Toolbox': '← 도구 모음', '← Lesson plan': '← 계획', '← Practice': '← 연습', '← Kit': '← 키트', '← Today': '← 오늘' })[backLabel] || backLabel : backLabel}</button>}
       <div className="card">
         <div style={{fontSize:12,fontWeight:800,color:(TOOL_CATS.find(c => c.id === toolMeta(t.id).cat) || {}).color || 'var(--muted)',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:12}}>{(TOOL_CATS.find(c => c.id === toolMeta(t.id).cat) || {}).name || 'Tool'}</div>
         <t.C/>
@@ -19554,9 +19554,21 @@ const pad2 = (n) => (n < 10 ? '0' : '') + n;
 function localDay(d) { d = d || new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
 function dayDate(s) { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || '')); return m ? new Date(+m[1], +m[2] - 1, +m[3], 12) : null; }
 function dayPlus(s, n) { const d = dayDate(s); d.setDate(d.getDate() + n); return localDay(d); }
-// the homework text -> up to 12 short lines, list marks removed
-function homeworkLines(text) {
-  return String(text || '').split(/\r?\n/).map(x => x.replace(/^\s*(?:[-*•·]|\d+[.)])\s+/, '').trim()).filter(Boolean).slice(0, 12).map(x => x.slice(0, 200));
+// the homework text -> up to 12 short items, list marks removed. A line may end with [chapter:<id>] or [tool:<id>]
+// (set in the dashboard by "+ Chapter / activity"): it then gets an Open button. An id that does not exist is shown as plain text.
+const HW_LINK_RE = /\s*\[(chapter|tool):([a-z0-9-]{1,40})\]\s*$/;
+function homeworkItems(text) {
+  return String(text || '').split(/\r?\n/).map(x => x.replace(/^\s*(?:[-*•·]|\d+[.)])\s+/, '').trim()).filter(Boolean).slice(0, 12).map(line => {
+    const m = HW_LINK_RE.exec(line);
+    let kind = null, id = null, label = line;
+    if (m) {
+      label = line.slice(0, m.index).trim();
+      if (m[1] === 'chapter' && DRILLS.find(d => d.id === m[2])) { kind = 'chapter'; id = m[2]; if (!label) label = DRILLS.find(d => d.id === id).label; }
+      else if (m[1] === 'tool' && TOOLS.find(x => x.id === m[2])) { kind = 'tool'; id = m[2]; if (!label) label = TOOLS.find(x => x.id === id).title; }
+      else if (!label) label = line;
+    }
+    return { key: line.slice(0, 220), text: label.slice(0, 200), kind, id };
+  });
 }
 function streakOf(set, today) {
   let d = set.has(today) ? today : dayPlus(today, -1), n = 0;
@@ -19564,7 +19576,7 @@ function streakOf(set, today) {
   return n;
 }
 function loadTicks() { try { const o = JSON.parse(localStorage.getItem(TODAY_TICKS_KEY)); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }
-function TodayView({ link, onOpenChapter, onAll }) {
+function TodayView({ link, onOpenChapter, onOpenTool, onAll }) {
   const token = link.token, who = token.slice(0, 8);
   const [data, setData] = useState(() => { try { const c = JSON.parse(localStorage.getItem(TODAY_CACHE_KEY)); return c && c.token === token && c.data ? c.data : null; } catch (e) { return null; } });
   const [status, setStatus] = useState('loading'); // loading | ok | offline | invalid
@@ -19632,7 +19644,7 @@ function TodayView({ link, onOpenChapter, onAll }) {
   }
 
   const lesson = data && data.lesson && data.lesson.homework ? data.lesson : null;
-  const lines = lesson ? homeworkLines(lesson.homework) : [];
+  const items = lesson ? homeworkItems(lesson.homework) : [];
   let dateLabel = '';
   try { dateLabel = new Date().toLocaleDateString(LANG === 'ko' ? 'ko-KR' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long' }); } catch (e) {}
   let lessonLabel = '';
@@ -19657,13 +19669,14 @@ function TodayView({ link, onOpenChapter, onAll }) {
       {status !== 'invalid' && data && (
         <div style={card}>
           <div style={kicker}>{lesson ? t('From your last lesson', '지난 레슨에서') + (lessonLabel ? ' · ' + lessonLabel : '') : t('From your teacher', '선생님이 올려준 것')}</div>
-          {lines.length === 0 && <div style={{ fontSize: 15, color: 'var(--muted)', lineHeight: 1.4 }}>{t('No homework yet. Your teacher will add it after your next lesson.', '아직 숙제가 없어요. 다음 레슨 후에 선생님이 올려줄 거예요.')}</div>}
-          {lines.map((ln, i) => {
-            const k = who + '|' + lesson.date + '|' + ln, on = !!ticks[k];
+          {items.length === 0 && <div style={{ fontSize: 15, color: 'var(--muted)', lineHeight: 1.4 }}>{t('No homework yet. Your teacher will add it after your next lesson.', '아직 숙제가 없어요. 다음 레슨 후에 선생님이 올려줄 거예요.')}</div>}
+          {items.map((it, i) => {
+            const k = who + '|' + lesson.date + '|' + it.key, on = !!ticks[k];
             return (
               <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '10px 0', borderTop: i ? '1px solid var(--navy-line)' : 'none', paddingTop: i ? 10 : 0 }}>
-                <button role="checkbox" aria-checked={on} aria-label={ln} onClick={() => toggleTick(k, lesson.date)} style={{ flex: '0 0 28px', width: 28, height: 28, borderRadius: 8, border: '2px solid ' + (on ? 'var(--good)' : 'var(--navy)'), background: on ? 'var(--good)' : 'transparent', color: '#fff', fontWeight: 900, fontSize: 16, lineHeight: 1, cursor: 'pointer', padding: 0, marginTop: 1 }}>{on ? '✓' : ''}</button>
-                <span style={{ fontSize: 15.5, lineHeight: 1.35, color: on ? 'var(--muted)' : 'var(--navy)', fontWeight: 600, textDecoration: on ? 'line-through' : 'none', minWidth: 0, overflowWrap: 'anywhere' }}>{ln}</span>
+                <button role="checkbox" aria-checked={on} aria-label={it.text} onClick={() => toggleTick(k, lesson.date)} style={{ flex: '0 0 28px', width: 28, height: 28, borderRadius: 8, border: '2px solid ' + (on ? 'var(--good)' : 'var(--navy)'), background: on ? 'var(--good)' : 'transparent', color: '#fff', fontWeight: 900, fontSize: 16, lineHeight: 1, cursor: 'pointer', padding: 0, marginTop: 1 }}>{on ? '✓' : ''}</button>
+                <span style={{ fontSize: 15.5, lineHeight: 1.35, color: on ? 'var(--muted)' : 'var(--navy)', fontWeight: 600, textDecoration: on ? 'line-through' : 'none', minWidth: 0, flex: 1, overflowWrap: 'anywhere' }}>{it.text}</span>
+                {it.kind && <button className="chip" aria-label={'Open ' + it.text} onClick={() => (it.kind === 'chapter' ? onOpenChapter(it.id) : onOpenTool(it.id))} style={{ flex: '0 0 auto', padding: '4px 12px', fontSize: 13, fontWeight: 800, color: 'var(--coral)', borderColor: 'var(--coral)' }}>{t('Open', '열기')} →</button>}
               </div>
             );
           })}
@@ -19826,14 +19839,14 @@ function App() {
         {!st.lock && (
           <div style={{display:'flex',gap:6,borderBottom:'1.5px solid var(--navy-line)',marginBottom:16}}>
             {(T ? [['path', t('Guide', '안내')], ['chapters', t('Chapters', '챕터')], ['toolbox', t('Toolbox', '도구함')], ['practice', t('Practice', '연습')], ['students', t('Students', '학생')]] : (showToday ? [['today', t('Today', '오늘')], ['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]] : [['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]])).map(([v, l]) => (
-              <button key={v} onClick={() => { update({ view: v, tool: null, kit: null, drill: (v === 'practice' || v === 'students') ? st.drill : null }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderBottom:'3px solid ' + ((st.view === v || (!T && v === 'path' && st.view === 'chapters') || (T && v === 'toolbox' && st.view === 'tools' && st.ret === 'toolbox')) ? 'var(--coral)' : 'transparent'),marginBottom:-1.5,background:'transparent',padding:'10px 0',fontFamily:"'Playfair Display', Georgia, serif",fontSize:T ? 14.5 : 18,fontWeight:800,cursor:'pointer',
+              <button key={v} onClick={() => { update({ view: v, tool: null, kit: null, from: null, drill: (v === 'practice' || v === 'students') ? st.drill : null }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderBottom:'3px solid ' + ((st.view === v || (!T && v === 'path' && st.view === 'chapters') || (T && v === 'toolbox' && st.view === 'tools' && st.ret === 'toolbox')) ? 'var(--coral)' : 'transparent'),marginBottom:-1.5,background:'transparent',padding:'10px 0',fontFamily:"'Playfair Display', Georgia, serif",fontSize:T ? 14.5 : 18,fontWeight:800,cursor:'pointer',
                 color:(st.view === v || (!T && v === 'path' && st.view === 'chapters') || (T && v === 'toolbox' && st.view === 'tools' && st.ret === 'toolbox')) ? 'var(--navy)' : 'var(--muted)'}}>{l}</button>
             ))}
           </div>
         )}
         <SoundSettings/>
         {st.view === 'today' && !T && !st.lock && sl.link ? (
-          <TodayView link={sl.link} onOpenChapter={(id) => { update({ view: 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }} onAll={() => { update({ view: 'path', tool: null, kit: null, drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
+          <TodayView link={sl.link} onOpenChapter={(id) => { update({ view: 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1, from: { drill: id } }); try { window.scrollTo(0, 0); } catch (e) {} }} onOpenTool={(id) => { update({ view: PRACTICE_IDS.includes(id) ? 'practice' : 'tools', tool: id, kit: null, drill: null, from: { tool: id } }); try { window.scrollTo(0, 0); } catch (e) {} }} onAll={() => { update({ view: 'path', tool: null, kit: null, drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
         ) : st.view === 'students' && T ? (
           <StudentsView onPlan={() => { update({ view: 'toolbox', drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }} onOpenKit={(k) => { update({ view: 'kit', kit: k.tools, kn: k.name, tool: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
         ) : st.view === 'kit' && st.kit ? (
@@ -19842,7 +19855,7 @@ function App() {
             : <>{T && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={() => update({ view: 'toolbox', kit: null, kn: '' })}>{t('← Toolbox', '← 도구함')}</button>}<KitView ids={st.kit} name={st.kn} onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/></>
         ) : (st.view === 'tools' || st.view === 'practice') ? (
           st.tool
-            ? <ToolView id={st.tool} locked={st.lock} backLabel={st.view === 'practice' ? '← Practice' : '← Toolbox'} onBack={() => update({ tool: null, view: st.ret || (T && st.view === 'tools' ? 'toolbox' : st.view), ret: null })} onChapter={(id) => update({ view: st.ret === 'toolbox' ? 'toolbox' : 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
+            ? <ToolView id={st.tool} locked={st.lock} backLabel={st.from && st.from.tool === st.tool ? '← Today' : st.view === 'practice' ? '← Practice' : '← Toolbox'} onBack={() => st.from && st.from.tool === st.tool ? update({ tool: null, view: 'today', from: null }) : update({ tool: null, view: st.ret || (T && st.view === 'tools' ? 'toolbox' : st.view), ret: null })} onChapter={(id) => update({ view: st.ret === 'toolbox' ? 'toolbox' : 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
             : <PracticeView onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
         ) : !inChapter && !st.lock ? (
           T && st.view === 'toolbox'
@@ -19856,9 +19869,10 @@ function App() {
         ) : <>
         {!st.lock && (() => {
           const sg = catOfChapter(active.id) ? { title: catOfChapter(active.id).name } : null, list = orderedChapterIds(), k = list.indexOf(active.id);
+          const fromToday = !T && !!st.from && st.from.drill === st.drill;
           return (
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6,marginBottom:14}}>
-              <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => update({ drill: null })}>{T ? t('← Back', '← 뒤로') : t('← Learn', '← 배우기')}</button>
+              <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => fromToday ? update({ drill: null, view: 'today', from: null }) : update({ drill: null })}>{T ? t('← Back', '← 뒤로') : fromToday ? t('← Today', '← 오늘') : t('← Learn', '← 배우기')}</button>
               <span style={{fontSize:12,fontWeight:800,color:'var(--muted)',textAlign:'center'}}>{sg ? sg.title : ''}</span>
               <span style={{display:'flex',gap:4}}>
                 <button className="ghost-btn" style={{fontSize:13,padding:'5px 9px'}} disabled={k <= 0} onClick={() => update({ drill: list[k - 1], tab: 'learn', level: 1 })}>‹</button>
