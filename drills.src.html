@@ -20370,9 +20370,182 @@ function StudentHome({ link, onOpenChapter, onOpenTool }) {
         <StudentScales onOpenTool={onOpenTool}/>
       </div>
       <div style={sec}>
+        <StaffHead title={t('My rhythms', '나의 리듬')}/>
+        <div style={{ height: 10 }}/>
+        <RhythmSheet/>
+      </div>
+      <div style={sec}>
         <StaffHead title={t('My music map', '나의 음악 지도')}/>
         <div style={{ height: 10 }}/>
         <MusicMap onOpen={onOpenChapter} compact/>
+      </div>
+    </div>
+  );
+}
+
+// ─── Phase 357: "My rhythms" on the student's page -- the rhythm basics on one card, like the scale clock ───
+// Two views. Note values: the note tree (1 semibreve = 2 minims = 4 crotchets = 8 quavers = 16 semiquavers, each row one
+// 4-beat bar, thin lines from each note to the two it splits into) and the two dotted notes. Time signatures: 2/4, 3/4,
+// 4/4 and 6/8 as one bar of beat dots (the strong beat in coral). Tap a row to hear it and see how to count it; stamp it
+// when you can clap or count it. Stamps live in the scale-stamp store with an "r:" prefix (pb_scale_stamps_v1, which
+// already follows a linked student between devices), so no new store and no SQL: "r:crotchet", "r:.minim", "r:3/4" ...
+const RS_W = 340, RS_GL = 30, RS_GR = 26, RS_ROW = 50;
+const RS_NOTES = [
+  { id: 'semibreve', n: 1, count: ['1', '(2', '3', '4)'] },
+  { id: 'minim', n: 2, count: ['1', '(2)', '3', '(4)'] },
+  { id: 'crotchet', n: 4, count: ['1', '2', '3', '4'] },
+  { id: 'quaver', n: 8, count: ['1', '&', '2', '&', '3', '&', '4', '&'] },
+  { id: 'semiquaver', n: 16, count: ['1', 'e', '&', 'a', '2', 'e', '&', 'a', '3', 'e', '&', 'a', '4', 'e', '&', 'a'] },
+];
+const RS_DOTS = [
+  { id: '.minim', it: () => NV_DOTTED.find(d => d.id === 'minim'), pat: () => [NV_DOTTED.find(d => d.id === 'minim'), NV_NOTES[2]], count: ['1', '(2', '3)', '4'], wmap: [0, 0, 0, 1], beats: ['3 beats', '3박'], sum: ['2 + 1 = 3 beats', '2 + 1 = 3박'] },
+  { id: '.crotchet', it: () => NV_DOTTED.find(d => d.id === 'crotchet'), pat: () => [NV_DOTTED.find(d => d.id === 'crotchet'), NV_NOTES[3], NV_DOTTED.find(d => d.id === 'crotchet'), NV_NOTES[3]], count: ['1', '(2)', '&', '3', '(4)', '&'], wmap: [0, 0, 1, 2, 2, 3], beats: ['1½ beats', '1½박'], sum: ['1 + ½ = 1½ beats', '1 + ½ = 1½박'] },
+];
+const RS_TIMES = [
+  { id: '2/4', top: 2, unit: 4, strong: [0], groups: [2], en: 'Two crotchet beats in a bar. A march: left, right.', ko: '한 마디에 4분음표 2박. 행진곡처럼: 왼발, 오른발.' },
+  { id: '3/4', top: 3, unit: 4, strong: [0], groups: [3], en: 'Three crotchet beats in a bar. A waltz: ONE two three.', ko: '한 마디에 4분음표 3박. 왈츠처럼: 쿵 짝 짝.' },
+  { id: '4/4', top: 4, unit: 4, strong: [0], half: [2], groups: [4], en: 'Four crotchet beats in a bar. The most common one.', ko: '한 마디에 4분음표 4박. 가장 많이 쓰여요.' },
+  { id: '6/8', top: 6, unit: 8, strong: [0], half: [3], groups: [3, 3], en: 'Six quavers in a bar, in two groups of three. It swings: ONE two three FOUR five six.', ko: '한 마디에 8분음표 6개, 셋씩 두 묶음. 흔들리듯: 쿵 짝 짝 쿵 짝 짝.' },
+];
+const RS_TOTAL = RS_NOTES.length + RS_DOTS.length + RS_TIMES.length;
+const rsName = (id) => { const it = NV_NOTES.find(x => x.id === id); return it ? (LANG === 'ko' ? it.ko : cap(it.id) + 's') : id; };
+const rsUs = (id) => { const v = NOTE_VALUES.find(x => x.id === id); return v ? v.us + ' notes' : ''; };
+// a small note at (x, y = the head's centre): head, stem up (not for a semibreve); beams are drawn by the row
+function RsNote({ x, y, id, ink }) {
+  const hollow = id === 'semibreve' || id === 'minim';
+  return (
+    <g>
+      <ellipse cx={x} cy={y} rx={id === 'semibreve' ? 5.6 : 4.7} ry="3.6" transform={`rotate(-20 ${x} ${y})`} fill={hollow ? 'none' : ink} stroke={ink} strokeWidth={hollow ? 1.7 : 1}/>
+      {id !== 'semibreve' && <line x1={x + 4.2} x2={x + 4.2} y1={y - 1} y2={y - 22} stroke={ink} strokeWidth="1.3"/>}
+    </g>
+  );
+}
+function rsPlayMeter(T, bars, onBeat) {
+  const ctx = getAudio(); if (!ctx) return [];
+  stopClicks();
+  const step = T.unit === 8 ? 0.27 : 0.62, t0 = ctx.currentTime + 0.12, timers = [];
+  for (let b = 0; b < bars; b++) for (let i = 0; i < T.top; i++) {
+    const at = t0 + (b * T.top + i) * step, k = T.strong.includes(i) ? 2 : (T.half || []).includes(i) ? 1 : (T.unit === 8 ? 0 : 1);
+    metroClick(ctx, at, k, 0.3);
+    timers.push(setTimeout(() => onBeat(i), (at - ctx.currentTime) * 1000));
+  }
+  timers.push(setTimeout(() => onBeat(-1), (0.12 + bars * T.top * step) * 1000 + 200));
+  return timers;
+}
+function RhythmSheet() {
+  const [view, setView] = useState('notes');
+  const [sel, setSel] = useState({ notes: 'crotchet', time: '4/4' });
+  const [stamps, setStamps] = useState(loadStamps);
+  const [on, setOn] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => { timers.current.forEach(clearTimeout); stopClicks(); }, []);
+  const has = (id) => !!stamps['r:' + id];
+  const count = [...RS_NOTES.map(r => r.id), ...RS_DOTS.map(r => r.id), ...RS_TIMES.map(r => r.id)].filter(has).length;
+  function toggle(id) { const n = { ...loadStamps() }, k = 'r:' + id; if (n[k]) delete n[k]; else n[k] = Date.now(); setStamps(n); saveStamps(n); }
+  const cur = sel[view];
+  function play(id) {
+    timers.current.forEach(clearTimeout); setOn(-1);
+    const T = RS_TIMES.find(x => x.id === id);
+    if (T) { timers.current = rsPlayMeter(T, 2, setOn); return; }
+    const D = RS_DOTS.find(x => x.id === id);
+    if (D) { timers.current = playItems(D.pat(), 72, setOn); return; }
+    const R = RS_NOTES.find(x => x.id === id), it = NV_NOTES.find(x => x.id === id);
+    timers.current = playItems(Array.from({ length: R.n }, () => it), 72, setOn);
+  }
+  function pick(id) { setSel(s => ({ ...s, [view]: id })); play(id); }
+  const key = (e, fn) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); } };
+  const rowProps = (id) => ({ role: 'button', tabIndex: 0, 'data-rrow': id, 'data-stamped': has(id) ? '1' : '0', 'aria-pressed': cur === id, onClick: () => pick(id), onKeyDown: (e) => key(e, () => pick(id)), style: { cursor: 'pointer' } });
+  const stampDot = (x, y, id) => <circle cx={x} cy={y} r="5" fill={has(id) ? CO : '#fff'} stroke={has(id) ? CO : 'rgba(38,41,107,0.3)'} strokeWidth="1.2"/>;
+  const usable = RS_W - RS_GL - RS_GR;
+  // ── the note tree ──
+  const tree = (
+    <svg viewBox={'0 0 ' + RS_W + ' ' + (RS_NOTES.length * RS_ROW + 6)} width="100%" style={{ display: 'block', maxWidth: 420, margin: '0 auto' }} aria-label={t('Note tree', '음표 나무')}>
+      {RS_NOTES.map((r, ri) => {
+        if (ri === RS_NOTES.length - 1) return null;
+        const y0 = ri * RS_ROW + 42, y1 = (ri + 1) * RS_ROW + 8, s0 = usable / r.n, s1 = usable / (r.n * 2);
+        return <g key={'c' + ri}>{Array.from({ length: r.n }, (_, k) => { const px = RS_GL + (k + 0.5) * s0; return [0, 1].map(j => <line key={k + '-' + j} x1={px} y1={y0} x2={RS_GL + (2 * k + j + 0.5) * s1} y2={y1} stroke="rgba(38,41,107,0.13)" strokeWidth="1"/>); })}</g>;
+      })}
+      {RS_NOTES.map((r, ri) => {
+        const top = ri * RS_ROW, s = usable / r.n, y = top + 33, isSel = cur === r.id, ink = isSel ? CO : NV;
+        const xs = Array.from({ length: r.n }, (_, k) => RS_GL + (k + 0.5) * s);
+        const group = r.id === 'quaver' ? 2 : r.id === 'semiquaver' ? 4 : 0;
+        return (
+          <g key={r.id} {...rowProps(r.id)}>
+            <rect x="2" y={top + 3} width={RS_W - 4} height={RS_ROW - 6} rx="9" fill={isSel ? 'rgba(228,87,46,0.09)' : 'transparent'}/>
+            <text x={RS_GL - 12} y={top + 30} textAnchor="middle" fontSize="13" fontWeight="800" fill={isSel ? CO : 'var(--muted)'} style={{ fontFamily: "Inter, 'Pretendard', sans-serif" }}>{r.n}</text>
+            {xs.map((x, k) => <g key={k} opacity={on >= 0 && isSel && on !== k ? 0.45 : 1}><RsNote x={x - 2} y={y} id={r.id} ink={ink}/></g>)}
+            {group > 0 && Array.from({ length: r.n / group }, (_, g) => {
+              const a = xs[g * group] - 2 + 4.2, b = xs[g * group + group - 1] - 2 + 4.2;
+              return <g key={'b' + g}><rect x={a - 0.6} y={y - 23} width={b - a + 1.2} height="3" fill={ink}/>{r.id === 'semiquaver' && <rect x={a - 0.6} y={y - 18.5} width={b - a + 1.2} height="3" fill={ink}/>}</g>;
+            })}
+            {stampDot(RS_W - 13, top + 26, r.id)}
+          </g>
+        );
+      })}
+    </svg>
+  );
+  // ── the two dotted notes ──
+  const dots = (
+    <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap', margin: '6px 0 2px' }}>
+      {RS_DOTS.map(D => { const isSel = cur === D.id; return (
+        <button key={D.id} data-rrow={D.id} data-stamped={has(D.id) ? '1' : '0'} aria-pressed={isSel} onClick={() => pick(D.id)}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, border: '1.5px solid ' + (isSel ? CO : 'var(--navy-line)'), background: isSel ? 'rgba(228,87,46,0.09)' : '#fff', borderRadius: 999, padding: '3px 12px 3px 6px', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 800, color: isSel ? CO : NV }}>
+          <Glyph item={D.it()} size={30} ink={isSel ? CO : NV}/>{t(D.beats[0], D.beats[1])}
+          <span style={{ width: 9, height: 9, borderRadius: '50%', background: has(D.id) ? CO : '#fff', border: '1.2px solid ' + (has(D.id) ? CO : 'rgba(38,41,107,0.3)') }}/>
+        </button>
+      ); })}
+    </div>
+  );
+  // ── time signatures: one bar of beat dots each ──
+  const times = (
+    <svg viewBox={'0 0 ' + RS_W + ' ' + (RS_TIMES.length * 62 + 4)} width="100%" style={{ display: 'block', maxWidth: 420, margin: '0 auto' }} aria-label={t('Time signatures', '박자표')}>
+      {RS_TIMES.map((T, ti) => {
+        const top = ti * 62, isSel = cur === T.id, ink = isSel ? CO : NV, x0 = 76, span = RS_W - x0 - 40;
+        let gx = x0; const dotsX = [];
+        T.groups.forEach((g, gi) => { const w = span / T.top; for (let i = 0; i < g; i++) dotsX.push(gx + (i + 0.5) * w); gx += g * w + (gi < T.groups.length - 1 ? 0 : 0); });
+        if (T.groups.length > 1) dotsX.forEach((x, i) => { if (i >= T.groups[0]) dotsX[i] = x + 10; else dotsX[i] = x - 10; });
+        return (
+          <g key={T.id} {...rowProps(T.id)}>
+            <rect x="2" y={top + 3} width={RS_W - 4} height="56" rx="9" fill={isSel ? 'rgba(228,87,46,0.09)' : 'transparent'}/>
+            <text x="34" y={top + 29} textAnchor="middle" fontSize="22" fontWeight="900" fill={ink} style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>{T.top}</text>
+            <text x="34" y={top + 50} textAnchor="middle" fontSize="22" fontWeight="900" fill={ink} style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>{T.unit}</text>
+            {dotsX.map((x, i) => { const strong = T.strong.includes(i), lit = isSel && on === i; return (
+              <circle key={i} cx={x} cy={top + 31} r={strong ? 9 : (T.half || []).includes(i) ? 7 : 5.5} fill={lit ? CO : strong ? CO : (T.half || []).includes(i) ? NV : '#fff'} stroke={lit || strong ? CO : NV} strokeWidth="1.4" opacity={on >= 0 && isSel && !lit ? 0.55 : 1}/>
+            ); })}
+            {stampDot(RS_W - 13, top + 31, T.id)}
+          </g>
+        );
+      })}
+    </svg>
+  );
+  // ── the chosen row: what it is, how to count it, play, stamp ──
+  const T = RS_TIMES.find(x => x.id === cur), D = RS_DOTS.find(x => x.id === cur), R = RS_NOTES.find(x => x.id === cur);
+  const title = T ? T.id : D ? (LANG === 'ko' ? D.it().ko : cap(D.it().ukEn)) : rsName(cur);
+  const sub = T ? (LANG === 'ko' ? T.ko : T.en) : D ? t('A dot adds half again: ' + D.sum[0] + '.', '점은 원래 길이의 절반을 더해요: ' + D.sum[1] + '.') :
+    t(fmtBeats(NV_NOTES.find(x => x.id === cur).beats) + ' each, ' + R.n + ' in a bar (' + rsUs(cur) + ').', '하나에 ' + fmtBeats(NV_NOTES.find(x => x.id === cur).beats) + ', 한 마디에 ' + R.n + '개.');
+  const words = T ? (T.unit === 8 ? ['1', '2', '3', '4', '5', '6'] : Array.from({ length: T.top }, (_, i) => String(i + 1))) : D ? D.count : R.count;
+  const wordItem = (i) => T ? i : D ? D.wmap[i] : Math.floor(i * R.n / words.length);
+  const stampLabel = T ? t('I can count it', '셀 수 있어요') : t('I can clap it', '손뼉으로 칠 수 있어요');
+  return (
+    <div data-testid="rhythm-sheet" style={{ background: 'var(--surface)', border: '1.5px solid var(--navy-line)', borderRadius: 16, padding: '14px 12px 16px' }}>
+      <style>{'[data-rrow]:focus{outline:none}[data-rrow]:focus-visible{outline:2px solid #e4572e;outline-offset:2px;border-radius:9px}'}</style>
+      <div style={{ display: 'flex', gap: 6, justifyContent: 'center', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
+        <button className={'chip' + (view === 'notes' ? ' active' : '')} onClick={() => { setView('notes'); setOn(-1); }}>{t('Note values', '음표 길이')}</button>
+        <button className={'chip' + (view === 'time' ? ' active' : '')} onClick={() => { setView('time'); setOn(-1); }}>{t('Time signatures', '박자표')}</button>
+        <span data-testid="rhythm-count" style={{ fontSize: 13, fontWeight: 800, color: 'var(--muted)', marginLeft: 6 }}><b style={{ fontSize: 17, fontWeight: 900, color: NV }}>{count}</b>/{RS_TOTAL} {t('stamps', '도장')}</span>
+      </div>
+      {view === 'notes' ? <>{tree}{dots}</> : times}
+      <div style={{ borderTop: '1px solid var(--navy-line)', marginTop: 10, paddingTop: 12, textAlign: 'center' }}>
+        <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 800, fontSize: 20, color: NV }}>{title}</div>
+        <div style={{ fontSize: 13.5, color: 'var(--muted)', margin: '3px auto 0', maxWidth: 360, lineHeight: 1.45 }}>{sub}</div>
+        <div data-testid="rhythm-words" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: words.length > 8 ? 4 : 8, margin: '10px 0 2px', fontWeight: 800, fontSize: words.length > 8 ? 13 : 16, color: NV, fontVariantNumeric: 'tabular-nums' }}>
+          {words.map((w, i) => <span key={i} style={{ minWidth: 10, color: on >= 0 && wordItem(i) === on ? CO : /^\(|\)$/.test(w) ? 'var(--muted)' : NV }}>{w}</span>)}
+        </div>
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap', marginTop: 10 }}>
+          <button className="ghost-btn" data-testid="rhythm-play" onClick={() => play(cur)}>{t('♪ Play', '♪ 듣기')}</button>
+          <button data-rstamp={cur} aria-pressed={has(cur)} onClick={() => toggle(cur)} style={{ border: '1.5px solid ' + (has(cur) ? CO : 'var(--navy-line)'), background: has(cur) ? CO : '#fff', color: has(cur) ? '#fff' : NV, borderRadius: 999, padding: '7px 14px', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' }}>{has(cur) ? '✓ ' : ''}{stampLabel}</button>
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 8 }}>{t('Tap a row to hear it. Stamp it when you can do it without help.', '줄을 누르면 소리가 나요. 혼자 할 수 있으면 도장을 찍어요.')}</div>
       </div>
     </div>
   );
