@@ -66,6 +66,13 @@
     .hover\:text-slate-600:hover { color:#4a4d86 !important; } .hover\:text-indigo-600:hover { color:#26296b !important; }
     header h1 { font-size:20px !important; font-weight:900 !important; color:var(--navy) !important; line-height:1.2; }
     header.sticky { background-color:var(--surface) !important; border-bottom:1.5px solid var(--navy-line) !important; }
+    /* Phase 351: section heads like the drills' (five thin staff lines with the title knocked out of them) */
+    .stf-head { position:relative; width:100%; height:36px; display:flex; align-items:center; justify-content:space-between; gap:8px; color:var(--navy);
+      background-image:repeating-linear-gradient(to bottom, transparent 0 4.4px, var(--navy) 4.4px 6px); background-size:100% 30px; background-repeat:no-repeat; background-position:0 3px;
+      -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .stf-title { background:var(--bg); padding:0 10px 0 4px; margin:0 0 0 12px; font-family:'Playfair Display',Georgia,serif; font-weight:800; font-size:19px; letter-spacing:0.02em; text-transform:uppercase; line-height:1; color:var(--navy); white-space:nowrap; }
+    .stf-right { background:var(--bg); padding:0 4px 0 10px; display:flex; align-items:center; gap:6px; }
+    @media (max-width:440px) { .stf-title { font-size:15.5px; margin-left:8px; letter-spacing:0; } }
   </style>
 </head>
 <body>
@@ -1237,9 +1244,9 @@ function StudentCard({ student, logs, onLog, onEdit, onDelete, onSelect }) {
 function GeneralPlanPanel({ student, logs }) {
   const AREAS = [
     { key:"repertoire", label:"Repertoire", bg:"#ecebf5", col:"#26296b" },
-    { key:"technical",  label:"Technical",  bg:"#f5f3ff", col:"#7c3aed" },
-    { key:"srAural",    label:"SR & Aural", bg:"#ecfeff", col:"#0891b2" },
-    { key:"gk",         label:"Gen. Knowledge", bg:"#fffbeb", col:"#d97706" },
+    { key:"technical",  label:"Technical",  bg:"#ecebf5", col:"#26296b" },
+    { key:"srAural",    label:"SR & Aural", bg:"#ecebf5", col:"#26296b" },
+    { key:"gk",         label:"Gen. Knowledge", bg:"#ecebf5", col:"#26296b" },
     { key:"notes",      label:"Notes",      bg:"#faf6ec", col:"#62649a" },
   ];
 
@@ -1337,13 +1344,13 @@ const DashBlock = ({ title, note, children, testid }) => (
     {children}
   </div>
 );
-const CardHead = ({ icon, title, pill, pillStyle }) => (
-  <div className="flex items-center gap-2 mb-4 flex-wrap">
-    <span style={{fontSize:"18px"}}>{icon}</span>
-    <h3 className="text-base font-bold text-slate-800">{title}</h3>
-    {pill ? <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={pillStyle}>{pill}</span> : null}
+const SecHead = ({ title, right, testid }) => (
+  <div className="stf-head mb-3" data-testid={testid}>
+    <h3 className="stf-title">{title}</h3>
+    {right ? <span className="stf-right">{right}</span> : null}
   </div>
 );
+const navyPill = { background:"#ecebf5", color:"#26296b" }, coralPill = { background:"#fbe3da", color:"#c0431f" };
 const dayNum = (d) => String(parseInt(String(d).slice(8, 10), 10));
 const shortDate = (d) => d.toLocaleDateString("en-AU", { day: "numeric", month: "short" });
 const longWeekday = (d) => d.toLocaleDateString("en-AU", { weekday: "long" });
@@ -1371,14 +1378,15 @@ function PracticeStrip({ studentId }) {
   const lastDate = last ? new Date(last + "T12:00:00") : null;
   const fmt = (d) => new Date(d + "T12:00:00").toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
   return (
-    <div className="card p-5 mb-5 no-print" style={{borderLeft:"4px solid #2e8a6e"}} data-testid="practice-strip">
-      <CardHead icon="📅" title="Daily practice" pill="Check-ins" pillStyle={{background:"#f0fdf4",color:"#15803d"}}/>
+    <section className="no-print mb-6" data-testid="practice-strip">
+      <SecHead title="Daily practice"/>
+      <div className="card p-5">
       <div className="mb-4" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12}} data-testid="practice-tiles">
-        <DashTile label="This week" value={weekRows.length} sub={(weekRows.length === 1 ? "day" : "days") + (weekMin > 0 ? " · " + weekMin + " min" : "")} color="#2e8a6e"/>
-        <DashTile label="Last 14 days" value={in14} sub={in14 === 1 ? "day practised" : "days practised"} color="#2e8a6e"/>
-        <DashTile label="Last check-in" value={lastDate ? shortDate(lastDate) : "—"} sub={lastDate ? longWeekday(lastDate) : "none yet"} color="#2e8a6e"/>
+        <DashTile label="This week" value={weekRows.length} sub={(weekRows.length === 1 ? "day" : "days") + (weekMin > 0 ? " · " + weekMin + " min" : "")} color="#26296b"/>
+        <DashTile label="Last 14 days" value={in14} sub={in14 === 1 ? "day practised" : "days practised"} color="#26296b"/>
+        <DashTile label="Last check-in" value={lastDate ? shortDate(lastDate) : "—"} sub={lastDate ? longWeekday(lastDate) : "none yet"} color="#26296b"/>
       </div>
-      <DashBlock title="Last 14 days" note="each circle is a day">
+      <DashBlock title="Last 14 days" note="each circle is a day, green = practised">
         <div className="flex gap-1.5 flex-wrap" aria-label="Practice check-ins, last 14 days">
           {days.map(d => {
             const yes = by.has(d), isToday = d === today, m = by.get(d);
@@ -1395,7 +1403,8 @@ function PracticeStrip({ studentId }) {
         </div>
         {!last && <p className="text-sm text-slate-500 mt-3">No check-ins yet. They appear here when the student taps “I practised today” on their Today page.</p>}
       </DashBlock>
-    </div>
+      </div>
+    </section>
   );
 }
 
@@ -1408,11 +1417,11 @@ const chapterLabel = (id) => { const x = DRILL_LINKS.chapters.find(y => y.id ===
 const fmtDay = (d) => d.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
 const fmtDayTime = (d) => fmtDay(d) + ", " + d.toLocaleTimeString("en-AU", { hour: "numeric", minute: "2-digit", hour12: false });
 const isObj = (v) => !!v && typeof v === "object" && !Array.isArray(v);
-// result pill: a lesson is out of 10 (green 8+, amber 5-7, red below), a game shows points
+// result pill: navy, or coral when fewer than half were right; a game shows points
 const resultPill = (mode, correct, total, score) => {
   if (mode === "game") return { text: score + " pts", bg: "#ecebf5", fg: "#26296b" };
   const r = total ? correct / total : 0;
-  return r >= 0.8 ? { text: correct + "/" + total, bg: "#e8f5ef", fg: "#1f6e55" } : r >= 0.5 ? { text: correct + "/" + total, bg: "#fff4dc", fg: "#92400e" } : { text: correct + "/" + total, bg: "#fdecea", fg: "#b3402a" };
+  return r >= 0.5 ? { text: correct + "/" + total, bg: "#ecebf5", fg: "#26296b" } : { text: correct + "/" + total, bg: "#fbe3da", fg: "#c0431f" };
 };
 function DrillProgress({ studentId }) {
   const [data, setData] = useState(null);     // null = loading, false = not available, { st, log } = ok
@@ -1464,8 +1473,12 @@ function DrillProgress({ studentId }) {
 
   // lesson steps ticked per chapter, in the order of the chapter list
   const stepRows = DRILL_LINKS.chapters.map(c => {
-    const o = steps[c.id]; const n = isObj(o) ? Object.keys(o).filter(i => o[i]).length : 0;
-    return n ? { id: c.id, label: c.label, n, of: +totals[c.id] || 0 } : null;
+    let n = 0, of = 0;
+    Object.keys(Object.assign({}, steps, totals)).forEach(k => {
+      if (k !== c.id && k.indexOf(c.id + "-") !== 0) return;
+      const o = steps[k]; n += isObj(o) ? Object.keys(o).filter(i => o[i]).length : 0; of += +totals[k] || 0;
+    });
+    return n ? { id: c.id, label: c.label, n, of } : null;
   }).filter(Boolean);
   const stampOn = (prefix, k, step) => !!stamps[prefix + k + ":" + step];
   const nMajor = SCALE_KEYS_MAJOR.reduce((a, k) => a + ["RH","LH","HT"].filter(x => stampOn("", k, x)).length, 0);
@@ -1490,7 +1503,7 @@ function DrillProgress({ studentId }) {
     </tr>
   ));
   const bestHead = <thead><tr><th style={th}>Drill</th><th style={th}>Level</th><th style={th}>Mode</th><th style={th}>Best</th><th style={th}>Plays</th><th style={th}>Last</th></tr></thead>;
-  const dot = (on) => ({ display: "inline-block", width: 12, height: 12, borderRadius: "50%", background: on ? "#2e8a6e" : "transparent", border: "1.5px solid " + (on ? "#2e8a6e" : "#d9d2c0") });
+  const dot = (on) => ({ display: "inline-block", width: 12, height: 12, borderRadius: "50%", background: on ? "#e4572e" : "transparent", border: "1.5px solid " + (on ? "#e4572e" : "#d9d2c0") });
   const stampGroup = (title, prefix, keys, n) => (
     <div className="mb-3" key={title}>
       <p className="text-xs font-bold text-slate-600 mb-2">{title} <span className="font-normal text-slate-400">· {n}/36</span></p>
@@ -1498,7 +1511,7 @@ function DrillProgress({ studentId }) {
         {keys.map(k => {
           const all = ["RH","LH","HT"].every(x => stampOn(prefix, k, x));
           return (
-            <div key={k} className="flex items-center justify-between rounded-lg px-2 py-1.5" style={{background: all ? "#e8f5ef" : "#faf6ec", border: "1px solid " + (all ? "#bfe3d3" : "#efe9d9")}}>
+            <div key={k} className="flex items-center justify-between rounded-lg px-2 py-1.5" style={{background: all ? "#ecebf5" : "#faf6ec", border: "1px solid " + (all ? "#c9cae3" : "#efe9d9")}}>
               <span className="text-xs font-bold text-slate-700">{k}</span>
               <span className="flex gap-1">{["RH","LH","HT"].map(x => <span key={x} title={x} data-stamp={prefix + k + ":" + x} data-on={stampOn(prefix, k, x) ? "1" : "0"} style={dot(stampOn(prefix, k, x))}/>)}</span>
             </div>
@@ -1508,18 +1521,19 @@ function DrillProgress({ studentId }) {
     </div>
   );
   return (
-    <div className="card p-5 mb-5 no-print" style={{borderLeft:"4px solid #e4572e"}} data-testid="drill-progress">
-      <CardHead icon="🎹" title="Drill progress" pill={empty ? null : log.length + (log.length === 1 ? " session" : " sessions") + " in 60 days"} pillStyle={{background:"#fff5f0",color:"#c2410c"}}/>
-      <p className="text-sm text-slate-500 mb-4" style={{marginTop:-8}}>Saved from the student’s link, on any device they use.</p>
+    <section className="no-print mb-6" data-testid="drill-progress">
+      <SecHead title="Drill progress" right={empty ? null : <span className="text-xs font-bold" style={{color:"#e4572e"}}>{log.length + (log.length === 1 ? " session" : " sessions") + " in 60 days"}</span>}/>
+      <div className="card p-5">
+      <p className="text-sm text-slate-500 mb-4">Saved from the student’s link, on any device they use.</p>
       {empty ? (
         <div className="rounded-xl p-4 text-sm text-slate-500 mb-4" style={{background:"#faf6ec",border:"1px solid #efe9d9"}} data-testid="drill-empty">Nothing yet. It appears here after the student opens their link and practises in the drills.</div>
       ) : (
         <>
           <div className="mb-4" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12}} data-testid="drill-summary">
-            <DashTile label="This week" value={weekSessions} sub={(weekSessions === 1 ? "session" : "sessions") + " on " + weekDays + (weekDays === 1 ? " day" : " days")} color="#e4572e"/>
-            <DashTile label="Last 14 days" value={in14} sub={in14 === 1 ? "day practised" : "days practised"} color="#e4572e"/>
-            <DashTile label="Last drill" value={lastMs ? shortDate(new Date(lastMs)) : "—"} sub={lastMs ? longWeekday(new Date(lastMs)) : "none yet"} color="#e4572e"/>
-            <DashTile label="Scale stamps" value={nMajor + nMinor} sub="of 72" color="#e4572e"/>
+            <DashTile label="This week" value={weekSessions} sub={(weekSessions === 1 ? "session" : "sessions") + " on " + weekDays + (weekDays === 1 ? " day" : " days")} color="#26296b"/>
+            <DashTile label="Last 14 days" value={in14} sub={in14 === 1 ? "day practised" : "days practised"} color="#26296b"/>
+            <DashTile label="Last drill" value={lastMs ? shortDate(new Date(lastMs)) : "—"} sub={lastMs ? longWeekday(new Date(lastMs)) : "none yet"} color="#26296b"/>
+            <DashTile label="Scale stamps" value={nMajor + nMinor} sub="of 72" color="#26296b"/>
           </div>
 
           <DashBlock title="Sessions" note="last 14 days">
@@ -1581,7 +1595,7 @@ function DrillProgress({ studentId }) {
                   <div key={r.id} className="rounded-lg px-3 py-2" style={{background:"#faf6ec",border:"1px solid #efe9d9"}}>
                     <p className="text-xs font-bold text-slate-700">{r.label}</p>
                     <p className="text-sm font-black" style={{color:"#26296b"}}>{r.of ? r.n + "/" + r.of : r.n + (r.n === 1 ? " step" : " steps")}</p>
-                    {r.of > 0 && <div style={{height:5,borderRadius:3,background:"#e9e2d2",marginTop:4}}><div style={{height:5,borderRadius:3,background:"#2e8a6e",width:Math.min(100, Math.round(r.n / r.of * 100)) + "%"}}/></div>}
+                    {r.of > 0 && <div style={{height:5,borderRadius:3,background:"#e9e2d2",marginTop:4}}><div style={{height:5,borderRadius:3,background:"#26296b",width:Math.min(100, Math.round(r.n / r.of * 100)) + "%"}}/></div>}
                   </div>
                 ))}
               </div>
@@ -1615,17 +1629,18 @@ function DrillProgress({ studentId }) {
       <div className="pt-4 flex items-center justify-between gap-3 flex-wrap" style={{borderTop:"1px solid #efe9d9"}}>
         <p className="text-xs text-slate-500">Student data: delete this student’s saved drill progress and practice log.</p>
         {!confirmDel
-          ? <button disabled={busy} onClick={() => setConfirmDel(true)} className="btn-ghost text-xs py-1.5 px-3" style={{color:"#b91c1c",borderColor:"#fecaca"}} data-testid="drill-delete">Delete drill progress</button>
+          ? <button disabled={busy} onClick={() => setConfirmDel(true)} className="btn-ghost text-xs py-1.5 px-3" style={{color:"#c0431f",borderColor:"rgba(228,87,46,0.35)"}} data-testid="drill-delete">Delete drill progress</button>
           : (
-            <span className="flex gap-2 items-center flex-wrap text-xs px-3 py-1.5 rounded-xl" style={{background:"#fef2f2",color:"#991b1b",border:"1px solid #fecaca"}} data-testid="drill-delete-confirm">
+            <span className="flex gap-2 items-center flex-wrap text-xs px-3 py-1.5 rounded-xl" style={{background:"#fbe3da",color:"#c0431f",border:"1px solid rgba(228,87,46,0.35)"}} data-testid="drill-delete-confirm">
               This deletes the student’s saved drill progress and practice log. It cannot be undone.
               <button disabled={busy} onClick={wipe} className="font-bold underline">{busy ? "Deleting…" : "Delete everything"}</button>
               <button disabled={busy} onClick={() => setConfirmDel(false)} className="underline">Cancel</button>
             </span>
           )}
       </div>
-      {msg && <p className="text-xs mt-2" style={{color: /^Deleted/.test(msg) ? "#15803d" : "#dc2626"}} role="status">{msg}</p>}
-    </div>
+      {msg && <p className="text-xs mt-2" style={{color: /^Deleted/.test(msg) ? "#26296b" : "#c0431f"}} role="status">{msg}</p>}
+      </div>
+    </section>
   );
 }
 
@@ -1678,9 +1693,9 @@ function StudentLinkPanel({ student }) {
   const active = row && row.active;
   return (
     <>
-      <div className="card p-5 mb-5 no-print" style={{borderLeft:"4px solid #26296b"}}>
-        <CardHead icon="🔗" title="Student link" pill={row ? (active ? "Active" : "Paused") : null}
-          pillStyle={active ? {background:"#f0fdf4",color:"#15803d"} : {background:"#fffbeb",color:"#92400e"}}/>
+      <section className="no-print mb-6">
+      <SecHead title="Student link" right={row ? <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={active ? navyPill : coralPill}>{active ? "Active" : "Paused"}</span> : null}/>
+      <div className="card p-5">
         <p className="text-sm text-slate-600 mb-4">A private link that opens the drills as {row ? row.display_name : (cleanName || "this student")} and with a Today page: your homework, the pieces they are working on, a daily practice check-in and a record of their drill practice.</p>
 
         {row === undefined && <p className="text-xs text-slate-400">Loading…</p>}
@@ -1709,7 +1724,7 @@ function StudentLinkPanel({ student }) {
               {!confirmNew
                 ? <button disabled={busy} onClick={()=>setConfirmNew(true)} className="btn-ghost text-xs py-1.5 px-3">New link</button>
                 : (
-                  <span className="flex gap-2 items-center flex-wrap text-xs px-3 py-1.5 rounded-xl" style={{background:"#fffbeb",color:"#92400e",border:"1px solid #fde68a"}}>
+                  <span className="flex gap-2 items-center flex-wrap text-xs px-3 py-1.5 rounded-xl" style={{background:"#fbe3da",color:"#c0431f",border:"1px solid rgba(228,87,46,0.35)"}}>
                     The old link will stop working.
                     <button disabled={busy} onClick={()=>change({token:makeToken(), active:true, revoked_at:null}, ()=>setConfirmNew(false))} className="font-bold underline">Make a new link</button>
                     <button onClick={()=>setConfirmNew(false)} className="underline">Cancel</button>
@@ -1726,11 +1741,11 @@ function StudentLinkPanel({ student }) {
                 )}
             </div>
             <div className="mt-4" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:12}}>
-              <div className="rounded-xl p-3 text-xs leading-relaxed" style={{background:"#fffbeb",border:"1px solid #fde68a",color:"#92400e"}}>
-                <p className="font-bold mb-1">Keep it private</p>
+              <div className="rounded-xl p-3 text-xs leading-relaxed" style={{background:"#faf6ec",border:"1px solid rgba(228,87,46,0.35)",color:"#26296b"}}>
+                <p className="font-bold mb-1" style={{color:"#c0431f"}}>Keep it private</p>
                 <p>Anyone with this link can open this student's practice record, so send it to the student or parent only. A new link stops the old one.</p>
               </div>
-              <div className="rounded-xl p-3 text-xs leading-relaxed" style={{background:"#ecebf5",border:"1px solid #d9daec",color:"#34377b"}}>
+              <div className="rounded-xl p-3 text-xs leading-relaxed" style={{background:"#faf6ec",border:"1px solid rgba(38,41,107,0.14)",color:"#26296b"}}>
                 <p className="font-bold mb-1">Trying it yourself</p>
                 <p>Anything practised through this link is saved to this student’s progress, so use it only to look, and open it in a private window. Trying it in a normal window switches that browser to the student view. To switch back, open the drills with <span style={{fontFamily:"monospace"}}>?teacher=1</span> added to the address.</p>
               </div>
@@ -1738,8 +1753,9 @@ function StudentLinkPanel({ student }) {
           </>
         )}
 
-        {msg && <p className="text-xs mt-3" style={{color:"#dc2626"}} role="alert">{msg}</p>}
+        {msg && <p className="text-xs mt-3" style={{color:"#c0431f"}} role="alert">{msg}</p>}
       </div>
+      </section>
       {row && <PracticeStrip studentId={student.id}/>}
       {row && <DrillProgress studentId={student.id}/>}
     </>
@@ -1771,9 +1787,9 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
 
   const LOG_SECTIONS = [
     { key:"repertoire", label:"Repertoire",          color:"#26296b", bg:"#ecebf5" },
-    { key:"technical",  label:"Technical",            color:"#7c3aed", bg:"#f5f3ff" },
-    { key:"srAural",    label:"SR & Aural",           color:"#0891b2", bg:"#ecfeff" },
-    { key:"gk",         label:"General Knowledge",   color:"#d97706", bg:"#fffbeb" },
+    { key:"technical",  label:"Technical",            color:"#26296b", bg:"#ecebf5" },
+    { key:"srAural",    label:"SR & Aural",           color:"#26296b", bg:"#ecebf5" },
+    { key:"gk",         label:"General Knowledge",   color:"#26296b", bg:"#ecebf5" },
     { key:"notes",      label:"Notes & Homework",    color:"#62649a", bg:"#faf6ec" },
     { key:"homework",   label:"For the student",     color:"#e4572e", bg:"#fff5f0" },
   ];
@@ -1804,21 +1820,21 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
       </button>
 
       {/* Student header card */}
-      <div className="card p-5 mb-5" style={{borderTop:`4px solid ${pm.color}`}}>
+      <div className="card p-5 mb-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0"
-              style={{background:gc.bg,color:gc.text}}>{initials}</div>
+              style={{background:"#26296b",color:"#fff",fontFamily:"'Playfair Display',Georgia,serif"}}>{initials}</div>
             <div>
               <h2 className="text-lg font-bold text-slate-800">{student.name}</h2>
-              <p className="text-sm text-slate-400">{student.age ? "Age " + student.age + " · " : ""}{student.grade || student.level || "General"} · {student.lessonDuration}min · {student.lessonsPerWeek==="fortnightly" ? "Fortnightly" : `${student.lessonsPerWeek}× per week`}</p>
+              <p className="text-sm text-slate-400">{student.age ? "Age " + student.age + " · " : ""}{student.grade || student.level || "General"} · {student.lessonDuration}min · {student.lessonsPerWeek==="fortnightly" ? "Fortnightly" : student.lessonsPerWeek ? `${student.lessonsPerWeek}× per week` : ""}</p>
               {student.termGoal && (
-                <p className="text-xs text-teal-600 mt-1 bg-teal-50 px-2 py-1 rounded-lg inline-block">
+                <p className="text-xs mt-1 px-2 py-1 rounded-lg inline-block" style={navyPill}>
                   Goal: {student.termGoal}
                 </p>
               )}
               {studentNorm.startingPhase && studentNorm.startingPhase !== "foundation" && studentNorm.startingPhase !== "exploration" && (
-                <p className="text-xs text-amber-600 mt-1 bg-amber-50 px-2 py-1 rounded-lg inline-block">
+                <p className="text-xs mt-1 px-2 py-1 rounded-lg inline-block" style={navyPill}>
                   Started with me at: {PHASE_META[studentNorm.startingPhase]?.name}
                 </p>
               )}
@@ -1826,8 +1842,8 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
           </div>
           <div className="flex gap-3 flex-wrap">
             {isExamStudent(student) && weeksLeft !== null && (
-              <div className="text-center px-4 py-2 rounded-xl" style={{background: weeksLeft<=4?"#fef2f2": weeksLeft<=8?"#fffbeb":"#f0fdf4"}}>
-                <p className="text-2xl font-black" style={{color:weeksLeft<=4?"#dc2626":weeksLeft<=8?"#d97706":"#16a34a"}}>{weeksLeft}w</p>
+              <div className="text-center px-4 py-2 rounded-xl" style={{background:"#faf6ec"}}>
+                <p className="text-2xl font-black" style={{color:weeksLeft<=4?"#e4572e":"#26296b"}}>{weeksLeft}w</p>
                 <p className="text-xs text-slate-400">to exam</p>
                 <p className="text-[10px] text-slate-400">{fmtShort(student.examDate)}</p>
               </div>
@@ -1847,26 +1863,24 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
         <div className="flex gap-2 mt-4 pt-4 border-t border-slate-100 flex-wrap">
           <button onClick={()=>onEdit(student)} className="btn-ghost text-xs py-1.5 px-3">Edit student</button>
           <button onClick={()=>window.print()} className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1.5">
-            <span>⬇</span> Download PDF
+            Download PDF
           </button>
           {student.paused ? (
             <button onClick={()=>onResume(student)}
-              className="text-xs py-1.5 px-3 rounded-xl border font-semibold transition-all"
-              style={{background:"#f0fdf4",color:"#16a34a",borderColor:"#bbf7d0"}}>
-              ▶ Resume lessons
+              className="btn-ghost text-xs py-1.5 px-3 font-semibold">
+              Resume lessons
             </button>
           ) : (
             <button onClick={()=>onPause(student)}
-              className="text-xs py-1.5 px-3 rounded-xl border font-semibold transition-all"
-              style={{background:"#fffbeb",color:"#d97706",borderColor:"#fde68a"}}>
-              ⏸ Pause lessons
+              className="btn-ghost text-xs py-1.5 px-3 font-semibold">
+              Pause lessons
             </button>
           )}
         </div>
         {student.paused && (
           <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold"
-            style={{background:"#fffbeb",color:"#92400e",border:"1px solid #fde68a"}}>
-            ⏸ Paused since {fmtDate(student.pausedAt)}
+            style={{background:"#fbe3da",color:"#c0431f",border:"1px solid rgba(228,87,46,0.35)"}}>
+            Paused since {fmtDate(student.pausedAt)}
             {student.pauseUndecided
               ? " · Return date TBD"
               : student.pauseUntil
@@ -1881,10 +1895,11 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
 
       {/* This month plan — exam students only */}
       {isExamStudent(student) && currentPlanMonth && (
-        <div className="card p-5 mb-5" style={{borderLeft:`4px solid ${pm.color}`}}>
+        <section className="mb-6">
+        <SecHead title={"This month · " + currentPlanMonth.label}/>
+        <div className="card p-5">
           <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs font-bold uppercase tracking-wide" style={{color:pm.text}}>This month — {currentPlanMonth.label}</span>
-            <span className="text-xs px-2 py-0.5 rounded-full" style={{background:pm.bg,color:pm.text}}>{pm.name}</span>
+            <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={navyPill}>{pm.name}</span>
           </div>
           <p className="text-sm text-slate-700 leading-relaxed mb-4">{currentPlanMonth.focus}</p>
           <div className="flex flex-wrap gap-2">
@@ -1896,21 +1911,22 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
             ))}
           </div>
         </div>
+        </section>
       )}
 
       {/* AI Guide */}
-      <div className="card p-5 mb-5" style={{
-        borderLeft:`4px solid ${guide.status==="urgent"?"#dc2626":guide.status==="warning"?"#d97706":"#16a34a"}`
-      }}>
+      <section className="mb-6">
+      <SecHead title="Teaching guide"/>
+      <div className="card p-5">
         <p className="text-xs font-bold uppercase tracking-wide mb-3"
-          style={{color:guide.status==="urgent"?"#dc2626":guide.status==="warning"?"#d97706":"#16a34a"}}>
-          {guide.status==="urgent"?"⚠ Action needed":guide.status==="warning"?"⚡ Check these":"✓ Looking good"}
+          style={{color:guide.status==="urgent"||guide.status==="warning"?"#e4572e":"#26296b"}}>
+          {guide.status==="urgent"?"Action needed":guide.status==="warning"?"Check these":"✓ Looking good"}
         </p>
         {guide.alerts.length > 0 && (
           <ul className="space-y-1.5 mb-3">
             {guide.alerts.map((a,i)=>(
               <li key={i} className="text-sm text-slate-700 flex gap-2">
-                <span className="text-red-400 shrink-0">•</span>{a}
+                <span className="shrink-0" style={{color:"#e4572e"}}>•</span>{a}
               </li>
             ))}
           </ul>
@@ -1925,6 +1941,7 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
           </ul>
         )}
       </div>
+      </section>
 
       {/* ── Progress Passport ── */}
       {(() => {
@@ -1996,7 +2013,7 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
         );
 
         const PassportStat = ({ label, value, sub, color }) => (
-          <div className="text-center px-3 py-3 rounded-xl" style={{background:"#faf6ec"}}>
+          <div className="text-center px-3 py-3 rounded-xl" style={{background:"#faf6ec",border:"1px solid #efe9d9"}}>
             <p className="text-2xl font-black" style={{color}}>{value}</p>
             <p className="text-xs font-bold text-slate-600 mt-0.5">{label}</p>
             {sub && <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>}
@@ -2010,23 +2027,19 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
             : "All time";
 
         return (
-          <div className="card p-5 mb-5" style={{borderLeft:"4px solid #3b3f8f"}}>
+          <section className="mb-6">
+          <SecHead title="Progress Passport" right={<span className="text-xs font-bold" style={{color:"#e4572e"}}>{totalLogs.length} lessons</span>}/>
+          <div className="card p-5">
             {/* Header */}
             <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-              <div className="flex items-center gap-2">
-                <span style={{fontSize:"18px"}}>📋</span>
-                <span className="text-sm font-bold text-slate-700">Progress Passport</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-500 font-bold uppercase tracking-wide">
-                  {totalLogs.length} lessons
-                </span>
-              </div>
+              <div className="flex items-center gap-2"></div>
               {/* Period selector */}
               <div className="flex gap-1 no-print">
                 {[["month","Month"],["quarter","Quarter"],["all","All time"]].map(([val,label])=>(
                   <button key={val} onClick={()=>setPassportPeriod(val)}
                     className="text-[11px] px-3 py-1 rounded-full border font-semibold transition-all"
                     style={passportPeriod===val
-                      ? {background:"#3b3f8f",color:"white",borderColor:"#3b3f8f"}
+                      ? {background:"#26296b",color:"white",borderColor:"#26296b"}
                       : {background:"white",color:"#7a7ca6",borderColor:"#e9e2d2"}}>
                     {label}
                   </button>
@@ -2047,19 +2060,19 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
                     label="Attendance"
                     value={attendanceRate !== null ? `${attendanceRate}%` : "—"}
                     sub={`${absentLogs.length} absent`}
-                    color={attendanceRate >= 80 ? "#16a34a" : attendanceRate >= 60 ? "#d97706" : "#dc2626"}
+                    color={attendanceRate >= 80 ? "#26296b" : "#e4572e"}
                   />
                   <PassportStat
                     label="Lessons logged"
                     value={totalLogs.length}
                     sub={`${absentLogs.length} absences`}
-                    color="#3b3f8f"
+                    color="#26296b"
                   />
                   <PassportStat
                     label="Lesson streak"
                     value={streak}
                     sub="consecutive weeks"
-                    color="#0891b2"
+                    color="#26296b"
                   />
                 </div>
 
@@ -2069,9 +2082,9 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
                   <div className="space-y-3">
                     {[
                       { label:"Repertoire",       pct:repCov,  color:"#26296b" },
-                      ...(hasTech ? [{ label:"Technical",        pct:techCov, color:"#7c3aed" }] : []),
-                      ...(hasSR ? [{ label:"SR & Aural",       pct:srCov,   color:"#0891b2" }] : []),
-                      ...(hasGK ? [{ label:"General Knowledge",pct:gkCov,   color:"#d97706" }] : []),
+                      ...(hasTech ? [{ label:"Technical",        pct:techCov, color:"#26296b" }] : []),
+                      ...(hasSR ? [{ label:"SR & Aural",       pct:srCov,   color:"#26296b" }] : []),
+                      ...(hasGK ? [{ label:"General Knowledge",pct:gkCov,   color:"#26296b" }] : []),
                     ].map(({ label, pct, color }) => (
                       <div key={label}>
                         <div className="flex justify-between items-center">
@@ -2090,8 +2103,8 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
                     <p className="text-xs font-bold uppercase tracking-wide text-slate-400 mb-3">Repertoire list mentions in logs</p>
                     <div className="flex gap-3 flex-wrap">
                       {[["List A", listAMentions,"#26296b","#ecebf5"],
-                        ["List B", listBMentions,"#7c3aed","#f5f3ff"],
-                        ["List C", listCMentions,"#0891b2","#ecfeff"]].map(([label,count,color,bg])=>(
+                        ["List B", listBMentions,"#26296b","#ecebf5"],
+                        ["List C", listCMentions,"#26296b","#ecebf5"]].map(([label,count,color,bg])=>(
                         <div key={label} className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{background:bg}}>
                           <span className="text-xs font-bold" style={{color}}>{label}</span>
                           <span className="text-xs font-black" style={{color}}>{count}×</span>
@@ -2102,13 +2115,14 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
                 )}
 
                 {/* Parent summary */}
-                <div className="rounded-xl p-4" style={{background:"#f0fdf4",border:"1px solid #bbf7d0"}}>
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-green-600 mb-1">Parent summary</p>
+                <div className="rounded-xl p-4" style={{background:"#faf6ec",border:"1px solid rgba(38,41,107,0.14)"}}>
+                  <p className="text-[10px] font-bold uppercase tracking-wide mb-1" style={{color:"#e4572e"}}>Parent summary</p>
                   <p className="text-sm text-slate-700 leading-relaxed">{summary}</p>
                 </div>
               </>
             )}
           </div>
+          </section>
         );
       })()}
 
@@ -2124,15 +2138,9 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
         const today = todayStr();
 
         return (
-          <div className="card p-5 mb-5" style={{borderLeft:"4px solid #f59e0b"}}>
-            <div className="flex items-center gap-2 mb-4">
-              <span style={{fontSize:"16px"}}>🔄</span>
-              <span className="text-sm font-bold text-slate-700">Makeup Schedule</span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide"
-                style={{background:"#fffbeb",color:"#d97706"}}>
-                {pendingMakeups.length} pending
-              </span>
-            </div>
+          <section className="mb-6">
+          <SecHead title="Makeup schedule" right={<span className="text-xs font-bold" style={{color:"#e4572e"}}>{pendingMakeups.length} pending</span>}/>
+          <div className="card p-5">
             <div className="space-y-3">
               {pendingMakeups.map(log => {
                 const isOverdue = log.makeupDate < today;
@@ -2140,16 +2148,16 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
                 return (
                   <div key={log.id} className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
                     style={{
-                      background: isOverdue ? "#fef2f2" : isToday ? "#f0fdf4" : "#faf6ec",
-                      border: `1px solid ${isOverdue ? "#fecaca" : isToday ? "#bbf7d0" : "#e9e2d2"}`
+                      background: isOverdue ? "#fbe3da" : isToday ? "#ecebf5" : "#faf6ec",
+                      border: `1px solid ${isOverdue ? "rgba(228,87,46,0.35)" : "#e9e2d2"}`
                     }}>
                     <div>
                       <p className="text-xs text-slate-400 mb-0.5">
                         Absent: <span className="font-semibold text-slate-600">{fmtDate(log.date)}</span>
                       </p>
                       <p className="text-sm font-bold"
-                        style={{color: isOverdue ? "#dc2626" : isToday ? "#16a34a" : "#26296b"}}>
-                        {isOverdue ? "⚠ Overdue — " : isToday ? "✓ Today — " : "📅 "}
+                        style={{color: isOverdue ? "#c0431f" : "#26296b"}}>
+                        {isOverdue ? "Overdue — " : isToday ? "Today — " : ""}
                         Makeup: {fmtDate(log.makeupDate)}
                       </p>
                     </div>
@@ -2157,7 +2165,7 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
                       <button
                         onClick={() => onMarkAttended(log)}
                         className="text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
-                        style={{background:"#f0fdf4", color:"#16a34a"}}
+                        style={navyPill}
                         title="Makeup completed — mark as attended">
                         ✓ Done
                       </button>
@@ -2170,14 +2178,12 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
               Click <strong>✓ Done</strong> when the makeup lesson has taken place — it will be recorded as an attended lesson.
             </p>
           </div>
+          </section>
         );
       })()}
 
       {/* Lesson log */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-slate-700">Lesson history</h3>
-        <button onClick={()=>onLog(student)} className="btn-primary text-xs py-2 px-4">+ Log lesson</button>
-      </div>
+      <SecHead title="Lesson history" right={<button onClick={()=>onLog(student)} className="btn-primary text-xs py-2 px-4 no-print">+ Log lesson</button>}/>
 
       {studentLogs.length === 0 ? (
         <div className="card p-10 text-center text-slate-400 text-sm">No lessons logged yet.</div>
@@ -2189,14 +2195,14 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-slate-400 font-mono">{log.monthStr ? MONTH_NAMES[parseInt(log.monthStr.slice(5,7))-1]+" "+log.monthStr.slice(0,4) : fmtDate(log.date)}</span>
                   <span className="text-sm font-semibold text-slate-700">{fmtDate(log.date)}</span>
-                  {log.type==="absent" && <span style={{fontSize:"10px",fontWeight:700,padding:"1px 8px",borderRadius:"99px",background:"#fef2f2",color:"#dc2626"}}>😔 Absent</span>}
-                  {log.type==="makeup" && <span style={{fontSize:"10px",fontWeight:700,padding:"1px 8px",borderRadius:"99px",background:"#f0fdf4",color:"#16a34a"}}>🔄 Makeup</span>}
+                  {log.type==="absent" && <span style={{fontSize:"10px",fontWeight:700,padding:"1px 8px",borderRadius:"99px",...coralPill}}>Absent</span>}
+                  {log.type==="makeup" && <span style={{fontSize:"10px",fontWeight:700,padding:"1px 8px",borderRadius:"99px",...navyPill}}>Makeup</span>}
                 </div>
                 <div className="flex gap-2">
                   {log.type === "absent" && (
                     <button onClick={()=>onMarkAttended(log)}
                       className="text-xs font-bold px-2 py-1 rounded-lg transition-colors"
-                      style={{background:"#f0fdf4",color:"#16a34a"}}
+                      style={navyPill}
                       title="Change this to an attended lesson">
                       ✓ Mark attended
                     </button>
@@ -2224,7 +2230,7 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
       {/* Full plan timeline — exam students only */}
       {isExamStudent(student) && plan.length > 0 && (
         <div className="mt-8" style={{breakBefore:"auto"}}>
-          <h3 className="text-sm font-bold text-slate-700 mb-4">Full plan — {plan.length} months</h3>
+          <SecHead title={"Full plan · " + plan.length + " months"}/>
           <div className="space-y-1.5">
             {plan.map((m,i)=>{
               const pm2 = PHASE_META[m.phase]||PHASE_META.foundation;
@@ -2234,15 +2240,15 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
               return (
                 <div key={i} className="flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all"
                   style={{
-                    background: isCurrent ? pm2.bg : isPast ? "#faf6ec" : "transparent",
-                    border: isCurrent ? `1px solid ${pm2.color}40` : "1px solid transparent",
+                    background: isCurrent ? "#fbe3da" : isPast ? "#faf6ec" : "transparent",
+                    border: isCurrent ? "1px solid rgba(228,87,46,0.35)" : "1px solid transparent",
                     breakInside: "avoid",
                   }}>
                   <span className="text-xs font-bold text-slate-500 w-16 shrink-0">{m.label}</span>
-                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold shrink-0" style={{background:pm2.bg,color:pm2.text}}>{pm2.name}</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold shrink-0" style={navyPill}>{pm2.name}</span>
                   <span className="text-xs text-slate-500 flex-1 truncate">{m.focus}</span>
-                  {isCurrent && <span className="text-xs font-bold shrink-0" style={{color:pm2.color}}>← now</span>}
-                  {hasLog && !isCurrent && <span className="text-xs text-green-500 shrink-0">✓</span>}
+                  {isCurrent && <span className="text-xs font-bold shrink-0" style={{color:"#e4572e"}}>← now</span>}
+                  {hasLog && !isCurrent && <span className="text-xs font-bold shrink-0" style={{color:"#26296b"}}>✓</span>}
                 </div>
               );
             })}
