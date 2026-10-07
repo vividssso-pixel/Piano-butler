@@ -19193,6 +19193,8 @@ function initialMode() {
     const p = new URLSearchParams(location.search);
     if (p.get('teacher') === '1') { localStorage.setItem(MODE_KEY, 'teacher'); return true; }
     if (p.get('teacher') === '0') { localStorage.setItem(MODE_KEY, 'student'); return false; }
+    // A student link (#k=<token>) opens the clean student view and remembers it on this device, like ?teacher=0 does (so "Not me" never drops a child into the teacher view). ?teacher=1 above still wins.
+    if (linkTokenFromHash()) { localStorage.setItem(MODE_KEY, 'student'); return false; }
     const saved = localStorage.getItem(MODE_KEY);
     if (saved === 'student') return false;
     return true; // default: teacher view, until ?teacher=0 or a student link says otherwise
@@ -19447,6 +19449,88 @@ function ToolboxTab({ onOpenTool, onOpenKit, onStudents, onChapter }) {
   );
 }
 
+// ─── Student link (Phase 333): #k=<token> opens the drills as one student ───────────────
+// The teacher's dashboard makes each student a private link: drills.html#k=<token>. The token sits in the URL
+// fragment (so it is never sent to a server or a Referer header). This step only asks the database for the
+// student's first name (rpc pb_student_info, anon key, plain fetch -- no library), shows it with a "Not me"
+// button, and remembers the link on this device. Nothing here runs unless a link is present, so a visitor
+// without one sees exactly the same page as before and no request is made. Print routes never reach App.
+// The anon key is public by design (same one the teacher pages use); the token is the only secret.
+const PB_SUPABASE_URL = 'https://icefqxaccclwasnfzgnp.supabase.co';
+const PB_SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImljZWZxeGFjY2Nsd2FzbmZ6Z25wIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcwNjgzMTgsImV4cCI6MjA5MjY0NDMxOH0.lZ8BO_L8iOtET8RtUuk9trkf9bQbLqR8K6rKEfPtmtQ';
+const LINK_TOKEN_KEY = 'pb_link_token_v1', LINK_NAME_KEY = 'pb_link_name_v1';
+const LINK_TOKEN_RE = /^[A-Za-z0-9_-]{32,64}$/;
+function linkTokenFromHash() {
+  try { const m = /(?:^#|&)k=([^&]*)/.exec(location.hash); return m && LINK_TOKEN_RE.test(m[1]) ? m[1] : null; } catch (e) { return null; }
+}
+function loadStoredLink() {
+  try {
+    const tk = localStorage.getItem(LINK_TOKEN_KEY);
+    return tk && LINK_TOKEN_RE.test(tk) ? { token: tk, name: (localStorage.getItem(LINK_NAME_KEY) || '').slice(0, 40) } : null;
+  } catch (e) { return null; }
+}
+function saveStoredLink(token, name) { try { localStorage.setItem(LINK_TOKEN_KEY, token); localStorage.setItem(LINK_NAME_KEY, name); } catch (e) {} }
+// "Not me" / "Remove": forget this link on this device. (Step B will also push and clear the synced practice data here.)
+function forgetStudentLink() {
+  try { localStorage.removeItem(LINK_TOKEN_KEY); localStorage.removeItem(LINK_NAME_KEY); } catch (e) {}
+  try { if (/(?:^#|&)k=/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+}
+// -> { ok: true, name } | { ok: false, reason: 'invalid' } (no active link has this token) | { ok: false, reason: 'offline' } (could not ask)
+async function fetchStudentInfo(token) {
+  const ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const tm = setTimeout(() => { try { if (ctl) ctl.abort(); } catch (e) {} }, 8000);
+  try {
+    const r = await fetch(PB_SUPABASE_URL + '/rest/v1/rpc/pb_student_info', {
+      method: 'POST',
+      headers: { apikey: PB_SUPABASE_ANON, Authorization: 'Bearer ' + PB_SUPABASE_ANON, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_token: token }),
+      signal: ctl ? ctl.signal : undefined,
+    });
+    if (!r.ok) return { ok: false, reason: 'offline' }; // a server problem is not the student's link being wrong
+    const j = await r.json();
+    if (j && typeof j.name === 'string' && j.name) return { ok: true, name: j.name.slice(0, 40) };
+    return { ok: false, reason: 'invalid' };
+  } catch (e) { return { ok: false, reason: 'offline' }; } finally { clearTimeout(tm); }
+}
+function StudentBanner() {
+  const [link, setLink] = useState(() => { const h = linkTokenFromHash(); if (h) { const old = loadStoredLink(); return { token: h, name: old && old.token === h ? old.name : '' }; } return loadStoredLink(); });
+  const [state, setState] = useState(link ? 'checking' : 'none'); // none | checking | ok | invalid | offline
+  const token = link ? link.token : null;
+  useEffect(() => {
+    if (!token) return;
+    let off = false;
+    fetchStudentInfo(token).then(r => {
+      if (off) return;
+      if (r.ok) { saveStoredLink(token, r.name); setLink({ token, name: r.name }); setState('ok'); }
+      else if (r.reason === 'invalid') setState('invalid'); // a fresh link that is not active is not remembered; one already remembered is kept, in case the teacher resumes it
+      else setState(link && link.name ? 'ok' : 'offline');
+    });
+    return () => { off = true; };
+  }, [token]);
+  if (!link || state === 'none') return null;
+  const name = link.name;
+  if (state === 'checking' && !name) return null;
+  const box = { background: 'var(--surface)', border: '1.5px solid var(--navy-line)', borderRadius: 12, padding: '8px 12px', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, fontSize: 14, color: 'var(--text)' };
+  const small = { padding: '2px 9px', fontSize: 12, flex: '0 0 auto' };
+  if (state === 'invalid') return (
+    <div role="status" style={box}>
+      <span>{t('This link isn’t active. Ask your teacher for a new one. You can keep practicing.', '이 링크는 지금 쓸 수 없어요. 선생님께 새 링크를 부탁해 보세요. 연습은 계속할 수 있어요.')}</span>
+      <button className="chip" style={small} onClick={() => { forgetStudentLink(); setLink(null); setState('none'); }}>{t('Remove', '지우기')}</button>
+    </div>
+  );
+  if (state === 'offline') return (
+    <div role="status" style={{ ...box, color: 'var(--muted)' }}>
+      <span>{t('Couldn’t reach your link just now. You can keep practicing.', '지금은 링크를 확인할 수 없어요. 연습은 계속할 수 있어요.')}</span>
+    </div>
+  );
+  return (
+    <div role="status" style={box}>
+      <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 800, fontSize: 16, minWidth: 0, overflowWrap: 'anywhere' }}>{t('Hi, ' + name + '!', name + ' 님, 안녕하세요!')}</span>
+      <button className="chip" style={small} onClick={() => { forgetStudentLink(); setLink(null); setState('none'); }}>{t('Not me', '내가 아니에요')}</button>
+    </div>
+  );
+}
+
 // URL state: ?drill=<id>&tab=learn|drill&level=<n>&mode=lesson|game&lock=1
 // lock=1 (used by the student share link) hides the drill picker and level/mode controls.
 function readUrlState() {
@@ -19500,7 +19584,7 @@ function App() {
         if (concept) { p.set('tab', st.tab); if (st.tab === 'drill') { p.set('level', level); p.set('mode', st.mode); } }
       }
       if (st.lock) p.set('lock', '1');
-      history.replaceState(null, '', location.pathname + '?' + p.toString());
+      history.replaceState(null, '', location.pathname + '?' + p.toString() + location.hash);
     } catch (e) { /* URL sync is a convenience only */ }
   }, [active.id, st.drill, st.tab, level, st.mode, st.lock, st.view, st.tool, st.kit, st.kn]);
 
@@ -19534,6 +19618,7 @@ function App() {
       {T && findOpen && <FindOverlay onClose={() => setFindOpen(false)} onJump={(id) => { setFindOpen(false); update({ view: 'tools', tool: id, kit: null, ret: 'toolbox' }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/>}
 
       <div className="pb-main" style={{maxWidth:600,margin:'0 auto',padding:'20px 16px 60px'}}>
+        <StudentBanner/>
         {preview && <div style={{background:'#26296b',color:'#fff',borderRadius:10,padding:'8px 12px',marginBottom:12,fontSize:13.5,display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}><span>{t('You’re seeing what a student sees.', '학생에게 보이는 화면이에요.')}</span><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setPreview(false)}>{t('Back to teacher view', '교사 화면으로')}</button></div>}
         {!st.lock && (
           <div style={{display:'flex',gap:6,borderBottom:'1.5px solid var(--navy-line)',marginBottom:16}}>
