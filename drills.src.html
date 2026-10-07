@@ -20381,9 +20381,11 @@ function StudentHome({ link, onOpenChapter, onOpenTool }) {
 // ─── The music map (Phase 352): every chapter on one sheet, as a small mind map ───────────────
 // Sohyun 2026-10-07: "seeing the whole picture is better -- if you see the end before you start, you can see how far you've come",
 // "it must all be on one sheet", and "don't lose the minimalism: too much information blurs what to look at".
-// So: one root ("My music map", chapters done), the 7 stages (PATH_STAGES, the same order as the Start guide and the Lesson
-// Book) branching from it, and each stage's chapters as small chips with a short name and nothing else but their state:
-// navy = done, coral ring = where you are, a coral dot = started. Tapping a chip opens the chapter (the details live there).
+// and then "a classic mind map, branching out round from the middle". So: one centre ("My music map", chapters done), the
+// 7 stages (PATH_STAGES, the same order as the Start guide and the Lesson Book) branching out on curved lines, clockwise from the
+// top right (1-4 on the right, 5-7 on the left), and each stage's chapters as small pills on thinner twigs with a short name
+// and nothing else but their state: navy = done, coral ring = where you are, a coral dot = started. Tapping a pill opens the
+// chapter (the details live there). One SVG drawing that scales to the width, so the whole map is always one picture.
 // Used for Learn, the teacher's Chapters tab and the student's own page.
 const CH_SHORT = {
   'posture-hands': ['Posture', '자세'], 'first-steps': ['Black keys', '검은건반'], 'note-names': ['Note names', '음 이름'],
@@ -20405,8 +20407,31 @@ function chapterSteps(id) {
   return { n, of };
 }
 function chapterState(id) { const s = chapterSteps(id); return { ...s, status: s.n === 0 ? 'new' : s.of && s.n >= s.of ? 'done' : 'started' }; }
-const MM_LINE = 'rgba(38,41,107,0.22)';
+const MM_W = 480, MM_H = 556, MM_C = { x: 240, y: 278 }, MM_R = 44;
+const MM_LEAF_FONT = 15.5, MM_ROW = 31, MM_HEAD = 30, MM_GAP = 14;
+// pill width from the text (measured with the page's own font; corrected once the web font has loaded)
+let mmCtx = null;
+function mmWidth(text) {
+  try { if (!mmCtx) mmCtx = document.createElement('canvas').getContext('2d'); mmCtx.font = '700 ' + MM_LEAF_FONT + "px Inter, 'Pretendard', sans-serif"; return Math.ceil(mmCtx.measureText(text).width) + 24; }
+  catch (e) { return text.length * 9 + 24; }
+}
+// where everything sits: right side = stages 1-4 top to bottom, left side = stages 7, 6, 5 top to bottom (clockwise)
+function mmLayout(stages) {
+  const side = (list, dir) => {
+    const h = list.reduce((a, x) => a + MM_HEAD + x.ids.length * MM_ROW + MM_GAP, -MM_GAP);
+    let y = (MM_H - h) / 2;
+    return list.map(x => {
+      const head = y + MM_HEAD / 2 - 2;
+      const leaves = x.ids.map((id, j) => y + MM_HEAD + j * MM_ROW + MM_ROW / 2);
+      y += MM_HEAD + x.ids.length * MM_ROW + MM_GAP;
+      return { x, dir, head, leaves, nx: MM_C.x + dir * 34 + dir * 34 };
+    });
+  };
+  return side(stages.slice(0, 4), 1).concat(side(stages.slice(4).reverse(), -1));
+}
 function MusicMap({ onOpen, compact }) {
+  const [, setFontTick] = useState(0);
+  useEffect(() => { try { document.fonts && document.fonts.ready.then(() => { mmCtx = null; setFontTick(n => n + 1); }); } catch (e) {} }, []);
   const stages = PATH_STAGES.map((s, i) => {
     const ids = pathStageIds(s);
     return { s, i, ids, st: ids.map(id => chapterState(id).status) };
@@ -20415,47 +20440,60 @@ function MusicMap({ onOpen, compact }) {
   const finished = stages.reduce((a, x) => a + x.st.filter(v => v === 'done').length, 0);
   let last = null; try { last = localStorage.getItem(LAST_CHAPTER_KEY); } catch (e) {}
   const here = last && all.includes(last) && chapterState(last).status !== 'done' ? last : all.find(id => chapterState(id).status !== 'done');
+  const L = mmLayout(stages);
+  const NV = '#26296b', CO = '#e4572e', LINE = 'rgba(38,41,107,0.32)';
+  const key = (e, id) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(id); } };
   return (
     <div data-testid="music-map" className={compact ? '' : 'fade-up'}>
-      {!compact && <PageIntro title={UI_TEACHER ? t('Chapters', '챕터') : t('Learn', '배우기')} text={t('The whole map on one page. Tap a chapter to open it.', '전체 지도가 한 장에 있어요. 챕터를 누르면 열려요.')}/>}
-      <div style={{ background: 'var(--surface)', border: '1.5px solid var(--navy-line)', borderRadius: 18, padding: '16px 14px 14px', boxShadow: '0 4px 18px rgba(38,41,107,0.05)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <span style={{ background: 'var(--navy)', color: '#fff', borderRadius: 999, padding: '7px 14px', fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 800, fontSize: 16 }}>{t('My music map', '나의 음악 지도')}</span>
-          <span data-testid="map-count" style={{ fontSize: 13, fontWeight: 800, color: 'var(--muted)' }}>{t(finished + ' of ' + all.length + ' done', all.length + '개 중 ' + finished + '개 완료')}</span>
-        </div>
-        <div style={{ marginLeft: 18 }}>
-          {stages.map((x, k) => {
-            const full = x.st.every(v => v === 'done'), isHere = x.ids.includes(here), lastStage = k === stages.length - 1;
+      {!compact && <PageIntro title={UI_TEACHER ? t('Chapters', '챕터') : t('Learn', '배우기')} text={t('The whole map in one picture. Tap a chapter to open it.', '전체 지도가 한 장에 있어요. 챕터를 누르면 열려요.')}/>}
+      <div style={{ background: 'var(--surface)', border: '1.5px solid var(--navy-line)', borderRadius: 18, padding: '8px 4px', boxShadow: '0 4px 18px rgba(38,41,107,0.05)' }}>
+        <svg viewBox={'0 0 ' + MM_W + ' ' + MM_H} width="100%" style={{ display: 'block', maxWidth: 620, margin: '0 auto', fontFamily: "Inter, 'Pretendard', sans-serif" }} role="group" aria-label={t('Music map', '음악 지도')}>
+          {/* main branches: thick curves from the centre to each stage */}
+          {L.map(b => {
+            const tx = b.nx, ty = b.head, ang = Math.atan2(ty - MM_C.y, tx - MM_C.x);
+            const sx = MM_C.x + MM_R * Math.cos(ang), sy = MM_C.y + MM_R * Math.sin(ang);
+            return <path key={'m' + b.x.i} d={`M${sx.toFixed(1)} ${sy.toFixed(1)} C${(sx + b.dir * 30).toFixed(1)} ${sy.toFixed(1)} ${(tx - b.dir * 26).toFixed(1)} ${ty.toFixed(1)} ${tx} ${ty.toFixed(1)}`} fill="none" stroke={LINE} strokeWidth="4" strokeLinecap="round"/>;
+          })}
+          {/* twigs: thin curves from each stage to its chapters */}
+          {L.map(b => b.leaves.map((ly, j) => {
+            const x0 = b.nx, y0 = b.head + 10, x1 = b.nx + b.dir * 20;
+            return <path key={'t' + b.x.i + '-' + j} d={`M${x0} ${y0.toFixed(1)} C${x0} ${(ly - 6).toFixed(1)} ${(x0 + b.dir * 4).toFixed(1)} ${ly.toFixed(1)} ${x1} ${ly.toFixed(1)}`} fill="none" stroke={LINE} strokeWidth="1.8" strokeLinecap="round"/>;
+          }))}
+          {/* the centre */}
+          <circle cx={MM_C.x} cy={MM_C.y} r={MM_R} fill={NV}/>
+          <text x={MM_C.x} y={MM_C.y - 12} textAnchor="middle" fontSize="11.5" fontWeight="800" fill="#fff" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>{t('My music map', '나의 음악 지도')}</text>
+          <text data-testid="map-count" x={MM_C.x} y={MM_C.y + 12} textAnchor="middle" fontSize="23" fontWeight="900" fill="#fff">{finished}<tspan fontSize="14" fill="rgba(255,255,255,0.7)">/{all.length}</tspan></text>
+          <text x={MM_C.x} y={MM_C.y + 27} textAnchor="middle" fontSize="10" fontWeight="800" fill="rgba(255,255,255,0.8)">{t('done', '완료')}</text>
+          {/* stages and chapters */}
+          {L.map(b => {
+            const x = b.x, full = x.st.every(v => v === 'done'), isHere = x.ids.includes(here), anchor = b.dir > 0 ? 'start' : 'end';
             return (
-              <div key={x.i} data-map-stage={x.i} style={{ position: 'relative', paddingLeft: 24, paddingTop: 14 }}>
-                {!lastStage && <span aria-hidden="true" style={{ position: 'absolute', left: 0, top: 0, bottom: 0, borderLeft: '2px solid ' + MM_LINE }}/>}
-                <span aria-hidden="true" style={{ position: 'absolute', left: 0, top: 0, width: 22, height: 27, borderLeft: '2px solid ' + MM_LINE, borderBottom: '2px solid ' + MM_LINE, borderBottomLeftRadius: 14 }}/>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                  <span style={{ flex: '0 0 26px', width: 26, height: 26, borderRadius: '50%', boxSizing: 'border-box', background: full ? 'var(--navy)' : '#fff', border: isHere ? '2.5px solid var(--coral)' : '2px solid var(--navy)', color: full ? '#fff' : isHere ? 'var(--coral)' : 'var(--navy)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif', fontWeight: 900, fontSize: 12.5 }}>{full ? '✓' : x.i + 1}</span>
-                  <span style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 800, fontSize: 16.5, color: 'var(--navy)', lineHeight: 1.2 }}>{t(x.s.en[0], x.s.ko[0])}</span>
-                </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, margin: '8px 0 0 35px' }}>
-                  {x.ids.map((id, j) => {
-                    const st = x.st[j], on = id === here, name = CH_SHORT[id] || [(DRILLS.find(d => d.id === id) || {}).label, ''];
-                    return (
-                      <button key={id} onClick={() => onOpen(id)} data-chapter={id} data-status={st} aria-label={t(name[0], name[1] || name[0]) + (st === 'done' ? ' ✓' : '')}
-                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, borderRadius: 999, padding: '5px 11px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', lineHeight: 1.2,
-                          background: st === 'done' ? 'var(--navy)' : '#fff', color: st === 'done' ? '#fff' : 'var(--navy)',
-                          border: on ? '2px solid var(--coral)' : '1.5px solid ' + (st === 'done' ? 'var(--navy)' : 'var(--navy-line)') }}>
-                        {st === 'done' && <span aria-hidden="true">✓</span>}
-                        {st === 'started' && <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--coral)' }}/>}
-                        {t(name[0], name[1] || name[0])}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <g key={'s' + x.i} data-map-stage={x.i}>
+                <circle cx={b.nx} cy={b.head} r="11" fill={full ? NV : '#fff'} stroke={isHere ? CO : NV} strokeWidth={isHere ? 2.6 : 1.8}/>
+                <text x={b.nx} y={b.head + 4.5} textAnchor="middle" fontSize="12" fontWeight="900" fill={full ? '#fff' : isHere ? CO : NV}>{full ? '✓' : x.i + 1}</text>
+                <text x={b.nx + b.dir * 17} y={b.head + 5.5} textAnchor={anchor} fontSize="16.5" fontWeight="800" fill={NV} style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>{t(x.s.en[0], x.s.ko[0])}</text>
+                {x.ids.map((id, j) => {
+                  const st = x.st[j], on = id === here, name = CH_SHORT[id] || [(DRILLS.find(d => d.id === id) || {}).label, ''];
+                  const label = t(name[0], name[1] || name[0]), w = mmWidth(label), ly = b.leaves[j];
+                  const left = b.dir > 0 ? b.nx + 20 : b.nx - 20 - w;
+                  return (
+                    <g key={id} data-chapter={id} data-status={st} role="button" tabIndex="0" aria-label={label + (st === 'done' ? ' ✓' : '')}
+                      onClick={() => onOpen(id)} onKeyDown={(e) => key(e, id)} style={{ cursor: 'pointer' }}>
+                      <rect x={left - 2} y={ly - MM_ROW / 2} width={w + 4} height={MM_ROW} fill="transparent"/>
+                      <rect x={left} y={ly - 12} width={w} height="24" rx="12" fill={st === 'done' ? NV : '#fff'} stroke={on ? CO : st === 'done' ? NV : 'rgba(38,41,107,0.22)'} strokeWidth={on ? 2.4 : 1.4}/>
+                      {st === 'started' && <circle cx={left + 11} cy={ly} r="3.4" fill={CO}/>}
+                      <text x={left + (st === 'started' ? 19 : 12)} y={ly + 5.3} fontSize={MM_LEAF_FONT} fontWeight="700" fill={st === 'done' ? '#fff' : NV}>{label}</text>
+                    </g>
+                  );
+                })}
+              </g>
             );
           })}
-        </div>
-        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'flex-end', marginTop: 14, fontSize: 11.5, fontWeight: 700, color: 'var(--muted)' }}>
+        </svg>
+        <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center', margin: '4px 0 6px', fontSize: 11.5, fontWeight: 700, color: 'var(--muted)' }}>
           <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', background: 'var(--navy)', marginRight: 4, verticalAlign: '-1px' }}/>{t('done', '완료')}</span>
           <span><span style={{ display: 'inline-block', width: 10, height: 10, borderRadius: '50%', border: '2px solid var(--coral)', boxSizing: 'border-box', marginRight: 4, verticalAlign: '-1px' }}/>{t('you are here', '지금 여기')}</span>
+          <span><span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: 'var(--coral)', marginRight: 4, verticalAlign: '0px' }}/>{t('started', '하는 중')}</span>
         </div>
       </div>
     </div>
