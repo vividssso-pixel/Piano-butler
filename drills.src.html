@@ -6116,6 +6116,9 @@ function ChordsLearn({ onStart }) {
         <ExplChords6/>
         <CadencePlayer/>
       </Step>
+      <Step title={t('Four chords, one song', '코드 네 개로 노래 만들기')}>
+        <FourChordSong/>
+      </Step>
     </Lesson>
   );
 }
@@ -14154,6 +14157,130 @@ function FormHero() {
   );
 }
 
+// ─── Phase 359: song shapes (Form chapter) and four chords, one song (Chords chapter) ──────────────
+// From Sohyun's "common song structures" and "ways to start a song" cheat sheets. Song shapes: verse-chorus (ABAB),
+// the 32-bar song (AABA, B = the bridge) and verse / pre-chorus / chorus, played with the chapter's own A, B, C tunes.
+// Four chords: the I-V-vi-IV loop and two other common orders; tap a box to change its chord and make your own.
+const SONG_SHAPES = [
+  { id: 'vc', en: 'Verse-chorus (ABAB)', ko: '벌스-코러스 (ABAB)', blocks: [['A', 'Verse', '벌스', 'A'], ['B', 'Chorus', '코러스', 'B'], ['A', 'Verse', '벌스', 'A'], ['B', 'Chorus', '코러스', 'B']],
+    den: 'The verse tells the story; the chorus is the catchy part everyone sings. They take turns. Most pop and rock songs work like this.',
+    dko: '벌스는 이야기를 들려주고, 코러스는 모두가 따라 부르는 신나는 부분이에요. 둘이 번갈아 나와요. 대부분의 팝·록 노래가 이렇게 생겼어요.' },
+  { id: 'aaba', en: '32-bar song (AABA)', ko: '32마디 노래 (AABA)', blocks: [['A', '8 bars', '8마디', 'A'], ['A', '8 bars', '8마디', 'A'], ['B', 'Bridge', '브리지', 'B'], ['A', '8 bars', '8마디', 'A']],
+    den: 'Four parts of 8 bars = 32 bars. A twice, then the bridge (B) brings something new, then A comes home. Many old songs and jazz standards use it.',
+    dko: '8마디씩 네 부분 = 32마디. A를 두 번, 그다음 브리지(B)가 새로운 것을 보여 주고, 마지막에 A가 돌아와요. 옛날 노래와 재즈 곡에 많아요.' },
+  { id: 'vpc', en: 'Verse, pre-chorus, chorus', ko: '벌스, 프리코러스, 코러스', blocks: [['A', 'Verse', '벌스', 'A'], ['B', 'Pre-chorus', '프리코러스', 'C'], ['C', 'Chorus', '코러스', 'B'], ['A', 'Verse', '벌스', 'A'], ['B', 'Pre-chorus', '프리코러스', 'C'], ['C', 'Chorus', '코러스', 'B']],
+    den: 'The pre-chorus builds up the excitement so the chorus feels like a big arrival. You hear this in a lot of today’s pop and K-pop.',
+    dko: '프리코러스가 기대감을 끌어올려서 코러스가 터지듯 느껴지게 해요. 요즘 팝과 케이팝에서 많이 들려요.' },
+];
+function SongForms() {
+  const [id, setId] = useState('vc');
+  const [on, setOn] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const S = SONG_SHAPES.find(x => x.id === id);
+  function stop() { timers.current.forEach(clearTimeout); timers.current = []; setOn(-1); }
+  function playBlock(i) { stop(); setOn(i); timers.current.push(...playMelody(FORM_MOTIF[S.blocks[i][3]], 132, (k) => { if (k === -1) setOn(-1); })); }
+  function playAll() {
+    stop(); let tms = 0;
+    S.blocks.forEach((b, i) => { timers.current.push(setTimeout(() => { setOn(i); playMelody(FORM_MOTIF[b[3]], 132); }, tms)); tms += FORM_MOTIF_MS; });
+    timers.current.push(setTimeout(() => setOn(-1), tms));
+  }
+  if (BOOK) return (
+    <div className="try-box" style={actBox} data-testid="song-forms">
+      <div style={actTitle}>{t('Song shapes', '노래의 모양')}</div>
+      {SONG_SHAPES.map(x => <div key={x.id} style={{ breakInside: 'avoid', margin: '8px 0' }}>
+        <div style={{ fontWeight: 900, fontSize: 14 }}>{t(x.en, x.ko)}</div>
+        <div style={{ display: 'flex', gap: 5, margin: '4px 0' }}>{x.blocks.map((b, i) => <span key={i} style={{ flex: 1, textAlign: 'center', borderRadius: 7, padding: '4px 2px', background: FORM_COLOR[b[0]], color: '#fff', fontWeight: 900, fontSize: 12 }}>{b[0]}<span style={{ display: 'block', fontSize: 9.5, fontWeight: 700 }}>{t(b[1], b[2])}</span></span>)}</div>
+        <div style={{ fontSize: 12, color: '#4a4d86', lineHeight: 1.4 }}>{t(x.den, x.dko)}</div>
+      </div>)}
+    </div>
+  );
+  return (
+    <div className="try-box" style={actBox} data-testid="song-forms">
+      <div style={actTitle}>{t('Song shapes', '노래의 모양')}</div>
+      <div style={actNote}>{t('Songs are built from sections too. Pick a shape, tap a box to hear that part, or play the whole song.', '노래도 부분들로 짜여 있어요. 모양을 고르고, 상자를 눌러 그 부분을 듣거나, 노래 전체를 들어 봐요.')}</div>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 10, flexWrap: 'wrap' }}>
+        {SONG_SHAPES.map(x => <button key={x.id} data-song={x.id} className={'chip' + (id === x.id ? ' active' : '')} style={{ padding: '4px 11px', fontSize: 13 }} onClick={() => { stop(); setId(x.id); }}>{t(x.en, x.ko)}</button>)}
+      </div>
+      <div data-testid="song-blocks" style={{ display: 'grid', gridTemplateColumns: 'repeat(' + (S.blocks.length > 4 ? 3 : S.blocks.length) + ', minmax(0, 1fr))', gap: 6, margin: '10px 0' }}>
+        {S.blocks.map((b, i) => (
+          <button key={i} data-block={b[0]} onClick={() => playBlock(i)} style={{ minWidth: 0, height: 58, borderRadius: 10, border: 'none', color: '#fff', background: FORM_COLOR[b[0]], cursor: 'pointer', fontFamily: 'inherit', padding: '0 2px',
+            boxShadow: on === i ? '0 0 0 3px rgba(228,87,46,0.45)' : 'none', transform: on === i ? 'translateY(-3px)' : 'none', transition: 'transform .15s, box-shadow .15s' }}>
+            <span style={{ display: 'block', fontFamily: "'Playfair Display', Georgia, serif", fontSize: 20, fontWeight: 900, lineHeight: 1.05 }}>{b[0]}</span>
+            <span style={{ display: 'block', fontSize: 10.5, fontWeight: 800, opacity: 0.95, lineHeight: 1.15, wordBreak: 'keep-all' }}>{t(b[1], b[2])}</span>
+          </button>
+        ))}
+      </div>
+      {id === 'aaba' && <div style={{ textAlign: 'center', fontSize: 12.5, fontWeight: 800, color: 'var(--navy-soft)', margin: '-4px 0 6px' }}>{t('8 + 8 + 8 + 8 = 32 bars', '8 + 8 + 8 + 8 = 32마디')}</div>}
+      <div style={{ textAlign: 'center', margin: '8px 0' }}><button className="ghost-btn" data-testid="song-play" onClick={on >= 0 ? stop : playAll}>{on >= 0 ? t('Stop', '멈추기') : '♪ ' + t('Play the whole song', '노래 전체 듣기')}</button></div>
+      <div style={{ fontSize: 12.5, color: '#4a4d86', background: '#f5f0e4', borderRadius: 8, padding: '6px 9px', lineHeight: 1.5 }}>{t(S.den, S.dko)}</div>
+    </div>
+  );
+}
+
+// Four chords in C major. Notes are diatonic steps (28 = middle C); close voicings so the hands hardly move.
+const FC_CHORDS = {
+  I: { name: 'C', notes: [28, 30, 32], bass: 21, col: '#26296b', ink: '#fff' },
+  ii: { name: 'Dm', notes: [29, 31, 33], bass: 22, col: '#3f9a7e', ink: '#fff' },
+  IV: { name: 'F', notes: [28, 31, 33], bass: 17, col: '#e4572e', ink: '#fff' },
+  V: { name: 'G', notes: [27, 29, 32], bass: 18, col: '#2b8c8c', ink: '#fff' },
+  vi: { name: 'Am', notes: [28, 30, 33], bass: 19, col: '#e8b93a', ink: '#26296b' },
+};
+const FC_ORDER = ['I', 'ii', 'IV', 'V', 'vi'];
+const FC_PRESETS = [['I', 'V', 'vi', 'IV'], ['I', 'vi', 'IV', 'V'], ['vi', 'IV', 'I', 'V']];
+function FourChordSong() {
+  const [slots, setSlots] = useState(FC_PRESETS[0]);
+  const [on, setOn] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  function stop() { timers.current.forEach(clearTimeout); timers.current = []; setOn(-1); }
+  function hear(r) { playChord(FC_CHORDS[r].notes.map(d => ({ d })), 'block'); }
+  function tap(i) { stop(); const nx = FC_ORDER[(FC_ORDER.indexOf(slots[i]) + 1) % FC_ORDER.length]; const c = slots.slice(); c[i] = nx; setSlots(c); hear(nx); }
+  function play() {
+    stop(); const ctx = getAudio(); if (!ctx) return;
+    const beat = 60 / 100, bar = 4 * beat, T0 = ctx.currentTime + 0.15, seq = slots.concat(slots);
+    seq.forEach((r, i) => {
+      const c = FC_CHORDS[r], at = T0 + i * bar;
+      [0, 2].forEach(b => blip(ctx, at + b * beat, ivFreq({ d: c.bass }), beat * 0.9, 0.22, 'triangle'));
+      [1, 3].forEach(b => c.notes.forEach(d => blip(ctx, at + b * beat, ivFreq({ d }), beat * 0.6, 0.11, 'triangle')));
+      timers.current.push(setTimeout(() => setOn(i % 4), Math.max(0, (0.15 + i * bar) * 1000 - 60)));
+    });
+    timers.current.push(setTimeout(() => setOn(-1), (0.15 + seq.length * bar) * 1000));
+  }
+  const same = (p) => p.every((r, i) => r === slots[i]);
+  if (BOOK) return (
+    <div className="try-box" style={actBox} data-testid="four-chords">
+      <div style={actTitle}>{t('Four chords, one song', '코드 네 개로 노래 만들기')}</div>
+      <div style={actNote}>{t('Many pop songs use only four chords, round and round. In C: C, G, Am, F (I, V, vi, IV). Play them in a loop and hum a tune on top. Write your own order in the boxes.', '많은 팝송이 코드 네 개만 계속 돌려요. C장조에서는 C, G, Am, F (I, V, vi, IV). 반복해서 치면서 위에 콧노래를 불러 봐요. 상자에 나만의 순서를 적어 봐요.')}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>{[0, 1, 2, 3].map(i => <div key={i} style={{ height: 54, border: '1.5px solid #d9d3c4', borderRadius: 10 }}/>)}</div>
+    </div>
+  );
+  return (
+    <div className="try-box" style={actBox} data-testid="four-chords">
+      <div style={actTitle}>{t('Four chords, one song', '코드 네 개로 노래 만들기')}</div>
+      <div style={actNote}>{t('Lots of pop songs use just four chords, round and round. Play the loop and hum a tune on top -- that’s one way songs begin. Tap a box to change its chord and make your own order.', '많은 팝송이 코드 네 개만 계속 돌려요. 반복을 틀어 놓고 위에 콧노래를 불러 봐요 -- 노래는 이렇게 시작되기도 해요. 상자를 누르면 코드가 바뀌어요. 나만의 순서를 만들어 봐요.')}</div>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 10, flexWrap: 'wrap' }}>
+        {FC_PRESETS.map((p, k) => <button key={k} data-preset={p.join('-')} className={'chip' + (same(p) ? ' active' : '')} style={{ padding: '4px 11px', fontSize: 13 }} onClick={() => { stop(); setSlots(p); }}>{p.join('–')}</button>)}
+      </div>
+      <div data-testid="four-slots" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }}>
+        {slots.map((r, i) => { const c = FC_CHORDS[r]; return (
+          <button key={i} data-slot-chord={r} onClick={() => tap(i)} style={{ height: 64, borderRadius: 12, border: 'none', background: c.col, color: c.ink, cursor: 'pointer', fontFamily: 'inherit', padding: 0,
+            boxShadow: on === i ? '0 0 0 3px rgba(228,87,46,0.45)' : 'none', transform: on === i ? 'translateY(-3px)' : 'none', transition: 'transform .15s, box-shadow .15s, background .15s' }}>
+            <span style={{ display: 'block', fontFamily: "'Playfair Display', Georgia, serif", fontSize: 24, fontWeight: 900, lineHeight: 1.05 }}>{c.name}</span>
+            <span style={{ display: 'block', fontSize: 12, fontWeight: 800, opacity: 0.9 }}>{r}</span>
+          </button>
+        ); })}
+      </div>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 10 }}>
+        <button className="primary-btn" data-testid="four-play" style={{ width: 'auto', padding: '8px 18px', fontSize: 14 }} onClick={on >= 0 ? stop : play}>{on >= 0 ? t('Stop', '멈추기') : t('Play the loop', '반복 듣기')}</button>
+      </div>
+      <div style={{ fontSize: 12.5, color: '#4a4d86', background: '#f5f0e4', borderRadius: 8, padding: '6px 9px', lineHeight: 1.5, marginTop: 10 }}>
+        {t('Other ways to start a song: a tune you hum, a beat you tap, a sound you like, or a few words you want to sing.', '노래를 시작하는 다른 방법: 흥얼거린 선율, 두드린 박자, 마음에 드는 소리, 부르고 싶은 몇 마디 말.')}
+      </div>
+    </div>
+  );
+}
+
 function FormLearn({ onStart }) {
   return (
     <Lesson id="form" title={t('How a piece is put together', '곡은 어떻게 짜여 있을까요')} intro={t('Composers organize music into sections, often labeled with letters like A and B. This chapter looks at the three most common shapes: binary, ternary, and rondo.', '작곡가는 음악을 A, B 같은 글자로 이름 붙인 여러 부분으로 짜요. 이 챕터에서는 가장 흔한 세 가지 모양인 두 부분(binary), 세 부분(ternary), 론도(rondo)를 살펴봐요.')} onStart={onStart}>
@@ -14171,6 +14298,9 @@ function FormLearn({ onStart }) {
       </Step>
       <Step title={t('Two sections, or three?', '두 부분일까요, 세 부분일까요?')}>
         <BinaryTernarySpot/>
+      </Step>
+      <Step title={t('Song shapes', '노래의 모양')}>
+        <SongForms/>
       </Step>
     </Lesson>
   );
