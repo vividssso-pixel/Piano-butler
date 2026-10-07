@@ -215,7 +215,7 @@
       </div>
     </div>
 
-    <footer>Plays a simple piano sound and follows the written notes in order; repeat signs are not played twice yet. On an iPhone or iPad, turn the silent switch off to hear it. For lessons and practice &mdash; use scores you are free to use (for example public-domain editions). Score drawing by <a href="https://opensheetmusicdisplay.org" rel="noopener" style="color:inherit">OpenSheetMusicDisplay</a>.</footer>
+    <footer>Plays a simple piano sound and follows the written notes in order; switch on &ldquo;Play repeats&rdquo; (shown when a score has repeat signs) to hear repeats and endings as written. On an iPhone or iPad, turn the silent switch off to hear it. For lessons and practice &mdash; use scores you are free to use (for example public-domain editions). Score drawing by <a href="https://opensheetmusicdisplay.org" rel="noopener" style="color:inherit">OpenSheetMusicDisplay</a>.</footer>
   </div>
 
   <div class="dock" id="dock">
@@ -231,6 +231,7 @@
         <button class="chip" id="loop" type="button">Loop</button>
         <button class="chip" id="metro" type="button">Metronome</button>
         <button class="chip" id="countin" type="button">Count-in</button>
+        <button class="chip" id="repeats" type="button" style="display:none" title="Play the repeat signs and endings as written">Play repeats</button>
         <span class="sp"></span>
         <div class="tempo">
           <span>Tempo</span>
@@ -358,7 +359,7 @@
 
   function extractAll() {
     var sheet = osmd.Sheet, src = sheet.SourceMeasures;
-    S.measures = []; S.events = []; S.steps = [];
+    S.measures = []; S.events = []; S.steps = []; S.perfSegs = [];
 
     src.forEach(function (m, i) {
       var num = m.ActiveTimeSignature ? m.ActiveTimeSignature.Numerator : 4;
@@ -383,6 +384,9 @@
       raw++;
       var q = it.currentTimeStamp.RealValue * 4;
       var mi = it.CurrentMeasureIndex;
+      // performed order (repeats and endings unfolded): consecutive bars form one segment, a jump starts a new one
+      var ps = S.perfSegs[S.perfSegs.length - 1];
+      if (!ps || q <= prevQ + 1e-9 && raw > 0 || mi > ps.b + 1) S.perfSegs.push({ a: mi, b: mi }); else if (mi > ps.b) ps.b = mi;
       // The cursor follows repeat signs, so a repeated section comes round twice (the written time goes backwards).
       // The Music Lab plays the score as written, each bar once: skip the second pass until new music begins.
       if (raw > 0 && q <= prevQ + 1e-9) skipping = true;
@@ -609,6 +613,7 @@
       extractAll();
       S.sel = null; S.pending = null; S.stepIdx = 0;
       renderMeta();
+      $('repeats').style.display = (S.perfSegs && S.perfSegs.length > 1) ? '' : 'none';
       $('tools').classList.add('show');
       $('dock').classList.add('show');
       S.loaded = true;
@@ -782,13 +787,30 @@
   // ---------- playback engine (look-ahead scheduler) ----------
   var playing = false, paused = false;
   var P = null; // playback state
-  var loopOn = false, metroOn = false, countInOn = false;
+  var loopOn = false, metroOn = false, countInOn = false, repeatsOn = false;
   var timer = null, raf = null;
 
   function rangeQ() {
     var a = S.sel ? S.sel.a : 0, b = S.sel ? S.sel.b : S.measures.length - 1;
     var ma = S.measures[a], mb = S.measures[b];
     return { a: a, b: b, startQ: ma.startQ, endQ: mb.startQ + mb.lenQ };
+  }
+  // The pieces of the score to play, in order. Normally just the chosen bars once; with "Play repeats" on, the
+  // repeat signs and first/second endings are followed (clipped to the chosen bars).
+  function playSegs(rg) {
+    var whole = [{ startQ: rg.startQ, endQ: rg.endQ }];
+    if (!repeatsOn || !S.perfSegs || S.perfSegs.length < 2) return whole;
+    var out = [];
+    for (var k = 0; k < S.perfSegs.length; k++) {
+      var sg = S.perfSegs[k], a = Math.max(sg.a, rg.a), b = Math.min(sg.b, rg.b);
+      if (a <= b) {
+        var ma = S.measures[a], mb = S.measures[b];
+        out.push({ startQ: ma.startQ, endQ: mb.startQ + mb.lenQ });
+      }
+      // the chosen bars end inside this piece, so the repeat jump after it is never reached
+      if (sg.b > rg.b) break;
+    }
+    return out.length ? out : whole;
   }
   function spq() { return 60 / (S.bpmWritten * (parseInt($('tempo').value, 10) / 100)); }
 
@@ -811,18 +833,20 @@
     return out;
   }
 
-  function startPlayback(fromQOverride) {
+  function startPlayback(fromQOverride, segIdx) {
     if (!S.loaded) return;
     ensureAudio();
     if (master) { try { master.disconnect(); } catch (e) {} }
     master = newMaster();
     var rg = rangeQ();
     var startQ = (fromQOverride !== undefined) ? fromQOverride : rg.startQ;
+    var segs = playSegs(rg), si = Math.min(segIdx || 0, segs.length - 1);
+    if (fromQOverride === undefined) startQ = segs[0].startQ;
     var pre = (countInOn && fromQOverride === undefined) ? countInBeats(startQ, rg) : [];
     var anchorQ = pre.length ? pre[0].q : startQ;
     P = {
-      rg: rg, anchorQ: anchorQ, anchorT: ctx.currentTime + 0.08, spq: spq(),
-      ei: firstEventIdx(startQ), bi: 0, beats: pre.concat(buildBeats(startQ, rg.endQ)),
+      rg: rg, segs: segs, si: si, segEnd: segs[si].endQ, anchorQ: anchorQ, anchorT: ctx.currentTime + 0.08, spq: spq(),
+      ei: firstEventIdx(startQ), bi: 0, beats: pre.concat(buildBeats(startQ, segs[si].endQ)),
       startQ: startQ, passes: 0, countIn: pre.length > 0
     };
     playing = true; paused = false;
@@ -840,7 +864,7 @@
 
   function schedule() {
     if (!playing || !P) return;
-    var horizon = ctx.currentTime + 0.14, end = P.rg.endQ;
+    var horizon = ctx.currentTime + 0.14, end = P.segEnd;
     function tOf(q) { return P.anchorT + (q - P.anchorQ) * P.spq; }
 
     while (P.ei < S.events.length) {
@@ -861,11 +885,14 @@
     var endT = tOf(end);
     var evDone = P.ei >= S.events.length || S.events[P.ei].startQ >= end - 1e-6;
     if (evDone && P.bi >= P.beats.length && endT <= horizon) {
-      if (loopOn) {
-        // wrap gaplessly: the next pass starts exactly where this one ends
-        P.passes++;
-        P.anchorQ = P.rg.startQ; P.anchorT = Math.max(endT, ctx.currentTime); P.startQ = P.rg.startQ; P.countIn = false;
-        P.ei = firstEventIdx(P.rg.startQ); P.beats = buildBeats(P.rg.startQ, P.rg.endQ); P.bi = 0;
+      var nextSeg = (P.si + 1 < P.segs.length) ? P.si + 1 : (loopOn ? 0 : -1);
+      if (nextSeg >= 0) {
+        // continue gaplessly: the next piece (a repeat, an ending, or the loop's start) begins exactly where this one ends
+        if (nextSeg === 0) P.passes++;
+        var sg = P.segs[nextSeg];
+        P.si = nextSeg; P.segEnd = sg.endQ;
+        P.anchorQ = sg.startQ; P.anchorT = Math.max(endT, ctx.currentTime); P.startQ = sg.startQ; P.countIn = false;
+        P.ei = firstEventIdx(sg.startQ); P.beats = buildBeats(sg.startQ, sg.endQ); P.bi = 0;
       } else if (ctx.currentTime >= endT) {
         stopPlayback(false, true);
       }
@@ -886,7 +913,7 @@
       for (var i = 0; i < dots.length; i++) dots[i].classList.toggle('on', i === idx);
       renderNames([]);
     } else {
-      var qq = Math.min(q, rg.endQ - 1e-4);
+      var qq = Math.min(q, P.segEnd - 1e-4);
       setNow(qq, true);
       var si = stepAtQ(qq);
       if (si !== lastStep) { placeCursorAtStep(si); S.stepIdx = si; lastStep = si; }
@@ -896,7 +923,7 @@
 
   function pausePlayback() {
     if (!playing) return;
-    P.pausedQ = Math.max(P.startQ, Math.min(curQ(), P.rg.endQ - 0.01));
+    P.pausedQ = Math.max(P.startQ, Math.min(curQ(), P.segEnd - 0.01)); P.pausedSeg = P.si;
     playing = false; paused = true;
     clearInterval(timer); cancelAnimationFrame(raf);
     try { master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.02); } catch (e) {}
@@ -904,8 +931,8 @@
   }
   function resumePlayback() {
     if (!paused || !P) return;
-    var q = P.pausedQ, rg = P.rg;
-    startPlayback(q);
+    var q = P.pausedQ, rg = P.rg, sgI = P.pausedSeg || 0;
+    startPlayback(q, sgI);
     P.rg = rg;
   }
   function stopPlayback(silentReset, natural) {
@@ -983,6 +1010,7 @@
   function toggle(id, get, set) { $(id).addEventListener('click', function () { set(!get()); $(id).classList.toggle('on', get()); }); }
   toggle('loop', function () { return loopOn; }, function (v) { loopOn = v; });
   toggle('metro', function () { return metroOn; }, function (v) { metroOn = v; });
+  toggle('repeats', function () { return repeatsOn; }, function (v) { repeatsOn = v; if (playing || paused) restartAtRange(); });
   toggle('countin', function () { return countInOn; }, function (v) { countInOn = v; });
   $('tempo').addEventListener('input', updateTempoLabel);
 
@@ -991,7 +1019,7 @@
       S.nameMode = b.getAttribute('data-nm');
       Array.prototype.forEach.call(document.querySelectorAll('[data-nm]'), function (x) { x.classList.toggle('on', x === b); });
       drawNames();
-      if (S.loaded) { if (playing && P) setNow(Math.min(curQ(), P.rg.endQ - 1e-4), true, true); else setNow(S.steps[S.stepIdx] ? S.steps[S.stepIdx].q : 0, false, true); }
+      if (S.loaded) { if (playing && P) setNow(Math.min(curQ(), P.segEnd - 1e-4), true, true); else setNow(S.steps[S.stepIdx] ? S.steps[S.stepIdx].q : 0, false, true); }
     });
   });
   // Name rows need room between systems, otherwise the row below one system runs into the row above the next.
