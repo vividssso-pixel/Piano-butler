@@ -316,13 +316,8 @@ function generateGuide(student, logs, currentMonthIdx, plan) {
   // ── Check: missing sections ──
   const last2 = recentLogs.slice(0,2);
   const noTech  = last2.length >= 2 && last2.every(l => !l.technical?.trim());
-  const noSR    = last2.length >= 2 && last2.every(l => !l.srAural?.trim());
-  const noGK    = recentLogs.slice(0,3).every(l => !l.gk?.trim()) && recentLogs.length >= 3;
 
   if (noTech)  { alerts.push("Technical work hasn't been recorded for 2+ weeks."); status="warning"; }
-  if (noSR)    { alerts.push("Sight-reading & Aural missing for 2+ weeks."); status="warning"; }
-  if (noGK && (phase === "consolidation" || phase === "polish" || phase === "exam"))
-               { alerts.push("General Knowledge not recorded — important at this stage."); status="warning"; }
 
   // ── Check: exam-specific urgency ──
   if (isExamStudent(student)) {
@@ -960,6 +955,7 @@ function LogModal({ student, existingLog, currentMonth, lastLog, onSave, onClose
   const [f, setF] = useState(existingLog ?? blank);
   const [lists, setLists] = useState(() => { const src = existingLog ?? blank; return { rep: parseItems(src.repertoire, true), tech: parseItems(src.technical), sr: parseItems(src.srAural), gk: parseItems(src.gk), hw: parseItems(src.homework, false, true) }; });
   const setList = (k) => (items) => setLists(p => ({ ...p, [k]: items }));
+  const [legacy] = useState(() => ({ sr: !!((existingLog?.srAural || "").trim()), gk: !!((existingLog?.gk || "").trim()) }));
   const save = () => onSave({ ...f, repertoire: joinItems(lists.rep, true), technical: joinItems(lists.tech), srAural: joinItems(lists.sr), gk: joinItems(lists.gk), homework: joinItems(lists.hw) });
   const [copied, setCopied] = useState(false);
   const set = (k,v) => setF(p=>({...p,[k]:v}));
@@ -978,16 +974,6 @@ function LogModal({ student, existingLog, currentMonth, lastLog, onSave, onClose
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
-  };
-
-  // "From repertoire": copy the piece names (no ratings) into "For the student"; the notes box and ratings stay private
-  const fromRepertoire = () => {
-    const base = lists.hw.filter(x => x.t.trim());
-    const have = new Set(base.map(x => x.t.trim().toLowerCase()));
-    const add = lists.rep.map(x => x.t.trim()).filter(t => t && !have.has(t.toLowerCase()));
-    if (!add.length) return;
-    const next = [...base, ...add.map(t => ({ t, r: "" }))].slice(0, 12);
-    setList("hw")(next);
   };
 
   const lastHint = !existingLog ? ((lastLog?.homework || "").trim() || (lastLog?.notes || "").trim()) : "";
@@ -1039,17 +1025,16 @@ function LogModal({ student, existingLog, currentMonth, lastLog, onSave, onClose
         <div className="p-5 space-y-5 max-h-[60vh] overflow-y-auto">
           <ListField testid="list-rep" label="Repertoire" color="#26296b" bg="#ecebf5" items={lists.rep} onChange={setList("rep")} rating addLabel="Add piece"
             placeholder="e.g. Minuet in G, bars 1–8, hands together"
-            hint="One piece per row. Tap the circle to rate it: red needs work, yellow progressing, green solid."/>
+            hint="One piece per row. The names show on the student's Today page as “Pieces you're working on” (if they have a student link). The red / yellow / green circle is for you only: tap it to rate, red needs work, yellow progressing, green solid."/>
           <ListField testid="list-tech" label="Technical work" color="#7c3aed" bg="#f5f3ff" items={lists.tech} onChange={setList("tech")} placeholder="e.g. C major scale, 2 octaves"/>
-          <ListField testid="list-sr" label="Sight-reading & aural" color="#0891b2" bg="#ecfeff" items={lists.sr} onChange={setList("sr")} placeholder="e.g. SR p.14, intervals up to a 6th"/>
-          <ListField testid="list-gk" label="General knowledge" color="#d97706" bg="#fffbeb" items={lists.gk} onChange={setList("gk")} placeholder="e.g. Terms: andante, legato"/>
+          {legacy.sr && <ListField testid="list-sr" label="Sight-reading & aural" color="#0891b2" bg="#ecfeff" items={lists.sr} onChange={setList("sr")} placeholder="e.g. SR p.14, intervals up to a 6th"/>}
+          {legacy.gk && <ListField testid="list-gk" label="General knowledge" color="#d97706" bg="#fffbeb" items={lists.gk} onChange={setList("gk")} placeholder="e.g. Terms: andante, legato"/>}
 
-          {/* For the student: the only text that appears on the student's Today page */}
+          {/* For the student: this week's homework, shown on the student's Today page (the Repertoire names are shown there too, without ratings) */}
           <ListField testid="list-hw" label="For the student" color="#e4572e" bg="#fff5f0" items={lists.hw} onChange={setList("hw")} max={12} addLabel="Add" links={DRILL_LINKS}
             placeholder="e.g. Minuet in G, bars 1–8, slowly"
-            hint="Shows on the student's Today page when they have a student link. A chapter or activity gets an Open button. Your notes below stay private."
-            action={<button type="button" onClick={fromRepertoire} disabled={!lists.rep.some(x => x.t.trim())}
-              style={{ fontSize: "10px", fontWeight: 700, padding: "3px 10px", borderRadius: "99px", cursor: "pointer", border: "1px solid #e9e2d2", background: "white", color: "#62649a", opacity: lists.rep.some(x => x.t.trim()) ? 1 : 0.45 }}>+ From repertoire</button>}/>
+            hint="This week's homework. Shows on the student's Today page when they have a student link. A chapter or activity gets an Open button. Your notes below stay private."
+/>
 
           {/* Private notes */}
           <div>
@@ -1068,8 +1053,8 @@ function LogModal({ student, existingLog, currentMonth, lastLog, onSave, onClose
               id="log-notes"
               value={f.notes}
               onChange={e=>set("notes",e.target.value)}
-              rows={2}
-              placeholder="e.g. Parents updated re: exam. Sick last week."
+              rows={3}
+              placeholder="e.g. Sight-reading p.14, hesitant on bar 5. Terms: andante, legato. Parents updated re: exam."
               className="input text-sm"
               style={{background:"#faf6ec",borderColor:"transparent"}}
               onFocus={e=>e.target.style.borderColor="#62649a"}
@@ -1450,7 +1435,7 @@ function StudentLinkPanel({ student }) {
           </span>
         )}
       </div>
-      <p className="text-xs text-slate-500 mb-3">A private link that opens the drills as {row ? row.display_name : (cleanName || "this student")} and with a Today page: your homework and a daily practice check.</p>
+      <p className="text-xs text-slate-500 mb-3">A private link that opens the drills as {row ? row.display_name : (cleanName || "this student")} and with a Today page: your homework, the pieces they are working on, and a daily practice check.</p>
 
       {row === undefined && <p className="text-xs text-slate-400">Loading…</p>}
 
