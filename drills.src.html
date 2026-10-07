@@ -6087,6 +6087,161 @@ function ChordsHero() {
   );
 }
 
+// ─── Phase 360: arpeggios (Chords), the eight elements of music (Styles), ppp and fff (Dynamics) ────
+// From Sohyun's "elements of music" and "dynamics" cheat sheets, plus arpeggios (scales' partner in technical work).
+
+// Arpeggios: a chord one note at a time, two octaves up and back down. The six white-key triads all share one fingering:
+// right hand 1 2 3 1 2 3 5, left hand 5 4 2 1 4 2 1 (the thumb passes under / the 4th finger crosses over at each octave).
+const ARP_KEYS = [
+  { id: 'C', root: 48, q: 'M' }, { id: 'F', root: 53, q: 'M' }, { id: 'G', root: 55, q: 'M' },
+  { id: 'Am', root: 57, q: 'm' }, { id: 'Dm', root: 50, q: 'm' }, { id: 'Em', root: 52, q: 'm' },
+];
+const ARP_FINGERS = { RH: [1, 2, 3, 1, 2, 3, 5], LH: [5, 4, 2, 1, 4, 2, 1] };
+const ARP_WHITE = [0, 2, 4, 5, 7, 9, 11];
+function arpNotes(k) { const third = k.q === 'M' ? 4 : 3; return [0, third, 7, 12, 12 + third, 19, 24].map(x => k.root + x); }
+function ArpKeys({ notes, fingers, on }) {
+  const lo = notes[0] - (ARP_WHITE.includes(notes[0] % 12) ? 0 : 1), hi = notes[notes.length - 1];
+  const whites = []; for (let m = lo; m <= hi; m++) if (ARP_WHITE.includes(m % 12)) whites.push(m);
+  const W = 22, H = 84, idxOf = (m) => whites.indexOf(m);
+  const blacks = []; for (let m = lo; m <= hi; m++) if (!ARP_WHITE.includes(m % 12)) blacks.push(m);
+  const at = (m) => { const i = notes.indexOf(m); return i; };
+  return (
+    <svg viewBox={'-2 -2 ' + (whites.length * W + 4) + ' ' + (H + 4)} width="100%" style={{ display: 'block', maxWidth: 460, margin: '0 auto' }} aria-hidden="true">
+      {whites.map((m, i) => { const k = at(m), lit = k >= 0 && on === k; return (
+        <g key={m}>
+          <rect x={i * W} y="0" width={W} height={H} rx="3" fill={lit ? '#e4572e' : k >= 0 ? '#fbe3da' : '#fff'} stroke="rgba(38,41,107,0.45)" strokeWidth="1.2"/>
+          {k >= 0 && <text x={i * W + W / 2} y={H - 9} textAnchor="middle" fontSize="12" fontWeight="900" fill={lit ? '#fff' : '#c0431f'}>{fingers[k]}</text>}
+        </g>
+      ); })}
+      {blacks.map(m => { const i = idxOf(m - 1); return <rect key={m} x={(i + 1) * W - 7} y="0" width="14" height="52" rx="2" fill="#26296b"/>; })}
+    </svg>
+  );
+}
+function ArpeggioTool() {
+  const [key, setKey] = useState('C');
+  const [hand, setHand] = useState('RH');
+  const [on, setOn] = useState(-1);
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  const K = ARP_KEYS.find(x => x.id === key), base = arpNotes(K), notes = hand === 'LH' ? base.map(m => m - 12) : base, fingers = ARP_FINGERS[hand];
+  function play(ns) {
+    timers.current.forEach(clearTimeout); timers.current = []; setOn(-1);
+    const ctx = getAudio(); if (!ctx) return;
+    const seq = [...ns.map((m, i) => i), ...ns.map((m, i) => i).reverse().slice(1)], step = 0.26, t0 = ctx.currentTime + 0.1;
+    seq.forEach((i, j) => { blip(ctx, t0 + j * step, 440 * Math.pow(2, (ns[i] - 69) / 12), step * 1.1, 0.16, 'triangle'); timers.current.push(setTimeout(() => setOn(i), (0.1 + j * step) * 1000)); });
+    timers.current.push(setTimeout(() => setOn(-1), (0.1 + seq.length * step) * 1000 + 120));
+  }
+  if (BOOK) return (
+    <div className="try-box" style={actBox} data-testid="arpeggios">
+      <div style={actTitle}>{t('Arpeggios', '아르페지오')}</div>
+      <p style={actNote}>{t('An arpeggio is a chord played one note at a time, up and back down. For C, F, G, A minor, D minor and E minor the fingers are the same: right hand 1 2 3 1 2 3 5, left hand 5 4 2 1 4 2 1.', '아르페지오는 화음을 한 음씩 차례로, 올라갔다 내려오며 치는 거예요. C, F, G, A단조, D단조, E단조는 손가락 번호가 모두 같아요: 오른손 1 2 3 1 2 3 5, 왼손 5 4 2 1 4 2 1.')}</p>
+      <ArpKeys notes={arpNotes(ARP_KEYS[0])} fingers={ARP_FINGERS.RH} on={-1}/>
+    </div>
+  );
+  return (
+    <div className="try-box" style={actBox} data-testid="arpeggios">
+      <div style={actTitle}>{t('Arpeggios', '아르페지오')}</div>
+      <p style={actNote}>{t('An arpeggio is a chord played one note at a time, up two octaves and back down. Pick a chord and a hand; the numbers are the fingers.', '아르페지오는 화음을 한 음씩 차례로, 두 옥타브 올라갔다 내려오며 치는 거예요. 화음과 손을 고르세요. 숫자는 손가락 번호예요.')}</p>
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 6 }}>
+        {ARP_KEYS.map(x => <button key={x.id} data-arp={x.id} className={'chip' + (key === x.id ? ' active' : '')} style={{ padding: '4px 11px', fontSize: 14, fontWeight: 900 }} onClick={() => { setKey(x.id); const b = arpNotes(x); play(hand === 'LH' ? b.map(m => m - 12) : b); }}>{x.id}</button>)}
+      </div>
+      <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 8 }}>
+        {['RH', 'LH'].map(h => <button key={h} data-arp-hand={h} className={'chip' + (hand === h ? ' active' : '')} style={{ padding: '3px 12px', fontSize: 13 }} onClick={() => { setHand(h); setOn(-1); }}>{h === 'RH' ? t('Right hand', '오른손') : t('Left hand', '왼손')}</button>)}
+      </div>
+      <ArpKeys notes={notes} fingers={fingers} on={on}/>
+      <div data-testid="arp-fingers" style={{ textAlign: 'center', fontWeight: 900, fontSize: 18, letterSpacing: 3, color: 'var(--navy)', margin: '8px 0 2px' }}>{fingers.join(' ')}</div>
+      <div style={{ fontSize: 13, color: '#4a4d86', textAlign: 'center', lineHeight: 1.45, maxWidth: 420, margin: '0 auto' }}>
+        {hand === 'RH' ? t('Going up, the thumb tucks under after finger 3. Coming down, finger 3 crosses over the thumb.', '올라갈 때는 3번 손가락 다음에 엄지가 밑으로 들어가요. 내려올 때는 3번 손가락이 엄지 위로 넘어가요.')
+          : t('Going up, finger 4 crosses over the thumb. Coming down, the thumb tucks under after finger 4.', '올라갈 때는 4번 손가락이 엄지 위로 넘어가요. 내려올 때는 4번 손가락 다음에 엄지가 밑으로 들어가요.')}
+      </div>
+      <div style={{ textAlign: 'center', marginTop: 10 }}><button className="ghost-btn" data-testid="arp-play" onClick={() => play(notes)}>{t('♪ Play up and down', '♪ 올라갔다 내려오기')}</button></div>
+    </div>
+  );
+}
+
+// The eight elements of music: one card with all eight; tap one to hear it and see which chapter teaches it.
+const ELEMENTS = [
+  { id: 'pitch', en: 'Pitch', ko: '음높이', den: 'How high or low a sound is.', dko: '소리가 얼마나 높은지, 낮은지.', ch: 'pitch-range' },
+  { id: 'rhythm', en: 'Rhythm', ko: '리듬', den: 'The pattern of long and short sounds and silences.', dko: '길고 짧은 소리와 쉼의 무늬.', ch: 'rhythm' },
+  { id: 'melody', en: 'Melody', ko: '선율', den: 'Notes one after another that make a tune.', dko: '음이 하나씩 이어져 만드는 노래.', ch: 'melody' },
+  { id: 'harmony', en: 'Harmony', ko: '화성', den: 'Two or more notes sounding together.', dko: '두 개 이상의 음이 함께 울리는 것.', ch: 'chords' },
+  { id: 'dynamics', en: 'Dynamics', ko: '셈여림', den: 'How loud or soft the music is.', dko: '음악이 얼마나 세고 여린지.', ch: 'dynamics' },
+  { id: 'timbre', en: 'Timbre', ko: '음색', den: 'The colour of a sound: why a flute and a piano playing the same note still sound different.', dko: '소리의 색깔: 플루트와 피아노가 같은 음을 쳐도 다르게 들리는 이유.', ch: null },
+  { id: 'texture', en: 'Texture', ko: '텍스처', den: 'How many layers of sound you hear at once.', dko: '한 번에 몇 겹의 소리가 들리는지.', ch: null },
+  { id: 'form', en: 'Form', ko: '형식', den: 'How a piece is put together from sections: A, B, A ...', dko: '곡이 부분들로 어떻게 짜였는지: A, B, A …', ch: 'form' },
+];
+let OPEN_CH = null; // set by App: open another chapter
+function ElemIcon({ id, color }) {
+  const s = { fill: 'none', stroke: color, strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' };
+  return (
+    <svg viewBox="0 0 40 28" width="40" height="28" aria-hidden="true">
+      {id === 'pitch' && <><circle cx="10" cy="21" r="3.2" fill={color}/><circle cx="30" cy="7" r="3.2" fill={color}/><path d="M14 18 L26 10" {...s}/></>}
+      {id === 'rhythm' && <><rect x="4" y="12" width="12" height="5" rx="2" fill={color}/><rect x="19" y="12" width="5" height="5" rx="2" fill={color}/><rect x="27" y="12" width="5" height="5" rx="2" fill={color}/><rect x="35" y="12" width="3" height="5" rx="1.5" fill={color}/></>}
+      {id === 'melody' && <><path d="M4 18 Q12 6 20 14 T36 9" {...s}/><circle cx="4" cy="18" r="2.4" fill={color}/><circle cx="20" cy="14" r="2.4" fill={color}/><circle cx="36" cy="9" r="2.4" fill={color}/></>}
+      {id === 'harmony' && <><circle cx="20" cy="6" r="3.2" fill={color}/><circle cx="20" cy="14" r="3.2" fill={color}/><circle cx="20" cy="22" r="3.2" fill={color}/></>}
+      {id === 'dynamics' && <><text x="5" y="22" fontSize="12" fontStyle="italic" fontWeight="900" fill={color} style={{ fontFamily: 'Georgia, serif' }}>p</text><text x="18" y="24" fontSize="22" fontStyle="italic" fontWeight="900" fill={color} style={{ fontFamily: 'Georgia, serif' }}>f</text></>}
+      {id === 'timbre' && <><path d="M3 14 Q8 4 13 14 T23 14" {...s}/><path d="M23 14 L26 6 L29 22 L32 6 L35 22 L38 14" {...s}/></>}
+      {id === 'texture' && <><path d="M4 7 H36" {...s}/><path d="M4 14 H36" {...s} strokeOpacity="0.7"/><path d="M4 21 H36" {...s} strokeOpacity="0.45"/></>}
+      {id === 'form' && <text x="20" y="20" textAnchor="middle" fontSize="13" fontWeight="900" fill={color} style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>ABA</text>}
+    </svg>
+  );
+}
+function elemPlay(id, colour) {
+  const ctx = getAudio(); if (!ctx) return; stopClicks();
+  const t0 = ctx.currentTime + 0.08, f = (m) => 440 * Math.pow(2, (m - 69) / 12), P = (at, m, len, vol) => blip(ctx, t0 + at, f(m), len, vol || 0.16, 'triangle');
+  if (id === 'pitch') { P(0, 48, 0.7); P(0.8, 84, 0.7); }
+  else if (id === 'rhythm') [[0, 0.5], [0.5, 0.5], [1, 0.25], [1.25, 0.25], [1.5, 0.5]].forEach(([a, l]) => P(a * 0.8, 72, l * 0.7));
+  else if (id === 'melody') [60, 62, 64, 67, 64, 62, 60].forEach((m, i) => P(i * 0.3, m + 12, 0.3));
+  else if (id === 'harmony') { [60, 64, 67].forEach(m => P(0, m, 1.3, 0.12)); }
+  else if (id === 'dynamics') { P(0, 67, 0.6, 0.04); P(0.8, 67, 0.6, 0.45); }
+  else if (id === 'texture') { if (typeof TEXTURE_TYPES !== 'undefined') TEXTURE_TYPES.homophony.play(); }
+  else if (id === 'form') { [72, 76, 79].forEach((m, i) => P(i * 0.22, m, 0.22)); [74, 77, 81].forEach((m, i) => P(0.8 + i * 0.22, m, 0.22)); [72, 76, 79].forEach((m, i) => P(1.6 + i * 0.22, m, 0.22)); }
+  else if (id === 'timbre') {
+    const kind = colour || 'piano', notes = [67, 72, 76];
+    notes.forEach((m, i) => {
+      const at = t0 + i * 0.42;
+      if (kind === 'piano') { blip(ctx, at, f(m), 0.4, 0.16, 'triangle'); return; }
+      const o = ctx.createOscillator(), g = ctx.createGain(), lp = ctx.createBiquadFilter();
+      o.type = kind === 'smooth' ? 'sine' : kind === 'buzzy' ? 'sawtooth' : 'square'; o.frequency.value = f(m);
+      if (kind === 'smooth') { const v = ctx.createOscillator(), vg = ctx.createGain(); v.frequency.value = 5.5; vg.gain.value = 4; v.connect(vg); vg.connect(o.frequency); v.start(at); v.stop(at + 0.45); }
+      lp.type = 'lowpass'; lp.frequency.value = kind === 'buzzy' ? 2600 : 1800;
+      const vol = kind === 'smooth' ? 0.16 : 0.06;
+      g.gain.setValueAtTime(0.0001, at); g.gain.exponentialRampToValueAtTime(vol, at + 0.04); g.gain.setValueAtTime(vol, at + 0.3); g.gain.exponentialRampToValueAtTime(0.0001, at + 0.42);
+      o.connect(lp); lp.connect(g); g.connect(ctx.destination); o.start(at); o.stop(at + 0.45);
+    });
+  }
+}
+function ElementsOfMusic() {
+  const [sel, setSel] = useState('timbre');
+  const E = ELEMENTS.find(x => x.id === sel);
+  const chLabel = (ch) => { const d = DRILLS.find(x => x.id === ch); return d ? (CH_SHORT && CH_SHORT[ch] ? t(CH_SHORT[ch][0], CH_SHORT[ch][1]) : d.label) : ch; };
+  return (
+    <div className="try-box" style={actBox} data-testid="elements">
+      <div style={actTitle}>{t('The eight elements of music', '음악의 여덟 가지 요소')}</div>
+      <p style={actNote}>{BOOK ? t('Every piece of music is made of these eight things. Listen for them in the music you play.', '모든 음악은 이 여덟 가지로 만들어져요. 내가 치는 음악에서 찾아 들어 봐요.') : t('Every piece of music is made of these eight things. Tap one to hear it.', '모든 음악은 이 여덟 가지로 만들어져요. 하나를 눌러 들어 봐요.')}</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 6 }}>
+        {ELEMENTS.map(x => { const isSel = !BOOK && sel === x.id; return (
+          <button key={x.id} data-element={x.id} aria-pressed={isSel} onClick={() => { setSel(x.id); elemPlay(x.id); }} style={{ minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '8px 2px 7px', borderRadius: 12, cursor: 'pointer', fontFamily: 'inherit',
+            background: isSel ? 'rgba(228,87,46,0.09)' : '#fff', border: '1.5px solid ' + (isSel ? '#e4572e' : 'var(--navy-line)') }}>
+            <ElemIcon id={x.id} color={isSel ? '#e4572e' : '#26296b'}/>
+            <span style={{ fontSize: 12.5, fontWeight: 900, color: isSel ? '#e4572e' : 'var(--navy)', whiteSpace: 'nowrap' }}>{t(x.en, x.ko)}</span>
+            {BOOK && <span style={{ fontSize: 10.5, color: '#4a4d86', lineHeight: 1.3, textAlign: 'center', padding: '0 3px' }}>{t(x.den, x.dko)}</span>}
+          </button>
+        ); })}
+      </div>
+      {!BOOK && <div style={{ textAlign: 'center', marginTop: 10, minHeight: 70 }}>
+        <div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 800, fontSize: 19, color: 'var(--navy)' }}>{t(E.en, E.ko)}</div>
+        <div data-testid="element-meaning" style={{ fontSize: 13.5, color: '#4a4d86', lineHeight: 1.45, maxWidth: 400, margin: '2px auto 6px' }}>{t(E.den, E.dko)}</div>
+        {E.id === 'timbre' && <div style={{ display: 'flex', gap: 5, justifyContent: 'center', flexWrap: 'wrap' }}>
+          {[['piano', 'Piano', '피아노'], ['smooth', 'Smooth', '부드럽게'], ['hollow', 'Hollow', '텅 빈 듯'], ['buzzy', 'Buzzy', '지잉']].map(([k, en, ko]) => <button key={k} data-timbre={k} className="chip" style={{ padding: '4px 11px', fontSize: 13 }} onClick={() => elemPlay('timbre', k)}>{t(en, ko)}</button>)}
+          <div style={{ flexBasis: '100%', fontSize: 12, color: 'var(--navy-soft)', marginTop: 4 }}>{t('The same three notes, four different colours.', '같은 세 음, 네 가지 다른 색깔.')}</div>
+        </div>}
+        {E.ch && OPEN_CH && <button className="chapter-link" data-testid="element-chapter" onClick={() => OPEN_CH(E.ch)}>{t('Learn it in: ', '배우는 곳: ') + chLabel(E.ch) + ' →'}</button>}
+      </div>}
+    </div>
+  );
+}
+
 function ChordsLearn({ onStart }) {
   const tip = (title, body) => <Rule title={title}>{body}</Rule>;
   return (
@@ -6118,6 +6273,9 @@ function ChordsLearn({ onStart }) {
       </Step>
       <Step title={t('Four chords, one song', '코드 네 개로 노래 만들기')}>
         <FourChordSong/>
+      </Step>
+      <Step title={t('Arpeggios', '아르페지오')}>
+        <ArpeggioTool/>
       </Step>
     </Lesson>
   );
@@ -9853,6 +10011,13 @@ function DynLearn({ onStart }) {
         {DYNAMICS.map((d, i) => cell(d.id, <span style={{fontSize:16 + i * 3,lineHeight:1.1}}><DynMark id={d.id} size={16 + i * 3}/></span>, d.it + ' · ' + d.meaning, () => pick(d.id, () => playDyn(d.vol))))}
       </div>
       <p style={{fontSize:13,color:'#6d6f9c',margin:'0 0 12px',lineHeight:1.5}}>{t(<><b>p</b> = piano (soft), <b>f</b> = forte (loud), <b>m</b> = mezzo (“half”, moderately). Doubling the letter makes it more so.</>, <><b>p</b> = piano (여리게), <b>f</b> = forte (세게), <b>m</b> = mezzo ("반", 중간 정도로). 글자를 두 번 쓰면 더 강조돼요.</>)}</p>
+      <div data-testid="dyn-extremes" style={{margin:'-4px 0 12px'}}>
+        <div style={{fontSize:13,fontWeight:800,color:'var(--navy)',margin:'0 0 5px'}}>{t('Even further: the softest and the loudest', '더 끝까지: 가장 여리게, 가장 세게')}</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+          {cell('ppp', <span style={{lineHeight:1.1}}><DynMark id="ppp" size={15}/></span>, t('pianississimo · as soft as you can', 'pianississimo · 가장 여리게'), () => pick('ppp', () => playDyn(0.022)))}
+          {cell('fff', <span style={{lineHeight:1.1}}><DynMark id="fff" size={34}/></span>, t('fortississimo · as loud as you can', 'fortississimo · 가장 세게'), () => pick('fff', () => playDyn(0.75)))}
+        </div>
+      </div>
       <DynOrder/>
       </Step>
       <Step title={t('Getting louder and softer', '점점 세게, 점점 여리게')}>
@@ -14881,6 +15046,9 @@ function StylesLearn({ onStart }) {
       </Step>
       <Step storeAs={4} title={t('The 12-bar blues', '12마디 블루스')}>
         <TwelveBarBlues/>
+      </Step>
+      <Step storeAs={6} title={t('The eight elements of music', '음악의 여덟 가지 요소')}>
+        <ElementsOfMusic/>
       </Step>
     </Lesson>
   );
@@ -21003,6 +21171,7 @@ function App() {
   useEffect(() => { if (st.drill && CHAPTER_CAT[st.drill]) { try { localStorage.setItem(LAST_CHAPTER_KEY, st.drill); } catch (e) {} } }, [st.drill]);
   useEffect(() => { try { const n = parseInt(new URLSearchParams(location.search).get('step'), 10); if (!st.drill || isNaN(n)) return; const tmo = setTimeout(() => { const el = document.getElementById(st.drill + '-step-' + (n - 1)); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 700); return () => clearTimeout(tmo); } catch (e) {} }, []);
   function update(patch) { setSt(prev => ({ ...prev, ...patch })); }
+  OPEN_CH = (id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }; // Phase 360: chapter links inside a lesson
   // a student with a link always has a button back to the Today page on the Learn and Practice lists
   const todayBack = showToday && !T ? <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:12}} onClick={() => { update({ view: 'today', tool: null, kit: null, drill: null, from: null }); try { window.scrollTo(0, 0); } catch (e) {} }}>{t('← Today', '← 오늘')}</button> : null;
   function jumpToChapter(id) { setFindOpen(false); update({ view: (T && (st.view === 'toolbox' || st.view === 'chapters')) ? st.view : 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }
