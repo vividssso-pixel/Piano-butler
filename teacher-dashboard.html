@@ -314,11 +314,6 @@ function generateGuide(student, logs, currentMonthIdx, plan) {
   }
 
   // ── Check: missing sections ──
-  const last2 = recentLogs.slice(0,2);
-  const noTech  = last2.length >= 2 && last2.every(l => !l.technical?.trim());
-
-  if (noTech)  { alerts.push("Technical work hasn't been recorded for 2+ weeks."); status="warning"; }
-
   // ── Check: exam-specific urgency ──
   if (isExamStudent(student)) {
     if (weeksLeft !== null && weeksLeft <= 4) {
@@ -336,8 +331,8 @@ function generateGuide(student, logs, currentMonthIdx, plan) {
   }
 
   // ── Positive patterns ──
-  const allSections = recentLogs.every(l => l.repertoire?.trim() && l.technical?.trim());
-  if (allSections && recentLogs.length >= 2) tips.push("Great consistency — all sections covered recently.");
+  const allRep = recentLogs.every(l => l.repertoire?.trim());
+  if (allRep && recentLogs.length >= 2) tips.push("Great consistency — repertoire recorded at every recent lesson.");
 
   // ── Phase-specific tips ──
   const phaseTips = {
@@ -350,13 +345,6 @@ function generateGuide(student, logs, currentMonthIdx, plan) {
     performance:   "Celebrate what's been achieved this term.",
   };
   if (phaseTips[phase]) tips.push(phaseTips[phase]);
-
-  // ── Lesson duration tip ──
-  if (student.lessonDuration === 30 && recentLogs[0]) {
-    const lastLog = recentLogs[0];
-    const filledSections = [lastLog.repertoire, lastLog.technical, lastLog.srAural, lastLog.gk].filter(s => s?.trim()).length;
-    if (filledSections >= 4) tips.push("30-min lesson — prioritise repertoire + one other section per week.");
-  }
 
   if (alerts.length === 0 && status === "on-track") tips.unshift("On track — keep the current pace.");
 
@@ -955,7 +943,7 @@ function LogModal({ student, existingLog, currentMonth, lastLog, onSave, onClose
   const [f, setF] = useState(existingLog ?? blank);
   const [lists, setLists] = useState(() => { const src = existingLog ?? blank; return { rep: parseItems(src.repertoire, true), tech: parseItems(src.technical), sr: parseItems(src.srAural), gk: parseItems(src.gk), hw: parseItems(src.homework, false, true) }; });
   const setList = (k) => (items) => setLists(p => ({ ...p, [k]: items }));
-  const [legacy] = useState(() => ({ sr: !!((existingLog?.srAural || "").trim()), gk: !!((existingLog?.gk || "").trim()) }));
+  const [legacy] = useState(() => ({ tech: !!((existingLog?.technical || "").trim()), sr: !!((existingLog?.srAural || "").trim()), gk: !!((existingLog?.gk || "").trim()) }));
   const save = () => onSave({ ...f, repertoire: joinItems(lists.rep, true), technical: joinItems(lists.tech), srAural: joinItems(lists.sr), gk: joinItems(lists.gk), homework: joinItems(lists.hw) });
   const [copied, setCopied] = useState(false);
   const set = (k,v) => setF(p=>({...p,[k]:v}));
@@ -1026,7 +1014,7 @@ function LogModal({ student, existingLog, currentMonth, lastLog, onSave, onClose
           <ListField testid="list-rep" label="Repertoire" color="#26296b" bg="#ecebf5" items={lists.rep} onChange={setList("rep")} rating addLabel="Add piece"
             placeholder="e.g. Minuet in G, bars 1–8, hands together"
             hint="One piece per row. The names show on the student's Today page as “Pieces you're working on” (if they have a student link). The red / yellow / green circle is for you only: tap it to rate, red needs work, yellow progressing, green solid."/>
-          <ListField testid="list-tech" label="Technical work" color="#7c3aed" bg="#f5f3ff" items={lists.tech} onChange={setList("tech")} placeholder="e.g. C major scale, 2 octaves"/>
+          {legacy.tech && <ListField testid="list-tech" label="Technical work" color="#7c3aed" bg="#f5f3ff" items={lists.tech} onChange={setList("tech")} placeholder="e.g. C major scale, 2 octaves"/>}
           {legacy.sr && <ListField testid="list-sr" label="Sight-reading & aural" color="#0891b2" bg="#ecfeff" items={lists.sr} onChange={setList("sr")} placeholder="e.g. SR p.14, intervals up to a 6th"/>}
           {legacy.gk && <ListField testid="list-gk" label="General knowledge" color="#d97706" bg="#fffbeb" items={lists.gk} onChange={setList("gk")} placeholder="e.g. Terms: andante, legato"/>}
 
@@ -1054,7 +1042,7 @@ function LogModal({ student, existingLog, currentMonth, lastLog, onSave, onClose
               value={f.notes}
               onChange={e=>set("notes",e.target.value)}
               rows={3}
-              placeholder="e.g. Sight-reading p.14, hesitant on bar 5. Terms: andante, legato. Parents updated re: exam."
+              placeholder="e.g. C major scale, 2 octaves. Sight-reading p.14, hesitant on bar 5. Terms: andante, legato. Parents updated re: exam."
               className="input text-sm"
               style={{background:"#faf6ec",borderColor:"transparent"}}
               onFocus={e=>e.target.style.borderColor="#62649a"}
@@ -1698,7 +1686,8 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
         const techCov = coverageOf("technical");
         const srCov   = coverageOf("srAural");
         const gkCov   = coverageOf("gk");
-        // Sight-reading & aural and General knowledge are no longer in the Log lesson form (Phase 340): show their numbers only when old logs have them
+        // Technical work, Sight-reading & aural and General knowledge are no longer in the Log lesson form (Phases 340, 344): show their numbers only when old logs have them
+        const hasTech = totalLogs.some(l => l.technical?.trim());
         const hasSR = totalLogs.some(l => l.srAural?.trim());
         const hasGK = totalLogs.some(l => l.gk?.trim());
 
@@ -1812,7 +1801,7 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
                   <div className="space-y-3">
                     {[
                       { label:"Repertoire",       pct:repCov,  color:"#26296b" },
-                      { label:"Technical",        pct:techCov, color:"#7c3aed" },
+                      ...(hasTech ? [{ label:"Technical",        pct:techCov, color:"#7c3aed" }] : []),
                       ...(hasSR ? [{ label:"SR & Aural",       pct:srCov,   color:"#0891b2" }] : []),
                       ...(hasGK ? [{ label:"General Knowledge",pct:gkCov,   color:"#d97706" }] : []),
                     ].map(({ label, pct, color }) => (
