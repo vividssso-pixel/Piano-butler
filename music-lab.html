@@ -95,6 +95,11 @@
     .hl { position: absolute; background: rgba(228,87,46,.16); border: 2px solid rgba(228,87,46,.75); border-radius: 6px; }
     .hl.edge { background: rgba(228,87,46,.28); }
     .hover { position: absolute; background: rgba(38,41,107,.07); border-radius: 6px; }
+    #names { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+    .nlabel { position: absolute; transform: translateX(-50%); font-weight: 800; font-size: 11px; line-height: 12px; white-space: nowrap;
+      letter-spacing: 0; text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 2px #fff; }
+    .nlabel.top { color: var(--coral); }
+    .nlabel.bot { color: var(--navy); }
     #osmd, #osmd * { -webkit-tap-highlight-color: transparent; }
     #osmd svg { cursor: pointer; }
 
@@ -189,6 +194,10 @@
       <button class="chip" data-nm="solfege" type="button">Do Re Mi</button>
       <button class="chip" data-nm="both" type="button">Both</button>
       <span style="width:10px"></span>
+      <span class="lab">Write names on the score</span>
+      <button class="chip" id="nm-top" type="button" title="Names above the top staff (usually the right hand)">Top staff &middot; RH</button>
+      <button class="chip" id="nm-bot" type="button" title="Names below the bottom staff (usually the left hand)">Bottom staff &middot; LH</button>
+      <span style="width:10px"></span>
       <span class="lab">Step</span>
       <button class="chip" id="stepback" type="button" title="Previous note position">&#9664; Back</button>
       <button class="chip" id="stepfwd" type="button" title="Next note position">Next &#9654;</button>
@@ -202,6 +211,7 @@
       <div class="scorewrap" id="scorewrap">
         <div id="osmd"></div>
         <div id="overlay"></div>
+        <div id="names"></div>
       </div>
     </div>
 
@@ -255,6 +265,8 @@
     rects: [],         // per measure: {x,y,w,h}
     zoom: 1,
     nameMode: 'letter',
+    scoreNames: { top: false, bot: false },
+    labels: [],        // note-name labels measured from the drawn score
     stepIdx: 0
   };
 
@@ -301,6 +313,7 @@
     var o;
     try { o = ensureOsmd(); } catch (e) { showError('The score viewer could not start. Check your internet connection and reload.'); return Promise.resolve(); }
     $('scorecard').classList.add('show');
+    applyNameSpacing();
     return o.load(data).then(function () {
       o.zoom = S.zoom;
       return o.render();
@@ -443,6 +456,80 @@
     $('meta').classList.add('show');
   }
 
+  // ---------- note names written ON the score (above the top staff, below the lower staves) ----------
+  function computeNameLabels() {
+    S.labels = [];
+    var gs = osmd.GraphicSheet, px = (gs.UnitInPixels || 10) * (osmd.zoom || 1), list = gs.MeasureList || [];
+    for (var mi = 0; mi < list.length; mi++) {
+      var row = list[mi] || [];
+      row.forEach(function (gm, si) {
+        if (!gm || !gm.PositionAndShape) return;
+        var ap = gm.PositionAndShape.AbsolutePosition, sz = gm.PositionAndShape.Size;
+        var top = ap.y * px, bottom = (ap.y + sz.height) * px;
+        var groups = {};
+        (gm.staffEntries || []).forEach(function (se) {
+          if (!se) return;
+          (se.graphicalVoiceEntries || []).forEach(function (gve) {
+            (gve.notes || []).forEach(function (gn) {
+              var n = gn && gn.sourceNote;
+              if (!n || n.isRest() || !n.Pitch || n.IsGraceNote) return;
+              var tie = n.NoteTie;
+              if (tie && tie.StartNote && tie.StartNote !== n) return;                 // tied note: name it once, at its start
+              var np = gn.PositionAndShape, x = (np.AbsolutePosition.x + (np.Size ? np.Size.width / 2 : 0)) * px;
+              var p = n.Pitch, acc = p.AccidentalHalfTones | 0, key = Math.round(x);
+              var g = groups[key] || (groups[key] = { x: x, notes: {}, y0: Infinity, y1: -Infinity });
+              var ny = np.AbsolutePosition.y * px, nh = (np.Size ? np.Size.height : 1) * px;
+              g.y0 = Math.min(g.y0, ny); g.y1 = Math.max(g.y1, ny + nh);
+              g.notes[p.FundamentalNote + '|' + acc + '|' + p.Octave] = { letter: LETTERS[p.FundamentalNote], acc: acc, octave: p.Octave + 3, midi: (p.Octave + 4) * 12 + p.FundamentalNote + acc };
+            });
+          });
+        });
+        Object.keys(groups).forEach(function (k) {
+          var g = groups[k], notes = Object.keys(g.notes).map(function (x) { return g.notes[x]; }).sort(function (a, b) { return b.midi - a.midi; });
+          S.labels.push({ x: g.x, top: top, bottom: bottom, staff: si, notes: notes, y0: g.y0, y1: g.y1 });
+        });
+      });
+    }
+  }
+  // Every system gets one name row above its top staff and one below each lower staff, placed clear of the
+  // highest/lowest note in that system (stems and beams reach about 3.5 staff spaces beyond the notehead).
+  function placeNameRows() {
+    var px = (osmd.GraphicSheet.UnitInPixels || 10) * (osmd.zoom || 1), stem = 3.6 * px, ext = {};
+    function key(L) { return L.staff + '|' + Math.round((L.staff === 0 ? L.top : L.bottom) / 6); }
+    S.labels.forEach(function (L) {
+      var k = key(L), e = ext[k] || (ext[k] = { up: L.top, down: L.bottom });
+      e.up = Math.min(e.up, L.y0 - stem); e.down = Math.max(e.down, L.y1 + stem);
+    });
+    S.labels.forEach(function (L) { var e = ext[key(L)]; L.rowTop = Math.min(L.top, e.up); L.rowBottom = Math.max(L.bottom, e.down); });
+  }
+  function drawNames() {
+    var layer = $('names'); layer.innerHTML = '';
+    var svg = $('osmd').querySelector('svg');
+    if (svg) { var r = svg.getBoundingClientRect(); layer.style.width = r.width + 'px'; layer.style.height = r.height + 'px'; }
+    if (!S.scoreNames.top && !S.scoreNames.bot) return;
+    var frag = document.createDocumentFragment(), ROW = 12;
+    S.labels.forEach(function (L) {
+      var isTop = L.staff === 0;
+      if (isTop ? !S.scoreNames.top : !S.scoreNames.bot) return;
+      L.notes.forEach(function (n, i) {
+        var d = document.createElement('div');
+        d.className = 'nlabel ' + (isTop ? 'top' : 'bot');
+        d.textContent = nameText(n);
+        d.style.left = L.x + 'px';
+        // top staff: stack upwards from just above the staff (highest note on top); lower staves: stack downwards below it
+        d.style.top = (isTop ? (L.rowTop - 4 - (L.notes.length - i) * ROW) : (L.rowBottom + 4 + i * ROW)) + 'px';
+        frag.appendChild(d);
+      });
+    });
+    layer.appendChild(frag);
+  }
+  function nameText(e) {
+    var a = ACC[String(e.acc)] || '';
+    if (S.nameMode === 'letter') return e.letter + a;
+    if (S.nameMode === 'solfege') return SOLFEGE[e.letter] + a;
+    return e.letter + a + ' ' + SOLFEGE[e.letter];
+  }
+
   // ---------- measure rectangles, selection, overlay ----------
   function computeRects() {
     S.rects = [];
@@ -516,6 +603,8 @@
 
   function afterRender(fresh) {
     computeRects();
+    computeNameLabels();
+    placeNameRows();
     if (fresh) {
       extractAll();
       S.sel = null; S.pending = null; S.stepIdx = 0;
@@ -530,7 +619,7 @@
         document.documentElement.style.setProperty('--dock-h', $('dock').offsetHeight + 'px');
       });
     }
-    drawOverlay();
+    drawOverlay(); drawNames();
     cursorStep = -1;
     try { osmd.cursor.show(); } catch (e) {}
     if (!fresh) placeCursorAtStep(Math.min(S.stepIdx, S.steps.length - 1));
@@ -901,9 +990,29 @@
     b.addEventListener('click', function () {
       S.nameMode = b.getAttribute('data-nm');
       Array.prototype.forEach.call(document.querySelectorAll('[data-nm]'), function (x) { x.classList.toggle('on', x === b); });
+      drawNames();
       if (S.loaded) { if (playing && P) setNow(Math.min(curQ(), P.rg.endQ - 1e-4), true, true); else setNow(S.steps[S.stepIdx] ? S.steps[S.stepIdx].q : 0, false, true); }
     });
   });
+  // Name rows need room between systems, otherwise the row below one system runs into the row above the next.
+  var spacedForNames = false;
+  function applyNameSpacing() {
+    var need = S.scoreNames.top || S.scoreNames.bot;
+    if (!osmd || need === spacedForNames) return false;
+    var r = osmd.EngravingRules;
+    r.MinimumDistanceBetweenSystems = need ? 13 : 7;
+    r.MinSkyBottomDistBetweenSystems = need ? 10 : 5;
+    spacedForNames = need;
+    return true;
+  }
+  function scoreNameToggle(id, key) {
+    $(id).addEventListener('click', function () {
+      S.scoreNames[key] = !S.scoreNames[key]; $(id).classList.toggle('on', S.scoreNames[key]);
+      if (S.loaded && applyNameSpacing()) { osmd.zoom = S.zoom; osmd.render(); afterRender(false); }
+      else drawNames();
+    });
+  }
+  scoreNameToggle('nm-top', 'top'); scoreNameToggle('nm-bot', 'bot');
   $('stepback').addEventListener('click', function () { stepBy(-1); });
   $('stepfwd').addEventListener('click', function () { stepBy(1); });
   $('zin').addEventListener('click', function () { setZoom(S.zoom + 0.15); });
