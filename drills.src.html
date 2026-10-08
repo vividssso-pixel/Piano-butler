@@ -21858,12 +21858,12 @@ function houseWrap(text, maxW, size) {
   if (cur) lines.push(cur);
   return lines.slice(0, 2);
 }
-function houseStairs(x, y, w, h, right) {
+function houseStairs(x, y, w, h, right, railTop = 2) {
   const n = Math.max(5, Math.round(h / 12)), sw = (w - 8) / n, sh = (h - 4) / n, pts = [];
   for (let k = 0; k < n; k++) { const sx = 4 + k * sw, sy = h - k * sh; pts.push([sx, sy], [sx, sy - sh], [sx + sw, sy - sh]); }
   const P = pts.map(([a, b]) => [right ? x + a : x + w - a, y + b]);
   return [{ k: 'pl', p: P, s: PEN_N, w: 1.8 },
-    penLine([right ? x + 3 : x + w - 3, y + h - 24], [right ? x + w - 6 : x + 6, y + 2], 1.2)];
+    penLine([right ? x + 3 : x + w - 3, y + h - 24], [right ? x + w - 6 : x + 6, y + railTop], 1.2)];
 }
 function houseShapes(view, wide) {
   const { stages, here, nums } = view;
@@ -21893,7 +21893,7 @@ function houseShapes(view, wide) {
       { k: 'rc', x: X0, y: fy, w: HW, h: fl.h, rx: 0, f: PEN_P, s: PEN_N, sw: 2.6 },
       { k: 'rc', x: X0, y: fy + fl.h - SLAB, w: HW, h: SLAB, rx: 0, f: 'H@0.7', s: PEN_N, sw: 1.4 },
       penLine([X0 + SC, fy], [X0 + SC, fy + fl.h - SLAB], 2),
-      ...houseStairs(X0, fy + LH, SC, fl.h - SLAB - LH, right)] });
+      ...houseStairs(X0, fy + LH, SC, fl.h - SLAB - LH, right, wide ? 26 : 2)] });
     const label = (fl.i + 1) + ' · ' + t(fl.s.en[0], fl.s.ko[0]);
     if (wide) s.push(penText(right ? X0 + 8 : X0 + SC - 8, fy + 16, label, { size: 12.5, weight: 800, fill: PEN_N, anchor: right ? 'start' : 'end', serif: true, halo: true }));
     else { s.push(penLine([X0 + SC, fy + LH], [X0 + HW, fy + LH], 1.2), penText(X0 + SC + 8, fy + 14, label, { size: 12, weight: 800, fill: PEN_N, serif: true })); }
@@ -21913,7 +21913,7 @@ function houseShapes(view, wide) {
   rooms.sort((a, b) => a.num - b.num).forEach(r => {
     const { rx, ry, rw, rh, st, on, num } = r, done = st === 'done';
     if (on) s.push({ k: 'rc', x: rx + 2, y: ry + 2, w: rw - 4, h: rh - 4, rx: 0, f: '#fde9e1' });
-    if (wide) s.push(penLine([rx + rw / 2, ry], [rx + rw / 2, ry + 9], 1), { k: 'pa', seg: [['M', [rx + rw / 2 - 6, ry + 15]], ['Q', [rx + rw / 2, ry + 7], [rx + rw / 2 + 6, ry + 15]], ['Z']], f: PEN_N });
+    if (wide && rw >= 170) s.push(penLine([rx + rw / 2, ry], [rx + rw / 2, ry + 9], 1), { k: 'pa', seg: [['M', [rx + rw / 2 - 6, ry + 15]], ['Q', [rx + rw / 2, ry + 7], [rx + rw / 2 + 6, ry + 15]], ['Z']], f: PEN_N });   // a lamp, where the name leaves room
     const ncx = rx + (wide ? 16 : 13), ncy = ry + (wide ? 20 : 14), nr = wide ? 10 : 9;
     s.push({ k: 'el', c: [ncx, ncy], rx: nr, ry: nr, f: done ? PEN_N : PEN_P, s: on ? PEN_C : PEN_N, w: 1.8 });
     s.push(penText(ncx, ncy + 4, String(num), { size: wide ? 12 : 11, weight: 800, fill: done ? '#fff' : on ? PEN_C : PEN_N, anchor: 'middle', serif: true }));
@@ -21940,11 +21940,12 @@ function houseShapes(view, wide) {
   for (let gx = 10; gx < W - 10; gx += 23) s.push({ k: 'pa', seg: [['M', [gx, gy]], ['L', [gx + 2, gy - 6]], ['M', [gx + 4, gy]], ['L', [gx + 3, gy - 5]]], f: 'none', s: PEN_N, w: 0.9 });
   const rab = (PB_ART.rabbit || '').replace(/^<svg[^>]*>|<\/svg>$/g, '');
   if (wide) s.push({ k: 'raw', svg: '<g transform="translate(4 ' + pFix(gy - 210 * 0.6) + ') scale(0.6)">' + rab + '</g>' },
-    penText(52, gy + 20, t('Your butler opens the door', '버틀러가 문을 열어 줘요'), { size: 11.5, weight: 700, fill: PEN_N, anchor: 'middle', serif: true, italic: true }));
+    penText(58, gy + 18, t('Your butler', '버틀러가'), { size: 11.5, weight: 700, fill: PEN_N, anchor: 'middle', serif: true, italic: true }),
+    penText(58, gy + 32, t('opens the door', '문을 열어 줘요'), { size: 11.5, weight: 700, fill: PEN_N, anchor: 'middle', serif: true, italic: true }));
   else s.push({ k: 'raw', svg: '<g transform="translate(8 ' + pFix(gy + 4) + ') scale(0.34)">' + rab + '</g>' },
     penText(70, gy + 34, t('Your butler opens the door.', '버틀러가 문을 열어 줘요.'), { size: 12, weight: 700, fill: PEN_N, serif: true, italic: true }),
     penText(70, gy + 50, t('Climb the stairs, one room at a time.', '한 방씩, 계단을 올라가요.'), { size: 12, weight: 700, fill: PEN_N, serif: true, italic: true }));
-  return { shapes: s, W, H: wide ? gy + 30 : gy + 80 };
+  return { shapes: s, W, H: wide ? gy + 40 : gy + 80 };
 }
 function HouseMap({ onOpen, compact, noIntro }) {
   const box = useRef(null);
@@ -22566,6 +22567,54 @@ function bkStepPages(concepts) {
   return m;
 }
 // The whole path (the same 7 stages as the app's Start-here guide), with one chapter marked.
+// ─── Phase 378: the house in the books ───
+// A small house (one line per floor, every room with its number and short name, your chapter's room in coral) takes
+// the place of "The whole path" list; the Workbook's opening pages get the whole house to colour in, a room per chapter.
+function houseMiniShapes(current, W = 600) {
+  const s = [], X0 = 4, HW = W - 8, SC = 120, FH = 19, ROOF = 26, TOP = ROOF + 4;
+  const stages = PATH_STAGES.map((st, i) => ({ st, i, ids: pathStageIds(st) }));
+  let n = 0; const nums = {}; stages.forEach(x => x.ids.forEach(id => { nums[id] = ++n; }));
+  s.push({ k: 'pa', seg: [['M', [X0, TOP]], ['L', [X0 + 26, TOP - ROOF + 4]], ['L', [X0 + HW - 26, TOP - ROOF + 4]], ['L', [X0 + HW, TOP]], ['Z']], f: 'H@0.7', s: PEN_N, w: 2 });
+  const cx = W / 2; s.push({ k: 'rc', x: cx - 58, y: TOP - ROOF + 7, w: 116, h: 15, rx: 4, f: PEN_P, s: PEN_N, sw: 1.4 }, penText(cx, TOP - ROOF + 18, 'Piano Butler', { size: 10, weight: 700, fill: PEN_N, anchor: 'middle', serif: true, italic: true }));
+  let y = TOP;
+  [...stages].reverse().forEach(x => {
+    const has = x.ids.includes(current), rw = (HW - SC) / x.ids.length;
+    s.push({ k: 'rc', x: X0, y, w: HW, h: FH, rx: 0, f: PEN_P, s: PEN_N, sw: 1.4 }, penLine([X0 + SC, y], [X0 + SC, y + FH], 1.2));
+    s.push(penText(X0 + 6, y + 13, (x.i + 1) + ' · ' + x.st.en[0], { size: 10, weight: 800, fill: has ? PEN_C : PEN_N, serif: true }));
+    x.ids.forEach((id, j) => {
+      const rx = X0 + SC + j * rw, on = id === current;
+      if (j) s.push(penLine([rx, y], [rx, y + FH], 1));
+      if (on) s.push({ k: 'rc', x: rx + 1.2, y: y + 1.2, w: rw - 2.4, h: FH - 2.4, rx: 0, f: '#fde9e1' });
+      const nm = (CH_SHORT[id] || [bkChapterName(id)])[0];
+      s.push(penText(rx + 5, y + 13, nums[id] + ' ' + nm, { size: 9.5, weight: on ? 800 : 600, fill: on ? PEN_C : PEN_N }));
+    });
+    y += FH;
+  });
+  s.push(penLine([0, y + 1.5], [W, y + 1.5], 1.4));
+  return { shapes: s, W, H: y + 6 };
+}
+function BkHouse({ current, compact }) {
+  const h = useMemo(() => houseMiniShapes(current), [current]);
+  return (
+    <div data-bk-house style={{border:'1.5px solid ' + BK.line,borderRadius:12,padding:compact ? '8px 12px 6px' : '10px 14px 8px'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:4}}><div style={bkH(compact ? 15 : 17, 4)}>The Piano Butler’s house</div><span style={{fontSize:10.5,color:BK.muted}}>every floor a stage, every room a chapter -- the same order as the app</span></div>
+      <PenArt shapes={h.shapes} vb={[0, 0, h.W, h.H]} label="The Piano Butler’s house: the chapter map"/>
+    </div>
+  );
+}
+// the whole house to colour in (the Workbook's opening pages)
+function BkHousePage() {
+  const stages = PATH_STAGES.map((s, i) => { const ids = pathStageIds(s); return { s, i, ids, st: ids.map(() => 'print') }; });
+  const nums = {}; stages.flatMap(x => x.ids).forEach((id, k) => { nums[id] = k + 1; });
+  const house = useMemo(() => houseShapes({ stages, here: null, nums, print: true }, true), []);
+  return <>
+    <div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em',marginTop:4}}>YOUR MAP</div>
+    <h1 style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:32,fontWeight:900,color:BK.ink,margin:'2px 0 4px',lineHeight:1.05}}>The Piano Butler’s house</h1>
+    <p style={{fontSize:13.5,color:BK.muted,margin:'0 0 8px',lineHeight:1.5}}>Every floor is a stage and every room is a chapter, from the front door up to the attic. When you finish a chapter, <b style={{color:BK.ink}}>colour in its room</b>. Draw yourself on the stairs of the floor you are on.</p>
+    <div style={{flex:1,minHeight:0,display:'flex',alignItems:'center',justifyContent:'center'}}><PenArt shapes={house.shapes} vb={[0, 0, house.W, house.H]} label="The Piano Butler’s house" style={{maxHeight:'100%'}}/></div>
+  </>;
+}
+
 function BkPath({ current, compact }) {
   return (
     <div style={{border:'1.5px solid ' + BK.line,borderRadius:12,padding:compact ? '8px 12px 4px' : '10px 14px 6px'}}>
@@ -22647,7 +22696,7 @@ function WbMap({ id, concepts, tasks, steps, checkPage, minor }) {
       </div>
     </div>
     <div style={{flex:1}}/>
-    {total <= 7 && levels.length <= 6 && <BkPath current={id} compact/>}
+    {total <= 7 && levels.length <= 6 && <BkHouse current={id} compact/>}
     <div style={{display:'flex',gap:12,alignItems:'center',fontSize:12,color:BK.ink,border:'1.5px dashed ' + BK.coral,borderRadius:10,padding:'8px 12px',marginTop:10}}>
       <BkStar size={16} fill={BK.coral}/>
       <span><b>All steps ticked?</b> Do the Chapter check-up{checkPage ? ' on page ' + checkPage : ''} in your lesson, then colour in the badge.</span>
@@ -22698,10 +22747,11 @@ function FrontMatter() {
       <div style={{border:'1.4px solid ' + BK.line,borderRadius:10,padding:'8px 10px'}}><b>Drill</b> is the quiz: 10 questions a round, in levels. A level is yours when you get 9 out of 10.</div>
     </div>
     <div style={{fontSize:12.5,color:BK.ink,lineHeight:1.5,margin:'8px 0 10px'}}>The app has the same path as these books, in the same order, and its <b>Start here</b> guide always shows what comes next.</div>
-    <BkPath/>
+    <BkHouse/>
     <div style={{flex:1}}/>
     <div style={{display:'flex',gap:12,alignItems:'center',border:'1.5px dashed ' + BK.coral,borderRadius:10,padding:'8px 12px',fontSize:12.5,color:BK.ink}}><BkStar size={16} fill={BK.coral}/><span><b>Finished a chapter?</b> Do its check-up in your lesson, colour in the badge, and turn to the next chapter’s map.</span></div>
   </>);
+  P(<BkHousePage/>);
   P(<WbLog/>);
   return <>{pages}</>;
 }
