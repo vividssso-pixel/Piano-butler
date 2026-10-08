@@ -16878,9 +16878,17 @@ function penHandSide(a, o = {}) {
   s.push(...penLimb([wr, kn], 14, PEN_P, PEN_N, 1.8), ...penLimb([kn, j2, j1, tip], 7.6, PEN_P, PEN_N, 1.6));
   const u = pUnit(pSub(tip, j1)), n = [-u[1], u[0]];
   s.push(penLine([j1[0] + u[0] * 3 - n[0] * 2.4, j1[1] + u[1] * 3 - n[1] * 2.4], [j1[0] + u[0] * 8 - n[0] * 2.4, j1[1] + u[1] * 8 - n[1] * 2.4], 1.1));
-  if (o.car != null) {   // the little car on the knuckle bridge; o.car: 0 at the knuckle, -1 back at the wrist, +1 past the knuckle
-    const at = o.car <= 0 ? pAdd(kn, pSub(wr, kn), -o.car) : pAdd(kn, pSub(j2, kn), o.car * 0.6);
-    const ang = (-8 + (o.car < 0 ? Math.atan2(kn[1] - wr[1], kn[0] - wr[0]) * 180 / Math.PI + 8 : 0)) * Math.PI / 180, c = Math.cos(ang), sn = Math.sin(ang);
+  if (o.car != null) {   // the little car; o.car: -1 back at the wrist, 0 on the knuckle bridge, 1 slid down the finger onto the key (Sohyun 2026-10-09)
+    let at, dir;
+    if (o.car <= 0) { at = pAdd(kn, pSub(wr, kn), -o.car); dir = pSub(kn, wr); }
+    else {
+      const chain = [kn, j2, j1, tip, [tip[0] + 16, 124 + (o.press || 0)]], lens = chain.slice(1).map((q, i) => Math.hypot(q[0] - chain[i][0], q[1] - chain[i][1]));
+      const total = lens.reduce((x, y) => x + y, 0);
+      let d = Math.min(o.car, 1) * total, i = 0;
+      while (i < lens.length - 1 && d > lens[i]) { d -= lens[i]; i++; }
+      at = pAdd(chain[i], pSub(chain[i + 1], chain[i]), d / lens[i]); dir = pSub(chain[i + 1], chain[i]);
+    }
+    const ang = Math.atan2(dir[1], dir[0]), c = Math.cos(ang), sn = Math.sin(ang);
     const m = [c, sn, -sn, c, at[0] - 4, at[1] - 11];
     s.push({ k: 'rc', x: -13, y: -9, w: 26, h: 9, rx: 3.5, f: PEN_C, m }, { k: 'rc', x: -7, y: -15, w: 13, h: 7, rx: 3, f: PEN_C, m },
       { k: 'el', c: [-7, 1], rx: 3.3, ry: 3.3, f: PEN_N, m }, { k: 'el', c: [7, 1], rx: 3.3, ry: 3.3, f: PEN_N, m });
@@ -17252,21 +17260,13 @@ function wuGlideTop(ph, who) {
   const O = [X(hx), Y(58)];
   s.push({ k: 'rc', x: O[0] - 12.1, y: O[1] - 1.1, w: 22, h: 18.7, rx: 6, f: PEN_P, s: PEN_N, sw: 1.8 });
   [[-16, -6], [-6, -8], [4, -8], [14, -6]].forEach(([fx, fy]) => s.push({ k: 'el', c: [O[0] + fx * 0.55, O[1] + fy * 0.55], rx: 2.2, ry: 5.5, f: PEN_P, s: PEN_N, w: 1.4 }));
-  const tc = Math.cos(0.61), ts = Math.sin(0.61);
-  s.push({ k: 'el', c: [0, 0], rx: 2.75, ry: 4.95, f: PEN_P, s: PEN_N, w: 1.4, m: [tc, ts, -ts, tc, O[0] - 13.75, O[1] + 9.35] });
+  s.push(...penLimb([[O[0] - 8.5, O[1] + 2], [O[0] - 12.5, O[1] + 5.5], [O[0] - 16.5, O[1] + 11]], 4.6, PEN_P, PEN_N, 1.4));
   s.push({ k: 'el', c: Ep, rx: 3.6, ry: 3.6, f: PEN_P, s: PEN_C, w: 2.2 });
   s.push({ ...penText(E[0] > 240 ? Ep[0] - 6 : Ep[0] + 6, Ep[1] + 2.5, t('elbow leads', '팔꿈치가 먼저'), { size: 9, weight: 900, anchor: E[0] > 240 ? 'end' : 'start' }), halo: true });
   s.push({ ...penText(110, 151, t('sitting back -- room for the arm to travel', '뒤로 앉아서 -- 팔이 움직일 공간을 만들어요'), { size: 8.5, fill: '#6d6f9c', anchor: 'middle' }), halo: true });
   return s;
 }
-function wuGlide(ph, who) {
-  if (ph != null) return wuGlideTop(ph, who);
-  const s = [penLine([6, 152], [214, 152], 1.6, '#bdb7a6'), ...penKeyrow(112, 80, 10)];
-  [[8, 60], [14, 72], [8, 84]].forEach(([x, y]) => s.push(penLine([x, y], [x + 18, y], 1.8)));
-  s.push(...penKid(WU_GLIDE, 1, who));
-  s.push(...wuSkate([84.5, 140], 0), ...wuSkate([34.5, 133], -22 * Math.PI / 180));
-  return s;
-}
+function wuGlide(ph, who) { return wuGlideTop(ph == null ? 0 : ph, who); }
 // 4. arm drop: the girl dives off the board along the dashed arc into the water -- splash (the arm drops into the key)
 function wuDivePose() {
   const dv = [0.62, 0.78], pp = [-dv[1], dv[0]], hip = [96, 60], nk = pAdd(hip, dv, 36), hd = pAdd(nk, dv, 13);
@@ -17284,36 +17284,26 @@ function wuDrop376(ph) {
   const r = penHandSide([80, 55, 24, -3, -2], { labels: false, faults: false, press, tip: [222, 118 - lift + press] });
   return penPlace(r.shapes, 0.82, [36, 20], [9, 30]);
 }
-function wuDive(ph, who) {
-  if (ph != null) return wuDrop376(ph);
-  const s = [{ k: 'rc', x: 6, y: 70, w: 62, h: 7, rx: 2, f: PEN_P, s: PEN_N, sw: 2.6 }, penLine([18, 77], [18, 162], 2.6), penLine([6, 162], [214, 162], 1.6, '#bdb7a6'),
-    penCurve([['M', [64, 60]], ['Q', [92, 24], [124, 64]]], 1.4, PEN_N, { dash: '3 5', op: 0.6 })];
-  s.push(...penKid(WU_DIVE, 1, who));
-  const wave = [['M', [90, 142]]]; for (let i = 0; i < 6; i++) wave.push(['Q', [100 + i * 20, i % 2 ? 149 : 135], [110 + i * 20, 142]]);
-  s.push(penCurve(wave, 2.4, PEN_N));
-  [[156, 130, 3.2], [166, 122, 2.6], [146, 123, 2.4], [174, 132, 2], [138, 133, 2]].forEach(([x, y, r]) => s.push({ k: 'el', c: [x, y], rx: r, ry: r, f: PEN_C }));
-  return s;
-}
+function wuDive(ph, who) { return wuDrop376(ph == null ? 0 : ph); }
 // 5. knuckle bridge: a little car drives over the knuckles; the bridge stays up (the hand from the side)
 function wuBridge(ph) {
-  const car = ph == null ? 0 : ph < 0.7 ? -1 + 2 * pEase(ph / 0.7) : 1;
-  return penHandSide([80, 55, 24, -3, -2], { labels: false, faults: false, car: ph != null && ph >= 0.85 ? null : car, press: ph != null && ph > 0.3 && ph < 0.7 ? 2 : 0 }).shapes;
+  const car = ph == null ? 0 : -1 + 2 * pEase(Math.min(ph, 0.82) / 0.82);
+  return penHandSide([80, 55, 24, -3, -2], { labels: false, faults: false, car, press: ph != null && ph > 0.3 && ph < 0.82 ? 2 : 0 }).shapes;
 }
-// 6. wrist balloon: the key goes down, and a balloon lifts the wrist straight back up to level (the boy)
-const WU_BAL = { hip: [80, 106], neck: [80, 64], head: [82, 50], arms: [[[82, 67], [103, 86], [124, 80], [130, 102]], [[78, 68], [74, 88], [75, 106]]], legs: [[[82, 106], [85, 132], [87, 157]], [[78, 106], [74, 132], [71, 157]]] };
+// 6. wrist balloon: the old animation (Sohyun 2026-10-09) -- the hand from the side on the pen hand;
+// the balloon floats the wrist up while the fingertip stays on the key
+const WU_BAL_UP = [84, 62, 30, 28, 18];
 function wuBalloon(ph, who) {
-  let dip = 0, press = 0;
-  if (ph != null) { dip = ph < 0.18 ? pEase(ph / 0.18) * 8 : ph < 0.5 ? 8 * (1 - pEase((ph - 0.18) / 0.32)) : 0; press = ph < 0.5 ? 1.6 : 0; }
-  const wr = [124, 80 + dip], el = [103, 86 + dip * 0.45];
-  const J = { ...WU_BAL, arms: [[WU_BAL.arms[0][0], el, wr, [130, 102 + press]], WU_BAL.arms[1]] };
-  const by = 25 + (ph == null ? 0 : Math.sin(ph * Math.PI * 2) * 2 + dip * 0.6);
-  const s = [...penFloor(220), ...penKeyrow(112, 104, 8)];
-  if (press) s.push({ k: 'rc', x: 126.5, y: 104 + press, w: 9.5, h: 10, rx: 0, f: PEN_P, s: PEN_N, sw: 1.6 });
-  s.push(penCurve([['M', wr], ['C', [wr[0] + 6, wr[1] - 22], [148, by + 25], [151, by + 15]]], 1.6, PEN_N),
-    { k: 'el', c: [153, by], rx: 13, ry: 16, f: PEN_C }, { k: 'pa', seg: [['M', [150, by + 16]], ['L', [153, by + 12]], ['L', [156, by + 16]], ['Z']], f: PEN_C },
-    { k: 'el', c: [148, by - 6], rx: 3, ry: 5, f: '#fff', op: 0.45 });
-  s.push(...penKid(J, 1, who));
-  return s;
+  const e = ph == null ? 0 : pEase(ph);
+  const a = RH_GOOD.map((v, i) => v + (WU_BAL_UP[i] - v) * e);
+  const r = penHandSide(a, { labels: false, faults: false });
+  const wr = r.pts[4], s = r.shapes;
+  const bx = wr[0] + 9, by = wr[1] - 46;
+  s.push(penCurve([['M', [wr[0], wr[1] - 3]], ['C', [wr[0] + 4, wr[1] - 18], [bx + 2, by + 26], [bx, by + 15]]], 1.6, PEN_N));
+  s.push({ k: 'el', c: [bx, by], rx: 13, ry: 16, f: PEN_C });
+  s.push({ k: 'pa', seg: [['M', [bx - 3, by + 16]], ['L', [bx, by + 12]], ['L', [bx + 3, by + 16]], ['Z']], f: PEN_C });
+  s.push({ k: 'el', c: [bx - 5, by - 6], rx: 3, ry: 5, f: '#fff', op: 0.45 });
+  return penPlace(s, 0.82, [36, 20], [9, 30]);
 }
 const WARM_UPS = [
   { id: 'ragdoll', who: 'girl', vb: [0, 0, 150, 172], ms: 4200, f: wuRagdoll },
@@ -17323,43 +17313,39 @@ const WARM_UPS = [
   { id: 'bridge', who: '', vb: [34, 26, 258, 126], ms: 3000, f: wuBridge },
   { id: 'balloon', who: 'boy', vb: [0, 0, 220, 172], ms: 3200, f: wuBalloon },
 ];
-// plays one scene for a few rounds, then comes back to the book's still picture
-function useWarmPlay(ms, rounds, on, onEnd) {
-  const [ph, setPh] = useState(null);
+// every card plays on its own, all the time (Sohyun 2026-10-09: the moves should just be there,
+// not behind a tap). A light 90 ms clock, not a full-rate rAF, keeps six pen drawings cheap on a phone.
+function useWarmPlay(ms, go) {
+  const [ph, setPh] = useState(go ? 0 : null);
   useEffect(() => {
-    if (!on) { setPh(null); return; }
-    let raf, t0 = null;
-    const step = (ts) => { if (t0 == null) t0 = ts; const k = (ts - t0) / ms; if (k >= rounds) { setPh(null); onEnd && onEnd(); return; } setPh(k % 1); raf = requestAnimationFrame(step); };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [on]);
+    if (!go) { setPh(null); return; }
+    const t0 = performance.now();
+    setPh(0);
+    const iv = setInterval(() => setPh(((performance.now() - t0) / ms) % 1), 90);
+    return () => clearInterval(iv);
+  }, [go, ms]);
   return ph;
 }
-function WarmPic({ w, playing, onEnd, h }) {
-  const ph = useWarmPlay(w.ms, 2, playing, onEnd);
+function WarmPic({ w, playing, h }) {
+  const ph = useWarmPlay(w.ms, playing !== false);
   const who = penWho(w.who);
   const shapes = useMemo(() => w.f(ph, who), [ph, who]);
   return <PenArt shapes={shapes} vb={w.vb} style={{height:h,width:'auto',maxWidth:'100%'}}/>;
 }
 function WarmUps376({ cards }) {
-  const [on, setOn] = useState(-1);
-  const [all, setAll] = useState(false);
-  const next = (i) => { if (all && i < WARM_UPS.length - 1) setOn(i + 1); else { setOn(-1); setAll(false); } };
+  // Sohyun (2026-10-09): the six moves play on their own, no tapping needed; a tap starts that card again
+  const [seed, setSeed] = useState({});
   return (
     <div data-warmups>
-      <div style={{display:'flex',justifyContent:'flex-end',marginBottom:8}}>
-        <button className="ghost-btn" style={{padding:'5px 12px',fontWeight:800,fontSize:13}} onClick={() => { if (on >= 0) { setOn(-1); setAll(false); } else { setAll(true); setOn(0); } }}>{on >= 0 ? t('■ Stop', '■ 멈추기') : t('▶ Watch all six, in order', '▶ 여섯 가지를 순서대로 보기')}</button>
-      </div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(min(100%, 170px), 1fr))',gap:14}}>
         {WARM_UPS.map((w, i) => { const [name, how] = cards[i]; return (
-          <div key={w.id} data-warm={w.id} style={{border:'1px solid ' + (on === i ? BK.coral : '#ece6d8'),borderRadius:12,padding:'8px 10px 10px',display:'flex',flexDirection:'column',gap:5,transition:'border-color 0.2s'}}>
-            <button onClick={() => { setAll(false); setOn(on === i ? -1 : i); }} aria-pressed={on === i} aria-label={t('Watch it move: ', '움직이는 모습 보기: ') + name}
-              style={{position:'relative',background:BK.soft,border:'none',borderRadius:8,height:150,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden',padding:0,cursor:'pointer'}}>
-              <WarmPic w={w} playing={on === i} onEnd={() => next(i)} h={134}/>
-              {on !== i && <span aria-hidden="true" style={{position:'absolute',right:6,bottom:6,width:26,height:26,borderRadius:13,background:'#fff',border:'1.5px solid ' + BK.ink,color:BK.ink,fontSize:11,display:'flex',alignItems:'center',justifyContent:'center',paddingLeft:2}}>▶</span>}
+          <div key={w.id} data-warm={w.id} style={{border:'1px solid #ece6d8',borderRadius:12,padding:'8px 10px 10px',display:'flex',flexDirection:'column',gap:5}}>
+            <button onClick={() => setSeed(x => ({ ...x, [w.id]: (x[w.id] || 0) + 1 }))} aria-label={t('Watch from the start: ', '처음부터 보기: ') + name}
+              style={{background:BK.soft,border:'none',borderRadius:8,height:150,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden',padding:0,cursor:'pointer'}}>
+              <WarmPic key={(seed[w.id] || 0)} w={w} h={134}/>
             </button>
             <div style={{display:'flex',alignItems:'center',gap:7}}>
-              <span style={{flex:'0 0 22px',height:22,borderRadius:11,background:on === i ? BK.coral : BK.ink,color:'#fff',fontWeight:900,fontSize:12.5,display:'flex',alignItems:'center',justifyContent:'center'}}>{i + 1}</span>
+              <span style={{flex:'0 0 22px',height:22,borderRadius:11,background:BK.ink,color:'#fff',fontWeight:900,fontSize:12.5,display:'flex',alignItems:'center',justifyContent:'center'}}>{i + 1}</span>
               <span style={{fontFamily:LB_SERIF,fontSize:16.5,fontWeight:800,color:BK.ink}}>{name}</span>
             </div>
             <div style={{fontSize:13.5,color:BK.ink,lineHeight:1.4}}>{how}</div>
