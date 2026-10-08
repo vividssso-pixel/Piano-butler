@@ -19772,7 +19772,7 @@ function BooksShelf() {
         <div style={{fontSize:12.5,color:'var(--muted)',lineHeight:1.45,padding:'2px 0 6px'}}>{t('Paper tools to cut out and play with at the lesson table. Flashcards are two-sided: print the fronts page, then the backs page on the other side (flip on the long edge).', '레슨 책상에서 오려서 쓰는 종이 교구예요. 플래시카드는 양면이에요: 앞면 페이지를 인쇄한 다음, 같은 종이 뒷면에 뒷면 페이지를 인쇄하세요 (긴 변 기준으로 넘기기).')}</div>
         {CUTOUT_LIST.map(c => (
           <div key={c.id} style={{display:'flex',alignItems:'center',gap:'4px 10px',flexWrap:'wrap',padding:'6px 0',borderTop:'1px solid #efe9d9'}}>
-            <span style={{flex:'1 1 150px',fontSize:14,fontWeight:800,color:'var(--navy)'}}>{c.name}<span style={{color:'var(--muted)',fontWeight:600,fontSize:12,marginLeft:8}}>{c.blurb} · {c.pages} {c.pages === 1 ? 'page' : 'pages'}</span></span>
+            <span style={{flex:'1 1 150px',fontSize:14,fontWeight:800,color:'var(--navy)'}}><span data-cut-ch={c.ch || ''} style={{color:'var(--muted)',fontWeight:700,marginRight:6}}>{c.ch ? bkChapterNo(c.ch) : t('any', '공통')}</span>{c.name}<span style={{color:'var(--muted)',fontWeight:600,fontSize:12,marginLeft:8}}>{c.blurb} · {c.pages} {c.pages === 1 ? 'page' : 'pages'}</span></span>
             <a href={href('cutouts', c.id)} target="_blank" rel="noopener" style={{fontSize:11.5,fontWeight:800,color:KIND.cutouts.col,border:'1.5px solid ' + KIND.cutouts.col,borderRadius:8,padding:'3px 9px',textDecoration:'none',background:'#fff',whiteSpace:'nowrap'}}>{t('Open to print', '인쇄용 열기')}</a>
           </div>
         ))}
@@ -21520,6 +21520,11 @@ function WbOpener({ id, blurb, concepts, hero }) {
           <span style={{fontSize:11.5,color:BK.muted}}>page {c.page}</span>
         </div>)}
         <div style={{fontSize:12,color:BK.muted,marginTop:7,lineHeight:1.5}}>Tick a box when you can do it without help.</div>
+        {CUTOUT_LIST.some(c => c.ch === id) && <div data-opener-cutouts={id} style={{display:'flex',alignItems:'center',gap:'4px 10px',flexWrap:'wrap',marginTop:16,border:'1.4px dashed ' + CUT.cut,borderRadius:10,padding:'8px 12px',fontSize:12.5,color:BK.ink,lineHeight:1.45}}>
+          <CutScissors size={16}/><b>Cut-outs for this chapter:</b>
+          <span style={{fontWeight:800,color:CUT.cut}}>{CUTOUT_LIST.filter(c => c.ch === id).map(c => c.name).join(' · ')}</span>
+          <span style={{color:BK.muted,fontSize:11.5}}>Print them from Books, Cut-outs in the app.</span>
+        </div>}
       </div>
       <div style={{textAlign:'center',width:130}}>
         <div style={{display:'inline-block',padding:6,border:'1.5px solid ' + BK.line,borderRadius:10}}><QR url={bkLink('drill=' + id + '&lock=1')} size={104}/></div>
@@ -31340,18 +31345,271 @@ function CutTempoRace() {
     </CutPage>
   </>;
 }
-const CUTOUTS = { 'note-bars': CutNoteBars, 'scale-slider': CutScaleSlider, 'staff-mat': CutStaffMat, 'cards-notes': CutCardsNotes, 'cards-rhythm': CutCardsRhythm, 'cards-terms': CutCardsTerms, 'fifths-wheel': CutFifthsWheel, 'chord-cake': CutChordCake, 'practice-dice': CutDice, 'tempo-race': CutTempoRace };
-const CUTOUT_LIST = [
-  { id: 'note-bars', name: 'Note-value bars', pages: 2, blurb: 'Pieces that add up to a bar' },
-  { id: 'scale-slider', name: 'Scale slider', pages: 2, blurb: 'Slide a pattern along the keys' },
-  { id: 'staff-mat', name: 'Staff mat and tokens', pages: 2, blurb: 'Build notes and words on the staff' },
-  { id: 'cards-notes', name: 'Note flashcards', pages: 4, blurb: 'Treble and bass notes, double-sided' },
-  { id: 'cards-rhythm', name: 'Rhythm flashcards', pages: 2, blurb: 'Notes and rests, double-sided' },
-  { id: 'cards-terms', name: 'Term flashcards', pages: 4, blurb: 'Speed, volume and more, double-sided' },
-  { id: 'fifths-wheel', name: 'Circle-of-fifths wheel', pages: 2, blurb: 'A turning window on every key' },
-  { id: 'chord-cake', name: 'Chord cake', pages: 2, blurb: 'Stack layers to build every triad' },
-  { id: 'practice-dice', name: 'Practice dice and week tracker', pages: 3, blurb: 'Roll how to play, then tick off the week' },
-  { id: 'tempo-race', name: 'Tempo Race board game', pages: 3, blurb: 'Race round the track by saying tempo words' },
+// ─── Phase 364: four new cut-out sets, in the same paper style as the first ten ───────────────────
+// Four-chord loop (Chords), Song builder (Musical Form), Composer cards (Famous Composers) and
+// Elements and motion cards (Styles & Genres). Everything printed comes from the app's own data
+// (FC_CHORDS, FC_PRESETS, SONG_SHAPES, FM_COL, CMP, ELEMENTS, MOTION_TYPES), so the paper and the app agree.
+
+// a grid of single-sided pieces that share their dashed cut lines
+function CutGrid({ cols, w, h, items, style }) {
+  return <div style={{display:'grid',gridTemplateColumns:'repeat(' + cols + ', ' + w + 'mm)',gridAutoRows:h + 'mm',borderTop:'1.2px dashed ' + CUT.cut,borderLeft:'1.2px dashed ' + CUT.cut,width:'fit-content',margin:'0 auto',...style}}>
+    {items.map((it, k) => <div key={k} style={{boxSizing:'border-box',borderRight:'1.2px dashed ' + CUT.cut,borderBottom:'1.2px dashed ' + CUT.cut,background:it && it.bg ? it.bg : '#fff',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'1.2mm',position:'relative',overflow:'hidden'}}>{it && it.node}</div>)}
+  </div>;
+}
+
+// ── Set: four-chord loop ──
+const CL_ORDER = ['I', 'ii', 'IV', 'V', 'vi'];
+const clLetters = (r) => FC_CHORDS[r].notes.map(dName);
+const clMinor = (r) => r === r.toLowerCase();
+function CutChordKeys({ letters, col }) {
+  return <svg viewBox="0 0 70 22" style={{width:'34mm',display:'block'}}>
+    {'CDEFGAB'.split('').map((l, i) => <rect key={l} x={i * 10 + 0.3} y="0.3" width="9.4" height="21.4" fill={letters.includes(l) ? col : '#fff'} stroke={BK.ink} strokeWidth="0.5"/>)}
+    {[0, 1, 3, 4, 5].map(i => <rect key={i} x={(i + 1) * 10 - 3} y="0.3" width="6" height="13" fill={BK.ink}/>)}
+    {'CDEFGAB'.split('').map((l, i) => letters.includes(l) && <text key={'t' + l} x={i * 10 + 5} y="19.4" fontSize="5.2" fontWeight="900" textAnchor="middle" fill={col === '#e8b93a' ? BK.ink : '#fff'}>{l}</text>)}
+  </svg>;
+}
+function clCard(r) {
+  const C = FC_CHORDS[r];
+  return { bg: cutRgba(C.col, 0.1), node: <>
+    <div style={{fontFamily:CK_SERIF,fontSize:34,fontWeight:900,color:C.col === '#e8b93a' ? '#b8860b' : C.col,lineHeight:1}}>{r}</div>
+    <div style={{fontSize:19,fontWeight:900,color:BK.ink,lineHeight:1}}>{C.name}</div>
+    <CutChordKeys letters={clLetters(r)} col={C.col}/>
+    <div style={{fontSize:9,fontWeight:800,color:BK.muted,letterSpacing:'0.06em'}}>{clMinor(r) ? 'MINOR · SAD' : 'MAJOR · HAPPY'}</div>
+  </> };
+}
+function CutChordLoop() {
+  const blank = { node: <><div style={{fontSize:9,fontWeight:800,color:BK.muted}}>write a chord</div><div style={{width:'30mm',borderBottom:'1px solid ' + BK.ink,height:'7mm'}}/><div style={{width:'30mm',borderBottom:'1px solid ' + BK.ink,height:'7mm'}}/></> };
+  const cards = [...CL_ORDER.map(clCard), ...CL_ORDER.map(clCard), blank, blank];
+  const W = 44, H = 52;
+  const slot = (n) => <div style={{width:W + 'mm',height:H + 'mm',boxSizing:'border-box',border:'1.6px solid ' + BK.line,borderRadius:'3mm',background:BK.soft,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:CK_SERIF,fontSize:40,fontWeight:900,color:BK.line}}>{n}</div>;
+  const arrow = (rot, extra) => <svg viewBox="0 0 30 12" style={{width:'14mm',transform:'rotate(' + rot + 'deg)',...extra}}><path d="M2 6 H24" stroke={BK.coral} strokeWidth="1.8" strokeLinecap="round"/><path d="M20 1.8 L27 6 L20 10.2" fill="none" stroke={BK.coral} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+  return <>
+    <CutPage no={1} set="Four-chord loop" title="Chord cards" intro={<>Five chords from C major, two of each. The big number is the chord’s <b>Roman numeral</b>: capitals are major (happy), small letters are minor (sad). The coloured keys are the three notes. Two blank cards are for chords you learn later.</>}>
+      <div style={{marginTop:'2mm'}}><CutGrid cols={4} w={W} h={H} items={cards}/></div>
+      <CutTry style={{marginTop:'4mm'}} items={[
+        <>Lay out <b>I · V · vi · IV</b> (C G Am F) on the loop mat. Play the bottom note of each chord with your left hand, four beats each, round and round.</>,
+        'Now play the whole chord with your right hand while your left hand plays the bottom note.',
+      ]}/>
+    </CutPage>
+    <CutPage no={2} keep set="Four-chord loop" title="The loop mat" intro={<>Put one card on each square and play them in order, 1 to 4, then straight back to 1 -- a loop. Hundreds of pop songs are built on just four chords going round like this.</>}>
+      <div style={{display:'grid',gridTemplateColumns:W + 'mm 22mm ' + W + 'mm',gridTemplateRows:H + 'mm 16mm ' + H + 'mm',alignItems:'center',justifyItems:'center',width:'fit-content',margin:'3mm auto 0'}}>
+        {slot(1)}{arrow(0)}{slot(2)}
+        {arrow(-90)}<div style={{fontSize:11,fontWeight:900,color:BK.coral,textAlign:'center',lineHeight:1.2}}>round<br/>and<br/>round</div>{arrow(90)}
+        {slot(4)}{arrow(180)}{slot(3)}
+      </div>
+      <div style={{marginTop:'5mm'}}>
+        <NvLabel col={BK.coral}>Famous loops to try <span style={{fontWeight:600,color:BK.muted}}>· same four chords, different order, different feeling</span></NvLabel>
+        <div style={{border:'1.3px solid ' + BK.line,borderRadius:8,overflow:'hidden'}}>
+          {FC_PRESETS.map((p, i) => <div key={i} style={{display:'flex',alignItems:'center',gap:'3mm',padding:'2mm 3mm',borderTop:i ? '1px solid ' + BK.line : 'none',background:i % 2 ? '#fff' : BK.soft}}>
+            <b style={{fontSize:12,color:BK.muted,width:'8mm'}}>{i + 1}</b>
+            {p.map((r, j) => <span key={j} style={{display:'inline-flex',alignItems:'center',gap:5,minWidth:'24mm'}}><span style={{fontFamily:CK_SERIF,fontSize:17,fontWeight:900,color:FC_CHORDS[r].col === '#e8b93a' ? '#b8860b' : FC_CHORDS[r].col}}>{r}</span><span style={{fontSize:13,fontWeight:800,color:BK.ink}}>{FC_CHORDS[r].name}</span></span>)}
+          </div>)}
+        </div>
+      </div>
+      <CutTry style={{marginTop:'4mm'}} items={[
+        'Play loop 1 four times round. Then play loop 3. Which one starts sadder? (Hint: which chord comes first?)',
+        'Play your loop and hum a tune on top. Use only notes from the chord you are on -- it always fits!',
+        'Swap two cards. Does your new loop still sound good? Give it a name and play it to someone at home.',
+      ]}/>
+    </CutPage>
+  </>;
+}
+
+// ── Set: song builder ──
+const SB_PARTS = [['Verse', FM_COL.A, BK.ink], ['Chorus', FM_COL.B, '#fff'], ['Pre-chorus', FM_COL.C, '#fff'], ['Bridge', FM_COL.D, '#fff'], ['Intro', '#6b9b5e', '#fff'], ['Outro', '#6b9b5e', '#fff']];
+const sbPart = (name) => SB_PARTS.find(p => p[0] === name);
+function sbBlock(name, h) {
+  const [nm, col] = sbPart(name);
+  return { w: 42, col, node: <span style={{fontFamily:CK_SERIF,fontSize:h > 18 ? 19 : 16,fontWeight:900,color:col === FM_COL.A ? '#8a6a14' : col,lineHeight:1,filter:col === FM_COL.A ? 'none' : 'brightness(0.85)'}}>{nm}</span> };
+}
+const SB_SHAPES = [
+  ['Verse-chorus', ['Verse', 'Chorus', 'Verse', 'Chorus'], 'A B A B'],
+  ['With a pre-chorus', ['Verse', 'Pre-chorus', 'Chorus', 'Verse', 'Pre-chorus', 'Chorus'], 'A B C A B C'],
+  ['With a bridge', ['Verse', 'Chorus', 'Verse', 'Chorus', 'Bridge', 'Chorus'], 'A B A B C B'],
+  ['32-bar song', null, 'A A B A'],
+  ['Binary', null, 'A B'],
+  ['Ternary', null, 'A B A'],
+  ['Rondo', null, 'A B A C A'],
+];
+function CutSongBuilder() {
+  const H = 20;
+  const row = (names) => <CutStrip h={H} pieces={names.map(n => sbBlock(n, H))}/>;
+  const tile = (l) => ({ w: 21, col: FM_COL[l], node: <span style={{fontFamily:CK_SERIF,fontSize:24,fontWeight:900,color:l === 'A' ? BK.ink : FM_COL[l],lineHeight:1}}>{l}</span> });
+  const mini = (name, k) => { const [nm, col, fg] = sbPart(name); return <span key={k} style={{display:'inline-flex',alignItems:'center',justifyContent:'center',height:'6.5mm',padding:'0 2mm',borderRadius:4,background:col,color:fg,fontSize:9.5,fontWeight:900,whiteSpace:'nowrap'}}>{nm}</span>; };
+  const miniL = (l, k) => <span key={k} style={{display:'inline-flex',alignItems:'center',justifyContent:'center',width:'6.5mm',height:'6.5mm',borderRadius:4,background:FM_COL[l],color:FM_FG[l],fontFamily:CK_SERIF,fontSize:12,fontWeight:900}}>{l}</span>;
+  return <>
+    <CutPage no={1} set="Song builder" title="Song blocks" intro={<>Songs are built from sections, like blocks. Cut out every block and the letter tiles. Each kind of section has its own colour, and inside one song the same section always gets the same letter.</>}>
+      <div style={{display:'flex',flexDirection:'column',gap:'3mm',alignItems:'center',marginTop:'2mm'}}>
+        <div><NvLabel col={FM_COL.A}>Verses <span style={{fontWeight:600,color:BK.muted}}>· tell the story, new words each time</span></NvLabel>{row(['Verse', 'Verse', 'Verse', 'Verse'])}</div>
+        <div><NvLabel col={FM_COL.B}>Choruses <span style={{fontWeight:600,color:BK.muted}}>· the catchy part everyone sings, the same each time</span></NvLabel>{row(['Chorus', 'Chorus', 'Chorus', 'Chorus'])}</div>
+        <div><NvLabel col={FM_COL.C}>Pre-choruses and bridges <span style={{fontWeight:600,color:BK.muted}}>· build up to the chorus · something new near the end</span></NvLabel>{row(['Pre-chorus', 'Pre-chorus', 'Bridge', 'Bridge'])}</div>
+        <div><NvLabel col={'#6b9b5e'}>Intro and outro <span style={{fontWeight:600,color:BK.muted}}>· the start and the end</span></NvLabel>{row(['Intro', 'Outro', 'Intro', 'Outro'])}</div>
+        <div><NvLabel col={BK.ink}>Letter tiles <span style={{fontWeight:600,color:BK.muted}}>· for any piece: the same music gets the same letter</span></NvLabel><CutStrip h={21} pieces={['A', 'A', 'A', 'A', 'B', 'B', 'C', 'C'].map(tile)}/></div>
+      </div>
+      <CutTry style={{marginTop:'5mm'}} items={[
+        'Put the blocks in a bag. Pull out four and lay them in a row. Would that make a good song? Swap one block to make it better.',
+        'Which blocks did you use most? Most songs have more choruses than anything else -- why do you think that is?',
+      ]}/>
+    </CutPage>
+    <CutPage no={2} keep set="Song builder" title="The song mat" intro={<>Lay your blocks on the mat from 1 to 8 -- that is your song’s plan, from start to finish. Then put a letter tile under each block.</>}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4, 42mm)',gap:'3mm',justifyContent:'center',marginTop:'2mm'}}>
+        {Array.from({ length: 8 }, (_, i) => <div key={i}>
+          <div style={{height:'20mm',boxSizing:'border-box',border:'1.6px solid ' + BK.line,borderRadius:'2mm',background:BK.soft,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:CK_SERIF,fontSize:26,fontWeight:900,color:BK.line}}>{i + 1}</div>
+          <div style={{height:'21mm',width:'21mm',margin:'1.5mm auto 0',boxSizing:'border-box',border:'1.2px dashed ' + BK.line,borderRadius:'2mm'}}/>
+        </div>)}
+      </div>
+      <div style={{marginTop:'5mm'}}>
+        <NvLabel col={BK.coral}>Shapes to build <span style={{fontWeight:600,color:BK.muted}}>· songs on top, pieces below</span></NvLabel>
+        <div style={{border:'1.3px solid ' + BK.line,borderRadius:8,overflow:'hidden'}}>
+          {SB_SHAPES.map(([nm, parts, letters], i) => <div key={nm} style={{display:'grid',gridTemplateColumns:'36mm 1fr 30mm',alignItems:'center',gap:'2mm',padding:'1.6mm 3mm',borderTop:i ? '1px solid ' + BK.line : 'none',background:i % 2 ? '#fff' : BK.soft}}>
+            <b style={{fontSize:12,color:BK.ink}}>{nm}</b>
+            <span style={{display:'flex',gap:'1.2mm',flexWrap:'wrap'}}>{parts ? parts.map((x, k) => mini(x, k)) : letters.split(' ').map(miniL)}</span>
+            <b style={{fontSize:12.5,color:BK.muted,letterSpacing:'0.08em',textAlign:'right'}}>{letters}</b>
+          </div>)}
+        </div>
+      </div>
+      <CutTry style={{marginTop:'4mm'}} items={[
+        'Put on a song you love. Lay down a block each time a new section starts. Did it have a pre-chorus? A bridge?',
+        'Build a rondo with the letter tiles: A B A C A. Make up a tiny A on the piano and play it every time A comes home.',
+        'Build your own song on the mat, then sing it with la-la words. Which shape did you make?',
+      ]}/>
+    </CutPage>
+  </>;
+}
+
+// ── Set: composer cards ──
+const CC_IDS = ['pachelbel', 'vivaldi', 'bach', 'handel', 'haydn', 'mozart', 'clementi', 'beethoven', 'schubert', 'chopin', 'rschumann', 'cschumann',
+  'liszt', 'brahms', 'tchaikovsky', 'grieg', 'debussy', 'joplin', 'bartok', 'prokofiev', 'gershwin', 'kabalevsky', 'sculthorpe', 'hisaishi'];
+const CC_ERA_COL = { renaissance: '#6b9b5e', baroque: '#3f9e94', classical: '#3a7bc4', romantic: '#e2735a', modern: '#d9a21b', contemporary: '#7a64a8' };
+const ccName = (c) => /Schumann/.test(c.name[0]) ? c.name[0] : cmpT(c.sur);
+function ccCard(c, i) {
+  const col = CC_ERA_COL[c.era];
+  return {
+    tag: 'C' + (i + 1), col,
+    front: <>
+      <div style={{position:'absolute',left:0,right:0,top:0,height:'7mm',background:col,color:'#fff',fontSize:9,fontWeight:900,letterSpacing:'0.08em',display:'flex',alignItems:'center',justifyContent:'center',textTransform:'uppercase'}}>{cmpEraTag(c.era)}</div>
+      <div style={{marginTop:'6mm'}}><CmpEmblem id={c.id} size={92}/></div>
+      <div style={{fontFamily:CK_SERIF,fontSize:ccName(c).length > 12 ? 15 : 19,fontWeight:900,color:BK.ink,lineHeight:1.1,marginTop:'1.5mm',textAlign:'center'}}>{ccName(c)}</div>
+      <div style={{fontSize:10,fontWeight:800,color:BK.muted}}>{cmpYears(c)}</div>
+    </>,
+    back: <div style={{padding:'0 3.5mm',textAlign:'center',display:'flex',flexDirection:'column',gap:'1.4mm',alignItems:'center'}}>
+      <div style={{fontSize:11.5,fontWeight:900,color:BK.ink,lineHeight:1.15}}>{cmpT(c.name)}</div>
+      <div style={{fontSize:9,fontWeight:700,color:BK.muted,lineHeight:1.2}}>{cmpT(c.country)}</div>
+      <div style={{fontSize:8,fontWeight:900,color:col,filter:'brightness(0.8)',letterSpacing:'0.08em'}}>FAMOUS FOR</div>
+      <div style={{fontSize:10,fontWeight:700,color:BK.ink,lineHeight:1.25,fontStyle:'italic'}}>{cmpT(c.known[0])}</div>
+      <div style={{fontSize:8,fontWeight:900,color:col,filter:'brightness(0.8)',letterSpacing:'0.08em'}}>LISTEN FOR</div>
+      <div style={{fontSize:9.5,color:BK.ink,lineHeight:1.25}}>{cmpT(c.finger[0])}</div>
+      <div style={{fontSize:9,fontWeight:900,color:BK.muted,marginTop:'0.5mm'}}>BORN <span style={{fontSize:15,color:BK.ink}}>{c.bornApprox ? 'c. ' : ''}{c.born}</span></div>
+    </div>,
+  };
+}
+function CutComposerCards() {
+  const all = CC_IDS.map(cmpById).filter(Boolean);
+  const cards = all.map(ccCard);
+  const a = cards.slice(0, 12), b = cards.slice(12, 24);
+  const order = all.slice().sort((x, y) => x.born - y.born);
+  return <>
+    <CutCardSheet no={1} set="Composer cards" title="Composers, set 1" side="front" cards={a}/>
+    <CutCardSheet no={2} set="Composer cards" title="Composers, set 1" side="back" cards={a}/>
+    <CutCardSheet no={3} set="Composer cards" title="Composers, set 2" side="front" cards={b}/>
+    <CutCardSheet no={4} set="Composer cards" title="Composers, set 2" side="back" cards={b}/>
+    <CutPage no={5} keep set="Composer cards" title="Games to play" intro={<>Twenty-four composers from nearly four hundred years of music. The colour on top of each card is its period.</>}>
+      <div style={{display:'flex',flexWrap:'wrap',gap:'2mm',margin:'1mm 0 3mm'}}>{Object.keys(CC_ERA_COL).map(id => <span key={id} style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:11,fontWeight:800,color:BK.ink}}><span style={{width:'4mm',height:'4mm',borderRadius:2,background:CC_ERA_COL[id]}}/>{cmpEraTag(id)} <span style={{color:BK.muted,fontWeight:600}}>{CMP_PERIODS[id].years[0]}–{CMP_PERIODS[id].years[1] > 2025 ? 'today' : CMP_PERIODS[id].years[1]}</span></span>)}</div>
+      <CutTry title="GAMES" items={[
+        <><b>Born first!</b> Deal the cards out, face up. Everyone turns over their top card at the same time and reads the <b>BORN</b> year on the back. The earliest-born composer wins all the cards. Same year? Turn over the next one.</>,
+        <><b>Time line.</b> Lay all the cards in a row, oldest on the left -- without looking at the backs! Then turn them over and check with the list below.</>,
+        <><b>Who am I?</b> Pick a card secretly and read out its <b>LISTEN FOR</b> line, then its <b>FAMOUS FOR</b> line. Who can guess the composer first?</>,
+        <><b>Period families.</b> Deal five cards each. Ask another player for a card from a period (“Do you have a Romantic?”). Collect three of the same colour to make a family.</>,
+        <><b>My composers.</b> Find the cards for the composers of the pieces you are playing. Keep them on your music stand this week.</>,
+      ]}/>
+      <div style={{marginTop:'4mm'}}>
+        <NvLabel col={BK.ink}>Answer list <span style={{fontWeight:600,color:BK.muted}}>· oldest first</span></NvLabel>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3, 1fr)',gap:'1mm 4mm',border:'1.3px solid ' + BK.line,borderRadius:8,padding:'2.5mm 3mm'}}>
+          {order.map((c, i) => <div key={c.id} style={{display:'flex',alignItems:'center',gap:6,fontSize:11,color:BK.ink}}><b style={{width:'5mm',color:BK.muted}}>{i + 1}</b><span style={{width:'3mm',height:'3mm',borderRadius:1,background:CC_ERA_COL[c.era]}}/><b>{ccName(c)}</b><span style={{color:BK.muted}}>{cmpYears(c)}</span></div>)}
+        </div>
+      </div>
+    </CutPage>
+  </>;
+}
+
+// ── Set: elements and motion cards ──
+const CE_LISTEN = {
+  pitch: 'High, middle or low? Does it go up or down?', rhythm: 'Long notes or short ones? Can you clap the pattern?', melody: 'Can you hum the tune? Does it step or leap?',
+  harmony: 'Do you hear chords under the tune? Do they sound happy or sad?', dynamics: 'Loud or soft? Does it get louder or softer?', timbre: 'Which instruments or voices can you hear?',
+  texture: 'One line, a tune with chords, or tunes woven together?', form: 'Which parts come back? Say the letters: A B A …',
+};
+const CE_COL = '#3f9e94', CM_COL = '#e2735a';
+function ceCards() {
+  const el = ELEMENTS.map((e, i) => ({
+    tag: 'E' + (i + 1), col: CE_COL,
+    front: <>
+      <div style={{position:'absolute',left:0,right:0,top:0,height:'7mm',background:CE_COL,color:'#fff',fontSize:9,fontWeight:900,letterSpacing:'0.08em',display:'flex',alignItems:'center',justifyContent:'center'}}>ELEMENT OF MUSIC</div>
+      <div style={{width:96,height:66,display:'flex',alignItems:'center',justifyContent:'center',marginTop:'5mm'}}><div style={{transform:'scale(2.3)'}}><ElemIcon id={e.id} color={BK.ink}/></div></div>
+      <div style={{fontFamily:CK_SERIF,fontSize:24,fontWeight:900,color:BK.ink,lineHeight:1,marginTop:'2mm'}}>{e.en}</div>
+    </>,
+    back: <div style={{padding:'0 4mm',textAlign:'center',display:'flex',flexDirection:'column',gap:'2mm',alignItems:'center'}}>
+      <div style={{fontSize:9,fontWeight:900,color:BK.muted,letterSpacing:'0.06em'}}>{e.en.toUpperCase()}</div>
+      <div style={{fontSize:13,fontWeight:800,color:BK.ink,lineHeight:1.25}}>{e.den}</div>
+      <div style={{fontSize:8,fontWeight:900,color:CE_COL,filter:'brightness(0.8)',letterSpacing:'0.08em',marginTop:'1mm'}}>LISTEN FOR</div>
+      <div style={{fontSize:10.5,color:BK.ink,lineHeight:1.3,fontStyle:'italic'}}>{CE_LISTEN[e.id]}</div>
+      <div style={{fontSize:8.5,fontWeight:800,color:BK.muted}}>Chapter {bkChapterNo(e.ch || 'styles')} · {bkChapterName(e.ch || 'styles')}</div>
+    </div>,
+  }));
+  const mo = MOTION_TYPES.map((m, i) => ({
+    tag: 'H' + (i + 1), col: CM_COL,
+    front: <>
+      <div style={{position:'absolute',left:0,right:0,top:0,height:'7mm',background:CM_COL,color:'#fff',fontSize:9,fontWeight:900,letterSpacing:'0.08em',display:'flex',alignItems:'center',justifyContent:'center'}}>TWO HANDS</div>
+      <div style={{width:'50mm',marginTop:'6mm'}}><MotionPicture type={m} on={-1}/></div>
+      <div style={{fontFamily:CK_SERIF,fontSize:22,fontWeight:900,color:BK.ink,lineHeight:1}}>{m.en}</div>
+      <div style={{fontSize:9,fontWeight:800,color:BK.muted}}>motion</div>
+    </>,
+    back: <div style={{padding:'0 4mm',textAlign:'center',display:'flex',flexDirection:'column',gap:'2mm',alignItems:'center'}}>
+      <div style={{fontSize:9,fontWeight:900,color:BK.muted,letterSpacing:'0.06em'}}>{m.en.toUpperCase()} MOTION</div>
+      <div style={{fontSize:12,fontWeight:700,color:BK.ink,lineHeight:1.3}}>{m.den}</div>
+      <div style={{fontSize:8.5,fontWeight:800,color:BK.muted}}>Chapter {bkChapterNo('styles')} · {bkChapterName('styles')}</div>
+    </div>,
+  }));
+  return [...el, ...mo];
+}
+function CutElementCards() {
+  const cards = ceCards();
+  return <>
+    <CutCardSheet no={1} set="Elements and motion cards" title="Elements and motion" side="front" cards={cards}/>
+    <CutCardSheet no={2} set="Elements and motion cards" title="Elements and motion" side="back" cards={cards}/>
+    <CutPage no={3} keep set="Elements and motion cards" title="Games to play" intro={<>The <b style={{color:CE_COL}}>eight elements</b> are what every piece of music is made of. The <b style={{color:CM_COL}}>four motion cards</b> show how two hands can move together.</>}>
+      <CutTry title="GAMES" style={{marginTop:'2mm'}} items={[
+        <><b>Element detective.</b> Put on a piece of music. Turn over an element card and say one thing you hear about it. Right? Keep the card. Collect all eight!</>,
+        <><b>Play it, guess it.</b> Pick a motion card secretly. Play a short pattern with both hands in that motion. Can your partner name it? Then swap.</>,
+        <><b>See it or hear it?</b> Open a piece you are learning. Sort the element cards into two piles: the ones you can <b>see</b> on the page (like dynamics) and the ones you can only <b>hear</b> (like timbre).</>,
+        <><b>Change one thing.</b> Play a piece you know. Turn over an element card and change only that element: higher, faster, softer, a new texture… Can someone at home tell what changed?</>,
+      ]}/>
+      <div style={{marginTop:'5mm'}}>
+        <NvLabel col={CE_COL}>My listening log <span style={{fontWeight:600,color:BK.muted}}>· write what you heard for three elements</span></NvLabel>
+        <div style={{border:'1.3px solid ' + BK.line,borderRadius:8,overflow:'hidden'}}>
+          <div style={{display:'grid',gridTemplateColumns:'46mm 1fr 1fr 1fr',background:BK.ink,color:'#fff',fontSize:10.5,fontWeight:900,padding:'1.6mm 3mm'}}><span>The piece</span><span>Element 1</span><span>Element 2</span><span>Element 3</span></div>
+          {Array.from({ length: 6 }, (_, i) => <div key={i} style={{display:'grid',gridTemplateColumns:'46mm 1fr 1fr 1fr',height:'13mm',borderTop:'1px solid ' + BK.line,background:i % 2 ? '#fff' : BK.soft}}>{[0, 1, 2, 3].map(k => <span key={k} style={{borderLeft:k ? '1px solid ' + BK.line : 'none'}}/>)}</div>)}
+        </div>
+      </div>
+    </CutPage>
+  </>;
+}
+
+const CUTOUTS = { 'note-bars': CutNoteBars, 'scale-slider': CutScaleSlider, 'staff-mat': CutStaffMat, 'cards-notes': CutCardsNotes, 'cards-rhythm': CutCardsRhythm, 'cards-terms': CutCardsTerms, 'fifths-wheel': CutFifthsWheel, 'chord-cake': CutChordCake, 'practice-dice': CutDice, 'tempo-race': CutTempoRace, 'chord-loop': CutChordLoop, 'song-builder': CutSongBuilder, 'composer-cards': CutComposerCards, 'cards-elements': CutElementCards };
+const CUTOUT_LIST = [ // in the music map's order; ch = the chapter it goes with (null = any chapter)
+  { id: 'staff-mat', ch: 'staff', name: 'Staff mat and tokens', pages: 2, blurb: 'Build notes and words on the staff' },
+  { id: 'cards-notes', ch: 'staff', name: 'Note flashcards', pages: 4, blurb: 'Treble and bass notes, double-sided' },
+  { id: 'note-bars', ch: 'note-values', name: 'Note-value bars', pages: 2, blurb: 'Pieces that add up to a bar' },
+  { id: 'cards-rhythm', ch: 'note-values', name: 'Rhythm flashcards', pages: 2, blurb: 'Notes and rests, double-sided' },
+  { id: 'tempo-race', ch: 'tempo', name: 'Tempo Race board game', pages: 3, blurb: 'Race round the track by saying tempo words' },
+  { id: 'scale-slider', ch: 'scales', name: 'Scale slider', pages: 2, blurb: 'Slide a pattern along the keys' },
+  { id: 'fifths-wheel', ch: 'key-signatures', name: 'Circle-of-fifths wheel', pages: 2, blurb: 'A turning window on every key' },
+  { id: 'chord-cake', ch: 'chords', name: 'Chord cake', pages: 2, blurb: 'Stack layers to build every triad' },
+  { id: 'chord-loop', ch: 'chords', name: 'Four-chord loop', pages: 2, blurb: 'Chord cards and a loop mat' },
+  { id: 'song-builder', ch: 'form', name: 'Song builder', pages: 2, blurb: 'Song blocks, letter tiles and a song mat' },
+  { id: 'cards-terms', ch: 'terms', name: 'Term flashcards', pages: 4, blurb: 'Speed, volume and more, double-sided' },
+  { id: 'composer-cards', ch: 'composers', name: 'Composer cards', pages: 5, blurb: '24 composers, double-sided, with games' },
+  { id: 'cards-elements', ch: 'styles', name: 'Elements and motion cards', pages: 3, blurb: 'The eight elements and the four two-hand motions, with games' },
+  { id: 'practice-dice', ch: null, name: 'Practice dice and week tracker', pages: 3, blurb: 'Roll how to play, then tick off the week' },
 ];
 
 function BookRoot({ kind, ch }) {
