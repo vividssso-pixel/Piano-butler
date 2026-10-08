@@ -19415,7 +19415,7 @@ function Toolbox({ onOpen, onChapter, kit, onStar }) {
   return (
     <div className="fade-up">
       <div className="card" style={{marginBottom:12}}>
-        <p style={{fontSize:13.5,color:'var(--muted)',margin:'0 0 10px',lineHeight:1.5}}>{kit ? t('☆ puts a tool in ', '☆ 를 누르면 ') + kit.name + t('’s kit.', '의 키트에 담겨요.') : t('☆ starts a kit for the current student.', '☆ 를 누르면 지금 학생의 키트가 시작돼요.')}</p>
+        <p style={{fontSize:13.5,color:'var(--muted)',margin:'0 0 10px',lineHeight:1.5}}>{kit ? t('☆ puts a tool in the kit “', '☆ 를 누르면 “') + kit.name + t('”.', '” 키트에 담겨요.') : t('☆ starts a new kit.', '☆ 를 누르면 새 키트가 시작돼요.')}</p>
         {/* Phase 166 (2026-09-28): Sohyun liked the Learn tab's category-chip overview and asked
             for the same at-a-glance browsing at the top of the Toolbox, since the category
             grouping below (unchanged) was easy to miss under the search/filter card. This row
@@ -19727,6 +19727,44 @@ function StudentsView({ onPlan, onOpenKit }) {
 function GuideTab({ onOpenChapter }) {
   return <div className="fade-up"><StartGuide onOpen={onOpenChapter} always/></div>;
 }
+const GUIDE_HOW = () => [
+  [t('Open a chapter', '챕터 열기'), t('Each chapter is one lesson: short steps to tap, hear and play. Press “Got it ✓” at the end of each step.', '챕터 하나가 레슨 하나예요: 누르고, 듣고, 쳐 보는 짧은 단계들. 단계를 마치면 “이해했어요 ✓”를 눌러요.')],
+  [t('Do the drill', '드릴 하기'), t('At the bottom of the chapter, press “Start the drill” for a quick quiz on what you learned.', '챕터 맨 아래의 “드릴 시작하기”를 누르면 배운 것을 짧은 퀴즈로 확인해요.')],
+  [t('Press Next', '다음 누르기'), t('Every chapter ends with “Next on your path” -- so you always know what comes after.', '모든 챕터 끝에 “나의 경로에서 다음”이 있어요 -- 그래서 다음에 할 일을 늘 알 수 있어요.')],
+];
+// The top of the map page: the one chapter to open next, and "How it works" folded away until asked for.
+function MapHead({ onOpen }) {
+  const [help, setHelp] = useState(false);
+  const totals = loadStepTotals(), ids = pathIds();
+  const status = Object.fromEntries(ids.map(id => [id, chapterStatus(id, totals)]));
+  const focus = guideFocus(status, ids), next = focus ? focus.id : null;
+  const label = (id) => (DRILLS.find(d => d.id === id) || {}).label;
+  return (
+    <div data-testid="map-head" style={{margin:'0 0 16px'}}>
+      {next
+        ? <button className="primary-btn" data-testid="map-continue" style={{width:'100%',padding:'12px 16px',fontSize:15.5,textAlign:'left',display:'flex',justifyContent:'space-between',alignItems:'center',gap:10}} onClick={() => onOpen(next)}>
+            <span><span style={{display:'block',fontSize:11.5,fontWeight:800,letterSpacing:'0.08em',textTransform:'uppercase',opacity:0.8}}>{focus.kind === 'resume' ? t('Keep going', '이어서 하기') : focus.kind === 'next' ? t('Next on your path', '나의 경로에서 다음') : t('Start at the beginning', '처음부터 시작하기')}</span>{label(next)}</span><span style={{fontSize:20}}>→</span></button>
+        : <div style={{fontSize:14.5,fontWeight:800,color:'var(--good)',textAlign:'center',margin:'6px 0'}}>{t('Every chapter on the path is done -- wonderful!', '경로의 모든 챕터를 마쳤어요 -- 멋져요!')}</div>}
+      <div style={{display:'flex',justifyContent:'flex-end',marginTop:8}}>
+        <button className={'chip' + (help ? ' active' : '')} data-testid="map-help" aria-expanded={help} style={{padding:'3px 11px',fontSize:12.5}} onClick={() => setHelp(h => !h)}>{help ? t('Hide how it works ▴', '사용법 접기 ▴') : t('? How it works', '? 사용법')}</button>
+      </div>
+      {help && <div data-testid="map-help-panel" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(160px, 1fr))',gap:10,marginTop:10}}>
+        {GUIDE_HOW().map(([h, x], i) => <div key={i} style={{display:'flex',gap:10,alignItems:'flex-start',background:'var(--surface)',border:'1.5px solid var(--navy-line)',borderRadius:12,padding:'10px 11px'}}>
+          <GuideNum n={i + 1} on={i === 2}/><span><b style={{display:'block',fontSize:14.5,color:'var(--navy)',marginBottom:2}}>{h}</b><span style={{fontSize:13,color:'var(--navy-soft)',lineHeight:1.45}}>{x}</span></span>
+        </div>)}
+      </div>}
+    </div>
+  );
+}
+function MapHome({ onOpen }) {
+  return (
+    <div className="fade-up" data-testid="map-home">
+      <PageIntro title={UI_TEACHER ? t('Music map', '음악 지도') : t('My music map', '나의 음악 지도')} text={t('The whole road on one page. Tap a chapter to open it, or carry on with the button.', '전체 길이 한 장에 있어요. 챕터를 누르거나, 버튼을 눌러 이어서 해요.')}/>
+      <MapHead onOpen={onOpen}/>
+      <MusicMap onOpen={onOpen} noIntro/>
+    </div>
+  );
+}
 // Phase 325: the printed books, one shelf. Each link opens the paper layout in a new tab (it has its own Print / Save as PDF button).
 // The books are English only (the Korean app is the screen version), so the links always ask for lang=en.
 const BOOKS_PUBLIC = true; // Sohyun OK 2026-10-06: the Books tab shows for every visitor of drills.html (nothing on the main site links to it yet)
@@ -19817,7 +19855,7 @@ function ToolboxTab({ onOpenTool, onOpenKit, onStudents, onChapter }) {
   const chip = (on, label, onClick, key) => <button key={key || label} className={'chip' + (on ? ' active' : '')} style={{padding:'2px 9px',fontSize:12}} onClick={onClick}>{label}</button>;
   return (
     <div className="fade-up">
-      <PageIntro title={t('Toolbox', '도구함')} text={sec === 'books' ? t('The printed books (Lesson Book, Workbook, Teacher copy for every chapter) and paper cut-outs.', '인쇄용 책(챕터마다 레슨북, 워크북, 교사용)과 오려 쓰는 종이 교구.') : t('Search for one activity in the middle of a lesson, or browse by topic. Press ☆ to build a kit for the student.', '레슨 중에 쓸 활동 하나를 검색하거나 주제별로 찾아보세요. ☆ 를 눌러 학생의 키트를 만들어요.')}/>
+      <PageIntro title={t('Toolbox', '도구함')} text={sec === 'books' ? t('The printed books (Lesson Book, Workbook, Teacher copy for every chapter) and paper cut-outs.', '인쇄용 책(챕터마다 레슨북, 워크북, 교사용)과 오려 쓰는 종이 교구.') : t('Search for one activity in the middle of a lesson, or browse by topic. Press ☆ to put an activity in a kit you can send as a link.', '레슨 중에 쓸 활동 하나를 검색하거나 주제별로 찾아보세요. ☆ 를 누르면 링크로 보낼 수 있는 키트에 담겨요.')}/>
       {booksOn && <div style={{display:'flex',gap:6,margin:'-6px 0 12px'}}>
         {[['tools', t('Activities', '활동')], ['books', t('Books', '책')]].map(([k, l]) => (
           <button key={k} className={'chip' + (sec === k ? ' active' : '')} style={{padding:'6px 16px',fontSize:14,fontWeight:800}} onClick={() => setSec(k)}>{l}</button>
@@ -19826,14 +19864,15 @@ function ToolboxTab({ onOpenTool, onOpenKit, onStudents, onChapter }) {
       {booksOn && sec === 'books' && <BooksShelf/>}
       {sec === 'tools' && <div className="card" style={{marginBottom:10,padding:'10px 12px'}}>
         <div style={{display:'flex',gap:4,flexWrap:'wrap',alignItems:'center'}}>
-          <span style={{fontSize:12,fontWeight:900,color:'var(--muted)',marginRight:2}}>{t('STUDENT','학생')}</span>
+          <span style={{fontSize:12,fontWeight:900,color:'var(--muted)',marginRight:2}}>{t('KIT','키트')}</span>
           {kits.map((k, i) => chip(i === who, k.name, () => setWho(i), 's' + i))}
-          <AddName onAdd={newStudent}/>
-          {kits.length > 0 && onStudents && <button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={onStudents}>{t('Edit students','학생 관리')}</button>}
+          <AddName onAdd={newStudent} label={t('+ Kit', '+ 키트')} placeholder={t('Kit name', '키트 이름')}/>
+          <span style={{flex:1}}/>
+          <a href="teacher-dashboard.html" data-testid="kit-to-dashboard" style={{fontSize:12,fontWeight:800,color:'var(--muted)',textDecoration:'none'}}>{t('Students and homework: dashboard →', '학생과 숙제: 대시보드 →')}</a>
         </div>
         {kit && kit.notes && <div style={{fontSize:13,color:'#6d6f9c',marginTop:6,background:'#f5f0e4',borderRadius:8,padding:'5px 8px'}}><b>{t('Notes:','메모:')}</b> {kit.notes}</div>}
         {kit && kit.tools.length > 0 && <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:8}}>
-          <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => onOpenKit(kit)}>{LANG === 'ko' ? kit.name + ' 키트 열기 (' + kit.tools.length + ')' : 'Open ' + kit.name + '’s kit (' + kit.tools.length + ')'}</button>
+          <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => onOpenKit(kit)}>{LANG === 'ko' ? '“' + kit.name + '” 키트 열기 (' + kit.tools.length + ')' : 'Open the kit “' + kit.name + '” (' + kit.tools.length + ')'}</button>
           <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={copyKit}>{copied ? t('Link copied ✓', '링크 복사됨 ✓') : t('Copy student link', '학생 링크 복사')}</button>
         </div>}
       </div>}
@@ -21033,7 +21072,7 @@ function rdWater(cx, cy, r, surf) {
   return s + ` V${cy + r + 2} H${x0} Z`;
 }
 const RD_CSS = '@keyframes rdRise{from{transform:translateY(var(--rd-d))}to{transform:none}}.rd-rise{animation:rdRise 1.1s cubic-bezier(.3,.7,.3,1) both}@media (prefers-reduced-motion: reduce){.rd-rise{animation:none}}[data-chapter]:focus-visible,[data-stage-circle]:focus-visible{outline:2px solid #e4572e;outline-offset:2px;border-radius:4px}';
-function MusicMap({ onOpen, compact }) {
+function MusicMap({ onOpen, compact, noIntro }) {
   const [, setFontTick] = useState(0);
   const box = useRef(null);
   const [wide, setWide] = useState(() => { try { return window.innerWidth >= 700; } catch (e) { return false; } });
@@ -21055,7 +21094,7 @@ function MusicMap({ onOpen, compact }) {
   return (
     <div data-testid="music-map" data-layout={wide ? 'wide' : 'tall'} ref={box} className={compact ? '' : 'fade-up'}>
       <style>{RD_CSS}</style>
-      {!compact && <PageIntro title={UI_TEACHER ? t('Music map', '음악 지도') : t('My music map', '나의 음악 지도')} text={t('The whole road on one page. Tap a chapter to open it.', '전체 길이 한 장에 있어요. 챕터를 누르면 열려요.')}/>}
+      {!compact && !noIntro && <PageIntro title={UI_TEACHER ? t('Music map', '음악 지도') : t('My music map', '나의 음악 지도')} text={t('The whole road on one page. Tap a chapter to open it.', '전체 길이 한 장에 있어요. 챕터를 누르면 열려요.')}/>}
       <svg viewBox={'0 0 ' + lay.W + ' ' + lay.H} width="100%" style={{ display: 'block', maxWidth: wide ? 720 : 440, margin: '0 auto', overflow: 'visible' }} role="group" aria-label={t('Music map', '음악 지도')}>
         <text data-testid="map-count" x={wide ? 8 : 14} y="14" fontSize="12.5" fontWeight="600" fill="#6d6f9c" style={sans}>{t(finished + ' of ' + all.length + ' chapters done', all.length + '개 챕터 중 ' + finished + '개 완료')}</text>
         <path d={lay.d} fill="none" stroke={RD.ROAD} strokeOpacity="0.4" strokeWidth="1.6" strokeLinecap="round"/>
@@ -21172,19 +21211,20 @@ function App() {
   return (
     <div style={{minHeight:'100vh',background:'var(--bg)'}}>
       <div style={{background:'var(--bg)',padding:'14px 16px 30px',backgroundImage:'repeating-linear-gradient(to bottom, transparent 0 3px, var(--navy) 3px 4.2px)',backgroundSize:'100% 20px',backgroundRepeat:'no-repeat',backgroundPosition:'0 100%'}}>
-        <div className="pb-main" style={{maxWidth:600,margin:'0 auto',display:'flex',alignItems:'center',justifyContent:'space-between',gap:10}}>
+        <div className="pb-main" style={{maxWidth:600,margin:'0 auto',display:'flex',flexWrap:'wrap',alignItems:'center',justifyContent:'space-between',gap:10}}>
           <div style={{minWidth:0}}>
             <a href="index.html" style={{color:'var(--muted)',fontSize:13,textDecoration:'none',display:'block',marginBottom:2}}>{t('← Piano Butler', '← 피아노 버틀러')}</a>
             <h1 style={{color:'var(--text)',fontSize:21,fontWeight:900,margin:0,letterSpacing:'-0.02em',lineHeight:1.2}}>
               {st.lock ? (st.view === 'kit' ? (st.kn || t('Your tools', '내 도구')) : st.tool ? (TOOLS.find(tl => tl.id === st.tool) || {}).title : active.label) : t('Practice Drills', '연습 드릴')}
             </h1>
           </div>
-          <div style={{display:'flex',alignItems:'center',gap:8,flex:'0 0 auto'}}>
+          <div style={{display:'flex',alignItems:'center',gap:8,flex:'0 0 auto',marginLeft:'auto'}}>
             <button className="chip" style={{padding:'3px 9px',fontSize:12}} onClick={toggleLang} title={t('한국어로 보기', 'View in English')}>{lang === 'ko' ? 'EN' : '한국어'}</button>
             {T && lang !== 'ko' && <button className={'chip' + (solfaEn ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={toggleSolfa} title="Show fixed-do syllables (C = Do) beside the letter names">Do Re Mi</button>}
             {T && <div style={{textAlign:'right'}}>
               <div style={{fontSize:11,fontWeight:900,color:'#e4572e',letterSpacing:'0.06em'}}>{t('TEACHER VIEW', '교사 화면')}</div>
-              <button className="chip" style={{padding:'3px 10px',fontSize:12,marginTop:3}} onClick={() => setPreview(true)}>{t('Student view', '학생 화면')}</button>
+              <button className="chip" style={{padding:'3px 10px',fontSize:12,marginTop:3}} onClick={() => setPreview(true)}>{t('Student view', '학생 화면')}</button>{' '}
+              <a className="chip" data-testid="to-dashboard" href="teacher-dashboard.html" style={{padding:'3px 10px',fontSize:12,marginTop:3,textDecoration:'none',display:'inline-block'}}>{t('Dashboard', '대시보드')}</a>
             </div>}
           </div>
         </div>
@@ -21198,17 +21238,15 @@ function App() {
         {preview && <div style={{background:'#26296b',color:'#fff',borderRadius:10,padding:'8px 12px',marginBottom:12,fontSize:13.5,display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}><span>{t('You’re seeing what a student sees.', '학생에게 보이는 화면이에요.')}</span><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setPreview(false)}>{t('Back to teacher view', '교사 화면으로')}</button></div>}
         {!st.lock && !(showToday && !T) && (
           <div style={{display:'flex',gap:6,borderBottom:'1.5px solid var(--navy-line)',marginBottom:16}}>
-            {(T ? [['path', t('Guide', '안내')], ['chapters', t('Chapters', '챕터')], ['toolbox', t('Toolbox', '도구함')], ['practice', t('Practice', '연습')], ['students', t('Students', '학생')]] : (showToday ? [['today', t('Today', '오늘')], ['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]] : [['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]])).map(([v, l]) => (
-              <button key={v} onClick={() => { update({ view: v, tool: null, kit: null, from: null, drill: (v === 'practice' || v === 'students') ? st.drill : null }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderBottom:'3px solid ' + ((st.view === v || (!T && v === 'path' && st.view === 'chapters') || (T && v === 'toolbox' && st.view === 'tools' && st.ret === 'toolbox')) ? 'var(--coral)' : 'transparent'),marginBottom:-1.5,background:'transparent',padding:'10px 0',fontFamily:"'Playfair Display', Georgia, serif",fontSize:T ? 14.5 : 18,fontWeight:800,cursor:'pointer',
-                color:(st.view === v || (!T && v === 'path' && st.view === 'chapters') || (T && v === 'toolbox' && st.view === 'tools' && st.ret === 'toolbox')) ? 'var(--navy)' : 'var(--muted)'}}>{l}</button>
+            {(T ? [['path', t('Chapters', '챕터')], ['toolbox', t('Toolbox', '도구함')], ['practice', t('Practice', '연습')]] : (showToday ? [['today', t('Today', '오늘')], ['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]] : [['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]])).map(([v, l]) => (
+              <button key={v} onClick={() => { update({ view: v, tool: null, kit: null, from: null, drill: (v === 'practice' || v === 'students') ? st.drill : null }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderBottom:'3px solid ' + ((st.view === v || (v === 'path' && st.view === 'chapters') || (T && v === 'toolbox' && st.view === 'tools' && st.ret === 'toolbox')) ? 'var(--coral)' : 'transparent'),marginBottom:-1.5,background:'transparent',padding:'10px 0',fontFamily:"'Playfair Display', Georgia, serif",fontSize:T ? 14.5 : 18,fontWeight:800,cursor:'pointer',
+                color:(st.view === v || (v === 'path' && st.view === 'chapters') || (T && v === 'toolbox' && st.view === 'tools' && st.ret === 'toolbox')) ? 'var(--navy)' : 'var(--muted)'}}>{l}</button>
             ))}
           </div>
         )}
         <SoundSettings/>
         {st.view === 'today' && !T && !st.lock && sl.link ? (
           <StudentHome link={sl.link} onOpenChapter={(id) => { update({ view: 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1, from: { drill: id } }); try { window.scrollTo(0, 0); } catch (e) {} }} onOpenTool={(id) => { update({ view: PRACTICE_IDS.includes(id) ? 'practice' : 'tools', tool: id, kit: null, drill: null, from: { tool: id } }); try { window.scrollTo(0, 0); } catch (e) {} }} onAll={() => { update({ view: 'path', tool: null, kit: null, drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
-        ) : st.view === 'students' && T ? (
-          <StudentsView onPlan={() => { update({ view: 'toolbox', drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }} onOpenKit={(k) => { update({ view: 'kit', kit: k.tools, kn: k.name, tool: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
         ) : st.view === 'kit' && st.kit ? (
           st.tool
             ? <ToolView id={st.tool} locked={st.lock} backLabel="← Kit" onBack={() => update({ tool: null })} onChapter={(id) => update({ view: 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
@@ -21223,9 +21261,7 @@ function App() {
                 onOpenKit={(k) => { update({ view: 'kit', kit: k.tools, kn: k.name, tool: null }); try { window.scrollTo(0, 0); } catch (e) {} }}
                 onStudents={() => { update({ view: 'students' }); try { window.scrollTo(0, 0); } catch (e) {} }}
                 onChapter={jumpToChapter}/>
-            : T && st.view !== 'chapters'
-            ? <GuideTab onOpenChapter={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
-            : <>{todayBack}<MusicMap onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
+            : <>{todayBack}<MapHome onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
         ) : <>
         {!st.lock && (() => {
           const sg = catOfChapter(active.id) ? { title: catOfChapter(active.id).name } : null, list = orderedChapterIds(), k = list.indexOf(active.id);
@@ -31630,10 +31666,12 @@ function BookRoot({ kind, ch }) {
        .bk-lesson .try-box::before { display: none; }
        .bk-lesson svg, .bk-lesson [style*="border-radius"] { break-inside: avoid; }
        @media print { .no-print { display: none !important } }`;
+  const only = (() => { try { return (new URLSearchParams(location.search).get('pages') || '').split(',').map(n => parseInt(n, 10)).filter(n => n > 0 && n < 60); } catch (e) { return []; } })();
+  const cssOnly = fixed && only.length ? ' section.bk-page { display: none !important } ' + only.map(n => 'section.bk-page:nth-of-type(' + n + ')').join(', ') + ' { display: flex !important }' : '';
   const reg = kind === 'teacher' ? TEACHER_COPIES : kind === 'cutouts' ? CUTOUTS : WORKBOOKS;
   return (
     <div style={{fontFamily:"Inter, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Noto Sans CJK KR', 'Malgun Gothic', sans-serif",color:BK.ink}}>
-      <style>{css}</style>
+      <style>{css + cssOnly}</style>
       <div className="no-print" style={{textAlign:'center',padding:'14px 0'}}>
         <button onClick={() => window.print()} style={{padding:'10px 22px',fontSize:15,fontWeight:800,background:BK.ink,color:'#fff',border:'none',borderRadius:8,cursor:'pointer'}}><PrintIcon/>{t('Print / Save as PDF', '인쇄 / PDF로 저장')}</button>
       </div>
