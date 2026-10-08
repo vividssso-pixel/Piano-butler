@@ -2014,7 +2014,7 @@ function ConceptView({ concept, tab, level, mode, locked, onChange }) {
               </div>
               <div style={{fontSize:13,color:'var(--muted)',marginBottom:10}}>{lvName(lv.label)}</div>
               <div style={{display:'flex',gap:6}}>
-                {[['lesson', t('Lesson mode', '레슨 모드')], ['game', t('Game mode (pixel)', '게임 모드 (픽셀)')]].map(([id, label]) => (
+                {[['lesson', t('Lesson mode', '레슨 모드')], ['game', t('Game mode', '게임 모드')]].map(([id, label]) => (
                   <button key={id} className={'chip' + (mode === id ? ' active' : '')} onClick={() => onChange({ mode: id })}>{label}</button>
                 ))}
               </div>
@@ -16707,7 +16707,7 @@ const SIT_PRESETS = [
 // the same hand-drawn wobble (the same noise field, exported from Python as PEN_FIELD).
 //   penKid(j, face, who) -> shapes        the two siblings, from a joints dict (hip, neck, head, arms, legs)
 //   penSvg(shapes, opts) -> '<svg ...>'   pen-and-ink: hatch the big navy areas, then wobble every outline
-const PEN_N = '#26296b', PEN_C = '#e4572e', PEN_P = '#fffdf7';
+const PEN_N = '#26296b', PEN_C = '#e4572e', PEN_P = '#fffdf7', PEN_G = '#2e8a6e';
 const PEN_FIELD = [[[0.155563, -0.117238, 4.873777, 0.322693], [-0.041694, 0.127865, 5.488698, 0.322693], [0.043848, -0.091346, 5.008135, 0.322693], [-0.055961, 0.161683, 1.7494, 0.322693], [-0.130771, 0.04701, 3.17017, 0.322693], [0.435705, -0.012322, 4.980442, 0.145212], [0.449899, -0.031258, 1.352824, 0.145212], [-0.265623, -0.226978, 0.276096, 0.145212], [-0.320598, -0.030079, 2.929259, 0.145212]], [[-0.164339, -0.173307, 3.230296, 0.322693], [0.00274, 0.175436, 0.074104, 0.322693], [-0.046147, -0.121047, 1.260449, 0.322693], [0.156213, 0.003666, 5.215344, 0.322693], [-0.013664, 0.123067, 5.53129, 0.322693], [0.244339, -0.349289, 4.019462, 0.145212], [0.400563, 0.259517, 3.400107, 0.145212], [0.294099, -0.307948, 2.269889, 0.145212], [0.415175, 0.162125, 2.435562, 0.145212]]];
 function penField(x, y) {
   const f = (cc) => { let v = 0; for (let i = 0; i < cc.length; i++) { const c = cc[i]; v += c[3] * Math.sin(c[0] * x + c[1] * y + c[2]); } return v; };
@@ -16817,9 +16817,9 @@ function penKid(j, face = 1, who = 'girl') {
   return [{ k: 'g', who: 'girl', hide: who !== 'girl', kids: penGirl(j, face) }, { k: 'g', who: 'boy', hide: who !== 'boy', kids: penBoy(j, face) }];
 }
 // joint dots (white = fine, coral = this one is wrong or is the thing to look at)
-function penJoints(j, coral = [], skip = []) {
+function penJoints(j, coral = [], skip = [], good = []) {
   const pts = { shoulder: j.arms[0][0], elbow: j.arms[0][1], wrist: j.arms[0][2], hip: j.legs[0][0], knee: j.legs[0][1], ankle: j.legs[0][2] };
-  return Object.keys(pts).filter(k => !skip.includes(k)).map(k => ({ k: 'el', c: pts[k], rx: 3.2, ry: 3.2, f: coral.includes(k) ? PEN_C : PEN_P, s: PEN_N, w: 1.3 }));
+  return Object.keys(pts).filter(k => !skip.includes(k)).map(k => ({ k: 'el', c: pts[k], rx: 3.2, ry: 3.2, f: coral.includes(k) ? PEN_C : PEN_P, s: good.includes(k) ? PEN_G : PEN_N, w: good.includes(k) ? 2 : 1.3 }));
 }
 const penText = (x, y, text, o = {}) => ({ k: 'tx', x, y, text, size: o.size || 8.5, weight: o.weight || 800, fill: o.fill || PEN_C, anchor: o.anchor || 'start', serif: o.serif, italic: o.italic, halo: o.halo });
 // shapes drawn smaller somewhere else: every point scaled by k about src and moved to dst, line widths scaled too
@@ -17079,19 +17079,20 @@ function sitChecks376(p) {
 }
 function penSitShapes(seatY, x2, up, checks) {
   const p = sitPose376(seatY, x2, up), bad = (id) => !checks.find(c => c.id === id).ok;
+  const elOk = !bad('level') && !bad('ahead'), wrOk = !bad('level');
   const s = [...penFloor(220), ...penKeyLevel(122, t('key level', '건반 높이')), ...penPiano()];
   if (up) s.push({ k: 'rc', x: 102, y: 150, w: 40, h: 12, rx: 1.5, f: PEN_P, s: PEN_N, sw: 2.2 });
   // the figure moves with the stool; reading its wobble from where it sits keeps its lines steady while it slides
   const shift = [x2 - 100, seatY - 114];
   s.push({ k: 'g', shift, kids: penStool(x2 - 54, x2, seatY) });
-  s.push({ k: 'g', shift, kids: [...penKid(p.J, 1, penWho('boy')), ...penJoints(p.J, [bad('level') || bad('ahead') ? 'elbow' : '', bad('level') ? 'wrist' : '', bad('feet') ? 'ankle' : ''].filter(Boolean), ['shoulder', 'hip', 'knee'])] });
+  s.push({ k: 'g', shift, kids: [...penKid(p.J, 1, penWho('boy')), ...penJoints(p.J, [bad('level') || bad('ahead') ? 'elbow' : '', bad('level') ? 'wrist' : '', bad('feet') ? 'ankle' : ''].filter(Boolean), ['shoulder', 'hip', 'knee'], [elOk ? 'elbow' : '', wrOk ? 'wrist' : ''].filter(Boolean))] });
   // labels as in the book (elbow above and to the right, wrist above it); the elbow's word stays a line above the wrist's
   // (an elbow squashed back behind the shoulder gets its word on the left, behind the back, so it never sits on the face)
-  const lab = (tx, ty, from, to, txt, anchor) => [{ ...penText(tx, ty, txt, { anchor }), halo: true }, { k: 'pa', seg: [['M', from], ['L', to]], f: 'none', s: PEN_C, w: 1.2 }];
+  const lab = (tx, ty, from, to, txt, anchor, col) => [{ ...penText(tx, ty, txt, { anchor, fill: col || PEN_C }), halo: true }, { k: 'pa', seg: [['M', from], ['L', to]], f: 'none', s: col || PEN_C, w: 1.2 }];
   const wy = p.wr[1] - 12, ey = Math.min(p.el[1] - 19, wy - 9), back = p.J.hip[0] - 15;
-  if (p.ahead < 6) s.push(...lab(back - 3, p.el[1] + 3, [back - 1, p.el[1]], [p.el[0] - 4, p.el[1]], t('elbow', '팔꿈치'), 'end'));
-  else s.push(...lab(p.el[0] + 7, ey, [p.el[0] + 6, ey - 2], [p.el[0] + 1.5, p.el[1] - 4.5], t('elbow', '팔꿈치')));
-  s.push(...lab(p.wr[0] + 5, wy, [p.wr[0] + 4.5, wy - 1.5], [p.wr[0] + 2, p.wr[1] - 6], t('wrist', '손목')));
+  if (p.ahead < 6) s.push(...lab(back - 3, p.el[1] + 3, [back - 1, p.el[1]], [p.el[0] - 4, p.el[1]], t('elbow', '팔꿈치'), 'end', elOk ? PEN_G : PEN_C));
+  else s.push(...lab(p.el[0] + 7, ey, [p.el[0] + 6, ey - 2], [p.el[0] + 1.5, p.el[1] - 4.5], t('elbow', '팔꿈치'), undefined, elOk ? PEN_G : PEN_C));
+  s.push(...lab(p.wr[0] + 5, wy, [p.wr[0] + 4.5, wy - 1.5], [p.wr[0] + 2, p.wr[1] - 6], t('wrist', '손목'), undefined, wrOk ? PEN_G : PEN_C));
   return s;
 }
 // the front view: elbows a fist away from the body (the girl, as on the Lesson Book's warm-ups page)
@@ -17107,8 +17108,8 @@ function penFrontShapes(gap, ok) {
   [1, -1].forEach(sx => {
     s.push(...penLimbPair([[cx + sx * 13, 99], [cx + sx * 10, 105]]));                               // the hands, on the keys
     const side = cx + sx * 11, el = cx + sx * (9 + ex);
-    s.push(penLine([side, 89], [el - sx * 4, 89], 1.4, ok ? PEN_N : PEN_C, '2.5 2.5'));
-    s.push({ k: 'el', c: [el, 89], rx: 3.2, ry: 3.2, f: ok ? PEN_P : PEN_C, s: PEN_N, w: 1.3 });
+    s.push(penLine([side, 89], [el - sx * 4, 89], 1.4, ok ? PEN_G : PEN_C, '2.5 2.5'));
+    s.push({ k: 'el', c: [el, 89], rx: 3.2, ry: 3.2, f: ok ? PEN_P : PEN_C, s: ok ? PEN_G : PEN_N, w: ok ? 2 : 1.3 });
   });
   return s;
 }
@@ -17220,17 +17221,50 @@ function wuSkate(ank, ang) {
   const c = Math.cos(ang), s = Math.sin(ang), m = [c, s, -s, c, ank[0], ank[1]];
   return [{ k: 'rc', x: -8, y: -2, w: 17, h: 6, rx: 3, f: PEN_N, m }, { k: 'el', c: [-5, 7], rx: 3, ry: 3, f: PEN_C, m }, { k: 'el', c: [6, 7], rx: 3, ry: 3, f: PEN_C, m }];
 }
+function wuGlideTop(ph, who) {
+  // Sohyun (2026-10-09): the old top-view animation reads best -- the elbow really leads. The same
+  // motion as the pre-376 tool, drawn in the book's pen and ink (old coordinates scaled by 0.55).
+  const X = (x) => 22 + x * 0.55, Y = (y) => y * 0.55, e = pEase(ph);
+  const s = [{ k: 'rc', x: X(10), y: Y(10), w: 165, h: 33, rx: 0, f: PEN_P, s: PEN_N, sw: 2 }];
+  for (let i = 1; i < 21; i++) s.push(penLine([X(10 + i * 14.3), Y(10)], [X(10 + i * 14.3), Y(70)], 1.1));
+  for (let i = 0; i < 20; i++) if ([1, 2, 4, 5, 6].includes(i % 7)) s.push({ k: 'rc', x: X(10 + i * 14.3 - 4.5), y: Y(10), w: 4.95, h: 19.2, rx: 0, f: PEN_N });
+  s.push({ k: 'rc', x: X(0), y: Y(70), w: 176, h: 4.4, rx: 0, f: PEN_N, solid: true });
+  s.push({ k: 'pl', p: [[X(114), Y(232)], [X(98), Y(196)], [X(124), Y(190)]], s: PEN_N, w: 7.7, op: 0.55 });
+  const sc = [X(160), Y(236)], a = 35.2, b = 12.1;
+  s.push({ k: 'pa', seg: [['M', [sc[0] - a, sc[1]]], ['Q', [sc[0] - a, sc[1] - b], [sc[0], sc[1] - b]], ['Q', [sc[0] + a, sc[1] - b], [sc[0] + a, sc[1]]], ['Q', [sc[0] + a, sc[1] + b], [sc[0], sc[1] + b]], ['Q', [sc[0] - a, sc[1] + b], [sc[0] - a, sc[1]]], ['Z']], f: PEN_N, s: PEN_N, w: 2.2 });
+  const hd = [X(160), Y(230)];
+  s.push({ k: 'el', c: hd, rx: 10.4, ry: 10.4, f: PEN_P, s: PEN_N, w: 2.2 });
+  s.push({ k: 'g', who: 'girl', hide: penWho(who) !== 'girl', kids: [
+    { k: 'el', c: [hd[0], hd[1] + 3.5], rx: 9, ry: 9.5, f: PEN_N },
+    { k: 'pa', seg: [['M', [hd[0] - 8.4, hd[1] - 3.2]], ['Q', [hd[0], hd[1] - 7.6], [hd[0] + 8.4, hd[1] - 3.2]]], f: 'none', s: PEN_P, w: 3 }] });
+  s.push({ k: 'g', who: 'boy', hide: penWho(who) !== 'boy', kids: [
+    { k: 'el', c: [hd[0], hd[1] + 4.5], rx: 8.6, ry: 7.6, f: PEN_N }] });
+  // the right arm reaches the gliding hand (the same two-bone reach as the old tool)
+  const hx = 96 + e * 176, hy = 58, sh = [206, 232], U = 96, L = 96;
+  const wr = [hx - 2, hy + 36], dx = wr[0] - sh[0], dy = wr[1] - sh[1], d = Math.min(Math.hypot(dx, dy), U + L - 1);
+  const ia = (U * U - L * L + d * d) / (2 * d), ih = Math.sqrt(Math.max(0, U * U - ia * ia));
+  const mx = sh[0] + ia * dx / d, my = sh[1] + ia * dy / d;
+  const c1 = [mx - ih * dy / d, my + ih * dx / d], c2 = [mx + ih * dy / d, my - ih * dx / d];
+  const E = c1[0] > c2[0] ? c1 : c2, Ep = [X(E[0]), Y(E[1])], Wp = [X(wr[0]), Y(wr[1])];
+  s.push({ k: 'pl', p: [[X(sh[0]), Y(sh[1])], Ep], s: PEN_N, w: 8.5 });
+  s.push(...penLimb([Ep, Wp], 6, PEN_P, PEN_N, 1.6));
+  // the hand, from above, riding on the keys (the shape never changes)
+  const O = [X(hx), Y(58)];
+  s.push({ k: 'rc', x: O[0] - 12.1, y: O[1] - 1.1, w: 22, h: 18.7, rx: 6, f: PEN_P, s: PEN_N, sw: 1.8 });
+  [[-16, -6], [-6, -8], [4, -8], [14, -6]].forEach(([fx, fy]) => s.push({ k: 'el', c: [O[0] + fx * 0.55, O[1] + fy * 0.55], rx: 2.2, ry: 5.5, f: PEN_P, s: PEN_N, w: 1.4 }));
+  const tc = Math.cos(0.61), ts = Math.sin(0.61);
+  s.push({ k: 'el', c: [0, 0], rx: 2.75, ry: 4.95, f: PEN_P, s: PEN_N, w: 1.4, m: [tc, ts, -ts, tc, O[0] - 13.75, O[1] + 9.35] });
+  s.push({ k: 'el', c: Ep, rx: 3.6, ry: 3.6, f: PEN_P, s: PEN_C, w: 2.2 });
+  s.push({ ...penText(E[0] > 240 ? Ep[0] - 6 : Ep[0] + 6, Ep[1] + 2.5, t('elbow leads', '팔꿈치가 먼저'), { size: 9, weight: 900, anchor: E[0] > 240 ? 'end' : 'start' }), halo: true });
+  s.push({ ...penText(110, 151, t('sitting back -- room for the arm to travel', '뒤로 앉아서 -- 팔이 움직일 공간을 만들어요'), { size: 8.5, fill: '#6d6f9c', anchor: 'middle' }), halo: true });
+  return s;
+}
 function wuGlide(ph, who) {
-  let J = WU_GLIDE, dx = 0, st = 0;
-  if (ph != null) { dx = 46 * (0.5 - 0.5 * Math.cos(ph * Math.PI * 2)); st = Math.sin(ph * Math.PI * 4);
-    const legA = [[66, 100], [74 + 8 * st, 120], [70 + 14 * st, 140]], legB = [[62, 100], [56 - 8 * st, 120], [48 - 14 * st, 136 + 3 * Math.abs(st)]];
-    J = { ...WU_GLIDE, legs: st >= 0 ? [legA, legB] : [legB.map(q => q), legA] };
-    J = pMoveJ(J, [0, 0], 0, [dx, 0]); }
+  if (ph != null) return wuGlideTop(ph, who);
   const s = [penLine([6, 152], [214, 152], 1.6, '#bdb7a6'), ...penKeyrow(112, 80, 10)];
-  if (ph == null || Math.abs(Math.sin(ph * Math.PI * 2)) > 0.3) [[8, 60], [14, 72], [8, 84]].forEach(([x, y]) => s.push(penLine([x + dx * 0.6, y], [x + 18 + dx * 0.6, y], 1.8)));
-  s.push(...penKid(J, 1, who));
-  if (ph == null) s.push(...wuSkate([84.5, 140], 0), ...wuSkate([34.5, 133], -22 * Math.PI / 180));
-  else J.legs.forEach(lg => { const a = lg[2]; s.push(...wuSkate([a[0] + 0.5, a[1]], a[1] < 138 ? -18 * Math.PI / 180 : 0)); });
+  [[8, 60], [14, 72], [8, 84]].forEach(([x, y]) => s.push(penLine([x, y], [x + 18, y], 1.8)));
+  s.push(...penKid(WU_GLIDE, 1, who));
+  s.push(...wuSkate([84.5, 140], 0), ...wuSkate([34.5, 133], -22 * Math.PI / 180));
   return s;
 }
 // 4. arm drop: the girl dives off the board along the dashed arc into the water -- splash (the arm drops into the key)
@@ -17242,21 +17276,22 @@ function wuDivePose() {
     legs: [[pAdd(hip, pp, 3), A(hip, -24, 4), A(hip, -46, 4)], [pAdd(hip, pp, -3), A(hip, -24, -3), A(hip, -46, -6)]] };
 }
 const WU_DIVE = wuDivePose();
+function wuDrop376(ph) {
+  // Sohyun (2026-10-09): the old arm-drop animation is easier to understand. The same motion as the
+  // pre-376 tool -- the whole hand lifts, keeping its shape, and drops into the key -- on the book's pen hand.
+  const lift = ph < 0.5 ? Math.sin(Math.PI * ph) * 34 : ph < 0.62 ? 34 * (1 - (ph - 0.5) / 0.12) : 0;
+  const press = ph >= 0.62 && ph < 0.85 ? 2 : 0;
+  const r = penHandSide([80, 55, 24, -3, -2], { labels: false, faults: false, press, tip: [222, 118 - lift + press] });
+  return penPlace(r.shapes, 0.82, [36, 20], [9, 30]);
+}
 function wuDive(ph, who) {
-  let J = WU_DIVE, under = false, splash = 1;
-  if (ph != null) {
-    const k = Math.min(1, ph / 0.62), at = pQuad([62, 50], [94, 12], [150, 128], pEase(k) * 0.82 + k * 0.18), ang = (-38 + 58 * k) * Math.PI / 180;
-    J = pMoveJ(WU_DIVE, WU_DIVE.hip, ang, pSub(at, WU_DIVE.hip));
-    under = ph > 0.45; splash = ph < 0.5 ? 0 : ph < 0.62 ? (ph - 0.5) / 0.12 : ph < 0.85 ? 1 : 1 - (ph - 0.85) / 0.15;
-    if (ph >= 0.62) J = null;
-  }
+  if (ph != null) return wuDrop376(ph);
   const s = [{ k: 'rc', x: 6, y: 70, w: 62, h: 7, rx: 2, f: PEN_P, s: PEN_N, sw: 2.6 }, penLine([18, 77], [18, 162], 2.6), penLine([6, 162], [214, 162], 1.6, '#bdb7a6'),
     penCurve([['M', [64, 60]], ['Q', [92, 24], [124, 64]]], 1.4, PEN_N, { dash: '3 5', op: 0.6 })];
-  if (J) s.push(...penKid(J, 1, who));
-  if (under) s.push({ k: 'rc', x: 86, y: 143, w: 134, h: 29, rx: 0, f: BK.soft }, penLine([86, 162], [214, 162], 1.6, '#bdb7a6'));   // the water hides her (the card's own paper colour)
+  s.push(...penKid(WU_DIVE, 1, who));
   const wave = [['M', [90, 142]]]; for (let i = 0; i < 6; i++) wave.push(['Q', [100 + i * 20, i % 2 ? 149 : 135], [110 + i * 20, 142]]);
   s.push(penCurve(wave, 2.4, PEN_N));
-  if (splash > 0) [[156, 130, 3.2], [166, 122, 2.6], [146, 123, 2.4], [174, 132, 2], [138, 133, 2]].forEach(([x, y, r]) => s.push({ k: 'el', c: [156 + (x - 156) * (0.4 + 0.6 * splash), 142 + (y - 142) * splash], rx: r * Math.max(0.3, splash), ry: r * Math.max(0.3, splash), f: PEN_C }));
+  [[156, 130, 3.2], [166, 122, 2.6], [146, 123, 2.4], [174, 132, 2], [138, 133, 2]].forEach(([x, y, r]) => s.push({ k: 'el', c: [x, y], rx: r, ry: r, f: PEN_C }));
   return s;
 }
 // 5. knuckle bridge: a little car drives over the knuckles; the bridge stays up (the hand from the side)
@@ -17284,7 +17319,7 @@ const WARM_UPS = [
   { id: 'ragdoll', who: 'girl', vb: [0, 0, 150, 172], ms: 4200, f: wuRagdoll },
   { id: 'wings', who: 'girl', vb: [0, 0, 150, 172], ms: 3600, f: wuWings },
   { id: 'glide', who: 'boy', vb: [0, 0, 220, 160], ms: 4400, f: wuGlide },
-  { id: 'dive', who: 'girl', vb: [0, 0, 220, 172], ms: 2600, f: wuDive },
+  { id: 'dive', who: 'girl', vb: [0, 0, 220, 172], ms: 2400, f: wuDive },
   { id: 'bridge', who: '', vb: [34, 26, 258, 126], ms: 3000, f: wuBridge },
   { id: 'balloon', who: 'boy', vb: [0, 0, 220, 172], ms: 3200, f: wuBalloon },
 ];
@@ -26517,7 +26552,7 @@ function PostureTeacher() {
       watch="Elbows squashed in (too close) or arms reaching out (too far). Feet dangling: a footstool or a sturdy box fixes it. The five checks come before every time at the piano, for every student."
       say="“Sit tall, like a puppet on a string, and lean a little toward the piano.”"/>
     <TcBlock page={3} title="The arm leads" answers={<>{tcAns('TOGETHER', [PH_WARMUPS[0], ...W.order].map(([art, name]) => name + ' ' + (PH_WARMUPS.findIndex(x => x[0] === art) + 1)))}{tcAns('YES OR NO', PH_ARM.slice(0, 4).map(([, ok]) => ok ? 'yes' : 'no'))}</>}
-      watch="The order goes from the big parts of the body to the small. After every key, watch the wrist: it comes straight back up to level and never sinks. The elbows stay away from the body."
+      watch="The order goes from the big parts of the body to the small. After every key, watch the wrist: it comes straight back up to level and never sinks. The elbows stay away from the body. A little turtle eraser on the shoulder: it slides down the arm, over the elbow and the wrist, off the fingertips -- an elbow stuck to the body makes the slide too steep for the turtle, so up comes the elbow."
       say="“Arms heavy, like wet spaghetti. Now rest them on the keys.”"/>
     <TcBlock page={4} title="A round hand" answers={<>{tcAns('TOGETHER', PH_HAND.map(([, name, ok]) => yn(ok) + (ok ? '' : ' (' + name.toLowerCase() + ')')))}</>}
       watch="The tip joint, especially on finger 5: for now, just help the student notice it. The wrist stays free, as if on a roller."
