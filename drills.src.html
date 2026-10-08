@@ -28241,7 +28241,829 @@ function PaperSwing() {
   </div>;
 }
 
-const WORKBOOKS = { front: FrontMatter, staff: StaffWorkbook, 'note-names': NoteNamesWorkbook, 'note-values': NoteValuesWorkbook, 'time-signatures': TimeSigWorkbook, 'ledger-lines': LedgerWorkbook, intervals: IntervalsWorkbook, 'key-signatures': KeySigWorkbook, 'first-steps': FirstStepsWorkbook, pulse: PulseWorkbook, 'posture-hands': PostureWorkbook, rhythm: RhythmWorkbook, 'reading-steps': ReadingStepsWorkbook, dynamics: DynamicsWorkbook, signs: SignsWorkbook, tempo: TempoWorkbook, terms: TermsWorkbook, melody: MelodyWorkbook, tones: TonesWorkbook, scales: ScalesWorkbook, chords: ChordsWorkbook , form: MusicalFormWorkbook, styles: StylesWorkbook };
+// ─── Phase 363: workbooks + teacher copies for the last three chapters ─────────────────────────────
+// The Piano's Story, Famous Composers, and Pitch, Hz & Range. Same shape as every other chapter: opener,
+// map, one page per lesson step (TOGETHER / AT HOME / PLAY), a 20-mark check-up. All facts come from the
+// lesson's own data (ANCESTORS, PIANO_TIMELINE, ERAS, CMP, CMP_PERIODS, CMP_MOVES, RANGES, VFAM), and
+// every answer in the teacher copy is worked out from that same data.
+
+// ── shared bits ──
+const wbDot = { width: 9, height: 9, borderRadius: 5, background: BK.ink, flex: '0 0 auto' };
+// words to circle; on = the worked example's answer (coral)
+function WbChips({ opts, on = -1, size = 11.5 }) {
+  return <span style={{display:'inline-flex',flexWrap:'wrap',gap:4,verticalAlign:'middle'}}>{opts.map((o, i) => <span key={i} style={{border:'1.5px solid ' + (i === on ? BK.coral : BK.line),borderRadius:14,padding:'0 8px',fontSize:size,lineHeight:'18px',color:i === on ? BK.coral : BK.ink,fontWeight:i === on ? 900 : 600,whiteSpace:'nowrap'}}>{o}</span>)}</span>;
+}
+// one sentence with words to circle: it = { pre, opts, ans, post }
+function CircleLine({ n, it, ex, fs = 12.5 }) {
+  return <div style={{display:'flex',gap:8,alignItems:'baseline',fontSize:fs,color:BK.ink,lineHeight:1.55,padding:'3px 0',borderBottom:'1px solid #ece6d8'}}>
+    <b style={{color:BK.coral,fontSize:10.5,minWidth:16,flex:'0 0 auto',letterSpacing:ex ? '0.04em' : 0}}>{ex ? 'EX' : n}</b>
+    <span>{it.pre} <WbChips opts={it.opts} on={ex ? it.ans : -1}/>{it.post && it.post !== '.' ? (/^[,;:]/.test(it.post) ? '' : ' ') + it.post : ''}</span>
+  </div>;
+}
+const circleAns = (it) => it.opts[it.ans];
+function WbBank({ words, label = 'WORD BANK' }) {
+  return <div style={{display:'flex',flexWrap:'wrap',gap:6,alignItems:'center',margin:'0 0 8px',fontSize:12,color:BK.ink}}><b style={{fontSize:10,letterSpacing:'0.08em',color:BK.muted}}>{label}</b>{words.map(w => <span key={w} style={{border:'1.4px solid ' + BK.line,borderRadius:6,padding:'1px 8px',background:BK.soft,fontWeight:700}}>{w}</span>)}</div>;
+}
+// two columns joined by lines; ex = [left row, right row] of the worked example
+function MatchGrid({ left, right, ex, rowH = 32, mid = 110, side = '1fr' }) {
+  const n = left.length, step = rowH + 6, H = n * step - 6, y = (i) => i * step + rowH / 2;
+  return <div style={{display:'grid',gridTemplateColumns:side + ' ' + mid + 'px 1fr',gridAutoRows:rowH + 'px',alignItems:'center',rowGap:6}}>
+    {left.map((l, i) => <div key={'l' + i} style={{gridColumn:1,gridRow:i + 1,display:'flex',alignItems:'center',gap:8,justifyContent:'flex-end',textAlign:'right'}}>{l}<span style={wbDot}/></div>)}
+    <svg viewBox={'0 0 ' + mid + ' ' + H} style={{gridColumn:2,gridRow:'1 / span ' + n,width:'100%',height:'100%'}} preserveAspectRatio="none">{ex && <line x1="4" y1={y(ex[0])} x2={mid - 4} y2={y(ex[1])} stroke={BK.coral} strokeWidth="2"/>}</svg>
+    {right.map((r, i) => <div key={'r' + i} style={{gridColumn:3,gridRow:i + 1,display:'flex',alignItems:'center',gap:8}}><span style={wbDot}/>{r}</div>)}
+  </div>;
+}
+const wbLine = (w) => <span style={{display:'inline-block',width:w,borderBottom:'1px solid ' + BK.ink,height:16,verticalAlign:'bottom'}}/>;
+const wbTickRow = (txt, key) => <div key={key} style={{display:'flex',alignItems:'center',gap:8,fontSize:12.5,color:BK.ink,padding:'4px 0'}}>{bkTick(16)}<span>{txt}</span></div>;
+
+// ═══════════════════════════════ The Piano's Story ═══════════════════════════════
+const PS_KB = ['clavichord', 'harpsichord', 'piano'];
+const PS_KB_NAME = { clavichord: 'Clavichord', harpsichord: 'Harpsichord', piano: 'Piano' };
+const PS_HOW = ['pressed', 'plucked', 'struck'];
+const PS_HOW_OF = { clavichord: 'pressed', harpsichord: 'plucked', piano: 'struck' };
+const PS_CLUES = [
+  ['harpsichord', 'A quill plucks the string.'],
+  ['piano', 'Press harder and the note gets louder and brighter.'],
+  ['clavichord', 'Very quiet -- wobble the key and the note wobbles too (Bebung).'],
+  ['harpsichord', 'Gentle or hard, every note is the same loudness.'],
+  ['piano', 'Cristofori built the first one, around 1700.'],
+  ['clavichord', 'A small brass tangent touches the string while you hold the key.'],
+  ['harpsichord', 'To play louder, the player switches to another keyboard (manual).'],
+  ['piano', 'A felt hammer strikes the string and falls straight back.'],
+  ['clavichord', 'Lovely for practising at home -- too soft for a room full of people.'],
+];
+// the five big moments of PIANO_TIMELINE (rows 0, 1, 4, 6, 7)
+const PS_TL = [
+  ['1400s', 'The clavichord and the harpsichord: the first keyboards with strings.'],
+  ['1700', 'Cristofori, in Florence, builds a keyboard with hammers that plays soft and loud.'],
+  ['1770s', 'The light, clear fortepiano of Mozart and Haydn: about five octaves.'],
+  ['1825–1859', 'A cast-iron frame holds thicker, tighter strings: the modern sound arrives.'],
+  ['1880s', '88 keys, from A0 to C8, become the standard.'],
+];
+const PS_BLANKS = [
+  ['Cristofori looked after the instruments of the', 'Medici', 'family in Florence.'],
+  ['Three of his pianos still exist. They have about', 'four', 'octaves.'],
+  ['When J. S. Bach first tried a German piano, he found the touch', 'heavy', '.'],
+  ['In 1821 Érard invented the double', 'escapement', ', so a note can be repeated fast.'],
+  ['A cast-', 'iron', 'frame lets the strings be much thicker and tighter.'],
+  ['Since the 1980s there have also been', 'digital', 'pianos with recorded sound.'],
+];
+const PS_INSIDE = [
+  { pre: 'Press the key: a felt hammer', opts: ['strikes', 'plucks'], ans: 0, post: 'the string.' },
+  { pre: 'At the same time the damper', opts: ['lifts', 'drops'], ans: 0, post: ', so the string can ring.' },
+  { pre: 'Let go: the damper', opts: ['lifts', 'drops'], ans: 1, post: 'back and stops the sound.' },
+  { pre: 'The right pedal lifts', opts: ['all the dampers', 'one damper'], ans: 0, post: '.' },
+  { pre: 'With the left pedal (una corda) a grand’s hammers strike', opts: ['one string', 'every string'], ans: 0, post: '-- softer.' },
+  { pre: 'The middle pedal holds up the dampers of notes', opts: ['already down', 'not played yet'], ans: 0, post: '.' },
+  { pre: 'In a grand piano the strings lie', opts: ['flat', 'standing up'], ans: 0, post: '.' },
+  { pre: 'Most notes have', opts: ['two or three', 'ten'], ans: 0, post: 'strings tuned the same.' },
+];
+const PS_INSIDE_CHK = [
+  { pre: 'A piano key is a', opts: ['lever', 'spring'], ans: 0, post: '.' },
+  { pre: 'The hammers and dampers are covered in', opts: ['felt', 'metal'], ans: 0, post: '.' },
+  { pre: 'In an upright piano the strings', opts: ['stand up', 'lie flat'], ans: 0, post: '.' },
+  { pre: 'Right pedal down, let go of the key: the sound', opts: ['keeps ringing', 'stops'], ans: 0, post: '.' },
+  { pre: 'Piano strings are made of', opts: ['steel', 'wool'], ans: 0, post: '.' },
+];
+const PS_KNOW_CHK = [
+  { pre: 'A harpsichord’s string is', opts: ['plucked', 'struck'], ans: 0, post: '.' },
+  { pre: 'Press a harpsichord key harder: the note is', opts: ['louder', 'the same'], ans: 1, post: '.' },
+  { pre: 'The clavichord is', opts: ['very quiet', 'very loud'], ans: 0, post: '.' },
+  { pre: 'A piano’s string is struck by a felt', opts: ['hammer', 'quill'], ans: 0, post: '.' },
+  { pre: 'Non legato means', opts: ['detached, but not short', 'smooth and joined'], ans: 0, post: '.' },
+];
+const PS_TL_CHK = [
+  ['Mozart plays a light fortepiano with about five octaves.', '1770s'],
+  ['The very first piano: Cristofori, Florence.', '1700'],
+  ['Iron frames and crossed strings.', '1825–1859'],
+  ['The 88-key piano becomes the standard.', '1880s'],
+  ['Only clavichords and harpsichords -- no pianos yet.', '1400s'],
+];
+const PS_ERA_L = ['B', 'C', 'R'];
+const PS_ERA_NAMES = ['Baroque', 'Classical', 'Romantic'];
+const PS_PLAYIT = [ // from ERAS[0..2] traits and "today"
+  [0, 'A clear non legato touch.'], [0, 'Little or no pedal.'], [0, 'Loud and soft in blocks -- no crescendo.'], [0, 'Crisp ornaments: trills and mordents.'], [0, 'Several independent lines at once.'],
+  [1, 'A tune over a light Alberti bass.'], [1, 'Balanced question-and-answer phrases.'], [1, 'Pedal only sparingly.'], [1, 'Light and elegant, with a quiet left hand.'], [1, 'Crescendo and sf are new and exciting.'],
+  [2, 'Long, singing legato melodies.'], [2, 'Lots of sustaining pedal.'], [2, 'Rubato -- the time bends with the feeling.'], [2, 'A huge range, from ppp to fff.'], [2, 'Big chords that use the whole keyboard.'],
+];
+function psWorkbook() {
+  const k = (s) => 'ps-wb-' + s;
+  const s1 = withSeed(k('s1'), () => ({ tog: ['harpsichord', 'piano', 'clavichord'], home: shuffle(PS_CLUES.slice()).slice(0, 6) }));
+  const s3 = withSeed(k('s3'), () => ({ order: shuffle([0, 1, 2, 3, 4]), bank: shuffle(PS_BLANKS.map(b => b[1])) }));
+  const s5 = withSeed(k('s5'), () => {
+    const right = shuffle([0, 1, 2, 3]);
+    const byEra = [0, 1, 2].map(e => shuffle(PS_PLAYIT.filter(x => x[0] === e)));
+    return { right, home: shuffle([...byEra[0].slice(0, 3), ...byEra[1].slice(0, 3), ...byEra[2].slice(0, 3)]), rest: shuffle([...byEra[0].slice(3), ...byEra[1].slice(3), ...byEra[2].slice(3)]).slice(0, 5) };
+  });
+  const chk = withSeed(k('chk'), () => ({ tl: shuffle(PS_TL_CHK.slice()) }));
+  return { s1, s3, s5, chk };
+}
+function psConcepts() {
+  return [
+    { id: 'an', name: 'Pluck, press or strike -- and non legato', step: '1-2', page: '3' },
+    { id: 'tl', name: 'The piano’s timeline', step: 3, page: '4' },
+    { id: 'in', name: 'Inside the piano', step: 4, page: '5' },
+    { id: 'ek', name: 'Each era’s keyboard', step: 5, page: '6' },
+  ];
+}
+// the action, labelled with numbers: 1 key, 2 hammer, 3 damper, 4 string
+function PsActionPic() {
+  const N = BK.ink, C = BK.coral;
+  const tag = (x, y, n, tx, ty) => <g><line x1={x} y1={y} x2={tx} y2={ty} stroke={C} strokeWidth="1.3"/><circle cx={x} cy={y} r="9" fill={N}/><text x={x} y={y + 3.8} textAnchor="middle" fontSize="11" fontWeight="900" fill="#fff">{n}</text></g>;
+  return <svg viewBox="0 0 320 180" style={{width:'100%',display:'block'}}>
+    <circle cx="34" cy="44" r="5" fill={N}/><path d="M296 44 l10 10 h-20 Z" fill={N}/>
+    <line x1="34" x2="296" y1="44" y2="44" stroke={N} strokeWidth="1.6"/>
+    <line x1="122" x2="122" y1="10" y2="32" stroke={N} strokeWidth="2"/>
+    <rect x="110" y="32" width="24" height="11.5" rx="2" fill="#f1e4c8" stroke={N} strokeWidth="1.4"/>
+    <line x1="236" x2="168" y1="100" y2="82" stroke={N} strokeWidth="2.6" strokeLinecap="round"/>
+    <path d="M155 68 h22 a6 6 0 0 1 6 6 v12 h-34 v-12 a6 6 0 0 1 6 -6 Z" fill={C} stroke={N} strokeWidth="1.4"/>
+    <circle cx="236" cy="100" r="3.4" fill={N}/>
+    <rect x="212" y="104" width="5" height="34" rx="2" fill={N}/>
+    <rect x="16" y="138" width="262" height="10" rx="2" fill="#fffefa" stroke={N} strokeWidth="1.6"/>
+    <path d="M150 150 l-6 9 h12 Z" fill={N}/>
+    {tag(40, 170, 1, 44, 148)}
+    {tag(120, 92, 2, 150, 80)}
+    {tag(84, 22, 3, 110, 36)}
+    {tag(250, 22, 4, 250, 44)}
+  </svg>;
+}
+function PianoStoryWorkbook({ startNo = 1 }) {
+  const W = useMemo(() => psWorkbook(), [LANG]);
+  const C = psConcepts();
+  const pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="piano-story">{content}</WbPage>);
+  P(<WbOpener id="piano-story" concepts={C} blurb="Before the piano there were the clavichord and the harpsichord. Meet the man who invented the piano, look inside it, and find out how each era’s keyboard shaped the way its music is played."/>);
+  P(<WbMap id="piano-story" concepts={C} steps={5} checkPage={startNo + 6} tasks={[
+    'Play a short tune non legato: detached, but not short.',
+    'Play it again legato, then staccato. Which sounds most like a harpsichord?',
+    'Hold the right pedal, play a low note and let go of the key. Listen to it ring.',
+    'Play one note with the left pedal down, then without it. Can you hear the difference?',
+    'Practise online: scan the code and play the drill for this chapter.',
+  ]}/>);
+
+  // steps 1-2: three keyboards, three ways to make a sound -- and non legato
+  P(<>
+    <WbTop step="1-2"/>
+    <Part kind="together" title="Pluck, press or strike?" how="Look at what the key does to the string. Write the keyboard’s name, then circle how it makes its sound.">
+      <BkGrid cols={3} gap="10px 12px">{W.s1.tog.map((kb, i) => <ExCell key={kb} n={i + 1} ex={i === 0}>
+        <div style={{padding:'14px 2px 0'}}><Mechanism kind={kb} p={0}/></div>
+        <div style={{textAlign:'center',margin:'2px 0 4px'}}>{i === 0 ? bkHand(PS_KB_NAME[kb], 130, 28) : bkBox(130, 28)}</div>
+        <div style={{textAlign:'center',marginBottom:2}}><WbChips opts={PS_HOW} on={i === 0 ? PS_HOW.indexOf(PS_HOW_OF[kb]) : -1}/></div>
+      </ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Which keyboard?" how="Read each clue and circle the keyboard it is about.">
+      <BkGrid cols={3} gap="8px 10px">{W.s1.home.map(([kb, clue], i) => <ExCell key={i} n={i + 1}>
+        <div style={{padding:'14px 4px 4px',fontSize:12.5,color:BK.ink,lineHeight:1.4,minHeight:52,display:'flex',alignItems:'center'}}>{clue}</div>
+        <div style={{textAlign:'center',marginBottom:2}}><WbChips opts={PS_KB.map(x => PS_KB_NAME[x].toLowerCase())} size={10.5}/></div>
+      </ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Draw the touch" how="Play this tune three ways. The bars show how long each note really sounds: legato is done for you. Draw the bars for non legato and staccato, then play all three. Which one is the everyday touch for Baroque music?">
+      <div style={{display:'grid',gap:8}}>
+        {[['Legato', 'smooth and joined', 1], ['Non legato', 'detached, but not short', 0], ['Staccato', 'short and bouncy', 0]].map(([name, how, done]) => <div key={name} style={{display:'grid',gridTemplateColumns:'130px repeat(8, 1fr) 26px',gap:4,alignItems:'center'}}>
+          <div><b style={{fontSize:13,color:BK.ink}}>{name}</b><div style={{fontSize:11,color:BK.muted}}>{how}</div></div>
+          {'GFEDCDEC'.split('').map((L, i) => <div key={i}>
+            <div style={{height:22,border:'1.5px dashed ' + BK.line,borderRadius:5,padding:3,display:'flex'}}>{done ? <span style={{flex:1,background:BK.coral,borderRadius:3}}/> : null}</div>
+            <div style={{fontSize:11,fontWeight:900,color:BK.muted,marginTop:2}}>{L}</div>
+          </div>)}
+          <span>{bkTick(18)}</span>
+        </div>)}
+        <div style={{display:'flex',alignItems:'flex-end',gap:8,fontSize:12.5,color:BK.ink,marginTop:4}}>The everyday touch for Baroque music is {wbLine(170)}</div>
+      </div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // step 3: Cristofori and after
+  P(<>
+    <WbTop step={3}/>
+    <Part kind="together" title="Put the story in order" how="Read the five cards. Write each card’s letter under its date on the timeline. The first is done.">
+      <div style={{position:'relative',margin:'4px 0 10px'}}>
+        <div style={{position:'absolute',left:20,right:20,top:16,height:3,background:BK.ink,borderRadius:2}}/>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',position:'relative'}}>{PS_TL.map(([y], i) => <div key={y} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+          <span style={{width:14,height:14,borderRadius:7,background:i === 1 ? BK.coral : '#fff',border:'2.5px solid ' + BK.coral,marginTop:10}}/>
+          <b style={{fontSize:13,color:BK.ink}}>{y}</b>
+          {i === 1 ? bkHand('ABCDE'[W.s3.order.indexOf(1)], 40, 30) : bkBox(40, 30)}
+        </div>)}</div>
+      </div>
+      <BkGrid cols={5} gap="6px 8px">{W.s3.order.map((e, i) => <div key={e} style={{border:'1px solid #ece6d8',borderRadius:8,padding:'5px 7px',fontSize:11.5,color:BK.ink,lineHeight:1.4,background:e === 1 ? '#fff8f5' : '#fff'}}><b style={{color:BK.coral,fontSize:13}}>{'ABCDE'[i]}</b> {PS_TL[e][1]}</div>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Fill in the facts">
+      <WbBank words={W.s3.bank}/>
+      <div style={{display:'grid',gap:2}}>{PS_BLANKS.map(([a, w, b], i) => <div key={i} style={{display:'flex',alignItems:'flex-end',gap:6,flexWrap:'wrap',fontSize:12.5,color:BK.ink,padding:'4px 0',borderBottom:'1px solid #ece6d8'}}><b style={{color:BK.coral,fontSize:11,minWidth:14}}>{i + 1}</b>{a} {wbLine(110)} {b}</div>)}</div>
+    </Part>
+    <Part kind="play" title="Meet your piano" how="Be a piano detective at home. Count carefully -- then compare with a friend’s piano or your teacher’s.">
+      <div style={{display:'grid',gridTemplateColumns:'1.25fr 1fr',gap:16,alignItems:'stretch'}}>
+        <div style={{display:'grid',gap:9,fontSize:12.5,color:BK.ink,alignContent:'center'}}>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>My piano is <WbChips opts={['a grand', 'an upright', 'digital']}/></div>
+          <div style={{display:'flex',alignItems:'flex-end',gap:6,whiteSpace:'nowrap'}}>White keys {bkBox(42, 26)} Black {bkBox(42, 26)} All {bkBox(42, 26)}</div>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>Is it the modern 88? <WbChips opts={['yes', 'no']}/></div>
+          <div style={{display:'flex',alignItems:'flex-end',gap:6,whiteSpace:'nowrap'}}>Pedals {bkBox(40, 26)} <span style={{marginLeft:8}}>Its name</span> {wbLine(120)}</div>
+          {wbTickRow('I played the very lowest key and the very highest key.')}
+        </div>
+        <div style={{border:'1.5px dashed ' + BK.line,borderRadius:10,minHeight:150,padding:'6px 10px',fontSize:11.5,color:BK.muted}}>Draw your piano</div>
+      </div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // step 4: inside the piano
+  P(<>
+    <WbTop step={4}/>
+    <Part kind="together" title="Label the action" how="A piano key is a lever. Write the name of each numbered part. Then press a key slowly in the app (scan the strip) and watch.">
+      <div style={{display:'grid',gridTemplateColumns:'1.5fr 1fr',gap:18,alignItems:'center'}}>
+        <PsActionPic/>
+        <div>
+          <WbBank words={['key', 'hammer', 'damper', 'string']}/>
+          <div style={{display:'grid',gap:8}}>{[1, 2, 3, 4].map(n => <div key={n} style={{display:'flex',alignItems:'center',gap:8}}><span style={{width:20,height:20,borderRadius:10,background:BK.ink,color:'#fff',fontSize:11,fontWeight:900,display:'inline-flex',alignItems:'center',justifyContent:'center'}}>{n}</span>{n === 1 ? bkHand('key', 120, 28) : bkBox(120, 28)}</div>)}</div>
+        </div>
+      </div>
+    </Part>
+    <Part kind="home" title="What happens?" how="Circle the right word.">
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 18px'}}>{PS_INSIDE.map((it, i) => <CircleLine key={i} n={i + 1} it={it} fs={12}/>)}</div>
+    </Part>
+    <Part kind="play" title="Peek inside" how="With a grown-up, open the lid of a real piano and watch while you play. Tick what you see. (A digital piano has no hammers -- try your teacher’s piano instead.)">
+      <div style={{display:'grid',gridTemplateColumns:'1.6fr 1fr',gap:16,alignItems:'stretch'}}>
+        <div style={{alignSelf:'center'}}>
+          {wbTickRow('I pressed a key slowly and saw the hammer hit the string.', 1)}
+          {wbTickRow('I saw the damper lift -- and drop again when I let go.', 2)}
+          {wbTickRow('I held the right pedal and ALL the dampers lifted.', 3)}
+          <div style={{display:'flex',alignItems:'flex-end',gap:8,fontSize:12.5,color:BK.ink,padding:'4px 0',whiteSpace:'nowrap'}}>Left pedal down: what moved? {wbLine(160)}</div>
+          <div style={{display:'flex',alignItems:'flex-end',gap:6,fontSize:12.5,color:BK.ink,padding:'4px 0',whiteSpace:'nowrap'}}>Strings on a high note {bkBox(36, 24)} on a very low note {bkBox(36, 24)}</div>
+        </div>
+        <div style={{border:'1.5px dashed ' + BK.line,borderRadius:10,minHeight:140,padding:'6px 10px',fontSize:11.5,color:BK.muted}}>Draw a hammer and a damper</div>
+      </div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // step 5: each era's keyboard
+  P(<>
+    <WbTop step={5}/>
+    <Part kind="together" title="Which keyboard?" how="What the keyboard could do shaped how its music is played. Join each era to the keyboard of its time. The first is joined.">
+      <MatchGrid side="170px" mid={90} rowH={36}
+        left={ERAS.map(e => <span key={e.id}><b style={{fontSize:13.5,color:BK.ink}}>{e.name}</b><br/><span style={{fontSize:11,color:BK.muted,fontWeight:700}}>{e.years}</span></span>)}
+        right={W.s5.right.map(r => <span key={r} style={{fontSize:12.5,color:BK.ink,lineHeight:1.3}}>{ERAS[r].inst}</span>)}
+        ex={[0, W.s5.right.indexOf(0)]}/>
+    </Part>
+    <Part kind="home" title="How would you play it?" how="Write B (Baroque), C (Classical) or R (Romantic) for each way of playing.">
+      <BkGrid cols={3} gap="8px 10px">{W.s5.home.map(([e, txt], i) => <ExCell key={i} n={i + 1}><div style={{display:'flex',alignItems:'center',gap:8,padding:'14px 2px 2px'}}><span style={{flex:1,fontSize:12.5,color:BK.ink,lineHeight:1.35}}>{txt}</span>{bkBox(34, 30)}</div></ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Guess my keyboard" how="Play one short tune three ways. Someone at home closes their eyes and guesses which keyboard you are pretending to be. Tick each time they get it right.">
+      <div style={{display:'grid',gap:8}}>
+        {[['Harpsichord', 'non legato, no pedal, every note the same loudness'], ['Fortepiano', 'light and clear, a little crescendo, hardly any pedal'], ['Modern piano', 'legato and singing, pedal, a big crescendo']].map(([kb, how]) => <div key={kb} style={{display:'grid',gridTemplateColumns:'130px 1fr repeat(3, 26px)',gap:8,alignItems:'center',border:'1px solid #ece6d8',borderRadius:8,padding:'8px 10px'}}>
+          <b style={{fontSize:13.5,color:BK.ink,fontFamily:"'Playfair Display', Georgia, serif"}}>{kb}</b>
+          <span style={{fontSize:12,color:BK.muted}}>{how}</span>
+          {[0, 1, 2].map(j => <span key={j}>{bkTick(20)}</span>)}
+        </div>)}
+        <div style={{fontSize:11.5,color:BK.muted,textAlign:'right'}}>three tries each</div>
+      </div>
+    </Part>
+    <Faces/>
+  </>);
+
+  const cnt = { an: 5, tl: 5, in: 5, ek: 5 };
+  P(<>
+    <CheckHead total={20}/>
+    {bkSec('A', 'Circle the right word.')}
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 18px'}}>{PS_KNOW_CHK.map((it, i) => <CircleLine key={i} n={i + 1} it={it} fs={12}/>)}</div>
+    {bkSec('B', 'Write the date for each moment.')}
+    <WbBank words={['1400s', '1700', '1770s', '1825–1859', '1880s']} label="DATES"/>
+    <BkGrid cols={5} gap="6px 8px">{W.chk.tl.map(([txt], i) => <BkCell key={i} n={i + 6}><div style={{padding:'14px 2px 4px',fontSize:11,color:BK.ink,lineHeight:1.35,minHeight:46}}>{txt}</div><div style={{textAlign:'center'}}>{bkBox(84, 24)}</div></BkCell>)}</BkGrid>
+    {bkSec('C', 'Circle the right word.')}
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 18px'}}>{PS_INSIDE_CHK.map((it, i) => <CircleLine key={i} n={i + 11} it={it} fs={12}/>)}</div>
+    {bkSec('D', 'Write B (Baroque), C (Classical) or R (Romantic).')}
+    <BkGrid cols={5} gap="6px 8px">{W.s5.rest.map(([e, txt], i) => <BkCell key={i} n={i + 16}><div style={{padding:'14px 2px 4px',fontSize:11,color:BK.ink,lineHeight:1.35,minHeight:44}}>{txt}</div><div style={{textAlign:'center'}}>{bkBox(34, 24)}</div></BkCell>)}</BkGrid>
+    <CheckTable concepts={C} cnt={cnt}/>
+  </>);
+  return <>{pages}</>;
+}
+function PianoStoryTeacher() {
+  const W = useMemo(() => psWorkbook(), [LANG]);
+  const pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={pages.length + 1} chId="piano-story" teacher>{content}</WbPage>);
+  const note = (txt) => <div style={{fontSize:12,color:BK.ink,lineHeight:1.5}}>{txt}</div>;
+  P(<>
+    <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('piano-story')}</div>
+    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Answers for every workbook page, the mistakes students make most, and a line to say when they get stuck. Step 5 (the style eras) also has a page in the Styles & Genres workbook, for later.</div>
+    <TcBlock page={3} title="Pluck, press or strike · touch" answers={<>{tcAns('TOGETHER', W.s1.tog.map(kb => PS_KB_NAME[kb] + ' -- ' + PS_HOW_OF[kb]))}{tcAns('AT HOME', W.s1.home.map(([kb]) => kb))}{note('PLAY: non legato bars about three-quarters long, staccato bars short (about a third). The everyday Baroque touch is non legato.')}</>}
+      watch="Thinking the clavichord is plucked because it came before the piano. Only the harpsichord plucks; the clavichord's tangent presses up into the string and stays there."
+      say="“Harpsichord: a quill plucks, like a guitar. Clavichord: a tangent presses. Piano: a hammer strikes.”"/>
+    <TcBlock page={4} title="Cristofori and after" answers={<>{tcAns('TOGETHER', PS_TL.map(([y], e) => y + ' = ' + 'ABCDE'[W.s3.order.indexOf(e)]))}{tcAns('AT HOME', PS_BLANKS.map(b => b[1]))}{note('PLAY: a full modern piano has 52 white + 36 black = 88 keys. Many digital pianos have 88 too; smaller keyboards have 61 or 76.')}</>}
+      watch="Mixing up Cristofori's 1700 piano with the modern one. His had about four octaves and no iron frame -- the modern sound only arrives with the iron frame (1825–1859)."
+      say="“Three big dates: 1700 the invention, 1770s Mozart's fortepiano, 1825–1859 the iron frame.”"/>
+    <TcBlock page={5} title="Inside the piano" answers={<>{tcAns('TOGETHER', ['key', 'hammer', 'damper', 'string'])}{tcAns('AT HOME', PS_INSIDE.map(circleAns))}{note('PLAY: on a grand the left pedal shifts the whole action sideways; on an upright it moves the hammers closer to the strings. High notes usually have three strings, the lowest notes one.')}</>}
+      watch="Thinking the hammer stays on the string. It strikes and falls straight back (the escapement) -- the damper is what stops the sound."
+      say="“Key down: hammer hits, damper lifts. Key up: damper drops, sound stops.”"/>
+  </>);
+  P(<>
+    <TcBlock page={6} title="Each era's keyboard" answers={<>{tcAns('TOGETHER', ERAS.map(e => e.short + ' -- ' + e.inst))}{tcAns('AT HOME', W.s5.home.map(([e]) => PS_ERA_L[e]))}{note('PLAY: any clear difference counts -- the harpsichord one should have no crescendo at all.')}</>}
+      watch="Using lots of pedal in Baroque music because it sounds nice on a modern piano. The harpsichord had no pedal: keep it clear and non legato."
+      say="“What could the keyboard of that time do? Play only what it could do.”"/>
+    <TcBlock page={7} title="Check-up" goBack={psConcepts()} answers={<>{tcAns('A', PS_KNOW_CHK.map(circleAns))}{tcAns('B', W.chk.tl.map(x => x[1]))}{tcAns('C', PS_INSIDE_CHK.map(circleAns))}{tcAns('D', W.s5.rest.map(([e]) => PS_ERA_L[e]))}
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (pass 4+ out of 5).</div></>}/>
+  </>);
+  return <>{pages}</>;
+}
+
+// ═══════════════════════════════ Famous Composers ═══════════════════════════════
+const CW_ERA_IDS = CMP_ERA_IDS;
+const cwEraName = (id) => cmpEraTag(id);
+const CW_CLUE = { renaissance: 'world', baroque: 'world', classical: 'keys', romantic: 'where', modern: 'where', contemporary: 'keys' };
+const CW_CLUE_CHK = [['baroque', 'keys'], ['classical', 'world'], ['romantic', 'keys'], ['modern', 'world'], ['contemporary', 'world']];
+const CW_MOVES = ['nationalism', 'impressionism', 'american', 'vienna2', 'minimalism', 'film'];
+const CW_MOVE_WHO = ['grieg', 'debussy', 'gershwin', 'schoenberg', 'reich', 'williams', 'dvorak', 'ravel'];
+const CW_MOVE_CHK = ['copland', 'part', 'smetana', 'bartok', 'debussy'];
+const CW_PIECES = ['vivaldi', 'mozart', 'beethoven', 'tchaikovsky', 'gershwin'];
+const CW_RIDDLES = ['mozart', 'chopin', 'cage'];
+const CW_PIECES_CHK = ['saintsaens', 'prokofiev', 'ravel', 'reich', 'bach'];
+const cwMoveName = (id) => cmpT(CMP_MOVE_SHORT[id]);
+const cwAlive = (c, y) => c.born <= y && y <= cmpDied(c);
+// lifelines: TOGETHER shows five lives; AT HOME the student draws four
+const CW_LIFE_TOG = ['bach', 'mozart', 'beethoven', 'chopin', 'debussy'];
+const CW_LIFE_HOME = ['haydn', 'schubert', 'brahms', 'tchaikovsky'];
+const CW_LIFE_CHK = ['handel', 'haydn', 'mozart', 'schubert', 'liszt'];
+const CW_PARTY_YEAR = 1825;
+const CW_PARTY = ['haydn', 'clementi', 'mozart', 'beethoven', 'schubert', 'mendelssohn', 'chopin', 'liszt', 'brahms'];
+function cwLifeQs() {
+  const c = cmpById;
+  const yn = (b) => b ? 'yes' : 'no';
+  return {
+    tog: [
+      { q: 'Was Bach still alive when Mozart was born?', a: yn(cwAlive(c('bach'), c('mozart').born)) },
+      { q: 'What age did Beethoven turn in ' + c('mozart').died + ', the year Mozart died?', a: String(c('mozart').died - c('beethoven').born) },
+      { q: 'Who was alive in 1830: Beethoven, Chopin or Debussy?', a: ['beethoven', 'chopin', 'debussy'].filter(id => cwAlive(c(id), 1830)).map(id => cmpT(c(id).sur)).join(', ') },
+    ],
+    home: [
+      { q: 'Which of the four were alive in 1800?', a: CW_LIFE_HOME.filter(id => cwAlive(c(id), 1800)).map(id => cmpT(c(id).sur)).join(' and ') },
+      { q: 'How many years did Schubert live (died minus born)?', a: String(c('schubert').died - c('schubert').born) },
+      { q: 'Who was born first, Brahms or Tchaikovsky?', a: c('brahms').born < c('tchaikovsky').born ? 'Brahms' : 'Tchaikovsky' },
+    ],
+    chk: [
+      { pre: 'Alive in 1800:', opts: ['Mozart', 'Schubert'], ans: cwAlive(c('mozart'), 1800) ? 0 : 1 },
+      { pre: 'Born first:', opts: ['Handel', 'Haydn'], ans: c('handel').born < c('haydn').born ? 0 : 1 },
+      { pre: 'Lived longer:', opts: ['Haydn', 'Mozart'], ans: (c('haydn').died - c('haydn').born) > (c('mozart').died - c('mozart').born) ? 0 : 1 },
+      { pre: 'Was Liszt alive when Schubert died?', opts: ['yes', 'no'], ans: cwAlive(c('liszt'), c('schubert').died) ? 0 : 1 },
+      { pre: 'Alive in 1750:', opts: ['Handel', 'Mozart'], ans: cwAlive(c('handel'), 1750) ? 0 : 1 },
+    ],
+  };
+}
+function cwWorkbook() {
+  const k = (s) => 'cw-wb-' + s;
+  const s1 = withSeed(k('s1'), () => ({ home: shuffle(CW_ERA_IDS.slice()) }));
+  const s2 = withSeed(k('s2'), () => ({ right: shuffle([0, 1, 2, 3, 4, 5]), who: shuffle(CW_MOVE_WHO.slice()), bank: shuffle(CW_MOVES.slice()) }));
+  const s4 = withSeed(k('s4'), () => ({ right: shuffle([0, 1, 2, 3, 4]), bank: shuffle([...CW_RIDDLES, 'haydn', 'liszt']) }));
+  const chk = withSeed(k('chk'), () => ({
+    pe: shuffle(CW_CLUE_CHK.slice()),
+    mv: CW_MOVE_CHK.map(id => { const c = cmpById(id), right = c.moves[0], not = CMP_MOVE_NOT[id] || []; const others = shuffle(CW_MOVES.filter(m => m !== right && !not.includes(m))).slice(0, 2); const opts = shuffle([right, ...others]); return { id, opts, ans: opts.indexOf(right) }; }),
+    fp: CW_PIECES_CHK.map(id => { const others = shuffle(CMP.filter(x => x.id !== id && x.era !== cmpById(id).era && !CW_PIECES_CHK.includes(x.id)).map(x => x.id)).slice(0, 2); const opts = shuffle([id, ...others]); return { id, opts, ans: opts.indexOf(id) }; }),
+  }));
+  return { s1, s2, s4, chk, life: cwLifeQs() };
+}
+function cwConcepts() {
+  return [
+    { id: 'pe', name: 'Six periods of music', step: 1, page: '3' },
+    { id: 'mv', name: 'Movements', step: 2, page: '4' },
+    { id: 'wl', name: 'Who lived when?', step: 3, page: '5' },
+    { id: 'fp', name: 'Famous pieces and fingerprints', step: '4-5', page: '6' },
+  ];
+}
+// six equal blocks, the boundary years underneath
+function CwPeriodBar({ ex, answers }) {
+  const yrs = ['1400', '1600', '1750', '1820', '1900', '1950', 'today'];
+  return <div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',height:40,borderRadius:8,overflow:'hidden',border:'1.4px solid ' + BK.ink}}>{CW_ERA_IDS.map((id, i) => <div key={id} style={{borderLeft:i ? '1.4px solid ' + BK.ink : 'none',display:'flex',alignItems:'center',justifyContent:'center',background:i % 2 ? '#fff' : BK.soft,fontWeight:900,fontStyle:'italic',fontSize:12.5,color:BK.coral}}>{(answers || (ex && i === 0)) ? cwEraName(id) : ''}</div>)}</div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',fontSize:11,fontWeight:800,color:BK.muted,marginTop:2}}>{CW_ERA_IDS.map((id, i) => <div key={id} style={{display:'flex',justifyContent:'space-between'}}><span>{yrs[i]}</span>{i === 5 && <span>{yrs[6]}</span>}</div>)}</div>
+  </div>;
+}
+// lifelines over a year axis: bars drawn, or empty tracks to draw on
+function CwLifeChart({ ids, blank, y0 = 1650, y1 = 1950, rowH = 22, label = 150 }) {
+  const pct = (y) => ((Math.max(y0, Math.min(y1, y)) - y0) / (y1 - y0) * 100) + '%';
+  const ticks = []; for (let y = y0; y <= y1; y += 50) ticks.push(y);
+  return <div>
+    {ids.map((id, i) => { const c = cmpById(id), late = (cmpDied(c) - y0) / (y1 - y0) > 0.8; return <div key={id} style={{display:'flex',alignItems:'center',height:rowH}}>
+      <span style={{width:label,flex:'0 0 auto',fontSize:12,fontWeight:800,color:BK.ink,whiteSpace:'nowrap',textAlign:'right',paddingRight:8}}>{cmpT(c.sur)} <span style={{fontWeight:600,color:BK.muted,fontSize:10.5}}>{blank ? cmpYears(c) : ''}</span></span>
+      <div style={{position:'relative',flex:1,height:'100%',background:i % 2 ? 'rgba(38,41,107,0.03)' : 'transparent'}}>
+        {ticks.map(y => <span key={y} style={{position:'absolute',left:pct(y),top:0,bottom:0,borderLeft:'1px dotted ' + BK.line}}/>)}
+        {!blank && <div style={{position:'absolute',top:6,height:10,left:pct(c.born),width:'calc(' + pct(cmpDied(c)) + ' - ' + pct(c.born) + ')',background:BK.ink,borderRadius:5}}/>}
+        {!blank && <span style={{position:'absolute',top:3,...(late ? { right: 'calc(100% - ' + pct(c.born) + ' + 5px)' } : { left: 'calc(' + pct(cmpDied(c)) + ' + 5px)' }),fontSize:10,fontWeight:700,color:BK.muted,whiteSpace:'nowrap'}}>{cmpYears(c)}</span>}
+      </div>
+    </div>; })}
+    <div style={{display:'flex'}}><span style={{width:label,flex:'0 0 auto'}}/><div style={{position:'relative',flex:1,height:16,borderTop:'1.5px solid ' + BK.ink,fontSize:10.5,fontWeight:800,color:BK.muted}}>{ticks.map((y, i) => <span key={y} style={{position:'absolute',left:pct(y),transform:i === 0 ? 'none' : i === ticks.length - 1 ? 'translateX(-100%)' : 'translateX(-50%)',top:1}}>{y}</span>)}</div></div>
+  </div>;
+}
+function CwQRow({ n, q, a, ex }) {
+  return <div style={{display:'flex',alignItems:'center',gap:8,fontSize:12.5,color:BK.ink,padding:'4px 0',borderBottom:'1px solid #ece6d8'}}>
+    <b style={{color:BK.coral,fontSize:10.5,minWidth:16}}>{ex ? 'EX' : n}</b><span style={{flex:1}}>{q}</span>{ex ? bkHand(a, 150, 26) : bkBox(150, 26)}
+  </div>;
+}
+// a blank composer card to fill in and cut out
+function CwBlankCard() {
+  const row = (label, lines = 1) => <div style={{fontSize:11,color:BK.muted,fontWeight:800}}>{label}{Array.from({ length: lines }, (_, i) => <div key={i} style={{borderBottom:'1px solid ' + BK.line,height:16}}/>)}</div>;
+  return <div style={{border:'1.8px dashed ' + BK.muted,borderRadius:14,padding:'9px 12px',display:'grid',gap:4,background:'#fff'}}>
+    <div style={{display:'grid',gridTemplateColumns:'62px 1fr',gap:10,alignItems:'center'}}>
+      <div style={{width:62,height:62,borderRadius:12,border:'1.6px solid ' + BK.ink,background:BK.soft,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9.5,color:BK.muted,textAlign:'center',lineHeight:1.2}}>draw<br/>them</div>
+      <div style={{display:'grid',gap:3}}>{row('Name')}{row('Years · country · period')}</div>
+    </div>
+    {row('Famous for')}{row('Musical fingerprint')}{row('Fun fact', 2)}
+  </div>;
+}
+function ComposersWorkbook({ startNo = 1 }) {
+  const W = useMemo(() => cwWorkbook(), [LANG]);
+  const C = cwConcepts();
+  const pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="composers">{content}</WbPage>);
+  P(<WbOpener id="composers" concepts={C} blurb="Who wrote the music you play? Travel through six periods of music history, discover the movements inside them, see who was alive at the same time, and get to know each composer’s musical fingerprint."/>);
+  P(<WbMap id="composers" concepts={C} steps={6} checkPage={startNo + 6} tasks={[
+    'Find out who wrote each piece you are learning. Which period is it from?',
+    'Play one of your pieces to someone at home and tell them one fact about its composer.',
+    'Listen to a piece from a movement on page 4. What did you hear?',
+    'Make a composer card (page 6) for every composer you play.',
+    'Practise online: scan the code and play the drill for this chapter.',
+  ]}/>);
+
+  // step 1: six periods
+  P(<>
+    <WbTop step={1}/>
+    <Part kind="together" title="Six periods in order" how="Music history is split into six periods. Write their names on the timeline: Renaissance, Baroque, Classical, Romantic, Modern, Contemporary. The first is done.">
+      <CwPeriodBar ex/>
+    </Part>
+    <Part kind="home" title="Where are we?" how="Each clue describes one period. Write its name in the box.">
+      <BkGrid cols={2} gap="8px 10px">{W.s1.home.map((id, i) => <ExCell key={id} n={i + 1}><div style={{display:'grid',gridTemplateColumns:'1fr 120px',gap:8,alignItems:'center',padding:'14px 2px 2px'}}><span style={{fontSize:12.5,color:BK.ink,lineHeight:1.4}}>{cmpT(CMP_PERIODS[id][CW_CLUE[id]])}</span>{bkBox(120, 30)}</div></ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="A postcard from the past" how="You have time-travelled! Pick a period and write a postcard home: where you heard music, what keyboard you saw, and who paid the composer. Then draw a stamp for your period.">
+      <div style={{border:'1.6px solid ' + BK.ink,borderRadius:12,padding:'12px 14px',display:'grid',gridTemplateColumns:'1.4fr 1fr',gap:16,background:'#fff'}}>
+        <div style={{display:'grid',gap:4,alignContent:'start'}}><div style={{fontSize:12.5,color:BK.ink,fontStyle:'italic'}}>Dear {wbLine(120)},</div>{Array.from({ length: 7 }, (_, i) => <div key={i} style={{borderBottom:'1px solid ' + BK.line,height:22}}/>)}</div>
+        <div style={{borderLeft:'1.4px solid ' + BK.line,paddingLeft:14,display:'grid',gridTemplateRows:'auto 1fr',gap:10}}>
+          <div style={{justifySelf:'end',width:96,height:110,border:'2px dashed ' + BK.coral,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:BK.coral,fontWeight:800,textAlign:'center'}}>stamp</div>
+          <div style={{display:'grid',gap:10,alignContent:'end',fontSize:12,color:BK.ink}}><div style={{display:'flex',alignItems:'flex-end',gap:6}}>Period {wbLine(120)}</div><div style={{display:'flex',alignItems:'flex-end',gap:6}}>Year {wbLine(132)}</div><div style={{display:'flex',alignItems:'flex-end',gap:6}}>To {wbLine(145)}</div></div>
+        </div>
+      </div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // step 2: movements
+  P(<>
+    <WbTop step={2}/>
+    <Part kind="together" title="What’s the big idea?" how="Inside each period, groups of composers shared a big idea: a movement. Join each movement to what you listen for. The first is joined.">
+      <MatchGrid side="180px" mid={90} rowH={30}
+        left={CW_MOVES.map(id => <b key={id} style={{fontSize:13.5,color:BK.ink}}>{cwMoveName(id)}</b>)}
+        right={W.s2.right.map(r => <span key={r} style={{fontSize:12.5,color:BK.ink,lineHeight:1.25}}>{cmpT(cmpMove(CW_MOVES[r]).listen[0])}</span>)}
+        ex={[0, W.s2.right.indexOf(0)]}/>
+    </Part>
+    <Part kind="home" title="Which movement?" how="Write each composer’s movement.">
+      <WbBank words={W.s2.bank.map(cwMoveName)} label="MOVEMENTS"/>
+      <BkGrid cols={4} gap="8px 10px">{W.s2.who.map((id, i) => { const c = cmpById(id); return <ExCell key={id} n={i + 1}><div style={{display:'flex',alignItems:'center',gap:8,padding:'14px 2px 4px'}}><CmpEmblem id={id} size={42}/><div><b style={{fontSize:13,color:BK.ink}}>{cmpT(c.sur)}</b><div style={{fontSize:10.5,color:BK.muted}}>{cmpYears(c)}</div></div></div><div style={{textAlign:'center'}}>{bkBox(140, 26)}</div></ExCell>; })}</BkGrid>
+    </Part>
+    <Part kind="play" title="Start your own movement" how="Invent a movement! Give it a name, a big idea and two things to listen for, and design its logo. Then make up four bars in its style and play them to someone at home.">
+      <div style={{display:'grid',gridTemplateColumns:'1.4fr 1fr',gap:16,alignItems:'stretch'}}>
+        <div style={{display:'grid',gap:10,fontSize:12.5,color:BK.ink,alignContent:'center'}}>
+          {['My movement is called', 'The big idea', 'Listen for 1', 'Listen for 2', 'Who is in it? Me and'].map(l => <div key={l} style={{display:'flex',alignItems:'flex-end',gap:8}}><span style={{whiteSpace:'nowrap'}}>{l}</span><span style={{flex:1,borderBottom:'1px solid ' + BK.ink,height:18}}/></div>)}
+          {wbTickRow('I played my four bars to someone at home.')}
+        </div>
+        <div style={{border:'1.5px dashed ' + BK.coral,borderRadius:'50%',minHeight:170,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,color:BK.coral,fontWeight:800}}>logo</div>
+      </div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // step 3: who lived when
+  P(<>
+    <WbTop step={3}/>
+    <Part kind="together" title="Read the lifelines" how="Each bar is one composer’s life. Read the chart to answer.">
+      <CwLifeChart ids={CW_LIFE_TOG}/>
+      <div style={{marginTop:6}}>{W.life.tog.map((x, i) => <CwQRow key={i} n={i + 1} q={x.q} a={x.a} ex={i === 0}/>)}</div>
+    </Part>
+    <Part kind="home" title="Draw the lifelines" how="Draw a bar for each life, from the year they were born to the year they died. Then answer.">
+      <CwLifeChart ids={CW_LIFE_HOME} blank rowH={24}/>
+      <div style={{marginTop:6}}>{W.life.home.map((x, i) => <CwQRow key={i} n={i + 1} q={x.q} a={x.a}/>)}</div>
+    </Part>
+    <Part kind="play" title="A party in 1825" how={'It is ' + CW_PARTY_YEAR + ' and you are having a party. Cross out anyone who cannot come -- not born yet, or no longer alive. Write the age each guest turns this year.'}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>{CW_PARTY.map(id => { const c = cmpById(id); return <div key={id} style={{display:'flex',alignItems:'center',gap:8,border:'1.4px solid ' + BK.line,borderRadius:10,padding:'6px 8px'}}>
+        <CmpEmblem id={id} size={38}/>
+        <div style={{flex:1}}><b style={{fontSize:12.5,color:BK.ink}}>{cmpT(c.sur)}</b><div style={{fontSize:10.5,color:BK.muted}}>{cmpYears(c)}</div></div>
+        <div style={{textAlign:'center',fontSize:9.5,color:BK.muted,fontWeight:800}}>age{bkBox(38, 24)}</div>
+      </div>; })}</div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // steps 4-5: meet the composers, who am I?
+  P(<>
+    <WbTop step="4-5"/>
+    <Part kind="together" title="Famous for…" how="Join each composer to one of their famous pieces. The first is joined.">
+      <MatchGrid side="170px" mid={80} rowH={30}
+        left={CW_PIECES.map(id => <span key={id} style={{display:'inline-flex',alignItems:'center',gap:6}}><b style={{fontSize:13,color:BK.ink}}>{cmpT(cmpById(id).sur)}</b><CmpEmblem id={id} size={30}/></span>)}
+        right={W.s4.right.map(r => <span key={r} style={{fontSize:12.5,color:BK.ink}}>{cmpT(cmpById(CW_PIECES[r]).known[0])}</span>)}
+        ex={[0, W.s4.right.indexOf(0)]}/>
+    </Part>
+    <Part kind="home" title="Who am I?" how="Read the clues and write the composer’s name.">
+      <WbBank words={W.s4.bank.map(id => cmpT(cmpById(id).sur))} label="NAMES"/>
+      <div style={{display:'grid',gap:6}}>{CW_RIDDLES.map((id, i) => { const cl = cmpClues(cmpById(id)); return <ExCell key={id} n={i + 1}><div style={{display:'grid',gridTemplateColumns:'1fr 130px',gap:10,alignItems:'center',padding:'12px 2px 2px'}}><div style={{fontSize:12,color:BK.ink,lineHeight:1.4}}>{cl[1]} {cl[2]}</div>{bkBox(130, 30)}</div></ExCell>; })}</div>
+    </Part>
+    <Part kind="play" title="Make composer cards" how="Fill in a card for a composer you play, then cut it out. Make one for every new composer you meet!">
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}><CwBlankCard/><CwBlankCard/></div>
+      <div style={{fontSize:11,color:BK.muted,marginTop:4}}>✂ Cut on the dashed lines.</div>
+    </Part>
+    <Faces/>
+  </>);
+
+  const cnt = { pe: 5, mv: 5, wl: 5, fp: 5 };
+  P(<>
+    <CheckHead total={20}/>
+    {bkSec('A', 'Which period? Write its name.')}
+    <BkGrid cols={5} gap="6px 8px">{W.chk.pe.map(([id, f], i) => <BkCell key={i} n={i + 1}><div style={{padding:'14px 2px 4px',fontSize:10.5,color:BK.ink,lineHeight:1.35,minHeight:72}}>{cmpT(CMP_PERIODS[id][f])}</div><div style={{textAlign:'center'}}>{bkBox(96, 24)}</div></BkCell>)}</BkGrid>
+    {bkSec('B', 'Circle the movement.')}
+    <BkGrid cols={5} gap="6px 8px">{W.chk.mv.map((x, i) => { const c = cmpById(x.id); return <BkCell key={i} n={i + 6}><div style={{display:'flex',alignItems:'center',gap:6,padding:'14px 2px 4px'}}><CmpEmblem id={x.id} size={30}/><b style={{fontSize:11.5,color:BK.ink}}>{cmpT(c.sur)}</b></div><div style={{display:'grid',gap:2,margin:'0 4px 3px'}}>{x.opts.map(m => <span key={m} style={{border:'1px solid ' + BK.line,borderRadius:10,fontSize:9.5,textAlign:'center'}}>{cwMoveName(m)}</span>)}</div></BkCell>; })}</BkGrid>
+    {bkSec('C', 'Read the lifelines. Circle the answer.')}
+    <div style={{display:'grid',gridTemplateColumns:'1.15fr 1fr',gap:14,alignItems:'center'}}>
+      <CwLifeChart ids={CW_LIFE_CHK} rowH={19} label={74} y0={1650} y1={1900}/>
+      <div>{W.life.chk.map((it, i) => <CircleLine key={i} n={i + 11} it={it} fs={12}/>)}</div>
+    </div>
+    {bkSec('D', 'Who wrote it? Circle the composer.')}
+    <BkGrid cols={5} gap="6px 8px">{W.chk.fp.map((x, i) => <BkCell key={i} n={i + 16}><div style={{padding:'14px 2px 4px',fontSize:11,fontWeight:700,fontStyle:'italic',color:BK.ink,lineHeight:1.3,minHeight:40}}>{cmpT(cmpById(x.id).known[0])}</div><div style={{display:'grid',gap:2,margin:'0 4px 3px'}}>{x.opts.map(o => <span key={o} style={{border:'1px solid ' + BK.line,borderRadius:10,fontSize:9.5,textAlign:'center'}}>{cmpT(cmpById(o).sur)}</span>)}</div></BkCell>)}</BkGrid>
+    <CheckTable concepts={C} cnt={cnt}/>
+  </>);
+  return <>{pages}</>;
+}
+function ComposersTeacher() {
+  const W = useMemo(() => cwWorkbook(), [LANG]);
+  const pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={pages.length + 1} chId="composers" teacher>{content}</WbPage>);
+  const note = (txt) => <div style={{fontSize:12,color:BK.ink,lineHeight:1.5}}>{txt}</div>;
+  const sur = (id) => cmpT(cmpById(id).sur);
+  const party = CW_PARTY.map(id => { const c = cmpById(id); return sur(id) + (cwAlive(c, CW_PARTY_YEAR) ? ' ' + (CW_PARTY_YEAR - c.born) : c.born > CW_PARTY_YEAR ? ' -- not born yet' : ' -- died ' + c.died); });
+  P(<>
+    <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('composers')}</div>
+    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Answers for every workbook page, the mistakes students make most, and a line to say when they get stuck. Lesson step 6 (Name that tune) needs sound, so it lives in the app only.</div>
+    <TcBlock page={3} title="Six periods" answers={<>{tcAns('TOGETHER', CW_ERA_IDS.map(cwEraName))}{tcAns('AT HOME', W.s1.home.map(cwEraName))}{note('PLAY: check the postcard matches its period (e.g. no piano in the Renaissance, candles in the Baroque, a fortepiano in the Classical period).')}</>}
+      watch="Thinking ‘Classical’ means all old music. In music history it is one short period, 1750–1820: Haydn, Mozart and young Beethoven."
+      say="“Ren-Bar-Class-Rom-Mod-Con: six rooms in a row, oldest first.”"/>
+    <TcBlock page={4} title="Movements" answers={<>{tcAns('TOGETHER', CW_MOVES.map(id => cwMoveName(id) + ' -- ' + cmpT(cmpMove(id).listen[0])))}{tcAns('AT HOME', W.s2.who.map(id => sur(id) + ' -- ' + cwMoveName(cmpById(id).moves[0])))}</>}
+      watch="Mixing up a period and a movement. A period is a big slice of time; a movement is a group of composers inside it with one big idea -- Minimalism, for example, belongs to the Contemporary period."
+      say="“The period is the house; the movement is one room in it.”"/>
+    <TcBlock page={5} title="Who lived when?" answers={<>{tcAns('TOGETHER', W.life.tog.map(x => x.a))}{tcAns('AT HOME', W.life.home.map(x => x.a))}{tcAns('PLAY', party)}</>}
+      watch="Counting the age wrongly at the edges. The age is the year minus the birth year -- the age they turn that year, as in the app."
+      say="“Put your finger on the year, go straight down the chart: whose bar does it touch?”"/>
+  </>);
+  P(<>
+    <TcBlock page={6} title="Famous pieces · who am I?" answers={<>{tcAns('TOGETHER', CW_PIECES.map(id => sur(id) + ' -- ' + cmpT(cmpById(id).known[0])))}{tcAns('AT HOME', CW_RIDDLES.map(sur))}{note('PLAY: any composer; check the period they circled matches the dates they wrote.')}</>}
+      watch="Guessing from one word. Read both clues -- the fingerprint says how the music sounds, the fun fact says something only that composer did."
+      say="“What would you hear? Now, what is the story about them?”"/>
+    <TcBlock page={7} title="Check-up" goBack={cwConcepts()} answers={<>{tcAns('A', W.chk.pe.map(([id]) => cwEraName(id)))}{tcAns('B', W.chk.mv.map(x => cwMoveName(x.opts[x.ans])))}{tcAns('C', W.life.chk.map(circleAns))}{tcAns('D', W.chk.fp.map(x => sur(x.id)))}
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (pass 4+ out of 5).</div></>}/>
+  </>);
+  return <>{pages}</>;
+}
+
+// ═══════════════════════════════ Pitch, Hz & Range ═══════════════════════════════
+const PR_TEN = { loose: -3, normal: 0, tight: 3 };
+const prStrHz = (s) => mFreq(STRING_OPEN + PR_TEN[s.ten || 'normal']) / (s.len || 1);
+const PR_STRINGS = [
+  [{ len: 1 }, { len: 0.5 }], [{ len: 0.75 }, { len: 1 }], [{ ten: 'loose' }, { ten: 'tight' }],
+  [{ ten: 'tight' }, { ten: 'normal' }], [{ len: 0.5 }, { len: 0.75 }], [{ ten: 'normal' }, { ten: 'loose' }],
+];
+const prHigher = (pair) => prStrHz(pair[0]) > prStrHz(pair[1]) ? 0 : 1;
+const PR_WAVES = [[3, 6], [9, 4.5], [5, 10]];
+const PR_LADDER = [33, 45, 57, 69, 81, 93]; // A1 .. A6
+const prHz = (m) => Math.round(mFreq(m) * 10) / 10;
+const prRange = (name) => ALL_RANGES.find(r => r.name === name);
+function prCmp(a, b, which) { // which: 'lo' (lower) or 'hi' (higher)
+  const A = prRange(a), B = prRange(b);
+  return which === 'lo' ? (A.lo < B.lo ? 0 : 1) : (A.hi > B.hi ? 0 : 1);
+}
+const PR_RANGE_HOME = [
+  { pre: 'Which can play lower?', a: 'Tuba', b: 'Trumpet', w: 'lo' },
+  { pre: 'Which can play higher?', a: 'Flute', b: 'Bassoon', w: 'hi' },
+  { pre: 'Which can play lower?', a: 'Viola', b: 'Cello', w: 'lo' },
+  { pre: 'Which voice sings higher?', a: 'Tenor', b: 'Soprano', w: 'hi' },
+  { pre: 'Which goes lower?', a: 'Piano (today, 88 keys)', b: 'Double bass', w: 'lo', la: 'Piano' },
+  { pre: 'Which goes higher?', a: 'Violin', b: 'Piccolo', w: 'hi' },
+].map(x => ({ pre: x.pre, opts: [(x.la || x.a).toLowerCase(), x.b.toLowerCase()], ans: prCmp(x.a, x.b, x.w) }));
+const PR_RANGE_CHK = [
+  { pre: 'Which plays lower?', a: 'Double bass', b: 'Flute', w: 'lo' },
+  { pre: 'Which plays higher?', a: 'Trombone', b: 'Piccolo', w: 'hi' },
+  { pre: 'Which voice sings lower?', a: 'Alto', b: 'Bass', w: 'lo' },
+].map(x => ({ pre: x.pre, opts: [x.a.toLowerCase(), x.b.toLowerCase()], ans: prCmp(x.a, x.b, x.w) }))
+  .concat([{ pre: 'The piano covers', opts: ['nearly all', 'only half'], ans: 0, post: 'of the orchestra’s range.' }]);
+const PR_HZ_CHK = [
+  { pre: 'Hertz (Hz) means vibrations every', opts: ['second', 'minute'], ans: 0, post: '.' },
+  { pre: 'Faster vibrations make a', opts: ['higher', 'lower'], ans: 0, post: 'note.' },
+  { pre: 'Orchestras tune to A4 =', opts: ['440 Hz', '100 Hz'], ans: 0, post: '.' },
+  { pre: 'People hear from about 20 Hz up to about', opts: ['20,000 Hz', '2,000 Hz'], ans: 0, post: '.' },
+];
+const PR_ST_CHK = [
+  { pre: 'A shorter string plays a', opts: ['higher', 'lower'], ans: 0, post: 'note.' },
+  { pre: 'Loosen a string and its note goes', opts: ['up', 'down'], ans: 1, post: '.' },
+  { pre: 'A violinist’s finger makes the vibrating string', opts: ['shorter', 'longer'], ans: 0, post: '.' },
+  { pre: 'A piano’s low strings are', opts: ['long', 'short'], ans: 0, post: '.' },
+];
+const prVf = (i) => VFAM[i];
+const PR_SZ_CHK = [[0, 2], [3, 1], [2, 3]].map(([a, b]) => ({ pre: 'Which plays higher?', opts: [prVf(a).en.toLowerCase(), prVf(b).en.toLowerCase()], ans: prVf(a).low > prVf(b).low ? 0 : 1 }))
+  .concat([{ pre: 'On a xylophone the', opts: ['small bars', 'big bars'], ans: 0, post: 'play the high notes.' }]);
+const PR_OC_CHK = [
+  { pre: 'Half the string sounds an octave', opts: ['higher', 'lower'], ans: 0, post: '.' },
+  { pre: 'One octave up, the Hz', opts: ['doubles', 'halves'], ans: 0, post: '.' },
+];
+function prWorkbook() {
+  const k = (s) => 'pr-wb-' + s;
+  const s1 = withSeed(k('s1'), () => ({ strings: shuffle(PR_STRINGS.slice()) }));
+  const s3 = withSeed(k('s3'), () => ({ xylo: shuffle([0, 1, 2, 3, 4, 5]), fam: shuffle([0, 1, 2, 3]) }));
+  const s5 = withSeed(k('s5'), () => ({ inst: shuffle(['Tuba', 'Violin', 'Cello']).concat(['Piccolo']).reverse() }));
+  return { s1, s3, s5, hide: [1, 3, 5], chkHide: [1, 3] };
+}
+function prConcepts() {
+  return [
+    { id: 'hz', name: 'Vibrations and Hertz', step: 1, page: '3' },
+    { id: 'st', name: 'Shorter, tighter, higher', step: 2, page: '3' },
+    { id: 'sz', name: 'Big is low, small is high', step: 3, page: '4' },
+    { id: 'oc', name: 'The octave ladder', step: 4, page: '4' },
+    { id: 'rg', name: 'Who plays where?', step: 5, page: '5' },
+  ];
+}
+function PrWave({ n, w = 220, h = 34, color = BK.coral }) {
+  const pts = []; for (let i = 0; i <= 200; i++) pts.push((i / 200 * w).toFixed(1) + ',' + (h / 2 - (h / 2 - 3) * Math.sin(2 * Math.PI * n * i / 200)).toFixed(1));
+  return <svg viewBox={'0 0 ' + w + ' ' + h} style={{width:'100%',display:'block'}}><line x1="0" x2={w} y1={h / 2} y2={h / 2} stroke="#e9e2d2"/><polyline points={pts.join(' ')} fill="none" stroke={color} strokeWidth="1.8"/></svg>;
+}
+function PrString({ s, label }) {
+  const NUT = 12, BR = 196, Y = 15, len = s.len || 1, fx = NUT + (1 - len) * (BR - NUT), mid = (fx + BR) / 2;
+  return <svg viewBox="0 0 240 30" style={{width:'100%',display:'block'}}>
+    <text x="0" y={Y + 4} fontSize="11" fontWeight="900" fill={BK.muted}>{label}</text>
+    <rect x={NUT} y={Y - 9} width="5" height="18" rx="1.5" fill={BK.ink}/>
+    <path d={`M${BR} ${Y + 8} L${BR + 6} ${Y + 8} L${BR + 3} ${Y - 3} Z`} fill={BK.ink}/>
+    {fx > NUT + 6 && <line x1={NUT + 5} x2={fx} y1={Y} y2={Y} stroke="#6d6f9c" strokeOpacity="0.4" strokeWidth="2"/>}
+    <path d={`M${Math.max(fx, NUT + 5)} ${Y} Q${mid} ${Y + 7} ${BR} ${Y}`} fill="none" stroke={BK.ink} strokeWidth="2.4" strokeLinecap="round"/>
+    {len < 1 && <circle cx={fx} cy={Y} r="5" fill={BK.coral} stroke="#fff" strokeWidth="1.5"/>}
+    {s.ten && s.ten !== 'normal' && <text x="206" y={Y + 4} fontSize="10" fontWeight="900" fill={BK.coral}>{s.ten}</text>}
+  </svg>;
+}
+function PrXyloBar({ i }) {
+  const h = 92 - i * 11;
+  return <svg viewBox="0 0 40 96" style={{width:40,display:'block',margin:'0 auto'}}><rect x="4" y={(96 - h) / 2} width="32" height={h} rx="6" fill={BK.ink}/><circle cx="20" cy={(96 - h) / 2 + 9} r="2.4" fill="#fffefa" opacity="0.7"/><circle cx="20" cy={(96 + h) / 2 - 9} r="2.4" fill="#fffefa" opacity="0.7"/></svg>;
+}
+function PrRangeBars({ inst, exName }) {
+  const x = (m) => 8 + (m - 21) * 3.9;
+  const whites = []; for (let m = 21; m <= 108; m++) if ([0, 2, 4, 5, 7, 9, 11].includes(m % 12)) whites.push(m);
+  const rows = inst.map(n => prRange(n)), H = rows.length * 20 + 6;
+  return <svg viewBox={`-2 -14 364 ${H + 62}`} style={{width:'100%',display:'block'}}>
+    {[21, 33, 45, 57, 69, 81, 93, 105].map(m => <g key={m}><line x1={x(m)} x2={x(m)} y1={-4} y2={H + 4} stroke="#e9e3d4"/><text x={x(m)} y={-6} fontSize="6.5" fontWeight="800" textAnchor="middle" fill="#7f81a8">{midiName(m)}</text></g>)}
+    <line x1={x(60)} x2={x(60)} y1={-4} y2={H + 4} stroke={BK.coral} strokeDasharray="2 2"/>
+    {rows.map((r, i) => { const y = i * 20 + 4, right = x(r.hi) + 66 < 360, bx = right ? x(r.hi) + 5 : x(r.lo) - 63, ex = r.name === exName;
+      return <g key={r.name}>
+        <rect x={x(r.lo) - 1.5} y={y} width={x(r.hi) - x(r.lo) + 3} height="10" rx="5" fill={BK.ink} opacity="0.8"/>
+        <rect x={bx} y={y - 3} width="58" height="16" rx="4" fill="#fff" stroke={ex ? BK.coral : BK.line} strokeWidth="1.2"/>
+        {ex && <text x={bx + 29} y={y + 8.5} textAnchor="middle" fontSize="8.5" fontWeight="900" fontStyle="italic" fill={BK.coral}>{r.name.toLowerCase()}</text>}
+      </g>; })}
+    <g transform={`translate(0,${H + 8})`}>
+      {whites.map(m => <rect key={m} x={x(m) - 3.3} y="0" width="6.6" height="30" fill="#fff" stroke="#c9c0aa" strokeWidth="0.5"/>)}
+      {Array.from({ length: 88 }, (_, i) => 21 + i).filter(m => ![0, 2, 4, 5, 7, 9, 11].includes(m % 12)).map(m => <rect key={m} x={x(m) - 2} y="0" width="4" height="18" fill={BK.ink}/>)}
+      <text x={x(60)} y="40" fontSize="7" fontWeight="800" textAnchor="middle" fill={BK.coral}>middle C</text>
+    </g>
+  </svg>;
+}
+function PrLadder({ hide = [], answers }) {
+  const max = mFreq(PR_LADDER[PR_LADDER.length - 1]);
+  return <div style={{display:'flex',flexDirection:'column-reverse',gap:4}}>{PR_LADDER.map((m, k) => <div key={m} style={{display:'flex',alignItems:'center',gap:10}}>
+    <span style={{width:28,fontFamily:"'Playfair Display', Georgia, serif",fontWeight:900,fontSize:14,color:BK.ink}}>{midiName(m)}</span>
+    <span style={{height:11,width:Math.max(6, mFreq(m) / max * 260),borderRadius:6,background:BK.ink,flex:'0 0 auto'}}/>
+    {hide.includes(k) && !answers ? <span style={{display:'inline-flex',alignItems:'center',gap:4,fontSize:12,color:BK.muted}}>{bkBox(56, 22)} Hz</span> : <b style={{fontSize:13,color:hide.includes(k) ? BK.coral : BK.ink}}>{prHz(m)} Hz</b>}
+  </div>)}</div>;
+}
+function PitchRangeWorkbook({ startNo = 1 }) {
+  const W = useMemo(() => prWorkbook(), [LANG]);
+  const C = prConcepts();
+  const pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="pitch-range">{content}</WbPage>);
+  P(<WbOpener id="pitch-range" concepts={C} blurb="What makes a note high or low? Count vibrations, shorten strings, line up the violin family, climb the octave ladder, and find out where the piano sits among the instruments and voices."/>);
+  P(<WbMap id="pitch-range" concepts={C} steps={5} checkPage={startNo + 5} tasks={[
+    'Play the lowest key and the highest key on your piano. Which one vibrates faster?',
+    'Play an A, then the A an octave higher: it vibrates twice as fast.',
+    'With a grown-up, look inside a piano: are the high strings short or long?',
+    'Play a tune down low like a tuba, then up high like a piccolo.',
+    'Practise online: scan the code and play the drill for this chapter.',
+  ]}/>);
+
+  // steps 1-2: vibrations, and shorter or tighter strings
+  P(<>
+    <WbTop step="1-2"/>
+    <Part kind="together" title="Count the waves" how="Each picture shows the same tiny slice of time. More waves = faster vibrations = a higher note. Circle the higher one in each pair.">
+      <BkGrid cols={3} gap="10px 12px">{PR_WAVES.map(([a, b], i) => <ExCell key={i} n={i + 1} ex={i === 0}>
+        <div style={{padding:'14px 4px 2px',display:'grid',gap:6}}>{[a, b].map((n, j) => { const on = i === 0 && n > (j ? a : b); return <div key={j} style={{border:'1.5px solid ' + (on ? BK.coral : 'transparent'),borderRadius:8,padding:'2px 4px'}}><PrWave n={n}/></div>; })}</div>
+      </ExCell>)}</BkGrid>
+      <div style={{display:'flex',alignItems:'center',flexWrap:'wrap',gap:8,fontSize:12.5,color:BK.ink,marginTop:8}}><b>A4 = 440 Hz.</b> One octave up, A5 = {bkBox(60, 26)} Hz. One octave down, A3 = {bkBox(60, 26)} Hz.</div>
+    </Part>
+    <Part kind="home" title="Which string is higher?" how="A finger (the coral dot) makes the vibrating part shorter. Tight and loose tell you how hard the string is pulled. Circle A or B -- the higher note.">
+      <BkGrid cols={3} gap="8px 10px">{W.s1.strings.map((pair, i) => <ExCell key={i} n={i + 1}>
+        <div style={{padding:'14px 2px 0'}}><PrString s={pair[0]} label="A"/><PrString s={pair[1]} label="B"/></div>
+        <div style={{textAlign:'center',margin:'2px 0'}}><WbChips opts={['A', 'B']}/></div>
+      </ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Make a rubber-band guitar" how="You need an open box or plastic tub, three rubber bands (thin, medium, thick) and a pencil. Stretch the bands round the box, then experiment and circle what happens.">
+      <div style={{display:'grid',gridTemplateColumns:'1.4fr 1fr',gap:16,alignItems:'stretch'}}>
+        <div style={{display:'grid',gap:7,fontSize:12.5,color:BK.ink,alignContent:'center'}}>
+          <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>Pluck each band. The highest is <WbChips opts={['thin', 'medium', 'thick']}/></div>
+          <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>Pull one band tighter. Its note goes <WbChips opts={['higher', 'lower']}/></div>
+          <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>Slide the pencil under to make it shorter. It goes <WbChips opts={['higher', 'lower']}/></div>
+          {wbTickRow('I played high, middle, low -- the start of “Three Blind Mice”!')}
+        </div>
+        <div style={{border:'1.5px dashed ' + BK.line,borderRadius:10,minHeight:140,padding:'6px 10px',fontSize:11.5,color:BK.muted}}>Draw your guitar</div>
+      </div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // steps 3-4: size, and the octave ladder
+  P(<>
+    <WbTop step="3-4"/>
+    <Part kind="together" title="Big is low, small is high" how="Smaller bars vibrate faster, so they sound higher. Number the xylophone bars from 1 (the lowest note) to 6 (the highest).">
+      <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:8,maxWidth:520,margin:'0 auto',width:'100%'}}>{W.s3.xylo.map(b => <div key={b} style={{textAlign:'center'}}><PrXyloBar i={b}/><div style={{marginTop:4}}>{b === 0 ? bkHand('1', 40, 28) : bkBox(40, 28)}</div></div>)}</div>
+    </Part>
+    <Part kind="home" title="The violin family and the octave ladder" how="Write each instrument’s name (violin, viola, cello, double bass) and circle the one that plays highest. Then fill in the missing numbers: each A vibrates twice as fast as the A below.">
+      <div style={{display:'grid',gridTemplateColumns:'1.15fr 1fr',gap:18,alignItems:'center'}}>
+        <div>
+          <svg viewBox="0 0 320 156" style={{width:'100%',display:'block'}}>
+            <line x1="14" x2="306" y1="150" y2="150" stroke={BK.ink} strokeOpacity="0.3"/>
+            {W.s3.fam.map((v, i) => <StringFamilyShape key={v} h={VFAM[v].h} x={48 + i * 75} base={148} on={false}/>)}
+          </svg>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,marginTop:4}}>{W.s3.fam.map(v => <div key={v} style={{textAlign:'center'}}>{bkBox(70, 24)}</div>)}</div>
+        </div>
+        <PrLadder hide={W.hide}/>
+      </div>
+    </Part>
+    <Part kind="play" title="Water-glass xylophone" how="Ask a grown-up first. Fill five glasses or jars that are the same with different amounts of water. Tap each gently with a spoon: more water = a lower note. Line them up from low to high, draw the water in each glass, and write the note it is nearest to.">
+      <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:12,maxWidth:540,margin:'0 auto',width:'100%'}}>{[0, 1, 2, 3, 4].map(i => <div key={i} style={{textAlign:'center'}}>
+        <svg viewBox="0 0 60 80" style={{width:60,display:'block',margin:'0 auto'}}><path d="M8 4 L14 76 L46 76 L52 4" fill="none" stroke={BK.ink} strokeWidth="2" strokeLinejoin="round"/></svg>
+        <div style={{marginTop:4}}>{bkBox(40, 26)}</div>
+      </div>)}</div>
+      <div style={{fontSize:12,color:BK.ink,textAlign:'center',marginTop:8}}>Can you play “Hot Cross Buns” (E D C)? {bkTick(16)}</div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // step 5: who plays where
+  P(<>
+    <WbTop step={5}/>
+    <Part kind="together" title="Name the ranges" how="Each bar is an instrument’s range, laid over the 88 keys of the piano. Write piccolo, tuba, violin or cello in its box. The first is done.">
+      <PrRangeBars inst={W.s5.inst} exName="Piccolo"/>
+    </Part>
+    <Part kind="home" title="Higher or lower?" how="Circle the answer.">
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 18px'}}>{PR_RANGE_HOME.map((it, i) => <CircleLine key={i} n={i + 1} it={it}/>)}</div>
+    </Part>
+    <Part kind="play" title="Find your voice" how="Sing “la” with the piano. Find the lowest and the highest notes you can sing comfortably -- no squeaking! Colour the keys in between (the C marked on each keyboard is middle C). Then do the same for someone at home.">
+      <div style={{display:'grid',gap:10}}>
+        {['Me', 'Someone at home'].map(who => <div key={who} style={{display:'grid',gridTemplateColumns:'110px 1fr',gap:10,alignItems:'center'}}><b style={{fontSize:13,color:BK.ink}}>{who}</b><PaperKeys start="C" whites={22} w={24} h={70} labels={{ 7: 'C' }}/></div>)}
+        <div style={{display:'flex',alignItems:'flex-end',gap:8,fontSize:12.5,color:BK.ink}}>Who has the bigger range? {wbLine(130)} Which voice might you be? {wbLine(120)}</div>
+      </div>
+    </Part>
+    <Faces/>
+  </>);
+
+  const cnt = { hz: 4, st: 4, sz: 4, oc: 4, rg: 4 };
+  P(<>
+    <CheckHead total={20}/>
+    {bkSec('A', 'Circle the right answer.')}
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 18px'}}>{PR_HZ_CHK.map((it, i) => <CircleLine key={i} n={i + 1} it={it} fs={12}/>)}</div>
+    {bkSec('B', 'Circle the right answer.')}
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 18px'}}>{PR_ST_CHK.map((it, i) => <CircleLine key={i} n={i + 5} it={it} fs={12}/>)}</div>
+    {bkSec('C', 'Circle the right answer.')}
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 18px'}}>{PR_SZ_CHK.map((it, i) => <CircleLine key={i} n={i + 9} it={it} fs={12}/>)}</div>
+    {bkSec('D', 'Fill in the two missing numbers, then circle.')}
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 18px',alignItems:'center'}}>
+      <div style={{display:'flex',alignItems:'center',gap:6,fontSize:13,color:BK.ink,flexWrap:'wrap'}}><b style={{color:BK.coral,fontSize:10.5}}>13-14</b>{[55, null, 220, null, 880].map((v, i) => <React.Fragment key={i}>{i > 0 && <span style={{color:BK.muted}}>→</span>}{v ? <b>{v}</b> : bkBox(50, 24)}</React.Fragment>)}<span style={{fontSize:11,color:BK.muted}}>Hz</span></div>
+      <div>{PR_OC_CHK.map((it, i) => <CircleLine key={i} n={i + 15} it={it} fs={12}/>)}</div>
+    </div>
+    {bkSec('E', 'Circle the right answer.')}
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0 18px'}}>{PR_RANGE_CHK.map((it, i) => <CircleLine key={i} n={i + 17} it={it} fs={12}/>)}</div>
+    <CheckTable concepts={C} cnt={cnt}/>
+  </>);
+  return <>{pages}</>;
+}
+function PitchRangeTeacher() {
+  const W = useMemo(() => prWorkbook(), [LANG]);
+  const pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={pages.length + 1} chId="pitch-range" teacher>{content}</WbPage>);
+  const note = (txt) => <div style={{fontSize:12,color:BK.ink,lineHeight:1.5}}>{txt}</div>;
+  const famBySize = W.s3.fam.map(v => VFAM[v].en.toLowerCase());
+  const highest = VFAM.reduce((a, b) => (a.low > b.low ? a : b)).en.toLowerCase();
+  P(<>
+    <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('pitch-range')}</div>
+    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Answers for every workbook page, the mistakes students make most, and a line to say when they get stuck.</div>
+    <TcBlock page={3} title="Hertz · strings" answers={<>{tcAns('TOGETHER', [...PR_WAVES.map(([a, b]) => a > b ? 'top' : 'bottom'), 'A5 = ' + prHz(81), 'A3 = ' + prHz(57)])}{tcAns('AT HOME', W.s1.strings.map(p => 'AB'[prHigher(p)]))}{note('PLAY: thin band highest; tighter = higher; shorter = higher.')}</>}
+      watch="Thinking a tighter string is lower because it is ‘harder’. Tighter and shorter both make the string vibrate faster -- higher."
+      say="“Fast wiggles, high note. Slow wiggles, low note.”"/>
+    <TcBlock page={4} title="Size · the octave ladder" answers={<>{tcAns('TOGETHER', W.s3.xylo.map(b => String(b + 1)))}{tcAns('AT HOME', [...famBySize, 'highest: ' + highest, ...W.hide.map(k => midiName(PR_LADDER[k]) + ' = ' + prHz(PR_LADDER[k]))])}{note('PLAY: more water = lower. Glasses that are exactly the same work best.')}</>}
+      watch="Ordering the violin family by how famous they are. Go by size: the smallest (violin) is highest, the biggest (double bass) lowest."
+      say="“Big things move slowly. Small things move fast.”"/>
+    <TcBlock page={5} title="Who plays where?" answers={<>{tcAns('TOGETHER', W.s5.inst.map(n => n.toLowerCase()))}{tcAns('AT HOME', PR_RANGE_HOME.map(circleAns))}{note('PLAY: a child’s comfortable range is often about C4 to C5; adults vary. Any honest range is right.')}</>}
+      watch="Reading the bar's length instead of where it sits. A long bar is a big range; a bar far to the left goes low."
+      say="“Left on the keyboard is low, right is high -- where does the bar start and stop?”"/>
+    <TcBlock page={6} title="Check-up" goBack={prConcepts()} answers={<>{tcAns('A', PR_HZ_CHK.map(circleAns))}{tcAns('B', PR_ST_CHK.map(circleAns))}{tcAns('C', PR_SZ_CHK.map(circleAns))}{tcAns('D', ['110', '440', ...PR_OC_CHK.map(circleAns)])}{tcAns('E', PR_RANGE_CHK.map(circleAns))}
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (pass 3+ out of 4).</div></>}/>
+  </>);
+  return <>{pages}</>;
+}
+
+const WORKBOOKS = { front: FrontMatter, staff: StaffWorkbook, 'note-names': NoteNamesWorkbook, 'note-values': NoteValuesWorkbook, 'time-signatures': TimeSigWorkbook, 'ledger-lines': LedgerWorkbook, intervals: IntervalsWorkbook, 'key-signatures': KeySigWorkbook, 'first-steps': FirstStepsWorkbook, pulse: PulseWorkbook, 'posture-hands': PostureWorkbook, rhythm: RhythmWorkbook, 'reading-steps': ReadingStepsWorkbook, dynamics: DynamicsWorkbook, signs: SignsWorkbook, tempo: TempoWorkbook, terms: TermsWorkbook, melody: MelodyWorkbook, tones: TonesWorkbook, scales: ScalesWorkbook, chords: ChordsWorkbook , form: MusicalFormWorkbook, 'piano-story': PianoStoryWorkbook, composers: ComposersWorkbook, 'pitch-range': PitchRangeWorkbook, styles: StylesWorkbook };
 
 // ─── Teacher copy (?book=teacher&ch=staff): answers, what to watch for, what to say ───
 function TcBlock({ page, title, answers, watch, say, goBack }) {
@@ -28303,7 +29125,7 @@ function StaffTeacher() {
   </>);
   return <>{pages}</>;
 }
-const TEACHER_COPIES = { staff: StaffTeacher, 'note-names': NoteNamesTeacher, 'note-values': NoteValuesTeacher, 'time-signatures': TimeSigTeacher, 'ledger-lines': LedgerTeacher, intervals: IntervalsTeacher, 'key-signatures': KeySigTeacher, 'first-steps': FirstStepsTeacher, pulse: PulseTeacher, 'posture-hands': PostureTeacher, rhythm: RhythmTeacher, 'reading-steps': ReadingStepsTeacher, dynamics: DynamicsTeacher, signs: SignsTeacher, tempo: TempoTeacher, terms: TermsTeacher, melody: MelodyTeacher, tones: TonesTeacher, scales: ScalesTeacher, chords: ChordsTeacher , form: MusicalFormTeacher, styles: StylesTeacher };
+const TEACHER_COPIES = { staff: StaffTeacher, 'note-names': NoteNamesTeacher, 'note-values': NoteValuesTeacher, 'time-signatures': TimeSigTeacher, 'ledger-lines': LedgerTeacher, intervals: IntervalsTeacher, 'key-signatures': KeySigTeacher, 'first-steps': FirstStepsTeacher, pulse: PulseTeacher, 'posture-hands': PostureTeacher, rhythm: RhythmTeacher, 'reading-steps': ReadingStepsTeacher, dynamics: DynamicsTeacher, signs: SignsTeacher, tempo: TempoTeacher, terms: TermsTeacher, melody: MelodyTeacher, tones: TonesTeacher, scales: ScalesTeacher, chords: ChordsTeacher , form: MusicalFormTeacher, 'piano-story': PianoStoryTeacher, composers: ComposersTeacher, 'pitch-range': PitchRangeTeacher, styles: StylesTeacher };
 
 // ─── Lesson Book extras (Phase 296): symbol cards, a Remember line, paper versions of tools ───
 // Every new sign gets a card: the symbol drawn big, its name, what it means, how to play it --
