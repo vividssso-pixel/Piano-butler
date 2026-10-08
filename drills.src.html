@@ -19878,6 +19878,7 @@ function BooksShelf() {
     work: { en: 'Workbook', ko: '워크북', col: '#e4572e' },
     teacher: { en: 'Teacher copy', ko: '교사용', col: '#8a6a2c' },
     cutouts: { en: 'Cut-outs', ko: '오려 쓰는 교구', col: '#8a6a2c' },
+    spread: { en: 'Side by side', ko: '나란히', col: '#26296b' },
   };
   const pill = (kind, ch, label, on) => on
     ? <a key={kind} href={href(kind, ch)} target="_blank" rel="noopener" style={{fontSize:11.5,fontWeight:800,color:KIND[kind].col,border:'1.5px solid ' + KIND[kind].col,borderRadius:8,padding:'3px 9px',textDecoration:'none',background:'#fff',whiteSpace:'nowrap'}}>{label || t(KIND[kind].en, KIND[kind].ko)}</a>
@@ -19919,6 +19920,7 @@ function BooksShelf() {
                 {pill('lesson', id, null, true)}
                 {pill('work', id, null, !!WORKBOOKS[id])}
                 {pill('teacher', id, null, !!TEACHER_COPIES[id])}
+                {LESSON_BOOKS[id] && WORKBOOKS[id] && pill('spread', id, t('Lesson + Workbook, side by side', '레슨북 + 워크북 나란히'), true)}
               </span>
             </div>
           ))}
@@ -32105,11 +32107,40 @@ const LB_FLOW_CSS = LB_CSS + ` .bk-lesson .lb-page, .lb-page { width: 178mm; hei
   .lb-page .lb-pic { min-height: 0 !important; }
   .lb-page .lb-head, .lb-page .lb-no { display: none !important; }`;
 
+// ─── Phase 373: the Lesson Book and the Workbook side by side (?book=spread&ch=<chapter>) ───
+// For a chapter that has its own Lesson Book pages: a cover, then each Lesson Book page followed by its Workbook page.
+// Printed double-sided, the cover is page 1 (a right-hand page), so every lesson page lands on the left and its
+// workbook page faces it on the right -- both carry the same page number.
+function SpreadCover({ id }) {
+  return (
+    <section className="bk-page" data-spread-cover={id}>
+      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:18,textAlign:'center'}}>
+        <div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em'}}>{'CHAPTER ' + bkChapterNo(id)}</div>
+        <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:46,fontWeight:900,color:BK.ink,lineHeight:1.05}}>{bkChapterName(id)}</div>
+        <div style={{fontSize:16,fontWeight:800,color:BK.muted}}>Lesson Book <span style={{color:BK.coral}}>+</span> Workbook</div>
+        <PbArt name="rabbit" h={300}/>
+        <div style={{maxWidth:420,fontSize:13,color:BK.ink,lineHeight:1.55,border:'1.5px dashed ' + BK.line,borderRadius:12,padding:'10px 16px'}}>
+          <b>Print double-sided</b> (flip on the long edge). Each Lesson Book page is on the left and its Workbook page faces it on the right, with the same page number. Read the left page, then do the right one.
+        </div>
+      </div>
+      <div style={{textAlign:'center',fontSize:10.5,color:BK.muted,fontWeight:700}}>Piano Butler</div>
+    </section>
+  );
+}
+function SpreadBook({ id }) {
+  const lesson = LESSON_BOOKS[id](), work = WORKBOOKS[id]({ startNo: 1 });
+  const lp = React.Children.toArray(lesson.props.children), wp = React.Children.toArray(work.props.children);
+  const blank = (k) => <section key={'blank' + k} className="bk-page" data-spread-blank/>;
+  const out = [<SpreadCover key="cover" id={id}/>];
+  for (let k = 0; k < Math.max(lp.length, wp.length); k++) out.push(lp[k] || blank('l' + k), wp[k] || blank('w' + k));
+  return <>{out}</>;
+}
+
 function BookRoot({ kind, ch }) {
   BOOK = true;
   try { document.documentElement.lang = LANG; } catch (e) {} // lets the browser pick a Korean font for Hangul
   const ids = ch === 'all' ? (kind === 'cutouts' ? CUTOUT_LIST.map(x => x.id) : STAGES.flatMap(s => s.ids)) : [ch];
-  const fixed = kind === 'work' || kind === 'teacher' || kind === 'cutouts' || (kind === 'lesson' && ids.every(id => LESSON_BOOKS[id]));
+  const fixed = kind === 'spread' || kind === 'work' || kind === 'teacher' || kind === 'cutouts' || (kind === 'lesson' && ids.every(id => LESSON_BOOKS[id]));
   const css = fixed
     ? `@page { size: A4; margin: 0 } html, body { background: #e9e4d8 } .bk-page { width: 210mm; height: 297mm; box-sizing: border-box; padding: 13mm 15mm 9mm; background: #fff; margin: 0 auto 8mm; display: flex; flex-direction: column; break-after: page; overflow: hidden; } .bk-body > * { flex-shrink: 0 }
        @media print { html, body { background: #fff } .bk-page { margin: 0 } .no-print { display: none !important } }` + LB_CSS
@@ -32133,7 +32164,8 @@ function BookRoot({ kind, ch }) {
         <button onClick={() => window.print()} style={{padding:'10px 22px',fontSize:15,fontWeight:800,background:BK.ink,color:'#fff',border:'none',borderRadius:8,cursor:'pointer'}}><PrintIcon/>{t('Print / Save as PDF', '인쇄 / PDF로 저장')}</button>
       </div>
       {fixed
-        ? ids.map(id => { const Wb = reg[id]; return Wb ? <Wb key={id}/> : null; })
+        ? kind === 'spread' ? ids.filter(id => LESSON_BOOKS[id] && WORKBOOKS[id]).map(id => <SpreadBook key={id} id={id}/>)
+        : ids.map(id => { const Wb = reg[id]; return Wb ? <Wb key={id}/> : null; })
         : ids.map(id => LESSON_BOOKS[id] ? React.createElement(LESSON_BOOKS[id], { key: id }) : <LessonFix key={id}><LessonBookChapter id={id}/></LessonFix>)}
     </div>
   );
@@ -32144,7 +32176,7 @@ function Root() {
   try { printParams = new URLSearchParams(location.search); } catch (e) {}
   const lp = printParams && printParams.get('lang');
   if (lp === 'ko' || lp === 'en') LANG = lp; // explicit language from a link (e.g. the QR codes in the Korean books)
-  if (printParams && (printParams.get('book') === 'lesson' || printParams.get('book') === 'work' || printParams.get('book') === 'teacher' || printParams.get('book') === 'cutouts')) {
+  if (printParams && (printParams.get('book') === 'lesson' || printParams.get('book') === 'work' || printParams.get('book') === 'teacher' || printParams.get('book') === 'cutouts' || printParams.get('book') === 'spread')) {
     return <BookRoot kind={printParams.get('book')} ch={printParams.get('ch') || 'staff'}/>;
   }
   if (printParams && printParams.get('print') === '1') {
