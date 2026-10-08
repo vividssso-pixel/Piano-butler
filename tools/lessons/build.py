@@ -59,6 +59,8 @@ ld = {
     'publisher': {'@type': 'Organization', 'name': 'Piano Butler', 'url': SITE},
     'image': SITE + meta['image'],
 }
+if meta.get('author'):
+    ld['author'] = {'@type': 'Person', 'name': meta['author']}
 
 page = f'''<!DOCTYPE html>
 <html lang="en">
@@ -82,7 +84,7 @@ page = f'''<!DOCTYPE html>
 <meta name="twitter:title" content="{esc(meta['title'])}">
 <meta name="twitter:description" content="{esc(meta['description'])}">
 <meta name="twitter:image" content="{SITE}{meta['image']}">
-<meta name="author" content="Piano Butler">
+<meta name="author" content="{esc(meta.get('author', 'Piano Butler'))}">
 <meta name="robots" content="{'index, follow' if final else 'noindex, nofollow'}">
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-D232EW4QWF"></script>
 <script>
