@@ -26,7 +26,8 @@ python3 tools/lessons/build.py <chapter-id> --final  # refuses while any DRAFT m
 ```
 
 - `src/<chapter-id>.html` starts with a `<!--meta {...} -->` JSON block (slug, title, h1, description,
-  teaches, image, updated), then the hand-written body. Her own words go where `class="draft"` marks are.
+  teaches, image, author, updated), then the hand-written body. `author` (her name as she chose it,
+  "Clara Sohyun Park", no city) goes into `<meta name="author">` and the JSON-LD. Her own words go where `class="draft"` marks are.
 - Drawings are the Lesson Book's own pen-and-ink drawings as SVG (`svg/<chapter-id>/*.svg`), made by the art
   generator kept untracked in `_workspace/chapter-review/art/` (chapter 1: `guide374.py`), placed with
   `{{svg:name}}`. build.py prefixes every id inside a drawing with its name, so drawings never clash on a page.
