@@ -1524,7 +1524,7 @@ function ChapterArt({ id }) {
   );
 }
 
-function Lesson({ id, title, intro, children, onStart, startLabel, head }) {
+function Lesson({ id, title, intro, children, onStart, startLabel, head, noArt }) {
   const steps = React.Children.toArray(children).filter(Boolean);
   // Phase 350: a step may say storeAs={n}: its tick is stored under n (its old place), so reordering steps keeps every tick on its step
   const sk = (i) => { const p = steps[i] && steps[i].props; return p && p.storeAs != null ? p.storeAs : i; };
@@ -1551,7 +1551,7 @@ function Lesson({ id, title, intro, children, onStart, startLabel, head }) {
       {/* Staff look: each chapter's own staff-line drawing (ChapterArt) under the title; `head` now only carries extra controls (e.g. the Scales major/minor tabs). */}
       <h2 style={{fontSize:30,fontWeight:900,margin:'0 0 6px',lineHeight:1.1,color:'var(--navy)'}}>{title}</h2>
       {intro && <p style={{fontSize:14.5,color:'var(--muted)',margin:'0 0 8px',lineHeight:1.5}}>{intro}</p>}
-      <ChapterArt id={STAFF_ART[id] ? id : String(id).split('-')[0]}/>
+      {!noArt && <ChapterArt id={STAFF_ART[id] ? id : String(id).split('-')[0]}/>}
       {head}
       <div style={{display:'flex',flexWrap:'wrap',gap:5,margin:'4px 0 2px'}}>
         {steps.map((s, i) => {
@@ -11059,7 +11059,7 @@ const FW_TUNES = [
   { icon: 'tune-hill4', en: 'Little hill', ko: '작은 언덕', howEn: 'four notes: up the hill and down', howKo: '네 음: 언덕을 올라갔다 내려와요', seq: ['1', '2', '3', '4', '|', '3', '2', '1', '-'] },
   { icon: 'tune-stairs', en: 'Stairs and slide', ko: '계단과 미끄럼틀', howEn: 'all five: up the stairs, then down the slide', howKo: '다섯 음: 계단을 올라가서 미끄럼틀로 내려와요', seq: ['1', '2', '3', '4', '5', '-', '|', '5', '4', '3', '2', '1', '-'] },
 ];
-function FingerWalks() {
+function FingerWalks({ bare }) {
   const [tune, setTune] = useState(0);
   const [hand, setHand] = useState('R');
   const [pos, setPos] = useState(-1);
@@ -11087,10 +11087,10 @@ function FingerWalks() {
   const navy = '#26296b', coral = '#e4572e';
   return (
     <div className="try-box" style={actBox}>
-      <div style={actTitle}>{t('Play: finger walks', '연주: 손가락 걷기')}</div>
-      <div style={actNote}>{LANG === 'ko'
+      {!bare && <div style={actTitle}>{t('Play: finger walks', '연주: 손가락 걷기')}</div>}
+      {!bare && <div style={actNote}>{LANG === 'ko'
         ? <>앉은 자세, 둥근 손으로 쳐 봐요. <b>작게 시작해요:</b> 한 음, 그다음 두 음, 세 음, 네 음, 다섯 음. 건반에서 건반으로 손이 작은 <b>무지개</b>를 그려요: 꽉 쥐지 않고 편하게, 손 전체가 도와줘요. <b>동그라미 하나가 일정한 박 하나</b>예요.</>
-        : <>Sit well, make a round hand, and play. <b>Start small:</b> one note, then two, three, four, and all five. From key to key, the hand draws a little <b>rainbow</b>: relaxed, never squeezed tight, the whole hand helping. <b>One circle is one steady beat.</b></>}</div>
+        : <>Sit well, make a round hand, and play. <b>Start small:</b> one note, then two, three, four, and all five. From key to key, the hand draws a little <b>rainbow</b>: relaxed, never squeezed tight, the whole hand helping. <b>One circle is one steady beat.</b></>}</div>}
       <div style={{display:'flex',justifyContent:'center',gap:18,margin:'2px 0 8px'}}>
         {['L', 'R'].map(h => (
           <button key={h} onClick={() => setHand(h)} aria-pressed={hand === h} style={{border:'2px solid ' + (hand === h ? navy : 'transparent'),borderRadius:12,background:'#fff',padding:'4px 6px',cursor:'pointer',opacity:hand === h ? 1 : 0.5}}>
@@ -11120,42 +11120,6 @@ function FingerWalks() {
   );
 }
 
-function PostureHandsLearn({ onStart }) {
-  const tip = (title, body) => <Rule title={title}>{body}</Rule>;
-  return (
-    <Lesson id="posture-hands" title={t('Posture and hand shape', '자세와 손 모양')} onStart={onStart}
-      intro={<>{t('Before any notes: how to sit, and how the hand is shaped. Get this right first -- everything else builds on it.', '음을 배우기 전에: 어떻게 앉을지, 손 모양은 어떻게 만들지부터 익혀요. 이걸 먼저 제대로 잡아야 나머지가 잘 쌓여요.')}</>}>
-      <Step title={t('Sit at the piano', '피아노 앞에 앉기')}>
-        <ExplPostureHands1/>
-        <SitCheck/>
-      </Step>
-      <Step title={t('Move with the whole arm', '팔 전체로 움직이기')}>
-        <ExplPostureHands2/>
-        <ArmExercises/>
-      </Step>
-      <Step title={t('Feel the arm weight', '팔 무게 느껴보기')}>
-        <ArmAlignment/>
-      </Step>
-      <Step title={t('The hand shape', '손 모양')}>
-        <ExplPostureHands3/>
-        <HandShape/>
-      </Step>
-      <Step title={t('Meet your fingers', '손가락과 친해지기')}>
-        <FingerFriends/>
-      </Step>
-      <Step title={t('Finger numbers', '손가락 번호')}>
-        <ExplPostureHands4/>
-        <FingerNumbers/>
-      </Step>
-      <Step title={t('Play: finger walks', '연주: 손가락 걷기')} storeAs={7}>
-        <FingerWalks/>
-      </Step>
-      <Step title={t('Posture check', '자세 점검')} storeAs={6}>
-        <PostureChecklist/>
-      </Step>
-    </Lesson>
-  );
-}
 const POSTURE_LEVELS = [
   { n: 1, label: 'Is the stool set up right?', kind: 'sit', time: 12 },
   { n: 2, label: 'Spot the hand-shape fault', kind: 'hand', time: 12 },
@@ -11172,7 +11136,7 @@ const POSTURE_HAND = [
   { id: 'good',   en: 'The good shape',        ko: '좋은 손 모양',        px: 'GOOD SHAPE',  why: ['Knuckles make a bridge, the wrist is level with the forearm, and the finger plays on its tip.', '너클이 다리처럼 올라오고, 손목은 팔뚝과 수평이고, 손가락 끝으로 쳐요.'] },
   { id: 'flat',   en: 'Flat fingers',          ko: '손가락이 펴졌어요',    px: 'FLAT FINGERS', why: ['The finger lies flat. Hold a small ball, then keep that round shape on the keys.', '손가락이 펴졌어요. 작은 공을 쥔 듯 둥근 모양을 건반에 그대로 올려요.'] },
   { id: 'bridge', en: 'Knuckles collapsed',    ko: '너클이 무너졌어요',    px: 'KNUCKLES LOW', why: ['The knuckles are lower than the wrist. Rebuild the bridge: tap each finger while the knuckles stay up.', '너클이 손목보다 낮아졌어요. 너클을 올린 채 손가락을 하나씩 두드려 다리를 다시 세워요.'] },
-  { id: 'nail',   en: 'Nail joint caving in',  ko: '손톱 마디가 꺾여요',   px: 'NAIL JOINT',   why: ['The last joint bends backwards. Play slowly on the tip and keep it firm like a little pillar.', '끝마디가 뒤로 꺾여요. 천천히 끝으로 누르고, 끝마디를 작은 기둥처럼 단단하게 유지해요.'] },
+  { id: 'nail',   en: 'Tip joint caving in',  ko: '손끝 관절이 꺾여요',   px: 'TIP JOINT',   why: ['The last joint bends backwards. Notice it: play slowly on the tip and feel it stay firm, like a little pillar.', '끝마디가 뒤로 꺾여요. 알아차려 봐요: 손끝으로 천천히 누르며 작은 기둥처럼 단단한지 느껴 봐요.'] },
   { id: 'low',    en: 'Wrist dropped',         ko: '손목이 처졌어요',      px: 'WRIST LOW',    why: ['The wrist sinks below the keys. Float it up, level with the forearm, like a balloon.', '손목이 건반 아래로 처졌어요. 풍선처럼 띄워서 팔뚝과 수평이 되게 해요.'] },
   { id: 'high',   en: 'Wrist too high',        ko: '손목이 너무 높아요',   px: 'WRIST HIGH',   why: ['The wrist is hunched up. Let it sink until elbow, wrist and knuckle make a straight line.', '손목이 솟았어요. 팔꿈치, 손목, 너클이 일직선이 되도록 내려요.'] },
 ];
@@ -16737,47 +16701,761 @@ const SIT_PRESETS = [
   { id: 'close', get label() { return t('Too close', '너무 가까워요'); }, S: 140, F: 196 },
   { id: 'far', get label() { return t('Too far', '너무 멀어요'); }, S: 140, F: 138 },
 ];
+// ─── Phase 376: the Lesson Book's pen-and-ink drawings, drawn live (so the online lesson can move them) ───
+// The book's drawings are baked once in Python (chars/chars8.py: KID -> to_pen -> bake). This is the same recipe in
+// JS, so a picture that moves on screen is the book's picture: the same sister and brother, the same hatching, and
+// the same hand-drawn wobble (the same noise field, exported from Python as PEN_FIELD).
+//   penKid(j, face, who) -> shapes        the two siblings, from a joints dict (hip, neck, head, arms, legs)
+//   penSvg(shapes, opts) -> '<svg ...>'   pen-and-ink: hatch the big navy areas, then wobble every outline
+const PEN_N = '#26296b', PEN_C = '#e4572e', PEN_P = '#fffdf7';
+const PEN_FIELD = [[[0.155563, -0.117238, 4.873777, 0.322693], [-0.041694, 0.127865, 5.488698, 0.322693], [0.043848, -0.091346, 5.008135, 0.322693], [-0.055961, 0.161683, 1.7494, 0.322693], [-0.130771, 0.04701, 3.17017, 0.322693], [0.435705, -0.012322, 4.980442, 0.145212], [0.449899, -0.031258, 1.352824, 0.145212], [-0.265623, -0.226978, 0.276096, 0.145212], [-0.320598, -0.030079, 2.929259, 0.145212]], [[-0.164339, -0.173307, 3.230296, 0.322693], [0.00274, 0.175436, 0.074104, 0.322693], [-0.046147, -0.121047, 1.260449, 0.322693], [0.156213, 0.003666, 5.215344, 0.322693], [-0.013664, 0.123067, 5.53129, 0.322693], [0.244339, -0.349289, 4.019462, 0.145212], [0.400563, 0.259517, 3.400107, 0.145212], [0.294099, -0.307948, 2.269889, 0.145212], [0.415175, 0.162125, 2.435562, 0.145212]]];
+function penField(x, y) {
+  const f = (cc) => { let v = 0; for (let i = 0; i < cc.length; i++) { const c = cc[i]; v += c[3] * Math.sin(c[0] * x + c[1] * y + c[2]); } return v; };
+  return [f(PEN_FIELD[0]), f(PEN_FIELD[1])];
+}
+const pAdd = (a, b, k = 1) => [a[0] + b[0] * k, a[1] + b[1] * k];
+const pSub = (a, b) => [a[0] - b[0], a[1] - b[1]];
+const pUnit = (v) => { const l = Math.hypot(v[0], v[1]) || 1; return [v[0] / l, v[1] / l]; };
+const pFix = (v) => { const s = (Math.round(v * 10) / 10).toFixed(1); return s === '-0.0' ? '0' : s.endsWith('.0') ? s.slice(0, -2) : s; };
+
+// ---- shapes: plain objects, drawn flat first (like the Python SVG before to_pen) ----
+// pl: polyline {p, s, w}  ln: line {p:[a,b], s, w, dash}  el: ellipse {c, rx, ry, f, s, w, m}  pa: path {seg, f, s, w, m}
+// hr: a hair-like path drawn rigid {d, f, s, w, m}  rc: rect {x, y, w, h, rx, f, s, sw}  tx: text  g: group {who, hide, kids}
+const PEN_HAIR = {
+  LONG_SIDE: 'M4.6,-8.6 C-2,-13 -11.6,-9 -11.2,1 C-11,8 -11.8,16 -12.6,23.4 C-9.8,25 -6.2,24.8 -3.6,23.4 C-4.6,15 -4.8,8 -3.8,2.2 C-3,-2.2 0,-5.4 5.8,-5.8 Z',
+  LONG_FRONT: 'M-9.6,6 C-11.4,-9 -5,-12.8 0,-12.6 C5,-12.8 11.4,-9 9.6,6 L10.8,18.6 C8.8,20 6.4,19.6 5.4,18 L5.6,4 C5.4,-1 3.6,-4.6 0,-5.4 C-3.6,-4.6 -5.4,-1 -5.6,4 L-5.4,18 C-6.4,19.6 -8.8,20 -10.8,18.6 Z',
+  BAND_SIDE: 'M1.9,-10.4 C-0.4,-7.8 -2.4,-4.2 -3.4,0.4 L-5.9,0 C-4.9,-5 -2.6,-8.8 -0.4,-11.6 Z',
+  BAND_FRONT: 'M-9.3,-4.2 C-6,-10.6 6,-10.6 9.3,-4.2 L8,-2.2 C5,-7.8 -5,-7.8 -8,-2.2 Z',
+  SHORT_SIDE: 'M6.4,-6.4 C3,-12.6 -9,-12 -9.6,-1.6 C-9.4,1.6 -8.6,3 -7.4,3.4 C-6.6,0 -5,-3.4 -1.6,-4.4 C1.6,-5.4 4.4,-5.2 6.4,-6.4 Z',
+  SHORT_FRONT: 'M-8.6,-1 C-9.6,-9.6 -4.6,-12.6 0,-12.4 C4.6,-12.6 9.6,-9.6 8.6,-1 C7,-4.4 4,-5.6 0,-5.4 C-4,-5.6 -7,-4.4 -8.6,-1 Z',
+};
+const PEN_SW = 2.2;
+// a limb: navy outline (w + 2*ow), then the fill inside (unless the fill is navy too)
+function penLimb(chain, w, fill, out = PEN_N, ow = 2.2) {
+  const a = [{ k: 'pl', p: chain, s: out, w: w + 2 * ow }];
+  if (fill !== out) a.push({ k: 'pl', p: chain, s: fill, w });
+  return a;
+}
+const penLine = (a, b, w = 3.2, c = PEN_N, dash) => ({ k: 'ln', p: [a, b], s: c, w, dash });
+// head group matrix: translate(hc) rotate(ang) [scale(face, 1)]
+function penHeadM(hc, u, face) {
+  const ang = Math.atan2(u[1], u[0]) - Math.PI / 2, c = Math.cos(ang), s = Math.sin(ang), sx = face ? face : 1;
+  return [c * sx, s * sx, -s, c, hc[0], hc[1]];
+}
+function penTorso(nk, hp) {
+  const u = pUnit(pSub(hp, nk)), p = [-u[1], u[0]];
+  const sh1 = pAdd(pAdd(nk, p, 10), u, 2), sh2 = pAdd(pAdd(nk, p, -10), u, 2);
+  const h1 = pAdd(hp, p, 11.5), h2 = pAdd(hp, p, -11.5);
+  const top = pAdd(nk, u, -2.5), c1 = pAdd(sh1, u, 18), c2 = pAdd(sh2, u, 18);
+  return { seg: [['M', sh1], ['Q', c1, h1], ['L', h2], ['Q', c2, sh2], ['Q', top, sh1], ['Z']], h: [h1, h2] };
+}
+function penHull(points) {
+  const key = (q) => q[0] + ',' + q[1];
+  const seen = {}, ps = [];
+  points.forEach(q => { const r = [Math.round(q[0] * 10) / 10, Math.round(q[1] * 10) / 10]; if (!seen[key(r)]) { seen[key(r)] = 1; ps.push(r); } });
+  ps.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lo = [], up = [];
+  for (const q of ps) { while (lo.length >= 2 && cross(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+  for (let i = ps.length - 1; i >= 0; i--) { const q = ps[i]; while (up.length >= 2 && cross(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}
+const penShoe = (a, face) => ({ k: 'el', c: [a[0] + 4 * (face || 0), a[1] + 1], rx: face ? 6 : 4.4, ry: 3, f: PEN_N });
+// the girl: long hair and a headband, a white blouse under an A-line pinafore, knee socks
+function penGirl(j, face) {
+  const u = pUnit(pSub(j.hip, j.neck)), legs = j.legs, arms = j.arms, out = [];
+  const leg = (ch) => { const [hip, knee, ank] = ch; out.push(...penLimb(ch, 5, PEN_P), ...penLimb([pAdd(knee, pSub(ank, knee), 0.16), ank], 5.4, PEN_N), penShoe(ank, face)); };
+  const arm = (ch) => { const [sh, el, wr] = ch; const hand = ch[3] || pAdd(wr, pUnit(pSub(wr, el)), 4); out.push(...penLimb([sh, el, wr], 5.2, PEN_P), ...penLimb([wr, hand], 3.6, PEN_P, PEN_N, 1.6)); };
+  if (legs.length > 1) leg(legs[1]);
+  if (arms.length > 1 && face !== 0) arm(arms[1]);
+  leg(legs[0]);
+  out.push({ k: 'pa', seg: penTorso(j.neck, j.hip).seg, f: PEN_P, s: PEN_N, w: PEN_SW });
+  // the A-line pinafore: a hull from the shoulders to a short flared hem, with pale pleats
+  const nk = j.neck, hp = j.hip, p = [-u[1], u[0]];
+  const ps = [pAdd(pAdd(nk, p, 5.6), u, 3), pAdd(pAdd(nk, p, -5.6), u, 3), pAdd(pAdd(nk, p, 10.5), u, 17), pAdd(pAdd(nk, p, -10.5), u, 17), pAdd(hp, p, 12), pAdd(hp, p, -12)];
+  const hems = [];
+  legs.forEach(lg => { const t = pUnit(pSub(lg[1], lg[0])), n = [-t[1], t[0]], hm = pAdd(lg[0], pSub(lg[1], lg[0]), 0.46); ps.push(pAdd(hm, n, 9), pAdd(hm, n, -9)); hems.push([hm, t, n]); });
+  const hull = penHull(ps);
+  out.push({ k: 'pa', seg: hull.map((q, i) => [i ? 'L' : 'M', q]).concat([['Z']]), f: PEN_N, s: PEN_N, w: PEN_SW });
+  const [hm, t, n] = hems[0];
+  [-0.62, -0.2, 0.2, 0.62].forEach(k => { const a = pAdd(pAdd(hm, n, 9 * k), t, -1.6); out.push(penLine(a, pAdd(a, t, -8), 1.3, PEN_P)); });
+  if (face === 0 && arms.length > 1) arm(arms[1]);
+  arm(arms[0]);
+  out.push(penLine(pAdd(j.head, u, 8), j.neck, 3.4, PEN_N));
+  // the collar and its little ribbon
+  [1, -1].forEach(sx => {
+    const a = pAdd(nk, p, sx * 0.8), b = pAdd(pAdd(nk, p, sx * 8.4), u, 0.6), c = pAdd(pAdd(nk, p, sx * 6.6), u, 6.6), d0 = pAdd(pAdd(nk, p, sx * 1.4), u, 5.4);
+    out.push({ k: 'pa', seg: [['M', a], ['Q', b, c], ['Q', d0, a], ['Z']], f: PEN_P, s: PEN_N, w: 1.1 });
+  });
+  const c0 = pAdd(nk, u, 4.6);
+  [1, -1].forEach(sx => { const q1 = pAdd(c0, [p[0] * 3.4 * sx + u[0] * -1.8, p[1] * 3.4 * sx + u[1] * -1.8]); out.push({ k: 'pa', seg: [['M', c0], ['L', q1], ['L', pAdd(q1, u, 3.6)], ['Z']], f: PEN_P, s: PEN_N, w: 1 }); });
+  const m = penHeadM(j.head, u, face);
+  out.push({ k: 'el', c: [0, 0], rx: 8, ry: 9.6, f: PEN_P, s: PEN_N, w: PEN_SW, m });
+  out.push({ k: 'hr', d: face === 0 ? PEN_HAIR.LONG_FRONT : PEN_HAIR.LONG_SIDE, f: PEN_N, m });
+  out.push({ k: 'hr', d: face === 0 ? PEN_HAIR.BAND_FRONT : PEN_HAIR.BAND_SIDE, f: PEN_P, s: PEN_N, w: 1.1, m });
+  return out;
+}
+// the boy: short hair, a jumper and trousers
+function penBoy(j, face) {
+  const u = pUnit(pSub(j.hip, j.neck)), legs = j.legs, arms = j.arms, out = [];
+  const leg = (ch) => { out.push(...penLimb(ch, 5, PEN_N), penShoe(ch[ch.length - 1], face)); };
+  const arm = (ch) => { const [sh, el, wr] = ch; const hand = ch[3] || pAdd(wr, pUnit(pSub(wr, el)), 4); out.push(...penLimb([sh, el, wr], 5.2, PEN_N), ...penLimb([wr, hand], 3.6, PEN_P, PEN_N, 1.6)); };
+  if (legs.length > 1) leg(legs[1]);
+  if (arms.length > 1 && face !== 0) arm(arms[1]);
+  leg(legs[0]);
+  out.push({ k: 'pa', seg: penTorso(j.neck, j.hip).seg, f: PEN_N, s: PEN_N, w: PEN_SW });   // the jumper
+  if (face === 0 && arms.length > 1) arm(arms[1]);
+  arm(arms[0]);
+  out.push(penLine(pAdd(j.head, u, 8), j.neck, 3.4, PEN_N));
+  const m = penHeadM(j.head, u, face);
+  out.push({ k: 'el', c: [0, 0], rx: 8, ry: 9.6, f: PEN_P, s: PEN_N, w: PEN_SW, m });
+  out.push({ k: 'hr', d: face === 0 ? PEN_HAIR.SHORT_FRONT : PEN_HAIR.SHORT_SIDE, f: PEN_N, m });
+  return out;
+}
+// both children in one drawing; ?kid=girl|boy (PB_KID_CSS) shows one of them everywhere
+function penKid(j, face = 1, who = 'girl') {
+  return [{ k: 'g', who: 'girl', hide: who !== 'girl', kids: penGirl(j, face) }, { k: 'g', who: 'boy', hide: who !== 'boy', kids: penBoy(j, face) }];
+}
+// joint dots (white = fine, coral = this one is wrong or is the thing to look at)
+function penJoints(j, coral = [], skip = []) {
+  const pts = { shoulder: j.arms[0][0], elbow: j.arms[0][1], wrist: j.arms[0][2], hip: j.legs[0][0], knee: j.legs[0][1], ankle: j.legs[0][2] };
+  return Object.keys(pts).filter(k => !skip.includes(k)).map(k => ({ k: 'el', c: pts[k], rx: 3.2, ry: 3.2, f: coral.includes(k) ? PEN_C : PEN_P, s: PEN_N, w: 1.3 }));
+}
+const penText = (x, y, text, o = {}) => ({ k: 'tx', x, y, text, size: o.size || 8.5, weight: o.weight || 800, fill: o.fill || PEN_C, anchor: o.anchor || 'start', serif: o.serif, italic: o.italic, halo: o.halo });
+// shapes drawn smaller somewhere else: every point scaled by k about src and moved to dst, line widths scaled too
+function penPlace(list, k, src, dst) {
+  const P = (q) => [dst[0] + (q[0] - src[0]) * k, dst[1] + (q[1] - src[1]) * k];
+  const M = (m) => m ? [m[0] * k, m[1] * k, m[2] * k, m[3] * k, dst[0] + (m[4] - src[0]) * k, dst[1] + (m[5] - src[1]) * k] : null;
+  const sc = (v) => v === 'H' ? 'H@' + (+k.toFixed(2)) : v;
+  return penHatch(list).map(e0 => {
+    const e = { ...e0, s: sc(e0.s), f: sc(e0.f) };
+    if (e.k === 'g') return { ...e, kids: penPlace(e.kids, k, src, dst) };
+    if (e.k === 'pl' || e.k === 'ln') return { ...e, p: e.p.map(P), w: e.w * k };
+    if (e.k === 'pa') return e.m ? { ...e, m: M(e.m), w: (e.w || 0) * k } : { ...e, seg: e.seg.map(sg => [sg[0], ...sg.slice(1).map(P)]), w: (e.w || 0) * k };
+    if (e.k === 'el') return e.m ? { ...e, m: M(e.m), w: e.w != null ? e.w * k : e.w } : { ...e, c: P(e.c), rx: e.rx * k, ry: e.ry * k, w: e.w != null ? e.w * k : e.w };
+    if (e.k === 'hr') return { ...e, m: M(e.m), w: e.w != null ? e.w * k : e.w };
+    if (e.k === 'rc') return e.m ? { ...e, m: M(e.m), sw: (e.sw || 0) * k } : { ...e, x: P([e.x, e.y])[0], y: P([e.x, e.y])[1], w: e.w * k, h: e.h * k, rx: (e.rx || 0) * k, sw: (e.sw || 0) * k };
+    if (e.k === 'tx') return { ...e, x: P([e.x, e.y])[0], y: P([e.x, e.y])[1], size: e.size * k };
+    return e;
+  });
+}
+// props, as in chars5.py
+const penFloor = (W, y = 162) => [penLine([6, y], [W - 6, y], 1.6, '#bdb7a6')];
+function penPiano(x = 150, y = 58, floorY = 162, keyY = 98) {
+  const a = [{ k: 'rc', x, y, w: 56, h: floorY - y, rx: 2.5, f: PEN_P, s: PEN_N, sw: 2.4 }, { k: 'rc', x: x - 26, y: keyY, w: 30, h: 8.5, rx: 1.5, f: PEN_P, s: PEN_N, sw: 2.2 }];
+  for (let i = 1; i < 4; i++) a.push(penLine([x - 26 + i * 7.5, keyY], [x - 26 + i * 7.5, keyY + 8.5], 1.2));
+  return a;
+}
+function penStool(x1 = 46, x2 = 100, y = 114, floorY = 162) {
+  return [{ k: 'rc', x: x1, y, w: x2 - x1, h: 7, rx: 2, f: PEN_P, s: PEN_N, sw: 2.4 }, penLine([x1 + 7, y + 7], [x1 + 7, floorY], 2.4), penLine([x2 - 7, y + 7], [x2 - 7, floorY], 2.4)];
+}
+function penKeyrow(x, y, n, w = 9.5, h = 10) {
+  const a = [{ k: 'rc', x, y, w: n * w, h, rx: 1.5, f: PEN_P, s: PEN_N, sw: 2.2 }];
+  for (let i = 1; i < n; i++) a.push(penLine([x + i * w, y], [x + i * w, y + h], 1.2));
+  return a;
+}
+// the hand from the side (handside.py): segment angles from the fingertip back to the elbow, the app's HAND_POSES
+const PEN_HAND_LENS = [12, 15, 24, 46, 120];
+function penHandChain(a, tip = [222, 118]) {
+  const pts = [tip]; let x = tip[0], y = tip[1];
+  a.forEach((ang, i) => { const r = ang * Math.PI / 180; x -= PEN_HAND_LENS[i] * Math.cos(r); y -= PEN_HAND_LENS[i] * Math.sin(r); pts.push([x, y]); });
+  return pts;   // tip, nail joint, middle joint, knuckle, wrist, elbow side
+}
+function penHandChecks(a, pts) { const [tip, j1, j2, kn, wr] = pts; return { wrist: Math.abs(a[4]) < 6 && a[3] > -14 && a[3] <= 2, knuckle: kn[1] < wr[1] + 1, tip: a[0] > 55 && a[0] > a[1] - 5 }; }
+function penHandSide(a, o = {}) {
+  const labels = o.labels !== false, faults = o.faults !== false, tipAt = o.tip || [222, 118];
+  const pts = penHandChain(a, tipAt), [tip, j1, j2, kn, wr, fa] = pts;
+  const ok = faults ? penHandChecks(a, pts) : { wrist: true, knuckle: true, tip: true };
+  const s = [{ k: 'rc', x: 150, y: 118 + (o.press || 0), w: 134, h: 16, rx: 0, f: PEN_P, s: PEN_N, sw: 2 }, penLine([206, 118 + (o.press || 0)], [206, 134 + (o.press || 0)], 1.2),
+    { k: 'pa', seg: [['M', [120, 134]], ['L', [290, 134]], ['L', [290, 148]], ['L', [120, 148]], ['Z']], f: PEN_N, s: PEN_N, w: 2 },
+    penLine([36, 118], [150, 118], 1.4, PEN_C, '4 4')];
+  if (o.keylabel !== false && labels) s.push(penText(38, 113, o.keyText || 'key level'));
+  if (o.ball) { const bx = (wr[0] + kn[0]) / 2 + 6, by = (wr[1] + kn[1]) / 2 + 16.5;
+    s.push({ k: 'el', c: [bx, by], rx: 12, ry: 12, f: 'none', s: PEN_C, w: 2.2 }, { k: 'pa', seg: [['M', [bx - 7, by - 9]], ['Q', [bx - 1.6, by], [bx - 7, by + 9]], ['M', [bx + 7, by - 9]], ['Q', [bx + 1.6, by], [bx + 7, by + 9]]], f: 'none', s: PEN_C, w: 1.2 }); }
+  s.push(...penLimb([fa, wr], 17, PEN_P, PEN_N, 1.8));
+  const sl = [fa[0] + (wr[0] - fa[0]) * 0.62, fa[1] + (wr[1] - fa[1]) * 0.62];
+  s.push(...penLimb([[fa[0] - 4, fa[1]], sl], 21, PEN_N, PEN_N, 0));
+  s.push(...penLimb([wr, kn], 14, PEN_P, PEN_N, 1.8), ...penLimb([kn, j2, j1, tip], 7.6, PEN_P, PEN_N, 1.6));
+  const u = pUnit(pSub(tip, j1)), n = [-u[1], u[0]];
+  s.push(penLine([j1[0] + u[0] * 3 - n[0] * 2.4, j1[1] + u[1] * 3 - n[1] * 2.4], [j1[0] + u[0] * 8 - n[0] * 2.4, j1[1] + u[1] * 8 - n[1] * 2.4], 1.1));
+  if (o.car != null) {   // the little car on the knuckle bridge; o.car: 0 at the knuckle, -1 back at the wrist, +1 past the knuckle
+    const at = o.car <= 0 ? pAdd(kn, pSub(wr, kn), -o.car) : pAdd(kn, pSub(j2, kn), o.car * 0.6);
+    const ang = (-8 + (o.car < 0 ? Math.atan2(kn[1] - wr[1], kn[0] - wr[0]) * 180 / Math.PI + 8 : 0)) * Math.PI / 180, c = Math.cos(ang), sn = Math.sin(ang);
+    const m = [c, sn, -sn, c, at[0] - 4, at[1] - 11];
+    s.push({ k: 'rc', x: -13, y: -9, w: 26, h: 9, rx: 3.5, f: PEN_C, m }, { k: 'rc', x: -7, y: -15, w: 13, h: 7, rx: 3, f: PEN_C, m },
+      { k: 'el', c: [-7, 1], rx: 3.3, ry: 3.3, f: PEN_N, m }, { k: 'el', c: [7, 1], rx: 3.3, ry: 3.3, f: PEN_N, m });
+  }
+  const dot = (p, good, r = 3.6) => ({ k: 'el', c: p, rx: r, ry: r, f: good ? PEN_P : PEN_C, s: PEN_N, w: 1.5 });
+  s.push(dot(j2, true, 2.9), dot(j1, !(o.nail && faults), 2.9), dot(wr, ok.wrist), dot(kn, ok.knuckle), dot(tip, ok.tip));
+  if (labels) {
+    const lab = (x, y, txt, good, anchor = 'middle') => ({ k: 'tx', x, y, text: txt, size: 9.5, weight: 900, fill: good ? PEN_N : PEN_C, anchor, halo: o.halo });
+    s.push(lab(wr[0], wr[1] - 14, o.wristText || 'wrist', ok.wrist), lab(kn[0] + 4, kn[1] - (o.car != null ? 26 : 13), o.knuckleText || 'knuckle', ok.knuckle), lab(tip[0] + 10, tip[1] - 7, o.tipText || 'tip', ok.tip, 'start'));
+  }
+  return { shapes: s, ok, pts };
+}
+const penKeyLevel = (x2 = 122, label) => [penText(8, 91, label || 'key level'), penLine([8, 96], [x2, 96], 1.3, PEN_C, '4 4')];
+
+// ---- to_pen: big navy areas hatched, thick navy limbs get an outline and a hatched core ----
+function penHatch(list) {
+  const out = [];
+  list.forEach(e => {
+    if (e.k === 'g') { out.push({ ...e, kids: penHatch(e.kids) }); return; }
+    if (e.hz) { out.push(e); return; }   // already done (penHatch may meet a shape twice)
+    if (e.k === 'pl' && e.s === PEN_N && e.w >= 6) { out.push({ ...e, w: e.w + 0.4, hz: true }, { ...e, s: 'H', w: Math.max(2, e.w - 3.4), hz: true }); return; }
+    if (e.k === 'pa' && e.f === PEN_N && !e.solid) {
+      const xs = [], ys = []; e.seg.forEach(sg => sg.slice(1).forEach(q => { xs.push(q[0]); ys.push(q[1]); }));
+      if ((Math.max(...xs) - Math.min(...xs)) * (Math.max(...ys) - Math.min(...ys)) >= 260) { out.push({ ...e, f: 'H', hz: true }); return; }
+    }
+    if (e.k === 'rc' && e.f === PEN_N && !e.solid && e.w * e.h >= 400) { out.push({ ...e, f: 'H', hz: true }); return; }
+    if (e.k === 'pl' || e.k === 'pa' || e.k === 'rc') { out.push({ ...e, hz: true }); return; }
+    out.push(e);
+  });
+  return out;
+}
+
+// ---- bake: resample every outline every 4.6 units and push each point along the noise field ----
+const penMul = (m, q) => m ? [m[0] * q[0] + m[2] * q[1] + m[4], m[1] * q[0] + m[3] * q[1] + m[5]] : q;
+function penSegPoint(start, sg, t) {
+  const u = 1 - t;
+  if (sg[0] === 'L') return [start[0] + (sg[1][0] - start[0]) * t, start[1] + (sg[1][1] - start[1]) * t];
+  if (sg[0] === 'Q') { const [c, e] = [sg[1], sg[2]]; return [u * u * start[0] + 2 * u * t * c[0] + t * t * e[0], u * u * start[1] + 2 * u * t * c[1] + t * t * e[1]]; }
+  if (sg[0] === 'C') { const [c1, c2, e] = [sg[1], sg[2], sg[3]]; return [u * u * u * start[0] + 3 * u * u * t * c1[0] + 3 * u * t * t * c2[0] + t * t * t * e[0], u * u * u * start[1] + 3 * u * u * t * c1[1] + 3 * u * t * t * c2[1] + t * t * t * e[1]]; }
+  if (sg[0] === 'A') { const [c, rx, ry, a0, a1] = sg.slice(1); const a = a0 + (a1 - a0) * t; return [c[0] + rx * Math.cos(a), c[1] + ry * Math.sin(a)]; }
+}
+function penSegLen(start, sg) {
+  if (sg[0] === 'L') return Math.hypot(sg[1][0] - start[0], sg[1][1] - start[1]);
+  let l = 0, q = start; for (let i = 1; i <= 24; i++) { const r = penSegPoint(start, sg, i / 24); l += Math.hypot(r[0] - q[0], r[1] - q[1]); q = r; } return l;
+}
+// a shape as subpaths of segments (local coords), plus whether it is closed
+function penGeom(e) {
+  if (e.k === 'pl' || e.k === 'ln') return [{ start: e.p[0], seg: e.p.slice(1).map(q => ['L', q]), closed: false }];
+  if (e.k === 'pa') {
+    const subs = []; let cur = null;
+    e.seg.forEach(sg => {
+      if (sg[0] === 'M') { cur = { start: sg[1], seg: [], closed: false }; subs.push(cur); }
+      else if (sg[0] === 'Z') { const last = cur.seg.length ? cur.seg[cur.seg.length - 1] : null; const end = last ? last[last.length - 1] : cur.start;
+        if (Math.hypot(end[0] - cur.start[0], end[1] - cur.start[1]) > 1e-6) cur.seg.push(['L', cur.start]); cur.closed = true; }
+      else cur.seg.push(sg);
+    });
+    return subs;
+  }
+  if (e.k === 'el') { const [cx, cy] = e.c; return [{ start: [cx - e.rx, cy], seg: [['A', [cx, cy], e.rx, e.ry, Math.PI, 0], ['A', [cx, cy], e.rx, e.ry, 0, -Math.PI]], closed: true }]; }
+  if (e.k === 'rc') {
+    const { x, y, w, h } = e, rx = Math.min(e.rx || 0, w / 2, h / 2);
+    if (rx <= 0) return [{ start: [x, y], seg: [['L', [x + w, y]], ['L', [x + w, y + h]], ['L', [x, y + h]], ['L', [x, y]]], closed: true }];
+    const P2 = Math.PI / 2;
+    return [{ start: [x + rx, y], closed: true, seg: [['L', [x + w - rx, y]], ['A', [x + w - rx, y + rx], rx, rx, -P2, 0], ['L', [x + w, y + h - rx]], ['A', [x + w - rx, y + h - rx], rx, rx, 0, P2],
+      ['L', [x + rx, y + h]], ['A', [x + rx, y + h - rx], rx, rx, P2, Math.PI], ['L', [x, y + rx]], ['A', [x + rx, y + rx], rx, rx, Math.PI, 3 * P2]] }];
+  }
+  return [];
+}
+const penSegEnd = (sg) => sg[0] === 'A' ? penSegPoint(null, sg, 1) : sg[sg.length - 1];
+let PEN_SCALES = null;   // the hatch sizes one drawing needs (filled while it is baked)
+function penPaint(v, hatch) {
+  if (v === 'H') return 'url(#' + hatch + ')';
+  if (typeof v === 'string' && v.indexOf('H@') === 0) { const k = v.slice(2); if (PEN_SCALES) PEN_SCALES.add(k); return 'url(#' + hatch + '_' + k.replace('.', '') + ')'; }
+  return v;
+}
+function penAttrs(e, hatch) {
+  const paint = (v) => penPaint(v, hatch);
+  let a = '';
+  if (e.k === 'pl' || e.k === 'ln') a += ' fill="none" stroke="' + paint(e.s) + '" stroke-width="' + pFix(e.w) + '" stroke-linecap="round"' + (e.k === 'pl' ? ' stroke-linejoin="round"' : '') + (e.dash ? ' stroke-dasharray="' + e.dash + '"' : '');
+  else {
+    a += ' fill="' + paint(e.f || 'none') + '"';
+    if (e.s) a += ' stroke="' + paint(e.s) + '" stroke-width="' + pFix(e.k === 'rc' ? e.sw : e.w) + '"';
+    if (e.k === 'pa' || (e.k === 'hr' && e.s)) a += ' stroke-linejoin="round"';
+  }
+  if (e.op != null) a += ' opacity="' + e.op + '"';
+  return a;
+}
+// the shape as it is, unwobbled (for the small, rigid ones and the hair)
+function penPlain(e, hatch) {
+  const tf = e.m ? ' transform="matrix(' + e.m.map(v => +v.toFixed(4)).join(' ') + ')"' : '';
+  if (e.k === 'hr') return '<path d="' + e.d + '"' + penAttrs(e, hatch) + tf + '/>';
+  if (e.k === 'el') return '<ellipse cx="' + pFix(e.c[0]) + '" cy="' + pFix(e.c[1]) + '" rx="' + e.rx + '" ry="' + e.ry + '"' + penAttrs(e, hatch) + tf + '/>';
+  if (e.k === 'ln') return '<line x1="' + pFix(e.p[0][0]) + '" y1="' + pFix(e.p[0][1]) + '" x2="' + pFix(e.p[1][0]) + '" y2="' + pFix(e.p[1][1]) + '"' + penAttrs(e, hatch) + '/>';
+  if (e.k === 'pl') return '<polyline points="' + e.p.map(q => pFix(q[0]) + ',' + pFix(q[1])).join(' ') + '"' + penAttrs(e, hatch) + '/>';
+  if (e.k === 'rc') return '<rect x="' + pFix(e.x) + '" y="' + pFix(e.y) + '" width="' + pFix(e.w) + '" height="' + pFix(e.h) + '" rx="' + (e.rx || 0) + '"' + penAttrs(e, hatch) + tf + '/>';
+  if (e.k === 'pa') return '<path d="' + e.seg.map(sg => sg[0] + (sg[0] === 'Z' ? '' : sg.slice(1).map(q => pFix(q[0]) + ',' + pFix(q[1])).join(' '))).join(' ') + '"' + penAttrs(e, hatch) + tf + '/>';
+  return '';
+}
+function penHrBox(e) {
+  const n = (e.d.match(/-?\d*\.?\d+/g) || []).map(Number), q = [];
+  for (let i = 0; i + 1 < n.length; i += 2) q.push(penMul(e.m, [n[i], n[i + 1]]));
+  return q;
+}
+function penEsc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+// shift: where this group's noise is read from (so a figure that slides along keeps its own lines instead of boiling)
+function penBakeList(list, hatch, shift, step = 4.6, small = 17) {
+  let out = '';
+  const fld = (x, y) => penField(x - shift[0], y - shift[1]);
+  list.forEach(e => {
+    if (e.k === 'g') { const sh = e.shift ? [shift[0] + e.shift[0], shift[1] + e.shift[1]] : shift;
+      out += '<g' + (e.who ? ' data-who="' + e.who + '"' : '') + (e.hide ? ' display="none"' : '') + (e.testid ? ' data-testid="' + e.testid + '"' : '') + (e.floor != null ? ' data-map-stage="' + e.floor + '"' : '') + '>' + penBakeList(e.kids, hatch, sh, step, small) + '</g>'; return; }
+    if (e.k === 'raw') { out += e.svg; return; }   // already drawn (a baked book picture, a small icon): passed through as it is
+    if (e.k === 'tx') { out += '<text x="' + pFix(e.x) + '" y="' + pFix(e.y) + '" text-anchor="' + e.anchor + '" font-size="' + e.size + '" font-weight="' + e.weight + '" fill="' + e.fill + '" font-family="Inter,sans-serif"'
+      + (e.serif || e.italic ? ' style="' + (e.serif ? "font-family:'Playfair Display',Georgia,serif;" : '') + (e.italic ? 'font-style:italic;' : '') + '"' : '')
+      + (e.halo ? ' stroke="#fffdf7" stroke-width="2.4" stroke-linejoin="round" paint-order="stroke"' : '') + '>' + penEsc(e.text) + '</text>'; return; }
+    let box;
+    const subs = e.k === 'hr' ? null : penGeom(e);
+    const sc = e.m ? Math.sqrt(Math.abs(e.m[0] * e.m[3] - e.m[1] * e.m[2])) || 1 : 1;
+    // sample every subpath (uniform in each segment's parameter, as svgpathtools does)
+    const sampled = subs ? subs.map(sp => {
+      const pts = [sp.start]; let st = sp.start;
+      sp.seg.forEach(sg => { const n = Math.max(1, Math.ceil(penSegLen(st, sg) * sc / step)); for (let i = 1; i <= n; i++) pts.push(penSegPoint(st, sg, i / n)); st = penSegEnd(sg); });
+      if (sp.closed && pts.length > 2) pts.pop();
+      return { pts: pts.map(q => penMul(e.m, q)), closed: sp.closed };
+    }) : null;
+    box = e.k === 'hr' ? penHrBox(e) : [].concat(...sampled.map(s => s.pts));
+    const xs = box.map(q => q[0]), ys = box.map(q => q[1]);
+    const bw = Math.max(...xs) - Math.min(...xs), bh = Math.max(...ys) - Math.min(...ys);
+    if (e.k === 'hr' || Math.max(bw, bh) < small) {
+      const d = fld((Math.max(...xs) + Math.min(...xs)) / 2, (Math.max(...ys) + Math.min(...ys)) / 2);
+      out += '<g transform="translate(' + pFix(d[0]) + ' ' + pFix(d[1]) + ')">' + penPlain(e, hatch) + '</g>'; return;
+    }
+    const d = sampled.map(s => { const q = s.pts.map(p => { const v = fld(p[0], p[1]); return [p[0] + v[0], p[1] + v[1]]; });
+      return 'M' + q.map(p => pFix(p[0]) + ' ' + pFix(p[1])).join('L') + (s.closed ? 'Z' : ''); }).join('');
+    out += '<path d="' + d + '"' + penAttrs(e, hatch) + '/>';
+  });
+  return out;
+}
+let PEN_UID = 0;
+// opts: vb [x, y, w, h], shift [dx, dy] for the whole drawing, id (hatch pattern id; unique per drawing on a page)
+function penSvg(shapes, opts = {}) {
+  const vb = opts.vb || [0, 0, 220, 172], hatch = opts.id || ('penh' + (++PEN_UID));
+  PEN_SCALES = new Set();
+  const body = penBakeList(penHatch(shapes), hatch, opts.shift || [0, 0]);
+  const pat = (id, k) => '<pattern id="' + id + '" width="' + 3.2 * k + '" height="' + 3.2 * k + '" patternUnits="userSpaceOnUse" patternTransform="rotate(40)"><rect width="' + 3.2 * k + '" height="' + 3.2 * k + '" fill="' + PEN_P + '"/><line x1="0" y1="0" x2="0" y2="' + 3.2 * k + '" stroke="' + PEN_N + '" stroke-width="' + 1.15 * k + '"/></pattern>';
+  const defs = '<defs>' + pat(hatch, 1) + [...PEN_SCALES].map(k => pat(hatch + '_' + k.replace('.', ''), +k)).join('') + '</defs>';
+  PEN_SCALES = null;
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + vb.join(' ') + '">' + defs + body + '</svg>';
+}
+if (typeof module !== 'undefined' && module.exports) module.exports = { penPlace, penKid, penSvg, penJoints, penText, penFloor, penPiano, penStool, penKeyLevel, penKeyrow, penHandSide, penHandChain, penLine, penLimb, pAdd, pSub, pUnit, PEN_C, PEN_N, PEN_P };
+
+// ─── Phase 376: "Set up the stool", drawn as the Lesson Book draws it (page 2), and moving ───
+// The same boy on the same stool as the book's picture, in the book's coordinates (stool 46-100 at y 114, keys at
+// y 98). Height moves the stool up and down, distance moves it in and out; the hands stay on the keys, so the
+// elbows bend to fit (two-bone reach), and the feet reach the floor or swing. A footstool fixes swinging feet.
+// The checks are the book's: feet flat; forearm level with the keys; elbows just in front of you, away from your body.
+function PenArt({ shapes, vb, shift, label, style, who, inter }) {   // inter: the drawing has its own buttons inside (no img role)
+  const id = useMemo(() => 'penh' + (++PEN_UID), []);
+  const html = useMemo(() => penSvg(shapes, { vb, shift, id }).replace('<svg ', '<svg width="100%" height="100%" '), [shapes, vb, shift, id]);
+  const w = vb ? vb[2] : 220, h = vb ? vb[3] : 172;
+  return <div role={label && !inter ? 'img' : undefined} aria-label={inter ? undefined : label} aria-hidden={label || inter ? undefined : true} style={{lineHeight:0,aspectRatio:w + ' / ' + h,width:'100%',...style}} dangerouslySetInnerHTML={{__html: html}}/>;
+}
+const penWho = (dflt) => (typeof PB_KID !== 'undefined' && PB_KID) || dflt;
+function penReach(sh, tg, U, L) {
+  const dx = tg[0] - sh[0], dy = tg[1] - sh[1], d = Math.hypot(dx, dy);
+  if (d >= U + L - 0.3) return { el: [sh[0] + dx / d * U, sh[1] + dy / d * U], wr: [sh[0] + dx / d * (U + L), sh[1] + dy / d * (U + L)], straight: true };
+  const a = (U * U - L * L + d * d) / (2 * d), h = Math.sqrt(Math.max(0, U * U - a * a)), mx = sh[0] + a * dx / d, my = sh[1] + a * dy / d;
+  const e1 = [mx + h * dy / d, my - h * dx / d], e2 = [mx - h * dy / d, my + h * dx / d];
+  return { el: e1[1] > e2[1] ? e1 : e2, wr: tg, straight: false };
+}
+// seatY: the stool's top; x2: its front edge; up: a footstool under the feet
+function sitPose376(seatY, x2, up) {
+  const hip = [x2 - 24, seatY - 4], r = (dx, dy) => [hip[0] + dx, hip[1] + dy], floorY = up ? 143 : 155;
+  const sh0 = r(7, -39), sh1 = r(3, -38);
+  const a0 = penReach(sh0, [121, 92], 25, 23.02), a1 = penReach(sh1, [116, 94], 25.24, 23.02);
+  const leg = (h, k, shin) => { const drop = floorY - k[1]; return drop <= shin + 0.01 ? { ch: [h, k, [k[0] + Math.sqrt(Math.max(0, shin * shin - drop * drop)), floorY]], down: true } : { ch: [h, k, [k[0] + 3, k[1] + shin]], down: false }; };
+  const l0 = leg(r(2, 0), r(32, 1), 44), l1 = leg(r(-3, 1), r(25, 3), 42);
+  const arm = (sh, A, hv) => A.straight ? [sh, A.el, A.wr] : [sh, A.el, A.wr, [A.wr[0] + hv[0], A.wr[1] + hv[1]]];
+  const J = { hip, neck: r(5, -42), head: r(8, -57), arms: [arm(sh0, a0, [7, 6]), arm(sh1, a1, [7, 5])], legs: [l0.ch, l1.ch] };
+  return { J, feet: l0.down && l1.down, straight: a0.straight, slope: Math.atan2(a0.wr[1] - a0.el[1], a0.wr[0] - a0.el[0]) * 180 / Math.PI,
+    ahead: a0.el[0] - sh0[0], steep: Math.atan2(a0.wr[1] - sh0[1], a0.wr[0] - sh0[0]) * 180 / Math.PI > 31, el: a0.el, wr: a0.wr };
+}
+function sitChecks376(p) {
+  const reach = p.steep ? t('The arm has to stretch down to the keys -- lower the stool.', '팔을 아래로 쭉 뻗어야 건반에 닿아요 -- 의자를 낮춰요.')
+    : t('The arm has to stretch out to the keys -- slide the stool closer.', '팔을 앞으로 쭉 뻗어야 건반에 닿아요 -- 의자를 더 가까이 옮겨요.');
+  return [
+    { id: 'feet', label: t('Feet flat on the floor', '발은 바닥에 평평하게'), ok: p.feet,
+      fix: t('The feet can’t reach -- put a footstool or a sturdy box under them.', '발이 닿지 않아요 -- 발판이나 튼튼한 상자를 발밑에 놓아요.') },
+    { id: 'level', label: t('Forearm level with the keys', '팔뚝이 건반과 수평'), ok: !p.straight && p.slope > -8 && p.slope < 12,
+      fix: p.straight ? reach : p.slope <= -8 ? t('The elbows are below the keys, so the hands reach up -- raise the stool.', '팔꿈치가 건반보다 낮아서 손이 위로 뻗어요 -- 의자를 높여요.')
+        : t('The elbows are too high, so the wrists drop to the keys -- lower the stool.', '팔꿈치가 너무 높아서 손목이 건반으로 떨어져요 -- 의자를 낮춰요.') },
+    { id: 'ahead', label: t('Elbows just in front of you, away from your body', '팔꿈치는 몸 바로 앞에, 몸에서 떨어지게'), ok: !p.straight && p.ahead >= 8 && p.ahead <= 18,
+      fix: p.straight ? reach : p.ahead < 8 ? t('The elbows are squashed in against the body -- slide the stool back.', '팔꿈치가 몸에 눌려 있어요 -- 의자를 뒤로 빼요.')
+        : t('The arms reach out ahead of the body -- slide the stool closer.', '팔이 몸 앞으로 멀리 뻗어 있어요 -- 의자를 더 가까이 옮겨요.') },
+  ];
+}
+function penSitShapes(seatY, x2, up, checks) {
+  const p = sitPose376(seatY, x2, up), bad = (id) => !checks.find(c => c.id === id).ok;
+  const s = [...penFloor(220), ...penKeyLevel(122, t('key level', '건반 높이')), ...penPiano()];
+  if (up) s.push({ k: 'rc', x: 102, y: 150, w: 40, h: 12, rx: 1.5, f: PEN_P, s: PEN_N, sw: 2.2 });
+  // the figure moves with the stool; reading its wobble from where it sits keeps its lines steady while it slides
+  const shift = [x2 - 100, seatY - 114];
+  s.push({ k: 'g', shift, kids: penStool(x2 - 54, x2, seatY) });
+  s.push({ k: 'g', shift, kids: [...penKid(p.J, 1, penWho('boy')), ...penJoints(p.J, [bad('level') || bad('ahead') ? 'elbow' : '', bad('level') ? 'wrist' : '', bad('feet') ? 'ankle' : ''].filter(Boolean), ['shoulder', 'hip', 'knee'])] });
+  // labels as in the book (elbow above and to the right, wrist above it); the elbow's word stays a line above the wrist's
+  // (an elbow squashed back behind the shoulder gets its word on the left, behind the back, so it never sits on the face)
+  const lab = (tx, ty, from, to, txt, anchor) => [{ ...penText(tx, ty, txt, { anchor }), halo: true }, { k: 'pa', seg: [['M', from], ['L', to]], f: 'none', s: PEN_C, w: 1.2 }];
+  const wy = p.wr[1] - 12, ey = Math.min(p.el[1] - 19, wy - 9), back = p.J.hip[0] - 15;
+  if (p.ahead < 6) s.push(...lab(back - 3, p.el[1] + 3, [back - 1, p.el[1]], [p.el[0] - 4, p.el[1]], t('elbow', '팔꿈치'), 'end'));
+  else s.push(...lab(p.el[0] + 7, ey, [p.el[0] + 6, ey - 2], [p.el[0] + 1.5, p.el[1] - 4.5], t('elbow', '팔꿈치')));
+  s.push(...lab(p.wr[0] + 5, wy, [p.wr[0] + 4.5, wy - 1.5], [p.wr[0] + 2, p.wr[1] - 6], t('wrist', '손목')));
+  return s;
+}
+// the front view: elbows a fist away from the body (the girl, as on the Lesson Book's warm-ups page)
+function penFrontShapes(gap, ok) {
+  const cx = 75, ex = 2 + gap * 22;
+  const j = { hip: [cx, 106], neck: [cx, 64], head: [cx, 49],
+    arms: [[[cx + 9, 67], [cx + 9 + ex, 89], [cx + 13, 99], [cx + 10, 105]], [[cx - 9, 67], [cx - 9 - ex, 89], [cx - 13, 99], [cx - 10, 105]]],
+    legs: [[[cx + 4, 106], [cx + 5, 132], [cx + 6, 157]], [[cx - 4, 106], [cx - 5, 132], [cx - 6, 157]]] };
+  const s = [...penFloor(150), ...penKid(j, 0, penWho('girl'))];
+  s.push({ k: 'rc', x: 8, y: 102, w: 134, h: 60, rx: 2, f: PEN_P, s: PEN_N, sw: 2.4 });          // the piano, in front of the lap
+  s.push({ k: 'rc', x: 8, y: 102, w: 134, h: 10, rx: 1.5, f: PEN_P, s: PEN_N, sw: 2.2 });
+  for (let i = 1; i < 14; i++) s.push(penLine([8 + i * 134 / 14, 102], [8 + i * 134 / 14, 112], 1.1));
+  [1, -1].forEach(sx => {
+    s.push(...penLimbPair([[cx + sx * 13, 99], [cx + sx * 10, 105]]));                               // the hands, on the keys
+    const side = cx + sx * 11, el = cx + sx * (9 + ex);
+    s.push(penLine([side, 89], [el - sx * 4, 89], 1.4, ok ? PEN_N : PEN_C, '2.5 2.5'));
+    s.push({ k: 'el', c: [el, 89], rx: 3.2, ry: 3.2, f: ok ? PEN_P : PEN_C, s: PEN_N, w: 1.3 });
+  });
+  return s;
+}
+const penLimbPair = (ch) => [{ k: 'pl', p: ch, s: PEN_N, w: 6.8 }, { k: 'pl', p: ch, s: PEN_P, w: 3.6 }];
+const SIT_PRESETS_376 = [
+  { id: 'good', get label() { return t('Just right', '딱 좋아요'); }, y: 114, x: 100 },
+  { id: 'low', get label() { return t('Stool too low', '의자가 너무 낮아요'); }, y: 124, x: 100 },
+  { id: 'high', get label() { return t('Stool too high', '의자가 너무 높아요'); }, y: 106, x: 100 },
+  { id: 'close', get label() { return t('Too close', '너무 가까워요'); }, y: 114, x: 124 },
+  { id: 'far', get label() { return t('Too far', '너무 멀어요'); }, y: 114, x: 90 },
+];
 function SitCheck() {
-  const [S, setS] = useState(166);
-  const [F, setF] = useState(166);
+  const [seatY, setSeatY] = useState(124);
+  const [x2, setX2] = useState(100);
+  const [up, setUp] = useState(false);
   const [view, setView] = useState('side');
   const [gap, setGap] = useState(0.05);
-  const checks = sitChecks(sitPose(S, F));
-  const allOk = checks.every(c => c.ok);
+  const p = sitPose376(seatY, x2, up), checks = sitChecks376(p), allOk = checks.every(c => c.ok);
   const gapOk = gap >= 0.3 && gap <= 0.65;
+  const side = useMemo(() => penSitShapes(seatY, x2, up, checks), [seatY, x2, up, LANG]);
+  const front = useMemo(() => penFrontShapes(gap, gapOk), [gap]);
+  const lab = {fontSize:13,fontWeight:800,color:'var(--navy)'};
   return (
-    <div className="try-box" style={actBox}>
+    <div className="try-box" data-pen-sit style={actBox}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
         <div style={actTitle}>{t('Set up the stool', '의자 맞추기')}</div>
         <div style={{display:'flex',gap:3}}>{[['side', t('Side view', '옆에서')], ['front', t('Front view', '앞에서')]].map(([k, l]) => <button key={k} className={'chip' + (view === k ? ' active' : '')} style={{padding:'2px 9px',fontSize:12}} onClick={() => setView(k)}>{l}</button>)}</div>
       </div>
       {view === 'side' ? <>
-        <div style={actNote}>{LANG === 'ko' ? <>모든 항목이 초록색이 될 때까지 의자를 옮겨 봐요. 높이는 <b>아래팔</b>을(건반과 수평), 거리는 <b>팔꿈치</b>를(몸 바로 앞) 정해요.</> : <>Move the stool until every check is green. The height sets the <b>forearm</b> (level with the keys); the distance sets the <b>elbows</b> (just in front of the body).</>}</div>
-        <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6}}>{SIT_PRESETS.map(p => <button key={p.id} className={'chip' + (p.S === S && p.F === F ? ' active' : '')} style={{padding:'2px 8px',fontSize:12}} onClick={() => { setS(p.S); setF(p.F); }}>{p.label}</button>)}</div>
-        <SeatedFigure S={S} F={F} checks={checks}/>
-        <div style={{display:'grid',gridTemplateColumns:'auto 1fr',gap:'2px 8px',alignItems:'center',fontSize:13,fontWeight:800,margin:'4px 0 6px'}}>
-          <span>{t('Height', '높이')}</span><input type="range" min="22" max="72" value={194 - S} onChange={e => setS(194 - +e.target.value)} style={{accentColor:'#e4572e'}}/>
-          <span>{t('Distance', '거리')}</span><input type="range" min="134" max="204" value={338 - F} onChange={e => setF(338 - +e.target.value)} style={{accentColor:'#e4572e'}}/>
+        <div style={actNote}>{LANG === 'ko' ? <>모든 확인이 맞을 때까지 의자를 옮겨 봐요. <b>높이</b>는 팔뚝을(건반과 수평), <b>거리</b>는 팔꿈치를(몸 바로 앞) 정해요.</> : <>Move the stool until every check is right. The <b>height</b> sets the forearm (level with the keys); the <b>distance</b> sets the elbows (just in front of you).</>}</div>
+        <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6}}>{SIT_PRESETS_376.map(q => <button key={q.id} className={'chip' + (q.y === seatY && q.x === x2 ? ' active' : '')} style={{padding:'2px 8px',fontSize:12}} onClick={() => { setSeatY(q.y); setX2(q.x); }}>{q.label}</button>)}</div>
+        <div style={{background:'#faf6ec',borderRadius:12,padding:'6px 4px'}}><PenArt shapes={side} label={t('A child at the piano, seen from the side', '옆에서 본, 피아노 앞에 앉은 아이')} style={{maxWidth:460,margin:'0 auto'}}/></div>
+        <div style={{display:'grid',gridTemplateColumns:'auto 1fr',gap:'4px 10px',alignItems:'center',margin:'8px 0 6px'}}>
+          <label htmlFor="pen-sit-h" style={lab}>{t('Height', '높이')}</label><input id="pen-sit-h" type="range" min="0" max="30" value={130 - seatY} onChange={e => setSeatY(130 - +e.target.value)} style={{accentColor:'#e4572e'}}/>
+          <label htmlFor="pen-sit-d" style={lab}>{t('Distance', '거리')}</label><input id="pen-sit-d" type="range" min="0" max="44" value={132 - x2} onChange={e => setX2(132 - +e.target.value)} style={{accentColor:'#e4572e'}}/>
         </div>
+        <label style={{display:'inline-flex',alignItems:'center',gap:7,fontSize:13,fontWeight:700,margin:'0 0 6px',cursor:'pointer'}}><input type="checkbox" checked={up} onChange={e => setUp(e.target.checked)} style={{accentColor:'#26296b',width:16,height:16}}/>{t('Footstool under the feet', '발밑에 발판 놓기')}</label>
         <div style={{display:'flex',flexDirection:'column',gap:3}}>
           {checks.map(c => (
-            <div key={c.id} style={{display:'flex',gap:7,alignItems:'flex-start',background:'#fff',borderRadius:8,padding:'5px 8px',fontSize:13.5}}>
+            <div key={c.id} data-check={c.id} data-ok={c.ok ? '1' : '0'} style={{display:'flex',gap:7,alignItems:'flex-start',background:'#faf6ec',borderRadius:8,padding:'5px 8px',fontSize:13.5}}>
               <span style={{fontWeight:900,color:c.ok ? POS_GOOD : POS_BAD,width:14}}>{c.ok ? '✓' : '✗'}</span>
               <span><b>{c.label}</b>{!c.ok && <span style={{color:'#6d6f9c'}}> -- {c.fix}</span>}</span>
             </div>
           ))}
         </div>
-        {allOk && <div style={{textAlign:'center',fontWeight:900,color:POS_GOOD,marginTop:6}}>{t('That’s the set-up. Remember the stool height for next time!', '바로 이 자세예요. 다음에도 이 의자 높이를 기억해요!')}</div>}
+        {allOk && <div style={{textAlign:'center',fontWeight:900,color:POS_GOOD,marginTop:6}}>{t('That’s the set-up. Remember this stool height for next time!', '바로 이 자세예요. 다음에도 이 의자 높이를 기억해요!')}</div>}
       </> : <>
-        <div style={actNote}>{LANG === 'ko' ? <>앞에서 보면 팔꿈치는 <b>살짝 벌어져</b> 있어요 -- 몸에서 주먹 하나 정도 떨어져서 -- 그래야 팔이 손을 건반 위로 데려갈 수 있어요. 옆구리에 붙이면 팔이 움직이지 못하고, 너무 벌리면 어깨가 긴장해요.</> : <>Seen from the front, the elbows hang <b>open</b> -- a little away from the body, about a fist’s width -- so the arm can carry the hand along the keys. Glued to the ribs, the arm can’t move; flapping out, the shoulders tense.</>}</div>
-        <FrontArms gap={gap}/>
-        <input type="range" min="0" max="100" value={Math.round(gap * 100)} onChange={e => setGap(+e.target.value / 100)} style={{width:'100%',accentColor:'#e4572e'}}/>
-        <div style={{textAlign:'center',fontSize:14,fontWeight:900,color:gapOk ? POS_GOOD : POS_BAD}}>{gap < 0.3 ? t('✗ Elbows squashed against the body', '✗ 팔꿈치가 몸에 꽉 붙었어요') : gap > 0.65 ? t('✗ Chicken wings -- the shoulders lift and tense', '✗ 닭 날개 -- 어깨가 들리고 긴장해요') : t('✓ Open elbows -- room for a fist between elbow and body', '✓ 열린 팔꿈치 -- 팔꿈치와 몸 사이에 주먹 하나')}</div>
-        <div style={{fontSize:13,color:'#6d6f9c',marginTop:6,background:'#fff',borderRadius:8,padding:'6px 8px'}}>{LANG === 'ko' ? <><b>해 봐요:</b> 팔꿈치와 옆구리 사이에 주먹을 넣었다가 빼고, 그 공간을 그대로 유지해요.</> : <><b>Try:</b> put a fist between your elbow and your side, then take it away and keep the space.</>}</div>
+        <div style={actNote}>{LANG === 'ko' ? <>앞에서 보면 팔꿈치는 몸에서 <b>주먹 하나만큼</b> 떨어져 있어요. 그래야 팔이 손을 건반 위로 데려갈 수 있어요. 몸에 붙이면 팔이 움직이지 못하고, 너무 벌리면 어깨가 긴장해요.</> : <>From the front, the elbows sit <b>about a fist away</b> from the body, so the arm can carry the hand along the keys. Stuck to the body, the arm can’t move; flapping out, the shoulders tense.</>}</div>
+        <div style={{background:'#faf6ec',borderRadius:12,padding:'6px 4px'}}><PenArt shapes={front} vb={[0, 20, 150, 146]} label={t('A child at the piano, seen from the front', '앞에서 본, 피아노 앞에 앉은 아이')} style={{maxWidth:320,margin:'0 auto'}}/></div>
+        <input type="range" aria-label={t('Elbows', '팔꿈치')} min="0" max="100" value={Math.round(gap * 100)} onChange={e => setGap(+e.target.value / 100)} style={{width:'100%',accentColor:'#e4572e',marginTop:6}}/>
+        <div style={{textAlign:'center',fontSize:14,fontWeight:900,color:gapOk ? POS_GOOD : POS_BAD}}>{gap < 0.3 ? t('✗ Elbows stuck to the body', '✗ 팔꿈치가 몸에 붙었어요') : gap > 0.65 ? t('✗ Chicken wings -- the shoulders lift and tense', '✗ 닭 날개 -- 어깨가 들리고 긴장해요') : t('✓ Elbows away from the body -- room for a fist', '✓ 팔꿈치가 몸에서 떨어졌어요 -- 주먹 하나만큼')}</div>
+        <div style={{fontSize:13,color:'#6d6f9c',marginTop:6,background:'#faf6ec',borderRadius:8,padding:'6px 8px'}}>{LANG === 'ko' ? <><b>해 봐요:</b> 팔꿈치와 옆구리 사이에 주먹을 넣었다가 빼고, 그 공간을 그대로 두어요.</> : <><b>Try:</b> put a fist between your elbow and your side, then take it away and keep the space.</>}</div>
       </>}
     </div>
   );
 }
+
+// ─── Phase 376: the six warm-ups of the Lesson Book's page 3, moving ───
+// Each card is the book's card (same picture, same words). Tap the picture and that drawing moves: the same child
+// in the same pen and ink, joint by joint. At rest each scene is exactly the book's picture (phase null).
+const pLerp = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+function pLerpJ(A, B, k) {
+  return { hip: pLerp(A.hip, B.hip, k), neck: pLerp(A.neck, B.neck, k), head: pLerp(A.head, B.head, k),
+    arms: A.arms.map((ch, i) => ch.map((q, n) => pLerp(q, B.arms[i][n] || q, k))), legs: A.legs.map((ch, i) => ch.map((q, n) => pLerp(q, B.legs[i][n] || q, k))) };
+}
+const pEase = (k) => k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k);
+// the joints dict moved/turned as one piece (turn around o by ang radians, then shift by d)
+function pMoveJ(J, o, ang, d) {
+  const c = Math.cos(ang), s = Math.sin(ang), f = (q) => [o[0] + (q[0] - o[0]) * c - (q[1] - o[1]) * s + d[0], o[1] + (q[0] - o[0]) * s + (q[1] - o[1]) * c + d[1]];
+  return { hip: f(J.hip), neck: f(J.neck), head: f(J.head), arms: J.arms.map(ch => ch.map(f)), legs: J.legs.map(ch => ch.map(f)) };
+}
+const pQuad = (a, c, b, k) => { const u = 1 - k; return [u * u * a[0] + 2 * u * k * c[0] + k * k * b[0], u * u * a[1] + 2 * u * k * c[1] + k * k * b[1]]; };
+const penPoly = (pts, w, c = PEN_N) => ({ k: 'pl', p: pts, s: c, w });
+const penCurve = (seg, w, c, extra) => ({ k: 'pa', seg, f: 'none', s: c, w, ...extra });
+
+// 1. rag doll: flop and shake, rise, float the hands up, flop again (the girl)
+const WU_RAG = { hip: [70, 104], neck: [90, 72], head: [100, 63], arms: [[[89, 75], [90, 97], [89, 117], [89, 123]], [[85, 77], [84, 99], [83, 119]]], legs: [[[72, 104], [73, 131], [74, 157]], [[68, 104], [66, 131], [64, 157]]] };
+const WU_RAG_UP = { hip: [70, 104], neck: [73, 63], head: [75, 49], arms: [[[75, 66], [80, 86], [100, 88], [107, 92]], [[71, 66], [75, 87], [95, 89], [101, 93]]], legs: WU_RAG.legs };
+function wuRagdoll(ph, who) {
+  let J = WU_RAG, marks = true;
+  if (ph != null) {
+    if (ph < 0.42) { const w = Math.sin(ph / 0.42 * Math.PI * 6) * 5;
+      J = { ...WU_RAG, arms: WU_RAG.arms.map(ch => ch.map((q, n) => n === 0 ? q : [q[0] + w * (n / 3), q[1] - Math.abs(w) * 0.15 * n])) }; }
+    else if (ph < 0.66) { J = pLerpJ(WU_RAG, WU_RAG_UP, pEase((ph - 0.42) / 0.24)); marks = false; }
+    else if (ph < 0.84) { J = WU_RAG_UP; marks = false; }
+    else { J = pLerpJ(WU_RAG_UP, WU_RAG, pEase((ph - 0.84) / 0.16)); marks = false; }
+  }
+  const s = [...penFloor(150), ...penKid(J, 1, who)];
+  if (marks) s.push(penPoly([[80, 128], [76, 132], [80, 136], [76, 140]], 1.6, PEN_C), penPoly([[98, 128], [102, 132], [98, 136], [102, 140]], 1.6, PEN_C));
+  if (ph != null && ph >= 0.6 && ph < 0.9) s.push(...penKeyrow(96, 95, 4, 9.5, 8).map(e => ({ ...e, op: 0.9 })));
+  return s;
+}
+// 2. elbow wings: the hands rest; the elbows float in, out like wings, and stop in the middle (the girl, from the front)
+const WU_WINGS = { hip: [75, 106], neck: [75, 64], head: [75, 49], arms: [[[84, 67], [104, 76], [92, 90], [87, 92]], [[66, 67], [46, 76], [58, 90], [63, 92]]], legs: [[[79, 106], [80, 132], [81, 157]], [[71, 106], [70, 132], [69, 157]]] };
+function wuWings(ph, who) {
+  let out = 1;   // 0 = stuck to the body, 1 = wings out (the book's picture), 0.55 = the middle
+  if (ph != null) out = ph < 0.25 ? 1 - pEase(ph / 0.25) : ph < 0.5 ? pEase((ph - 0.25) / 0.25) : ph < 0.65 ? 1 : ph < 0.85 ? 1 - 0.45 * pEase((ph - 0.65) / 0.2) : 0.55;
+  const el = (sx) => [75 + sx * (13 + 16 * out), 88 - 12 * out];
+  const J = { ...WU_WINGS, arms: [[WU_WINGS.arms[0][0], el(1), WU_WINGS.arms[0][2], WU_WINGS.arms[0][3]], [WU_WINGS.arms[1][0], el(-1), WU_WINGS.arms[1][2], WU_WINGS.arms[1][3]]] };
+  const s = [...penFloor(150), ...penKid(J, 0, who)];
+  if (ph == null || out > 0.9) s.push(penCurve([['M', [108, 66]], ['Q', [113, 70], [112, 78]], ['M', [112, 62]], ['Q', [120, 68], [118, 80]], ['M', [42, 66]], ['Q', [37, 70], [38, 78]], ['M', [38, 62]], ['Q', [30, 68], [32, 80]]], 1.6, PEN_C));
+  if (ph != null && ph >= 0.85) s.push(penLine([86, 88], [75 + 13 + 16 * out - 4, 82], 1.4, PEN_C, '2.5 2.5'), penLine([64, 88], [75 - 13 - 16 * out + 4, 82], 1.4, PEN_C, '2.5 2.5'));
+  s.push(penCurve([['M', [112, 24]], ['Q', [118, 18], [124, 24]], ['Q', [130, 18], [136, 24]]], 2, PEN_N));
+  return s;
+}
+// 3. arm glide: the boy skates along the keys; the round hand rides on the arm (the fingers don't walk)
+const WU_GLIDE = { hip: [64, 100], neck: [74, 60], head: [79, 46], arms: [[[76, 64], [98, 74], [120, 75], [127, 79]], [[72, 64], [56, 78], [44, 90]]], legs: [[[66, 100], [82, 120], [84, 140]], [[62, 100], [48, 119], [34, 133]]] };
+function wuSkate(ank, ang) {
+  const c = Math.cos(ang), s = Math.sin(ang), m = [c, s, -s, c, ank[0], ank[1]];
+  return [{ k: 'rc', x: -8, y: -2, w: 17, h: 6, rx: 3, f: PEN_N, m }, { k: 'el', c: [-5, 7], rx: 3, ry: 3, f: PEN_C, m }, { k: 'el', c: [6, 7], rx: 3, ry: 3, f: PEN_C, m }];
+}
+function wuGlide(ph, who) {
+  let J = WU_GLIDE, dx = 0, st = 0;
+  if (ph != null) { dx = 46 * (0.5 - 0.5 * Math.cos(ph * Math.PI * 2)); st = Math.sin(ph * Math.PI * 4);
+    const legA = [[66, 100], [74 + 8 * st, 120], [70 + 14 * st, 140]], legB = [[62, 100], [56 - 8 * st, 120], [48 - 14 * st, 136 + 3 * Math.abs(st)]];
+    J = { ...WU_GLIDE, legs: st >= 0 ? [legA, legB] : [legB.map(q => q), legA] };
+    J = pMoveJ(J, [0, 0], 0, [dx, 0]); }
+  const s = [penLine([6, 152], [214, 152], 1.6, '#bdb7a6'), ...penKeyrow(112, 80, 10)];
+  if (ph == null || Math.abs(Math.sin(ph * Math.PI * 2)) > 0.3) [[8, 60], [14, 72], [8, 84]].forEach(([x, y]) => s.push(penLine([x + dx * 0.6, y], [x + 18 + dx * 0.6, y], 1.8)));
+  s.push(...penKid(J, 1, who));
+  if (ph == null) s.push(...wuSkate([84.5, 140], 0), ...wuSkate([34.5, 133], -22 * Math.PI / 180));
+  else J.legs.forEach(lg => { const a = lg[2]; s.push(...wuSkate([a[0] + 0.5, a[1]], a[1] < 138 ? -18 * Math.PI / 180 : 0)); });
+  return s;
+}
+// 4. arm drop: the girl dives off the board along the dashed arc into the water -- splash (the arm drops into the key)
+function wuDivePose() {
+  const dv = [0.62, 0.78], pp = [-dv[1], dv[0]], hip = [96, 60], nk = pAdd(hip, dv, 36), hd = pAdd(nk, dv, 13);
+  const A = (b, k1, k2) => pAdd(pAdd(b, dv, k1), pp, k2);
+  return { hip, neck: nk, head: hd,
+    arms: [[pAdd(nk, pp, 3), A(nk, 20, 5), A(nk, 38, 4), A(nk, 44, 4)], [pAdd(nk, pp, -3), A(nk, 20, -2), A(nk, 38, -1), A(nk, 44, -1)]],
+    legs: [[pAdd(hip, pp, 3), A(hip, -24, 4), A(hip, -46, 4)], [pAdd(hip, pp, -3), A(hip, -24, -3), A(hip, -46, -6)]] };
+}
+const WU_DIVE = wuDivePose();
+function wuDive(ph, who) {
+  let J = WU_DIVE, under = false, splash = 1;
+  if (ph != null) {
+    const k = Math.min(1, ph / 0.62), at = pQuad([62, 50], [94, 12], [150, 128], pEase(k) * 0.82 + k * 0.18), ang = (-38 + 58 * k) * Math.PI / 180;
+    J = pMoveJ(WU_DIVE, WU_DIVE.hip, ang, pSub(at, WU_DIVE.hip));
+    under = ph > 0.45; splash = ph < 0.5 ? 0 : ph < 0.62 ? (ph - 0.5) / 0.12 : ph < 0.85 ? 1 : 1 - (ph - 0.85) / 0.15;
+    if (ph >= 0.62) J = null;
+  }
+  const s = [{ k: 'rc', x: 6, y: 70, w: 62, h: 7, rx: 2, f: PEN_P, s: PEN_N, sw: 2.6 }, penLine([18, 77], [18, 162], 2.6), penLine([6, 162], [214, 162], 1.6, '#bdb7a6'),
+    penCurve([['M', [64, 60]], ['Q', [92, 24], [124, 64]]], 1.4, PEN_N, { dash: '3 5', op: 0.6 })];
+  if (J) s.push(...penKid(J, 1, who));
+  if (under) s.push({ k: 'rc', x: 86, y: 143, w: 134, h: 29, rx: 0, f: BK.soft }, penLine([86, 162], [214, 162], 1.6, '#bdb7a6'));   // the water hides her (the card's own paper colour)
+  const wave = [['M', [90, 142]]]; for (let i = 0; i < 6; i++) wave.push(['Q', [100 + i * 20, i % 2 ? 149 : 135], [110 + i * 20, 142]]);
+  s.push(penCurve(wave, 2.4, PEN_N));
+  if (splash > 0) [[156, 130, 3.2], [166, 122, 2.6], [146, 123, 2.4], [174, 132, 2], [138, 133, 2]].forEach(([x, y, r]) => s.push({ k: 'el', c: [156 + (x - 156) * (0.4 + 0.6 * splash), 142 + (y - 142) * splash], rx: r * Math.max(0.3, splash), ry: r * Math.max(0.3, splash), f: PEN_C }));
+  return s;
+}
+// 5. knuckle bridge: a little car drives over the knuckles; the bridge stays up (the hand from the side)
+function wuBridge(ph) {
+  const car = ph == null ? 0 : ph < 0.7 ? -1 + 2 * pEase(ph / 0.7) : 1;
+  return penHandSide([80, 55, 24, -3, -2], { labels: false, faults: false, car: ph != null && ph >= 0.85 ? null : car, press: ph != null && ph > 0.3 && ph < 0.7 ? 2 : 0 }).shapes;
+}
+// 6. wrist balloon: the key goes down, and a balloon lifts the wrist straight back up to level (the boy)
+const WU_BAL = { hip: [80, 106], neck: [80, 64], head: [82, 50], arms: [[[82, 67], [103, 86], [124, 80], [130, 102]], [[78, 68], [74, 88], [75, 106]]], legs: [[[82, 106], [85, 132], [87, 157]], [[78, 106], [74, 132], [71, 157]]] };
+function wuBalloon(ph, who) {
+  let dip = 0, press = 0;
+  if (ph != null) { dip = ph < 0.18 ? pEase(ph / 0.18) * 8 : ph < 0.5 ? 8 * (1 - pEase((ph - 0.18) / 0.32)) : 0; press = ph < 0.5 ? 1.6 : 0; }
+  const wr = [124, 80 + dip], el = [103, 86 + dip * 0.45];
+  const J = { ...WU_BAL, arms: [[WU_BAL.arms[0][0], el, wr, [130, 102 + press]], WU_BAL.arms[1]] };
+  const by = 25 + (ph == null ? 0 : Math.sin(ph * Math.PI * 2) * 2 + dip * 0.6);
+  const s = [...penFloor(220), ...penKeyrow(112, 104, 8)];
+  if (press) s.push({ k: 'rc', x: 126.5, y: 104 + press, w: 9.5, h: 10, rx: 0, f: PEN_P, s: PEN_N, sw: 1.6 });
+  s.push(penCurve([['M', wr], ['C', [wr[0] + 6, wr[1] - 22], [148, by + 25], [151, by + 15]]], 1.6, PEN_N),
+    { k: 'el', c: [153, by], rx: 13, ry: 16, f: PEN_C }, { k: 'pa', seg: [['M', [150, by + 16]], ['L', [153, by + 12]], ['L', [156, by + 16]], ['Z']], f: PEN_C },
+    { k: 'el', c: [148, by - 6], rx: 3, ry: 5, f: '#fff', op: 0.45 });
+  s.push(...penKid(J, 1, who));
+  return s;
+}
+const WARM_UPS = [
+  { id: 'ragdoll', who: 'girl', vb: [0, 0, 150, 172], ms: 4200, f: wuRagdoll },
+  { id: 'wings', who: 'girl', vb: [0, 0, 150, 172], ms: 3600, f: wuWings },
+  { id: 'glide', who: 'boy', vb: [0, 0, 220, 160], ms: 4400, f: wuGlide },
+  { id: 'dive', who: 'girl', vb: [0, 0, 220, 172], ms: 2600, f: wuDive },
+  { id: 'bridge', who: '', vb: [34, 26, 258, 126], ms: 3000, f: wuBridge },
+  { id: 'balloon', who: 'boy', vb: [0, 0, 220, 172], ms: 3200, f: wuBalloon },
+];
+// plays one scene for a few rounds, then comes back to the book's still picture
+function useWarmPlay(ms, rounds, on, onEnd) {
+  const [ph, setPh] = useState(null);
+  useEffect(() => {
+    if (!on) { setPh(null); return; }
+    let raf, t0 = null;
+    const step = (ts) => { if (t0 == null) t0 = ts; const k = (ts - t0) / ms; if (k >= rounds) { setPh(null); onEnd && onEnd(); return; } setPh(k % 1); raf = requestAnimationFrame(step); };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [on]);
+  return ph;
+}
+function WarmPic({ w, playing, onEnd, h }) {
+  const ph = useWarmPlay(w.ms, 2, playing, onEnd);
+  const who = penWho(w.who);
+  const shapes = useMemo(() => w.f(ph, who), [ph, who]);
+  return <PenArt shapes={shapes} vb={w.vb} style={{height:h,width:'auto',maxWidth:'100%'}}/>;
+}
+function WarmUps376({ cards }) {
+  const [on, setOn] = useState(-1);
+  const [all, setAll] = useState(false);
+  const next = (i) => { if (all && i < WARM_UPS.length - 1) setOn(i + 1); else { setOn(-1); setAll(false); } };
+  return (
+    <div data-warmups>
+      <div style={{display:'flex',justifyContent:'flex-end',marginBottom:8}}>
+        <button className="ghost-btn" style={{padding:'5px 12px',fontWeight:800,fontSize:13}} onClick={() => { if (on >= 0) { setOn(-1); setAll(false); } else { setAll(true); setOn(0); } }}>{on >= 0 ? t('■ Stop', '■ 멈추기') : t('▶ Watch all six, in order', '▶ 여섯 가지를 순서대로 보기')}</button>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(min(100%, 170px), 1fr))',gap:14}}>
+        {WARM_UPS.map((w, i) => { const [name, how] = cards[i]; return (
+          <div key={w.id} data-warm={w.id} style={{border:'1px solid ' + (on === i ? BK.coral : '#ece6d8'),borderRadius:12,padding:'8px 10px 10px',display:'flex',flexDirection:'column',gap:5,transition:'border-color 0.2s'}}>
+            <button onClick={() => { setAll(false); setOn(on === i ? -1 : i); }} aria-pressed={on === i} aria-label={t('Watch it move: ', '움직이는 모습 보기: ') + name}
+              style={{position:'relative',background:BK.soft,border:'none',borderRadius:8,height:150,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden',padding:0,cursor:'pointer'}}>
+              <WarmPic w={w} playing={on === i} onEnd={() => next(i)} h={134}/>
+              {on !== i && <span aria-hidden="true" style={{position:'absolute',right:6,bottom:6,width:26,height:26,borderRadius:13,background:'#fff',border:'1.5px solid ' + BK.ink,color:BK.ink,fontSize:11,display:'flex',alignItems:'center',justifyContent:'center',paddingLeft:2}}>▶</span>}
+            </button>
+            <div style={{display:'flex',alignItems:'center',gap:7}}>
+              <span style={{flex:'0 0 22px',height:22,borderRadius:11,background:on === i ? BK.coral : BK.ink,color:'#fff',fontWeight:900,fontSize:12.5,display:'flex',alignItems:'center',justifyContent:'center'}}>{i + 1}</span>
+              <span style={{fontFamily:LB_SERIF,fontSize:16.5,fontWeight:800,color:BK.ink}}>{name}</span>
+            </div>
+            <div style={{fontSize:13.5,color:BK.ink,lineHeight:1.4}}>{how}</div>
+          </div>); })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Phase 376: the Lesson Book's pages 4, 5 and 7, with the parts that move ───
+// Page 4: the hand from the side (the book's drawing), with the roller wrist and the five faults it can turn into.
+// Page 5: both hands from above; tap a finger, or play "Which finger?". Page 7: the five checks, starred per lesson.
+const RH_GOOD = [80, 55, 24, -3, -2];
+const RH_FAULTS = ['flat', 'bridge', 'nail', 'low', 'high'];
+function RoundHand376() {
+  const [mode, setMode] = useState('good');     // good | roller | one of RH_FAULTS
+  const [ang, setAng] = useState(RH_GOOD);
+  const [ph, setPh] = useState(0);
+  const from = useRef(RH_GOOD);
+  // morph to the chosen pose; the roller sways the wrist while the fingertip stays on the key
+  useEffect(() => {
+    let raf, t0 = null; const a0 = ang.slice(), target = mode === 'good' || mode === 'roller' ? RH_GOOD : HAND_POSES[mode].a;
+    const step = (ts) => {
+      if (t0 == null) t0 = ts; const k = Math.min(1, (ts - t0) / 450), e = pEase(k);
+      if (mode === 'roller') { const w = Math.sin((ts - t0) / 1600 * Math.PI * 2) * Math.min(1, (ts - t0) / 400); setPh(w); setAng([80, 55, 24, -3 + 11 * w, -2 + 5 * w]); raf = requestAnimationFrame(step); return; }
+      setAng(a0.map((v, i) => v + (target[i] - v) * e)); if (k < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [mode]);
+  const roller = mode === 'roller';
+  const shapes = useMemo(() => {
+    const r = penHandSide(ang, { ball: mode === 'good', faults: !roller, nail: mode === 'nail', halo: true, keyText: t('key level', '건반 높이'), wristText: t('wrist', '손목'), knuckleText: t('knuckle', '마디'), tipText: t('tip', '손끝') });
+    const s = r.shapes;
+    if (roller) {   // the roller under the forearm, turning as the wrist sways
+      const [, , , , wr, fa] = r.pts, c = pAdd(wr, pSub(fa, wr), 0.22), u = pUnit(pSub(fa, wr)), n = [u[1], -u[0]], o = pAdd(c, n, n[1] > 0 ? 17 : -17);   // below the forearm
+      s.splice(4, 0, { k: 'el', c: o, rx: 7, ry: 7, f: PEN_P, s: PEN_C, w: 2 });
+      for (let i = 0; i < 3; i++) { const a = ph * 2.4 + i * Math.PI / 3; s.splice(5, 0, penLine([o[0] - 6 * Math.cos(a), o[1] - 6 * Math.sin(a)], [o[0] + 6 * Math.cos(a), o[1] + 6 * Math.sin(a)], 1.2, PEN_C)); }
+    }
+    return s;
+  }, [ang, mode, ph, LANG]);
+  const P = mode === 'good' || roller ? null : HAND_POSES[mode];
+  return (
+    <div className="try-box" data-round-hand style={actBox}>
+      <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:8}}>
+        <button className={'chip' + (mode === 'good' ? ' active' : '')} style={{padding:'3px 9px',fontSize:12.5}} onClick={() => setMode('good')}>{t('The good shape', '좋은 모양')}</button>
+        <button className={'chip' + (roller ? ' active' : '')} style={{padding:'3px 9px',fontSize:12.5}} onClick={() => setMode(roller ? 'good' : 'roller')} aria-pressed={roller}>{roller ? t('■ Roller wrist', '■ 롤러 손목') : t('▶ Roller wrist', '▶ 롤러 손목')}</button>
+        {RH_FAULTS.map(f => <button key={f} className={'chip' + (mode === f ? ' active' : '')} style={{padding:'3px 9px',fontSize:12.5}} onClick={() => setMode(f)}><span style={{color:mode === f ? '#fff' : BK.coral}}>✗</span> {HAND_POSES[f].title}</button>)}
+      </div>
+      <div style={{background:BK.soft,borderRadius:12,padding:'4px 2px'}}><PenArt shapes={shapes} vb={[34, 26, 258, 126]} label={t('A hand on a key, seen from the side', '옆에서 본, 건반 위의 손')} style={{maxWidth:520,margin:'0 auto'}}/></div>
+      <div style={{background:'#faf6ec',borderRadius:8,padding:'8px 10px',marginTop:8,fontSize:13.5,lineHeight:1.5,minHeight:44}}>
+        {roller ? (LANG === 'ko' ? <><b>롤러 손목:</b> 손끝은 건반에 그대로, 팔뚝 아래 롤러가 있는 것처럼 손목이 위아래로 흔들려요(좌우로도요). 마디와 손끝은 무너지지 않아요.</>
+            : <><b>The roller wrist:</b> the fingertip stays on the key while the wrist sways up and down (and side to side), as if a roller sat under the forearm. The knuckles and the tip stay up.</>)
+          : P ? <><b style={{color:BK.coral}}>{P.title}.</b> {P.see} {P.fix && <span style={{display:'block',marginTop:3}}><b>{t('Try: ', '해 봐요: ')}</b>{P.fix}</span>}</>
+          : <><b>{HAND_POSES.good.title}.</b> {HAND_POSES.good.see}</>}
+      </div>
+    </div>
+  );
+}
+// page 5: tap a finger to see its number and nickname, or play "Which finger?"
+function FingerNumbers376() {
+  const [lit, setLit] = useState({ hand: 'R', f: 1 });
+  const [ask, setAsk] = useState(null);
+  const [res, setRes] = useState(null);
+  const [score, setScore] = useState({ right: 0, tries: 0 });
+  const next = () => { setAsk({ hand: Math.random() < 0.5 ? 'L' : 'R', f: 1 + Math.floor(Math.random() * 5) }); setRes(null); };
+  function tap(hand, f) {
+    const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime + 0.01, 262 * Math.pow(2, [0, 2, 4, 5, 7][f - 1] / 12) * (hand === 'L' ? 0.5 : 1), 0.25, 0.15, 'triangle');
+    setLit({ hand, f });
+    if (!ask) return;
+    const ok = hand === ask.hand && f === ask.f; setRes(ok ? 'good' : 'bad');
+    setScore(s => ({ right: s.right + (ok ? 1 : 0), tries: s.tries + 1 }));
+    if (ok) setTimeout(next, 750);
+  }
+  const onHand = (hand) => (e) => { const el = e.target.closest && e.target.closest('[data-f]'); if (el) tap(hand, +el.getAttribute('data-f')); };
+  const name = FINGER_NAMES[lit.f - 1];
+  return (
+    <div className="try-box" data-finger-numbers style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>{ask ? t('Which finger?', '어느 손가락?') : t('Tap a finger', '손가락을 눌러 봐요')}</div>
+        {ask && <div style={{fontSize:13,fontWeight:800,color:'var(--muted)'}}>{score.right}/{score.tries}</div>}
+      </div>
+      <div style={{display:'flex',justifyContent:'center',gap:'clamp(10px, 6vw, 40px)',margin:'6px 0'}}>
+        {['L', 'R'].map(h => (
+          <div key={h} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>
+            <div onClick={onHand(h)} role="group" aria-label={h === 'L' ? t('Left hand', '왼손') : t('Right hand', '오른손')} style={{cursor:'pointer',background:BK.soft,borderRadius:12,padding:'4px 6px'}}>
+              <PbArt name={'q-fingers-' + h + '-plain'} h={150} lit={lit.hand === h && (!ask || res) ? lit.f : null} style={{maxWidth:'100%'}}/>
+            </div>
+            {/* the same five fingers as buttons, in the hand's own order (left: 5 4 3 2 1; right: 1 2 3 4 5); in the game they hide their numbers */}
+            <div style={{display:'flex',gap:3}}>{(h === 'L' ? [5, 4, 3, 2, 1] : [1, 2, 3, 4, 5]).map(f => { const on = lit.hand === h && lit.f === f && (!ask || res);
+              return <button key={f} onClick={() => tap(h, f)} aria-label={(h === 'L' ? t('Left hand ', '왼손 ') : t('Right hand ', '오른손 ')) + f}
+                style={{width:24,height:24,borderRadius:12,border:'1.6px solid ' + (on ? BK.coral : BK.ink),background:on ? BK.coral : '#fff',color:on ? '#fff' : BK.ink,fontSize:12,fontWeight:900,padding:0,cursor:'pointer'}}>{ask && !res ? '' : f}</button>; })}</div>
+            <b style={{fontSize:13,color:BK.ink}}>{h === 'L' ? t('Left hand', '왼손') : t('Right hand', '오른손')}</b>
+          </div>))}
+      </div>
+      <div style={{textAlign:'center',minHeight:52}}>
+        {ask ? <div style={{fontSize:19,fontWeight:900}}>{LANG === 'ko' ? <>"{ask.hand === 'L' ? '왼손' : '오른손'} <span style={{color:BK.coral}}>{ask.f}</span>번!"</> : <>"{ask.hand === 'L' ? 'Left' : 'Right'} hand, <span style={{color:BK.coral}}>{ask.f}</span>!"</>}
+            {res && <div style={{fontSize:14,color:res === 'good' ? POS_GOOD : POS_BAD}}>{res === 'good' ? t('✓ Yes!', '✓ 맞아요!') : (LANG === 'ko' ? '✗ 그건 ' + (lit.hand === 'L' ? '왼손 ' : '오른손 ') + lit.f + '번이에요' : '✗ That’s ' + (lit.hand === 'L' ? 'left' : 'right') + ' hand ' + lit.f)}</div>}</div>
+          : <div style={{fontSize:17,fontWeight:900}}>{LANG === 'ko' ? (lit.hand === 'L' ? '왼손 ' : '오른손 ') + lit.f + '번' : (lit.hand === 'L' ? 'Left' : 'Right') + ' hand, ' + lit.f}<div style={{fontSize:14,fontWeight:800,color:BK.coral}}>{t(name.en, name.ko)}</div></div>}
+      </div>
+      <div style={{textAlign:'center'}}><button className="ghost-btn" style={{fontWeight:800}} onClick={() => { if (ask) { setAsk(null); setRes(null); } else { setScore({ right: 0, tries: 0 }); next(); } }}>{ask ? t('Stop the game', '게임 멈추기') : t('▶ Play “Which finger?”', '▶ "어느 손가락?" 게임')}</button></div>
+    </div>
+  );
+}
+// page 7: a star for each check in each lesson (kept on this device)
+const FIVE_KEY = 'pb_five_checks_v1';
+function FiveChecks376({ rows }) {
+  const [st, setSt] = useState(() => { try { return JSON.parse(localStorage.getItem(FIVE_KEY)) || {}; } catch (e) { return {}; } });
+  const tog = (r, c) => { const k = r + '-' + c, nx = { ...st, [k]: !st[k] }; if (!nx[k]) delete nx[k]; setSt(nx); try { localStorage.setItem(FIVE_KEY, JSON.stringify(nx)); } catch (e) {} };
+  const n = Object.keys(st).length;
+  return (
+    <div data-five-checks style={{display:'flex',flexDirection:'column',gap:7}}>
+      {rows.map(([a, txt], r) => (
+        <div key={a} style={{border:'1px solid #ece6d8',borderRadius:12,padding:'6px 8px 8px',display:'flex',flexWrap:'wrap',alignItems:'center',gap:'4px 10px'}}>
+          <div style={{flex:'1 1 200px',display:'flex',alignItems:'center',gap:10,minWidth:0}}>
+            <div style={{flex:'0 0 64px',display:'flex',justifyContent:'center'}}><PbArt name={a} h={a === 'chk-hand' ? 38 : 52}/></div>
+            <div style={{fontSize:14,fontWeight:800,color:BK.ink,lineHeight:1.3}}>{txt}</div>
+          </div>
+          <div style={{flex:'0 0 auto',display:'flex',gap:4,marginLeft:'auto'}}>{[1, 2, 3, 4, 5, 6].map(c => { const on = !!st[r + '-' + c]; return (
+            <button key={c} onClick={() => tog(r, c)} aria-pressed={on} aria-label={txt + ', ' + t('lesson ', '레슨 ') + c} title={t('Lesson ', '레슨 ') + c}
+              style={{width:30,height:36,border:'1.5px solid ' + (on ? BK.coral : BK.line),borderRadius:7,background:on ? '#fdeee8' : '#fff',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:1,padding:0,cursor:'pointer'}}>
+              <BkStarG size={14} fill={on ? BK.coral : '#ece6d8'}/><span style={{fontSize:9,fontWeight:800,color:BK.muted,lineHeight:1}}>{c}</span></button>); })}</div>
+        </div>))}
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:12.5,color:BK.muted}}>
+        <span>{t(n + (n === 1 ? ' star' : ' stars') + ' so far (lesson 1 to 6)', '지금까지 별 ' + n + '개 (레슨 1~6)')}</span>
+        {n > 0 && <button className="ghost-btn" style={{fontSize:12,padding:'3px 10px'}} onClick={() => { setSt({}); try { localStorage.removeItem(FIVE_KEY); } catch (e) {} }}>{t('Start again', '처음부터')}</button>}
+      </div>
+    </div>
+  );
+}
+
 
 // ── 2. Hand shape: one finger on a key, drawn from the fingertip back to the forearm ──
 // Segment directions (degrees, 0 = to the right, + = downwards), fingertip to elbow:
@@ -16785,9 +17463,9 @@ function SitCheck() {
 const HAND_POSES = {
   good:   { a: [80, 55, 24, -3, -2],  get title() { return t('The good shape', '좋은 모양'); }, get see() { return t('Knuckles make a bridge (the highest point), fingers curve down, you play on the fingertip pad. The wrist sits a little above the keys, level with the forearm -- nearly as high as the knuckles.', '마디가 다리를 만들고(가장 높은 곳), 손가락은 아래로 둥글게 굽어, 손끝의 살로 쳐요. 손목은 건반보다 조금 위, 아래팔과 수평 -- 마디와 거의 같은 높이예요.'); }, get fix() { return t('', ''); } },
   flat:   { a: [22, 16, 10, 4, 2],     get title() { return t('Flat fingers', '납작한 손가락'); }, get see() { return t('Fingers lie flat and the key is played with the soft middle of the finger.', '손가락이 납작하게 누워서 손가락 가운데의 말랑한 부분으로 건반을 쳐요.'); }, get fix() { return t('Hold a small ball (or a mandarin). Keep that round shape and put it on the keys.', '작은 공(또는 귤)을 쥐어 봐요. 그 둥근 모양 그대로 건반 위에 올려요.'); } },
-  bridge: { a: [62, 38, 8, 18, 3],     get title() { return t('Knuckles collapsed', '마디가 무너졌어요'); }, get see() { return t('The bridge has fallen in: the knuckles are lower than the wrist.', '다리가 무너졌어요: 마디가 손목보다 낮아요.'); }, get fix() { return t('Knuckle bridge (exercise 2): tap each finger while the knuckles stay up.', '마디 다리(운동 2): 마디를 세운 채로 손가락을 하나씩 눌러요.'); } },
-  nail:   { a: [18, 78, 30, -8, 0],    get title() { return t('Nail joint caving in', '손끝 관절이 꺾여요'); }, get see() { return t('The last joint bends backwards when the finger plays.', '건반을 칠 때 마지막 관절이 뒤로 꺾여요.'); }, get fix() { return t('Notice the tip joint: play slowly on the tip, press the key down and hold, and feel it stay firm like a little pillar.', '손끝 관절을 살펴봐요: 손끝으로 천천히, 건반을 끝까지 누르고 기다리며, 작은 기둥처럼 단단한지 느껴 봐요.'); } },
-  low:    { a: [80, 55, 22, -40, -18], get title() { return t('Wrist dropped', '손목이 처졌어요'); }, get see() { return t('The wrist sinks below the keys and the hand has to push up.', '손목이 건반 아래로 가라앉아서 손이 위로 밀어 올려야 해요.'); }, get fix() { return t('Wrist balloon (exercise 5): the wrist floats up to level with the forearm.', '손목 풍선(운동 5): 손목이 아래팔 높이까지 둥실 떠올라요.'); } },
+  bridge: { a: [62, 38, 8, 18, 3],     get title() { return t('Knuckles collapsed', '마디가 무너졌어요'); }, get see() { return t('The bridge has fallen in: the knuckles are lower than the wrist.', '다리가 무너졌어요: 마디가 손목보다 낮아요.'); }, get fix() { return t('Knuckle bridge (warm-up 5): press one key slowly and hold for 3 -- the knuckles stay up like a bridge.', '마디 다리(워밍업 5): 건반 하나를 천천히 누르고 셋을 세는 동안, 마디는 다리처럼 위로 그대로.'); } },
+  nail:   { a: [18, 78, 30, -8, 0],    get title() { return t('Tip joint caving in', '손끝 관절이 꺾여요'); }, get see() { return t('The last joint bends backwards when the finger plays.', '건반을 칠 때 마지막 관절이 뒤로 꺾여요.'); }, get fix() { return t('Notice the tip joint: play slowly on the tip, press the key down and hold, and feel it stay firm like a little pillar.', '손끝 관절을 살펴봐요: 손끝으로 천천히, 건반을 끝까지 누르고 기다리며, 작은 기둥처럼 단단한지 느껴 봐요.'); } },
+  low:    { a: [80, 55, 22, -40, -18], get title() { return t('Wrist dropped', '손목이 처졌어요'); }, get see() { return t('The wrist sinks below the keys and the hand has to push up.', '손목이 건반 아래로 가라앉아서 손이 위로 밀어 올려야 해요.'); }, get fix() { return t('Wrist balloon (warm-up 6): after each key, the wrist comes straight back up to level.', '손목 풍선(워밍업 6): 건반을 칠 때마다 손목이 바로 같은 높이로 다시 올라와요.'); } },
   high:   { a: [82, 60, 36, 26, 14],   get title() { return t('Wrist too high', '손목이 너무 높아요'); }, get see() { return t('The wrist is hunched up and the fingers poke straight down.', '손목이 구부정하게 솟고 손가락이 꼿꼿이 아래로 찔러요.'); }, get fix() { return t('Let the wrist sink until it’s level with the forearm -- a straight line from elbow to knuckle.', '손목이 아래팔과 수평이 될 때까지 내려요 -- 팔꿈치에서 마디까지 곧은 선.'); } },
 };
 const HAND_LENS = [12, 15, 24, 46, 120];
@@ -18167,8 +18845,8 @@ function ArmAlignment() {
 
 const TOOLS = [
   { id: 'sit-check', ch: 'posture-hands', title: 'Set up the stool', blurb: 'Height and distance: forearm level, elbows open.', C: () => <><ExplPostureHands1/><SitCheck/></> },
-  { id: 'hand-shape', ch: 'posture-hands', title: 'The hand shape', blurb: 'Knuckle bridge, level wrist, fingertips -- and six faults.', C: () => <><ExplPostureHands3/><HandShape/></> },
-  { id: 'arm-moves', ch: 'posture-hands', title: 'Move with the whole arm', blurb: 'Six warm-ups in order, from the big parts of the body to the small.', C: () => <><ExplPostureHands2/><ArmExercises/></> },
+  { id: 'hand-shape', ch: 'posture-hands', title: 'The hand shape', blurb: 'Knuckle bridge, level wrist, fingertips -- and six faults.', C: () => <><ExplPostureHands3/><RoundHand376/></> },
+  { id: 'arm-moves', ch: 'posture-hands', title: 'Move with the whole arm', blurb: 'Six warm-ups in order, from the big parts of the body to the small.', C: () => <><ExplPostureHands2/><div className="try-box" style={actBox}><WarmUps376 cards={postureWarmCards()}/></div></> },
   { id: 'posture-check', ch: 'posture-hands', title: 'Posture check', blurb: '17-point checklist, saved with a history.', C: () => <PostureChecklist/> },
   { id: 'keyboard-ancestors', ch: 'piano-story', title: 'Clavichord, harpsichord, piano', blurb: 'Pluck, tangent or hammer -- press harder and hear.', C: () => <><ExplPianoStory1/><KeyboardAncestors/></> },
   { id: 'touch-lengths', ch: 'dynamics', title: 'Legato, non legato, staccato', blurb: 'How long each note sounds -- and why Bach is non legato.', C: () => <><ExplPianoStory2/><TouchLengths/></> },
@@ -18180,7 +18858,7 @@ const TOOLS = [
   { id: 'size-pitch', ch: 'pitch-range', title: 'Big is low, small is high', blurb: 'Xylophone bars from big to small, then guess which of the violin family plays higher.', C: () => <SizePitch/> },
   { id: 'octave-ladder', ch: 'pitch-range', title: 'The octave ladder', blurb: 'Every octave up, the vibrations double -- find the missing number.', C: () => <OctaveLadder/> },
   { id: 'range-chart', ch: 'pitch-range', title: 'Who plays where?', blurb: 'Instrument and voice ranges over the 88 keys.', C: () => <><ExplPitchRange2/><RangeChart/></> },
-  { id: 'finger-numbers', ch: 'posture-hands', title: 'Finger numbers', blurb: '“Show me finger 3!” -- both hands.', C: () => <><ExplPostureHands4/><FingerNumbers/></> },
+  { id: 'finger-numbers', ch: 'posture-hands', title: 'Finger numbers', blurb: '“Show me finger 3!” -- both hands.', C: () => <><ExplPostureHands4/><FingerNumbers376/></> },
   { id: 'arm-alignment', ch: 'posture-hands', title: 'Arm weight & alignment', blurb: 'Move over the diagram -- watch elbow, wrist and finger joints react.', C: () => <ArmAlignment/> },
   { id: 'high-low', ch: 'first-steps', title: 'High or low, loud or soft', blurb: 'Listening games before reading.', C: () => <HighLowGame/> },
   { id: 'key-houses', ch: 'first-steps', title: 'Small house, big house (black keys)', blurb: 'The black-key map; where C and F live.', C: () => <><ExplFirstSteps1/><KeyHouses/></> },
@@ -19852,9 +20530,9 @@ function MapHead({ onOpen }) {
 function MapHome({ onOpen }) {
   return (
     <div className="fade-up" data-testid="map-home">
-      <PageIntro title={UI_TEACHER ? t('Music map', '음악 지도') : t('My music map', '나의 음악 지도')} text={t('The whole road on one page. Tap a chapter to open it, or carry on with the button.', '전체 길이 한 장에 있어요. 챕터를 누르거나, 버튼을 눌러 이어서 해요.')}/>
+      <PageIntro title={UI_TEACHER ? t('Music map', '음악 지도') : t('My music map', '나의 음악 지도')} text={t('The Piano Butler’s house: every floor is a stage, every room is a chapter, from the front door up to the attic. Tap a room to open it, or carry on with the button.', '피아노 버틀러의 집: 층마다 단계 하나, 방마다 챕터 하나, 현관에서 다락까지. 방을 누르거나, 버튼을 눌러 이어서 해요.')}/>
       <MapHead onOpen={onOpen}/>
-      <MusicMap onOpen={onOpen} noIntro/>
+      <HouseMap onOpen={onOpen} noIntro/>
     </div>
   );
 }
@@ -20902,7 +21580,7 @@ function StudentHome({ link, onOpenChapter, onOpenTool }) {
       <div style={sec}>
         <StaffHead title={t('My music map', '나의 음악 지도')}/>
         <div style={{ height: 10 }}/>
-        <MusicMap onOpen={onOpenChapter} compact/>
+        <HouseMap onOpen={onOpenChapter} compact/>
       </div>
     </div>
   );
@@ -21167,6 +21845,139 @@ function rdWater(cx, cy, r, surf) {
   return s + ` V${cy + r + 2} H${x0} Z`;
 }
 const RD_CSS = '@keyframes rdRise{from{transform:translateY(var(--rd-d))}to{transform:none}}.rd-rise{animation:rdRise 1.1s cubic-bezier(.3,.7,.3,1) both}@media (prefers-reduced-motion: reduce){.rd-rise{animation:none}}[data-chapter]:focus-visible,[data-stage-circle]:focus-visible{outline:2px solid #e4572e;outline-offset:2px;border-radius:4px}';
+// ─── Phase 377: the Piano Butler's House, the chapter map (Sohyun 2026-10-08: "the whole dollhouse") ───
+// Every floor is a stage, every room is a chapter, in the map's order from the front door to the attic. The siblings
+// stand on the stairs of the floor you are on; your room is tinted coral; a finished room has its number filled in.
+// Drawn in the Lesson Book's pen and ink (pen376.js). Two drawings of the same house: phones get a tall house with
+// the rooms of a floor in rows of up to three; wider screens get one row of rooms per floor and the butler outside.
+const HOUSE_ICONS = {"1": "<rect x=\"4\" y=\"21\" width=\"16\" height=\"3.4\" rx=\"1\" fill=\"#26296b\" stroke=\"none\"/><path d=\"M7 24 V32 M17 24 V32\"/><rect x=\"26\" y=\"4\" width=\"18\" height=\"28\" rx=\"1.5\"/><rect x=\"21\" y=\"15\" width=\"8\" height=\"4\" rx=\"1\"/>", "2": "<rect x=\"3\" y=\"8\" width=\"42\" height=\"22\" rx=\"1.5\"/><path d=\"M9 8 V30 M15 8 V30 M21 8 V30 M27 8 V30 M33 8 V30 M39 8 V30\" stroke-width=\"1.1\"/><rect x=\"7\" y=\"8\" width=\"4\" height=\"13\" fill=\"#26296b\" stroke=\"none\"/><rect x=\"13\" y=\"8\" width=\"4\" height=\"13\" fill=\"#26296b\" stroke=\"none\"/><rect x=\"25\" y=\"8\" width=\"4\" height=\"13\" fill=\"#26296b\" stroke=\"none\"/><rect x=\"31\" y=\"8\" width=\"4\" height=\"13\" fill=\"#26296b\" stroke=\"none\"/><rect x=\"37\" y=\"8\" width=\"4\" height=\"13\" fill=\"#26296b\" stroke=\"none\"/>", "3": "<rect x=\"3\" y=\"11\" width=\"12\" height=\"13\" rx=\"2\"/><rect x=\"18\" y=\"11\" width=\"12\" height=\"13\" rx=\"2\"/><rect x=\"33\" y=\"11\" width=\"12\" height=\"13\" rx=\"2\"/><text x=\"9\" y=\"21.5\" text-anchor=\"middle\" font-size=\"9\" font-weight=\"800\" fill=\"#26296b\" stroke=\"none\" font-family=\"Inter, sans-serif\">C</text><text x=\"24\" y=\"21.5\" text-anchor=\"middle\" font-size=\"9\" font-weight=\"800\" fill=\"#26296b\" stroke=\"none\" font-family=\"Inter, sans-serif\">D</text><text x=\"39\" y=\"21.5\" text-anchor=\"middle\" font-size=\"9\" font-weight=\"800\" fill=\"#26296b\" stroke=\"none\" font-family=\"Inter, sans-serif\">E</text>", "4": "<path d=\"M4 9 H44 M4 14 H44 M4 19 H44 M4 24 H44 M4 29 H44\" stroke-width=\"1.2\"/><ellipse cx=\"26\" cy=\"19\" rx=\"4.4\" ry=\"3.2\" transform=\"rotate(-20 26 19)\" fill=\"#26296b\" stroke=\"none\"/>", "5": "<path d=\"M4 3 H44 M4 7 H44 M4 11 H44 M4 15 H44 M4 19 H44\" stroke-width=\"1.2\"/><path d=\"M18 24 H34 M18 29 H34\" stroke-width=\"1.6\"/><ellipse cx=\"26\" cy=\"29\" rx=\"4.4\" ry=\"3.2\" transform=\"rotate(-20 26 29)\" fill=\"#26296b\" stroke=\"none\"/>", "6": "<rect x=\"6\" y=\"10\" width=\"36\" height=\"22\" rx=\"1.5\"/><path d=\"M18 10 V32 M30 10 V32\" stroke-width=\"1.2\"/><rect x=\"15.5\" y=\"10\" width=\"5\" height=\"13\" fill=\"#26296b\" stroke=\"none\"/><rect x=\"27.5\" y=\"10\" width=\"5\" height=\"13\" fill=\"#26296b\" stroke=\"none\"/><path d=\"M12 7 Q18 0 24 7\" stroke-width=\"1.5\"/>", "7": "<path d=\"M24 31 C10 21 5 13 11 7 C16 3 21 6 24 10 C27 6 32 3 37 7 C43 13 38 21 24 31 Z\"/><path d=\"M12 17 H19 L22 12 L26 22 L29 17 H36\" stroke-width=\"1.6\"/>", "8": "<ellipse cx=\"14\" cy=\"26\" rx=\"5\" ry=\"3.6\" transform=\"rotate(-20 14 26)\" fill=\"#26296b\" stroke=\"none\"/><path d=\"M18.4 25 V5\"/><path d=\"M31 5 L36 11 L31 17 L36 23 Q30 21 32 30\" stroke-width=\"2.4\"/>", "9": "<text x=\"24\" y=\"16\" text-anchor=\"middle\" font-size=\"16\" font-weight=\"900\" fill=\"#26296b\" stroke=\"none\" font-family=\"'Playfair Display', Georgia, serif\">4</text><text x=\"24\" y=\"32\" text-anchor=\"middle\" font-size=\"16\" font-weight=\"900\" fill=\"#26296b\" stroke=\"none\" font-family=\"'Playfair Display', Georgia, serif\">4</text>", "10": "<ellipse cx=\"9\" cy=\"26\" rx=\"4.6\" ry=\"3.4\" transform=\"rotate(-20 9 26)\" fill=\"#26296b\" stroke=\"none\"/><path d=\"M13 25 V8\"/><ellipse cx=\"25\" cy=\"26\" rx=\"4.6\" ry=\"3.4\" transform=\"rotate(-20 25 26)\" fill=\"#26296b\" stroke=\"none\"/><ellipse cx=\"38\" cy=\"26\" rx=\"4.6\" ry=\"3.4\" transform=\"rotate(-20 38 26)\" fill=\"#26296b\" stroke=\"none\"/><path d=\"M29 25 V8 M42 25 V8\"/><rect x=\"29\" y=\"7\" width=\"13\" height=\"3.6\" fill=\"#26296b\" stroke=\"none\"/>", "11": "<path d=\"M4 30 H14 V22 H24 V14 H34 V6 H44\"/><path d=\"M9 26 Q19 6 29 10\" stroke-dasharray=\"2 3\" stroke-width=\"1.5\"/>", "12": "<path d=\"M8 25 L12 17 L30 17 L36 22 L45 23 L45 28 L8 28 Z\"/><circle cx=\"16\" cy=\"29\" r=\"4\" fill=\"#26296b\"/><circle cx=\"37\" cy=\"29\" r=\"4\" fill=\"#26296b\"/><path d=\"M1 19 H6 M2 24 H5\" stroke-width=\"1.5\"/>", "13": "<rect x=\"4\" y=\"12\" width=\"40\" height=\"12\" rx=\"2\"/><path d=\"M9 12 V16 M14 12 V19 M19 12 V16 M24 12 V19 M29 12 V16 M34 12 V19 M39 12 V16\" stroke-width=\"1.3\"/>", "14": "<path d=\"M15 2 V32 M33 2 V32 M15 8 H33 M15 14 H33 M15 20 H33 M15 26 H33\"/>", "15": "<circle cx=\"13\" cy=\"20\" r=\"7\"/><path d=\"M20 20 H42 M34 20 V25 M39 20 V25\"/><path d=\"M30 3 V13 M35 2 V12 M27 6.5 L38 5.5 M27 10.5 L38 9.5\" stroke-width=\"1.5\"/>", "16": "<rect x=\"10\" y=\"23\" width=\"28\" height=\"9\" rx=\"1.5\"/><rect x=\"13\" y=\"15\" width=\"22\" height=\"8\" rx=\"1.5\"/><rect x=\"16\" y=\"7\" width=\"16\" height=\"8\" rx=\"1.5\"/><path d=\"M24 7 V2\"/>", "17": "<path d=\"M4 26 Q12 6 20 18 T36 12 T44 8\"/><circle cx=\"12\" cy=\"13\" r=\"2.4\" fill=\"#26296b\"/><circle cx=\"28\" cy=\"16\" r=\"2.4\" fill=\"#26296b\"/><circle cx=\"42\" cy=\"9\" r=\"2.4\" fill=\"#26296b\"/>", "18": "<rect x=\"3\" y=\"10\" width=\"12\" height=\"15\" rx=\"2\"/><rect x=\"18\" y=\"10\" width=\"12\" height=\"15\" rx=\"2\"/><rect x=\"33\" y=\"10\" width=\"12\" height=\"15\" rx=\"2\"/><text x=\"9\" y=\"21.5\" text-anchor=\"middle\" font-size=\"9\" font-weight=\"800\" fill=\"#26296b\" stroke=\"none\" font-family=\"Inter, sans-serif\">A</text><text x=\"24\" y=\"21.5\" text-anchor=\"middle\" font-size=\"9\" font-weight=\"800\" fill=\"#26296b\" stroke=\"none\" font-family=\"Inter, sans-serif\">B</text><text x=\"39\" y=\"21.5\" text-anchor=\"middle\" font-size=\"9\" font-weight=\"800\" fill=\"#26296b\" stroke=\"none\" font-family=\"Inter, sans-serif\">A</text>", "19": "<text x=\"8\" y=\"25\" font-size=\"15\" font-weight=\"700\" font-style=\"italic\" fill=\"#26296b\" stroke=\"none\" font-family=\"'Playfair Display', Georgia, serif\">p</text><path d=\"M17 20 L33 14 M17 20 L33 26\"/><text x=\"37\" y=\"25\" font-size=\"15\" font-weight=\"700\" font-style=\"italic\" fill=\"#26296b\" stroke=\"none\" font-family=\"'Playfair Display', Georgia, serif\">f</text>", "20": "<path d=\"M6 6 V28 M6 6 H32 M6 28 H32\" stroke-width=\"1.2\"/><circle cx=\"24\" cy=\"13\" r=\"2.3\" fill=\"#26296b\" stroke=\"none\"/><circle cx=\"24\" cy=\"21\" r=\"2.3\" fill=\"#26296b\" stroke=\"none\"/><line x1=\"31\" y1=\"6\" x2=\"31\" y2=\"28\" stroke-width=\"1.6\"/><rect x=\"35\" y=\"6\" width=\"4\" height=\"22\" fill=\"#26296b\" stroke=\"none\"/>", "21": "<path d=\"M5 5 H43 V24 H18 L11 31 L12 24 H5 Z\"/><text x=\"24\" y=\"17.5\" text-anchor=\"middle\" font-size=\"9\" font-weight=\"700\" font-style=\"italic\" fill=\"#26296b\" stroke=\"none\" font-family=\"'Playfair Display', Georgia, serif\">Allegro</text>", "22": "<path d=\"M6 14 L30 14 C38 14 42 18 42 22 L42 24 L6 24 Z\" fill=\"#26296b\"/><path d=\"M9 24 V32 M39 24 V32 M6 14 L26 4\"/>", "23": "<rect x=\"12\" y=\"2\" width=\"24\" height=\"30\" rx=\"2\"/><circle cx=\"24\" cy=\"12\" r=\"5\" fill=\"#26296b\"/><path d=\"M15 30 Q24 16 33 30 Z\" fill=\"#26296b\"/>", "24": "<path d=\"M4 17 Q9 4 14 17 T24 17 T34 17 T44 17\"/>", "25": "<circle cx=\"24\" cy=\"17\" r=\"14\"/><circle cx=\"24\" cy=\"17\" r=\"9\" stroke-width=\"1\"/><circle cx=\"24\" cy=\"17\" r=\"4\" fill=\"#26296b\"/>"};   // the room pictures from the house design (48 x 34 each), by chapter number
+const HOUSE_STAND = { hip: [64, 104], neck: [64, 63], head: [65, 49], arms: [[[66, 66], [69, 86], [68, 104]], [[62, 66], [58, 86], [59, 104]]], legs: [[[66, 104], [67, 131], [68, 157]], [[62, 104], [60, 131], [58, 157]]] };
+function houseWrap(text, maxW, size) {
+  const words = text.split(' '), lines = []; let cur = '';
+  words.forEach(w => { const nx = cur ? cur + ' ' + w : w; if (cur && rdWidth(nx, 700, size) > maxW) { lines.push(cur); cur = w; } else cur = nx; });
+  if (cur) lines.push(cur);
+  return lines.slice(0, 2);
+}
+function houseStairs(x, y, w, h, right, railTop = 2) {
+  const n = Math.max(5, Math.round(h / 12)), sw = (w - 8) / n, sh = (h - 4) / n, pts = [];
+  for (let k = 0; k < n; k++) { const sx = 4 + k * sw, sy = h - k * sh; pts.push([sx, sy], [sx, sy - sh], [sx + sw, sy - sh]); }
+  const P = pts.map(([a, b]) => [right ? x + a : x + w - a, y + b]);
+  return [{ k: 'pl', p: P, s: PEN_N, w: 1.8 },
+    penLine([right ? x + 3 : x + w - 3, y + h - 24], [right ? x + w - 6 : x + 6, y + railTop], 1.2)];
+}
+function houseShapes(view, wide) {
+  const { stages, here, nums } = view;
+  const s = [], W = wide ? 900 : 360, X0 = wide ? 132 : 6, HW = wide ? 760 : 348, SC = wide ? 118 : 42;
+  const LH = wide ? 0 : 20, RH = wide ? 92 : 70, SLAB = 6, TOP = wide ? 112 : 92;
+  const floors = stages.map(st => {
+    const n = st.ids.length, cols = wide ? n : n <= 3 ? n : n === 4 ? 2 : 3, rows = Math.ceil(n / cols);
+    return { ...st, n, cols, rows, h: LH + rows * RH + SLAB };
+  });
+  // the roof: tiles, a plaque with the bow tie, two round windows, a chimney and a curl of smoke
+  const rx0 = X0, rx1 = X0 + HW, ry = TOP, peak = wide ? 86 : 64;
+  s.push({ k: 'rc', x: rx1 - (wide ? 120 : 52), y: ry - peak - 26, w: wide ? 30 : 20, h: wide ? 56 : 40, rx: 0, f: 'H@0.8', s: PEN_N, sw: 2.2 });
+  s.push({ k: 'pa', seg: [['M', [rx1 - (wide ? 104 : 42), ry - peak - 30]], ['Q', [rx1 - (wide ? 116 : 52), ry - peak - 40], [rx1 - (wide ? 104 : 42), ry - peak - 50]], ['Q', [rx1 - (wide ? 94 : 34), ry - peak - 60], [rx1 - (wide ? 102 : 40), ry - peak - 70]]], f: 'none', s: PEN_N, w: 1.5 });
+  s.push({ k: 'pa', seg: [['M', [rx0, ry]], ['L', [rx0 + (wide ? 70 : 34), ry - peak]], ['L', [rx1 - (wide ? 70 : 34), ry - peak]], ['L', [rx1, ry]], ['Z']], f: 'H', s: PEN_N, w: 2.8 });
+  const cx = (rx0 + rx1) / 2, pw = wide ? 250 : 170, ph = wide ? 56 : 44;
+  s.push({ k: 'rc', x: cx - pw / 2, y: ry - peak + (wide ? 12 : 8), w: pw, h: ph, rx: 9, f: PEN_P, s: PEN_N, sw: 2.2 });
+  const by = ry - peak + (wide ? 24 : 18);
+  s.push({ k: 'pa', seg: [['M', [cx - 15, by - 6]], ['L', [cx - 2, by]], ['L', [cx - 15, by + 6]], ['Z'], ['M', [cx + 15, by - 6]], ['L', [cx + 2, by]], ['L', [cx + 15, by + 6]], ['Z']], f: 'none', s: PEN_N, w: 1.8 },
+    { k: 'el', c: [cx, by], rx: 2.8, ry: 2.8, f: PEN_C });
+  s.push({ ...penText(cx, by + (wide ? 27 : 21), 'Piano Butler', { size: wide ? 24 : 17, weight: 700, fill: PEN_N, anchor: 'middle', serif: true, italic: true }) });
+  if (wide) [cx - 230, cx + 230].forEach(wx => s.push({ k: 'el', c: [wx, ry - 40], rx: 15, ry: 15, f: PEN_P, s: PEN_N, w: 2.2 }, penLine([wx - 15, ry - 40], [wx + 15, ry - 40], 1.3), penLine([wx, ry - 55], [wx, ry - 25], 1.3)));
+  // the floors, top (stage 7) to bottom (stage 1)
+  let y = TOP; const rooms = []; let kidsAt = null;
+  [...floors].reverse().forEach(fl => {
+    const fy = y, right = (fl.i + 1) % 2 === 1;
+    s.push({ k: 'g', floor: fl.i, kids: [
+      { k: 'rc', x: X0, y: fy, w: HW, h: fl.h, rx: 0, f: PEN_P, s: PEN_N, sw: 2.6 },
+      { k: 'rc', x: X0, y: fy + fl.h - SLAB, w: HW, h: SLAB, rx: 0, f: 'H@0.7', s: PEN_N, sw: 1.4 },
+      penLine([X0 + SC, fy], [X0 + SC, fy + fl.h - SLAB], 2),
+      ...houseStairs(X0, fy + LH, SC, fl.h - SLAB - LH, right, wide ? 26 : 2)] });
+    const label = (fl.i + 1) + ' · ' + t(fl.s.en[0], fl.s.ko[0]);
+    if (wide) s.push(penText(right ? X0 + 8 : X0 + SC - 8, fy + 16, label, { size: 12.5, weight: 800, fill: PEN_N, anchor: right ? 'start' : 'end', serif: true, halo: true }));
+    else { s.push(penLine([X0 + SC, fy + LH], [X0 + HW, fy + LH], 1.2), penText(X0 + SC + 8, fy + 14, label, { size: 12, weight: 800, fill: PEN_N, serif: true })); }
+    if (fl.ids.includes(here)) kidsAt = { x: X0, y: fy + LH, w: SC, h: fl.h - SLAB - LH, right };
+    // the rooms of this floor, in rows
+    const RA = HW - SC;
+    fl.ids.forEach((id, j) => {
+      const row = Math.floor(j / fl.cols), inRow = Math.min(fl.cols, fl.n - row * fl.cols), col = j - row * fl.cols, rw = RA / inRow;
+      const rx = X0 + SC + col * rw, ry2 = fy + LH + row * RH;
+      rooms.push({ id, rx, ry: ry2, rw, rh: RH, st: fl.st[j], on: id === here, num: nums[id] });
+      if (col > 0) s.push(penLine([rx, ry2], [rx, ry2 + RH], 1.8));
+      if (row > 0 && col === 0) s.push(penLine([X0 + SC, ry2], [X0 + HW, ry2], 1.2));
+    });
+    y += fl.h;
+  });
+  // the rooms' insides (in chapter order, so the buttons are met 1 to 25)
+  rooms.sort((a, b) => a.num - b.num).forEach(r => {
+    const { rx, ry, rw, rh, st, on, num } = r, done = st === 'done';
+    if (on) s.push({ k: 'rc', x: rx + 2, y: ry + 2, w: rw - 4, h: rh - 4, rx: 0, f: '#fde9e1' });
+    const ncx = rx + (wide ? 16 : 13), ncy = ry + (wide ? 20 : 14), nr = wide ? 10 : 9;
+    s.push({ k: 'el', c: [ncx, ncy], rx: nr, ry: nr, f: done ? PEN_N : PEN_P, s: on ? PEN_C : PEN_N, w: 1.8 });
+    s.push(penText(ncx, ncy + 4, String(num), { size: wide ? 12 : 11, weight: 800, fill: done ? '#fff' : on ? PEN_C : PEN_N, anchor: 'middle', serif: true }));
+    if (st === 'started' && !on) s.push({ k: 'el', c: [ncx + nr - 1, ncy - nr + 1], rx: 3, ry: 3, f: PEN_C });
+    const nm = CH_SHORT[r.id] || [(DRILLS.find(d => d.id === r.id) || {}).label || r.id, ''];
+    const name = (done ? '✓ ' : '') + t(nm[0], nm[1] || nm[0]);
+    const tx = ncx + nr + 5, lines = houseWrap(name, rw - (tx - rx) - 4, wide ? 12.5 : 11.5);
+    lines.forEach((ln, li) => s.push(penText(tx, ncy + 4 + li * (wide ? 15 : 13), ln, { size: wide ? 12.5 : 11.5, weight: on || done ? 800 : 600, fill: on ? PEN_C : st === 'new' ? '#7f82a8' : PEN_N })));
+    const ic = HOUSE_ICONS[num], k = wide ? 1.05 : 0.72, iw = 48 * k, ih = 34 * k;
+    if (ic) s.push({ k: 'raw', svg: '<g transform="translate(' + pFix(rx + rw / 2 - iw / 2) + ' ' + pFix(ry + rh - ih - (wide ? 8 : 5)) + ') scale(' + k + ')" fill="none" stroke="#26296b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="' + (st === 'new' && !on ? 0.55 : 1) + '">' + ic + '</g>' });
+    if (on && wide) s.push(penText(rx + rw - 8, ry + rh - 8, t('you are here', '지금 여기'), { size: 11, weight: 700, fill: PEN_C, anchor: 'end', serif: true, italic: true }));
+    // the room as a button (the house is drawn as markup, so the page listens for taps on [data-chapter])
+    s.push({ k: 'raw', svg: '<g data-chapter="' + r.id + '" data-status="' + st + '" data-here="' + (on ? '1' : '0') + '" role="button" tabindex="0" aria-label="' + penEsc(num + '. ' + t(nm[0], nm[1] || nm[0])) + (done ? t(', done', ', 완료') : on ? t(', you are here', ', 지금 여기') : '') + '" style="cursor:pointer"><rect x="' + pFix(rx + 1) + '" y="' + pFix(ry + 1) + '" width="' + pFix(rw - 2) + '" height="' + pFix(rh - 2) + '" fill="transparent"/></g>' });
+  });
+  // the siblings on the stairs of your floor
+  if (kidsAt) {
+    const k = wide ? 0.4 : 0.36, { x, y: ky, w, h, right } = kidsAt, foot = (f) => [right ? x + 8 + f * (w - 22) : x + w - 8 - f * (w - 22), ky + h - f * (h - 8)];
+    const a = foot(0.18), b = foot(0.5);
+    s.push({ k: 'g', testid: 'map-figure', kids: [...penPlace(penKid(HOUSE_STAND, right ? 1 : -1, 'boy'), k, [64, 157], [a[0], a[1] - 1]), ...penPlace(penKid(HOUSE_STAND, right ? 1 : -1, 'girl'), k, [64, 157], [b[0], b[1] - 1])] });
+  }
+  // the ground, and the butler at the front door
+  const gy = y + 2;
+  s.push(penLine([4, gy], [W - 4, gy], 1.8));
+  for (let gx = 10; gx < W - 10; gx += 23) s.push({ k: 'pa', seg: [['M', [gx, gy]], ['L', [gx + 2, gy - 6]], ['M', [gx + 4, gy]], ['L', [gx + 3, gy - 5]]], f: 'none', s: PEN_N, w: 0.9 });
+  const rab = (PB_ART.rabbit || '').replace(/^<svg[^>]*>|<\/svg>$/g, '');
+  if (wide) s.push({ k: 'raw', svg: '<g transform="translate(4 ' + pFix(gy - 210 * 0.6) + ') scale(0.6)">' + rab + '</g>' },
+    penText(58, gy + 18, t('Your butler', '버틀러가'), { size: 11.5, weight: 700, fill: PEN_N, anchor: 'middle', serif: true, italic: true }),
+    penText(58, gy + 32, t('opens the door', '문을 열어 줘요'), { size: 11.5, weight: 700, fill: PEN_N, anchor: 'middle', serif: true, italic: true }));
+  else s.push({ k: 'raw', svg: '<g transform="translate(8 ' + pFix(gy + 4) + ') scale(0.34)">' + rab + '</g>' },
+    penText(70, gy + 34, t('Your butler opens the door.', '버틀러가 문을 열어 줘요.'), { size: 12, weight: 700, fill: PEN_N, serif: true, italic: true }),
+    penText(70, gy + 50, t('Climb the stairs, one room at a time.', '한 방씩, 계단을 올라가요.'), { size: 12, weight: 700, fill: PEN_N, serif: true, italic: true }));
+  return { shapes: s, W, H: wide ? gy + 40 : gy + 80 };
+}
+function HouseMap({ onOpen, compact, noIntro }) {
+  const box = useRef(null);
+  const [wide, setWide] = useState(() => { try { return window.innerWidth >= 1000; } catch (e) { return false; } });
+  const [, setFontTick] = useState(0);
+  useEffect(() => { try { document.fonts && document.fonts.ready.then(() => { rdCtx = null; setFontTick(n => n + 1); }); } catch (e) {} }, []);
+  useEffect(() => {
+    const el = box.current; if (!el) return;
+    const f = () => setWide(el.clientWidth >= 820); f();
+    let ro = null; try { ro = new ResizeObserver(f); ro.observe(el); } catch (e) { window.addEventListener('resize', f); }
+    return () => { try { ro && ro.disconnect(); } catch (e) {} window.removeEventListener('resize', f); };
+  }, []);
+  const stages = PATH_STAGES.map((s, i) => { const ids = pathStageIds(s); return { s, i, ids, st: ids.map(id => chapterState(id).status) }; });
+  const all = stages.flatMap(x => x.ids), nums = {}; all.forEach((id, k) => { nums[id] = k + 1; });
+  const finished = stages.reduce((a, x) => a + x.st.filter(v => v === 'done').length, 0);
+  let last = null; try { last = localStorage.getItem(LAST_CHAPTER_KEY); } catch (e) {}
+  const here = last && all.includes(last) && chapterState(last).status !== 'done' ? last : all.find(id => chapterState(id).status !== 'done');
+  const sig = stages.map(x => x.st.join(',')).join('|') + here + wide + LANG;
+  const house = useMemo(() => houseShapes({ stages, here, nums }, wide), [sig]);
+  const open = (e) => { const g = e.target.closest && e.target.closest('[data-chapter]'); if (g) onOpen(g.getAttribute('data-chapter')); };
+  const key = (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.getAttribute && e.target.getAttribute('data-chapter')) { e.preventDefault(); onOpen(e.target.getAttribute('data-chapter')); } };
+  return (
+    <div data-testid="music-map" data-layout={wide ? 'wide' : 'tall'} data-house ref={box} className={compact ? '' : 'fade-up'}>
+      <style>{'[data-house] [data-chapter]:focus-visible{outline:none}[data-house] [data-chapter]:focus-visible rect{stroke:#e4572e;stroke-width:3}'}</style>
+      {!compact && !noIntro && <PageIntro title={UI_TEACHER ? t('Music map', '음악 지도') : t('My music map', '나의 음악 지도')} text={t('The Piano Butler’s house: every floor is a stage, every room is a chapter. Tap a room to open it.', '피아노 버틀러의 집: 층마다 단계 하나, 방마다 챕터 하나. 방을 누르면 열려요.')}/>}
+      <div data-testid="map-count" style={{fontSize:12.5,fontWeight:600,color:'#6d6f9c',maxWidth:wide ? 900 : 440,margin:'0 auto 4px'}}>{t(finished + ' of ' + all.length + ' chapters done', all.length + '개 챕터 중 ' + finished + '개 완료')}</div>
+      <div onClick={open} onKeyDown={key} role="group" aria-label={t('The Piano Butler’s house: the chapter map', '피아노 버틀러의 집: 챕터 지도')} style={{maxWidth:wide ? 900 : 440,margin:'0 auto'}}>
+        <PenArt shapes={house.shapes} vb={[0, 0, house.W, house.H]} inter/>
+      </div>
+    </div>
+  );
+}
+
 function MusicMap({ onOpen, compact, noIntro }) {
   const [, setFontTick] = useState(0);
   const box = useRef(null);
@@ -21755,6 +22566,54 @@ function bkStepPages(concepts) {
   return m;
 }
 // The whole path (the same 7 stages as the app's Start-here guide), with one chapter marked.
+// ─── Phase 378: the house in the books ───
+// A small house (one line per floor, every room with its number and short name, your chapter's room in coral) takes
+// the place of "The whole path" list; the Workbook's opening pages get the whole house to colour in, a room per chapter.
+function houseMiniShapes(current, W = 600) {
+  const s = [], X0 = 4, HW = W - 8, SC = 120, FH = 19, ROOF = 26, TOP = ROOF + 4;
+  const stages = PATH_STAGES.map((st, i) => ({ st, i, ids: pathStageIds(st) }));
+  let n = 0; const nums = {}; stages.forEach(x => x.ids.forEach(id => { nums[id] = ++n; }));
+  s.push({ k: 'pa', seg: [['M', [X0, TOP]], ['L', [X0 + 26, TOP - ROOF + 4]], ['L', [X0 + HW - 26, TOP - ROOF + 4]], ['L', [X0 + HW, TOP]], ['Z']], f: 'H@0.7', s: PEN_N, w: 2 });
+  const cx = W / 2; s.push({ k: 'rc', x: cx - 58, y: TOP - ROOF + 7, w: 116, h: 15, rx: 4, f: PEN_P, s: PEN_N, sw: 1.4 }, penText(cx, TOP - ROOF + 18, 'Piano Butler', { size: 10, weight: 700, fill: PEN_N, anchor: 'middle', serif: true, italic: true }));
+  let y = TOP;
+  [...stages].reverse().forEach(x => {
+    const has = x.ids.includes(current), rw = (HW - SC) / x.ids.length;
+    s.push({ k: 'rc', x: X0, y, w: HW, h: FH, rx: 0, f: PEN_P, s: PEN_N, sw: 1.4 }, penLine([X0 + SC, y], [X0 + SC, y + FH], 1.2));
+    s.push(penText(X0 + 6, y + 13, (x.i + 1) + ' · ' + x.st.en[0], { size: 10, weight: 800, fill: has ? PEN_C : PEN_N, serif: true }));
+    x.ids.forEach((id, j) => {
+      const rx = X0 + SC + j * rw, on = id === current;
+      if (j) s.push(penLine([rx, y], [rx, y + FH], 1));
+      if (on) s.push({ k: 'rc', x: rx + 1.2, y: y + 1.2, w: rw - 2.4, h: FH - 2.4, rx: 0, f: '#fde9e1' });
+      const nm = (CH_SHORT[id] || [bkChapterName(id)])[0];
+      s.push(penText(rx + 5, y + 13, nums[id] + ' ' + nm, { size: 9.5, weight: on ? 800 : 600, fill: on ? PEN_C : PEN_N }));
+    });
+    y += FH;
+  });
+  s.push(penLine([0, y + 1.5], [W, y + 1.5], 1.4));
+  return { shapes: s, W, H: y + 6 };
+}
+function BkHouse({ current, compact }) {
+  const h = useMemo(() => houseMiniShapes(current), [current]);
+  return (
+    <div data-bk-house style={{border:'1.5px solid ' + BK.line,borderRadius:12,padding:compact ? '8px 12px 6px' : '10px 14px 8px'}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:4}}><div style={bkH(compact ? 15 : 17, 4)}>The Piano Butler’s house</div><span style={{fontSize:10.5,color:BK.muted}}>every floor a stage, every room a chapter -- the same order as the app</span></div>
+      <PenArt shapes={h.shapes} vb={[0, 0, h.W, h.H]} label="The Piano Butler’s house: the chapter map"/>
+    </div>
+  );
+}
+// the whole house to colour in (the Workbook's opening pages)
+function BkHousePage() {
+  const stages = PATH_STAGES.map((s, i) => { const ids = pathStageIds(s); return { s, i, ids, st: ids.map(() => 'print') }; });
+  const nums = {}; stages.flatMap(x => x.ids).forEach((id, k) => { nums[id] = k + 1; });
+  const house = useMemo(() => houseShapes({ stages, here: null, nums, print: true }, true), []);
+  return <>
+    <div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em',marginTop:4}}>YOUR MAP</div>
+    <h1 style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:32,fontWeight:900,color:BK.ink,margin:'2px 0 4px',lineHeight:1.05}}>The Piano Butler’s house</h1>
+    <p style={{fontSize:13.5,color:BK.muted,margin:'0 0 8px',lineHeight:1.5}}>Every floor is a stage and every room is a chapter, from the front door up to the attic. When you finish a chapter, <b style={{color:BK.ink}}>colour in its room</b>. Draw yourself on the stairs of the floor you are on.</p>
+    <div style={{flex:1,minHeight:0,display:'flex',alignItems:'center',justifyContent:'center'}}><PenArt shapes={house.shapes} vb={[0, 0, house.W, house.H]} label="The Piano Butler’s house" style={{maxHeight:'100%'}}/></div>
+  </>;
+}
+
 function BkPath({ current, compact }) {
   return (
     <div style={{border:'1.5px solid ' + BK.line,borderRadius:12,padding:compact ? '8px 12px 4px' : '10px 14px 6px'}}>
@@ -21836,7 +22695,7 @@ function WbMap({ id, concepts, tasks, steps, checkPage, minor }) {
       </div>
     </div>
     <div style={{flex:1}}/>
-    {total <= 7 && levels.length <= 6 && <BkPath current={id} compact/>}
+    {total <= 7 && levels.length <= 6 && <BkHouse current={id} compact/>}
     <div style={{display:'flex',gap:12,alignItems:'center',fontSize:12,color:BK.ink,border:'1.5px dashed ' + BK.coral,borderRadius:10,padding:'8px 12px',marginTop:10}}>
       <BkStar size={16} fill={BK.coral}/>
       <span><b>All steps ticked?</b> Do the Chapter check-up{checkPage ? ' on page ' + checkPage : ''} in your lesson, then colour in the badge.</span>
@@ -21887,10 +22746,11 @@ function FrontMatter() {
       <div style={{border:'1.4px solid ' + BK.line,borderRadius:10,padding:'8px 10px'}}><b>Drill</b> is the quiz: 10 questions a round, in levels. A level is yours when you get 9 out of 10.</div>
     </div>
     <div style={{fontSize:12.5,color:BK.ink,lineHeight:1.5,margin:'8px 0 10px'}}>The app has the same path as these books, in the same order, and its <b>Start here</b> guide always shows what comes next.</div>
-    <BkPath/>
+    <BkHouse/>
     <div style={{flex:1}}/>
     <div style={{display:'flex',gap:12,alignItems:'center',border:'1.5px dashed ' + BK.coral,borderRadius:10,padding:'8px 12px',fontSize:12.5,color:BK.ink}}><BkStar size={16} fill={BK.coral}/><span><b>Finished a chapter?</b> Do its check-up in your lesson, colour in the badge, and turn to the next chapter’s map.</span></div>
   </>);
+  P(<BkHousePage/>);
   P(<WbLog/>);
   return <>{pages}</>;
 }
@@ -25462,11 +26322,12 @@ const PH_FILL_CHK = [['1', '2', '3', '?4', '5'], ['5', '4', '?3', '2', '1'], ['2
 function phConcepts() {
   return [
     { id: 'st', name: 'Sitting at the piano', step: '1', page: '2' },
-    { id: 'ar', name: 'The arm leads', step: '2-3', page: '3' },
-    { id: 'hs', name: 'A round hand', step: '4', page: '4' },
-    { id: 'lr', name: 'Left hand, right hand', step: '5-6', page: '5' },
-    { id: 'fn', name: 'Finger numbers', step: '5-6', page: '5' },
-    { id: 'fw', name: 'Finger walks', step: '7', page: '6' },
+    { id: 'ar', name: 'The arm leads', step: '2', page: '3' },
+    { id: 'hs', name: 'A round hand', step: '3', page: '4' },
+    { id: 'lr', name: 'Left hand, right hand', step: '4', page: '5' },
+    { id: 'fn', name: 'Finger numbers', step: '4', page: '5' },
+    { id: 'fw', name: 'Finger walks', step: '5', page: '6' },
+    { id: 'ck', name: 'My five checks', step: '6', page: '7', chk: false },
   ];
 }
 const tfPill = (ok, ex) => <span style={{display:'inline-flex',gap:5}}>{['yes', 'no'].map((l, j) => { const on = ex && ((j === 0) === ok); return <span key={l} style={{border:'1.5px solid ' + (on ? BK.coral : BK.line),borderRadius:14,padding:'1px 10px',fontSize:11.5,color:on ? BK.coral : BK.ink,fontWeight:on ? 900 : 600}}>{l}</span>; })}</span>;
@@ -25526,7 +26387,7 @@ function PostureWorkbook({ startNo = 1 }) {
       <span style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:24,fontWeight:900,color:BK.ink}}>{bkChapterName('posture-hands')}</span>
     </div>
     <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 10px',lineHeight:1.45}}>Each workbook page faces its Lesson Book page: read the left page, then do the right one.</div>
-    <WbMap id="posture-hands" concepts={C} steps={8} checkPage={startNo + 6} tasks={[
+    <WbMap id="posture-hands" concepts={C} steps={6} checkPage={startNo + 6} tasks={[
       'Before you play, every time: front half of the stool, feet flat, sit tall, leaning a little toward the piano.',
       'The six warm-ups in order, from the big parts of the body to the small.',
       'A round hand on your knee, like holding a ball, then onto the keys. The wrist stays free, as if on a roller.',
@@ -25554,7 +26415,7 @@ function PostureWorkbook({ startNo = 1 }) {
 
   // 3 (faces "Let the arm carry the hand")
   P(<>
-    <WbTop step="2-3"/>
+    <WbTop step={2}/>
     <Part kind="together" title="Put the warm-ups in order" how="Big parts of the body first, small parts last. Write 1 to 6 under the pictures. The first one is done.">
       <BkGrid cols={3} gap="6px 10px">{[PH_WARMUPS[0], ...W.order].map(([art, name], i) => <ExCell key={art} n={i + 1} ex={i === 0}><div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,padding:'12px 2px 2px'}}>
         <div style={{height:92,display:'flex',alignItems:'center'}}><PbArt name={art} h={88} style={{maxWidth:'100%'}}/></div>
@@ -25572,7 +26433,7 @@ function PostureWorkbook({ startNo = 1 }) {
 
   // 4 (faces "A round hand")
   P(<>
-    <WbTop step={4}/>
+    <WbTop step={3}/>
     <Part kind="together" title="Spot the good hand" how="Circle the tick for the good hand shape and the cross for a fault. Then tell your teacher what is wrong.">
       <BkGrid cols={3} gap="6px 10px">{PH_HAND.map(([id, , ok], i) => <PhPic key={id} art={'q-hand-' + id} ok={ok} n={i + 1} ex={i === 0} h={66}/>)}</BkGrid>
     </Part>
@@ -25590,7 +26451,7 @@ function PostureWorkbook({ startNo = 1 }) {
 
   // 5 (faces "Finger numbers")
   P(<>
-    <WbTop step="5-6" mins={10}/>
+    <WbTop step={4} mins={10}/>
     <Part kind="together" title="Which finger?" how="Write the number of the coloured finger. Thumbs are 1 on both hands.">
       <BkGrid cols={6} gap="6px 8px">{W.fingers.map(([h, f], i) => <ExCell key={i} n={i + 1} ex={i === 0}><div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,padding:'12px 2px 2px'}}>
         <PbArt name={'q-fingers-' + h} lit={f} h={74}/>{nvBox(i === 0, String(f), 34, 28)}
@@ -25604,7 +26465,7 @@ function PostureWorkbook({ startNo = 1 }) {
 
   // 6 (faces "Finger walks")
   P(<>
-    <WbTop step={7}/>
+    <WbTop step={5}/>
     <Part kind="together" title="Fill in the missing numbers" how="Write the missing finger numbers in the coral circles, then play the tune. The first one is done.">
       <div style={{display:'grid',gap:8}}>{PH_FILL.map(([name, seq], i) => <div key={name} style={{display:'grid',gridTemplateColumns:'130px 1fr',alignItems:'center',gap:10,border:'1px solid #ece6d8',borderRadius:10,padding:'7px 10px'}}>
         <span style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:15,fontWeight:800,color:BK.ink}}>{name}</span><PhCircles seq={seq} ex={i === 0}/>
@@ -31859,7 +32720,7 @@ function PbArt({ name, h = 120, style, lit }) {
   let s = PB_ART[name]; if (!s) return null;
   if (lit) s = s.replace(new RegExp('(data-f="' + lit + '"[^>]*?)fill="#fffdf7"'), '$1fill="#e4572e"');
   const m = /viewBox="[\d.-]+ [\d.-]+ ([\d.]+) ([\d.]+)"/.exec(s); const w = m ? h * (+m[1]) / (+m[2]) : h;
-  return <span className={'pb-art' + (PB_KID ? ' pbk-' + PB_KID : '')} data-art={name} style={{display:'inline-block',lineHeight:0,width:w,height:h,flex:'0 0 auto',...style}} dangerouslySetInnerHTML={{__html: s.replace('<svg ', '<svg width="100%" height="100%" ')}}/>;
+  return <span className={'pb-art' + (PB_KID ? ' pbk-' + PB_KID : '')} data-art={name} style={lbScreen() ? {display:'inline-block',lineHeight:0,width:w,maxWidth:'100%',height:'auto',aspectRatio:w + ' / ' + h,flex:'0 1 auto',...style} : {display:'inline-block',lineHeight:0,width:w,height:h,flex:'0 0 auto',...style}} dangerouslySetInnerHTML={{__html: s.replace('<svg ', '<svg width="100%" height="100%" ')}}/>;
 }
 
 // ─── Phase 368: the Lesson Book, written as a book (Sohyun 2026-10-08) ───────────────────────────────
@@ -31899,7 +32760,7 @@ function LbPage({ no, chId, kicker, title, teacher, qr, children }) {
 }
 // the picture box takes whatever height the page has left, so every page ends level (it shrinks back to h when printed inside page margins)
 function LbPic({ children, h, gap = 18, pad = '14px 16px' }) {
-  return <div className="lb-pic" style={{background:BK.soft,borderRadius:16,padding:pad,display:'flex',alignItems:'center',justifyContent:'center',gap,minHeight:h,flex:'1 1 auto',flexWrap:'wrap'}}>{children}</div>;
+  return <div className="lb-pic" style={{background:BK.soft,borderRadius:16,padding:pad,display:'flex',alignItems:'center',justifyContent:'center',gap,minHeight:lbScreen() ? 0 : h,flex:'1 1 auto',flexWrap:'wrap'}}>{children}</div>;
 }
 function LbSay({ children, size = 16.5 }) {
   return <p style={{fontSize:size,lineHeight:1.5,color:BK.ink,margin:0}}>{children}</p>;
@@ -31907,16 +32768,16 @@ function LbSay({ children, size = 16.5 }) {
 function LbKeysIcon({ size = 22 }) {
   return <svg viewBox="0 0 24 16" width={size} height={size * 16 / 24} aria-hidden="true"><rect x="1" y="1" width="22" height="14" rx="2" fill="#fff" stroke={BK.ink} strokeWidth="1.4"/>{[6.5, 12, 17.5].map(x => <line key={x} x1={x} x2={x} y1="1" y2="15" stroke={BK.ink} strokeWidth="1"/>)}{[5, 10.5, 16].map(x => <rect key={x} x={x} y="1" width="3" height="8" fill={BK.ink}/>)}</svg>;
 }
-function LbPiano({ steps, title = 'At the piano' }) {
+function LbPiano({ steps, title }) {
   return (
     <div>
-      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:7}}><LbKeysIcon/><span style={{fontFamily:LB_SERIF,fontSize:21,fontWeight:800,color:BK.ink}}>{title}</span></div>
+      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:7}}><LbKeysIcon/><span style={{fontFamily:LB_SERIF,fontSize:21,fontWeight:800,color:BK.ink}}>{title || t('At the piano', '피아노 앞에서')}</span></div>
       <div style={{display:'flex',flexDirection:'column',gap:7}}>
         {steps.map((s, i) => (
           <div key={i} style={{display:'flex',alignItems:'flex-start',gap:10,fontSize:15,lineHeight:1.45,color:BK.ink}}>
             <span style={{flex:'0 0 24px',height:24,borderRadius:12,background:BK.ink,color:'#fff',fontWeight:900,fontSize:13,display:'flex',alignItems:'center',justifyContent:'center'}}>{i + 1}</span>
             <span style={{flex:1,paddingTop:1}}>{s}</span>
-            <span style={{flex:'0 0 auto',width:18,height:18,border:'1.6px solid ' + BK.ink,borderRadius:4,marginTop:3}}/>
+            <LbTick label={t('Done', '했어요') + ' ' + (i + 1)}/>
           </div>
         ))}
       </div>
@@ -31927,7 +32788,7 @@ function LbRemember({ children }) {
   return (
     <div style={{display:'flex',alignItems:'center',gap:12,borderTop:'1.6px solid ' + BK.coral,borderBottom:'1.6px solid ' + BK.coral,padding:'4px 2px'}}>
       <PbArt name="rabbit-head" h={40}/>
-      <span style={{fontSize:10.5,fontWeight:900,letterSpacing:'0.08em',color:BK.coral}}>REMEMBER</span>
+      <span style={{fontSize:10.5,fontWeight:900,letterSpacing:'0.08em',color:BK.coral}}>{t('REMEMBER', '기억해요')}</span>
       <span style={{fontSize:16.5,fontWeight:800,color:BK.ink}}>{children}</span>
     </div>
   );
@@ -31936,8 +32797,8 @@ function LbRemember({ children }) {
 function LbNot({ items }) {
   return (
     <div>
-      <div style={{fontSize:12.5,fontWeight:800,color:BK.coral,marginBottom:5}}>Not like this</div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(' + items.length + ',1fr)',gap:10}}>
+      <div style={{fontSize:12.5,fontWeight:800,color:BK.coral,marginBottom:5}}>{t('Not like this', '이렇게는 안 돼요')}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(' + items.length + (lbScreen() ? ',minmax(0,1fr))' : ',1fr)'),gap:10}}>
         {items.map(([pic, cap], i) => <div key={i} style={{border:'1px solid #ece6d8',borderRadius:10,padding:'6px 6px 7px',display:'flex',flexDirection:'column',alignItems:'center',gap:3}}>
           {pic}<div style={{fontSize:11.5,fontWeight:700,color:BK.ink,textAlign:'center',lineHeight:1.25}}><span style={{color:BK.coral,fontWeight:900}}>✗</span> {cap}</div></div>)}
       </div>
@@ -31965,137 +32826,216 @@ function LbTune({ name, how, seq, icon }) {
 }
 // a captioned picture inside a page's picture box
 function LbFig({ art, h, cap }) {
-  return <div style={{display:'grid',justifyItems:'center',gap:5,width:'min-content'}}><PbArt name={art} h={h}/>{cap && <b style={{fontSize:13,color:BK.ink,textAlign:'center',lineHeight:1.3}}>{cap}</b>}</div>;
+  return <div style={lbScreen() ? {display:'flex',flexDirection:'column',alignItems:'center',gap:5,maxWidth:'100%',minWidth:0} : {display:'grid',justifyItems:'center',gap:5,width:'min-content'}}><PbArt name={art} h={h}/>{cap && <b style={{fontSize:13,color:BK.ink,textAlign:'center',lineHeight:1.3}}>{cap}</b>}</div>;
 }
 
 // ─── Chapter 1: Posture & Hand Shape (drawings: art369.jsx, pen and ink: the rabbit butler, a sister and a brother) ───
-function PostureLessonBook() {
+// ─── Phase 376: one Lesson Book, opened two ways (Sohyun 2026-10-08) ───
+// "The online lesson should open exactly like the Lesson Book; only what can move is different." The chapter's
+// pages are written once (postureLbPages); printed, they are the A4 Lesson Book; on screen, each page after the
+// opener is one step of the online lesson, with the same words and drawings, and LbLive swaps a still picture for
+// its moving version. Words are t(English, Korean), so the app keeps its Korean; the books print in English.
+const LbScreenCtx = React.createContext(false);
+const lbScreen = () => React.useContext(LbScreenCtx);
+function LbLive({ still, live }) { return lbScreen() ? live : still; }
+function LbOnly({ print, screen, children }) { return (lbScreen() ? screen : print) ? children : null; }
+// an "At the piano" tick box: printed, an empty box; on screen, a box the student can tick
+function LbTick({ label }) {
+  const [on, setOn] = useState(false);
+  if (!lbScreen()) return <span style={{flex:'0 0 auto',width:18,height:18,border:'1.6px solid ' + BK.ink,borderRadius:4,marginTop:3}}/>;
+  return <button onClick={() => setOn(v => !v)} aria-pressed={on} aria-label={label} style={{flex:'0 0 auto',width:24,height:24,border:'1.8px solid ' + BK.ink,borderRadius:5,marginTop:0,background:on ? BK.ink : '#fff',color:'#fff',fontWeight:900,fontSize:14,lineHeight:1,padding:0,cursor:'pointer'}}>{on ? '✓' : ''}</button>;
+}
+// a page of the book, on screen (the opener's page is the lesson's head instead)
+function LbScreenPage({ page }) {
+  const { teacher, children } = page.props;
+  return (
+    <LbScreenCtx.Provider value={true}>
+      <BkChapterCtx.Provider value={page.props.chId}>
+        <div className="lb-screen" data-lb-screen={page.props.no} style={{display:'flex',flexDirection:'column',gap:14,margin:'4px 0 6px'}}>
+          {children}
+          {teacher && <TeacherOnly><div data-lb-teacher style={{display:'flex',gap:10,alignItems:'flex-start',borderTop:'1.3px dashed ' + BK.line,paddingTop:9}}>
+            <span style={{flex:'0 0 auto',fontSize:9.5,fontWeight:900,letterSpacing:'0.06em',color:'#fff',background:BK.ink,borderRadius:4,padding:'3px 7px',marginTop:2}}>{t('TEACHER', '선생님')}</span>
+            <div style={{flex:1,fontSize:13,color:BK.ink,lineHeight:1.5}}>{teacher}</div>
+          </div></TeacherOnly>}
+        </div>
+      </BkChapterCtx.Provider>
+    </LbScreenCtx.Provider>
+  );
+}
+const LB_SCREEN_CSS = ` .lb-screen .lb-pic { min-height: 0 !important; } .lb-screen .pb-art { max-width: 100%; }`;
+
+// the six warm-ups' names and how-tos (the Lesson Book's page 3 and the Toolbox)
+function postureWarmCards() {
+  return [[t('Rag doll', '헝겊 인형'), t('Flop forward and let both arms hang heavy. Shake them loose, then float the hands up and set them gently on the keys.', '앞으로 털썩 숙여 두 팔을 무겁게 늘어뜨려요. 흔들어 힘을 빼고, 손을 둥실 올려 건반 위에 살포시 내려놓아요.')],
+    [t('Elbow wings', '팔꿈치 날개'), t('Check the elbows are free, not stuck to your body: let them float out like wings, then back. Stop in the middle, a fist from your body.', '팔꿈치가 몸에 붙지 않고 자유로운지 확인해요: 날개처럼 둥실 벌렸다가 돌아와요. 몸에서 주먹 하나만큼 떨어진 가운데에서 멈춰요.')],
+    [t('Arm glide', '팔 미끄럼'), t('Now the whole arm: skate along the keys. The round hand rides on the arm to the next group of keys. The fingers ride, they don’t walk.', '이제 팔 전체로 건반 위를 스케이트 타듯 지나가요. 둥근 손은 팔을 타고 다음 건반 묶음으로 가요. 손가락은 걷지 않고 타고 가요.')],
+    [t('Arm drop', '팔 떨어뜨리기'), t('Lift the whole arm and let it drop into a key on finger 3: firm tip, soft wrist, a round sound.', '팔 전체를 들었다가 3번 손가락으로 건반에 떨어뜨려요: 단단한 손끝, 부드러운 손목, 둥근 소리.')],
+    [t('Knuckle bridge', '마디 다리'), t('Check the bridge: your knuckles are a bridge a little car can drive over. Press one key slowly and hold for 3: the bridge stays up.', '다리를 확인해요: 손가락 마디는 작은 자동차가 지나갈 수 있는 다리예요. 건반 하나를 천천히 누르고 셋을 세는 동안 그대로: 다리는 무너지지 않아요.')],
+    [t('Wrist balloon', '손목 풍선'), t('Check the wrist never sinks: as the key goes down, a balloon lifts the wrist straight back up to level. The fingertip stays on the key.', '손목이 가라앉지 않는지 확인해요: 건반이 내려가면 풍선이 손목을 바로 같은 높이까지 다시 들어 올려요. 손끝은 건반 위에 그대로 있어요.')]];
+}
+// ─── Chapter 1: Posture & Hand Shape ───
+// scr: true when the pages are shown as the online lesson (decided by the caller: page JSX is built outside the screen context)
+function postureLbPages(scr = false) {
   const ch = 'posture-hands';
-  const pages = [
+  const checks5 = [['chk-front', t('Front half of the stool', '의자 앞쪽 절반에 앉기')], ['chk-feet', t('Feet flat, leaning a little toward the piano', '발은 평평하게, 피아노 쪽으로 살짝 기울여요')], ['chk-tall', t('Sit tall, like a puppet on a string', '줄에 매달린 인형처럼 곧게 앉기')], ['chk-forearm', t('Forearm level with the keys, elbows away from your body', '팔뚝은 건반과 수평, 팔꿈치는 몸에서 띄워요')], ['chk-hand', t('Round hand, play on the tips', '둥근 손으로 손끝으로 치기')]];
+  return [
     // 1. opener
-    <LbPage key="1" no={1} chId={ch} teacher={<>This chapter is the base for every other one. The five checks on page 7 come before every time at the piano, for every student at every level, not only for beginners.</>} qr={bkLink('drill=' + ch + '&lock=1')}>
-      <div data-ch={ch}>
+    <LbPage key="1" no={1} chId={ch} teacher={<>{t('This chapter is the base for every other one. The five checks on page 7 come before every time at the piano, for every student at every level, not only for beginners.', '이 챕터는 다른 모든 챕터의 바탕이에요. 7쪽의 다섯 가지 확인은 초보자만이 아니라 모든 학생이, 피아노 앞에 앉을 때마다 먼저 해요.')}</>} qr={bkLink('drill=' + ch + '&lock=1')}>
+      <LbOnly print><div data-ch={ch}>
         <div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em'}}>CHAPTER {bkChapterNo(ch)}</div>
-        <div style={{fontFamily:LB_SERIF,fontSize:50,fontWeight:900,color:BK.ink,lineHeight:1.02,margin:'4px 0 0'}}>Posture &amp; Hand Shape</div>
-      </div>
-      <LbPic h={300}><LbFig art="puppet" h={350} cap="Sit tall, like a puppet on a string"/></LbPic>
-      <LbSay size={18}>Before the first note: how to sit, and how to hold your hands. Get these right, and every note after them is easier.</LbSay>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
-        <div>
+        <div style={{fontFamily:LB_SERIF,fontSize:50,fontWeight:900,color:BK.ink,lineHeight:1.02,margin:'4px 0 0'}}>{t('Posture & Hand Shape', '자세와 손 모양')}</div>
+      </div></LbOnly>
+      <LbPic h={300}><LbFig art="puppet" h={350} cap={t('Sit tall, like a puppet on a string', '줄에 매달린 인형처럼 곧게 앉아요')}/></LbPic>
+      <LbSay size={18}>{t('Before the first note: how to sit, and how to hold your hands. Get these right, and every note after them is easier.', '첫 음을 치기 전에: 어떻게 앉고, 손을 어떻게 둘지 배워요. 이걸 잘 잡으면 그다음 모든 음이 쉬워져요.')}</LbSay>
+      <div style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
+        <LbOnly print><div>
           <div style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>In this chapter</div>
           {[['Sit at the piano', 2], ['Let the arm carry the hand', 3], ['A round hand', 4], ['Finger numbers', 5], ['Play: finger walks', 6], ['My five checks', 7]].map(([n, p]) => <div key={p} style={{display:'flex',justifyContent:'space-between',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid #ece6d8'}}><span>{n}</span><span style={{color:BK.muted,fontWeight:700}}>page {p}</span></div>)}
-        </div>
+        </div></LbOnly>
         <div>
-          <div style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>By the end, you can</div>
-          {['sit at the right height and distance', 'move your hand with the whole arm', 'make a round hand and play on the tips', 'say every finger number, on both hands'].map(x => <div key={x} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid #ece6d8'}}><span style={{flex:'0 0 16px',height:16,border:'1.6px solid ' + BK.ink,borderRadius:4,marginTop:3}}/><span>{x}</span></div>)}
+          <div style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          {[t('sit at the right height and distance', '알맞은 높이와 거리로 앉을 수 있어요'), t('move your hand with the whole arm', '팔 전체로 손을 움직일 수 있어요'), t('make a round hand and play on the tips', '둥근 손으로, 손끝으로 칠 수 있어요'), t('say every finger number, on both hands', '양손의 손가락 번호를 모두 말할 수 있어요')].map(x => <div key={x} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid #ece6d8'}}><span style={{flex:'0 0 16px',height:16,border:'1.6px solid ' + BK.ink,borderRadius:4,marginTop:3}}/><span>{x}</span></div>)}
         </div>
       </div>
-      <div style={{fontSize:13,color:BK.muted}}>Goes with: the Workbook page beside each lesson page, and the online lesson (scan the code below).</div>
+      <LbOnly print><div style={{fontSize:13,color:BK.muted}}>Goes with: the Workbook page beside each lesson page, and the online lesson (scan the code below).</div></LbOnly>
     </LbPage>,
     // 2. sit
-    <LbPage key="2" no={2} chId={ch} kicker="Step 1" title="Sit at the piano"
-      teacher={<>Watch for elbows squashed in (too close) or arms reaching out (too far). Feet dangling? A footstool or a sturdy box fixes it. Say: "Sit tall, like a puppet on a string."</>}>
-      <LbPic h={250}><PbArt name="sit" h={310}/></LbPic>
-      <LbSay>Two things to set: <b>how high</b> and <b>how far</b>. Your forearm is level with the keys, and your elbows sit just in front of your body.</LbSay>
-      <LbPiano steps={[
+    <LbPage key="2" no={2} chId={ch} kicker={t('Step 1', '1단계')} title={t('Sit at the piano', '피아노 앞에 앉기')}
+      teacher={<>{t('Watch for elbows squashed in (too close) or arms reaching out (too far). Feet dangling? A footstool or a sturdy box fixes it. Say: "Sit tall, like a puppet on a string."', '팔꿈치가 몸에 눌리는지(너무 가까움), 팔이 앞으로 멀리 뻗는지(너무 멂) 봐 주세요. 발이 대롱대롱하면 발판이나 튼튼한 상자를 놓아요. 이렇게 말해 주세요: "줄에 매달린 인형처럼 곧게 앉자."')}</>}>
+      <LbLive still={<LbPic h={250}><PbArt name="sit" h={310}/></LbPic>} live={<SitCheck/>}/>
+      <LbSay>{LANG === 'ko' ? <>맞출 것은 두 가지예요: <b>높이</b>와 <b>거리</b>. 팔뚝은 건반과 수평이고, 팔꿈치는 몸 바로 앞에 있어요.</> : <>Two things to set: <b>how high</b> and <b>how far</b>. Your forearm is level with the keys, and your elbows sit just in front of your body.</>}</LbSay>
+      <LbPiano steps={LANG === 'ko' ? [
+        <><b>의자 앞쪽 절반</b>에 앉고, 발은 바닥에 평평하게, 피아노 쪽으로 살짝 기울여요.</>,
+        <><b>팔뚝이 건반과 수평</b>이 될 때까지 의자를 올리거나 내려요.</>,
+        <><b>팔꿈치가 몸 바로 앞에</b> 오도록, 옆구리에서 주먹 하나만큼 떨어지게 의자를 앞뒤로 옮겨요.</>,
+      ] : [
         <>Sit on the <b>front half of the stool</b>, feet flat on the floor, leaning a little toward the piano.</>,
         <>Raise or lower the stool until your <b>forearm is level</b> with the keys.</>,
         <>Slide in or out until your <b>elbows are just in front of you</b>, about a fist away from your sides.</>,
       ]}/>
-      <LbNot items={[[<PbArt name="not-sofa" h={104}/>, 'Leaning back, like on a sofa'], [<PbArt name="not-close" h={104}/>, 'So close the elbows squash in'], [<PbArt name="not-swing" h={104}/>, 'Too high: feet swinging']]}/>
-      <LbRemember>Front half of the stool, feet flat, sit tall, leaning a little forward.</LbRemember>
+      <LbNot items={[[<PbArt name="not-sofa" h={104}/>, t('Leaning back, like on a sofa', '소파처럼 뒤로 기대기')], [<PbArt name="not-close" h={104}/>, t('So close the elbows squash in', '너무 가까워서 팔꿈치가 눌려요')], [<PbArt name="not-swing" h={104}/>, t('Too high: feet swinging', '너무 높아서 발이 대롱대롱')]]}/>
+      <LbRemember>{t('Front half of the stool, feet flat, sit tall, leaning a little forward.', '의자 앞쪽 절반, 발은 평평하게, 곧게 앉아 앞으로 살짝 기울여요.')}</LbRemember>
     </LbPage>,
     // 3. arm -- the six warm-ups as one sequence, in Sohyun's order (2026-10-08): each move checks something the next one needs
-    <LbPage key="3" no={3} chId={ch} kicker="Step 2" title="Let the arm carry the hand"
-      teacher={<>Do all six in this order: each one checks something the next one needs. After every key, watch the wrist: it comes straight back up to level and never sinks. Say: "Arms heavy, like wet spaghetti. Now rest them on the keys."</>}>
-      <LbSay>Your fingertips stay connected to the piano, but the <b>whole arm</b> does the work: from above, it leads the hand and the fingers. Six moves, <b>in this order</b>, from the big parts of the body to the small ones: each one gets the arm ready for the next.</LbSay>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:14,flex:'1 1 auto',minHeight:0,alignContent:'center'}}>
-        {[['ragdoll', 'Rag doll', 'Flop forward and let both arms hang heavy. Shake them loose, then float the hands up and set them gently on the keys.'],
-          ['wings', 'Elbow wings', 'Check the elbows are free, not stuck to your body: let them float out like wings, then back. Stop in the middle, a fist from your body.'],
-          ['glide', 'Arm glide', 'Now the whole arm: skate along the keys. The round hand rides on the arm to the next group of keys. The fingers ride, they don\u2019t walk.'],
-          ['dive', 'Arm drop', 'Lift the whole arm and let it drop into a key on finger 3: firm tip, soft wrist, a round sound.'],
-          ['bridge', 'Knuckle bridge', 'Check the bridge: your knuckles are a bridge a little car can drive over. Press one key slowly and hold for 3: the bridge stays up.'],
-          ['balloon', 'Wrist balloon', 'Check the wrist never sinks: as the key goes down, a balloon lifts the wrist straight back up to level. The fingertip stays on the key.']].map(([a, n, how], i) => (
-          <div key={n} style={{border:'1px solid #ece6d8',borderRadius:12,padding:'8px 10px 10px',display:'flex',flexDirection:'column',gap:5,minHeight:0}}>
-            <div style={{background:BK.soft,borderRadius:8,height:196,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}><PbArt name={a} h={176} style={{maxWidth:'100%'}}/></div>
+    <LbPage key="3" no={3} chId={ch} kicker={t('Step 2', '2단계')} title={t('Let the arm carry the hand', '팔이 손을 데려가요')}
+      teacher={<>{t('Do all six in this order: each one checks something the next one needs. After every key, watch the wrist: it comes straight back up to level and never sinks. Say: "Arms heavy, like wet spaghetti. Now rest them on the keys."', '여섯 가지를 이 순서대로 해요: 하나하나가 다음 동작에 필요한 것을 확인해 줘요. 건반을 칠 때마다 손목을 봐 주세요: 바로 같은 높이로 다시 올라오고, 절대 가라앉지 않아요. 이렇게 말해 주세요: "팔이 젖은 스파게티처럼 무거워. 이제 건반 위에 살짝 내려놓자."')}</>}>
+      <LbSay>{LANG === 'ko' ? <>손끝은 늘 피아노와 이어져 있지만, 일은 <b>팔 전체</b>가 해요: 위에서 손과 손가락을 이끌어요. 여섯 가지 동작을 <b>이 순서대로</b>, 큰 몸 부분부터 작은 부분까지 해요. 하나하나가 다음 동작을 준비해 줘요.</>
+        : <>Your fingertips stay connected to the piano, but the <b>whole arm</b> does the work: from above, it leads the hand and the fingers. Six moves, <b>in this order</b>, from the big parts of the body to the small ones: each one gets the arm ready for the next.</>}</LbSay>
+      <LbLive live={<WarmUps376 cards={postureWarmCards()}/>} still={
+      <div style={{display:'grid',gridTemplateColumns:scr ? 'repeat(auto-fill, minmax(min(100%, 170px), 1fr))' : 'repeat(3,minmax(0,1fr))',gap:14,flex:'1 1 auto',minHeight:0,alignContent:'center'}}>
+        {postureWarmCards().map(([n, how], i) => [WARM_UPS[i].id, n, how]).map(([a, n, how], i) => (
+          <div key={a} style={{border:'1px solid #ece6d8',borderRadius:12,padding:'8px 10px 10px',display:'flex',flexDirection:'column',gap:5,minHeight:0}}>
+            <div style={{background:BK.soft,borderRadius:8,height:scr ? 150 : 196,display:'flex',alignItems:'center',justifyContent:'center',overflow:'hidden'}}><PbArt name={a} h={scr ? 134 : 176} style={{maxWidth:'100%'}}/></div>
             <div style={{display:'flex',alignItems:'center',gap:7}}>
               <span style={{flex:'0 0 22px',height:22,borderRadius:11,background:BK.ink,color:'#fff',fontWeight:900,fontSize:12.5,display:'flex',alignItems:'center',justifyContent:'center'}}>{i + 1}</span>
               <span style={{fontFamily:LB_SERIF,fontSize:16.5,fontWeight:800,color:BK.ink}}>{n}</span>
             </div>
-            <div style={{fontSize:12.5,color:BK.ink,lineHeight:1.4}}>{how}</div>
+            <div style={{fontSize:scr ? 13.5 : 12.5,color:BK.ink,lineHeight:1.4}}>{how}</div>
           </div>))}
-      </div>
-      <LbRemember>The arm leads from above, elbows free. Even while a finger presses a key, the whole arm stays free.</LbRemember>
+      </div>}/>
+      <LbRemember>{t('The arm leads from above, elbows free. Even while a finger presses a key, the whole arm stays free.', '팔이 위에서 이끌고, 팔꿈치는 자유롭게. 손가락이 건반을 누르는 동안에도 팔 전체는 자유로워요.')}</LbRemember>
     </LbPage>,
     // 4. round hand
-    <LbPage key="4" no={4} chId={ch} kicker="Step 3" title="A round hand"
-      teacher={<>Watch the tip joint, especially on finger 5: for now, just help the student notice it. Say: "Hold a little bubble in your hand. Don't pop it!"</>}>
-      <LbPic h={200} gap={24}>
-        <LbFig art="hand-good" h={168} cap="Round, like holding a ball"/>
-        <LbFig art="hand-thumb" h={128} cap="The thumb bends in and plays on the side of its tip, like a tipped boat"/>
-      </LbPic>
-      <LbSay>Let your arms hang, then lift your hands as if you were holding a small ball. Keep that shape when the hand goes on the keys. <b>Knuckles up</b> like a bridge, and play on the <b>fingertips</b>. The wrist stays free: with the fingertip on the key, the hand can sway up and down and side to side, as if a <b>roller</b> sat under your forearm.</LbSay>
-      <LbPiano steps={[
+    <LbPage key="4" no={4} chId={ch} kicker={t('Step 3', '3단계')} title={t('A round hand', '둥근 손')}
+      teacher={<>{t('Watch the tip joint, especially on finger 5: for now, just help the student notice it. Say: "Hold a little bubble in your hand. Don\'t pop it!"', '손끝 관절을, 특히 5번 손가락을 봐 주세요: 지금은 학생이 알아차리도록만 도와요. 이렇게 말해 주세요: "손 안에 작은 비눗방울을 쥐고 있어. 터뜨리지 마!"')}</>}>
+      <LbLive still={<LbPic h={200} gap={24}>
+        <LbFig art="hand-good" h={168} cap={t('Round, like holding a ball', '공을 쥔 것처럼 둥글게')}/>
+        <LbFig art="hand-thumb" h={128} cap={t('The thumb bends in and plays on the side of its tip, like a tipped boat', '엄지는 안으로 꺾여 손끝 옆면으로 쳐요. 옆으로 누운 배처럼')}/>
+      </LbPic>} live={<>
+        <RoundHand376/>
+        <LbPic h={120}><LbFig art="hand-thumb" h={118} cap={t('The thumb bends in and plays on the side of its tip, like a tipped boat', '엄지는 안으로 꺾여 손끝 옆면으로 쳐요. 옆으로 누운 배처럼')}/></LbPic>
+      </>}/>
+      <LbSay>{LANG === 'ko' ? <>팔을 늘어뜨렸다가, 작은 공을 쥐듯이 손을 들어 올려요. 손이 건반 위로 가도 그 모양 그대로예요. <b>손가락 마디는 다리처럼 위로</b>, <b>손끝</b>으로 쳐요. 손목은 자유롭게: 손끝을 건반에 댄 채로, 팔뚝 아래 <b>롤러</b>가 있는 것처럼 손이 위아래, 좌우로 흔들려요.</>
+        : <>Let your arms hang, then lift your hands as if you were holding a small ball. Keep that shape when the hand goes on the keys. <b>Knuckles up</b> like a bridge, and play on the <b>fingertips</b>. The wrist stays free: with the fingertip on the key, the hand can sway up and down and side to side, as if a <b>roller</b> sat under your forearm.</>}</LbSay>
+      <LbPiano steps={LANG === 'ko' ? [
+        <>손을 무릎에 올리고, 상상의 공을 쥐어요.</>,
+        <>공 모양을 찌그러뜨리지 않고 건반 위로 옮겨요.</>,
+        <>손가락마다 건반 하나씩, 손끝으로 쳐요. 마디는 위로 그대로.</>,
+        <>손끝을 건반에 대고: 롤러 위에 있는 것처럼 손목을 위아래로, 그다음 좌우로 흔들어요. 마디와 손끝을 살펴보고, 무너지지 않게 해 봐요.</>,
+      ] : [
         <>Hands on your knees. Hold an imaginary ball.</>,
         <>Move the ball shape onto the keys without squashing it.</>,
         <>Play one key with each finger, on the tip. The knuckles stay up.</>,
         <>Fingertip on a key: sway the wrist up and down, then side to side, as if on a roller. Notice the knuckles and the tip, and try not to let them cave in.</>,
       ]}/>
-      <LbNot items={[[<PbArt name="hand-flat" h={80}/>, 'Flat fingers'], [<PbArt name="hand-cave" h={80}/>, 'Tip joint caving in'], [<PbArt name="hand-high" h={80}/>, 'Wrist stiff and high']]}/>
-      <LbRemember>A free wrist, as if on a roller. Keep an eye on the knuckles and fingertips.</LbRemember>
+      <LbNot items={[[<PbArt name="hand-flat" h={80}/>, t('Flat fingers', '납작한 손가락')], [<PbArt name="hand-cave" h={80}/>, t('Tip joint caving in', '손끝 관절이 꺾여요')], [<PbArt name="hand-high" h={80}/>, t('Wrist stiff and high', '손목이 굳고 높아요')]]}/>
+      <LbRemember>{t('A free wrist, as if on a roller. Keep an eye on the knuckles and fingertips.', '롤러 위에 있는 것처럼 자유로운 손목. 마디와 손끝을 살펴봐요.')}</LbRemember>
     </LbPage>,
     // 5. finger numbers
-    <LbPage key="5" no={5} chId={ch} kicker="Step 4" title="Finger numbers"
-      teacher={<>Watch for the left hand numbered from the little finger. Say: "Thumbs are always 1. Your hands are mirror twins."</>} qr={bkLink('drill=' + ch + '&tab=drill&level=3')}>
-      <LbPic h={220} gap={40}><PbArt name="hand-L" h={210}/><PbArt name="hand-R" h={210}/></LbPic>
-      <LbSay>Every finger has a number, <b>1 to 5, starting from the thumb</b>. It's the same on both hands: both thumbs are 1, and both little fingers are 5.</LbSay>
+    <LbPage key="5" no={5} chId={ch} kicker={t('Step 4', '4단계')} title={t('Finger numbers', '손가락 번호')}
+      teacher={<>{t('Watch for the left hand numbered from the little finger. Say: "Thumbs are always 1. Your hands are mirror twins."', '왼손을 새끼손가락부터 세는지 봐 주세요. 이렇게 말해 주세요: "엄지는 언제나 1번. 두 손은 거울 쌍둥이야."')}</>} qr={bkLink('drill=' + ch + '&tab=drill&level=3')}>
+      <LbLive still={<LbPic h={220} gap={40}><PbArt name="hand-L" h={210}/><PbArt name="hand-R" h={210}/></LbPic>} live={<FingerNumbers376/>}/>
+      <LbSay>{LANG === 'ko' ? <>손가락마다 번호가 있어요. <b>엄지부터 1번에서 5번까지</b>예요. 양손이 똑같아요: 두 엄지는 1번, 두 새끼손가락은 5번이에요.</>
+        : <>Every finger has a number, <b>1 to 5, starting from the thumb</b>. It's the same on both hands: both thumbs are 1, and both little fingers are 5.</>}</LbSay>
       <div style={{display:'flex',flexWrap:'wrap',gap:8}}>
-        {['1 Captain Thumb', '2 Pointer', '3 Tall Middle', '4 Shy Ring', '5 Baby Pinky'].map(x => <span key={x} style={{border:'1.6px solid ' + BK.ink,borderRadius:999,padding:'4px 13px',fontSize:14,fontWeight:800}}>{x}</span>)}
+        {FINGER_NAMES.map((n, i) => (i + 1) + ' ' + t(n.en, n.ko)).map(x => <span key={x} style={{border:'1.6px solid ' + BK.ink,borderRadius:999,padding:'4px 13px',fontSize:14,fontWeight:800}}>{x}</span>)}
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 250px',gap:18,alignItems:'center'}}>
-        <LbPiano title="The mirror game" steps={[
+      <div style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 250px',gap:18,alignItems:'center'}}>
+        <LbPiano title={t('The mirror game', '거울 게임')} steps={LANG === 'ko' ? [
+          <>두 손을 들어요. 손가락을 하나씩 꼼지락거리며 번호를 말해요.</>,
+          <>선생님이 "오른손 3번!" 하고 부르면 그 손가락을 꼼지락거려요. 열 번 해 봐요.</>,
+          <>바꿔요: 내가 손가락을 부르고, 선생님이 꼼지락거려요.</>,
+        ] : [
           <>Hold both hands up. Wiggle each finger as you say its number.</>,
           <>Your teacher calls "Right hand, 3!" and you wiggle it. Try ten calls.</>,
           <>Swap: you call the finger, and your teacher wiggles it.</>,
         ]}/>
         <div style={{background:BK.soft,borderRadius:12,padding:'6px 4px',display:'flex',justifyContent:'center'}}><PbArt name="mirror" h={170}/></div>
       </div>
-      <LbRemember>Fingers are numbered 1 to 5 from the thumb, on both hands.</LbRemember>
+      <LbRemember>{t('Fingers are numbered 1 to 5 from the thumb, on both hands.', '양손 모두, 엄지부터 1번에서 5번까지.')}</LbRemember>
     </LbPage>,
     // 6. finger walks
-    <LbPage key="6" no={6} chId={ch} kicker="Play" title="Finger walks"
-      teacher={<>Right hand first, then left hand, then together if it is easy. Move on to the next tune only when the hand stays round. Any five white keys near the middle will do; your teacher shows where to put the hand, and the letter names come in chapter 3.</>}>
-      <LbSay>Now put it together: sit well, make a round hand, and play. <b>Start small:</b> one note, then two, three, four, and all five. From key to key, the hand draws a little <b>rainbow</b>: relaxed, never squeezed tight, the whole hand helping. <b>One circle is one steady beat.</b></LbSay>
-      <LbPic h={164} gap={48} pad="6px 18px">
-        <LbFig art="keys-hand-L" h={152}/>
-        <LbFig art="keys-hand-R" h={152}/>
-      </LbPic>
-      <LbTune icon="tune-hop" name="Hop on 3" how="one note: an arm drop on every 3" seq={['3', '-', '3', '-', '|', '3', '3', '3', '-']}/>
-      <LbTune icon="tune-neighbours" name="Neighbours" how="two notes, next door, taking turns" seq={['2', '3', '2', '3', '|', '3', '2', '3', '-']}/>
-      <LbTune icon="tune-hill3" name="Up and back" how="three notes: up, then back down" seq={['1', '2', '3', '-', '|', '3', '2', '1', '-']}/>
-      <LbTune icon="tune-hill4" name="Little hill" how="four notes: up the hill and down" seq={['1', '2', '3', '4', '|', '3', '2', '1', '-']}/>
-      <LbTune icon="tune-stairs" name="Stairs and slide" how="all five: up the stairs, then down the slide" seq={['1', '2', '3', '4', '5', '-', '|', '5', '4', '3', '2', '1', '-']}/>
-      <div style={{fontSize:13,color:BK.muted}}>An empty dashed circle means: hold the note for one more beat.</div>
-      <LbRemember>A little rainbow from key to key. Relaxed: the whole hand helps.</LbRemember>
+    <LbPage key="6" no={6} chId={ch} kicker={t('Play', '연주')} title={t('Finger walks', '손가락 걷기')}
+      teacher={<>{t('Right hand first, then left hand, then together if it is easy. Move on to the next tune only when the hand stays round. Any five white keys near the middle will do; your teacher shows where to put the hand, and the letter names come in chapter 3.', '오른손 먼저, 그다음 왼손, 쉬우면 양손 함께 해요. 손이 둥글게 유지될 때만 다음 곡으로 넘어가요. 가운데 근처 흰 건반 다섯 개면 어디든 괜찮아요. 손 놓을 자리는 선생님이 보여 주고, 음이름은 챕터 3에서 배워요.')}</>}>
+      <LbSay>{LANG === 'ko' ? <>앉은 자세, 둥근 손으로 쳐 봐요. <b>작게 시작해요:</b> 한 음, 그다음 두 음, 세 음, 네 음, 다섯 음. 건반에서 건반으로 손이 작은 <b>무지개</b>를 그려요: 꽉 쥐지 않고 편하게, 손 전체가 도와줘요. <b>동그라미 하나가 일정한 박 하나</b>예요.</>
+        : <>Now put it together: sit well, make a round hand, and play. <b>Start small:</b> one note, then two, three, four, and all five. From key to key, the hand draws a little <b>rainbow</b>: relaxed, never squeezed tight, the whole hand helping. <b>One circle is one steady beat.</b></>}</LbSay>
+      <LbLive still={<>
+        <LbPic h={164} gap={48} pad="6px 18px">
+          <LbFig art="keys-hand-L" h={152}/>
+          <LbFig art="keys-hand-R" h={152}/>
+        </LbPic>
+        {FW_TUNES.map(x => <LbTune key={x.icon} icon={x.icon} name={t(x.en, x.ko)} how={t(x.howEn, x.howKo)} seq={x.seq}/>)}
+        <div style={{fontSize:13,color:BK.muted}}>{t('An empty dashed circle means: hold the note for one more beat.', '빈 점선 동그라미는 그 음을 한 박 더 누르고 있으라는 뜻이에요.')}</div>
+      </>} live={<FingerWalks bare/>}/>
+      <LbRemember>{t('A little rainbow from key to key. Relaxed: the whole hand helps.', '건반에서 건반으로 작은 무지개. 편하게, 손 전체가 도와줘요.')}</LbRemember>
     </LbPage>,
     // 7. five checks
-    <LbPage key="7" no={7} chId={ch} kicker="Step 5" title="My five checks"
-      teacher={<>At the start of each lesson, the student says the five checks out loud while doing them; you only correct. When all five are easy, do the Chapter check-up in the Workbook.</>}>
-      <LbSay>Before you play, every time. Give yourself a star for each check in each lesson.</LbSay>
+    <LbPage key="7" no={7} chId={ch} kicker={t('Step 5', '5단계')} title={t('My five checks', '나의 다섯 가지 확인')}
+      teacher={<>{t('At the start of each lesson, the student says the five checks out loud while doing them; you only correct. When all five are easy, do the Chapter check-up in the Workbook.', '레슨을 시작할 때마다 학생이 다섯 가지를 소리 내어 말하며 직접 해요. 선생님은 고쳐 주기만 해요. 다섯 가지가 다 쉬워지면 워크북의 챕터 점검을 해요.')}</>}>
+      <LbSay>{t('Before you play, every time. Give yourself a star for each check in each lesson.', '칠 때마다, 치기 전에 먼저. 레슨마다 확인 하나에 별 하나씩 칠해요.')}</LbSay>
+      <LbLive still={
       <div style={{display:'flex',flexDirection:'column',gap:9,flex:'1 1 auto'}}>
-        <div style={{display:'grid',gridTemplateColumns:'150px 1fr repeat(6, 34px)',gap:8,alignItems:'end',fontSize:11,fontWeight:800,color:BK.muted,textAlign:'center'}}><span/><span style={{textAlign:'right',paddingRight:6}}>Lesson</span>{[1, 2, 3, 4, 5, 6].map(n => <span key={n}>{n}</span>)}</div>
-        {[['chk-front', 'Front half of the stool'], ['chk-feet', 'Feet flat, leaning a little toward the piano'], ['chk-tall', 'Sit tall, like a puppet on a string'], ['chk-forearm', 'Forearm level with the keys, elbows away from your body'], ['chk-hand', 'Round hand, play on the tips']].map(([a, txt], i) => (
-          <div key={i} style={{display:'grid',gridTemplateColumns:'150px 1fr repeat(6, 34px)',gap:8,alignItems:'center',border:'1px solid #ece6d8',borderRadius:12,padding:'4px 8px',flex:'1 1 auto'}}>
-            <div style={{display:'flex',justifyContent:'center'}}><PbArt name={a} h={a === 'chk-hand' ? 86 : 108}/></div>
-            <div style={{fontSize:15.5,fontWeight:800,color:BK.ink}}>{txt}</div>
-            {[1, 2, 3, 4, 5, 6].map(n => <span key={n} style={{width:30,height:30,border:'1.5px solid ' + BK.line,borderRadius:8,justifySelf:'center',display:'flex',alignItems:'center',justifyContent:'center'}}><BkStarG size={14} fill="#ece6d8"/></span>)}
+        <div style={{display:'grid',gridTemplateColumns:scr ? '64px 1fr repeat(6, 26px)' : '150px 1fr repeat(6, 34px)',gap:scr ? 4 : 8,alignItems:'end',fontSize:11,fontWeight:800,color:BK.muted,textAlign:'center'}}><span/><span style={{textAlign:'right',paddingRight:6}}>{t('Lesson', '레슨')}</span>{[1, 2, 3, 4, 5, 6].map(n => <span key={n}>{n}</span>)}</div>
+        {checks5.map(([a, txt], i) => (
+          <div key={i} style={{display:'grid',gridTemplateColumns:scr ? '64px 1fr repeat(6, 26px)' : '150px 1fr repeat(6, 34px)',gap:scr ? 4 : 8,alignItems:'center',border:'1px solid #ece6d8',borderRadius:12,padding:scr ? '4px 6px' : '4px 8px',flex:'1 1 auto'}}>
+            <div style={{display:'flex',justifyContent:'center'}}><PbArt name={a} h={scr ? (a === 'chk-hand' ? 40 : 52) : a === 'chk-hand' ? 86 : 108}/></div>
+            <div style={{fontSize:scr ? 13 : 15.5,fontWeight:800,color:BK.ink}}>{txt}</div>
+            {[1, 2, 3, 4, 5, 6].map(n => <span key={n} style={{width:scr ? 24 : 30,height:scr ? 24 : 30,border:'1.5px solid ' + BK.line,borderRadius:8,justifySelf:'center',display:'flex',alignItems:'center',justifyContent:'center'}}><BkStarG size={14} fill="#ece6d8"/></span>)}
           </div>))}
-      </div>
-      <LbRemember>Check your posture before every practice.</LbRemember>
+      </div>} live={<FiveChecks376 rows={checks5}/>}/>
+      <LbOnly screen><div style={{fontSize:13,color:BK.muted}}>{t('More checks, with a history: ', '더 많은 확인과 기록: ')}<a href="?tool=posture-check" style={{color:BK.coral,fontWeight:800}}>{t('the full posture check (17 points)', '전체 자세 점검 (17가지)')}</a></div></LbOnly>
+      <LbRemember>{t('Check your posture before every practice.', '연습할 때마다 먼저 자세를 확인해요.')}</LbRemember>
     </LbPage>,
   ];
-  return <>{pages}</>;
 }
+function PostureLessonBook() { return <>{postureLbPages(false)}</>; }
+// the online lesson: the book's pages 2-7 as its six steps; each keeps the tick it had in the old 8-step lesson
+const POSTURE_STORE = [0, 1, 3, 5, 7, 6];
+function PostureHandsLearn({ onStart }) {
+  const pages = postureLbPages(true);
+  const opener = pages[0];
+  return (
+    <Lesson id="posture-hands" title={t('Posture and hand shape', '자세와 손 모양')} onStart={onStart} noArt
+      head={<LbScreenCtx.Provider value={true}><BkChapterCtx.Provider value="posture-hands"><div className="lb-screen lb-open" style={{display:'flex',flexDirection:'column',gap:12,margin:'0 0 8px'}}>{opener.props.children}</div></BkChapterCtx.Provider></LbScreenCtx.Provider>}>
+      {pages.slice(1).map((pg, i) => (
+        <Step key={i} storeAs={POSTURE_STORE[i]} title={pg.props.kicker === t('Play', '연주') ? t('Play: ', '연주: ') + pg.props.title.charAt(0).toLowerCase() + pg.props.title.slice(1) : pg.props.title}>
+          <LbScreenPage page={pg}/>
+        </Step>
+      ))}
+    </Lesson>
+  );
+}
+
 const LESSON_BOOKS = { 'posture-hands': PostureLessonBook };
 // Printed alone, a chapter's pages use the Workbook's fixed A4 frame (BookRoot's fixed css). Printed with chapters
 // that are still the app lesson (?ch=all), they sit inside that book's page margins: 264 mm tall, no padding.
