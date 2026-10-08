@@ -178,6 +178,14 @@ page = f'''<!DOCTYPE html>
   .next .lab {{ font-size:13px; color:var(--muted); display:block; }}
   footer {{ margin-top:28px; font-size:13px; color:var(--muted); }}
   footer a {{ color:var(--navy); font-weight:600; }}
+  .house {{ margin:22px 0 0; }}
+  .house-wide {{ display:none; }}
+  @media (min-width:760px) {{ .house-wide {{ display:block; }} .house-tall {{ display:none; }} }}
+  .house-tall {{ max-width:460px; margin-left:auto; margin-right:auto; }}
+  .legend {{ font-size:14px; color:var(--muted); max-width:40em; margin:10px 0 0; }}
+  a.card.room {{ display:block; text-decoration:none; position:relative; padding-left:52px; }}
+  a.card.room:hover {{ border-color:var(--navy); }}
+  a.card.room .no {{ position:absolute; left:14px; top:13px; width:26px; height:26px; border-radius:50%; border:1.8px solid var(--navy); font-family:'Playfair Display',Georgia,serif; font-weight:800; font-size:14px; display:flex; align-items:center; justify-content:center; }}
   .draft {{ background:#fff1a8; outline:1.5px dashed #c9a400; outline-offset:2px; border-radius:3px; }}
   .draft::before {{ content:'DRAFT '; font-size:11px; font-weight:800; color:#8a6d00; letter-spacing:.04em; }}
   @media (max-width:700px) {{
