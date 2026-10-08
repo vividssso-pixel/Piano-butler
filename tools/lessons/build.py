@@ -2,7 +2,8 @@
 #   python3 tools/lessons/build.py <chapter-id>          (draft: yellow DRAFT marks allowed)
 #   python3 tools/lessons/build.py <chapter-id> --final  (refuses while any DRAFT mark is left)
 # The page body is hand-written in tools/lessons/src/<chapter-id>.html (one per chapter, checked by Sohyun);
-# drawings are SVGs taken from the drills app, in tools/lessons/svg/<chapter-id>/, placed with {{svg:name}}.
+# drawings are SVGs (the Lesson Book's own, from the art generator), in tools/lessons/svg/<chapter-id>/, placed with {{svg:name}};
+# {{beats:1 2 3 - | 3 2 1 -}} draws a row of beat circles like the Lesson Book's tunes.
 import html, json, os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -26,9 +27,23 @@ def svg(name):
     s = re.sub(r'^<svg([^>]*?)\sstyle="[^"]*"', r'<svg\1', s, count=1)          # the app's inline size goes; CSS sizes it here
     s = re.sub(r'^<svg([^>]*?)\swidth="[^"]*"', r'<svg\1', s, count=1)
     s = re.sub(r'^<svg', '<svg class="pic" aria-hidden="true" focusable="false"', s, count=1)
+    # many drawings share one page: give every id (hatch patterns etc.) the drawing's name, so two never clash
+    s = re.sub(r'\bid="([^"]+)"', lambda x: 'id="%s-%s"' % (name, x.group(1)), s)
+    s = re.sub(r'url\(#([^)]+)\)', lambda x: 'url(#%s-%s)' % (name, x.group(1)), s)
+    s = re.sub(r'href="#([^"]+)"', lambda x: 'href="#%s-%s"' % (name, x.group(1)), s)
     return s
 
 
+def beats(seq):
+    # a row of beat circles like the Lesson Book's tunes: numbers are fingers, - holds for one more beat, | is a bar line
+    xs = seq.split()
+    say = ', '.join({'-': 'hold', '|': 'bar line'}.get(x, x) for x in xs)
+    cell = lambda x: '<i class="h"></i>' if x == '-' else '<i>' + html.escape(x) + '</i>'
+    bars = ['<span class="bt">' + ''.join(cell(x) for x in bar.split()) + '</span>' for bar in seq.split('|')]   # a bar never breaks across lines
+    return '<span class="beats" role="img" aria-label="%s">%s</span>' % (html.escape(say), '<i class="bar"></i>'.join(bars))
+
+
+body = re.sub(r'\{\{beats:([^}]+)\}\}', lambda x: beats(x.group(1)), body)
 body = re.sub(r'\{\{svg:([\w-]+)\}\}', lambda x: svg(x.group(1)), body)
 drafts = len(re.findall(r'class="[^"]*\bdraft\b', body))
 if final and drafts:
@@ -126,8 +141,17 @@ page = f'''<!DOCTYPE html>
   ol.moves li {{ counter-increment:mv; background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:12px 14px 12px 50px; position:relative; font-size:14.5px; color:var(--navy-soft); line-height:1.5; }}
   ol.moves li::before {{ content:counter(mv); position:absolute; left:14px; top:12px; width:24px; height:24px; border-radius:50%; background:var(--navy); color:#fff; font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center; }}
   ol.moves li b {{ display:block; color:var(--navy); font-size:15.5px; }}
+  .grid.even .card .pic {{ height:170px; }}
+  .beats {{ display:flex; flex-wrap:wrap; gap:4px; align-items:center; margin-top:8px; }}
+  .beats i {{ width:24px; height:24px; border-radius:50%; border:1.8px solid var(--navy); background:#fff; color:var(--navy); font-style:normal; font-weight:800; font-size:12.5px; display:inline-flex; align-items:center; justify-content:center; }}
+  .beats i.h {{ border:1.5px dashed #a99e85; background:transparent; }}
+  .beats i.bar {{ width:1.6px; border:0; border-radius:0; background:var(--navy); opacity:.5; margin:0 3px; }}
+  .beats .bt {{ display:inline-flex; gap:4px; }}
+  ol.moves.tunes {{ grid-template-columns:1fr; gap:10px; }}
+  ol.moves.tunes li {{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 18px; }}
+  ol.moves.tunes .beats {{ margin-top:0; }}
   .hands {{ display:flex; gap:18px; justify-content:center; flex-wrap:wrap; }}
-  .hands .pic {{ width:150px; }}
+  .hands .pic {{ width:min(180px, 44%); }}
   .names {{ display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }}
   .names span {{ border:1.5px solid var(--navy); border-radius:999px; padding:3px 12px; font-size:14px; font-weight:700; background:var(--paper); }}
   .check {{ display:grid; grid-template-columns:repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap:10px 26px; margin-top:12px; }}
