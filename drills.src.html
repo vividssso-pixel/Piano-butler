@@ -10658,6 +10658,15 @@ function TendonLink() {
 // HTML label boxes that need normal CSS text wrapping.
 function FingerAnatomyDiagram() {
   const CW = 430, CH = 400; // canvas size
+  // The labels sit at fixed pixel spots, so on a narrow phone the whole canvas scales down
+  // as one piece instead of the right-hand labels spilling off the screen (known issue, fixed 2026-10-09).
+  const [zk, setZk] = useState(1);
+  const zwrap = useRef(null);
+  useEffect(() => {
+    const m = () => { if (zwrap.current) setZk(Math.min(1, (zwrap.current.clientWidth || CW) / CW)); };
+    m(); window.addEventListener('resize', m);
+    return () => window.removeEventListener('resize', m);
+  }, []);
   const S = 2.1, OX = 140, OY = 50; // hand placement: scale + top-left offset, tuned by screenshot
   const lens = [26, 50, 56, 51, 40];
   const xs = [16, 38, 58, 78, 97];
@@ -10685,7 +10694,8 @@ function FingerAnatomyDiagram() {
   const numStyle = { color: 'var(--brass)' };
 
   return (
-    <div style={{position:'relative', width: CW, maxWidth:'100%', height: CH, margin:'6px auto 4px'}}>
+    <div ref={zwrap} style={{overflow:'hidden', height: CH * zk + 8, margin:'6px 0 4px'}}>
+    <div style={{position:'relative', width: CW, height: CH, margin:'0 auto', transform: zk < 1 ? 'scale(' + zk + ')' : undefined, transformOrigin:'top left'}}>
       <svg viewBox={`0 0 ${CW} ${CH}`} style={{position:'absolute', top:0, left:0, width:'100%', height:'100%'}}>
         <Leader from={{x: 221, y: 56}} to={midTip}/>
         <Leader from={{x: 221, y: 56}} to={idxTip}/>
@@ -10726,6 +10736,7 @@ function FingerAnatomyDiagram() {
       <div style={{...boxStyle, left: 4, top: 172, width: 130}}>
         <span style={numStyle}>1</span> — {t('awkward for a downward strike -- its muscles pull it toward the palm', '아래로 누르기 어색해요 -- 근육이 손바닥 쪽으로 당기거든요')}
       </div>
+    </div>
     </div>
   );
 }
