@@ -1035,7 +1035,7 @@ const MARK_STYLE = {
   bad:    { white: '#fbdcd2', black: '#c8361b', stroke: '#c8361b' },
   fof:    { white: '#dfe9f8', black: '#3b4fa8', stroke: '#3b4fa8' },
 };
-const GROUP_TINT = { two: '#fbe3da', three: '#e4eeea' };
+const GROUP_TINT = { two: '#fbe9e2', three: '#e9eaf4' };   // the book's membership tints (Phase 387)
 
 // Tappable keyboard. Key index i = octave*12 + pc, starting on C.
 // marks: { [i]: 'target'|'good'|'bad' }, labels: null | 'white' | 'all', tint: shade C-D-E / F-G-A-B groups.
@@ -10811,7 +10811,7 @@ function FingerNumbers() {
 
 // High or low, loud or soft -- listening games before any reading.
 const HL_KO = { High: '높게', Low: '낮게', Loud: '크게', Soft: '작게' };
-function HighLowGame() {
+function HighLowGame({ pitchOnly }) {
   const [kind, setKind] = useState('pitch'); // pitch | volume
   const [q, setQ] = useState(null);
   const [ans, setAns] = useState(null);
@@ -10830,7 +10830,7 @@ function HighLowGame() {
     <div className="try-box" style={actBox}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div style={actTitle}>{kind === 'pitch' ? t('Listen: high or low?', '들어 봐요: 높을까, 낮을까?') : t('Listen: loud or soft?', '들어 봐요: 클까, 작을까?')}</div>
-        <div style={{display:'flex',gap:4}}>{[['pitch', t('high/low', '높게/낮게')], ['volume', t('loud/soft', '크게/작게')]].map(([k, l]) => <button key={k} className={'chip' + (kind === k ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => { setKind(k); setQ(null); setAns(null); }}>{l}</button>)}</div>
+        {!pitchOnly && <div style={{display:'flex',gap:4}}>{[['pitch', t('high/low', '높게/낮게')], ['volume', t('loud/soft', '크게/작게')]].map(([k, l]) => <button key={k} className={'chip' + (kind === k ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => { setKind(k); setQ(null); setAns(null); }}>{l}</button>)}</div>}
       </div>
       <div style={actNote}>{kind === 'pitch' ? (LANG === 'ko' ? <>피아노에서는 <b>오른쪽 = 높은 음</b>, <b>왼쪽 = 낮은 음</b>이에요. 듣고 나서 가리켜 봐요: 피아노의 어느 쪽 끝이었을까요?</> : <>On the piano, <b>right = higher</b>, <b>left = lower</b>. Listen, then point: which end of the piano was it?</>) : (LANG === 'ko' ? <>크게는 <b>f</b>(포르테), 작게는 <b>p</b>(피아노) -- 피아노의 원래 이름은 피아노포르테예요: 둘 다 할 수 있거든요!</> : <>Loud is <b>f</b> (forte), soft is <b>p</b> (piano) -- the piano’s full name is the pianoforte: it can do both!</>)}</div>
       {kind === 'pitch' && <div style={{display:'flex',justifyContent:'space-between',fontSize:12,fontWeight:800,color:'var(--muted)',margin:'0 4px 2px'}}><span>{t('← low', '← 낮은 음')}</span><span>{t('high →', '높은 음 →')}</span></div>}
@@ -10849,7 +10849,7 @@ function HighLowGame() {
 
 // The black-key map drawn as houses: 2 black keys = small house, 3 = big house. C D E live at the
 // small house (C at its left door, D inside, E at its right door); F G A B at the big house.
-function KeyHouses() {
+function KeyHouses({ modes }) {
   const OCT = 2;
   const [mode, setMode] = useState('houses'); // houses | small | big
   const [lit, setLit] = useState(null);
@@ -10867,12 +10867,12 @@ function KeyHouses() {
     <div className="try-box" style={actBox}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
         <div style={actTitle}>{t('Small house, big house', '작은 집, 큰 집')}</div>
-        <div style={{display:'flex',gap:4}}>{[['houses', t('houses', '집')], ['small', 'C D E'], ['big', 'F G A B']].map(([k, l]) => <button key={k} className={'chip' + (mode === k ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => setMode(k)}>{l}</button>)}</div>
+        <div style={{display:'flex',gap:4}}>{[['houses', t('houses', '집')], ['small', 'C D E'], ['big', 'F G A B']].filter(([k]) => !modes || modes.includes(k)).map(([k, l]) => <button key={k} className={'chip' + (mode === k ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => setMode(k)}>{l}</button>)}</div>
       </div>
       <div style={actNote}>{say}</div>
       <svg viewBox={`-1 0 ${W + 2} 44`} style={{width:'100%',display:'block'}}>
         {houses.map((h, i) => {
-          const mid = (h.x1 + h.x2) / 2, on = lit === i, col = h.kind === 'small' ? '#b8801f' : '#2e8a6e';
+          const mid = (h.x1 + h.x2) / 2, on = lit === i, col = h.kind === 'small' ? '#e4572e' : '#26296b';
           return (
             <g key={i} onClick={() => tapHouse(h, i)} style={{cursor:'pointer'}}>
               <polygon points={`${h.x1},42 ${mid},${h.kind === 'small' ? 14 : 6} ${h.x2},42`} fill={on ? col : col + '33'} stroke={col} strokeWidth="2" strokeLinejoin="round" style={{transition:'fill 0.2s'}}/>
@@ -10883,16 +10883,29 @@ function KeyHouses() {
       </svg>
       <TapKeyboard octaves={OCT} marks={marks} names={names} tint={mode === 'houses'} onTap={(k) => playKey(k)}/>
       <div style={{display:'flex',justifyContent:'center',gap:14,fontSize:13,fontWeight:800,marginTop:6}}>
-        <span style={{color:'#b8801f'}}>{t('▲ small house = 2', '▲ 작은 집 = 2')}</span><span style={{color:'#2e8a6e'}}>{t('▲ big house = 3', '▲ 큰 집 = 3')}</span>
+        <span style={{color:'#e4572e'}}>{t('▲ small house = 2', '▲ 작은 집 = 2')}</span><span style={{color:'#26296b'}}>{t('▲ big house = 3', '▲ 큰 집 = 3')}</span>
       </div>
     </div>
   );
 }
 
 // A first song on the black keys (big house): watch, then play it back one key at a time.
+// Fingers on the black keys (Sohyun 2026-10-09): both hands, 2 3 4 first -- left hand 3-2 on the
+// small roof below, right hand 2-3-4 on the big roof; Mary's two high notes take R5 (her note:
+// 1 and 5 properly arrive with C position). Finger rows replace the old note-name row (A2).
 const BLACK_SONGS = {
-  hotcross: { get title() { return t('Hot Cross Buns', '핫 크로스 번'); }, get chip() { return t('Hot Cross', '핫 크로스 번'); }, keys: [10, 8, 6, 10, 8, 6, 6, 6, 6, 6, 8, 8, 8, 8, 10, 8, 6], durs: [1, 1, 2, 1, 1, 2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 1, 2] },
-  mary: { get title() { return t('Mary Had a Little Lamb', '떴다 떴다 비행기'); }, get chip() { return t('Mary Had', '떴다 떴다 비행기'); }, keys: [10, 8, 6, 8, 10, 10, 10, 8, 8, 8, 10, 13, 13, 10, 8, 6, 8, 10, 10, 10, 10, 8, 8, 10, 8, 6], durs: [1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4] },
+  hotcross: { get title() { return t('Hot Cross Buns', '핫 크로스 번'); }, get chip() { return t('Hot Cross', '핫 크로스 번'); },
+    keys: [10, 8, 6, 10, 8, 6, 6, 6, 6, 6, 8, 8, 8, 8, 10, 8, 6], durs: [1, 1, 2, 1, 1, 2, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1, 1, 2],
+    f: ['R4', 'R3', 'R2', 'R4', 'R3', 'R2', 'R2', 'R2', 'R2', 'R2', 'R3', 'R3', 'R3', 'R3', 'R4', 'R3', 'R2'] },
+  mary: { get title() { return t('Mary Had a Little Lamb', '떴다 떴다 비행기'); }, get chip() { return t('Mary Had', '떴다 떴다 비행기'); },
+    keys: [10, 8, 6, 8, 10, 10, 10, 8, 8, 8, 10, 13, 13, 10, 8, 6, 8, 10, 10, 10, 10, 8, 8, 10, 8, 6], durs: [1, 1, 1, 1, 1, 1, 2, 1, 1, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4],
+    f: ['R4', 'R3', 'R2', 'R3', 'R4', 'R4', 'R4', 'R3', 'R3', 'R3', 'R4', 'R5', 'R5', 'R4', 'R3', 'R2', 'R3', 'R4', 'R4', 'R4', 'R4', 'R3', 'R3', 'R4', 'R3', 'R2'] },
+  oldmac: { get title() { return t('Old MacDonald', '올드 맥도날드'); }, get chip() { return t('Old MacDonald', '올드 맥도날드'); },
+    keys: [6, 6, 6, 1, 3, 3, 1, 10, 10, 8, 8, 6], durs: [1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 3],
+    f: ['R2', 'R2', 'R2', 'L3', 'L2', 'L2', 'L3', 'R4', 'R4', 'R3', 'R3', 'R2'] },
+  rain: { get title() { return t('Rain Rain Go Away', '레인 레인 고 어웨이'); }, get chip() { return t('Rain Rain', '레인 레인'); },
+    keys: [13, 13, 10, 13, 10, 13, 13, 10, 15, 13, 13, 10], durs: [1, 1, 2, 1, 2, 1, 1, 1, 1, 1, 1, 2],
+    f: ['R3', 'R3', 'R2', 'R3', 'R2', 'R3', 'R3', 'R2', 'R4', 'R3', 'R3', 'R2'] },
 };
 
 // Phase (2026-09-27): the "faster" branch off the black-key houses -- Sohyun's first-lesson
@@ -10964,17 +10977,17 @@ function BlackKeySong() {
   const done = mode === 'turn' && i === song.keys.length - 1;
   const cur = mode === 'watch' ? (i >= 0 ? song.keys[i] : null) : (i + 1 < song.keys.length ? song.keys[i + 1] : null);
   const marks = {}; if (cur !== null) marks[cur] = mode === 'watch' ? 'good' : 'target'; if (bad !== null) marks[bad] = 'bad';
-  const label = (k) => ({ 6: '1', 8: '2', 10: '3', 13: '5' }[k]);
+
   return (
     <div className="try-box" style={actBox}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
         <div style={actTitle}>{t('A first song on the black keys', '검은건반으로 치는 첫 노래')}</div>
-        <div style={{display:'flex',gap:4}}>{Object.keys(BLACK_SONGS).map(k => <button key={k} className={'chip' + (id === k ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => setId(k)}>{BLACK_SONGS[k].chip}</button>)}</div>
+        <div style={{display:'flex',gap:4,flexWrap:'wrap',justifyContent:'flex-end'}}>{Object.keys(BLACK_SONGS).map(k => <button key={k} className={'chip' + (id === k ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => setId(k)}>{BLACK_SONGS[k].chip}</button>)}</div>
       </div>
-      <div style={actNote}>{LANG === 'ko' ? <>아직 악보는 읽지 않아요 -- 큰 집만 써요. 오른손 2, 3, 4번 손가락을 큰 집의 검은건반 세 개에 올려요. 먼저 <b>보기</b>, 그다음 <b>내 차례</b>: 주황색 건반이 다음 차례예요.</> : <>No reading yet -- just the big house. Use right-hand fingers 2, 3 and 4 on its three black keys. <b>Watch</b> first, then <b>your turn</b>: the orange key is the next one.</>}</div>
+      <div style={actNote}>{LANG === 'ko' ? <>아직 악보는 없어요 -- 손가락 번호만 봐요. 오른손 <b>2, 3, 4</b>는 큰 지붕에, 왼손 <b>3, 2</b>는 아래 작은 지붕에. 먼저 <b>보기</b>, 그다음 <b>내 차례</b>: 주황색 건반이 다음 차례예요. 바통 터치하듯 레가토로!</> : <>No written notes -- just finger numbers. Right-hand <b>2, 3, 4</b> on the big roof; left-hand <b>3, 2</b> on the small roof below. <b>Watch</b> first, then <b>your turn</b>: the orange key is the next one. Legato, like a relay baton!</>}</div>
       <TapKeyboard octaves={2} marks={marks} onTap={tap}/>
       <div style={{display:'flex',flexWrap:'wrap',gap:3,justifyContent:'center',margin:'8px 0',fontSize:14,fontWeight:900}}>
-        {song.keys.map((k, j) => <span key={j} style={{minWidth:14,textAlign:'center',color:(mode === 'watch' ? j === i : j <= i) ? '#e4572e' : '#c9c0aa'}}>{({ 6: 'G♭', 8: 'A♭', 10: 'B♭', 13: 'D♭' })[k]}</span>)}
+        {song.keys.map((k, j) => { const on = mode === 'watch' ? j === i : j <= i; const L = song.f[j][0] === 'L'; return <span key={j} title={L ? t('left hand', '왼손') : t('right hand', '오른손')} style={{minWidth:17,textAlign:'center',color:on ? '#e4572e' : L ? '#26296b' : '#8a8dc0',fontWeight:900}}><span style={{fontSize:9,opacity:0.75}}>{song.f[j][0]}</span>{song.f[j].slice(1)}</span>; })}
       </div>
       {done && <div style={{textAlign:'center',fontSize:15,fontWeight:900,color:'#2e8a6e',marginBottom:6}}>{t('You played ' + song.title + '!', song.title + ' 끝까지 쳤어요!')}</div>}
       <div style={{display:'flex',gap:6,justifyContent:'center'}}>
@@ -11354,7 +11367,7 @@ function WholePiano() {
   }
   function pickMode(k) { clear(); setRun(null); setMode(k); if (k === 'middle') sound([60]); }
   const H = 46, BH = 28, lit = shown[mode] || 0, done = mode !== 'middle' && guess[mode] !== undefined && lit === 7;
-  const col = { small: '#b8801f', big: '#2e8a6e' };
+  const col = { small: '#e4572e', big: '#26296b' };
   const four = L.houses.filter(h => h.kind === 'small')[3];
   const qs = { small: t('Guess first: how many small houses does a real piano have?', '먼저 맞혀 봐요: 진짜 피아노에는 작은 집이 몇 개 있을까요?'), big: t('And how many big houses?', '그럼 큰 집은 몇 개일까요?') };
   return (
@@ -11498,43 +11511,28 @@ function BlackKeyJam() {
   );
 }
 
-function FirstStepsLearn({ onStart }) {
-  const tip = (title, body) => <Rule title={title}>{body}</Rule>;
-  return (
-    <Lesson id="first-steps" title={t('The keyboard and your first song', '건반과 첫 곡')} onStart={onStart}
-      intro={<>{t('Once sitting and hand shape feel natural: a map of the black keys by ear and by eye, and a first little tune to play.', '앉는 자세와 손 모양이 자연스러워지면: 귀와 눈으로 검은건반 지도를 익히고, 짧은 첫 곡을 연주해봐요.')}</>}>
-      <Step title={t('High, low, loud and soft', '높고 낮음, 크고 작음')}>
-        <HighLowGame/>
-      </Step>
-      <Step title={t('Small house, big house', '작은 집, 큰 집')}>
-        <ExplFirstSteps1/>
-        <KeyHouses/>
-      </Step>
-      <Step title={t('The whole piano', '피아노 전체')}>
-        <WholePiano/>
-      </Step>
-      <Step title={t('Your first song', '첫 곡')}>
-        <BlackKeySong/>
-      </Step>
-      <Step title={t('Make up your own', '나만의 튠 만들기')}>
-        <BlackKeyJam/>
-      </Step>
-    </Lesson>
-  );
-}
+// Phase 387: FirstStepsLearn is the Lesson Book opened on screen -- defined with the chapter pages (fsLbPages).
 const FINGER_LEVELS = [
   { n: 1, label: 'Which finger?', kind: 'finger', time: 6 },
 ];
 const FS_LEVELS = [
   { n: 1, label: 'High or low?',    kind: 'high', time: 6 },
-  { n: 2, label: 'Loud or soft?',   kind: 'loud', time: 6 },
-  { n: 3, label: 'Small house or big house?', kind: 'house', time: 6 },
+  { n: 2, label: 'Small house or big house?', kind: 'house', time: 6 },
+  { n: 3, label: "What's this key's name?", kind: 'name', time: 7 },
 ];
 function genFsQuestion(lv, prev) {
   const uid = Math.random();
   if (lv.kind === 'finger') { let hand, f, g = 0; do { hand = Math.random() < 0.5 ? 'L' : 'R'; f = 1 + Math.floor(Math.random() * 5); } while (prev && prev.key === hand + f && g++ < 10); return { kind: 'finger', key: hand + f, hand, f, answer: String(f), choices: ['1', '2', '3', '4', '5'], uid }; }
   if (lv.kind === 'high') { const hi = Math.random() < 0.5; return { kind: 'high', key: uid, hi, f: hi ? 880 * Math.pow(2, Math.floor(Math.random() * 7) / 12) : 98 * Math.pow(2, Math.floor(Math.random() * 7) / 12), answer: hi ? 'High' : 'Low', choices: ['Low', 'High'], uid }; }
   if (lv.kind === 'loud') { const loud = Math.random() < 0.5; return { kind: 'loud', key: uid, loud, answer: loud ? 'Loud (f)' : 'Soft (p)', choices: ['Soft (p)', 'Loud (f)'], uid }; }
+  if (lv.kind === 'name') {
+    const L7 = ['C', 'D', 'E', 'F', 'G', 'A', 'B'], PCS = [0, 2, 4, 5, 7, 9, 11];
+    let wi, g = 0;
+    do { wi = Math.floor(Math.random() * 7); } while (prev && prev.key === 'n' + wi && g++ < 10);
+    const o = Math.floor(Math.random() * 3);
+    const others = shuffle(L7.filter(x => x !== L7[wi])).slice(0, 3);
+    return { kind: 'name', key: 'n' + wi, k: o * 12 + PCS[wi], answer: L7[wi], choices: shuffle([L7[wi], ...others]), uid };
+  }
   const small = Math.random() < 0.5, o = Math.floor(Math.random() * 3);
   return { kind: 'house', key: small + ':' + o, small, keys: small ? [o * 12 + 1, o * 12 + 3] : [o * 12 + 6, o * 12 + 8, o * 12 + 10], answer: small ? 'Small house' : 'Big house', choices: ['Small house', 'Big house'], uid };
 }
@@ -11548,20 +11546,21 @@ function FsQuestion({ q, given, locked, onAnswer, pixel }) {
   const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
   useEffect(() => { if (q.kind === 'high' || q.kind === 'loud') { const t = setTimeout(() => playFs(q), 250); return () => clearTimeout(t); } }, [q.uid]);
   const cls = (c) => btnCls + (!done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '');
-  const title = (LANG === 'ko' ? { finger: '몇 번 손가락에 불이 켜졌나요?', high: '들어 봐요: 높을까, 낮을까?', loud: '들어 봐요: 클까, 작을까?', house: '어떤 집일까요?' } : { finger: 'Which finger number is lit?', high: 'Listen: high or low?', loud: 'Listen: loud or soft?', house: 'Which house is this?' })[q.kind];
+  const title = (LANG === 'ko' ? { finger: '몇 번 손가락에 불이 켜졌나요?', name: '이 건반의 이름은 무엇일까요?', high: '들어 봐요: 높을까, 낮을까?', loud: '들어 봐요: 클까, 작을까?', house: '어떤 집일까요?' } : { finger: 'Which finger number is lit?', name: "What is this key's name?", high: 'Listen: high or low?', loud: 'Listen: loud or soft?', house: 'Which house is this?' })[q.kind];
   const marks = {}; if (q.kind === 'house') q.keys.forEach(k => { marks[k] = 'target'; });
   return (<div>
     <p style={pixel ? {fontSize:11.5,textAlign:'center'} : {fontSize:15,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? title.toUpperCase() : title}</p>
     {q.kind === 'finger' && <div style={{display:'flex',justifyContent:'center',marginBottom:10}}><PbArt name={'q-fingers-' + q.hand} lit={q.f} h={200}/></div>}
     {(q.kind === 'high' || q.kind === 'loud') && <div style={{textAlign:'center',marginBottom:12}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => playFs(q)}>{pixel ? t('♪ AGAIN', '♪ 다시') : t('♪ Play again', '♪ 다시 듣기')}</button></div>}
     {q.kind === 'house' && <div style={{marginBottom:12}}><TapKeyboard octaves={3} marks={marks} pixel={pixel}/></div>}
-    <div style={{display:'grid',gridTemplateColumns:'repeat(' + (q.choices.length === 5 ? 5 : 2) + ',1fr)',gap:8}}>{q.choices.map(c => <button key={c} disabled={locked} className={cls(c)} style={{padding:'16px 0',fontSize:pixel ? 10 : 18}} onClick={() => onAnswer(c)}>{fsLabel(c)}</button>)}</div>
+    {q.kind === 'name' && <div style={{marginBottom:12}}><TapKeyboard octaves={3} marks={{ [q.k]: 'target' }} tint pixel={pixel}/></div>}
+    <div style={{display:'grid',gridTemplateColumns:'repeat(' + (q.choices.length === 5 ? 5 : q.choices.length === 4 ? 4 : 2) + ',1fr)',gap:8}}>{q.choices.map(c => <button key={c} disabled={locked} className={cls(c)} style={{padding:'16px 0',fontSize:pixel ? 10 : 18}} onClick={() => onAnswer(c)}>{fsLabel(c)}</button>)}</div>
   </div>);
 }
 const FS_KO = { High: '높게', Low: '낮게', 'Loud (f)': '크게 (f)', 'Soft (p)': '작게 (p)', 'Small house': '작은 집', 'Big house': '큰 집' };
 function fsLabel(c) { return LANG === 'ko' && FS_KO[c] ? FS_KO[c] : c; }
 const FIRST_STEPS_DRILL = {
-  id: 'first-steps', label: 'Keyboard Patterns', levels: FS_LEVELS, generate: genFsQuestion,
+  id: 'first-steps', label: 'Keyboard Patterns & Note Names', levels: FS_LEVELS, generate: genFsQuestion,
   check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
   answerLabel: (q) => LANG === 'ko' ? fsLabel(q.answer) : q.answer.toLowerCase(),
   Question: FsQuestion, Learn: FirstStepsLearn,
@@ -16363,7 +16362,7 @@ const COMPOSERS_DRILL = {
 
 const DRILLS = [ // Phase 361: in the music map's order
   { id: 'posture-hands', label: 'Posture & Hand Shape', concept: POSTURE_HANDS_DRILL, track: 'start' },
-  { id: 'first-steps', label: 'Black Keys & Your First Song', concept: FIRST_STEPS_DRILL, track: 'start' },
+  { id: 'first-steps', label: 'Keyboard Patterns & Note Names', concept: FIRST_STEPS_DRILL, track: 'start' },
   { id: 'note-names', label: 'Note Names', concept: NOTE_NAMES_DRILL, track: 'pitch' },
   { id: 'staff', label: 'Reading the Staff', concept: STAFF_DRILL, track: 'pitch' },
   { id: 'ledger-lines', label: 'Ledger Lines', concept: LEDGER_DRILL, track: 'pitch' },
@@ -16391,7 +16390,7 @@ const DRILLS = [ // Phase 361: in the music map's order
 
 // Phase 276: Korean chapter names. `label` becomes a getter (English kept as labelEn) so every list, header and link follows LANG.
 const CHAPTER_KO = {
-  'posture-hands': '자세와 손 모양', 'first-steps': '검은건반과 첫 노래', 'note-names': '음이름', 'pulse': '박과 세기',
+  'posture-hands': '자세와 손 모양', 'first-steps': '건반 패턴과 음이름', 'note-names': '음이름', 'pulse': '박과 세기',
   'note-values': '음표와 쉼표', 'rhythm': '리듬 패턴', 'staff': '오선보 읽기', 'reading-steps': '차례가기와 건너뛰기',
   'time-signatures': '박자표', 'tempo': '템포 경주', 'dynamics': '다이나믹과 아티큘레이션', 'ledger-lines': '덧줄',
   'tones': '온음과 반음', 'scales': '스케일', 'key-signatures': '조표', 'intervals': '음정', 'chords': '화음',
@@ -17469,16 +17468,17 @@ function FingerNumbers376() {
 }
 // page 7: a star for each check in each lesson (kept on this device)
 const FIVE_KEY = 'pb_five_checks_v1';
-function FiveChecks376({ rows }) {
-  const [st, setSt] = useState(() => { try { return JSON.parse(localStorage.getItem(FIVE_KEY)) || {}; } catch (e) { return {}; } });
-  const tog = (r, c) => { const k = r + '-' + c, nx = { ...st, [k]: !st[k] }; if (!nx[k]) delete nx[k]; setSt(nx); try { localStorage.setItem(FIVE_KEY, JSON.stringify(nx)); } catch (e) {} };
+function FiveChecks376({ rows, storeKey }) {
+  const SK = storeKey || FIVE_KEY;
+  const [st, setSt] = useState(() => { try { return JSON.parse(localStorage.getItem(SK)) || {}; } catch (e) { return {}; } });
+  const tog = (r, c) => { const k = r + '-' + c, nx = { ...st, [k]: !st[k] }; if (!nx[k]) delete nx[k]; setSt(nx); try { localStorage.setItem(SK, JSON.stringify(nx)); } catch (e) {} };
   const n = Object.keys(st).length;
   return (
     <div data-five-checks style={{display:'flex',flexDirection:'column',gap:7}}>
       {rows.map(([a, txt], r) => (
         <div key={a} style={{border:'1px solid #ece6d8',borderRadius:12,padding:'6px 8px 8px',display:'flex',flexWrap:'wrap',alignItems:'center',gap:'4px 10px'}}>
           <div style={{flex:'1 1 200px',display:'flex',alignItems:'center',gap:10,minWidth:0}}>
-            <div style={{flex:'0 0 64px',display:'flex',justifyContent:'center'}}><PbArt name={a} h={a === 'chk-hand' ? 38 : 52}/></div>
+            <div style={{flex:'0 0 64px',display:'flex',justifyContent:'center'}}>{typeof a === 'string' ? <PbArt name={a} h={a === 'chk-hand' ? 38 : 52}/> : <PenArt shapes={a.shapes} vb={a.vb} style={{width:64}}/>}</div>
             <div style={{fontSize:14,fontWeight:800,color:BK.ink,lineHeight:1.3}}>{txt}</div>
           </div>
           <div style={{flex:'0 0 auto',display:'flex',gap:4,marginLeft:'auto'}}>{[1, 2, 3, 4, 5, 6].map(c => { const on = !!st[r + '-' + c]; return (
@@ -17488,7 +17488,7 @@ function FiveChecks376({ rows }) {
         </div>))}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:12.5,color:BK.muted}}>
         <span>{t(n + (n === 1 ? ' star' : ' stars') + ' so far (lesson 1 to 6)', '지금까지 별 ' + n + '개 (레슨 1~6)')}</span>
-        {n > 0 && <button className="ghost-btn" style={{fontSize:12,padding:'3px 10px'}} onClick={() => { setSt({}); try { localStorage.removeItem(FIVE_KEY); } catch (e) {} }}>{t('Start again', '처음부터')}</button>}
+        {n > 0 && <button className="ghost-btn" style={{fontSize:12,padding:'3px 10px'}} onClick={() => { setSt({}); try { localStorage.removeItem(SK); } catch (e) {} }}>{t('Start again', '처음부터')}</button>}
       </div>
     </div>
   );
@@ -19464,7 +19464,7 @@ const CHAPTER_SEARCH_TERMS = {
   'rhythm': 'rhythm clap count beat pattern',
   'reading-steps': 'sight reading step skip melody hear find which tune spot the change wrong note',
   'posture-hands': 'posture hand shape beginner sit stool arm weight alignment finger number which finger thumb',
-  'first-steps': 'black key small house big house first song white neighbour keyboard pattern whole piano 88 keys middle c pentatonic jam improvise band',
+  'first-steps': 'black key small house big house roof first song white neighbour keyboard pattern whole piano 88 keys middle c pentatonic jam improvise band note names letter name c d e f g a b',
   'terms': 'italian term tempo word meaning',
   'tempo': 'tempo speed italian term metronome mark bpm',
   'practice': 'practice timer dice repetition',
@@ -21804,7 +21804,7 @@ function RhythmSheet() {
 // "Fine". Tap a word to open that chapter, or a circle to open the stage's next chapter.
 // Used for Learn, the teacher's Chapters tab and the student's own page.
 const CH_SHORT = {
-  'posture-hands': ['Posture', '자세'], 'first-steps': ['Black keys', '검은건반'], 'note-names': ['Note names', '음 이름'],
+  'posture-hands': ['Posture', '자세'], 'first-steps': ['Patterns', '패턴'], 'note-names': ['Note names', '음 이름'],
   'staff': ['The staff', '오선'], 'ledger-lines': ['Ledger lines', '덧줄'], 'tones': ['Sharps & flats', '올림·내림표'],
   'pulse': ['Pulse', '박'], 'note-values': ['Note values', '음표 길이'], 'time-signatures': ['Time signatures', '박자표'], 'rhythm': ['Rhythm', '리듬 꼴'],
   'reading-steps': ['Steps & skips', '이웃음·건너뛰기'], 'tempo': ['Tempo', '빠르기'],
@@ -26550,7 +26550,7 @@ function PostureTeacher() {
   const fill = (seq) => seq.filter(x => x[0] === '?').map(x => x.slice(1)).join(', ');
   P(<>
     <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('posture-hands')}</div>
-    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Each workbook page faces its Lesson Book page. Every answer here should also be tried at the piano -- the paper is only the reminder.</div>
+    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Each workbook page faces its Lesson Book page. Every answer here should also be tried at the piano -- the paper is only the reminder. This chapter is the base for every other one: its five checks come before every time at the piano, at every level.</div>
     <TcBlock page={2} title="Sit at the piano" answers={<>{tcAns('TOGETHER', [PH_SIT[0], PH_SIT[1], PH_SIT[4], PH_SIT[2]].map(([, name, ok]) => yn(ok) + ' (' + name.toLowerCase() + ')'))}{tcAns('AT HOME', ['a tick for each check they really did'])}</>}
       watch="Elbows squashed in (too close) or arms reaching out (too far). Feet dangling: a footstool or a sturdy box fixes it. The five checks come before every time at the piano, for every student."
       say="“Sit tall, like a puppet on a string, and lean a little toward the piano.”"/>
@@ -26566,10 +26566,10 @@ function PostureTeacher() {
   </>);
   P(<>
     <TcBlock page={6} title="Finger walks" answers={<>{tcAns('MISSING NUMBERS', PH_FILL.map(([name, seq]) => name + ': ' + fill(seq)))}<div style={{fontSize:12,color:BK.ink}}>Own tune: any numbers 1 to 5; check that it is played with a round hand and the empty circles are held.</div></>}
-      watch="Right hand first, then left hand. Move on to the next tune only when the hand stays round. Relaxed, never squeezed tight."
+      watch="Right hand first, then left hand, then together if it is easy. Any five white keys near the middle will do; the letter names come with the Note Names chapter. Move on to the next tune only when the hand stays round. Relaxed, never squeezed tight."
       say="“Draw a little rainbow from key to key. Let the whole hand help.”"/>
     <TcBlock page={7} title="Check-up" goBack={phConcepts()} answers={<>{tcAns('A', W.chk.st.map(([, , ok]) => yn(ok)))}{tcAns('B', W.chk.ar.map(([, ok]) => ok ? 'yes' : 'no'))}{tcAns('C', W.chk.hs.map(([, , ok]) => yn(ok)))}{tcAns('D', W.chk.lr)}{tcAns('E', W.chk.fn)}{tcAns('F', PH_FILL_CHK.map(fill))}
-      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (4 marks each, pass 3+). Then check the posture at the piano, not just on paper.</div></>}/>
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>At the start of each lesson the student says the five checks out loud while doing them; you only correct. Score each concept on its own (4 marks each, pass 3+). Then check the posture at the piano, not just on paper.</div></>}/>
   </>);
   return <>{pages}</>;
 }
@@ -32787,11 +32787,8 @@ function LbPage({ no, chId, kicker, title, teacher, qr, children }) {
         <div style={{fontFamily:LB_SERIF,fontSize:36,fontWeight:900,color:BK.ink,lineHeight:1.05}}>{title}</div>
       </div>}
       <div className="bk-body" style={{flex:1,minHeight:0,overflow:'hidden',display:'flex',flexDirection:'column',gap:14}}><BkChapterCtx.Provider value={chId}>{children}</BkChapterCtx.Provider></div>
-      {teacher && <div data-lb-teacher style={{display:'flex',gap:12,alignItems:'center',borderTop:'1.3px dashed ' + BK.line,marginTop:12,paddingTop:9}}>
-        <span style={{flex:'0 0 auto',fontSize:9.5,fontWeight:900,letterSpacing:'0.06em',color:'#fff',background:BK.ink,borderRadius:4,padding:'3px 7px'}}>TEACHER</span>
-        <div style={{flex:1,fontSize:11.8,color:BK.ink,lineHeight:1.45}}>{teacher}</div>
-        {qr && <div style={{flex:'0 0 auto',display:'flex',alignItems:'center',gap:6}}><span style={{fontSize:9,color:BK.muted,textAlign:'right',lineHeight:1.2,width:48}}>Try it in the app</span><QR url={qr} size={46}/></div>}
-      </div>}
+      {/* Sohyun 2026-10-09: teacher content prints in the Teacher copy, not in the Lesson Book;
+          on screen it still shows in the teacher view (LbScreenPage). */}
       <div className="lb-no" style={{textAlign:'center',fontSize:10.5,color:BK.muted,fontWeight:700,paddingTop:6}}>{no}</div>
     </section>
   );
@@ -33074,7 +33071,431 @@ function PostureHandsLearn({ onStart }) {
   );
 }
 
-const LESSON_BOOKS = { 'posture-hands': PostureLessonBook };
+// ─── Chapter 2: Keyboard Patterns & Note Names (Phase 387 -- applied) ───
+// Sohyun's re-centre (2026-10-09): the chapter is PATTERN RECOGNITION, not the first song.
+// Black-key patterns -> the white keys each group carries (3 + 4) -> the seven letter names ->
+// the whole piano and middle C (where the low and high voices meet) -> then play on the patterns.
+// High/low folds into the pattern page as a direction line; loud/soft leaves the chapter;
+// clefs and the Queen/King wait for the Reading chapter (only the "two voices meet at middle C"
+// seed is planted here). Format: Phase 368. Drawings: the Phase 369 pen engine, drawn live.
+// ?draft=1 marks the lines that wait for Sohyun's B answers. Not applied to the app yet.
+
+// a keyboard with black keys, in pen (start: 'C' or 'A'; the blacks stay solid navy)
+function fsKeysShapes(x, y, nw, W, H, opts = {}) {
+  const start = opts.start || 'C', BW = W * 0.62, BH = H * 0.6;
+  const off = start === 'C' ? 0 : 5;              // white index of the pattern (C=0 ... A=5)
+  const hasBlackAfter = (i) => [0, 1, 3, 4, 5].includes((i + off) % 7);
+  const s = [{ k: 'rc', x, y, w: nw * W, h: H, rx: 2, f: PEN_P, s: PEN_N, sw: opts.sw || 2.2 }];
+  if (opts.tints) for (let i = 0; i < nw; i++) {
+    const m7 = (i + off) % 7;                                   // C D E pale coral, F G A B pale navy
+    s.push({ k: 'rc', x: x + i * W + 1, y: y + 2, w: W - 2, h: H - 4, rx: 1.5, f: m7 < 3 ? '#fbe9e2' : '#e9eaf4' });
+  }
+  for (let i = 1; i < nw; i++) s.push(penLine([x + i * W, y], [x + i * W, y + H], 1.2));
+  const blacks = [];
+  for (let i = 0; i < nw - 1; i++) if (hasBlackAfter(i)) { blacks.push(i); s.push({ k: 'rc', x: x + (i + 1) * W - BW / 2, y, w: BW, h: BH, rx: 1, f: PEN_N, solid: true }); }
+  // the houses: groups of consecutive black keys (2 = small, 3 = big, 1 = the lonely one)
+  const houses = [];
+  const groups = [];
+  blacks.forEach(i => { const g = groups[groups.length - 1]; if (g && i === g[g.length - 1] + 1) g.push(i); else groups.push([i]); });
+  groups.forEach(g => houses.push({ kind: g.length >= 3 ? 'big' : g.length === 2 ? 'small' : 'lone',
+    x1: x + (g[0] + 1) * W - BW / 2 - W * 0.14, x2: x + (g[g.length - 1] + 1) * W + BW / 2 + W * 0.14 }));
+  // letter names on the white keys (C-start octaves): C and F in coral
+  if (opts.letters) {
+    const L7 = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+    for (let i = 0; i < nw; i++) {
+      const n = L7[(i + off) % 7], coral = n === 'C' || n === 'F';
+      s.push({ ...penText(x + (i + 0.5) * W, y + H - H * 0.07, n, { size: opts.letterSize || W * 0.48, weight: 900, fill: coral ? PEN_C : PEN_N, anchor: 'middle' }) });
+    }
+  }
+  return { shapes: s, houses, BW, BH };
+}
+// a roof over a house (the big one gets a chimney)
+function fsRoof(h, baseY, peak, opts = {}) {
+  const mid = (h.x1 + h.x2) / 2, col = opts.coral ? PEN_C : PEN_N;
+  const out = [{ k: 'pl', p: [[h.x1, baseY], [mid, baseY - peak], [h.x2, baseY]], s: col, w: opts.w || 2.6 }];
+  if (h.kind === 'big' && opts.chimney !== false) {
+    const cx = mid + (h.x2 - mid) * 0.52, cy = baseY - peak * (1 - (cx - mid) / (h.x2 - mid)) - 1;
+    out.push({ k: 'rc', x: cx - 2.6, y: cy - 8, w: 5.2, h: 9, rx: 0.8, f: PEN_C });
+  }
+  if (opts.label) out.push({ ...penText(mid, baseY - peak - 5, opts.label, { size: opts.labelSize || 11, weight: 900, fill: col, anchor: 'middle' }), halo: true });
+  return out;
+}
+// a bracket under a group of white keys, with a count
+function fsBrace(x1, x2, y, n, coral) {
+  const col = coral ? PEN_C : PEN_N, mid = (x1 + x2) / 2;
+  return [
+    { k: 'pa', seg: [['M', [x1, y]], ['L', [x1, y + 5]], ['L', [x2, y + 5]], ['L', [x2, y]]], f: 'none', s: col, w: 2 },
+    { k: 'el', c: [mid, y + 15], rx: 9.5, ry: 9.5, f: col },
+    { ...penText(mid, y + 19, String(n), { size: 12.5, weight: 900, fill: '#fffdf7', anchor: 'middle' }) },
+  ];
+}
+// the bear (low end) and the bird (high end), small, in pen
+function fsBear(x, y, k = 1) {
+  const s = [];
+  const E = (cx, cy, rx, ry, f) => ({ k: 'el', c: [x + cx * k, y + cy * k], rx: rx * k, ry: ry * k, f: f || PEN_P, s: PEN_N, w: 1.8 });
+  s.push(E(0, 10, 14, 12));
+  s.push(E(-7, -8, 4, 4), E(7, -8, 4, 4));
+  s.push(E(0, -4, 10, 9.4));
+  s.push(E(0, -1, 4.6, 3.6));
+  s.push({ k: 'el', c: [x, y - 2.6], rx: 1.4, ry: 1.1, f: PEN_N });
+  s.push({ k: 'el', c: [x - 4 * k, y - 7 * k], rx: 1.1, ry: 1.1, f: PEN_N }, { k: 'el', c: [x + 4 * k, y - 7 * k], rx: 1.1, ry: 1.1, f: PEN_N });
+  s.push(E(-10, 18, 3.6, 2.6), E(10, 18, 3.6, 2.6));
+  return s;
+}
+function fsBird(x, y, k = 1) {
+  const s = [];
+  s.push({ k: 'el', c: [x, y], rx: 7 * k, ry: 5.4 * k, f: PEN_P, s: PEN_N, w: 1.8 });
+  s.push({ k: 'el', c: [x + 6 * k, y - 4 * k], rx: 3.8 * k, ry: 3.4 * k, f: PEN_P, s: PEN_N, w: 1.8 });
+  s.push({ k: 'pa', seg: [['M', [x + 9.4 * k, y - 4.6 * k]], ['L', [x + 13 * k, y - 3.6 * k]], ['L', [x + 9.4 * k, y - 2.6 * k]], ['Z']], f: PEN_C });
+  s.push({ k: 'el', c: [x + 6.6 * k, y - 5 * k], rx: 0.9 * k, ry: 0.9 * k, f: PEN_N });
+  s.push(penCurve([['M', [x - 2 * k, y - 1.5 * k]], ['Q', [x - 7 * k, y - 6 * k], [x - 10 * k, y - 1 * k]]], 1.6, PEN_N));
+  s.push(penCurve([['M', [x - 6.6 * k, y + 1.4 * k]], ['L', [x - 11 * k, y + 3.4 * k]], ['M', [x - 6.6 * k, y + 2.8 * k]], ['L', [x - 11 * k, y + 5 * k]]], 1.4, PEN_N));
+  s.push({ ...penText(x + 13 * k, y - 10 * k, '♪', { size: 9 * k, weight: 800, fill: PEN_C }), halo: true });
+  return s;
+}
+// a standing child, posed (scaled via penPlace)
+function fsKid(who, pose, face = 1) {
+  const x = 75;
+  const arms = pose === 'point'
+    ? [[[x + 4, 66], [x + 15, 56], [x + 26, 48], [x + 31, 45]], [[x - 3, 67], [x - 6, 87], [x - 4, 103]]]
+    : [[[x + 4, 66], [x + 8, 86], [x + 7, 103]], [[x - 3, 66], [x - 7, 86], [x - 6, 103]]];
+  const J = { hip: [x, 104], neck: [x + 1, 64], head: [x + 2, 49],
+    arms, legs: [[[x + 2, 104], [x + 3, 130], [x + 4, 156]], [[x - 2, 104], [x - 3, 130], [x - 4, 156]]] };
+  return penKid(J, face, who);
+}
+
+// ─── the seven pages ───
+function fsLbPages(scr = false) {
+  const ch = 'first-steps';
+  const P_W = 560;
+
+  // p1: the street of keys with its houses, letters on the doors, the siblings
+  const art1 = (() => {
+    const s = [penLine([8, 136], [332, 136], 1.6, '#bdb7a6')];
+    const K = fsKeysShapes(62, 68, 14, 15.6, 68, { letters: true, letterSize: 8, tints: true });
+    s.push(...K.shapes);
+    K.houses.forEach((h, i) => s.push(...fsRoof(h, 66, h.kind === 'big' ? 22 : 16, { coral: i === 0 })));
+    s.push(...penPlace(fsKid('girl', 'point', 1), 0.58, [75, 156], [34, 136]));
+    s.push(...penPlace(fsKid('boy', 'stand', -1), 0.58, [75, 156], [312, 136]));
+    return s;
+  })();
+  // p2: the two patterns, plus the low -> high direction strip (bear and bird)
+  const art2 = (() => {
+    const s = [];
+    const K = fsKeysShapes(17, 44, 7, 38, 92, { sw: 2.6, tints: true });
+    s.push(...K.shapes);
+    const [sm, bg] = K.houses;
+    s.push(...fsRoof(sm, 42, 20, { label: t('small house', '작은 집'), labelSize: 11.5 }));
+    s.push(...fsRoof(bg, 42, 26, { label: t('big house', '큰 집'), labelSize: 11.5 }));
+    [[sm, '2'], [bg, '3']].forEach(([h, n]) => {
+      const mx = (h.x1 + h.x2) / 2;
+      s.push({ k: 'el', c: [mx, 148], rx: 9.5, ry: 9.5, f: PEN_C });
+      s.push({ ...penText(mx, 152, n, { size: 12.5, weight: 900, fill: '#fffdf7', anchor: 'middle' }) });
+    });
+    return s;
+  })();
+  const art2b = (() => {
+    const s = [];
+    const K = fsKeysShapes(46, 16, 21, 12.2, 44);
+    s.push(...K.shapes);
+    s.push(...fsBear(22, 44, 0.9));
+    s.push(...fsBird(320, 12, 0.95));
+    s.push({ k: 'pa', seg: [['M', [60, 76]], ['L', [290, 76]]], f: 'none', s: PEN_C, w: 2 });
+    s.push({ k: 'pa', seg: [['M', [284, 72]], ['L', [292, 76]], ['L', [284, 80]], ['Z']], f: PEN_C });
+    s.push({ ...penText(62, 88, t('low voices', '낮은 소리'), { size: 9.5, weight: 900, fill: PEN_N }), halo: true });
+    s.push({ ...penText(288, 88, t('high voices', '높은 소리'), { size: 9.5, weight: 900, fill: PEN_C, anchor: 'end' }), halo: true });
+    return s;
+  })();
+  // p3: each house carries its white keys -- 3 at the small house, 4 at the big one
+  const art3 = (() => {
+    const s = [];
+    const K = fsKeysShapes(17, 36, 7, 38, 88, { sw: 2.6, tints: true });
+    s.push(...K.shapes);
+    const [sm, bg] = K.houses;
+    s.push(...fsRoof(sm, 34, 18, { label: t('small house', '작은 집'), labelSize: 10.5 }));
+    s.push(...fsRoof(bg, 34, 23, { label: t('big house', '큰 집'), labelSize: 10.5 }));
+    s.push(...fsBrace(17 + 2, 17 + 3 * 38 - 2, 130, 3, true));
+    s.push(...fsBrace(17 + 3 * 38 + 2, 17 + 7 * 38 - 2, 130, 4, false));
+    return s;
+  })();
+  // p4: the seven letter names on the doors (C and F in coral)
+  const art4 = (() => {
+    const s = [];
+    const K = fsKeysShapes(17, 40, 7, 38, 96, { sw: 2.6, letters: true, letterSize: 15, tints: true });
+    s.push(...K.shapes);
+    const [sm, bg] = K.houses;
+    s.push(...fsRoof(sm, 38, 18, { w: 2.2 }));
+    s.push(...fsRoof(bg, 38, 23, { w: 2.2 }));
+    // the doors: C at the small house's left door, F at the big house's
+    s.push(penCurve([['M', [17 + 0.5 * 38, 34]], ['L', [17 + 0.5 * 38, 24]]], 1.4, PEN_C));
+    s.push({ ...penText(17 + 0.5 * 38, 19, t('C -- the left door', 'C -- 왼쪽 문'), { size: 9.5, weight: 900, fill: PEN_C, anchor: 'start' }), halo: true });
+    s.push(penCurve([['M', [17 + 3.5 * 38, 34]], ['L', [17 + 3.5 * 38, 10]]], 1.4, PEN_C));
+    s.push({ ...penText(17 + 3.5 * 38, 7, t('F -- the big house\'s left door', 'F -- 큰 집의 왼쪽 문'), { size: 9.5, weight: 900, fill: PEN_C, anchor: 'start' }), halo: true });
+    return s;
+  })();
+  // p5: the whole piano -- 7+7 houses, the kennel, middle C where the two voices meet
+  const art5 = (() => {
+    const s = [];
+    const X = 24, W = 9.85, H = 64, Y = 56;
+    const K = fsKeysShapes(X, Y, 52, W, H, { start: 'A', sw: 2 });
+    s.push(...K.shapes);
+    let nS = 0;
+    K.houses.forEach(h => {
+      if (h.kind === 'lone') {
+        s.push(...fsRoof({ ...h, kind: 'small' }, 54, 10));
+        s.push({ ...penText((h.x1 + h.x2) / 2, 36, t('the kennel', '개집'), { size: 8.5, weight: 900, fill: PEN_C, anchor: 'start' }), halo: true });
+        s.push(penCurve([['M', [(h.x1 + h.x2) / 2 + 2, 38]], ['L', [(h.x1 + h.x2) / 2, 46]]], 1.2, PEN_C));
+      } else {
+        s.push(...fsRoof(h, 54, h.kind === 'small' ? 9 : 12, { w: 1.8, chimney: false }));
+        if (h.kind === 'small') { nS++; s.push({ ...penText((h.x1 + h.x2) / 2, 42, String(nS), { size: 8.5, weight: 900, fill: PEN_N, anchor: 'middle' }), halo: true }); }
+      }
+    });
+    const mcX = X + 23 * W;
+    s.push({ k: 'rc', x: mcX + 1.2, y: Y + H - 20, w: W - 2.4, h: 17, rx: 1, f: PEN_C });
+    s.push(penCurve([['M', [mcX + W / 2, Y + H + 14]], ['L', [mcX + W / 2, Y + H + 3]]], 1.6, PEN_C));
+    s.push({ k: 'pa', seg: [['M', [mcX + W / 2 - 3, Y + H + 7]], ['L', [mcX + W / 2, Y + H + 2]], ['L', [mcX + W / 2 + 3, Y + H + 7]], ['Z']], f: PEN_C });
+    s.push({ ...penText(mcX + W / 2, Y + H + 24, t('middle C', '가운데 도'), { size: 10, weight: 900, fill: PEN_C, anchor: 'middle' }), halo: true });
+    s.push({ ...penText(mcX - 14, Y + H + 15, t('← low voices', '← 낮은 목소리'), { size: 8.5, weight: 800, fill: PEN_N, anchor: 'end' }), halo: true });
+    s.push({ ...penText(mcX + W + 14, Y + H + 15, t('high voices →', '높은 목소리 →'), { size: 8.5, weight: 800, fill: PEN_N, anchor: 'start' }), halo: true });
+    s.push(...penPlace(fsBear(0, 0, 1), 0.72, [0, 0], [10, 38]));
+    s.push(...penPlace(fsBird(0, 0, 1), 0.9, [0, 0], [548, 26]));
+    return s;
+  })();
+  // p6: right hand 2 3 4 on the big house (the play page)
+  const art6 = (() => {
+    const s = [];
+    const K = fsKeysShapes(10, 30, 7, 34, 86, { sw: 2.4, tints: true });
+    s.push(...K.shapes);
+    const bg = K.houses[1];
+    s.push(...fsRoof(bg, 28, 22));
+    [3, 4, 5].forEach((wi, i) => {
+      const cx = 10 + (wi + 1) * 34;
+      s.push({ k: 'el', c: [cx, 44], rx: 8.6, ry: 8.6, f: PEN_C });
+      s.push({ ...penText(cx, 47.6, String(i + 2), { size: 11, weight: 900, fill: '#fffdf7', anchor: 'middle' }) });
+    });
+    return s;
+  })();
+  // p7 icons
+  const chkArts = {
+    house: [...fsRoof({ kind: 'small', x1: 10, x2: 34 }, 30, 12), ...fsRoof({ kind: 'big', x1: 44, x2: 80 }, 30, 16), penLine([6, 31], [86, 31], 1.8)],
+    brace: [penLine([6, 10], [86, 10], 1.8), ...fsBrace(8, 38, 14, 3, true), ...fsBrace(44, 84, 14, 4, false)],
+    letters: 'CDEFGAB'.split('').map((n, i) => ({ ...penText(8 + i * 12.6, 26, n, { size: 11, weight: 900, fill: n === 'C' || n === 'F' ? PEN_C : PEN_N, anchor: 'middle' }) })),
+    midc: (() => { const K = fsKeysShapes(6, 6, 7, 11.4, 26, { sw: 1.6 }); return [...K.shapes, { k: 'rc', x: 7, y: 24, w: 9.4, h: 7, rx: 0.8, f: PEN_C }]; })(),
+    song: ['4', '3', '2'].map((n, i) => [{ k: 'el', c: [18 + i * 26, 20], rx: 10, ry: 10, f: PEN_P, s: PEN_N, w: 2 }, { ...penText(18 + i * 26, 24.4, n, { size: 12, weight: 900, fill: PEN_N, anchor: 'middle' }) }]).flat(),
+  };
+  const checksRows = [
+    ['house', [0, 0, 92, 40], t('I can find a small house and a big house anywhere', '어디서든 작은 집과 큰 집을 찾을 수 있어요')],
+    ['brace', [0, 0, 92, 40], t('I can say each house\'s white keys: 3 and 4', '집마다 딸린 흰건반을 말할 수 있어요: 3개와 4개')],
+    ['letters', [0, 0, 92, 40], t('I can name any white key (C at the small house\'s left door)', '어떤 흰건반이든 이름을 댈 수 있어요 (C는 작은 집 왼쪽 문)')],
+    ['midc', [0, 0, 92, 40], t('I can find middle C (just left of the 4th small house)', '가운데 도를 찾을 수 있어요 (4번째 작은 집 바로 왼쪽)')],
+    ['song', [0, 0, 92, 40], t('I can play Hot Cross Buns legato with 2 3 4', '2 3 4로 핫 크로스 번을 레가토로 칠 수 있어요')],
+  ];
+
+  const hcb = ['4', '3', '2', '-', '|', '4', '3', '2', '-', '|', '2', '2', '2', '2', '3', '3', '3', '3', '|', '4', '3', '2', '-'];
+
+  return [
+    // 1. opener
+    <LbPage key="1" no={1} chId={ch} teacher={<>{t('Pattern first, names second -- the same order at every age. Older beginners take this chapter in one sitting; younger ones live in the patterns for a while before the names stick. ', '어느 나이든 순서는 같아요: 패턴 먼저, 이름은 그다음. 나이가 있는 학습자는 이 챕터를 한 번에 지나가고, 어린 친구들은 패턴 속에서 한동안 지내다가 이름이 붙어요. ')}{t('No staff yet: the Queen of G and the King of F wait for the Reading chapter -- here we only plant "the low and high voices meet at middle C".', '오선보는 아직이에요: 솔의 여왕과 파의 왕은 악보 읽기 챕터에서 등장해요 -- 여기서는 "낮은 목소리와 높은 목소리가 가운데 도에서 만난다"만 심어 둬요.')}</>}>
+      <LbOnly print><div data-ch={ch}>
+        <div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em'}}>CHAPTER {bkChapterNo(ch)}</div>
+        <div style={{fontFamily:LB_SERIF,fontSize:44,fontWeight:900,color:BK.ink,lineHeight:1.02,margin:'4px 0 0'}}>{t('Keyboard Patterns & Note Names', '건반 패턴과 음이름')}</div>
+      </div></LbOnly>
+      <LbPic h={225}><div style={{width:'100%'}}><PenArt shapes={art1} vb={[0, 14, 340, 128]} label={t('A keyboard street with roofed black-key houses and letters on the doors; the sister points at a small house', '지붕 얹은 검은건반 집들과 문마다 글자가 있는 건반 거리; 누나가 작은 집을 가리켜요')}/></div></LbPic>
+      <LbSay size={17.5}>{t('The piano looks like 88 different keys -- but it is one small pattern, repeated: a small house of 2 black keys that carries 3 white keys, and a big house of 3 black keys that carries 4. Learn the pattern, and every key on the piano tells you its own name.', '피아노는 건반 88개처럼 보이지만, 사실은 작은 패턴 하나가 반복되는 거예요: 흰건반 3개를 거느린 검은건반 2개짜리 작은 집, 그리고 흰건반 4개를 거느린 3개짜리 큰 집. 이 패턴을 알면 피아노의 모든 건반이 자기 이름을 알려 줘요.')}</LbSay>
+      <div style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
+        <LbOnly print><div>
+          <div style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>In this chapter</div>
+          {[[t('Small house, big house', '작은 집, 큰 집'), 2], [t('The white keys of each house', '집마다 딸린 흰건반'), 3], [t('The seven letter names', '일곱 글자 음이름'), 4], [t('The whole piano & middle C', '피아노 전체와 가운데 도'), 5], [t('Play on the patterns', '패턴 위에서 연주'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} style={{display:'flex',justifyContent:'space-between',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid #ece6d8'}}><span>{n}</span><b>{p}</b></div>)}
+        </div></LbOnly>
+        <div>
+          <div style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          {[t('find any small house or big house', '어떤 작은 집, 큰 집이든 찾을 수 있어요'), t('say which white keys belong to each house', '집마다 어떤 흰건반이 딸려 있는지 말할 수 있어요'), t('name every white key, C to B', '모든 흰건반의 이름을 댈 수 있어요'), t('find middle C on a real piano', '진짜 피아노에서 가운데 도를 찾을 수 있어요'), t('play your first tune on the black keys', '검은건반으로 첫 튠을 칠 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',gap:8,fontSize:14.5,padding:'4px 0'}}><span style={{color:BK.coral,fontWeight:900}}>✓</span><span>{x}</span></div>)}
+        </div>
+      </div>
+      <LbOnly print><div style={{fontSize:13,color:BK.muted}}>Goes with: the Workbook page beside each lesson page, and the online lesson (scan the code below).</div></LbOnly>
+    </LbPage>,
+
+    // 2. small house, big house (+ the low -> high direction)
+    <LbPage key="2" no={2} chId={ch} kicker={t('Step 1', '1단계')} title={t('Small house, big house', '작은 집, 큰 집')}
+      teacher={<>{t('Watch for counting black keys one by one instead of seeing the groups. Say: "Look for the shapes, not the keys -- two together, three together." ', '검은건반을 하나씩 세고 무리를 못 보는지 봐 주세요. 이렇게 말해요: "건반 말고 모양을 봐요 -- 둘이 함께, 셋이 함께." ')}{t('The bear (low end) and the bird (high end) carry the direction; loud/soft stays out of this chapter (her call).', '곰(낮은 쪽)과 새(높은 쪽)가 방향을 맡아요; 크고 작게는 이 챕터에서 뺐어요(소현님 결정).')}</>}>
+      <LbLive still={<LbPic h={225}><div style={{width:'100%',maxWidth:440,margin:'0 auto'}}><PenArt shapes={art2} vb={[0, 0, 300, 162]} label={t('One octave: a small house over the two black keys, a big house with a chimney over the three', '한 옥타브: 검은건반 두 개 위에 작은 집, 세 개 위에 굴뚝 달린 큰 집')}/></div>
+      <div style={{width:'100%',maxWidth:470,margin:'0 auto'}}><PenArt shapes={art2b} vb={[0, 0, 340, 94]} label={t('The street runs from the bear\'s low end to the bird\'s high end', '거리는 곰의 낮은 쪽 끝에서 새의 높은 쪽 끝으로 이어져요')}/></div></LbPic>} live={<><KeyHouses modes={['houses']}/><HighLowGame pitchOnly/></>}/>
+      <LbSay>{LANG === 'ko' ? <>검은건반은 집의 <b>지붕</b>이에요. <b>검은건반 2개</b> = 작은 집의 지붕, <b>3개</b> = 큰 집의 지붕. 작은 집, 큰 집, 작은 집, 큰 집... 피아노 끝까지 같은 두 집이 반복돼요. 그리고 거리는 <b>왼쪽(낮은 소리)에서 오른쪽(높은 소리)</b>으로 올라가요.</> : <>The black keys are the <b>roofs</b> of the houses. <b>Two black keys</b> = the small house's roof; <b>three</b> = the big house's. Small, big, small, big... the same two houses repeat all the way up the piano. And the street climbs from <b>left (low sounds) to right (high sounds)</b>.</>}</LbSay>
+      <LbPiano steps={LANG === 'ko' ? [
+        <>피아노 가운데쯤에서 <b>작은 집</b>과 <b>큰 집</b>을 하나씩 찾아요.</>,
+        <>맨 아래부터 맨 위까지 올라가며 소리 내어 말해요: "작은 집... 큰 집... 작은 집..."</>,
+        <>눈을 감아요. 누가 높거나 낮은 소리를 하나 치면, 그 소리가 사는 쪽을 가리켜요.</>,
+      ] : [
+        <>Find a <b>small house</b> and a <b>big house</b> near the middle of the piano.</>,
+        <>Travel from the very bottom to the very top, saying it out loud: "small house... big house... small house..."</>,
+        <>Close your eyes. Someone plays one high or one low sound -- point to the end of the street where it lives.</>,
+      ]}/>
+      <LbRemember>{t('A 2-key roof = the small house. A 3-key roof = the big one. Low left, high right.', '검은건반 2개 지붕 = 작은 집, 3개 지붕 = 큰 집. 왼쪽은 낮게, 오른쪽은 높게.')}</LbRemember>
+    </LbPage>,
+
+    // 3. the white keys of each house
+    <LbPage key="3" no={3} chId={ch} kicker={t('Step 2', '2단계')} title={t('The white keys of each house', '집마다 딸린 흰건반')}
+      teacher={<>{t('This is the chapter\'s key idea: the white keys belong to a house. 3 at the small house, 4 at the big one -- 3 + 4 = 7, then the street repeats. A student who sees this grouping finds every note name (and later every scale fingering) from the pattern, not by counting from the bottom.', '이 챕터의 핵심이에요: 흰건반은 집에 딸려 있어요. 작은 집에 3개, 큰 집에 4개 -- 3 + 4 = 7, 그리고 거리가 반복돼요. 이 묶음이 보이는 학생은 모든 음이름을 (나중에는 스케일 손가락 번호까지) 맨 아래부터 세지 않고 패턴에서 찾아요.')}</>}>
+      <LbLive still={<LbPic h={235}><div style={{width:'100%',maxWidth:470,margin:'0 auto'}}><PenArt shapes={art3} vb={[0, -10, 300, 172]} label={t('One octave: a bracket under the small house\'s 3 white keys and the big house\'s 4', '한 옥타브: 작은 집의 흰건반 3개와 큰 집의 4개 아래에 묶음 표시')}/></div></LbPic>} live={<WhoseHouse/>}/>
+      <LbSay>{LANG === 'ko' ? <>흰건반은 아무 데나 있는 게 아니라 <b>어느 지붕 아래</b>에 살아요. 작은 지붕 아래에는 흰건반 <b>3개</b>(왼쪽 문, 집 안, 오른쪽 문), 큰 지붕 아래에는 <b>4개</b>가 살아요. 그림의 연한 색이 누가 어느 집 식구인지 보여 줘요. 3 + 4 = <b>7</b> -- 일곱 개가 지나면 거리가 처음부터 반복돼요.</> : <>A white key is never just anywhere -- each one lives <b>under a roof</b>. Under the small roof live <b>3</b> white keys (left door, inside, right door); under the big roof live <b>4</b>. The faint colours in the picture show who belongs to which house. 3 + 4 = <b>7</b> -- after seven, the street starts again.</>}</LbSay>
+      <LbPiano steps={LANG === 'ko' ? [
+        <>작은 집을 찾아 그 흰건반 <b>3개</b>를 차례로 쳐요: 왼쪽 문, 집 안, 오른쪽 문.</>,
+        <>옆의 큰 집에서 흰건반 <b>4개</b>를 차례로 쳐요.</>,
+        <>"3개... 4개... 3개... 4개..." 하고 말하면서 피아노 끝까지 올라가요.</>,
+      ] : [
+        <>Find a small house and play its <b>3</b> white keys in turn: left door, inside, right door.</>,
+        <>Move to the big house next door and play its <b>4</b> white keys in turn.</>,
+        <>Travel up the whole piano saying "three... four... three... four..."</>,
+      ]}/>
+      <LbRemember>{t('Every white key lives under a roof: 3 under the small one, 4 under the big.', '흰건반은 모두 지붕 아래 살아요: 작은 지붕에 3개, 큰 지붕에 4개.')}</LbRemember>
+    </LbPage>,
+
+    // 4. the seven letter names
+    <LbPage key="4" no={4} chId={ch} kicker={t('Step 3', '3단계')} title={t('The seven letter names', '일곱 글자 음이름')}
+      teacher={<>{t('Anchor C and F at their doors; the rest follow by walking. Watch for "H" (there is none -- after G comes A again) and for counting from A at the bottom. ', 'C와 F를 각자의 문에 닻으로 내려요; 나머지는 걸어가며 따라와요. "H"를 찾거나(없어요 -- G 다음은 다시 A) 맨 아래 A부터 세는 습관을 봐 주세요. ')}{t('Letters only here; 도레미 alongside (Korean mode) is an open choice.', '여기서는 알파벳만; 한국어 모드의 도레미 병기는 아직 열린 선택이에요.')}</>}>
+      <LbLive still={<LbPic h={235}><div style={{width:'100%',maxWidth:470,margin:'0 auto'}}><PenArt shapes={art4} vb={[0, 0, 300, 150]} label={t('One octave with its letter names; C at the small house\'s left door and F at the big house\'s, both in coral', '음이름이 적힌 한 옥타브; 작은 집 왼쪽 문의 C와 큰 집 왼쪽 문의 F가 코랄색이에요')}/></div></LbPic>} live={<><KeyHouses/><WhichLetter/></>}/>
+      <LbSay>{LANG === 'ko' ? <>음악은 글자 <b>일곱 개</b>만 써요: <b>C D E</b>는 작은 집에, <b>F G A B</b>는 큰 집에 살아요. <b>C는 작은 집의 왼쪽 문</b>, <b>F는 큰 집의 왼쪽 문</b> -- 문 두 개만 외우면 나머지는 걸어가며 읽을 수 있어요. G 다음은? 다시 A예요.</> : <>Music uses just <b>seven letters</b>: <b>C D E</b> live at the small house and <b>F G A B</b> at the big one. <b>C is the small house’s left door</b> and <b>F is the big house’s</b> -- learn the two doors, and you can walk to every other name. After G? A again.</>}</LbSay>
+      <LbPiano steps={LANG === 'ko' ? [
+        <>맨 아래부터 맨 위까지, <b>모든 C</b>를 찾아 쳐요 -- 작은 집의 왼쪽 문마다 하나씩이에요.</>,
+        <>이제 <b>모든 F</b>를 찾아 쳐요 -- 큰 집의 왼쪽 문이에요.</>,
+        <>누가 글자를 하나 말하면(예: D, G, B), 두 집을 보고 그 건반을 찾아 쳐요.</>,
+      ] : [
+        <>From the bottom to the top, find and play <b>every C</b> -- one at each small house’s left door.</>,
+        <>Now find and play <b>every F</b> -- the big house’s left door.</>,
+        <>Someone says a letter (D, G, B...); use the two houses to find that key and play it.</>,
+      ]}/>
+      <LbRemember>{t('C D E at the small house, F G A B at the big -- and after G comes A.', 'C D E는 작은 집에, F G A B는 큰 집에 -- G 다음은 다시 A.')}</LbRemember>
+    </LbPage>,
+
+    // 5. the whole piano & middle C
+    <LbPage key="5" no={5} chId={ch} kicker={t('Step 4', '4단계')} title={t('The whole piano & middle C', '피아노 전체와 가운데 도')}
+      teacher={<>{t('Tick each house while counting so none is counted twice. The lonely black key is A♯0/B♭0, the second key from the bottom. ', '세면서 집마다 표시하면 두 번 세지 않아요. 외로운 검은건반은 맨 아래에서 두 번째 건반(A♯0/B♭0)이에요. ')}{t('"Kennel" for the lonely key -- your call.', '외로운 건반의 "개집" -- 선생님이 정해 주세요.')}</>}>
+      <LbLive still={<LbPic h={210} pad="14px 8px"><div style={{width:'100%'}}><PenArt shapes={art5} vb={[0, 14, P_W, 140]} label={t('All 88 keys: 7 small and 7 big houses, the kennel, and middle C where the low and high voices meet', '88개 건반 전체: 작은 집 7채와 큰 집 7채, 개집, 그리고 낮은 목소리와 높은 목소리가 만나는 가운데 도')}/></div></LbPic>} live={<WholePiano/>}/>
+      <LbSay>{LANG === 'ko' ? <>진짜 피아노는 건반 <b>88개</b> -- 그래도 작은 집 7채, 큰 집 7채뿐이에요. <b>4번째 작은 집</b>까지 세면 그 왼쪽 문이 <b>가운데 도(middle C)</b>: 왼쪽은 낮은 목소리 나라, 오른쪽은 높은 목소리 나라, 가운데 도는 <b>둘이 만나는 문</b>이에요.</> : <>A real piano has <b>88 keys</b> -- yet still only 7 small houses and 7 big ones. Count to the <b>4th small house</b>: its left door is <b>middle C</b>. To its left live the low voices, to its right the high voices -- middle C is <b>the door where they meet</b>.</>}</LbSay>
+      <LbPiano steps={LANG === 'ko' ? [
+        <>맨 아래부터 <b>작은 집</b>을 세어요: 1... 7까지, 집마다 짚으면서.</>,
+        <>맨 아래의 <b>외로운 검은건반</b>을 찾아요 -- 바로 옆이 가장 낮은 건반이에요.</>,
+        <><b>가운데 도</b>를 치고, 한 집 아래의 C(더 낮은 목소리)와 한 집 위의 C(더 높은 목소리)도 쳐 봐요.</>,
+      ] : [
+        <>Count the <b>small houses</b> from the bottom: 1 up to 7, touching each one.</>,
+        <>Find the <b>lonely black key</b> at the very bottom -- right beside it is the lowest key of all.</>,
+        <>Play <b>middle C</b>; then the C one house lower (a lower voice) and one house higher (a higher one).</>,
+      ]}/>
+      <LbRemember>{t('Middle C: just left of the 4th small house -- where low and high meet.', '가운데 도: 4번째 작은 집 바로 왼쪽 -- 낮음과 높음이 만나는 곳.')}</LbRemember>
+    </LbPage>,
+
+    // 6. play on the patterns
+    <LbPage key="6" no={6} chId={ch} kicker={t('Play', '연주')} title={t('Play on the patterns', '패턴 위에서 연주')}
+      teacher={<>{t('Fingers 2 3 4 only, in both hands -- 1 and 5 wait for C position. The legato tip: like a relay baton -- hold the key until the next one plays, and the moment it sounds, release the old one. No gap between the two sounds. ', '양손 모두 2 3 4번만 써요 -- 1번과 5번은 C 포지션에서 만나요. 레가토 팁: 릴레이 바통처럼 -- 다음 음을 누를 때까지 손을 떼지 않고, 다음 음이 울리는 순간 잡고 있던 음을 놓아요. 두 소리 사이에 틈이 없게. ')}{t('Echo: 2-3 black keys, straight back; grow to 4-5.', '에코: 검은건반 2-3개를 바로 따라 치고, 쉬워지면 4-5개로.')}</>}>
+      <LbOnly print><LbPic h={175}><div style={{flex:'1 1 200px',minWidth:0,maxWidth:300}}><PenArt shapes={art6} vb={[0, 0, 258, 126]} label={t('Right-hand fingers 2, 3 and 4 on the big roof\'s three black keys', '큰 지붕의 검은건반 세 개 위에 오른손 2, 3, 4번 손가락')}/></div><LbFig art="keys-hand-R" h={142}/></LbPic></LbOnly>
+      <LbSay>{LANG === 'ko' ? <>이제 지도가 보답할 차례예요. 첫 튠에는 악보가 필요 없어요: <b>검은건반 지붕</b>과 양손의 <b>2, 3, 4번</b> 손가락이면 돼요. <b>꿀처럼 매끄럽게</b>(레가토) -- 바통 터치하듯, 다음 음이 울리는 순간 앞의 손가락이 놓아요.</> : <>Now the map pays you back. Your first tunes need no written notes: just the <b>black-key roofs</b> and fingers <b>2, 3, 4</b> of both hands. Play <b>smooth as honey</b> (legato) -- like a relay baton, the old finger lets go the moment the new note sounds.</>}</LbSay>
+      <LbOnly print><div style={{zoom:0.85}}><LbTune name="Hot Cross Buns" how={t('right hand 2 3 4 on the big roof; one circle = one steady beat', '오른손 2 3 4를 큰 지붕에; 동그라미 하나 = 일정한 박 하나')} seq={hcb}/></div></LbOnly>
+      <LbOnly screen><BlackKeySong/></LbOnly>
+      <LbOnly screen><BlackKeyJam/></LbOnly>
+      <div style={{border:'1px solid #ece6d8',borderRadius:12,padding:'7px 12px',fontSize:13.5,lineHeight:1.5,color:BK.ink}}>
+        <b style={{fontFamily:LB_SERIF,fontSize:15.5}}>{t('More tunes that live on the black keys', '검은건반에 사는 다른 노래들')}</b> — {t('left hand 2 3 on the small roof, right hand 2 3 4 on the big one:', '왼손 2 3은 작은 지붕에, 오른손 2 3 4는 큰 지붕에:')} <b>Mary Had a Little Lamb</b>{t(' (떴다 떴다 비행기)', ' (떴다 떴다 비행기)')}, <b>Old MacDonald</b>, <b>Rain Rain Go Away</b>. {t('All famous, all free to use -- the finger rows are in the app and the Workbook.', '모두 유명하고 저작권 걱정 없는 곡이에요 -- 손가락 번호 악보는 앱과 워크북에 있어요.')}</div>
+      <LbPiano steps={LANG === 'ko' ? [
+        <>가운데쯤의 큰 지붕에 오른손 <b>2, 3, 4</b>를 올리고, 노래하면서 천천히: <b>4 - 3 - 2...</b></>,
+        <>왼손 <b>2, 3</b>을 작은 지붕에 올리고, 두 손을 번갈아 써서 다른 노래도 쳐 봐요.</>,
+        <><b>에코:</b> 누가 검은건반 두세 개를 치면 똑같이 바로 따라 쳐요. 그다음 나만의 튠!</>,
+      ] : [
+        <>Right-hand <b>2, 3, 4</b> on a big roof near the middle; sing and play slowly: <b>4 - 3 - 2...</b></>,
+        <>Put left-hand <b>2, 3</b> on the small roof and try the other tunes, hands taking turns.</>,
+        <><b>Echo:</b> someone plays two or three black keys; you play them straight back. Then make up your own tune!</>,
+      ]}/>
+      <LbRemember>{t('Legato: a relay baton -- the old finger lets go as the new note sounds.', '레가토: 릴레이 바통 -- 새 음이 울리는 순간 앞 손가락이 놓아요.')}</LbRemember>
+    </LbPage>,
+
+    // 7. my five checks
+    <LbPage key="7" no={7} chId={ch} kicker={t('Step 5', '5단계')} title={t('My five checks', '나의 다섯 가지 확인')}
+      teacher={<>{t('Chapter 1\'s five checks still come first, every time at the piano. These five are this chapter\'s own: the student shows you each one on the keyboard; you only correct. All five easy? Do the Chapter check-up in the Workbook.', '1챕터의 다섯 가지 확인은 여전히 피아노 앞에서 늘 먼저예요. 이 다섯 가지는 이 챕터만의 확인이에요: 학생이 건반 위에서 직접 보여 주고, 선생님은 고쳐 주기만 해요. 다 쉬워지면 워크북의 챕터 점검을 해요.')}</>}>
+      <LbSay>{t('Show, don\'t tell! Give yourself a star for each check in each lesson.', '말로 말고, 직접 보여 줘요! 레슨마다 확인 하나에 별 하나씩 칠해요.')}</LbSay>
+      <LbLive still={<div style={{display:'flex',flexDirection:'column',gap:9,flex:'1 1 auto'}}>
+        <div style={{display:'grid',gridTemplateColumns:'110px 1fr repeat(6, 34px)',gap:8,alignItems:'end',fontSize:11,fontWeight:800,color:BK.muted,textAlign:'center'}}><span/><span style={{textAlign:'right',paddingRight:6}}>{t('Lesson', '레슨')}</span>{[1, 2, 3, 4, 5, 6].map(n => <span key={n}>{n}</span>)}</div>
+        {checksRows.map(([a, vb, txt], i) => (
+          <div key={i} style={{display:'grid',gridTemplateColumns:'110px 1fr repeat(6, 34px)',gap:8,alignItems:'center',border:'1px solid #ece6d8',borderRadius:12,padding:'6px 8px',flex:'1 1 auto'}}>
+            <div style={{display:'flex',justifyContent:'center'}}><PenArt shapes={chkArts[a]} vb={vb} style={{width:92}}/></div>
+            <div style={{fontSize:15,fontWeight:800,color:BK.ink}}>{txt}</div>
+            {[1, 2, 3, 4, 5, 6].map(n => <span key={n} style={{width:30,height:30,border:'1.5px solid ' + BK.line,borderRadius:8,justifySelf:'center',display:'flex',alignItems:'center',justifyContent:'center'}}><BkStarG size={14} fill="#ece6d8"/></span>)}
+          </div>))}
+      </div>} live={<FiveChecks376 storeKey="pb_five_fs_v1" rows={checksRows.map(([a, vb, txt]) => [{ shapes: chkArts[a], vb }, txt])}/>}/>
+      <LbRemember>{t('Pattern first, names second -- the keyboard is a map you can read.', '패턴 먼저, 이름은 그다음 -- 건반은 읽을 수 있는 지도예요.')}</LbRemember>
+    </LbPage>,
+  ];
+}
+function FirstStepsLessonBook() { return <>{fsLbPages(false)}</>; }
+
+
+// ─── the chapter's own small tools (screen only) ───
+// Whose house? tap any white key: its roof-mates light up and the house answers
+function WhoseHouse() {
+  const [pick, setPick] = useState(null);   // key index
+  const marks = {};
+  let msg = t('Tap any white key.', '흰건반을 아무거나 눌러 봐요.');
+  if (pick != null) {
+    const pc = pick % 12, base = Math.floor(pick / 12) * 12;
+    const small = [0, 2, 4].includes(pc);
+    (small ? [0, 2, 4] : [5, 7, 9, 11]).forEach(k => { marks[base + k] = 'target'; });
+    marks[pick] = 'good';
+    msg = small ? t('This key lives under the SMALL roof -- one of its 3.', '이 건반은 작은 지붕 아래 살아요 -- 3개 식구 중 하나!')
+      : t('This key lives under the BIG roof -- one of its 4.', '이 건반은 큰 지붕 아래 살아요 -- 4개 식구 중 하나!');
+  }
+  return (
+    <div className="try-box" data-whose-house style={actBox}>
+      <div style={actTitle}>{t('Whose house is this?', '누구네 집 건반일까?')}</div>
+      <div style={actNote}>{t('Every white key lives under a roof: 3 under the small one, 4 under the big. Tap a white key and watch its house light up.', '흰건반은 모두 지붕 아래 살아요: 작은 지붕에 3개, 큰 지붕에 4개. 흰건반을 누르면 그 집 식구가 모두 켜져요.')}</div>
+      <TapKeyboard octaves={2} tint marks={marks} onTap={(k) => { if (!PC_INFO[k % 12].white) { playKey(k); return; } setPick(k); playKey(k); }}/>
+      <div style={{textAlign:'center',fontSize:14.5,fontWeight:800,color:'var(--navy)',minHeight:22,marginTop:6}}>{msg}</div>
+    </div>
+  );
+}
+// Which letter? the teacher-free naming game: find any key with that name
+function WhichLetter() {
+  const L7 = ['C', 'D', 'E', 'F', 'G', 'A', 'B'], PCS = [0, 2, 4, 5, 7, 9, 11];
+  const [ask, setAsk] = useState(null);
+  const [marks, setMarks] = useState({});
+  const [score, setScore] = useState({ right: 0, tries: 0 });
+  function next(prev) { let n; do { n = L7[Math.floor(Math.random() * 7)]; } while (n === prev); setAsk(n); setMarks({}); }
+  function tap(k) {
+    playKey(k);
+    if (!ask || !PC_INFO[k % 12].white) return;
+    const ok = (k % 12) === PCS[L7.indexOf(ask)];
+    setMarks({ [k]: ok ? 'good' : 'bad' });
+    setScore(x => ({ right: x.right + (ok ? 1 : 0), tries: x.tries + 1 }));
+    if (ok) setTimeout(() => next(ask), 650);
+  }
+  return (
+    <div className="try-box" data-which-letter style={actBox}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div style={actTitle}>{t('Find the letter', '글자 찾기')}</div>
+        {ask && <div style={{fontSize:13,fontWeight:800,color:'var(--muted)'}}>{score.right}/{score.tries}</div>}
+      </div>
+      <div style={actNote}>{t('Use the two houses: C and F are the left doors. Tap ANY key with the asked name -- there is one in every octave.', '두 집을 이용해요: C와 F는 왼쪽 문이에요. 말한 이름의 건반을 아무 옥타브에서나 찾아 눌러요.')}</div>
+      {ask && <div style={{textAlign:'center',fontFamily:"'Playfair Display', Georgia, serif",fontSize:34,fontWeight:900,color:'var(--coral)',margin:'2px 0 6px'}}>{ask}</div>}
+      <TapKeyboard octaves={2} tint marks={marks} onTap={tap}/>
+      <div style={{textAlign:'center',marginTop:8}}>{!ask ? <button className="ghost-btn" onClick={() => { setScore({ right: 0, tries: 0 }); next(); }}>{t('▶ Play', '▶ 시작')}</button>
+        : <button className="ghost-btn" onClick={() => next(ask)}>{t('Skip ▶', '건너뛰기 ▶')}</button>}</div>
+    </div>
+  );
+}
+// the online lesson: the book's pages 2-7 as its six steps (old ticks stay where their content went)
+const FS_STORE = [1, 5, 6, 2, 3, 7];
+function FirstStepsLearn({ onStart }) {
+  const pages = fsLbPages(true);
+  const opener = pages[0];
+  return (
+    <Lesson id="first-steps" title={t('Keyboard Patterns & Note Names', '건반 패턴과 음이름')} onStart={onStart} noArt
+      head={<LbScreenCtx.Provider value={true}><BkChapterCtx.Provider value="first-steps"><div className="lb-screen lb-open" style={{display:'flex',flexDirection:'column',gap:12,margin:'0 0 8px'}}>{opener.props.children}</div></BkChapterCtx.Provider></LbScreenCtx.Provider>}>
+      {pages.slice(1).map((pg, i) => (
+        <Step key={i} storeAs={FS_STORE[i]} title={pg.props.title}>
+          <LbScreenPage page={pg}/>
+        </Step>
+      ))}
+    </Lesson>
+  );
+}
+
+const LESSON_BOOKS = { 'posture-hands': PostureLessonBook, 'first-steps': FirstStepsLessonBook };
 // Printed alone, a chapter's pages use the Workbook's fixed A4 frame (BookRoot's fixed css). Printed with chapters
 // that are still the app lesson (?ch=all), they sit inside that book's page margins: 264 mm tall, no padding.
 const LB_CSS = PB_KID_CSS + ` .lb-page button { display: none !important; }
