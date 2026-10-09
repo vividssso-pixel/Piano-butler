@@ -11518,13 +11518,19 @@ const FINGER_LEVELS = [
 const FS_LEVELS = [
   { n: 1, label: 'High or low?',    kind: 'high', time: 6 },
   { n: 2, label: 'Small house or big house?', kind: 'house', time: 6 },
-  { n: 3, label: "What's this key's name?", kind: 'name', time: 7 },
+  { n: 3, label: 'Whose house is this white key?', kind: 'whose', time: 6 },
 ];
 function genFsQuestion(lv, prev) {
   const uid = Math.random();
   if (lv.kind === 'finger') { let hand, f, g = 0; do { hand = Math.random() < 0.5 ? 'L' : 'R'; f = 1 + Math.floor(Math.random() * 5); } while (prev && prev.key === hand + f && g++ < 10); return { kind: 'finger', key: hand + f, hand, f, answer: String(f), choices: ['1', '2', '3', '4', '5'], uid }; }
   if (lv.kind === 'high') { const hi = Math.random() < 0.5; return { kind: 'high', key: uid, hi, f: hi ? 880 * Math.pow(2, Math.floor(Math.random() * 7) / 12) : 98 * Math.pow(2, Math.floor(Math.random() * 7) / 12), answer: hi ? 'High' : 'Low', choices: ['Low', 'High'], uid }; }
   if (lv.kind === 'loud') { const loud = Math.random() < 0.5; return { kind: 'loud', key: uid, loud, answer: loud ? 'Loud (f)' : 'Soft (p)', choices: ['Soft (p)', 'Loud (f)'], uid }; }
+  if (lv.kind === 'whose') {   // Phase 395: which house does this white key belong to?
+    const PCS = [0, 2, 4, 5, 7, 9, 11]; let wi, g = 0;
+    do { wi = Math.floor(Math.random() * 7); } while (prev && prev.key === 'w' + wi && g++ < 10);
+    const o = Math.floor(Math.random() * 3), small = wi < 3;
+    return { kind: 'whose', key: 'w' + wi, k: o * 12 + PCS[wi], small, answer: small ? 'Small house' : 'Big house', choices: ['Small house', 'Big house'], uid };
+  }
   if (lv.kind === 'name') {
     const L7 = ['C', 'D', 'E', 'F', 'G', 'A', 'B'], PCS = [0, 2, 4, 5, 7, 9, 11];
     let wi, g = 0;
@@ -11546,7 +11552,7 @@ function FsQuestion({ q, given, locked, onAnswer, pixel }) {
   const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
   useEffect(() => { if (q.kind === 'high' || q.kind === 'loud') { const t = setTimeout(() => playFs(q), 250); return () => clearTimeout(t); } }, [q.uid]);
   const cls = (c) => btnCls + (!done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '');
-  const title = (LANG === 'ko' ? { finger: '몇 번 손가락에 불이 켜졌나요?', name: '이 건반의 이름은 무엇일까요?', high: '들어 봐요: 높을까, 낮을까?', loud: '들어 봐요: 클까, 작을까?', house: '어떤 집일까요?' } : { finger: 'Which finger number is lit?', name: "What is this key's name?", high: 'Listen: high or low?', loud: 'Listen: loud or soft?', house: 'Which house is this?' })[q.kind];
+  const title = (LANG === 'ko' ? { finger: '몇 번 손가락에 불이 켜졌나요?', whose: '이 흰건반은 누구네 집일까요?', name: '이 건반의 이름은 무엇일까요?', high: '들어 봐요: 높을까, 낮을까?', loud: '들어 봐요: 클까, 작을까?', house: '어떤 집일까요?' } : { finger: 'Which finger number is lit?', whose: 'Whose house is this white key?', name: "What is this key's name?", high: 'Listen: high or low?', loud: 'Listen: loud or soft?', house: 'Which house is this?' })[q.kind];
   const marks = {}; if (q.kind === 'house') q.keys.forEach(k => { marks[k] = 'target'; });
   return (<div>
     <p style={pixel ? {fontSize:11.5,textAlign:'center'} : {fontSize:15,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? title.toUpperCase() : title}</p>
@@ -11554,6 +11560,7 @@ function FsQuestion({ q, given, locked, onAnswer, pixel }) {
     {(q.kind === 'high' || q.kind === 'loud') && <div style={{textAlign:'center',marginBottom:12}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => playFs(q)}>{pixel ? t('♪ AGAIN', '♪ 다시') : t('♪ Play again', '♪ 다시 듣기')}</button></div>}
     {q.kind === 'house' && <div style={{marginBottom:12}}><TapKeyboard octaves={3} marks={marks} pixel={pixel}/></div>}
     {q.kind === 'name' && <div style={{marginBottom:12}}><TapKeyboard octaves={3} marks={{ [q.k]: 'target' }} tint pixel={pixel}/></div>}
+    {q.kind === 'whose' && <div style={{marginBottom:12}}><TapKeyboard octaves={3} marks={{ [q.k]: 'target' }} pixel={pixel}/></div>}
     <div style={{display:'grid',gridTemplateColumns:'repeat(' + (q.choices.length === 5 ? 5 : q.choices.length === 4 ? 4 : 2) + ',1fr)',gap:8}}>{q.choices.map(c => <button key={c} disabled={locked} className={cls(c)} style={{padding:'16px 0',fontSize:pixel ? 10 : 18}} onClick={() => onAnswer(c)}>{fsLabel(c)}</button>)}</div>
   </div>);
 }
@@ -17473,27 +17480,52 @@ function FingerNumbers376() {
 }
 // page 7: a star for each check in each lesson (kept on this device)
 const FIVE_KEY = 'pb_five_checks_v1';
+// Phase 395 (Sohyun 2026-10-09): a check is not tied to lessons -- each one is ticked as it goes: not yet, nearly, got it!
+const lbStages = () => [t('Not yet', '아직'), t('Nearly', '거의'), t('Got it!', '됐어요!')];
+function LbStageIcon({ i, on }) {
+  const c = on ? BK.coral : '#c9c3b2';
+  if (i === 2) { const pts = Array.from({ length: 10 }, (_, k) => { const r = k % 2 ? 2.9 : 6.8, an = Math.PI / 5 * k - Math.PI / 2; return (8 + r * Math.cos(an)).toFixed(2) + ',' + (8.4 + r * Math.sin(an)).toFixed(2); }).join(' ');
+    return <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><polygon points={pts} fill={on ? BK.coral : 'none'} stroke={c} strokeWidth="1.6" strokeLinejoin="round"/></svg>; }
+  return <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke={c} strokeWidth="1.8"/>{i === 1 && <path d="M8 2 A6 6 0 0 1 8 14 Z" fill={on ? BK.coral : '#ddd7c6'}/>}</svg>;
+}
+// the printed five checks: three boxes in each row
+function LbStageRows({ rows }) {
+  const S = lbStages(), cols = '96px 1fr repeat(3, 62px)';
+  return <div style={{display:'flex',flexDirection:'column',gap:5}}>
+    <div style={{display:'grid',gridTemplateColumns:cols,gap:7,alignItems:'end',fontSize:11,fontWeight:800,color:BK.muted,textAlign:'center'}}>
+      <span style={{gridColumn:'1 / 3',textAlign:'left',fontFamily:LB_SERIF,fontSize:18,color:BK.ink,whiteSpace:'nowrap'}}>{t('At the piano', '피아노 앞에서')}</span>
+      {S.map((l, i) => <span key={i} style={i === 2 ? {color:BK.coral} : null}>{l}</span>)}
+    </div>
+    {rows.map(([pic, txt], i) => <div key={i} style={{display:'grid',gridTemplateColumns:cols,gap:7,alignItems:'center',border:'1px solid #ece6d8',borderRadius:10,padding:'3px 8px'}}>
+      <div style={{display:'flex',justifyContent:'center'}}>{pic}</div>
+      <div style={{fontSize:14,fontWeight:800,color:BK.ink}}>{txt}</div>
+      {[0, 1, 2].map(k => <span key={k} style={{width:30,height:30,border:'1.5px solid ' + BK.line,borderRadius:15,justifySelf:'center',display:'flex',alignItems:'center',justifyContent:'center'}}><LbStageIcon i={k}/></span>)}
+    </div>)}
+    <div style={{fontSize:11.5,color:BK.muted}}>{t('Tick a box each time it gets better: not yet, then nearly, then got it!', '좋아질 때마다 한 칸씩 표시해요: 아직, 거의, 그리고 됐어요!')}</div>
+  </div>;
+}
+// the app's five checks: tap how each one is going
 function FiveChecks376({ rows, storeKey }) {
-  const SK = storeKey || FIVE_KEY;
+  const SK = (storeKey || FIVE_KEY) + ':stage';
   const [st, setSt] = useState(() => { try { return JSON.parse(localStorage.getItem(SK)) || {}; } catch (e) { return {}; } });
-  const tog = (r, c) => { const k = r + '-' + c, nx = { ...st, [k]: !st[k] }; if (!nx[k]) delete nx[k]; setSt(nx); try { localStorage.setItem(SK, JSON.stringify(nx)); } catch (e) {} };
-  const n = Object.keys(st).length;
+  const set = (r, k) => { const nx = { ...st }; if (nx[r] === k) delete nx[r]; else nx[r] = k; setSt(nx); try { localStorage.setItem(SK, JSON.stringify(nx)); } catch (e) {} };
+  const S = lbStages(), got = rows.filter((_, r) => st[r] === 2).length;
   return (
     <div data-five-checks style={{display:'flex',flexDirection:'column',gap:7}}>
       {rows.map(([a, txt], r) => (
-        <div key={a} style={{border:'1px solid #ece6d8',borderRadius:12,padding:'6px 8px 8px',display:'flex',flexWrap:'wrap',alignItems:'center',gap:'4px 10px'}}>
+        <div key={r} style={{border:'1px solid #ece6d8',borderRadius:12,padding:'6px 8px 8px',display:'flex',flexWrap:'wrap',alignItems:'center',gap:'6px 10px'}}>
           <div style={{flex:'1 1 200px',display:'flex',alignItems:'center',gap:10,minWidth:0}}>
             <div style={{flex:'0 0 64px',display:'flex',justifyContent:'center'}}>{typeof a === 'string' ? <PbArt name={a} h={a === 'chk-hand' ? 38 : 52}/> : <PenArt shapes={a.shapes} vb={a.vb} style={{width:64}}/>}</div>
             <div style={{fontSize:14,fontWeight:800,color:BK.ink,lineHeight:1.3}}>{txt}</div>
           </div>
-          <div style={{flex:'0 0 auto',display:'flex',gap:4,marginLeft:'auto'}}>{[1, 2, 3, 4, 5, 6].map(c => { const on = !!st[r + '-' + c]; return (
-            <button key={c} onClick={() => tog(r, c)} aria-pressed={on} aria-label={txt + ', ' + t('lesson ', '레슨 ') + c} title={t('Lesson ', '레슨 ') + c}
-              style={{width:30,height:36,border:'1.5px solid ' + (on ? BK.coral : BK.line),borderRadius:7,background:on ? '#fdeee8' : '#fff',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:1,padding:0,cursor:'pointer'}}>
-              <BkStarG size={14} fill={on ? BK.coral : '#ece6d8'}/><span style={{fontSize:9,fontWeight:800,color:BK.muted,lineHeight:1}}>{c}</span></button>); })}</div>
+          <div style={{flex:'0 0 auto',display:'flex',gap:4,marginLeft:'auto'}}>{[0, 1, 2].map(k => { const on = st[r] === k; return (
+            <button key={k} onClick={() => set(r, k)} aria-pressed={on} aria-label={txt + ': ' + S[k]}
+              style={{height:34,border:'1.5px solid ' + (on ? BK.coral : BK.line),borderRadius:17,background:on ? '#fdeee8' : '#fff',display:'flex',alignItems:'center',gap:4,padding:'0 9px',fontSize:11.5,fontWeight:800,color:on ? BK.coral : BK.muted,cursor:'pointer'}}>
+              <LbStageIcon i={k} on={on}/>{S[k]}</button>); })}</div>
         </div>))}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:12.5,color:BK.muted}}>
-        <span>{t(n + (n === 1 ? ' star' : ' stars') + ' so far (lesson 1 to 6)', '지금까지 별 ' + n + '개 (레슨 1~6)')}</span>
-        {n > 0 && <button className="ghost-btn" style={{fontSize:12,padding:'3px 10px'}} onClick={() => { setSt({}); try { localStorage.removeItem(SK); } catch (e) {} }}>{t('Start again', '처음부터')}</button>}
+        <span>{t(got + ' of ' + rows.length + ': got it!', rows.length + '개 중 ' + got + '개: 됐어요!')}</span>
+        {Object.keys(st).length > 0 && <button className="ghost-btn" style={{fontSize:12,padding:'3px 10px'}} onClick={() => { setSt({}); try { localStorage.removeItem(SK); } catch (e) {} }}>{t('Start again', '처음부터')}</button>}
       </div>
     </div>
   );
@@ -18904,7 +18936,7 @@ const TOOLS = [
   { id: 'finger-numbers', ch: 'posture-hands', title: 'Finger numbers', blurb: '“Show me finger 3!” -- both hands.', C: () => <><ExplPostureHands4/><FingerNumbers376/></> },
   { id: 'arm-alignment', ch: 'posture-hands', title: 'Arm weight & alignment', blurb: 'Move over the diagram -- watch elbow, wrist and finger joints react.', C: () => <ArmAlignment/> },
   { id: 'high-low', ch: 'first-steps', title: 'High or low, loud or soft', blurb: 'Listening games before reading.', C: () => <HighLowGame/> },
-  { id: 'key-houses', ch: 'first-steps', title: 'Small house, big house (black keys)', blurb: 'The black-key map; where C and F live.', C: () => <><ExplFirstSteps1/><KeyHouses/></> },
+  { id: 'key-houses', ch: 'first-steps', title: 'Small house, big house (black keys)', blurb: 'The black-key map: small houses and big houses, all the way up.', C: () => <><ExplFirstSteps1/><KeyHouses modes={['houses']}/></> },
   { id: 'black-key-song', ch: 'first-steps', title: 'First black-key song', blurb: 'Hot Cross Buns and Mary, by rote.', C: () => <BlackKeySong/> },
   { id: 'whole-piano', ch: 'first-steps', title: 'The whole piano (count the houses)', blurb: '88 keys: 7 small houses, 7 big houses -- and where middle C lives.', C: () => <WholePiano/> },
   { id: 'black-key-jam', ch: 'first-steps', title: 'Black-key jam', blurb: 'Play any black keys over a little band -- five notes that always fit.', C: () => <BlackKeyJam/> },
@@ -25887,11 +25919,10 @@ function fsConcepts() {
     { id: 'hs', name: 'Small & big houses', step: '1', page: '2' },
     { id: 'hl', name: 'High & low', step: '1', page: '2' },
     { id: 'wk', name: 'White keys of each house', step: '2', page: '3' },
-    { id: 'ln', name: 'The seven letter names', step: '3', page: '4' },
-    { id: 'mc', name: 'Middle C', step: '4', page: '5', chk: false },
-    { id: 'sg', name: 'Hot Cross Buns', step: '5', page: '6' },
-    { id: 'lg', name: 'Legato', step: '5', page: '6' },
-    { id: 'ck', name: 'My five checks', step: '6', page: '7', chk: false },
+    { id: 'mc', name: 'Middle C', step: '3', page: '4', chk: false },
+    { id: 'sg', name: 'Hot Cross Buns', step: '4', page: '5' },
+    { id: 'lg', name: 'Legato', step: '4', page: '5' },
+    { id: 'ck', name: 'My five checks', step: '5', page: '6', chk: false },
   ];
 }
 function FirstStepsWorkbook({ startNo = 1, frames = true }) {
@@ -25948,30 +25979,9 @@ function FirstStepsWorkbook({ startNo = 1, frames = true }) {
     <Faces/>
   </>);
 
-  // 4 (faces "The seven letter names")
+  // 4 (faces "The whole piano & middle C")
   P(<>
     <WbTop step={3}/>
-    <Part kind="together" title="Write the names on the doors" how="C is the small house's left door, F is the big house's. Write the other five letters. The first one is done.">
-      <KeysCell ex><PaperKeys start="C" whites={7} w={68} h={150} labels={{ 0: 'C', 1: 'D', 3: 'F' }} ex={{ 1: true }} boxes={[2, 4, 5, 6]} fills={FS_TINT(7)}/></KeysCell>
-      <div style={{fontSize:11.5,color:BK.muted,marginTop:4}}>Example: D sits inside the small house, between its two black keys.</div>
-    </Part>
-    <Part kind="home" title="Name the dotted key" how="Find the two left doors first (C and F), then walk to the dot. Write its letter.">
-      <BkGrid cols={3} gap="8px 12px">{W.s4.map((w, i) => <ExCell key={i} n={i + 1} ex={i === 0}><div style={{display:'flex',alignItems:'center',gap:10,padding:'14px 4px 4px'}}>
-        <div style={{flex:1}}><PaperKeys start="C" whites={10} w={17} h={56} dots={[w]}/></div>{nvBox(i === 0, fsLetter(w), 34, 28)}
-      </div></ExCell>)}</BkGrid>
-    </Part>
-    <Part kind="play" title="Spell a word on the keys" how="Music only uses A B C D E F G -- but they make words! Find each word on the piano and play it letter by letter. Then make up your own.">
-      <div style={{display:'flex',flexWrap:'wrap',gap:'8px 12px',alignItems:'center'}}>
-        {['BAG', 'CAFE', 'FACE', 'BEAD', 'CAGE', 'BADGE'].map(w => <span key={w} style={{display:'inline-flex',alignItems:'center',gap:6,border:'1px solid #ece6d8',borderRadius:8,padding:'5px 10px',fontFamily:"'Playfair Display', Georgia, serif",fontSize:18,fontWeight:900,color:BK.ink,letterSpacing:'0.12em'}}>{w}<span style={{width:14,height:14,border:'1.5px solid ' + BK.ink,borderRadius:4}}/></span>)}
-      </div>
-      <div style={{display:'flex',alignItems:'center',gap:8,marginTop:12,fontSize:13,color:BK.ink}}>My word: {Array.from({ length: 6 }, (_, i) => <span key={i}>{bkBox(32, 32)}</span>)}</div>
-    </Part>
-    <Faces/>
-  </>);
-
-  // 5 (faces "The whole piano & middle C")
-  P(<>
-    <WbTop step={4}/>
     <Part kind="together" title="Count the houses on a real piano" how="A real piano has 88 keys. Count the small houses together, from left to right, ticking each one.">
       <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'6px 8px 8px',fontSize:10.5,fontWeight:800,color:BK.muted}}>
         <div style={{margin:'0 0 2px'}}>Bottom half -- the low keys, the turtle's end under the sea</div><KeyScene start="A" whites={26} w={24} h={72} houses={false} turtle/>
@@ -25996,9 +26006,9 @@ function FirstStepsWorkbook({ startNo = 1, frames = true }) {
     <Faces/>
   </>);
 
-  // 6 (faces "Play on the patterns")
+  // 5 (faces "Play on the patterns")
   P(<>
-    <WbTop step={5}/>
+    <WbTop step={4}/>
     <Part kind="together" title="Fingers on the roofs" how="Right hand on the big roof: 2 on the first black key, 3 in the middle, 4 on the highest. Write the finger number on each black key.">
       <KeysCell ex><div style={{display:'grid',gridTemplateColumns:'1fr 120px',gap:16,alignItems:'center'}}>
         <div style={{position:'relative'}}><KeyScene start="C" whites={7} w={60} h={118} houses blackNums={{ 3: '2' }}/><div style={{position:'absolute',left:(5 * 60 + 2) / (7 * 60 + 4) * 100 + '%',top:72,transform:'translateX(-50%)'}}>{bkBox(26, 26)}</div><div style={{position:'absolute',left:(6 * 60 + 2) / (7 * 60 + 4) * 100 + '%',top:72,transform:'translateX(-50%)'}}>{bkBox(26, 26)}</div></div>
@@ -26038,10 +26048,10 @@ function FsPaperCheck() {
     <LbPaperHead/>
     {bkSec('A', 'Write S under each small house and B under each big house.')}
     <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'2px 10px'}}><PaperKeys start="C" whites={14} w={30} h={56} boxes={[1, 4, 8, 11]}/></div>
-    {bkSec('B', 'Whose house is the dotted white key? Write S (small) or B (big).')}
-    <BkGrid cols={4} gap="5px 10px">{W.chk.wh.map((w, i) => <BkCell key={i} n={5 + i}><div style={{display:'flex',alignItems:'center',gap:8,padding:'11px 4px 3px'}}><div style={{flex:1}}><PaperKeys start="C" whites={7} w={16} h={40} roofs dots={[w]}/></div>{bkBox(28, 24)}</div></BkCell>)}</BkGrid>
-    {bkSec('C', 'Name the dotted key. Write its letter.')}
-    <BkGrid cols={4} gap="5px 10px">{W.chk.ln.map((w, i) => <BkCell key={i} n={9 + i}><div style={{display:'flex',alignItems:'center',gap:8,padding:'11px 4px 3px'}}><div style={{flex:1}}><PaperKeys start="C" whites={10} w={12} h={38} dots={[w]}/></div>{bkBox(28, 24)}</div></BkCell>)}</BkGrid>
+    {bkSec('B', 'Put a star on the higher dot -- the one nearer the bird.')}
+    <BkGrid cols={4} gap="5px 10px">{W.chk.hl.map((pp, i) => <BkCell key={i} n={5 + i}><div style={{padding:'11px 6px 4px'}}><PaperKeys start="C" whites={10} w={22} h={44} dots={pp}/></div></BkCell>)}</BkGrid>
+    {bkSec('C', 'Whose house is the dotted white key? Write S (small) or B (big).')}
+    <BkGrid cols={4} gap="5px 10px">{W.chk.wh.map((w, i) => <BkCell key={i} n={9 + i}><div style={{display:'flex',alignItems:'center',gap:8,padding:'11px 4px 3px'}}><div style={{flex:1}}><PaperKeys start="C" whites={7} w={16} h={40} roofs dots={[w]}/></div>{bkBox(28, 24)}</div></BkCell>)}</BkGrid>
     {bkSec('D', 'Middle C: count the small houses from the bottom.')}
     <div style={{display:'flex',gap:22,alignItems:'center',fontSize:13,color:BK.ink,padding:'2px 4px'}}><span><b style={{color:BK.coral}}>13</b> Middle C is the left door of small house number {bkBox(32, 24)}</span><span><b style={{color:BK.coral}}>14</b> A piano has {bkBox(44, 24)} keys.</span></div>
     {bkSec('E', 'Hot Cross Buns: which finger plays the dotted key?')}
@@ -26063,19 +26073,16 @@ function FirstStepsTeacher() {
     <TcBlock page={3} title="The white keys of each house" answers={<>{tcAns('TRY IT', ['C D E one colour (twice), F G A B the other (twice)'])}{tcAns('YOUR TURN', W.s3.map(w => fsHouse(w) + ' (' + fsLetter(w) + ')'))}</>}
       watch="This is the chapter's key idea: the white keys belong to a house -- 3 under the small roof, 4 under the big. A student who sees this grouping finds every note name, and later every scale fingering, from the pattern instead of counting from the bottom."
       say="“Every white key lives under a roof.”"/>
-    <TcBlock page={4} title="The seven letter names" answers={<>{tcAns('TRY IT', ['C D E F G A B'])}{tcAns('YOUR TURN', W.s4.map(fsLetter))}<div style={{fontSize:12,color:BK.ink}}>PLAY: any word from A to G, played letter by letter.</div></>}
-      watch="The most common stumble: crossing into F G A at the three-black-key roof. Anchor C and F at their left doors and walk from there. Also watch for an “H” (there is none -- after G comes A again) and for counting up from A at the bottom."
-      say="“C and F are the left doors. Find the door, then walk.”"/>
   </>);
   P(<>
-    <TcBlock page={5} title="The whole piano & middle C" answers={<>{tcAns('TRY IT', ['7 small houses'])}{tcAns('YOUR TURN', ['7 big houses', 'the kennel over the 2nd key from the bottom (A♯0/B♭0)', 'the star on the 24th white key from the left: middle C'])}</>}
+    <TcBlock page={4} title="The whole piano & middle C" answers={<>{tcAns('TRY IT', ['7 small houses'])}{tcAns('YOUR TURN', ['7 big houses', 'the kennel over the 2nd key from the bottom (A♯0/B♭0)', 'the star on the 24th white key from the left: middle C'])}</>}
       watch="Losing count on the long keyboard -- tick each house as it is counted so none is counted twice. Check middle C at the piano, not only on paper."
       say="“Count the small houses to 4. Middle C is the door just to its left -- the ground. Up is the sky, down is the sea.”"/>
-    <TcBlock page={6} title="Play on the patterns" answers={<>{tcAns('TRY IT', ['2 3 4 (left to right)'])}{tcAns('YOUR TURN', [FS_SONG.join(' ')])}<div style={{fontSize:12,color:BK.ink}}>PLAY: one unbroken line through all six pots. Then hear Hot Cross Buns legato.</div></>}
+    <TcBlock page={5} title="Play on the patterns" answers={<>{tcAns('TRY IT', ['2 3 4 (left to right)'])}{tcAns('YOUR TURN', [FS_SONG.join(' ')])}<div style={{fontSize:12,color:BK.ink}}>PLAY: one unbroken line through all six pots. Then hear Hot Cross Buns legato.</div></>}
       watch="Fingers 2 3 4 only, in both hands: 1 and 5 wait for C position. Lifting the hand between notes (a gap) or holding both keys down (a blur). Check the chapter 1 habits while it plays: round hand, wrist back to level. Echo game: play 2-3 black keys, the student plays them straight back; grow to 4-5 as it gets easy."
       say="“Like a relay baton: hold on until the next note sounds, then let the old one go. No gap between the two sounds.”"/>
-    <TcBlock page={7} title="My five checks · the check-up on paper" answers={<>{tcAns('A', ['S B S B'])}{tcAns('B', W.chk.wh.map(w => fsHouse(w) + ' (' + fsLetter(w) + ')'))}{tcAns('C', W.chk.ln.map(fsLetter))}{tcAns('D', ['4 (the 4th small house)', '88'])}{tcAns('E', W.chk.sg.map(f => String(finger[f])))}
-      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Chapter 1's five checks still come first, every time at the piano. This chapter's five checks are shown on the keyboard (find the houses, say 3 and 4, name any white key, find middle C, Hot Cross Buns legato); you only correct. The paper part follows the same order: score each part on its own (A, B, C, E: 4 marks, pass 3+; D: 2 marks). Not passed? Go back to that step's page: A p.2 · B p.3 · C p.4 · D p.5 · E p.6.</div></>}/>
+    <TcBlock page={6} title="My five checks · the check-up on paper" answers={<>{tcAns('A', ['S B S B'])}{tcAns('B', W.chk.hl.map(hi))}{tcAns('C', W.chk.wh.map(w => fsHouse(w) + ' (' + fsLetter(w) + ')'))}{tcAns('D', ['4 (the 4th small house)', '88'])}{tcAns('E', W.chk.sg.map(f => String(finger[f])))}
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Chapter 1's five checks still come first, every time at the piano. This chapter's five checks are shown on the keyboard (find the houses, high and low, say 3 and 4, find middle C, Hot Cross Buns legato); you only correct. The paper part follows the same order: score each part on its own (A, B, C, E: 4 marks, pass 3+; D: 2 marks). Not passed? Go back to that step's page: A and B p.2 · C p.3 · D p.4 · E p.5.</div></>}/>
   </>);
   return <>{pages}</>;
 }
@@ -26535,7 +26542,7 @@ function PhPaperCheck() {
   return <div className="lb-paper" style={{display:'flex',flexDirection:'column'}}>
     <LbPaperHead/>
     {bkSec('A', 'A good set-up? Circle the tick or the cross.')}
-    <BkGrid cols={4} gap="5px 10px">{W.chk.st.map(([id, , ok], i) => <PhPic key={id} art={'q-sit-' + id} ok={ok} n={i + 1} h={50}/>)}</BkGrid>
+    <BkGrid cols={4} gap="5px 10px">{W.chk.st.map(([id, , ok], i) => <PhPic key={id} art={'q-sit-' + id} ok={ok} n={i + 1} h={46}/>)}</BkGrid>
     {bkSec('B', 'A good hand shape? Circle the tick or the cross.')}
     <BkGrid cols={4} gap="5px 10px">{W.chk.hs.map(([id, , ok], i) => <PhPic key={id} art={'q-hand-' + id} ok={ok} n={i + 5} h={40}/>)}</BkGrid>
     {bkSec('C', 'Left or right hand? Write L or R.  D  Which finger is coloured?')}
@@ -33072,17 +33079,8 @@ function postureLbPages(scr = false) {
     // 7. five checks
     <LbPage key="7" no={7} chId={ch} kicker={t('Check-up', '점검')} title={t('My five checks', '나의 다섯 가지 확인')}
       teacher={<>{t('At the start of each lesson, the student says the five checks out loud while doing them; you only correct. When all five are easy, do the paper part on the same page.', '레슨을 시작할 때마다 학생이 다섯 가지를 소리 내어 말하며 직접 해요. 선생님은 고쳐 주기만 해요. 다섯 가지가 다 쉬워지면 워크북의 챕터 점검을 해요.')}</>}>
-      <LbSay>{t('At the piano: before you play, every time -- give yourself a star for each check in each lesson. On paper: do the check-up below.', '피아노 앞에서: 칠 때마다, 치기 전에 먼저 -- 레슨마다 확인 하나에 별 하나씩. 종이에서: 아래 점검을 풀어요.')}</LbSay>
-      <LbLive still={
-      <div style={{display:'flex',flexDirection:'column',gap:5}}>
-        <div style={{display:'grid',gridTemplateColumns:scr ? '64px 1fr repeat(6, 26px)' : '96px 1fr repeat(6, 28px)',gap:scr ? 4 : 7,alignItems:'end',fontSize:10.5,fontWeight:800,color:BK.muted,textAlign:'center'}}><span style={{textAlign:'left',whiteSpace:'nowrap',fontFamily:LB_SERIF,fontSize:18,color:BK.ink}}>{t('At the piano', '피아노 앞에서')}</span><span style={{textAlign:'right',paddingRight:6}}>{t('Lesson', '레슨')}</span>{[1, 2, 3, 4, 5, 6].map(n => <span key={n}>{n}</span>)}</div>
-        {checks5.map(([a, txt], i) => (
-          <div key={i} style={{display:'grid',gridTemplateColumns:scr ? '64px 1fr repeat(6, 26px)' : '96px 1fr repeat(6, 28px)',gap:scr ? 4 : 7,alignItems:'center',border:'1px solid #ece6d8',borderRadius:10,padding:scr ? '4px 6px' : '2px 8px'}}>
-            <div style={{display:'flex',justifyContent:'center'}}><PbArt name={a} h={scr ? (a === 'chk-hand' ? 40 : 52) : a === 'chk-hand' ? 40 : 52}/></div>
-            <div style={{fontSize:scr ? 13 : 14,fontWeight:800,color:BK.ink}}>{txt}</div>
-            {[1, 2, 3, 4, 5, 6].map(n => <span key={n} style={{width:scr ? 24 : 25,height:scr ? 24 : 25,border:'1.5px solid ' + BK.line,borderRadius:8,justifySelf:'center',display:'flex',alignItems:'center',justifyContent:'center'}}><BkStarG size={14} fill="#ece6d8"/></span>)}
-          </div>))}
-      </div>} live={<FiveChecks376 rows={checks5}/>}/>
+      <LbSay>{t('At the piano: before you play, every time -- tick how each one is going: not yet, nearly, or got it! On paper: do the check-up below.', '피아노 앞에서: 칠 때마다, 치기 전에 먼저 -- 하나씩 어떤지 표시해요: 아직, 거의, 됐어요! 종이에서: 아래 점검을 풀어요.')}</LbSay>
+      <LbLive still={<LbStageRows rows={checks5.map(([a, txt]) => [<PbArt name={a} h={a === 'chk-hand' ? 40 : 52}/>, txt])}/>} live={<FiveChecks376 rows={checks5}/>}/>
       <LbOnly screen><div style={{fontSize:13,color:BK.muted}}>{t('More checks, with a history: ', '더 많은 확인과 기록: ')}<a href="?tool=posture-check" style={{color:BK.coral,fontWeight:800}}>{t('the full posture check (17 points)', '전체 자세 점검 (17가지)')}</a></div></LbOnly>
       <LbOnly print><PhPaperCheck/></LbOnly>
     </LbPage>,
@@ -33338,14 +33336,14 @@ function fsLbPages(scr = false) {
   const chkArts = {
     house: [...fsRoof({ kind: 'small', x1: 10, x2: 34 }, 30, 12), ...fsRoof({ kind: 'big', x1: 44, x2: 80 }, 30, 16), penLine([6, 31], [86, 31], 1.8)],
     brace: [penLine([6, 10], [86, 10], 1.8), ...fsBrace(8, 38, 14, 3, true), ...fsBrace(44, 84, 14, 4, false)],
-    letters: 'CDEFGAB'.split('').map((n, i) => ({ ...penText(8 + i * 12.6, 26, n, { size: 11, weight: 900, fill: n === 'C' || n === 'F' ? PEN_C : PEN_N, anchor: 'middle' }) })),
+    highlow: [...fsTurtle(16, 26, 0.42), ...fsBird(76, 22, 0.62), { k: 'pa', seg: [['M', [30, 30]], ['L', [60, 30]]], f: 'none', s: PEN_C, w: 1.8, nw: true }, { k: 'pa', seg: [['M', [57, 27]], ['L', [62, 30]], ['L', [57, 33]], ['Z']], f: PEN_C }],
     midc: (() => { const K = fsKeysShapes(6, 6, 7, 11.4, 26, { sw: 1.6 }); return [...K.shapes, { k: 'rc', x: 7, y: 24, w: 9.4, h: 7, rx: 0.8, f: PEN_C }]; })(),
     song: ['4', '3', '2'].map((n, i) => [{ k: 'el', c: [18 + i * 26, 20], rx: 10, ry: 10, f: PEN_P, s: PEN_N, w: 2 }, { ...penText(18 + i * 26, 24.4, n, { size: 12, weight: 900, fill: PEN_N, anchor: 'middle' }) }]).flat(),
   };
   const checksRows = [
     ['house', [0, 0, 92, 40], t('I can find a small house and a big house anywhere', '어디서든 작은 집과 큰 집을 찾을 수 있어요')],
+    ['highlow', [0, 0, 92, 40], t('I can hear high and low, and show the turtle\'s end and the bird\'s', '높고 낮은 소리를 듣고, 거북이 쪽과 새 쪽을 가리킬 수 있어요')],
     ['brace', [0, 0, 92, 40], t('I can say each house\'s white keys: 3 and 4', '집마다 딸린 흰건반을 말할 수 있어요: 3개와 4개')],
-    ['letters', [0, 0, 92, 40], t('I can name any white key (C at the small house\'s left door)', '어떤 흰건반이든 이름을 댈 수 있어요 (C는 작은 집 왼쪽 문)')],
     ['midc', [0, 0, 92, 40], t('I can find middle C (just left of the 4th small house)', '가운데 도를 찾을 수 있어요 (4번째 작은 집 바로 왼쪽)')],
     ['song', [0, 0, 92, 40], t('I can play Hot Cross Buns legato with 2 3 4', '2 3 4로 핫 크로스 번을 레가토로 칠 수 있어요')],
   ];
@@ -33354,21 +33352,21 @@ function fsLbPages(scr = false) {
 
   return [
     // 1. opener
-    <LbPage key="1" no={1} chId={ch} teacher={<>{t('Pattern first, names second -- the same order at every age. Older beginners take this chapter in one sitting; younger ones live in the patterns for a while before the names stick. ', '어느 나이든 순서는 같아요: 패턴 먼저, 이름은 그다음. 나이가 있는 학습자는 이 챕터를 한 번에 지나가고, 어린 친구들은 패턴 속에서 한동안 지내다가 이름이 붙어요. ')}{t('No staff yet: the Queen of G and the King of F wait for the Reading chapter -- here we only plant "middle C is the ground: up into the sky, down under the sea".', '오선보는 아직이에요: 솔의 여왕과 파의 왕은 악보 읽기 챕터에서 등장해요 -- 여기서는 "가운데 도는 땅: 위로 가면 하늘, 아래로 가면 바다"만 심어 둬요.')}</>}>
+    <LbPage key="1" no={1} chId={ch} teacher={<>{t('Pattern first, names second -- the same order at every age: this chapter is the pattern, the next one (The Musical Alphabet) gives every key its name. Older beginners take this chapter in one sitting; younger ones live in the patterns for a while. ', '어느 나이든 순서는 같아요: 패턴 먼저, 이름은 그다음 -- 이 챕터는 패턴이고, 다음 챕터(음악 알파벳)에서 건반마다 이름이 생겨요. 나이가 있는 학습자는 이 챕터를 한 번에 지나가고, 어린 친구들은 패턴 속에서 한동안 지내요. ')}{t('No staff yet: the Queen of G and the King of F wait for the Reading chapter -- here we only plant "middle C is the ground: up into the sky, down under the sea".', '오선보는 아직이에요: 솔의 여왕과 파의 왕은 악보 읽기 챕터에서 등장해요 -- 여기서는 "가운데 도는 땅: 위로 가면 하늘, 아래로 가면 바다"만 심어 둬요.')}</>}>
       <LbOnly print><div data-ch={ch}>
         <div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em'}}>CHAPTER {bkChapterNo(ch)}</div>
         <div style={{fontFamily:LB_SERIF,fontSize:44,fontWeight:900,color:BK.ink,lineHeight:1.02,margin:'4px 0 0'}}>{t('Keyboard Patterns', '건반 패턴')}</div>
       </div></LbOnly>
       <LbPic h={210}><FsCoverScene/></LbPic>
-      <LbSay size={17.5}>{t('The piano looks like 88 different keys -- but it is one small pattern, repeated: a small house of 2 black keys that carries 3 white keys, and a big house of 3 black keys that carries 4. Learn the pattern, and every key on the piano tells you its own name.', '피아노는 건반 88개처럼 보이지만, 사실은 작은 패턴 하나가 반복되는 거예요: 흰건반 3개를 거느린 검은건반 2개짜리 작은 집, 그리고 흰건반 4개를 거느린 3개짜리 큰 집. 이 패턴을 알면 피아노의 모든 건반이 자기 이름을 알려 줘요.')}</LbSay>
+      <LbSay size={17.5}>{t('The piano looks like 88 different keys -- but it is one small pattern, repeated: a small house of 2 black keys that carries 3 white keys, and a big house of 3 black keys that carries 4. Learn the pattern, and you always know where you are on the piano -- in the next chapter, every key gets its name.', '피아노는 건반 88개처럼 보이지만, 사실은 작은 패턴 하나가 반복되는 거예요: 흰건반 3개를 거느린 검은건반 2개짜리 작은 집, 그리고 흰건반 4개를 거느린 3개짜리 큰 집. 이 패턴을 알면 피아노 어디에서든 길을 잃지 않아요 -- 다음 챕터에서는 건반마다 이름이 생겨요.')}</LbSay>
       <div style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>In this chapter</div>
-          {[[t('Small house, big house', '작은 집, 큰 집'), 2], [t('The white keys of each house', '집마다 딸린 흰건반'), 3], [t('The seven letter names', '일곱 글자 음이름'), 4], [t('The whole piano & middle C', '피아노 전체와 가운데 도'), 5], [t('Play on the patterns', '패턴 위에서 연주'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid #ece6d8'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkTick(15)}{n}</span><b>{'page ' + p}</b></div>)}
+          {[[t('Small house, big house', '작은 집, 큰 집'), 2], [t('The white keys of each house', '집마다 딸린 흰건반'), 3], [t('The whole piano & middle C', '피아노 전체와 가운데 도'), 4], [t('Play on the patterns', '패턴 위에서 연주'), 5], [t('My five checks', '나의 다섯 가지 확인'), 6]].map(([n, p]) => <div key={p} style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid #ece6d8'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkTick(15)}{n}</span><b>{'page ' + p}</b></div>)}
         </div></LbOnly>
         <div>
           <div style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
-          {[t('find any small house or big house', '어떤 작은 집, 큰 집이든 찾을 수 있어요'), t('say which white keys belong to each house', '집마다 어떤 흰건반이 딸려 있는지 말할 수 있어요'), t('name every white key, C to B', '모든 흰건반의 이름을 댈 수 있어요'), t('find middle C on a real piano', '진짜 피아노에서 가운데 도를 찾을 수 있어요'), t('play your first tune on the black keys', '검은건반으로 첫 튠을 칠 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',gap:8,fontSize:14.5,padding:'4px 0'}}><span style={{color:BK.coral,fontWeight:900}}>✓</span><span>{x}</span></div>)}
+          {[t('find any small house or big house', '어떤 작은 집, 큰 집이든 찾을 수 있어요'), t('say which white keys belong to each house', '집마다 어떤 흰건반이 딸려 있는지 말할 수 있어요'), t('hear high and low, and show the turtle\'s end and the bird\'s', '높은 소리와 낮은 소리를 듣고, 거북이 쪽과 새 쪽을 가리킬 수 있어요'), t('find middle C on a real piano', '진짜 피아노에서 가운데 도를 찾을 수 있어요'), t('play your first tune on the black keys', '검은건반으로 첫 튠을 칠 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',gap:8,fontSize:14.5,padding:'4px 0'}}><span style={{color:BK.coral,fontWeight:900}}>✓</span><span>{x}</span></div>)}
         </div>
       </div>
       <LbOnly print><LbDrillStrip id={ch}/></LbOnly>
@@ -33410,25 +33408,10 @@ function fsLbPages(scr = false) {
       <LbRemember>{t('Every white key lives under a roof: 3 under the small one, 4 under the big.', '흰건반은 모두 지붕 아래 살아요: 작은 지붕에 3개, 큰 지붕에 4개.')}</LbRemember>
     </LbPage>,
 
-    // 4. the seven letter names
-    <LbPage key="4" no={4} chId={ch} kicker={t('Step 3', '3단계')} title={t('The seven letter names', '일곱 글자 음이름')}
-      teacher={<>{t('Anchor C and F at their doors; the rest follow by walking. Watch for "H" (there is none -- after G comes A again) and for counting from A at the bottom. ', 'C와 F를 각자의 문에 닻으로 내려요; 나머지는 걸어가며 따라와요. "H"를 찾거나(없어요 -- G 다음은 다시 A) 맨 아래 A부터 세는 습관을 봐 주세요. ')}{t('Letters only here; 도레미 alongside (Korean mode) is an open choice.', '여기서는 알파벳만; 한국어 모드의 도레미 병기는 아직 열린 선택이에요.')}</>}>
-      <LbLive still={<LbPic h={235}><div style={{width:'100%',maxWidth:470,margin:'0 auto'}}><PenArt shapes={art4} vb={[0, 0, 300, 150]} label={t('One octave with its letter names; C at the small house\'s left door and F at the big house\'s, both in coral', '음이름이 적힌 한 옥타브; 작은 집 왼쪽 문의 C와 큰 집 왼쪽 문의 F가 코랄색이에요')}/></div></LbPic>} live={<><KeyHouses/><WhichLetter/></>}/>
-      <LbSay>{LANG === 'ko' ? <>음악은 글자 <b>일곱 개</b>만 써요: <b>C D E</b>는 작은 집에, <b>F G A B</b>는 큰 집에 살아요. <b>C는 작은 집의 왼쪽 문</b>, <b>F는 큰 집의 왼쪽 문</b> -- 문 두 개만 외우면 나머지는 걸어가며 읽을 수 있어요. G 다음은? 다시 A예요.</> : <>Music uses just <b>seven letters</b>: <b>C D E</b> live at the small house and <b>F G A B</b> at the big one. <b>C is the small house’s left door</b> and <b>F is the big house’s</b> -- learn the two doors, and you can walk to every other name. After G? A again.</>}</LbSay>
-      <LbPiano steps={LANG === 'ko' ? [
-        <>맨 아래부터 맨 위까지, <b>모든 C</b>를 찾아 쳐요 -- 작은 집의 왼쪽 문마다 하나씩이에요.</>,
-        <>이제 <b>모든 F</b>를 찾아 쳐요 -- 큰 집의 왼쪽 문이에요.</>,
-        <>누가 글자를 하나 말하면(예: D, G, B), 두 집을 보고 그 건반을 찾아 쳐요.</>,
-      ] : [
-        <>From the bottom to the top, find and play <b>every C</b> -- one at each small house’s left door.</>,
-        <>Now find and play <b>every F</b> -- the big house’s left door.</>,
-        <>Someone says a letter (D, G, B...); use the two houses to find that key and play it.</>,
-      ]}/>
-      <LbRemember>{t('C D E at the small house, F G A B at the big -- and after G comes A.', 'C D E는 작은 집에, F G A B는 큰 집에 -- G 다음은 다시 A.')}</LbRemember>
-    </LbPage>,
+    // (the seven letter names moved to chapter 3, The Musical Alphabet -- Phase 395)
 
     // 5. the whole piano & middle C
-    <LbPage key="5" no={5} chId={ch} kicker={t('Step 4', '4단계')} title={t('The whole piano & middle C', '피아노 전체와 가운데 도')}
+    <LbPage key="4" no={4} chId={ch} kicker={t('Step 3', '3단계')} title={t('The whole piano & middle C', '피아노 전체와 가운데 도')}
       teacher={<>{t('Tick each house while counting so none is counted twice. The lonely black key is A♯0/B♭0, the second key from the bottom. ', '세면서 집마다 표시하면 두 번 세지 않아요. 외로운 검은건반은 맨 아래에서 두 번째 건반(A♯0/B♭0)이에요. ')}{t('"Kennel" for the lonely key -- your call.', '외로운 건반의 "개집" -- 선생님이 정해 주세요.')}</>}>
       <LbLive still={<LbPic h={210} pad="14px 8px"><div style={{width:'100%'}}><PenArt shapes={art5} vb={[0, 14, P_W, 140]} label={t('All 88 keys: 7 small and 7 big houses, the kennel, and middle C, the ground between the sea and the sky', '88개 건반 전체: 작은 집 7채와 큰 집 7채, 개집, 그리고 바다와 하늘 사이의 땅인 가운데 도')}/></div></LbPic>} live={<WholePiano/>}/>
       <LbSay>{LANG === 'ko' ? <>진짜 피아노는 건반 <b>88개</b> -- 그래도 작은 집 7채, 큰 집 7채뿐이에요. <b>4번째 작은 집</b>까지 세면 그 왼쪽 문이 <b>가운데 도(middle C)</b>예요. 가운데 도는 <b>땅</b>이에요: 오른쪽으로 가면 <b>하늘 위로</b> 점점 높이, 왼쪽으로 가면 <b>바다 아래로</b> 점점 깊이 내려가요.</> : <>A real piano has <b>88 keys</b> -- yet still only 7 small houses and 7 big ones. Count to the <b>4th small house</b>: its left door is <b>middle C</b>. Middle C is <b>the ground</b>: go right and you climb <b>up into the sky</b>, higher and higher; go left and you dive <b>down under the sea</b>, lower and lower.</>}</LbSay>
@@ -33445,7 +33428,7 @@ function fsLbPages(scr = false) {
     </LbPage>,
 
     // 6. play on the patterns
-    <LbPage key="6" no={6} chId={ch} kicker={t('Play', '연주')} title={t('Play on the patterns', '패턴 위에서 연주')}
+    <LbPage key="5" no={5} chId={ch} kicker={t('Play', '연주')} title={t('Play on the patterns', '패턴 위에서 연주')}
       teacher={<>{t('Fingers 2 3 4 only, in both hands -- 1 and 5 wait for C position. The legato tip: like a relay baton -- hold the key until the next one plays, and the moment it sounds, release the old one. No gap between the two sounds. ', '양손 모두 2 3 4번만 써요 -- 1번과 5번은 C 포지션에서 만나요. 레가토 팁: 릴레이 바통처럼 -- 다음 음을 누를 때까지 손을 떼지 않고, 다음 음이 울리는 순간 잡고 있던 음을 놓아요. 두 소리 사이에 틈이 없게. ')}{t('Echo: 2-3 black keys, straight back; grow to 4-5.', '에코: 검은건반 2-3개를 바로 따라 치고, 쉬워지면 4-5개로.')}</>}>
       <LbOnly print><LbPic h={175}><div style={{flex:'1 1 200px',minWidth:0,maxWidth:300}}><PenArt shapes={art6} vb={[0, 0, 258, 126]} label={t('Right-hand fingers 2, 3 and 4 on the big roof\'s three black keys', '큰 지붕의 검은건반 세 개 위에 오른손 2, 3, 4번 손가락')}/></div><LbFig art="keys-hand-R" h={142}/></LbPic></LbOnly>
       <LbSay>{LANG === 'ko' ? <>이제 지도가 보답할 차례예요. 첫 튠에는 악보가 필요 없어요: <b>검은건반 지붕</b>과 양손의 <b>2, 3, 4번</b> 손가락이면 돼요. <b>꿀처럼 매끄럽게</b>(레가토) -- 바통 터치하듯, 다음 음이 울리는 순간 앞의 손가락이 놓아요.</> : <>Now the map pays you back. Your first tunes need no written notes: just the <b>black-key roofs</b> and fingers <b>2, 3, 4</b> of both hands. Play <b>smooth as honey</b> (legato) -- like a relay baton, the old finger lets go the moment the new note sounds.</>}</LbSay>
@@ -33467,18 +33450,10 @@ function fsLbPages(scr = false) {
     </LbPage>,
 
     // 7. my five checks
-    <LbPage key="7" no={7} chId={ch} kicker={t('Check-up', '점검')} title={t('My five checks', '나의 다섯 가지 확인')}
-      teacher={<>{t('Chapter 1\'s five checks still come first, every time at the piano. These five are this chapter\'s own: the student shows you each one on the keyboard; you only correct. All five easy? Do the Chapter check-up in the Workbook.', '1챕터의 다섯 가지 확인은 여전히 피아노 앞에서 늘 먼저예요. 이 다섯 가지는 이 챕터만의 확인이에요: 학생이 건반 위에서 직접 보여 주고, 선생님은 고쳐 주기만 해요. 다 쉬워지면 워크북의 챕터 점검을 해요.')}</>}>
-      <LbSay>{t('At the piano: show each one and give yourself a star. On paper: do the check-up below. All done? Colour in the badge!', '피아노 앞에서: 하나씩 보여 주고 별을 칠해요. 종이에서: 아래 점검을 풀어요. 다 끝나면? 배지를 색칠해요!')}</LbSay>
-      <LbLive still={<div style={{display:'flex',flexDirection:'column',gap:5}}>
-        <div style={{display:'grid',gridTemplateColumns:'96px 1fr repeat(6, 28px)',gap:7,alignItems:'end',fontSize:10.5,fontWeight:800,color:BK.muted,textAlign:'center'}}><span style={{textAlign:'left',whiteSpace:'nowrap',fontFamily:LB_SERIF,fontSize:18,color:BK.ink}}>{t('At the piano', '피아노 앞에서')}</span><span style={{textAlign:'right',paddingRight:6}}>{t('Lesson', '레슨')}</span>{[1, 2, 3, 4, 5, 6].map(n => <span key={n}>{n}</span>)}</div>
-        {checksRows.map(([a, vb, txt], i) => (
-          <div key={i} style={{display:'grid',gridTemplateColumns:'96px 1fr repeat(6, 28px)',gap:7,alignItems:'center',border:'1px solid #ece6d8',borderRadius:10,padding:'3px 8px'}}>
-            <div style={{display:'flex',justifyContent:'center'}}><PenArt shapes={chkArts[a]} vb={vb} style={{width:80}}/></div>
-            <div style={{fontSize:14,fontWeight:800,color:BK.ink}}>{txt}</div>
-            {[1, 2, 3, 4, 5, 6].map(n => <span key={n} style={{width:25,height:25,border:'1.5px solid ' + BK.line,borderRadius:7,justifySelf:'center',display:'flex',alignItems:'center',justifyContent:'center'}}><BkStarG size={12} fill="#ece6d8"/></span>)}
-          </div>))}
-      </div>} live={<FiveChecks376 storeKey="pb_five_fs_v1" rows={checksRows.map(([a, vb, txt]) => [{ shapes: chkArts[a], vb }, txt])}/>}/>
+    <LbPage key="6" no={6} chId={ch} kicker={t('Check-up', '점검')} title={t('My five checks', '나의 다섯 가지 확인')}
+      teacher={<>{t('Chapter 1\'s five checks still come first, every time at the piano. These five are this chapter\'s own: the student shows you each one on the keyboard; you only correct. All five "got it"? Then the paper part on the same page.', '1챕터의 다섯 가지 확인은 여전히 피아노 앞에서 늘 먼저예요. 이 다섯 가지는 이 챕터만의 확인이에요: 학생이 건반 위에서 직접 보여 주고, 선생님은 고쳐 주기만 해요. 다섯 가지 다 "됐어요!"가 되면 같은 쪽의 종이 점검을 해요.')}</>}>
+      <LbSay>{t('At the piano: show each one, then tick how it is going -- not yet, nearly, or got it! On paper: do the check-up below.', '피아노 앞에서: 하나씩 보여 주고 어떤지 표시해요 -- 아직, 거의, 됐어요! 종이에서: 아래 점검을 풀어요.')}</LbSay>
+      <LbLive still={<LbStageRows rows={checksRows.map(([a, vb, txt]) => [<PenArt shapes={chkArts[a]} vb={vb} style={{width:80}}/>, txt])}/>} live={<FiveChecks376 storeKey="pb_five_fs_v1" rows={checksRows.map(([a, vb, txt]) => [{ shapes: chkArts[a], vb }, txt])}/>}/>
       <LbOnly print><FsPaperCheck/></LbOnly>
     </LbPage>,
   ];
@@ -33539,7 +33514,7 @@ function WhichLetter() {
   );
 }
 // the online lesson: the book's pages 2-7 as its six steps (old ticks stay where their content went)
-const FS_STORE = [1, 5, 6, 2, 3, 7];
+const FS_STORE = [1, 5, 2, 3, 7];   // Phase 395: the letter-names step left for chapter 3
 function FirstStepsLearn({ onStart }) {
   const pages = fsLbPages(true);
   const opener = pages[0];
@@ -33579,7 +33554,7 @@ const LB_FLOW_CSS = LB_CSS + ` .bk-lesson .lb-page, .lb-page { width: 178mm; hei
 // Phase 392 (Sohyun 2026-10-09): a chapter's cover can carry its own scene around the rabbit butler.
 // Chapter 2: the rabbit stands on the ground between the small house (C D E) and the big house (F G A B);
 // the sea and the turtle lie at the low end on the left, the clouds and the bird at the high end on the right.
-function fsCoverShapes() {
+function fsCoverShapes(opts = {}) {
   const s = [], G = 262, W = 46, H = 134, Y = G - H;
   const house = (x, letters, tint) => {
     const n = letters.length, BW = W * 0.62, BH = H * 0.58;
@@ -33587,7 +33562,7 @@ function fsCoverShapes() {
     for (let i = 0; i < n; i++) out.push({ k: 'rc', x: x + i * W + 1.2, y: Y + 2.2, w: W - 2.4, h: H - 4.4, rx: 1.5, f: tint, nw: true });
     for (let i = 1; i < n; i++) out.push({ ...penLine([x + i * W, Y], [x + i * W, Y + H], 1.4), nw: true });
     for (let i = 0; i < n - 1; i++) out.push({ k: 'rc', x: x + (i + 1) * W - BW / 2, y: Y, w: BW, h: BH, rx: 1, f: PEN_N, solid: true, nw: true });
-    letters.forEach((l, i) => out.push({ ...penText(x + (i + 0.5) * W, Y + H - 12, l, { size: 22, weight: 900, fill: i === 0 ? PEN_C : PEN_N, anchor: 'middle' }) }));
+    if (opts.letters !== false) letters.forEach((l, i) => out.push({ ...penText(x + (i + 0.5) * W, Y + H - 12, l, { size: 22, weight: 900, fill: i === 0 ? PEN_C : PEN_N, anchor: 'middle' }) }));
     out.push(...fsRoof({ kind: n === 3 ? 'small' : 'big', x1: x + W - BW / 2 - W * 0.14, x2: x + (n - 1) * W + BW / 2 + W * 0.14 }, Y - 1, n === 3 ? 26 : 33, { w: 3 }));
     return out;
   };
@@ -33609,9 +33584,9 @@ function FsCoverScene() {
     const RH = 240, RW = RH * 160 / 210;    // the rabbit butler (his baked drawing), standing on the ground at x = 357
     const r = PB_ART.rabbit || '', inner = r.slice(r.indexOf('>') + 1, r.lastIndexOf('</svg>'));   // a group, not a nested svg (page css sizes every svg)
     const rabbit = '<g transform="translate(' + (357 - RW / 2).toFixed(1) + ' ' + (264 - RH) + ') scale(' + (RH / 210).toFixed(4) + ')">' + inner + '</g>';
-    return [...fsCoverShapes(), { k: 'raw', svg: rabbit }];
+    return [...fsCoverShapes({ letters: false }), { k: 'raw', svg: rabbit }];
   }, []);
-  return <div style={{width:680,maxWidth:'100%'}}><PenArt shapes={shapes} vb={[0, 20, 680, 324]} label="The rabbit butler stands on the ground between a small house of keys, C D E, and a big house, F G A B; the sea and a turtle at the low end, clouds and a bird at the high end"/></div>;
+  return <div style={{width:680,maxWidth:'100%'}}><PenArt shapes={shapes} vb={[0, 20, 680, 324]} label="The rabbit butler stands on the ground between a small house of keys and a big house; the sea and a turtle at the low end, clouds and a bird at the high end"/></div>;
 }
 const SPREAD_SCENES = { 'first-steps': () => <FsCoverScene/> };
 function SpreadCover({ id }) {
