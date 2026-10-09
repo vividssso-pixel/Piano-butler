@@ -32837,11 +32837,11 @@ function lbWordsFirst(children) {
   return a;
 }
 // One fixed A4 page of the Lesson Book.
-function LbPage({ no, chId, kicker, title, teacher, qr, children }) {
+function LbPage({ no, chId, kicker, title, teacher, qr, book, children }) {
   return (
     <section className="bk-page lb-page" data-lb-page={no}>
       <div className="lb-head" style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',fontSize:10.5,color:BK.muted,fontWeight:700,borderBottom:'1.2px solid ' + BK.ink,paddingBottom:4,marginBottom:14}}>
-        <span><b style={{color:BK.ink}}>Piano Butler</b> · Lesson Book</span>
+        <span><b style={{color:BK.ink}}>Piano Butler</b> · {book || 'Lesson Book'}</span>
         <span>Chapter {bkChapterNo(chId)} · {bkChapterName(chId)}</span>
       </div>
       {title && <div style={{margin:'0 0 12px'}}>
@@ -34315,13 +34315,14 @@ function sfLbPages(scr = false) {
   // the clef on its own first (Phase 406): the sign big, its line in coral, its owner beside it -- out of the staff
   const clefIntro = (clef) => {
     const line = clef === 'treble' ? 32 : 24, L = clef === 'treble' ? 'G' : 'F';
-    return <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:30,width:'100%'}}>
+    return <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:22,width:'100%'}}>
       <div style={{width:175,flex:'0 0 auto'}}>
         <SfStaff clef={clef} width={130} pad={[16, 16]} label={clef === 'treble' ? t('The treble clef, big: its curl wraps the G line, in coral', '높은음자리표를 크게: 소용돌이가 산호색 G 줄을 감싸요') : t('The bass clef, big: its two dots guard the F line, in coral', '낮은음자리표를 크게: 두 점이 산호색 F 줄을 지켜요')}
           extra={(yOf, layer, txt) => layer === 'under'
             ? <line x1="4" x2="126" y1={yOf(line)} y2={yOf(line)} stroke={BK.coral} strokeOpacity="0.55" strokeWidth="3.4"/>
             : <text x="114" y={yOf(line) + 4.5} fontSize="14" fontWeight="900" fill={BK.coral} textAnchor="middle" style={txt}>{L}</text>}/>
       </div>
+      <div style={{fontSize:34,fontWeight:900,color:BK.ink,flex:'0 0 auto',lineHeight:1}} aria-hidden="true">=</div>
       <PenArt shapes={clef === 'treble' ? sfQueen(26, 28, 1.2) : sfKing(26, 28, 1.2)} vb={[0, 0, 52, 58]} style={{width:82,flex:'0 0 auto'}} label={clef === 'treble' ? t('the Queen', '여왕') : t('the King', '왕')}/>
     </div>;
   };
@@ -34334,21 +34335,24 @@ function sfLbPages(scr = false) {
     extra={(yOf, layer, txt) => <g>{layer === 'under' && <line x1="36" x2="332" y1={yOf(32)} y2={yOf(32)} stroke={BK.coral} strokeOpacity="0.55" strokeWidth="3.4"/>}
       {rowLabels([[xs5[0], 'C', t('Clara', '클라라'), true], [xs5[1], 'D'], [xs5[2], 'E'], [xs5[3], 'F'], [xs5[4], 'G', t('the Queen\'s G', '여왕의 G'), true]], (yOf) => yOf(28) + 19, 12)(yOf, layer, txt)}</g>}/>;
   // p5: the King's five -- F G A B C, from the King's F up to Clara; the two dots guard the fourth line
-  const p5 = <SfStaff clef="bass" width={340} pad={[30, 46]} label={t('The bass clef; its two dots guard the fourth line, the King\'s F line, in coral; five notes climb from the King\'s F to middle C on its little ladder rung: F G A B C', '낮은음자리표; 두 점이 지키는 넷째 줄(왕의 F 줄)이 산호색; 왕의 F에서 작은 사다리 발판 위의 가운데 도까지 다섯 음: F G A B C')}
+  const p5 = <SfStaff clef="bass" width={340} pad={[48, 46]} label={t('The bass clef; its two dots guard the fourth line, the King\'s F line, in coral; five notes climb from the King\'s F to middle C on its little ladder rung: F G A B C', '낮은음자리표; 두 점이 지키는 넷째 줄(왕의 F 줄)이 산호색; 왕의 F에서 작은 사다리 발판 위의 가운데 도까지 다섯 음: F G A B C')}
     notes={[24, 25, 26, 27, 28].map((d, i) => ({ d, x: xs5[i], color: i === 0 || i === 4 ? PEN_C : undefined }))}
     icons={[SF_ICON(clara, 304, 94, 0.62)]}
     extra={(yOf, layer, txt) => <g>{layer === 'under' && <line x1="36" x2="332" y1={yOf(24)} y2={yOf(24)} stroke={BK.coral} strokeOpacity="0.55" strokeWidth="3.4"/>}
       {rowLabels([[xs5[0], 'F', t('the King\'s F', '왕의 F'), true], [xs5[1], 'G'], [xs5[2], 'A'], [xs5[3], 'B'], [xs5[4], 'C', t('Clara', '클라라'), true]], (yOf) => yOf(28) - 16, -12)(yOf, layer, txt)}</g>}/>;
   // p6 (v4): the grand staff; the written middle C attaches just under the Queen's staff or just over the King's --
   // two places on paper, one key. No folding here (Sohyun: the fold waits for chapter 5's three Cs).
-  const p6 = <SfStaff clef="grand" width={340} pad={[26, 30]} label={t('The grand staff: middle C written twice on its little ladder rung, once just under the Queen\'s staff and once just over the King\'s, in the same column, joined by a dotted line saying they are the same key; Princess Clara stands by both', '큰보표: 작은 사다리 발판 위의 가운데 도가 두 번 써 있어요 -- 한 번은 여왕의 오선 바로 아래, 한 번은 왕의 오선 바로 위, 같은 세로줄에; 점선이 둘을 이으며 같은 건반이라고 말해요; 클라라 공주가 양쪽에 서 있어요')}
-    notes={[{ d: 28, x: 96, staff: 'treble', color: PEN_C }, { d: 28, x: 96, staff: 'bass', color: PEN_C }]}
-    icons={[SF_ICON(clara, 60, 96, 0.55), SF_ICON(clara, 60, 140, 0.55)]}
+  const p6 = <SfStaff clef="grand" width={340} pad={[26, 30]} label={t('The grand staff with one Princess Clara between the two staves; visiting the Queen, her middle C is written on its ladder rung just under the treble staff; visiting the King, just over the bass staff -- dotted paths join Clara to both notes: the same key', '큰보표, 두 오선 사이에 클라라 공주 한 명; 여왕네 갈 때는 가운데 도를 높은음자리표 오선 바로 아래 사다리 발판에, 왕네 갈 때는 낮은음자리표 오선 바로 위에 써요 -- 점선이 공주와 두 음표를 이어요: 같은 건반')}
+    notes={[{ d: 28, x: 104, staff: 'treble', color: PEN_C }, { d: 28, x: 266, staff: 'bass', color: PEN_C }]}
+    icons={[SF_ICON(clara, 172, 116, 0.62)]}
     extra={(yOf, layer, txt) => layer === 'over' && <g style={txt}>
-      <line x1="96" x2="96" y1={yOf(28, 'treble') + 9} y2={yOf(28, 'bass') - 9} stroke={BK.coral} strokeWidth="1.4" strokeDasharray="4 3.5"/>
-      <text x="108" y={(yOf(28, 'treble') + yOf(28, 'bass')) / 2 + 3.5} fontSize="9.5" fontWeight="900" fill={BK.coral} textAnchor="start">{t('the same key!', '같은 건반!')}</text>
-      <text x="116" y={yOf(28, 'treble') + 3.5} fontSize="8.5" fontWeight="800" fill={BK.ink} textAnchor="start">{t("just under the Queen's staff", '여왕의 오선 바로 아래')}</text>
-      <text x="116" y={yOf(28, 'bass') + 3.5} fontSize="8.5" fontWeight="800" fill={BK.ink} textAnchor="start">{t("just over the King's staff", '왕의 오선 바로 위')}</text>
+      <path d={`M168 134 Q136 128 112 ${yOf(28, 'treble') + 9}`} fill="none" stroke={BK.coral} strokeWidth="1.4" strokeDasharray="4 3.5"/>
+      <path d={`M204 134 Q236 140 258 ${yOf(28, 'bass') - 9}`} fill="none" stroke={BK.coral} strokeWidth="1.4" strokeDasharray="4 3.5"/>
+      <text x="104" y={yOf(28, 'treble') - 12} fontSize="9" fontWeight="900" fill={BK.ink} textAnchor="middle">{t('visiting the Queen', '여왕네 갈 때')}</text>
+      <text x="104" y={yOf(28, 'treble') + 20} fontSize="8" fontWeight="800" fill={BK.muted} textAnchor="middle">{t('just under her staff', '여왕의 오선 바로 아래')}</text>
+      <text x="266" y={yOf(28, 'bass') - 16} fontSize="8" fontWeight="800" fill={BK.muted} textAnchor="middle">{t('just over his staff', '왕의 오선 바로 위')}</text>
+      <text x="266" y={yOf(28, 'bass') + 21} fontSize="9" fontWeight="900" fill={BK.ink} textAnchor="middle">{t('visiting the King', '왕네 갈 때')}</text>
+      <text x="186" y="160" fontSize="9.5" fontWeight="900" fill={BK.coral} textAnchor="middle">{t('the same key!', '같은 건반!')}</text>
     </g>}/>;
 
   const mini = (dots, extra = []) => { const s = []; for (let i = 0; i < 5; i++) s.push({ ...penLine([6, 8 + i * 6], [86, 8 + i * 6], 1.1), nw: true }); return [...s, ...dots.map(([x, y, c]) => ({ k: 'el', c: [x, y], rx: 4.4, ry: 3.1, f: c || PEN_N })), ...extra]; };
@@ -34455,8 +34459,8 @@ function sfLbPages(scr = false) {
     // 6. middle C: Princess Clara (the grand staff)
     <LbPage key="6" no={6} chId={ch} kicker={t('Step 5', '5단계')} title={t('Middle C: Princess Clara', '가운데 도: 클라라 공주')}>
       {pic(p6, 230, 680)}
-      <LbSay>{LANG === 'ko' ? <>여왕의 오선을 위에, 왕의 오선을 아래에 두고 앞에서 선으로 묶으면 <b>큰보표</b>예요 -- 손마다 오선 하나씩. 두 궁전 사이, <b>가운데 도</b>에 <b>클라라 공주</b>가 살아요 -- 2챕터의 땅이에요. 공주의 음은 자기만의 <b>작은 사다리 발판</b>에 써요: 여왕의 오선에 붙을 땐 <b>바로 아래</b>, 왕의 오선에 붙을 땐 <b>바로 위</b>. 종이에서는 두 자리처럼 보여도 피아노에서는 <b>한 건반</b> -- 그래서 클라라가 양쪽에 서 있어요.</>
-        : <>Put the Queen's staff on top and the King's underneath, joined by a line at the start: that is the <b>grand staff</b> -- one staff for each hand. Between the two palaces, on <b>middle C</b>, lives <b>Princess Clara</b> -- the ground from Chapter 2. Her note is written on <b>a little ladder rung of its own</b>: <b>just under</b> the Queen's staff when it belongs up there, <b>just over</b> the King's when it belongs down. Two places on paper, <b>one key</b> on the piano -- that is why Clara stands by both.</>}</LbSay>
+      <LbSay>{LANG === 'ko' ? <>여왕의 오선을 위에, 왕의 오선을 아래에 두고 앞에서 선으로 묶으면 <b>큰보표</b>예요 -- 손마다 오선 하나씩. 두 궁전 사이, <b>가운데 도</b>에 <b>클라라 공주</b>가 살아요 -- 2챕터의 땅이에요. 공주는 <b>한 명</b>이고, 음도 자기만의 <b>작은 사다리 발판</b> 하나뿐이에요. <b>여왕네 갈 때</b>는 여왕의 오선 바로 아래에 쓰고, <b>왕네 갈 때</b>는 왕의 오선 바로 위에 써요. 종이에서는 두 자리처럼 보여도 피아노에서는 <b>같은 건반</b>이에요.</>
+        : <>Put the Queen's staff on top and the King's underneath, joined by a line at the start: that is the <b>grand staff</b> -- one staff for each hand. Between the two palaces, on <b>middle C</b>, lives <b>Princess Clara</b> -- the ground from Chapter 2. There is <b>one Clara</b>, and she has <b>one little ladder rung of her own</b>. <b>Visiting the Queen</b>, her note is written just under the Queen's staff; <b>visiting the King</b>, just over his. Two places on paper -- <b>the same key</b> on the piano.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [
         <><b>가운데 도</b>를 쳐요: 공주의 자리, 두 손이 다 닿는 단 한 곳.</>,
         <><b>어느 궁전?</b> 누가 공주의 음을 위 오선 아래에 쓰거나 아래 오선 위에 써요: 위에 붙어도 아래에 붙어도 <b>같은 건반</b> -- 매번 가운데 도를 쳐요. 오른손으로도, 왼손으로도.</>,
@@ -34471,6 +34475,21 @@ function sfLbPages(scr = false) {
     <LbPage key="7" no={7} chId={ch} kicker={t('Check-up', '점검')} title={t('My five checks', '나의 다섯 가지 확인')}>
       <LbSay>{t('Show each one at the piano, then tick how it is going -- not yet, nearly, or got it! The check-up on paper is in the Workbook.', '피아노 앞에서 하나씩 보여 주고 어떤지 표시해요 -- 아직, 거의, 됐어요! 종이 점검은 워크북에 있어요.')}</LbSay>
       <LbLive still={<LbStageRows rows={checksRows.map(([a, vb, txt]) => [<PenArt shapes={chkArts[a]} vb={vb} style={{width:80}}/>, txt])}/>} live={<FiveChecks376 storeKey="pb_five_sf_v1" rows={checksRows.map(([a, vb, txt]) => [{ shapes: chkArts[a], vb }, txt])}/>}/>
+      <LbOnly print><div style={{border:'1.4px solid #ece6d8',borderRadius:14,padding:'12px 16px'}}>
+        <div style={{fontFamily:LB_SERIF,fontSize:19,fontWeight:800,color:BK.ink,marginBottom:8}}>{t('The royal signs', '왕실의 기호들')}</div>
+        {[['treble', 32, t('the Queen sings high -- her curl holds the G line. The right hand reads her staff.', '여왕은 높은 목소리 -- 소용돌이가 G 줄을 감싸요. 보통 오른손이 읽어요.')],
+          ['bass', 24, t('the King sings low -- his two dots guard the F line. The left hand reads his staff.', '왕은 낮은 목소리 -- 두 점이 F 줄을 지켜요. 보통 왼손이 읽어요.')]].map(([cl, ln, txt0]) => <div key={cl} style={{display:'flex',alignItems:'center',gap:14,padding:'5px 0',borderTop:'1px solid #f1ece0'}}>
+          <div style={{width:108,flex:'0 0 auto'}}><SfStaff clef={cl} width={110} pad={[12, 12]} label="" extra={(yOf, layer) => layer === 'under' && <line x1="4" x2="106" y1={yOf(ln)} y2={yOf(ln)} stroke={BK.coral} strokeOpacity="0.55" strokeWidth="3"/>}/></div>
+          <PenArt shapes={cl === 'treble' ? sfQueen(26, 28, 1) : sfKing(26, 28, 1)} vb={[2, 2, 48, 52]} style={{width:46,flex:'0 0 auto'}}/>
+          <div style={{fontSize:13,color:BK.ink,lineHeight:1.45}}>{txt0}</div>
+        </div>)}
+        <div style={{display:'flex',alignItems:'center',gap:14,padding:'5px 0',borderTop:'1px solid #f1ece0'}}>
+          <div style={{width:108,flex:'0 0 auto'}}><svg viewBox="0 0 110 36" style={{width:'100%',display:'block'}} aria-hidden="true"><line x1="36" x2="74" y1="18" y2="18" stroke={BK.ink} strokeOpacity="0.75" strokeWidth="1.3"/><ellipse cx="55" cy="18" rx="7.4" ry="5.2" fill={BK.coral}/><ellipse cx="55" cy="18" rx="3.4" ry="2.7" transform="rotate(-38 55 18)" fill="#fff"/><line x1="51" x2="59" y1="18" y2="18" stroke={BK.ink} strokeOpacity="0.75" strokeWidth="1.3"/></svg></div>
+          <PenArt shapes={sfClara(26, 28, 1)} vb={[2, 2, 48, 52]} style={{width:46,flex:'0 0 auto'}}/>
+          <div style={{fontSize:13,color:BK.ink,lineHeight:1.45}}>{t('Princess Clara -- middle C on her little ladder rung, the same key from either palace.', '클라라 공주 -- 작은 사다리 발판 위의 가운데 도, 어느 궁전에서 써도 같은 건반.')}</div>
+        </div>
+        <div style={{fontSize:13,color:BK.ink,marginTop:8}}><b style={{color:BK.coral}}>{t('Next: ', '다음: ')}</b>{t('Chapter 5 · The Whole Staff -- every line and space on both staves, and the rhymes that go with them.', '5챕터 · 오선 전체 읽기 -- 두 오선의 모든 줄과 칸, 그리고 외우는 문장들.')}</div>
+      </div></LbOnly>
     </LbPage>,
   ];
 }
@@ -34587,7 +34606,8 @@ function sfWorkbook() {
   const run = (n, lo, hi) => { const out = []; for (let i = 0; i < n; i++) { let d; do { d = rnd(lo, hi); } while (out.length && out[out.length - 1].d === d); out.push({ d }); } return out; };
   const mkSS = (lo, hi) => { for (;;) { const a = rnd(lo, hi), gap = Math.random() < 0.5 ? 1 : 2, dir = Math.random() < 0.5 ? 1 : -1, b = a + gap * dir; if (b >= lo && b <= hi) return { a, b }; } };
   const s1 = withSeed(k('s1'), () => ({ tog: run(4, 30, 38), home: run(6, 30, 38), sort: run(6, 30, 38) }));
-  const s2 = withSeed(k('s2'), () => ({ tog: Array.from({ length: 4 }, () => mkSS(30, 38)), home: Array.from({ length: 8 }, () => mkSS(30, 38)), hi: Array.from({ length: 4 }, () => mkSS(30, 38)) }));
+  const s2 = withSeed(k('s2'), () => ({ tog: Array.from({ length: 4 }, () => mkSS(30, 38)), home: Array.from({ length: 8 }, () => mkSS(30, 38)), hi: Array.from({ length: 4 }, () => mkSS(30, 38)),
+    stair: (() => { let d = 31; const moves = []; for (let i = 0; i < 4; i++) { let m; do { m = [1, 2, -1, -2][Math.floor(Math.random() * 4)]; } while (d + m < 30 || d + m > 38); d += m; moves.push({ m, d }); } return { start: 31, moves }; })() }));
   const s3 = withSeed(k('s3'), () => ({ tog: shuffle([28, 29, 30, 31, 32]).slice(0, 4).map(d => ({ d })), home: run(6, 28, 32), draw: shuffle(['D', 'E', 'F', 'G']) }));
   const s4 = withSeed(k('s4'), () => {
     let r = rnd(0, 2); const path = [[r, 0]];
@@ -34597,7 +34617,7 @@ function sfWorkbook() {
     return { tog: shuffle([24, 25, 26, 27, 28]).slice(0, 4).map(d => ({ d })), home: run(6, 24, 28), draw: shuffle(['G', 'A', 'B', 'C']), grid, path };
   });
   const s5 = withSeed(k('s5'), () => ({
-    mid: [0, 1].map(() => { const cs = shuffle([0, 1, 2, 3, 4]).slice(0, 2); const rest = [24, 25, 26, 27, 29, 30, 31, 32]; return [0, 1, 2, 3, 4].map(i => cs.includes(i) ? { d: 28, staff: Math.random() < 0.5 ? 'treble' : 'bass' } : { d: rest[Math.floor(Math.random() * rest.length)] }); }),
+    mid: [0].map(() => { const cs = shuffle([0, 1, 2, 3, 4, 5, 6, 7]).slice(0, 3); const rest = [24, 25, 26, 27, 29, 30, 31, 32]; return [0, 1, 2, 3, 4, 5, 6, 7].map(i => cs.includes(i) ? { d: 28, staff: Math.random() < 0.5 ? 'treble' : 'bass' } : { d: rest[Math.floor(Math.random() * rest.length)] }); }),
     bingo: shuffle([24, 25, 26, 27, 28, 29, 30, 31, 32]),
   }));
   return { s1, s2, s3, s4, s5 };
@@ -34642,6 +34662,9 @@ function SfWorkbook({ startNo = 1, frames = true }) {
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginTop:8}}>
         {[['Kebab plate (line notes)', true], ['Sandwich plate (space notes)', false]].map(([lbl]) => <div key={lbl} style={{border:'1.6px solid ' + BK.ink,borderRadius:40,minHeight:44,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:800,color:BK.muted}}>{lbl}</div>)}
       </div>
+      <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:16,fontWeight:800,color:BK.ink,margin:'12px 0 2px'}}>Now cook your own</div>
+      <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 6px',lineHeight:1.45}}>Draw three kebabs (line notes) and three sandwiches (space notes) -- anywhere on this staff, any order. Ask someone to point at each one and say which it is.</div>
+      <div style={{maxWidth:500,margin:'0 auto',width:'100%'}}><PaperStaff clefOn={false} notes={[]} width={500} minSpan={[29, 39]}/></div>
     </Part>
   </>);
   // 3 (faces "Up the staff, up the piano")
@@ -34653,8 +34676,16 @@ function SfWorkbook({ startNo = 1, frames = true }) {
     <Part kind="home" title="Your turn">
       <BkGrid cols={4} gap="5px 8px">{W.s2.home.map((it, i) => ssCell(it, i + 5))}</BkGrid>
     </Part>
-    <Part kind="play" grow={false} title="Which is higher?" how="Circle the higher note in each pair -- then play both, low one first, and check with your ears.">
+    <Part kind="play" title="Which is higher?" how="Circle the higher note in each pair -- then play both, low one first, and check with your ears.">
       <BkGrid cols={4} gap="5px 8px">{W.s2.hi.map((it, i) => <BkCell key={i} n={i + 1}><div style={{padding:'8px 4px 2px'}}><PaperStaff clefOn={false} notes={[{ d: it.a }, { d: it.b }]} width={92}/></div></BkCell>)}</BkGrid>
+      <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:16,fontWeight:800,color:BK.ink,margin:'12px 0 2px'}}>The staircase tune</div>
+      <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 6px',lineHeight:1.45}}>The first note is drawn. Follow the signs left to right, drawing each next note -- then play your staircase with one hand and hear it climb and fall.</div>
+      <div style={{maxWidth:500,margin:'0 auto',width:'100%'}}>
+        <PaperStaff clefOn={false} notes={[{ d: W.s2.stair.start, x: 50, color: BK.coral }]} width={500} minSpan={[29, 39]}/>
+        <div style={{display:'flex',justifyContent:'space-between',padding:'4px 10px 0 70px',fontSize:11.5,fontWeight:800,color:BK.ink}}>
+          {W.s2.stair.moves.map((mv, i) => <span key={i}>{i + 1} · {({ 1: 'step up', 2: 'skip up', '-1': 'step down', '-2': 'skip down' })[mv.m]}</span>)}
+        </div>
+      </div>
     </Part>
   </>);
   // 4 (faces "The Queen's five")
@@ -34666,8 +34697,12 @@ function SfWorkbook({ startNo = 1, frames = true }) {
     <Part kind="home" title="The Queen's five: name the notes" how="Count up from Clara's C or down from the Queen's G.">
       <BkGrid cols={3} gap="5px 8px">{W.s3.home.map((it, i) => nmCell(it, i + 1, i === 0, 'treble'))}</BkGrid>
     </Part>
-    <Part kind="play" style={{justifyContent:'center'}} title="Draw the Queen's notes" how="Draw a note head where each letter lives. On a line, the line runs through it; in a space, it fills the space.">
-      <BkGrid cols={4} gap="5px 8px">{W.s3.draw.map((L, i) => drawCell(L, i + 1, 'treble', i === 0))}</BkGrid>
+    <Part kind="play" title="Make a tune for the Queen" how="Draw any FOUR of her five notes on the staff -- your own tune! Write its letters in the boxes, then play it to someone with your right hand.">
+      <div style={{maxWidth:500,margin:'0 auto',width:'100%'}}>
+        <PaperStaff clef="treble" notes={[]} width={500} minSpan={[27, 34]}/>
+        <div style={{display:'flex',gap:8,justifyContent:'center',marginTop:6}}>{[0, 1, 2, 3].map(i => <span key={i} style={{width:30,height:30,border:'1.4px solid ' + BK.ink,borderRadius:6,display:'inline-block'}}/>)}</div>
+      </div>
+      <div style={{fontSize:11.5,color:BK.muted,textAlign:'center',marginTop:6}}>Give your tune a name: ______________________</div>
     </Part>
   </>);
   // 5 (faces "The King's five")
@@ -34691,7 +34726,7 @@ function SfWorkbook({ startNo = 1, frames = true }) {
   P(<>
     <WbTop step={5}/>
     <Part kind="together" title="Circle every middle C" how="Clara's note sits on its own little ladder rung -- just under the Queen's staff, or just over the King's. Same key!">
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>{W.s5.mid.map((row, i) => <div key={i} style={{border:'1px solid #ece6d8',borderRadius:8,padding:'2px 10px'}}><PaperStaff clef="grand" notes={row} width={330}/></div>)}</div>
+      {W.s5.mid.map((row, i) => <div key={i} style={{border:'1px solid #ece6d8',borderRadius:8,padding:'2px 14px',maxWidth:620,margin:'0 auto',width:'100%'}}><PaperStaff clef="grand" notes={row} width={560}/></div>)}
     </Part>
     <Part kind="home" title="The secret message" how="Write each note's letter in its box -- every row spells a word. The last one is seven notes long!">
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'2px 10px'}}>
@@ -34701,12 +34736,12 @@ function SfWorkbook({ startNo = 1, frames = true }) {
         </div>)}
       </div>
       {SF_MSG.slice(3).map((m) => <div key={m.word} style={{display:'flex',alignItems:'center',gap:12,margin:'6px 0 0'}}>
-        <div style={{flex:'1 1 auto',maxWidth:330}}><PaperStaff clef={m.clef} notes={m.notes.map(d => ({ d }))} width={330}/></div>
+        <div style={{flex:'1 1 auto',maxWidth:440}}><PaperStaff clef={m.clef} notes={m.notes.map(d => ({ d }))} width={430}/></div>
         <div style={{display:'flex',gap:4}}>{m.word.split('').map((L, j) => <span key={j} style={{width:24,height:26,border:'1.4px solid ' + BK.ink,borderRadius:5,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:900,color:'transparent'}}/>)}</div>
       </div>)}
     </Part>
     <Part kind="play" style={{justifyContent:'center'}} title="Note bingo" how="Someone names (or plays) one of the nine notes. Find it and colour it. Three in a row -- any direction -- wins!">
-      <BkGrid cols={9} gap="4px 5px">{W.s5.bingo.map((d, i) => <div key={i} style={{border:'1px solid #ece6d8',borderRadius:7,padding:'2px 3px'}}><PaperStaff clef={d >= 28 ? 'treble' : 'bass'} notes={[{ d }]} width={56}/></div>)}</BkGrid>
+      <BkGrid cols={9} gap="4px 5px">{W.s5.bingo.map((d, i) => <div key={i} style={{border:'1px solid #ece6d8',borderRadius:7,padding:'2px 3px'}}><PaperStaff clef={d >= 28 ? 'treble' : 'bass'} notes={[{ d }]} width={60} minSpan={d >= 28 ? [39, 27] : [29, 17]}/></div>)}</BkGrid>
     </Part>
   </>);
   // 7. the check-up on paper (Phase 406, Sohyun: it belongs in the Workbook, not the Lesson Book)
@@ -34727,16 +34762,16 @@ function SfTeacher() {
   P(<>
     <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('staff')}</div>
     <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Answers for every workbook page, the mistakes students make most, and a line to say when they get stuck. This chapter reads only the nine notes round middle C; the whole staff, the rhymes and fast reading from landmarks come in the next chapter.</div>
-    <TcBlock page={2} title="Lines and spaces" answers={<>{tcAns('TRY IT', W.s1.tog.map(it => sfLS(it.d)))}{tcAns('YOUR TURN', W.s1.home.map(it => sfLS(it.d) + (sfLS(it.d) === 'L' ? (it.d - 30) / 2 + 1 : (it.d - 29) / 2)))}{tcAns('PLATES', ['kebab: ' + W.s1.sort.map((it, i) => sfLS(it.d) === 'L' ? i + 1 : null).filter(Boolean).join(' ') , 'sandwich: ' + W.s1.sort.map((it, i) => sfLS(it.d) === 'S' ? i + 1 : null).filter(Boolean).join(' ')])}</>}
+    <TcBlock page={2} title="Lines and spaces" answers={<>{tcAns('TRY IT', W.s1.tog.map(it => sfLS(it.d)))}{tcAns('YOUR TURN', W.s1.home.map(it => sfLS(it.d) + (sfLS(it.d) === 'L' ? (it.d - 30) / 2 + 1 : (it.d - 29) / 2)))}{tcAns('PLATES', ['kebab: ' + W.s1.sort.map((it, i) => sfLS(it.d) === 'L' ? i + 1 : null).filter(Boolean).join(' '), 'sandwich: ' + W.s1.sort.map((it, i) => sfLS(it.d) === 'S' ? i + 1 : null).filter(Boolean).join(' '), 'own staff: any 3 line + 3 space notes, each checked against its own look'])}</>}
       watch="Counting from the top line down, and space notes drawn leaning on a line so they look like line notes."
       say="“Count like climbing a ladder -- from the floor up. Line 1 is the bottom one.”"/>
-    <TcBlock page={3} title="Up the staff, up the piano" answers={<>{tcAns('TRY IT', W.s2.tog.map(sfSSName))}{tcAns('YOUR TURN', W.s2.home.map(sfSSName))}{tcAns('HIGHER', W.s2.hi.map(it => it.a > it.b ? '1st' : '2nd'))}</>}
+    <TcBlock page={3} title="Up the staff, up the piano" answers={<>{tcAns('TRY IT', W.s2.tog.map(sfSSName))}{tcAns('YOUR TURN', W.s2.home.map(sfSSName))}{tcAns('HIGHER', W.s2.hi.map(it => it.a > it.b ? '1st' : '2nd'))}{tcAns('STAIRS', W.s2.stair.moves.map(mv => (mv.d - 30) % 2 === 0 ? 'line ' + ((mv.d - 30) / 2 + 1) : 'space ' + ((mv.d - 29) / 2)))}</>}
       watch="Circling the note that comes later in time instead of the higher one, and calling every move “up”."
       say="“Higher on the page is higher on the piano -- which one would your right hand reach for?”"/>
-    <TcBlock page={4} title="The Queen's five" answers={<>{tcAns('YOUR TURN', W.s3.home.map(it => withSolfa(dName(it.d))))}{tcAns('DRAW', W.s3.draw.map(L => L + ': ' + { C: 'her ladder rung', D: 'just under line 1', E: 'line 1', F: 'space 1', G: 'line 2, the Queen\u2019s' }[L]))}</>}
+    <TcBlock page={4} title="The Queen's five" answers={<>{tcAns('YOUR TURN', W.s3.home.map(it => withSolfa(dName(it.d))))}{tcAns('COMPOSE', ['any four of C D E F G -- check each drawn note against the letter written under it; then they play it'])}</>}
       watch="Starting to count without looking at the clef first -- most children grab whatever they remember."
       say="“Crown check first: whose palace is this? The curl holds the Queen's G -- start from her line, or from Clara's C.”"/>
-    <TcBlock page={5} title="The King's five" answers={<>{tcAns('YOUR TURN', W.s4.home.map(it => withSolfa(dName(it.d))))}{tcAns('DRAW', W.s4.draw.map(L => L + ': ' + { F: 'line 4, the King\u2019s', G: 'space 4', A: 'line 5, the top line', B: 'just over the top line', C: 'her ladder rung above' }[L]))}{tcAns('MAZE', ['the F road: ' + path.join(' \u203a ')])}</>}
+    <TcBlock page={5} title="The King's five" answers={<>{tcAns('YOUR TURN', W.s4.home.map(it => withSolfa(dName(it.d))))}{tcAns('MAZE', ['the F road: ' + path.join(' \u203a ')])}</>}
       watch="Reading bass notes with treble names -- the answer comes out two letters too high."
       say="“Crown check: this is the King's staff. His two dots guard F -- find F first, then walk from there.”"/>
   </>);
@@ -34765,7 +34800,7 @@ const LESSON_BOOKS = { 'posture-hands': PostureLessonBook, 'first-steps': FirstS
 const LB_PAGE_FNS = { 'posture-hands': postureLbPages, 'first-steps': fsLbPages, 'note-names': nnLbPages, staff: sfLbPages };
 function lbFramed(id, pages, startNo) {
   const lb = LB_PAGE_FNS[id](false);
-  return [React.cloneElement(lb[0], { key: 'frame-open', no: startNo }), ...pages, React.cloneElement(lb[lb.length - 1], { key: 'frame-check', no: startNo + 1 + pages.length })];
+  return [React.cloneElement(lb[0], { key: 'frame-open', no: startNo, book: 'Workbook' }), ...pages, React.cloneElement(lb[lb.length - 1], { key: 'frame-check', no: startNo + 1 + pages.length, book: 'Workbook' })];
 }
 // Printed alone, a chapter's pages use the Workbook's fixed A4 frame (BookRoot's fixed css). Printed with chapters
 // that are still the app lesson (?ch=all), they sit inside that book's page margins: 264 mm tall, no padding.
