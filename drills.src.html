@@ -8844,7 +8844,9 @@ function StaffView({ clef = 'grand', notes = [], ink = '#26296b', width = 300, l
         return (
           <g key={i}>
             {lw.map(p => <line key={p} x1={x - 12} x2={x + 12} y1={yOf(p, st)} y2={yOf(p, st)} stroke={ink} strokeWidth="1.4"/>)}
-            <ellipse cx={x} cy={y} rx="7" ry="5" transform={`rotate(-20 ${x} ${y})`} fill={n.color || ink} data-d={n.d}/>
+            <ellipse cx={x} cy={y} rx="7.2" ry="5.1" fill={n.color || ink} data-d={n.d}/>
+            <ellipse cx={x} cy={y} rx="3.3" ry="2.6" transform={`rotate(-38 ${x} ${y})`} fill={ink === '#faf6ec' ? '#26296b' : '#fff'}/>
+            {(n.d - CLEFS[st].low) % 2 === 0 && <line x1={x - 3.6} x2={x + 3.6} y1={y} y2={y} stroke={ink} strokeOpacity="0.75" strokeWidth="1.1"/>}
             {labels && labels[i] && <text x={x} y={y1 - 6} textAnchor="middle" fontSize="11" fontWeight="800" fill={n.color || ink}>{labels[i]}</text>}
           </g>
         );
@@ -22359,7 +22361,7 @@ function PaperStaff({ clef = 'treble', notes = [], width = 150, ink = BK.ink, cl
           <g key={i}>
             {ledgersFor(n.d, CLEFS[st].low, CLEFS[st].high).map(p => <line key={p} x1={x - 11} x2={x + 11} y1={yOf(p, st)} y2={yOf(p, st)} stroke={ink} strokeWidth="1.3"/>)}
             {n.filled ? <ellipse cx={x} cy={y} rx="6.6" ry="4.7" transform={`rotate(-20 ${x} ${y})`} fill={c}/>
-              : <g><ellipse cx={x} cy={y} rx="7" ry="4.9" fill={c}/><ellipse cx={x} cy={y} rx="3.3" ry="2.6" transform={`rotate(-38 ${x} ${y})`} fill="#fff"/></g>}
+              : <g><ellipse cx={x} cy={y} rx="7" ry="4.9" fill={c}/><ellipse cx={x} cy={y} rx="3.3" ry="2.6" transform={`rotate(-38 ${x} ${y})`} fill="#fff"/>{(n.d - CLEFS[st].low) % 2 === 0 && <line x1={x - 3.6} x2={x + 3.6} y1={y} y2={y} stroke={ink} strokeOpacity="0.7" strokeWidth="1.05"/>}</g>}
             {n.circle && <ellipse cx={x} cy={y} rx="12" ry="10" fill="none" stroke={BK.coral} strokeWidth="1.8"/>}
           </g>
         );
@@ -34165,7 +34167,7 @@ function qnCrown(P, k, s) {   // the Queen's tall crown: five points with pearls
 function qnFace(P, k, s) {
   s.push({ k: 'el', c: P(-2.5, 0.2), rx: 0.85 * k, ry: 0.95 * k, f: PEN_N }, { k: 'el', c: P(2.5, 0.2), rx: 0.85 * k, ry: 0.95 * k, f: PEN_N });
   s.push({ k: 'pa', seg: [['M', P(-1.7, 3.6)], ['Q', P(0, 5.2), P(1.7, 3.6)], ['Q', P(0, 4.2), P(-1.7, 3.6)], ['Z']], f: PEN_C, s: PEN_C, w: 0.6 });   // coral lips
-  s.push({ k: 'el', c: P(-5.9, 2.9), rx: 0.95 * k, ry: 1.2 * k, f: PEN_P, s: PEN_N, w: 0.7 }, { k: 'el', c: P(5.9, 2.9), rx: 0.95 * k, ry: 1.2 * k, f: PEN_P, s: PEN_N, w: 0.7 });   // pearl earrings, at the jaw
+  [-1, 1].forEach(sx => s.push(penLine(P(5.7 * sx, 2.1), P(6.2 * sx, 3.3), 1), { k: 'el', c: P(6.35 * sx, 4.3), rx: 1.05 * k, ry: 1.25 * k, f: PEN_P, s: PEN_N, w: 0.8 }));   // drop earrings: a stem from the jaw, the pearl below
 }
 function sfQueen(cx, cy, k = 1) {   // Phase 404, her pick (Queen A): hair up, a high lace collar, pearl earrings, a tall crown, a coral gown with a pearl necklace
   const P = (a, b) => [cx + a * k, cy + b * k], s = [];
@@ -34310,24 +34312,38 @@ function sfLbPages(scr = false) {
       <path d={`M64 ${yOf(30) + 24} L292 ${yOf(30) + 24}`} stroke={BK.coral} strokeWidth="1.8"/>{sfArrowHead(296, yOf(30) + 24, 1, BK.coral)}{sfArrowHead(60, yOf(30) + 24, -1, BK.coral)}
       <text x="178" y={yOf(30) + 37} fontSize="9" fontWeight="800" fill={BK.ink} textAnchor="middle">{t('up = higher, to the right · down = lower, to the left', '위로 = 높게, 오른쪽으로 · 아래로 = 낮게, 왼쪽으로')}</text>
     </g>}/>;
+  // the clef on its own first (Phase 406): the sign big, its line in coral, its owner beside it -- out of the staff
+  const clefIntro = (clef) => {
+    const line = clef === 'treble' ? 32 : 24, L = clef === 'treble' ? 'G' : 'F';
+    return <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:30,width:'100%'}}>
+      <div style={{width:175,flex:'0 0 auto'}}>
+        <SfStaff clef={clef} width={130} pad={[16, 16]} label={clef === 'treble' ? t('The treble clef, big: its curl wraps the G line, in coral', '높은음자리표를 크게: 소용돌이가 산호색 G 줄을 감싸요') : t('The bass clef, big: its two dots guard the F line, in coral', '낮은음자리표를 크게: 두 점이 산호색 F 줄을 지켜요')}
+          extra={(yOf, layer, txt) => layer === 'under'
+            ? <line x1="4" x2="126" y1={yOf(line)} y2={yOf(line)} stroke={BK.coral} strokeOpacity="0.55" strokeWidth="3.4"/>
+            : <text x="114" y={yOf(line) + 4.5} fontSize="14" fontWeight="900" fill={BK.coral} textAnchor="middle" style={txt}>{L}</text>}/>
+      </div>
+      <PenArt shapes={clef === 'treble' ? sfQueen(26, 28, 1.2) : sfKing(26, 28, 1.2)} vb={[0, 0, 52, 58]} style={{width:82,flex:'0 0 auto'}} label={clef === 'treble' ? t('the Queen', '여왕') : t('the King', '왕')}/>
+    </div>;
+  };
+  const pic2 = (intro, main, h) => <LbPic h={h}><div style={{display:'flex',flexDirection:'column',gap:12,width:'100%',maxWidth:640,margin:'0 auto'}}>{intro}<div style={{width:'100%',maxWidth:600,margin:'0 auto'}}>{main}</div></div></LbPic>;
   // p4: the Queen's five -- C D E F G, from Clara up to the Queen's G; the curl wraps the second line
   const xs5 = [70, 126, 182, 238, 294];
-  const p4 = <SfStaff clef="treble" width={340} pad={[50, 40]} label={t('The treble clef; its curl wraps the second line, the Queen\'s G line, in coral; five notes climb from middle C on its little ladder rung: C D E F G', '높은음자리표; 소용돌이가 감싸는 둘째 줄(여왕의 G 줄)이 산호색; 작은 사다리 발판 위의 가운데 도에서 다섯 음이 올라가요: C D E F G')}
+  const p4 = <SfStaff clef="treble" width={340} pad={[26, 40]} label={t('The treble clef; its curl wraps the second line, the Queen\'s G line, in coral; five notes climb from middle C on its little ladder rung: C D E F G', '높은음자리표; 소용돌이가 감싸는 둘째 줄(여왕의 G 줄)이 산호색; 작은 사다리 발판 위의 가운데 도에서 다섯 음이 올라가요: C D E F G')}
     notes={[28, 29, 30, 31, 32].map((d, i) => ({ d, x: xs5[i], color: i === 4 || i === 0 ? PEN_C : undefined }))}
-    icons={[SF_ICON(queen, 268, 10, 0.9), SF_ICON(clara, 28, 92, 0.72)]}
+    icons={[SF_ICON(clara, 28, 92, 0.72)]}
     extra={(yOf, layer, txt) => <g>{layer === 'under' && <line x1="36" x2="332" y1={yOf(32)} y2={yOf(32)} stroke={BK.coral} strokeOpacity="0.55" strokeWidth="3.4"/>}
       {rowLabels([[xs5[0], 'C', t('Clara', '클라라'), true], [xs5[1], 'D'], [xs5[2], 'E'], [xs5[3], 'F'], [xs5[4], 'G', t('the Queen\'s G', '여왕의 G'), true]], (yOf) => yOf(28) + 19, 12)(yOf, layer, txt)}</g>}/>;
   // p5: the King's five -- F G A B C, from the King's F up to Clara; the two dots guard the fourth line
-  const p5 = <SfStaff clef="bass" width={340} pad={[56, 50]} label={t('The bass clef; its two dots guard the fourth line, the King\'s F line, in coral; five notes climb from the King\'s F to middle C on its little ladder rung: F G A B C', '낮은음자리표; 두 점이 지키는 넷째 줄(왕의 F 줄)이 산호색; 왕의 F에서 작은 사다리 발판 위의 가운데 도까지 다섯 음: F G A B C')}
+  const p5 = <SfStaff clef="bass" width={340} pad={[30, 46]} label={t('The bass clef; its two dots guard the fourth line, the King\'s F line, in coral; five notes climb from the King\'s F to middle C on its little ladder rung: F G A B C', '낮은음자리표; 두 점이 지키는 넷째 줄(왕의 F 줄)이 산호색; 왕의 F에서 작은 사다리 발판 위의 가운데 도까지 다섯 음: F G A B C')}
     notes={[24, 25, 26, 27, 28].map((d, i) => ({ d, x: xs5[i], color: i === 0 || i === 4 ? PEN_C : undefined }))}
-    icons={[SF_ICON(king, 51, 166, 0.9), SF_ICON(clara, 304, 94, 0.62)]}
+    icons={[SF_ICON(clara, 304, 94, 0.62)]}
     extra={(yOf, layer, txt) => <g>{layer === 'under' && <line x1="36" x2="332" y1={yOf(24)} y2={yOf(24)} stroke={BK.coral} strokeOpacity="0.55" strokeWidth="3.4"/>}
       {rowLabels([[xs5[0], 'F', t('the King\'s F', '왕의 F'), true], [xs5[1], 'G'], [xs5[2], 'A'], [xs5[3], 'B'], [xs5[4], 'C', t('Clara', '클라라'), true]], (yOf) => yOf(28) - 16, -12)(yOf, layer, txt)}</g>}/>;
   // p6 (v4): the grand staff; the written middle C attaches just under the Queen's staff or just over the King's --
   // two places on paper, one key. No folding here (Sohyun: the fold waits for chapter 5's three Cs).
   const p6 = <SfStaff clef="grand" width={340} pad={[26, 30]} label={t('The grand staff: middle C written twice on its little ladder rung, once just under the Queen\'s staff and once just over the King\'s, in the same column, joined by a dotted line saying they are the same key; Princess Clara stands by both', '큰보표: 작은 사다리 발판 위의 가운데 도가 두 번 써 있어요 -- 한 번은 여왕의 오선 바로 아래, 한 번은 왕의 오선 바로 위, 같은 세로줄에; 점선이 둘을 이으며 같은 건반이라고 말해요; 클라라 공주가 양쪽에 서 있어요')}
     notes={[{ d: 28, x: 96, staff: 'treble', color: PEN_C }, { d: 28, x: 96, staff: 'bass', color: PEN_C }]}
-    icons={[SF_ICON(clara, 60, 96, 0.55), SF_ICON(clara, 60, 140, 0.55), SF_ICON(queen, 300, 50, 0.85), SF_ICON(king, 300, 140, 0.85)]}
+    icons={[SF_ICON(clara, 60, 96, 0.55), SF_ICON(clara, 60, 140, 0.55)]}
     extra={(yOf, layer, txt) => layer === 'over' && <g style={txt}>
       <line x1="96" x2="96" y1={yOf(28, 'treble') + 9} y2={yOf(28, 'bass') - 9} stroke={BK.coral} strokeWidth="1.4" strokeDasharray="4 3.5"/>
       <text x="108" y={(yOf(28, 'treble') + yOf(28, 'bass')) / 2 + 3.5} fontSize="9.5" fontWeight="900" fill={BK.coral} textAnchor="start">{t('the same key!', '같은 건반!')}</text>
@@ -34404,7 +34420,7 @@ function sfLbPages(scr = false) {
 
     // 4. the Queen's five (treble clef)
     <LbPage key="4" no={4} chId={ch} kicker={t('Step 3', '3단계')} title={t('The Queen\'s five', '여왕의 다섯 음')}>
-      {pic(p4, 210, 680)}
+      {pic2(clefIntro('treble'), p4, 290)}
       <LbSay>{LANG === 'ko' ? <>이 꼬불꼬불한 기호가 <b>높은음자리표</b>예요. 아주 옛날에는 그냥 글자 <b>G</b>였어요. 소용돌이가 아래에서 <b>둘째 줄</b>을 감싸는데, 그 줄이 <b>여왕의 집</b>이에요: 그 줄 위의 음은 모두 <b>G</b>. 여왕은 높은 목소리로 노래하고, 보통 <b>오른손</b>이 읽어요. 클라라 공주(가운데 도)에서 여왕의 G까지는 딱 <b>다섯 음</b>: C D E F G -- 공주는 오선 아래 작은 사다리 발판 위, D는 1번 줄 바로 아래, E는 1번 줄, F는 1번 칸, G는 여왕의 줄.</>
         : <>This curly sign is the <b>treble clef</b>. Long ago it was simply a letter <b>G</b>. Its curl wraps round the <b>second line</b> from the bottom, and that line is the <b>Queen's house</b>: every note on it is <b>G</b>. The Queen sings high, and usually the <b>right hand</b> reads her staff. From Princess Clara (middle C) up to the Queen's G is exactly <b>five notes</b>: C D E F G -- Clara on her little ladder rung under the staff, D just under line 1, E on line 1, F in space 1, G on the Queen's line.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [
@@ -34421,7 +34437,7 @@ function sfLbPages(scr = false) {
 
     // 5. the King's five (bass clef)
     <LbPage key="5" no={5} chId={ch} kicker={t('Step 4', '4단계')} title={t('The King\'s five', '왕의 다섯 음')}>
-      {pic(p5, 220, 680)}
+      {pic2(clefIntro('bass'), p5, 290)}
       <LbSay>{LANG === 'ko' ? <>이 기호는 <b>낮은음자리표</b>예요. 글자 <b>F</b>에서 시작했어요. 왕의 집은 아래에서 <b>넷째 줄</b>이고, 음자리표의 <b>두 점</b>이 경비병이에요 -- 하나는 왕의 줄 바로 위, 하나는 바로 아래. 두 경비병 사이의 줄이 <b>F</b>예요. 왕은 낮은 목소리로 노래하고, 보통 <b>왼손</b>이 읽어요. 왕의 F에서 공주까지도 딱 <b>다섯 음</b>: F G A B C -- F는 왕의 줄, G는 그 위 칸, A는 맨 윗줄, B는 그 위, C는 오선 위 작은 사다리 발판의 공주.</>
         : <>This sign is the <b>bass clef</b>. It began as a letter <b>F</b>. The King's house is the <b>fourth line</b> from the bottom, and the clef's <b>two dots</b> are his guards, one just above his line and one just below. The line between the guards is <b>F</b>. The King sings low, and usually the <b>left hand</b> reads his staff. From the King's F up to Princess Clara is <b>five notes</b> too: F G A B C -- F on the King's line, G in the space above, A on the top line, B just over it, and Clara on her little ladder rung above the staff.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [
@@ -34453,9 +34469,8 @@ function sfLbPages(scr = false) {
 
     // 8. my five checks + the check-up on paper
     <LbPage key="7" no={7} chId={ch} kicker={t('Check-up', '점검')} title={t('My five checks', '나의 다섯 가지 확인')}>
-      <LbSay>{t('At the piano: show each one, then tick how it is going -- not yet, nearly, or got it! On paper: do the check-up below.', '피아노 앞에서: 하나씩 보여 주고 어떤지 표시해요 -- 아직, 거의, 됐어요! 종이에서: 아래 점검을 풀어요.')}</LbSay>
+      <LbSay>{t('Show each one at the piano, then tick how it is going -- not yet, nearly, or got it! The check-up on paper is in the Workbook.', '피아노 앞에서 하나씩 보여 주고 어떤지 표시해요 -- 아직, 거의, 됐어요! 종이 점검은 워크북에 있어요.')}</LbSay>
       <LbLive still={<LbStageRows rows={checksRows.map(([a, vb, txt]) => [<PenArt shapes={chkArts[a]} vb={vb} style={{width:80}}/>, txt])}/>} live={<FiveChecks376 storeKey="pb_five_sf_v1" rows={checksRows.map(([a, vb, txt]) => [{ shapes: chkArts[a], vb }, txt])}/>}/>
-      <LbOnly print><SfPaperCheck/></LbOnly>
     </LbPage>,
   ];
 }
@@ -34572,7 +34587,7 @@ function sfWorkbook() {
   const run = (n, lo, hi) => { const out = []; for (let i = 0; i < n; i++) { let d; do { d = rnd(lo, hi); } while (out.length && out[out.length - 1].d === d); out.push({ d }); } return out; };
   const mkSS = (lo, hi) => { for (;;) { const a = rnd(lo, hi), gap = Math.random() < 0.5 ? 1 : 2, dir = Math.random() < 0.5 ? 1 : -1, b = a + gap * dir; if (b >= lo && b <= hi) return { a, b }; } };
   const s1 = withSeed(k('s1'), () => ({ tog: run(4, 30, 38), home: run(6, 30, 38), sort: run(6, 30, 38) }));
-  const s2 = withSeed(k('s2'), () => ({ tog: Array.from({ length: 4 }, () => mkSS(30, 38)), home: Array.from({ length: 4 }, () => mkSS(30, 38)), hi: Array.from({ length: 4 }, () => mkSS(30, 38)) }));
+  const s2 = withSeed(k('s2'), () => ({ tog: Array.from({ length: 4 }, () => mkSS(30, 38)), home: Array.from({ length: 8 }, () => mkSS(30, 38)), hi: Array.from({ length: 4 }, () => mkSS(30, 38)) }));
   const s3 = withSeed(k('s3'), () => ({ tog: shuffle([28, 29, 30, 31, 32]).slice(0, 4).map(d => ({ d })), home: run(6, 28, 32), draw: shuffle(['D', 'E', 'F', 'G']) }));
   const s4 = withSeed(k('s4'), () => {
     let r = rnd(0, 2); const path = [[r, 0]];
@@ -34638,7 +34653,7 @@ function SfWorkbook({ startNo = 1, frames = true }) {
     <Part kind="home" title="Your turn">
       <BkGrid cols={4} gap="5px 8px">{W.s2.home.map((it, i) => ssCell(it, i + 5))}</BkGrid>
     </Part>
-    <Part kind="play" style={{justifyContent:'center'}} title="Which is higher?" how="Circle the higher note in each pair -- then play both, low one first, and check with your ears.">
+    <Part kind="play" grow={false} title="Which is higher?" how="Circle the higher note in each pair -- then play both, low one first, and check with your ears.">
       <BkGrid cols={4} gap="5px 8px">{W.s2.hi.map((it, i) => <BkCell key={i} n={i + 1}><div style={{padding:'8px 4px 2px'}}><PaperStaff clefOn={false} notes={[{ d: it.a }, { d: it.b }]} width={92}/></div></BkCell>)}</BkGrid>
     </Part>
   </>);
@@ -34694,6 +34709,11 @@ function SfWorkbook({ startNo = 1, frames = true }) {
       <BkGrid cols={9} gap="4px 5px">{W.s5.bingo.map((d, i) => <div key={i} style={{border:'1px solid #ece6d8',borderRadius:7,padding:'2px 3px'}}><PaperStaff clef={d >= 28 ? 'treble' : 'bass'} notes={[{ d }]} width={56}/></div>)}</BkGrid>
     </Part>
   </>);
+  // 7. the check-up on paper (Phase 406, Sohyun: it belongs in the Workbook, not the Lesson Book)
+  P(<>
+    <WbTop step={6}/>
+    <SfPaperCheck/>
+  </>);
   return <>{frames ? lbFramed('staff', pages, startNo) : pages}</>;
 }
 
@@ -34724,7 +34744,7 @@ function SfTeacher() {
     <TcBlock page={6} title="Middle C: Princess Clara" answers={<>{tcAns('CIRCLE', W.s5.mid.map((row, i) => 'staff ' + (i + 1) + ': notes ' + row.map((n, j) => n.d === 28 ? j + 1 : null).filter(Boolean).join(' & ')))}{tcAns('MESSAGE', SF_MSG.map(m => m.word))}{tcAns('BINGO', W.s5.bingo.map(d => withSolfa(dName(d))))}</>}
       watch="Thinking the C under the treble staff and the C over the bass staff are two different keys."
       say="“Same key, written from the Queen's side or the King's side -- that is why Clara stands by both.”"/>
-    <TcBlock page={7} title="Check-up (in the Lesson Book)" goBack={[{ id: 'ls', step: 1, page: 2 }, { id: 'ss', step: 2, page: 3 }, { id: 'tr', step: 3, page: 4 }, { id: 'ba', step: 4, page: 5 }, { id: 'mc', step: 5, page: 6 }]} answers={<>
+    <TcBlock page={7} title="Check-up" goBack={[{ id: 'ls', step: 1, page: 2 }, { id: 'ss', step: 2, page: 3 }, { id: 'tr', step: 3, page: 4 }, { id: 'ba', step: 4, page: 5 }, { id: 'mc', step: 5, page: 6 }]} answers={<>
       {tcAns('A', C.ls.map(it => sfLS(it.d)))}
       {tcAns('B', C.ss.map(it => sfSSName({ a: it.a, b: it.b })))}
       {tcAns('C', C.tr.map(d => withSolfa(dName(d))))}
