@@ -17513,15 +17513,15 @@ function LbStageIcon({ i, on }) {
 // the printed five checks: three boxes in each row
 function LbStageRows({ rows, big }) {   // Phase 409: big = the check page's rows fill the page (no paper part below)
   const S = lbStages(), cols = big ? '140px 1fr repeat(3, 70px)' : '96px 1fr repeat(3, 62px)';
-  return <div style={{display:'flex',flexDirection:'column',gap:5}}>
+  return <div style={{display:'flex',flexDirection:'column',gap:big ? 8 : 5,flex:big ? '1 0 auto' : undefined}}>
     <div style={{display:'grid',gridTemplateColumns:cols,gap:7,alignItems:'end',fontSize:11,fontWeight:800,color:BK.muted,textAlign:'center'}}>
       <span style={{gridColumn:'1 / 3',textAlign:'left',fontFamily:LB_SERIF,fontSize:18,color:BK.ink,whiteSpace:'nowrap'}}>{t('At the piano', '피아노 앞에서')}</span>
       {S.map((l, i) => <span key={i} style={i === 2 ? {color:BK.coral} : null}>{l}</span>)}
     </div>
-    {rows.map(([pic, txt], i) => <div key={i} style={{display:'grid',gridTemplateColumns:cols,gap:7,alignItems:'center',border:'1px solid #ece6d8',borderRadius:10,padding:big ? '14px 10px' : '3px 8px'}}>
+    {rows.map(([pic, txt], i) => <div key={i} style={{display:'grid',gridTemplateColumns:cols,gap:7,alignItems:'center',border:'1px solid #ece6d8',borderRadius:10,padding:big ? '9px 10px' : '3px 8px',flex:big ? '1 0 auto' : undefined}}>
       <div style={{display:'flex',justifyContent:'center',zoom:big ? 1.5 : undefined}}>{pic}</div>
-      <div style={{fontSize:big ? 17 : 14,fontWeight:800,color:BK.ink,lineHeight:1.35}}>{txt}</div>
-      {[0, 1, 2].map(k => <span key={k} style={{width:30,height:30,border:'1.5px solid ' + BK.line,borderRadius:15,justifySelf:'center',display:'flex',alignItems:'center',justifyContent:'center'}}><LbStageIcon i={k}/></span>)}
+      <div style={{fontSize:big ? 18 : 14,fontWeight:800,color:BK.ink,lineHeight:1.35}}>{txt}</div>
+      {[0, 1, 2].map(k => <span key={k} style={{width:big ? 38 : 30,height:big ? 38 : 30,border:'1.5px solid ' + BK.line,borderRadius:19,justifySelf:'center',display:'flex',alignItems:'center',justifyContent:'center',zoom:big ? 1.2 : undefined}}><LbStageIcon i={k}/></span>)}
     </div>)}
     <div style={{fontSize:11.5,color:BK.muted}}>{t('Tick a box each time it gets better: not yet, then nearly, then got it!', '좋아질 때마다 한 칸씩 표시해요: 아직, 거의, 그리고 됐어요!')}</div>
   </div>;
@@ -22909,12 +22909,19 @@ function BkStarG({ size = 16, fill = BK.coral }) {
   const p = []; for (let i = 0; i < 10; i++) { const r = (i % 2 ? 4.2 : 10) * size / 24, a = Math.PI / 5 * i - Math.PI / 2; p.push((size / 2 + r * Math.cos(a)).toFixed(2) + ',' + (size / 2 + r * Math.sin(a)).toFixed(2)); }
   return <polygon points={p.join(' ')} fill={fill}/>;
 }
+// Phase 417: answer boxes under a paper keyboard (big enough to write in), centred under key i (i can be x.5)
+function KeyBoxRow({ whites, w, idx, nos, bw = 42, bh = 38 }) {
+  const W = whites * w + 4;
+  return <div style={{position:'relative',height:bh + 16,marginTop:4}}>{idx.map(i => <span key={i} style={{position:'absolute',left:((i + 0.5) * w + 2) / W * 100 + '%',transform:'translateX(-50%)',top:0,display:'flex',flexDirection:'column',alignItems:'center'}}>
+    <span style={{width:bw,height:bh,border:'1.5px solid ' + BK.ink,borderRadius:7,background:'#fff'}}/>
+    {nos && nos[i] != null && <span style={{fontSize:10.5,fontWeight:900,color:BK.coral,marginTop:2}}>{nos[i]}</span>}</span>)}</div>;
+}
 // A row of letter boxes; given[i] = letter printed, ex[i] = worked answer in coral, else empty.
-function LetterRow({ cells, n, ex }) {
+function LetterRow({ cells, n, ex, big }) {
   return (
-    <div style={{display:'flex',alignItems:'center',gap:6,border:ex ? '1.5px solid ' + BK.coral : '1px solid #ece6d8',background:ex ? '#fff8f5' : '#fff',borderRadius:8,padding:'7px 10px'}}>
-      <span style={{fontSize:10,fontWeight:900,color:BK.coral,minWidth:ex ? 54 : 16,letterSpacing:ex ? '0.06em' : 0}}>{ex ? 'EXAMPLE' : n}</span>
-      {cells.map((c, i) => <span key={i} style={{width:32,height:34,borderRadius:6,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:17,fontWeight:900,
+    <div style={{display:'flex',alignItems:'center',gap:big ? 9 : 6,border:ex ? '1.5px solid ' + BK.coral : '1px solid #ece6d8',background:ex ? '#fff8f5' : '#fff',borderRadius:8,padding:big ? '9px 12px' : '7px 10px'}}>
+      <span style={{fontSize:big ? 11 : 10,fontWeight:900,color:BK.coral,minWidth:ex ? 54 : big ? 40 : 16,letterSpacing:ex ? '0.06em' : 0}}>{ex ? 'EXAMPLE' : n}</span>
+      {cells.map((c, i) => <span key={i} style={{width:big ? 42 : 32,height:big ? 44 : 34,borderRadius:6,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:big ? 21 : 17,fontWeight:900,
         border:'1.5px solid ' + (c.given ? 'transparent' : c.ex ? BK.coral : BK.line),background:c.given ? BK.soft : '#fff',color:c.ex ? BK.coral : BK.ink,fontStyle:c.ex ? 'italic' : 'normal'}}>{c.given || c.ex || ''}</span>)}
     </div>
   );
@@ -23706,6 +23713,10 @@ function Lead({ children, max = 440 }) {
 
 // ─── Note Names (chapter 'note-names'): the black-key map, A to G, up and down, the letter chain ───
 const NN_WORDS = ['BAG', 'CAFE', 'EGG', 'FACE', 'BADGE', 'CAGE', 'BEAD'];
+// Phase 417: 'in my head' starts from a set letter each day (Mon..Sun)
+const NN_HEAD_DAYS = ['G', 'C', 'E', 'A', 'D', 'B', 'F'];
+// Phase 413: the word search's bonus is set, not free -- two riddles in music letters
+const NN_RIDDLES = [['It buzzes:', 'E B E', 'BEE'], ['You sleep in it:', 'D B E', 'BED']];
 const nnLet = (start, k) => BK_LET[((BK_LET.indexOf(start) + k) % 7 + 7) % 7];
 const AZ = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
 const azStep = (l, k) => AZ[((AZ.indexOf(l) + k) % 7 + 7) % 7];
@@ -23747,7 +23758,7 @@ function nnWorkbook() {
   const s1 = withSeed(k('s1'), () => { const a = dotSet(10, 'C', 4); const al = a.map(i => nnLet('C', i)); const b = dotSet(10, 'A', 4, al.slice(0, 1)); return { kb: [{ start: 'C', dots: a }, { start: 'A', dots: b }] }; });
   const s2 = withSeed(k('s2'), () => ({ tog: [nnRow(1, 8, 3), nnRow(1, 8, 3), nnRow(1, 8, 3)], home: Array.from({ length: 6 }, () => nnRow(1, 7, 3)) }));
   const s3 = withSeed(k('s3'), () => ({ tog: [mk('D', true), mk(pick(['E', 'F', 'B']), false), mk(pick(['C', 'A']), true), mk(pick(['G', 'D']), false)], back: [nnRow(-1, 7, 3), nnRow(-1, 7, 3), nnRow(-1, 7, 3), nnRow(-1, 7, 3)] }));
-  const hunt = withSeed(k('hunt'), () => { let pos = 3; const moves = []; while (moves.length < 6) { const m = pick([2, 3, 4, -1, -2, -3]); if (pos + m >= 0 && pos + m <= 14) { pos += m; moves.push({ m, land: pos }); } } return { start: 3, moves }; });
+  const hunt = withSeed(k('hunt'), () => { let pos = 3; const moves = []; while (moves.length < 8) { const m = pick([2, 3, 4, -1, -2, -3]); if (pos + m >= 0 && pos + m <= 14) { pos += m; moves.push({ m, land: pos }); } } return { start: 3, moves }; });
   const gl = withSeed(k('gl'), () => { const rest = shuffle(['C', 'E', 'F', 'G', 'A', 'B']); return { tog: ['D', ...rest.slice(0, 3)], home: rest.slice(3), kb: dotSet(14, 'C', 6) }; });
   const sk = withSeed(k('sk'), () => ({ tog: [nnRow(2, 8, 3), nnRow(2, 8, 3), nnRow(2, 8, 3)], home: [nnRow(2, 7, 3), nnRow(2, 7, 3), nnRow(-2, 7, 3), nnRow(-2, 7, 3)] }));
   const search = withSeed(k('ws'), () => nnSearch());
@@ -23770,16 +23781,16 @@ function nnConcepts() {
     { id: 'ck', name: 'My five checks', step: '7', page: '8', chk: false },
   ];
 }
-function UpDownCell({ it, n, ex }) {
+function UpDownCell({ it, n, ex, big }) {
   return (
     <ExCell n={n} ex={ex}>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'16px 4px 8px'}}>
-        <span style={{fontSize:24,fontWeight:900,color:BK.ink}}>{it.l}</span>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:big ? '20px 4px 12px' : '16px 4px 8px'}}>
+        <span style={{fontSize:big ? 30 : 24,fontWeight:900,color:BK.ink}}>{it.l}</span>
         <span style={{display:'inline-flex',flexDirection:'column',alignItems:'center',fontSize:10,fontWeight:800,color:BK.muted,lineHeight:1.1}}>
           <svg width="40" height="18" viewBox="0 0 40 18">{it.up ? <path d="M3 9 H33 M26 3 L34 9 L26 15" fill="none" stroke={BK.coral} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/> : <path d="M37 9 H7 M14 3 L6 9 L14 15" fill="none" stroke={BK.ink} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>}</svg>
           {it.up ? 'one up' : 'one down'}
         </span>
-        {ex ? bkHand(it.a, 40, 38) : bkBox(40, 38)}
+        {ex ? bkHand(it.a, 40, 38) : bkBox(big ? 48 : 40, big ? 46 : 38)}
       </div>
     </ExCell>
   );
@@ -23795,8 +23806,8 @@ function NoteNamesWorkbook({ startNo = 1, frames = true }) {
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + 1 + pages.length} chId="note-names">{content}</WbPage>);
   // a resident: who lives there, and a little keyboard to put a dot on its key
   const ResCell = ({ L, n, ex }) => <ExCell n={n} ex={ex}><div style={{padding:'13px 4px 2px'}}>
-    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3}}>{nnResIcon(L, 42)}<span style={{fontSize:12.5,fontWeight:900,color:BK.ink}}>{NN_RES[L][0]}</span></div>
-    <PaperKeys start="C" whites={7} w={20} h={50} dots={ex ? [NN_L7.indexOf(L)] : []} dotR={0.2}/>
+    <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>{nnResIcon(L, 46)}<span style={{fontSize:13,fontWeight:900,color:BK.ink}}>{NN_RES[L][0]}</span></div>
+    <PaperKeys start="C" whites={7} w={20} h={70} dots={ex ? [NN_L7.indexOf(L)] : []} dotR={0.2}/>
   </div></ExCell>;
 
   // 2 (faces "A to G on the keys")
@@ -23804,14 +23815,13 @@ function NoteNamesWorkbook({ startNo = 1, frames = true }) {
   P(<>
     <WbTop step={1}/>
     <Part kind="together" title="Find every C and F" how="Write C or F in every box.">
-      <ArtLead pic={<KeyScene start="C" whites={7} w={40} h={84} houses doors/>} picW={290} text={<><span style={{color:BK.coral}}>C</span> is the small house's left door. <span style={{color:BK.coral}}>F</span> is the big house's left door.</>}/>
-      <KeysCell ex><PaperKeys start="E" whites={15} w={40} h={120} boxes={cf} labels={{ 1: 'F' }} ex={{ 1: true }}/></KeysCell>
+      <KeysCell ex><PaperKeys start="E" whites={15} w={40} h={96} boxes={cf} labels={{ 1: 'F' }} ex={{ 1: true }}/></KeysCell>
     </Part>
     <Part kind="home" title="Name the dotted keys" how="Find the house, then its left door, and walk along from there. Write the letter in the box.">
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>{W.s1.kb.map((kb, i) => <KeysCell key={i} n={i === 0 ? '1-4' : '5-8'}><PaperKeys start={kb.start} whites={10} w={30} h={110} dots={kb.dots} boxes={kb.dots} boxNos={Object.fromEntries([...kb.dots].sort((a, b) => a - b).map((d, j) => [d, 4 * i + j + 1]))}/></KeysCell>)}</div>
+      <div style={{display:'grid',gap:10}}>{W.s1.kb.map((kb, i) => <KeysCell key={i} n={i === 0 ? '1-4' : '5-8'} pad="12px 10px 2px"><PaperKeys start={kb.start} whites={10} w={30} h={40} dots={kb.dots}/><KeyBoxRow whites={10} w={30} bh={34} idx={kb.dots} nos={Object.fromEntries([...kb.dots].sort((a, b) => a - b).map((d, j) => [d, 4 * i + j + 1]))}/></KeysCell>)}</div>
     </Part>
     <Part kind="play" title="Lost letters" how="Five letters have floated away from their keys! Draw a line from each balloon down to the key it lives on. Then draw a roof on every house.">
-      <KeyScene start="C" whites={14} w={40} h={110} houses={false} lost={['D', 'G', 'B', 'C', 'A']}/>
+      <KeyScene start="C" whites={14} w={40} h={96} houses={false} lost={['D', 'G', 'B', 'C', 'A']}/>
     </Part>
     <Faces/>
   </>);
@@ -23820,19 +23830,18 @@ function NoteNamesWorkbook({ startNo = 1, frames = true }) {
   P(<>
     <WbTop step={2}/>
     <Part kind="together" title="Fill in the missing letters" how="Say the letters round the wheel out loud, then fill the gaps.">
-      <ArtLead pic={<LetterWheel size={118}/>} picW={118} text={<>Music has only 7 letters, A to G, going round like a Ferris wheel. <span style={{color:BK.coral}}>After G, you are back at A.</span></>} style={{padding:'4px 14px'}}/>
-      <div style={{display:'grid',gap:8}}>{W.s2.tog.map((r, i) => <LetterRow key={i} n={i + 1} ex={i === 0} cells={rowCells(r, i === 0)}/>)}</div>
+      <div style={{display:'grid',gap:10}}>{W.s2.tog.map((r, i) => <LetterRow key={i} big n={i + 1} ex={i === 0} cells={rowCells(r, i === 0)}/>)}</div>
     </Part>
     <Part kind="home" title="Fill them in on your own">
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>{W.s2.home.map((r, i) => <LetterRow key={i} n={i + 1} cells={rowCells(r, false)}/>)}</div>
     </Part>
     <Part kind="play" title="Same letter, every octave" how="Colour every C. Then draw a hop from each C to the next C, like the first one. Each hop is one octave: 8 white keys, counting both Cs.">
-      <PaperKeys start="C" whites={22} w={26} h={96} fills={{ 0: '#fdeee8' }} arrows={<g>
+      <PaperKeys start="C" whites={22} w={26} h={196} fills={{ 0: '#fdeee8' }} arrows={<g>
         <path d={`M15 27 Q106 -3 197 27`} fill="none" stroke={BK.coral} strokeWidth="2.2"/>
         <path d="M190 20 L197.5 27.5 L188.5 27" fill="none" stroke={BK.coral} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
         <text x="106" y="9" textAnchor="middle" fontSize="11" fontWeight="900" fill={BK.coral}>one octave</text>
       </g>}/>
-      <div style={{display:'flex',gap:28,justifyContent:'center',marginTop:10,fontSize:13,color:BK.ink,alignItems:'center'}}><span>Cs on this keyboard: {bkBox(36, 28)}</span><span>Octave hops: {bkBox(36, 28)}</span></div>
+      <div style={{display:'flex',gap:36,justifyContent:'center',marginTop:16,fontSize:15,color:BK.ink,alignItems:'center'}}><span style={{display:'inline-flex',alignItems:'center',gap:8}}>Cs on this keyboard: {bkBox(46, 38)}</span><span style={{display:'inline-flex',alignItems:'center',gap:8}}>Octave hops: {bkBox(46, 38)}</span></div>
     </Part>
     <Faces/>
   </>);
@@ -23842,20 +23851,20 @@ function NoteNamesWorkbook({ startNo = 1, frames = true }) {
   P(<>
     <WbTop step={3}/>
     <Part kind="together" title="One step up, one step down" how="Write the letter one step up (the next letter) or one step down (the letter before).">
-      <ArtLead pic={<Staircase size={230}/>} picW={230} text={<>Up a step = one key to the RIGHT = the next letter. <span style={{color:BK.coral}}>Down a step = one key to the LEFT = the letter before.</span></>}/>
-      <BkGrid cols={4} gap="10px 12px">{W.s3.tog.map((it, i) => <UpDownCell key={i} it={it} n={i + 1} ex={i === 0}/>)}</BkGrid>
+      <BkGrid cols={4} gap="10px 12px">{W.s3.tog.map((it, i) => <UpDownCell key={i} big it={it} n={i + 1} ex={i === 0}/>)}</BkGrid>
     </Part>
     <Part kind="home" title="Backwards" how="Each row goes backwards, down the piano. Watch out for A -- the letter before A is G.">
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>{W.s3.back.map((r, i) => <LetterRow key={i} n={i + 1} cells={rowCells(r, false)}/>)}</div>
-      <div style={{display:'flex',alignItems:'center',gap:8,marginTop:9,fontSize:12.5,color:BK.ink,flexWrap:'wrap'}}><b>In my head, no piano:</b><span>the letters backwards, from a different letter each day. Tick a day:</span>{BK_DAYS.map(d => <span key={d} style={{display:'inline-flex',alignItems:'center',gap:3,fontSize:10.5,color:BK.muted,fontWeight:700}}>{d}<span style={{width:18,height:18,border:'1.5px solid ' + BK.line,borderRadius:4}}/></span>)}</div>
+      <div style={{marginTop:10,fontSize:13,color:BK.ink}}><b>In my head, no piano:</b> say the letters backwards, all seven, starting from the day's letter. Tick the day:</div>
+      <div style={{display:'flex',justifyContent:'space-between',marginTop:6,padding:'0 4px'}}>{BK_DAYS.map((d, j) => <span key={d} style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:11.5,color:BK.muted,fontWeight:700}}>{d} <b style={{fontSize:14,color:BK.coral}}>{NN_HEAD_DAYS[j]}</b><span style={{width:22,height:22,border:'1.5px solid ' + BK.line,borderRadius:5}}/></span>)}</div>
     </Part>
     <Part kind="play" title="Treasure hunt" how="Start on the star (F). One step = the next white key. Follow each clue, write the letter you land on, and start the next clue from there. Clue 1 is done: the arrow shows the hop. Draw a treasure chest on the last key!">
-      <PaperKeys start="C" whites={hk} w={42} h={110} stars={[hstart]} arrows={(() => { const m0 = W.hunt.moves[0].m, x0 = (hstart + 0.5) * 42 + 2, x1 = (W.hunt.moves[0].land + 0.5) * 42 + 2, dir = m0 > 0 ? 1 : -1; return <g>
+      <PaperKeys start="C" whites={hk} w={42} h={178} stars={[hstart]} arrows={(() => { const m0 = W.hunt.moves[0].m, x0 = (hstart + 0.5) * 42 + 2, x1 = (W.hunt.moves[0].land + 0.5) * 42 + 2, dir = m0 > 0 ? 1 : -1; return <g>
         {Array.from({ length: Math.abs(m0) }, (_, j) => { const a = x0 + j * 42 * dir, b = a + 42 * dir; return <path key={j} d={`M${a} 26 Q${(a + b) / 2} 2 ${b} 26`} fill="none" stroke={BK.coral} strokeWidth="2.2"/>; })}
         <path d={`M${x1 - 5 * dir} 17 L${x1} 27 L${x1 - 6 * dir} 25`} fill="none" stroke={BK.coral} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
         <text x={(x0 + x1) / 2} y={11} textAnchor="middle" fontSize="11" fontWeight="900" fill={BK.coral}>{'clue 1: ' + Math.abs(m0) + (Math.abs(m0) === 1 ? ' step ' : ' steps ') + (m0 > 0 ? 'up' : 'down')}</text>
       </g>; })()}/>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:8,marginTop:10}}>{W.hunt.moves.map((mv, i) => <div key={i} style={{border:(i === 0 ? '1.5px solid ' + BK.coral : '1px solid #ece6d8'),background:i === 0 ? '#fff8f5' : '#fff',borderRadius:8,padding:'6px 4px',textAlign:'center'}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginTop:12}}>{W.hunt.moves.map((mv, i) => <div key={i} style={{border:(i === 0 ? '1.5px solid ' + BK.coral : '1px solid #ece6d8'),background:i === 0 ? '#fff8f5' : '#fff',borderRadius:8,padding:'6px 4px',textAlign:'center'}}>
         <div style={{fontSize:10,fontWeight:900,color:BK.coral}}>{i === 0 ? 'CLUE 1 · EXAMPLE' : 'CLUE ' + (i + 1)}</div>
         <div style={{fontSize:13.5,fontWeight:800,color:BK.ink,margin:'2px 0 6px'}}>{Math.abs(mv.m) + (Math.abs(mv.m) === 1 ? ' step ' : ' steps ') + (mv.m > 0 ? 'up' : 'down')}</div>
         {i === 0 ? bkHand(nnLet('C', mv.land), 40, 34) : bkBox(40, 34)}
@@ -23870,12 +23879,12 @@ function NoteNamesWorkbook({ startNo = 1, frames = true }) {
     <Part kind="together" title="Who lives where?" how="Put a dot on the key where each one lives. The first one is done.">
       <BkGrid cols={4} gap="8px 10px">{W.gl.tog.map((L, i) => <ResCell key={L} L={L} n={i + 1} ex={i === 0}/>)}</BkGrid>
     </Part>
-    <Part kind="home" title="Name it at a glance" how="First the last three: a dot on their keys. Then write the letter of each dotted key below -- don't count from C, think who lives there.">
-      <BkGrid cols={4} gap="8px 10px">{W.gl.home.map((L, i) => <ResCell key={L} L={L} n={i + 4}/>)}</BkGrid>
-      <div style={{marginTop:8}}><KeysCell n="7-12"><PaperKeys start="C" whites={14} w={36} h={134} dots={W.gl.kb} boxes={W.gl.kb} boxNos={Object.fromEntries([...W.gl.kb].sort((a, b) => a - b).map((d, j) => [d, j + 7]))}/></KeysCell></div>
+    <Part kind="home" title="Name it at a glance" how="5-7: put a dot on the key where each one lives. 8-13: write the letter of each dotted key -- don't count from C, think who lives there.">
+      <BkGrid cols={4} gap="8px 10px">{W.gl.home.map((L, i) => <ResCell key={L} L={L} n={i + 5}/>)}</BkGrid>
+      <div style={{marginTop:8}}><KeysCell n="8-13"><PaperKeys start="C" whites={14} w={36} h={116} dots={W.gl.kb} boxes={W.gl.kb} boxNos={Object.fromEntries([...W.gl.kb].sort((a, b) => a - b).map((d, j) => [d, j + 8]))}/></KeysCell></div>
     </Part>
     <Part kind="play" title="Draw who lives here" how="Draw them on their keys: Princess Clara, her Dog in his doghouse and the Exit in the small house; the Front door, Grandma, her Apple garden and the Back door in the big house.">
-      <div style={{maxWidth:560,margin:'0 auto',width:'100%'}}><PaperKeys start="C" whites={7} w={78} h={170} roofs/></div>
+      <div style={{maxWidth:540,margin:'0 auto',width:'100%'}}><PaperKeys start="C" whites={7} w={78} h={150} roofs/></div>
     </Part>
     <Faces/>
   </>);
@@ -23884,18 +23893,17 @@ function NoteNamesWorkbook({ startNo = 1, frames = true }) {
   P(<>
     <WbTop step={5}/>
     <Part kind="together" title="Skip a letter" how="Say each row out loud first -- whisper the letter you jump over -- then fill the gaps.">
-      <ArtLead pic={<LetterWheel size={110} mode="skip"/>} picW={110} text={<>Skipping: hop over one gondola each time. <span style={{color:BK.coral}}>A (b) C (d) E...</span> <NnSkipNote/></>} style={{padding:'4px 14px'}}/>
-      <div style={{display:'grid',gap:8}}>{W.sk.tog.map((r, i) => <LetterRow key={i} n={i + 1} ex={i === 0} cells={rowCells(r, i === 0)}/>)}</div>
+      <div style={{display:'grid',gap:10}}>{W.sk.tog.map((r, i) => <LetterRow key={i} big n={i + 1} ex={i === 0} cells={rowCells(r, i === 0)}/>)}</div>
     </Part>
-    <Part kind="home" title="Your turn" how="Rows 1-2 skip up. Rows 3-4 skip down (C, A, F...).">
+    <Part kind="home" title="Skip on your own" how="Rows 1-2 skip up. Rows 3-4 skip down (C, A, F...).">
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>{[0, 2, 1, 3].map(j => <LetterRow key={j} n={j + 1} cells={rowCells(W.sk.home[j], false)}/>)}</div>
     </Part>
-    <Part kind="play" title="Draw the letter star" how="Start on A. Skip a letter each time (A, C, E...) and join them with a ruler as you go. Keep going until you are back on A -- what shape did you make?">
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20,alignItems:'center'}}>
-        <LetterRing size={185} star start="A"/>
+    <Part kind="play" title="Draw the letter star" how="Start on C. Skip a letter each time (C, E, G...) and join them with a ruler as you go. Keep going until you are back on C -- what shape did you make?">
+      <div style={{display:'grid',gridTemplateColumns:'1.15fr 1fr',gap:20,alignItems:'center',flex:1}}>
+        <LetterRing size={310} star start="C"/>
         <div>
           <div style={{fontSize:12.5,color:BK.ink,marginBottom:8}}>Write the letters you visit:</div>
-          <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{['A', '', '', '', '', '', '', 'A'].map((l, i) => <span key={i} style={{width:30,height:34,borderRadius:6,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:17,fontWeight:900,border:'1.5px solid ' + (l ? 'transparent' : BK.line),background:l ? BK.soft : '#fff',color:BK.ink}}>{l}</span>)}</div>
+          <div style={{display:'flex',gap:8,flexWrap:'wrap',maxWidth:4 * 42 + 3 * 8}}>{['C', '', '', '', '', '', '', 'C'].map((l, i) => <span key={i} style={{width:42,height:46,borderRadius:7,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:21,fontWeight:900,border:'1.5px solid ' + (l ? 'transparent' : BK.line),background:l ? BK.soft : '#fff',color:BK.ink}}>{l}</span>)}</div>
           <div style={{fontSize:12.5,color:BK.ink,marginTop:14}}>My shape is a <span style={{display:'inline-block',width:110,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span></div>
           <div style={{fontSize:11.5,color:BK.muted,marginTop:10,lineHeight:1.45}}>Musicians use this skip all the time: C E G is a chord!</div>
         </div>
@@ -23911,13 +23919,14 @@ function NoteNamesWorkbook({ startNo = 1, frames = true }) {
       <BkGrid cols={2} gap="8px 12px">{NN_SPELL.map((w, i) => <NnSpellCell key={w} w={w} n={i + 1} ex={i === 0} kw={230}/>)}</BkGrid>
     </Part>
     <Part kind="home" title="This week" how="Tick each one you do.">
-      <PhLog rows={['Read and play: C D E, E D C, right hand', 'The same, left hand, one small house lower', 'Letter chain with someone: forwards', 'Letter chain: backwards', 'Spell and play: BAG, CAFE, FACE']} days={7} label={250}/>
+      <PhLog rows={['Read and play: C D E, E D C, right hand', 'The same, left hand, one small house lower', 'Letter chain out loud: forwards', 'Letter chain out loud: backwards', 'Spell and play: BAG, CAFE, FACE']} days={7} label={250}/>
     </Part>
     <Part kind="play" title="Music word search" how="These words use only music letters. Find each one -- across or down -- ring it, tick it, and play it on the piano!">
       <div style={{display:'grid',gridTemplateColumns:'auto 1fr',gap:22,alignItems:'center'}}>
         <div style={{display:'grid',gridTemplateColumns:'repeat(9, 31px)',gap:3}}>{W.search.g.flat().map((l, i) => <span key={i} style={{width:31,height:31,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:800,color:BK.ink,border:'1px solid #ece6d8',borderRadius:5}}>{l}</span>)}</div>
         <div style={{display:'grid',gap:8}}>{NN_WORDS.map(w => <div key={w} style={{display:'flex',alignItems:'center',gap:10,fontSize:16,fontWeight:900,color:BK.ink,letterSpacing:'0.12em'}}><span style={{width:20,height:20,border:'1.5px solid ' + BK.line,borderRadius:5}}/>{w}</div>)}
-          <div style={{fontSize:12,color:BK.muted,marginTop:4,lineHeight:1.45}}>Bonus: make up your own music word<br/><span style={{display:'inline-block',width:150,borderBottom:'1px solid ' + BK.ink,marginTop:4}}>&nbsp;</span></div>
+          <div style={{fontSize:12.5,color:BK.ink,marginTop:6,lineHeight:1.5}}><b>Bonus riddles</b> -- unscramble the music letters:
+            {NN_RIDDLES.map(([clue, mix]) => <div key={mix} style={{display:'flex',alignItems:'center',gap:8,marginTop:6}}><span style={{minWidth:104}}>{clue}</span><b style={{letterSpacing:'0.14em'}}>{mix}</b> → {bkBox(64, 28)}</div>)}</div>
         </div>
       </div>
     </Part>
@@ -23952,13 +23961,13 @@ function NoteNamesTeacher() {
     <TcBlock page={5} title="Name it at a glance" answers={<>{tcAns('TRY IT', W.gl.tog.map(resAns))}{tcAns('YOUR TURN', [...W.gl.home.map(resAns), ...[...W.gl.kb].sort((a, b) => a - b).map(i => nnLet('C', i))])}<div style={{fontSize:12,color:BK.ink}}><b style={{color:BK.muted,fontSize:10.5,letterSpacing:'0.06em'}}>PLAY</b>  C Princess Clara, D her Dog in his doghouse, E the Exit; F the Front door, G Grandma, A her Apple garden, B the Back door</div></>}
       watch="Counting up from C to find every key. Ask “Who lives there?” instead. Each one sits in its key's place: the Dog between the two black keys, Grandma and the Apple garden between the three."
       say="“Princess Clara, Dog, Exit -- Front door, Grandma, Apple garden, Back door.”"/>
-    <TcBlock page={6} title="Skip a letter" answers={<>{tcAns('TRY IT', rowAns(W.sk.tog))}{tcAns('YOUR TURN', rowAns(W.sk.home))}{tcAns('PLAY', ['A C E G B D F A -- a 7-point star'])}</>}
+    <TcBlock page={6} title="Skip a letter" answers={<>{tcAns('TRY IT', rowAns(W.sk.tog))}{tcAns('YOUR TURN', rowAns(W.sk.home))}{tcAns('PLAY', ['C E G B D F A C -- a 7-point star'])}</>}
       watch="Skips are the hardest part of this chapter for most children. Landing on the very next letter instead of jumping one. Start slowly with the whispered letter, then drop it."
       say="“Whisper the one you jump over: C (d) E (f) G.”"/>
-    <TcBlock page={7} title="Play by letter names" answers={<>{tcAns('TRY IT', NN_SPELL.map(w => w + ': ' + [...new Set(w.split(''))].join(' ') + ' keys'))}{tcAns('PLAY', W.search.placed.map(p => p.w + ' ' + (p.hz ? 'across' : 'down') + ' from row ' + (p.r + 1) + ' col ' + (p.c + 1)))}</>}
+    <TcBlock page={7} title="Play by letter names" answers={<>{tcAns('TRY IT', NN_SPELL.map(w => w + ': ' + [...new Set(w.split(''))].join(' ') + ' keys'))}{tcAns('PLAY', W.search.placed.map(p => p.w + ' ' + (p.hz ? 'across' : 'down') + ' from row ' + (p.r + 1) + ' col ' + (p.c + 1)))}{tcAns('BONUS', NN_RIDDLES.map(([, mix, a]) => mix + ' = ' + a))}</>}
       watch="Reading the finger numbers instead of the letters: have them say the letter names while they play. Fingers 2 3 4 only; 1 and 5 wait for C position. The legato is still the relay baton."
       say="“Read the letter, see its place, play.”"/>
-    <TcBlock page={8} title="My five checks · the check-up on paper" answers={<>{tcAns('A', [...W.chk.nm].sort((a, b) => a - b).map(i => nnLet('G', i)))}{tcAns('B', rowAns(W.chk.ab))}{tcAns('C', W.chk.ud.map(it => it.a))}{tcAns('D', rowAns(W.chk.ch))}{tcAns('E', NN_CHK_WORDS.map(w => w + ': dots on ' + [...new Set(w.split(''))].join(' ')))}
+    <TcBlock page={8} title="The check-up on paper (the Workbook's last page)" answers={<>{tcAns('A', [...W.chk.nm].sort((a, b) => a - b).map(i => nnLet('G', i)))}{tcAns('B', rowAns(W.chk.ab))}{tcAns('C', W.chk.ud.map(it => it.a))}{tcAns('D', rowAns(W.chk.ch))}{tcAns('E', NN_CHK_WORDS.map(w => w + ': dots on ' + [...new Set(w.split(''))].join(' ')))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Chapter 1's five checks still come first at the piano. This chapter's five checks are shown on the keyboard or said out loud (A to G on the keys, forwards and backwards, at a glance, skips, reading letters onto the keys); you only correct. The paper part follows the same order: score each part on its own (A, B, C, D: 4 marks, pass 3+; E: 2 marks). Not passed? Go back to that step's page: A p.2 and p.5 · B p.3 · C p.4 · D p.4 and p.6 · E p.7.</div></>}/>
   </>);
   return <>{pages}</>;
@@ -25988,12 +25997,12 @@ function FirstStepsWorkbook({ startNo = 1, frames = true }) {
         <span>Small houses: {bkBox(36, 28)}</span><span>Big houses: {bkBox(36, 28)}</span>
       </div>
     </Part>
-    <Part kind="play" title="Turtle or bird?" how="Make each sound with your voice first. In each pair, one is lower and one is higher: draw a line from the lower one to the turtle and from the higher one to the bird -- then find both sounds on the piano!">
-      <div style={{display:'grid',gridTemplateColumns:'86px 1fr 86px',gap:10,alignItems:'center',flex:1}}>
-        <div style={{display:'grid',justifyItems:'center',gap:2,fontSize:12,fontWeight:800,color:BK.ink}}>{turtleIcon(66)}low</div>
-        <div style={{display:'grid',gap:8}}>{[[['chick', 'a chick', 'cheep cheep!'], ['cow', 'a cow', 'moooo']], [['lion', 'a lion', 'ROAR'], ['mouse', 'a mouse', 'squeak!']], [['whistle', 'a whistle', 'tweeeet!'], ['ship', 'a ship\u2019s horn', 'booooo']]].map((pair, r) => (
-          <div key={r} data-pair={r + 1} style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,background:BK.soft,borderRadius:10,padding:'4px 8px'}}>{pair.map(([k, lab, snd]) => <div key={k} style={{background:'#fff',border:'1px solid #ece6d8',borderRadius:8,display:'grid',gridTemplateColumns:'54px 1fr',alignItems:'center',gap:8,padding:'4px 10px',height:70}}><SoundIcon kind={k} size={52}/><div style={{lineHeight:1.25}}><div style={{fontSize:12,color:BK.ink,fontWeight:700}}>{lab}</div><div style={{fontSize:14,color:BK.coral,fontWeight:900,fontStyle:'italic'}}>{snd}</div></div></div>)}</div>))}</div>
-        <div style={{display:'grid',justifyItems:'center',gap:2,fontSize:12,fontWeight:800,color:BK.coral}}>{birdIcon(66)}high</div>
+    <Part kind="play" title="Turtle or bird?" how="Make each sound with your voice first. In each pair, circle the lower one (the turtle's) and draw a star by the higher one (the bird's) -- then find both sounds on the piano!">
+      <div style={{display:'grid',gridTemplateColumns:'96px 1fr 96px',gap:10,alignItems:'center',flex:1}}>
+        <div style={{display:'grid',justifyItems:'center',gap:2,fontSize:12,fontWeight:800,color:BK.ink}}>{turtleIcon(80)}low</div>
+        <div style={{display:'grid',gap:10}}>{[[['chick', 'a chick', 'cheep cheep!'], ['cow', 'a cow', 'moooo']], [['lion', 'a lion', 'ROAR'], ['mouse', 'a mouse', 'squeak!']], [['whistle', 'a whistle', 'tweeeet!'], ['ship', 'a ship\u2019s horn', 'booooo']]].map((pair, r) => (
+          <div key={r} data-pair={r + 1} style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14,background:BK.soft,borderRadius:10,padding:'4px 8px'}}>{pair.map(([k, lab, snd]) => <div key={k} style={{background:'#fff',border:'1px solid #ece6d8',borderRadius:8,display:'grid',gridTemplateColumns:'62px 1fr',alignItems:'center',gap:8,padding:'4px 10px',height:88}}><SoundIcon kind={k} size={60}/><div style={{lineHeight:1.25}}><div style={{fontSize:13,color:BK.ink,fontWeight:700}}>{lab}</div><div style={{fontSize:16,color:BK.coral,fontWeight:900,fontStyle:'italic',whiteSpace:'nowrap'}}>{snd}</div></div></div>)}</div>))}</div>
+        <div style={{display:'grid',justifyItems:'center',gap:2,fontSize:12,fontWeight:800,color:BK.coral}}>{birdIcon(80)}high</div>
       </div>
       <div style={{textAlign:'center',fontSize:12.5,color:BK.ink,marginTop:6}}>Listen to your own voice: a deep <b>moooo</b> sits <b>low</b> · a squeaky <b style={{color:BK.coral}}>cheep</b> sits <b style={{color:BK.coral}}>high</b></div>
     </Part>
@@ -26004,17 +26013,17 @@ function FirstStepsWorkbook({ startNo = 1, frames = true }) {
   P(<>
     <WbTop step={2}/>
     <Part kind="together" title="Who lives under each roof?" how="Colour the 3 white keys under every small roof one colour and the 4 under every big roof another. The first house is done.">
-      <KeysCell ex><PaperKeys start="C" whites={14} w={40} h={120} roofs fills={{ 0: '#fbe9e2', 1: '#fbe9e2', 2: '#fbe9e2' }}/></KeysCell>
+      <KeysCell ex><PaperKeys start="C" whites={14} w={40} h={100} roofs fills={{ 0: '#fbe9e2', 1: '#fbe9e2', 2: '#fbe9e2' }}/></KeysCell>
     </Part>
     <Part kind="home" title="Whose house?" how="Is the dotted white key under a small roof or a big roof? Write S or B.">
-      <BkGrid cols={3} gap="8px 12px">{W.s3.map((w, i) => <ExCell key={i} n={i + 1} ex={i === 0}><div style={{display:'flex',alignItems:'center',gap:10,padding:'14px 4px 4px'}}>
-        <div style={{flex:1}}><PaperKeys start="C" whites={7} w={22} h={64} roofs dots={[w]}/></div>{nvBox(i === 0, fsHouse(w), 34, 28)}
+      <BkGrid cols={2} gap="8px 14px">{W.s3.map((w, i) => <ExCell key={i} n={i + 1} ex={i === 0}><div style={{display:'flex',alignItems:'center',gap:14,padding:'10px 8px 2px'}}>
+        <div style={{flex:1}}><PaperKeys start="C" whites={7} w={34} h={64} roofs dots={[w]}/></div>{nvBox(i === 0, fsHouse(w), 42, 36)}
       </div></ExCell>)}</BkGrid>
     </Part>
-    <Part kind="play" title="Who lives here?" how="Draw a family of 3 under the small roof and a family of 4 under the big one -- one for each white key. Give them names!">
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1.33fr',gap:14,flex:1,minHeight:150}}>
-        {[['Small house: 3 live here', 2], ['Big house: 4 live here', 3]].map(([l, n]) => <div key={l} style={{border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',flexDirection:'column',justifyContent:'space-between',padding:'6px 10px',fontSize:11.5,color:BK.muted}}>
-          <svg viewBox="0 0 120 30" style={{width:n === 2 ? 70 : 96}}><path d={n === 2 ? 'M4 26 L34 6 L64 26' : 'M4 26 L50 4 L96 26'} fill="none" stroke={BK.ink} strokeWidth="2.4"/>{Array.from({ length: n }, (_, k) => <rect key={k} x={(n === 2 ? 20 : 26) + k * 15} y="14" width="9" height="12" fill={BK.ink}/>)}</svg>
+    <Part kind="play" title="Who lives here?" how="Draw one smiley face for each white key: 3 faces in the small house, 4 faces in the big house.">
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1.33fr',gap:14,flex:1,minHeight:110}}>
+        {[['Small house: 3 smiley faces', 2], ['Big house: 4 smiley faces', 3]].map(([l, n]) => <div key={l} style={{border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',flexDirection:'column',justifyContent:'space-between',padding:'6px 10px',fontSize:11.5,color:BK.muted}}>
+          <svg viewBox="0 0 120 30" style={{width:n === 2 ? 120 : 164}}><path d={n === 2 ? 'M4 26 L34 6 L64 26' : 'M4 26 L50 4 L96 26'} fill="none" stroke={BK.ink} strokeWidth="2.4"/>{Array.from({ length: n }, (_, k) => <rect key={k} x={(n === 2 ? 20 : 26) + k * 15} y="14" width="9" height="12" fill={BK.ink}/>)}</svg>
           <span>{l}</span></div>)}
       </div>
     </Part>
@@ -26026,23 +26035,23 @@ function FirstStepsWorkbook({ startNo = 1, frames = true }) {
     <WbTop step={3}/>
     <Part kind="together" title="Count the houses on a real piano" how="A real piano has 88 keys. Count the small houses together, from left to right, ticking each one.">
       <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'6px 8px 8px',fontSize:10.5,fontWeight:800,color:BK.muted}}>
-        <div style={{margin:'0 0 2px'}}>Bottom half -- the low keys, the turtle's end under the sea</div><KeyScene start="A" whites={26} w={24} h={72} houses={false} turtle/>
-        <div style={{margin:'6px 0 2px'}}>Top half -- the high keys, the bird's end up in the sky (carry on counting here)</div><KeyScene start="F" whites={26} w={24} h={72} houses={false} bird/>
+        <div style={{margin:'0 0 2px'}}>Bottom half -- the low keys, the turtle's end under the sea</div><KeyScene start="A" whites={26} w={24} h={96} houses={false} turtle/>
+        <div style={{margin:'6px 0 2px'}}>Top half -- the high keys, the bird's end up in the sky (carry on counting here)</div><KeyScene start="F" whites={26} w={24} h={96} houses={false} bird/>
       </div>
-      <div style={{display:'flex',gap:28,justifyContent:'center',marginTop:8,fontSize:13,color:BK.ink,alignItems:'center'}}><span>Small houses: {bkHand('7', 36, 28)}</span></div>
+      <div style={{display:'flex',gap:28,justifyContent:'center',marginTop:8,fontSize:13,color:BK.ink,alignItems:'center'}}><span style={{display:'inline-flex',alignItems:'center',gap:8}}>Small houses: {bkBox(44, 36)}</span></div>
     </Part>
     <Part kind="home" title="Your turn on the big piano" how="Use the keyboard above.">
       <div style={{display:'grid',gap:6,fontSize:13,color:BK.ink}}>
         <div style={{display:'flex',alignItems:'center',gap:10}}>1 · Count the big houses: {bkBox(36, 28)}</div>
-        <div>2 · Draw a little lighthouse on the lonely black key at the very bottom, by the sea.</div>
-        <div>3 · Draw a star on <b>middle C</b> -- the white key just left of the 4th small house.</div>
+        <div>2 · Circle the lonely black key at the very bottom, by the sea -- that is the lighthouse.</div>
+        <div>3 · Draw a star on <b>middle C</b> -- the left door of the 4th small house.</div>
       </div>
     </Part>
-    <Part kind="play" title="Under the sea, up in the sky" how="Middle C is the ground. Draw what swims under the sea (to the left of middle C) and what flies up in the sky (to the right of it). Then play their sounds!">
+    <Part kind="play" title="Under the sea, up in the sky" how="Middle C is the ground. Under the sea (left of middle C) draw a fish, a crab and the turtle. Up in the sky (right of middle C) draw a cloud, the sun and the bird. Then play a low note for each sea friend and a high note for each sky friend.">
       <div style={{display:'grid',gridTemplateColumns:'1fr 74px 1fr',gap:10,flex:1,minHeight:140,alignItems:'stretch'}}>
-        {box('Under the sea (low)')}
+        {box('Under the sea (low): fish · crab · turtle')}
         <div style={{display:'grid',justifyItems:'center',alignContent:'center',gap:4,fontSize:10,fontWeight:900,color:BK.coral,textAlign:'center'}}><svg viewBox="0 0 30 46" style={{width:30}}><rect x="3" y="2" width="24" height="42" rx="3" fill="#fff" stroke={BK.coral} strokeWidth="2"/><circle cx="21" cy="24" r="2" fill={BK.coral}/></svg>middle C: the ground</div>
-        {box('Up in the sky (high)')}
+        {box('Up in the sky (high): cloud · sun · bird')}
       </div>
     </Part>
     <Faces/>
@@ -26059,12 +26068,11 @@ function FirstStepsWorkbook({ startNo = 1, frames = true }) {
     </Part>
     <Part kind="home" title="Roof walks" how="The roof walk in finger numbers: fill in the missing numbers, then tick each one you do this week.">
       <NnTuneRow seq={FS_ROOF_WALK} ex/>
-      <div style={{marginTop:8}}><PhLog rows={['Roof walk, right hand 2 3 4', 'The same, one big roof higher', 'Left hand 2 3 on a small roof', 'Echo game with someone at home', 'My own black-key tune']} label={190}/></div>
+      <div style={{marginTop:8}}><PhLog rows={['Roof walk, right hand 2 3 4', 'The same, one big roof higher', 'Left hand 2 3 on a small roof', 'Left hand 2 3 4 on a big roof', 'Roof walk back down: 4 3 2']} label={190}/></div>
     </Part>
-    <Part kind="play" title="The relay baton: legato" how="Hold the key until the next one plays -- the moment it sounds, let the old one go. Trace the dotted path from pot to pot in one smooth line -- don't lift your pencil, no gaps: that's legato!">
+    <Part kind="play" title="The relay baton: legato" how="Which walk is legato, A or B? Circle it. Then trace the dotted path from pot to pot in one smooth line -- don't lift your pencil.">
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:4}}>
-        <div style={{border:'1px solid #ece6d8',background:BK.soft,borderRadius:8,padding:'4px 10px'}}><Footsteps smooth/><div style={{fontSize:11.5,fontWeight:800,color:BK.ink,textAlign:'center'}}>Legato: one foot is always on the ground.</div></div>
-        <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'4px 10px'}}><Footsteps smooth={false}/><div style={{fontSize:11.5,fontWeight:800,color:BK.muted,textAlign:'center'}}>Not legato: a gap between every step.</div></div>
+        {[['A', false], ['B', true]].map(([l, sm]) => <div key={l} style={{border:'1px solid #ece6d8',borderRadius:8,padding:'4px 10px',position:'relative'}}><span style={{position:'absolute',left:10,top:6,width:26,height:26,borderRadius:13,border:'1.5px solid ' + BK.ink,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:14,fontWeight:900,color:BK.ink}}>{l}</span><Footsteps smooth={sm}/></div>)}
       </div>
       <svg viewBox="0 0 640 140" style={{width:'100%',display:'block'}}>
         {(() => { const R = [[40, 98], [150, 58], [260, 94], [370, 48], [480, 90], [590, 56]].map(([x, y]) => [x, y - 22]);
@@ -26089,15 +26097,15 @@ function FsPaperCheck() {
   return <div className="lb-paper" style={{display:'flex',flexDirection:'column'}}>
     <LbPaperHead/>
     {bkSec('A', 'Write S under each small house and B under each big house.')}
-    <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'2px 10px'}}><PaperKeys start="C" whites={14} w={30} h={56} boxes={[1, 4, 8, 11]}/></div>
+    <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'4px 10px'}}><PaperKeys start="C" whites={14} w={42} h={64}/><KeyBoxRow whites={14} w={42} idx={[1, 4.5, 8, 11.5]} nos={{ 1: 1, 4.5: 2, 8: 3, 11.5: 4 }}/></div>
     {bkSec('B', 'Put a star on the higher dot -- the one nearer the bird.')}
-    <BkGrid cols={4} gap="5px 10px">{W.chk.hl.map((pp, i) => <BkCell key={i} n={5 + i}><div style={{padding:'11px 6px 4px'}}><PaperKeys start="C" whites={10} w={22} h={44} dots={pp}/></div></BkCell>)}</BkGrid>
+    <BkGrid cols={2} gap="6px 12px">{W.chk.hl.map((pp, i) => <BkCell key={i} n={5 + i}><div style={{padding:'12px 6px 3px'}}><PaperKeys start="C" whites={10} w={30} h={46} dots={pp}/></div></BkCell>)}</BkGrid>
     {bkSec('C', 'Whose house is the dotted white key? Write S (small) or B (big).')}
-    <BkGrid cols={4} gap="5px 10px">{W.chk.wh.map((w, i) => <BkCell key={i} n={9 + i}><div style={{display:'flex',alignItems:'center',gap:8,padding:'11px 4px 3px'}}><div style={{flex:1}}><PaperKeys start="C" whites={7} w={16} h={40} roofs dots={[w]}/></div>{bkBox(28, 24)}</div></BkCell>)}</BkGrid>
+    <BkGrid cols={2} gap="6px 12px">{W.chk.wh.map((w, i) => <BkCell key={i} n={9 + i}><div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 8px 3px'}}><div style={{flex:1}}><PaperKeys start="C" whites={7} w={30} h={48} roofs dots={[w]}/></div>{bkBox(36, 30)}</div></BkCell>)}</BkGrid>
     {bkSec('D', 'Middle C: count the small houses from the bottom.')}
-    <div style={{display:'flex',gap:22,alignItems:'center',fontSize:13,color:BK.ink,padding:'2px 4px'}}><span><b style={{color:BK.coral}}>13</b> Middle C is the left door of small house number {bkBox(32, 24)}</span><span><b style={{color:BK.coral}}>14</b> A piano has {bkBox(44, 24)} keys.</span></div>
+    <div style={{display:'flex',gap:28,alignItems:'center',fontSize:14.5,color:BK.ink,padding:'4px 4px'}}><span style={{display:'inline-flex',alignItems:'center',gap:6}}><b style={{color:BK.coral}}>13</b> Middle C is the left door of small house number {bkBox(38, 30)}</span><span style={{display:'inline-flex',alignItems:'center',gap:6}}><b style={{color:BK.coral}}>14</b> A piano has {bkBox(52, 30)} keys.</span></div>
     {bkSec('E', 'Right hand on the big roof: which finger plays the dotted key?')}
-    <BkGrid cols={4} gap="5px 10px">{W.chk.sg.map((f, i) => <BkCell key={i} n={15 + i}><div style={{display:'flex',alignItems:'center',gap:8,padding:'11px 4px 3px'}}><div style={{flex:1}}><PaperKeys start="C" whites={7} w={20} h={40} blackDots={[f]}/></div>{bkBox(28, 24)}</div></BkCell>)}</BkGrid>
+    <BkGrid cols={2} gap="6px 12px">{W.chk.sg.map((f, i) => <BkCell key={i} n={15 + i}><div style={{display:'flex',alignItems:'center',gap:12,padding:'12px 8px 3px'}}><div style={{flex:1}}><PaperKeys start="C" whites={7} w={30} h={48} blackDots={[f]}/></div>{bkBox(36, 30)}</div></BkCell>)}</BkGrid>
   </div>;
 }
 function FirstStepsTeacher() {
@@ -26112,18 +26120,18 @@ function FirstStepsTeacher() {
     <TcBlock page={2} title="Small house, big house" answers={<>{tcAns('TRY IT', ['a small roof over every 2, a big roof over every 3 (4 roofs)'])}{tcAns('YOUR TURN', ['small houses 3, big houses 3'])}{tcAns('PLAY', ['turtle (lower): the cow, the lion, the ship\u2019s horn', 'bird (higher): the chick, the mouse, the whistle'])}</>}
       watch="Counting the black keys one by one instead of seeing the groups. Taking “higher” as further up the piano lid. The black keys are the roofs: the shape is what matters."
       say="“Look for the shapes, not the keys -- two together, three together.”"/>
-    <TcBlock page={3} title="The white keys of each house" answers={<>{tcAns('TRY IT', ['C D E one colour (twice), F G A B the other (twice)'])}{tcAns('YOUR TURN', W.s3.map(w => fsHouse(w) + ' (' + fsLetter(w) + ')'))}</>}
+    <TcBlock page={3} title="The white keys of each house" answers={<>{tcAns('TRY IT', ['C D E one colour (twice), F G A B the other (twice)'])}{tcAns('YOUR TURN', W.s3.map(w => fsHouse(w) + ' (' + fsLetter(w) + ')'))}{tcAns('PLAY', ['3 faces in the small house, 4 in the big house -- one per white key'])}</>}
       watch="This is the chapter's key idea: the white keys belong to a house -- 3 under the small roof, 4 under the big. A student who sees this grouping finds every note name, and later every scale fingering, from the pattern instead of counting from the bottom."
       say="“Every white key lives under a roof.”"/>
   </>);
   P(<>
-    <TcBlock page={4} title="The whole piano & middle C" answers={<>{tcAns('TRY IT', ['7 small houses'])}{tcAns('YOUR TURN', ['7 big houses', 'the lighthouse on the 2nd key from the bottom (A♯0/B♭0)', 'the star on the 24th white key from the left: middle C'])}</>}
+    <TcBlock page={4} title="The whole piano & middle C" answers={<>{tcAns('TRY IT', ['7 small houses'])}{tcAns('YOUR TURN', ['7 big houses', 'the lighthouse circled: the 2nd key from the bottom (A♯0/B♭0)', 'the star on the 24th white key from the left: middle C'])}{tcAns('PLAY', ['sea (left of middle C): fish, crab, turtle', 'sky (right of middle C): cloud, sun, bird', 'then a low note for each sea friend, a high note for each sky friend'])}</>}
       watch="Losing count on the long keyboard -- tick each house as it is counted so none is counted twice. Check middle C at the piano, not only on paper."
-      say="“Count the small houses to 4. Middle C is the door just to its left -- the ground. Up is the sky, down is the sea.”"/>
-    <TcBlock page={5} title="Play on the patterns" answers={<>{tcAns('TRY IT', ['2 3 4 (left to right)'])}{tcAns('YOUR TURN', FS_ROOF_WALK.filter(x => x[0] === '?').map(x => x.slice(1)))}<div style={{fontSize:12,color:BK.ink}}>PLAY: one unbroken line through all six pots. Then play the roof walk legato.</div></>}
+      say="“Count the small houses to 4. Middle C is its left door -- the ground. Up is the sky, down is the sea.”"/>
+    <TcBlock page={5} title="Play on the patterns" answers={<>{tcAns('TRY IT', ['2 3 4 (left to right)'])}{tcAns('YOUR TURN', FS_ROOF_WALK.filter(x => x[0] === '?').map(x => x.slice(1)))}<div style={{fontSize:12,color:BK.ink}}>PLAY: B is legato (one foot always on the ground); one unbroken line through all six pots. Then play the roof walk legato.</div></>}
       watch="Fingers 2 3 4 only, in both hands: 1 and 5 wait for C position. Lifting the hand between notes (a gap) or holding both keys down (a blur). Check the chapter 1 habits while it plays: round hand, wrist back to level. Echo game: play 2-3 black keys, the student plays them straight back; grow to 4-5 as it gets easy."
       say="“Like a relay baton: hold on until the next note sounds, then let the old one go. No gap between the two sounds.”"/>
-    <TcBlock page={6} title="My five checks · the check-up on paper" answers={<>{tcAns('A', ['S B S B'])}{tcAns('B', W.chk.hl.map(hi))}{tcAns('C', W.chk.wh.map(w => fsHouse(w) + ' (' + fsLetter(w) + ')'))}{tcAns('D', ['4 (the 4th small house)', '88'])}{tcAns('E', W.chk.sg.map(f => String(finger[f])))}
+    <TcBlock page={6} title="The check-up on paper (the Workbook's last page)" answers={<>{tcAns('A', ['S B S B'])}{tcAns('B', W.chk.hl.map(hi))}{tcAns('C', W.chk.wh.map(w => fsHouse(w) + ' (' + fsLetter(w) + ')'))}{tcAns('D', ['4 (the 4th small house)', '88'])}{tcAns('E', W.chk.sg.map(f => String(finger[f])))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Chapter 1's five checks still come first, every time at the piano. This chapter's five checks are shown on the keyboard (find the houses, high and low, say 3 and 4, find middle C, legato with 2 3 4 on a big roof); you only correct. The paper part follows the same order: score each part on its own (A, B, C, E: 4 marks, pass 3+; D: 2 marks). Not passed? Go back to that step's page: A and B p.2 · C p.3 · D p.4 · E p.5.</div></>}/>
   </>);
   return <>{pages}</>;
@@ -26423,7 +26431,7 @@ function phWorkbook() {
   return { order, fingers, chk };
 }
 const PH_FILL = [['Up and back', ['1', '2', '?3', '-', '|', '3', '?2', '1', '-']], ['Little hill', ['1', '2', '?3', '4', '|', '?3', '2', '1', '-']], ['Stairs and slide', ['1', '2', '3', '?4', '5', '-', '|', '5', '?4', '3', '2', '1', '-']]];
-const PH_FILL_CHK = [['1', '2', '3', '?4', '5'], ['5', '4', '?3', '2', '1'], ['2', '3', '2', '?3'], ['1', '?2', '3', '2', '1']];
+const PH_FILL_CHK = [['1', '2', '3', '?4', '5'], ['5', '4', '?3', '2', '1'], ['2', '3', '4', '?5'], ['1', '?2', '3', '2', '1']];   // Phase 417: no item with two right answers
 function phConcepts() {
   return [
     { id: 'st', name: 'Sitting at the piano', step: '1', page: '2' },
@@ -26491,12 +26499,12 @@ function PostureWorkbook({ startNo = 1, frames = true }) {
   P(<>
     <WbTop step={1}/>
     <Part kind="together" title="Is this a good set-up?" how="Look at each picture, then try it at the piano. Circle the tick or the cross.">
-      <BkGrid cols={4} gap="6px 10px">{[PH_SIT[0], PH_SIT[1], PH_SIT[4], PH_SIT[2]].map(([id, , ok], i) => <PhPic key={id} art={'q-sit-' + id} ok={ok} n={i + 1} ex={i === 0} h={84}/>)}</BkGrid>
+      <BkGrid cols={4} gap="6px 10px">{[PH_SIT[1], PH_SIT[4], PH_SIT[0], PH_SIT[2]].map(([id, , ok], i) => <PhPic key={id} art={'q-sit-' + id} ok={ok} n={i + 1} ex={i === 0} h={104}/>)}</BkGrid>
     </Part>
-    <Part kind="home" title="Set up at home" how="Before you practise, set up and tick each one. Ask someone at home to check, or use a mirror.">
+    <Part kind="home" title="Set up at home" how="Before you practise, set up and tick each one. Check yourself in a mirror.">
       <PhLog rows={['Front half of the stool', 'Feet flat, leaning a little toward the piano', 'Sit tall, like a puppet on a string', 'Forearm level with the keys', 'Elbows away from your body']} label={230}/>
     </Part>
-    <Part kind="play" title="Draw yourself at the piano" how="Draw yourself sitting at the piano. Then colour a star for each thing you drew.">
+    <Part kind="play" title="Draw yourself at the piano" how="Draw yourself sitting at the piano with all five: sitting tall, feet flat, leaning a little forward, elbows away from the body, round hands. Colour a star for each one you drew.">
       <div style={{display:'grid',gridTemplateColumns:'1fr 190px',gap:14,flex:1,minHeight:150}}>
         <div style={{border:'1.5px solid ' + BK.line,borderRadius:10}}/>
         <div style={{display:'grid',gap:6,alignContent:'center'}}>{['sitting tall', 'feet flat', 'leaning a little forward', 'elbows away from the body', 'round hands'].map(star)}</div>
@@ -26510,12 +26518,12 @@ function PostureWorkbook({ startNo = 1, frames = true }) {
     <WbTop step={2}/>
     <Part kind="together" title="Put the warm-ups in order" how="Big parts of the body first, small parts last. Write 1 to 6 under the pictures. The first one is done.">
       <BkGrid cols={3} gap="6px 10px">{[PH_WARMUPS[0], ...W.order].map(([art, name], i) => <ExCell key={art} n={i + 1} ex={i === 0}><div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,padding:'12px 2px 2px'}}>
-        <div style={{height:92,display:'flex',alignItems:'center'}}><PbArt name={art} h={88} style={{maxWidth:'100%'}}/></div>
+        <div style={{height:108,display:'flex',alignItems:'center'}}><PbArt name={art} h={104} style={{maxWidth:'100%'}}/></div>
         <div style={{display:'flex',alignItems:'center',gap:8,fontSize:12,fontWeight:800,color:BK.ink}}>{name}{nvBox(i === 0, '1', 36, 28)}</div>
       </div></ExCell>)}</BkGrid>
     </Part>
-    <Part kind="home" title="My warm-ups this week" how="Do the six in order before you practise. Tick a box for each one you did.">
-      <PhLog rows={PH_WARMUPS.map(([, n], i) => (i + 1) + '  ' + n)} days={7} label={150}/>
+    <Part kind="home" title="My warm-ups this week" how="Before you practise, do all six in the order you found above. Tick each one you did.">
+      <PhLog rows={PH_WARMUPS.map(([, n]) => n).sort()} days={7} label={150}/>
     </Part>
     <Part kind="home" title="Yes or no?" how="Circle yes or no.">
       <div style={{display:'grid',gap:4}}>{PH_ARM.slice(0, 4).map(([txt, ok], i) => <TFRow key={i} txt={txt} ok={ok} n={i + 1} pad="13px 8px 4px"/>)}</div>
@@ -26526,13 +26534,13 @@ function PostureWorkbook({ startNo = 1, frames = true }) {
   // 4 (faces "A round hand")
   P(<>
     <WbTop step={3}/>
-    <Part kind="together" title="Spot the good hand" how="Circle the tick for the good hand shape and the cross for a fault. Then say what is wrong.">
-      <BkGrid cols={3} gap="6px 10px">{PH_HAND.map(([id, , ok], i) => <PhPic key={id} art={'q-hand-' + id} ok={ok} n={i + 1} ex={i === 0} h={66}/>)}</BkGrid>
+    <Part kind="together" title="Spot the good hand" how="Circle the tick for the good hand shape and the cross for a fault.">
+      <BkGrid cols={3} gap="6px 10px">{PH_HAND.map(([id, , ok], i) => <PhPic key={id} art={'q-hand-' + id} ok={ok} n={i + 1} ex={i === 0} h={92}/>)}</BkGrid>
     </Part>
     <Part kind="home" title="Roller wrist and thumb" how="Do each one at the piano and tick a box each day.">
       <PhLog rows={['Fingertip on a key: sway the wrist up and down, then side to side', 'Knuckles up, like a bridge', 'The thumb bends in and plays on the side of its tip']} label={300}/>
     </Part>
-    <Part kind="play" title="Hold the bubble" how="Hold a small ball (or a mandarin) in a round hand. Draw your hand round it, then colour a star for each.">
+    <Part kind="play" title="Hold the bubble" how="Hold a small ball (or a mandarin) in the hand you don't draw with, fingers round it. Draw your hand round the ball with all four: knuckles up, round fingers, playing on the tips, the thumb on its side. Colour a star for each one you drew.">
       <div style={{display:'grid',gridTemplateColumns:'1fr 200px',gap:14,flex:1,minHeight:150}}>
         <div style={{border:'1.5px solid ' + BK.line,borderRadius:10}}/>
         <div style={{display:'grid',gap:6,alignContent:'center'}}>{['knuckles up', 'round fingers', 'playing on the tips', 'the thumb on its side'].map(star)}</div>
@@ -26545,14 +26553,15 @@ function PostureWorkbook({ startNo = 1, frames = true }) {
   P(<>
     <WbTop step={4} mins={10}/>
     <Part kind="together" title="Which finger?" how="Write the number of the coloured finger. Thumbs are 1 on both hands.">
-      <BkGrid cols={6} gap="6px 8px">{W.fingers.map(([h, f], i) => <ExCell key={i} n={i + 1} ex={i === 0}><div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,padding:'12px 2px 2px'}}>
-        <PbArt name={'q-fingers-' + h} lit={f} h={74}/>{nvBox(i === 0, String(f), 34, 28)}
+      <BkGrid cols={6} gap="6px 8px">{W.fingers.map(([h, f], i) => <ExCell key={i} n={i + 1} ex={i === 0}><div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6,padding:'14px 2px 6px'}}>
+        <PbArt name={'q-fingers-' + h} lit={f} h={78}/>{nvBox(i === 0, String(f), 40, 34)}
       </div></ExCell>)}</BkGrid>
     </Part>
     <Part kind="play" title="Trace your hands" how="Put each hand flat in its box and draw round it. Write the finger numbers on every finger -- the thumb is 1 on both hands! Then draw a ring on each finger 4." style={{padding:'7px 12px 8px'}}>
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,flex:1,minHeight:500}}>{['Left hand', 'Right hand'].map(l => <div key={l} style={{border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',alignItems:'flex-end',justifyContent:'center',fontSize:11.5,fontWeight:800,color:BK.muted,paddingBottom:4}}>{l}</div>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,flex:1,minHeight:470}}>{['Left hand', 'Right hand'].map(l => <div key={l} style={{border:'1.5px solid ' + BK.line,borderRadius:10,display:'flex',alignItems:'flex-end',justifyContent:'center',fontSize:11.5,fontWeight:800,color:BK.muted,paddingBottom:4}}>{l}</div>)}</div>
       <div style={{display:'flex',flexWrap:'wrap',gap:'6px 18px',marginTop:9,fontSize:12,color:BK.ink,alignItems:'center'}}><b style={{color:BK.muted}}>Check:</b>{['5 fingers on each hand', 'Thumbs are 1', 'A ring round each finger 4', 'Left and right the right way round'].map(x => <span key={x} style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:15,height:15,border:'1.5px solid ' + BK.ink,borderRadius:4}}/>{x}</span>)}</div>
     </Part>
+    <Faces/>
   </>);
 
   // 6 (faces "Finger walks")
@@ -26560,17 +26569,18 @@ function PostureWorkbook({ startNo = 1, frames = true }) {
     <WbTop step={5}/>
     <Part kind="together" title="Fill in the missing numbers" how="Write the missing finger numbers in the coral circles, then play the tune. The first one is done.">
       <div style={{display:'grid',gap:8}}>{PH_FILL.map(([name, seq], i) => <div key={name} style={{display:'grid',gridTemplateColumns:'130px 1fr',alignItems:'center',gap:10,border:'1px solid #ece6d8',borderRadius:10,padding:'7px 10px'}}>
-        <span style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:15,fontWeight:800,color:BK.ink}}>{name}</span><PhCircles seq={seq} ex={i === 0}/>
+        <span style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:16,fontWeight:800,color:BK.ink}}>{name}</span><PhCircles seq={seq} ex={i === 0} size={34}/>
       </div>)}</div>
     </Part>
     <Part kind="home" title="Finger walks this week" how="Play each tune. Tick it when the hand stays round and draws a little rainbow from key to key.">
       <PhLog rows={PH_TUNES.map((n, i) => (i + 1) + '  ' + n)} label={150}/>
     </Part>
-    <Part kind="play" title="Make your own finger walk" how="Write a finger number (1 to 5) in each circle. Leave a circle empty to hold the note. Play it to someone!">
-      <div style={{display:'grid',gap:12,justifyItems:'center'}}>
-        <div style={{display:'flex',alignItems:'center',gap:8}}>{[0, 1, 2, 3, 'bar', 4, 5, 6, 7].map((k, i) => k === 'bar' ? <span key={i} style={{width:1.8,height:40,background:BK.ink,opacity:0.5,margin:'0 4px'}}/> : <span key={i} style={{width:40,height:40,borderRadius:20,border:'2px solid ' + BK.ink,background:'#fff'}}/>)}</div>
-        <div style={{fontSize:13,color:BK.ink}}>My tune is called <span style={{display:'inline-block',width:220,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span></div>
-      </div>
+    <Part kind="play" title="The secret walks" how="Read the clues and write the finger numbers in the circles -- then play each walk with its hand. The first circle is done.">
+      <div style={{display:'grid',gap:12}}>{PH_SECRET_CLUES.map(([hand, clues, first], k) => <div key={hand} style={{border:'1px solid #ece6d8',borderRadius:10,padding:'9px 14px 12px'}}>
+        <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:16,fontWeight:800,color:BK.ink,marginBottom:2}}>{k + 1} · {hand}</div>
+        <ol style={{margin:'0 0 10px',padding:'0 0 0 20px',fontSize:13.5,color:BK.ink,lineHeight:1.6}}>{clues.map((c, j) => <li key={j}>{c}</li>)}</ol>
+        <div style={{display:'flex',justifyContent:'center',gap:9}}>{[0, 1, 2, 3, 4, 5, 6, 7].map(i => <span key={i} style={{width:44,height:44,borderRadius:22,border:'2px solid ' + (i === 0 ? BK.coral : BK.ink),background:'#fff',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:20,fontWeight:900,color:BK.coral}}>{i === 0 ? first : ''}</span>)}</div>
+      </div>)}</div>
     </Part>
     <Faces/>
   </>);
@@ -26584,18 +26594,24 @@ function PhPaperCheck() {
   return <div className="lb-paper" style={{display:'flex',flexDirection:'column'}}>
     <LbPaperHead/>
     {bkSec('A', 'A good set-up? Circle the tick or the cross.')}
-    <BkGrid cols={4} gap="5px 10px">{W.chk.st.map(([id, , ok], i) => <PhPic key={id} art={'q-sit-' + id} ok={ok} n={i + 1} h={LANG === 'ko' ? 42 : 46}/>)}</BkGrid>
+    <BkGrid cols={4} gap="6px 10px">{W.chk.st.map(([id, , ok], i) => <PhPic key={id} art={'q-sit-' + id} ok={ok} n={i + 1} h={100}/>)}</BkGrid>
     {bkSec('B', 'A good hand shape? Circle the tick or the cross.')}
-    <BkGrid cols={4} gap="5px 10px">{W.chk.hs.map(([id, , ok], i) => <PhPic key={id} art={'q-hand-' + id} ok={ok} n={i + 5} h={40}/>)}</BkGrid>
-    {bkSec('C', 'Left or right hand? Write L or R.  D  Which finger is coloured?')}
-    <BkGrid cols={4} gap="5px 10px">{W.chk.fn.map((f, i) => <BkCell key={i} n={(9 + i) + ' · ' + (13 + i)}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'11px 4px 3px'}}>
-      <PbArt name={'q-fingers-' + W.chk.lr[i] + '-plain'} lit={f} h={54}/>
-      <div style={{display:'grid',gap:5,fontSize:10,fontWeight:900,color:BK.coral}}><span>C {bkBox(28, 22)}</span><span>D {bkBox(28, 22)}</span></div>
+    <BkGrid cols={2} gap="6px 12px">{W.chk.hs.map(([id, , ok], i) => <PhPic key={id} art={'q-hand-' + id} ok={ok} n={i + 5} h={116}/>)}</BkGrid>
+    {bkSec('C · D', 'Left or right hand? Write L or R in box C. Which finger is coloured? Write its number in box D.')}
+    <BkGrid cols={4} gap="6px 10px">{W.chk.fn.map((f, i) => <BkCell key={i} n={(9 + i) + ' · ' + (13 + i)}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,padding:'13px 4px 4px'}}>
+      <PbArt name={'q-fingers-' + W.chk.lr[i] + '-plain'} lit={f} h={100}/>
+      <div style={{display:'grid',gap:8,fontSize:11,fontWeight:900,color:BK.coral}}><span>C {bkBox(32, 28)}</span><span>D {bkBox(32, 28)}</span></div>
     </div></BkCell>)}</BkGrid>
     {bkSec('E', 'Finger walks: write the missing number.')}
-    <BkGrid cols={4} gap="5px 10px">{PH_FILL_CHK.map((seq, i) => <BkCell key={i} n={17 + i}><div style={{display:'flex',justifyContent:'center',padding:'12px 2px 2px'}}><PhCircles seq={seq} size={21}/></div></BkCell>)}</BkGrid>
+    <BkGrid cols={2} gap="8px 12px">{PH_FILL_CHK.map((seq, i) => <BkCell key={i} n={17 + i}><div style={{display:'flex',justifyContent:'center',padding:'20px 2px 12px'}}><PhCircles seq={seq} size={44}/></div></BkCell>)}</BkGrid>
   </div>;
 }
+const PH_SECRET_WALK = '1 2 3 5 4 3 2 1';   // Phase 411: thumb, up to the middle finger, jump to 5, back home
+const PH_SECRET_WALK_L = '5 4 3 1 2 3 4 5';  // Phase 416: the left hand -- little finger down to the middle, jump to the thumb, back up
+const PH_SECRET_CLUES = [
+  ['Right hand', [<>Start on your <b>thumb</b>.</>, <>Walk up <b>one finger at a time</b> to your <b>middle finger</b>.</>, <><b>Jump</b> to your <b>little finger</b>.</>, <>Walk back down, one finger at a time, all the way <b>home to your thumb</b>.</>], '1'],
+  ['Left hand', [<>Start on your <b>little finger</b>.</>, <>Walk <b>one finger at a time</b> to your <b>middle finger</b>.</>, <><b>Jump</b> to your <b>thumb</b>.</>, <>Walk back, one finger at a time, all the way to your <b>little finger</b>.</>], '5'],
+];
 function PostureTeacher() {
   const W = useMemo(() => phWorkbook(), [LANG]);
   const pages = [];
@@ -26605,7 +26621,7 @@ function PostureTeacher() {
   P(<>
     <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('posture-hands')}</div>
     <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Each workbook page faces its Lesson Book page. Every answer here should also be tried at the piano -- the paper is only the reminder. This chapter is the base for every other one: its five checks come before every time at the piano, at every level.</div>
-    <TcBlock page={2} title="Sit at the piano" answers={<>{tcAns('TRY IT', [PH_SIT[0], PH_SIT[1], PH_SIT[4], PH_SIT[2]].map(([, name, ok]) => yn(ok) + ' (' + name.toLowerCase() + ')'))}{tcAns('YOUR TURN', ['a tick for each check they really did'])}</>}
+    <TcBlock page={2} title="Sit at the piano" answers={<>{tcAns('TRY IT', [PH_SIT[1], PH_SIT[4], PH_SIT[0], PH_SIT[2]].map(([, name, ok]) => yn(ok) + ' (' + name.toLowerCase() + ')'))}{tcAns('YOUR TURN', ['a tick for each check they really did'])}</>}
       watch="Elbows squashed in (too close) or arms reaching out (too far). Feet dangling: a footstool or a sturdy box fixes it. The five checks come before every time at the piano, for every student."
       say="“Sit tall, like a puppet on a string, and lean a little toward the piano.”"/>
     <TcBlock page={3} title="The arm leads" answers={<>{tcAns('TRY IT', [PH_WARMUPS[0], ...W.order].map(([art, name]) => name + ' ' + (PH_WARMUPS.findIndex(x => x[0] === art) + 1)))}{tcAns('YES OR NO', PH_ARM.slice(0, 4).map(([, ok]) => ok ? 'yes' : 'no'))}</>}
@@ -26619,10 +26635,10 @@ function PostureTeacher() {
       say="“Thumbs are always 1. Your hands are mirror twins.”"/>
   </>);
   P(<>
-    <TcBlock page={6} title="Finger walks" answers={<>{tcAns('MISSING NUMBERS', PH_FILL.map(([name, seq]) => name + ': ' + fill(seq)))}<div style={{fontSize:12,color:BK.ink}}>Own tune: any numbers 1 to 5; check that it is played with a round hand and the empty circles are held.</div></>}
+    <TcBlock page={6} title="Finger walks" answers={<>{tcAns('MISSING NUMBERS', PH_FILL.map(([name, seq]) => name + ': ' + fill(seq)))}{tcAns('SECRET WALKS', ['right hand: ' + PH_SECRET_WALK, 'left hand: ' + PH_SECRET_WALK_L, 'then each played with a round hand'])}</>}
       watch="Right hand first, then left hand, then together if it is easy. Any five white keys near the middle will do; the letter names come with the Note Names chapter. Move on to the next tune only when the hand stays round. Relaxed, never squeezed tight."
       say="“Draw a little rainbow from key to key. Let the whole hand help.”"/>
-    <TcBlock page={7} title="My five checks · the check-up on paper" answers={<>{tcAns('A', W.chk.st.map(([, , ok]) => yn(ok)))}{tcAns('B', W.chk.hs.map(([, , ok]) => yn(ok)))}{tcAns('C', W.chk.lr)}{tcAns('D', W.chk.fn)}{tcAns('E', PH_FILL_CHK.map(fill))}
+    <TcBlock page={7} title="The check-up on paper (the Workbook's last page)" answers={<>{tcAns('A', W.chk.st.map(([, , ok]) => yn(ok)))}{tcAns('B', W.chk.hs.map(([, , ok]) => yn(ok)))}{tcAns('C', W.chk.lr)}{tcAns('D', W.chk.fn)}{tcAns('E', PH_FILL_CHK.map(fill))}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>At the start of each lesson the student says the five checks out loud while doing them; you only correct. Score each paper part on its own (4 marks each, pass 3+). Not passed? Go back to that step's page: A p.2 · B p.4 · C and D p.5 · E p.6. Then check the posture at the piano, not just on paper.</div></>}/>
   </>);
   return <>{pages}</>;
@@ -33388,7 +33404,7 @@ function fsLbPages(scr = false) {
     ['house', [0, 0, 92, 40], t('I can find a small house and a big house anywhere', '어디서든 작은 집과 큰 집을 찾을 수 있어요')],
     ['highlow', [0, 0, 92, 40], t('I can hear high and low, and show the turtle\'s end and the bird\'s', '높고 낮은 소리를 듣고, 거북이 쪽과 새 쪽을 가리킬 수 있어요')],
     ['brace', [0, 0, 92, 40], t('I can say each house\'s white keys: 3 and 4', '집마다 딸린 흰건반을 말할 수 있어요: 3개와 4개')],
-    ['midc', [0, 0, 92, 40], t('I can find middle C (just left of the 4th small house)', '가운데 도를 찾을 수 있어요 (4번째 작은 집 바로 왼쪽)')],
+    ['midc', [0, 0, 92, 40], t('I can find middle C (the left door of the 4th small house)', '가운데 도를 찾을 수 있어요 (4번째 작은 집의 왼쪽 문)')],
     ['song', [0, 0, 92, 40], t('I can play legato with 2 3 4 on a big roof', '큰 지붕에서 2 3 4로 레가토로 칠 수 있어요')],
   ];
 
@@ -33990,15 +34006,15 @@ function NnPaperCheck() {
   return <div className="lb-paper" style={{display:'flex',flexDirection:'column'}}>
     <LbPaperHead/>
     {bkSec('A', 'Name the dotted keys.')}
-    <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'2px 10px',width:'62%'}}><PaperKeys start="G" whites={10} w={30} h={66} dots={W.chk.nm} boxes={W.chk.nm} boxNos={Object.fromEntries([...W.chk.nm].sort((a, b) => a - b).map((d, j) => [d, j + 1]))}/></div>
+    <div style={{border:'1px solid #ece6d8',borderRadius:8,padding:'4px 10px',width:'72%'}}><PaperKeys start="F" whites={11} w={30} h={150} dots={W.chk.nm.map(i => i + 1)} boxes={W.chk.nm.map(i => i + 1)} boxNos={Object.fromEntries([...W.chk.nm].sort((a, b) => a - b).map((d, j) => [d + 1, j + 1]))}/></div>
     {bkSec('B', 'Fill in the missing letters.')}
-    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>{W.chk.ab.map((r, i) => <LetterRow key={i} n={(5 + 2 * i) + '-' + (6 + 2 * i)} cells={rowCells(r, false)}/>)}</div>
+    <div style={{display:'grid',gap:8}}>{W.chk.ab.map((r, i) => <LetterRow key={i} big n={(5 + 2 * i) + '-' + (6 + 2 * i)} cells={rowCells(r, false)}/>)}</div>
     {bkSec('C', 'One step up or down.')}
-    <BkGrid cols={4} gap="6px 10px">{W.chk.ud.map((it, i) => <UpDownCell key={i} it={it} n={i + 9}/>)}</BkGrid>
+    <BkGrid cols={4} gap="6px 10px">{W.chk.ud.map((it, i) => <UpDownCell key={i} big it={it} n={i + 9}/>)}</BkGrid>
     {bkSec('D', 'Row 1 goes backwards. Row 2 skips a letter.')}
-    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>{W.chk.ch.map((r, i) => <LetterRow key={i} n={(13 + 2 * i) + '-' + (14 + 2 * i)} cells={rowCells(r, false)}/>)}</div>
+    <div style={{display:'grid',gap:8}}>{W.chk.ch.map((r, i) => <LetterRow key={i} big n={(13 + 2 * i) + '-' + (14 + 2 * i)} cells={rowCells(r, false)}/>)}</div>
     {bkSec('E', 'Put a dot on the key of each letter.')}
-    <BkGrid cols={2} gap="6px 10px">{NN_CHK_WORDS.map((w, i) => <NnSpellCell key={w} w={w} n={17 + i}/>)}</BkGrid>
+    <BkGrid cols={2} gap="6px 10px">{NN_CHK_WORDS.map((w, i) => <NnSpellCell key={w} w={w} n={17 + i} kw={290} kh={66}/>)}</BkGrid>
   </div>;
 }
 // a tune by letter names, with boxes for the missing letters (ex: the first box shows its answer in coral)
@@ -34009,10 +34025,10 @@ const NN_CHK_SONG = ['E', 'D', '?C', '-', '|', 'E', '?D', 'C', '-'];
 const NN_CHK_WORDS = ['BAG', 'FACE'];
 const NN_SPELL = ['BAG', 'CAFE', 'FACE', 'EGG'];
 const nnSpellDots = (w) => [...new Set(w.split('').map(l => NN_L7.indexOf(l)))];
-function NnSpellCell({ w, n, ex, kw = 140 }) {
+function NnSpellCell({ w, n, ex, kw = 140, kh = 46 }) {
   return <ExCell n={n} ex={ex}><div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 4px 0'}}>
     <span style={{fontSize:17,fontWeight:900,letterSpacing:'0.12em',color:BK.ink,minWidth:52}}>{w}</span>
-    <div style={{flex:1,maxWidth:kw}}><PaperKeys start="C" whites={7} w={18} h={46} dots={ex ? nnSpellDots(w) : []} dotR={0.2}/></div>
+    <div style={{flex:1,maxWidth:kw}}><PaperKeys start="C" whites={7} w={18} h={kh} dots={ex ? nnSpellDots(w) : []} dotR={0.2}/></div>
   </div></ExCell>;
 }
 function NnTuneRow({ seq, ex, n0 }) {
@@ -34466,7 +34482,7 @@ function sfLbPages(scr = false) {
     // 8. my five checks + the check-up on paper
     <LbPage key="7" no={7} chId={ch} kicker={t('Check-up', '점검')} title={t('My five checks', '나의 다섯 가지 확인')}>
       <LbSay>{t('Show each one at the piano, then tick how it is going -- not yet, nearly, or got it! The check-up on paper is in the Workbook.', '피아노 앞에서 하나씩 보여 주고 어떤지 표시해요 -- 아직, 거의, 됐어요! 종이 점검은 워크북에 있어요.')}</LbSay>
-      <LbLive still={<LbStageRows rows={checksRows.map(([a, vb, txt]) => [<PenArt shapes={chkArts[a]} vb={vb} style={{width:80}}/>, txt])}/>} live={<FiveChecks376 storeKey="pb_five_sf_v1" rows={checksRows.map(([a, vb, txt]) => [{ shapes: chkArts[a], vb }, txt])}/>}/>
+      <LbLive still={<LbStageRows big rows={checksRows.map(([a, vb, txt]) => [<PenArt shapes={chkArts[a]} vb={vb} style={{width:80}}/>, txt])}/>} live={<FiveChecks376 storeKey="pb_five_sf_v1" rows={checksRows.map(([a, vb, txt]) => [{ shapes: chkArts[a], vb }, txt])}/>}/>
       <LbOnly print><div style={{border:'1.4px solid #ece6d8',borderRadius:14,padding:'12px 16px'}}>
         <div style={{fontFamily:LB_SERIF,fontSize:19,fontWeight:800,color:BK.ink,marginBottom:8}}>{t('The royal signs', '왕실의 기호들')}</div>
         {[['treble', 32, t('the Queen sings high -- her curl holds the G line. The right hand reads her staff.', '여왕은 높은 목소리 -- 소용돌이가 G 줄을 감싸요. 보통 오른손이 읽어요.')],
@@ -34489,7 +34505,7 @@ function StaffLessonBook() { return <>{sfLbPages(false)}</>; }
 // the check-up on paper, in the order of the five checks; only the nine notes from the King's F to the Queen's G
 const sfChkData = () => withSeed('sf-chk405', () => ({
     ls: shuffle([30, 33, 36, 35]).map(d => ({ d })),
-    ss: [[31, 32], [34, 32], [30, 34], [37, 36]].map(([a, b]) => ({ a, b })),
+    ss: [[31, 32], [34, 32], [30, 32], [37, 36]].map(([a, b]) => ({ a, b })),   // Phase 417: item 7 E-G (was E-B, a 5th)
     tr: shuffle([29, 30, 31, 32]),
     ba: shuffle([25, 26, 27, 24]),
     mc: { treble: shuffle([{ d: 28 }, { d: 31 }, { d: 29 }]), bass: shuffle([{ d: 28 }, { d: 25 }, { d: 27 }]) },
@@ -34584,20 +34600,33 @@ function sfWorkbook() {
   const s1 = withSeed(k('s1'), () => ({ tog: run(4, 30, 38), home: run(6, 30, 38) }));
   const s2 = withSeed(k('s2'), () => ({ tog: Array.from({ length: 3 }, () => mkSS(30, 38)), home: Array.from({ length: 4 }, () => mkSS(30, 38)), hi: Array.from({ length: 4 }, () => mkSS(30, 38)),
     stair: (() => { let d = 31; const moves = []; for (let i = 0; i < 5; i++) { let m; do { m = [1, 2, -1, -2][Math.floor(Math.random() * 4)]; } while (d + m < 30 || d + m > 38); d += m; moves.push({ m, d }); } return { start: 31, moves }; })() }));
-  const s3 = withSeed(k('s3'), () => ({ home: run(6, 28, 32) }));
+  // Phase 417: the four kinds of move all appear in 'on your own'; the higher note is first in two pairs, second in two
+  const kindPair = (gap) => { for (;;) { const a = rnd(30, 38), b = a + gap; if (b >= 30 && b <= 38) return { a, b }; } };
+  Object.assign(s2, withSeed(k('s2b'), () => ({ home: shuffle([1, 2, -1, -2]).map(kindPair), hi: shuffle([1, 2, -1, -2]).map(g => kindPair(g)) })));
+  // the Queen's five / the King's five: every note once, then one more (no note three times)
+  const five = (lo) => { const a = shuffle([lo, lo + 1, lo + 2, lo + 3, lo + 4]); let x; do { x = rnd(lo, lo + 4); } while (x === a[4]); return [...a, x].map(d => ({ d })); };
+  const s3 = withSeed(k('s3b'), () => ({ home: five(28) }));
   const s4 = withSeed(k('s4'), () => {
-    let r = rnd(0, 2); const path = [[r, 0]];
-    for (let c = 1; c < 5; c++) { r = Math.max(0, Math.min(2, r + rnd(-1, 1))); path.push([r, c]); }
-    const grid = Array.from({ length: 3 }, () => Array.from({ length: 5 }, () => rnd(25, 28)));
+    let r = rnd(0, 3); const path = [[r, 0]];
+    for (let c = 1; c < 5; c++) { const nr = Math.max(0, Math.min(3, r + rnd(-1, 1))); if (nr !== r) path.push([nr, c - 1]); r = nr; path.push([r, c]); }
+    const grid = Array.from({ length: 4 }, () => Array.from({ length: 5 }, () => rnd(25, 28)));
     path.forEach(([pr, pc]) => { grid[pr][pc] = 24; });
-    return { home: run(6, 24, 28), grid, path };
+    return { home: five(24), grid, path };
   });
-  const s5 = withSeed(k('s5'), () => {
-    const cs = shuffle([0, 1, 2, 3, 4, 5, 6, 7]).slice(0, 3), rest = [24, 25, 26, 27, 29, 30, 31, 32];
-    return { mid: [0, 1, 2, 3, 4, 5, 6, 7].map(i => cs.includes(i) ? { d: 28, staff: Math.random() < 0.5 ? 'treble' : 'bass' } : { d: rest[Math.floor(Math.random() * rest.length)] }) };
-  });
+  // Phase 414: set places -- Clara's C is notes 2, 5 and 8 (never side by side), with B and D as decoys near her
+  const s5 = { mid: [{ d: 30 }, { d: 28, staff: 'treble' }, { d: 25 }, { d: 27 }, { d: 28, staff: 'bass' }, { d: 29 }, { d: 24 }, { d: 28, staff: 'treble' }] };
   const s6 = withSeed(k('s6'), () => ({ bingo: shuffle([24, 25, 26, 27, 28, 29, 30, 31, 32]) }));
+  // Phase 414: played alone -- the calls are printed; one line (only one) is the first to fill, and not before call 5
+  Object.assign(s6, withSeed(k('s6calls'), () => { for (;;) { const calls = shuffle([24, 25, 26, 27, 28, 29, 30, 31, 32]); const w = sfBingoWin(s6.bingo, calls); if (w && w.lines.length === 1 && w.at >= 5) return { calls, win: w }; } }));
   return { s1, s2, s3, s4, s5, s6 };
+}
+// the call names: whose note it is (F and G live in both palaces)
+const SF_CALL = { 24: 'the King’s F', 25: 'the King’s G', 26: 'the King’s A', 27: 'the King’s B', 28: 'Clara’s C', 29: 'the Queen’s D', 30: 'the Queen’s E', 31: 'the Queen’s F', 32: 'the Queen’s G' };
+const SF_LINES = [['row 1', [0, 1, 2]], ['row 2', [3, 4, 5]], ['row 3', [6, 7, 8]], ['column 1', [0, 3, 6]], ['column 2', [1, 4, 7]], ['column 3', [2, 5, 8]], ['corner to corner, from the top left', [0, 4, 8]], ['corner to corner, from the top right', [2, 4, 6]]];
+function sfBingoWin(card, calls) {
+  const on = new Set();
+  for (let i = 0; i < calls.length; i++) { on.add(card.indexOf(calls[i])); const lines = SF_LINES.filter(([, c]) => c.every(j => on.has(j))).map(([n]) => n); if (lines.length) return { at: i + 1, lines }; }
+  return null;
 }
 const sfLS = (d, clef = 'treble') => (d - CLEFS[clef].low) % 2 === 0 ? 'L' : 'S';
 const sfSSName = (it) => (Math.abs(it.b - it.a) === 1 ? 'step ' : 'skip ') + (it.b > it.a ? 'up' : 'down');
@@ -34623,7 +34652,9 @@ function SfRow({ clef = 'none', notes = [], width = 360, items = [], minSpan, bo
   return <div style={{width:'100%'}}>
     {items.some(it => it.n != null) && <div style={{position:'relative',height:15}}>{items.map((it, i) => it.n != null && <span key={i} style={{position:'absolute',left:pct(it.x),transform:'translateX(-50%)',fontSize:11,fontWeight:900,color:BK.coral,whiteSpace:'nowrap'}}>{it.ex ? 'e.g.' : it.n}</span>)}</div>}
     <PaperStaff clef={clefOn ? clef : 'treble'} clefOn={clefOn} notes={notes} width={width} minSpan={minSpan}/>
-    {items.some(it => it.box !== false) && <div style={{position:'relative',height:boxH + 4,marginTop:3}}>{items.map((it, i) => it.box !== false && (it.label != null
+    {items.some(it => it.box !== false) && <div style={{position:'relative',height:items.some(it => it.choose) ? 50 : boxH + 4,marginTop:3}}>{items.map((it, i) => it.box !== false && (it.choose
+      ? <span key={i} style={{position:'absolute',left:pct(it.x),transform:'translateX(-50%)',top:0,display:'grid',gap:3,justifyItems:'center'}}>{[['step', 'skip'], ['up', 'down']].map((pair, r) => <span key={r} style={{display:'flex',gap:6}}>{pair.map(wd => { const on = it.ex && it.ans.split(' ')[r] === wd; return <span key={wd} style={{fontSize:12.5,fontWeight:800,color:on ? BK.coral : BK.ink,border:'1.5px solid ' + (on ? BK.coral : 'transparent'),borderRadius:12,padding:'0 7px',lineHeight:'19px'}}>{wd}</span>; })}</span>)}</span>
+      : it.label != null
       ? <span key={i} style={{position:'absolute',left:pct(it.x),transform:'translateX(-50%)',top:4,fontSize:12,fontWeight:900,color:BK.ink,whiteSpace:'nowrap',background:BK.soft,borderRadius:12,padding:'3px 9px'}}>{it.label}</span>
       : <span key={i} style={{position:'absolute',left:pct(it.x),transform:'translateX(-50%)',top:0,width:it.w || boxW,height:boxH,border:'1.5px solid ' + (it.ex ? BK.coral : BK.ink),borderRadius:7,background:it.ex ? '#fdf3ef' : '#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:it.w && it.w > 40 ? 13 : 16,fontWeight:900,color:BK.coral,whiteSpace:'nowrap'}}>{it.ex ? it.ans : ''}</span>))}</div>}
   </div>;
@@ -34652,82 +34683,87 @@ function SfWorkbook({ startNo = 1, frames = true }) {
       items={list.map((it, i) => ({ x: xs[i], n: from + i, ex: exFirst && i === 0, ans: clef === 'none' ? sfLS(it.d) : dName(it.d) }))}/>; };
   const pairs = (list, width, opts = {}) => { const cs = sfXs(list.length, width, false).map((c, i, a) => list.length === 1 ? c : 50 + i * (width - 100) / (list.length - 1));
     return <SfRow width={width} notes={list.flatMap((it, i) => [{ d: it.a, x: cs[i] - 16 }, { d: it.b, x: cs[i] + 16 }])}
-      items={list.map((it, i) => ({ x: cs[i], n: (opts.from || 1) + i, ex: opts.ex && i === 0, ans: sfSSName(it), w: 88, box: opts.box }))}/>; };
+      items={list.map((it, i) => ({ x: cs[i], n: (opts.from || 1) + i, ex: opts.ex && i === 0, ans: sfSSName(it), w: 88, box: opts.box, choose: opts.box !== false }))}/>; };
 
   // 2 (faces "Lines and spaces")
   P(<>
     <WbTop step={1}/>
     <Part kind="together" title="Line or space?" how="Skewer = on a line, write L. Sandwich = in a space, write S. Count from the bottom.">
-      <Lead max={400}><KebabSandwich/></Lead>
+      <Lead max={540}><KebabSandwich/></Lead>
       {singles(W.s1.tog, 380, 'none', true)}
     </Part>
-    <Part kind="home" title="Your turn" how="L or S -- and add the number if you can: L3 is line 3, S2 is space 2.">
+    <Part kind="home" title="Line or space? On your own" how="Write L or S and its number: L3 is line 3, S2 is space 2. Count from the bottom.">
       {singles(W.s1.home, 380, 'none', false, 5)}
     </Part>
     <Part kind="play" title="Skewer plate, sandwich plate" how="Cook! Draw each note where its label says -- skewers ON the lines, sandwiches IN the spaces. Count from the bottom.">
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
-        {sfPlate('Skewer plate · line notes', <SfRow width={170} notes={[]} minSpan={[29, 39]} items={[[44, 'line 1'], [86, 'line 3'], [128, 'line 5']].map(([x, label]) => ({ x, label }))}/>)}
-        {sfPlate('Sandwich plate · space notes', <SfRow width={170} notes={[]} minSpan={[29, 39]} items={[[44, 'space 1'], [86, 'space 2'], [128, 'space 4']].map(([x, label]) => ({ x, label }))}/>)}
+        {sfPlate('Skewer plate · line notes', <SfRow width={132} notes={[]} minSpan={[29, 39]} items={[[30, 'line 1'], [66, 'line 3'], [102, 'line 5']].map(([x, label]) => ({ x, label }))}/>)}
+        {sfPlate('Sandwich plate · space notes', <SfRow width={132} notes={[]} minSpan={[29, 39]} items={[[30, 'space 1'], [66, 'space 2'], [102, 'space 4']].map(([x, label]) => ({ x, label }))}/>)}
       </div>
     </Part>
+    <Faces/>
   </>);
   // 3 (faces "Up the staff, up the piano")
   P(<>
     <WbTop step={2}/>
-    <Part kind="together" title="Step or skip? Up or down?" how="From the first note to the second. Write it, like “step up” or “skip down”.">
+    <Part kind="together" title="Step or skip? Up or down?" how="From the first note to the second: circle step or skip, and up or down.">
       {pairs(W.s2.tog, 380, { ex: true })}
     </Part>
-    <Part kind="home" title="Your turn">
+    <Part kind="home" title="Step or skip? On your own">
       {pairs(W.s2.home, 400, { from: 4 })}
     </Part>
     <Part kind="play" title="Which is higher? · The staircase tune" how="Circle the higher note in each pair -- then play both and check with your ears.">
       {pairs(W.s2.hi, 400, { box: false })}
       {sub('The staircase tune', 'The first note is drawn. Follow the signs left to right and draw each next note -- then play your staircase and hear it climb and fall.')}
-      <SfRow width={420} notes={[{ d: W.s2.stair.start, x: 40, color: BK.coral }]} minSpan={[29, 39]}
-        items={W.s2.stair.moves.map((mv, i) => ({ x: 40 + (i + 1) * 72, label: SF_MOVE[mv.m] }))}/>
+      <SfRow width={360} notes={[{ d: W.s2.stair.start, x: 34, color: BK.coral }]} minSpan={[29, 39]}
+        items={W.s2.stair.moves.map((mv, i) => ({ x: 34 + (i + 1) * 60, label: SF_MOVE[mv.m] }))}/>
     </Part>
+    <Faces/>
   </>);
   // 4 (faces "The Queen's five")
   P(<>
     <WbTop step={3}/>
-    <Part kind="together" title="Trace the Queen's curl" how="A treble clef starts on the G line -- the Queen's house, in coral -- and spirals out. Trace the faint ones.">
+    <Part kind="together" title="Trace the Queen's curl" how="Start on the coral G line and spiral out. Trace the three faint ones.">
       <SfTraceStaff clef="treble"/>
     </Part>
     <Part kind="home" title="The Queen's five: name the notes" how="Count up from Clara's C or down from the Queen's G.">
       {singles(W.s3.home, 400, 'treble', true)}
     </Part>
     <Part kind="play" title="Write the Queen's tunes" how="Draw each note above its letter -- on the line or in the space where it lives. Then play both tunes with your right hand.">
-      {SF_QUEEN_TUNES.map((tu, k) => { const xs = sfXs(tu.notes.length, 400, true); return <div key={k} style={{marginTop:k ? 8 : 0}}>
+      {SF_QUEEN_TUNES.map((tu, k) => { const xs = sfXs(tu.notes.length, 360, true); return <div key={k} style={{marginTop:k ? 8 : 0}}>
         <div style={{fontSize:13.5,fontWeight:800,color:BK.ink,margin:'0 0 2px'}}>{tu.name}</div>
-        <SfRow clef="treble" width={400} notes={[]} minSpan={[27, 34]} items={xs.map((x, i) => ({ x, ex: true, ans: dName(tu.notes[i]), w: 34 }))}/>
+        <SfRow clef="treble" width={360} notes={[]} minSpan={[27, 34]} items={xs.map((x, i) => ({ x, ex: true, ans: dName(tu.notes[i]), w: 34 }))}/>
       </div>; })}
     </Part>
+    <Faces/>
   </>);
   // 5 (faces "The King's five")
   P(<>
     <WbTop step={4}/>
-    <Part kind="together" title="Trace the King's guards" how="A bass clef starts with a dot on the F line -- the King's house, in coral -- curls down, then the two guards: one above the F line and one below.">
+    <Part kind="together" title="Trace the King's guards" how="Start with the dot on the coral F line, curl down, then add the two guards -- one above the line, one below. Trace the three faint ones.">
       <SfTraceStaff clef="bass"/>
     </Part>
     <Part kind="home" title="The King's five: name the notes" how="Start from the King's F -- the line between the two guards -- or from Clara's C.">
       {singles(W.s4.home, 400, 'bass', true)}
     </Part>
-    <Part kind="play" title="Help the King get home" how="Colour every F. The F stones touching each other make the road from the King to his castle.">
-      <div style={{display:'flex',alignItems:'center',gap:8}}>
-        <PenArt shapes={sfKing(22, 26, 1)} vb={[4, 0, 36, 48]} style={{width:44,flex:'0 0 auto'}} label="the King"/>
-        <div style={{flex:1}}><BkGrid cols={5} gap="6px 6px">{W.s4.grid.flatMap((row, r) => row.map((d, c) => <div key={r + '-' + c} style={{border:'1.2px solid #e2dccb',borderRadius:9,padding:'3px 5px'}}><PaperStaff clef="bass" notes={[{ d }]} width={76} minSpan={[29, 17]}/></div>))}</BkGrid></div>
-        <svg viewBox="0 0 36 48" style={{width:44,flex:'0 0 auto'}} aria-label="his castle"><path d="M6 44 V20 H10 V15 H14 V20 H16 V15 H20 V20 H22 V15 H26 V20 H30 V44 Z" fill={BK.soft} stroke={BK.ink} strokeWidth="1.8" strokeLinejoin="round"/><path d="M15 44 V32 Q18 28 21 32 V44" fill={BK.coral} stroke={BK.ink} strokeWidth="1.4"/></svg>
+    <Part kind="play" title="Help the King get home" how="Colour every F stone. They join side by side -- up, down or across, never corner to corner -- into one road from the King to his castle.">
+      <div style={{display:'grid',gridTemplateColumns:'48px repeat(5, 1fr) 48px',gap:'6px 6px',alignItems:'center'}}>
+        {W.s4.grid.flatMap((row, r) => [
+          <div key={'k' + r} style={{display:'flex',justifyContent:'center'}}>{r === W.s4.path[0][0] && <PenArt shapes={sfKing(22, 26, 1)} vb={[4, 0, 36, 48]} style={{width:44}} label="the King"/>}</div>,
+          ...row.map((d, c) => <div key={r + '-' + c} style={{border:'1.2px solid #e2dccb',borderRadius:9,padding:'3px 5px'}}><PaperStaff clef="bass" notes={[{ d }]} width={84} minSpan={[29, 17]}/></div>),
+          <div key={'c' + r} style={{display:'flex',justifyContent:'center'}}>{r === W.s4.path[W.s4.path.length - 1][0] && <svg viewBox="0 0 36 48" style={{width:44}} aria-label="his castle"><path d="M6 44 V20 H10 V15 H14 V20 H16 V15 H20 V20 H22 V15 H26 V20 H30 V44 Z" fill={BK.soft} stroke={BK.ink} strokeWidth="1.8" strokeLinejoin="round"/><path d="M15 44 V32 Q18 28 21 32 V44" fill={BK.coral} stroke={BK.ink} strokeWidth="1.4"/></svg>}</div>])}
       </div>
     </Part>
+    <Faces/>
   </>);
   // 6 (faces "Middle C: Princess Clara")
   const visit = (label, clef, who) => <div style={{border:'1.2px solid #e2dccb',borderRadius:12,padding:'8px 12px 6px'}}>
     <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:2}}><PenArt shapes={who === 'clara' ? sfClara(22, 24, 1) : who === 'queen' ? sfQueen(22, 24, 1) : sfKing(22, 24, 1)} vb={[0, 2, 44, 42]} style={{width:30,flex:'0 0 auto'}}/><span style={{fontSize:13,fontWeight:800,color:BK.ink}}>{label}</span></div>
-    <PaperStaff clef={clef} notes={[]} width={150} minSpan={clef === 'treble' ? [27, 39] : [17, 29]}/>
+    <PaperStaff clef={clef} notes={[]} width={172} minSpan={clef === 'treble' ? [27, 39] : [17, 29]}/>
   </div>;
   P(<>
     <WbTop step={5}/>
-    <Part kind="together" title="Circle every middle C" how="Clara's note sits on its own little ladder rung -- just under the Queen's staff, or just over the King's. Same key!">
+    <Part kind="together" title="Circle every middle C" how="Find Clara's C on both staves and circle it. Some notes near her are not C -- look closely!">
       <div style={{maxWidth:640,margin:'0 auto',width:'100%'}}><PaperStaff clef="grand" notes={W.s5.mid.map((n, i) => ({ ...n, x: sfXs(8, 440, true)[i] }))} width={440}/></div>
     </Part>
     <Part kind="home" title="Clara visits" how="Draw the note each time -- on its little ladder rung when it is Clara's C.">
@@ -34736,27 +34772,37 @@ function SfWorkbook({ startNo = 1, frames = true }) {
         {visit('Visiting the King: draw Clara’s C', 'bass', 'clara')}
         {visit('One step up from Clara: draw D', 'treble', 'queen')}
         {visit('One step down from Clara: draw B', 'bass', 'king')}
+        {visit('Two steps up from Clara: draw E', 'treble', 'queen')}
+        {visit('Two steps down from Clara: draw A', 'bass', 'king')}
       </div>
     </Part>
+    <Faces/>
   </>);
   // 7 (puzzle page for step 5)
   P(<>
     <WbTop step={5}/>
     <Part kind="play" grow={false} title="The secret message" how="Write each note's letter in its box -- every staff spells a word. The last one is seven notes long!">
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'4px 14px'}}>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'4px 14px',alignItems:'end'}}>
         {SF_MSG.slice(0, 3).map((m, i) => { const xs = [64, 98, 132]; return <SfRow key={i} clef={m.clef} width={152} notes={m.notes.map((d, j) => ({ d, x: xs[j] }))} minSpan={m.clef === 'bass' ? [29, 17] : [27, 39]} items={xs.map((x, j) => ({ x, ex: i === 0, ans: m.word[j], box: true, w: 30 }))}/>; })}
       </div>
       {SF_MSG.slice(3).map(m => { const xs = sfXs(7, 440, true); return <div key={m.word} style={{maxWidth:620,margin:'10px auto 0',width:'100%'}}><SfRow clef="grand" width={440} notes={m.notes.map((d, j) => ({ d, x: xs[j] }))} items={xs.map(x => ({ x, w: 30 }))}/></div>; })}
     </Part>
-    <Part kind="play" title="Note bingo" how="Someone names (or plays) one of the nine notes. Find it and colour it. Three in a row -- across, down or corner to corner -- wins!">
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3, 1fr)',gap:8,maxWidth:520,margin:'0 auto',width:'100%'}}>
-        {W.s6.bingo.map((d, i) => <div key={i} style={{border:'1.6px solid ' + BK.ink,borderRadius:10,padding:'4px 10px'}}><PaperStaff clef={d >= 28 ? 'treble' : 'bass'} notes={[{ d }]} width={130} minSpan={d >= 28 ? [39, 27] : [29, 17]}/></div>)}
+    <Part kind="play" title="Bingo on your own" how="Read the calls in order. Find each note on the card and colour it. The first three in a row -- across, down or corner to corner -- is BINGO! Write the number of the call that made it.">
+      <div style={{display:'grid',gridTemplateColumns:'1fr 184px',gap:18,alignItems:'center'}}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3, 1fr)',gap:8}}>
+          {W.s6.bingo.map((d, i) => <div key={i} style={{border:'1.6px solid ' + BK.ink,borderRadius:10,padding:'4px 8px'}}><PaperStaff clef={d >= 28 ? 'treble' : 'bass'} notes={[{ d }]} width={130} minSpan={d >= 28 ? [39, 27] : [29, 17]}/></div>)}
+        </div>
+        <div>
+          <div style={{fontSize:12,fontWeight:900,color:BK.coral,letterSpacing:'0.06em',marginBottom:5}}>THE CALLS</div>
+          <div style={{display:'grid',gap:4}}>{W.s6.calls.map((d, i) => <div key={i} style={{display:'flex',alignItems:'center',gap:8,fontSize:13.5,color:BK.ink,fontWeight:700}}><span style={{width:20,height:20,borderRadius:10,background:BK.soft,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:900,color:BK.coral}}>{i + 1}</span>{SF_CALL[d]}</div>)}</div>
+          <div style={{display:'flex',alignItems:'center',gap:8,marginTop:12,fontSize:13.5,fontWeight:900,color:BK.ink}}>BINGO on call {bkBox(44, 34)}</div>
+        </div>
       </div>
     </Part>
+    <Faces/>
   </>);
   // 8. the check-up on paper (Phase 406: it belongs in the Workbook)
   P(<>
-    <WbTop step={6}/>
     <SfPaperCheck/>
   </>);
   return <>{frames ? lbFramed('staff', pages, startNo) : pages}</>;
@@ -34765,18 +34811,18 @@ function SfWorkbook({ startNo = 1, frames = true }) {
 // the check-up on paper, big staves (Phase 409)
 function SfPaperCheck() {
   const C = useMemo(() => sfChkData(), [LANG]);
-  const xs4n = sfXs(4, 480, false), xs4c = sfXs(4, 480, true);
-  const pcs = [70, 180, 290, 400];
+  const xs4n = sfXs(4, 436, false), xs4c = sfXs(4, 436, true);
+  const pcs = [64, 164, 264, 364];
   return <div className="lb-paper" style={{display:'flex',flexDirection:'column',gap:4}}>
     <LbPaperHead/>
     {bkSec('A', 'Line or space? Write L or S.')}
-    <SfRow width={480} notes={C.ls.map((it, i) => ({ d: it.d, x: xs4n[i] }))} minSpan={[29, 39]} items={xs4n.map((x, i) => ({ x, n: i + 1 }))}/>
-    {bkSec('B', 'Step or skip? Up or down? Write it.')}
-    <SfRow width={480} notes={C.ss.flatMap((it, i) => [{ d: it.a, x: pcs[i] - 16 }, { d: it.b, x: pcs[i] + 16 }])} minSpan={[29, 39]} items={pcs.map((x, i) => ({ x, n: i + 5, w: 88 }))}/>
+    <SfRow width={436} notes={C.ls.map((it, i) => ({ d: it.d, x: xs4n[i] }))} minSpan={[29, 39]} items={xs4n.map((x, i) => ({ x, n: i + 1 }))}/>
+    {bkSec('B', 'Step or skip? Up or down? Circle the words.')}
+    <SfRow width={436} notes={C.ss.flatMap((it, i) => [{ d: it.a, x: pcs[i] - 16 }, { d: it.b, x: pcs[i] + 16 }])} minSpan={[29, 39]} items={pcs.map((x, i) => ({ x, n: i + 5, w: 88, choose: true }))}/>
     {bkSec('C', 'The Queen’s five: name the notes.')}
-    <SfRow clef="treble" width={480} notes={C.tr.map((d, i) => ({ d, x: xs4c[i] }))} minSpan={[27, 39]} items={xs4c.map((x, i) => ({ x, n: i + 9 }))}/>
+    <SfRow clef="treble" width={436} notes={C.tr.map((d, i) => ({ d, x: xs4c[i] }))} minSpan={[27, 39]} items={xs4c.map((x, i) => ({ x, n: i + 9 }))}/>
     {bkSec('D', 'The King’s five: name the notes.')}
-    <SfRow clef="bass" width={480} notes={C.ba.map((d, i) => ({ d, x: xs4c[i] }))} minSpan={[17, 29]} items={xs4c.map((x, i) => ({ x, n: i + 13 }))}/>
+    <SfRow clef="bass" width={436} notes={C.ba.map((d, i) => ({ d, x: xs4c[i] }))} minSpan={[17, 29]} items={xs4c.map((x, i) => ({ x, n: i + 13 }))}/>
     {bkSec('E', 'Circle every middle C.')}
     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}>{['treble', 'bass'].map(cl => <div key={cl}><PaperStaff clef={cl} notes={C.mc[cl].map((n, i) => ({ ...n, x: sfXs(3, 230, true)[i] }))} width={230} minSpan={cl === 'treble' ? [27, 39] : [17, 29]}/></div>)}</div>
   </div>;
@@ -34808,12 +34854,12 @@ function SfTeacher() {
       say="“Crown check: this is the King's staff. His two dots guard F -- find F first, then walk from there.”"/>
   </>);
   P(<>
-    <TcBlock page={6} title="Middle C: Princess Clara" answers={<>{tcAns('CIRCLE', ['notes ' + W.s5.mid.map((n, j) => n.d === 28 ? j + 1 : null).filter(Boolean).join(', ')])}{tcAns('CLARA VISITS', ['C on the ladder rung just under the treble staff', 'C on the ladder rung just over the bass staff', 'D just under line 1 of the treble staff', 'B just over line 5 of the bass staff'])}</>}
+    <TcBlock page={6} title="Middle C: Princess Clara" answers={<>{tcAns('CIRCLE', ['notes ' + W.s5.mid.map((n, j) => n.d === 28 ? j + 1 : null).filter(Boolean).join(', ')])}{tcAns('CLARA VISITS', ['C on the ladder rung just under the treble staff', 'C on the ladder rung just over the bass staff', 'D just under line 1 of the treble staff', 'B just over line 5 of the bass staff', 'E on line 1 of the treble staff', 'A on line 5 of the bass staff'])}</>}
       watch="Thinking the C under the treble staff and the C over the bass staff are two different keys."
       say="“One Clara, one key -- written from the Queen's side or the King's side.”"/>
-    <TcBlock page={7} title="Puzzle page" answers={<>{tcAns('MESSAGE', SF_MSG.map(m => m.word))}{tcAns('BINGO CARD', W.s6.bingo.map(d => withSolfa(dName(d)) + (d === 28 ? ' (middle C)' : '')))}</>}
-      watch="In bingo, F and G live in both palaces: the treble F/G are high, the bass F/G low. Call them by palace: “the Queen's G”, “the King's F”."
-      say="“Which palace? Then which friend is nearest?”"/>
+    <TcBlock page={7} title="Puzzle page" answers={<>{tcAns('MESSAGE', SF_MSG.map(m => m.word))}{tcAns('BINGO', ['call ' + W.s6.win.at + ' (' + SF_CALL[W.s6.calls[W.s6.win.at - 1]] + '): ' + W.s6.win.lines[0]])}</>}
+      watch="In bingo, F and G live in both palaces: the call says whose -- the Queen's G is on her staff (high), the King's G on his (low)."
+      say="“Whose palace? Then which friend is nearest?”"/>
     <TcBlock page={8} title="Check-up" goBack={[{ id: 'ls', step: 1, page: 2 }, { id: 'ss', step: 2, page: 3 }, { id: 'tr', step: 3, page: 4 }, { id: 'ba', step: 4, page: 5 }, { id: 'mc', step: 5, page: 6 }]} answers={<>
       {tcAns('A', C.ls.map(it => sfLS(it.d)))}
       {tcAns('B', C.ss.map(it => sfSSName({ a: it.a, b: it.b })))}
@@ -34910,10 +34956,13 @@ function SpreadBook({ id }) {
   const lesson = LESSON_BOOKS[id](), work = WORKBOOKS[id]({ startNo: 1, frames: false });
   const lp = React.Children.toArray(lesson.props.children), wp = React.Children.toArray(work.props.children);
   const blank = (k) => <section key={'blank' + k} className="bk-page" data-spread-blank/>;
-  if (framed) {   // Phase 394: the opener is page 1 (a right-hand page), each lesson page faces its workbook page, the check-up closes
+  if (framed) {   // Phase 394/415: the opener is page 1 (a right-hand page), each lesson page faces its workbook page, the checks face the paper check-up
+    const wf = React.Children.toArray(WORKBOOKS[id]({ startNo: 1, frames: true }).props.children);
+    const steps = lp.length - 2, paper = wf[wf.length - 1];
     const out = [lp[0]];
-    for (let k = 1; k < lp.length - 1; k++) out.push(lp[k], wp[k - 1] || blank('w' + k));
-    out.push(lp[lp.length - 1]);
+    for (let k = 1; k <= steps; k++) out.push(lp[k], wf[k - 1] || blank('w' + k));
+    wf.slice(steps, -1).forEach((pg, j) => out.push(blank('x' + j), pg));
+    out.push(lp[lp.length - 1], paper);
     return <>{out}</>;
   }
   const out = [<SpreadCover key="cover" id={id}/>];
