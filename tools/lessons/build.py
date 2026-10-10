@@ -95,7 +95,7 @@ page = f'''<!DOCTYPE html>
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,700;0,800;0,900;1,700;1,800&family=Cinzel:wght@700&family=Cormorant+Garamond:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
 <script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>
 <style>
   :root {{ --cream:#faf6ec; --paper:#fffefa; --navy:#26296b; --navy-soft:#4a4d86; --muted:#6d6f9c; --line:#e8e1d0; --coral:#e4572e; --good:#2f8a6c; --brass:#b8801f; }}
@@ -179,7 +179,7 @@ page = f'''<!DOCTYPE html>
   footer {{ margin-top:28px; font-size:13px; color:var(--muted); }}
   footer a {{ color:var(--navy); font-weight:600; }}
   .house {{ margin:22px 0 0; }}
-  .house-wide {{ display:none; }}
+  .house-wide {{ display:none; max-width:680px; margin-left:auto; margin-right:auto; }}
   @media (min-width:760px) {{ .house-wide {{ display:block; }} .house-tall {{ display:none; }} }}
   .house-tall {{ max-width:460px; margin-left:auto; margin-right:auto; }}
   .legend {{ font-size:14px; color:var(--muted); max-width:40em; margin:10px 0 0; }}
