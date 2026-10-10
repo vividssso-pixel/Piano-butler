@@ -37,18 +37,20 @@ python3 tools/lessons/build.py <chapter-id> --final  # refuses while any DRAFT m
   `lessons/img/<chapter-id>-worksheet.jpg` (880 px wide).
 - Do not commit a draft build of `lessons/<slug>.html`: it would go live on push. Commit the page only
   after the `--final` build.
-- After a page goes final: add it to `sitemap.xml`, and open its room on the front page (below). (The Free
+- After a page goes final: add it to `sitemap.xml`, and open its window on the front page (below). (The Free
   printables page was taken down on 2026-10-08, so the guide pages do not link to it.)
 
-## The front page: the Piano Butler's house (`lessons/index.html`)
+## The front page: the Piano Butler's street (`lessons/index.html`)
 
-`src/index.html` is the guide pages' front page: the house from the app (Phase 377), one room per chapter. Rooms
-with a guide page are drawn in dark ink and link to it; the others are grey. When a chapter's page goes final:
-1. redraw the two house pictures with the app's own code, listing every published page:
-   `BUILD=drills.tNNN.html node house379gen.js '{"posture-hands":"posture-and-hand-shape.html", ...}'`
-   (kept in `_workspace/chapter-review/lessonbook/`; it writes `svg/index/house-wide.svg` and `house-tall.svg`;
-   `houseimg.js` remakes the sharing picture `lessons/img/house.jpg`);
-2. add the chapter's card to "Open rooms" in `src/index.html`;
+`src/index.html` is the guide pages' front page: the street from the app (Phase 425; it was a house, Phases 377-424),
+one window per chapter. Windows with a guide page are drawn in dark ink and link to it; the others are grey. When a
+chapter's page goes final:
+1. redraw the street with the app's own code, listing every published page:
+   `BUILD=drills.tNNN.html OUT=<svg/index> node street425gen.js '{"posture-hands":"posture-and-hand-shape.html", ...}'`
+   (kept in `_workspace/chapter-review/kit/`; it writes `svg/index/house-wide.svg` (three stretches of street, big
+   screens) and `house-tall.svg` (one street, phones) -- the file names stay -- and `house-og.svg`, from which
+   `node streetimg425.js house-og.svg lessons/img/house.jpg` remakes the sharing picture);
+2. add the chapter's card to "Open windows" in `src/index.html`;
 3. `python3 tools/lessons/build.py index --final`.
-The drawing's links stay out of the tab order (the picture is hidden from screen readers); the "Open rooms" list is
+The drawing's links stay out of the tab order (the picture is hidden from screen readers); the "Open windows" list is
 the way in for keyboards and screen readers.
