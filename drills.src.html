@@ -8882,6 +8882,7 @@ const FOLD_PAIRS = [   // Phase 419: the two space Cs meet; High C / Low C (two 
   { d: 35, color: '#e4572e', get label() { return t('Queensland C ↔ Kingsland C', '퀸즈랜드 C ↔ 킹스랜드 C'); } },
 ];
 const FOLD_LINE_COLOR = '#4a63c9';
+const FOLD_LEDGER = { d: 42, color: '#c0431f', get label() { return t('Sky C ↔ Sea C -- two ladders up, two ladders down', '하늘 C ↔ 바다 C -- 발판 둘 위, 발판 둘 아래'); } };   // Phase 431: chapter 6
 
 // Phase 101c: Sohyun's clef story -- the Queen of G and the King of F. Grounded in the real
 // history (both clefs began as the letters G and F), told as a story.
@@ -9012,7 +9013,8 @@ function ClefStory() {
   );
 }
 
-function FoldStaff() {
+function FoldStaff({ ledger = false }) {   // ledger: chapter 6 -- the Cs on two ladders meet too
+  const PAIRS = ledger ? [...FOLD_PAIRS, FOLD_LEDGER] : FOLD_PAIRS;
   const [phase, setPhase] = useState('open'); // open | folding | printed
   const timers = useRef([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
@@ -9035,7 +9037,7 @@ function FoldStaff() {
       </g>
     );
   };
-  const topY = dY(41), botY = dY(15);
+  const topY = dY(ledger ? 44 : 41), botY = dY(ledger ? 12 : 15);
   const bottomStyle = {
     transformOrigin: `0px ${foldY}px`, transformBox: 'view-box',
     transform: phase === 'folding' ? 'scaleY(-1)' : 'scaleY(1)',
@@ -9046,13 +9048,13 @@ function FoldStaff() {
     <div className="try-box" style={{background:'var(--brass-bg)',borderRadius:10,padding:'10px',margin:'12px 0'}}>
       <div style={{fontSize:15,fontWeight:800,marginBottom:2}}>{t('Fold the staff at Clara\'s ladder', '클라라의 발판에서 오선 접기')}</div>
       <div style={{fontSize:13,color:'#6d6f9c',marginBottom:6,lineHeight:1.5}}>
-        {t('Like a paint print: put ink on the treble side, fold the paper along middle C, and open it.', '데칼코마니처럼: 높은음자리표 쪽에 물감을 묻히고, 가운데 도를 따라 종이를 접었다가 펼쳐요.')}
+        {ledger ? t('Like a paint print, now with the ledger Cs: ink on the treble side, fold along Clara\'s ladder, and open it.', '데칼코마니처럼, 이번엔 덧줄의 C까지: 높은음자리표 쪽에 물감을 묻히고, 클라라의 발판을 따라 접었다가 펼쳐요.') : t('Like a paint print: put ink on the treble side, fold the paper along middle C, and open it.', '데칼코마니처럼: 높은음자리표 쪽에 물감을 묻히고, 가운데 도를 따라 종이를 접었다가 펼쳐요.')}
       </div>
       <svg viewBox={`0 ${topY} ${W} ${botY - topY}`} style={{width:'100%',maxWidth:450,display:'block',margin:'0 auto',overflow:'visible'}}>
         <g>
           {[30, 32, 34, 36, 38].map(d => line(d, d === 32 ? FOLD_LINE_COLOR : null))}
           <ClefGlyph clef="treble" st="treble" yOf={(d) => dY(d)} ink="#26296b"/>
-          {FOLD_PAIRS.map((p, i) => ink(p.d, p.color, 150 + i * 60))}
+          {PAIRS.map((p, i) => ink(p.d, p.color, 150 + i * 60))}
         </g>
         <line x1="4" x2={W - 4} y1={foldY} y2={foldY} stroke="#e4572e" strokeWidth="1.6" strokeDasharray="6 5"/>
 
@@ -9060,11 +9062,11 @@ function FoldStaff() {
           <rect x="0" y={foldY + 1} width={W} height={botY - foldY} fill="var(--brass-bg)"/>
           {[18, 20, 22, 24, 26].map(d => line(d, printed && d === 24 ? FOLD_LINE_COLOR : null))}
           <ClefGlyph clef="bass" st="bass" yOf={(d) => dY(d)} ink="#26296b"/>
-          {printed && FOLD_PAIRS.map((p, i) => ink(56 - p.d, p.color, 150 + i * 60))}
+          {printed && PAIRS.map((p, i) => ink(56 - p.d, p.color, 150 + i * 60))}
         </g>
         <line x1={90 - 12} x2={90 + 12} y1={foldY} y2={foldY} stroke="#26296b" strokeWidth="1.6"/>
         <ellipse cx={90} cy={foldY} rx="7.5" ry="5.5" transform={`rotate(-20 90 ${foldY})`} fill="#26296b"/>
-        <BoxLabel x={104} y={foldY} text={t('middle C', '가운데 도')} anchor="start"/>
+        <BoxLabel x={104} y={foldY} text={ledger ? t('Clara\'s C', '클라라의 C') : t('middle C', '가운데 도')} anchor="start"/>
         <BoxLabel x={W - 6} y={foldY} text={t('fold', '접는 선')} anchor="end" color="#e4572e"/>
       </svg>
       <div style={{display:'flex',gap:8,justifyContent:'center',margin:'8px 0 6px'}}>
@@ -9073,7 +9075,7 @@ function FoldStaff() {
       </div>
       <div style={{fontSize:13,lineHeight:1.7,opacity:printed ? 1 : 0.45,transition:'opacity 0.4s'}}>
         <div><span style={{display:'inline-block',width:10,height:10,borderRadius:5,background:'#26296b',marginRight:6}}/>{t('Clara\'s C sits right on the fold -- it is its own mirror.', '클라라의 C는 접는 선 바로 위에 있어요 -- 자기 자신이 거울이에요.')}</div>
-        {FOLD_PAIRS.map(p => <div key={p.d}><span style={{display:'inline-block',width:10,height:10,borderRadius:5,background:p.color,marginRight:6}}/>{p.label}</div>)}
+        {PAIRS.map(p => <div key={p.d}><span style={{display:'inline-block',width:10,height:10,borderRadius:5,background:p.color,marginRight:6}}/>{p.label}</div>)}
         <div><span style={{display:'inline-block',width:10,height:3,background:FOLD_LINE_COLOR,margin:'0 6px 3px 0'}}/>{t('The Queen\'s G line ↔ the King\'s F line -- her curl wraps one, his two dots guard the other.', '여왕의 G 줄 ↔ 왕의 F 줄 -- 여왕의 소용돌이는 한쪽을 감싸고, 왕의 두 점은 다른 쪽을 지켜요.')}</div>
       </div>
     </div>
@@ -34216,17 +34218,19 @@ const SF_MSG = [
 // note positions along a staff of width w (room for the clef when there is one)
 const sfXs = (n, w, clefOn) => { const a = clefOn ? 82 : 36, b = w - 32; return Array.from({ length: n }, (_, i) => n === 1 ? (a + b) / 2 : a + i * (b - a) / (n - 1)); };
 // a big staff row: notes at set places, a number over each, an answer box (or a label) under each
+// Phase 431 (Sohyun 2026-10-12: numbers over the notes read like note labels): a question's number sits in the
+// corner of its answer box, crossword-style; the example (coral) box has none
+const SF_NUM = { fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 10, fontWeight: 700, lineHeight: 1, color: '#6d6f9c', fontVariantNumeric: 'lining-nums', pointerEvents: 'none' };
 function SfRow({ clef = 'none', notes = [], width = 360, items = [], minSpan, boxW = 40, boxH = 32, guides }) {
   const clefOn = clef !== 'none';
   const pct = (x) => (x / width * 100) + '%';
   return <div style={{width:'100%'}}>
-    {items.some(it => it.n != null) && <div style={{position:'relative',height:15}}>{items.map((it, i) => it.n != null && <span key={i} style={{position:'absolute',left:pct(it.x),transform:'translateX(-50%)',fontFamily:LB_SERIF,fontStyle:'italic',fontSize:13,fontWeight:700,fontVariantNumeric:'lining-nums',color:it.ex ? BK.coral : BK.ink,whiteSpace:'nowrap'}}>{it.ex ? 'e.g.' : it.n}</span>)}</div>}
     <PaperStaff clef={clefOn ? clef : 'treble'} clefOn={clefOn} notes={notes} width={width} minSpan={minSpan} guides={guides}/>
-    {items.some(it => it.box !== false) && <div style={{position:'relative',height:items.some(it => it.choose) ? 50 : boxH + 4,marginTop:3}}>{items.map((it, i) => it.box !== false && (it.choose
-      ? <span key={i} style={{position:'absolute',left:pct(it.x),transform:'translateX(-50%)',top:0,display:'grid',gap:3,justifyItems:'center'}}>{[['step', 'skip'], ['up', 'down']].map((pair, r) => <span key={r} style={{display:'flex',gap:6}}>{pair.map(wd => { const on = it.ex && it.ans.split(' ')[r] === wd; return <span key={wd} style={{fontSize:12.5,fontWeight:800,color:on ? BK.coral : BK.ink,border:'1.5px solid ' + (on ? BK.coral : 'transparent'),borderRadius:12,padding:'0 7px',lineHeight:'19px'}}>{wd}</span>; })}</span>)}</span>
+    {items.some(it => it.box !== false || it.n != null) && <div style={{position:'relative',height:items.some(it => it.choose) ? 50 : boxH + 4,marginTop:3}}>{items.map((it, i) => it.box === false ? (it.n != null && <span key={i} style={{...SF_NUM,position:'absolute',left:pct(it.x),transform:'translateX(-50%)',top:4,fontSize:12}}>{it.n}</span>) : (it.choose
+      ? <span key={i} style={{position:'absolute',left:pct(it.x),transform:'translateX(-50%)',top:0,display:'grid',gap:3,justifyItems:'center'}}>{it.n != null && !it.ex && <span style={{...SF_NUM,position:'absolute',left:-14,top:2}}>{it.n}</span>}{[['step', 'skip'], ['up', 'down']].map((pair, r) => <span key={r} style={{display:'flex',gap:6}}>{pair.map(wd => { const on = it.ex && it.ans.split(' ')[r] === wd; return <span key={wd} style={{fontSize:12.5,fontWeight:800,color:on ? BK.coral : BK.ink,border:'1.5px solid ' + (on ? BK.coral : 'transparent'),borderRadius:12,padding:'0 7px',lineHeight:'19px'}}>{wd}</span>; })}</span>)}</span>
       : it.label != null
       ? <span key={i} style={{position:'absolute',left:pct(it.x),transform:'translateX(-50%)',top:4,fontSize:12,fontWeight:900,color:BK.ink,whiteSpace:'nowrap',background:BK.soft,borderRadius:12,padding:'3px 9px'}}>{it.label}</span>
-      : <span key={i} style={{position:'absolute',left:pct(it.x),transform:'translateX(-50%)',top:0,width:it.w || boxW,height:boxH,border:'1.5px solid ' + (it.ex ? BK.coral : BK.ink),borderRadius:3,background:it.ex ? '#fdf3ef' : '#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:it.w && it.w > 40 ? 13 : 16,fontWeight:900,color:BK.coral,whiteSpace:'nowrap'}}>{it.ex ? it.ans : ''}</span>))}</div>}
+      : <span key={i} style={{position:'absolute',left:pct(it.x),transform:'translateX(-50%)',top:0,width:it.w || boxW,height:boxH,border:'1.5px solid ' + (it.ex ? BK.coral : BK.ink),borderRadius:3,background:it.ex ? '#fdf3ef' : '#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:it.w && it.w > 40 ? 13 : 16,fontWeight:900,color:BK.coral,whiteSpace:'nowrap'}}>{it.ex ? it.ans : ''}{it.n != null && !it.ex && <span style={{...SF_NUM,position:'absolute',left:3,top:2}}>{it.n}</span>}</span>))}</div>}
   </div>;
 }
 // one long staff with the clef four times: the first solid, the rest faint to trace (N4/N5)
@@ -35190,9 +35194,9 @@ function llLbPages(scr = false) {
 
   // p1: the ladder out of both lands -- two rungs up into the bird's sky over Queensland, Clara on her rung between the
   // lands, two rungs down into the turtle's sea under Kingsland
-  const p1 = <SfStaff clef="grand" width={360} span={[4, 340]} pad={[30, 30]} label={t('The grand staff with ladders: above Queensland two short ledger lines carry the notes A and C up towards a bird in the sky; between the lands Princess Clara stands by middle C on its short line; below Kingsland two ledger lines carry E and C down towards a turtle in the sea', '큰보표의 사다리: 퀸즈랜드 위로 짧은 덧줄 두 개에 A와 C가 하늘의 새를 향해 올라가고, 두 나라 사이에는 클라라 공주가 가운데 도의 짧은 줄 옆에 서 있고, 킹스랜드 아래로 덧줄 두 개에 E와 C가 바다의 거북을 향해 내려가요')}
-    notes={[{ d: 40, x: 214, color: PEN_C }, { d: 42, x: 256, color: PEN_C }, { d: 28, x: 112, color: PEN_C }, { d: 16, x: 214, staff: 'bass', color: PEN_C }, { d: 14, x: 256, staff: 'bass', color: PEN_C }]}
-    icons={[SF_ICON(bird, 286, 4, 1), SF_ICON(clara, 124, 84, 0.8), SF_ICON(turtle, 284, 196, 0.95)]}
+  const p1 = <SfStaff clef="grand" width={360} span={[4, 340]} pad={[30, 30]} label={t('The grand staff with ladders: above Queensland two short ledger lines carry the notes A and C up towards a bird in the sky; between the lands Princess Clara stands by middle C, written on its short line under Queensland and again over Kingsland; below Kingsland two ledger lines carry E and C down towards a turtle in the sea', '큰보표의 사다리: 퀸즈랜드 위로 짧은 덧줄 두 개에 A와 C가 하늘의 새를 향해 올라가고, 두 나라 사이에는 클라라 공주가 퀸즈랜드 아래와 킹스랜드 위, 두 번 쓴 가운데 도 옆에 서 있고, 킹스랜드 아래로 덧줄 두 개에 E와 C가 바다의 거북을 향해 내려가요')}
+    notes={[{ d: 40, x: 214, color: PEN_C }, { d: 42, x: 256, color: PEN_C }, { d: 28, x: 112, color: PEN_C }, { d: 28, x: 112, staff: 'bass', color: PEN_C }, { d: 16, x: 214, staff: 'bass', color: PEN_C }, { d: 14, x: 256, staff: 'bass', color: PEN_C }]}
+    icons={[SF_ICON(bird, 286, 4, 1), SF_ICON(clara, 124, 112, 0.8), SF_ICON(turtle, 284, 196, 0.95)]}
     extra={both(landName(t('QUEENSLAND', '퀸즈랜드'), 34, 'treble', 186), landName(t('KINGSLAND', '킹스랜드'), 22, 'bass', 186))}/>;
 
   // p2: Clara's ladder is a ledger line -- and how to draw one: as wide as the note, the same distance apart, never one too many
@@ -35206,7 +35210,7 @@ function llLbPages(scr = false) {
         <text x={x + 51} y={yOf(d) + 4} fontSize="11.5" fontWeight="900" fill={BK.ink}>{t('ledger line', '덧줄')}</text></g>)}
     </g>}/>;
   const howTo = (ok, cap, bad) => <div style={{textAlign:'center'}}>
-    <SfStaff clef="treble" width={128} pad={[12, 18]} span={[4, 124]} label={cap} notes={[{ d: bad === 'lid' ? 41 : 42, x: 66 }]}
+    <SfStaff clef="treble" width={128} pad={[bad === 'lid' ? 17 : 12, 18]} span={[4, 124]} label={cap} notes={[{ d: bad === 'lid' ? 41 : 42, x: 66 }]}
       extra={(yOf, layer, txt) => layer === 'under' ? <g>{bad === 'long' && [40, 42].map(d => <line key={d} x1="38" x2="94" y1={yOf(d)} y2={yOf(d)} stroke={BK.ink} strokeWidth="1.4"/>)}{bad === 'lid' && <line x1="54" x2="78" y1={yOf(42)} y2={yOf(42)} stroke={BK.ink} strokeWidth="1.4"/>}</g>
         : <g>{bad === 'gap' && <rect x="50" y={yOf(40) - 3} width="32" height="6" fill={BK.soft}/>}<text x="112" y={yOf(43) + 4} fontSize="17" fontWeight="900" fill={ok ? BK.green : BK.coral} textAnchor="middle">{ok ? '✓' : '✗'}</text></g>}/>
     <div style={{fontSize:11.5,fontWeight:800,color:BK.ink,marginTop:2,lineHeight:1.3}}>{cap}</div></div>;
@@ -35238,18 +35242,19 @@ function llLbPages(scr = false) {
       <text x={x - 16} y={yOf(d, 'treble') + 4} fontSize="12" fontWeight="900" fill={BK.coral} textAnchor="end">{L}</text>
       <text x={x - 16} y={yOf(d, 'bass') + 4} fontSize="12" fontWeight="900" fill={BK.coral} textAnchor="end">{L}</text></g>)}</g>}/>;
 
-  // p6: the five Cs, from the sea to the sky -- rungs, space, rung, space, rungs; and a hop from each new C
-  // [d, staff, top label, under label, coral] -- the two navy notes are the hops (Sea C a skip up to E, Sky C a step down to B)
-  const C5 = [[14, 'bass', 'C', t('Sea', '바다'), t('2 ladders', '발판 2개'), true], [16, 'bass', 'E', t('a skip up', '건너뛰어 위')], [21, 'bass', 'C', t('Kingsland', '킹스랜드'), t('space', '칸'), true], [28, 'treble', 'C', t('Clara\'s', '클라라의'), t('ladder', '발판'), true], [35, 'treble', 'C', t('Queensland', '퀸즈랜드'), t('space', '칸'), true], [42, 'treble', 'C', t('Sky', '하늘'), t('2 ladders', '발판 2개'), true], [41, 'treble', 'B', t('a step down', '한 걸음 아래')]];
-  const xC = [50, 94, 152, 210, 268, 326, 370];
-  const p6 = <SfStaff clef="grand" width={404} span={[4, 400]} pad={[30, 64]} label={t('The five Cs from low to high, an octave apart: Sea C on two ladders below Kingsland, Kingsland C in its second space, Clara\'s C on her ladder, Queensland C in its third space, Sky C on two ladders above Queensland; and two hops: from Sea C a skip up to E, from Sky C a step down to B', '낮은 곳부터 한 옥타브씩 떨어진 다섯 C: 킹스랜드 아래 두 발판의 바다 C, 둘째 칸의 킹스랜드 C, 발판 위의 클라라의 C, 셋째 칸의 퀸즈랜드 C, 퀸즈랜드 위 두 발판의 하늘 C; 그리고 두 번 뛰기: 바다 C에서 건너뛰어 위로 E, 하늘 C에서 한 걸음 아래로 B')}
-    notes={C5.map(([d, st, , , , c], i) => ({ d, staff: st, x: xC[i], color: c ? PEN_C : undefined }))}
-    extra={(yOf, layer, txt) => { const y = yOf(14, 'bass'); return layer === 'over' && <g style={txt}>
-      {sfHop(xC[0] + 7, xC[1] - 7, y + 9, -10)}{sfHop(xC[5] + 7, xC[6] - 7, yOf(42) - 9, 10)}
-      {C5.map(([d, st, L, name, where, c], i) => <g key={i}>
-        <text x={xC[i]} y={y + 31} fontSize="9.4" fontWeight="900" fill={c ? BK.coral : BK.ink} textAnchor="middle">{name}</text>
-        <text x={xC[i]} y={y + 45} fontSize="13" fontWeight="900" fill={c ? BK.coral : BK.ink} textAnchor="middle">{L}</text>
-        {where && <text x={xC[i]} y={y + 56} fontSize="8.2" fontWeight="900" fill={BK.muted} textAnchor="middle">{where}</text>}</g>)}</g>; }}/>;
+  // p6 (Phase 431): the five Cs, folded at Clara's ladder like chapter 5's paint print -- now the ledger Cs meet too:
+  // Clara's C on Clara's C, Queensland C on Kingsland C, Sky C (two ladders up) on Sea C (two ladders down)
+  const C5 = [[120, 28, 28, t('Clara\'s C', '클라라의 C'), t('Clara\'s C', '클라라의 C')], [210, 35, 21, t('Queensland C', '퀸즈랜드 C'), t('Kingsland C', '킹스랜드 C')], [300, 42, 14, t('Sky C', '하늘 C'), t('Sea C', '바다 C')]];
+  const p6 = <SfStaff clef="grand" width={384} span={[4, 340]} pad={[24, 24]} label={t('The grand staff folded at Clara\'s ladder: a dashed fold line between the staves; the five Cs meet in pairs -- Clara\'s C under Queensland and over Kingsland, Queensland C in the third space and Kingsland C in the second space, Sky C on two ladders above Queensland and Sea C on two ladders below Kingsland', '클라라의 발판에서 접은 큰보표: 두 오선 사이의 접는 점선; 다섯 C가 짝을 지어 만나요 -- 퀸즈랜드 아래와 킹스랜드 위의 클라라의 C, 셋째 칸의 퀸즈랜드 C와 둘째 칸의 킹스랜드 C, 퀸즈랜드 위 두 발판의 하늘 C와 킹스랜드 아래 두 발판의 바다 C')}
+    notes={C5.flatMap(([x, a, b2]) => [{ d: a, x, staff: 'treble', color: PEN_C }, { d: b2, x, staff: 'bass', color: PEN_C }])}
+    icons={[SF_ICON(clara, 344, 104, 0.7)]}
+    extra={(yOf, layer, txt) => { const mid = (yOf(30, 'treble') + yOf(26, 'bass')) / 2;
+      return layer === 'under' ? <line x1="4" x2="340" y1={mid} y2={mid} stroke={BK.coral} strokeWidth="1.6" strokeDasharray="6 5"/>
+      : <g style={txt}>
+        {C5.map(([x, a, b2], i) => <path key={i} d={`M${x + 12} ${yOf(a, 'treble')} Q${x + 34 + i * 4} ${mid} ${x + 12} ${yOf(b2, 'bass')}`} fill="none" stroke={BK.ink} strokeWidth="1.2" strokeDasharray="3 3"/>)}
+        {C5.flatMap(([x, a, b2, na, nb], i) => [[x, a, 'treble', na], [x, b2, 'bass', nb]]).map(([x, d, st, L], i) => <text key={'l' + i} x={x - 17} y={yOf(d, st) + 4} fontSize="10.5" fontWeight="900" fill={BK.coral} textAnchor="end">{L}</text>)}
+        <text x="12" y={mid - 6} fontSize="9" fontWeight="900" fill={BK.coral}>{t('fold here', '여기서 접어요')}</text>
+      </g>; }}/>;
 
   // the check page's little pictures: a rung; out of Queensland under the bird; out of Kingsland over the turtle; the twins; the five Cs
   const st5 = (y0, x0 = 34) => { const s = []; for (let i = 0; i < 5; i++) s.push({ ...penLine([x0, y0 + i * 4], [88, y0 + i * 4], 1.1), nw: true }); return s; };
@@ -35356,14 +35361,16 @@ function llLbPages(scr = false) {
 
     // 6. five Cs
     <LbPage key="6" no={6} chId={ch} kicker={t('Step 5', '5단계')} title={t('Five Cs', '다섯 C')}>
-      <LbLive still={pic(p6, 300, 680)} live={<LlFiveCs/>}/>
-      <LbSay>{LANG === 'ko' ? <>바다에서 하늘까지 C가 다섯 개, 한 옥타브씩 떨어져 있어요: {A('B3', <b>바다 C</b>)}, <b>킹스랜드 C</b>, <b>클라라의 C</b>, <b>퀸즈랜드 C</b>, {A('B3', <b>하늘 C</b>)}. 자리는 발판, 칸, 발판, 칸, 발판 -- 번갈아 가요. 이 책의 덧줄 음은 모두 바다 C, 클라라의 C, 하늘 C에서 한 걸음이나 건너뛰기면 닿아요.</>
-        : <>From the sea to the sky there are five Cs, an octave apart: {A('B3', <b>Sea C</b>)}, <b>Kingsland C</b>, <b>Clara's C</b>, <b>Queensland C</b> and {A('B3', <b>Sky C</b>)}. They take turns: ladders, space, ladder, space, ladders. Every ledger note in this book is a step or a skip from Sea C, Clara's C or Sky C.</>}</LbSay>
+      <LbLive still={pic(p6, 300, 640)} live={<><FoldStaff ledger/><LlFiveCs/></>}/>
+      <LbSay>{LANG === 'ko' ? <>바다에서 하늘까지 C가 다섯 개, 한 옥타브씩 떨어져 있어요: {A('B3', <b>바다 C</b>)}, <b>킹스랜드 C</b>, <b>클라라의 C</b>, <b>퀸즈랜드 C</b>, {A('B3', <b>하늘 C</b>)}. 5챕터처럼 <b>클라라의 발판에서 접어</b> 보면 C끼리 짝을 지어 만나요: 퀸즈랜드 C는 킹스랜드 C에, 그리고 이제 <b>하늘 C는 바다 C</b>에 -- 발판 둘 위, 발판 둘 아래. 이 책의 덧줄 음은 모두 바다 C, 클라라의 C, 하늘 C에서 한 걸음이나 건너뛰기면 닿아요.</>
+        : <>From the sea to the sky there are five Cs, an octave apart: {A('B3', <b>Sea C</b>)}, <b>Kingsland C</b>, <b>Clara's C</b>, <b>Queensland C</b> and {A('B3', <b>Sky C</b>)}. Fold at <b>Clara's ladder</b>, like in Chapter 5, and they meet in pairs: Queensland C on Kingsland C -- and now <b>Sky C on Sea C</b>, two ladders up, two ladders down. Every ledger note in this book is a step or a skip from Sea C, Clara's C or Sky C.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [
         <>다섯 C를 낮은 데서 높은 데로 쳐요 -- 이름을 말하면서. 바다 C와 킹스랜드 C는 왼손, 나머지는 오른손.</>,
+        <><b>접기 짝:</b> 바다 C와 하늘 C를 두 손으로 같이, 그다음 킹스랜드 C와 퀸즈랜드 C, 마지막에 두 엄지로 클라라의 C -- 두 손이 접는 선으로 모여요.</>,
         <><b>C에서 뛰기:</b> 선생님이 덧줄 음 하나를 짚으면: 가장 가까운 C → 한 걸음 또는 건너뛰기 → 이름 → 쳐요.</>,
       ] : [
         <>Play the five Cs from low to high, naming each one -- Sea C and Kingsland C with the left hand, the others with the right.</>,
+        <><b>Fold partners:</b> Sea C and Sky C together, then Kingsland C and Queensland C, then both thumbs on Clara's C -- the hands meet at the fold.</>,
         <><b>C hop:</b> your teacher points to a ledger note: nearest C → a step or a skip → name it → play it.</>,
       ]}/>
       <LbRemember>{t('Five Cs from the sea to the sky: find the nearest, then step or skip.', '바다에서 하늘까지 다섯 C: 가장 가까운 C를 찾고, 한 걸음 또는 건너뛰기.')}</LbRemember>
