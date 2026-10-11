@@ -34981,10 +34981,11 @@ const vicPiece = (svg, cx, cy, k) => { const K = k * 2.1, sc = 19.5 * K / 97; re
 function sfKing(cx, cy, k = 1) { return vicPiece(VIC_KING, cx, cy, k); }     // the King's piece (navy)
 function sfQueen(cx, cy, k = 1) { return vicPiece(VIC_QUEEN, cx, cy, k); }   // the Queen's piece (coral)
 function sfClara(cx, cy, k = 1) { return vicPiece(VIC_PAWN, cx, cy, k); }    // Princess Clara: a pink pawn with a tiara
-// a hairline frame with cut-in corners and a finer line inside it, drawn inside a box (it measures the box)
+// a hairline frame with cut-in corners and a finer line inside it, drawn inside a box (it measures the box in the
+// box's own px -- its computed width/height, not getBoundingClientRect, which a zoomed page scales; Phase 430)
 function VicCutFrame({ inset = 9, r = 11, gap = 3 }) {
   const ref = React.useRef(null); const [sz, setSz] = useState(null);
-  React.useLayoutEffect(() => { const el = ref.current; if (!el) return; const m = () => { const b = el.getBoundingClientRect(); setSz([b.width, b.height]); }; m(); let ro = null; try { ro = new ResizeObserver(m); ro.observe(el); } catch (e) {} return () => { if (ro) ro.disconnect(); }; }, []);
+  React.useLayoutEffect(() => { const el = ref.current; if (!el) return; const m = () => { const c = getComputedStyle(el), w = parseFloat(c.width), h = parseFloat(c.height); if (w && h) setSz([w, h]); }; m(); let ro = null; try { ro = new ResizeObserver(m); ro.observe(el); } catch (e) {} return () => { if (ro) ro.disconnect(); }; }, []);
   const d = (w, h, i, rr) => { const L = i, T = i, R = w - i, B = h - i; return `M${L + rr} ${T} H${R - rr} A${rr} ${rr} 0 0 0 ${R} ${T + rr} V${B - rr} A${rr} ${rr} 0 0 0 ${R - rr} ${B} H${L + rr} A${rr} ${rr} 0 0 0 ${L} ${B - rr} V${T + rr} A${rr} ${rr} 0 0 0 ${L + rr} ${T} Z`; };
   return <svg ref={ref} aria-hidden="true" style={{position:'absolute',left:0,top:0,width:'100%',height:'100%',pointerEvents:'none',overflow:'visible'}}>
     {sz && sz[0] > 40 && sz[1] > 40 && <><path d={d(sz[0], sz[1], inset, r)} fill="none" stroke={BK.ink} strokeWidth="1.1"/><path d={d(sz[0], sz[1], inset + gap, r + gap)} fill="none" stroke={BK.ink} strokeOpacity="0.45" strokeWidth="0.6"/></>}
@@ -35017,10 +35018,12 @@ function WbPage({ no, chId, children, bare, teacher }) {
   );
 }
 // the picture box takes whatever height the page has left, so every page ends level (it shrinks back to h when printed
-// inside page margins); white, with the cut-in-corner frame inside
+// inside page margins); white, with the cut-in-corner frame inside -- in the printed books only: online the plain
+// box (Sohyun 2026-10-12: the frame sat crooked in every chapter on the web; Phase 430)
 function LbPic({ children, h, gap = 18, pad = '14px 16px' }) {
+  const scr = lbScreen();
   const pp = String(pad).split(' ').map(parseFloat), p = pp.length === 1 ? (pp[0] + 4) + 'px ' + (pp[0] + 8) + 'px' : pp.map((v, i) => (i % 2 ? v + 8 : v + 4) + 'px').join(' ');
-  return <div className="lb-pic" style={{position:'relative',background:'#fff',border:'0.8px solid ' + BK.ink2,padding:p,display:'flex',alignItems:'center',justifyContent:'center',gap,minHeight:lbScreen() ? 0 : h,flex:'1 1 auto',flexWrap:'wrap'}}>{children}<VicCutFrame/></div>;
+  return <div className="lb-pic" style={{position:'relative',background:'#fff',border:'0.8px solid ' + BK.ink2,padding:p,display:'flex',alignItems:'center',justifyContent:'center',gap,minHeight:scr ? 0 : h,flex:'1 1 auto',flexWrap:'wrap'}}>{children}{!scr && <VicCutFrame/>}</div>;
 }
 // the chair rail: thick and thin above, thin and thick below, the butler's portrait at its start
 function LbRemember({ children }) {
