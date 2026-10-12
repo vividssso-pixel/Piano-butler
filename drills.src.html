@@ -21805,8 +21805,9 @@ const stGlow = (x, y, k = 1) => '<ellipse cx="' + pFix(x) + '" cy="' + pFix(y - 
 // a floor for each stage, a room for each chapter, climbed by the stair on the left; at the top a mansard roof in
 // chequered slates with a pedimented dormer and two turrets, the Queen on one and the King on the other. Classical
 // dress: quoins up both corners, a dentil cornice between floors, panelled wainscot in every room, a pedimented door.
-// Every floor has its own interior -- its wallpaper, its floor and the lamp on its stair -- like the rooms of a doll's
-// house. A room is a chapter button; a finished room's number is green; yours has a coral frame and Clara in it.
+// Every floor has its own interior -- its wallpaper and its floor -- like the rooms of a doll's house; no lamps (Phase 438).
+// A room is a chapter button with its picture on the wall, no frame; a finished room's number is green; yours has a coral
+// frame and its picture under a glass dome (Phase 438: the dome instead of Clara).
 const TH = { W: 360, X0: 22, X1: 338, SC: 0, RH: 86, LH: 28, SLAB: 13, GH: 112 };
 const TH_SERIF = "'Cormorant Garamond',Georgia,serif", TH_CAPS = "Cinzel,Georgia,serif";   // her 17:22: classical letters (Inter and the plain icons had no classicism)
 const thFontsIn = () => { try { return document.fonts.check('700 12px Cinzel') && document.fonts.check("700 15px 'Cormorant Garamond'"); } catch (e) { return false; } };
@@ -21815,12 +21816,20 @@ function thWrap(text, maxW, size, font) {   // breaks at a space, or just after 
   String(text).split(' ').forEach(w => w.replace(/·/g, '·\u0001').split('\u0001').filter(Boolean).forEach((p, j) => { const nx = cur ? cur + (j ? '' : ' ') + p : p; if (cur && rdWidth(nx, 700, size, font) > maxW) { out.push(cur); cur = p; } else cur = nx; }));
   if (cur) out.push(cur); return out;
 }
-function thPic(cx, top, ic, faded) {   // the chapter's picture in a frame with cut-in corners, hung from a nail on two cords
-  const k = 0.6, iw = 48 * k, ih = 34 * k, w = iw + 14, h = ih + 12, x = cx - w / 2, y = top, r = 4;
-  const fr = (a, rr) => stD('M', x + a + rr, y + a, 'L', x + w - a - rr, y + a, 'A', rr, rr, 0, 0, 0, x + w - a, y + a + rr, 'L', x + w - a, y + h - a - rr, 'A', rr, rr, 0, 0, 0, x + w - a - rr, y + h - a, 'L', x + a + rr, y + h - a, 'A', rr, rr, 0, 0, 0, x + a, y + h - a - rr, 'L', x + a, y + a + rr, 'A', rr, rr, 0, 0, 0, x + a + rr, y + a, 'Z');
-  return stL(cx, y - 7, x + 7, y, 0.5) + stL(cx, y - 7, x + w - 7, y, 0.5) + stC(cx, y - 7.5, 1.2, 0, ST.N)
-    + stP(fr(0, r), 1.1) + stP(fr(3, r - 1.5), 0.45, 'none')
-    + '<g transform="translate(' + pFix(cx - iw / 2) + ' ' + pFix(y + 6) + ') scale(' + k + ')" fill="none" stroke="' + ST.N + '" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="' + (faded ? 0.5 : 1) + '">' + ic + '</g>';
+function thPic(cx, top, ic, faded) {   // the chapter's picture on the wall, no frame (Phase 438); faded: the guides' rooms without a page
+  const k = 0.8, iw = 48 * k;
+  return '<g transform="translate(' + pFix(cx - iw / 2) + ' ' + pFix(top + 2) + ') scale(' + k + ')" fill="none" stroke="' + ST.N + '" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" opacity="' + (faded ? 0.5 : 1) + '">' + ic + '</g>';
+}
+// your room: its picture under a wide glass dome on a little round table (her 14:45: the dome instead of Clara, wider)
+function thDome(cx, top, ic) {
+  const T = top + 33, fl = top + 46, R = 28, k = 0.66, iw = 48 * k;
+  return stR(cx - R - 3, T - 3, 2 * R + 6, 3, 0.9)
+    + stR(cx - 18, T, 36, 2.2, 0.8) + stR(cx - 1.3, T + 2.2, 2.6, fl - T - 6, 0.7)
+    + stP(stD('M', cx - 10, fl, 'Q', cx - 3, fl - 2, cx, fl - 4.5, 'Q', cx + 3, fl - 2, cx + 10, fl), 0.8, 'none')
+    + '<path d="' + stD('M', cx - R, T - 3, 'L', cx - R, top + 10, 'A', R, 16, 0, 0, 1, cx + R, top + 10, 'L', cx + R, T - 3) + '" fill="#fff" stroke-width="1.1"/>'
+    + '<path d="' + stD('M', cx + R - 9, top - 1, 'A', 18, 13, 0, 0, 1, cx + R - 4, top + 9) + '" fill="none" stroke-width="0.6" opacity="0.5"/>'
+    + stC(cx, top - 7.6, 1.7, 0, ST.C)
+    + '<g transform="translate(' + pFix(cx - iw / 2) + ' ' + pFix(top + 7.2) + ') scale(' + k + ')" fill="none" stroke="' + ST.N + '" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + ic + '</g>';
 }
 const TH_FLOOR = [   // per floor (Phase 436: levels 1-5 use the first five): wallpaper, floor, the stair's lamp
   { wp: 'panel', fl: 'chequer', lamp: 'sconce' },       // 1 Getting started
@@ -21875,7 +21884,7 @@ function thLamp(kind, x, y) {   // the stair's lamp, hanging from the ceiling at
 // A floor's names in one size -- the largest at which every name fits on one line, keeping the done tick if it can --
 // and how many lines the longest takes, so the pictures on a floor hang in one row (her 2026-10-12: balance).
 function thNames(state, rooms) {
-  const Z = [16.5, 15, 13.5], one = (txt, w, z) => rdWidth(txt, 700, z, TH_SERIF) <= w - 33;   // the square, a gap and a margin each side
+  const Z = [16.5, 15, 13.5, 12.5], one = (txt, w, z) => rdWidth(txt, 700, z, TH_SERIF) <= w - 33;   // the square, a gap and a margin each side
   const rs = rooms.map(([id, w]) => { const st = state[id], nm = CH_SHORT[id] || [id, ''], bare = st === 'print' ? nm[0] : t(nm[0], nm[1] || nm[0]); return { id, w, bare, full: (st === 'done' ? '✓\u00a0' : '') + bare }; });
   // with the ticks if every name still fits on one line; else without (the green squares say done) -- the same on the whole floor
   let key = 'full', z = Z.find(z => rs.every(r => one(r.full, r.w, z)));
@@ -21907,8 +21916,9 @@ function thRoom(view, state, id, x, y, w, h, fs, out, dimNew, lay) {   // dimNew
   s += stSquare(sx, sy, sq, num, done ? ST.G : null, 11) + stT(sx + sq + 5, sy + 13, lines[0], { size: nz, weight: 700, font: TH_SERIF, fill: nfill });
   if (lines[1]) s += stT(cx, sy + 27, lines[1], { size: nz, weight: 700, font: TH_SERIF, fill: nfill, anchor: 'middle' });
   const ic = HOUSE_ICONS[id];
-  if (ic) s += thPic(x + w / 2, Math.max(sy + lay.ml * 14 + 14, cy - 40), ic, st === 'new' && !on);   // one height on the floor
-  if (on) out.fig = (view.pawn || stPawn)(x + w - 20, y + h - fh - 0.5, 0.4);
+  const picTop = Math.max(sy + lay.ml * 14 + 14, cy - 40);   // one height on the floor
+  if (ic && !on) s += thPic(x + w / 2, picTop, ic, dimNew && st === 'new');
+  if (on) out.fig = stG(ic ? thDome(x + w / 2, picTop, ic) : '');   // your room: the dome, not Clara
   const label = num + '. ' + t(nm[0], nm[1] || nm[0]) + (done ? t(', done', ', 완료') : on ? t(', you are here', ', 지금 여기') : '');
   out.btns.push({ num, html: '<g data-chapter="' + id + '" data-status="' + st + '" data-here="' + (on ? '1' : '0') + '" role="button" tabindex="0" aria-label="' + penEsc(label).replace(/"/g, '&quot;') + '" style="cursor:pointer"><rect x="' + pFix(x + 1) + '" y="' + pFix(y + 1) + '" width="' + pFix(w - 2) + '" height="' + pFix(h - 2) + '" fill="transparent"/></g>' });
   return s;
@@ -21932,7 +21942,6 @@ function townhouseSvg(view, o = {}) {
     const name = o.print || LANG !== 'ko' ? 'LEVEL ' + (k + 1) : (k + 1) + '층', mw = rdWidth(name, 700, 11.5, TH_CAPS), pw = (thFontsIn() ? mw : Math.max(mw, name.length * 9.4)) + name.length * 1.04 + 30, px = (X0 + X1) / 2 - pw / 2;   // Cinzel's capitals are wide: trust a measure only once the letters are in
     body += stR(px, yy + 4, pw, 20, 0.9) + stR(px + 2, yy + 6, pw - 4, 16, 0.4, 'none')
       + stT((X0 + X1) / 2, yy + 18.4, name, { size: 11.5, weight: 700, font: TH_CAPS, ls: '0.09em', fill: here ? ST.C : st.st.every(v => v === 'done') ? ST.G : ST.N, anchor: 'middle' });
-    const [lp, lg] = thLamp(fs.lamp, X1 - 24, yy); body += lp; glow += lg;
     st.ids.forEach((id, j) => {
       const r = Math.floor(j / c), cc = j - r * c, rw = rwOf(j);
       body += thRoom(view, state, id, RX0 + cc * rw, yy + LH + r * rh, rw, rh, fs, out, o.dimNew, lay);
@@ -21953,7 +21962,6 @@ function townhouseSvg(view, o = {}) {
   const hallTop = y, door = [dx - 27, gy + 34, 54, GH - 41];
   const camH = 66, camX = o.wide ? dx - 200 : X0 + 22;
   body += '<ellipse cx="' + pFix(camX + camH * 0.4) + '" cy="' + pFix(gy + 18 + camH / 2) + '" rx="' + pFix(camH * 0.44) + '" ry="' + pFix(camH * 0.55) + '" fill="none" stroke-width="0.8"/>' + '<image href="' + VIC_CAMEO + '" x="' + pFix(camX) + '" y="' + pFix(gy + 18) + '" height="' + camH + '" width="' + pFix(camH * 0.794) + '"/>';
-  [camX - 6, camX + camH * 0.8 + 6].forEach(sx => { const [lp, lg] = thLamp('sconce', sx - 2, gy + 26); body += lp; glow += lg; });
   const tx = o.wide ? 2 * dx - (camX + camH * 0.4) : (dx + 44 + X1) / 2, T_ = (en, ko) => o.print ? en : t(en, ko);   // the words centred: opposite the portrait (wide), between the door and the wall (phone)
   const ita = o.print || LANG !== 'ko';   // Hangul is never slanted
   body += stT(tx, gy + 58, T_('Your butler', '버틀러가'), { size: 17, weight: 700, anchor: 'middle', font: TH_SERIF, italic: ita }) + stT(tx, gy + 76, T_('welcomes you.', '맞아 줘요.'), { size: 17, weight: 700, anchor: 'middle', font: TH_SERIF, italic: ita });
@@ -21961,7 +21969,6 @@ function townhouseSvg(view, o = {}) {
   // the corners: quoins from the roof to the ground; the steps; the chequered pavement; lanterns by the steps
   body += stQuoins(X0, top, gb, false) + stQuoins(X1, top, gb, true) + stL(X0, top, X0, gb, 2.2) + stL(X1, top, X1, gb, 2.2);
   body += stR(dx - 38, gb, 76, 5, 0, ST.N) + stR(dx - 44, gb + 7, 88, 5, 0, ST.N);
-  [dx - 58, dx + 58].forEach(lx => { body += stLantern(lx, gb + 12, 0.62); glow += stGlow(lx, gb + 12, 0.62); });
   const pv = gb + 14;
   body += '<rect x="6" y="' + pFix(pv) + '" width="' + (W - 12) + '" height="16" fill="url(#thpv)" stroke-width="0.8"/>';
   if (!o.print) body += stT(W / 2, pv + 34, T_('Start · floor by floor, any room first', '출발 · 한 층씩, 방은 마음대로'), { size: 11, weight: 700, fill: ST.C, anchor: 'middle', font: TH_CAPS, ls: '0.1em' });
