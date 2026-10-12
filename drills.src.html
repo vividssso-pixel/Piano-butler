@@ -4756,7 +4756,7 @@ function KSStaff({ count, type, width = 170, ink = '#26296b', accent = '#e4572e'
   const lowD = clef === 'bass' ? 18 : 30;
   const yOf = (d) => base - (d - lowD) * 5;
   return (
-    <svg viewBox={`0 ${base - (numbers ? 72 : 60)} ${width} ${numbers ? 88 : 76}`} style={{width:'100%',maxWidth:width * 1.6,display:'block',margin:'0 auto'}}>
+    <svg viewBox={`0 ${base - (numbers ? 72 : 60)} ${width} ${numbers ? 90 : 78}`} style={{width:'100%',maxWidth:width * 1.6,display:'block',margin:'0 auto'}}>
       {numbers && accs.map((acc, i) => <text key={'n' + acc} x={56 + i * 15} y={base - 62} textAnchor="middle" fontSize="8.5" fontWeight="800" fill={upto === i ? '#c8361b' : '#a3a5c2'}>{i + 1}</text>)}
       {[0, 2, 4, 6, 8].map(p => <line key={p} x1="4" x2={width - 4} y1={base - p * 5} y2={base - p * 5} stroke={ink} strokeOpacity="0.5" strokeWidth="1.1"/>)}
       <ClefGlyph clef={clef} st={clef} yOf={yOf} ink={ink}/>
@@ -4930,7 +4930,7 @@ function PlaceIt() {
       <div style={{fontSize:13,color:'#6d6f9c',marginBottom:4}}>
         {LANG === 'ko' ? (want !== null ? <>{n + 1}번째 {type === 'sharp' ? '샵' : '플랫'}({prettyNote(order[n])})은 어디에 올까요? 색칠된 칸 안에서 그 줄이나 칸을 눌러요: 점 하나가 줄 하나 또는 칸 하나예요.</> : <>일곱 개 모두 순서대로{tries ? ': ' + tries + '번 틀림' : ': 한 번도 안 틀렸어요!'}</>) : (want !== null ? <>Where does {type === 'sharp' ? 'sharp' : 'flat'} <b>#{n + 1}</b> ({prettyNote(order[n])}) go? Tap its line or space in the shaded column: each dot is a line or space.</> : <>All seven, in order{tries ? ': ' + tries + ' miss' + (tries > 1 ? 'es' : '') : ': no misses!'}</>)}
       </div>
-      <svg viewBox={`0 ${base - 64} ${W} 80`} style={{width:'100%',maxWidth:W * 1.6,display:'block',margin:'0 auto',touchAction:'manipulation'}}>
+      <svg viewBox={`0 ${base - 64} ${W} 82`} style={{width:'100%',maxWidth:W * 1.6,display:'block',margin:'0 auto',touchAction:'manipulation'}}>
         {[0, 2, 4, 6, 8].map(p => <line key={p} x1="4" x2={W - 4} y1={base - p * 5} y2={base - p * 5} stroke="#26296b" strokeOpacity="0.5" strokeWidth="1.1"/>)}
         <ClefGlyph clef="treble" st="treble" yOf={(d) => base - (d - 30) * 5} ink="#26296b"/>
         {order.slice(0, n).map((acc, i) => type === 'sharp'
@@ -5150,7 +5150,7 @@ const IV_SEMIS = (n, q) => IV_BASE[n] + (q === 'm' ? -1 : 0);
 // ladder: { from, to } draws the counting stairs 1, 2, 3 ... between the first two notes.
 function IntervalStaff({ clef = 'treble', notes, colors = [], labels, width = 240, ladder, tapRange, onTapD, ink = '#26296b' }) {
   const c = CLEFS[clef];
-  const ys = [dY(c.high) - 18, dY(c.low) + 16];
+  const ys = [dY(c.high) - 18, dY(c.low) + 16, ...clefInkYs(clef, dY, clef)];   // Phase 448: and the clef
   notes.forEach(n => ys.push(dY(n.d) - 16, dY(n.d) + 12));
   if (tapRange) ys.push(dY(tapRange[1]) - 8, dY(tapRange[0]) + 8);
   const y0 = Math.min(...ys), y1 = Math.max(...ys) + (labels ? 20 : 0);
@@ -5643,7 +5643,7 @@ function ChordStaff({ clef = 'treble', chords, width = 280, hi = null }) {
   const c = CLEFS[clef];
   const ds = chords.flatMap(ch => ch.notes.map(n => n.d));
   const top = Math.max(c.high, ...ds) , bot = Math.min(c.low, ...ds);
-  const y0 = dY(top) - 18, y1 = dY(bot) + 16 + (chords.some(ch => ch.label) ? 30 : 0);
+  const y0 = dY(top) - 18, y1 = Math.max(dY(bot) + 16, clefInkYs(clef, dY, clef)[1] || 0) + (chords.some(ch => ch.label) ? 30 : 0);   // Phase 448: and the clef
   const n = chords.length;
   const xOf = (i) => n === 1 ? width * 0.6 : 74 + i * ((width - 96) / Math.max(1, n - 1));
   return (
@@ -8765,6 +8765,9 @@ const GRAND_GAP = 20;
 // of a space, so the treble and bass boxes are lifted by that much (treble 14.63 / 16.35, bass 1.96 / 34.35). (Before: the treble's two pads were swapped, so every treble
 // curl sat a quarter of a space above G.) Tested by measuring every clef on every page (clefcheck.js).
 const CLEF_GLYPH = { treble: { ch: '𝄞', top: 38, topPad: 14.63, bottom: 30, bottomPad: 16.35 }, bass: { ch: '𝄢', top: 26, topPad: 1.96, bottom: 26, bottomPad: 34.35 }, alto: { ch: '𝄡', top: 32, topPad: 0.98, bottom: 24, bottomPad: 0.9 } };   // Phase 447: from the font's own geometry (see below)
+// Phase 448: where a clef's ink reaches, top and bottom (0.6 of a unit each side for the faint edge the ink scan trims),
+// so a staff's box can make room for it.
+function clefInkYs(clef, yOf, st) { const g = CLEF_GLYPH[clef]; return g ? [yOf(g.top, st) - g.topPad - 0.6, yOf(g.bottom, st) + g.bottomPad + 0.6] : []; }
 function ClefGlyph({ clef, yOf, st, ink }) {
   const g = CLEF_GLYPH[clef];
   const ref = useRef(null);
@@ -9102,7 +9105,7 @@ function StaffFrame({ clef, lo, hi, width = 300, rows, onRow, children, ink = '#
   const yOf = staffYOfFor(clef);
   const topHigh = clef === 'bass' ? 26 : clef === 'alto' ? 32 : 38, botLow = clef === 'treble' ? 30 : clef === 'alto' ? 24 : 18;
   const topD = Math.max(hi, topHigh), botD = Math.min(lo, botLow);
-  const y0 = yOf(topD) - 16, y1 = yOf(botD) + 16;
+  const y0 = yOf(topD) - 16, y1 = yOf(botD) + 18;   // Phase 448: 18, the treble clef's tail
   return (
     <svg viewBox={`0 ${y0} ${width} ${y1 - y0}`} style={{width:'100%',maxWidth:width * 1.5,display:'block',margin:'0 auto',touchAction:'manipulation',userSelect:'none'}}>
       {staves.map(st => CLEFS[st].lines.map(l => <line key={st + l} x1="4" x2={width - 4} y1={dY(l) + (clef === 'grand' && st === 'bass' ? GRAND_GAP : 0)} y2={dY(l) + (clef === 'grand' && st === 'bass' ? GRAND_GAP : 0)} stroke={ink} strokeOpacity="0.55" strokeWidth="1.2"/>))}
@@ -9613,14 +9616,16 @@ function ChangeMark({ c, color, size = 26 }) {
   return c.sign ? <Hairpin dir={c.id} color={color}/> : <DynMark id={c.text} size={size} color={color}/>;
 }
 
-// Four crotchets with an articulation drawn on them (stems up, marks below the heads... kept above for clarity).
+// Four crotchets with an articulation drawn on them: stems up, so the marks go under the heads. The heads sit on the second
+// line; the first space clear of a head is just under the staff (Phase 448: a whole space under it, a tenuto read as a
+// ledger line). The wedge points at the note.
 function ArticBar({ mark, ink = '#26296b', width = 220 }) {
   const xs = [40, 90, 140, 190], y = 62;
   const marks = xs.map((x, i) => {
-    const my = y + 16;
-    if (mark === 'dot') return <circle key={i} cx={x} cy={my} r="2.6" fill={ink}/>;
-    if (mark === 'wedge') return <path key={i} d={`M${x - 3},${my - 4} L${x + 3},${my - 4} L${x},${my + 5} Z`} fill={ink}/>;
-    if (mark === 'tenuto') return <line key={i} x1={x - 7} x2={x + 7} y1={my} y2={my} stroke={ink} strokeWidth="2.4"/>;
+    const my = y + 16, mi = y + 12;   // mi: half a space under the bottom line (70), clear of the head and of any ledger line
+    if (mark === 'dot') return <circle key={i} cx={x} cy={mi} r="2.6" fill={ink}/>;
+    if (mark === 'wedge') return <path key={i} d={`M${x - 3},${my + 4} L${x + 3},${my + 4} L${x},${my - 5} Z`} fill={ink}/>;
+    if (mark === 'tenuto') return <line key={i} x1={x - 7} x2={x + 7} y1={mi} y2={mi} stroke={ink} strokeWidth="2.4"/>;
     if (mark === 'accent') return i === 0 || i === 2 ? <polyline key={i} points={`${x - 8},${my - 4} ${x + 8},${my} ${x - 8},${my + 4}`} fill="none" stroke={ink} strokeWidth="2"/> : null;
     return null;
   });
@@ -10040,7 +10045,7 @@ function CurvePair({ a, b, width = 200, color = '#26296b', curve = '#26296b' }) 
   const up = (a + b) / 2 < 34;
   const low = Math.max(y1, y2) + 9, high = Math.min(y1, y2) - 9;
   return (
-    <svg viewBox={`0 ${dY(40)} ${width} ${dY(26) - dY(40)}`} style={{width:'100%',maxWidth:width * 1.6,display:'block',margin:'0 auto'}}>
+    <svg viewBox={`0 ${dY(40) - 6} ${width} ${dY(26) - dY(40) + 6}`} style={{width:'100%',maxWidth:width * 1.6,display:'block',margin:'0 auto'}}>
       {[30, 32, 34, 36, 38].map(l => <line key={l} x1="4" x2={width - 4} y1={dY(l)} y2={dY(l)} stroke="#26296b" strokeOpacity="0.55" strokeWidth="1.2"/>)}
       <ClefGlyph clef="treble" st="treble" yOf={(d) => dY(d)} ink="#26296b"/>
       {[[x1, a], [x2, b]].map(([x, d], i) => (
@@ -10276,6 +10281,7 @@ function MelodyStaff({ notes, beats = 4, clef = 'treble', width = 320, on = -1, 
   const ds = notes.map(n => n.d);
   const top = Math.max(c.high + 2, ...ds.map(d => d + (d < 34 ? 7 : 1))), bot = Math.min(c.low - 2, ...ds.map(d => d - (d >= 34 ? 7 : 2)));
   let y0 = dY(top) - (fingers ? 12 : 4), y1 = dY(bot) + (counts ? 26 : 6) + (names ? 14 : 0);
+  { const [a, b] = clefInkYs(clef, dY, clef); y0 = Math.min(y0, a); y1 = Math.max(y1, b); }   // Phase 448
   let t = 0;
   const placed = notes.map(n => { const p = { ...n, t, x: x0 + (t + 0.35) * unit }; t += n.dur; return p; });
   const bars = []; if (showTime) for (let b = beats; b < total; b += beats) bars.push(x0 + b * unit - 2);
@@ -22400,6 +22406,7 @@ function PaperStaff({ clef = 'treble', notes = [], width = 150, ink = BK.ink, cl
   const staffOf = (n) => n.staff || (grand ? (n.d >= 28 ? 'treble' : 'bass') : clef);
   const ys = [];
   staves.forEach(st => ys.push(yOf(CLEFS[st].high, st) - 15, yOf(CLEFS[st].low, st) + 13));
+  if (clefOn) staves.forEach(st => ys.push(...clefInkYs(st, yOf, st)));   // Phase 448: the treble clef's tail
   notes.forEach(n => { const st = staffOf(n); ys.push(yOf(n.d, st) - 9, yOf(n.d, st) + 9); (n.rungs || []).forEach(([p]) => ys.push(yOf(p, st) - 5, yOf(p, st) + 5)); });
   if (minSpan) { ys.push(yOf(minSpan[0], staves[0]) - 9, yOf(minSpan[1], staves[staves.length - 1]) + 9); }
   const guideDs = (st) => { const c = CLEFS[st], g = []; if (guides) { for (let k = 1; k <= (guides[0] || 0); k++) g.push(c.high + 2 * k); for (let k = 1; k <= (guides[1] || 0); k++) g.push(c.low - 2 * k); } return g; };
@@ -22545,8 +22552,10 @@ function BigStaff({ clef = 'treble', width = 640, gap = 20, children, h0 = 26, h
   // reuse ClefGlyph: map d-positions onto this staff's own spacing
   const base = clef === 'treble' ? 30 : 18;
   const yOf = (d) => top + 4 * gap - (d - base) * (gap / 2);
+  const ty = top + 4 * gap - (clef === 'treble' ? 100 : 160) * gap / 10, ink = clefInkYs(clef, dY, clef).map(y => ty + y * gap / 10);   // Phase 448
+  const vy0 = Math.min(0, ink[0]), vy1 = Math.max(top + 4 * gap + h1, ink[1]);
   return (
-    <svg viewBox={`0 0 ${width} ${top + 4 * gap + h1}`} style={{width:'100%',display:'block'}}>
+    <svg viewBox={`0 ${vy0} ${width} ${vy1 - vy0}`} style={{width:'100%',display:'block'}}>
       {ys.map(y => <line key={y} x1="4" x2={width - 4} y1={y} y2={y} stroke={BK.ink} strokeOpacity="0.6" strokeWidth="1.3"/>)}
       {/* the clef is drawn in the normal 10-unit staff coordinates, then scaled up to this staff */}
       <g transform={`translate(${-8 * (gap / 10 - 1)} ${top + 4 * gap - (clef === 'treble' ? 100 : 160) * gap / 10}) scale(${gap / 10})`}><ClefGlyph clef={clef} st={clef} yOf={(d) => dY(d) + (clef === 'bass' ? 0 : 0)} ink={BK.ink}/></g>
@@ -31103,7 +31112,7 @@ function PaperOttava() {
   const card = (mode) => {
     const up = mode === '8va', shift = up ? 12 : -12, marks = {};
     written.forEach(d => { const k = dMidiKey(d) + shift; if (k >= 0 && k < 36) marks[k] = 'target'; });
-    const y0 = up ? dY(46) : dY(41), y1 = up ? dY(27) : dY(22), col = up ? '#c8361b' : '#3b4fa8';
+    const y0 = up ? dY(46) : dY(41), y1 = up ? dY(27) + 3 : dY(22), col = up ? '#c8361b' : '#3b4fa8';
     return (
       <div key={mode} style={pmlCard}>
         <div style={{fontSize:13.5,fontWeight:900,color:BK.ink}}>{up ? '8va: an octave higher' : '8vb: an octave lower'}</div>
@@ -31686,7 +31695,7 @@ function CutScaleSlider() {
 // so one token fits exactly in a space and sits on a line. ──
 const CUT_GAP = 9.5;
 function CutStaffSystem({ kind = 'grand', gap = CUT_GAP, bars = 0, capTop, capBottom, W = 176 }) {
-  const mt = gap * 1.75, mb = gap * 1.6, x0 = 36;
+  const mt = gap * 1.75, mb = gap * 1.75, x0 = 36;   // Phase 448: mb 1.75 (was 1.6), the treble clef's tail
   const staves = kind === 'grand' ? [{ clef: 'treble', top: mt }, { clef: 'bass', top: mt + 6 * gap }] : [{ clef: kind, top: mt }];
   const H = staves[staves.length - 1].top + 4 * gap + mb;
   const first = staves[0].top, last = staves[staves.length - 1].top + 4 * gap;
@@ -33864,7 +33873,8 @@ function SfStaff({ clef = 'treble', width = 340, notes = [], gap = 44, pad = [26
   const staffOf = (n) => n.staff || (grand ? (n.d >= 28 ? 'treble' : 'bass') : staves[0]);
   const ys = []; staves.forEach(st => ys.push(yOf(CLEFS[st].high, st), yOf(CLEFS[st].low, st)));
   notes.forEach(n => ys.push(yOf(n.d, staffOf(n))));
-  const y0 = Math.min(...ys) - pad[0], y1 = Math.max(...ys) + pad[1];
+  let y0 = Math.min(...ys) - pad[0], y1 = Math.max(...ys) + pad[1];
+  if (!none) staves.forEach(st => { const [a, b] = clefInkYs(st, yOf, st); y0 = Math.min(y0, a); y1 = Math.max(y1, b); });   // Phase 448
   const inner = (shapes, vb) => { const s = penSvg(shapes, { vb }); return s.slice(s.indexOf('>') + 1, s.lastIndexOf('</svg>')); };
   const icn = useMemo(() => icons.map(ic => inner(ic.shapes, ic.vb || [0, 0, 44, 44])), [icons]);
   const txt = { fontFamily: "Inter, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif", paintOrder: 'stroke', stroke: BK.soft, strokeWidth: 3.5, strokeLinejoin: 'round' };
@@ -34390,7 +34400,7 @@ function SfWorkbook({ startNo = 1, frames = true }) {
     <Faces/>
   </>);
   // 6 (faces "Middle C: Clara")
-  const visit = (label, clef, who) => <div style={{border:'1.2px solid rgba(38,41,107,0.22)',borderRadius:12,padding:'8px 12px 6px'}}>
+  const visit = (label, clef, who) => <div style={{border:'1.2px solid rgba(38,41,107,0.22)',borderRadius:12,padding:'7px 12px 3px'}}>
     <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:2}}><PenArt shapes={who === 'clara' ? sfClara(22, 24, 1) : who === 'queen' ? sfQueen(22, 24, 1) : sfKing(22, 24, 1)} vb={[0, 2, 44, 42]} style={{width:30,flex:'0 0 auto'}}/><span style={{fontSize:13,fontWeight:800,color:BK.ink}}>{label}</span></div>
     <PaperStaff clef={clef} notes={[]} width={172} minSpan={clef === 'treble' ? [27, 39] : [17, 29]}/>
   </div>;
@@ -34400,7 +34410,7 @@ function SfWorkbook({ startNo = 1, frames = true }) {
       <div style={{maxWidth:640,margin:'0 auto',width:'100%'}}><PaperStaff clef="grand" notes={W.s5.mid.map((n, i) => ({ ...n, x: sfXs(8, 440, true)[i] }))} width={440}/></div>
     </Part>
     <Part kind="home" title="Clara visits" how="Draw the note each time, on its little ladder when it is Clara's C.">
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:9}}>
         {visit('Visiting the Queen: draw Clara’s C', 'treble', 'clara')}
         {visit('Visiting the King: draw Clara’s C', 'bass', 'clara')}
         {visit('One step up from Clara: draw D', 'treble', 'queen')}
@@ -34810,13 +34820,13 @@ function WsWorkbook({ startNo = 1, frames = true }) {
   P(<>
     <WbTop step={1}/>
     <Part kind="together" title="Whose land?" how="Look at the crown at the start of each staff. Circle Q for Queensland or K for Kingsland.">
-      <BkGrid cols={4} gap="8px 10px">{W.crown.lands.map(([cl, d], i) => <ExCell key={i} n={i + 1} ex={i === 0}><div style={{padding:'12px 4px 3px'}}>
+      <BkGrid cols={4} gap="8px 10px">{W.crown.lands.map(([cl, d], i) => <ExCell key={i} n={i + 1} ex={i === 0}><div style={{padding:'9px 4px 2px'}}>
         <PaperStaff clef={cl} notes={[{ d }]} width={110} minSpan={ms(cl)}/>
         <div style={{display:'flex',justifyContent:'center',marginTop:3}}>{wsChoose(['Q', 'K'], i === 0 ? (cl === 'treble' ? 'Q' : 'K') : null)}</div>
       </div></ExCell>)}</BkGrid>
     </Part>
     <Part kind="home" title="Crown check, then name it" how="First circle the land: Q for Queensland, K for Kingsland. Then write the note's name.">
-      <BkGrid cols={4} gap="8px 10px">{W.crown.cells.map((c, i) => <BkCell key={i} n={i + 1 + W.crown.lands.length}><div style={{padding:'12px 4px 3px'}}>
+      <BkGrid cols={4} gap="8px 10px">{W.crown.cells.map((c, i) => <BkCell key={i} n={i + 1 + W.crown.lands.length}><div style={{padding:'9px 4px 2px'}}>
         <PaperStaff clef={c.clef} notes={[{ d: c.d }]} width={110} minSpan={ms(c.clef)}/>
         <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,marginTop:3}}>{wsChoose(['Q', 'K'])}{bkBox(34, 30)}</div>
       </div></BkCell>)}</BkGrid>
