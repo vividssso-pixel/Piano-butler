@@ -43,7 +43,7 @@ python3 tools/lessons/build.py <chapter-id> --final  # refuses while any DRAFT m
 ## The front page: the Piano Butler's house (`lessons/index.html`)
 
 `src/index.html` is the guide pages' front page: the townhouse from the app (Phase 426; before it a street, Phase 425,
-and a first house, Phases 377-424), one floor per stage and one room per chapter. Rooms with a guide page are drawn
+and a first house, Phases 377-424), one floor per level (five, Phase 436) and one room per chapter. Rooms with a guide page are drawn
 in dark ink and link to it; the others are grey. When a chapter's page goes final:
 1. redraw the house with the app's own code, listing every published page:
    `BUILD=drills.tNNN.html OUT=<svg/index> node house428gen.js '{"posture-hands":"posture-and-hand-shape.html", ...}'`
