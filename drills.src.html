@@ -35844,6 +35844,17 @@ function tnFoot(cx, cy, k = 1, col = PEN_C) {   // a bare footprint: the ball, t
   return [{ k: 'el', c: P(0, -0.6), rx: 2.7 * k, ry: 3.2 * k, f: col, nw: true }, { k: 'el', c: P(0.5, 4.4), rx: 1.9 * k, ry: 2.3 * k, f: col, nw: true },
     ...[[-2.3, -5.3, 0.95], [-0.7, -6.3, 0.85], [0.9, -6.2, 0.75], [2.3, -5.4, 0.65]].map(([a, b, r]) => ({ k: 'el', c: P(a, b), rx: r * k, ry: r * k, f: col, nw: true }))];
 }
+// Phase 440 (her 2026-10-12 14:52: the arrows above the keys did not catch the eye): a step drawn ON the keyboard -- a
+// dotted line from key to key, a dot at each end, and its name on a little plate in the middle; coral a half step, navy a whole
+function tnStepLine(x1, x2, y, label, col = PEN_C, o = {}) {
+  const y2 = o.y2 != null ? o.y2 : y;
+  const s = [{ ...penLine([x1, y], [x2, y2], o.w || 3.2, col, '0.1 4.4'), nw: true }];
+  [[x1, y], [x2, y2]].forEach((c, j) => s.push(j && o.ring2 ? { k: 'el', c, rx: 4.2, ry: 4.2, f: '#fff', s: col, w: 2, nw: true } : { k: 'el', c, rx: 4.2, ry: 4.2, f: col, nw: true }));   // ring2: the far end on a coral key
+  if (label) { const mx = o.mx != null ? o.mx : (x1 + x2) / 2, my = o.my != null ? o.my : (y + y2) / 2, z = o.size || 10.5;
+    if (o.plate) { const lw = rdWidth(label, 900, z, 'Inter, sans-serif') + 12; s.push({ k: 'rc', x: mx - lw / 2, y: my - 8.5, w: lw, h: 17, rx: 8.5, f: '#fff', s: col, sw: 1.4, nw: true }, penText(mx, my + 3.6, label, { size: z, weight: 900, fill: col, anchor: 'middle' })); }
+    else s.push({ ...penText(mx, my + (o.ly != null ? o.ly : -9), label, { size: z, weight: 900, fill: col, anchor: 'middle' }), halo: true }); }
+  return s;
+}
 // a heart (draft v1's best friend; kept for the small icons)
 function tnHeart(cx, cy, k = 1, col = PEN_C, outline = false) {
   const P = (a, b) => [cx + a * k, cy + b * k];
@@ -35880,46 +35891,48 @@ function tnLbPages(scr = false) {
   const W_ = '#fff';
 
   // p1: Clara at her C on the keyboard street: two half steps -- to the black key, then on to D -- make one whole step
-  const art1 = (() => {
-    const K = tnKeys(30, 64, 7, 40, 112, { start: 'A' });
+  const art1 = (() => {   // Phase 440: the steps dotted on the keys -- a stair of two half steps; the whole step a ruler under them
+    const K = tnKeys(40, 50, 6, 46, 124, { start: 'A' });
     const s = [...K.shapes, ...K.letters({ size: 15, coral: ['C'] })];
-    s.push(K.youW(2), ...sfClara(K.wx(2), 140, 0.85));
+    s.push(K.youW(2), ...sfClara(K.wx(2), 140, 0.9));
     const c = K.wx(2), cs = K.bx(2), d = K.wx(3);
-    s.push(...nnHop(c + 1, cs - 2, 60, 8), ...nnHop(cs + 2, d - 1, 60, 8));
-    s.push(...tnFoot(cs, K.lower - 16, 1.4), ...tnFoot(d, K.lower + 11, 1.45, PEN_N));
-    s.push({ ...penText((c + cs) / 2 - 3, 45, t('half', '반'), { size: 10, weight: 900, fill: PEN_C, anchor: 'middle' }), halo: true }, { ...penText((cs + d) / 2 + 3, 45, t('half', '반'), { size: 10, weight: 900, fill: PEN_C, anchor: 'middle' }), halo: true });
-    s.push(...nnHop(c - 2, d + 2, 33, 10, PEN_N, 1.9), { ...penText(d + 12, 22, t('a whole step', '온 걸음'), { size: 11.5, weight: 900, fill: PEN_N, anchor: 'start' }), halo: true });
-    s.push(...tnFoot(104, 197, 0.85), { ...penText(114, 201, t('a half step = a semitone', '반 걸음 = 반음'), { size: 10.5, weight: 900, fill: PEN_C }) });
-    s.push(...tnFoot(104, 214, 0.85, PEN_N), { ...penText(114, 218, t('a whole step = a tone', '온 걸음 = 온음'), { size: 10.5, weight: 900, fill: PEN_N }) });
+    s.push(...tnFoot(cs, K.lower - 14, 1.35), ...tnFoot(d, K.lower + 13, 1.5, PEN_N));
+    s.push(...tnStepLine(c - 6, cs, 98, t('half', '반'), PEN_C, { ly: -10, size: 11.5 }), ...tnStepLine(cs, d, 72, t('half', '반'), PEN_C, { ly: -10, size: 11.5 }));
+    s.push(...tnStepLine(c, d, 190, t('a whole step', '온 걸음'), PEN_N, { ly: 18, size: 11.5 }));
+    s.push({ ...penLine([104, 228], [124, 228], 3.2, PEN_C, '0.1 4.4'), nw: true }, penText(132, 232, t('a half step = a semitone', '반 걸음 = 반음'), { size: 11, weight: 900, fill: PEN_C }));
+    s.push({ ...penLine([104, 246], [124, 246], 3.2, PEN_N, '0.1 4.4'), nw: true }, penText(132, 250, t('a whole step = a tone', '온 걸음 = 온음'), { size: 11, weight: 900, fill: PEN_N }));
     return s;
   })();
 
-  // p2: a half step -- from the Dog's D both land on black keys; from a black key both land on white keys
+  // p2: a half step -- from the Dog's D both land on black keys; from a black key both land on white keys. The closest
+  // keys: a dotted line from your key to each, on the keys
   const art2 = (() => {
-    const s = [];
-    const a = tnKeys(26, 34, 3, 42, 140), b = tnKeys(196, 34, 3, 42, 140);
-    s.push(...a.shapes, ...a.letters({ size: 13, coralIdx: [1] }), a.youW(1), ...nnDog(a.wx(1), a.lower + 22, 0.8));
-    s.push(...tnFoot(a.bx(0), a.lower - 16, 1.35), ...tnFoot(a.bx(1), a.lower - 16, 1.35));
-    s.push(...nnHop(a.wx(1) - 3, a.bx(0) + 2, 30, 7), ...nnHop(a.wx(1) + 3, a.bx(1) - 2, 30, 7));
-    s.push(...b.shapes, ...b.letters({ size: 13 }), b.youB(0));
-    s.push(...tnFoot(b.wx(0), b.lower + 22, 1.5), ...tnFoot(b.wx(1), b.lower + 22, 1.5));
-    s.push(...nnHop(b.bx(0) - 3, b.wx(0) - 2, 30, 7), ...nnHop(b.bx(0) + 3, b.wx(1) + 2, 30, 7));
-    [[a.wx(1), t('The Dog\'s half steps:', '강아지 D의 반 걸음:'), t('two black keys', '검은건반 둘')], [b.bx(0), t('A black key\'s half steps:', '검은건반의 반 걸음:'), t('two white keys', '흰건반 둘')]].forEach(([cx, l1, l2]) => {
-      s.push({ ...penText(cx, 192, l1, { size: 10, weight: 900, fill: PEN_N, anchor: 'middle' }) }, { ...penText(cx, 205, l2, { size: 10, weight: 900, fill: PEN_C, anchor: 'middle' }) });
+    const s = [], W = 52, H = 150;
+    const a = tnKeys(12, 26, 3, W, H), b = tnKeys(176, 26, 3, W, H);
+    s.push(...a.shapes, ...a.letters({ size: 14, coralIdx: [1] }), a.youW(1), ...nnDog(a.wx(1), a.lower + 26, 0.9));
+    s.push(...tnFoot(a.bx(0), a.lower - 16, 1.5), ...tnFoot(a.bx(1), a.lower - 16, 1.5));
+    const ya = a.lower - 46;
+    s.push(...tnStepLine(a.wx(1), a.bx(0), ya, t('half', '반'), PEN_C, { mx: a.bx(0), my: 26 + 22, ly: 0, size: 12 }).map(e => e.k === 'tx' ? { ...e, fill: '#fff', halo: false } : e));
+    s.push(...tnStepLine(a.wx(1), a.bx(1), ya, t('half', '반'), PEN_C, { mx: a.bx(1), my: 26 + 22, ly: 0, size: 12 }).map(e => e.k === 'tx' ? { ...e, fill: '#fff', halo: false } : e));
+    s.push(...b.shapes, ...b.letters({ size: 14 }), b.youB(0));
+    s.push(...tnFoot(b.wx(0), b.lower + 26, 1.6), ...tnFoot(b.wx(1), b.lower + 26, 1.6));
+    const yb = b.lower - 14;
+    s.push(...tnStepLine(b.bx(0), b.wx(0) - 4, yb, t('half', '반'), PEN_C, { mx: b.wx(0) - 4, my: b.lower + 4, ly: 0, size: 12 }), ...tnStepLine(b.bx(0), b.wx(1) + 4, yb, t('half', '반'), PEN_C, { mx: b.wx(1) + 4, my: b.lower + 4, ly: 0, size: 12 }));
+    [[a.wx(1), t('The Dog\'s closest keys', '강아지 D와 제일 가까운 건반'), t('two black keys', '검은건반 둘')], [b.bx(0), t('A black key\'s closest keys', '검은건반과 제일 가까운 건반'), t('two white keys', '흰건반 둘')]].forEach(([cx, l1, l2]) => {
+      s.push({ ...penText(cx, 196, l1, { size: 10, weight: 900, fill: PEN_N, anchor: 'middle' }) }, { ...penText(cx, 210, l2, { size: 10.5, weight: 900, fill: PEN_C, anchor: 'middle' }) });
     });
     return s;
   })();
 
-  // p3: a whole step -- C to D over the black key; and black to black over one white key; two half steps (coral) make one
-  // whole step (the navy arc)
+  // p3: a whole step -- C to D over the black key; and black to black over one white key: two half steps (coral, dotted
+  // through the keys) make one whole step (navy, dotted along the top of the keys, named)
   const art3 = (() => {
     const K = tnKeys(16, 56, 7, 44, 124);
     const s = [...K.shapes, ...K.letters({ size: 13, coralIdx: [0, 1] })];
     s.push(K.youW(0), K.youW(1), K.youB(3), K.youB(4));
     const two = (x1, xm, x2) => {
-      s.push(...nnHop(x1 + 2, xm - 2, 52, 8), ...nnHop(xm + 2, x2 - 2, 52, 8));
-      s.push({ ...penText((x1 + xm) / 2, 38, t('half', '반'), { size: 8.6, weight: 900, fill: PEN_C, anchor: 'middle' }), halo: true }, { ...penText((xm + x2) / 2, 38, t('half', '반'), { size: 8.6, weight: 900, fill: PEN_C, anchor: 'middle' }), halo: true });
-      s.push(...nnHop(x1, x2, 28, 9, PEN_N, 1.8), { ...penText((x1 + x2) / 2, 12, t('a whole step', '온 걸음'), { size: 11, weight: 900, fill: PEN_N, anchor: 'middle' }), halo: true });
+      s.push(...tnStepLine(x1, xm, 108, ''), ...tnStepLine(xm, x2, 108, ''));
+      s.push(...tnStepLine(x1, x2, 74, t('a whole step', '온 걸음'), PEN_N, { plate: true, size: 10.5 }));
     };
     two(K.wx(0), K.bx(0), K.wx(1));
     two(K.bx(3), K.wx(4), K.bx(4));
@@ -35929,8 +35942,8 @@ function tnLbPages(scr = false) {
     return s;
   })();
 
-  // p4: the white half steps -- C to C with who lives there; between the letters a whole step, except E F and B C (a
-  // coral half-step hop across their line, where no black key is)
+  // p4: the white half steps -- C to C with who lives there; between the letters a whole step, except E F and B C: a coral
+  // dotted line across their line, on the keys, where no black key is
   const art4 = (() => {
     const X = 10, Y = 38, Wk = 40, H = 138;
     const K = tnKeys(X, Y, 8, Wk, H, { sw: 2.6 });
@@ -35942,26 +35955,28 @@ function tnLbPages(scr = false) {
     'CDEFGABC'.split('').forEach((L, i) => s.push(...nnResident(L, K.wx(i), cy, 1)));
     'CDEFGAB'.split('').forEach((L, i) => {
       const half = L === 'E' || L === 'B', bxx = X + (i + 1) * Wk;
-      if (half) s.push(...nnHop(K.wx(i) + 4, K.wx(i + 1) - 4, 66, 8));
+      if (half) s.push(...tnStepLine(K.wx(i) - 6, K.wx(i + 1) + 6, Y + 46, t('half', '반'), PEN_C, { plate: true, size: 10.5 }));
       s.push({ ...penText(bxx, Y + H + 15, half ? t('half', '반') : t('whole', '온'), { size: 9, weight: 900, fill: half ? PEN_C : PEN_N, anchor: 'middle' }) });
       s.push(penCurve([['M', [K.wx(i) + 3, Y + H + 3]], ['Q', [bxx, Y + H + 8], [K.wx(i + 1) - 3, Y + H + 3]]], 1.3, half ? PEN_C : '#9a9cc4'));
     });
     return s;
   })();
 
-  // p5: sharp and flat -- C sharp is a half step up from C, D flat a half step down from D: the same black key; every black
-  // key of the small and the big house named both ways
+  // p5: sharp and flat -- C sharp is a half step up from C, D flat a half step down from D: the same black key, both
+  // steps dotted on the keys from a plate on C and on D; every black key of both houses named both ways
   const art5 = (() => {
-    const K = tnKeys(16, 52, 7, 44, 140);
+    const K = tnKeys(16, 52, 7, 44, 164);
     const s = [...K.shapes, ...K.letters({ size: 14, coral: ['C', 'D'] })];
-    s.push(K.youW(0), K.youW(1), K.youB(0));
+    s.push(K.youB(0));
     const pairs = { 0: ['C', 'D'], 1: ['D', 'E'], 3: ['F', 'G'], 4: ['G', 'A'], 5: ['A', 'B'] };
     Object.entries(pairs).forEach(([i, [lo, hi]]) => {
       const cx = K.bx(+i);
       s.push(tnText(cx, 52 + 24, [lo, '#'], { size: 10.5, fill: W_ }), { ...penLine([cx - 6, 52 + 37], [cx + 6, 52 + 37], 1, 'rgba(255,253,247,0.6)'), nw: true }, tnText(cx, 52 + 56, [hi, 'b'], { size: 10.5, fill: W_ }));
     });
-    s.push(...nnHop(K.wx(0) + 1, K.bx(0) - 3, 48, 9, PEN_C, 2), ...nnHop(K.wx(1) - 1, K.bx(0) + 3, 48, 9, PEN_N, 2));
-    s.push(tnText(K.wx(0) - 6, 22, ['#', ' ', t('up', '위로')], { size: 12, fill: PEN_C, anchor: 'middle', halo: true }), tnText(K.wx(1) + 8, 22, ['b', ' ', t('down', '아래로')], { size: 12, fill: PEN_N, anchor: 'middle', halo: true }));
+    // a V: from C a half step up, from D a half step down -- both dotted lines meet on the same black key
+    const top = K.lower - 6, foot = K.lower + 14;
+    s.push(...tnStepLine(K.wx(0) - 4, K.bx(0), foot, '', PEN_C, { y2: top, ring2: true }), ...tnStepLine(K.wx(1) + 4, K.bx(0), foot, '', PEN_N, { y2: top, ring2: true }));
+    s.push(tnText(K.wx(0) - 4, foot + 19, ['#', ' ', t('up', '위로')], { size: 12, fill: PEN_C, halo: true }), tnText(K.wx(1) + 4, foot + 19, ['b', ' ', t('down', '아래로')], { size: 12, fill: PEN_N, halo: true }));
     return s;
   })();
 
@@ -36008,7 +36023,7 @@ function tnLbPages(scr = false) {
         <div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em'}}>CHAPTER {bkChapterNo(ch)}</div>
         <div style={{fontFamily:LB_SERIF,fontSize:44,fontWeight:900,color:BK.ink,lineHeight:1.02,margin:'4px 0 0'}}>{t('Tones & Semitones', '온음과 반음')}</div>
       </div></LbOnly>
-      {pic(art1, [0, 4, 340, 222], t('The keyboard street with Princess Clara at her C: two small coral hops, each a half step -- to the black key, then on to D -- and one navy arc over both, a whole step. Below: a half step is a semitone, a whole step is a tone', '클라라 공주가 C에 서 있는 건반 거리: 산호색 작은 걸음 둘, 각각 반 걸음 -- 검은건반으로, 그리고 D로 -- 그 위의 남색 아치 하나는 온 걸음. 아래: 반 걸음은 반음, 온 걸음은 온음'), 250, 620)}
+      {pic(art1, [0, 38, 340, 220], t('The keyboard street with Princess Clara at her C: two coral dotted lines on the keys, each a half step -- to the black key, then up again to D, like a stair -- and under the keys a navy dotted line from C to D, a whole step. Below: a half step is a semitone, a whole step is a tone', '클라라 공주가 C에 서 있는 건반 거리: 건반 위의 산호색 점선 둘, 각각 반 걸음 -- 검은건반으로, 그리고 계단처럼 한 번 더 D로 -- 건반 아래 C에서 D까지 남색 점선은 온 걸음. 아래: 반 걸음은 반음, 온 걸음은 온음'), 250, 620)}
       <LbSay size={17.5}>{LANG === 'ko' ? <>이름이 크기를 알려 줘요. <b>반음</b>은 <b>반 걸음</b> -- 바로 옆 건반까지. <b>온음</b>은 <b>온 걸음</b> -- 반 걸음 두 개. 그리고 검은건반에 이름이 생겨요: <b>샤프</b>와 <b>플랫</b>.</>
         : <>The names tell you the size. A <b>semitone</b> is a <b>half step</b> -- to the very next key. A <b>tone</b> is a <b>whole step</b> -- two half steps. And the black keys get their names: <b>sharps</b> and <b>flats</b>.</>}</LbSay>
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
@@ -36026,22 +36041,22 @@ function tnLbPages(scr = false) {
 
     // 2. a half step: a semitone
     <LbPage key="2" no={2} chId={ch} kicker={t('Step 1', '1단계')} title={t('A half step: a semitone', '반 걸음: 반음')}>
-      <LbLive still={pic(art2, [0, 4, 340, 206], t('Two pieces of keyboard. On the left, D -- the Dog -- with a coral footprint on each black key beside it: a half step up and a half step down both land on black keys. On the right, a black key with a coral footprint on the white key on each side: its half steps land on white keys', '건반 두 조각. 왼쪽은 강아지 D, 양옆 검은건반마다 산호색 발자국: 반 걸음 위도 아래도 검은건반. 오른쪽은 검은건반, 양옆 흰건반마다 산호색 발자국: 반 걸음은 흰건반에 닿아요'), 300)} live={<TnHalf/>}/>
-      <LbSay>{LANG === 'ko' ? <>피아노에서 가장 작은 걸음은 <b>반 걸음</b>이에요: 한 건반에서 <b>바로 옆 건반</b>까지 -- 검은건반이든 흰건반이든, 사이에 아무것도 없이, 베프처럼 가까이. 이 걸음의 이름이 <b>반음</b>이에요. 영어로는 <b>semitone</b>(호주·영국 책)이라고도, <b>half step</b>(미국 책)이라고도 해요 -- 같은 걸음이에요. 반 걸음은 오른쪽, 새가 사는 하늘 쪽으로 올라가기도 하고, 왼쪽, 거북이 사는 바다 쪽으로 내려가기도 해요.</>
-        : <>The smallest step on the piano is a <b>half step</b>: from a key to the <b>very next key</b> -- black or white, nothing in between, as close as a best friend. Its other name is a <b>semitone</b> (<i>semi</i> means half): Australian and British books say semitone, American books say half step -- the same step. A half step goes up to the right, towards the bird's sky, or down to the left, towards the turtle's sea.</>}</LbSay>
+      <LbLive still={pic(art2, [0, 14, 340, 204], t('Two pieces of keyboard. On the left, D -- the Dog -- with a coral dotted line to each black key beside it, its closest keys: a half step up and a half step down both land on black keys. On the right, a black key with a dotted line to the white key on each side: its half steps land on white keys', '건반 두 조각. 왼쪽은 강아지 D, 양옆 검은건반마다 산호색 점선, 제일 가까운 건반: 반 걸음 위도 아래도 검은건반. 오른쪽은 검은건반, 양옆 흰건반마다 점선: 반 걸음은 흰건반에 닿아요'), 300)} live={<TnHalf/>}/>
+      <LbSay>{LANG === 'ko' ? <>피아노에서 가장 작은 걸음은 <b>반 걸음</b>이에요: 한 건반에서 <b>바로 옆 건반</b>까지 -- 검은건반이든 흰건반이든, 사이에 아무것도 없는 <b>가장 가까운 이웃</b>이에요. 이 걸음의 이름이 <b>반음</b>이에요. 영어로는 <b>semitone</b>(호주·영국 책)이라고도, <b>half step</b>(미국 책)이라고도 해요 -- 같은 걸음이에요. 반 걸음은 오른쪽, 새가 사는 하늘 쪽으로 올라가기도 하고, 왼쪽, 거북이 사는 바다 쪽으로 내려가기도 해요.</>
+        : <>The smallest step on the piano is a <b>half step</b>: from a key to the <b>very next key</b> -- black or white, nothing in between: its <b>nearest neighbour</b>, the closest key there is. Its other name is a <b>semitone</b> (<i>semi</i> means half): Australian and British books say semitone, American books say half step -- the same step. A half step goes up to the right, towards the bird's sky, or down to the left, towards the turtle's sea.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [
         <>강아지 D에 손가락을 올려요. 반 걸음 위, 그다음 반 걸음 아래를 쳐요 -- 둘 다 검은건반이에요. 칠 때마다 "반 걸음"이라고 말해요.</>,
-        <><b>반 걸음 걷기:</b> 클라라의 C에서 시작해 반 걸음씩 계속 올라가요 -- 검은건반, 흰건반 모두 -- 다음 C까지. 건반 말고 걸음을 세어요: 반 걸음 12개.</>,
+        <><b>반 걸음 걷기:</b> 클라라의 C에서 시작해 반 걸음씩 계속 올라가요 -- 검은건반, 흰건반 모두 -- 다음 C까지. 건반 말고 걸음을 세어요: 반 걸음 12개. 이렇게 반 걸음으로만 걷는 게 <b>반음계(크로마틱 스케일)</b>예요.</>,
       ] : [
         <>Put a finger on D, the Dog. Play a half step up, then a half step down -- both black keys. Say "half step" each time.</>,
-        <><b>The half-step walk:</b> start on Clara's C and go up a half step, again and again -- every key, black and white -- to the next C. Count the steps, not the keys: 12 half steps.</>,
+        <><b>The half-step walk:</b> start on Clara's C and go up a half step, again and again -- every key, black and white -- to the next C. Count the steps, not the keys: 12 half steps. Walking in half steps like this is the <b>chromatic scale</b>.</>,
       ]}/>
       <LbRemember>{t('A semitone is a half step: the very next key, black or white.', '반음은 반 걸음: 바로 옆 건반, 검은건반이든 흰건반이든.')}</LbRemember>
     </LbPage>,
 
     // 3. a whole step: a tone
     <LbPage key="3" no={3} chId={ch} kicker={t('Step 2', '2단계')} title={t('A whole step: a tone', '온 걸음: 온음')}>
-      <LbLive still={pic(art3, [0, 0, 340, 214], t('The keys C to B. From C to D: two half steps, two small coral hops over the black key between them -- together one navy arc, a whole step. From the big house\'s first black key to its second: two half steps over the white key G -- one arc, a whole step', 'C부터 B까지의 건반. C에서 D: 사이의 검은건반을 지나는 반 걸음 둘(산호색 작은 걸음) -- 합치면 남색 아치 하나, 온 걸음. 큰 집의 첫째 검은건반에서 둘째로: 흰건반 G를 지나는 반 걸음 둘 -- 아치 하나, 온 걸음'), 280)} live={<TnSteps/>}/>
+      <LbLive still={pic(art3, [0, 0, 340, 214], t('The keys C to B. From C to D: two half steps, a coral dotted line through the black key between them -- together one navy dotted line along the top of the keys, a whole step. From the big house\'s first black key to its second: two half steps through the white key G -- one navy line, a whole step', 'C부터 B까지의 건반. C에서 D: 사이의 검은건반을 지나는 반 걸음 둘(산호색 점선) -- 합치면 건반 위쪽의 남색 점선 하나, 온 걸음. 큰 집의 첫째 검은건반에서 둘째로: 흰건반 G를 지나는 반 걸음 둘 -- 남색 점선 하나, 온 걸음'), 280)} live={<TnSteps/>}/>
       <LbSay>{LANG === 'ko' ? <>반 걸음 두 개가 <b>온 걸음</b>이에요: 사이에 <b>건반 하나</b>가 끼어 있어요. 이 걸음의 이름이 <b>온음</b>이에요. 영어로는 <b>tone</b>, 미국 책에서는 <b>whole step</b>이라고 해요. C에서 검은건반을 넘어가면 D가 온 걸음 위예요. 검은건반끼리도 돼요: 흰건반 하나를 사이에 둔 두 검은건반도 온 걸음이에요.</>
         : <>Two half steps make a <b>whole step</b>: <b>one key</b> sits in between. Its other name is a <b>tone</b>; American books say whole step. From C, step over the black key: D is a whole step up. Black keys too: two black keys with one white key between them are a whole step apart.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [
@@ -36056,22 +36071,22 @@ function tnLbPages(scr = false) {
 
     // 4. the white half steps
     <LbPage key="4" no={4} chId={ch} kicker={t('Step 3', '3단계')} title={t('White half steps: E F and B C', '흰건반의 반 걸음: E F와 B C')}>
-      <LbLive still={pic(art4, [0, -4, 340, 206], t('One octave, C to C, under the small house and the big house, with who lives on each white key. Under each pair of white neighbours: whole, whole, half, whole, whole, whole, half -- a coral half-step hop from E to F and from B to C, where there is no black key between', 'C부터 C까지 한 옥타브, 작은 집과 큰 집 아래, 흰건반마다 사는 이. 흰건반 이웃마다 아래에: 온, 온, 반, 온, 온, 온, 반 -- 검은건반이 없는 E에서 F, B에서 C로 산호색 반 걸음'), 300, 590)} live={<TnWhites/>}/>
+      <LbLive still={pic(art4, [0, -4, 340, 206], t('One octave, C to C, under the small house and the big house, with who lives on each white key. Under each pair of white neighbours: whole, whole, half, whole, whole, whole, half -- a coral dotted line on the keys from E to F and from B to C, where there is no black key between', 'C부터 C까지 한 옥타브, 작은 집과 큰 집 아래, 흰건반마다 사는 이. 흰건반 이웃마다 아래에: 온, 온, 반, 온, 온, 온, 반 -- 검은건반이 없는 E에서 F, B에서 C로 건반 위 산호색 점선'), 300, 590)} live={<TnWhites/>}/>
       <LbSay>{LANG === 'ko' ? <>흰건반을 글자 하나씩 걸어가며({bkChapterNo('note-names')}챕터의 걸음) 사이를 봐요. 대부분은 사이에 검은건반이 있어요: <b>온 걸음</b>이에요. 그런데 두 군데는 없어요. 작은 집의 <b>출구(E)</b>로 나오면 바로 큰 집의 <b>앞문(F)</b>이고, 큰 집의 <b>뒷문(B)</b>으로 나가면 옆 작은 집의 <b>클라라 공주(C)</b>가 있어요. <b>E F</b>와 <b>B C</b>는 <b>반 걸음</b>밖에 안 돼요.</>
         : <>Walk the white keys letter by letter (Chapter {bkChapterNo('note-names')}'s steps) and look between them. Most letter steps have a black key in between: a <b>whole step</b>. But twice there is none. Walk out of the small house's <b>Exit (E)</b> and you are at the big house's <b>Front door (F)</b>; go out of the big house's <b>Back door (B)</b> and there is <b>Princess Clara (C)</b> at the next small house. <b>E F</b> and <b>B C</b> are only a <b>half step</b> apart.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [
         <>피아노의 모든 E와 F, 그다음 모든 B와 C를 찾아요: 사이에 검은건반이 없어요 -- 반 걸음이에요.</>,
-        <>C에서 다음 C까지 흰건반으로 올라가며 걸음마다 말해요: 온, 온, <b>반</b>, 온, 온, 온, <b>반</b>.</>,
+        <>C에서 다음 C까지 흰건반으로 올라가며 걸음마다 말해요: 온, 온, <b>반</b>, 온, 온, 온, <b>반</b>. 이 순서가 장조 스케일의 레시피예요 -- 스케일 방에서 이걸로 스케일을 쌓아요.</>,
       ] : [
         <>Find every E and F on the piano, then every B and C: no black key between them -- a half step.</>,
-        <>Walk up the white keys from C to the next C, naming each step: whole, whole, <b>half</b>, whole, whole, whole, <b>half</b>.</>,
+        <>Walk up the white keys from C to the next C, naming each step: whole, whole, <b>half</b>, whole, whole, whole, <b>half</b>. This order is the major scale's recipe -- in the Scales room you build scales with it.</>,
       ]}/>
       <LbRemember>{t('No black key between E F and B C: only a half step.', 'E F, B C 사이엔 검은건반이 없어요: 반 걸음뿐.')}</LbRemember>
     </LbPage>,
 
     // 5. sharp and flat: one key, two names
     <LbPage key="5" no={5} chId={ch} kicker={t('Step 4', '4단계')} title={t('Sharp and flat: one key, two names', '샤프와 플랫: 건반 하나, 이름 둘')}>
-      <LbLive still={pic(art5, [0, 6, 340, 192], t('The keys C to B with every black key named two ways: C sharp and D flat, D sharp and E flat, F sharp and G flat, G sharp and A flat, A sharp and B flat. A coral arrow goes a half step up from C to C sharp, a navy arrow a half step down from D to D flat -- the same black key', 'C부터 B까지, 검은건반마다 이름 두 개: C 샤프와 D 플랫, D 샤프와 E 플랫, F 샤프와 G 플랫, G 샤프와 A 플랫, A 샤프와 B 플랫. 산호색 화살표는 C에서 반 걸음 위 C 샤프로, 남색 화살표는 D에서 반 걸음 아래 D 플랫으로 -- 같은 검은건반'), 300)} live={<TnSharpFlat/>}/>
+      <LbLive still={pic(art5, [0, 30, 340, 196], t('The keys C to B with every black key named two ways: C sharp and D flat, D sharp and E flat, F sharp and G flat, G sharp and A flat, A sharp and B flat. A coral dotted line goes a half step up from C to C sharp, a navy one a half step down from D to D flat -- the same black key', 'C부터 B까지, 검은건반마다 이름 두 개: C 샤프와 D 플랫, D 샤프와 E 플랫, F 샤프와 G 플랫, G 샤프와 A 플랫, A 샤프와 B 플랫. 산호색 점선은 C에서 반 걸음 위 C 샤프로, 남색 점선은 D에서 반 걸음 아래 D 플랫으로 -- 같은 검은건반'), 300)} live={<TnSharpFlat/>}/>
       <LbSay>{LANG === 'ko' ? <>이제 검은건반에 이름이 생겨요. <b>샤프 {tnSign('#')}</b>는 음을 <b>반 걸음 위로</b> 옮겨요 -- 오른쪽 바로 옆 건반으로. 그래서 C 바로 오른쪽 검은건반은 <b>C 샤프, C{tnSign('#')}</b>예요. <b>플랫 {tnSign('b')}</b>은 음을 <b>반 걸음 아래로</b> 옮겨요 -- 왼쪽 바로 옆 건반으로. 그래서 같은 검은건반을 D에서 보면 <b>D 플랫, D{tnSign('b')}</b>이에요. 건반 하나, 이름 둘: 클라라의 C에서 반 걸음 위, 강아지의 D에서 반 걸음 아래예요.</>
         : <>Now the black keys get their names. The <b>sharp sign {tnSign('#')}</b> moves a note <b>up a half step</b> -- to the very next key on the right. So the black key just right of C is <b>C sharp, C{tnSign('#')}</b>. The <b>flat sign {tnSign('b')}</b> moves a note <b>down a half step</b> -- to the very next key on the left. So the same black key, seen from D, is <b>D flat, D{tnSign('b')}</b>. One key, two names: a half step up from Clara's C, and a half step down from the Dog's D.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [
@@ -36558,7 +36573,7 @@ function TnTeacher() {
   const both = (k) => PC_INFO[TN_PC[k]].names.map(prettyNote).join(' = ');
   P(<>
     <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('tones')}</div>
-    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Answers for every workbook page, the mistakes students make most, and a line to say when they get stuck. The book teaches both pairs of names: semitone and tone (Australian and British books, AMEB), half step and whole step (American books); either is right. One black key with two names is <b>enharmonic</b> (C♯ = D♭) -- a Music Craft Grade 1 word, said here, not in the student's book. The half-step walk from C to C is the <b>chromatic scale</b> (Piano for Leisure Grade 1 plays it hands separately). Left for later: the natural sign and "a sign lasts until the bar line" (the Accidentals room), E♯ = F and C♭ = B (the scales chapters), double sharps and flats (Grade 4).</div>
+    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Answers for every workbook page, the mistakes students make most, and a line to say when they get stuck. The book teaches both pairs of names: semitone and tone (Australian and British books, AMEB), half step and whole step (American books); either is right. One black key with two names is <b>enharmonic</b> (C♯ = D♭) -- a Music Craft Grade 1 word, said here, not in the student's book. The half-step walk from C to C is the <b>chromatic scale</b> -- named in the book; Piano for Leisure Grade 1 plays it hands separately, writing it out waits for later. The white keys' W W H W W W H from C is the major scale's recipe: the book only names it; the Scales room builds on it. Left for later: the natural sign and "a sign lasts until the bar line" (the Accidentals room), E♯ = F and C♭ = B (the scales chapters), double sharps and flats (Grade 4).</div>
     <TcBlock page={2} title="A half step: a semitone" answers={<>{tcAns('TRY IT', W.halfUp.map(k => nm(k) + ' → ' + nm(tnStep(k, 1))))}{tcAns('YOUR TURN', W.halfDown.map(k => nm(k) + ' → ' + nm(tnStep(k, -1))), 5)}{tcAns('PLAY', W.count.map(([a, b]) => nm(a) + ' to ' + nm(b) + ': ' + (TN_PC[b] - TN_PC[a])), 9)}</>}
       watch="Counting the key they stand on as the first step (“C, C♯, D -- three!”). Skipping the black key and landing on the next white key. From E and B a half step up is a white key: there is no black key on their right."
       say="“Count the steps, not the keys: the first step lands on the very next key.”"/>
