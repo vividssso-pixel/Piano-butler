@@ -161,6 +161,8 @@
     @keyframes drawArc { to { stroke-dashoffset: 0; } }
     @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
     .fade-up { animation: fadeUp 0.18s ease both; }
+    /* Phase 439: Korean lines break between words, never inside one (a word too long for its box may still break) */
+    html[lang="ko"] body { word-break: keep-all; overflow-wrap: anywhere; }
     /* Vox-style era/composer reveal animations */
     @keyframes voxYearIn { from { opacity:0; transform:translateX(-14px) scale(0.92); } to { opacity:1; transform:translateX(0) scale(1); } }
     @keyframes voxNameIn { from { opacity:0; transform:scale(0.85); } to { opacity:1; transform:scale(1); } }
@@ -22211,6 +22213,7 @@ function App() {
   const [lang, setLang] = useState(LANG);
   const [findOpen, setFindOpen] = useState(false);
   LANG = lang;
+  try { document.documentElement.lang = lang; } catch (e) {}   // Phase 439: the Korean line rule (and the browser's Hangul font) follow the switch
   function toggleLang() { const next = lang === 'ko' ? 'en' : 'ko'; setLang(next); }
   const [solfaEn, setSolfaEn] = useState(SOLFA_EN);
   SOLFA_EN = solfaEn;
@@ -36733,6 +36736,15 @@ function Root() {
   }
   return <App/>;
 }
+// Phase 439 (A8): ' -- ' is the house dash. It stays with the word before it (a no-break space) and its two strokes never
+// part (a word joiner): every text node that shows on the page is fixed as it arrives or changes.
+const PB_DASH = / --(?=[\s\u00a0.,;:!?)\]'"\u2019\u201d]|$)/g;
+function pbGlue(node) {
+  if (node.nodeType === 3) { const v = node.nodeValue; if (v && v.indexOf(' --') >= 0) { const f = v.replace(PB_DASH, '\u00a0-\u2060-'); if (f !== v) node.nodeValue = f; } return; }
+  if (node.nodeType !== 1 || node.nodeName === 'SCRIPT' || node.nodeName === 'STYLE') return;
+  const w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) pbGlue(n);
+}
+try { new MutationObserver(ms => ms.forEach(m => { if (m.type === 'characterData') pbGlue(m.target); else m.addedNodes.forEach(pbGlue); })).observe(document.getElementById('root'), { childList: true, subtree: true, characterData: true }); } catch (e) {}
 ReactDOM.createRoot(document.getElementById('root')).render(
   <ErrorBoundary><Root/></ErrorBoundary>
 );
