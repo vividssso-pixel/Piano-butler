@@ -1036,12 +1036,14 @@ const MARK_STYLE = {
   good:   { white: '#dcefe7', black: '#2e8a6e', stroke: '#2e8a6e' },
   bad:    { white: '#fbdcd2', black: '#c8361b', stroke: '#c8361b' },
   fof:    { white: '#dfe9f8', black: '#3b4fa8', stroke: '#3b4fa8' },
+  pick:   { white: '#e4572e', black: '#e4572e', stroke: '#c0431f', sw: 1.5 },   // Phase 462: the key you tapped
+  mate:   { white: '#fbe3da', black: '#e4572e', stroke: '#e9b9a6', sw: 1 },     // Phase 462: the keys that go with it
 };
 const GROUP_TINT = { two: '#fbe9e2', three: '#e9eaf4' };   // the book's membership tints (Phase 387)
 
 // Tappable keyboard. Key index i = octave*12 + pc, starting on C.
 // marks: { [i]: 'target'|'good'|'bad' }, labels: null | 'white' | 'all', tint: shade C-D-E / F-G-A-B groups.
-function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, pixel = false, names = null }) {
+function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, pixel = false, names = null, outline = null }) {   // outline (Phase 462): [first, last] white key index, one navy frame round them
   const whiteW = 36, whiteH = 132, blackW = 22, blackH = 82;
   const whites = [], blacks = [];
   let w = 0;
@@ -1062,7 +1064,7 @@ function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, 
         return (
           <g key={k.i} onClick={tap(k.i)} style={{cursor:onTap?'pointer':'default'}} data-key={k.i}>
             <rect x={k.x} y="0" width={whiteW} height={whiteH} fill={fill} style={{transition:'fill 0.25s'}}
-              stroke={m ? m.stroke : (pixel ? '#26296b' : '#dbd2bd')} strokeWidth={m ? 2.5 : (pixel ? 2 : 1)}
+              stroke={m ? m.stroke : (pixel ? '#26296b' : '#dbd2bd')} strokeWidth={m ? (m.sw || 2.5) : (pixel ? 2 : 1)}
               rx={pixel ? 0 : 3}/>
             {names && names[k.i] && (() => {
               const sf = solfaOn() && !labels && /^[A-G]$/.test(names[k.i]); // a letter name gets its syllable under it
@@ -1088,7 +1090,7 @@ function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, 
         return (
           <g key={k.i} onClick={tap(k.i)} style={{cursor:onTap?'pointer':'default'}} data-key={k.i}>
             <rect x={k.x} y="0" width={blackW} height={blackH} fill={m ? m.black : '#1d1c22'}
-              stroke={m ? m.stroke : '#26296b'} strokeWidth={m ? 2 : 1} rx={pixel ? 0 : 2}/>
+              stroke={m ? m.stroke : '#26296b'} strokeWidth={m ? (m.sw ? Math.min(m.sw, 2) : 2) : 1} rx={pixel ? 0 : 2}/>
             {names && names[k.i] && (
               <text x={k.x + blackW / 2} y={labels === 'all' ? 22 : labels ? blackH - 14 : blackH - 12} textAnchor="middle" fontSize={labels ? 14 : 11} fontWeight="900"
                 fill="#fff" style={{pointerEvents:'none',animation:'fadeUp 0.3s both'}}>{names[k.i]}</text>
@@ -1100,6 +1102,7 @@ function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, 
           </g>
         );
       })}
+      {outline && (() => { const a = whites.find(k => k.i === outline[0]), b = whites.find(k => k.i === outline[1]); return a && b ? <rect x={a.x + 1.2} y="1.2" width={b.x + whiteW - a.x - 2.4} height={whiteH - 2.4} rx="4" fill="none" stroke="#26296b" strokeWidth="3" style={{pointerEvents:'none'}}/> : null; })()}
     </svg>
   );
 }
@@ -22911,6 +22914,7 @@ function BkPath({ current, compact }) {
     </div>
   );
 }
+const bkGoal = (s = 15) => <svg viewBox="0 0 16 16" width={s} height={s} aria-hidden="true" style={{flex:'0 0 auto',verticalAlign:'middle',display:'inline-block'}}><path d="M8 0.9 L15.1 8 L8 15.1 L0.9 8 Z" fill="#fff" stroke={BK.ink} strokeWidth="1.3" strokeLinejoin="round"/><path d="M8 4 L12 8 L8 12 L4 8 Z" fill={BK.coral}/></svg>;   // Phase 462: the openers' lists
 const bkTick = (s = 18) => <span style={{display:'inline-block',width:s,height:s,border:'1.5px solid ' + BK.green,borderRadius:2,verticalAlign:'middle',background:'#fff'}}/>;
 // The route every chapter follows, drawn once: four stations and three arrows.
 function BkRoute({ compact, checkPage }) {
@@ -32893,11 +32897,11 @@ function postureLbPages(scr = false) {
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
-          {[['Sit at the piano', 2], ['Let the arm carry the hand', 3], ['A round hand', 4], ['Finger numbers', 5], ['Play: finger walks', 6], ['My five checks', 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkTick(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
+          {[['Sit at the piano', 2], ['Let the arm carry the hand', 3], ['A round hand', 4], ['Finger numbers', 5], ['Play: finger walks', 6], ['My five checks', 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
-          {[t('sit at the right height and distance', '알맞은 높이와 거리로 앉을 수 있어요'), t('move your hand with the whole arm', '팔 전체로 손을 움직일 수 있어요'), t('make a round hand and play on the tips', '둥근 손으로, 손끝으로 칠 수 있어요'), t('say every finger number, on both hands', '양손의 손가락 번호를 모두 말할 수 있어요')].map(x => <div key={x} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:3}}>{bkTick(15)}</span><span>{x}</span></div>)}
+          {[t('sit at the right height and distance', '알맞은 높이와 거리로 앉을 수 있어요'), t('move your hand with the whole arm', '팔 전체로 손을 움직일 수 있어요'), t('make a round hand and play on the tips', '둥근 손으로, 손끝으로 칠 수 있어요'), t('say every finger number, on both hands', '양손의 손가락 번호를 모두 말할 수 있어요')].map(x => <div key={x} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:3}}>{bkGoal(15)}</span><span>{x}</span></div>)}
         </div>
       </div>
       <LbOnly print><LbDrillStrip id={ch}/></LbOnly>
@@ -33301,11 +33305,11 @@ function fsLbPages(scr = false) {
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
-          {[[t('Small house, big house', '작은 집, 큰 집'), 2], [t('The white keys of each house', '집마다 딸린 흰건반'), 3], [t('The whole piano & middle C', '피아노 전체와 가운데 도'), 4], [t('Play on the patterns', '패턴 위에서 연주'), 5], [t('My five checks', '나의 다섯 가지 확인'), 6]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkTick(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
+          {[[t('Small house, big house', '작은 집, 큰 집'), 2], [t('The white keys of each house', '집마다 딸린 흰건반'), 3], [t('The whole piano & middle C', '피아노 전체와 가운데 도'), 4], [t('Play on the patterns', '패턴 위에서 연주'), 5], [t('My five checks', '나의 다섯 가지 확인'), 6]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
-          {[t('find any small house or big house', '어떤 작은 집, 큰 집이든 찾을 수 있어요'), t('say which white keys belong to each house', '집마다 어떤 흰건반이 딸려 있는지 말할 수 있어요'), t('hear high and low, and show the turtle\'s end and the bird\'s', '높은 소리와 낮은 소리를 듣고, 거북이 쪽과 새 쪽을 가리킬 수 있어요'), t('find middle C on a real piano', '진짜 피아노에서 가운데 도를 찾을 수 있어요'), t('play legato on the black keys with 2 3 4', '검은건반에서 2 3 4로 레가토로 칠 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:2}}>{bkTick(15)}</span><span>{x}</span></div>)}
+          {[t('find any small house or big house', '어떤 작은 집, 큰 집이든 찾을 수 있어요'), t('say which white keys belong to each house', '집마다 어떤 흰건반이 딸려 있는지 말할 수 있어요'), t('hear high and low, and show the turtle\'s end and the bird\'s', '높은 소리와 낮은 소리를 듣고, 거북이 쪽과 새 쪽을 가리킬 수 있어요'), t('find middle C on a real piano', '진짜 피아노에서 가운데 도를 찾을 수 있어요'), t('play legato on the black keys with 2 3 4', '검은건반에서 2 3 4로 레가토로 칠 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:2}}>{bkGoal(15)}</span><span>{x}</span></div>)}
         </div>
       </div>
       <LbOnly print><LbDrillStrip id={ch}/></LbOnly>
@@ -33407,8 +33411,8 @@ function WhoseHouse() {
   if (pick != null) {
     const pc = pick % 12, base = Math.floor(pick / 12) * 12;
     const small = [0, 2, 4].includes(pc);
-    (small ? [0, 2, 4] : [5, 7, 9, 11]).forEach(k => { marks[base + k] = 'target'; });
-    marks[pick] = 'good';
+    (small ? [0, 2, 4] : [5, 7, 9, 11]).forEach(k => { marks[base + k] = 'mate'; });
+    marks[pick] = 'pick';
     msg = small ? t('This key lives under the SMALL roof: one of its 3.', '이 건반은 작은 지붕 아래 살아요: 3개 식구 중 하나!')
       : t('This key lives under the BIG roof: one of its 4.', '이 건반은 큰 지붕 아래 살아요: 4개 식구 중 하나!');
   }
@@ -33416,7 +33420,7 @@ function WhoseHouse() {
     <div className="try-box" data-whose-house style={actBox}>
       <div style={actTitle}>{t('Whose house is this?', '누구네 집 건반일까?')}</div>
       <div style={actNote}>{t('Every white key lives under a roof: 3 under the small one, 4 under the big. Tap a white key and watch its house light up.', '흰건반은 모두 지붕 아래 살아요: 작은 지붕에 3개, 큰 지붕에 4개. 흰건반을 누르면 그 집 식구가 모두 켜져요.')}</div>
-      <TapKeyboard octaves={2} tint marks={marks} onTap={(k) => { if (!PC_INFO[k % 12].white) { playKey(k); return; } setPick(k); playKey(k); }}/>
+      <TapKeyboard octaves={2} tint={pick == null} marks={marks} outline={pick == null ? null : (() => { const b = Math.floor(pick / 12) * 12; return [0, 2, 4].includes(pick % 12) ? [b, b + 4] : [b + 5, b + 11]; })()} onTap={(k) => { if (!PC_INFO[k % 12].white) { playKey(k); return; } setPick(k); playKey(k); }}/>
       <div style={{textAlign:'center',fontSize:14.5,fontWeight:800,color:'var(--navy)',minHeight:22,marginTop:6}}>{msg}</div>
     </div>
   );
@@ -33733,11 +33737,11 @@ function nnLbPages(scr = false) {
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
-          {[[t('A to G on the keys', '건반 위의 A부터 G'), 2], [t('The letter wheel', '글자 관람차'), 3], [t('Forwards up, backwards down', '위로는 앞으로, 아래로는 거꾸로'), 4], [t('Name it at a glance', '보자마자 이름 대기'), 5], [t('Skip a letter', '한 글자 건너뛰기'), 6], [t('Play by letter names', '음이름 보고 연주하기'), 7], [t('My five checks', '나의 다섯 가지 확인'), 8]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkTick(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
+          {[[t('A to G on the keys', '건반 위의 A부터 G'), 2], [t('The letter wheel', '글자 관람차'), 3], [t('Forwards up, backwards down', '위로는 앞으로, 아래로는 거꾸로'), 4], [t('Name it at a glance', '보자마자 이름 대기'), 5], [t('Skip a letter', '한 글자 건너뛰기'), 6], [t('Play by letter names', '음이름 보고 연주하기'), 7], [t('My five checks', '나의 다섯 가지 확인'), 8]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
-          {[t('find A to G on the keys', '건반에서 A부터 G까지 찾을 수 있어요'), t('say the letters forwards and backwards, from any letter', '어떤 글자에서든 앞으로, 거꾸로 글자를 말할 수 있어요'), t('name any white key at a glance', '어떤 흰건반이든 보자마자 이름을 댈 수 있어요'), t('find the same letter in every octave', '모든 옥타브에서 같은 글자를 찾을 수 있어요'), t('skip up and down the keys: C E G B D F A', '건너뛰며 건반을 오르내릴 수 있어요: C E G B D F A'), t('read letters and play them, word by word', '글자를 읽고 단어처럼 칠 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:2}}>{bkTick(15)}</span><span>{x}</span></div>)}
+          {[t('find A to G on the keys', '건반에서 A부터 G까지 찾을 수 있어요'), t('say the letters forwards and backwards, from any letter', '어떤 글자에서든 앞으로, 거꾸로 글자를 말할 수 있어요'), t('name any white key at a glance', '어떤 흰건반이든 보자마자 이름을 댈 수 있어요'), t('find the same letter in every octave', '모든 옥타브에서 같은 글자를 찾을 수 있어요'), t('skip up and down the keys: C E G B D F A', '건너뛰며 건반을 오르내릴 수 있어요: C E G B D F A'), t('read letters and play them, word by word', '글자를 읽고 단어처럼 칠 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:2}}>{bkGoal(15)}</span><span>{x}</span></div>)}
         </div>
       </div>
       <LbOnly print><LbDrillStrip id={ch}/></LbOnly>
@@ -34270,11 +34274,11 @@ function sfLbPages(scr = false) {
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
-          {[[t('Lines and spaces', '줄과 칸'), 2], [t('Up the staff, up the piano', '오선 위로, 피아노 위로'), 3], [t('The Queen\'s five', '여왕의 다섯 음'), 4], [t('The King\'s five', '왕의 다섯 음'), 5], [t('Middle C: Clara', '가운데 도: 클라라'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkTick(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
+          {[[t('Lines and spaces', '줄과 칸'), 2], [t('Up the staff, up the piano', '오선 위로, 피아노 위로'), 3], [t('The Queen\'s five', '여왕의 다섯 음'), 4], [t('The King\'s five', '왕의 다섯 음'), 5], [t('Middle C: Clara', '가운데 도: 클라라'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
-          {[t('tell a line note from a space note', '줄 음표와 칸 음표를 구별할 수 있어요'), t('see a step or a skip on the staff, and play it', '오선에서 한 걸음과 건너뛰기를 보고 칠 수 있어요'), t('read C D E F G in the treble clef', '높은음자리표에서 C D E F G를 읽을 수 있어요'), t('read F G A B C in the bass clef', '낮은음자리표에서 F G A B C를 읽을 수 있어요'), t('find middle C on both staves: attached up or down, the same key', '두 오선에서 가운데 도를 찾을 수 있어요: 위에 붙어도 아래에 붙어도 같은 건반')].map((x, i) => <div key={i} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:2}}>{bkTick(15)}</span><span>{x}</span></div>)}
+          {[t('tell a line note from a space note', '줄 음표와 칸 음표를 구별할 수 있어요'), t('see a step or a skip on the staff, and play it', '오선에서 한 걸음과 건너뛰기를 보고 칠 수 있어요'), t('read C D E F G in the treble clef', '높은음자리표에서 C D E F G를 읽을 수 있어요'), t('read F G A B C in the bass clef', '낮은음자리표에서 F G A B C를 읽을 수 있어요'), t('find middle C on both staves: attached up or down, the same key', '두 오선에서 가운데 도를 찾을 수 있어요: 위에 붙어도 아래에 붙어도 같은 건반')].map((x, i) => <div key={i} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:2}}>{bkGoal(15)}</span><span>{x}</span></div>)}
         </div>
       </div>
       <LbOnly print><LbDrillStrip id={ch}/></LbOnly>
@@ -34862,11 +34866,11 @@ function wsLbPages(scr = false) {
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
-          {[[t('Clef check first', '음자리표 확인 먼저'), 2], [t('Treble clef', '높은음자리표'), 3], [t('Bass clef', '낮은음자리표'), 4], [t('Fold at Clara\'s ladder', '클라라의 발판에서 접기'), 5], [t('Five landmarks', '다섯 랜드마크'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkTick(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
+          {[[t('Clef check first', '음자리표 확인 먼저'), 2], [t('Treble clef', '높은음자리표'), 3], [t('Bass clef', '낮은음자리표'), 4], [t('Fold at Clara\'s ladder', '클라라의 발판에서 접기'), 5], [t('Five landmarks', '다섯 랜드마크'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
-          {[t('check the clef before you read', '읽기 전에 음자리표부터 확인할 수 있어요'), t('read every line and space in the treble clef', '높은음자리표의 모든 줄과 칸을 읽을 수 있어요'), t('read every line and space in the bass clef', '낮은음자리표의 모든 줄과 칸을 읽을 수 있어요'), t('find the partner note across the fold', '접는 선 건너편의 짝 음을 찾을 수 있어요'), t('read fast from five landmarks', '다섯 랜드마크에서 빨리 읽을 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkTick(15)}{x}</div>)}
+          {[t('check the clef before you read', '읽기 전에 음자리표부터 확인할 수 있어요'), t('read every line and space in the treble clef', '높은음자리표의 모든 줄과 칸을 읽을 수 있어요'), t('read every line and space in the bass clef', '낮은음자리표의 모든 줄과 칸을 읽을 수 있어요'), t('find the partner note across the fold', '접는 선 건너편의 짝 음을 찾을 수 있어요'), t('read fast from five landmarks', '다섯 랜드마크에서 빨리 읽을 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}{x}</div>)}
         </div>
       </div>
       <LbOnly print><LbDrillStrip id={ch}/></LbOnly>
@@ -35595,11 +35599,11 @@ function llLbPages(scr = false) {
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
-          {[[t('Clara\'s ladder is a ledger line', '클라라의 발판은 덧줄'), 2], [t('Up into the sky', '하늘로 올라가기'), 3], [t('Down into the sea', '바다로 내려가기'), 4], [t('Between the staves', '두 오선 사이'), 5], [t('Five Cs', '다섯 C'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkTick(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
+          {[[t('Clara\'s ladder is a ledger line', '클라라의 발판은 덧줄'), 2], [t('Up into the sky', '하늘로 올라가기'), 3], [t('Down into the sea', '바다로 내려가기'), 4], [t('Between the staves', '두 오선 사이'), 5], [t('Five Cs', '다섯 C'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
-          {[t('say what a ledger line is and draw one neatly', '덧줄이 뭔지 말하고 깔끔하게 그을 수 있어요'), t('read up to three ladders above the treble staff', '높은음자리표 오선 위로 발판 세 개까지 읽을 수 있어요'), t('read up to three ladders below the bass staff', '낮은음자리표 오선 아래로 발판 세 개까지 읽을 수 있어요'), t('read the ladders between the staves both ways', '두 오선 사이의 발판을 두 가지로 읽을 수 있어요'), t('find the five Cs from the sea to the sky', '바다에서 하늘까지 다섯 C를 찾을 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkTick(15)}{x}</div>)}
+          {[t('say what a ledger line is and draw one neatly', '덧줄이 뭔지 말하고 깔끔하게 그을 수 있어요'), t('read up to three ladders above the treble staff', '높은음자리표 오선 위로 발판 세 개까지 읽을 수 있어요'), t('read up to three ladders below the bass staff', '낮은음자리표 오선 아래로 발판 세 개까지 읽을 수 있어요'), t('read the ladders between the staves both ways', '두 오선 사이의 발판을 두 가지로 읽을 수 있어요'), t('find the five Cs from the sea to the sky', '바다에서 하늘까지 다섯 C를 찾을 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}{x}</div>)}
         </div>
       </div>
       <LbOnly print><LbDrillStrip id={ch}/></LbOnly>
@@ -36283,11 +36287,11 @@ function tnLbPages(scr = false) {
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
-          {[[t('A half step: a semitone', '반 걸음: 반음'), 2], [t('A whole step: a tone', '온 걸음: 온음'), 3], [t('White half steps', '흰건반의 반 걸음'), 4], [t('Sharp and flat', '샤프와 플랫'), 5], [t('Sharps and flats on the staff', '오선 위의 샤프와 플랫'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkTick(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
+          {[[t('A half step: a semitone', '반 걸음: 반음'), 2], [t('A whole step: a tone', '온 걸음: 온음'), 3], [t('White half steps', '흰건반의 반 걸음'), 4], [t('Sharp and flat', '샤프와 플랫'), 5], [t('Sharps and flats on the staff', '오선 위의 샤프와 플랫'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
-          {[t('play a half step up and down from any key', '어떤 건반에서든 반 걸음 위와 아래를 칠 수 있어요'), t('play a whole step up and down from any key', '어떤 건반에서든 온 걸음 위와 아래를 칠 수 있어요'), t('show the white half steps: E F and B C', '흰건반의 반 걸음을 보여 줄 수 있어요: E F와 B C'), <>{t('name every black key two ways: C', '검은건반마다 이름 두 개를 말할 수 있어요: C')}{tnSign('#')} = D{tnSign('b')}</>, t('read sharps and flats on the staff and play them', '오선의 샤프와 플랫을 읽고 칠 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkTick(15)}<span>{x}</span></div>)}
+          {[t('play a half step up and down from any key', '어떤 건반에서든 반 걸음 위와 아래를 칠 수 있어요'), t('play a whole step up and down from any key', '어떤 건반에서든 온 걸음 위와 아래를 칠 수 있어요'), t('show the white half steps: E F and B C', '흰건반의 반 걸음을 보여 줄 수 있어요: E F와 B C'), <>{t('name every black key two ways: C', '검은건반마다 이름 두 개를 말할 수 있어요: C')}{tnSign('#')} = D{tnSign('b')}</>, t('read sharps and flats on the staff and play them', '오선의 샤프와 플랫을 읽고 칠 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x}</span></div>)}
         </div>
       </div>
       <LbOnly print><LbDrillStrip id={ch}/></LbOnly>
@@ -37042,11 +37046,11 @@ function plLbPages(scr = false) {
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
-          {[[t('A steady beat', '꾸준한 박'), 2], [t('Count out loud', '소리 내어 세기'), 3], [t('When the notes stop', '음이 멈출 때'), 4], [t('Beat or rhythm?', '박일까, 리듬일까?'), 5], [t('The beat in your fingers', '손가락으로 박 치기'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkTick(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
+          {[[t('A steady beat', '꾸준한 박'), 2], [t('Count out loud', '소리 내어 세기'), 3], [t('When the notes stop', '음이 멈출 때'), 4], [t('Beat or rhythm?', '박일까, 리듬일까?'), 5], [t('The beat in your fingers', '손가락으로 박 치기'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
-          {[t('pat a steady beat, the same gap every time', '매번 똑같은 간격으로 꾸준한 박을 칠 수 있어요'), t('count out loud, 1 2 3 4, while you pat', '무릎을 치면서 소리 내어 셀 수 있어요: 1 2 3 4'), t('keep counting through silent beats', '조용한 박에서도 계속 셀 수 있어요'), t('tell the beat from the rhythm', '박과 리듬을 구별할 수 있어요'), t('play a new finger on each beat and count out loud', '박마다 다른 손가락으로 치면서 소리 내어 셀 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkTick(15)}<span>{x}</span></div>)}
+          {[t('pat a steady beat, the same gap every time', '매번 똑같은 간격으로 꾸준한 박을 칠 수 있어요'), t('count out loud, 1 2 3 4, while you pat', '무릎을 치면서 소리 내어 셀 수 있어요: 1 2 3 4'), t('keep counting through silent beats', '조용한 박에서도 계속 셀 수 있어요'), t('tell the beat from the rhythm', '박과 리듬을 구별할 수 있어요'), t('play a new finger on each beat and count out loud', '박마다 다른 손가락으로 치면서 소리 내어 셀 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x}</span></div>)}
         </div>
       </div>
       <LbOnly print><LbDrillStrip id={ch}/></LbOnly>
@@ -38050,11 +38054,11 @@ function nvLbPages(scr = false) {
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
-          {[[t('The crotchet: one beat', '4분음표: 한 박'), 2], [t('The minim: two beats', '2분음표: 두 박'), 3], [t('Longer notes: 3 and 4 beats', '더 긴 음표: 3박과 4박'), 4], [t('Two quavers on one beat', '한 박에 8분음표 둘'), 5], [t('Rests: silence you count', '쉼표: 세면서 쉬어요'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkTick(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
+          {[[t('The crotchet: one beat', '4분음표: 한 박'), 2], [t('The minim: two beats', '2분음표: 두 박'), 3], [t('Longer notes: 3 and 4 beats', '더 긴 음표: 3박과 4박'), 4], [t('Two quavers on one beat', '한 박에 8분음표 둘'), 5], [t('Rests: silence you count', '쉼표: 세면서 쉬어요'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
-          {checksRows.map(([, , x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkTick(15)}<span>{x.replace(/^I can /, '')}</span></div>)}
+          {checksRows.map(([, , x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I can /, '')}</span></div>)}
         </div>
       </div>
       <LbOnly print><LbDrillStrip id={ch}/></LbOnly>
