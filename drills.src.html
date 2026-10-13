@@ -2200,7 +2200,7 @@ function PrintWorksheet({ drillId, level, count }) {
     for (let i = 0; i < n; i++) { const q = concept.generate(lv, prev); out.push(q); prev = q; }
     return out;
   }, [drillId, level, n]);
-  if (!concept) {
+  if (!concept || concept.noPrint) {
     return (
       <div style={{maxWidth:600,margin:'40px auto',padding:'0 20px',fontFamily:'Inter,sans-serif',textAlign:'center',color:'#26296b'}}>
         <p>No printable worksheet for this activity yet: it's a hands-on tool, not a set of questions.</p>
@@ -4234,6 +4234,10 @@ function NoteValLearn({ onStart }) {
       </Step>
       <Step title={t('Which bar did you hear?', '어떤 마디를 들었을까요?')}>
       <HeardBar/>
+      </Step>
+      <Step title={t('Count it out loud', '소리 내어 세기')}>
+      <ExplPulse2/>
+      <CountAloud/>
       </Step>
       </Lesson>
   );
@@ -8591,6 +8595,13 @@ function TimeSigLearn({ onStart }) {
       </Step>
       <Step title={t('Duplets, triplets and more', '듀플릿, 셋잇단음표, 그 이상')}>
       <DupletDemo/>
+      </Step>
+      <Step title={t('Strong and weak beats', '강한 박과 약한 박')}>
+      <BeatGroups/>
+      </Step>
+      <Step title={t('Tap the right beat', '맞는 박에 치기')}>
+      <ExplPulse1/>
+      <BeatTarget/>
       </Step>
     </Lesson>
   );
@@ -18802,10 +18813,13 @@ const TOOLS = [
   { id: 'black-key-jam', ch: 'first-steps', title: 'Black-key jam', blurb: 'Play any black keys over a little band: five notes that always fit.', C: () => <BlackKeyJam/> },
   { id: 'black-white-neighbours', ch: 'first-steps', title: 'Black keys, white neighbours', blurb: 'For a quick learner: the white key right beside each black one.', C: () => <BlackWhiteNeighbours/> },
   { id: 'steady-beat', ch: 'pulse', title: 'The steady beat', blurb: 'A heartbeat pulse to tap along with.', C: () => <SteadyBeat/> },
-  { id: 'beat-or-rhythm', ch: 'pulse', title: 'Beat or rhythm?', blurb: 'A tune’s long and short notes against the steady beat: tap one or the other and see what you hit.', C: () => <BeatOrRhythm/> },
-  { id: 'beat-groups', ch: 'pulse', title: 'Strong and weak beats', blurb: 'Pat the strong 1, clap the rest: in 2s, 3s or 4s, then guess by ear.', C: () => <BeatGroups/> },
-  { id: 'beat-target', ch: 'pulse', title: 'Tap the right beat', blurb: 'Count-in, then tap only beat 3, the “and”, or in silent bars.', C: () => <><ExplPulse1/><BeatTarget/></> },
-  { id: 'count-aloud', ch: 'pulse', title: 'Count it out loud', blurb: '1 2 3 4, or 1 and 2 and: lights up as the bar plays.', C: () => <><ExplPulse2/><CountAloud/></> },
+  { id: 'beat-or-rhythm', ch: 'pulse', title: 'Beat or rhythm?', blurb: 'Words over a steady beat: tap the beat, then tap the words.', C: () => <PlWordsBeat/> },
+  { id: 'count-ring', ch: 'pulse', title: 'Count with the ring', blurb: 'Four circles light up with the click: count 1 2 3 4, four times round.', C: () => <PlCountRing/> },
+  { id: 'silent-beats', ch: 'pulse', title: 'Silent beats still count', blurb: 'Play on some beats and keep counting through the silent ones.', C: () => <PlSilentBeats/> },
+  { id: 'finger-beat', ch: 'pulse', title: 'A new finger on each beat', blurb: 'Black keys on the beat, a new finger each time, counting out loud.', C: () => <PlFingerBeat/> },
+  { id: 'beat-groups', ch: 'time-signatures', title: 'Strong and weak beats', blurb: 'Pat the strong 1, clap the rest: in 2s, 3s or 4s, then guess by ear.', C: () => <BeatGroups/> },
+  { id: 'beat-target', ch: 'time-signatures', title: 'Tap the right beat', blurb: 'Count-in, then tap only beat 3, the “and”, or in silent bars.', C: () => <><ExplPulse1/><BeatTarget/></> },
+  { id: 'count-aloud', ch: 'note-values', title: 'Count it out loud', blurb: '1 2 3 4, or 1 and 2 and: lights up as the bar plays.', C: () => <><ExplPulse2/><CountAloud/></> },
   { id: 'step-skip', ch: 'intervals', title: 'Step, skip or same?', blurb: 'Read by direction and distance.', C: () => <><ExplIntervals1/><StepSkip/></> },
   { id: 'mini-tune', ch: 'reading-steps', title: 'Read a tiny tune', blurb: 'C position tunes with counting.', C: () => <><ExplReadingSteps2/><MiniTune/></> },
   { id: 'five-positions', ch: 'reading-steps', title: 'Five-finger positions', blurb: 'All 12 keys, both hands: one finger per note.', C: () => <><ExplReadingSteps5/><FivePosition/></> },
@@ -18963,7 +18977,10 @@ const TOOL_KO = {
   'black-key-jam': ['검은건반 잼', '작은 밴드에 맞춰 아무 검은건반이나, 언제나 어울리는 다섯 음.'],
   'black-white-neighbours': ['검은건반, 흰건반 이웃', '빨리 배우는 학생에게: 검은건반 바로 옆 흰건반.'],
   'steady-beat': ['일정한 박', '따라 두드릴 수 있는 심장 박동 같은 박.'],
-  'beat-or-rhythm': ['박일까, 리듬일까?', '튠의 길고 짧은 음과 일정한 박: 둘 중 하나를 쳐 보고 맞힌 곳을 봐요.'],
+  'beat-or-rhythm': ['박일까, 리듬일까?', '꾸준한 박 위의 낱말: 박을 치고, 그다음 낱말을 쳐요.'],
+  'count-ring': ['동그라미와 함께 세기', '클릭에 맞춰 동그라미 네 개에 불이 켜져요: 1 2 3 4, 네 바퀴.'],
+  'silent-beats': ['조용한 박에서도 계속 세요', '몇 박에서만 치고, 조용한 박에서는 계속 세요.'],
+  'finger-beat': ['박마다 다른 손가락', '박마다 다른 손가락으로 검은건반을 치며 소리 내어 세요.'],
   'beat-groups': ['강한 박과 약한 박', '강한 1은 무릎, 나머지는 손뼉: 2박, 3박, 4박씩, 그리고 귀로 맞히기.'],
   'beat-target': ['맞는 박에 두드리기', '예비박 다음에 3박만, "앤"만, 또는 소리 없는 마디에 두드리기.'],
   'count-aloud': ['소리 내어 세기', '1 2 3 4, 또는 1 앤 2 앤: 마디가 연주되는 동안 불이 켜져요.'],
@@ -19398,9 +19415,9 @@ const TOOL_CATS = [
   { id: 'pitch', name: 'Reading the staff', when: 'Staff lines and spaces, clefs, rhymes, landmarks, ledger lines', color: '#e4572e' },
   { id: 'ledger', name: 'Writing notes & ledger lines', when: 'Writing a named note on the staff, ledger lines above and below, the same note on the other staff, the alto clef', color: '#e4572e' },
   { id: 'tones', name: 'Tones & semitones', when: 'Tones and semitones, sharps, flats and naturals, the chromatic scale, how long an accidental lasts', color: '#e4572e' },
-  { id: 'rpulse', name: 'Pulse & counting', when: 'The steady beat, tapping on the right beat, counting out loud', color: '#e4572e' },
-  { id: 'rnotes', name: 'Note values & rests', when: 'Splitting notes, rests, filling bars, the whole-bar rest', color: '#e4572e' },
-  { id: 'rtime', name: 'Time signatures', when: 'What the two numbers mean, common and cut time, bar lines, the bottom number, counting along', color: '#e4572e' },
+  { id: 'rpulse', name: 'Pulse & counting', when: 'The steady beat, counting out loud, silent beats, beat or rhythm, a new finger on each beat', color: '#e4572e' },
+  { id: 'rnotes', name: 'Note values & rests', when: 'Splitting notes, rests, filling bars, the whole-bar rest, counting it out loud', color: '#e4572e' },
+  { id: 'rtime', name: 'Time signatures', when: 'What the two numbers mean, common and cut time, bar lines, the bottom number, counting along, strong and weak beats', color: '#e4572e' },
   { id: 'rrhythm', name: 'Compound time & rhythm patterns', when: '6/8 and compound time, grouping quavers, duplets and triplets, rhythm cards, harder rhythms, anacrusis', color: '#e4572e' },
   { id: 'steps', name: 'Reading tunes: pitch + rhythm', when: 'Reading tiny tunes, completing a melody, five-finger positions in all 12 keys, sight-reading cards', color: '#e4572e' },
   { id: 'rtempo', name: 'Tempo', when: 'Metronome and speed', color: '#e4572e' },
@@ -19422,9 +19439,9 @@ const CAT_KO = {
   pitch: ['오선보 읽기', '오선의 줄과 칸, 음자리표, 외우는 문장, 기준 음, 덧줄'],
   ledger: ['음표 쓰기와 덧줄', '이름을 보고 오선에 음표 쓰기, 위아래 덧줄, 다른 오선의 같은 음, 알토음자리표'],
   tones: ['온음과 반음', '온음과 반음, 샤프·플랫·내추럴, 반음계, 임시표는 어디까지 유효할까'],
-  rpulse: ['박과 세기', '일정한 박, 맞는 박에 두드리기, 소리 내어 세기'],
-  rnotes: ['음표 길이와 쉼표', '음표 나누기, 쉼표, 마디 채우기, 온마디 쉼표'],
-  rtime: ['박자표', '두 숫자의 뜻, 보통박자와 얼라 브레베, 세로줄, 아래 숫자, 따라 세기'],
+  rpulse: ['박과 세기', '꾸준한 박, 소리 내어 세기, 조용한 박, 박과 리듬, 박마다 다른 손가락'],
+  rnotes: ['음표 길이와 쉼표', '음표 나누기, 쉼표, 마디 채우기, 온마디 쉼표, 소리 내어 세기'],
+  rtime: ['박자표', '두 숫자의 뜻, 보통박자와 얼라 브레베, 세로줄, 아래 숫자, 따라 세기, 강한 박과 약한 박'],
   rrhythm: ['겹박자와 리듬 패턴', '6/8과 겹박자, 8분음표 묶기, 2잇단음표와 셋잇단음표, 리듬 카드, 어려운 리듬, 여린내기'],
   steps: ['튠 읽기: 음높이 + 리듬', '짧은 튠 읽기, 선율 완성하기, 12개 조의 다섯 손가락 자리, 초견 카드'],
   rtempo: ['템포', '메트로놈과 빠르기'],
@@ -19458,7 +19475,8 @@ const TOOL_META = {
   'landmark-hop': ['pitch', 1, 2, 'game'], 'fold': ['pitch', 1, 2, 'show'], 'write-note': ['ledger', 1, 2, 'write home'], 'ledger-walk': ['ledger', 1, 2, 'show'],
   'ledger-landmarks': ['ledger', 1, 2, 'show'], 'ledger-twins': ['ledger', 2, 3, 'show'], 'ledger-write': ['ledger', 1, 3, 'write'], 'step-skip': ['intervals', 0, 1, 'game'],
   'mini-tune': ['steps', 0, 1, 'game'], 'hear-find': ['steps', 0, 1, 'ear game'], 'sight-reading': ['steps', 1, 3, 'home game'], 'ottava': ['words', 2, 3, 'show'],
-  'steady-beat': ['rpulse', 0, 1, 'game'], 'beat-or-rhythm': ['rpulse', 0, 1, 'game ear'], 'beat-groups': ['rpulse', 0, 2, 'game ear'], 'beat-target': ['rpulse', 0, 2, 'game home'], 'count-aloud': ['rpulse', 0, 1, 'show'], 'count-along': ['rtime', 1, 2, 'show home'],
+  'steady-beat': ['rpulse', 0, 1, 'game'], 'beat-or-rhythm': ['rpulse', 0, 1, 'game ear'], 'beat-groups': ['rtime', 0, 2, 'game ear'], 'beat-target': ['rtime', 0, 2, 'game home'], 'count-aloud': ['rnotes', 0, 1, 'show'],
+  'count-ring': ['rpulse', 0, 1, 'game'], 'silent-beats': ['rpulse', 0, 1, 'game'], 'finger-beat': ['rpulse', 0, 1, 'game home'], 'count-along': ['rtime', 1, 2, 'show home'],
   'beat-doubler': ['rtime', 1, 3, 'show'], 'metronome': ['rtempo', 0, 3, 'home'],
   'split-it': ['rnotes', 1, 1, 'show'], 'note-rest-naming': ['rnotes', 0, 1, 'show ear'], 'dot-lab': ['rnotes', 1, 2, 'show ear'], 'beam-apples': ['rnotes', 0, 1, 'show'], 'fix-the-bar': ['rnotes', 1, 2, 'game'], 'heard-bar': ['rnotes', 1, 2, 'ear game'], 'note-rest-match': ['rnotes', 0, 1, 'game'],
   'fill-bar': ['rnotes', 1, 2, 'game write home'], 'make-card': ['rrhythm', 1, 2, 'game home'], 'bar-lines': ['rtime', 1, 2, 'write'], 'regroup': ['rrhythm', 2, 3, 'show ear'],
@@ -20056,7 +20074,7 @@ function ToolRow({ t, color, starred, onStar, open, onToggle, onChapter }) {
 // New lesson-only pieces now live in the Toolbox too; borrow a sibling's icon until the design-phase redraw.
 [['time-sig-numbers', 'count-along'], ['note-value-tree', 'split-it'], ['dotted-notes', 'dot-lab'], ['rhythm-cards-all', 'make-card'], ['all-keys', 'circle-fifths'],
  ['major-shape', 'build-major'], ['major-fingering', 'scale-finder'], ['minor-fingering', 'minor-forms'], ['dc-ds-coda', 'road-map'], 
- ['finger-friends', 'finger-numbers'], ['accidental-cards', 'sharp-flat']].forEach(([a, b]) => { if (!TOOL_ICON[a] && TOOL_ICON[b]) TOOL_ICON[a] = TOOL_ICON[b]; });
+ ['finger-friends', 'finger-numbers'], ['accidental-cards', 'sharp-flat'], ['count-ring', 'count-aloud'], ['silent-beats', 'beat-target'], ['finger-beat', 'finger-numbers']].forEach(([a, b]) => { if (!TOOL_ICON[a] && TOOL_ICON[b]) TOOL_ICON[a] = TOOL_ICON[b]; });
 const CHAPTER_TOOL_ORDER = {
   'chords': ['triad-stack', 'major-minor', 'key-chords', 'primary-triads', 'inversions', 'cadences', 'chord-extensions', 'seventh-chords'],
   'dynamics': ['dyn-order', 'hairpin', 'pedal', 'tie-slur', 'touch-ear', 'touch-lengths'],
@@ -20067,11 +20085,11 @@ const CHAPTER_TOOL_ORDER = {
   'ledger-lines': ['ledger-walk', 'ledger-landmarks', 'ledger-twins', 'ledger-write'],
   'melody': ['tune-anatomy', 'draw-tune', 'phrase-marks', 'question-answer', 'melody-sequence'],
   'note-names': ['find-every', 'name-reveal', 'step-updown', 'letter-chain'],
-  'note-values': ['note-value-tree', 'rest-grouping', 'note-rest-match', 'split-it', 'beam-apples', 'dotted-notes', 'dot-lab', 'fix-the-bar', 'fill-bar', 'heard-bar'],
+  'note-values': ['note-value-tree', 'rest-grouping', 'note-rest-match', 'split-it', 'beam-apples', 'dotted-notes', 'dot-lab', 'fix-the-bar', 'fill-bar', 'heard-bar', 'count-aloud'],
   'piano-story': ['keyboard-ancestors', 'piano-timeline', 'piano-action', 'eras'],
   'pitch-range': ['hz-explorer', 'string-lab', 'size-pitch', 'octave-ladder', 'range-chart'],
   'posture-hands': ['sit-check', 'arm-moves', 'arm-alignment', 'hand-shape', 'finger-friends', 'finger-numbers', 'posture-check'],
-  'pulse': ['steady-beat', 'beat-or-rhythm', 'beat-groups', 'beat-target', 'count-aloud'],
+  'pulse': ['steady-beat', 'count-ring', 'silent-beats', 'beat-or-rhythm', 'finger-beat'],
   'reading-steps': ['mini-tune', 'echo', 'hear-find', 'complete-melody', 'five-positions'],
   'rhythm': ['rhythm-cards-all', 'count-more', 'anacrusis', 'make-card'],
   'scales': ['major-shape', 'build-major', 'degree-names', 'major-fingering', 'scale-finder', 'minor-forms', 'build-minor', 'minor-fingering', 'modes'],
@@ -20082,7 +20100,7 @@ const CHAPTER_TOOL_ORDER = {
   'composers': ['era-worlds', 'movement-map', 'composer-time-machine', 'composer-cards', 'who-am-i', 'name-that-tune'],
   'tempo': ['tempo-walk', 'tempo-race', 'tap-tempo', 'same-tune-tempo', 'speed-change', 'metronome'],
   'terms': ['term-sort', 'term-cards', 'term-mixer', 'term-match'],
-  'time-signatures': ['time-sig-numbers', 'count-along', 'common-cut', 'bar-lines', 'beat-doubler', 'regroup', 'grouping', 'duplets'],
+  'time-signatures': ['time-sig-numbers', 'count-along', 'common-cut', 'bar-lines', 'beat-doubler', 'regroup', 'grouping', 'duplets', 'beat-groups', 'beat-target'],
   'tones': ['tone-semitone', 'accidental-cards', 'sharp-flat', 'accidental-bar', 'chromatic'],
 };
 function ChapterGroups({ list, colorOf, starIds, onStar, onOpen, onChapter, inline, chapterOrder }) {
@@ -20350,9 +20368,9 @@ const SKILLS = [
   ['k7', 'keys', 'All 12 five-finger positions', ['five-positions']],
   ['k8', 'keys', 'Sharps, flats and naturals on the keys', ['sharp-flat', 'tone-semitone']],
   ['p1', 'beat', 'Taps a steady beat', ['steady-beat']],
-  ['p2', 'beat', 'Crotchets: counts 1 2 3 4 out loud', ['count-aloud']],
+  ['p2', 'beat', 'Crotchets: counts 1 2 3 4 out loud', ['count-ring', 'count-aloud']],
   ['p3', 'beat', 'Minims, dotted minims, semibreves: keeps counting', ['count-aloud', 'split-it']],
-  ['p4', 'beat', 'Taps only on the beat asked for', ['beat-target']],
+  ['p4', 'beat', 'Taps only on the beat asked for', ['silent-beats', 'beat-target']],
   ['p5', 'beat', 'Rests and bar lines; 2/4, 3/4, 4/4', ['count-along', 'bar-lines', 'fill-bar']],
   ['p6', 'beat', 'Claps rhythm cards', ['make-card']],
   ['p7', 'beat', 'Quavers: 1 & 2 &', ['count-aloud', 'beat-target']],
@@ -22507,7 +22525,7 @@ function App() {
           <>
             <ConceptView concept={concept} tab={st.tab} level={level} mode={st.mode} locked={st.lock} onChange={update} />
             {T && st.tab === 'drill' && <ShareLink drillId={active.id} level={level} mode={st.mode} />}
-            {T && st.tab === 'drill' && <PrintLink drillId={active.id} level={level} />}
+            {T && st.tab === 'drill' && !concept.noPrint && <PrintLink drillId={active.id} level={level} />}
           </>
         ) : active.render()}
         {!st.lock && <PathNext id={active.id} onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }} onMap={() => { update({ view: 'path', drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>}
@@ -32750,7 +32768,7 @@ function LbNot({ items }) {
   );
 }
 // a tiny tune by finger numbers: one circle = one steady beat, a long oval = hold for one more beat
-function LbTune({ name, how, seq, icon }) {
+function LbTune({ name, how, seq, icon, coral }) {   // coral (Phase 455): finger numbers in coral circles, so they never read as the count
   return (
     <div style={{...VIC_PANEL,padding:'8px 15px 9px',display:'flex',alignItems:'center',gap:14}}>
       {icon && <PbArt name={icon} h={66}/>}
@@ -32762,7 +32780,7 @@ function LbTune({ name, how, seq, icon }) {
         <div style={{display:'flex',flexWrap:'wrap',alignItems:'center',gap:6,marginTop:7}}>
           {seq.map((x, i) => x === '|' ? <span key={i} style={{width:1.6,height:28,background:BK.ink,opacity:0.5,margin:'0 4px'}}/>
             : x === '-' ? <span key={i} style={{width:28,height:28,borderRadius:14,border:'1.6px dashed ' + BK.line}}/>
-            : <span key={i} style={{width:28,height:28,borderRadius:14,background:'#fff',border:'2px solid ' + BK.ink,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:14.5,fontWeight:900,color:BK.ink}}>{x}</span>)}
+            : <span key={i} style={{width:28,height:28,borderRadius:14,background:coral ? BK.coral : '#fff',border:'2px solid ' + (coral ? BK.coral : BK.ink),display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:14.5,fontWeight:900,color:coral ? '#fff' : BK.ink}}>{x}</span>)}
         </div>
       </div>
     </div>
@@ -36808,9 +36826,996 @@ function TnTeacher() {
 WORKBOOKS.tones = TnWorkbook;
 TEACHER_COPIES.tones = TnTeacher;
 
-const LESSON_BOOKS = { 'posture-hands': PostureLessonBook, 'first-steps': FirstStepsLessonBook, 'note-names': NoteNamesLessonBook, staff: StaffLessonBook, 'whole-staff': WholeStaffLessonBook, 'ledger-lines': LedgerLessonBook, tones: TonesLessonBook };
+// ─── Phases 446 and 455: chapter 3 (Pulse & Counting): the Lesson Book (v1 draft 446; applied 455 after her 2026-10-13 'b 전부 추천대로') ───
+// Built on her own words for the pulse ("Music has a heartbeat: the pulse. It keeps going, steady, even when the notes
+// stop."), the level plan's scope for room 3 (a steady beat, counting out loud, the beat and the rhythm are not the same;
+// strong and weak beats wait for Time signatures, note values for Notes & rests), the cast of chapters 1 and 2 (the
+// sister and the brother, the small house and the big house, the bird's sky and the turtle's sea, the lighthouse) and
+// the Book rules. Chapter 3 comes before the letter names (chapter 4): the keys are named by their house and the fingers
+// by their numbers. Phase 455: B3 (no 'slower' line: speed is room 13's) and B7 (the cast's words) as recommended.
+// AMEB (2026 Manual): practical; the groundwork for 2/4 and 3/4 (Preliminary). No grade asks for "pulse" on paper.
+
+const plRaw = (svg) => ({ k: 'raw', svg });
+// a beat circle: white with a navy ring (a beat), navy filled (a beat you play), dashed (a silent beat: count, don't play)
+function plBeat(cx, cy, r, label, o = {}) {
+  const col = o.col || PEN_N, fill = o.fill ? col : '#fff';
+  let s = '<circle cx="' + pFix(cx) + '" cy="' + pFix(cy) + '" r="' + pFix(r) + '" fill="' + fill + '" stroke="' + col + '" stroke-width="' + (o.sw || 2.2) + '"' + (o.silent ? ' stroke-dasharray="4.2 3.4"' : '') + '/>';
+  if (label != null && label !== '') s += '<text x="' + pFix(cx) + '" y="' + pFix(cy + r * 0.38) + '" text-anchor="middle" font-size="' + pFix(o.size || r * 1.08) + '" font-weight="900" fill="' + (o.fill ? '#fff' : col) + '" font-family="Inter,sans-serif">' + penEsc(label) + '</text>';
+  return plRaw(s);
+}
+// a bracket under two neighbours: the gap between two beats
+function plGap(x1, x2, y, col = PEN_C) {
+  return { k: 'pl', p: [[x1, y - 4], [x1, y], [x2, y], [x2, y - 4]], s: col, w: 1.6, nw: true };
+}
+// a small curved arrow (back to 1)
+function plArc(x1, x2, y, h, col = PEN_C) {
+  const m = (x1 + x2) / 2;
+  return [penCurve([['M', [x1, y]], ['Q', [m, y - h], [x2, y]]], 1.8, col), { k: 'pa', seg: [['M', [x2 - 5.5, y - 5]], ['L', [x2, y]], ['L', [x2 + 1, y - 7]]], f: 'none', s: col, w: 1.8, nw: true }];
+}
+// a bare footprint pointing right (the way she walks); left: the left foot (its big toe on the other side)
+function plFoot(cx, cy, k = 1, col = PEN_N, left = false) {
+  const m = left ? -1 : 1, P = (a, b) => [cx + a * k, cy + b * m * k];
+  return [{ k: 'el', c: P(0.6, 0), rx: 3.2 * k, ry: 2.7 * k, f: col, nw: true }, { k: 'el', c: P(-4.4, 0.5), rx: 2.3 * k, ry: 1.9 * k, f: col, nw: true },
+    ...[[4.8, -2.3, 0.95], [5.8, -0.7, 0.85], [5.7, 0.9, 0.75], [4.9, 2.3, 0.65]].map(([a, b, r]) => ({ k: 'el', c: P(a, b), rx: r * k, ry: r * k, f: col, nw: true }))];
+}
+const plBird = (x, y, k) => fsBird(x, y, k).filter(e => !(e.k === 'tx' && e.text === '♪'));   // no note: a quaver is chapter 5's
+// the sister walking: a stride (her joints, as fsKid's, legs and arms swinging)
+function plWalker(who = 'girl') {
+  const x = 75;
+  const J = { hip: [x, 104], neck: [x + 2, 64], head: [x + 3, 49],
+    arms: [[[x + 4, 66], [x + 13, 84], [x + 18, 99]], [[x - 2, 67], [x - 10, 85], [x - 15, 99]]],
+    legs: [[[x + 2, 104], [x + 12, 129], [x + 18, 155]], [[x - 2, 104], [x - 9, 130], [x - 18, 152]]] };
+  return penKid(J, 1, who);
+}
+
+function plLbPages(scr = false) {
+  const ch = 'pulse';
+  const A = (q, kids) => <LbAsk q={q}>{kids}</LbAsk>;
+  const live = (still, comp) => <LbLive still={still} live={<>{still}{comp}</>}/>;   // Phase 455: on screen the picture, then what moves (B11)
+  const pic = (art, vb, label, h = 230, mw = 600) => <LbPic h={h}><div style={{width:'100%',maxWidth:mw,margin:'0 auto'}}><PenArt shapes={art} vb={vb} label={label}/></div></LbPic>;
+
+  // p1: the heart, and the beat it makes: steady circles, 1 2 3 4, 1 2 3 4, the same gap every time
+  const art1 = (() => {
+    const s = [];
+    s.push({ ...tnHeart(66, 112, 7.4), ch: true });
+    s.push({ ...penText(66, 176, t('your heartbeat', '내 심장 박동'), { size: 13, weight: 900, fill: PEN_C, anchor: 'middle' }) });
+    [10, 20, 30].forEach((d, i) => s.push(penCurve([['M', [120 + d, 112 - 12 - i * 6]], ['Q', [128 + d + i * 3, 112], [120 + d, 112 + 12 + i * 6]]], 2, PEN_C)));   // the beat going out of the heart
+    const x0 = 172, dx = 44, r = 17;
+    [[84, '1234'], [148, '1234']].forEach(([cy, ns]) => {
+      ns.split('').forEach((n, i) => s.push(plBeat(x0 + i * dx, cy, r, n, { size: 17 })));
+      for (let i = 0; i < 3; i++) s.push(plGap(x0 + i * dx, x0 + (i + 1) * dx, cy + r + 9));
+    });
+    s.push({ ...penText(x0 + 1.5 * dx, 46, t('the pulse: steady, it never stops', '박: 꾸준하고, 멈추지 않아요'), { size: 12.5, weight: 900, fill: PEN_N, anchor: 'middle' }) });
+    s.push({ ...penText(x0 + 1.5 * dx, 198, t('the same gap every time', '매번 똑같은 간격'), { size: 12.5, weight: 900, fill: PEN_C, anchor: 'middle' }) });
+    return s;
+  })();
+
+  // p2: a steady beat: footprints with the same gap every time (a tick) and footprints with gaps that change (a cross)
+  const art2 = (() => {
+    const s = [];
+    s.push(...penPlace(plWalker('girl'), 1.12, [75, 156], [48, 226]));
+    const row = (y, xs, ok) => {
+      xs.forEach((x, i) => s.push(...plFoot(x, y + (i % 2 ? 9 : -9), 2.5, ok ? PEN_N : PEN_C, i % 2 === 0)));
+      if (ok) for (let i = 0; i < xs.length - 1; i++) s.push(plGap(xs[i], xs[i + 1], y + 36, PEN_N));
+      const mid = (xs[0] + xs[xs.length - 1]) / 2;
+      s.push({ ...penText(mid, y - (ok ? 34 : 32), (ok ? '✓  ' : '✗  ') + (ok ? t('steady', '꾸준해요') : t('not steady', '들쭉날쭉')), { size: 14, weight: 900, fill: ok ? PEN_G : PEN_C, anchor: 'middle' }) });
+    };
+    row(80, [128, 168, 208, 248, 288, 328], true);
+    row(208, [128, 146, 196, 268, 290, 328], false);
+    s.push({ ...penText(228, 136, t('the same gap every time', '매번 똑같은 간격'), { size: 11.5, weight: 900, fill: PEN_N, anchor: 'middle' }) });
+    return s;
+  })();
+
+  // p3: count out loud: the brother says the numbers, one on each beat; the count goes round: 4, then back to 1
+  const art3 = (() => {
+    const s = [];
+    s.push(...penPlace(fsKid('boy', 'stand', 1), 1.15, [75, 156], [62, 232]));
+    s.push({ k: 'rc', x: 36, y: 34, w: 96, h: 40, rx: 16, f: '#fff', s: PEN_N, sw: 1.8, nw: true }, { k: 'pl', p: [[62, 73], [70, 92], [80, 73]], s: PEN_N, w: 1.8, nw: true }, { k: 'rc', x: 63, y: 71, w: 16, h: 5, f: '#fff', nw: true });
+    s.push({ ...penText(84, 60, '1, 2, 3, 4!', { size: 16, weight: 900, fill: PEN_C, anchor: 'middle' }) });
+    const cx = 258, cy = 142, R = 58, r = 20;
+    const at = (i) => { const a = -Math.PI / 2 + i * Math.PI / 2; return [cx + R * Math.cos(a), cy + R * Math.sin(a)]; };
+    for (let i = 0; i < 4; i++) {   // the arrows between the circles, round the ring
+      const a1 = -Math.PI / 2 + i * Math.PI / 2 + 0.42, a2 = -Math.PI / 2 + (i + 1) * Math.PI / 2 - 0.42, am = (a1 + a2) / 2, k2 = R / Math.cos((a2 - a1) / 2);
+      const p1 = [cx + R * Math.cos(a1), cy + R * Math.sin(a1)], p2 = [cx + R * Math.cos(a2), cy + R * Math.sin(a2)], pm = [cx + k2 * Math.cos(am), cy + k2 * Math.sin(am)];
+      const col = i === 3 ? PEN_C : PEN_N;
+      s.push(penCurve([['M', p1], ['Q', pm, p2]], 2, col));
+      const tang = [-Math.sin(a2), Math.cos(a2)], nrm = [Math.cos(a2), Math.sin(a2)];
+      s.push({ k: 'pl', p: [[p2[0] - tang[0] * 7 + nrm[0] * 4, p2[1] - tang[1] * 7 + nrm[1] * 4], p2, [p2[0] - tang[0] * 7 - nrm[0] * 4, p2[1] - tang[1] * 7 - nrm[1] * 4]], s: col, w: 2, nw: true });
+    }
+    ['1', '2', '3', '4'].forEach((n, i) => { const [x, y] = at(i); s.push(plBeat(x, y, r, n, { size: 19 })); });
+    s.push({ ...penText(cx - R - 12, cy - R + 2, t('back to 1', '다시 1'), { size: 12, weight: 900, fill: PEN_C, anchor: 'end' }) });
+    s.push({ ...penText(cx, cy + R + r + 22, t('one number on each beat', '박마다 숫자 하나'), { size: 12, weight: 900, fill: PEN_N, anchor: 'middle' }) });
+    return s;
+  })();
+
+  // p4: when the notes stop: play on 1 and 2, count only on 3 and 4, and the count goes on; under it the heart keeps beating
+  const art4 = (() => {
+    const s = [];
+    const dx = 46, cy = 104, r = 20, X = (i) => 34 + i * dx + (i >= 4 ? 18 : 0), x0 = X(0);
+    for (let i = 0; i < 8; i++) {
+      const play = i % 4 < 2, n = String(i % 4 + 1);
+      s.push(plBeat(X(i), cy, r, n, { fill: play, silent: !play, size: 19 }));
+      s.push({ ...tnHeart(X(i), cy + 60, 3), nw: true });
+    }
+    [[0, 1], [4, 5]].forEach(([a, b]) => s.push({ ...penText((X(a) + X(b)) / 2, cy - 34, t('play', '치기'), { size: 13, weight: 900, fill: PEN_N, anchor: 'middle' }) }));
+    [[2, 3], [6, 7]].forEach(([a, b]) => s.push({ ...penText((X(a) + X(b)) / 2, cy - 34, t('count only', '세기만'), { size: 13, weight: 900, fill: PEN_C, anchor: 'middle' }) }));
+    s.push({ ...penLine([x0 - 8, cy + 94], [X(7) + 12, cy + 94], 2, PEN_C), nw: true }, { k: 'pl', p: [[X(7) + 5, cy + 89], [X(7) + 12, cy + 94], [X(7) + 5, cy + 99]], s: PEN_C, w: 2, nw: true });
+    s.push({ ...penText((X(3) + X(4)) / 2, cy + 118, t('the beat goes on', '박은 계속돼요'), { size: 13, weight: 900, fill: PEN_C, anchor: 'middle' }) });
+    return s;
+  })();
+
+  // p5: beat or rhythm: four beats (hearts) under four words; one dot for each sound on top: bird (one), tur-tle (two)
+  const art5 = (() => {
+    const s = [];
+    const x0 = 104, dx = 78, words = [1, 2, 1, 2];
+    words.forEach((n, i) => {
+      const cx = x0 + i * dx;
+      if (n === 1) s.push(...plBird(cx - 4, 40, 2.1)); else s.push(...fsTurtle(cx - 3, 46, 1.55));
+      s.push({ ...penText(cx, 92, n === 1 ? t('bird', '새') : t('tur-tle', '거-북'), { size: 15, weight: 900, fill: PEN_N, anchor: 'middle' }) });
+      (n === 1 ? [cx] : [cx - 12, cx + 12]).forEach(x => s.push({ k: 'el', c: [x, 124], rx: 7.5, ry: 7.5, f: PEN_C, nw: true }));
+      s.push({ ...tnHeart(cx, 170, 2.6), nw: true });
+    });
+    s.push({ ...penText(10, 128, t('rhythm', '리듬'), { size: 13, weight: 900, fill: PEN_C, anchor: 'start' }) });
+    s.push({ ...penText(10, 144, t('the sounds', '소리들'), { size: 10, weight: 800, fill: PEN_C, anchor: 'start' }) });
+    s.push({ ...penText(10, 172, t('beat', '박'), { size: 13, weight: 900, fill: PEN_N, anchor: 'start' }) });
+    s.push({ ...penText(10, 188, t('steady', '꾸준해요'), { size: 10, weight: 800, fill: PEN_N, anchor: 'start' }) });
+    return s;
+  })();
+
+  // p6: the pulse in the fingers: the small house's two black keys under fingers 2 and 3, one note on each beat
+  const art6 = (() => {
+    const s = [];
+    const KX = 20, KY = 52, KW = 36;
+    const K = fsKeysShapes(KX, KY, 7, KW, 118, { tints: true, sw: 2.4 });
+    s.push(...K.shapes);
+    const [sm, bg] = K.houses;
+    s.push(...fsRoof(sm, KY - 2, 16, { label: t('small house', '작은 집'), labelSize: 11 }), ...fsRoof(bg, KY - 2, 21, { label: t('big house', '큰 집'), labelSize: 11 }));
+    [[1, '2'], [2, '3']].forEach(([i, f]) => { const cx = KX + i * KW; s.push({ k: 'el', c: [cx, KY + K.BH - 16], rx: 11, ry: 11, f: PEN_C, nw: true }, { ...penText(cx, KY + K.BH - 11.5, f, { size: 13, weight: 900, fill: '#fff', anchor: 'middle' }) }); });
+    const x0 = 300, dx = 30, cy = 112;
+    s.push({ ...penText(x0 + 1.5 * dx, cy - 50, t('fingers', '손가락'), { size: 12, weight: 900, fill: PEN_C, anchor: 'middle' }) });
+    ['2', '3', '2', '3'].forEach((f, i) => s.push(plBeat(x0 + i * dx, cy - 24, 12.5, f, { fill: true, col: PEN_C, size: 14 })));
+    ['1', '2', '3', '4'].forEach((n, i) => s.push({ ...penText(x0 + i * dx, cy + 18, n, { size: 16, weight: 900, fill: PEN_N, anchor: 'middle' }) }));
+    s.push({ ...penText(x0 + 1.5 * dx, cy + 44, t('say: 1 2 3 4', '말해요: 1 2 3 4'), { size: 12, weight: 900, fill: PEN_N, anchor: 'middle' }) });
+    return s;
+  })();
+
+  // the check rows' small pictures
+  const chkArts = {
+    steady: [...[0, 1, 2, 3].map(i => ({ k: 'el', c: [16 + i * 20, 15], rx: 5.5, ry: 5.5, f: PEN_N, nw: true })), ...[0, 1, 2].map(i => plGap(16 + i * 20, 36 + i * 20, 32, PEN_C))],
+    count: ['1', '2', '3', '4'].map((n, i) => plBeat(16 + i * 20, 20, 9, n, { size: 10.5, sw: 1.7 })),
+    silent: [0, 1, 2, 3].map(i => plBeat(16 + i * 20, 20, 9, String(i + 1), { fill: i < 2, silent: i >= 2, size: 10.5, sw: 1.7 })),
+    rhythm: [{ k: 'el', c: [26, 10], rx: 4, ry: 4, f: PEN_C, nw: true }, { k: 'el', c: [58, 10], rx: 4, ry: 4, f: PEN_C, nw: true }, { k: 'el', c: [70, 10], rx: 4, ry: 4, f: PEN_C, nw: true }, { ...tnHeart(26, 30, 1.2), nw: true }, { ...tnHeart(64, 30, 1.2), nw: true }],
+    piano: [{ k: 'rc', x: 18, y: 4, w: 56, h: 32, rx: 2, f: '#fff', s: PEN_N, sw: 1.4, nw: true }, ...[1, 2, 3].map(i => ({ ...penLine([18 + i * 14, 4], [18 + i * 14, 36], 1), nw: true })), { k: 'rc', x: 28, y: 4, w: 8, h: 19, f: PEN_N, nw: true }, { k: 'rc', x: 42, y: 4, w: 8, h: 19, f: PEN_C, nw: true }],
+  };
+  const checksRows = [
+    ['steady', [0, 0, 92, 40], t('I can pat a steady beat: the same gap every time', '무릎을 치며 꾸준한 박을 지킬 수 있어요: 매번 똑같은 간격')],
+    ['count', [0, 0, 92, 40], t('I can count out loud, 1 2 3 4, while I pat', '무릎을 치면서 소리 내어 셀 수 있어요: 1 2 3 4')],
+    ['silent', [0, 0, 92, 40], t('I can keep counting through silent beats', '조용한 박에서도 계속 셀 수 있어요')],
+    ['rhythm', [0, 0, 92, 40], t('I can tell the beat from the rhythm: my foot keeps the beat, my hands clap the words', '박과 리듬을 구별할 수 있어요: 발로 박을 지키며 낱말에 손뼉을 쳐요')],
+    ['piano', [0, 0, 92, 40], t('I can play a new finger on each beat and count out loud', '박마다 다른 손가락으로 치면서 소리 내어 셀 수 있어요')],
+  ];
+
+  return [
+    // 1. opener
+    <LbPage key="1" no={1} chId={ch}>
+      <LbOnly print><div data-ch={ch}>
+        <div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em'}}>CHAPTER {bkChapterNo(ch)}</div>
+        <div style={{fontFamily:LB_SERIF,fontSize:44,fontWeight:900,color:BK.ink,lineHeight:1.02,margin:'4px 0 0'}}>{t('Pulse & Counting', '박과 세기')}</div>
+      </div></LbOnly>
+      {pic(art1, [0, 26, 340, 190], t('A coral heart, your heartbeat, and beside it two rows of four beat circles, 1 2 3 4 and 1 2 3 4, with the same gap between every two: the pulse, steady, it never stops', '산호색 심장, 내 심장 박동. 그 옆에 박 동그라미 네 개씩 두 줄: 1 2 3 4, 1 2 3 4, 둘 사이마다 똑같은 간격. 박은 꾸준하고 멈추지 않아요'), 200)}
+      <LbSay size={17.5}>{LANG === 'ko' ? <>음악에는 심장 박동이 있어요: <b>박</b>이에요. 박은 <b>매번 똑같은 간격</b>으로 꾸준히 이어지고, 음이 멈춰도 계속돼요. 이 챕터에서는 박을 느끼고, 소리 내어 세고, 피아노에서 계속 이어 가요.</>
+        : <>Music has a heartbeat: the <b>pulse</b>. It keeps going, steady, with <b>the same gap every time</b>, even when the notes stop. In this chapter you feel it, count it out loud, and keep it going at the piano.</>}</LbSay>
+      <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
+        <LbOnly print><div>
+          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
+          {[[t('A steady beat', '꾸준한 박'), 2], [t('Count out loud', '소리 내어 세기'), 3], [t('When the notes stop', '음이 멈출 때'), 4], [t('Beat or rhythm?', '박일까, 리듬일까?'), 5], [t('The beat in your fingers', '손가락으로 박 치기'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkTick(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
+        </div></LbOnly>
+        <div>
+          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          {[t('pat a steady beat, the same gap every time', '매번 똑같은 간격으로 꾸준한 박을 칠 수 있어요'), t('count out loud, 1 2 3 4, while you pat', '무릎을 치면서 소리 내어 셀 수 있어요: 1 2 3 4'), t('keep counting through silent beats', '조용한 박에서도 계속 셀 수 있어요'), t('tell the beat from the rhythm', '박과 리듬을 구별할 수 있어요'), t('play a new finger on each beat and count out loud', '박마다 다른 손가락으로 치면서 소리 내어 셀 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkTick(15)}<span>{x}</span></div>)}
+        </div>
+      </div>
+      <LbOnly print><LbDrillStrip id={ch}/></LbOnly>
+    </LbPage>,
+
+    // 2. a steady beat
+    <LbPage key="2" no={2} chId={ch} kicker={t('Step 1', '1단계')} title={t('A steady beat', '꾸준한 박')}>
+      {live(pic(art2, [0, 30, 352, 210], t('The sister walking to the right. Beside her two trails of footprints: in the top one the same gap every time, steady, with a green tick; in the bottom one the gaps change, not steady, with a coral cross', '오른쪽으로 걸어가는 누나. 옆에 발자국 두 줄: 윗줄은 매번 똑같은 간격으로 꾸준해요, 초록 체크. 아랫줄은 간격이 바뀌어 들쭉날쭉해요, 산호색 엑스'), 230), <PlSteadyPad/>)}
+      <LbSay>{LANG === 'ko' ? <><b>꾸준한 박</b>은 <b>간격이 매번 똑같아요</b>. 심장 박동처럼, 똑딱거리는 시계처럼, 걸어갈 때 내 발걸음처럼요. 꾸준하지 않으면 간격이 바뀌어요: 짧아졌다, 길어졌다, 멈췄다, 다시 가요. 음악의 박은 꾸준해요.</>
+        : <>A <b>steady beat</b> has <b>the same gap every time</b>, like your heartbeat, a ticking clock, or your feet when you walk. Not steady means the gaps change: shorter, longer, a stop, then go again. The beat of music is steady.</>}</LbSay>
+      <LbPiano steps={LANG === 'ko' ? [
+        <>두 손으로 무릎을 꾸준하게 8번 쳐요: 매번 똑같은 간격으로, 시계처럼.</>,
+        <>방을 가로질러 8걸음 걸어요: 박 하나에 한 걸음, 매번 똑같은 간격으로.</>,
+      ] : [
+        <>Pat your knees with both hands, 8 times, steady: the same gap every time, like a clock.</>,
+        <>Walk 8 steps across the room: one step on each beat, the same gap every time.</>,
+      ]}/>
+      <LbRemember>{t('A steady beat: the same gap every time.', '꾸준한 박: 매번 똑같은 간격.')}</LbRemember>
+    </LbPage>,
+
+    // 3. count out loud
+    <LbPage key="3" no={3} chId={ch} kicker={t('Step 2', '2단계')} title={t('Count out loud', '소리 내어 세기')}>
+      {live(pic(art3, [0, 28, 340, 222], t('The brother says 1, 2, 3, 4! Beside him four beat circles in a ring, 1 2 3 4, with arrows round the ring: from 4 a coral arrow goes back to 1', '남동생이 1, 2, 3, 4! 하고 말해요. 옆에 박 동그라미 네 개가 동그랗게: 1 2 3 4, 화살표가 돌아가고 4에서 산호색 화살표가 다시 1로'), 210), <PlCountRing/>)}
+      <LbSay>{LANG === 'ko' ? <>박마다 번호를 붙여요: <b>1 2 3 4</b>, 그리고 다시 1부터. 소리 내어, 박 하나에 숫자 하나씩, 매번 똑같은 간격으로 말해요. 소리 내어 세면 박이 꾸준해지고, 나중에는 음이 어디에 오는지도 알려 줘요.</>
+        : <>Give every beat a number: <b>1 2 3 4</b>, then start again at 1. Say it out loud, one number on each beat, the same gap every time. Counting out loud keeps the beat steady, and later it tells you where every note goes.</>}</LbSay>
+      <LbPiano steps={LANG === 'ko' ? [
+        <>무릎을 치면서 소리 내어 세요: 1 2 3 4를 네 번, 멈추지 않고.</>,
+        <>오른손 3번 손가락을 넷째 작은 집의 오른쪽 검은건반에 올려요. 박마다 한 번씩 치면서 세요: 1 2 3 4를 네 번.</>,
+      ] : [
+        <>Pat your knees and count out loud: 1 2 3 4, four times round, without stopping.</>,
+        <>Right hand: finger 3 on the right black key of the 4th small house. Play it on every beat and count: 1 2 3 4, four times round.</>,
+      ]}/>
+      <LbRemember>{t('Count out loud: 1 2 3 4, then 1 again.', '소리 내어 세기: 1 2 3 4, 그리고 다시 1.')}</LbRemember>
+    </LbPage>,
+
+    // 4. when the notes stop
+    <LbPage key="4" no={4} chId={ch} kicker={t('Step 3', '3단계')} title={t('When the notes stop', '음이 멈출 때')}>
+      {live(pic(art4, [0, 52, 396, 196], t('Eight beat circles in two groups, 1 2 3 4 and 1 2 3 4: on 1 and 2 navy, play; on 3 and 4 dashed, count only. Under every circle a coral heart: the beat goes on', '박 동그라미 여덟 개, 1 2 3 4와 1 2 3 4: 1과 2는 남색, 치기. 3과 4는 점선, 세기만. 동그라미마다 아래에 산호색 심장: 박은 계속돼요'), 190), <PlSilentBeats/>)}
+      <LbSay>{LANG === 'ko' ? <>치는 걸 멈춰도 박은 멈추지 않아요. 1과 2에서 치고, 3과 4에서는 손을 들고 세기만 해요: <b>조용한 박에서도 계속 세요</b>. 그래야 제때 다시 들어가요.</>
+        : <>The beat does not stop when you stop playing. Play on 1 and 2, lift your hand on 3 and 4, and keep counting: <b>the silent beats still count</b>. Then you come back in at the right time.</>}</LbSay>
+      <LbPiano steps={LANG === 'ko' ? [
+        <>오른손 3번 손가락, 넷째 작은 집의 오른쪽 검은건반: 1과 2에서 치고, 3과 4에서는 손을 들고, 계속 소리 내어 세요. 네 번.</>,
+        <>이번에는 1에서만 쳐요. 2 3 4는 손을 건반 바로 위에 띄우고 세요. 네 번.</>,
+      ] : [
+        <>Right hand, finger 3 on the right black key of the 4th small house: play on 1 and 2, lift on 3 and 4, and keep counting out loud. Four times round.</>,
+        <>Now play only on 1, and count 2 3 4 with your hand just above the key. Four times round.</>,
+      ]}/>
+      <LbRemember>{t('Silent beats still count.', '조용한 박에서도 계속 세요.')}</LbRemember>
+    </LbPage>,
+
+    // 5. beat or rhythm?
+    <LbPage key="5" no={5} chId={ch} kicker={t('Step 4', '4단계')} title={t('Beat or rhythm?', '박일까, 리듬일까?')}>
+      {live(pic(art5, [0, 14, 380, 190], t('Four beats, four coral hearts in a row. Over them four words: bird, tur-tle, bird, tur-tle, with the bird and the turtle drawn above them. One coral dot for each sound: one over bird, two over tur-tle', '박 넷, 산호색 심장 네 개가 한 줄로. 그 위에 낱말 넷: 새, 거-북, 새, 거-북, 그 위에 새와 거북 그림. 소리마다 산호색 점 하나: 새 위에 하나, 거-북 위에 둘'), 230), <PlWordsBeat/>)}
+      <LbSay>{LANG === 'ko' ? <><b>박</b>은 아래에서 꾸준하게 이어져요. <b>리듬</b>은 그 위에 있는 소리들의 모양이에요: 낱말 소리처럼 길기도 하고 짧기도 해요. 박 하나에 <b>새</b>라고 말하면 소리 하나, <b>거-북</b>이라고 말하면 소리 둘. 박은 그대로, 리듬은 바뀌어요.</>
+        : <>The <b>beat</b> is the steady heartbeat underneath. The <b>rhythm</b> is the pattern of sounds on top, long and short, like the sounds of words. Say <b>bird</b> on one beat: one sound. Say <b>tur-tle</b> on one beat: two sounds. The beat stays the same; the rhythm changes.</>}</LbSay>
+      <LbPiano steps={LANG === 'ko' ? [
+        <>발로 바닥을 톡톡 치며 박을 지키고 말해요: 새, 거-북, 새, 거-북. 박마다 낱말 하나. 그다음 발은 박을 지키고, 낱말 소리마다 손뼉을 쳐요.</>,
+        <>이번엔: 거-북, 거-북, 새, 새. 그리고: 등-대, 새, 등-대, 새.</>,
+      ] : [
+        <>Tap the beat with your foot and say: bird, tur-tle, bird, tur-tle, one word on each beat. Then clap the words while your foot keeps the beat.</>,
+        <>Now: tur-tle, tur-tle, bird, bird. And: light-house, bird, light-house, bird.</>,
+      ]}/>
+      <LbRemember>{t('The beat stays steady; the rhythm is the sounds on top.', '박은 꾸준하게, 리듬은 그 위의 소리.')}</LbRemember>
+    </LbPage>,
+
+    // 6. the pulse in your fingers
+    <LbPage key="6" no={6} chId={ch} kicker={t('Step 5', '5단계')} title={t('The beat in your fingers', '손가락으로 박 치기')}>
+      {live(pic(art6, [0, 14, 440, 170], t('The small house and the big house of black keys. Fingers 2 and 3 on the small house\'s two black keys. Beside it, the coral finger circles 2 3 2 3 over the count 1 2 3 4: a new finger on each beat, counted out loud', '검은건반의 작은 집과 큰 집. 작은 집의 검은건반 두 개에 2번과 3번 손가락. 옆에 산호색 손가락 동그라미 2 3 2 3, 그 아래 세는 숫자 1 2 3 4: 박마다 다른 손가락, 소리 내어 세요'), 200), <PlFingerBeat/>)}
+      <LbSay>{LANG === 'ko' ? <>이제 손가락이 번갈아 쳐요: 박마다 다른 손가락. 줄마다 두 번씩, 소리 내어 세면서 쳐요: 1 2 3 4. 산호색 동그라미 안의 숫자는 손가락 번호예요.</>
+        : <>Now your fingers take turns: a new finger on each beat. Play each row twice and count out loud: 1 2 3 4. The numbers in the coral circles are finger numbers.</>}</LbSay>
+      <LbTune name={t('Small-house beat', '작은 집 박')} coral how={t('right hand, fingers 2 and 3 on the 4th small house', '오른손, 넷째 작은 집에 2번과 3번 손가락')} seq={['2', '3', '2', '3', '2', '3', '2', '3']}/>
+      <LbTune name={t('Big-house beat', '큰 집 박')} coral how={t('right hand, fingers 2 3 4 on the big house next to it', '오른손, 바로 옆 큰 집에 2번 3번 4번 손가락')} seq={['2', '3', '4', '3', '2', '3', '4', '3']}/>
+      <LbTune name={t('Left-hand beat', '왼손 박')} coral how={t('left hand, fingers 3 and 2 on the 3rd small house', '왼손, 셋째 작은 집에 3번과 2번 손가락')} seq={['3', '2', '3', '2', '3', '2', '3', '2']}/>
+      <LbRemember>{t('A new finger on each beat; keep counting.', '박마다 다른 손가락, 계속 세면서.')}</LbRemember>
+    </LbPage>,
+
+    // 7. my five checks
+    <LbPage key="7" no={7} chId={ch} kicker={t('Check-up', '점검')} title={t('My five checks', '나의 다섯 가지 확인')}>
+      <LbSay>{t('Show each one at the piano, then colour a circle for how it is going: not yet, nearly, or got it! The check-up on paper is in the Workbook.', '피아노 앞에서 하나씩 보여 주고 어떤지 동그라미를 칠해요: 아직, 거의, 됐어요! 종이 점검은 워크북에 있어요.')}</LbSay>
+      <LbLive still={<LbStageRows big rows={checksRows.map(([a, vb, txt]) => [<PenArt shapes={chkArts[a]} vb={vb} style={{width:80}}/>, txt])}/>} live={<FiveChecks376 storeKey="pb_five_pl_v1" rows={checksRows.map(([a, vb, txt]) => [{ shapes: chkArts[a], vb }, txt])}/>}/>
+    </LbPage>,
+  ];
+}
+function PulseLessonBook() { return <>{plLbPages(false)}</>; }
+
+// ─── Phase 455: chapter 3 on screen: what moves on each page (B11), the book as the online lesson, the drill (B9) ───
+// Every beat is booked on the audio clock (like SteadyBeat); a tap is compared with the time the beat reached the ear
+// (scheduled time + the speaker's latency). 72 beats a minute, as the old lesson (A6). Counting is 1 2 3 4 only (B5).
+const PL_BPM = 72;
+const PL_TOL = 0.19;   // how far from the beat a tap may land and still count (s): kind to young hands
+// n beats; o.gaps: the time to each next beat (s) instead of an even beat; o.silentFrom: no click from that beat on;
+// o.vol: click loudness; o.extra(ctx, t, i): anything else to sound on beat i
+function plRun(n, o = {}) {
+  const ctx = getAudio(); if (!ctx) return null;
+  stopClicks();
+  const spb = 60 / (o.bpm || PL_BPM), t0 = ctx.currentTime + 0.18, lat = outLatency(ctx), at = [];
+  let t = t0;
+  for (let i = 0; i < n; i++) {
+    at.push(t + lat);
+    if (o.silentFrom == null || i < o.silentFrom) plTick(ctx, t, i, o.vol != null ? o.vol : 0.3, o.noVoice);
+    if (o.extra) o.extra(ctx, t, i, spb);
+    t += o.gaps ? o.gaps[i] || spb : spb;
+  }
+  return { ctx, spb, at, lat, t0, now: () => ctx.currentTime };
+}
+// one beat: the same click every time (strong and weak beats are room 8's, B4), or the spoken count when the sound
+// settings ask for a voice (never while a child counts inside her head)
+function plTick(ctx, t, i, vol, noVoice) {
+  if (SOUND.count === 'voice' && !noVoice && sayCount(ctx, t, String(i % 4 + 1), 1)) return;
+  metroClick(ctx, t, false, vol);
+}
+// each expected time takes the nearest free tap within the tolerance
+function plMatch(expect, taps, tol = PL_TOL) {
+  const used = new Set(), offs = [];
+  let hits = 0;
+  expect.forEach(e => {
+    let best = -1, bd = 1e9;
+    taps.forEach((tp, j) => { if (used.has(j)) return; const d = Math.abs(tp - e); if (d < bd) { bd = d; best = j; } });
+    if (best >= 0 && bd <= tol) { used.add(best); hits++; offs.push(taps[best] - e); } else offs.push(null);
+  });
+  return { hits, total: expect.length, extra: taps.length - used.size, offs };
+}
+// are the gaps between taps the same? (the largest gap differs from the average by at most a fifth)
+function plEven(taps) {
+  if (taps.length < 3) return null;
+  const g = taps.slice(1).map((x, i) => x - taps[i]), m = g.reduce((a, b) => a + b, 0) / g.length;
+  return { gaps: g, mean: m, dev: Math.max(...g.map(x => Math.abs(x - m) / m)), steady: Math.max(...g.map(x => Math.abs(x - m) / m)) <= 0.2 };
+}
+// timers that fire when a beat reaches the ear; cleared together
+function usePlTimers() {
+  const ref = useRef([]);
+  useEffect(() => () => { ref.current.forEach(clearTimeout); stopClicks(); }, []);
+  return {
+    at: (run, when, fn) => ref.current.push(setTimeout(fn, Math.max(0, (when - run.now()) * 1000))),
+    clear: () => { ref.current.forEach(clearTimeout); ref.current = []; },
+  };
+}
+// a big tap pad, and the space bar while it is live
+function PlPad({ on, onTap, label, h = 74 }) {
+  useEffect(() => {
+    if (!on) return;
+    const k = (e) => { if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); onTap(); } };
+    window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k);
+  }, [on, onTap]);
+  return <button data-pl-pad onPointerDown={(e) => { e.preventDefault(); if (on) onTap(); }} disabled={!on}
+    style={{width:'100%',height:h,borderRadius:14,border:'2px solid ' + (on ? BK.coral : BK.line),background:on ? '#fbe3da' : '#fff',color:on ? BK.coral : BK.muted,fontSize:18,fontWeight:900,touchAction:'manipulation',cursor:on ? 'pointer' : 'default',userSelect:'none'}}>{label || t('TAP', '탭')}</button>;
+}
+const plHint = () => <div style={{fontSize:12,color:'var(--muted)',textAlign:'center',marginTop:6,lineHeight:1.4}}>{t('Tap the pad or press the space bar. The device speaker or wired headphones work best: Bluetooth adds a delay.', '패드를 누르거나 스페이스 바를 눌러요. 기기 스피커나 유선 이어폰이 가장 좋아요: 블루투스는 소리가 늦게 와요.')}</div>;
+// a row of beat circles in plain SVG (the book's beat circles): kinds 'beat' | 'play' | 'silent'; lit = the one sounding now
+// kinds: 'beat' (white), 'play' (navy), 'silent' (dashed), 'finger' (a finger number in a coral circle, B8);
+// under(i): the count under each circle (lit in coral with its beat)
+function PlCircles({ n, kind = () => 'beat', label = (i) => String(i % 4 + 1), lit = -1, mark = () => null, under = null, r = 17, gap = 46, group = 4 }) {
+  const W = 24 + (n - 1) * gap + Math.floor((n - 1) / group) * 14 + 24;
+  const X = (i) => 24 + i * gap + Math.floor(i / group) * 14;
+  const uy = r * 2 + 24, my = under ? r * 2 + 46 : r * 2 + 24;
+  return <svg viewBox={'0 0 ' + W + ' ' + (my + 6)} style={{width:'100%',maxWidth:W * 1.15,display:'block',margin:'0 auto'}}>
+    {Array.from({ length: n }, (_, i) => { const k = kind(i), on = i === lit, play = k === 'play', fin = k === 'finger', m = mark(i);
+      const fill = fin ? (on ? '#c0431f' : BK.coral) : on ? (play ? BK.coral : '#fbe3da') : play ? BK.ink : '#fff';
+      return <g key={i}>
+        <circle cx={X(i)} cy={r + 4} r={on && fin ? r + 2 : r} fill={fill} stroke={fin ? (on ? '#c0431f' : BK.coral) : on ? BK.coral : BK.ink} strokeWidth="2.2" strokeDasharray={k === 'silent' ? '4.2 3.4' : undefined} style={{transition:'fill 0.08s'}}/>
+        <text x={X(i)} y={r + 4 + r * 0.38} textAnchor="middle" fontSize={r * 1.05} fontWeight="900" fill={play || fin ? '#fff' : on ? BK.coral : BK.ink}>{label(i)}</text>
+        {under && <text x={X(i)} y={uy} textAnchor="middle" fontSize="15" fontWeight="900" fill={on ? BK.coral : BK.muted}>{under(i)}</text>}
+        {m && <text x={X(i)} y={my} textAnchor="middle" fontSize="15" fontWeight="900" fill={m === '✓' ? BK.green : BK.coral}>{m}</text>}
+      </g>; })}
+  </svg>;
+}
+
+// ── page 2: a steady click, a tap pad, and your gaps drawn as footprints ──
+function PlSteadyPad() {
+  const T = usePlTimers();
+  const [mode, setMode] = useState(null);   // null | 'click' | 'alone'
+  const [taps, setTaps] = useState([]);
+  const [lit, setLit] = useState(-1);
+  const run = useRef(null), tapsRef = useRef([]);
+  const N = 8;
+  function start(m) {
+    T.clear(); tapsRef.current = []; setTaps([]); setLit(-1);
+    if (m === 'click') {
+      const r = plRun(4 + N); if (!r) return; run.current = r;
+      r.at.forEach((a, i) => T.at(r, a, () => setLit(i)));
+      T.at(r, r.at[4 + N - 1] + r.spb * 0.9, () => { setLit(-1); setMode('done-click'); });
+    } else { const ctx = getAudio(); run.current = { now: () => ctx ? ctx.currentTime : performance.now() / 1000 }; }
+    setMode(m);
+  }
+  const tap = React.useCallback(() => {
+    const r = run.current; if (!r || (mode !== 'click' && mode !== 'alone')) return;
+    const tm = r.now(); tapsRef.current = [...tapsRef.current, tm].slice(0, N); setTaps(tapsRef.current);
+    if (mode === 'alone' && tapsRef.current.length >= N) setMode('done-alone');
+  }, [mode]);
+  const ev = plEven(taps);
+  const fromClick = mode === 'click' || mode === 'done-click';
+  const W = 560, X0 = 24, span = run.current && run.current.spb ? run.current.spb * (N - 1) : (ev ? ev.mean * (N - 1) : 1);
+  const x = (tm) => { const base = fromClick && run.current && run.current.at ? run.current.at[4] : taps[0]; return X0 + (tm - base) / span * (W - 2 * X0); };
+  const done = mode === 'done-click' || mode === 'done-alone';
+  return (
+    <div className="try-box" style={actBox} data-pl="steady">
+      <div style={actTitle}>{t('Tap a steady beat', '꾸준한 박 치기')}</div>
+      <div style={actNote}>{LANG === 'ko' ? <>클릭과 함께 8번 쳐 보고, 그다음 혼자 8번 쳐 봐요. 발자국이 내 간격을 보여 줘요: <b>매번 똑같은 간격</b>이면 꾸준해요.</> : <>Tap 8 times with the click, then 8 times on your own. The footprints show your gaps: <b>the same gap every time</b> is steady.</>}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap',marginBottom:8}}>
+        <button className={'chip' + (fromClick ? ' active' : '')} onClick={() => start('click')}>{t('▶ With the click (4 to get ready)', '▶ 클릭과 함께 (4번 듣고 시작)')}</button>
+        <button className={'chip' + (mode === 'alone' || mode === 'done-alone' ? ' active' : '')} onClick={() => start('alone')}>{t('On my own', '나 혼자')}</button>
+      </div>
+      {fromClick && <PlCircles n={4} lit={lit >= 0 ? lit % 4 : -1} r={13} gap={36}/>}
+      <svg viewBox={'0 0 ' + W + ' 86'} style={{width:'100%',display:'block',margin:'4px 0'}}>
+        <line x1={X0 - 10} x2={W - X0 + 10} y1="44" y2="44" stroke={BK.line} strokeWidth="1.4"/>
+        {fromClick && run.current && run.current.at && Array.from({ length: N }, (_, i) => <line key={i} x1={X0 + i * (W - 2 * X0) / (N - 1)} x2={X0 + i * (W - 2 * X0) / (N - 1)} y1="36" y2="52" stroke={BK.muted} strokeWidth="1.4" strokeDasharray="2 2"/>)}
+        {taps.map((tm, i) => { const cx = Math.max(10, Math.min(W - 10, x(tm))), cy = i % 2 ? 58 : 30, bad = ev && done && Math.abs((i ? tm - taps[i - 1] : ev.mean) - ev.mean) / ev.mean > 0.2;
+          return <g key={i}><ellipse cx={cx + 2} cy={cy} rx="7" ry="5" fill={bad ? BK.coral : BK.ink}/><ellipse cx={cx - 7} cy={cy} rx="4" ry="3.6" fill={bad ? BK.coral : BK.ink}/></g>; })}
+        {done && ev && ev.gaps.map((g, i) => { const a = x(taps[i]), b = x(taps[i + 1]), off = Math.abs(g - ev.mean) / ev.mean > 0.2;
+          return <path key={i} d={`M${a} 76 L${a} 80 L${b} 80 L${b} 76`} fill="none" stroke={off ? BK.coral : BK.green} strokeWidth="1.8"/>; })}
+      </svg>
+      <PlPad on={mode === 'click' || mode === 'alone'} onTap={tap} label={mode === 'alone' ? t('TAP · ' + taps.length + ' of 8', '탭 · ' + taps.length + ' / 8') : t('TAP', '탭')}/>
+      {done && ev && <div style={{textAlign:'center',fontSize:15,fontWeight:900,marginTop:8,color:ev.steady ? BK.green : BK.coral}}>{ev.steady ? t('Steady: the same gap every time ✓', '꾸준해요: 매번 똑같은 간격 ✓') : t('The gaps change (the coral ones). Try again, like a clock.', '간격이 바뀌었어요 (산호색). 시계처럼 다시 해 봐요.')}</div>}
+      {done && !ev && <div style={{textAlign:'center',fontSize:14,fontWeight:800,marginTop:8,color:BK.muted}}>{t('Tap 8 times to see your gaps.', '8번 쳐야 간격이 보여요.')}</div>}
+      {plHint()}
+    </div>
+  );
+}
+
+// ── page 3: the counting ring lights up with the click, four times round ──
+function PlCountRing() {
+  const T = usePlTimers();
+  const [lit, setLit] = useState(-1);
+  const [round, setRound] = useState(0);
+  const [on, setOn] = useState(false);
+  function start() {
+    T.clear(); if (on) { stopClicks(); setOn(false); setLit(-1); setRound(0); return; }
+    const r = plRun(16); if (!r) return;
+    r.at.forEach((a, i) => T.at(r, a, () => { setLit(i % 4); setRound(Math.floor(i / 4) + 1); }));
+    T.at(r, r.at[15] + r.spb * 0.9, () => { setLit(-1); setOn(false); });
+    setOn(true);
+  }
+  const cx = 110, cy = 92, R = 58, at = (i) => { const a = -Math.PI / 2 + i * Math.PI / 2; return [cx + R * Math.cos(a), cy + R * Math.sin(a)]; };
+  return (
+    <div className="try-box" style={actBox} data-pl="ring">
+      <div style={actTitle}>{t('Count with the ring', '동그라미와 함께 세기')}</div>
+      <div style={actNote}>{LANG === 'ko' ? <>시작을 누르고 무릎을 치면서 소리 내어 세요: <b>1 2 3 4</b>, 불이 켜지는 동그라미마다 숫자 하나. 네 번 돌아요.</> : <>Press start, pat your knees and count out loud: <b>1 2 3 4</b>, one number on each lit circle. Four times round.</>}</div>
+      <svg viewBox="0 0 220 186" style={{width:'100%',maxWidth:260,display:'block',margin:'0 auto'}}>
+        {[0, 1, 2, 3].map(i => { const a1 = -Math.PI / 2 + i * Math.PI / 2 + 0.46, a2 = -Math.PI / 2 + (i + 1) * Math.PI / 2 - 0.46, am = (a1 + a2) / 2, k2 = R / Math.cos((a2 - a1) / 2);
+          const p1 = [cx + R * Math.cos(a1), cy + R * Math.sin(a1)], p2 = [cx + R * Math.cos(a2), cy + R * Math.sin(a2)], pm = [cx + k2 * Math.cos(am), cy + k2 * Math.sin(am)];
+          const tg = [-Math.sin(a2), Math.cos(a2)], nm = [Math.cos(a2), Math.sin(a2)], col = i === 3 ? BK.coral : BK.ink;
+          return <g key={'a' + i} fill="none" stroke={col} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={`M${p1[0]} ${p1[1]} Q${pm[0]} ${pm[1]} ${p2[0]} ${p2[1]}`}/>
+            <path d={`M${p2[0] - tg[0] * 6 + nm[0] * 3.6} ${p2[1] - tg[1] * 6 + nm[1] * 3.6} L${p2[0]} ${p2[1]} L${p2[0] - tg[0] * 6 - nm[0] * 3.6} ${p2[1] - tg[1] * 6 - nm[1] * 3.6}`}/></g>; })}
+        <text x={cx - R + 4} y={cy - R + 8} textAnchor="end" fontSize="12" fontWeight="900" fill={BK.coral}>{t('back to 1', '다시 1')}</text>
+        {[0, 1, 2, 3].map(i => { const [x, y] = at(i), o = i === lit; return <g key={i}><circle cx={x} cy={y} r={o ? 25 : 21} fill={o ? BK.coral : '#fff'} stroke={o ? BK.coral : BK.ink} strokeWidth="2.4" style={{transition:'r 0.06s'}}/><text x={x} y={y + 8} textAnchor="middle" fontSize="22" fontWeight="900" fill={o ? '#fff' : BK.ink}>{i + 1}</text></g>; })}
+        <text x={cx} y={cy + 6} textAnchor="middle" fontSize="13" fontWeight="900" fill={BK.muted}>{on && round ? t('round ' + round + ' of 4', round + ' / 4 바퀴') : ''}</text>
+      </svg>
+      <div style={{textAlign:'center'}}><button className="ghost-btn" onClick={start}>{on ? t('■ Stop', '■ 멈춤') : t('▶ Start: four times round', '▶ 시작: 네 바퀴')}</button></div>
+    </div>
+  );
+}
+
+// ── page 4: play on some beats, count the silent ones; tap only where you play ──
+const PL_SILENT = [
+  { id: '12', play: [1, 1, 0, 0], get name() { return t('Play on 1 and 2', '1과 2에서 치기'); } },
+  { id: '1', play: [1, 0, 0, 0], get name() { return t('Play only on 1', '1에서만 치기'); } },
+];
+function PlSilentBeats() {
+  const T = usePlTimers();
+  const [pi, setPi] = useState(0);
+  const [lit, setLit] = useState(-1);
+  const [phase, setPhase] = useState('ready');   // ready | count | go | done
+  const [res, setRes] = useState(null);
+  const run = useRef(null), taps = useRef([]);
+  const P = PL_SILENT[pi], N = 8, play = (i) => P.play[i % 4] === 1;
+  function start() {
+    T.clear(); setRes(null); taps.current = [];
+    const r = plRun(4 + N, { vol: 0.22 }); if (!r) return; run.current = r;
+    r.at.forEach((a, i) => T.at(r, a, () => { setLit(i - 4); setPhase(i < 4 ? 'count' : 'go'); }));
+    T.at(r, r.at[4 + N - 1] + r.spb * 0.9, () => {
+      setLit(-1); setPhase('done');
+      const at = r.at.slice(4), playAt = at.filter((_, i) => play(i)), silentAt = at.filter((_, i) => !play(i));
+      const m = plMatch(playAt, taps.current), onSilent = plMatch(silentAt, taps.current);
+      const marks = at.map((a, i) => { const near = taps.current.some(tp => Math.abs(tp - a) <= PL_TOL); return play(i) ? (near ? '✓' : '?') : (near ? '✗' : null); });
+      setRes({ m, silentHit: onSilent.hits, marks });
+    });
+    setPhase('count');
+  }
+  const tap = React.useCallback(() => { const r = run.current; if (r && (phase === 'count' || phase === 'go')) taps.current.push(r.now()); }, [phase]);
+  const nPlay = Array.from({ length: N }, (_, i) => play(i)).filter(Boolean).length;
+  return (
+    <div className="try-box" style={actBox} data-pl="silent">
+      <div style={actTitle}>{t('Silent beats still count', '조용한 박에서도 계속 세요')}</div>
+      <div style={actNote}>{LANG === 'ko' ? <>클릭 4번을 듣고, 꽉 찬 동그라미에서만 패드를 쳐요. 점선 동그라미에서는 손을 들고 계속 세요.</> : <>Listen to 4 clicks, then tap the pad only on the full circles. On the dashed circles, lift your hand and keep counting.</>}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',marginBottom:6}}>{PL_SILENT.map((x, i) => <button key={x.id} className={'chip' + (i === pi ? ' active' : '')} onClick={() => { T.clear(); stopClicks(); setPi(i); setRes(null); setPhase('ready'); setLit(-1); }}>{x.name}</button>)}</div>
+      <PlCircles n={N} kind={(i) => play(i) ? 'play' : 'silent'} lit={lit} mark={(i) => res ? res.marks[i] : null}/>
+      <div style={{textAlign:'center',fontSize:13,fontWeight:800,color:BK.muted,minHeight:18}}>{phase === 'count' ? t('Get ready…', '준비…') : phase === 'go' ? t('Count out loud: 1 2 3 4', '소리 내어 세요: 1 2 3 4') : ''}</div>
+      <PlPad on={phase === 'count' || phase === 'go'} onTap={tap}/>
+      <div style={{textAlign:'center',marginTop:8}}><button className="ghost-btn" onClick={start}>{phase === 'done' ? t('▶ Again', '▶ 다시') : t('▶ Start', '▶ 시작')}</button></div>
+      {res && <div style={{textAlign:'center',fontSize:14.5,fontWeight:900,marginTop:6,color:res.m.hits === nPlay && res.silentHit === 0 ? BK.green : BK.coral}}>
+        {t('Played on time: ' + res.m.hits + ' of ' + nPlay + ' · taps on a silent beat: ' + res.silentHit, '제때 친 박: ' + nPlay + '개 중 ' + res.m.hits + '개 · 조용한 박에 친 것: ' + res.silentHit + '개')}
+        {res.m.hits === nPlay && res.silentHit === 0 ? t('  ✓', '  ✓') : ''}</div>}
+      {plHint()}
+    </div>
+  );
+}
+
+// ── page 5: words over a beat (the cast's words, B7): tap the beat, then the words ──
+const PL_WORDS = { bird: [t => t('bird', '새'), 1], turtle: [t => t('tur-tle', '거-북'), 2], lighthouse: [t => t('light-house', '등-대'), 2] };
+const PL_WORD_SETS = [['bird', 'turtle', 'bird', 'turtle'], ['turtle', 'turtle', 'bird', 'bird'], ['lighthouse', 'bird', 'lighthouse', 'bird']];
+const plWordName = (w) => PL_WORDS[w][0](t);
+// a beat's heart: coral while its beat sounds, an outline otherwise
+const plBeatHeart = (on, w = 20) => <svg viewBox="-8.5 -7.5 17 14" width={w} style={{display:'block',margin:'4px auto 0'}}><path d="M0 5 Q-7.5 -0.5 -5 -4.2 Q-2.4 -6.8 0 -3 Q2.4 -6.8 5 -4.2 Q7.5 -0.5 0 5 Z" fill={on ? BK.coral : '#fff'} stroke={BK.coral} strokeWidth="1.3" strokeLinejoin="round"/></svg>;
+// the sounds of a row of words, in beats from its start (a two-sound word: on the beat and halfway to the next)
+const plSyll = (row) => row.flatMap((w, i) => PL_WORDS[w][1] === 1 ? [i] : [i, i + 0.5]);
+function plWordSounds(row, rounds) {
+  return (ctx, t, i, spb) => { if (i < 4) return; const b = i - 4, w = row[b % 4];
+    blip(ctx, t, 587.33, PL_WORDS[w][1] === 1 ? spb * 0.8 : spb * 0.42, 0.2, 'triangle');
+    if (PL_WORDS[w][1] === 2) blip(ctx, t + spb / 2, 493.88, spb * 0.42, 0.2, 'triangle'); };
+}
+function PlWordsBeat() {
+  const T = usePlTimers();
+  const [si, setSi] = useState(0);
+  const [mode, setMode] = useState('beat');   // beat | words
+  const [phase, setPhase] = useState('ready');
+  const [pos, setPos] = useState(-1);
+  const [res, setRes] = useState(null);
+  const run = useRef(null), taps = useRef([]);
+  const row = PL_WORD_SETS[si], ROUNDS = 2, N = 4 * ROUNDS;
+  function start(m) {
+    T.clear(); setRes(null); taps.current = []; setMode(m);
+    const r = plRun(4 + N, { vol: 0.25, extra: plWordSounds(row) }); if (!r) return; run.current = r;
+    r.at.forEach((a, i) => T.at(r, a, () => { setPos(i - 4); setPhase(i < 4 ? 'count' : 'go'); }));
+    T.at(r, r.at[4 + N - 1] + r.spb * 0.95, () => {
+      setPos(-1); setPhase('done');
+      const beats = r.at.slice(4), sounds = [];
+      for (let k = 0; k < ROUNDS; k++) plSyll(row).forEach(o => sounds.push(r.at[4 + k * 4] + o * r.spb));
+      const want = m === 'beat' ? beats : sounds;
+      setRes({ m: plMatch(want, taps.current, Math.min(PL_TOL, r.spb * 0.22)), want: want.length });
+    });
+    setPhase('count');
+  }
+  const tap = React.useCallback(() => { const r = run.current; if (r && (phase === 'count' || phase === 'go')) taps.current.push(r.now()); }, [phase]);
+  const b = pos >= 0 ? pos % 4 : -1;
+  const ok = res && res.m.hits === res.want && res.m.extra === 0;
+  return (
+    <div className="try-box" style={actBox} data-pl="words">
+      <div style={actTitle}>{t('Beat or rhythm?', '박일까, 리듬일까?')}</div>
+      <div style={actNote}>{LANG === 'ko' ? <>낱말이 박 위에서 소리를 내요. 먼저 <b>박</b>만 쳐요 (낱말 하나에 한 번). 그다음 <b>낱말 소리</b>마다 쳐요.</> : <>The words sound over the beat. First tap only the <b>beat</b>, once for each word. Then tap every <b>sound</b> of the words.</>}</div>
+      <div style={{display:'flex',gap:5,justifyContent:'center',flexWrap:'wrap',marginBottom:8}}>{PL_WORD_SETS.map((s, i) => <button key={i} className={'chip' + (i === si ? ' active' : '')} onClick={() => { T.clear(); stopClicks(); setSi(i); setRes(null); setPhase('ready'); setPos(-1); }}>{s.map(plWordName).join(', ')}</button>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,auto)',justifyContent:'space-around',gap:4,textAlign:'center',margin:'0 auto 6px',maxWidth:420}}>
+        {row.map((w, i) => <div key={i} style={{padding:'6px 2px',borderRadius:10,background:i === b ? '#fbe3da' : 'transparent',transition:'background 0.08s'}}>
+          <div style={{display:'flex',justifyContent:'center',gap:6,height:14}}>{Array.from({ length: PL_WORDS[w][1] }, (_, k) => <span key={k} style={{width:12,height:12,borderRadius:6,background:BK.coral}}/>)}</div>
+          <div style={{fontSize:row.includes('lighthouse') ? 14 : 15.5,fontWeight:900,color:BK.ink,marginTop:3,whiteSpace:'nowrap'}}>{plWordName(w)}</div>
+          {plBeatHeart(i === b, 22)}
+        </div>)}
+      </div>
+      <PlPad on={phase === 'count' || phase === 'go'} onTap={tap} label={mode === 'beat' ? t('TAP THE BEAT', '박을 쳐요') : t('TAP THE WORDS', '낱말을 쳐요')}/>
+      <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:8}}>
+        <button className="ghost-btn" onClick={() => start('beat')}>{t('▶ Tap the beat', '▶ 박 치기')}</button>
+        <button className="ghost-btn" onClick={() => start('words')}>{t('▶ Tap the words', '▶ 낱말 치기')}</button>
+      </div>
+      {res && <div style={{textAlign:'center',fontSize:14.5,fontWeight:900,marginTop:6,color:ok ? BK.green : BK.coral}}>
+        {mode === 'beat' ? t('Beats: ' + res.m.hits + ' of ' + res.want + (res.m.extra ? ' · extra taps: ' + res.m.extra + ' (the words?)' : ''), '박: ' + res.want + '개 중 ' + res.m.hits + '개' + (res.m.extra ? ' · 더 친 것: ' + res.m.extra + '개 (낱말 소리?)' : ''))
+          : t('Sounds: ' + res.m.hits + ' of ' + res.want + (res.m.extra ? ' · extra taps: ' + res.m.extra : ''), '소리: ' + res.want + '개 중 ' + res.m.hits + '개' + (res.m.extra ? ' · 더 친 것: ' + res.m.extra + '개' : ''))}{ok ? '  ✓' : ''}</div>}
+      {plHint()}
+    </div>
+  );
+}
+
+// ── page 6: the pulse in the fingers: tap the black keys on the beat, a new finger each time (the book's three rows) ──
+const PL_FINGER_TUNES = [
+  { id: 'small', get name() { return t('Small-house beat', '작은 집 박'); }, keys: [['2', 1], ['3', 3]], seq: ['2', '3', '2', '3'] },
+  { id: 'big', get name() { return t('Big-house beat', '큰 집 박'); }, keys: [['2', 6], ['3', 8], ['4', 10]], seq: ['2', '3', '4', '3'] },
+  { id: 'left', get name() { return t('Left-hand beat', '왼손 박'); }, keys: [['3', -11], ['2', -9]], seq: ['3', '2', '3', '2'] },
+];
+function PlFingerBeat() {
+  const T = usePlTimers();
+  const [ti, setTi] = useState(0);
+  const [phase, setPhase] = useState('ready');
+  const [pos, setPos] = useState(-1);
+  const [res, setRes] = useState(null);
+  const [down, setDown] = useState(null);
+  const run = useRef(null), taps = useRef([]);
+  const tune = PL_FINGER_TUNES[ti], N = 8, want = (i) => tune.seq[i % 4];
+  function start() {
+    T.clear(); setRes(null); taps.current = [];
+    const r = plRun(4 + N, { vol: 0.22 }); if (!r) return; run.current = r;
+    r.at.forEach((a, i) => T.at(r, a, () => { setPos(i - 4); setPhase(i < 4 ? 'count' : 'go'); }));
+    T.at(r, r.at[4 + N - 1] + r.spb * 0.9, () => {
+      setPos(-1); setPhase('done');
+      let hits = 0; const marks = r.at.slice(4).map((a, i) => { const ok = taps.current.some(([tm, f]) => f === want(i) && Math.abs(tm - a) <= PL_TOL); if (ok) hits++; return ok ? '✓' : '?'; });
+      setRes({ hits, marks, extra: Math.max(0, taps.current.length - hits) });
+    });
+    setPhase('count');
+  }
+  function press(f, k) {
+    playKey(k, 0.4); setDown(f); setTimeout(() => setDown(d => d === f ? null : d), 160);
+    const r = run.current; if (r && (phase === 'count' || phase === 'go')) taps.current.push([r.now(), f]);
+  }
+  return (
+    <div className="try-box" style={actBox} data-pl="fingers">
+      <div style={actTitle}>{t('A new finger on each beat', '박마다 다른 손가락')}</div>
+      <div style={actNote}>{LANG === 'ko' ? <>클릭 4번을 듣고, 박마다 산호색 번호의 손가락으로 검은건반을 쳐요. 소리 내어 세요: 1 2 3 4.</> : <>Listen to 4 clicks, then on every beat tap the black key for the finger in the coral circle. Count out loud: 1 2 3 4.</>}</div>
+      <div style={{display:'flex',gap:5,justifyContent:'center',flexWrap:'wrap',marginBottom:8}}>{PL_FINGER_TUNES.map((x, i) => <button key={x.id} className={'chip' + (i === ti ? ' active' : '')} onClick={() => { T.clear(); stopClicks(); setTi(i); setRes(null); setPhase('ready'); setPos(-1); }}>{x.name}</button>)}</div>
+      <PlCircles n={N} kind={() => 'finger'} label={(i) => want(i)} under={(i) => String(i % 4 + 1)} lit={pos} mark={(i) => res ? res.marks[i] : null} r={15} gap={40}/>
+      <div style={{display:'flex',gap:10,justifyContent:'center'}}>{tune.keys.map(([f, k]) => <button key={f} onPointerDown={(e) => { e.preventDefault(); press(f, k); }}
+        style={{width:64,height:120,borderRadius:'0 0 10px 10px',border:'none',background:down === f ? '#3b3f8f' : BK.ink,display:'flex',flexDirection:'column',justifyContent:'flex-end',alignItems:'center',paddingBottom:10,touchAction:'manipulation',cursor:'pointer'}}>
+        <span style={{width:30,height:30,borderRadius:15,background:BK.coral,color:'#fff',fontWeight:900,fontSize:16,display:'flex',alignItems:'center',justifyContent:'center'}}>{f}</span></button>)}</div>
+      <div style={{textAlign:'center',fontSize:12,color:BK.muted,marginTop:4}}>{ti === 2 ? t('left hand · the 3rd small house', '왼손 · 셋째 작은 집') : ti === 1 ? t('right hand · the big house next to the 4th small house', '오른손 · 넷째 작은 집 옆 큰 집') : t('right hand · the 4th small house', '오른손 · 넷째 작은 집')}</div>
+      <div style={{textAlign:'center',marginTop:8}}><button className="ghost-btn" onClick={start}>{phase === 'done' ? t('▶ Again', '▶ 다시') : t('▶ Start', '▶ 시작')}</button></div>
+      {res && <div style={{textAlign:'center',fontSize:14.5,fontWeight:900,marginTop:6,color:res.hits === N ? BK.green : BK.coral}}>{t('On the beat with the right finger: ' + res.hits + ' of 8', '제 박에 맞는 손가락: 8개 중 ' + res.hits + '개')}{res.hits === N ? '  ✓' : ''}</div>}
+    </div>
+  );
+}
+
+// ── the book on screen: the opener is the lesson's head, every other page a step. Old ticks kept where the idea is the
+// same: 'Feel the pulse' (0) is now 'A steady beat', 'Beat or rhythm?' (1) stays, 'Count out loud' (4) stays. ──
+const PL_STORE = [0, 4, 6, 1, 7, 8];
+function PlLearn({ onStart }) {
+  const pages = plLbPages(true);
+  const opener = pages[0];
+  return (
+    <Lesson id="pulse" title={t('Pulse & Counting', '박과 세기')} onStart={onStart} noArt
+      head={<LbScreenCtx.Provider value={true}><BkChapterCtx.Provider value="pulse"><div className="lb-screen lb-open" style={{display:'flex',flexDirection:'column',gap:12,margin:'0 0 8px'}}>{lbWordsFirst(opener.props.children)}</div></BkChapterCtx.Provider></LbScreenCtx.Provider>}>
+      {pages.slice(1).map((pg, i) => (
+        <Step key={i} storeAs={PL_STORE[i]} title={pg.props.title}>
+          <LbScreenPage page={pg}/>
+        </Step>
+      ))}
+    </Lesson>
+  );
+}
+
+// ── the drill (B9): five levels, one idea a level. 1 listens; 2 to 5 are tapped. ──
+const PL_LEVELS = [
+  { n: 1, label: 'Steady or not?', kind: 'steady', time: 16 },
+  { n: 2, label: 'Tap along with the click', kind: 'along', time: 24 },
+  { n: 3, label: 'Keep it going on your own', kind: 'keep', time: 20 },
+  { n: 4, label: 'Count inside, tap one beat', kind: 'inside', time: 24 },
+  { n: 5, label: 'Tap the beat, not the words', kind: 'words', time: 24 },
+];
+Object.assign(LEVEL_KO, {
+  'Steady or not?': '꾸준할까, 아닐까?', 'Tap along with the click': '클릭에 맞춰 치기', 'Keep it going on your own': '혼자 계속 이어 가기',
+  'Count inside, tap one beat': '속으로 세고 한 박만 치기', 'Tap the beat, not the words': '낱말 말고 박을 쳐요',
+});
+function genPlQuestion(lv, prev) {
+  const uid = Math.random(), spb = 60 / PL_BPM;
+  if (lv.kind === 'steady') {
+    const steady = Math.random() < 0.5;
+    let gaps = Array(7).fill(spb);
+    if (!steady) { const at = shuffle([1, 2, 3, 4, 5]).slice(0, 2 + Math.floor(Math.random() * 2)); at.forEach((i, k) => { gaps[i] = spb * (k % 2 ? 0.62 : 1.42); }); }
+    return { kind: 'steady', gaps, answer: steady ? 'steady' : 'not', key: 'st' + gaps.map(g => Math.round(g * 100)).join('.'), uid };
+  }
+  if (lv.kind === 'inside') { let b = 1 + Math.floor(Math.random() * 4), g = 0; while (prev && prev.key === 'in' + b && g++ < 6) b = 1 + Math.floor(Math.random() * 4); return { kind: 'inside', beat: b, key: 'in' + b, uid }; }
+  if (lv.kind === 'words') {
+    let row, g = 0;
+    do { row = Array.from({ length: 4 }, () => pick(['bird', 'turtle', 'lighthouse'])); } while ((row.every(w => w === 'bird') || row.filter(w => w === 'lighthouse').length > 1 || (prev && prev.key === row.join())) && g++ < 20);
+    return { kind: 'words', row, key: row.join(), uid };
+  }
+  return { kind: lv.kind, key: lv.kind, uid };
+}
+// what each tapped level asks for, from the run's beat times (4 count-in clicks first)
+function plWant(q, r) {
+  const b = r.at.slice(4);
+  if (q.kind === 'along') return b;
+  if (q.kind === 'keep') return b.slice(0, 8);   // 4 with the clicks, then 4 alone
+  if (q.kind === 'inside') return b.filter((_, i) => i % 4 === q.beat - 1);
+  return b.slice(0, 4);   // words: the beat
+}
+function PlQuestion({ q, given, locked, onAnswer, pixel }) {
+  const T = usePlTimers();
+  const [phase, setPhase] = useState('ready');
+  const [pos, setPos] = useState(-1);
+  const run = useRef(null), taps = useRef([]);
+  const done = !!given;
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const prompt = (txt) => <p style={{fontSize:15,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{txt}</p>;
+  function listen() {
+    T.clear();
+    const r = plRun(8, { gaps: q.gaps }); if (!r) return;
+    r.at.forEach((a, i) => T.at(r, a, () => setPos(i)));
+    T.at(r, r.at[7] + 0.5, () => setPos(-1));
+  }
+  useEffect(() => { T.clear(); stopClicks(); setPhase('ready'); setPos(-1); taps.current = []; if (q.kind === 'steady') { const id = setTimeout(listen, 300); return () => clearTimeout(id); } }, [q.uid]);
+  function start() {
+    if (done || phase !== 'ready') return;
+    T.clear(); taps.current = [];
+    const n = q.kind === 'along' || q.kind === 'inside' ? 4 + 8 : 4 + 4 + (q.kind === 'keep' ? 4 : 0);
+    const r = plRun(n, { silentFrom: q.kind === 'keep' ? 8 : undefined, vol: q.kind === 'inside' ? 0.18 : 0.3, noVoice: q.kind === 'inside', extra: q.kind === 'words' ? plWordSounds(q.row) : undefined }); if (!r) return;
+    run.current = r;
+    r.at.forEach((a, i) => T.at(r, a, () => { setPos(i); setPhase(i < 4 ? 'count' : 'go'); }));
+    T.at(r, r.at[n - 1] + r.spb * 0.95, () => {
+      setPhase('scoring'); setPos(-1);
+      const want = plWant(q, r), m = plMatch(want, taps.current, q.kind === 'keep' ? 0.24 : PL_TOL);
+      const early = taps.current.filter(tp => tp < r.at[4] - PL_TOL).length;   // taps during the count-in don't count against you
+      const extra = Math.max(0, m.extra - early), alone = m.offs.slice(4).filter(x => x !== null).length;
+      const ok = q.kind === 'along' ? m.hits >= 7 && extra <= 1 : q.kind === 'keep' ? m.hits >= 6 && alone >= 3 && extra <= 1 : m.hits === m.total && extra === 0;
+      onAnswer({ ok, hits: m.hits, total: m.total, extra });
+    });
+    setPhase('count');
+  }
+  const tap = React.useCallback(() => { const r = run.current; if (r && (phase === 'count' || phase === 'go')) taps.current.push(r.now()); }, [phase]);
+  if (q.kind === 'steady') {
+    const cls = (c) => btnCls + (!done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '');
+    return (<div>
+      {prompt(t('Listen to 8 clicks. Is the beat steady, the same gap every time?', '클릭 8번을 들어요. 박이 꾸준한가요, 매번 똑같은 간격인가요?'))}
+      <PlCircles n={8} lit={pos} label={() => ''} r={13} gap={34}/>
+      <div style={{textAlign:'center',margin:'6px 0 10px'}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={listen}>{t('♪ Listen again', '♪ 다시 듣기')}</button></div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+        <button disabled={locked} className={cls('steady')} style={{padding:'14px 0',fontSize:pixel ? 10 : 17}} onClick={() => { T.clear(); stopClicks(); onAnswer('steady'); }}>{t('Steady', '꾸준해요')}</button>
+        <button disabled={locked} className={cls('not')} style={{padding:'14px 0',fontSize:pixel ? 10 : 17}} onClick={() => { T.clear(); stopClicks(); onAnswer('not'); }}>{t('Not steady', '들쭉날쭉해요')}</button>
+      </div>
+    </div>);
+  }
+  const res = done && given.ans && typeof given.ans === 'object' ? given.ans : null;
+  const say = q.kind === 'along' ? t('4 clicks to get ready, then tap with every click: 8 taps.', '클릭 4번을 듣고, 클릭마다 같이 쳐요: 8번.')
+    : q.kind === 'keep' ? t('4 clicks to get ready, 4 clicks to tap with, then the click stops: tap 4 more on your own, the same gap.', '클릭 4번을 듣고, 클릭 4번에 맞춰 치고, 클릭이 멈추면 혼자 4번 더 쳐요, 같은 간격으로.')
+    : q.kind === 'inside' ? t('Count 1 2 3 4 inside your head and tap only on ' + q.beat + '. Two rounds.', '속으로 1 2 3 4를 세고 ' + q.beat + '에서만 쳐요. 두 바퀴.')
+    : t('Words over a beat: tap the beat, once for each word, not every sound.', '박 위의 낱말: 낱말 하나에 한 번, 박을 쳐요. 소리마다 치지 않아요.');
+  const N = q.kind === 'keep' ? 8 : q.kind === 'words' ? 4 : 8, show = (i) => q.kind === 'keep' ? i < 4 || phase === 'scoring' || done : q.kind === 'inside' ? false : true;
+  const ring = pos >= 4 ? pos - 4 : -1;
+  return (<div>
+    {prompt(say)}
+    {q.kind === 'words' && <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:6,textAlign:'center',maxWidth:380,margin:'0 auto 8px'}}>{q.row.map((w, i) => <div key={i} style={{borderRadius:10,padding:'4px 0',background:i === ring ? '#fbe3da' : 'transparent'}}>
+      <div style={{display:'flex',justifyContent:'center',gap:5,height:12}}>{Array.from({ length: PL_WORDS[w][1] }, (_, k) => <span key={k} style={{width:10,height:10,borderRadius:5,background:BK.coral}}/>)}</div>
+      <div style={{fontSize:15,fontWeight:900,color:BK.ink,whiteSpace:'nowrap'}}>{plWordName(w)}</div>{plBeatHeart(i === ring)}</div>)}</div>}
+    {q.kind !== 'words' && <PlCircles n={N} lit={q.kind === 'inside' ? -1 : ring} kind={(i) => q.kind === 'inside' ? (i % 4 === q.beat - 1 ? 'play' : 'silent') : 'beat'}
+      label={(i) => String(i % 4 + 1)} r={14} gap={36}/>}
+    {q.kind === 'keep' && <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',maxWidth:330,margin:'-18px auto 6px',textAlign:'center',fontSize:12.5,fontWeight:800,color:BK.muted}}><span>{t('with the click', '클릭과 함께')}</span><span style={{color:BK.ink}}>{t('on your own', '혼자서')}</span></div>}
+    <div style={{textAlign:'center',fontSize:13,fontWeight:800,color:BK.muted,minHeight:18,margin:'2px 0 4px'}}>{phase === 'count' ? t('Get ready: ', '준비: ') + (pos + 1) : phase === 'go' ? (q.kind === 'keep' && pos >= 8 ? t('On your own now!', '이제 혼자!') : t('Go!', '시작!')) : ''}</div>
+    {!done && phase === 'ready' && <div style={{textAlign:'center',marginBottom:8}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={start} style={{fontSize:15,padding:'10px 18px'}}>{t('▶ Start', '▶ 시작')}</button></div>}
+    {!done && <PlPad on={phase === 'count' || phase === 'go'} onTap={tap} h={64}/>}
+    {res && <div style={{textAlign:'center',fontSize:15,fontWeight:900,marginTop:8,color:res.ok ? BK.green : BK.coral}}>{t('On the beat: ' + res.hits + ' of ' + res.total + (res.extra ? ' · extra taps: ' + res.extra : ''), '박에 맞게: ' + res.total + '개 중 ' + res.hits + '개' + (res.extra ? ' · 더 친 것: ' + res.extra + '개' : ''))}</div>}
+  </div>);
+}
+Object.assign(PULSE_DRILL, {
+  levels: PL_LEVELS, generate: genPlQuestion, noPrint: true,   // tapped by ear: no printed worksheet (the Workbook is the paper)
+  check: (q, ans) => { if (ans === null || ans === undefined) return false; if (q.kind === 'steady') return ans === q.answer; return !!(ans && ans.ok); },
+  answerLabel: (q) => q.kind === 'steady' ? (q.answer === 'steady' ? t('steady: the same gap every time', '꾸준해요: 매번 똑같은 간격') : t('not steady: the gaps change', '들쭉날쭉해요: 간격이 바뀌어요'))
+    : q.kind === 'along' ? t('a tap with every click: 8 taps', '클릭마다 한 번: 8번')
+    : q.kind === 'keep' ? t('4 taps with the clicks, then 4 on your own, the same gap', '클릭에 맞춰 4번, 그다음 혼자 4번, 같은 간격으로')
+    : q.kind === 'inside' ? t('a tap on ' + q.beat + ' only: twice', q.beat + '에서만: 두 번')
+    : t('the beat: 4 taps (the words have ' + plSyll(q.row).length + ' sounds)', '박: 4번 (낱말 소리는 ' + plSyll(q.row).length + '개)'),
+  Question: PlQuestion, Learn: PlLearn,
+});
+
+// ─── Phase 455: chapter 3's Workbook (B10) and Teacher copy. English, like every Workbook. Each page faces its Lesson
+// Book page (2 to 6); the last page is the check-up on paper, facing 'My five checks'. Counting is 1 2 3 4 only (B5);
+// a silent beat is a dashed circle with no rest name (B6); finger numbers sit in coral circles (B8). ───
+// paper pieces: a beat circle ('beat' white, 'play' navy, 'silent' dashed, 'finger' coral, 'fingerOpen' a coral ring to
+// write a finger in); label: a printed number, or (ans) a worked answer in coral handwriting
+function plC(kind, label, o = {}) {
+  const s = o.size || 30, fill = kind === 'play' ? BK.ink : kind === 'finger' ? BK.coral : '#fff';
+  const stroke = kind === 'finger' || kind === 'fingerOpen' ? BK.coral : BK.ink;
+  const tc = kind === 'play' || kind === 'finger' || o.ansFill ? '#fff' : o.ans ? BK.coral : kind === 'fingerOpen' ? BK.coral : BK.ink;   // ansFill: a worked colouring, navy like a played beat
+  return <svg width={s} height={s} viewBox="0 0 30 30" style={{display:'block',flex:'0 0 auto'}}>
+    <circle cx="15" cy="15" r="13" fill={o.ansFill ? BK.ink : fill} stroke={o.ansFill ? BK.ink : stroke} strokeWidth="1.8" strokeDasharray={kind === 'silent' && !o.ansFill ? '3.6 3' : undefined}/>
+    {label != null && label !== '' && <text x="15" y="20.6" textAnchor="middle" fontSize="15.5" fontWeight="900" fontStyle={o.ans ? 'italic' : undefined} fill={tc} fontFamily="Inter,sans-serif">{label}</text>}
+  </svg>;
+}
+// a row of circles in groups of four; under(i): what sits under circle i (a count, a box)
+function PlRow({ n, circ, under, size = 30, gap = 6, group = 10 }) {
+  return <div style={{display:'flex',alignItems:'flex-start',justifyContent:'center'}}>{Array.from({ length: n }, (_, i) => <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,marginLeft:i === 0 ? 0 : i % 4 === 0 ? group : gap}}>
+    {circ(i)}{under && under(i)}</div>)}</div>;
+}
+const plCount = (txt, col = BK.ink) => <span style={{fontSize:13.5,fontWeight:900,color:col,lineHeight:1}}>{txt}</span>;
+const plWBox = (ex, txt, w = 34, h = 30) => ex ? bkHand(txt, w, h) : bkBox(w, h);
+// a trail of bare footprints walking right: gaps in the viewBox's units; a footprint for each place
+function PlTrail({ gaps, w = 210, h, first = 12, more = 0, color = BK.ink, k = 1.7 }) {
+  const xs = [first]; gaps.forEach(g => xs.push(xs[xs.length - 1] + g));
+  const y1 = 5 + 4 * k, y2 = y1 + 9 * k + 4, H = h || y2 + 4 * k + 6;
+  h = H;
+  const foot = (x, i) => { const y = i % 2 ? y2 : y1, m = i % 2 ? 1 : -1;
+    return <g key={i} fill={color} transform={'translate(' + x + ' ' + y + ') scale(' + k + ')'}><ellipse cx="0.6" cy="0" rx="3.4" ry="2.9"/><ellipse cx="-4.6" cy={0.5 * m} rx="2.4" ry="2"/>
+      {[[4.9, -2.4, 1], [5.9, -0.7, 0.9], [5.8, 0.9, 0.78], [5, 2.4, 0.68]].map(([a, b, r], j) => <circle key={j} cx={a} cy={b * m} r={r}/>)}</g>; };
+  return <svg viewBox={'0 0 ' + w + ' ' + h} style={{width:'100%',display:'block'}}>
+    <line x1="4" x2={w - 4} y1={h - 3} y2={h - 3} stroke={BK.line} strokeWidth="1" strokeDasharray={more ? '3 3' : undefined}/>
+    {xs.map(foot)}
+  </svg>;
+}
+const plHeart = (s = 16, col = BK.coral) => <svg width={s} height={s * 0.86} viewBox="-8 -7 16 13.6" style={{display:'block'}}><path d="M0 5.6 Q-7.6 -0.4 -5.1 -4.3 Q-2.5 -7 0 -3 Q2.5 -7 5.1 -4.3 Q7.6 -0.4 0 5.6 Z" fill={col}/></svg>;
+const PL_WN = { bird: ['bird', 1], turtle: ['tur-tle', 2], lighthouse: ['light-house', 2], sea: ['sea', 1], sky: ['sky', 1] };
+// a row of four words over four beats; dots: draw the sound dots (ex: in coral); lines: a dotted line to draw on
+function PlWordRow({ row, dots, w = 300, size = 15 }) {
+  return <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',width:'100%',maxWidth:w,margin:'0 auto'}}>{row.map((x, i) => <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3}}>
+    <div style={{height:18,display:'flex',alignItems:'flex-end',gap:7}}>{dots ? Array.from({ length: PL_WN[x][1] }, (_, k) => <span key={k} style={{width:10,height:10,borderRadius:5,background:BK.coral}}/>) : <span style={{width:46,borderBottom:'1.2px dotted ' + BK.muted}}/>}</div>
+    <span style={{fontSize:size,fontWeight:900,color:BK.ink,whiteSpace:'nowrap'}}>{PL_WN[x][0]}</span>
+    {plHeart(15)}
+  </div>)}</div>;
+}
+const plSounds = (row) => row.reduce((a, x) => a + PL_WN[x][1], 0);
+
+// the Workbook's tasks, fixed so the Teacher copy always matches
+const PL_WB = {
+  // footprint trails (gaps): steady or not
+  trails: [[30, 30, 30, 30, 30], [18, 40, 28, 40, 22], [34, 34, 18, 34, 34], [24, 24, 24, 24, 24]],
+  trails2: [[34, 20, 34, 48, 34], [28, 28, 28, 28, 28], [36, 36, 36, 36, 36], [22, 22, 22, 42, 22]],
+  keep: [24, 34, 44],   // three footprints at this gap: draw the next two
+  // number the beats: the numbers printed in each row of eight (the rest to write)
+  fill: [{}, { 0: 1, 4: 1 }, { 0: 1, 3: 4, 6: 3 }, { 1: 2, 5: 2 }],
+  next: [3, 2, 4, 1],   // six circles from this number: the first two printed
+  snake: { 0: 1, 6: 3, 13: 2, 19: 4 },
+  // silent beats: the beats you play in each group of four
+  silent: [[1, 1, 0, 0], [1, 0, 0, 0], [1, 0, 1, 0], [0, 1, 1, 1]],
+  colour: [[1, 3], [4], [1, 2, 4], [2, 3]],
+  fix: [[1, 1, 0, 0], [1, 0, 0, 1], [0, 1, 1, 0], [1, 1, 1, 0]],   // counted wrongly: only the played notes got a number
+  // words over the beat
+  dots: [['turtle', 'bird', 'bird', 'turtle'], ['bird', 'lighthouse', 'bird', 'bird'], ['turtle', 'turtle', 'lighthouse', 'bird'], ['lighthouse', 'turtle', 'bird', 'turtle']],
+  count: [['bird', 'bird', 'bird', 'turtle'], ['turtle', 'turtle', 'turtle', 'turtle'], ['lighthouse', 'bird', 'turtle', 'bird'], ['bird', 'bird', 'bird', 'bird']],
+  // fingers on the beat
+  which: [[[2, 3, 2, 3], 3], [[2, 3, 4, 3], 2], [[3, 2, 3, 2], 4], [[2, 3, 4, 3], 3]],
+  go: [[2, 3, 2, 3], [2, 3, 4, 3], [3, 2, 3, 2], [4, 3, 2, 3]],
+  wordsFromDots: [[1, 2, 2, 1], [2, 1, 2, 2], [1, 1, 1, 2]],   // one dot: bird; two dots: tur-tle
+  keys: [{ 2: [1, 3], 3: [2], 4: [4] }, { 2: [1], 3: [2, 4], 4: [3] }, { 2: [2, 4], 3: [3], 4: [1] }],   // the beats each finger's key plays
+};
+const PL_CHK = {
+  trails: [[32, 32, 32, 14, 32], [26, 26, 26, 26, 26], [18, 30, 40, 22, 34], [20, 20, 34, 20, 20]],
+  fill: [{ 0: 1, 5: 2 }, { 2: 3, 4: 1 }, { 1: 2, 7: 4 }, { 3: 4, 6: 3 }],
+  play: [[1, 0, 1, 0], [1, 1, 1, 0], [0, 0, 1, 1], [1, 0, 0, 1]],
+  sounds: [['turtle', 'bird', 'bird', 'bird'], ['lighthouse', 'bird', 'bird', 'turtle'], ['bird', 'turtle', 'bird', 'bird'], ['turtle', 'bird', 'turtle', 'turtle']],
+  which: [[[2, 3, 4, 3], 3], [[3, 2, 3, 2], 2], [[2, 3, 2, 3], 4], [[4, 3, 2, 3], 1]],
+};
+const plSteady = (g) => g.every(x => x === g[0]);
+const plFingerRow = (fs, size = 28, ans) => <PlRow n={4} gap={8} circ={(i) => plC('finger', fs[i], { size })} under={(i) => plCount(String(i + 1), BK.muted)}/>;
+
+function PlWorkbook({ startNo = 1 }) {
+  const W = PL_WB, pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + 1 + pages.length} chId="pulse">{content}</WbPage>);
+  const trailCell = (g, i, n0, ex) => <ExCell key={i} n={n0 + i} ex={ex}><div style={{display:'grid',gridTemplateColumns:'1fr auto',alignItems:'center',gap:10,padding:'14px 8px 4px'}}><PlTrail gaps={g}/><TickCross ok={plSteady(g)} ex={ex}/></div></ExCell>;
+
+  // 2 (faces "A steady beat")
+  P(<>
+    <WbTop step={1}/>
+    <Part kind="together" title="Steady or not?" how="Look at the gaps between the footprints. Tick a trail with the same gap every time; cross a trail whose gaps change.">
+      <BkGrid cols={2} gap="8px 12px">{W.trails.map((g, i) => trailCell(g, i, 1, i === 0))}</BkGrid>
+    </Part>
+    <Part kind="home" title="Steady or not, on your own" how="Tick or cross. Look carefully: one gap that changes makes a trail not steady.">
+      <BkGrid cols={2} gap="8px 12px">{W.trails2.map((g, i) => trailCell(g, i, 5, false))}</BkGrid>
+    </Part>
+    <Part kind="play" title="Keep the trail going" how="Draw the next two footprints on each trail, the same gap every time. Then walk it across the room: one step on each beat, counting 1 2 3 4.">
+      <div style={{display:'grid',gap:22}}>{W.keep.map((g, i) => <div key={i} style={{display:'grid',gridTemplateColumns:'24px 1fr',alignItems:'center',gap:8}}><span style={{fontFamily:LB_SERIF,fontStyle:'italic',fontWeight:700,fontSize:14,color:BK.ink}}>{9 + i}</span><PlTrail gaps={[g, g]} w={300} more={1} k={1.7}/></div>)}</div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // 3 (faces "Count out loud")
+  P(<>
+    <WbTop step={2}/>
+    <Part kind="together" title="Number the beats" how="Write the count in every empty circle: 1 2 3 4, then start again at 1.">
+      <div style={{display:'grid',gap:8}}>{W.fill.map((m, i) => <ExCell key={i} n={i + 1} ex={i === 0}><div style={{padding:'16px 6px 4px'}}>
+        <PlRow n={8} circ={(j) => i === 0 ? plC('beat', String(j % 4 + 1), { ans: j !== 0 && j !== 4, size: 38 }) : plC('beat', m[j] != null ? String(m[j]) : '', { size: 38 })}/></div></ExCell>)}</div>
+    </Part>
+    <Part kind="home" title="What comes next?" how="The count goes round: after 4 comes 1. Write the next four numbers.">
+      <BkGrid cols={2} gap="8px 12px">{W.next.map((s, i) => <ExCell key={i} n={i + 5}><div style={{padding:'16px 4px 4px'}}><PlRow n={6} gap={5} group={5} circ={(j) => plC('beat', j < 2 ? String((s - 1 + j) % 4 + 1) : '', { size: 37 })}/></div></ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="The counting snake" how="Fill in the whole snake, from its head to its tail. Then pat your knees and count it out loud, one number on each pat.">
+      <PlSnake given={W.snake}/>
+    </Part>
+    <Faces/>
+  </>);
+
+  // 4 (faces "When the notes stop")
+  P(<>
+    <WbTop step={3}/>
+    <Part kind="together" title="Count every beat" how="Write the count under every circle: the navy ones you play and the dashed silent ones too.">
+      <BkGrid cols={2} gap="8px 12px">{W.silent.map((m, i) => <ExCell key={i} n={i + 1} ex={i === 0}><div style={{padding:'16px 2px 4px'}}>
+        <PlRow n={8} gap={3} group={9} circ={(j) => plC(m[j % 4] ? 'play' : 'silent', '', { size: 33 })} under={(j) => plWBox(i === 0, String(j % 4 + 1), 33, 30)}/></div></ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Colour the beats you play" how="Colour the circles you play. Leave the silent beats white and dashed.">
+      <BkGrid cols={2} gap="8px 12px">{W.colour.map((pl, i) => <ExCell key={i} n={i + 5} ex={i === 0}><div style={{display:'grid',gap:6,justifyItems:'center',padding:'16px 4px 4px'}}>
+        <span style={{fontSize:13.5,fontWeight:900,color:BK.ink}}>{pl.length === 1 ? 'Play only on ' + pl[0] : 'Play on ' + pl.slice(0, -1).join(', ') + ' and ' + pl[pl.length - 1]}</span>
+        <PlRow n={4} gap={10} circ={(j) => plC('silent', String(j + 1), { size: 36, ansFill: i === 0 && pl.includes(j + 1) })}/></div></ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Fix the count" how="Only the played notes got a number here. Write the right count under every circle, then play each row: right hand, finger 3, the 4th small house.">
+      <div style={{display:'grid',gap:12}}>{W.fix.map((m, r) => { let k = 0; const lab = Array.from({ length: 8 }, (_, j) => m[j % 4] ? String(++k > 4 ? k - 4 : k) : '');
+        return <div key={r} style={{display:'grid',gridTemplateColumns:'24px 1fr',alignItems:'center',gap:6}}><span style={{fontFamily:LB_SERIF,fontStyle:'italic',fontWeight:700,fontSize:14,color:BK.ink}}>{9 + r}</span>
+          <PlRow n={8} gap={8} group={18} circ={(j) => plC(m[j % 4] ? 'play' : 'silent', lab[j], { size: 32 })} under={() => bkBox(34, 28)}/></div>; })}</div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // 5 (faces "Beat or rhythm?")
+  P(<>
+    <WbTop step={4}/>
+    <Part kind="together" title="One dot for each sound" how="Say each row, one word on each heart. Draw one dot over a word for each sound.">
+      <BkGrid cols={2} gap="8px 12px">{W.dots.map((row, i) => <ExCell key={i} n={i + 1} ex={i === 0}><div style={{padding:'16px 4px 4px'}}><PlWordRow row={row} dots={i === 0}/></div></ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Beats and sounds" how="How many beats? How many sounds? Draw the dots, then write both numbers.">
+      <BkGrid cols={2} gap="8px 12px">{W.count.map((row, i) => <ExCell key={i} n={i + 5}><div style={{display:'grid',gap:6,padding:'16px 4px 4px'}}>
+        <PlWordRow row={row} dots={false}/>
+        <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:8,fontSize:12.5,fontWeight:800,color:BK.ink}}>beats {bkBox(40, 32)} <span style={{width:8}}/>sounds {bkBox(40, 32)}</div></div></ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Words from dots" how="One dot: write bird. Two dots: write tur-tle. Then say each row, tapping the beat with your foot.">
+      <div style={{display:'grid',gap:22}}>{W.wordsFromDots.map((row, r) => <div key={r} style={{display:'grid',gridTemplateColumns:'24px 1fr',alignItems:'center',gap:6}}><span style={{fontFamily:LB_SERIF,fontStyle:'italic',fontWeight:700,fontSize:14,color:BK.ink}}>{9 + r}</span>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',maxWidth:540,width:'100%',margin:'0 auto'}}>{row.map((d, k) => <div key={k} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
+          <div style={{display:'flex',gap:8,height:12}}>{Array.from({ length: d }, (_, q) => <span key={q} style={{width:12,height:12,borderRadius:6,background:BK.coral}}/>)}</div>
+          <span style={{width:100,borderBottom:'1.4px solid ' + BK.ink,height:26}}/>{plHeart(17)}</div>)}</div></div>)}</div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // 6 (faces "The pulse in your fingers")
+  P(<>
+    <WbTop step={5}/>
+    <Part kind="together" title="Which finger on the beat?" how="Which finger plays on the beat asked for? Write its number in the box.">
+      <BkGrid cols={2} gap="8px 12px">{W.which.map(([fs, b], i) => <ExCell key={i} n={i + 1} ex={i === 0}><div style={{display:'grid',gridTemplateColumns:'1fr auto',alignItems:'center',gap:10,padding:'16px 8px 4px'}}>
+        {plFingerRow(fs, 28, i === 0 ? b : null)}
+        <span style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:12.5,fontWeight:800,color:BK.ink}}>on {b}: {plWBox(i === 0, String(fs[b - 1]), 40, 34)}</span></div></ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Keep the pattern going" how="Write the finger numbers for the next four beats: the same pattern again. Then play each row, counting out loud.">
+      <div style={{display:'grid',gap:7}}>{W.go.map((fs, i) => <ExCell key={i} n={i + 5}><div style={{padding:'13px 6px 2px'}}>
+        <PlRow n={8} gap={7} circ={(j) => j < 4 ? plC('finger', fs[j], { size: 34 }) : plC('fingerOpen', '', { size: 34 })} under={(j) => plCount(String(j % 4 + 1), BK.muted)}/></div></ExCell>)}</div>
+    </Part>
+    <Part kind="play" title="Read the keys" how="Over each key: the beats it plays on. Write the finger for each beat, then play it: right hand, the big house next to the 4th small house.">
+      <BkGrid cols={3} gap="8px 12px">{W.keys.map((m, i) => <div key={i} style={{display:'grid',justifyItems:'center',gap:6}}>
+        <span style={{fontFamily:LB_SERIF,fontStyle:'italic',fontWeight:700,fontSize:14,color:BK.ink,justifySelf:'start'}}>{9 + i}</span>
+        <PlKeys3 beats={m}/>
+        <PlRow n={4} gap={6} circ={() => plC('fingerOpen', '', { size: 34 })} under={(j) => plCount(String(j + 1), BK.muted)}/></div>)}</BkGrid>
+    </Part>
+    <Faces/>
+  </>);
+
+  // 7. the check-up on paper (the Workbook's last page)
+  P(<PlPaperCheck/>);
+  return <>{pages}</>;
+}
+function PlKeys3({ beats }) {
+  const X = [18, 54, 90];
+  return <svg viewBox="0 0 132 104" style={{width:136,display:'block'}}>
+    {[2, 3, 4].map((f, i) => <text key={'b' + f} x={X[i] + 12} y="15" textAnchor="middle" fontSize="15" fontWeight="900" fill={BK.ink}>{(beats[f] || []).join(', ')}</text>)}
+    <rect x="2" y="24" width="128" height="78" fill="#fff" stroke={BK.ink} strokeWidth="1.6"/>
+    {[1, 2, 3].map(i => <line key={i} x1={2 + i * 32} x2={2 + i * 32} y1="74" y2="102" stroke={BK.ink} strokeWidth="1"/>)}
+    {[2, 3, 4].map((f, i) => <g key={f}><rect x={X[i]} y="24" width="24" height="50" fill={BK.ink}/><circle cx={X[i] + 12} cy="60" r="9.5" fill={BK.coral}/><text x={X[i] + 12} y="64.6" textAnchor="middle" fontSize="12.5" fontWeight="900" fill="#fff">{f}</text></g>)}
+  </svg>;
+}
+// the counting snake: twenty-four circles, eight along, eight back, eight along again; a head and a tail
+function PlSnake({ given = {}, answers }) {
+  const r = 17, dx = 50, x0 = 76, W = x0 * 2 + dx * 7 + 30, ys = [34, 100, 166], H = 198;
+  const at = (i) => { const row = Math.floor(i / 8), k = i % 8; return [x0 + (row % 2 ? 7 - k : k) * dx, ys[row]]; };
+  const xe = x0 + 7 * dx, band = `M${x0 - 10} ${ys[0]} L${xe} ${ys[0]} Q${xe + 50} ${(ys[0] + ys[1]) / 2} ${xe} ${ys[1]} L${x0} ${ys[1]} Q${x0 - 50} ${(ys[1] + ys[2]) / 2} ${x0} ${ys[2]} L${xe + 6} ${ys[2]}`;
+  return <svg viewBox={'0 0 ' + W + ' ' + H} style={{width:'100%',maxWidth:580,display:'block',margin:'0 auto'}}>
+    {[[BK.ink, 30], ['#fff', 27]].map(([c, w]) => <path key={c} d={band} fill="none" stroke={c} strokeWidth={w} strokeLinejoin="round"/>)}
+    <path d={`M${xe + 6} ${ys[2] - 15} L${xe + 36} ${ys[2] + 2} L${xe + 6} ${ys[2] + 15}`} fill="#fff" stroke={BK.ink} strokeWidth="1.5" strokeLinejoin="round"/>
+    <ellipse cx={x0 - 38} cy={ys[0]} rx="21" ry="16" fill="#fff" stroke={BK.ink} strokeWidth="1.5"/><circle cx={x0 - 46} cy={ys[0] - 5} r="2.6" fill={BK.ink}/>
+    <path d={`M${x0 - 58} ${ys[0] + 3} l-8 0 m8 0 l-6 -4 m6 4 l-6 4`} fill="none" stroke={BK.coral} strokeWidth="1.8" strokeLinecap="round"/>
+    {Array.from({ length: 24 }, (_, i) => { const [x, y] = at(i), g = given[i], a = answers && g == null;
+      return <g key={i}><circle cx={x} cy={y} r={r} fill="#fff" stroke={BK.ink} strokeWidth="1.8"/>
+        {(g != null || a) && <text x={x} y={y + 6.5} textAnchor="middle" fontSize="18" fontWeight="900" fontStyle={a ? 'italic' : undefined} fill={a ? BK.coral : BK.ink}>{g != null ? g : i % 4 + 1}</text>}</g>; })}
+  </svg>;
+}
+function PlPaperCheck() {
+  const C = PL_CHK;
+  return <div className="lb-paper" style={{display:'flex',flexDirection:'column',gap:4}}>
+    <LbPaperHead/>
+    {bkSec('A', 'Steady or not? Tick a steady trail; cross a trail whose gaps change.')}
+    <BkGrid cols={2} gap="6px 10px">{C.trails.map((g, i) => <BkCell key={i} n={i + 1}><div style={{display:'grid',gridTemplateColumns:'1fr auto',alignItems:'center',gap:10,padding:'12px 6px 2px'}}><PlTrail gaps={g}/><TickCross ok={plSteady(g)}/></div></BkCell>)}</BkGrid>
+    {bkSec('B', 'Write the count in every empty circle: 1 2 3 4, then 1 again.')}
+    <BkGrid cols={2} gap="6px 10px">{C.fill.map((m, i) => <BkCell key={i} n={i + 5}><div style={{padding:'14px 2px 2px'}}><PlRow n={8} gap={3} group={8} circ={(j) => plC('beat', m[j] != null ? String(m[j]) : '', { size: 33 })}/></div></BkCell>)}</BkGrid>
+    {bkSec('C', 'Which beats do you play? Write their numbers.')}
+    <BkGrid cols={2} gap="6px 10px">{C.play.map((m, i) => <BkCell key={i} n={i + 9}><div style={{display:'grid',gridTemplateColumns:'1fr auto',alignItems:'center',gap:10,padding:'12px 8px 2px'}}><PlRow n={4} gap={8} circ={(j) => plC(m[j] ? 'play' : 'silent', '', { size: 32 })} under={(j) => plCount(String(j + 1), BK.muted)}/>{bkBox(84, 36)}</div></BkCell>)}</BkGrid>
+    {bkSec('D', 'Four beats: how many sounds? Write the number.')}
+    <BkGrid cols={2} gap="6px 10px">{C.sounds.map((row, i) => <BkCell key={i} n={i + 13}><div style={{display:'grid',gridTemplateColumns:'1fr auto',alignItems:'center',gap:8,padding:'12px 6px 2px'}}><PlWordRow row={row} dots={false} w={280} size={14}/>{bkBox(40, 36)}</div></BkCell>)}</BkGrid>
+    {bkSec('E', 'Which finger plays on the beat asked for?')}
+    <BkGrid cols={2} gap="6px 10px">{C.which.map(([fs, b], i) => <BkCell key={i} n={i + 17}><div style={{display:'grid',gridTemplateColumns:'1fr auto',alignItems:'center',gap:10,padding:'12px 8px 2px'}}>{plFingerRow(fs, 30)}<span style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:12.5,fontWeight:800,color:BK.ink}}>on {b}: {bkBox(40, 36)}</span></div></BkCell>)}</BkGrid>
+  </div>;
+}
+
+function PlTeacher() {
+  const W = PL_WB, C = PL_CHK, pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={pages.length + 1} chId="pulse" teacher>{content}</WbPage>);
+  const st = (g) => plSteady(g) ? 'steady ✓' : 'not steady ✗';
+  const plays = (m) => m.map((x, j) => x ? j + 1 : null).filter(Boolean).join(' ');
+  const playName = (pl) => pl.length === 1 ? 'only ' + pl[0] : pl.join(' ');
+  P(<>
+    <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('pulse')}</div>
+    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 8px',lineHeight:1.5}}>Each workbook page faces its Lesson Book page. The book uses <b>pulse</b> in the title and the opener and <b>beat</b> everywhere else (Korean: 박). It counts <b>1 2 3 4</b> only. Later: strong and weak beats (chapter {bkChapterNo('time-signatures')}, Time signatures); note values, rest names and + for “and” (chapter {bkChapterNo('note-values')}: 1 + 2 + 3 + 4 +, then 1 e + a 2 e + a); speed (chapter {bkChapterNo('tempo')}, Tempo). A silent beat is a dashed circle with no rest name yet. AMEB: practical, the groundwork for 2/4 and 3/4 at Preliminary.</div>
+    <div style={{fontSize:12.5,color:BK.ink,margin:'0 0 12px',lineHeight:1.5,border:'0.8px solid ' + BK.hair,padding:'7px 10px'}}><b style={{color:BK.coral}}>Lesson time: walk, then run.</b> Walk round the room to a steady beat: one step on each beat. Later, running (two quick steps on each beat) becomes two quavers, counted 1 + 2 + in chapter {bkChapterNo('note-values')}. In this chapter, keep to walking.</div>
+    <TcBlock page={2} title="A steady beat" answers={<>{tcAns('TRY IT', W.trails.map(st))}{tcAns('YOUR TURN', W.trails2.map(st), 5)}{tcAns('PLAY', ['9 to 11: two more footprints on each trail, the same gap as the first three'], null)}</>}
+      watch="Judging a trail by its length instead of its gaps. Missing a single gap that changes (3 and 8). When the student pats or walks: speeding up as the beat goes on, slowing down, or stopping to think: the count must stay steady."
+      say="“Look between the feet: is every gap the same?”"/>
+    <TcBlock page={3} title="Count out loud" answers={<>{tcAns('TRY IT', ['1 to 4: 1 2 3 4 1 2 3 4 in every row'], null)}{tcAns('YOUR TURN', W.next.map(s => Array.from({ length: 6 }, (_, j) => (s - 1 + j) % 4 + 1).join(' ')), 5)}{tcAns('PLAY', ['1 2 3 4 six times round, from the head to the tail'], 9)}</>}
+      watch="Counting on past 4 (“5, 6”). Playing or patting the first beat and only then starting the count, so the count lands late and every number is behind its beat: the number and the beat start together. Letting the count speed up or slow down: it should be as steady as the beat."
+      say="“Say 1 at the same moment as you pat: number and pat together.”"/>
+    <TcBlock page={4} title="When the notes stop" answers={<>{tcAns('TRY IT', ['1 to 4: 1 2 3 4 1 2 3 4 under every row, the silent circles too'], null)}{tcAns('YOUR TURN', W.colour.map(playName), 5)}{tcAns('PLAY', ['9 to 12: 1 2 3 4 1 2 3 4 under every row (the numbers in the circles counted only the notes)'], null)}</>}
+      watch="Writing numbers only under the played circles. At the piano: stopping the count when the hand lifts, or rushing through the silent beats to the next note, so the next 1 comes early. Numbers 4 and 11 begin with a silent beat: the count still starts on 1."
+      say="“Your hand stops; your count doesn't.”"/>
+  </>);
+  P(<>
+    <TcBlock page={5} title="Beat or rhythm?" answers={<>{tcAns('TRY IT', W.dots.map(r => r.map(x => PL_WN[x][1]).join(' ') + ' dots'))}{tcAns('YOUR TURN', W.count.map(r => '4 beats, ' + plSounds(r) + ' sounds'), 5)}{tcAns('PLAY', W.wordsFromDots.map(r => r.map(d => d === 1 ? 'bird' : 'tur-tle').join(' ')), 9)}</>}
+      watch="Tapping the foot on every sound of the words instead of the beat (the commonest mix-up). Giving a two-sound word two beats. Number 8: bird bird bird bird has 4 beats and 4 sounds: here the rhythm and the beat are the same."
+      say="“The foot is the heartbeat: it never changes. The hands say the words.”"/>
+    <TcBlock page={6} title="The beat in your fingers" answers={<>{tcAns('TRY IT', W.which.map(([fs, b]) => 'on ' + b + ': finger ' + fs[b - 1]))}{tcAns('YOUR TURN', W.go.map(fs => [...fs, ...fs].join(' ')), 5)}{tcAns('PLAY', W.keys.map(m => [1, 2, 3, 4].map(b => [2, 3, 4].find(f => (m[f] || []).includes(b))).join(' ')), 9)}</>}
+      watch="Reading the finger numbers as the count, or the count as finger numbers: the coral circles are fingers, the numbers under them are the count. Pausing to find the next finger, so the beat stops: put every finger on its key before the count starts. Playing the first note and then starting the count late."
+      say="“Coral is the finger, the number under it is the count. Keep the count going even while you look.”"/>
+    <TcBlock page={7} title="The check-up on paper (the Workbook's last page)" answers={<>
+      {tcAns('A', C.trails.map(st))}
+      {tcAns('B', ['5 to 8: 1 2 3 4 1 2 3 4 in every row'], null)}
+      {tcAns('C', C.play.map(plays), 9)}
+      {tcAns('D', C.sounds.map(plSounds), 13)}
+      {tcAns('E', C.which.map(([fs, b]) => 'finger ' + fs[b - 1]), 17)}
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Four marks for each section. The paper shows the idea; the beat itself is heard: also listen to the student pat and count (My five checks, Lesson Book page 7).</div>
+    </>}
+      goBack={[{ id: 'a', step: 1, page: 2 }, { id: 'b', step: 2, page: 3 }, { id: 'c', step: 3, page: 4 }, { id: 'd', step: 4, page: 5 }, { id: 'e', step: 5, page: 6 }]}/>
+  </>);
+  return <>{pages}</>;
+}
+WORKBOOKS.pulse = PlWorkbook;
+TEACHER_COPIES.pulse = PlTeacher;
+
+const LESSON_BOOKS = { 'posture-hands': PostureLessonBook, 'first-steps': FirstStepsLessonBook, 'note-names': NoteNamesLessonBook, staff: StaffLessonBook, 'whole-staff': WholeStaffLessonBook, 'ledger-lines': LedgerLessonBook, tones: TonesLessonBook, pulse: PulseLessonBook };
 // Phase 394: chapters whose first and last pages are shared by both books
-const LB_PAGE_FNS = { 'posture-hands': postureLbPages, 'first-steps': fsLbPages, 'note-names': nnLbPages, staff: sfLbPages, 'whole-staff': wsLbPages, 'ledger-lines': llLbPages };
+const LB_PAGE_FNS = { 'posture-hands': postureLbPages, 'first-steps': fsLbPages, 'note-names': nnLbPages, staff: sfLbPages, 'whole-staff': wsLbPages, 'ledger-lines': llLbPages, tones: tnLbPages, pulse: plLbPages };   // Phase 455: tones and pulse too, so each workbook page faces its own lesson page
 // Phase 409: the Workbook no longer repeats the book's opener; its last page is the check-up on paper (the book's
 // last page keeps only the at-the-piano checks). Chapter 4 builds its own check-up page.
 const LB_PAPER_PAGES = { 'posture-hands': () => <PhPaperCheck/>, 'first-steps': () => <FsPaperCheck/>, 'note-names': () => <NnPaperCheck/> };
