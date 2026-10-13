@@ -4,6 +4,7 @@
 # The page body is hand-written in tools/lessons/src/<chapter-id>.html (one per chapter, checked by Sohyun);
 # drawings are SVGs (the Lesson Book's own, from the art generator), in tools/lessons/svg/<chapter-id>/, placed with {{svg:name}};
 # {{beats:1 2 3 - | 3 2 1 -}} draws a row of beat circles like the Lesson Book's tunes.
+# {{fingers:2 3 2 3 | 2 3 2 3}} draws the same with the finger numbers in coral circles (chapter 3 on, Phase 456).
 import html, json, os, re, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -34,16 +35,17 @@ def svg(name):
     return s
 
 
-def beats(seq):
+def beats(seq, fing=False):
     # a row of beat circles like the Lesson Book's tunes: numbers are fingers, - holds for one more beat, | is a bar line
     xs = seq.split()
     say = ', '.join({'-': 'hold', '|': 'bar line'}.get(x, x) for x in xs)
     cell = lambda x: '<i class="h"></i>' if x == '-' else '<i>' + html.escape(x) + '</i>'
     bars = ['<span class="bt">' + ''.join(cell(x) for x in bar.split()) + '</span>' for bar in seq.split('|')]   # a bar never breaks across lines
-    return '<span class="beats" role="img" aria-label="%s">%s</span>' % (html.escape(say), '<i class="bar"></i>'.join(bars))
+    return '<span class="beats%s" role="img" aria-label="%s%s">%s</span>' % (' fing' if fing else '', 'fingers ' if fing else '', html.escape(say), '<i class="bar"></i>'.join(bars))
 
 
 body = re.sub(r'\{\{beats:([^}]+)\}\}', lambda x: beats(x.group(1)), body)
+body = re.sub(r'\{\{fingers:([^}]+)\}\}', lambda x: beats(x.group(1), True), body)
 body = re.sub(r'\{\{svg:([\w-]+)\}\}', lambda x: svg(x.group(1)), body)
 drafts = len(re.findall(r'class="[^"]*\bdraft\b', body))
 if final and drafts:
@@ -147,6 +149,7 @@ page = f'''<!DOCTYPE html>
   .beats {{ display:flex; flex-wrap:wrap; gap:4px; align-items:center; margin-top:8px; }}
   .beats i {{ width:24px; height:24px; border-radius:50%; border:1.8px solid var(--navy); background:#fff; color:var(--navy); font-style:normal; font-weight:800; font-size:12.5px; display:inline-flex; align-items:center; justify-content:center; }}
   .beats i.h {{ border:1.5px dashed #a99e85; background:transparent; }}
+  .beats.fing i:not(.bar):not(.h) {{ background:var(--coral); border-color:var(--coral); color:#fff; }}
   .beats i.bar {{ width:1.6px; border:0; border-radius:0; background:var(--navy); opacity:.5; margin:0 3px; }}
   .beats .bt {{ display:inline-flex; gap:4px; }}
   ol.moves.tunes {{ grid-template-columns:1fr; gap:10px; }}

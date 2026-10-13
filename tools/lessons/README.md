@@ -32,6 +32,8 @@ python3 tools/lessons/build.py <chapter-id> --final  # refuses while any DRAFT m
   `{{svg:name}}`. build.py prefixes every id inside a drawing with its name, so drawings never clash on a page.
 - `{{beats:1 2 3 - | 3 2 1 -}}` draws a row of beat circles like the Lesson Book's tunes (a number is a
   finger, `-` holds for one more beat, `|` is a bar line).
+- `{{fingers:2 3 2 3 | 2 3 2 3}}` draws the same row with the finger numbers in coral circles, as the Lesson
+  Book does from chapter 3 on, so a finger number never reads as the count (Phase 456).
 - Only facts already in the Lesson Book go on the page; anything new is a question for Sohyun first.
 - The worksheet picture is the chapter's Workbook page, printed by Chromium and saved as
   `lessons/img/<chapter-id>-worksheet.jpg` (880 px wide).
