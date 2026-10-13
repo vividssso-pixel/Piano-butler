@@ -2200,7 +2200,7 @@ function PrintWorksheet({ drillId, level, count }) {
     for (let i = 0; i < n; i++) { const q = concept.generate(lv, prev); out.push(q); prev = q; }
     return out;
   }, [drillId, level, n]);
-  if (!concept || concept.noPrint) {
+  if (!concept || concept.noPrint || (lv && lv.noPrint)) {
     return (
       <div style={{maxWidth:600,margin:'40px auto',padding:'0 20px',fontFamily:'Inter,sans-serif',textAlign:'center',color:'#26296b'}}>
         <p>No printable worksheet for this activity yet: it's a hands-on tool, not a set of questions.</p>
@@ -3381,6 +3381,7 @@ const HEAD_Y = 62, STEM_TOP = 20;
 
 function RestShape({ d, cx, ink }) {
   const s = { stroke: ink, fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' };
+  if (d >= 8) return <g><line x1={cx - 10} y1="37" x2={cx + 10} y2="37" stroke={ink} strokeWidth="1.2"/><line x1={cx - 10} y1="51" x2={cx + 10} y2="51" stroke={ink} strokeWidth="1.2"/><rect x={cx - 4} y="37" width="8" height="14" fill={ink}/></g>;   // the breve rest fills a space
   if (d >= 4) return <g><line x1={cx - 12} y1="44" x2={cx + 12} y2="44" stroke={ink} strokeWidth="1.2"/><rect x={cx - 8} y="44" width="16" height="7" fill={ink}/></g>;
   if (d >= 2) return <g><line x1={cx - 12} y1="52" x2={cx + 12} y2="52" stroke={ink} strokeWidth="1.2"/><rect x={cx - 8} y="45" width="16" height="7" fill={ink}/></g>;
   if (d >= 1) return <path d={`M${cx - 3},30 L${cx + 5},40 L${cx - 2},49 L${cx + 6},59 Q${cx - 7},55 ${cx - 1},68`} {...s} strokeWidth="3.4"/>;
@@ -3399,7 +3400,7 @@ function RestShape({ d, cx, ink }) {
 }
 
 // One note: head (+ stem, + flags if not beamed, + dot). base = undotted value in beats.
-function NoteShape({ base, dot, cx, ink, beamed }) {
+function NoteShape({ base, dot, dd, cx, ink, beamed }) {
   const hollow = base >= 2;
   const sx = cx + 6.4;
   return (
@@ -3410,7 +3411,9 @@ function NoteShape({ base, dot, cx, ink, beamed }) {
       {!beamed && base <= 0.5 && <path d={`M${sx},${STEM_TOP} c 2,9 13,12 8,27`} fill="none" stroke={ink} strokeWidth="2.6" strokeLinecap="round"/>}
       {!beamed && base <= 0.25 && <path d={`M${sx},${STEM_TOP + 9} c 2,8 13,11 8,24`} fill="none" stroke={ink} strokeWidth="2.6" strokeLinecap="round"/>}
       {!beamed && base <= 0.125 && <path d={`M${sx},${STEM_TOP + 17} c 2,7 13,10 8,20`} fill="none" stroke={ink} strokeWidth="2.6" strokeLinecap="round"/>}
-      {dot && <circle cx={cx + 14} cy={HEAD_Y - 2} r="2.6" fill={ink}/>}
+      {base >= 8 && <g stroke={ink} strokeWidth="1.6">{[-14.5, -12, 12, 14.5].map(dx => <line key={dx} x1={cx + dx} x2={cx + dx} y1={HEAD_Y - 8} y2={HEAD_Y + 8}/>)}</g>}
+      {dot && <circle cx={cx + (base >= 8 ? 19 : 14)} cy={HEAD_Y - 2} r="2.6" fill={ink}/>}
+      {dd && <circle cx={cx + (base >= 8 ? 26 : 21)} cy={HEAD_Y - 2} r="2.6" fill={ink}/>}
     </g>
   );
 }
@@ -3420,7 +3423,7 @@ function Glyph({ item, ink = '#26296b', size = 56 }) {
   const w = 44;
   return (
     <svg viewBox={'0 10 ' + w + ' 66'} style={{width: size * w / 66, height: size, display:'inline-block', verticalAlign:'middle'}}>
-      {item.rest ? <g><RestShape d={item.base} cx={w / 2 - (item.dot ? 4 : 0)} ink={ink}/>{item.dot && <circle cx={w / 2 + 12} cy={item.base >= 2 ? 40 : 46} r="2.6" fill={ink}/>}</g> : <NoteShape base={item.base} dot={item.dot} cx={w / 2 - (item.dot ? 5 : 2)} ink={ink}/>}
+      {item.rest ? <g><RestShape d={item.base} cx={w / 2 - (item.dot ? 4 : 0)} ink={ink}/>{item.dot && <circle cx={w / 2 + 12} cy={item.base >= 2 ? 40 : 46} r="2.6" fill={ink}/>}</g> : <NoteShape base={item.base} dot={item.dot} dd={item.dd} cx={w / 2 - (item.dd ? 8 : item.dot ? 5 : 2)} ink={ink}/>}
     </svg>
   );
 }
@@ -3435,15 +3438,15 @@ const NOTE_VALUES = [
   { id: 'quaver',     us: 'eighth',    base: 0.5 },
   { id: 'semiquaver', us: 'sixteenth', base: 0.25 },
 ];
-const NV_KO = { semibreve: '온', minim: '2분', crotchet: '4분', quaver: '8분', semiquaver: '16분', demisemiquaver: '32분' };
+const NV_KO = { breve: '겹온', semibreve: '온', minim: '2분', crotchet: '4분', quaver: '8분', semiquaver: '16분', demisemiquaver: '32분' };
 function nvItem(v, opts) {
   const o = opts || {};
-  const beats = v.base * (o.dot ? 1.5 : 1);
-  const ukEn = (o.dot ? 'dotted ' : '') + v.id + (o.rest ? ' rest' : '');
-  const us = (o.dot ? 'dotted ' : '') + v.us + (o.rest ? ' rest' : ' note');
-  const ko = (o.dot ? '점' : '') + NV_KO[v.id] + (o.rest ? '쉼표' : '음표');
+  const beats = v.base * (o.dd ? 1.75 : o.dot ? 1.5 : 1);   // dd (Phase 460): double-dotted
+  const ukEn = (o.dd ? 'double-dotted ' : o.dot ? 'dotted ' : '') + v.id + (o.rest ? ' rest' : '');
+  const us = (o.dd ? 'double-dotted ' : o.dot ? 'dotted ' : '') + v.us + (o.rest ? ' rest' : ' note');
+  const ko = (o.dd ? '겹점' : o.dot ? '점' : '') + NV_KO[v.id] + (o.rest ? '쉼표' : '음표');
   // uk follows the language (Korean has one naming system: 온음표, 4분쉼표 ...); us stays the American name
-  return { key: (o.rest ? 'r:' : 'n:') + (o.dot ? '.' : '') + v.id, id: v.id, base: v.base, dot: !!o.dot, rest: !!o.rest, beats, get uk() { return LANG === 'ko' ? ko : ukEn; }, ukEn, us, ko };
+  return { key: (o.rest ? 'r:' : 'n:') + (o.dd ? '..' : o.dot ? '.' : '') + v.id, id: v.id, base: v.base, dot: !!o.dot || !!o.dd, dd: !!o.dd, rest: !!o.rest, beats, get uk() { return LANG === 'ko' ? ko : ukEn; }, ukEn, us, ko };
 }
 const NV_NOTES = NOTE_VALUES.map(v => nvItem(v));
 const NV_RESTS = NOTE_VALUES.map(v => nvItem(v, { rest: true }));
@@ -4670,6 +4673,15 @@ function RhythmLearn({ onStart }) {
       </Step>
       <Step title={t('Make your own', '직접 만들어보기')}>
       <RhythmComposer/>
+      </Step>
+      <Step title={t('One beat = one apple', '한 박 = 사과 한 개')}>
+      <BeamApples/>
+      </Step>
+      <Step title={t('Dotted notes', '점음표')}>
+      <DottedNotesCard/>
+      </Step>
+      <Step title={t('Dot lab', '점 실험실')}>
+      <DotLab/>
       </Step>
     </Lesson>
   );
@@ -8603,6 +8615,18 @@ function TimeSigLearn({ onStart }) {
       <ExplPulse1/>
       <BeatTarget/>
       </Step>
+      <Step title={t('Writing rests correctly', '쉼표를 올바르게 쓰기')}>
+      <RestGrouping/>
+      </Step>
+      <Step title={t('Fix the bar', '마디 고치기')}>
+      <FixTheBar/>
+      </Step>
+      <Step title={t('Fill the bar', '마디 채우기')}>
+      <FillTheBar/>
+      </Step>
+      <Step title={t('Which bar did you hear?', '어떤 마디를 들었을까요?')}>
+      <HeardBar/>
+      </Step>
     </Lesson>
   );
 }
@@ -11450,7 +11474,7 @@ function CountAloud() {
   const [id, setId] = useState('q');
   const bar = COUNT_BARS.find(b => b.id === id);
   const [pos, setPos] = useState(-1); // half-beat index 0..7
-  const [ands, setAnds] = useState(false); // count "1 2 3 4", or "1 and 2 and"
+  const [ands, setAnds] = useState(false); // count "1 2 3 4", or "1 + 2 +" (said "and")
   const useAnd = ands || id === 'e'; // quavers can't be counted without the "and"
   const timers = useRef([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
@@ -11476,16 +11500,16 @@ function CountAloud() {
   return (
     <div className="try-box" style={actBox}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
-        <div style={actTitle}>{t('Count it: ', '소리 내어 세기: ')}{useAnd ? t('1 and 2 and', '1 앤 2 앤') : '1 2 3 4'}</div>
-        <div style={{display:'flex',gap:3}}>{[[false, '1 2 3 4'], [true, t('1 and 2 and', '1 앤 2 앤')]].map(([v, l]) => <button key={l} className={'chip' + (useAnd === v ? ' active' : '')} disabled={id === 'e' && !v} style={{padding:'2px 8px',fontSize:12,opacity:id === 'e' && !v ? 0.45 : 1}} onClick={() => { setAnds(v); setPos(-1); }}>{l}</button>)}</div>
+        <div style={actTitle}>{t('Count it: ', '소리 내어 세기: ')}{useAnd ? '1 + 2 +' : '1 2 3 4'}</div>
+        <div style={{display:'flex',gap:3}}>{[[false, '1 2 3 4'], [true, '1 + 2 +']].map(([v, l]) => <button key={l} className={'chip' + (useAnd === v ? ' active' : '')} disabled={id === 'e' && !v} style={{padding:'2px 8px',fontSize:12,opacity:id === 'e' && !v ? 0.45 : 1}} onClick={() => { setAnds(v); setPos(-1); }}>{l}</button>)}</div>
       </div>
       <div style={actNote}>{LANG === 'ko' ? <>마디 끝까지 세는 소리를 소리 내어 말해요. 음이 시작하는 곳의 숫자는 <b>굵게</b> 보여요. 긴 음을 누르고 있는 동안에도 작게 계속 세요: 그 숫자는 회색이에요.</> : <>Say the count out loud all the way through the bar. Where a note starts, the count is <b>bold</b>; while a long note is still held, keep counting quietly: those counts are grey.</>}</div>
       <div style={{display:'flex',flexWrap:'wrap',gap:4,marginBottom:6}}>{COUNT_BARS.map(b => <button key={b.id} className={'chip' + (b.id === id ? ' active' : '')} style={{padding:'3px 9px',fontSize:13}} onClick={() => { setId(b.id); setPos(-1); }}>{b.title}</button>)}</div>
       <BeatRow items={items} total={4} on={pos >= 0 ? onsets.filter(o => o <= pos / 2 + 1e-9).length - 1 : -1} size={40}/>
-      {id === 'e' && !ands && <div style={{fontSize:12.5,color:'var(--muted)',marginTop:8,lineHeight:1.4}}>{t('Quavers are half a beat, so they need the “and”: two quavers = “1 and”.', '8분음표는 반 박이라서 “앤”이 필요해요: 8분음표 두 개 = “1 앤”.')}</div>}
+      {id === 'e' && !ands && <div style={{fontSize:12.5,color:'var(--muted)',marginTop:8,lineHeight:1.4}}>{t('Quavers are half a beat, so they need the +: two quavers = 1 +. Say + as “and”.', '8분음표는 반 박이라서 +가 필요해요: 8분음표 두 개 = 1 +. +는 “앤”이라고 읽어요.')}</div>}
       <div style={{display:'grid',gridTemplateColumns:'repeat(8,1fr)',marginTop:6}}>
         {words.map((w, h) => !useAnd && w === 'and' ? <div key={h}/> : (
-          <div key={h} style={{textAlign:'center',fontSize:w === 'and' ? 12 : 17,fontWeight:isOnset(h) ? 900 : 600,color:pos === h ? '#c8361b' : isOnset(h) ? 'var(--text)' : '#c9c0aa',transform:pos === h ? 'scale(1.25)' : 'none',transition:'transform 0.08s'}}>{w === 'and' && LANG === 'ko' ? '앤' : w}</div>
+          <div key={h} style={{textAlign:'center',fontSize:w === 'and' ? 12 : 17,fontWeight:isOnset(h) ? 900 : 600,color:pos === h ? '#c8361b' : isOnset(h) ? 'var(--text)' : '#c9c0aa',transform:pos === h ? 'scale(1.25)' : 'none',transition:'transform 0.08s'}}>{w === 'and' ? '+' : w}</div>
         ))}
       </div>
       <div style={{textAlign:'center',marginTop:8}}><button className="ghost-btn" onClick={play}>{t('♪ Play and count', '♪ 연주하며 세기')}</button></div>
@@ -18819,7 +18843,12 @@ const TOOLS = [
   { id: 'finger-beat', ch: 'pulse', title: 'A new finger on each beat', blurb: 'Black keys on the beat, a new finger each time, counting out loud.', C: () => <PlFingerBeat/> },
   { id: 'beat-groups', ch: 'time-signatures', title: 'Strong and weak beats', blurb: 'Pat the strong 1, clap the rest: in 2s, 3s or 4s, then guess by ear.', C: () => <BeatGroups/> },
   { id: 'beat-target', ch: 'time-signatures', title: 'Tap the right beat', blurb: 'Count-in, then tap only beat 3, the “and”, or in silent bars.', C: () => <><ExplPulse1/><BeatTarget/></> },
-  { id: 'count-aloud', ch: 'note-values', title: 'Count it out loud', blurb: '1 2 3 4, or 1 and 2 and: lights up as the bar plays.', C: () => <><ExplPulse2/><CountAloud/></> },
+  { id: 'count-aloud', ch: 'note-values', title: 'Count it out loud', blurb: '1 2 3 4, or 1 + 2 +: lights up as the bar plays.', C: () => <><ExplPulse2/><CountAloud/></> },
+  { id: 'nv-walk', ch: 'note-values', title: 'Walk the crotchets', blurb: 'One beat each: listen, then tap them with the click.', C: () => <NvPad page={2}/> },
+  { id: 'nv-hold', ch: 'note-values', title: 'Play, then hold', blurb: 'Minims last two beats: watch the sound line grow, then tap.', C: () => <NvPad page={3}/> },
+  { id: 'nv-long', ch: 'note-values', title: 'Hold 3 beats, hold 4', blurb: 'The dotted minim and the semibreve, against the click.', C: () => <NvPad page={4}/> },
+  { id: 'nv-run', ch: 'note-values', title: 'Walk and run', blurb: 'Two quavers on one beat: 1 + 2 +.', C: () => <NvPad page={5}/> },
+  { id: 'nv-rests', ch: 'note-values', title: 'Count the silence', blurb: 'Tap the notes, not the rests, and keep counting.', C: () => <NvPad page={6}/> },
   { id: 'step-skip', ch: 'intervals', title: 'Step, skip or same?', blurb: 'Read by direction and distance.', C: () => <><ExplIntervals1/><StepSkip/></> },
   { id: 'mini-tune', ch: 'reading-steps', title: 'Read a tiny tune', blurb: 'C position tunes with counting.', C: () => <><ExplReadingSteps2/><MiniTune/></> },
   { id: 'five-positions', ch: 'reading-steps', title: 'Five-finger positions', blurb: 'All 12 keys, both hands: one finger per note.', C: () => <><ExplReadingSteps5/><FivePosition/></> },
@@ -18885,21 +18914,21 @@ const TOOLS = [
   { id: 'seventh-chords', ch: 'chords', title: 'Build a 7th chord', blurb: 'maj7, 7, m7, m7\u266D5, \u00B07: triad + one more 3rd.', C: () => <SeventhChords/> },
   { id: 'chord-extensions', ch: 'chords', title: 'Beyond the 7th: 9, 11, 13', blurb: 'Why the numbers skip past the octave.', C: () => <ChordExtensions/> },
   { id: 'split-it', ch: 'note-values', title: 'Split the notes (note values)', blurb: 'One semibreve into minims, crotchets...', C: () => <SplitTree/> },
-  { id: 'beam-apples', ch: 'note-values', title: 'One beat = one apple (beams)', blurb: 'Cut the beat-apple into halves and quarters: the beam holds the pieces together.', C: () => <BeamApples/> },
-  { id: 'fix-the-bar', ch: 'note-values', title: 'Fix the bar', blurb: 'Tap notes and rests until the 4/4 bar adds up to exactly 4 beats.', C: () => <FixTheBar/> },
-  { id: 'heard-bar', ch: 'note-values', title: 'Which bar did you hear?', blurb: 'Listen for sound and silence, then pick the matching bar of notes and rests.', C: () => <HeardBar/> },
-  { id: 'dot-lab', ch: 'note-values', title: 'Dot lab', blurb: 'Flip note/rest and the dot: see and hear exactly how long it lasts.', C: () => <DotLab/> },
+  { id: 'beam-apples', ch: 'rhythm', title: 'One beat = one apple (beams)', blurb: 'Cut the beat-apple into halves and quarters: the beam holds the pieces together.', C: () => <BeamApples/> },
+  { id: 'fix-the-bar', ch: 'time-signatures', title: 'Fix the bar', blurb: 'Tap notes and rests until the 4/4 bar adds up to exactly 4 beats.', C: () => <FixTheBar/> },
+  { id: 'heard-bar', ch: 'time-signatures', title: 'Which bar did you hear?', blurb: 'Listen for sound and silence, then pick the matching bar of notes and rests.', C: () => <HeardBar/> },
+  { id: 'dot-lab', ch: 'rhythm', title: 'Dot lab', blurb: 'Flip note/rest and the dot: see and hear exactly how long it lasts.', C: () => <DotLab/> },
   { id: 'note-rest-naming', ch: 'note-values', hidden: true, title: 'Same name, note or rest', blurb: 'Every note value and its rest share the same name.', C: () => <NoteRestNaming/> },
-  { id: 'rest-grouping', ch: 'note-values', title: 'Rests: counted, but silent', blurb: 'Tap beats to make notes or rests. The pulse keeps going through the silence.', C: () => <RestGrouping/> },
+  { id: 'rest-grouping', ch: 'time-signatures', title: 'Rests: counted, but silent', blurb: 'Tap beats to make notes or rests. The pulse keeps going through the silence.', C: () => <RestGrouping/> },
   { id: 'note-rest-match', ch: 'note-values', title: 'Note ↔ rest match', blurb: 'Memory-pairs game: match each note name to its rest.', C: () => <NoteRestMatch/> },
-  { id: 'fill-bar', ch: 'note-values', title: 'Fill the bar', blurb: 'Exactly 2, 3 or 4 beats.', C: () => <FillTheBar/> },
+  { id: 'fill-bar', ch: 'time-signatures', title: 'Fill the bar', blurb: 'Exactly 2, 3 or 4 beats.', C: () => <FillTheBar/> },
   { id: 'count-along', ch: 'time-signatures', title: 'Count along (time signatures)', blurb: 'Beat lights and the accent for 2/4, 3/4, 4/4, 2/2, 5/4, 3/8, 6/8, 9/8 and 12/8.', C: () => <BeatPulse/> },
   { id: 'bar-lines', ch: 'time-signatures', title: 'Bar lines (and double bar, repeat signs)', blurb: 'What a bar line is, the other lines at the end of a bar, then put them in.', C: () => <BarLinesFull/> },
   { id: 'beat-doubler', ch: 'time-signatures', title: 'The bottom number changes the beat', blurb: '8 on the bottom doubles every note; 2 on the bottom halves it.', C: () => <BeatDoubler/> },
   { id: 'grouping', ch: 'time-signatures', title: 'Group the quavers', blurb: 'Which bar is beamed right for 2/4, 3/4, 4/4, 6/8?', C: () => <GroupingGame/> },
   { id: 'time-sig-numbers', ch: 'time-signatures', title: 'The two numbers: simple & compound time', blurb: 'Top = beats in a bar, bottom = which note is the beat. Switch between simple and compound; tap each to hear it.', C: () => <TimeSigNumbers/> },
   { id: 'note-value-tree', ch: 'note-values', title: 'Note values, names & rests', blurb: 'How each note splits into two of the next, and the matching rest and beat count for every note.', C: () => <NoteValuesTool/> },
-  { id: 'dotted-notes', ch: 'note-values', title: 'Dotted notes', blurb: 'A dot adds half again.', C: () => <DottedNotesCard/> },
+  { id: 'dotted-notes', ch: 'rhythm', title: 'Dotted notes', blurb: 'A dot adds half again.', C: () => <DottedNotesCard/> },
   { id: 'rhythm-cards-all', ch: 'rhythm', title: 'The 40 rhythm cards', blurb: 'One-bar rhythms in 4/4, easiest first: tap to hear.', C: () => <RhythmCardsBrowser/> },
   { id: 'all-keys', ch: 'key-signatures', title: 'All 15 key signatures', blurb: 'Tap a key to see its signature.', C: () => <KeySigAllKeys/> },
   { id: 'major-shape', ch: 'scales', title: 'The major scale shape', blurb: 'One shape builds every major scale.', C: () => <MajorShapeCard/> },
@@ -18983,7 +19012,12 @@ const TOOL_KO = {
   'finger-beat': ['박마다 다른 손가락', '박마다 다른 손가락으로 검은건반을 치며 소리 내어 세요.'],
   'beat-groups': ['강한 박과 약한 박', '강한 1은 무릎, 나머지는 손뼉: 2박, 3박, 4박씩, 그리고 귀로 맞히기.'],
   'beat-target': ['맞는 박에 두드리기', '예비박 다음에 3박만, "앤"만, 또는 소리 없는 마디에 두드리기.'],
-  'count-aloud': ['소리 내어 세기', '1 2 3 4, 또는 1 앤 2 앤: 마디가 연주되는 동안 불이 켜져요.'],
+  'count-aloud': ['소리 내어 세기', '1 2 3 4, 또는 1 + 2 +: 마디가 연주되는 동안 불이 켜져요.'],
+  'nv-walk': ['4분음표 걷기', '한 박씩: 들어 보고, 클릭에 맞춰 쳐 봐요.'],
+  'nv-hold': ['치고, 누르고 있어요', '2분음표는 두 박: 소리 줄이 자라는 걸 보고, 쳐 봐요.'],
+  'nv-long': ['3박, 4박 누르기', '점2분음표와 온음표를 클릭에 맞춰요.'],
+  'nv-run': ['걷고, 달려요', '한 박에 8분음표 둘: 1 + 2 +.'],
+  'nv-rests': ['쉬면서 세요', '쉼표 말고 음을 치고, 계속 세요.'],
   'step-skip': ['한 칸, 건너뛰기, 같은 음?', '방향과 거리로 읽어요.'],
   'mini-tune': ['짧은 튠 읽기', '박을 세며 읽는 도 자리 튠.'],
   'five-positions': ['다섯 손가락 자리', '12개 조 모두, 양손: 한 음에 한 손가락.'],
@@ -19416,9 +19450,9 @@ const TOOL_CATS = [
   { id: 'ledger', name: 'Writing notes & ledger lines', when: 'Writing a named note on the staff, ledger lines above and below, the same note on the other staff, the alto clef', color: '#e4572e' },
   { id: 'tones', name: 'Tones & semitones', when: 'Tones and semitones, sharps, flats and naturals, the chromatic scale, how long an accidental lasts', color: '#e4572e' },
   { id: 'rpulse', name: 'Pulse & counting', when: 'The steady beat, counting out loud, silent beats, beat or rhythm, a new finger on each beat', color: '#e4572e' },
-  { id: 'rnotes', name: 'Note values & rests', when: 'Splitting notes, rests, filling bars, the whole-bar rest, counting it out loud', color: '#e4572e' },
-  { id: 'rtime', name: 'Time signatures', when: 'What the two numbers mean, common and cut time, bar lines, the bottom number, counting along, strong and weak beats', color: '#e4572e' },
-  { id: 'rrhythm', name: 'Compound time & rhythm patterns', when: '6/8 and compound time, grouping quavers, duplets and triplets, rhythm cards, harder rhythms, anacrusis', color: '#e4572e' },
+  { id: 'rnotes', name: 'Notes & rests', when: 'Crotchets, minims, dotted minims, semibreves, quaver pairs and their rests, counted out loud', color: '#e4572e' },
+  { id: 'rtime', name: 'Time signatures', when: 'What the two numbers mean, common and cut time, bar lines, the bottom number, counting along, strong and weak beats, rests on the staff, filling bars', color: '#e4572e' },
+  { id: 'rrhythm', name: 'Compound time & rhythm patterns', when: '6/8 and compound time, grouping quavers, duplets and triplets, rhythm cards, harder rhythms, anacrusis, dotted notes, semiquavers', color: '#e4572e' },
   { id: 'steps', name: 'Reading tunes: pitch + rhythm', when: 'Reading tiny tunes, completing a melody, five-finger positions in all 12 keys, sight-reading cards', color: '#e4572e' },
   { id: 'rtempo', name: 'Tempo', when: 'Metronome and speed', color: '#e4572e' },
   { id: 'intervals', name: 'Intervals', when: 'Step or skip, counting an interval, major/minor/perfect, hearing intervals', color: '#e4572e' },
@@ -19440,9 +19474,9 @@ const CAT_KO = {
   ledger: ['음표 쓰기와 덧줄', '이름을 보고 오선에 음표 쓰기, 위아래 덧줄, 다른 오선의 같은 음, 알토음자리표'],
   tones: ['온음과 반음', '온음과 반음, 샤프·플랫·내추럴, 반음계, 임시표는 어디까지 유효할까'],
   rpulse: ['박과 세기', '꾸준한 박, 소리 내어 세기, 조용한 박, 박과 리듬, 박마다 다른 손가락'],
-  rnotes: ['음표 길이와 쉼표', '음표 나누기, 쉼표, 마디 채우기, 온마디 쉼표, 소리 내어 세기'],
-  rtime: ['박자표', '두 숫자의 뜻, 보통박자와 얼라 브레베, 세로줄, 아래 숫자, 따라 세기, 강한 박과 약한 박'],
-  rrhythm: ['겹박자와 리듬 패턴', '6/8과 겹박자, 8분음표 묶기, 2잇단음표와 셋잇단음표, 리듬 카드, 어려운 리듬, 여린내기'],
+  rnotes: ['음표와 쉼표', '4분음표, 2분음표, 점2분음표, 온음표, 8분음표 둘과 쉼표, 소리 내어 세기'],
+  rtime: ['박자표', '두 숫자의 뜻, 보통박자와 얼라 브레베, 세로줄, 아래 숫자, 따라 세기, 강한 박과 약한 박, 오선 위의 쉼표, 마디 채우기'],
+  rrhythm: ['겹박자와 리듬 패턴', '6/8과 겹박자, 8분음표 묶기, 2잇단음표와 셋잇단음표, 리듬 카드, 어려운 리듬, 여린내기, 점음표, 16분음표'],
   steps: ['튠 읽기: 음높이 + 리듬', '짧은 튠 읽기, 선율 완성하기, 12개 조의 다섯 손가락 자리, 초견 카드'],
   rtempo: ['템포', '메트로놈과 빠르기'],
   intervals: ['음정', '차례가기와 건너뛰기, 음정 세기, 장·단·완전 음정, 음정 듣기'],
@@ -19462,7 +19496,7 @@ TOOL_CATS.forEach(c => { const n = c.name, w = c.when; c.nameEn = n; c.whenEn = 
 // kinds: show = show & explain, game = student does it, ear = listening, write = written theory, home = home practice
 const TOOL_META = {
   'complete-melody': ['steps', 1, 2, 'game ear'],
-  'rest-grouping': ['rnotes', 2, 3, 'show'], 'duplets': ['rrhythm', 3, 3, 'show'], 'common-cut': ['rtime', 1, 2, 'show ear'], 'time-sig-numbers': ['rtime', 0, 3, 'show ear'], 'note-value-tree': ['rnotes', 0, 1, 'show ear'], 'dotted-notes': ['rnotes', 1, 2, 'show'], 'rhythm-cards-all': ['rrhythm', 1, 3, 'show ear'], 'all-keys': ['scales', 2, 3, 'show'], 'major-shape': ['scales', 1, 2, 'show'], 'major-fingering': ['scales', 1, 3, 'show home'], 'minor-fingering': ['scales', 2, 3, 'show'], 'dc-ds-coda': ['words', 1, 2, 'show'], 'finger-friends': ['body', 0, 0, 'show'], 'accidental-cards': ['tones', 1, 2, 'show'],
+  'rest-grouping': ['rtime', 2, 3, 'show'], 'duplets': ['rrhythm', 3, 3, 'show'], 'common-cut': ['rtime', 1, 2, 'show ear'], 'time-sig-numbers': ['rtime', 0, 3, 'show ear'], 'note-value-tree': ['rnotes', 0, 1, 'show ear'], 'dotted-notes': ['rrhythm', 1, 2, 'show'], 'rhythm-cards-all': ['rrhythm', 1, 3, 'show ear'], 'all-keys': ['scales', 2, 3, 'show'], 'major-shape': ['scales', 1, 2, 'show'], 'major-fingering': ['scales', 1, 3, 'show home'], 'minor-fingering': ['scales', 2, 3, 'show'], 'dc-ds-coda': ['words', 1, 2, 'show'], 'finger-friends': ['body', 0, 0, 'show'], 'accidental-cards': ['tones', 1, 2, 'show'],
   'flash-cards': ['pitch', 1, 2, 'game'], 'grace-write': ['words', 3, 3, 'write'],
   'clef-basics': ['pitch', 0, 1, 'show'], 'alto-clef': ['ledger', 3, 3, 'show'], 'staff-basics': ['pitch', 0, 1, 'show'], 'anacrusis': ['rrhythm', 2, 3, 'show'], 'minor-forms': ['scales', 1, 2, 'show'],
   'count-more': ['rrhythm', 2, 3, 'show game'], 'grouping': ['rrhythm', 2, 3, 'game write'], 'pedal': ['expression', 2, 3, 'show ear'],
@@ -19478,8 +19512,8 @@ const TOOL_META = {
   'steady-beat': ['rpulse', 0, 1, 'game'], 'beat-or-rhythm': ['rpulse', 0, 1, 'game ear'], 'beat-groups': ['rtime', 0, 2, 'game ear'], 'beat-target': ['rtime', 0, 2, 'game home'], 'count-aloud': ['rnotes', 0, 1, 'show'],
   'count-ring': ['rpulse', 0, 1, 'game'], 'silent-beats': ['rpulse', 0, 1, 'game'], 'finger-beat': ['rpulse', 0, 1, 'game home'], 'count-along': ['rtime', 1, 2, 'show home'],
   'beat-doubler': ['rtime', 1, 3, 'show'], 'metronome': ['rtempo', 0, 3, 'home'],
-  'split-it': ['rnotes', 1, 1, 'show'], 'note-rest-naming': ['rnotes', 0, 1, 'show ear'], 'dot-lab': ['rnotes', 1, 2, 'show ear'], 'beam-apples': ['rnotes', 0, 1, 'show'], 'fix-the-bar': ['rnotes', 1, 2, 'game'], 'heard-bar': ['rnotes', 1, 2, 'ear game'], 'note-rest-match': ['rnotes', 0, 1, 'game'],
-  'fill-bar': ['rnotes', 1, 2, 'game write home'], 'make-card': ['rrhythm', 1, 2, 'game home'], 'bar-lines': ['rtime', 1, 2, 'write'], 'regroup': ['rrhythm', 2, 3, 'show ear'],
+  'split-it': ['rnotes', 1, 1, 'show'], 'nv-walk': ['rnotes', 0, 1, 'game ear'], 'nv-hold': ['rnotes', 0, 1, 'game ear'], 'nv-long': ['rnotes', 0, 1, 'game ear'], 'nv-run': ['rnotes', 0, 1, 'game ear'], 'nv-rests': ['rnotes', 0, 1, 'game ear'], 'note-rest-naming': ['rnotes', 0, 1, 'show ear'], 'dot-lab': ['rrhythm', 1, 2, 'show ear'], 'beam-apples': ['rrhythm', 0, 1, 'show'], 'fix-the-bar': ['rtime', 1, 2, 'game'], 'heard-bar': ['rtime', 1, 2, 'ear game'], 'note-rest-match': ['rnotes', 0, 1, 'game'],
+  'fill-bar': ['rtime', 1, 2, 'game write home'], 'make-card': ['rrhythm', 1, 2, 'game home'], 'bar-lines': ['rtime', 1, 2, 'write'], 'regroup': ['rrhythm', 2, 3, 'show ear'],
   'dyn-order': ['expression', 0, 1, 'game'], 'hairpin': ['expression', 1, 2, 'show'], 'touch-ear': ['expression', 0, 2, 'ear game'], 'touch-lengths': ['expression', 1, 3, 'show ear'],
   'tempo-race': ['rtempo', 0, 2, 'show ear'], 'tempo-walk': ['rtempo', 0, 1, 'show ear'], 'tap-tempo': ['rtempo', 0, 3, 'game'], 'same-tune-tempo': ['rtempo', 0, 2, 'ear game'], 'speed-change': ['rtempo', 1, 2, 'show ear'], 'tie-slur': ['words', 1, 2, 'show ear'],
   'high-low': ['ear', 0, 0, 'ear game'], 'echo': ['ear', 0, 1, 'ear game home'], 'interval-ear': ['ear', 2, 3, 'ear'],
@@ -19524,7 +19558,7 @@ const PROBLEMS = [
   ['mixes up treble and bass', ['clef-story', 'fold', 'ledger-twins']],
   ['gets lost on ledger lines', ['ledger-walk', 'ledger-landmarks', 'ledger-write']],
   ['rushes or can’t keep a steady beat', ['steady-beat', 'beat-target', 'metronome']],
-  ['cuts long notes short / doesn’t count rests', ['count-aloud', 'fill-bar', 'beat-target']],
+  ['cuts long notes short / doesn’t count rests', ['nv-hold', 'nv-rests', 'count-aloud']],
   ['is confused by 6/8', ['beat-doubler', 'regroup', 'count-along']],
   ['plays everything at one volume', ['dyn-order', 'touch-ear', 'hairpin']],
   ['can’t tell legato from staccato', ['touch-lengths', 'touch-ear', 'tie-slur']],
@@ -20074,7 +20108,7 @@ function ToolRow({ t, color, starred, onStar, open, onToggle, onChapter }) {
 // New lesson-only pieces now live in the Toolbox too; borrow a sibling's icon until the design-phase redraw.
 [['time-sig-numbers', 'count-along'], ['note-value-tree', 'split-it'], ['dotted-notes', 'dot-lab'], ['rhythm-cards-all', 'make-card'], ['all-keys', 'circle-fifths'],
  ['major-shape', 'build-major'], ['major-fingering', 'scale-finder'], ['minor-fingering', 'minor-forms'], ['dc-ds-coda', 'road-map'], 
- ['finger-friends', 'finger-numbers'], ['accidental-cards', 'sharp-flat'], ['count-ring', 'count-aloud'], ['silent-beats', 'beat-target'], ['finger-beat', 'finger-numbers']].forEach(([a, b]) => { if (!TOOL_ICON[a] && TOOL_ICON[b]) TOOL_ICON[a] = TOOL_ICON[b]; });
+ ['finger-friends', 'finger-numbers'], ['accidental-cards', 'sharp-flat'], ['nv-walk', 'count-aloud'], ['nv-hold', 'split-it'], ['nv-long', 'note-value-tree'], ['nv-run', 'beam-apples'], ['nv-rests', 'note-rest-naming'], ['count-ring', 'count-aloud'], ['silent-beats', 'beat-target'], ['finger-beat', 'finger-numbers']].forEach(([a, b]) => { if (!TOOL_ICON[a] && TOOL_ICON[b]) TOOL_ICON[a] = TOOL_ICON[b]; });
 const CHAPTER_TOOL_ORDER = {
   'chords': ['triad-stack', 'major-minor', 'key-chords', 'primary-triads', 'inversions', 'cadences', 'chord-extensions', 'seventh-chords'],
   'dynamics': ['dyn-order', 'hairpin', 'pedal', 'tie-slur', 'touch-ear', 'touch-lengths'],
@@ -20085,13 +20119,13 @@ const CHAPTER_TOOL_ORDER = {
   'ledger-lines': ['ledger-walk', 'ledger-landmarks', 'ledger-twins', 'ledger-write'],
   'melody': ['tune-anatomy', 'draw-tune', 'phrase-marks', 'question-answer', 'melody-sequence'],
   'note-names': ['find-every', 'name-reveal', 'step-updown', 'letter-chain'],
-  'note-values': ['note-value-tree', 'rest-grouping', 'note-rest-match', 'split-it', 'beam-apples', 'dotted-notes', 'dot-lab', 'fix-the-bar', 'fill-bar', 'heard-bar', 'count-aloud'],
+  'note-values': ['nv-walk', 'nv-hold', 'nv-long', 'nv-run', 'nv-rests', 'count-aloud', 'note-value-tree', 'note-rest-match', 'split-it'],
   'piano-story': ['keyboard-ancestors', 'piano-timeline', 'piano-action', 'eras'],
   'pitch-range': ['hz-explorer', 'string-lab', 'size-pitch', 'octave-ladder', 'range-chart'],
   'posture-hands': ['sit-check', 'arm-moves', 'arm-alignment', 'hand-shape', 'finger-friends', 'finger-numbers', 'posture-check'],
   'pulse': ['steady-beat', 'count-ring', 'silent-beats', 'beat-or-rhythm', 'finger-beat'],
   'reading-steps': ['mini-tune', 'echo', 'hear-find', 'complete-melody', 'five-positions'],
-  'rhythm': ['rhythm-cards-all', 'count-more', 'anacrusis', 'make-card'],
+  'rhythm': ['rhythm-cards-all', 'count-more', 'anacrusis', 'make-card', 'beam-apples', 'dotted-notes', 'dot-lab'],
   'scales': ['major-shape', 'build-major', 'degree-names', 'major-fingering', 'scale-finder', 'minor-forms', 'build-minor', 'minor-fingering', 'modes'],
   'signs': ['road-map', 'dc-ds-coda', 'ottava', 'ornaments', 'grace-write'],
   'staff': ['staff-basics', 'staff-climb', 'clef-basics', 'clef-story', 'alto-clef'],
@@ -20100,7 +20134,7 @@ const CHAPTER_TOOL_ORDER = {
   'composers': ['era-worlds', 'movement-map', 'composer-time-machine', 'composer-cards', 'who-am-i', 'name-that-tune'],
   'tempo': ['tempo-walk', 'tempo-race', 'tap-tempo', 'same-tune-tempo', 'speed-change', 'metronome'],
   'terms': ['term-sort', 'term-cards', 'term-mixer', 'term-match'],
-  'time-signatures': ['time-sig-numbers', 'count-along', 'common-cut', 'bar-lines', 'beat-doubler', 'regroup', 'grouping', 'duplets', 'beat-groups', 'beat-target'],
+  'time-signatures': ['time-sig-numbers', 'count-along', 'common-cut', 'bar-lines', 'beat-doubler', 'regroup', 'grouping', 'duplets', 'beat-groups', 'beat-target', 'rest-grouping', 'fix-the-bar', 'fill-bar', 'heard-bar'],
   'tones': ['tone-semitone', 'accidental-cards', 'sharp-flat', 'accidental-bar', 'chromatic'],
 };
 function ChapterGroups({ list, colorOf, starIds, onStar, onOpen, onChapter, inline, chapterOrder }) {
@@ -20369,11 +20403,11 @@ const SKILLS = [
   ['k8', 'keys', 'Sharps, flats and naturals on the keys', ['sharp-flat', 'tone-semitone']],
   ['p1', 'beat', 'Taps a steady beat', ['steady-beat']],
   ['p2', 'beat', 'Crotchets: counts 1 2 3 4 out loud', ['count-ring', 'count-aloud']],
-  ['p3', 'beat', 'Minims, dotted minims, semibreves: keeps counting', ['count-aloud', 'split-it']],
+  ['p3', 'beat', 'Minims, dotted minims, semibreves: keeps counting', ['nv-hold', 'nv-long']],
   ['p4', 'beat', 'Taps only on the beat asked for', ['silent-beats', 'beat-target']],
   ['p5', 'beat', 'Rests and bar lines; 2/4, 3/4, 4/4', ['count-along', 'bar-lines', 'fill-bar']],
   ['p6', 'beat', 'Claps rhythm cards', ['make-card']],
-  ['p7', 'beat', 'Quavers: 1 & 2 &', ['count-aloud', 'beat-target']],
+  ['p7', 'beat', 'Quavers: 1 + 2 +', ['nv-run', 'count-aloud']],
   ['p8', 'beat', '6/8 counted 1 to 6', ['beat-doubler', 'regroup']],
   ['e1', 'ear', 'Hears high and low', ['high-low']],
   ['e2', 'ear', 'Plays loud and soft', ['dyn-order', 'touch-ear']],
@@ -22525,7 +22559,7 @@ function App() {
           <>
             <ConceptView concept={concept} tab={st.tab} level={level} mode={st.mode} locked={st.lock} onChange={update} />
             {T && st.tab === 'drill' && <ShareLink drillId={active.id} level={level} mode={st.mode} />}
-            {T && st.tab === 'drill' && !concept.noPrint && <PrintLink drillId={active.id} level={level} />}
+            {T && st.tab === 'drill' && !concept.noPrint && !(concept.levels.find(l => l.n === level) || {}).noPrint && <PrintLink drillId={active.id} level={level} />}
           </>
         ) : active.render()}
         {!st.lock && <PathNext id={active.id} onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }} onMap={() => { update({ view: 'path', drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>}
@@ -37813,9 +37847,913 @@ function PlTeacher() {
 WORKBOOKS.pulse = PlWorkbook;
 TEACHER_COPIES.pulse = PlTeacher;
 
-const LESSON_BOOKS = { 'posture-hands': PostureLessonBook, 'first-steps': FirstStepsLessonBook, 'note-names': NoteNamesLessonBook, staff: StaffLessonBook, 'whole-staff': WholeStaffLessonBook, 'ledger-lines': LedgerLessonBook, tones: TonesLessonBook, pulse: PulseLessonBook };
+// ─── Phases 457-460: chapter 5 (Notes & Rests): the Lesson Book. Drafts v1 (457) and v2 (458); applied in Phase 460
+// after her 2026-10-13 20:57 '추천대로 가보자' (B4 held beats lighter, B5 the dot adds half the minim, B6 the sound line,
+// B8 no single quaver or quaver rest yet, B13 the dotted minim and the semibreve on one page).
+// v2 (her 2026-10-13 20:45): walk and running only (no bird / tur-tle); 'its other name is ...', never 'American books';
+// every explanation short and plain; the rests show which line they sit on or hang from.
+// The level plan's scope for room 5: the semibreve, the minim, the crotchet, the quaver pair, the dotted minim; their
+// rests as pictures. Rests on the staff, bars and filling bars wait for Time signatures; the dotted crotchet, single
+// quavers and semiquavers for Rhythm patterns and the drill's higher levels. It builds on the pulse chapter (the beat
+// as hearts, counting 1 2 3 4, silent beats as dashed circles, bird and tur-tle, finger numbers in coral circles) and
+// comes before the staff, so the notes stand over the beats with no staff; the tasks use middle C (chapter 2) and the
+// black-key houses, not letter names, since the floor's rooms are free in order (ROOM_AFTER: pulse only).
+// Each note has a coral sound line under it, as long as its beats (B6). Her G2 for the pulse chapter: 'walk, running ...
+// 1 2 3 4, 1+2+3+4+, 1e+a 2e+a; + is and' (Book rule 12). AMEB: the plan puts these at Preliminary.
+
+const nvbR = (svg) => ({ k: 'raw', svg });
+const nvbF = (n) => pFix(n);
+// a note head; the semibreve's is wider, rounder and heavier
+function nvbHead(x, y, kind, col, k) {
+  const w = kind === 'w', hollow = w || kind === 'h';
+  const rx = (w ? 9.4 : 7.2) * k, ry = (w ? 6.3 : 5.3) * k, rot = w ? -12 : -20;
+  return '<ellipse cx="' + nvbF(x) + '" cy="' + nvbF(y) + '" rx="' + nvbF(rx) + '" ry="' + nvbF(ry) + '" transform="rotate(' + rot + ' ' + nvbF(x) + ' ' + nvbF(y) + ')" fill="' + (hollow ? '#fff' : col) + '" stroke="' + col + '" stroke-width="' + nvbF(w ? 2.9 * k : hollow ? 2.3 * k : 1.2 * k) + '"/>';
+}
+// one note: kind 'w' semibreve, 'h' minim, 'q' crotchet, 'e' a single quaver; o.dot, o.col, o.k
+function nvbNote(x, y, kind, o = {}) {
+  const k = o.k || 1, col = o.col || PEN_N, sx = x + 6.4 * k, top = y - 34 * k;
+  let s = nvbHead(x, y, kind, col, k);
+  if (kind !== 'w') s += '<line x1="' + nvbF(sx) + '" y1="' + nvbF(y - 1.5 * k) + '" x2="' + nvbF(sx) + '" y2="' + nvbF(top) + '" stroke="' + col + '" stroke-width="' + nvbF(1.9 * k) + '" stroke-linecap="round"/>';
+  if (kind === 'e') s += '<path d="M' + nvbF(sx) + ' ' + nvbF(top) + ' c ' + nvbF(2 * k) + ' ' + nvbF(9 * k) + ' ' + nvbF(13 * k) + ' ' + nvbF(12 * k) + ' ' + nvbF(8 * k) + ' ' + nvbF(27 * k) + '" fill="none" stroke="' + col + '" stroke-width="' + nvbF(2.6 * k) + '" stroke-linecap="round"/>';
+  if (o.dot) s += '<circle cx="' + nvbF(x + 14 * k) + '" cy="' + nvbF(y - 2 * k) + '" r="' + nvbF(2.6 * k) + '" fill="' + col + '"/>';
+  return nvbR(s);
+}
+// two quavers joined by a beam
+function nvbPair(x1, x2, y, o = {}) {
+  const k = o.k || 1, col = o.col || PEN_N, top = y - 34 * k;
+  let s = nvbHead(x1, y, 'q', col, k) + nvbHead(x2, y, 'q', col, k);
+  [x1, x2].forEach(x => { s += '<line x1="' + nvbF(x + 6.4 * k) + '" y1="' + nvbF(y - 1.5 * k) + '" x2="' + nvbF(x + 6.4 * k) + '" y2="' + nvbF(top) + '" stroke="' + col + '" stroke-width="' + nvbF(1.9 * k) + '"/>'; });
+  s += '<path d="M' + nvbF(x1 + 5.5 * k) + ' ' + nvbF(top - 0.2 * k) + ' L' + nvbF(x2 + 7.3 * k) + ' ' + nvbF(top - 0.2 * k) + ' L' + nvbF(x2 + 7.3 * k) + ' ' + nvbF(top + 5.2 * k) + ' L' + nvbF(x1 + 5.5 * k) + ' ' + nvbF(top + 5.2 * k) + ' Z" fill="' + col + '"/>';
+  return nvbR(s);
+}
+// a rest as a picture: 'q' crotchet rest, 'h' minim rest (sits on its short line), 'w' semibreve rest (hangs under it)
+function nvbRest(x, y, kind, o = {}) {
+  const k = o.k || 1, col = o.col || PEN_N, P = (a, b) => nvbF(x + a * k) + ' ' + nvbF(y + b * k);
+  if (kind === 'q') return nvbR('<path d="M' + P(-3, -19) + ' L' + P(5, -9) + ' L' + P(-2, 0) + ' L' + P(6, 10) + ' C' + P(-4, 4) + ' ' + P(-7, 15) + ' ' + P(1, 19) + '" fill="none" stroke="' + col + '" stroke-width="' + nvbF(3.4 * k) + '" stroke-linecap="round" stroke-linejoin="round"/>');
+  const line = '<line x1="' + nvbF(x - 13 * k) + '" y1="' + nvbF(y) + '" x2="' + nvbF(x + 13 * k) + '" y2="' + nvbF(y) + '" stroke="' + col + '" stroke-width="' + nvbF(1.4 * k) + '"/>';
+  const by = kind === 'h' ? y - 7 * k : y;
+  return nvbR(line + '<rect x="' + nvbF(x - 8 * k) + '" y="' + nvbF(by) + '" width="' + nvbF(16 * k) + '" height="' + nvbF(7 * k) + '" fill="' + col + '"/>');
+}
+// a piece of the five lines of music (the staff comes in chapter 6), numbered from the bottom; line `hi` coral
+function nvbLines(x, y5, gap, w, hi) {   // y5: the bottom line
+  const out = [];
+  for (let i = 0; i < 5; i++) { const y = y5 - i * gap, on = i + 1 === hi;
+    out.push({ ...penLine([x - w / 2, y], [x + w / 2, y], on ? 2.4 : 1.3, on ? PEN_C : PEN_N), nw: true });
+    out.push({ ...penText(x - w / 2 - 9, y + 4, String(i + 1), { size: 10.5, weight: 900, fill: on ? PEN_C : PEN_MUTED_NV, anchor: 'middle' }) }); }
+  return out;
+}
+const PEN_MUTED_NV = 'rgba(38,41,107,0.55)';
+// the sound line under a note: as long as its beats (B6)
+const nvbBar = (x1, x2, y, col = PEN_C) => ({ ...penLine([x1, y], [x2, y], 4, col), nw: true });
+// the brother running: two quick steps on each beat
+function nvbRunner(who = 'boy') {
+  const x = 75;
+  const J = { hip: [x, 102], neck: [x + 9, 64], head: [x + 12, 49],
+    arms: [[[x + 10, 66], [x + 22, 80], [x + 32, 72]], [[x + 6, 67], [x - 6, 82], [x - 15, 75]]],
+    legs: [[[x + 2, 102], [x + 18, 120], [x + 15, 146]], [[x - 2, 102], [x - 13, 124], [x - 30, 134]]] };
+  return penKid(J, 1, who);
+}
+// a row of notes over beats: cells D wide centred on H(i); items [kind, beats], kind 'w' | 'h' | 'hd' (dotted minim) |
+// 'q' | 'p' (quaver pair) | 'r' (crotchet rest); each note's sound line under it
+function nvbRow(s, H, D, y, items) {
+  let b = 0;
+  items.forEach(([kd, n]) => {
+    const x0 = H(b) - D / 2 + 5, x1 = H(b + n - 1) + D / 2 - 5;
+    if (kd === 'p') s.push(nvbPair(H(b) - 13, H(b) + 9, y, { k: 0.92 }), nvbBar(x0, H(b) - 3, y + 16), nvbBar(H(b) + 3, x1, y + 16));
+    else if (kd === 'r') s.push(nvbRest(H(b) + 1, y - 12, 'q'));
+    else s.push(nvbNote(kd === 'w' ? H(b) - 1 : H(b) - 3, y, kd === 'hd' ? 'h' : kd, { dot: kd === 'hd' }), nvbBar(x0, x1, y + 16));
+    b += n;
+  });
+}
+
+function nvLbPages(scr = false) {
+  const ch = 'note-values';
+  const live = (still, comp) => <LbLive still={still} live={<>{still}{comp}</>}/>;   // on screen: the picture, then what moves (B12)
+  const pic = (art, vb, label, h = 230, mw = 680) => <LbPic h={h}><div style={{width:'100%',maxWidth:mw,margin:'0 auto'}}><PenArt shapes={art} vb={vb} label={label}/></div></LbPic>;
+  const heart = (x, y, k = 2.6, col = PEN_C) => ({ ...tnHeart(x, y, k, col), nw: true });
+  const txt = (x, y, s, o) => ({ ...penText(x, y, s, o) });
+  const N = (n) => String(n);
+  const pulseNo = bkChapterNo('pulse'), chP = t('chapter ' + pulseNo, pulseNo + '챕터');
+  const C4 = '1 2 3 4', QQ = '1 + 2 +';
+
+  // p1: the note family on four beats: a semibreve, two minims, four crotchets, four quaver pairs, over four hearts
+  const art1 = (() => {
+    const s = [], D = 62, H = (i) => 162 + i * D, rows = [44, 102, 160, 218];
+    [[t('semibreve', '온음표'), t('4 beats', '4박')], [t('minim', '2분음표'), t('2 beats', '2박')], [t('crotchet', '4분음표'), t('1 beat', '1박')], [t('quavers', '8분음표'), t('2 on a beat', '한 박에 둘')]].forEach(([n, b], r) => {
+      s.push(txt(8, rows[r] - 2, n, { size: 13, weight: 900, fill: PEN_N, anchor: 'start' }), txt(8, rows[r] + 14, b, { size: 11.5, weight: 800, fill: PEN_C, anchor: 'start' }));
+    });
+    nvbRow(s, H, D, rows[0], [['w', 4]]);
+    nvbRow(s, H, D, rows[1], [['h', 2], ['h', 2]]);
+    nvbRow(s, H, D, rows[2], [['q', 1], ['q', 1], ['q', 1], ['q', 1]]);
+    nvbRow(s, H, D, rows[3], [['p', 1], ['p', 1], ['p', 1], ['p', 1]]);
+    [0, 1, 2, 3].forEach(i => { s.push(heart(H(i), 268, 2.7)); s.push(txt(H(i), 298, N(i + 1), { size: 16, weight: 900, fill: PEN_N, anchor: 'middle' })); });
+    s.push(txt(8, 273, t('the beat', '박'), { size: 13, weight: 900, fill: PEN_C, anchor: 'start' }));
+    return s;
+  })();
+
+  // p2: the crotchet: one beat; the sister walks, one step on each crotchet
+  const art2 = (() => {
+    const s = [], D = 56, H = (i) => 184 + i * D;
+    s.push(...penPlace(plWalker('girl'), 1.02, [75, 156], [70, 226]));
+    nvbRow(s, H, D, 84, [['q', 1], ['q', 1], ['q', 1], ['q', 1]]);
+    [0, 1, 2, 3].forEach(i => {
+      s.push(txt(H(i), 124, t('walk', '걷기'), { size: 13, weight: 900, fill: PEN_N, anchor: 'middle' }));
+      s.push(heart(H(i), 150, 2.6));
+      s.push(...plFoot(H(i), 184 + (i % 2 ? 7 : -7), 2.2, PEN_N, i % 2 === 0));
+      s.push(txt(H(i), 224, N(i + 1), { size: 16, weight: 900, fill: PEN_N, anchor: 'middle' }));
+    });
+    return s;
+  })();
+
+  // p3: the minim: two beats; a crotchet beside a minim; then two minims over four beats, the held beats lighter
+  const art3 = (() => {
+    const s = [], D = 70, H = (i) => 66 + i * D;
+    s.push(txt(H(0), 34, t('crotchet: 1 beat', '4분음표: 1박'), { size: 12.5, weight: 900, fill: PEN_N, anchor: 'middle' }));
+    nvbRow(s, H, D, 84, [['q', 1]]); s.push(heart(H(0), 130, 2.4));
+    s.push(txt(H(2.5), 34, t('minim: 2 beats', '2분음표: 2박'), { size: 12.5, weight: 900, fill: PEN_N, anchor: 'middle' }));
+    nvbRow(s, (i) => H(i + 2), D, 84, [['h', 2]]); s.push(heart(H(2), 130, 2.4), heart(H(3), 130, 2.4));
+    nvbRow(s, H, D, 202, [['h', 2], ['h', 2]]);
+    [0, 1, 2, 3].forEach(i => { s.push(heart(H(i), 248, 2.4)); s.push(txt(H(i), 280, N(i + 1), { size: 17, weight: 900, fill: i % 2 ? 'rgba(38,41,107,0.42)' : PEN_N, anchor: 'middle' })); });
+    s.push(txt(H(1.5), 308, t('play, then hold', '치고, 누르고 있어요'), { size: 12.5, weight: 900, fill: PEN_C, anchor: 'middle' }));
+    return s;
+  })();
+
+  // p4: longer notes: a dotted minim (3 beats) and a crotchet; a semibreve (4 beats)
+  const art4 = (() => {
+    const s = [], D = 64, H = (i) => 136 + i * D, light = 'rgba(38,41,107,0.42)';
+    s.push(txt(8, 66, t('dotted minim', '점2분음표'), { size: 12.5, weight: 900, fill: PEN_N, anchor: 'start' }), txt(8, 82, t('3 beats', '3박'), { size: 12, weight: 800, fill: PEN_C, anchor: 'start' }));
+    nvbRow(s, H, D, 74, [['hd', 3], ['q', 1]]);
+    s.push(txt(8, 196, t('semibreve', '온음표'), { size: 12.5, weight: 900, fill: PEN_N, anchor: 'start' }), txt(8, 212, t('4 beats', '4박'), { size: 12, weight: 800, fill: PEN_C, anchor: 'start' }));
+    nvbRow(s, H, D, 204, [['w', 4]]);
+    [[116, 146, [1, 2]], [246, 276, [1, 2, 3]]].forEach(([hy, cy, held]) => [0, 1, 2, 3].forEach(i => s.push(heart(H(i), hy, 2.3), txt(H(i), cy, N(i + 1), { size: 16, weight: 900, fill: held.includes(i) ? light : PEN_N, anchor: 'middle' }))));
+    return s;
+  })();
+
+  // p5: two quavers on one beat: running; counted 1 + 2 +
+  const art5 = (() => {
+    const s = [], D = 60, H = (i) => 178 + i * D;
+    s.push(...penPlace(nvbRunner('boy'), 0.95, [75, 156], [62, 222]));
+    nvbRow(s, H, D, 80, [['q', 1], ['p', 1], ['q', 1], ['p', 1]]);
+    [0, 1, 2, 3].forEach(i => {
+      const pr = i % 2 === 1;
+      s.push(txt(H(i), 122, pr ? t('run-ning', '달리기') : t('walk', '걷기'), { size: 13, weight: 900, fill: PEN_N, anchor: 'middle' }));
+      s.push(heart(H(i), 148, 2.5));
+      s.push(txt(H(i), 180, pr ? N(i + 1) + '  +' : N(i + 1), { size: 16, weight: 900, fill: PEN_N, anchor: 'middle' }));
+      if (!pr) s.push(...plFoot(H(i), 210, 2, PEN_N, true));
+      else { s.push(...plFoot(H(i) - 11, 204, 1.7, PEN_C, true)); s.push(...plFoot(H(i) + 11, 216, 1.7, PEN_C, false)); }
+    });
+    return s;
+  })();
+
+  // p6: rests: the three signs, then a row with a silent beat (dashed, as in the pulse chapter), the hearts go on
+  const art6 = (() => {
+    const s = [];
+    const G = 13, Y1 = 98;   // the five lines: the bottom line at Y1, 13 apart
+    s.push(nvbRest(56, 70, 'q', { k: 1.6 }));
+    s.push(...nvbLines(196, Y1, G, 96, 3), nvbR('<rect x="' + nvbF(196 - 15) + '" y="' + nvbF(Y1 - 2 * G - 6.5) + '" width="30" height="6.5" fill="' + PEN_N + '"/>'));
+    s.push(...nvbLines(332, Y1, G, 96, 4), nvbR('<rect x="' + nvbF(332 - 15) + '" y="' + nvbF(Y1 - 3 * G) + '" width="30" height="6.5" fill="' + PEN_N + '"/>'));
+    [[56, t('crotchet rest', '4분쉼표'), t('1 beat', '1박')], [196, t('minim rest', '2분쉼표'), t('2 beats', '2박')], [332, t('semibreve rest', '온쉼표'), t('4 beats', '4박')]].forEach(([x, n, b]) => {
+      s.push(txt(x, 124, n, { size: 13, weight: 900, fill: PEN_N, anchor: 'middle' }), txt(x, 141, b, { size: 12, weight: 800, fill: PEN_C, anchor: 'middle' }));
+    });
+    s.push(txt(196, 30, t('sits on the middle line', '가운데 줄 위에 앉아요'), { size: 11.5, weight: 900, fill: PEN_C, anchor: 'middle' }), txt(332, 30, t('hangs from line 4', '넷째 줄에 매달려요'), { size: 11.5, weight: 900, fill: PEN_C, anchor: 'middle' }));
+    const D = 66, H = (i) => 98 + i * D;
+    nvbRow(s, H, D, 212, [['q', 1], ['q', 1], ['r', 1], ['q', 1]]);
+    [0, 1, 2, 3].forEach(i => { s.push(heart(H(i), 256, 2.4)); s.push(i === 2 ? plBeat(H(i), 288, 13, N(i + 1), { silent: true, size: 14 }) : txt(H(i), 294, N(i + 1), { size: 16, weight: 900, fill: PEN_N, anchor: 'middle' })); });
+    return s;
+  })();
+
+  const chkArts = {
+    crotchet: [nvbNote(16, 30, 'q', { k: 0.62 }), nvbNote(42, 30, 'q', { k: 0.62 }), nvbNote(68, 30, 'q', { k: 0.62 })],
+    hold: [nvbNote(16, 24, 'h', { k: 0.62 }), nvbBar(10, 82, 34)],
+    long: [nvbNote(16, 28, 'h', { k: 0.6, dot: true }), nvbNote(64, 30, 'w', { k: 0.7 })],
+    pair: [nvbPair(14, 32, 30, { k: 0.62 }), txt(64, 34, '1 +', { size: 12, weight: 900, fill: PEN_N, anchor: 'middle' })],
+    rests: [nvbRest(18, 22, 'q', { k: 0.62 }), nvbRest(48, 26, 'h', { k: 0.7 }), nvbRest(76, 20, 'w', { k: 0.7 })],
+  };
+  const checksRows = [
+    ['crotchet', [0, 0, 92, 40], t('I can play a crotchet on every beat, counting out loud', '박마다 4분음표를 치면서 소리 내어 셀 수 있어요')],
+    ['hold', [0, 0, 92, 40], t('I can hold a minim for two beats and keep counting', '2분음표를 두 박 동안 누르면서 계속 셀 수 있어요')],
+    ['long', [0, 0, 92, 40], t('I can hold a dotted minim for 3 beats and a semibreve for 4', '점2분음표는 3박, 온음표는 4박 동안 누를 수 있어요')],
+    ['pair', [0, 0, 92, 40], t('I can play two quavers on one beat and count ' + QQ, '한 박에 8분음표 둘을 치고 ' + QQ + '로 셀 수 있어요')],
+    ['rests', [0, 0, 92, 40], t('I can count through a crotchet rest, a minim rest and a semibreve rest', '4분쉼표, 2분쉼표, 온쉼표 동안 계속 셀 수 있어요')],
+  ];
+
+  return [
+    // 1. opener
+    <LbPage key="1" no={1} chId={ch}>
+      <LbOnly print><div data-ch={ch}>
+        <div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em'}}>CHAPTER {bkChapterNo(ch)}</div>
+        <div style={{fontFamily:LB_SERIF,fontSize:44,fontWeight:900,color:BK.ink,lineHeight:1.02,margin:'4px 0 0'}}>{t('Notes & Rests', '음표와 쉼표')}</div>
+      </div></LbOnly>
+      {pic(art1, [0, 0, 410, 310], t('The note family over four beats, four coral hearts numbered 1 2 3 4. One semibreve lasts all four beats; two minims, two beats each; four crotchets, one beat each; four pairs of quavers, two on each beat. Under each note a coral sound line as long as its beats.', '박 네 개, 1 2 3 4 번호가 붙은 산호색 심장 넷 위의 음표 가족. 온음표 하나는 네 박 내내, 2분음표 둘은 두 박씩, 4분음표 넷은 한 박씩, 8분음표 둘씩 네 쌍은 한 박에 둘. 음표마다 아래에 박만큼 긴 산호색 소리 줄.'), 230, 500)}
+      <LbSay size={17.5}>{LANG === 'ko' ? <>음표마다 소리 나는 <b>박의 수</b>가 정해져 있어요. <b>모양</b>을 보면 알 수 있어요. <b>쉼표</b>는 몇 박 동안 쉬는지 알려 줘요.</>
+        : <>Every note lasts a number of <b>beats</b>. Its <b>shape</b> tells you how many. A <b>rest</b> is a silence that lasts beats too.</>}</LbSay>
+      <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
+        <LbOnly print><div>
+          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
+          {[[t('The crotchet: one beat', '4분음표: 한 박'), 2], [t('The minim: two beats', '2분음표: 두 박'), 3], [t('Longer notes: 3 and 4 beats', '더 긴 음표: 3박과 4박'), 4], [t('Two quavers on one beat', '한 박에 8분음표 둘'), 5], [t('Rests: silence you count', '쉼표: 세면서 쉬어요'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkTick(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
+        </div></LbOnly>
+        <div>
+          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          {checksRows.map(([, , x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkTick(15)}<span>{x.replace(/^I can /, '')}</span></div>)}
+        </div>
+      </div>
+      <LbOnly print><LbDrillStrip id={ch}/></LbOnly>
+    </LbPage>,
+
+    // 2. the crotchet
+    <LbPage key="2" no={2} chId={ch} kicker={t('Step 1', '1단계')} title={t('The crotchet: one beat', '4분음표: 한 박')}>
+      {live(pic(art2, [0, 20, 400, 216], t('The sister walking. Beside her four crotchets, each with a short coral sound line under it, the word walk under each, one coral heart and one footprint for each beat, and the count 1 2 3 4.', '걸어가는 누나. 옆에 4분음표 넷, 음표마다 아래에 짧은 산호색 소리 줄, 그 아래 걷기라는 낱말, 박마다 산호색 심장 하나와 발자국 하나, 세는 숫자 1 2 3 4.'), 230), <NvPad page={2}/>)}
+      <LbSay>{LANG === 'ko' ? <><b>4분음표</b>는 꽉 찬 머리에 기둥이 있어요. <b>한 박</b> 동안 소리 나요. 걸어요: 한 박에 한 걸음.</>
+        : <>A <b>crotchet</b> has a filled head and a stem. It lasts <b>one beat</b>. Walk: one step on each beat. Its other name is a quarter note.</>}</LbSay>
+      <LbPiano steps={LANG === 'ko' ? [
+        <>오른손 1번 손가락, 가운데 도: 박마다 4분음표, {C4}로 세면서. 네 번.</>,
+        <>방을 걸어요: 박마다 한 걸음, 소리 내어 세면서. 8걸음.</>,
+      ] : [
+        <>Right hand, finger 1 on middle C: a crotchet on every beat, counting {C4}. Four times round.</>,
+        <>Walk round the room: one step on each beat, counting out loud. 8 steps.</>,
+      ]}/>
+      <LbRemember>{t('A crotchet: one beat.', '4분음표: 한 박.')}</LbRemember>
+    </LbPage>,
+
+    // 3. the minim
+    <LbPage key="3" no={3} chId={ch} kicker={t('Step 2', '2단계')} title={t('The minim: two beats', '2분음표: 두 박')}>
+      {live(pic(art3, [0, 16, 340, 302], t('A crotchet with a sound line over one heart, beside a minim with a sound line over two hearts. Below, two minims over four hearts, the count 1 2 3 4 under them, 2 and 4 printed lighter: play, then hold.', '심장 하나 위의 4분음표와 소리 줄, 그 옆에 심장 둘 위의 2분음표와 두 박 길이의 소리 줄. 아래에 심장 넷 위의 2분음표 둘, 그 아래 세는 숫자 1 2 3 4, 2와 4는 연하게: 치고, 누르고 있어요.'), 240, 540), <NvPad page={3}/>)}
+      <LbSay>{LANG === 'ko' ? <><b>2분음표</b>는 속이 빈 머리에 기둥이 있어요. <b>두 박</b> 동안 소리 나요: 치고, 누르고 있어요. 누르는 동안에도 계속 세요.</>
+        : <>A <b>minim</b> has a hollow head and a stem. It lasts <b>two beats</b>: play, then hold. Keep counting while you hold. Its other name is a half note.</>}</LbSay>
+      <LbPiano steps={LANG === 'ko' ? [
+        <>오른손 1번 손가락, 가운데 도: 1과 3에서 2분음표, 다음 박까지 누르고 있어요. 소리 내어 세면서 네 번.</>,
+        <>오른손, 넷째 작은 집에 2번과 3번 손가락: 2번으로 4분음표 둘 (1, 2), 3번으로 2분음표 (3 4). 소리 내어 세면서 네 번.</>,
+      ] : [
+        <>Right hand, finger 1 on middle C: a minim on 1 and on 3, each held through the next beat. Count out loud, four times round.</>,
+        <>Right hand, fingers 2 and 3 on the 4th small house: finger 2 two crotchets (1, 2), finger 3 a minim (3 4). Count out loud, four times round.</>,
+      ]}/>
+      <LbRemember>{t('A minim: two beats.', '2분음표: 두 박.')}</LbRemember>
+    </LbPage>,
+
+    // 4. longer notes
+    <LbPage key="4" no={4} chId={ch} kicker={t('Step 3', '3단계')} title={t('Longer notes: 3 and 4 beats', '더 긴 음표: 3박과 4박')}>
+      {live(pic(art4, [0, 22, 400, 270], t('Top: a dotted minim with a sound line across three hearts, then a crotchet on the fourth. Bottom: a semibreve, a round hollow head with no stem, its sound line across all four hearts. Under each row the count 1 2 3 4, the held beats lighter.', '위: 점2분음표, 소리 줄이 심장 셋에 걸쳐 있고, 넷째 심장 위에는 4분음표. 아래: 온음표, 기둥 없는 둥근 속 빈 머리, 소리 줄이 심장 넷 모두에 걸쳐 있어요. 줄마다 아래에 세는 숫자 1 2 3 4, 누르고 있는 박은 연하게.'), 240), <NvPad page={4}/>)}
+      <LbSay>{LANG === 'ko' ? <><b>점2분음표</b>는 점이 붙은 2분음표예요. <b>세 박</b> 동안 소리 나요: 점은 2분음표의 반을 더해요. <b>온음표</b>는 기둥 없는 속 빈 머리예요. <b>네 박</b> 동안 소리 나요.</>
+        : <>A <b>dotted minim</b> is a minim with a dot. It lasts <b>three beats</b>: the dot adds half the minim. A <b>semibreve</b> has a hollow head and no stem. It lasts <b>four beats</b>. Their other names are a dotted half note and a whole note.</>}</LbSay>
+      <LbPiano steps={LANG === 'ko' ? [
+        <>오른손 1번 손가락, 가운데 도: 점2분음표 (1 2 3), 그다음 4분음표 (4). 소리 내어 세면서 네 번.</>,
+        <>오른손 3번 손가락, 넷째 작은 집의 오른쪽 검은건반: 온음표 (1 2 3 4). 소리 내어 세면서 네 번.</>,
+      ] : [
+        <>Right hand, finger 1 on middle C: a dotted minim (1 2 3), then a crotchet (4). Count out loud, four times round.</>,
+        <>Right hand, finger 3 on the right black key of the 4th small house: a semibreve (1 2 3 4). Count out loud, four times round.</>,
+      ]}/>
+      <LbRemember>{t('Dotted minim: 3 beats. Semibreve: 4 beats.', '점2분음표: 3박. 온음표: 4박.')}</LbRemember>
+    </LbPage>,
+
+    // 5. two quavers on one beat
+    <LbPage key="5" no={5} chId={ch} kicker={t('Step 4', '4단계')} title={t('Two quavers on one beat', '한 박에 8분음표 둘')}>
+      {live(pic(art5, [0, 20, 400, 240], t('The brother running. Beside him, over four hearts: a crotchet (walk), a pair of quavers joined by a beam (run-ning), a crotchet, a pair of quavers, each with its sound line. The count 1, 2 +, 3, 4 +. One footprint for each crotchet, two quick coral footprints for each pair.', '달리는 남동생. 옆에 심장 넷 위로: 4분음표 (걷기), 꼬리가 이어진 8분음표 둘 (달리기), 4분음표, 8분음표 둘, 음표마다 소리 줄. 세는 숫자 1, 2 +, 3, 4 +. 4분음표마다 발자국 하나, 8분음표 둘마다 빠른 산호색 발자국 둘.'), 230), <NvPad page={5}/>)}
+      <LbSay>{LANG === 'ko' ? <>꼬리가 이어진 <b>8분음표</b> 둘은 <b>한 박</b>을 나눠요. 달려요: 한 박에 빠른 걸음 둘. <b>{QQ}</b>로 세고, +는 "앤"이라고 읽어요.</>
+        : <>Two <b>quavers</b> joined by a beam share <b>one beat</b>. Run: two quick steps on a beat. Count them <b>{QQ}</b> and say "and" for +. Their other name is eighth notes.</>}</LbSay>
+      <LbPiano steps={LANG === 'ko' ? [
+        <>손뼉 쳐요: 한 번, 빠르게 두 번, 한 번, 빠르게 두 번. 그다음 오른손 1번 손가락으로 가운데 도에서 쳐요, 1, 2 +, 3, 4 +로 세면서. 네 번.</>,
+        <>이번엔 빠르게 두 번, 빠르게 두 번, 한 번, 한 번: 손뼉 치고, 가운데 도에서 쳐요, 1 +, 2 +, 3, 4로 세면서. 네 번.</>,
+      ] : [
+        <>Say and clap: walk, run-ning, walk, run-ning. Then play it with right-hand finger 1 on middle C, counting 1, 2 +, 3, 4 +. Four times round.</>,
+        <>Now run-ning, run-ning, walk, walk: say it, clap it, then play it on middle C, counting 1 +, 2 +, 3, 4. Four times round.</>,
+      ]}/>
+      <LbRemember>{t('Two quavers: one beat.', '8분음표 둘: 한 박.')}</LbRemember>
+    </LbPage>,
+
+    // 6. rests
+    <LbPage key="6" no={6} chId={ch} kicker={t('Step 5', '5단계')} title={t('Rests: silence you count', '쉼표: 세면서 쉬어요')}>
+      {live(pic(art6, [0, 14, 400, 294], t('The three rests with their beats: the crotchet rest, a zigzag, 1 beat; the minim rest, a block sitting on the middle of five lines, 2 beats; the semibreve rest, a block hanging from line 4, 4 beats. Below, crotchet, crotchet, crotchet rest, crotchet over four hearts: the third beat is a dashed circle, a silent beat.', '쉼표 셋과 박: 4분쉼표, 지그재그, 1박. 2분쉼표, 다섯 줄의 가운데 줄 위에 앉은 네모, 2박. 온쉼표, 넷째 줄에 매달린 네모, 4박. 아래에 4분음표, 4분음표, 4분쉼표, 4분음표가 심장 넷 위에: 셋째 박은 점선 동그라미, 조용한 박.'), 230), <NvPad page={6}/>)}
+      <LbSay>{LANG === 'ko' ? <><b>쉼표</b>는 소리 없이 쉬는 거예요. 음표처럼 정해진 박 동안 쉬어요. 쉬는 동안에도 계속 세요. 4분쉼표는 1박, 2분쉼표는 2박, 온쉼표는 4박. 다섯 줄 위에서 2분쉼표는 <b>가운데 줄 위에 앉고</b>, 온쉼표는 <b>넷째 줄에 매달려요</b>.</>
+        : <>A <b>rest</b> is a silence. It lasts a number of beats, like a note. Keep counting while it lasts. A crotchet rest is 1 beat, a minim rest 2 beats, a semibreve rest 4 beats. On the five lines of music, the minim rest <b>sits on the middle line</b> and the semibreve rest <b>hangs from line 4</b>. Their other names are quarter, half and whole rests.</>}</LbSay>
+      <LbPiano steps={LANG === 'ko' ? [
+        <>오른손 1번 손가락, 가운데 도: 1, 2, 4에서 쳐요. 3에서는 손을 건반 바로 위에 띄우고 세요. 네 번.</>,
+        <>오른손 1번 손가락, 가운데 도: 2분음표 (1 2), 그다음 2분쉼표 (3 4), 손은 건반 바로 위에. 소리 내어 세면서 네 번.</>,
+      ] : [
+        <>Right hand, finger 1 on middle C: play on 1, 2 and 4. On 3, lift your hand just above the key and count. Four times round.</>,
+        <>Right hand, finger 1 on middle C: a minim (1 2), then a minim rest (3 4), your hand just above the key. Count out loud, four times round.</>,
+      ]}/>
+      <LbRemember>{t('A rest: count the silence.', '쉼표: 쉬면서 세요.')}</LbRemember>
+    </LbPage>,
+
+    // 7. my five checks
+    <LbPage key="7" no={7} chId={ch} kicker={t('Check-up', '점검')} title={t('My five checks', '나의 다섯 가지 확인')}>
+      <LbSay>{t('Show each one at the piano. Colour a circle: not yet, nearly, or got it! The check-up on paper is in the Workbook.', '피아노 앞에서 하나씩 보여 줘요. 동그라미를 칠해요: 아직, 거의, 됐어요! 종이 점검은 워크북에 있어요.')}</LbSay>
+      <LbLive still={<LbStageRows big rows={checksRows.map(([a, vb, x]) => [<PenArt shapes={chkArts[a]} vb={vb} style={{width:80}}/>, x])}/>} live={<FiveChecks376 storeKey="pb_five_nv_v1" rows={checksRows.map(([a, vb, x]) => [{ shapes: chkArts[a], vb }, x])}/>}/>
+    </LbPage>,
+  ];
+}
+function NotesRestsLessonBook() { return <>{nvLbPages(false)}</>; }
+
+// ─── Phase 460: chapter 5 on screen: what moves on each page (B12), the book as the online lesson, the drill (B10) ───
+// A row is a list of [kind, beats]: 'w' semibreve 4, 'hd' dotted minim 3, 'h' minim 2, 'q' crotchet 1, 'p' two quavers on
+// one beat, 'r' crotchet rest 1, 'hr' minim rest 2, 'wr' semibreve rest 4. Everything is booked on the audio clock like
+// chapter 3 (plRun, plMatch, PlPad); the click says 1 2 3 4, and 'and' between when the sound settings ask for a voice.
+const NV_BPM = 66;
+const nvRestKind = (k) => k === 'r' || k === 'hr' || k === 'wr';
+const nvBeats = (row) => row.reduce((a, x) => a + x[1], 0);
+// each sound of a row: b its start in beats, d its length, j the item, h which quaver of a pair
+function nvSounds(row) {
+  const out = []; let b = 0;
+  row.forEach(([k, n], j) => { if (k === 'p') out.push({ b, d: 0.5, j, h: 0 }, { b: b + 0.5, d: 0.5, j, h: 1 }); else if (!nvRestKind(k)) out.push({ b, d: n, j, h: 0 }); b += n; });
+  return out;
+}
+// 4 clicks to get ready, then the row: its notes on middle C (none when the child taps them), 'and' over a pair's beat
+function nvRunRow(row, o = {}) {
+  const n = nvBeats(row), snd = nvSounds(row), pairs = new Set(snd.filter(s => s.h === 1).map(s => Math.round(s.b - 0.5)));
+  return plRun(4 + n, { bpm: NV_BPM, vol: o.vol != null ? o.vol : 0.24, extra: (ctx, tm, i, spb) => {
+    if (i < 4) return;
+    const b = i - 4;
+    if (!o.silent) snd.filter(s => Math.floor(s.b + 1e-9) === b).forEach(s => blip(ctx, tm + (s.b - b) * spb, 261.63, Math.max(0.1, s.d * spb * 0.92), 0.2, 'triangle'));
+    if (pairs.has(b) && SOUND.count === 'voice') sayCount(ctx, tm + spb / 2, 'and', 0.8);
+  } });
+}
+const nvWord = (k) => k === 'p' ? t('run-ning', '달리기') : t('walk', '걷기');
+
+// one bar, drawn like the book: each note (or rest), its sound line, a heart on every beat, the count under it (held
+// beats lighter, a rest's beats in dashed circles). grow: { sound index: seconds } the lines growing now (on screen);
+// lit: the beat sounding; arrow: an item marked from above; marks: '✓' | '?' under each sound; words: walk / run-ning
+function NvBar({ row, D = 88, grow = null, lit = -1, arrow = null, marks = null, words = false, count = true, maxW = 470 }) {
+  const n = nvBeats(row), P = 12, W = P * 2 + n * D, H = (b) => P + D * (b + 0.5);
+  const yN = 56, yL = 74, yW = 96, yH = words ? 118 : 100, yC = yH + 32, yM = yC + 24, HT = (marks ? yM : yC) + 10;
+  const raw = [], lines = [], counts = [], held = new Set(), rest = new Set(), pairAt = new Set();
+  const sx = (s) => s.h === 0 && row[s.j][0] === 'p' ? H(s.b) - 15 : s.h === 1 ? H(Math.floor(s.b)) + 11 : H(s.b);
+  let b = 0;
+  row.forEach(([k, len], j) => {
+    if (k === 'p') { raw.push(nvbPair(H(b) - 15, H(b) + 11, yN, { k: 0.92 }).svg); pairAt.add(b); }
+    else if (k === 'r') { raw.push(nvbRest(H(b) + 1, yN - 12, 'q').svg); rest.add(b); }
+    else if (k === 'hr' || k === 'wr') { const xm = (H(b) + H(b + len - 1)) / 2; raw.push(nvbRest(xm, k === 'hr' ? yN - 2 : yN - 14, k === 'hr' ? 'h' : 'w', { k: 1.3 }).svg); for (let i = 0; i < len; i++) rest.add(b + i); }
+    else { raw.push(nvbNote(k === 'w' ? H(b) - 1 : H(b) - 3, yN, k === 'hd' ? 'h' : k, { dot: k === 'hd' }).svg); for (let i = 1; i < len; i++) held.add(b + i); }
+    if (arrow && arrow[0] === j) { const ax = k === 'p' ? (arrow[1] ? H(b) + 11 : H(b) - 15) : k === 'w' ? H(b) - 1 : H(b) - 3; raw.push('<path d="M' + pFix(ax - 7) + ' 4 L' + pFix(ax + 7) + ' 4 L' + pFix(ax) + ' 13 Z" fill="' + BK.coral + '"/>'); }
+    b += len;
+  });
+  nvSounds(row).forEach((s, k) => {
+    const len = row[s.j][0] === 'p' ? 0.5 : s.d, x0 = row[s.j][0] === 'p' ? (s.h ? H(Math.floor(s.b)) + 3 : H(s.b) - D / 2 + 6) : H(s.b) - D / 2 + 6;
+    const x1 = row[s.j][0] === 'p' ? (s.h ? H(Math.floor(s.b)) + D / 2 - 6 : H(s.b) - 3) : H(s.b + len - 1) + D / 2 - 6;
+    const g = grow && grow[k];
+    lines.push(<g key={'l' + k}>
+      {grow && <line x1={x0} x2={x1} y1={yL} y2={yL} stroke={BK.coral} strokeOpacity="0.2" strokeWidth="4" strokeLinecap="round"/>}
+      <line x1={x0} x2={x1} y1={yL} y2={yL} stroke={BK.coral} strokeWidth="4" strokeLinecap="round"
+        style={grow ? { transformBox: 'fill-box', transformOrigin: 'left center', transform: g ? 'scaleX(1)' : 'scaleX(0)', transition: g ? 'transform ' + g.toFixed(2) + 's linear' : 'none' } : undefined}/>
+      {marks && marks[k] && <text x={sx(s)} y={yM} textAnchor="middle" fontSize="15" fontWeight="900" fill={marks[k] === '✓' ? BK.green : BK.coral}>{marks[k]}</text>}
+    </g>);
+  });
+  for (let i = 0; i < n; i++) {
+    const on = i === lit, x = H(i);
+    counts.push(<g key={'c' + i}>
+      <path d="M0 5 Q-7.5 -0.5 -5 -4.2 Q-2.4 -6.8 0 -3 Q2.4 -6.8 5 -4.2 Q7.5 -0.5 0 5 Z" transform={'translate(' + x + ' ' + yH + ') scale(1.7)'} fill={on ? BK.coral : '#fff'} stroke={BK.coral} strokeWidth="0.9" strokeLinejoin="round"/>
+      {count && rest.has(i) && <circle cx={x} cy={yC - 6} r="13" fill="#fff" stroke={BK.ink} strokeWidth="1.6" strokeDasharray="3.6 3"/>}
+      {count && <text x={pairAt.has(i) ? x - 15 : x} y={yC} textAnchor="middle" fontSize="17" fontWeight="900" fill={on ? BK.coral : held.has(i) ? 'rgba(38,41,107,0.38)' : BK.ink}>{i % 4 + 1}</text>}
+      {count && pairAt.has(i) && <text x={x + 11} y={yC} textAnchor="middle" fontSize="17" fontWeight="900" fill={on ? BK.coral : BK.ink}>+</text>}
+    </g>);
+  }
+  let wb = 0;
+  const wordEls = words ? row.map(([k, len], j) => { const x = H(wb); wb += len; return nvRestKind(k) ? null : <text key={'w' + j} x={x} y={yW} textAnchor="middle" fontSize="14" fontWeight="900" fill={BK.ink}>{nvWord(k)}</text>; }) : null;
+  return <svg viewBox={'0 0 ' + W + ' ' + HT} style={{width:'100%',maxWidth:maxW,display:'block',margin:'0 auto'}}>
+    <g dangerouslySetInnerHTML={{ __html: raw.join('') }}/>
+    {lines}{wordEls}{counts}
+  </svg>;
+}
+
+// ── each page's rhythms: the book's own tasks (pages 2 to 6) ──
+const NV_PAGE_ROWS = {
+  2: [[() => t('Crotchets', '4분음표'), [['q', 1], ['q', 1], ['q', 1], ['q', 1]]]],
+  3: [[() => t('Two minims', '2분음표 둘'), [['h', 2], ['h', 2]]], [() => t('Crotchet, crotchet, minim', '4분음표, 4분음표, 2분음표'), [['q', 1], ['q', 1], ['h', 2]]]],
+  4: [[() => t('Dotted minim, crotchet', '점2분음표, 4분음표'), [['hd', 3], ['q', 1]]], [() => t('Semibreve', '온음표'), [['w', 4]]]],
+  5: [[() => t('walk, run-ning, walk, run-ning', '걷기, 달리기, 걷기, 달리기'), [['q', 1], ['p', 1], ['q', 1], ['p', 1]]], [() => t('run-ning, run-ning, walk, walk', '달리기, 달리기, 걷기, 걷기'), [['p', 1], ['p', 1], ['q', 1], ['q', 1]]]],
+  6: [[() => t('A crotchet rest on 3', '3에 4분쉼표'), [['q', 1], ['q', 1], ['r', 1], ['q', 1]]], [() => t('Minim, minim rest', '2분음표, 2분쉼표'), [['h', 2], ['hr', 2]]]],
+};
+const NV_PAD_TITLE = { 2: () => t('Walk the crotchets', '4분음표 걷기'), 3: () => t('Play, then hold', '치고, 누르고 있어요'), 4: () => t('Hold 3 beats, hold 4', '3박, 4박 누르기'), 5: () => t('Walk and run', '걷고, 달려요'), 6: () => t('Count the silence', '쉬면서 세요') };
+// listen: the sound lines grow while each note sounds; tap it: the click goes on and you tap every note
+function NvPad({ page }) {
+  const rows = NV_PAGE_ROWS[page];
+  const T = usePlTimers();
+  const [ri, setRi] = useState(0);
+  const [mode, setMode] = useState(null);   // null | 'listen' | 'tap'
+  const [phase, setPhase] = useState('ready');   // ready | count | go | done
+  const [lit, setLit] = useState(-1);
+  const [count, setCount] = useState(0);
+  const [grow, setGrow] = useState({});
+  const [res, setRes] = useState(null);
+  const run = useRef(null), taps = useRef([]);
+  const row = rows[ri][1], snd = nvSounds(row), n = nvBeats(row);
+  function reset(i) { T.clear(); stopClicks(); setRi(i); setRes(null); setGrow({}); setLit(-1); setPhase('ready'); setMode(null); }
+  function start(m) {
+    T.clear(); setRes(null); setGrow({}); setLit(-1); taps.current = []; setMode(m);
+    const r = nvRunRow(row, { silent: m === 'tap' }); if (!r) return; run.current = r;
+    r.at.forEach((a, i) => T.at(r, a, () => { if (i < 4) { setCount(i + 1); setPhase('count'); } else { setLit(i - 4); setPhase('go'); } }));
+    snd.forEach((s, k) => T.at(r, r.at[4] + s.b * r.spb, () => setGrow(g => ({ ...g, [k]: s.d * r.spb * 0.98 }))));
+    T.at(r, r.at[4] + n * r.spb + 0.05, () => {
+      setLit(-1); setPhase('done');
+      if (m !== 'tap') return;
+      const want = snd.map(s => r.at[4] + s.b * r.spb), tol = Math.min(PL_TOL, r.spb * 0.22), mm = plMatch(want, taps.current, tol);
+      const early = taps.current.filter(tp => tp < r.at[4] - tol).length;
+      setRes({ hits: mm.hits, total: mm.total, extra: Math.max(0, mm.extra - early), marks: mm.offs.map(o => o === null ? '?' : '✓') });
+    });
+    setPhase('count'); setCount(0);
+  }
+  const tap = React.useCallback(() => {
+    const r = run.current; if (!r || mode !== 'tap' || (phase !== 'count' && phase !== 'go')) return;
+    taps.current.push(r.now());
+    const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime, 261.63, 0.16, 0.16, 'triangle');
+  }, [phase, mode]);
+  const ok = res && res.hits === res.total && res.extra === 0;
+  const live = phase === 'count' || phase === 'go';
+  return (
+    <div className="try-box" style={actBox} data-nv={'pad' + page}>
+      <div style={actTitle}>{NV_PAD_TITLE[page]()}</div>
+      <div style={actNote}>{LANG === 'ko'
+        ? <>먼저 <b>들어 봐요</b>: 음이 울리는 동안 소리 줄이 자라요. 그다음 <b>쳐 봐요</b>: 클릭 4번을 듣고, 음마다 한 번씩 쳐요{page === 6 ? <>. 쉼표에서는 치지 않고 세요</> : null}. 소리 내어 세요.</>
+        : <>First <b>listen</b>: each sound line grows while its note sounds. Then <b>tap it</b>: 4 clicks to get ready, then tap once for each note{page === 6 ? <>, and count through the rests</> : null}. Count out loud.</>}</div>
+      {rows.length > 1 && <div style={{display:'flex',gap:5,justifyContent:'center',flexWrap:'wrap',marginBottom:8}}>{rows.map(([nm], i) => <button key={i} className={'chip' + (i === ri ? ' active' : '')} onClick={() => reset(i)}>{nm()}</button>)}</div>}
+      <NvBar row={row} grow={grow} lit={lit} marks={res ? res.marks : null} words={page === 2 || page === 5}/>
+      <div style={{textAlign:'center',fontSize:13,fontWeight:800,color:BK.muted,minHeight:18,margin:'2px 0 4px'}}>{phase === 'count' ? t('Get ready: ', '준비: ') + count : phase === 'go' ? (mode === 'tap' ? t('Tap!', '쳐요!') : t('Listen and count', '들으면서 세요')) : ''}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',marginBottom:8}}>
+        <button className="ghost-btn" onClick={() => start('listen')}>{t('▶ Listen', '▶ 듣기')}</button>
+        <button className="ghost-btn" onClick={() => start('tap')}>{t('▶ Tap it', '▶ 쳐 보기')}</button>
+      </div>
+      {mode === 'tap' && <PlPad on={live} onTap={tap} label={t('TAP EACH NOTE', '음마다 쳐요')}/>}
+      {res && <div style={{textAlign:'center',fontSize:14.5,fontWeight:900,marginTop:6,color:ok ? BK.green : BK.coral}}>{t('Notes on time: ' + res.hits + ' of ' + res.total + (res.extra ? ' · extra taps: ' + res.extra : ''), '제때 친 음: ' + res.total + '개 중 ' + res.hits + '개' + (res.extra ? ' · 더 친 것: ' + res.extra + '개' : ''))}{ok ? '  ✓' : ''}</div>}
+      {mode === 'tap' && plHint()}
+    </div>
+  );
+}
+
+// ── the book on screen: the opener is the lesson's head, every other page a step. Old ticks kept where the idea is
+// close: 'Count it out loud' (11) for crotchets, 'Split it' (4) for minims, 'Dotted notes' (6) for longer notes,
+// 'One beat = one apple' (5) for quavers, 'Same name for the note and the rest' (1) for rests. ──
+const NV_STORE = [11, 4, 6, 5, 1, 12];
+function NvLearn({ onStart }) {
+  const pages = nvLbPages(true);
+  const opener = pages[0];
+  return (
+    <Lesson id="note-values" title={t('Notes & Rests', '음표와 쉼표')} onStart={onStart} noArt
+      head={<LbScreenCtx.Provider value={true}><BkChapterCtx.Provider value="note-values"><div className="lb-screen lb-open" style={{display:'flex',flexDirection:'column',gap:12,margin:'0 0 8px'}}>{lbWordsFirst(opener.props.children)}</div></BkChapterCtx.Provider></LbScreenCtx.Provider>}>
+      {pages.slice(1).map((pg, i) => (
+        <Step key={i} storeAs={NV_STORE[i]} title={pg.props.title}>
+          <LbScreenPage page={pg}/>
+        </Step>
+      ))}
+    </Lesson>
+  );
+}
+
+// ── the drill (B10): six levels for this room, then three higher ones, each marked with its grade ──
+// (AMEB Theory: single quavers at Grade 1, semiquavers and other dotted notes at Grade 2; ABRSM: both at Grade 1, the
+// breve and double dots at Grade 4.)
+const NV_LEVELS = [
+  { n: 1, label: 'Name the note', kind: 'name', time: 8 },
+  { n: 2, label: 'How many beats?', kind: 'beats', time: 8 },
+  { n: 3, label: 'Find the matching rest', kind: 'rest', time: 8 },
+  { n: 4, label: 'Tap the rhythm', kind: 'tap', time: 24, noPrint: true },
+  { n: 5, label: 'Which count?', kind: 'count', time: 10 },
+  { n: 6, label: 'Rests: tap, then count the silence', kind: 'tapr', time: 24, noPrint: true },
+  { n: 7, label: 'Dotted crotchets & single quavers (Grades 1 and 2)', kind: 'g1', time: 10 },
+  { n: 8, label: 'Semiquavers: add them up (Grades 1 and 2)', kind: 'g2', time: 12 },
+  { n: 9, label: 'The breve & double dots (Grade 4)', kind: 'g4', time: 10 },
+];
+Object.assign(LEVEL_KO, {
+  'Name the note': '음표 이름 맞히기', 'How many beats?': '몇 박일까요?', 'Tap the rhythm': '리듬 치기', 'Which count?': '몇에서 칠까요?',
+  'Rests: tap, then count the silence': '쉼표: 치고, 쉬면서 세요', 'Dotted crotchets & single quavers (Grades 1 and 2)': '점4분음표와 8분음표 하나 (1, 2급)',
+  'Semiquavers: add them up (Grades 1 and 2)': '16분음표: 박을 더해요 (1, 2급)', 'The breve & double dots (Grade 4)': '겹온음표와 겹점 (4급)',
+});
+// the room's notes and rests, with their names
+const NV_ROOM = {
+  w: { b: 4, get name() { return t('semibreve', '온음표'); }, other: 'whole note' },
+  h: { b: 2, get name() { return t('minim', '2분음표'); }, other: 'half note' },
+  hd: { b: 3, get name() { return t('dotted minim', '점2분음표'); }, other: 'dotted half note' },
+  q: { b: 1, get name() { return t('crotchet', '4분음표'); }, other: 'quarter note' },
+  p: { b: 1, get name() { return t('two quavers', '8분음표 둘'); }, other: 'eighth notes' },
+  r: { b: 1, get name() { return t('crotchet rest', '4분쉼표'); }, other: 'quarter rest' },
+  hr: { b: 2, get name() { return t('minim rest', '2분쉼표'); }, other: 'half rest' },
+  wr: { b: 4, get name() { return t('semibreve rest', '온쉼표'); }, other: 'whole rest' },
+};
+// one note or rest of the room, drawn like the book (the minim and semibreve rests on a little piece of the five lines)
+function nvGlyphRaw(kind, ink) {
+  const col = ink || PEN_N;
+  let svg;
+  if (kind === 'p') svg = nvbPair(26, 48, 62, { col }).svg;
+  else if (kind === 'r') svg = nvbRest(40, 48, 'q', { col }).svg;
+  else if (kind === 'hr' || kind === 'wr') {
+    svg = [0, 1, 2, 3, 4].map(i => '<line x1="12" x2="68" y1="' + (24 + i * 9) + '" y2="' + (24 + i * 9) + '" stroke="' + col + '" stroke-opacity="0.45" stroke-width="1.1"/>').join('')
+      + '<line x1="12" x2="68" y1="' + (kind === 'hr' ? 42 : 33) + '" y2="' + (kind === 'hr' ? 42 : 33) + '" stroke="' + col + '" stroke-width="1.4"/><rect x="31" y="' + (kind === 'hr' ? 37.5 : 33) + '" width="18" height="4.5" fill="' + col + '"/>';
+  } else svg = nvbNote(kind === 'w' ? 40 : 36, kind === 'w' ? 52 : 62, kind === 'hd' ? 'h' : kind, { dot: kind === 'hd', col, k: kind === 'w' ? 1.45 : 1 }).svg;
+  return svg;
+}
+function NvGlyph({ kind, size = 84, ink }) {
+  return <svg viewBox="0 10 80 66" style={{width:size * 80 / 66,height:size,display:'inline-block',verticalAlign:'middle'}} dangerouslySetInnerHTML={{ __html: nvGlyphRaw(kind, ink) }}/>;
+}
+// four beats for the tap levels: a minim on 1 or 3, a dotted minim or a semibreve on 1; level 6 has a rest in every bar
+const NV_TAP_BARS = [
+  [['q', 1], ['q', 1], ['q', 1], ['q', 1]], [['h', 2], ['h', 2]], [['q', 1], ['q', 1], ['h', 2]], [['h', 2], ['q', 1], ['q', 1]], [['hd', 3], ['q', 1]], [['w', 4]],
+  [['q', 1], ['p', 1], ['q', 1], ['p', 1]], [['p', 1], ['p', 1], ['q', 1], ['q', 1]], [['p', 1], ['q', 1], ['h', 2]], [['h', 2], ['p', 1], ['q', 1]], [['q', 1], ['q', 1], ['p', 1], ['q', 1]], [['p', 1], ['p', 1], ['p', 1], ['q', 1]],
+];
+const NV_REST_BARS = [
+  [['q', 1], ['q', 1], ['r', 1], ['q', 1]], [['h', 2], ['hr', 2]], [['q', 1], ['r', 1], ['q', 1], ['r', 1]], [['q', 1], ['q', 1], ['hr', 2]], [['hr', 2], ['h', 2]],
+  [['p', 1], ['q', 1], ['r', 1], ['q', 1]], [['h', 2], ['r', 1], ['q', 1]], [['r', 1], ['q', 1], ['q', 1], ['q', 1]], [['q', 1], ['p', 1], ['hr', 2]],
+];
+const NV_COUNTS = ['1', '1 +', '2', '2 +', '3', '3 +', '4', '4 +'];
+// the extra levels use the app's old note shapes (Glyph), with the breve and double dots added for level 9
+const NV_BREVE = { id: 'breve', us: 'double whole', base: 8 };
+const NV_HI = {
+  g1: () => [NV_DOTTED[1], NV_NOTES[3], NV_RESTS[3], NV_DOTTED[0], NV_NOTES[2], NV_RESTS[2], NV_DOTTED[2]],
+  g2: () => [NV_NOTES[4], NV_RESTS[4], NV_NOTES[3], NV_DOTTED[2], NV_NOTES[2], NV_DOTTED[1]],
+  g4: () => [nvItem(NV_BREVE), nvItem(NV_BREVE, { rest: true }), nvItem(NOTE_VALUES[1], { dd: true }), nvItem(NOTE_VALUES[2], { dd: true }), nvItem(NOTE_VALUES[0], { dot: true }), NV_DOTTED[0], NV_NOTES[0]],
+};
+function genNvQuestion(lv, prev) {
+  const uid = Math.random();
+  const notPrev = (list, keyOf) => { let x = pick(list), g = 0; while (prev && prev.key === keyOf(x) && g++ < 12) x = pick(list); return x; };
+  if (lv.kind === 'name') {
+    const k = notPrev(['w', 'h', 'hd', 'q', 'p'], x => 'n' + x);
+    return { kind: 'name', glyph: k, key: 'n' + k, answer: k, choices: shuffle([k, ...sampleN(['w', 'h', 'hd', 'q', 'p'].filter(x => x !== k), 3)]), uid };
+  }
+  if (lv.kind === 'beats') {
+    const k = notPrev(['w', 'h', 'hd', 'q', 'p', 'r', 'hr', 'wr'], x => 'b' + x);
+    return { kind: 'beats', glyph: k, key: 'b' + k, answer: NV_ROOM[k].b, choices: [1, 2, 3, 4], uid };
+  }
+  if (lv.kind === 'rest') {
+    const k = notPrev(['w', 'h', 'q'], x => 'r' + x);
+    return { kind: 'rest', glyph: k, key: 'r' + k, answer: { w: 'wr', h: 'hr', q: 'r' }[k], choices: shuffle(['r', 'hr', 'wr']), uid };
+  }
+  if (lv.kind === 'tap' || lv.kind === 'tapr') {
+    const bars = lv.kind === 'tap' ? NV_TAP_BARS : NV_REST_BARS;
+    const i = notPrev(bars.map((_, j) => j), x => lv.kind + x);
+    return { kind: lv.kind, row: bars[i], key: lv.kind + i, uid };
+  }
+  if (lv.kind === 'count') {
+    let row, j, g = 0;
+    let h = 0;
+    do { row = pick(NV_TAP_BARS.slice(1).concat(NV_REST_BARS.slice(1))); const items = row.map((x, k) => k).filter(k => !nvRestKind(row[k][0])); j = pick(items); h = row[j][0] === 'p' && Math.random() < 0.6 ? 1 : 0; } while (prev && prev.key === 'c' + row.map(x => x[0]).join() + j + h && g++ < 12);
+    const at = row.slice(0, j).reduce((a, x) => a + x[1], 0) + h / 2, ans = NV_COUNTS[at * 2];
+    const others = sampleN(NV_COUNTS.filter(c => c !== ans), 3);
+    return { kind: 'count', row, arrow: [j, h], key: 'c' + row.map(x => x[0]).join() + j + h, answer: ans, choices: NV_COUNTS.filter(c => c === ans || others.includes(c)), uid };
+  }
+  // the higher levels: how many beats (g1, g4) or add two of them up (g2)
+  const pool = NV_HI[lv.kind]();
+  if (lv.kind === 'g2') {
+    const a = pick(pool), b = pick(pool), total = a.beats + b.beats;
+    const cands = [...new Set([total - 0.25, total + 0.25, total - 0.5, total + 0.5, total + 1, total * 2].filter(v => v > 0 && Math.abs(v - total) > 1e-9))];
+    return { kind: 'sum', a, b, key: 'g2' + a.key + b.key, answer: total, choices: shuffle([total, ...sampleN(cands, 3)]), uid };
+  }
+  const it = notPrev(pool, x => lv.kind + x.key);
+  const vals = [...new Set(pool.map(x => x.beats).concat(lv.kind === 'g4' ? [2, 7, 12] : [0.25, 2, 0.75]))].filter(v => Math.abs(v - it.beats) > 1e-9);
+  return { kind: 'hbeats', item: it, key: lv.kind + it.key, answer: it.beats, choices: shuffle([it.beats, ...sampleN(vals, 3)]).sort((x, y) => x - y), uid };
+}
+const nvRoomName = (k) => NV_ROOM[k].name;
+const nvOther = (k) => k === 'p' ? 'Their other name is eighth notes.' : 'Its other name is a ' + NV_ROOM[k].other + '.';
+function NvQuestion({ q, given, locked, onAnswer, pixel }) {
+  const board = useBoard(q, given);
+  const T = usePlTimers();
+  const [phase, setPhase] = useState('ready');
+  const [lit, setLit] = useState(-1);
+  const [grow, setGrow] = useState({});
+  const run = useRef(null), taps = useRef([]);
+  const done = !!given;
+  const ink = pixel ? '#faf6ec' : '#26296b';
+  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const prompt = (txt) => <p style={pixel ? {fontSize:11.5,textAlign:'center',margin:'0 0 10px',lineHeight:1.7} : {fontSize:15,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{txt}</p>;
+  const st = (c) => !done ? '' : (c === q.answer || (typeof c === 'number' && Math.abs(c - q.answer) < 1e-9) ? ' good' : (given.ans === c ? ' bad' : ''));
+  useEffect(() => { T.clear(); stopClicks(); setPhase('ready'); setLit(-1); setGrow({}); taps.current = []; }, [q.uid]);
+  if (q.kind === 'tap' || q.kind === 'tapr') {
+    const snd = nvSounds(q.row), n = nvBeats(q.row);
+    function start() {
+      if (done || phase !== 'ready') return;
+      T.clear(); taps.current = []; setGrow({});
+      const r = nvRunRow(q.row, { silent: true }); if (!r) return; run.current = r;
+      r.at.forEach((a, i) => T.at(r, a, () => { setPhase(i < 4 ? 'count' : 'go'); setLit(i < 4 ? -1 : i - 4); }));
+      snd.forEach((s, k) => T.at(r, r.at[4] + s.b * r.spb, () => setGrow(g => ({ ...g, [k]: s.d * r.spb * 0.98 }))));
+      T.at(r, r.at[4] + n * r.spb + 0.05, () => {
+        setPhase('scoring'); setLit(-1);
+        const want = snd.map(s => r.at[4] + s.b * r.spb), tol = Math.min(PL_TOL, r.spb * 0.22), m = plMatch(want, taps.current, tol);
+        const early = taps.current.filter(tp => tp < r.at[4] - tol).length, extra = Math.max(0, m.extra - early);
+        onAnswer({ ok: m.hits === m.total && extra === 0, hits: m.hits, total: m.total, extra, marks: m.offs.map(o => o === null ? '?' : '✓') });
+      });
+      setPhase('count');
+    }
+    const onTap = () => { const r = run.current; if (r && (phase === 'count' || phase === 'go')) { taps.current.push(r.now()); const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime, 261.63, 0.16, 0.16, 'triangle'); } };
+    const res = done && given.ans && typeof given.ans === 'object' ? given.ans : null;
+    return <div>
+      <BoardTrack b={board} pixel={pixel}/>
+      {prompt(q.kind === 'tap' ? t('4 clicks to get ready, then tap once for each note. Count out loud.', '클릭 4번을 듣고, 음마다 한 번씩 쳐요. 소리 내어 세요.') : t('Tap the notes. In a rest, don’t tap: count the silence.', '음을 쳐요. 쉼표에서는 치지 말고 쉬면서 세요.'))}
+      <div style={{background:pixel ? '#faf6ec' : 'transparent',borderRadius:8,padding:pixel ? 6 : 0}}><NvBar row={q.row} grow={phase === 'ready' && !done ? null : grow} lit={lit} marks={res ? res.marks : null} maxW={430}/></div>
+      <div style={{textAlign:'center',fontSize:13,fontWeight:800,color:pixel ? '#faf6ec' : BK.muted,minHeight:18,margin:'2px 0 4px'}}>{phase === 'count' ? t('Get ready…', '준비…') : phase === 'go' ? t('Tap!', '쳐요!') : ''}</div>
+      {!done && phase === 'ready' && <div style={{textAlign:'center',marginBottom:8}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={start} style={{fontSize:15,padding:'10px 18px'}}>{t('▶ Start', '▶ 시작')}</button></div>}
+      {!done && <PlPad on={phase === 'count' || phase === 'go'} onTap={onTap} h={64}/>}
+      {res && <div style={{textAlign:'center',fontSize:15,fontWeight:900,marginTop:8,color:res.ok ? BK.green : BK.coral}}>{t('Notes on time: ' + res.hits + ' of ' + res.total + (res.extra ? ' · extra taps: ' + res.extra : ''), '제때 친 음: ' + res.total + '개 중 ' + res.hits + '개' + (res.extra ? ' · 더 친 것: ' + res.extra + '개' : ''))}</div>}
+    </div>;
+  }
+  let body;
+  if (q.kind === 'name') body = <>
+    {prompt(t('What is this note called?', '이 음표의 이름은?'))}
+    <div style={{textAlign:'center',margin:'0 0 12px'}}><NvGlyph kind={q.glyph} ink={ink} size={96}/></div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>{q.choices.map(c => <button key={c} disabled={locked} onClick={() => onAnswer(c)} className={btnCls + st(c)} style={{padding:'12px 4px'}}>{cap(nvRoomName(c))}</button>)}</div>
+    {done && LANG !== 'ko' && !pixel && <div style={{textAlign:'center',fontSize:13,color:'var(--muted)',marginTop:8}}>{nvOther(q.answer)}</div>}
+  </>;
+  else if (q.kind === 'beats') body = <>
+    {prompt(t('How many beats does it last?', '몇 박일까요?'))}
+    <div style={{textAlign:'center',margin:'0 0 12px'}}><NvGlyph kind={q.glyph} ink={ink} size={96}/></div>
+    {done && !pixel && <div style={{textAlign:'center',fontSize:13,color:'var(--muted)',margin:'-6px 0 10px'}}>{cap(nvRoomName(q.glyph))}</div>}
+    <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>{q.choices.map(v => <button key={v} disabled={locked} onClick={() => onAnswer(v)} className={btnCls + st(v)} style={{padding:'14px 2px'}}>{fmtBeats(v)}</button>)}</div>
+  </>;
+  else if (q.kind === 'rest') body = <>
+    {prompt(t('Which rest lasts just as long?', '똑같은 길이의 쉼표는?'))}
+    <div style={{textAlign:'center',margin:'0 0 12px'}}><NvGlyph kind={q.glyph} ink={ink} size={96}/></div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>{q.choices.map(c => <button key={c} disabled={locked} onClick={() => onAnswer(c)} className={btnCls + st(c)} style={{padding:'8px 2px'}} aria-label={nvRoomName(c)}><NvGlyph kind={c} size={56} ink={pixel ? '#faf6ec' : undefined}/>{done && !pixel && <span style={{display:'block',fontSize:12,fontWeight:700}}>{nvRoomName(c)}</span>}</button>)}</div>
+  </>;
+  else if (q.kind === 'count') body = <>
+    {prompt(t('The arrow points to a note. On which count do you play it?', '화살표가 가리키는 음표는 몇에서 칠까요?'))}
+    <div style={{background:pixel ? '#faf6ec' : 'transparent',borderRadius:8,padding:pixel ? 6 : 0,margin:'0 0 10px'}}><NvBar row={q.row} arrow={q.arrow} count={false} maxW={430}/></div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:8}}>{q.choices.map(c => <button key={c} disabled={locked} onClick={() => onAnswer(c)} className={btnCls + st(c)} style={{padding:'14px 2px',fontSize:pixel ? 10 : 18}}>{c}</button>)}</div>
+  </>;
+  else if (q.kind === 'sum') body = <>
+    {prompt(t('How many beats altogether?', '모두 몇 박일까요?'))}
+    <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:6,margin:'0 0 12px',color:ink}}><Glyph item={q.a} ink={ink} size={84}/><span style={{fontSize:30,fontWeight:900}}>+</span><Glyph item={q.b} ink={ink} size={84}/><span style={{fontSize:30,fontWeight:900}}>= ?</span></div>
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>{q.choices.map(v => <button key={v} disabled={locked} onClick={() => onAnswer(v)} className={btnCls + st(v)} style={{padding:'14px 4px'}}>{fmtBeats(v)}</button>)}</div>
+  </>;
+  else body = <>
+    {prompt(t('How many crotchet beats does it last?', '4분음표 박으로 몇 박일까요?'))}
+    <div style={{textAlign:'center',margin:'0 0 12px'}}><Glyph item={q.item} ink={ink} size={96}/></div>
+    {done && !pixel && <div style={{textAlign:'center',fontSize:13,color:'var(--muted)',margin:'-6px 0 10px'}}>{LANG === 'ko' ? q.item.ko : cap(q.item.uk) + '. Its other name is a ' + q.item.us + '.'}</div>}
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>{q.choices.map(v => <button key={v} disabled={locked} onClick={() => onAnswer(v)} className={btnCls + st(v)} style={{padding:'14px 4px'}}>{fmtBeats(v)}</button>)}</div>
+  </>;
+  return <div><BoardTrack b={board} pixel={pixel}/>{body}</div>;
+}
+function nvCheck(q, ans) {
+  if (ans === null || ans === undefined) return false;
+  if (q.kind === 'tap' || q.kind === 'tapr') return !!(ans && ans.ok);
+  if (typeof q.answer === 'number') return typeof ans === 'number' && Math.abs(ans - q.answer) < 1e-9;
+  return ans === q.answer;
+}
+const nvBarWords = (row) => row.map(([k]) => nvRoomName(k)).join(', ');
+function nvAnswerLabel(q) {
+  if (q.kind === 'name') return cap(nvRoomName(q.answer)) + (LANG === 'ko' ? '' : '. ' + nvOther(q.answer));
+  if (q.kind === 'beats') return fmtBeats(q.answer);
+  if (q.kind === 'rest') return LANG === 'ko' ? nvRoomName(q.answer) : 'a ' + nvRoomName(q.answer);
+  if (q.kind === 'tap') return t('a tap for each note: ', '음마다 한 번: ') + nvSounds(q.row).length + t(' taps', '번');
+  if (q.kind === 'tapr') return t('a tap for each note, none in the rests: ', '음마다 한 번, 쉼표에서는 안 쳐요: ') + nvSounds(q.row).length + t(' taps', '번');
+  if (q.kind === 'count') return q.answer;
+  return fmtBeats(q.answer);
+}
+Object.assign(NOTEVAL_DRILL, { levels: NV_LEVELS, generate: genNvQuestion, check: nvCheck, answerLabel: nvAnswerLabel, Question: NvQuestion, Learn: NvLearn });
+
+// ─── Phase 460: chapter 5's Workbook (B11: W1 name it and write its beats, W2 sound lines over the hearts, W3 the count
+// with held beats in grey boxes, W4 1 + 2 + under quaver pairs, W5 the count under every beat, rests too; the check-up on
+// paper) and its Teacher copy. English, like every Workbook. Each page faces its Lesson Book page (2 to 6). ───
+// a bar on paper, drawn like the book. notes: 'show' | 'trace' (pale, to draw over) | 'none'; lines: 'show' | 'guide' (a
+// dotted line to draw the sound lines on) | 'none'; count: 'show' | 'boxes' | 'ans' (a worked example) | 'none';
+// words: 'show' (walk / run-ning under each note) | 'none'
+function NvPaperBar({ row, D = 84, notes = 'show', lines = 'show', count = 'show', words = 'none', hearts = true, maxW = 380 }) {
+  const n = nvBeats(row), P = 10, W = P * 2 + n * D, H = (b) => P + D * (b + 0.5);
+  const yN = 50, yL = 66, yW = 86, yH = words === 'show' ? 104 : 84, yC = yH + 34, HT = !hearts ? (words === 'show' ? yW + 8 : yL + 8) : count === 'none' ? yH + 12 : yC + 10;
+  const raw = [], els = [], held = new Set(), rest = new Set(), pairAt = new Set();
+  let b = 0;
+  row.forEach(([k, len], j) => {
+    if (k === 'p') { raw.push(nvbPair(H(b) - 15, H(b) + 11, yN, { k: 0.92 }).svg); pairAt.add(b); }
+    else if (k === 'r') { raw.push(nvbRest(H(b) + 1, yN - 12, 'q').svg); rest.add(b); }
+    else if (k === 'hr' || k === 'wr') { const xm = (H(b) + H(b + len - 1)) / 2; raw.push(nvbRest(xm, k === 'hr' ? yN - 2 : yN - 14, k === 'hr' ? 'h' : 'w', { k: 1.3 }).svg); for (let i = 0; i < len; i++) rest.add(b + i); }
+    else { raw.push(nvbNote(k === 'w' ? H(b) - 1 : H(b) - 3, yN, k === 'hd' ? 'h' : k, { dot: k === 'hd' }).svg); for (let i = 1; i < len; i++) held.add(b + i); }
+    if (words === 'show' && !nvRestKind(k)) els.push(<text key={'w' + j} x={H(b)} y={yW} textAnchor="middle" fontSize="13.5" fontWeight="900" fill={BK.ink}>{k === 'p' ? 'run-ning' : 'walk'}</text>);
+    b += len;
+  });
+  if (lines === 'show') nvSounds(row).forEach((s, k) => {
+    const pr = row[s.j][0] === 'p', B = Math.floor(s.b);
+    const x0 = pr ? (s.h ? H(B) + 3 : H(B) - D / 2 + 6) : H(s.b) - D / 2 + 6, x1 = pr ? (s.h ? H(B) + D / 2 - 6 : H(B) - 3) : H(s.b + s.d - 1) + D / 2 - 6;
+    els.push(<line key={'l' + k} x1={x0} x2={x1} y1={yL} y2={yL} stroke={BK.coral} strokeWidth="4" strokeLinecap="round"/>);
+  });
+  if (lines === 'guide') els.push(<line key="g" x1={P + 4} x2={W - P - 4} y1={yL} y2={yL} stroke={BK.muted} strokeWidth="1" strokeDasharray="2 3"/>);
+  for (let i = 0; i < n; i++) {
+    const x = H(i), pr = pairAt.has(i);
+    if (!hearts) continue;
+    els.push(<path key={'h' + i} d="M0 5 Q-7.5 -0.5 -5 -4.2 Q-2.4 -6.8 0 -3 Q2.4 -6.8 5 -4.2 Q7.5 -0.5 0 5 Z" transform={'translate(' + x + ' ' + yH + ') scale(1.6)'} fill={BK.coral}/>);
+    if (count === 'none') continue;
+    const cells = pr ? [[x - 16, String(i % 4 + 1)], [x + 15, '+']] : [[x, String(i % 4 + 1)]];
+    cells.forEach(([cx, txt], c) => {
+      const bw = pr ? 28 : 32, lightNo = held.has(i);
+      if (count === 'show') els.push(<text key={'c' + i + c} x={cx} y={yC} textAnchor="middle" fontSize="17" fontWeight="900" fill={lightNo ? 'rgba(38,41,107,0.38)' : BK.ink}>{txt}</text>);
+      else {
+        els.push(<rect key={'b' + i + c} x={cx - bw / 2} y={yC - 23} width={bw} height="32" rx="3" fill={lightNo ? 'rgba(38,41,107,0.11)' : '#fff'} stroke={count === 'ans' ? BK.coral : BK.line} strokeWidth="1.5" strokeDasharray={rest.has(i) ? '3.4 2.8' : undefined}/>);
+        if (count === 'ans') els.push(<text key={'a' + i + c} x={cx} y={yC - 1} textAnchor="middle" fontSize="16" fontWeight="900" fontStyle="italic" fill={lightNo ? 'rgba(228,87,46,0.55)' : BK.coral}>{txt}</text>);
+      }
+    });
+  }
+  return <svg viewBox={'0 0 ' + W + ' ' + HT} style={{width:'100%',maxWidth:maxW,display:'block',margin:'0 auto'}}>
+    {notes !== 'none' && <g opacity={notes === 'trace' ? 0.2 : 1} dangerouslySetInnerHTML={{ __html: raw.join('') }}/>}
+    {els}
+  </svg>;
+}
+// words to circle (a box for a word is replaced by words to circle, Book rule 5)
+const nvChoose = (words, on) => <span style={{display:'inline-flex',gap:3,flexWrap:'nowrap'}}>{words.map(w => <span key={w} style={{fontSize:12,fontWeight:800,color:on === w ? BK.coral : BK.ink,border:'1.5px solid ' + (on === w ? BK.coral : 'transparent'),borderRadius:12,padding:'0 5px',lineHeight:'19px',whiteSpace:'nowrap'}}>{w}</span>)}</span>;
+const nvNameEn = { w: 'semibreve', h: 'minim', hd: 'dotted minim', q: 'crotchet', p: 'two quavers', r: 'crotchet rest', hr: 'minim rest', wr: 'semibreve rest' };
+const NV_BEATS = { w: 4, h: 2, hd: 3, q: 1, p: 1, r: 1, hr: 2, wr: 4 };
+// a single note: words to circle (its name), and a box for its beats
+function NvNameCell({ k, n, ex, words, beats = true }) {
+  return <ExCell n={n} ex={ex}><div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'4px 2px 0'}}>
+    <NvGlyph kind={k} size={46}/>
+    {words && <div style={{display:'flex',justifyContent:'center'}}>{nvChoose(words, ex ? nvNameEn[k] : null)}</div>}
+    {beats && <span style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:12,fontWeight:800,color:BK.ink}}>beats {ex ? bkHand(String(NV_BEATS[k]), 36, 30) : bkBox(36, 30)}</span>}
+  </div></ExCell>;
+}
+const nvNum = (i) => <span style={{fontFamily:LB_SERIF,fontStyle:'italic',fontWeight:700,fontSize:14,color:BK.ink}}>{i}</span>;
+const nvBarCell = (row, i, n0, ex, o) => <ExCell key={i} n={n0 + i} ex={ex}><div style={{padding:'14px 2px 0'}}><NvPaperBar row={row} {...o(ex)}/></div></ExCell>;
+
+// the Workbook's tasks, fixed so the Teacher copy always matches
+const NV_WB = {
+  // p2: crotchets
+  trace: [[['q', 1], ['q', 1], ['q', 1], ['q', 1]], [['q', 1], ['q', 1], ['q', 1], ['q', 1]]],
+  howMany: [3, 1, 4, 2],
+  lines2: [[['q', 1], ['q', 1], ['q', 1], ['q', 1]], [['q', 1], ['q', 1], ['q', 1], ['q', 1]]],
+  // p3: minims
+  qh: ['h', 'q', 'q', 'h', 'h', 'q', 'h', 'q'],
+  lines3: [[['h', 2], ['h', 2]], [['q', 1], ['q', 1], ['h', 2]], [['h', 2], ['q', 1], ['q', 1]], [['q', 1], ['q', 1], ['q', 1], ['q', 1]]],
+  count3: [[['q', 1], ['q', 1], ['h', 2]], [['h', 2], ['h', 2]]],
+  // p4: longer notes
+  beats4: ['hd', 'w', 'q', 'h', 'w', 'hd', 'h', 'q'],
+  lines4: [[['hd', 3], ['q', 1]], [['w', 4]], [['q', 1], ['hd', 3]], [['h', 2], ['h', 2]]],
+  count4: [[['hd', 3], ['q', 1]], [['w', 4]]],
+  // p5: quavers
+  walkRun: ['p', 'q', 'q', 'p', 'p', 'q', 'p', 'q'],
+  plus: [[['q', 1], ['p', 1], ['q', 1], ['p', 1]], [['p', 1], ['p', 1], ['q', 1], ['q', 1]], [['p', 1], ['q', 1], ['h', 2]], [['q', 1], ['q', 1], ['p', 1], ['q', 1]]],
+  fromWords: [[['q', 1], ['q', 1], ['p', 1], ['q', 1]], [['p', 1], ['q', 1], ['p', 1], ['q', 1]]],
+  // p6: rests
+  match: { notes: ['q', 'w', 'h'], rests: ['hr', 'r', 'wr'] },
+  restCount: [[['q', 1], ['q', 1], ['r', 1], ['q', 1]], [['h', 2], ['hr', 2]], [['r', 1], ['q', 1], ['q', 1], ['q', 1]], [['q', 1], ['q', 1], ['hr', 2]]],
+  draw: ['hr', 'wr', 'wr', 'hr'],
+};
+const NV_CHK = {
+  name: ['hd', 'q', 'w', 'h', 'w', 'q'],
+  lines: [[['h', 2], ['q', 1], ['q', 1]], [['hd', 3], ['q', 1]]],
+  count: [[['q', 1], ['h', 2], ['q', 1]], [['w', 4]]],
+  plus: [[['p', 1], ['q', 1], ['p', 1], ['q', 1]], [['q', 1], ['p', 1], ['p', 1], ['q', 1]]],
+  rests: [[['q', 1], ['r', 1], ['hr', 2]], [['wr', 4]]],
+};
+// draw a line from each note to its rest; ex: the first line drawn
+function NvMatch({ notes, rests, ex }) {
+  const G = 66, x0 = 40, x1 = 370, y = (i) => 2 + i * G;
+  const right = { q: 'r', h: 'hr', w: 'wr' };
+  const j0 = rests.indexOf(right[notes[0]]);
+  return <svg viewBox={'0 0 460 ' + (G * notes.length)} style={{width:'100%',maxWidth:310,display:'block',margin:'0 auto'}}>
+    {notes.map((k, i) => <g key={'n' + i}><svg x={x0} y={y(i)} width="84" height="70" viewBox="0 10 80 66" dangerouslySetInnerHTML={{ __html: nvGlyphRaw(k) }}/><circle cx={x0 + 110} cy={y(i) + 36} r="5" fill={BK.ink}/></g>)}
+    {rests.map((k, i) => <g key={'r' + i}><circle cx={x1 - 26} cy={y(i) + 36} r="5" fill={BK.ink}/><svg x={x1} y={y(i)} width="84" height="70" viewBox="0 10 80 66" dangerouslySetInnerHTML={{ __html: nvGlyphRaw(k) }}/></g>)}
+    {ex && <line x1={x0 + 110} y1={y(0) + 36} x2={x1 - 26} y2={y(j0) + 36} stroke={BK.coral} strokeWidth="2.6" strokeLinecap="round"/>}
+  </svg>;
+}
+// five lines to draw a rest on: numbered from the bottom, as on Lesson Book page 6
+function NvFiveLines({ k, ex }) {
+  const G = 12, y5 = 66, x0 = 30, x1 = 160;
+  return <svg viewBox="0 0 180 76" style={{width:'100%',maxWidth:180,display:'block',margin:'0 auto'}}>
+    {[0, 1, 2, 3, 4].map(i => <g key={i}><line x1={x0} x2={x1} y1={y5 - i * G} y2={y5 - i * G} stroke={BK.ink} strokeWidth="1.3"/><text x={x0 - 10} y={y5 - i * G + 4} textAnchor="middle" fontSize="10" fontWeight="900" fill={BK.muted}>{i + 1}</text></g>)}
+    {ex && <rect x={(x0 + x1) / 2 - 12} y={k === 'hr' ? y5 - 2 * G - 6 : y5 - 3 * G} width="24" height="6" fill={BK.coral}/>}
+  </svg>;
+}
+
+function NvWorkbook({ startNo = 1 }) {
+  const W = NV_WB, pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + 1 + pages.length} chId="note-values">{content}</WbPage>);
+
+  // 2 (faces "The crotchet: one beat")
+  P(<>
+    <WbTop step={1}/>
+    <Part kind="together" title="Draw crotchets" how="Trace the pale crotchets in 1. Then draw a crotchet over every heart in 2.">
+      <BkGrid cols={2} gap="8px 12px">{W.trace.map((row, i) => nvBarCell(row, i, 1, false, () => ({ notes: i === 0 ? 'trace' : 'none', lines: 'none', count: 'show' })))}</BkGrid>
+    </Part>
+    <Part kind="home" title="How many beats?" how="Write how many beats each row lasts.">
+      <BkGrid cols={4} gap="8px 10px">{W.howMany.map((c, i) => <ExCell key={i} n={i + 3}><div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6,padding:'14px 2px 2px'}}>
+        <NvPaperBar row={Array.from({ length: c }, () => ['q', 1])} D={30} lines="none" count="none" hearts={false} maxW={30 * c + 20}/>
+        <span style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:12,fontWeight:800,color:BK.ink}}>beats {bkBox(36, 30)}</span></div></ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Draw the sound lines" how="Draw each crotchet's sound line, one heart long. Then play it on middle C, right hand finger 1, counting out loud.">
+      <div style={{display:'grid',gap:18}}>{W.lines2.map((row, r) => <div key={r} style={{display:'grid',gridTemplateColumns:'24px 1fr',alignItems:'center',gap:6}}>{nvNum(7 + r)}<NvPaperBar row={row} lines="guide" maxW={470}/></div>)}</div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // 3 (faces "The minim: two beats")
+  P(<>
+    <WbTop step={2}/>
+    <Part kind="together" title="Crotchet or minim?" how="Circle its name. Then write how many beats it lasts.">
+      <BkGrid cols={4} gap="8px 10px">{W.qh.map((k, i) => <NvNameCell key={i} k={k} n={i + 1} ex={i === 0} words={['crotchet', 'minim']}/>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Draw the sound lines" how="Draw each note's sound line on the dotted line: one heart or two.">
+      <BkGrid cols={2} gap="8px 12px">{W.lines3.map((row, i) => nvBarCell(row, i, 9, false, () => ({ lines: 'guide', count: 'none' })))}</BkGrid>
+    </Part>
+    <Part kind="play" title="Count it, then play it" how="Write the count in every box, grey ones too. A grey box is a beat you hold. Then play it on middle C, counting out loud.">
+      <div style={{display:'grid',gap:16}}>{W.count3.map((row, r) => <div key={r} style={{display:'grid',gridTemplateColumns:'24px 1fr',alignItems:'center',gap:6}}>{nvNum(13 + r)}<NvPaperBar row={row} count="boxes" maxW={278}/></div>)}</div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // 4 (faces "Longer notes: 3 and 4 beats")
+  P(<>
+    <WbTop step={3}/>
+    <Part kind="together" title="How many beats?" how="Write how many beats each note lasts: 1, 2, 3 or 4.">
+      <BkGrid cols={4} gap="8px 10px">{W.beats4.map((k, i) => <NvNameCell key={i} k={k} n={i + 1} ex={i === 0}/>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Draw the sound lines" how="Draw each note's sound line on the dotted line, as long as its beats.">
+      <BkGrid cols={2} gap="8px 12px">{W.lines4.map((row, i) => nvBarCell(row, i, 9, false, () => ({ lines: 'guide', count: 'none' })))}</BkGrid>
+    </Part>
+    <Part kind="play" title="Count it, then play it" how="Write the count in every box, grey ones too. A grey box is a beat you hold. Then play it on middle C, counting out loud.">
+      <div style={{display:'grid',gap:16}}>{W.count4.map((row, r) => <div key={r} style={{display:'grid',gridTemplateColumns:'24px 1fr',alignItems:'center',gap:6}}>{nvNum(13 + r)}<NvPaperBar row={row} count="boxes" maxW={340}/></div>)}</div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // 5 (faces "Two quavers on one beat")
+  P(<>
+    <WbTop step={4}/>
+    <Part kind="together" title="Walk or run-ning?" how="Circle walk or run-ning for each one.">
+      <BkGrid cols={4} gap="8px 10px">{W.walkRun.map((k, i) => <NvNameCell key={i} k={k} n={i + 1} ex={i === 0} words={['walk', 'run-ning']} beats={false}/>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Write 1 + 2 +" how="Write the count under every heart. Under two quavers, write the beat's number and then +.">
+      <BkGrid cols={2} gap="8px 12px">{W.plus.map((row, i) => nvBarCell(row, i, 9, false, () => ({ count: 'boxes' })))}</BkGrid>
+    </Part>
+    <Part kind="play" title="Notes from words" how="Over each word, draw a crotchet for walk or two quavers for run-ning. Then clap it, saying the words.">
+      <div style={{display:'grid',gap:14}}>{W.fromWords.map((row, r) => <div key={r} style={{display:'grid',gridTemplateColumns:'24px 1fr',alignItems:'center',gap:6}}>{nvNum(13 + r)}<NvPaperBar row={row} notes="none" lines="none" words="show" count="none" maxW={345}/></div>)}</div>
+    </Part>
+    <Faces/>
+  </>);
+
+  // 6 (faces "Rests: silence you count")
+  P(<>
+    <WbTop step={5}/>
+    <Part kind="together" title="Note and rest" how="Draw a line from each note to the rest that lasts just as long. The first one is done.">
+      <ExCell n={1}><div style={{padding:'12px 4px 2px'}}><NvMatch notes={W.match.notes} rests={W.match.rests} ex/></div></ExCell>
+    </Part>
+    <Part kind="home" title="Count every beat, rests too" how="Write the count under every heart. A dashed box is a rest: count it too.">
+      <BkGrid cols={2} gap="8px 12px">{W.restCount.map((row, i) => nvBarCell(row, i, 2, false, () => ({ count: 'boxes' })))}</BkGrid>
+    </Part>
+    <Part kind="play" title="Draw the rests" how="Draw the rest named in each box on the five lines.">
+      <BkGrid cols={2} gap="8px 12px">{W.draw.map((k, i) => <ExCell key={i} n={i + 6}><div style={{display:'grid',gap:4,justifyItems:'center',padding:'16px 4px 4px'}}>
+        <span style={{fontSize:13,fontWeight:900,color:BK.ink}}>{k === 'hr' ? 'a minim rest' : 'a semibreve rest'}</span><NvFiveLines k={k}/></div></ExCell>)}</BkGrid>
+    </Part>
+    <Faces/>
+  </>);
+
+  // 7. the check-up on paper (the Workbook's last page)
+  P(<NvPaperCheck/>);
+  return <>{pages}</>;
+}
+function NvPaperCheck() {
+  const C = NV_CHK;
+  return <div className="lb-paper" style={{display:'flex',flexDirection:'column',gap:4}}>
+    <LbPaperHead/>
+    {bkSec('A', 'Circle each note\'s name. Write how many beats it lasts.')}
+    <BkGrid cols={3} gap="6px 10px">{C.name.map((k, i) => <BkCell key={i} n={i + 1}><div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'4px 2px 0'}}><NvGlyph kind={k} size={44}/>
+      <div style={{display:'flex',justifyContent:'center'}}>{nvChoose(k === 'q' || k === 'h' ? ['crotchet', 'minim'] : ['dotted minim', 'semibreve'], null)}</div>
+      <span style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:12,fontWeight:800,color:BK.ink}}>beats {bkBox(36, 30)}</span></div></BkCell>)}</BkGrid>
+    {bkSec('B', 'Draw each note\'s sound line on the dotted line, as long as its beats.')}
+    <BkGrid cols={2} gap="6px 10px">{C.lines.map((row, i) => <BkCell key={i} n={i + 7}><div style={{padding:'12px 2px 0'}}><NvPaperBar row={row} lines="guide" count="none"/></div></BkCell>)}</BkGrid>
+    {bkSec('C', 'Write the count under every heart. A grey box is a beat you hold.')}
+    <BkGrid cols={2} gap="6px 10px">{C.count.map((row, i) => <BkCell key={i} n={i + 9}><div style={{padding:'12px 2px 0'}}><NvPaperBar row={row} count="boxes"/></div></BkCell>)}</BkGrid>
+    {bkSec('D', 'Write the count. Under two quavers, write the beat\'s number and then +.')}
+    <BkGrid cols={2} gap="6px 10px">{C.plus.map((row, i) => <BkCell key={i} n={i + 11}><div style={{padding:'12px 2px 0'}}><NvPaperBar row={row} count="boxes"/></div></BkCell>)}</BkGrid>
+    {bkSec('E', 'Write the count under every heart, the rests too.')}
+    <BkGrid cols={2} gap="6px 10px">{C.rests.map((row, i) => <BkCell key={i} n={i + 13}><div style={{padding:'12px 2px 0'}}><NvPaperBar row={row} count="boxes"/></div></BkCell>)}</BkGrid>
+  </div>;
+}
+
+function NvTeacher() {
+  const W = NV_WB, C = NV_CHK, pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={pages.length + 1} chId="note-values" teacher>{content}</WbPage>);
+  const lineTxt = (row) => row.map(([k, n]) => nvNameEn[k] + ' ' + n + (n === 1 ? ' heart' : ' hearts')).join(', ');
+  const cnt = (row) => { const out = []; let b = 0; row.forEach(([k, len]) => { for (let i = 0; i < len; i++) { const no = String(b % 4 + 1); out.push(nvRestKind(k) ? '(' + no + ')' : i > 0 ? '[' + no + ']' : k === 'p' ? no + ' +' : no); b++; } }); return out.join(' '); };
+  P(<>
+    <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('note-values')}</div>
+    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 8px',lineHeight:1.5}}>Each workbook page faces its Lesson Book page. The book uses the British names; each note's page gives its other name once (quarter note, half note, dotted half note, whole note, eighth notes; quarter, half and whole rests). It counts <b>1 2 3 4</b>, and <b>1 + 2 +</b> for quavers (+ is said “and”). Under every note a coral sound line as long as its beats; held beats are lighter, a rest's beats are dashed. Not yet: the single quaver and its rest, the dotted crotchet and semiquavers (chapter {bkChapterNo('rhythm')}, Rhythm patterns, and the drill's higher levels); rests in bars and filling bars (chapter {bkChapterNo('time-signatures')}, Time signatures). Page 6 shows five lines only to show where the minim and semibreve rests sit; the staff is chapter {bkChapterNo('staff')}. AMEB: Preliminary.</div>
+    <div style={{fontSize:12.5,color:BK.ink,margin:'0 0 12px',lineHeight:1.5,border:'0.8px solid ' + BK.hair,padding:'7px 10px'}}><b style={{color:BK.coral}}>Lesson time: walk, then run.</b> Walk round the room on the crotchets, one step a beat. Hold a minim like a long step: one step, then stand for the second beat. Run on the quavers: two quick steps on a beat. In this book the count in brackets below is a rest's beat, and a count in square brackets is a held beat.</div>
+    <TcBlock page={2} title="The crotchet: one beat" answers={<>{tcAns('TRY IT', ['1 traced; 2 four crotchets, one over each heart'], null)}{tcAns('YOUR TURN', W.howMany.map(c => c + (c === 1 ? ' beat' : ' beats')), 3)}{tcAns('PLAY', ['7 and 8: one heart-long line under each crotchet'], null)}</>}
+      watch="A crotchet drawn with a hollow head (that is a minim) or the stem on the wrong side. At the piano: the count stopping between notes, or the notes getting quicker."
+      say="“One crotchet, one heart, one step.”"/>
+    <TcBlock page={3} title="The minim: two beats" answers={<>{tcAns('TRY IT', W.qh.map(k => nvNameEn[k] + ', ' + NV_BEATS[k]))}{tcAns('YOUR TURN', W.lines3.map(lineTxt), 9)}{tcAns('PLAY', W.count3.map(cnt), 13)}</>}
+      watch="Cutting the minim short: letting go on its second beat, or saying only “1” and going on. The held number is still said, just more quietly."
+      say="“Play on 1, hold on 2: keep the key down while you say it.”"/>
+    <TcBlock page={4} title="Longer notes: 3 and 4 beats" answers={<>{tcAns('TRY IT', W.beats4.map(k => nvNameEn[k] + ', ' + NV_BEATS[k]))}{tcAns('YOUR TURN', W.lines4.map(lineTxt), 9)}{tcAns('PLAY', W.count4.map(cnt), 13)}</>}
+      watch="Mixing up the dotted minim (stem, dot) and the semibreve (no stem). Letting a semibreve go after two or three beats."
+      say="“The dot adds half the minim: two beats and one more.”"/>
+  </>);
+  P(<>
+    <TcBlock page={5} title="Two quavers on one beat" answers={<>{tcAns('TRY IT', W.walkRun.map(k => k === 'p' ? 'run-ning' : 'walk'))}{tcAns('YOUR TURN', W.plus.map(cnt), 9)}{tcAns('PLAY', W.fromWords.map(row => row.map(([k]) => k === 'p' ? 'two quavers' : 'crotchet').join(', ')), 13)}</>}
+      watch="Rushing the quavers so the beat speeds up; giving each quaver a whole beat. The two quavers share one heart: the + is exactly halfway."
+      say="“Run-ning is two steps in the time of one walk.”"/>
+    <TcBlock page={6} title="Rests: silence you count" answers={<>{tcAns('TRY IT', ['crotchet to crotchet rest, semibreve to semibreve rest, minim to minim rest'], 1)}{tcAns('YOUR TURN', W.restCount.map(cnt), 2)}{tcAns('PLAY', W.draw.map(k => k === 'hr' ? 'a block sitting on line 3' : 'a block hanging from line 4'), 6)}</>}
+      watch="Stopping the count in a rest, so the next note comes early. Mixing up the minim rest (sits on the line) and the semibreve rest (hangs from it)."
+      say="“Your hand rests; your count doesn't.”"/>
+    <TcBlock page={7} title="The check-up on paper (the Workbook's last page)" answers={<>
+      {tcAns('A', C.name.map(k => nvNameEn[k] + ', ' + NV_BEATS[k]))}
+      {tcAns('B', C.lines.map(lineTxt), 7)}
+      {tcAns('C', C.count.map(cnt), 9)}
+      {tcAns('D', C.plus.map(cnt), 11)}
+      {tcAns('E', C.rests.map(cnt), 13)}
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>One mark for each answer. The paper shows the idea; the note lengths themselves are heard: also listen to the student play and count (My five checks, Lesson Book page 7).</div>
+    </>}
+      goBack={[{ id: 'a', step: '1 to 3', page: '2 to 4' }, { id: 'b', step: '2 and 3', page: '3 and 4' }, { id: 'c', step: '2 and 3', page: '3 and 4' }, { id: 'd', step: 4, page: 5 }, { id: 'e', step: 5, page: 6 }]}/>
+  </>);
+  return <>{pages}</>;
+}
+WORKBOOKS['note-values'] = NvWorkbook;
+TEACHER_COPIES['note-values'] = NvTeacher;
+
+const LESSON_BOOKS = { 'posture-hands': PostureLessonBook, 'first-steps': FirstStepsLessonBook, 'note-names': NoteNamesLessonBook, staff: StaffLessonBook, 'whole-staff': WholeStaffLessonBook, 'ledger-lines': LedgerLessonBook, tones: TonesLessonBook, pulse: PulseLessonBook, 'note-values': NotesRestsLessonBook };
 // Phase 394: chapters whose first and last pages are shared by both books
-const LB_PAGE_FNS = { 'posture-hands': postureLbPages, 'first-steps': fsLbPages, 'note-names': nnLbPages, staff: sfLbPages, 'whole-staff': wsLbPages, 'ledger-lines': llLbPages, tones: tnLbPages, pulse: plLbPages };   // Phase 455: tones and pulse too, so each workbook page faces its own lesson page
+const LB_PAGE_FNS = { 'posture-hands': postureLbPages, 'first-steps': fsLbPages, 'note-names': nnLbPages, staff: sfLbPages, 'whole-staff': wsLbPages, 'ledger-lines': llLbPages, tones: tnLbPages, pulse: plLbPages, 'note-values': nvLbPages };   // Phase 455: tones and pulse too, so each workbook page faces its own lesson page
 // Phase 409: the Workbook no longer repeats the book's opener; its last page is the check-up on paper (the book's
 // last page keeps only the at-the-piano checks). Chapter 4 builds its own check-up page.
 const LB_PAPER_PAGES = { 'posture-hands': () => <PhPaperCheck/>, 'first-steps': () => <FsPaperCheck/>, 'note-names': () => <NnPaperCheck/> };
