@@ -2376,7 +2376,8 @@ function pianoNote(ctx, t, freq, len, vol) {
   const out = ctx.createGain(), filt = ctx.createBiquadFilter();
   filt.type = 'lowpass'; filt.frequency.value = 900 + vel * vel * 9000; filt.Q.value = 0.3;
   filt.connect(out); out.connect(ctx.destination);
-  const end = t + Math.max(len, 0.08);
+  const end = t + Math.max(len, 0.08), stops = [];
+  const release = () => { const now = ctx.currentTime; if (now >= end) return; try { out.gain.cancelScheduledValues(now); out.gain.setValueAtTime(0.9 * vel, now); out.gain.exponentialRampToValueAtTime(0.0008, now + 0.16); stops.forEach(n => n.stop(now + 0.2)); } catch (e) {} };
   out.gain.setValueAtTime(0.9 * vel, t);
   out.gain.setValueAtTime(0.9 * vel, end);
   out.gain.exponentialRampToValueAtTime(0.0008, end + 0.28); // damper
@@ -2385,8 +2386,8 @@ function pianoNote(ctx, t, freq, len, vol) {
     const src = ctx.createBufferSource();
     src.buffer = _piano.buf[near]; src.playbackRate.value = Math.pow(2, (midi - near) / 12);
     src.connect(filt); src.start(t, _piano.on[near] || 0); src.stop(end + 0.3);
-    _clickNodes.push(src);
-    return;
+    _clickNodes.push(src); stops.push(src);
+    return release;
   }
   // Synthesised fallback: a few decaying partials and a soft hammer.
   [[1, 1, 1.6], [2, 0.45, 1.1], [3, 0.2, 0.8], [4, 0.1, 0.6]].forEach(([h, a, dec]) => {
@@ -2394,8 +2395,9 @@ function pianoNote(ctx, t, freq, len, vol) {
     o.type = 'sine'; o.frequency.value = freq * h * (1 + (h - 1) * 0.0008);
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.35 * a, t + 0.004);
     g.gain.exponentialRampToValueAtTime(0.0005, t + Math.min(dec * (freq < 300 ? 2 : 1.2), len + 1.2));
-    o.connect(g); g.connect(filt); o.start(t); o.stop(end + 0.3); _clickNodes.push(o);
+    o.connect(g); g.connect(filt); o.start(t); o.stop(end + 0.3); _clickNodes.push(o); stops.push(o);
   });
+  return release;
 }
 // Count voice.
 const _count = { buf: {}, on: {}, started: false, last: null };
@@ -4419,8 +4421,8 @@ function getAudio() {
     return _audioCtx;
   } catch (e) { return null; }
 }
-function blip(ctx, t, freq, len, vol, type) {
-  if (type === 'triangle' && SOUND.piano) { pianoNote(ctx, t, freq, len, vol); return; }
+function blip(ctx, t, freq, len, vol, type) {   // returns release(): stop the note early (Phase 463, a held tap)
+  if (type === 'triangle' && SOUND.piano) return pianoNote(ctx, t, freq, len, vol);
   const o = ctx.createOscillator(), g = ctx.createGain();
   if (type) o.type = type;
   o.frequency.value = freq;
@@ -4430,6 +4432,7 @@ function blip(ctx, t, freq, len, vol, type) {
   o.connect(g); g.connect(ctx.destination);
   o.start(t); o.stop(t + len + 0.03);
   _clickNodes.push(o);
+  return () => { const now = ctx.currentTime; try { g.gain.cancelScheduledValues(now); g.gain.setValueAtTime(Math.max(0.0002, g.gain.value), now); g.gain.exponentialRampToValueAtTime(0.0001, now + 0.08); o.stop(now + 0.1); } catch (e) {} };
 }
 
 const RHYTHM_LEVELS = RHYTHM_TIERS.map(t => ({ n: t.n, label: 'Cards ' + ((t.n - 1) * 8 + 1) + '–' + t.n * 8 + ': ' + t.label, tier: t.n, bpm: t.bpm, time: 18 }));
@@ -34194,16 +34197,28 @@ function sfLbPages(scr = false) {
       </g></g>; }}/>;
   // p3: up the staff = up the piano, and back down (Sohyun v3 review: "내려가는건?") -- the steps climb a hill and
   // come down again; the skips go up; the arrow under it points both ways
-  const p3 = <SfStaff clef="none" width={340} pad={[46, 44]} label={t('Notes on the staff: steps climb line, space, line, space to the top and walk back down; skips go line, line, line; the bird is up at the high end, the turtle down at the low end, and an arrow under the staff points both ways', '오선 위의 음표: 한 걸음은 줄, 칸, 줄, 칸 꼭대기까지 올라갔다가 다시 내려와요; 건너뛰기는 줄, 줄, 줄; 높은 쪽엔 새, 낮은 쪽엔 거북이, 오선 아래 화살표는 양쪽을 가리켜요')}
-    notes={[30, 31, 32, 33, 34, 33, 32].map((d, i) => ({ d, x: 56 + i * 21 })).concat([30, 32, 34, 36].map((d, i) => ({ d, x: 216 + i * 27, color: PEN_C })))}
-    icons={[SF_ICON(bird, 300, 6, 0.85), SF_ICON(turtle, 0, 116, 0.75)]}
-    extra={(yOf, layer, txt) => layer === 'over' && <g style={txt}>
-      <text x="119" y={yOf(38) - 14} fontSize="10" fontWeight="900" fill={BK.ink} textAnchor="middle">{t('steps: up... and down', '한 걸음: 위로... 그리고 아래로')}</text>
-      <text x="257" y={yOf(38) - 14} fontSize="10" fontWeight="900" fill={BK.coral} textAnchor="middle">{t('skips: line, line, line', '건너뛰기: 줄, 줄, 줄')}</text>
-      {[0, 1, 2].map(i => <g key={i}>{sfHop(216 + i * 27 + 3, 216 + (i + 1) * 27 - 3, yOf(32 + 2 * i) - 9, 11)}</g>)}
-      <path d={`M64 ${yOf(30) + 24} L292 ${yOf(30) + 24}`} stroke={BK.coral} strokeWidth="1.8"/>{sfArrowHead(296, yOf(30) + 24, 1, BK.coral)}{sfArrowHead(60, yOf(30) + 24, -1, BK.coral)}
-      <text x="178" y={yOf(30) + 37} fontSize="9" fontWeight="800" fill={BK.ink} textAnchor="middle">{t('up = higher, to the right · down = lower, to the left', '위로 = 높게, 오른쪽으로 · 아래로 = 낮게, 왼쪽으로')}</text>
-    </g>}/>;
+  const p3 = <div style={{display:'flex',flexDirection:'column',gap:6,width:'100%'}}>
+    <SfStaff clef="none" width={300} pad={[56, 52]} label={t('Steps on the staff: line, space, line, space up to the top and back down; the bird is up at the high end, the turtle down at the low end, and an arrow under the staff points both ways', '오선 위의 한 걸음: 줄, 칸, 줄, 칸 꼭대기까지 올라갔다가 다시 내려와요; 높은 쪽엔 새, 낮은 쪽엔 거북이, 오선 아래 화살표는 양쪽을 가리켜요')}
+      notes={[30, 31, 32, 33, 34, 33, 32, 31, 30].map((d, i) => ({ d, x: 48 + i * 24 }))}
+      icons={[SF_ICON(bird, 256, 6, 0.85), SF_ICON(turtle, 0, 124, 0.75)]}
+      extra={(yOf, layer, txt) => layer === 'over' && <g style={txt}>
+        <text x="144" y={yOf(38) - 16} fontSize="10.5" fontWeight="900" fill={BK.ink} textAnchor="middle">{t('steps: up and down', '한 걸음: 위로, 아래로')}</text>
+        <path d={`M48 ${yOf(30) + 24} L242 ${yOf(30) + 24}`} stroke={BK.coral} strokeWidth="1.8"/>{sfArrowHead(246, yOf(30) + 24, 1, BK.coral)}{sfArrowHead(44, yOf(30) + 24, -1, BK.coral)}
+        <text x="146" y={yOf(30) + 38} fontSize="9.5" fontWeight="800" fill={BK.ink} textAnchor="middle">{t('up = higher, to the right · down = lower, to the left', '위로 = 높게, 오른쪽으로 · 아래로 = 낮게, 왼쪽으로')}</text>
+      </g>}/>
+    <SfStaff clef="none" width={300} pad={[36, 14]} label={t('Skips on the staff: line to line up and back down, then space to space up and back down, a coral arrow over each skip', '오선 위의 건너뛰기: 줄에서 줄로 올라갔다 내려오고, 칸에서 칸으로 올라갔다 내려와요, 건너뛸 때마다 산호색 화살표')}
+      notes={[30, 32, 34, 32, 30].map((d, i) => ({ d, x: 34 + i * 24, color: PEN_C })).concat([31, 33, 35, 33, 31].map((d, i) => ({ d, x: 170 + i * 24, color: PEN_C })))}
+      extra={(yOf, layer, txt) => { if (layer !== 'over') return null;
+        const hop = (x1, d1, x2, d2, k) => { const y1 = yOf(d1) - 9, y2 = yOf(d2) - 9, top = Math.min(y1, y2) - 10;
+          return <g key={k}><path d={`M${x1 + 3} ${y1} Q${(x1 + x2) / 2} ${top} ${x2 - 3} ${y2}`} fill="none" stroke={BK.coral} strokeWidth="1.6"/><path d={`M${x2 - 8.5} ${y2 - 4.5} L${x2 - 3} ${y2} L${x2 - 9.5} ${y2 + 1.5}`} fill="none" stroke={BK.coral} strokeWidth="1.6" strokeLinecap="round"/></g>; };
+        const L = [30, 32, 34, 32, 30], S = [31, 33, 35, 33, 31];
+        return <g style={txt}>
+          <text x="82" y={yOf(38) - 16} fontSize="10.5" fontWeight="900" fill={BK.coral} textAnchor="middle">{t('skips: line to line', '건너뛰기: 줄에서 줄')}</text>
+          <text x="218" y={yOf(38) - 16} fontSize="10.5" fontWeight="900" fill={BK.coral} textAnchor="middle">{t('skips: space to space', '건너뛰기: 칸에서 칸')}</text>
+          {L.slice(1).map((d, i) => hop(34 + i * 24, L[i], 34 + (i + 1) * 24, d, 'l' + i))}
+          {S.slice(1).map((d, i) => hop(170 + i * 24, S[i], 170 + (i + 1) * 24, d, 's' + i))}
+        </g>; }}/>
+  </div>;
   // the clef on its own first (Phase 406): the sign big, its line in coral, its owner beside it -- out of the staff
   const clefIntro = (clef) => {
     const line = clef === 'treble' ? 32 : 24, L = clef === 'treble' ? 'G' : 'F';
@@ -34215,7 +34230,7 @@ function sfLbPages(scr = false) {
             : <text x="114" y={yOf(line) + 4.5} fontSize="14" fontWeight="900" fill={BK.coral} textAnchor="middle" style={txt}>{L}</text>}/>
       </div>
       <div style={{fontSize:34,fontWeight:900,color:BK.ink,flex:'0 0 auto',lineHeight:1}} aria-hidden="true">=</div>
-      <PenArt shapes={clef === 'treble' ? sfQueen(26, 28, 1.2) : sfKing(26, 28, 1.2)} vb={[0, 0, 52, 58]} style={{width:82,flex:'0 0 auto'}} label={clef === 'treble' ? t('the Queen', '여왕') : t('the King', '왕')}/>
+      <PenArt shapes={clef === 'treble' ? sfQueen(26, 31, 1.2) : sfKing(26, 31, 1.2)} vb={[0, 0, 52, 58]} style={{width:82,flex:'0 0 auto'}} label={clef === 'treble' ? t('the Queen', '여왕') : t('the King', '왕')}/>
     </div>;
   };
   const pic2 = (intro, main, h) => <LbPic h={h}><div style={{display:'flex',flexDirection:'column',gap:12,width:'100%',maxWidth:640,margin:'0 auto'}}>{intro}<div style={{width:'100%',maxWidth:600,margin:'0 auto'}}>{main}</div></div></LbPic>;
@@ -34303,13 +34318,13 @@ function sfLbPages(scr = false) {
       <LbSay>{LANG === 'ko' ? <>오선은 건반의 지도예요. 오선에서 <b>위</b>는 <b>높은 소리</b>: 오른쪽, 하늘 위 새 쪽. <b>아래</b>는 왼쪽, 바다 아래 거북이 쪽. 줄에서 바로 다음 칸은 <b>한 걸음</b>: 다음 글자, 다음 흰건반. 줄에서 다음 줄, 칸에서 다음 칸은 <b>건너뛰기</b>: {bkChapterNo('note-names')}챕터처럼 글자 하나를 넘어가요.</>
         : <>The staff is a map of the keys. <b>Higher</b> on the staff is <b>higher</b> on the piano: to the right, up towards the bird. <b>Lower</b> is to the left, down towards the turtle. Line to the next space is a <b>step</b>: the next letter, the next white key. Line to the next line, or space to the next space, is a <b>skip</b>: one letter jumped over, as in Chapter {bkChapterNo('note-names')}.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [
-        <>아무 흰건반에서 시작해 그림처럼 <b>한 걸음</b>으로 꼭대기까지 올라갔다가 <b>다시 내려와요</b>, 매번 이웃 건반으로.</>,
-        <>이번엔 <b>건너뛰기</b>: 줄, 줄, 줄 위로, 건반 하나씩 넘어가요. 그리고 건너뛰기로 다시 내려와요.</>,
+        <>오른손 엄지를 가운데 도에: 그림처럼 <b>한 걸음</b>씩 C D E F G 올라갔다가 F E D C로 <b>다시 내려와요</b>.</>,
+        <>이번엔 <b>건너뛰기</b>, 매번 건반 하나를 넘어가요: C E G E C, 그다음 D F A F D. 올라갔다 내려와요.</>,
       ] : [
-        <>Start on any white key and play the picture's <b>steps</b>: up to the top and <b>back down</b>, the next key each time.</>,
-        <>Now the <b>skips</b>: line, line, line going up, a key jumped over each time. Then skip your way back down.</>,
+        <>Right hand, thumb on middle C: play the <b>steps</b> as in the picture, up C D E F G and <b>back down</b> F E D C.</>,
+        <>Now the <b>skips</b>, a key jumped over each time: C E G E C, then D F A F D. Up and back down.</>,
       ]}/>
-      <LbRemember>{t('Line to space: a step. Line to line: a skip. Up or down.', '줄에서 칸: 한 걸음. 줄에서 줄: 건너뛰기. 위로도, 아래로도.')}</LbRemember>
+      <LbRemember>{t('Line to space: a step. Line to line, space to space: a skip.', '줄에서 칸: 한 걸음. 줄에서 줄, 칸에서 칸: 건너뛰기.')}</LbRemember>
     </LbPage>,
 
     // 4. the Queen's five (treble clef)
@@ -35238,7 +35253,7 @@ function WsTeacher() {
 
 // Phase 424: the cast, drawn once (cast/cast.py, cast/butlers.py in _workspace/chapter-review): the royal family as Staunton chess pieces
 // -- the King navy, the Queen coral, Clara a pink pawn with a tiara -- and the butler's portrait: the rabbit again (Phase 433), centred, coral bow tie.
-const VIC_KING = "<g fill=\"#26296b\" stroke=\"#26296b\" stroke-width=\"0.8\" stroke-linejoin=\"round\"><path d=\"M-22 0 L22 0 C22.1 -0.25 22.43 -0.92 22.6 -1.5 C22.77 -2.08 23.07 -2.75 23 -3.5 C22.93 -4.25 22.7 -5.32 22.2 -6 C21.7 -6.68 20.62 -7.2 20 -7.6 C19.38 -8 18.63 -8 18.5 -8.4 C18.37 -8.8 19.18 -9.4 19.2 -10 C19.22 -10.6 19.05 -11.47 18.6 -12 C18.15 -12.53 17.27 -12.83 16.5 -13.2 C15.73 -13.57 14.75 -13.57 14 -14.2 C13.25 -14.83 12.62 -15.7 12 -17 C11.38 -18.3 10.8 -19.83 10.3 -22 C9.8 -24.17 9.35 -27.33 9 -30 C8.65 -32.67 8.38 -35.33 8.2 -38 C8.02 -40.67 7.9 -43.73 7.9 -46 C7.9 -48.27 7.77 -50.43 8.2 -51.6 C8.63 -52.77 9.62 -52.6 10.5 -53 C11.38 -53.4 12.87 -53.52 13.5 -54 C14.13 -54.48 14.3 -55.27 14.3 -55.9 C14.3 -56.53 14.22 -57.32 13.5 -57.8 C12.78 -58.28 10.82 -58.47 10 -58.8 C9.18 -59.13 8.73 -59.27 8.6 -59.8 C8.47 -60.33 8.8 -60.8 9.2 -62 C9.6 -63.2 10.3 -65.33 11 -67 C11.7 -68.67 12.7 -70.5 13.4 -72 C14.1 -73.5 14.82 -75.07 15.2 -76 C15.58 -76.93 15.77 -77.15 15.7 -77.6 C15.63 -78.05 15.35 -78.37 14.8 -78.7 C14.25 -79.03 13.27 -79.23 12.4 -79.6 C11.53 -79.97 10.6 -80.5 9.6 -80.9 C8.6 -81.3 7.43 -81.68 6.4 -82 C5.37 -82.32 4.1 -82.53 3.4 -82.8 C2.7 -83.07 2.4 -83.47 2.2 -83.6 L1.4 -84.4 L1.4 -88.6 L5.4 -88 L5.4 -92.6 L1.4 -92 L1.8 -97 L-1.8 -97 L-1.4 -92 L-5.4 -92.6 L-5.4 -88 L-1.4 -88.6 L-1.4 -84.4 L-2.2 -83.6 C-2.4 -83.47 -2.7 -83.07 -3.4 -82.8 C-4.1 -82.53 -5.37 -82.32 -6.4 -82 C-7.43 -81.68 -8.6 -81.3 -9.6 -80.9 C-10.6 -80.5 -11.53 -79.97 -12.4 -79.6 C-13.27 -79.23 -14.25 -79.03 -14.8 -78.7 C-15.35 -78.37 -15.63 -78.05 -15.7 -77.6 C-15.77 -77.15 -15.58 -76.93 -15.2 -76 C-14.82 -75.07 -14.1 -73.5 -13.4 -72 C-12.7 -70.5 -11.7 -68.67 -11 -67 C-10.3 -65.33 -9.6 -63.2 -9.2 -62 C-8.8 -60.8 -8.47 -60.33 -8.6 -59.8 C-8.73 -59.27 -9.18 -59.13 -10 -58.8 C-10.82 -58.47 -12.78 -58.28 -13.5 -57.8 C-14.22 -57.32 -14.3 -56.53 -14.3 -55.9 C-14.3 -55.27 -14.13 -54.48 -13.5 -54 C-12.87 -53.52 -11.38 -53.4 -10.5 -53 C-9.62 -52.6 -8.63 -52.77 -8.2 -51.6 C-7.77 -50.43 -7.9 -48.27 -7.9 -46 C-7.9 -43.73 -8.02 -40.67 -8.2 -38 C-8.38 -35.33 -8.65 -32.67 -9 -30 C-9.35 -27.33 -9.8 -24.17 -10.3 -22 C-10.8 -19.83 -11.38 -18.3 -12 -17 C-12.62 -15.7 -13.25 -14.83 -14 -14.2 C-14.75 -13.57 -15.73 -13.57 -16.5 -13.2 C-17.27 -12.83 -18.15 -12.53 -18.6 -12 C-19.05 -11.47 -19.22 -10.6 -19.2 -10 C-19.18 -9.4 -18.37 -8.8 -18.5 -8.4 C-18.63 -8 -19.38 -8 -20 -7.6 C-20.62 -7.2 -21.7 -6.68 -22.2 -6 C-22.7 -5.32 -22.93 -4.25 -23 -3.5 C-23.07 -2.75 -22.77 -2.08 -22.6 -1.5 C-22.43 -0.92 -22.1 -0.25 -22 0 Z\"/></g><g fill=\"none\" stroke=\"#fff\" stroke-opacity=\"0.55\" stroke-width=\"0.9\" stroke-linecap=\"round\"><path d=\"M-18.86 -3.1 Q0 -1.7 18.86 -3.1\"/><path d=\"M-15.25 -11.6 Q0 -10.2 15.25 -11.6\"/><path d=\"M-11.73 -55.5 Q0 -54.1 11.73 -55.5\"/><path d=\"M-12.87 -77.2 Q0 -75.8 12.87 -77.2\"/><path d=\"M-3.6 -18 L-2.8 -46\"/></g>";
+const VIC_KING = "<g fill=\"#26296b\" stroke=\"#26296b\" stroke-width=\"0.8\" stroke-linejoin=\"round\"><path d=\"M-22 0 L22 0 C22.1 -0.25 22.43 -0.92 22.6 -1.5 C22.77 -2.08 23.07 -2.75 23 -3.5 C22.93 -4.25 22.7 -5.32 22.2 -6 C21.7 -6.68 20.62 -7.2 20 -7.6 C19.38 -8 18.63 -8 18.5 -8.4 C18.37 -8.8 19.18 -9.4 19.2 -10 C19.22 -10.6 19.05 -11.47 18.6 -12 C18.15 -12.53 17.27 -12.83 16.5 -13.2 C15.73 -13.57 14.75 -13.57 14 -14.2 C13.25 -14.83 12.62 -15.7 12 -17 C11.38 -18.3 10.8 -19.83 10.3 -22 C9.8 -24.17 9.35 -27.33 9 -30 C8.65 -32.67 8.38 -35.33 8.2 -38 C8.02 -40.67 7.9 -43.73 7.9 -46 C7.9 -48.27 7.77 -50.43 8.2 -51.6 C8.63 -52.77 9.62 -52.6 10.5 -53 C11.38 -53.4 12.87 -53.52 13.5 -54 C14.13 -54.48 14.3 -55.27 14.3 -55.9 C14.3 -56.53 14.22 -57.32 13.5 -57.8 C12.78 -58.28 10.82 -58.47 10 -58.8 C9.18 -59.13 8.73 -59.27 8.6 -59.8 C8.47 -60.33 8.8 -60.8 9.2 -62 C9.6 -63.2 10.3 -65.33 11 -67 C11.7 -68.67 12.7 -70.5 13.4 -72 C14.1 -73.5 14.82 -75.07 15.2 -76 C15.58 -76.93 15.77 -77.15 15.7 -77.6 C15.63 -78.05 15.35 -78.37 14.8 -78.7 C14.25 -79.03 13.27 -79.23 12.4 -79.6 C11.53 -79.97 10.6 -80.5 9.6 -80.9 C8.6 -81.3 7.43 -81.68 6.4 -82 C5.37 -82.32 4.1 -82.53 3.4 -82.8 C2.7 -83.07 2.4 -83.47 2.2 -83.6 L1.4 -84.4 L1.4 -89.6 L5.8 -89.6 L5.8 -92.4 L1.4 -92.4 L1.4 -97 L-1.4 -97 L-1.4 -92.4 L-5.8 -92.4 L-5.8 -89.6 L-1.4 -89.6 L-1.4 -84.4 L-2.2 -83.6 C-2.4 -83.47 -2.7 -83.07 -3.4 -82.8 C-4.1 -82.53 -5.37 -82.32 -6.4 -82 C-7.43 -81.68 -8.6 -81.3 -9.6 -80.9 C-10.6 -80.5 -11.53 -79.97 -12.4 -79.6 C-13.27 -79.23 -14.25 -79.03 -14.8 -78.7 C-15.35 -78.37 -15.63 -78.05 -15.7 -77.6 C-15.77 -77.15 -15.58 -76.93 -15.2 -76 C-14.82 -75.07 -14.1 -73.5 -13.4 -72 C-12.7 -70.5 -11.7 -68.67 -11 -67 C-10.3 -65.33 -9.6 -63.2 -9.2 -62 C-8.8 -60.8 -8.47 -60.33 -8.6 -59.8 C-8.73 -59.27 -9.18 -59.13 -10 -58.8 C-10.82 -58.47 -12.78 -58.28 -13.5 -57.8 C-14.22 -57.32 -14.3 -56.53 -14.3 -55.9 C-14.3 -55.27 -14.13 -54.48 -13.5 -54 C-12.87 -53.52 -11.38 -53.4 -10.5 -53 C-9.62 -52.6 -8.63 -52.77 -8.2 -51.6 C-7.77 -50.43 -7.9 -48.27 -7.9 -46 C-7.9 -43.73 -8.02 -40.67 -8.2 -38 C-8.38 -35.33 -8.65 -32.67 -9 -30 C-9.35 -27.33 -9.8 -24.17 -10.3 -22 C-10.8 -19.83 -11.38 -18.3 -12 -17 C-12.62 -15.7 -13.25 -14.83 -14 -14.2 C-14.75 -13.57 -15.73 -13.57 -16.5 -13.2 C-17.27 -12.83 -18.15 -12.53 -18.6 -12 C-19.05 -11.47 -19.22 -10.6 -19.2 -10 C-19.18 -9.4 -18.37 -8.8 -18.5 -8.4 C-18.63 -8 -19.38 -8 -20 -7.6 C-20.62 -7.2 -21.7 -6.68 -22.2 -6 C-22.7 -5.32 -22.93 -4.25 -23 -3.5 C-23.07 -2.75 -22.77 -2.08 -22.6 -1.5 C-22.43 -0.92 -22.1 -0.25 -22 0 Z\"/></g><g fill=\"none\" stroke=\"#fff\" stroke-opacity=\"0.55\" stroke-width=\"0.9\" stroke-linecap=\"round\"><path d=\"M-18.86 -3.1 Q0 -1.7 18.86 -3.1\"/><path d=\"M-15.25 -11.6 Q0 -10.2 15.25 -11.6\"/><path d=\"M-11.73 -55.5 Q0 -54.1 11.73 -55.5\"/><path d=\"M-12.87 -77.2 Q0 -75.8 12.87 -77.2\"/><path d=\"M-3.6 -18 L-2.8 -46\"/></g>";
 const VIC_QUEEN = "<g fill=\"#e4572e\" stroke=\"#e4572e\" stroke-width=\"0.8\" stroke-linejoin=\"round\"><path d=\"M-21 0 L21 0 C21.1 -0.25 21.43 -0.93 21.6 -1.5 C21.77 -2.07 22.07 -2.68 22 -3.4 C21.93 -4.12 21.7 -5.13 21.2 -5.8 C20.7 -6.47 19.6 -7 19 -7.4 C18.4 -7.8 17.73 -7.8 17.6 -8.2 C17.47 -8.6 18.2 -9.23 18.2 -9.8 C18.2 -10.37 18.03 -11.1 17.6 -11.6 C17.17 -12.1 16.33 -12.43 15.6 -12.8 C14.87 -13.17 13.93 -13.18 13.2 -13.8 C12.47 -14.42 11.8 -15.3 11.2 -16.5 C10.6 -17.7 10.07 -19.08 9.6 -21 C9.13 -22.92 8.73 -25.5 8.4 -28 C8.07 -30.5 7.78 -33.5 7.6 -36 C7.42 -38.5 7.3 -41.07 7.3 -43 C7.3 -44.93 7.15 -46.6 7.6 -47.6 C8.05 -48.6 9.1 -48.6 10 -49 C10.9 -49.4 12.38 -49.52 13 -50 C13.62 -50.48 13.7 -51.27 13.7 -51.9 C13.7 -52.53 13.68 -53.32 13 -53.8 C12.32 -54.28 10.4 -54.47 9.6 -54.8 C8.8 -55.13 8.33 -55.27 8.2 -55.8 C8.07 -56.33 8.37 -56.8 8.8 -58 C9.23 -59.2 10.03 -61.33 10.8 -63 C11.57 -64.67 12.6 -66.57 13.4 -68 C14.2 -69.43 15.1 -70.67 15.6 -71.6 C16.1 -72.53 16.27 -73.27 16.4 -73.6 L12.6 -72.4 L11.6 -75.6 L7.4 -73.4 L5.6 -76.2 L3.6 -75 L2.4 -77.4 L1.2 -78.6 L-1.2 -78.6 L-2.4 -77.4 L-3.6 -75 L-5.6 -76.2 L-7.4 -73.4 L-11.6 -75.6 L-12.6 -72.4 L-16.4 -73.6 C-16.27 -73.27 -16.1 -72.53 -15.6 -71.6 C-15.1 -70.67 -14.2 -69.43 -13.4 -68 C-12.6 -66.57 -11.57 -64.67 -10.8 -63 C-10.03 -61.33 -9.23 -59.2 -8.8 -58 C-8.37 -56.8 -8.07 -56.33 -8.2 -55.8 C-8.33 -55.27 -8.8 -55.13 -9.6 -54.8 C-10.4 -54.47 -12.32 -54.28 -13 -53.8 C-13.68 -53.32 -13.7 -52.53 -13.7 -51.9 C-13.7 -51.27 -13.62 -50.48 -13 -50 C-12.38 -49.52 -10.9 -49.4 -10 -49 C-9.1 -48.6 -8.05 -48.6 -7.6 -47.6 C-7.15 -46.6 -7.3 -44.93 -7.3 -43 C-7.3 -41.07 -7.42 -38.5 -7.6 -36 C-7.78 -33.5 -8.07 -30.5 -8.4 -28 C-8.73 -25.5 -9.13 -22.92 -9.6 -21 C-10.07 -19.08 -10.6 -17.7 -11.2 -16.5 C-11.8 -15.3 -12.47 -14.42 -13.2 -13.8 C-13.93 -13.18 -14.87 -13.17 -15.6 -12.8 C-16.33 -12.43 -17.17 -12.1 -17.6 -11.6 C-18.03 -11.1 -18.2 -10.37 -18.2 -9.8 C-18.2 -9.23 -17.47 -8.6 -17.6 -8.2 C-17.73 -7.8 -18.4 -7.8 -19 -7.4 C-19.6 -7 -20.7 -6.47 -21.2 -5.8 C-21.7 -5.13 -21.93 -4.12 -22 -3.4 C-22.07 -2.68 -21.77 -2.07 -21.6 -1.5 C-21.43 -0.93 -21.1 -0.25 -21 0 Z\"/><circle cx=\"16.6\" cy=\"-75.2\" r=\"1.5\"/><circle cx=\"11.6\" cy=\"-76.6\" r=\"1.25\"/><circle cx=\"5.6\" cy=\"-77.2\" r=\"1.15\"/><circle cx=\"-5.6\" cy=\"-77.2\" r=\"1.15\"/><circle cx=\"-11.6\" cy=\"-76.6\" r=\"1.25\"/><circle cx=\"-16.6\" cy=\"-75.2\" r=\"1.5\"/><circle cx=\"0\" cy=\"-81.6\" r=\"3.1\"/></g><g fill=\"none\" stroke=\"#fff\" stroke-opacity=\"0.55\" stroke-width=\"0.9\" stroke-linecap=\"round\"><path d=\"M-18.04 -3 Q0 -1.6 18.04 -3\"/><path d=\"M-14.43 -11.2 Q0 -9.8 14.43 -11.2\"/><path d=\"M-11.23 -51.5 Q0 -50.1 11.23 -51.5\"/><path d=\"M-13.19 -72.4 Q0 -71 13.19 -72.4\"/><path d=\"M-3.6 -18 L-2.8 -46\"/></g>";
 const VIC_PAWN = "<g fill=\"#f4a9bb\" stroke=\"#f4a9bb\" stroke-width=\"0.8\" stroke-linejoin=\"round\"><path d=\"M-18 0 L18 0 C18.08 -0.23 18.37 -0.87 18.5 -1.4 C18.63 -1.93 18.88 -2.53 18.8 -3.2 C18.72 -3.87 18.47 -4.8 18 -5.4 C17.53 -6 16.57 -6.43 16 -6.8 C15.43 -7.17 14.73 -7.23 14.6 -7.6 C14.47 -7.97 15.2 -8.5 15.2 -9 C15.2 -9.5 15.03 -10.17 14.6 -10.6 C14.17 -11.03 13.27 -11.27 12.6 -11.6 C11.93 -11.93 11.2 -12.03 10.6 -12.6 C10 -13.17 9.45 -13.93 9 -15 C8.55 -16.07 8.2 -17.67 7.9 -19 C7.6 -20.33 7.32 -21.83 7.2 -23 C7.08 -24.17 6.8 -25.33 7.2 -26 C7.6 -26.67 8.8 -26.7 9.6 -27 C10.4 -27.3 11.52 -27.43 12 -27.8 C12.48 -28.17 12.52 -28.73 12.5 -29.2 C12.48 -29.67 12.52 -30.23 11.9 -30.6 C11.28 -30.97 9.65 -31.07 8.8 -31.4 C7.95 -31.73 7.17 -32.1 6.8 -32.6 C6.43 -33.1 6.63 -34.1 6.6 -34.4 L-6.6 -34.4 C-6.63 -34.1 -6.43 -33.1 -6.8 -32.6 C-7.17 -32.1 -7.95 -31.73 -8.8 -31.4 C-9.65 -31.07 -11.28 -30.97 -11.9 -30.6 C-12.52 -30.23 -12.48 -29.67 -12.5 -29.2 C-12.52 -28.73 -12.48 -28.17 -12 -27.8 C-11.52 -27.43 -10.4 -27.3 -9.6 -27 C-8.8 -26.7 -7.6 -26.67 -7.2 -26 C-6.8 -25.33 -7.08 -24.17 -7.2 -23 C-7.32 -21.83 -7.6 -20.33 -7.9 -19 C-8.2 -17.67 -8.55 -16.07 -9 -15 C-9.45 -13.93 -10 -13.17 -10.6 -12.6 C-11.2 -12.03 -11.93 -11.93 -12.6 -11.6 C-13.27 -11.27 -14.17 -11.03 -14.6 -10.6 C-15.03 -10.17 -15.2 -9.5 -15.2 -9 C-15.2 -8.5 -14.47 -7.97 -14.6 -7.6 C-14.73 -7.23 -15.43 -7.17 -16 -6.8 C-16.57 -6.43 -17.53 -6 -18 -5.4 C-18.47 -4.8 -18.72 -3.87 -18.8 -3.2 C-18.88 -2.53 -18.63 -1.93 -18.5 -1.4 C-18.37 -0.87 -18.08 -0.23 -18 0 Z\"/><circle cx=\"0\" cy=\"-41.6\" r=\"9.4\"/></g><g fill=\"none\" stroke=\"#fff\" stroke-opacity=\"0.55\" stroke-width=\"0.9\" stroke-linecap=\"round\"><path d=\"M-15.42 -2.8 Q0 -1.4 15.42 -2.8\"/><path d=\"M-11.97 -10.2 Q0 -8.8 11.97 -10.2\"/><path d=\"M-10.25 -28.8 Q0 -27.4 10.25 -28.8\"/><path d=\"M-3.6 -15 L-2.8 -24\"/></g><path d=\"M-5.4 -49.2 L-4.8 -53.2 L-2.4 -51.4 L0 -55.4 L2.4 -51.4 L4.8 -53.2 L5.4 -49.2 Q0 -51 -5.4 -49.2 Z\" fill=\"#e07c96\" stroke=\"#e07c96\" stroke-width=\"0.9\" stroke-linejoin=\"round\"/><circle cx=\"0\" cy=\"-52.4\" r=\"1.1\" fill=\"#fff\"/>";
 const VIC_CAMEO = 'data:image/svg+xml,' + "%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%228%2012%20184%20232%22%3E%3CclipPath%20id%3D%22bk1%22%3E%3Cellipse%20cx%3D%22100%22%20cy%3D%22128%22%20rx%3D%2280%22%20ry%3D%22104%22%2F%3E%3C%2FclipPath%3E%3Cellipse%20cx%3D%22100%22%20cy%3D%22128%22%20rx%3D%2288%22%20ry%3D%22112%22%20fill%3D%22%23ffffff%22%20stroke%3D%22%2326296b%22%20stroke-width%3D%221.6%22%2F%3E%3Cellipse%20cx%3D%22100%22%20cy%3D%22128%22%20rx%3D%2284%22%20ry%3D%22108%22%20fill%3D%22none%22%20stroke%3D%22%2326296b%22%20stroke-width%3D%220.6%22%2F%3E%3Cellipse%20cx%3D%22100%22%20cy%3D%22128%22%20rx%3D%2280%22%20ry%3D%22104%22%20fill%3D%22%23ffffff%22%2F%3E%3Cg%20clip-path%3D%22url%28%23bk1%29%22%3E%3Cg%20transform%3D%22translate%2812.7%2022%29%20scale%280.9%29%22%3E%3Cpath%20d%3D%22M40%20122%20C39%20114%2044%20106%2052%20100%20C60%2094%2070%2088%2082%2085%20C80%2062%2084%2034%2093%2015%20C97%208%20104%209%20104%2018%20C104%2040%20101%2064%20100%2083%20C102%2084%20104%2084%20106%2083%20C111%2062%20120%2040%20129%2025%20C133%2019%20140%2021%20138%2029%20C133%2050%20124%2074%20118%2092%20C127%20101%20130%20114%20127%20126%20C124%20137%20117%20145%20111%20150%20C110%20155%20111%20159%20115%20162%20C134%20168%20152%20180%20160%20200%20C165%20212%20166%20226%20166%20240%20L34%20240%20C36%20216%2044%20194%2056%20178%20C60%20171%2064%20166%2068%20161%20C72%20157%2078%20152%2084%20150%20C76%20148%2064%20142%2056%20136%20C51%20133%2046%20130%2044%20128%20C41%20126%2040%20124%2040%20122%20Z%22%20fill%3D%22%2326296b%22%2F%3E%3Cpath%20d%3D%22M88%2080%20C88%2058%2091%2036%2097%2020%22%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%222.2%22%20stroke-opacity%3D%220.45%22%20stroke-linecap%3D%22round%22%2F%3E%3Cg%20transform%3D%22rotate%280%2080%20104%29%22%3E%3Cellipse%20cx%3D%2280%22%20cy%3D%22104%22%20rx%3D%225.4%22%20ry%3D%224.4%22%20fill%3D%22%23ffffff%22%2F%3E%3Ccircle%20cx%3D%2279.2%22%20cy%3D%22104.3%22%20r%3D%222.73%22%20fill%3D%22%2326296b%22%2F%3E%3Ccircle%20cx%3D%2278.2%22%20cy%3D%22103.2%22%20r%3D%220.9%22%20fill%3D%22%23ffffff%22%2F%3E%3C%2Fg%3E%3Cpath%20d%3D%22M43%20125%20C46%20126%2048%20128%2049%20131%22%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%221.2%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M85%20162%20C91%20158%20103%20158%20109%20162%20L99%20228%20L95%20228%20Z%22%20fill%3D%22%23ffffff%22%2F%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%221.2%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M81%20163%20C85%20182%2090%20200%2094%20230%22%2F%3E%3Cpath%20d%3D%22M113%20163%20C109%20182%20104%20200%20100%20230%22%2F%3E%3C%2Fg%3E%3Cpath%20d%3D%22M109%20218%20C117%20222%20125%20220%20133%20212%22%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%221.2%22%20stroke-dasharray%3D%221.3%202.4%22%20stroke-linecap%3D%22round%22%2F%3E%3Ccircle%20cx%3D%22134.5%22%20cy%3D%22210.5%22%20r%3D%222.4%22%20fill%3D%22none%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%221.1%22%2F%3E%3Cg%20stroke%3D%22%2326296b%22%20stroke-width%3D%220.8%22%20stroke-linecap%3D%22round%22%20fill%3D%22none%22%3E%3Cpath%20d%3D%22M46%20124%20c-10%20-4%20-20%20-7%20-32%20-8%22%2F%3E%3Cpath%20d%3D%22M46%20126%20c-12%200%20-22%201%20-34%203%22%2F%3E%3Cpath%20d%3D%22M47%20128%20c-9%204%20-19%208%20-29%2013%22%2F%3E%3C%2Fg%3E%3Cg%20transform%3D%22translate%2897%20170%29%20scale%281.5%29%22%20stroke%3D%22%2326296b%22%20stroke-width%3D%220.9%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M0%200%20C-3%20-4%20-8%20-7%20-15%20-8%20C-17.5%20-4%20-17.5%204%20-15%208%20C-8%207%20-3%204%200%200%20Z%22%20fill%3D%22%23e4572e%22%2F%3E%3Cpath%20d%3D%22M0%200%20C-3%20-4%20-8%20-7%20-15%20-8%20C-17.5%20-4%20-17.5%204%20-15%208%20C-8%207%20-3%204%200%200%20Z%22%20fill%3D%22%23e4572e%22%20transform%3D%22scale%28-1%201%29%22%2F%3E%3Cpath%20d%3D%22M-6%20-3%20C-9%20-2%20-11%200%20-13%200%20M-6%203%20C-9%202%20-11%200%20-13%200%20M6%20-3%20C9%20-2%2011%200%2013%200%20M6%203%20C9%202%2011%200%2013%200%22%20fill%3D%22none%22%20stroke-opacity%3D%220.45%22%20stroke-width%3D%220.7%22%2F%3E%3Crect%20x%3D%22-3.4%22%20y%3D%22-4.6%22%20width%3D%226.8%22%20height%3D%229.2%22%20rx%3D%222%22%20fill%3D%22%23e4572e%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E";
@@ -36982,14 +36997,14 @@ function plLbPages(scr = false) {
     return s;
   })();
 
-  // p5: beat or rhythm: four beats (hearts) under four words; one dot for each sound on top: bird (one), tur-tle (two)
+  // p5: beat or rhythm: four beats (hearts) under four words; one dot for each sound on top: walk (one), run-ning (two)
   const art5 = (() => {
     const s = [];
     const x0 = 104, dx = 78, words = [1, 2, 1, 2];
     words.forEach((n, i) => {
       const cx = x0 + i * dx;
-      if (n === 1) s.push(...plBird(cx - 4, 40, 2.1)); else s.push(...fsTurtle(cx - 3, 46, 1.55));
-      s.push({ ...penText(cx, 92, n === 1 ? t('bird', '새') : t('tur-tle', '거-북'), { size: 15, weight: 900, fill: PEN_N, anchor: 'middle' }) });
+      if (n === 1) s.push(...plFoot(cx, 46, 2.6, PEN_N)); else s.push(...plFoot(cx - 13, 40, 2.1, PEN_C, true), ...plFoot(cx + 13, 52, 2.1, PEN_C));   // Phase 463: a step, two quick steps
+      s.push({ ...penText(cx, 92, n === 1 ? t('walk', '타') : t('run-ning', '티-티'), { size: 15, weight: 900, fill: PEN_N, anchor: 'middle' }) });
       (n === 1 ? [cx] : [cx - 12, cx + 12]).forEach(x => s.push({ k: 'el', c: [x, 124], rx: 7.5, ry: 7.5, f: PEN_C, nw: true }));
       s.push({ ...tnHeart(cx, 170, 2.6), nw: true });
     });
@@ -37103,15 +37118,15 @@ function plLbPages(scr = false) {
 
     // 5. beat or rhythm?
     <LbPage key="5" no={5} chId={ch} kicker={t('Step 4', '4단계')} title={t('Beat or rhythm?', '박일까, 리듬일까?')}>
-      {live(pic(art5, [0, 14, 380, 190], t('Four beats, four coral hearts in a row. Over them four words: bird, tur-tle, bird, tur-tle, with the bird and the turtle drawn above them. One coral dot for each sound: one over bird, two over tur-tle', '박 넷, 산호색 심장 네 개가 한 줄로. 그 위에 낱말 넷: 새, 거-북, 새, 거-북, 그 위에 새와 거북 그림. 소리마다 산호색 점 하나: 새 위에 하나, 거-북 위에 둘'), 230), <PlWordsBeat/>)}
-      <LbSay>{LANG === 'ko' ? <><b>박</b>은 아래에서 꾸준하게 이어져요. <b>리듬</b>은 그 위의 소리들이에요: 낱말처럼 길고 짧아요. 박 하나에 <b>새</b>라고 하면 소리 하나, <b>거-북</b>이면 소리 둘. 박은 그대로, 리듬은 바뀌어요.</>
-        : <>The <b>beat</b> is the steady heartbeat underneath. The <b>rhythm</b> is the long and short sounds on top, like words. Say <b>bird</b> on one beat: one sound. Say <b>tur-tle</b>: two sounds. The beat stays the same; the rhythm changes.</>}</LbSay>
+      {live(pic(art5, [0, 14, 380, 190], t('Four beats, four coral hearts in a row. Over them four words: walk, run-ning, walk, run-ning, with one footprint over walk and two quick coral footprints over run-ning. One coral dot for each sound: one over walk, two over run-ning', '박 넷, 산호색 심장 네 개가 한 줄로. 그 위에 낱말 넷: 타, 티-티, 타, 티-티, 타 위에 발자국 하나, 티-티 위에 빠른 산호색 발자국 둘. 소리마다 산호색 점 하나: 타 위에 하나, 티-티 위에 둘'), 230), <PlWordsBeat/>)}
+      <LbSay>{LANG === 'ko' ? <><b>박</b>은 아래에서 꾸준하게 이어져요. <b>리듬</b>은 그 위의 소리들이에요: 낱말처럼 길고 짧아요. 박 하나에 <b>타</b>라고 하면 소리 하나, <b>티-티</b>면 소리 둘. 박은 그대로, 리듬은 바뀌어요.</>
+        : <>The <b>beat</b> is the steady heartbeat underneath. The <b>rhythm</b> is the long and short sounds on top, like words. Say <b>walk</b> on one beat: one sound. Say <b>run-ning</b>: two sounds. The beat stays the same; the rhythm changes.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [
-        <>발로 박을 치며 말해요: 새, 거-북, 새, 거-북. 박마다 낱말 하나. 그다음 발로 박을 지키며 낱말 소리마다 손뼉을 쳐요.</>,
-        <>이번엔: 거-북, 거-북, 새, 새. 그리고: 등-대, 새, 등-대, 새.</>,
+        <>발로 박을 치며 말해요: 타, 티-티, 타, 티-티. 박마다 하나. 그다음 발로 박을 지키며 소리마다 손뼉을 쳐요.</>,
+        <>이번엔: 티-티, 티-티, 타, 타. 그리고: 타, 타, 티-티, 타.</>,
       ] : [
-        <>Tap the beat with your foot and say: bird, tur-tle, bird, tur-tle, one word on each beat. Then clap the words while your foot keeps the beat.</>,
-        <>Now: tur-tle, tur-tle, bird, bird. And: light-house, bird, light-house, bird.</>,
+        <>Tap the beat with your foot and say: walk, run-ning, walk, run-ning, one word on each beat. Then clap the words while your foot keeps the beat.</>,
+        <>Now: run-ning, run-ning, walk, walk. And: walk, walk, run-ning, walk.</>,
       ]}/>
       <LbRemember>{t('The beat stays steady; the rhythm is the sounds on top.', '박은 꾸준하게, 리듬은 그 위의 소리.')}</LbRemember>
     </LbPage>,
@@ -37189,13 +37204,15 @@ function usePlTimers() {
   };
 }
 // a big tap pad, and the space bar while it is live
-function PlPad({ on, onTap, label, h = 74 }) {
+function PlPad({ on, onTap, onRelease, label, h = 74 }) {   // onRelease (Phase 463): the pad let go, so a note can sound as long as it is held
   useEffect(() => {
     if (!on) return;
-    const k = (e) => { if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); onTap(); } };
-    window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k);
-  }, [on, onTap]);
-  return <button data-pl-pad onPointerDown={(e) => { e.preventDefault(); if (on) onTap(); }} disabled={!on}
+    const k = (e) => { if ((e.code === 'Space' || e.key === ' ') && !e.repeat) { e.preventDefault(); onTap(); } };
+    const u = (e) => { if ((e.code === 'Space' || e.key === ' ') && onRelease) onRelease(); };
+    window.addEventListener('keydown', k); window.addEventListener('keyup', u); return () => { window.removeEventListener('keydown', k); window.removeEventListener('keyup', u); };
+  }, [on, onTap, onRelease]);
+  const up = () => { if (onRelease) onRelease(); };
+  return <button data-pl-pad onPointerDown={(e) => { e.preventDefault(); if (on) onTap(); }} onPointerUp={up} onPointerLeave={up} onPointerCancel={up} disabled={!on}
     style={{width:'100%',height:h,borderRadius:14,border:'2px solid ' + (on ? BK.coral : BK.line),background:on ? '#fbe3da' : '#fff',color:on ? BK.coral : BK.muted,fontSize:18,fontWeight:900,touchAction:'manipulation',cursor:on ? 'pointer' : 'default',userSelect:'none'}}>{label || t('TAP', '탭')}</button>;
 }
 const plHint = () => <div style={{fontSize:12,color:'var(--muted)',textAlign:'center',marginTop:6,lineHeight:1.4}}>{t('Tap the pad or press the space bar. The device speaker or wired headphones work best: Bluetooth adds a delay.', '패드를 누르거나 스페이스 바를 눌러요. 기기 스피커나 유선 이어폰이 가장 좋아요: 블루투스는 소리가 늦게 와요.')}</div>;
@@ -37349,8 +37366,8 @@ function PlSilentBeats() {
 }
 
 // ── page 5: words over a beat (the cast's words, B7): tap the beat, then the words ──
-const PL_WORDS = { bird: [t => t('bird', '새'), 1], turtle: [t => t('tur-tle', '거-북'), 2], lighthouse: [t => t('light-house', '등-대'), 2] };
-const PL_WORD_SETS = [['bird', 'turtle', 'bird', 'turtle'], ['turtle', 'turtle', 'bird', 'bird'], ['lighthouse', 'bird', 'lighthouse', 'bird']];
+const PL_WORDS = { bird: [t => t('walk', '타'), 1], turtle: [t => t('run-ning', '티-티'), 2] };   // Phase 463: walk and run-ning (Korean 타, 티-티); the keys stay
+const PL_WORD_SETS = [['bird', 'turtle', 'bird', 'turtle'], ['turtle', 'turtle', 'bird', 'bird'], ['bird', 'bird', 'turtle', 'bird']];
 const plWordName = (w) => PL_WORDS[w][0](t);
 // a beat's heart: coral while its beat sounds, an outline otherwise
 const plBeatHeart = (on, w = 20) => <svg viewBox="-8.5 -7.5 17 14" width={w} style={{display:'block',margin:'4px auto 0'}}><path d="M0 5 Q-7.5 -0.5 -5 -4.2 Q-2.4 -6.8 0 -3 Q2.4 -6.8 5 -4.2 Q7.5 -0.5 0 5 Z" fill={on ? BK.coral : '#fff'} stroke={BK.coral} strokeWidth="1.3" strokeLinejoin="round"/></svg>;
@@ -37394,7 +37411,7 @@ function PlWordsBeat() {
       <div style={{display:'grid',gridTemplateColumns:'repeat(4,auto)',justifyContent:'space-around',gap:4,textAlign:'center',margin:'0 auto 6px',maxWidth:420}}>
         {row.map((w, i) => <div key={i} style={{padding:'6px 2px',borderRadius:10,background:i === b ? '#fbe3da' : 'transparent',transition:'background 0.08s'}}>
           <div style={{display:'flex',justifyContent:'center',gap:6,height:14}}>{Array.from({ length: PL_WORDS[w][1] }, (_, k) => <span key={k} style={{width:12,height:12,borderRadius:6,background:BK.coral}}/>)}</div>
-          <div style={{fontSize:row.includes('lighthouse') ? 14 : 15.5,fontWeight:900,color:BK.ink,marginTop:3,whiteSpace:'nowrap'}}>{plWordName(w)}</div>
+          <div style={{fontSize:15.5,fontWeight:900,color:BK.ink,marginTop:3,whiteSpace:'nowrap'}}>{plWordName(w)}</div>
           {plBeatHeart(i === b, 22)}
         </div>)}
       </div>
@@ -37498,7 +37515,7 @@ function genPlQuestion(lv, prev) {
   if (lv.kind === 'inside') { let b = 1 + Math.floor(Math.random() * 4), g = 0; while (prev && prev.key === 'in' + b && g++ < 6) b = 1 + Math.floor(Math.random() * 4); return { kind: 'inside', beat: b, key: 'in' + b, uid }; }
   if (lv.kind === 'words') {
     let row, g = 0;
-    do { row = Array.from({ length: 4 }, () => pick(['bird', 'turtle', 'lighthouse'])); } while ((row.every(w => w === 'bird') || row.filter(w => w === 'lighthouse').length > 1 || (prev && prev.key === row.join())) && g++ < 20);
+    do { row = Array.from({ length: 4 }, () => pick(['bird', 'turtle'])); } while ((row.every(w => w === 'bird') || (prev && prev.key === row.join())) && g++ < 20);
     return { kind: 'words', row, key: row.join(), uid };
   }
   return { kind: lv.kind, key: lv.kind, uid };
@@ -37623,7 +37640,7 @@ function PlTrail({ gaps, w = 210, h, first = 12, more = 0, color = BK.ink, k = 1
   </svg>;
 }
 const plHeart = (s = 16, col = BK.coral) => <svg width={s} height={s * 0.86} viewBox="-8 -7 16 13.6" style={{display:'block'}}><path d="M0 5.6 Q-7.6 -0.4 -5.1 -4.3 Q-2.5 -7 0 -3 Q2.5 -7 5.1 -4.3 Q7.6 -0.4 0 5.6 Z" fill={col}/></svg>;
-const PL_WN = { bird: ['bird', 1], turtle: ['tur-tle', 2], lighthouse: ['light-house', 2], sea: ['sea', 1], sky: ['sky', 1] };
+const PL_WN = { bird: ['walk', 1], turtle: ['run-ning', 2], sea: ['sea', 1], sky: ['sky', 1] };   // Phase 463: walk and run-ning
 // a row of four words over four beats; dots: draw the sound dots (ex: in coral); lines: a dotted line to draw on
 function PlWordRow({ row, dots, w = 300, size = 15 }) {
   return <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',width:'100%',maxWidth:w,margin:'0 auto'}}>{row.map((x, i) => <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3}}>
@@ -37649,19 +37666,19 @@ const PL_WB = {
   colour: [[1, 3], [4], [1, 2, 4], [2, 3]],
   fix: [[1, 1, 0, 0], [1, 0, 0, 1], [0, 1, 1, 0], [1, 1, 1, 0]],   // counted wrongly: only the played notes got a number
   // words over the beat
-  dots: [['turtle', 'bird', 'bird', 'turtle'], ['bird', 'lighthouse', 'bird', 'bird'], ['turtle', 'turtle', 'lighthouse', 'bird'], ['lighthouse', 'turtle', 'bird', 'turtle']],
-  count: [['bird', 'bird', 'bird', 'turtle'], ['turtle', 'turtle', 'turtle', 'turtle'], ['lighthouse', 'bird', 'turtle', 'bird'], ['bird', 'bird', 'bird', 'bird']],
+  dots: [['turtle', 'bird', 'bird', 'turtle'], ['bird', 'turtle', 'bird', 'bird'], ['turtle', 'turtle', 'turtle', 'bird'], ['bird', 'turtle', 'turtle', 'turtle']],
+  count: [['bird', 'bird', 'bird', 'turtle'], ['turtle', 'turtle', 'turtle', 'turtle'], ['turtle', 'bird', 'bird', 'turtle'], ['bird', 'bird', 'bird', 'bird']],
   // fingers on the beat
   which: [[[2, 3, 2, 3], 3], [[2, 3, 4, 3], 2], [[3, 2, 3, 2], 4], [[2, 3, 4, 3], 3]],
   go: [[2, 3, 2, 3], [2, 3, 4, 3], [3, 2, 3, 2], [4, 3, 2, 3]],
-  wordsFromDots: [[1, 2, 2, 1], [2, 1, 2, 2], [1, 1, 1, 2]],   // one dot: bird; two dots: tur-tle
+  wordsFromDots: [[1, 2, 2, 1], [2, 1, 2, 2], [1, 1, 1, 2]],   // one dot: walk; two dots: run-ning
   keys: [{ 2: [1, 3], 3: [2], 4: [4] }, { 2: [1], 3: [2, 4], 4: [3] }, { 2: [2, 4], 3: [3], 4: [1] }],   // the beats each finger's key plays
 };
 const PL_CHK = {
   trails: [[32, 32, 32, 14, 32], [26, 26, 26, 26, 26], [18, 30, 40, 22, 34], [20, 20, 34, 20, 20]],
   fill: [{ 0: 1, 5: 2 }, { 2: 3, 4: 1 }, { 1: 2, 7: 4 }, { 3: 4, 6: 3 }],
   play: [[1, 0, 1, 0], [1, 1, 1, 0], [0, 0, 1, 1], [1, 0, 0, 1]],
-  sounds: [['turtle', 'bird', 'bird', 'bird'], ['lighthouse', 'bird', 'bird', 'turtle'], ['bird', 'turtle', 'bird', 'bird'], ['turtle', 'bird', 'turtle', 'turtle']],
+  sounds: [['turtle', 'bird', 'bird', 'bird'], ['bird', 'bird', 'turtle', 'turtle'], ['bird', 'turtle', 'bird', 'bird'], ['turtle', 'bird', 'turtle', 'turtle']],
   which: [[[2, 3, 4, 3], 3], [[3, 2, 3, 2], 2], [[2, 3, 2, 3], 4], [[4, 3, 2, 3], 1]],
 };
 const plSteady = (g) => g.every(x => x === g[0]);
@@ -37734,7 +37751,7 @@ function PlWorkbook({ startNo = 1 }) {
         <PlWordRow row={row} dots={false}/>
         <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:8,fontSize:12.5,fontWeight:800,color:BK.ink}}>beats {bkBox(40, 32)} <span style={{width:8}}/>sounds {bkBox(40, 32)}</div></div></ExCell>)}</BkGrid>
     </Part>
-    <Part kind="play" title="Words from dots" how="One dot: write bird. Two dots: write tur-tle. Then say each row, tapping the beat with your foot.">
+    <Part kind="play" title="Words from dots" how="One dot: write walk. Two dots: write run-ning. Then say each row, tapping the beat with your foot.">
       <div style={{display:'grid',gap:22}}>{W.wordsFromDots.map((row, r) => <div key={r} style={{display:'grid',gridTemplateColumns:'24px 1fr',alignItems:'center',gap:6}}><span style={{fontFamily:LB_SERIF,fontStyle:'italic',fontWeight:700,fontSize:14,color:BK.ink}}>{9 + r}</span>
         <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',maxWidth:540,width:'100%',margin:'0 auto'}}>{row.map((d, k) => <div key={k} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
           <div style={{display:'flex',gap:8,height:12}}>{Array.from({ length: d }, (_, q) => <span key={q} style={{width:12,height:12,borderRadius:6,background:BK.coral}}/>)}</div>
@@ -37830,8 +37847,8 @@ function PlTeacher() {
       say="“Your hand stops; your count doesn't.”"/>
   </>);
   P(<>
-    <TcBlock page={5} title="Beat or rhythm?" answers={<>{tcAns('TRY IT', W.dots.map(r => r.map(x => PL_WN[x][1]).join(' ') + ' dots'))}{tcAns('YOUR TURN', W.count.map(r => '4 beats, ' + plSounds(r) + ' sounds'), 5)}{tcAns('PLAY', W.wordsFromDots.map(r => r.map(d => d === 1 ? 'bird' : 'tur-tle').join(' ')), 9)}</>}
-      watch="Tapping the foot on every sound of the words instead of the beat (the commonest mix-up). Giving a two-sound word two beats. Number 8: bird bird bird bird has 4 beats and 4 sounds: here the rhythm and the beat are the same."
+    <TcBlock page={5} title="Beat or rhythm?" answers={<>{tcAns('TRY IT', W.dots.map(r => r.map(x => PL_WN[x][1]).join(' ') + ' dots'))}{tcAns('YOUR TURN', W.count.map(r => '4 beats, ' + plSounds(r) + ' sounds'), 5)}{tcAns('PLAY', W.wordsFromDots.map(r => r.map(d => d === 1 ? 'walk' : 'run-ning').join(' ')), 9)}</>}
+      watch="Tapping the foot on every sound of the words instead of the beat (the commonest mix-up). Giving a two-sound word two beats. Number 8: walk walk walk walk has 4 beats and 4 sounds: here the rhythm and the beat are the same."
       say="“The foot is the heartbeat: it never changes. The hands say the words.”"/>
     <TcBlock page={6} title="The beat in your fingers" answers={<>{tcAns('TRY IT', W.which.map(([fs, b]) => 'on ' + b + ': finger ' + fs[b - 1]))}{tcAns('YOUR TURN', W.go.map(fs => [...fs, ...fs].join(' ')), 5)}{tcAns('PLAY', W.keys.map(m => [1, 2, 3, 4].map(b => [2, 3, 4].find(f => (m[f] || []).includes(b))).join(' ')), 9)}</>}
       watch="Reading the finger numbers as the count, or the count as finger numbers: the coral circles are fingers, the numbers under them are the count. Pausing to find the next finger, so the beat stops: put every finger on its key before the count starts. Playing the first note and then starting the count late."
@@ -37859,7 +37876,7 @@ TEACHER_COPIES.pulse = PlTeacher;
 // The level plan's scope for room 5: the semibreve, the minim, the crotchet, the quaver pair, the dotted minim; their
 // rests as pictures. Rests on the staff, bars and filling bars wait for Time signatures; the dotted crotchet, single
 // quavers and semiquavers for Rhythm patterns and the drill's higher levels. It builds on the pulse chapter (the beat
-// as hearts, counting 1 2 3 4, silent beats as dashed circles, bird and tur-tle, finger numbers in coral circles) and
+// as hearts, counting 1 2 3 4, silent beats as dashed circles, walk and run-ning (Phase 463), finger numbers in coral circles) and
 // comes before the staff, so the notes stand over the beats with no staff; the tasks use middle C (chapter 2) and the
 // black-key houses, not letter names, since the floor's rooms are free in order (ROOM_AFTER: pulse only).
 // Each note has a coral sound line under it, as long as its beats (B6). Her G2 for the pulse chapter: 'walk, running ...
@@ -37961,7 +37978,7 @@ function nvLbPages(scr = false) {
     s.push(...penPlace(plWalker('girl'), 1.02, [75, 156], [70, 226]));
     nvbRow(s, H, D, 84, [['q', 1], ['q', 1], ['q', 1], ['q', 1]]);
     [0, 1, 2, 3].forEach(i => {
-      s.push(txt(H(i), 124, t('walk', '걷기'), { size: 13, weight: 900, fill: PEN_N, anchor: 'middle' }));
+      s.push(txt(H(i), 124, t('walk', '타'), { size: 13, weight: 900, fill: PEN_N, anchor: 'middle' }));
       s.push(heart(H(i), 150, 2.6));
       s.push(...plFoot(H(i), 184 + (i % 2 ? 7 : -7), 2.2, PEN_N, i % 2 === 0));
       s.push(txt(H(i), 224, N(i + 1), { size: 16, weight: 900, fill: PEN_N, anchor: 'middle' }));
@@ -38000,7 +38017,7 @@ function nvLbPages(scr = false) {
     nvbRow(s, H, D, 80, [['q', 1], ['p', 1], ['q', 1], ['p', 1]]);
     [0, 1, 2, 3].forEach(i => {
       const pr = i % 2 === 1;
-      s.push(txt(H(i), 122, pr ? t('run-ning', '달리기') : t('walk', '걷기'), { size: 13, weight: 900, fill: PEN_N, anchor: 'middle' }));
+      s.push(txt(H(i), 122, pr ? t('run-ning', '티-티') : t('walk', '타'), { size: 13, weight: 900, fill: PEN_N, anchor: 'middle' }));
       s.push(heart(H(i), 148, 2.5));
       s.push(txt(H(i), 180, pr ? N(i + 1) + '  +' : N(i + 1), { size: 16, weight: 900, fill: PEN_N, anchor: 'middle' }));
       if (!pr) s.push(...plFoot(H(i), 210, 2, PEN_N, true));
@@ -38171,7 +38188,7 @@ function nvRunRow(row, o = {}) {
     if (pairs.has(b) && SOUND.count === 'voice') sayCount(ctx, tm + spb / 2, 'and', 0.8);
   } });
 }
-const nvWord = (k) => k === 'p' ? t('run-ning', '달리기') : t('walk', '걷기');
+const nvWord = (k) => k === 'p' ? t('run-ning', '티-티') : t('walk', '타');
 
 // one bar, drawn like the book: each note (or rest), its sound line, a heart on every beat, the count under it (held
 // beats lighter, a rest's beats in dashed circles). grow: { sound index: seconds } the lines growing now (on screen);
@@ -38223,7 +38240,7 @@ const NV_PAGE_ROWS = {
   2: [[() => t('Crotchets', '4분음표'), [['q', 1], ['q', 1], ['q', 1], ['q', 1]]]],
   3: [[() => t('Two minims', '2분음표 둘'), [['h', 2], ['h', 2]]], [() => t('Crotchet, crotchet, minim', '4분음표, 4분음표, 2분음표'), [['q', 1], ['q', 1], ['h', 2]]]],
   4: [[() => t('Dotted minim, crotchet', '점2분음표, 4분음표'), [['hd', 3], ['q', 1]]], [() => t('Semibreve', '온음표'), [['w', 4]]]],
-  5: [[() => t('walk, run-ning, walk, run-ning', '걷기, 달리기, 걷기, 달리기'), [['q', 1], ['p', 1], ['q', 1], ['p', 1]]], [() => t('run-ning, run-ning, walk, walk', '달리기, 달리기, 걷기, 걷기'), [['p', 1], ['p', 1], ['q', 1], ['q', 1]]]],
+  5: [[() => t('walk, run-ning, walk, run-ning', '타, 티-티, 타, 티-티'), [['q', 1], ['p', 1], ['q', 1], ['p', 1]]], [() => t('run-ning, run-ning, walk, walk', '티-티, 티-티, 타, 타'), [['p', 1], ['p', 1], ['q', 1], ['q', 1]]]],
   6: [[() => t('A crotchet rest on 3', '3에 4분쉼표'), [['q', 1], ['q', 1], ['r', 1], ['q', 1]]], [() => t('Minim, minim rest', '2분음표, 2분쉼표'), [['h', 2], ['hr', 2]]]],
 };
 const NV_PAD_TITLE = { 2: () => t('Walk the crotchets', '4분음표 걷기'), 3: () => t('Play, then hold', '치고, 누르고 있어요'), 4: () => t('Hold 3 beats, hold 4', '3박, 4박 누르기'), 5: () => t('Walk and run', '걷고, 달려요'), 6: () => t('Count the silence', '쉬면서 세요') };
@@ -38238,7 +38255,7 @@ function NvPad({ page }) {
   const [count, setCount] = useState(0);
   const [grow, setGrow] = useState({});
   const [res, setRes] = useState(null);
-  const run = useRef(null), taps = useRef([]);
+  const run = useRef(null), taps = useRef([]), held = useRef(null);
   const row = rows[ri][1], snd = nvSounds(row), n = nvBeats(row);
   function reset(i) { T.clear(); stopClicks(); setRi(i); setRes(null); setGrow({}); setLit(-1); setPhase('ready'); setMode(null); }
   function start(m) {
@@ -38258,16 +38275,17 @@ function NvPad({ page }) {
   const tap = React.useCallback(() => {
     const r = run.current; if (!r || mode !== 'tap' || (phase !== 'count' && phase !== 'go')) return;
     taps.current.push(r.now());
-    const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime, 261.63, 0.16, 0.16, 'triangle');
+    const ctx = getAudio(); if (ctx) { if (held.current) held.current(); held.current = blip(ctx, ctx.currentTime, 261.63, 4.3 * r.spb, 0.18, 'triangle'); }
   }, [phase, mode]);
+  const release = React.useCallback(() => { if (held.current) { held.current(); held.current = null; } }, []);
   const ok = res && res.hits === res.total && res.extra === 0;
   const live = phase === 'count' || phase === 'go';
   return (
     <div className="try-box" style={actBox} data-nv={'pad' + page}>
       <div style={actTitle}>{NV_PAD_TITLE[page]()}</div>
       <div style={actNote}>{LANG === 'ko'
-        ? <>먼저 <b>들어 봐요</b>: 음이 울리는 동안 소리 줄이 자라요. 그다음 <b>쳐 봐요</b>: 클릭 4번을 듣고, 음마다 한 번씩 쳐요{page === 6 ? <>. 쉼표에서는 치지 않고 세요</> : null}. 소리 내어 세요.</>
-        : <>First <b>listen</b>: each sound line grows while its note sounds. Then <b>tap it</b>: 4 clicks to get ready, then tap once for each note{page === 6 ? <>, and count through the rests</> : null}. Count out loud.</>}</div>
+        ? <>먼저 <b>들어 봐요</b>: 음이 울리는 동안 소리 줄이 자라요. 그다음 <b>쳐 봐요</b>: 클릭 4번을 듣고, 음마다 한 번 눌러 음의 길이만큼 누르고 있어요{page === 6 ? <>. 쉼표에서는 치지 않고 세요</> : null}. 소리 내어 세요.</>
+        : <>First <b>listen</b>: each sound line grows while its note sounds. Then <b>tap it</b>: 4 clicks to get ready, then press once for each note and hold it as long as the note{page === 6 ? <>, and count through the rests</> : null}. Count out loud.</>}</div>
       {rows.length > 1 && <div style={{display:'flex',gap:5,justifyContent:'center',flexWrap:'wrap',marginBottom:8}}>{rows.map(([nm], i) => <button key={i} className={'chip' + (i === ri ? ' active' : '')} onClick={() => reset(i)}>{nm()}</button>)}</div>}
       <NvBar row={row} grow={grow} lit={lit} marks={res ? res.marks : null} words={page === 2 || page === 5}/>
       <div style={{textAlign:'center',fontSize:13,fontWeight:800,color:BK.muted,minHeight:18,margin:'2px 0 4px'}}>{phase === 'count' ? t('Get ready: ', '준비: ') + count : phase === 'go' ? (mode === 'tap' ? t('Tap!', '쳐요!') : t('Listen and count', '들으면서 세요')) : ''}</div>
@@ -38275,7 +38293,7 @@ function NvPad({ page }) {
         <button className="ghost-btn" onClick={() => start('listen')}>{t('▶ Listen', '▶ 듣기')}</button>
         <button className="ghost-btn" onClick={() => start('tap')}>{t('▶ Tap it', '▶ 쳐 보기')}</button>
       </div>
-      {mode === 'tap' && <PlPad on={live} onTap={tap} label={t('TAP EACH NOTE', '음마다 쳐요')}/>}
+      {mode === 'tap' && <PlPad on={live} onTap={tap} onRelease={release} label={t('HOLD EACH NOTE', '음마다 누르고 있어요')}/>}
       {res && <div style={{textAlign:'center',fontSize:14.5,fontWeight:900,marginTop:6,color:ok ? BK.green : BK.coral}}>{t('Notes on time: ' + res.hits + ' of ' + res.total + (res.extra ? ' · extra taps: ' + res.extra : ''), '제때 친 음: ' + res.total + '개 중 ' + res.hits + '개' + (res.extra ? ' · 더 친 것: ' + res.extra + '개' : ''))}{ok ? '  ✓' : ''}</div>}
       {mode === 'tap' && plHint()}
     </div>
@@ -38410,7 +38428,7 @@ function NvQuestion({ q, given, locked, onAnswer, pixel }) {
   const [phase, setPhase] = useState('ready');
   const [lit, setLit] = useState(-1);
   const [grow, setGrow] = useState({});
-  const run = useRef(null), taps = useRef([]);
+  const run = useRef(null), taps = useRef([]), held = useRef(null);
   const done = !!given;
   const ink = pixel ? '#faf6ec' : '#26296b';
   const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
@@ -38433,7 +38451,8 @@ function NvQuestion({ q, given, locked, onAnswer, pixel }) {
       });
       setPhase('count');
     }
-    const onTap = () => { const r = run.current; if (r && (phase === 'count' || phase === 'go')) { taps.current.push(r.now()); const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime, 261.63, 0.16, 0.16, 'triangle'); } };
+    const onTap = () => { const r = run.current; if (r && (phase === 'count' || phase === 'go')) { taps.current.push(r.now()); const ctx = getAudio(); if (ctx) { if (held.current) held.current(); held.current = blip(ctx, ctx.currentTime, 261.63, 4.3 * r.spb, 0.18, 'triangle'); } } };
+    const onRelease = () => { if (held.current) { held.current(); held.current = null; } };
     const res = done && given.ans && typeof given.ans === 'object' ? given.ans : null;
     return <div>
       <BoardTrack b={board} pixel={pixel}/>
@@ -38441,7 +38460,7 @@ function NvQuestion({ q, given, locked, onAnswer, pixel }) {
       <div style={{background:pixel ? '#faf6ec' : 'transparent',borderRadius:8,padding:pixel ? 6 : 0}}><NvBar row={q.row} grow={phase === 'ready' && !done ? null : grow} lit={lit} marks={res ? res.marks : null} maxW={430}/></div>
       <div style={{textAlign:'center',fontSize:13,fontWeight:800,color:pixel ? '#faf6ec' : BK.muted,minHeight:18,margin:'2px 0 4px'}}>{phase === 'count' ? t('Get ready…', '준비…') : phase === 'go' ? t('Tap!', '쳐요!') : ''}</div>
       {!done && phase === 'ready' && <div style={{textAlign:'center',marginBottom:8}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={start} style={{fontSize:15,padding:'10px 18px'}}>{t('▶ Start', '▶ 시작')}</button></div>}
-      {!done && <PlPad on={phase === 'count' || phase === 'go'} onTap={onTap} h={64}/>}
+      {!done && <PlPad on={phase === 'count' || phase === 'go'} onTap={onTap} onRelease={onRelease} h={64}/>}
       {res && <div style={{textAlign:'center',fontSize:15,fontWeight:900,marginTop:8,color:res.ok ? BK.green : BK.coral}}>{t('Notes on time: ' + res.hits + ' of ' + res.total + (res.extra ? ' · extra taps: ' + res.extra : ''), '제때 친 음: ' + res.total + '개 중 ' + res.hits + '개' + (res.extra ? ' · 더 친 것: ' + res.extra + '개' : ''))}</div>}
     </div>;
   }
