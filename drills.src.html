@@ -1590,9 +1590,19 @@ function Lesson({ id, title, intro, children, onStart, startLabel, head, noArt }
         key: i, n: i + 1, total: steps.length, id: id + '-step-' + i, color: STEP_COLORS[i % STEP_COLORS.length],
         open: !!open[i], done: !!done[sk(i)], onToggle: () => setOpen(o => ({ ...o, [i]: !o[i] })), onDone: () => markDone(i),
       }))}
+      <LessonMore id={id}/>
       {onStart && <button className="primary-btn" style={{marginTop:16}} onClick={onStart}>{startLabel || t('Start the drill →', '드릴 시작하기 →')}</button>}
     </div>
   );
+}
+function LessonMore({ id }) {
+  const own = { 'posture-hands': ['sit-check', 'arm-moves', 'hand-shape'], 'whole-staff': ['rhymes'] }[id] || [];
+  const list = (CHAPTER_TOOL_ORDER[id] || []).filter(x => !/^(sdy|ssk|srh|ssc|stm|sps|spr|skg|sac|ts|nv)-/.test(x) && !own.includes(x)).map(x => TOOLS.find(tl => tl.id === x)).filter(Boolean);
+  if (!list.length) return null;
+  return <div style={{margin:'14px 0 0',padding:'10px 12px',border:'1px solid rgba(38,41,107,0.16)',borderRadius:10,background:'#fff'}}>
+    <div style={{fontSize:14,fontWeight:900,color:'var(--text)',margin:'0 0 6px'}}>{t('More in the toolbox', '툴박스에 더 있어요')}</div>
+    <div style={{display:'flex',flexWrap:'wrap',gap:6}}>{list.map(tl => <a key={tl.id} className="chip" href={'?tool=' + tl.id + (LANG === 'ko' ? '&lang=ko' : '')} style={{textDecoration:'none',minHeight:44,display:'inline-flex',alignItems:'center',fontSize:13.5,whiteSpace:'normal',textAlign:'left',maxWidth:'100%'}}>{sscSx(LANG === 'ko' && TOOL_KO[tl.id] ? TOOL_KO[tl.id][0] : tl.title)}</a>)}</div>
+  </div>;
 }
 const actTitle = { fontSize:17, fontWeight:900, letterSpacing:'-0.01em' };
 const actNote = { fontSize:14, color:'#4a4d86', lineHeight:1.5, margin:'2px 0 10px' };
@@ -1832,7 +1842,7 @@ function UpDownWalk() {
   return (
     <div className="try-box" style={actBox}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-        <div style={actTitle}>{t('Step up, step down', '한 칸 위로, 한 칸 아래로')}</div>
+        <div style={actTitle}>{t('Step up, step down', '위로 한 걸음, 아래로 한 걸음')}</div>
         <button className={'chip' + (hide ? ' active' : '')} style={{padding:'3px 10px',fontSize:12}} onClick={() => setHide(h => !h)}>{hide ? t('Names hidden', '이름 숨김') : t('Hide names', '이름 숨기기')}</button>
       </div>
       <div style={actNote}>{LANG === 'ko' ? <>피아노에서 <b>위</b>는 <b>오른쪽</b>, <b>아래</b>는 <b>왼쪽</b>이에요. 누르기 전에 다음 글자를 소리 내어 말해요{hide ? '. 건반에 도착하면 이름이 보여요' : ''}.</> : <>On the piano, <b>up</b> means to the <b>right</b> and <b>down</b> means to the <b>left</b>. Say the next letter out loud before you press{hide ? '. The key shows its name once you land on it' : ''}.</>}</div>
@@ -2041,12 +2051,12 @@ const LEVEL_KO = {
   'White keys · name the key': '흰건반 · 이름 말하기',
   'White keys · find the key': '흰건반 · 건반 찾기',
   'Two octaves · both ways': '두 옥타브 · 양쪽 다',
-  'Black keys too (sharps & flats)': '검은건반까지 (샵과 플랫)',
+  'Black keys too (sharps & flats)': '검은건반까지 (샤프와 플랫)',
   'Letter steps · next letter up or down': '글자 한 칸 · 위나 아래 다음 글자',
   'Letter jumps · 3rds to octaves, up or down': '글자 건너뛰기 · 3도부터 옥타브까지, 위나 아래로',
   'Next letter up or down': '다음 글자 · 위나 아래로',
   'Skip a letter, up or down': '한 글자 건너뛰기 · 위나 아래로',
-  'Name the black keys (sharps & flats)': '검은건반 이름 (샵과 플랫)',
+  'Name the black keys (sharps & flats)': '검은건반 이름 (샤프와 플랫)',
   'Term → meaning': '용어 → 뜻',
   'Which one is faster?': '어느 쪽이 더 빠를까?',
   'Put 4 in order, slow → fast': '4개를 순서대로, 느리게 → 빠르게',
@@ -2067,10 +2077,10 @@ const LEVEL_KO = {
   'Semiquavers': '16분음표',
   'Triplets & dotted quavers': '셋잇단음표와 점8분음표',
   'Name the major key (up to 4♯ / 4♭)': '장조 이름 말하기 (♯/♭ 4개까지)',
-  'How many sharps or flats?': '샵이나 플랫이 몇 개?',
+  'How many sharps or flats?': '샤프나 플랫이 몇 개?',
   'Name the major key (all 15)': '장조 이름 말하기 (15개 모두)',
   'Name the relative minor': '나란한조(단조) 이름 말하기',
-  'Order of sharps and flats': '샵과 플랫의 순서',
+  'Order of sharps and flats': '샤프와 플랫의 순서',
   'Circle of fifths: next key round': '5도권: 다음 조',
   'Number only · treble': '숫자만 · 높은음자리표',
   'Number only · treble and bass': '숫자만 · 높은음자리표와 낮은음자리표',
@@ -3328,7 +3338,7 @@ function SameTuneTempo() {
   const right = mystery !== null && guess === mystery;
   return (
     <div className="try-box" style={actBox}>
-      <div style={actTitle}>{t('Same tune, different tempo', '같은 튠, 다른 템포')}</div>
+      <div style={actTitle}>{t('Same tune, different tempo', '같은 선율, 다른 템포')}</div>
       <p style={actNote}>{t('Twinkle Twinkle three ways. The notes never change, only the tempo. Which one sounds like a lullaby? Which one sounds like a race?', '반짝반짝 작은 별을 세 가지 빠르기로. 음은 그대로, 템포만 바뀌어요. 어느 것이 자장가 같고, 어느 것이 경주 같나요?')}</p>
       <div style={{display:'flex',gap:3,margin:'2px 0 12px'}}>
         {TWINKLE.map((n, i) => <span key={i} style={{flex:n.dur,height:26 + (n.d - 28) * 5,alignSelf:'flex-end',borderRadius:6,background:on === i ? 'var(--coral)' : '#d6d7e8',transition:'background 0.1s'}}/>)}
@@ -3364,7 +3374,7 @@ function TempoLearn({ onStart }) {
       <Step title={t('Tap your own tempo', '내 템포 두드리기')}>
       <TapTempo/>
       </Step>
-      <Step title={t('Same tune, different tempo', '같은 튠, 다른 템포')}>
+      <Step title={t('Same tune, different tempo', '같은 선율, 다른 템포')}>
       <SameTuneTempo/>
       </Step>
       <Step title={t('Changing speed', '속도 바꾸기')}>
@@ -4748,7 +4758,7 @@ const KEY_SIGS = [
   { major: 'Gb', minor: 'Eb', type: 'flat',  count: 6 },
   { major: 'Cb', minor: 'Ab', type: 'flat',  count: 7 },
 ];
-function sigLabel(k) { return k.count === 0 ? t('no sharps or flats', '샵·플랫 없음') : k.count + (k.type === 'sharp' ? '♯' : '♭'); }
+function sigLabel(k) { return k.count === 0 ? t('no sharps or flats', '샤프·플랫 없음') : k.count + (k.type === 'sharp' ? '♯' : '♭'); }
 function majName(k) { return prettyNote(k.major) + t(' major', ' 장조'); }
 function minName(k) { return prettyNote(k.minor) + t(' minor', ' 단조'); }
 const ORDINALS = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th'];
@@ -4873,7 +4883,7 @@ function KeySigQuestion({ q, level, given, locked, onAnswer, pixel }) {
     top = <>{prompt(t('How many sharps or flats in this key?', '이 조에는 샤프나 플랫이 몇 개일까요?'), t('HOW MANY?', '몇 개일까요?'))}
       <div style={{textAlign:'center',fontSize:pixel?26:48,fontWeight:900,margin:'0 0 16px',color:pixel?'var(--brass)':'var(--text)'}}>{majName(q.k)}</div></>;
   } else if (q.kind === 'order') {
-    const label = t('The ' + ORDINALS[q.idx] + (q.type === 'sharp' ? ' sharp' : ' flat') + ' is…', (q.idx + 1) + '번째 ' + (q.type === 'sharp' ? '샵' : '플랫') + '은…');
+    const label = t('The ' + ORDINALS[q.idx] + (q.type === 'sharp' ? ' sharp' : ' flat') + ' is…', (q.idx + 1) + '번째 ' + (q.type === 'sharp' ? '샤프는…' : '플랫은…'));
     top = <>{prompt(t('Order of ' + (q.type === 'sharp' ? 'sharps' : 'flats'), (q.type === 'sharp' ? '샤프' : '플랫') + '의 순서'), t(q.type === 'sharp' ? 'ORDER OF SHARPS' : 'ORDER OF FLATS', q.type === 'sharp' ? '샤프의 순서' : '플랫의 순서'))}
       <div style={{textAlign:'center',fontSize:pixel?14:30,fontWeight:900,margin:'0 0 16px',color:pixel?'var(--brass)':'var(--text)'}}>{pixel ? label.toUpperCase() : label}</div>
       {done && <KSStaff count={q.idx + 1} type={q.type} ink={ink} upto={q.idx}/>}</>;
@@ -4918,7 +4928,7 @@ function OrderBuilder({ type }) {
     <div style={{marginBottom:16}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:4}}>
         <div style={{fontSize:12,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em'}}>
-          {type === 'sharp' ? t('Order of sharps', '샵의 순서') : t('Order of flats: the sharps backwards', '플랫의 순서: 샵의 거꾸로')}
+          {type === 'sharp' ? t('Order of sharps', '샤프의 순서') : t('Order of flats: the sharps backwards', '플랫의 순서: 샤프의 거꾸로')}
         </div>
         <div style={{display:'flex',gap:4}}>
           {['treble', 'bass'].map(c => <button key={c} className={'chip' + (clef === c ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={() => setClef(c)}>{c === 'treble' ? t('𝄞 treble', '𝄞 높은음') : t('𝄢 bass', '𝄢 낮은음')}</button>)}
@@ -4929,7 +4939,7 @@ function OrderBuilder({ type }) {
         {order.map((nm, i) => <span key={nm} style={{opacity:i < n ? 1 : 0.18,color:i === n - 1 ? '#c8361b' : 'var(--text)',transition:'opacity 0.3s'}}>{prettyNote(nm)}</span>)}
       </div>
       <div style={{textAlign:'center',fontSize:15,fontWeight:800,minHeight:22}}>
-        {n === 0 ? t('No ' + (type === 'sharp' ? 'sharps' : 'flats') + ' = C major / A minor', (type === 'sharp' ? '샵' : '플랫') + ' 없음 = C 장조 / A 단조')
+        {n === 0 ? t('No ' + (type === 'sharp' ? 'sharps' : 'flats') + ' = C major / A minor', (type === 'sharp' ? '샤프' : '플랫') + ' 없음 = C 장조 / A 단조')
           : n + sym + ' = ' + majName(k) + ' / ' + minName(k)}
       </div>
       <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:8}}>
@@ -4968,7 +4978,7 @@ function PlaceIt() {
         </div>
       </div>
       <div style={{fontSize:13,color:'#6d6f9c',marginBottom:4}}>
-        {LANG === 'ko' ? (want !== null ? <>{n + 1}번째 {type === 'sharp' ? '샵' : '플랫'}({prettyNote(order[n])})은 어디에 올까요? 색칠된 칸 안에서 그 줄이나 칸을 눌러요: 점 하나가 줄 하나 또는 칸 하나예요.</> : <>일곱 개 모두 순서대로{tries ? ': ' + tries + '번 틀림' : ': 한 번도 안 틀렸어요!'}</>) : (want !== null ? <>Where does {type === 'sharp' ? 'sharp' : 'flat'} <b>#{n + 1}</b> ({prettyNote(order[n])}) go? Tap its line or space in the shaded column: each dot is a line or space.</> : <>All seven, in order{tries ? ': ' + tries + ' miss' + (tries > 1 ? 'es' : '') : ': no misses!'}</>)}
+        {LANG === 'ko' ? (want !== null ? <>{n + 1}번째 {type === 'sharp' ? '샤프' : '플랫'}({prettyNote(order[n])}){type === 'sharp' ? '는' : '은'} 어디에 올까요? 색칠된 칸 안에서 그 줄이나 칸을 눌러요: 점 하나가 줄 하나 또는 칸 하나예요.</> : <>일곱 개 모두 순서대로{tries ? ': ' + tries + '번 틀림' : ': 한 번도 안 틀렸어요!'}</>) : (want !== null ? <>Where does {type === 'sharp' ? 'sharp' : 'flat'} <b>#{n + 1}</b> ({prettyNote(order[n])}) go? Tap its line or space in the shaded column: each dot is a line or space.</> : <>All seven, in order{tries ? ': ' + tries + ' miss' + (tries > 1 ? 'es' : '') : ': no misses!'}</>)}
       </div>
       <svg viewBox={`0 ${base - 64} ${W} 82`} style={{width:'100%',maxWidth:W * 1.6,display:'block',margin:'0 auto',touchAction:'manipulation'}}>
         {[0, 2, 4, 6, 8].map(p => <line key={p} x1="4" x2={W - 4} y1={base - p * 5} y2={base - p * 5} stroke="#26296b" strokeOpacity="0.5" strokeWidth="1.1"/>)}
@@ -5023,13 +5033,13 @@ function CircleOfFifths() {
     <div className="try-box" style={{background:'#fff',border:'1px solid var(--border)',borderRadius:10,padding:'10px',margin:'4px 0 16px'}}>
       <div style={{fontSize:15,fontWeight:800,marginBottom:2}}>{t('The circle of fifths', '5도권')}</div>
       <div style={{fontSize:13,color:'#6d6f9c',lineHeight:1.5,marginBottom:6}}>
-        {LANG === 'ko' ? <>모든 조가 시계 하나에 들어 있어요. <b>시계 방향</b>으로 한 칸 가면 5도 올라가고 샵이 하나 늘어요. <b>반시계 방향</b>으로 한 칸 가면 5도 내려가고 플랫이 하나 늘어요. 안쪽: 각 조의 나란한조(단조). 아무 조나 눌러 봐요.</> : <>Every key in one clock. Step <b>clockwise</b> and you go up a 5th and gain one sharp; step <b>anticlockwise</b> and you go down a 5th and gain one flat. Inside: each key’s relative minor. Tap any key.</>}
+        {LANG === 'ko' ? <>모든 조가 시계 하나에 들어 있어요. <b>시계 방향</b>으로 한 칸 가면 5도 올라가고 샤프가 하나 늘어요. <b>반시계 방향</b>으로 한 칸 가면 5도 내려가고 플랫이 하나 늘어요. 안쪽: 각 조의 나란한조(단조). 아무 조나 눌러 봐요.</> : <>Every key in one clock. Step <b>clockwise</b> and you go up a 5th and gain one sharp; step <b>anticlockwise</b> and you go down a 5th and gain one flat. Inside: each key’s relative minor. Tap any key.</>}
       </div>
       <svg viewBox="0 0 240 236" style={{width:'100%',maxWidth:340,display:'block',margin:'0 auto'}}>
         <circle cx={cx} cy={cy} r={R + 16} fill="#f8f3e6" stroke="#e9e2d2"/>
         <circle cx={cx} cy={cy} r={r - 16} fill="#fff" stroke="#e9e2d2"/>
         <text x="6" y="14" fontSize="9" fontWeight="800" fill="#6d78b8">{t('↺ flats', '↺ 플랫')}</text>
-        <text x="234" y="14" textAnchor="end" fontSize="9" fontWeight="800" fill="#e4572e">{t('sharps ↻', '샵 ↻')}</text>
+        <text x="234" y="14" textAnchor="end" fontSize="9" fontWeight="800" fill="#e4572e">{t('sharps ↻', '샤프 ↻')}</text>
         {CIRCLE.map((c, i) => {
           const [x, y] = pt(i, R), [ix, iy] = pt(i, r);
           const on = i === slot;
@@ -5054,11 +5064,11 @@ function CircleOfFifths() {
       <KSStaff count={k.count} type={k.type} upto={k.count ? k.count - 1 : undefined} numbers/>
       <div style={{textAlign:'center',fontSize:15,fontWeight:900}}>{majName(k)} <span style={{color:'var(--muted)',fontWeight:700}}>/ {minName(k)}</span></div>
       <div style={{textAlign:'center',fontSize:13,color:'#6d6f9c',minHeight:18,marginTop:2}}>
-        {k.count ? t('Newest ' + (k.type === 'sharp' ? 'sharp' : 'flat') + ' (red): ', '새로 생긴 ' + (k.type === 'sharp' ? '샵' : '플랫') + '(빨강): ') + prettyNote((k.type === 'sharp' ? SHARP_ORDER : FLAT_ORDER)[k.count - 1]) : t('The top of the circle: no sharps or flats.', '원의 맨 위: 샵도 플랫도 없어요.')}
+        {k.count ? t('Newest ' + (k.type === 'sharp' ? 'sharp' : 'flat') + ' (red): ', '새로 생긴 ' + (k.type === 'sharp' ? '샤프' : '플랫') + '(빨강): ') + prettyNote((k.type === 'sharp' ? SHARP_ORDER : FLAT_ORDER)[k.count - 1]) : t('The top of the circle: no sharps or flats.', '원의 맨 위: 샤프도 플랫도 없어요.')}
       </div>
       <div style={{display:'flex',gap:6,justifyContent:'center',marginTop:8}}>
         <button className="ghost-btn" onClick={() => setWalk({ dir: 'ccw', i: 0 })}>{t('↺ Walk the flats', '↺ 플랫 쪽으로 돌기')}</button>
-        <button className="ghost-btn" onClick={() => setWalk({ dir: 'cw', i: 0 })}>{t('Walk the sharps ↻', '샵 쪽으로 돌기 ↻')}</button>
+        <button className="ghost-btn" onClick={() => setWalk({ dir: 'cw', i: 0 })}>{t('Walk the sharps ↻', '샤프 쪽으로 돌기 ↻')}</button>
       </div>
     </div>
   );
@@ -6694,7 +6704,7 @@ function ScaleFinder({ ext, onKey } = {}) {
         <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}>
           <div style={{flex:'1 1 150px'}}>
             <div style={{fontSize:22,fontWeight:900}}>{twinKs ? prettyNote(myName) + ' / ' + prettyNote(nameOf(twinKs)) : prettyNote(key)} {mode === 'minor' ? t('harmonic minor', '화성 단음계') : t('major', '장조')}</div>
-            <div style={{fontSize:13,fontWeight:800,color:'var(--muted)'}}>{twinKs ? t('The same keys on the piano, written two ways.', '피아노에서는 같은 건반, 적는 방법만 두 가지예요.') : (LANG === 'ko' && ks.count === 0 ? '샵·플랫 없음' : sigLabel(ks))}{mode === 'minor' && !twinKs ? t(' · raised 7th: ', ' · 올린 7음: ') + prettyAny(names[6]) : ''}</div>
+            <div style={{fontSize:13,fontWeight:800,color:'var(--muted)'}}>{twinKs ? t('The same keys on the piano, written two ways.', '피아노에서는 같은 건반, 적는 방법만 두 가지예요.') : (LANG === 'ko' && ks.count === 0 ? '샤프·플랫 없음' : sigLabel(ks))}{mode === 'minor' && !twinKs ? t(' · raised 7th: ', ' · 올린 7음: ') + prettyAny(names[6]) : ''}</div>
           </div>
           <div style={two ? {display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,alignItems:'flex-start',flex:'1 1 300px',maxWidth:420} : {display:'flex',gap:10,alignItems:'flex-start'}}>
             {cardList.map(x => (
@@ -6708,7 +6718,7 @@ function ScaleFinder({ ext, onKey } = {}) {
         </div>
         <div style={{margin:'6px 0 10px'}}>{twinKs ? cardList.map(x => noteRow(x.name, true)) : thy ? [noteRow(key, true), noteRow(thyTonic, true, true)] : noteRow(key, false)}</div>
         {thy && (() => { const sh = thy.type === 'sharp', nd = thy.count - 7, dbls = (sh ? SHARP_ORDER : FLAT_ORDER).slice(0, nd).map(a => a[0] + (sh ? '♯♯' : '♭♭')).join(', ');
-          return <div style={{fontSize:12.5,color:'#6d6f9c',margin:'-4px 0 10px',lineHeight:1.5}}>{t(altName + ' ' + (mode === 'minor' ? 'minor' : 'major') + ' would need ' + thy.count + ' ' + (sh ? 'sharps' : 'flats') + ', including ' + (nd === 1 ? 'a double ' + (sh ? 'sharp' : 'flat') : 'double ' + (sh ? 'sharps' : 'flats')) + ' (' + dbls + '), so it only exists on paper. Everyone writes ' + prettyNote(key) + ' ' + (mode === 'minor' ? 'minor' : 'major') + ' instead.', altName + ' ' + kindWord + '은(는) ' + (sh ? '샵' : '플랫') + '이 ' + thy.count + '개나 필요하고 겹' + (sh ? '샵' : '플랫') + '(' + dbls + ')까지 들어가서 종이 위에서만 존재해요. 그래서 늘 ' + prettyNote(key) + ' ' + kindWord + '으로 적어요.')}</div>; })()}
+          return <div style={{fontSize:12.5,color:'#6d6f9c',margin:'-4px 0 10px',lineHeight:1.5}}>{t(altName + ' ' + (mode === 'minor' ? 'minor' : 'major') + ' would need ' + thy.count + ' ' + (sh ? 'sharps' : 'flats') + ', including ' + (nd === 1 ? 'a double ' + (sh ? 'sharp' : 'flat') : 'double ' + (sh ? 'sharps' : 'flats')) + ' (' + dbls + '), so it only exists on paper. Everyone writes ' + prettyNote(key) + ' ' + (mode === 'minor' ? 'minor' : 'major') + ' instead.', altName + ' ' + kindWord + '은(는) ' + (sh ? '샤프가 ' : '플랫이 ') + thy.count + '개나 필요하고 겹' + (sh ? '샤프' : '플랫') + '(' + dbls + ')까지 들어가서 종이 위에서만 존재해요. 그래서 늘 ' + prettyNote(key) + ' ' + kindWord + '으로 적어요.')}</div>; })()}
         <div style={{fontSize:12,fontWeight:900,color:'var(--muted)',letterSpacing:'0.05em',marginBottom:4}}>{t('RIGHT HAND', '오른손')}</div>
         <ScaleKeyboard rootPc={info.rootPc} offsets={e.offsets} fingers={e.RH} hand="RH"/>
         <div style={{fontSize:12,fontWeight:900,color:'var(--muted)',letterSpacing:'0.05em',margin:'10px 0 4px'}}>{t('LEFT HAND', '왼손')}</div>
@@ -7375,7 +7385,7 @@ function ScaleBuilder({ mode = 'major' }) {
         {done
           ? <><b>{names.map(prettyAny).join(' ')}</b><div style={{color:'#2e8a6e',fontWeight:700}}>
               {mode === 'major'
-                ? (accs.length ? t(prettyNote(key) + ' major needs ' + accs.map(prettyAny).join(' ') + '. That’s its key signature.', prettyNote(key) + ' 장조에는 ' + accs.map(prettyAny).join(' ') + '이 필요해요. 그게 바로 조표예요.') : t('C major: no sharps or flats at all.', 'C 장조: 샵도 플랫도 전혀 없어요.'))
+                ? (accs.length ? t(prettyNote(key) + ' major needs ' + accs.map(prettyAny).join(' ') + '. That’s its key signature.', prettyNote(key) + ' 장조에는 ' + accs.map(prettyAny).join(' ') + '이 필요해요. 그게 바로 조표예요.') : t('C major: no sharps or flats at all.', 'C 장조: 샤프도 플랫도 전혀 없어요.'))
                 : t('The raised 7th (' + prettyAny(names[6]) + ') makes the tone-and-a-half step. It isn’t in the key signature, so it’s written in each time.', '올린 7음(' + prettyAny(names[6]) + ')이 온음+반음 간격을 만들어요. 조표에는 없어서 매번 임시표로 적어요.')}</div></>
           : flash ? <span style={{color:'#c8361b',fontWeight:700}}>{t('Not ' + STEP_WORD[flash] + ' here' + (wrong >= 2 ? ': the pattern is ' + pat.join(' ') : '') + '.', '여기는 ' + { T: '온음', S: '반음', 'T+S': '온음+반음' }[flash] + '이 아니에요' + (wrong >= 2 ? ': 패턴은 ' + pat.join(' ') + '예요' : '') + '.')}</span>
           : <span style={{color:'var(--muted)'}}>{t('Step ' + (n + 1) + ': from ' + prettyAny(names[n]) + ', which step comes next?', (n + 1) + '번째 걸음: ' + prettyAny(names[n]) + '에서 다음은 어떤 걸음일까요?')}</span>}
@@ -12176,7 +12186,7 @@ function Transposer() {
   const ks = KEY_SIGS.find(k => k.major === to);
   return (
     <div className="try-box" style={actBox}>
-      <div style={actTitle}>{t('Transpose a tune', '튠 조옮김')}</div>
+      <div style={actTitle}>{t('Transpose a tune', '선율 조옮김')}</div>
       <div style={actNote}>{LANG === 'ko' ? <>조옮김을 하려면 모든 음의 <b>음계 위치(도수)</b>는 그대로 두고 새 조로 옮겨요. 먼저 튠 위에 도수 번호를 쓰고, 새 조에서 그 도수의 음을 찾아요.</> : <>To transpose, keep every note on the same <b>scale degree</b> and move to a new key. Write the degree numbers over the tune first, then find those degrees in the new key.</>}</div>
       <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:4}}>{TR_TUNES.map(tt => <button key={tt.id} className={'chip' + (tt.id === tid ? ' active' : '')} style={{padding:'3px 9px',fontSize:13}} onClick={() => { setTid(tt.id); setShow(false); }}>{tt.title}</button>)}</div>
       <div style={{fontSize:12,fontWeight:800,color:'var(--muted)',margin:'4px 0 2px'}}>{t('IN C MAJOR', 'C 장조')}</div>
@@ -13864,7 +13874,7 @@ function MelodyContour() {
   const path = ds.map((d, i) => (i ? 'L' : 'M') + colX(i) + ' ' + contourY(d)).join(' ');
   return (
     <div className="try-box" style={actBox}>
-      <div style={actTitle}>{t('Draw a tune', '튠 그리기')}</div>
+      <div style={actTitle}>{t('Draw a tune', '선율 그리기')}</div>
       <p style={actNote}>{t('Tap the staff to move each of the eight notes up or down, then play your tune. The line shows its shape. Every melody has one.', '오선을 눌러 여덟 음을 하나씩 위아래로 옮기고, 내 튠을 연주해 봐요. 선이 모양을 보여 줘요. 모든 선율에는 모양이 있어요.')}</p>
       <svg viewBox={`0 0 ${W} 130`} width="100%" style={{display:'block',maxWidth:520,touchAction:'manipulation',cursor:'pointer'}} onClick={tapSvg}>
         {[30, 32, 34, 36, 38].map(d => <line key={d} x1="6" x2={W - 6} y1={contourY(d)} y2={contourY(d)} stroke="#26296b" strokeOpacity="0.55" strokeWidth="1.2"/>)}
@@ -13935,10 +13945,10 @@ function FormBuilder() {
 function MelodyLearn({ onStart }) {
   return (
     <Lesson id="melody" title={t('What makes a tune', '튠(선율)이 뭘까요')} intro={t('A tune is rhythm and pitch working together. This chapter looks at how melodies are shaped: phrases, questions and answers, and sequences.', '튠(선율)은 리듬과 음높이가 함께 만들어내요. 이 챕터에서는 프레이즈, 질문과 대답, 시퀀스처럼 선율이 어떻게 모양을 갖추는지 살펴봐요.')} onStart={onStart}>
-      <Step title={t('Rhythm + pitch = a tune', '리듬 + 음높이 = 튠')}>
+      <Step title={t('Rhythm + pitch = a tune', '리듬 + 음높이 = 선율')}>
         <TuneAnatomy/>
       </Step>
-      <Step title={t('Draw a tune', '튠 그리기')}>
+      <Step title={t('Draw a tune', '선율 그리기')}>
         <MelodyContour/>
       </Step>
       <Step title={t('Phrase marks: where to breathe', '프레이즈 마크: 숨쉬는 곳')}>
@@ -18949,6 +18959,11 @@ const TOOLS = [
   { id: 'build-major', ch: 'scales', title: 'Build a major scale', blurb: 'T T S T T T S, step by step.', C: () => <ScaleBuilder mode="major"/> },
   { id: 'build-minor', ch: 'scales', title: 'Build a harmonic minor', blurb: 'With the tone-and-a-half step.', C: () => <ScaleBuilder mode="minor"/> },
   { id: 'modes', ch: 'scales', title: 'The seven modes', blurb: 'Lydian to Locrian: same notes, new home, brighter to darker.', C: () => <Modes/> },
+  { id: 'skg-every', ch: 'key-signatures', title: 'Every F', blurb: 'One sharp on the top line: every F is F♯, high or low. Hear it with and without the key signature.', C: () => <SkgPad page={2}/> },
+  { id: 'skg-g', ch: 'key-signatures', title: 'G major', blurb: 'G major written with its key signature: listen, then play it, every F as F♯.', C: () => <SkgPad page={3}/> },
+  { id: 'skg-f', ch: 'key-signatures', title: 'F major', blurb: 'F major written with its key signature: listen, then play it, every B as B♭.', C: () => <SkgPad page={4}/> },
+  { id: 'skg-acc', ch: 'key-signatures', title: 'Key signature and accidental', blurb: 'A natural lasts until the bar line; then the key signature holds again.', C: () => <SkgPad page={5}/> },
+  { id: 'skg-five', ch: 'key-signatures', title: 'Name the key', blurb: 'C, G, D, F and B♭ major: each key signature and its scale.', C: () => <SkgFivePad/> },
   { id: 'sharps-order', ch: 'key-signatures', title: 'Order of sharps', blurb: 'Add them one by one, numbered.', C: () => <OrderBuilder type="sharp"/> },
   { id: 'flats-order', ch: 'key-signatures', title: 'Order of flats', blurb: 'The sharps backwards.', C: () => <OrderBuilder type="flat"/> },
   { id: 'place-it', ch: 'key-signatures', title: 'Place the key signature', blurb: 'Tap where each sharp or flat goes.', C: () => <PlaceIt/> },
@@ -19114,7 +19129,7 @@ const TOOL_KO = {
   'five-positions': ['다섯 손가락 자리', '12개 조 모두, 양손: 한 음에 한 손가락.'],
   'minor-forms': ['단조의 세 가지 형태', '자연, 화성, 가락: 가단조로 나란히 비교해요.'],
   'degree-names': ['음계 이름', '으뜸음, 윗으뜸음... 이끔음.'],
-  'transpose': ['튠 조옮김', '음계 위치는 그대로, 새로운 조로.'],
+  'transpose': ['선율 조옮김', '음계 위치는 그대로, 새로운 조로.'],
   'term-match': ['용어 짝 맞추기', '기억력 짝 게임: 용어와 뜻을 소리 내어 읽어 줘요.'],
   'term-cards': ['용어 카드', '음악 용어, 1-4급, 소리와 함께.'],
   'term-sort': ['용어의 네 가족', '빠르기, 빠르기 변화, 셈여림, 느낌과 터치? 단어를 나누고 들어 봐요.'],
@@ -19128,7 +19143,7 @@ const TOOL_KO = {
   'sight-reading': ['초견 카드', '매번 새로운 2마디 튠.'],
   'find-every': ['모든 C 찾기', 'C(또는 다른 음)를 모두 찾는 경주.'],
   'name-reveal': ['음이름 일곱 글자', 'A부터 G, 그리고 다시 A: 글자가 건반에 내려앉는 걸 봐요.'],
-  'step-updown': ['한 칸 위로, 한 칸 아래로', '오른쪽 = 위로 = 알파벳 앞으로.'],
+  'step-updown': ['위로 한 걸음, 아래로 한 걸음', '오른쪽 = 위로 = 알파벳 앞으로.'],
   'letter-chain': ['글자 이어 말하기', '다음 글자를 차례대로 소리 내어 말해요.'],
   'clef-basics': ['높은음자리표와 낮은음자리표', '어떤 음을, 어느 손으로: 큰보표 설명.'],
   'alto-clef': ['알토음자리표', '세 번째 음자리표, 항상 가운데 도가 중심: 비올라가 읽어요.'],
@@ -19158,6 +19173,11 @@ const TOOL_KO = {
   'build-major': ['장조 스케일 만들기', '온 온 반 온 온 온 반, 한 단계씩.'],
   'build-minor': ['화성 단조 스케일 만들기', '온음 반 간격과 함께.'],
   'modes': ['일곱 가지 선법', '리디안부터 로크리안까지: 같은 음, 새로운 집, 밝음에서 어두움으로.'],
+  'skg-every': ['모든 F', '맨 윗줄의 샤프 하나: 높은 F도 낮은 F도 모두 F♯. 조표대로 한 번, 조표 없이 한 번 들어 봐요.'],
+  'skg-g': ['G장조', '조표로 쓴 G장조: 듣고, F는 모두 F♯로 쳐 봐요.'],
+  'skg-f': ['F장조', '조표로 쓴 F장조: 듣고, B는 모두 B♭으로 쳐 봐요.'],
+  'skg-acc': ['조표와 임시표', '내추럴은 세로줄까지, 그다음에는 다시 조표대로예요.'],
+  'skg-five': ['조 이름', 'C, G, D, F, B♭장조: 조마다 조표와 음계.'],
   'sharps-order': ['샤프의 순서', '번호를 붙여 하나씩 더해요.'],
   'flats-order': ['플랫의 순서', '샤프 순서를 거꾸로.'],
   'place-it': ['조표 자리 찾기', '샤프나 플랫이 들어갈 자리를 눌러요.'],
@@ -19227,14 +19247,14 @@ const TOOL_KO = {
   'tempo-race': ['템포 경주', '가장 느린 것부터 가장 빠른 것까지 이탈리아어 템포 단어: 눌러서 박을 들어 봐요.'],
   'tempo-walk': ['걷기, 조깅, 전력 질주 (템포란)', '템포는 박이 얼마나 빨리 가는지예요. 세 가지 빠르기를 느껴 봐요.'],
   'tap-tempo': ['내 템포 두드리기', '일정하게 두드리면 1분당 박 수와 맞는 이탈리아어 단어가 보여요.'],
-  'same-tune-tempo': ['같은 튠, 다른 템포', '한 튠을 세 가지 빠르기로, 그리고 수수께끼 템포 맞히기.'],
+  'same-tune-tempo': ['같은 선율, 다른 템포', '한 튠을 세 가지 빠르기로, 그리고 수수께끼 템포 맞히기.'],
   'speed-change': ['rit.와 accel. (빠르기 변화)', '빠르기가 바뀌는 걸 들어 봐요.'],
   'sdy-pf': ['여리게? 세게?', '선율을 p와 f로 듣고, 어느 쪽을 들었는지 골라요.'],
   'sdy-ladder': ['pp에서 f까지', '네 단계의 셈여림: 듣고, 차례대로 놓아요.'],
   'sdy-hair': ['점점 세게? 점점 여리게?', '오선 아래의 헤어핀: 듣고, 어느 쪽을 들었는지 골라요.'],
   'sdy-touch': ['레가토? 스타카토?', '소리 줄을 보며 듣고, 어느 쪽을 들었는지 골라요.'],
   'sdy-tie': ['붙임줄? 이음줄?', '같은 곡선: 같은 음 위일까요, 다른 음 위일까요?'],
-  'dyn-order': ['다이나믹 순서대로 놓기', 'pp부터 ff까지, 귀와 눈으로.'],
+  'dyn-order': ['셈여림 순서대로 놓기', 'pp부터 ff까지, 귀와 눈으로.'],
   'touch-ear': ['어떤 터치? 얼마나 크게?', '듣기 게임: 스타카토, 레가토, 악센트; p부터 ff까지.'],
   'pedal': ['댐퍼 페달', '페달 없이, 계속 밟고, 화음마다 바꿔 밟기: 차이를 들어 봐요.'],
   'hairpin': ['헤어핀 그리기', '크레셴도와 디미누엔도.'],
@@ -19243,15 +19263,15 @@ const TOOL_KO = {
   'grace-write': ['꾸밈음 써 보기', '아차카투라나 아포자투라가 들어갈 자리를 눌러요.'],
   'ornaments': ['꾸밈음', '트릴, 모르덴트, 턴, 아차카투라, 아포자투라: 악보와 실제 연주.'],
   'ottava': ['8va와 8vb', '한 옥타브 높게 또는 낮게.'],
-  'tune-anatomy': ['리듬 + 음높이 = 튠', '하나씩 따로 듣고, 함께 들어 봐요.'],
-  'draw-tune': ['튠 그리기', '오선에 음을 눌러 놓고 연주하며 모양을 봐요: 아치, 물결, 오르막...'],
+  'tune-anatomy': ['리듬 + 음높이 = 선율', '하나씩 따로 듣고, 함께 들어 봐요.'],
+  'draw-tune': ['선율 그리기', '오선에 음을 눌러 놓고 연주하며 모양을 봐요: 아치, 물결, 오르막...'],
   'phrase-marks': ['프레이즈 마크: 숨 쉬는 곳', '음악 문장 위의 무지개 아치.'],
   'question-answer': ['묻는 프레이즈일까, 답하는 프레이즈일까?', '불안정 (2, 4, 5, 7) 아니면 집 (1)?'],
   'melody-sequence': ['시퀀스: 같은 모양, 새 음높이', '패턴이 매번 한 칸씩 높아지며 다시 나와요.'],
   'form-shapes': ['2부, 3부, 론도 형식', '작곡가가 곡을 부분으로 나누는 세 가지 방법.'],
   'form-builder': ['나만의 형식 만들기', 'A, B, C 블록을 쌓아 곡을 만들어요: 2부, 3부, 론도?'],
   'same-or-new': ['같은 부분 반복일까, 새로운 부분일까?', '두 부분이 이어서 연주돼요: 반복일까, 다를까?'],
-  'rondo-refrain': ['론도: 계속 돌아오는 튠', '새 에피소드 사이에 후렴(A)이 언제 돌아오는지 맞혀 봐요.'],
+  'rondo-refrain': ['론도: 계속 돌아오는 선율', '새 에피소드 사이에 후렴(A)이 언제 돌아오는지 맞혀 봐요.'],
   'binary-ternary-spot': ['두 부분일까, 세 부분일까?', '처음 튠이 끝에 다시 나오는지 들어 봐요.'],
   'texture-types': ['텍스처: 목소리는 몇 개?', '모노포니, 호모포니, 폴리포니: 같은 튠, 세 가지 방법.'],
   'texture-spotter': ['이건 어떤 텍스처?', '듣고 맞혀 봐요: 선율 하나, 선율과 화음, 엮인 두 선율.'],
@@ -19272,11 +19292,11 @@ TOOLS.forEach(tl => { const k = TOOL_KO[tl.id]; if (!k) return; const ti = tl.ti
 const GRADE_TAGS = {
   'posture-hands': 'Beginner', 'first-steps': 'Beginner', 'note-names': 'Prelim', 'whole-staff': 'Prelim–G1', pulse: 'Beginner', 'note-values': 'Prelim', rhythm: 'Prelim–G2', staff: 'Prelim',
   'reading-steps': 'Beginner', 'time-signatures': 'Prelim–G2', tempo: 'Prelim–G1', dynamics: 'Prelim–G1',
-  'ledger-lines': 'Prelim–G2', tones: 'Prelim–G1', accidentals: 'Prelim–G1', scales: 'Prelim–G3', 'key-signatures': 'Prelim–G3', intervals: 'Prelim–G3', chords: 'Prelim–G3', signs: 'Prelim–G2', terms: 'G1–G4',
+  'ledger-lines': 'Prelim–G2', tones: 'Prelim–G1', accidentals: 'Prelim–G1', scales: 'Prelim–G3', 'key-signatures': 'Prelim–G1', intervals: 'Prelim–G3', chords: 'Prelim–G3', signs: 'Prelim–G2', terms: 'G1–G4',
   'piano-story': 'General knowledge', 'pitch-range': 'General knowledge', 'melody': 'Prelim–G2', 'form': 'Prelim–G3', 'styles': 'General knowledge', 'composers': 'General knowledge',
 };
 function stageOf(id) { return STAGES.find(s => s.ids.includes(id)); }
-function stepsDone(id) { const d = loadDone()[id] || {}; return Object.values(d).filter(Boolean).length; }
+function stepsDone(id) { const d = loadDone()[id] || {}; return Object.keys(d).filter(k => d[k] && !skgOldStep(id, k)).length; }
 // Phase 211 (2026-09-29): chapter-picker gallery. Every chapter now has a hero illustration
 // (finished Phase 210), so the "All chapters" screen shows those as tappable thumbnails instead
 // of a plain text list -- Sohyun's request, inspired by a wallpaper-picker-style photo grid.
@@ -19464,7 +19484,7 @@ function AfterNote({ id, onOpen }) {
     <div data-testid="after-note" style={{fontSize:13,color:'var(--navy-soft)',margin:'-4px 0 14px',lineHeight:1.45}}>
       {UI_TEACHER ? t('Builds on ', '바탕이 되는 방: ') : t('Easier after ', '먼저 하면 더 쉬워요: ')}
       {show.map((x, i) => <React.Fragment key={x}>{i > 0 && (LANG === 'ko' ? ', ' : i === show.length - 1 ? ' and ' : ', ')}<button onClick={() => onOpen(x)} style={{border:'none',background:'none',padding:0,font:'inherit',fontWeight:800,color:'var(--navy)',textDecoration:'underline',textUnderlineOffset:2,cursor:'pointer'}}>{name(x)}</button></React.Fragment>)}
-      {UI_TEACHER ? (LANG === 'ko' ? '' : '.') : t(', or carry on here.', ', 여기서 계속해도 돼요.')}
+      {UI_TEACHER ? (LANG === 'ko' ? '' : '.') : t(', or carry on here.', '. 아니면 여기서 계속해도 돼요.')}
     </div>
   );
 }
@@ -19534,7 +19554,7 @@ const CHAPTER_SEARCH_TERMS = {
   'time-signatures': 'time signature meter simple compound duple triple quadruple beat grouping beaming 2/4 3/4 4/4 6/8 9/8 12/8',
   'tones': 'tone semitone half step whole step tone sharp flat enharmonic chromatic',
   'accidentals': 'accidental sharp flat natural bar line cancel sign same line space octave reading',
-  'key-signatures': 'key signature sharps flats circle of fifths relative minor transpose',
+  'key-signatures': 'key signature sharps flats G major F major D major B flat major order of sharps flats circle of fifths relative minor transpose',
   'intervals': 'interval second third fourth fifth sixth seventh octave unison major minor perfect augmented diminished',
   'scales': 'scale major minor fingering octave degree mode',
   'chords': 'chord triad inversion cadence roman numeral seventh ninth eleventh thirteenth extension',
@@ -19640,7 +19660,7 @@ const TOOL_META = {
   'sac-signs': ['tones', 1, 2, 'game ear'], 'sac-natural': ['tones', 1, 2, 'game ear'], 'sac-bar': ['tones', 1, 2, 'game ear'], 'sac-line': ['tones', 1, 2, 'game ear'], 'sac-tune': ['tones', 1, 2, 'game ear'],
   'tone-semitone': ['tones', 1, 1, 'show game'], 'sharp-flat': ['tones', 1, 1, 'show'], 'accidental-bar': ['tones', 1, 2, 'show write'], 'build-major': ['scales', 1, 2, 'game write'],
   'ssc-steps': ['scales', 1, 2, 'game ear'], 'ssc-fingers': ['scales', 1, 2, 'show game'], 'ssc-degrees': ['scales', 1, 2, 'game'], 'ssc-g': ['scales', 1, 2, 'game ear'], 'ssc-f': ['scales', 1, 2, 'game ear'],
-  'build-minor': ['scales', 2, 3, 'game write'], 'scale-finder': ['scales', 0, 3, 'show home'], 'degree-names': ['scales', 2, 3, 'show'], 'sharps-order': ['scales', 1, 3, 'game'], 'flats-order': ['scales', 1, 3, 'game'],
+  'build-minor': ['scales', 2, 3, 'game write'], 'scale-finder': ['scales', 0, 3, 'show home'], 'degree-names': ['scales', 2, 3, 'show'], 'skg-every': ['scales', 1, 2, 'game ear'], 'skg-g': ['scales', 1, 2, 'game ear'], 'skg-f': ['scales', 1, 2, 'game ear'], 'skg-acc': ['scales', 1, 2, 'game ear'], 'skg-five': ['scales', 1, 2, 'show ear'], 'sharps-order': ['scales', 1, 3, 'game'], 'flats-order': ['scales', 1, 3, 'game'],
   'modes': ['scales', 3, 3, 'show ear'],
   'place-it': ['scales', 1, 3, 'write'], 'relative-minor': ['scales', 2, 3, 'show'], 'circle-fifths': ['scales', 2, 3, 'show'], 'transpose': ['scales', 2, 3, 'show write'],
   'interval-ruler': ['intervals', 1, 2, 'show'], 'letter-hop': ['intervals', 1, 2, 'game'], 'semitone-counter': ['intervals', 2, 3, 'show'], 'scale-intervals': ['intervals', 2, 3, 'show'],
@@ -20231,14 +20251,14 @@ function ToolRow({ t, color, starred, onStar, open, onToggle, onChapter }) {
 // New lesson-only pieces now live in the Toolbox too; borrow a sibling's icon until the design-phase redraw.
 [['time-sig-numbers', 'count-along'], ['note-value-tree', 'split-it'], ['dotted-notes', 'dot-lab'], ['rhythm-cards-all', 'make-card'], ['all-keys', 'circle-fifths'],
  ['major-shape', 'build-major'], ['major-fingering', 'scale-finder'], ['minor-fingering', 'minor-forms'], ['dc-ds-coda', 'road-map'], 
- ['finger-friends', 'finger-numbers'], ['accidental-cards', 'sharp-flat'], ['ts-bars', 'bar-lines'], ['ssk-shape', 'complete-melody'], ['ssk-step', 'step-skip'], ['ssk-cpos', 'five-positions'], ['ssk-gpos', 'five-positions'], ['ssk-read', 'mini-tune'], ['sdy-pf', 'dyn-order'], ['sdy-ladder', 'dyn-order'], ['sdy-hair', 'hairpin'], ['sdy-touch', 'touch-lengths'], ['sdy-tie', 'tie-slur'], ['spr-zone', 'range-chart'], ['sps-sound', 'keyboard-ancestors'], ['sps-softloud', 'keyboard-ancestors'], ['sps-action', 'keyboard-ancestors'], ['sps-pedals', 'pedal'], ['sps-keys', 'range-chart'], ['spr-big', 'size-pitch'], ['spr-fam', 'size-pitch'], ['spr-ladder', 'size-pitch'], ['spr-range', 'range-chart'], ['stm-sf', 'tempo-walk'], ['stm-words', 'tempo-race'], ['stm-read', 'tempo-race'], ['stm-metro', 'metronome'], ['stm-steady', 'tap-tempo'], ['srh-beams', 'grouping'], ['srh-alone', 'beam-apples'], ['srh-dot', 'dot-lab'], ['srh-up', 'anacrusis'], ['srh-read', 'rhythm-cards-all'], ['sac-signs', 'accidental-cards'], ['sac-natural', 'sharp-flat'], ['sac-bar', 'accidental-bar'], ['sac-line', 'accidental-bar'], ['sac-tune', 'ssk-read'], ['ssc-steps', 'major-shape'], ['ssc-fingers', 'major-fingering'], ['ssc-degrees', 'degree-names'], ['ssc-g', 'build-major'], ['ssc-f', 'scale-finder'], ['ts-numbers', 'time-sig-numbers'], ['ts-strong', 'beat-groups'], ['ts-build', 'fill-bar'], ['ts-tie', 'tie-slur'], ['nv-walk', 'count-aloud'], ['nv-hold', 'split-it'], ['nv-long', 'note-value-tree'], ['nv-run', 'beam-apples'], ['nv-rests', 'note-rest-naming'], ['count-ring', 'count-aloud'], ['silent-beats', 'beat-target'], ['finger-beat', 'finger-numbers']].forEach(([a, b]) => { if (!TOOL_ICON[a] && TOOL_ICON[b]) TOOL_ICON[a] = TOOL_ICON[b]; });
+ ['finger-friends', 'finger-numbers'], ['accidental-cards', 'sharp-flat'], ['ts-bars', 'bar-lines'], ['ssk-shape', 'complete-melody'], ['ssk-step', 'step-skip'], ['ssk-cpos', 'five-positions'], ['ssk-gpos', 'five-positions'], ['ssk-read', 'mini-tune'], ['sdy-pf', 'dyn-order'], ['sdy-ladder', 'dyn-order'], ['sdy-hair', 'hairpin'], ['sdy-touch', 'touch-lengths'], ['sdy-tie', 'tie-slur'], ['spr-zone', 'range-chart'], ['skg-every', 'place-it'], ['skg-g', 'sharps-order'], ['skg-f', 'flats-order'], ['skg-acc', 'sharp-flat'], ['skg-five', 'circle-fifths'], ['sps-sound', 'keyboard-ancestors'], ['sps-softloud', 'keyboard-ancestors'], ['sps-action', 'keyboard-ancestors'], ['sps-pedals', 'pedal'], ['sps-keys', 'range-chart'], ['spr-big', 'size-pitch'], ['spr-fam', 'size-pitch'], ['spr-ladder', 'size-pitch'], ['spr-range', 'range-chart'], ['stm-sf', 'tempo-walk'], ['stm-words', 'tempo-race'], ['stm-read', 'tempo-race'], ['stm-metro', 'metronome'], ['stm-steady', 'tap-tempo'], ['srh-beams', 'grouping'], ['srh-alone', 'beam-apples'], ['srh-dot', 'dot-lab'], ['srh-up', 'anacrusis'], ['srh-read', 'rhythm-cards-all'], ['sac-signs', 'accidental-cards'], ['sac-natural', 'sharp-flat'], ['sac-bar', 'accidental-bar'], ['sac-line', 'accidental-bar'], ['sac-tune', 'ssk-read'], ['ssc-steps', 'major-shape'], ['ssc-fingers', 'major-fingering'], ['ssc-degrees', 'degree-names'], ['ssc-g', 'build-major'], ['ssc-f', 'scale-finder'], ['ts-numbers', 'time-sig-numbers'], ['ts-strong', 'beat-groups'], ['ts-build', 'fill-bar'], ['ts-tie', 'tie-slur'], ['nv-walk', 'count-aloud'], ['nv-hold', 'split-it'], ['nv-long', 'note-value-tree'], ['nv-run', 'beam-apples'], ['nv-rests', 'note-rest-naming'], ['count-ring', 'count-aloud'], ['silent-beats', 'beat-target'], ['finger-beat', 'finger-numbers']].forEach(([a, b]) => { if (!TOOL_ICON[a] && TOOL_ICON[b]) TOOL_ICON[a] = TOOL_ICON[b]; });
 const CHAPTER_TOOL_ORDER = {
   'chords': ['triad-stack', 'major-minor', 'key-chords', 'primary-triads', 'inversions', 'cadences', 'chord-extensions', 'seventh-chords'],
   'dynamics': ['sdy-pf', 'sdy-ladder', 'sdy-hair', 'sdy-touch', 'sdy-tie', 'dyn-order', 'hairpin', 'touch-ear', 'touch-lengths', 'tie-slur', 'pedal'],
   'first-steps': ['high-low', 'key-houses', 'whole-piano', 'black-key-song', 'black-key-jam', 'black-white-neighbours'],
   'form': ['form-shapes', 'form-builder', 'same-or-new', 'rondo-refrain', 'binary-ternary-spot'],
   'intervals': ['step-skip', 'interval-ruler', 'letter-hop', 'semitone-counter', 'scale-intervals', 'interval-ear', 'invert-interval', 'tritone'],
-  'key-signatures': ['sharps-order', 'flats-order', 'place-it', 'relative-minor', 'circle-fifths', 'transpose', 'all-keys'],
+  'key-signatures': ['skg-every', 'skg-g', 'skg-f', 'skg-acc', 'skg-five', 'sharps-order', 'flats-order', 'place-it', 'relative-minor', 'circle-fifths', 'transpose', 'all-keys'],
   'ledger-lines': ['ledger-walk', 'ledger-landmarks', 'ledger-twins', 'ledger-write'],
   'melody': ['tune-anatomy', 'draw-tune', 'phrase-marks', 'question-answer', 'melody-sequence'],
   'note-names': ['find-every', 'name-reveal', 'step-updown', 'letter-chain'],
@@ -21975,7 +21995,7 @@ function chapterSteps(id) {
   Object.keys(Object.assign({}, done, totals)).forEach(k => {
     if (k !== id && k.indexOf(id + '-') !== 0) return;
     if (k === 'scales-major' || k === 'scales-minor') return;   // Phase 471: lessons that are gone
-    const d = done[k] || {}; n += Object.keys(d).filter(i => d[i]).length; of += +totals[k] || 0;
+    const d = done[k] || {}; n += Object.keys(d).filter(i => d[i] && !skgOldStep(k, i)).length; of += +totals[k] || 0;
   });
   return { n, of };
 }
@@ -44557,14 +44577,14 @@ const SSC_LEVELS = [
   { n: 3, label: 'Build the scale', kind: 'build', time: 20 },
   { n: 4, label: 'Which finger?', kind: 'finger', time: 9 },
   { n: 5, label: 'Which degree?', kind: 'degree', time: 8 },
-  { n: 6, label: 'Name the note', kind: 'name', time: 9 },
+  { n: 6, label: 'Name the scale note', kind: 'name', time: 9 },
   { n: 7, label: 'Listen: a major scale?', kind: 'ear', time: 14, noPrint: true },
   { n: 8, label: 'Extra: D and B♭ major', kind: 'acc2', time: 9 },
   { n: 9, label: 'Extra: harmonic minor, the raised 7th', kind: 'minor7', time: 9 },
 ];
 Object.assign(LEVEL_KO, {
   'Whole or half?': '온 걸음? 반 걸음?', 'Where is the half step?': '반 걸음은 어디?', 'Build the scale': '음계 만들기', 'Which finger?': '몇 번 손가락?',
-  'Which degree?': '몇 번 음?', 'Name the note': '음이름 맞히기', 'Listen: a major scale?': '듣기: 장음계일까요?',
+  'Which degree?': '몇 번 음?', 'Name the scale note': '음계의 음이름 맞히기', 'Listen: a major scale?': '듣기: 장음계일까요?',
   'Extra: D and B♭ major': '더 해 보기: D장조와 B♭장조', 'Extra: harmonic minor, the raised 7th': '더 해 보기: 화성단음계의 올린 7번 음',
 });
 const SSC_KEYS3 = ['C', 'G', 'F'];
@@ -46391,9 +46411,738 @@ function SpsTeacher() {
 WORKBOOKS['piano-story'] = SpsWorkbook;
 TEACHER_COPIES['piano-story'] = SpsTeacher;
 
-const LESSON_BOOKS = { 'posture-hands': PostureLessonBook, 'first-steps': FirstStepsLessonBook, 'note-names': NoteNamesLessonBook, staff: StaffLessonBook, 'whole-staff': WholeStaffLessonBook, 'ledger-lines': LedgerLessonBook, tones: TonesLessonBook, pulse: PulseLessonBook, 'note-values': NotesRestsLessonBook, 'time-signatures': TimeSignaturesLessonBook, 'reading-steps': ReadingStepsLessonBook, dynamics: DynamicsLessonBook, 'pitch-range': PitchRangeLessonBook, tempo: TempoLessonBook, rhythm: RhythmLessonBook, scales: ScalesLessonBook, accidentals: AccidentalsLessonBook, 'piano-story': PianoStoryLessonBook };
+// ─── Phase 474: chapter 19, Key Signatures: the first room of Level 4 (the level plan of Phase 435: 'C, G and F major
+// (then D, B flat); a key signature lasts the whole piece, an accidental one bar. (All 15 keys, the circle: later.)'; AMEB
+// 2026 Music Craft: Preliminary keys C, G, F major; Grade 1 adds D and B♭ major). It builds on chapter 16 (the major scale;
+// G major's F♯, F major's B♭) and chapter 17 (accidentals: until the bar line, on their own line or space). Built in full
+// under Book rules 14 and 15 (her 2026-10-14 09:17 '계속 가줘 최종검토는 한꺼번에하게').
+// Words: key signature, accidental, natural; Korean 조표, 임시표, 내추럴, G장조 (the app's way of naming keys).
+// A tune is chapter 17's items (['q', beats, d, sign?]) read with a key: every note of a letter in the key signature
+// takes its sharp or flat, in every octave and every bar, unless an accidental in its bar says otherwise.
+
+const SKG_ORDER = { '#': ['F', 'C', 'G', 'D', 'A', 'E', 'B'], b: ['B', 'E', 'A', 'D', 'G', 'C', 'F'] };
+const SKG_KEY = { C: ['#', 0], G: ['#', 1], D: ['#', 2], A: ['#', 3], F: ['b', 1], Bb: ['b', 2], Eb: ['b', 3] };
+// each sign's place from the treble staff's bottom line (E4 = d 30); on the bass staff two places lower (G2 = d 18)
+const SKG_POS = { '#': { F: 8, C: 5, G: 9, D: 6, A: 3, E: 7, B: 4 }, b: { B: 4, E: 7, A: 3, D: 6, G: 2, C: 5, F: 1 } };
+const skgSigns = (key) => { const [s, n] = SKG_KEY[key]; return SKG_ORDER[s].slice(0, n).map(l => [s, l]); };
+const skgSignD = (s, l, clef) => (clef === 'bass' ? 16 : 30) + SKG_POS[s][l];
+const skgKs = (key, clef = 'treble') => skgSigns(key).map(([s, l]) => [s, skgSignD(s, l, clef)]);
+const skgMap = (key) => Object.fromEntries(skgSigns(key).map(([s, l]) => [l, SAC_ACC[s]]));
+const skgKeyName = (key) => t(prettyNote(key) + ' major', prettyNote(key) + '장조');
+const skgSignNames = (key) => skgSigns(key).map(([s, l]) => l + (s === '#' ? '♯' : '♭'));
+const skgCountWords = (key) => { const [s, n] = SKG_KEY[key];
+  return n === 0 ? t('no sharps or flats', '샤프도 플랫도 없음') : t(['', 'one', 'two', 'three'][n] + (s === '#' ? ' sharp' : ' flat') + (n > 1 ? 's' : ''), (s === '#' ? '샤프 ' : '플랫 ') + ['', '하나', '둘', '셋'][n]); };
+// a line or space by name (the drill's answers, the Teacher copy): 1st line at the bottom
+const skgWhere = (d, clef = 'treble', en) => { const k = d - CLEFS[clef].low, ord = ['first', 'second', 'third', 'fourth', 'fifth'], ko = ['맨 아랫', '둘째 ', '셋째 ', '넷째 ', '다섯째 '], T = en ? (a) => a : t;
+  if (k < 0 || k > 9) return k > 9 ? T('above the staff', '오선 위') : T('below the staff', '오선 아래');
+  if (k === 9) return T('the space above the staff', '오선 위의 칸');
+  if (k % 2 === 0) return k === 8 ? T('the top line', '맨 윗줄') : k === 4 ? T('the middle line', '가운데 줄') : T('the ' + ord[k / 2] + ' line', ko[k / 2] + '줄');
+  if (k === 1) return T('the first space', '맨 아래 칸');
+  return k === 7 ? T('the top space', '맨 위 칸') : T('the ' + ord[(k - 1) / 2] + ' space', ko[(k - 1) / 2].trim() + ' 칸'); };
+// Korean: a sign never parts from the syllable after it (a word joiner); 'ㄹ 수 있어요', '맨 윗줄', '맨 위 칸' on one line
+const skgKo = (x) => x.replace(/([♯♭♮])(?=[가-힣(])/g, '$1\u2060').replace(/(\S) 수 있어요/g, '$1\u00a0수\u00a0있어요').replace(/맨 (윗줄|위 칸|아랫줄)/g, '맨\u00a0$1');
+// the Phase 299 lesson's ticks (0 to 6, under the same id): not this lesson's steps (they are synced by union, so ignored, not deleted)
+function skgOldStep(id, k) { return id === 'key-signatures' && /^\d+$/.test(String(k)); }
+
+// how each note of a tune sounds in a key: the key signature, unless an accidental earlier in its bar (on its own line or
+// space) says otherwise. byKey: changed by the key signature; held / natHeld: an accidental earlier in the bar still holds;
+// back: an accidental in the bar before, so the key signature again
+function skgRead(items, key = 'C') {
+  const ks = skgMap(key), out = []; let held = {}, prev = {};
+  const note = (d, dur, s) => {
+    if (s) held[d] = SAC_ACC[s];
+    const kAcc = ks[dName(d)] || 0, h = held[d], acc = h !== undefined ? h : kAcc;
+    out.push({ d, dur, acc, sign: s || null, byKey: !s && h === undefined && kAcc !== 0, held: !s && h !== undefined && h !== 0, natHeld: !s && h === 0,
+      back: !s && h === undefined && prev[d] !== undefined && prev[d] !== kAcc });
+  };
+  items.forEach(it => {
+    if (it[0] === '|' || it[0] === '||') { prev = held; held = {}; return; }
+    if (it[0] === 'p') { note(it[2][0], 0.5); note(it[2][1], 0.5); return; }
+    if (sacIsNote(it)) note(it[2], it[1], it[3]);
+  });
+  return out;
+}
+const skgNames = (items, key) => skgRead(items, key).map(sacNameTxt);
+// names under the notes (only some: 'only' a list of note indexes); coral: the indexes named in coral
+const skgUnder = (items, key, only, coral = []) => ({ under: skgRead(items, key).map((n, j) => only && !only.includes(j) ? undefined : sacNameRaw(n)), underCoral: coral });
+const skgOf = (items, key, f) => skgRead(items, key).map((n, j) => f(n) ? j : -1).filter(j => j >= 0);
+
+// a staff with its clef, its key signature (k: the key; o.ks: signs drawn as given, [[sign, d]]; o.ksRoom: the room of
+// that many signs, none drawn, to write in; o.ksCol: their colour) and a tune (SacStaff's options: hl, under, ring, bracket ...)
+function SkgStaff({ items, k = 'C', clef = 'treble', width = 400, o = {}, label, full, pad, left }) {
+  const ks = o.ks || skgKs(k, clef), base = o.base || (clef === 'bass' ? 54 : 46), room = o.ksRoom != null ? o.ksRoom : ks.length;
+  const ksx = (i) => base + 6 + i * 15, x0 = skgX0(items, base, room);
+  const P = sacPrep(items, o.room || 16), oo = { ...o, clef, x0 }, m = sskRaw((d) => dY(d), P.items, oo);
+  const vbw = Math.ceil(Math.max(m.last, x0 + 8) + 6), hi = dY(CLEFS[clef].high), lo = dY(CLEFS[clef].low);
+  const kTop = Math.min(Infinity, ...ks.map(([s, d]) => dY(d) - (s === 'b' ? 20 : 16))), kBot = Math.max(-Infinity, ...ks.map(([s, d]) => dY(d) + (s === 'b' ? 6 : 16)));
+  const sTop = Math.min(m.top, kTop, ...m.notes.map((n, j) => P.signs[j] ? n.y - 21 : Infinity)), sBot = Math.max(m.bottom, kBot, ...m.notes.map((n, j) => P.signs[j] ? n.y + 17 : -Infinity));
+  const top = o.bracket || o.bracketRoom ? Math.min(sTop, hi) - 30 : sTop;
+  const p = pad || [Math.max(12, hi - top + 6), Math.max(12, sBot - lo + 6)];
+  return <div style={{width:full ? '100%' : Math.min(100, vbw / width * 100) + '%',margin:full || left ? undefined : '0 auto'}}><SfStaff clef={clef} width={vbw} span={[4, m.last || vbw - 6]} pad={p} label={label}
+    extra={(yOf, layer) => { if (layer !== 'over') return null; const mm = sskRaw((d) => yOf(d, clef), P.items, oo);
+      return <g>{ks.map(([s, d], i) => <g key={'k' + i}>{tnAcc(s, ksx(i), yOf(d, clef), o.ksCol || PEN_N)}</g>)}
+        <g dangerouslySetInnerHTML={{ __html: mm.raw }}/>
+        {mm.notes.map((n, j) => P.signs[j] && !(o.noSign || []).includes(j) && <g key={'s' + j}>{tnAcc(P.signs[j], n.x - 21, n.y, (o.signHl || []).includes(j) ? PEN_C : (o.ink || PEN_N))}</g>)}
+        {(o.ring || []).map(j => mm.notes[j] && <ellipse key={'r' + j} cx={mm.notes[j].x} cy={mm.notes[j].y} rx="15" ry="11" fill="none" stroke={PEN_C} strokeWidth="1.8"/>)}
+        {o.bracket && (() => { const a = mm.notes[o.bracket.from], x1 = a.x - 27, x2 = mm.bars[o.bracket.bar], y = Math.min(sTop, hi) - 12, yt = yOf(CLEFS[clef].high, clef) - 4;
+          return <g><path d={`M${x1} ${y + 6} L${x1} ${y} L${x2} ${y} L${x2} ${yt}`} fill="none" stroke={PEN_C} strokeWidth="1.8" strokeLinejoin="round"/>
+            {o.bracket.label && <text x={(x1 + x2) / 2} y={y - 6} textAnchor="middle" fontSize="13" fontWeight="900" fill={PEN_C} style={{paintOrder:'stroke',stroke:'#fff',strokeWidth:3}}>{String(o.bracket.label).split(/([♯♭♮])/).map((x, i) => /[♯♭♮]/.test(x) ? <tspan key={i} style={{fontFamily:SAC_MF,fontWeight:400}} fontSize="17">{x}</tspan> : x)}</text>}</g>; })()}
+        {o.ksRing && ks.length > 0 && <rect x={ksx(0) - 11} y={kTop - 4} width={(ks.length - 1) * 15 + 22} height={kBot - kTop + 8} rx="8" fill="none" stroke={PEN_C} strokeWidth="1.8"/>}
+      </g>; }}/></div>;
+}
+const skgX0 = (items, base, room) => base + (room ? room * 15 + 4 + (items[0] && items[0][0] === 'ts' ? 4 : items[0] && items[0][0] !== 'sp' ? 14 : 0) : 0);
+const skgVbw = (items, k, o = {}, clef = 'treble') => { const ks = o.ks || skgKs(k, clef), room = o.ksRoom != null ? o.ksRoom : ks.length, x0 = skgX0(items, o.base || (clef === 'bass' ? 54 : 46), room);
+  return Math.ceil(Math.max(sskRaw((d) => dY(d), sacPrep(items, o.room || 16).items, { ...o, clef, x0 }).last, x0 + 8) + 6); };
+// a set of staves at one size, their clefs in line (chapter 17's way)
+const skgSetBox = (list, k, ref, oOf = () => ({}), clef = 'treble') => Math.min(ref, Math.max(...list.map((it, i) => skgVbw(it, k, oOf(it, i), clef))));
+// a key signature alone (a short staff), with room after it; both clefs from one origin and with one pad, so a set of
+// them (treble and bass mixed) is drawn at one size with its staff lines in line
+const SKG_ALONE = [['sp', 26]];
+const SKG_AL = { base: 54, ksRoom: 2 }, SKG_AL_PAD = [34, 24];
+// a key signature to draw or name in the Workbook: one size everywhere (about 5 mm between the lines in print)
+const skgAloneW = (items, room = 2, k = 1.95) => Math.round(skgVbw(items, 'C', { base: 54, ksRoom: room, ks: [] }) * k);
+
+// the tunes of the book's pictures (the pads on pages 2 to 5 play them)
+const SKG_TUNES = {
+  1: [[['ts', 4], ['q', 1, 34], ['q', 1, 33], ['q', 1, 32], ['q', 1, 31], ['|'], ['q', 1, 32], ['q', 1, 33], ['h', 2, 34], ['|']],
+      [['q', 1, 36], ['q', 1, 37], ['q', 1, 38], ['q', 1, 37], ['|'], ['h', 2, 36], ['h', 2, 32], ['||']]],          // B A G F♯ | G A B; D E F♯ E | D G
+  2: [['ts', 4], ['q', 1, 33], ['q', 1, 32], ['q', 1, 31], ['q', 1, 32], ['|'], ['q', 1, 38], ['q', 1, 37], ['h', 2, 36], ['||']],   // A G F♯ G | F♯ E D
+  3: [32, 33, 34, 35, 36, 37, 38, 39].map(d => ['q', 1, d]).concat([['||']]),                                                 // G major
+  4: [31, 32, 33, 34, 35, 36, 37, 38].map(d => ['q', 1, d]).concat([['||']]),                                                 // F major
+  5: [['ts', 4], ['q', 1, 33], ['q', 1, 31, 'n'], ['q', 1, 32], ['q', 1, 31], ['|'], ['q', 1, 31], ['q', 1, 30], ['h', 2, 29], ['||']],   // A F♮ G F | F♯ E D
+};
+const SKG_TUNE_KEY = { 1: 'G', 2: 'G', 3: 'G', 4: 'F', 5: 'G' };
+const SKG_KEYS = { 2: [31, 9], 3: [32, 8], 4: [31, 8], 5: [29, 6] };   // each page's keyboard: from d, n white keys
+// page 6 and its pad: the five keys, each with its scale (from d), its keyboard
+const SKG_FIVE = ['C', 'G', 'D', 'F', 'Bb'];
+const SKG_SCALE_D = { C: 28, G: 32, D: 29, F: 31, Bb: 34, A: 33, Eb: 30 };
+const skgScale = (key) => [0, 1, 2, 3, 4, 5, 6, 7].map(i => ['q', 1, SKG_SCALE_D[key] + i]).concat([['||']]);
+const skgScaleKeys = (key) => key === 'Bb' ? [33, 9] : [SKG_SCALE_D[key], 8];
+
+function skgLbPages(scr = false) {
+  const ch = 'key-signatures';
+  const live = (still, comp) => <LbLive still={still} live={comp}/>;
+  const stack = (nodes, h, gap = 12, mw = 680) => <LbPic h={h}><div style={{display:'flex',flexDirection:'column',gap,width:'100%',maxWidth:mw,margin:'0 auto',alignItems:'stretch'}}>{nodes}</div></LbPic>;
+  const X = (en, ko) => sscT(en, skgKo(ko)), T = SKG_TUNES, REF = scr ? 270 : 330;   // one staff size on every page (chapter 17's)
+  const tune = (items, k, o = {}, key = 's', label) => <div key={key} style={{width:'100%'}}><SkgStaff items={items} k={k} width={REF} o={{ boxS: 26, ...o }} label={label}/></div>;
+  const keys = (pg, o, label, mw = 470) => <div key="k" style={{maxWidth:mw,margin:'0 auto',width:'100%'}}><SacKeys d0={SKG_KEYS[pg][0]} n={SKG_KEYS[pg][1]} o={{ H: 150, ...o }} label={label}/></div>;
+  const cap = (x) => <div style={{textAlign:'center',fontSize:scr ? 14 : 13.5,fontWeight:800,color:BK.ink,marginTop:2,lineHeight:1.35}}>{sscSx(x)}</div>;
+  // a key signature alone on a short staff, a caption under it (both clefs from one origin, one pad: one size, lines in line)
+  const alone = (k, clef, c, w = 150, key) => <div key={key} style={{display:'flex',flexDirection:'column',alignItems:'center'}}><div style={{width:'100%',maxWidth:w}}><SkgStaff items={SKG_ALONE} k={k} clef={clef} width={w} full pad={SKG_AL_PAD} o={{ ...SKG_AL, ksCol: PEN_C }}/></div>{c && cap(c)}</div>;
+  const pair = (k, a, b, label) => <div key="pair" role="img" aria-label={label} style={{display:'grid',gridTemplateColumns:'1fr 1fr',alignItems:'start',gap:scr ? 10 : 30,maxWidth:scr ? 330 : 490,margin:'0 auto',width:'100%'}}>{alone(k, 'treble', a, scr ? 150 : 225, 't')}{alone(k, 'bass', b, scr ? 150 : 225, 'b')}</div>;
+  const F = (row, k) => skgOf(row, k, n => n.byKey);
+
+  // p1: a tune in G major on two lines of music, the key signature at the start of each; every F (in coral) is F♯.
+  // On a phone one bar a line.
+  const r1 = scr ? T[1].flatMap(sacBars) : T[1], o1 = { D: 27 };
+  const vb1 = r1.map(row => skgVbw(row, 'G', o1)), box1 = Math.max(...vb1), ref1 = Math.max(REF, box1);
+  const p1 = stack(r1.map((row, i) => sacInSet(box1 * (REF / ref1), REF, <SkgStaff items={row} k="G" width={box1} left o={{ ...o1, ksCol: PEN_C, hl: F(row, 'G') }}
+    label={skgP1Label(row, i, scr)}/>, i)), scr ? undefined : 262, scr ? 6 : 10);
+  // p2: one sharp on the F line: both Fs sharp
+  const p2 = stack([tune(T[2], 'G', { D: 26, ksCol: PEN_C, hl: F(T[2], 'G'), ...skgUnder(T[2], 'G', null, F(T[2], 'G')) }, 's', t('Two bars on the treble staff with one sharp, on the top line, after the clef: A, G, F sharp (in the bottom space), G, then F sharp (on the top line), E, D. Both F sharps in coral.', '높은음자리표 오선의 두 마디, 음자리표 다음 맨 윗줄에 샤프 하나: A, G, F♯(맨 아래 칸), G, 그다음 F♯(맨 윗줄), E, D. 두 F♯는 산호색.')),
+    keys(2, { lit: [66, 78] }, t('The keys from F to G: both F sharps in coral, an octave apart.', 'F에서 G까지의 건반: 한 옥타브 떨어진 두 F♯는 산호색.'))], 300, 16);
+  // p3: G major's key signature on both staves; the scale written with it
+  const pairG = pair('G', t('treble: the top line', '높은음자리표: 맨 윗줄'), t('bass: the fourth line', '낮은음자리표: 넷째 줄'), t('G major’s key signature: one sharp, on the top line of the treble staff and on the fourth line of the bass staff.', 'G장조의 조표: 샤프 하나, 높은음자리표 오선의 맨 윗줄과 낮은음자리표 오선의 넷째 줄.'));
+  const p3 = stack([pairG,
+    tune(T[3], 'G', { D: scr ? 27 : 30, hl: [6], ...skgUnder(T[3], 'G', null, [6]) }, 's', t('G major written with its key signature: G A B C D E F sharp G, no sign before the F; F sharp in coral.', '조표로 쓴 G장조: G A B C D E F♯ G, F 앞에는 샤프가 없어요; F♯는 산호색.'))], 380, 22);
+  // p4: F major
+  const pairF = pair('F', t('treble: the middle line', '높은음자리표: 가운데 줄'), t('bass: the second line', '낮은음자리표: 둘째 줄'), t('F major’s key signature: one flat, on the middle line of the treble staff and on the second line of the bass staff.', 'F장조의 조표: 플랫 하나, 높은음자리표 오선의 가운데 줄과 낮은음자리표 오선의 둘째 줄.'));
+  const p4 = stack([pairF,
+    tune(T[4], 'F', { D: scr ? 27 : 30, hl: [3], ...skgUnder(T[4], 'F', null, [3]) }, 's', t('F major written with its key signature: F G A B flat C D E F, no sign before the B; B flat in coral.', '조표로 쓴 F장조: F G A B♭ C D E F, B 앞에는 플랫이 없어요; B♭은 산호색.'))], 380, 22);
+  // p5: a natural in G major: until the bar line, then the key signature again
+  const p5 = stack([tune(T[5], 'G', { D: 25, ...SKG_P5O() }, 's', t('Two bars in G major. A coral bracket runs from a natural before F to the bar line. Under the notes: A, F, G, F (still F: the natural holds), then F sharp (in coral: the key signature again), E, D.', 'G장조의 두 마디. F 앞의 내추럴에서 세로줄까지 산호색 괄호. 음표 아래: A, F, G, F(아직 F: 내추럴이 그대로), 그다음 F♯(산호색: 다시 조표대로), E, D.')),
+    keys(5, { lit: [65], pale: [66] }, t('The keys from D to B: F in coral, F sharp pale coral.', 'D에서 B까지의 건반: F는 산호색, F♯는 옅은 산호색.'), 300)], 250, 16);
+  // p6: the five keys by their signs, on both staves (one size, one origin)
+  const p6 = <LbPic h={380}><SkgFiveTable/></LbPic>;
+
+  // the check icons
+  const g = (x, c, s, col, y = 30) => '<text x="' + x + '" y="' + y + '" text-anchor="middle" style="font-family:' + SAC_MF + '" font-size="' + s + '" fill="' + col + '">' + c + '</text>';
+  const tx = (x, c, col, s = 18, y = 28) => '<text x="' + x + '" y="' + y + '" text-anchor="middle" font-family="Inter, sans-serif" font-size="' + s + '" font-weight="900" fill="' + col + '">' + c + '</text>';
+  const st5 = '<g stroke="' + PEN_N + '" stroke-opacity="0.55" stroke-width="1.2">' + [8, 14, 20, 26, 32].map(y => '<line x1="6" x2="86" y1="' + y + '" y2="' + y + '"/>').join('') + '</g>';
+  const ic = {
+    find: [{ k: 'raw', svg: st5 + g(18, '♯', 22, PEN_C, 11.5) + '<ellipse cx="46" cy="29" rx="5.4" ry="4" fill="' + PEN_C + '"/><ellipse cx="72" cy="8" rx="5.4" ry="4" fill="' + PEN_C + '"/>' }],
+    g: [{ k: 'raw', svg: tx(34, 'G', PEN_N, 22, 30) + g(60, '♯', 26, PEN_C, 30) + tx(76, 'F', PEN_C, 13, 34) }],
+    f: [{ k: 'raw', svg: tx(34, 'F', PEN_N, 22, 30) + g(58, '♭', 26, PEN_C, 30) + tx(74, 'B', PEN_C, 13, 34) }],
+    acc: [{ k: 'raw', svg: g(18, '♮', 24, PEN_C) + '<line x1="28" x2="58" y1="22" y2="22" stroke="' + PEN_C + '" stroke-width="2"/><line x1="62" x2="62" y1="8" y2="34" stroke="' + PEN_N + '" stroke-width="2.4"/>' + g(78, '♯', 22, PEN_N) }],
+    name: [{ k: 'raw', svg: g(22, '♯♯', 22, PEN_C) + tx(52, '=', PEN_N, 16) + tx(72, 'D', PEN_N, 20) }],
+  };
+  const checksRows = [
+    ['find', t('I can find the key signature and say which notes it changes', '조표를 찾고, 어떤 음이 바뀌는지 말할 수 있어요')],
+    ['g', t('I can play G major from its key signature, every F as F♯', '조표를 보고 G장조 음계를 칠 수 있어요: F는 모두 F♯')],
+    ['f', t('I can play F major from its key signature, every B as B♭', '조표를 보고 F장조 음계를 칠 수 있어요: B는 모두 B♭')],
+    ['acc', t('I can say how long a key signature lasts and how long an accidental lasts', '조표와 임시표가 언제까지 효과가 있는지 말할 수 있어요')],
+    ['name', t('I can name C, G, D, F and B♭ major from their key signatures', '조표를 보고 C, G, D, F, B♭장조를 말할 수 있어요')],
+  ].map(([a, x]) => [a, LANG === 'ko' ? skgKo(sscNbKo(x)) : sscNbEn(x)]);
+  const ch16 = bkChapterNo('scales'), ch17 = bkChapterNo('accidentals');
+
+  return [
+    <LbPage key="1" no={1} chId={ch}>
+      <LbOnly print><div data-ch={ch}>
+        <div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em'}}>CHAPTER {bkChapterNo(ch)}</div>
+        <div style={{fontFamily:LB_SERIF,fontSize:44,fontWeight:900,color:BK.ink,lineHeight:1.02,margin:'4px 0 0'}}>{bkChapterName(ch)}</div>
+      </div></LbOnly>
+      {p1}
+      <LbSay size={17.5}>{LANG === 'ko' ? <><b>조표</b>는 오선마다 맨 앞, 음자리표 바로 뒤에 적는 샤프나 플랫이에요. 곡 끝까지 그&nbsp;음을 바꿔요.</> : <>A <b>key signature</b> is the sharps or flats written just after the clef at the start of every line of music. It changes those notes for the whole piece.</>}</LbSay>
+      <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
+        <LbOnly print><div>
+          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
+          {[[t('The key signature', '조표'), 2], [t('G major', 'G장조'), 3], [t('F major', 'F장조'), 4], [t('Key signature and accidental', '조표와 임시표'), 5], [sscSx(t('D major and B♭ major', 'D장조와 B♭장조')), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}<span>{n}</span></span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
+        </div></LbOnly>
+        <div>
+          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          {checksRows.map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{sscSx(x.replace(/^I can /, ''))}</span></div>)}
+        </div>
+      </div>
+      <LbOnly print><LbDrillStrip id={ch}/></LbOnly>
+    </LbPage>,
+
+    <LbPage key="2" no={2} chId={ch} kicker={t('Step 1', '1단계')} title={t('The key signature', '조표')}>
+      {live(p2, <SkgPad page={2}/>)}
+      <LbDefs items={[
+        [t('where it sits', '자리'), X('After the clef and before the time signature, at the start of every line of music.', '오선마다 맨 앞, 음자리표 다음, 박자표 앞.')],
+        [t('its line or space', '줄이나 칸'), X('Each sharp or flat sits on the line or space of the note it changes. The sharp on the top line changes F.', '샤프나 플랫은 저마다 자기가 바꾸는 음의 줄이나 칸에 있어요. 맨 윗줄의 샤프는 F를 바꿔요.')],
+        [t('every octave', '모든 옥타브'), X('It changes every note of that letter: high or low, in every bar.', '이름이 같은 음을 모두 바꿔요: 높은 음도 낮은 음도, 어느 마디에서나.')],
+      ]}/>
+      <LbPiano steps={[
+        X('Play the notes of the picture, saying the names: A G F♯ G, then F♯ E D. Both Fs are\u00a0F♯.', '이름을 말하며 그림의 음을 쳐요: A G F♯ G, 그다음 F♯ E D. F는 둘 다 F♯예요.'),
+        X('Play every F♯ on the piano, from the lowest to the highest.', '피아노의 F♯를 가장 낮은 것부터 가장 높은 것까지 모두 쳐요.'),
+      ]}/>
+      <LbRemember>{X('A key signature changes every note of its letter, for the whole piece.', '조표는 이름이 같은 음을 곡 끝까지 모두 바꿔요.')}</LbRemember>
+    </LbPage>,
+
+    <LbPage key="3" no={3} chId={ch} kicker={t('Step 2', '2단계')} title={t('G major', 'G장조')}>
+      {live(p3, <>{pairG}<SkgPad page={3}/></>)}
+      <LbDefs items={[
+        [t('G major', 'G장조'), X('Its key signature is one sharp: F♯.', '조표는 샤프 하나, F♯예요.')],
+        [t('on the staff', '오선에서'), X('On the treble staff the sharp sits on the top line; on the bass staff, on the fourth line. Both are F: the F line.', '높은음자리표 오선에서는 맨 윗줄, 낮은음자리표 오선에서는 넷째 줄에 있어요. 둘 다 F 자리, F 줄이에요.')],
+        [t('no sign before F', 'F 앞에 샤프 없음'), X('The scale’s F♯ (chapter ' + ch16 + ') is in the key signature, so no F needs a sharp of its own.', '음계의 F♯(' + ch16 + '챕터)가 조표에 있어서, F마다 따로 샤프를 붙이지 않아요.')],
+      ]}/>
+      <LbPiano steps={[
+        X('Play G major with the right hand from the picture: 1 2 3, thumb under, 1 2 3 4 5. Finger 4 plays F♯.', '그림을 보며 오른손으로 G장조 음계를 쳐요: 1 2 3, 엄지 밑으로 넣기, 1 2 3 4 5. 4번 손가락으로 F♯를 쳐요.'),
+        X('Left hand, an octave lower: 5 4 3 2 1, 3 over, 3 2 1. Finger 2 plays F♯.', '왼손으로 한 옥타브 아래에서 쳐요: 5 4 3 2 1, 3번 넘기기, 3 2 1. 2번 손가락으로 F♯를 쳐요.'),
+      ]}/>
+      <LbRemember>{X('G major’s key signature: one sharp, F♯.', 'G장조의 조표: 샤프 하나, F♯.')}</LbRemember>
+    </LbPage>,
+
+    <LbPage key="4" no={4} chId={ch} kicker={t('Step 3', '3단계')} title={t('F major', 'F장조')}>
+      {live(p4, <>{pairF}<SkgPad page={4}/></>)}
+      <LbDefs items={[
+        [t('F major', 'F장조'), X('Its key signature is one flat: B♭.', '조표는 플랫 하나, B♭이에요.')],
+        [t('on the staff', '오선에서'), X('On the treble staff the flat sits on the middle line; on the bass staff, on the second line. Both are B: the B line.', '높은음자리표 오선에서는 가운데 줄, 낮은음자리표 오선에서는 둘째 줄에 있어요. 둘 다 B 자리, B 줄이에요.')],
+        [t('no sign before B', 'B 앞에 플랫 없음'), X('The scale’s B♭ (chapter ' + ch16 + ') is in the key signature, so no B needs a flat of its own.', '음계의 B♭(' + ch16 + '챕터)이 조표에 있어서, B마다 따로 플랫을 붙이지 않아요.')],
+      ]}/>
+      <LbPiano steps={[
+        X('Play F major with the right hand from the picture: 1 2 3 4, thumb under, 1 2 3 4. Finger 4 plays B♭.', '그림을 보며 오른손으로 F장조 음계를 쳐요: 1 2 3 4, 엄지 밑으로 넣기, 1 2 3 4. 4번 손가락으로 B♭을 쳐요.'),
+        X('Left hand, an octave lower: 5 4 3 2 1, 3 over, 3 2 1. Finger 2 plays B♭.', '왼손으로 한 옥타브 아래에서 쳐요: 5 4 3 2 1, 3번 넘기기, 3 2 1. 2번 손가락으로 B♭을 쳐요.'),
+      ]}/>
+      <LbRemember>{X('F major’s key signature: one flat, B♭.', 'F장조의 조표: 플랫 하나, B♭.')}</LbRemember>
+    </LbPage>,
+
+    <LbPage key="5" no={5} chId={ch} kicker={t('Step 4', '4단계')} title={t('Key signature and accidental', '조표와 임시표')}>
+      {live(p5, <SkgPad page={5}/>)}
+      <LbDefs items={[
+        [t('key signature', '조표'), X('Lasts the whole piece, in every octave.', '곡 끝까지, 모든 옥타브에서 효과가 있어요.')],
+        [t('accidental', '임시표'), X('Lasts until the bar line, on its own line or space (chapter ' + ch17 + ').', '세로줄까지, 같은 줄이나 칸에만 효과가 있어요(' + ch17 + '챕터).')],
+        [sscSx(t('natural ♮', '내추럴 ♮')), X('Cancels the key signature’s sharp or flat on its own line or space, until the bar line. After the bar line, the key signature holds again.', '같은 줄이나 칸에서 조표의 샤프나 플랫을 세로줄까지 없애요. 세로줄 다음에는 다시 조표대로예요.')],
+      ]}/>
+      <LbPiano steps={[
+        X('Play the notes of the picture, saying the names: A F G F, then F♯ E D.', '이름을 말하며 그림의 음을 쳐요: A F G F, 그다음 F♯ E D.'),
+        X('Point to the natural, then to the bar line where it stops. Play it again.', '내추럴을 가리키고, 효과가 끝나는 세로줄을 가리켜요. 다시 쳐요.'),
+      ]}/>
+      <LbRemember>{X('Key signature: the whole piece. Accidental: until the bar line.', '조표는 곡 끝까지, 임시표는 세로줄까지.')}</LbRemember>
+    </LbPage>,
+
+    <LbPage key="6" no={6} chId={ch} kicker={t('Step 5', '5단계')} title={<span>{sscSx(t('D major and B♭ major', 'D장조와 B♭장조'))}</span>}>
+      {live(p6, <><LbPic><SkgFiveTable/></LbPic><SkgFivePad/></>)}
+      <LbDefs items={[
+        [t('D major', 'D장조'), X('Two sharps: F♯ and C♯, F♯ first.', '샤프 둘: F♯와 C♯, F♯가 먼저예요.')],
+        [sscSx(t('B♭ major', 'B♭장조')), X('Two flats: B♭ and E♭, B♭ first.', '플랫 둘: B♭과 E♭, B♭이 먼저예요.')],
+        [t('naming the key', '조 이름'), X('Count the signs. None: C major. One sharp: G. Two sharps: D. One flat: F. Two flats: B♭.', '조표를 세어요. 없으면 C장조, 샤프 하나면 G장조, 둘이면 D장조, 플랫 하나면 F장조, 둘이면 B♭장조.')],
+      ]}/>
+      <LbPiano steps={[
+        X('Play D major with the right hand, with C major’s fingers: 1 2 3, thumb under, 1 2 3 4 5. Finger 3 plays F♯, finger 4 plays C♯.', '오른손으로 D장조 음계를 C장조와 같은 손가락으로 쳐요: 1 2 3, 엄지 밑으로 넣기, 1 2 3 4 5. 3번 손가락으로 F♯, 4번 손가락으로 C♯를 쳐요.'),
+        X('Cover the names in the picture. Point to each key signature, count its signs and say its key.', '그림의 이름을 가려요. 조표를 하나씩 가리키며 개수를 세고 조 이름을 말해요.'),
+      ]}/>
+      <LbRemember>{X('Count the signs: none C; one sharp G, two D; one flat F, two B♭.', '조표를 세어요: 없으면 C, 샤프 하나면 G, 둘이면 D, 플랫 하나면 F, 둘이면 B♭.')}</LbRemember>
+    </LbPage>,
+
+    <LbPage key="7" no={7} chId={ch} kicker={t('Check-up', '점검')} title={t('My five checks', '나의 다섯 가지 확인')}>
+      <LbSay>{t('Show each one at the piano, on its page (2 to 6). The check-up on paper is in the Workbook.', '2~6쪽을 하나씩 펴고 피아노 앞에서 보여 줘요. 종이 점검은 워크북에 있어요.')}</LbSay>
+      <LbLive still={<LbStageRows big rows={checksRows.map(([a, x]) => [<PenArt shapes={ic[a]} vb={[0, 0, 92, 40]} style={{width:80}}/>, sscSx(x)])}/>} live={<FiveChecks376 storeKey="pb_five_skg_v1" rows={checksRows.map(([a, x]) => [{ shapes: ic[a], vb: [0, 0, 92, 40] }, sscSx(x)])}/>}/>
+    </LbPage>,
+  ];
+}
+// page 1's rows described for a screen reader: each row by its own notes (on a phone a row is a bar)
+const skgP1Label = (row, i, scr) => { const nm = skgRead(row, 'G').map(n => sacNameTxt(n).replace('♯', ' sharp')).join(', '), nmk = skgRead(row, 'G').map(sacNameTxt).join(', ');
+  return i === 0 ? t('A tune in G major. ' + (scr ? 'Bar 1' : 'The first line of music') + ': the treble clef, the key signature (one sharp, on the top line), 4/4, then ' + nm + '; every F sharp in coral.', 'G장조 선율. ' + (scr ? '1마디' : '첫째 오선') + ': 높은음자리표, 조표(맨 윗줄의 샤프 하나), 4/4, 그다음 ' + nmk + '; F♯는 모두 산호색.')
+    : t((scr ? 'Bar ' + (i + 1) : 'The next line of music') + ': the treble clef and the sharp on the top line again, then ' + nm + '.', (scr ? (i + 1) + '마디' : '다음 오선') + ': 다시 높은음자리표와 맨 윗줄의 샤프, 그다음 ' + nmk + '.'); };
+// page 5's picture and pad: the natural's bracket, the names, the coral notes
+const SKG_P5O = () => { const T5 = SKG_TUNES[5]; return { signHl: [1], hl: [1, 4], ...skgUnder(T5, 'G', null, [1, 3, 4]), bracket: { from: 1, bar: 0, label: t('F♮ until the bar line', 'F♮: 세로줄까지') } }; };
+// page 6's picture: the five key signatures on both staves, a column a key, its name and count under it (print);
+// on a phone the same in two columns of keys
+function SkgFiveTable() {
+  const scr = lbScreen(), W = scr ? 170 : 136, cell = (k, clef) => <div key={k + clef} style={{maxWidth:W,width:'100%',margin:'0 auto'}}><SkgStaff items={[['sp', 8]]} k={k} clef={clef} width={W} full pad={[22, 16]} o={{ ...SKG_AL, ksCol: PEN_C }}/></div>;
+  const name = (k) => <div key={'n' + k} style={{textAlign:'center',fontSize:scr ? 14 : 16,fontWeight:900,color:BK.ink,lineHeight:1.3}}>{sscSx(skgKeyName(k))}<br/><span style={{fontWeight:700,color:BK.muted,fontSize:scr ? 12.5 : 13}}>{skgCountWords(k)}</span></div>;
+  const label = t('Five key signatures on the treble staff (top row) and the bass staff (second row), a column a key: C major, no sharps or flats; G major, one sharp; D major, two sharps, F sharp then C sharp (the bass staff’s C sharp in the second space); F major, one flat; B flat major, two flats, B flat then E flat (the bass staff’s E flat in the third space).', '조표 다섯, 위는 높은음자리표 오선, 아래는 낮은음자리표 오선, 한 줄에 한 조: C장조, 샤프도 플랫도 없음; G장조, 샤프 하나; D장조, 샤프 둘, F♯ 다음 C♯(낮은음자리표 오선의 C♯는 둘째 칸); F장조, 플랫 하나; B♭장조, 플랫 둘, B♭ 다음 E♭(낮은음자리표 오선의 E♭은 셋째 칸).');
+  if (scr) return <div role="img" aria-label={label} style={{display:'grid',gridTemplateColumns:'1fr 1fr',alignItems:'center',gap:'2px 10px',width:'100%',maxWidth:380,margin:'0 auto'}}>
+    {SKG_FIVE.map(k => <React.Fragment key={k}><div style={{gridColumn:'1 / -1',textAlign:'center',fontSize:14.5,fontWeight:900,color:BK.ink,marginTop:6}}>{sscSx(skgKeyName(k))} <span style={{fontWeight:700,color:BK.muted,fontSize:13}}>· {skgCountWords(k)}</span></div>{cell(k, 'treble')}{cell(k, 'bass')}</React.Fragment>)}</div>;
+  return <div role="img" aria-label={label} style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:'44px 6px',width:'100%',maxWidth:700,margin:'0 auto',alignItems:'start'}}>
+    {SKG_FIVE.map(k => cell(k, 'treble'))}{SKG_FIVE.map(k => cell(k, 'bass'))}{SKG_FIVE.map(name)}</div>;
+}
+function KeySigLessonBook() { return <>{skgLbPages(false)}</>; }
+
+// ─── Phase 474: chapter 19's pads (pages 2 to 6), the screen lesson and the drill ───
+const SKG_BPM = 84;
+const SKG_SCR = 270;   // the staff's reference width on a phone screen (chapter 17's)
+const skgSay = (n) => n.sign === 'n' ? sacNameTxt(n) + t(': the natural, until the bar line', ': 내추럴, 세로줄까지')
+  : n.sign ? sacNameTxt(n) + t(': an accidental, until the bar line', ': 임시표, 세로줄까지')
+  : n.natHeld ? sacNameTxt(n) + t(': the natural still holds', ': 내추럴이 그대로예요')
+  : n.held ? sacNameTxt(n) + t(': the same bar, still ' + sacNameTxt(n), ': 같은 마디라 임시표가 그대로예요')
+  : n.back && n.byKey ? sacNameTxt(n) + t(': a new bar, the key signature again', ': 새 마디라 다시 조표대로예요')
+  : n.byKey ? sacNameTxt(n) + t(': the key signature', ': 조표대로') : sacNameTxt(n);
+const SKG_PAD = { 2: () => t('Every F', '모든 F'), 3: () => t('G major', 'G장조'), 4: () => t('F major', 'F장조'), 5: () => t('Key signature and accidental', '조표와 임시표') };
+const SKG_STOP = { fn: null };   // the pad that is sounding: a new ▶ Listen on another pad stops it
+// one pad: a tune (or a scale) with its key: ▶ Listen (each note lit, with its name), ▶ Tap it (play it in order on the keys);
+// page 2 also plays it ▶ Without the key signature
+function useSkgPlayer(items, key) {
+  const seq = skgRead(items, key);
+  const [mode, setMode] = useState(null);   // null | 'listen' | 'tap'
+  const [lit, setLit] = useState(-1);
+  const [keyLit, setKeyLit] = useState(null);
+  const [miss, setMiss] = useState(null);
+  const [msg, setMsg] = useState('');
+  const timers = useRef([]);
+  const clear = () => { const on = timers.current.length > 0; timers.current.forEach(clearTimeout); timers.current = []; if (on) stopClicks(); };
+  const meRef = useRef(null);
+  meRef.current = () => { clear(); setLit(-1); setKeyLit(null); setMiss(null); setMsg(''); setMode(null); };
+  const me = useRef(() => meRef.current()).current;
+  const release = () => { if (SKG_STOP.fn === me) SKG_STOP.fn = null; };
+  useEffect(() => () => { clear(); release(); }, []);
+  const take = () => { if (SKG_STOP.fn && SKG_STOP.fn !== me) SKG_STOP.fn(); SKG_STOP.fn = me; };
+  function listen(plain) {
+    take(); clear(); setMode('listen'); setMiss(null);
+    const s = plain ? skgRead(items, 'C') : seq;
+    timers.current = playMelody(s.map(x => ({ d: x.d, acc: x.acc, dur: x.dur })), SKG_BPM, (i) => {
+      if (i < 0) { timers.current = []; release(); setLit(-1); setKeyLit(null); setMsg(''); setMode(null); return; }
+      setLit(i); setKeyLit(sacMidi(s[i])); setMsg(plain ? sacNameTxt(s[i]) + (seq[i].byKey ? t(': without the key signature', ': 조표 없이') : '') : skgSay(s[i])); });
+    if (!timers.current.length) { release(); setMode(null); }
+  }
+  function tapMode() { take(); clear(); release(); setMode('tap'); setLit(0); setKeyLit(null); setMiss(null); setMsg(t('Play the notes in order, one key at a time.', '음표를 차례로, 한 건반씩 쳐요.')); }
+  function onTap(m) {
+    sacKey(m);
+    if (mode !== 'tap' || lit < 0) return;
+    const want = sacMidi(seq[lit]);
+    if (m === want) { setMiss(null); setKeyLit(m); setMsg(skgSay(seq[lit]) + (lit === seq.length - 1 ? ' ✓' : '')); setLit(lit + 1 < seq.length ? lit + 1 : -1); if (lit + 1 >= seq.length) setMode(null); }
+    else { setMiss(m); setKeyLit(null); setMsg(t('Not that key. Look at the key signature, and for a sign earlier in the bar.', '그 건반이 아니에요. 조표를 보고, 같은 마디 앞쪽의 임시표도 찾아요.')); }
+  }
+  const stop = () => meRef.current();
+  return { seq, mode, lit, keyLit, miss, msg, listen, tapMode, onTap, stop };
+}
+const skgMsgLine = (msg, miss) => <div style={{textAlign:'center',fontSize:15,fontWeight:900,color:miss ? BK.coral : BK.ink,minHeight:22,margin:'6px 0',textWrap:'balance',wordBreak:'keep-all'}}>{sscSx(msg)}</div>;
+function SkgPad({ page }) {
+  const items = SKG_TUNES[page], key = SKG_TUNE_KEY[page], [d0, n] = SKG_KEYS[page];
+  const P = useSkgPlayer(items, key), rows = page === 5 || page === 2 ? sacBars(items) : [items], scale = page === 3 || page === 4;
+  const o = scale ? { D: 25 } : {};
+  let off = 0;
+  const box = skgSetBox(rows, key, SKG_SCR, (row, r) => ({ ...o, ...(page === 5 ? (r === 0 ? { bracket: {} } : {}) : {}) }));
+  const extra = (row, r, k) => { if (page !== 5) return {}; const c = SKG_P5O(), cnt = skgRead(row, key).length, loc = (js) => js.filter(j => j >= k && j < k + cnt).map(j => j - k);
+    return { under: c.under.slice(k, k + cnt), underCoral: loc(c.underCoral), signHl: loc(c.signHl), ...(r === 0 ? { bracket: c.bracket } : {}) }; };
+  const staffRows = rows.map((row, r) => { const k = off, cnt = skgRead(row, key).length; off += cnt;
+    return sacInSet(box, SKG_SCR, <SkgStaff items={row} k={key} width={box} left o={{ ...o, ...extra(row, r, k), boxS: 24, ksCol: PEN_C, hl: P.lit >= k && P.lit < k + cnt ? [P.lit - k] : [] }}/>, r); });
+  return (
+    <div className="try-box" style={actBox} data-skg={'pad' + page}>
+      <div style={actTitle}>{SKG_PAD[page]()}</div>
+      <div style={actNote}>{page === 2 ? t('▶\u00a0Listen: with the key signature. ▶\u00a0Without\u00a0it: every F plain. ▶\u00a0Tap\u00a0it: play the notes in order on the keys.', '▶\u00a0듣기: 조표대로. ▶\u00a0조표\u00a0없이: F가 모두 그냥\u00a0F. ▶\u00a0쳐\u00a0보기: 건반에서 차례로 쳐요.') : t('▶\u00a0Listen: the notes sound in turn, each lit, with its name. ▶\u00a0Tap\u00a0it: play them in order on the keys.', '▶\u00a0듣기: 음이 차례로 울리고, 음표마다 불이 켜지며 이름이 나와요. ▶\u00a0쳐\u00a0보기: 건반에서 차례로 쳐요.')}</div>
+      <div style={{display:'flex',flexDirection:'column',gap:6}}>{staffRows}</div>
+      <div style={{maxWidth:n * 44,margin:'8px auto 0'}}><SacKeys d0={d0} n={n} o={{ lit: P.keyLit == null ? [] : [P.keyLit], miss: P.miss, H: 120 }} onTap={P.onTap}/></div>
+      {skgMsgLine(P.msg, P.miss)}
+      <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap'}}>
+        <button className="ghost-btn" style={{minHeight:44}} onClick={() => P.listen(false)}>{t('▶ Listen', '▶ 듣기')}</button>
+        {page === 2 && <button className="ghost-btn" style={{minHeight:44}} onClick={() => P.listen(true)}>{t('▶ Without it', '▶ 조표 없이')}</button>}
+        <button className="ghost-btn" style={{minHeight:44}} onClick={P.tapMode}>{t('▶ Tap it', '▶ 쳐 보기')}</button>
+      </div>
+    </div>
+  );
+}
+// page 6: pick a key: its key signature, its scale; ▶ Listen, ▶ Tap it
+function SkgFivePad() {
+  const [key, setKey] = useState('D');
+  return <SkgFivePadKey key={key} k={key} setKey={setKey}/>;
+}
+function SkgFivePadKey({ k, setKey }) {
+  const items = skgScale(k), [d0, n] = skgScaleKeys(k), P = useSkgPlayer(items, k);
+  return (
+    <div className="try-box" style={actBox} data-skg="pad6">
+      <div style={actTitle}>{t('Name the key', '조 이름')}</div>
+      <div style={actNote}>{t('Pick a key: its key signature and its scale. ▶\u00a0Listen, or ▶\u00a0Tap\u00a0it on the keys.', '조를 골라요: 그 조의 조표와 음계. ▶\u00a0듣기, 또는 건반에서 ▶\u00a0쳐\u00a0보기.')}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap',margin:'0 0 8px'}}>{SKG_FIVE.map(x => <button key={x} className={'chip' + (x === k ? ' active' : '')} style={{minHeight:44,minWidth:52,fontSize:16,fontWeight:900}} onClick={() => { P.stop(); setKey(x); }}>{sscSx(prettyNote(x))}</button>)}</div>
+      <div style={{textAlign:'center',fontSize:16,fontWeight:900,color:BK.ink,margin:'0 0 2px'}}>{sscSx(skgKeyName(k))} <span style={{color:BK.muted,fontWeight:800,fontSize:14}}>· {sscSx(skgCountWords(k) + (SKG_KEY[k][1] ? ': ' + skgSignNames(k).join('\u00a0') : ''))}</span></div>
+      <SkgStaff items={items} k={k} width={SKG_SCR} o={{ D: 25, ksCol: PEN_C, hl: P.lit >= 0 ? [P.lit] : [] }}/>
+      <div style={{maxWidth:n * 44,margin:'8px auto 0'}}><SacKeys d0={d0} n={n} o={{ lit: P.keyLit == null ? [] : [P.keyLit], miss: P.miss, H: 120 }} onTap={P.onTap}/></div>
+      {skgMsgLine(P.msg, P.miss)}
+      <div style={{display:'flex',gap:6,justifyContent:'center'}}>
+        <button className="ghost-btn" style={{minHeight:44}} onClick={() => P.listen(false)}>{t('▶ Listen', '▶ 듣기')}</button>
+        <button className="ghost-btn" style={{minHeight:44}} onClick={P.tapMode}>{t('▶ Tap it', '▶ 쳐 보기')}</button>
+      </div>
+    </div>
+  );
+}
+
+// ── the book on screen: the opener is the lesson's head, every other page a step ──
+function SkgLearn({ onStart }) {
+  const pages = skgLbPages(true);
+  const opener = pages[0];
+  return (
+    <Lesson id="key-signatures" title={bkChapterName('key-signatures')} onStart={onStart} noArt
+      head={<LbScreenCtx.Provider value={true}><BkChapterCtx.Provider value="key-signatures"><div className="lb-screen lb-open" style={{display:'flex',flexDirection:'column',gap:12,margin:'0 0 8px'}}>{lbWordsFirst(opener.props.children)}</div></BkChapterCtx.Provider></LbScreenCtx.Provider>}>
+      {pages.slice(1).map((pg, i) => (
+        <Step key={i} title={<span>{pg.props.title}</span>} storeAs={'k' + (i + 1)}>
+          <LbScreenPage page={pg}/>
+        </Step>
+      ))}
+    </Lesson>
+  );
+}
+
+// ── the drill, after page 6, in the book's order: which key (1), what it changes (2), reading in G and F (3), with
+// accidentals (4), all five keys (5), writing it (6), listening (7), the bass staff (8); 9 extra (three sharps or flats) ──
+const SKG_LEVELS = [
+  { n: 1, label: 'Which key: C, G or F?', kind: 'name3', time: 8 },
+  { n: 2, label: 'Which notes change?', kind: 'which', time: 9 },
+  { n: 3, label: 'Name the coral note', kind: 'note', time: 10 },
+  { n: 4, label: 'Key signature and accidental', kind: 'acc', time: 12 },
+  { n: 5, label: 'Which key? All five', kind: 'name5', time: 9 },
+  { n: 6, label: 'Which is written right?', kind: 'write', time: 12 },
+  { n: 7, label: 'Listen: right or wrong?', kind: 'ear', time: 14, noPrint: true },
+  { n: 8, label: 'The bass staff', kind: 'bass', time: 11 },
+  { n: 9, label: 'Extra: three sharps or flats', kind: 'three', time: 10 },
+];
+Object.assign(LEVEL_KO, {
+  'Which key: C, G or F?': '어떤 조? C, G, F', 'Which notes change?': '바뀌는 음', 'Name the coral note': '산호색 음 이름', 'Key signature and accidental': '조표와 임시표',
+  'Which key? All five': '어떤 조? 다섯 가지', 'Which is written right?': '바르게 쓴 조표', 'Listen: right or wrong?': '듣기: 맞았을까?', 'The bass staff': '낮은음자리표 오선',
+  'Extra: three sharps or flats': '더 해 보기: 샤프나 플랫 셋',
+});
+// a key's sign on a letter, as a name; the signs a letter may take here (never E♯, B♯, C♭, F♭)
+const skgNm = (d, acc) => sacNm(d, acc);
+const skgKeySign = (key) => SKG_KEY[key][0];
+// fillers: other letters than the key's changed ones and than x, a step or two from x
+const skgFill = (x, lo, hi, avoid = []) => pick([x - 2, x - 1, x + 1, x + 2, x + 3].filter(v => v >= lo && v <= hi && (v - x) % 7 !== 0 && !avoid.includes(dName(v))));
+// where the key's changed letters sit in a range (every octave)
+const skgDsOf = (key, lo, hi) => { const L = Object.keys(skgMap(key)); const out = []; for (let d = lo; d <= hi; d++) if (L.includes(dName(d))) out.push(d); return out; };
+function genSkgQuestion(lv, prev) {
+  const uid = Math.random(), pk = prev && prev.key;
+  const again = (f, p = 0) => { const pp = /[?&]print=1/.test(location.search) ? 0 : p; for (let g = 0; g < 40; g++) { const q = f(); if (q.key !== pk || Math.random() < pp) return { ...q, uid }; } return { ...f(), uid }; };
+  const nameQ = (kind, pool, clef = 'treble', weight, p = 0) => again(() => {
+    const k = weight && Math.random() < 0.6 ? pick(weight) : pick(pool), others = shuffle(pool.filter(x => x !== k)).slice(0, Math.min(3, pool.length - 1));
+    return { kind, sub: 'name', k, clef, items: SKG_ALONE, key: kind + k + clef, answer: k, choices: shuffle([k, ...others]) }; }, p);
+  // a coral note to name in a bar of four (the key's letter in 6 of 10, both octaves; another letter otherwise)
+  const noteQ = (kind, keys, clef, lo, hi) => again(() => {
+    const k = pick(keys), on = Math.random() < 0.6, Ls = Object.keys(skgMap(k));
+    const x = on ? pick(skgDsOf(k, lo, hi)) : pick(Array.from({ length: hi - lo + 1 }, (_, i) => lo + i).filter(d => !Ls.includes(dName(d)))), at = pick([0, 1, 2, 3]);
+    const notes = [0, 1, 2, 3].map(i => i === at ? ['q', 1, x] : ['q', 1, skgFill(x, lo, hi, Ls)]);
+    const items = [...notes, ['||']], n = skgRead(items, k)[at], ans = sacNameTxt(n), s = skgKeySign(k), sAcc = SAC_ACC[s];
+    const other = on ? skgNm(x, 0) : sacOk(x, s) ? skgNm(x, sAcc) : null, nbs = [x - 1, x + 1].filter(v => !Ls.includes(dName(v))), nb = skgNm(nbs.length ? pick(nbs) : x + 2, 0);
+    const ch = [...new Set([ans, other || skgNm(x, on ? 0 : -sAcc), nb])];
+    return { kind, sub: 'note', k, clef, items, at, key: kind + k + x + at, answer: ans, choices: shuffle(ch) }; });
+  if (lv.kind === 'name3') return nameQ('name3', ['C', 'G', 'F'], 'treble', null, 0.3);
+  if (lv.kind === 'name5') return nameQ('name5', SKG_FIVE);
+  if (lv.kind === 'three') return nameQ('three', ['C', 'G', 'D', 'A', 'F', 'Bb', 'Eb'], Math.random() < 0.3 ? 'bass' : 'treble', ['A', 'Eb']);
+  if (lv.kind === 'which') return again(() => {
+    const k = pick(['G', 'F', 'D', 'Bb']), s = skgKeySign(k), O = SKG_ORDER[s].map(l => l + (s === '#' ? '♯' : '♭'));
+    const ans = skgSignNames(k).join(' '), choices = [O[0], O[1], O[0] + ' ' + O[1], O[2]];
+    return { kind: 'which', k, clef: 'treble', items: SKG_ALONE, key: 'w' + k, answer: ans, choices: shuffle(choices) }; }, 0.25);
+  if (lv.kind === 'note') return noteQ('note', ['G', 'F'], 'treble', 29, 38);
+  if (lv.kind === 'bass') return Math.random() < 0.5 ? nameQ('bass', SKG_FIVE, 'bass') : noteQ('bass', ['G', 'F', 'D', 'Bb'], 'bass', 17, 26);
+  if (lv.kind === 'acc') return again(() => {   // two bars in a key with a natural (or another letter's accidental) in one of them
+    const k = pick(['G', 'F', 'D', 'Bb']), Ls = Object.keys(skgMap(k)), x = pick(skgDsOf(k, 30, 37)), f = () => ['q', 1, skgFill(x, 29, 38, Ls)];
+    const v = pick(['held', 'held', 'self', 'next', 'before', 'acc']), sb = v === 'next' ? 0 : pick([0, 1]);
+    const bars = [[f(), f(), f(), f()], [f(), f(), f(), f()]];
+    let at, y = x, sg = 'n';
+    if (v === 'acc') { const s = skgKeySign(k), L = SKG_ORDER[s][SKG_KEY[k][1]]; y = pick([29, 30, 31, 32, 33, 34, 35, 36, 37, 38].filter(d => dName(d) === L)); sg = s; }
+    if (v === 'held' || v === 'acc') { const ph = pick([1, 2, 3]), ps = Math.floor(Math.random() * ph); bars[sb][ps] = ['q', 1, y, sg]; bars[sb][ph] = ['q', 1, y]; at = sb * 4 + ph;
+      if (v === 'acc' && Math.random() < 0.5) { const po = pick([0, 1, 2, 3]); bars[1 - sb][po] = ['q', 1, y]; at = (1 - sb) * 4 + po; } }
+    else if (v === 'self') { const ps = pick([0, 1, 2, 3]); bars[sb][ps] = ['q', 1, x, 'n']; at = sb * 4 + ps; }
+    else if (v === 'before') { const pb = pick([0, 1, 2]), ps = pb + 1 + Math.floor(Math.random() * (3 - pb)); bars[sb][ps] = ['q', 1, x, 'n']; bars[sb][pb] = ['q', 1, x]; at = sb * 4 + pb; }
+    else { const ps = pick([0, 1, 2, 3]), po = pick([0, 1, 2, 3]); bars[0][ps] = ['q', 1, x, 'n']; bars[1][po] = ['q', 1, x]; at = 4 + po; }
+    const items = [['ts', 4], ...bars[0], ['|'], ...bars[1], ['||']], n = skgRead(items, k)[at], ans = sacNameTxt(n), s = skgKeySign(k);
+    const nbs = [n.d - 1, n.d + 1].filter(v2 => !Ls.includes(dName(v2))), nb = skgNm(nbs.length ? pick(nbs) : n.d + 2, 0), alt = sacOk(n.d, s) ? skgNm(n.d, n.acc ? 0 : SAC_ACC[s]) : skgNm(n.d, n.acc ? 0 : -SAC_ACC[s]);
+    return { kind: 'acc', k, clef: 'treble', items, at, key: 'a' + k + x + v + at, answer: ans, choices: shuffle([...new Set([ans, alt, nb])]) }; });
+  if (lv.kind === 'write') return again(() => {   // three key signatures: one right, two not (a sign on a wrong line or space, the wrong order, a sign missing, the other kind)
+    const k = pick(['G', 'F', 'D', 'Bb']), clef = 'treble', right = skgKs(k, clef), s = skgKeySign(k);
+    const shift = (list, i) => list.map(([g, d], j) => j === i ? [g, d + (d >= 37 ? -2 : d <= 31 ? 2 : pick([-2, 2]))] : [g, d]);
+    const wrongs = right.length === 1 ? [shift(right, 0), [[s === '#' ? 'b' : '#', right[0][1]]], skgKs(s === '#' ? 'F' : 'G', clef)]
+      : [[right[1], right[0]], shift(right, 1), [right[0]], shift(right, 0)];
+    const opts = shuffle([right, ...shuffle(wrongs).slice(0, 2)]), L = ['1', '2', '3'], ans = L[opts.indexOf(right)];
+    return { kind: 'write', k, clef, opts, key: 'r' + k + ans, answer: ans, choices: L }; });
+  if (lv.kind === 'ear') return again(() => {   // a tune in a key, played right or with one of its changed notes plain
+    const k = pick(['G', 'F', 'D', 'Bb']), Ls = Object.keys(skgMap(k)), x = pick(skgDsOf(k, 30, 37)), f = () => ['q', 1, skgFill(x, 29, 37, Ls)], X = ['q', 1, x];
+    const tonic = SKG_SCALE_D[k] < 31 ? SKG_SCALE_D[k] + 7 : SKG_SCALE_D[k];
+    const b0 = pick([[f(), X, f(), f()], [X, f(), f(), X], [f(), f(), X, f()]]), b1 = pick([[X, f()], [f(), X]]);
+    const items = [['ts', 4], ...b0, ['|'], ...b1, ['h', 2, tonic], ['||']];
+    const changed = skgOf(items, k, n => n.byKey), which = Math.random() < 0.5 ? 'right' : 'wrong', bad = which === 'wrong' ? pick(changed) : -1;
+    return { kind: 'ear', k, clef: 'treble', items, bad, key: 'e' + k + which + Math.random(), answer: which, choices: ['right', 'wrong'] }; });
+  return genSkgQuestion(SKG_LEVELS[0], prev);
+}
+function skgPlay(q) { stopClicks(); const r = skgRead(q.items, q.k), d0 = SKG_SCALE_D[q.k], ks = skgMap(q.k), key = [0, 2, 4, 7, 0].map((i, j) => ({ d: d0 + i, acc: ks[dName(d0 + i)] || 0, dur: j < 4 ? 0.5 : 2 }));
+  return playMelody(key.concat(r.map((n, j) => ({ d: n.d, acc: j === q.bad ? 0 : n.acc, dur: n.dur }))), 96); }
+const SKG_EAR_W = { right: () => t('All right', '모두 맞아요'), wrong: () => t('A wrong note', '틀린 음이 있어요') };
+function SkgQuestion({ q, given, locked, onAnswer, pixel }) {
+  const board = useBoard(q, given);
+  const answered = useRef(false); answered.current = !!given;
+  useEffect(() => { if (q.kind !== 'ear') return undefined; const tm = setTimeout(() => { if (!answered.current) skgPlay(q); }, 300); return () => { clearTimeout(tm); stopClicks(); }; }, [q.uid]);
+  const isDone = !!given, btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const prompt = (txt) => <p style={pixel ? {fontSize:11.5,textAlign:'center',margin:'0 0 10px',lineHeight:1.7} : {fontSize:17,fontWeight:900,textAlign:'center',margin:'0 0 10px',color:'var(--text)',textWrap:'balance',wordBreak:'keep-all'}}>{txt}</p>;
+  const st = (c) => !isDone ? '' : (String(c) === String(q.answer) ? ' good' : (String(given.ans) === String(c) ? ' bad' : ''));
+  const grid = (min, render, pad = '12px 4px') => <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(' + min + 'px,1fr))',gap:8}}>{q.choices.map(c => <button key={c} disabled={locked} onClick={() => { stopClicks(); onAnswer(c); }} className={btnCls + st(c)} style={{padding:pad,minHeight:44,wordBreak:'keep-all'}}>{render(c)}</button>)}</div>;
+  const word = (s, sz = 18) => <span style={{fontSize:pixel ? 11 : sz,fontWeight:900}}>{sscSx(s)}</span>;
+  const paper = (node, mw = 400) => <div style={{background:'#fff',borderRadius:pixel ? 0 : 8,padding:pixel ? 4 : '4px 0',margin:'0 auto 10px',maxWidth:mw}}>{node}</div>;
+  const alone = (mw = 190) => paper(<SkgStaff items={SKG_ALONE} k={q.k} clef={q.clef} width={mw} full pad={SKG_AL_PAD} o={{ base: 54, ksRoom: q.kind === 'three' ? 3 : 2 }}/>, mw);
+  const bars = (items) => { const rows = sacBars(items), box = Math.max(...rows.map(r => skgVbw(r, q.k, { D: 26 }, q.clef))); let off = 0;
+    return paper(<div style={{display:'flex',flexDirection:'column',gap:2}}>{rows.map((r, i) => { const k = off, cnt = skgRead(r, q.k).length; off += cnt;
+      return <SkgStaff key={i} items={r} k={q.k} clef={q.clef} width={box} left o={{ D: 26, hl: [q.at].filter(j => j != null && j >= k && j < k + cnt).map(j => j - k) }}/>; })}</div>, 300); };
+  let body;
+  if (q.sub === 'name') body = <>{prompt(t('Which major key has this key signature?', '이 조표는 어떤 장조일까요?'))}{alone()}{grid(120, c => word(skgKeyName(c), 18))}</>;
+  else if (q.kind === 'which') body = <>{prompt(t('Which notes does this key signature change?', '이 조표가 바꾸는 음은?'))}{alone()}{grid(120, c => word(c, 20))}</>;
+  else if (q.sub === 'note') body = <>{prompt(t('What is the coral note?', '산호색 음의 이름은?'))}{paper(<SkgStaff items={q.items} k={q.k} clef={q.clef} width={300} full o={{ D: 26, hl: [q.at] }}/>, 300)}{grid(90, c => word(c, 20))}</>;
+  else if (q.kind === 'acc') body = <>{prompt(t('What is the coral note?', '산호색 음의 이름은?'))}{bars(q.items)}{grid(90, c => word(c, 20))}</>;
+  else if (q.kind === 'write') body = <>{prompt(sscSx(t('Which is ' + skgKeyName(q.k) + '’s key signature, written right?', skgKeyName(q.k) + '의 조표를 바르게 쓴 것은?')))}
+    <div style={{display:'grid',gridTemplateColumns:'1fr',gap:8}}>{q.choices.map((c, i) => <button key={c} disabled={locked} onClick={() => onAnswer(c)} className={btnCls + st(c)} style={{padding:'4px 8px',minHeight:44,display:'grid',gridTemplateColumns:'28px 1fr',alignItems:'center',gap:6}}>
+      <div style={{fontWeight:900,fontSize:pixel ? 10 : 18}}>{c}</div><div style={{background:'#fff',borderRadius:6,maxWidth:220,width:'100%',margin:'0 auto'}}><SkgStaff items={SKG_ALONE} k="C" clef={q.clef} width={150} full pad={[22, 16]} o={{ ks: q.opts[i], base: 54, ksRoom: 2 }}/></div></button>)}</div></>;
+  else body = <>{prompt(t('Listen: first the key, then the tune. Was every note right?', '들어 봐요: 먼저 조, 그다음 선율. 모든 음을 바르게 쳤을까요?'))}{bars(q.items)}
+    <div style={{textAlign:'center',margin:'0 0 10px'}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => skgPlay(q)} style={pixel ? {fontSize:9} : {fontSize:15,padding:'8px 16px',minHeight:44}}>{t('▶ Hear it again', '▶ 다시 듣기')}</button></div>
+    {grid(130, c => word(SKG_EAR_W[c](), 18))}</>;
+  return <div><BoardTrack b={board} pixel={pixel}/>{body}</div>;
+}
+function skgCheck(q, ans) { return ans != null && String(ans) === String(q.answer); }
+function skgAnswerLabel(q) {
+  if (q.sub === 'name') return skgKeyName(q.k) + ' (' + skgCountWords(q.k) + (SKG_KEY[q.k][1] ? ': ' + skgSignNames(q.k).join('\u00a0') : '') + ')';
+  if (q.kind === 'which') { const L = skgSigns(q.k).map(([, l]) => l); return q.answer + t(' (every ' + L.join(' and every ') + ')', ' (모든 ' + L.join('와 모든 ') + ')'); }
+  if (q.kind === 'write') { const right = q.opts[q.choices.indexOf(q.answer)]; return q.answer + ': ' + right.map(([s, d]) => { const nm = dName(d) + (s === '#' ? '♯' : '♭'); return t(nm + ' on ' + skgWhere(d, q.clef), skgKo(skgWhere(d, q.clef) + '의 ' + nm)); }).join(t(', then ', ', 그다음 ')); }
+  if (q.kind === 'ear') { if (q.answer === 'right') return t('every note right', '모든 음이 맞아요'); const n = skgRead(q.items, q.k)[q.bad], no = q.bad + 1;
+    return t('a wrong note (note ' + no + ': ' + dName(n.d) + ' without its ' + (n.acc > 0 ? 'sharp' : 'flat') + ')', '틀린 음이 있어요 (' + no + '번째 음: ' + dName(n.d) + '를 ' + (n.acc > 0 ? '샤프' : '플랫') + ' 없이 쳤어요)'); }
+  const n = skgRead(q.items, q.k)[q.at];
+  return q.answer + (n.sign === 'n' ? t(' (the natural)', ' (내추럴)') : n.sign ? t(' (the accidental)', ' (임시표)') : n.natHeld ? t(' (the natural still holds)', ' (내추럴이 그대로예요)')
+    : n.held ? t(' (the same bar: the accidental holds)', ' (같은 마디라 임시표가 그대로예요)') : n.back && n.byKey ? t(' (a new bar: the key signature again)', ' (새 마디라 다시 조표대로예요)')
+    : n.byKey ? t(' (the key signature)', ' (조표)') : n.back ? t(' (a new bar: the accidental is over)', ' (새 마디라 임시표가 끝났어요)') : t(' (not in the key signature)', ' (조표에 없는 음)'));
+}
+Object.assign(KEYSIG_DRILL, { levels: SKG_LEVELS, generate: genSkgQuestion, check: skgCheck, answerLabel: skgAnswerLabel, Question: SkgQuestion, Learn: SkgLearn });
+
+// ─── Phase 474: chapter 19's Workbook (pages 2 to 6 face Lesson Book pages 2 to 6: the key signature; G major; F major;
+// key signature and accidental; D major and B♭ major; page 7 the check-up on paper) and its Teacher copy. English, like every
+// Workbook. Every task set (rule 3) and done alone (rule 4); no tune copied from the facing book page; nothing on a page
+// gives away another task on it; the check-up repeats no practice item; answers vary (rule 7).
+const skgQ = (spec) => spec.map(x => x === '|' ? ['|'] : x === '||' ? ['||'] : typeof x === 'number' ? ['q', 1, x] : x.length === 2 && typeof x[1] === 'string' ? ['q', 1, x[0], x[1]] : x);
+const skgT = (spec, top = 4) => [['ts', top], ...skgQ(spec)];
+// a staff to write on, one size for a set (chapter 17's sacPaper, with a key)
+const skgPaper = (items, k, o = {}, ref = 460, box, clef = 'treble') => <div style={{width:'100%'}}>{box ? sacInSet(box, ref, <SkgStaff items={items} k={k} clef={clef} width={box} left o={{ boxS: 28, ...o }}/>) : <SkgStaff items={items} k={k} clef={clef} width={ref} o={{ boxS: 28, ...o }}/>}</div>;
+const skgChanged = (items, k) => skgOf(items, k, n => n.byKey);
+const skgTicks = (ws) => <div style={{display:'flex',justifyContent:'center',gap:30,flexWrap:'wrap',fontSize:15,fontWeight:800,color:BK.ink}}>{ws.map(w => sprTickW(w))}</div>;
+// a key signature to draw on (room for two signs, none drawn), or the done one in coral: one size everywhere (about
+// 5 mm between the lines), both clefs from one origin with one pad
+const SKG_DRAW = [['sp', 34]];
+const skgDrawCell = (k, clef, ex, pd = '8px 8px 4px') => <div style={{padding:pd}}><div style={{maxWidth:skgAloneW(SKG_DRAW),width:'100%',margin:'0 auto'}}><SkgStaff items={SKG_DRAW} k={k} clef={clef} width={200} full pad={[26, 20]} o={ex ? { ...SKG_AL, ksCol: PEN_C } : { ...SKG_AL, ks: [] }}/></div></div>;
+// a key signature to read (to name it, or to write its signs): one size for both clefs
+const skgReadKs = (k, clef, w = 140) => <div style={{maxWidth:w,width:'100%',margin:'0 auto'}}><SkgStaff items={SKG_ALONE} k={k} clef={clef} width={w} full pad={[30, 20]} o={{ ...SKG_AL }}/></div>;
+// a note's key on a keyboard (C to B) with the key signature before it (one size for both clefs)
+const skgKeyCell = (d, k, clef, ex) => { const items = [['w', 4, d], ['sp', 8]], n = skgRead(items, k)[0], m = sacMidi(n), pc = (((m - 60) % 12) + 12) % 12, vb = skgVbw(items, k, { base: 54 }, clef);
+  return <div style={{display:'grid',gridTemplateColumns:'205px 240px',justifyContent:'center',alignItems:'center',gap:40,padding:'6px 10px 2px'}}><div style={{width:'100%'}}><SkgStaff items={items} k={k} clef={clef} width={vb} full pad={[22, 16]} o={{ D: 16, base: 54 }}/></div>
+    <TnPKeys start="C" whites={7} w={30} h={84} slots wslots dots={ex ? [TN_KEY[pc]] : []}/></div>; };
+
+const SKG_WB = {
+  circ2: [['G', skgT([32, 31, 33, 34, '|', 38, 37, ['h', 2, 36], '||'])],          // G F♯ A B | F♯ E D: 2, 5 (done)
+          ['G', skgT([34, 38, 36, 31, '|', 33, 38, ['h', 2, 39], '||'])]],         // B F♯ D F♯ | A F♯ G: 2, 4, 6
+  names2: [['G', skgT([31, 33, 38, 36, '|', 37, 31, ['h', 2, 32], '||'])],         // F♯ A F♯ D | E F♯ G
+           ['G', skgT([35, 38, 33, 31, '|', 32, 38, ['h', 2, 36], '||'])]],        // C F♯ A F♯ | G F♯ D
+  play2: skgT([36, 38, 37, 38, '|', 36, 31, ['h', 2, 32], '||']),                   // G major: D F♯ E F♯ | D F♯ G
+  draw3: [['treble', true], ['bass'], ['bass'], ['treble']],
+  bass3: skgT([22, 24, 23, 21, '|', 20, 17, ['h', 2, 18], '||']),                   // on the bass staff: D F♯ E C | B F♯ G
+  play3: skgT([32, 34, 36, 34, '|', 33, 31, ['h', 2, 32], '||']),                   // G B D B | A F♯ G
+  draw4: [['treble', true], ['bass']],
+  keys4: [[34, 'treble'], [20, 'bass'], [33, 'treble']],                            // B♭ (done), B♭, A
+  play4: skgT([31, 33, 35, 34, '|', 33, 32, ['h', 2, 31], '||']),                   // F A C B♭ | A G F
+  name5: [['G', skgQ([[31, 'n'], 32, 31, '||']), 2],                                // F (the natural holds: done)
+          ['F', skgQ([[34, 'n'], 33, '|', 34, '||']), 2],                           // B♭ (a new bar)
+          ['G', skgQ([38, 36, [38, 'n'], '||']), 0],                                // F♯ (before the natural)
+          ['F', skgQ([32, [34, 'n'], 34, '||']), 2]],                               // B (the natural holds)
+  names5: [['F', skgT([[34, 'n'], 35, 34, 33, '|', 34, 32, ['h', 2, 31], '||'])],  // B C B A | B♭ G F
+           ['G', skgT([36, [38, 'n'], 37, 38, '|', 37, 38, ['h', 2, 39], '||'])]], // D F E F | E F♯ G
+  play5: skgT([32, 33, [31, 'n'], 31, '|', 31, 33, ['h', 2, 32], '||']),            // G A F F | F♯ A G
+  name6: [['D', 'treble'], ['Bb', 'bass'], ['G', 'treble'], ['F', 'bass'], ['C', 'treble'], ['D', 'bass']],   // the first done
+  draw6: [['D', 'treble'], ['Bb', 'bass']],
+  play6: [29, 30, 31, 32, 33, 34, 35, 36].map(d => ['q', 1, d]).concat([['||']]),   // D major
+};
+const SKG_WORDS = ['C', 'G', 'D', 'F', 'B♭'];
+// the five key names to circle (chapter 13's row, the signs in the music font)
+const skgCircle = (on, gx) => <div style={{display:'flex',justifyContent:'center',flexWrap:'wrap',gap:'4px ' + gx + 'px',fontSize:13,fontWeight:800,color:BK.ink,marginTop:'auto',paddingTop:4}}>{SKG_WORDS.map(w => <span key={w} style={{border:'1.5px solid ' + (on === w ? BK.coral : 'transparent'),borderRadius:14,padding:'0 7px',color:on === w ? BK.coral : BK.ink,whiteSpace:'nowrap'}}>{sscSx(w)}</span>)}</div>;
+// the Teacher copy's answers (tcAns, with each number kept with its answer)
+const skgTcAns = (label, list, n0 = 1) => <div style={{fontSize:12,color:BK.ink,lineHeight:1.65,marginBottom:2}}><b style={{color:BK.muted,fontSize:10.5,letterSpacing:'0.06em'}}>{label}</b>{'  '}{list.map((a, i) => <React.Fragment key={i}><span style={{marginRight:10,whiteSpace:String(a).length > 14 ? 'normal' : 'nowrap'}}>{n0 != null && <span style={{color:BK.muted}}>{i + n0}.</span>}{'\u00a0'}<b style={{color:BK.green}}>{a}</b></span>{' '}</React.Fragment>)}</div>;
+const SKG_CHK = {
+  name: [['G', 'bass'], ['F', 'treble'], ['Bb', 'treble']],
+  which: [['D', 'bass'], ['F', 'bass']],
+  note: [['F', skgQ([33, 34, 32, '||']), 1], ['F', skgQ([32, 31, 30, '||']), 1],                                                   // B♭, F
+         ['D', skgQ([[35, 'n'], 36, 35, '||']), 2], ['Bb', skgQ([37, [37, 'n'], '|', 36, 37, '||']), 3]],                               // C, E♭
+  draw: [['Bb', 'treble'], ['D', 'bass']],
+};
+
+function SkgWorkbook({ startNo = 1 }) {
+  const W = SKG_WB, pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + 1 + pages.length} chId="key-signatures">{content}</WbPage>);
+  const rows = (list, oOf, n0, ref = 460) => { const box = Math.min(ref, Math.max(...list.map(([k, it], i) => skgVbw(it, k, oOf(it, i, k))))); return <div style={{display:'grid',gap:8}}>{list.map(([k, it], i) => sskRowN(n0 + i, skgPaper(it, k, oOf(it, i, k), ref, box)))}</div>; };
+  const playRow = (n, items, k, ticks, ref = 520, o = {}) => sskRowN(n, <div style={{display:'flex',flexDirection:'column',gap:6,width:'100%'}}>{skgPaper(items, k, o, ref)}{skgTicks(ticks)}</div>);
+  const draws = (list, k, n0) => <BkGrid cols={2} gap="6px 14px">{list.map(([clef, ex], i) => <ExCell key={i} n={n0 + i} ex={!!ex}>{skgDrawCell(k, clef, ex)}</ExCell>)}</BkGrid>;
+  const names = (it, i, k) => ({ under: skgRead(it, k).map(() => null) });
+
+  // 2 (faces "The key signature")
+  P(<>
+    <WbTop step={1}/>
+    <Part kind="together" title="Circle the changed notes" how="Circle every note the key signature changes. The first line is done.">
+      {rows(W.circ2, (it, i, k) => ({ ring: i === 0 ? skgChanged(it, k) : [] }), 1)}
+    </Part>
+    <Part kind="home" title="Write the names" how="Write each note’s name in its box: its letter, and ♯ when the key signature changes it.">
+      {rows(W.names2, names, 3)}
+    </Part>
+    <Part kind="play" title="Play it" how="Play this with the right hand, saying the names. Tick each time.">
+      {playRow(5, W.play2, 'G', ['saying the names', 'just playing'], 470)}
+    </Part>
+    <Faces/>
+  </>);
+
+  // 3 (faces "G major")
+  P(<>
+    <WbTop step={2}/>
+    <Part kind="together" title="Draw the key signature" how="Draw G major’s sharp after each clef, on the F line. The first one is done.">
+      {draws(W.draw3, 'G', 1)}
+    </Part>
+    <Part kind="home" title="On the bass staff" how="Write each note’s name in its box.">
+      {sskRowN(5, skgPaper(W.bass3, 'G', { D: 33, boxS: 26, under: skgRead(W.bass3, 'G').map(() => null) }, 400, null, 'bass'))}
+    </Part>
+    <Part kind="play" title="Play it" how="Play this with the right hand, saying the names. Tick each time.">
+      {playRow(6, W.play3, 'G', ['saying the names', 'just playing'], 470)}
+    </Part>
+    <Faces/>
+  </>);
+
+  // 4 (faces "F major")
+  P(<>
+    <WbTop step={3}/>
+    <Part kind="together" title="Draw the key signature" how="Draw F major’s flat after each clef, on the B line. The first one is done.">
+      {draws(W.draw4, 'F', 1)}
+    </Part>
+    <Part kind="home" title="Find the key" how="Put a dot on the key of each note in F major. The first one is done.">
+      <BkGrid cols={1} gap="4px">{W.keys4.map(([d, clef], i) => <ExCell key={i} n={i + 3} ex={i === 0}>{skgKeyCell(d, 'F', clef, i === 0)}</ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Play it" how="Play this with the right hand, saying the names. Tick each time.">
+      {playRow(6, W.play4, 'F', ['saying the names', 'just playing'], 470)}
+    </Part>
+    <Faces/>
+  </>);
+
+  // 5 (faces "Key signature and accidental")
+  const box5 = Math.max(...W.name5.map(([k, it]) => skgVbw(it, k)));
+  P(<>
+    <WbTop step={4}/>
+    <Part kind="together" title="Name the coral note" how="Write the name of the coral note in its box. The first one is done.">
+      <BkGrid cols={2} gap="8px 14px">{W.name5.map(([k, items, at], i) => <ExCell key={i} n={i + 1} ex={i === 0}>{sdyCol(skgPaper(items, k, { hl: [at], boxS: 37, under: skgRead(items, k).map((n, j) => j === at ? (i === 0 ? sacNameTxt(n) : null) : undefined), underCoral: i === 0 ? [at] : [], underBoxed: true }, 300, box5), '4px 6px 2px')}</ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Write the names" how="Write each note’s name in its box.">
+      {rows(W.names5, (it, i, k) => ({ D: 38, boxS: 31, ...names(it, i, k) }), 5, 560)}
+    </Part>
+    <Part kind="play" title="Play it" how="Play this, saying the names. Tick each time.">
+      {playRow(7, W.play5, 'G', ['saying the names', 'just playing'], 470)}
+    </Part>
+    <Faces/>
+  </>);
+
+  // 6 (faces "D major and B♭ major")
+  P(<>
+    <WbTop step={5}/>
+    <Part kind="together" title="Name the key" how="Circle the major key of each key signature. The first one is done.">
+      <BkGrid cols={3} gap="8px 10px">{W.name6.map(([k, clef], i) => <ExCell key={i} n={i + 1} ex={i === 0}>{sdyCol(<>{skgReadKs(k, clef, 165)}{skgCircle(i === 0 ? prettyNote(k) : null, 9)}</>, '10px 4px 8px')}</ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Draw the key signature" how="Draw each key signature after the clef: its signs in order, each on its line or space.">
+      <BkGrid cols={2} gap="8px 14px">{W.draw6.map(([k, clef], i) => <BkCell key={i} n={i + 7}><div style={{textAlign:'center',fontSize:14,fontWeight:900,color:BK.ink,marginTop:8}}>{sscSx(prettyNote(k) + ' major')}</div>{skgDrawCell(k, clef, false, '2px 8px 6px')}</BkCell>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Play D major" how="Right hand, with C major’s fingers. Tick each time.">
+      {playRow(9, W.play6, 'D', ['up', 'down', 'up and down twice'], 470, { D: 30 })}
+    </Part>
+    <Faces/>
+  </>);
+
+  // 7. the check-up on paper
+  P(<SkgPaperCheck/>);
+  return <>{pages}</>;
+}
+const skgChkNo = () => { const C = SKG_CHK, nB = C.name.length + 1, nC = nB + C.which.length, nD = nC + C.note.length; return { nB, nC, nD }; };
+function SkgPaperCheck() {
+  const C = SKG_CHK, { nB, nC, nD } = skgChkNo();
+  // a set at one size (box: the widest of the set), the coral note's box about 10 mm
+  const coral = (items, k, at, ref, box, boxS) => skgPaper(items, k, { hl: [at], under: skgRead(items, k).map((_, j) => j === at ? null : undefined), boxS }, ref, box);
+  const boxC = Math.max(...C.note.map(([k, it]) => skgVbw(it, k)));
+  return <div className="lb-paper" style={{display:'flex',flexDirection:'column',gap:4,flex:'1 0 auto'}}>
+    <LbPaperHead/>
+    {bkSec('A', 'Circle the major key of each key signature.')}
+    <BkGrid cols={3} gap="6px 8px">{C.name.map(([k, clef], i) => <BkCell key={i} n={i + 1}>{sdyCol(<>{skgReadKs(k, clef, 165)}{skgCircle(null, 8)}</>, '6px 2px 4px')}</BkCell>)}</BkGrid>
+    {bkSec('B', 'Write the sharps or flats of each key signature, in order.')}
+    <BkGrid cols={2} gap="6px 10px">{C.which.map(([k, clef], i) => <BkCell key={i} n={nB + i}><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',alignItems:'center',gap:10,padding:'4px 10px 2px'}}>{skgReadKs(k, clef, 150)}<div style={{display:'flex',gap:8,justifyContent:'center'}}>{[0, 1].map(j => <span key={j}>{bkBox(46, 38)}</span>)}</div></div></BkCell>)}</BkGrid>
+    {bkSec('C', 'Write the name of the coral note.')}
+    <BkGrid cols={2} gap="6px 10px">{C.note.map(([k, items, at], i) => <BkCell key={i} n={nC + i}><div style={{padding:'4px 6px 2px'}}>{coral(items, k, at, Math.round(boxC * 1.05), boxC, 34)}</div></BkCell>)}</BkGrid>
+    {bkSec('D', 'Draw each key signature after the clef, its signs in order.')}
+    <BkGrid cols={2} gap="6px 10px">{C.draw.map(([k, clef], i) => <BkCell key={i} n={nD + i}><div style={{textAlign:'center',fontSize:13,fontWeight:900,color:BK.ink,marginTop:6}}>{sscSx(prettyNote(k) + ' major')}</div>{skgDrawCell(k, clef, false, '0 8px 4px')}</BkCell>)}</BkGrid>
+  </div>;
+}
+
+function SkgTeacher() {
+  const W = SKG_WB, C = SKG_CHK, pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={pages.length + 1} chId="key-signatures" teacher>{content}</WbPage>);
+  const nb = (x) => String(x).replace(/ /g, ' ');   // an answer never breaks inside
+  const names = (items, k) => { const r = skgNames(items, k), bars = []; let n = 0; items.forEach(it => { if (it[0] === '|' || it[0] === '||') bars.push(n); else if (sacIsNote(it)) n++; });
+    return r.map((x, j) => x + (bars.includes(j + 1) && j + 1 < r.length ? ' |' : '')).join(' '); };
+  const changed = (items, k) => { const r = skgRead(items, k); return skgChanged(items, k).map(j => 'note ' + (j + 1) + ' (' + sacNameTxt(r[j]) + ')').join(', '); };
+  const where = (d, clef) => skgWhere(d, clef, true);
+  const sig = (k, clef) => skgKs(k, clef).map(([s, d]) => nb(dName(d) + (s === '#' ? '♯' : '♭') + ' on ' + where(d, clef))).join(nb(', then '));
+  const marks = { A: C.name.length, B: C.which.length, C: C.note.length, D: C.draw.length };
+  const total = Object.values(marks).reduce((a, b) => a + b, 0), N = skgChkNo();
+  P(<>
+    <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('key-signatures')}</div>
+    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 8px',lineHeight:1.5}}>{sscSx('Key signatures (chapter ' + bkChapterNo('scales') + ': the major scale, G major’s F♯ and F major’s B♭; chapter ' + bkChapterNo('accidentals') + ': accidentals last until the bar line). AMEB Music Craft: Preliminary, C, G and F major (treble staff only); Grade 1 adds D and B♭ major, the bass staff and the natural. ABRSM Theory: Grade 1, C, G, D and F major; Grade 2 adds B♭, A and E♭ major. A key signature lasts to the end of the piece (a key change comes later). Not here: minor keys and the relative minor, all seven sharps and flats, the circle of fifths (all in the toolbox); A and E♭ major are drill level 9 (extra).')}</div>
+    <div style={{border:'0.8px solid ' + BK.hair,padding:'6px 12px',margin:'0 0 8px',fontSize:12.5,color:BK.ink,lineHeight:1.5}}><b style={{color:BK.coral}}>Where the signs sit.</b> {sscSx(['treble', 'bass'].map(clef => (clef === 'treble' ? 'Treble staff: ' : 'Bass staff: ') + [['#', 'F'], ['#', 'C'], ['b', 'B'], ['b', 'E']].map(([g, l]) => l + (g === '#' ? '♯ ' : '♭ ') + where(skgSignD(g, l, clef), clef).replace(/^the /, '')).join('; ') + '.').join(' '))}</div>
+    <TcBlock page={2} title="The key signature" answers={<>{sscLesson('The child points to the key signature on each line of a piece, names the line or space of each sign, and says which letter it changes.')}{skgTcAns('TRY IT', W.circ2.map(([k, it], i) => changed(it, k) + (i === 0 ? ' (done)' : '')))}{skgTcAns('YOUR TURN', W.names2.map(([k, it]) => names(it, k)), 3)}{skgTcAns('PLAY', [names(W.play2, 'G')], 5)}</>}
+      watch="Only the F on the top line made sharp; the F in the bottom space forgotten. A sharp read as belonging to the first note after it. The key signature mistaken for a time signature."
+      say="“Every F, every octave, the whole piece.”"/>
+    <TcBlock page={3} title="G major" answers={<>{sscLesson('Play G major with and without F♯; the child says which one is G major.')}{skgTcAns('TRY IT', W.draw3.map(([clef], i) => nb('F♯ on ' + where(skgSignD('#', 'F', clef), clef)) + (i === 0 ? ' (done)' : '')))}{skgTcAns('YOUR TURN', [names(W.bass3, 'G')], 5)}{skgTcAns('PLAY', [names(W.play3, 'G')], 6)}</>}
+      watch="The sharp drawn on the bottom space of the treble staff (also F, but not where a key signature puts it) or on the fifth line of the bass staff. On the bass staff, the notes read as if treble; the low F in the space under the staff left plain."
+      say="“G major: one sharp, F♯, on the F line.”"/>
+    <TcBlock page={4} title="F major" answers={<>{sscLesson('The child points to the flat after each clef and names its line: the middle line (treble), the second line (bass).')}{skgTcAns('TRY IT', W.draw4.map(([clef], i) => nb('B♭ on ' + where(skgSignD('b', 'B', clef), clef)) + (i === 0 ? ' (done)' : '')))}{skgTcAns('YOUR TURN', W.keys4.map(([d, clef], i) => sacNameTxt(skgRead([['w', 4, d]], 'F')[0]) + (i === 0 ? ' (done)' : '')), 3)}{skgTcAns('PLAY', [names(W.play4, 'F')], 6)}</>}
+      watch="The flat drawn in the third space (C). On the bass staff, B played without its flat. A♯ named for B♭: in F major it is always B♭."
+      say="“F major: one flat, B♭, on the B line.”"/>
+  </>);
+  P(<>
+    <div style={{fontSize:12.5,color:BK.ink,margin:'0 0 10px',lineHeight:1.55,border:'0.8px solid ' + BK.hair,padding:'7px 12px'}}><b style={{color:BK.coral}}>Lesson time: the key-signature hunt.</b> {sscSx('Open a piece the child is learning in C, G, F, D or B♭ major. They find the key signature at the start of every line, name the key, play its scale, then point to every note the key signature changes on the first line. (A minor-key piece shares its key signature with a major key: not yet.)')}</div>
+    <TcBlock page={5} title="Key signature and accidental" answers={<>{sscLesson('Play two bars of G major with F♮ in the first; the child says where F♯ comes back: after the bar line.')}{skgTcAns('TRY IT', W.name5.map(([k, items, at], i) => sacNameTxt(skgRead(items, k)[at]) + (i === 0 ? ' (done)' : '')))}{skgTcAns('YOUR TURN', W.names5.map(([k, it]) => names(it, k)), 5)}{skgTcAns('PLAY', [names(W.play5, 'G')], 7)}</>}
+      watch="The natural carried over the bar line. The note before the natural played plain too. A natural thought to last the whole piece, like the key signature."
+      say="“Key signature: the whole piece. Accidental: until the bar line.”"/>
+    <TcBlock page={6} title="D major and B♭ major" answers={<>{sscLesson('The child counts the signs and names the key, then plays D major with the right hand.')}{skgTcAns('TRY IT', W.name6.map(([k, clef], i) => prettyNote(k) + ' major' + (i === 0 ? ' (done)' : '')))}{skgTcAns('YOUR TURN', W.draw6.map(([k, clef]) => sig(k, clef)), 7)}{skgTcAns('PLAY', ['D major, fingers 1 2 3 1 2 3 4 5 up, 5 4 3 2 1 3 2 1 down'], 9)}</>}
+      watch="C♯ written before F♯, or E♭ before B♭. B♭ major named 'E♭ major' (the last flat) or 'B major'. Two sharps called G major. An empty key signature not read as C major."
+      say="“Count the signs: none C; one sharp G, two D; one flat F, two B♭.”"/>
+    <TcBlock page={7} title="The check-up on paper (the Workbook's last page)" answers={<>
+      {skgTcAns('A', C.name.map(([k]) => prettyNote(k) + ' major'))}
+      {skgTcAns('B', C.which.map(([k]) => skgSignNames(k).join(' ')), N.nB)}
+      {skgTcAns('C', C.note.map(([k, items, at]) => sacNameTxt(skgRead(items, k)[at])), N.nC)}
+      {skgTcAns('D', C.draw.map(([k, clef]) => sig(k, clef)), N.nD)}
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>One mark for each answer: A {marks.A}, B {marks.B}, C {marks.C}, D {marks.D}; {total} in all. B and D: every sign, in order, for the mark. A section with any wrong answer is not passed yet: go back to its pages below. Also listen to the student (My five checks, Lesson Book page 7).</div>
+    </>}
+      goBack={[{ id: 'a', step: '2, 3 and 5', page: '3, 4 and 6' }, { id: 'b', step: '1, 3 and 5', page: '2, 4 and 6' }, { id: 'c', step: '1 to 5', page: '2 to 6' }, { id: 'd', step: '2, 3 and 5', page: '3, 4 and 6' }]}/>
+    <div style={{border:'0.8px solid ' + BK.hair,padding:'6px 12px',margin:'0 0 8px',fontSize:12,color:BK.ink,lineHeight:1.5}}><b style={{color:BK.coral}}>The drill (after page 6).</b> {sscSx('1 C, G or F major · 2 the notes it changes · 3 the coral note in G and F · 4 with accidentals · 5 all five keys · 6 written right · 7 listening (screen only) · 8 the bass staff · 9 extra: A and E♭ major.')}</div>
+    <div style={{border:'0.8px solid ' + BK.hair,padding:'7px 12px',fontSize:12,color:BK.ink,lineHeight:1.5}}><b style={{color:BK.coral}}>My five checks (Lesson Book page 7): what to ask.</b> 1. Page 2: point to the key signature and say which notes it changes. 2. Page 3: play G major from the page, every F as F♯. 3. Page 4: play F major from the page, every B as B♭. 4. Page 5: say how long the key signature lasts and how long the natural lasts, then play the two bars. 5. Page 6: cover the names and name each key. Got it! means right without help.</div>
+  </>);
+  return <>{pages}</>;
+}
+WORKBOOKS['key-signatures'] = SkgWorkbook;
+TEACHER_COPIES['key-signatures'] = SkgTeacher;
+
+const LESSON_BOOKS = { 'posture-hands': PostureLessonBook, 'first-steps': FirstStepsLessonBook, 'note-names': NoteNamesLessonBook, staff: StaffLessonBook, 'whole-staff': WholeStaffLessonBook, 'ledger-lines': LedgerLessonBook, tones: TonesLessonBook, pulse: PulseLessonBook, 'note-values': NotesRestsLessonBook, 'time-signatures': TimeSignaturesLessonBook, 'reading-steps': ReadingStepsLessonBook, dynamics: DynamicsLessonBook, 'pitch-range': PitchRangeLessonBook, tempo: TempoLessonBook, rhythm: RhythmLessonBook, scales: ScalesLessonBook, accidentals: AccidentalsLessonBook, 'piano-story': PianoStoryLessonBook, 'key-signatures': KeySigLessonBook };
 // Phase 394: chapters whose first and last pages are shared by both books
-const LB_PAGE_FNS = { 'posture-hands': postureLbPages, 'first-steps': fsLbPages, 'note-names': nnLbPages, staff: sfLbPages, 'whole-staff': wsLbPages, 'ledger-lines': llLbPages, tones: tnLbPages, pulse: plLbPages, 'note-values': nvLbPages, 'time-signatures': tsLbPages, 'reading-steps': sskLbPages, dynamics: sdyLbPages, 'pitch-range': sprLbPages, tempo: stmLbPages, rhythm: srhLbPages, scales: sscLbPages, accidentals: sacLbPages, 'piano-story': spsLbPages };   // Phase 455: tones and pulse too, so each workbook page faces its own lesson page
+const LB_PAGE_FNS = { 'posture-hands': postureLbPages, 'first-steps': fsLbPages, 'note-names': nnLbPages, staff: sfLbPages, 'whole-staff': wsLbPages, 'ledger-lines': llLbPages, tones: tnLbPages, pulse: plLbPages, 'note-values': nvLbPages, 'time-signatures': tsLbPages, 'reading-steps': sskLbPages, dynamics: sdyLbPages, 'pitch-range': sprLbPages, tempo: stmLbPages, rhythm: srhLbPages, scales: sscLbPages, accidentals: sacLbPages, 'piano-story': spsLbPages, 'key-signatures': skgLbPages };   // Phase 455: tones and pulse too, so each workbook page faces its own lesson page
 // Phase 409: the Workbook no longer repeats the book's opener; its last page is the check-up on paper (the book's
 // last page keeps only the at-the-piano checks). Chapter 4 builds its own check-up page.
 const LB_PAPER_PAGES = { 'posture-hands': () => <PhPaperCheck/>, 'first-steps': () => <FsPaperCheck/>, 'note-names': () => <NnPaperCheck/> };
@@ -46474,10 +47223,11 @@ function SpreadBook({ id }) {
   if (framed) {   // Phase 394/415: the opener is page 1 (a right-hand page), each lesson page faces its workbook page, the checks face the paper check-up
     const wf = React.Children.toArray(WORKBOOKS[id]({ startNo: 1, frames: true }).props.children);
     const steps = lp.length - 2, paper = wf[wf.length - 1];
-    const out = [lp[0]];
-    for (let k = 1; k <= steps; k++) out.push(lp[k], wf[k - 1] || blank('w' + k));
-    wf.slice(steps, -1).forEach((pg, j) => out.push(blank('x' + j), pg));
-    out.push(lp[lp.length - 1], paper);
+    const kk = (el, k) => el && React.cloneElement(el, { key: k });
+    const out = [kk(lp[0], 'l0')];
+    for (let k = 1; k <= steps; k++) out.push(kk(lp[k], 'l' + k), wf[k - 1] ? kk(wf[k - 1], 'w' + k) : blank('w' + k));
+    wf.slice(steps, -1).forEach((pg, j) => out.push(blank('x' + j), kk(pg, 'wx' + j)));
+    out.push(kk(lp[lp.length - 1], 'lz'), kk(paper, 'wz'));
     return <>{out}</>;
   }
   const out = [<SpreadCover key="cover" id={id}/>];
