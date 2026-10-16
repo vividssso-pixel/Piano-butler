@@ -877,6 +877,44 @@ function StudentModal({ initial, onSave, onClose }) {
 /* ═══════════════════════════════════════════════════════════════════════════
    LESSON LOG MODAL
 ═══════════════════════════════════════════════════════════════════════════ */
+// The student's keys (Phase 476): chapters 16 and 19 (Scales, Key Signatures) open and close with a map of all twelve keys;
+// the student's keys are marked there and drill level 10 asks about them. Saved as a line [keys:C,G,D] in "For the student"
+// (the drills store it and leave it out of the Today list); [keys:-]: none (back to the chapter's keys), carried with each
+// homework after a clear. The names are the drills' own (G♭ for F♯; a typed F#, c or B♭ is read as the drills read it).
+const KEYS_FIFTHS = ["C", "G", "D", "A", "E", "B", "Gb", "Db", "Ab", "Eb", "Bb", "F"];
+const KEY_LABEL = { Gb: "G♭", Db: "D♭", Ab: "A♭", Eb: "E♭", Bb: "B♭" };
+const KEY_ALIAS = { "C#": "Db", "D#": "Eb", "F#": "Gb", "G#": "Ab", "A#": "Bb", Cb: "B", Fb: "E", "E#": "F", "B#": "C" };
+const keyId = (k) => { const x = String(k || "").trim().replace(/♯/g, "#").replace(/♭/g, "b"), n = x ? x[0].toUpperCase() + x.slice(1) : ""; return KEYS_FIFTHS.includes(n) ? n : KEY_ALIAS[n] || null; };
+const HW_KEYS_RE = /^\s*\[keys:([^\]]{0,80})\]\s*$/;
+const hwPlain = (x) => String(x).replace(/^\s*(?:[-*•·]|\d+[.)])\s+/, "").trim();   // a homework line without its list mark
+// -> null (no keys line), [] ([keys:-]) or the keys, in circle-of-fifths order
+const keysOf = (text) => { const ln = String(text || "").split(/\r?\n/).map(hwPlain).find(x => HW_KEYS_RE.test(x)); if (!ln) return null; const k = HW_KEYS_RE.exec(ln)[1].split(/[\s,]+/).map(keyId); return KEYS_FIFTHS.filter(x => k.includes(x)); };
+const latestKeys = (logs) => { for (const l of [...(logs || [])].sort((a, b) => String(b.date).localeCompare(String(a.date)) || (Number(b.id) || 0) - (Number(a.id) || 0))) { const k = keysOf(l.homework); if (k) return k; } return null; };   // null: never set
+const keysLineShow = (text) => String(text || "").replace(/^\s*(?:(?:[-*•·]|\d+[.)])\s+)?\[keys:([^\]]{0,80})\]\s*$/m, (m) => { const ks = keysOf(m) || []; return ks.length ? "Keys: " + ks.map(x => KEY_LABEL[x] || x).join(" ") : "Keys: the chapters' own"; });
+function KeysField({ keys, onChange }) {
+  const on = new Set(keys);
+  const chip = (active) => ({ minHeight: 44, padding: "4px 6px", borderRadius: 99, border: "1.5px solid " + (active ? "#26296b" : "#d9d3c4"), background: active ? "#26296b" : "#fff", color: active ? "#fff" : "#26296b", fontWeight: 800, fontSize: 13, cursor: "pointer" });
+  return (
+    <div data-testid="keys-field">
+      <div className="flex items-center justify-between gap-2" style={{ marginBottom: 6 }}>
+        <span className="field-label" style={{ color: "#26296b", marginBottom: 0 }}>Keys (scales and key signatures)</span>
+        <span style={{ display: "flex", gap: 6 }}>
+          <button type="button" data-keys="all" onClick={() => onChange(KEYS_FIFTHS.slice())} className="btn-ghost text-xs py-1 px-3">All 12</button>
+          <button type="button" data-keys="none" onClick={() => onChange([])} className="btn-ghost text-xs py-1 px-3">Clear</button>
+        </span>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 6 }}>
+        {KEYS_FIFTHS.map(k => (
+          <button type="button" key={k} data-key={k} aria-pressed={on.has(k)} onClick={() => onChange(KEYS_FIFTHS.filter(x => x === k ? !on.has(x) : on.has(x)))} style={chip(on.has(k))}>
+            {KEY_LABEL[k] || k}
+          </button>
+        ))}
+      </div>
+      <p style={{ margin: "6px 0 0", fontSize: 11, color: "#7a7ca6", lineHeight: 1.5 }}>On the student's twelve-key maps (chapters 16 and 19) and drill level 10. None picked: each chapter's own keys. G♭ is played on the same keys as F♯; key signatures use G♭ (six flats).</p>
+    </div>
+  );
+}
+
 // Chapters and practice activities of the drills that the teacher can attach to "For the student" (the student's Today page
 // shows an Open button). The ids are the drills' own: ?drill=<id> and ?tool=<id>. If a chapter is added to the drills,
 // add it here too; an id the drills do not know is shown to the student as plain text, so nothing breaks.
@@ -1015,7 +1053,7 @@ function ListField({ label, color, bg, hint, items, onChange, max = 8, placehold
 }
 // text <-> rows. One item per line; for repertoire a leading traffic-light emoji is that piece's rating.
 const parseItems = (text, rating, withLinks) => {
-  const lines = String(text || "").split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+  const lines = String(text || "").split(/\r?\n/).map(x => x.trim()).filter(x => x && !(withLinks && HW_KEYS_RE.test(hwPlain(x))));
   if (!lines.length) return [{ t: "", r: "" }];
   return lines.map(l => {
     const m = rating ? /^([🔴🟡🟢])\s*(.*)$/u.exec(l) : null;
@@ -1027,13 +1065,19 @@ const parseItems = (text, rating, withLinks) => {
 };
 const joinItems = (items, rating) => items.map(it => ({ t: it.t.trim() || (it.k ? linkLabel(it.k) : ""), r: it.r, k: it.k })).filter(it => it.t).map(it => (rating && it.r ? it.r + " " : "") + it.t + (it.k ? " [" + it.k + "]" : "")).join("\n");
 
-function LogModal({ student, existingLog, currentMonth, lastLog, onSave, onClose }) {
+function LogModal({ student, existingLog, currentMonth, lastLog, keysNow, onSave, onClose }) {
   const blank = { date:todayStr(), repertoire:"", technical:"", srAural:"", gk:"", notes:"", homework:"", mood:"", pieceRating:"" };
   const [f, setF] = useState(existingLog ?? blank);
   const [lists, setLists] = useState(() => { const src = existingLog ?? blank; return { rep: parseItems(src.repertoire, true), tech: parseItems(src.technical), sr: parseItems(src.srAural), gk: parseItems(src.gk), hw: parseItems(src.homework, false, true) }; });
   const setList = (k) => (items) => setLists(p => ({ ...p, [k]: items }));
   const [legacy] = useState(() => ({ tech: !!((existingLog?.technical || "").trim()), sr: !!((existingLog?.srAural || "").trim()), gk: !!((existingLog?.gk || "").trim()) }));
-  const save = () => onSave({ ...f, repertoire: joinItems(lists.rep, true), technical: joinItems(lists.tech), srAural: joinItems(lists.sr), gk: joinItems(lists.gk), homework: joinItems(lists.hw) });
+  const own = keysOf(existingLog?.homework);   // this log's own keys line (null: none)
+  const [keys, setKeys] = useState(() => own != null ? own : (keysNow || []));
+  // the keys line: with homework, or when it changes the keys, or when this log had one; [keys:-] when keys set before are cleared
+  const keysLine = (hw) => { const now = keysNow || [], changed = keys.join() !== now.join();
+    if (keys.length) return (hw || changed || own != null) ? "[keys:" + keys.join(",") + "]" : "";
+    return (now.length || own != null || (hw && keysNow != null)) ? "[keys:-]" : ""; };   // once cleared, the clear goes on with each homework
+  const save = () => { const hw = joinItems(lists.hw); onSave({ ...f, repertoire: joinItems(lists.rep, true), technical: joinItems(lists.tech), srAural: joinItems(lists.sr), gk: joinItems(lists.gk), homework: [keysLine(hw), hw].filter(Boolean).join("\n") }); };
   const [copied, setCopied] = useState(false);
   const set = (k,v) => setF(p=>({...p,[k]:v}));
 
@@ -1053,7 +1097,7 @@ function LogModal({ student, existingLog, currentMonth, lastLog, onSave, onClose
     });
   };
 
-  const lastHint = !existingLog ? ((lastLog?.homework || "").trim() || (lastLog?.notes || "").trim()) : "";
+  const lastHint = !existingLog ? (keysLineShow(lastLog?.homework || "").replace(/\s*\[(?:chapter|tool):[a-z0-9-]+\]/g, " ↗").trim() || (lastLog?.notes || "").trim()) : "";
   const showLastHint = !!lastHint;
 
   return (
@@ -1112,6 +1156,7 @@ function LogModal({ student, existingLog, currentMonth, lastLog, onSave, onClose
             placeholder="e.g. Minuet in G, bars 1–8, slowly"
             hint="This week's homework. Shows on the student's Today page when they have a student link. A chapter or activity gets an Open button. Your notes below stay private."
 />
+          <KeysField keys={keys} onChange={setKeys}/>
 
           {/* Private notes */}
           <div>
@@ -1747,7 +1792,7 @@ function DrillProgress({ studentId }) {
 // Without that SQL the student's ticks are simply not shown; the app plays still are. The week ends at the next lesson log.
 const HW_MARK_RE = /\s*\[(chapter|tool):([a-z0-9-]{1,40})\]\s*$/;
 // the same lines as the student's Today page: list marks removed, at most 12; the key is the line as saved (with its mark)
-const hwLines = (text) => String(text || "").split(/\r?\n/).map(x => x.replace(/^\s*(?:[-*•·]|\d+[.)])\s+/, "").trim()).filter(Boolean).slice(0, 12).map(line => {
+const hwLines = (text) => String(text || "").split(/\r?\n/).map(x => x.replace(/^\s*(?:[-*•·]|\d+[.)])\s+/, "").trim()).filter(x => x && !HW_KEYS_RE.test(x)).slice(0, 12).map(line => {
   const m = HW_MARK_RE.exec(line);
   const label = (m ? line.slice(0, m.index).trim() : line) || (m ? chapterLabel(m[2]) : line);
   return { key: line.slice(0, 220), text: label.slice(0, 200), chapter: m && m[1] === "chapter" ? m[2] : null };
@@ -2379,7 +2424,7 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
                 {LOG_SECTIONS.filter(s=>log[s.key]?.trim()).map(s=>(
                   <div key={s.key}>
                     <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{color:s.color}}>{s.label}</p>
-                    <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{s.key === "homework" ? String(log[s.key]).replace(/\s*\[(?:chapter|tool):[a-z0-9-]+\]/g, " ↗") : log[s.key]}</p>
+                    <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{s.key === "homework" ? keysLineShow(String(log[s.key])).replace(/\s*\[(?:chapter|tool):[a-z0-9-]+\]/g, " ↗") : log[s.key]}</p>
                   </div>
                 ))}
                 {LOG_SECTIONS.every(s=>!log[s.key]?.trim()) && (
@@ -4727,6 +4772,7 @@ function App() {
           existingLog={editLog}
           currentMonth={MONTH_NAMES[new Date().getMonth()] + " " + new Date().getFullYear()}
           lastLog={!editLog ? logs.filter(l=>l.studentId===logging.id).sort((a,b)=>b.date.localeCompare(a.date))[0] : null}
+          keysNow={latestKeys(logs.filter(l=>l.studentId===logging.id))}
           onSave={saveLog}
           onClose={()=>{setLogging(null);setEditLog(null);}}
         />
