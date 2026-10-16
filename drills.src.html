@@ -1598,7 +1598,7 @@ function Lesson({ id, title, intro, children, onStart, startLabel, head, noArt }
 }
 function LessonMore({ id }) {
   const own = { 'posture-hands': ['sit-check', 'arm-moves', 'hand-shape'], 'whole-staff': ['rhymes'] }[id] || [];
-  const list = (CHAPTER_TOOL_ORDER[id] || []).filter(x => !/^(sdy|ssk|srh|ssc|stm|sps|spr|skg|sgn|sac|ts|nv)-/.test(x) && !own.includes(x)).map(x => TOOLS.find(tl => tl.id === x)).filter(Boolean);
+  const list = (CHAPTER_TOOL_ORDER[id] || []).filter(x => !/^(sdy|ssk|srh|ssc|stm|sps|spr|skg|sgn|ivx|sac|ts|nv)-/.test(x) && !own.includes(x)).map(x => TOOLS.find(tl => tl.id === x)).filter(Boolean);
   if (!list.length) return null;
   return <div style={{margin:'14px 0 0',padding:'10px 12px',border:'1px solid rgba(38,41,107,0.16)',borderRadius:10,background:'#fff'}}>
     <div style={{fontSize:14,fontWeight:900,color:'var(--text)',margin:'0 0 6px'}}>{t('More in the toolbox', '툴박스에 더 있어요')}</div>
@@ -3586,6 +3586,7 @@ function useBoard(q, given) {
   return b;
 }
 function BoardTrack({ b, pixel }) {
+  try { if (new URLSearchParams(location.search).get('print') === '1') return null; } catch (e) {}
   const cols = 8, cell = 38, gap = 3;
   const ink = pixel ? '#faf6ec' : '#26296b';
   const cellsXY = [];
@@ -18970,6 +18971,12 @@ const TOOLS = [
   { id: 'place-it', ch: 'key-signatures', title: 'Place the key signature', blurb: 'Tap where each sharp or flat goes.', C: () => <PlaceIt/> },
   { id: 'relative-minor', ch: 'key-signatures', title: 'Relative minor', blurb: 'Same signature: down 3 semitones, or the 6th note.', C: () => <><ExplKeySig1/><RelativeMinor/></> },
   { id: 'circle-fifths', ch: 'key-signatures', title: 'Circle of fifths', blurb: 'Every key in one clock.', C: () => <CircleOfFifths/> },
+  { id: 'ivx-ladder', ch: 'intervals', title: 'The interval ladder', blurb: 'Every interval from one note, a 2nd to an octave: tap a number to hear it.', C: () => <IvxMapPad/> },
+  { id: 'ivx-count', ch: 'intervals', title: 'Count an interval', blurb: 'Count both notes: the lower note is 1.', C: () => <IvxCountPad set="p2"/> },
+  { id: 'ivx-hand', ch: 'intervals', title: 'Intervals in the hand', blurb: 'C or G position: thumb and finger 3 make a 3rd.', C: () => <IvxHandPad/> },
+  { id: 'ivx-big', ch: 'intervals', title: '6th, 7th or octave?', blurb: 'The intervals wider than the hand.', C: () => <IvxCountPad set="p4"/> },
+  { id: 'ivx-mh', ch: 'intervals', title: 'Melodic or harmonic?', blurb: 'One after the other, or together.', C: () => <IvxCountPad set="p5"/> },
+  { id: 'ivx-tonic', ch: 'intervals', title: 'Above the tonic', blurb: 'Major or perfect, from the tonic of C, G, D or F major.', C: () => <IvxTonicPad/> },
   { id: 'interval-ruler', ch: 'intervals', title: 'Interval ruler', blurb: 'Count lines and spaces from 1.', C: () => <><ExplIntervals1/><IntervalRuler/></> },
   { id: 'letter-hop', ch: 'intervals', title: 'Hop round the letters (count an interval)', blurb: 'The start counts as 1.', C: () => <><ExplIntervals1/><LetterWalker/></> },
   { id: 'semitone-counter', ch: 'intervals', title: 'Count the semitones', blurb: 'Major, minor or perfect?', C: () => <><ExplIntervals2/><SemitoneCounter/></> },
@@ -19189,10 +19196,16 @@ const TOOL_KO = {
   'place-it': ['조표 자리 찾기', '샤프나 플랫이 들어갈 자리를 눌러요.'],
   'relative-minor': ['나란한조', '같은 조표: 반음 3개 아래, 또는 여섯 번째 음.'],
   'circle-fifths': ['5도권', '모든 조를 시계 하나에.'],
+  'ivx-ladder': ['음정 사다리', '한 음에서 2도부터 옥타브까지 모든 음정: 음정을 누르면 들려요.'],
+  'ivx-count': ['음정 세기', '두 음을 모두 세요: 아래 음이 1이에요.'],
+  'ivx-hand': ['손 안의 음정', 'C 자리, G 자리: 엄지와 3번 손가락은 3도.'],
+  'ivx-big': ['6도, 7도, 옥타브?', '다섯 손가락 자리보다 넓은 음정.'],
+  'ivx-mh': ['선율적? 화성적?', '한 음씩 차례로, 또는 두 음 함께.'],
+  'ivx-tonic': ['으뜸음 위의 음정', 'C, G, D, F장조의 으뜸음에서: 장음정? 완전음정?'],
   'interval-ruler': ['음정 자', '1부터 줄과 칸을 세어요.'],
-  'letter-hop': ['글자 따라 뛰기 (음정 세기)', '시작 음이 1이에요.'],
+  'letter-hop': ['음이름 따라 뛰기', '시작 음이 1이에요.'],
   'semitone-counter': ['반음 세기', '장음정, 단음정, 완전음정?'],
-  'scale-intervals': ['장조 스케일로 빨리 찾기 (음정)', 'M2 M3 P4 P5 M6 M7 P8.'],
+  'scale-intervals': ['장조 음계로 빨리 찾기 (음정)', '장2 장3 완전4 완전5 장6 장7 완전8.'],
   'interval-ear': ['음정 듣기', '기억하기 쉬운 노래와 함께 하나씩.'],
   'invert-interval': ['음정 자리바꿈', '두 숫자를 더하면 9.'],
   'tritone': ['트라이톤', '증4도 = 감5도, 소리는 같아요.'],
@@ -19566,7 +19579,7 @@ const CHAPTER_SEARCH_TERMS = {
   'tones': 'tone semitone half step whole step tone sharp flat enharmonic chromatic',
   'accidentals': 'accidental sharp flat natural bar line cancel sign same line space octave reading',
   'key-signatures': 'key signature sharps flats G major F major D major B flat major order of sharps flats circle of fifths relative minor transpose',
-  'intervals': 'interval second third fourth fifth sixth seventh octave unison major minor perfect augmented diminished',
+  'intervals': 'interval ladder second third fourth fifth sixth seventh octave unison melodic harmonic tonic above the tonic major minor perfect augmented diminished',
   'scales': 'scale major minor fingering octave degree mode',
   'chords': 'chord triad inversion cadence roman numeral seventh ninth eleventh thirteenth extension',
   'signs': 'repeat sign start repeat end repeat 1st and 2nd time bars volta da capo dal segno segno fine pause fermata coda ottava tie slur',
@@ -19674,7 +19687,7 @@ const TOOL_META = {
   'build-minor': ['scales', 2, 3, 'game write'], 'scale-finder': ['scales', 0, 3, 'show home'], 'degree-names': ['scales', 2, 3, 'show'], 'skg-every': ['scales', 1, 2, 'game ear'], 'skg-g': ['scales', 1, 2, 'game ear'], 'skg-f': ['scales', 1, 2, 'game ear'], 'skg-acc': ['scales', 1, 2, 'game ear'], 'skg-five': ['scales', 1, 2, 'show ear'], 'sharps-order': ['scales', 1, 3, 'game'], 'flats-order': ['scales', 1, 3, 'game'],
   'modes': ['scales', 3, 3, 'show ear'],
   'place-it': ['scales', 1, 3, 'write'], 'relative-minor': ['scales', 2, 3, 'show'], 'circle-fifths': ['scales', 2, 3, 'show'], 'transpose': ['scales', 2, 3, 'show write'],
-  'interval-ruler': ['intervals', 1, 2, 'show'], 'letter-hop': ['intervals', 1, 2, 'game'], 'semitone-counter': ['intervals', 2, 3, 'show'], 'scale-intervals': ['intervals', 2, 3, 'show'],
+  'ivx-ladder': ['intervals', 1, 3, 'show ear'], 'ivx-count': ['intervals', 1, 2, 'game ear'], 'ivx-hand': ['intervals', 1, 2, 'show ear'], 'ivx-big': ['intervals', 1, 2, 'game ear'], 'ivx-mh': ['intervals', 1, 2, 'game ear'], 'ivx-tonic': ['intervals', 2, 3, 'show ear'], 'interval-ruler': ['intervals', 1, 2, 'show'], 'letter-hop': ['intervals', 1, 2, 'game'], 'semitone-counter': ['intervals', 2, 3, 'show'], 'scale-intervals': ['intervals', 2, 3, 'show'],
   'invert-interval': ['intervals', 3, 3, 'show'], 'tritone': ['intervals', 3, 3, 'show ear'], 'triad-stack': ['harmony', 1, 3, 'show'], 'major-minor': ['harmony', 2, 3, 'ear show'],
   'key-chords': ['harmony', 2, 3, 'show'], 'primary-triads': ['harmony', 2, 3, 'show ear'], 'inversions': ['harmony', 3, 3, 'show'], 'cadences': ['harmony', 3, 3, 'ear show'],
   'seventh-chords': ['harmony', 3, 3, 'show ear'], 'chord-extensions': ['harmony', 3, 3, 'show'],
@@ -20261,14 +20274,14 @@ function ToolRow({ t, color, starred, onStar, open, onToggle, onChapter }) {
 // Phase 226: tools inside a chapter group follow that chapter's own step order.
 // New lesson-only pieces now live in the Toolbox too; borrow a sibling's icon until the design-phase redraw.
 [['time-sig-numbers', 'count-along'], ['note-value-tree', 'split-it'], ['dotted-notes', 'dot-lab'], ['rhythm-cards-all', 'make-card'], ['all-keys', 'circle-fifths'],
- ['major-shape', 'build-major'], ['major-fingering', 'scale-finder'], ['minor-fingering', 'minor-forms'], ['dc-ds-coda', 'road-map'], ['sgn-rep', 'road-map'], ['sgn-volta', 'road-map'], ['sgn-dc', 'dc-ds-coda'], ['sgn-ds', 'dc-ds-coda'], ['sgn-pause', 'road-map'], 
+ ['major-shape', 'build-major'], ['major-fingering', 'scale-finder'], ['minor-fingering', 'minor-forms'], ['dc-ds-coda', 'road-map'], ['sgn-rep', 'road-map'], ['sgn-volta', 'road-map'], ['sgn-dc', 'dc-ds-coda'], ['sgn-ds', 'dc-ds-coda'], ['sgn-pause', 'road-map'], ['ivx-ladder', 'scale-intervals'], ['ivx-count', 'interval-ruler'], ['ivx-hand', 'interval-ruler'], ['ivx-big', 'interval-ruler'], ['ivx-mh', 'interval-ear'], ['ivx-tonic', 'scale-intervals'], 
  ['finger-friends', 'finger-numbers'], ['accidental-cards', 'sharp-flat'], ['ts-bars', 'bar-lines'], ['ssk-shape', 'complete-melody'], ['ssk-step', 'step-skip'], ['ssk-cpos', 'five-positions'], ['ssk-gpos', 'five-positions'], ['ssk-read', 'mini-tune'], ['sdy-pf', 'dyn-order'], ['sdy-ladder', 'dyn-order'], ['sdy-hair', 'hairpin'], ['sdy-touch', 'touch-lengths'], ['sdy-tie', 'tie-slur'], ['spr-zone', 'range-chart'], ['skg-every', 'place-it'], ['skg-g', 'sharps-order'], ['skg-f', 'flats-order'], ['skg-acc', 'sharp-flat'], ['skg-five', 'circle-fifths'], ['sps-sound', 'keyboard-ancestors'], ['sps-softloud', 'keyboard-ancestors'], ['sps-action', 'keyboard-ancestors'], ['sps-pedals', 'pedal'], ['sps-keys', 'range-chart'], ['spr-big', 'size-pitch'], ['spr-fam', 'size-pitch'], ['spr-ladder', 'size-pitch'], ['spr-range', 'range-chart'], ['stm-sf', 'tempo-walk'], ['stm-words', 'tempo-race'], ['stm-read', 'tempo-race'], ['stm-metro', 'metronome'], ['stm-steady', 'tap-tempo'], ['srh-beams', 'grouping'], ['srh-alone', 'beam-apples'], ['srh-dot', 'dot-lab'], ['srh-up', 'anacrusis'], ['srh-read', 'rhythm-cards-all'], ['sac-signs', 'accidental-cards'], ['sac-natural', 'sharp-flat'], ['sac-bar', 'accidental-bar'], ['sac-line', 'accidental-bar'], ['sac-tune', 'ssk-read'], ['ssc-steps', 'major-shape'], ['ssc-fingers', 'major-fingering'], ['ssc-degrees', 'degree-names'], ['ssc-g', 'build-major'], ['ssc-f', 'scale-finder'], ['ts-numbers', 'time-sig-numbers'], ['ts-strong', 'beat-groups'], ['ts-build', 'fill-bar'], ['ts-tie', 'tie-slur'], ['nv-walk', 'count-aloud'], ['nv-hold', 'split-it'], ['nv-long', 'note-value-tree'], ['nv-run', 'beam-apples'], ['nv-rests', 'note-rest-naming'], ['count-ring', 'count-aloud'], ['silent-beats', 'beat-target'], ['finger-beat', 'finger-numbers']].forEach(([a, b]) => { if (!TOOL_ICON[a] && TOOL_ICON[b]) TOOL_ICON[a] = TOOL_ICON[b]; });
 const CHAPTER_TOOL_ORDER = {
   'chords': ['triad-stack', 'major-minor', 'key-chords', 'primary-triads', 'inversions', 'cadences', 'chord-extensions', 'seventh-chords'],
   'dynamics': ['sdy-pf', 'sdy-ladder', 'sdy-hair', 'sdy-touch', 'sdy-tie', 'dyn-order', 'hairpin', 'touch-ear', 'touch-lengths', 'tie-slur', 'pedal'],
   'first-steps': ['high-low', 'key-houses', 'whole-piano', 'black-key-song', 'black-key-jam', 'black-white-neighbours'],
   'form': ['form-shapes', 'form-builder', 'same-or-new', 'rondo-refrain', 'binary-ternary-spot'],
-  'intervals': ['step-skip', 'interval-ruler', 'letter-hop', 'semitone-counter', 'scale-intervals', 'interval-ear', 'invert-interval', 'tritone'],
+  'intervals': ['ivx-ladder', 'ivx-count', 'ivx-hand', 'ivx-big', 'ivx-mh', 'ivx-tonic', 'step-skip', 'interval-ruler', 'letter-hop', 'semitone-counter', 'scale-intervals', 'interval-ear', 'invert-interval', 'tritone'],
   'key-signatures': ['skg-every', 'skg-g', 'skg-f', 'skg-acc', 'skg-five', 'sharps-order', 'flats-order', 'place-it', 'relative-minor', 'circle-fifths', 'transpose', 'all-keys'],
   'ledger-lines': ['ledger-walk', 'ledger-landmarks', 'ledger-twins', 'ledger-write'],
   'melody': ['tune-anatomy', 'draw-tune', 'phrase-marks', 'question-answer', 'melody-sequence'],
@@ -46462,7 +46475,7 @@ const skgWhere = (d, clef = 'treble', en) => { const k = d - CLEFS[clef].low, or
 // Korean: a sign never parts from the syllable after it (a word joiner); 'ㄹ 수 있어요', '맨 윗줄', '맨 위 칸' on one line
 const skgKo = (x) => x.replace(/([♯♭♮])(?=[가-힣(])/g, '$1\u2060').replace(/(\S) 수 있어요/g, '$1\u00a0수\u00a0있어요').replace(/맨 (윗줄|위 칸|아랫줄)/g, '맨\u00a0$1');
 // the Phase 299 lesson's ticks (0 to 6, under the same id): not this lesson's steps (they are synced by union, so ignored, not deleted)
-function skgOldStep(id, k) { return (id === 'key-signatures' || id === 'signs') && /^\d+$/.test(String(k)); }
+function skgOldStep(id, k) { return (id === 'key-signatures' || id === 'signs' || id === 'intervals') && /^\d+$/.test(String(k)); }
 
 // how each note of a tune sounds in a key: the key signature, unless an accidental earlier in its bar (on its own line or
 // space) says otherwise. byKey: changed by the key signature; held / natHeld: an accidental earlier in the bar still holds;
@@ -48288,9 +48301,717 @@ function SkgAnyKeyPage() {
   </>;
 }
 
-const LESSON_BOOKS = { 'posture-hands': PostureLessonBook, 'first-steps': FirstStepsLessonBook, 'note-names': NoteNamesLessonBook, staff: StaffLessonBook, 'whole-staff': WholeStaffLessonBook, 'ledger-lines': LedgerLessonBook, tones: TonesLessonBook, pulse: PulseLessonBook, 'note-values': NotesRestsLessonBook, 'time-signatures': TimeSignaturesLessonBook, 'reading-steps': ReadingStepsLessonBook, dynamics: DynamicsLessonBook, 'pitch-range': PitchRangeLessonBook, tempo: TempoLessonBook, rhythm: RhythmLessonBook, scales: ScalesLessonBook, accidentals: AccidentalsLessonBook, 'piano-story': PianoStoryLessonBook, 'key-signatures': KeySigLessonBook, signs: SignsLessonBook };
+// ─── Phase 477: chapter 21, Intervals, built in full (Book rules 14 and 15; her 2026-10-17 02:05 macro-first plan: the
+// whole first, then the parts, then the whole again). The third room of Level 4. Page 1 is the interval ladder: every
+// interval from one note, a 2nd to an octave, on the staff and on the keys; the steps zoom in (counting, 2nd to 5th in the
+// hand, 6th to the octave, melodic and harmonic, above the tonic with major and perfect); the screen lesson ends with the
+// ladder again in the student's keys (Phase 476's [keys:...]), with the qualities.
+// Placement (AMEB Music Craft 2026: Grade 1 all intervals by number, Grade 2 major and minor 2nd 3rd 6th 7th, perfect
+// 1st 4th 5th 8th; ABRSM Theory: Grade 1 the number above the tonic in C G D F major, Grade 3 number and type).
+// A note is { d, acc } (d: chapter 6's staff number, middle C 28; acc -1, 0 or 1); the old chapter's ivMidi, ivOrd, ivName,
+// ivQuality, ivBuild and playIv are reused.
+
+const IVX_N = (d, acc = 0) => ({ d, acc });
+const ivxEn = (n) => n === 1 ? 'unison' : n === 8 ? 'octave' : n + (n === 2 ? 'nd' : n === 3 ? 'rd' : 'th');
+const ivxShortEn = (n) => n === 8 ? '8ve' : ivxEn(n);
+const ivxShort = (n) => LANG === 'ko' ? (n === 8 ? '8도' : n + '도') : ivxShortEn(n);
+const ivxQ = (q) => LANG === 'ko' ? { M: '장', P: '완전', m: '단' }[q] : { M: 'major', P: 'perfect', m: 'minor' }[q];
+const ivxQName = (q, n) => LANG === 'ko' ? ivxQ(q) + (n === 8 ? '8도' : n + '도') : ivxQ(q) + ' ' + ivxEn(n);
+const ivxNoteTxt = (x) => dName(x.d) + (x.acc > 0 ? '♯' : x.acc < 0 ? '♭' : '');
+// the key's notes from its tonic up an octave, as { d, acc }: the tonic near middle C (chapter 16's spelling)
+const IVX_TONIC_D = { C: 28, Db: 29, D: 29, Eb: 30, E: 30, F: 31, Gb: 32, G: 32, Ab: 33, A: 33, Bb: 34, B: 34 };
+function ivxScale(k) {
+  const names = spellScale(k), d0 = IVX_TONIC_D[k] != null ? IVX_TONIC_D[k] : 28;
+  const acc = (nm) => nm.length > 1 ? (nm[1] === '#' ? 1 : -1) : 0;
+  return [...names, names[0]].map((nm, i) => IVX_N(d0 + i, acc(nm)));
+}
+// the quality above the tonic of a major key: M or P
+const IVX_MP = { 2: 'M', 3: 'M', 4: 'P', 5: 'P', 6: 'M', 7: 'M', 8: 'P' };
+
+// a staff with intervals. pairs: [{ a, b, harm, down (melodic, the higher note first), lab, lab2, hl ('a' | 'b' | 'both'),
+// ladder (count up the lines and spaces from the lower note) }] laid out left to right (blank: an empty place; onlyA: the
+// lower note alone, to write above). o.key: a key signature after the clef (a note the key already alters has no sign);
+// o.bars: a bar line between the places; o.x0: where the first place starts; o.labSize. A harmonic 2nd: side by side, the
+// lower note on the left; an accidental before its note (before the chord in a harmonic one)
+function IvxStaff({ clef = 'treble', pairs, width = 320, o = {}, label }) {
+  const ks = o.key ? skgKs(o.key, clef) : [], kmap = o.key ? skgMap(o.key) : {};
+  const x0 = (o.x0 || 56) + (ks.length ? ks.length * 12 + 6 : 0), slot = (width - x0 - 6) / Math.max(1, pairs.length), notes = [], accs = [], labs = [], lads = [];
+  const low = CLEFS[clef].low, signOf = (n) => { const k = kmap[dName(n.d)] || 0; return (n.acc || 0) === k ? null : (n.acc > 0 ? '#' : n.acc < 0 ? 'b' : 'n'); };
+  pairs.forEach((p, i) => {
+    if (p.blank) return;
+    const cx = x0 + slot * (i + 0.5), second = p.harm && p.b.d - p.a.d === 1, gapM = p.ladder && !p.harm ? Math.min(48, slot * 0.4) : Math.min(o.gap || 30, slot * 0.3);
+    let xa = p.harm ? (second ? cx - 7.4 : cx) : cx - gapM, xb = p.harm ? (second ? cx + 7.4 : cx) : cx + gapM;
+    if (p.down && !p.harm) { const x = xa; xa = xb; xb = x; }
+    const ca = p.hl === 'a' || p.hl === 'both' ? PEN_C : BK.ink, cb = p.hl === 'b' || p.hl === 'both' ? PEN_C : BK.ink;
+    notes.push({ d: p.a.d, x: xa, color: ca }); if (!p.onlyA) notes.push({ d: p.b.d, x: xb, color: cb });
+    const sa = signOf(p.a), sb = p.onlyA ? null : signOf(p.b), near = p.harm && sa && sb && p.b.d - p.a.d < 6;
+    if (sb) accs.push([sb, (p.harm ? Math.min(xa, xb) : xb) - 17, p.b.d, cb]);
+    if (sa) accs.push([sa, xa - 17 - (near ? 13 : 0), p.a.d, ca]);
+    if (p.lab) labs.push([cx, p.lab, p.lab2, p.labCol]);
+    if (p.ladder) lads.push([p, xa, xb, cx]);
+  });
+  const ysN = notes.map(n => dY(n.d)), yLab = Math.max(dY(low) + 30, ...ysN.map(y => y + 24)) + (o.labDy || 0);
+  const bottomNeed = labs.length ? yLab + (labs.some(l => l[2]) ? 18 : 6) : Math.max(dY(low), ...ysN) + 14;
+  const pad = [o.padTop != null ? o.padTop : 18, bottomNeed - Math.max(dY(low), ...ysN)];
+  const ls = o.labSize || 13, hi = CLEFS[clef].high;
+  return <SfStaff clef={clef} width={width} notes={notes} pad={pad} label={label} extra={(yOf, layer, txt) => layer !== 'over' ? null : <g>
+    {ks.map(([sg, d], i) => <g key={'k' + i}>{tnAcc(sg, 48 + i * 12, yOf(d), BK.ink)}</g>)}
+    {o.bars && pairs.slice(1).map((_, i) => <line key={'b' + i} x1={x0 + slot * (i + 1)} x2={x0 + slot * (i + 1)} y1={yOf(hi)} y2={yOf(low)} stroke={BK.ink} strokeWidth="1.2"/>)}
+    {accs.map(([sg, x, d, c], i) => <g key={'a' + i}>{tnAcc(sg, x, yOf(d), c)}</g>)}
+    {lads.map(([p, xa, xb, cx], i) => { const n = p.b.d - p.a.d + 1;
+      return <g key={'l' + i}>{Array.from({ length: n }, (_, k) => { const x = p.harm ? cx + (p.b.d - p.a.d === 1 ? 24 : 16) + k * 10 : xa + (xb > xa ? 1 : -1) * (18 + (n > 1 ? k * (Math.abs(xb - xa) - 36) / (n - 1) : 0));
+        return <text key={k} x={x} y={yOf(p.a.d + k) + 4.2} textAnchor="middle" fontSize={p.harm && n > 5 ? 10.5 : 11.5} fontWeight="900" fill={PEN_C} style={txt}>{k + 1}</text>; })}</g>; })}
+    {labs.map(([x, a, b, c], i) => <text key={'t' + i} x={x} y={yLab} textAnchor="middle" fontSize={ls} fontWeight="900" fill={c || BK.ink} style={{fontFamily:'Inter, sans-serif'}}>{b ? <><tspan x={x} dy="0" fontSize={ls * 0.82} fontWeight="800" fill={BK.muted}>{a}</tspan><tspan x={x} dy={ls + 2}>{b}</tspan></> : a}</text>)}
+  </g>}/>;
+}
+// a keyboard with a number over some white keys (counting, fingers): nums { d: '1' }; the rest as SacKeys
+function IvxKeys({ d0 = 28, n = 8, nums = {}, numCol, o = {}, onTap, label }) {
+  return <div role={label ? 'img' : undefined} aria-label={label}>
+    <div aria-hidden="true" style={{display:'grid',gridTemplateColumns:'repeat(' + n + ',1fr)',padding:'0 ' + (3 / (n * 40 + 6) * 100) + '%',margin:'0 0 2px'}}>
+      {Array.from({ length: n }, (_, i) => <div key={i} style={{textAlign:'center',fontSize:15,fontWeight:900,color:numCol || PEN_C,minHeight:20,fontFamily:'Inter, sans-serif'}}>{nums[d0 + i] == null ? '' : Array.isArray(nums[d0 + i]) ? <span style={{display:'inline-block',transform:'translateX(50%)'}}>{nums[d0 + i][0]}</span> : nums[d0 + i]}</div>)}
+    </div>
+    <SacKeys d0={d0} n={n} o={o} onTap={onTap}/>
+  </div>;
+}
+// nums: a number over a white key, or [n, 'sharp'] over the black key to its right
+// the ladder from a tonic: the 2nd to the octave as harmonic intervals; q: with major / perfect
+const ivxLadder = (k, q, hlN) => { const sc = ivxScale(k); return sc.slice(1).map((b, i) => ({ a: sc[0], b, harm: true, lab: q ? ivxQ(IVX_MP[i + 2]) : ivxShort(i + 2), lab2: q ? ivxShort(i + 2) : null })); };
+const ivxLadderLabel = (k, q) => { const sc = ivxScale(k);
+  return t('From ' + ivxNoteTxt(sc[0]) + ', every interval up to the octave, both notes together: ' + sc.slice(1).map((b, i) => (q ? ivxQ(IVX_MP[i + 2]) + ' ' : '') + ivxEn(i + 2) + ' (' + ivxNoteTxt(b) + ')').join(', ') + '.',
+    ivxNoteTxt(sc[0]) + '에서 옥타브까지 모든 음정, 두 음을 함께: ' + sc.slice(1).map((b, i) => (q ? ivxQ(IVX_MP[i + 2]) : '') + (i + 2 === 8 ? '8도' : (i + 2) + '도') + '(' + ivxNoteTxt(b) + ')').join(', ') + '.'); };
+
+// the pictures' intervals (the pads play the same)
+const IVX_P2 = [{ a: IVX_N(28), b: IVX_N(30), ladder: true }, { a: IVX_N(32), b: IVX_N(35), ladder: true }];
+const IVX_P3 = [2, 3, 4, 5].map(n => ({ a: IVX_N(28), b: IVX_N(28 + n - 1), harm: true, n }));
+const IVX_P4 = [6, 7, 8].map(n => ({ a: IVX_N(28), b: IVX_N(28 + n - 1), harm: true, n }));
+const IVX_P5 = [{ a: IVX_N(28), b: IVX_N(30), harm: false, w: 'mel' }, { a: IVX_N(28), b: IVX_N(30), harm: true, w: 'harm' }, { a: IVX_N(32), b: IVX_N(33), harm: true, w: 'harm' }];
+const IVX_P5B = [{ a: IVX_N(20), b: IVX_N(22), down: true, w: 'down' }, { a: IVX_N(18), b: IVX_N(22), harm: true, w: 'harm' }];
+const ivxP5Lab = (w) => w === 'mel' ? t('melodic', '선율적') : w === 'down' ? t('going down', '내려가는') : t('harmonic', '화성적');
+// Korean: words that belong together never part at a line end (아래 음, 두 음, 몇 도, 3번 손가락, a run of note names)
+const ivxNbKo = (x) => typeof x !== 'string' ? x : x.replace(/(아래|위|두|그|한|여덟|같은) 음/g, '$1 음').replace(/둘 다/g, '둘 다').replace(/몇 도/g, '몇 도').replace(/(\d)번 손가락/g, '$1번 손가락').replace(/(?<![A-Za-z])([A-G][♯♭]?) (?=[A-G][♯♭]?(?![A-Za-z]))/g, '$1 ').replace(/([A-G][♯♭]?) 자리/g, '$1 자리').replace(/몇 번째/g, '몇 번째');
+const ivxKoT = (x) => LANG === 'ko' ? ivxNbKo(x) : x;
+const ivxTitle = (x) => <span style={{fontFamily:'inherit',fontVariantNumeric:'lining-nums'}}>{x}</span>;
+
+function ivxLbPages(scr = false) {
+  const ch = 'intervals';
+  const live = (still, comp) => <LbLive still={still} live={comp}/>;
+  const stack = (nodes, h, gap = 12, mw = 680) => <LbPic h={h}><div style={{display:'flex',flexDirection:'column',gap,width:'100%',maxWidth:mw,margin:'0 auto',alignItems:'stretch'}}>{nodes}</div></LbPic>;
+  const X = (en, ko) => sscT(en, skgKo(ivxNbKo(ko)));
+  const W = scr ? 320 : 380, M = scr ? 340 : 640;   // a staff's viewBox width, and its width on the page (print: about 1.7 times)
+  const cap = (x, key = 'cap') => <div key={key} style={{textAlign:'center',fontSize:scr ? 14 : 13.5,fontWeight:800,color:BK.ink,margin:'2px auto 0',maxWidth:560,lineHeight:1.35,textWrap:'balance'}}>{sscSx(ivxKoT(x))}</div>;
+  const nums8 = (d0) => Object.fromEntries(Array.from({ length: 8 }, (_, i) => [d0 + i, String(i + 1)]));
+  const staff = (key, mw, node) => <div key={key} style={{width:'100%',maxWidth:mw,margin:'0 auto'}}>{node}</div>;
+
+  // p1 (macro first): the interval ladder from C, a 2nd to an octave, and the keys counted 1 to 8; on screen the ladder pad
+  const p1 = <LbLive still={stack([staff('lad', M, <IvxStaff pairs={ivxLadder('C')} width={W} o={{ labSize: scr ? 12 : 14 }} label={ivxLadderLabel('C')}/>),
+    <div key="k" style={{maxWidth:420,margin:'10px auto 0',width:'100%',borderTop:'1px solid rgba(38,41,107,0.18)',paddingTop:8}}><IvxKeys d0={28} n={8} nums={nums8(28)} o={{ H: 100, lit: [60] }} label={t('The keys from middle C to the C above, counted 1 to 8: C is 1, the next C is 8.', '가운데 도부터 한 옥타브 위 C까지 건반을 1에서 8까지 세어요: C가 1, 다음 C가 8.')}/></div>,
+    cap(t('Every interval from C, a 2nd to an octave. Its number: count the letters, both notes included.', 'C에서 옥타브까지 모든 음정. 음이름을 아래 음부터 위 음까지 세면 몇 도인지 알아요.'))], 400, 10)} live={<IvxMapPad/>}/>;
+  // p2: counting: C to E, G to C, the lines and spaces counted from the lower note
+  const p2 = stack([staff('s', scr ? 330 : 600, <IvxStaff pairs={IVX_P2.map(p => ({ ...p, lab: ivxShort(p.b.d - p.a.d + 1) }))} width={scr ? 320 : 300} o={{ labSize: 14 }} label={t('Two intervals on the treble staff, one note after the other, each counted up its lines and spaces: C to E, 1 2 3, a 3rd; G to C, 1 2 3 4, a 4th.', '높은음자리표 오선의 두 음정, 한 음씩: 줄과 칸을 세어요. C에서 E는 1 2 3, 3도; G에서 C는 1 2 3 4, 4도.')}/>),
+    <div key="k" style={{maxWidth:420,margin:'0 auto',width:'100%'}}><IvxKeys d0={28} n={8} nums={{ 28: '1', 29: '2', 30: '3' }} o={{ H: 110, lit: [60], pale: [64] }} label={t('The keys C D E counted 1 2 3: C to E is a 3rd.', 'C D E 건반을 1 2 3으로 세어요: C에서 E는 3도.')}/></div>], 300, 16);
+  // p3: the 2nd to the 5th in the hand: C position, thumb and each finger (the staff first, the keys under it)
+  const p3 = stack([staff('s', M, <IvxStaff pairs={IVX_P3.map(p => ({ ...p, lab: t('1 and ' + p.n, '1번과 ' + p.n + '번'), lab2: ivxShort(p.n) }))} width={scr ? 320 : 340} o={{ labSize: 14 }} label={t('Four intervals from C, both notes together: C and D, a 2nd (fingers 1 and 2); C and E, a 3rd (1 and 3); C and F, a 4th (1 and 4); C and G, a 5th (1 and 5).', 'C에서 네 음정, 두 음을 함께: C와 D는 2도(1번과 2번), C와 E는 3도(1번과 3번), C와 F는 4도(1번과 4번), C와 G는 5도(1번과 5번).')}/>),
+    <div key="k" style={{maxWidth:280,margin:'0 auto',width:'100%'}}><IvxKeys d0={28} n={5} nums={{ 28: '1', 29: '2', 30: '3', 31: '4', 32: '5' }} numCol={PEN_N} o={{ H: 96, lit: [60], pale: [62, 64, 65, 67] }} label={t('C position, the right hand: finger 1 on C, 2 on D, 3 on E, 4 on F, 5 on G.', 'C 자리의 오른손: 1번 손가락은 C, 2번은 D, 3번은 E, 4번은 F, 5번은 G.')}/></div>], 340, 8);
+  // p4: the 6th, the 7th, the octave; the keys counted to 8
+  const p4 = stack([staff('s', scr ? 330 : 500, <IvxStaff pairs={IVX_P4.map(p => ({ ...p, lab: ivxShort(p.n) }))} width={scr ? 320 : 290} o={{ labSize: 14 }} label={t('Three intervals from middle C, both notes together: C and A, a 6th; C and B, a 7th; C and the C above, an octave.', '가운데 도에서 세 음정, 두 음을 함께: C와 A는 6도, C와 B는 7도, C와 위의 C는 옥타브.')}/>),
+    <div key="k" style={{maxWidth:440,margin:'0 auto',width:'100%'}}><IvxKeys d0={28} n={8} nums={nums8(28)} o={{ H: 110, lit: [60], pale: [69, 71, 72] }} label={t('The keys from C to C counted 1 to 8: A is 6, B is 7, C is 8.', 'C에서 C까지의 건반을 1에서 8까지 세어요: A가 6, B가 7, C가 8.')}/></div>], 320, 16);
+  // p5: melodic and harmonic, on both staves; a melodic interval going down
+  const p5 = stack([staff('t', scr ? 330 : 540, <IvxStaff pairs={IVX_P5.map(p => ({ ...p, lab: ivxP5Lab(p.w), lab2: ivxShort(p.b.d - p.a.d + 1) }))} width={320} o={{ labSize: 13.5, bars: true }} label={t('On the treble staff: C then E, a melodic 3rd; C and E together, a harmonic 3rd; G and A together, a harmonic 2nd, the two notes side by side.', '높은음자리표 오선: C 다음 E는 선율적 3도, C와 E를 함께 치면 화성적 3도, G와 A를 함께 치면 화성적 2도(두 음이 옆으로 붙어 있어요).')}/>),
+    staff('b', scr ? 330 : 540, <IvxStaff clef="bass" pairs={IVX_P5B.map(p => ({ ...p, lab: ivxP5Lab(p.w), lab2: ivxShort(p.b.d - p.a.d + 1) }))} width={320} o={{ labSize: 13.5 }} label={t('On the bass staff: D then B below it, a 3rd going down; G and D together, a harmonic 5th.', '낮은음자리표 오선: D 다음 그 아래 B는 내려가는 3도, G와 D를 함께 치면 화성적 5도.')}/>)], 380, 10);
+  // p6: above the tonic in G major, with its key signature: major and perfect; the keys of G major under it
+  const g6 = ivxLadder('G', true);
+  const gKeys = <div key="k" style={{maxWidth:440,margin:'0 auto',width:'100%'}}><IvxKeys d0={32} n={8} nums={{ 32: '1', 33: '2', 34: '3', 35: '4', 36: '5', 37: '6', 38: ['7', 'sharp'], 39: '8' }} o={{ H: 100, lit: [67], pale: [78] }} label={t('The keys from G to G: G is 1, F sharp (7) the black key before the top G.', 'G에서 G까지의 건반: G가 1, F♯(7)은 위 G 바로 앞의 검은 건반.')}/></div>;
+  const p6 = stack(scr ? [g6.slice(0, 4), g6.slice(4)].map((row, r) => staff(r, 330, <IvxStaff pairs={row} width={320} o={{ labSize: 13, key: 'G' }} label={r ? '' : ivxLadderLabel('G', true)}/>))
+    : [staff('s', 660, <IvxStaff pairs={g6} width={400} o={{ labSize: 13, key: 'G' }} label={ivxLadderLabel('G', true)}/>), gKeys], scr ? 330 : 360, 14);
+
+  // the check icons
+  const tx = (x, c, col, s = 18, y = 28) => '<text x="' + x + '" y="' + y + '" text-anchor="middle" font-family="Inter, sans-serif" font-size="' + s + '" font-weight="900" fill="' + col + '">' + c + '</text>';
+  const head = (x, y, col) => '<ellipse cx="' + x + '" cy="' + y + '" rx="6" ry="4.4" fill="' + col + '"/>';
+  const st5 = '<g stroke="' + PEN_N + '" stroke-opacity="0.55" stroke-width="1.2">' + [8, 14, 20, 26, 32].map(y => '<line x1="6" x2="86" y1="' + y + '" y2="' + y + '"/>').join('') + '</g>';
+  const ic = {
+    count: [{ k: 'raw', svg: st5 + head(18, 32, PEN_N) + head(70, 26, PEN_N) + tx(34, '1', PEN_C, 11, 36) + tx(46, '2', PEN_C, 11, 33) + tx(58, '3', PEN_C, 11, 30) }],
+    hand: [{ k: 'raw', svg: tx(22, '1', PEN_N, 20, 30) + '<line x1="34" x2="54" y1="22" y2="22" stroke="' + PEN_C + '" stroke-width="2.4"/>' + tx(68, '5', PEN_N, 20, 30) }],
+    big: [{ k: 'raw', svg: st5 + head(24, 35, PEN_N) + head(66, 14, PEN_C) + tx(84, '8', PEN_C, 12, 10) }],
+    harm: [{ k: 'raw', svg: st5 + head(20, 26, PEN_N) + head(36, 14, PEN_N) + head(64, 26, PEN_C) + head(64, 14, PEN_C) }],
+    tonic: [{ k: 'raw', svg: tx(16, 'G', PEN_N, 18, 28) + (LANG === 'ko' ? tx(56, '장3도', PEN_C, 15, 28) : tx(58, 'major', PEN_C, 12, 19) + tx(58, '3rd', PEN_C, 14, 34)) }],
+  };
+  const checksRows = [
+    ['count', t('I can count an interval on the staff, both notes included', '오선에서 두 음을 모두 세어 몇 도인지 말할 수 있어요')],
+    ['hand', t('I can play a 2nd, 3rd, 4th and 5th in C position and name them', 'C 자리에서 2도, 3도, 4도, 5도를 치고 이름을 말할 수 있어요')],
+    ['big', t('I can find a 6th, a 7th and an octave on the staff and on the keys', '오선과 건반에서 6도, 7도, 옥타브를 찾을 수 있어요')],
+    ['harm', t('I can tell a melodic interval from a harmonic one, and write both', '선율적 음정과 화성적 음정을 구별하고, 둘 다 쓸 수 있어요')],
+    ['tonic', t('I can name each interval above the tonic of C, G, D and F major', 'C, G, D, F장조에서 으뜸음 위의 음정을 말할 수 있어요')],
+  ].map(([a, x]) => [a, LANG === 'ko' ? skgKo(sscNbKo(ivxNbKo(x))) : sscNbEn(x)]);
+  const ch9 = bkChapterNo('reading-steps'), ch16 = bkChapterNo('scales');
+
+  return [
+    <LbPage key="1" no={1} chId={ch}>
+      <LbOnly print><div data-ch={ch}>
+        <div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em'}}>CHAPTER {bkChapterNo(ch)}</div>
+        <div style={{fontFamily:LB_SERIF,fontSize:44,fontWeight:900,color:BK.ink,lineHeight:1.02,margin:'4px 0 0'}}>{bkChapterName(ch)}</div>
+      </div></LbOnly>
+      {p1}
+      <LbSay size={17.5}>{LANG === 'ko' ? <>두 음 사이의 거리가 <b>음정</b>이에요. 아래&nbsp;음부터 위&nbsp;음까지 음이름을 세어 몇&nbsp;도인지 말해요.</> : <>An <b>interval</b> is the distance between two notes. Its number counts the letter names from the lower note to the higher.</>}</LbSay>
+      <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
+        <LbOnly print><div>
+          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
+          {[[t('Counting an interval', '음정 세기'), 2], [t('2nd to 5th, in the hand', '손 안의 2도~5도'), 3], [t('6th, 7th and octave', '6도, 7도, 옥타브'), 4], [t('Melodic and harmonic', '선율적 음정과 화성적 음정'), 5], [t('Above the tonic', '으뜸음 위의 음정'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}<span>{n}</span></span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
+        </div></LbOnly>
+        <div>
+          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          {checksRows.map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)',textWrap:'pretty'}}>{bkGoal(15)}<span>{sscSx(x.replace(/^I can /, ''))}</span></div>)}
+        </div>
+      </div>
+      <LbOnly print><LbDrillStrip id={ch}/></LbOnly>
+    </LbPage>,
+
+    <LbPage key="2" no={2} chId={ch} kicker={t('Step 1', '1단계')} title={t('Counting an interval', '음정 세기')}>
+      {live(p2, <IvxCountPad set="p2"/>)}
+      <LbDefs items={[
+        [t('number', '몇 도(도수)'), X('Count the letter names from the lower note to the higher; both notes count. C to E: C D E, a 3rd.', '아래 음부터 위 음까지 음이름을 세어요. 두 음 모두 세요. C에서 E: C D E, 3도.')],
+        [t('on the staff', '오선에서'), X('Count each line and space from the lower note up to the higher one. The lower note is 1.', '아래 음부터 위 음까지 줄과 칸을 하나씩 세어요. 아래 음이 1이에요.')],
+        [t('unison', '1도'), X('Both notes on the same line or space: the same letter. Its number is 1.', '같은 줄이나 칸에 있는 두 음, 같은 음이름이에요. 세면 1이에요.')],
+      ]}/>
+      <LbPiano steps={[
+        X('Play C, then E. Count aloud: C D E, a 3rd.', 'C를 치고 E를 쳐요. 소리 내어 세요: C D E, 3도.'),
+        X('Play G, then the C above it. Count: G A B C, a 4th.', 'G를 치고 그 위의 C를 쳐요. 세어요: G A B C, 4도.'),
+      ]}/>
+      <LbRemember>{X('Count both notes: the lower note is 1.', '두 음을 모두 세요. 아래 음이 1이에요.')}</LbRemember>
+    </LbPage>,
+
+    <LbPage key="3" no={3} chId={ch} kicker={t('Step 2', '2단계')} title={ivxTitle(t('2nd to 5th, in the hand', '손 안의 2도~5도'))}>
+      {live(p3, <IvxHandPad/>)}
+      <LbDefs items={[
+        [t('2nd', '2도'), X('The next letter: a step (chapter ' + ch9 + '). A line to the next space, or a space to the next line.', '바로 다음 음이름, 한 걸음이에요(' + ch9 + '챕터). 줄에서 옆 칸으로, 칸에서 옆 줄로.')],
+        [t('3rd', '3도'), X('Skip one letter: a line to the next line, or a space to the next space.', '음이름 하나를 건너뛰어요. 줄에서 바로 위 줄로, 칸에서 바로 위 칸으로.')],
+        [t('4th', '4도'), X('Skip two letters: a line to a space, or a space to a line.', '음이름 둘을 건너뛰어요. 줄에서 칸으로, 칸에서 줄로.')],
+        [t('5th', '5도'), X('Skip three letters: line to line or space to space, with one line (or space) between.', '음이름 셋을 건너뛰어요. 줄에서 줄로, 칸에서 칸으로, 사이에 줄(칸) 하나.')],
+        [t('in the hand', '손 안에서'), X('In a five-finger position, the thumb and finger 2 play a 2nd; with finger 3, a 3rd; 4, a 4th; 5, a 5th.', '다섯 손가락 자리에서 엄지와 2번 손가락은 2도, 3번은 3도, 4번은 4도, 5번은 5도를 쳐요.')],
+      ]}/>
+      <LbPiano steps={[
+        X('Right hand in C position: play 1 and 2 together, then 1 and 3, 1 and 4, 1 and 5. Say: 2nd, 3rd, 4th, 5th.', '오른손 C 자리: 1번과 2번을 함께 친 다음, 1번과 3번, 1번과 4번, 1번과 5번을 쳐요. 말해요: 2도, 3도, 4도, 5도.'),
+        X('Move to G position, thumb on G, and play them again.', '엄지를 G에 놓고 G 자리에서 다시 쳐요.'),
+      ]}/>
+      <LbRemember>{X('Thumb and finger 5: a 5th. With the thumb, the finger’s number is the interval’s.', '엄지와 5번 손가락은 5도. 엄지와 함께 치면 손가락 번호와 몇 도가 같아요.')}</LbRemember>
+    </LbPage>,
+
+    <LbPage key="4" no={4} chId={ch} kicker={t('Step 3', '3단계')} title={ivxTitle(t('6th, 7th and octave', '6도, 7도, 옥타브'))}>
+      {live(p4, <IvxCountPad set="p4"/>)}
+      <LbDefs items={[
+        [t('6th', '6도'), X('Six letters: C to A.', '음이름 여섯 개: C에서 A까지.')],
+        [t('7th', '7도'), X('Seven letters: C to B, one short of the octave.', '음이름 일곱 개: C에서 B까지. 옥타브보다 하나 적어요.')],
+        [t('octave', '옥타브'), X('Eight letters, from a note to the next one of the same name: C to C. Also called an 8th; written 8ve for short.', '음이름 여덟 개, C에서 다음 C까지예요. 8도라고도 하고, 줄여서 8ve로 써요.')],
+        [t('odd and even', '홀수와 짝수'), X('Odd (3rd, 5th, 7th): line to line, or space to space. Even (2nd, 4th, 6th, octave): line to space, or space to line.', '홀수(3·5·7도)는 줄에서 줄로, 칸에서 칸으로. 짝수(2·4·6·8도)는 줄에서 칸으로, 칸에서 줄로.')],
+      ]}/>
+      <LbPiano steps={[
+        X('Play the picture’s intervals: C and A, C and B, C and C. Say: 6th, 7th, octave.', '그림의 음정을 쳐요: C와 A, C와 B, C와 C. 말해요: 6도, 7도, 옥타브.'),
+        X('Play every C on the piano, one octave apart, from the lowest to the highest.', '피아노의 모든 C를 가장 낮은 C부터 가장 높은 C까지 한 옥타브씩 올라가며 쳐요.'),
+      ]}/>
+      <LbRemember>{X('An octave: the same letter, 8 counting both notes: C to C.', '옥타브: 두 음을 모두 세어 8, 같은 음이름이에요.')}</LbRemember>
+    </LbPage>,
+
+    <LbPage key="5" no={5} chId={ch} kicker={t('Step 4', '4단계')} title={t('Melodic and harmonic', '선율적 음정과 화성적 음정')}>
+      {live(p5, <IvxCountPad set="p5"/>)}
+      <LbDefs items={[
+        [t('melodic interval', '선율적 음정'), X('One note after the other. Written side by side.', '두 음을 차례로 쳐요. 옆으로 나란히 써요.')],
+        [t('harmonic interval', '화성적 음정'), X('Both notes together. Written one above the other.', '두 음을 함께 쳐요. 위아래로 쌓아 써요.')],
+        [t('a harmonic 2nd', '화성적 2도'), X('The two notes touch, side by side: the lower one on the left.', '두 음이 옆으로 붙어요. 아래 음이 왼쪽이에요.')],
+        [t('going down', '내려가는 음정'), X('Count from the lower note just the same: D down to B is a 3rd.', '똑같이 아래 음부터 세어요. D에서 B로 내려가도 3도예요.')],
+      ]}/>
+      <LbPiano steps={[
+        X('Play each interval of the picture, one note after the other, then together.', '그림의 음정마다 두 음을 차례로 친 다음, 함께 쳐요.'),
+        X('Your teacher plays an interval. Say: melodic or harmonic.', '선생님이 음정을 쳐요. 선율적인지 화성적인지 말해요.'),
+      ]}/>
+      <LbRemember>{X('Melodic: one after the other. Harmonic: together.', '선율적은 차례로, 화성적은 함께.')}</LbRemember>
+    </LbPage>,
+
+    <LbPage key="6" no={6} chId={ch} kicker={t('Step 5', '5단계')} title={t('Above the tonic', '으뜸음 위의 음정')}>
+      {live(p6, <IvxTonicPad/>)}
+      <LbDefs items={[
+        [t('tonic', '으뜸음'), X('The key’s first note (chapter ' + ch16 + '): in G major, G.', '조의 첫 음이에요(' + ch16 + '챕터). G장조에서는 G.')],
+        [t('above the tonic', '으뜸음 위'), X('Each note of the scale makes an interval with the tonic. Its number is the note’s degree: B in G major is a 3rd.', '음계의 각 음과 으뜸음 사이의 음정이에요. 몇 도인지는 그 음이 음계의 몇 번째 음인지와 같아요. G장조의 B는 3도.')],
+        [t('major and perfect', '장음정과 완전음정'), X('From the tonic of a major key, the 2nd, 3rd, 6th and 7th are major; the 4th, 5th and octave are perfect.', '장조 으뜸음에서 2·3·6·7도는 장음정, 4·5·8도는 완전음정이에요.')],
+      ]}/>
+      <LbPiano steps={[
+        X('Play G with each note of G major above it, together. Say: major 2nd, major 3rd, perfect 4th, perfect 5th, major 6th, major 7th, perfect octave.', 'G와 그 위의 G장조 음을 하나씩 함께 쳐요. 말해요: 장2도, 장3도, 완전4도, 완전5도, 장6도, 장7도, 완전8도.'),
+        X('Do the same in C, D and F major.', 'C, D, F장조에서도 똑같이 해요.'),
+      ]}/>
+      <LbRemember>{X('From the tonic: 2nd, 3rd, 6th, 7th major; 4th, 5th, octave perfect.', '으뜸음에서 2·3·6·7도는 장음정, 4·5·8도는 완전음정.')}</LbRemember>
+    </LbPage>,
+
+    <LbPage key="7" no={7} chId={ch} kicker={t('Check-up', '점검')} title={t('My five checks', '나의 다섯 가지 확인')}>
+      <LbSay>{t('Show each one at the piano, on its page (2 to 6). The check-up on paper is in the Workbook.', '2~6쪽을 하나씩 펴고 피아노 앞에서 보여 줘요. 종이 점검은 워크북에 있어요.')}</LbSay>
+      <LbLive still={<LbStageRows big rows={checksRows.map(([a, x]) => [<PenArt shapes={ic[a]} vb={[0, 0, 92, 40]} style={{width:80}}/>, sscSx(x)])}/>} live={<FiveChecks376 storeKey="pb_five_ivx_v1" rows={checksRows.map(([a, x]) => [{ shapes: ic[a], vb: [0, 0, 92, 40] }, sscSx(x)])}/>}/>
+    </LbPage>,
+  ];
+}
+function IntervalsLessonBook() { return <>{ivxLbPages(false)}</>; }
+
+// ─── Phase 477: chapter 21's pads (pages 1 to 6), the screen lesson and the drill ───
+const IVX_W = 300;   // a pad's staff width on a phone
+// play an interval: melodic low then high (a falling one high then low), or harmonic
+const ivxPlay = (p) => { stopClicks(); if (p.down && !p.harm) playIv(p.b, p.a, 'melodic'); else playIv(p.a, p.b, p.harm ? 'harmonic' : 'melodic'); };
+const ivxMidis = (p) => [ivMidi(p.a), ivMidi(p.b)];
+// the keys under a pair: from the lower note's white key (a flat's white key below it), wide enough for both
+const ivxKeyRange = (p) => { const d0 = p.a.d - (p.a.acc < 0 ? 1 : 0), d1 = p.b.d + (p.b.acc > 0 ? 1 : 0); return [d0, Math.max(5, d1 - d0 + 1)]; };
+const ivxMsg = (msg, bad) => <div style={{textAlign:'center',fontSize:15,fontWeight:900,color:bad ? BK.coral : BK.ink,minHeight:22,margin:'6px 0',textWrap:'balance',wordBreak:'keep-all'}}>{sscSx(ivxKoT(msg))}</div>;
+const ivxCountWords = (p) => { const n = p.b.d - p.a.d + 1, L = Array.from({ length: n }, (_, k) => dName(p.a.d + k)).join(' ');
+  return t(L + ', ' + (n === 8 ? 'an octave' : 'a ' + ivxEn(n)), L + ', ' + (n === 8 ? '옥타브' : n + '도')); };
+const ivxNums = (n) => <div style={{display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:6,maxWidth:340,margin:'8px auto 4px'}}>{n}</div>;
+const IVX_SCALE_N = (d) => Object.fromEntries([0, 1, 2, 3, 4].map(i => [d + i, String(i + 1)]));
+
+// pages 2, 4 and 5: an interval to count (page 5: melodic or harmonic?); ▶ Listen, ▶ Count it (the ladder), the next one
+const IVX_SETS = {
+  p2: [[28, 30], [32, 35], [29, 33], [30, 32, 'down'], [31, 36], [33, 34]].map(([a, b, w]) => ({ a: IVX_N(a), b: IVX_N(b), down: w === 'down' })),
+  p4: [[28, 33], [28, 34], [28, 35], [29, 34], [30, 36], [32, 39]].map(([a, b]) => ({ a: IVX_N(a), b: IVX_N(b), harm: true })),
+  p5: [[28, 30, 0], [28, 30, 1], [32, 33, 1], [29, 33, 0], [31, 35, 1], [30, 31, 0]].map(([a, b, h]) => ({ a: IVX_N(a), b: IVX_N(b), harm: !!h })),
+};
+const IVX_PAD_T = { p2: () => t('Count it', '몇 도일까요?'), p4: () => t('6th, 7th or octave?', '6도, 7도, 옥타브?'), p5: () => t('Melodic or harmonic?', '선율적? 화성적?') };
+function IvxCountPad({ set }) {
+  const list = IVX_SETS[set], [i, setI] = useState(0), [ans, setAns] = useState(null), [lad, setLad] = useState(false);
+  useEffect(() => () => stopClicks(), []);
+  const p = list[i], n = p.b.d - p.a.d + 1, mh = set === 'p5', right = mh ? (p.harm ? 'harm' : 'mel') : n;
+  const choices = mh ? ['mel', 'harm'] : set === 'p4' ? [5, 6, 7, 8] : [2, 3, 4, 5, 6, 7, 8];
+  const name = (c) => mh ? ivxP5Lab(c === 'harm' ? 'harm' : 'mel') : ivxShort(c);
+  const done = ans != null && String(ans) === String(right);
+  const pick = (c) => { setAns(c); ivxPlay(p); if (String(c) === String(right)) setLad(true); };
+  const next = () => { stopClicks(); setI((i + 1) % list.length); setAns(null); setLad(false); };
+  const d0 = p.a.d - (p.a.acc < 0 ? 1 : 0);   // eight keys from the lower note's letter: the keyboard never gives the answer away
+  const msg = ans == null ? (mh ? t('One after the other, or together?', '차례로? 함께?') : t('How many letters, both notes included?', '몇 도일까요? 두 음 모두 세요.'))
+    : done ? (mh ? (p.harm ? t('Harmonic: together. ', '화성적: 함께. ') : t('Melodic: one after the other. ', '선율적: 차례로. ')) : '') + ivxCountWords(p) + ' ✓'
+    : mh ? t('Look again: together (one above the other, or touching), or one after the other?', '다시 봐요: 함께(위아래로, 또는 붙어서)? 차례로?') : t('Count again: the lower note is 1.', '다시 세어요: 아래 음이 1이에요.');
+  return (
+    <div className="try-box" style={actBox} data-ivx={'pad-' + set}>
+      <div style={actTitle}>{IVX_PAD_T[set]()}</div>
+      <div style={actNote}>{ivxKoT(t('▶ Listen, then pick the answer. ▶ Count it shows the count on the staff.', '▶ 듣기를 누르고 답을 골라요. ▶ 세어 보기를 누르면 오선에 숫자가 나와요.'))}</div>
+      <div style={{maxWidth:IVX_W,margin:'0 auto'}}><IvxStaff pairs={[{ ...p, ladder: lad }]} width={IVX_W} o={{ x0: 70 }}
+        label={t((p.harm ? 'Together: ' : 'One after the other: ') + ivxNoteTxt(p.down ? p.b : p.a) + ' and ' + ivxNoteTxt(p.down ? p.a : p.b) + '.', (p.harm ? '함께: ' : '차례로: ') + ivxNoteTxt(p.down ? p.b : p.a) + '와 ' + ivxNoteTxt(p.down ? p.a : p.b) + '.')}/></div>
+      <div style={{maxWidth:8 * 40,margin:'6px auto 0'}}><SacKeys d0={d0} n={8} o={{ lit: done ? [ivMidi(p.a)] : [], pale: done ? [ivMidi(p.b)] : [], H: 100 }} onTap={(m) => sacKey(m)}/></div>
+      {ivxMsg(msg, ans != null && !done)}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(' + Math.min(choices.length, 4) + ',minmax(0,1fr))',gap:6,maxWidth:340,margin:'0 auto 8px'}}>
+        {choices.map(c => <button key={c} className={'chip' + (ans != null && String(c) === String(ans) ? ' active' : '')} style={{minHeight:44,justifyContent:'center',fontWeight:900}} onClick={() => pick(c)}>{name(c)}</button>)}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap'}}>
+        <button className="ghost-btn" style={{minHeight:44}} onClick={() => ivxPlay(p)}>{t('▶ Listen', '▶ 듣기')}</button>
+        <button className="ghost-btn" style={{minHeight:44}} onClick={() => setLad(true)}>{t('▶ Count it', '▶ 세어 보기')}</button>
+        <button className="ghost-btn" style={{minHeight:44}} onClick={next}>{t('Next →', '다음 →')}</button>
+      </div>
+    </div>
+  );
+}
+// page 3: C or G position, a finger number over each key: tap a key, the thumb sounds with it
+function IvxHandPad() {
+  const [pos, setPos] = useState(28), [b, setB] = useState(null);
+  useEffect(() => () => stopClicks(), []);
+  const thumb = IVX_N(pos), p = b == null ? null : { a: thumb, b: IVX_N(b), harm: true }, n = b == null ? null : b - pos + 1;
+  const tap = (m) => { const k = Array.from({ length: 5 }, (_, i) => pos + i).find(d => ivMidi({ d }) === m); if (k == null) { sacKey(m); return; } setB(k); stopClicks(); playIv(thumb, IVX_N(k), 'harmonic'); };
+  return (
+    <div className="try-box" style={actBox} data-ivx="pad-hand">
+      <div style={actTitle}>{t('In the hand', '손 안의 음정')}</div>
+      <div style={actNote}>{ivxKoT(t('Tap a key: the thumb’s note sounds with it. Finger 3: a 3rd.', '건반을 누르면 엄지 음과 함께 울려요. 3번 손가락이면 3도.'))}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',margin:'0 0 8px'}}>{[[28, t('C position', 'C 자리')], [32, t('G position', 'G 자리')]].map(([d, w]) => <button key={d} className={'chip' + (pos === d ? ' active' : '')} style={{minHeight:44}} onClick={() => { stopClicks(); setPos(d); setB(null); }}>{w}</button>)}</div>
+      <div style={{maxWidth:IVX_W,margin:'0 auto'}}><IvxStaff pairs={p ? [{ ...p, lab: t('1 and ' + n, n === 1 ? '1번만' : '1번과 ' + n + '번'), lab2: n === 1 ? t('unison', '1도') : ivxShort(n) }] : [{ a: thumb, b: thumb, harm: true }]} width={IVX_W} o={{ x0: 70, labSize: 14 }}/></div>
+      <div style={{maxWidth:260,margin:'6px auto 0'}}><IvxKeys d0={pos} n={5} nums={IVX_SCALE_N(pos)} numCol={PEN_N} o={{ H: 120, lit: [ivMidi(thumb)], pale: b != null && b !== pos ? [ivMidi({ d: b })] : [] }} onTap={tap}/></div>
+      {ivxMsg(p ? (n === 1 ? t('The same note: a unison.', '같은 음: 1도.') : t('Thumb and finger ' + n + ': ' + ivxCountWords(p) + '.', '엄지와 ' + n + '번 손가락: ' + ivxCountWords(p) + '.')) : t('Tap finger 2, 3, 4 or 5.', '2, 3, 4, 5번 손가락 건반을 눌러요.'))}
+    </div>
+  );
+}
+// page 6: pick a key and a number: the tonic and the note above it (with the key signature), major or perfect
+const IVX_TONIC_KEYS = ['C', 'G', 'D', 'F'];
+function IvxTonicPad() {
+  const [k, setK] = useState('G'), [n, setN] = useState(3);
+  useEffect(() => () => stopClicks(), []);
+  const sc = ivxScale(k), p = { a: sc[0], b: sc[n - 1], harm: true }, q = IVX_MP[n];
+  const [d0, nk] = ivxKeyRange({ a: sc[0], b: sc[7] });
+  const pickN = (x) => { setN(x); const s = ivxScale(k); stopClicks(); playIv(s[0], s[x - 1], 'harmonic'); };
+  return (
+    <div className="try-box" style={actBox} data-ivx="pad-tonic">
+      <div style={actTitle}>{t('Above the tonic', '으뜸음 위의 음정')}</div>
+      <div style={actNote}>{ivxKoT(t('Pick a key, then a number: the tonic sounds with that note of the scale.', '조를 고르고 몇 도인지 골라요. 으뜸음과 그 음이 함께 울려요.'))}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',margin:'0 0 6px'}}>{IVX_TONIC_KEYS.map(x => <button key={x} className={'chip' + (x === k ? ' active' : '')} style={{minHeight:44,minWidth:48,justifyContent:'center',fontWeight:900}} onClick={() => { stopClicks(); setK(x); }}>{sscSx(prettyNote(x))}</button>)}</div>
+      <div style={{maxWidth:IVX_W,margin:'0 auto'}}><IvxStaff pairs={[{ ...p, lab: ivxQ(q), lab2: ivxShort(n) }]} width={IVX_W} o={{ x0: 64, labSize: 15, key: k }} label={t(skgKeyName(k) + ': ' + ivxNoteTxt(p.a) + ' and ' + ivxNoteTxt(p.b) + ', a ' + ivxQName(q, n) + '.', skgKeyName(k) + ': ' + ivxNoteTxt(p.a) + '와 ' + ivxNoteTxt(p.b) + ', ' + ivxQName(q, n) + '.')}/></div>
+      <div style={{maxWidth:nk * 36,margin:'6px auto 0'}}><SacKeys d0={d0} n={nk} o={{ lit: [ivMidi(p.a)], pale: [ivMidi(p.b)], H: 100 }} onTap={(m) => sacKey(m)}/></div>
+      {ivxNums([2, 3, 4, 5, 6, 7, 8].map(x => <button key={x} className={'chip' + (x === n ? ' active' : '')} style={{minHeight:44,justifyContent:'center',padding:'4px 2px',fontWeight:900}} onClick={() => pickN(x)}>{ivxShort(x)}</button>))}
+      {ivxMsg(t(skgKeyName(k) + ': ' + ivxNoteTxt(p.a) + ' to ' + ivxNoteTxt(p.b) + ', a ' + ivxQName(q, n) + '.', skgKeyName(k) + ': ' + ivxNoteTxt(p.a) + '에서 ' + ivxNoteTxt(p.b) + ', ' + ivxQName(q, n) + '.'))}
+    </div>
+  );
+}
+
+// the ladder: page 1 (from C, G, D or F) and again at the end (the teacher's keys, else the exam's four; with the key
+// signature, major and perfect); tap a number; two staves (2nd to 5th, 6th to octave) so the words stay readable
+function IvxMapPad({ end }) {
+  const { keys, fromTeacher } = pbKeysFor('scales'), list = end && fromTeacher ? keys : IVX_TONIC_KEYS;   // the exam's four keys unless the teacher set some
+  const [k, setK] = useState(list[0]), [n, setN] = useState(null);
+  useEffect(() => () => stopClicks(), []);
+  const sc = ivxScale(k), [d0, nk] = ivxKeyRange({ a: sc[0], b: sc[7] }), lad = ivxLadder(k, !!end, n);
+  const pickN = (x) => { stopClicks(); setN(x); playIv(sc[0], sc[x - 1], 'harmonic'); };
+  const all = () => { const s = ivxScale(k), ctx = getAudio(); if (!ctx) return; stopClicks(); const t0 = ctx.currentTime + 0.05;
+    s.slice(1).forEach((b, i) => { blip(ctx, t0 + i * 0.75, ivFreq(s[0]), 0.65, 0.13, 'triangle'); blip(ctx, t0 + i * 0.75, ivFreq(b), 0.65, 0.13, 'triangle'); }); };
+  return (
+    <div className="try-box" style={actBox} data-pb="iv-map">
+      {!end && <div style={actTitle}>{t('The interval ladder', '음정 사다리')}</div>}
+      <div style={{...actNote,textWrap:'pretty'}}>{ivxKoT(end ? t('Every interval above the tonic: the 2nd, 3rd, 6th and 7th major; the 4th, 5th and octave perfect. Tap one to hear it.', '고른 조에서 으뜸음 위의 모든 음정: 2·3·6·7도는 장음정, 4·5·8도는 완전음정. 음정을 누르면 들려요.')
+        : t('Every interval from one note, a 2nd to an octave. Tap one to hear it; ▶ All plays them in order.', '한 음에서 2도부터 옥타브까지 모든 음정. 음정을 누르면 들려요. ▶ 모두 듣기는 차례로 들려줘요.'))}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap',margin:'0 0 6px'}}>{list.map(x => <button key={x} className={'chip' + (x === k ? ' active' : '')} style={{minHeight:44,minWidth:44,justifyContent:'center',fontWeight:900}} onClick={() => { stopClicks(); setK(x); setN(null); }}>{sscSx(pbKeyName(x))}</button>)}</div>
+      <div role="img" aria-label={ivxLadderLabel(k, !!end)} style={{maxWidth:340,margin:'0 auto'}}>
+        {[lad.slice(0, 4), lad.slice(4).concat([{ blank: true }])].map((row, r) => <IvxStaff key={r} pairs={row} width={300 + 12 * Math.max(0, (end ? skgKs(k, 'treble').length : 0) - 3)} o={{ x0: 60, labSize: 14, key: end ? k : null, padTop: 12 }}/>)}</div>
+      <div style={{maxWidth:nk * 36,margin:'6px auto 0'}}><SacKeys d0={d0} n={nk} o={{ lit: [ivMidi(sc[0])], pale: n ? [ivMidi(sc[n - 1])] : [], H: 96 }} onTap={(m) => sacKey(m)}/></div>
+      {ivxNums([2, 3, 4, 5, 6, 7, 8].map(x => <button key={x} className={'chip' + (x === n ? ' active' : '')} style={{minHeight:44,justifyContent:'center',padding:'4px 2px',fontWeight:900}} onClick={() => pickN(x)}>{ivxShort(x)}</button>))}
+      {n ? ivxMsg(t(ivxNoteTxt(sc[0]) + ' to ' + ivxNoteTxt(sc[n - 1]) + ': ' + (end ? 'a ' + ivxQName(IVX_MP[n], n) : (n === 8 ? 'an octave' : 'a ' + ivxEn(n))) + '.', ivxNoteTxt(sc[0]) + '에서 ' + ivxNoteTxt(sc[n - 1]) + ': ' + (end ? ivxQName(IVX_MP[n], n) : n === 8 ? '옥타브' : ivxShort(n)) + '.')) : null}
+      {end && pbKeysRow(PB_DOT, fromTeacher, list)}
+      <div style={{display:'flex',justifyContent:'center'}}><button className="ghost-btn" style={{minHeight:44}} onClick={all}>{t('▶ All', '▶ 모두 듣기')}</button></div>
+    </div>
+  );
+}
+
+// ── the book on screen: the opener is the lesson's head, every other page a step; the ladder again at the end ──
+function IvxLearn({ onStart }) {
+  const pages = ivxLbPages(true);
+  const opener = pages[0];
+  return (
+    <Lesson id="intervals" title={bkChapterName('intervals')} onStart={onStart} noArt
+      head={<LbScreenCtx.Provider value={true}><BkChapterCtx.Provider value="intervals"><div className="lb-screen lb-open" style={{display:'flex',flexDirection:'column',gap:12,margin:'0 0 8px'}}>{lbWordsFirst(opener.props.children)}</div></BkChapterCtx.Provider></LbScreenCtx.Provider>}>
+      {pages.slice(1).map((pg, i) => (
+        <Step key={i} title={<span>{pg.props.title}</span>} storeAs={'k' + (i + 1)}>
+          <LbScreenPage page={pg}/>
+        </Step>
+      ))}
+      <Step key="map" extra title={t('My intervals', '나의 음정')} storeAs="k7"><IvxMapPad end/></Step>
+    </Lesson>
+  );
+}
+
+// ── the drill, after page 6, in the book's order: count it (1, 2), in the hand (3), write it (4), melodic or harmonic (5),
+// the bass staff (6), listening (7), above the tonic in the student's keys (8); 9 extra: major or perfect ──
+const IVX_LEVELS = [
+  { n: 1, label: 'Count it', kind: 'count', time: 8 },
+  { n: 2, label: 'Count it: together too', kind: 'count2', time: 8 },
+  { n: 3, label: 'In C or G position', kind: 'hand', time: 8 },
+  { n: 4, label: 'Write it: the note above', kind: 'write', time: 14 },
+  { n: 5, label: 'Melodic or harmonic?', kind: 'mh', time: 6 },
+  { n: 6, label: 'The bass staff', kind: 'bass', time: 8 },
+  { n: 7, label: 'Listen: 2nd, 3rd, 5th or octave?', kind: 'ear', time: 12, noPrint: true },
+  { n: 8, label: 'Above the tonic, in my keys', kind: 'tonic', time: 9 },
+  { n: 9, label: 'Extra: major or perfect?', kind: 'mp', time: 8 },
+];
+// ('The bass staff' keeps chapter 19's Korean, 낮은음자리표 오선)
+Object.assign(LEVEL_KO, { 'Count it': '세어 보기', 'Count it: together too': '세어 보기: 함께 치는 음정도', 'In C or G position': 'C 자리나 G 자리에서', 'Write it: the note above': '써 보기: 위의 음',
+  'Melodic or harmonic?': '선율적? 화성적?', 'Listen: 2nd, 3rd, 5th or octave?': '듣기: 2도, 3도, 5도, 8도?', 'Above the tonic, in my keys': '나의 조: 으뜸음 위의 음정', 'Extra: major or perfect?': '더 해 보기: 장음정? 완전음정?' });
+const ivxNear = (n, lo = 2, hi = 8) => shuffle([n, ...shuffle([n - 1, n + 1, n - 2, n + 2, n + 3, n - 3].filter(x => x >= lo && x <= hi && x !== n)).slice(0, 3)]);
+function genIvxQuestion(lv, prev) {
+  const uid = Math.random(), same = (key) => prev && prev.key === key;
+  for (let g = 0; g < 40; g++) {
+    if (lv.kind === 'count' || lv.kind === 'count2' || lv.kind === 'bass' || lv.kind === 'mh') {
+      const clef = lv.kind === 'bass' ? 'bass' : 'treble', lo = clef === 'bass' ? 16 : 28, hi = clef === 'bass' ? 28 : 40;
+      const n = 2 + Math.floor(Math.random() * 7), a = lo + Math.floor(Math.random() * (hi - lo - n + 2)), b = a + n - 1;
+      const harm = lv.kind === 'count' ? false : Math.random() < 0.5, down = !harm && Math.random() < 0.4, key = lv.kind + a + '-' + b + (harm ? 'h' : down ? 'd' : 'm');
+      if (b > hi || same(key)) continue;
+      const p = { a: IVX_N(a), b: IVX_N(b), harm, down };
+      if (lv.kind === 'mh') return { kind: 'mh', key, p, clef, answer: harm ? 'harm' : 'mel', choices: ['mel', 'harm'], uid };
+      return { kind: 'count', key, p, clef, answer: n, choices: ivxNear(n), uid };
+    }
+    if (lv.kind === 'hand') {
+      const pos = Math.random() < 0.6 ? 28 : 32, n = 2 + Math.floor(Math.random() * 4), key = 'h' + pos + n;
+      if (same(key)) continue;
+      return { kind: 'hand', key, pos, p: { a: IVX_N(pos), b: IVX_N(pos + n - 1), harm: true }, answer: n, choices: [2, 3, 4, 5], uid };
+    }
+    if (lv.kind === 'write') {
+      const n = 2 + Math.floor(Math.random() * 7), a = 28 + Math.floor(Math.random() * (40 - 28 - n + 2)), key = 'w' + a + n;
+      if (a + n - 1 > 40 || same(key)) continue;
+      return { kind: 'write', key, a: IVX_N(a), n, answer: a + n - 1, uid };
+    }
+    if (lv.kind === 'ear') {
+      const n = pick([2, 3, 5, 8]), a = 28 + Math.floor(Math.random() * 5), harm = Math.random() < 0.4, key = 'e' + a + n;
+      if (same(key)) continue;
+      return { kind: 'ear', key, p: { a: IVX_N(a), b: IVX_N(a + n - 1), harm }, answer: n, choices: [2, 3, 5, 8], uid };
+    }
+    if (lv.kind === 'tonic' || lv.kind === 'mp') {
+      const { keys } = pbKeysFor('scales'), pool = pbMyKeys() ? keys : IVX_TONIC_KEYS, k = pick(pool), sc = ivxScale(k), n = 2 + Math.floor(Math.random() * 7);
+      const harm = Math.random() < 0.5, key = lv.kind + k + n;
+      if (same(key)) continue;
+      const p = { a: sc[0], b: sc[n - 1], harm };
+      if (lv.kind === 'tonic') return { kind: 'tonic', key, k, p, answer: n, choices: ivxNear(n), uid };
+      return { kind: 'mp', key, k, p, n, answer: IVX_MP[n], choices: ['M', 'P'], uid };   // the number is given: major or perfect is the question
+    }
+  }
+  return { kind: 'count', key: 'f', p: { a: IVX_N(28), b: IVX_N(30), harm: false }, clef: 'treble', answer: 3, choices: [2, 3, 4, 5], uid };
+}
+const ivxCheck = (q, ans) => ans != null && String(ans) === String(q.answer);
+const ivxChoiceTxt = (q, c) => q.kind === 'mh' ? ivxP5Lab(c === 'harm' ? 'harm' : 'mel') : q.kind === 'mp' ? ivxQ(c) + (LANG === 'ko' ? '음정' : '') : ivxShort(+c);
+// a string: the game shows it in capitals
+function ivxAnswerLabel(q) {
+  const ar = ' → ';
+  if (q.kind === 'write') return dName(q.answer) + t(': ' + ivxShortEn(q.n) + ' above ' + dName(q.a.d), ' (' + dName(q.a.d) + '에서 ' + ivxShort(q.n) + ' 위)');
+  const p = q.p, lo = p.down && !p.harm ? p.b : p.a, hi = p.down && !p.harm ? p.a : p.b, pr = ' (' + ivxNoteTxt(lo) + (p.harm ? '–' : ar) + ivxNoteTxt(hi) + ')';
+  if (q.kind === 'mh') return (q.answer === 'harm' ? t('harmonic', '화성적') : t('melodic', '선율적')) + ' ' + ivxShort(p.b.d - p.a.d + 1) + pr;
+  if (q.kind === 'mp') return ivxQName(q.answer, q.n) + pr;
+  return ivxShort(q.answer) + pr;
+}
+// level 4: write the note above. Tap the staff to place a note (it snaps to a line or space), ▲ ▼ to move it, Check. After
+// the answer: a wrong note in red, the right one in green. On a worksheet (no answer, locked): the lower note and room above.
+function IvxWrite({ q, given, locked, onAnswer, pixel, paper }) {
+  const [g, setG] = useState(null), isDone = !!given, lo = q.a.d, hiD = Math.min(41, lo + 8), clef = 'treble';
+  useEffect(() => { setG(null); }, [q.uid]);
+  const W = 240, xa = 96, xb = 150, top = Math.max(CLEFS[clef].high, hiD);
+  const head = (x, d, col, k) => <g key={k}>{ledgersFor(d, CLEFS[clef].low, CLEFS[clef].high).map(pp => <line key={pp} x1={x - 12} x2={x + 12} y1={dY(pp)} y2={dY(pp)} stroke={col} strokeWidth="1.4"/>)}
+    <ellipse cx={x} cy={dY(d)} rx="7.4" ry="5.2" fill={col}/><ellipse cx={x} cy={dY(d)} rx="3.4" ry="2.7" transform={`rotate(-38 ${x} ${dY(d)})`} fill="#fff"/></g>;
+  const tapAt = (e) => { if (locked || isDone) return; const svg = e.currentTarget.ownerSVGElement; if (!svg || !svg.getScreenCTM) return; const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+    const y = pt.matrixTransform(svg.getScreenCTM().inverse()).y, d = Math.round(30 + (100 - y) / 5); setG(Math.max(lo, Math.min(hiD, d))); };
+  const miss = isDone && given.ans != null && String(given.ans) !== String(q.answer);
+  const extra = (yOf, layer) => layer !== 'over' ? null : <g>
+    {!paper && !isDone && g != null && head(xb, g, 'rgba(38,41,107,0.45)', 'g')}
+    {isDone && miss && head(xb, +given.ans, '#c8361b', 'w')}
+    {isDone && head(xb + (miss ? 30 : 0), q.answer, '#2e8a6e', 'r')}
+    {!paper && !isDone && !locked && <rect x={xa + 16} y={dY(41) - 6} width={W - xa - 20} height={dY(Math.min(lo, 30)) - dY(41) + 12} fill="transparent" style={{cursor:'pointer'}} onClick={tapAt}/>}
+  </g>;
+  const staff = <SfStaff clef={clef} width={W} notes={[{ d: lo, x: xa }]} pad={[Math.max(14, dY(CLEFS[clef].high) - dY(top) + 14), 16]} extra={extra}/>;
+  if (paper) return <div style={{maxWidth:W * 1.4,margin:'0 auto'}}>{staff}</div>;
+  const nudge = (k) => setG(x => Math.max(lo, Math.min(hiD, (x == null ? lo : x) + k)));
+  return <div>
+    <div style={{maxWidth:W * 1.25,margin:'0 auto',background:pixel ? '#fff' : 'transparent',borderRadius:pixel ? 0 : 8}}>{staff}</div>
+    {!isDone && !locked && <div style={{display:'flex',gap:8,justifyContent:'center',margin:'8px 0 0'}}>
+      <button className={pixel ? 'pixel-choice' : 'choice-btn'} style={{minWidth:52,minHeight:48,fontSize:20}} aria-label={t('Up', '위로')} onClick={() => nudge(1)}>▲</button>
+      <button className={pixel ? 'pixel-choice' : 'choice-btn'} style={{minWidth:52,minHeight:48,fontSize:20}} aria-label={t('Down', '아래로')} onClick={() => nudge(-1)}>▼</button>
+      <button className={pixel ? 'pixel-choice' : 'choice-btn'} style={{minWidth:96,minHeight:48,fontWeight:900}} disabled={g == null} onClick={() => g != null && onAnswer(g)}>{t('Check', '확인')}</button>
+    </div>}
+    {!isDone && !locked && <div style={{textAlign:'center',fontSize:13,fontWeight:700,margin:'6px 0 0',minHeight:18,color:pixel ? '#faf6ec' : 'rgba(38,41,107,0.72)'}}>{g == null ? t('Tap the staff, or use ▲ ▼.', '오선을 누르거나 ▲ ▼로 옮겨요.') : ''}</div>}
+  </div>;
+}
+function IvxQuestion({ q, given, locked, onAnswer, pixel }) {
+  const paper = locked && !given;   // the printed worksheet
+  const board = useBoard(q, given), isDone = !!given, btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const ink = pixel ? '#faf6ec' : 'var(--text)', box = { background: pixel ? '#fff' : 'transparent', borderRadius: pixel ? 0 : 8 };
+  const st = (c) => !isDone ? '' : (String(c) === String(q.answer) ? ' good' : (String(given.ans) === String(c) ? ' bad' : ''));
+  useEffect(() => { if (q.kind === 'ear' && !locked) { const tm = setTimeout(() => ivxPlay(q.p), 350); return () => { clearTimeout(tm); stopClicks(); }; } }, [q.uid]);
+  const above = (q.n === 8 ? t('an octave', '옥타브') : t('a ' + ivxEn(q.n || 2), ivxShort(q.n || 2)));
+  const prompt = { count: t('How many? Count both notes.', '몇 도일까요? 두 음 모두 세요.'), hand: t('Thumb and which finger? Name the interval.', '엄지와 몇 번 손가락? 몇 도일까요?'),
+    write: t((paper ? 'Draw' : 'Write') + ' the note ' + above + ' above ' + (q.a ? dName(q.a.d) : '') + '.', (q.a ? dName(q.a.d) : '') + '에서 ' + above + ' 위의 음을 ' + (paper ? '그려요.' : '써요.')),
+    mh: t('Melodic or harmonic?', '선율적일까요, 화성적일까요?'), ear: t('Listen: which interval?', '듣고 골라요: 몇 도?'),
+    tonic: t('The interval above the tonic?', '으뜸음 위의 음정은?'), mp: t((q.n === 8 ? 'An octave' : 'A ' + ivxEn(q.n || 2)) + ' above the tonic: major or perfect?', '으뜸음 위 ' + ivxShort(q.n || 2) + ': 장음정? 완전음정?') }[q.kind];
+  const head = (q.kind === 'tonic' || q.kind === 'mp') && <div style={{textAlign:'center',fontFamily:LB_SERIF,fontSize:pixel ? 14 : 22,fontWeight:900,color:pixel ? '#faf6ec' : 'var(--navy)',margin:'0 0 2px'}}>{sscSx(skgKeyName(q.k))}</div>;
+  let pic = null;
+  if (q.kind === 'write') {
+    pic = <IvxWrite q={q} given={given} locked={locked} onAnswer={onAnswer} pixel={pixel} paper={paper}/>;
+  } else if (q.kind === 'hand') {
+    pic = <div style={{maxWidth:240,margin:'0 auto',...box}}><IvxKeys d0={q.pos} n={5} nums={IVX_SCALE_N(q.pos)} numCol={PEN_N} o={{ H: 110, lit: [ivMidi(q.p.a)], pale: [ivMidi(q.p.b)] }}/></div>;
+  } else if (q.kind === 'ear') {
+    pic = <div style={{textAlign:'center',margin:'4px 0 6px'}}><button className="ghost-btn" style={{minHeight:44}} onClick={() => ivxPlay(q.p)}>{t('▶ Listen again', '▶ 다시 듣기')}</button>
+      {isDone && <div style={{maxWidth:240,margin:'8px auto 0',background:pixel ? '#fff' : 'transparent',borderRadius:pixel ? 0 : 8}}><IvxStaff pairs={[q.p]} width={240} o={{ x0: 64 }}/></div>}</div>;
+  } else {
+    const kk = q.kind === 'tonic' || q.kind === 'mp' ? q.k : null;
+    pic = <div style={{maxWidth:260,margin:'0 auto',...box}}><IvxStaff clef={q.clef || 'treble'} pairs={[{ ...q.p, ladder: isDone && q.kind !== 'mh' && q.kind !== 'mp' }]} width={260} o={{ x0: 66, key: kk }}/></div>;
+  }
+  const cols = q.kind === 'write' ? 0 : q.choices.length === 2 ? 2 : 4;
+  return <div>{!paper && <BoardTrack b={board} pixel={pixel}/>}
+    {head}
+    <p style={{fontSize:pixel ? 11.5 : 17,fontWeight:900,textAlign:'center',margin:'0 0 8px',color:ink,textWrap:'balance',wordBreak:'keep-all'}}>{prompt}</p>
+    <div style={{margin:'0 auto 10px'}}>{pic}</div>
+    {cols > 0 && <div style={{display:'grid',gridTemplateColumns:'repeat(' + cols + ',minmax(0,1fr))',gap:8}}>{q.choices.map(c => <button key={c} disabled={locked} onClick={() => { if (q.kind === 'ear') stopClicks(); onAnswer(c); }} className={btnCls + st(c)} style={{padding:'12px 4px',minHeight:44}}><span style={{fontSize:pixel ? 11 : 18,fontWeight:900}}>{sscSx(ivxChoiceTxt(q, c))}</span></button>)}</div>}
+  </div>;
+}
+
+// ─── Phase 477: chapter 21's Workbook (pages 2 to 8: one per lesson step, any key, the check-up) and the Teacher copy ───
+// (they replace the Phase 116 ones)
+const ivxP = (a, b, harm) => ({ a: IVX_N(a), b: IVX_N(b), harm: !!harm });
+const IVX_WB = {
+  try2: [ivxP(28, 30), ivxP(31, 35), ivxP(29, 32), ivxP(33, 34)],                                   // 3rd (done), 5th, 4th, 2nd
+  turn2: [['bass', ivxP(18, 21)], ['treble', ivxP(30, 35, 1)], ['bass', ivxP(20, 26, 1)], ['treble', { ...ivxP(35, 37), down: true }]],   // 4th, 6th, 7th, 3rd (going down: E then C)
+  play2: [ivxP(28, 32), ivxP(32, 34), ivxP(29, 35)],                                                 // 5th, 3rd, 7th
+  try3: [2, 4, 1, 3],                                                                                // C position: the thumb and E (3rd, done), G, D, F
+  turn3: [[28, 'treble', 3], [32, 'treble', 5], [30, 'treble', 4], [18, 'bass', 3], [29, 'treble', 2], [19, 'bass', 5]],   // E, D, A, B, E, E
+  play3: [2, 3, 4, 5].map(n => ivxP(28, 28 + n - 1, 1)),
+  try4: [ivxP(28, 33, 1), ivxP(29, 35, 1), ivxP(30, 37, 1), ivxP(31, 36, 1)],                       // 6th (done), 7th, octave, 6th
+  turn4: [[29, 'treble', 6], [30, 'treble', 8], [31, 'treble', 7], [20, 'bass', 6]],                 // B, E, E, G
+  play4: [28, 29, 30, 31].map(d => ivxP(d, d + 7, 1)),
+  try5: [ivxP(28, 30), ivxP(32, 34, 1), ivxP(29, 30, 1), ivxP(31, 35)],                             // melodic 3rd (done), harmonic 3rd, harmonic 2nd, melodic 5th
+  turn5: [['treble', ivxP(28, 32)], ['treble', ivxP(30, 31)], ['bass', ivxP(18, 22)], ['bass', ivxP(21, 23)]],
+  try6: [3, 5, 6, 4],                                                                                // G major: major 3rd (done), perfect 5th, major 6th, perfect 4th
+  turn6: [['D', 3], ['F', 4], ['C', 7], ['D', 7], ['C', 5], ['F', 7]],                               // F♯, B♭, B, C♯, G, E
+};
+const IVX_CHK = {
+  num: [['treble', ivxP(29, 33)], ['bass', ivxP(18, 23, 1)], ['treble', ivxP(32, 33, 1)], ['bass', ivxP(21, 28)]],   // 5th, 6th, 2nd, octave
+  above: [[30, 'treble', 4], [19, 'bass', 3], [28, 'treble', 7]],                                                  // A, C, B
+  mh: [['treble', ivxP(31, 33, 1)], ['treble', ivxP(29, 34)]],                                                     // harmonic, melodic
+  tonic: [['C', 3], ['F', 5], ['D', 6]],                                                                           // major 3rd, perfect 5th, major 6th
+};
+const ivxChkNo = () => { const C = IVX_CHK, nB = C.num.length + 1, nC = nB + C.above.length, nD = nC + C.mh.length; return { nB, nC, nD, total: nD + C.tonic.length - 1 }; };
+// an answer under a picture: in the example, the answer in coral; else a box
+const ivxAns = (ex, txt, w = 74, h = 30) => <div style={{display:'flex',justifyContent:'center',margin:'4px 0 2px'}}>{ex ? <span style={{display:'inline-flex',alignItems:'center',justifyContent:'center',minWidth:w,height:h,border:'1.5px solid ' + BK.coral,borderRadius:6,color:BK.coral,fontWeight:900,fontStyle:'italic',fontSize:14,padding:'0 6px'}}>{txt}</span> : bkBox(w, h)}</div>;
+const ivxCircle = (words, on) => <div style={{display:'flex',justifyContent:'center',gap:14,fontSize:13,fontWeight:800,color:BK.ink,margin:'2px 0'}}>{words.map(w => <span key={w} style={{border:'1.5px solid ' + (on === w ? BK.coral : 'transparent'),borderRadius:14,padding:'0 8px',color:on === w ? BK.coral : BK.ink}}>{w}</span>)}</div>;
+const ivxPaper = (clef, pairs, w = 220, o = {}, k = 1) => <div style={{width:'100%',maxWidth:w * k,margin:'0 auto'}}><IvxStaff clef={clef} pairs={pairs} width={w} o={{ x0: 60, padTop: 14, ...o }}/></div>;
+const ivxAboveTitle = (d, n) => <div style={{textAlign:'center',fontSize:13,fontWeight:900,color:BK.ink,marginTop:4}}>{(n === 8 ? 'Octave' : ivxEn(n)) + ' above ' + dName(d)}</div>;
+const ivxTicks = (ws) => <div style={{display:'flex',justifyContent:'center',gap:30,flexWrap:'wrap',fontSize:15,fontWeight:800,color:BK.ink}}>{ws.map(w => sprTickW(w))}</div>;
+// the note to write: the bottom note, and room for the top one (a blank pair beside it)
+const ivxWriteStaff = (d, clef, w = 180, k = 1.2) => ivxPaper(clef, [{ a: IVX_N(d), b: IVX_N(d), harm: true, onlyA: true }], w, { x0: 66, padTop: 20 }, k);
+
+function IvxWorkbook({ startNo = 1 }) {
+  const W = IVX_WB, pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + 1 + pages.length} chId="intervals">{content}</WbPage>);
+  const nm = (p) => ivxEn(p.b.d - p.a.d + 1);
+
+  // 2 (faces "Counting an interval")
+  P(<>
+    <WbTop step={1}/>
+    <Part kind="together" title="Count it" how="Count the lines and spaces from the lower note to the higher; the lower note is 1. Write the number. The first one is done.">
+      <BkGrid cols={2} gap="8px 14px">{W.try2.map((p, i) => <ExCell key={i} n={i + 1} ex={i === 0}>{sdyCol(<>{ivxPaper('treble', [{ ...p, ladder: i === 0 }])}{ivxAns(i === 0, nm(p))}</>, '8px 4px 4px')}</ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="On both staves" how="Write the number of each interval: one note after the other, or both together.">
+      <BkGrid cols={2} gap="8px 14px">{W.turn2.map(([clef, p], i) => <BkCell key={i} n={i + 5}>{sdyCol(<>{ivxPaper(clef, [p])}{ivxAns(false)}</>, '8px 4px 4px')}</BkCell>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Play and count" how="Play each interval, counting the letters aloud. Tick each one you can play.">
+      {sskRowN(9, <div style={{display:'flex',flexDirection:'column',gap:6,width:'100%'}}>{ivxPaper('treble', W.play2, 420, { x0: 70, bars: true })}{ivxTicks(['counting aloud', 'just playing'])}</div>)}
+    </Part>
+    <Faces/>
+  </>);
+
+  // 3 (faces "2nd to 5th, in the hand")
+  P(<>
+    <WbTop step={2}/>
+    <Part kind="together" title="Which interval?" how="C position: the thumb plays C. Write the interval of the two dotted keys. The first one is done.">
+      <BkGrid cols={4} gap="8px 10px">{W.try3.map((w, i) => <ExCell key={i} n={i + 1} ex={i === 0}>{sdyCol(<><div style={{maxWidth:150,margin:'0 auto',width:'100%'}}><TnPKeys start="C" whites={5} w={30} h={100} dots={['w0', 'w' + w]} labels={{ w0: '1', ['w' + w]: String(w + 1) }}/></div>{ivxAns(i === 0, ivxEn(w + 1), 60)}</>, '10px 4px 4px')}</ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Write the note above" how="Draw the note, a semibreve, on its line or space.">
+      <BkGrid cols={2} gap="8px 14px">{W.turn3.map(([d, clef, n], i) => <BkCell key={i} n={i + 5}>{sdyCol(<>{ivxAboveTitle(d, n)}{ivxWriteStaff(d, clef)}</>, '4px 4px 4px')}</BkCell>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Play them in the hand" how="Play each together: thumb and finger 2, 3, 4, 5. Then in G position. Tick each one.">
+      {sskRowN(11, <div style={{display:'flex',flexDirection:'column',gap:6,width:'100%'}}>{ivxPaper('treble', W.play3.map((p, i) => ({ ...p, lab: '1 and ' + (i + 2) })), 340, { x0: 64, labSize: 12.5 })}{ivxTicks(['C position', 'G position'])}</div>)}
+    </Part>
+    <Faces/>
+  </>);
+
+  // 4 (faces "6th, 7th and octave")
+  P(<>
+    <WbTop step={3}/>
+    <Part kind="together" title="6th, 7th or octave?" how="Write the number of each interval. The first one is done.">
+      <BkGrid cols={2} gap="8px 14px">{W.try4.map((p, i) => <ExCell key={i} n={i + 1} ex={i === 0}>{sdyCol(<>{ivxPaper('treble', [{ ...p, ladder: i === 0 }])}{ivxAns(i === 0, nm(p))}</>, '8px 4px 4px')}</ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Write the note above" how="Draw the note, a semibreve. Odd numbers: line to line, or space to space; even: line to space, or space to line.">
+      <BkGrid cols={2} gap="8px 14px">{W.turn4.map(([d, clef, n], i) => <BkCell key={i} n={i + 5}>{sdyCol(<>{ivxAboveTitle(d, n)}{ivxWriteStaff(d, clef)}</>, '4px 4px 4px')}</BkCell>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Octaves" how="Play each note with the one an octave above, together. Then find every C on the piano. Tick each one.">
+      {sskRowN(9, <div style={{display:'flex',flexDirection:'column',gap:6,width:'100%'}}>{ivxPaper('treble', W.play4, 340, { x0: 64 })}{ivxTicks(['the four octaves', 'every C'])}</div>)}
+    </Part>
+    <Faces/>
+  </>);
+
+  // 5 (faces "Melodic and harmonic")
+  P(<>
+    <WbTop step={4}/>
+    <Part kind="together" title="Melodic or harmonic?" how="Circle melodic or harmonic, then write the number. The first one is done.">
+      <BkGrid cols={2} gap="8px 14px">{W.try5.map((p, i) => <ExCell key={i} n={i + 1} ex={i === 0}>{sdyCol(<>{ivxPaper('treble', [p], 190, { x0: 56, padTop: 22 })}{ivxCircle(['melodic', 'harmonic'], i === 0 ? (p.harm ? 'harmonic' : 'melodic') : null)}{ivxAns(i === 0, nm(p), 70, 28)}</>, '8px 4px 4px')}</ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Make it harmonic" how="Write the same two notes together after the arrow: one above the other (a 2nd: side by side, touching, the lower note on the left).">
+      <BkGrid cols={2} gap="8px 14px">{W.turn5.map(([clef, p], i) => <BkCell key={i} n={i + 5}>{sdyCol(<div style={{position:'relative'}}>{ivxPaper(clef, [p, { ...p, blank: true }], 240, { x0: 56 }, 1.25)}<span style={{position:'absolute',left:'60%',top:4,transform:'translateX(-50%)',fontSize:18,fontWeight:900,color:BK.muted,lineHeight:1}}>→</span></div>, '8px 4px 6px')}</BkCell>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Listen and say" how="Your teacher plays six intervals. Write m (melodic) or h (harmonic) for each, and say its number.">
+      {sskRowN(9, <div style={{display:'flex',justifyContent:'center',gap:16}}>{[1, 2, 3, 4, 5, 6].map(i => <div key={i} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3}}>{bkBox(64, 56)}<span style={{fontSize:11,fontWeight:800,color:BK.muted}}>{i}</span></div>)}</div>)}
+    </Part>
+    <Faces/>
+  </>);
+
+  // 6 (faces "Above the tonic")
+  const g = ivxScale('G');
+  P(<>
+    <WbTop step={5}/>
+    <Part kind="together" title="Above the tonic (G major)" how="With G major’s key signature (F♯). Write major or perfect, and the number. The first one is done.">
+      <BkGrid cols={4} gap="8px 10px">{W.try6.map((n, i) => <ExCell key={i} n={i + 1} ex={i === 0}>{sdyCol(<>{ivxPaper('treble', [{ a: g[0], b: g[n - 1], harm: true }], 132, { x0: 50, padTop: 22, key: 'G' })}{ivxAns(i === 0, ivxQ(IVX_MP[n]) + ' ' + ivxEn(n), 112, 30)}</>, '8px 2px 4px')}</ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Write the note above the tonic" how="Draw the note. Add a sharp or flat only if that note has one in the key (D major: F♯ and C♯; F major: B♭).">
+      <BkGrid cols={2} gap="8px 14px">{W.turn6.map(([k, n], i) => { const sc = ivxScale(k); return <BkCell key={i} n={i + 5}>{sdyCol(<><div style={{textAlign:'center',fontSize:13,fontWeight:900,color:BK.ink,marginTop:4}}>{sscSx(prettyNote(k) + ' major: a ' + ivxQ(IVX_MP[n]) + ' ' + ivxEn(n) + ' above ' + ivxNoteTxt(sc[0]))}</div>{ivxPaper('treble', [{ a: sc[0], b: sc[0], harm: true, onlyA: true }], 180, { x0: 66, padTop: 26 }, 1.2)}</>, '4px 4px 4px')}</BkCell>; })}</BkGrid>
+    </Part>
+    <Part kind="play" title="The ladder" how="Play the tonic with each note of the scale above it, together, saying major or perfect. Tick each key.">
+      {sskRowN(11, <div style={{display:'flex',flexDirection:'column',gap:6,width:'100%'}}>{ivxPaper('treble', ivxLadder('G', false).map(p => ({ ...p, lab: null })), 400, { x0: 60, key: 'G' })}{ivxTicks(['G major', 'C major', 'D major', 'F major'])}</div>)}
+    </Part>
+    <Faces/>
+  </>);
+
+  // 7. any key: the teacher writes the key; 8. the check-up on paper
+  P(<IvxAnyKeyPage/>);
+  P(<IvxPaperCheck/>);
+  return <>{pages}</>;
+}
+function IvxAnyKeyPage() {
+  return <>
+    <WbTop step={7}/>
+    {pbKeysHead()}
+    <Part kind="together" title="Its scale" how={<span style={{textWrap:'pretty'}}>Write the key’s scale, going up from the tonic: eight notes, each with its sharp or flat.</span>}>
+      {sskRowN(1, pbBoxes(8, 50, 44, null, 10))}
+    </Part>
+    <Part kind="home" title="The ladder" how={<span style={{textWrap:'pretty'}}>Write the tonic in each bar, and the note above it: a 2nd, a 3rd, up to the octave. Then write major or perfect under each.</span>}>
+      {sskRowN(2, <div style={{width:'100%',maxWidth:640,margin:'0 auto'}}><SfStaff clef="treble" width={620} pad={[44, 70]} extra={(yOf, layer) => layer !== 'over' ? null : <g>{[1, 2, 3, 4, 5, 6].map(i => <line key={i} x1={60 + i * 79.5} x2={60 + i * 79.5} y1={yOf(38)} y2={yOf(30)} stroke={BK.ink} strokeWidth="1.3"/>)}<line x1={614} x2={614} y1={yOf(38)} y2={yOf(30)} stroke={BK.ink} strokeWidth="1.3"/>
+        {['2nd', '3rd', '4th', '5th', '6th', '7th', '8ve'].map((w, i) => <text key={w} x={60 + (i + 0.5) * 79.5} y={yOf(38) - 16} textAnchor="middle" fontSize="13" fontWeight="900" fill={BK.muted} style={{fontFamily:'Inter, sans-serif'}}>{w}</text>)}
+        {[0, 1, 2, 3, 4, 5, 6].map(i => <rect key={'bx' + i} x={60 + i * 79.5 + 5} y={yOf(30) + 32} width={69.5} height={30} rx="4" fill="#fff" stroke={BK.line} strokeWidth="1.3"/>)}</g>}/></div>)}
+    </Part>
+    <Part kind="play" title="Play the ladder" how="Fill the circles on the scale’s eight keys. Play the tonic with each note above it, together, saying the intervals. Tick each time.">
+      {sskRowN(3, <div style={{maxWidth:620,margin:'0 auto',width:'100%'}}><TnPKeys start="C" whites={14} w={37} h={130} slots wslots/></div>)}
+      <div style={{marginTop:8}}>{ivxTicks(['saying them', 'eyes closed'])}</div>
+    </Part>
+    <Part kind="year" title="My twelve keys"><div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:'8px 10px'}}>{FIFTHS.map(k => <div key={k} style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,border:'1.2px solid ' + BK.line,borderRadius:8,padding:'6px 4px',fontFamily:'Inter, sans-serif',fontSize:16,fontWeight:900,color:BK.ink}}>{prettyNote(k)}{bkBox(20, 20)}</div>)}</div>
+      <div style={{fontSize:12.5,color:BK.muted,marginTop:6}}>Tick a key when you can play its ladder and name every interval. Keep this on your first copy.</div></Part>
+    <Faces/>
+  </>;
+}
+function IvxPaperCheck() {
+  const C = IVX_CHK, { nB, nC, nD } = ivxChkNo();
+  return <div className="lb-paper" style={{display:'flex',flexDirection:'column',gap:4,flex:'1 0 auto'}}>
+    <LbPaperHead/>
+    {bkSec('A', 'Write the number of each interval.')}
+    <BkGrid cols={2} gap="6px 10px">{C.num.map(([clef, p], i) => <BkCell key={i} n={i + 1}>{sdyCol(<>{ivxPaper(clef, [p], 200, { x0: 56 }, 1.2)}{ivxAns(false, '', 64, 28)}</>, '6px 2px 4px')}</BkCell>)}</BkGrid>
+    {bkSec('B', 'Draw the note above, a semibreve.')}
+    <BkGrid cols={3} gap="6px 8px">{C.above.map(([d, clef, n], i) => <BkCell key={i} n={nB + i}>{sdyCol(<>{ivxAboveTitle(d, n)}{ivxWriteStaff(d, clef, 150, 1.4)}</>, '4px 2px 4px')}</BkCell>)}</BkGrid>
+    {bkSec('C', 'Circle melodic or harmonic.')}
+    <BkGrid cols={2} gap="6px 10px">{C.mh.map(([clef, p], i) => <BkCell key={i} n={nC + i}>{sdyCol(<>{ivxPaper(clef, [p], 200, { x0: 56 }, 1.15)}{ivxCircle(['melodic', 'harmonic'])}</>, '6px 2px 4px')}</BkCell>)}</BkGrid>
+    {bkSec('D', 'Name each interval above the tonic: major or perfect, and its number.')}
+    <BkGrid cols={3} gap="6px 8px">{C.tonic.map(([k, n], i) => { const sc = ivxScale(k); return <BkCell key={i} n={nD + i}>{sdyCol(<><div style={{textAlign:'center',fontSize:13,fontWeight:900,color:BK.ink,marginTop:4}}>{sscSx(prettyNote(k) + ' major')}</div>{ivxPaper('treble', [{ a: sc[0], b: sc[n - 1], harm: true }], 150, { x0: 56, key: k }, 1.45)}{ivxAns(false, '', 120, 28)}</>, '4px 2px 4px')}</BkCell>; })}</BkGrid>
+  </div>;
+}
+
+function IvxTeacher() {
+  const W = IVX_WB, C = IVX_CHK, pages = [], { nB, nC, nD, total } = ivxChkNo();
+  const P = (content) => pages.push(<WbPage key={pages.length} no={pages.length + 1} chId="intervals" teacher>{content}</WbPage>);
+  const num = (p) => ivxEn(p.b.d - p.a.d + 1), nmA = (d, n) => dName(d + n - 1);
+  const ab = (k, n) => { const sc = ivxScale(k); return ivxNoteTxt(sc[n - 1]); };
+  P(<>
+    <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('intervals')}</div>
+    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 8px',lineHeight:1.5}}>{sscSx('Intervals (chapter ' + bkChapterNo('reading-steps') + ': steps and skips; chapter ' + bkChapterNo('scales') + ': the major scale and its degrees). AMEB Music Craft: Grade 1, every interval by number; Grade 2, major and minor 2nds, 3rds, 6ths and 7ths; perfect unisons, 4ths, 5ths and octaves (Preliminary: 3rds, 4ths, 5ths and octaves by number). ABRSM Theory: Grade 1, the number above the tonic (C, G, D and F major); Grade 3, number and type. The interval ladder: Lesson Book page 1 and the end of the screen lesson (in the student’s keys, with major and perfect). Not here: minor intervals (chapter ' + bkChapterNo('chords') + '’s thirds), augmented and diminished, inversions, compound intervals (the toolbox).')}</div>
+    <div style={{border:'0.8px solid ' + BK.hair,padding:'6px 12px',margin:'0 0 8px',fontSize:12.5,color:BK.ink,lineHeight:1.5}}><b style={{color:BK.coral}}>Counting.</b> The lower note is 1; count every letter (every line and space) up to the higher note. Odd numbers: line to line or space to space; even numbers: line to space, or space to line. In a five-finger position the finger number is the interval (thumb and finger 3: a 3rd).</div>
+    <TcBlock page={2} title="Counting an interval" answers={<>{sscLesson('Play C then E; the child counts C D E aloud and says a 3rd. Then G up to C.')}{skgTcAns('TRY IT', W.try2.map((p, i) => num(p) + (i === 0 ? ' (done)' : '')))}{skgTcAns('YOUR TURN', W.turn2.map(([, p]) => num(p)), 5)}</>}
+      watch="Starting the count at 0 (C to E called a 2nd). Counting only the lines, or only the spaces. A falling interval given another number (E down to C is still a 3rd). On the bass staff, the notes read as if treble."
+      say="“The bottom note is 1.”"/>
+    <TcBlock page={3} title="2nd to 5th, in the hand" answers={<>{sscLesson('Right hand in C position: thumb with each finger, together; the child names each one. Then G position.')}{skgTcAns('TRY IT', W.try3.map((w, i) => ivxEn(w + 1) + (i === 0 ? ' (done)' : '')))}{skgTcAns('YOUR TURN', W.turn3.map(([d, , n]) => nmA(d, n)), 5)}</>}
+      watch="Fingers 1 and 3 called a 2nd (counting the steps, not the notes). The 4th written line to line."
+      say="“Thumb and finger 5: a 5th.”"/>
+    <TcBlock page={4} title="6th, 7th and octave" answers={<>{sscLesson('C with A, B and C above; the child names them, then plays every C on the piano.')}{skgTcAns('TRY IT', W.try4.map((p, i) => num(p) + (i === 0 ? ' (done)' : '')))}{skgTcAns('YOUR TURN', W.turn4.map(([d, , n]) => nmA(d, n)), 5)}</>}
+      watch="The octave called a 7th or a 9th. A 6th written line to line (6 is even: line to space, or space to line)."
+      say="“Same letter, count to 8: an octave.”"/>
+    <div style={{border:'0.8px solid ' + BK.hair,padding:'6px 12px',margin:'0 0 8px',fontSize:12,color:BK.ink,lineHeight:1.5}}><b style={{color:BK.coral}}>The drill (after page 6).</b> 1 count it · 2 together too · 3 in C or G position · 4 write it (place the note, then Check) · 5 melodic or harmonic · 6 the bass staff · 7 listening: 2nd, 3rd, 5th or octave (screen only) · 8 above the tonic, in the student’s keys · 9 extra: major or perfect.</div>
+  </>);
+  P(<>
+    <TcBlock page={5} title="Melodic and harmonic" answers={<>{sscLesson('Play C–E one after the other, then together; the child says melodic or harmonic. Then six for PLAY, mixed, e.g. C–E together, C–G apart, D–E together, F–A apart, G–B together, E–C apart (falling).')}{skgTcAns('TRY IT', W.try5.map((p, i) => (p.harm ? 'harmonic ' : 'melodic ') + num(p) + (i === 0 ? ' (done)' : '')))}{skgTcAns('YOUR TURN', W.turn5.map(([, p]) => dName(p.a.d) + ' and ' + dName(p.b.d) + ' together' + (p.b.d - p.a.d === 1 ? ', touching (' + dName(p.a.d) + ' on the left)' : '')), 5)}</>}
+      watch="A harmonic 2nd drawn with one note on top of the other (they sit side by side, touching)."
+      say="“Melodic: one after the other. Harmonic: together.”"/>
+    <TcBlock page={6} title="Above the tonic" answers={<>{sscLesson('G with each note of G major above it, together; the child says major or perfect and the number. Then C, D and F major.')}{skgTcAns('TRY IT', W.try6.map((n, i) => ivxQ(IVX_MP[n]) + ' ' + ivxEn(n) + (i === 0 ? ' (done)' : '')))}{skgTcAns('YOUR TURN', W.turn6.map(([k, n]) => ab(k, n)), 5)}</>}
+      watch="The key’s sharp or flat left out (D major’s 3rd is F♯), or one added where the key has none (F major’s 7th is E, not E♭). A 4th or 5th called major."
+      say="“From the tonic: 2, 3, 6, 7 major; 4, 5, 8 perfect.”"/>
+    <TcBlock page={7} title="Any key (photocopy it for each new key)" answers={<div style={{fontSize:12,color:BK.ink,lineHeight:1.5}}>For whichever key you write at the top (set in Log lesson › For the student › Keys). Its scale: the Scale finder (toolbox). The ladder: the tonic with the 2nd to the 8ve of its scale; from the tonic of any major key the 2nd, 3rd, 6th and 7th are major and the 4th, 5th and octave perfect. F♯ and C♯ major show as G♭ and D♭ (the same keys).</div>}/>
+    <TcBlock page={8} title="The check-up on paper (the Workbook’s last page)" answers={<>
+      {skgTcAns('A', C.num.map(([, p]) => num(p)))}
+      {skgTcAns('B', C.above.map(([d, , n]) => nmA(d, n)), nB)}
+      {skgTcAns('C', C.mh.map(([, p]) => p.harm ? 'harmonic' : 'melodic'), nC)}
+      {skgTcAns('D', C.tonic.map(([k, n]) => ivxQ(IVX_MP[n]) + ' ' + ivxEn(n)), nD)}
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>One mark for each answer: A {C.num.length}, B {C.above.length}, C {C.mh.length}, D {C.tonic.length}; {total} in all. D: both words for the mark; D shows the key signature, as exam papers do. A section with any wrong answer is not passed yet: go back to its pages below. Also listen to the student (My five checks, Lesson Book page 7).</div>
+    </>}
+      goBack={[{ id: 'a', step: '1, 3 and 4', page: '2, 4 and 5' }, { id: 'b', step: '2 and 3', page: '3 and 4' }, { id: 'c', step: '4', page: '5' }, { id: 'd', step: '5', page: '6' }]}/>
+    <div style={{border:'0.8px solid ' + BK.hair,padding:'7px 12px',fontSize:12,color:BK.ink,lineHeight:1.5}}><b style={{color:BK.coral}}>My five checks (Lesson Book page 7): what to ask.</b> 1. Page 2: count an interval on the staff aloud. 2. Page 3: in C position, play a 2nd, 3rd, 4th and 5th and name them. 3. Page 4: show a 6th, a 7th and an octave on the staff and on the keys. 4. Page 5: point to a melodic and a harmonic interval, write one of each, play both. 5. Page 6: name each interval above the tonic of C, G, D and F major (number; major or perfect). Got it! means right without help.</div>
+  </>);
+  return <>{pages}</>;
+}
+WORKBOOKS['intervals'] = IvxWorkbook;
+TEACHER_COPIES['intervals'] = IvxTeacher;
+
+Object.assign(INTERVALS_DRILL, { levels: IVX_LEVELS, generate: genIvxQuestion, check: ivxCheck, answerLabel: ivxAnswerLabel, Question: IvxQuestion, Learn: IvxLearn });
+const LESSON_BOOKS = { 'posture-hands': PostureLessonBook, 'first-steps': FirstStepsLessonBook, 'note-names': NoteNamesLessonBook, staff: StaffLessonBook, 'whole-staff': WholeStaffLessonBook, 'ledger-lines': LedgerLessonBook, tones: TonesLessonBook, pulse: PulseLessonBook, 'note-values': NotesRestsLessonBook, 'time-signatures': TimeSignaturesLessonBook, 'reading-steps': ReadingStepsLessonBook, dynamics: DynamicsLessonBook, 'pitch-range': PitchRangeLessonBook, tempo: TempoLessonBook, rhythm: RhythmLessonBook, scales: ScalesLessonBook, accidentals: AccidentalsLessonBook, 'piano-story': PianoStoryLessonBook, 'key-signatures': KeySigLessonBook, signs: SignsLessonBook, intervals: IntervalsLessonBook };
 // Phase 394: chapters whose first and last pages are shared by both books
-const LB_PAGE_FNS = { 'posture-hands': postureLbPages, 'first-steps': fsLbPages, 'note-names': nnLbPages, staff: sfLbPages, 'whole-staff': wsLbPages, 'ledger-lines': llLbPages, tones: tnLbPages, pulse: plLbPages, 'note-values': nvLbPages, 'time-signatures': tsLbPages, 'reading-steps': sskLbPages, dynamics: sdyLbPages, 'pitch-range': sprLbPages, tempo: stmLbPages, rhythm: srhLbPages, scales: sscLbPages, accidentals: sacLbPages, 'piano-story': spsLbPages, 'key-signatures': skgLbPages, signs: sgnLbPages };   // Phase 455: tones and pulse too, so each workbook page faces its own lesson page
+const LB_PAGE_FNS = { 'posture-hands': postureLbPages, 'first-steps': fsLbPages, 'note-names': nnLbPages, staff: sfLbPages, 'whole-staff': wsLbPages, 'ledger-lines': llLbPages, tones: tnLbPages, pulse: plLbPages, 'note-values': nvLbPages, 'time-signatures': tsLbPages, 'reading-steps': sskLbPages, dynamics: sdyLbPages, 'pitch-range': sprLbPages, tempo: stmLbPages, rhythm: srhLbPages, scales: sscLbPages, accidentals: sacLbPages, 'piano-story': spsLbPages, 'key-signatures': skgLbPages, signs: sgnLbPages, intervals: ivxLbPages };   // Phase 455: tones and pulse too, so each workbook page faces its own lesson page
 // Phase 409: the Workbook no longer repeats the book's opener; its last page is the check-up on paper (the book's
 // last page keeps only the at-the-piano checks). Chapter 4 builds its own check-up page.
 const LB_PAPER_PAGES = { 'posture-hands': () => <PhPaperCheck/>, 'first-steps': () => <FsPaperCheck/>, 'note-names': () => <NnPaperCheck/> };
