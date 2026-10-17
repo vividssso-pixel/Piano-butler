@@ -804,7 +804,7 @@ function loadRecords() {
 }
 function recordKey(drillId, level, mode) { return drillId + '|' + level + '|' + mode; }
 // a rebuilt drill's levels are new: a record saved before the rebuild (ms) belongs to the old levels, so it is not shown
-const REC_SINCE = { chords: 1792186864000, terms: 1792197545000, form: 1792201375000, melody: 1792210231000 };
+const REC_SINCE = { chords: 1792186864000, terms: 1792197545000, form: 1792201375000, melody: 1792210231000, composers: 1792219781212 };
 function getRecord(drillId, level, mode) { const r = loadRecords()[recordKey(drillId, level, mode)] || null; return r && REC_SINCE[drillId] && !(+r.lastAt >= REC_SINCE[drillId]) ? null : r; }
 function saveRecord(drillId, level, mode, result) {
   const prev = getRecord(drillId, level, mode);
@@ -1600,7 +1600,7 @@ function Lesson({ id, title, intro, children, onStart, startLabel, head, noArt }
 }
 function LessonMore({ id }) {
   const own = { 'posture-hands': ['sit-check', 'arm-moves', 'hand-shape'], 'whole-staff': ['rhymes'] }[id] || [];
-  const list = (CHAPTER_TOOL_ORDER[id] || []).filter(x => !/^(sdy|ssk|srh|ssc|stm|sps|spr|skg|sgn|ivx|chx|tmx|fmx|mlx|sac|ts|nv)-/.test(x) && !own.includes(x)).map(x => TOOLS.find(tl => tl.id === x)).filter(Boolean);
+  const list = (CHAPTER_TOOL_ORDER[id] || []).filter(x => !/^(sdy|ssk|srh|ssc|stm|sps|spr|skg|sgn|ivx|chx|tmx|fmx|mlx|cpx|sac|ts|nv)-/.test(x) && !own.includes(x)).map(x => TOOLS.find(tl => tl.id === x)).filter(Boolean);
   if (!list.length) return null;
   return <div style={{margin:'14px 0 0',padding:'10px 12px',border:'1px solid rgba(38,41,107,0.16)',borderRadius:10,background:'#fff'}}>
     <div style={{fontSize:14,fontWeight:900,color:'var(--text)',margin:'0 0 6px'}}>{t('More in the toolbox', '툴박스에 더 있어요')}</div>
@@ -15373,9 +15373,7 @@ CMP_HEAR.debussy.unshift({ kind: 'tune', title: ['“Clair de lune” (Moonlight
 // ── Phase 305: the chapter redrawn in the app's two-colour "staff look" (navy + coral on paper) ──
 const cmpT = (p) => t(p[0], p[1]);
 const cmpYears = (c) => c.died ? (c.bornApprox ? t('c. ', '약 ') : '') + c.born + '–' + c.died : t('born ' + c.born, c.born + '년 출생');
-const cmpEraName = (id) => cmpEra(id).name;
 const cmpEraTag = (id) => cmpEra(id).name.replace(/ \(.*\)$/, ''); // 'Modern (1900–1950)' -> 'Modern' where the years are shown anyway
-const cmpQuote = (k) => /^“.*”$/.test(k) && k.indexOf('“', 1) < 0 ? k : '“' + k.replace(/“/g, '‘').replace(/”/g, '’') + '”';
 const cmpById = (id) => CMP.find(c => c.id === id);
 const cmpEraSpan = (c) => c.span || [c.era];
 const cmpEraLabel = (c) => cmpEraSpan(c).map(cmpEraTag).join(' → ');
@@ -15908,80 +15906,7 @@ function ComposersHero() {
   );
 }
 
-function ComposersLearn({ onStart }) {
-  return (
-    <Lesson id="composers" title={t('Composers', '작곡가')} onStart={onStart}
-      intro={t('Who wrote the music you play? Step into each period of music history, discover its movements, see who was alive at the same time, meet ' + CMP.length + ' composers and their musical fingerprints, then test your ears.', '내가 치는 음악은 누가 썼을까요? 음악사의 각 시대로 들어가 보고, 사조를 알아보고, 누가 같은 때에 살았는지 보고, 작곡가 ' + CMP.length + '명과 그들의 음악적 지문을 만나 본 뒤, 귀로 맞혀 봐요.')}>
-      <Step title={t('Step into each era', '시대 속으로 들어가 보기')}><EraWorlds/></Step>
-      <Step title={t('Movements', '사조')}><MovementMap/></Step>
-      <Step title={t('Who lived when?', '누가 언제 살았을까?')}><ComposerTimeMachine/></Step>
-      <Step title={t('Meet the composers', '작곡가를 만나요')}><ComposerCards/></Step>
-      <Step title={t('Who am I?', '나는 누구일까요?')}><WhoAmI/></Step>
-      <Step title={t('Name that tune', '어떤 곡일까요?')}><NameThatTune/></Step>
-    </Lesson>
-  );
-}
-
-// ── Drill ──
-const COMPOSERS_LEVELS = [
-  { n: 1, label: 'Which era?', kind: 'era', time: 12 },
-  { n: 2, label: 'Which movement?', kind: 'move', time: 14 },
-  { n: 3, label: 'Who am I?', kind: 'who', time: 16 },
-  { n: 4, label: 'Name that tune', kind: 'tune', time: 18 },
-  { n: 5, label: 'Who was born first?', kind: 'first', time: 10 },
-  { n: 6, label: 'Everything mixed', kind: 'mix', time: 16 },
-];
-// Movements a composer also touched, so they are never offered as a "wrong" answer for them.
-const CMP_MOVE_NOT = { ravel: ['neoclassicism'], copland: ['film'], gershwin: ['film'], bartok: ['neoclassicism'], williams: ['american'], tchaikovsky: ['nationalism'], stravinsky: ['nationalism'], reich: ['experimental'], cage: ['minimalism'], schoenberg: ['lateromantic'], rachmaninoff: ['nationalism'] };
-// Generic "known" items that would not point to one composer on a worksheet.
-const CMP_GENERIC = /^(\d+ |More than|Four |String quartets|Études|Nocturnes|Impromptus|Gloria|Album for the Young|Piano Concerto|Piano Trio|Motets|Chorale preludes|Film music|Suite for|Jazz Suites)/;
-function genComposersQuestion(lv, prev) {
-  // a printed worksheet has no sound: listening questions become “Who wrote ...?”
-  const paper = /[?&]print=1/.test(location.search);
-  const uid = Math.random(); let kind = lv.kind === 'mix' ? pick(['era', 'move', 'who', 'tune', 'first']) : lv.kind;
-  if (paper && kind === 'tune') kind = 'wrote';
-  const nameOf = (c) => cmpT(c.name);
-  if (kind === 'era') {
-    let c, g = 0; do { c = pick(CMP.filter(x => !x.span)); } while (prev && prev.key === c.id && g++ < 10);
-    const others = shuffle(CMP_ERA_IDS.filter(id => id !== c.era)).slice(0, 3);
-    return { key: c.id, text: t('Which period did ' + nameOf(c) + ' live and compose in?', nameOf(c) + ', 어느 시대의 작곡가일까요?'), answer: cmpEraName(c.era), choices: CMP_ERA_IDS.filter(id => id === c.era || others.includes(id)).map(cmpEraName), uid };
-  }
-  if (kind === 'move') {
-    let c, g = 0; do { c = pick(CMP.filter(x => (x.moves || []).length === 1)); } while (prev && prev.key === c.id && g++ < 10);
-    const right = c.moves[0], wrong = shuffle(CMP_MOVES.map(m => m.id).filter(id => id !== right && !(CMP_MOVE_NOT[c.id] || []).includes(id))).slice(0, 3);
-    return { key: c.id, text: t('Which movement does ' + nameOf(c) + ' belong to?', nameOf(c) + ', 어떤 사조에 속할까요?'), answer: cmpT(cmpMove(right).name), choices: shuffle([right, ...wrong]).map(id => cmpT(cmpMove(id).name)), uid };
-  }
-  if (kind === 'who') {
-    let c, g = 0; do { c = pick(CMP); } while (prev && prev.key === c.id && g++ < 10);
-    const clue = cmpMask(pick([cmpT(c.fun), t('I am famous for: ', '나의 대표곡: ') + cmpT(c.known[0])]), c); // fingerprints overlap between composers, so the drill uses facts and pieces only
-    const others = shuffle(CMP.filter(x => x.id !== c.id)).slice(0, 3);
-    return { key: c.id, text: clue, answer: nameOf(c), choices: shuffle([c, ...others]).map(nameOf), uid };
-  }
-  if (kind === 'wrote') {
-    const named = (x) => x.known.filter(k => !CMP_GENERIC.test(k[0]));
-    let c, g = 0; do { c = pick(CMP.filter(x => named(x).length)); } while (prev && prev.key === c.id && g++ < 10);
-    const others = shuffle(CMP.filter(x => x.id !== c.id)).slice(0, 3);
-    return { key: c.id, text: t('Who wrote ', '') + cmpQuote(cmpT(pick(named(c)))) + t('?', '의 작곡가는?'), answer: nameOf(c), choices: shuffle([c, ...others]).map(nameOf), uid };
-  }
-  if (kind === 'tune') {
-    let k, g = 0; do { k = Math.floor(Math.random() * CMP_TUNES.length); } while (prev && prev.key === 'tune' + k && g++ < 10);
-    const tu = CMP_TUNES[k], c = cmpById(tu.id), pool = [...new Set(CMP_TUNES.map(x => x.id))].filter(id => id !== c.id);
-    return { key: 'tune' + k, text: t('Listen. Who wrote this?', '들어 보세요. 누가 작곡했을까요?'), hear: () => cmpPlay(tu.h, tu.h.quiz), auto: true, answer: nameOf(c), choices: shuffle([c, ...shuffle(pool).slice(0, 3).map(cmpById)]).map(nameOf), uid };
-  }
-  let a, b, g = 0;
-  do { [a, b] = sampleN(CMP, 2); } while ((Math.abs(a.born - b.born) < 15 || (prev && prev.key === a.id + b.id)) && g++ < 50);
-  const first = a.born < b.born ? a : b;
-  return { key: a.id + b.id, text: t('Who was born first?', '누가 먼저 태어났을까요?'), answer: nameOf(first), choices: shuffle([a, b]).map(nameOf), uid };
-}
-function ComposersQuestion(props) {
-  const { q } = props;
-  useEffect(() => { if (!q.auto || !q.hear) return; const tmo = setTimeout(q.hear, 300); return () => { clearTimeout(tmo); stopClicks(); }; }, [q.uid]);
-  return <FactQuestion {...props}/>;
-}
-const COMPOSERS_DRILL = {
-  id: 'composers', label: 'Composers', levels: COMPOSERS_LEVELS, generate: genComposersQuestion,
-  check: (q, ans) => ans === q.answer, answerLabel: (q) => q.answer, Question: ComposersQuestion, Learn: ComposersLearn,
-};
+const COMPOSERS_DRILL = { id: 'composers', label: 'Composers through Time' };   // its levels, lesson and questions: Phase 482 (Object.assign below)
 
 const SAC_DRILL = { id: 'accidentals', label: 'Accidentals' };   // Phase 472: filled in with the chapter's code
 const DRILLS = [ // Phase 361: in the music map's order
@@ -16009,7 +15934,7 @@ const DRILLS = [ // Phase 361: in the music map's order
   { id: 'signs', label: 'Signs', concept: SIGNS_DRILL, track: 'reading' },
   { id: 'terms', label: 'Musical Terms', concept: TERMS_DRILL, track: 'reading' },
   { id: 'piano-story', label: 'The Piano’s Story', concept: PIANO_STORY_DRILL, track: 'reading' },
-  { id: 'composers', label: 'Composers', concept: COMPOSERS_DRILL, track: 'about' },
+  { id: 'composers', label: 'Composers through Time', concept: COMPOSERS_DRILL, track: 'about' },
   { id: 'pitch-range', label: 'Pitch, Hz & Range', concept: PITCH_RANGE_DRILL, track: 'pitch' },
   { id: 'styles', label: 'Styles & Genres', concept: STYLES_DRILL, track: 'about' },
 ];
@@ -16021,7 +15946,7 @@ const CHAPTER_KO = {
   'time-signatures': '박자표', 'tempo': '템포 경주', 'dynamics': '다이나믹과 아티큘레이션', 'ledger-lines': '덧줄',
   'tones': '온음과 반음', 'scales': '스케일', 'accidentals': '임시표', 'key-signatures': '조표', 'intervals': '음정', 'chords': '화음',
   'signs': '기호', 'terms': '음악 용어', 'piano-story': '피아노 이야기', 'pitch-range': '음높이, 헤르츠와 음역',
-  'melody': '선율과 프레이징', 'form': '음악 형식', 'styles': '스타일과 장르', 'composers': '작곡가',
+  'melody': '선율과 프레이징', 'form': '음악 형식', 'styles': '스타일과 장르', 'composers': '시대와 작곡가',
 };
 DRILLS.forEach(d => { if (!CHAPTER_KO[d.id]) return; const en = d.label; d.labelEn = en;
   Object.defineProperty(d, 'label', { get: () => (LANG === 'ko' ? CHAPTER_KO[d.id] : en), enumerable: true, configurable: true }); });
@@ -18858,6 +18783,13 @@ const TOOLS = [
   { id: 'genre-traits', ch: 'styles', title: 'What makes each style different?', blurb: 'Folk, classical, jazz and blues, popular music: their defining traits.', C: () => <GenreTraits/> },
   { id: 'swing-feel', ch: 'styles', title: 'Straight or swing?', blurb: 'The same written eighth notes played even, then long-short: see it, hear it, test your ear.', C: () => <SwingFeel/> },
   { id: 'twelve-bar-blues', ch: 'styles', title: 'The 12-bar blues', blurb: 'Three chords, twelve bars: play it through, then fill in the missing chords.', C: () => <TwelveBarBlues/> },
+  { id: 'cpx-map', ch: 'composers', title: 'The timeline of music', blurb: 'Five periods, their keyboards and their composers on one line: tap one to hear it.', C: () => <MtlMapPad/> },
+  { id: 'cpx-baroque', ch: 'composers', title: 'Baroque composers', blurb: 'Vivaldi, Bach, Handel and Scarlatti: their lives, a piece each, and how they sound.', C: () => <CpxPeriodPad k={0}/> },
+  { id: 'cpx-classical', ch: 'composers', title: 'Classical composers', blurb: 'Haydn, Clementi, Mozart and Beethoven: their lives, a piece each, and how they sound.', C: () => <CpxPeriodPad k={1}/> },
+  { id: 'cpx-romantic', ch: 'composers', title: 'Romantic composers', blurb: 'Schubert, Chopin, the Schumanns, Liszt, Brahms and Tchaikovsky.', C: () => <CpxPeriodPad k={2}/> },
+  { id: 'cpx-modern', ch: 'composers', title: 'Modern and Contemporary composers', blurb: 'Debussy to Hisaishi: 1900 to today.', C: () => <CpxPeriodPad k={3}/> },
+  { id: 'cpx-alive', ch: 'composers', title: 'Who was alive?', blurb: 'Choose a year: the composers a line down from it crosses light up.', C: () => <CpxAlivePad/> },
+  { id: 'cpx-order', ch: 'composers', title: 'In order of birth', blurb: 'Four composers: tap them in the order they were born.', C: () => <CpxOrderPad/> },
   { id: 'era-worlds', ch: 'composers', title: 'Step into each era', blurb: 'Six periods, Renaissance to today: what the music sounds like, where it was heard, who paid the composer, the keyboard, and what else was new.', C: () => <EraWorlds/> },
   { id: 'movement-map', ch: 'composers', title: 'Movements', blurb: 'Nationalism, Impressionism, twelve-tone, Minimalism and more: when each movement happened, what to listen for, why it began, and who belonged to it.', C: () => <MovementMap/> },
   { id: 'composer-time-machine', ch: 'composers', title: 'Who lived when?', blurb: 'A time machine from 1500 to today: slide to any year and see which composers were alive, and how old they were.', C: () => <ComposerTimeMachine/> },
@@ -19114,6 +19046,13 @@ const TOOL_KO = {
   'genre-traits': ['스타일마다 무엇이 다를까?', '민요, 클래식, 재즈와 블루스, 대중음악: 각각의 특징.'],
   'swing-feel': ['스트레이트일까, 스윙일까?', '똑같이 적힌 8분음표를 고르게, 그리고 길게-짧게: 보고, 듣고, 귀를 테스트해요.'],
   'twelve-bar-blues': ['12마디 블루스', '화음 세 개, 열두 마디: 끝까지 연주하고, 빠진 화음을 채워요.'],
+  'cpx-map': ['음악의 타임라인', '다섯 시대, 그 시대의 건반 악기와 작곡가를 한 줄에: 눌러서 들어요.'],
+  'cpx-baroque': ['바로크 작곡가', '비발디, 바흐, 헨델, 스카를라티: 언제 살았는지, 곡 하나씩, 그리고 어떤 소리인지.'],
+  'cpx-classical': ['고전주의 작곡가', '하이든, 클레멘티, 모차르트, 베토벤: 언제 살았는지, 곡 하나씩, 그리고 어떤 소리인지.'],
+  'cpx-romantic': ['낭만주의 작곡가', '슈베르트, 쇼팽, 슈만 부부, 리스트, 브람스, 차이콥스키.'],
+  'cpx-modern': ['근대와 현대 작곡가', '드뷔시부터 히사이시까지: 1900년부터 오늘날까지.'],
+  'cpx-alive': ['누가 살아 있었을까?', '해를 골라요: 그해에서 내려온 선이 지나는 작곡가가 밝게 표시돼요.'],
+  'cpx-order': ['태어난 차례대로', '네 명의 작곡가: 태어난 차례대로 눌러요.'],
   'era-worlds': ['시대 속으로 들어가 보기', '르네상스부터 오늘날까지 여섯 시대: 어떤 소리인지, 음악을 듣던 곳, 작곡가에게 돈을 준 사람, 건반 악기, 그 무렵 새로웠던 것.'],
   'movement-map': ['사조', '국민악파, 인상주의, 12음 기법, 미니멀리즘 등: 각 사조가 언제였는지, 무엇을 들어야 하는지, 왜 생겨났는지, 누가 속했는지.'],
   'composer-time-machine': ['누가 언제 살았을까?', '1500년부터 오늘날까지의 타임머신: 아무 해로나 옮겨서 누가 살아 있었는지, 몇 살이었는지 봐요.'],
@@ -19132,7 +19071,7 @@ const GRADE_TAGS = {
   'piano-story': 'General knowledge', 'pitch-range': 'General knowledge', 'melody': 'Prelim–G2', 'form': 'G1–G3', 'styles': 'General knowledge', 'composers': 'General knowledge',
 };
 function stageOf(id) { return STAGES.find(s => s.ids.includes(id)); }
-const STEP_EXTRA = { scales: '6', 'key-signatures': 'k7', intervals: 'k7', chords: 'k7', terms: 'k7', form: 'k7', melody: 'k7' };   // the screen lesson's extra last step (not counted)
+const STEP_EXTRA = { scales: '6', 'key-signatures': 'k7', intervals: 'k7', chords: 'k7', terms: 'k7', form: 'k7', melody: 'k7', composers: 'k7' };   // the screen lesson's extra last step (not counted)
 function stepsDone(id) { const d = loadDone()[id] || {}; return Object.keys(d).filter(k => d[k] && !skgOldStep(id, k) && STEP_EXTRA[id] !== k).length; }
 // Phase 211 (2026-09-29): chapter-picker gallery. Every chapter now has a hero illustration
 // (finished Phase 210), so the "All chapters" screen shows those as tappable thumbnails instead
@@ -19217,7 +19156,7 @@ const pathIds = () => PATH_STAGES.flatMap(pathStageIds);
 const STAGES = PATH_STAGES.map((st, n) => ({ n, en: st.en, ko: st.ko, title: st.en[0], blurb: st.en[1], ids: pathStageIds(st) }));
 function loadStepTotals() { try { return JSON.parse(localStorage.getItem(STEPS_TOTAL_KEY)) || {}; } catch (e) { return {}; } }
 // 'new' | 'started' | 'done' (every Learn step ticked)
-const STEPS_TOTAL_NOW = { chords: 6, terms: 6, form: 6, melody: 6 };   // rebuilt lessons: their own count, never an older, larger synced total
+const STEPS_TOTAL_NOW = { chords: 6, terms: 6, form: 6, melody: 6, composers: 6 };   // rebuilt lessons: their own count, never an older, larger synced total
 function chapterStatus(id, totals) {
   const n = stepsDone(id), tot = STEPS_TOTAL_NOW[id] || (totals || loadStepTotals())[id];
   return n === 0 ? 'new' : tot && n >= tot ? 'done' : 'started';
@@ -19415,7 +19354,7 @@ const CHAPTER_SEARCH_TERMS = {
   'melody': 'melody tune line contour high point phrase phrasing phrase mark breath mark comma question answer antecedent consequent period cadence motif repetition sequence tonic',
   'form': 'form binary ternary rondo ABA AB AABB ABACA section phrase phrase mark resting note bar beat map repetition contrast letters refrain episode structure same different new repeat D.C. al Fine',
   'styles': 'style genre texture monophony homophony polyphony solo melody folk classical jazz blues popular music swing straight eighth notes triplet 12-bar twelve bar blues chords I IV V',
-  'composers': 'composer composers famous history era period renaissance baroque classical romantic 20th century modern contemporary movement school nationalism nationalist impressionism impressionist late romantic viennese twelve-tone serialism atonal neoclassicism neoclassical experimental minimalism minimalist film music ragtime jazz timeline who lived when age palestrina byrd pachelbel couperin mendelssohn smetana mussorgsky dvorak grieg rimsky-korsakov saint-saens rachmaninoff satie ravel schoenberg stravinsky copland shostakovich cage reich glass part williams hisaishi nutcracker vivaldi bach handel scarlatti haydn mozart clementi beethoven schubert chopin schumann clara liszt brahms tchaikovsky debussy joplin bartok prokofiev gershwin kabalevsky sculthorpe who am i name that tune listen fingerprint',
+  'composers': 'composer composers famous history era period renaissance baroque classical romantic 20th century modern contemporary movement school nationalism nationalist impressionism impressionist late romantic viennese twelve-tone serialism atonal neoclassicism neoclassical experimental minimalism minimalist film music ragtime jazz timeline who lived when age palestrina byrd pachelbel couperin mendelssohn smetana mussorgsky dvorak grieg rimsky-korsakov saint-saens rachmaninoff satie ravel schoenberg stravinsky copland shostakovich cage reich glass part williams hisaishi nutcracker vivaldi bach handel scarlatti haydn mozart clementi beethoven schubert chopin schumann clara liszt brahms tchaikovsky debussy joplin bartok prokofiev gershwin kabalevsky sculthorpe who am i name that tune listen fingerprint harpsichord fortepiano keyboard counterpoint alberti rubato virtuoso contemporaries alive born died lifeline',
 };
 // Phase 221: order = teaching order (body -> notes -> rhythm -> theory -> music-in-context -> helpers)
 const TOOL_CATS = [
@@ -19512,7 +19451,7 @@ const TOOL_META = {
   'mlx-map': ['melody', 1, 3, 'show ear'], 'mlx-line': ['melody', 1, 3, 'game ear'], 'mlx-phrasing': ['melody', 1, 3, 'show ear'], 'mlx-qa': ['melody', 1, 3, 'show ear'], 'mlx-motif': ['melody', 1, 3, 'game ear'], 'mlx-seq': ['melody', 1, 3, 'show ear'], 'mlx-build': ['melody', 1, 3, 'show ear'], 'tune-anatomy': ['melody', 0, 1, 'show'], 'draw-tune': ['melody', 0, 2, 'game ear'], 'phrase-marks': ['melody', 1, 2, 'show'], 'question-answer': ['melody', 1, 2, 'game ear'], 'melody-sequence': ['melody', 1, 2, 'show ear'],
   'fmx-map': ['melody', 1, 3, 'show ear'], 'fmx-phrase': ['melody', 1, 2, 'show ear'], 'fmx-letters': ['melody', 1, 3, 'game ear'], 'fmx-binary': ['melody', 2, 3, 'show ear'], 'fmx-ternary': ['melody', 2, 3, 'show ear'], 'fmx-find': ['melody', 2, 3, 'game ear'], 'fmx-build': ['melody', 1, 3, 'show ear'], 'form-shapes': ['melody', 0, 2, 'show'], 'form-builder': ['melody', 0, 2, 'game ear'], 'same-or-new': ['melody', 1, 2, 'game ear'], 'rondo-refrain': ['melody', 1, 3, 'game ear'], 'binary-ternary-spot': ['melody', 1, 3, 'game ear'],
   'texture-types': ['about', 0, 2, 'show ear'], 'texture-spotter': ['about', 1, 3, 'game ear'], 'genre-traits': ['about', 1, 3, 'show'], 'swing-feel': ['about', 1, 3, 'game ear'], 'twelve-bar-blues': ['about', 2, 3, 'game ear'],
-  'era-worlds': ['about', 0, 3, 'show'], 'movement-map': ['about', 1, 3, 'show ear'], 'composer-time-machine': ['about', 0, 3, 'show game'], 'composer-cards': ['about', 0, 3, 'show ear'], 'who-am-i': ['about', 1, 3, 'game'], 'name-that-tune': ['about', 0, 3, 'game ear'],
+  'cpx-map': ['about', 0, 3, 'show ear'], 'cpx-baroque': ['about', 0, 3, 'show ear'], 'cpx-classical': ['about', 0, 3, 'show ear'], 'cpx-romantic': ['about', 0, 3, 'show ear'], 'cpx-modern': ['about', 0, 3, 'show ear'], 'cpx-alive': ['about', 0, 3, 'show'], 'cpx-order': ['about', 1, 3, 'game'], 'era-worlds': ['about', 0, 3, 'show'], 'movement-map': ['about', 1, 3, 'show ear'], 'composer-time-machine': ['about', 0, 3, 'show game'], 'composer-cards': ['about', 0, 3, 'show ear'], 'who-am-i': ['about', 1, 3, 'game'], 'name-that-tune': ['about', 0, 3, 'game ear'],
 };
 function toolMeta(id) { const m = TOOL_META[id]; if (m) return { cat: m[0], lo: m[1], hi: m[2], kinds: m[3].split(' ') }; const t = TOOLS.find(x => x.id === id); return { cat: 'practice', lo: 0, hi: 3, kinds: ['show'], ch: t && t.ch }; }
 // Phase 168 (2026-09-28): shared search text for a tool -- title + blurb + its category's
@@ -19723,6 +19662,12 @@ const TOOL_ICON = {
   ),
   'composer-time-machine': () => (
     <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3f9a7e"/><rect x="2.5" y="4.5" width="8" height="2.6" rx="1.3" fill="#fefbf3"/><rect x="6" y="9" width="9" height="2.6" rx="1.3" fill="#fefbf3"/><rect x="10" y="13.5" width="9" height="2.6" rx="1.3" fill="#fefbf3"/><rect x="13.5" y="18" width="8" height="2.6" rx="1.3" fill="#fefbf3"/><line x1="12.2" x2="12.2" y1="2.5" y2="21.5" stroke="#e9a83a" strokeWidth="1.7" strokeLinecap="round"/></svg>
+  ),
+  'cpx-map': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3f9a7e"/>{[[2.5, 8.5], [9, 12.5], [13, 16.5], [17, 19], [19.5, 21.5]].map(([a, b]) => <rect key={a} x={a} y="4" width={b - a - 0.6} height="4.4" rx="0.8" fill="#fefbf3"/>)}<rect x="4" y="11" width="7" height="2.2" rx="1.1" fill="#fefbf3"/><rect x="8" y="14.5" width="8" height="2.2" rx="1.1" fill="#fefbf3"/><rect x="12" y="18" width="8" height="2.2" rx="1.1" fill="#e9a83a"/></svg>
+  ),
+  'cpx-order': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3f9a7e"/>{[[3, 17, '1'], [8.5, 13, '2'], [14, 9, '3']].map(([x, y, n]) => <g key={n}><rect x={x} y={y} width="7" height="2.4" rx="1.2" fill={n === '3' ? '#e9a83a' : '#fefbf3'}/><text x={x + 3.5} y={y - 1.4} textAnchor="middle" fontSize="5.6" fontWeight="900" fill="#fefbf3">{n}</text></g>)}</svg>
   ),
   'composer-cards': () => (
     <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3f9a7e"/><rect x="8" y="3" width="12" height="16" rx="1.6" fill="#fefbf3" opacity="0.55" transform="rotate(10 14 11)"/><rect x="4" y="5" width="12" height="16" rx="1.6" fill="#fefbf3" stroke="#26296b" strokeWidth="0.7"/><circle cx="10" cy="10.5" r="3" fill="#e9a83a"/><line x1="6.5" x2="13.5" y1="16" y2="16" stroke="#26296b" strokeWidth="1.1" strokeLinecap="round"/><line x1="7.5" x2="12.5" y1="18.4" y2="18.4" stroke="#26296b" strokeWidth="0.9" strokeLinecap="round" opacity="0.6"/></svg>
@@ -20097,7 +20042,7 @@ function ToolRow({ t, color, starred, onStar, open, onToggle, onChapter }) {
 // Phase 226: tools inside a chapter group follow that chapter's own step order.
 // New lesson-only pieces now live in the Toolbox too; borrow a sibling's icon until the design-phase redraw.
 [['time-sig-numbers', 'count-along'], ['note-value-tree', 'split-it'], ['dotted-notes', 'dot-lab'], ['rhythm-cards-all', 'make-card'], ['all-keys', 'circle-fifths'],
- ['major-shape', 'build-major'], ['major-fingering', 'scale-finder'], ['minor-fingering', 'minor-forms'], ['dc-ds-coda', 'road-map'], ['sgn-rep', 'road-map'], ['sgn-volta', 'road-map'], ['sgn-dc', 'dc-ds-coda'], ['sgn-ds', 'dc-ds-coda'], ['sgn-pause', 'road-map'], ['ivx-ladder', 'scale-intervals'], ['ivx-count', 'interval-ruler'], ['ivx-hand', 'interval-ruler'], ['ivx-big', 'interval-ruler'], ['ivx-mh', 'interval-ear'], ['ivx-tonic', 'scale-intervals'], ['chx-clock', 'major-minor'], ['chx-stack', 'triad-stack'], ['chx-mm', 'major-minor'], ['chx-tonic', 'key-chords'], ['chx-145', 'primary-triads'], ['chx-hands', 'primary-triads'], ['tmx-map', 'term-cards'], ['tmx-speed', 'tempo-race'], ['tmx-change', 'tempo-race'], ['tmx-vol', 'dyn-order'], ['tmx-touch', 'touch-lengths'], ['tmx-build', 'term-match'], ['fmx-map', 'form-shapes'], ['fmx-phrase', 'form-shapes'], ['fmx-letters', 'same-or-new'], ['fmx-binary', 'binary-ternary-spot'], ['fmx-ternary', 'binary-ternary-spot'], ['fmx-find', 'binary-ternary-spot'], ['fmx-build', 'binary-ternary-spot'], ['mlx-map', 'tune-anatomy'], ['mlx-phrasing', 'phrase-marks'], ['mlx-qa', 'question-answer'], ['mlx-seq', 'melody-sequence'], 
+ ['major-shape', 'build-major'], ['major-fingering', 'scale-finder'], ['minor-fingering', 'minor-forms'], ['dc-ds-coda', 'road-map'], ['sgn-rep', 'road-map'], ['sgn-volta', 'road-map'], ['sgn-dc', 'dc-ds-coda'], ['sgn-ds', 'dc-ds-coda'], ['sgn-pause', 'road-map'], ['ivx-ladder', 'scale-intervals'], ['ivx-count', 'interval-ruler'], ['ivx-hand', 'interval-ruler'], ['ivx-big', 'interval-ruler'], ['ivx-mh', 'interval-ear'], ['ivx-tonic', 'scale-intervals'], ['chx-clock', 'major-minor'], ['chx-stack', 'triad-stack'], ['chx-mm', 'major-minor'], ['chx-tonic', 'key-chords'], ['chx-145', 'primary-triads'], ['chx-hands', 'primary-triads'], ['tmx-map', 'term-cards'], ['tmx-speed', 'tempo-race'], ['tmx-change', 'tempo-race'], ['tmx-vol', 'dyn-order'], ['tmx-touch', 'touch-lengths'], ['tmx-build', 'term-match'], ['fmx-map', 'form-shapes'], ['fmx-phrase', 'form-shapes'], ['fmx-letters', 'same-or-new'], ['fmx-binary', 'binary-ternary-spot'], ['fmx-ternary', 'binary-ternary-spot'], ['fmx-find', 'binary-ternary-spot'], ['fmx-build', 'binary-ternary-spot'], ['mlx-map', 'tune-anatomy'], ['cpx-baroque', 'era-worlds'], ['cpx-classical', 'era-worlds'], ['cpx-romantic', 'era-worlds'], ['cpx-modern', 'era-worlds'], ['cpx-alive', 'composer-time-machine'], ['mlx-phrasing', 'phrase-marks'], ['mlx-qa', 'question-answer'], ['mlx-seq', 'melody-sequence'], 
  ['finger-friends', 'finger-numbers'], ['accidental-cards', 'sharp-flat'], ['ts-bars', 'bar-lines'], ['ssk-shape', 'complete-melody'], ['ssk-step', 'step-skip'], ['ssk-cpos', 'five-positions'], ['ssk-gpos', 'five-positions'], ['ssk-read', 'mini-tune'], ['sdy-pf', 'dyn-order'], ['sdy-ladder', 'dyn-order'], ['sdy-hair', 'hairpin'], ['sdy-touch', 'touch-lengths'], ['sdy-tie', 'tie-slur'], ['spr-zone', 'range-chart'], ['skg-every', 'place-it'], ['skg-g', 'sharps-order'], ['skg-f', 'flats-order'], ['skg-acc', 'sharp-flat'], ['skg-five', 'circle-fifths'], ['sps-sound', 'keyboard-ancestors'], ['sps-softloud', 'keyboard-ancestors'], ['sps-action', 'keyboard-ancestors'], ['sps-pedals', 'pedal'], ['sps-keys', 'range-chart'], ['spr-big', 'size-pitch'], ['spr-fam', 'size-pitch'], ['spr-ladder', 'size-pitch'], ['spr-range', 'range-chart'], ['stm-sf', 'tempo-walk'], ['stm-words', 'tempo-race'], ['stm-read', 'tempo-race'], ['stm-metro', 'metronome'], ['stm-steady', 'tap-tempo'], ['srh-beams', 'grouping'], ['srh-alone', 'beam-apples'], ['srh-dot', 'dot-lab'], ['srh-up', 'anacrusis'], ['srh-read', 'rhythm-cards-all'], ['sac-signs', 'accidental-cards'], ['sac-natural', 'sharp-flat'], ['sac-bar', 'accidental-bar'], ['sac-line', 'accidental-bar'], ['sac-tune', 'ssk-read'], ['ssc-steps', 'major-shape'], ['ssc-fingers', 'major-fingering'], ['ssc-degrees', 'degree-names'], ['ssc-g', 'build-major'], ['ssc-f', 'scale-finder'], ['ts-numbers', 'time-sig-numbers'], ['ts-strong', 'beat-groups'], ['ts-build', 'fill-bar'], ['ts-tie', 'tie-slur'], ['nv-walk', 'count-aloud'], ['nv-hold', 'split-it'], ['nv-long', 'note-value-tree'], ['nv-run', 'beam-apples'], ['nv-rests', 'note-rest-naming'], ['count-ring', 'count-aloud'], ['silent-beats', 'beat-target'], ['finger-beat', 'finger-numbers']].forEach(([a, b]) => { if (!TOOL_ICON[a] && TOOL_ICON[b]) TOOL_ICON[a] = TOOL_ICON[b]; });
 const CHAPTER_TOOL_ORDER = {
   'chords': ['chx-clock', 'chx-stack', 'chx-mm', 'chx-tonic', 'chx-145', 'chx-hands', 'triad-stack', 'major-minor', 'key-chords', 'primary-triads', 'inversions', 'cadences', 'chord-extensions', 'seventh-chords'],
@@ -20121,7 +20066,7 @@ const CHAPTER_TOOL_ORDER = {
   'staff': ['staff-basics', 'staff-climb', 'clef-basics', 'clef-story', 'alto-clef'],
   'whole-staff': ['rhymes', 'landmarks', 'landmark-hop', 'fold', 'flash-cards', 'write-note'],
   'styles': ['texture-types', 'texture-spotter', 'genre-traits', 'swing-feel', 'twelve-bar-blues'],
-  'composers': ['era-worlds', 'movement-map', 'composer-time-machine', 'composer-cards', 'who-am-i', 'name-that-tune'],
+  'composers': ['cpx-map', 'cpx-baroque', 'cpx-classical', 'cpx-romantic', 'cpx-modern', 'cpx-alive', 'cpx-order', 'era-worlds', 'movement-map', 'composer-time-machine', 'composer-cards', 'who-am-i', 'name-that-tune'],
   'tempo': ['stm-sf', 'stm-words', 'stm-read', 'stm-metro', 'stm-steady', 'metronome', 'tempo-walk', 'tempo-race', 'tap-tempo', 'same-tune-tempo', 'speed-change'],
   'terms': ['tmx-map', 'tmx-speed', 'tmx-change', 'tmx-vol', 'tmx-touch', 'tmx-build', 'term-sort', 'term-cards', 'term-mixer', 'term-match'],
   'time-signatures': ['ts-bars', 'ts-numbers', 'ts-strong', 'ts-build', 'ts-tie', 'bar-lines', 'beat-groups', 'beat-target', 'fill-bar', 'fix-the-bar', 'rest-grouping', 'heard-bar', 'count-along', 'time-sig-numbers', 'common-cut', 'beat-doubler'],
@@ -29540,255 +29485,6 @@ function PianoStoryTeacher() {
 }
 
 // ═══════════════════════════════ Famous Composers ═══════════════════════════════
-const CW_ERA_IDS = CMP_ERA_IDS;
-const cwEraName = (id) => cmpEraTag(id);
-const CW_CLUE = { renaissance: 'world', baroque: 'world', classical: 'keys', romantic: 'where', modern: 'where', contemporary: 'keys' };
-const CW_CLUE_CHK = [['baroque', 'keys'], ['classical', 'world'], ['romantic', 'keys'], ['modern', 'world'], ['contemporary', 'world']];
-const CW_MOVES = ['nationalism', 'impressionism', 'american', 'vienna2', 'minimalism', 'film'];
-const CW_MOVE_WHO = ['grieg', 'debussy', 'gershwin', 'schoenberg', 'reich', 'williams', 'dvorak', 'ravel'];
-const CW_MOVE_CHK = ['copland', 'part', 'smetana', 'bartok', 'debussy'];
-const CW_PIECES = ['vivaldi', 'mozart', 'beethoven', 'tchaikovsky', 'gershwin'];
-const CW_RIDDLES = ['mozart', 'chopin', 'cage'];
-const CW_PIECES_CHK = ['saintsaens', 'prokofiev', 'ravel', 'reich', 'bach'];
-const cwMoveName = (id) => cmpT(CMP_MOVE_SHORT[id]);
-const cwAlive = (c, y) => c.born <= y && y <= cmpDied(c);
-// lifelines: TOGETHER shows five lives; AT HOME the student draws four
-const CW_LIFE_TOG = ['bach', 'mozart', 'beethoven', 'chopin', 'debussy'];
-const CW_LIFE_HOME = ['haydn', 'schubert', 'brahms', 'tchaikovsky'];
-const CW_LIFE_CHK = ['handel', 'haydn', 'mozart', 'schubert', 'liszt'];
-const CW_PARTY_YEAR = 1825;
-const CW_PARTY = ['haydn', 'clementi', 'mozart', 'beethoven', 'schubert', 'mendelssohn', 'chopin', 'liszt', 'brahms'];
-function cwLifeQs() {
-  const c = cmpById;
-  const yn = (b) => b ? 'yes' : 'no';
-  return {
-    tog: [
-      { q: 'Was Bach still alive when Mozart was born?', a: yn(cwAlive(c('bach'), c('mozart').born)) },
-      { q: 'What age did Beethoven turn in ' + c('mozart').died + ', the year Mozart died?', a: String(c('mozart').died - c('beethoven').born) },
-      { q: 'Who was alive in 1830: Beethoven, Chopin or Debussy?', a: ['beethoven', 'chopin', 'debussy'].filter(id => cwAlive(c(id), 1830)).map(id => cmpT(c(id).sur)).join(', ') },
-    ],
-    home: [
-      { q: 'Which of the four were alive in 1800?', a: CW_LIFE_HOME.filter(id => cwAlive(c(id), 1800)).map(id => cmpT(c(id).sur)).join(' and ') },
-      { q: 'How many years did Schubert live (died minus born)?', a: String(c('schubert').died - c('schubert').born) },
-      { q: 'Who was born first, Brahms or Tchaikovsky?', a: c('brahms').born < c('tchaikovsky').born ? 'Brahms' : 'Tchaikovsky' },
-    ],
-    chk: [
-      { pre: 'Alive in 1800:', opts: ['Mozart', 'Schubert'], ans: cwAlive(c('mozart'), 1800) ? 0 : 1 },
-      { pre: 'Born first:', opts: ['Handel', 'Haydn'], ans: c('handel').born < c('haydn').born ? 0 : 1 },
-      { pre: 'Lived longer:', opts: ['Haydn', 'Mozart'], ans: (c('haydn').died - c('haydn').born) > (c('mozart').died - c('mozart').born) ? 0 : 1 },
-      { pre: 'Was Liszt alive when Schubert died?', opts: ['yes', 'no'], ans: cwAlive(c('liszt'), c('schubert').died) ? 0 : 1 },
-      { pre: 'Alive in 1750:', opts: ['Handel', 'Mozart'], ans: cwAlive(c('handel'), 1750) ? 0 : 1 },
-    ],
-  };
-}
-function cwWorkbook() {
-  const k = (s) => 'cw-wb-' + s;
-  const s1 = withSeed(k('s1'), () => ({ home: shuffle(CW_ERA_IDS.slice()) }));
-  const s2 = withSeed(k('s2'), () => ({ right: shuffle([0, 1, 2, 3, 4, 5]), who: shuffle(CW_MOVE_WHO.slice()), bank: shuffle(CW_MOVES.slice()) }));
-  const s4 = withSeed(k('s4'), () => ({ right: shuffle([0, 1, 2, 3, 4]), bank: shuffle([...CW_RIDDLES, 'haydn', 'liszt']) }));
-  const chk = withSeed(k('chk'), () => ({
-    pe: shuffle(CW_CLUE_CHK.slice()),
-    mv: CW_MOVE_CHK.map(id => { const c = cmpById(id), right = c.moves[0], not = CMP_MOVE_NOT[id] || []; const others = shuffle(CW_MOVES.filter(m => m !== right && !not.includes(m))).slice(0, 2); const opts = shuffle([right, ...others]); return { id, opts, ans: opts.indexOf(right) }; }),
-    fp: CW_PIECES_CHK.map(id => { const others = shuffle(CMP.filter(x => x.id !== id && x.era !== cmpById(id).era && !CW_PIECES_CHK.includes(x.id)).map(x => x.id)).slice(0, 2); const opts = shuffle([id, ...others]); return { id, opts, ans: opts.indexOf(id) }; }),
-  }));
-  return { s1, s2, s4, chk, life: cwLifeQs() };
-}
-function cwConcepts() {
-  return [
-    { id: 'pe', name: 'Six periods of music', step: 1, page: '3' },
-    { id: 'mv', name: 'Movements', step: 2, page: '4' },
-    { id: 'wl', name: 'Who lived when?', step: 3, page: '5' },
-    { id: 'fp', name: 'Famous pieces and fingerprints', step: '4-5', page: '6' },
-  ];
-}
-// six equal blocks, the boundary years underneath
-function CwPeriodBar({ ex, answers }) {
-  const yrs = ['1400', '1600', '1750', '1820', '1900', '1950', 'today'];
-  return <div>
-    <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',height:40,borderRadius:8,overflow:'hidden',border:'1.4px solid ' + BK.ink}}>{CW_ERA_IDS.map((id, i) => <div key={id} style={{borderLeft:i ? '1.4px solid ' + BK.ink : 'none',display:'flex',alignItems:'center',justifyContent:'center',background:i % 2 ? '#fff' : BK.soft,fontWeight:900,fontStyle:'italic',fontSize:12.5,color:BK.coral}}>{(answers || (ex && i === 0)) ? cwEraName(id) : ''}</div>)}</div>
-    <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',fontSize:11,fontWeight:800,color:BK.muted,marginTop:2}}>{CW_ERA_IDS.map((id, i) => <div key={id} style={{display:'flex',justifyContent:'space-between'}}><span>{yrs[i]}</span>{i === 5 && <span>{yrs[6]}</span>}</div>)}</div>
-  </div>;
-}
-// lifelines over a year axis: bars drawn, or empty tracks to draw on
-function CwLifeChart({ ids, blank, y0 = 1650, y1 = 1950, rowH = 22, label = 150 }) {
-  const pct = (y) => ((Math.max(y0, Math.min(y1, y)) - y0) / (y1 - y0) * 100) + '%';
-  const ticks = []; for (let y = y0; y <= y1; y += 50) ticks.push(y);
-  return <div>
-    {ids.map((id, i) => { const c = cmpById(id), late = (cmpDied(c) - y0) / (y1 - y0) > 0.8; return <div key={id} style={{display:'flex',alignItems:'center',height:rowH}}>
-      <span style={{width:label,flex:'0 0 auto',fontSize:12,fontWeight:800,color:BK.ink,whiteSpace:'nowrap',textAlign:'right',paddingRight:8}}>{cmpT(c.sur)} <span style={{fontWeight:600,color:BK.muted,fontSize:10.5}}>{blank ? cmpYears(c) : ''}</span></span>
-      <div style={{position:'relative',flex:1,height:'100%',background:i % 2 ? 'rgba(38,41,107,0.03)' : 'transparent'}}>
-        {ticks.map(y => <span key={y} style={{position:'absolute',left:pct(y),top:0,bottom:0,borderLeft:'1px dotted ' + BK.line}}/>)}
-        {!blank && <div style={{position:'absolute',top:6,height:10,left:pct(c.born),width:'calc(' + pct(cmpDied(c)) + ' - ' + pct(c.born) + ')',background:BK.ink,borderRadius:5}}/>}
-        {!blank && <span style={{position:'absolute',top:3,...(late ? { right: 'calc(100% - ' + pct(c.born) + ' + 5px)' } : { left: 'calc(' + pct(cmpDied(c)) + ' + 5px)' }),fontSize:10,fontWeight:700,color:BK.muted,whiteSpace:'nowrap'}}>{cmpYears(c)}</span>}
-      </div>
-    </div>; })}
-    <div style={{display:'flex'}}><span style={{width:label,flex:'0 0 auto'}}/><div style={{position:'relative',flex:1,height:16,borderTop:'1.5px solid ' + BK.ink,fontSize:10.5,fontWeight:800,color:BK.muted}}>{ticks.map((y, i) => <span key={y} style={{position:'absolute',left:pct(y),transform:i === 0 ? 'none' : i === ticks.length - 1 ? 'translateX(-100%)' : 'translateX(-50%)',top:1}}>{y}</span>)}</div></div>
-  </div>;
-}
-function CwQRow({ n, q, a, ex }) {
-  return <div style={{display:'flex',alignItems:'center',gap:8,fontSize:12.5,color:BK.ink,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>
-    <b style={{color:BK.coral,fontSize:10.5,minWidth:16}}>{ex ? 'EX' : n}</b><span style={{flex:1}}>{q}</span>{ex ? bkHand(a, 150, 26) : bkBox(150, 26)}
-  </div>;
-}
-// a blank composer card to fill in and cut out
-function CwBlankCard() {
-  const row = (label, lines = 1) => <div style={{fontSize:11,color:BK.muted,fontWeight:800}}>{label}{Array.from({ length: lines }, (_, i) => <div key={i} style={{borderBottom:'1px solid ' + BK.line,height:16}}/>)}</div>;
-  return <div style={{border:'1.8px dashed ' + BK.muted,borderRadius:14,padding:'9px 12px',display:'grid',gap:4,background:'#fff'}}>
-    <div style={{display:'grid',gridTemplateColumns:'62px 1fr',gap:10,alignItems:'center'}}>
-      <div style={{width:62,height:62,borderRadius:12,border:'1.6px solid ' + BK.ink,background:BK.soft,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9.5,color:BK.muted,textAlign:'center',lineHeight:1.2}}>draw<br/>them</div>
-      <div style={{display:'grid',gap:3}}>{row('Name')}{row('Years · country · period')}</div>
-    </div>
-    {row('Famous for')}{row('Musical fingerprint')}{row('Fun fact', 2)}
-  </div>;
-}
-function ComposersWorkbook({ startNo = 1 }) {
-  const W = useMemo(() => cwWorkbook(), [LANG]);
-  const C = cwConcepts();
-  const pages = [];
-  const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + pages.length} chId="composers">{content}</WbPage>);
-  P(<WbOpener id="composers" concepts={C} blurb="Who wrote the music you play? Travel through six periods of music history, discover the movements inside them, see who was alive at the same time, and get to know each composer’s musical fingerprint."/>);
-  P(<WbMap id="composers" concepts={C} steps={6} checkPage={startNo + 6} tasks={[
-    'Find out who wrote each piece you are learning. Which period is it from?',
-    'Play one of your pieces to someone at home and tell them one fact about its composer.',
-    'Listen to a piece from a movement on page 4. What did you hear?',
-    'Make a composer card (page 6) for every composer you play.',
-    'Practise online: scan the code and play the drill for this chapter.',
-  ]}/>);
-
-  // step 1: six periods
-  P(<>
-    <WbTop step={1}/>
-    <Part kind="together" title="Six periods in order" how="Music history is split into six periods. Write their names on the timeline: Renaissance, Baroque, Classical, Romantic, Modern, Contemporary. The first is done.">
-      <CwPeriodBar ex/>
-    </Part>
-    <Part kind="home" title="Where are we?" how="Each clue describes one period. Write its name in the box.">
-      <BkGrid cols={2} gap="8px 10px">{W.s1.home.map((id, i) => <ExCell key={id} n={i + 1}><div style={{display:'grid',gridTemplateColumns:'1fr 120px',gap:8,alignItems:'center',padding:'14px 2px 2px'}}><span style={{fontSize:12.5,color:BK.ink,lineHeight:1.4}}>{cmpT(CMP_PERIODS[id][CW_CLUE[id]])}</span>{bkBox(120, 30)}</div></ExCell>)}</BkGrid>
-    </Part>
-    <Part kind="play" title="A postcard from the past" how="You have time-travelled! Pick a period and write a postcard home: where you heard music, what keyboard you saw, and who paid the composer. Then draw a stamp for your period.">
-      <div style={{border:'1.6px solid ' + BK.ink,borderRadius:12,padding:'12px 14px',display:'grid',gridTemplateColumns:'1.4fr 1fr',gap:16,background:'#fff'}}>
-        <div style={{display:'grid',gap:4,alignContent:'start'}}><div style={{fontSize:12.5,color:BK.ink,fontStyle:'italic'}}>Dear {wbLine(120)},</div>{Array.from({ length: 7 }, (_, i) => <div key={i} style={{borderBottom:'1px solid ' + BK.line,height:22}}/>)}</div>
-        <div style={{borderLeft:'1.4px solid ' + BK.line,paddingLeft:14,display:'grid',gridTemplateRows:'auto 1fr',gap:10}}>
-          <div style={{justifySelf:'end',width:96,height:110,border:'2px dashed ' + BK.coral,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,color:BK.coral,fontWeight:800,textAlign:'center'}}>stamp</div>
-          <div style={{display:'grid',gap:10,alignContent:'end',fontSize:12,color:BK.ink}}><div style={{display:'flex',alignItems:'flex-end',gap:6}}>Period {wbLine(120)}</div><div style={{display:'flex',alignItems:'flex-end',gap:6}}>Year {wbLine(132)}</div><div style={{display:'flex',alignItems:'flex-end',gap:6}}>To {wbLine(145)}</div></div>
-        </div>
-      </div>
-    </Part>
-    <Faces/>
-  </>);
-
-  // step 2: movements
-  P(<>
-    <WbTop step={2}/>
-    <Part kind="together" title="What’s the big idea?" how="Inside each period, groups of composers shared a big idea: a movement. Join each movement to what you listen for. The first is joined.">
-      <MatchGrid side="180px" mid={90} rowH={30}
-        left={CW_MOVES.map(id => <b key={id} style={{fontSize:13.5,color:BK.ink}}>{cwMoveName(id)}</b>)}
-        right={W.s2.right.map(r => <span key={r} style={{fontSize:12.5,color:BK.ink,lineHeight:1.25}}>{cmpT(cmpMove(CW_MOVES[r]).listen[0])}</span>)}
-        ex={[0, W.s2.right.indexOf(0)]}/>
-    </Part>
-    <Part kind="home" title="Which movement?" how="Write each composer’s movement.">
-      <WbBank words={W.s2.bank.map(cwMoveName)} label="MOVEMENTS"/>
-      <BkGrid cols={4} gap="8px 10px">{W.s2.who.map((id, i) => { const c = cmpById(id); return <ExCell key={id} n={i + 1}><div style={{display:'flex',alignItems:'center',gap:8,padding:'14px 2px 4px'}}><CmpEmblem id={id} size={42}/><div><b style={{fontSize:13,color:BK.ink}}>{cmpT(c.sur)}</b><div style={{fontSize:10.5,color:BK.muted}}>{cmpYears(c)}</div></div></div><div style={{textAlign:'center'}}>{bkBox(140, 26)}</div></ExCell>; })}</BkGrid>
-    </Part>
-    <Part kind="play" title="Start your own movement" how="Invent a movement! Give it a name, a big idea and two things to listen for, and design its logo. Then make up four bars in its style and play them to someone at home.">
-      <div style={{display:'grid',gridTemplateColumns:'1.4fr 1fr',gap:16,alignItems:'stretch'}}>
-        <div style={{display:'grid',gap:10,fontSize:12.5,color:BK.ink,alignContent:'center'}}>
-          {['My movement is called', 'The big idea', 'Listen for 1', 'Listen for 2', 'Who is in it? Me and'].map(l => <div key={l} style={{display:'flex',alignItems:'flex-end',gap:8}}><span style={{whiteSpace:'nowrap'}}>{l}</span><span style={{flex:1,borderBottom:'1px solid ' + BK.ink,height:18}}/></div>)}
-          {wbTickRow('I played my four bars to someone at home.')}
-        </div>
-        <div style={{border:'1.5px dashed ' + BK.coral,borderRadius:'50%',minHeight:170,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,color:BK.coral,fontWeight:800}}>logo</div>
-      </div>
-    </Part>
-    <Faces/>
-  </>);
-
-  // step 3: who lived when
-  P(<>
-    <WbTop step={3}/>
-    <Part kind="together" title="Read the lifelines" how="Each bar is one composer’s life. Read the chart to answer.">
-      <CwLifeChart ids={CW_LIFE_TOG}/>
-      <div style={{marginTop:6}}>{W.life.tog.map((x, i) => <CwQRow key={i} n={i + 1} q={x.q} a={x.a} ex={i === 0}/>)}</div>
-    </Part>
-    <Part kind="home" title="Draw the lifelines" how="Draw a bar for each life, from the year they were born to the year they died. Then answer.">
-      <CwLifeChart ids={CW_LIFE_HOME} blank rowH={24}/>
-      <div style={{marginTop:6}}>{W.life.home.map((x, i) => <CwQRow key={i} n={i + 1} q={x.q} a={x.a}/>)}</div>
-    </Part>
-    <Part kind="play" title="A party in 1825" how={'It is ' + CW_PARTY_YEAR + ' and you are having a party. Cross out anyone who cannot come: not born yet, or no longer alive. Write the age each guest turns this year.'}>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>{CW_PARTY.map(id => { const c = cmpById(id); return <div key={id} style={{display:'flex',alignItems:'center',gap:8,border:'1.4px solid ' + BK.line,borderRadius:10,padding:'6px 8px'}}>
-        <CmpEmblem id={id} size={38}/>
-        <div style={{flex:1}}><b style={{fontSize:12.5,color:BK.ink}}>{cmpT(c.sur)}</b><div style={{fontSize:10.5,color:BK.muted}}>{cmpYears(c)}</div></div>
-        <div style={{textAlign:'center',fontSize:9.5,color:BK.muted,fontWeight:800}}>age{bkBox(38, 24)}</div>
-      </div>; })}</div>
-    </Part>
-    <Faces/>
-  </>);
-
-  // steps 4-5: meet the composers, who am I?
-  P(<>
-    <WbTop step="4-5"/>
-    <Part kind="together" title="Famous for…" how="Join each composer to one of their famous pieces. The first is joined.">
-      <MatchGrid side="170px" mid={80} rowH={30}
-        left={CW_PIECES.map(id => <span key={id} style={{display:'inline-flex',alignItems:'center',gap:6}}><b style={{fontSize:13,color:BK.ink}}>{cmpT(cmpById(id).sur)}</b><CmpEmblem id={id} size={30}/></span>)}
-        right={W.s4.right.map(r => <span key={r} style={{fontSize:12.5,color:BK.ink}}>{cmpT(cmpById(CW_PIECES[r]).known[0])}</span>)}
-        ex={[0, W.s4.right.indexOf(0)]}/>
-    </Part>
-    <Part kind="home" title="Who am I?" how="Read the clues and write the composer’s name.">
-      <WbBank words={W.s4.bank.map(id => cmpT(cmpById(id).sur))} label="NAMES"/>
-      <div style={{display:'grid',gap:6}}>{CW_RIDDLES.map((id, i) => { const cl = cmpClues(cmpById(id)); return <ExCell key={id} n={i + 1}><div style={{display:'grid',gridTemplateColumns:'1fr 130px',gap:10,alignItems:'center',padding:'12px 2px 2px'}}><div style={{fontSize:12,color:BK.ink,lineHeight:1.4}}>{cl[1]} {cl[2]}</div>{bkBox(130, 30)}</div></ExCell>; })}</div>
-    </Part>
-    <Part kind="play" title="Make composer cards" how="Fill in a card for a composer you play, then cut it out. Make one for every new composer you meet!">
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:14}}><CwBlankCard/><CwBlankCard/></div>
-      <div style={{fontSize:11,color:BK.muted,marginTop:4}}>✂ Cut on the dashed lines.</div>
-    </Part>
-    <Faces/>
-  </>);
-
-  const cnt = { pe: 5, mv: 5, wl: 5, fp: 5 };
-  P(<>
-    <CheckHead total={20}/>
-    {bkSec('A', 'Which period? Write its name.')}
-    <BkGrid cols={5} gap="6px 8px">{W.chk.pe.map(([id, f], i) => <BkCell key={i} n={i + 1}><div style={{padding:'14px 2px 4px',fontSize:10.5,color:BK.ink,lineHeight:1.35,minHeight:72}}>{cmpT(CMP_PERIODS[id][f])}</div><div style={{textAlign:'center'}}>{bkBox(96, 24)}</div></BkCell>)}</BkGrid>
-    {bkSec('B', 'Circle the movement.')}
-    <BkGrid cols={5} gap="6px 8px">{W.chk.mv.map((x, i) => { const c = cmpById(x.id); return <BkCell key={i} n={i + 6}><div style={{display:'flex',alignItems:'center',gap:6,padding:'14px 2px 4px'}}><CmpEmblem id={x.id} size={30}/><b style={{fontSize:11.5,color:BK.ink}}>{cmpT(c.sur)}</b></div><div style={{display:'grid',gap:2,margin:'0 4px 3px'}}>{x.opts.map(m => <span key={m} style={{border:'1px solid ' + BK.line,borderRadius:10,fontSize:9.5,textAlign:'center'}}>{cwMoveName(m)}</span>)}</div></BkCell>; })}</BkGrid>
-    {bkSec('C', 'Read the lifelines. Circle the answer.')}
-    <div style={{display:'grid',gridTemplateColumns:'1.15fr 1fr',gap:14,alignItems:'center'}}>
-      <CwLifeChart ids={CW_LIFE_CHK} rowH={19} label={74} y0={1650} y1={1900}/>
-      <div>{W.life.chk.map((it, i) => <CircleLine key={i} n={i + 11} it={it} fs={12}/>)}</div>
-    </div>
-    {bkSec('D', 'Who wrote it? Circle the composer.')}
-    <BkGrid cols={5} gap="6px 8px">{W.chk.fp.map((x, i) => <BkCell key={i} n={i + 16}><div style={{padding:'14px 2px 4px',fontSize:11,fontWeight:700,fontStyle:'italic',color:BK.ink,lineHeight:1.3,minHeight:40}}>{cmpT(cmpById(x.id).known[0])}</div><div style={{display:'grid',gap:2,margin:'0 4px 3px'}}>{x.opts.map(o => <span key={o} style={{border:'1px solid ' + BK.line,borderRadius:10,fontSize:9.5,textAlign:'center'}}>{cmpT(cmpById(o).sur)}</span>)}</div></BkCell>)}</BkGrid>
-    <CheckTable concepts={C} cnt={cnt}/>
-  </>);
-  return <>{pages}</>;
-}
-function ComposersTeacher() {
-  const W = useMemo(() => cwWorkbook(), [LANG]);
-  const pages = [];
-  const P = (content) => pages.push(<WbPage key={pages.length} no={pages.length + 1} chId="composers" teacher>{content}</WbPage>);
-  const note = (txt) => <div style={{fontSize:12,color:BK.ink,lineHeight:1.5}}>{txt}</div>;
-  const sur = (id) => cmpT(cmpById(id).sur);
-  const party = CW_PARTY.map(id => { const c = cmpById(id); return sur(id) + (cwAlive(c, CW_PARTY_YEAR) ? ' ' + (CW_PARTY_YEAR - c.born) : c.born > CW_PARTY_YEAR ? ': not born yet' : ': died ' + c.died); });
-  P(<>
-    <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('composers')}</div>
-    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Answers for every workbook page, the mistakes students make most, and a line to say when they get stuck. Lesson step 6 (Name that tune) needs sound, so it lives in the app only.</div>
-    <TcBlock page={3} title="Six periods" answers={<>{tcAns('TRY IT', CW_ERA_IDS.map(cwEraName))}{tcAns('YOUR TURN', W.s1.home.map(cwEraName))}{note('PLAY: check the postcard matches its period (e.g. no piano in the Renaissance, candles in the Baroque, a fortepiano in the Classical period).')}</>}
-      watch="Thinking ‘Classical’ means all old music. In music history it is one short period, 1750–1820: Haydn, Mozart and young Beethoven."
-      say="“Ren-Bar-Class-Rom-Mod-Con: six rooms in a row, oldest first.”"/>
-    <TcBlock page={4} title="Movements" answers={<>{tcAns('TRY IT', CW_MOVES.map(id => cwMoveName(id) + ': ' + cmpT(cmpMove(id).listen[0])))}{tcAns('YOUR TURN', W.s2.who.map(id => sur(id) + ': ' + cwMoveName(cmpById(id).moves[0])))}</>}
-      watch="Mixing up a period and a movement. A period is a big slice of time; a movement is a group of composers inside it with one big idea. Minimalism, for example, belongs to the Contemporary period."
-      say="“The period is the house; the movement is one room in it.”"/>
-    <TcBlock page={5} title="Who lived when?" answers={<>{tcAns('TRY IT', W.life.tog.map(x => x.a))}{tcAns('YOUR TURN', W.life.home.map(x => x.a))}{tcAns('PLAY', party)}</>}
-      watch="Counting the age wrongly at the edges. The age is the year minus the birth year: the age they turn that year, as in the app."
-      say="“Put your finger on the year, go straight down the chart: whose bar does it touch?”"/>
-  </>);
-  P(<>
-    <TcBlock page={6} title="Famous pieces · who am I?" answers={<>{tcAns('TRY IT', CW_PIECES.map(id => sur(id) + ': ' + cmpT(cmpById(id).known[0])))}{tcAns('YOUR TURN', CW_RIDDLES.map(sur))}{note('PLAY: any composer; check the period they circled matches the dates they wrote.')}</>}
-      watch="Guessing from one word. Read both clues: the fingerprint says how the music sounds, the fun fact says something only that composer did."
-      say="“What would you hear? Now, what is the story about them?”"/>
-    <TcBlock page={7} title="Check-up" goBack={cwConcepts()} answers={<>{tcAns('A', W.chk.pe.map(([id]) => cwEraName(id)))}{tcAns('B', W.chk.mv.map(x => cwMoveName(x.opts[x.ans])))}{tcAns('C', W.life.chk.map(circleAns))}{tcAns('D', W.chk.fp.map(x => sur(x.id)))}
-      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Score each concept on its own (pass 4+ out of 5).</div></>}/>
-  </>);
-  return <>{pages}</>;
-}
 
 // ═══════════════════════════════ Pitch, Hz & Range ═══════════════════════════════
 const PR_TEN = { loose: -3, normal: 0, tight: 3 };
@@ -30037,7 +29733,7 @@ function PitchRangeTeacher() {
   return <>{pages}</>;
 }
 
-const WORKBOOKS = { front: FrontMatter, staff: SfWorkbook, 'whole-staff': WsWorkbook, 'note-names': NoteNamesWorkbook, 'note-values': NoteValuesWorkbook, 'time-signatures': TimeSigWorkbook, 'ledger-lines': LedgerWorkbook, intervals: IntervalsWorkbook, 'key-signatures': KeySigWorkbook, 'first-steps': FirstStepsWorkbook, pulse: PulseWorkbook, 'posture-hands': PostureWorkbook, rhythm: RhythmWorkbook, 'reading-steps': ReadingStepsWorkbook, dynamics: DynamicsWorkbook, signs: SignsWorkbook, tempo: TempoWorkbook, terms: TermsWorkbook, tones: TonesWorkbook, scales: ScalesWorkbook, chords: ChordsWorkbook , form: MusicalFormWorkbook, 'piano-story': PianoStoryWorkbook, composers: ComposersWorkbook, 'pitch-range': PitchRangeWorkbook, styles: StylesWorkbook };
+const WORKBOOKS = { front: FrontMatter, staff: SfWorkbook, 'whole-staff': WsWorkbook, 'note-names': NoteNamesWorkbook, 'note-values': NoteValuesWorkbook, 'time-signatures': TimeSigWorkbook, 'ledger-lines': LedgerWorkbook, intervals: IntervalsWorkbook, 'key-signatures': KeySigWorkbook, 'first-steps': FirstStepsWorkbook, pulse: PulseWorkbook, 'posture-hands': PostureWorkbook, rhythm: RhythmWorkbook, 'reading-steps': ReadingStepsWorkbook, dynamics: DynamicsWorkbook, signs: SignsWorkbook, tempo: TempoWorkbook, terms: TermsWorkbook, tones: TonesWorkbook, scales: ScalesWorkbook, chords: ChordsWorkbook , form: MusicalFormWorkbook, 'piano-story': PianoStoryWorkbook, 'pitch-range': PitchRangeWorkbook, styles: StylesWorkbook };
 
 // ─── Teacher copy (?book=teacher&ch=staff): answers, what to watch for, what to say ───
 const tcAns = (label, list, n0 = 1) => <div style={{fontSize:12,color:BK.ink,lineHeight:1.65,marginBottom:2}}><b style={{color:BK.muted,fontSize:10.5,letterSpacing:'0.06em'}}>{label}</b>{'  '}{list.map((a, i) => <React.Fragment key={i}><span style={{marginRight:10,whiteSpace:String(a).length > 14 ? 'normal' : 'nowrap'}}>{n0 != null && <span style={{color:BK.muted}}>{i + n0}.</span>} <b style={{color:BK.green}}>{a}</b></span>{' '}</React.Fragment>)}</div>;
@@ -30083,7 +29779,7 @@ function StaffTeacher() {
   </>);
   return <>{pages}</>;
 }
-const TEACHER_COPIES = { staff: SfTeacher, 'whole-staff': WsTeacher, 'note-names': NoteNamesTeacher, 'note-values': NoteValuesTeacher, 'time-signatures': TimeSigTeacher, 'ledger-lines': LedgerTeacher, intervals: IntervalsTeacher, 'key-signatures': KeySigTeacher, 'first-steps': FirstStepsTeacher, pulse: PulseTeacher, 'posture-hands': PostureTeacher, rhythm: RhythmTeacher, 'reading-steps': ReadingStepsTeacher, dynamics: DynamicsTeacher, signs: SignsTeacher, tempo: TempoTeacher, terms: TermsTeacher, tones: TonesTeacher, scales: ScalesTeacher, chords: ChordsTeacher , form: MusicalFormTeacher, 'piano-story': PianoStoryTeacher, composers: ComposersTeacher, 'pitch-range': PitchRangeTeacher, styles: StylesTeacher };
+const TEACHER_COPIES = { staff: SfTeacher, 'whole-staff': WsTeacher, 'note-names': NoteNamesTeacher, 'note-values': NoteValuesTeacher, 'time-signatures': TimeSigTeacher, 'ledger-lines': LedgerTeacher, intervals: IntervalsTeacher, 'key-signatures': KeySigTeacher, 'first-steps': FirstStepsTeacher, pulse: PulseTeacher, 'posture-hands': PostureTeacher, rhythm: RhythmTeacher, 'reading-steps': ReadingStepsTeacher, dynamics: DynamicsTeacher, signs: SignsTeacher, tempo: TempoTeacher, terms: TermsTeacher, tones: TonesTeacher, scales: ScalesTeacher, chords: ChordsTeacher , form: MusicalFormTeacher, 'piano-story': PianoStoryTeacher, 'pitch-range': PitchRangeTeacher, styles: StylesTeacher };
 
 // ─── Lesson Book extras (Phase 296): symbol cards, a Remember line, paper versions of tools ───
 // Every new sign gets a card: the symbol drawn big, its name, what it means, how to play it --
@@ -30372,11 +30068,6 @@ function bookExtras(id) {
     { remember: 'Cristofori invented the piano around 1700; the iron frame (1825-1859) made the modern piano.' },
     { remember: 'Press the key: the hammer strikes and the damper lifts. Let go: the damper drops back and stops the sound.' },
     { swap: [[isType(ErasTimeline), <PaperEras/>]], remember: 'The keyboard of each era shaped how its music is played.' },
-  ];
-  if (id === 'composers') return [
-    {}, {}, {}, {},
-    { swap: [[isType(WhoAmI), <PaperQR text="A mystery composer gives clues one at a time. Guess early for more points. Scan the code to play, or take turns: one person reads a composer's card and the others guess." params="drill=composers&lock=1" label="Who am I?"/>]] },
-    { swap: [[isType(NameThatTune), <PaperQR text="Listening needs sound: scan the code, play the record and name the composer (30 tunes)." params="drill=composers&lock=1" label="Name that tune"/>]] },
   ];
   if (id === 'styles') return [
     { swap: [[isType(TextureTypes), <PaperTextures/>]], remember: 'Monophony = one tune alone. Homophony = a tune with chords. Polyphony = two or more tunes woven together.' },
@@ -46086,7 +45777,7 @@ const skgWhere = (d, clef = 'treble', en) => { const k = d - CLEFS[clef].low, or
 // Korean: a sign never parts from the syllable after it (a word joiner); 'ㄹ 수 있어요', '맨 윗줄', '맨 위 칸' on one line
 const skgKo = (x) => x.replace(/([♯♭♮])(?=[가-힣(])/g, '$1\u2060').replace(/(\S) 수 있어요/g, '$1\u00a0수\u00a0있어요').replace(/맨 (윗줄|위 칸|아랫줄)/g, '맨\u00a0$1');
 // the Phase 299 lesson's ticks (0 to 6, under the same id): not this lesson's steps (they are synced by union, so ignored, not deleted)
-function skgOldStep(id, k) { return (id === 'key-signatures' || id === 'signs' || id === 'intervals' || id === 'chords' || id === 'terms' || id === 'form' || id === 'melody') && /^\d+$/.test(String(k)); }
+function skgOldStep(id, k) { return (id === 'key-signatures' || id === 'signs' || id === 'intervals' || id === 'chords' || id === 'terms' || id === 'form' || id === 'melody' || id === 'composers') && /^\d+$/.test(String(k)); }
 
 // how each note of a tune sounds in a key: the key signature, unless an accidental earlier in its bar (on its own line or
 // space) says otherwise. byKey: changed by the key signature; held / natHeld: an accidental earlier in the bar still holds;
@@ -52008,9 +51699,830 @@ WORKBOOKS['melody'] = MlxWorkbook;
 TEACHER_COPIES['melody'] = MlxTeacher;
 
 Object.assign(MELODY_DRILL, { levels: MLX_LEVELS, generate: genMlxQuestion, check: mlxCheck, answerLabel: mlxAnswerLabel, Question: MlxQuestion, Learn: MlxLearn });
-const LESSON_BOOKS = { 'posture-hands': PostureLessonBook, 'first-steps': FirstStepsLessonBook, 'note-names': NoteNamesLessonBook, staff: StaffLessonBook, 'whole-staff': WholeStaffLessonBook, 'ledger-lines': LedgerLessonBook, tones: TonesLessonBook, pulse: PulseLessonBook, 'note-values': NotesRestsLessonBook, 'time-signatures': TimeSignaturesLessonBook, 'reading-steps': ReadingStepsLessonBook, dynamics: DynamicsLessonBook, 'pitch-range': PitchRangeLessonBook, tempo: TempoLessonBook, rhythm: RhythmLessonBook, scales: ScalesLessonBook, accidentals: AccidentalsLessonBook, 'piano-story': PianoStoryLessonBook, 'key-signatures': KeySigLessonBook, signs: SignsLessonBook, intervals: IntervalsLessonBook, chords: ChordsLessonBook, terms: TermsLessonBook, form: FormLessonBook, melody: MelodyLessonBook };
+// ─── Phase 482: the timeline of music (chapters 26 and 27 share it). One x axis, 1600 to today; its rows: the periods,
+// the keyboards of each time, the composers' lives, the sound of each period, and the styles beside them. Each chapter
+// draws its own rows strongly (26: the composers; 27: the sound and the styles) and the other rows lightly. Coral is the
+// one thing being looked at: a selected period or composer, or the line down from one year.
+// Facts: the periods and the composers' years are Phases 304-305's (CMP_PERIODS, CMP; checked then). The keyboards:
+// chapter 18's (Cristofori's piano about 1700; the fortepiano of Mozart's time, the 1770s; the piano from about 1830, as
+// the iron frame came in, 1825-1859). The styles: ragtime 1890s-1910s (Maple Leaf Rag 1899); blues from the late 1800s;
+// jazz from the 1910s (its first record 1917); rock and roll from the late 1940s and early 1950s (Library of Congress;
+// Wikipedia, checked 2026-10-17).
+const MTL_NOW = 2026;
+const MTL_ERAS = ['baroque', 'classical', 'romantic', 'modern', 'contemporary'];
+const mtlYears = (id) => CMP_PERIODS[id].years;
+const MTL_KEYS = [[1600, 1770, 'harpsichord', '하프시코드'], [1770, 1830, 'fortepiano', '포르테피아노'], [1830, MTL_NOW, 'piano', '피아노']];
+const MTL_SOUND = { baroque: ['counterpoint', '대위법'], classical: ['a clear tune', '또렷한 선율'], romantic: ['big feelings', '풍부한 감정'], modern: ['new sounds', '새로운 소리'], contemporary: ['anything goes', '무엇이든 가능'] };
+const MTL_STYLES = [[1890, MTL_NOW, 'blues', '블루스', 0], [1895, 1920, 'ragtime', '래그타임', 1], [1950, MTL_NOW, 'rock and pop', '록과 팝', 1], [1915, MTL_NOW, 'jazz', '재즈', 2]];
+const MTL_ROW_W = { era: ['periods', '시대'], keys: ['keyboards', '건반 악기'], cmp: ['composers', '작곡가'], sound: ['sound', '소리'], style: ['styles', '스타일'], draw: ['my composers', '나의 작곡가'] };
+const mtlEraOf = (y) => MTL_ERAS.find(id => y >= mtlYears(id)[0] && y < mtlYears(id)[1]) || (y < 1600 ? null : 'contemporary');
+const mtlEnd = (c) => c.died || MTL_NOW;
+const mtlSur = (c) => t(c.sur[0], c.sur[1]);
+// Korean writes a range with ~ (kept to the number after it)
+const mtlLife = (c) => c.died ? (c.bornApprox ? t('c. ', '약 ') : '') + c.born + t('–⁠', '~⁠') + c.died : t('born ' + c.born, c.born + '년 출생');
+// alive in a year: born before it and died after it (the years of birth and death themselves are left out of every question)
+const mtlAlive = (c, y) => c.born < y && mtlEnd(c) > y;
+// the width of a bold label: Hangul about a square each, the rest about 0.61 of the size
+const mtlTw = (s, f) => [...String(s)].reduce((w, ch) => w + (/[가-힣]/.test(ch) ? 0.98 : 0.61), 0) * f;
+
+// lanes: each composer in the first lane whose last bar (and its name) ends before this one begins.
+// one: a lane each (in order of birth); big: the years inside the bar too. A name goes inside the bar, after it, or
+// (at the right edge) before it, never outside [xMin, xMax]; where none fits, the surname alone.
+function mtlLanes(cs, X, f, one, sur = mtlSur, life = mtlLife, xMax = 9999, big = one, xMin = -9999) {
+  const lanes = [], out = [];
+  [...cs].sort((a, b) => a.born - b.born).forEach(c => {
+    const x0 = X(c.born), x1 = X(mtlEnd(c)), tip = c.died ? 0 : 7;
+    let name = big ? sur(c) + ' ' + life(c) : sur(c), tw = mtlTw(name, f), inside = big && x1 - x0 >= tw + 12;
+    const fitsR = (w) => x1 + tip + 4 + w <= xMax + 2, fitsL = (w) => x0 - 4 - w >= xMin;
+    if (big && !inside && !fitsR(tw) && !fitsL(tw)) { name = sur(c); tw = mtlTw(name, f); inside = x1 - x0 >= tw + 12; }
+    const left = !inside && !fitsR(tw) && fitsL(tw), s0 = left ? x0 - 4 - tw : x0, end = inside || left ? x1 + tip : x1 + tip + 4 + tw;
+    let k = one ? lanes.length : lanes.findIndex(e => e < s0 - 14);
+    if (k < 0) k = lanes.length;
+    lanes[k] = end; out.push({ c, k, x0, x1, name, inside, left, tip });
+  });
+  return { n: lanes.length, bars: out };
+}
+
+// MusTimeline: from/to the years shown; rows in order; focus the rows drawn strongly; ids the composers; sel {kind, id};
+// year a line down from one year; lit composers drawn coral; onTap(kind, id) makes the periods and composers (tapKinds)
+// buttons. stack: a lane per composer; big: their years inside the bars; fs, laneH, barH: the sizes; guides: the period
+// boundaries drawn faintly through the composers; en: English whatever the language (the Workbook).
+function MusTimeline({ from = 1600, to = MTL_NOW, rows = ['era', 'keys', 'cmp', 'sound', 'style'], focus = ['cmp'], ids = CPX_IDS, sel, year, lit = [], onTap, tapKinds = ['era', 'cmp'], big, W = 680, label, rowLabels = true, step, firstPiano, en, stack, fs, laneH, barH, guides, hiEra }) {
+  const T = en ? (a) => a : t, ko = LANG === 'ko' && !en, sur = (c) => en ? c.sur[0] : mtlSur(c), life = (c) => en ? (c.died ? (c.bornApprox ? 'c. ' : '') + c.born + '–' + c.died : 'born ' + c.born) : mtlLife(c);
+  const eraNm = (id) => en ? CMP_PERIODS[id].name[0].replace(/ \(.*\)$/, '') : cmpEraTag(id), ital = ko ? 'normal' : 'italic';
+  const f = fs || (big ? 11.5 : 9.5), LW = rowLabels ? (ko ? 62 : 74) * f / 9.5 + (rows.includes('draw') ? 14 : 0) : 0, x0 = LW + 8, x1 = W - 10;
+  const X = (y) => x0 + (Math.max(from, Math.min(to, y)) - from) / (to - from) * (x1 - x0);
+  const cs = ids.map(cmpById).filter(Boolean);
+  const L = mtlLanes(cs, X, f, !!(big || stack), sur, life, x1, !!big, x0 - 2), on = (r) => focus.includes(r);
+  const sw = (r) => on(r) ? PEN_N : 'rgba(38,41,107,0.45)', fillOf = (r) => on(r) ? 'rgba(38,41,107,0.10)' : 'rgba(38,41,107,0.04)';
+  const parts = [], labs = [];
+  let y = 0;
+  // the axis: ticks at least 34 units apart; a label that would touch the one before it, the edge or the year's flag is left out
+  const yx = year != null ? Math.max(20, Math.min(W - 20, X(year))) : null;
+  const pxy = (x1 - x0) / (to - from), st = step || [10, 20, 50, 100].find(v => v * pxy >= 34) || 100;
+  const ticks = []; for (let v = Math.ceil(from / st) * st; v <= to; v += st) ticks.push(v);
+  let lastR = -99; const tl = ticks.map(v => { const w = mtlTw(v, f), a = X(v) + w / 2 > W - 1 ? 'end' : X(v) - w / 2 < 1 ? 'start' : 'middle', l = a === 'end' ? X(v) - w : a === 'start' ? X(v) : X(v) - w / 2,
+    show = l > lastR + 4 && (yx == null || l > yx + 22 || l + w < yx - 22); if (show) lastR = l + w; return [v, a, show]; });
+  parts.push(<g key="ax">{tl.map(([v, a, show]) => <g key={v}><line x1={X(v)} x2={X(v)} y1={13} y2={17} stroke={BK.muted} strokeWidth="1"/>{show && <text x={X(v)} y={10} textAnchor={a} fontSize={f} fontWeight="700" fill={BK.muted}>{v}</text>}</g>)}<line x1={x0} x2={x1} y1={17} y2={17} stroke={BK.muted} strokeWidth="1"/></g>);
+  y = 22;
+  const tap = (kind, id, lab, pressed) => onTap && tapKinds.includes(kind) ? { role: 'button', tabIndex: 0, 'aria-label': lab, 'aria-pressed': !!pressed, className: 'mtl-part', style: { cursor: 'pointer' },
+    onClick: () => onTap(kind, id), onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTap(kind, id); } } } : {};
+  const rowLab = (r, yc) => rowLabels && labs.push(<text key={'l' + r} x={0} y={yc + 3.5} fontSize={Math.max(9, f - 0.5)} fontWeight="900" letterSpacing="0.06em" fill={on(r) ? BK.ink : BK.muted}>{T(MTL_ROW_W[r][0], MTL_ROW_W[r][1]).toUpperCase()}</text>);
+  rows.forEach(r => {
+    if (r === 'era' || r === 'keys') {
+      // a name inside its band where it fits; otherwise under the row, centred on its band, on as few lines as needed
+      const isEra = r === 'era', h = isEra ? Math.max(big ? 26 : 22, f * 2.2) : Math.max(big ? 16 : 13, f * 1.4), under = [];
+      const items = isEra ? MTL_ERAS.map(id => [...mtlYears(id), eraNm(id), id]) : MTL_KEYS.map(([a, b, e1, k1]) => [a, b, T(e1, k1), e1]);
+      items.forEach(([a, b, nm, id]) => { if (b <= from || a >= to) return;
+        const xa = X(a), xb = X(b), isSel = isEra && ((sel && sel.kind === 'era' && sel.id === id) || hiEra === id);
+        const fz = isEra ? f + 0.5 : f - 0.5, inside = xb - xa >= mtlTw(nm, fz) * 1.06 + (isEra ? 6 : 10);
+        const col = isSel ? BK.coral : on(r) || (isEra && on('cmp')) ? BK.ink : BK.muted, halo = year != null ? { stroke: '#fff', strokeWidth: 3, paintOrder: 'stroke', strokeLinejoin: 'round' } : {};
+        // (a band cut off at the edge of a close-up is only context: its name, if it does not fit, is left out)
+        if (!inside && xb - xa > 2 && ((a >= from && b <= to) || isSel)) under.push({ id, nm, cx: (xa + xb) / 2, col });
+        parts.push(<g key={r + id} {...(isEra ? tap('era', id, nm + ' ' + a + T('–', '~') + (b > 2025 ? T('today', '오늘날') : b), isSel) : {})}>
+          {isEra ? <rect x={xa + 0.5} y={y} width={Math.max(0, xb - xa - 1)} height={h} fill={isSel ? 'rgba(228,87,46,0.12)' : fillOf('era')} stroke={isSel ? BK.coral : sw('era')} strokeWidth={isSel ? 2 : on('era') ? 1.2 : 0.8}/>
+            : <rect x={xa + 0.5} y={y} width={Math.max(0, xb - xa - 1)} height={h} rx={h / 2} fill={fillOf('keys')} stroke={sw('keys')} strokeWidth={on('keys') ? 1.1 : 0.7}/>}
+          {inside && <text x={isEra ? (xa + xb) / 2 : xa + 6} y={y + h / 2 + fz * 0.36} textAnchor={isEra ? 'middle' : 'start'} fontSize={fz} fontWeight={isEra ? 900 : 800} fontStyle={isEra ? 'normal' : ital} fill={col} {...halo}>{nm}</text>}</g>); });
+      if (!isEra && firstPiano && from < 1700 && to > 1700) parts.push(<g key="fp"><line x1={X(1700)} x2={X(1700)} y1={y - 2} y2={y + h + 2} stroke={BK.ink} strokeWidth="1.4"/><text x={X(1700) + 4} y={y + h / 2 + (f - 1) * 0.36} fontSize={f - 1} fontWeight="800" fill={BK.ink}>{T('first piano', '첫 피아노')}</text></g>);
+      rowLab(r, y + h / 2); y += h + 2;
+      const uz = Math.max(9, f - 0.5), ends = [];
+      under.forEach(u => { const w = mtlTw(u.nm, uz) * 1.06, cx = Math.max(x0 + w / 2, Math.min(x1 - w / 2, u.cx));
+        let k = ends.findIndex(e => cx - w / 2 > e + 6); if (k < 0) k = ends.length; ends[k] = cx + w / 2;
+        parts.push(<text key={'u' + r + u.id} x={cx} y={y + (k + 1) * (uz + 2) - 1} textAnchor="middle" fontSize={uz} fontWeight={isEra ? 900 : 800} fontStyle={isEra ? 'normal' : ital} fill={u.col}>{u.nm}</text>); });
+      y += ends.length * (uz + 2) + (isEra ? 4 : 5);
+    }
+    if (r === 'cmp') {
+      const lh = laneH || (big ? 19 : 13), bh = barH || (big ? 14.5 : 8.5), y0 = y, nL = Math.max(1, L.n);
+      if (guides) MTL_ERAS.slice(1).map(id => mtlYears(id)[0]).filter(b => b > from && b < to).forEach(b =>
+        parts.push(<line key={'gd' + b} x1={X(b)} x2={X(b)} y1={y0 - 2} y2={y0 + nL * lh} stroke="rgba(38,41,107,0.18)" strokeWidth="0.8" strokeDasharray="2 3"/>));
+      L.bars.forEach(({ c, k, x0: xa, x1: xb, name, inside, left, tip }) => {
+        const yy = y0 + k * lh, picked = !!(sel && sel.kind === 'cmp' && sel.id === c.id), isSel = picked || lit.includes(c.id) || (year != null && mtlAlive(c, year));
+        const col = isSel ? BK.coral : on('cmp') ? PEN_N : 'rgba(38,41,107,0.4)';
+        const tx = inside ? xa + 6 : left ? xa - 4 : xb + tip + 4, anchor = left ? 'end' : 'start', tw = mtlTw(name, f);
+        parts.push(<g key={'c' + c.id} {...tap('cmp', c.id, cmpT(c.name) + ', ' + life(c), picked)}>
+          {onTap && tapKinds.includes('cmp') && <rect x={(left ? tx - tw : xa) - 2} y={yy} width={(left ? xb - tx + tw : inside ? xb - xa : xb - xa + tip + 4 + tw) + 4} height={lh} fill="transparent"/>}
+          <rect x={xa} y={yy + (lh - bh) / 2} width={Math.max(2, xb - xa)} height={bh} rx={bh / 2} fill={col}/>
+          {!c.died && <polygon points={`${xb},${yy + (lh - bh) / 2 - 2} ${xb + 6},${yy + lh / 2} ${xb},${yy + (lh + bh) / 2 + 2}`} fill={col}/>}
+          <text x={tx} y={yy + lh / 2 + f * 0.35} textAnchor={anchor} fontSize={f} fontWeight={big ? 900 : 800} fill={inside ? '#fff' : isSel ? BK.coral : on('cmp') ? BK.ink : BK.muted}
+            stroke={year != null && !inside ? '#fff' : 'none'} strokeWidth="3" paintOrder="stroke" strokeLinejoin="round">{name}</text></g>);
+      });
+      rowLab('cmp', y0 + nL * lh / 2); y += nL * lh + 6;
+    }
+    if (r === 'sound') {
+      const h = 14;
+      MTL_ERAS.forEach(id => { const [a, b] = mtlYears(id); if (b <= from || a >= to) return; const xa = X(a), xb = X(b), nm = T(MTL_SOUND[id][0], MTL_SOUND[id][1]);
+        if (xb - xa >= mtlTw(nm, f) + 4) parts.push(<text key={'s' + id} x={(xa + xb) / 2} y={y + h / 2 + f * 0.36} textAnchor="middle" fontSize={f} fontWeight="800" fontStyle={ital} fill={on('sound') ? BK.ink : BK.muted}>{nm}</text>); });
+      rowLab('sound', y + h / 2); y += h + 6;
+    }
+    if (r === 'style') {
+      const lh = Math.max(12, f + 4.5), nl = 3;
+      MTL_STYLES.forEach(([a, b, e1, k1, k]) => { if (b <= from || a >= to) return; const xa = X(a), xb = X(b), nm = T(e1, k1), yy = y + k * lh, inside = xb - xa >= mtlTw(nm, f - 0.5) + 10;
+        parts.push(<g key={'g' + e1}><rect x={xa} y={yy + 1.5} width={Math.max(2, xb - xa)} height={lh - 3} rx={(lh - 3) / 2} fill={on('style') ? 'rgba(38,41,107,0.16)' : 'rgba(38,41,107,0.07)'} stroke={sw('style')} strokeWidth={0.6}/>
+          <text x={inside ? xa + 5 : xa - 4} y={yy + lh / 2 + (f - 0.5) * 0.36} textAnchor={inside ? 'start' : 'end'} fontSize={f - 0.5} fontWeight="800" fill={on('style') ? BK.ink : BK.muted}>{nm}</text></g>); });
+      rowLab('style', y + nl * lh / 2); y += nl * lh + 4;
+    }
+    if (r === 'draw') {   // empty lanes to draw lives on (the Workbook), the ticks carried up
+      const n = 6, dh = 24;
+      ticks.forEach(v => parts.push(<line key={'dv' + v} x1={X(v)} x2={X(v)} y1={y} y2={y + n * dh} stroke="rgba(38,41,107,0.2)" strokeWidth="0.7" strokeDasharray="2 3"/>));
+      for (let i = 1; i <= n; i++) parts.push(<line key={'dl' + i} x1={x0} x2={x1} y1={y + i * dh} y2={y + i * dh} stroke="rgba(38,41,107,0.3)" strokeWidth="0.8"/>);
+      rowLab('draw', y + n * dh / 2); y += n * dh + 6;
+    }
+  });
+  if (year != null) {   // the line behind everything, its flag on top
+    parts.unshift(<line key="yrl" x1={X(year)} x2={X(year)} y1={14} y2={y} stroke={BK.coral} strokeWidth="2"/>);
+    parts.push(<g key="yr"><rect x={yx - 19} y={0} width={38} height={14} rx={3} fill={BK.coral}/><text x={yx} y={10.5} textAnchor="middle" fontSize="10.5" fontWeight="900" fill="#fff">{year}</text></g>);
+  }
+  const H = y + 2;
+  return <svg viewBox={`0 0 ${W} ${H}`} role={onTap ? 'group' : 'img'} aria-label={label} style={{width:'100%',height:'auto',display:'block',fontFamily:'Inter, system-ui, sans-serif'}}>
+    {onTap && <style>{'.mtl-part:focus{outline:none}.mtl-part:focus-visible>rect:first-of-type{stroke:#e4572e;stroke-width:2.5;stroke-dasharray:5 3}'}</style>}
+    {labs}{parts}</svg>;
+}
+
+// ─── Phase 482: chapter 26, Composers through Time: its composers, the who's who of each period, and the Lesson Book
+// (page 1 the timeline; pages 2 to 5 the periods; page 6 who lived when; page 7 the five checks) ───
+const CPX_PAGES = [
+  { era: 'baroque', ids: ['vivaldi', 'bach', 'handel', 'scarlatti'], from: 1670, to: 1770 },
+  { era: 'classical', ids: ['haydn', 'clementi', 'mozart', 'beethoven'], from: 1725, to: 1840 },
+  { era: 'romantic', ids: ['schubert', 'chopin', 'rschumann', 'liszt', 'cschumann', 'brahms', 'tchaikovsky'], from: 1790, to: 1910 },
+  { era: 'modern', ids: ['debussy', 'joplin', 'bartok', 'prokofiev', 'kabalevsky', 'sculthorpe', 'williams', 'hisaishi'], from: 1855, to: MTL_NOW },
+];
+const CPX_IDS = CPX_PAGES.flatMap(p => p.ids);
+// where each one lived, in short (a country, then a city), and one piece (from Phase 305's checked lists)
+const CPX_FROM = { vivaldi: ['Italy', '이탈리아'], bach: ['Germany', '독일'], handel: ['Germany, then London', '독일, 그 후 런던'], scarlatti: ['Italy, then Lisbon and Madrid', '이탈리아, 그 후 리스본과 마드리드'],
+  haydn: ['Austria', '오스트리아'], clementi: ['Italy, then London', '이탈리아, 그 후 런던'], mozart: ['Austria', '오스트리아'], beethoven: ['Germany, then Vienna', '독일, 그 후 빈'],
+  schubert: ['Austria', '오스트리아'], chopin: ['Poland, then Paris', '폴란드, 그 후 파리'], rschumann: ['Germany', '독일'], liszt: ['Hungary', '헝가리'], cschumann: ['Germany', '독일'], brahms: ['Germany, then Vienna', '독일, 그 후 빈'], tchaikovsky: ['Russia', '러시아'],
+  debussy: ['France', '프랑스'], joplin: ['USA', '미국'], bartok: ['Hungary', '헝가리'], prokofiev: ['Russia', '러시아'], kabalevsky: ['Russia', '러시아'], sculthorpe: ['Australia', '호주'], williams: ['USA', '미국'], hisaishi: ['Japan', '일본'] };
+// Schubert's piece is from 1822 (Romantic years); Robert Schumann's is the set students play (and the one the app plays)
+const CPX_PIECE = { vivaldi: ['The Four Seasons', '사계'], bach: ['The Well-Tempered Clavier', '평균율 클라비어곡집'], handel: ['Messiah', '메시아'], scarlatti: ['555 keyboard sonatas', '건반 소나타 555곡'],
+  haydn: ['the “Surprise” Symphony', '“놀람” 교향곡'], clementi: ['Sonatinas, Op. 36', '소나티네 작품 36'], mozart: ['Eine kleine Nachtmusik', '아이네 클라이네 나흐트무지크'], beethoven: ['Für Elise', '엘리제를 위하여'],
+  schubert: ['the “Unfinished” Symphony', '“미완성” 교향곡'], chopin: ['the “Minute” Waltz', '“강아지 왈츠”'], rschumann: ['Album for the Young, Op. 68', '어린이를 위한 앨범 작품 68'], liszt: ['“Liebestraum” No. 3', '“사랑의 꿈” 3번'], cschumann: ['Piano Concerto, Op. 7', '피아노 협주곡 작품 7'], brahms: ['Lullaby, Op. 49 No. 4', '자장가 작품 49-4'], tchaikovsky: ['The Nutcracker', '호두까기 인형'],
+  debussy: ['“Clair de lune”', '“달빛”'], joplin: ['“The Entertainer”', '“엔터테이너”'], bartok: ['Mikrokosmos', '미크로코스모스'], prokofiev: ['Peter and the Wolf', '피터와 늑대'], kabalevsky: ['24 Pieces for Children', '어린이를 위한 24개의 소품'],
+  sculthorpe: ['Kakadu', '카카두'], williams: ['Star Wars (film music)', '스타워즈(영화 음악)'], hisaishi: ['My Neighbor Totoro (film music)', '이웃집 토토로(영화 음악)'] };
+const cpxYrs = (id) => { const [a, b] = mtlYears(id); return b > 2025 ? t(a + ' to today', a + '년부터 오늘날까지') : t(a + '–⁠' + b, a + '~⁠' + b); };
+// Korean word pairs kept on one line
+const cpxNbKo = (x) => typeof x !== 'string' ? x : chxNbKo(x).replace(/(바로크|고전주의|낭만주의) 시대/g, '$1 시대').replace(/(같은|한) (때|해|시기|세기)/g, '$1 $2')
+  .replace(/그 후 /g, '그 후 ').replace(/작품 (\d+)/g, '작품 $1').replace(/건반 악기/g, '건반 악기').replace(/알베르티 베이스/g, '알베르티 베이스').replace(/어느 시대/g, '어느 시대')
+  .replace(/곡 하나/g, '곡 하나').replace(/맨 (아래|위) 음/g, '맨 $1 음').replace(/듣는 곡/g, '듣는 곡').replace(/소나타 (\d+곡)/g, '소나타 $1').replace(/요\((\d+)챕터\)/g, '요⁠($1챕터)');
+const cpxKoT = (x) => LANG === 'ko' ? cpxNbKo(x) : x;
+const cpxItal = () => LANG === 'ko' ? 'normal' : 'italic';   // Hangul is never slanted
+
+// the who's who of one period: each composer an entry (name and years; where; one piece). onTap makes each a button.
+function CpxWho({ ids, onTap, sel, cols = 2, scr }) {
+  return <div style={{display:'grid',gridTemplateColumns:'repeat(' + cols + ',minmax(0,1fr))',gap:scr ? '4px 16px' : '3px 22px',width:'100%',textAlign:'left'}}>
+    {onTap && <style>{'.cpx-who:focus{outline:none}.cpx-who:focus-visible{outline:2px solid #e4572e;outline-offset:2px}'}</style>}
+    {ids.map(id => { const c = cmpById(id), on = sel === id;
+      const body = <><span style={{display:'block',fontSize:scr ? 15 : 14,fontWeight:900,color:on ? BK.coral : BK.ink,lineHeight:1.3,wordBreak:'keep-all'}}>{cmpT(c.name)} <span style={{fontWeight:700,fontSize:scr ? 13 : 12.5,color:on ? BK.coral : BK.muted,whiteSpace:'nowrap'}}>{mtlLife(c)}</span></span>
+        <span style={{display:'block',fontSize:scr ? 13.5 : 12.5,color:BK.ink,lineHeight:1.35,wordBreak:'keep-all'}}>{cpxKoT(t(CPX_FROM[id][0], CPX_FROM[id][1]))} · <span style={{fontStyle:cpxItal()}}>{cpxKoT(t(CPX_PIECE[id][0], CPX_PIECE[id][1]))}</span></span></>;
+      const line = { borderStyle:'solid', borderColor:'rgba(38,41,107,0.16)', borderWidth:'1px 0 0', borderRadius:0 };
+      return onTap ? <button key={id} type="button" className="cpx-who" aria-pressed={on} onClick={() => onTap(id)} style={{...line,display:'flex',flexDirection:'column',justifyContent:'flex-start',alignItems:'stretch',minWidth:0,background:on ? 'rgba(228,87,46,0.07)' : 'transparent',textAlign:'left',font:'inherit',color:'inherit',cursor:'pointer',minHeight:44,padding:'5px 4px 3px',margin:0}}>{body}</button>
+        : <div key={id} style={{...line,padding:'5px 0 3px',minWidth:0}}>{body}</div>; })}
+  </div>;
+}
+
+function cpxLbPages(scr = false) {
+  const ch = 'composers';
+  const live = (still, comp) => <LbLive still={still} live={comp}/>;
+  const stack = (nodes, h, gap = 12, mw = 680, pad) => <LbPic h={h} pad={pad}><div style={{display:'flex',flexDirection:'column',gap,width:'100%',maxWidth:mw,margin:'0 auto',alignItems:'stretch'}}>{nodes}</div></LbPic>;
+  const X = (en, ko) => sscT(en, skgKo(cpxNbKo(ko)));
+  const cap = (x, key = 'cap') => <div key={key} style={{textAlign:'center',fontSize:scr ? 14 : 13.5,fontWeight:800,color:BK.ink,margin:'2px auto 0',maxWidth:600,lineHeight:1.35,textWrap:'balance',wordBreak:'keep-all'}}>{cpxKoT(x)}</div>;
+  const ch18 = bkChapterNo('piano-story'), ch27 = bkChapterNo('styles');
+  const eraLabel = (k) => k === 3 ? t('Modern and Contemporary, 1900 to today', '근대와 현대, 1900년부터 오늘날까지') : cmpEraTag(CPX_PAGES[k].era) + ', ' + cpxYrs(CPX_PAGES[k].era);
+  const lives = (ids) => ids.map(id => { const c = cmpById(id); return cmpT(c.name) + ', ' + mtlLife(c); }).join('; ');
+
+  // p1 (macro first): the timeline of music, a lane per composer in the order they were born
+  const p1 = <LbLive still={stack([<MusTimeline key="m" firstPiano stack fs={10.5} laneH={11.5} barH={7} guides label={t('The timeline of music, 1600 to today. Periods: Baroque 1600 to 1750, Classical 1750 to 1820, Romantic 1820 to 1900, Modern 1900 to 1950, Contemporary 1950 to today. Keyboards: the harpsichord, then the fortepiano from about 1770, then the piano from about 1830; the first piano in 1700. Composers: ' + CPX_IDS.length + ' lives in the order they were born, from Vivaldi, born 1678, to Hisaishi, born 1950. Sound and styles: chapter ' + ch27 + '.', '음악의 타임라인, 1600년부터 오늘날까지. 시대: 바로크 1600~1750, 고전주의 1750~1820, 낭만주의 1820~1900, 근대 1900~1950, 현대 1950~오늘날. 건반 악기: 하프시코드, 1770년쯤부터 포르테피아노, 1830년쯤부터 피아노. 첫 피아노는 1700년. 작곡가: 태어난 차례대로 ' + CPX_IDS.length + '명, 1678년에 태어난 비발디부터 1950년에 태어난 히사이시까지. 소리와 스타일은 ' + ch27 + '챕터.')}/>,
+    cap(t('A composer’s period is when they wrote their music. The last two rows, sound and styles, are chapter ' + ch27 + '.', '작곡가의 시대는 곡을 쓴 때로 정해요. 아래 두 줄, 소리와 스타일은 ' + ch27 + '챕터에서 배워요.'))], 300, 6, 680, '10px 16px')} live={<MtlMapPad/>}/>;
+  // p2 to p5: one period each: its stretch of the timeline, then its who's who
+  const per = (k, capx) => { const P = CPX_PAGES[k];
+    return stack([<MusTimeline key="t" big W={scr ? 680 : 590} from={P.from} to={P.to} rows={['era', 'keys', 'cmp']} ids={P.ids} firstPiano={k === 0} label={eraLabel(k) + ': ' + lives(P.ids) + '.'}/>,
+      <CpxWho key="w" ids={P.ids}/>, cap(capx, 'c')], 360, 12); };
+  const p2 = per(0, t('Bach, Handel and Scarlatti were all born in 1685. Their keyboard: the harpsichord.', '바흐, 헨델, 스카를라티는 모두 1685년에 태어났어요. 이들의 건반 악기는 하프시코드예요.'));
+  const p3 = per(1, t('Haydn, Mozart and Beethoven all worked in Vienna. Their keyboard: the fortepiano.', '하이든, 모차르트, 베토벤은 모두 빈에서 활동했어요. 이들의 건반 악기는 포르테피아노예요.'));
+  const p4 = per(2, t('Chopin and Robert Schumann were both born in 1810. Their keyboard: the piano.', '쇼팽과 로베르트 슈만은 둘 다 1810년에 태어났어요. 이들의 건반 악기는 피아노예요.'));
+  const p5 = per(3, t('Five composers of the Modern period, three of the Contemporary period.', '근대의 작곡가 다섯 명, 현대의 작곡가 세 명.'));
+  // p6: who lived when: Baroque to Romantic, a lane each, and a line down from 1785
+  const p6ids = CPX_PAGES.slice(0, 3).flatMap(p => p.ids);
+  const p6 = stack([<MusTimeline key="t" stack W={520} fs={11.5} laneH={19} barH={11} from={1670} to={1910} rows={['era', 'cmp']} ids={p6ids} year={1785} step={20} label={t('Fifteen lives from 1678 to 1897, Baroque to Romantic. A coral line down from 1785 crosses four of them: Haydn, Clementi, Mozart and Beethoven.', '1678년부터 1897년까지 열다섯 명의 생애, 바로크부터 낭만주의까지. 1785년에서 내려온 산호색 선이 네 명을 지나요: 하이든, 클레멘티, 모차르트, 베토벤.')}/>,
+    cap(t('A line down from 1785 crosses four lives: Haydn, Clementi, Mozart and Beethoven were alive at the same time.', '1785년에서 내려온 선이 네 사람을 지나요: 하이든, 클레멘티, 모차르트, 베토벤은 같은 시기에 살았어요.'), 'c6')], 300, 12);
+
+  // the check icons
+  const R = (x, y, w, h, extra = '') => '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" ' + extra + '/>';
+  const ic = {
+    map: [{ k: 'raw', svg: [6, 24, 40, 56, 70].map((x, i, a) => R(x, 12, (a[i + 1] || 86) - x - 2, 14, 'fill="none" stroke="' + PEN_N + '" stroke-width="1.4"')).join('') + '<text x="46" y="38" text-anchor="middle" font-size="8" font-weight="800" fill="' + PEN_N + '">' + t('1600 → today', '1600 → 오늘날') + '</text>' }],
+    keys: [{ k: 'raw', svg: [0, 1, 2, 3, 4, 5, 6].map(i => R(18 + i * 8, 8, 8, 24, 'fill="#fff" stroke="' + PEN_N + '" stroke-width="1.2"')).join('') + [0, 1, 3, 4, 5].map(i => R(23.5 + i * 8, 8, 5, 14, 'fill="' + PEN_N + '"')).join('') }],
+    piece: [{ k: 'raw', svg: R(24, 4, 44, 32, 'fill="none" stroke="' + PEN_N + '" stroke-width="1.4"') + [12, 17, 22, 27].map(y => '<line x1="30" x2="62" y1="' + y + '" y2="' + y + '" stroke="' + PEN_N + '" stroke-width="0.8"/>').join('') + '<ellipse cx="44" cy="24" rx="3.6" ry="2.6" fill="' + PEN_C + '"/><line x1="47.3" x2="47.3" y1="24" y2="11" stroke="' + PEN_C + '" stroke-width="1.3"/>' }],
+    alive: [{ k: 'raw', svg: [[4, 34, 10], [20, 62, 20], [38, 86, 30]].map(([a, b, y]) => R(a, y - 3, b - a, 6, 'rx="3" fill="' + (a < 46 && b > 46 ? PEN_C : PEN_N) + '"')).join('') + '<line x1="46" x2="46" y1="2" y2="38" stroke="' + PEN_C + '" stroke-width="1.8"/>' }],
+    mine: [{ k: 'raw', svg: '<circle cx="30" cy="14" r="7" fill="none" stroke="' + PEN_N + '" stroke-width="1.5"/><path d="M17 36 Q30 20 43 36" fill="none" stroke="' + PEN_N + '" stroke-width="1.5"/><ellipse cx="62" cy="28" rx="4.2" ry="3" fill="' + PEN_C + '"/><line x1="66" x2="66" y1="28" y2="10" stroke="' + PEN_C + '" stroke-width="1.5"/><path d="M66 10 Q72 13 72 19" fill="none" stroke="' + PEN_C + '" stroke-width="1.5"/>' }],
+  };
+  const checksRows = [
+    ['map', t('I can name the five periods in order, with their years', '다섯 시대의 이름과 연도를 차례대로 말할 수 있어요')],
+    ['keys', t('I can name the keyboard of the Baroque, Classical and Romantic periods', '바로크, 고전주의, 낭만주의 시대의 건반 악기를 말할 수 있어요')],
+    ['piece', t('I can name a composer and a piece from each period', '시대마다 작곡가 한 명과 그 작곡가의 곡 하나를 말할 수 있어요')],
+    ['alive', t('I can find who was alive in a given year', '어느 해에 누가 살아 있었는지 찾을 수 있어요')],
+    ['mine', t('I can say who wrote my piece, when they lived, and in which period', '내 곡을 누가 썼는지, 언제 살았는지, 어느 시대인지 말할 수 있어요')],
+  ].map(([a, x]) => [a, LANG === 'ko' ? skgKo(sscNbKo(cpxNbKo(x))) : sscNbEn(x)]);
+  const sayYears = (en, ko) => X(en + ' Say its composer and the years they lived.', ko + ' 작곡가 이름과, 그 작곡가가 언제부터 언제까지 살았는지 말해요.');
+
+  const P = (k, kicker, era, pic, defs, steps, rem, pad) => <LbPage key={k} no={k} chId={ch} kicker={kicker} title={t(cmpEraTag(era) + ': ' + cpxYrs(era), cmpEraTag(era) + ': ' + cpxYrs(era))}>
+    {live(pic, pad)}
+    <LbDefs items={defs}/>
+    <LbPiano steps={steps}/>
+    <LbRemember>{rem}</LbRemember>
+  </LbPage>;
+
+  return [
+    <LbPage key="1" no={1} chId={ch}>
+      <LbOnly print><div data-ch={ch}>
+        <div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em'}}>CHAPTER {bkChapterNo(ch)}</div>
+        <div style={{fontFamily:LB_SERIF,fontSize:44,fontWeight:900,color:BK.ink,lineHeight:1.02,margin:'4px 0 0'}}>{bkChapterName(ch)}</div>
+      </div></LbOnly>
+      {p1}
+      <LbSay size={17.5}>{LANG === 'ko' ? <>곡을 쓰는 사람이 <b>작곡가</b>예요. 음악의 역사는 <b>시대</b>로 나눠요. 시대는 음악 양식이 비슷한 기간이에요.</> : <><b>Composers</b> write music. Music history is divided into <b>periods</b>: stretches of years whose music shares a style.</>}</LbSay>
+      <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
+        <LbOnly print><div>
+          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
+          {[[cmpEraTag('baroque'), 2], [cmpEraTag('classical'), 3], [cmpEraTag('romantic'), 4], [t('Modern and Contemporary', '근대와 현대'), 5], [t('Who lived when', '누가 언제 살았을까'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',gap:8,fontSize:15,padding:'3px 0',borderBottom:'1px dotted rgba(38,41,107,0.3)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{fontWeight:800}}>{p}</span></div>)}
+        </div></LbOnly>
+        <div>
+          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          {checksRows.map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)',textWrap:'pretty'}}>{bkGoal(15)}<span>{x.replace(/^I can /, '')}</span></div>)}
+        </div>
+      </div>
+      <LbOnly print><LbDrillStrip id={ch}/></LbOnly>
+    </LbPage>,
+
+    P(2, t('Step 1', '1단계'), 'baroque', p2, [
+      [t('Baroque period', '바로크 시대'), X('The period from about 1600 to 1750.', '1600년쯤부터 1750년까지의 시대.')],
+      [t('counterpoint', '대위법'), X('Two or more tunes at once, each as important as the other.', '두 개 이상의 선율을 똑같이 중요하게 동시에 엮는 것.')],
+      [t('harpsichord', '하프시코드'), X('A keyboard whose strings are plucked. Pressing harder does not make it louder (chapter ' + ch18 + ').', '현을 뜯어 소리 내는 건반 악기. 세게 눌러도 소리가 커지지 않아요(' + ch18 + '챕터).')],
+    ], [
+      sayYears('Play a Baroque piece you know.', '아는 바로크 곡을 쳐요.'),
+      X('Play a tune at one loudness, like a harpsichord. Then play it soft and loud, like a piano.', '선율을 하프시코드처럼 같은 세기로 쳐요. 그다음 피아노처럼 여리게, 세게 쳐요.'),
+    ], X('Baroque: 1600 to 1750. Bach. The harpsichord.', '바로크: 1600~1750. 바흐. 하프시코드.'), <CpxPeriodPad k={0}/>),
+
+    P(3, t('Step 2', '2단계'), 'classical', p3, [
+      [t('Classical period', '고전주의 시대'), X('The period from about 1750 to 1820.', '1750년쯤부터 1820년까지의 시대.')],
+      [t('fortepiano', '포르테피아노'), X('The early piano of Mozart’s time. It plays soft and loud (chapter ' + ch18 + ').', '모차르트 시대의 초기 피아노. 여리게도 세게도 칠 수 있어요(' + ch18 + '챕터).')],
+      [t('Alberti bass', '알베르티 베이스'), X('A left-hand accompaniment that breaks a chord: lowest, highest, middle, highest.', '화음을 맨 아래 음, 맨 위 음, 가운데 음, 맨 위 음 순서로 펼쳐 치는 왼손 반주.')],
+    ], [
+      X('Play an Alberti bass on the chord of C: C G E G, again and again.', 'C 화음으로 알베르티 베이스를 쳐요: C G E G를 되풀이해요.'),
+      sayYears('Play a Classical piece you know, such as a sonatina.', '소나티네처럼 아는 고전주의 곡을 쳐요.'),
+    ], X('Classical: 1750 to 1820. Mozart. The fortepiano.', '고전주의: 1750~1820. 모차르트. 포르테피아노.'), <CpxPeriodPad k={1}/>),
+
+    P(4, t('Step 3', '3단계'), 'romantic', p4, [
+      [t('Romantic period', '낭만주의 시대'), X('The period from about 1820 to 1900.', '1820년쯤부터 1900년까지의 시대.')],
+      [t('rubato', '루바토'), X('Time bent for feeling: a little faster, then a little slower.', '표현을 위해 빠르기를 조금 당겼다가 조금 늦추는 것.')],
+      [t('virtuoso', '비르투오소'), X('A performer with dazzling skill, such as Liszt.', '리스트처럼 놀라운 기교를 가진 연주자.')],
+    ], [
+      X('Play a slow tune twice: once in strict time, once with a little rubato.', '느린 선율을 두 번 쳐요: 한 번은 일정한 빠르기로, 한 번은 루바토를 조금 넣어서.'),
+      sayYears('Play a Romantic piece you know.', '아는 낭만주의 곡을 쳐요.'),
+    ], X('Romantic: 1820 to 1900. Chopin. The piano.', '낭만주의: 1820~1900. 쇼팽. 피아노.'), <CpxPeriodPad k={2}/>),
+
+    <LbPage key="5" no={5} chId={ch} kicker={t('Step 4', '4단계')} title={t('Modern and Contemporary', '근대와 현대')}>
+      {live(p5, <CpxPeriodPad k={3}/>)}
+      <LbDefs items={[
+        [t('Modern period', '근대'), X('The period from about 1900 to 1950.', '1900년쯤부터 1950년까지의 시대.')],
+        [t('Contemporary period', '현대'), X('The period from 1950 to today.', '1950년부터 오늘날까지의 시대.')],
+        [t('Impressionism', '인상주의'), X('Music of soft colours and moods, from about 1890 to 1920: Debussy, Ravel.', '부드러운 색채와 분위기의 음악. 1890년쯤부터 1920년까지: 드뷔시, 라벨.')],
+      ]}/>
+      <LbPiano steps={[
+        sayYears('Play a Modern or Contemporary piece you know.', '아는 근대나 현대 곡을 쳐요.'),
+        X('Hold the sustaining pedal down and play soft notes high up. Let them blur, like an Impressionist painting.', '댐퍼 페달을 밟은 채 높은 음을 여리게 쳐요. 인상주의 그림처럼 소리가 번지게 해요.'),
+      ]}/>
+      <LbRemember>{X('Modern: 1900 to 1950. Contemporary: 1950 to today.', '근대: 1900~1950. 현대: 1950년부터 오늘날까지.')}</LbRemember>
+    </LbPage>,
+
+    <LbPage key="6" no={6} chId={ch} kicker={t('Step 5', '5단계')} title={t('Who lived when', '누가 언제 살았을까')}>
+      {live(p6, <CpxAlivePad/>)}
+      <LbDefs items={[
+        [t('contemporaries', '동시대인'), X('People who lived at the same time.', '같은 시기에 살았던 사람들.')],
+      ]}/>
+      <LbPiano steps={[
+        X('On the timeline, find 1685. Who was born that year?', '타임라인에서 1685년을 찾아요. 그해에 누가 태어났나요?'),
+        X('In 1792 Beethoven went to Vienna to study with Haydn. Find both on the timeline. Play Haydn’s “Surprise” tune (C C E E G G E), then Beethoven’s “Ode to Joy” (E E F G G F E D).'.replace(/\(([A-G ]+)\)/g, (m, x) => '(' + x.replace(/ /g, '\u00a0') + ')'), '1792년에 베토벤은 하이든에게 배우러 빈에 갔어요. 타임라인에서 두 사람을 찾아요. 하이든의 “놀람” 선율을 쳐요(C C E E G G E). 그다음 베토벤의 “환희의\u00a0송가”를 쳐요(E E F G G F E D).'.replace(/\(([A-G ]+)\)/g, (m, x) => '(' + x.replace(/ /g, '\u00a0') + ')')),
+      ]}/>
+      <LbRemember>{X('Contemporaries lived at the same time. A line down from one year finds them.', '동시대인은 같은 시기에 살았어요. 한 해에서 아래로 선을 그으면 찾을 수 있어요.')}</LbRemember>
+    </LbPage>,
+
+    <LbPage key="7" no={7} chId={ch} kicker={t('Check-up', '점검')} title={t('My five checks', '나의 다섯 가지 확인')}>
+      <LbSay>{t('Show each one on its page (1 to 6). The check-up on paper is in the Workbook.', '1~6쪽을 펴고 하나씩 보여 줘요. 종이 점검은 워크북에 있어요.')}</LbSay>
+      <LbLive still={<LbStageRows big rows={checksRows.map(([a, x]) => [<PenArt shapes={ic[a]} vb={[0, 0, 92, 40]} style={{width:80}}/>, x])}/>} live={<FiveChecks376 storeKey="pb_five_cpx_v1" rows={checksRows.map(([a, x]) => [{ shapes: ic[a], vb: [0, 0, 92, 40] }, x])}/>}/>
+    </LbPage>,
+  ];
+}
+function ComposersLessonBook() { return <>{cpxLbPages(false)}</>; }
+
+// ─── Phase 482: chapter 26's pads (pages 1 to 6, and "in order" at the end), the screen lesson and the drill ───
+const cpxMsg = (msg, bad) => <div role="status" aria-live="polite" style={{textAlign:'center',fontSize:15,fontWeight:900,color:bad ? BK.coral : BK.ink,minHeight:22,margin:'8px 0 6px',textWrap:'balance',wordBreak:'keep-all'}}>{cpxKoT(msg)}</div>;
+// one sound at a time. A pad (its owner) hears when its sound stops, whoever stops it; a pad that leaves stops only its own.
+let _cpxTm = null, _cpxEnd = null, _cpxOwner = null;
+function cpxStop(owner) {
+  if (owner !== undefined && owner !== _cpxOwner) return;
+  if (_cpxTm) clearTimeout(_cpxTm); _cpxTm = null; _cpxOwner = null; stopClicks();
+  const e = _cpxEnd; _cpxEnd = null; if (e) e();
+}
+// a composer's sound: the piece the chapter names where the app has it, else their first (a real opening, or bars in their style)
+const CPX_CLIP = { beethoven: 'Für Elise', chopin: '“Minute” Waltz, Op. 64 No. 1' };
+const cpxSound = (id) => { const l = (CMP_HEAR[id] || []).filter(cmpHasSound), h = (CPX_CLIP[id] && l.find(x => x.title && x.title[0] === CPX_CLIP[id])) || cmpFirstSound(cmpById(id)); return cmpHasSound(h) ? h : null; };
+function cpxHear(id, onEnd, owner) {
+  cpxStop(); const h = cpxSound(id); if (!h) return 0;
+  const s = cmpPlay(h); if (!s) return 0;
+  _cpxEnd = onEnd || null; _cpxOwner = owner;
+  _cpxTm = setTimeout(() => { _cpxTm = null; _cpxOwner = null; const e = _cpxEnd; _cpxEnd = null; if (e) e(); }, s * 1000 + 250); return s;
+}
+const cpxIsTune = (id) => { const h = cpxSound(id); return !!(h && h.kind === 'tune' && h.title); };
+const cpxSoundName = (id) => { const h = cpxSound(id), c = cmpById(id); if (!h) return ''; return cpxIsTune(id) ? cmpT(h.title).replace(/: [^:]*!$/, '') : t('a few bars in the style of ' + mtlSur(c), mtlSur(c) + '풍의 짧은 음악'); };
+// Korean particles after a word: a if it ends on a closed syllable, else b. Quotes and a last (bracket) are skipped; a
+// number is read in Korean (0 영/십, 1 일, 3 삼, 6 육, 7 칠, 8 팔 are closed).
+const cpxJ = (w, a, b) => { const base = String(w).replace(/\s*\([^)]*\)\s*$/, ''), s = base.replace(/[”’"')\]\s.]+$/, ''), ch = s.slice(-1), c = ch.charCodeAt(0);
+  const closed = c >= 0xAC00 && c <= 0xD7A3 ? (c - 0xAC00) % 28 > 0 : /[013678]/.test(ch); return base + (closed ? a : b); };
+// the width a drawing really has (one SVG unit a CSS pixel), up to max
+function useCpxW(max = 680) {
+  const ref = React.useRef(null), [w, setW] = useState(() => { try { return Math.min(max, Math.max(200, window.innerWidth - 70)); } catch (e) { return max; } });
+  useEffect(() => { const el = ref.current; if (!el) return;
+    const set = () => { const r = Math.round(el.getBoundingClientRect().width); if (r > 0) setW(Math.min(max, Math.max(200, r))); }; set();
+    if (typeof ResizeObserver === 'undefined') { window.addEventListener('resize', set); return () => window.removeEventListener('resize', set); }
+    const ro = new ResizeObserver(set); ro.observe(el); return () => ro.disconnect(); }, []);
+  return [ref, w];
+}
+// a Stop that stays in the tab order when there is nothing to stop
+const cpxStopBtn = (playing, stop) => <button type="button" className="ghost-btn" aria-disabled={!playing} onClick={playing ? stop : undefined} style={{minHeight:44,...(playing ? {} : { opacity: 0.3, cursor: 'default' })}}>{t('■ Stop', '■ 멈추기')}</button>;
+// the composer heard when a period is tapped
+const CPX_ERA_SOUND = { baroque: 'bach', classical: 'mozart', romantic: 'chopin', modern: 'joplin', contemporary: 'hisaishi' };
+const cpxList = (ids) => { const n = ids.map(id => mtlSur(cmpById(id))); return LANG === 'ko' || n.length < 2 ? n.join(', ') : n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1]; };
+const cpxNowKo = (id) => (cpxIsTune(id) ? mtlSur(cmpById(id)) + '의 ' : '') + cpxSoundName(id);
+const cpxChip = (on, label, onClick, key) => <button key={key} type="button" className={'chip' + (on ? ' active' : '')} aria-pressed={!!on} onClick={onClick} style={{minHeight:44,padding:'4px 12px',fontSize:14,fontWeight:800}}>{label}</button>;
+
+// page 1: the timeline. A period (its chip or its band) lights its composers, shows them as buttons and plays one of
+// them; a composer plays. It fits the width: on phones only the periods, keyboards and composers.
+function MtlMapPad() {
+  const me = React.useRef({}).current, [box, w] = useCpxW();
+  const [sel, setSel] = useState(null), [era, setEra] = useState(null), [playing, setPlaying] = useState(false);
+  useEffect(() => () => cpxStop(me), []);
+  const go = (kind, id) => { setEra(kind === 'era' ? id : cmpById(id).era); setSel({ kind, id });
+    setPlaying(cpxHear(kind === 'cmp' ? id : CPX_ERA_SOUND[id], () => setPlaying(false), me) > 0); };
+  const eraIds = (id) => CPX_IDS.filter(x => cmpById(x).era === id), wide = w >= 480;
+  let msg = t('Tap a period or a composer. Hear them.', '시대나 작곡가를 눌러요. 소리가 들려요.');
+  if (sel && sel.kind === 'era') { const s = CPX_ERA_SOUND[sel.id];
+    msg = t(cmpEraTag(sel.id) + ', ' + cpxYrs(sel.id) + '.' + (playing ? ' Playing: ' + (cpxIsTune(s) ? mtlSur(cmpById(s)) + '’s ' : '') + cpxSoundName(s) + '.' : ''),
+      cmpEraTag(sel.id) + ', ' + cpxYrs(sel.id) + '.' + (playing ? ' 듣는 곡: ' + cpxNowKo(s) + '.' : '')); }
+  if (sel && sel.kind === 'cmp') { const c = cmpById(sel.id);
+    msg = t(cmpT(c.name) + ', ' + mtlLife(c) + ', ' + cmpEraLabel(c) + '.' + (playing ? ' Playing: ' + cpxSoundName(sel.id) + '.' : ''), cmpT(c.name) + ', ' + mtlLife(c) + ', ' + cmpEraLabel(c) + '.' + (playing ? ' 듣는 곡: ' + cpxSoundName(sel.id) + '.' : '')); }
+  return (
+    <div className="try-box" style={actBox} data-cpx="pad-map">
+      <div style={actTitle}>{t('The timeline of music', '음악의 타임라인')}</div>
+      <div style={{...actNote,textWrap:'pretty'}}>{cpxKoT(t('Tap a period or a composer’s line. Hear them.', '시대나 작곡가의 선을 눌러요. 소리가 들려요.'))}</div>
+      <div role="group" aria-label={t('Periods', '시대')} style={{display:'flex',flexWrap:'wrap',justifyContent:'center',gap:6,margin:'0 0 8px'}}>{MTL_ERAS.map(id => cpxChip(sel && sel.kind === 'era' && sel.id === id, cmpEraTag(id), () => go('era', id), id))}</div>
+      <div ref={box}><MusTimeline W={w} stack fs={11} laneH={15} barH={8} guides firstPiano={wide} rowLabels={wide} rows={['era', 'keys', 'cmp']}
+        sel={sel} lit={sel && sel.kind === 'era' ? eraIds(sel.id) : []} onTap={go} label={t('The timeline of music, 1600 to today: periods, keyboards and composers. Each period and each composer can be tapped.', '음악의 타임라인, 1600년부터 오늘날까지: 시대, 건반 악기, 작곡가. 시대와 작곡가를 하나씩 누를 수 있어요.')}/></div>
+      {era && <div role="group" aria-label={t('Composers', '작곡가')} style={{display:'flex',flexWrap:'wrap',justifyContent:'center',gap:6,margin:'8px 0 0'}}>{eraIds(era).map(id => cpxChip(sel && sel.kind === 'cmp' && sel.id === id, mtlSur(cmpById(id)), () => go('cmp', id), id))}</div>}
+      {cpxMsg(msg)}
+      <div style={{display:'flex',justifyContent:'center'}}>{cpxStopBtn(playing, () => cpxStop())}</div>
+    </div>
+  );
+}
+
+// pages 2 to 5: one period: its stretch of the timeline and its who's who; a composer tapped plays, with one fact
+function CpxPeriodPad({ k }) {
+  const me = React.useRef({}).current, [box, w] = useCpxW();
+  const P = CPX_PAGES[k], [sel, setSel] = useState(null), [playing, setPlaying] = useState(false);
+  useEffect(() => () => cpxStop(me), []);
+  const go = (id) => { setSel(id); setPlaying(cpxHear(id, () => setPlaying(false), me) > 0); };
+  const c = sel && cmpById(sel), nm = sel && cpxSoundName(sel), lab = k === 3 ? t('Modern and Contemporary', '근대와 현대') : cmpEraTag(P.era);
+  return (
+    <div className="try-box" style={actBox} data-cpx={'pad-era' + k}>
+      <div style={actTitle}>{lab}</div>
+      <div style={{...actNote,textWrap:'pretty'}}>{cpxKoT(t('Tap a composer: hear their music and read one fact.', '작곡가를 눌러요: 음악을 듣고 이야기 하나를 읽어요.'))}</div>
+      <div ref={box} style={{margin:'0 0 6px'}}><MusTimeline big W={w} rowLabels={w >= 480} from={P.from} to={P.to} rows={['era', 'keys', 'cmp']} ids={P.ids} sel={sel ? { kind: 'cmp', id: sel } : null} onTap={(kind, id) => go(id)} tapKinds={['cmp']} firstPiano={k === 0 && w >= 340} label={t(lab + ': the composers on the timeline; each can be tapped.', lab + ': 타임라인 위의 작곡가들. 하나씩 누를 수 있어요.')}/></div>
+      <CpxWho ids={P.ids} onTap={go} sel={sel} cols={w < 480 ? 1 : 2} scr/>
+      {c ? <div role="status" aria-live="polite" style={{margin:'10px 0 6px',padding:'8px 12px',border:'1px solid rgba(38,41,107,0.18)',borderRadius:8,background:'#fff',fontSize:14.5,lineHeight:1.5,color:BK.ink,wordBreak:'keep-all'}}>
+          <b style={{color:BK.coral}}>{cmpT(c.name)}</b> · {mtlLife(c)}<span style={{color:BK.muted}}> · {nm ? (playing ? t('Playing: ', '듣는 곡: ') : '') + nm : t('no music to hear for this one', '이 작곡가는 들어 볼 곡이 없어요')}</span>
+          <span style={{display:'block',marginTop:4}}>{cpxKoT(cmpT(c.fun))}</span></div>
+        : cpxMsg(t('Tap a name.', '이름을 눌러요.'))}
+      <div style={{display:'flex',justifyContent:'center'}}>{cpxStopBtn(playing, () => cpxStop())}</div>
+    </div>
+  );
+}
+
+// page 6: a line down from one year: who was alive then (and who was born, or died, that year)
+const CPX_P6 = CPX_PAGES.slice(0, 3).flatMap(p => p.ids);
+function CpxAlivePad() {
+  const [box, w] = useCpxW(), [y, setY] = useState(1785);
+  const alive = CPX_P6.filter(id => mtlAlive(cmpById(id), y)), born = CPX_P6.filter(id => cmpById(id).born === y), died = CPX_P6.filter(id => cmpById(id).died === y);
+  const msg = t('In ' + y + ': ' + (alive.length ? cpxList(alive) + (alive.length > 1 ? ' were' : ' was') + ' alive.' : 'none of them was alive.') + (born.length ? ' Born that year: ' + cpxList(born) + '.' : '') + (died.length ? ' Died that year: ' + cpxList(died) + '.' : ''),
+    y + '년: ' + (alive.length ? cpxJ(cpxList(alive), '이', '가') + ' 살아 있었어요.' : '이 중 아무도 살아 있지 않았어요.') + (born.length ? ' 그해에 태어난 사람: ' + cpxList(born) + '.' : '') + (died.length ? ' 그해에 세상을 떠난 사람: ' + cpxList(died) + '.' : ''));
+  return (
+    <div className="try-box" style={actBox} data-cpx="pad-alive">
+      <div style={actTitle}>{t('Who was alive?', '누가 살아 있었을까?')}</div>
+      <div style={{...actNote,textWrap:'pretty'}}>{cpxKoT(t('Slide to a year. The composers the line crosses light up.', '해를 골라요. 선이 지나는 작곡가가 밝게 표시돼요.'))}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(52px,1fr))',gap:4,maxWidth:420,margin:'0 auto 6px'}}>{[1685, 1745, 1785, 1815, 1845].map(v => <button key={v} type="button" className={'chip' + (y === v ? ' active' : '')} aria-pressed={y === v} onClick={() => setY(v)} style={{minHeight:44,padding:'4px 0',fontSize:14,fontWeight:800}}>{v}</button>)}</div>
+      <div style={{display:'flex',alignItems:'center',gap:8,margin:'0 0 6px'}}>
+        <button type="button" className="ghost-btn" aria-label={t('One year earlier', '한 해 전')} onClick={() => setY(v => Math.max(1670, v - 1))} style={{minHeight:44,minWidth:44}}>−</button>
+        <input type="range" min={1670} max={1910} value={y} onChange={(e) => setY(+e.target.value)} aria-label={t('Year', '연도')} aria-valuetext={String(y)} style={{flex:1,minWidth:0,height:44,margin:0,accentColor:BK.coral}}/>
+        <button type="button" className="ghost-btn" aria-label={t('One year later', '한 해 뒤')} onClick={() => setY(v => Math.min(1910, v + 1))} style={{minHeight:44,minWidth:44}}>+</button></div>
+      <div ref={box}><MusTimeline stack W={w} rowLabels={w >= 480} fs={12} laneH={18} barH={10} from={1670} to={1910} rows={['era', 'cmp']} ids={CPX_P6} year={y} label={t('Fifteen lives, Baroque to Romantic, with a line down from ' + y + '.', '바로크부터 낭만주의까지 열다섯 명의 생애와 ' + y + '년에서 내려온 선.')}/></div>
+      {cpxMsg(msg)}
+    </div>
+  );
+}
+
+// the end: four composers born at least 12 years apart (two may share a period): tap them in the order they were born
+function cpxFour(prev) { const k = (a) => [...a].sort().join();
+  for (let g = 0; g < 200; g++) { const ids = sampleN(CPX_IDS, 4), b = ids.map(id => cmpById(id).born).sort((x, y) => x - y);
+    if (b.slice(1).some((v, i) => v - b[i] < 12) || (prev && k(ids) === k(prev))) continue; return ids; }
+  return shuffle(CPX_PAGES.map(p => pick(p.ids))); }
+function CpxOrderPad() {
+  const [box, w] = useCpxW(), [four, setFour] = useState(() => cpxFour()), [done, setDone] = useState([]), [bad, setBad] = useState(null);
+  const order = [...four].sort((a, b) => cmpById(a).born - cmpById(b).born), all = done.length === 4;
+  const tap = (id) => { if (done.includes(id) || all) return; if (id === order[done.length]) { setDone(d => [...d, id]); setBad(null); } else setBad(id); };
+  const again = () => { setFour(f => cpxFour(f)); setDone([]); setBad(null); };
+  const last = done.length ? mtlSur(cmpById(done[done.length - 1])) : '';
+  const msg = all ? t('All four in order: ' + done.map(id => mtlSur(cmpById(id)) + ' ' + cmpById(id).born).join(', ') + '.', '네 명 모두 차례대로: ' + done.map(id => mtlSur(cmpById(id)) + ' ' + cmpById(id).born).join(', ') + '.')
+    : bad ? t('Not yet: someone else was born earlier.', '아직 아니에요: 더 일찍 태어난 사람이 있어요.') : t(done.length ? 'Next: who was born after ' + last + '?' : 'Who was born first?', done.length ? last + ' 다음에는 누가 태어났을까요?' : '누가 제일 먼저 태어났을까요?');
+  return (
+    <div className="try-box" style={actBox} data-cpx="pad-order">
+      <div style={actTitle}>{t('In order', '차례대로')}</div>
+      <div style={{...actNote,textWrap:'pretty'}}>{cpxKoT(t('Tap the four in the order they were born. Each one joins the timeline.', '네 명을 태어난 차례대로 눌러요. 누를 때마다 타임라인에 나타나요.'))}</div>
+      <div role="group" aria-label={t('Composers', '작곡가')} style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:8,maxWidth:420,margin:'0 auto 8px'}}>{four.map(id => { const k = done.indexOf(id);
+        return <button key={id} type="button" aria-disabled={k >= 0 || all} onClick={() => tap(id)} className={'choice-btn' + (k >= 0 ? ' good' : bad === id ? ' bad' : '')} style={{minHeight:48,fontSize:15.5,fontWeight:900,wordBreak:'keep-all'}}>{k >= 0 ? (k + 1) + '. ' : ''}{cmpT(cmpById(id).name)}</button>; })}</div>
+      <div ref={box}><MusTimeline W={w} rowLabels={w >= 480} fs={12} laneH={18} barH={10} rows={['era', 'cmp']} ids={done} lit={all ? [] : done.slice(-1)} label={t('The timeline with the composers placed so far: ' + (done.length ? cpxList(done) : 'none yet') + '.', '지금까지 놓은 작곡가가 있는 타임라인: ' + (done.length ? cpxList(done) : '아직 없음') + '.')}/></div>
+      {cpxMsg(msg, !!bad && !all)}
+      <div style={{display:'flex',justifyContent:'center'}}>{(all || done.length > 0) && chxBtn('n', all ? t('Four more', '다른 네 명') : t('Start again', '처음부터'), again, false)}</div>
+    </div>
+  );
+}
+
+// ── the book on screen: the opener is the lesson's head, every other page a step; "in order" at the end ──
+function CpxLearn({ onStart }) {
+  const pages = cpxLbPages(true);
+  const opener = pages[0];
+  return (
+    <Lesson id="composers" title={bkChapterName('composers')} onStart={onStart} noArt
+      head={<LbScreenCtx.Provider value={true}><BkChapterCtx.Provider value="composers"><div className="lb-screen lb-open" style={{display:'flex',flexDirection:'column',gap:12,margin:'0 0 8px'}}>{lbWordsFirst(opener.props.children)}</div></BkChapterCtx.Provider></LbScreenCtx.Provider>}>
+      {pages.slice(1).map((pg, i) => (
+        <Step key={i} title={<span>{pg.props.title}</span>} storeAs={'k' + (i + 1)}>
+          <LbScreenPage page={pg}/>
+        </Step>
+      ))}
+      <Step key="order" extra title={t('In order', '차례대로')} storeAs="k7"><CpxOrderPad/></Step>
+    </Lesson>
+  );
+}
+
+// ── the drill, after page 6: the map first (a year), then the composers ──
+const CPX_LEVELS = [
+  { n: 1, label: 'Which period is this year in?', kind: 'year', time: 10 },
+  { n: 2, label: 'Which period?', kind: 'era', time: 10 },
+  { n: 3, label: 'Who was born first?', kind: 'first', time: 10 },
+  { n: 4, label: 'Alive at the same time?', kind: 'same', time: 12 },
+  { n: 5, label: 'Who wrote it?', kind: 'wrote', time: 12 },
+  { n: 6, label: 'Listen: Baroque, Classical or Romantic?', kind: 'earEra', time: 18, noPrint: true },
+  { n: 7, label: 'Listen: who wrote it?', kind: 'earWho', time: 18, noPrint: true },
+  { n: 8, label: 'The words', kind: 'word', time: 10 },
+  { n: 9, label: 'Extra: in order of birth', kind: 'order', time: 18 },
+];
+Object.assign(LEVEL_KO, { 'Which period?': '어느 시대일까요?', 'Which period is this year in?': '이 해는 어느 시대일까요?', 'Who was born first?': '누가 먼저 태어났을까요?', 'Alive at the same time?': '같은 시기에 살았을까요?',
+  'Who wrote it?': '누가 썼을까요?', 'Listen: Baroque, Classical or Romantic?': '듣기: 어느 시대의 음악일까요?', 'Listen: who wrote it?': '듣기: 누가 썼을까요?', 'The words': '용어', 'Extra: in order of birth': '더 해 보기: 태어난 차례' });
+const CPX_WORDS = [
+  ['composer', 'a person who writes music', '곡을 쓰는 사람'],
+  ['period', 'a stretch of years whose music shares a style', '음악 양식이 비슷한 기간'],
+  ['counterpoint', 'two or more tunes at once, each as important as the other', '두 개 이상의 선율을 똑같이 중요하게 동시에 엮는 것'],
+  ['harpsichord', 'a keyboard whose strings are plucked', '현을 뜯어 소리 내는 건반 악기'],
+  ['fortepiano', 'the early piano of Mozart’s time', '모차르트 시대의 초기 피아노'],
+  ['Alberti bass', 'a left hand that breaks a chord: lowest, highest, middle, highest', '화음을 맨 아래 음, 맨 위 음, 가운데 음, 맨 위 음으로 펼쳐 치는 왼손 반주'],
+  ['rubato', 'time bent for feeling', '표현을 위해 빠르기를 당겼다가 늦추는 것'],
+  ['virtuoso', 'a performer with dazzling skill', '놀라운 기교를 가진 연주자'],
+  ['Impressionism', 'music of soft colours and moods, about 1890 to 1920', '부드러운 색채와 분위기의 음악(1890~1920년쯤)'],
+  ['contemporaries', 'people who lived at the same time', '같은 시기에 살았던 사람들'],
+];
+const CPX_WORD_KO = { composer: '작곡가', period: '시대', counterpoint: '대위법', harpsichord: '하프시코드', fortepiano: '포르테피아노', 'Alberti bass': '알베르티 베이스', rubato: '루바토', virtuoso: '비르투오소', Impressionism: '인상주의', contemporaries: '동시대인' };
+// who can be asked a period: not those across two (Beethoven, Debussy, and Kabalevsky, whose later pieces are Contemporary).
+// Listening for the period: real openings only, of the three periods whose sound is taught (marches and lullabies left out).
+const CPX_ONE = CPX_IDS.filter(id => !cmpById(id).span && id !== 'kabalevsky');
+const CPX_EAR_ERAS = ['baroque', 'classical', 'romantic'];
+const CPX_EAR = CPX_ONE.filter(id => cpxIsTune(id) && CPX_EAR_ERAS.includes(cmpById(id).era) && !['schubert', 'rschumann', 'brahms'].includes(id));
+const CPX_TUNE = CPX_IDS.filter(cpxIsTune);
+const CPX_BOUND = [1750, 1820, 1900, 1950];
+const CPX_FILM = /\(film music\)$/;
+// a title in Korean text is quoted (unless it already is, or it is a count of pieces); a (bracket) after it is dropped
+const cpxKoTitle = (k) => { const s = k.replace(/\s*\(.*\)$/, ''); return /^“/.test(s) || /\d+곡$/.test(s) ? s : '“' + s + '”'; };
+const cpxOverlap = (a, b) => Math.min(mtlEnd(a), mtlEnd(b)) - Math.max(a.born, b.born);
+// each level remembers its last few questions, so a printed sheet does not ask the same thing twice in a row of them
+const _cpxRecent = {};
+function genCpxQuestion(lv, prev) {
+  const r = _cpxRecent[lv.n] || (_cpxRecent[lv.n] = []), keep = { year: 12, era: 10, earEra: 3, wrote: 11, earWho: 7, word: 8 }[lv.kind] || 12;
+  let q = null; for (let g = 0; g < 12; g++) { const x = genCpxQuestion0(lv, prev); if (!x) continue; q = x; if (!r.includes(x.key)) break; }
+  if (q) { r.push(q.key); while (r.length > keep) r.shift(); }
+  return q;
+}
+function genCpxQuestion0(lv, prev) {
+  const uid = Math.random(), same = (key) => prev && prev.key === key;
+  // each period (and yes and no) equally often, whatever the number of composers in it
+  const want = { era: pick(lv.kind === 'earEra' ? CPX_EAR_ERAS : MTL_ERAS), yes: Math.random() < 0.5 };
+  for (let g = 0; g < 80; g++) {
+    if (g === 60) prev = null;   // never stuck on the no-repeat rule
+    const kind = lv.kind;
+    if (kind === 'era' || kind === 'earEra') {
+      const pool = (kind === 'era' ? CPX_ONE : CPX_EAR).filter(x => cmpById(x).era === want.era), id = pick(pool.length ? pool : CPX_ONE); if (same(id)) continue;
+      return { kind, key: id, id, answer: cmpById(id).era, choices: kind === 'earEra' ? [...CPX_EAR_ERAS] : [...MTL_ERAS], ids: [id], uid };
+    }
+    if (kind === 'year') {
+      const [a0, b0] = mtlYears(want.era), y = a0 + Math.floor(Math.random() * (Math.min(b0, 2020) - a0)); if (CPX_BOUND.some(b => Math.abs(b - y) < 4) || same(String(y))) continue;
+      return { kind, key: String(y), year: y, answer: mtlEraOf(y), choices: [...MTL_ERAS], uid };
+    }
+    if (kind === 'first') {
+      const [a, b] = sampleN(CPX_IDS, 2).map(cmpById); if (Math.abs(a.born - b.born) < 15) continue;
+      const key = [a.id, b.id].sort().join('-'); if (same(key)) continue;
+      return { kind, key, answer: (a.born < b.born ? a : b).id, choices: [a.id, b.id], ids: [a.id, b.id], uid };
+    }
+    if (kind === 'same') {
+      const yes = want.yes, [a, b] = sampleN(CPX_IDS, 2).map(cmpById), ov = cpxOverlap(a, b);
+      if (yes ? ov < 10 : ov > -5) continue;
+      const key = [a.id, b.id].sort().join('-'); if (same(key)) continue;
+      return { kind, key, answer: yes ? 'yes' : 'no', choices: ['yes', 'no'], ids: [a.id, b.id], uid };
+    }
+    if (kind === 'wrote' || kind === 'earWho') {
+      const id = pick(kind === 'wrote' ? CPX_IDS : CPX_TUNE); if (same(id)) continue;
+      const era = cmpById(id).era, others = shuffle(CPX_IDS.filter(x => x !== id && cmpById(x).era !== era)).slice(0, 3);
+      return { kind, key: id, id, answer: id, choices: shuffle([id, ...others]), ids: [id], uid };
+    }
+    if (kind === 'word') {
+      const w = pick(CPX_WORDS); if (same(w[0])) continue;
+      return { kind, key: w[0], w, answer: w[0], choices: shuffle([w[0], ...shuffle(CPX_WORDS.filter(x => x !== w).map(x => x[0])).slice(0, 3)]), uid };
+    }
+    // order: three composers born at least 15 years apart; four orders to choose from
+    const three = sampleN(CPX_IDS, 3).map(cmpById).sort((a, b) => a.born - b.born);
+    if (three[1].born - three[0].born < 15 || three[2].born - three[1].born < 15) continue;
+    const ids = three.map(c => c.id), key = ids.join('-'); if (same(key)) continue;
+    const perms = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]].map(p => p.map(i => ids[i]).join('-'));
+    // the names shown in an order that is not the answer
+    let shown = shuffle(ids); if (shown.join('-') === key) shown = [shown[1], shown[2], shown[0]];
+    return { kind: 'order', key, answer: key, choices: shuffle([key, ...shuffle(perms.slice(1)).slice(0, 3)]), ids, shown, uid };
+  }
+  return null;
+}
+const cpxCheck = (q, ans) => ans != null && String(ans) === String(q.answer);
+const cpxNm = (id) => mtlSur(cmpById(id));
+// the orders break only before an arrow
+const cpxChoiceTxt = (c, q) => q.kind === 'era' || q.kind === 'earEra' || q.kind === 'year' ? cmpEraTag(c)
+  : q.kind === 'same' ? (c === 'yes' ? t('yes', '네') : t('no', '아니요'))
+  : q.kind === 'word' ? t(c, CPX_WORD_KO[c])
+  : q.kind === 'order' ? c.split('-').map(cpxNm).join(' → ')
+  : cmpT(cmpById(c).name);
+function cpxAnswerLabel(q) { return cpxKoT(cpxAnswerLabel0(q)); }
+function cpxAnswerLabel0(q) {
+  const life = (id) => cpxNm(id) + ' ' + mtlLife(cmpById(id)), lives = (q.ids || []).map(life).join(', ');
+  if (q.kind === 'word') return t(q.w[0] + ' = ' + q.w[1], CPX_WORD_KO[q.w[0]] + ' = ' + q.w[2]);
+  if (q.kind === 'year') return t(cmpEraTag(q.answer) + ' (' + cpxYrs(q.answer) + ')', cmpEraTag(q.answer) + '(' + cpxYrs(q.answer) + ')');
+  if (q.kind === 'era' || q.kind === 'earEra') return t(cmpEraTag(q.answer) + ': ' + life(q.id), cmpEraTag(q.answer) + '(' + life(q.id) + ')') + (q.kind === 'earEra' ? ' · ' + cpxSoundName(q.id) : '');
+  if (q.kind === 'same') return t(cpxChoiceTxt(q.answer, q) + ': ' + lives, cpxChoiceTxt(q.answer, q) + '(' + lives + ')');
+  if (q.kind === 'first') return t(cmpT(cmpById(q.answer).name) + ': ' + lives, cmpT(cmpById(q.answer).name) + '(' + lives + ')');
+  if (q.kind === 'order') return lives;
+  if (q.kind === 'earWho') return t(cmpT(cmpById(q.id).name) + ': ' + cpxSoundName(q.id), cmpT(cmpById(q.id).name) + '의 ' + cpxSoundName(q.id));
+  if (q.kind === 'wrote') return t(cmpT(cmpById(q.id).name) + ': ' + CPX_PIECE[q.id][0], cmpT(cmpById(q.id).name) + '의 ' + cpxKoTitle(CPX_PIECE[q.id][1]));
+  return cpxChoiceTxt(q.answer, q);
+}
+function CpxQuestion({ q, given, locked, onAnswer, pixel }) {
+  const me = React.useRef({}).current, [box, w] = useCpxW(520), givenRef = React.useRef(given); givenRef.current = given;
+  const paper = locked && !given, isDone = !!given;
+  const board = useBoard(q, given), btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const ink = pixel ? '#faf6ec' : 'var(--text)';
+  const st = (c) => !isDone ? '' : (String(c) === String(q.answer) ? ' good' : (String(given.ans) === String(c) ? ' bad' : ''));
+  const ear = q.kind === 'earEra' || q.kind === 'earWho';
+  const hear = () => cpxHear(q.id, null, me);
+  useEffect(() => () => cpxStop(me), [q.uid]);
+  useEffect(() => { if (ear && !locked) { const tm = setTimeout(() => { if (!givenRef.current) hear(); }, 350); return () => clearTimeout(tm); } }, [q.uid]);
+  const nm = (id) => cmpT(cmpById(id).name);
+  const prompt = cpxKoT(({ era: () => t('In which period did ' + nm(q.id) + ' compose?', cpxJ(nm(q.id), '은', '는') + ' 어느 시대의 작곡가일까요?'), earEra: () => t('Listen: is this music Baroque, Classical or Romantic?', '듣고 골라요: 바로크, 고전주의, 낭만주의 중 어느 시대의 음악일까요?'),
+    year: () => t('Which period is this year in?', '이 해는 어느 시대일까요?'), first: () => t('Who was born first?', '누가 먼저 태어났을까요?'),
+    same: () => t('Were ' + nm(q.ids[0]) + ' and ' + nm(q.ids[1]) + ' alive at the same time?', cpxJ(nm(q.ids[0]), '과', '와') + ' ' + cpxJ(nm(q.ids[1]), '은', '는') + ' 같은 시기에 살았을까요?'),
+    wrote: () => { const [e, k] = CPX_PIECE[q.id]; return CPX_FILM.test(e) ? t('Who wrote the music for ' + e.replace(CPX_FILM, '').trim() + '?', cpxKoTitle(k) + '의 음악을 누가 썼을까요?') : t('Who wrote ' + e + '?', cpxJ(cpxKoTitle(k), '을', '를') + ' 누가 썼을까요?'); },
+    earWho: () => t('Listen: who wrote this?', '듣고 골라요: 누가 썼을까요?'),
+    word: () => t('Which word means this?', '이 뜻의 용어는 무엇일까요?'), order: () => t('In what order were they born?', '어떤 차례로 태어났을까요?') })[q.kind]());
+  let pic = null;
+  if (q.kind === 'year') pic = <div style={{textAlign:'center',fontFamily:LB_SERIF,fontSize:pixel ? 22 : paper ? 30 : 44,fontWeight:900,color:pixel ? ink : BK.ink,margin:'0 0 4px',fontVariantNumeric:'lining-nums'}}>{q.year}</div>;
+  else if (q.kind === 'word') pic = <div style={{textAlign:'center',fontSize:pixel ? 13 : 20,fontWeight:900,color:ink,margin:'0 0 6px',textWrap:'balance',wordBreak:'keep-all'}}>“{cpxKoT(t(q.w[1], q.w[2]))}”</div>;
+  else if (q.kind === 'order') pic = <div style={{textAlign:'center',fontSize:pixel ? 13 : 18,fontWeight:900,color:ink,margin:'0 0 6px',wordBreak:'keep-all'}}>{(q.shown || q.ids).map((id, i) => <React.Fragment key={id}>{i > 0 && ' · '}<span style={{whiteSpace:'nowrap'}}>{nm(id)}</span></React.Fragment>)}</div>;
+  else if (ear) pic = <div style={{textAlign:'center',margin:'4px 0 6px'}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} style={{minHeight:44}} onClick={hear}>{t('▶ Listen again', '▶ 다시 듣기')}</button></div>;
+  // after an answer: the lives on the timeline (or the year's line on the periods), drawn at the width it has
+  const reveal = isDone && !pixel && q.kind !== 'word' ? <div style={{margin:'10px auto 0',maxWidth:520,background:'#fff',borderRadius:8,padding:'6px 0'}}>{q.kind === 'year'
+    ? <MusTimeline W={w} fs={12} rows={['era']} year={q.year} hiEra={q.answer} ids={[]} rowLabels={false} label={t(q.year + ' on the timeline of periods.', '시대 타임라인 위의 ' + q.year + '년.')}/>
+    : <MusTimeline W={w} fs={12} laneH={18} barH={10} rows={['era', 'cmp']} ids={q.ids} lit={q.ids} hiEra={q.kind === 'era' || q.kind === 'earEra' ? q.answer : null} rowLabels={false} label={t('Their lives on the timeline: ', '타임라인 위의 생애: ') + q.ids.map(id => nm(id) + ' ' + mtlLife(cmpById(id))).join(', ')}/>}</div> : null;
+  // the periods: one row of five on paper, sized to their words; two columns on phones (Contemporary across both)
+  const eraQ = q.kind === 'era' || q.kind === 'earEra' || q.kind === 'year', narrow = !paper && (pixel || (typeof window !== 'undefined' && window.innerWidth < 520));
+  const five = eraQ && paper && q.choices.length === 5;
+  const tight = pixel || (typeof window !== 'undefined' && window.innerWidth < 400);
+  const cols = q.choices.length === 2 && q.kind === 'same' ? 2 : eraQ ? (paper ? q.choices.length : narrow ? 2 : 3) : tight ? 1 : 2;
+  const grid = 'repeat(' + cols + ',minmax(0,1fr))';
+  return <div ref={box}>{!paper && <BoardTrack b={board} pixel={pixel}/>}
+    <p style={{fontSize:pixel ? 11.5 : 17,fontWeight:900,textAlign:'center',margin:'0 0 8px',color:ink,textWrap:'balance',wordBreak:'keep-all'}}>{prompt}</p>
+    {pic}
+    <div style={five ? {display:'flex',flexWrap:'wrap',justifyContent:'center',gap:8,maxWidth:680,margin:'0 auto'} : {display:'grid',gridTemplateColumns:grid,justifyContent:'center',gap:8,maxWidth:q.kind === 'order' ? 560 : 520,margin:'0 auto'}}>{q.choices.map((c, j) => <button key={c} disabled={locked} data-cpx-choice={c} onClick={() => { cpxStop(); onAnswer(c); }} className={btnCls + st(c)}
+      style={{minHeight:pixel ? undefined : 48,padding:five ? '6px 14px' : '6px 8px',gridColumn:eraQ && !paper && cols === 2 && q.choices.length % 2 && j === q.choices.length - 1 ? 'span 2' : undefined}}>
+      <span style={{fontSize:pixel ? 11 : q.kind === 'order' ? 15 : five ? 15 : 16.5,fontWeight:900,wordBreak:'keep-all'}}>{cpxKoT(cpxChoiceTxt(c, q))}</span></button>)}</div>
+    {reveal}
+  </div>;
+}
+
+// ─── Phase 482: chapter 26's Workbook (pages 2 to 8: one per lesson step, my composers, the check-up) and the Teacher
+// copy. English only. ───
+const CPX_WB = {
+  life: [{ ids: ['vivaldi', 'bach', 'handel', 'scarlatti'], from: 1670, to: 1770, step: 10 }, { ids: ['haydn', 'clementi', 'mozart', 'beethoven'], from: 1725, to: 1835, step: 10 },
+    { ids: ['schubert', 'chopin', 'rschumann', 'liszt', 'cschumann', 'brahms', 'tchaikovsky'], from: 1790, to: 1910, step: 10 }, { ids: ['debussy', 'joplin', 'bartok', 'prokofiev', 'kabalevsky', 'sculthorpe'], from: 1850, to: 2020, step: 20 }],
+  // who wrote it: the pieces in this order, the names in that order; the first pair is done
+  match: [{ left: ['vivaldi', 'bach', 'handel', 'scarlatti'], right: ['bach', 'scarlatti', 'vivaldi', 'handel'] }, { left: ['haydn', 'mozart', 'clementi', 'beethoven'], right: ['mozart', 'haydn', 'beethoven', 'clementi'] },
+    { left: ['schubert', 'chopin', 'liszt', 'brahms', 'tchaikovsky'], right: ['chopin', 'tchaikovsky', 'schubert', 'brahms', 'liszt'] }, { left: ['debussy', 'joplin', 'bartok', 'prokofiev', 'williams', 'hisaishi'], right: ['prokofiev', 'debussy', 'hisaishi', 'joplin', 'williams', 'bartok'] }],
+  rh: [44, 48, 34, 32],   // row heights (the pages fill)
+  alive: [1745, 1785, 1815, 1845],
+  // the words of each page, written from their meaning
+  words: [[['counterpoint', 'two or more tunes at once, each as important as the other'], ['harpsichord', 'a keyboard whose strings are plucked'], ['Baroque', 'the period from about 1600 to 1750']],
+    [['fortepiano', 'the early piano of Mozart’s time'], ['Alberti bass', 'a left hand that breaks a chord: lowest, highest, middle, highest'], ['Classical', 'the period from about 1750 to 1820']],
+    [['rubato', 'time bent for feeling'], ['virtuoso', 'a performer with dazzling skill'], ['Romantic', 'the period from about 1820 to 1900']],
+    [['Impressionism', 'music of soft colours and moods, about 1890 to 1920'], ['Modern', 'the period from about 1900 to 1950'], ['Contemporary', 'the period from 1950 to today']]],
+  order: [['mozart', 'bach', 'chopin', 'debussy'], ['brahms', 'haydn', 'vivaldi', 'liszt'], ['kabalevsky', 'schubert', 'handel', 'joplin']],
+};
+const CPX_CHK = {
+  era: ['handel', 'mozart', 'brahms', 'prokofiev', 'hisaishi', 'chopin'],
+  year: [1720, 1790, 1860, 1930, 1985],
+  word: ['counterpoint', 'fortepiano', 'rubato', 'contemporaries'],
+  first: [['mozart', 'bach'], ['chopin', 'beethoven'], ['debussy', 'brahms'], ['haydn', 'vivaldi']],
+  keys: ['bach', 'mozart', 'chopin'],   // the keyboard of their time (check 2)
+};
+const CPX_KEY_OF = { bach: 'harpsichord', mozart: 'fortepiano', chopin: 'piano' };
+const cpxChkNo = () => { const C = CPX_CHK, nB = C.era.length + 1, nC = nB + C.year.length, nD = nC + C.word.length, nE = nD + C.first.length; return { nB, nC, nD, nE, total: nE + C.keys.length - 1 }; };
+const cpxE = (id) => cmpById(id);
+const cpxEn = { name: (id) => cpxE(id).name[0], sur: (id) => cpxE(id).sur[0], life: (id) => { const c = cpxE(id); return (c.bornApprox ? 'c. ' : '') + c.born + '–' + (c.died || ''); }, piece: (id) => CPX_PIECE[id][0], era: (id) => CMP_PERIODS[id].name[0].replace(/ \(.*\)$/, '') };
+const cpxAliveIn = (y) => CPX_P6.filter(id => mtlAlive(cpxE(id), y));
+
+// a ruler of years; each row a composer (name and years) and a track to draw the life on; the first row drawn (the example)
+function CpxLifeRows({ from, to, step, ids, ex = true, W = 680, rh = 30, n0 }) {
+  const LW = 172, x0 = LW + 12, x1 = W - 16, X = (y) => x0 + (y - from) / (to - from) * (x1 - x0), top = 24, H = top + ids.length * rh + 6;
+  const ticks = [], minor = [];
+  for (let v = Math.ceil(from / step) * step; v <= to; v += step) ticks.push(v);
+  for (let v = Math.ceil(from / (step / 2)) * (step / 2); v <= to; v += step / 2) if (v % step) minor.push(v);
+  return <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={'A ruler from ' + from + ' to ' + to + ' and a row for each composer: ' + ids.map(id => cpxEn.name(id) + ' ' + cpxEn.life(id)).join('; ') + '.'} style={{width:'100%',height:'auto',display:'block',fontFamily:'Inter, system-ui, sans-serif'}}>
+    {ticks.map(v => <g key={v}><text x={X(v)} y={12} textAnchor="middle" fontSize="11" fontWeight="800" fill={BK.ink}>{v}</text><line x1={X(v)} x2={X(v)} y1={16} y2={H - 4} stroke="rgba(38,41,107,0.28)" strokeWidth="0.8" strokeDasharray="2 3"/></g>)}
+    {ids.map((id, i) => { const y = top + i * rh, mid = y + rh / 2, c = cpxE(id);
+      return <g key={id}>
+        {n0 != null && <text x={0} y={mid + 4} fontSize="13" fontWeight="700" fontStyle="italic" fill={i === 0 && ex ? BK.coral : BK.ink} style={{fontFamily:LB_SERIF}}>{n0 + i}</text>}
+        <text x={n0 != null ? 20 : 0} y={mid + 4} fontSize="12.5" fontWeight="900" fill={BK.ink}>{cpxEn.sur(id)}</text>
+        <text x={LW} y={mid + 4} textAnchor="end" fontSize="12" fontWeight="700" fill={BK.muted}>{cpxEn.life(id)}</text>
+        <line x1={x0} x2={x1} y1={mid + 7} y2={mid + 7} stroke="rgba(38,41,107,0.45)" strokeWidth="0.9"/>
+        {ticks.map(v => <line key={v} x1={X(v)} x2={X(v)} y1={mid + 3} y2={mid + 11} stroke="rgba(38,41,107,0.55)" strokeWidth="0.9"/>)}
+        {minor.map(v => <line key={'m' + v} x1={X(v)} x2={X(v)} y1={mid + 5} y2={mid + 9} stroke="rgba(38,41,107,0.45)" strokeWidth="0.7"/>)}
+        {ex && i === 0 && <rect x={X(c.born)} y={mid} width={X(c.died) - X(c.born)} height={7} rx={3.5} fill={BK.coral}/>}
+      </g>; })}
+  </svg>;
+}
+// join each piece to its composer: pieces on the left, names on the right, a dot at each end; the first pair joined
+function CpxMatch({ left, right, rowH = 30, n0 }) {
+  const W = 680, H = Math.max(left.length, right.length) * rowH + 4, xl = 262, xr = 450;
+  const yl = (i) => 4 + i * rowH + rowH / 2, yr = (id) => 4 + right.indexOf(id) * rowH + rowH / 2;
+  return <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={'Pieces: ' + left.map(cpxEn.piece).join('; ') + '. Composers: ' + right.map(cpxEn.name).join('; ') + '.'} style={{width:'100%',height:'auto',display:'block',fontFamily:'Inter, system-ui, sans-serif'}}>
+    {left.map((id, i) => <g key={'l' + id}>{n0 != null && <text x={0} y={yl(i) + 4.5} fontSize="13" fontWeight="700" fontStyle="italic" fill={i === 0 ? BK.coral : BK.ink} style={{fontFamily:LB_SERIF}}>{n0 + i}</text>}<text x={xl - 12} y={yl(i) + 4.5} textAnchor="end" fontSize="13" fontWeight="700" fontStyle="italic" fill={BK.ink}>{cpxEn.piece(id)}</text><circle cx={xl} cy={yl(i)} r="3.6" fill={BK.ink}/></g>)}
+    {right.map((id, i) => <g key={'r' + id}><circle cx={xr} cy={yl(i)} r="3.6" fill={BK.ink}/><text x={xr + 12} y={yl(i) + 4.5} fontSize="13" fontWeight="900" fill={BK.ink}>{cpxEn.name(id)}</text></g>)}
+    <line x1={xl} y1={yl(0)} x2={xr} y2={yr(left[0])} stroke={BK.coral} strokeWidth="2"/>
+  </svg>;
+}
+const cpxWrite = (w = 300, h = 26) => <span style={{display:'inline-block',width:w,maxWidth:'100%',borderBottom:'1.3px solid ' + BK.line,height:h}}/>;
+const cpxHand = (txt) => <span style={{fontFamily:"'Caveat', 'Comic Sans MS', cursive",fontSize:18,color:BK.coral,fontWeight:700}}>{txt}</span>;
+const cpxCircleRow = (words) => <div style={{display:'flex',justifyContent:'center',gap:6,flexWrap:'wrap',fontSize:12,fontWeight:800,color:BK.ink}}>{words.map(w => <span key={w} style={{padding:'1px 6px'}}>{w}</span>)}</div>;
+
+function CpxWorkbook({ startNo = 1 }) {
+  const W = CPX_WB, pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + 1 + pages.length} chId="composers">{content}</WbPage>);
+  const lifePart = (k) => { const L = W.life[k];
+    return <Part kind="together" title="Draw the lives" how={'Each composer’s life is a bar from the year they were born to the year they died. Draw each one on its line. The first one is done.'}>
+      <div style={{border:'0.8px solid ' + BK.hair,padding:'8px 10px 6px'}}><CpxLifeRows {...L} n0={1} rh={CPX_WB.rh[k]}/></div></Part>; };
+  const matchPart = (k) => <Part kind="home" title="Who wrote it?" how="Join each piece to its composer with a line. The first one is done.">
+    <div style={{border:'0.8px solid ' + BK.hair,padding:'8px 10px'}}><CpxMatch {...W.match[k]} n0={W.life[k].ids.length + 1} rowH={CPX_WB.rh[k]}/></div></Part>;
+  const wordsPart = (ws, n0) => <Part kind="home" title="The words" how="Write the word for each meaning.">
+    <BkGrid cols={ws.length} gap="6px 10px">{ws.map(([w, mean], i) => <BkCell key={w} n={n0 + i}>{sdyCol(<><div style={{textAlign:'center',fontSize:13,fontWeight:800,color:BK.ink,marginTop:14,lineHeight:1.3,textWrap:'balance'}}>“{mean}”</div><div style={{borderBottom:'1.3px solid ' + BK.line,height:34,margin:'auto 8px 4px'}}/></>, '6px 2px 8px')}</BkCell>)}</BkGrid></Part>;
+  const eraPage = (k, play, words) => P(<>
+    <WbTop step={k + 1}/>
+    {lifePart(k)}
+    {matchPart(k)}
+    {wordsPart(words, W.life[k].ids.length + W.match[k].left.length + 1)}
+    <Part kind="play" title="At the piano" how="Play, then tick each.">{sskRowN(W.life[k].ids.length + W.match[k].left.length + 4, ivxTicks(play))}</Part>
+    <Faces/>
+  </>);
+  eraPage(0, ['a Baroque piece', 'its composer and years', 'one loudness, then soft and loud'], CPX_WB.words[0]);
+  eraPage(1, ['an Alberti bass on C', 'a Classical piece', 'its composer and years'], CPX_WB.words[1]);
+  eraPage(2, ['a slow tune with rubato', 'a Romantic piece', 'its composer and years'], CPX_WB.words[2]);
+  eraPage(3, ['a Modern or Contemporary piece', 'its composer and years', 'blurred with the pedal'], CPX_WB.words[3]);
+
+  // 6 (faces "Who lived when")
+  P(<>
+    <WbTop step={5}/>
+    <Part kind="together" title="A line down from one year" how="Draw a line straight down from each year. Write who was alive then (born before it, died after it). The first one is done.">
+      <div style={{border:'0.8px solid ' + BK.hair,padding:'8px 10px 4px'}}><MusTimeline en stack W={640} fs={10.5} laneH={14} barH={8} from={1670} to={1910} rows={['era', 'cmp']} ids={CPX_P6} year={W.alive[0]} step={20} label={'Fifteen lives, Baroque to Romantic, with a line down from ' + W.alive[0] + '.'}/></div>
+      <div style={{display:'flex',flexDirection:'column',gap:4,marginTop:6}}>{W.alive.map((y, i) => <div key={y} style={{display:'grid',gridTemplateColumns:'26px 58px minmax(0,1fr)',alignItems:'end',gap:8,fontSize:14,fontWeight:900,color:BK.ink,minHeight:38}}>
+        <span style={{fontFamily:LB_SERIF,fontStyle:'italic',fontWeight:700}}>{i + 1}</span><span>{y}</span>{i === 0 ? <span style={{borderBottom:'1.3px solid ' + BK.line}}>{cpxHand(cpxAliveIn(y).map(cpxEn.sur).join(', '))}</span> : <span style={{borderBottom:'1.3px solid ' + BK.line,height:26}}/>}</div>)}</div>
+    </Part>
+    <Part kind="home" title="Who came first?" how="Number each row 1 to 4, in the order they were born. Look back at Lesson Book pages 2 to 5. The first one is done.">
+      <div style={{display:'flex',flexDirection:'column',gap:6}}>{W.order.map((g, i) => { const ord = [...g].sort((a, b) => cpxE(a).born - cpxE(b).born);
+        return <div key={i} style={{display:'grid',gridTemplateColumns:'26px repeat(4,minmax(0,1fr))',alignItems:'center',gap:8,border:i === 0 ? '1.4px solid ' + BK.coral : '0.8px solid ' + BK.hair,background:i === 0 ? '#fff8f5' : '#fff',padding:'9px 8px'}}>
+          <span style={{fontFamily:LB_SERIF,fontStyle:'italic',fontSize:13,fontWeight:700,color:i === 0 ? BK.coral : BK.ink}}>{i + 5}</span>
+          {g.map(id => <span key={id} style={{display:'flex',alignItems:'center',gap:6,fontSize:13.5,fontWeight:900,color:BK.ink}}><span style={{width:24,height:24,border:'1.4px solid ' + BK.line,borderRadius:3,display:'inline-flex',alignItems:'center',justifyContent:'center',flex:'0 0 auto'}}>{i === 0 && cpxHand(ord.indexOf(id) + 1)}</span>{cpxEn.sur(id)}</span>)}</div>; })}</div>
+    </Part>
+    <Part kind="play" title="At the piano" how="Play, then tick each.">{sskRowN(8, ivxTicks(['Haydn: C\u00a0C\u00a0E\u00a0E\u00a0G\u00a0G\u00a0E', 'Beethoven: E\u00a0E\u00a0F\u00a0G\u00a0G\u00a0F\u00a0E\u00a0D', 'both found on the timeline']))}</Part>
+    <Faces/>
+  </>);
+  // 7: my composers (any piece)
+  P(<CpxMyComposers/>);
+  // 8: the check-up
+  P(<CpxPaperCheck/>);
+  return <>{pages}</>;
+}
+
+function CpxMyComposers() {
+  const head = ['My piece', 'Composer', 'Born–died', 'Period', 'Keyboard of their time'];
+  const cols = 'minmax(0,1.4fr) minmax(0,1.2fr) 112px minmax(0,0.9fr) minmax(0,1.1fr)';
+  return <>
+    <WbTop step={7}/>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',gap:12,margin:'0 0 2px'}}>
+      <div style={{minWidth:0}}><div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em'}}>ANY PIECE</div><div style={{fontSize:12.5,color:BK.muted,textWrap:'pretty'}}>Keep this page all year. Add each new piece you learn.</div></div></div>
+    <Part kind="together" title="My composers" how="For each piece: its composer, the years they lived, their period, and the keyboard of their time (harpsichord, fortepiano or piano). The composer’s name and years are printed above the music, on the right.">
+      <div style={{border:'0.8px solid ' + BK.hair}}>
+        <div style={{display:'grid',gridTemplateColumns:cols,gap:8,padding:'6px 10px',borderBottom:'1px solid ' + BK.line,fontSize:10.5,fontWeight:900,letterSpacing:'0.07em',textTransform:'uppercase',color:BK.muted}}>{head.map(h => <span key={h}>{h}</span>)}</div>
+        {Array.from({ length: 10 }, (_, i) => <div key={i} style={{display:'grid',gridTemplateColumns:cols,gap:8,padding:'0 10px',height:34,borderBottom:'0.8px solid ' + BK.hair}}>{head.map(h => <span key={h} style={{borderRight:h === head[4] ? 'none' : '0.8px dotted ' + BK.hair}}/>)}</div>)}
+      </div>
+    </Part>
+    <Part kind="home" title="My composers on the timeline" how="Draw each composer’s life above the periods, and write their name beside it.">
+      <div style={{border:'0.8px solid ' + BK.hair,padding:'8px 10px 4px'}}>
+        <MusTimeline en rows={['draw', 'era', 'keys']} ids={[]} label="Six empty lines to draw lives on, above the periods and keyboards from 1600 to today."/></div>
+    </Part>
+    <Part kind="play" title="At the piano" how="Play each piece on your list. Say its composer, years and period. Tick when your teacher says yes.">{sskRowN(1, ivxTicks(['composer', 'years', 'period']))}</Part>
+    <Faces/>
+  </>;
+}
+function CpxPaperCheck() {
+  const C = CPX_CHK, { nB, nC, nD, nE } = cpxChkNo(), eras = MTL_ERAS.map(cpxEn.era);
+  return <div className="lb-paper" style={{display:'flex',flexDirection:'column',gap:10,flex:'1 0 auto'}}>
+    <LbPaperHead/>
+    {bkSec('A', 'Which period? Circle one.')}
+    <BkGrid cols={3} gap="6px 10px">{C.era.map((id, i) => <BkCell key={id} n={i + 1}>{sdyCol(<><div style={{textAlign:'center',fontSize:15,fontWeight:900,color:BK.ink,margin:'2px 0 6px'}}>{cpxEn.name(id)}</div>{cpxCircleRow(eras)}</>, '14px 4px 6px')}</BkCell>)}</BkGrid>
+    {bkSec('B', 'Which period is this year in? Write it.')}
+    <BkGrid cols={5} gap="6px 10px">{C.year.map((y, i) => <BkCell key={y} n={nB + i}>{sdyCol(<><div style={{textAlign:'center',fontFamily:LB_SERIF,fontSize:24,fontWeight:900,color:BK.ink,margin:'4px 0 0',fontVariantNumeric:'lining-nums'}}>{y}</div><div style={{borderBottom:'1.3px solid ' + BK.line,height:34,margin:'auto 6px 4px'}}/></>, '12px 2px 6px')}</BkCell>)}</BkGrid>
+    {bkSec('C', 'Write the word.')}
+    <BkGrid cols={4} gap="6px 10px">{C.word.map((w, i) => <BkCell key={w} n={nC + i}>{sdyCol(<><div style={{textAlign:'center',fontSize:13,fontWeight:800,color:BK.ink,marginTop:16,lineHeight:1.3,textWrap:'balance'}}>“{CPX_WORDS.find(x => x[0] === w)[1]}”</div><div style={{borderBottom:'1.3px solid ' + BK.line,height:40,margin:'auto 8px 4px'}}/></>, '6px 2px 8px')}</BkCell>)}</BkGrid>
+    {bkSec('D', 'Who was born first? Circle one.')}
+    <BkGrid cols={4} gap="6px 10px">{C.first.map(([a, b], i) => <BkCell key={a + b} n={nD + i}>{sdyCol(<div style={{display:'flex',justifyContent:'center',gap:14,fontSize:15,fontWeight:900,color:BK.ink,margin:'auto 0'}}><span>{cpxEn.sur(a)}</span><span>{cpxEn.sur(b)}</span></div>, '16px 4px 6px')}</BkCell>)}</BkGrid>
+    {bkSec('E', 'Which keyboard did they write for? Circle one.')}
+    <BkGrid cols={3} gap="6px 10px">{C.keys.map((id, i) => <BkCell key={id} n={nE + i}>{sdyCol(<><div style={{textAlign:'center',fontSize:15,fontWeight:900,color:BK.ink,margin:'2px 0 6px'}}>{cpxEn.name(id)}</div>{cpxCircleRow(['harpsichord', 'fortepiano', 'piano'])}</>, '14px 4px 6px')}</BkCell>)}</BkGrid>
+  </div>;
+}
+
+function CpxTeacher() {
+  const W = CPX_WB, C = CPX_CHK, pages = [], { nB, nC, nD, nE, total } = cpxChkNo();
+  const P = (content) => pages.push(<WbPage key={pages.length} no={pages.length + 1} chId="composers" teacher>{content}</WbPage>);
+  const done = (i) => i === 0 ? ' (done)' : '';
+  const lifeAns = (k) => W.life[k].ids.map((id, i) => cpxEn.sur(id) + ' ' + cpxEn.life(id) + done(i));
+  const matchAns = (k) => W.match[k].left.map((id, i) => cpxEn.piece(id).replace(/ \(film music\)$/, '') + ': ' + cpxEn.sur(id) + done(i));
+  const wordAns = (k) => skgTcAns('THE WORDS', W.words[k].map(w => w[0]), W.life[k].ids.length + W.match[k].left.length + 1);
+  const firstOf = ([a, b]) => cpxE(a).born < cpxE(b).born ? a : b;
+  P(<>
+    <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('composers')}</div>
+    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 8px',lineHeight:1.5}}>{'The timeline of music: five periods, the keyboard of each time, and ' + CPX_IDS.length + ' composers placed on it. Chapter ' + bkChapterNo('piano-story') + ' (the harpsichord, the first piano, the fortepiano) comes first; chapter ' + bkChapterNo('styles') + ' reads the same timeline’s sound and styles rows. AMEB: general knowledge (the composer and period of each exam piece).'}</div>
+    <div style={{border:'0.8px solid ' + BK.hair,padding:'6px 12px',margin:'0 0 8px',fontSize:11.5,color:BK.ink,lineHeight:1.42}}><b style={{color:BK.coral}}>Dates.</b> Period boundaries are conventions (Classical: 1730 or 1750 to 1820 or 1830). A composer’s period is when the music was written; Beethoven, Debussy and Kabalevsky (Op. 51, 60 and 89, 1952–74, are Contemporary) cross a boundary, and the drill never asks theirs. The keyboards row is simplified: harpsichords lasted past 1770; the piano row starts about 1830, as the iron frame came in (1825–1859, chapter {bkChapterNo('piano-story')}).</div>
+    <TcBlock page={2} title="Baroque: 1600 to 1750" answers={<>{sscLesson('A Baroque piece with its composer and years; a tune at one loudness (harpsichord), then soft and loud (piano).')}{skgTcAns('TRY IT', lifeAns(0))}{skgTcAns('YOUR TURN', matchAns(0), W.life[0].ids.length + 1)}{wordAns(0)}</>}
+      watch="A life drawn from tick to tick instead of from its own years: 1678 falls between 1670 and 1680. Three lives that start at the same tick (1685) are right, not a mistake."
+      say="“Baroque: 1600 to 1750. Bach, Handel and Scarlatti were all born in 1685.”"/>
+    <TcBlock page={3} title="Classical: 1750 to 1820" answers={<>{sscLesson('An Alberti bass on C (C G E G); a Classical piece with its composer and years.')}{skgTcAns('TRY IT', lifeAns(1))}{skgTcAns('YOUR TURN', matchAns(1), W.life[1].ids.length + 1)}{wordAns(1)}</>}
+      watch="Haydn called Baroque because he was born in 1732: the period is when the music was written. The Alberti bass played as a block chord."
+      say="“Classical: 1750 to 1820. Haydn, Mozart and Beethoven all worked in Vienna.”"/>
+    <TcBlock page={4} title="Romantic: 1820 to 1900" answers={<>{sscLesson('A slow tune in strict time, then with a little rubato; a Romantic piece with its composer and years.')}{skgTcAns('TRY IT', lifeAns(2))}{skgTcAns('YOUR TURN', matchAns(2), W.life[2].ids.length + 1)}{wordAns(2)}</>}
+      watch="Rubato that only slows down (it gives time back). Clara and Robert Schumann taken for one person: two lives, two composers."
+      say="“Romantic: 1820 to 1900. Chopin and Robert Schumann were both born in 1810.”"/>
+  </>);
+  P(<>
+    <TcBlock page={5} title="Modern and Contemporary: 1900 to today" answers={<>{sscLesson('A Modern or Contemporary piece, its composer and years; soft high notes blurred.')}{skgTcAns('TRY IT', lifeAns(3))}{skgTcAns('YOUR TURN', matchAns(3), W.life[3].ids.length + 1)}{wordAns(3)}</>}
+      watch="“Modern” taken to mean today’s music: here it is 1900 to 1950; today’s is Contemporary. This ruler’s ticks are 20 years apart."
+      say="“Modern: 1900 to 1950. Contemporary: 1950 to today.”"/>
+    <TcBlock page={6} title="Who lived when" answers={<>{sscLesson('1685 on the timeline (Bach, Handel, Scarlatti born); Beethoven to Vienna in 1792 to study with Haydn; Haydn’s “Surprise” tune and Beethoven’s “Ode to Joy”.')}{skgTcAns('TRY IT', W.alive.map((y, i) => y + ': ' + cpxAliveIn(y).map(cpxEn.sur).join(', ') + done(i)))}{skgTcAns('YOUR TURN', W.order.map((g, i) => g.map(id => cpxEn.sur(id) + ' ' + ([...g].sort((a, b) => cpxE(a).born - cpxE(b).born).indexOf(id) + 1)).join(', ') + done(i)), 5)}</>}
+      watch="A line drawn on a slant. (No year asked here is a year of birth or death.)"
+      say="“Contemporaries lived at the same time. A line down from one year finds them.”"/>
+    <TcBlock page={7} title="Any piece: my composers (one page, kept all year)" answers={<div style={{fontSize:12,color:BK.ink,lineHeight:1.5}}>Composer, years, period, keyboard (harpsichord to about 1770, fortepiano to about 1830, then piano). Others (Czerny, Grieg, Miriam Hyde …) by their years. The Minuet in G (Anna Magdalena Notebook) is by Petzold.</div>}/>
+    <TcBlock page={8} title="The check-up on paper (the Workbook’s last page)" answers={<>
+      {skgTcAns('A', C.era.map(id => cpxEn.era(cpxE(id).era)))}
+      {skgTcAns('B', C.year.map(y => cpxEn.era(mtlEraOf(y))), nB)}
+      {skgTcAns('C', C.word, nC)}
+      {skgTcAns('D', C.first.map(p => cpxEn.sur(firstOf(p))), nD)}
+      {skgTcAns('E', C.keys.map(id => CPX_KEY_OF[id]), nE)}
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>One mark each, {total} in all. A section with a wrong answer is not passed yet: go back to its pages. Also listen to the student (My five checks, page 7).</div>
+    </>}
+      goBack={[{ id: 'a', step: '1 to 4', page: '2 to 5' }, { id: 'b', step: '1 to 4', page: '2 to 5' }, { id: 'c', step: '1 to 5', page: '2 to 6' }, { id: 'd', step: '5', page: '6' }, { id: 'e', step: '1 to 3', page: '2 to 4' }]}/>
+    <div style={{border:'0.8px solid ' + BK.hair,padding:'6px 12px',margin:'0 0 8px',fontSize:12,color:BK.ink,lineHeight:1.5}}><b style={{color:BK.coral}}>The drill (after page 6).</b> 1 period of a year · 2 period of a composer · 3 born first · 4 alive together · 5 who wrote it · 6 listening: Baroque, Classical or Romantic (real openings) · 7 listening: who wrote it (6, 7 screen only) · 8 the words · 9 extra: order of birth.</div>
+  </>);
+  return <>{pages}</>;
+}
+WORKBOOKS['composers'] = CpxWorkbook;
+TEACHER_COPIES['composers'] = CpxTeacher;
+
+Object.assign(COMPOSERS_DRILL, { levels: CPX_LEVELS, generate: genCpxQuestion, check: cpxCheck, answerLabel: cpxAnswerLabel, Question: CpxQuestion, Learn: CpxLearn });
+const LESSON_BOOKS = { 'posture-hands': PostureLessonBook, 'first-steps': FirstStepsLessonBook, 'note-names': NoteNamesLessonBook, staff: StaffLessonBook, 'whole-staff': WholeStaffLessonBook, 'ledger-lines': LedgerLessonBook, tones: TonesLessonBook, pulse: PulseLessonBook, 'note-values': NotesRestsLessonBook, 'time-signatures': TimeSignaturesLessonBook, 'reading-steps': ReadingStepsLessonBook, dynamics: DynamicsLessonBook, 'pitch-range': PitchRangeLessonBook, tempo: TempoLessonBook, rhythm: RhythmLessonBook, scales: ScalesLessonBook, accidentals: AccidentalsLessonBook, 'piano-story': PianoStoryLessonBook, 'key-signatures': KeySigLessonBook, signs: SignsLessonBook, intervals: IntervalsLessonBook, chords: ChordsLessonBook, terms: TermsLessonBook, form: FormLessonBook, melody: MelodyLessonBook, composers: ComposersLessonBook };
 // Phase 394: chapters whose first and last pages are shared by both books
-const LB_PAGE_FNS = { 'posture-hands': postureLbPages, 'first-steps': fsLbPages, 'note-names': nnLbPages, staff: sfLbPages, 'whole-staff': wsLbPages, 'ledger-lines': llLbPages, tones: tnLbPages, pulse: plLbPages, 'note-values': nvLbPages, 'time-signatures': tsLbPages, 'reading-steps': sskLbPages, dynamics: sdyLbPages, 'pitch-range': sprLbPages, tempo: stmLbPages, rhythm: srhLbPages, scales: sscLbPages, accidentals: sacLbPages, 'piano-story': spsLbPages, 'key-signatures': skgLbPages, signs: sgnLbPages, intervals: ivxLbPages, chords: chxLbPages, terms: tmxLbPages, form: fmxLbPages, melody: mlxLbPages };   // Phase 455: tones and pulse too, so each workbook page faces its own lesson page
+const LB_PAGE_FNS = { 'posture-hands': postureLbPages, 'first-steps': fsLbPages, 'note-names': nnLbPages, staff: sfLbPages, 'whole-staff': wsLbPages, 'ledger-lines': llLbPages, tones: tnLbPages, pulse: plLbPages, 'note-values': nvLbPages, 'time-signatures': tsLbPages, 'reading-steps': sskLbPages, dynamics: sdyLbPages, 'pitch-range': sprLbPages, tempo: stmLbPages, rhythm: srhLbPages, scales: sscLbPages, accidentals: sacLbPages, 'piano-story': spsLbPages, 'key-signatures': skgLbPages, signs: sgnLbPages, intervals: ivxLbPages, chords: chxLbPages, terms: tmxLbPages, form: fmxLbPages, melody: mlxLbPages, composers: cpxLbPages };   // Phase 455: tones and pulse too, so each workbook page faces its own lesson page
 // Phase 409: the Workbook no longer repeats the book's opener; its last page is the check-up on paper (the book's
 // last page keeps only the at-the-piano checks). Chapter 4 builds its own check-up page.
 const LB_PAPER_PAGES = { 'posture-hands': () => <PhPaperCheck/>, 'first-steps': () => <FsPaperCheck/>, 'note-names': () => <NnPaperCheck/> };
