@@ -803,7 +803,9 @@ function loadRecords() {
   try { return JSON.parse(localStorage.getItem(REC_KEY)) || {}; } catch (e) { return {}; }
 }
 function recordKey(drillId, level, mode) { return drillId + '|' + level + '|' + mode; }
-function getRecord(drillId, level, mode) { return loadRecords()[recordKey(drillId, level, mode)] || null; }
+// a rebuilt drill's levels are new: a record saved before the rebuild (ms) belongs to the old levels, so it is not shown
+const REC_SINCE = { chords: 1792186864000, terms: 1792197545000, form: 1792201375000 };
+function getRecord(drillId, level, mode) { const r = loadRecords()[recordKey(drillId, level, mode)] || null; return r && REC_SINCE[drillId] && !(+r.lastAt >= REC_SINCE[drillId]) ? null : r; }
 function saveRecord(drillId, level, mode, result) {
   const prev = getRecord(drillId, level, mode);
   const prevBest = prev ? prev.best : null;
@@ -1598,7 +1600,7 @@ function Lesson({ id, title, intro, children, onStart, startLabel, head, noArt }
 }
 function LessonMore({ id }) {
   const own = { 'posture-hands': ['sit-check', 'arm-moves', 'hand-shape'], 'whole-staff': ['rhymes'] }[id] || [];
-  const list = (CHAPTER_TOOL_ORDER[id] || []).filter(x => !/^(sdy|ssk|srh|ssc|stm|sps|spr|skg|sgn|ivx|chx|tmx|sac|ts|nv)-/.test(x) && !own.includes(x)).map(x => TOOLS.find(tl => tl.id === x)).filter(Boolean);
+  const list = (CHAPTER_TOOL_ORDER[id] || []).filter(x => !/^(sdy|ssk|srh|ssc|stm|sps|spr|skg|sgn|ivx|chx|tmx|fmx|sac|ts|nv)-/.test(x) && !own.includes(x)).map(x => TOOLS.find(tl => tl.id === x)).filter(Boolean);
   if (!list.length) return null;
   return <div style={{margin:'14px 0 0',padding:'10px 12px',border:'1px solid rgba(38,41,107,0.16)',borderRadius:10,background:'#fff'}}>
     <div style={{fontSize:14,fontWeight:900,color:'var(--text)',margin:'0 0 6px'}}>{t('More in the toolbox', '툴박스에 더 있어요')}</div>
@@ -14253,52 +14255,6 @@ const SONG_SHAPES = [
     den: 'The pre-chorus builds up the excitement so the chorus feels like a big arrival. You hear this in a lot of today’s pop and K-pop.',
     dko: '프리코러스가 기대감을 끌어올려서 코러스가 터지듯 느껴지게 해요. 요즘 팝과 케이팝에서 많이 들려요.' },
 ];
-function SongForms() {
-  const [id, setId] = useState('vc');
-  const [on, setOn] = useState(-1);
-  const timers = useRef([]);
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
-  const S = SONG_SHAPES.find(x => x.id === id);
-  function stop() { timers.current.forEach(clearTimeout); timers.current = []; setOn(-1); }
-  function playBlock(i) { stop(); setOn(i); timers.current.push(...playMelody(FORM_MOTIF[S.blocks[i][3]], 132, (k) => { if (k === -1) setOn(-1); })); }
-  function playAll() {
-    stop(); let tms = 0;
-    S.blocks.forEach((b, i) => { timers.current.push(setTimeout(() => { setOn(i); playMelody(FORM_MOTIF[b[3]], 132); }, tms)); tms += FORM_MOTIF_MS; });
-    timers.current.push(setTimeout(() => setOn(-1), tms));
-  }
-  if (BOOK) return (
-    <div className="try-box" style={actBox} data-testid="song-forms">
-      <div style={actTitle}>{t('Song shapes', '노래의 모양')}</div>
-      {SONG_SHAPES.map(x => <div key={x.id} style={{ breakInside: 'avoid', margin: '8px 0' }}>
-        <div style={{ fontWeight: 900, fontSize: 14 }}>{t(x.en, x.ko)}</div>
-        <div style={{ display: 'flex', gap: 5, margin: '4px 0' }}>{x.blocks.map((b, i) => <span key={i} style={{ flex: 1, textAlign: 'center', borderRadius: 7, padding: '4px 2px', background: FORM_COLOR[b[0]], color: '#fff', fontWeight: 900, fontSize: 12 }}>{b[0]}<span style={{ display: 'block', fontSize: 9.5, fontWeight: 700 }}>{t(b[1], b[2])}</span></span>)}</div>
-        <div style={{ fontSize: 12, color: '#4a4d86', lineHeight: 1.4 }}>{t(x.den, x.dko)}</div>
-      </div>)}
-    </div>
-  );
-  return (
-    <div className="try-box" style={actBox} data-testid="song-forms">
-      <div style={actTitle}>{t('Song shapes', '노래의 모양')}</div>
-      <div style={actNote}>{t('Songs are built from sections too. Pick a shape, tap a box to hear that part, or play the whole song.', '노래도 부분들로 짜여 있어요. 모양을 고르고, 상자를 눌러 그 부분을 듣거나, 노래 전체를 들어 봐요.')}</div>
-      <div style={{ display: 'flex', gap: 4, marginBottom: 10, flexWrap: 'wrap' }}>
-        {SONG_SHAPES.map(x => <button key={x.id} data-song={x.id} className={'chip' + (id === x.id ? ' active' : '')} style={{ padding: '4px 11px', fontSize: 13 }} onClick={() => { stop(); setId(x.id); }}>{t(x.en, x.ko)}</button>)}
-      </div>
-      <div data-testid="song-blocks" style={{ display: 'grid', gridTemplateColumns: 'repeat(' + (S.blocks.length > 4 ? 3 : S.blocks.length) + ', minmax(0, 1fr))', gap: 6, margin: '10px 0' }}>
-        {S.blocks.map((b, i) => (
-          <button key={i} data-block={b[0]} onClick={() => playBlock(i)} style={{ minWidth: 0, height: 58, borderRadius: 10, border: 'none', color: '#fff', background: FORM_COLOR[b[0]], cursor: 'pointer', fontFamily: 'inherit', padding: '0 2px',
-            boxShadow: on === i ? '0 0 0 3px rgba(228,87,46,0.45)' : 'none', transform: on === i ? 'translateY(-3px)' : 'none', transition: 'transform .15s, box-shadow .15s' }}>
-            <span style={{ display: 'block', fontFamily: "'Playfair Display', Georgia, serif", fontSize: 20, fontWeight: 900, lineHeight: 1.05 }}>{b[0]}</span>
-            <span style={{ display: 'block', fontSize: 10.5, fontWeight: 800, opacity: 0.95, lineHeight: 1.15, wordBreak: 'keep-all' }}>{t(b[1], b[2])}</span>
-          </button>
-        ))}
-      </div>
-      {id === 'aaba' && <div style={{ textAlign: 'center', fontSize: 12.5, fontWeight: 800, color: 'var(--navy-soft)', margin: '-4px 0 6px' }}>{t('8 + 8 + 8 + 8 = 32 bars', '8 + 8 + 8 + 8 = 32마디')}</div>}
-      <div style={{ textAlign: 'center', margin: '8px 0' }}><button className="ghost-btn" data-testid="song-play" onClick={on >= 0 ? stop : playAll}>{on >= 0 ? t('Stop', '멈추기') : '♪ ' + t('Play the whole song', '노래 전체 듣기')}</button></div>
-      <div style={{ fontSize: 12.5, color: '#4a4d86', background: '#f5f0e4', borderRadius: 8, padding: '6px 9px', lineHeight: 1.5 }}>{t(S.den, S.dko)}</div>
-    </div>
-  );
-}
-
 // Four chords in C major. Notes are diatonic steps (28 = middle C); close voicings so the hands hardly move.
 const FC_CHORDS = {
   I: { name: 'C', notes: [28, 30, 32], bass: 21, col: '#26296b', ink: '#fff' },
@@ -14362,120 +14318,7 @@ function FourChordSong() {
   );
 }
 
-function FormLearn({ onStart }) {
-  return (
-    <Lesson id="form" title={t('How a piece is put together', '곡은 어떻게 짜여 있을까요')} intro={t('Composers organize music into sections, often labeled with letters like A and B. This chapter looks at the three most common shapes: binary, ternary, and rondo.', '작곡가는 음악을 A, B 같은 글자로 이름 붙인 여러 부분으로 짜요. 이 챕터에서는 가장 흔한 세 가지 모양인 두 부분(binary), 세 부분(ternary), 론도(rondo)를 살펴봐요.')} onStart={onStart}>
-      <Step title={t('Three ways to shape a piece', '곡을 짜는 세 가지 방법')}>
-        <FormShapes/>
-      </Step>
-      <Step title={t('Build your own form', '나만의 형식 만들기')}>
-        <FormBuilder/>
-      </Step>
-      <Step title={t('Same section again, or something new?', '같은 부분인가요, 새로운 부분인가요?')}>
-        <SameOrNewSection/>
-      </Step>
-      <Step title={t('Rondo: the tune that keeps coming back', '론도: 계속 돌아오는 곡')}>
-        <RondoRefrain/>
-      </Step>
-      <Step title={t('Two sections, or three?', '두 부분일까요, 세 부분일까요?')}>
-        <BinaryTernarySpot/>
-      </Step>
-      <Step title={t('Song shapes', '노래의 모양')}>
-        <SongForms/>
-      </Step>
-    </Lesson>
-  );
-}
-const FORM_LEVELS = [
-  { n: 1, label: 'Binary, ternary, or rondo?', kind: 'shapeName', time: 8 },
-  { n: 2, label: 'Same section or new?', kind: 'sameOrNew', time: 8 },
-  { n: 3, label: 'Spot the refrain', kind: 'rondoRefrain', time: 8 },
-  { n: 4, label: 'Two sections or three?', kind: 'binaryOrTernary', time: 9 },
-];
-const SHAPE_FACTS = [
-  { q: 1, answer: 'Binary (AB)' },
-  { q: 2, answer: 'Ternary (ABA)' },
-  { q: 3, answer: 'Rondo (ABACA)' },
-];
-function genFormQuestion(lv, prev) {
-  const uid = Math.random();
-  if (lv.kind === 'shapeName') {
-    let f = pick(SHAPE_FACTS), n = 0; while (prev && prev.key === f.answer && n++ < 10) f = pick(SHAPE_FACTS);
-    return { kind: lv.kind, key: f.answer, f, answer: f.answer, choices: shuffle(SHAPE_FACTS.map(x => x.answer)), uid };
-  }
-  if (lv.kind === 'sameOrNew') {
-    let p = pick(SON_PAIRS), n = 0; while (prev && prev.key === p.first + p.second && n++ < 10) p = pick(SON_PAIRS);
-    const answer = p.answer === 'same' ? 'Same section repeated' : 'New section';
-    return { kind: lv.kind, key: p.first + p.second, p, answer, choices: ['Same section repeated', 'New section'], uid };
-  }
-  if (lv.kind === 'rondoRefrain') {
-    let cut = 1 + Math.floor(Math.random() * (RONDO_SEQUENCE.length - 1)), n = 0;
-    while (prev && prev.key === cut && n++ < 10) cut = 1 + Math.floor(Math.random() * (RONDO_SEQUENCE.length - 1));
-    const next = RONDO_SEQUENCE[cut];
-    const answer = next === 'A' ? 'The refrain (A) returns' : 'A new episode';
-    return { kind: lv.kind, key: cut, cut, answer, choices: ['The refrain (A) returns', 'A new episode'], uid };
-  }
-  const ex = genBTExample();
-  const answer = ex.answer === 'binary' ? 'Two sections (AB)' : 'Three sections (ABA)';
-  return { kind: 'binaryOrTernary', key: ex.blocks.join(''), ex, answer, choices: ['Two sections (AB)', 'Three sections (ABA)'], uid };
-}
-function FormQuestion({ q, level, given, locked, onAnswer, pixel }) {
-  const done = !!given;
-  const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
-  const st = (c) => !done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '';
-  const prompt = (tx, px) => <p style={pixel ? {fontSize:11.5,textAlign:'center',margin:'0 0 10px'} : {fontSize:15,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{pixel ? px : tx}</p>;
-  const grid = () => (
-    <div style={{display:'grid',gridTemplateColumns:'1fr',gap:8}}>
-      {q.choices.map(c => <button key={c} disabled={locked} onClick={() => { stopClicks(); onAnswer(c); }} className={btnCls + st(c)} style={{padding:'10px 6px',fontSize:14}}>{chKo(c)}</button>)}
-    </div>
-  );
-  useEffect(() => {
-    let timers = [];
-    const tmo = setTimeout(() => {
-      if (q.kind === 'sameOrNew') timers = playFormSeq([q.p.first, q.p.second]);
-      else if (q.kind === 'rondoRefrain') timers = playFormSeq(RONDO_SEQUENCE.slice(0, q.cut));
-      else if (q.kind === 'binaryOrTernary') timers = playFormSeq(q.ex.blocks);
-    }, 250);
-    return () => { clearTimeout(tmo); timers.forEach(clearTimeout); };
-  }, [q.uid]);
-  if (q.kind === 'shapeName') {
-    const shapeQs = {
-      1: t('Two sections, A then B: B never comes back. What form is this?', '두 부분, A 다음 B: B는 다시 안 돌아와요. 어떤 형식일까요?'),
-      2: t('Three sections: A, then B, then A returns. What form is this?', '세 부분: A, B, 그리고 A가 다시 돌아와요. 어떤 형식일까요?'),
-      3: t('A keeps returning between new episodes, like a chorus between verses. What form is this?', 'A가 새로운 부분 사이사이 계속 돌아와요, 벌스 사이의 코러스처럼요. 어떤 형식일까요?'),
-    };
-    return <div>{prompt(shapeQs[q.f.q], t('WHICH FORM IS THIS?', '어떤 형식일까요?'))}{grid()}</div>;
-  }
-  if (q.kind === 'sameOrNew') return (<div>
-    {prompt(t('Two sections play back to back. Is the second a repeat, or something new?', '두 부분이 이어서 재생돼요. 두 번째는 반복인가요, 새로운 건가요?'), t('SAME, OR NEW?', '같은가요, 새로운가요?'))}
-    <div style={{display:'flex',gap:8,justifyContent:'center',margin:'0 0 10px'}}>
-      <div style={{width:36,height:36,borderRadius:9,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:900,background:FORM_COLOR[q.p.first]}}>{q.p.first}</div>
-      <div style={{width:36,height:36,borderRadius:9,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:900,background:done ? FORM_COLOR[q.p.second] : 'var(--muted)'}}>{done ? q.p.second : '?'}</div>
-    </div>
-    <div style={{textAlign:'center',margin:'0 0 10px'}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => playFormSeq([q.p.first, q.p.second])}>{t('♪ Play again', '♪ 다시 듣기')}</button></div>
-    {grid()}
-  </div>);
-  if (q.kind === 'rondoRefrain') return (<div>
-    {prompt(t('Is the next section the refrain (A) coming back, or a new episode?', '다음 부분은 후렴(A)이 돌아오는 걸까요, 새 에피소드일까요?'), t('REFRAIN, OR NEW?', '후렴인가요, 새로운가요?'))}
-    <div style={{display:'flex',gap:6,justifyContent:'center',margin:'0 0 10px',flexWrap:'wrap'}}>
-      {RONDO_SEQUENCE.slice(0, q.cut).map((b, i) => <div key={i} style={{width:34,height:34,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:900,fontSize:14,background:FORM_COLOR[b]}}>{b}</div>)}
-      <div style={{width:34,height:34,borderRadius:8,display:'flex',alignItems:'center',justifyContent:'center',border:'2px dashed var(--border)',color:'var(--muted)',fontSize:14}}>?</div>
-    </div>
-    <div style={{textAlign:'center',margin:'0 0 10px'}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => playFormSeq(RONDO_SEQUENCE.slice(0, q.cut))}>{t('♪ Play again', '♪ 다시 듣기')}</button></div>
-    {grid()}
-  </div>);
-  return (<div>
-    {prompt(t('Listen to the whole piece. Did the opening tune come back at the end?', '곡 전체를 들어보세요. 처음 곡이 끝에 다시 나왔나요?'), t('TWO SECTIONS, OR THREE?', '두 부분인가요, 세 부분인가요?'))}
-    <div style={{textAlign:'center',margin:'0 0 10px'}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => playFormSeq(q.ex.blocks)}>{t('♪ Play again', '♪ 다시 듣기')}</button></div>
-    {grid()}
-  </div>);
-}
-const FORM_DRILL = {
-  id: 'form', label: 'Musical Form', levels: FORM_LEVELS, generate: genFormQuestion,
-  check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
-  answerLabel: (q) => chKo(q.answer),
-  Question: FormQuestion, Learn: FormLearn,
-};
+const FORM_DRILL = { id: 'form', label: 'Musical Form' };   // its levels, lesson and questions: Phase 480 (Object.assign below)
 
 // ─── Concept: Styles & Genres -- musical textures, folk/classical/jazz/pop (Phase 184) ──
 // New chapter, not in the original 21. Completes the "Help Your Kids with Music" gap-fill --
@@ -19074,6 +18917,13 @@ const TOOLS = [
   { id: 'phrase-marks', ch: 'melody', title: 'Phrase marks: where to breathe', blurb: 'The rainbow arc over a musical sentence.', C: () => <PhraseBreath/> },
   { id: 'question-answer', ch: 'melody', title: 'Question or answer phrase?', blurb: 'Unstable (2, 4, 5, 7) or home (1)?', C: () => <QuestionAnswer/> },
   { id: 'melody-sequence', ch: 'melody', title: 'Sequences: same shape, new pitch', blurb: 'A pattern restated, one step higher each time.', C: () => <SequenceStepper/> },
+  { id: 'fmx-map', ch: 'form', title: 'The map of a piece', blurb: 'The piece, its sections, phrases, bars and beats: tap one to hear it.', C: () => <FmxMapPad/> },
+  { id: 'fmx-phrase', ch: 'form', title: 'The phrase', blurb: 'Two phrases, each to its resting note.', C: () => <FmxPhrasePad/> },
+  { id: 'fmx-letters', ch: 'form', title: 'Same or different', blurb: 'Give four phrases their letters: same music, same letter.', C: () => <FmxLetterPad/> },
+  { id: 'fmx-binary', ch: 'form', title: 'Binary form', blurb: 'A and B, each played twice: hear the road.', C: () => <FmxRoadPad kind="bin"/> },
+  { id: 'fmx-ternary', ch: 'form', title: 'Ternary form', blurb: 'A, B, then D.C. back to A.', C: () => <FmxRoadPad kind="ter"/> },
+  { id: 'fmx-find', ch: 'form', title: 'Find the form', blurb: 'Hear each section, give the letters, name the form.', C: () => <FmxFindPad/> },
+  { id: 'fmx-build', ch: 'form', title: 'Build a piece', blurb: 'A first, then A and B sections in any order: binary, ternary, or your own.', C: () => <FmxBuildPad/> },
   { id: 'form-shapes', ch: 'form', title: 'Binary, ternary, and rondo', blurb: 'Three ways composers shape a piece into sections.', C: () => <FormShapes/> },
   { id: 'form-builder', ch: 'form', title: 'Build your own form', blurb: 'Stack A, B and C blocks into a piece: binary, ternary or rondo?', C: () => <FormBuilder/> },
   { id: 'same-or-new', ch: 'form', title: 'Same section again, or something new?', blurb: 'Two sections play back to back: repeat, or different?', C: () => <SameOrNewSection/> },
@@ -19316,11 +19166,18 @@ const TOOL_KO = {
   'phrase-marks': ['프레이즈 마크: 숨 쉬는 곳', '음악 문장 위의 무지개 아치.'],
   'question-answer': ['묻는 프레이즈일까, 답하는 프레이즈일까?', '불안정 (2, 4, 5, 7) 아니면 집 (1)?'],
   'melody-sequence': ['시퀀스: 같은 모양, 새 음높이', '패턴이 매번 한 칸씩 높아지며 다시 나와요.'],
+  'fmx-map': ['곡의 지도', '곡 전체, 부분, 프레이즈, 마디, 박: 눌러서 들어요.'],
+  'fmx-phrase': ['프레이즈', '프레이즈 두 개를 쉬는 음까지 들어요.'],
+  'fmx-letters': ['같은 음악, 새 음악', '네 프레이즈에 글자를 붙여요: 같은 음악은 같은 글자.'],
+  'fmx-binary': ['2부 형식', 'A와 B를 두 번씩: 길을 따라 들어요.'],
+  'fmx-ternary': ['3부 형식', 'A, B, 그다음 D.C.에서 A로 돌아가요.'],
+  'fmx-find': ['형식 찾기', '부분을 하나씩 듣고 글자를 붙인 다음 형식 이름을 골라요.'],
+  'fmx-build': ['곡 만들기', 'A로 시작해 A와 B 부분을 마음대로 놓아요: 2부 형식, 3부 형식, 또는 나만의 곡.'],
   'form-shapes': ['2부, 3부, 론도 형식', '작곡가가 곡을 부분으로 나누는 세 가지 방법.'],
   'form-builder': ['나만의 형식 만들기', 'A, B, C 블록을 쌓아 곡을 만들어요: 2부, 3부, 론도?'],
   'same-or-new': ['같은 부분 반복일까, 새로운 부분일까?', '두 부분이 이어서 연주돼요: 반복일까, 다를까?'],
   'rondo-refrain': ['론도: 계속 돌아오는 선율', '새 에피소드 사이에 후렴(A)이 언제 돌아오는지 맞혀 봐요.'],
-  'binary-ternary-spot': ['두 부분일까, 세 부분일까?', '처음 튠이 끝에 다시 나오는지 들어 봐요.'],
+  'binary-ternary-spot': ['두 부분일까, 세 부분일까?', '처음 선율이 끝에 다시 나오는지 들어 봐요.'],
   'texture-types': ['텍스처: 목소리는 몇 개?', '모노포니, 호모포니, 폴리포니: 같은 튠, 세 가지 방법.'],
   'texture-spotter': ['이건 어떤 텍스처?', '듣고 맞혀 봐요: 선율 하나, 선율과 화음, 엮인 두 선율.'],
   'genre-traits': ['스타일마다 무엇이 다를까?', '민요, 클래식, 재즈와 블루스, 대중음악: 각각의 특징.'],
@@ -19341,10 +19198,10 @@ const GRADE_TAGS = {
   'posture-hands': 'Beginner', 'first-steps': 'Beginner', 'note-names': 'Prelim', 'whole-staff': 'Prelim–G1', pulse: 'Beginner', 'note-values': 'Prelim', rhythm: 'Prelim–G2', staff: 'Prelim',
   'reading-steps': 'Beginner', 'time-signatures': 'Prelim–G2', tempo: 'Prelim–G1', dynamics: 'Prelim–G1',
   'ledger-lines': 'Prelim–G2', tones: 'Prelim–G1', accidentals: 'Prelim–G1', scales: 'Prelim–G3', 'key-signatures': 'Prelim–G1', intervals: 'Prelim–G3', chords: 'Prelim–G3', signs: 'G1–G2', terms: 'Prelim–G2',
-  'piano-story': 'General knowledge', 'pitch-range': 'General knowledge', 'melody': 'Prelim–G2', 'form': 'Prelim–G3', 'styles': 'General knowledge', 'composers': 'General knowledge',
+  'piano-story': 'General knowledge', 'pitch-range': 'General knowledge', 'melody': 'Prelim–G2', 'form': 'G1–G3', 'styles': 'General knowledge', 'composers': 'General knowledge',
 };
 function stageOf(id) { return STAGES.find(s => s.ids.includes(id)); }
-const STEP_EXTRA = { scales: '6', 'key-signatures': 'k7', intervals: 'k7', chords: 'k7', terms: 'k7' };   // the screen lesson's extra last step (not counted)
+const STEP_EXTRA = { scales: '6', 'key-signatures': 'k7', intervals: 'k7', chords: 'k7', terms: 'k7', form: 'k7' };   // the screen lesson's extra last step (not counted)
 function stepsDone(id) { const d = loadDone()[id] || {}; return Object.keys(d).filter(k => d[k] && !skgOldStep(id, k) && STEP_EXTRA[id] !== k).length; }
 // Phase 211 (2026-09-29): chapter-picker gallery. Every chapter now has a hero illustration
 // (finished Phase 210), so the "All chapters" screen shows those as tappable thumbnails instead
@@ -19429,7 +19286,7 @@ const pathIds = () => PATH_STAGES.flatMap(pathStageIds);
 const STAGES = PATH_STAGES.map((st, n) => ({ n, en: st.en, ko: st.ko, title: st.en[0], blurb: st.en[1], ids: pathStageIds(st) }));
 function loadStepTotals() { try { return JSON.parse(localStorage.getItem(STEPS_TOTAL_KEY)) || {}; } catch (e) { return {}; } }
 // 'new' | 'started' | 'done' (every Learn step ticked)
-const STEPS_TOTAL_NOW = { chords: 6, terms: 6 };   // rebuilt lessons: their own count, never an older, larger synced total
+const STEPS_TOTAL_NOW = { chords: 6, terms: 6, form: 6 };   // rebuilt lessons: their own count, never an older, larger synced total
 function chapterStatus(id, totals) {
   const n = stepsDone(id), tot = STEPS_TOTAL_NOW[id] || (totals || loadStepTotals())[id];
   return n === 0 ? 'new' : tot && n >= tot ? 'done' : 'started';
@@ -19625,7 +19482,7 @@ const CHAPTER_SEARCH_TERMS = {
   'piano-story': 'history piano era composer hammer damper string key action inside pedal una corda sustain sostenuto grand upright',
   'pitch-range': 'pitch range hertz frequency octave instrument string length tension shorter tighter xylophone bars violin viola cello double bass bigger smaller ladder double',
   'melody': 'melody tune phrase phrasing phrase mark question answer antecedent consequent sequence motif contour breath comma',
-  'form': 'form binary ternary rondo ABA AB ABACA section refrain episode structure same new repeat',
+  'form': 'form binary ternary rondo ABA AB AABB ABACA section phrase phrase mark resting note bar beat map repetition contrast letters refrain episode structure same different new repeat D.C. al Fine',
   'styles': 'style genre texture monophony homophony polyphony solo melody folk classical jazz blues popular music swing straight eighth notes triplet 12-bar twelve bar blues chords I IV V',
   'composers': 'composer composers famous history era period renaissance baroque classical romantic 20th century modern contemporary movement school nationalism nationalist impressionism impressionist late romantic viennese twelve-tone serialism atonal neoclassicism neoclassical experimental minimalism minimalist film music ragtime jazz timeline who lived when age palestrina byrd pachelbel couperin mendelssohn smetana mussorgsky dvorak grieg rimsky-korsakov saint-saens rachmaninoff satie ravel schoenberg stravinsky copland shostakovich cage reich glass part williams hisaishi nutcracker vivaldi bach handel scarlatti haydn mozart clementi beethoven schubert chopin schumann clara liszt brahms tchaikovsky debussy joplin bartok prokofiev gershwin kabalevsky sculthorpe who am i name that tune listen fingerprint',
 };
@@ -19669,7 +19526,7 @@ const CAT_KO = {
   intervals: ['음정', '차례가기와 건너뛰기, 음정 세기, 장·단·완전 음정, 음정 듣기'],
   scales: ['스케일과 조', '장조와 단조 스케일, 손가락 번호, 조표, 단조의 세 가지 형태'],
   harmony: ['화음과 화성', '3화음, I IV V, 전위, 케이던스, 7화음'],
-  melody: ['선율과 형식', '튠이란, 프레이즈 마크, 묻고 답하기, 시퀀스; 2부·3부·론도 형식'],
+  melody: ['선율과 형식', '선율이란, 프레이즈 표시, 묻고 답하기, 시퀀스; 2부·3부·론도 형식'],
   expression: ['터치와 표현', '다이나믹, 레가토와 스타카토, 빠르기 변화'],
   words: ['기호와 용어', '이탈리아어 용어, 도돌이표와 악보 길찾기, 이음줄'],
   ear: ['귀로 듣기', '듣고 따라 치기, 음정 듣기, 높고 낮음'],
@@ -19722,7 +19579,7 @@ const TOOL_META = {
   'sps-sound': ['about', 0, 2, 'game ear'], 'sps-softloud': ['about', 0, 2, 'game ear'], 'sps-action': ['about', 0, 2, 'show game ear'], 'sps-pedals': ['about', 0, 2, 'game ear'], 'sps-keys': ['about', 0, 2, 'show ear'],
   'keyboard-ancestors': ['about', 0, 3, 'show ear'], 'piano-timeline': ['about', 1, 3, 'show'], 'piano-action': ['about', 0, 3, 'show ear'], 'eras': ['about', 1, 3, 'show ear'], 'spr-zone': ['about', 0, 1, 'game ear'], 'spr-big': ['about', 0, 1, 'game ear'], 'spr-fam': ['about', 0, 2, 'game'], 'spr-ladder': ['about', 0, 2, 'game ear'], 'spr-range': ['about', 0, 3, 'show game'], 'hz-explorer': ['about', 1, 3, 'show ear'], 'string-lab': ['about', 0, 3, 'show ear'], 'size-pitch': ['about', 0, 2, 'game ear'], 'octave-ladder': ['about', 1, 3, 'game ear'], 'range-chart': ['about', 1, 3, 'show ear'],
   'tune-anatomy': ['melody', 0, 1, 'show'], 'draw-tune': ['melody', 0, 2, 'game ear'], 'phrase-marks': ['melody', 1, 2, 'show'], 'question-answer': ['melody', 1, 2, 'game ear'], 'melody-sequence': ['melody', 1, 2, 'show ear'],
-  'form-shapes': ['melody', 0, 2, 'show'], 'form-builder': ['melody', 0, 2, 'game ear'], 'same-or-new': ['melody', 1, 2, 'game ear'], 'rondo-refrain': ['melody', 1, 3, 'game ear'], 'binary-ternary-spot': ['melody', 1, 3, 'game ear'],
+  'fmx-map': ['melody', 1, 3, 'show ear'], 'fmx-phrase': ['melody', 1, 2, 'show ear'], 'fmx-letters': ['melody', 1, 3, 'game ear'], 'fmx-binary': ['melody', 2, 3, 'show ear'], 'fmx-ternary': ['melody', 2, 3, 'show ear'], 'fmx-find': ['melody', 2, 3, 'game ear'], 'fmx-build': ['melody', 1, 3, 'show ear'], 'form-shapes': ['melody', 0, 2, 'show'], 'form-builder': ['melody', 0, 2, 'game ear'], 'same-or-new': ['melody', 1, 2, 'game ear'], 'rondo-refrain': ['melody', 1, 3, 'game ear'], 'binary-ternary-spot': ['melody', 1, 3, 'game ear'],
   'texture-types': ['about', 0, 2, 'show ear'], 'texture-spotter': ['about', 1, 3, 'game ear'], 'genre-traits': ['about', 1, 3, 'show'], 'swing-feel': ['about', 1, 3, 'game ear'], 'twelve-bar-blues': ['about', 2, 3, 'game ear'],
   'era-worlds': ['about', 0, 3, 'show'], 'movement-map': ['about', 1, 3, 'show ear'], 'composer-time-machine': ['about', 0, 3, 'show game'], 'composer-cards': ['about', 0, 3, 'show ear'], 'who-am-i': ['about', 1, 3, 'game'], 'name-that-tune': ['about', 0, 3, 'game ear'],
 };
@@ -20300,13 +20157,13 @@ function ToolRow({ t, color, starred, onStar, open, onToggle, onChapter }) {
 // Phase 226: tools inside a chapter group follow that chapter's own step order.
 // New lesson-only pieces now live in the Toolbox too; borrow a sibling's icon until the design-phase redraw.
 [['time-sig-numbers', 'count-along'], ['note-value-tree', 'split-it'], ['dotted-notes', 'dot-lab'], ['rhythm-cards-all', 'make-card'], ['all-keys', 'circle-fifths'],
- ['major-shape', 'build-major'], ['major-fingering', 'scale-finder'], ['minor-fingering', 'minor-forms'], ['dc-ds-coda', 'road-map'], ['sgn-rep', 'road-map'], ['sgn-volta', 'road-map'], ['sgn-dc', 'dc-ds-coda'], ['sgn-ds', 'dc-ds-coda'], ['sgn-pause', 'road-map'], ['ivx-ladder', 'scale-intervals'], ['ivx-count', 'interval-ruler'], ['ivx-hand', 'interval-ruler'], ['ivx-big', 'interval-ruler'], ['ivx-mh', 'interval-ear'], ['ivx-tonic', 'scale-intervals'], ['chx-clock', 'major-minor'], ['chx-stack', 'triad-stack'], ['chx-mm', 'major-minor'], ['chx-tonic', 'key-chords'], ['chx-145', 'primary-triads'], ['chx-hands', 'primary-triads'], ['tmx-map', 'term-cards'], ['tmx-speed', 'tempo-race'], ['tmx-change', 'tempo-race'], ['tmx-vol', 'dyn-order'], ['tmx-touch', 'touch-lengths'], ['tmx-build', 'term-match'], 
+ ['major-shape', 'build-major'], ['major-fingering', 'scale-finder'], ['minor-fingering', 'minor-forms'], ['dc-ds-coda', 'road-map'], ['sgn-rep', 'road-map'], ['sgn-volta', 'road-map'], ['sgn-dc', 'dc-ds-coda'], ['sgn-ds', 'dc-ds-coda'], ['sgn-pause', 'road-map'], ['ivx-ladder', 'scale-intervals'], ['ivx-count', 'interval-ruler'], ['ivx-hand', 'interval-ruler'], ['ivx-big', 'interval-ruler'], ['ivx-mh', 'interval-ear'], ['ivx-tonic', 'scale-intervals'], ['chx-clock', 'major-minor'], ['chx-stack', 'triad-stack'], ['chx-mm', 'major-minor'], ['chx-tonic', 'key-chords'], ['chx-145', 'primary-triads'], ['chx-hands', 'primary-triads'], ['tmx-map', 'term-cards'], ['tmx-speed', 'tempo-race'], ['tmx-change', 'tempo-race'], ['tmx-vol', 'dyn-order'], ['tmx-touch', 'touch-lengths'], ['tmx-build', 'term-match'], ['fmx-map', 'form-shapes'], ['fmx-phrase', 'form-shapes'], ['fmx-letters', 'same-or-new'], ['fmx-binary', 'binary-ternary-spot'], ['fmx-ternary', 'binary-ternary-spot'], ['fmx-find', 'binary-ternary-spot'], ['fmx-build', 'binary-ternary-spot'], 
  ['finger-friends', 'finger-numbers'], ['accidental-cards', 'sharp-flat'], ['ts-bars', 'bar-lines'], ['ssk-shape', 'complete-melody'], ['ssk-step', 'step-skip'], ['ssk-cpos', 'five-positions'], ['ssk-gpos', 'five-positions'], ['ssk-read', 'mini-tune'], ['sdy-pf', 'dyn-order'], ['sdy-ladder', 'dyn-order'], ['sdy-hair', 'hairpin'], ['sdy-touch', 'touch-lengths'], ['sdy-tie', 'tie-slur'], ['spr-zone', 'range-chart'], ['skg-every', 'place-it'], ['skg-g', 'sharps-order'], ['skg-f', 'flats-order'], ['skg-acc', 'sharp-flat'], ['skg-five', 'circle-fifths'], ['sps-sound', 'keyboard-ancestors'], ['sps-softloud', 'keyboard-ancestors'], ['sps-action', 'keyboard-ancestors'], ['sps-pedals', 'pedal'], ['sps-keys', 'range-chart'], ['spr-big', 'size-pitch'], ['spr-fam', 'size-pitch'], ['spr-ladder', 'size-pitch'], ['spr-range', 'range-chart'], ['stm-sf', 'tempo-walk'], ['stm-words', 'tempo-race'], ['stm-read', 'tempo-race'], ['stm-metro', 'metronome'], ['stm-steady', 'tap-tempo'], ['srh-beams', 'grouping'], ['srh-alone', 'beam-apples'], ['srh-dot', 'dot-lab'], ['srh-up', 'anacrusis'], ['srh-read', 'rhythm-cards-all'], ['sac-signs', 'accidental-cards'], ['sac-natural', 'sharp-flat'], ['sac-bar', 'accidental-bar'], ['sac-line', 'accidental-bar'], ['sac-tune', 'ssk-read'], ['ssc-steps', 'major-shape'], ['ssc-fingers', 'major-fingering'], ['ssc-degrees', 'degree-names'], ['ssc-g', 'build-major'], ['ssc-f', 'scale-finder'], ['ts-numbers', 'time-sig-numbers'], ['ts-strong', 'beat-groups'], ['ts-build', 'fill-bar'], ['ts-tie', 'tie-slur'], ['nv-walk', 'count-aloud'], ['nv-hold', 'split-it'], ['nv-long', 'note-value-tree'], ['nv-run', 'beam-apples'], ['nv-rests', 'note-rest-naming'], ['count-ring', 'count-aloud'], ['silent-beats', 'beat-target'], ['finger-beat', 'finger-numbers']].forEach(([a, b]) => { if (!TOOL_ICON[a] && TOOL_ICON[b]) TOOL_ICON[a] = TOOL_ICON[b]; });
 const CHAPTER_TOOL_ORDER = {
   'chords': ['chx-clock', 'chx-stack', 'chx-mm', 'chx-tonic', 'chx-145', 'chx-hands', 'triad-stack', 'major-minor', 'key-chords', 'primary-triads', 'inversions', 'cadences', 'chord-extensions', 'seventh-chords'],
   'dynamics': ['sdy-pf', 'sdy-ladder', 'sdy-hair', 'sdy-touch', 'sdy-tie', 'dyn-order', 'hairpin', 'touch-ear', 'touch-lengths', 'tie-slur', 'pedal'],
   'first-steps': ['high-low', 'key-houses', 'whole-piano', 'black-key-song', 'black-key-jam', 'black-white-neighbours'],
-  'form': ['form-shapes', 'form-builder', 'same-or-new', 'rondo-refrain', 'binary-ternary-spot'],
+  'form': ['fmx-map', 'fmx-phrase', 'fmx-letters', 'fmx-binary', 'fmx-ternary', 'fmx-find', 'fmx-build', 'form-shapes', 'form-builder', 'same-or-new', 'rondo-refrain', 'binary-ternary-spot'],
   'intervals': ['ivx-ladder', 'ivx-count', 'ivx-hand', 'ivx-big', 'ivx-mh', 'ivx-tonic', 'step-skip', 'interval-ruler', 'letter-hop', 'semitone-counter', 'scale-intervals', 'interval-ear', 'invert-interval', 'tritone'],
   'key-signatures': ['skg-every', 'skg-g', 'skg-f', 'skg-acc', 'skg-five', 'sharps-order', 'flats-order', 'place-it', 'relative-minor', 'circle-fifths', 'transpose', 'all-keys'],
   'ledger-lines': ['ledger-walk', 'ledger-landmarks', 'ledger-twins', 'ledger-write'],
@@ -40893,6 +40750,9 @@ function sdyMarks(yOf, items, m, k = {}, clef = 'treble') {
         const near = lines.find(L => Math.abs(L - y) < 2.5); if (near == null) return y; return onLine(n.y) ? n.y + 12.5 : near + 3; };
       const y1 = inside ? A.y + 6.5 : end(A), y2 = inside ? B.y + 6.5 : end(B);
       let apex = inside ? A.y + 7.9 : Math.max(y1, y2, ...span.slice(1, -1).map(n => dotY(n) != null ? Math.max(n.y + 8.5, dotY(n) + 5) : n.y + 8.5)) + (tie ? 4.5 : Math.min(9, 3 + 1.5 * (b - a)));
+      if (!inside && !tie && b - a > 1) span.slice(1, -1).forEach(n => { const tt = (n.x - A.x) / (B.x - A.x); if (tt <= 0.02 || tt >= 0.98) return;
+        const r = (dotY(n) != null ? Math.max(n.y + 8.5, dotY(n) + 5) : n.y + 8.5) + 1.2, need = (r - (1 - tt) * (1 - tt) * y1 - tt * tt * y2 + tt * (1 - tt) * (y1 + y2)) / (4 * tt * (1 - tt));
+        if (need > apex) apex = need; });
       if (!inside && apex > yTop && apex < yBot + 2 && lines.some(L => Math.abs(L - apex) < 1.6)) apex += 2.2;
       const x1 = inside ? A.x + 5.5 : tie ? A.x + 4 : A.x, x2 = inside ? B.x - 5.5 : tie ? B.x - 4 : B.x, cy = 2 * apex - (y1 + y2) / 2;
       out.push('<path d="M' + pFix(x1) + ' ' + pFix(y1) + ' Q' + pFix((x1 + x2) / 2) + ' ' + pFix(cy) + ' ' + pFix(x2) + ' ' + pFix(y2) + '" fill="none" stroke="' + c + '" stroke-width="' + (inside ? 1.6 : 1.9) + '" stroke-linecap="round"/>');
@@ -46502,7 +46362,7 @@ const skgWhere = (d, clef = 'treble', en) => { const k = d - CLEFS[clef].low, or
 // Korean: a sign never parts from the syllable after it (a word joiner); 'ㄹ 수 있어요', '맨 윗줄', '맨 위 칸' on one line
 const skgKo = (x) => x.replace(/([♯♭♮])(?=[가-힣(])/g, '$1\u2060').replace(/(\S) 수 있어요/g, '$1\u00a0수\u00a0있어요').replace(/맨 (윗줄|위 칸|아랫줄)/g, '맨\u00a0$1');
 // the Phase 299 lesson's ticks (0 to 6, under the same id): not this lesson's steps (they are synced by union, so ignored, not deleted)
-function skgOldStep(id, k) { return (id === 'key-signatures' || id === 'signs' || id === 'intervals' || id === 'chords' || id === 'terms') && /^\d+$/.test(String(k)); }
+function skgOldStep(id, k) { return (id === 'key-signatures' || id === 'signs' || id === 'intervals' || id === 'chords' || id === 'terms' || id === 'form') && /^\d+$/.test(String(k)); }
 
 // how each note of a tune sounds in a key: the key signature, unless an accidental earlier in its bar (on its own line or
 // space) says otherwise. byKey: changed by the key signature; held / natHeld: an accidental earlier in the bar still holds;
@@ -47245,7 +47105,7 @@ function sgnOrder(bars, mis = {}) {
 }
 const sgnWords = (b) => (b.dc ? 'D.C.' : 'D.S.') + ' al ' + (b.al === 'coda' ? 'Coda' : 'Fine');
 // a thin double bar line under Fine (not at the end) and before the coda; never on a task that asks for Fine
-const sgnDbl = (bars, i, skip) => i < bars.length - 1 && ((bars[i].fine && !skip.has('fine')) || (bars[i + 1] && bars[i + 1].coda));
+const sgnDbl = (bars, i, skip) => i < bars.length - 1 && ((bars[i].fine && !skip.has('fine')) || bars[i].dbl || (bars[i + 1] && bars[i + 1].coda));
 // the items of bars a..b (for sskRaw), with room for the signs; and where each bar's closing line is (its item index)
 function sgnItems(bars, a, b, o = {}) {
   const items = [], ends = [], starts = [], skip = new Set(o.noSigns || []);
@@ -50716,9 +50576,795 @@ WORKBOOKS['terms'] = TmxWorkbook;
 TEACHER_COPIES['terms'] = TmxTeacher;
 
 Object.assign(TERMS_DRILL, { levels: TMX_LEVELS, generate: genTmxQuestion, check: tmxCheck, answerLabel: tmxAnswerLabel, Question: TmxQuestion, Learn: TmxLearn });
-const LESSON_BOOKS = { 'posture-hands': PostureLessonBook, 'first-steps': FirstStepsLessonBook, 'note-names': NoteNamesLessonBook, staff: StaffLessonBook, 'whole-staff': WholeStaffLessonBook, 'ledger-lines': LedgerLessonBook, tones: TonesLessonBook, pulse: PulseLessonBook, 'note-values': NotesRestsLessonBook, 'time-signatures': TimeSignaturesLessonBook, 'reading-steps': ReadingStepsLessonBook, dynamics: DynamicsLessonBook, 'pitch-range': PitchRangeLessonBook, tempo: TempoLessonBook, rhythm: RhythmLessonBook, scales: ScalesLessonBook, accidentals: AccidentalsLessonBook, 'piano-story': PianoStoryLessonBook, 'key-signatures': KeySigLessonBook, signs: SignsLessonBook, intervals: IntervalsLessonBook, chords: ChordsLessonBook, terms: TermsLessonBook };
+// ─── Phase 480: chapter 24, Musical Form, built in full (Book rules 14 and 15; her 2026-10-17 macro-first plan and her
+// 09:42 order: terms, then form, then melody). The last room of Level 4. Page 1 is the map of a piece: the whole piece,
+// its sections (A B A), their phrases, the bars, one bar's beats, each row a zoom into the one above; the steps zoom in
+// (the phrase, same or different and the letters, binary, ternary, finding the form); the screen lesson ends with a piece
+// the student builds from A and B. Placement (AMEB Music Craft 2022): Grade 1 repetition and contrast in an eight-bar
+// melody, repeat signs; Grade 2 the definition of phrase, binary and ternary form marked with A and B; Grade 3 (aural)
+// A and B in a sixteen-bar four-phrase melody. Rondo comes at Grade 5 (the older tools keep it). Chapter 20's roads
+// (SgnRoad: repeat signs, Fine, D.C. al Fine) draw the binary and ternary pieces; chapter 10's SdyStaff the phrases.
+
+// the book's phrases: four bars each, 4/4, right hand from middle C; the book's own. Each ends on a resting note.
+const FMX_PH = {
+  A: [[['q', 1, 28], ['q', 1, 29], ['q', 1, 30], ['q', 1, 31]], [['q', 1, 32], ['q', 1, 30], ['h', 2, 28]], [['q', 1, 29], ['q', 1, 30], ['q', 1, 31], ['q', 1, 29]], [['w', 4, 28]]],   // C D E F | G E C | D E F D | C (home)
+  B: [[['q', 1, 30], ['q', 1, 32], ['q', 1, 31], ['q', 1, 32]], [['q', 1, 33], ['q', 1, 32], ['q', 1, 31], ['q', 1, 30]], [['q', 1, 29], ['q', 1, 30], ['q', 1, 31], ['q', 1, 29]], [['w', 4, 32]]],   // E G F G | A G F E | D E F D | G (away)
+  C: [[['q', 1, 32], ['q', 1, 33], ['q', 1, 32], ['q', 1, 31]], [['q', 1, 30], ['q', 1, 31], ['h', 2, 30]], [['q', 1, 29], ['q', 1, 30], ['q', 1, 31], ['q', 1, 30]], [['w', 4, 29]]],   // G A G F | E F E | D E F E | D (away)
+  D: [[['q', 1, 30], ['q', 1, 32], ['q', 1, 31], ['q', 1, 30]], [['h', 2, 29], ['h', 2, 31]], [['q', 1, 30], ['q', 1, 29], ['q', 1, 28], ['q', 1, 29]], [['w', 4, 30]]],   // E G F E | D F | E D C D | E
+  E: [[['q', 1, 32], ['q', 1, 31], ['q', 1, 30], ['q', 1, 29]], [['q', 1, 31], ['q', 1, 33], ['h', 2, 32]], [['q', 1, 33], ['q', 1, 32], ['q', 1, 31], ['q', 1, 29]], [['w', 4, 28]]],   // G F E D | F A G | A G F D | C (home)
+};
+const FMX_NOTE = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+const fmxCount = (id) => FMX_PH[id].reduce((a, b) => a + b.length, 0);
+// a row of phrases as staff items (one system): bar lines between bars, the final bar line at the very end (end: false,
+// a single one). tsRoom: the time signature's room kept on rows without it, so rows stack bar under bar; gap: room
+// before each bar line (small staves: the line clear of the last note's stem)
+const fmxItems = (ids, o = {}) => { const items = o.ts ? [['ts', 4]] : o.tsRoom ? [['sp', 26]] : [];
+  ids.forEach((id, p) => FMX_PH[id].forEach((bar, b) => { bar.forEach(n => items.push(n)); if (o.gap) items.push(['sp', o.gap]);
+    const last = p === ids.length - 1 && b === 3; items.push(last && o.end !== false ? ['||'] : ['|']); }));
+  return items; };
+const fmxGap = (D) => D < 22 ? 7 : 0;
+// note index ranges of each phrase in a row; its last note (the resting note)
+const fmxRanges = (ids) => { let k = 0; return ids.map(id => { const a = k; k += fmxCount(id); return [a, k - 1]; }); };
+const fmxNotes = (ids) => ids.flatMap(id => FMX_PH[id].flat().map(n => ({ d: n[2], dur: n[1] })));
+const fmxLast = (id) => { const bar = FMX_PH[id][3]; return FMX_NOTE[(bar[bar.length - 1][2] - 28) % 7]; };
+// the sound: one at a time. A sound started while another plays (or a pad that closes) ends the other one properly:
+// its pad's end callback runs, so no pad stays lit with nothing sounding.
+let _fmxT = [], _fmxEnd = null;
+const fmxStop = () => { _fmxT.forEach(clearTimeout); _fmxT = []; chxStop(); const e = _fmxEnd; _fmxEnd = null; if (e) e(); };
+const FMX_BPM = 150;
+function fmxRun(notes, cb, bpm = FMX_BPM) {
+  fmxStop();
+  if (!cb) { _fmxT = playMelody(notes, bpm, null); return; }
+  const end = () => { if (_fmxEnd === end) _fmxEnd = null; cb(-1); };
+  _fmxEnd = end; _fmxT = playMelody(notes, bpm, (i) => i === -1 ? end() : cb(i));
+}
+// a run of phrases; onPhrase(i) as each starts, -1 at the end (or when stopped)
+function fmxPlay(ids, onPhrase, bpm = FMX_BPM) {
+  const starts = []; let k = 0; ids.forEach(id => { starts.push(k); k += fmxCount(id); });
+  fmxRun(fmxNotes(ids), onPhrase ? (i) => { if (i === -1) onPhrase(-1); else if (starts.includes(i)) onPhrase(starts.indexOf(i)); } : null, bpm);
+}
+// notes (d, dur) with onStep per note, for the roads
+const fmxPlayNotes = (notes, onStep, bpm = FMX_BPM) => fmxRun(notes, onStep, bpm);
+// clicks (the beats), stoppable like the rest
+function fmxPlayBeats(n, onEnd) { fmxStop(); playClicks(FMX_BPM, n); const end = () => { if (_fmxEnd === end) _fmxEnd = null; onEnd(); }; _fmxEnd = end; _fmxT = [setTimeout(end, n * 60000 / FMX_BPM)]; }
+
+// one system of phrases on the treble staff: phrase marks (marks), letters over the phrases (letters; coral: the indexes
+// drawn coral; qmark: boxes to fill), the resting notes coral (rest), the first bar's number (n0)
+function FmxRow({ ids, ts, tsRoom, marks, letters, coral = [], rest, n0, width, label, D = 26, end, qmark = [], secEnd }) {
+  const gap = fmxGap(D), items = fmxItems(ids, { ts, tsRoom, end, gap }), rg = fmxRanges(ids);
+  const k = marks ? { slurs: rg.map(([a, b]) => [a, b]) } : {};
+  const o = { D, hl: rest ? rg.map(([, b]) => b) : [] }, small = D < 22, [bw0, bh0] = small ? [46, 42] : [30, 28];
+  const extra = (yOf, txt, mm) => <g>
+    {letters && rg.map(([a, b], j) => { const x = (mm.notes[a].x + mm.notes[b].x) / 2, y = yOf(38) - (small ? 22 : 20), c = coral.includes(j) ? PEN_C : PEN_N, q = qmark.includes(j);
+      return <g key={j}><rect x={x - bw0 / 2} y={y - bh0 + 7} width={bw0} height={bh0} rx={4} fill="#fff" stroke={c} strokeWidth={q ? 1.4 : 1.8} strokeDasharray={q ? '4 3' : undefined}/>
+        <text x={x} y={small ? y - 4 : y} textAnchor="middle" fontSize={small ? 28 : 20} fontWeight="900" fill={c} style={{fontFamily:LB_SERIF}}>{letters[j] || ''}</text></g>; })}
+    {secEnd && mm.bars.length > 0 && <line x1={mm.bars[mm.bars.length - 1] - 4} x2={mm.bars[mm.bars.length - 1] - 4} y1={yOf(38)} y2={yOf(30)} stroke={PEN_N} strokeWidth="1.5"/>}
+    {n0 != null && <text x={mm.notes[0].x - 8} y={yOf(38) - 6} fontSize="11" fontWeight="800" fill={BK.muted} style={{fontFamily:'Inter, sans-serif'}}>{n0}</text>}
+  </g>;
+  return <SdyStaff full={!width} width={width || 400} items={items} o={o} k={k} label={label} extra={extra} room={letters ? (small ? 46 : 30) : n0 != null ? 6 : 0}/>;
+}
+const fmxVbw = (ids, ts, D = 26, tsRoom) => sdyVbw(fmxItems(ids, { ts, tsRoom, gap: fmxGap(D) }), { D });
+
+// ── the map of a piece (page 1): rows zooming in: the piece, its sections, the phrases, the bars, one bar's beats ──
+// the piece: A B A, eight bars a section, four a phrase. sel: { kind, i } lit coral; onTap(kind, i). Nothing selected
+// (the printed page): the A that comes back is coral. quiz: no row names (the drill asks them)
+const FMX_SEC = ['A', 'B', 'A'];
+const FMX_LEVELS6 = ['piece', 'section', 'phrase', 'bar', 'beat'];
+const FMX_LEVEL_W = { piece: ['the piece', '곡 전체'], section: ['sections', '부분'], phrase: ['phrases', '프레이즈'], bar: ['bars', '마디'], beat: ['beats', '박'] };
+function FmxMapSvg({ sel, onTap, label, scr, quiz }) {
+  // print: 640 wide, the row names in a column on the left; screen: 340 wide, each row's name above it, rows tall enough to tap
+  const W = scr ? 340 : 640, L = scr ? 6 : 108, R = W - (scr ? 6 : 10), w = R - L;
+  const extra = (i) => Math.floor(i / 4) * 2 + Math.floor(i / 8) * 3, bw = (w - extra(23)) / 24, bx = (i) => L + i * bw + extra(i);
+  const rowY = scr ? { piece: 24, section: 100, phrase: 180, bar: 236, beat: 336 } : { piece: 14, section: 70, phrase: 124, bar: 176, beat: 252 };
+  const H = scr ? 392 : 300, ph = scr ? 44 : 30, sh = scr ? 50 : 38, barH = scr ? 30 : 26, bt = scr ? 44 : 46, fs = scr ? 15 : 11;
+  const on = (kind, i) => sel && sel.kind === kind && (sel.i == null || sel.i === i);
+  const nm = (kind) => t(FMX_LEVEL_W[kind][0], FMX_LEVEL_W[kind][1]);
+  const tap = (kind, i, lab) => onTap ? { onClick: () => onTap(kind, i), onKeyDown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTap(kind, i); } }, role: 'button', tabIndex: 0, 'aria-label': lab, style: { cursor: 'pointer' } } : {};
+  const col = (kind, i, base = PEN_N) => on(kind, i) ? PEN_C : base;
+  const lab = (kind) => quiz ? null : scr ? (kind === 'beat' ? null : <text x={L} y={rowY[kind] - 8} fontSize={fs} fontWeight="900" fill={BK.muted} letterSpacing="0.06em" style={{fontFamily:'Inter, sans-serif'}}>{nm(kind).toUpperCase()}</text>)
+    : <text x={0} y={rowY[kind] + (kind === 'beat' ? 26 : kind === 'bar' ? 17 : 20)} fontSize="11" fontWeight="900" fill={BK.muted} letterSpacing="0.08em" style={{fontFamily:'Inter, sans-serif'}}>{nm(kind).toUpperCase()}</text>;
+  const ret = !sel && !quiz;   // the printed page: the A that comes back, coral
+  const secX = (i) => bx(i * 8), secW = () => 8 * bw + extra(7) - extra(0);
+  return <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label} style={{width:'100%',display:'block',touchAction:'manipulation',userSelect:'none'}}>
+    {FMX_LEVELS6.map(k => <React.Fragment key={k}>{lab(k)}</React.Fragment>)}
+    <g {...tap('piece', 0, nm('piece'))} data-fmx="piece"><rect x={L} y={rowY.piece} width={w} height={ph} rx={6} fill={on('piece', 0) ? '#fbe3da' : 'rgba(38,41,107,0.08)'} stroke={col('piece', 0)} strokeWidth="1.6"/>
+      <text x={L + w / 2} y={rowY.piece + ph / 2 + fs * 0.36} textAnchor="middle" fontSize={scr ? 15 : 13} fontWeight="800" fill={col('piece', 0)} style={{fontFamily:'Inter, sans-serif'}}>{t('24 bars', '24마디')}</text></g>
+    {FMX_SEC.map((s, i) => { const c = col('section', i, i === 2 && ret ? PEN_C : PEN_N);
+      return <g key={'s' + i} {...tap('section', i, t('section ' + (i + 1) + ', ' + s, fmxNth(i + 1) + ' 부분, ' + s))} data-fmx={'section' + i}><rect x={secX(i) + 1} y={rowY.section} width={secW() - 2} height={sh} rx={6} fill={on('section', i) ? '#fbe3da' : '#fff'} stroke={c} strokeWidth={on('section', i) ? 2.6 : 1.8}/>
+        <text x={secX(i) + secW() / 2} y={rowY.section + sh / 2 + 9} textAnchor="middle" fontSize="26" fontWeight="900" fill={c} style={{fontFamily:LB_SERIF}}>{s}</text>
+        {i === 2 && ret && <text x={secX(i) + secW() / 2 + 16} y={rowY.section + sh / 2 + 9} fontSize="11.5" fontWeight="800" fill={PEN_C} style={{fontFamily:'Inter, sans-serif'}}>{t('again', '다시')}</text>}</g>; })}
+    {[0, 1, 2, 3, 4, 5].map(i => { const x1 = bx(i * 4) + 4, x2 = bx(i * 4 + 3) + bw - 4, y = rowY.phrase, c = col('phrase', i);
+      return <g key={'p' + i} {...tap('phrase', i, t('phrase ' + (i + 1), fmxNth(i + 1) + ' 프레이즈'))} data-fmx={'phrase' + i}>{onTap && <rect x={x1 - 3} y={y - (scr ? 14 : 4)} width={x2 - x1 + 6} height={scr ? 50 : 36} fill="transparent"/>}
+        <path d={`M${x1} ${y} Q${(x1 + x2) / 2} ${y + 34} ${x2} ${y}`} fill="none" stroke={c} strokeWidth={on('phrase', i) ? 3 : 2} strokeLinecap="round"/></g>; })}
+    {Array.from({ length: 24 }, (_, i) => <g key={'b' + i} {...tap('bar', i, t('bar ' + (i + 1), (i + 1) + '마디'))} data-fmx={'bar' + i}>{onTap && <rect x={bx(i) - 1} y={rowY.bar - 12} width={bw + 2} height={56} fill="transparent"/>}
+      <rect x={bx(i) + 0.5} y={rowY.bar} width={bw - 1} height={barH} rx={3} fill={on('bar', i) ? '#fbe3da' : '#fff'} stroke={col('bar', i)} strokeWidth="1.2"/>
+      {!scr && <text x={bx(i) + bw / 2} y={rowY.bar + 17} textAnchor="middle" fontSize="9.5" fontWeight="800" fill={col('bar', i)} style={{fontFamily:'Inter, sans-serif'}}>{i + 1}</text>}
+      {scr && [0, 8, 16, 23].includes(i) && <text x={bx(i) + bw / 2} y={rowY.bar + barH + 18} textAnchor="middle" fontSize="14" fontWeight="800" fill={col('bar', i, BK.muted)} style={{fontFamily:'Inter, sans-serif'}}>{i + 1}</text>}</g>)}
+    <path d={`M${bx(0) + 1} ${rowY.bar + barH + 1} L${L + 1} ${rowY.beat} M${bx(0) + bw - 1} ${rowY.bar + barH + 1} L${L + 4 * bt} ${rowY.beat}`} fill="none" stroke={BK.muted} strokeWidth="1" strokeDasharray="3 3"/>
+    <g {...tap('beat', 0, t('bar 1: four beats', '1마디: 네 박'))} data-fmx="beat"><rect x={L} y={rowY.beat} width={4 * bt} height={scr ? 48 : 40} rx={5} fill={on('beat', 0) ? '#fbe3da' : '#fff'} stroke={col('beat', 0)} strokeWidth="1.4"/>
+      {[0, 1, 2, 3].map(j => <g key={j}><circle cx={L + bt / 2 + j * bt} cy={rowY.beat + 15} r={6} fill={col('beat', 0)}/><text x={L + bt / 2 + j * bt} y={rowY.beat + (scr ? 40 : 35)} textAnchor="middle" fontSize={scr ? 14 : 11} fontWeight="900" fill={col('beat', 0)} style={{fontFamily:'Inter, sans-serif'}}>{j + 1}</text></g>)}</g>
+    {scr && !quiz && <text x={L + 4 * bt + 12} y={rowY.beat + 16} fontSize={fs} fontWeight="900" fill={BK.muted} letterSpacing="0.06em" style={{fontFamily:'Inter, sans-serif'}}>{nm('beat').toUpperCase()}</text>}
+    {!quiz && <text x={L + 4 * bt + 12} y={rowY.beat + (scr ? 36 : 25)} fontSize={scr ? 14 : 12} fontWeight="800" fill={BK.muted} style={{fontFamily:'Inter, sans-serif'}}>{t('bar 1: four beats', '1마디: 네 박')}</text>}
+  </svg>;
+}
+// the piece the map shows: A = phrases B then A (ends at home), B = phrases D then C (ends on D, leading back), then A
+const FMX_PIECE = { A: ['B', 'A'], B: ['D', 'C'] };
+const fmxPieceIds = (secs = FMX_SEC) => secs.flatMap(s => FMX_PIECE[s]);
+
+// ── page 4 and 5: binary and ternary on chapter 20's roads ──
+const fmxBars = (id) => FMX_PH[id].map(bar => bar.map(n => sgnQ(n[2], n[0] === 'w' ? 'w' : n[0] === 'h' ? 'h' : 'q')));
+// binary: ‖: B :‖: E :‖  (A ends away on G, B comes home to C); ternary: A Fine, C D.C. al Fine
+const FMX_BIN = (() => { const a = fmxBars('B'), b = fmxBars('E'); return [{ n: a[0] }, { n: a[1] }, { n: a[2] }, { n: a[3], end: true }, { start: true, n: b[0] }, { n: b[1] }, { n: b[2] }, { n: b[3], end: true }]; })();
+const FMX_TER = (() => { const a = fmxBars('A'), b = fmxBars('C'); return [{ n: a[0] }, { n: a[1] }, { n: a[2] }, { n: a[3], fine: true }, { n: b[0] }, { n: b[1] }, { n: b[2] }, { n: b[3], dc: true }]; })();
+const FMX_ORDER = { bin: [0, 1, 2, 3, 0, 1, 2, 3, 4, 5, 6, 7, 4, 5, 6, 7], ter: [0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3] };
+const fmxRoadNotes = (bars, ord) => ord.flatMap(i => bars[i].n.map(n => ({ d: n[2], dur: n[1] })));
+// the playing order in groups, one per section played: its bar numbers, its letter under them; cur: the group sounding
+const FMX_GROUPS = { bin: [[[1, 2, 3, 4], 'A'], [[1, 2, 3, 4], 'A'], [[5, 6, 7, 8], 'B'], [[5, 6, 7, 8], 'B']], ter: [[[1, 2, 3, 4], 'A'], [[5, 6, 7, 8], 'B'], [[1, 2, 3, 4], 'A']] };
+const fmxGroups = (kind, cur = -1, sz = 15, coralLast) => <div style={{display:'flex',justifyContent:'center',flexWrap:'wrap',gap:'8px 16px'}}>{FMX_GROUPS[kind].map(([ns, l], g) => { const now = g === cur, c = coralLast && g === FMX_GROUPS[kind].length - 1 ? PEN_C : PEN_N;
+  return <div key={g} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>
+    <div style={{display:'flex',gap:3}}>{ns.map(n => <span key={n} style={{minWidth:sz * 1.5,textAlign:'center',fontSize:sz,fontWeight:900,padding:'1px 2px',borderRadius:5,border:'1.4px solid rgba(38,41,107,0.35)',color:now ? '#fff' : BK.ink,background:now ? PEN_N : 'transparent'}}>{n}</span>)}</div>
+    <span style={{width:sz * 2.4,height:sz * 2.4,display:'inline-flex',alignItems:'center',justifyContent:'center',borderRadius:6,border:'1.8px solid ' + c,fontFamily:LB_SERIF,fontSize:sz * 1.55,fontWeight:900,color:now ? '#fff' : c,background:now ? c : '#fff'}}>{l}</span></div>; })}</div>;
+// Korean: words that belong together never part at a line end
+const fmxNbKo = (x) => typeof x !== 'string' ? x : chxNbKo(x).replace(/(2부|3부) 형식/g, '$1 형식').replace(/([AB]) (다음|부분)/g, '$1 $2').replace(/D\.C\. al Fine/g, 'D.C. al Fine')
+  .replace(/(\d)마디 (\d)/g, '$1마디 $2').replace(/맨 (처음|끝)/g, '맨 $1').replace(/쉬는 음/g, '쉬는 음').replace(/프레이즈 표시/g, '프레이즈 표시')
+  .replace(/(같은|다른|다음|새) (음악|글자)/g, '$1 $2').replace(/곡 전체/g, '곡 전체').replace(/글자 붙이기/g, '글자 붙이기').replace(/형식 이름 말하기/g, '형식 이름 말하기').replace(/첫 (번째|상자|프레이즈)/g, '첫 $1');
+const fmxNth = (n) => n === 1 ? '첫 번째' : n + '번째';
+const fmxKoT = (x) => LANG === 'ko' ? fmxNbKo(x) : x;
+
+function fmxLbPages(scr = false) {
+  const ch = 'form';
+  const live = (still, comp) => <LbLive still={still} live={comp}/>;
+  const stack = (nodes, h, gap = 12, mw = 680) => <LbPic h={h}><div style={{display:'flex',flexDirection:'column',gap,width:'100%',maxWidth:mw,margin:'0 auto',alignItems:'stretch'}}>{nodes}</div></LbPic>;
+  const X = (en, ko) => sscT(en, skgKo(fmxNbKo(ko)));
+  const cap = (x, key = 'cap') => <div key={key} style={{textAlign:'center',fontSize:scr ? 14 : 13.5,fontWeight:800,color:BK.ink,margin:'2px auto 0',maxWidth:560,lineHeight:1.35,textWrap:'balance'}}>{fmxKoT(x)}</div>;
+  const B = (s) => <b>{s}</b>;
+  const ch20 = bkChapterNo('signs'), ch8 = bkChapterNo('time-signatures');
+
+  // p1 (macro first): the map of a piece
+  const p1 = <LbLive still={stack([<FmxMapSvg key="m" label={t('The map of a piece. The piece: 24 bars. Its sections: A, B, then A again (coral), eight bars each. The phrases: a curve over each four bars, six in all. The bars: 1 to 24. Bar 1 opened up: four beats.', '곡의 지도. 곡 전체: 24마디. 부분: A, B, 그리고 다시 A(산호색), 8마디씩. 프레이즈: 4마디마다 곡선 하나, 모두 여섯. 마디: 1부터 24. 1마디를 펼치면: 네 박.')}/>,
+    cap(t('Beats make bars, bars make phrases, phrases make sections, sections make the piece.', '박이 모여 마디, 마디가 모여 프레이즈, 프레이즈가 모여 부분, 부분이 모여 곡이 돼요.'))], 360, 10)} live={<FmxMapPad/>}/>;
+  // p2: two phrases: phrase marks, resting notes coral
+  const w2 = fmxVbw(['B'], true);
+  const p2 = stack([<FmxRow key="a" ids={['B']} ts marks rest width={w2} n0={1} end={false} label={t('Bars 1 to 4: E G F G, A G F E, D E F D, G, all in one phrase mark; the last G coral.', '1~4마디: E G F G, A G F E, D E F D, G. 프레이즈 표시 하나로 묶여 있고, 마지막 G는 산호색이에요.')}/>,
+    <FmxRow key="b" ids={['A']} tsRoom marks rest width={w2} n0={5} label={t('Bars 5 to 8: C D E F, G E C, D E F D, C, all in one phrase mark; the last C coral.', '5~8마디: C D E F, G E C, D E F D, C. 프레이즈 표시 하나로 묶여 있고, 마지막 C는 산호색이에요.')}/>,
+    cap(t('Two phrases, four bars each. The first rests on G, the second on C.', '4마디씩 두 프레이즈. 첫 프레이즈는 G에서, 둘째 프레이즈는 C에서 쉬어요.'), 'c2')], 300, 30, 640);
+  // p3: sixteen bars, four phrases: A A B A
+  const w3 = fmxVbw(['A'], true), L3 = ['A', 'A', 'B', 'A'];
+  const p3 = stack(L3.map((id, i) => <FmxRow key={i} ids={[id]} ts={i === 0} tsRoom={i > 0} end={i === 3} letters={[L3[i]]} coral={L3[i] === 'B' ? [0] : []} width={w3} n0={i * 4 + 1} label={t('Bars ' + (i * 4 + 1) + ' to ' + (i * 4 + 4) + ': phrase ' + L3[i] + '.', (i * 4 + 1) + '~' + (i * 4 + 4) + '마디: 프레이즈 ' + L3[i] + '.')}/>)
+    .concat([cap(t('Same music, same letter: A A B A.', '같은 음악은 같은 글자: A A B A.'), 'c3')]), 420, 4, 640);
+  // p4: binary
+  const p4 = stack([<SgnRoad key="r" bars={FMX_BIN} rows={[[0, 3], [4, 7]]} rw={560} o={{ ts: 4, nums: true, coral: ['start', 'end'] }} label={t('Eight bars in two sections. Bars 1 to 4 end with an end-repeat sign; bars 5 to 8 start with a start-repeat sign and end with an end-repeat sign.', '두 부분, 여덟 마디. 1~4마디 끝에 끝 도돌이표, 5~8마디 앞에 시작 도돌이표, 끝에 끝 도돌이표.')}/>,
+    <React.Fragment key="g">{fmxGroups('bin', -1, 16)}</React.Fragment>, cap(t('Played: A A B B. Two sections, each twice: binary form.', '치는 차례: A A B B. 두 부분을 두 번씩: 2부 형식.'), 'c4')], 330, 22, 640);
+  // p5: ternary
+  const p5 = stack([<SgnRoad key="r" bars={FMX_TER} rows={[[0, 3], [4, 7]]} rw={560} o={{ ts: 4, nums: true, coral: ['fine', 'dc'] }} label={t('Eight bars. Fine over the end of bar 4; D.C. al Fine over the end of bar 8.', '여덟 마디. 4마디 끝 위에 Fine, 8마디 끝 위에 D.C. al Fine.')}/>,
+    <React.Fragment key="g">{fmxGroups('ter', -1, 16, true)}</React.Fragment>, cap(t('Played: A B A. A comes back: ternary form.', '치는 차례: A B A. A가 돌아오니까 3부 형식.'), 'c5')], 330, 22, 640);
+  // p6: find the form: four steps on a map of blocks
+  const step = (n, en, ko, node) => <div key={n} style={{display:'grid',gridTemplateColumns:'34px minmax(0,1fr) 270px',alignItems:'center',gap:14}}>
+    <span style={{width:30,height:30,borderRadius:15,background:PEN_N,color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:16}}>{n}</span>
+    <span style={{fontSize:16.5,fontWeight:800,color:BK.ink,lineHeight:1.3}}>{fmxKoT(t(en, ko))}</span><span>{node}</span></div>;
+  const blocks = (ls, opts = {}) => <svg viewBox="0 0 230 50" style={{width:'100%',display:'block'}} aria-hidden="true">{ls.map((l, i) => { const w = 230 / ls.length, c = opts.coral === i ? PEN_C : PEN_N;
+    return <g key={i}><rect x={i * w + 7} y={5} width={w - 14} height={40} rx={5} fill="#fff" stroke={c} strokeWidth="1.6" strokeDasharray={l === '?' ? '4 3' : undefined}/>{opts.dbl && i < ls.length - 1 && <g><line x1={(i + 1) * w - 2} x2={(i + 1) * w - 2} y1={2} y2={48} stroke={PEN_N} strokeWidth="1.4"/><line x1={(i + 1) * w + 2} x2={(i + 1) * w + 2} y1={2} y2={48} stroke={PEN_N} strokeWidth="1.4"/></g>}
+      {Array.isArray(l) ? <g fill={c} textAnchor="middle" fontWeight="900" style={{fontFamily:'Inter, sans-serif'}}><text x={i * w + w / 2} y={24} fontSize="14">{l[0]}</text><text x={i * w + w / 2} y={38} fontSize="10.5" fill={BK.muted}>{l[1]}</text></g>
+        : <text x={i * w + w / 2} y={32} textAnchor="middle" fontSize={22} fontWeight="900" fill={c} style={{fontFamily:LB_SERIF}}>{l}</text>}</g>; })}</svg>;
+  const p6 = stack([step(1, 'Find the sections: double bar lines, repeat signs, Fine.', '부분 찾기: 겹세로줄, 도돌이표, Fine.', blocks(['?', '?', '?'], { dbl: true })),
+    step(2, 'Listen to each section: the same music as A, or new?', '부분마다 들어요: A와 같은 음악인가요, 새 음악인가요?', blocks([['1–8', t('bars', '마디')], ['9–16', t('bars', '마디')], ['17–24', t('bars', '마디')]])),
+    step(3, 'Same music, same letter; new music, the next letter.', '같은 음악은 같은 글자, 새 음악은 다음 글자.', blocks(['A', 'B', 'A'], { coral: 2 })),
+    step(4, 'Name the form: A B is binary, A B A is ternary.', '형식 이름 말하기: A B는 2부 형식, A B A는 3부 형식.', <div style={{textAlign:'center',fontFamily:LB_SERIF,fontSize:24,fontWeight:900,color:PEN_C}}>{t('ternary', '3부 형식')}</div>)], 330, 40, 680);
+
+  // the check icons
+  const tx = (x, c, col, s = 18, y = 28) => '<text x="' + x + '" y="' + y + '" text-anchor="middle" style="font-family:Georgia, serif" font-size="' + s + '" font-weight="900" fill="' + col + '">' + c + '</text>';
+  const box = (x, l, col) => '<rect x="' + (x - 11) + '" y="10" width="22" height="22" rx="3" fill="#fff" stroke="' + col + '" stroke-width="1.6"/>' + tx(x, l, col, 15, 27);
+  const ic = {
+    map: [{ k: 'raw', svg: '<rect x="6" y="6" width="80" height="9" rx="2" fill="none" stroke="' + PEN_N + '" stroke-width="1.4"/>' + [6, 33, 60].map((x, i) => '<rect x="' + (x + 1) + '" y="20" width="24" height="14" rx="2" fill="none" stroke="' + (i === 2 ? PEN_C : PEN_N) + '" stroke-width="1.4"/>').join('') }],
+    phrase: [{ k: 'raw', svg: [18, 34, 50].map(x => '<ellipse cx="' + x + '" cy="14" rx="4.4" ry="3.1" fill="' + PEN_N + '"/>').join('') + '<ellipse cx="72" cy="14" rx="5.4" ry="3.8" fill="none" stroke="' + PEN_C + '" stroke-width="2"/><path d="M10 22 Q46 42 82 22" fill="none" stroke="' + PEN_N + '" stroke-width="2"/>' }],
+    letters: [{ k: 'raw', svg: box(14, 'A', PEN_N) + box(36, 'A', PEN_N) + box(58, 'B', PEN_C) + box(80, 'A', PEN_N) }],
+    binary: [{ k: 'raw', svg: box(26, 'A', PEN_N) + box(64, 'B', PEN_N) + '<circle cx="42" cy="17" r="1.8" fill="' + PEN_N + '"/><circle cx="42" cy="25" r="1.8" fill="' + PEN_N + '"/><line x1="45.5" x2="45.5" y1="8" y2="34" stroke="' + PEN_N + '" stroke-width="2.6"/>' }],
+    ternary: [{ k: 'raw', svg: box(18, 'A', PEN_N) + box(46, 'B', PEN_N) + box(74, 'A', PEN_C) }],
+  };
+  const checksRows = [
+    ['map', t('I can show a piece’s sections, phrases, bars and beats on its map', '곡의 지도에서 부분, 프레이즈, 마디, 박을 보여 줄 수 있어요')],
+    ['phrase', t('I can find the phrases of a tune and play each to its resting note', '선율의 프레이즈를 찾고, 쉬는 음까지 하나씩 칠 수 있어요')],
+    ['letters', t('I can give each phrase a letter: same music, same letter', '프레이즈마다 글자를 붙일 수 있어요: 같은 음악은 같은 글자')],
+    ['binary', t('I can play a piece in binary form and say A A B B', '2부 형식 곡을 치고 A A B B라고 말할 수 있어요')],
+    ['ternary', t('I can play a piece in ternary form and say A B A', '3부 형식 곡을 치고 A B A라고 말할 수 있어요')],
+  ].map(([a, x]) => [a, LANG === 'ko' ? skgKo(sscNbKo(fmxNbKo(x))) : sscNbEn(x)]);
+
+  return [
+    <LbPage key="1" no={1} chId={ch}>
+      <LbOnly print><div data-ch={ch}>
+        <div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em'}}>CHAPTER {bkChapterNo(ch)}</div>
+        <div style={{fontFamily:LB_SERIF,fontSize:44,fontWeight:900,color:BK.ink,lineHeight:1.02,margin:'4px 0 0'}}>{bkChapterName(ch)}</div>
+      </div></LbOnly>
+      {p1}
+      <LbSay size={17.5}>{LANG === 'ko' ? <>곡이 짜인 모양이 <b>형식</b>이에요. 같은 음악은 같은 글자로, 새 음악은 다음 글자로 나타내요.</> : <><b>Form</b> is how a piece is built. Same music gets the same letter; new music gets the next letter.</>}</LbSay>
+      <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
+        <LbOnly print><div>
+          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
+          {[[t('The phrase', '프레이즈'), 2], [t('Same or different', '같은 음악, 새 음악'), 3], [t('Binary form', '2부 형식'), 4], [t('Ternary form', '3부 형식'), 5], [t('Finding the form', '형식 찾기'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}<span>{n}</span></span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
+        </div></LbOnly>
+        <div>
+          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          {checksRows.map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)',textWrap:'pretty'}}>{bkGoal(15)}<span>{x.replace(/^I can /, '')}</span></div>)}
+        </div>
+      </div>
+      <LbOnly print><LbDrillStrip id={ch}/></LbOnly>
+    </LbPage>,
+
+    <LbPage key="2" no={2} chId={ch} kicker={t('Step 1', '1단계')} title={t('The phrase', '프레이즈')}>
+      {live(p2, <FmxPhrasePad/>)}
+      <LbDefs items={[
+        [t('phrase', '프레이즈'), X('A musical sentence: often four bars, ending on a resting note.', '음악의 한 문장. 보통 4마디이고, 쉬는 음에서 끝나요.')],
+        [t('phrase mark', '프레이즈 표시'), X('A long curve over or under a phrase. Its notes are played smoothly, as one idea.', '프레이즈 위나 아래의 긴 곡선. 그 음들을 한 덩어리로 매끄럽게 쳐요.')],
+        [t('resting note', '쉬는 음'), X('The note a phrase comes to rest on, at its end. It is often long.', '프레이즈가 끝에서 머무는 음. 보통 길어요.')],
+      ]}/>
+      <LbPiano steps={[
+        X('Play the picture’s two phrases. Lift your hand a little after each resting note.', '그림의 두 프레이즈를 쳐요. 쉬는 음이 끝날 때마다 손을 살짝 들어요.'),
+        X('In a piece you know, find the phrases. Count the bars in each.', '아는 곡에서 프레이즈를 찾아요. 프레이즈마다 마디를 세어요.'),
+      ]}/>
+      <LbRemember>{X('A phrase ends on a resting note.', '프레이즈는 쉬는 음에서 끝나요.')}</LbRemember>
+    </LbPage>,
+
+    <LbPage key="3" no={3} chId={ch} kicker={t('Step 2', '2단계')} title={t('Same or different', '같은 음악, 새 음악')}>
+      {live(p3, <FmxLetterPad/>)}
+      <LbDefs items={[
+        [t('repetition', '반복'), X('The same music again.', '같은 음악이 다시 나오는 것.')],
+        [t('contrast', '대조'), X('New music, different from what came before.', '앞과 다른 새 음악.')],
+        [t('letters', '글자'), X('The first music is A. Same music, same letter; new music, the next letter: B, then C.', '처음 음악은 A. 같은 음악은 같은 글자, 새 음악은 다음 글자: B, 그다음 C.')],
+      ]}/>
+      <LbPiano steps={[
+        X('Play the four phrases. Say each one’s letter as you start it.', '네 프레이즈를 쳐요. 프레이즈를 시작할 때마다 글자를 말해요.'),
+        X('Your teacher plays two phrases. Say: same or different?', '선생님이 프레이즈 두 개를 쳐요. 같은지 다른지 말해요.'),
+      ]}/>
+      <LbRemember>{X('Same music, same letter.', '같은 음악은 같은 글자.')}</LbRemember>
+    </LbPage>,
+
+    <LbPage key="4" no={4} chId={ch} kicker={t('Step 3', '3단계')} title={t('Binary form', '2부 형식')}>
+      {live(p4, <FmxRoadPad kind="bin"/>)}
+      <LbDefs items={[
+        [t('section', '부분'), X('A large part of a piece, one or more phrases long. It often ends with a double bar line or a repeat sign.', '곡을 크게 나눈 한 덩어리. 프레이즈 하나 이상으로 되어 있고, 끝에 보통 겹세로줄이나 도돌이표가 있어요.')],
+        [t('binary form', '2부 형식'), X('Two sections, A and B, often each played twice (chapter ' + ch20 + '’s repeat signs).', '두 부분 A와 B. 보통 부분마다 두 번씩 쳐요(' + ch20 + '챕터의 도돌이표).')],
+      ]}/>
+      <LbPiano steps={[
+        X('Play the picture, with both repeats. Say A A B B as you go.', '도돌이표를 지켜 그림을 쳐요. 치면서 A A B B라고 말해요.'),
+        X('Point to where A ends and where B starts.', 'A가 끝나는 곳과 B가 시작하는 곳을 짚어요.'),
+      ]}/>
+      <LbRemember>{X('Binary: A B.', '2부 형식: A B.')}</LbRemember>
+    </LbPage>,
+
+    <LbPage key="5" no={5} chId={ch} kicker={t('Step 4', '4단계')} title={t('Ternary form', '3부 형식')}>
+      {live(p5, <FmxRoadPad kind="ter"/>)}
+      <LbDefs items={[
+        [t('ternary form', '3부 형식'), X('Three sections: A, then B, then A again.', '세 부분: A, 그다음 B, 그리고 다시 A.')],
+        [t('the return', '돌아오기'), X('A coming back after B. It is often written with D.C. al Fine (chapter ' + ch20 + ').', 'B 다음에 A가 다시 나오는 것. 보통 D.C. al Fine(' + ch20 + '챕터)으로 적어요.')],
+      ]}/>
+      <LbPiano steps={[
+        X('Play the picture: A, B, then D.C. back to A, and stop at Fine.', '그림을 쳐요: A, B, 그다음 D.C.에서 A로 돌아가 Fine에서 멈춰요.'),
+        X('Play A, then make up your own B, then play A again.', 'A를 치고, 나만의 B를 지어 친 다음, 다시 A를 쳐요.'),
+      ]}/>
+      <LbRemember>{X('Ternary: A B A.', '3부 형식: A B A.')}</LbRemember>
+    </LbPage>,
+
+    <LbPage key="6" no={6} chId={ch} kicker={t('Step 5', '5단계')} title={t('Finding the form', '형식 찾기')}>
+      {live(p6, <FmxFindPad/>)}
+      <LbDefs items={[
+        [t('form', '형식'), X('How a piece is built: the order of its sections, shown with letters.', '곡이 짜인 모양. 부분을 찾아 글자로 나타내요.')],
+        [t('double bar line', '겹세로줄'), X('Two bar lines close together. Two thin lines end a section; a thin and a thick line end the piece (chapter ' + ch8 + ').', '가는 세로줄 두 개. 부분의 끝에 써요(곡의 끝에는 끝세로줄, ' + ch8 + '챕터).')],
+      ]}/>
+      <LbPiano steps={[
+        X('Take a piece you are learning. Find its sections and give them letters.', '배우고 있는 곡을 펴요. 부분을 찾아 글자를 붙여요.'),
+        X('Play it and say each letter as it starts. Then name the form.', '치면서 부분이 시작될 때마다 글자를 말해요. 그다음 형식 이름을 말해요.'),
+      ]}/>
+      <LbRemember>{X('Find the sections, give the letters, name the form.', '부분 찾기, 글자 붙이기, 형식 이름 말하기.')}</LbRemember>
+    </LbPage>,
+
+    <LbPage key="7" no={7} chId={ch} kicker={t('Check-up', '점검')} title={t('My five checks', '나의 다섯 가지 확인')}>
+      <LbSay>{t('Show each one at the piano, on its page (1 to 5). The check-up on paper is in the Workbook.', '1~5쪽을 하나씩 펴고 피아노 앞에서 보여 줘요. 종이 점검은 워크북에 있어요.')}</LbSay>
+      <LbLive still={<LbStageRows big rows={checksRows.map(([a, x]) => [<PenArt shapes={ic[a]} vb={[0, 0, 92, 40]} style={{width:80}}/>, x])}/>} live={<FiveChecks376 storeKey="pb_five_fmx_v1" rows={checksRows.map(([a, x]) => [{ shapes: ic[a], vb: [0, 0, 92, 40] }, x])}/>}/>
+    </LbPage>,
+  ];
+}
+function FormLessonBook() { return <>{fmxLbPages(false)}</>; }
+
+// ─── Phase 480: chapter 24's pads (pages 1 to 6), the screen lesson and the drill ───
+const fmxMsg = (msg, bad) => <div style={{textAlign:'center',fontSize:15,fontWeight:900,color:bad ? BK.coral : BK.ink,minHeight:22,margin:'8px 0 6px',textWrap:'balance',wordBreak:'keep-all'}}>{fmxKoT(msg)}</div>;
+const fmxStopBtn = (playing, onPlay, label) => chxBtn('p', playing ? t('■ Stop', '■ 멈추기') : label || t('▶ Listen', '▶ 듣기'), playing ? () => onPlay(null) : () => onPlay(true), playing);
+const fmxSecOf = (bar) => Math.floor(bar / 8), fmxPhOf = (bar) => Math.floor(bar / 4);
+
+// page 1: the map: tap a row's part to hear it; the part sounding lit
+function FmxMapPad() {
+  const [sel, setSel] = useState({ kind: 'section', i: 2 }), [playing, setPlaying] = useState(false);
+  useEffect(() => () => fmxStop(), []);
+  const ids = fmxPieceIds();
+  const go = (kind, i) => { fmxStop(); setSel({ kind, i }); setPlaying(true);
+    const done = (p) => { if (p === -1) setPlaying(false); };
+    if (kind === 'piece') fmxPlay(ids, (p) => { if (p === -1) { setPlaying(false); setSel({ kind: 'piece', i: 0 }); } else setSel({ kind: 'phrase', i: p, from: 'piece' }); });
+    else if (kind === 'section') fmxPlay(ids.slice(i * 2, i * 2 + 2), done);
+    else if (kind === 'phrase') fmxPlay([ids[i]], done);
+    else if (kind === 'bar') fmxPlayNotes(FMX_PH[ids[fmxPhOf(i)]][i % 4].map(n => ({ d: n[2], dur: n[1] })), (k) => { if (k === -1) setPlaying(false); });
+    else fmxPlayBeats(4, () => setPlaying(false)); };
+  const stop = () => { fmxStop(); setPlaying(false); };
+  const k = sel.kind, i = sel.i, sec = (j) => FMX_SEC[j];
+  const secKo = (j) => (j === 2 ? '다시 나온 ' : '') + sec(j) + ' 부분';
+  const msg = sel.from === 'piece' ? t('The piece: phrase ' + (i + 1) + ', in section ' + sec(fmxSecOf(i * 4)) + '.', '곡 전체: ' + fmxNth(i + 1) + ' 프레이즈, ' + secKo(fmxSecOf(i * 4)) + '.')
+    : k === 'piece' ? t('The piece: 24 bars, A B A.', '곡 전체: 24마디, A B A.')
+    : k === 'section' ? t('Section ' + sec(i) + (i === 2 ? ' again' : '') + ': bars ' + (i * 8 + 1) + ' to ' + (i * 8 + 8) + ', two phrases.', secKo(i) + ': ' + (i * 8 + 1) + '~' + (i * 8 + 8) + '마디, 프레이즈 두 개.')
+    : k === 'phrase' ? t('Phrase ' + (i + 1) + ': bars ' + (i * 4 + 1) + ' to ' + (i * 4 + 4) + ', in section ' + sec(fmxSecOf(i * 4)) + '.', fmxNth(i + 1) + ' 프레이즈: ' + (i * 4 + 1) + '~' + (i * 4 + 4) + '마디, ' + secKo(fmxSecOf(i * 4)) + '.')
+    : k === 'bar' ? t('Bar ' + (i + 1) + ': in phrase ' + (fmxPhOf(i) + 1) + ', section ' + sec(fmxSecOf(i)) + '.', (i + 1) + '마디: ' + fmxNth(fmxPhOf(i) + 1) + ' 프레이즈, ' + secKo(fmxSecOf(i)) + '.')
+    : t('Bar 1: four beats.', '1마디: 네 박.');
+  return (
+    <div className="try-box" style={actBox} data-fmx="pad-map">
+      <div style={actTitle}>{t('The map of a piece', '곡의 지도')}</div>
+      <div style={{...actNote,textWrap:'pretty'}}>{fmxKoT(t('Tap any part: the piece, a section, a phrase, a bar or the beats. Hear it.', '아무 곳이나 눌러요: 곡 전체, 부분, 프레이즈, 마디, 박. 소리가 들려요.'))}</div>
+      <div style={{maxWidth:420,margin:'0 auto'}}><FmxMapSvg scr sel={sel} onTap={go} label={t('The map of a piece: 24 bars; sections A, B, A; six phrases; the bars; bar 1’s four beats.', '곡의 지도: 24마디; A, B, A 부분; 프레이즈 여섯; 마디; 1마디의 네 박.')}/></div>
+      <div style={{textAlign:'center',fontSize:13,color:BK.muted,margin:'4px 0 0',textWrap:'balance',wordBreak:'keep-all'}}>{fmxKoT(t('Beats make bars, bars make phrases, phrases make sections, sections make the piece.', '박이 모여 마디, 마디가 모여 프레이즈, 프레이즈가 모여 부분, 부분이 모여 곡이 돼요.'))}</div>
+      {fmxMsg(msg)}
+      {playing && <div style={{display:'flex',justifyContent:'center'}}>{chxBtn('s', t('■ Stop', '■ 멈추기'), stop, true)}</div>}
+    </div>
+  );
+}
+// page 2: two phrases; tap one to hear it to its resting note
+function FmxPhrasePad() {
+  const [on, setOn] = useState(-1);
+  useEffect(() => () => fmxStop(), []);
+  const ids = ['B', 'A'], w = fmxVbw(['B'], true, 18);
+  const hear = (j) => { fmxStop(); setOn(j); fmxPlay([ids[j]], (p) => { if (p === -1) setOn(-1); }); };
+  return (
+    <div className="try-box" style={actBox} data-fmx="pad-phrase">
+      <div style={actTitle}>{t('The phrase', '프레이즈')}</div>
+      <div style={actNote}>{fmxKoT(t('Two phrases. Tap one: it plays to its resting note.', '프레이즈 두 개. 하나를 누르면 쉬는 음까지 들려요.'))}</div>
+      <div style={{display:'flex',flexDirection:'column',gap:4}}>{ids.map((id, j) => <button key={id} type="button" data-fmx={'ph' + j} onClick={() => hear(j)} style={{border:'1.5px solid ' + (on === j ? PEN_C : 'rgba(38,41,107,0.18)'),borderRadius:10,background:'#fff',padding:'2px 4px',cursor:'pointer'}}>
+        <FmxRow ids={[id]} ts={j === 0} tsRoom={j > 0} end={j === 1} marks rest width={w} D={18} n0={j * 4 + 1} label={t('Phrase ' + (j + 1) + ', bars ' + (j * 4 + 1) + ' to ' + (j * 4 + 4) + '.', fmxNth(j + 1) + ' 프레이즈, ' + (j * 4 + 1) + '~' + (j * 4 + 4) + '마디.')}/></button>)}</div>
+      {fmxMsg(on === -1 ? t('Tap a phrase.', '프레이즈를 눌러요.') : t('Phrase ' + (on + 1) + ': bars ' + (on * 4 + 1) + ' to ' + (on * 4 + 4) + '. It rests on ' + fmxLast(ids[on]) + '.', fmxNth(on + 1) + ' 프레이즈: ' + (on * 4 + 1) + '~' + (on * 4 + 4) + '마디. ' + fmxLast(ids[on]) + '에서 쉬어요.'))}
+    </div>
+  );
+}
+// page 3: four phrases: give each a letter (the first is A); Check
+const FMX_L3 = ['A', 'A', 'B', 'A'];
+function FmxLetterPad() {
+  const [ls, setLs] = useState(['A', '', '', '']), [on, setOn] = useState(-1), [checked, setChecked] = useState(false);
+  useEffect(() => () => fmxStop(), []);
+  const w = fmxVbw(['A'], true, 22);
+  const hear = (j) => { fmxStop(); setOn(j); fmxPlay([FMX_L3[j]], (p) => { if (p === -1) setOn(-1); }); };
+  const cyc = (j) => { if (j === 0) return; const nx = { '': 'A', A: 'B', B: 'C', C: 'A' }[ls[j]]; const c = ls.slice(); c[j] = nx; setLs(c); setChecked(false); };
+  const ok = ls.every((l, j) => l === FMX_L3[j]);
+  return (
+    <div className="try-box" style={actBox} data-fmx="pad-letters">
+      <div style={actTitle}>{t('Same or different', '같은 음악, 새 음악')}</div>
+      <div style={actNote}>{fmxKoT(t('Tap ▶ to hear a phrase. Tap its box to give it a letter: same music, same letter.', '▶를 눌러 프레이즈를 들어요. 상자를 눌러 글자를 붙여요: 같은 음악은 같은 글자.'))}</div>
+      <div style={{display:'flex',flexDirection:'column',gap:10}}>{FMX_L3.map((id, j) => <div key={j} style={{display:'flex',flexDirection:'column',gap:2}}>
+        <div style={{display:'flex',gap:8,alignItems:'center'}}><span style={{fontSize:12,fontWeight:800,color:BK.muted,minWidth:60}}>{t('bars ' + (j * 4 + 1) + '–' + (j * 4 + 4), (j * 4 + 1) + '~' + (j * 4 + 4) + '마디')}</span>
+          <button type="button" data-fmx={'let' + j} aria-label={t('Letter for phrase ' + (j + 1), fmxNth(j + 1) + ' 프레이즈의 글자')} onClick={() => cyc(j)} disabled={j === 0} style={{width:44,height:44,borderRadius:8,border:'1.8px ' + (ls[j] ? 'solid ' : 'dashed ') + (checked && ls[j] !== FMX_L3[j] ? PEN_C : PEN_N),background:'#fff',fontFamily:LB_SERIF,fontSize:22,fontWeight:900,color:PEN_N,cursor:j ? 'pointer' : 'default'}}>{ls[j] || '?'}</button>
+          <button type="button" data-fmx={'play' + j} aria-label={t('Play phrase ' + (j + 1), fmxNth(j + 1) + ' 프레이즈 듣기')} onClick={() => hear(j)} style={{width:44,height:44,borderRadius:8,border:'1.5px solid ' + (on === j ? PEN_C : 'rgba(38,41,107,0.25)'),background:'#fff',color:on === j ? PEN_C : PEN_N,fontWeight:900,cursor:'pointer'}}>▶</button></div>
+        <FmxRow ids={[id]} ts={j === 0} tsRoom={j > 0} end={j === 3} width={w} D={22} label={t('Phrase ' + (j + 1) + ', bars ' + (j * 4 + 1) + ' to ' + (j * 4 + 4) + '.', fmxNth(j + 1) + ' 프레이즈, ' + (j * 4 + 1) + '~' + (j * 4 + 4) + '마디.')}/></div>)}</div>
+      {fmxMsg(!checked ? t('The first phrase is A.', '첫 프레이즈는 A예요.') : ok ? t('A A B A: phrase 3 is new music. ✓', 'A A B A: 3번째 프레이즈가 새 음악이에요. ✓') : t('Listen again: which phrases are the same?', '다시 들어요: 어느 프레이즈가 같나요?'), checked && !ok)}
+      <div style={{display:'flex',justifyContent:'center'}}>{chxBtn('c', t('Check', '확인'), () => setChecked(true), false)}</div>
+    </div>
+  );
+}
+// pages 4 and 5: a road (binary or ternary); ▶ plays it in its order, the bar and the letter sounding lit
+function FmxRoadPad({ kind }) {
+  const [lit, setLit] = useState(-1), [cur, setCur] = useState(-1);
+  useEffect(() => () => fmxStop(), []);
+  const bars = kind === 'bin' ? FMX_BIN : FMX_TER, ord = FMX_ORDER[kind];
+  const play = (go) => { fmxStop(); if (!go) { setLit(-1); setCur(-1); return; }
+    const steps = []; ord.forEach((b, s) => bars[b].n.forEach(() => steps.push(s)));
+    fmxPlayNotes(fmxRoadNotes(bars, ord), (k) => { if (k === -1) { setLit(-1); setCur(-1); return; } const s = steps[k]; setLit(ord[s]); setCur(Math.floor(s / 4)); }); };
+  const playing = lit >= 0;
+  return (
+    <div className="try-box" style={actBox} data-fmx={'pad-' + kind}>
+      <div style={actTitle}>{kind === 'bin' ? t('Binary form', '2부 형식') : t('Ternary form', '3부 형식')}</div>
+      <div style={actNote}>{fmxKoT(kind === 'bin' ? t('▶ plays it with both repeats. Watch the letters.', '▶를 누르면 도돌이표대로 들려요. 글자를 봐요.') : t('▶ plays it: A, B, then D.C. back to A, to Fine.', '▶를 누르면 들려요: A, B, 그다음 D.C.에서 A로 돌아가 Fine까지.'))}</div>
+      <SgnRoad bars={bars} rows={[[0, 1], [2, 3], [4, 5], [6, 7]]} rw={270} o={{ ts: 4, nums: true, lit: lit >= 0 ? lit : null, coral: kind === 'bin' ? ['start', 'end'] : ['fine', 'dc'] }} label={kind === 'bin' ? t('Binary form: two sections, each between repeat signs.', '2부 형식: 도돌이표 안의 두 부분.') : t('Ternary form: Fine after bar 4, D.C. al Fine after bar 8.', '3부 형식: 4마디 뒤 Fine, 8마디 뒤 D.C. al Fine.')}/>
+      <div style={{margin:'10px 0 0'}}>{fmxGroups(kind, cur, 15, kind === 'ter')}</div>
+      {fmxMsg(kind === 'bin' ? t('A A B B: two sections, each twice: binary form.', 'A A B B: 두 부분을 두 번씩: 2부 형식.') : t('A B A: A comes back, so ternary form.', 'A B A: A가 돌아오니까 3부 형식.'))}
+      <div style={{display:'flex',justifyContent:'center'}}>{fmxStopBtn(playing, play)}</div>
+    </div>
+  );
+}
+// page 6: find the form: hear how each section starts, give it a letter, then name the form
+function FmxFindPad() {
+  const [ls, setLs] = useState(['A', '', '']), [name, setName] = useState(null), [on, setOn] = useState(-1);
+  useEffect(() => () => fmxStop(), []);
+  const hear = (j) => { fmxStop(); setOn(j); fmxPlay(FMX_PIECE[FMX_SEC[j]], (p) => { if (p === -1) setOn(-1); }); };
+  const cyc = (j) => { if (j === 0) return; const c = ls.slice(); c[j] = { '': 'A', A: 'B', B: 'A' }[ls[j]]; setLs(c); setName(null); };
+  const lettersOk = ls.join('') === 'ABA', ok = lettersOk && name === 'ternary';
+  return (
+    <div className="try-box" style={actBox} data-fmx="pad-find">
+      <div style={actTitle}>{t('Find the form', '형식 찾기')}</div>
+      <div style={actNote}>{fmxKoT(t('A piece in three sections. ▶ plays each section. Give each a letter, then name the form.', '세 부분으로 된 곡. ▶를 누르면 부분이 하나씩 들려요. 글자를 붙인 다음 형식 이름을 골라요.'))}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:8,maxWidth:330,margin:'0 auto'}}>{[0, 1, 2].map(j => <div key={j} style={{display:'flex',flexDirection:'column',gap:6,alignItems:'stretch'}}>
+        <div style={{textAlign:'center',fontSize:12,fontWeight:800,color:BK.muted}}>{t('bars ' + (j * 8 + 1) + '–' + (j * 8 + 8), (j * 8 + 1) + '~' + (j * 8 + 8) + '마디')}</div>
+        <button type="button" data-fmx={'flet' + j} onClick={() => cyc(j)} disabled={j === 0} style={{height:56,borderRadius:8,border:'1.8px ' + (ls[j] ? 'solid ' : 'dashed ') + PEN_N,background:'#fff',fontFamily:LB_SERIF,fontSize:26,fontWeight:900,color:j === 2 && ok ? PEN_C : PEN_N,cursor:j ? 'pointer' : 'default'}}>{ls[j] || '?'}</button>
+        <button type="button" data-fmx={'fplay' + j} onClick={() => hear(j)} style={{minHeight:44,borderRadius:8,border:'1.5px solid ' + (on === j ? PEN_C : 'rgba(38,41,107,0.25)'),background:'#fff',color:on === j ? PEN_C : PEN_N,fontWeight:900,cursor:'pointer'}}>▶</button></div>)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:6,maxWidth:300,margin:'12px auto 0'}}>{['binary', 'ternary'].map(n => <button key={n} className={'chip' + (name === n ? ' active' : '')} style={{minHeight:44,justifyContent:'center',fontWeight:900}} onClick={() => setName(n)}>{n === 'binary' ? t('binary', '2부 형식') : t('ternary', '3부 형식')}</button>)}</div>
+      {fmxMsg(name == null ? t('Same music, same letter.', '같은 음악은 같은 글자.') : ok ? t('A B A: A comes back, so ternary form. ✓', 'A B A: A가 돌아오니까 3부 형식. ✓') : !lettersOk ? t('Listen to each section again: which two are the same?', '부분을 다시 들어요: 어느 둘이 같나요?') : t('A comes back after B: how many sections?', 'B 다음에 A가 돌아와요: 부분이 몇 개인가요?'), name != null && !ok)}
+    </div>
+  );
+}
+// the end: build a piece from A and B sections (the first always A); it names the form when it is binary or ternary.
+// The phrases chosen so the piece ends on C: ending on B, A is phrase B (rests on G) and B is phrase E (rests on C);
+// ending on A, A is phrase A (rests on C) and B is phrase C (rests on D)
+const fmxBuildIds = (ls) => ls[ls.length - 1] === 'B' ? ls.map(l => l === 'A' ? 'B' : 'E') : ls.map(l => l === 'A' ? 'A' : 'C');
+function FmxBuildPad() {
+  const [ls, setLs] = useState(['A', 'B', 'A']), [cur, setCur] = useState(-1);
+  useEffect(() => () => fmxStop(), []);
+  const set = (x) => { fmxStop(); setCur(-1); setLs(x); };
+  const tog = (j) => { if (j === 0) return; const c = ls.slice(); c[j] = c[j] === 'A' ? 'B' : 'A'; set(c); };
+  const s = ls.join(' '), name = s === 'A B' || s === 'A A B B' ? 'bin' : s === 'A B A' ? 'ter' : null;
+  const play = (go) => { fmxStop(); if (!go) { setCur(-1); return; } fmxPlay(fmxBuildIds(ls), (p) => setCur(p)); };
+  return (
+    <div className="try-box" style={actBox} data-fmx="pad-build">
+      <div style={actTitle}>{t('Build a piece', '곡 만들기')}</div>
+      <div style={actNote}>{fmxKoT(t('Each box is a section as you play it, in order. The first is A. Tap a box to change it; + adds one, − takes one off. ▶ plays your piece.', '상자 하나가 치는 차례대로 한 부분이에요. 첫 상자는 A. 상자를 누르면 바뀌고, +는 하나 더, −는 하나 빼요. ▶를 누르면 내 곡이 들려요.'))}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap',margin:'0 0 8px'}}>{[['A', 'B'], ['A', 'B', 'A'], ['A', 'A', 'B', 'B']].map(x => <button key={x.join('')} className={'chip' + (s === x.join(' ') ? ' active' : '')} style={{minHeight:44,fontFamily:LB_SERIF,fontWeight:900}} onClick={() => set(x)}>{x.join(' ')}</button>)}</div>
+      <div style={{display:'flex',gap:8,justifyContent:'center',alignItems:'center',flexWrap:'wrap'}}>
+        {ls.map((l, j) => <button key={j} type="button" data-fmx={'blk' + j} onClick={() => tog(j)} disabled={j === 0} aria-label={t('Section ' + (j + 1) + ': ' + l, fmxNth(j + 1) + ' 부분: ' + l)} style={{width:56,height:56,borderRadius:8,border:'1.8px solid ' + (j === cur ? PEN_C : PEN_N),background:j === cur ? PEN_C : '#fff',color:j === cur ? '#fff' : PEN_N,fontFamily:LB_SERIF,fontSize:26,fontWeight:900,cursor:j ? 'pointer' : 'default'}}>{l}</button>)}
+        <button type="button" aria-label={t('Add a section', '부분 더하기')} disabled={ls.length >= 5} onClick={() => set(ls.concat(['A']))} className="ghost-btn" style={{minWidth:44,minHeight:44}}>+</button>
+        <button type="button" aria-label={t('Take a section off', '부분 빼기')} disabled={ls.length <= 2} onClick={() => set(ls.slice(0, -1))} className="ghost-btn" style={{minWidth:44,minHeight:44}}>−</button></div>
+      {fmxMsg(s === 'A B' ? t('A B: two sections: binary form.', 'A B: 두 부분: 2부 형식.') : s === 'A A B B' ? t('A A B B: A twice, then B twice: binary form.', 'A A B B: A를 두 번, B를 두 번: 2부 형식.') : name === 'ter' ? t('A B A: A comes back, so ternary form.', 'A B A: A가 돌아오니까 3부 형식.') : t('Your piece: ' + s + '.', '내 곡: ' + s + '.'))}
+      <div style={{display:'flex',justifyContent:'center'}}>{fmxStopBtn(cur >= 0, play)}</div>
+    </div>
+  );
+}
+
+// ── the book on screen: the opener is the lesson's head, every other page a step; a piece of my own at the end ──
+function FmxLearn({ onStart }) {
+  const pages = fmxLbPages(true);
+  const opener = pages[0];
+  return (
+    <Lesson id="form" title={bkChapterName('form')} onStart={onStart} noArt
+      head={<LbScreenCtx.Provider value={true}><BkChapterCtx.Provider value="form"><div className="lb-screen lb-open" style={{display:'flex',flexDirection:'column',gap:12,margin:'0 0 8px'}}>{lbWordsFirst(opener.props.children)}</div></BkChapterCtx.Provider></LbScreenCtx.Provider>}>
+      {pages.slice(1).map((pg, i) => (
+        <Step key={i} title={<span>{pg.props.title}</span>} storeAs={'k' + (i + 1)}>
+          <LbScreenPage page={pg}/>
+        </Step>
+      ))}
+      <Step key="map" extra title={t('My piece', '나의 곡')} storeAs="k7"><FmxBuildPad/></Step>
+    </Lesson>
+  );
+}
+
+// ── the drill, after page 6, in the book's order ──
+const FMX_LEVELS = [
+  { n: 1, label: 'Same or different?', kind: 'sd', time: 10 },
+  { n: 2, label: 'Which letter?', kind: 'letter', time: 14 },
+  { n: 3, label: 'Listen: same or different?', kind: 'earSd', time: 22, noPrint: true },
+  { n: 4, label: 'Bar, phrase, section or piece?', kind: 'part', time: 8 },
+  { n: 5, label: 'Binary or ternary?', kind: 'bt', time: 8 },
+  { n: 6, label: 'Listen: binary or ternary?', kind: 'earBt', time: 30, noPrint: true },
+  { n: 7, label: 'Read the road', kind: 'road', time: 16 },
+  { n: 8, label: 'The words', kind: 'word', time: 10 },
+  { n: 9, label: 'Extra: four phrases, four letters', kind: 'pattern', time: 22 },
+];
+Object.assign(LEVEL_KO, { 'Same or different?': '같을까, 다를까?', 'Which letter?': '어떤 글자일까요?', 'Listen: same or different?': '듣기: 같을까, 다를까?', 'Bar, phrase, section or piece?': '마디? 프레이즈? 부분? 곡 전체?',
+  'Binary or ternary?': '2부 형식? 3부 형식?', 'Listen: binary or ternary?': '듣기: 2부 형식? 3부 형식?', 'Read the road': '길 읽기', 'The words': '용어', 'Extra: four phrases, four letters': '더 해 보기: 네 프레이즈, 네 글자' });
+const FMX_IDS = Object.keys(FMX_PH);
+// letters for a row of phrases: the first A; the same phrase keeps its letter; a new one takes the next
+const fmxLettersOf = (ids) => { const m = {}; let n = 0; return ids.map(id => m[id] || (m[id] = 'ABCD'[n++])); };
+const FMX_PATTERNS = ['AABA', 'ABAB', 'AABB', 'ABBA', 'ABAC', 'ABCA', 'AAAB', 'ABCB'];
+// one phrase per letter; the last letter's phrase ends on C (A or E), so the tune ends at home
+const fmxIdsFor = (pat) => { const L = pat[pat.length - 1], h = pick(['A', 'E']), ids = shuffle(FMX_IDS.filter(x => x !== h)), m = { [L]: h }; let n = 0; return pat.split('').map(l => m[l] || (m[l] = ids[n++])); };
+const FMX_WORDS = [
+  ['form', 'how a piece is built: the order of its sections', '곡이 짜인 모양'],
+  ['phrase', 'a musical sentence, often four bars', '음악의 한 문장, 보통 4마디'],
+  ['phrase mark', 'a long curve over or under a phrase', '프레이즈 위나 아래의 긴 곡선'],
+  ['section', 'a large part of a piece, one or more phrases long', '곡을 크게 나눈 덩어리, 프레이즈 하나 이상'],
+  ['repetition', 'the same music again', '같은 음악이 다시 나오는 것'],
+  ['contrast', 'new music, different from what came before', '앞과 다른 새 음악'],
+  ['binary form', 'two sections: A B', '두 부분: A B'],
+  ['ternary form', 'three sections: A B A', '세 부분: A B A'],
+];
+const FMX_WORD_KO2 = { form: '형식', phrase: '프레이즈', 'phrase mark': '프레이즈 표시', section: '부분', repetition: '반복', contrast: '대조', 'binary form': '2부 형식', 'ternary form': '3부 형식' };
+const FMX_PART_KO = { bar: '마디', phrase: '프레이즈', section: '부분', piece: '곡 전체' };
+const FMX_ROADS = {
+  bin: { bars: FMX_BIN, ls: 'A A B B' },
+  ter: { bars: FMX_TER, ls: 'A B A' },
+  repA: { bars: (() => { const a = fmxBars('B'), b = fmxBars('E'); return [{ n: a[0] }, { n: a[1] }, { n: a[2] }, { n: a[3], end: true }, { n: b[0] }, { n: b[1] }, { n: b[2] }, { n: b[3] }]; })(), ls: 'A A B' },
+  plain: { bars: (() => { const a = fmxBars('B'), b = fmxBars('E'); return [{ n: a[0] }, { n: a[1] }, { n: a[2] }, { n: a[3], dbl: true }, { n: b[0] }, { n: b[1] }, { n: b[2] }, { n: b[3] }]; })(), ls: 'A B' },
+};
+// listening, binary or ternary: phrases chosen so the piece ends on C (binary: A away, B home; ternary: A home, B away)
+const FMX_EAR_PH = { bin: { A: ['B', 'C', 'D'], B: ['A', 'E'] }, ter: { A: ['A', 'E'], B: ['B', 'C', 'D'] } };
+function genFmxQuestion(lv, prev) {
+  const uid = Math.random(), same = (key) => prev && prev.key === key;
+  for (let g = 0; g < 40; g++) {
+    if (lv.kind === 'sd' || lv.kind === 'earSd') {
+      const a = pick(FMX_IDS), sm = Math.random() < 0.5, b = sm ? a : pick(FMX_IDS.filter(x => x !== a)), key = lv.kind + a + b;
+      if (same(key)) continue;
+      return { kind: lv.kind, key, ids: [a, b], answer: sm ? 'same' : 'different', choices: ['same', 'different'], uid };
+    }
+    if (lv.kind === 'letter') {
+      const pat = pick(FMX_PATTERNS), ids = fmxIdsFor(pat), ls = fmxLettersOf(ids), key = 'l' + ids.join('');
+      if (same(key)) continue;
+      const known = [...new Set(ls.slice(0, 3))], next = 'ABCD'[known.length], choices = known.concat([next]).sort();
+      return { kind: 'letter', key, ids, ls, answer: ls[3], choices, uid };
+    }
+    if (lv.kind === 'part') {
+      const kind = pick(['bar', 'phrase', 'section', 'piece']), i = kind === 'bar' ? Math.floor(Math.random() * 24) : kind === 'phrase' ? Math.floor(Math.random() * 6) : kind === 'section' ? Math.floor(Math.random() * 3) : 0, key = 'p' + kind + i;
+      if (same(key)) continue;
+      return { kind: 'part', key, sel: { kind, i }, answer: kind, choices: ['bar', 'phrase', 'section', 'piece'], uid };
+    }
+    if (lv.kind === 'bt' || lv.kind === 'earBt') {
+      // binary or ternary half the time each; level 5's two binary pictures never come twice running (one ternary picture may)
+      const ter = Math.random() < 0.5, bins = lv.kind === 'bt' ? [['A', 'B'], ['A', 'A', 'B', 'B']].filter(x => !prev || prev.ls == null || prev.ls.join('') !== x.join('')) : [['A', 'B']], ls = ter ? ['A', 'B', 'A'] : pick(bins);
+      const ph = lv.kind === 'earBt' ? { A: pick(FMX_EAR_PH[ter ? 'ter' : 'bin'].A), B: pick(FMX_EAR_PH[ter ? 'ter' : 'bin'].B) } : null, key = lv.kind + ls.join('') + (ph ? ph.A + ph.B : '');
+      if (lv.kind === 'earBt' && same(key)) continue;
+      return { kind: lv.kind, key, ls, ph, answer: ter ? 'ternary' : 'binary', choices: ['binary', 'ternary'], uid };
+    }
+    if (lv.kind === 'road') {
+      const r = pick(Object.keys(FMX_ROADS)), key = 'r' + r;
+      if (same(key)) continue;
+      return { kind: 'road', key, r, answer: FMX_ROADS[r].ls, choices: shuffle(Object.values(FMX_ROADS).map(x => x.ls)), uid };
+    }
+    if (lv.kind === 'word') {
+      const wd = pick(FMX_WORDS), key = 'w' + wd[0];
+      if (same(key)) continue;
+      const wrong = shuffle(FMX_WORDS.filter(x => x[0] !== wd[0])).slice(0, 3).map(x => x[0]);
+      return { kind: 'word', key, w: wd, answer: wd[0], choices: shuffle([wd[0], ...wrong]), uid };
+    }
+    if (lv.kind === 'pattern') {
+      const pat = pick(FMX_PATTERNS), ids = fmxIdsFor(pat), key = 'x' + ids.join('');
+      if (same(key)) continue;
+      const wrong = shuffle(FMX_PATTERNS.filter(p => p !== pat)).slice(0, 3);
+      return { kind: 'pattern', key, ids, answer: pat, choices: shuffle([pat, ...wrong]), uid };
+    }
+  }
+  return { kind: 'sd', key: 'f', ids: ['A', 'A'], answer: 'same', choices: ['same', 'different'], uid };
+}
+const fmxCheck = (q, ans) => ans != null && String(ans) === String(q.answer);
+const fmxChoiceTxt = (c, q) => q.kind === 'sd' || q.kind === 'earSd' ? (c === 'same' ? t('same', '같아요') : t('different', '달라요'))
+  : q.kind === 'bt' || q.kind === 'earBt' ? (c === 'binary' ? t('binary', '2부 형식') : t('ternary', '3부 형식'))
+  : q.kind === 'part' ? t(c === 'piece' ? 'the piece' : c, FMX_PART_KO[c])
+  : q.kind === 'word' ? t(c, FMX_WORD_KO2[c])
+  : q.kind === 'pattern' ? c.split('').join(' ') : c;
+function fmxAnswerLabel(q) {
+  if (q.kind === 'word') return t(q.w[0] + ' = ' + q.w[1], FMX_WORD_KO2[q.w[0]] + ' = ' + q.w[2]);
+  if (q.kind === 'sd' || q.kind === 'earSd') return q.answer === 'same' ? t('the same music', '같은 음악') : t('different music', '다른 음악');
+  if (q.kind === 'part') return { bar: t('a bar', '마디'), phrase: t('a phrase', '프레이즈'), section: t('a section', '부분'), piece: t('the whole piece', '곡 전체') }[q.answer];
+  if (q.kind === 'letter') return t(q.answer + ' (' + q.ls.join(' ') + ')', q.answer + ' (' + q.ls.join(' ') + ')');
+  if (q.kind === 'bt' || q.kind === 'earBt') return q.ls.join(' ') + ': ' + fmxChoiceTxt(q.answer, q);
+  if (q.kind === 'road') return q.answer;
+  if (q.kind === 'pattern') return q.answer.split('').join(' ');
+  return fmxChoiceTxt(q.answer, q);
+}
+// blocks of letters (a map of sections); a '?' block dashed
+const fmxBlocks = (ls, size = 36, pixel) => <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap',margin:'2px 0 8px'}}>{ls.map((l, i) => <span key={i} style={{width:size * 1.3,height:size,display:'inline-flex',alignItems:'center',justifyContent:'center',borderRadius:6,border:'1.8px ' + (l === '?' ? 'dashed ' : 'solid ') + (pixel ? '#faf6ec' : PEN_N),fontFamily:LB_SERIF,fontSize:size * 0.6,fontWeight:900,color:pixel ? '#faf6ec' : PEN_N,background:pixel ? 'transparent' : '#fff'}}>{l}</span>)}</div>;
+function FmxQuestion({ q, given, locked, onAnswer, pixel }) {
+  const paper = locked && !given, isDone = !!given;
+  const board = useBoard(q, given), btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const ink = pixel ? '#faf6ec' : 'var(--text)', box = { background: pixel ? '#fff' : 'transparent', borderRadius: pixel ? 0 : 8, padding: pixel ? '2px 0' : 0 };
+  const st = (c) => !isDone ? '' : (String(c) === String(q.answer) ? ' good' : (String(given.ans) === String(c) ? ' bad' : ''));
+  const hear = () => { if (q.kind === 'earSd') fmxPlay(q.ids); else if (q.kind === 'earBt') fmxPlay(q.ls.map(l => q.ph[l])); };
+  useEffect(() => () => fmxStop(), [q.uid]);
+  useEffect(() => { if ((q.kind === 'earSd' || q.kind === 'earBt') && !locked) { const tm = setTimeout(hear, 350); return () => clearTimeout(tm); } }, [q.uid]);
+  const prompt = fmxKoT({ sd: t('Same music, or different?', '같은 음악일까요, 다른 음악일까요?'), earSd: t('Listen: same music, or different?', '듣고 골라요: 같은 음악? 다른 음악?'),
+    letter: t('Which letter does phrase 4 get?', '4번째 프레이즈에는 어떤 글자를 붙일까요?'), part: t('What is the coral part?', '산호색으로 칠한 곳은 무엇일까요?'),
+    bt: t('Binary or ternary?', '2부 형식일까요, 3부 형식일까요?'), earBt: t('Listen: binary or ternary?', '듣고 골라요: 2부 형식? 3부 형식?'),
+    road: t('In what order are the sections played?', '부분을 어떤 차례로 칠까요?'), word: t('Which word means this?', '이 뜻의 용어는 무엇일까요?'),
+    pattern: t('Which letters do the four phrases get?', '네 프레이즈에 어떤 글자가 붙을까요?') }[q.kind]);
+  const n = q.ids ? q.ids.length : 0, w = fmxVbw(['A'], false, 20);
+  const row = (id, j, lab) => <div key={j} style={{...box,margin:'0 0 4px'}}><FmxRow ids={[id]} end={q.kind !== 'sd' && j === n - 1} width={w} D={20} letters={lab ? [lab] : null} qmark={lab === '?' ? [0] : []}/></div>;
+  let pic = null;
+  if (q.kind === 'sd') pic = <>{q.ids.map((id, j) => row(id, j))}</>;
+  else if (q.kind === 'letter') pic = <>{q.ids.map((id, j) => row(id, j, j < 3 ? q.ls[j] : isDone ? q.ls[3] : '?'))}</>;
+  else if (q.kind === 'pattern') pic = <>{q.ids.map((id, j) => row(id, j, isDone ? fmxLettersOf(q.ids)[j] : String(j + 1)))}</>;
+  else if (q.kind === 'part') pic = <div style={{...box,maxWidth:paper ? 600 : 420,margin:'0 auto'}}><FmxMapSvg scr={!paper} quiz sel={q.sel} label={t('A map of a piece with one part coral.', '한 곳을 산호색으로 칠한 곡의 지도.')}/></div>;
+  else if (q.kind === 'bt') pic = <>{fmxBlocks(q.ls, pixel ? 30 : 40, pixel)}{q.ls.length === 4 && <div style={{textAlign:'center',fontSize:pixel ? 12 : 13,fontWeight:800,color:pixel ? '#faf6ec' : BK.muted,margin:'-4px 0 6px'}}>{t('each section played twice', '부분마다 두 번씩')}</div>}</>;
+  else if (q.kind === 'road') pic = <div style={box}><SgnRoad bars={FMX_ROADS[q.r].bars} rows={[[0, 3], [4, 7]]} rw={330} o={{ ts: 4 }} label={t('An eight-bar road with its signs.', '기호가 있는 여덟 마디 길.')}/></div>;
+  else if (q.kind === 'word') pic = <div style={{textAlign:'center',fontSize:pixel ? 13 : 20,fontWeight:900,color:ink,margin:'0 0 6px',textWrap:'balance',wordBreak:'keep-all'}}>“{t(q.w[1], q.w[2])}”</div>;
+  else pic = <div style={{textAlign:'center',margin:'4px 0 6px'}}><button className="ghost-btn" style={{minHeight:44}} onClick={hear}>{t('▶ Listen again', '▶ 다시 듣기')}</button>{isDone && q.kind === 'earBt' && fmxBlocks(q.ls, 32)}</div>;
+  const cols = q.kind === 'part' || q.kind === 'pattern' || q.kind === 'road' || q.kind === 'word' ? 2 : q.choices.length === 4 ? 4 : q.choices.length === 3 ? 3 : 2;
+  return <div>{!paper && <BoardTrack b={board} pixel={pixel}/>}
+    <p style={{fontSize:pixel ? 11.5 : 17,fontWeight:900,textAlign:'center',margin:'0 0 8px',color:ink,textWrap:'balance',wordBreak:'keep-all'}}>{prompt}</p>
+    {pic && <div style={{margin:'0 auto 8px',maxWidth:q.kind === 'part' ? (paper ? 600 : 420) : paper ? 400 : 460}}>{pic}</div>}
+    <div style={{display:'grid',gridTemplateColumns:'repeat(' + cols + ',minmax(0,1fr))',gap:8}}>{q.choices.map(c => <button key={c} disabled={locked} data-fmx-choice={c} onClick={() => { fmxStop(); onAnswer(c); }} className={btnCls + st(c)} style={{padding:'10px 4px',minHeight:48}}><span style={{fontSize:pixel ? (q.kind === 'letter' ? 20 : q.kind === 'pattern' || q.kind === 'road' ? 15 : 11) : q.kind === 'letter' ? 22 : 16.5,fontWeight:900,fontFamily:q.kind === 'letter' || q.kind === 'pattern' || q.kind === 'road' ? LB_SERIF : undefined,wordBreak:'keep-all'}}>{fmxChoiceTxt(c, q)}</span></button>)}</div>
+  </div>;
+}
+
+// ─── Phase 480: chapter 24's Workbook (pages 2 to 8: one per lesson step, my piece's map, the check-up) and the Teacher
+// copy (they replace the Phase 117 ones). Chapter 21's ivxAns and chapter 22's chxCircle are reused.
+const FMX_WB = {
+  try2: ['A', 'B', 'C', 'D'],                                     // mark the phrase, circle its resting note (A done)
+  turn2: [['B', 'E'], ['C', 'A']],                                 // eight bars, two phrases each: 4 and 4 (both end on C)
+  try3: [['A', 'A'], ['B', 'C'], ['D', 'D'], ['E', 'A']],         // same (done), different, same, different
+  turn3: ['B', 'C', 'B', 'A'],                                     // A B A C (ends on C)
+  try4: [['A', 'B'], ['A', 'B', 'A'], ['A', 'A', 'B', 'B'], ['A', 'B', 'C']],        // binary (done), ternary, binary, neither
+  try5: [['A', 'B', '?'], ['A', '?', 'A'], ['?', 'B', 'A'], ['?', 'B', '?']],         // A (done), B, A, A and A
+  try6: [['C D E F', 'G A G F', 'C D E F'], ['E G F E', 'G F E D', 'C D E F'], ['G F E D', 'E G F G', 'G F E D'], ['E G F G', 'G F E D']],   // the book's openings: A B A (done), A B C, A B A, A B
+  turn6: ['A', 'C', 'A'],                                          // twelve bars, three sections: A B A, ternary
+};
+const FMX_CHK = {
+  sd: [['B', 'B'], ['A', 'E']],                                   // same, different
+  bt: [['A', 'B', 'A'], ['A', 'A', 'B', 'B'], ['A', 'B']],        // ternary, binary, binary
+  word: ['phrase', 'repetition', 'contrast', 'section'],
+  pat: ['E', 'E', 'D', 'E'],                                       // A A B A (the first given: A)
+};
+const fmxChkNo = () => { const C = FMX_CHK, nB = C.sd.length + 1, nC = nB + C.bt.length, nD = nC + C.word.length; return { nB, nC, nD, total: nD + C.pat.length - 2 }; };
+const fmxWbRow = (ids, o = {}) => <div style={{width:'100%',maxWidth:o.mw || 9999,margin:'0 auto'}}><FmxRow ids={ids} ts={o.ts} tsRoom={o.tsRoom} secEnd={o.secEnd} marks={o.marks} rest={o.rest} letters={o.letters} qmark={o.qmark || []} coral={o.coral || []} width={o.w || fmxVbw(ids, o.ts, o.D || 17)} D={o.D || 17} n0={o.n0} end={o.end}/></div>;
+const fmxWbBlocks = (ls, on, w = 34) => <div style={{display:'flex',gap:5,justifyContent:'center',margin:'4px 0'}}>{ls.map((l, i) => <span key={i} style={{width:w,height:w,display:'inline-flex',alignItems:'center',justifyContent:'center',borderRadius:5,border:'1.6px ' + (l === '?' ? 'dashed ' : 'solid ') + (on === i ? BK.coral : BK.ink),fontFamily:LB_SERIF,fontSize:w * 0.58,fontWeight:900,color:on === i ? BK.coral : BK.ink}}>{l === '?' ? (on === i ? 'A' : '') : l}</span>)}</div>;
+const fmxWbWords = (words, on) => <div style={{display:'flex',justifyContent:'center',gap:14,fontSize:13.5,fontWeight:800,color:BK.ink,margin:'2px 0'}}>{words.map(w => <span key={w} style={{border:'1.5px solid ' + (on === w ? BK.coral : 'transparent'),borderRadius:14,padding:'0 8px',color:on === w ? BK.coral : BK.ink}}>{w}</span>)}</div>;
+const fmxEmptyBars = (n = 4, label, pad = [22, 22]) => { const W0 = 620, x0 = 60, bw = (W0 - 8 - x0) / n;
+  return <div style={{width:'100%',maxWidth:620,margin:'0 auto'}}><SfStaff clef="treble" width={W0} pad={pad} label={label} extra={(yOf, layer) => layer !== 'over' ? null : <g>{Array.from({ length: n }, (_, i) => <line key={i} x1={x0 + (i + 1) * bw} x2={x0 + (i + 1) * bw} y1={yOf(38)} y2={yOf(30)} stroke={BK.ink} strokeWidth={i === n - 1 ? 1.5 : 1.3}/>)}</g>}/></div>; };
+const fmxWbLine = (h = 30) => <div style={{borderBottom:'1.3px solid ' + BK.line,height:h,margin:'auto 8px 4px'}}/>;
+
+function FmxWorkbook({ startNo = 1 }) {
+  const W = FMX_WB, pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + 1 + pages.length} chId="form">{content}</WbPage>);
+
+  // 2 (faces "The phrase")
+  P(<>
+    <WbTop step={1}/>
+    <Part kind="together" title="Mark the phrase" how="Draw the phrase mark under each phrase and circle its resting note. The first one is done.">
+      <BkGrid cols={2} gap="8px 10px">{W.try2.map((id, i) => <ExCell key={i} n={i + 1} ex={i === 0}>{sdyCol(fmxWbRow([id], { marks: i === 0, rest: i === 0 }), '22px 6px 10px')}</ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Two phrases" how="Each tune has two phrases. Draw a phrase mark under each, and write how many bars each phrase has.">
+      <BkGrid cols={2} gap="8px 10px">{W.turn2.map((ids, i) => <BkCell key={i} n={i + 5}>{sdyCol(<>{fmxWbRow([ids[0]], { ts: true, end: false, w: fmxVbw([ids[0]], true, 17) })}{fmxWbRow([ids[1]], { tsRoom: true, n0: 5, w: fmxVbw([ids[0]], true, 17) })}<div style={{display:'flex',justifyContent:'center',gap:16,flexWrap:'wrap',alignItems:'center',fontSize:13,fontWeight:800,color:BK.ink,marginTop:'auto',paddingTop:6}}><span style={{display:'flex',alignItems:'center',gap:8}}>Phrase 1: {bkBox(40, 30)} bars</span><span style={{display:'flex',alignItems:'center',gap:8}}>Phrase 2: {bkBox(40, 30)} bars</span></div></>, '22px 6px 8px')}</BkCell>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="One breath" how="Play the tunes above, each phrase in one breath. Lift your hand a little after each resting note. Tick each.">
+      {sskRowN(7, <div style={{display:'flex',flexDirection:'column',gap:6,width:'100%'}}>{fmxWbRow(['A'], { ts: true, marks: true, rest: true, end: false, D: 22, n0: 1, w: fmxVbw(['A'], true, 22), mw: 560 })}{fmxWbRow(['E'], { tsRoom: true, marks: true, rest: true, D: 22, n0: 5, w: fmxVbw(['A'], true, 22), mw: 560 })}{ivxTicks(['these two', 'tune 5', 'tune 6', 'a piece I know'])}</div>)}
+    </Part>
+    <Faces/>
+  </>);
+
+  // 3 (faces "Same or different")
+  P(<>
+    <WbTop step={2}/>
+    <Part kind="together" title="Same or different?" how="Compare the two phrases. Circle same or different. The first one is done.">
+      <BkGrid cols={2} gap="8px 10px">{W.try3.map(([a, b], i) => <ExCell key={i} n={i + 1} ex={i === 0}>{sdyCol(<>{fmxWbRow([a])}{fmxWbRow([b])}<div style={{marginTop:'auto'}}>{fmxWbWords(['same', 'different'], i === 0 ? (a === b ? 'same' : 'different') : null)}</div></>, '20px 6px 8px')}</ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Give the letters" how="Sixteen bars, four phrases. Write a letter in each box: the first is A; same music, same letter; new music, the next letter.">
+      <BkGrid cols={2} gap="8px 10px">{W.turn3.map((id, i) => <BkCell key={i} n={i + 5}>{sdyCol(fmxWbRow([id], { ts: i === 0, tsRoom: i > 0, letters: [''], qmark: [0], n0: i * 4 + 1, end: i === 3, w: fmxVbw([id], true, 17) }), '8px 6px 10px')}</BkCell>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Say the letters" how="Play the four phrases above, saying each letter as you start it. Tick when you can.">
+      {sskRowN(9, ivxTicks(['phrases 5 to 8', 'with my letters said aloud']))}
+    </Part>
+    <Faces/>
+  </>);
+
+  // 4 (faces "Binary form")
+  P(<>
+    <WbTop step={3}/>
+    <Part kind="together" title="Binary?" how="Each map shows a piece’s sections in the order they are played. Circle binary, ternary or neither. The first one is done.">
+      <BkGrid cols={4} gap="8px 10px">{W.try4.map((ls, i) => <ExCell key={i} n={i + 1} ex={i === 0}>{sdyCol(<>{fmxWbBlocks(ls, null, 32)}<div style={{marginTop:'auto',display:'flex',flexDirection:'column',alignItems:'center',gap:2}}>{['binary', 'ternary', 'neither'].map(w => <span key={w} style={{border:'1.5px solid ' + (i === 0 && w === 'binary' ? BK.coral : 'transparent'),borderRadius:14,padding:'0 8px',fontSize:13,fontWeight:800,color:i === 0 && w === 'binary' ? BK.coral : BK.ink}}>{w}</span>)}</div></>, '22px 2px 6px')}</ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="The order" how="Write the letters in the order the sections are played. You may not need every box.">
+      <BkGrid cols={1} gap="8px">{[['bin', 5], ['repA', 5]].map(([r, n], i) => <BkCell key={i} n={i + 5}>{sdyCol(<><div style={{maxWidth:530,margin:'0 auto',width:'100%'}}><SgnRoad bars={FMX_ROADS[r].bars} rows={[[0, 3], [4, 7]]} rw={560} o={{ ts: 4, nums: true }} label={'An eight-bar road with repeat signs.'}/></div>
+        <div style={{display:'flex',gap:8,justifyContent:'center',marginTop:6}}>{Array.from({ length: n }, (_, k) => <span key={k}>{bkBox(40, 36)}</span>)}</div></>, '14px 6px 8px')}</BkCell>)}</BkGrid>
+    </Part>
+    <Part kind="play" title="Play it twice" how="Play road 5 with both repeats, saying A A B B. Tick it.">
+      {sskRowN(7, ivxTicks(['road 5', 'saying the letters']))}
+    </Part>
+    <Faces/>
+  </>);
+
+  // 5 (faces "Ternary form")
+  P(<>
+    <WbTop step={4}/>
+    <Part kind="together" title="Make it ternary" how="Fill the empty boxes so the piece is ternary: A B A. The first one is done.">
+      <BkGrid cols={4} gap="8px 10px">{W.try5.map((ls, i) => <ExCell key={i} n={i + 1} ex={i === 0}>{sdyCol(fmxWbBlocks(ls, i === 0 ? 2 : null, 36), '42px 2px 30px')}</ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Follow the road" how="Write the bars in the order they are played, then the letters of the sections. You may not need every box.">
+      <BkCell n={5}>{sdyCol(<><div style={{maxWidth:600,margin:'0 auto',width:'100%'}}><SgnRoad bars={FMX_TER} rows={[[0, 3], [4, 7]]} rw={560} o={{ ts: 4, nums: true }} label={'Eight bars with Fine after bar 4 and D.C. al Fine after bar 8.'}/></div>
+        <div style={{display:'flex',gap:5,justifyContent:'center',marginTop:8}}>{Array.from({ length: 14 }, (_, k) => <span key={k}>{bkBox(34, 40)}</span>)}</div>
+        <div style={{display:'flex',gap:8,justifyContent:'center',alignItems:'center',marginTop:8,fontSize:13,fontWeight:800,color:BK.ink}}>Letters: {[0, 1, 2].map(k => <span key={k}>{bkBox(44, 42)}</span>)}</div></>, '20px 6px 16px')}</BkCell>
+    </Part>
+    <Part kind="play" title="Your own B" how="Play the road with D.C. al Fine. Then play A, make up your own B, and play A again. Tick each.">
+      {sskRowN(6, <div style={{display:'flex',flexDirection:'column',gap:4,width:'100%'}}><div style={{fontFamily:LB_SERIF,fontSize:17,fontWeight:900,color:BK.ink,textAlign:'center'}}>A <span style={{fontSize:13,fontFamily:'Inter, sans-serif',fontWeight:800,color:BK.muted}}>(bars 1 to 4)</span> · B <span style={{fontSize:13,fontFamily:'Inter, sans-serif',fontWeight:800,color:BK.muted}}>(my own, below)</span> · A</div>{fmxEmptyBars(4, 'Four empty bars for my own B.', [40, 36])}{ivxTicks(['the road', 'A, my own B, A'])}</div>)}
+    </Part>
+    <Faces/>
+  </>);
+
+  // 6 (faces "Finding the form")
+  P(<>
+    <WbTop step={5}/>
+    <Part kind="together" title="Find the form" how="Each map shows a piece’s sections in the order they are played. A box shows how its section starts; here, the same start means the same music. Write a letter for each section, then circle the form. The first one is done.">
+      <BkGrid cols={2} gap="8px 10px">{W.try6.map((st, i) => { const ls = fmxLettersOf(st), ter = ls.join('') === 'ABA';
+        return <ExCell key={i} n={i + 1} ex={i === 0}>{sdyCol(<><div style={{display:'grid',gridTemplateColumns:'repeat(' + st.length + ',1fr)',gap:6,textAlign:'center',fontSize:13.5,fontWeight:800,color:BK.ink,marginTop:6}}>{st.map((s, k) => <div key={k}>{s}<div style={{marginTop:4,display:'flex',justifyContent:'center'}}>{i === 0 ? <span style={{width:34,height:30,display:'inline-flex',alignItems:'center',justifyContent:'center',border:'1.5px solid ' + BK.coral,borderRadius:5,color:BK.coral,fontFamily:LB_SERIF,fontWeight:900,fontSize:17}}>{ls[k]}</span> : bkBox(34, 30)}</div></div>)}</div>
+          <div style={{marginTop:'auto',paddingTop:10}}>{chxCircle(['binary', 'ternary', 'neither'], i === 0 ? (ter ? 'ternary' : 'neither') : null)}</div></>, '20px 6px 6px')}</ExCell>; })}</BkGrid>
+    </Part>
+    <Part kind="home" title="Twelve bars" how="A piece in three sections, four bars each. Write a letter for each section, then circle its form.">
+      <BkCell n={5}>{sdyCol(<>{W.turn6.map((id, k) => <div key={k} style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) 58px minmax(0,380px) minmax(0,1fr)',alignItems:'center',gap:8}}><span/><div style={{display:'flex',justifyContent:'center'}}>{bkBox(40, 38)}</div>{fmxWbRow([id], { ts: k === 0, tsRoom: k > 0, n0: k * 4 + 1, end: k === 2, secEnd: k < 2, w: fmxVbw([id], true, 17), mw: 380 })}<span/></div>)}
+        <div style={{marginTop:2}}>{chxCircle(['binary', 'ternary', 'neither'])}</div></>, '10px 10px 8px')}</BkCell>
+    </Part>
+    <Part kind="play" title="Say it as you play" how="Play the twelve bars, saying each letter as its section starts. Then find the form of a piece you are learning, with the four steps. Tick each.">
+      {sskRowN(6, <div style={{display:'flex',flexDirection:'column',gap:4,width:'100%'}}>{['Find the sections: double bar lines, repeat signs, Fine.', 'Listen to each section: the same music as A, or new?', 'Same music, same letter; new music, the next letter.', 'Name the form.'].map((x, k) => <div key={k} style={{display:'flex',alignItems:'center',gap:10,fontSize:13.5,fontWeight:800,color:BK.ink}}><span style={{width:24,height:24,borderRadius:12,background:BK.ink,color:'#fff',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:13}}>{k + 1}</span>{x}</div>)}<div style={{marginTop:6}}>{ivxTicks(['the twelve bars', 'a piece I am learning'])}</div></div>)}
+    </Part>
+    <Faces/>
+  </>);
+
+  // 7. my piece's map (any piece); 8. the check-up on paper
+  P(<FmxMapPage/>);
+  P(<FmxPaperCheck/>);
+  return <>{pages}</>;
+}
+function FmxMapPage() {
+  const row = (label, node) => <div style={{display:'grid',gridTemplateColumns:'110px minmax(0,1fr)',alignItems:'center',gap:10,minHeight:46}}><div style={{fontSize:11.5,fontWeight:900,letterSpacing:'0.08em',textTransform:'uppercase',color:BK.muted}}>{label}</div><div>{node}</div></div>;
+  return <>
+    <WbTop step={7}/>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',gap:12,margin:'0 0 2px'}}>
+      <div style={{minWidth:0}}><div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em'}}>ANY PIECE</div><div style={{fontSize:12.5,color:BK.muted,textWrap:'pretty'}}>Write the piece’s name. Each new piece gets a fresh copy of this page.</div></div>
+      <span style={{display:'inline-block',width:230,borderBottom:'2px solid ' + BK.ink,height:26,flex:'0 0 auto'}}/></div>
+    <Part kind="together" title="My piece’s map" how="Like Lesson Book page 1. Write how many bars the piece has. On the bar ruler: over the bars of each section, draw a box with its letter; over the bars of each phrase, draw a curve. Cross out the bars the piece does not have.">
+      <div style={{display:'flex',flexDirection:'column',gap:8,border:'0.8px solid ' + BK.hair,padding:'10px 12px'}}>
+        {row('The piece', <div style={{display:'flex',alignItems:'center',gap:8,fontSize:13,fontWeight:800,color:BK.ink}}>{bkBox(60, 34)} bars</div>)}
+        {[0, 16].map(b0 => <div key={b0} style={{display:'grid',gridTemplateColumns:'110px minmax(0,1fr)',gap:10,alignItems:'stretch'}}>
+          <div style={{display:'flex',flexDirection:'column',justifyContent:'space-between',fontSize:11.5,fontWeight:900,letterSpacing:'0.08em',textTransform:'uppercase',color:BK.muted,padding:'6px 0 4px'}}><span style={{height:44,display:'flex',alignItems:'center'}}>Sections</span><span style={{height:36,display:'flex',alignItems:'center'}}>Phrases</span><span style={{height:26,display:'flex',alignItems:'center'}}>Bars</span></div>
+          <div style={{display:'flex',flexDirection:'column'}}>
+            <div style={{height:50,borderBottom:'0.8px dashed ' + BK.hair}}/>
+            <div style={{height:40,borderBottom:'0.8px dashed ' + BK.hair}}/>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(16,1fr)',border:'1.3px solid ' + BK.ink,height:28}}>{Array.from({ length: 16 }, (_, k) => <span key={k} style={{borderLeft:k ? '0.8px solid ' + BK.ink : 'none',fontSize:10.5,fontWeight:800,color:BK.muted,textAlign:'center',paddingTop:2,fontVariantNumeric:'tabular-nums'}}>{b0 + k + 1}</span>)}</div></div></div>)}
+        {row('Its form', <div style={{display:'flex',alignItems:'center'}}>{chxCircle(['binary', 'ternary', 'another form'])}</div>)}
+      </div>
+    </Part>
+    <Part kind="play" title="Play it by its map" how="Play the piece. Point to each section on your map as it starts. Tick when your teacher says yes.">
+      {sskRowN(1, ivxTicks(['the sections', 'the phrases', 'the form named']))}
+    </Part>
+    <Part kind="year" title="My pieces and their forms"><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'4px 18px'}}>{Array.from({ length: 12 }, (_, i) => <div key={i} style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) 110px',gap:8,borderBottom:'0.8px solid ' + BK.hair,height:36,alignItems:'end',fontSize:11.5,color:BK.muted}}><span/><span style={{borderLeft:'0.8px solid ' + BK.hair,paddingLeft:6}}>form</span></div>)}</div>
+      <div style={{fontSize:12.5,color:BK.muted,marginTop:6}}>Write each piece you learn and its form. Keep this on your first copy.</div></Part>
+    <Faces/>
+  </>;
+}
+function FmxPaperCheck() {
+  const C = FMX_CHK, { nB, nC, nD } = fmxChkNo();
+  return <div className="lb-paper" style={{display:'flex',flexDirection:'column',gap:10,flex:'1 0 auto'}}>
+    <LbPaperHead/>
+    {bkSec('A', 'Same or different? Circle one.')}
+    <BkGrid cols={2} gap="6px 10px">{C.sd.map(([a, b], i) => <BkCell key={i} n={i + 1}>{sdyCol(<>{fmxWbRow([a])}{fmxWbRow([b])}<div style={{marginTop:'auto'}}>{fmxWbWords(['same', 'different'])}</div></>, '20px 6px 8px')}</BkCell>)}</BkGrid>
+    {bkSec('B', 'Binary or ternary? Circle one. The boxes show the sections in the order they are played.')}
+    <BkGrid cols={3} gap="6px 10px">{C.bt.map((ls, i) => <BkCell key={i} n={nB + i}>{sdyCol(<>{fmxWbBlocks(ls, null, 36)}<div style={{marginTop:'auto'}}>{fmxWbWords(['binary', 'ternary'])}</div></>, '18px 4px 8px')}</BkCell>)}</BkGrid>
+    {bkSec('C', 'Write the word.')}
+    <BkGrid cols={4} gap="6px 10px">{C.word.map((w, i) => <BkCell key={i} n={nC + i}>{sdyCol(<><div style={{textAlign:'center',fontSize:13.5,fontWeight:800,color:BK.ink,marginTop:16,lineHeight:1.3,textWrap:'balance'}}>“{FMX_WORDS.find(x => x[0] === w)[1]}”</div>{fmxWbLine(46)}</>, '6px 2px 8px')}</BkCell>)}</BkGrid>
+    {bkSec('D', 'Write a letter for each phrase. The first is A.')}
+    <BkGrid cols={2} gap="6px 10px">{C.pat.map((id, i) => <BkCell key={i} n={i ? nD + i - 1 : ''}>{sdyCol(fmxWbRow([id], { ts: i === 0, tsRoom: i > 0, letters: [i ? '' : 'A'], qmark: i ? [0] : [], n0: i * 4 + 1, end: i === 3, w: fmxVbw([id], true, 17) }), '6px 6px 8px')}</BkCell>)}</BkGrid>
+  </div>;
+}
+
+function FmxTeacher() {
+  const W = FMX_WB, C = FMX_CHK, pages = [], { nB, nC, nD, total } = fmxChkNo();
+  const P = (content) => pages.push(<WbPage key={pages.length} no={pages.length + 1} chId="form" teacher>{content}</WbPage>);
+  const done = (i) => i === 0 ? ' (done)' : '';
+  const nm = (ls) => { const s = ls.join(''); return s === 'AB' || s === 'AABB' ? 'binary' : s === 'ABA' ? 'ternary' : 'neither'; };
+  P(<>
+    <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('form')}</div>
+    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 8px',lineHeight:1.5}}>{'Musical form: the piece, its sections, phrases, bars and beats (chapter ' + bkChapterNo('time-signatures') + ': bars and double bar lines; chapter ' + bkChapterNo('signs') + ': repeat signs, Fine, D.C. al Fine). AMEB Music Craft (2022): Grade 1, repetition and contrast in an eight-bar melody, repeat signs; Grade 2, the definition of phrase (and motif: chapter ' + bkChapterNo('melody') + '), binary and ternary form marked with A and B; Grade 3 (aural), A and B in a sixteen-bar four-phrase melody. Rondo comes at Grade 5 (the toolbox keeps it). Lesson Book page 1 is the map of a piece (piece, sections, phrases, bars, beats); the screen lesson ends with a piece the student builds from A and B. The book’s tunes are original, four-bar phrases from middle C.'}</div>
+    <div style={{border:'0.8px solid ' + BK.hair,padding:'6px 12px',margin:'0 0 8px',fontSize:12,color:BK.ink,lineHeight:1.45}}><b style={{color:BK.coral}}>Letters.</b> The first music is A; the same music keeps its letter; new music takes the next letter. Music that is nearly the same (a changed ending) keeps its letter; exam papers may write A1 or A′. Page 3’s letters name phrases; pages 4 to 6’s letters name sections (a section is one or more phrases): A A B A on page 3 is a pattern of phrases, not a form name. Binary: two sections, A and B, often each repeated (A A B B played). Ternary: A, B, A again, often written with D.C. al Fine. Many minuets are ‖: A :‖: B A :‖ (rounded binary): A’s tune comes back inside the second repeat. Call it binary at this level (two repeated sections) and point out the return; ternary needs a whole B between two whole A sections. Korean school books count 한도막 / 두도막 / 세도막 형식 in 8-bar 큰악절 (8, 8 + 8, 8 + 8 + 8; 작은 세도막 = 4 + 4 + 4) and call a 4-bar phrase 작은악절; by that count this book’s 8-bar binary road is 한도막 and its ternary road is 작은 세도막. This book names the form by its sections: 2부 / 3부 형식 for binary and ternary.</div>
+    <TcBlock page={2} title="The phrase" answers={<>{sscLesson('The picture’s two phrases, each in one breath, lifting after the resting note; then the phrases of a known piece, counted in bars.')}{skgTcAns('TRY IT', W.try2.map((id, i) => 'resting note ' + fmxLast(id) + done(i)))}{skgTcAns('YOUR TURN', W.turn2.map(() => '4 and 4 bars'), 5)}</>}
+      watch="A phrase mark drawn bar by bar instead of under the whole phrase. The resting note taken for a rest: it is a note, held. Lifting in the middle of a phrase."
+      say="“A phrase ends on a resting note.”"/>
+    <TcBlock page={3} title="Same or different" answers={<>{sscLesson('Four phrases, saying each letter (A A B A); the teacher plays two phrases and the child says same or different.')}{skgTcAns('TRY IT', W.try3.map(([a, b], i) => (a === b ? 'same' : 'different') + done(i)))}{skgTcAns('YOUR TURN', fmxLettersOf(W.turn3), 5)}</>}
+      watch="Letters given by the order of phrases (A B C D) instead of by their music. A new phrase after B given B again."
+      say="“Same music, same letter.”"/>
+    <TcBlock page={4} title="Binary form" answers={<>{sscLesson('The road with both repeats, saying A A B B; where A ends and B starts.')}{skgTcAns('TRY IT', W.try4.map((ls, i) => nm(ls) + done(i)))}{skgTcAns('YOUR TURN', [FMX_ROADS.bin.ls, FMX_ROADS.repA.ls], 5)}</>}
+      watch="A A B B called four sections: the repeats play each section twice; it is still two sections, binary. A B C is neither: a third, new section."
+      say="“Binary: A B.”"/>
+  </>);
+  P(<>
+    <TcBlock page={5} title="Ternary form" answers={<>{sscLesson('The road with D.C. al Fine (A B A); then A, the child’s own B, and A again.')}{skgTcAns('TRY IT', W.try5.map((ls, i) => ls.map((l, k) => l === '?' ? 'ABA'[k] : null).filter(Boolean).join(' and ') + done(i)))}{skgTcAns('YOUR TURN', ['bars 1 2 3 4 5 6 7 8 1 2 3 4 (two boxes empty); A B A'], 5)}</>}
+      watch="Stopping at the end of bar 8 instead of going back. Going back but playing past Fine."
+      say="“Ternary: A B A.”"/>
+    <TcBlock page={6} title="Finding the form" answers={<>{sscLesson('A piece the child is learning: its sections, letters and form.')}{skgTcAns('TRY IT', W.try6.map((st, i) => fmxLettersOf(st).join(' ') + ', ' + nm(fmxLettersOf(st)) + done(i)))}{skgTcAns('YOUR TURN', [fmxLettersOf(W.turn6).join(' ') + ', ' + nm(fmxLettersOf(W.turn6))], 5)}</>}
+      watch="A section judged only by its first notes: listen to the whole of it (a B can open like A). A B C named ternary: here it is neither."
+      say="“Find the sections, give the letters, name the form.”"/>
+    <TcBlock page={7} title="Any piece: my piece’s map (a fresh copy for each piece)" answers={<div style={{fontSize:12,color:BK.ink,lineHeight:1.5}}>The student’s own piece drawn like Lesson Book page 1: its bars in all, its sections with letters and bar numbers, a curve over each phrase, and its form. Pieces in other forms (rondo, theme and variations, song forms like A A B A): circle “another form” and name it together.</div>}/>
+    <TcBlock page={8} title="The check-up on paper (the Workbook’s last page)" answers={<>
+      {skgTcAns('A', C.sd.map(([a, b]) => a === b ? 'same' : 'different'))}
+      {skgTcAns('B', C.bt.map(ls => nm(ls)), nB)}
+      {skgTcAns('C', C.word, nC)}
+      {skgTcAns('D', fmxLettersOf(C.pat).slice(1), nD)}
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>One mark each: A {C.sd.length}, B {C.bt.length}, C {C.word.length}, D {C.pat.length - 1} (its first phrase is given: A); {total} in all. A section with a wrong answer is not passed yet: go back to its pages. Also listen to the student (My five checks, Lesson Book page 7).</div>
+    </>}
+      goBack={[{ id: 'a', step: '2', page: '3' }, { id: 'b', step: '3 and 4', page: '4 and 5' }, { id: 'c', step: '1 to 3', page: '2 to 4' }, { id: 'd', step: '2', page: '3' }]}/>
+    <div style={{border:'0.8px solid ' + BK.hair,padding:'6px 12px',margin:'0 0 8px',fontSize:12,color:BK.ink,lineHeight:1.5}}><b style={{color:BK.coral}}>The drill (after page 6).</b> 1 same or different · 2 which letter · 3 listening: same or different (screen only) · 4 bar, phrase, section or piece · 5 binary or ternary · 6 listening: binary or ternary (screen only) · 7 read the road · 8 the words · 9 extra: four phrases, four letters.</div>
+    <div style={{border:'0.8px solid ' + BK.hair,padding:'7px 12px',fontSize:12,color:BK.ink,lineHeight:1.5}}><b style={{color:BK.coral}}>My five checks (Lesson Book page 7).</b> 1. On page 1’s map, point to a section, a phrase, a bar and the beats. 2. Play page 2’s phrases, each to its resting note. 3. Give page 3’s four phrases their letters. 4. Play page 4’s road with its repeats, saying A A B B. 5. Play page 5’s road with D.C. al Fine, saying A B A. Got it! means right without help.</div>
+  </>);
+  return <>{pages}</>;
+}
+WORKBOOKS['form'] = FmxWorkbook;
+TEACHER_COPIES['form'] = FmxTeacher;
+
+Object.assign(FORM_DRILL, { levels: FMX_LEVELS, generate: genFmxQuestion, check: fmxCheck, answerLabel: fmxAnswerLabel, Question: FmxQuestion, Learn: FmxLearn });
+const LESSON_BOOKS = { 'posture-hands': PostureLessonBook, 'first-steps': FirstStepsLessonBook, 'note-names': NoteNamesLessonBook, staff: StaffLessonBook, 'whole-staff': WholeStaffLessonBook, 'ledger-lines': LedgerLessonBook, tones: TonesLessonBook, pulse: PulseLessonBook, 'note-values': NotesRestsLessonBook, 'time-signatures': TimeSignaturesLessonBook, 'reading-steps': ReadingStepsLessonBook, dynamics: DynamicsLessonBook, 'pitch-range': PitchRangeLessonBook, tempo: TempoLessonBook, rhythm: RhythmLessonBook, scales: ScalesLessonBook, accidentals: AccidentalsLessonBook, 'piano-story': PianoStoryLessonBook, 'key-signatures': KeySigLessonBook, signs: SignsLessonBook, intervals: IntervalsLessonBook, chords: ChordsLessonBook, terms: TermsLessonBook, form: FormLessonBook };
 // Phase 394: chapters whose first and last pages are shared by both books
-const LB_PAGE_FNS = { 'posture-hands': postureLbPages, 'first-steps': fsLbPages, 'note-names': nnLbPages, staff: sfLbPages, 'whole-staff': wsLbPages, 'ledger-lines': llLbPages, tones: tnLbPages, pulse: plLbPages, 'note-values': nvLbPages, 'time-signatures': tsLbPages, 'reading-steps': sskLbPages, dynamics: sdyLbPages, 'pitch-range': sprLbPages, tempo: stmLbPages, rhythm: srhLbPages, scales: sscLbPages, accidentals: sacLbPages, 'piano-story': spsLbPages, 'key-signatures': skgLbPages, signs: sgnLbPages, intervals: ivxLbPages, chords: chxLbPages, terms: tmxLbPages };   // Phase 455: tones and pulse too, so each workbook page faces its own lesson page
+const LB_PAGE_FNS = { 'posture-hands': postureLbPages, 'first-steps': fsLbPages, 'note-names': nnLbPages, staff: sfLbPages, 'whole-staff': wsLbPages, 'ledger-lines': llLbPages, tones: tnLbPages, pulse: plLbPages, 'note-values': nvLbPages, 'time-signatures': tsLbPages, 'reading-steps': sskLbPages, dynamics: sdyLbPages, 'pitch-range': sprLbPages, tempo: stmLbPages, rhythm: srhLbPages, scales: sscLbPages, accidentals: sacLbPages, 'piano-story': spsLbPages, 'key-signatures': skgLbPages, signs: sgnLbPages, intervals: ivxLbPages, chords: chxLbPages, terms: tmxLbPages, form: fmxLbPages };   // Phase 455: tones and pulse too, so each workbook page faces its own lesson page
 // Phase 409: the Workbook no longer repeats the book's opener; its last page is the check-up on paper (the book's
 // last page keeps only the at-the-piano checks). Chapter 4 builds its own check-up page.
 const LB_PAPER_PAGES = { 'posture-hands': () => <PhPaperCheck/>, 'first-steps': () => <FsPaperCheck/>, 'note-names': () => <NnPaperCheck/> };
