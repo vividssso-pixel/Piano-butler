@@ -1598,7 +1598,7 @@ function Lesson({ id, title, intro, children, onStart, startLabel, head, noArt }
 }
 function LessonMore({ id }) {
   const own = { 'posture-hands': ['sit-check', 'arm-moves', 'hand-shape'], 'whole-staff': ['rhymes'] }[id] || [];
-  const list = (CHAPTER_TOOL_ORDER[id] || []).filter(x => !/^(sdy|ssk|srh|ssc|stm|sps|spr|skg|sgn|ivx|chx|sac|ts|nv)-/.test(x) && !own.includes(x)).map(x => TOOLS.find(tl => tl.id === x)).filter(Boolean);
+  const list = (CHAPTER_TOOL_ORDER[id] || []).filter(x => !/^(sdy|ssk|srh|ssc|stm|sps|spr|skg|sgn|ivx|chx|tmx|sac|ts|nv)-/.test(x) && !own.includes(x)).map(x => TOOLS.find(tl => tl.id === x)).filter(Boolean);
   if (!list.length) return null;
   return <div style={{margin:'14px 0 0',padding:'10px 12px',border:'1px solid rgba(38,41,107,0.16)',borderRadius:10,background:'#fff'}}>
     <div style={{fontSize:14,fontWeight:900,color:'var(--text)',margin:'0 0 6px'}}>{t('More in the toolbox', '툴박스에 더 있어요')}</div>
@@ -12361,7 +12361,7 @@ const TERMS = [
   ['Allegro', '', 'lively and fast', 'Speed', 1, { bpm: 144 }], ['Presto', '', 'very fast', 'Speed', 1, { bpm: 184 }],
   ['Accelerando', 'accel.', 'gradually becoming faster', 'Changing speed', 1, { from: 84, to: 168 }], ['Rallentando', 'rall.', 'gradually becoming slower', 'Changing speed', 1, { from: 140, to: 60 }],
   ['Ritardando', 'ritard., rit.', 'gradually becoming slower', 'Changing speed', 1, { from: 140, to: 60 }], ['Ritenuto', 'riten., rit.', 'immediately slower, or held back', 'Changing speed', 1, { from: 140, to: 70, sudden: true }],
-  ['A tempo', '', 'return to former speed', 'Changing speed', 1, { from: 70, to: 140, sudden: true }],
+  ['A tempo', '', 'return to former speed', 'Changing speed', 1, { from: 120, to: 72, back: true }],
   ['Crescendo', 'cres., cresc.', 'gradually becoming louder', 'Volume', 1, { vFrom: 0.06, vTo: 0.5 }], ['Decrescendo', 'decres., decresc.', 'gradually becoming softer', 'Volume', 1, { vFrom: 0.5, vTo: 0.06 }],
   ['Diminuendo', 'dim.', 'gradually becoming softer', 'Volume', 1, { vFrom: 0.5, vTo: 0.06 }], ['Forte', 'f', 'loud', 'Volume', 1, { vol: 0.4 }], ['Piano', 'p', 'soft', 'Volume', 1, { vol: 0.08 }],
   ['Legato', '', 'smoothly, well connected', 'Other', 1, { len: 1.02 }], ['Staccato', '', 'detached, short', 'Other', 1, { len: 0.2 }],
@@ -12404,7 +12404,7 @@ function playTerm(tm) {
     let at = ctx.currentTime + 0.08; const N = h.from ? 12 : 8;
     for (let i = 0; i < N; i++) {
       const u = i / (N - 1);
-      const bpm = h.bpm || (h.rubato ? 100 * (1 + 0.35 * Math.sin(i * 1.3)) : h.sudden ? (i < N / 2 ? h.from : h.to) : h.from + (h.to - h.from) * u) || 100;
+      const bpm = h.bpm || (h.rubato ? 100 * (1 + 0.35 * Math.sin(i * 1.3)) : h.back ? (i >= N / 3 && i < 2 * N / 3 ? h.to : h.from) : h.sudden ? (i < N / 2 ? h.from : h.to) : h.from + (h.to - h.from) * u) || 100;
       metroClick(ctx, at, i % 4 === 0, i % 4 === 0 ? 0.3 : 0.18);
       at += 60 / bpm;
     }
@@ -18918,6 +18918,12 @@ const TOOLS = [
   { id: 'minor-forms', ch: 'scales', title: 'Three kinds of minor', blurb: 'Natural, harmonic, melodic: side by side on A minor.', C: () => <MinorFormsCard/> },
   { id: 'degree-names', ch: 'scales', title: 'Scale degree names', blurb: 'Tonic, supertonic... leading note.', C: () => <DegreeNames/> },
   { id: 'transpose', ch: 'key-signatures', title: 'Transpose a tune', blurb: 'Same scale degrees, new key.', C: () => <><ExplKeySig2/><Transposer/></> },
+  { id: 'tmx-map', ch: 'terms', title: 'The expression ladder', blurb: 'Every word for how to play, by family: tap one to hear it and read it.', C: () => <TmxMapPad/> },
+  { id: 'tmx-speed', ch: 'terms', title: 'The speed ladder', blurb: 'Largo to Prestissimo: tap a rung, hear its speed.', C: () => <TmxSpeedPad/> },
+  { id: 'tmx-change', ch: 'terms', title: 'Changing speed', blurb: 'accel., rall., rit., riten. and a tempo, as beats you can hear.', C: () => <TmxChangePad/> },
+  { id: 'tmx-vol', ch: 'terms', title: 'Loud and soft', blurb: 'pp to ff one rung at a time, the hairpins and sf.', C: () => <TmxVolPad/> },
+  { id: 'tmx-touch', ch: 'terms', title: 'Touch and character', blurb: 'Legato, staccato, mezzo staccato, and five character words.', C: () => <TmxTouchPad/> },
+  { id: 'tmx-build', ch: 'terms', title: 'Little words', blurb: 'poco, molto, sempre, senza, più, meno, con: how they change a term.', C: () => <TmxBuildPad/> },
   { id: 'term-match', ch: 'terms', title: 'Term match', blurb: 'Memory pairs: term and meaning, spoken aloud.', C: () => <TermMatch/> },
   { id: 'term-sort', ch: 'terms', title: 'Four families of terms', blurb: 'Speed, changing speed, loud and soft, or mood and touch? Sort each word, then hear it.', C: () => <TermSort/> },
   { id: 'term-mixer', ch: 'terms', title: 'Little words, big changes', blurb: 'Molto, assai, poco, non troppo, sempre: hear how they change a term.', C: () => <TermMixer/> },
@@ -19149,6 +19155,12 @@ const TOOL_KO = {
   'minor-forms': ['단조의 세 가지 형태', '자연, 화성, 가락: 가단조로 나란히 비교해요.'],
   'degree-names': ['음계 이름', '으뜸음, 윗으뜸음... 이끔음.'],
   'transpose': ['선율 조옮김', '음계 위치는 그대로, 새로운 조로.'],
+  'tmx-map': ['표현의 사다리', '어떻게 칠지 알려 주는 말을 종류별로 모았어요. 누르면 소리를 듣고 뜻을 읽어요.'],
+  'tmx-speed': ['빠르기 사다리', '라르고부터 프레스티시모까지: 칸을 누르면 그 빠르기가 들려요.'],
+  'tmx-change': ['빠르기 변화', '아첼레란도, 랄렌탄도, 리타르단도, 리테누토, 아 템포를 박으로 들어요.'],
+  'tmx-vol': ['셈여림', 'pp부터 ff까지 한 칸씩, 헤어핀과 sf.'],
+  'tmx-touch': ['터치와 느낌', '레가토, 스타카토, 메조 스타카토, 그리고 느낌을 나타내는 말 다섯 개.'],
+  'tmx-build': ['꾸며 주는 말', '포코, 몰토, 셈프레, 센차, 피우, 메노, 콘을 붙이면 뜻이 어떻게 바뀌는지 들어 봐요.'],
   'term-match': ['용어 짝 맞추기', '기억력 짝 게임: 용어와 뜻을 소리 내어 읽어 줘요.'],
   'term-cards': ['용어 카드', '음악 용어, 1-4급, 소리와 함께.'],
   'term-sort': ['용어의 네 가족', '빠르기, 빠르기 변화, 셈여림, 느낌과 터치? 단어를 나누고 들어 봐요.'],
@@ -19328,11 +19340,11 @@ TOOLS.forEach(tl => { const k = TOOL_KO[tl.id]; if (!k) return; const ti = tl.ti
 const GRADE_TAGS = {
   'posture-hands': 'Beginner', 'first-steps': 'Beginner', 'note-names': 'Prelim', 'whole-staff': 'Prelim–G1', pulse: 'Beginner', 'note-values': 'Prelim', rhythm: 'Prelim–G2', staff: 'Prelim',
   'reading-steps': 'Beginner', 'time-signatures': 'Prelim–G2', tempo: 'Prelim–G1', dynamics: 'Prelim–G1',
-  'ledger-lines': 'Prelim–G2', tones: 'Prelim–G1', accidentals: 'Prelim–G1', scales: 'Prelim–G3', 'key-signatures': 'Prelim–G1', intervals: 'Prelim–G3', chords: 'Prelim–G3', signs: 'G1–G2', terms: 'G1–G4',
+  'ledger-lines': 'Prelim–G2', tones: 'Prelim–G1', accidentals: 'Prelim–G1', scales: 'Prelim–G3', 'key-signatures': 'Prelim–G1', intervals: 'Prelim–G3', chords: 'Prelim–G3', signs: 'G1–G2', terms: 'Prelim–G2',
   'piano-story': 'General knowledge', 'pitch-range': 'General knowledge', 'melody': 'Prelim–G2', 'form': 'Prelim–G3', 'styles': 'General knowledge', 'composers': 'General knowledge',
 };
 function stageOf(id) { return STAGES.find(s => s.ids.includes(id)); }
-const STEP_EXTRA = { scales: '6', 'key-signatures': 'k7', intervals: 'k7', chords: 'k7' };   // the screen lesson's extra last step (not counted)
+const STEP_EXTRA = { scales: '6', 'key-signatures': 'k7', intervals: 'k7', chords: 'k7', terms: 'k7' };   // the screen lesson's extra last step (not counted)
 function stepsDone(id) { const d = loadDone()[id] || {}; return Object.keys(d).filter(k => d[k] && !skgOldStep(id, k) && STEP_EXTRA[id] !== k).length; }
 // Phase 211 (2026-09-29): chapter-picker gallery. Every chapter now has a hero illustration
 // (finished Phase 210), so the "All chapters" screen shows those as tappable thumbnails instead
@@ -19408,8 +19420,8 @@ const PATH_STAGES = [   // Phase 436: five levels, the floors of the house, in t
   { ids: ['posture-hands', 'first-steps', 'pulse', 'note-names', 'note-values', 'staff'], en: ['Level 1', 'Sitting well, the keys and their letters, a steady beat, the first note values and the staff.'], ko: ['1층', '바른 자세, 건반과 글자, 일정한 박, 처음 음표 길이, 그리고 오선.'] },
   { ids: ['whole-staff', 'time-signatures', 'reading-steps', 'dynamics', 'tones', 'pitch-range'], en: ['Level 2', 'Both staves, bar lines and time signatures, the first tunes, loud and soft, half and whole steps, high and low.'], ko: ['2층', '두 오선, 세로줄과 박자표, 첫 선율, 셈여림, 반 걸음과 온 걸음, 높고 낮은 소리.'] },
   { ids: ['tempo', 'rhythm', 'ledger-lines', 'scales', 'accidentals', 'piano-story'], en: ['Level 3', 'Speed, quavers and dots, ledger lines, scales, accidentals, and the piano’s own story.'], ko: ['3층', '빠르기, 8분음표와 점, 덧줄, 스케일, 임시표, 그리고 피아노 이야기.'] },
-  { ids: ['key-signatures', 'signs', 'intervals', 'chords', 'composers', 'melody'], en: ['Level 4', 'Key signatures, signs, intervals and chords, the composers, and how a tune is shaped.'], ko: ['4층', '조표, 기호, 음정과 화음, 작곡가, 그리고 선율의 모양.'] },
-  { ids: ['form', 'terms', 'styles', 'more-scales'], en: ['Level 5', 'How pieces are built, the Italian terms, and the styles of music.'], ko: ['5층', '곡의 짜임, 이탈리아어 용어, 그리고 음악의 스타일.'] },
+  { ids: ['key-signatures', 'signs', 'intervals', 'chords', 'terms', 'form'], en: ['Level 4', 'Key signatures, signs, intervals and chords, the words for how to play, and how a piece is built.'], ko: ['4층', '조표, 기호, 음정과 화음, 음악 용어, 그리고 곡의 짜임.'] },
+  { ids: ['melody', 'composers', 'styles', 'more-scales'], en: ['Level 5', 'How a tune is shaped, music through time, and more scales.'], ko: ['5층', '선율의 모양, 시대별 음악, 그리고 더 많은 음계.'] },
 ];
 const pathStageIds = (s) => s.ids.filter(id => DRILLS.find(d => d.id === id));   // a room waits off the map until its chapter exists (accidentals; more-scales: pentatonic, blues, whole-tone, the modes)
 const pathIds = () => PATH_STAGES.flatMap(pathStageIds);
@@ -19417,7 +19429,7 @@ const pathIds = () => PATH_STAGES.flatMap(pathStageIds);
 const STAGES = PATH_STAGES.map((st, n) => ({ n, en: st.en, ko: st.ko, title: st.en[0], blurb: st.en[1], ids: pathStageIds(st) }));
 function loadStepTotals() { try { return JSON.parse(localStorage.getItem(STEPS_TOTAL_KEY)) || {}; } catch (e) { return {}; } }
 // 'new' | 'started' | 'done' (every Learn step ticked)
-const STEPS_TOTAL_NOW = { chords: 6 };   // rebuilt lessons: their own count, never an older, larger synced total
+const STEPS_TOTAL_NOW = { chords: 6, terms: 6 };   // rebuilt lessons: their own count, never an older, larger synced total
 function chapterStatus(id, totals) {
   const n = stepsDone(id), tot = STEPS_TOTAL_NOW[id] || (totals || loadStepTotals())[id];
   return n === 0 ? 'new' : tot && n >= tot ? 'done' : 'started';
@@ -19512,7 +19524,7 @@ const ROOM_AFTER = { 'first-steps': ['posture-hands'], 'note-names': ['first-ste
   'whole-staff': ['staff'], 'time-signatures': ['note-values', 'staff'], 'reading-steps': ['whole-staff', 'time-signatures'], dynamics: ['reading-steps'], tones: ['whole-staff'], 'pitch-range': ['first-steps', 'staff'],
   tempo: ['pulse', 'note-values'], rhythm: ['time-signatures'], 'ledger-lines': ['whole-staff'], scales: ['tones'], accidentals: ['tones', 'reading-steps'],
   'key-signatures': ['scales', 'accidentals'], signs: ['time-signatures', 'reading-steps'], intervals: ['reading-steps', 'scales'], chords: ['intervals', 'key-signatures'], composers: ['piano-story'], 'piano-story': ['dynamics', 'pitch-range'], melody: ['reading-steps', 'signs'],
-  form: ['melody', 'signs'], terms: ['dynamics', 'tempo'], styles: ['composers'] };
+  form: ['signs', 'reading-steps'], terms: ['dynamics', 'tempo'], styles: ['composers'] };
 function AfterNote({ id, onOpen }) {
   const ids = pathIds(), before = (ROOM_AFTER[id] || []).filter(x => ids.includes(x));
   const show = UI_TEACHER ? before : before.filter(x => chapterState(x).status !== 'done');
@@ -19607,7 +19619,7 @@ const CHAPTER_SEARCH_TERMS = {
   'reading-steps': 'sight reading step skip melody hear find which tune spot the change wrong note',
   'posture-hands': 'posture hand shape beginner sit stool arm weight alignment finger number which finger thumb',
   'first-steps': 'black key small house big house roof first song white neighbour keyboard pattern whole piano 88 keys middle c pentatonic jam improvise band note names letter name c d e f g a b',
-  'terms': 'italian term tempo word meaning',
+  'terms': 'italian term tempo word meaning speed largo lento adagio andante moderato allegretto allegro vivace presto prestissimo accelerando rallentando ritardando ritenuto a tempo dynamics crescendo sforzando legato staccato mezzo staccato sostenuto cantabile leggiero maestoso espressivo molto poco sempre senza piu meno con moto mosso expression ladder',
   'tempo': 'tempo speed italian term metronome mark bpm',
   'practice': 'practice timer dice repetition',
   'piano-story': 'history piano era composer hammer damper string key action inside pedal una corda sustain sostenuto grand upright',
@@ -19705,7 +19717,7 @@ const TOOL_META = {
   'invert-interval': ['intervals', 3, 3, 'show'], 'tritone': ['intervals', 3, 3, 'show ear'], 'chx-clock': ['harmony', 1, 3, 'show ear'], 'chx-stack': ['harmony', 1, 2, 'show ear'], 'chx-mm': ['harmony', 1, 3, 'show ear'], 'chx-tonic': ['harmony', 1, 3, 'show ear'], 'chx-145': ['harmony', 2, 3, 'show ear'], 'chx-hands': ['harmony', 1, 2, 'game ear'], 'triad-stack': ['harmony', 1, 3, 'show'], 'major-minor': ['harmony', 2, 3, 'ear show'],
   'key-chords': ['harmony', 2, 3, 'show'], 'primary-triads': ['harmony', 2, 3, 'show ear'], 'inversions': ['harmony', 3, 3, 'show'], 'cadences': ['harmony', 3, 3, 'ear show'],
   'seventh-chords': ['harmony', 3, 3, 'show ear'], 'chord-extensions': ['harmony', 3, 3, 'show'],
-  'sgn-rep': ['words', 1, 2, 'game ear'], 'sgn-volta': ['words', 1, 2, 'game ear'], 'sgn-dc': ['words', 1, 2, 'game ear'], 'sgn-ds': ['words', 1, 2, 'game ear'], 'sgn-pause': ['words', 1, 2, 'show ear'], 'road-map': ['words', 1, 2, 'game'], 'term-cards': ['words', 1, 3, 'home show'], 'term-match': ['words', 1, 3, 'game home'], 'term-sort': ['words', 1, 3, 'game'], 'term-mixer': ['words', 2, 3, 'show ear'],
+  'sgn-rep': ['words', 1, 2, 'game ear'], 'sgn-volta': ['words', 1, 2, 'game ear'], 'sgn-dc': ['words', 1, 2, 'game ear'], 'sgn-ds': ['words', 1, 2, 'game ear'], 'sgn-pause': ['words', 1, 2, 'show ear'], 'road-map': ['words', 1, 2, 'game'], 'tmx-map': ['words', 1, 3, 'show ear'], 'tmx-speed': ['words', 1, 2, 'show ear'], 'tmx-change': ['words', 1, 2, 'show ear'], 'tmx-vol': ['words', 1, 2, 'show ear'], 'tmx-touch': ['words', 1, 2, 'show ear'], 'tmx-build': ['words', 2, 3, 'show ear'], 'term-cards': ['words', 1, 3, 'home show'], 'term-match': ['words', 1, 3, 'game home'], 'term-sort': ['words', 1, 3, 'game'], 'term-mixer': ['words', 2, 3, 'show ear'],
   'practice-timer': ['practice', 0, 3, 'home'], 'practice-dice': ['practice', 0, 3, 'home game'], 'perfect-counter': ['practice', 0, 3, 'home'],
   'sps-sound': ['about', 0, 2, 'game ear'], 'sps-softloud': ['about', 0, 2, 'game ear'], 'sps-action': ['about', 0, 2, 'show game ear'], 'sps-pedals': ['about', 0, 2, 'game ear'], 'sps-keys': ['about', 0, 2, 'show ear'],
   'keyboard-ancestors': ['about', 0, 3, 'show ear'], 'piano-timeline': ['about', 1, 3, 'show'], 'piano-action': ['about', 0, 3, 'show ear'], 'eras': ['about', 1, 3, 'show ear'], 'spr-zone': ['about', 0, 1, 'game ear'], 'spr-big': ['about', 0, 1, 'game ear'], 'spr-fam': ['about', 0, 2, 'game'], 'spr-ladder': ['about', 0, 2, 'game ear'], 'spr-range': ['about', 0, 3, 'show game'], 'hz-explorer': ['about', 1, 3, 'show ear'], 'string-lab': ['about', 0, 3, 'show ear'], 'size-pitch': ['about', 0, 2, 'game ear'], 'octave-ladder': ['about', 1, 3, 'game ear'], 'range-chart': ['about', 1, 3, 'show ear'],
@@ -20288,7 +20300,7 @@ function ToolRow({ t, color, starred, onStar, open, onToggle, onChapter }) {
 // Phase 226: tools inside a chapter group follow that chapter's own step order.
 // New lesson-only pieces now live in the Toolbox too; borrow a sibling's icon until the design-phase redraw.
 [['time-sig-numbers', 'count-along'], ['note-value-tree', 'split-it'], ['dotted-notes', 'dot-lab'], ['rhythm-cards-all', 'make-card'], ['all-keys', 'circle-fifths'],
- ['major-shape', 'build-major'], ['major-fingering', 'scale-finder'], ['minor-fingering', 'minor-forms'], ['dc-ds-coda', 'road-map'], ['sgn-rep', 'road-map'], ['sgn-volta', 'road-map'], ['sgn-dc', 'dc-ds-coda'], ['sgn-ds', 'dc-ds-coda'], ['sgn-pause', 'road-map'], ['ivx-ladder', 'scale-intervals'], ['ivx-count', 'interval-ruler'], ['ivx-hand', 'interval-ruler'], ['ivx-big', 'interval-ruler'], ['ivx-mh', 'interval-ear'], ['ivx-tonic', 'scale-intervals'], ['chx-clock', 'major-minor'], ['chx-stack', 'triad-stack'], ['chx-mm', 'major-minor'], ['chx-tonic', 'key-chords'], ['chx-145', 'primary-triads'], ['chx-hands', 'primary-triads'], 
+ ['major-shape', 'build-major'], ['major-fingering', 'scale-finder'], ['minor-fingering', 'minor-forms'], ['dc-ds-coda', 'road-map'], ['sgn-rep', 'road-map'], ['sgn-volta', 'road-map'], ['sgn-dc', 'dc-ds-coda'], ['sgn-ds', 'dc-ds-coda'], ['sgn-pause', 'road-map'], ['ivx-ladder', 'scale-intervals'], ['ivx-count', 'interval-ruler'], ['ivx-hand', 'interval-ruler'], ['ivx-big', 'interval-ruler'], ['ivx-mh', 'interval-ear'], ['ivx-tonic', 'scale-intervals'], ['chx-clock', 'major-minor'], ['chx-stack', 'triad-stack'], ['chx-mm', 'major-minor'], ['chx-tonic', 'key-chords'], ['chx-145', 'primary-triads'], ['chx-hands', 'primary-triads'], ['tmx-map', 'term-cards'], ['tmx-speed', 'tempo-race'], ['tmx-change', 'tempo-race'], ['tmx-vol', 'dyn-order'], ['tmx-touch', 'touch-lengths'], ['tmx-build', 'term-match'], 
  ['finger-friends', 'finger-numbers'], ['accidental-cards', 'sharp-flat'], ['ts-bars', 'bar-lines'], ['ssk-shape', 'complete-melody'], ['ssk-step', 'step-skip'], ['ssk-cpos', 'five-positions'], ['ssk-gpos', 'five-positions'], ['ssk-read', 'mini-tune'], ['sdy-pf', 'dyn-order'], ['sdy-ladder', 'dyn-order'], ['sdy-hair', 'hairpin'], ['sdy-touch', 'touch-lengths'], ['sdy-tie', 'tie-slur'], ['spr-zone', 'range-chart'], ['skg-every', 'place-it'], ['skg-g', 'sharps-order'], ['skg-f', 'flats-order'], ['skg-acc', 'sharp-flat'], ['skg-five', 'circle-fifths'], ['sps-sound', 'keyboard-ancestors'], ['sps-softloud', 'keyboard-ancestors'], ['sps-action', 'keyboard-ancestors'], ['sps-pedals', 'pedal'], ['sps-keys', 'range-chart'], ['spr-big', 'size-pitch'], ['spr-fam', 'size-pitch'], ['spr-ladder', 'size-pitch'], ['spr-range', 'range-chart'], ['stm-sf', 'tempo-walk'], ['stm-words', 'tempo-race'], ['stm-read', 'tempo-race'], ['stm-metro', 'metronome'], ['stm-steady', 'tap-tempo'], ['srh-beams', 'grouping'], ['srh-alone', 'beam-apples'], ['srh-dot', 'dot-lab'], ['srh-up', 'anacrusis'], ['srh-read', 'rhythm-cards-all'], ['sac-signs', 'accidental-cards'], ['sac-natural', 'sharp-flat'], ['sac-bar', 'accidental-bar'], ['sac-line', 'accidental-bar'], ['sac-tune', 'ssk-read'], ['ssc-steps', 'major-shape'], ['ssc-fingers', 'major-fingering'], ['ssc-degrees', 'degree-names'], ['ssc-g', 'build-major'], ['ssc-f', 'scale-finder'], ['ts-numbers', 'time-sig-numbers'], ['ts-strong', 'beat-groups'], ['ts-build', 'fill-bar'], ['ts-tie', 'tie-slur'], ['nv-walk', 'count-aloud'], ['nv-hold', 'split-it'], ['nv-long', 'note-value-tree'], ['nv-run', 'beam-apples'], ['nv-rests', 'note-rest-naming'], ['count-ring', 'count-aloud'], ['silent-beats', 'beat-target'], ['finger-beat', 'finger-numbers']].forEach(([a, b]) => { if (!TOOL_ICON[a] && TOOL_ICON[b]) TOOL_ICON[a] = TOOL_ICON[b]; });
 const CHAPTER_TOOL_ORDER = {
   'chords': ['chx-clock', 'chx-stack', 'chx-mm', 'chx-tonic', 'chx-145', 'chx-hands', 'triad-stack', 'major-minor', 'key-chords', 'primary-triads', 'inversions', 'cadences', 'chord-extensions', 'seventh-chords'],
@@ -20314,7 +20326,7 @@ const CHAPTER_TOOL_ORDER = {
   'styles': ['texture-types', 'texture-spotter', 'genre-traits', 'swing-feel', 'twelve-bar-blues'],
   'composers': ['era-worlds', 'movement-map', 'composer-time-machine', 'composer-cards', 'who-am-i', 'name-that-tune'],
   'tempo': ['stm-sf', 'stm-words', 'stm-read', 'stm-metro', 'stm-steady', 'metronome', 'tempo-walk', 'tempo-race', 'tap-tempo', 'same-tune-tempo', 'speed-change'],
-  'terms': ['term-sort', 'term-cards', 'term-mixer', 'term-match'],
+  'terms': ['tmx-map', 'tmx-speed', 'tmx-change', 'tmx-vol', 'tmx-touch', 'tmx-build', 'term-sort', 'term-cards', 'term-mixer', 'term-match'],
   'time-signatures': ['ts-bars', 'ts-numbers', 'ts-strong', 'ts-build', 'ts-tie', 'bar-lines', 'beat-groups', 'beat-target', 'fill-bar', 'fix-the-bar', 'rest-grouping', 'heard-bar', 'count-along', 'time-sig-numbers', 'common-cut', 'beat-doubler'],
   'tones': ['tone-semitone', 'accidental-cards', 'sharp-flat', 'accidental-bar', 'chromatic'],
   'accidentals': ['sac-signs', 'sac-natural', 'sac-bar', 'sac-line', 'sac-tune'],
@@ -40876,10 +40888,11 @@ function sdyMarks(yOf, items, m, k = {}, clef = 'treble') {
       // a tie between two line notes inside the staff stays flat in the space below them; any other end goes clear of
       // its head (a semibreve's a little more) and never along a line: a line note's slur end goes under the next line
       const inside = tie && onLine(A.y) && A.y < yBot - 1;
-      const end = (n) => { const y = n.y + 8.5 + (n.end === n.y ? 1.5 : 0); if (y < yTop - 2 || y > yBot + 2.5) return y;
+      const dotY = (n) => { const d = dots.find(q => Math.abs(q.x - n.x) < 0.5 && q.y > n.y); return d ? d.y : null; };
+      const end = (n) => { const dy = dotY(n); if (dy != null) return dy + 5.5; const y = n.y + 8.5 + (n.end === n.y ? 1.5 : 0); if (y < yTop - 2 || y > yBot + 2.5) return y;
         const near = lines.find(L => Math.abs(L - y) < 2.5); if (near == null) return y; return onLine(n.y) ? n.y + 12.5 : near + 3; };
       const y1 = inside ? A.y + 6.5 : end(A), y2 = inside ? B.y + 6.5 : end(B);
-      let apex = inside ? A.y + 7.9 : Math.max(y1, y2, ...span.slice(1, -1).map(n => n.y + 8.5)) + (tie ? 4.5 : Math.min(9, 3 + 1.5 * (b - a)));
+      let apex = inside ? A.y + 7.9 : Math.max(y1, y2, ...span.slice(1, -1).map(n => dotY(n) != null ? Math.max(n.y + 8.5, dotY(n) + 5) : n.y + 8.5)) + (tie ? 4.5 : Math.min(9, 3 + 1.5 * (b - a)));
       if (!inside && apex > yTop && apex < yBot + 2 && lines.some(L => Math.abs(L - apex) < 1.6)) apex += 2.2;
       const x1 = inside ? A.x + 5.5 : tie ? A.x + 4 : A.x, x2 = inside ? B.x - 5.5 : tie ? B.x - 4 : B.x, cy = 2 * apex - (y1 + y2) / 2;
       out.push('<path d="M' + pFix(x1) + ' ' + pFix(y1) + ' Q' + pFix((x1 + x2) / 2) + ' ' + pFix(cy) + ' ' + pFix(x2) + ' ' + pFix(y2) + '" fill="none" stroke="' + c + '" stroke-width="' + (inside ? 1.6 : 1.9) + '" stroke-linecap="round"/>');
@@ -46489,7 +46502,7 @@ const skgWhere = (d, clef = 'treble', en) => { const k = d - CLEFS[clef].low, or
 // Korean: a sign never parts from the syllable after it (a word joiner); 'ㄹ 수 있어요', '맨 윗줄', '맨 위 칸' on one line
 const skgKo = (x) => x.replace(/([♯♭♮])(?=[가-힣(])/g, '$1\u2060').replace(/(\S) 수 있어요/g, '$1\u00a0수\u00a0있어요').replace(/맨 (윗줄|위 칸|아랫줄)/g, '맨\u00a0$1');
 // the Phase 299 lesson's ticks (0 to 6, under the same id): not this lesson's steps (they are synced by union, so ignored, not deleted)
-function skgOldStep(id, k) { return (id === 'key-signatures' || id === 'signs' || id === 'intervals' || id === 'chords') && /^\d+$/.test(String(k)); }
+function skgOldStep(id, k) { return (id === 'key-signatures' || id === 'signs' || id === 'intervals' || id === 'chords' || id === 'terms') && /^\d+$/.test(String(k)); }
 
 // how each note of a tune sounds in a key: the key signature, unless an accidental earlier in its bar (on its own line or
 // space) says otherwise. byKey: changed by the key signature; held / natHeld: an accidental earlier in the bar still holds;
@@ -49863,9 +49876,849 @@ WORKBOOKS['chords'] = ChxWorkbook;
 TEACHER_COPIES['chords'] = ChxTeacher;
 
 Object.assign(CHORDS_DRILL, { levels: CHX_LEVELS, generate: genChxQuestion, check: chxCheck, answerLabel: chxAnswerLabel, Question: ChxQuestion, Learn: ChxLearn });
-const LESSON_BOOKS = { 'posture-hands': PostureLessonBook, 'first-steps': FirstStepsLessonBook, 'note-names': NoteNamesLessonBook, staff: StaffLessonBook, 'whole-staff': WholeStaffLessonBook, 'ledger-lines': LedgerLessonBook, tones: TonesLessonBook, pulse: PulseLessonBook, 'note-values': NotesRestsLessonBook, 'time-signatures': TimeSignaturesLessonBook, 'reading-steps': ReadingStepsLessonBook, dynamics: DynamicsLessonBook, 'pitch-range': PitchRangeLessonBook, tempo: TempoLessonBook, rhythm: RhythmLessonBook, scales: ScalesLessonBook, accidentals: AccidentalsLessonBook, 'piano-story': PianoStoryLessonBook, 'key-signatures': KeySigLessonBook, signs: SignsLessonBook, intervals: IntervalsLessonBook, chords: ChordsLessonBook };
+// ─── Phase 479: chapter 23, Musical Terms, built in full (Book rules 14 and 15; her 2026-10-17 macro-first plan, and
+// her 09:42 order: terms, then form, then melody). The fifth room of Level 4. Page 1 is the expression ladder: every word
+// for how to play on one map (speed slow to fast, volume soft to loud, the changes, touch and character, the little
+// words); the steps zoom in; the screen lesson ends with the map again, the words the student can say and play ticked.
+// Placement (AMEB Music Craft 2022: Preliminary Adagio Andante Moderato Allegro, pp p mf f, legato staccato; Grade 1
+// Lento Allegretto Vivace Presto, accel. rall. rit. riten. a tempo, mp ff cresc. decresc., sf rf; Grade 2 Largo Vivo
+// Prestissimo Largamente Larghetto Con moto Maestoso, Allargando Più mosso Meno mosso, sostenuto sempre poco molto senza
+// cantabile leggiero espressivo mezzo staccato). Chapters 10 (dynamics) and 13 (tempo) met the Preliminary words.
+// The old chapter's TERMS (AMEB meanings), playTerm and speakTerm are reused; its tools stay in the toolbox.
+
+// fam: speed | change | vol | touch | little. w: as printed; name: TERMS' name (its sound); met: the chapter that met it
+const TMX = [
+  // speed, slow to fast (bpm: its place on the ladder)
+  { w: 'Largo', fam: 'speed', bpm: 46, en: 'broadly, very slow', ko: '아주 느리고 폭넓게', rd: '라르고', g: 2 },
+  { w: 'Lento', fam: 'speed', bpm: 56, en: 'slowly', ko: '아주 느리게', rd: '렌토', g: 1 },
+  { w: 'Adagio', fam: 'speed', bpm: 70, en: 'slow', ko: '느리게', rd: '아다지오', met: 'tempo', g: 0 },
+  { w: 'Andante', fam: 'speed', bpm: 90, en: 'at a walking pace', ko: '걷는 빠르기로', rd: '안단테', met: 'tempo', g: 0 },
+  { w: 'Moderato', fam: 'speed', bpm: 110, en: 'at a medium speed', ko: '보통 빠르기로', rd: '모데라토', met: 'tempo', g: 0 },
+  { w: 'Allegretto', fam: 'speed', bpm: 120, en: 'moderately fast', ko: '조금 빠르게', rd: '알레그레토', g: 1 },
+  { w: 'Allegro', fam: 'speed', bpm: 140, en: 'fast and lively', ko: '빠르고 경쾌하게', rd: '알레그로', met: 'tempo', g: 0 },
+  { w: 'Vivace', fam: 'speed', bpm: 160, en: 'lively, spirited', ko: '생기 있고 활발하게', rd: '비바체', g: 1 },
+  { w: 'Presto', fam: 'speed', bpm: 184, en: 'very fast', ko: '매우 빠르게', rd: '프레스토', g: 1 },
+  { w: 'Prestissimo', fam: 'speed', bpm: 208, en: 'as fast as possible', ko: '할 수 있는 한 빠르게', rd: '프레스티시모', g: 2 },
+  // changing speed
+  { w: 'accel.', name: 'Accelerando', fam: 'change', en: 'gradually faster', ko: '점점 빠르게', rd: '아첼레란도', g: 1 },
+  { w: 'rall.', name: 'Rallentando', fam: 'change', en: 'gradually slower', ko: '점점 느리게', rd: '랄렌탄도', g: 1 },
+  { w: 'rit.', name: 'Ritardando', fam: 'change', en: 'gradually slower', ko: '점점 느리게', rd: '리타르단도', g: 1 },
+  { w: 'riten.', name: 'Ritenuto', fam: 'change', en: 'slower at once, held back', ko: '곧바로 느리게', rd: '리테누토', g: 1 },
+  { w: 'a tempo', name: 'A tempo', fam: 'change', en: 'back to the speed before', ko: '원래 빠르기로', rd: '아 템포', g: 1, hear: { from: 120, to: 72, back: true }, cat: 'Changing speed' },   // the first speed, held back, the first speed again
+  // loud and soft
+  { w: 'pp', name: 'Pianissimo', fam: 'vol', en: 'very soft', ko: '매우 여리게', rd: '피아니시모', met: 'dynamics', g: 0 },
+  { w: 'p', name: 'Piano', fam: 'vol', en: 'soft', ko: '여리게', rd: '피아노', met: 'dynamics', g: 0 },
+  { w: 'mp', name: 'Mezzo piano', fam: 'vol', en: 'medium soft', ko: '조금 여리게', rd: '메조 피아노', g: 1 },
+  { w: 'mf', name: 'Mezzo forte', fam: 'vol', en: 'medium loud', ko: '조금 세게', rd: '메조 포르테', met: 'dynamics', g: 0 },
+  { w: 'f', name: 'Forte', fam: 'vol', en: 'loud', ko: '세게', rd: '포르테', met: 'dynamics', g: 0 },
+  { w: 'ff', name: 'Fortissimo', fam: 'vol', en: 'very loud', ko: '매우 세게', rd: '포르티시모', g: 1 },
+  { w: 'cresc.', name: 'Crescendo', fam: 'vol', en: 'getting louder', ko: '점점 세게', rd: '크레셴도', met: 'dynamics', g: 1 },
+  { w: 'decresc.', name: 'Decrescendo', fam: 'vol', en: 'getting softer', ko: '점점 여리게', rd: '데크레셴도', met: 'dynamics', g: 1 },
+  { w: 'sf', name: 'Sforzando', fam: 'vol', en: 'a strong accent on one note', ko: '그 음만 특히 세게', rd: '스포르찬도', g: 1 },
+  // touch and character
+  { w: 'legato', name: 'Legato', fam: 'touch', en: 'smoothly, connected', ko: '부드럽게 이어서', rd: '레가토', met: 'dynamics', g: 0 },
+  { w: 'staccato', name: 'Staccato', fam: 'touch', en: 'short, detached', ko: '짧게 끊어서', rd: '스타카토', met: 'dynamics', g: 0 },
+  { w: 'mezzo staccato', name: 'Mezzo staccato', fam: 'touch', en: 'moderately short', ko: '조금 짧게 끊어서', rd: '메조 스타카토', g: 2 },
+  { w: 'sostenuto', name: 'Sostenuto', fam: 'touch', en: 'sustained', ko: '음을 충분히 끌어서', rd: '소스테누토', g: 2 },
+  { w: 'cantabile', name: 'Cantabile', fam: 'touch', en: 'in a singing style', ko: '노래하듯이', rd: '칸타빌레', g: 2 },
+  { w: 'leggiero', name: 'Leggiero', fam: 'touch', en: 'lightly', ko: '가볍게', rd: '레지에로', g: 2 },
+  { w: 'maestoso', name: 'Maestoso', fam: 'touch', en: 'majestically', ko: '장엄하게', rd: '마에스토소', g: 2 },
+  { w: 'espressivo', fam: 'touch', en: 'with expression', ko: '표정 있게', rd: '에스프레시보', g: 2, hear: { bpm: 80, len: 1.02, vol: 0.2 }, cat: 'Other' },
+  // the little words
+  { w: 'molto', fam: 'little', en: 'very, much', ko: '매우, 많이', rd: '몰토', g: 2 },
+  { w: 'poco', fam: 'little', en: 'a little', ko: '조금', rd: '포코', g: 2 },
+  { w: 'sempre', fam: 'little', en: 'always', ko: '항상, 계속', rd: '셈프레', g: 2 },
+  { w: 'senza', fam: 'little', en: 'without', ko: '~ 없이', rd: '센차', g: 2 },
+  { w: 'più', fam: 'little', en: 'more', ko: '더', rd: '피우', g: 2 },
+  { w: 'meno', fam: 'little', en: 'less', ko: '덜', rd: '메노', g: 2 },
+  { w: 'con', fam: 'little', en: 'with', ko: '~와 함께', rd: '콘', g: 2 },
+];
+// a little word with a big one (page 6)
+const TMX_COMBO = [
+  { w: 'poco rit.', a: 'poco', b: 'rit.', en: 'slowing down a little', ko: '조금 점점 느리게', rd: '포코 리타르단도', hear: { from: 120, to: 88 }, cat: 'Changing speed' },
+  { w: 'molto cresc.', a: 'molto', b: 'cresc.', en: 'getting much louder', ko: '매우 점점 세게', rd: '몰토 크레셴도', hear: { vFrom: 0.04, vTo: 0.6 }, cat: 'Volume' },
+  { w: 'sempre staccato', a: 'sempre', b: 'staccato', en: 'short all the way', ko: '계속 짧게 끊어서', rd: '셈프레 스타카토', hear: { len: 0.2 }, cat: 'Other' },
+  { w: 'più mosso', a: 'più', b: 'mosso', name: 'Più mosso', en: 'quicker (more movement)', ko: '더 빠르게', rd: '피우 모소' },
+  { w: 'meno mosso', a: 'meno', b: 'mosso', name: 'Meno mosso', en: 'slower (less movement)', ko: '더 느리게', rd: '메노 모소' },
+  { w: 'con moto', a: 'con', b: 'moto', name: 'Con moto', en: 'with movement', ko: '움직임 있게', rd: '콘 모토' },
+  { w: 'senza rit.', a: 'senza', b: 'rit.', en: 'without slowing down', ko: '느려지지 않게', rd: '센차 리타르단도', hear: { bpm: 120 }, cat: 'Speed' },
+  { w: 'poco a poco cresc.', a: 'poco a poco', b: 'cresc.', en: 'getting louder little by little', ko: '조금씩 점점 세게', rd: '포코 아 포코 크레셴도', hear: { vFrom: 0.05, vTo: 0.42, bpm: 90 }, cat: 'Volume' },
+];
+const TMX_FAM = { speed: ['Speed', '빠르기'], change: ['Changing speed', '빠르기 변화'], vol: ['Loud and soft', '셈여림'], touch: ['Touch and character', '터치와 느낌'], little: ['Little words', '꾸며 주는 말'] };
+const tmxFam = (f) => t(TMX_FAM[f][0], TMX_FAM[f][1]);
+const tmxOf = (w) => TMX.find(x => x.w === w) || TMX_COMBO.find(x => x.w === w);
+const tmxMean = (e) => t(e.en, e.ko);
+// its sound: the old chapter's TERMS entry (AMEB), else its own
+// (a speed word: clicks at its own number on the ladder, chapter 13's for the four met there)
+const tmxSound = (e) => { if (!e) return null; if (e.fam === 'speed') return { term: e.w, hear: { bpm: e.bpm }, cat: 'Speed' }; if (e.hear) return { term: e.w, hear: e.hear, cat: e.cat || 'Other' };
+  const x = TERMS.find(tm => tm.term === (e.name || e.w)); return x && x.hear ? x : null; };
+const tmxPlay = (e) => { const s = tmxSound(e); if (s) { chxStop(); playTerm(s); } };
+// the word as music prints it: speed words upright bold; signs bold italic; the rest italic
+const TMX_SERIF = "'Playfair Display', Georgia, serif";
+const tmxStyle = (e, size) => e && e.fam === 'speed' ? { fontFamily: TMX_SERIF, fontWeight: 900, fontStyle: 'normal', fontSize: size }
+  : e && e.fam === 'vol' && /^[pmfs]+$/.test(e.w) ? { fontFamily: SDY_FONT, fontWeight: 900, fontStyle: 'italic', fontSize: size * 1.2 }
+  : { fontFamily: SDY_FONT, fontWeight: 700, fontStyle: 'italic', fontSize: size };
+const tmxWord = (w, size = 17, col) => { const e = tmxOf(w); return <span style={{...tmxStyle(e || { fam: 'touch' }, size), color:col || PEN_N, lineHeight:1.1, whiteSpace:'nowrap'}}>{w}</span>; };
+const tmxSvgStyle = (e, size) => { const s = tmxStyle(e, size); return { fontFamily: s.fontFamily, fontStyle: s.fontStyle, fontWeight: s.fontWeight, fontSize: s.fontSize }; };
+// Korean: words that belong together never part at a line end
+const tmxNbKo = (x) => typeof x !== 'string' ? x : chxNbKo(x).replace(/~ 없이/g, '~ 없이')
+  .replace(/(아|메조|피우|메노|콘|포코|셈프레|몰토|센차) (템포|스타카토|피아노|포르테|모소|모토|아 포코|리타르단도|크레셴도)/g, '$1 $2').replace(/포코 아 포코/g, '포코 아 포코')
+  .replace(/맨 (위|아래)/g, '맨 $1').replace(/할 수 있는 한/g, '할 수 있는 한').replace(/꾸며 주는 말/g, '꾸며 주는 말');
+const tmxKoT = (x) => LANG === 'ko' ? tmxNbKo(x) : x;
+[['Espressivo', 'es-pres-SEE-voh'], ['Più', 'PYOO'], ['Meno', 'MEH-noh'], ['Con', 'kohn']].forEach(([k, v]) => { if (!PRON[k]) PRON[k] = v; });
+// running text with the signs set as signs: chapter 10's sdyRich, and sf as well
+const tmxRich = (str) => { if (typeof str !== 'string') return str; const out = []; let last = 0, m; const re = /(^|[^A-Za-z.])(sf)(?![A-Za-z])/g;
+  while ((m = re.exec(str))) { const at = m.index + m[1].length; out.push(...sdyRich(str.slice(last, at)), <React.Fragment key={'sf' + at}>{sdyDm('sf', '1.1em')}</React.Fragment>); last = at + 2; }
+  out.push(...sdyRich(str.slice(last))); return out; };
+
+// the speed ladder: the speed words from slow to fast, one rung each (the numbers are only about); nums: '♩ = n' by each
+const TMX_SPEED = TMX.filter(e => e.fam === 'speed');
+function TmxSpeedSvg({ sel, onTap, nums, words = TMX_SPEED, label }) {
+  const W = 640, H = nums ? 132 : 100, ax = nums ? 64 : 54, X = (i) => 70 + i * 56;
+  return <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label} style={{width:'100%',display:'block',touchAction:'manipulation',userSelect:'none'}}>
+    <line x1={20} x2={W - 14} y1={ax} y2={ax} stroke={PEN_N} strokeWidth="2"/>
+    <polygon points={`${W - 6},${ax} ${W - 16},${ax - 5} ${W - 16},${ax + 5}`} fill={PEN_N}/>
+    <text x={20} y={ax + 18} fontSize="11.5" fontWeight="800" fill={BK.muted} style={{fontFamily:'Inter, sans-serif'}}>{t('slow', '느리게')}</text>
+    <text x={W - 18} y={ax - 8} textAnchor="end" fontSize="11.5" fontWeight="800" fill={BK.muted} style={{fontFamily:'Inter, sans-serif'}}>{t('fast', '빠르게')}</text>
+    {words.map((e, i) => { const x = X(i), up = i % 2 === 0, last = i === words.length - 1, y = up ? ax - 18 : ax + 30, on = sel === e.w, col = on ? PEN_C : PEN_N;
+      return <g key={e.w} onClick={onTap ? () => onTap(e) : undefined} style={{cursor:onTap ? 'pointer' : 'default'}} data-tmx={e.w}>
+        {onTap && <rect x={x - 46} y={up ? 0 : ax + 2} width={92} height={up ? ax - 2 : H - ax - 2} fill="transparent"/>}
+        <line x1={x} x2={x} y1={ax - 5} y2={ax + 5} stroke={col} strokeWidth="2"/>
+        <text x={last ? x + 36 : x} y={y} textAnchor={last ? 'end' : 'middle'} fill={col} style={tmxSvgStyle(e, 15.5)}>{e.w}</text>
+        {nums && <StmMark x={last ? x + 6 : x} y={up ? ax - 38 : ax + 50} n={e.bpm} size={10.5} c={BK.muted} anchor="middle"/>}
+      </g>; })}
+  </svg>;
+}
+// the volume ladder: a wedge from soft to loud, the six signs under it
+const TMX_VOL6 = ['pp', 'p', 'mp', 'mf', 'f', 'ff'];
+function TmxVolSvg({ sel, onTap, label, hair }) {
+  const W = 640, H = hair ? 150 : 84, xs = TMX_VOL6.map((_, i) => 70 + i * 100);
+  return <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label} style={{width:'100%',display:'block',touchAction:'manipulation',userSelect:'none'}}>
+    <polygon points={`40,26 600,10 600,42`} fill="rgba(38,41,107,0.10)" stroke={PEN_N} strokeWidth="1.6" strokeLinejoin="round"/>
+    {TMX_VOL6.map((w, i) => { const e = tmxOf(w), on = sel === w;
+      return <g key={w} onClick={onTap ? () => onTap(e) : undefined} style={{cursor:onTap ? 'pointer' : 'default'}} data-tmx={w}>
+        {onTap && <rect x={xs[i] - 40} y={0} width={80} height={84} fill="transparent"/>}
+        <line x1={xs[i]} x2={xs[i]} y1={26 + (i - 2.5) * 0} y2={50} stroke={on ? PEN_C : BK.muted} strokeWidth="1.2" strokeDasharray="2 3"/>
+        <text x={xs[i]} y={76} textAnchor="middle" fill={on ? PEN_C : PEN_N} style={tmxSvgStyle(e, 22)}>{w}</text>
+      </g>; })}
+    {hair && <g>
+      {[['cresc.', 70, 260, 1], ['decresc.', 380, 570, -1]].map(([w, x0, x1, dir]) => { const on = sel === w, c = on ? PEN_C : PEN_N, a = dir > 0 ? x0 : x1, b = dir > 0 ? x1 : x0;
+        return <g key={w} onClick={onTap ? () => onTap(tmxOf(w)) : undefined} style={{cursor:onTap ? 'pointer' : 'default'}} data-tmx={w}>
+          {onTap && <rect x={x0 - 10} y={96} width={x1 - x0 + 20} height={54} fill="transparent"/>}
+          <path d={`M${b} 104 L${a} 114 L${b} 124`} fill="none" stroke={c} strokeWidth="2" strokeLinejoin="round"/>
+          <text x={(x0 + x1) / 2} y={144} textAnchor="middle" fill={c} style={tmxSvgStyle(tmxOf(w), 15)}>{w}</text></g>; })}
+      <g onClick={onTap ? () => onTap(tmxOf('sf')) : undefined} style={{cursor:onTap ? 'pointer' : 'default'}} data-tmx="sf">
+        {onTap && <rect x={286} y={96} width={68} height={54} fill="transparent"/>}
+        <text x={320} y={124} textAnchor="middle" fill={sel === 'sf' ? PEN_C : PEN_N} style={tmxSvgStyle(tmxOf('sf'), 17)}>sf</text></g>
+    </g>}
+  </svg>;
+}
+function TmxVolBig({ label }) {
+  const xs = TMX_VOL6.map((_, i) => 70 + i * 100), hw = (w, x0, x1, dir) => { const a = dir > 0 ? x0 : x1, b = dir > 0 ? x1 : x0;
+    return <g key={w}><path d={`M${b} 196 L${a} 212 L${b} 228`} fill="none" stroke={PEN_N} strokeWidth="2.2" strokeLinejoin="round"/><text x={(x0 + x1) / 2} y={258} textAnchor="middle" fill={PEN_N} style={tmxSvgStyle(tmxOf(w), 19)}>{w}</text></g>; };
+  const head = (x, big, col) => <ellipse key={x} cx={x} cy={318} rx={big ? 12 : 8.5} ry={big ? 8.6 : 6.2} transform={`rotate(-22 ${x} 318)`} fill={col}/>;
+  return <svg viewBox="0 0 640 380" role="img" aria-label={label} style={{width:'100%',display:'block'}}>
+    <polygon points="40,62 600,18 600,106" fill="rgba(38,41,107,0.10)" stroke={PEN_N} strokeWidth="1.8" strokeLinejoin="round"/>
+    <text x={40} y={40} fontSize="13" fontWeight="800" fill={BK.muted} style={{fontFamily:'Inter, sans-serif'}}>{t('soft', '여리게')}</text>
+    <text x={608} y={68} textAnchor="start" fontSize="13" fontWeight="800" fill={BK.muted} style={{fontFamily:'Inter, sans-serif'}}>{t('loud', '세게')}</text>
+    {TMX_VOL6.map((w, i) => <g key={w}><line x1={xs[i]} x2={xs[i]} y1={62} y2={128} stroke={BK.muted} strokeWidth="1.2" strokeDasharray="2 3"/>
+      <text x={xs[i]} y={166} textAnchor="middle" fill={PEN_N} style={tmxSvgStyle(tmxOf(w), 27)}>{w}</text></g>)}
+    {hw('cresc.', 60, 280, 1)}{hw('decresc.', 360, 580, -1)}
+    {[200, 260, 320, 380].map(x => head(x, false, PEN_N))}{head(450, true, PEN_C)}{[520, 580].map(x => head(x, false, PEN_N))}
+    <text x={450} y={362} textAnchor="middle" fill={PEN_C} style={tmxSvgStyle(tmxOf('sf'), 22)}>sf</text>
+  </svg>;
+}
+// the speed ladder standing up (page 2): Largo on the bottom rung, Prestissimo on the top; ♩ = about
+function TmxLadderSvg({ label }) {
+  const n = TMX_SPEED.length, y = (i) => 350 - i * 36;
+  return <svg viewBox="0 0 520 372" role="img" aria-label={label} style={{width:'100%',display:'block'}}>
+    {[214, 300].map(x => <line key={x} x1={x} x2={x} y1={8} y2={366} stroke={PEN_N} strokeWidth="2.4" strokeLinecap="round"/>)}
+    {TMX_SPEED.map((e, i) => <g key={e.w}><line x1={214} x2={300} y1={y(i)} y2={y(i)} stroke={PEN_N} strokeWidth="2"/>
+      <text x={200} y={y(i) + 6} textAnchor="end" fill={PEN_N} style={tmxSvgStyle(e, 19)}>{e.w}</text>
+      <StmMark x={314} y={y(i) + 6} n={e.bpm} size={13} c={BK.muted}/></g>)}
+    <g fill={BK.muted} style={{fontFamily:'Inter, sans-serif'}} fontSize="12.5" fontWeight="800">
+      <text x={440} y={y(n - 1) + 6}>{t('fast', '빠르게')}</text><text x={440} y={y(0) + 6}>{t('slow', '느리게')}</text></g>
+    <line x1={452} x2={452} y1={y(1)} y2={y(n - 2) + 4} stroke={BK.muted} strokeWidth="1.6"/><polygon points={`452,${y(n - 2) - 6} 447,${y(n - 2) + 4} 457,${y(n - 2) + 4}`} fill={BK.muted}/>
+  </svg>;
+}
+// a row of beats: gaps (the space between each) say the speed: accel. closer, rit. further apart
+function TmxBeatsSvg({ gaps, w, sel, onTap, word = true, label, x0, w0 = 0, text }) {
+  const span = gaps.reduce((a, g) => a + g, 0), W = Math.max(150, span + 24, w0), s0 = x0 != null ? x0 : (W - span) / 2, r = Math.min(5.5, Math.min(...gaps) * 0.36);
+  const xs = [s0]; gaps.forEach(g => xs.push(xs[xs.length - 1] + g)); const e = tmxOf(w), on = sel === w, c = on ? PEN_C : PEN_N;
+  return <svg viewBox={`0 0 ${W} ${word ? 56 : 30}`} role="img" aria-label={label} onClick={onTap ? () => onTap(e) : undefined} style={{width:'100%',display:'block',cursor:onTap ? 'pointer' : 'default'}} data-tmx={w}>
+    {xs.map((x, i) => <circle key={i} cx={x} cy={15} r={r} fill={c}/>)}
+    {word && <text x={W / 2} y={48} textAnchor="middle" fill={c} style={tmxSvgStyle(e, 15)}>{text || w}</text>}
+  </svg>;
+}
+// a tempo: the first speed, held back, then the first speed again (after riten., the speed before comes back)
+const TMX_GAPS = { 'accel.': [36, 29, 24, 20, 17, 15], 'rit.': [15, 17, 20, 24, 29, 36], 'riten.': [16, 16, 16, 34, 34, 34], 'a tempo': [16, 16, 34, 34, 16, 16] };
+TMX_GAPS['rall.'] = TMX_GAPS['rit.'];
+const tmxChip = (w, on, onTap, key, tick, size = 16, fill) => { const e = tmxOf(w), st = {border:'1.5px solid ' + (on ? PEN_C : 'rgba(38,41,107,0.28)'),background:'#fff',borderRadius:999,padding:fill ? '2px 0' : onTap ? '2px 10px' : '1px 10px',minHeight:onTap ? 44 : 26,minWidth:onTap && !fill ? 44 : 0,width:fill ? '100%' : undefined,position:'relative',justifyContent:'center',cursor:onTap ? 'pointer' : 'default',color:on ? PEN_C : PEN_N,display:'inline-flex',alignItems:'center',gap:5,boxSizing:'border-box'};
+  if (!onTap) return <span key={key || w} data-tmx={w} style={st}>{tmxWord(w, size)}</span>;   // print: a word, not a button
+  return <button key={key || w} type="button" onClick={() => onTap(e)} data-tmx={w} aria-pressed={!!on} style={st}>{tick && <span aria-label={t('known', '알아요')} style={fill ? {position:'absolute',top:1,right:3,color:PEN_G,fontWeight:900,fontSize:11} : {color:PEN_G,fontWeight:900,fontSize:14}}>✓</span>}{tmxWord(w, 15, on ? PEN_C : PEN_N)}</button>; };
+
+// the expression ladder: page 1 (print). On screen (the pad) every family is a row of words in its order.
+function TmxMap({ sel, onTap, label }) {
+  const lab = (f) => <div style={{fontSize:11.5,fontWeight:900,letterSpacing:'0.08em',textTransform:'uppercase',color:BK.muted,paddingTop:4,lineHeight:1.2}}>{tmxFam(f)}</div>;
+  const row = (f, node) => <div key={f} style={{display:'grid',gridTemplateColumns:'96px minmax(0,1fr)',gap:10,alignItems:'center'}}>{lab(f)}<div style={{minWidth:0}}>{node}</div></div>;
+  const chips = (fam) => <div style={{display:'flex',flexWrap:'wrap',gap:5}}>{TMX.filter(e => e.fam === fam).map(e => tmxChip(e.w, sel === e.w, onTap, null, false, 14.5))}</div>;
+  return <div role="img" aria-label={label} style={{display:'flex',flexDirection:'column',gap:6,width:'100%'}}>
+    {row('speed', <TmxSpeedSvg sel={sel} onTap={onTap}/>)}
+    {row('change', <div style={{display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:14}}>{['accel.', 'rit.', 'riten.', 'a tempo'].map((w, i) => <div key={w} style={{maxWidth:150,borderLeft:i ? '1px solid rgba(38,41,107,0.15)' : 0,paddingLeft:i ? 6 : 0}}><TmxBeatsSvg gaps={TMX_GAPS[w]} w0={174} w={w} sel={sel} onTap={onTap} text={w === 'rit.' ? 'rit. · rall.' : null}/></div>)}</div>)}
+    {row('vol', <TmxVolSvg sel={sel} onTap={onTap} hair/>)}
+    {row('touch', chips('touch'))}
+    {row('little', chips('little'))}
+  </div>;
+}
+// page 5's bars (and the Workbook's): four crotchets with their marks: legato a slur, staccato dots, mezzo staccato both
+const TMX_T3B = { legato: [{ slurs: [[0, 3]] }, [28, 29, 30, 31]], staccato: [{ stacc: [0, 1, 2, 3] }, [28, 29, 30, 31]], 'mezzo staccato': [{ slurs: [[0, 3]], stacc: [0, 1, 2, 3] }, [28, 29, 30, 31]] };
+const tmxBar = (notes) => [['ts', 4], ...notes.map(d => ['q', 1, d]), ['||']];
+
+function tmxLbPages(scr = false) {
+  const ch = 'terms';
+  const live = (still, comp) => <LbLive still={still} live={comp}/>;
+  const stack = (nodes, h, gap = 12, mw = 680) => <LbPic h={h}><div style={{display:'flex',flexDirection:'column',gap,width:'100%',maxWidth:mw,margin:'0 auto',alignItems:'stretch'}}>{nodes}</div></LbPic>;
+  const X = (en, ko) => tmxRich(LANG === 'ko' ? sscNbKo(skgKo(tmxNbKo(ko))) : sscNbEn(en));
+  const cap = (x, key = 'cap') => <div key={key} style={{textAlign:'center',fontSize:scr ? 14 : 13.5,fontWeight:800,color:BK.ink,margin:'2px auto 0',maxWidth:560,lineHeight:1.35,textWrap:'balance'}}>{typeof x === 'string' ? tmxRich(tmxKoT(x)) : x}</div>;
+  // a term as a dictionary headword: the word as printed (and in Korean its reading)
+  const hw1 = (w) => { const e = tmxOf(w); return <span style={{whiteSpace:'nowrap'}}>{tmxWord(w, 19)}{LANG === 'ko' && e && e.rd ? <span style={{fontSize:13,fontWeight:700,color:BK.muted,marginLeft:5}}>{tmxNbKo(e.rd)}</span> : null}</span>; };
+  const hw = (w) => <span>{hw1(w)}{'\u200b'}</span>;
+  const hw2 = (a, b) => <span>{hw1(a)}<span style={{color:BK.muted}}>{' · '}</span>{hw1(b)}{'\u200b'}</span>;
+
+  // p1 (macro first): the expression ladder
+  const p1 = <LbLive still={stack([<TmxMap key="m" label={t('The expression ladder. Speed: Largo, Lento, Adagio, Andante, Moderato, Allegretto, Allegro, Vivace, Presto, Prestissimo, from slow to fast. Changing speed: accel., rit. (or rall.), riten., a tempo, each a row of beats. Loud and soft: pp, p, mp, mf, f, ff under a widening wedge, then cresc., sf and decresc. Touch and character: legato, staccato, mezzo staccato, sostenuto, cantabile, leggiero, maestoso, espressivo. Little words: molto, poco, sempre, senza, più, meno, con.', '표현의 사다리. 빠르기: 라르고, 렌토, 아다지오, 안단테, 모데라토, 알레그레토, 알레그로, 비바체, 프레스토, 프레스티시모, 느린 것부터 빠른 것까지. 빠르기 변화: 아첼레란도, 리타르단도(랄렌탄도), 리테누토, 아 템포, 박의 간격으로. 셈여림: 점점 넓어지는 쐐기 아래 pp, p, mp, mf, f, ff, 그리고 크레셴도, sf, 데크레셴도. 터치와 느낌: 레가토, 스타카토, 메조 스타카토, 소스테누토, 칸타빌레, 레지에로, 마에스토소, 에스프레시보. 꾸며 주는 말: 몰토, 포코, 셈프레, 센차, 피우, 메노, 콘.')}/>,
+    ], 380, 6)} live={<TmxMapPad/>}/>;
+  // p2: the speed ladder standing up, a metronome number by each rung
+  const p2 = stack([<div key="s" style={{width:'100%',maxWidth:470,margin:'0 auto'}}><TmxLadderSvg label={t('A ladder of ten rungs, slow at the bottom, fast at the top: Largo (about 46 crotchets a minute), Lento 56, Adagio 70, Andante 90, Moderato 110, Allegretto 120, Allegro 140, Vivace 160, Presto 184, Prestissimo 208.', '열 칸짜리 사다리, 아래는 느리고 위는 빨라요: 라르고(1분에 4분음표 약 46), 렌토 56, 아다지오 70, 안단테 90, 모데라토 110, 알레그레토 120, 알레그로 140, 비바체 160, 프레스토 184, 프레스티시모 208.')}/></div>,
+    cap(<><svg viewBox="0 0 16 22" width="12" height="16" aria-hidden="true" style={{verticalAlign:'-3px',marginRight:3}}><StmMark x={1} y={20} size={13} c={BK.ink}/></svg>{tmxKoT(t('= about how many crotchet beats a minute (chapter ' + bkChapterNo('tempo') + '). Pieces differ a little.', '= 뒤의 숫자는 1분에 4분음표를 약 몇 박 치는지 나타내요(' + bkChapterNo('tempo') + '챕터). 곡마다 조금씩 달라요.'))}</>)], 380, 8, 560);
+  // p3: changing speed: a row of beats for each word
+  const p3 = stack(['accel.', 'rall.', 'rit.', 'riten.', 'a tempo'].map(w => <div key={w} style={{display:'grid',gridTemplateColumns:'120px minmax(0,1fr)',alignItems:'center',gap:14}}>
+      <div style={{textAlign:'right'}}>{tmxWord(w, 22)}</div><div style={{maxWidth:440}}><TmxBeatsSvg gaps={TMX_GAPS[w].map(g => g * 2.2)} x0={12} w0={174 * 2.2} w={w} word={false} label={t(w + ': ' + tmxOf(w).en + '.', tmxOf(w).rd + ': ' + tmxOf(w).ko + '.')}/></div></div>)
+    .concat([cap(t('The dots are beats: the closer they are, the faster.', '점은 박이에요. 가까울수록 빨라요.'), 'c3')]), 360, 40, 600);
+  // p4: the volume ladder and the hairpins
+  const p4 = stack([<TmxVolBig key="v" label={t('A wedge widening from soft to loud, with pp, p, mp, mf, f and ff under it; a hairpin that opens, cresc., and one that closes, decresc.; then a row of notes with one bigger coral note marked sf.', '여린 것부터 센 것까지 넓어지는 쐐기, 그 아래 pp, p, mp, mf, f, ff. 벌어지는 헤어핀 크레셴도, 좁아지는 헤어핀 데크레셴도. 그리고 음표들 가운데 크고 붉은 음표 하나에 sf.')}/>,
+    cap(t('One rung louder each time: pp p mp mf f ff.', '한 칸씩 더 세게: pp p mp mf f ff.'), 'c4')], 360, 10, 640);
+  // p5: one bar for each touch, its word beside it; then the character words
+  const p5 = stack(Object.keys(TMX_T3B).map(w => <div key={w} style={{display:'grid',gridTemplateColumns:'150px minmax(0,1fr)',alignItems:'center',gap:12}}>
+      <div style={{textAlign:'right'}}>{tmxWord(w, 19)}</div><div style={{maxWidth:330}}><SdyStaff full items={tmxBar(TMX_T3B[w][1])} k={TMX_T3B[w][0]} o={{ D: 40 }} label={t(w + ': C D E F, ' + (w === 'legato' ? 'in one slur.' : w === 'staccato' ? 'each with a dot.' : 'each with a dot, all in one slur.'), tmxOf(w).rd + ': C D E F, ' + (w === 'legato' ? '이음줄 하나로.' : w === 'staccato' ? '음마다 점.' : '음마다 점, 모두 이음줄 하나로.'))}/></div></div>)
+    .concat([<div key="c" style={{display:'flex',flexWrap:'wrap',gap:8,justifyContent:'center',marginTop:10}}>{['sostenuto', 'cantabile', 'leggiero', 'maestoso', 'espressivo'].map(w => tmxChip(w, false, null, null, false, 17))}</div>]), 380, 10, 560);
+  // p6: a little word and a big one: every term the drill asks
+  const tile = (x, on) => <span style={{display:'inline-flex',alignItems:'center',border:'1.5px solid rgba(38,41,107,0.3)',borderRadius:8,padding:'3px 10px',background:'#fff'}}>{tmxWord(x, 21, on ? PEN_C : PEN_N)}</span>;
+  const p6 = stack(TMX_COMBO.map(c => <div key={c.w} style={{display:'grid',gridTemplateColumns:'158px 18px 124px 22px minmax(0,1fr)',alignItems:'center',gap:8}}>
+      <span style={{textAlign:'right'}}>{tile(c.a, true)}</span><span style={{fontWeight:900,color:BK.muted,textAlign:'center'}}>+</span><span>{tile(c.b)}</span>
+      <span style={{fontWeight:900,color:BK.muted,textAlign:'center'}}>=</span><span style={{fontSize:17,fontWeight:800,color:BK.ink,wordBreak:'keep-all',lineHeight:1.3}}>{tmxKoT(tmxMean(c))}</span></div>), 400, 20, 640);
+
+  // the check icons
+  const tx = (x, c, col, s = 18, y = 28, it) => '<text x="' + x + '" y="' + y + '" text-anchor="middle" style="font-family:' + (it ? 'Georgia, serif' : 'Inter, sans-serif') + ';font-style:' + (it ? 'italic' : 'normal') + '" font-size="' + s + '" font-weight="900" fill="' + col + '">' + c + '</text>';
+  const ic = {
+    speed: [{ k: 'raw', svg: '<line x1="6" x2="80" y1="20" y2="20" stroke="' + PEN_N + '" stroke-width="2"/><polygon points="90,20 80,15 80,25" fill="' + PEN_N + '"/>' + [16, 40, 64].map((x, i) => '<line x1="' + x + '" x2="' + x + '" y1="14" y2="26" stroke="' + (i === 2 ? PEN_C : PEN_N) + '" stroke-width="2.2"/>').join('') }],
+    change: [{ k: 'raw', svg: [8, 32, 51, 66, 78, 88].map((x, i) => '<circle cx="' + x + '" cy="20" r="3.4" fill="' + (i > 3 ? PEN_C : PEN_N) + '"/>').join('') }],
+    vol: [{ k: 'raw', svg: tx(16, 'pp', PEN_N, 15, 28, 1) + tx(46, 'mp', PEN_N, 15, 28, 1) + tx(76, 'ff', PEN_C, 15, 28, 1) }],
+    touch: [{ k: 'raw', svg: '<path d="M8 14 Q30 2 52 14" fill="none" stroke="' + PEN_N + '" stroke-width="1.8"/>' + [14, 30, 46].map(x => '<ellipse cx="' + x + '" cy="26" rx="4.4" ry="3.1" fill="' + PEN_N + '"/>').join('') + [64, 78].map(x => '<ellipse cx="' + x + '" cy="26" rx="4.4" ry="3.1" fill="' + PEN_C + '"/><circle cx="' + x + '" cy="17" r="1.8" fill="' + PEN_C + '"/>').join('') }],
+    little: [{ k: 'raw', svg: tx(26, 'poco', PEN_C, 14, 26, 1) + tx(54, '+', PEN_N, 13, 26) + tx(74, 'rit.', PEN_N, 14, 26, 1) }],
+  };
+  const checksRows = [
+    ['speed', t('I can put the speed words in order, Largo to Prestissimo, and say what each means', '빠르기말을 라르고부터 프레스티시모까지 차례로 놓고 뜻을 말할 수 있어요')],
+    ['change', t('I can play accel., rit., riten. and a tempo', '아첼레란도, 리타르단도, 리테누토, 아 템포를 칠 수 있어요')],
+    ['vol', t('I can play pp, p, mp, mf, f and ff, a crescendo and an sf', 'pp, p, mp, mf, f, ff와 크레셴도, sf를 칠 수 있어요')],
+    ['touch', t('I can play legato, staccato and mezzo staccato, and say five character words', '레가토, 스타카토, 메조 스타카토를 치고 느낌을 나타내는 말 다섯 개를 말할 수 있어요')],
+    ['little', t('I can read a term with a little word: poco rit., molto cresc., sempre staccato', '꾸며 주는 말이 붙은 용어를 읽을 수 있어요: 포코 리타르단도, 몰토 크레셴도, 셈프레 스타카토')],
+  ].map(([a, x]) => [a, LANG === 'ko' ? skgKo(sscNbKo(tmxNbKo(x))) : sscNbEn(x)]);
+  const ch10 = bkChapterNo('dynamics'), ch13 = bkChapterNo('tempo');
+
+  return [
+    <LbPage key="1" no={1} chId={ch}>
+      <LbOnly print><div data-ch={ch}>
+        <div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em'}}>CHAPTER {bkChapterNo(ch)}</div>
+        <div style={{fontFamily:LB_SERIF,fontSize:44,fontWeight:900,color:BK.ink,lineHeight:1.02,margin:'4px 0 0'}}>{bkChapterName(ch)}</div>
+      </div></LbOnly>
+      {p1}
+      <LbSay size={17.5}>{LANG === 'ko' ? <>어떻게 칠지 알려 주는 말이 <b>음악{'\u00a0'}용어</b>예요. 대부분 이탈리아어이고, 빠르기, 셈여림, 터치와 느낌을 나타내요.</> : <>A <b>musical term</b> is a word, mostly Italian, that says how to play: how fast, how loud, and with what touch and character.</>}</LbSay>
+      <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
+        <LbOnly print><div>
+          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
+          {[[t('The speed ladder', '빠르기 사다리'), 2], [t('Changing speed', '빠르기 변화'), 3], [t('Loud and soft', '셈여림'), 4], [t('Touch and character', '터치와 느낌'), 5], [t('Little words', '꾸며 주는 말'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}<span>{n}</span></span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
+        </div></LbOnly>
+        <div>
+          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          {checksRows.map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)',textWrap:'pretty'}}>{bkGoal(15)}<span>{tmxRich(x.replace(/^I can /, ''))}</span></div>)}
+        </div>
+      </div>
+      <LbOnly print><LbDrillStrip id={ch}/></LbOnly>
+    </LbPage>,
+
+    <LbPage key="2" no={2} chId={ch} kicker={t('Step 1', '1단계')} title={t('The speed ladder', '빠르기 사다리')}>
+      {live(p2, <TmxSpeedPad/>)}
+      <LbDefs items={[
+        [t('speed words', '빠르기말'), X('Written above the staff at the start of a piece (chapter ' + ch13 + '). From slow to fast: Largo, Lento, Adagio, Andante, Moderato, Allegretto, Allegro, Vivace, Presto, Prestissimo.', '곡의 맨 앞, 오선 위에 써요(' + ch13 + '챕터). 느린 것부터: 라르고, 렌토, 아다지오, 안단테, 모데라토, 알레그레토, 알레그로, 비바체, 프레스토, 프레스티시모.')],
+        [hw2('Largo', 'Lento'), X('Very slow and broad; slowly. Both slower than Adagio.', '라르고는 아주 느리고 폭넓게, 렌토는 아주 느리게. 둘 다 아다지오보다 느려요.')],
+        [hw('Allegretto'), X('Moderately fast: a little slower than Allegro.', '조금 빠르게. 알레그로보다 조금 느려요.')],
+        [hw2('Vivace', 'Presto'), X('Lively, spirited; very fast. Both faster than Allegro.', '비바체는 생기 있고 활발하게, 프레스토는 매우 빠르게. 둘 다 알레그로보다 빨라요.')],
+        [hw('Prestissimo'), X('As fast as possible. ‑issimo means “very”, as in pianissimo.', '할 수 있는 한 빠르게. ‑issimo는 ‘매우’라는 뜻으로, 피아니시모에도 있어요.')],
+      ]}/>
+      <LbPiano steps={[
+        X('Play C D E F G at Lento, Andante, Allegretto and Presto: four rungs of the ladder.', 'C D E F G를 렌토, 안단테, 알레그레토, 프레스토로 쳐요: 사다리 네 칸.'),
+        X('Your teacher plays a scale at one speed. Say its word.', '선생님이 음계를 쳐요. 어떤 빠르기인지 빠르기말로 말해요.'),
+      ]}/>
+      <LbRemember>{X('Largo at the bottom, Prestissimo at the top.', '맨 아래는 라르고, 맨 위는 프레스티시모.')}</LbRemember>
+    </LbPage>,
+
+    <LbPage key="3" no={3} chId={ch} kicker={t('Step 2', '2단계')} title={t('Changing speed', '빠르기 변화')}>
+      {live(p3, <TmxChangePad/>)}
+      <LbDefs items={[
+        [hw('accel.'), X('Accelerando: gradually faster.', '점점 빠르게.')],
+        [hw2('rall.', 'rit.'), X('Rallentando, ritardando: gradually slower. Two names, one meaning.', '점점 느리게. 이름은 둘, 뜻은 하나예요.')],
+        [hw('riten.'), X('Ritenuto: slower at once, held back.', '곧바로 느리게.')],
+        [hw('a tempo'), X('Back to the speed before.', '원래 빠르기로 돌아가요.')],
+      ]}/>
+      <LbPiano steps={[
+        X('Play C D E F G A B C getting faster (accel.), then down again getting slower (rit.).', 'C D E F G A B C를 점점 빠르게(아첼레란도), 내려올 때는 점점 느리게(리타르단도) 쳐요.'),
+        X('Play twelve Cs: four at a steady speed, four held back (riten.), then four at the first speed again (a tempo).', 'C를 열두 번 쳐요: 네 번은 일정한 빠르기로, 네 번은 곧바로 느리게(리테누토), 네 번은 처음 빠르기로(아 템포).'),
+      ]}/>
+      <LbRemember>{X('accel. faster, rit. slower, a tempo back.', '아첼레란도는 점점 빠르게, 리타르단도는 점점 느리게, 아 템포는 원래 빠르기로.')}</LbRemember>
+    </LbPage>,
+
+    <LbPage key="4" no={4} chId={ch} kicker={t('Step 3', '3단계')} title={t('Loud and soft', '셈여림')}>
+      {live(p4, <TmxVolPad/>)}
+      <LbDefs items={[
+        [t('the volume ladder', '셈여림 사다리'), X('pp p mp mf f ff: very soft to very loud (chapter ' + ch10 + ').', 'pp p mp mf f ff: 매우 여리게부터 매우 세게까지(' + ch10 + '챕터).')],
+        [hw('mp'), X('Mezzo piano: medium soft, between p and mf.', '조금 여리게. p와 mf 사이예요.')],
+        [hw('ff'), X('Fortissimo: very loud. The same letter twice means very.', '매우 세게. 같은 글자 두 개는 ‘매우’.')],
+        [hw2('cresc.', 'decresc.'), X('Getting louder; getting softer. Other name for decresc.: dim.', '점점 세게, 점점 여리게. 데크레셴도의 다른 이름은 디미누엔도(dim.).')],
+        [hw('sf'), X('Sforzando: a strong accent on one note.', '그 음만 특히 세게.')],
+      ]}/>
+      <LbPiano steps={[
+        X('Play C six times: pp, p, mp, mf, f, ff, one rung louder each time.', 'C를 여섯 번 쳐요: pp, p, mp, mf, f, ff, 한 칸씩 더 세게.'),
+        X('Play C D E F G with a crescendo, then with an sf on the G.', 'C D E F G를 점점 세게 친 다음, G에만 sf를 넣어 쳐요.'),
+      ]}/>
+      <LbRemember>{X('pp p mp mf f ff.', 'pp p mp mf f ff.')}</LbRemember>
+    </LbPage>,
+
+    <LbPage key="5" no={5} chId={ch} kicker={t('Step 4', '4단계')} title={t('Touch and character', '터치와 느낌')}>
+      {live(p5, <TmxTouchPad/>)}
+      <LbDefs items={[
+        [hw('mezzo staccato'), X('Moderately short: dots and a slur together.', '조금 짧게 끊어서. 점과 이음줄이 함께 있어요.')],
+        [hw('sostenuto'), X('Sustained: each note held its full length.', '음을 충분히 끌어서. 음마다 제 길이를 다 채워요.')],
+        [hw2('cantabile', 'leggiero'), X('In a singing style; lightly.', '칸타빌레는 노래하듯이, 레지에로는 가볍게.')],
+        [hw2('maestoso', 'espressivo'), X('Majestically; with expression.', '마에스토소는 장엄하게, 에스프레시보는 표정 있게.')],
+      ]}/>
+      <LbPiano steps={[
+        X('Play the picture’s three bars: legato, staccato, then mezzo staccato.', '그림의 세 마디를 레가토, 스타카토, 메조 스타카토로 차례로 쳐요.'),
+        X('Play C D E F G three times: cantabile, leggiero, maestoso.', 'C D E F G를 세 번 쳐요: 칸타빌레, 레지에로, 마에스토소.'),
+      ]}/>
+      <LbRemember>{X('Dots: short. A slur: smooth. Both: in between.', '점은 짧게, 이음줄은 부드럽게, 둘 다 있으면 그 사이.')}</LbRemember>
+    </LbPage>,
+
+    <LbPage key="6" no={6} chId={ch} kicker={t('Step 5', '5단계')} title={t('Little words', '꾸며 주는 말')}>
+      {live(p6, <TmxBuildPad/>)}
+      <LbDefs items={[
+        [hw2('molto', 'poco'), X('Very, much; a little. poco a poco: little by little.', '몰토는 매우, 많이. 포코는 조금. 포코 아 포코는 조금씩.')],
+        [hw2('sempre', 'senza'), X('Always; without.', '셈프레는 항상(계속), 센차는 ~ 없이.')],
+        [hw2('più', 'meno'), X('More; less. più mosso: quicker. meno mosso: slower.', '피우는 더, 메노는 덜. 피우 모소는 더 빠르게, 메노 모소는 더 느리게.')],
+        [hw('con'), X('With. con moto: with movement.', '~와 함께. 콘 모토는 움직임 있게.')],
+      ]}/>
+      <LbPiano steps={[
+        X('Play C D E F G A B C poco rit., then molto rit. Hear the difference.', 'C D E F G A B C를 포코 리타르단도로, 그다음 몰토 리타르단도로 쳐요. 차이를 들어요.'),
+        X('Play a piece you know sempre staccato, then più mosso.', '아는 곡을 셈프레 스타카토로, 그다음 피우 모소로 쳐요.'),
+      ]}/>
+      <LbRemember>{X('A little word changes the term beside it: poco rit., slowing down a little.', '꾸며 주는 말이 용어의 뜻을 바꿔요: 포코 리타르단도는 조금 점점 느리게.')}</LbRemember>
+    </LbPage>,
+
+    <LbPage key="7" no={7} chId={ch} kicker={t('Check-up', '점검')} title={t('My five checks', '나의 다섯 가지 확인')}>
+      <LbSay>{t('Show each one at the piano, on its page (2 to 6). The check-up on paper is in the Workbook.', '2~6쪽을 하나씩 펴고 피아노 앞에서 보여 줘요. 종이 점검은 워크북에 있어요.')}</LbSay>
+      <LbLive still={<LbStageRows big rows={checksRows.map(([a, x]) => [<PenArt shapes={ic[a]} vb={[0, 0, 92, 40]} style={{width:80}}/>, tmxRich(x)])}/>} live={<FiveChecks376 storeKey="pb_five_tmx_v1" rows={checksRows.map(([a, x]) => [{ shapes: ic[a], vb: [0, 0, 92, 40] }, tmxRich(x)])}/>}/>
+    </LbPage>,
+  ];
+}
+function TermsLessonBook() { return <>{tmxLbPages(false)}</>; }
+
+// ─── Phase 479: chapter 23's pads (pages 1 to 6), the screen lesson and the drill ───
+// a word's reading card: the word as printed, its Korean reading, its meaning; hear it, say it
+const tmxPron = (e) => { if (!e) return null; const k = e.name || (e.w.charAt(0).toUpperCase() + e.w.slice(1)); return PRON[k] ? k : null; };
+const tmxSay = (e) => { const k = tmxPron(e); if (k) { chxStop(); speakTerm({ term: k }); } };
+// the parts of a little-word term that are not words of their own in this chapter
+const TMX_PART = { mosso: ['movement', '움직임', '모소'], moto: ['movement', '움직임', '모토'], 'poco a poco': ['little by little', '조금씩', '포코 아 포코'] };
+const tmxPartMean = (w) => { const e = TMX.find(x => x.w === w); return e ? tmxMean(e) : TMX_PART[w] ? t(TMX_PART[w][0], TMX_PART[w][1]) : ''; };
+function TmxCard({ e, extra }) {
+  if (!e) return null;
+  const k = tmxPron(e), snd = tmxSound(e);
+  return <div data-tmx-card={e.w} style={{border:'1.5px solid rgba(38,41,107,0.18)',borderRadius:12,background:'#fff',padding:'10px 12px',margin:'10px auto 0',maxWidth:360,textAlign:'center'}}>
+    <div style={{fontSize:11.5,fontWeight:900,letterSpacing:'0.08em',textTransform:'uppercase',color:BK.muted}}>{e.fam ? tmxFam(e.fam) : t('A little word with a term', '꾸며 주는 말 + 용어')}</div>
+    <div style={{margin:'4px 0 0'}}>{tmxWord(e.w, 30)}</div>
+    {LANG === 'ko' && e.rd && <div style={{fontSize:14,fontWeight:800,color:BK.muted,marginTop:2}}>{tmxNbKo(e.rd)}</div>}
+    <div style={{fontSize:16.5,fontWeight:800,color:BK.ink,margin:'6px 0 8px',textWrap:'balance',wordBreak:'keep-all'}}>{tmxKoT(tmxMean(e))}</div>
+    <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap'}}>
+      {snd && chxBtn('h', t('▶ Hear it', '▶ 들어 보기'), () => tmxPlay(e))}
+      {k && chxBtn('s', LANG === 'ko' ? '이탈리아어 발음 듣기' : 'Say it: ' + PRON[k], () => tmxSay(e))}
+      {extra}
+    </div>
+  </div>;
+}
+const tmxFamHead = (f, note) => <div style={{fontSize:11.5,fontWeight:900,letterSpacing:'0.08em',textTransform:'uppercase',color:BK.muted,margin:'0 0 4px'}}>{tmxFam(f)}{note && <span style={{textTransform:'none',letterSpacing:0,fontWeight:700}}> · {note}</span>}</div>;
+
+// page 1 and the end: the whole ladder, family by family, in its order (an arrow under the speeds, a wedge over the
+// dynamics, beats in the changes); tap a word: hear it, and its card opens under its family. end: tick the words you know
+const TMX_KNOWN = 'pb_terms_known_v1';
+const tmxKnownLoad = () => { try { const v = JSON.parse(localStorage.getItem(TMX_KNOWN)); return v && typeof v === 'object' ? v : {}; } catch (err) { return {}; } };
+const tmxWedge = () => <svg viewBox="0 0 300 18" style={{width:'100%',display:'block',margin:'0 0 5px'}} aria-hidden="true"><polygon points="6,9 294,2 294,16" fill="rgba(38,41,107,0.10)" stroke={PEN_N} strokeWidth="1.2" strokeLinejoin="round"/></svg>;
+const tmxArrow = () => <svg viewBox="0 0 300 10" style={{width:'100%',display:'block',margin:'5px 0 0'}} aria-hidden="true"><line x1="4" x2="290" y1="5" y2="5" stroke={BK.muted} strokeWidth="1.4"/><polygon points="298,5 290,1 290,9" fill={BK.muted}/></svg>;
+function TmxMapPad({ end }) {
+  const [sel, setSel] = useState(null), [known, setKnown] = useState(tmxKnownLoad);
+  useEffect(() => () => chxStop(), []);
+  const e = sel ? tmxOf(sel) : null;
+  const tap = (x) => { setSel(x.w); tmxPlay(x); };
+  const mark = (w) => { const nk = { ...known }; if (nk[w]) delete nk[w]; else nk[w] = 1; setKnown(nk); try { localStorage.setItem(TMX_KNOWN, JSON.stringify(nk)); } catch (err) {} };
+  const n = TMX.filter(x => known[x.w]).length;
+  const notes = { speed: t('slow → fast', '느리게 → 빠르게'), vol: t('soft → loud', '여리게 → 세게') };
+  const chg = (x) => { const on = sel === x.w; return <button key={x.w} type="button" data-tmx={x.w} aria-pressed={on} onClick={() => tap(x)} style={{border:'1.5px solid ' + (on ? PEN_C : 'rgba(38,41,107,0.28)'),background:'#fff',borderRadius:14,padding:'4px 10px 2px',minHeight:44,minWidth:64,display:'inline-flex',flexDirection:'column',alignItems:'center',gap:1,cursor:'pointer'}}>
+    <span style={{display:'inline-flex',alignItems:'center',gap:4}}>{end && known[x.w] && <span style={{color:PEN_G,fontWeight:900,fontSize:13}}>✓</span>}{tmxWord(x.w, 15, on ? PEN_C : PEN_N)}</span><span aria-hidden="true" style={{width:58,display:'block'}}><TmxBeatsSvg gaps={TMX_GAPS[x.w]} w0={174} w={x.w} sel={sel} word={false}/></span></button>; };
+  const card = e && <TmxCard e={e} extra={end ? chxBtn('k', known[e.w] ? t('✓ I know it', '✓ 알아요') : t('I know it', '알아요'), () => mark(e.w), known[e.w]) : null}/>;
+  return (
+    <div className="try-box" style={actBox} data-tmx={end ? 'pad-mine' : 'pad-map'}>
+      {!end && <div style={actTitle}>{t('The expression ladder', '표현의 사다리')}</div>}
+      <div style={{...actNote,textWrap:'pretty'}}>{tmxKoT(end ? t('Tap a word, then tick it when you can say what it means and play it.', '용어를 누르고, 뜻을 말하고 칠 수 있으면 ✓ 표시해요.')
+        : t('Tap any word: hear it and read what it means.', '아무 용어나 눌러요. 소리를 듣고 뜻을 읽어요.'))}</div>
+      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+        {['speed', 'change', 'vol', 'touch', 'little'].map(f => <div key={f} data-tmx-fam={f}>{tmxFamHead(f, notes[f])}
+          {f === 'vol' && tmxWedge()}
+          {f === 'vol' ? <>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(6,minmax(0,1fr))',gap:3}}>{TMX_VOL6.map(w => tmxChip(w, sel === w, tap, w, end && known[w], 16, true))}</div>
+            <div style={{display:'flex',flexWrap:'wrap',gap:4,marginTop:4}}>{['cresc.', 'decresc.', 'sf'].map(w => tmxChip(w, sel === w, tap, w, end && known[w]))}</div></>
+            : <div style={{display:'flex',flexWrap:'wrap',gap:4}}>{TMX.filter(x => x.fam === f).map(x => f === 'change' ? chg(x) : tmxChip(x.w, sel === x.w, tap, x.w, end && known[x.w]))}</div>}
+          {f === 'speed' && tmxArrow()}
+          {e && e.fam === f && card}</div>)}
+      </div>
+      {!e && <div style={{textAlign:'center',fontSize:14.5,fontWeight:800,color:BK.muted,margin:'10px 0 0'}}>{t('Tap a word to start.', '용어를 하나 눌러 시작해요.')}</div>}
+      {end && <div style={{textAlign:'center',fontSize:15,fontWeight:900,color:BK.ink,margin:'10px 0 0'}} data-tmx="known-count">{t('I know ' + n + ' of ' + TMX.length + ' words.', TMX.length + '개 중 ' + n + '개를 알아요.')}</div>}
+    </div>
+  );
+}
+// page 2: the speed ladder, fast at the top; tap a rung: its clicks
+function TmxSpeedPad() {
+  const [sel, setSel] = useState('Moderato');
+  useEffect(() => () => chxStop(), []);
+  const e = tmxOf(sel);
+  return (
+    <div className="try-box" style={actBox} data-tmx="pad-speed">
+      <div style={actTitle}>{t('The speed ladder', '빠르기 사다리')}</div>
+      <div style={actNote}>{tmxKoT(t('Fast at the top, slow at the bottom. Tap a word: hear its speed.', '위로 갈수록 빠르고, 아래로 갈수록 느려요. 빠르기말을 누르면 그 빠르기가 들려요.'))}</div>
+      <div style={{display:'flex',flexDirection:'column',gap:4,maxWidth:320,margin:'0 auto'}}>{TMX_SPEED.slice().reverse().map(x => { const on = sel === x.w;
+        return <button key={x.w} type="button" data-tmx={x.w} aria-pressed={on} onClick={() => { setSel(x.w); tmxPlay(x); }} style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) 66px',alignItems:'center',gap:8,minHeight:44,padding:'2px 12px',border:'1.5px solid ' + (on ? PEN_C : 'rgba(38,41,107,0.2)'),borderRadius:10,background:'#fff',cursor:'pointer',textAlign:'left'}}>
+          {tmxWord(x.w, 19, on ? PEN_C : PEN_N)}<svg viewBox="0 0 66 22" width="66" height="22" aria-hidden="true"><StmMark x={2} y={18} n={x.bpm} size={13} c={on ? PEN_C : BK.muted}/></svg></button>; })}</div>
+      {chxMsg(t(e.w + ': ' + e.en + '.', e.rd + ': ' + e.ko + '.'))}
+    </div>
+  );
+}
+// page 3: changing speed: the beats as dots; tap a row: hear it
+const TMX_CHG = ['accel.', 'rall.', 'rit.', 'riten.', 'a tempo'];
+function TmxChangePad() {
+  const [sel, setSel] = useState('accel.');
+  useEffect(() => () => chxStop(), []);
+  const e = tmxOf(sel), same = sel === 'rall.' || sel === 'rit.';
+  return (
+    <div className="try-box" style={actBox} data-tmx="pad-change">
+      <div style={actTitle}>{t('Changing speed', '빠르기 변화')}</div>
+      <div style={actNote}>{tmxKoT(t('The dots are beats: closer is faster. Tap a row to hear it.', '점은 박이에요. 가까울수록 빨라요. 줄을 누르면 들려요.'))}</div>
+      <div style={{display:'flex',flexDirection:'column',gap:4,maxWidth:340,margin:'0 auto'}}>{TMX_CHG.map(w => { const on = sel === w, x = tmxOf(w);
+        return <button key={w} type="button" data-tmx={w} aria-pressed={on} onClick={() => { setSel(w); tmxPlay(x); }} style={{display:'grid',gridTemplateColumns:'84px minmax(0,1fr)',alignItems:'center',gap:8,minHeight:48,padding:'2px 10px',border:'1.5px solid ' + (on ? PEN_C : 'rgba(38,41,107,0.2)'),borderRadius:10,background:'#fff',cursor:'pointer',textAlign:'left'}}>
+          {tmxWord(w, 18, on ? PEN_C : PEN_N)}<TmxBeatsSvg gaps={TMX_GAPS[w]} x0={12} w0={174} w={w} sel={sel} word={false} label={w}/></button>; })}</div>
+      {chxMsg(t(e.w + ': ' + e.en + '.' + (same ? ' rall. and rit.: two names, one meaning.' : ''), e.rd + ': ' + e.ko + '.' + (same ? ' 랄렌탄도와 리타르단도는 이름은 둘, 뜻은 하나.' : '')))}
+    </div>
+  );
+}
+// page 4: loud and soft: the six rungs under a wedge, the hairpins and an accent
+function TmxVolPad() {
+  const [sel, setSel] = useState('mf');
+  useEffect(() => () => chxStop(), []);
+  const e = tmxOf(sel), tap = (w) => { setSel(w); tmxPlay(tmxOf(w)); };
+  const pin = (w, c) => <svg viewBox="0 0 60 16" width="52" height="14" aria-hidden="true">{w === 'cresc.' ? <path d="M58 2 L2 8 L58 14" fill="none" stroke={c} strokeWidth="1.8" strokeLinejoin="round"/> : <path d="M2 2 L58 8 L2 14" fill="none" stroke={c} strokeWidth="1.8" strokeLinejoin="round"/>}</svg>;
+  const btn = (w, h = 50) => { const on = sel === w, c = on ? PEN_C : PEN_N; return <button key={w} type="button" data-tmx={w} aria-pressed={on} onClick={() => tap(w)} style={{minHeight:h,border:'1.5px solid ' + (on ? PEN_C : 'rgba(38,41,107,0.2)'),borderRadius:10,background:'#fff',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:2,padding:'2px 2px'}}>{/^(de)?cresc\.$/.test(w) && pin(w, c)}{tmxWord(w, w.length < 3 ? 20 : 15, c)}</button>; };
+  return (
+    <div className="try-box" style={actBox} data-tmx="pad-vol">
+      <div style={actTitle}>{t('Loud and soft', '셈여림')}</div>
+      <div style={actNote}>{tmxKoT(t('One rung louder each time. Tap a sign to hear it.', '한 칸씩 더 세게. 기호를 누르면 들려요.'))}</div>
+      <div style={{maxWidth:340,margin:'0 auto'}}>
+        <svg viewBox="0 0 300 26" style={{width:'100%',display:'block'}} aria-hidden="true"><polygon points="8,13 292,3 292,23" fill="rgba(38,41,107,0.10)" stroke={PEN_N} strokeWidth="1.4" strokeLinejoin="round"/></svg>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(6,minmax(0,1fr))',gap:3,marginTop:4}}>{TMX_VOL6.map(w => btn(w))}</div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:6,marginTop:8}}>{['cresc.', 'decresc.', 'sf'].map(w => btn(w, 54))}</div>
+      </div>
+      {chxMsg(t(e.w + ': ' + e.en + '.', e.rd + ': ' + e.ko + '.'))}
+    </div>
+  );
+}
+// page 5: one tune, three touches; then the character words
+function TmxTouchPad() {
+  const [sel, setSel] = useState('legato'), [touch, setTouch] = useState('legato');
+  useEffect(() => () => chxStop(), []);
+  const e = tmxOf(sel), tap = (x) => { setSel(x.w); if (TMX_T3B[x.w]) setTouch(x.w); tmxPlay(x); };
+  return (
+    <div className="try-box" style={actBox} data-tmx="pad-touch">
+      <div style={actTitle}>{t('Touch and character', '터치와 느낌')}</div>
+      <div style={actNote}>{tmxKoT(t('Dots: short. A slur: smooth. Both: in between. Tap a word to hear it.', '점은 짧게, 이음줄은 부드럽게, 둘 다 있으면 그 사이. 용어를 누르면 들려요.'))}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap'}}>{Object.keys(TMX_T3B).map(w => tmxChip(w, sel === w, tap))}</div>
+      <div style={{maxWidth:300,margin:'4px auto 0'}}><SdyStaff full items={tmxBar(TMX_T3B[touch][1])} o={{ D: 40 }} k={TMX_T3B[touch][0]} label={t('C D E F, ' + touch + '.', 'C D E F, ' + tmxOf(touch).rd + '.')}/></div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap',marginTop:4}}>{['sostenuto', 'cantabile', 'leggiero', 'maestoso', 'espressivo'].map(w => tmxChip(w, sel === w, tap))}</div>
+      {chxMsg(t(e.w + ': ' + e.en + '.', e.rd + ': ' + e.ko + '.'))}
+    </div>
+  );
+}
+// page 6: a little word and a big one: pick a term; its two halves and what they make
+function TmxBuildPad() {
+  const [sel, setSel] = useState('poco rit.');
+  useEffect(() => () => chxStop(), []);
+  const c = tmxOf(sel), b = tmxOf(c.b), tap = (x) => { setSel(x.w); tmxPlay(x); };
+  const half = (w, on) => <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:2,minWidth:0}}>
+    <span style={{border:'1.5px solid ' + (on ? PEN_C : 'rgba(38,41,107,0.3)'),borderRadius:8,padding:'4px 10px',background:'#fff'}}>{tmxWord(w, 19, on ? PEN_C : PEN_N)}</span>
+    <span style={{fontSize:12.5,fontWeight:800,color:BK.muted,textAlign:'center',textWrap:'balance',wordBreak:'keep-all'}}>{tmxKoT(tmxPartMean(w))}</span></div>;
+  return (
+    <div className="try-box" style={actBox} data-tmx="pad-build">
+      <div style={actTitle}>{t('Little words', '꾸며 주는 말')}</div>
+      <div style={actNote}>{tmxKoT(t('A little word changes the term beside it. Pick one.', '꾸며 주는 말이 옆의 용어를 바꿔요. 하나를 골라요.'))}</div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap'}}>{TMX_COMBO.map(x => tmxChip(x.w, sel === x.w, tap))}</div>
+      <div style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) 18px minmax(0,1fr)',alignItems:'start',gap:6,maxWidth:300,margin:'12px auto 0'}}>
+        {half(c.a, true)}<span style={{fontWeight:900,color:BK.muted,textAlign:'center',paddingTop:8}}>+</span>{half(c.b)}</div>
+      {chxMsg('= ' + t(c.w + ': ' + c.en + '.', (c.rd ? c.rd + ': ' : c.w + ': ') + c.ko + '.'))}
+      <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap'}}>
+        {b && tmxSound(b) && chxBtn('b', '▶ ' + b.w, () => tmxPlay(b))}
+        {tmxSound(c) && chxBtn('c', '▶ ' + c.w, () => tmxPlay(c), true)}
+      </div>
+    </div>
+  );
+}
+
+// ── the book on screen: the opener is the lesson's head, every other page a step; the whole ladder again at the end ──
+function TmxLearn({ onStart }) {
+  const pages = tmxLbPages(true);
+  const opener = pages[0];
+  return (
+    <Lesson id="terms" title={bkChapterName('terms')} onStart={onStart} noArt
+      head={<LbScreenCtx.Provider value={true}><BkChapterCtx.Provider value="terms"><div className="lb-screen lb-open" style={{display:'flex',flexDirection:'column',gap:12,margin:'0 0 8px'}}>{lbWordsFirst(opener.props.children)}</div></BkChapterCtx.Provider></LbScreenCtx.Provider>}>
+      {pages.slice(1).map((pg, i) => (
+        <Step key={i} title={<span>{pg.props.title}</span>} storeAs={'k' + (i + 1)}>
+          <LbScreenPage page={pg}/>
+        </Step>
+      ))}
+      <Step key="map" extra title={t('My terms', '나의 용어')} storeAs="k7"><TmxMapPad end/></Step>
+    </Lesson>
+  );
+}
+
+// ── the drill, after page 6, in the book's order: speed (1, 2), changing speed (3), loud and soft (4), listening (5),
+// touch and character (6), little words (7), build a term (8); 9 extra: meaning → term, every family ──
+const TMX_LEVELS = [
+  { n: 1, label: 'Speed words: what they mean', kind: 'tm', fam: 'speed', time: 9 },
+  { n: 2, label: 'Which is faster?', kind: 'faster', time: 7 },
+  { n: 3, label: 'Changing speed', kind: 'tm', fam: 'change', time: 9 },
+  { n: 4, label: 'Loud and soft: the signs', kind: 'tm', fam: 'vol', time: 9 },
+  { n: 5, label: 'Listen: which one?', kind: 'ear', time: 12, noPrint: true },
+  { n: 6, label: 'Touch and character', kind: 'tm', fam: 'touch', time: 9 },
+  { n: 7, label: 'Little words', kind: 'tm', fam: 'little', time: 9 },
+  { n: 8, label: 'Build the term', kind: 'combo', time: 11 },
+  { n: 9, label: 'Extra: meaning → term', kind: 'mt', time: 10 },
+];
+Object.assign(LEVEL_KO, { 'Speed words: what they mean': '빠르기말의 뜻', 'Which is faster?': '어느 쪽이 더 빠를까요?', 'Changing speed': '빠르기 변화', 'Loud and soft: the signs': '셈여림 기호',
+  'Listen: which one?': '듣기: 어느 쪽?', 'Touch and character': '터치와 느낌', 'Little words': '꾸며 주는 말', 'Build the term': '용어 만들기', 'Extra: meaning → term': '더 해 보기: 뜻 → 용어' });
+// words a child cannot tell apart by meaning alone never stand as each other's wrong answer
+const TMX_GRP = { Largo: 'slow', Lento: 'slow', Adagio: 'slow', Allegro: 'lively', Vivace: 'lively', Presto: 'vfast', Prestissimo: 'vfast', 'rall.': 'rit', 'rit.': 'rit' };
+const tmxClash = (a, b) => a.w === b.w || (TMX_GRP[a.w] && TMX_GRP[a.w] === TMX_GRP[b.w]) || a.en === b.en || a.ko === b.ko;
+const TMX_EAR = [['accel.', 'rit.'], ['legato', 'staccato'], ['cresc.', 'decresc.'], ['Adagio', 'Presto'], ['sf', 'cresc.'], ['a tempo', 'riten.']];
+// level 8: each term with three that a child might build instead
+const TMX_BUILD_WRONG = { 'poco rit.': ['molto rit.', 'poco accel.', 'senza rit.'], 'molto cresc.': ['poco cresc.', 'molto decresc.', 'sempre staccato'], 'sempre staccato': ['sempre legato', 'senza staccato', 'poco rit.'],
+  'più mosso': ['meno mosso', 'senza rit.', 'molto cresc.'], 'meno mosso': ['più mosso', 'con moto', 'sempre staccato'], 'con moto': ['meno mosso', 'sempre legato', 'molto cresc.'],
+  'senza rit.': ['poco rit.', 'molto rit.', 'meno mosso'], 'poco a poco cresc.': ['molto cresc.', 'poco a poco decresc.', 'sempre staccato'] };
+const _tmxBag = {};
+const TMX_FPAIRS = []; TMX_SPEED.forEach((x, i) => TMX_SPEED.forEach((y, j) => { if (j - i >= 2 && !tmxClash(x, y)) TMX_FPAIRS.push([i, j]); }));
+const tmxFromBag = (kind, list) => { let b = _tmxBag[kind]; if (!b || !b.length) b = _tmxBag[kind] = shuffle(list.slice()); return b.pop(); };
+function genTmxQuestion(lv, prev) {
+  const uid = Math.random(), same = (key) => prev && prev.key === key;
+  for (let g = 0; g < 40; g++) {
+    if (lv.kind === 'tm' || lv.kind === 'mt') {
+      const pool = lv.fam ? TMX.filter(x => x.fam === lv.fam) : TMX, e = tmxFromBag(lv.kind + (lv.fam || ''), pool), key = lv.kind + e.w;
+      if (same(key)) continue;
+      const wrong = [];
+      for (const x of shuffle(TMX.filter(x => x.fam === e.fam && !tmxClash(x, e)))) if (wrong.length < 3 && !wrong.some(y => tmxClash(x, y))) wrong.push(x);
+      if (wrong.length < 3) continue;
+      if (lv.kind === 'tm') return { kind: 'tm', key, w: e.w, answer: e.en, choices: shuffle([e.en, ...wrong.map(x => x.en)]), uid };
+      return { kind: 'mt', key, w: e.w, answer: e.w, choices: shuffle([e.w, ...wrong.map(x => x.w)]), uid };
+    }
+    if (lv.kind === 'faster') {
+      const [i, j] = tmxFromBag('faster', TMX_FPAIRS).slice().sort(() => Math.random() - 0.5);
+      const a = TMX_SPEED[i], b = TMX_SPEED[j], key = 'f' + [a.w, b.w].sort().join();
+      if (same(key)) continue;
+      return { kind: 'faster', key, answer: (i > j ? a : b).w, choices: shuffle([a.w, b.w]), uid };
+    }
+    if (lv.kind === 'ear') {
+      const pair = pick(TMX_EAR), w = pick(pair), key = 'e' + w;
+      if (same(key)) continue;
+      return { kind: 'ear', key, w, answer: w, choices: pair.slice(), uid };
+    }
+    if (lv.kind === 'combo') {
+      const c = tmxFromBag('combo', TMX_COMBO), key = 'c' + c.w;
+      if (same(key)) continue;
+      return { kind: 'combo', key, w: c.w, answer: c.w, choices: shuffle([c.w, ...TMX_BUILD_WRONG[c.w]]), uid };
+    }
+  }
+  return { kind: 'tm', key: 'x', w: 'Andante', answer: 'at a walking pace', choices: ['at a walking pace', 'very fast', 'slowly', 'moderately fast'], uid };
+}
+const tmxCheck = (q, ans) => ans != null && String(ans) === String(q.answer);
+// a meaning in the student's language (the answer is kept in English, the key the check compares)
+const tmxEnToKo = (en) => { const e = TMX.find(x => x.en === en) || TMX_COMBO.find(x => x.en === en); return e ? t(e.en, e.ko) : en; };
+function tmxAnswerLabel(q) {
+  if (q.kind === 'faster') { const [a, b] = q.answer === q.choices[0] ? q.choices : [q.choices[1], q.choices[0]]; return t(a + ' (faster than ' + b + ')', tmxOf(a).rd + '(' + a + ')가 ' + tmxOf(b).rd + '(' + b + ')보다 빨라요'); }
+  const e = tmxOf(q.w); return t(e.w + ': ' + e.en, e.w + ' = ' + e.ko);
+}
+function TmxQuestion({ q, given, locked, onAnswer, pixel }) {
+  const paper = locked && !given;
+  const board = useBoard(q, given), isDone = !!given, btnCls = pixel ? 'pixel-choice' : 'choice-btn';
+  const ink = pixel ? '#faf6ec' : 'var(--text)', e = q.w ? tmxOf(q.w) : null;
+  const st = (c) => !isDone ? '' : (String(c) === String(q.answer) ? ' good' : (String(given.ans) === String(c) ? ' bad' : ''));
+  useEffect(() => () => chxStop(), [q.uid]);
+  useEffect(() => { if (q.kind === 'ear' && !locked) { const tm = setTimeout(() => tmxPlay(tmxOf(q.w)), 350); return () => { clearTimeout(tm); chxStop(); }; } }, [q.uid]);
+  const prompt = { tm: t('What does it mean?', '무슨 뜻일까요?'), mt: t('Which term means this?', '이 뜻의 용어는 무엇일까요?'), combo: t('Which term means this?', '이 뜻의 용어는 무엇일까요?'),
+    faster: t('Which is faster?', '어느 쪽이 더 빠를까요?'), ear: t('Listen: which one?', '듣고 골라요: 어느 쪽일까요?') }[q.kind];
+  const wordCol = pixel ? '#faf6ec' : PEN_N;
+  let head = null;
+  if (q.kind === 'tm') head = <div style={{textAlign:'center',margin:'0 0 4px'}}>{tmxWord(q.w, pixel ? 20 : 34, wordCol)}{LANG === 'ko' && e.rd && <div style={{fontSize:pixel ? 10 : 14,fontWeight:800,color:pixel ? '#faf6ec' : BK.muted,marginTop:2}}>{e.rd}</div>}</div>;
+  if (q.kind === 'mt' || q.kind === 'combo') head = <div style={{textAlign:'center',fontSize:pixel ? 13 : 21,fontWeight:900,color:ink,margin:'0 0 6px',textWrap:'balance',wordBreak:'keep-all'}}>“{tmxKoT(tmxMean(e))}”</div>;
+  if (q.kind === 'ear') head = <div style={{textAlign:'center',margin:'4px 0 6px'}}><button className="ghost-btn" style={{minHeight:44}} onClick={() => tmxPlay(tmxOf(q.w))}>{t('▶ Listen again', '▶ 다시 듣기')}</button></div>;
+  const after = isDone && !pixel && e && q.kind !== 'ear' && <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap',margin:'0 0 8px'}}>
+    {tmxSound(e) && chxBtn('h', t('▶ Hear it', '▶ 들어 보기'), () => tmxPlay(e))}{tmxPron(e) && chxBtn('s', LANG === 'ko' ? '이탈리아어 발음 듣기' : 'Say it: ' + PRON[tmxPron(e)], () => tmxSay(e))}</div>;
+  const words = q.kind !== 'tm', long = words && (q.kind === 'combo' || q.choices.some(c => c.length > 10)), cols = paper ? 2 : words && !long && !pixel ? 2 : 1;
+  const lab = (c) => words ? tmxWord(c, pixel ? 11 : 21, pixel ? '#26296b' : undefined) : <span style={{fontSize:pixel ? 11 : 16.5,fontWeight:800,wordBreak:'keep-all'}}>{tmxKoT(tmxEnToKo(c))}</span>;
+  return <div>{!paper && <BoardTrack b={board} pixel={pixel}/>}
+    <p style={{fontSize:pixel ? 11.5 : 17,fontWeight:900,textAlign:'center',margin:'0 0 8px',color:ink,textWrap:'balance',wordBreak:'keep-all'}}>{prompt}</p>
+    {head}
+    {after}
+    <div style={{display:'grid',gridTemplateColumns:'repeat(' + cols + ',minmax(0,1fr))',gap:8,marginTop:6}}>{q.choices.map(c => <button key={c} disabled={locked} data-tmx-choice={c} onClick={() => { if (q.kind === 'ear') chxStop(); onAnswer(c); }} className={btnCls + st(c)} style={{padding:'10px 6px',minHeight:48}}>{lab(c)}</button>)}</div>
+  </div>;
+}
+
+// ─── Phase 479: chapter 23's Workbook (pages 2 to 8: one per lesson step, a term hunt in any piece, the check-up) and
+// the Teacher copy (they replace the Phase 117 ones). Chapter 21's ivxAns, ivxCircle and ivxTicks are reused.
+const TMX_WB = {
+  try2: [['Largo', 'Allegro'], ['Presto', 'Andante'], ['Lento', 'Vivace'], ['Allegretto', 'Adagio']],   // the faster: Allegro (done), Presto, Vivace, Allegretto
+  turn2: ['Lento', 'Allegretto', 'Vivace', 'Presto', 'Largo', 'Prestissimo'],
+  try3: ['accel.', 'riten.', 'a tempo', 'rit.'],
+  turn3: ['accel.', 'rall.', 'riten.', 'a tempo'],                   // then: draw the beats for rit. and for accel.
+  try4: [['p', 'f'], ['mf', 'mp'], ['ff', 'mf'], ['pp', 'p']],         // the louder: f (done), mf, ff, p
+  bank4: ['mf', 'pp', 'ff', 'p', 'f', 'mp'],
+  turn4: ['mp', 'ff', 'cresc.', 'sf'],
+  try5: ['staccato', 'mezzo staccato', 'legato', 'mezzo staccato'],
+  turn5: ['sostenuto', 'cantabile', 'leggiero', 'maestoso', 'espressivo', 'mezzo staccato'],
+  try6: ['poco rit.', 'molto cresc.', 'sempre staccato', 'senza rit.'],
+  turn6: ['più mosso', 'meno mosso', 'con moto', 'poco a poco cresc.', 'sempre', 'senza'],
+};
+const TMX_CHK = {
+  mean: ['Allegretto', 'rit.', 'cresc.', 'mezzo staccato'],
+  sign: ['ff', 'mp', 'sf'],
+  pick: [['faster', 'Lento', 'Allegro'], ['louder', 'mf', 'pp']],
+  term: ['poco', 'sempre', 'a tempo'],
+};
+const tmxChkNo = () => { const C = TMX_CHK, nB = C.mean.length + 1, nC = nB + C.sign.length, nD = nC + C.pick.length; return { nB, nC, nD, total: nD + C.term.length - 1 }; };
+// writing lines; the example's answer written on the first in coral
+const tmxLine = (ex, txt, h = 28, n = 1) => <div style={{margin:'auto 6px 2px'}}>{Array.from({ length: n }, (_, k) => <div key={k} style={{borderBottom:'1.3px solid ' + BK.line,minHeight:h,display:'flex',alignItems:'flex-end',justifyContent:'center',color:BK.coral,fontStyle:'italic',fontWeight:900,fontSize:13.5,textAlign:'center',lineHeight:1.2,paddingBottom:2}}>{ex && k === n - 1 ? txt : ''}</div>)}</div>;
+const tmxHead = (w, s = 21, mt = 14) => <div style={{textAlign:'center',marginTop:mt}}>{tmxWord(w, s)}</div>;
+const tmxMeanTxt = (w) => '“' + tmxOf(w).en + '”';
+const tmxQuote = (x, mt = 16) => <div style={{textAlign:'center',fontSize:14,fontWeight:800,color:BK.ink,marginTop:mt,lineHeight:1.3,textWrap:'balance'}}>{x}</div>;
+// words to circle, each its own size; the done one ringed in coral
+const tmxCircleW = (words, on, size = 17, col) => <div style={{display:'flex',flexDirection:col ? 'column' : 'row',alignItems:'center',justifyContent:'center',gap:col ? 4 : 12,flexWrap:'wrap',margin:'4px 0 2px'}}>{words.map((w, i) => <span key={i} style={{border:'1.5px solid ' + (on === w ? BK.coral : 'transparent'),borderRadius:16,padding:'0 8px'}}>{tmxWord(w, size, on === w ? BK.coral : PEN_N)}</span>)}</div>;
+const tmxTick = (w, size = 17) => <span key={w} style={{display:'flex',alignItems:'center',gap:8}}>{sprTick()}{tmxWord(w, size)}</span>;
+const tmxTickRow = (ws) => <div style={{display:'flex',justifyContent:'center',gap:'8px 26px',flexWrap:'wrap'}}>{ws.map(w => tmxTick(w))}</div>;
+const TMX_ORDER2 = ['Allegro', 'Adagio', 'Presto', 'Andante', 'Largo', 'Moderato'];   // number them, slowest first: 5 2 6 3 1 4 (no two neighbours on the ladder)
+const tmxFaster = (a, b) => TMX_SPEED.findIndex(x => x.w === a) > TMX_SPEED.findIndex(x => x.w === b) ? a : b;
+const TMX_SIX_C = [['ts', 3], ['q', 1, 28], ['q', 1, 28], ['q', 1, 28], ['|'], ['q', 1, 28], ['q', 1, 28], ['q', 1, 28], ['||']];
+const tmxLouder = (a, b) => TMX_VOL6.indexOf(a) > TMX_VOL6.indexOf(b) ? a : b;
+
+function TmxWorkbook({ startNo = 1 }) {
+  const W = TMX_WB, pages = [];
+  const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + 1 + pages.length} chId="terms">{content}</WbPage>);
+  const meanCell = (w, n, s = 21, h = 38) => <BkCell key={n} n={n}>{sdyCol(<>{tmxHead(w, s)}{tmxLine(false, '', h, 2)}</>, '6px 2px 8px')}</BkCell>;
+
+  // 2 (faces "The speed ladder")
+  P(<>
+    <WbTop step={1}/>
+    <Part kind="together" title="Which is faster?" how="Circle the faster word in each box. The first one is done.">
+      <BkGrid cols={4} gap="8px 10px">{W.try2.map(([a, b], i) => <ExCell key={i} n={i + 1} ex={i === 0}>{sdyCol(<div style={{margin:'auto 0'}}>{tmxCircleW([a, b], i === 0 ? tmxFaster(a, b) : null, 21, true)}</div>, '30px 2px 18px')}</ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="What it means; in order" how="Write what each speed word means. Then number the six words in 11 from the slowest (1) to the fastest (6).">
+      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+        <BkGrid cols={3} gap="8px 10px">{W.turn2.map((w, i) => meanCell(w, i + 5))}</BkGrid>
+        <BkCell n={11}><div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',justifyItems:'center',gap:6,padding:'14px 10px 8px'}}>{TMX_ORDER2.map(w => <div key={w} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:6}}>{tmxWord(w, 18)}{bkBox(48, 44)}</div>)}</div></BkCell>
+      </div>
+    </Part>
+    <Part kind="play" title="Four speeds" how="Play C D E F G at each speed. Your teacher plays a scale: say its word. Tick each one.">
+      {sskRowN(12, <div style={{display:'flex',flexDirection:'column',gap:10,width:'100%'}}><div style={{maxWidth:600,margin:'0 auto',width:'100%'}}><TmxSpeedSvg nums label="The speed ladder, slow to fast, a metronome number by each word: Largo, Lento, Adagio, Andante, Moderato, Allegretto, Allegro, Vivace, Presto, Prestissimo."/></div><div style={{textAlign:'center',fontSize:12,color:BK.muted,marginTop:-4}}>The numbers are only about: pieces differ.</div>{tmxTickRow(['Lento', 'Andante', 'Allegretto', 'Presto'])}</div>)}
+    </Part>
+    <Faces/>
+  </>);
+
+  // 3 (faces "Changing speed")
+  const beats = (w, k = 1, mw = 150) => <div style={{maxWidth:mw,margin:'0 auto',width:'100%'}}><TmxBeatsSvg gaps={TMX_GAPS[w].map(g => g * k)} x0={12} w0={174 * k} w={w} word={false} label={'A row of beats: ' + tmxOf(w).en + '.'}/></div>;
+  P(<>
+    <WbTop step={2}/>
+    <Part kind="together" title="Read the beats" how="The dots are beats. Circle the word each row of beats shows. The first one is done.">
+      <BkGrid cols={4} gap="8px 10px">{W.try3.map((w, i) => <ExCell key={i} n={i + 1} ex={i === 0}>{sdyCol(<>{beats(w)}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',marginTop:'auto',rowGap:4}}>{['accel.', 'rit.', 'riten.', 'a tempo'].map(x => <div key={x}>{tmxCircleW([x], i === 0 ? w : null, 14.5)}</div>)}</div></>, '28px 2px 8px')}</ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="What it means; draw it" how="Write what each word means. Draw seven beats for rit. and for accel. Then circle the word that means the same as rall.">
+      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+        <BkGrid cols={4} gap="8px 10px">{W.turn3.map((w, i) => meanCell(w, i + 5, 21, 44))}</BkGrid>
+        <BkGrid cols={3} gap="8px 10px">{['rit.', 'accel.'].map((w, i) => <BkCell key={'d' + i} n={i + 9}>{sdyCol(<>{tmxHead(w, 20)}<div style={{height:100,margin:'auto 12px 6px',borderBottom:'1.3px dashed ' + BK.line}}/></>, '6px 2px 6px')}</BkCell>)}
+          <BkCell n={11}>{sdyCol(<>{tmxQuote(<span>The same as {tmxWord('rall.', 16)}</span>, 14)}<div style={{margin:'auto 0 4px'}}>{tmxCircleW(['accel.', 'rit.', 'a tempo'], null, 17)}</div></>, '6px 2px 8px')}</BkCell></BkGrid>
+      </div>
+    </Part>
+    <Part kind="play" title="Faster, slower, back" how="C D E F G A B C getting faster (accel.), then down getting slower (rit.). Then twelve Cs: four steady, four held back (riten.), four at the first speed again (a tempo). Tick each.">
+      {sskRowN(12, <div style={{display:'grid',gridTemplateColumns:'110px minmax(0,1fr) 40px',alignItems:'center',gap:'22px 14px',width:'100%',maxWidth:580,margin:'0 auto'}}>{['accel.', 'rit.', 'riten.', 'a tempo'].map(w => [<div key={w} style={{textAlign:'right'}}>{tmxWord(w, 20)}</div>, <div key={w + 'b'}>{beats(w, 2.6, 400)}</div>, <span key={w + 't'}>{sprTick()}</span>])}</div>)}
+    </Part>
+    <Faces/>
+  </>);
+
+  // 4 (faces "Loud and soft")
+  P(<>
+    <WbTop step={3}/>
+    <Part kind="together" title="Which is louder?" how="Circle the louder sign in each box. The first one is done.">
+      <BkGrid cols={4} gap="8px 10px">{W.try4.map(([a, b], i) => <ExCell key={i} n={i + 1} ex={i === 0}>{sdyCol(<div style={{margin:'auto 0'}}>{tmxCircleW([a, b], i === 0 ? tmxLouder(a, b) : null, 28)}</div>, '34px 2px 22px')}</ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="The volume ladder" how={<span>Write these six signs in the boxes, softest first: {W.bank4.map((w, i) => <React.Fragment key={w}>{i > 0 && ' · '}{tmxWord(w, 15, BK.ink)}</React.Fragment>)}. Then write what each word means.</span>}>
+      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+        <BkCell n={5}><div style={{padding:'12px 30px 10px'}}><svg viewBox="0 0 600 30" style={{width:'100%',display:'block'}} aria-hidden="true"><polygon points="20,15 580,3 580,27" fill="rgba(38,41,107,0.08)" stroke={PEN_N} strokeWidth="1.3" strokeLinejoin="round"/></svg>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',justifyItems:'center',marginTop:8}}>{TMX_VOL6.map(w => <span key={w}>{bkBox(62, 58)}</span>)}</div></div></BkCell>
+        <BkGrid cols={4} gap="8px 10px">{W.turn4.map((w, i) => meanCell(w, i + 6))}</BkGrid>
+      </div>
+    </Part>
+    <Part kind="play" title="One rung louder" how={<span>{tmxRich('Play C six times, pp to ff. Then play the tune, doing what the signs say; then C D E F G with an sf on the G. Tick each.')}</span>}>
+      {sskRowN(10, <div style={{display:'flex',flexDirection:'column',gap:10,width:'100%'}}>
+        <div style={{maxWidth:322,margin:'0 auto',width:'100%'}}><SdyStaff full items={TMX_SIX_C} o={{ D: 46 }} k={{ dyn: TMX_VOL6.map((w, i) => [i, w]) }} label="Six crotchet Cs, pp, p, mp, mf, f, ff."/></div>
+        <div style={{maxWidth:600,margin:'0 auto',width:'100%'}}><SdyStaff full items={SDY_ROWS.hair} o={{ D: 36 }} k={SDY_MARKS.hair} label="Four bars: C D E F from p getting louder; a semibreve G, f; G F E D getting softer; a semibreve C, p."/></div>{tmxTickRow(['pp → ff', 'the tune', 'sf'])}</div>)}
+    </Part>
+    <Faces/>
+  </>);
+
+  // 5 (faces "Touch and character")
+  const bar = (w, mw = 150) => { const [k, nt] = TMX_T3B[w]; return <div style={{maxWidth:mw,margin:'0 auto',width:'100%'}}><SdyStaff full items={tmxBar(nt)} k={k} o={{ D: 20 }} label={'C D E F with ' + (k.slurs && k.stacc ? 'dots and a slur' : k.slurs ? 'a slur' : 'dots') + '.'}/></div>; };
+  P(<>
+    <WbTop step={4}/>
+    <Part kind="together" title="Which touch?" how="Look at the marks. Circle legato, staccato or mezzo staccato. The first one is done.">
+      <BkGrid cols={4} gap="8px 10px">{W.try5.map((w, i) => <ExCell key={i} n={i + 1} ex={i === 0}>{sdyCol(<>{bar(w)}<div style={{marginTop:'auto'}}>{tmxCircleW(['legato', 'staccato', 'mezzo staccato'], i === 0 ? w : null, 14, true)}</div></>, '26px 2px 8px')}</ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="What it means" how="Write what each word means.">
+      <BkGrid cols={3} gap="8px 10px">{W.turn5.map((w, i) => meanCell(w, i + 5, 19, 44))}</BkGrid>
+    </Part>
+    <Part kind="play" title="Three touches, three characters" how="Play each bar with its touch. Then C D E F G three times: cantabile, leggiero, maestoso. Can your teacher tell which is which? Tick each.">
+      {sskRowN(11, <div style={{display:'flex',flexDirection:'column',gap:12,width:'100%'}}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:'4px 14px',alignItems:'start',justifyItems:'center'}}>{Object.keys(TMX_T3B).map(w => <div key={w} style={{width:'100%'}}>{bar(w, 220)}</div>)}{Object.keys(TMX_T3B).map(w => tmxTick(w, 16))}</div>
+        {tmxTickRow(['cantabile', 'leggiero', 'maestoso'])}</div>)}
+    </Part>
+    <Faces/>
+  </>);
+
+  // 6 (faces "Little words")
+  P(<>
+    <WbTop step={5}/>
+    <Part kind="together" title="Little word + term" how="Write what each term means. The first one is done.">
+      <BkGrid cols={4} gap="8px 10px">{W.try6.map((w, i) => <ExCell key={i} n={i + 1} ex={i === 0}>{sdyCol(<>{tmxHead(w, 19)}{tmxLine(i === 0, tmxOf(w).en, 38, 2)}</>, '12px 2px 8px')}</ExCell>)}</BkGrid>
+    </Part>
+    <Part kind="home" title="Write the term; make one" how="Write the term for each meaning. In 11, make your own: a little word and a term, and what they mean together.">
+      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+        <BkGrid cols={3} gap="8px 10px">{W.turn6.map((w, i) => <BkCell key={i} n={i + 5}>{sdyCol(<>{tmxQuote(tmxMeanTxt(w))}{tmxLine(false, '', 62)}</>, '6px 2px 8px')}</BkCell>)}</BkGrid>
+        <BkCell n={11}><div style={{display:'grid',gridTemplateColumns:'110px 20px 130px 24px minmax(0,1fr)',alignItems:'end',gap:8,padding:'22px 14px 12px'}}>{bkBox(110, 50)}<span style={{fontWeight:900,color:BK.muted,textAlign:'center',paddingBottom:14}}>+</span>{bkBox(130, 50)}<span style={{fontWeight:900,color:BK.muted,textAlign:'center',paddingBottom:14}}>=</span><div style={{borderBottom:'1.3px solid ' + BK.line,height:50}}/></div></BkCell>
+      </div>
+    </Part>
+    <Part kind="play" title="One piece, three ways" how="Play a piece you know sempre staccato, then più mosso, then with a poco rit. at the end. Then play your own term from 11. Tick each.">
+      {sskRowN(12, <div style={{display:'grid',gridTemplateColumns:'30px 190px minmax(0,1fr)',alignItems:'center',gap:'14px 10px',width:'100%',maxWidth:520,margin:'0 auto'}}>{['sempre staccato', 'più mosso', 'poco rit.', null].map((w, i) => [<span key={i + 't'}>{sprTick()}</span>, <span key={i + 'w'}>{w ? tmxWord(w, 20) : <span style={{fontSize:15,fontWeight:800,color:BK.ink}}>My own (11)</span>}</span>, <span key={i + 'm'} style={{fontSize:13,fontWeight:700,color:BK.muted}}>{w ? tmxOf(w).en : ''}</span>])}</div>)}
+    </Part>
+    <Faces/>
+  </>);
+
+  // 7. any piece: a term hunt; 8. the check-up on paper
+  P(<TmxHuntPage/>);
+  P(<TmxPaperCheck/>);
+  return <>{pages}</>;
+}
+function TmxHuntPage() {
+  const fams = ['speed', 'change', 'vol', 'touch', 'little'];
+  return <>
+    <WbTop step={7}/>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-end',gap:12,margin:'0 0 2px'}}>
+      <div style={{minWidth:0}}><div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em'}}>ANY PIECE</div><div style={{fontSize:12.5,color:BK.muted,textWrap:'pretty'}}>Write the piece’s name. Each new piece gets a fresh copy of this page.</div></div>
+      <span style={{display:'inline-block',width:230,borderBottom:'2px solid ' + BK.ink,height:26,flex:'0 0 auto'}}/></div>
+    <Part kind="together" title="Term hunt" how="Find every word in the piece that says how to play. Write each in its family’s row, with what it means.">
+      <div style={{display:'grid',gridTemplateColumns:'126px minmax(0,1fr) minmax(0,1fr)',border:'0.8px solid ' + BK.hair}}>
+        {['', 'The words', 'What they mean'].map((h, i) => <div key={i} style={{fontSize:11,fontWeight:900,letterSpacing:'0.08em',textTransform:'uppercase',color:BK.muted,padding:'4px 8px',borderBottom:'0.8px solid ' + BK.hair,borderLeft:i ? '0.8px solid ' + BK.hair : 0}}>{h}</div>)}
+        {fams.map(f => [<div key={f} style={{fontSize:13,fontWeight:900,color:BK.ink,padding:'8px',borderBottom:'0.8px solid ' + BK.hair,minHeight:74,display:'flex',alignItems:'center'}}>{TMX_FAM[f][0]}</div>,
+          <div key={f + 'a'} style={{borderBottom:'0.8px solid ' + BK.hair,borderLeft:'0.8px solid ' + BK.hair}}/>, <div key={f + 'b'} style={{borderBottom:'0.8px solid ' + BK.hair,borderLeft:'0.8px solid ' + BK.hair}}/>])}
+      </div>
+    </Part>
+    <Part kind="play" title="Play what it says" how="Play the piece, doing what each word says. Tick when your teacher says yes.">
+      {sskRowN(1, <div style={{display:'flex',justifyContent:'center',gap:30,flexWrap:'wrap',fontSize:15,fontWeight:800,color:BK.ink}}>{['speed', 'changes', 'loud and soft', 'touch', 'little words'].map(w => sprTickW(w))}</div>)}
+    </Part>
+    <Part kind="year" title="My terms"><div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'5px 10px'}}>{TMX.map(e => <div key={e.w} style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6,borderBottom:'0.8px solid ' + BK.hair,padding:'1px 2px'}}>{tmxWord(e.w, 13.5)}{bkBox(16, 16)}</div>)}</div>
+      <div style={{fontSize:12.5,color:BK.muted,marginTop:6}}>Tick a word when you can say what it means and play it. Keep this on your first copy.</div></Part>
+    <Faces/>
+  </>;
+}
+function TmxPaperCheck() {
+  const C = TMX_CHK, { nB, nC, nD } = tmxChkNo();
+  return <div className="lb-paper" style={{display:'flex',flexDirection:'column',gap:14,flex:'1 0 auto'}}>
+    <LbPaperHead/>
+    {bkSec('A', 'Write what each term means.')}
+    <BkGrid cols={4} gap="6px 10px">{C.mean.map((w, i) => <BkCell key={i} n={i + 1}>{sdyCol(<>{tmxHead(w, w.length > 10 ? 18 : 22, 18)}{tmxLine(false, '', 48, 2)}</>, '6px 2px 8px')}</BkCell>)}</BkGrid>
+    {bkSec('B', 'Write the sign.')}
+    <BkGrid cols={3} gap="6px 10px">{C.sign.map((w, i) => <BkCell key={i} n={nB + i}>{sdyCol(<>{tmxQuote(tmxMeanTxt(w), 20)}<div style={{margin:'auto 0 8px'}}>{ivxAns(false, '', 92, 68)}</div></>, '6px 2px 8px')}</BkCell>)}</BkGrid>
+    {bkSec('C', 'Circle one.')}
+    <BkGrid cols={2} gap="6px 10px">{C.pick.map(([k, a, b], i) => <BkCell key={i} n={nC + i}>{sdyCol(<>{tmxQuote('The ' + k, 26)}<div style={{margin:'auto 0 16px'}}>{tmxCircleW([a, b], null, 30)}</div></>, '6px 2px 8px')}</BkCell>)}</BkGrid>
+    {bkSec('D', 'Write the term.')}
+    <BkGrid cols={3} gap="6px 10px">{C.term.map((w, i) => <BkCell key={i} n={nD + i}>{sdyCol(<>{tmxQuote(tmxMeanTxt(w), 20)}{tmxLine(false, '', 90)}</>, '6px 2px 8px')}</BkCell>)}</BkGrid>
+  </div>;
+}
+
+function TmxTeacher() {
+  const W = TMX_WB, C = TMX_CHK, pages = [], { nB, nC, nD, total } = tmxChkNo();
+  const P = (content) => pages.push(<WbPage key={pages.length} no={pages.length + 1} chId="terms" teacher>{content}</WbPage>);
+  const en = (w) => tmxOf(w).en, done = (i) => i === 0 ? ' (done)' : '';
+  const order = TMX_ORDER2.map(w => w + ' ' + (TMX_SPEED.filter(x => TMX_ORDER2.includes(x.w)).findIndex(x => x.w === w) + 1)).join(', ');
+  P(<>
+    <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('terms')}</div>
+    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 8px',lineHeight:1.5}}>{'Met before: chapter ' + bkChapterNo('dynamics') + ' (pp, p, mf, f, cresc., decresc., legato, staccato) and chapter ' + bkChapterNo('tempo') + ' (Adagio, Andante, Moderato, Allegro). AMEB Music Craft (2022): Preliminary, those words except cresc. and decresc. (Grade 1); Grade 1, Lento, Allegretto, Vivace, Presto, accel., rall., rit., riten., a tempo, mp, ff, cresc., decresc., sf (and rf); Grade 2, Largo, Prestissimo, Con moto, Maestoso, Più mosso, Meno mosso, sostenuto, sempre, poco, molto, senza, cantabile, leggiero, espressivo, mezzo staccato (and Vivo, Largamente, Larghetto, Allargando). ABRSM Music Theory asks Italian terms from Grade 1 (check the current list). Lesson Book page 1 is the expression ladder; the screen lesson ends with it again, the student ticking the words they know. Not here: Vivo, Largamente, Larghetto, Allargando, rf, Grade 3–4 and string terms (the toolbox: Term cards).'}</div>
+    <div style={{border:'0.8px solid ' + BK.hair,padding:'6px 12px',margin:'0 0 8px',fontSize:12.5,color:BK.ink,lineHeight:1.5}}><b style={{color:BK.coral}}>Five families.</b> Speed, changing speed, loud and soft, touch and character, and the little words that change the term beside them. The speed numbers (page 2) are only about. The drill never sets Largo, Lento and Adagio against each other, nor Allegro against Vivace or Presto against Prestissimo; rall. and rit. mean the same.</div>
+    <TcBlock page={2} title="The speed ladder" answers={<>{sscLesson('C D E F G at Lento, Andante, Allegretto and Presto; the teacher plays a scale and the child names its speed.')}{skgTcAns('TRY IT', W.try2.map(([a, b], i) => tmxFaster(a, b) + done(i)))}{skgTcAns('YOUR TURN', W.turn2.map(en).concat([order]), 5)}</>}
+      watch="Allegretto taken as faster than Allegro (-etto: a little less). Lento and Largo mixed up: both slow, Largo also broad."
+      say="“Largo at the bottom, Prestissimo at the top.”"/>
+    <TcBlock page={3} title="Changing speed" answers={<>{sscLesson('C to C up with accel., down with rit.; then twelve Cs: four steady, four riten., four a tempo.')}{skgTcAns('TRY IT', W.try3.map((w, i) => w + done(i)))}{skgTcAns('YOUR TURN', W.turn3.map(en).concat(['dots further and further apart', 'dots closer and closer', 'rit.']), 5)}</>}
+      watch="rit. played as a sudden change (that is riten.; some editions shorten ritenuto to rit. too: in this book rit. is always ritardando). a tempo read as “slower”: it means back to the speed before."
+      say="“accel. faster, rit. slower, a tempo back.”"/>
+    <TcBlock page={4} title="Loud and soft" answers={<>{sscLesson('C six times, pp to ff; C D E F G with a crescendo, then with an sf on G.')}{skgTcAns('TRY IT', W.try4.map(([a, b], i) => tmxLouder(a, b) + done(i)))}{skgTcAns('YOUR TURN', ['pp p mp mf f ff'].concat(W.turn4.map(en)), 5)}</>}
+      watch="mp and mf swapped (m is medium: mp the softer). sf played as a loud passage, not one note."
+      say="“pp p mp mf f ff.”"/>
+  </>);
+  P(<>
+    <TcBlock page={5} title="Touch and character" answers={<>{sscLesson('C D E F three ways: legato, staccato, mezzo staccato; then C D E F G cantabile, leggiero and maestoso.')}{skgTcAns('TRY IT', W.try5.map((w, i) => w + done(i)))}{skgTcAns('YOUR TURN', W.turn5.map(en), 5)}</>}
+      watch="Mezzo staccato played as staccato: it is half way. Sostenuto here means each note held its full length (not the pedal)."
+      say="“Dots: short. A slur: smooth. Both: in between.”"/>
+    <TcBlock page={6} title="Little words" answers={<>{sscLesson('C to C poco rit., then molto rit.; a known piece sempre staccato, then più mosso.')}{skgTcAns('TRY IT', W.try6.map((w, i) => en(w) + done(i)))}{skgTcAns('YOUR TURN', W.turn6.concat(['the student’s own']), 5)}</>}
+      watch="più and meno swapped (più: more; meno: less). poco read as “slow”. senza rit. read as a rit."
+      say="“A little word changes the term beside it.”"/>
+    <TcBlock page={7} title="Any piece: a term hunt (a fresh copy for each piece)" answers={<div style={{fontSize:12,color:BK.ink,lineHeight:1.5}}>Every word in the student’s piece, by family, with its meaning. Words not in this chapter (dolce, rubato, D.C.): the toolbox’s Term cards, or chapter {bkChapterNo('signs')} for the signs. The year grid lists this chapter’s {TMX.length} words.</div>}/>
+    <TcBlock page={8} title="The check-up on paper (the Workbook’s last page)" answers={<>
+      {skgTcAns('A', C.mean.map(en))}
+      {skgTcAns('B', C.sign, nB)}
+      {skgTcAns('C', C.pick.map(([k, a, b]) => k === 'faster' ? tmxFaster(a, b) : tmxLouder(a, b)), nC)}
+      {skgTcAns('D', C.term, nD)}
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>One mark each: A {C.mean.length}, B {C.sign.length}, C {C.pick.length}, D {C.term.length}; {total} in all. A: the student’s own words are fine (rit.: slowing down). B: sfz is right too. A section with a wrong answer is not passed yet: go back to its pages. Also listen to the student (My five checks, Lesson Book page 7).</div>
+    </>}
+      goBack={[{ id: 'a', step: '1 to 4', page: '2 to 5' }, { id: 'b', step: '3', page: '4' }, { id: 'c', step: '1 and 3', page: '2 and 4' }, { id: 'd', step: '2 and 5', page: '3 and 6' }]}/>
+    <div style={{border:'0.8px solid ' + BK.hair,padding:'6px 12px',margin:'0 0 8px',fontSize:12,color:BK.ink,lineHeight:1.5}}><b style={{color:BK.coral}}>The drill (after page 6).</b> 1 speed words · 2 which is faster · 3 changing speed · 4 loud and soft · 5 listening (screen only) · 6 touch and character · 7 little words · 8 build the term · 9 extra: meaning → term.</div>
+    <div style={{border:'0.8px solid ' + BK.hair,padding:'7px 12px',fontSize:12,color:BK.ink,lineHeight:1.5}}><b style={{color:BK.coral}}>My five checks (Lesson Book page 7).</b> 1. Put the ten speed words in order and say what each means. 2. Play accel., rit., riten. and a tempo. 3. Play C at all six rungs, a crescendo and an sf. 4. Play legato, staccato and mezzo staccato; name five character words. 5. Read and play poco rit., molto cresc., sempre staccato. Got it! means right without help.</div>
+  </>);
+  return <>{pages}</>;
+}
+WORKBOOKS['terms'] = TmxWorkbook;
+TEACHER_COPIES['terms'] = TmxTeacher;
+
+Object.assign(TERMS_DRILL, { levels: TMX_LEVELS, generate: genTmxQuestion, check: tmxCheck, answerLabel: tmxAnswerLabel, Question: TmxQuestion, Learn: TmxLearn });
+const LESSON_BOOKS = { 'posture-hands': PostureLessonBook, 'first-steps': FirstStepsLessonBook, 'note-names': NoteNamesLessonBook, staff: StaffLessonBook, 'whole-staff': WholeStaffLessonBook, 'ledger-lines': LedgerLessonBook, tones: TonesLessonBook, pulse: PulseLessonBook, 'note-values': NotesRestsLessonBook, 'time-signatures': TimeSignaturesLessonBook, 'reading-steps': ReadingStepsLessonBook, dynamics: DynamicsLessonBook, 'pitch-range': PitchRangeLessonBook, tempo: TempoLessonBook, rhythm: RhythmLessonBook, scales: ScalesLessonBook, accidentals: AccidentalsLessonBook, 'piano-story': PianoStoryLessonBook, 'key-signatures': KeySigLessonBook, signs: SignsLessonBook, intervals: IntervalsLessonBook, chords: ChordsLessonBook, terms: TermsLessonBook };
 // Phase 394: chapters whose first and last pages are shared by both books
-const LB_PAGE_FNS = { 'posture-hands': postureLbPages, 'first-steps': fsLbPages, 'note-names': nnLbPages, staff: sfLbPages, 'whole-staff': wsLbPages, 'ledger-lines': llLbPages, tones: tnLbPages, pulse: plLbPages, 'note-values': nvLbPages, 'time-signatures': tsLbPages, 'reading-steps': sskLbPages, dynamics: sdyLbPages, 'pitch-range': sprLbPages, tempo: stmLbPages, rhythm: srhLbPages, scales: sscLbPages, accidentals: sacLbPages, 'piano-story': spsLbPages, 'key-signatures': skgLbPages, signs: sgnLbPages, intervals: ivxLbPages, chords: chxLbPages };   // Phase 455: tones and pulse too, so each workbook page faces its own lesson page
+const LB_PAGE_FNS = { 'posture-hands': postureLbPages, 'first-steps': fsLbPages, 'note-names': nnLbPages, staff: sfLbPages, 'whole-staff': wsLbPages, 'ledger-lines': llLbPages, tones: tnLbPages, pulse: plLbPages, 'note-values': nvLbPages, 'time-signatures': tsLbPages, 'reading-steps': sskLbPages, dynamics: sdyLbPages, 'pitch-range': sprLbPages, tempo: stmLbPages, rhythm: srhLbPages, scales: sscLbPages, accidentals: sacLbPages, 'piano-story': spsLbPages, 'key-signatures': skgLbPages, signs: sgnLbPages, intervals: ivxLbPages, chords: chxLbPages, terms: tmxLbPages };   // Phase 455: tones and pulse too, so each workbook page faces its own lesson page
 // Phase 409: the Workbook no longer repeats the book's opener; its last page is the check-up on paper (the book's
 // last page keeps only the at-the-piano checks). Chapter 4 builds its own check-up page.
 const LB_PAPER_PAGES = { 'posture-hands': () => <PhPaperCheck/>, 'first-steps': () => <FsPaperCheck/>, 'note-names': () => <NnPaperCheck/> };
