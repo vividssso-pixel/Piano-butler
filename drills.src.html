@@ -626,12 +626,13 @@ function buildKeyboard(rootPc, totalSemitones) {
   return { keys, whiteCount };
 }
 
-function ScaleKeyboard({ rootPc, offsets, fingers, hand }) {
+function ScaleKeyboard({ rootPc, offsets, fingers, hand, plain }) {
   const totalSemitones = offsets[offsets.length - 1];
   const { keys, whiteCount } = buildKeyboard(rootPc, totalSemitones);
   const whiteW = 34, whiteH = 110, blackW = 20, blackH = 66;
   const fingerAt = {};
-  offsets.forEach((off, idx) => { fingerAt[off] = fingers[idx]; });
+  const lit = {};
+  offsets.forEach((off, idx) => { fingerAt[off] = plain ? null : fingers[idx]; lit[off] = true; });
   const segmentLabels = hand === 'LH' ? segmentsEndAt1(fingers) : segmentsStartAt1(fingers);
   const segmentAt = {};
   offsets.forEach((off, idx) => { segmentAt[off] = segmentLabels[idx]; });
@@ -647,8 +648,8 @@ function ScaleKeyboard({ rootPc, offsets, fingers, hand }) {
         return (
         <g key={'w'+k.i}>
           <rect x={k.whiteIndex*whiteW} y="0" width={whiteW} height={whiteH}
-            fill={seg ? seg.fill : '#fff'}
-            stroke={seg ? seg.stroke : 'var(--muted)'}
+            fill={seg ? seg.fill : (plain && lit[k.i] ? '#dfe2f6' : '#fff')}
+            stroke={seg ? seg.stroke : (plain && lit[k.i] ? '#4a4d86' : 'var(--muted)')}
             strokeWidth="2"/>
           {played && (
             <text x={k.whiteIndex*whiteW+whiteW/2} y={whiteH-14} textAnchor="middle" fontSize="14" fontWeight="800" fill="var(--brass)">
@@ -669,7 +670,7 @@ function ScaleKeyboard({ rootPc, offsets, fingers, hand }) {
           {/* A black key always stays black (so a run of black keys is easy to see); its group
               colour shows as the outline and a stripe at the bottom (Sohyun, Phase 135). */}
           <rect x={(k.precedingWhiteIndex+1)*whiteW - blackW/2} y="0" width={blackW} height={blackH}
-            fill="#1d1c22" stroke={seg ? seg.stroke : 'none'} strokeWidth={seg ? 3 : 0}/>
+            fill="#1d1c22" stroke={seg ? seg.stroke : (plain && lit[k.i] ? '#8c90d9' : 'none')} strokeWidth={seg || (plain && lit[k.i]) ? 3 : 0}/>
           {seg && <rect x={(k.precedingWhiteIndex+1)*whiteW - blackW/2 + 2} y={blackH - 9} width={blackW - 4} height="7" rx="1.5" fill={seg.fill}/>}
           {played && (
             <text x={(k.precedingWhiteIndex+1)*whiteW} y={blackH-15} textAnchor="middle" fontSize="13" fontWeight="900" fill="#fff">
@@ -6644,9 +6645,9 @@ function scaleSig(key, mode) {
   const ks = mode === 'minor' ? KEY_SIGS.find(k => k.minor === key || (key === 'D#' && k.minor === 'D#') || (key === 'Bb' && k.minor === 'Bb')) : KEY_SIGS.find(k => k.major === key);
   return ks || KEY_SIGS[0];
 }
-function playScaleNotes(rootPc, offsets) {
+function playScaleNotes(rootPc, offsets, downOffsets) {
   const ctx = getAudio(); if (!ctx) return; stopClicks();
-  const base = 60 + rootPc - (rootPc > 6 ? 12 : 0), seq = [...offsets, ...offsets.slice(0, -1).reverse()];
+  const base = 60 + rootPc - (rootPc > 6 ? 12 : 0), seq = [...offsets, ...(downOffsets || offsets).slice(0, -1).reverse()];
   seq.forEach((o, i) => blip(ctx, ctx.currentTime + 0.08 + i * 0.3, 440 * Math.pow(2, (base + o - 69) / 12), 0.28, 0.2, 'triangle'));
 }
 // Phase 317: ONE scale finder (it replaces the separate "Practise the fingering" step, which did the same job).
@@ -6673,10 +6674,21 @@ function ScaleFinder({ ext, onKey } = {}) {
   const [mode, setMode] = useState(init.mode);
   const [oct, setOct] = useState(1);
   const [q, setQ] = useState('');
+  const narrow = typeof window !== 'undefined' && window.innerWidth < 480;
+  const hub = !onKey && !ext; // the Toolbox card; a lesson step that passes ext/onKey keeps the old finder
+  const [form, setForm] = useState('harmonic'); // minor only: natural | harmonic | melodic
+  const [deg, setDeg] = useState('num'); // under the keys: num | name
+  const [sec, setSec] = useState(null); // build | patterns | stamps | modes
   const lastExt = useRef(ext);
   useEffect(() => { if (ext && ext !== lastExt.current) { lastExt.current = ext; if (SCALES[ext]) { setKey(ext); setMode('major'); setQ(''); } } }, [ext]);
   const info = scaleData(key, mode) || SCALES.C, e = info.octaves[oct];
-  const names = spellFor(key, mode), ks = scaleSig(key, mode);
+  const fm = mode === 'minor' ? form : 'major', names = mode === 'minor' ? spellMinor(key, form) : spellFor(key, mode), ks = scaleSig(key, mode);
+  const offs = mode === 'minor' && form !== 'harmonic' ? minorOffsets(form, oct) : e.offsets;
+  const clash = mode === 'minor' && form !== 'harmonic' && ['RH', 'LH'].some(h => e[h].some((f, i) => f === 1 && [1, 3, 6, 8, 10].includes((info.rootPc + offs[i]) % 12)));
+  const fing = (h) => e[h];
+  const spell = (nm) => mode === 'minor' ? spellMinor(nm, form) : spellFor(nm, mode);
+  const hot = (i) => mode === 'minor' && (form === 'harmonic' ? i === 6 : form === 'melodic' ? i === 5 || i === 6 : false);
+  const FORM_NAME = { natural: t('natural minor', '자연 단음계'), harmonic: t('harmonic minor', '화성 단음계'), melodic: t('melodic minor', '가락 단음계') };
   const keys = mode === 'minor' ? MINOR_PATH : SCALE_KEYS.filter(k => !SF_CANON[k]);
   const canon = mode === 'major' && SF_CANON[key] ? SF_CANON[key] : key;
   const nameOf = (x) => mode === 'minor' ? x.minor : x.major;
@@ -6684,7 +6696,7 @@ function ScaleFinder({ ext, onKey } = {}) {
   const twinKs = ks.type ? KEY_SIGS.find(x => x !== ks && scalePcOf(nameOf(x)) === pc) : null;
   const altRaw = (CHIP_ALSO[mode] || {})[key];
   const altName = altRaw ? altRaw.replace(/m$/, '') : '';
-  const theory = !twinKs && ks.type && [1, 3, 6, 8, 10].includes(pc) && altName; // the other spelling exists only on paper
+  const theory = !twinKs && ks.type && [1, 3, 6, 8, 10].includes(pc) && altName && (mode !== 'minor' || form === 'harmonic'); // the other spelling exists only on paper
   const thyTonic = theory ? altName.replace('♯', '#').replace('♭', 'b') : null;
   const thy = theory ? theoryKey(thyTonic, mode) : null;
   const cardList = twinKs ? [ks, twinKs].map(x => ({ name: nameOf(x), count: x.count, type: x.type }))
@@ -6695,10 +6707,10 @@ function ScaleFinder({ ext, onKey } = {}) {
   function pick(k) { setKey(k); setQ(''); if (mode === 'major' && onKey) onKey(k); }
   function search(v) { setQ(v); const r = parseScaleQuery(v); if (r) { setKey(r.key); setMode(r.mode); if (r.mode === 'major' && onKey) onKey(r.key); } }
   const miss = q && !parseScaleQuery(q);
-  const noteRow = (nm, label, paper) => { const ns = paper ? thy.names : spellFor(nm, mode); return (
+  const noteRow = (nm, label, paper) => { const ns = paper ? thy.names : spell(nm); return (
     <div key={nm} style={{fontSize:paper ? 14 : 16,fontWeight:800,margin:'4px 0',display:'flex',gap:paper ? 5 : 8,flexWrap:'wrap',alignItems:'baseline',opacity:paper ? 0.62 : 1}}>
       {label && <span style={{fontSize:12,fontWeight:900,color:'var(--muted)',minWidth:34}}>{prettyNote(nm)}</span>}
-      {ns.concat([ns[0]]).map((n, i) => <span key={i} style={{color:mode === 'minor' && i === 6 ? '#e4572e' : 'var(--text)'}}>{paper ? fmtTheory(n) : prettyAny(n)}</span>)}
+      {ns.concat([ns[0]]).map((n, i) => <span key={i} style={{color:hot(i) ? '#e4572e' : 'var(--text)'}}>{paper ? fmtTheory(n) : prettyAny(n)}</span>)}
     </div>); };
   return (
     <div className="try-box" style={actBox}>
@@ -6706,14 +6718,15 @@ function ScaleFinder({ ext, onKey } = {}) {
       <div style={actNote}>{LANG === 'ko' ? <>스케일을 입력하거나(<b>Bb</b>, <b>F# minor</b>, <b>E flat</b>) 눌러 보세요. 숫자는 손가락 번호이고, 색칠된 묶음은 엄지에서 시작해요.</> : <>Type a scale (<b>Bb</b>, <b>F# minor</b>, <b>E flat</b>) or tap one. Numbers are fingers; the coloured groups start on the thumb.</>}</div>
       <input value={q} onChange={e => search(e.target.value)} placeholder={t('Type a scale: Bb, c minor, f#m…', '스케일 입력: Bb, c minor, f#m…')} style={{width:'100%',boxSizing:'border-box',padding:'9px 12px',borderRadius:10,border:'1.5px solid ' + (miss ? '#c8361b' : 'var(--border)'),fontSize:15,fontFamily:'inherit',marginBottom:6}}/>
       {miss && <div style={{fontSize:12,color:'#c8361b',marginBottom:6}}>{t('No scale called “' + q + '” here. Try a letter with # or b, and “minor” if you need it.', '“' + q + '”(이)라는 스케일은 없어요. 알파벳에 # 또는 b를 붙이고, 단조면 “minor”를 써 보세요.')}</div>}
-      <div style={{display:'flex',gap:4,marginBottom:6}}>{[['major', t('Major', '장조')], ['minor', t('Harmonic minor', '화성 단음계')]].map(([m, l]) => <button key={m} className={'chip' + (mode === m ? ' active' : '')} style={{padding:'3px 11px',fontSize:13}} onClick={() => { setMode(m); if (!scaleData(key, m)) setKey(m === 'minor' ? 'A' : 'C'); }}>{l}</button>)}
+      <div style={{display:'flex',gap:4,marginBottom:6,flexWrap:'wrap'}}>{[['major', t('Major', '장조')], ['minor', hub ? t('Minor', '단조') : t('Harmonic minor', '화성 단음계')]].map(([m, l]) => <button key={m} className={'chip' + (mode === m ? ' active' : '')} style={{padding:'3px 11px',fontSize:13}} onClick={() => { setMode(m); if (!scaleData(key, m)) setKey(m === 'minor' ? 'A' : 'C'); }}>{l}</button>)}
         <span style={{flex:1}}/>{[1, 2].map(n => <button key={n} className={'chip' + (oct === n ? ' active' : '')} style={{padding:'3px 10px',fontSize:13}} onClick={() => setOct(n)}>{t(n + ' oct', n + '옥타브')}</button>)}</div>
+      {hub && mode === 'minor' && <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:6}}>{['natural', 'harmonic', 'melodic'].map(f => <button key={f} className={'chip' + (form === f ? ' active' : '')} aria-pressed={form === f} style={{padding:'8px 13px',fontSize:14,minHeight:38}} onClick={() => setForm(f)}>{FORM_NAME[f]}</button>)}</div>}
       <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:10}}>{keys.map(k => <button key={k} className={'chip' + (k === canon ? ' active' : '')} style={{padding:'3px 9px',fontSize:13,minWidth:40}} onClick={() => pick(k)}>{scaleChipLabel(k, mode)}</button>)}</div>
       <div style={{background:'#fff',borderRadius:12,padding:'12px'}}>
         <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}>
           <div style={{flex:'1 1 150px'}}>
-            <div style={{fontSize:22,fontWeight:900}}>{twinKs ? prettyNote(myName) + ' / ' + prettyNote(nameOf(twinKs)) : prettyNote(key)} {mode === 'minor' ? t('harmonic minor', '화성 단음계') : t('major', '장조')}</div>
-            <div style={{fontSize:13,fontWeight:800,color:'var(--muted)'}}>{twinKs ? t('The same keys on the piano, written two ways.', '피아노에서는 같은 건반, 적는 방법만 두 가지예요.') : (LANG === 'ko' && ks.count === 0 ? '샤프·플랫 없음' : sigLabel(ks))}{mode === 'minor' && !twinKs ? t(' · raised 7th: ', ' · 올린 7음: ') + prettyAny(names[6]) : ''}</div>
+            <div style={{fontSize:22,fontWeight:900}}>{twinKs ? prettyNote(myName) + ' / ' + prettyNote(nameOf(twinKs)) : prettyNote(key)} {mode === 'minor' ? FORM_NAME[form] : t('major', '장조')}</div>
+            <div style={{fontSize:13,fontWeight:800,color:'var(--muted)'}}>{twinKs ? t('The same keys on the piano, written two ways.', '피아노에서는 같은 건반, 적는 방법만 두 가지예요.') : (LANG === 'ko' && ks.count === 0 ? '샤프·플랫 없음' : sigLabel(ks))}{mode === 'minor' && !twinKs && form === 'harmonic' ? t(' · raised 7th: ', ' · 올린 7음: ') + prettyAny(names[6]) : ''}{mode === 'minor' && !twinKs && form === 'melodic' ? t(' · going up, raised 6th and 7th: ', ' · 올라갈 때 올린 6음과 7음: ') + prettyAny(names[5]) + ' ' + prettyAny(names[6]) : ''}</div>
           </div>
           <div style={two ? {display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,alignItems:'flex-start',flex:'1 1 300px',maxWidth:420} : {display:'flex',gap:10,alignItems:'flex-start'}}>
             {cardList.map(x => (
@@ -6728,22 +6741,45 @@ function ScaleFinder({ ext, onKey } = {}) {
         <div style={{margin:'6px 0 10px'}}>{twinKs ? cardList.map(x => noteRow(x.name, true)) : thy ? [noteRow(key, true), noteRow(thyTonic, true, true)] : noteRow(key, false)}</div>
         {thy && (() => { const sh = thy.type === 'sharp', nd = thy.count - 7, dbls = (sh ? SHARP_ORDER : FLAT_ORDER).slice(0, nd).map(a => a[0] + (sh ? '♯♯' : '♭♭')).join(', ');
           return <div style={{fontSize:12.5,color:'#6d6f9c',margin:'-4px 0 10px',lineHeight:1.5}}>{t(altName + ' ' + (mode === 'minor' ? 'minor' : 'major') + ' would need ' + thy.count + ' ' + (sh ? 'sharps' : 'flats') + ', including ' + (nd === 1 ? 'a double ' + (sh ? 'sharp' : 'flat') : 'double ' + (sh ? 'sharps' : 'flats')) + ' (' + dbls + '), so it only exists on paper. Everyone writes ' + prettyNote(key) + ' ' + (mode === 'minor' ? 'minor' : 'major') + ' instead.', altName + ' ' + kindWord + '은(는) ' + (sh ? '샤프가 ' : '플랫이 ') + thy.count + '개나 필요하고 겹' + (sh ? '샤프' : '플랫') + '(' + dbls + ')까지 들어가서 종이 위에서만 존재해요. 그래서 늘 ' + prettyNote(key) + ' ' + kindWord + '으로 적어요.')}</div>; })()}
+        {hub && <div style={{margin:'0 0 12px'}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,marginBottom:2}}>
+            <span style={{fontSize:12,fontWeight:900,color:'var(--muted)',letterSpacing:'0.05em'}}>{t('STEPS', '걸음')}</span>
+            <button className={'chip' + (deg === 'name' ? ' active' : '')} aria-pressed={deg === 'name'} style={{padding:'9px 14px',fontSize:13,minHeight:40}} onClick={() => setDeg(d => d === 'name' ? 'num' : 'name')}>{t('Degree names', '음계 이름')}</button>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:narrow ? 'repeat(4,minmax(0,1fr))' : 'repeat(7,minmax(0,1fr)) auto',rowGap:6,alignItems:'center',fontWeight:900,fontSize:15}}>
+            {Array.from({ length: 8 }, (_, i) => <div key={i} style={{display:'flex',alignItems:'center',gap:3,minWidth:0}}>
+              <span style={{color:i === 0 || i === 7 ? 'var(--text)' : '#4a4d86',minWidth:10}}>{i + 1}</span>
+              {i < 7 && <span style={{flex:1,display:'flex',alignItems:'center',gap:2,minWidth:0}}><span style={{flex:1,height:1,background:'#c9c0aa'}}/><span style={{fontSize:narrow ? 11 : 10,fontWeight:800,padding:'1px 4px',borderRadius:5,whiteSpace:'nowrap',background:STEP_PATTERNS[fm][i] === 'T' ? '#e9e2d0' : '#fbe3da',color:STEP_PATTERNS[fm][i] === 'T' ? '#6d6f9c' : '#e4572e',border:'1px solid ' + (STEP_PATTERNS[fm][i] === 'T' ? '#dbd2bd' : '#e4572e')}}>{STEP_PATTERNS[fm][i]}</span><span style={{flex:1,height:1,background:'#c9c0aa'}}/></span>}
+            </div>)}
+          </div>
+          <div style={{fontSize:12,fontWeight:700,color:'var(--muted)',marginTop:2}}>{t('T = tone, S = semitone', 'T = 온음, S = 반음')}{form === 'melodic' && mode === 'minor' ? t(' · going up', ' · 올라갈 때') : ''}</div>
+          {form === 'melodic' && mode === 'minor' && (() => { const nn = spellMinor(key, 'natural'); return <div style={{fontSize:13,fontWeight:700,marginTop:4}}>{t('Coming down it is the natural minor: ', '내려올 때는 자연 단음계예요: ')}{[nn[0], nn[6], nn[5], nn[4], nn[3], nn[2], nn[1], nn[0]].map(n => prettyAny(n)).join(' ')}</div>; })()}
+          {deg === 'name' && <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(112px,1fr))',gap:'2px 8px',marginTop:6,fontSize:13}}>
+            {DEGREE_NAMES.map((nm, i) => <div key={i}><b style={{color:'#e4572e'}}>{i + 1}</b> {mode === 'minor' && form === 'natural' && i === 6 ? t('subtonic', '서브토닉') : (LANG === 'ko' ? DEGREE_NAMES_KO[i] : nm)} <span style={{color:'var(--muted)'}}>{prettyAny(names[i])}</span></div>)}
+          </div>}
+        </div>}
         <div style={{fontSize:12,fontWeight:900,color:'var(--muted)',letterSpacing:'0.05em',marginBottom:4}}>{t('RIGHT HAND', '오른손')}</div>
-        <ScaleKeyboard rootPc={info.rootPc} offsets={e.offsets} fingers={e.RH} hand="RH"/>
+        <ScaleKeyboard rootPc={info.rootPc} offsets={offs} fingers={fing('RH')} hand="RH" plain={clash}/>
         <div style={{fontSize:12,fontWeight:900,color:'var(--muted)',letterSpacing:'0.05em',margin:'10px 0 4px'}}>{t('LEFT HAND', '왼손')}</div>
-        <ScaleKeyboard rootPc={info.rootPc} offsets={e.offsets} fingers={e.LH} hand="LH"/>
-        <div style={{display:'flex',gap:10,flexWrap:'wrap',alignItems:'center',justifyContent:'center',marginTop:8,fontSize:12,fontWeight:700,color:'#4a4d86'}}>
+        <ScaleKeyboard rootPc={info.rootPc} offsets={offs} fingers={fing('LH')} hand="LH" plain={clash}/>
+        <div style={{display:clash ? 'none' : 'flex',gap:10,flexWrap:'wrap',alignItems:'center',justifyContent:'center',marginTop:8,fontSize:12,fontWeight:700,color:'#4a4d86'}}>
           <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:14,height:14,borderRadius:3,background:SEGMENT_COLORS.three.fill,border:'1.5px solid ' + SEGMENT_COLORS.three.stroke}}/>{t('1-2-3 group', '1-2-3 묶음')}</span>
           <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:14,height:14,borderRadius:3,background:SEGMENT_COLORS.four.fill,border:'1.5px solid ' + SEGMENT_COLORS.four.stroke}}/>{t('1-2-3-4 group', '1-2-3-4 묶음')}</span>
           <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:14,height:14,borderRadius:3,background:'#fff',border:'1.5px solid #7f81a8'}}/>{t('start / end note', '시작 / 끝 음')}</span>
         </div>
-        <div style={{textAlign:'center',marginTop:8}}><button className="ghost-btn" onClick={() => playScaleNotes(info.rootPc, e.offsets)}>{t('♪ Hear it up and down', '♪ 올라갔다 내려오며 듣기')}</button></div>
+        {clash && <p style={{fontSize:13,color:'var(--muted)',margin:'8px 0 0',textAlign:'center',lineHeight:1.5}}>{t('No finger numbers for this form: the harmonic fingering would put a thumb on a black key. The lit keys are the notes of the scale; look the fingering up in your book.', '이 형태는 손가락 번호를 보여 주지 않아요: 화성 단음계 손가락으로 치면 엄지가 검은건반에 닿아요. 불 켜진 건반이 이 스케일의 음이에요. 손가락 번호는 책에서 확인해요.')}</p>}
+        <div style={{textAlign:'center',marginTop:8}}><button className="ghost-btn" onClick={() => playScaleNotes(info.rootPc, offs, mode === 'minor' && form === 'melodic' ? minorOffsets('natural', oct) : null)}>{t('♪ Hear it up and down', '♪ 올라갔다 내려오며 듣기')}</button></div>
       </div>
+      {hub && <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:12}}>{[['build', t('Build it', '직접 만들기')], ['patterns', t('Fingering patterns', '손가락 번호 패턴')], ['stamps', t('Stamps', '도장')], ['modes', t('Modes', '선법')]].map(([id, l]) => <button key={id} className={'chip' + (sec === id ? ' active' : '')} style={{padding:'9px 16px',fontSize:14,minHeight:40}} aria-pressed={sec === id} onClick={() => setSec(sec === id ? null : id)}>{l}</button>)}</div>}
+      {hub && sec === 'build' && <div style={{marginTop:10}}><ScaleBuilder key={mode} mode={mode}/></div>}
+      {hub && sec === 'patterns' && <div style={{marginTop:10}}><ScalePatterns sel={key} onPick={pick} mode={mode}/></div>}
+      {hub && sec === 'stamps' && <div style={{marginTop:10}}>{mode === 'minor' ? <ScalePath sel={key} onPick={pick} keys={MINOR_PATH} prefix="m:" mode="minor" cols={narrow ? 2 : 3}/> : <ScalePath sel={key} onPick={pick} cols={narrow ? 2 : 3}/>}</div>}
+      {hub && sec === 'modes' && <div style={{marginTop:10}}><Modes/></div>}
     </div>
   );
 }
 
-function ScalePath({ sel, onPick, keys = SCALE_PATH, prefix = '', mode = 'major' }) {
+function ScalePath({ sel, onPick, keys = SCALE_PATH, prefix = '', mode = 'major', cols = 3 }) {
   const [stamps, setStamps] = useState(loadStamps);
   function toggle(id) { const n = { ...stamps }; if (n[id]) delete n[id]; else n[id] = Date.now(); setStamps(n); saveStamps(n); }
   const done = keys.reduce((a, k) => a + PATH_STEPS.filter(st => stamps[prefix + k + ':' + st.id]).length, 0);
@@ -6754,7 +6790,7 @@ function ScalePath({ sel, onPick, keys = SCALE_PATH, prefix = '', mode = 'major'
         <div style={{fontSize:12,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em'}}>{t('Scale cards: stamp each one when it’s solid', '스케일 카드: 확실해지면 도장을 찍어요')}</div>
         <div style={{fontSize:13,fontWeight:800,color:'var(--brass)'}}>{done}/{total}</div>
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:6}}>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(' + cols + ',minmax(0,1fr))',gap:6}}>
         {keys.map((k, ki) => PATH_STEPS.map((s, si) => {
           const id = prefix + k + ':' + s.id, on = !!stamps[id];
           return (
@@ -18522,13 +18558,13 @@ const TOOLS = [
   { id: 'ssk-read', ch: 'reading-steps', title: 'Read a tune', blurb: 'Four tunes, each hand in C and G position: listen, then play.', C: () => <SskReadPad/> },
   { id: 'mini-tune', ch: 'reading-steps', title: 'Read a tiny tune', blurb: 'C position tunes with counting.', C: () => <><ExplReadingSteps2/><MiniTune/></> },
   { id: 'five-positions', ch: 'reading-steps', title: 'Five-finger positions', blurb: 'All 12 keys, both hands: one finger per note.', C: () => <><ExplReadingSteps5/><FivePosition/></> },
-  { id: 'ssc-steps', ch: 'scales', title: 'The major scale’s steps', blurb: 'C major on the keys: whole, whole, half, whole, whole, whole, half. Listen, then play it.', C: () => <SscPad page={2}/> },
-  { id: 'ssc-fingers', ch: 'scales', title: 'Fingers on C major', blurb: 'Each hand’s fingering, the thumb under and 3 over.', C: () => <SscPad page={3}/> },
-  { id: 'ssc-degrees', ch: 'scales', title: 'Find the degrees', blurb: 'Tap a key of C major: its number, 1 to 8.', C: () => <SscPad page={4}/> },
-  { id: 'ssc-g', ch: 'scales', title: 'G major and its F♯', blurb: 'Listen, then play G major up.', C: () => <SscPad page={5}/> },
-  { id: 'ssc-f', ch: 'scales', title: 'F major and its B♭', blurb: 'Listen, then play F major up, with the right hand’s fingering.', C: () => <SscPad page={6}/> },
-  { id: 'minor-forms', ch: 'scales', title: 'Three kinds of minor', blurb: 'Natural, harmonic, melodic: side by side on A minor.', C: () => <MinorFormsCard/> },
-  { id: 'degree-names', ch: 'scales', title: 'Scale degree names', blurb: 'Tonic, supertonic... leading note.', C: () => <DegreeNames/> },
+  { id: 'ssc-steps', hidden: true, ch: 'scales', title: 'The major scale’s steps', blurb: 'C major on the keys: whole, whole, half, whole, whole, whole, half. Listen, then play it.', C: () => <SscPad page={2}/> },
+  { id: 'ssc-fingers', hidden: true, ch: 'scales', title: 'Fingers on C major', blurb: 'Each hand’s fingering, the thumb under and 3 over.', C: () => <SscPad page={3}/> },
+  { id: 'ssc-degrees', hidden: true, ch: 'scales', title: 'Find the degrees', blurb: 'Tap a key of C major: its number, 1 to 8.', C: () => <SscPad page={4}/> },
+  { id: 'ssc-g', hidden: true, ch: 'scales', title: 'G major and its F♯', blurb: 'Listen, then play G major up.', C: () => <SscPad page={5}/> },
+  { id: 'ssc-f', hidden: true, ch: 'scales', title: 'F major and its B♭', blurb: 'Listen, then play F major up, with the right hand’s fingering.', C: () => <SscPad page={6}/> },
+  { id: 'minor-forms', hidden: true, ch: 'scales', title: 'Three kinds of minor', blurb: 'Natural, harmonic, melodic: side by side on A minor.', C: () => <MinorFormsCard/> },
+  { id: 'degree-names', hidden: true, ch: 'scales', title: 'Scale degree names', blurb: 'Tonic, supertonic... leading note.', C: () => <DegreeNames/> },
   { id: 'transpose', ch: 'key-signatures', title: 'Transpose a tune', blurb: 'Same scale degrees, new key.', C: () => <><ExplKeySig2/><Transposer/></> },
   { id: 'tmx-map', ch: 'terms', title: 'The expression ladder', blurb: 'Every word for how to play, by family: tap one to hear it and read it.', C: () => <TmxMapPad/> },
   { id: 'tmx-speed', ch: 'terms', title: 'The speed ladder', blurb: 'Largo to Prestissimo: tap a rung, hear its speed.', C: () => <TmxSpeedPad/> },
@@ -18575,10 +18611,10 @@ const TOOLS = [
   { id: 'sharp-flat', ch: 'tones', title: 'Sharp, flat, natural', blurb: 'Push a key one semitone and back.', C: () => <><ExplTones2/><SharpFlatMover/></> },
   { id: 'chromatic', ch: 'tones', title: 'Chromatic scale & enharmonics', blurb: 'Every key, its fingering, and all its names, double sharps too.', C: () => <ChromaticScale/> },
   { id: 'accidental-bar', ch: 'tones', title: 'How long an accidental lasts', blurb: 'Until the bar line: hear it.', C: () => <><ExplTones2/><AccidentalBar/></> },
-  { id: 'scale-finder', ch: 'scales', title: 'Scale finder', blurb: 'Type any scale: fingering for both hands, key signature (both spellings for black-key scales), notes.', C: () => <ScaleFinder/> },
-  { id: 'build-major', ch: 'scales', title: 'Build a major scale', blurb: 'T T S T T T S, step by step.', C: () => <ScaleBuilder mode="major"/> },
-  { id: 'build-minor', ch: 'scales', title: 'Build a harmonic minor', blurb: 'With the tone-and-a-half step.', C: () => <ScaleBuilder mode="minor"/> },
-  { id: 'modes', ch: 'scales', title: 'The seven modes', blurb: 'Ionian to Locrian: same notes, a new home note.', C: () => <Modes/> },
+  { id: 'scale-finder', ch: 'scales', title: 'Scale finder', blurb: 'Type or tap any scale, major or minor (natural, harmonic, melodic): the steps and degrees, key signature, notes, fingering for both hands. Build one, stamp it, modes.', C: () => <ScaleFinder/> },
+  { id: 'build-major', hidden: true, ch: 'scales', title: 'Build a major scale', blurb: 'T T S T T T S, step by step.', C: () => <ScaleBuilder mode="major"/> },
+  { id: 'build-minor', hidden: true, ch: 'scales', title: 'Build a harmonic minor', blurb: 'With the tone-and-a-half step.', C: () => <ScaleBuilder mode="minor"/> },
+  { id: 'modes', hidden: true, ch: 'scales', title: 'The seven modes', blurb: 'Ionian to Locrian: same notes, a new home note.', C: () => <Modes/> },
   { id: 'skg-every', ch: 'key-signatures', title: 'Every F', blurb: 'One sharp on the top line: every F is F♯, high or low. Hear it with and without the key signature.', C: () => <SkgPad page={2}/> },
   { id: 'skg-g', ch: 'key-signatures', title: 'G major', blurb: 'G major written with its key signature: listen, then play it, every F as F♯.', C: () => <SkgPad page={3}/> },
   { id: 'skg-f', ch: 'key-signatures', title: 'F major', blurb: 'F major written with its key signature: listen, then play it, every B as B♭.', C: () => <SkgPad page={4}/> },
@@ -18639,9 +18675,9 @@ const TOOLS = [
   { id: 'dotted-notes', ch: 'rhythm', title: 'Dotted notes', blurb: 'A dot adds half again.', C: () => <DottedNotesCard/> },
   { id: 'rhythm-cards-all', ch: 'rhythm', title: 'The 40 rhythm cards', blurb: 'One-bar rhythms in 4/4, easiest first: tap to hear.', C: () => <RhythmCardsBrowser/> },
   { id: 'all-keys', ch: 'key-signatures', title: 'All 15 key signatures', blurb: 'Tap a key to see its signature.', C: () => <KeySigAllKeys/> },
-  { id: 'major-shape', ch: 'scales', title: 'The major scale shape', blurb: 'One shape builds every major scale.', C: () => <MajorShapeCard/> },
-  { id: 'major-fingering', ch: 'scales', title: 'Major scale fingering', blurb: 'Fingering patterns and your scale path. The Scale finder shows any key on the keyboard.', C: () => <MajorFingeringSet/> },
-  { id: 'minor-fingering', ch: 'scales', title: 'Minor scale fingering', blurb: 'Fingering patterns, your scale path and every form of each minor.', C: () => <MinorFingeringSet/> },
+  { id: 'major-shape', hidden: true, ch: 'scales', title: 'The major scale shape', blurb: 'One shape builds every major scale.', C: () => <MajorShapeCard/> },
+  { id: 'major-fingering', hidden: true, ch: 'scales', title: 'Major scale fingering', blurb: 'Fingering patterns and your scale path. The Scale finder shows any key on the keyboard.', C: () => <MajorFingeringSet/> },
+  { id: 'minor-fingering', hidden: true, ch: 'scales', title: 'Minor scale fingering', blurb: 'Fingering patterns, your scale path and every form of each minor.', C: () => <MinorFingeringSet/> },
   { id: 'sgn-rep', ch: 'signs', title: 'Repeat signs', blurb: 'Back to the start-repeat sign, or to the beginning: listen to the road, then tap the bars in order.', C: () => <SgnPad page={2}/> },
   { id: 'sgn-volta', ch: 'signs', title: '1st and 2nd time bars', blurb: 'The 1st time bar, back, then the 2nd: listen to the road, then tap the bars in order.', C: () => <SgnPad page={3}/> },
   { id: 'sgn-dc', ch: 'signs', title: 'D.C. al Fine', blurb: 'Back to the beginning, then up to Fine: listen to the road, then tap the bars in order.', C: () => <SgnPad page={4}/> },
@@ -18840,7 +18876,7 @@ const TOOL_KO = {
   'ssc-degrees': ['음의 번호 찾기', 'C장조 음계의 건반을 눌러요: 번호 1에서 8.'],
   'ssc-g': ['G장조와 F♯', '듣고, G장조 음계를 올라가며 쳐 봐요.'],
   'ssc-f': ['F장조와 B♭', '듣고, F장조 음계를 오른손 손가락 번호대로 쳐 봐요.'],
-  'scale-finder': ['스케일 찾기', '아무 스케일이나 입력: 양손 손가락 번호, 조표(검은건반 스케일은 두 가지 표기 모두), 음.'],
+  'scale-finder': ['스케일 찾기', '아무 스케일이나 입력하거나 눌러요. 장조와 단조(자연·화성·가락): 스텝과 음 번호, 조표, 음, 양손 손가락 번호. 직접 만들기, 도장, 선법까지.'],
   'build-major': ['장음계 만들기', '온 온 반 온 온 온 반, 한 걸음씩.'],
   'build-minor': ['화성단음계 만들기', '온+반 걸음이 있는 단음계.'],
   'modes': ['일곱 가지 선법', '이오니안부터 로크리안까지: 같은 음, 새로운 집.'],
@@ -19384,7 +19420,7 @@ const TOOL_META = {
   'sac-signs': ['tones', 1, 2, 'game ear'], 'sac-natural': ['tones', 1, 2, 'game ear'], 'sac-bar': ['tones', 1, 2, 'game ear'], 'sac-line': ['tones', 1, 2, 'game ear'], 'sac-tune': ['tones', 1, 2, 'game ear'],
   'tone-semitone': ['tones', 1, 1, 'show game'], 'sharp-flat': ['tones', 1, 1, 'show'], 'accidental-bar': ['tones', 1, 2, 'show write'], 'build-major': ['scales', 1, 2, 'game write'],
   'ssc-steps': ['scales', 1, 2, 'game ear'], 'ssc-fingers': ['scales', 1, 2, 'show game'], 'ssc-degrees': ['scales', 1, 2, 'game'], 'ssc-g': ['scales', 1, 2, 'game ear'], 'ssc-f': ['scales', 1, 2, 'game ear'],
-  'build-minor': ['scales', 2, 3, 'game write'], 'scale-finder': ['scales', 0, 3, 'show home'], 'degree-names': ['scales', 2, 3, 'show'], 'skg-every': ['scales', 1, 2, 'game ear'], 'skg-g': ['scales', 1, 2, 'game ear'], 'skg-f': ['scales', 1, 2, 'game ear'], 'skg-acc': ['scales', 1, 2, 'game ear'], 'skg-five': ['scales', 1, 2, 'show ear'], 'sharps-order': ['scales', 1, 3, 'game'], 'flats-order': ['scales', 1, 3, 'game'],
+  'build-minor': ['scales', 2, 3, 'game write'], 'scale-finder': ['scales', 0, 3, 'show game write ear home'], 'degree-names': ['scales', 2, 3, 'show'], 'skg-every': ['scales', 1, 2, 'game ear'], 'skg-g': ['scales', 1, 2, 'game ear'], 'skg-f': ['scales', 1, 2, 'game ear'], 'skg-acc': ['scales', 1, 2, 'game ear'], 'skg-five': ['scales', 1, 2, 'show ear'], 'sharps-order': ['scales', 1, 3, 'game'], 'flats-order': ['scales', 1, 3, 'game'],
   'modes': ['scales', 3, 3, 'show ear'],
   'place-it': ['scales', 1, 3, 'write'], 'relative-minor': ['scales', 2, 3, 'show'], 'circle-fifths': ['scales', 2, 3, 'show'], 'transpose': ['scales', 2, 3, 'show write'],
   'ivx-ladder': ['intervals', 1, 3, 'show ear'], 'ivx-count': ['intervals', 1, 2, 'game ear'], 'ivx-hand': ['intervals', 1, 2, 'show ear'], 'ivx-big': ['intervals', 1, 2, 'game ear'], 'ivx-mh': ['intervals', 1, 2, 'game ear'], 'ivx-tonic': ['intervals', 2, 3, 'show ear'], 'interval-ruler': ['intervals', 1, 2, 'show'], 'letter-hop': ['intervals', 1, 2, 'game'], 'semitone-counter': ['intervals', 2, 3, 'show'], 'scale-intervals': ['intervals', 2, 3, 'show'],
@@ -19434,7 +19470,7 @@ const PROBLEMS = [
   ['can’t tell legato from staccato', ['touch-lengths', 'touch-ear', 'tie-slur']],
   ['loses the place at repeats and D.C.', ['road-map']],
   ['mixes up sharps and flats', ['sharp-flat', 'tone-semitone', 'accidental-bar']],
-  ['has a theory exam coming', ['sharps-order', 'place-it', 'build-major', 'interval-ruler', 'triad-stack', 'term-match']],
+  ['has a theory exam coming', ['sharps-order', 'place-it', 'scale-finder', 'interval-ruler', 'triad-stack', 'term-match']],
   ['forgets Italian terms', ['term-cards', 'term-match']],
   ['doesn’t practise at home', ['practice-timer', 'practice-dice', 'perfect-counter']],
   ['struggles to sight-read', ['sight-reading', 'step-skip', 'mini-tune']],
@@ -53334,10 +53370,10 @@ function cbScalesPages(scr = false) {
 
   // p8: the steps, with the tools for each
   const STEPS = [
-    [t('First', '처음에'), X('C, G and F major, and their key signatures', 'C, G, F장조와 그 조표'), X('Build each from the rule (Any key); say its sharps or flats (Key signatures).', '규칙으로 하나씩 만들고(어느 음에서나 장음계), 샤프나 플랫을 말해요(조표).'), ['ssc-steps', 'ssc-g', 'ssc-f', 'skg-five'], ['C', 'G', 'F']],
-    [t('Then', '그다음에'), X('D and B♭ major; A, E, D and G minor', 'D장조와 B♭장조, A단조·E단조·D단조·G단조'), X('The order of sharps and flats (Key signatures); a major key’s relative minor, natural and harmonic (Minor scales).', '샤프와 플랫의 순서(조표), 장조의 나란한조, 자연단음계와 화성단음계(단음계).'), ['build-major', 'sharps-order', 'flats-order', 'relative-minor', 'build-minor'], ['D', 'Bb', 'Am', 'Em', 'Dm', 'Gm']],
-    [t('Further', '더 나아가서'), X('Up to four sharps and four flats, and their minors', '샤프 넷, 플랫 넷까지의 장조와 그 나란한조'), X('The circle of fifths; placing a key signature (Key signatures); the melodic minor (Minor scales); the major pentatonic on C and G (Other scales).', '5도권, 조표 자리 찾기(조표), 가락단음계(단음계), C와 G의 장조 5음음계(다른 음계).'), ['circle-fifths', 'place-it', 'minor-forms', 'csx-penta', 'scale-finder'], ['A', 'E', 'Eb', 'Ab', 'Bm', 'F#m', 'C#m', 'Cm', 'Fm']],
-    [t('Later', '나중에'), X('Every key, major and minor', '모든 장조와 단조'), X('All fifteen key signatures (The circle of fifths); double sharps (G♯ minor’s F𝄪); the chromatic scale (Other scales); the modes.', '조표 15개 전부(5도권), 겹샤프(G♯단조의 F𝄪), 반음계(다른 음계), 선법.'), ['all-keys', 'chromatic', 'modes'], null],
+    [t('First', '처음에'), X('C, G and F major, and their key signatures', 'C, G, F장조와 그 조표'), X('Build each from the rule (Any key); say its sharps or flats (Key signatures).', '규칙으로 하나씩 만들고(어느 음에서나 장음계), 샤프나 플랫을 말해요(조표).'), ['scale-finder', 'skg-five'], ['C', 'G', 'F']],
+    [t('Then', '그다음에'), X('D and B♭ major; A, E, D and G minor', 'D장조와 B♭장조, A단조·E단조·D단조·G단조'), X('The order of sharps and flats (Key signatures); a major key’s relative minor, natural and harmonic (Minor scales).', '샤프와 플랫의 순서(조표), 장조의 나란한조, 자연단음계와 화성단음계(단음계).'), ['scale-finder', 'sharps-order', 'flats-order', 'relative-minor'], ['D', 'Bb', 'Am', 'Em', 'Dm', 'Gm']],
+    [t('Further', '더 나아가서'), X('Up to four sharps and four flats, and their minors', '샤프 넷, 플랫 넷까지의 장조와 그 나란한조'), X('The circle of fifths; placing a key signature (Key signatures); the melodic minor (Minor scales); the major pentatonic on C and G (Other scales).', '5도권, 조표 자리 찾기(조표), 가락단음계(단음계), C와 G의 장조 5음음계(다른 음계).'), ['circle-fifths', 'place-it', 'csx-penta', 'scale-finder'], ['A', 'E', 'Eb', 'Ab', 'Bm', 'F#m', 'C#m', 'Cm', 'Fm']],
+    [t('Later', '나중에'), X('Every key, major and minor', '모든 장조와 단조'), X('All fifteen key signatures (The circle of fifths); double sharps (G♯ minor’s F𝄪); the chromatic scale (Other scales); the modes.', '조표 15개 전부(5도권), 겹샤프(G♯단조의 F𝄪), 반음계(다른 음계), 선법.'), ['all-keys', 'chromatic', 'scale-finder'], null],
   ];
   const coin = (k) => { const m = /m$/.test(k), n = prettyNote(m ? k.slice(0, -1) : k); return <span key={k} style={{display:'inline-flex',alignItems:'center',justifyContent:'center',minWidth:scr ? 34 : 38,height:scr ? 34 : 38,padding:'0 6px',borderRadius:19,border:'1.6px solid ' + PEN_N,background:m ? '#fff' : PEN_N,color:m ? PEN_N : '#fff',fontFamily:LB_SERIF,fontWeight:900,fontSize:scr ? 15 : 16,fontVariantNumeric:'lining-nums'}}><span>{n[0]}{n.length > 1 ? tnSign(n[1] === '♯' ? '#' : 'b') : null}{m ? <span style={{fontFamily:'Inter, sans-serif',fontSize:'0.8em',fontWeight:800}}>m</span> : null}</span></span>; };
   const coinKey = <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',fontSize:13,fontWeight:700,color:BK.muted,margin:'0 0 2px'}}>{coin('C')}<span>{t('a major key', '장조')}</span>{coin('Am')}<span>{t('a minor key', '단조')}</span></div>;
