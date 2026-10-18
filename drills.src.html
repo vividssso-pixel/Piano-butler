@@ -5182,6 +5182,8 @@ function KfFind({ type, go, setKi }) {
   const [found, setFound] = useState(false);
   const [wrong, setWrong] = useState(null);
   const [ran, setRan] = useState(false);   // Phase 497: the order has been said: its keys are lit
+  const [phase, setPhase] = useState('order');   // Phase 502: 'order' (learn the order), then 'find' (one more each time)
+  const [maxN, setMaxN] = useState(1);
   const timers = useRef([]);
   const tiny = useCbNarrow(380);
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
@@ -5196,30 +5198,50 @@ function KfFind({ type, go, setKi }) {
   const trail = ran && !done && lit > 0 ? order.slice(0, lit).map((nm, i) => ({ i: kidx(nm), n: i + 1 })) : null;
   const trailLabels = trail ? (() => { const o = {}; order.slice(0, lit).forEach(nm => { if (sharp && (nm[0] === 'E' || nm[0] === 'B')) o[kidx(nm)] = prettyNote(nm); }); return o; })() : null;
   const pickN = (i) => { clear(); setN(i); setLit(i); setFound(false); setWrong(null); setRan(false); };
+  const startFind = () => { clear(); setPhase('find'); setN(1); setLit(1); setFound(false); setWrong(null); setRan(false); };
+  const toOrder = () => { clear(); setPhase('order'); setN(7); setLit(7); setFound(false); setWrong(null); setRan(false); };
+  const more = () => { pickN(n + 1); setMaxN(m => Math.max(m, n + 1)); };
   const say = () => { clear(); setLit(0); setRan(true); for (let i = 0; i < n; i++) timers.current.push(setTimeout(() => { playKey(pcOfName(order[i]), 0.45); setLit(i + 1); }, 350 + i * 520)); };
   const tap = (i) => { if (done) return; if (i === want) { setFound(true); playKey(tonic, 0.6); const j = KEY_SIGS.findIndex(q => q.major === k.major); if (j >= 0) setKi(j); } else { setWrong(i); setTimeout(() => setWrong(null), 700); } };
+  const titleStyle = {textAlign:'center',fontFamily:"'Playfair Display', Georgia, serif",fontSize:22,fontWeight:900,color:'#26296b',lineHeight:1.2,margin:'0 0 8px',minHeight:27,textWrap:'balance'};
+  const wordsRow = <div style={{display:'flex',flexWrap:'wrap',gap:'0 6px',justifyContent:'center',fontSize:14,fontWeight:700,lineHeight:1.5,margin:'2px 0',textWrap:'balance'}}>
+    {words.map((w, i) => <span key={i} style={{opacity:i < lit ? 1 : 0.22,color:i === lit - 1 ? '#c8361b' : '#26296b',fontWeight:i === lit - 1 ? 900 : 700,transition:'opacity 0.3s'}}>{w}</span>)}
+  </div>;
+  const staff = <div style={{maxWidth:260,margin:'0 auto'}}><KSStaff count={lit} type={type} width={200} numbers={ran} upto={ran && lit > 0 ? lit - 1 : undefined}/></div>;
+  const board = <div style={{maxWidth:300,margin:'0 auto'}}><TapKeyboard octaves={1} marks={marks} labels="all" bigLabels extraC={sharp} trail={trail} trailLabels={trailLabels}/></div>;
+  if (phase === 'order') return (<>
+    <KfChain hi={[0]}/>
+    <div style={titleStyle}>{sharp ? t('The order of sharps', '샤프의 순서') : t('The order of flats', '플랫의 순서')}</div>
+    <div style={{textAlign:'center',fontSize:15,fontWeight:800,color:'#26296b',margin:'0 0 6px'}}>{sharp ? t('Sharps always come in this order.', '샤프는 언제나 이 순서로 붙어요.') : t('Flats come in the same order, backwards.', '플랫은 같은 순서를 거꾸로 붙어요.')}</div>
+    {staff}
+    {wordsRow}
+    {!sharp && <div style={{textAlign:'center',fontSize:12,color:'#5a5d8f',marginTop:-1}}>{t('the same sentence backwards', '같은 문장을 거꾸로')}</div>}
+    <div style={{textAlign:'center',margin:'4px 0 10px'}}><button className="ghost-btn" style={{...KF_BTN,minWidth:120}} onClick={say}>{t('▶ Say the order', '▶ 순서 듣기')}</button></div>
+    {board}
+    <KfNext go={startFind}/>
+  </>);
+  const prim = {...KF_BTN,minWidth:140,background:'#26296b',color:'#fffefa',borderColor:'#26296b'};
   return (<>
     <KfChain hi={[0, 1]}/>
-    <div style={{textAlign:'center',fontFamily:"'Playfair Display', Georgia, serif",fontSize:22,fontWeight:900,color:'#26296b',lineHeight:1.2,margin:'0 0 8px',minHeight:27,textWrap:'balance'}}>
+    <div style={titleStyle}>
       {done ? <span style={{animation:'fadeUp 0.3s both',display:'inline-block'}}>{n}{sym} → <span style={{color:'#c0431f'}}>{majName(k)}</span></span> : t('What key has ' + n + sym + '?', (sharp ? '샤프 ' : '플랫 ') + n + '개는 무슨 조?')}
     </div>
     <div style={{display:'grid',gridTemplateColumns:'repeat(' + (tiny ? 4 : 7) + ', minmax(0, 1fr))',gap:4,marginBottom:6}}>
-      {[1, 2, 3, 4, 5, 6, 7].map(i => <button key={i} className={'chip' + (n === i ? ' active' : '')} aria-pressed={n === i} style={{...KF_BTN,minWidth:44,padding:'0 2px',fontSize:14}} onClick={() => pickN(i)}>{i}{sym}</button>)}
+      {[1, 2, 3, 4, 5, 6, 7].map(i => <button key={i} className={'chip' + (n === i ? ' active' : '')} aria-pressed={n === i} aria-disabled={i > maxN} style={{...KF_BTN,minWidth:44,padding:'0 2px',fontSize:14,opacity:i > maxN ? 0.3 : 1}} onClick={() => { if (i <= maxN) pickN(i); }}>{i}{sym}</button>)}
     </div>
-    <div style={{maxWidth:260,margin:'0 auto'}}><KSStaff count={lit} type={type} width={200} numbers={ran} upto={ran && lit > 0 ? lit - 1 : undefined}/></div>
-    <div style={{display:'flex',flexWrap:'wrap',gap:'0 6px',justifyContent:'center',fontSize:14,fontWeight:700,lineHeight:1.5,margin:'2px 0',textWrap:'balance'}}>
-      {words.map((w, i) => <span key={i} style={{opacity:i < lit ? 1 : 0.22,color:i === lit - 1 ? '#c8361b' : '#26296b',fontWeight:i === lit - 1 ? 900 : 700,transition:'opacity 0.3s'}}>{w}</span>)}
-    </div>
-    {!sharp && <div style={{textAlign:'center',fontSize:12,color:'#5a5d8f',marginTop:-1}}>{t('the same sentence backwards', '같은 문장을 거꾸로')}</div>}
-    <div style={{textAlign:'center',margin:'4px 0 10px'}}><button className="ghost-btn" style={{...KF_BTN,minWidth:120}} onClick={say}>{t('▶ Say the order', '▶ 순서 듣기')}</button></div>
-    <div style={{textAlign:'center',fontSize:15,fontWeight:800,color:'#26296b',marginBottom:6}}>{auto ? t('Only one: it is F.', '하나뿐이면 F예요.') : sharp ? t('Now tap the last ♯.', '이제 마지막 샤프를 눌러요.') : t('Now tap the second-to-last ♭.', '이제 뒤에서 두 번째 플랫을 눌러요.')}</div>
+    {staff}
+    {wordsRow}
+    <div style={{textAlign:'center',fontSize:15,fontWeight:800,color:'#26296b',margin:'8px 0 6px'}}>{auto ? t('Only one: it is F.', '하나뿐이면 F예요.') : sharp ? t('Now tap the last ♯.', '이제 마지막 샤프를 눌러요.') : t('Now tap the second-to-last ♭.', '이제 뒤에서 두 번째 플랫을 눌러요.')}</div>
     {!auto && <div style={{display:'flex',gap:4,justifyContent:'center',marginBottom:8}}>
       {order.slice(0, n).map((nm, i) => <button key={nm} aria-label={prettyNote(nm)} className="chip" style={{...KF_BTN,flex:'1 1 0',minWidth:0,maxWidth:56,padding:'0 2px',fontSize:15,
         background:done && i === want ? '#26296b' : '#fff',color:done && i === want ? '#fffefa' : '#26296b',borderColor:wrong === i ? '#e4572e' : undefined,borderWidth:wrong === i ? 2.5 : undefined,opacity:done && i !== want ? 0.35 : 1}} onClick={() => tap(i)}>{prettyNote(nm)}</button>)}
     </div>}
-    <div style={{maxWidth:300,margin:'0 auto'}}><TapKeyboard octaves={1} marks={marks} labels="all" bigLabels extraC={sharp} trail={trail} trailLabels={trailLabels}/></div>
+    {board}
     <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:'#5a5d8f',minHeight:20,marginTop:6}}>{done && !auto ? (sharp ? t('A half step up from the last ♯.', '마지막 샤프의 반음 위!') : t('That ♭ is the key.', '그 플랫이 바로 그 조!')) : ''}</div>
-    <KfNext go={go}/>
+    <div style={{textAlign:'center',marginTop:14,display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>
+      <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={toOrder}>{t('← The order', '← 순서')}</button>
+      {done && (n < 7 ? <button className="ghost-btn" style={prim} onClick={more}>{t('One more ' + sym + ' →', (sharp ? '샤프' : '플랫') + ' 하나 더 →')}</button> : <button className="ghost-btn" style={prim} onClick={go}>{t('Next →', '다음 →')}</button>)}
+    </div>
   </>);
 }
 function KfNav({ i, setI, children }) {
