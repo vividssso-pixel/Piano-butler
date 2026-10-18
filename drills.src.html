@@ -654,9 +654,9 @@ function ScaleKeyboard({ rootPc, offsets, fingers, hand, plain, names }) {
             fill={seg ? seg.fill : (plain && lit[k.i] ? '#dfe2f6' : '#fff')}
             stroke={seg ? seg.stroke : (plain && lit[k.i] ? '#4a4d86' : 'var(--muted)')}
             strokeWidth="2"/>
-          {nameAt[k.i] && <text x={k.whiteIndex*whiteW+whiteW/2} y={whiteH-36} textAnchor="middle" fontSize="13" fontWeight="900" fill="#26296b">{prettyAny(nameAt[k.i])}</text>}
+          {nameAt[k.i] && <text x={k.whiteIndex*whiteW+whiteW/2} y={whiteH-24} textAnchor="middle" fontSize="13" fontWeight="900" fill="#26296b">{prettyAny(nameAt[k.i])}</text>}
           {played && (
-            <text x={k.whiteIndex*whiteW+whiteW/2} y={whiteH-14} textAnchor="middle" fontSize="14" fontWeight="800" fill="var(--brass)">
+            <text x={k.whiteIndex*whiteW+whiteW/2} y={whiteH-7} textAnchor="middle" fontSize="14" fontWeight="800" fill="var(--brass)">
               {played}
             </text>
           )}
@@ -676,9 +676,9 @@ function ScaleKeyboard({ rootPc, offsets, fingers, hand, plain, names }) {
           <rect x={(k.precedingWhiteIndex+1)*whiteW - blackW/2} y="0" width={blackW} height={blackH}
             fill="#1d1c22" stroke={seg ? seg.stroke : (plain && lit[k.i] ? '#8c90d9' : 'none')} strokeWidth={seg || (plain && lit[k.i]) ? 3 : 0}/>
           {seg && <rect x={(k.precedingWhiteIndex+1)*whiteW - blackW/2 + 2} y={blackH - 9} width={blackW - 4} height="7" rx="1.5" fill={seg.fill}/>}
-          {nameAt[k.i] && <text x={(k.precedingWhiteIndex+1)*whiteW} y={blackH-33} textAnchor="middle" fontSize="11" fontWeight="900" fill="#fffefa">{prettyAny(nameAt[k.i])}</text>}
+          {nameAt[k.i] && <text x={(k.precedingWhiteIndex+1)*whiteW} y={blackH-36} textAnchor="middle" fontSize="11" fontWeight="900" fill="#fffefa">{prettyAny(nameAt[k.i])}</text>}
           {played && (
-            <text x={(k.precedingWhiteIndex+1)*whiteW} y={blackH-15} textAnchor="middle" fontSize="13" fontWeight="900" fill="#fff">
+            <text x={(k.precedingWhiteIndex+1)*whiteW} y={blackH-18} textAnchor="middle" fontSize="13" fontWeight="900" fill="#fff">
               {played}
             </text>
           )}
@@ -1057,7 +1057,7 @@ const GROUP_TINT = { two: '#fbe9e2', three: '#e9eaf4' };   // the book's members
 
 // Tappable keyboard. Key index i = octave*12 + pc, starting on C.
 // marks: { [i]: 'target'|'good'|'bad' }, labels: null | 'white' | 'all', tint: shade C-D-E / F-G-A-B groups.
-function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, pixel = false, names = null, outline = null, bigLabels = false }) {   // outline (Phase 462): [first, last] white key index, one navy frame round them
+function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, pixel = false, names = null, outline = null, bigLabels = false, extraC = false, trail = null, trailLabels = null }) {   // Phase 499: extraC = one more C at the right end; trail = numbered dots above the keys, joined in order   // outline (Phase 462): [first, last] white key index, one navy frame round them
   const whiteW = 36, whiteH = 132, blackW = 22, blackH = 82;
   const whites = [], blacks = [];
   let w = 0;
@@ -1066,11 +1066,14 @@ function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, 
     if (info.white) { whites.push({ i, x: w * whiteW, info }); w++; }
     else blacks.push({ i, x: w * whiteW - blackW / 2, info });
   }
+  if (extraC) { whites.push({ i: octaves * 12, x: w * whiteW, info: PC_INFO[0] }); w++; }
   const width = w * whiteW;
+  const TR = trail && trail.length ? 58 : 0;
+  const tpos = (i) => { const wk = whites.find(k => k.i === i); if (wk) return wk.x + whiteW / 2; const bk = blacks.find(k => k.i === i); return bk ? bk.x + blackW / 2 : 0; };
   const tap = onTap ? (i) => () => onTap(i) : () => undefined;
   const edge = pixel ? 'crispEdges' : 'auto';
   return (
-    <svg viewBox={'-1 -1 ' + (width + 2) + ' ' + (whiteH + 2)} shapeRendering={edge}
+    <svg viewBox={'-1 ' + (-1 - TR) + ' ' + (width + 2) + ' ' + (whiteH + 2 + TR)} shapeRendering={edge}
       style={{width:'100%',display:'block',touchAction:'manipulation',userSelect:'none'}}>
       {whites.map(k => {
         const m = marks[k.i] && MARK_STYLE[marks[k.i]];
@@ -1092,6 +1095,7 @@ function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, 
               <text x={k.x + whiteW / 2} y={whiteH - 12} textAnchor="middle" fontSize="13" fontWeight="800"
                 fill={m ? (m.text || m.stroke) : '#6d6f9c'} style={{pointerEvents:'none'}}>{k.info.names[0]}</text>
             )}
+            {trailLabels && trailLabels[k.i] && <text x={k.x + whiteW / 2} y={whiteH - 34} textAnchor="middle" fontSize="13" fontWeight="900" fill={m ? (m.text || '#fff') : '#c0431f'} style={{pointerEvents:'none'}}>{trailLabels[k.i]}</text>}
             {labels && solfaOn() && (
               <text x={k.x + whiteW / 2} y={whiteH - 27} textAnchor="middle" fontSize="10" fontWeight="700"
                 fill={m ? (m.text || m.stroke) : '#8f91b3'} style={{pointerEvents:'none'}}>{solfa(k.info.names[0])}</text>
@@ -1116,6 +1120,10 @@ function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, 
           </g>
         );
       })}
+      {TR > 0 && (() => { const P = trail.map((q, j) => [tpos(q.i), -50 + j * 7.5]); return <g aria-hidden="true" style={{pointerEvents:'none'}}>
+        <polyline points={P.map(p => p.join(',')).join(' ')} fill="none" stroke="#e4572e" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round"/>
+        {P.map((p, j) => <g key={j}><circle cx={p[0]} cy={p[1]} r={j === P.length - 1 ? 9 : 7.5} fill={j === P.length - 1 ? '#c0431f' : '#e4572e'} stroke="#fffefa" strokeWidth="1.5"/><text x={p[0]} y={p[1] + 3.5} textAnchor="middle" fontSize="10" fontWeight="900" fill="#fff">{trail[j].n}</text></g>)}
+      </g>; })()}
       {outline && (() => { const a = whites.find(k => k.i === outline[0]), b = whites.find(k => k.i === outline[1]); return a && b ? <rect x={a.x + 1.2} y="1.2" width={b.x + whiteW - a.x - 2.4} height={whiteH - 2.4} rx="4" fill="none" stroke="#26296b" strokeWidth="3" style={{pointerEvents:'none'}}/> : null; })()}
     </svg>
   );
@@ -5179,8 +5187,11 @@ function KfFind({ type, go, setKi }) {
   const done = found || auto;
   useEffect(() => { if (auto) { const j = KEY_SIGS.findIndex(q => q.major === k.major); if (j >= 0) setKi(j); } }, [auto, k.major]);
   const tonic = pcOfName(k.major), marks = {};
-  if (done) { if (sharp) marks[pcOfName(order[want])] = 'mate'; marks[tonic] = 'pick'; }
-  else if (ran) order.slice(0, lit).forEach((nm, i) => { marks[pcOfName(nm)] = i === lit - 1 ? 'pick' : 'mate'; });
+  const kidx = (nm) => (sharp && pcOfName(nm) === 0 ? 12 : pcOfName(nm));   // B♯ is the C above B
+  if (done) { if (sharp) marks[kidx(order[want])] = 'mate'; marks[tonic] = 'pick'; }
+  else if (ran) order.slice(0, lit).forEach((nm, i) => { marks[kidx(nm)] = i === lit - 1 ? 'pick' : 'mate'; });
+  const trail = ran && !done && lit > 0 ? order.slice(0, lit).map((nm, i) => ({ i: kidx(nm), n: i + 1 })) : null;
+  const trailLabels = trail ? (() => { const o = {}; order.slice(0, lit).forEach(nm => { if (sharp && (nm[0] === 'E' || nm[0] === 'B')) o[kidx(nm)] = prettyNote(nm); }); return o; })() : null;
   const pickN = (i) => { clear(); setN(i); setLit(i); setFound(false); setWrong(null); setRan(false); };
   const say = () => { clear(); setLit(0); setRan(true); for (let i = 0; i < n; i++) timers.current.push(setTimeout(() => { playKey(pcOfName(order[i]), 0.45); setLit(i + 1); }, 350 + i * 520)); };
   const tap = (i) => { if (done) return; if (i === want) { setFound(true); playKey(tonic, 0.6); const j = KEY_SIGS.findIndex(q => q.major === k.major); if (j >= 0) setKi(j); } else { setWrong(i); setTimeout(() => setWrong(null), 700); } };
@@ -5203,7 +5214,7 @@ function KfFind({ type, go, setKi }) {
       {order.slice(0, n).map((nm, i) => <button key={nm} aria-label={prettyNote(nm)} className="chip" style={{...KF_BTN,flex:'1 1 0',minWidth:0,maxWidth:56,padding:'0 2px',fontSize:15,
         background:done && i === want ? '#26296b' : '#fff',color:done && i === want ? '#fffefa' : '#26296b',borderColor:wrong === i ? '#e4572e' : undefined,borderWidth:wrong === i ? 2.5 : undefined,opacity:done && i !== want ? 0.35 : 1}} onClick={() => tap(i)}>{prettyNote(nm)}</button>)}
     </div>}
-    <div style={{maxWidth:300,margin:'0 auto'}}><TapKeyboard octaves={1} marks={marks} labels="all" bigLabels/></div>
+    <div style={{maxWidth:300,margin:'0 auto'}}><TapKeyboard octaves={1} marks={marks} labels="all" bigLabels extraC={sharp} trail={trail} trailLabels={trailLabels}/></div>
     <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:'#5a5d8f',minHeight:20,marginTop:6}}>{done && !auto ? (sharp ? t('A half step up from the last ♯.', '마지막 샤프의 반음 위!') : t('That ♭ is the key.', '그 플랫이 바로 그 조!')) : ''}</div>
     <KfNext go={go}/>
   </>);
@@ -5234,6 +5245,21 @@ function KfMinor({ i, setI, go }) {
     <KfNext go={go}/>
   </>);
 }
+function KfCircle({ i, setI, go }) {
+  const ks = KEY_SIGS[i];
+  const [sel, setSel] = useState(FIFTHS.includes(ks.major) ? ks.major : 'C');
+  const sg = KEY_SIGS.find(x => x.major === sel) || KEY_SIGS[0];
+  const pick = (k) => { setSel(k); playKey(pcOfName(k), 0.5); const j = KEY_SIGS.findIndex(q => q.major === k); if (j >= 0) setI(j); };
+  return (<>
+    <KfChain hi={[1]}/>
+    <div style={{textAlign:'center',fontFamily:"'Playfair Display', Georgia, serif",fontSize:22,fontWeight:900,color:'#26296b',lineHeight:1.2,margin:'0 0 6px',textWrap:'balance'}}>{t('Every key, in one circle', '모든 조를 한 바퀴에')}</div>
+    <div style={{maxWidth:290,margin:'0 auto'}}><FifthsRing sel={sel} onPick={pick} o={{ filled: [], twins: true, minors: true }} label={t('The circle of fifths, ' + skgKeyName(sel) + ' ringed; inside each key, its relative minor.', '5도권: ' + skgKeyName(sel) + '에 동그라미. 조마다 안쪽에 그 나란한조.')}/></div>
+    <div style={{maxWidth:200,margin:'2px auto 0'}}><KSStaff count={sg.count} type={sg.type} width={170}/></div>
+    <div style={{textAlign:'center',fontSize:14,fontWeight:800,color:'#26296b',margin:'2px 0 4px',textWrap:'balance'}}>{cbKeyLines(sel)[0]}</div>
+    <div style={{textAlign:'center',fontSize:15,fontWeight:800,color:'#26296b',margin:'6px 0 0'}}>{t('Clockwise: one more ♯. Anticlockwise: one more ♭.', '시계 방향은 샤프 하나 더, 반시계 방향은 플랫 하나 더.')}</div>
+    <KfNext go={go}/>
+  </>);
+}
 function KfPiece({ i, setI }) {
   const ks = KEY_SIGS[i];
   return (<>
@@ -5249,23 +5275,24 @@ function KfPiece({ i, setI }) {
 function KeyFinder() {
   const [step, setStep] = useState(1);
   const [ki, setKi] = useState(1);
-  const names = [null, t('Sharps', '샤프'), t('Flats', '플랫'), t('Major and minor', '장조와 단조'), t('Before a piece', '곡 치기 전에')];
-  const go = () => setStep(s => Math.min(4, s + 1));
+  const names = [null, t('Sharps', '샤프'), t('Flats', '플랫'), t('Major and minor', '장조와 단조'), t('Circle of fifths', '5도권'), t('Before a piece', '곡 치기 전에')];
+  const go = () => setStep(s => Math.min(5, s + 1));
   if (step === 0) return (
     <div className="try-box" style={{background:'#fff',border:'1px solid var(--border)',borderRadius:10,padding:'10px',margin:'4px 0 16px'}}>
-      <button className="ghost-btn" style={{...KF_BTN,marginBottom:6}} onClick={() => setStep(1)}>{t('← The four steps', '← 네 단계')}</button>
+      <button className="ghost-btn" style={{...KF_BTN,marginBottom:6}} onClick={() => setStep(1)}>{t('← The five steps', '← 다섯 단계')}</button>
       <KeyFinderFree/>
     </div>);
   return (
     <div className="try-box" data-kf-steps style={{background:'#fff',border:'1px solid var(--border)',borderRadius:10,padding:'10px 10px 12px',margin:'4px 0 16px'}}>
-      <div role="tablist" aria-label={t('Four steps', '네 단계')} style={{display:'flex',gap:4,marginBottom:6}} onKeyDown={(e) => { const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (!d) return; e.preventDefault(); const nv = ((step - 1 + d + 4) % 4) + 1; setStep(nv); const el = document.getElementById('kf-tab-' + nv); if (el) el.focus(); }}>
-        {[1, 2, 3, 4].map(i => <button key={i} id={'kf-tab-' + i} role="tab" tabIndex={step === i ? 0 : -1} aria-selected={step === i} aria-label={names[i]} className={'chip' + (step === i ? ' active' : '')} style={{...KF_BTN,flex:'1 1 0',minWidth:0,padding:'0 2px',fontSize:14}} onClick={() => setStep(i)}>{i}</button>)}
+      <div role="tablist" aria-label={t('Five steps', '다섯 단계')} style={{display:'flex',gap:4,marginBottom:6}} onKeyDown={(e) => { const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (!d) return; e.preventDefault(); const nv = ((step - 1 + d + 5) % 5) + 1; setStep(nv); const el = document.getElementById('kf-tab-' + nv); if (el) el.focus(); }}>
+        {[1, 2, 3, 4, 5].map(i => <button key={i} id={'kf-tab-' + i} role="tab" tabIndex={step === i ? 0 : -1} aria-selected={step === i} aria-label={names[i]} className={'chip' + (step === i ? ' active' : '')} style={{...KF_BTN,flex:'1 1 0',minWidth:0,padding:'0 2px',fontSize:14}} onClick={() => setStep(i)}>{i}</button>)}
       </div>
       <div style={{height:8}}/>
       {step === 1 && <KfFind key="sharp" type="sharp" go={go} setKi={setKi}/>}
       {step === 2 && <KfFind key="flat" type="flat" go={go} setKi={setKi}/>}
       {step === 3 && <KfMinor i={ki} setI={setKi} go={go}/>}
-      {step === 4 && <KfPiece i={ki} setI={setKi}/>}
+      {step === 4 && <KfCircle key="circle" i={ki} setI={setKi} go={go}/>}
+      {step === 5 && <KfPiece i={ki} setI={setKi}/>}
       <div style={{textAlign:'center',marginTop:12}}><button className="ghost-btn" style={{minHeight:44,fontSize:13,fontWeight:700,color:'#5a5d8f'}} onClick={() => setStep(0)}>{t('Free play', '자유롭게')}</button></div>
     </div>
   );
@@ -18869,7 +18896,7 @@ const TOOLS = [
   { id: 'build-major', hidden: true, ch: 'scales', title: 'Build a major scale', blurb: 'T T S T T T S, step by step.', C: () => <ScaleBuilder mode="major"/> },
   { id: 'build-minor', hidden: true, ch: 'scales', title: 'Build a harmonic minor', blurb: 'With the tone-and-a-half step.', C: () => <ScaleBuilder mode="minor"/> },
   { id: 'modes', hidden: true, ch: 'scales', title: 'The seven modes', blurb: 'Ionian to Locrian: same notes, a new home note.', C: () => <Modes/> },
-  { id: 'key-finder', ch: 'key-signatures', title: 'Key finder', blurb: 'Four short steps: sharps, flats, major and minor, before a piece.', C: () => <KeyFinder/> },
+  { id: 'key-finder', ch: 'key-signatures', title: 'Key finder', blurb: 'Five short steps: sharps, flats, major and minor, the circle of fifths, before a piece.', C: () => <KeyFinder/> },
   { id: 'skg-every', ch: 'key-signatures', title: 'Every F', blurb: 'One sharp on the top line: every F is F♯, high or low. Hear it with and without the key signature.', C: () => <SkgPad page={2}/> },
   { id: 'skg-g', hidden: true, ch: 'key-signatures', title: 'G major', blurb: 'G major written with its key signature: listen, then play it, every F as F♯.', C: () => <SkgPad page={3}/> },
   { id: 'skg-f', hidden: true, ch: 'key-signatures', title: 'F major', blurb: 'F major written with its key signature: listen, then play it, every B as B♭.', C: () => <SkgPad page={4}/> },
@@ -19145,7 +19172,7 @@ const TOOL_KO = {
   'place-it': ['조표 자리 찾기', '샤프나 플랫이 들어갈 자리를 눌러요.'],
   'relative-minor': ['나란한조', '같은 조표: 반음 3개 아래, 또는 여섯 번째 음.'],
   'circle-fifths': ['5도권', '모든 조를 시계 하나에.'],
-  'key-finder': ['조 찾기', '네 단계: 샤프, 플랫, 장조와 단조, 곡 치기 전에.'],
+  'key-finder': ['조 찾기', '다섯 단계: 샤프, 플랫, 장조와 단조, 5도권, 곡 치기 전에.'],
   'ivx-ladder': ['음정 사다리', '한 음에서 2도부터 옥타브까지 모든 음정: 음정을 누르면 들려요.'],
   'ivx-count': ['음정 세기', '두 음을 모두 세요: 아래 음이 1이에요.'],
   'ivx-hand': ['손 안의 음정', 'C 자리, G 자리: 엄지와 3번 손가락은 3도.'],
@@ -22642,7 +22669,7 @@ const HOME_LIVE = {
   'p-scales': {
     learn: 'key-finder', check: 'scales', tools: ['scale-finder'],
     more: ['skg-every', 'skg-acc', 'skg-five', 'transpose', 'csx-penta'],
-    learnLine: ['Four steps: find the key from its signature', '네 단계: 조표로 조 찾기'],
+    learnLine: ['Five steps: find the key from its signature', '다섯 단계: 조표로 조 찾기'],
     tryLine: ['Three steps: white keys, black keys, all twelve', '세 단계: 흰건반, 검은건반, 열두 조'],
     checkLine: ['Questions, level by level', '문제를 단계별로'],
   },
@@ -22653,7 +22680,7 @@ const HOME_AREA_LINE = {
 };
 const HOME_TOOL_LINE = {
   'scale-finder': ['Three short steps: white keys, black keys, all twelve.', '세 단계: 흰건반, 검은건반, 열두 조.'],
-  'key-finder': ['Four short steps to find any key.', '조를 찾는 네 단계예요.'],
+  'key-finder': ['Five short steps to find any key.', '조를 찾는 다섯 단계예요.'],
 };
 function HomeAreaIcon({ id }) {
   const p = { width: 44, height: 44, viewBox: '0 0 48 48', fill: 'none', stroke: '#26296b', strokeWidth: 2.4, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': true, style: { flex: 'none' } };
@@ -53995,6 +54022,12 @@ function CbChainBig({ at }) {
     {items.map((l, i) => <React.Fragment key={i}>{i > 0 && <span style={{color:'#a3a5c2',fontWeight:800,fontSize:18}}>→</span>}<span style={{flex:'1 1 0',minWidth:0,textAlign:'center',padding:'12px 6px',borderRadius:22,fontSize:19,fontWeight:800,background:at === i ? '#e4572e' : '#efe8d6',color:at === i ? '#fff' : '#26296b'}}>{l}</span></React.Fragment>)}
   </div>;
 }
+function CbCirclePic() {
+  return <div role="img" aria-label={t('The circle of fifths: the twelve major keys in a ring, C at the top, each with its relative minor inside. Clockwise one more sharp, anticlockwise one more flat.', '5도권: 열두 장조가 원을 이루고 맨 위에 C, 조마다 안쪽에 나란한조. 시계 방향은 샤프 하나 더, 반시계 방향은 플랫 하나 더.')} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:14,width:'100%',maxWidth:560}}>
+    <div aria-hidden="true" style={{width:'100%',maxWidth:430}}><FifthsRing o={{ filled: [], paper: true, twins: true, minors: true }}/></div>
+    <div aria-hidden="true" style={{display:'flex',gap:28,fontSize:19,fontWeight:900,color:'#26296b'}}><span>{t('↻ one more ♯', '↻ 샤프 하나 더')}</span><span>{t('↺ one more ♭', '↺ 플랫 하나 더')}</span></div>
+  </div>;
+}
 function CbPiecePic() {
   const ks = KEY_SIGS.find(q => q.major === 'D') || KEY_SIGS[0];
   return <div role="img" aria-label={t('Before a piece: read the key signature, name the key, play its scale once. Example: two sharps, D major.', '곡을 치기 전에: 조표를 읽고, 조를 찾고, 스케일을 한 번 쳐요. 예: 샤프 둘, D장조.')} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:26,width:'100%',maxWidth:560}}>
@@ -54030,15 +54063,15 @@ function cbScalesPages(scr = false) {
     <LbSay size={19}>{line}</LbSay>
     {rem ? <LbRemember>{rem}</LbRemember> : null}
   </LbPage>;
-  const kk = (n) => t('Find the key · step ' + n + ' of 4', '조 찾기 · 4단계 중 ' + n + '단계');
+  const kk = (n) => t('Find the key · step ' + n + ' of 5', '조 찾기 · 5단계 중 ' + n + '단계');
   const sk = (n) => t('Play the scales · step ' + n + ' of 3', '스케일 치기 · 3단계 중 ' + n + '단계');
   const steps = [
-    [t('Sharps', '샤프'), 2], [t('Flats', '플랫'), 3], [t('Major and minor', '장조와 단조'), 4], [t('Before a piece', '곡 치기 전에'), 5],
-    [t('White keys', '흰건반'), 6], [t('Black keys', '검은건반'), 7], [t('All twelve', '열두 조'), 8],
+    [t('Sharps', '샤프'), 2], [t('Flats', '플랫'), 3], [t('Major and minor', '장조와 단조'), 4], [t('Circle of fifths', '5도권'), 5], [t('Before a piece', '곡 치기 전에'), 6],
+    [t('White keys', '흰건반'), 7], [t('Black keys', '검은건반'), 8], [t('All twelve', '열두 조'), 9],
   ];
   const checksRows = [
     ['sig', t('I can say the order of sharps and of flats', '샤프의 순서와 플랫의 순서를 말할 수 있어요')],
-    ['any', t('I can name the major key from its key signature', '조표를 보고 장조 이름을 말할 수 있어요')],
+    ['any', t('I can name the major key from its key signature and find it on the circle of fifths', '조표를 보고 장조 이름을 말하고, 5도권에서 찾을 수 있어요')],
     ['minor', t('I can find the relative minor, 3 half steps down', '장조에서 반음 3칸 아래로 나란한조를 찾을 수 있어요')],
     ['steps', t('I can play a white-key major scale with fingering: right hand, left hand, both', '흰건반 장음계를 손가락 번호대로 오른손, 왼손, 양손으로 칠 수 있어요')],
     ['circle', t('I can play the major scale from all twelve keys, going up by half steps', '반음씩 올라가며 열두 조의 장음계를 칠 수 있어요')],
@@ -54061,8 +54094,8 @@ function cbScalesPages(scr = false) {
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:20}}>
         <div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this book', '이 책에서는')}</div>
-          {steps.map(([n, p], i) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'3px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{i < 4 ? t('Key: ', '조: ') : t('Scale: ', '스케일: ')}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
-          <div className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'3px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{t('My five checks', '나의 다섯 가지 확인')}</span><span style={{color:BK.muted,fontWeight:800}}>9</span></div>
+          {steps.map(([n, p], i) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'3px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{i < 5 ? t('Key: ', '조: ') : t('Scale: ', '스케일: ')}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
+          <div className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'3px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{t('My five checks', '나의 다섯 가지 확인')}</span><span style={{color:BK.muted,fontWeight:800}}>10</span></div>
         </div>
         <div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 책을 마치면')}</div>
@@ -54083,16 +54116,19 @@ function cbScalesPages(scr = false) {
     P(4, kk(3), t('Is it major or minor?', '장조일까, 단조일까?'), <CbMinorPic/>,
       X('The same signature has both. From the major, count 3 half steps down.', '조표는 같아요. 장조에서 반음 3칸 아래로 내려가면 단조.'),
       X('Minor: 3 half steps below the major.', '단조는 장조에서 반음 3칸 아래.')),
-    P(5, kk(4), t('Before you play the piece', '곡을 치기 전에'), <CbPiecePic/>,
+    P(5, kk(4), t('Every key, in one circle', '모든 조를 한 바퀴에'), <CbCirclePic/>,
+      X('Clockwise: one more ♯. Anticlockwise: one more ♭.', '시계 방향은 샤프 하나 더, 반시계 방향은 플랫 하나 더.'),
+      X('Inside each key is its relative minor.', '조마다 안쪽에 그 나란한조가 있어요.')),
+    P(6, kk(5), t('Before you play the piece', '곡을 치기 전에'), <CbPiecePic/>,
       X('Read the signature, name the key, then play its scale once.', '조표를 읽고, 조를 찾고, 그 스케일을 한 번 쳐요.')),
-    P(6, sk(1), t('How do you play C major?', 'C장조는 어떻게 쳐요?'), <CbScalePic k="C" label={t('C major on the keys, with finger numbers: right hand, then left hand.', 'C장조 건반과 손가락 번호: 오른손, 그다음 왼손.')}/>,
+    P(7, sk(1), t('How do you play C major?', 'C장조는 어떻게 쳐요?'), <CbScalePic k="C" label={t('C major on the keys, with finger numbers: right hand, then left hand.', 'C장조 건반과 손가락 번호: 오른손, 그다음 왼손.')}/>,
       X('White keys first: right hand, then left hand, then both.', '흰건반부터: 오른손, 왼손, 그다음 양손.'),
       X('Finger groups: 1-2-3 and 1-2-3-4.', '손가락 묶음: 1-2-3, 1-2-3-4.')),
-    P(7, sk(2), t('How do you play D♭ major?', 'D♭장조는 어떻게 쳐요?'), <CbScalePic k="Db" legend={false} label={t('D flat major on the keys, with finger numbers: right hand, then left hand.', 'D♭장조 건반과 손가락 번호: 오른손, 그다음 왼손.')}/>,
+    P(8, sk(2), t('How do you play D♭ major?', 'D♭장조는 어떻게 쳐요?'), <CbScalePic k="Db" legend={false} label={t('D flat major on the keys, with finger numbers: right hand, then left hand.', 'D♭장조 건반과 손가락 번호: 오른손, 그다음 왼손.')}/>,
       X('Now start on a black key: right hand, then left hand, then both.', '이번에는 검은건반에서 시작해요: 오른손, 왼손, 그다음 양손.')),
-    P(8, sk(3), t('Twelve keys, a half step apart', '열두 조, 반음씩 올라가요'), <CbTwelvePic/>,
+    P(9, sk(3), t('Twelve keys, a half step apart', '열두 조, 반음씩 올라가요'), <CbTwelvePic/>,
       X('Go up by a half step each time: right hand, then left hand, then both.', '반음씩 올라가요: 오른손, 왼손, 그다음 양손.')),
-    <LbPage key="9" no={9} chId={ch} head={head} book={book} kicker={t('Check-up', '점검')} title={t('My five checks', '나의 다섯 가지 확인')}>
+    <LbPage key="10" no={10} chId={ch} head={head} book={book} kicker={t('Check-up', '점검')} title={t('My five checks', '나의 다섯 가지 확인')}>
       <LbSay>{t('Show each one at the piano, in the keys of your step.', '내가 있는 단계의 조로, 하나씩 피아노 앞에서 보여 줘요.')}</LbSay>
       <LbLive still={<LbStageRows big rows={checksRows.map(([a, x]) => [<PenArt shapes={ic[a]} vb={[0, 0, 92, 40]} style={{width:80}}/>, cbSx(x)])}/>} live={<FiveChecks376 storeKey="pb_five_cb_scales_v2" rows={checksRows.map(([a, x]) => [{ shapes: ic[a], vb: [0, 0, 92, 40] }, cbSx(x)])}/>}/>
     </LbPage>,
@@ -54101,8 +54137,8 @@ function cbScalesPages(scr = false) {
 function CbScalesBook() { return <>{cbScalesPages(false)}</>; }
 CONCEPT_BOOKS['p-scales'] = CbScalesBook;
 // on screen (Phase 495): the book is the step screens themselves; this hidden entry keeps old links and QR codes working
-TOOLS.push({ id: 'cb-p-scales', ch: 'concept', title: 'Concept book: Scales and keys', blurb: 'Four steps to find the key, three to play the scales.', hidden: true, get kicker() { return TOOL_AREAS.find(a => a.id === 'pitch').name + ' · ' + cbBookName(); }, C: () => <KeyFinder/> });
-TOOL_KO['cb-p-scales'] = ['개념책: 스케일과 조', '조 찾기 네 단계, 스케일 치기 세 단계.'];
+TOOLS.push({ id: 'cb-p-scales', ch: 'concept', title: 'Concept book: Scales and keys', blurb: 'Five steps to find the key, three to play the scales.', hidden: true, get kicker() { return TOOL_AREAS.find(a => a.id === 'pitch').name + ' · ' + cbBookName(); }, C: () => <KeyFinder/> });
+TOOL_KO['cb-p-scales'] = ['개념책: 스케일과 조', '조 찾기 다섯 단계, 스케일 치기 세 단계.'];
 (() => { const tl = TOOLS[TOOLS.length - 1], k = TOOL_KO[tl.id], ti = tl.title, bl = tl.blurb; tl.titleEn = ti; tl.blurbEn = bl;
   Object.defineProperty(tl, 'title', { get: () => (LANG === 'ko' ? k[0] : ti), enumerable: true, configurable: true });
   Object.defineProperty(tl, 'blurb', { get: () => (LANG === 'ko' ? k[1] : bl), enumerable: true, configurable: true }); })();
@@ -54114,7 +54150,7 @@ function CbCard({ cid, onOpen }) {
   return <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap',margin:'8px 14px 2px',padding:'8px 12px',border:'1px solid var(--navy-line)',borderRadius:10,background:'#fff'}}>
     <svg width="22" height="18" viewBox="0 0 22 18" aria-hidden="true" style={{flex:'0 0 auto'}}><path d="M11 3 C8 1 4 1 1.5 2 L1.5 16 C4 15 8 15 11 17 C14 15 18 15 20.5 16 L20.5 2 C18 1 14 1 11 3 Z M11 3 L11 17" fill="none" stroke="var(--navy)" strokeWidth="1.6" strokeLinejoin="round"/></svg>
     <div style={{flex:'1 1 200px',minWidth:0}}><div style={{fontSize:14.5,fontWeight:900,color:'var(--navy)'}}>{t('The concept book', '개념책')}</div>
-      <div style={{fontSize:12.5,color:'var(--navy-soft)',lineHeight:1.35}}>{t('Find the key in four steps, play the scales in three.', '조 찾기 네 단계, 스케일 치기 세 단계.')}</div></div>
+      <div style={{fontSize:12.5,color:'var(--navy-soft)',lineHeight:1.35}}>{t('Find the key in five steps, play the scales in three.', '조 찾기 다섯 단계, 스케일 치기 세 단계.')}</div></div>
     <div style={{display:'flex',gap:6}}><button className="ghost-btn" style={{minHeight:44}} onClick={() => onOpen(id)}>{t('Open', '열기')}</button>
       <a className="ghost-btn" style={{minHeight:44,display:'inline-flex',alignItems:'center',textDecoration:'none'}} href={href} target="_blank" rel="noopener">{t('Print', '인쇄')}</a></div>
   </div>;
