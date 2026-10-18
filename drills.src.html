@@ -162,6 +162,8 @@
     .blink { animation: blink 1s steps(1) infinite; }
 
     .try-box { position: relative; }
+    .kf-nest .try-box::before { display: none; }
+    .kf-nest .try-box { margin: 0 !important; }
     .try-box::before { content: 'TRY IT'; position: absolute; top: -8px; right: 10px; background: var(--coral); color: #fff; font-size: 9px; font-weight: 800; letter-spacing: 0.1em; padding: 2px 8px; border-radius: 8px; }
     @keyframes drawArc { to { stroke-dashoffset: 0; } }
     @keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
@@ -4962,8 +4964,8 @@ function OrderBuilder({ type }) {
 }
 
 // "Place it yourself": tap the line or space where the next sharp/flat goes.
-function PlaceIt() {
-  const [type, setType] = useState('sharp');
+function PlaceIt({ initType = 'sharp' }) {
+  const [type, setType] = useState(initType);
   const [n, setN] = useState(0);
   const [miss, setMiss] = useState(null);
   const [tries, setTries] = useState(0);
@@ -5080,6 +5082,101 @@ function CircleOfFifths() {
         <button className="ghost-btn" onClick={() => setWalk({ dir: 'ccw', i: 0 })}>{t('↺ Walk the flats', '↺ 플랫 쪽으로 돌기')}</button>
         <button className="ghost-btn" onClick={() => setWalk({ dir: 'cw', i: 0 })}>{t('Walk the sharps ↻', '샤프 쪽으로 돌기 ↻')}</button>
       </div>
+    </div>
+  );
+}
+
+// Phase 487 (rule 16): the one key tool. Add the sharps or flats one at a time (the sentence lights up, each one sounds),
+// tap any key on the circle, place them yourself, find the relative minor. The old cards stay as hidden cards.
+const KF_WORDS = { sharp: ['Father', 'Charles', 'Goes', 'Down', 'And', 'Ends', 'Battle'], flat: ['Battle', 'Ends', 'And', 'Down', 'Goes', 'Charles’', 'Father'] };
+function KeyFinder() {
+  const [type, setType] = useState('sharp');
+  const [n, setN] = useState(0);
+  const [clef, setClef] = useState('treble');
+  const [auto, setAuto] = useState(false);
+  const [sec, setSec] = useState(null);
+  const order = type === 'sharp' ? SHARP_ORDER : FLAT_ORDER;
+  const sym = type === 'sharp' ? '♯' : '♭';
+  const k = KEY_BY_COUNT(type, n);
+  const words = KF_WORDS[type];
+  useEffect(() => {
+    if (!auto) return;
+    if (n >= 7) { setAuto(false); return; }
+    const id = setTimeout(() => { playKey(pcOfName(order[n]), 0.5); setN(x => x + 1); }, 850);
+    return () => clearTimeout(id);
+  }, [auto, n]);
+  function add() { if (n >= 7) return; setAuto(false); playKey(pcOfName(order[n]), 0.5); setN(n + 1); }
+  function less() { setAuto(false); setN(Math.max(0, n - 1)); }
+  function pickType(ty) { setAuto(false); setType(ty); setN(0); }
+  function pickKey(ks) { setAuto(false); if (ks.type) setType(ks.type); setN(ks.count); }
+  const slot = CIRCLE.findIndex(c => c.maj.includes(k.major));
+  const names = CIRCLE[slot].maj;
+  const R = 92, r = 60, cx = 120, cy = 118;
+  const pt = (i, rad) => { const a = -Math.PI / 2 + i * Math.PI / 6; return [cx + rad * Math.cos(a), cy + rad * Math.sin(a)]; };
+  const chipStyle = { padding: '8px 14px', fontSize: 14, minHeight: 40 };
+  return (
+    <div className="try-box" style={{background:'#fff',border:'1px solid var(--border)',borderRadius:10,padding:'10px',margin:'4px 0 16px'}}>
+      <div style={{fontSize:15,fontWeight:800,marginBottom:2}}>{t('Key signatures', '조표')}</div>
+      <div style={{fontSize:13,color:'#6d6f9c',lineHeight:1.5,marginBottom:8}}>{t('Add the sharps (or flats) one at a time and say the sentence as you go. Or tap a key on the circle.', '샤프(또는 플랫)를 하나씩 더하면서 문장을 말해 봐요. 또는 5도권에서 조를 눌러 봐요.')}</div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:6,alignItems:'center',justifyContent:'space-between',marginBottom:6}}>
+        <div style={{display:'flex',gap:4}}>
+          {[['sharp', '♯ ' + t('Sharps', '샤프')], ['flat', '♭ ' + t('Flats', '플랫')]].map(([ty, l]) => <button key={ty} className={'chip' + (type === ty ? ' active' : '')} aria-pressed={type === ty} style={chipStyle} onClick={() => pickType(ty)}>{l}</button>)}
+        </div>
+        <div style={{display:'flex',gap:4}}>
+          {['treble', 'bass'].map(c => <button key={c} className={'chip' + (clef === c ? ' active' : '')} aria-pressed={clef === c} style={chipStyle} onClick={() => setClef(c)}>{c === 'treble' ? t('𝄞 treble', '𝄞 높은음') : t('𝄢 bass', '𝄢 낮은음')}</button>)}
+        </div>
+      </div>
+      <KSStaff count={n} type={type} width={170} clef={clef} upto={n ? n - 1 : undefined} numbers/>
+      <div style={{display:'flex',justifyContent:'center',gap:10,fontSize:15,fontWeight:900,margin:'2px 0 4px',minHeight:22}}>
+        {order.map((nm, i) => <span key={nm} style={{opacity:i < n ? 1 : 0.18,color:i === n - 1 ? '#c8361b' : 'var(--text)',transition:'opacity 0.3s'}}>{prettyNote(nm)}</span>)}
+      </div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:'0 6px',justifyContent:'center',fontSize:14,fontWeight:700,lineHeight:1.5}}>
+        {words.map((w, i) => <span key={i} style={{opacity:i < n ? 1 : 0.25,color:i === n - 1 ? '#c8361b' : 'var(--text)',fontWeight:i === n - 1 ? 900 : 700,transition:'opacity 0.3s'}}>{w}</span>)}
+      </div>
+      {type === 'flat' && <div style={{textAlign:'center',fontSize:12,color:'var(--muted)',marginTop:2}}>{t('the same sentence backwards', '같은 문장을 거꾸로')}</div>}
+      <div style={{textAlign:'center',fontSize:15,fontWeight:800,minHeight:22,marginTop:6}}>
+        {n === 0 ? t('No sharps or flats = C major / A minor', '샤프·플랫 없음 = C장조 / A단조') : n + sym + ' = ' + majName(k) + ' / ' + minName(k)}
+      </div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:6,justifyContent:'center',marginTop:8}}>
+        <button className="ghost-btn" style={{minHeight:40}} disabled={n === 0} onClick={less}>{t('− One off', '− 하나 빼기')}</button>
+        <button className="ghost-btn" style={{minHeight:40,fontWeight:900}} disabled={n === 7} onClick={add}>{t('+ Next one', '+ 다음 하나')}</button>
+        <button className="ghost-btn" style={{minHeight:40}} onClick={() => { setN(0); setAuto(true); }}>{t('▶ Play', '▶ 재생')}</button>
+      </div>
+      <div style={{fontSize:12,fontWeight:800,color:'var(--muted)',textTransform:'uppercase',letterSpacing:'0.05em',margin:'14px 0 2px',textAlign:'center'}}>{t('Every key on one clock', '모든 조를 시계 하나에')}</div>
+      <svg viewBox="0 0 240 236" style={{width:'100%',maxWidth:340,display:'block',margin:'0 auto'}}>
+        <circle cx={cx} cy={cy} r={R + 16} fill="#f8f3e6" stroke="#e9e2d2"/>
+        <circle cx={cx} cy={cy} r={r - 16} fill="#fff" stroke="#e9e2d2"/>
+        <text x="6" y="14" fontSize="9" fontWeight="800" fill="#6d78b8">{t('↺ flats', '↺ 플랫')}</text>
+        <text x="234" y="14" textAnchor="end" fontSize="9" fontWeight="800" fill="#e4572e">{t('sharps ↻', '샤프 ↻')}</text>
+        {CIRCLE.map((c, i) => {
+          const [x, y] = pt(i, R), [ix, iy] = pt(i, r);
+          const on = i === slot;
+          const minors = c.maj.map(m => KEY_SIGS.find(q => q.major === m).minor);
+          const cur = c.maj.indexOf(k.major);
+          const target = KEY_SIGS.find(q => q.major === (on && c.maj.length > 1 ? c.maj[(cur + 1) % c.maj.length] : c.maj[0]));
+          return (
+            <g key={i} role="button" aria-label={prettyNote(c.maj[0])} onClick={() => pickKey(target)} style={{cursor:'pointer'}}>
+              <circle cx={x} cy={y} r="21" fill="transparent"/>
+              <circle cx={x} cy={y} r="15" fill={on ? '#26296b' : '#fff'} stroke={on ? '#26296b' : '#dbd2bd'}/>
+              <text x={x} y={y + (c.maj.length > 1 ? -1 : 4)} textAnchor="middle" fontSize={c.maj.length > 1 ? 9 : 12} fontWeight="900" fill={on ? '#fff' : '#26296b'}>{prettyNote(c.maj[0])}</text>
+              {c.maj.length > 1 && <text x={x} y={y + 9} textAnchor="middle" fontSize="8" fontWeight="700" fill={on ? '#fbe3da' : '#a3a5c2'}>{prettyNote(c.maj[1])}</text>}
+              <text x={ix} y={iy + 3} textAnchor="middle" fontSize="8.5" fontWeight="700" fill={on ? '#e4572e' : '#a3a5c2'}>{prettyNote(minors[on ? Math.max(0, cur) : 0]).toLowerCase()}</text>
+            </g>
+          );
+        })}
+        <text x={cx} y={cy - 2} textAnchor="middle" fontSize="12" fontWeight="900" fill="#26296b">{prettyNote(k.major)}</text>
+        <text x={cx} y={cy + 12} textAnchor="middle" fontSize="9" fontWeight="700" fill="#a3a5c2">{sigLabel(k)}</text>
+      </svg>
+      {names.length > 1 && (
+        <div style={{display:'flex',gap:4,justifyContent:'center',flexWrap:'wrap',margin:'4px 0'}}>
+          {names.map(m => { const ks = KEY_SIGS.find(q => q.major === m); return <button key={m} className={'chip' + (k.major === m ? ' active' : '')} aria-pressed={k.major === m} style={chipStyle} onClick={() => pickKey(ks)}>{prettyNote(m)}{t(' major', ' 장조')} · {sigLabel(ks)}</button>; })}
+        </div>
+      )}
+      <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:12}}>
+        {[['place', t('Place them yourself', '직접 놓아 보기')], ['minor', t('Relative minor', '나란한조')]].map(([id, l]) => <button key={id} className={'chip' + (sec === id ? ' active' : '')} style={{padding:'9px 16px',fontSize:14,minHeight:40}} aria-pressed={sec === id} onClick={() => setSec(sec === id ? null : id)}>{l}</button>)}
+      </div>
+      {sec === 'place' && <div className="kf-nest" style={{marginTop:10}}><PlaceIt key={type} initType={type}/></div>}
+      {sec === 'minor' && <div className="kf-nest" style={{marginTop:10}}><RelativeMinor key={k.major} initKey={k.major}/></div>}
     </div>
   );
 }
@@ -15922,8 +16019,8 @@ DRILLS.forEach(d => { if (!CHAPTER_KO[d.id]) return; const en = d.label; d.label
 // ─── Phase 124: three more mini tools ──────────────────────────────────────────
 // 1. Relative minor: same key signature, tonic 3 semitones (and 3 letters) lower. Or the 6th note of the major scale.
 const REL_KEYS = ['C', 'G', 'D', 'A', 'E', 'F', 'Bb', 'Eb', 'Ab'];
-function RelativeMinor() {
-  const [key, setKey] = useState('C');
+function RelativeMinor({ initKey = 'C' }) {
+  const [key, setKey] = useState(initKey);
   const [dir, setDir] = useState('down'); // 'down' = major -> minor, 'up' = minor -> major
   const [step, setStep] = useState(0);
   const ks = KEY_SIGS.find(k => k.major === key);
@@ -15955,9 +16052,9 @@ function RelativeMinor() {
       <div style={actTitle}>{t('Relative major and minor', '나란한조: 장조와 단조')}</div>
       <div style={actNote}>{LANG === 'ko' ? <>조표 하나는 두 조의 것이에요: 장조 하나와 그 <b>나란한조(단조)</b>. 장조의 으뜸음에서 <b>반음 3개 아래로</b>(음이름도 3개) 가요. 단조에서는 <b>3개 위로</b>.</> : <>Every key signature belongs to two keys: a major key and its <b>relative minor</b>. From the major tonic, go <b>down 3 semitones</b> (and 3 letter names). From the minor, go <b>up 3</b>.</>}</div>
       <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:4}}>
-        {REL_KEYS.map(k => <button key={k} className={'chip' + (k === key ? ' active' : '')} style={{padding:'3px 9px',fontSize:13}} onClick={() => setKey(k)}>{dir === 'down' ? prettyNote(k) + t(' major', ' 장조') : prettyNote(KEY_SIGS.find(x => x.major === k).minor) + t(' minor', ' 단조')}</button>)}
+        {(REL_KEYS.includes(initKey) ? REL_KEYS : [...REL_KEYS, initKey]).map(k => <button key={k} className={'chip' + (k === key ? ' active' : '')} style={{padding:'3px 9px',fontSize:13}} onClick={() => setKey(k)}>{dir === 'down' ? prettyNote(k) + t(' major', ' 장조') : prettyNote(KEY_SIGS.find(x => x.major === k).minor) + t(' minor', ' 단조')}</button>)}
       </div>
-      <div style={{display:'flex',gap:4,marginBottom:6}}>
+      <div style={{display:'flex',gap:4,marginBottom:6,flexWrap:'wrap'}}>
         {[['down', t('Major → minor', '장조 → 단조')], ['up', t('Minor → major', '단조 → 장조')]].map(([k, l]) => <button key={k} className={'chip' + (dir === k ? ' active' : '')} style={{padding:'2px 9px',fontSize:12}} onClick={() => setDir(k)}>{l}</button>)}
       </div>
       <div style={{display:'flex',justifyContent:'center'}}><KSStaff count={ks.count} type={ks.type} width={170}/></div>
@@ -18615,16 +18712,17 @@ const TOOLS = [
   { id: 'build-major', hidden: true, ch: 'scales', title: 'Build a major scale', blurb: 'T T S T T T S, step by step.', C: () => <ScaleBuilder mode="major"/> },
   { id: 'build-minor', hidden: true, ch: 'scales', title: 'Build a harmonic minor', blurb: 'With the tone-and-a-half step.', C: () => <ScaleBuilder mode="minor"/> },
   { id: 'modes', hidden: true, ch: 'scales', title: 'The seven modes', blurb: 'Ionian to Locrian: same notes, a new home note.', C: () => <Modes/> },
+  { id: 'key-finder', ch: 'key-signatures', title: 'Key finder', blurb: 'Every key in one place: add the sharps or flats one at a time, tap the circle, place them yourself, find the relative minor.', C: () => <KeyFinder/> },
   { id: 'skg-every', ch: 'key-signatures', title: 'Every F', blurb: 'One sharp on the top line: every F is F♯, high or low. Hear it with and without the key signature.', C: () => <SkgPad page={2}/> },
-  { id: 'skg-g', ch: 'key-signatures', title: 'G major', blurb: 'G major written with its key signature: listen, then play it, every F as F♯.', C: () => <SkgPad page={3}/> },
-  { id: 'skg-f', ch: 'key-signatures', title: 'F major', blurb: 'F major written with its key signature: listen, then play it, every B as B♭.', C: () => <SkgPad page={4}/> },
+  { id: 'skg-g', hidden: true, ch: 'key-signatures', title: 'G major', blurb: 'G major written with its key signature: listen, then play it, every F as F♯.', C: () => <SkgPad page={3}/> },
+  { id: 'skg-f', hidden: true, ch: 'key-signatures', title: 'F major', blurb: 'F major written with its key signature: listen, then play it, every B as B♭.', C: () => <SkgPad page={4}/> },
   { id: 'skg-acc', ch: 'key-signatures', title: 'Key signature and accidental', blurb: 'A natural lasts until the bar line; then the key signature holds again.', C: () => <SkgPad page={5}/> },
   { id: 'skg-five', ch: 'key-signatures', title: 'Name the key', blurb: 'C, G, D, F and B♭ major: each key signature and its scale.', C: () => <SkgFivePad/> },
-  { id: 'sharps-order', ch: 'key-signatures', title: 'Order of sharps', blurb: 'Add them one by one, numbered.', C: () => <OrderBuilder type="sharp"/> },
-  { id: 'flats-order', ch: 'key-signatures', title: 'Order of flats', blurb: 'The sharps backwards.', C: () => <OrderBuilder type="flat"/> },
-  { id: 'place-it', ch: 'key-signatures', title: 'Place the key signature', blurb: 'Tap where each sharp or flat goes.', C: () => <PlaceIt/> },
-  { id: 'relative-minor', ch: 'key-signatures', title: 'Relative minor', blurb: 'Same signature: down 3 semitones, or the 6th note.', C: () => <><ExplKeySig1/><RelativeMinor/></> },
-  { id: 'circle-fifths', ch: 'key-signatures', title: 'Circle of fifths', blurb: 'Every key in one clock.', C: () => <CircleOfFifths/> },
+  { id: 'sharps-order', hidden: true, ch: 'key-signatures', title: 'Order of sharps', blurb: 'Add them one by one, numbered.', C: () => <OrderBuilder type="sharp"/> },
+  { id: 'flats-order', hidden: true, ch: 'key-signatures', title: 'Order of flats', blurb: 'The sharps backwards.', C: () => <OrderBuilder type="flat"/> },
+  { id: 'place-it', hidden: true, ch: 'key-signatures', title: 'Place the key signature', blurb: 'Tap where each sharp or flat goes.', C: () => <PlaceIt/> },
+  { id: 'relative-minor', hidden: true, ch: 'key-signatures', title: 'Relative minor', blurb: 'Same signature: down 3 semitones, or the 6th note.', C: () => <><ExplKeySig1/><RelativeMinor/></> },
+  { id: 'circle-fifths', hidden: true, ch: 'key-signatures', title: 'Circle of fifths', blurb: 'Every key in one clock.', C: () => <CircleOfFifths/> },
   { id: 'ivx-ladder', ch: 'intervals', title: 'The interval ladder', blurb: 'Every interval from one note, a 2nd to an octave: tap a number to hear it.', C: () => <IvxMapPad/> },
   { id: 'ivx-count', ch: 'intervals', title: 'Count an interval', blurb: 'Count both notes: the lower note is 1.', C: () => <IvxCountPad set="p2"/> },
   { id: 'ivx-hand', ch: 'intervals', title: 'Intervals in the hand', blurb: 'C or G position: thumb and finger 3 make a 3rd.', C: () => <IvxHandPad/> },
@@ -18674,7 +18772,7 @@ const TOOLS = [
   { id: 'note-value-tree', ch: 'note-values', title: 'Note values, names & rests', blurb: 'How each note splits into two of the next, and the matching rest and beat count for every note.', C: () => <NoteValuesTool/> },
   { id: 'dotted-notes', ch: 'rhythm', title: 'Dotted notes', blurb: 'A dot adds half again.', C: () => <DottedNotesCard/> },
   { id: 'rhythm-cards-all', ch: 'rhythm', title: 'The 40 rhythm cards', blurb: 'One-bar rhythms in 4/4, easiest first: tap to hear.', C: () => <RhythmCardsBrowser/> },
-  { id: 'all-keys', ch: 'key-signatures', title: 'All 15 key signatures', blurb: 'Tap a key to see its signature.', C: () => <KeySigAllKeys/> },
+  { id: 'all-keys', hidden: true, ch: 'key-signatures', title: 'All 15 key signatures', blurb: 'Tap a key to see its signature.', C: () => <KeySigAllKeys/> },
   { id: 'major-shape', hidden: true, ch: 'scales', title: 'The major scale shape', blurb: 'One shape builds every major scale.', C: () => <MajorShapeCard/> },
   { id: 'major-fingering', hidden: true, ch: 'scales', title: 'Major scale fingering', blurb: 'Fingering patterns and your scale path. The Scale finder shows any key on the keyboard.', C: () => <MajorFingeringSet/> },
   { id: 'minor-fingering', hidden: true, ch: 'scales', title: 'Minor scale fingering', blurb: 'Fingering patterns, your scale path and every form of each minor.', C: () => <MinorFingeringSet/> },
@@ -18890,6 +18988,7 @@ const TOOL_KO = {
   'place-it': ['조표 자리 찾기', '샤프나 플랫이 들어갈 자리를 눌러요.'],
   'relative-minor': ['나란한조', '같은 조표: 반음 3개 아래, 또는 여섯 번째 음.'],
   'circle-fifths': ['5도권', '모든 조를 시계 하나에.'],
+  'key-finder': ['조 찾기', '조 하나로: 샤프나 플랫을 하나씩 더하고, 5도권을 눌러 보고, 직접 놓아 보고, 나란한조를 찾아요.'],
   'ivx-ladder': ['음정 사다리', '한 음에서 2도부터 옥타브까지 모든 음정: 음정을 누르면 들려요.'],
   'ivx-count': ['음정 세기', '두 음을 모두 세요: 아래 음이 1이에요.'],
   'ivx-hand': ['손 안의 음정', 'C 자리, G 자리: 엄지와 3번 손가락은 3도.'],
@@ -19422,7 +19521,7 @@ const TOOL_META = {
   'ssc-steps': ['scales', 1, 2, 'game ear'], 'ssc-fingers': ['scales', 1, 2, 'show game'], 'ssc-degrees': ['scales', 1, 2, 'game'], 'ssc-g': ['scales', 1, 2, 'game ear'], 'ssc-f': ['scales', 1, 2, 'game ear'],
   'build-minor': ['scales', 2, 3, 'game write'], 'scale-finder': ['scales', 0, 3, 'show game write ear home'], 'degree-names': ['scales', 2, 3, 'show'], 'skg-every': ['scales', 1, 2, 'game ear'], 'skg-g': ['scales', 1, 2, 'game ear'], 'skg-f': ['scales', 1, 2, 'game ear'], 'skg-acc': ['scales', 1, 2, 'game ear'], 'skg-five': ['scales', 1, 2, 'show ear'], 'sharps-order': ['scales', 1, 3, 'game'], 'flats-order': ['scales', 1, 3, 'game'],
   'modes': ['scales', 3, 3, 'show ear'],
-  'place-it': ['scales', 1, 3, 'write'], 'relative-minor': ['scales', 2, 3, 'show'], 'circle-fifths': ['scales', 2, 3, 'show'], 'transpose': ['scales', 2, 3, 'show write'],
+  'place-it': ['scales', 1, 3, 'write'], 'relative-minor': ['scales', 2, 3, 'show'], 'circle-fifths': ['scales', 2, 3, 'show'], 'key-finder': ['scales', 1, 3, 'show write'], 'transpose': ['scales', 2, 3, 'show write'],
   'ivx-ladder': ['intervals', 1, 3, 'show ear'], 'ivx-count': ['intervals', 1, 2, 'game ear'], 'ivx-hand': ['intervals', 1, 2, 'show ear'], 'ivx-big': ['intervals', 1, 2, 'game ear'], 'ivx-mh': ['intervals', 1, 2, 'game ear'], 'ivx-tonic': ['intervals', 2, 3, 'show ear'], 'interval-ruler': ['intervals', 1, 2, 'show'], 'letter-hop': ['intervals', 1, 2, 'game'], 'semitone-counter': ['intervals', 2, 3, 'show'], 'scale-intervals': ['intervals', 2, 3, 'show'],
   'invert-interval': ['intervals', 3, 3, 'show'], 'tritone': ['intervals', 3, 3, 'show ear'], 'chx-clock': ['harmony', 1, 3, 'show ear'], 'chx-stack': ['harmony', 1, 2, 'show ear'], 'chx-mm': ['harmony', 1, 3, 'show ear'], 'chx-tonic': ['harmony', 1, 3, 'show ear'], 'chx-145': ['harmony', 2, 3, 'show ear'], 'chx-hands': ['harmony', 1, 2, 'game ear'], 'triad-stack': ['harmony', 1, 3, 'show'], 'major-minor': ['harmony', 2, 3, 'ear show'],
   'key-chords': ['harmony', 2, 3, 'show'], 'primary-triads': ['harmony', 2, 3, 'show ear'], 'inversions': ['harmony', 3, 3, 'show'], 'cadences': ['harmony', 3, 3, 'ear show'],
@@ -19437,7 +19536,7 @@ const TOOL_META = {
   'cpx-map': ['about', 0, 3, 'show ear'], 'cpx-baroque': ['about', 0, 3, 'show ear'], 'cpx-classical': ['about', 0, 3, 'show ear'], 'cpx-romantic': ['about', 0, 3, 'show ear'], 'cpx-modern': ['about', 0, 3, 'show ear'], 'cpx-alive': ['about', 0, 3, 'show'], 'cpx-order': ['about', 1, 3, 'game'], 'era-worlds': ['about', 0, 3, 'show'], 'movement-map': ['about', 1, 3, 'show ear'], 'composer-time-machine': ['about', 0, 3, 'show game'], 'composer-cards': ['about', 0, 3, 'show ear'], 'who-am-i': ['about', 1, 3, 'game'], 'name-that-tune': ['about', 0, 3, 'game ear'],
 };
 // Phase 484: each tool's concept (the inventory of 17 October); the old topic stays in TOOL_META for its level and kinds
-const TOOL_CONCEPT = { 'accidental-bar': 'p-clock', 'accidental-cards': 'p-clock', 'all-keys': 'p-scales', 'alto-clef': 'p-staff', 'anacrusis': 'r-beat', 'arm-alignment': 'k-posture', 'arm-moves': 'k-posture', 'bar-lines': 'r-beat', 'beam-apples': 'r-beat', 'beat-doubler': 'r-beat', 'beat-groups': 'r-beat', 'beat-or-rhythm': 'r-beat', 'beat-target': 'r-beat', 'binary-ternary-spot': 'c-map', 'black-key-jam': 'p-staff', 'black-key-song': 'p-staff', 'black-white-neighbours': 'p-staff', 'build-major': 'p-scales', 'build-minor': 'p-scales', 'cadences': 'p-chords', 'chord-extensions': 'p-chords', 'chromatic': 'p-clock', 'chx-145': 'p-chords', 'chx-clock': 'p-chords', 'chx-hands': 'k-play', 'chx-mm': 'p-chords', 'chx-stack': 'p-chords', 'chx-tonic': 'p-chords', 'circle-fifths': 'p-scales', 'clef-basics': 'p-staff', 'clef-story': 'p-staff', 'common-cut': 'r-beat', 'complete-melody': 'c-map', 'composer-cards': 'about', 'composer-time-machine': 'about', 'count-along': 'r-beat', 'count-aloud': 'r-beat', 'count-more': 'r-beat', 'count-ring': 'r-beat', 'cpx-alive': 'about', 'cpx-baroque': 'about', 'cpx-classical': 'about', 'cpx-map': 'about', 'cpx-modern': 'about', 'cpx-order': 'about', 'cpx-romantic': 'about', 'csx-blues': 'p-chords', 'csx-ear': 'about', 'csx-era': 'about', 'csx-map': 'about', 'csx-penta': 'p-scales', 'csx-pop': 'about', 'csx-texture': 'about', 'dc-ds-coda': 'c-map', 'degree-names': 'p-scales', 'dot-lab': 'r-beat', 'dotted-notes': 'r-beat', 'draw-tune': 'c-map', 'duplets': 'r-beat', 'dyn-order': 't-touch', 'echo': 'c-reading', 'era-worlds': 'about', 'eras': 'about', 'fill-bar': 'r-beat', 'find-every': 'p-staff', 'finger-beat': 'r-beat', 'finger-friends': 'k-posture', 'finger-numbers': 'k-positions', 'five-positions': 'k-positions', 'fix-the-bar': 'r-beat', 'flash-cards': 'p-staff', 'flats-order': 'p-scales', 'fmx-binary': 'c-map', 'fmx-build': 'c-map', 'fmx-find': 'c-map', 'fmx-letters': 'c-map', 'fmx-map': 'c-map', 'fmx-phrase': 'c-map', 'fmx-ternary': 'c-map', 'fold': 'p-staff', 'form-builder': 'c-map', 'form-shapes': 'c-map', 'genre-traits': 'about', 'grace-write': 't-touch', 'grouping': 'r-beat', 'hairpin': 't-touch', 'hand-shape': 'k-posture', 'hear-find': 'c-reading', 'heard-bar': 'r-beat', 'high-low': 'p-staff', 'hz-explorer': 'p-staff', 'interval-ear': 'p-intervals', 'interval-ruler': 'p-intervals', 'inversions': 'p-chords', 'invert-interval': 'p-intervals', 'ivx-big': 'p-intervals', 'ivx-count': 'p-intervals', 'ivx-hand': 'p-intervals', 'ivx-ladder': 'p-intervals', 'ivx-mh': 'p-intervals', 'ivx-tonic': 'p-intervals', 'key-chords': 'p-chords', 'key-houses': 'p-staff', 'keyboard-ancestors': 'about', 'landmark-hop': 'p-staff', 'landmarks': 'p-staff', 'ledger-landmarks': 'p-staff', 'ledger-twins': 'p-staff', 'ledger-walk': 'p-staff', 'ledger-write': 'p-staff', 'letter-chain': 'p-staff', 'letter-hop': 'p-intervals', 'major-fingering': 'k-play', 'major-minor': 'p-chords', 'major-shape': 'p-scales', 'make-card': 'r-beat', 'melody-sequence': 'c-map', 'metronome': 't-tempo', 'mini-tune': 'c-reading', 'minor-fingering': 'k-play', 'minor-forms': 'p-scales', 'mlx-build': 'c-map', 'mlx-line': 'c-map', 'mlx-map': 'c-map', 'mlx-motif': 'c-map', 'mlx-phrasing': 'c-map', 'mlx-qa': 'c-map', 'mlx-seq': 'c-map', 'modes': 'p-scales', 'movement-map': 'about', 'name-reveal': 'p-staff', 'name-that-tune': 'about', 'note-rest-match': 'r-beat', 'note-rest-naming': 'r-beat', 'note-value-tree': 'r-beat', 'nv-hold': 'r-beat', 'nv-long': 'r-beat', 'nv-rests': 'r-beat', 'nv-run': 'r-beat', 'nv-walk': 'r-beat', 'octave-ladder': 'p-staff', 'ornaments': 't-touch', 'ottava': 'p-staff', 'pedal': 't-touch', 'perfect-counter': 'practice', 'phrase-marks': 'c-map', 'piano-action': 'about', 'piano-timeline': 'about', 'place-it': 'p-scales', 'posture-check': 'k-posture', 'practice-dice': 'practice', 'practice-timer': 'practice', 'primary-triads': 'p-chords', 'question-answer': 'c-map', 'range-chart': 'about', 'regroup': 'r-beat', 'relative-minor': 'p-scales', 'rest-grouping': 'r-beat', 'rhymes': 'p-staff', 'rhythm-cards-all': 'r-beat', 'road-map': 'c-map', 'rondo-refrain': 'c-map', 'sac-bar': 'p-clock', 'sac-line': 'p-clock', 'sac-natural': 'p-clock', 'sac-signs': 'p-clock', 'sac-tune': 'p-clock', 'same-or-new': 'c-map', 'same-tune-tempo': 't-tempo', 'scale-finder': 'p-scales', 'scale-intervals': 'p-intervals', 'sdy-hair': 't-touch', 'sdy-ladder': 't-touch', 'sdy-pf': 't-touch', 'sdy-tie': 't-touch', 'sdy-touch': 't-touch', 'semitone-counter': 'p-intervals', 'seventh-chords': 'p-chords', 'sgn-dc': 'c-map', 'sgn-ds': 'c-map', 'sgn-pause': 't-tempo', 'sgn-rep': 'c-map', 'sgn-volta': 'c-map', 'sharp-flat': 'p-clock', 'sharps-order': 'p-scales', 'sight-reading': 'c-reading', 'silent-beats': 'r-beat', 'sit-check': 'k-posture', 'size-pitch': 'p-staff', 'skg-acc': 'p-scales', 'skg-every': 'p-scales', 'skg-f': 'p-scales', 'skg-five': 'p-scales', 'skg-g': 'p-scales', 'speed-change': 't-tempo', 'split-it': 'r-beat', 'spr-big': 'p-staff', 'spr-fam': 'about', 'spr-ladder': 'about', 'spr-range': 'about', 'spr-zone': 'p-staff', 'sps-action': 'about', 'sps-keys': 'p-staff', 'sps-pedals': 't-touch', 'sps-softloud': 'about', 'sps-sound': 'about', 'srh-alone': 'r-beat', 'srh-beams': 'r-beat', 'srh-dot': 'r-beat', 'srh-read': 'r-beat', 'srh-up': 'r-beat', 'ssc-degrees': 'p-scales', 'ssc-f': 'p-scales', 'ssc-fingers': 'k-play', 'ssc-g': 'p-scales', 'ssc-steps': 'p-scales', 'ssk-cpos': 'k-positions', 'ssk-gpos': 'k-positions', 'ssk-read': 'c-reading', 'ssk-shape': 'c-reading', 'ssk-step': 'c-reading', 'staff-basics': 'p-staff', 'staff-climb': 'p-staff', 'steady-beat': 'r-beat', 'step-skip': 'c-reading', 'step-updown': 'p-staff', 'stm-metro': 't-tempo', 'stm-read': 't-tempo', 'stm-sf': 't-tempo', 'stm-steady': 't-tempo', 'stm-words': 't-tempo', 'string-lab': 'p-staff', 'swing-feel': 'r-beat', 'tap-tempo': 't-tempo', 'tempo-race': 't-tempo', 'tempo-walk': 't-tempo', 'term-cards': 't-tempo', 'term-match': 't-tempo', 'term-mixer': 't-tempo', 'term-sort': 't-tempo', 'texture-spotter': 'about', 'texture-types': 'about', 'tie-slur': 't-touch', 'time-sig-numbers': 'r-beat', 'tmx-build': 't-tempo', 'tmx-change': 't-tempo', 'tmx-map': 't-tempo', 'tmx-speed': 't-tempo', 'tmx-touch': 't-touch', 'tmx-vol': 't-touch', 'tone-semitone': 'p-clock', 'touch-ear': 't-touch', 'touch-lengths': 't-touch', 'transpose': 'p-scales', 'triad-stack': 'p-chords', 'tritone': 'p-intervals', 'ts-bars': 'r-beat', 'ts-build': 'r-beat', 'ts-numbers': 'r-beat', 'ts-strong': 'r-beat', 'ts-tie': 'r-beat', 'tune-anatomy': 'c-map', 'twelve-bar-blues': 'p-chords', 'who-am-i': 'about', 'whole-piano': 'p-staff', 'write-note': 'p-staff' };
+const TOOL_CONCEPT = { 'accidental-bar': 'p-clock', 'accidental-cards': 'p-clock', 'all-keys': 'p-scales', 'key-finder': 'p-scales', 'alto-clef': 'p-staff', 'anacrusis': 'r-beat', 'arm-alignment': 'k-posture', 'arm-moves': 'k-posture', 'bar-lines': 'r-beat', 'beam-apples': 'r-beat', 'beat-doubler': 'r-beat', 'beat-groups': 'r-beat', 'beat-or-rhythm': 'r-beat', 'beat-target': 'r-beat', 'binary-ternary-spot': 'c-map', 'black-key-jam': 'p-staff', 'black-key-song': 'p-staff', 'black-white-neighbours': 'p-staff', 'build-major': 'p-scales', 'build-minor': 'p-scales', 'cadences': 'p-chords', 'chord-extensions': 'p-chords', 'chromatic': 'p-clock', 'chx-145': 'p-chords', 'chx-clock': 'p-chords', 'chx-hands': 'k-play', 'chx-mm': 'p-chords', 'chx-stack': 'p-chords', 'chx-tonic': 'p-chords', 'circle-fifths': 'p-scales', 'clef-basics': 'p-staff', 'clef-story': 'p-staff', 'common-cut': 'r-beat', 'complete-melody': 'c-map', 'composer-cards': 'about', 'composer-time-machine': 'about', 'count-along': 'r-beat', 'count-aloud': 'r-beat', 'count-more': 'r-beat', 'count-ring': 'r-beat', 'cpx-alive': 'about', 'cpx-baroque': 'about', 'cpx-classical': 'about', 'cpx-map': 'about', 'cpx-modern': 'about', 'cpx-order': 'about', 'cpx-romantic': 'about', 'csx-blues': 'p-chords', 'csx-ear': 'about', 'csx-era': 'about', 'csx-map': 'about', 'csx-penta': 'p-scales', 'csx-pop': 'about', 'csx-texture': 'about', 'dc-ds-coda': 'c-map', 'degree-names': 'p-scales', 'dot-lab': 'r-beat', 'dotted-notes': 'r-beat', 'draw-tune': 'c-map', 'duplets': 'r-beat', 'dyn-order': 't-touch', 'echo': 'c-reading', 'era-worlds': 'about', 'eras': 'about', 'fill-bar': 'r-beat', 'find-every': 'p-staff', 'finger-beat': 'r-beat', 'finger-friends': 'k-posture', 'finger-numbers': 'k-positions', 'five-positions': 'k-positions', 'fix-the-bar': 'r-beat', 'flash-cards': 'p-staff', 'flats-order': 'p-scales', 'fmx-binary': 'c-map', 'fmx-build': 'c-map', 'fmx-find': 'c-map', 'fmx-letters': 'c-map', 'fmx-map': 'c-map', 'fmx-phrase': 'c-map', 'fmx-ternary': 'c-map', 'fold': 'p-staff', 'form-builder': 'c-map', 'form-shapes': 'c-map', 'genre-traits': 'about', 'grace-write': 't-touch', 'grouping': 'r-beat', 'hairpin': 't-touch', 'hand-shape': 'k-posture', 'hear-find': 'c-reading', 'heard-bar': 'r-beat', 'high-low': 'p-staff', 'hz-explorer': 'p-staff', 'interval-ear': 'p-intervals', 'interval-ruler': 'p-intervals', 'inversions': 'p-chords', 'invert-interval': 'p-intervals', 'ivx-big': 'p-intervals', 'ivx-count': 'p-intervals', 'ivx-hand': 'p-intervals', 'ivx-ladder': 'p-intervals', 'ivx-mh': 'p-intervals', 'ivx-tonic': 'p-intervals', 'key-chords': 'p-chords', 'key-houses': 'p-staff', 'keyboard-ancestors': 'about', 'landmark-hop': 'p-staff', 'landmarks': 'p-staff', 'ledger-landmarks': 'p-staff', 'ledger-twins': 'p-staff', 'ledger-walk': 'p-staff', 'ledger-write': 'p-staff', 'letter-chain': 'p-staff', 'letter-hop': 'p-intervals', 'major-fingering': 'k-play', 'major-minor': 'p-chords', 'major-shape': 'p-scales', 'make-card': 'r-beat', 'melody-sequence': 'c-map', 'metronome': 't-tempo', 'mini-tune': 'c-reading', 'minor-fingering': 'k-play', 'minor-forms': 'p-scales', 'mlx-build': 'c-map', 'mlx-line': 'c-map', 'mlx-map': 'c-map', 'mlx-motif': 'c-map', 'mlx-phrasing': 'c-map', 'mlx-qa': 'c-map', 'mlx-seq': 'c-map', 'modes': 'p-scales', 'movement-map': 'about', 'name-reveal': 'p-staff', 'name-that-tune': 'about', 'note-rest-match': 'r-beat', 'note-rest-naming': 'r-beat', 'note-value-tree': 'r-beat', 'nv-hold': 'r-beat', 'nv-long': 'r-beat', 'nv-rests': 'r-beat', 'nv-run': 'r-beat', 'nv-walk': 'r-beat', 'octave-ladder': 'p-staff', 'ornaments': 't-touch', 'ottava': 'p-staff', 'pedal': 't-touch', 'perfect-counter': 'practice', 'phrase-marks': 'c-map', 'piano-action': 'about', 'piano-timeline': 'about', 'place-it': 'p-scales', 'posture-check': 'k-posture', 'practice-dice': 'practice', 'practice-timer': 'practice', 'primary-triads': 'p-chords', 'question-answer': 'c-map', 'range-chart': 'about', 'regroup': 'r-beat', 'relative-minor': 'p-scales', 'rest-grouping': 'r-beat', 'rhymes': 'p-staff', 'rhythm-cards-all': 'r-beat', 'road-map': 'c-map', 'rondo-refrain': 'c-map', 'sac-bar': 'p-clock', 'sac-line': 'p-clock', 'sac-natural': 'p-clock', 'sac-signs': 'p-clock', 'sac-tune': 'p-clock', 'same-or-new': 'c-map', 'same-tune-tempo': 't-tempo', 'scale-finder': 'p-scales', 'scale-intervals': 'p-intervals', 'sdy-hair': 't-touch', 'sdy-ladder': 't-touch', 'sdy-pf': 't-touch', 'sdy-tie': 't-touch', 'sdy-touch': 't-touch', 'semitone-counter': 'p-intervals', 'seventh-chords': 'p-chords', 'sgn-dc': 'c-map', 'sgn-ds': 'c-map', 'sgn-pause': 't-tempo', 'sgn-rep': 'c-map', 'sgn-volta': 'c-map', 'sharp-flat': 'p-clock', 'sharps-order': 'p-scales', 'sight-reading': 'c-reading', 'silent-beats': 'r-beat', 'sit-check': 'k-posture', 'size-pitch': 'p-staff', 'skg-acc': 'p-scales', 'skg-every': 'p-scales', 'skg-f': 'p-scales', 'skg-five': 'p-scales', 'skg-g': 'p-scales', 'speed-change': 't-tempo', 'split-it': 'r-beat', 'spr-big': 'p-staff', 'spr-fam': 'about', 'spr-ladder': 'about', 'spr-range': 'about', 'spr-zone': 'p-staff', 'sps-action': 'about', 'sps-keys': 'p-staff', 'sps-pedals': 't-touch', 'sps-softloud': 'about', 'sps-sound': 'about', 'srh-alone': 'r-beat', 'srh-beams': 'r-beat', 'srh-dot': 'r-beat', 'srh-read': 'r-beat', 'srh-up': 'r-beat', 'ssc-degrees': 'p-scales', 'ssc-f': 'p-scales', 'ssc-fingers': 'k-play', 'ssc-g': 'p-scales', 'ssc-steps': 'p-scales', 'ssk-cpos': 'k-positions', 'ssk-gpos': 'k-positions', 'ssk-read': 'c-reading', 'ssk-shape': 'c-reading', 'ssk-step': 'c-reading', 'staff-basics': 'p-staff', 'staff-climb': 'p-staff', 'steady-beat': 'r-beat', 'step-skip': 'c-reading', 'step-updown': 'p-staff', 'stm-metro': 't-tempo', 'stm-read': 't-tempo', 'stm-sf': 't-tempo', 'stm-steady': 't-tempo', 'stm-words': 't-tempo', 'string-lab': 'p-staff', 'swing-feel': 'r-beat', 'tap-tempo': 't-tempo', 'tempo-race': 't-tempo', 'tempo-walk': 't-tempo', 'term-cards': 't-tempo', 'term-match': 't-tempo', 'term-mixer': 't-tempo', 'term-sort': 't-tempo', 'texture-spotter': 'about', 'texture-types': 'about', 'tie-slur': 't-touch', 'time-sig-numbers': 'r-beat', 'tmx-build': 't-tempo', 'tmx-change': 't-tempo', 'tmx-map': 't-tempo', 'tmx-speed': 't-tempo', 'tmx-touch': 't-touch', 'tmx-vol': 't-touch', 'tone-semitone': 'p-clock', 'touch-ear': 't-touch', 'touch-lengths': 't-touch', 'transpose': 'p-scales', 'triad-stack': 'p-chords', 'tritone': 'p-intervals', 'ts-bars': 'r-beat', 'ts-build': 'r-beat', 'ts-numbers': 'r-beat', 'ts-strong': 'r-beat', 'ts-tie': 'r-beat', 'tune-anatomy': 'c-map', 'twelve-bar-blues': 'p-chords', 'who-am-i': 'about', 'whole-piano': 'p-staff', 'write-note': 'p-staff' };
 Object.keys(TOOL_META).forEach(id => { if (TOOL_CONCEPT[id]) TOOL_META[id][0] = TOOL_CONCEPT[id]; });
 function toolMeta(id) { const m = TOOL_META[id]; if (m) return { cat: m[0], lo: m[1], hi: m[2], kinds: m[3].split(' ') }; const t = TOOLS.find(x => x.id === id); return { cat: TOOL_CONCEPT[id] || 'practice', lo: 0, hi: 3, kinds: ['show'], ch: t && t.ch }; }
 // Phase 168 (2026-09-28): shared search text for a tool -- title + blurb + its category's
@@ -19470,7 +19569,7 @@ const PROBLEMS = [
   ['can’t tell legato from staccato', ['touch-lengths', 'touch-ear', 'tie-slur']],
   ['loses the place at repeats and D.C.', ['road-map']],
   ['mixes up sharps and flats', ['sharp-flat', 'tone-semitone', 'accidental-bar']],
-  ['has a theory exam coming', ['sharps-order', 'place-it', 'scale-finder', 'interval-ruler', 'triad-stack', 'term-match']],
+  ['has a theory exam coming', ['key-finder', 'scale-finder', 'interval-ruler', 'triad-stack', 'term-match']],
   ['forgets Italian terms', ['term-cards', 'term-match']],
   ['doesn’t practise at home', ['practice-timer', 'practice-dice', 'perfect-counter']],
   ['struggles to sight-read', ['sight-reading', 'step-skip', 'mini-tune']],
@@ -20039,7 +20138,7 @@ function ToolRow({ t, color, starred, onStar, open, onToggle, onChapter }) {
 // (or when onChapter isn't offered) just shows its cards with no header.
 // Phase 226: tools inside a chapter group follow that chapter's own step order.
 // New lesson-only pieces now live in the Toolbox too; borrow a sibling's icon until the design-phase redraw.
-[['time-sig-numbers', 'count-along'], ['note-value-tree', 'split-it'], ['dotted-notes', 'dot-lab'], ['rhythm-cards-all', 'make-card'], ['all-keys', 'circle-fifths'],
+[['time-sig-numbers', 'count-along'], ['note-value-tree', 'split-it'], ['dotted-notes', 'dot-lab'], ['rhythm-cards-all', 'make-card'], ['all-keys', 'circle-fifths'], ['key-finder', 'circle-fifths'],
  ['major-shape', 'build-major'], ['major-fingering', 'scale-finder'], ['minor-fingering', 'minor-forms'], ['dc-ds-coda', 'road-map'], ['sgn-rep', 'road-map'], ['sgn-volta', 'road-map'], ['sgn-dc', 'dc-ds-coda'], ['sgn-ds', 'dc-ds-coda'], ['sgn-pause', 'road-map'], ['ivx-ladder', 'scale-intervals'], ['ivx-count', 'interval-ruler'], ['ivx-hand', 'interval-ruler'], ['ivx-big', 'interval-ruler'], ['ivx-mh', 'interval-ear'], ['ivx-tonic', 'scale-intervals'], ['chx-clock', 'major-minor'], ['chx-stack', 'triad-stack'], ['chx-mm', 'major-minor'], ['chx-tonic', 'key-chords'], ['chx-145', 'primary-triads'], ['chx-hands', 'primary-triads'], ['tmx-map', 'term-cards'], ['tmx-speed', 'tempo-race'], ['tmx-change', 'tempo-race'], ['tmx-vol', 'dyn-order'], ['tmx-touch', 'touch-lengths'], ['tmx-build', 'term-match'], ['fmx-map', 'form-shapes'], ['fmx-phrase', 'form-shapes'], ['fmx-letters', 'same-or-new'], ['fmx-binary', 'binary-ternary-spot'], ['fmx-ternary', 'binary-ternary-spot'], ['fmx-find', 'binary-ternary-spot'], ['fmx-build', 'binary-ternary-spot'], ['mlx-map', 'tune-anatomy'], ['cpx-baroque', 'era-worlds'], ['cpx-classical', 'era-worlds'], ['cpx-romantic', 'era-worlds'], ['cpx-modern', 'era-worlds'], ['cpx-alive', 'composer-time-machine'], ['csx-texture', 'texture-types'], ['csx-era', 'era-worlds'], ['csx-ear', 'texture-spotter'], ['mlx-phrasing', 'phrase-marks'], ['mlx-qa', 'question-answer'], ['mlx-seq', 'melody-sequence'], 
  ['finger-friends', 'finger-numbers'], ['accidental-cards', 'sharp-flat'], ['ts-bars', 'bar-lines'], ['ssk-shape', 'complete-melody'], ['ssk-step', 'step-skip'], ['ssk-cpos', 'five-positions'], ['ssk-gpos', 'five-positions'], ['ssk-read', 'mini-tune'], ['sdy-pf', 'dyn-order'], ['sdy-ladder', 'dyn-order'], ['sdy-hair', 'hairpin'], ['sdy-touch', 'touch-lengths'], ['sdy-tie', 'tie-slur'], ['spr-zone', 'range-chart'], ['skg-every', 'place-it'], ['skg-g', 'sharps-order'], ['skg-f', 'flats-order'], ['skg-acc', 'sharp-flat'], ['skg-five', 'circle-fifths'], ['sps-sound', 'keyboard-ancestors'], ['sps-softloud', 'keyboard-ancestors'], ['sps-action', 'keyboard-ancestors'], ['sps-pedals', 'pedal'], ['sps-keys', 'range-chart'], ['spr-big', 'size-pitch'], ['spr-fam', 'size-pitch'], ['spr-ladder', 'size-pitch'], ['spr-range', 'range-chart'], ['stm-sf', 'tempo-walk'], ['stm-words', 'tempo-race'], ['stm-read', 'tempo-race'], ['stm-metro', 'metronome'], ['stm-steady', 'tap-tempo'], ['srh-beams', 'grouping'], ['srh-alone', 'beam-apples'], ['srh-dot', 'dot-lab'], ['srh-up', 'anacrusis'], ['srh-read', 'rhythm-cards-all'], ['sac-signs', 'accidental-cards'], ['sac-natural', 'sharp-flat'], ['sac-bar', 'accidental-bar'], ['sac-line', 'accidental-bar'], ['sac-tune', 'ssk-read'], ['ssc-steps', 'major-shape'], ['ssc-fingers', 'major-fingering'], ['ssc-degrees', 'degree-names'], ['ssc-g', 'build-major'], ['ssc-f', 'scale-finder'], ['ts-numbers', 'time-sig-numbers'], ['ts-strong', 'beat-groups'], ['ts-build', 'fill-bar'], ['ts-tie', 'tie-slur'], ['nv-walk', 'count-aloud'], ['nv-hold', 'split-it'], ['nv-long', 'note-value-tree'], ['nv-run', 'beam-apples'], ['nv-rests', 'note-rest-naming'], ['count-ring', 'count-aloud'], ['silent-beats', 'beat-target'], ['finger-beat', 'finger-numbers']].forEach(([a, b]) => { if (!TOOL_ICON[a] && TOOL_ICON[b]) TOOL_ICON[a] = TOOL_ICON[b]; });
 const CHAPTER_TOOL_ORDER = {
@@ -20048,7 +20147,7 @@ const CHAPTER_TOOL_ORDER = {
   'first-steps': ['high-low', 'key-houses', 'whole-piano', 'black-key-song', 'black-key-jam', 'black-white-neighbours'],
   'form': ['fmx-map', 'fmx-phrase', 'fmx-letters', 'fmx-binary', 'fmx-ternary', 'fmx-find', 'fmx-build', 'form-shapes', 'form-builder', 'same-or-new', 'rondo-refrain', 'binary-ternary-spot'],
   'intervals': ['ivx-ladder', 'ivx-count', 'ivx-hand', 'ivx-big', 'ivx-mh', 'ivx-tonic', 'step-skip', 'interval-ruler', 'letter-hop', 'semitone-counter', 'scale-intervals', 'interval-ear', 'invert-interval', 'tritone'],
-  'key-signatures': ['skg-every', 'skg-g', 'skg-f', 'skg-acc', 'skg-five', 'sharps-order', 'flats-order', 'place-it', 'relative-minor', 'circle-fifths', 'transpose', 'all-keys'],
+  'key-signatures': ['key-finder', 'skg-every', 'skg-g', 'skg-f', 'skg-acc', 'skg-five', 'sharps-order', 'flats-order', 'place-it', 'relative-minor', 'circle-fifths', 'transpose', 'all-keys'],
   'ledger-lines': ['ledger-walk', 'ledger-landmarks', 'ledger-twins', 'ledger-write'],
   'melody': ['mlx-map', 'mlx-line', 'mlx-phrasing', 'mlx-qa', 'mlx-motif', 'mlx-seq', 'mlx-build', 'tune-anatomy', 'draw-tune', 'phrase-marks', 'question-answer', 'melody-sequence'],
   'note-names': ['find-every', 'name-reveal', 'step-updown', 'letter-chain'],
@@ -53371,9 +53470,9 @@ function cbScalesPages(scr = false) {
   // p8: the steps, with the tools for each
   const STEPS = [
     [t('First', '처음에'), X('C, G and F major, and their key signatures', 'C, G, F장조와 그 조표'), X('Build each from the rule (Any key); say its sharps or flats (Key signatures).', '규칙으로 하나씩 만들고(어느 음에서나 장음계), 샤프나 플랫을 말해요(조표).'), ['scale-finder', 'skg-five'], ['C', 'G', 'F']],
-    [t('Then', '그다음에'), X('D and B♭ major; A, E, D and G minor', 'D장조와 B♭장조, A단조·E단조·D단조·G단조'), X('The order of sharps and flats (Key signatures); a major key’s relative minor, natural and harmonic (Minor scales).', '샤프와 플랫의 순서(조표), 장조의 나란한조, 자연단음계와 화성단음계(단음계).'), ['scale-finder', 'sharps-order', 'flats-order', 'relative-minor'], ['D', 'Bb', 'Am', 'Em', 'Dm', 'Gm']],
-    [t('Further', '더 나아가서'), X('Up to four sharps and four flats, and their minors', '샤프 넷, 플랫 넷까지의 장조와 그 나란한조'), X('The circle of fifths; placing a key signature (Key signatures); the melodic minor (Minor scales); the major pentatonic on C and G (Other scales).', '5도권, 조표 자리 찾기(조표), 가락단음계(단음계), C와 G의 장조 5음음계(다른 음계).'), ['circle-fifths', 'place-it', 'csx-penta', 'scale-finder'], ['A', 'E', 'Eb', 'Ab', 'Bm', 'F#m', 'C#m', 'Cm', 'Fm']],
-    [t('Later', '나중에'), X('Every key, major and minor', '모든 장조와 단조'), X('All fifteen key signatures (The circle of fifths); double sharps (G♯ minor’s F𝄪); the chromatic scale (Other scales); the modes.', '조표 15개 전부(5도권), 겹샤프(G♯단조의 F𝄪), 반음계(다른 음계), 선법.'), ['all-keys', 'chromatic', 'scale-finder'], null],
+    [t('Then', '그다음에'), X('D and B♭ major; A, E, D and G minor', 'D장조와 B♭장조, A단조·E단조·D단조·G단조'), X('The order of sharps and flats, a major key’s relative minor (Key finder); natural and harmonic minor (Scale finder).', '샤프와 플랫의 순서, 장조의 나란한조(조 찾기), 자연단음계와 화성단음계(스케일 찾기).'), ['key-finder', 'scale-finder'], ['D', 'Bb', 'Am', 'Em', 'Dm', 'Gm']],
+    [t('Further', '더 나아가서'), X('Up to four sharps and four flats, and their minors', '샤프 넷, 플랫 넷까지의 장조와 그 나란한조'), X('The circle of fifths; placing a key signature (Key finder); the melodic minor (Scale finder); the major pentatonic on C and G (Other scales).', '5도권, 조표 자리 찾기(조 찾기), 가락단음계(스케일 찾기), C와 G의 장조 5음음계(다른 음계).'), ['key-finder', 'csx-penta', 'scale-finder'], ['A', 'E', 'Eb', 'Ab', 'Bm', 'F#m', 'C#m', 'Cm', 'Fm']],
+    [t('Later', '나중에'), X('Every key, major and minor', '모든 장조와 단조'), X('All fifteen key signatures (Key finder); double sharps (G♯ minor’s F𝄪); the chromatic scale (Other scales); the modes (Scale finder).', '조표 15개 전부(조 찾기), 겹샤프(G♯단조의 F𝄪), 반음계(다른 음계), 선법(스케일 찾기).'), ['key-finder', 'chromatic', 'scale-finder'], null],
   ];
   const coin = (k) => { const m = /m$/.test(k), n = prettyNote(m ? k.slice(0, -1) : k); return <span key={k} style={{display:'inline-flex',alignItems:'center',justifyContent:'center',minWidth:scr ? 34 : 38,height:scr ? 34 : 38,padding:'0 6px',borderRadius:19,border:'1.6px solid ' + PEN_N,background:m ? '#fff' : PEN_N,color:m ? PEN_N : '#fff',fontFamily:LB_SERIF,fontWeight:900,fontSize:scr ? 15 : 16,fontVariantNumeric:'lining-nums'}}><span>{n[0]}{n.length > 1 ? tnSign(n[1] === '♯' ? '#' : 'b') : null}{m ? <span style={{fontFamily:'Inter, sans-serif',fontSize:'0.8em',fontWeight:800}}>m</span> : null}</span></span>; };
   const coinKey = <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap',fontSize:13,fontWeight:700,color:BK.muted,margin:'0 0 2px'}}>{coin('C')}<span>{t('a major key', '장조')}</span>{coin('Am')}<span>{t('a minor key', '단조')}</span></div>;
