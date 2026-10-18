@@ -628,13 +628,14 @@ function buildKeyboard(rootPc, totalSemitones) {
   return { keys, whiteCount };
 }
 
-function ScaleKeyboard({ rootPc, offsets, fingers, hand, plain }) {
+function ScaleKeyboard({ rootPc, offsets, fingers, hand, plain, names }) {
   const totalSemitones = offsets[offsets.length - 1];
   const { keys, whiteCount } = buildKeyboard(rootPc, totalSemitones);
   const whiteW = 34, whiteH = 110, blackW = 20, blackH = 66;
   const fingerAt = {};
   const lit = {};
-  offsets.forEach((off, idx) => { fingerAt[off] = plain ? null : fingers[idx]; lit[off] = true; });
+  const nameAt = {};
+  offsets.forEach((off, idx) => { fingerAt[off] = plain ? null : fingers[idx]; lit[off] = true; if (names && names[idx]) nameAt[off] = names[idx]; });
   const segmentLabels = hand === 'LH' ? segmentsEndAt1(fingers) : segmentsStartAt1(fingers);
   const segmentAt = {};
   offsets.forEach((off, idx) => { segmentAt[off] = segmentLabels[idx]; });
@@ -653,6 +654,7 @@ function ScaleKeyboard({ rootPc, offsets, fingers, hand, plain }) {
             fill={seg ? seg.fill : (plain && lit[k.i] ? '#dfe2f6' : '#fff')}
             stroke={seg ? seg.stroke : (plain && lit[k.i] ? '#4a4d86' : 'var(--muted)')}
             strokeWidth="2"/>
+          {nameAt[k.i] && <text x={k.whiteIndex*whiteW+whiteW/2} y={whiteH-36} textAnchor="middle" fontSize="13" fontWeight="900" fill="#26296b">{prettyAny(nameAt[k.i])}</text>}
           {played && (
             <text x={k.whiteIndex*whiteW+whiteW/2} y={whiteH-14} textAnchor="middle" fontSize="14" fontWeight="800" fill="var(--brass)">
               {played}
@@ -674,6 +676,7 @@ function ScaleKeyboard({ rootPc, offsets, fingers, hand, plain }) {
           <rect x={(k.precedingWhiteIndex+1)*whiteW - blackW/2} y="0" width={blackW} height={blackH}
             fill="#1d1c22" stroke={seg ? seg.stroke : (plain && lit[k.i] ? '#8c90d9' : 'none')} strokeWidth={seg || (plain && lit[k.i]) ? 3 : 0}/>
           {seg && <rect x={(k.precedingWhiteIndex+1)*whiteW - blackW/2 + 2} y={blackH - 9} width={blackW - 4} height="7" rx="1.5" fill={seg.fill}/>}
+          {nameAt[k.i] && <text x={(k.precedingWhiteIndex+1)*whiteW} y={blackH-33} textAnchor="middle" fontSize="11" fontWeight="900" fill="#fffefa">{prettyAny(nameAt[k.i])}</text>}
           {played && (
             <text x={(k.precedingWhiteIndex+1)*whiteW} y={blackH-15} textAnchor="middle" fontSize="13" fontWeight="900" fill="#fff">
               {played}
@@ -6941,9 +6944,9 @@ function ScaleFinderFree({ ext, onKey } = {}) {
           </div>}
         </div>}
         <div style={{fontSize:12,fontWeight:900,color:'var(--muted)',letterSpacing:'0.05em',marginBottom:4}}>{t('RIGHT HAND', '오른손')}</div>
-        <ScaleKeyboard rootPc={info.rootPc} offsets={offs} fingers={fing('RH')} hand="RH" plain={clash}/>
+        <ScaleKeyboard rootPc={info.rootPc} offsets={offs} fingers={fing('RH')} hand="RH" plain={clash} names={names.concat([names[0]])}/>
         <div style={{fontSize:12,fontWeight:900,color:'var(--muted)',letterSpacing:'0.05em',margin:'10px 0 4px'}}>{t('LEFT HAND', '왼손')}</div>
-        <ScaleKeyboard rootPc={info.rootPc} offsets={offs} fingers={fing('LH')} hand="LH" plain={clash}/>
+        <ScaleKeyboard rootPc={info.rootPc} offsets={offs} fingers={fing('LH')} hand="LH" plain={clash} names={names.concat([names[0]])}/>
         <div style={{display:clash ? 'none' : 'flex',gap:10,flexWrap:'wrap',alignItems:'center',justifyContent:'center',marginTop:8,fontSize:12,fontWeight:700,color:'#4a4d86'}}>
           <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:14,height:14,borderRadius:3,background:SEGMENT_COLORS.three.fill,border:'1.5px solid ' + SEGMENT_COLORS.three.stroke}}/>{t('1-2-3 group', '1-2-3 묶음')}</span>
           <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:14,height:14,borderRadius:3,background:SEGMENT_COLORS.four.fill,border:'1.5px solid ' + SEGMENT_COLORS.four.stroke}}/>{t('1-2-3-4 group', '1-2-3-4 묶음')}</span>
@@ -6977,6 +6980,7 @@ function SfStage({ keys, k, setK, hand, setHand, titleFor, grid, go }) {
   const play = () => playScaleNotes(info.rootPc, e.offsets, null);
   const hands = [['RH', t('Right hand', '오른손')], ['LH', t('Left hand', '왼손')], ['both', t('Both hands', '양손')]];
   const nm = prettyNote(k);
+  const sp = spellFor(k, 'major'), nmz = sp.concat([sp[0]]);
   return (<>
     <div style={{textAlign:'center',fontFamily:"'Playfair Display', Georgia, serif",fontSize:22,fontWeight:900,color:'#26296b',lineHeight:1.2,margin:'0 0 8px',minHeight:27,textWrap:'balance'}}>{titleFor(nm)}</div>
     <div style={{display:'grid',gridTemplateColumns:'repeat(' + grid + ', minmax(0, 1fr))',gap:4,marginBottom:8}}>
@@ -6985,8 +6989,8 @@ function SfStage({ keys, k, setK, hand, setHand, titleFor, grid, go }) {
     <div style={{display:'flex',gap:4,marginBottom:8}}>
       {hands.map(([h, l]) => <button key={h} className={'chip' + (hand === h ? ' active' : '')} aria-pressed={hand === h} style={{...KF_BTN,flex:'1 1 0',minWidth:0,padding:'0 2px',fontSize:tiny ? 12 : 13}} onClick={() => setHand(h)}>{l}</button>)}
     </div>
-    {(hand === 'RH' || hand === 'both') && <div>{hand === 'both' && <div style={{fontSize:12,fontWeight:900,color:'#5a5d8f',letterSpacing:'0.05em',marginBottom:2}}>{t('RIGHT', '오른손')}</div>}<ScaleKeyboard rootPc={info.rootPc} offsets={e.offsets} fingers={e.RH} hand="RH"/></div>}
-    {(hand === 'LH' || hand === 'both') && <div style={{marginTop:hand === 'both' ? 8 : 0}}>{hand === 'both' && <div style={{fontSize:12,fontWeight:900,color:'#5a5d8f',letterSpacing:'0.05em',marginBottom:2}}>{t('LEFT', '왼손')}</div>}<ScaleKeyboard rootPc={info.rootPc} offsets={e.offsets} fingers={e.LH} hand="LH"/></div>}
+    {(hand === 'RH' || hand === 'both') && <div>{hand === 'both' && <div style={{fontSize:12,fontWeight:900,color:'#5a5d8f',letterSpacing:'0.05em',marginBottom:2}}>{t('RIGHT', '오른손')}</div>}<ScaleKeyboard rootPc={info.rootPc} offsets={e.offsets} fingers={e.RH} hand="RH" names={nmz}/></div>}
+    {(hand === 'LH' || hand === 'both') && <div style={{marginTop:hand === 'both' ? 8 : 0}}>{hand === 'both' && <div style={{fontSize:12,fontWeight:900,color:'#5a5d8f',letterSpacing:'0.05em',marginBottom:2}}>{t('LEFT', '왼손')}</div>}<ScaleKeyboard rootPc={info.rootPc} offsets={e.offsets} fingers={e.LH} hand="LH" names={nmz}/></div>}
     <div style={{display:'flex',gap:14,flexWrap:'wrap',alignItems:'center',justifyContent:'center',marginTop:8,fontSize:13,fontWeight:800,color:'#26296b'}}>
       <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:16,height:16,borderRadius:4,background:SEGMENT_COLORS.three.fill,border:'1.5px solid ' + SEGMENT_COLORS.three.stroke}}/>1-2-3</span>
       <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:16,height:16,borderRadius:4,background:SEGMENT_COLORS.four.fill,border:'1.5px solid ' + SEGMENT_COLORS.four.stroke}}/>1-2-3-4</span>
