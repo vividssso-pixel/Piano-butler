@@ -1054,7 +1054,7 @@ const GROUP_TINT = { two: '#fbe9e2', three: '#e9eaf4' };   // the book's members
 
 // Tappable keyboard. Key index i = octave*12 + pc, starting on C.
 // marks: { [i]: 'target'|'good'|'bad' }, labels: null | 'white' | 'all', tint: shade C-D-E / F-G-A-B groups.
-function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, pixel = false, names = null, outline = null }) {   // outline (Phase 462): [first, last] white key index, one navy frame round them
+function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, pixel = false, names = null, outline = null, bigLabels = false }) {   // outline (Phase 462): [first, last] white key index, one navy frame round them
   const whiteW = 36, whiteH = 132, blackW = 22, blackH = 82;
   const whites = [], blacks = [];
   let w = 0;
@@ -1107,7 +1107,7 @@ function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, 
                 fill="#fff" style={{pointerEvents:'none',animation:'fadeUp 0.3s both'}}>{names[k.i]}</text>
             )}
             {labels === 'all' && k.info.names.map((n, j) => (
-              <text key={n} x={k.x + blackW / 2} y={blackH - 22 + j * 12} textAnchor="middle" fontSize="8.5"
+              <text key={n} x={k.x + blackW / 2} y={bigLabels ? blackH - 28 + j * 14 : blackH - 22 + j * 12} textAnchor="middle" fontSize={bigLabels ? 11 : 8.5}
                 fontWeight="700" fill="#faf6ec" style={{pointerEvents:'none'}}>{prettyNote(n)}</text>
             ))}
           </g>
@@ -3574,63 +3574,32 @@ function noteValAnswerLabel(q) {
   return LANG === 'ko' ? fmtBeats(q.missing.beats) + '짜리 (예: ' + q.missing.ko + ')' : 'something worth ' + fmtBeats(q.missing.beats) + ' (e.g. a ' + q.missing.uk + ')';
 }
 
-// Board game for this chapter: a correct answer rolls a die (1-3) and moves you on.
-// Real repeat signs are the board's rules: D.C. sends you back to the start, D.S. back to the
-// segno, each only the first time per lap -- just like in music -- and Fine ends the lap.
-const BOARD_LEN = 24, SEGNO_AT = 7, DC_AT = 12, DS_AT = 18;
+// Ten steps, one per question (Phase 491; it replaced the dice board). The token moves one step after every answer:
+// a navy step for a right answer, a coral one for a wrong answer. After the tenth step it starts again.
 function useBoard(q, given) {
-  const [b, setB] = useState({ pos: 0, laps: 0, dcUsed: false, dsUsed: false, roll: null, msg: '' });
+  const [b, setB] = useState({ marks: [] });
   const seen = useRef(null);
   useEffect(() => {
-    if (!given || !given.ok || seen.current === q.uid) return;
+    if (!given || seen.current === q.uid) return;
     seen.current = q.uid;
-    setB(prev => {
-      const roll = 1 + Math.floor(Math.random() * 3);
-      let pos = prev.pos + roll, msg = '', dcUsed = prev.dcUsed, dsUsed = prev.dsUsed, laps = prev.laps;
-      if (pos >= BOARD_LEN) return { pos: 0, laps: laps + 1, dcUsed: false, dsUsed: false, roll, msg: t('Fine! Lap ' + (laps + 1) + ' done', 'Fine! ' + (laps + 1) + '바퀴 완주') };
-      if (pos === DC_AT && !dcUsed) { pos = 0; dcUsed = true; msg = t('D.C.: back to the start!', 'D.C.: 처음으로!'); }
-      else if (pos === DS_AT && !dsUsed) { pos = SEGNO_AT; dsUsed = true; msg = t('D.S.: back to the segno!', 'D.S.: 세뇨로!'); }
-      return { pos, laps, dcUsed, dsUsed, roll, msg };
-    });
+    setB(prev => ({ marks: (prev.marks.length >= LESSON_TOTAL ? [] : prev.marks).concat(!!given.ok) }));
   }, [given, q.uid]);
   return b;
 }
 function BoardTrack({ b, pixel }) {
   try { if (new URLSearchParams(location.search).get('print') === '1') return null; } catch (e) {}
-  const cols = 8, cell = 38, gap = 3;
-  const ink = pixel ? '#faf6ec' : '#26296b';
-  const cellsXY = [];
-  for (let i = 0; i < BOARD_LEN; i++) {
-    const r = Math.floor(i / cols), c = r % 2 === 0 ? i % cols : cols - 1 - (i % cols);
-    cellsXY.push({ x: c * (cell + gap), y: r * (cell + gap) });
-  }
-  const W = cols * (cell + gap) - gap, H = 3 * (cell + gap) - gap;
-  const special = { [SEGNO_AT]: '𝄋', [DC_AT]: 'D.C.', [DS_AT]: 'D.S.', [BOARD_LEN]: 'Fine' };
-  const here = b.pos === 0 ? null : cellsXY[b.pos - 1];
+  const n = LESSON_TOTAL, gap = 4, gaps = (n - 1) * gap, pos = b.marks.length;
+  const ink = pixel ? '#faf6ec' : '#26296b', cell = 'calc((100% - ' + gaps + 'px) / ' + n + ')';
+  const label = t('Question ' + Math.min(pos + 1, n) + ' of ' + n + ', ' + b.marks.filter(Boolean).length + ' right so far', '문제 ' + Math.min(pos + 1, n) + ' / ' + n + ' · 지금까지 ' + b.marks.filter(Boolean).length + '개 맞음');
   return (
-    <div style={{marginBottom:12}}>
-      <svg viewBox={`-2 -2 ${W + 4} ${H + 4}`} shapeRendering={pixel ? 'crispEdges' : 'auto'} style={{width:'100%',display:'block'}}>
-        {cellsXY.map((p, i) => {
-          const n = i + 1, sp = special[n];
-          return (
-            <g key={n}>
-              <rect x={p.x} y={p.y} width={cell} height={cell} rx={pixel ? 0 : 6}
-                fill={sp ? (pixel ? 'rgba(228,87,46,0.35)' : '#fbe3da') : (pixel ? 'rgba(250,246,236,0.08)' : '#fff')}
-                stroke={pixel ? 'rgba(250,246,236,0.3)' : '#e9e2d2'}/>
-              <text x={p.x + 4} y={p.y + 10} fontSize="7" fill={ink} opacity="0.5">{n}</text>
-              {sp && <text x={p.x + cell / 2} y={p.y + cell / 2 + 5} textAnchor="middle" fontSize={sp.length > 2 ? 10 : 16} fontWeight="800"
-                fontStyle={sp.length > 2 ? 'italic' : 'normal'} fill={ink} fontFamily={sp.length > 2 ? 'serif' : "'Noto Music','Apple Symbols',serif"}>{sp}</text>}
-            </g>
-          );
-        })}
-        {here && <circle cx={here.x + cell / 2} cy={here.y + cell / 2 + (special[b.pos] ? 11 : 3)} r="7" fill="var(--brass)" stroke={ink} strokeWidth="1.5"
-          style={{transition:'cx 0.3s, cy 0.3s'}}/>}
-      </svg>
-      <div style={{display:'flex',justifyContent:'space-between',fontSize:pixel?8:12,fontWeight:700,marginTop:6,color:pixel?'#faf6ec':'var(--muted)'}}>
-        <span>{LANG === 'ko' ? <>{b.pos === 0 ? '출발' : b.pos + '번 칸'}{b.roll ? ' · 주사위 ' + b.roll : ''}</> : <>{b.pos === 0 ? (pixel ? 'START' : 'At the start') : (pixel ? 'SQUARE ' + b.pos : 'Square ' + b.pos)}{b.roll ? (pixel ? ' · ROLLED ' + b.roll : ' · rolled ' + b.roll) : ''}</>}</span>
-        <span>{b.laps ? (LANG === 'ko' ? b.laps + '바퀴' : pixel ? 'LAPS ' + b.laps : 'Laps: ' + b.laps) : ''}</span>
-      </div>
-      {b.msg && <div style={{textAlign:'center',fontSize:pixel?9:13,fontWeight:800,color:'var(--brass)',marginTop:4}}>{pixel && LANG !== 'ko' ? b.msg.toUpperCase() : b.msg}</div>}
+    <div role="img" aria-label={label} style={{position:'relative',display:'flex',gap,margin:'2px 0 14px',paddingBottom:2}}>
+      {Array.from({ length: n }, (_, i) => {
+        const done = i < pos, ok = b.marks[i];
+        return <div key={i} style={{flex:'1 1 0',minWidth:0,height:12,borderRadius:pixel ? 0 : 6,boxSizing:'border-box',
+          background:done ? (ok ? ink : (pixel ? 'rgba(228,87,46,0.55)' : '#fbe3da')) : (pixel ? 'rgba(250,246,236,0.08)' : '#fff'),
+          border:'1.5px solid ' + (done && !ok ? '#e4572e' : (pixel ? 'rgba(250,246,236,0.35)' : '#e4dccb')),transition:'background 0.3s'}}/>;
+      })}
+      {pos < n && <div style={{position:'absolute',top:-4,left:'calc(' + pos + ' * (' + cell + ' + ' + gap + 'px) + ' + cell + ' / 2 - 10px)',width:20,height:20,borderRadius:10,background:'#e4572e',border:'2px solid ' + ink,boxSizing:'border-box',transition:'left 0.35s ease',pointerEvents:'none'}}/>}
     </div>
   );
 }
@@ -4267,9 +4236,6 @@ function NoteValLearn({ onStart }) {
       </Step>
       <Step title={t('Fill the bar', '마디 채우기')}>
       <FillTheBar/>
-      <p style={{fontSize:12,color:'var(--muted)',margin:'10px 0 0',lineHeight:1.5}}>
-        {t('Game board rule: D.C. sends you back to the start and D.S. back to the ' + '𝄋' + ' sign, each only once per lap, just like in real music. Reach Fine to finish a lap.', '게임판 규칙: D.C.는 처음으로, D.S.는 ' + '𝄋' + ' 기호로 되돌아가요. 실제 악보처럼 한 바퀴에 한 번씩만요. Fine에 도착하면 한 바퀴가 끝나요.')}
-      </p>
       </Step>
       <Step title={t('Which bar did you hear?', '어떤 마디를 들었을까요?')}>
       <HeardBar/>
@@ -47300,7 +47266,7 @@ function KeyRing({ sel = 'C', onPick, o = {}, label }) {
       {KEY12.map((k, i) => { const b = black.includes(i), fill = b && !P ? PEN_N : '#fff', ink = b && !P ? '#fff' : PEN_N;
         const [lx, ly] = pt(-90 + i * 30, LR), nm = spAt(i), fs2 = P ? 15 : 14.5;
         const lab = o.only ? (nm ? onlyLab(lx, ly, nm, ink) : o.ghost && !b ? one(lx, ly, k, 'rgba(38,41,107,0.38)', 15) : null)
-          : spelled && nm ? one(lx, ly, prettyNote(nm), ink, b ? 16 : 18)
+          : spelled && nm && !(o.both && b) ? one(lx, ly, prettyNote(nm), ink, b ? 16 : 18)
           : b ? two(lx, ly, prettyNote(KEY_ALIAS_BACK[k]), prettyNote(k), ink, fs2)
           : o.plain && o.shape && nm && nm !== k ? two(lx, ly, prettyNote(k), prettyNote(nm), ink, fs2)
           : one(lx, ly, k, ink, 18);
@@ -53426,31 +53392,42 @@ const cbKeyLine = (sel) => { const sg = KEY_SIGS.find(x => x.major === sel) || K
 // ── the pads ──
 // the opener's: one key, everything at once (the clock's shape, the circle, the notes, the key signature, the sound)
 const CB_TWIN = { Gb: ['the same keys as F♯ major (6 sharps)', 'F♯장조(샤프 여섯)와 건반이 같아요'], B: ['the same keys as C♭ major (7 flats)', 'C♭장조(플랫 일곱)와 건반이 같아요'], Db: ['the same keys as C♯ major (7 sharps)', 'C♯장조(샤프 일곱)와 건반이 같아요'] };
+function cbKeyLines(sel) {
+  const sg = KEY_SIGS.find(x => x.major === sel) || KEY_SIGS[0], signs = sg.type ? (sg.type === 'sharp' ? SHARP_ORDER : FLAT_ORDER).slice(0, sg.count) : [];
+  const main = skgKeyName(sel) + ': ' + (sg.count ? pbCountWords(sel) + (LANG === 'ko' ? '(' : ' (') + signs.map(prettyNote).join('\u00a0') + ')' : t('no sharps or flats', '샤프도 플랫도 없음'));
+  const out = [main]; if (CB_TWIN[sel]) out.push(t(CB_TWIN[sel][0], CB_TWIN[sel][1]));
+  return out.map(x => cbSx(LANG === 'ko' ? cbNbKo(x) : x));
+}
 function CbKeyPad() {
   const [sel, setSel] = useState('C');
+  const [view, setView] = useState('clock');
   const timers = useRef([]);
   const stop = cbUseOneSound(timers);
   const pickK = (k) => { stop(); setSel(k); };
-  const narrow = useCbNarrow(560), tiny = useCbNarrow(360), [ring, setRing] = useState('clock');
-  const sg = KEY_SIGS.find(x => x.major === sel) || KEY_SIGS[0], names = pbSpell(sel);
-  const clock = <div><KeyRing sel={sel} onPick={pickK} o={{ shape: true, center: (C) => <text x={C} y={C + 7} textAnchor="middle" fontSize="22" fontWeight="900" fill={PEN_N} style={{fontFamily:"'Playfair Display', Georgia, serif"}}>{pbAccT(prettyNote(sel))}</text> }} label={t('The keyboard clock with the ' + prettyNote(sel) + ' major scale drawn as a shape.', '건반 시계: ' + prettyNote(sel) + '장조 음계가 모양으로 그려져 있어요.')}/>
-    <div style={{textAlign:'center',fontSize:12.5,fontWeight:800,color:BK.muted}}>{t('the keyboard clock', '건반 시계')}</div></div>;
-  const circle = <div><FifthsRing sel={sel} onPick={pickK} o={{ filled: [], twins: true }} label={t('The circle of fifths, ' + skgKeyName(sel) + ' ringed.', '5도권: ' + skgKeyName(sel) + '에 동그라미.')}/>
-    <div style={{textAlign:'center',fontSize:12.5,fontWeight:800,color:BK.muted}}>{t('the circle of fifths', '5도권')}</div></div>;
+  const tiny = useCbNarrow(360);
+  const sg = KEY_SIGS.find(x => x.major === sel) || KEY_SIGS[0], names = pbSpell(sel), pc = pbKeyPc(sel);
+  const marks = {}; PB_MAJOR.forEach(o => { marks[(pc + o) % 12] = 'mate'; }); marks[pc] = 'pick';
+  const tabs = [['clock', t('Keyboard clock', '건반 시계')], ['circle', t('Circle of fifths', '5도권')]];
+  const wrap = { maxWidth: tiny ? '100%' : 300, margin: '0 auto' };
   return (
     <div className="try-box" style={tiny ? { ...actBox, paddingLeft:4, paddingRight:4 } : actBox} data-cb="key-pad">
-      <div style={actTitle}>{t('One key, all at once', '조 하나를 한눈에')}</div>
-      <div style={{...actNote,textWrap:'pretty'}}>{narrow
-        ? t('The keyboard clock is one octave’s twelve keys in a ring, C at the top, each place a half step. Tap a piano key on the clock, or a key on the circle: the clock turns the scale’s shape to start there; the circle shows where the key sits. Switch rings with the two buttons.', '건반 시계는 한 옥타브의 열두 건반을 둥글게 놓은 거예요. 맨 위는 C, 한 칸이 반 걸음이에요. 건반 시계나 5도권에서 조를 눌러요. 건반 시계는 장음계 모양을 그 조에서 시작하도록 돌리고, 5도권은 그 조의 자리를 보여 줘요. 위의 두 버튼으로 원을 바꿔요.')
-        : t('The keyboard clock is one octave’s twelve keys in a ring, C at the top, each place a half step. Tap a piano key on the clock, or a key on the circle: the clock turns the scale’s shape to start there; the circle shows where the key sits and how many sharps or flats it has.', '건반 시계는 한 옥타브의 열두 건반을 둥글게 놓은 거예요. 맨 위는 C, 한 칸이 반 걸음이에요. 두 원 어디에서든 조를 눌러요. 건반 시계는 장음계 모양을 그 조에서 시작하도록 돌리고, 5도권은 그 조의 자리와 샤프나 플랫의 개수를 보여 줘요.')}</div>
-      {narrow ? <>
-        <div role="tablist" style={{display:'flex',gap:6,justifyContent:'center',marginBottom:8}}>{[['clock', t('Clock', '건반 시계')], ['circle', t('Circle', '5도권')]].map(([v, l]) => <button key={v} role="tab" aria-selected={ring === v} className={'chip' + (ring === v ? ' active' : '')} style={{minHeight:44,minWidth:96}} onClick={() => setRing(v)}>{l}</button>)}</div>
-        <div style={{maxWidth:tiny ? '100%' : 300,margin:'0 auto'}}>{ring === 'clock' ? clock : circle}</div>
-      </> : <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,maxWidth:600,margin:'0 auto'}}>{clock}{circle}</div>}
-      <div style={{display:'flex',flexWrap:'wrap',justifyContent:'center',gap:3,margin:'10px auto 4px',maxWidth:360}}>{[...names, names[0]].map((n, i) => <span key={i} style={{flex:'1 1 0',minWidth:0,maxWidth:tiny ? 38 : 42,textAlign:'center',padding:'4px 0',borderRadius:6,border:'1.5px solid ' + (cbAcc(n) ? PEN_C : BK.line),fontSize:tiny ? 13 : 15,fontWeight:900,color:cbAcc(n) ? PEN_C : BK.ink}}>{cbNoteEl(n)}</span>)}</div>
-      <div style={{maxWidth:300,margin:'4px auto 0'}}><KSStaff count={sg.count} type={sg.type}/></div>
-      <div style={{textAlign:'center',fontSize:14,fontWeight:800,color:BK.ink,margin:'2px 0 8px',textWrap:'balance'}}>{cbKeyLine(sel)}</div>
-      <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap'}}>
+      <div style={actTitle}>{t('One key, two ways to look', '조 하나, 두 가지로 보기')}</div>
+      <div role="tablist" aria-label={t('Two ways to look at one key', '조 하나를 보는 두 가지 방법')} style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap',margin:'4px 0 10px'}} onKeyDown={(e) => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); const nv = view === 'clock' ? 'circle' : 'clock'; setView(nv); const el = document.getElementById('cbkp-tab-' + nv); if (el) el.focus(); } }}>{tabs.map(([v, l]) => <button key={v} id={'cbkp-tab-' + v} role="tab" aria-selected={view === v} aria-controls="cbkp-panel" tabIndex={view === v ? 0 : -1} className={'chip' + (view === v ? ' active' : '')} style={{minHeight:44,padding:'8px 16px',fontSize:14,outlineOffset:2}} onFocus={(e) => { e.currentTarget.style.outline = '3px solid #e4572e'; }} onBlur={(e) => { e.currentTarget.style.outline = 'none'; }} onClick={() => setView(v)}>{l}</button>)}</div>
+      <div role="tabpanel" id="cbkp-panel" aria-labelledby={'cbkp-tab-' + view}>
+      {view === 'clock' ? <>
+        <div style={{...actNote,textWrap:'pretty'}}>{t('Tap a key on the clock: the major scale’s shape turns to start there. The piano under it lights the same keys.', '시계에서 건반을 눌러 보세요. 장음계 모양이 돌아서 그 음에서 시작하고, 아래 피아노에도 같은 건반이 켜져요.')}</div>
+        <div style={wrap}><KeyRing sel={sel} onPick={pickK} o={{ shape: true, both: true, center: (C) => <text x={C} y={C + 7} textAnchor="middle" fontSize="22" fontWeight="900" fill={PEN_N} style={{fontFamily:"'Playfair Display', Georgia, serif"}}>{pbAccT(prettyNote(sel))}</text> }} label={t('The keyboard clock with the ' + prettyNote(sel) + ' major scale drawn as a shape.', '건반 시계: ' + prettyNote(sel) + '장조 음계가 모양으로 그려져 있어요.')}/></div>
+        <div style={{maxWidth:tiny ? '100%' : 340,margin:'8px auto 0'}}><TapKeyboard octaves={1} marks={marks} labels="all" bigLabels onTap={(i) => pickK(KEY12[i])}/></div>
+        <div style={{textAlign:'center',fontSize:12,fontWeight:800,color:BK.muted,marginTop:10}}>{t('The ' + prettyNote(sel) + ' major scale, note by note', prettyNote(sel) + '장음계의 음 이름')}</div>
+        <div style={{display:'flex',flexWrap:'wrap',justifyContent:'center',gap:3,margin:'4px auto 4px',maxWidth:360}}>{[...names, names[0]].map((n, i) => <span key={i} style={{flex:'1 1 0',minWidth:0,maxWidth:tiny ? 38 : 42,textAlign:'center',padding:'4px 0',borderRadius:6,border:'1.5px solid ' + (cbAcc(n) ? PEN_C : BK.line),fontSize:tiny ? 13 : 15,fontWeight:900,color:cbAcc(n) ? PEN_C : BK.ink}}>{cbNoteEl(n)}</span>)}</div>
+      </> : <>
+        <div style={{...actNote,textWrap:'pretty'}}>{t('Tap a key on the circle: its key signature, the sharps or flats, is written right under it.', '5도권에서 조를 눌러 보세요. 그 조의 조표(샤프나 플랫)가 바로 아래에 나와요.')}</div>
+        <div style={wrap}><FifthsRing sel={sel} onPick={pickK} o={{ filled: [], twins: true }} label={t('The circle of fifths, ' + skgKeyName(sel) + ' ringed.', '5도권: ' + skgKeyName(sel) + '에 동그라미.')}/></div>
+        <div style={{maxWidth:300,margin:'4px auto 0'}}><KSStaff count={sg.count} type={sg.type}/></div>
+        <div style={{textAlign:'center',fontSize:14,fontWeight:800,color:BK.ink,margin:'2px 0 8px',textWrap:'balance'}}>{cbKeyLines(sel).map((ln, i) => <div key={i} style={i ? {fontSize:13,fontWeight:700,marginTop:2} : null}>{ln}</div>)}</div>
+      </>}
+      </div>
+      <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap',marginTop:6}}>
         <button className="ghost-btn" style={{minHeight:44}} onClick={() => { stop(); stop.claim(); timers.current = pbPlayMidi(pbScaleMidi(sel), 110); }}>{t('▶ Listen', '▶ 듣기')}</button>
         <a className="ghost-btn" style={{minHeight:44,display:'inline-flex',alignItems:'center',textDecoration:'none'}} href={cbHref('tool=scale-finder&key=' + encodeURIComponent(sel))}>{t('Fingering →', '손가락 번호 →')}</a>
       </div>
