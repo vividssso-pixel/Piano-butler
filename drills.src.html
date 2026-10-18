@@ -5170,6 +5170,7 @@ function KfFind({ type, go, setKi }) {
   const [lit, setLit] = useState(7);
   const [found, setFound] = useState(false);
   const [wrong, setWrong] = useState(null);
+  const [ran, setRan] = useState(false);   // Phase 497: the order has been said: its keys are lit
   const timers = useRef([]);
   const tiny = useCbNarrow(380);
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
@@ -5179,8 +5180,9 @@ function KfFind({ type, go, setKi }) {
   useEffect(() => { if (auto) { const j = KEY_SIGS.findIndex(q => q.major === k.major); if (j >= 0) setKi(j); } }, [auto, k.major]);
   const tonic = pcOfName(k.major), marks = {};
   if (done) { if (sharp) marks[pcOfName(order[want])] = 'mate'; marks[tonic] = 'pick'; }
-  const pickN = (i) => { clear(); setN(i); setLit(i); setFound(false); setWrong(null); };
-  const say = () => { clear(); setLit(0); for (let i = 0; i < n; i++) timers.current.push(setTimeout(() => { playKey(pcOfName(order[i]), 0.45); setLit(i + 1); }, 350 + i * 520)); };
+  else if (ran) order.slice(0, lit).forEach((nm, i) => { marks[pcOfName(nm)] = i === lit - 1 ? 'pick' : 'mate'; });
+  const pickN = (i) => { clear(); setN(i); setLit(i); setFound(false); setWrong(null); setRan(false); };
+  const say = () => { clear(); setLit(0); setRan(true); for (let i = 0; i < n; i++) timers.current.push(setTimeout(() => { playKey(pcOfName(order[i]), 0.45); setLit(i + 1); }, 350 + i * 520)); };
   const tap = (i) => { if (done) return; if (i === want) { setFound(true); playKey(tonic, 0.6); const j = KEY_SIGS.findIndex(q => q.major === k.major); if (j >= 0) setKi(j); } else { setWrong(i); setTimeout(() => setWrong(null), 700); } };
   return (<>
     <KfChain hi={[0, 1]}/>
