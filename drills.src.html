@@ -988,25 +988,33 @@ function DrillEngine({ drill, level, mode }) {
         </div>
       )}
 
-      <Q q={q} level={lv} given={given} locked={phase !== 'ask'} onAnswer={answer} pixel={isGame} stats={{ correct, asked, streak }} />
-
-      <div style={{minHeight:isGame?34:44,marginTop:14,textAlign:'center'}}>
-        {feedback && (given.ok ? (
-          <div style={{color:isGame?'#8fd3b9':'var(--good)',fontWeight:800,fontSize:isGame?11:15}}>{isGame ? 'NICE!' : t('Correct!', '정답!')}</div>
-        ) : (
-          <div style={{color:isGame?'#f08c70':'var(--bad)',fontWeight:800,fontSize:isGame?9:14,lineHeight:1.7}}>
-            {given.timedOut ? (isGame ? 'TIME UP! ' : t('Time’s up: ', '시간이 다 됐어요. ')) : (isGame ? 'MISS! ' : t('Not quite: ', '아쉬워요. '))}
-            {isGame ? 'IT WAS ' + drill.answerLabel(q).toUpperCase() : t('it was ' + drill.answerLabel(q), '정답: ' + drill.answerLabel(q))}
+      {drill.feedbackAbove && !isGame
+        ? <div style={{display:'flex',flexDirection:'column'}}>
+            <Q q={q} level={lv} given={given} locked={phase !== 'ask'} onAnswer={answer} pixel={isGame} stats={{ correct, asked, streak }} fbAbove />
+            <div style={{order:1,minHeight:44,margin:'10px 0 2px',textAlign:'center'}}>{feedback && <DrillFeedback given={given} isGame={isGame} drill={drill} q={q}/>}</div>
           </div>
-        ))}
-      </div>
+        : <>
+            <Q q={q} level={lv} given={given} locked={phase !== 'ask'} onAnswer={answer} pixel={isGame} stats={{ correct, asked, streak }} />
+            <div style={{minHeight:isGame?34:44,marginTop:14,textAlign:'center'}}>{feedback && <DrillFeedback given={given} isGame={isGame} drill={drill} q={q}/>}</div>
+          </>}
       {!isGame && pendingNext && (
-        <button className="primary-btn" onClick={goNext}>{t('Next →', '다음 →')}</button>
+        <button className="primary-btn" style={drill.feedbackAbove ? {marginTop:16} : undefined} onClick={goNext}>{t('Next →', '다음 →')}</button>
       )}
     </div>
   );
 }
 
+// Phase 540: the right / not quite line (shared; a drill with feedbackAbove shows it between the question and the buttons)
+function DrillFeedback({ given, isGame, drill, q }) {
+  return given.ok ? (
+    <div style={{color:isGame?'#8fd3b9':'var(--good)',fontWeight:800,fontSize:isGame?11:17}}>{isGame ? 'NICE!' : t('Correct!', '정답!')}</div>
+  ) : (
+    <div style={{color:isGame?'#f08c70':'var(--bad)',fontWeight:800,fontSize:isGame?9:15,lineHeight:1.6}}>
+      {given.timedOut ? (isGame ? 'TIME UP! ' : t('Time’s up: ', '시간이 다 됐어요. ')) : (isGame ? 'MISS! ' : t('Not quite: ', '아쉬워요. '))}
+      {isGame ? 'IT WAS ' + drill.answerLabel(q).toUpperCase() : t('it was ' + drill.answerLabel(q), '정답: ' + drill.answerLabel(q))}
+    </div>
+  );
+}
 // ─── Concept 1: Note names on the keyboard (Learn + Drill share PC_INFO) ─────────
 
 // One entry per pitch class. The single source of truth for both the infographic and the drill.
@@ -46670,14 +46678,14 @@ function genSkgQuestion(lv, prev) {
 function skgPlay(q) { stopClicks(); const r = skgRead(q.items, q.k), d0 = SKG_SCALE_D[q.k], ks = skgMap(q.k), key = [0, 2, 4, 7, 0].map((i, j) => ({ d: d0 + i, acc: ks[dName(d0 + i)] || 0, dur: j < 4 ? 0.5 : 2 }));
   return playMelody(key.concat(r.map((n, j) => ({ d: n.d, acc: j === q.bad ? 0 : n.acc, dur: n.dur }))), 96); }
 const SKG_EAR_W = { right: () => t('All right', '모두 맞아요'), wrong: () => t('A wrong note', '틀린 음이 있어요') };
-function SkgQuestion({ q, given, locked, onAnswer, pixel }) {
+function SkgQuestion({ q, given, locked, onAnswer, pixel, fbAbove }) {
   const board = useBoard(q, given);
   const answered = useRef(false); answered.current = !!given;
   useEffect(() => { if (q.kind !== 'ear') return undefined; const tm = setTimeout(() => { if (!answered.current) skgPlay(q); }, 300); return () => { clearTimeout(tm); stopClicks(); }; }, [q.uid]);
   const isDone = !!given, btnCls = pixel ? 'pixel-choice' : 'choice-btn';
   const prompt = (txt) => <p style={pixel ? {fontSize:11.5,textAlign:'center',margin:'0 0 10px',lineHeight:1.7} : {fontSize:17,fontWeight:900,textAlign:'center',margin:'0 0 10px',color:'var(--text)',textWrap:'balance',wordBreak:'keep-all'}}>{txt}</p>;
   const st = (c) => !isDone ? '' : (String(c) === String(q.answer) ? ' good' : (String(given.ans) === String(c) ? ' bad' : ''));
-  const grid = (min, render, pad = '12px 4px') => <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(' + min + 'px,1fr))',gap:8}}>{q.choices.map(c => <button key={c} disabled={locked} onClick={() => { stopClicks(); onAnswer(c); }} className={btnCls + st(c)} style={{padding:pad,minHeight:44,wordBreak:'keep-all'}}>{render(c)}</button>)}</div>;
+  const grid = (min, render, pad = '12px 4px') => <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(' + min + 'px,1fr))',gap:8,order:2}}>{q.choices.map(c => <button key={c} disabled={locked} onClick={() => { stopClicks(); onAnswer(c); }} className={btnCls + st(c)} style={{padding:pad,minHeight:44,wordBreak:'keep-all'}}>{render(c)}</button>)}</div>;
   const word = (s, sz = 18) => <span style={{fontSize:pixel ? 11 : sz,fontWeight:900}}>{sscSx(s)}</span>;
   const paper = (node, mw = 400) => <div style={{background:'#fff',borderRadius:pixel ? 0 : 8,padding:pixel ? 4 : '4px 0',margin:'0 auto 10px',maxWidth:mw}}>{node}</div>;
   const alone = (mw = 190) => paper(<SkgStaff items={SKG_ALONE} k={q.k} clef={q.clef} width={mw} full pad={SKG_AL_PAD} o={{ base: 54, ksRoom: q.kind === 'three' ? 3 : 2 }}/>, mw);
@@ -46690,12 +46698,12 @@ function SkgQuestion({ q, given, locked, onAnswer, pixel }) {
   else if (q.sub === 'note') body = <>{prompt(t('What is the coral note?', '산호색 음의 이름은?'))}{paper(<SkgStaff items={q.items} k={q.k} clef={q.clef} width={300} full o={{ D: 26, hl: [q.at] }}/>, 300)}{grid(90, c => word(c, 20))}</>;
   else if (q.kind === 'acc') body = <>{prompt(t('What is the coral note?', '산호색 음의 이름은?'))}{bars(q.items)}{grid(90, c => word(c, 20))}</>;
   else if (q.kind === 'write') body = <>{prompt(sscSx(t('Which is ' + skgKeyName(q.k) + '’s key signature, written right?', skgKeyName(q.k) + '의 조표를 바르게 쓴 것은?')))}
-    <div style={{display:'grid',gridTemplateColumns:'1fr',gap:8}}>{q.choices.map((c, i) => <button key={c} disabled={locked} onClick={() => onAnswer(c)} className={btnCls + st(c)} style={{padding:'4px 8px',minHeight:44,display:'grid',gridTemplateColumns:'28px 1fr',alignItems:'center',gap:6}}>
+    <div style={{display:'grid',gridTemplateColumns:'1fr',gap:8,order:2}}>{q.choices.map((c, i) => <button key={c} disabled={locked} onClick={() => onAnswer(c)} className={btnCls + st(c)} style={{padding:'4px 8px',minHeight:44,display:'grid',gridTemplateColumns:'28px 1fr',alignItems:'center',gap:6}}>
       <div style={{fontWeight:900,fontSize:pixel ? 10 : 18}}>{c}</div><div style={{background:'#fff',borderRadius:6,maxWidth:220,width:'100%',margin:'0 auto'}}><SkgStaff items={SKG_ALONE} k="C" clef={q.clef} width={150} full pad={[22, 16]} o={{ ks: q.opts[i], base: 54, ksRoom: 2 }}/></div></button>)}</div></>;
   else body = <>{prompt(t('Listen: first the key, then the tune. Was every note right?', '들어 봐요: 먼저 조, 그다음 선율. 모든 음을 바르게 쳤을까요?'))}{bars(q.items)}
     <div style={{textAlign:'center',margin:'0 0 10px'}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => skgPlay(q)} style={pixel ? {fontSize:9} : {fontSize:15,padding:'8px 16px',minHeight:44}}>{t('▶ Hear it again', '▶ 다시 듣기')}</button></div>
     {grid(130, c => word(SKG_EAR_W[c](), 18))}</>;
-  return <div><BoardTrack b={board} pixel={pixel}/>{body}</div>;
+  return <div style={fbAbove ? {display:'contents'} : undefined}><BoardTrack b={board} pixel={pixel}/>{body}</div>;
 }
 function skgCheck(q, ans) { return ans != null && String(ans) === String(q.answer); }
 function skgAnswerLabel(q) {
@@ -46714,7 +46722,7 @@ function skgAnswerLabel(q) {
     : n.held ? t(' (the same bar: the accidental holds)', ' (같은 마디라 임시표가 그대로예요)') : n.back && n.byKey ? t(' (a new bar: the key signature again)', ' (새 마디라 다시 조표대로예요)')
     : n.byKey ? t(' (the key signature)', ' (조표)') : n.back ? t(' (a new bar: the accidental is over)', ' (새 마디라 임시표가 끝났어요)') : t(' (not in the key signature)', ' (조표에 없는 음)'));
 }
-function KnQuestion({ q, given, locked, onAnswer, pixel }) {
+function KnQuestion({ q, given, locked, onAnswer, pixel, fbAbove }) {
   const board = useBoard(q, given);
   const done = !!given, ink = pixel ? '#faf6ec' : '#26296b', btnCls = pixel ? 'pixel-choice' : 'choice-btn';
   const st = (c) => !done ? '' : (String(c) === String(q.answer) ? ' good' : (String(given.ans) === String(c) ? ' bad' : ''));
@@ -46734,11 +46742,11 @@ function KnQuestion({ q, given, locked, onAnswer, pixel }) {
   } else {
     top = <>{prompt(t('Which major key has this key signature?', '이 조표는 어떤 장조일까요?'))}{paper(<KSStaff count={q.k.count} type={q.k.type} ink={ink} width={170} clef={q.clef}/>)}</>;
   }
-  return <div><BoardTrack b={board} pixel={pixel}/>{top}
-    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:8}}>{q.choices.map(c => <button key={c} disabled={locked} onClick={() => onAnswer(c)} className={btnCls + st(c)} style={{padding:'14px 6px',minHeight:44}}>{q.kind === 'kn-order' ? prettyNote(c) : c}</button>)}</div></div>;
+  return <div style={fbAbove ? {display:'contents'} : undefined}><BoardTrack b={board} pixel={pixel}/>{top}
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:8,order:2}}>{q.choices.map(c => <button key={c} disabled={locked} onClick={() => onAnswer(c)} className={btnCls + st(c)} style={{padding:'14px 6px',minHeight:44}}>{q.kind === 'kn-order' ? prettyNote(c) : c}</button>)}</div></div>;
 }
 const SkgQuestionAll = (p) => p.q && p.q.kind === 'mykeys' ? <MyKeySigQuestion {...p}/> : p.q && p.q.kind && p.q.kind.indexOf('kn-') === 0 ? <KnQuestion {...p}/> : <SkgQuestion {...p}/>;
-Object.assign(KEYSIG_DRILL, { levels: SKG_LEVELS, generate: genSkgQuestion, check: skgCheck, answerLabel: skgAnswerLabel, Question: SkgQuestionAll, Learn: SkgLearn });
+Object.assign(KEYSIG_DRILL, { feedbackAbove: true, levels: SKG_LEVELS, generate: genSkgQuestion, check: skgCheck, answerLabel: skgAnswerLabel, Question: SkgQuestionAll, Learn: SkgLearn });
 
 // ─── Phase 474: chapter 19's Workbook (pages 2 to 6 face Lesson Book pages 2 to 6: the key signature; G major; F major;
 // key signature and accidental; D major and B♭ major; page 7 the check-up on paper) and its Teacher copy. English, like every
