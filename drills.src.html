@@ -5333,7 +5333,7 @@ function KfRule({ type, go, back }) {
   const one = !sharp && n === 1;
   const kx = (nm) => (sharp && pcOfName(nm) === 0 ? 12 : !sharp && pcOfName(nm) === 11 ? -1 : pcOfName(nm));
   const [up, setUp] = useState(false);   // Phase 523: the move to the key plays as a short animation
-  useEffect(() => { setUp(false); if (r === 1 && !one) { const id = setTimeout(() => { setUp(true); playKey(pcOfName(k.major), 0.9); }, 1000); return () => clearTimeout(id); } }, [r, e]);
+  useEffect(() => { setUp(false); if (r === 1 && !one) { const id = setTimeout(() => { setUp(true); playKey(pcOfName(k.major), 0.9); }, 700); return () => clearTimeout(id); } }, [r, e]);
   const want = sharp ? n - 1 : n - 2;
   const lastNm = one ? 'F' : (sharp ? SHARP_ORDER : FLAT_ORDER)[want];
   if (one) marks[pcOfName('F')] = 'pick';
@@ -5409,7 +5409,7 @@ function KfMinor({ i, setI, go }) {   // Phase 522: learn (find the major, then 
   if (bad != null) marks[bad] = 'miss';
   const walkDown = () => {
     walk.current.forEach(clearTimeout); walk.current = []; setSd(0);
-    [1, 2, 3].forEach((q) => walk.current.push(setTimeout(() => { setSd(q); playKey(m12(pM - q), 0.9); }, 800 + (q - 1) * 1500)));
+    [1, 2, 3].forEach((q) => walk.current.push(setTimeout(() => { setSd(q); playKey(m12(pM - q), 0.9); }, 600 + (q - 1) * 1000)));
   };
   const stopWalk = () => { walk.current.forEach(clearTimeout); walk.current = []; setSd(0); };
   const pickKey = (x) => { clearTimeout(timer.current); setI(x); setStage(0); setFound(false); setBad(null); };
@@ -5436,7 +5436,14 @@ function KfMinor({ i, setI, go }) {   // Phase 522: learn (find the major, then 
     <div style={head}>{t('Find the minor key', '단조 찾기')}</div>
     <div key={ph + r + e + stage + found} style={{textAlign:'center',fontSize:16,fontWeight:800,color:'#26296b',margin:'0 0 8px',textWrap:'balance',minHeight:40,animation:'fadeUp 0.3s both'}}>{stageLine}</div>
     {tryMode && <div style={{display:'flex',gap:8,justifyContent:'center',margin:'0 0 6px'}}>{grpBtn('sharp', t('♯ Sharp keys', '♯ 샵 조'))}{grpBtn('flat', t('♭ Flat keys', '♭ 플랫 조'))}</div>}
-    {tryMode ? <KfNav i={i} setI={pickKey} lo={grp === 'flat' ? 8 : 1} hi={grp === 'flat' ? 14 : 7}>{staff}</KfNav> : staff}
+    {staff}
+    {tryMode && (() => { const lo = grp === 'flat' ? 8 : 1, hi = grp === 'flat' ? 14 : 7, sg = grp === 'flat' ? '♭' : '♯';
+      const pm1 = (txt, d, lab) => <button className="ghost-btn" aria-label={lab} disabled={i + d < lo || i + d > hi} style={{...KF_BTN,minWidth:84,fontSize:22,opacity:(i + d < lo || i + d > hi) ? 0.35 : 1}} onClick={() => pickKey(i + d)}>{txt}</button>;
+      return <div style={{display:'flex',gap:12,justifyContent:'center',alignItems:'center',margin:'4px 0 0'}}>
+        {pm1('−', -1, t('One less ' + sg, sg + ' 하나 빼기'))}
+        <span style={{fontSize:18,fontWeight:900,color:'#26296b',minWidth:34,textAlign:'center'}}>{ks.count}{sg}</span>
+        {pm1('+', 1, t('One more ' + sg, sg + ' 하나 더하기'))}
+      </div>; })()}
     {kb}
     <div style={{...head,margin:'6px 0 2px',minHeight:27,visibility:resultLine === '' ? 'hidden' : 'visible'}}>{resultLine || ' '}</div>
     <div style={{textAlign:'center',marginTop:10,display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>
