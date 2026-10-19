@@ -1,0 +1,7 @@
+import sys
+p = sys.argv[1]
+lines = open(p, encoding='utf-8').read().split('\n')
+idx = [i for i, l in enumerate(lines) if l.startswith('| 542 |')]
+assert len(idx) == 1
+lines.insert(idx[0] + 1, "| 543 | 2026-10-19 | **Semitones and accidentals on the Home (her 14:54 note: put every tool in, then decide).** Home concept `p-clock` now has 13 numbered lessons: 1 Tone or semitone, 2 The sharp, 3 The flat, 4 Play sharps and flats, 5 Cancel it: the natural, 6 The natural, 7 Chromatic scale and enharmonics, 8 How long an accidental lasts, 9 Until the bar line, 10 Its own line or space, 11 Read the tune, 12 Accidentals: sharp, flat, natural, 13 Sharp, flat, natural (the old all-in-one). Sharp, flat and natural are each their own short tool (`SharpFlatMover only=`). One new drill `clock` with 18 levels numbered like the lessons (1 half or whole, play a half step, play a whole step, white neighbours; 2 name the sign; 3 black key names; 4 find the key, on the staff; 5 the natural; 6 which sign; 7 two names; 9 until the bar line; 10 own line or space; 11 read the bar; More practice: listen, bass clef, coral note, accidentals in a key). The old chapter drills are unchanged. Feedback sits under the question (`fbAbove`). Source `patch546.py`; checked by me, no console errors. To decide with her: what to merge or drop among the 13 lessons. |")
+open(p, 'w', encoding='utf-8').write('\n'.join(lines)); print('ok')
