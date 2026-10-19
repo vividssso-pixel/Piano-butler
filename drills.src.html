@@ -902,11 +902,11 @@ function DrillEngine({ drill, level, mode }) {
     setAsked(s.asked); setCorrect(s.correct); setStreak(s.streak); setLives(s.lives); setScore(s.score);
     setPhase('feedback');
     if (isGame) later(() => advance(s), ok ? 450 : 1200);
-    else if (ok) later(() => advance(s), 700);
+    else if (ok) { later(() => advance(s), 2000); setPendingNext(s); }   // Phase 536: a right answer stays on screen for 2 s; Next goes on sooner
     else setPendingNext(s);
   }
   const [pendingNext, setPendingNext] = useState(null);
-  function goNext() { const s = pendingNext; setPendingNext(null); advance(s); }
+  function goNext() { const s = pendingNext; timers.current.forEach(clearTimeout); timers.current = []; setPendingNext(null); advance(s); }
 
   // Game-mode countdown
   useEffect(() => {
@@ -5501,7 +5501,10 @@ function KfPiece({ i, setI }) {   // Phase 531: one table of the key signatures,
       const pick = (k) => { playKey(pcOfName(k), 0.5); const j = KEY_SIGS.findIndex(q => q.major === k); if (j >= 0) setI(j); };
       return <>
         <div style={{maxWidth:290,margin:'0 auto'}}><FifthsRing sel={sel} onPick={pick} o={{ filled: [], twins: true, minors: true }} label={t('The circle of fifths, ' + skgKeyName(sel) + ' ringed; inside each key, its relative minor.', '5도권: ' + skgKeyName(sel) + '에 동그라미. 조마다 안쪽에 그 나란한조.')}/></div>
-        <div style={{maxWidth:200,margin:'2px auto 0'}}><KSStaff count={sg.count} type={sg.type} width={170}/></div>
+        <div style={{display:'flex',alignItems:'stretch',justifyContent:'center',gap:4,margin:'4px auto 0',maxWidth:220}} role="img" aria-label={t('The key signature on the treble and bass staves', '높은음자리표와 낮은음자리표의 조표')}>
+          <svg width="14" viewBox="0 0 10 100" preserveAspectRatio="none" aria-hidden="true" style={{flex:'none'}}><path d="M9 2 C2 16 2 36 4 50 C2 64 2 84 9 98" fill="none" stroke="#26296b" strokeWidth="1.8" vectorEffect="non-scaling-stroke"/></svg>
+          <div style={{flex:'1 1 auto',minWidth:0}}><KSStaff count={sg.count} type={sg.type} width={170}/><KSStaff count={sg.count} type={sg.type} width={170} clef="bass"/></div>
+        </div>
         <div style={{textAlign:'center',fontSize:15,fontWeight:800,color:'#26296b',margin:'4px 0 0'}}>{t('Clockwise: one more ♯. Anticlockwise: one more ♭.', '시계 방향은 샵 하나 더, 반시계 방향은 플랫 하나 더.')}</div>
       </>; })()}
     {view === 'list' && <div style={{display:'flex',gap:10,justifyContent:'center',margin:'4px 0 14px'}}>{grpBtn('sharp', t('♯ Sharp keys', '♯ 샵 조'))}{grpBtn('flat', t('♭ Flat keys', '♭ 플랫 조'))}</div>}
