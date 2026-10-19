@@ -5542,6 +5542,39 @@ function KfPiece({ i, setI }) {   // Phase 531: one table of the key signatures,
     <div style={{textAlign:'center',marginTop:14,display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>{kc && kc.step > 1 && <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => kc.setStep(3)}>{t('← Back', '← 이전')}</button>}<a className="ghost-btn" style={{...KF_BTN,display:'inline-flex',alignItems:'center',textDecoration:'none',background:'#26296b',color:'#fffefa',borderColor:'#26296b',padding:'0 20px'}} href={cbHref('tool=scale-finder&key=' + encodeURIComponent(ks.major))}>{t('▶ Play its scale', '▶ 스케일 치러 가기')}</a></div>
   </>);
 }
+const KF_WHAT_ROW = [['q', 1, 31], ['q', 1, 34], ['q', 1, 35], ['q', 1, 38], ['q', 1, 36], ['q', 1, 31], ['||']];   // F B C, the F an octave up, D, F
+function KfWhat() {
+  const [view, setView] = useState('all');   // 'all' (the whole picture, G major) -> 'try' (pick another key)
+  const [k, setK] = useState('G'), [n, setN] = useState(0);
+  const timers = useRef([]);
+  const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
+  useEffect(() => clear, []);
+  const map = skgMap(k), L = Object.keys(map), sign = SKG_KEY[k][0] === '#' ? 'sharp' : 'flat';
+  const hits = KF_WHAT_ROW.map((it, j) => it.length === 3 && L.includes(dName(it[2])) ? j : -1).filter(j => j >= 0);
+  useEffect(() => { clear(); setN(0); hits.forEach((j, i) => timers.current.push(setTimeout(() => setN(i + 1), 700 + i * 650))); return clear; }, [k, view]);
+  const titleStyle = {textAlign:'center',fontFamily:"'Playfair Display', Georgia, serif",fontSize:22,fontWeight:900,color:'#26296b',lineHeight:1.2,margin:'0 0 8px',textWrap:'balance'};
+  const lineStyle = {textAlign:'center',fontSize:15,fontWeight:800,color:'#26296b',margin:'8px 0 6px',minHeight:42,textWrap:'balance',wordBreak:'keep-all'};
+  const prim = {...KF_BTN,minWidth:140,background:'#26296b',color:'#fffefa',borderColor:'#26296b'};
+  const letters = L.map(prettyNote === undefined ? (x => x) : (x => x)).join(t(' and every ', '와 모든 '));
+  const word = sign === 'sharp' ? t('a sharp', '샵') : t('a flat', '플랫');
+  const done = n >= hits.length;
+  const line = view === 'all'
+    ? (done ? t('The ♯ on the F line is in the key signature. Every F is sharp: the low ones and the high one.', '조표의 ♯이 F 줄에 있어요. 낮은 F도 높은 F도, 모든 F가 샵이에요.') : '')
+    : (done ? t('Every ' + letters + ' gets ' + word + ', in every octave.', '모든 ' + letters + '에 ' + word + '이 붙어요, 어느 옥타브에서나.') : '');
+  return (
+    <div className="try-box" data-kf-lesson="what" style={{background:'#fff',border:'1px solid var(--border)',borderRadius:10,padding:'10px 10px 12px',margin:'4px 0 16px'}}>
+      <div style={titleStyle}>{view === 'all' ? t('What a key signature does', '조표가 하는 일') : t('Your turn', '내가 해보기')}</div>
+      {view === 'try' && <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap',marginBottom:8}}>
+        {['G', 'D', 'F', 'Bb'].map(x => <button key={x} className={'chip' + (k === x ? ' active' : '')} aria-pressed={k === x} style={{...KF_BTN,padding:'0 12px',fontSize:14}} onClick={() => setK(x)}>{skgKeyName(x)}</button>)}
+      </div>}
+      <div style={{background:'#fff',maxWidth:300,margin:'0 auto 6px'}}><SkgStaff items={KF_WHAT_ROW} k={k} width={340} full o={{ D: 22, hl: hits.slice(0, n), base: 54 }}/></div>
+      <div style={lineStyle}>{line}</div>
+      <div style={{textAlign:'center',marginTop:12,display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>
+        {view === 'try' && <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { setK('G'); setView('all'); }}>{t('← Back', '← 이전')}</button>}
+        {view === 'all' && <button className="ghost-btn" style={prim} onClick={() => setView('try')}>{t('Your turn →', '내가 해보기 →')}</button>}
+      </div>
+    </div>);
+}
 function KeyFinder({ only }) {
   const [step, setStep] = useState(1);
   const [ki, setKi] = useState(1);
@@ -5549,6 +5582,7 @@ function KeyFinder({ only }) {
     <div className="try-box" data-kf-lesson={only} style={{background:'#fff',border:'1px solid var(--border)',borderRadius:10,padding:'10px 10px 12px',margin:'4px 0 16px'}}>
       <KfOnlyCtx.Provider value={true}>
       <KfCtx.Provider value={{ step: 1, setStep: () => {} }}>
+        {only === 'what' && <KfWhat/>}
         {only === 'sharps' && <KfFind key="os" type="sharp" mode="order" setKi={setKi}/>}
         {only === 'flats' && <KfFind key="of" type="flat" mode="order" setKi={setKi}/>}
         {only === 'major' && <KfMajor setKi={setKi}/>}
@@ -22964,7 +22998,7 @@ const HOME_LIVE = {
     checkLine: ['Questions, level by level', '문제를 단계별로'],
   },
   'p-keysig': {
-    lessons: ['kf-sharps', 'kf-flats', 'kf-msharp', 'kf-mflat', 'kf-minor', 'kf-piece'], check: 'key-signatures', tools: [], more: [],
+    lessons: ['kf-what', 'kf-sharps', 'kf-flats', 'kf-msharp', 'kf-mflat', 'kf-minor', 'kf-piece'], check: 'key-signatures', tools: [], more: [],
     checkLine: ['Questions, level by level', '문제를 단계별로'],
   },
   'p-scale': {
@@ -46575,13 +46609,13 @@ function SkgLearn({ onStart }) {
 // ── the drill, after page 6, in the book's order: which key (1), what it changes (2), reading in G and F (3), with
 // accidentals (4), all five keys (5), writing it (6), listening (7), the bass staff (8); 9 extra (three sharps or flats) ──
 const SKG_LEVELS = [   // Phase 533: the first six follow the Home lessons (new numbers 11-16); the extras keep their old numbers
-  { n: 11, label: 'Sharp order: which is the Nth sharp?', short: ['Sharp order', '샵 순서'], num: '1', kind: 'kn-ordS', time: 8, noPrint: true },
-  { n: 12, label: 'Flat order: which is the Nth flat?', short: ['Flat order', '플랫 순서'], num: '2', kind: 'kn-ordF', time: 8, noPrint: true },
-  { n: 13, label: 'Major key from sharps: name the key', short: ['Major: sharps', '장조: 샵'], num: '3', kind: 'kn-majS', time: 9, noPrint: true },
-  { n: 14, label: 'Major key from flats: name the key', short: ['Major: flats', '장조: 플랫'], num: '4', kind: 'kn-majF', time: 9, noPrint: true },
-  { n: 15, label: 'Sharps and flats mixed: name the major key', short: ['Major: ♯ + ♭', '장조: 샵 + 플랫'], num: '3+4', kind: 'kn-maj15', time: 9, noPrint: true },
-  { n: 16, label: 'Relative minor: name the minor key', short: ['Relative minor', '나란한 단조'], num: '5', kind: 'kn-min', time: 11, noPrint: true },
-  { n: 17, label: 'The last note: which key is the piece in?', short: ['Last note', '끝음'], num: '6', kind: 'kn-last', time: 12, noPrint: true },
+  { n: 11, label: 'Sharp order: which is the Nth sharp?', short: ['Sharp order', '샵 순서'], num: '2', kind: 'kn-ordS', time: 8, noPrint: true },
+  { n: 12, label: 'Flat order: which is the Nth flat?', short: ['Flat order', '플랫 순서'], num: '3', kind: 'kn-ordF', time: 8, noPrint: true },
+  { n: 13, label: 'Major key from sharps: name the key', short: ['Major: sharps', '장조: 샵'], num: '4', kind: 'kn-majS', time: 9, noPrint: true },
+  { n: 14, label: 'Major key from flats: name the key', short: ['Major: flats', '장조: 플랫'], num: '5', kind: 'kn-majF', time: 9, noPrint: true },
+  { n: 15, label: 'Sharps and flats mixed: name the major key', short: ['Major: ♯ + ♭', '장조: 샵 + 플랫'], num: '4+5', kind: 'kn-maj15', time: 9, noPrint: true },
+  { n: 16, label: 'Relative minor: name the minor key', short: ['Relative minor', '나란한 단조'], num: '6', kind: 'kn-min', time: 11, noPrint: true },
+  { n: 17, label: 'The last note: which key is the piece in?', short: ['Last note', '끝음'], num: '7', kind: 'kn-last', time: 12, noPrint: true },
   { n: 2, label: 'Which notes get a sharp or a flat?', short: ['Which notes?', '어떤 음?'], extra: true, extraStart: true, kind: 'which', time: 9 },
   { n: 6, label: 'Which is written right?', short: ['Written right', '바른 조표'], extra: true, kind: 'write', time: 12 },
 ];
@@ -54557,7 +54591,8 @@ TOOL_KO['cb-p-scales'] = ['개념책: 스케일과 조', '조 찾기 네 단계,
   Object.defineProperty(tl, 'blurb', { get: () => (LANG === 'ko' ? k[1] : bl), enumerable: true, configurable: true }); })();
 TOOL_CONCEPT['cb-p-scales'] = 'p-scales';
 // Phase 510: the five Learn lessons, each its own short tool (opened from the concept home)
-[['kf-sharps', 'sharps', 'Sharp order', '샤프 순서', 'All seven, one by one, then your turn.', '일곱 개를 한꺼번에, 하나씩, 그다음 내가 해 보기.'],
+[['kf-what', 'what', 'What a key signature does', '조표가 하는 일', 'A sharp or flat in it counts for every note of that letter.', '조표의 샵과 플랫은 그 글자의 모든 음에 붙어요.'],
+ ['kf-sharps', 'sharps', 'Sharp order', '샤프 순서', 'All seven, one by one, then your turn.', '일곱 개를 한꺼번에, 하나씩, 그다음 내가 해 보기.'],
  ['kf-flats', 'flats', 'Flat order', '플랫 순서', 'All seven, one by one, then your turn.', '일곱 개를 한꺼번에, 하나씩, 그다음 내가 해 보기.'],
  ['kf-major', 'major', 'Find the major key', '장조 찾기', 'The sharp way, then the flat way.', '샤프로 찾는 법, 그다음 플랫으로 찾는 법.'],
  ['kf-msharp', 'msharp', 'Major key: sharps', '장조 찾기: 샤프', 'Circle the last sharp, go up a half step.', '마지막 샤프에 동그라미, 반음 위로.'],
