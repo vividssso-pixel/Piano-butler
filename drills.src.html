@@ -19783,6 +19783,11 @@ const CAT_KO = {
 TOOL_CATS.forEach(c => { const n = c.name, w = c.when; c.nameEn = n; c.whenEn = w;
   Object.defineProperty(c, 'name', { get: () => (LANG === 'ko' && CAT_KO[c.id] ? CAT_KO[c.id][0] : n), enumerable: true, configurable: true });
   Object.defineProperty(c, 'when', { get: () => (LANG === 'ko' && CAT_KO[c.id] ? CAT_KO[c.id][1] : w), enumerable: true, configurable: true }); });
+// Phase 513: on the Home, Scales and keys is two concepts: Key signatures and Scales (the Toolbox keeps one group)
+const HOME_VIRTUAL = [{ id: 'p-keysig', area: 'pitch', en: 'Key signatures', ko: '조표' }, { id: 'p-scale', area: 'pitch', en: 'Scales', ko: '스케일' }]
+  .map(v => ({ id: v.id, area: v.area, get name() { return LANG === 'ko' ? v.ko : v.en; } }));
+const homeCats = (areaId) => TOOL_CATS.filter(c => c.area === areaId).flatMap(c => c.id === 'p-scales' ? HOME_VIRTUAL : [c]);
+const homeCatById = (id) => TOOL_CATS.find(c => c.id === id) || HOME_VIRTUAL.find(c => c.id === id);
 // an area's name over its concepts: a larger Playfair line (not capitals, so it never reads as one more staff head) and what
 // the area holds; navy only (coral stays for 'you are here')
 const toolAreaHead = (a) => <div className="tool-area" style={{display:'flex',alignItems:'baseline',gap:'4px 12px',flexWrap:'wrap',margin:'30px 4px 10px',paddingBottom:6,borderBottom:'2px solid var(--navy)'}}>
@@ -21835,7 +21840,7 @@ function readUrlState(studentMode) {
     tool: TOOLS.find(t => t.id === p.get('tool')) ? p.get('tool') : null,
     kit: p.get('kit') ? p.get('kit').split(',').filter(id => TOOLS.find(t => t.id === id)) : null,
     kn: p.get('kn') || '',
-    ha: TOOL_AREAS.some(a => a.id === p.get('area')) ? p.get('area') : null, hc: TOOL_CATS.some(c => c.id === p.get('concept')) ? p.get('concept') : null, hs: p.get('room') === 'try' ? 'try' : null, ret: p.get('ret') === 'home' ? 'home' : null,
+    ha: TOOL_AREAS.some(a => a.id === p.get('area')) ? p.get('area') : null, hc: homeCatById(p.get('concept')) ? p.get('concept') : null, hs: p.get('room') === 'try' ? 'try' : null, ret: p.get('ret') === 'home' ? 'home' : null,
     view: p.get('kit') ? 'kit' : p.get('ret') === 'home' && p.get('drill') ? 'home' : p.get('view') === 'chapters' ? 'chapters' : p.get('view') === 'toolbox' ? 'toolbox' : p.get('view') === 'students' ? 'students' : p.get('view') === 'home' ? 'home' : p.get('tool') ? (PRACTICE_IDS.includes(p.get('tool')) && p.get('view') === 'practice' ? 'practice' : 'tools') : ['tools', 'practice'].includes(p.get('view')) ? p.get('view') : todayView ? 'today' : 'path',
   };
 }
@@ -22771,6 +22776,8 @@ const HOME_LINE = {
   'p-clock': ['The smallest step, sharps and flats', '가장 작은 걸음, 샤프와 플랫'],
   'p-intervals': ['The gap between two notes', '두 음 사이의 거리'],
   'p-scales': ['Every key from one pattern', '패턴 하나로 모든 조'],
+  'p-keysig': ['Which sharps and flats a key has', '조마다 붙는 샵과 플랫'],
+  'p-scale': ['The same pattern from every note', '어느 음에서나 같은 패턴'],
   'p-chords': ['Notes stacked together', '쌓아 올린 음들'],
   'r-beat': ['The steady beat and how long notes last', '일정한 박과 음의 길이'],
   't-touch': ['Smooth, short, soft and loud', '이어서, 짧게, 여리게, 세게'],
@@ -22782,11 +22789,12 @@ const HOME_LINE = {
   'c-map': ['How a tune is built', '곡의 짜임'],
 };
 const HOME_LIVE = {
-  'p-scales': {
-    learn: 'key-finder', check: 'scales', tools: ['scale-finder'],
-    more: ['skg-every', 'skg-acc', 'skg-five', 'transpose', 'csx-penta'],
-    learnLine: ['Five short lessons, one at a time', '짧은 레슨 다섯 개, 하나씩'],
-    lessons: ['kf-sharps', 'kf-flats', 'kf-major', 'kf-minor', 'kf-piece'],
+  'p-keysig': {
+    lessons: ['kf-sharps', 'kf-flats', 'kf-major', 'kf-minor', 'kf-piece'], check: 'key-signatures', tools: [], more: [],
+    checkLine: ['Questions, level by level', '문제를 단계별로'],
+  },
+  'p-scale': {
+    check: 'scales', tools: ['scale-finder'], more: ['csx-penta'],
     tryLine: ['Three steps: white keys, black keys, all twelve', '세 단계: 흰건반, 검은건반, 열두 조'],
     checkLine: ['Questions, level by level', '문제를 단계별로'],
   },
@@ -22832,7 +22840,7 @@ function HomeToolPreview({ id }) {
 }
 function ConceptHome({ st, update }) {
   const go = (patch) => { update(patch); try { window.scrollTo(0, 0); } catch (e) {} };
-  const cat = TOOL_CATS.find(c => c.id === st.hc && c.area !== 'beside');
+  const cat0 = homeCatById(st.hc), cat = cat0 && cat0.area !== 'beside' ? cat0 : undefined;
   const area = TOOL_AREAS.find(a => a.id === (st.ha || (cat && cat.area)) && a.id !== 'beside');
   const live = cat && HOME_LIVE[cat.id];
   const ghost = { fontSize: 14, padding: '10px 16px', minHeight: 44, marginBottom: 10 };
@@ -22881,12 +22889,12 @@ function ConceptHome({ st, update }) {
     <div className="fade-up">
       <button className="ghost-btn" style={ghost} onClick={() => go({ hc: null, hs: null })}>← {area ? area.name : t('Home', '홈')}</button>
       <StaffHead title={cat.name}/>
-      <div style={{marginTop:14}}><HomeScaleRule/></div>
-      <div style={{display:'flex',flexDirection:'column',gap:10}}>
-        {live.lessons ? live.lessons.map((id, i) => { const tl = TOOLS.find(x => x.id === id); return tl ? step(i + 1, tl.title, tl.blurb, false, () => go({ view: 'tools', tool: id, ret: 'home' })) : null; })
-          : step(1, t('Learn', '배우기'), LANG === 'ko' ? live.learnLine[1] : live.learnLine[0], false, () => go({ view: 'tools', tool: live.learn, ret: 'home' }))}
-        {step(live.lessons ? live.lessons.length + 1 : 2, t('Try', '해 보기'), LANG === 'ko' ? live.tryLine[1] : live.tryLine[0], true, () => go({ hs: 'try' }))}
-        {step(live.lessons ? live.lessons.length + 2 : 3, t('Check', '확인하기'), LANG === 'ko' ? live.checkLine[1] : live.checkLine[0], false, () => go({ view: 'home', drill: live.check, tab: 'drill', level: 1, mode: 'lesson' }))}
+      <div style={{display:'flex',flexDirection:'column',gap:10,marginTop:14}}>
+        {(() => { let n = 0; return <>
+          {(live.lessons || []).map(id => { const tl = TOOLS.find(x => x.id === id); return tl ? step(++n, tl.title, tl.blurb, false, () => go({ view: 'tools', tool: id, ret: 'home' })) : null; })}
+          {live.tools && live.tools.length > 0 && step(++n, t('Try', '해 보기'), LANG === 'ko' ? live.tryLine[1] : live.tryLine[0], true, () => go({ hs: 'try' }))}
+          {step(++n, t('Drill', '드릴'), LANG === 'ko' ? live.checkLine[1] : live.checkLine[0], false, () => go({ view: 'home', drill: live.check, tab: 'drill', level: 1, mode: 'lesson' }))}
+        </>; })()}
       </div>
     </div>
   );
@@ -22897,7 +22905,7 @@ function ConceptHome({ st, update }) {
       <StaffHead title={area.name}/>
       <div style={{fontSize:15,fontWeight:500,color:'var(--navy-soft)',margin:'10px 0 12px'}}>{LANG === 'ko' ? HOME_AREA_LINE[area.id][1] : HOME_AREA_LINE[area.id][0]}</div>
       <div style={{display:'flex',flexDirection:'column',gap:10}}>
-        {TOOL_CATS.filter(c => c.area === area.id).map(c => { const on = !!HOME_LIVE[c.id], ln = HOME_LINE[c.id] || ['', '']; return (
+        {homeCats(area.id).map(c => { const on = !!HOME_LIVE[c.id], ln = HOME_LINE[c.id] || ['', '']; return (
           <button key={c.id} style={{...homeRow(on),minHeight:76}} onClick={() => {
             if (on) go({ ha: area.id, hc: c.id, hs: null });
             else { go({ view: 'toolbox' }); setTimeout(() => { try { const el = document.getElementById('cat-' + c.id); if (el) el.scrollIntoView(); } catch (e) {} }, 300); }
@@ -22987,7 +22995,7 @@ function App() {
   OPEN_CH = (id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }; // Phase 360: chapter links inside a lesson
   // a student with a link always has a button back to the Today page on the Learn and Practice lists
   const todayBack = showToday && !T ? <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:12}} onClick={() => { update({ view: 'today', tool: null, kit: null, drill: null, from: null }); try { window.scrollTo(0, 0); } catch (e) {} }}>{t('← Today', '← 오늘')}</button> : null;
-  const homeBack = '← ' + (st.hs === 'try' ? t('Try', '해 보기') : ((TOOL_CATS.find(c => c.id === st.hc) || {}).name || t('Home', '홈')));
+  const homeBack = '← ' + (st.hs === 'try' ? t('Try', '해 보기') : ((homeCatById(st.hc) || {}).name || t('Home', '홈')));
   useEffect(() => { if (st.view === 'home' && !T) setSt(prev => ({ ...prev, view: 'path', drill: null, ret: null })); }, [st.view, T]);
   function jumpToChapter(id) { setFindOpen(false); update({ view: (T && (st.view === 'toolbox' || st.view === 'chapters')) ? st.view : 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }
 
@@ -23053,7 +23061,7 @@ function App() {
           const fromToday = !T && !!st.from && st.from.drill === st.drill;
           return (
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6,marginBottom:14}}>
-              <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => fromToday ? update({ drill: null, view: 'today', from: null }) : update({ drill: null })}>{T ? (st.view === 'home' ? '← ' + ((TOOL_CATS.find(c => c.id === st.hc) || {}).name || t('Home', '홈')) : t('← Back', '← 뒤로')) : fromToday ? t('← Today', '← 오늘') : t('← Learn', '← 배우기')}</button>
+              <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => fromToday ? update({ drill: null, view: 'today', from: null }) : update({ drill: null })}>{T ? (st.view === 'home' ? '← ' + ((homeCatById(st.hc) || {}).name || t('Home', '홈')) : t('← Back', '← 뒤로')) : fromToday ? t('← Today', '← 오늘') : t('← Learn', '← 배우기')}</button>
               <span style={{fontSize:12,fontWeight:800,color:'var(--muted)',textAlign:'center'}}>{sg ? sg.title : ''}</span>
               <span style={{display:'flex',gap:4}}>
                 <button className="ghost-btn" style={{fontSize:13,padding:'5px 9px'}} disabled={k <= 0} onClick={() => update({ drill: list[k - 1], tab: 'learn', level: 1 })}>‹</button>
