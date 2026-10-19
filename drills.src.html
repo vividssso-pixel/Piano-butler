@@ -1051,7 +1051,8 @@ const MARK_STYLE = {
   fof:    { white: '#dfe9f8', black: '#3b4fa8', stroke: '#3b4fa8' },
   pick:   { white: '#e4572e', black: '#e4572e', stroke: '#c0431f', sw: 1.5, text: '#fff' },   // Phase 462: the key you tapped (Phase 466: white words on it)
   mate:   { white: '#fbe3da', black: '#e4572e', stroke: '#e9b9a6', sw: 1, text: '#26296b' },     // Phase 462: the keys that go with it (Phase 466: navy words on it)
-  miss:   { white: '#fff', black: '#26296b', stroke: '#e4572e', sw: 2.5, text: '#e4572e' },     // Phase 466: a wrong key, outlined
+  miss:   { white: '#fff', black: '#26296b', stroke: '#e4572e', sw: 2.5, text: '#e4572e' },
+  pass:   { white: '#fbe3da', black: '#f6cbbb', stroke: '#e9b9a6', sw: 1, text: '#26296b', blackText: '#26296b' },   // Phase 528: a key the move passes through, pale; only the arrival is strong     // Phase 466: a wrong key, outlined
 };
 const GROUP_TINT = { two: '#fbe9e2', three: '#e9eaf4' };   // the book's membership tints (Phase 387)
 
@@ -1113,11 +1114,11 @@ function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, 
               stroke={m ? m.stroke : '#26296b'} strokeWidth={m ? (m.sw ? Math.min(m.sw, 2) : 2) : 1} rx={pixel ? 0 : 2}/>
             {names && names[k.i] && (
               <text x={k.x + blackW / 2} y={labels === 'all' ? 22 : labels ? blackH - 14 : blackH - 12} textAnchor="middle" fontSize={labels ? 14 : 11} fontWeight="900"
-                fill="#fff" style={{pointerEvents:'none',animation:'fadeUp 0.3s both'}}>{names[k.i]}</text>
+                fill={m && m.blackText ? m.blackText : '#fff'} style={{pointerEvents:'none',animation:'fadeUp 0.3s both'}}>{names[k.i]}</text>
             )}
             {labels === 'all' && k.info.names.map((n, j) => (
               <text key={n} x={k.x + blackW / 2} y={bigLabels ? blackH - 28 + j * 14 : blackH - 22 + j * 12} textAnchor="middle" fontSize={bigLabels ? 11 : 8.5}
-                fontWeight="700" fill="#faf6ec" style={{pointerEvents:'none'}}>{prettyNote(n)}</text>
+                fontWeight="700" fill={m && m.blackText ? m.blackText : '#faf6ec'} style={{pointerEvents:'none'}}>{prettyNote(n)}</text>
             ))}
           </g>
         );
@@ -5399,11 +5400,11 @@ function KfMinor({ i, setI, go }) {   // Phase 522: learn (find the major, then 
   if (!tryMode) {
     if (r === 0) marks[pM] = 'pick';
     else {
-      marks[pM] = 'mate';
-      for (let q = 1; q <= sd; q++) { const kk = m12(pM - q); marks[kk] = q === sd ? 'pick' : 'mate'; names[kk] = String(q); }
+      marks[pM] = 'pass';
+      for (let q = 1; q <= sd; q++) { const kk = m12(pM - q); marks[kk] = q === 3 ? 'pick' : 'pass'; names[kk] = String(q); }
     }
   } else {
-    if (stage === 1 || found) marks[pM] = 'mate';
+    if (stage === 1 || found) marks[pM] = 'pass';
     if (found) marks[pm] = 'pick';
   }
   if (bad != null) marks[bad] = 'miss';
@@ -5429,24 +5430,24 @@ function KfMinor({ i, setI, go }) {   // Phase 522: learn (find the major, then 
   const resultLine = tryMode
     ? (found ? <>{majName(ks)} → <span style={{color:'#c0431f'}}>{minName(ks)}</span></> : '')
     : r === 0 ? <>{ks.count}{sym} → <span style={{color:'#c0431f'}}>{majName(ks)}</span></> : sd < 3 ? '' : <>{majName(ks)} → <span style={{color:'#c0431f'}}>{minName(ks)}</span></>;
-  const kb = <div style={{maxWidth:300,margin:'6px auto 0'}}><TapKeyboard octaves={1} marks={marks} names={Object.keys(names).length ? names : null} labels="all" bigLabels onTap={tryMode ? tapTry : undefined}/></div>;
+  const kb = <div style={{maxWidth:300,margin:tryMode ? '0 auto' : '10px auto 0'}}><TapKeyboard octaves={1} marks={marks} names={Object.keys(names).length ? names : null} labels="all" bigLabels onTap={tryMode ? tapTry : undefined}/></div>;
   const staff = <div style={{maxWidth:200,margin:'0 auto'}}><KSStaff count={ks.count} type={ks.type} width={170}/></div>;
   return (<>
     <KfChain hi={[1]}/>
     <div style={head}>{t('Find the minor key', '단조 찾기')}</div>
     <div key={ph + r + e + stage + found} style={{textAlign:'center',fontSize:16,fontWeight:800,color:'#26296b',margin:'0 0 8px',textWrap:'balance',minHeight:tryMode ? 26 : 40,animation:'fadeUp 0.3s both'}}>{stageLine}</div>
-    {tryMode && <div style={{display:'flex',gap:10,justifyContent:'center',margin:'0 0 10px'}}>{grpBtn('sharp', t('♯ Sharp keys', '♯ 샵 조'))}{grpBtn('flat', t('♭ Flat keys', '♭ 플랫 조'))}</div>}
+    {tryMode && <div style={{display:'flex',gap:10,justifyContent:'center',margin:'4px 0 14px'}}>{grpBtn('sharp', t('♯ Sharp keys', '♯ 샵 조'))}{grpBtn('flat', t('♭ Flat keys', '♭ 플랫 조'))}</div>}
     {staff}
     {tryMode && (() => { const lo = grp === 'flat' ? 8 : 1, hi = grp === 'flat' ? 14 : 7, sg = grp === 'flat' ? '♭' : '♯';
       const pm1 = (txt, d, lab) => <button className="ghost-btn" aria-label={lab} disabled={i + d < lo || i + d > hi} style={{...KF_BTN,minHeight:38,minWidth:64,padding:0,fontSize:22,opacity:(i + d < lo || i + d > hi) ? 0.35 : 1}} onClick={() => pickKey(i + d)}>{txt}</button>;
-      return <div style={{display:'flex',gap:14,justifyContent:'center',alignItems:'center',margin:'8px 0 4px'}}>
+      return <div style={{display:'flex',gap:14,justifyContent:'center',alignItems:'center',margin:'12px 0 18px'}}>
         {pm1('−', -1, t('One less ' + sg, sg + ' 하나 빼기'))}
         <span style={{fontSize:18,fontWeight:900,color:'#26296b',minWidth:34,textAlign:'center'}}>{ks.count}{sg}</span>
         {pm1('+', 1, t('One more ' + sg, sg + ' 하나 더하기'))}
       </div>; })()}
     {kb}
     <div style={{...head,margin:'6px 0 2px',minHeight:27,visibility:resultLine === '' ? 'hidden' : 'visible'}}>{resultLine || ' '}</div>
-    <div style={{textAlign:'center',marginTop:10,display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>
+    <div style={{textAlign:'center',marginTop:tryMode ? 22 : 14,display:'flex',gap:10,justifyContent:'center',flexWrap:'wrap'}}>
       {tryMode
         ? <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { setPh('rule'); setR(0); setE(0); }}>{t('← The rule', '← 규칙')}</button>
         : (r === 1 ? <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { stopWalk(); setR(0); }}>{t('← Back', '← 이전')}</button>
