@@ -5164,7 +5164,9 @@ function KeyFinderFree() {
 // ── Phase 492: the Key finder in four steps ──
 const KF_BTN = { minHeight: 44, fontWeight: 800, fontSize: 15 };
 const KfCtx = React.createContext(null);
+const KfOnlyCtx = React.createContext(false);   // Phase 510: one lesson on its own, no tabs and no three-pill chain
 function KfChain({ hi }) {
+  if (React.useContext(KfOnlyCtx)) return null;
   const items = [t('Read it', '읽기'), t('Name the key', '조 찾기'), t('Play its scale', '스케일 치기')];
   const kc = React.useContext(KfCtx), jump = [1, 2, 4];
   return (
@@ -5175,7 +5177,7 @@ function KfChain({ hi }) {
 }
 function KfNext({ go, label, back }) {
   const kc = React.useContext(KfCtx);
-  return <div style={{textAlign:'center',marginTop:14,display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>{((kc && kc.step > 1) || back) && <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={back || (() => kc.setStep(kc.step - 1))}>{t('← Back', '← 이전')}</button>}<button className="ghost-btn" style={{...KF_BTN,minWidth:140,background:'#26296b',color:'#fffefa',borderColor:'#26296b'}} onClick={go}>{label || t('Next →', '다음 →')}</button></div>;
+  return <div style={{textAlign:'center',marginTop:14,display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>{((kc && kc.step > 1) || back) && <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={back || (() => kc.setStep(kc.step - 1))}>{t('← Back', '← 이전')}</button>}{go && <button className="ghost-btn" style={{...KF_BTN,minWidth:140,background:'#26296b',color:'#fffefa',borderColor:'#26296b'}} onClick={go}>{label || t('Next →', '다음 →')}</button>}</div>;
 }
 // sharps or flats: the order, then the tap that finds the key, on one screen
 function KfFind({ type, go, setKi, mode, goLabel, onBack, backFn }) {   // mode 'order' = only the order; mode 'find' = only the unfolding count
@@ -5247,7 +5249,7 @@ function KfFind({ type, go, setKi, mode, goLabel, onBack, backFn }) {   // mode 
       {words.map((w, i) => <span key={i} style={{opacity:i < got ? 0.45 : 1,color:i === got ? '#c8361b' : '#26296b',fontWeight:i === got ? 900 : 700}}>{w}</span>)}
     </div>
     <div style={{maxWidth:300,margin:'0 auto'}}><TapKeyboard octaves={1} marks={bad != null ? { ...marks, [bad]: 'miss' } : marks} labels="all" bigLabels extraC={sharp} trail={trail} trailLabels={trailLabels} onTap={tapOrd}/></div>
-    {got >= 7 ? <KfNext go={mode === 'order' ? go : startFind} label={goLabel} back={() => { clear(); setGot(0); setBad(null); setN(0); setLit(0); setView('one'); }}/>
+    {got >= 7 && !(mode === 'order' && !go) ? <KfNext go={mode === 'order' ? go : startFind} label={goLabel} back={() => { clear(); setGot(0); setBad(null); setN(0); setLit(0); setView('one'); }}/>
       : <div style={{textAlign:'center',marginTop:14}}><button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { clear(); setGot(0); setBad(null); setN(0); setLit(0); setView('one'); }}>{t('← Back', '← 이전')}</button></div>}
   </>);
   if (phase === 'order') return (<>
@@ -5285,7 +5287,7 @@ function KfFind({ type, go, setKi, mode, goLabel, onBack, backFn }) {   // mode 
     <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:'#5a5d8f',minHeight:20,marginTop:6}}>{done && !auto ? (sharp ? t('A half step up from the last ♯.', '마지막 샤프의 반음 위!') : t('That ♭ is the key.', '그 플랫이 바로 그 조!')) : ''}</div>
     <div style={{textAlign:'center',marginTop:14,display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>
       <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={mode === 'find' ? onBack : toOrder}>{mode === 'find' ? t('← The rule', '← 규칙') : t('← The order', '← 순서')}</button>
-      {done && (n < 7 ? <button className="ghost-btn" style={prim} onClick={more}>{t('One more ' + sym + ' →', (sharp ? '샤프' : '플랫') + ' 하나 더 →')}</button> : <button className="ghost-btn" style={prim} onClick={go}>{goLabel || t('Next →', '다음 →')}</button>)}
+      {done && (n < 7 ? <button className="ghost-btn" style={prim} onClick={more}>{t('One more ' + sym + ' →', (sharp ? '샤프' : '플랫') + ' 하나 더 →')}</button> : go && <button className="ghost-btn" style={prim} onClick={go}>{goLabel || t('Next →', '다음 →')}</button>)}
     </div>
   </>);
 }
@@ -5305,7 +5307,7 @@ function KfRule({ type, go, back }) {
     <div style={{textAlign:'center',fontFamily:"'Playfair Display', Georgia, serif",fontSize:22,fontWeight:900,color:'#26296b',margin:'6px 0 2px'}}>{n}{sharp ? '♯' : '♭'} → <span style={{color:'#c0431f'}}>{majName(k)}</span></div>
     <div style={{textAlign:'center',fontSize:15,fontWeight:800,color:'#26296b',margin:'6px 0 0',textWrap:'balance'}}>{sharp ? t('The key is a half step above the last ♯.', '장조는 마지막 샤프의 반음 위예요.') : t('The key is the second-to-last ♭. One flat is F.', '장조는 뒤에서 두 번째 플랫이에요. 플랫이 하나면 F.')}</div>
     <div style={{textAlign:'center',marginTop:14,display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>
-      <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={back || (() => kc && kc.setStep(1))}>{t('← Back', '← 이전')}</button>
+      {(back || (kc && kc.step > 1)) && <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={back || (() => kc && kc.setStep(1))}>{t('← Back', '← 이전')}</button>}
       <button className="ghost-btn" style={{...KF_BTN,minWidth:140,background:'#26296b',color:'#fffefa',borderColor:'#26296b'}} onClick={go}>{t('Try it →', '해 보기 →')}</button>
     </div>
   </>);
@@ -5367,12 +5369,24 @@ function KfPiece({ i, setI }) {
       <div style={{maxWidth:200,margin:'0 auto'}}><KSStaff count={ks.count} type={ks.type} width={170}/></div>
       <div style={{textAlign:'center',fontFamily:"'Playfair Display', Georgia, serif",fontSize:20,fontWeight:900,color:'#26296b'}}>{majName(ks)} · {minName(ks)}</div>
     </KfNav>
-    <div style={{textAlign:'center',marginTop:14,display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}><button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => kc.setStep(3)}>{t('← Back', '← 이전')}</button><a className="ghost-btn" style={{...KF_BTN,display:'inline-flex',alignItems:'center',textDecoration:'none',background:'#26296b',color:'#fffefa',borderColor:'#26296b',padding:'0 20px'}} href={cbHref('tool=scale-finder&key=' + encodeURIComponent(ks.major))}>{t('▶ Play its scale', '▶ 스케일 치러 가기')}</a></div>
+    <div style={{textAlign:'center',marginTop:14,display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>{kc && kc.step > 1 && <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => kc.setStep(3)}>{t('← Back', '← 이전')}</button>}<a className="ghost-btn" style={{...KF_BTN,display:'inline-flex',alignItems:'center',textDecoration:'none',background:'#26296b',color:'#fffefa',borderColor:'#26296b',padding:'0 20px'}} href={cbHref('tool=scale-finder&key=' + encodeURIComponent(ks.major))}>{t('▶ Play its scale', '▶ 스케일 치러 가기')}</a></div>
   </>);
 }
-function KeyFinder() {
+function KeyFinder({ only }) {
   const [step, setStep] = useState(1);
   const [ki, setKi] = useState(1);
+  if (only) return (
+    <div className="try-box" data-kf-lesson={only} style={{background:'#fff',border:'1px solid var(--border)',borderRadius:10,padding:'10px 10px 12px',margin:'4px 0 16px'}}>
+      <KfOnlyCtx.Provider value={true}>
+      <KfCtx.Provider value={{ step: 1, setStep: () => {} }}>
+        {only === 'sharps' && <KfFind key="os" type="sharp" mode="order" setKi={setKi}/>}
+        {only === 'flats' && <KfFind key="of" type="flat" mode="order" setKi={setKi}/>}
+        {only === 'major' && <KfMajor setKi={setKi}/>}
+        {only === 'minor' && <KfMinor i={ki} setI={setKi}/>}
+        {only === 'piece' && <KfPiece i={ki} setI={setKi}/>}
+      </KfCtx.Provider>
+      </KfOnlyCtx.Provider>
+    </div>);
   const names = [null, t('The orders', '순서'), t('Find the major key', '장조 찾기'), t('Find the minor key', '단조 찾기'), t('Before a piece', '곡 치기 전에')];
   const go = () => setStep(s => Math.min(4, s + 1));
   if (step === 0) return (
@@ -22769,7 +22783,8 @@ const HOME_LIVE = {
   'p-scales': {
     learn: 'key-finder', check: 'scales', tools: ['scale-finder'],
     more: ['skg-every', 'skg-acc', 'skg-five', 'transpose', 'csx-penta'],
-    learnLine: ['Four steps: find the key from its signature', '네 단계: 조표로 조 찾기'],
+    learnLine: ['Five short lessons, one at a time', '짧은 레슨 다섯 개, 하나씩'],
+    lessons: ['kf-sharps', 'kf-flats', 'kf-major', 'kf-minor', 'kf-piece'],
     tryLine: ['Three steps: white keys, black keys, all twelve', '세 단계: 흰건반, 검은건반, 열두 조'],
     checkLine: ['Questions, level by level', '문제를 단계별로'],
   },
@@ -22827,6 +22842,16 @@ function ConceptHome({ st, update }) {
       <HomeChev on/>
     </button>
   );
+  // level 3: the five Learn lessons
+  if (cat && live && st.hs === 'learn') return (
+    <div className="fade-up">
+      <button className="ghost-btn" style={ghost} onClick={() => go({ hs: null })}>← {cat.name}</button>
+      <StaffHead title={t('Learn', '배우기')}/>
+      <div style={{display:'flex',flexDirection:'column',gap:10,marginTop:12}}>
+        {live.lessons.map((id, i) => { const tl = TOOLS.find(x => x.id === id); return tl ? step(i + 1, tl.title, tl.blurb, false, () => go({ view: 'tools', tool: id, ret: 'home' })) : null; })}
+      </div>
+    </div>
+  );
   // level 3: the tools of one concept
   if (cat && live && st.hs === 'try') return (
     <div className="fade-up">
@@ -22856,7 +22881,7 @@ function ConceptHome({ st, update }) {
       <StaffHead title={cat.name}/>
       <div style={{marginTop:14}}><HomeScaleRule/></div>
       <div style={{display:'flex',flexDirection:'column',gap:10}}>
-        {step(1, t('Learn', '배우기'), LANG === 'ko' ? live.learnLine[1] : live.learnLine[0], false, () => go({ view: 'tools', tool: live.learn, ret: 'home' }))}
+        {step(1, t('Learn', '배우기'), LANG === 'ko' ? live.learnLine[1] : live.learnLine[0], false, () => go(live.lessons ? { hs: 'learn' } : { view: 'tools', tool: live.learn, ret: 'home' }))}
         {step(2, t('Try', '해 보기'), LANG === 'ko' ? live.tryLine[1] : live.tryLine[0], true, () => go({ hs: 'try' }))}
         {step(3, t('Check', '확인하기'), LANG === 'ko' ? live.checkLine[1] : live.checkLine[0], false, () => go({ view: 'home', drill: live.check, tab: 'drill', level: 1, mode: 'lesson' }))}
       </div>
@@ -22959,7 +22984,7 @@ function App() {
   OPEN_CH = (id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }; // Phase 360: chapter links inside a lesson
   // a student with a link always has a button back to the Today page on the Learn and Practice lists
   const todayBack = showToday && !T ? <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:12}} onClick={() => { update({ view: 'today', tool: null, kit: null, drill: null, from: null }); try { window.scrollTo(0, 0); } catch (e) {} }}>{t('← Today', '← 오늘')}</button> : null;
-  const homeBack = '← ' + (st.hs === 'try' ? t('Try', '해 보기') : ((TOOL_CATS.find(c => c.id === st.hc) || {}).name || t('Home', '홈')));
+  const homeBack = '← ' + (st.hs === 'try' ? t('Try', '해 보기') : st.hs === 'learn' ? t('Learn', '배우기') : ((TOOL_CATS.find(c => c.id === st.hc) || {}).name || t('Home', '홈')));
   useEffect(() => { if (st.view === 'home' && !T) setSt(prev => ({ ...prev, view: 'path', drill: null, ret: null })); }, [st.view, T]);
   function jumpToChapter(id) { setFindOpen(false); update({ view: (T && (st.view === 'toolbox' || st.view === 'chapters')) ? st.view : 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }
 
@@ -54252,6 +54277,19 @@ TOOL_KO['cb-p-scales'] = ['개념책: 스케일과 조', '조 찾기 네 단계,
   Object.defineProperty(tl, 'title', { get: () => (LANG === 'ko' ? k[0] : ti), enumerable: true, configurable: true });
   Object.defineProperty(tl, 'blurb', { get: () => (LANG === 'ko' ? k[1] : bl), enumerable: true, configurable: true }); })();
 TOOL_CONCEPT['cb-p-scales'] = 'p-scales';
+// Phase 510: the five Learn lessons, each its own short tool (opened from the concept home)
+[['kf-sharps', 'sharps', 'Sharp order', '샤프 순서', 'All seven, one by one, then your turn.', '일곱 개를 한꺼번에, 하나씩, 그다음 내가 해 보기.'],
+ ['kf-flats', 'flats', 'Flat order', '플랫 순서', 'All seven, one by one, then your turn.', '일곱 개를 한꺼번에, 하나씩, 그다음 내가 해 보기.'],
+ ['kf-major', 'major', 'Find the major key', '장조 찾기', 'The sharp way, then the flat way.', '샤프로 찾는 법, 그다음 플랫으로 찾는 법.'],
+ ['kf-minor', 'minor', 'Find the minor key', '단조 찾기', 'From the major, three half steps down.', '장조에서 반음 세 칸 아래로.'],
+ ['kf-piece', 'piece', 'Before a piece', '곡 치기 전에', 'Find the key, then play its scale.', '조를 찾고, 그 스케일을 쳐 봐요.']].forEach(([id, only, en, ko, benEn, bko]) => {
+  TOOLS.push({ id, ch: 'concept', title: en, blurb: benEn, hidden: true, get kicker() { return TOOL_AREAS.find(a => a.id === 'pitch').name + ' · ' + (LANG === 'ko' ? '조 찾기' : 'Learn'); }, C: () => <KeyFinder only={only}/> });
+  TOOL_KO[id] = [ko, bko];
+  const tl = TOOLS[TOOLS.length - 1], k = TOOL_KO[id], ti = tl.title, bl = tl.blurb; tl.titleEn = ti; tl.blurbEn = bl;
+  Object.defineProperty(tl, 'title', { get: () => (LANG === 'ko' ? k[0] : ti), enumerable: true, configurable: true });
+  Object.defineProperty(tl, 'blurb', { get: () => (LANG === 'ko' ? k[1] : bl), enumerable: true, configurable: true });
+  TOOL_CONCEPT[id] = 'p-scales';
+});
 // the Toolbox: a concept's book, right under its name (open on screen, or print)
 function CbCard({ cid, onOpen }) {
   const id = CB_TOOL[cid]; if (!id) return null;
