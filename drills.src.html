@@ -5307,11 +5307,11 @@ function KfFind({ type, go, setKi, mode, goLabel, onBack, backFn }) {   // mode 
       {done ? <span style={{animation:'fadeUp 0.3s both',display:'inline-block'}}>{n}{sym} → <span style={{color:'#c0431f'}}>{majName(k)}</span></span> : t('What key has ' + n + sym + '?', (sharp ? '샤프 ' : '플랫 ') + n + '개는 무슨 조?')}
     </div>
     <div style={{display:'grid',gridTemplateColumns:'repeat(' + (tiny ? 4 : 7) + ', minmax(0, 1fr))',gap:4,marginBottom:6}}>
-      {[1, 2, 3, 4, 5, 6, 7].map(i => <button key={i} className={'chip' + (n === i ? ' active' : '')} aria-pressed={n === i} aria-disabled={i > maxN} style={{...KF_BTN,minWidth:44,padding:'0 2px',fontSize:14,opacity:i > maxN ? 0.3 : 1}} onClick={() => { if (i <= maxN) pickN(i); }}>{i}{sym}</button>)}
+      {[1, 2, 3, 4, 5, 6, 7].map(i => <button key={i} className={'chip' + (n === i ? ' active' : '')} aria-pressed={n === i} style={{...KF_BTN,minWidth:44,padding:'0 2px',fontSize:14}} onClick={() => pickN(i)}>{i}{sym}</button>)}
     </div>
     <div style={{maxWidth:260,margin:'0 auto'}}><KSStaff count={lit} type={type} width={200} tallBox={sharp} onPick={done || auto ? undefined : (st) => hit(null, st)} ring={(stage === 1 || (done && !auto)) ? want : undefined} tonicPos={done && !auto ? tonicStep : undefined} tonicFrom={done && !auto && sharp ? lastPos : undefined} ghostPos={badPos}/></div>
     {wordsRow}
-    <div style={{textAlign:'center',fontSize:15,fontWeight:800,color:'#26296b',margin:'8px 0 6px',minHeight:40,textWrap:'balance'}}>{done ? '' : auto ? t('Only one: it is F.', '하나뿐이면 F예요.') : !sharp ? t('Tap the second-to-last ♭ on the staff or the keys. That is the key.', '뒤에서 두 번째 플랫을 오선이나 건반에서 눌러요. 그게 바로 그 조예요.') : stage === 0 ? t('Tap the last ♯ on the staff or the keys.', '마지막 샤프를 오선이나 건반에서 눌러요.') : t('Now go up a half step: tap the key.', '이제 반음 위, 그 조를 눌러요.')}</div>
+    <div style={{textAlign:'center',fontSize:15,fontWeight:800,color:'#26296b',margin:'8px 0 6px',minHeight:40,textWrap:'balance'}}>{done ? '' : auto ? t('Only one: it is F.', '하나뿐이면 F예요.') : !sharp ? t('Tap the second last ♭ on the staff or the keys. That is the key.', '뒤에서 두 번째 플랫을 오선이나 건반에서 눌러요. 그게 바로 그 조예요.') : stage === 0 ? t('Tap the last ♯ on the staff or the keys.', '마지막 샤프를 오선이나 건반에서 눌러요.') : t('Now go up a half step: tap the key.', '이제 반음 위, 그 조를 눌러요.')}</div>
     <div style={{maxWidth:300,margin:'0 auto'}}><TapKeyboard octaves={1} marks={bad != null ? { ...marks, [bad]: 'miss' } : marks} labels="all" bigLabels extraC={sharp} onTap={done || auto ? undefined : (i) => hit(i, null)}/></div>
     <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:'#5a5d8f',minHeight:20,marginTop:6}}>{done && !auto ? (sharp ? t('A half step up from the last ♯.', '마지막 샤프의 반음 위!') : t('That ♭ is the key.', '그 플랫이 바로 그 조!')) : ''}</div>
     <div style={{textAlign:'center',marginTop:14,display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>
@@ -5328,30 +5328,32 @@ function KfRule({ type, go, back }) {
   const kc = React.useContext(KfCtx), sharp = type === 'sharp';
   const [r, setR] = useState(0);   // 0 = circle the sign, 1 = what the circle tells you
   const [e, setE] = useState(0);   // Phase 516: three examples with different counts
-  const EX = sharp ? [3, 5, 2] : [3, 5, 2];
+  const EX = sharp ? [3, 5, 2] : [3, 5, 1];   // flats end with the exception: one flat is F
   const n = EX[e], k = KEY_BY_COUNT(type, n), marks = {};
+  const one = !sharp && n === 1;
   const want = sharp ? n - 1 : n - 2;
-  const lastNm = (sharp ? SHARP_ORDER : FLAT_ORDER)[want];
-  marks[pcOfName(lastNm)] = r === 0 ? 'pick' : 'mate';
-  if (r === 1) marks[pcOfName(k.major)] = 'pick';
+  const lastNm = one ? 'F' : (sharp ? SHARP_ORDER : FLAT_ORDER)[want];
+  if (one) marks[pcOfName('F')] = 'pick';
+  else { marks[pcOfName(lastNm)] = r === 0 ? 'pick' : 'mate'; if (r === 1) marks[pcOfName(k.major)] = 'pick'; }
   const head = {textAlign:'center',fontFamily:"'Playfair Display', Georgia, serif",fontSize:22,fontWeight:900,color:'#26296b',lineHeight:1.2,margin:'0 0 8px',textWrap:'balance'};
-  const say = r === 0
-    ? (sharp ? t('1. Find the last ♯ and circle it.', '1. 마지막 샤프를 찾아 동그라미 쳐요.') : t('1. Find the second-to-last ♭ and circle it.', '1. 뒤에서 두 번째 플랫을 찾아 동그라미 쳐요.'))
+  const say = one ? t('With one ♭ there is no second last. The key is just F.', '플랫이 하나면 뒤에서 두 번째가 없어요. 그냥 F예요.') : r === 0
+    ? (sharp ? t('1. Find the last ♯ and circle it.', '1. 마지막 샤프를 찾아 동그라미 쳐요.') : t('1. Find the second last ♭ and circle it.', '1. 뒤에서 두 번째 플랫을 찾아 동그라미 쳐요.'))
     : (sharp ? t('2. Go up one half step. That is the key.', '2. 반음 위로 올라가요. 그게 바로 그 조예요.') : t('2. That ♭ is the key.', '2. 그 플랫이 바로 그 조예요.'));
-  const tonicPos = r === 1 ? (sharp ? SHARP_POS[lastNm] + 1 : FLAT_POS[lastNm]) : undefined;
+  const tonicPos = r === 1 && !one ? (sharp ? SHARP_POS[lastNm] + 1 : FLAT_POS[lastNm]) : undefined;
   const more = e < EX.length - 1;
   return (<>
     <KfChain hi={[1]}/>
     <div style={head}>{sharp ? t('Sharps: find the key', '샤프로 조 찾기') : t('Flats: find the key', '플랫으로 조 찾기')}</div>
     <div key={r + '-' + e} style={{textAlign:'center',fontSize:16,fontWeight:800,color:'#26296b',margin:'0 0 8px',textWrap:'balance',minHeight:40,animation:'fadeUp 0.3s both'}}>{say}</div>
-    <div style={{maxWidth:260,margin:'0 auto'}}><KSStaff count={n} type={type} width={200} ring={want} tallBox={sharp} tonicPos={tonicPos} tonicFrom={sharp && r === 1 ? SHARP_POS[lastNm] : undefined}/></div>
+    <div style={{maxWidth:260,margin:'0 auto'}}><KSStaff count={n} type={type} width={200} ring={one ? undefined : want} tallBox={sharp} tonicPos={tonicPos} tonicFrom={sharp && r === 1 ? SHARP_POS[lastNm] : undefined}/></div>
     <div style={{maxWidth:300,margin:'4px auto 0'}}><TapKeyboard octaves={1} marks={marks} labels="all" bigLabels/></div>
-    <div style={{...head,margin:'6px 0 2px',minHeight:27,visibility:r === 1 ? 'visible' : 'hidden'}}>{n}{sharp ? '♯' : '♭'} → <span style={{color:'#c0431f'}}>{majName(k)}</span></div>
-    <div style={{textAlign:'center',fontSize:12,color:'#5a5d8f',minHeight:16}}>{sharp ? '' : (r === 1 && n === 2 ? '' : '')}{!sharp && r === 0 ? t('One ♭ is the exception: it is F.', '플랫이 하나면 예외예요: F.') : ''}</div>
+    <div style={{...head,margin:'6px 0 2px',minHeight:27,visibility:r === 1 || one ? 'visible' : 'hidden'}}>{n}{sharp ? '♯' : '♭'} → <span style={{color:'#c0431f'}}>{majName(k)}</span></div>
+    <div style={{textAlign:'center',fontSize:12,color:'#5a5d8f',minHeight:16}}>{sharp ? '' : (r === 1 && n === 2 ? '' : '')}</div>
     <div style={{textAlign:'center',marginTop:10,display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>
-      {r === 1 ? <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => setR(0)}>{t('← Back', '← 이전')}</button>
+      {one ? <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { setE(e - 1); setR(1); }}>{t('← Back', '← 이전')}</button>
+        : r === 1 ? <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => setR(0)}>{t('← Back', '← 이전')}</button>
         : (back || (kc && kc.step > 1)) && <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={back || (() => kc && kc.setStep(1))}>{t('← Back', '← 이전')}</button>}
-      <button className="ghost-btn" style={{...KF_BTN,minWidth:140,background:'#26296b',color:'#fffefa',borderColor:'#26296b'}} onClick={r === 0 ? () => { setR(1); playKey(pcOfName(k.major), 0.5); } : more ? () => { setE(e + 1); setR(0); } : go}>{r === 0 ? t('Next →', '다음 →') : more ? t('Another one →', '다른 예 →') : t('Try it →', '해 보기 →')}</button>
+      <button className="ghost-btn" style={{...KF_BTN,minWidth:140,background:'#26296b',color:'#fffefa',borderColor:'#26296b'}} onClick={r === 0 && !one ? () => { setR(1); playKey(pcOfName(k.major), 0.5); } : more ? () => { setE(e + 1); setR(0); } : go}>{r === 0 && !one ? t('Next →', '다음 →') : more ? t('Another one →', '다른 예 →') : t('Try it →', '해 보기 →')}</button>
     </div>
   </>);
 }
@@ -54302,7 +54304,7 @@ function cbScalesPages(scr = false) {
       X('Sharps: the key is a half step above the last ♯.', '샤프: 장조는 마지막 샤프의 반음 위예요.'),
       X('Count the sharps in the order, then go a half step up.', '순서대로 샤프를 세고, 반음 위로 가요.')),
     P(4, kk(2), t('What key has 3♭?', '플랫 3개는 무슨 조?'), <CbFindPic type="flat" n={3}/>,
-      X('Flats: the key is the second-to-last ♭. One flat is F.', '플랫: 장조는 뒤에서 두 번째 플랫이에요. 하나면 F.'),
+      X('Flats: the key is the second last ♭. One flat is F.', '플랫: 장조는 뒤에서 두 번째 플랫이에요. 하나면 F.'),
       X('Sharps and flats find the key in different ways.', '샤프와 플랫은 장조를 찾는 방법이 달라요.')),
     P(5, kk(3), t('Is it major or minor?', '장조일까, 단조일까?'), <CbMinorPic/>,
       X('The same signature has both. From the major, count 3 half steps down.', '조표는 같아요. 장조에서 반음 3칸 아래로 내려가면 단조.'),
@@ -54336,7 +54338,7 @@ TOOL_CONCEPT['cb-p-scales'] = 'p-scales';
  ['kf-flats', 'flats', 'Flat order', '플랫 순서', 'All seven, one by one, then your turn.', '일곱 개를 한꺼번에, 하나씩, 그다음 내가 해 보기.'],
  ['kf-major', 'major', 'Find the major key', '장조 찾기', 'The sharp way, then the flat way.', '샤프로 찾는 법, 그다음 플랫으로 찾는 법.'],
  ['kf-msharp', 'msharp', 'Major key: sharps', '장조 찾기: 샤프', 'Circle the last sharp, go up a half step.', '마지막 샤프에 동그라미, 반음 위로.'],
- ['kf-mflat', 'mflat', 'Major key: flats', '장조 찾기: 플랫', 'Circle the second-to-last flat: that is the key.', '뒤에서 두 번째 플랫에 동그라미: 그게 그 조.'],
+ ['kf-mflat', 'mflat', 'Major key: flats', '장조 찾기: 플랫', 'Circle the second last flat: that is the key.', '뒤에서 두 번째 플랫에 동그라미: 그게 그 조.'],
  ['kf-minor', 'minor', 'Find the minor key', '단조 찾기', 'From the major, three half steps down.', '장조에서 반음 세 칸 아래로.'],
  ['kf-piece', 'piece', 'Before a piece', '곡 치기 전에', 'Find the key, then play its scale.', '조를 찾고, 그 스케일을 쳐 봐요.']].forEach(([id, only, en, ko, benEn, bko]) => {
   TOOLS.push({ id, ch: 'concept', title: en, blurb: benEn, hidden: true, get kicker() { return TOOL_AREAS.find(a => a.id === 'pitch').name + ' · ' + (LANG === 'ko' ? '조 찾기' : 'Learn'); }, C: () => <KeyFinder only={only}/> });
