@@ -1,0 +1,24 @@
+import sys
+s=open(sys.argv[1],encoding='utf-8').read()
+def rep(a,b,n=1):
+    global s
+    assert s.count(a)==n,(a[:90],s.count(a)); s=s.replace(a,b)
+# ---- the drill opened from Home is the drill only
+rep("function ConceptView({ concept, tab, level, mode, locked, onChange }) {\n  const lv =","function ConceptView({ concept, tab: tabIn, level, mode, locked, onChange, drillOnly }) {   // Phase 534: drillOnly = opened from Home: no Learn tab (the lessons are on the Home)\n  const tab = drillOnly ? 'drill' : tabIn;\n  const lv =")
+rep("      <div style={{display:'flex',gap:8,marginBottom:16}}>\n        {[['learn',t('Learn', '배우기')],['drill',t('Drill', '드릴')]].map(","      {!drillOnly && <div style={{display:'flex',gap:8,marginBottom:16}}>\n        {[['learn',t('Learn', '배우기')],['drill',t('Drill', '드릴')]].map(")
+rep("background:tab===id?'var(--navy)':'#fff',color:tab===id?'#fff':'var(--navy-soft)'}}>{label}</button>\n        ))}\n      </div>","background:tab===id?'var(--navy)':'#fff',color:tab===id?'#fff':'var(--navy-soft)'}}>{label}</button>\n        ))}\n      </div>}")
+rep("<ConceptView concept={concept} tab={st.tab} level={level} mode={st.mode} locked={st.lock} onChange={update} />","<ConceptView concept={concept} tab={st.tab} level={level} mode={st.mode} locked={st.lock} onChange={update} drillOnly={T && st.view === 'home'} />")
+rep("""                <button className="ghost-btn" style={{fontSize:13,padding:'5px 9px'}} disabled={k <= 0} onClick={() => update({ drill: list[k - 1], tab: 'learn', level: 1 })}>‹</button>
+                <button className="ghost-btn" style={{fontSize:13,padding:'5px 9px'}} disabled={k >= list.length - 1} onClick={() => update({ drill: list[k + 1], tab: 'learn', level: 1 })}>›</button>""",
+"""                {!(T && st.view === 'home') && <button className="ghost-btn" style={{fontSize:13,padding:'5px 9px'}} disabled={k <= 0} onClick={() => update({ drill: list[k - 1], tab: 'learn', level: 1 })}>‹</button>}
+                {!(T && st.view === 'home') && <button className="ghost-btn" style={{fontSize:13,padding:'5px 9px'}} disabled={k >= list.length - 1} onClick={() => update({ drill: list[k + 1], tab: 'learn', level: 1 })}>›</button>}""")
+rep("        {!st.lock && <AfterNote id={active.id}","        {!st.lock && !(T && st.view === 'home') && <AfterNote id={active.id}")
+rep("        {!st.lock && <PathNext id={active.id}","        {!st.lock && !(T && st.view === 'home') && <PathNext id={active.id}")
+# ---- sharp order and flat order are two checks
+rep("  { n: 11, label: 'The order: which is the Nth sharp or flat?', short: ['Order', '순서'], kind: 'kn-order', time: 8, noPrint: true },\n  { n: 12, label: 'Sharp keys: name the major key', short: ['Sharp keys', '샵 조'], kind: 'kn-majS', time: 9, noPrint: true },\n  { n: 13, label: 'Flat keys: name the major key', short: ['Flat keys', '플랫 조'], kind: 'kn-majF', time: 9, noPrint: true },\n  { n: 14, label: 'All 15 keys: name the major key', short: ['All 15', '15개 조'], kind: 'kn-maj15', time: 9, noPrint: true },\n  { n: 15, label: 'Relative minor: name the minor key', short: ['Relative minor', '나란한 단조'], kind: 'kn-min', time: 11, noPrint: true },\n  { n: 16, label:",
+"  { n: 11, label: 'Sharp order: which is the Nth sharp?', short: ['Sharp order', '샵 순서'], kind: 'kn-ordS', time: 8, noPrint: true },\n  { n: 12, label: 'Flat order: which is the Nth flat?', short: ['Flat order', '플랫 순서'], kind: 'kn-ordF', time: 8, noPrint: true },\n  { n: 13, label: 'Major key from sharps: name the key', short: ['Major: sharps', '장조: 샵'], kind: 'kn-majS', time: 9, noPrint: true },\n  { n: 14, label: 'Major key from flats: name the key', short: ['Major: flats', '장조: 플랫'], kind: 'kn-majF', time: 9, noPrint: true },\n  { n: 15, label: 'All 15 keys: name the major key', short: ['All 15', '15개 조'], kind: 'kn-maj15', time: 9, noPrint: true },\n  { n: 16, label: 'Relative minor: name the minor key', short: ['Relative minor', '나란한 단조'], kind: 'kn-min', time: 11, noPrint: true },\n  { n: 17, label:")
+rep("  'The order: which is the Nth sharp or flat?': '순서: N번째 샵이나 플랫은?', 'Sharp keys: name the major key': '샵 조: 장조 이름 맞히기', 'Flat keys: name the major key': '플랫 조: 장조 이름 맞히기',",
+"  'Sharp order: which is the Nth sharp?': '샵 순서: N번째 샵은?', 'Flat order: which is the Nth flat?': '플랫 순서: N번째 플랫은?', 'Major key from sharps: name the key': '샵으로 장조 찾기: 조 이름 맞히기', 'Major key from flats: name the key': '플랫으로 장조 찾기: 조 이름 맞히기',")
+rep("  if (kind === 'kn-order') {\n    const type = Math.random() < 0.5 ? 'sharp' : 'flat', order","  if (kind === 'kn-ordS' || kind === 'kn-ordF') {\n    const type = kind === 'kn-ordS' ? 'sharp' : 'flat', order")
+rep("    return { kind, key: 'o' + type + i, type, idx: i,","    return { kind: 'kn-order', key: 'o' + type + i, type, idx: i,")
+open(sys.argv[2],'w',encoding='utf-8').write(s);print('ok')
