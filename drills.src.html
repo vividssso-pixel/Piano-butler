@@ -20808,7 +20808,7 @@ function ToolView({ id, locked, onBack, onChapter, backLabel = '← Toolbox' }) 
         {!locked && (
           <div style={{display:'flex',gap:6,flexWrap:'wrap',justifyContent:'space-between',alignItems:'center',borderTop:'1px solid var(--border)',paddingTop:10,marginTop:4}}>
             {ch ? <button className="ghost-btn" style={{fontSize:13,padding:'6px 12px'}} onClick={() => onChapter(t.ch)}>{LANG === 'ko' ? '챕터 전체 배우기 →' : 'Learn the whole chapter →'}</button> : <span/>}
-            {UI_TEACHER ? <button className="ghost-btn" style={{fontSize:13,padding:'6px 12px'}} onClick={copy}>{copied ? (LANG === 'ko' ? '링크 복사됨 ✓' : 'Link copied ✓') : (LANG === 'ko' ? '학생 링크 복사' : 'Copy student link')}</button> : <span/>}
+            {UI_TEACHER ? <button className="ghost-btn" style={{fontSize:13,padding:'6px 12px'}} onClick={copy}>{copied ? (LANG === 'ko' ? '링크 복사됨 ✓' : 'Link copied ✓') : (LANG === 'ko' ? '링크 복사' : 'Copy link')}</button> : <span/>}
           </div>
         )}
       </div>
@@ -21033,7 +21033,7 @@ function StudentsView({ onPlan, onOpenKit }) {
                 : <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>
                   <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => { saveWho(kits, kits.indexOf(k)); onPlan(); }}>{t('Toolbox', '도구함')}</button>
                   <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} disabled={!(k.tools || []).length} onClick={() => onOpenKit(k)}>Open kit</button>
-                  <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} disabled={!(k.tools || []).length} onClick={() => copy(k)}>{copied === k.id ? (LANG === 'ko' ? '복사됨 ✓' : 'Copied ✓') : (LANG === 'ko' ? '학생 링크' : 'Student link')}</button>
+                  <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} disabled={!(k.tools || []).length} onClick={() => copy(k)}>{copied === k.id ? (LANG === 'ko' ? '복사됨 ✓' : 'Copied ✓') : (LANG === 'ko' ? '링크 복사' : 'Copy link')}</button>
                   <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => startEdit(k)}>Edit</button>
                   <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px',color:'#c8361b'}} onClick={() => { setDel(k.id); setEdit(null); }}>Delete</button>
                 </div>}
@@ -21199,7 +21199,7 @@ function ToolboxTab({ onOpenTool, onOpenKit, onStudents, onChapter }) {
         {kit && kit.notes && <div style={{fontSize:13,color:'#6d6f9c',marginTop:6,background:'#f5f0e4',borderRadius:8,padding:'5px 8px'}}><b>{t('Notes:','메모:')}</b> {kit.notes}</div>}
         {kit && kit.tools.length > 0 && <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:8}}>
           <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => onOpenKit(kit)}>{LANG === 'ko' ? '“' + kit.name + '” 키트 열기 (' + kit.tools.length + ')' : 'Open the kit “' + kit.name + '” (' + kit.tools.length + ')'}</button>
-          <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={copyKit}>{copied ? t('Link copied ✓', '링크 복사됨 ✓') : t('Copy student link', '학생 링크 복사')}</button>
+          <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={copyKit}>{copied ? t('Link copied ✓', '링크 복사됨 ✓') : t('Copy link', '링크 복사')}</button>
         </div>}
       </div>}
 
@@ -54745,10 +54745,11 @@ function AcSign({ kind }) {
     : nameOf(k) + '(' + L(k) + ' ' + D.word[1] + '): ' + L(k) + '보다 반음 ' + D.above[1] + '예요.';
   const [view, setView] = useState('all');   // 'all' -> 'one' -> 'try'
   const [i, setI] = useState(0), [shown, setShown] = useState(false), [nonce, setNonce] = useState(0);
-  const [from, setFrom] = useState(null), [to, setTo] = useState(null);
+  const [from, setFrom] = useState(null), [to, setTo] = useState(null), [miss, setMiss] = useState(null);
   const timers = useRef([]);
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   useEffect(() => clear, []);
+  useEffect(() => { setMiss(null); }, [view]);
   const snd = (k, d) => { if (k >= 0) playKey(k, d); };
   const EX = D.order.map(k => ({ a: k, b: target(k) }));
   const show = (idx) => { clear(); setI(idx); setShown(false); setNonce(n => n + 1); const e = EX[idx]; snd(e.a, 0.45); timers.current.push(setTimeout(() => { setShown(true); snd(e.b, 0.6); }, 750)); };
@@ -54781,17 +54782,20 @@ function AcSign({ kind }) {
     const marks = {}, arcs = [], names = {};
     if (from != null) marks[from] = 'pass';
     if (from != null && to != null) { marks[to] = 'pick'; arcs.push([from, to, true]); names[to] = nameOf(from); }
-    const go = () => { if (!ok(from)) return; clear(); setTo(target(from)); setNonce(n => n + 1); snd(from, 0.4); timers.current.push(setTimeout(() => snd(target(from), 0.6), 450)); };
-    const line = from == null ? t('Tap a white key. Then press ' + D.word[0] + '.', '흰건반을 눌러요. 그다음 ' + D.word[1] + '을 눌러요.')
+    const tap = (k) => {
+      clear(); snd(k, 0.5);
+      if (from != null && to == null && ok(from) && k === target(from)) { setTo(k); setMiss(null); setNonce(n => n + 1); return; }   // the sharp key itself
+      if (ok(k)) { setFrom(k); setTo(null); setMiss(null); setNonce(n => n + 1); return; }                                          // a new white key
+      setMiss(from != null && to == null ? 'wrong' : 'white'); setNonce(n => n + 1);
+    };
+    const line = from == null ? (miss ? t('Tap a white key first.', '먼저 흰건반을 눌러요.') : t('Tap a white key.', '흰건반을 눌러요.'))
       : to != null ? t(en(from), ko(from))
-      : !isW(from) ? t('Tap a white key.', '흰건반을 눌러요.')
-      : !ok(from) ? t('Tap a white key in the middle.', '가운데 흰건반을 눌러요.')
-      : t('Now press ' + D.word[0] + '.', '이제 ' + D.word[1] + '을 눌러요.');
+      : miss === 'wrong' ? t('Not that one. Where is the ' + D.word[0] + ' of ' + L(from) + '?', '그 건반이 아니에요. ' + L(from) + ' ' + D.word[1] + '은 어디일까요?')
+      : t('Now tap the ' + D.word[0] + ' of ' + L(from) + '.', '이제 ' + L(from) + ' ' + D.word[1] + ' 건반을 눌러요.');
     body = <>
       <div style={titleStyle}>{t('Your turn', '내가 해보기')}</div>
-      <AcKeys marks={marks} arcs={arcs} names={names} nonce={nonce} onTap={(k) => { clear(); setFrom(k); setTo(null); setNonce(n => n + 1); snd(k, 0.5); }}/>
+      <AcKeys marks={marks} arcs={arcs} names={names} nonce={nonce} onTap={tap}/>
       <div style={lineStyle}>{line}</div>
-      {row(<button className="ghost-btn" style={{...KF_BTN,minWidth:150,opacity:ok(from) && to == null ? 1 : 0.4}} disabled={!ok(from) || to != null} onClick={go}>{t(D.btn[0], D.btn[1])}</button>)}
       {row(<button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { clear(); setView('one'); show(EX.length - 1); }}>{t('← Back', '← 이전')}</button>)}
     </>;
   }
