@@ -5387,6 +5387,7 @@ function KfMinor({ i, setI, go }) {   // Phase 522: learn (find the major, then 
   const [stage, setStage] = useState(0);
   const [bad, setBad] = useState(null);
   const [found, setFound] = useState(false);
+  const [intro, setIntro] = useState(true);   // Phase 530: first, every key signature is a pair: a major and its relative minor
   const [sd, setSd] = useState(0);   // Phase 523: how many of the three half steps down have been shown
   const timer = useRef(null), walk = useRef([]);
   useEffect(() => () => { clearTimeout(timer.current); walk.current.forEach(clearTimeout); }, []);
@@ -5398,7 +5399,8 @@ function KfMinor({ i, setI, go }) {   // Phase 522: learn (find the major, then 
   const head = {textAlign:'center',fontFamily:"'Playfair Display', Georgia, serif",fontSize:22,fontWeight:900,color:'#26296b',lineHeight:1.2,margin:'0 0 8px',textWrap:'balance'};
   const marks = {}, names = {};
   if (!tryMode) {
-    if (r === 0) marks[pM] = 'pick';
+    if (intro) { marks[pM] = 'pick'; marks[pm] = 'pick'; }
+    else if (r === 0) marks[pM] = 'pick';
     else {
       marks[pM] = 'pass';
       for (let q = 1; q <= sd; q++) { const kk = m12(pM - q); marks[kk] = q === 3 ? 'pick' : 'pass'; names[kk] = String(q); }
@@ -5426,16 +5428,18 @@ function KfMinor({ i, setI, go }) {   // Phase 522: learn (find the major, then 
   const prim = {...KF_BTN,minWidth:140,background:'#26296b',color:'#fffefa',borderColor:'#26296b'};
   const stageLine = tryMode
     ? (found ? '' : stage === 0 ? t('Tap the major key.', '장조를 눌러요.') : t('Now 3 half steps down: tap the minor key.', '이제 반음 3칸 아래, 단조를 눌러요.'))
+    : intro ? t('Every key signature has two keys: a major and its relative minor.', '조표 하나에는 두 조가 한 세트예요. 장조와 그 나란한 단조.')
     : r === 0 ? t('1. Find the major key first.', '1. 먼저 장조를 찾아요.') : t('2. Count 3 half steps down. That is the minor.', '2. 반음 3칸 아래로 내려가요. 거기가 단조예요.');
   const resultLine = tryMode
     ? (found ? <>{majName(ks)} → <span style={{color:'#c0431f'}}>{minName(ks)}</span></> : '')
+    : intro ? <>{majName(ks)} <span style={{fontWeight:700}}>+</span> <span style={{color:'#c0431f'}}>{minName(ks)}</span></>
     : r === 0 ? <>{ks.count}{sym} → <span style={{color:'#c0431f'}}>{majName(ks)}</span></> : sd < 3 ? '' : <>{majName(ks)} → <span style={{color:'#c0431f'}}>{minName(ks)}</span></>;
   const kb = <div style={{maxWidth:300,margin:tryMode ? '0 auto' : '10px auto 0'}}><TapKeyboard octaves={1} marks={marks} names={Object.keys(names).length ? names : null} labels="all" bigLabels onTap={tryMode ? tapTry : undefined}/></div>;
   const staff = <div style={{maxWidth:200,margin:'0 auto'}}><KSStaff count={ks.count} type={ks.type} width={170}/></div>;
   return (<>
     <KfChain hi={[1]}/>
-    <div style={head}>{t('Find the minor key', '단조 찾기')}</div>
-    <div key={ph + r + e + stage + found} style={{textAlign:'center',fontSize:16,fontWeight:800,color:'#26296b',margin:'0 0 8px',textWrap:'balance',minHeight:tryMode ? 26 : 40,animation:'fadeUp 0.3s both'}}>{stageLine}</div>
+    <div style={head}>{t('Find the relative minor key', '나란한 단조 찾기')}</div>
+    <div key={ph + r + e + stage + found + intro} style={{textAlign:'center',fontSize:16,fontWeight:800,color:'#26296b',margin:'0 0 8px',textWrap:'balance',minHeight:tryMode ? 26 : 40,animation:'fadeUp 0.3s both'}}>{stageLine}</div>
     {tryMode && <div style={{display:'flex',gap:10,justifyContent:'center',margin:'4px 0 14px'}}>{grpBtn('sharp', t('♯ Sharp keys', '♯ 샵 조'))}{grpBtn('flat', t('♭ Flat keys', '♭ 플랫 조'))}</div>}
     {staff}
     {tryMode && (() => { const lo = grp === 'flat' ? 8 : 1, hi = grp === 'flat' ? 14 : 7, sg = grp === 'flat' ? '♭' : '♯';
@@ -5452,8 +5456,9 @@ function KfMinor({ i, setI, go }) {   // Phase 522: learn (find the major, then 
         ? <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { setPh('rule'); setR(0); setE(0); }}>{t('← The rule', '← 규칙')}</button>
         : (r === 1 ? <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { stopWalk(); setR(0); }}>{t('← Back', '← 이전')}</button>
           : e > 0 ? <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { setE(e - 1); setR(1); setSd(3); }}>{t('← Back', '← 이전')}</button>
+          : !intro ? <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => setIntro(true)}>{t('← Back', '← 이전')}</button>
           : (kc && kc.step > 1) && <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => kc.setStep(kc.step - 1)}>{t('← Back', '← 이전')}</button>)}
-      {!tryMode && <button className="ghost-btn" style={prim} onClick={r === 0 ? () => { setR(1); walkDown(); } : e < EXM.length - 1 ? () => { stopWalk(); setE(e + 1); setR(0); } : () => enterTry('sharp')}>{r === 0 ? t('Next →', '다음 →') : e < EXM.length - 1 ? t('Another one →', '다른 예 →') : t('Your turn →', '내가 해보기 →')}</button>}
+      {!tryMode && <button className="ghost-btn" style={prim} onClick={intro ? () => setIntro(false) : r === 0 ? () => { setR(1); walkDown(); } : e < EXM.length - 1 ? () => { stopWalk(); setE(e + 1); setR(0); } : () => enterTry('sharp')}>{intro || r === 0 ? t('Next →', '다음 →') : e < EXM.length - 1 ? t('Another one →', '다른 예 →') : t('Your turn →', '내가 해보기 →')}</button>}
       {tryMode && found && go && <button className="ghost-btn" style={prim} onClick={go}>{t('Next →', '다음 →')}</button>}
     </div>
   </>);
