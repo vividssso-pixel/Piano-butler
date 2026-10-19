@@ -46566,12 +46566,7 @@ const SKG_LEVELS = [   // Phase 533: the first six follow the Home lessons (new 
   { n: 16, label: 'Relative minor: name the minor key', short: ['Relative minor', '나란한 단조'], kind: 'kn-min', time: 11, noPrint: true },
   { n: 17, label: 'The last note: which key is the piece in?', short: ['Last note', '끝음'], kind: 'kn-last', time: 12, noPrint: true },
   { n: 2, label: 'Which notes get a sharp or a flat?', short: ['Which notes?', '어떤 음?'], extra: true, extraStart: true, kind: 'which', time: 9 },
-  { n: 3, label: 'Name the coral note', short: ['Coral note', '산호색 음'], extra: true, kind: 'note', time: 10 },
-  { n: 4, label: 'Key signature and accidental', short: ['Accidentals', '임시표'], extra: true, kind: 'acc', time: 12 },
   { n: 6, label: 'Which is written right?', short: ['Written right', '바른 조표'], extra: true, kind: 'write', time: 12 },
-  { n: 7, label: 'Listen: right or wrong?', short: ['Listen', '듣기'], extra: true, kind: 'ear', time: 14, noPrint: true },
-  { n: 8, label: 'The bass staff', short: ['Bass staff', '낮은음자리'], extra: true, kind: 'bass', time: 11 },
-  { n: 10, label: 'My keys: name the key', short: ['My keys', '나의 조'], extra: true, kind: 'mykeys', time: 10 },
 ];
 Object.assign(LEVEL_KO, {
   'Which key: C, G or F?': '어떤 조? C, G, F', 'Which notes change?': '바뀌는 음', 'Name the coral note': '산호색 음 이름', 'Key signature and accidental': '조표와 임시표',
@@ -46598,13 +46593,14 @@ function genKnQuestion(lv, prev) {   // Phase 533: the questions that follow the
     const answer = order[i];
     return { kind: 'kn-order', key: 'o' + type + i, type, idx: i, answer, choices: shuffle([answer, ...sampleN(order, 3, [answer])]), uid };
   }
+  const clef = Math.random() < 0.35 ? 'bass' : 'treble';   // Phase 539: the bass staff is mixed in
   const pool = kind === 'kn-majS' ? KEY_SIGS.filter(x => x.type === 'sharp') : kind === 'kn-majF' ? KEY_SIGS.filter(x => x.type === 'flat') : KEY_SIGS;
   let k = pick(pool), g = 0;
   while (prev && prev.key === 'k' + k.major && g++ < 12) k = pick(pool);
   const near = (list) => list.filter(x => x !== k);
   const same = near(pool).filter(x => x.type === k.type || !k.type || !x.type);
   const others = (f) => sampleN(same.length >= 3 ? same : near(pool), 3).map(f);
-  if (kind === 'kn-min') return { kind, key: 'k' + k.major, k, answer: minName(k), choices: shuffle([minName(k), ...others(minName)]), uid };
+  if (kind === 'kn-min') return { kind, clef, key: 'k' + k.major, k, answer: minName(k), choices: shuffle([minName(k), ...others(minName)]), uid };
   if (kind === 'kn-last') {
     const which = Math.random() < 0.5 ? 'major' : 'minor', note = which === 'major' ? k.major : k.minor, letter = note[0];
     const step = KN_STEP[letter] + (KN_STEP[letter] <= 3 && Math.random() < 0.5 ? 7 : 0);
@@ -46613,7 +46609,7 @@ function genKnQuestion(lv, prev) {   // Phase 533: the questions that follow the
     if (!ch.includes(answer)) ch[0] = answer;
     return { kind, key: 'k' + k.major + which, k, note, step, which, answer, choices: shuffle(ch), uid };
   }
-  return { kind, key: 'k' + k.major, k, answer: majName(k), choices: shuffle([majName(k), ...others(majName)]), uid };
+  return { kind, clef, key: 'k' + k.major, k, answer: majName(k), choices: shuffle([majName(k), ...others(majName)]), uid };
 }
 function genSkgQuestion(lv, prev) {
   if (lv.kind && lv.kind.indexOf('kn-') === 0) return genKnQuestion(lv, prev);
@@ -46730,13 +46726,13 @@ function KnQuestion({ q, given, locked, onAnswer, pixel }) {
     top = <>{prompt(t('The ' + ORDINALS[q.idx] + sym + ' is…', (q.idx + 1) + '번째' + sym + '은…'))}
       {done ? paper(<KSStaff count={q.idx + 1} type={q.type} ink={ink} upto={q.idx} width={170}/>) : <div style={{height:8}}/>}</>;
   } else if (q.kind === 'kn-min') {
-    top = <>{prompt(t('Which minor key has this key signature?', '이 조표는 어떤 단조일까요?'))}{paper(<KSStaff count={q.k.count} type={q.k.type} ink={ink} width={170}/>)}</>;
+    top = <>{prompt(t('Which minor key has this key signature?', '이 조표는 어떤 단조일까요?'))}{paper(<KSStaff count={q.k.count} type={q.k.type} ink={ink} width={170} clef={q.clef}/>)}</>;
   } else if (q.kind === 'kn-last') {
     top = <>{prompt(t('The piece ends on this note. Which key is it in?', '곡이 이 음으로 끝나요. 어떤 조일까요?'))}
       {paper(<KSStaff count={q.k.count} type={q.k.type} ink={ink} width={200} tonicPos={q.step}/>, 280)}
       <div style={{textAlign:'center',fontSize:15,fontWeight:800,color:'var(--muted)',margin:'-4px 0 10px'}}>{t('Last note: ', '마지막 음: ')}<b style={{color:'var(--text)'}}>{prettyNote(q.note)}</b></div></>;
   } else {
-    top = <>{prompt(t('Which major key has this key signature?', '이 조표는 어떤 장조일까요?'))}{paper(<KSStaff count={q.k.count} type={q.k.type} ink={ink} width={170}/>)}</>;
+    top = <>{prompt(t('Which major key has this key signature?', '이 조표는 어떤 장조일까요?'))}{paper(<KSStaff count={q.k.count} type={q.k.type} ink={ink} width={170} clef={q.clef}/>)}</>;
   }
   return <div><BoardTrack b={board} pixel={pixel}/>{top}
     <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:8}}>{q.choices.map(c => <button key={c} disabled={locked} onClick={() => onAnswer(c)} className={btnCls + st(c)} style={{padding:'14px 6px',minHeight:44}}>{q.kind === 'kn-order' ? prettyNote(c) : c}</button>)}</div></div>;
