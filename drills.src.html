@@ -54630,14 +54630,14 @@ const AC_STEP = {
       { a: 11, b: 12, en: 'B to C: no black key between either.', ko: 'B에서 C도 사이에 검은건반이 없어요.' },
     ], up: ['↑ Half step up', '↑ 반음 위로'], down: ['↓ Half step down', '↓ 반음 아래로'], word: ['a half step', '반음'] },
   whole: { size: 2, title: ['The whole step = tone', '온음 = tone'],
-    all: ['Whole step (tone) = two half steps: skip one key.', '온음(tone)은 반음 두 개예요: 건반 하나를 건너뛰어요.'],
+    all: ['Whole step (tone) = two half steps.', '온음(tone)은 반음 두 걸음이에요.'],
     ex: [
-      { a: 0, b: 2, en: 'From C, skip the black key to D: a whole step.', ko: 'C에서 검은건반을 건너뛰면 D. 온음이에요.' },
-      { a: 4, b: 6, en: 'From E, skip F: a black key. A whole step.', ko: 'E에서 F를 건너뛰면 검은건반. 온음이에요.' },
-      { a: 1, b: 3, en: 'Black to black can be a whole step too.', ko: '검은건반에서 검은건반도 온음일 수 있어요.' },
-      { a: 7, b: 5, en: 'Down is a whole step too.', ko: '아래로 내려가도 온음이에요.' },
-      { a: 9, b: 11, en: 'A to B: skip the black key between.', ko: 'A에서 B: 사이의 검은건반을 건너뛰어요.' },
-    ], up: ['↑ Whole step up', '↑ 온음 위로'], down: ['↓ Whole step down', '↓ 온음 아래로'], word: ['a whole step', '온음'] },
+      { a: 0, b: 2, en: 'From C, one half step to the black key, one more to D: a whole step.', ko: 'C에서 반음 하나로 검은건반, 하나 더 가면 D: 온음이에요.' },
+      { a: 4, b: 6, en: 'From E, one half step to F, one more to the black key: a whole step.', ko: 'E에서 반음 하나로 F, 하나 더 가면 검은건반: 온음이에요.' },
+      { a: 1, b: 3, en: 'Black to black: one half step to the white key, one more to the next black key.', ko: '검은건반에서 검은건반: 반음 하나로 흰건반, 하나 더 가면 검은건반.' },
+      { a: 7, b: 5, en: 'Down is the same: two half steps down make a whole step.', ko: '아래로도 같아요: 반음 두 걸음이 온음이에요.' },
+      { a: 9, b: 11, en: 'From A, one half step to the black key, one more to B: a whole step.', ko: 'A에서 반음 하나로 검은건반, 하나 더 가면 B: 온음이에요.' },
+    ], up: ['↑ Whole step up', '↑ 온음 위로'], down: ['↓ Whole step down', '↓ 온음 아래로'], word: ['a whole step (two half steps)', '온음 (반음 두 걸음)'] },
 };
 // one octave C to C with the B below and the C above, so every key has a neighbour on both sides.
 // arcs [from, to, animate?] are arrows drawn ON the keys: from the letter of a white key (or the middle of a black key) to the next key
@@ -54645,17 +54645,17 @@ function AcKeys({ marks, onTap, arcs, nonce }) {
   const kx = (i) => i === -1 ? 18 : keyCenterX(i) + 36;
   const white = (i) => PC_INFO[((i % 12) + 12) % 12].white;
   const pt = (i) => [kx(i), white(i) ? 99 : 58];
-  const arrows = arcs.map(([a, b, anim], j) => {
+  const arrows = arcs.map(([a, b, anim, col, dly], j) => {
     const [x1, y1] = pt(a), [x2, y2] = pt(b), dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L;
     const s0 = anim ? 7 : 4, s1 = anim ? 5 : 3, hd = anim ? 10 : 4.5, w = anim ? 3.4 : 1.5;
     const sx = x1 + ux * s0, sy = y1 + uy * s0, ex = x2 - ux * s1, ey = y2 - uy * s1, ang = 0.55;
     const hx = (sg) => ex - hd * (ux * Math.cos(ang) - sg * uy * Math.sin(ang)), hy = (sg) => ey - hd * (uy * Math.cos(ang) + sg * ux * Math.sin(ang));
     const line = 'M' + sx + ',' + sy + ' L' + ex + ',' + ey, head = 'M' + hx(1) + ',' + hy(1) + ' L' + ex + ',' + ey + ' L' + hx(-1) + ',' + hy(-1);
-    const dash = anim ? { strokeDasharray: '120', strokeDashoffset: '120', animation: 'drawArc 0.45s ease-out forwards' } : {};
-    const headAnim = anim ? { animation: 'fadeUp 0.3s both 0.3s' } : {};
+    const dash = anim ? { strokeDasharray: '120', strokeDashoffset: '120', animation: 'drawArc 0.45s ease-out ' + (dly || 0) + 's forwards' } : {};
+    const headAnim = anim ? { animation: 'fadeUp 0.3s both ' + (0.3 + (dly || 0)) + 's' } : {};
     return <g key={j + ':' + a + ':' + b + ':' + nonce} fill="none" strokeLinecap="round" strokeLinejoin="round" style={{pointerEvents:'none'}}>
       <path d={line} stroke="#fff" strokeWidth={w + 3} style={dash}/><path d={head} stroke="#fff" strokeWidth={w + 3} style={headAnim}/>
-      <path d={line} stroke="#26296b" strokeWidth={w} style={dash}/><path d={head} stroke="#26296b" strokeWidth={w} style={headAnim}/>
+      <path d={line} stroke={col || '#26296b'} strokeWidth={w} style={dash}/><path d={head} stroke={col || '#26296b'} strokeWidth={w} style={headAnim}/>
     </g>; });
   return (<div style={{maxWidth:330,margin:'0 auto'}}>
     <TapKeyboard octaves={1} extraB extraC labels="white" marks={marks} onTap={onTap} overlay={<g aria-hidden="true">{arrows}</g>}/>
@@ -54671,15 +54671,18 @@ function AcStep({ kind }) {
   useEffect(() => clear, []);
   const snd = (k, d) => { if (k >= 0) playKey(k, d); };
   const show = (idx) => { clear(); setI(idx); setShown(false); setNonce(n => n + 1); const e = EX[idx]; snd(e.a, 0.45);
-    timers.current.push(setTimeout(() => { setShown(true); snd(e.b, 0.6); }, 750)); };
+    timers.current.push(setTimeout(() => { setShown(true); if (SZ === 2) { snd(mid(e.a, e.b), 0.4); timers.current.push(setTimeout(() => snd(e.b, 0.6), 550)); } else snd(e.b, 0.6); }, 750)); };
   const titleStyle = {textAlign:'center',fontFamily:"'Playfair Display', Georgia, serif",fontSize:22,fontWeight:900,color:'#26296b',lineHeight:1.2,margin:'0 0 8px',textWrap:'balance'};
   const lineStyle = {textAlign:'center',fontSize:15,fontWeight:800,color:'#26296b',margin:'8px 0 6px',minHeight:42,textWrap:'balance',wordBreak:'keep-all'};
   const prim = {...KF_BTN,minWidth:140,background:'#26296b',color:'#fffefa',borderColor:'#26296b'};
   const row = (children) => <div style={{textAlign:'center',marginTop:14,display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>{children}</div>;
   const title = t(D.title[0], D.title[1]);
+  // a move as arrows: one for a half step; for a whole step two half steps (navy, then coral a moment later) through the key between
+  const mid = (a, b) => a + (b > a ? 1 : -1);
+  const legs = (a, b, anim) => SZ === 1 ? [[a, b, anim]] : [[a, mid(a, b), anim, '#26296b', 0], [mid(a, b), b, anim, '#c0431f', 0.55]];
   let body;
   if (view === 'all') {
-    const arcs = []; if (SZ === 1) { for (let k = 0; k <= 11; k++) arcs.push([k, k + 1, false]); } else { for (let k = 0; k <= 10; k += 2) arcs.push([k, k + 2, false]); }
+    const arcs = []; if (SZ === 1) { for (let k = 0; k <= 11; k++) arcs.push([k, k + 1, false]); } else { for (let k = 0; k <= 10; k += 2) arcs.push(...legs(k, k + 2, false)); }
     body = <>
       <div style={titleStyle}>{title}</div>
       <AcKeys marks={{}} arcs={arcs} nonce="all"/>
@@ -54687,10 +54690,10 @@ function AcStep({ kind }) {
       {row(<button className="ghost-btn" style={prim} onClick={() => { setView('one'); show(0); }}>{t('One by one →', '하나씩 →')}</button>)}
     </>;
   } else if (view === 'one') {
-    const e = EX[i], marks = { [e.a]: 'pass' }; if (shown) marks[e.b] = 'pick';
+    const e = EX[i], marks = { [e.a]: 'pass' }; if (shown) { marks[e.b] = 'pick'; if (SZ === 2) marks[mid(e.a, e.b)] = 'pass'; }
     body = <>
       <div style={titleStyle}>{title}</div>
-      <AcKeys marks={marks} arcs={shown ? [[e.a, e.b, true]] : []} nonce={nonce}/>
+      <AcKeys marks={marks} arcs={shown ? legs(e.a, e.b, true) : []} nonce={nonce}/>
       <div style={lineStyle}>{shown ? t(e.en, e.ko) : ''}</div>
       {row(<>
         <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { clear(); if (i === 0) setView('all'); else show(i - 1); }}>{t('← Back', '← 이전')}</button>
@@ -54701,9 +54704,9 @@ function AcStep({ kind }) {
     // her turn: tap a key to stand on it (pale), then press Up or Down: only that one move is drawn, the arrival strong
     const marks = {}, arcs = [];
     if (from != null) marks[from] = 'pass';
-    if (from != null && to != null) { marks[to] = 'pick'; arcs.push([from, to, true]); }
+    if (from != null && to != null) { marks[to] = 'pick'; if (SZ === 2) marks[mid(from, to)] = 'pass'; arcs.push(...legs(from, to, true)); }
     const can = (d) => from != null && from + d * SZ >= -1 && from + d * SZ <= 12;
-    const go = (d) => { if (!can(d)) return; clear(); const k = from + d * SZ; setTo(k); setNonce(n => n + 1); snd(from, 0.4); timers.current.push(setTimeout(() => snd(k, 0.6), 450)); };
+    const go = (d) => { if (!can(d)) return; clear(); const k = from + d * SZ; setTo(k); setNonce(n => n + 1); snd(from, 0.4); if (SZ === 2) { timers.current.push(setTimeout(() => snd(mid(from, k), 0.4), 450)); timers.current.push(setTimeout(() => snd(k, 0.6), 1000)); } else timers.current.push(setTimeout(() => snd(k, 0.6), 450)); };
     const nm = from != null && from >= 0 && PC_INFO[from % 12].white ? PC_INFO[from % 12].names[0] : (from === -1 ? 'B' : null);
     const line = from == null ? t('Tap a key to stand on. Then press up or down.', '서 있을 건반을 눌러요. 그다음 위나 아래를 눌러요.')
       : to == null ? t('Now press up or down.', '이제 위나 아래를 눌러요.')
@@ -54723,7 +54726,7 @@ function AcStep({ kind }) {
   return <div className="try-box" data-ac-lesson={kind} style={{background:'#fff',border:'1px solid var(--border)',borderRadius:10,padding:'10px 10px 12px',margin:'4px 0 16px'}}>{body}</div>;
 }
 [['ac-half', 'half', 'Half step = semitone', '반음 = semitone', 'The very next key, up or down.', '바로 옆 건반, 위로 또는 아래로.'],
- ['ac-whole', 'whole', 'Whole step = tone', '온음 = tone', 'Two half steps: skip one key.', '반음 두 개: 건반 하나를 건너뛰어요.']].forEach(([id, kind, en, ko, benEn, bko]) => {
+ ['ac-whole', 'whole', 'Whole step = tone', '온음 = tone', 'Two half steps in a row.', '반음 두 걸음을 이어서.']].forEach(([id, kind, en, ko, benEn, bko]) => {
   TOOLS.push({ id, ch: 'concept', title: en, blurb: benEn, hidden: true, get kicker() { return TOOL_AREAS.find(a => a.id === 'pitch').name + ' · ' + (LANG === 'ko' ? '임시표' : 'Accidentals'); }, C: () => <AcStep kind={kind}/> });
   TOOL_KO[id] = [ko, bko];
   const tl = TOOLS[TOOLS.length - 1], k = TOOL_KO[id], ti = tl.title, bl = tl.blurb; tl.titleEn = ti; tl.blurbEn = bl;
