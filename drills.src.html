@@ -46796,10 +46796,8 @@ Object.assign(KEYSIG_DRILL, { feedbackAbove: true, levels: SKG_LEVELS, generate:
 // numbered like the Home lessons, plus the coral-note and accidental questions that came out of the key signatures drill (More practice). ───
 const CLK_TN = ['hw', 'find', 'wn', 'bname', 'enh', 'staff'], CLK_SKG = ['note', 'acc'];
 const CLK_LEVELS = [   // numbered like the ten Home lessons (1 half step, 2 whole step, 3 sharp, 4 flat, 5 natural, 6 rules, 7 play it, 8 two names, 9 double signs, 10 accidental or key signature)
-  { n: 21, label: 'Half step or whole step?', short: ['Half or whole?', '반음? 온음?'], num: '1–2', kind: 'hw', time: 7, noPrint: true },
-  { n: 22, label: 'Play a half step, up or down', short: ['Play a half step', '반음 치기'], num: '1', kind: 'find', size: 1, time: 9, noPrint: true },
-  { n: 23, label: 'White neighbours: E F and B C', short: ['White neighbours', '흰건반 이웃'], num: '1', kind: 'wn', time: 7, noPrint: true },
-  { n: 24, label: 'Play a whole step, up or down', short: ['Play a whole step', '온음 치기'], num: '2', kind: 'find', size: 2, time: 9, noPrint: true },
+  { n: 21, label: 'Half step or whole step?', short: ['Half or whole?', '반음? 온음?'], num: '1–2', kind: 'hw', mix: true, time: 8, noPrint: true },
+  { n: 22, label: 'Play a half or whole step, up or down', short: ['Play the step', '반음·온음 치기'], num: '1–2', kind: 'find', mix: true, time: 9, noPrint: true },
   { n: 25, label: 'Name the sign', short: ['Name the sign', '임시표 이름'], num: '3–5', kind: 'sign', time: 7, noPrint: true },
   { n: 26, label: 'Find the key', short: ['Find the key', '건반 찾기'], num: '3–4', kind: 'key', time: 9, noPrint: true },
   { n: 27, label: 'Sharps and flats on the staff', short: ['On the staff', '오선 위 음'], num: '3–4', kind: 'staff', time: 10, noPrint: true },
@@ -46816,7 +46814,7 @@ const CLK_LEVELS = [   // numbered like the ten Home lessons (1 half step, 2 who
   { n: 38, label: 'Extra: the bass clef', short: ['Bass clef', '낮은음자리표'], extra: true, kind: 'bass', time: 10, noPrint: true },
   { n: 39, label: 'Accidental in a key signature', short: ['Accidentals in a key', '조표 안의 임시표'], extra: true, kind: 'acc', time: 14, noPrint: true },
 ];
-Object.assign(LEVEL_KO, { 'Coral note in a key signature': '조표 안의 산호색 음', 'Accidental in a key signature': '조표 안의 임시표', 'Double sharps and flats': '겹샵과 겹플랫' });
+Object.assign(LEVEL_KO, { 'Coral note in a key signature': '조표 안의 산호색 음', 'Accidental in a key signature': '조표 안의 임시표', 'Double sharps and flats': '겹샵과 겹플랫', 'Play a half or whole step, up or down': '반음·온음 치기, 위나 아래로' });
 // lesson 9's drill: a double-sharp or double-flat name, tap its key (her ALL_NAMES: C𝄪 = D, F𝄫 = E♭ ...)
 const CLK_DBL = [[28, 2, 'C', '𝄪', 'D'], [30, 2, 'E', '𝄪', 'F♯'], [31, 2, 'F', '𝄪', 'G'], [32, 2, 'G', '𝄪', 'A'], [33, 2, 'A', '𝄪', 'B'],
   [29, -2, 'D', '𝄫', 'C'], [30, -2, 'E', '𝄫', 'D'], [31, -2, 'F', '𝄫', 'E♭'], [32, -2, 'G', '𝄫', 'F'], [33, -2, 'A', '𝄫', 'G'], [34, -2, 'B', '𝄫', 'A']];
@@ -46836,7 +46834,7 @@ function DblQuestion({ q, given, locked, onAnswer, pixel, fbAbove }) {
 const clkWho = (q) => q.kind === 'dbl' ? 'dbl' :  CLK_TN.includes(q.kind) ? 'tn' : CLK_SKG.includes(q.kind) ? 'skg' : 'sac';
 const CLOCK_DRILL = {
   id: 'clock', label: 'Accidentals', feedbackAbove: true, levels: CLK_LEVELS,
-  generate: (lv, prev) => lv.kind === 'dbl' ? genDblQuestion(prev) : CLK_TN.includes(lv.kind) ? genTnQuestion(lv, prev) : CLK_SKG.includes(lv.kind) ? genSkgQuestion(lv, prev) : genSacQuestion(lv, prev),
+  generate: (lv, prev) => lv.kind === 'dbl' ? genDblQuestion(prev) : lv.kind === 'hw' && lv.mix && Math.random() < 0.4 ? genTnQuestion({ kind: 'wn' }, prev) : lv.kind === 'find' && lv.mix ? genTnQuestion({ ...lv, size: pick([1, 2]) }, prev) : CLK_TN.includes(lv.kind) ? genTnQuestion(lv, prev) : CLK_SKG.includes(lv.kind) ? genSkgQuestion(lv, prev) : genSacQuestion(lv, prev),
   check: (q, ans) => { const w = clkWho(q); if (w === 'dbl') return String(ans) === String(q.answer); return w === 'tn' ? TONES_DRILL.check(q, ans) : w === 'skg' ? skgCheck(q, ans) : sacCheck(q, ans); },
   answerLabel: (q) => { const w = clkWho(q); if (w === 'dbl') return q.L + q.sym + ' = ' + q.eq; return w === 'tn' ? TONES_DRILL.answerLabel(q) : w === 'skg' ? skgAnswerLabel(q) : sacAnswerLabel(q); },
   Question: (p) => { const w = p.q ? clkWho(p.q) : 'sac'; if (w === 'dbl') return <DblQuestion {...p}/>; return w === 'tn' ? <TnQuestion {...p}/> : w === 'skg' ? <SkgQuestionAll {...p}/> : <SacQuestion {...p}/>; },
