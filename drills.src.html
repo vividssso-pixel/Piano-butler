@@ -2014,18 +2014,19 @@ const NOTE_NAMES_DRILL = {
 };
 
 // Wrapper for a concept (Learn + Drill). Level/mode/tab live in App so they can sync to the URL.
-function ConceptView({ concept, tab, level, mode, locked, onChange }) {
+function ConceptView({ concept, tab: tabIn, level, mode, locked, onChange, drillOnly }) {   // Phase 534: drillOnly = opened from Home: no Learn tab (the lessons are on the Home)
+  const tab = drillOnly ? 'drill' : tabIn;
   const lv = concept.levels.find(l => l.n === level) || concept.levels[0];
   const Learn = concept.Learn;
   return (
     <div>
-      <div style={{display:'flex',gap:8,marginBottom:16}}>
+      {!drillOnly && <div style={{display:'flex',gap:8,marginBottom:16}}>
         {[['learn',t('Learn', '배우기')],['drill',t('Drill', '드릴')]].map(([id, label]) => (
           <button key={id} onClick={() => onChange({ tab: id })} style={{
             flex:1,padding:'9px 0',border:'1.5px solid ' + (tab===id ? 'var(--navy)' : 'var(--navy-line)'),borderRadius:999,cursor:'pointer',fontSize:14,fontWeight:800,fontFamily:'inherit',
             background:tab===id?'var(--navy)':'#fff',color:tab===id?'#fff':'var(--navy-soft)'}}>{label}</button>
         ))}
-      </div>
+      </div>}
       {tab === 'learn' ? (
         <Learn onStart={() => onChange({ tab: 'drill' })} />
       ) : (
@@ -23207,22 +23208,22 @@ function App() {
               <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => fromToday ? update({ drill: null, view: 'today', from: null }) : update({ drill: null })}>{T ? (st.view === 'home' ? '← ' + ((homeCatById(st.hc) || {}).name || t('Home', '홈')) : t('← Back', '← 뒤로')) : fromToday ? t('← Today', '← 오늘') : t('← Learn', '← 배우기')}</button>
               <span style={{fontSize:12,fontWeight:800,color:'var(--muted)',textAlign:'center'}}>{sg ? sg.title : ''}</span>
               <span style={{display:'flex',gap:4}}>
-                <button className="ghost-btn" style={{fontSize:13,padding:'5px 9px'}} disabled={k <= 0} onClick={() => update({ drill: list[k - 1], tab: 'learn', level: 1 })}>‹</button>
-                <button className="ghost-btn" style={{fontSize:13,padding:'5px 9px'}} disabled={k >= list.length - 1} onClick={() => update({ drill: list[k + 1], tab: 'learn', level: 1 })}>›</button>
+                {!(T && st.view === 'home') && <button className="ghost-btn" style={{fontSize:13,padding:'5px 9px'}} disabled={k <= 0} onClick={() => update({ drill: list[k - 1], tab: 'learn', level: 1 })}>‹</button>}
+                {!(T && st.view === 'home') && <button className="ghost-btn" style={{fontSize:13,padding:'5px 9px'}} disabled={k >= list.length - 1} onClick={() => update({ drill: list[k + 1], tab: 'learn', level: 1 })}>›</button>}
               </span>
             </div>
           );
         })()}
 
-        {!st.lock && <AfterNote id={active.id} onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/>}
+        {!st.lock && !(T && st.view === 'home') && <AfterNote id={active.id} onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/>}
         {concept ? (
           <>
-            <ConceptView concept={concept} tab={st.tab} level={level} mode={st.mode} locked={st.lock} onChange={update} />
+            <ConceptView concept={concept} tab={st.tab} level={level} mode={st.mode} locked={st.lock} onChange={update} drillOnly={T && st.view === 'home'} />
             {T && st.tab === 'drill' && <ShareLink drillId={active.id} level={level} mode={st.mode} />}
             {T && st.tab === 'drill' && !concept.noPrint && !(concept.levels.find(l => l.n === level) || {}).noPrint && <PrintLink drillId={active.id} level={level} />}
           </>
         ) : active.render()}
-        {!st.lock && <PathNext id={active.id} onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }} onMap={() => { update({ view: 'path', drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>}
+        {!st.lock && !(T && st.view === 'home') && <PathNext id={active.id} onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }} onMap={() => { update({ view: 'path', drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>}
         </>}
       </div>
     </div>
@@ -46543,12 +46544,13 @@ function SkgLearn({ onStart }) {
 // ── the drill, after page 6, in the book's order: which key (1), what it changes (2), reading in G and F (3), with
 // accidentals (4), all five keys (5), writing it (6), listening (7), the bass staff (8); 9 extra (three sharps or flats) ──
 const SKG_LEVELS = [   // Phase 533: the first six follow the Home lessons (new numbers 11-16); the extras keep their old numbers
-  { n: 11, label: 'The order: which is the Nth sharp or flat?', short: ['Order', '순서'], kind: 'kn-order', time: 8, noPrint: true },
-  { n: 12, label: 'Sharp keys: name the major key', short: ['Sharp keys', '샵 조'], kind: 'kn-majS', time: 9, noPrint: true },
-  { n: 13, label: 'Flat keys: name the major key', short: ['Flat keys', '플랫 조'], kind: 'kn-majF', time: 9, noPrint: true },
-  { n: 14, label: 'All 15 keys: name the major key', short: ['All 15', '15개 조'], kind: 'kn-maj15', time: 9, noPrint: true },
-  { n: 15, label: 'Relative minor: name the minor key', short: ['Relative minor', '나란한 단조'], kind: 'kn-min', time: 11, noPrint: true },
-  { n: 16, label: 'The last note: which key is the piece in?', short: ['Last note', '끝음'], kind: 'kn-last', time: 12, noPrint: true },
+  { n: 11, label: 'Sharp order: which is the Nth sharp?', short: ['Sharp order', '샵 순서'], kind: 'kn-ordS', time: 8, noPrint: true },
+  { n: 12, label: 'Flat order: which is the Nth flat?', short: ['Flat order', '플랫 순서'], kind: 'kn-ordF', time: 8, noPrint: true },
+  { n: 13, label: 'Major key from sharps: name the key', short: ['Major: sharps', '장조: 샵'], kind: 'kn-majS', time: 9, noPrint: true },
+  { n: 14, label: 'Major key from flats: name the key', short: ['Major: flats', '장조: 플랫'], kind: 'kn-majF', time: 9, noPrint: true },
+  { n: 15, label: 'All 15 keys: name the major key', short: ['All 15', '15개 조'], kind: 'kn-maj15', time: 9, noPrint: true },
+  { n: 16, label: 'Relative minor: name the minor key', short: ['Relative minor', '나란한 단조'], kind: 'kn-min', time: 11, noPrint: true },
+  { n: 17, label: 'The last note: which key is the piece in?', short: ['Last note', '끝음'], kind: 'kn-last', time: 12, noPrint: true },
   { n: 2, label: 'Which notes change?', short: ['Signs that change', '바뀌는 음'], extra: true, extraStart: true, kind: 'which', time: 9 },
   { n: 3, label: 'Name the coral note', short: ['Coral note', '산호색 음'], extra: true, kind: 'note', time: 10 },
   { n: 4, label: 'Key signature and accidental', short: ['Accidentals', '임시표'], extra: true, kind: 'acc', time: 12 },
@@ -46561,7 +46563,7 @@ Object.assign(LEVEL_KO, {
   'Which key: C, G or F?': '어떤 조? C, G, F', 'Which notes change?': '바뀌는 음', 'Name the coral note': '산호색 음 이름', 'Key signature and accidental': '조표와 임시표',
   'Which key? All five': '어떤 조? 다섯 가지', 'Which is written right?': '바르게 쓴 조표', 'Listen: right or wrong?': '듣기: 맞았을까?', 'The bass staff': '낮은음자리표 오선',
   'Extra: three sharps or flats': '더 해 보기: 샤프나 플랫 셋', 'My keys: name the key': '나의 조: 조 이름 맞히기',
-  'The order: which is the Nth sharp or flat?': '순서: N번째 샵이나 플랫은?', 'Sharp keys: name the major key': '샵 조: 장조 이름 맞히기', 'Flat keys: name the major key': '플랫 조: 장조 이름 맞히기',
+  'Sharp order: which is the Nth sharp?': '샵 순서: N번째 샵은?', 'Flat order: which is the Nth flat?': '플랫 순서: N번째 플랫은?', 'Major key from sharps: name the key': '샵으로 장조 찾기: 조 이름 맞히기', 'Major key from flats: name the key': '플랫으로 장조 찾기: 조 이름 맞히기',
   'All 15 keys: name the major key': '15개 조: 장조 이름 맞히기', 'Relative minor: name the minor key': '나란한 단조: 단조 이름 맞히기', 'The last note: which key is the piece in?': '끝나는 음: 곡의 조는?',
 });
 // a key's sign on a letter, as a name; the signs a letter may take here (never E♯, B♯, C♭, F♭)
@@ -46575,12 +46577,12 @@ const KN_STEP = { E: 0, F: 1, G: 2, A: 3, B: 4, C: 5, D: 6 };   // a letter's pl
 function genKnQuestion(lv, prev) {   // Phase 533: the questions that follow the Home lessons (all 15 key signatures)
   const uid = Math.random(), kind = lv.kind;
   const nm = (k, which) => which === 'minor' ? minName(k) : majName(k);
-  if (kind === 'kn-order') {
-    const type = Math.random() < 0.5 ? 'sharp' : 'flat', order = type === 'sharp' ? SHARP_ORDER : FLAT_ORDER;
+  if (kind === 'kn-ordS' || kind === 'kn-ordF') {
+    const type = kind === 'kn-ordS' ? 'sharp' : 'flat', order = type === 'sharp' ? SHARP_ORDER : FLAT_ORDER;
     let i = Math.floor(Math.random() * 7), g = 0;
     while (prev && prev.key === 'o' + type + i && g++ < 12) i = Math.floor(Math.random() * 7);
     const answer = order[i];
-    return { kind, key: 'o' + type + i, type, idx: i, answer, choices: shuffle([answer, ...sampleN(order, 3, [answer])]), uid };
+    return { kind: 'kn-order', key: 'o' + type + i, type, idx: i, answer, choices: shuffle([answer, ...sampleN(order, 3, [answer])]), uid };
   }
   const pool = kind === 'kn-majS' ? KEY_SIGS.filter(x => x.type === 'sharp') : kind === 'kn-majF' ? KEY_SIGS.filter(x => x.type === 'flat') : KEY_SIGS;
   let k = pick(pool), g = 0;
