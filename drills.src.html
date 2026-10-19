@@ -5184,12 +5184,14 @@ function KfFind({ type, go, setKi, mode, goLabel, onBack, backFn }) {   // mode 
   const [ran, setRan] = useState(false);   // Phase 497: the order has been said: its keys are lit
   const [phase, setPhase] = useState(mode === 'find' ? 'find' : 'order');   // Phase 502: 'order' (learn the order), then 'find' (one more each time)
   const [maxN, setMaxN] = useState(1);
-  const [view, setView] = useState('all');   // Phase 507: the order screen shows all seven first, then one by one
+  const [view, setView] = useState('all');   // 'all' -> 'one' (adds one at a time) -> 'tap' (she taps them in order)
+  const [got, setGot] = useState(0);
+  const [bad, setBad] = useState(null);   // Phase 507: the order screen shows all seven first, then one by one
   const timers = useRef([]);
   const tiny = useCbNarrow(380);
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   useEffect(() => clear, []);
-  const k = KEY_BY_COUNT(type, n), want = sharp ? n - 1 : n - 2, auto = want < 0;
+  const k = KEY_BY_COUNT(type, n), want = sharp ? n - 1 : n - 2, auto = phase !== 'order' && want < 0;
   const done = found || auto;
   useEffect(() => { if (auto) { const j = KEY_SIGS.findIndex(q => q.major === k.major); if (j >= 0) setKi(j); } }, [auto, k.major]);
   const tonic = pcOfName(k.major), marks = {};
@@ -5202,9 +5204,9 @@ function KfFind({ type, go, setKi, mode, goLabel, onBack, backFn }) {   // mode 
   const startFind = () => { clear(); setPhase('find'); setN(1); setLit(1); setFound(false); setWrong(null); setRan(false); };
   const toOrder = () => { clear(); setPhase('order'); setN(7); setLit(7); setFound(false); setWrong(null); setRan(false); };
   const more = () => { pickN(n + 1); setMaxN(m => Math.max(m, n + 1)); };
-  const less = () => { clear(); if (n > 1) { setN(n - 1); setLit(n - 1); } };
+  const less = () => { clear(); if (n > 0) { setN(n - 1); setLit(n - 1); } };
   const add = () => { clear(); if (n < 7) { setN(n + 1); setLit(n + 1); playKey(kidx(order[n]), 0.45); } };
-  const say = () => { clear(); setLit(0); setRan(true); for (let i = 0; i < n; i++) timers.current.push(setTimeout(() => { playKey(kidx(order[i]), 0.45); setLit(i + 1); }, 350 + i * 520)); };
+  const say = () => { clear(); setLit(0); setRan(true); for (let i = 0; i < 7; i++) timers.current.push(setTimeout(() => { playKey(kidx(order[i]), 0.45); setLit(i + 1); setN(i + 1); }, 350 + i * 520)); };
   const tap = (i) => { if (done) return; if (i === want) { setFound(true); playKey(tonic, 0.6); const j = KEY_SIGS.findIndex(q => q.major === k.major); if (j >= 0) setKi(j); } else { setWrong(i); setTimeout(() => setWrong(null), 700); } };
   const titleStyle = {textAlign:'center',fontFamily:"'Playfair Display', Georgia, serif",fontSize:22,fontWeight:900,color:'#26296b',lineHeight:1.2,margin:'0 0 8px',minHeight:27,textWrap:'balance'};
   const wordsRow = <div style={{display:'flex',flexWrap:'wrap',gap:'0 6px',justifyContent:'center',fontSize:14,fontWeight:700,lineHeight:1.5,margin:'2px 0',textWrap:'balance'}}>
@@ -5219,7 +5221,24 @@ function KfFind({ type, go, setKi, mode, goLabel, onBack, backFn }) {   // mode 
     <div style={{maxWidth:330,margin:'0 auto'}}><KSStaff count={7} type={type} width={260} numbers/></div>
     {wordsRow}
     {!sharp && <div style={{textAlign:'center',fontSize:12,color:'#5a5d8f',marginTop:-1}}>{t('the same sentence backwards', '같은 문장을 거꾸로')}</div>}
-    <KfNext go={() => { clear(); setN(7); setLit(7); setView('one'); }} label={t('One by one →', '하나씩 →')} back={backFn}/>
+    <KfNext go={() => { clear(); setN(0); setLit(0); setRan(false); setView('one'); }} label={t('One by one →', '하나씩 →')} back={backFn}/>
+  </>);
+  const nameWord = sharp ? t('sharp', '샤프') : t('flat', '플랫');
+  const tapOrd = (i) => {
+    if (got >= 7) return;
+    if (i % 12 === pcOfName(order[got])) { clear(); setBad(null); playKey(kidx(order[got]), 0.45); setGot(got + 1); setLit(got + 1); }
+    else { setBad(i); clear(); timers.current.push(setTimeout(() => setBad(null), 650)); }
+  };
+  if (phase === 'order' && view === 'tap') return (<>
+    <KfChain hi={[0]}/>
+    <div style={titleStyle}>{got >= 7 ? t('All seven!', '일곱 개 모두!') : t('Tap ' + nameWord + ' ' + (got + 1), nameWord + ' ' + (got + 1) + '번을 눌러요')}</div>
+    {staff}
+    <div style={{display:'flex',flexWrap:'wrap',gap:'0 6px',justifyContent:'center',fontSize:14,fontWeight:700,lineHeight:1.5,margin:'2px 0 6px',textWrap:'balance'}}>
+      {words.map((w, i) => <span key={i} style={{opacity:i < got ? 0.45 : 1,color:i === got ? '#c8361b' : '#26296b',fontWeight:i === got ? 900 : 700}}>{w}</span>)}
+    </div>
+    <div style={{maxWidth:300,margin:'0 auto'}}><TapKeyboard octaves={1} marks={bad != null ? { ...marks, [bad]: 'miss' } : marks} labels="all" bigLabels extraC={sharp} trail={trail} trailLabels={trailLabels} onTap={tapOrd}/></div>
+    {got >= 7 ? <KfNext go={mode === 'order' ? go : startFind} label={goLabel} back={() => { clear(); setGot(0); setBad(null); setN(0); setLit(0); setView('one'); }}/>
+      : <div style={{textAlign:'center',marginTop:14}}><button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { clear(); setGot(0); setBad(null); setN(0); setLit(0); setView('one'); }}>{t('← Back', '← 이전')}</button></div>}
   </>);
   if (phase === 'order') return (<>
     <KfChain hi={[0]}/>
@@ -5229,12 +5248,12 @@ function KfFind({ type, go, setKi, mode, goLabel, onBack, backFn }) {   // mode 
     {wordsRow}
     {!sharp && <div style={{textAlign:'center',fontSize:12,color:'#5a5d8f',marginTop:-1}}>{t('the same sentence backwards', '같은 문장을 거꾸로')}</div>}
     <div style={{display:'flex',gap:8,alignItems:'center',justifyContent:'center',margin:'4px 0 8px'}}>
-      <button className="ghost-btn" aria-label={t('One less', '하나 빼기')} disabled={n <= 1} style={{...KF_BTN,minWidth:52,padding:0,fontSize:22,opacity:n <= 1 ? 0.35 : 1}} onClick={less}>−</button>
+      <button className="ghost-btn" aria-label={t('One less', '하나 빼기')} disabled={n <= 0} style={{...KF_BTN,minWidth:52,padding:0,fontSize:22,opacity:n <= 0 ? 0.35 : 1}} onClick={less}>−</button>
       <button className="ghost-btn" style={{...KF_BTN,minWidth:120}} onClick={say}>{t('▶ Say the order', '▶ 순서 듣기')}</button>
       <button className="ghost-btn" aria-label={t('One more', '하나 더하기')} disabled={n >= 7} style={{...KF_BTN,minWidth:52,padding:0,fontSize:22,opacity:n >= 7 ? 0.35 : 1}} onClick={add}>+</button>
     </div>
     {board}
-    <KfNext go={mode === 'order' ? go : startFind} label={goLabel} back={() => { clear(); setView('all'); }}/>
+    <KfNext go={() => { clear(); setGot(0); setBad(null); setLit(0); setN(7); setRan(false); setView('tap'); }} label={t('Your turn →', '내가 해보기 →')} back={() => { clear(); setLit(7); setN(7); setView('all'); }}/>
   </>);
   const prim = {...KF_BTN,minWidth:140,background:'#26296b',color:'#fffefa',borderColor:'#26296b'};
   return (<>
