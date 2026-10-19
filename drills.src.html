@@ -22881,9 +22881,10 @@ function ConceptHome({ st, update }) {
       <StaffHead title={cat.name}/>
       <div style={{marginTop:14}}><HomeScaleRule/></div>
       <div style={{display:'flex',flexDirection:'column',gap:10}}>
-        {step(1, t('Learn', '배우기'), LANG === 'ko' ? live.learnLine[1] : live.learnLine[0], false, () => go(live.lessons ? { hs: 'learn' } : { view: 'tools', tool: live.learn, ret: 'home' }))}
-        {step(2, t('Try', '해 보기'), LANG === 'ko' ? live.tryLine[1] : live.tryLine[0], true, () => go({ hs: 'try' }))}
-        {step(3, t('Check', '확인하기'), LANG === 'ko' ? live.checkLine[1] : live.checkLine[0], false, () => go({ view: 'home', drill: live.check, tab: 'drill', level: 1, mode: 'lesson' }))}
+        {live.lessons ? live.lessons.map((id, i) => { const tl = TOOLS.find(x => x.id === id); return tl ? step(i + 1, tl.title, tl.blurb, false, () => go({ view: 'tools', tool: id, ret: 'home' })) : null; })
+          : step(1, t('Learn', '배우기'), LANG === 'ko' ? live.learnLine[1] : live.learnLine[0], false, () => go({ view: 'tools', tool: live.learn, ret: 'home' }))}
+        {step(live.lessons ? live.lessons.length + 1 : 2, t('Try', '해 보기'), LANG === 'ko' ? live.tryLine[1] : live.tryLine[0], true, () => go({ hs: 'try' }))}
+        {step(live.lessons ? live.lessons.length + 2 : 3, t('Check', '확인하기'), LANG === 'ko' ? live.checkLine[1] : live.checkLine[0], false, () => go({ view: 'home', drill: live.check, tab: 'drill', level: 1, mode: 'lesson' }))}
       </div>
     </div>
   );
@@ -22984,7 +22985,7 @@ function App() {
   OPEN_CH = (id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }; // Phase 360: chapter links inside a lesson
   // a student with a link always has a button back to the Today page on the Learn and Practice lists
   const todayBack = showToday && !T ? <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:12}} onClick={() => { update({ view: 'today', tool: null, kit: null, drill: null, from: null }); try { window.scrollTo(0, 0); } catch (e) {} }}>{t('← Today', '← 오늘')}</button> : null;
-  const homeBack = '← ' + (st.hs === 'try' ? t('Try', '해 보기') : st.hs === 'learn' ? t('Learn', '배우기') : ((TOOL_CATS.find(c => c.id === st.hc) || {}).name || t('Home', '홈')));
+  const homeBack = '← ' + (st.hs === 'try' ? t('Try', '해 보기') : ((TOOL_CATS.find(c => c.id === st.hc) || {}).name || t('Home', '홈')));
   useEffect(() => { if (st.view === 'home' && !T) setSt(prev => ({ ...prev, view: 'path', drill: null, ret: null })); }, [st.view, T]);
   function jumpToChapter(id) { setFindOpen(false); update({ view: (T && (st.view === 'toolbox' || st.view === 'chapters')) ? st.view : 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }
 
