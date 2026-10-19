@@ -1726,7 +1726,7 @@ function NameReveal() {
 }
 
 // 3. Sharp = one key right, flat = one key left. Pick a key, then push it.
-function SharpFlatMover() {
+function SharpFlatMover({ only }) {
   const OCT = 2;
   const [from, setFrom] = useState(2); // D
   const [dir, setDir] = useState(null); // 1 sharp, -1 flat
@@ -1744,7 +1744,8 @@ function SharpFlatMover() {
   const marks = { [from]: back ? 'good' : 'target' }; if (valid && !back) marks[to] = 'good';
   const W = OCT * 7 * 36;
   const x1 = back && valid ? keyCenterX(to) : keyCenterX(from), x2 = back ? keyCenterX(from) : valid ? keyCenterX(to) : x1;
-  let msg = t('Tap a white key, then push it up or down.', '흰건반을 누르고, 위나 아래로 밀어 봐요.');
+  let msg = only === 'sharp' ? t('Tap a white key, then push it up.', '흰건반을 누르고, 위로 밀어 봐요.') : only === 'flat' ? t('Tap a white key, then push it down.', '흰건반을 누르고, 아래로 밀어 봐요.')
+    : t('Tap a white key, then push it up or down.', '흰건반을 누르고, 위나 아래로 밀어 봐요.');
   if (dir && !valid) msg = t('Off the end of this keyboard. Pick another key.', '건반 끝을 벗어났어요. 다른 건반을 골라요.');
   else if (dir && back) msg = LANG === 'ko' ? <><b>♮ 내추럴</b>이 {dir > 0 ? '샤프를' : '플랫을'} 취소해요: 원래 <b>{baseName}</b>로 돌아와요.</> : <><b>♮ natural</b> cancels the {dir > 0 ? 'sharp' : 'flat'}: back to plain <b>{baseName}</b>.</>;
   else if (dir && LANG === 'ko') {
@@ -1763,8 +1764,11 @@ function SharpFlatMover() {
   }
   return (
     <div className="try-box" style={actBox}>
-      <div style={actTitle}>{t('Push a key: sharp or flat', '건반 밀기: 샤프 또는 플랫')}</div>
-      <div style={actNote}>{LANG === 'ko' ? <>샤프(♯)는 음을 <b>반음</b> 올려요: 건반 하나 <b>오른쪽</b>. 플랫(♭)은 반음 내려요: 건반 하나 <b>왼쪽</b>. 내추럴(♮)은 그걸 취소해요. 흰건반을 누르고, 밀어 본 다음 ♮을 눌러요. E와 B도 해 봐요.</> : <>A sharp (♯) raises a note by <b>one semitone</b>: one key to the <b>right</b>. A flat (♭) lowers it by one semitone: one key to the <b>left</b>. A natural (♮) cancels it. Tap a white key, push, then press ♮. Try E and B too.</>}</div>
+      <div style={actTitle}>{only === 'sharp' ? t('Push a key up: the sharp ♯', '건반 올리기: 샤프 ♯') : only === 'flat' ? t('Push a key down: the flat ♭', '건반 내리기: 플랫 ♭') : only === 'natural' ? t('Push a key, then cancel it: the natural ♮', '밀었다가 취소하기: 내추럴 ♮') : t('Push a key: sharp or flat', '건반 밀기: 샤프 또는 플랫')}</div>
+      {only ? <div style={actNote}>{only === 'sharp' ? (LANG === 'ko' ? <>샤프(♯)는 음을 <b>반음</b> 올려요: 건반 하나 <b>오른쪽</b>. 흰건반을 누르고 밀어 봐요. E와 B도 해 봐요.</> : <>A sharp (♯) raises a note by <b>one semitone</b>: one key to the <b>right</b>. Tap a white key and push it. Try E and B too.</>)
+        : only === 'flat' ? (LANG === 'ko' ? <>플랫(♭)은 음을 <b>반음</b> 내려요: 건반 하나 <b>왼쪽</b>. 흰건반을 누르고 밀어 봐요. C와 F도 해 봐요.</> : <>A flat (♭) lowers a note by <b>one semitone</b>: one key to the <b>left</b>. Tap a white key and push it. Try C and F too.</>)
+        : (LANG === 'ko' ? <>내추럴(♮)은 샤프나 플랫을 <b>취소</b>해요: 원래 음으로 돌아와요. 흰건반을 누르고, 밀어 본 다음 ♮을 눌러요.</> : <>A natural (♮) <b>cancels</b> a sharp or a flat: back to the plain note. Tap a white key, push it, then press ♮.</>)}</div>
+      : <div style={actNote}>{LANG === 'ko' ? <>샤프(♯)는 음을 <b>반음</b> 올려요: 건반 하나 <b>오른쪽</b>. 플랫(♭)은 반음 내려요: 건반 하나 <b>왼쪽</b>. 내추럴(♮)은 그걸 취소해요. 흰건반을 누르고, 밀어 본 다음 ♮을 눌러요. E와 B도 해 봐요.</> : <>A sharp (♯) raises a note by <b>one semitone</b>: one key to the <b>right</b>. A flat (♭) lowers it by one semitone: one key to the <b>left</b>. A natural (♮) cancels it. Tap a white key, push, then press ♮. Try E and B too.</>}</div>}
       <svg viewBox={`-1 0 ${W + 2} 30`} style={{width:'100%',display:'block'}}>
         {valid && dir && (
           <g key={nonce}>
@@ -1776,9 +1780,9 @@ function SharpFlatMover() {
       </svg>
       <TapKeyboard octaves={OCT} marks={marks} labels="white" onTap={(i) => { playKey(i); if (PC_INFO[i % 12].white) { setFrom(i); setDir(null); setBack(false); } }}/>
       <div style={{display:'flex',gap:6,justifyContent:'center',margin:'8px 0 4px'}}>
-        <button className="ghost-btn" style={{padding:'8px 10px',fontSize:14}} disabled={!base.white} onClick={() => push(-1)}>{t('← ♭ flat', '← ♭ 플랫')}</button>
-        <button className="ghost-btn" style={{padding:'8px 10px',fontSize:14}} disabled={!base.white} onClick={() => push(1)}>{t('♯ sharp →', '♯ 샤프 →')}</button>
-        <button className="ghost-btn" style={{padding:'8px 10px',fontSize:14}} disabled={!dir || !valid || back} onClick={() => { setBack(true); setNonce(x => x + 1); setTimeout(() => playKey(from), 350); }}>{t('♮ natural', '♮ 내추럴')}</button>
+        {only !== 'sharp' && <button className="ghost-btn" style={{padding:'8px 10px',fontSize:14}} disabled={!base.white} onClick={() => push(-1)}>{t('← ♭ flat', '← ♭ 플랫')}</button>}
+        {only !== 'flat' && <button className="ghost-btn" style={{padding:'8px 10px',fontSize:14}} disabled={!base.white} onClick={() => push(1)}>{t('♯ sharp →', '♯ 샤프 →')}</button>}
+        {only !== 'sharp' && only !== 'flat' && <button className="ghost-btn" style={{padding:'8px 10px',fontSize:14}} disabled={!dir || !valid || back} onClick={() => { setBack(true); setNonce(x => x + 1); setTimeout(() => playKey(from), 350); }}>{t('♮ natural', '♮ 내추럴')}</button>}
       </div>
       <div style={{textAlign:'center',fontSize:14,lineHeight:1.5,minHeight:40}}>{msg}</div>
     </div>
@@ -22955,6 +22959,10 @@ const HOME_LINE = {
   'c-map': ['How a tune is built', '곡의 짜임'],
 };
 const HOME_LIVE = {
+  'p-clock': {
+    lessons: ['tone-semitone', 'cl-sharp', 'cl-flat', 'sac-signs', 'cl-natural', 'sac-natural', 'chromatic', 'accidental-bar', 'sac-bar', 'sac-line', 'sac-tune', 'accidental-cards', 'sharp-flat'], check: 'clock', tools: [], more: [],
+    checkLine: ['Questions, level by level', '문제를 단계별로'],
+  },
   'p-keysig': {
     lessons: ['kf-sharps', 'kf-flats', 'kf-msharp', 'kf-mflat', 'kf-minor', 'kf-piece'], check: 'key-signatures', tools: [], more: [],
     checkLine: ['Questions, level by level', '문제를 단계별로'],
@@ -36473,47 +36481,48 @@ function genTnQuestion(lv, prev) {
 }
 const tnStepName = (a) => a === 'half' ? t('a half step (a semitone)', '반 걸음 (반음)') : t('a whole step (a tone)', '온 걸음 (온음)');
 const tnPlace = (clef, d) => { const c = CLEFS[clef], k = d - c.low; return k % 2 === 0 ? [t('bottom line', '맨 아랫줄'), t('second line', '둘째 줄'), t('middle line', '가운데 줄'), t('fourth line', '넷째 줄'), t('top line', '맨 윗줄')][k / 2] : [t('first space', '첫째 칸'), t('second space', '둘째 칸'), t('third space', '셋째 칸'), t('fourth space', '넷째 칸')][(k - 1) / 2]; };
-function TnQuestion({ q, level, given, locked, onAnswer, pixel }) {
+function TnQuestion({ q, level, given, locked, onAnswer, pixel, fbAbove }) {
   const done = !!given;
   const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
   const prompt = (txt) => <p style={{fontSize:15,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)'}}>{txt}</p>;
-  const choose = (opts, cols = 2) => <div style={{display:'grid',gridTemplateColumns:'repeat(' + cols + ',1fr)',gap:8,marginTop:14}}>
+  const root = fbAbove ? { display: 'contents' } : undefined, pic = (n) => <div style={{order:2}}>{n}</div>;
+  const choose = (opts, cols = 2) => <div style={{display:'grid',gridTemplateColumns:'repeat(' + cols + ',1fr)',gap:8,marginTop:14,order:3}}>
     {opts.map(([v, label]) => <button key={v} disabled={locked} onClick={() => onAnswer(v)} className={btnCls + (!done ? '' : v === q.answer ? ' good' : given.ans === v ? ' bad' : '')} style={{padding:'14px 0',fontSize:16}}>{label}</button>)}</div>;
   const hw = [['half', t('Half step · semitone', '반 걸음 · 반음')], ['whole', t('Whole step · tone', '온 걸음 · 온음')]];
-  if (q.kind === 'hw' || q.kind === 'wn') return (<div>
+  if (q.kind === 'hw' || q.kind === 'wn') return (<div style={root}>
     {prompt(q.kind === 'wn' ? t('White neighbours: a half step or a whole step?', '흰건반 이웃: 반 걸음일까요, 온 걸음일까요?') : t('A half step or a whole step?', '반 걸음일까요, 온 걸음일까요?'))}
-    <TapKeyboard octaves={2} labels="white" marks={{ [q.a]: 'target', [q.b]: 'target' }} pixel={pixel}/>
+    {pic(<TapKeyboard octaves={2} labels="white" marks={{ [q.a]: 'target', [q.b]: 'target' }} pixel={pixel}/>)}
     {choose(hw)}
   </div>);
-  if (q.kind === 'bname') return (<div>
+  if (q.kind === 'bname') return (<div style={root}>
     {prompt(t('Name the black key: a sharp or a flat name.', '검은건반의 이름은? 샤프 이름이든 플랫 이름이든.'))}
-    <TapKeyboard octaves={1} labels="white" marks={{ [q.a]: 'target' }} pixel={pixel}/>
+    {pic(<TapKeyboard octaves={1} labels="white" marks={{ [q.a]: 'target' }} pixel={pixel}/>)}
     {choose(q.choices.map(c => [c, prettyNote(c)]), 4)}
   </div>);
-  if (q.kind === 'enh') return (<div>
+  if (q.kind === 'enh') return (<div style={root}>
     {prompt(t('One key, two names. What is its other name?', '건반 하나, 이름 둘. 다른 이름은?'))}
-    <div style={{textAlign:'center',fontSize:60,fontWeight:900,margin:'0 0 6px',color:BK.ink}}>{q.shown[0]}{tnSign(q.shown[1])}</div>
+    <div style={{textAlign:'center',fontSize:60,fontWeight:900,margin:'0 0 6px',color:BK.ink,order:2}}>{q.shown[0]}{tnSign(q.shown[1])}</div>
     {choose(q.choices.map(c => [c, <>{c[0]}{tnSign(c[1])}</>]))}
   </div>);
   const marks = {};
   if (q.kind === 'staff') {
     if (done) { const good = q.pc + 12; marks[good] = 'good'; if (!given.ok && given.ans != null) marks[given.ans] = 'bad'; }
-    return (<div>
+    return (<div style={root}>
       {prompt(t('Read the note with its sign. Tap its key.', '기호가 붙은 음을 읽어요. 그 건반을 눌러요.'))}
-      <div style={{maxWidth:300,margin:'0 auto 8px'}}>
+      <div style={{maxWidth:300,margin:'0 auto 8px',order:2}}>
         <SfStaff clef={q.clef} width={240} span={[4, 236]} pad={[24, 22]} label={t(prettyNote(tnDName(q.d, q.acc)), prettyNote(tnDName(q.d, q.acc)))}
           notes={[{ d: q.d, x: 150, color: done ? (given.ok ? BK.green : BK.coral) : BK.ink }]}
           extra={(yOf, layer) => layer === 'over' && tnAcc(q.acc, 131, yOf(q.d), BK.ink)}/>
       </div>
-      <TapKeyboard octaves={2} labels="white" marks={marks} pixel={pixel} onTap={locked ? null : (i) => onAnswer(i)}/>
+      {pic(<TapKeyboard octaves={2} labels="white" marks={marks} pixel={pixel} onTap={locked ? null : (i) => onAnswer(i)}/>)}
     </div>);
   }
   marks[q.a] = 'target';
   if (done) { marks[q.target] = 'good'; if (!given.ok && given.ans != null && given.ans !== q.target) marks[given.ans] = 'bad'; }
   const what = q.size === 1 ? (q.up ? t('a half step up', '반 걸음 위') : t('a half step down', '반 걸음 아래')) : (q.up ? t('a whole step up', '온 걸음 위') : t('a whole step down', '온 걸음 아래'));
-  return (<div>
+  return (<div style={root}>
     {prompt(t('Tap the key ' + what + ' from ' + tnName(q.a) + '.', tnName(q.a) + '에서 ' + what + '인 건반을 눌러요.'))}
-    <TapKeyboard octaves={2} labels="white" marks={marks} pixel={pixel} onTap={locked ? null : (i) => onAnswer(i)}/>
+    {pic(<TapKeyboard octaves={2} labels="white" marks={marks} pixel={pixel} onTap={locked ? null : (i) => onAnswer(i)}/>)}
   </div>);
 }
 Object.assign(TONES_DRILL, {
@@ -45080,16 +45089,16 @@ function genSacQuestion(lv, prev) {
 function sacPlayItems(items) { stopClicks(); return playMelody(sacRead(items).map(n => ({ d: n.d, acc: n.acc, dur: n.dur })), 96); }
 const sacSignBtn = (s, sz) => s === 'none' ? <span style={{fontSize:sz * 0.62,fontWeight:900}}>{SAC_WORD.none()}</span> : <span style={{display:'inline-flex',alignItems:'baseline',gap:6}}><span style={{fontFamily:MUSIC_FONT,fontSize:sz * 1.25,lineHeight:1}}>{s === '#' ? '♯' : s === 'b' ? '♭' : '♮'}</span><span style={{fontSize:sz * 0.62,fontWeight:900}}>{SAC_WORD[s]()}</span></span>;
 const sacWithRo = (w) => w + (/♭$/.test(w) ? '으로' : '로');
-function SacQuestion({ q, given, locked, onAnswer, pixel }) {
+function SacQuestion({ q, given, locked, onAnswer, pixel, fbAbove }) {
   const board = useBoard(q, given);
   useEffect(() => { if (q.kind !== 'ear') return undefined; const tm = setTimeout(() => sacPlayItems(q.items), 300); return () => { clearTimeout(tm); stopClicks(); }; }, [q.uid]);
   const isDone = !!given;
   const btnCls = pixel ? 'pixel-choice' : 'choice-btn';
   const prompt = (txt) => <p style={pixel ? {fontSize:11.5,textAlign:'center',margin:'0 0 10px',lineHeight:1.7} : {fontSize:15,fontWeight:700,textAlign:'center',margin:'0 0 10px',color:'var(--muted)',textWrap:'balance',wordBreak:'keep-all'}}>{txt}</p>;
   const st = (c) => !isDone ? '' : (String(c) === String(q.answer) || (q.alt && c === q.alt && given.ans === q.alt) ? ' good' : (String(given.ans) === String(c) ? ' bad' : ''));
-  const grid = (cols, render, pad = '12px 2px') => <div style={{display:'grid',gridTemplateColumns:'repeat(' + cols + ',minmax(0,1fr))',gap:8}}>{q.choices.map(c => <button key={c} disabled={locked} onClick={() => { stopClicks(); onAnswer(c); }} className={btnCls + st(c)} style={{padding:pad}}>{render(c)}</button>)}</div>;
+  const grid = (cols, render, pad = '12px 2px') => <div style={{display:'grid',gridTemplateColumns:'repeat(' + cols + ',minmax(0,1fr))',gap:8,order:3}}>{q.choices.map(c => <button key={c} disabled={locked} onClick={() => { stopClicks(); onAnswer(c); }} className={btnCls + st(c)} style={{padding:pad}}>{render(c)}</button>)}</div>;
   const word = (s, sz = 18) => <span style={{fontSize:pixel ? 11 : sz,fontWeight:900}}>{sscSx(s)}</span>;
-  const paper = (node, mw = 400) => <div style={{background:'#fff',borderRadius:pixel ? 0 : 8,padding:pixel ? 4 : '4px 0',margin:'0 auto 10px',maxWidth:mw}}>{node}</div>;
+  const paper = (node, mw = 400) => <div style={{background:'#fff',borderRadius:pixel ? 0 : 8,padding:pixel ? 4 : '4px 0',margin:'0 auto 10px',maxWidth:mw,order:2}}>{node}</div>;
   const staff = (items, o = {}, clef = 'treble', mw = 400) => paper(<SacStaff items={items} clef={clef} width={mw} full o={{ ...o, x0: clef === 'bass' ? 54 : undefined }}/>, mw);
   const bars = (items, o = {}, clef = 'treble') => { const rows = sacBars(items), oo = { x0: clef === 'bass' ? 54 : undefined }, box = Math.max(...rows.map(r => sacVbw(r, oo, clef))); let off = 0;
     return paper(<div style={{display:'flex',flexDirection:'column',gap:2}}>{rows.map((r, i) => { const k = off, cnt = sacRead(r).length; off += cnt;
@@ -45103,10 +45112,10 @@ function SacQuestion({ q, given, locked, onAnswer, pixel }) {
   else if (q.kind === 'read') body = <>{prompt(t('Which names are right, note by note?', '음이름을 바르게 읽은 것은?'))}{bars(q.items)}{grid(1, c => word(c, 17), '10px 4px')}</>;
   else if (q.kind === 'write') body = <>{prompt(t('The coral note must sound ' + q.want + '. What goes just before it?', '산호색 음을 ' + sacWithRo(q.want) + ' 치려면 바로 앞에 무엇을 붙일까요?'))}{staff(q.items, coral)}{grid(4, c => sacSignBtn(c, 17), '10px 2px')}</>;
   else body = <>{prompt(t('Listen. Which bar did you hear?', '들어 봐요. 어느 마디였을까요?'))}
-    <div style={{display:'flex',flexDirection:'column',gap:4,margin:'0 0 8px'}}>{['a', 'b'].map(w => <div key={w} style={{display:'grid',gridTemplateColumns:'22px 1fr',alignItems:'center',gap:6}}><div style={{textAlign:'center',fontWeight:900,fontSize:16}}>{w}</div>{paper(<SacStaff items={q[w]} width={330} full/>, 360)}</div>)}</div>
-    <div style={{textAlign:'center',margin:'0 0 10px'}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => sacPlayItems(q.items)} style={pixel ? {fontSize:9} : {fontSize:15,padding:'8px 16px',minHeight:44}}>{t('▶ Hear it again', '▶ 다시 듣기')}</button></div>
+    <div style={{display:'flex',flexDirection:'column',gap:4,margin:'0 0 8px',order:2}}>{['a', 'b'].map(w => <div key={w} style={{display:'grid',gridTemplateColumns:'22px 1fr',alignItems:'center',gap:6}}><div style={{textAlign:'center',fontWeight:900,fontSize:16}}>{w}</div>{paper(<SacStaff items={q[w]} width={330} full/>, 360)}</div>)}</div>
+    <div style={{textAlign:'center',margin:'0 0 10px',order:2}}><button className={pixel ? 'pixel-btn' : 'ghost-btn'} onClick={() => sacPlayItems(q.items)} style={pixel ? {fontSize:9} : {fontSize:15,padding:'8px 16px',minHeight:44}}>{t('▶ Hear it again', '▶ 다시 듣기')}</button></div>
     {grid(2, c => word(c, 20))}</>;
-  return <div><BoardTrack b={board} pixel={pixel}/>{body}</div>;
+  return <div style={fbAbove ? {display:'contents'} : undefined}><BoardTrack b={board} pixel={pixel}/>{body}</div>;
 }
 function sacCheck(q, ans) { if (ans === null || ans === undefined) return false; return String(ans) === String(q.answer) || (q.alt != null && ans === q.alt); }
 function sacAnswerLabel(q) {
@@ -46747,6 +46756,41 @@ function KnQuestion({ q, given, locked, onAnswer, pixel, fbAbove }) {
 }
 const SkgQuestionAll = (p) => p.q && p.q.kind === 'mykeys' ? <MyKeySigQuestion {...p}/> : p.q && p.q.kind && p.q.kind.indexOf('kn-') === 0 ? <KnQuestion {...p}/> : <SkgQuestion {...p}/>;
 Object.assign(KEYSIG_DRILL, { feedbackAbove: true, levels: SKG_LEVELS, generate: genSkgQuestion, check: skgCheck, answerLabel: skgAnswerLabel, Question: SkgQuestionAll, Learn: SkgLearn });
+
+// ─── Phase 543: Semitones and accidentals, one drill for the Home concept. Every level of the two older drills (Tones and semitones; Accidentals),
+// numbered like the Home lessons, plus the coral-note and accidental questions that came out of the key signatures drill (More practice). ───
+const CLK_TN = ['hw', 'find', 'wn', 'bname', 'enh', 'staff'], CLK_SKG = ['note', 'acc'];
+const CLK_LEVELS = [
+  { n: 21, label: 'Half step or whole step?', short: ['Half or whole?', '반음? 온음?'], num: '1', kind: 'hw', time: 7, noPrint: true },
+  { n: 22, label: 'Play a half step, up or down', short: ['Play a half step', '반음 치기'], num: '1', kind: 'find', size: 1, time: 9, noPrint: true },
+  { n: 23, label: 'Play a whole step, up or down', short: ['Play a whole step', '온음 치기'], num: '1', kind: 'find', size: 2, time: 9, noPrint: true },
+  { n: 24, label: 'White neighbours: E F and B C', short: ['White neighbours', '흰건반 이웃'], num: '1', kind: 'wn', time: 7, noPrint: true },
+  { n: 25, label: 'Name the sign', short: ['Name the sign', '임시표 이름'], num: '2', kind: 'sign', time: 7, noPrint: true },
+  { n: 26, label: 'Name the black keys', short: ['Black key names', '검은건반 이름'], num: '3', kind: 'bname', time: 7, noPrint: true },
+  { n: 27, label: 'Find the key', short: ['Find the key', '건반 찾기'], num: '4', kind: 'key', time: 9, noPrint: true },
+  { n: 28, label: 'Sharps and flats on the staff', short: ['On the staff', '오선 위 음'], num: '4', kind: 'staff', time: 10, noPrint: true },
+  { n: 29, label: 'The natural', short: ['The natural', '내추럴'], num: '5', kind: 'nat', time: 10, noPrint: true },
+  { n: 30, label: 'Which sign?', short: ['Which sign?', '어떤 임시표?'], num: '6', kind: 'write', time: 12, noPrint: true },
+  { n: 31, label: 'One key, two names', short: ['Two names', '이름 둘'], num: '7', kind: 'enh', time: 8, noPrint: true },
+  { n: 32, label: 'Until the bar line', short: ['Until the bar line', '세로줄까지'], num: '9', kind: 'bar', time: 10, noPrint: true },
+  { n: 33, label: 'Its own line or space', short: ['Its own line or space', '같은 줄이나 칸'], num: '10', kind: 'line', time: 10, noPrint: true },
+  { n: 34, label: 'Read the bar', short: ['Read the bar', '마디 읽기'], num: '11', kind: 'read', time: 15, noPrint: true },
+  { n: 35, label: 'Listen: which bar?', short: ['Listen', '듣기'], extra: true, extraStart: true, kind: 'ear', time: 14, noPrint: true },
+  { n: 36, label: 'Extra: the bass clef', short: ['Bass clef', '낮은음자리표'], extra: true, kind: 'bass', time: 10, noPrint: true },
+  { n: 37, label: 'Coral note in a key signature', short: ['Coral note', '산호색 음'], extra: true, kind: 'note', time: 12, noPrint: true },
+  { n: 38, label: 'Accidental in a key signature', short: ['Accidentals in a key', '조표 안의 임시표'], extra: true, kind: 'acc', time: 14, noPrint: true },
+];
+Object.assign(LEVEL_KO, { 'Coral note in a key signature': '조표 안의 산호색 음', 'Accidental in a key signature': '조표 안의 임시표' });
+const clkWho = (q) => CLK_TN.includes(q.kind) ? 'tn' : CLK_SKG.includes(q.kind) ? 'skg' : 'sac';
+const CLOCK_DRILL = {
+  id: 'clock', label: 'Semitones and accidentals', feedbackAbove: true, levels: CLK_LEVELS,
+  generate: (lv, prev) => CLK_TN.includes(lv.kind) ? genTnQuestion(lv, prev) : CLK_SKG.includes(lv.kind) ? genSkgQuestion(lv, prev) : genSacQuestion(lv, prev),
+  check: (q, ans) => { const w = clkWho(q); return w === 'tn' ? TONES_DRILL.check(q, ans) : w === 'skg' ? skgCheck(q, ans) : sacCheck(q, ans); },
+  answerLabel: (q) => { const w = clkWho(q); return w === 'tn' ? TONES_DRILL.answerLabel(q) : w === 'skg' ? skgAnswerLabel(q) : sacAnswerLabel(q); },
+  Question: (p) => { const w = p.q ? clkWho(p.q) : 'sac'; return w === 'tn' ? <TnQuestion {...p}/> : w === 'skg' ? <SkgQuestionAll {...p}/> : <SacQuestion {...p}/>; },
+  Learn: SacLearn,
+};
+DRILLS.push({ id: 'clock', label: 'Semitones and accidentals', concept: CLOCK_DRILL, track: 'pitch' });
 
 // ─── Phase 474: chapter 19's Workbook (pages 2 to 6 face Lesson Book pages 2 to 6: the key signature; G major; F major;
 // key signature and accidental; D major and B♭ major; page 7 the check-up on paper) and its Teacher copy. English, like every
@@ -54526,6 +54570,17 @@ TOOL_CONCEPT['cb-p-scales'] = 'p-scales';
   Object.defineProperty(tl, 'title', { get: () => (LANG === 'ko' ? k[0] : ti), enumerable: true, configurable: true });
   Object.defineProperty(tl, 'blurb', { get: () => (LANG === 'ko' ? k[1] : bl), enumerable: true, configurable: true });
   TOOL_CONCEPT[id] = 'p-scales';
+});
+// Phase 543: Semitones and accidentals on the Home. Sharp, flat and natural are each their own lesson; every older tool of the concept sits in the order of the lessons
+[['cl-sharp', 'sharp', 'The sharp ♯', '샤프 ♯', 'One semitone up: one key to the right.', '반음 위로: 건반 하나 오른쪽.'],
+ ['cl-flat', 'flat', 'The flat ♭', '플랫 ♭', 'One semitone down: one key to the left.', '반음 아래로: 건반 하나 왼쪽.'],
+ ['cl-natural', 'natural', 'Cancel it: the natural ♮', '취소하기: 내추럴 ♮', 'Push a key, then press ♮ to cancel it.', '건반을 밀고, ♮로 취소해 봐요.']].forEach(([id, only, en, ko, benEn, bko]) => {
+  TOOLS.push({ id, ch: 'concept', title: en, blurb: benEn, hidden: true, get kicker() { return TOOL_AREAS.find(a => a.id === 'pitch').name + ' · ' + (LANG === 'ko' ? '반음과 임시표' : 'Semitones and accidentals'); }, C: () => <SharpFlatMover only={only}/> });
+  TOOL_KO[id] = [ko, bko];
+  const tl = TOOLS[TOOLS.length - 1], k = TOOL_KO[id], ti = tl.title, bl = tl.blurb; tl.titleEn = ti; tl.blurbEn = bl;
+  Object.defineProperty(tl, 'title', { get: () => (LANG === 'ko' ? k[0] : ti), enumerable: true, configurable: true });
+  Object.defineProperty(tl, 'blurb', { get: () => (LANG === 'ko' ? k[1] : bl), enumerable: true, configurable: true });
+  TOOL_CONCEPT[id] = 'p-clock';
 });
 // the Toolbox: a concept's book, right under its name (open on screen, or print)
 function CbCard({ cid, onOpen }) {
