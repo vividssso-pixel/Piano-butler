@@ -4785,7 +4785,8 @@ function DoubleSharpShape({ x, y, color }) {
   const r = 4.4;
   return <path d={`M${x - r},${y - r} L${x + r},${y + r} M${x - r},${y + r} L${x + r},${y - r}`} stroke={color} strokeWidth="2.7" strokeLinecap="butt" fill="none"/>;
 }
-function KSStaff({ count, type, width = 170, ink = '#26296b', accent = '#e4572e', upto, clef = 'treble', numbers, onPick, ghostPos, ring }) {   // Phase 515: ring = circle the sign with this index   // Phase 509: onPick(step) = tap the staff; ghostPos = a faint wrong guess
+function KSStaff({ count, type, width = 170, ink = '#26296b', accent = '#e4572e', upto, clef = 'treble', numbers, onPick, ghostPos, ring, tonicPos, tonicFrom, tallBox }) {   // Phase 516: tonicPos = draw the key note at this staff step; tonicFrom = step of the sign it comes from (draws the half-step arrow)   // Phase 515: ring = circle the sign with this index   // Phase 509: onPick(step) = tap the staff; ghostPos = a faint wrong guess
+  const tall = numbers || tallBox;
   const order = type === 'sharp' ? SHARP_ORDER : FLAT_ORDER;
   const posMap = type === 'sharp' ? SHARP_POS : FLAT_POS;
   const dbl = type ? Math.max(0, count - 7) : 0; // paper-only keys: the first (count - 7) signs are double
@@ -4797,9 +4798,9 @@ function KSStaff({ count, type, width = 170, ink = '#26296b', accent = '#e4572e'
   const lowD = clef === 'bass' ? 18 : 30;
   const yOf = (d) => base - (d - lowD) * 5;
   return (
-    <svg viewBox={`0 ${base - (numbers ? 72 : 60)} ${width} ${numbers ? 90 : 78}`} style={{width:'100%',maxWidth:width * 1.6,display:'block',margin:'0 auto',cursor:onPick ? 'pointer' : undefined,touchAction:onPick ? 'manipulation' : undefined}} data-staff-pick={onPick ? '1' : undefined}
-      onClick={onPick ? (e) => { const r = e.currentTarget.getBoundingClientRect(); const vy = (base - (numbers ? 72 : 60)) + (e.clientY - r.top) / r.height * (numbers ? 90 : 78); const st = Math.round((base - vy) / 5); if (st >= 0 && st <= 10) onPick(st); } : undefined}>
-      {onPick && <rect x="0" y={base - (numbers ? 72 : 60)} width={width} height={numbers ? 90 : 78} fill="transparent"/>}
+    <svg viewBox={`0 ${base - (tall ? 72 : 60)} ${width} ${tall ? 90 : 78}`} style={{width:'100%',maxWidth:width * 1.6,display:'block',margin:'0 auto',cursor:onPick ? 'pointer' : undefined,touchAction:onPick ? 'manipulation' : undefined}} data-staff-pick={onPick ? '1' : undefined}
+      onClick={onPick ? (e) => { const r = e.currentTarget.getBoundingClientRect(); const vy = (base - (tall ? 72 : 60)) + (e.clientY - r.top) / r.height * (tall ? 90 : 78); const st = Math.round((base - vy) / 5); if (st >= 0 && st <= 10) onPick(st); } : undefined}>
+      {onPick && <rect x="0" y={base - (tall ? 72 : 60)} width={width} height={tall ? 90 : 78} fill="transparent"/>}
       {ghostPos != null && (type === 'sharp' ? <g opacity="0.55"><SharpShape x={56 + accs.length * 15} y={yPos(ghostPos)} color="#c8361b"/></g> : <g opacity="0.55"><FlatShape x={56 + accs.length * 15} y={yPos(ghostPos)} color="#c8361b"/></g>)}
       {numbers && accs.map((acc, i) => <text key={'n' + acc} x={56 + i * 15} y={base - 62} textAnchor="middle" fontSize="9.5" fontWeight="800" fill={upto === i ? '#c8361b' : '#6d6f9c'}>{i + 1}</text>)}
       {[0, 2, 4, 6, 8].map(p => <line key={p} x1="4" x2={width - 4} y1={base - p * 5} y2={base - p * 5} stroke={ink} strokeOpacity="0.5" strokeWidth="1.1"/>)}
@@ -4810,6 +4811,17 @@ function KSStaff({ count, type, width = 170, ink = '#26296b', accent = '#e4572e'
         if (i < dbl) return type === 'sharp' ? <DoubleSharpShape key={acc} x={x} y={y} color={col}/> : <g key={acc}><FlatShape x={x - 5} y={y} color={col}/><FlatShape x={x + 4.5} y={y} color={col}/></g>;
         return type === 'sharp' ? <SharpShape key={acc} x={x} y={y} color={col}/> : <FlatShape key={acc} x={x} y={y} color={col}/>;
       })}
+      {tonicPos != null && (() => {
+        const nx = (accs.length ? xs[accs.length - 1] : 56) + 26, ny = yPos(tonicPos), ledgers = [];
+        for (let p = 10; p <= tonicPos; p += 2) ledgers.push(p);
+        for (let p = -2; p >= tonicPos; p -= 2) ledgers.push(p);
+        const fx = accs.length ? xs[accs.length - 1] : 56, fy = tonicFrom != null ? yPos(tonicFrom) : null;
+        return <g style={{animation:'fadeUp 0.35s both'}}>
+          {ledgers.map(p => <line key={p} x1={nx - 10} x2={nx + 10} y1={yPos(p)} y2={yPos(p)} stroke={ink} strokeOpacity="0.5" strokeWidth="1.1"/>)}
+          {fy != null && <><path d={`M${fx + 9},${fy} Q${fx + 20},${(fy + ny) / 2 - 7} ${nx - 8},${ny + 1}`} fill="none" stroke="#c8361b" strokeWidth="1.7" strokeLinecap="round"/><text x={fx + 20} y={Math.min(fy, ny) - 8} fontSize="9" fontWeight="900" fill="#c8361b">½↑</text></>}
+          <ellipse cx={nx} cy={ny} rx="6.2" ry="4.5" fill="#c0431f" transform={`rotate(-18 ${nx} ${ny})`}/>
+        </g>;
+      })()}
       {ring != null && ring >= 0 && ring < accs.length && <circle cx={xs[ring]} cy={yPos(posMap[accs[ring]])} r="12" fill="none" stroke={ink} strokeWidth="2.2" style={{animation:'fadeUp 0.3s both'}}/>}
     </svg>
   );
@@ -5299,8 +5311,11 @@ function KfOrders({ go, setKi }) {
   return <KfFind key={ty} type={ty} mode="order" setKi={setKi} go={ty === 'sharp' ? () => setTy('flat') : go} goLabel={ty === 'sharp' ? t('Flat order →', '플랫 순서 →') : t('Next →', '다음 →')} backFn={ty === 'flat' ? () => setTy('sharp') : undefined}/>;
 }
 function KfRule({ type, go, back }) {
-  const kc = React.useContext(KfCtx), sharp = type === 'sharp', n = 3, k = KEY_BY_COUNT(type, n), marks = {};
-  const [r, setR] = useState(0);   // Phase 515: 0 = circle the sign, 1 = what the circle tells you
+  const kc = React.useContext(KfCtx), sharp = type === 'sharp';
+  const [r, setR] = useState(0);   // 0 = circle the sign, 1 = what the circle tells you
+  const [e, setE] = useState(0);   // Phase 516: three examples with different counts
+  const EX = sharp ? [3, 5, 2] : [3, 5, 2];
+  const n = EX[e], k = KEY_BY_COUNT(type, n), marks = {};
   const want = sharp ? n - 1 : n - 2;
   const lastNm = (sharp ? SHARP_ORDER : FLAT_ORDER)[want];
   marks[pcOfName(lastNm)] = r === 0 ? 'pick' : 'mate';
@@ -5308,26 +5323,29 @@ function KfRule({ type, go, back }) {
   const head = {textAlign:'center',fontFamily:"'Playfair Display', Georgia, serif",fontSize:22,fontWeight:900,color:'#26296b',lineHeight:1.2,margin:'0 0 8px',textWrap:'balance'};
   const say = r === 0
     ? (sharp ? t('1. Find the last ♯ and circle it.', '1. 마지막 샤프를 찾아 동그라미 쳐요.') : t('1. Find the second-to-last ♭ and circle it.', '1. 뒤에서 두 번째 플랫을 찾아 동그라미 쳐요.'))
-    : (sharp ? t('2. Go up one half step. That is the key.', '2. 반음 위로 올라가요. 그게 바로 그 조예요.') : t('2. That ♭ is the key. (With one ♭ it is F.)', '2. 그 플랫이 바로 그 조예요. (플랫이 하나면 F예요.)'));
+    : (sharp ? t('2. Go up one half step. That is the key.', '2. 반음 위로 올라가요. 그게 바로 그 조예요.') : t('2. That ♭ is the key.', '2. 그 플랫이 바로 그 조예요.'));
+  const tonicPos = r === 1 ? (sharp ? SHARP_POS[lastNm] + 1 : FLAT_POS[lastNm]) : undefined;
+  const more = e < EX.length - 1;
   return (<>
     <KfChain hi={[1]}/>
     <div style={head}>{sharp ? t('Sharps: find the key', '샤프로 조 찾기') : t('Flats: find the key', '플랫으로 조 찾기')}</div>
-    <div key={r} style={{textAlign:'center',fontSize:16,fontWeight:800,color:'#26296b',margin:'0 0 8px',textWrap:'balance',minHeight:40,animation:'fadeUp 0.3s both'}}>{say}</div>
-    <div style={{maxWidth:260,margin:'0 auto'}}><KSStaff count={n} type={type} width={200} ring={want}/></div>
-    <div style={{maxWidth:300,margin:'4px auto 0'}}><TapKeyboard octaves={1} marks={marks} labels="all" bigLabels /></div>
+    <div key={r + '-' + e} style={{textAlign:'center',fontSize:16,fontWeight:800,color:'#26296b',margin:'0 0 8px',textWrap:'balance',minHeight:40,animation:'fadeUp 0.3s both'}}>{say}</div>
+    <div style={{maxWidth:260,margin:'0 auto'}}><KSStaff count={n} type={type} width={200} ring={want} tallBox={sharp} tonicPos={tonicPos} tonicFrom={sharp && r === 1 ? SHARP_POS[lastNm] : undefined}/></div>
+    <div style={{maxWidth:300,margin:'4px auto 0'}}><TapKeyboard octaves={1} marks={marks} labels="all" bigLabels/></div>
     <div style={{...head,margin:'6px 0 2px',minHeight:27,visibility:r === 1 ? 'visible' : 'hidden'}}>{n}{sharp ? '♯' : '♭'} → <span style={{color:'#c0431f'}}>{majName(k)}</span></div>
-    <div style={{textAlign:'center',marginTop:14,display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>
+    <div style={{textAlign:'center',fontSize:12,color:'#5a5d8f',minHeight:16}}>{sharp ? '' : (r === 1 && n === 2 ? '' : '')}{!sharp && r === 0 ? t('One ♭ is the exception: it is F.', '플랫이 하나면 예외예요: F.') : ''}</div>
+    <div style={{textAlign:'center',marginTop:10,display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>
       {r === 1 ? <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => setR(0)}>{t('← Back', '← 이전')}</button>
         : (back || (kc && kc.step > 1)) && <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={back || (() => kc && kc.setStep(1))}>{t('← Back', '← 이전')}</button>}
-      <button className="ghost-btn" style={{...KF_BTN,minWidth:140,background:'#26296b',color:'#fffefa',borderColor:'#26296b'}} onClick={r === 0 ? () => { setR(1); playKey(pcOfName(k.major), 0.5); } : go}>{r === 0 ? t('Next →', '다음 →') : t('Try it →', '해 보기 →')}</button>
+      <button className="ghost-btn" style={{...KF_BTN,minWidth:140,background:'#26296b',color:'#fffefa',borderColor:'#26296b'}} onClick={r === 0 ? () => { setR(1); playKey(pcOfName(k.major), 0.5); } : more ? () => { setE(e + 1); setR(0); } : go}>{r === 0 ? t('Next →', '다음 →') : more ? t('Another one →', '다른 예 →') : t('Try it →', '해 보기 →')}</button>
     </div>
   </>);
 }
-function KfMajor({ go, setKi }) {
-  const [st, setSt] = useState('sharp-rule');
+function KfMajor({ go, setKi, which }) {   // which: 'sharp' or 'flat' = that side on its own (Phase 516)
+  const [st, setSt] = useState(which === 'flat' ? 'flat-rule' : 'sharp-rule');
   if (st === 'sharp-rule') return <KfRule type="sharp" go={() => setSt('sharp')}/>;
-  if (st === 'sharp') return <KfFind key="fs" type="sharp" mode="find" setKi={setKi} go={() => setSt('flat-rule')} goLabel={t('Now flats →', '이제 플랫 →')} onBack={() => setSt('sharp-rule')}/>;
-  if (st === 'flat-rule') return <KfRule type="flat" go={() => setSt('flat')} back={() => setSt('sharp')}/>;
+  if (st === 'sharp') return <KfFind key="fs" type="sharp" mode="find" setKi={setKi} go={which === 'sharp' ? undefined : () => setSt('flat-rule')} goLabel={t('Now flats →', '이제 플랫 →')} onBack={() => setSt('sharp-rule')}/>;
+  if (st === 'flat-rule') return <KfRule type="flat" go={() => setSt('flat')} back={which === 'flat' ? undefined : () => setSt('sharp')}/>;
   return <KfFind key="ff" type="flat" mode="find" setKi={setKi} go={go} onBack={() => setSt('flat-rule')}/>;
 }
 function KfNav({ i, setI, children }) {
@@ -5393,6 +5411,8 @@ function KeyFinder({ only }) {
         {only === 'sharps' && <KfFind key="os" type="sharp" mode="order" setKi={setKi}/>}
         {only === 'flats' && <KfFind key="of" type="flat" mode="order" setKi={setKi}/>}
         {only === 'major' && <KfMajor setKi={setKi}/>}
+        {only === 'msharp' && <KfMajor which="sharp" setKi={setKi}/>}
+        {only === 'mflat' && <KfMajor which="flat" setKi={setKi}/>}
         {only === 'minor' && <KfMinor i={ki} setI={setKi}/>}
         {only === 'piece' && <KfPiece i={ki} setI={setKi}/>}
       </KfCtx.Provider>
@@ -22799,7 +22819,7 @@ const HOME_LINE = {
 };
 const HOME_LIVE = {
   'p-keysig': {
-    lessons: ['kf-sharps', 'kf-flats', 'kf-major', 'kf-minor', 'kf-piece'], check: 'key-signatures', tools: [], more: [],
+    lessons: ['kf-sharps', 'kf-flats', 'kf-msharp', 'kf-mflat', 'kf-minor', 'kf-piece'], check: 'key-signatures', tools: [], more: [],
     checkLine: ['Questions, level by level', '문제를 단계별로'],
   },
   'p-scale': {
@@ -54301,6 +54321,8 @@ TOOL_CONCEPT['cb-p-scales'] = 'p-scales';
 [['kf-sharps', 'sharps', 'Sharp order', '샤프 순서', 'All seven, one by one, then your turn.', '일곱 개를 한꺼번에, 하나씩, 그다음 내가 해 보기.'],
  ['kf-flats', 'flats', 'Flat order', '플랫 순서', 'All seven, one by one, then your turn.', '일곱 개를 한꺼번에, 하나씩, 그다음 내가 해 보기.'],
  ['kf-major', 'major', 'Find the major key', '장조 찾기', 'The sharp way, then the flat way.', '샤프로 찾는 법, 그다음 플랫으로 찾는 법.'],
+ ['kf-msharp', 'msharp', 'Major key: sharps', '장조 찾기: 샤프', 'Circle the last sharp, go up a half step.', '마지막 샤프에 동그라미, 반음 위로.'],
+ ['kf-mflat', 'mflat', 'Major key: flats', '장조 찾기: 플랫', 'Circle the second-to-last flat: that is the key.', '뒤에서 두 번째 플랫에 동그라미: 그게 그 조.'],
  ['kf-minor', 'minor', 'Find the minor key', '단조 찾기', 'From the major, three half steps down.', '장조에서 반음 세 칸 아래로.'],
  ['kf-piece', 'piece', 'Before a piece', '곡 치기 전에', 'Find the key, then play its scale.', '조를 찾고, 그 스케일을 쳐 봐요.']].forEach(([id, only, en, ko, benEn, bko]) => {
   TOOLS.push({ id, ch: 'concept', title: en, blurb: benEn, hidden: true, get kicker() { return TOOL_AREAS.find(a => a.id === 'pitch').name + ' · ' + (LANG === 'ko' ? '조 찾기' : 'Learn'); }, C: () => <KeyFinder only={only}/> });
