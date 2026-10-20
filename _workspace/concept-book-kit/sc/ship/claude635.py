@@ -1,0 +1,7 @@
+import sys
+p = sys.argv[1]
+lines = open(p, encoding='utf-8').read().split('\n')
+idx = [i for i, l in enumerate(lines) if l.startswith('| 621 |')]
+assert len(idx) == 1
+lines.insert(idx[0] + 1, "| 622 | 2026-10-21 | **Keys and staff: Keyboard patterns and Note names are one section, in her order.** Her list (2026-10-21): black keys in 2s and 3s; low and high (the direction); the white keys under the 2 black keys with the names C D E; the white keys under the 3 black keys, F G A B; every key with the same name; middle C; the 12-key pattern with its 7 names together. Section 1 of Keys and staff is now 'Keyboard patterns and note names' with 7 lessons: kp-groups, kp-hear, kp-small (C D E, one letter at a time in her door/inside wording, her turn: tap the letter), kp-big (F G A B), nn-find, kp-middle, kp-repeat (12 keys = 7 white + 5 black, named C D E F G A B, then it starts again at C; her turn alternates 'tap where a pattern starts' and 'which name comes after B'). Dropped as separate lessons: nn-letters, nn-houses, nn-updown (the letters round and round now live in the last lesson). The section ends with two buttons, one per chapter drill (first-steps, note-names), so the Home concept now has five sections. Built by `patch632.py` (+ `ks4.jsx`) (`t636`). Opened all seven lessons at 390 px in English and Korean (all, one at a time, her turn, an answer) and the Home concept page: no console errors. |")
+open(p, 'w', encoding='utf-8').write('\n'.join(lines)); print('ok')
