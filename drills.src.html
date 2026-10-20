@@ -19971,7 +19971,7 @@ TOOL_CATS.forEach(c => { const n = c.name, w = c.when; c.nameEn = n; c.whenEn = 
   Object.defineProperty(c, 'name', { get: () => (LANG === 'ko' && CAT_KO[c.id] ? CAT_KO[c.id][0] : n), enumerable: true, configurable: true });
   Object.defineProperty(c, 'when', { get: () => (LANG === 'ko' && CAT_KO[c.id] ? CAT_KO[c.id][1] : w), enumerable: true, configurable: true }); });
 // Phase 513: on the Home, Scales and keys is two concepts: Key signatures and Scales (the Toolbox keeps one group)
-const HOME_VIRTUAL = [{ id: 'p-keysig', area: 'pitch', en: 'Key signatures', ko: '조표' }, { id: 'p-scale', area: 'pitch', en: 'Scales', ko: '스케일' }]
+const HOME_VIRTUAL = [{ id: 'p-keysig', area: 'pitch', en: 'Key signatures', ko: '조표' }, { id: 'p-scale', area: 'pitch', en: 'Scales', ko: '스케일' }, { id: 'p-modes', area: 'pitch', en: 'Modes', ko: '선법' }]
   .map(v => ({ id: v.id, area: v.area, get name() { return LANG === 'ko' ? v.ko : v.en; } }));
 const homeCats = (areaId) => TOOL_CATS.filter(c => c.area === areaId).flatMap(c => c.id === 'p-scales' ? HOME_VIRTUAL : [c]);
 const homeCatById = (id) => TOOL_CATS.find(c => c.id === id) || HOME_VIRTUAL.find(c => c.id === id);
@@ -22955,6 +22955,7 @@ const HOME_LINE = {
   'p-scales': ['Every key from one pattern', '패턴 하나로 모든 조'],
   'p-keysig': ['Which sharps and flats a key has', '조마다 붙는 샵과 플랫'],
   'p-scale': ['The same pattern from every note', '어느 음에서나 같은 패턴'],
+  'p-modes': ['The same notes, a new home', '같은 음, 새로운 집'],
   'p-chords': ['Notes stacked together', '쌓아 올린 음들'],
   'r-beat': ['The steady beat and how long notes last', '일정한 박과 음의 길이'],
   't-touch': ['Smooth, short, soft and loud', '이어서, 짧게, 여리게, 세게'],
@@ -22975,9 +22976,12 @@ const HOME_LIVE = {
     checkLine: ['Questions, level by level', '문제를 단계별로'],
   },
   'p-scale': {
-    lessons: ['sc-shape', 'sc-same', 'sc-deg', 'sc-wr', 'sc-wl', 'sc-br', 'sc-bl', 'sc-both', 'sc-all', 'sc-chrom', 'sc-min', 'sc-modes'], check: 'scales', tools: [], more: [],
-    tryLine: ['Twelve short lessons: the shape, fingering, all twelve keys, the minor scales, the modes', '열두 개의 짧은 레슨: 모양, 손가락, 열두 조, 단음계, 선법'],
+    lessons: ['sc-shape', 'sc-same', 'sc-deg', 'sc-wr', 'sc-wl', 'sc-br', 'sc-bl', 'sc-both', 'sc-all', 'sc-chrom', 'sc-min'], check: 'scales', tools: ['scale-finder'], more: [],
+    tryLine: ['Scale finder: turn the circle of fifths to any key', '스케일 찾기: 5도권을 돌려 어느 조든 찾아요'],
     checkLine: ['Questions, level by level', '문제를 단계별로'],
+  },
+  'p-modes': {
+    lessons: ['sc-modes'], tools: [], more: [],
   },
 };
 const HOME_AREA_LINE = {
@@ -23076,7 +23080,7 @@ function ConceptHome({ st, update }) {
           {live.tools && live.tools.length > 0 && step(++n, t('Try', '해 보기'), LANG === 'ko' ? live.tryLine[1] : live.tryLine[0], true, () => go({ hs: 'try' }))}
         </>; })()}
       </div>
-      <button onClick={() => go({ view: 'home', drill: live.check, tab: 'drill', level: 1, mode: 'lesson' })} style={{display:'block',width:'100%',minHeight:60,marginTop:18,borderRadius:30,border:'none',background:'var(--navy)',color:'#fffefa',fontWeight:800,fontSize:20,cursor:'pointer'}}>{t('Start the drill →', '드릴 시작 →')}</button>
+      {live.check && <button onClick={() => go({ view: 'home', drill: live.check, tab: 'drill', level: 1, mode: 'lesson' })} style={{display:'block',width:'100%',minHeight:60,marginTop:18,borderRadius:30,border:'none',background:'var(--navy)',color:'#fffefa',fontWeight:800,fontSize:20,cursor:'pointer'}}>{t('Start the drill →', '드릴 시작 →')}</button>}
     </div>
   );
   // level 1: the concepts of one area
@@ -54990,7 +54994,8 @@ function ScShape() {
   const tl = TOOLS[TOOLS.length - 1], k = TOOL_KO[id], ti = tl.title, bl = tl.blurb; tl.titleEn = ti; tl.blurbEn = bl;
   Object.defineProperty(tl, 'title', { get: () => (LANG === 'ko' ? k[0] : ti), enumerable: true, configurable: true });
   Object.defineProperty(tl, 'blurb', { get: () => (LANG === 'ko' ? k[1] : bl), enumerable: true, configurable: true });
-  TOOL_CONCEPT[id] = 'p-scale';
+  TOOL_CONCEPT[id] = id === 'sc-modes' ? 'p-modes' : 'p-scale';
+  if (id === 'sc-modes') Object.defineProperty(tl, 'kicker', { get: () => TOOL_AREAS.find(a => a.id === 'pitch').name + ' · ' + (LANG === 'ko' ? '선법' : 'Modes'), enumerable: true, configurable: true });
 });
 
 // ─── Phase 571: Scales, lesson 2: the same pattern from every note. G major (its F♯) and F major (its B♭), step by step, then her turn on any key.
