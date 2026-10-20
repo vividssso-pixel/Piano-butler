@@ -1057,8 +1057,8 @@ const MARK_STYLE = {
   good:   { white: '#dcefe7', black: '#2e8a6e', stroke: '#2e8a6e' },
   bad:    { white: '#fbdcd2', black: '#c8361b', stroke: '#c8361b' },
   fof:    { white: '#dfe9f8', black: '#3b4fa8', stroke: '#3b4fa8' },
-  seg3:   { white: '#f6ac93', black: '#c0431f', stroke: '#c0431f', text: '#26296b' },   // the Scale finder: a 1-2-3 reach (the old finder's blue)
-  seg4:   { white: '#a3baf0', black: '#3b4fa8', stroke: '#3b4fa8', text: '#26296b' },   // a 1-2-3-4 reach (the old finder's green)
+  seg3:   { white: '#fad0c2', black: '#e4572e', stroke: '#e4572e', text: '#26296b' },   // the Scale finder: a 1-2-3 reach (the old finder's blue)
+  seg4:   { white: '#cddcf7', black: '#3b4fa8', stroke: '#3b4fa8', text: '#26296b' },   // a 1-2-3-4 reach (the old finder's green)
   pick:   { white: '#e4572e', black: '#e4572e', stroke: '#c0431f', sw: 1.5, text: '#fff' },   // Phase 462: the key you tapped (Phase 466: white words on it)
   mate:   { white: '#fbe3da', black: '#e4572e', stroke: '#e9b9a6', sw: 1, text: '#26296b' },     // Phase 462: the keys that go with it (Phase 466: navy words on it)
   miss:   { white: '#fff', black: '#26296b', stroke: '#e4572e', sw: 2.5, text: '#e4572e' },
@@ -39757,8 +39757,8 @@ function sskRaw(yOf, items, o = {}) {
     }
     top = M === 'circ' ? my - 26 : M === 'bracket' ? my - 19 : my - 14;
   }
-  const R = o.fingerR || 9;
-  const fing = (fy, j, v) => (o.ring1 && String(v) !== '1' ? '' : '<circle cx="' + pFix(notes[j].x) + '" cy="' + pFix(fy) + '" r="' + R + '" fill="#fff" stroke="' + cor + '" stroke-width="1.5"/>') + (v === '' ? '' : '<text x="' + pFix(notes[j].x) + '" y="' + pFix(fy + R * 0.5) + '" text-anchor="middle" font-family="Inter, sans-serif" font-size="' + pFix(R * 1.45) + '" font-weight="900" fill="' + cor + '">' + v + '</text>');
+  const R = o.fingerR || 9, cor0 = cor;
+  const fing = (fy, j, v) => { const cor = (o.fingerCols && o.fingerCols[j]) || cor0; return (o.ring1 && String(v) !== '1' ? '' : '<circle cx="' + pFix(notes[j].x) + '" cy="' + pFix(fy) + '" r="' + R + '" fill="#fff" stroke="' + cor + '" stroke-width="1.5"/>') + (v === '' ? '' : '<text x="' + pFix(notes[j].x) + '" y="' + pFix(fy + R * 0.5) + '" text-anchor="middle" font-family="Inter, sans-serif" font-size="' + pFix(R * 1.45) + '" font-weight="900" fill="' + cor + '">' + v + '</text>'); };
   if (o.fingers) {
     const has = notes.map((_, j) => o.fingers[j] != null);
     if (o.fingerAt === 'below') { const fy = bottom + 6 + R; notes.forEach((_, j) => { if (has[j]) over.push(fing(fy, j, o.fingers[j])); }); bottom = fy + R + 1; }
@@ -55885,6 +55885,7 @@ function ScaleFinderDial() {
     const mR = mkM(null, 'RH'), mL = mkM(sfdLD0(key), 'LH'); if (mR && mL) staff = { k: sigK, R: mR, L: mL };
     if (form === 'melodic') { const nn = spellMinor(key, 'natural'); noteDown = t('Coming down it is the natural minor: ', '내려올 때는 자연 단음계예요: ') + [nn[0], nn[6], nn[5], nn[4], nn[3], nn[2], nn[1], nn[0]].map(prettyAny).join(' '); }
   }
+  const sfdCols = (hand) => { const e1 = info.octaves[1] && info.octaves[1][hand]; if (!e1) return []; const cs = []; scRuns(mode === 'major' ? key : 'm' + key, hand, e1).forEach(g => { for (let q = g.from; q < g.from + g.len; q++) cs[q] = g.kind === 3 ? '#c0431f' : g.kind === 4 ? '#3b4fa8' : '#26296b'; }); return cs; };
   const FORMS = ['natural', 'harmonic', 'melodic'];
   const FNAME = { natural: t('Natural', '자연'), harmonic: t('Harmonic', '화성'), melodic: t('Melodic', '가락') };
   const step = (d) => pick((idx + d + 12) % 12, mode);
@@ -55944,7 +55945,7 @@ function ScaleFinderDial() {
         <ScKeys clean ks={K} marks={marks} names={names} arcs={[]} nonce={mode + key + form} mw={520}/>
         <p style={{ fontSize: 13, color: 'var(--muted)', margin: '8px 0 0', textAlign: 'center', lineHeight: 1.5 }}>{t('No finger numbers for this form: the harmonic fingering would put a thumb on a black key. Look the fingering up in your book.', '이 형태는 손가락 번호를 보여 주지 않아요: 화성 단음계의 손가락 번호로는 엄지가 검은건반에 놓여요. 책에서 찾아보세요.')}</p></>
         : (() => { const e = mode === 'major' ? info.octaves[oct] : fing, KK = offs.map(o => info.rootPc + o), kn = mode === 'major' ? key : 'm' + key;
-          const paint = (hand) => { const F = e[hand], mk = {}, nm = {}, nc = {}, curK = an >= 0 ? seq[an].k : null; scRuns(kn, hand, F).forEach(g => { for (let q = g.from; q < g.from + g.len; q++) { mk[KK[q]] = g.kind === 3 ? 'seg3' : g.kind === 4 ? 'seg4' : 'pass'; nc[KK[q]] = g.kind === 3 ? '#26296b' : g.kind === 4 ? '#26296b' : '#26296b'; } }); F.forEach((f, q) => { nm[KK[q]] = String(f); }); if (curK != null) { mk[curK] = 'pick'; nc[curK] = '#fff'; } return { mk, nm, nc }; };
+          const paint = (hand) => { const F = e[hand], mk = {}, nm = {}, nc = {}, curK = an >= 0 ? seq[an].k : null; scRuns(kn, hand, F).forEach(g => { for (let q = g.from; q < g.from + g.len; q++) { mk[KK[q]] = g.kind === 3 ? 'seg3' : g.kind === 4 ? 'seg4' : 'pass'; nc[KK[q]] = g.kind === 3 ? '#c0431f' : g.kind === 4 ? '#3b4fa8' : '#26296b'; } }); F.forEach((f, q) => { nm[KK[q]] = String(f); }); if (curK != null) { mk[curK] = 'pick'; nc[curK] = '#fff'; } return { mk, nm, nc }; };
           const row = (hand, label) => { const P = paint(hand); return <div style={{ marginTop: hand === 'RH' ? 4 : 10 }}>
             <div style={{ fontSize: 12, fontWeight: 900, color: 'var(--muted)', letterSpacing: '0.05em', marginBottom: 2 }}>{label}</div>
             <div><div><ScKeys inKey clean ks={KK} marks={P.mk} names={P.nm} ncol={P.nc} arcs={[]} nonce={hand + key + mode + form + oct} mw={oct === 2 ? 640 : 520} oct={oct === 2 ? 3 : 2}/></div></div></div>; };
@@ -55960,7 +55961,7 @@ function ScaleFinderDial() {
       {noteDown && <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, margin: '6px 0' }}>{noteDown}</div>}
       <ScStaffBtn on={stf} set={setStf}/>
       {stf && (staff ? <>
-        {[['R', 'treble', t('RIGHT HAND', '오른손')], ['L', 'bass', t('LEFT HAND', '왼손')]].map(([h, cf, lb]) => <div key={h} style={{ marginTop: 6 }}><div style={{ fontSize: 12, fontWeight: 900, color: 'var(--muted)', letterSpacing: '0.05em' }}>{lb}</div><SkgStaff items={staff[h].items} k={staff.k} clef={cf} width={330} o={{ boxS: 26, D: 30, hl: staff[h].coral, hl2: staff[h].alt, signHl: staff[h].coral, underAlt: staff[h].alt, ksCol: '#2e8a6e', fingers: staff[h].fingers, ring1: true, ring: an >= 0 && oct === 1 && seq[an].j < 8 ? [seq[an].j] : [], ...skgUnder(staff[h].items, staff.k, null, staff[h].coral) }}/></div>)}
+        {[['R', 'treble', t('RIGHT HAND', '오른손')], ['L', 'bass', t('LEFT HAND', '왼손')]].map(([h, cf, lb]) => <div key={h} style={{ marginTop: 6 }}><div style={{ fontSize: 12, fontWeight: 900, color: 'var(--muted)', letterSpacing: '0.05em' }}>{lb}</div><SkgStaff items={staff[h].items} k={staff.k} clef={cf} width={330} o={{ boxS: 26, D: 30, hl: staff[h].coral, hl2: staff[h].alt, signHl: staff[h].coral, underAlt: staff[h].alt, ksCol: '#2e8a6e', fingers: staff[h].fingers, ring1: true, fingerCols: sfdCols(h === 'R' ? 'RH' : 'LH'), ring: an >= 0 && oct === 1 && seq[an].j < 8 ? [seq[an].j] : [], ...skgUnder(staff[h].items, staff.k, null, staff[h].coral) }}/></div>)}
         <div style={{ textAlign: 'center', fontSize: 12.5, fontWeight: 700, color: '#6d6f9c', marginTop: 4 }}>{t('Green: from the key signature. Coral: a sign written beside the note.', '초록: 조표에 있는 음. 코랄: 음표 옆에 붙이는 표.')}</div>
       </> : <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--muted)', marginTop: 6 }}>{t('This form needs a double sharp, so the staff is left out here.', '이 형태는 겹샤프가 필요해서 오선은 보여 주지 않아요.')}</div>)}
       {scRow(<>
