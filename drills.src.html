@@ -23003,7 +23003,7 @@ const HOME_LIVE = {
     checkLine: ['Questions, level by level', '문제를 단계별로'],
   },
   'p-scale': {
-    lessons: ['sc-shape', 'sc-same'], check: 'scales', tools: [], more: [],
+    lessons: ['sc-shape', 'sc-same', 'sc-deg'], check: 'scales', tools: [], more: [],
     tryLine: ['Three steps: white keys, black keys, all twelve', '세 단계: 흰건반, 검은건반, 열두 조'],
     checkLine: ['Questions, level by level', '문제를 단계별로'],
   },
@@ -54927,7 +54927,8 @@ function ScShape() {
   return <div className="try-box" data-sc-lesson="shape" style={{background:'#fff',border:'1px solid var(--border)',borderRadius:10,padding:'10px 10px 12px',margin:'4px 0 16px'}}>{body}</div>;
 }
 [['sc-shape', 'The major scale pattern', '장음계의 모양', 'T T S T T T S, on the keys of C.', 'C의 건반 위에서 T T S T T T S.', ScShape],
- ['sc-same', 'The same pattern from any note', '어느 음에서 시작해도 같은 패턴', 'G has an F♯, F has a B♭: the pattern decides.', 'G에는 F♯, F에는 B♭: 패턴이 정해 줘요.', ScSame]].forEach(([id, en, ko, benEn, bko, Comp]) => {
+ ['sc-same', 'The same pattern from any note', '어느 음에서 시작해도 같은 패턴', 'G has an F♯, F has a B♭: the pattern decides.', 'G에는 F♯, F에는 B♭: 패턴이 정해 줘요.', ScSame],
+ ['sc-deg', 'The degrees of the scale', '음계의 음 번호와 이름', 'Tonic, supertonic … leading note.', '으뜸음, 윗으뜸음 … 이끎음.', ScDeg]].forEach(([id, en, ko, benEn, bko, Comp]) => {
   TOOLS.push({ id, ch: 'concept', title: en, blurb: benEn, hidden: true, get kicker() { return TOOL_AREAS.find(a => a.id === 'pitch').name + ' · ' + (LANG === 'ko' ? '스케일' : 'Scales'); }, C: () => <Comp/> });
   TOOL_KO[id] = [ko, bko];
   const tl = TOOLS[TOOLS.length - 1], k = TOOL_KO[id], ti = tl.title, bl = tl.blurb; tl.titleEn = ti; tl.blurbEn = bl;
@@ -55041,6 +55042,72 @@ function ScSame() {
     </>;
   }
   return <div className="try-box" data-sc-lesson="same" style={{background:'#fff',border:'1px solid var(--border)',borderRadius:10,padding:'10px 10px 12px',margin:'4px 0 16px'}}>{body}</div>;
+}
+
+// ─── Phase 572: Scales, lesson 3: the degrees of the scale, their numbers (1̂ 2̂ 3̂…) and names (tonic … leading note).
+// Her text only: DEGREE_NAMES / DEGREE_WHY (and the Korean pair) from her Scale degree names card.
+const scHat = (n) => n + '̂';
+function ScDeg() {
+  const [view, setView] = useState('all');   // 'all' -> 'one' -> 'try'
+  const [i, setI] = useState(0), [nonce, setNonce] = useState(0), [kk, setKk] = useState('C');
+  const [seq, setSeq] = useState([]), [at, setAt] = useState(0), [bad, setBad] = useState(null);
+  const timers = useRef([]);
+  const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
+  useEffect(() => clear, []);
+  const titleStyle = {textAlign:'center',fontFamily:"'Playfair Display', Georgia, serif",fontSize:22,fontWeight:900,color:'#26296b',lineHeight:1.2,margin:'0 0 8px',textWrap:'balance'};
+  const lineStyle = {textAlign:'center',fontSize:15,fontWeight:800,color:'#26296b',margin:'8px 0 6px',minHeight:42,textWrap:'balance',wordBreak:'keep-all'};
+  const prim = {...KF_BTN,minWidth:140,background:'#26296b',color:'#fffefa',borderColor:'#26296b'};
+  const row = (children) => <div style={{textAlign:'center',marginTop:14,display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>{children}</div>;
+  const title = t('The degrees of the scale', '음계의 음 번호와 이름');
+  const nm = (j) => LANG === 'ko' ? DEGREE_NAMES_KO[j] : DEGREE_NAMES[j];
+  const why = (j) => LANG === 'ko' ? DEGREE_WHY_KO[j] : DEGREE_WHY[j];
+  const newRound = (key) => { const order = shuffle([0, 1, 2, 3, 4, 5, 6]); setSeq(order.map((d, q) => ({ d, by: q % 2 === 0 ? 'name' : 'num' }))); setAt(0); setBad(null); setNonce(n => n + 1); };
+  let body;
+  if (view === 'all') {
+    const K = scIdx('C'), marks = {}, names = {}; K.forEach((k, j) => { marks[k] = 'pass'; names[k] = scHat(j === 7 ? 8 : j + 1); });
+    body = <>
+      <div style={titleStyle}>{title}</div>
+      <div style={lineStyle}>{t('Every note of the scale has a number and a name.', '음계의 음마다 번호와 이름이 있어요.')}</div>
+      <ScKeys ks={K} marks={marks} names={names} arcs={[]} nonce="all"/>
+      {row(<button className="ghost-btn" style={prim} onClick={() => { setView('one'); setI(0); setNonce(n => n + 1); playKey(K[0], 0.6); }}>{t('One by one →', '하나씩 →')}</button>)}
+    </>;
+  } else if (view === 'one') {
+    const K = scIdx('C'), marks = { [K[0]]: 'pass' }, names = {}; for (let j = 0; j <= i; j++) names[K[j]] = scHat(j + 1); marks[K[i]] = 'pick';
+    body = <>
+      <div style={titleStyle}>{title}</div>
+      <div style={lineStyle}><span style={{color:'#c0431f'}}>{scHat(i + 1) + ' ' + nm(i)}</span>{': ' + why(i) + '.'}</div>
+      <ScKeys ks={K} marks={marks} names={names} arcs={[]} nonce={nonce + ':' + i}/>
+      {row(<>
+        <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { clear(); if (i === 0) setView('all'); else { setI(i - 1); setNonce(n => n + 1); playKey(K[0], 0.4); timers.current.push(setTimeout(() => playKey(K[i - 1], 0.6), 400)); } }}>{t('← Back', '← 이전')}</button>
+        <button className="ghost-btn" style={prim} onClick={() => { clear(); if (i === 6) { setView('try'); newRound(kk); } else { setI(i + 1); setNonce(n => n + 1); playKey(K[0], 0.4); timers.current.push(setTimeout(() => playKey(K[i + 1], 0.6), 400)); } }}>{i === 6 ? t('Your turn →', '내가 해보기 →') : t('Next →', '다음 →')}</button>
+      </>)}
+    </>;
+  } else {
+    const K = scIdx(kk), N = scNames(kk), done = at >= 7, marks = {}, names = {};
+    seq.slice(0, at).forEach(({ d }) => { marks[K[d]] = 'good'; names[K[d]] = scHat(d + 1); });
+    if (done) { marks[K[7]] = 'pass'; }
+    if (bad != null) marks[bad] = 'bad';
+    const cur = seq[at];
+    const ask = cur ? (cur.by === 'name' ? t('Tap the ' + nm(cur.d) + '.', nm(cur.d) + ' 건반을 눌러요.') : t('Tap ' + scHat(cur.d + 1) + '.', scHat(cur.d + 1) + ' 건반을 눌러요.')) : '';
+    const line = done ? t('All seven found: that is every degree of ' + N[0] + ' major.', '일곱 개를 다 찾았어요. ' + N[0] + ' 장음계의 모든 음이에요.')
+      : bad != null ? t('Not that key. ' + ask, '그 건반이 아니에요. ' + ask) : ask + ' (' + (at + 1) + '/7)';
+    const tap = (k) => { if (done) return; clear(); const j = K.indexOf(k);
+      if (cur && k === K[cur.d] && j < 7) { setBad(null); setAt(at + 1); setNonce(n => n + 1); playKey(K[0], 0.35); timers.current.push(setTimeout(() => playKey(k, 0.6), 400)); }
+      else { setBad(k); playKey(k, 0.4); timers.current.push(setTimeout(() => setBad(null), 1100)); } };
+    body = <>
+      <div style={titleStyle}>{t('Your turn', '내가 해보기')}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:6,maxWidth:330,margin:'0 auto 6px'}}>
+        {['C', 'G', 'F', 'D'].map(k => <button key={k} className={'chip' + (kk === k ? ' active' : '')} aria-pressed={kk === k} style={{...KF_BTN,minHeight:40,padding:'0 4px'}} onClick={() => { clear(); setKk(k); newRound(k); playKey(SF12.indexOf(k), 0.5); }}>{prettyNote(k)}</button>)}
+      </div>
+      <div style={lineStyle}>{line}</div>
+      <ScKeys ks={K} marks={marks} names={names} arcs={[]} nonce={nonce + kk} onTap={tap}/>
+      {row(<>
+        <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { clear(); setView('one'); setI(6); setNonce(n => n + 1); }}>{t('← Back', '← 이전')}</button>
+        {done && <button className="ghost-btn" style={prim} onClick={() => newRound(kk)}>{t('Again', '다시 하기')}</button>}
+      </>)}
+    </>;
+  }
+  return <div className="try-box" data-sc-lesson="deg" style={{background:'#fff',border:'1px solid var(--border)',borderRadius:10,padding:'10px 10px 12px',margin:'4px 0 16px'}}>{body}</div>;
 }
 
 // lesson 5: the natural. A sign changed the key; the natural brings back the plain white key.
