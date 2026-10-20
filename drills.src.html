@@ -1057,8 +1057,8 @@ const MARK_STYLE = {
   good:   { white: '#dcefe7', black: '#2e8a6e', stroke: '#2e8a6e' },
   bad:    { white: '#fbdcd2', black: '#c8361b', stroke: '#c8361b' },
   fof:    { white: '#dfe9f8', black: '#3b4fa8', stroke: '#3b4fa8' },
-  seg3:   { white: '#93d0f5', black: '#4a63c9', stroke: '#4a63c9', text: '#26296b' },   // the Scale finder: a 1-2-3 reach (the old finder's blue)
-  seg4:   { white: '#98e6ab', black: '#3fa860', stroke: '#3fa860', text: '#26296b' },   // a 1-2-3-4 reach (the old finder's green)
+  seg3:   { white: '#f6ac93', black: '#c0431f', stroke: '#c0431f', text: '#26296b' },   // the Scale finder: a 1-2-3 reach (the old finder's blue)
+  seg4:   { white: '#a3baf0', black: '#3b4fa8', stroke: '#3b4fa8', text: '#26296b' },   // a 1-2-3-4 reach (the old finder's green)
   pick:   { white: '#e4572e', black: '#e4572e', stroke: '#c0431f', sw: 1.5, text: '#fff' },   // Phase 462: the key you tapped (Phase 466: white words on it)
   mate:   { white: '#fbe3da', black: '#e4572e', stroke: '#e9b9a6', sw: 1, text: '#26296b' },     // Phase 462: the keys that go with it (Phase 466: navy words on it)
   miss:   { white: '#fff', black: '#26296b', stroke: '#e4572e', sw: 2.5, text: '#e4572e' },
@@ -1104,7 +1104,7 @@ function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, 
                 {sf && <text x={k.x + whiteW / 2} y={whiteH - 10} textAnchor="middle" fontSize="10.5" fontWeight="800" fill={m ? (m.text || m.stroke) : '#6d6f9c'} style={{pointerEvents:'none'}}>{solfa(names[k.i])}</text>}
               </>;
             })()}
-            {numIn && names && names[k.i] === '1' && <circle cx={k.x + whiteW / 2} cy={98} r={12} fill="none" stroke="#e4572e" strokeWidth="2" style={{pointerEvents:'none'}}/>}
+            {numIn && names && names[k.i] === '1' && <circle cx={k.x + whiteW / 2} cy={98} r={12} fill="none" stroke={(nameCol && nameCol[k.i]) || '#e4572e'} strokeWidth="2" style={{pointerEvents:'none'}}/>}
             {labels && (
               <text x={k.x + whiteW / 2} y={numIn ? whiteH - 6 : whiteH - 12} textAnchor="middle" fontSize={numIn ? 12 : 13} fontWeight="800"
                 fill={m ? (m.text || m.stroke) : '#6d6f9c'} style={{pointerEvents:'none'}}>{k.info.names[0]}</text>
@@ -55838,8 +55838,8 @@ function ScaleFinderDial() {
   useEffect(() => { PENDING_SCALE = null; }, []);
   const [mode, setMode] = useState(init.mode), [key, setKey] = useState(init.key);
   const [form, setForm] = useState('harmonic'), [oct, setOct] = useState(1), [stf, setStf] = useState(false), [q, setQ] = useState('');
-  const [an, setAn] = useState(-1), tmR = useRef([]);
-  const stopA = () => { tmR.current.forEach(clearTimeout); tmR.current = []; setAn(-1); };
+  const [an, setAn] = useState(-1), [wt, setWt] = useState(false), tmR = useRef([]);
+  const stopA = () => { tmR.current.forEach(clearTimeout); tmR.current = []; setAn(-1); setWt(false); };
   useEffect(() => { stopA(); }, [key, mode, form, oct]);
   useEffect(() => () => tmR.current.forEach(clearTimeout), []);
   const idx0 = (init.mode === 'major' ? SFD_MAJ : SFD_MIN).indexOf(init.key);
@@ -55893,12 +55893,18 @@ function ScaleFinderDial() {
   const KD = mode === 'minor' && form === 'melodic' ? minorOffsets('natural', oct).map(o => info.rootPc + o) : KKt;
   const seq = []; for (let j = 0; j < nT; j++) seq.push({ j, k: KKt[j] }); for (let j = nT - 2; j >= 0; j--) seq.push({ j, k: KD[j] });
   const thumbs = (i) => { if (!eF || i === 0 || i === seq.length - 1) return null; const r = eF.RH[seq[i].j] === 1, l = eF.LH[seq[i].j] === 1; return r && l ? 'both' : r ? 'RH' : l ? 'LH' : null; };
-  const playA = () => {
-    if (an >= 0) { stopA(); return; }
-    stopA(); let at = 0;
-    seq.forEach((sq, i) => { tmR.current.push(setTimeout(() => { setAn(i); playKey(sq.k, 0.5); }, at)); at += thumbs(i) ? 1700 : 520; });
+  // plays on until the next thumb, then waits for the button, so there is time to take it in
+  const runFrom = (i0) => {
+    tmR.current.forEach(clearTimeout); tmR.current = []; setWt(false); let at = 0;
+    for (let i = i0; i < seq.length; i++) {
+      const sq = seq[i];
+      tmR.current.push(setTimeout(() => { setAn(i); playKey(sq.k, 0.5); if (thumbs(i)) setWt(true); }, at));
+      if (thumbs(i)) return;
+      at += 520;
+    }
     tmR.current.push(setTimeout(() => setAn(-1), at + 300));
   };
+  const playA = () => { if (an >= 0) { stopA(); return; } runFrom(0); };
   const thumbNow = an >= 0 ? thumbs(an) : null;
   const thumbMsg = thumbNow === 'both' ? t('Both thumbs (1).', '양손 엄지(1).') : thumbNow === 'RH' ? t('Right hand: the thumb (1).', '오른손: 엄지(1).') : thumbNow === 'LH' ? t('Left hand: the thumb (1).', '왼손: 엄지(1).') : '';
   const body = <>
@@ -55938,17 +55944,18 @@ function ScaleFinderDial() {
         <ScKeys clean ks={K} marks={marks} names={names} arcs={[]} nonce={mode + key + form} mw={520}/>
         <p style={{ fontSize: 13, color: 'var(--muted)', margin: '8px 0 0', textAlign: 'center', lineHeight: 1.5 }}>{t('No finger numbers for this form: the harmonic fingering would put a thumb on a black key. Look the fingering up in your book.', '이 형태는 손가락 번호를 보여 주지 않아요: 화성 단음계의 손가락 번호로는 엄지가 검은건반에 놓여요. 책에서 찾아보세요.')}</p></>
         : (() => { const e = mode === 'major' ? info.octaves[oct] : fing, KK = offs.map(o => info.rootPc + o), kn = mode === 'major' ? key : 'm' + key;
-          const paint = (hand) => { const F = e[hand], mk = {}, nm = {}, nc = {}, curK = an >= 0 ? seq[an].k : null; scRuns(kn, hand, F).forEach(g => { for (let q = g.from; q < g.from + g.len; q++) { mk[KK[q]] = g.kind === 3 ? 'seg3' : g.kind === 4 ? 'seg4' : 'pass'; nc[KK[q]] = '#e4572e'; } }); F.forEach((f, q) => { nm[KK[q]] = String(f); }); if (curK != null) { mk[curK] = 'pick'; nc[curK] = '#fff'; } return { mk, nm, nc }; };
+          const paint = (hand) => { const F = e[hand], mk = {}, nm = {}, nc = {}, curK = an >= 0 ? seq[an].k : null; scRuns(kn, hand, F).forEach(g => { for (let q = g.from; q < g.from + g.len; q++) { mk[KK[q]] = g.kind === 3 ? 'seg3' : g.kind === 4 ? 'seg4' : 'pass'; nc[KK[q]] = g.kind === 3 ? '#26296b' : g.kind === 4 ? '#26296b' : '#26296b'; } }); F.forEach((f, q) => { nm[KK[q]] = String(f); }); if (curK != null) { mk[curK] = 'pick'; nc[curK] = '#fff'; } return { mk, nm, nc }; };
           const row = (hand, label) => { const P = paint(hand); return <div style={{ marginTop: hand === 'RH' ? 4 : 10 }}>
             <div style={{ fontSize: 12, fontWeight: 900, color: 'var(--muted)', letterSpacing: '0.05em', marginBottom: 2 }}>{label}</div>
             <div><div><ScKeys inKey clean ks={KK} marks={P.mk} names={P.nm} ncol={P.nc} arcs={[]} nonce={hand + key + mode + form + oct} mw={oct === 2 ? 640 : 520} oct={oct === 2 ? 3 : 2}/></div></div></div>; };
           return <div data-sfd-fing>
             {row('RH', t('RIGHT HAND', '오른손'))}{row('LH', t('LEFT HAND', '왼손'))}
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', marginTop: 8, fontSize: 12.5, fontWeight: 800, color: '#26296b' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ width: 14, height: 14, borderRadius: 3, background: SEGMENT_COLORS.three.fill, border: '1.5px solid ' + SEGMENT_COLORS.three.stroke }}/>{t('1-2-3', '1-2-3')}</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ width: 14, height: 14, borderRadius: 3, background: SEGMENT_COLORS.four.fill, border: '1.5px solid ' + SEGMENT_COLORS.four.stroke }}/>{t('1-2-3-4', '1-2-3-4')}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ width: 14, height: 14, borderRadius: 3, background: MARK_STYLE.seg3.white, border: '1.5px solid ' + MARK_STYLE.seg3.stroke }}/>{t('1-2-3', '1-2-3')}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ width: 14, height: 14, borderRadius: 3, background: MARK_STYLE.seg4.white, border: '1.5px solid ' + MARK_STYLE.seg4.stroke }}/>{t('1-2-3-4', '1-2-3-4')}</span>
             </div>
             <div data-sfd-thumb style={{ minHeight: 24, textAlign: 'center', fontWeight: 900, fontSize: 14, color: '#c0431f', marginTop: 6 }}>{thumbMsg}</div>
+            {wt && <div style={{ textAlign: 'center', marginTop: 4 }}><button className="ghost-btn" style={scS.prim} data-sfd-next onClick={() => runFrom(an + 1)}>{t('Next →', '다음 →')}</button></div>}
           </div>; })()}
       {noteDown && <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, margin: '6px 0' }}>{noteDown}</div>}
       <ScStaffBtn on={stf} set={setStf}/>
@@ -55957,7 +55964,7 @@ function ScaleFinderDial() {
         <div style={{ textAlign: 'center', fontSize: 12.5, fontWeight: 700, color: '#6d6f9c', marginTop: 4 }}>{t('Green: from the key signature. Coral: a sign written beside the note.', '초록: 조표에 있는 음. 코랄: 음표 옆에 붙이는 표.')}</div>
       </> : <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--muted)', marginTop: 6 }}>{t('This form needs a double sharp, so the staff is left out here.', '이 형태는 겹샤프가 필요해서 오선은 보여 주지 않아요.')}</div>)}
       {scRow(<>
-        <button className="ghost-btn" style={scS.back} data-sfd-play onClick={playA}>{an >= 0 ? t('■ Stop', '■ 멈추기') : t('▶ Up and down: stops at each thumb', '▶ 올라갔다 내려오기: 엄지에서 멈춰요')}</button>
+        <button className="ghost-btn" style={scS.back} data-sfd-play onClick={playA}>{an >= 0 ? t('■ Stop', '■ 멈추기') : t('▶ Up and down: you press Next at each thumb', '▶ 올라갔다 내려오기: 엄지마다 \'다음\'을 눌러요')}</button>
         <button className="ghost-btn" style={scS.prim} data-sfd-rel onClick={() => pick(idx, relMode)}>{mode === 'major' ? t('Relative minor →', '나란한 단조 →') : t('Relative major →', '나란한 장조 →')}</button>
       </>)}
       <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#5a5d8f', marginTop: 8 }}>{relLine}</div>
