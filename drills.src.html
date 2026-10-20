@@ -46343,7 +46343,8 @@ function SkgStaff({ items, k = 'C', clef = 'treble', width = 400, o = {}, label,
       return <g>{ks.map(([s, d], i) => <g key={'k' + i}>{tnAcc(s, ksx(i), yOf(d, clef), o.ksCol || PEN_N)}</g>)}
         <g dangerouslySetInnerHTML={{ __html: mm.raw }}/>
         {mm.notes.map((n, j) => P.signs[j] && !(o.noSign || []).includes(j) && <g key={'s' + j}>{tnAcc(P.signs[j], n.x - 21, n.y, (o.signHl || []).includes(j) ? PEN_C : (o.signHl2 || []).includes(j) ? '#2e8a6e' : (o.ink || PEN_N))}</g>)}
-        {(o.ring || []).map(j => mm.notes[j] && <ellipse key={'r' + j} cx={mm.notes[j].x} cy={mm.notes[j].y} rx="15" ry="11" fill="none" stroke={PEN_C} strokeWidth="1.8"/>)}
+        {(o.ringGlide ? [] : (o.ring || [])).map(j => mm.notes[j] && <ellipse key={'r' + j} cx={mm.notes[j].x} cy={mm.notes[j].y} rx="15" ry="11" fill="none" stroke={PEN_C} strokeWidth="1.8"/>)}
+        {o.ringGlide && (o.ring || []).length > 0 && mm.notes[o.ring[0]] && <g style={{ transform: 'translate(' + mm.notes[o.ring[0]].x + 'px,' + mm.notes[o.ring[0]].y + 'px)', transition: 'transform 0.25s ease' }}><ellipse rx="17" ry="13" fill="rgba(228,87,46,0.16)" stroke={PEN_C} strokeWidth="2.6"/></g>}
         {o.bracket && (() => { const a = mm.notes[o.bracket.from], x1 = a.x - 27, x2 = mm.bars[o.bracket.bar], y = Math.min(sTop, hi) - 12, yt = yOf(CLEFS[clef].high, clef) - 4;
           return <g><path d={`M${x1} ${y + 6} L${x1} ${y} L${x2} ${y} L${x2} ${yt}`} fill="none" stroke={PEN_C} strokeWidth="1.8" strokeLinejoin="round"/>
             {o.bracket.label && <text x={(x1 + x2) / 2} y={y - 6} textAnchor="middle" fontSize="13" fontWeight="900" fill={PEN_C} style={{paintOrder:'stroke',stroke:'#fff',strokeWidth:3}}>{String(o.bracket.label).split(/([♯♭♮])/).map((x, i) => /[♯♭♮]/.test(x) ? <tspan key={i} style={{fontFamily:SAC_MF,fontWeight:400}} fontSize="17">{x}</tspan> : x)}</text>}</g>; })()}
@@ -55853,7 +55854,7 @@ function ScaleFinderDial() {
     const L = m === 'major' ? SFD_MAJ : SFD_MIN, k = L[i], RR = m === 'major' ? 134 : 82, rr = m === 'major' ? 24 : 21, a = (-90 + i * 30) * Math.PI / 180, x = C + RR * Math.cos(a), y = C + RR * Math.sin(a);
     const on = i === idx && m === mode, pair = i === idx && !on, two = SFD_TWO[m][k], sx = m === 'minor' ? 'm' : '', col = on ? '#fffefa' : NV, fs1 = m === 'major' ? 20 : 15, fs2 = m === 'major' ? 12 : 10.5;
     return <g key={m + k} data-key={k} data-mode={m} data-on={on ? 1 : 0} transform={'translate(' + x + ' ' + y + ')'} onClick={() => pick(i, m)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(i, m); } }} tabIndex={0} role="button" aria-label={sfdName(k, m) + ' ' + (m === 'major' ? t('major', '장조') : t('minor', '단조'))} style={{ cursor: 'pointer', outline: 'none' }}>
-      <g style={{ transform: 'rotate(' + (-rot) + 'deg)', transition: tr }}>
+      <g>
         <circle r={rr} fill={on ? NV : '#fff'} stroke={on ? NV : pair ? CO : NV} strokeWidth={pair ? 2.2 : 1.6}/>
         {two ? <><text y={-fs2 * 0.2} textAnchor="middle" fontSize={fs2} fontWeight="800" fill={col} fontFamily="'Playfair Display', Georgia, serif">{two[0] + sx}</text><text y={fs2 * 1.0} textAnchor="middle" fontSize={fs2} fontWeight="800" fill={col} fontFamily="'Playfair Display', Georgia, serif">{two[1] + sx}</text></>
           : <text y={fs1 * 0.34} textAnchor="middle" fontSize={fs1} fontWeight="800" fill={col} fontFamily="'Playfair Display', Georgia, serif">{prettyNote(k) + sx}</text>}
@@ -55914,9 +55915,10 @@ function ScaleFinderDial() {
     <svg data-sfd-dial viewBox="0 0 340 340" width="100%" style={{ display: 'block', maxWidth: 340, margin: '0 auto' }} role="group" aria-label={t('Circle of fifths', '5도권')}>
       <circle cx={C} cy={C} r={134} fill="none" stroke="rgba(38,41,107,0.14)" strokeWidth="1.5" strokeDasharray="3 5"/>
       <circle cx={C} cy={C} r={82} fill="none" stroke="rgba(38,41,107,0.14)" strokeWidth="1.5" strokeDasharray="3 5"/>
-      <rect x={C - 31} y={C - 134 - 24 - 7} width={62} height={134 - 82 + 24 + 21 + 14} rx={31} fill="#fbe3da" stroke={CO} strokeWidth="2"/>
-      <g data-sfd-rot={rot} style={{ transform: 'rotate(' + rot + 'deg)', transformOrigin: C + 'px ' + C + 'px', transition: tr }}>
-        {SFD_MAJ.map((_, i) => node(i, 'major'))}{SFD_MIN.map((_, i) => node(i, 'minor'))}
+      {SFD_MAJ.map((_, i) => node(i, 'major'))}{SFD_MIN.map((_, i) => node(i, 'minor'))}
+      <g data-sfd-rot={-rot} style={{ transform: 'rotate(' + (-rot) + 'deg)', transformOrigin: C + 'px ' + C + 'px', transition: tr, pointerEvents: 'none' }}>
+        <rect x={C - 31} y={C - 134 - 24 - 7} width={62} height={134 - 82 + 24 + 21 + 14} rx={31} fill="none" stroke={CO} strokeWidth="2.6"/>
+        <path d={'M' + C + ' ' + (C - 62) + ' L' + (C - 8) + ' ' + (C - 36) + ' L' + (C + 8) + ' ' + (C - 36) + ' Z'} fill={CO}/>
       </g>
       <text x={C} y={C - 8} textAnchor="middle" fontSize={sfdName(key, mode).length > 3 ? 19 : 28} fontWeight="900" fill={NV} fontFamily="'Playfair Display', Georgia, serif">{sfdName(key, mode)}</text>
       <text x={C} y={C + 8} textAnchor="middle" fontSize="10" fontWeight="900" letterSpacing="1.2" fill="var(--muted)">{mode === 'major' ? t('MAJOR', '장조') : t('MINOR', '단조')}</text>
@@ -55958,7 +55960,7 @@ function ScaleFinderDial() {
       {noteDown && <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, margin: '6px 0' }}>{noteDown}</div>}
       <ScStaffBtn on={stf} set={setStf}/>
       {stf && (staff ? <>
-        {[['R', 'treble', t('RIGHT HAND', '오른손')], ['L', 'bass', t('LEFT HAND', '왼손')]].map(([h, cf, lb]) => <div key={h} style={{ marginTop: 6 }}><div style={{ fontSize: 12, fontWeight: 900, color: 'var(--muted)', letterSpacing: '0.05em' }}>{lb}</div><SkgStaff items={staff[h].items} k={staff.k} clef={cf} width={330} o={{ boxS: 26, D: 30, hl: staff[h].coral, hl2: staff[h].alt, signHl: staff[h].coral, underAlt: staff[h].alt, ksCol: '#2e8a6e', fingers: staff[h].fingers, ring1: true, fingerCols: sfdCols(h === 'R' ? 'RH' : 'LH'), ring: an >= 0 && oct === 1 && seq[an].j < 8 ? [seq[an].j] : [], ...skgUnder(staff[h].items, staff.k, null, staff[h].coral) }}/></div>)}
+        {[['R', 'treble', t('RIGHT HAND', '오른손')], ['L', 'bass', t('LEFT HAND', '왼손')]].map(([h, cf, lb]) => <div key={h} style={{ marginTop: 6 }}><div style={{ fontSize: 12, fontWeight: 900, color: 'var(--muted)', letterSpacing: '0.05em' }}>{lb}</div><SkgStaff items={staff[h].items} k={staff.k} clef={cf} width={330} o={{ boxS: 26, D: 30, hl: staff[h].coral, hl2: staff[h].alt, signHl: staff[h].coral, underAlt: staff[h].alt, ksCol: '#2e8a6e', fingers: staff[h].fingers, ring1: true, fingerCols: sfdCols(h === 'R' ? 'RH' : 'LH'), ringGlide: true, ring: an >= 0 ? [seq[an].j < 8 ? seq[an].j : seq[an].j - 7] : [], ...skgUnder(staff[h].items, staff.k, null, staff[h].coral) }}/></div>)}
         <div style={{ textAlign: 'center', fontSize: 12.5, fontWeight: 700, color: '#6d6f9c', marginTop: 4 }}>{t('Green: from the key signature. Coral: a sign written beside the note.', '초록: 조표에 있는 음. 코랄: 음표 옆에 붙이는 표.')}</div>
       </> : <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--muted)', marginTop: 6 }}>{t('This form needs a double sharp, so the staff is left out here.', '이 형태는 겹샤프가 필요해서 오선은 보여 주지 않아요.')}</div>)}
       {scRow(<>
