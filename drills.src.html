@@ -54989,6 +54989,7 @@ const SC_PICK = ['G', 'D', 'A', 'E', 'F', 'Bb', 'Eb', 'Ab'];
 function ScSame() {
   const [view, setView] = useState('all');   // 'all' -> 'one' -> 'try'
   const [i, setI] = useState(0), [nonce, setNonce] = useState(0), [kk, setKk] = useState('G'), [at, setAt] = useState(0), [bad, setBad] = useState(null);
+  const P = useScPlay([view, i, kk]);
   const timers = useRef([]);
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   useEffect(() => clear, []);
@@ -55003,11 +55004,14 @@ function ScSame() {
   let body;
   if (view === 'all') {
     const K = scIdx('G'), N = scNames('G'), marks = {}, names = {}; K.forEach((k, j) => { marks[k] = j === 6 ? 'pick' : 'pass'; names[k] = N[j]; });
+    const Q = K.concat(K.slice(0, 7).reverse()), N2 = N.concat(N.slice(0, 7).reverse()), QS = Q.slice(1).map((k, j) => Math.abs(k - Q[j])), A = P.an >= 0 ? scAnim(Q, N2, QS, P.an, 7) : null;
     body = <>
       <div style={titleStyle}>{title}</div>
       <div style={lineStyle}>{t('Start on G and keep the same pattern. One note has to change.', 'G에서 시작해도 같은 패턴이에요. 음 하나가 바뀌어요.')}</div>
-      <ScKeys ks={K} marks={marks} names={names} arcs={ST.map((_, j) => mv(K, j, false))} nonce="all"/>
-      <ScPills/>
+      {A && scDirTag(A.dn)}
+      <ScKeys ks={K} marks={A ? A.marks : marks} names={A ? A.names : names} arcs={A ? A.arcs : ST.map((_, j) => mv(K, j, false))} nonce={'all' + (A ? 'a' + P.an : '')}/>
+      {A ? <ScPillRow st={QS} upTo={P.an} cur={P.an - 1}/> : <ScPills/>}
+      {scPlayBtn(P, Q)}
       {row(<button className="ghost-btn" style={prim} onClick={() => { setView('one'); setI(0); setNonce(n => n + 1); }}>{t('One by one →', '하나씩 →')}</button>)}
     </>;
   } else if (view === 'one') {
@@ -55028,8 +55032,8 @@ function ScSame() {
     </>;
   } else {
     const K = scIdx(kk), N = scNames(kk), Q = K.concat(K.slice(0, 7).reverse()), N2 = N.concat(N.slice(0, 7).reverse()), QS = Q.slice(1).map((k, j) => Math.abs(k - Q[j])), done = at >= 14, marks = {}, names = {}, arcs = [];
-    for (let j = 0; j <= at; j++) { marks[Q[j]] = j === at && !done ? 'pick' : 'pass'; names[Q[j]] = N2[j]; }
-    for (let j = 0; j < at; j++) arcs.push([Q[j], Q[j + 1], j === at - 1, SC_COL[QS[j]]]);
+    const ps = at >= 7 ? 7 : 0; for (let j = ps; j <= at; j++) { marks[Q[j]] = j === at && !done ? 'pick' : 'pass'; names[Q[j]] = N2[j]; }
+    for (let j = ps; j < at; j++) arcs.push([Q[j], Q[j + 1], j === at - 1, SC_COL[QS[j]]]);
     if (bad != null) marks[bad] = 'bad';
     const dn = at >= 7, word = (j) => scStepWord(QS[j], j >= 7);
     const line = done ? t('That is ' + N[0] + ' major, up and down: the same pattern.', N[0] + ' 장음계를 올라가고 내려왔어요. 같은 패턴이에요.')
@@ -55045,6 +55049,7 @@ function ScSame() {
         {SC_PICK.map(k => <button key={k} className={'chip' + (kk === k ? ' active' : '')} aria-pressed={kk === k} style={{...KF_BTN,minHeight:40,padding:'0 4px'}} onClick={() => { clear(); setKk(k); setAt(0); setBad(null); setNonce(n => n + 1); playKey(SF12.indexOf(k), 0.5); }}>{prettyNote(k)}</button>)}
       </div>
       <div style={lineStyle}>{line}</div>
+      {!done && scDirTag(at >= 7)}
       <ScKeys ks={K} marks={at === 0 ? { ...marks, [K[0]]: 'pick' } : marks} names={names} arcs={arcs} nonce={nonce + kk} onTap={tap}/>
       <ScPillRow st={QS} upTo={at} cur={at - 1}/>
       {row(<>
@@ -55368,11 +55373,11 @@ function ScBoth() {
       </>)}
     </>;
   } else {
-    const FR = SCALES[tk].octaves[1].RH, FL = SCALES[tk].octaves[1].LH, N = scNames(tk), done = at >= 8, j = done ? 0 : seq[at];
-    const hide = Array.from({ length: 8 }, (_, c) => seq.slice(0, at).includes(c));
-    const line = done ? t('All eight notes. That is the fingering of ' + N[0] + ' major, both hands.', '여덟 음을 다 했어요. ' + N[0] + ' 장음계 양손 운지예요.')
-      : miss ? t('Almost! Tap the finger with the ring. (' + (at + 1) + '/8)', '거의 다 왔어요! 동그라미 친 손가락을 눌러요. (' + (at + 1) + '/8)')
-      : t('Look at the left-hand row under the orange box. Which finger goes there? (' + (at + 1) + '/8)', '주황색 네모 아래 왼손 칸이에요. 몇 번 손가락일까요? (' + (at + 1) + '/8)');
+    const FR = SCALES[tk].octaves[1].RH, FL = SCALES[tk].octaves[1].LH, N = scNames(tk), Q = seq.concat(seq.slice(0, 7).reverse()), LQ = Q.length, done = at >= LQ, j = done ? 0 : Q[at];
+    const hide = Array.from({ length: 8 }, (_, c) => at < 8 ? c < at : (c === 7 || c >= 15 - at));
+    const line = done ? t('Up and down, all done. That is the fingering of ' + N[0] + ' major, both hands: the same fingers coming down.', '올라가고 내려오기까지 다 했어요. ' + N[0] + ' 장음계 양손 운지예요. 내려올 때도 같은 손가락이에요.')
+      : miss ? t('Not that finger. Tap the finger with the ring. (' + (at + 1) + '/' + LQ + ')', '그 손가락이 아니에요. 동그라미 친 손가락을 눌러요. (' + (at + 1) + '/' + LQ + ')')
+      : t((at === 8 ? 'Now come back down: the same fingers, backwards. ' : '') + 'Look at the left-hand row under the orange box. Which finger goes there? (' + (at + 1) + '/' + LQ + ')', (at === 8 ? '이제 내려와요. 같은 손가락을 거꾸로 써요. ' : '') + '주황색 네모 아래 왼손 칸이에요. 몇 번 손가락일까요? (' + (at + 1) + '/' + LQ + ')');
     const pick = (f) => { if (done) return; clear(); if (f === FL[j]) { setBad(null); setMiss(false); setAt(at + 1); setNonce(n => n + 1); } else { setMiss(true); setBad(f); timers.current.push(setTimeout(() => setBad(null), 1100)); } };
     body = <>
       <div style={scS.title}>{t('Your turn', '내가 해보기')}</div>
@@ -55380,6 +55385,7 @@ function ScBoth() {
         {KEYS.map(k => <button key={k} className={'chip' + (tk === k ? ' active' : '')} aria-pressed={tk === k} style={{...KF_BTN,minHeight:38,padding:'0 2px',fontSize:14}} onClick={() => { clear(); newRound(k); }}>{prettyNote(k)}</button>)}
       </div>
       <div style={scS.line}>{line}</div>
+      {!done && scDirTag(at >= 8)}
       <ScPair keyName={tk} n={1} hideLH={done ? null : hide} cur={done ? null : j}/>
       {!done && <div style={{display:'grid',gridTemplateColumns:'repeat(5,minmax(0,1fr))',gap:6,maxWidth:330,margin:'10px auto 0'}}>
         {[1, 2, 3, 4, 5].map(f => <button key={f} className="ghost-btn" style={{...KF_BTN,minHeight:48,fontSize:18,padding:0,...(bad === f ? {background:'#fbe3da',borderColor:'#e4572e',color:'#c0431f'} : {}),...(miss && f === FL[j] ? {boxShadow:'0 0 0 3px #e4572e',borderColor:'#e4572e'} : {})}} onClick={() => pick(f)}>{f}</button>)}
@@ -55404,6 +55410,7 @@ function ScAll() {
   const [view, setView] = useState('all');   // 'all' -> 'one' -> 'try'
   const [i, setI] = useState(0), [nonce, setNonce] = useState(0), [kk, setKk] = useState('C');
   const [tk, setTk] = useState('Eb'), [at, setAt] = useState(0), [bad, setBad] = useState(null);
+  const P = useScPlay([view, i, kk, tk]);
   const timers = useRef([]);
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   useEffect(() => clear, []);
@@ -55426,13 +55433,16 @@ function ScAll() {
   } else if (view === 'one') {
     const E = SC_ALLSTEPS[i], K = scIdx(kk), N = scNames(kk), marks = {}, names = {};
     K.forEach((k, j) => { marks[k] = j === 7 ? 'pick' : 'pass'; names[k] = N[j]; });
+    const Q = K.concat(K.slice(0, 7).reverse()), N2 = N.concat(N.slice(0, 7).reverse()), QS = Q.slice(1).map((k, j) => Math.abs(k - Q[j])), A = P.an >= 0 ? scAnim(Q, N2, QS, P.an, 7) : null;
     const pickK = (k) => { clear(); setKk(k); setNonce(n => n + 1); playKey(SCALES[k].rootPc, 0.5); };
     body = <>
       <div style={scS.title}>{title}</div>
       {chips(E.set, kk, pickK, E.set.length === 7 ? 7 : E.set.length === 5 ? 5 : 6)}
       <div style={scS.line}>{kk && E.set.includes(kk) ? t(N[0] + ' major: T T S T T T S.', N[0] + ' 장음계: T T S T T T S.') : t(E.text[0], E.text[1])}</div>
-      <ScKeys ks={K} marks={marks} names={names} arcs={ST.map((_, j) => mv(K, j, false))} nonce={nonce + ':' + i + kk}/>
-      <ScPills/>
+      {A && scDirTag(A.dn)}
+      <ScKeys ks={K} marks={A ? A.marks : marks} names={A ? A.names : names} arcs={A ? A.arcs : ST.map((_, j) => mv(K, j, false))} nonce={nonce + ':' + i + kk + (A ? 'a' + P.an : '')}/>
+      {A ? <ScPillRow st={QS} upTo={P.an} cur={P.an - 1}/> : <ScPills/>}
+      {scPlayBtn(P, Q)}
       {scRow(<>
         <button className="ghost-btn" style={scS.back} onClick={() => { clear(); if (i === 0) setView('all'); else { const p = SC_ALLSTEPS[i - 1]; setI(i - 1); setKk(p.set[0]); setNonce(n => n + 1); } }}>{t('← Back', '← 이전')}</button>
         <button className="ghost-btn" style={scS.prim} onClick={() => { clear(); if (i === SC_ALLSTEPS.length - 1) { setView('try'); setTk('Eb'); setAt(0); setBad(null); setNonce(n => n + 1); } else { const nx = SC_ALLSTEPS[i + 1]; setI(i + 1); setKk(nx.set[0]); setNonce(n => n + 1); } }}>{i === SC_ALLSTEPS.length - 1 ? t('Your turn →', '내가 해보기 →') : t('Next →', '다음 →')}</button>
@@ -55441,8 +55451,8 @@ function ScAll() {
     </>;
   } else {
     const K = scIdx(tk), N = scNames(tk), Q = K.concat(K.slice(0, 7).reverse()), N2 = N.concat(N.slice(0, 7).reverse()), QS = Q.slice(1).map((k, j) => Math.abs(k - Q[j])), done = at >= 14, marks = {}, names = {}, arcs = [];
-    for (let j = 0; j <= at; j++) { marks[Q[j]] = j === at && !done ? 'pick' : 'pass'; names[Q[j]] = N2[j]; }
-    for (let j = 0; j < at; j++) arcs.push([Q[j], Q[j + 1], j === at - 1, SC_COL[QS[j]]]);
+    const ps = at >= 7 ? 7 : 0; for (let j = ps; j <= at; j++) { marks[Q[j]] = j === at && !done ? 'pick' : 'pass'; names[Q[j]] = N2[j]; }
+    for (let j = ps; j < at; j++) arcs.push([Q[j], Q[j + 1], j === at - 1, SC_COL[QS[j]]]);
     if (bad != null) marks[bad] = 'bad';
     const dn = at >= 7, word = (j) => scStepWord(QS[j], j >= 7);
     const line = done ? t('That is ' + N[0] + ' major, up and down: the same pattern.', N[0] + ' 장음계를 올라가고 내려왔어요. 같은 패턴이에요.')
@@ -55456,6 +55466,7 @@ function ScAll() {
       <div style={scS.title}>{t('Your turn', '내가 해보기')}</div>
       {chips(SC_12, tk, (k) => { clear(); setTk(k); setAt(0); setBad(null); setNonce(n => n + 1); playKey(SCALES[k].rootPc, 0.5); }, 6)}
       <div style={scS.line}>{line}</div>
+      {!done && scDirTag(at >= 7)}
       <ScKeys ks={K} marks={at === 0 ? { ...marks, [K[0]]: 'pick' } : marks} names={names} arcs={arcs} nonce={nonce + tk} onTap={tap}/>
       <ScPillRow st={QS} upTo={at} cur={at - 1}/>
       {scRow(<>
@@ -55490,6 +55501,7 @@ function ScChrom() {
   const [view, setView] = useState('all');   // 'all' -> 'one' -> 'try'
   const [i, setI] = useState(0), [nonce, setNonce] = useState(0), [hand, setHand] = useState('RH'), [at, setAt] = useState(0), [bad, setBad] = useState(null);
   const handKo = (h) => h === 'RH' ? '오른손' : '왼손';
+  const P = useScPlay([view, i, hand]);
   const timers = useRef([]);
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   useEffect(() => clear, []);
@@ -55514,11 +55526,15 @@ function ScChrom() {
     else if (E.mode === 'down') K.forEach(k => { names[k] = CHROM_DOWN[k % 12]; });
     else K.forEach((k, j) => { names[k] = String(chromFinger(k % 12, E.mode, j === 0)); });
     const nums = E.mode === 'RH' || E.mode === 'LH';
+    const Q = K0.concat(K0.slice(0, 12).reverse()), N2 = Q.map((k, j) => j <= 12 ? CHROM_UP[k % 12] : CHROM_DOWN[k % 12]), QS = Q.slice(1).map(() => 1), A = !nums && P.an >= 0 ? scAnim(Q, N2, QS, P.an, 12) : null;
     const arcs = E.mode === 'down' ? K.slice(0, 12).map((k, j) => [K[j], K[j + 1], false, '#c0431f']) : nums ? [] : K.slice(0, 12).map((k, j) => [K[j], K[j + 1], false, '#c0431f']);
     body = <>
       <div style={scS.title}>{title}</div>
       <div style={scS.line}>{t(E.text[0], E.text[1])}</div>
-      <ScKeys ring={nums} ks={K0} marks={marks} names={names} arcs={arcs} nonce={nonce + ':' + i}/>
+      {A && scDirTag(A.dn)}
+      <ScKeys ring={nums} ks={K0} marks={A ? A.marks : marks} names={A ? A.names : names} arcs={A ? A.arcs : arcs} nonce={nonce + ':' + i + (A ? 'a' + P.an : '')}/>
+      {A && <ScPillRow st={QS} upTo={P.an} cur={P.an - 1}/>}
+      {!nums && scPlayBtn(P, Q)}
       {scRow(<>
         <button className="ghost-btn" style={scS.back} onClick={() => { clear(); if (i === 1) setView('all'); else { setI(i - 1); setNonce(n => n + 1); } }}>{t('← Back', '← 이전')}</button>
         <button className="ghost-btn" style={scS.prim} onClick={() => { clear(); if (i === SC_CH.length - 1) { setView('try'); setAt(0); setBad(null); setNonce(n => n + 1); } else { setI(i + 1); setNonce(n => n + 1); } }}>{i === SC_CH.length - 1 ? t('Your turn →', '내가 해보기 →') : t('Next →', '다음 →')}</button>
@@ -55527,7 +55543,7 @@ function ScChrom() {
   } else {
     const K = K0, Q = K0.concat(K0.slice(0, 12).reverse()), L = Q.length, done = at >= L, marks = {}, names = {};
     K.forEach(k => { marks[k] = 'pass'; });
-    for (let j = 0; j < at; j++) { marks[Q[j]] = 'good'; names[Q[j]] = String(chromFinger(Q[j] % 12, hand, j === 0 || j === L - 1)); }
+    const ps = at >= 12 ? 12 : 0; for (let j = ps; j < at; j++) { marks[Q[j]] = 'good'; names[Q[j]] = String(chromFinger(Q[j] % 12, hand, j === 0 || j === L - 1)); }
     if (!done) marks[Q[at]] = bad != null ? 'bad' : 'pick';
     const lowest = at === 0 || at === L - 1, k0 = done ? 0 : Q[at], pc = k0 % 12, isBlack = [1, 3, 6, 8, 10].includes(pc), right = chromFinger(pc, hand, lowest);
     const guide = lowest ? t('The lowest note takes the thumb: finger 1.', '맨 아래 음은 엄지, 1번이에요.')
@@ -55545,6 +55561,7 @@ function ScChrom() {
         {['RH', 'LH'].map(h => <button key={h} className={'chip' + (hand === h ? ' active' : '')} aria-pressed={hand === h} style={{...KF_BTN,minHeight:38}} onClick={() => { clear(); setHand(h); setAt(0); setBad(null); setNonce(n => n + 1); }}>{h === 'RH' ? t('Right hand', '오른손') : t('Left hand', '왼손')}</button>)}
       </div>
       <div style={scS.line}>{line}</div>
+      {!done && scDirTag(at >= 12)}
       <ScKeys ring ks={K} marks={marks} names={names} arcs={[]} nonce={nonce + hand}/>
       {!done && <div style={{display:'grid',gridTemplateColumns:'repeat(5,minmax(0,1fr))',gap:6,maxWidth:330,margin:'10px auto 0'}}>
         {[1, 2, 3, 4, 5].map(f => <button key={f} className="ghost-btn" style={{...KF_BTN,minHeight:48,fontSize:18,padding:0,...(bad === f ? {background:'#fbe3da',borderColor:'#e4572e',color:'#c0431f'} : {})}} onClick={() => pick(f)}>{f}</button>)}
@@ -55563,6 +55580,7 @@ const scMinSteps = (f) => { const s = MINOR_FORMS[f].steps.concat([12]); return 
 function ScMinor() {
   const [view, setView] = useState('all');   // 'all' -> 'one' -> 'try'
   const [i, setI] = useState(0), [nonce, setNonce] = useState(0), [fm, setFm] = useState('harmonic'), [at, setAt] = useState(0), [bad, setBad] = useState(null);
+  const P = useScPlay([view, i, fm]);
   const timers = useRef([]);
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   useEffect(() => clear, []);
@@ -55586,12 +55604,14 @@ function ScMinor() {
       {scRow(<button className="ghost-btn" style={scS.prim} onClick={() => { setView('one'); setI(0); setNonce(n => n + 1); }}>{t('One by one →', '하나씩 →')}</button>)}
     </>;
   } else if (view === 'one') {
-    const f = SC_MF[i], M = mk(f);
+    const f = SC_MF[i], M = mk(f), D = f === 'melodic' ? mk('natural') : M, Q = M.K.concat(D.K.slice(0, 7).reverse()), N2 = M.N.concat(D.N.slice(0, 7).reverse()), QS = Q.slice(1).map((k, j) => Math.abs(k - Q[j])), A = P.an >= 0 ? scAnim(Q, N2, QS, P.an, 7, M.marks) : null;
     body = <>
       <div style={scS.title}>{title}</div>
       <div style={scS.line}>{t(TXT[f][0], TXT[f][1])}</div>
-      <ScKeys ks={M.K} marks={M.marks} names={M.names} arcs={M.ST.map((_, j) => mvK(M.K, M.ST, j, false))} nonce={nonce + ':' + i}/>
-      <ScPillRow st={M.ST} upTo={7}/>
+      {A && scDirTag(A.dn)}
+      <ScKeys ks={M.K} marks={A ? A.marks : M.marks} names={A ? A.names : M.names} arcs={A ? A.arcs : M.ST.map((_, j) => mvK(M.K, M.ST, j, false))} nonce={nonce + ':' + i + (A ? 'a' + P.an : '')}/>
+      {A ? <ScPillRow st={QS} upTo={P.an} cur={P.an - 1}/> : <ScPillRow st={M.ST} upTo={7}/>}
+      {scPlayBtn(P, Q)}
       {scRow(<>
         <button className="ghost-btn" style={scS.back} onClick={() => { clear(); if (i === 0) setView('all'); else { setI(i - 1); setNonce(n => n + 1); } }}>{t('← Back', '← 이전')}</button>
         <button className="ghost-btn" style={scS.prim} onClick={() => { clear(); if (i === 2) { setView('try'); setAt(0); setBad(null); setNonce(n => n + 1); } else { setI(i + 1); setNonce(n => n + 1); } }}>{i === 2 ? t('Your turn →', '내가 해보기 →') : t('Next →', '다음 →')}</button>
@@ -55599,8 +55619,8 @@ function ScMinor() {
     </>;
   } else {
     const M = mk(fm), K = M.K, D = fm === 'melodic' ? mk('natural') : M, Q = K.concat(D.K.slice(0, 7).reverse()), N2 = M.N.concat(D.N.slice(0, 7).reverse()), QS = Q.slice(1).map((k, j) => Math.abs(k - Q[j])), done = at >= 14, marks = {}, names = {}, arcs = [];
-    for (let j = 0; j <= at; j++) { marks[Q[j]] = j === at && !done ? 'pick' : (j < 8 && M.marks[Q[j]] === 'target') ? 'target' : 'pass'; names[Q[j]] = N2[j]; }
-    for (let j = 0; j < at; j++) arcs.push([Q[j], Q[j + 1], j === at - 1, scColOf(QS[j])]);
+    const ps = at >= 7 ? 7 : 0; for (let j = ps; j <= at; j++) { marks[Q[j]] = j === at && !done ? 'pick' : (j < 8 && M.marks[Q[j]] === 'target') ? 'target' : 'pass'; names[Q[j]] = N2[j]; }
+    for (let j = ps; j < at; j++) arcs.push([Q[j], Q[j + 1], j === at - 1, scColOf(QS[j])]);
     if (bad != null) marks[bad] = 'bad';
     const word = (j) => scStepWord(QS[j], j >= 7);
     const fl = MINOR_FORMS[fm].label;
@@ -55619,6 +55639,7 @@ function ScMinor() {
         {SC_MF.map(f => <button key={f} className={'chip' + (fm === f ? ' active' : '')} aria-pressed={fm === f} style={{...KF_BTN,minHeight:40,padding:'0 4px'}} onClick={() => { clear(); setFm(f); setAt(0); setBad(null); setNonce(n => n + 1); playKey(9, 0.5); }}>{MINOR_FORMS[f].label}</button>)}
       </div>
       <div style={scS.line}>{line}</div>
+      {!done && scDirTag(at >= 7)}
       <ScKeys ks={K} marks={at === 0 ? { ...marks, [K[0]]: 'pick' } : marks} names={names} arcs={arcs} nonce={nonce + fm} onTap={tap}/>
       <ScPillRow st={QS} upTo={at} cur={at - 1}/>
       {scRow(<>
@@ -55634,6 +55655,24 @@ function ScMinor() {
 const scStepWord = (sz, dn) => dn ? (sz === 1 ? t('a half step down (S)', '반음 아래로 (S)') : sz === 2 ? t('a whole step down (T)', '온음 아래로 (T)') : t('a tone and a semitone down (T+S)', '온음에 반음을 더해 아래로 (T+S)'))
   : (sz === 1 ? t('a half step up (S)', '반음 위로 (S)') : sz === 2 ? t('a whole step up (T)', '온음 위로 (T)') : t('a tone and a semitone up (T+S)', '온음에 반음을 더해 위로 (T+S)'));
 
+// ─── Phase 586 (her ask, 2026-10-20 13:40): the lessons play the scale up and then down, one key at a time, animated, so up and down are seen. Colours clear when the way down starts, and a direction tag says which way.
+function useScPlay(deps) {
+  const [an, setAn] = useState(-1); const tm = useRef([]);
+  const stop = () => { tm.current.forEach(clearTimeout); tm.current = []; setAn(-1); };
+  useEffect(() => { stop(); }, deps);
+  useEffect(() => () => { tm.current.forEach(clearTimeout); }, []);
+  const play = (Q, ms = 480) => { stop(); setAn(0); playKey(Q[0], 0.4); Q.forEach((k, i) => { if (i) tm.current.push(setTimeout(() => { setAn(i); playKey(k, 0.4); }, i * ms)); }); tm.current.push(setTimeout(() => setAn(-1), Q.length * ms + 700)); };
+  return { an, play, stop };
+}
+function scAnim(Q, N2, QS, an, split, tmark) {
+  const ps = an > split ? split : 0, marks = {}, names = {}, arcs = [];
+  for (let j = ps; j <= an; j++) { marks[Q[j]] = j === an ? 'pick' : (tmark && j <= split && tmark[Q[j]] === 'target') ? 'target' : 'pass'; names[Q[j]] = N2[j]; }
+  for (let j = ps; j < an; j++) arcs.push([Q[j], Q[j + 1], j === an - 1, scColOf(QS[j])]);
+  return { marks, names, arcs, dn: an > split };
+}
+const scPlayBtn = (P, Q) => <div style={{textAlign:'center',marginTop:10}}><button className="ghost-btn" style={{...KF_BTN,minWidth:200,borderColor:'#e4572e',color:'#c0431f'}} onClick={() => P.an >= 0 ? P.stop() : P.play(Q)}>{P.an >= 0 ? t('■ Stop', '■ 멈추기') : t('▶ Up and down', '▶ 올라갔다 내려오기')}</button></div>;
+
+const scDirTag = (dn) => <div style={{textAlign:'center',fontWeight:900,fontSize:14,letterSpacing:'0.04em',color: dn ? '#c0431f' : '#26296b',margin:'6px 0 -2px'}}>{dn ? t('↓ Coming down', '↓ 내려가기') : t('↑ Going up', '↑ 올라가기')}</div>;
 // lesson 5: the natural. A sign changed the key; the natural brings back the plain white key.
 const AC_NAT = [   // a: the key with a sign, b: its plain white key, sg: the sign
   { a: 6, b: 5, sg: '♯' }, { a: 10, b: 11, sg: '♭' }, { a: 1, b: 0, sg: '♯' }, { a: 3, b: 4, sg: '♭' }, { a: 8, b: 7, sg: '♯' }, { a: 8, b: 9, sg: '♭' },

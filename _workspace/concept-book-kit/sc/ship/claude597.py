@@ -1,0 +1,7 @@
+import sys
+p = sys.argv[1]
+lines = open(p, encoding='utf-8').read().split('\n')
+idx = [i for i, l in enumerate(lines) if l.startswith('| 585 |')]
+assert len(idx) == 1
+lines.insert(idx[0] + 1, "| 586 | 2026-10-20 | **Up and down shown and checked clearly (her asks, 13:36-13:40).** (1) Lesson 8 (both hands) goes down too: 15 steps, the left-hand digits hidden again for the way down (\"Now come back down: the same fingers, backwards\"); a wrong finger says \"Not that finger.\" and points to the ringed one (it said \"Almost!\"). (2) In every her-turn that goes up and down (lessons 2, 8, 9, 10, 11) the colours of the way up are cleared when the way down starts and a direction tag says which way (\"↑ Going up\" navy, \"↓ Coming down\" coral); arrows and names show only the current way. (3) The learning screens animate it: a \"▶ Up and down\" button in lesson 2 (whole picture), lesson 9 (each key), lesson 10 (sharps and flats screens; names switch to flats on the way down) and lesson 11 (each form; melodic comes down as the natural minor) plays the scale key by key with sound, the colours clearing at the top, then \"■ Stop\" until it ends. New `useScPlay`, `scAnim`, `scPlayBtn`, `scDirTag`. Built by `patch592.py` + `patch593.py` (`t597`). Checked in English and Korean: animations run to the end, all her-turn rounds complete (incl. 25-step chromatic, both hands), no errors. Local commit only, not pushed. |")
+open(p, 'w', encoding='utf-8').write('\n'.join(lines)); print('ok')
