@@ -22985,7 +22985,7 @@ const HOME_LIVE = {
     checkLine: ['Questions, level by level', '문제를 단계별로'],
   },
   'p-modes': {
-    lessons: ['md-start', 'sc-modes', 'md-colour', 'md-parent', 'md-keys'], tools: [], more: [],
+    lessons: ['md-home', 'md-start', 'sc-modes', 'md-family', 'md-ladder', 'md-parent', 'md-keys'], tools: [], more: [],
   },
 };
 const HOME_AREA_LINE = {
@@ -55005,7 +55005,9 @@ function ScShape() {
 });
 
 [['md-start', 'The same white keys, a new home', '같은 흰건반, 새로운 집', 'Start on another white key.', '다른 흰건반에서 시작해요.', MdStart],
- ['md-colour', 'The same home, a new colour', '같은 집, 다른 색깔', 'Each mode on C, against C major.', 'C 위의 선법을 C장조와 견줘 봐요.', MdColour],
+ ['md-home', 'Which note feels like home?', '어느 음이 “집”처럼 느께져요?', 'Stop the scale on different notes.', '음계를 여러 음에서 멈춰 보아요.', MdHome],
+ ['md-family', 'The 3rd decides the family', '3번째 음이 계열을 정해요', 'Major-sounding or minor-sounding.', '장조 소리인지 단조 소리인지.', MdFamily],
+ ['md-ladder', 'From bright to dark', '밝은 것에서 어두운 것까지', 'One note moves down at a time.', '한 음씩 내려가요.', MdLadder],
  ['md-parent', 'Find the parent major', '부모 장조 찾기', 'Count back to the first note.', '거꾸로 세서 첫 음을 찾아요.', MdParent],
  ['md-keys', 'Modes in any key', '어느 조에서든 선법', 'Pick a mode and a home note.', '선법과 집이 되는 음을 골라요.', MdKeys]].forEach(([id, en, ko, benEn, bko, Comp]) => {
   TOOLS.push({ id, ch: 'concept', title: en, blurb: benEn, hidden: true, get kicker() { return TOOL_AREAS.find(a => a.id === 'pitch').name + ' · ' + (LANG === 'ko' ? '선법' : 'Modes'); }, C: Comp });
@@ -56122,6 +56124,7 @@ function MdStart() {
       {scRow(<>
         <button className="ghost-btn" style={scS.back} onClick={() => setView('all')}>{t('← Back', '← 이전')}</button>
         <button className="ghost-btn" style={scS.back} onClick={() => P.play(K)}>{t('▶ Hear it', '▶ 듣기')}</button>
+        <button className="ghost-btn" style={scS.back} onClick={() => mdHold(P, K)}>{t('▶ Home held', '▶ 집을 길게')}</button>
         <button className="ghost-btn" style={scS.prim} onClick={() => { setView('try'); setQ(1); }}>{t('Your turn →', '내가 해보기 →')}</button>
       </>)}
     </>;
@@ -56162,7 +56165,7 @@ function MdNames() {
       {stf && <>{mdStaff('C', i)}<div style={{ textAlign: 'center', fontSize: 12.5, fontWeight: 700, color: '#6d6f9c', marginTop: 4 }}>{t('Only white keys: no sharps or flats.', '흰건반만: ♯도 ♭도 없어요.')}</div></>}
       {scRow(<>
         <button className="ghost-btn" style={scS.back} onClick={() => { if (i === 0) setView('all'); else setI(i - 1); }}>{t('← Back', '← 이전')}</button>
-        <button className="ghost-btn" style={scS.back} onClick={() => P.play(K)}>{t('▶ Hear it', '▶ 듣기')}</button>
+        <button className="ghost-btn" style={scS.back} onClick={() => mdHold(P, K)}>{t('▶ Hear it, home held', '▶ 듣기(집을 길게)')}</button>
         <button className="ghost-btn" style={scS.prim} onClick={() => { if (i === 6) { setView('try'); setQ(1); setAt(-1); setBad(null); } else setI(i + 1); }}>{i === 6 ? t('Your turn →', '내가 해보기 →') : t('Next →', '다음 →')}</button>
       </>)}
     </>;
@@ -56220,32 +56223,35 @@ function MdColour() {
   </>);
 }
 
-// 4: find the parent major: the home note is the nth note of its parent, so count back
-const MD_Q = [[1, 'D'], [4, 'C'], [5, 'G'], [3, 'D'], [2, 'F'], [1, 'A'], [4, 'E'], [6, 'G']];
+// 6: find the parent major. First the one she knows (the relative minor), then count back for any mode.
+const MD_STEPS = [
+  { st: 5, par: 'C', show: 'mode' }, { st: 5, par: 'C', show: 'parent' }, { st: 1, par: 'D', show: 'mode' }, { st: 1, par: 'D', show: 'parent' }, { st: 1, par: 'D', show: 'all' },
+];
+const MD_Q = [[5, 'C'], [5, 'G'], [1, 'C'], [1, 'D'], [4, 'C'], [3, 'D'], [2, 'F'], [6, 'G'], [4, 'E'], [1, 'A']];
 function MdParent() {
   const [view, setView] = useState('one'), [s, setS] = useState(0), [q, setQ] = useState(0), [bad, setBad] = useState(null), [ok, setOk] = useState(false), P = useScPlay([view, s, q]);
   let body;
   if (view === 'one') {
-    const st = MD_Q[0][0], par = MD_Q[0][1], m = MODES[st], K = scModeK(par, st), N = scModeNames(par, st), PK = scModeK(par, 0), PN = scModeNames(par, 0);
-    const R = prettyAny(N[0]), pr = prettyNote(par);
-    const hot = {}; PK.forEach((k) => { hot[k] = false; });
-    const mk = {}, nm = {};
-    if (s < 1) { const X = mdPic(K, N, -1); body = { marks: X.marks, names: X.names, ks: K }; }
-    else { PK.forEach((k, j) => { mk[k] = j === 0 || j === 7 ? 'target' : j === st ? 'pick' : 'pass'; nm[k] = prettyAny(PN[j]); }); body = { marks: mk, names: nm, ks: PK }; }
+    const S = MD_STEPS[s], m = MODES[S.st], K = scModeK(S.par, S.st), N = scModeNames(S.par, S.st), PK = scModeK(S.par, 0), PN = scModeNames(S.par, 0), R = prettyAny(N[0]), pr = prettyNote(S.par);
+    const back = PN.slice(0, S.st + 1).map((n, j) => prettyAny(n) + ' (' + (j + 1) + ')').reverse().join(', ');
     const lines = [
-      t(mdNm(m) + ' is the ' + mdOrd(st) + ' mode: its home is the ' + mdOrd(st) + ' note of its parent major scale.', mdNm(m) + '은(는) ' + mdOrd(st) + ' 선법이에요: 집이 부모 장음계의 ' + mdOrd(st) + ' 음이에요.'),
-      t('So ' + R + ' is the ' + mdOrd(st) + ' note. Count back: ' + R + ' (' + (st + 1) + '), ' + prettyAny(PN[0]) + ' (1). The first note is ' + prettyAny(PN[0]) + '.', R + '이 ' + mdOrd(st) + ' 음이에요. 거꾸로 세요: ' + R + ' (' + (st + 1) + '), ' + prettyAny(PN[0]) + ' (1). 첫 음은 ' + prettyAny(PN[0]) + '이에요.'),
-      t('The parent is ' + pr + ' major. ' + R + ' ' + m.name + ' is the notes of ' + pr + ' major, started on ' + R + '.', '부모는 ' + pr + ' 장조예요. ' + R + ' ' + m.nameKo + '은(는) ' + pr + ' 장음계의 음을 ' + R + '에서 시작한 거예요.'),
+      t('You already know this one. A minor has the very same notes as C major. A minor is the Aeolian mode.', '이건 이미 알아요. A단조는 C장조와 음이 똑같아요. A단조가 에올리안 선법이에요.'),
+      t('Aeolian is the 6th mode, so A is the 6th note of its parent. Count back: ' + back + '. The parent is C major.', '에올리안은 6번째 선법이라 A가 부모의 6번째 음이에요. 거꾸로 세요: ' + back + '. 부모는 C장조예요.'),
+      t('Now the same trick with Dorian, the 2nd mode: E Dorian. E must be the 2nd note of its parent.', '이제 2번째 선법 도리안으로 같은 방법을 써요: E 도리안. E는 부모의 2번째 음이어야 해요.'),
+      t('Count back: ' + back + '. The parent is D major.', '거꾸로 세요: ' + back + '. 부모는 D장조예요.'),
+      t('So E Dorian has the notes of D major, started on E. The rule for every mode: its number is which note of the parent the home is.', '그래서 E 도리안은 D장조의 음을 E에서 시작한 거예요. 모든 선법의 규칙: 선법의 번호는 집이 부모의 몇 번째 음인지예요.'),
     ];
-    const ln = s === 0 ? lines[0] : s === 1 ? lines[1] : lines[2];
+    let ks, marks = {}, names = {};
+    if (S.show === 'mode') { const X = mdPic(K, N, -1); ks = K; marks = X.marks; names = X.names; }
+    else { ks = PK; PK.forEach((k, j) => { marks[k] = j === 0 || j === 7 ? 'target' : j === S.st ? 'pick' : 'pass'; names[k] = prettyAny(PN[j]); }); }
     body = <>
       <div style={scS.title}>{t('Find the parent major', '부모 장조 찾기')}</div>
-      <div style={scS.line}>{ln}</div>
-      <div style={{ textAlign: 'center', fontFamily: "'Playfair Display', Georgia, serif", fontSize: 20, fontWeight: 900, color: '#26296b', marginBottom: 4 }}>{R} {mdNm(m)}</div>
-      <ScKeys ks={body.ks} marks={body.marks} names={body.names} arcs={[]} nonce={'p' + s}/>
+      <div style={scS.line}>{lines[s]}</div>
+      <div style={{ textAlign: 'center', fontFamily: "'Playfair Display', Georgia, serif", fontSize: 20, fontWeight: 900, color: '#26296b', marginBottom: 4 }}>{S.show === 'mode' ? R + ' ' + mdNm(m) : pr + ' ' + t('major', '장조')}</div>
+      <ScKeys ks={ks} marks={marks} names={names} arcs={[]} nonce={'p' + s}/>
       {scRow(<>
         <button className="ghost-btn" style={scS.back} onClick={() => setS(Math.max(0, s - 1))}>{t('← Back', '← 이전')}</button>
-        <button className="ghost-btn" style={scS.prim} onClick={() => { if (s === 2) { setView('try'); setQ(0); setBad(null); setOk(false); } else setS(s + 1); }}>{s === 2 ? t('Your turn →', '내가 해보기 →') : t('Next →', '다음 →')}</button>
+        <button className="ghost-btn" style={scS.prim} onClick={() => { if (s === MD_STEPS.length - 1) { setView('try'); setQ(0); setBad(null); setOk(false); } else setS(s + 1); }}>{s === MD_STEPS.length - 1 ? t('Your turn →', '내가 해보기 →') : t('Next →', '다음 →')}</button>
       </>)}
     </>;
   } else {
@@ -56265,7 +56271,7 @@ function MdParent() {
         {order.map(k => <button key={k} className={'chip' + (ok && k === par ? ' active' : '')} style={{ ...KF_BTN, minHeight: 42, padding: '0 2px', ...(bad === k ? { borderColor: '#c8361b', color: '#c8361b' } : {}) }} onClick={() => { if (ok) return; if (k === par) { setOk(true); setBad(null); } else setBad(k); }}>{prettyNote(k)}</button>)}
       </div>
       {scRow(<>
-        <button className="ghost-btn" style={scS.back} onClick={() => { setView('one'); setS(2); }}>{t('← Back', '← 이전')}</button>
+        <button className="ghost-btn" style={scS.back} onClick={() => { setView('one'); setS(MD_STEPS.length - 1); }}>{t('← Back', '← 이전')}</button>
         {ok && <button className="ghost-btn" style={scS.prim} onClick={() => { setQ((q + 1) % MD_Q.length); setBad(null); setOk(false); }}>{t('Another →', '다른 것 →')}</button>}
       </>)}
     </>;
@@ -56284,6 +56290,8 @@ function MdKeys() {
       <div style={scS.title}>{R} {mdNm(M)}</div>
       <div style={scS.line}>{t('The notes of ' + prettyNote(par) + ' major (' + mdSign(par) + '), started on ' + R + '.', prettyNote(par) + ' 장음계(' + mdSign(par) + ')의 음을 ' + R + '에서 시작해요.')}</div>
       <ScKeys ks={K} marks={X.marks} names={X.names} arcs={[]} nonce={'k' + st + ':' + pc}/>
+      <ScPillRow st={K.slice(1).map((k, j) => k - K[j])} upTo={7} cur={P.an > 0 ? P.an - 1 : -1}/>
+      <div style={{ textAlign: 'center', fontSize: 12.5, fontWeight: 700, color: '#6d6f9c', marginTop: 4 }}>{t('T = a tone, S = a half step. Every mode has its own shape, and the shape works from any home note, like the major scale shape you know.', 'T = 온음, S = 반음. 선법마다 자기 모양이 있고, 아는 장음계 모양처럼 어느 집에서든 그대로 써요.')}</div>
       <div style={{ fontSize: 12, fontWeight: 900, color: 'var(--muted)', letterSpacing: '0.05em', margin: '10px 0 4px', textAlign: 'center' }}>{t('MODE', '선법')}</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', gap: 5, maxWidth: 340, margin: '0 auto' }}>
         {MODES.map((m, j) => <button key={m.name} className={'chip' + (st === j ? ' active' : '')} aria-pressed={st === j} style={{ ...KF_BTN, minHeight: 38, padding: '0 2px', fontSize: 12.5 }} onClick={() => setSt(j)}>{mdNm(m)}</button>)}
@@ -56306,6 +56314,108 @@ function MdKeys() {
       done={t(R + ' ' + M.name + ' is ' + prettyNote(par) + ' major started on ' + R + '.', R + ' ' + M.nameKo + '은(는) ' + prettyNote(par) + ' 장음계를 ' + R + '에서 시작한 거예요.')}/>;
   }
   return scBox('modes', body);
+}
+
+// ─── Modes, finer steps (her answer 2026-10-21: all four were unclear). Order on Home:
+// 1 md-home (which note feels like home), 2 md-start (a new home, heard with the home held), 3 sc-modes (the seven names),
+// 4 md-family (the 3rd: major- or minor-sounding), 5 md-ladder (bright to dark, one note at a time), 6 md-parent (count back, starting from the relative minor she knows),
+// 7 md-keys (the shape travels to any home note). Theory in 4, 5 and 7 is mine, derived from the MODES table and spellScale: flagged for her review.
+const mdHold = (P, K) => { P.play(K); playKey(K[0] - 12, 7); };
+
+function MdHome() {
+  const [stop, setStop] = useState(-1), [nonce, setNonce] = useState(0), P = useScPlay([stop, nonce]);
+  const K = scModeK('C', 0), N = scModeNames('C', 0), names = {}, marks = {};
+  K.forEach((k, j) => { names[k] = N[j]; marks[k] = 'pass'; });
+  if (stop >= 0) marks[K[stop]] = 'target';
+  const tap = (k) => { const j = K.indexOf(k); if (j < 0) return; setStop(j); setNonce(n => n + 1); setTimeout(() => P.play(K.slice(0, j + 1), 420), 30); };
+  const line = stop < 0 ? t('Tap a white key. The C major scale plays up and stops on it.', '흰건반을 눌러 보세요. C장조 음계가 올라가다가 그 음에서 멈춰요.')
+    : stop === 7 || stop === 0 ? t('Stopped on C. It feels finished: the tune can rest here. This is home.', 'C에서 멈췄어요. 끝난 느낌이 들죠: 여기서 쉴 수 있어요. 이게 “집”이에요.')
+    : t('Stopped on ' + N[stop] + '. Does it feel finished, or does it want to go on? Now tap the top C and listen again.', N[stop] + '에서 멈췄어요. 끝난 느낌이에요, 아니면 더 가고 싶나요? 이제 맨 위 C를 눌러서 다시 들어 보세요.');
+  return scBox('modes', <>
+    <div style={scS.title}>{t('Which note feels like home?', '어느 음이 “집”처럼 느껴져요?')}</div>
+    <div style={scS.line}>{line}</div>
+    <ScKeys ks={K} marks={marks} names={names} arcs={[]} nonce={'h' + nonce} onTap={tap}/>
+    <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#4a4d86', margin: '8px 0 0' }}>{t('The note a tune feels finished on is its home note. In a major scale it is the first note.', '곡이 끝난 느낌으로 쉬는 음이 그 곡의 “집”이에요. 장음계에서는 첫 번째 음이에요.')}</div>
+  </>);
+}
+
+// 4: the 3rd decides the family
+function MdFamily() {
+  const [view, setView] = useState('one'), [st, setSt] = useState(0), [q, setQ] = useState(1), [bad, setBad] = useState(false), [ok, setOk] = useState(false), P = useScPlay([view, st, q]);
+  const fam = (s) => scModeK('C', s)[2] - scModeK('C', s)[0] === 4 ? 'maj' : 'min';
+  let body;
+  if (view === 'one') {
+    const K = scModeK('C', st), N = scModeNames('C', st), m = MODES[st], M = mdPic(K, N, P.an), gap = K[2] - K[0], f = fam(st);
+    M.marks[K[2]] = 'pick';
+    body = <>
+      <div style={scS.title}>{t('The 3rd decides the family', '3번째 음이 계열을 정해요')}</div>
+      <div style={scS.line}>{t('From the home note ' + N[0] + ' to the 3rd note ' + N[2] + ' is ' + gap + ' half steps: ' + (f === 'maj' ? 'the major sound.' : 'the minor sound.'), '집 ' + N[0] + '에서 3번째 음 ' + N[2] + '까지는 반음 ' + gap + '개: ' + (f === 'maj' ? '장조 소리예요.' : '단조 소리예요.'))}</div>
+      <div style={{ textAlign: 'center', fontFamily: "'Playfair Display', Georgia, serif", fontSize: 20, fontWeight: 900, color: '#26296b', marginBottom: 4 }}>{N[0]} {mdNm(m)}</div>
+      <ScKeys ks={K} marks={M.marks} names={M.names} arcs={[[K[0], K[2], false, '#c0431f']]} nonce={'f' + st}/>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 8, maxWidth: 340, margin: '10px auto 0' }}>
+        {[['maj', t('Major family: 4 half steps', '장조 계열: 반음 4개'), [0, 3, 4]], ['min', t('Minor family: 3 half steps', '단조 계열: 반음 3개'), [1, 2, 5, 6]]].map(([id, lab, list]) => <div key={id} style={{ border: '1.5px solid ' + (f === id ? '#e4572e' : 'rgba(38,41,107,0.14)'), background: f === id ? '#fbe3da' : '#fff', borderRadius: 12, padding: '6px 6px 8px', textAlign: 'center' }}>
+          <div style={{ fontSize: 11.5, fontWeight: 900, color: '#c0431f', marginBottom: 4 }}>{lab}</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, justifyContent: 'center' }}>{list.map(s => <button key={s} className={'chip' + (st === s ? ' active' : '')} aria-pressed={st === s} style={{ ...KF_BTN, minHeight: 32, padding: '0 7px', fontSize: 12 }} onClick={() => setSt(s)}>{mdNm(MODES[s])}</button>)}</div>
+        </div>)}
+      </div>
+      {scRow(<>
+        <button className="ghost-btn" style={scS.back} onClick={() => mdHold(P, K)}>{t('▶ Hear it', '▶ 듣기')}</button>
+        <button className="ghost-btn" style={scS.prim} onClick={() => { setView('try'); setQ(1); setBad(false); setOk(false); }}>{t('Your turn →', '내가 해보기 →')}</button>
+      </>)}
+    </>;
+  } else {
+    const ORD = [1, 3, 5, 2, 4, 6, 0], s = ORD[(q - 1) % 7], K = scModeK('C', s), N = scModeNames('C', s), m = MODES[s], gap = K[2] - K[0], f = fam(s), M = mdPic(K, N, -1);
+    const line = ok ? t(N[0] + ' ' + m.name + ': ' + gap + ' half steps to the 3rd, so the ' + (f === 'maj' ? 'major' : 'minor') + ' family.', N[0] + ' ' + m.nameKo + ': 3번째 음까지 반음 ' + gap + '개라서 ' + (f === 'maj' ? '장조' : '단조') + ' 계열이에요.')
+      : bad ? t('Not that one. Count the half steps from ' + N[0] + ' to ' + N[2] + ': ' + gap + '. 4 is major, 3 is minor, so this is the ' + (f === 'maj' ? 'major' : 'minor') + ' family.', '그쪽이 아니에요. ' + N[0] + '에서 ' + N[2] + '까지 반음을 세 보세요: ' + gap + '개. 4개는 장조, 3개는 단조라서 ' + (f === 'maj' ? '장조' : '단조') + ' 계열이에요.')
+      : t(N[0] + ' ' + m.name + ': is it in the major family or the minor family?', N[0] + ' ' + m.nameKo + ': 장조 계열일까요, 단조 계열일까요?');
+    M.marks[K[2]] = 'pick';
+    body = <>
+      <div style={scS.title}>{t('Your turn', '내가 해보기')}</div>
+      <div style={scS.line}>{line}</div>
+      <ScKeys ks={K} marks={M.marks} names={M.names} arcs={[[K[0], K[2], false, '#c0431f']]} nonce={'g' + q}/>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 8, maxWidth: 340, margin: '10px auto 0' }}>
+        {[['maj', t('Major family', '장조 계열')], ['min', t('Minor family', '단조 계열')]].map(([id, lab]) => <button key={id} className={'chip' + (ok && f === id ? ' active' : '')} style={{ ...KF_BTN, minHeight: 44 }} onClick={() => { if (ok) return; if (id === f) { setOk(true); setBad(false); } else setBad(true); }}>{lab}</button>)}
+      </div>
+      {scRow(<>
+        <button className="ghost-btn" style={scS.back} onClick={() => { setView('one'); }}>{t('← Back', '← 이전')}</button>
+        {ok && <button className="ghost-btn" style={scS.prim} onClick={() => { setQ(q + 1); setBad(false); setOk(false); }}>{t('Another →', '다른 것 →')}</button>}
+      </>)}
+    </>;
+  }
+  return scBox('modes', body);
+}
+
+// 5: the ladder from bright to dark: on C, each step down lowers one note by a half step
+const MD_LAD = [3, 0, 4, 1, 5, 2, 6];
+function MdLadder() {
+  const [pos, setPos] = useState(1), P = useScPlay([pos]);
+  const st = MD_LAD[pos], K = scModeK(mdParent(0, st), st), N = scModeNames(mdParent(0, st), st), m = MODES[st], M = mdPic(K, N, P.an);
+  let line;
+  if (pos === 0) line = t('The brightest: C major with its 4th note raised (' + prettyAny(N[3]) + ').', '가장 밝아요: C장조에서 4번째 음을 올렸어요(' + prettyAny(N[3]) + ').');
+  else {
+    const ps = MD_LAD[pos - 1], PK = scModeK(mdParent(0, ps), ps), PN = scModeNames(mdParent(0, ps), ps), j = K.findIndex((k, i) => i < 7 && k !== PK[i]);
+    line = t('From ' + mdNm(MODES[ps]) + ' to ' + m.name + ': the ' + mdOrd(j) + ' note moves down one half step, ' + prettyAny(PN[j]) + ' → ' + prettyAny(N[j]) + '.', mdNm(MODES[ps]) + '에서 ' + m.nameKo + '으로: ' + mdOrd(j) + ' 음이 반음 내려가요, ' + prettyAny(PN[j]) + ' → ' + prettyAny(N[j]) + '.');
+    M.marks = {}; K.forEach((k, i) => { M.marks[k] = i === j ? 'target' : 'pass'; }); if (P.an >= 0) M.marks[K[P.an]] = 'pick';
+  }
+  if (pos === 0) { M.marks = {}; K.forEach((k, i) => { M.marks[k] = i === 3 ? 'target' : 'pass'; }); if (P.an >= 0) M.marks[K[P.an]] = 'pick'; }
+  return scBox('modes', <>
+    <div style={scS.title}>{t('From bright to dark', '밝은 것에서 어두운 것까지')}</div>
+    <div style={scS.line}>{line}</div>
+    <div style={{ textAlign: 'center', fontFamily: "'Playfair Display', Georgia, serif", fontSize: 20, fontWeight: 900, color: '#26296b', marginBottom: 4 }}>C {mdNm(m)}</div>
+    <ScKeys ks={K} marks={M.marks} names={M.names} arcs={[]} nonce={'l' + pos}/>
+    <div style={{ maxWidth: 340, margin: '10px auto 0', display: 'grid', gap: 4 }}>
+      <div style={{ fontSize: 11, fontWeight: 900, color: '#c0431f', textAlign: 'center' }}>{t('▲ brightest', '▲ 가장 밝음')}</div>
+      {MD_LAD.map((s2, i) => { const on = pos === i; let mv = ''; if (i > 0) { const ps = MD_LAD[i - 1], pk = scModeK(mdParent(0, ps), ps), ck = scModeK(mdParent(0, s2), s2), pn = scModeNames(mdParent(0, ps), ps), cn = scModeNames(mdParent(0, s2), s2), j = ck.findIndex((k, x) => x < 7 && k !== pk[x]); mv = prettyAny(pn[j]) + ' → ' + prettyAny(cn[j]); } else mv = '♯4';
+        return <button key={s2} aria-pressed={on} onClick={() => setPos(i)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, minHeight: 36, padding: '0 14px', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 900, color: on ? '#fffefa' : '#26296b', background: on ? '#26296b' : '#fff', border: '1.5px solid ' + (on ? '#26296b' : 'rgba(38,41,107,0.2)') }}><span>{mdNm(MODES[s2])}</span><span style={{ fontSize: 12.5, fontWeight: 800, color: on ? '#ffd9cc' : '#c0431f' }}>{mv}</span></button>; })}
+      <div style={{ fontSize: 11, fontWeight: 900, color: '#c0431f', textAlign: 'center' }}>{t('▼ darkest', '▼ 가장 어두움')}</div>
+    </div>
+    <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#4a4d86', marginTop: 8 }}>{t(m.mood, m.moodKo)}</div>
+    {scRow(<>
+      <button className="ghost-btn" style={scS.back} disabled={pos === 0} onClick={() => setPos(Math.max(0, pos - 1))}>{t('← Brighter', '← 더 밝게')}</button>
+      <button className="ghost-btn" style={scS.back} onClick={() => mdHold(P, K)}>{t('▶ Hear it', '▶ 듣기')}</button>
+      <button className="ghost-btn" style={scS.prim} disabled={pos === 6} onClick={() => setPos(Math.min(6, pos + 1))}>{t('Darker →', '더 어둡게 →')}</button>
+    </>)}
+  </>);
 }
 
 const scDirTag = (dn) => <div style={{textAlign:'center',fontWeight:900,fontSize:14,letterSpacing:'0.04em',color: dn ? '#c0431f' : '#26296b',margin:'6px 0 -2px'}}>{dn ? t('↓ Coming down', '↓ 내려가기') : t('↑ Going up', '↑ 올라가기')}</div>;
