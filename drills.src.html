@@ -44524,7 +44524,7 @@ function SscQuestion({ q, given, locked, onAnswer, pixel }) {
   let body;
   if (q.kind === 'step') body = <>{big(sscScaleName(q.start))}{prompt(t('Between the two coral keys: a whole step or a half step?', '산호색 두 건반 사이는 온 걸음일까요, 반 걸음일까요?'))}
     {paper(<SscKeys start={q.start} o={{ lit: [q.d, q.d + 1], nums: isDone }}/>)}{grid(2, c => word(SSC_SW[c]()))}</>;
-  else if (q.kind === 'half') body = <>{big(sscScaleName(q.start))}{prompt(t('Between which degrees is a half step?', '어느 두 번호 사이가 반 걸음일까요?'))}
+  else if (q.kind === 'half') body = <>{big(sscScaleName(q.start))}{prompt(t('Which of these pairs is a half step?', '다음 중 반 걸음인 곳은 어디일까요?'))}
     {paper(<SscKeys start={q.start} o={{ nums: true, steps: isDone }}/>)}{grid(4, c => word(sscPair(c), 15))}</>;
   else if (q.kind === 'build') {
     const sc = sscScale(q.start);
@@ -55262,6 +55262,7 @@ function ScWhite({ hand }) {
   const [seq, setSeq] = useState([]), [at, setAt] = useState(0), [given, setGiven] = useState(null), [score, setScore] = useState(0);
   const title = RHd ? t('White keys: right hand', '흰건반에서 시작: 오른손') : t('White keys: left hand', '흰건반에서 시작: 왼손');
   const last = steps.length - 1, N5 = 5;
+  const PL = useScPlay([view, i]);
   const newRound = () => { const rest = shuffle(['C', 'G', 'D', 'A', 'E', RHd ? 'B' : 'F']).slice(0, N5 - 1); setSeq(shuffle([odd, ...rest])); setAt(0); setGiven(null); setScore(0); setNonce(n => n + 1); };
   let body;
   if (view === 'all') {
@@ -55274,10 +55275,13 @@ function ScWhite({ hand }) {
     </>;
   } else if (view === 'one') {
     const E = steps[i], P = scPaintKey('C', hand, E.n);
+    const FF = scFingers('C', hand, 1), Qd = P.K.concat(P.K.slice(0, 7).reverse()), Nd = FF.map(String).concat(FF.slice(0, 7).reverse().map(String)), QSd = Qd.slice(1).map((k, j) => Math.abs(k - Qd[j])), Ad = i === last && PL.an >= 0 ? scAnim(Qd, Nd, QSd, PL.an, 7) : null;
     body = <>
       <div style={scS.title}>{title}</div>
-      <div style={scS.line}>{t(E.text[0], E.text[1])}</div>
-      <ScKeys nums ks={P.K} marks={P.marks} names={P.names} ncol={P.ncol} arcs={[]} nonce={nonce + ':' + i}/>
+      <div style={scS.line}>{Ad && Ad.dn ? t('Coming down: the same fingers, in reverse.', '내려올 때: 같은 손가락을 거꾸로.') : t(E.text[0], E.text[1])}</div>
+      {Ad && scDirTag(Ad.dn)}
+      <ScKeys nums ks={P.K} marks={Ad ? Ad.marks : P.marks} names={Ad ? Ad.names : P.names} ncol={P.ncol} arcs={Ad ? Ad.arcs : []} nonce={nonce + ':' + i + (Ad ? 'a' + PL.an : '')}/>
+      {i === last && scPlayBtn(PL, Qd)}
       {scRow(<>
         <button className="ghost-btn" style={scS.back} onClick={() => { if (i === 0) setView('all'); else { setI(i - 1); setNonce(n => n + 1); } }}>{t('← Back', '← 이전')}</button>
         <button className="ghost-btn" style={scS.prim} onClick={() => { if (i === last) { setView('cmp'); setNonce(n => n + 1); } else { setI(i + 1); setNonce(n => n + 1); } }}>{t('Next →', '다음 →')}</button>
@@ -55340,6 +55344,7 @@ function ScBlackHand({ hand }) {
   useEffect(() => clear, []);
   const title = RHd ? t('Black keys: right hand', '검은건반에서 시작: 오른손') : t('Black keys: left hand', '검은건반에서 시작: 왼손');
   const reset = () => { setFound([]); setBad(null); setWhy(''); setNonce(n => n + 1); };
+  const PL = useScPlay([view, i]);
   let body;
   if (view === 'all') {
     body = <>
@@ -55350,10 +55355,13 @@ function ScBlackHand({ hand }) {
     </>;
   } else if (view === 'one') {
     const E = STEPS[i], P = scPaintKey(E.key, hand);
+    const FF = SCALES[E.key].octaves[1][hand], Qd = P.K.concat(P.K.slice(0, 7).reverse()), Nd = FF.map(String).concat(FF.slice(0, 7).reverse().map(String)), QSd = Qd.slice(1).map((k, j) => Math.abs(k - Qd[j])), Ad = PL.an >= 0 ? scAnim(Qd, Nd, QSd, PL.an, 7) : null;
     body = <>
       <div style={scS.title}>{title}</div>
-      <div style={scS.line}>{t(E.text[0], E.text[1])}</div>
-      <ScKeys nums ks={P.K} marks={P.marks} names={P.names} ncol={P.ncol} arcs={[]} nonce={nonce + ':' + i}/>
+      <div style={scS.line}>{Ad && Ad.dn ? t('Coming down: the same fingers, in reverse.', '내려올 때: 같은 손가락을 거꾸로.') : t(E.text[0], E.text[1])}</div>
+      {Ad && scDirTag(Ad.dn)}
+      <ScKeys nums ks={P.K} marks={Ad ? Ad.marks : P.marks} names={Ad ? Ad.names : P.names} ncol={P.ncol} arcs={Ad ? Ad.arcs : []} nonce={nonce + ':' + i + (Ad ? 'a' + PL.an : '')}/>
+      {scPlayBtn(PL, Qd)}
       {scRow(<>
         <button className="ghost-btn" style={scS.back} onClick={() => { if (i === 0) setView('all'); else { setI(i - 1); setNonce(n => n + 1); } }}>{t('← Back', '← 이전')}</button>
         <button className="ghost-btn" style={scS.prim} onClick={() => { if (i === STEPS.length - 1) { setView('try'); reset(); } else { setI(i + 1); setNonce(n => n + 1); } }}>{i === STEPS.length - 1 ? t('Your turn →', '내가 해보기 →') : t('Next →', '다음 →')}</button>
