@@ -39711,7 +39711,7 @@ function sskRaw(yOf, items, o = {}) {
   const yTop = Y(high), yBot = Y(low), out = [], over = [], notes = [], bars = [];
   let x = o.x0 || 46, last = 0;
   const bar = (xx, w = 1.5) => '<line x1="' + pFix(xx) + '" x2="' + pFix(xx) + '" y1="' + pFix(yTop) + '" y2="' + pFix(yBot) + '" stroke="' + col + '" stroke-width="' + w + '"/>';
-  const coral = (j) => o.lit === j || (o.hl || []).includes(j);
+  const coral = (j) => o.lit === j || (o.hl || []).includes(j), alt = (j) => (o.hl2 || []).includes(j), ALT = '#2e8a6e';
   const stem = (nx, y, up, c) => '<line x1="' + pFix(up ? nx + 6.4 : nx - 6.4) + '" x2="' + pFix(up ? nx + 6.4 : nx - 6.4) + '" y1="' + pFix(up ? y - 1.5 : y + 1.5) + '" y2="' + pFix(up ? y - 34 : y + 34) + '" stroke="' + c + '" stroke-width="1.9" stroke-linecap="round"/>';
   const ledgers = (nx, d, lw = 12) => ledgersFor(d, low, high).map(p => '<line x1="' + pFix(nx - lw) + '" x2="' + pFix(nx + lw) + '" y1="' + pFix(Y(p)) + '" y2="' + pFix(Y(p)) + '" stroke="' + col + '" stroke-width="1.4"/>').join('');
   items.forEach((it) => {
@@ -39737,7 +39737,7 @@ function sskRaw(yOf, items, o = {}) {
       out.push('<rect x="' + pFix(xa) + '" y="' + pFix(up ? by : by - 5) + '" width="' + pFix(xb - xa) + '" height="5" fill="' + col + '"/>');
       x += Math.max(n * D * 1.3, o.minW || 0); return;
     }
-    const d = it[2], y = Y(d), up = d < mid, kind = k === 'hd' ? 'h' : k, c = coral(notes.length) ? cor : col;
+    const d = it[2], y = Y(d), up = d < mid, kind = k === 'hd' ? 'h' : k, c = coral(notes.length) ? cor : alt(notes.length) ? ALT : col;
     out.push(ledgers(nx, d, kind === 'w' ? 14.5 : 12), nvbHead(nx, y, kind, c, 1));
     if (kind !== 'w') out.push(stem(nx, y, up, c));
     if (k === 'hd') out.push('<circle cx="' + pFix(nx + 14) + '" cy="' + pFix((d - low) % 2 === 0 ? y - 5 : y) + '" r="2.6" fill="' + c + '"/>');
@@ -39788,7 +39788,7 @@ function sskRaw(yOf, items, o = {}) {
     notes.forEach((nt, j) => { const v = o.under[j]; if (v === undefined) return;
       if (v === null) over.push('<rect x="' + pFix(nt.x - BX / 2) + '" y="' + pFix(bt) + '" width="' + BX + '" height="' + BX + '" rx="3" fill="#fff" stroke="rgba(38,41,107,0.45)" stroke-width="1.3"/>');
       else { const cr = (o.underCoral || []).includes(j); if (o.underBoxed) over.push('<rect x="' + pFix(nt.x - BX / 2) + '" y="' + pFix(bt) + '" width="' + BX + '" height="' + BX + '" rx="3" fill="#fff" stroke="' + (cr ? cor : 'rgba(38,41,107,0.45)') + '" stroke-width="1.3"/>');
-        over.push('<text x="' + pFix(nt.x) + '" y="' + pFix(bt + BX * 0.5 + 5) + '" text-anchor="middle" font-family="Inter, sans-serif" font-size="' + pFix(Math.max(13, BX * 0.55)) + '" font-weight="900" fill="' + (cr ? cor : col) + '"' + (cr ? ' font-style="italic"' : '') + '>' + v + '</text>'); } });
+        over.push('<text x="' + pFix(nt.x) + '" y="' + pFix(bt + BX * 0.5 + 5) + '" text-anchor="middle" font-family="Inter, sans-serif" font-size="' + pFix(Math.max(13, BX * 0.55)) + '" font-weight="900" fill="' + (cr ? cor : (o.underAlt || []).includes(j) ? ALT : col) + '"' + (cr || (o.underAlt || []).includes(j) ? ' font-style="italic"' : '') + '>' + v + '</text>'); } });
     bottom = bt + BX + 2;
   }
   return { raw: under.join('') + out.join('') + over.join(''), notes, bars, last, end: x, top, bottom };
@@ -44837,7 +44837,7 @@ function SacStaff({ items, clef = 'treble', width = 400, o = {}, label, full, pa
   return <div style={{width:full ? '100%' : Math.min(100, vbw / width * 100) + '%',margin:full || left ? undefined : '0 auto'}}><SfStaff clef={clef} width={vbw} span={[4, m.last]} pad={p} label={label}
     extra={(yOf, layer) => { if (layer !== 'over') return null; const mm = sskRaw((d) => yOf(d, clef), P.items, oo);
       return <g><g dangerouslySetInnerHTML={{ __html: mm.raw }}/>
-        {mm.notes.map((n, j) => P.signs[j] && !(o.noSign || []).includes(j) && <g key={'s' + j}>{tnAcc(P.signs[j], n.x - 21, n.y, (o.signHl || []).includes(j) ? PEN_C : (o.ink || PEN_N))}</g>)}
+        {mm.notes.map((n, j) => P.signs[j] && !(o.noSign || []).includes(j) && <g key={'s' + j}>{tnAcc(P.signs[j], n.x - 21, n.y, (o.signHl || []).includes(j) ? PEN_C : (o.signHl2 || []).includes(j) ? '#2e8a6e' : (o.ink || PEN_N))}</g>)}
         {(o.ring || []).map(j => mm.notes[j] && <ellipse key={'r' + j} cx={mm.notes[j].x} cy={mm.notes[j].y} rx="15" ry="11" fill="none" stroke={PEN_C} strokeWidth="1.8"/>)}
         {o.bracket && (() => { const a = mm.notes[o.bracket.from], x1 = a.x - 27, x2 = mm.bars[o.bracket.bar], y = Math.min(sTop, hi) - 12, yt = yOf(CLEFS[clef].high) - 4;
           return <g><path d={`M${x1} ${y + 6} L${x1} ${y} L${x2} ${y} L${x2} ${yt}`} fill="none" stroke={PEN_C} strokeWidth="1.8" strokeLinejoin="round"/>
@@ -46356,7 +46356,7 @@ function SkgStaff({ items, k = 'C', clef = 'treble', width = 400, o = {}, label,
     extra={(yOf, layer) => { if (layer !== 'over') return null; const mm = sskRaw((d) => yOf(d, clef), P.items, oo);
       return <g>{ks.map(([s, d], i) => <g key={'k' + i}>{tnAcc(s, ksx(i), yOf(d, clef), o.ksCol || PEN_N)}</g>)}
         <g dangerouslySetInnerHTML={{ __html: mm.raw }}/>
-        {mm.notes.map((n, j) => P.signs[j] && !(o.noSign || []).includes(j) && <g key={'s' + j}>{tnAcc(P.signs[j], n.x - 21, n.y, (o.signHl || []).includes(j) ? PEN_C : (o.ink || PEN_N))}</g>)}
+        {mm.notes.map((n, j) => P.signs[j] && !(o.noSign || []).includes(j) && <g key={'s' + j}>{tnAcc(P.signs[j], n.x - 21, n.y, (o.signHl || []).includes(j) ? PEN_C : (o.signHl2 || []).includes(j) ? '#2e8a6e' : (o.ink || PEN_N))}</g>)}
         {(o.ring || []).map(j => mm.notes[j] && <ellipse key={'r' + j} cx={mm.notes[j].x} cy={mm.notes[j].y} rx="15" ry="11" fill="none" stroke={PEN_C} strokeWidth="1.8"/>)}
         {o.bracket && (() => { const a = mm.notes[o.bracket.from], x1 = a.x - 27, x2 = mm.bars[o.bracket.bar], y = Math.min(sTop, hi) - 12, yt = yOf(CLEFS[clef].high, clef) - 4;
           return <g><path d={`M${x1} ${y + 6} L${x1} ${y} L${x2} ${y} L${x2} ${yt}`} fill="none" stroke={PEN_C} strokeWidth="1.8" strokeLinejoin="round"/>
@@ -55513,6 +55513,7 @@ function ScAll() {
       {A && scDirTag(A.dn)}
       <ScKeys ks={K} marks={A ? A.marks : marks} names={A ? A.names : names} arcs={A ? A.arcs : ST.map((_, j) => mv(K, j, false))} nonce={nonce + ':' + i + kk + (A ? 'a' + P.an : '')}/>
       {A ? <ScPillRow st={QS} upTo={P.an} cur={P.an - 1}/> : <ScPills/>}
+      {scFingers(kk, 'RH', 1) && scFingers(kk, 'LH', 1) && <ScPair keyName={kk} n={1} cur={A ? (P.an <= 7 ? P.an : 14 - P.an) : undefined}/>}
       <ScStaffScale k={kk} ring={A ? (P.an <= 7 ? P.an : 14 - P.an) : null}/>
       {scPlayBtn(P, Q)}
       {scRow(<>
@@ -55678,16 +55679,17 @@ function ScMinor() {
   } else if (view === 'one') {
     const f = SC_MF[i], M = mk(f), Dn = f === 'melodic' ? mk('natural') : M, Q = M.K.concat(Dn.K.slice(0, 7).reverse()), QS = Q.slice(1).map((k, j) => Math.abs(k - Q[j])), an = P.an;
     const upI = scMinItems(f, 'up'), dnI = scMinItems(f, 'down');
-    const cUp = f === 'harmonic' ? [6] : f === 'melodic' ? [5, 6] : [], cDn = f === 'harmonic' ? [1] : [];
+    const cUp = f === 'harmonic' ? [6] : f === 'melodic' ? [5, 6] : [], cDn = f === 'harmonic' ? [1] : [], aUp = f === 'melodic' ? [] : [5], aDn = [2];
     const onlyUp = an >= 0 ? Array.from({ length: Math.min(an, 7) + 1 }, (_, j) => j) : null, onlyDn = an >= 0 ? (an >= 7 ? Array.from({ length: an - 6 }, (_, j) => j) : []) : null;
-    const stf = (items, coral, only, ring, key) => <SkgStaff key={key} items={items} k="F" width={330} o={{ boxS: 26, D: 30, hl: coral, signHl: coral, ring: ring == null ? [] : [ring], ...skgUnder(items, 'F', only, coral) }}/>;
+    const stf = (items, coral, alt, only, ring, key) => <SkgStaff key={key} items={items} k="F" width={330} o={{ boxS: 26, D: 30, hl: coral, hl2: alt, signHl: coral, underAlt: alt, ksCol: '#2e8a6e', ring: ring == null ? [] : [ring], ...skgUnder(items, 'F', only, coral) }}/>;
     body = <>
       <div style={scS.title}>{title}</div>
       <div style={scS.line}>{t(TXT[f][0], TXT[f][1])}</div>
       {scDirTag(false)}
-      {stf(upI, cUp, onlyUp, an >= 0 && an <= 7 ? an : null, 'u' + f + an)}
+      {stf(upI, cUp, aUp, onlyUp, an >= 0 && an <= 7 ? an : null, 'u' + f + an)}
       {scDirTag(true)}
-      {stf(dnI, cDn, onlyDn, an >= 7 ? an - 7 : null, 'd' + f + an)}
+      {stf(dnI, cDn, aDn, onlyDn, an >= 7 ? an - 7 : null, 'd' + f + an)}
+      <div style={{display:'flex',justifyContent:'center',gap:14,flexWrap:'wrap',fontSize:12,fontWeight:800,margin:'2px 0 4px'}}><span style={{color:'#2e8a6e'}}>{t('● from the key signature', '● 조표에서 온 음')}</span>{f !== 'natural' && <span style={{color:'#c0431f'}}>{t('● accidental, beside the note', '● 임시표, 음표 옆에 붙은 음')}</span>}</div>
       {an >= 0 ? <ScPillRow st={QS} upTo={an} cur={an - 1}/> : <ScPillRow st={M.ST} upTo={7}/>}
       {scPlayBtn(P, Q)}
       {scRow(<>
@@ -55719,6 +55721,12 @@ function ScMinor() {
       <div style={scS.line}>{line}</div>
       {!done && scDirTag(at >= 7)}
       <ScKeys ks={K} marks={at === 0 ? { ...marks, [K[0]]: 'pick' } : marks} names={names} arcs={arcs} nonce={nonce + fm} onTap={tap}/>
+      {(() => {   // the staff with its key signature (B♭); each note appears as she taps it: key-signature notes green, accidentals coral
+        const dn = at >= 7, cnt = dn ? at - 6 : at + 1, all = scMinItems(fm, dn ? 'down' : 'up'), items = all.slice(0, cnt).concat([['||']]);
+        const acc = dn ? (fm === 'harmonic' ? [1] : []) : (fm === 'harmonic' ? [6] : fm === 'melodic' ? [5, 6] : []), ks = dn ? [2] : (fm === 'melodic' ? [] : [5]);
+        const on = (l) => l.filter(j => j < cnt);
+        return <SkgStaff key={'tr' + fm + (dn ? 'd' : 'u') + cnt} items={items} k="F" width={330} o={{ boxS: 26, D: 30, hl: on(acc), hl2: on(ks), signHl: on(acc), underAlt: on(ks), ksCol: '#2e8a6e', ...skgUnder(items, 'F', null, on(acc)) }}/>;
+      })()}
       <ScPillRow st={QS} upTo={at} cur={at - 1}/>
       {scRow(<>
         <button className="ghost-btn" style={scS.back} onClick={() => { clear(); setView('one'); setI(2); setNonce(n => n + 1); }}>{t('← Back', '← 이전')}</button>
@@ -55754,7 +55762,7 @@ const scPlayBtn = (P, Q) => <div style={{textAlign:'center',marginTop:10}}><butt
 const SC_D0 = { C: 28, G: 32, D: 29, A: 33, E: 30, B: 27, F: 31, Bb: 27, Eb: 30, Ab: 33, Db: 29, Gb: 32 };
 function ScStaffScale({ k, ring, only, width = 330 }) {
   const d0 = SC_D0[k], items = Array.from({ length: 8 }, (_, j) => ['q', 1, d0 + j]).concat([['||']]), hl = skgOf(items, k, n => n.byKey);
-  return <SkgStaff items={items} k={k} width={width} o={{ boxS: 26, D: 30, hl, ...skgUnder(items, k, only, hl), ring: ring == null ? [] : [ring] }}/>;
+  return <SkgStaff items={items} k={k} width={width} o={{ boxS: 26, D: 30, hl2: hl, underAlt: hl, ksCol: '#2e8a6e', ...skgUnder(items, k, only, []), ring: ring == null ? [] : [ring] }}/>;
 }
 // D minor on the treble staff, d 29 to 36, with the key signature of F major (B♭). Up or down; signs only where the form raises a note.
 function scMinItems(form, dir) {
