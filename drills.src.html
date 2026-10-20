@@ -55486,7 +55486,8 @@ const SC_CH = [
 ];
 function ScChrom() {
   const [view, setView] = useState('all');   // 'all' -> 'one' -> 'try'
-  const [i, setI] = useState(0), [nonce, setNonce] = useState(0), [st0, setSt0] = useState(0), [at, setAt] = useState(0), [bad, setBad] = useState(null);
+  const [i, setI] = useState(0), [nonce, setNonce] = useState(0), [hand, setHand] = useState('RH'), [at, setAt] = useState(0), [bad, setBad] = useState(null);
+  const handKo = (h) => h === 'RH' ? '오른손' : '왼손';
   const timers = useRef([]);
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   useEffect(() => clear, []);
@@ -55495,10 +55496,10 @@ function ScChrom() {
   const K0 = Array.from({ length: 13 }, (_, j) => j);
   let body;
   if (view === 'all') {
-    const marks = {}, names = {}; K0.forEach(k => { marks[k] = 'pass'; });
+    const marks = {}, names = {}; K0.forEach(k => { marks[k] = [1, 3, 6, 8, 10].includes(k % 12) ? 'target' : 'pass'; });
     body = <>
       <div style={scS.title}>{title}</div>
-      <div style={scS.line}>{t(SC_CH[0].text[0], SC_CH[0].text[1])}</div>
+      <div style={scS.line}>{t('The 7 white keys, plus the 5 black keys put in between (orange): all twelve, one half step at a time.', '흰건반 7개, 그 사이에 끼워 넣은 검은건반 5개(주황색): 반음씩 가는 열두 음이에요.')}</div>
       <ScKeys ks={K0} marks={marks} names={names} arcs={ST.map((_, j) => mv(K0, j, false))} nonce="all"/>
       <ScPillRow st={ST} upTo={12}/>
       {scRow(<button className="ghost-btn" style={scS.prim} onClick={() => { setView('one'); setI(1); setNonce(n => n + 1); }}>{t('One by one →', '하나씩 →')}</button>)}
@@ -55522,25 +55523,29 @@ function ScChrom() {
       </>)}
     </>;
   } else {
-    const K = Array.from({ length: 13 }, (_, j) => st0 + j), done = at >= 12, marks = {}, names = {}, arcs = [];
-    for (let j = 0; j <= at; j++) { marks[K[j]] = j === at && !done ? 'pick' : 'pass'; names[K[j]] = CHROM_UP[K[j] % 12]; }
-    for (let j = 0; j < at; j++) arcs.push(mv(K, j, j === at - 1));
-    if (bad != null) marks[bad] = 'bad';
-    const nm = (k) => CHROM_UP[k % 12];
-    const line = done ? t('That is the chromatic scale from ' + nm(K[0]) + ': twelve half steps.', nm(K[0]) + '에서 시작하는 반음계예요. 반음 열두 걸음이에요.')
-      : bad != null ? t('Not that key. From ' + nm(K[at]) + ', tap the very next key, black or white.', '그 건반이 아니에요. ' + nm(K[at]) + '에서 바로 옆 건반을 눌러요. 검은건반이든 흰건반이든요.')
-      : at === 0 ? t('Start on ' + nm(K[0]) + '. Then tap the very next key.', nm(K[0]) + '에서 시작해요. 그다음 바로 옆 건반을 눌러요.')
-      : t('From ' + nm(K[at]) + ', tap the very next key. (' + at + '/12)', nm(K[at]) + '에서 바로 옆 건반을 눌러요. (' + at + '/12)');
-    const tap = (k) => { if (done) return; clear(); if (k === K[at + 1]) { setBad(null); setAt(at + 1); setNonce(n => n + 1); playKey(K[at], 0.3); timers.current.push(setTimeout(() => playKey(k, 0.5), 350)); }
-      else { setBad(k); playKey(k, 0.4); timers.current.push(setTimeout(() => setBad(null), 1100)); } };
+    const K = K0, done = at >= 13, marks = {}, names = {};
+    K.forEach((k, j) => { if (j < at) { marks[k] = 'good'; names[k] = String(chromFinger(k % 12, hand, j === 0)); } else marks[k] = 'pass'; });
+    if (!done) marks[K[at]] = bad != null ? 'bad' : 'pick';
+    const k0 = done ? 0 : K[at], pc = k0 % 12, isBlack = [1, 3, 6, 8, 10].includes(pc), right = chromFinger(pc, hand, at === 0);
+    const guide = at === 0 ? t('The lowest note takes the thumb: finger 1.', '맨 아래 음은 엄지, 1번이에요.')
+      : isBlack ? t('Every black key takes finger 3.', '검은건반은 모두 3번이에요.')
+      : right === 2 ? (hand === 'RH' ? t('On F and C (the upper key of two white keys side by side) the right hand uses finger 2.', '붙어 있는 흰건반 두 개 중 위쪽인 F와 C에서는 오른손 2번을 써요.') : t('On E and B the left hand uses finger 2.', 'E와 B에서는 왼손 2번을 써요.'))
+      : t('A white key takes the thumb, finger 1.', '흰건반은 엄지, 1번이에요.');
+    const handW = hand === 'RH' ? t('right hand', '오른손') : t('left hand', '왼손');
+    const line = done ? t('All thirteen notes. That is the chromatic fingering, ' + handW + '.', '열세 음을 다 했어요. ' + handKo(hand) + ' 반음계 운지예요.')
+      : bad != null ? t('Not that finger. ' + guide, '그 손가락이 아니에요. ' + guide)
+      : t('Which finger plays ' + CHROM_UP[pc] + '? ' + handW + ' (' + (at + 1) + '/13)', CHROM_UP[pc] + '는 몇 번 손가락일까요? ' + handKo(hand) + ' (' + (at + 1) + '/13)');
+    const pick = (f) => { if (done) return; clear(); if (f === right) { setBad(null); setAt(at + 1); setNonce(n => n + 1); playKey(k0, 0.5); } else { setBad(f); timers.current.push(setTimeout(() => setBad(null), 1600)); } };
     body = <>
       <div style={scS.title}>{t('Your turn', '내가 해보기')}</div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(6,minmax(0,1fr))',gap:5,maxWidth:330,margin:'0 auto 6px'}}>
-        {[0, 2, 4, 5, 7, 9].map(p => <button key={p} className={'chip' + (st0 === p ? ' active' : '')} aria-pressed={st0 === p} style={{...KF_BTN,minHeight:38,padding:'0 2px',fontSize:14}} onClick={() => { clear(); setSt0(p); setAt(0); setBad(null); setNonce(n => n + 1); playKey(p, 0.5); }}>{CHROM_UP[p]}</button>)}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:6,maxWidth:330,margin:'0 auto 6px'}}>
+        {['RH', 'LH'].map(h => <button key={h} className={'chip' + (hand === h ? ' active' : '')} aria-pressed={hand === h} style={{...KF_BTN,minHeight:38}} onClick={() => { clear(); setHand(h); setAt(0); setBad(null); setNonce(n => n + 1); }}>{h === 'RH' ? t('Right hand', '오른손') : t('Left hand', '왼손')}</button>)}
       </div>
       <div style={scS.line}>{line}</div>
-      <ScKeys ks={K} marks={at === 0 ? { ...marks, [K[0]]: 'pick' } : marks} names={names} arcs={arcs} nonce={nonce + st0} onTap={tap}/>
-      <ScPillRow st={ST} upTo={at} cur={at - 1}/>
+      <ScKeys ring ks={K} marks={marks} names={names} arcs={[]} nonce={nonce + hand}/>
+      {!done && <div style={{display:'grid',gridTemplateColumns:'repeat(5,minmax(0,1fr))',gap:6,maxWidth:330,margin:'10px auto 0'}}>
+        {[1, 2, 3, 4, 5].map(f => <button key={f} className="ghost-btn" style={{...KF_BTN,minHeight:48,fontSize:18,padding:0,...(bad === f ? {background:'#fbe3da',borderColor:'#e4572e',color:'#c0431f'} : {})}} onClick={() => pick(f)}>{f}</button>)}
+      </div>}
       {scRow(<>
         <button className="ghost-btn" style={scS.back} onClick={() => { clear(); setView('one'); setI(SC_CH.length - 1); setNonce(n => n + 1); }}>{t('← Back', '← 이전')}</button>
         {done && <button className="ghost-btn" style={scS.prim} onClick={() => { setAt(0); setBad(null); setNonce(n => n + 1); }}>{t('Again', '다시 하기')}</button>}
