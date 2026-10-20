@@ -55848,15 +55848,15 @@ function ScaleFinderDial() {
   const pick = (i, m) => { setMode(m); setKey((m === 'major' ? SFD_MAJ : SFD_MIN)[i]); setRot(r => r + ((((-i * 30 - r) % 360) + 540) % 360 - 180)); setQ(''); };
   const search = (v) => { setQ(v); const r = parseScaleQuery(v); if (r) { const m = r.mode, k = sfdNorm(r.key, m); pick((m === 'major' ? SFD_MAJ : SFD_MIN).indexOf(k), m); setQ(v); } };
   const miss = q && !parseScaleQuery(q);
-  const C = 170, R = 120, r = 28, tr = 'transform 0.7s cubic-bezier(0.3,0.7,0.2,1)';
-  const sfx = mode === 'minor' ? 'm' : '';
-  const node = (i) => {
-    const k = list[i], a = (-90 + i * 30) * Math.PI / 180, x = C + R * Math.cos(a), y = C + R * Math.sin(a), on = i === idx, two = SFD_TWO[mode][k], col = on ? '#fffefa' : NV;
-    return <g key={k} data-key={k} data-mode={mode} data-on={on ? 1 : 0} transform={'translate(' + x + ' ' + y + ')'} onClick={() => pick(i, mode)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(i, mode); } }} tabIndex={0} role="button" aria-label={sfdName(k, mode) + ' ' + (mode === 'major' ? t('major', '장조') : t('minor', '단조'))} style={{ cursor: 'pointer', outline: 'none' }}>
+  const C = 170, tr = 'transform 0.7s cubic-bezier(0.3,0.7,0.2,1)';
+  const node = (i, m) => {
+    const L = m === 'major' ? SFD_MAJ : SFD_MIN, k = L[i], RR = m === 'major' ? 134 : 82, rr = m === 'major' ? 24 : 21, a = (-90 + i * 30) * Math.PI / 180, x = C + RR * Math.cos(a), y = C + RR * Math.sin(a);
+    const on = i === idx && m === mode, pair = i === idx && !on, two = SFD_TWO[m][k], sx = m === 'minor' ? 'm' : '', col = on ? '#fffefa' : NV, fs1 = m === 'major' ? 20 : 15, fs2 = m === 'major' ? 12 : 10.5;
+    return <g key={m + k} data-key={k} data-mode={m} data-on={on ? 1 : 0} transform={'translate(' + x + ' ' + y + ')'} onClick={() => pick(i, m)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(i, m); } }} tabIndex={0} role="button" aria-label={sfdName(k, m) + ' ' + (m === 'major' ? t('major', '장조') : t('minor', '단조'))} style={{ cursor: 'pointer', outline: 'none' }}>
       <g style={{ transform: 'rotate(' + (-rot) + 'deg)', transition: tr }}>
-        <circle r={r} fill={on ? NV : '#fff'} stroke={NV} strokeWidth="1.6"/>
-        {two ? <><text y={-2} textAnchor="middle" fontSize="13" fontWeight="800" fill={col} fontFamily="'Playfair Display', Georgia, serif">{two[0] + sfx}</text><text y={13} textAnchor="middle" fontSize="13" fontWeight="800" fill={col} fontFamily="'Playfair Display', Georgia, serif">{two[1] + sfx}</text></>
-          : <text y={7} textAnchor="middle" fontSize="21" fontWeight="800" fill={col} fontFamily="'Playfair Display', Georgia, serif">{prettyNote(k) + sfx}</text>}
+        <circle r={rr} fill={on ? NV : '#fff'} stroke={on ? NV : pair ? CO : NV} strokeWidth={pair ? 2.2 : 1.6}/>
+        {two ? <><text y={-fs2 * 0.2} textAnchor="middle" fontSize={fs2} fontWeight="800" fill={col} fontFamily="'Playfair Display', Georgia, serif">{two[0] + sx}</text><text y={fs2 * 1.0} textAnchor="middle" fontSize={fs2} fontWeight="800" fill={col} fontFamily="'Playfair Display', Georgia, serif">{two[1] + sx}</text></>
+          : <text y={fs1 * 0.34} textAnchor="middle" fontSize={fs1} fontWeight="800" fill={col} fontFamily="'Playfair Display', Georgia, serif">{prettyNote(k) + sx}</text>}
       </g>
     </g>;
   };
@@ -55912,22 +55912,19 @@ function ScaleFinderDial() {
     <div style={scS.title}>{t('Scale finder', '스케일 찾기')}</div>
     <div style={scS.line}>{t('Turn the circle: one step right adds a ♯, one step left adds a ♭.', '원을 돌려 보세요: 오른쪽으로 한 칸이면 ♯이 하나 늘고, 왼쪽으로 한 칸이면 ♭이 하나 늘어요.')}</div>
     <svg data-sfd-dial viewBox="0 0 340 340" width="100%" style={{ display: 'block', maxWidth: 340, margin: '0 auto' }} role="group" aria-label={t('Circle of fifths', '5도권')}>
-      <circle cx={C} cy={C} r={R} fill="none" stroke="rgba(38,41,107,0.14)" strokeWidth="1.5" strokeDasharray="3 5"/>
-      <rect x={C - r - 7} y={C - R - r - 7} width={2 * r + 14} height={2 * r + 14} rx={r + 7} fill="#fbe3da" stroke={CO} strokeWidth="2"/>
+      <circle cx={C} cy={C} r={134} fill="none" stroke="rgba(38,41,107,0.14)" strokeWidth="1.5" strokeDasharray="3 5"/>
+      <circle cx={C} cy={C} r={82} fill="none" stroke="rgba(38,41,107,0.14)" strokeWidth="1.5" strokeDasharray="3 5"/>
+      <rect x={C - 31} y={C - 134 - 24 - 7} width={62} height={134 - 82 + 24 + 21 + 14} rx={31} fill="#fbe3da" stroke={CO} strokeWidth="2"/>
       <g data-sfd-rot={rot} style={{ transform: 'rotate(' + rot + 'deg)', transformOrigin: C + 'px ' + C + 'px', transition: tr }}>
-        {list.map((_, i) => node(i))}
+        {SFD_MAJ.map((_, i) => node(i, 'major'))}{SFD_MIN.map((_, i) => node(i, 'minor'))}
       </g>
-      <text x={C} y={C - 20} textAnchor="middle" fontSize={sfdName(key, mode).length > 3 ? 21 : 30} fontWeight="900" fill={NV} fontFamily="'Playfair Display', Georgia, serif">{sfdName(key, mode)}</text>
-      <text x={C} y={C - 2} textAnchor="middle" fontSize="11" fontWeight="900" letterSpacing="1.2" fill="var(--muted)">{mode === 'major' ? t('MAJOR', '장조') : t('MINOR', '단조')}</text>
-      <text x={C} y={C + 26} textAnchor="middle" fontSize="22" fontWeight="900" fill={CO}>{CLOCK_SIG[mode][idx] === '0' ? '' : CLOCK_SIG[mode][idx]}</text>
-      <text x={C} y={C + 48} textAnchor="middle" fontSize="12" fontWeight="800" fill="var(--muted)">{t('relative ', '나란한 ') + sfdName(relKey, relMode) + (relMode === 'minor' ? 'm' : '')}</text>
-      <text x={C - 40} y={C + 72} textAnchor="middle" fontSize="11" fontWeight="900" fill={CO}>← ♭</text>
-      <text x={C + 40} y={C + 72} textAnchor="middle" fontSize="11" fontWeight="900" fill={CO}>♯ →</text>
+      <text x={C} y={C - 8} textAnchor="middle" fontSize={sfdName(key, mode).length > 3 ? 19 : 28} fontWeight="900" fill={NV} fontFamily="'Playfair Display', Georgia, serif">{sfdName(key, mode)}</text>
+      <text x={C} y={C + 8} textAnchor="middle" fontSize="10" fontWeight="900" letterSpacing="1.2" fill="var(--muted)">{mode === 'major' ? t('MAJOR', '장조') : t('MINOR', '단조')}</text>
+      <text x={C} y={C + 30} textAnchor="middle" fontSize="19" fontWeight="900" fill={CO}>{CLOCK_SIG[mode][idx] === '0' ? '' : CLOCK_SIG[mode][idx]}</text>
     </svg>
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 5, maxWidth: 330, margin: '4px auto 6px' }}>
-      <button className="chip" data-sfd-step="-1" style={{ ...KF_BTN, minHeight: 40, padding: '0 2px' }} onClick={() => step(-1)}>← ♭</button>
-      {['major', 'minor'].map(m => <button key={m} className={'chip' + (mode === m ? ' active' : '')} aria-pressed={mode === m} style={{ ...KF_BTN, minHeight: 40, padding: '0 2px' }} onClick={() => pick(idx, m)}>{m === 'major' ? t('Major', '장조') : t('Minor', '단조')}</button>)}
-      <button className="chip" data-sfd-step="1" style={{ ...KF_BTN, minHeight: 40, padding: '0 2px' }} onClick={() => step(1)}>♯ →</button>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, maxWidth: 330, margin: '4px auto 6px' }}>
+      <button className="chip" data-sfd-step="-1" style={{ ...KF_BTN, minHeight: 40, padding: '0 2px' }} onClick={() => step(-1)}>{t('← one ♭ more', '← ♭ 하나 더')}</button>
+      <button className="chip" data-sfd-step="1" style={{ ...KF_BTN, minHeight: 40, padding: '0 2px' }} onClick={() => step(1)}>{t('one ♯ more →', '♯ 하나 더 →')}</button>
     </div>
     <input value={q} onChange={e => search(e.target.value)} placeholder={t('Or type a key: Bb, f#m…', '또는 입력: Bb, f#m…')} aria-label={t('Type a key', '조 입력')} style={{ display: 'block', width: '100%', maxWidth: 330, boxSizing: 'border-box', margin: '0 auto 4px', padding: '8px 12px', borderRadius: 10, border: '1.5px solid ' + (miss ? '#c8361b' : 'var(--border)'), fontSize: 14, fontFamily: 'inherit' }}/>
     {miss && <div style={{ fontSize: 12, color: '#c8361b', textAlign: 'center' }}>{t('No key called “' + q + '” here. Try a letter with # or b, and “minor” if you need it.', '“' + q + '”(이)라는 조는 없어요. 알파벳에 # 또는 b를 붙이고, 단조면 “minor”를 써 보세요.')}</div>}
@@ -55966,7 +55963,6 @@ function ScaleFinderDial() {
       </> : <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--muted)', marginTop: 6 }}>{t('This form needs a double sharp, so the staff is left out here.', '이 형태는 겹샤프가 필요해서 오선은 보여 주지 않아요.')}</div>)}
       {scRow(<>
         <button className="ghost-btn" style={scS.back} data-sfd-play onClick={playA}>{an >= 0 ? t('■ Stop', '■ 멈추기') : t('▶ Up and down: you press Next at each thumb', '▶ 올라갔다 내려오기: 엄지마다 \'다음\'을 눌러요')}</button>
-        <button className="ghost-btn" style={scS.prim} data-sfd-rel onClick={() => pick(idx, relMode)}>{mode === 'major' ? t('Relative minor →', '나란한 단조 →') : t('Relative major →', '나란한 장조 →')}</button>
       </>)}
       <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#5a5d8f', marginTop: 8 }}>{relLine}</div>
     </div>
