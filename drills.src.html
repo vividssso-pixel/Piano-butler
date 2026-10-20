@@ -23003,7 +23003,7 @@ const HOME_LIVE = {
     checkLine: ['Questions, level by level', '문제를 단계별로'],
   },
   'p-scale': {
-    lessons: ['sc-shape', 'sc-same', 'sc-deg', 'sc-wr', 'sc-wl', 'sc-br', 'sc-bl', 'sc-both', 'sc-all'], check: 'scales', tools: [], more: [],
+    lessons: ['sc-shape', 'sc-same', 'sc-deg', 'sc-wr', 'sc-wl', 'sc-br', 'sc-bl', 'sc-both', 'sc-all', 'sc-chrom', 'sc-min'], check: 'scales', tools: [], more: [],
     tryLine: ['Three steps: white keys, black keys, all twelve', '세 단계: 흰건반, 검은건반, 열두 조'],
     checkLine: ['Questions, level by level', '문제를 단계별로'],
   },
@@ -54934,7 +54934,9 @@ function ScShape() {
  ['sc-br', 'Black keys: right hand', '검은건반에서 시작: 오른손', 'Start on finger 2; the first white key gets the thumb.', '2번으로 시작, 처음 닿는 흰건반에 엄지.', () => <ScBlackHand hand="RH"/>],
  ['sc-bl', 'Black keys: left hand', '검은건반에서 시작: 왼손', 'One shape for B♭, E♭, A♭ and D♭.', 'B♭, E♭, A♭, D♭는 한 가지 모양.', () => <ScBlackHand hand="LH"/>],
  ['sc-both', 'Both hands together', '양손 같이', 'One column per note: right hand above, left hand below.', '한 칸에 음 하나: 위는 오른손, 아래는 왼손.', ScBoth],
- ['sc-all', 'All twelve keys', '12개 조 모두', 'One pattern, twelve start notes.', '패턴 하나, 시작 음 열두 개.', ScAll]].forEach(([id, en, ko, benEn, bko, Comp]) => {
+ ['sc-all', 'All twelve keys', '12개 조 모두', 'One pattern, twelve start notes.', '패턴 하나, 시작 음 열두 개.', ScAll],
+ ['sc-chrom', 'The chromatic scale', '반음계', 'Every key, one half step at a time.', '모든 건반을 반음씩.', ScChrom],
+ ['sc-min', 'Three kinds of minor', '세 가지 단음계', 'Natural, harmonic and melodic, shown on A.', 'A에서 보는 자연, 화성, 가락.', ScMinor]].forEach(([id, en, ko, benEn, bko, Comp]) => {
   TOOLS.push({ id, ch: 'concept', title: en, blurb: benEn, hidden: true, get kicker() { return TOOL_AREAS.find(a => a.id === 'pitch').name + ' · ' + (LANG === 'ko' ? '스케일' : 'Scales'); }, C: Comp });
   TOOL_KO[id] = [ko, bko];
   const tl = TOOLS[TOOLS.length - 1], k = TOOL_KO[id], ti = tl.title, bl = tl.blurb; tl.titleEn = ti; tl.blurbEn = bl;
@@ -54948,7 +54950,7 @@ function ScShape() {
 const SC_OFF = [0, 2, 4, 5, 7, 9, 11, 12];
 const scIdx = (key) => SC_OFF.map(o => (SCALES[key] ? SCALES[key].rootPc : SF12.indexOf(key)) + o);
 const scNames = (key) => spellScale(key).concat([key]).map(prettyNote);
-function ScKeys({ marks, onTap, arcs, nonce, names, ks, ncol, nums }) {
+function ScKeys({ marks, onTap, arcs, nonce, names, ks, ncol, nums, ring }) {
   const kx = keyCenterX, white = (i) => PC_INFO[((i % 12) + 12) % 12].white;
   const x0 = Math.min(...ks.map(kx)) - 24, x1 = Math.max(...ks.map(kx)) + 24;
   const pt = (i) => [kx(i), white(i) ? 99 : 58];
@@ -54967,7 +54969,7 @@ function ScKeys({ marks, onTap, arcs, nonce, names, ks, ncol, nums }) {
   return (<div style={{maxWidth:330,margin:'0 auto'}}>
     <TapKeyboard octaves={2} extraC labels={arcs.length ? 'white' : 'all'} marks={marks} onTap={onTap} top={46} vx={[x0, x1]} overlay={<g aria-hidden="true">{arrows}{Object.entries(names || {}).map(([k, txt]) => { const col = (ncol && ncol[k]) || '#c0431f';
       return <g key={'n' + k + txt} style={{animation:'fadeUp 0.3s both'}}>
-        {nums && txt === '1' && <circle cx={kx(+k)} cy={-18} r={13} fill="none" stroke={col} strokeWidth="2.4"/>}
+        {(nums || ring) && txt === '1' && <circle cx={kx(+k)} cy={nums ? -18 : white(+k) ? -13 : -31} r={nums ? 13 : 10} fill="none" stroke={col} strokeWidth="2.4"/>}
         <text x={kx(+k)} y={nums ? -12 : (white(+k) ? -9 : -27)} textAnchor="middle" fontSize="17" fontWeight="900" fill={col}>{txt}</text>
       </g>; })}</g>}/>
   </div>);
@@ -55461,6 +55463,160 @@ function ScAll() {
     </>;
   }
   return scBox('all12', body);
+}
+
+// ─── Phase 584 (her order, 2026-10-20): Scales, lessons 10 and 11. Her material only: ChromaticScale (CHROM_UP / CHROM_DOWN / chromFinger) and MinorFormsCard / MINOR_FORMS / STEP_PATTERNS.
+const scColOf = (sz) => sz === 2 ? '#26296b' : '#c0431f';
+function ScPillRow({ st, upTo, cur }) {
+  const n = st.length;
+  return <div style={{display:'grid',gridTemplateColumns:'repeat(' + n + ',minmax(0,1fr))',gap:n > 7 ? 3 : 5,maxWidth:330,margin:'10px auto 0'}}>
+    {st.map((sz, i) => { const on = i < upTo, wide = sz === 3, half = sz === 1, c = scColOf(sz);
+      return <div key={i} style={{height:34,borderRadius:9,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:n > 7 ? 12 : wide ? 12 : 16,
+        background: !on ? 'transparent' : (half || wide) ? '#fbe3da' : '#e6e7f1', color: !on ? 'rgba(38,41,107,0.25)' : c,
+        border:'1.5px solid ' + (i === cur ? c : on ? ((half || wide) ? '#e4572e' : 'rgba(38,41,107,0.25)') : 'rgba(38,41,107,0.14)'), boxShadow: i === cur ? '0 0 0 2px ' + c + '33' : 'none'}}>{on ? (wide ? 'T+S' : half ? 'S' : 'T') : ''}</div>; })}
+  </div>;
+}
+// lesson 10: the chromatic scale
+const SC_CH = [
+  { text: ['Every key, black and white, one half step at a time: twelve steps from C up to the next C.', '검은건반, 흰건반 가리지 않고 모든 건반을 반음씩 가요. C에서 다음 C까지 열두 걸음이에요.'], mode: 'up' },
+  { text: ['Going up, the black keys are written with sharps: C, C♯, D, D♯ …', '올라갈 때 검은건반은 샤프로 적어요: C, C♯, D, D♯ …'], mode: 'up' },
+  { text: ['Coming down, the same black keys are written with flats: C, B, B♭, A …', '내려올 때는 같은 검은건반을 플랫으로 적어요: C, B, B♭, A …'], mode: 'down' },
+  { text: ['Right hand: finger 3 on every black key, the thumb on the white keys, finger 2 on F and C (the upper key of two white keys side by side).', '오른손: 검은건반은 모두 3번, 흰건반은 엄지, 붙어 있는 흰건반 두 개 중 위쪽인 F와 C는 2번.'], mode: 'RH' },
+  { text: ['Left hand: finger 3 on every black key, the thumb on the white keys, finger 2 on E and B.', '왼손: 검은건반은 모두 3번, 흰건반은 엄지, E와 B는 2번.'], mode: 'LH' },
+];
+function ScChrom() {
+  const [view, setView] = useState('all');   // 'all' -> 'one' -> 'try'
+  const [i, setI] = useState(0), [nonce, setNonce] = useState(0), [st0, setSt0] = useState(0), [at, setAt] = useState(0), [bad, setBad] = useState(null);
+  const timers = useRef([]);
+  const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
+  useEffect(() => clear, []);
+  const title = t('The chromatic scale', '반음계');
+  const ST = Array(12).fill(1), mv = (K, j, anim) => [K[j], K[j + 1], anim, '#c0431f'];
+  const K0 = Array.from({ length: 13 }, (_, j) => j);
+  let body;
+  if (view === 'all') {
+    const marks = {}, names = {}; K0.forEach(k => { marks[k] = 'pass'; });
+    body = <>
+      <div style={scS.title}>{title}</div>
+      <div style={scS.line}>{t(SC_CH[0].text[0], SC_CH[0].text[1])}</div>
+      <ScKeys ks={K0} marks={marks} names={names} arcs={ST.map((_, j) => mv(K0, j, false))} nonce="all"/>
+      <ScPillRow st={ST} upTo={12}/>
+      {scRow(<button className="ghost-btn" style={scS.prim} onClick={() => { setView('one'); setI(1); setNonce(n => n + 1); }}>{t('One by one →', '하나씩 →')}</button>)}
+    </>;
+  } else if (view === 'one') {
+    const E = SC_CH[i], marks = {}, names = {}; let K = K0.slice();
+    if (E.mode === 'down') K = K0.slice().reverse();
+    K.forEach((k, j) => { marks[k] = 'pass'; });
+    if (E.mode === 'up') K.forEach(k => { names[k] = CHROM_UP[k % 12]; });
+    else if (E.mode === 'down') K.forEach(k => { names[k] = CHROM_DOWN[k % 12]; });
+    else K.forEach((k, j) => { names[k] = String(chromFinger(k % 12, E.mode, j === 0)); });
+    const nums = E.mode === 'RH' || E.mode === 'LH';
+    const arcs = E.mode === 'down' ? K.slice(0, 12).map((k, j) => [K[j], K[j + 1], false, '#c0431f']) : nums ? [] : K.slice(0, 12).map((k, j) => [K[j], K[j + 1], false, '#c0431f']);
+    body = <>
+      <div style={scS.title}>{title}</div>
+      <div style={scS.line}>{t(E.text[0], E.text[1])}</div>
+      <ScKeys ring={nums} ks={K0} marks={marks} names={names} arcs={arcs} nonce={nonce + ':' + i}/>
+      {scRow(<>
+        <button className="ghost-btn" style={scS.back} onClick={() => { clear(); if (i === 1) setView('all'); else { setI(i - 1); setNonce(n => n + 1); } }}>{t('← Back', '← 이전')}</button>
+        <button className="ghost-btn" style={scS.prim} onClick={() => { clear(); if (i === SC_CH.length - 1) { setView('try'); setAt(0); setBad(null); setNonce(n => n + 1); } else { setI(i + 1); setNonce(n => n + 1); } }}>{i === SC_CH.length - 1 ? t('Your turn →', '내가 해보기 →') : t('Next →', '다음 →')}</button>
+      </>)}
+    </>;
+  } else {
+    const K = Array.from({ length: 13 }, (_, j) => st0 + j), done = at >= 12, marks = {}, names = {}, arcs = [];
+    for (let j = 0; j <= at; j++) { marks[K[j]] = j === at && !done ? 'pick' : 'pass'; names[K[j]] = CHROM_UP[K[j] % 12]; }
+    for (let j = 0; j < at; j++) arcs.push(mv(K, j, j === at - 1));
+    if (bad != null) marks[bad] = 'bad';
+    const nm = (k) => CHROM_UP[k % 12];
+    const line = done ? t('That is the chromatic scale from ' + nm(K[0]) + ': twelve half steps.', nm(K[0]) + '에서 시작하는 반음계예요. 반음 열두 걸음이에요.')
+      : bad != null ? t('Not that key. From ' + nm(K[at]) + ', tap the very next key, black or white.', '그 건반이 아니에요. ' + nm(K[at]) + '에서 바로 옆 건반을 눌러요. 검은건반이든 흰건반이든요.')
+      : at === 0 ? t('Start on ' + nm(K[0]) + '. Then tap the very next key.', nm(K[0]) + '에서 시작해요. 그다음 바로 옆 건반을 눌러요.')
+      : t('From ' + nm(K[at]) + ', tap the very next key. (' + at + '/12)', nm(K[at]) + '에서 바로 옆 건반을 눌러요. (' + at + '/12)');
+    const tap = (k) => { if (done) return; clear(); if (k === K[at + 1]) { setBad(null); setAt(at + 1); setNonce(n => n + 1); playKey(K[at], 0.3); timers.current.push(setTimeout(() => playKey(k, 0.5), 350)); }
+      else { setBad(k); playKey(k, 0.4); timers.current.push(setTimeout(() => setBad(null), 1100)); } };
+    body = <>
+      <div style={scS.title}>{t('Your turn', '내가 해보기')}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(6,minmax(0,1fr))',gap:5,maxWidth:330,margin:'0 auto 6px'}}>
+        {[0, 2, 4, 5, 7, 9].map(p => <button key={p} className={'chip' + (st0 === p ? ' active' : '')} aria-pressed={st0 === p} style={{...KF_BTN,minHeight:38,padding:'0 2px',fontSize:14}} onClick={() => { clear(); setSt0(p); setAt(0); setBad(null); setNonce(n => n + 1); playKey(p, 0.5); }}>{CHROM_UP[p]}</button>)}
+      </div>
+      <div style={scS.line}>{line}</div>
+      <ScKeys ks={K} marks={at === 0 ? { ...marks, [K[0]]: 'pick' } : marks} names={names} arcs={arcs} nonce={nonce + st0} onTap={tap}/>
+      <ScPillRow st={ST} upTo={at} cur={at - 1}/>
+      {scRow(<>
+        <button className="ghost-btn" style={scS.back} onClick={() => { clear(); setView('one'); setI(SC_CH.length - 1); setNonce(n => n + 1); }}>{t('← Back', '← 이전')}</button>
+        {done && <button className="ghost-btn" style={scS.prim} onClick={() => { setAt(0); setBad(null); setNonce(n => n + 1); }}>{t('Again', '다시 하기')}</button>}
+      </>)}
+    </>;
+  }
+  return scBox('chrom', body);
+}
+// lesson 11: three kinds of minor, shown on A minor (her card: no key signature, so every change is easy to see)
+const SC_MF = ['natural', 'harmonic', 'melodic'];
+const scMinSteps = (f) => { const s = MINOR_FORMS[f].steps.concat([12]); return s.slice(1).map((v, j) => v - s[j]); };
+function ScMinor() {
+  const [view, setView] = useState('all');   // 'all' -> 'one' -> 'try'
+  const [i, setI] = useState(0), [nonce, setNonce] = useState(0), [fm, setFm] = useState('harmonic'), [at, setAt] = useState(0), [bad, setBad] = useState(null);
+  const timers = useRef([]);
+  const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
+  useEffect(() => clear, []);
+  const title = t('Three kinds of minor', '세 가지 단음계');
+  const TXT = {
+    natural: ['Natural minor: the same notes as its relative major. A minor uses C major’s white keys, starting on A.', '자연 단음계: 나란한조인 장조와 음이 똑같아요. A 단조는 C 장조의 흰건반을 그대로 쓰고, A에서 시작해요.'],
+    harmonic: ['Harmonic minor, the one you’ll play most: raise the 7th note a semitone, going up and coming down. G becomes G♯.', '화성 단음계, 가장 많이 치게 될 단음계: 7번째 음을 반음 올려요, 올라갈 때도 내려올 때도. G가 G♯이 돼요.'],
+    melodic: ['Melodic minor: going up, raise the 6th and 7th (F♯ and G♯). Coming down, play the natural minor.', '가락 단음계: 올라갈 때는 6음과 7음(F♯과 G♯)을 올려요. 내려올 때는 자연 단음계를 쳐요.'],
+  };
+  const mk = (f) => { const stp = MINOR_FORMS[f].steps, K = stp.map(x => 9 + x).concat([21]), N = spellMinor('A', f).map(prettyAny).concat(['A']), marks = {}, names = {};
+    K.forEach((k, j) => { marks[k] = (f === 'harmonic' && j === 6) || (f === 'melodic' && (j === 5 || j === 6)) ? 'target' : 'pass'; names[k] = N[j]; }); return { K, N, marks, names, ST: scMinSteps(f) }; };
+  const mvK = (K, ST, j, anim) => [K[j], K[j + 1], anim, scColOf(ST[j])];
+  let body;
+  if (view === 'all') {
+    body = <>
+      <div style={scS.title}>{title}</div>
+      <div style={scS.line}>{t('All three start on A. They differ in only one or two notes near the top.', '셋 모두 A에서 시작해요. 위쪽 한두 음만 달라요.')}</div>
+      <div style={{display:'grid',gap:10,maxWidth:330,margin:'0 auto'}}>
+        {SC_MF.map(f => { const M = mk(f); return <div key={f}><div style={{fontSize:12,fontWeight:800,color:'#6d6f9c',marginBottom:3}}>{MINOR_FORMS[f].label}</div><ScPillRow st={M.ST} upTo={7}/></div>; })}
+      </div>
+      {scRow(<button className="ghost-btn" style={scS.prim} onClick={() => { setView('one'); setI(0); setNonce(n => n + 1); }}>{t('One by one →', '하나씩 →')}</button>)}
+    </>;
+  } else if (view === 'one') {
+    const f = SC_MF[i], M = mk(f);
+    body = <>
+      <div style={scS.title}>{title}</div>
+      <div style={scS.line}>{t(TXT[f][0], TXT[f][1])}</div>
+      <ScKeys ks={M.K} marks={M.marks} names={M.names} arcs={M.ST.map((_, j) => mvK(M.K, M.ST, j, false))} nonce={nonce + ':' + i}/>
+      <ScPillRow st={M.ST} upTo={7}/>
+      {scRow(<>
+        <button className="ghost-btn" style={scS.back} onClick={() => { clear(); if (i === 0) setView('all'); else { setI(i - 1); setNonce(n => n + 1); } }}>{t('← Back', '← 이전')}</button>
+        <button className="ghost-btn" style={scS.prim} onClick={() => { clear(); if (i === 2) { setView('try'); setAt(0); setBad(null); setNonce(n => n + 1); } else { setI(i + 1); setNonce(n => n + 1); } }}>{i === 2 ? t('Your turn →', '내가 해보기 →') : t('Next →', '다음 →')}</button>
+      </>)}
+    </>;
+  } else {
+    const M = mk(fm), K = M.K, ST = M.ST, done = at >= 7, marks = {}, names = {}, arcs = [];
+    for (let j = 0; j <= at; j++) { marks[K[j]] = j === at && !done ? 'pick' : M.marks[K[j]] === 'target' ? 'target' : 'pass'; names[K[j]] = M.N[j]; }
+    for (let j = 0; j < at; j++) arcs.push(mvK(K, ST, j, j === at - 1));
+    if (bad != null) marks[bad] = 'bad';
+    const word = (sz) => sz === 1 ? t('a half step up (S)', '반음 위로 (S)') : sz === 2 ? t('a whole step up (T)', '온음 위로 (T)') : t('a tone and a semitone up (T+S)', '온음에 반음을 더해 위로 (T+S)');
+    const fl = MINOR_FORMS[fm].label;
+    const line = done ? t('That is A ' + fl.toLowerCase() + ' minor.', 'A ' + fl + ' 단음계예요.')
+      : bad != null ? t('Not that key. From ' + M.N[at] + ', go ' + word(ST[at]) + '.', '그 건반이 아니에요. ' + M.N[at] + '에서 ' + word(ST[at]) + ' 가요.')
+      : at === 0 ? t('Start on A. Then tap ' + word(ST[0]) + '.', 'A에서 시작해요. 그다음 ' + word(ST[0]) + ' 건반을 눌러요.')
+      : t('From ' + M.N[at] + ', tap ' + word(ST[at]) + '.', M.N[at] + '에서 ' + word(ST[at]) + ' 건반을 눌러요.');
+    const tap = (k) => { if (done) return; clear(); if (k === K[at + 1]) { setBad(null); setAt(at + 1); setNonce(n => n + 1); playKey(K[at], 0.35); timers.current.push(setTimeout(() => playKey(k, 0.6), 400)); }
+      else { setBad(k); playKey(k, 0.4); timers.current.push(setTimeout(() => setBad(null), 1100)); } };
+    body = <>
+      <div style={scS.title}>{t('Your turn', '내가 해보기')}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:6,maxWidth:330,margin:'0 auto 6px'}}>
+        {SC_MF.map(f => <button key={f} className={'chip' + (fm === f ? ' active' : '')} aria-pressed={fm === f} style={{...KF_BTN,minHeight:40,padding:'0 4px'}} onClick={() => { clear(); setFm(f); setAt(0); setBad(null); setNonce(n => n + 1); playKey(9, 0.5); }}>{MINOR_FORMS[f].label}</button>)}
+      </div>
+      <div style={scS.line}>{line}</div>
+      <ScKeys ks={K} marks={at === 0 ? { ...marks, [K[0]]: 'pick' } : marks} names={names} arcs={arcs} nonce={nonce + fm} onTap={tap}/>
+      <ScPillRow st={ST} upTo={at} cur={at - 1}/>
+      {scRow(<>
+        <button className="ghost-btn" style={scS.back} onClick={() => { clear(); setView('one'); setI(2); setNonce(n => n + 1); }}>{t('← Back', '← 이전')}</button>
+        {done && <button className="ghost-btn" style={scS.prim} onClick={() => { setAt(0); setBad(null); setNonce(n => n + 1); }}>{t('Again', '다시 하기')}</button>}
+      </>)}
+    </>;
+  }
+  return scBox('minor3', body);
 }
 
 // lesson 5: the natural. A sign changed the key; the natural brings back the plain white key.
