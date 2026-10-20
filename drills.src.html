@@ -1066,7 +1066,7 @@ const GROUP_TINT = { two: '#fbe9e2', three: '#e9eaf4' };   // the book's members
 
 // Tappable keyboard. Key index i = octave*12 + pc, starting on C.
 // marks: { [i]: 'target'|'good'|'bad' }, labels: null | 'white' | 'all', tint: shade C-D-E / F-G-A-B groups.
-function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, pixel = false, names = null, outline = null, bigLabels = false, extraC = false, extraB = false, trail = null, trailLabels = null, overlay = null, top = 0, vx = null }) {   // Phase 512: extraB = one more B at the left end (C♭ sits there)   // Phase 499: extraC = one more C at the right end; trail = numbered dots above the keys, joined in order   // outline (Phase 462): [first, last] white key index, one navy frame round them
+function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, pixel = false, names = null, outline = null, bigLabels = false, extraC = false, extraB = false, trail = null, trailLabels = null, overlay = null, top = 0, vx = null, clean = false }) {   // clean: thin quiet outlines, the colour is in the fill only   // Phase 512: extraB = one more B at the left end (C♭ sits there)   // Phase 499: extraC = one more C at the right end; trail = numbered dots above the keys, joined in order   // outline (Phase 462): [first, last] white key index, one navy frame round them
   const whiteW = 36, whiteH = 132, blackW = 22, blackH = 82;
   const whites = [], blacks = [];
   let w = 0;
@@ -1092,7 +1092,7 @@ function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, 
         return (
           <g key={k.i} onClick={tap(k.i)} style={{cursor:onTap?'pointer':'default'}} data-key={k.i}>
             <rect x={k.x} y="0" width={whiteW} height={whiteH} fill={fill} style={{transition:'fill 0.25s'}}
-              stroke={m ? m.stroke : (pixel ? '#26296b' : '#dbd2bd')} strokeWidth={m ? (m.sw || 2.5) : (pixel ? 2 : 1)}
+              stroke={clean ? '#d3cab4' : m ? m.stroke : (pixel ? '#26296b' : '#dbd2bd')} strokeWidth={clean ? 1 : m ? (m.sw || 2.5) : (pixel ? 2 : 1)}
               rx={pixel ? 0 : 3}/>
             {names && names[k.i] && (() => {
               const sf = solfaOn() && !labels && /^[A-G]$/.test(names[k.i]); // a letter name gets its syllable under it
@@ -1119,7 +1119,7 @@ function TapKeyboard({ octaves, marks = {}, onTap, labels = null, tint = false, 
         return (
           <g key={k.i} onClick={tap(k.i)} style={{cursor:onTap?'pointer':'default'}} data-key={k.i}>
             <rect x={k.x} y="0" width={blackW} height={blackH} fill={m ? m.black : '#1d1c22'}
-              stroke={m ? m.stroke : '#26296b'} strokeWidth={m ? (m.sw ? Math.min(m.sw, 2) : 2) : 1} rx={pixel ? 0 : 2}/>
+              stroke={clean ? (m ? m.black : '#1d1c22') : m ? m.stroke : '#26296b'} strokeWidth={clean ? 1 : m ? (m.sw ? Math.min(m.sw, 2) : 2) : 1} rx={pixel ? 0 : 2}/>
             {names && names[k.i] && (
               <text x={k.x + blackW / 2} y={labels === 'all' ? 22 : labels ? blackH - 14 : blackH - 12} textAnchor="middle" fontSize={labels ? 14 : 11} fontWeight="900"
                 fill={m && m.blackText ? m.blackText : '#fff'} style={{pointerEvents:'none',animation:'fadeUp 0.3s both'}}>{names[k.i]}</text>
@@ -55003,7 +55003,7 @@ function ScShape() {
 const SC_OFF = [0, 2, 4, 5, 7, 9, 11, 12];
 const scIdx = (key) => SC_OFF.map(o => (SCALES[key] ? SCALES[key].rootPc : SF12.indexOf(key)) + o);
 const scNames = (key) => spellScale(key).concat([key]).map(prettyNote);
-function ScKeys({ marks, onTap, arcs, nonce, names, ks, ncol, nums, ring, mw, oct }) {
+function ScKeys({ marks, onTap, arcs, nonce, names, ks, ncol, nums, ring, mw, oct, clean }) {
   const kx = keyCenterX, white = (i) => PC_INFO[((i % 12) + 12) % 12].white;
   const x0 = Math.min(...ks.map(kx)) - 24, x1 = Math.max(...ks.map(kx)) + 24;
   const pt = (i) => [kx(i), white(i) ? 99 : 58];
@@ -55020,7 +55020,7 @@ function ScKeys({ marks, onTap, arcs, nonce, names, ks, ncol, nums, ring, mw, oc
       <path d={line} stroke={col || '#26296b'} strokeWidth={w} style={dash}/><path d={head} stroke={col || '#26296b'} strokeWidth={w} style={headAnim}/>
     </g>; });
   return (<div style={{maxWidth:mw || 330,margin:'0 auto'}}>
-    <TapKeyboard octaves={oct || 2} extraC labels={arcs.length ? 'white' : 'all'} marks={marks} onTap={onTap} top={46} vx={[x0, x1]} overlay={<g aria-hidden="true">{arrows}{Object.entries(names || {}).map(([k, txt]) => { const col = (ncol && ncol[k]) || '#c0431f';
+    <TapKeyboard octaves={oct || 2} extraC clean={clean} labels={arcs.length ? 'white' : 'all'} marks={marks} onTap={onTap} top={46} vx={[x0, x1]} overlay={<g aria-hidden="true">{arrows}{Object.entries(names || {}).map(([k, txt]) => { const col = (ncol && ncol[k]) || '#c0431f';
       return <g key={'n' + k + txt} style={{animation:'fadeUp 0.3s both'}}>
         {(nums || ring) && txt === '1' && <circle cx={kx(+k)} cy={nums ? -18 : white(+k) ? -13 : -31} r={nums ? 13 : 10} fill="none" stroke={col} strokeWidth="2.4"/>}
         <text x={kx(+k)} y={nums ? -12 : (white(+k) ? -9 : -27)} textAnchor="middle" fontSize="17" fontWeight="900" fill={col}>{txt}</text>
@@ -55811,8 +55811,8 @@ function sfdNorm(key, mode) {
 }
 const sfdName = (key, mode) => SFD_TWO[mode][key] ? SFD_TWO[mode][key].join(' / ') : prettyNote(key);
 // natural or raised minor on the treble staff, with the key signature of its relative major; null when a note would need a double sharp
-function sfdMinItems(key, form) {
-  const L = 'CDEFGAB', d0 = key[0] === 'B' ? 27 : 28 + L.indexOf(key[0]), nat = spellMinor(key, 'natural'), cur = spellMinor(key, form), coral = [];
+function sfdMinItems(key, form, dOver) {
+  const L = 'CDEFGAB', d0 = dOver != null ? dOver : key[0] === 'B' ? 27 : 28 + L.indexOf(key[0]), nat = spellMinor(key, 'natural'), cur = spellMinor(key, form), coral = [];
   const items = [];
   for (let j = 0; j < 8; j++) {
     const d = d0 + j, raised = j < 7 && cur[j] !== nat[j];
@@ -55863,8 +55863,8 @@ function ScaleFinderDial() {
   if (mode === 'major') {
     K = scIdx(key); const N = scNames(key); K.forEach((k, j) => { marks[k] = 'pass'; names[k] = N[j]; });
     info = SCALES[key]; offs = info.octaves[oct].offsets;
-    const hl = skgOf(sfdScaleItems(key), key, n => n.byKey);
-    staff = { items: sfdScaleItems(key), k: key, coral: [], alt: hl };
+    const mkS = (d0) => { const it = sfdScaleItems(key, d0); return { items: it, coral: [], alt: skgOf(it, key, n => n.byKey) }; };
+    staff = { k: key, R: mkS(SC_D0[key]), L: mkS(sfdLD0(key)) };
   } else {
     info = MINOR_SCALES[key]; const stp = MINOR_FORMS[form].steps, N = spellMinor(key, form).map(prettyAny);
     K = stp.map(x => info.rootPc + x).concat([info.rootPc + 12]);
@@ -55872,7 +55872,8 @@ function ScaleFinderDial() {
     fing = info.octaves[oct]; nms = N;
     offs = form === 'harmonic' ? fing.offsets : minorOffsets(form, oct);
     clash = form !== 'harmonic' && ['RH', 'LH'].some(h => fing[h].some((f, i) => f === 1 && [1, 3, 6, 8, 10].includes((info.rootPc + offs[i]) % 12)));
-    const mi = sfdMinItems(key, form); if (mi) { const hl = skgOf(mi.items, sigK, n => n.byKey).filter(j => !mi.coral.includes(j)); staff = { items: mi.items, k: sigK, coral: mi.coral, alt: hl }; }
+    const mkM = (d0) => { const mi = sfdMinItems(key, form, d0); return mi && { items: mi.items, coral: mi.coral, alt: skgOf(mi.items, sigK, n => n.byKey).filter(j => !mi.coral.includes(j)) }; };
+    const mR = mkM(null), mL = mkM(sfdLD0(key)); if (mR && mL) staff = { k: sigK, R: mR, L: mL };
     if (form === 'melodic') { const nn = spellMinor(key, 'natural'); noteDown = t('Coming down it is the natural minor: ', '내려올 때는 자연 단음계예요: ') + [nn[0], nn[6], nn[5], nn[4], nn[3], nn[2], nn[1], nn[0]].map(prettyAny).join(' '); }
   }
   const FORMS = ['natural', 'harmonic', 'melodic'];
@@ -55912,13 +55913,13 @@ function ScaleFinderDial() {
         {[1, 2].map(n => <button key={n} className={'chip' + (oct === n ? ' active' : '')} aria-pressed={oct === n} style={{ ...KF_BTN, minHeight: 38 }} onClick={() => setOct(n)}>{n === 1 ? t('1 octave', '1옥타브') : t('2 octaves', '2옥타브')}</button>)}
       </div>
       {clash ? <>
-        <ScKeys ks={K} marks={marks} names={names} arcs={[]} nonce={mode + key + form} mw={520}/>
+        <ScKeys clean ks={K} marks={marks} names={names} arcs={[]} nonce={mode + key + form} mw={520}/>
         <p style={{ fontSize: 13, color: 'var(--muted)', margin: '8px 0 0', textAlign: 'center', lineHeight: 1.5 }}>{t('No finger numbers for this form: the harmonic fingering would put a thumb on a black key. Look the fingering up in your book.', '이 형태는 손가락 번호를 보여 주지 않아요: 화성 단음계의 손가락 번호로는 엄지가 검은건반에 놓여요. 책에서 찾아보세요.')}</p></>
         : (() => { const e = mode === 'major' ? info.octaves[oct] : fing, KK = offs.map(o => info.rootPc + o), kn = mode === 'major' ? key : 'm' + key;
           const paint = (hand) => { const F = e[hand], mk = {}, nm = {}, nc = {}; scRuns(kn, hand, F).forEach(g => { for (let q = g.from; q < g.from + g.len; q++) { mk[KK[q]] = g.kind === 3 ? 'target' : g.kind === 4 ? 'fof' : 'pass'; nc[KK[q]] = g.kind === 3 ? SC_G3 : g.kind === 4 ? SC_G4 : '#26296b'; } }); F.forEach((f, q) => { nm[KK[q]] = String(f); }); return { mk, nm, nc }; };
           const row = (hand, label) => { const P = paint(hand); return <div style={{ marginTop: hand === 'RH' ? 4 : 10 }}>
             <div style={{ fontSize: 12, fontWeight: 900, color: 'var(--muted)', letterSpacing: '0.05em', marginBottom: 2 }}>{label}</div>
-            <div style={{ overflowX: 'auto' }}><div style={{ minWidth: oct === 2 ? 640 : 0 }}><ScKeys nums ks={KK} marks={P.mk} names={P.nm} ncol={P.nc} arcs={[]} nonce={hand + key + mode + form + oct} mw={oct === 2 ? 640 : 520} oct={oct === 2 ? 3 : 2}/></div></div></div>; };
+            <div><div><ScKeys nums clean ks={KK} marks={P.mk} names={P.nm} ncol={P.nc} arcs={[]} nonce={hand + key + mode + form + oct} mw={oct === 2 ? 640 : 520} oct={oct === 2 ? 3 : 2}/></div></div></div>; };
           return <div data-sfd-fing>
             {row('RH', t('RIGHT HAND', '오른손'))}{row('LH', t('LEFT HAND', '왼손'))}
             <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', marginTop: 8, fontSize: 12.5, fontWeight: 800, color: '#26296b' }}>
@@ -55929,7 +55930,7 @@ function ScaleFinderDial() {
       {noteDown && <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, margin: '6px 0' }}>{noteDown}</div>}
       <ScStaffBtn on={stf} set={setStf}/>
       {stf && (staff ? <>
-        <SkgStaff items={staff.items} k={staff.k} width={330} o={{ boxS: 26, D: 30, hl: staff.coral, hl2: staff.alt, signHl: staff.coral, underAlt: staff.alt, ksCol: '#2e8a6e', ...skgUnder(staff.items, staff.k, null, staff.coral) }}/>
+        {[['R', 'treble', t('RIGHT HAND', '오른손')], ['L', 'bass', t('LEFT HAND', '왼손')]].map(([h, cf, lb]) => <div key={h} style={{ marginTop: 6 }}><div style={{ fontSize: 12, fontWeight: 900, color: 'var(--muted)', letterSpacing: '0.05em' }}>{lb}</div><SkgStaff items={staff[h].items} k={staff.k} clef={cf} width={330} o={{ boxS: 26, D: 30, hl: staff[h].coral, hl2: staff[h].alt, signHl: staff[h].coral, underAlt: staff[h].alt, ksCol: '#2e8a6e', ...skgUnder(staff[h].items, staff.k, null, staff[h].coral) }}/></div>)}
         <div style={{ textAlign: 'center', fontSize: 12.5, fontWeight: 700, color: '#6d6f9c', marginTop: 4 }}>{t('Green: from the key signature. Coral: a sign written beside the note.', '초록: 조표에 있는 음. 코랄: 음표 옆에 붙이는 표.')}</div>
       </> : <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--muted)', marginTop: 6 }}>{t('This form needs a double sharp, so the staff is left out here.', '이 형태는 겹샤프가 필요해서 오선은 보여 주지 않아요.')}</div>)}
       {scRow(<>
@@ -55941,7 +55942,8 @@ function ScaleFinderDial() {
   </>;
   return scBox('finder', body);
 }
-const sfdScaleItems = (k) => { const d0 = SC_D0[k]; return Array.from({ length: 8 }, (_, j) => ['q', 1, d0 + j]).concat([['||']]); };
+const sfdLD0 = (k) => { const L = 'CDEFGAB'.indexOf(k[0]); return 21 + L - (L >= 3 ? 7 : 0); };   // the left hand's octave, on the bass staff
+const sfdScaleItems = (k, d0 = SC_D0[k]) => { return Array.from({ length: 8 }, (_, j) => ['q', 1, d0 + j]).concat([['||']]); };
 
 // ── Scales, lesson 12: the modes. A mode is the major scale started on another of its own notes. Facts: the MODES table (her material). ──
 const SC_MP = [0, 2, 4, 5, 7, 9, 11];
