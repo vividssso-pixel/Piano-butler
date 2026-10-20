@@ -55263,7 +55263,7 @@ function ScWhite({ hand }) {
   const [seq, setSeq] = useState([]), [at, setAt] = useState(0), [given, setGiven] = useState(null), [score, setScore] = useState(0);
   const title = RHd ? t('White keys: right hand', '흰건반에서 시작: 오른손') : t('White keys: left hand', '흰건반에서 시작: 왼손');
   const last = steps.length - 1, N5 = 5;
-  const PL = useScPlay([view, i]);
+  const PL = useScPlay([view, i, at, given]);
   const newRound = () => { const rest = shuffle(['C', 'G', 'D', 'A', 'E', RHd ? 'B' : 'F']).slice(0, N5 - 1); setSeq(shuffle([odd, ...rest])); setAt(0); setGiven(null); setScore(0); setNonce(n => n + 1); };
   let body;
   if (view === 'all') {
@@ -55300,6 +55300,7 @@ function ScWhite({ hand }) {
     </>;
   } else {
     const done = at >= seq.length, ck = done ? 'C' : seq[at], isOdd = ck === odd, P = scPaintKey(ck, hand), N = scNames(ck);
+    const FFt = scFingers(ck, hand, 1), Qt = P.K.concat(P.K.slice(0, 7).reverse()), Nt = FFt.map(String).concat(FFt.slice(0, 7).reverse().map(String)), QSt = Qt.slice(1).map((k, j) => Math.abs(k - Qt[j])), Ad = given != null && !done && PL.an >= 0 ? scAnim(Qt, Nt, QSt, PL.an, 7) : null;
     const handWord = RHd ? t('right hand', '오른손') : t('left hand', '왼손'), handKo = RHd ? '오른손' : '왼손';
     const answer = (v) => { if (given != null || done) return; setGiven(v); if ((v === 'odd') === isOdd) setScore(x => x + 1); setNonce(n => n + 1); };
     const line = done ? t('Only one is different: the ' + handWord + ' of ' + odd + '. You got ' + score + ' of ' + seq.length + '.', '다른 건 하나뿐이에요: ' + odd + '의 ' + handKo + '. ' + seq.length + '개 중 ' + score + '개 맞았어요.')
@@ -55308,7 +55309,10 @@ function ScWhite({ hand }) {
     body = <>
       <div style={scS.title}>{t('Your turn', '내가 해보기')}</div>
       <div style={scS.line}>{line}</div>
-      {!done && <ScKeys nums ks={P.K} marks={given != null ? P.marks : { [P.K[0]]: 'pick' }} names={given != null ? P.names : {}} ncol={P.ncol} arcs={[]} nonce={nonce + ck}/>}
+      {Ad && scDirTag(Ad.dn)}
+      {!done && <ScKeys nums ks={P.K} marks={Ad ? Ad.marks : given != null ? P.marks : { [P.K[0]]: 'pick' }} names={Ad ? Ad.names : given != null ? P.names : {}} ncol={P.ncol} arcs={Ad ? Ad.arcs : []} nonce={nonce + ck + (Ad ? 'a' + PL.an : '')}/>}
+      {!done && given != null && scPlayBtn(PL, Qt)}
+      {Ad && Ad.dn && <div style={{...scS.line,minHeight:0,fontSize:13}}>{t('Coming down: the same fingers, in reverse.', '내려올 때: 같은 손가락을 거꾸로.')}</div>}
       {!done && given == null && <div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:8,maxWidth:330,margin:'12px auto 0'}}>
         <button className="ghost-btn" style={{...KF_BTN,minHeight:48}} onClick={() => answer('std')}>{t('Standard', '기본 모양')}</button>
         <button className="ghost-btn" style={{...KF_BTN,minHeight:48}} onClick={() => answer('odd')}>{t('Different', '달라요')}</button>
@@ -55339,13 +55343,13 @@ function ScBlackHand({ hand }) {
   const RHd = hand === 'RH', STEPS = RHd ? SC_BR : SC_BL;
   const [view, setView] = useState('all');   // 'all' (the strips) -> 'one' -> 'try'
   const [i, setI] = useState(0), [nonce, setNonce] = useState(0), [kk, setKk] = useState('Bb');
-  const [found, setFound] = useState([]), [bad, setBad] = useState(null), [why, setWhy] = useState('');
+  const [found, setFound] = useState([]), [bad, setBad] = useState(null), [why, setWhy] = useState(''), [ph, setPh] = useState(0);
   const timers = useRef([]);
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   useEffect(() => clear, []);
   const title = RHd ? t('Black keys: right hand', '검은건반에서 시작: 오른손') : t('Black keys: left hand', '검은건반에서 시작: 왼손');
-  const reset = () => { setFound([]); setBad(null); setWhy(''); setNonce(n => n + 1); };
-  const PL = useScPlay([view, i]);
+  const reset = () => { setFound([]); setBad(null); setWhy(''); setPh(0); setNonce(n => n + 1); };
+  const PL = useScPlay([view, i, kk, ph]);
   let body;
   if (view === 'all') {
     body = <>
@@ -55370,13 +55374,14 @@ function ScBlackHand({ hand }) {
     </>;
   } else {
     const K = scIdx(kk), F = SCALES[kk].octaves[1][hand], N = scNames(kk), thumbs = F.map((f, j) => f === 1 ? K[j] : null).filter(x => x != null);
-    const done = found.length >= thumbs.length, P = scPaintKey(kk, hand), marks = {}, names = {}, ncol = {};
+    const done = found.length >= thumbs.length, pat = done && ph === 0, fin = done && ph === 1, P = scPaintKey(kk, hand), marks = {}, names = {}, ncol = {};
+    const Qt = K.concat(K.slice(0, 7).reverse()), Nt = F.map(String).concat(F.slice(0, 7).reverse().map(String)), QSt = Qt.slice(1).map((k, j) => Math.abs(k - Qt[j])), Ad = fin && PL.an >= 0 ? scAnim(Qt, Nt, QSt, PL.an, 7) : null;
     if (done) Object.assign(marks, P.marks), Object.assign(names, P.names), Object.assign(ncol, P.ncol);
     found.forEach(k => { marks[k] = 'good'; names[k] = '1'; ncol[k] = '#2e8a6e'; });
     if (bad != null) marks[bad] = 'bad';
     const handWord = RHd ? t('right hand', '오른손') : t('left hand', '왼손'), handKo = RHd ? '오른손' : '왼손';
-    const line = done ? t('Both thumbs found. Here is the whole fingering of ' + N[0] + ' major.', '엄지 둘을 다 찾았어요. ' + N[0] + ' 장음계의 운지 전체예요.')
-      : bad != null ? why : t(N[0] + ' major, ' + handWord + ': tap the keys where the thumb goes. (' + found.length + '/' + thumbs.length + ')', N[0] + ' 장음계 ' + handKo + ': 엄지가 가는 건반을 눌러요. (' + found.length + '/' + thumbs.length + ')');
+    const line = pat ? t('Both thumbs found: that is the way up. Coming down, the thumbs are on the same keys.', '엄지 둘을 찾았어요. 올라가는 길이에요. 내려올 때도 엄지는 같은 건반에 가요.') : Ad && Ad.dn ? t('Coming down: the same fingers, in reverse.', '내려올 때: 같은 손가락을 거꾸로.') : done ? t('Both thumbs found. Here is the whole fingering of ' + N[0] + ' major.', '엄지 둘을 다 찾았어요. ' + N[0] + ' 장음계의 운지 전체예요.')
+      : bad != null ? why : ph === 1 ? t(N[0] + ' major, coming down, ' + handWord + ': tap the thumb keys again. (' + found.length + '/' + thumbs.length + ')', N[0] + ' 장음계 내려오기, ' + handKo + ': 엄지 건반을 한 번 더 눌러요. (' + found.length + '/' + thumbs.length + ')') : t(N[0] + ' major, ' + handWord + ': tap the keys where the thumb goes. (' + found.length + '/' + thumbs.length + ')', N[0] + ' 장음계 ' + handKo + ': 엄지가 가는 건반을 눌러요. (' + found.length + '/' + thumbs.length + ')');
     const tap = (k) => { if (done || found.includes(k)) return; clear();
       if (thumbs.includes(k)) { setBad(null); setFound(f => [...f, k]); setNonce(n => n + 1); playKey(k, 0.6); }
       else { setBad(k); setWhy(PC_INFO[((k % 12) + 12) % 12].white ? t('Not a thumb key. The thumbs go on the white keys.', '엄지 건반이 아니에요. 엄지는 흰건반에 가요.') : t('The thumb only ever plays white keys.', '엄지는 흰건반만 쳐요.')); playKey(k, 0.4); timers.current.push(setTimeout(() => setBad(null), 1400)); } };
@@ -55386,10 +55391,13 @@ function ScBlackHand({ hand }) {
         {['Bb', 'Eb', 'Ab', 'Db', 'Gb'].map(k => <button key={k} className={'chip' + (kk === k ? ' active' : '')} aria-pressed={kk === k} style={{...KF_BTN,minHeight:40,padding:'0 4px'}} onClick={() => { clear(); setKk(k); reset(); playKey(SCALES[k].rootPc, 0.5); }}>{scKeyBtn(k)}</button>)}
       </div>
       <div style={scS.line}>{line}</div>
-      <ScKeys nums ks={K} marks={marks} names={names} ncol={ncol} arcs={[]} nonce={nonce + kk + hand} onTap={tap}/>
+      {!fin && scDirTag(ph === 1)}{Ad && scDirTag(Ad.dn)}
+      <ScKeys nums ks={K} marks={Ad ? Ad.marks : marks} names={Ad ? Ad.names : names} ncol={ncol} arcs={Ad ? Ad.arcs : []} nonce={nonce + kk + hand + ph + (Ad ? 'a' + PL.an : '')} onTap={tap}/>
+      {fin && scPlayBtn(PL, Qt)}
       {scRow(<>
         <button className="ghost-btn" style={scS.back} onClick={() => { clear(); setView('one'); setI(STEPS.length - 1); setNonce(n => n + 1); }}>{t('← Back', '← 이전')}</button>
-        {done && <button className="ghost-btn" style={scS.prim} onClick={() => reset()}>{t('Again', '다시 하기')}</button>}
+        {pat && <button className="ghost-btn" style={scS.prim} onClick={() => { setPh(1); setFound([]); setBad(null); setWhy(''); setNonce(n => n + 1); }}>{t('Come down →', '내려가기 →')}</button>}
+        {fin && <button className="ghost-btn" style={scS.prim} onClick={() => reset()}>{t('Again', '다시 하기')}</button>}
       </>)}
     </>;
   }
