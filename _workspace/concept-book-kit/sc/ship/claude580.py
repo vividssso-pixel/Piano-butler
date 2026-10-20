@@ -1,0 +1,7 @@
+import sys
+p = sys.argv[1]
+lines = open(p, encoding='utf-8').read().split('\n')
+idx = [i for i, l in enumerate(lines) if l.startswith('| 573 |')]
+assert len(idx) == 1
+lines.insert(idx[0] + 1, "| 574 | 2026-10-20 | **Scales lesson 4 recoloured by group; lesson 5 added: white-key starts with different fingering (her call, 11:44).** Lesson 4 (`ScFinger`): a group of 3 is coral, a group of 4 is blue, finger 5 and lone notes stay plain keys (no more coral thumbs); the finger numbers take the group's colour. Groupings are hers: standard RH 3-4-1, LH 1-4-3; F's RH 4-3-1; B's LH 4-4. Lesson 5 (`sc-odd`, `ScOdd`): the white-key starts that differ, grouped in one lesson only to notice that they differ: F's right hand (the group of 4 first, finger 4 takes the B♭) and B's left hand (starts on finger 4, two groups of 4, thumb on E and B); F's left hand and B's right hand are standard. Four screens, then her turn: six (key, hand) pairs from C G D A E F B, each \"standard or different?\", the fingers revealed after the answer; both different ones are always in the round. The black-key starts get their own lesson next (6), then all twelve keys (7), the chromatic scale (8), the three minors (9). Home `p-scale` lists lessons 1-5. Korean wording is mine, unverified. Built by `patch580.py` (`t580`). Checked in English and Korean, both lessons played to the end (6 of 6), no errors. Local commit only, not pushed. |")
+open(p, 'w', encoding='utf-8').write('\n'.join(lines)); print('ok')
