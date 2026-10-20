@@ -1,0 +1,7 @@
+import sys
+p = sys.argv[1]
+lines = open(p, encoding='utf-8').read().split('\n')
+idx = [i for i, l in enumerate(lines) if l.startswith('| 608 |')]
+assert len(idx) == 1
+lines.insert(idx[0] + 1, "| 609 | 2026-10-21 | **Scale finder: up and down that stops at every thumb; it is step 12 of Scales.** Her ideas (2026-10-21): when listening up and down, stop and show at each thumb change, because the two hands change at different moments; and show the Scale finder directly as step 12, not as \"Try\". The finder's play button (\"Up and down: stops at each thumb\" / Stop) plays the scale up and down and lights the sounding key on both keyboards (and rrings the note on both staves for 1 octave); at every note where a hand has finger 1 it holds 1.7 s and says whose thumb it is (\"Right hand: the thumb (1).\" / \"Left hand: ...\" / \"Both thumbs\"); other notes take 0.5 s. Melodic minor comes down as natural minor. Any change of key, mode, form or octave stops it. On the Scales concept page a concept with exactly one tool now shows that tool as its last numbered step with the tool's own name (\"12 Scale finder\") and opens it directly; with several tools it still shows \"Try\". Built by `patch618.py` (`t622`). Checked C major playback (the thumb messages in order) and the Scales page: no console errors. Local commit only, not pushed. |")
+open(p, 'w', encoding='utf-8').write('\n'.join(lines)); print('ok')
