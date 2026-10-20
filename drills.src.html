@@ -19971,7 +19971,7 @@ TOOL_CATS.forEach(c => { const n = c.name, w = c.when; c.nameEn = n; c.whenEn = 
   Object.defineProperty(c, 'name', { get: () => (LANG === 'ko' && CAT_KO[c.id] ? CAT_KO[c.id][0] : n), enumerable: true, configurable: true });
   Object.defineProperty(c, 'when', { get: () => (LANG === 'ko' && CAT_KO[c.id] ? CAT_KO[c.id][1] : w), enumerable: true, configurable: true }); });
 // Phase 513: on the Home, Scales and keys is two concepts: Key signatures and Scales (the Toolbox keeps one group)
-const HOME_VIRTUAL = [{ id: 'p-keysig', area: 'pitch', en: 'Key signatures', ko: '조표' }, { id: 'p-scale', area: 'pitch', en: 'Scales', ko: '스케일' }]
+const HOME_VIRTUAL = [{ id: 'p-keysig', area: 'pitch', en: 'Key signatures', ko: '조표' }, { id: 'p-scale', area: 'pitch', en: 'Scales', ko: '스케일' }, { id: 'p-modes', area: 'pitch', en: 'Modes', ko: '선법' }]
   .map(v => ({ id: v.id, area: v.area, get name() { return LANG === 'ko' ? v.ko : v.en; } }));
 const homeCats = (areaId) => TOOL_CATS.filter(c => c.area === areaId).flatMap(c => c.id === 'p-scales' ? HOME_VIRTUAL : [c]);
 const homeCatById = (id) => TOOL_CATS.find(c => c.id === id) || HOME_VIRTUAL.find(c => c.id === id);
@@ -22955,6 +22955,7 @@ const HOME_LINE = {
   'p-scales': ['Every key from one pattern', '패턴 하나로 모든 조'],
   'p-keysig': ['Which sharps and flats a key has', '조마다 붙는 샵과 플랫'],
   'p-scale': ['The same pattern from every note', '어느 음에서나 같은 패턴'],
+  'p-modes': ['The same notes, a new home', '같은 음, 새로운 집'],
   'p-chords': ['Notes stacked together', '쌓아 올린 음들'],
   'r-beat': ['The steady beat and how long notes last', '일정한 박과 음의 길이'],
   't-touch': ['Smooth, short, soft and loud', '이어서, 짧게, 여리게, 세게'],
@@ -22975,9 +22976,12 @@ const HOME_LIVE = {
     checkLine: ['Questions, level by level', '문제를 단계별로'],
   },
   'p-scale': {
-    lessons: ['sc-shape', 'sc-same', 'sc-deg', 'sc-wr', 'sc-wl', 'sc-br', 'sc-bl', 'sc-both', 'sc-all', 'sc-chrom', 'sc-min'], check: 'scales', tools: [], more: [],
-    tryLine: ['Eleven short lessons: the shape, fingering, all twelve keys, the minor scales', '열한 개의 짧은 레슨: 모양, 손가락, 열두 조, 단음계'],
+    lessons: ['sc-shape', 'sc-same', 'sc-deg', 'sc-wr', 'sc-wl', 'sc-br', 'sc-bl', 'sc-both', 'sc-all', 'sc-chrom', 'sc-min'], check: 'scales', tools: ['scale-finder'], more: [],
+    tryLine: ['Scale finder: turn the circle of fifths to any key', '스케일 찾기: 5도권을 돌려 어느 조든 찾아요'],
     checkLine: ['Questions, level by level', '문제를 단계별로'],
+  },
+  'p-modes': {
+    lessons: ['sc-modes'], tools: [], more: [],
   },
 };
 const HOME_AREA_LINE = {
@@ -23076,7 +23080,7 @@ function ConceptHome({ st, update }) {
           {live.tools && live.tools.length > 0 && step(++n, t('Try', '해 보기'), LANG === 'ko' ? live.tryLine[1] : live.tryLine[0], true, () => go({ hs: 'try' }))}
         </>; })()}
       </div>
-      <button onClick={() => go({ view: 'home', drill: live.check, tab: 'drill', level: 1, mode: 'lesson' })} style={{display:'block',width:'100%',minHeight:60,marginTop:18,borderRadius:30,border:'none',background:'var(--navy)',color:'#fffefa',fontWeight:800,fontSize:20,cursor:'pointer'}}>{t('Start the drill →', '드릴 시작 →')}</button>
+      {live.check && <button onClick={() => go({ view: 'home', drill: live.check, tab: 'drill', level: 1, mode: 'lesson' })} style={{display:'block',width:'100%',minHeight:60,marginTop:18,borderRadius:30,border:'none',background:'var(--navy)',color:'#fffefa',fontWeight:800,fontSize:20,cursor:'pointer'}}>{t('Start the drill →', '드릴 시작 →')}</button>}
     </div>
   );
   // level 1: the concepts of one area
@@ -54983,13 +54987,15 @@ function ScShape() {
  ['sc-both', 'Both hands together', '양손 같이', 'One column per note: right hand above, left hand below.', '한 칸에 음 하나: 위는 오른손, 아래는 왼손.', ScBoth],
  ['sc-all', 'All twelve keys', '12개 조 모두', 'One pattern, twelve start notes.', '패턴 하나, 시작 음 열두 개.', ScAll],
  ['sc-chrom', 'The chromatic scale', '반음계', 'Every key, one half step at a time.', '모든 건반을 반음씩.', ScChrom],
- ['sc-min', 'Three kinds of minor', '세 가지 단음계', 'Natural, harmonic and melodic, shown on A.', 'A에서 보는 자연, 화성, 가락.', ScMinor]].forEach(([id, en, ko, benEn, bko, Comp]) => {
+ ['sc-min', 'Three kinds of minor', '세 가지 단음계', 'Natural, harmonic and melodic, shown on A.', 'A에서 보는 자연, 화성, 가락.', ScMinor],
+ ['sc-modes', 'The seven modes', '일곱 가지 선법', 'The major scale started on another of its notes.', '장음계를 다른 음에서 시작해요.', ScModes]].forEach(([id, en, ko, benEn, bko, Comp]) => {
   TOOLS.push({ id, ch: 'concept', title: en, blurb: benEn, hidden: true, get kicker() { return TOOL_AREAS.find(a => a.id === 'pitch').name + ' · ' + (LANG === 'ko' ? '스케일' : 'Scales'); }, C: Comp });
   TOOL_KO[id] = [ko, bko];
   const tl = TOOLS[TOOLS.length - 1], k = TOOL_KO[id], ti = tl.title, bl = tl.blurb; tl.titleEn = ti; tl.blurbEn = bl;
   Object.defineProperty(tl, 'title', { get: () => (LANG === 'ko' ? k[0] : ti), enumerable: true, configurable: true });
   Object.defineProperty(tl, 'blurb', { get: () => (LANG === 'ko' ? k[1] : bl), enumerable: true, configurable: true });
-  TOOL_CONCEPT[id] = 'p-scale';
+  TOOL_CONCEPT[id] = id === 'sc-modes' ? 'p-modes' : 'p-scale';
+  if (id === 'sc-modes') Object.defineProperty(tl, 'kicker', { get: () => TOOL_AREAS.find(a => a.id === 'pitch').name + ' · ' + (LANG === 'ko' ? '선법' : 'Modes'), enumerable: true, configurable: true });
 });
 
 // ─── Phase 571: Scales, lesson 2: the same pattern from every note. G major (its F♯) and F major (its B♭), step by step, then her turn on any key.
@@ -55925,6 +55931,82 @@ function ScaleFinderDial() {
   return scBox('finder', body);
 }
 const sfdScaleItems = (k) => { const d0 = SC_D0[k]; return Array.from({ length: 8 }, (_, j) => ['q', 1, d0 + j]).concat([['||']]); };
+
+// ── Scales, lesson 12: the modes. A mode is the major scale started on another of its own notes. Facts: the MODES table (her material). ──
+const SC_MP = [0, 2, 4, 5, 7, 9, 11];
+function scModeK(parent, st) {
+  const root = SCALES[parent].rootPc; let K = [];
+  for (let j = st; j <= st + 7; j++) K.push(root + SC_MP[j % 7] + 12 * Math.floor(j / 7));
+  while (K[0] >= 12) K = K.map(x => x - 12);
+  return K;
+}
+const scModeNames = (parent, st) => { const sp = spellScale(parent), r = Array.from({ length: 7 }, (_, i) => sp[(st + i) % 7]); return r.concat([r[0]]); };
+function ScModes() {
+  const [view, setView] = useState('all'), [stf, setStf] = useState(false);   // 'all' -> 'one' -> 'try'
+  const [i, setI] = useState(0), [parent, setParent] = useState('C'), [nonce, setNonce] = useState(0);
+  const [tm, setTm] = useState(1), [at, setAt] = useState(0), [bad, setBad] = useState(null);
+  const P = useScPlay([view, i, parent]);
+  const timers = useRef([]);
+  const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
+  useEffect(() => clear, []);
+  const title = t('The seven modes', '일곱 가지 선법');
+  const staffOf = (par, st, K) => {
+    const nm = scModeNames(par, st), d0 = nm[0][0] === 'B' ? 27 : 28 + STAFF_LETTERS.indexOf(nm[0][0]), items = Array.from({ length: 8 }, (_, j) => ['q', 1, d0 + j]).concat([['||']]), hl = skgOf(items, par, n => n.byKey);
+    return <SkgStaff key={par + st} items={items} k={par} width={330} o={{ boxS: 26, D: 30, hl2: hl, underAlt: hl, ksCol: '#2e8a6e', ...skgUnder(items, par, null, []) }}/>;
+  };
+  const picture = (par, st, an) => { const K = scModeK(par, st), N = scModeNames(par, st).map(prettyAny), marks = {}, names = {}; K.forEach((k, j) => { marks[k] = j === 0 || j === 7 ? 'target' : 'pass'; names[k] = N[j]; }); if (an >= 0) marks[K[an]] = 'pick'; return { K, marks, names }; };
+  let body;
+  if (view === 'all') {
+    const M = picture('C', 0, -1);
+    body = <>
+      <div style={scS.title}>{title}</div>
+      <div style={scS.line}>{t('A mode is the major scale started on another of its own notes: the same notes, the same key signature, a new home.', '선법은 장음계를 자기 안의 다른 음에서 시작한 거예요: 음도 조표도 같고, “집”만 달라요.')}</div>
+      <ScKeys ks={M.K} marks={M.marks} names={M.names} arcs={[]} nonce="all"/>
+      <div style={{display:'flex',flexWrap:'wrap',gap:5,justifyContent:'center',maxWidth:330,margin:'8px auto 0'}}>
+        {MODES.map((m, j) => <span key={m.name} style={{padding:'4px 9px',borderRadius:999,border:'1.5px solid #d8cfb6',background:'#efeadc',fontSize:12.5,fontWeight:800,color:'#26296b'}}>{j + 1} {LANG === 'ko' ? m.nameKo : m.name}</span>)}
+      </div>
+      {scRow(<button className="ghost-btn" style={scS.prim} onClick={() => { setView('one'); setI(0); setNonce(n => n + 1); }}>{t('One by one →', '하나씩 →')}</button>)}
+    </>;
+  } else if (view === 'one') {
+    const m = MODES[i], an = P.an, M = picture(parent, m.start, an), nm = scModeNames(parent, m.start);
+    body = <>
+      <div style={scS.title}>{LANG === 'ko' ? m.nameKo + ' (' + m.name + ')' : m.name} {t('on', '')} {prettyAny(nm[0])}{LANG === 'ko' ? '에서' : ''}</div>
+      <div style={scS.line}>{t(m.formula, m.formulaKo)}. {t(m.mood, m.moodKo)}</div>
+      <ScKeys ks={M.K} marks={M.marks} names={M.names} arcs={[]} nonce={nonce + ':' + i + parent}/>
+      <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:'#4a4d86',fontStyle:'italic',margin:'6px 0'}}>{t(m.exEn, m.exKo)}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(5,minmax(0,1fr))',gap:5,maxWidth:330,margin:'6px auto'}}>
+        {MODE_PARENTS.map(k => <button key={k} className={'chip' + (parent === k ? ' active' : '')} aria-pressed={parent === k} style={{...KF_BTN,minHeight:38,padding:'0 2px'}} onClick={() => { setParent(k); setNonce(n => n + 1); }}>{scKeyBtn(k)}</button>)}
+      </div>
+      <div style={{textAlign:'center',fontSize:12.5,fontWeight:700,color:'var(--muted)'}}>{t('Notes of ' + prettyNote(parent) + ' major, started on ' + prettyAny(nm[0]) + '.', prettyNote(parent) + ' 장음계의 음을 ' + prettyAny(nm[0]) + '에서 시작해요.')}</div>
+      <ScStaffBtn on={stf} set={setStf}/>
+      {stf && <>{staffOf(parent, m.start)}<div style={{textAlign:'center',fontSize:12.5,fontWeight:700,color:'#6d6f9c',marginTop:4}}>{t('Green: from the key signature of ' + prettyNote(parent) + ' major.', '초록: ' + prettyNote(parent) + ' 장조의 조표에 있는 음.')}</div></>}
+      {scRow(<>
+        <button className="ghost-btn" style={scS.back} onClick={() => { if (i === 0) setView('all'); else setI(i - 1); setNonce(n => n + 1); }}>{t('← Back', '← 이전')}</button>
+        <button className="ghost-btn" style={scS.back} onClick={() => P.play(M.K)}>{t('▶ Hear it', '▶ 듣기')}</button>
+        <button className="ghost-btn" style={scS.prim} onClick={() => { if (i === 6) { setView('try'); setTm(1); setAt(0); setBad(null); } else setI(i + 1); setNonce(n => n + 1); }}>{i === 6 ? t('Your turn →', '내가 해보기 →') : t('Next →', '다음 →')}</button>
+      </>)}
+    </>;
+  } else {
+    const m = MODES[tm], K = scModeK('C', m.start), N = scModeNames('C', m.start).map(prettyAny), done = at >= 7, marks = {}, names = {}, arcs = [];
+    for (let j = 0; j <= at; j++) { marks[K[j]] = j === at && !done ? 'pick' : j === 0 ? 'target' : 'pass'; names[K[j]] = N[j]; }
+    if (bad != null) marks[bad] = 'bad';
+    const line = done ? t('That is ' + m.name + ' on ' + N[0] + '. Same notes as C major.', LANG === 'ko' ? m.nameKo + ' (' + m.name + ') ' + N[0] + '에서예요. C장조와 같은 음이에요.' : '')
+      : bad != null ? t('Not that key. These are the notes of C major, started on ' + N[0] + ': after ' + N[at] + ' comes ' + N[at + 1] + '.', '그 건반이 아니에요. C장조의 음을 ' + N[0] + '에서 시작해요: ' + N[at] + ' 다음은 ' + N[at + 1] + '이에요.')
+      : at === 0 ? t('Play ' + m.name + ' on ' + N[0] + ': the white keys of C major, started on ' + N[0] + '. Start on ' + N[0] + ', then tap ' + N[1] + '.', m.nameKo + ' (' + m.name + ') ' + N[0] + '에서: C장조의 흰건반을 ' + N[0] + '에서 시작해요. ' + N[0] + '에서 시작해서 ' + N[1] + '을 눌러요.')
+      : t('From ' + N[at] + ', tap the next white key: ' + N[at + 1] + '.', N[at] + ' 다음 흰건반 ' + N[at + 1] + '을 눌러요.');
+    const tap = (k) => { if (done) return; clear(); if (k === K[at + 1]) { setBad(null); setAt(at + 1); setNonce(n => n + 1); playKey(k, 0.5); } else if (at === 0 && k === K[0]) { setAt(0); playKey(k, 0.5); } else { setBad(k); playKey(k, 0.4); timers.current.push(setTimeout(() => setBad(null), 1100)); } };
+    body = <>
+      <div style={scS.title}>{t('Your turn', '내가 해보기')}</div>
+      <div style={scS.line}>{line}</div>
+      <ScKeys ks={K} marks={at === 0 ? { ...marks, [K[0]]: 'pick' } : marks} names={names} arcs={arcs} nonce={nonce + ':' + tm} onTap={tap}/>
+      {scRow(<>
+        <button className="ghost-btn" style={scS.back} onClick={() => { clear(); setView('one'); setI(6); setNonce(n => n + 1); }}>{t('← Back', '← 이전')}</button>
+        {done && <button className="ghost-btn" style={scS.prim} onClick={() => { setTm(1 + (tm % 6)); setAt(0); setBad(null); setNonce(n => n + 1); }}>{t('Another →', '다른 것 →')}</button>}
+      </>)}
+    </>;
+  }
+  return scBox('modes', body);
+}
 
 const scDirTag = (dn) => <div style={{textAlign:'center',fontWeight:900,fontSize:14,letterSpacing:'0.04em',color: dn ? '#c0431f' : '#26296b',margin:'6px 0 -2px'}}>{dn ? t('↓ Coming down', '↓ 내려가기') : t('↑ Going up', '↑ 올라가기')}</div>;
 // lesson 5: the natural. A sign changed the key; the natural brings back the plain white key.
