@@ -55315,29 +55315,29 @@ function scRuns(key, hand, F) {
     [pre, a, post].forEach(g => { if (g.length) { const f = g.map(j => F[j]).join(); const ok = hand === 'RH' ? (f === '1,2,3' || f === '1,2,3,4') : (f === '3,2,1' || f === '4,3,2,1'); out.push({ from: g[0], len: g.length, kind: ok ? (g.length === 3 ? 3 : 4) : 0 }); } }); });
   return out;
 }
-function ScPair({ keyName, n, hideLH }) {
+function ScPair({ keyName, n, hideLH, cur }) {
   const FR = scFingers(keyName, 'RH', n), FL = scFingers(keyName, 'LH', n), cols = FR.length, base = spellScale(keyName).map(prettyNote), top = prettyNote(keyName);
   const names = FR.map((_, j) => j === cols - 1 ? top : base[j % 7]);
   const blk = (key, hand, F, hide) => scRuns(key, hand, F).map((g, q) => { const k = g.kind, bg = k === 3 ? '#fbe3da' : k === 4 ? '#dfe9f8' : '#efeadc', bd = k === 3 ? '#e4572e' : k === 4 ? '#3b4fa8' : '#d8cfb6', col = k === 3 ? SC_G3 : k === 4 ? SC_G4 : '#26296b';
-    const shown = !hide || hide.slice(g.from, g.from + g.len).every(Boolean);
-    return <div key={q} style={{gridColumn:(g.from + 2) + ' / span ' + g.len,height:30,borderRadius:7,background:shown ? bg : '#fff',border:'1.5px ' + (shown ? 'solid ' : 'dashed ') + (shown ? bd : '#d8cfb6'),color:col,display:'grid',gridTemplateColumns:'repeat(' + g.len + ',minmax(0,1fr))',gap:2,alignItems:'center',justifyItems:'center',fontWeight:900,fontSize:cols > 8 ? 11 : 13,whiteSpace:'nowrap'}}>{shown ? F.slice(g.from, g.from + g.len).map((f, q) => <span key={q}>{f}</span>) : <span style={{gridColumn:'1 / -1'}}>?</span>}</div>; });
+    const shown = true;
+    return <div key={q} style={{gridColumn:(g.from + 2) + ' / span ' + g.len,height:30,borderRadius:7,background:shown ? bg : '#fff',border:'1.5px ' + (shown ? 'solid ' : 'dashed ') + (shown ? bd : '#d8cfb6'),color:col,display:'grid',gridTemplateColumns:'repeat(' + g.len + ',minmax(0,1fr))',gap:2,alignItems:'center',justifyItems:'center',fontWeight:900,fontSize:cols > 8 ? 11 : 13,whiteSpace:'nowrap'}}>{F.slice(g.from, g.from + g.len).map((f, q) => <span key={q}>{!hide || hide[g.from + q] ? f : '?'}</span>)}</div>; });
   const cw = cols > 8 ? 22 : 31;
   return <div style={{maxWidth:330,margin:'0 auto',overflowX:'auto'}}><div style={{display:'grid',gridTemplateColumns:'34px repeat(' + cols + ', ' + (cols > 8 ? cw + 'px' : 'minmax(0,1fr)') + ')',gap:2,rowGap:5,minWidth:'min-content',alignItems:'center'}}>
-    <div/>{names.map((nm, j) => <div key={j} style={{textAlign:'center',fontWeight:900,fontSize:cols > 8 ? 11 : 13,color:'#26296b'}}>{nm}</div>)}
-    <div style={{fontSize:11,fontWeight:800,color:'#6d6f9c',gridRow:2}}>{t('right', '오른손')}</div>{blk(keyName, 'RH', FR).map(el => React.cloneElement(el, { style: { ...el.props.style, gridRow: 2 } }))}
+    <div/>{names.map((nm, j) => <div key={j} style={{gridRow:1,gridColumn:j + 2,textAlign:'center',fontWeight:900,fontSize:cols > 8 ? 11 : 13,color:'#26296b'}}>{nm}</div>)}
+    {cur != null && <div style={{gridColumn:(cur + 2),gridRow:'1 / 4',border:'2.5px solid #e4572e',borderRadius:9,pointerEvents:'none',alignSelf:'stretch',position:'relative',zIndex:2,margin:'-3px -1px'}}/>}<div style={{fontSize:11,fontWeight:800,color:'#6d6f9c',gridRow:2}}>{t('right', '오른손')}</div>{blk(keyName, 'RH', FR).map(el => React.cloneElement(el, { style: { ...el.props.style, gridRow: 2 } }))}
     <div style={{fontSize:11,fontWeight:800,color:'#6d6f9c',gridRow:3}}>{t('left', '왼손')}</div>{blk(keyName, 'LH', FL, hideLH).map(el => React.cloneElement(el, { style: { ...el.props.style, gridRow: 3 } }))}
   </div></div>;
 }
 function ScBoth() {
   const [view, setView] = useState('all');   // 'all' -> 'more' -> 'try'
   const [kk, setKk] = useState('C'), [oc, setOc] = useState(1), [nonce, setNonce] = useState(0);
-  const [seq, setSeq] = useState([]), [at, setAt] = useState(0), [bad, setBad] = useState(null), [tk, setTk] = useState('C');
+  const [seq, setSeq] = useState([]), [at, setAt] = useState(0), [bad, setBad] = useState(null), [tk, setTk] = useState('C'), [miss, setMiss] = useState(false);
   const timers = useRef([]);
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   useEffect(() => clear, []);
   const title = t('Both hands together', '양손 같이');
   const KEYS = ['C', 'G', 'D', 'A', 'E', 'B', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb'];
-  const newRound = (k) => { setTk(k); setSeq(shuffle([0, 1, 2, 3, 4, 5, 6, 7])); setAt(0); setBad(null); setNonce(n => n + 1); };
+  const newRound = (k) => { setTk(k); setSeq([0, 1, 2, 3, 4, 5, 6, 7]); setMiss(false); setAt(0); setBad(null); setNonce(n => n + 1); };
   let body;
   if (view === 'all') {
     body = <>
@@ -55367,18 +55367,18 @@ function ScBoth() {
     const FR = SCALES[tk].octaves[1].RH, FL = SCALES[tk].octaves[1].LH, N = scNames(tk), done = at >= 8, j = done ? 0 : seq[at];
     const hide = Array.from({ length: 8 }, (_, c) => seq.slice(0, at).includes(c));
     const line = done ? t('All eight notes. That is the fingering of ' + N[0] + ' major, both hands.', '여덟 음을 다 했어요. ' + N[0] + ' 장음계 양손 운지예요.')
-      : bad != null ? t('Not that finger. On ' + N[j] + ' the right hand plays ' + FR[j] + '. Which finger does the left hand play?', '그 손가락이 아니에요. ' + N[j] + '에서 오른손은 ' + FR[j] + '번이에요. 왼손은 몇 번일까요?')
-      : t(N[0] + ' major, on ' + N[j] + ' the right hand plays finger ' + FR[j] + '. The left hand? (' + (at + 1) + '/8)', N[0] + ' 장음계, ' + N[j] + '에서 오른손은 ' + FR[j] + '번이에요. 왼손은? (' + (at + 1) + '/8)');
-    const pick = (f) => { if (done) return; clear(); if (f === FL[j]) { setBad(null); setAt(at + 1); setNonce(n => n + 1); } else { setBad(f); timers.current.push(setTimeout(() => setBad(null), 1100)); } };
+      : miss ? t('Almost! Tap the finger with the ring. (' + (at + 1) + '/8)', '거의 다 왔어요! 동그라미 친 손가락을 눌러요. (' + (at + 1) + '/8)')
+      : t('Look at the left-hand row under the orange box. Which finger goes there? (' + (at + 1) + '/8)', '주황색 네모 아래 왼손 칸이에요. 몇 번 손가락일까요? (' + (at + 1) + '/8)');
+    const pick = (f) => { if (done) return; clear(); if (f === FL[j]) { setBad(null); setMiss(false); setAt(at + 1); setNonce(n => n + 1); } else { setMiss(true); setBad(f); timers.current.push(setTimeout(() => setBad(null), 1100)); } };
     body = <>
       <div style={scS.title}>{t('Your turn', '내가 해보기')}</div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(6,minmax(0,1fr))',gap:5,maxWidth:330,margin:'0 auto 6px'}}>
         {KEYS.map(k => <button key={k} className={'chip' + (tk === k ? ' active' : '')} aria-pressed={tk === k} style={{...KF_BTN,minHeight:38,padding:'0 2px',fontSize:14}} onClick={() => { clear(); newRound(k); }}>{prettyNote(k)}</button>)}
       </div>
       <div style={scS.line}>{line}</div>
-      <ScPair keyName={tk} n={1} hideLH={done ? null : hide}/>
+      <ScPair keyName={tk} n={1} hideLH={done ? null : hide} cur={done ? null : j}/>
       {!done && <div style={{display:'grid',gridTemplateColumns:'repeat(5,minmax(0,1fr))',gap:6,maxWidth:330,margin:'10px auto 0'}}>
-        {[1, 2, 3, 4, 5].map(f => <button key={f} className="ghost-btn" style={{...KF_BTN,minHeight:48,fontSize:18,padding:0,...(bad === f ? {background:'#fbe3da',borderColor:'#e4572e',color:'#c0431f'} : {})}} onClick={() => pick(f)}>{f}</button>)}
+        {[1, 2, 3, 4, 5].map(f => <button key={f} className="ghost-btn" style={{...KF_BTN,minHeight:48,fontSize:18,padding:0,...(bad === f ? {background:'#fbe3da',borderColor:'#e4572e',color:'#c0431f'} : {}),...(miss && f === FL[j] ? {boxShadow:'0 0 0 3px #e4572e',borderColor:'#e4572e'} : {})}} onClick={() => pick(f)}>{f}</button>)}
       </div>}
       {scRow(<>
         <button className="ghost-btn" style={scS.back} onClick={() => { clear(); setView('more'); setNonce(n => n + 1); }}>{t('← Back', '← 이전')}</button>
