@@ -39711,7 +39711,7 @@ function sskRaw(yOf, items, o = {}) {
   const yTop = Y(high), yBot = Y(low), out = [], over = [], notes = [], bars = [];
   let x = o.x0 || 46, last = 0;
   const bar = (xx, w = 1.5) => '<line x1="' + pFix(xx) + '" x2="' + pFix(xx) + '" y1="' + pFix(yTop) + '" y2="' + pFix(yBot) + '" stroke="' + col + '" stroke-width="' + w + '"/>';
-  const coral = (j) => o.lit === j || (o.hl || []).includes(j);
+  const coral = (j) => o.lit === j || (o.hl || []).includes(j), alt = (j) => (o.hl2 || []).includes(j), ALT = '#2e8a6e';
   const stem = (nx, y, up, c) => '<line x1="' + pFix(up ? nx + 6.4 : nx - 6.4) + '" x2="' + pFix(up ? nx + 6.4 : nx - 6.4) + '" y1="' + pFix(up ? y - 1.5 : y + 1.5) + '" y2="' + pFix(up ? y - 34 : y + 34) + '" stroke="' + c + '" stroke-width="1.9" stroke-linecap="round"/>';
   const ledgers = (nx, d, lw = 12) => ledgersFor(d, low, high).map(p => '<line x1="' + pFix(nx - lw) + '" x2="' + pFix(nx + lw) + '" y1="' + pFix(Y(p)) + '" y2="' + pFix(Y(p)) + '" stroke="' + col + '" stroke-width="1.4"/>').join('');
   items.forEach((it) => {
@@ -39737,7 +39737,7 @@ function sskRaw(yOf, items, o = {}) {
       out.push('<rect x="' + pFix(xa) + '" y="' + pFix(up ? by : by - 5) + '" width="' + pFix(xb - xa) + '" height="5" fill="' + col + '"/>');
       x += Math.max(n * D * 1.3, o.minW || 0); return;
     }
-    const d = it[2], y = Y(d), up = d < mid, kind = k === 'hd' ? 'h' : k, c = coral(notes.length) ? cor : col;
+    const d = it[2], y = Y(d), up = d < mid, kind = k === 'hd' ? 'h' : k, c = coral(notes.length) ? cor : alt(notes.length) ? ALT : col;
     out.push(ledgers(nx, d, kind === 'w' ? 14.5 : 12), nvbHead(nx, y, kind, c, 1));
     if (kind !== 'w') out.push(stem(nx, y, up, c));
     if (k === 'hd') out.push('<circle cx="' + pFix(nx + 14) + '" cy="' + pFix((d - low) % 2 === 0 ? y - 5 : y) + '" r="2.6" fill="' + c + '"/>');
@@ -39788,7 +39788,7 @@ function sskRaw(yOf, items, o = {}) {
     notes.forEach((nt, j) => { const v = o.under[j]; if (v === undefined) return;
       if (v === null) over.push('<rect x="' + pFix(nt.x - BX / 2) + '" y="' + pFix(bt) + '" width="' + BX + '" height="' + BX + '" rx="3" fill="#fff" stroke="rgba(38,41,107,0.45)" stroke-width="1.3"/>');
       else { const cr = (o.underCoral || []).includes(j); if (o.underBoxed) over.push('<rect x="' + pFix(nt.x - BX / 2) + '" y="' + pFix(bt) + '" width="' + BX + '" height="' + BX + '" rx="3" fill="#fff" stroke="' + (cr ? cor : 'rgba(38,41,107,0.45)') + '" stroke-width="1.3"/>');
-        over.push('<text x="' + pFix(nt.x) + '" y="' + pFix(bt + BX * 0.5 + 5) + '" text-anchor="middle" font-family="Inter, sans-serif" font-size="' + pFix(Math.max(13, BX * 0.55)) + '" font-weight="900" fill="' + (cr ? cor : col) + '"' + (cr ? ' font-style="italic"' : '') + '>' + v + '</text>'); } });
+        over.push('<text x="' + pFix(nt.x) + '" y="' + pFix(bt + BX * 0.5 + 5) + '" text-anchor="middle" font-family="Inter, sans-serif" font-size="' + pFix(Math.max(13, BX * 0.55)) + '" font-weight="900" fill="' + (cr ? cor : (o.underAlt || []).includes(j) ? ALT : col) + '"' + (cr || (o.underAlt || []).includes(j) ? ' font-style="italic"' : '') + '>' + v + '</text>'); } });
     bottom = bt + BX + 2;
   }
   return { raw: under.join('') + out.join('') + over.join(''), notes, bars, last, end: x, top, bottom };
@@ -44837,7 +44837,7 @@ function SacStaff({ items, clef = 'treble', width = 400, o = {}, label, full, pa
   return <div style={{width:full ? '100%' : Math.min(100, vbw / width * 100) + '%',margin:full || left ? undefined : '0 auto'}}><SfStaff clef={clef} width={vbw} span={[4, m.last]} pad={p} label={label}
     extra={(yOf, layer) => { if (layer !== 'over') return null; const mm = sskRaw((d) => yOf(d, clef), P.items, oo);
       return <g><g dangerouslySetInnerHTML={{ __html: mm.raw }}/>
-        {mm.notes.map((n, j) => P.signs[j] && !(o.noSign || []).includes(j) && <g key={'s' + j}>{tnAcc(P.signs[j], n.x - 21, n.y, (o.signHl || []).includes(j) ? PEN_C : (o.ink || PEN_N))}</g>)}
+        {mm.notes.map((n, j) => P.signs[j] && !(o.noSign || []).includes(j) && <g key={'s' + j}>{tnAcc(P.signs[j], n.x - 21, n.y, (o.signHl || []).includes(j) ? PEN_C : (o.signHl2 || []).includes(j) ? '#2e8a6e' : (o.ink || PEN_N))}</g>)}
         {(o.ring || []).map(j => mm.notes[j] && <ellipse key={'r' + j} cx={mm.notes[j].x} cy={mm.notes[j].y} rx="15" ry="11" fill="none" stroke={PEN_C} strokeWidth="1.8"/>)}
         {o.bracket && (() => { const a = mm.notes[o.bracket.from], x1 = a.x - 27, x2 = mm.bars[o.bracket.bar], y = Math.min(sTop, hi) - 12, yt = yOf(CLEFS[clef].high) - 4;
           return <g><path d={`M${x1} ${y + 6} L${x1} ${y} L${x2} ${y} L${x2} ${yt}`} fill="none" stroke={PEN_C} strokeWidth="1.8" strokeLinejoin="round"/>
@@ -46356,7 +46356,7 @@ function SkgStaff({ items, k = 'C', clef = 'treble', width = 400, o = {}, label,
     extra={(yOf, layer) => { if (layer !== 'over') return null; const mm = sskRaw((d) => yOf(d, clef), P.items, oo);
       return <g>{ks.map(([s, d], i) => <g key={'k' + i}>{tnAcc(s, ksx(i), yOf(d, clef), o.ksCol || PEN_N)}</g>)}
         <g dangerouslySetInnerHTML={{ __html: mm.raw }}/>
-        {mm.notes.map((n, j) => P.signs[j] && !(o.noSign || []).includes(j) && <g key={'s' + j}>{tnAcc(P.signs[j], n.x - 21, n.y, (o.signHl || []).includes(j) ? PEN_C : (o.ink || PEN_N))}</g>)}
+        {mm.notes.map((n, j) => P.signs[j] && !(o.noSign || []).includes(j) && <g key={'s' + j}>{tnAcc(P.signs[j], n.x - 21, n.y, (o.signHl || []).includes(j) ? PEN_C : (o.signHl2 || []).includes(j) ? '#2e8a6e' : (o.ink || PEN_N))}</g>)}
         {(o.ring || []).map(j => mm.notes[j] && <ellipse key={'r' + j} cx={mm.notes[j].x} cy={mm.notes[j].y} rx="15" ry="11" fill="none" stroke={PEN_C} strokeWidth="1.8"/>)}
         {o.bracket && (() => { const a = mm.notes[o.bracket.from], x1 = a.x - 27, x2 = mm.bars[o.bracket.bar], y = Math.min(sTop, hi) - 12, yt = yOf(CLEFS[clef].high, clef) - 4;
           return <g><path d={`M${x1} ${y + 6} L${x1} ${y} L${x2} ${y} L${x2} ${yt}`} fill="none" stroke={PEN_C} strokeWidth="1.8" strokeLinejoin="round"/>
@@ -55057,12 +55057,14 @@ const SC_SAME = [
 ];
 const SC_PICK = ['G', 'D', 'A', 'E', 'F', 'Bb', 'Eb', 'Ab'];
 function ScSame() {
-  const [view, setView] = useState('all');   // 'all' -> 'one' -> 'try'
+  const [go, setGo] = useState(false);
+  const [view, setView] = useState('all'), [stf, setStf] = useState(false);   // 'all' -> 'one' -> 'try'
   const [i, setI] = useState(0), [nonce, setNonce] = useState(0), [kk, setKk] = useState('G'), [at, setAt] = useState(0), [bad, setBad] = useState(null);
   const P = useScPlay([view, i, kk]);
   const timers = useRef([]);
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   useEffect(() => clear, []);
+  useEffect(() => { if (at < 7 && go) setGo(false); }, [at, go]);
   const titleStyle = {textAlign:'center',fontFamily:"'Playfair Display', Georgia, serif",fontSize:22,fontWeight:900,color:'#26296b',lineHeight:1.2,margin:'0 0 8px',textWrap:'balance'};
   const lineStyle = {textAlign:'center',fontSize:15,fontWeight:800,color:'#26296b',margin:'8px 0 6px',minHeight:42,textWrap:'balance',wordBreak:'keep-all'};
   const prim = {...KF_BTN,minWidth:140,background:'#26296b',color:'#fffefa',borderColor:'#26296b'};
@@ -55095,7 +55097,8 @@ function ScSame() {
       <div style={lineStyle}>{t(E.text[0], E.text[1])}</div>
       <ScKeys ks={K} marks={marks} names={names} arcs={arcs} nonce={nonce + ':' + i}/>
       <ScPills upTo={E.arc != null ? E.arc + 1 : Math.max(E.n - 1, 0)} cur={E.arc != null ? E.arc : -1}/>
-      {E.n === 8 && <ScStaffScale k={E.key}/>}
+      {E.n === 8 && <ScStaffBtn on={stf} set={setStf}/>}
+      {E.n === 8 && stf && <ScStaffScale k={E.key}/>}
       {row(<>
         <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { clear(); if (i === 0) setView('all'); else { setI(i - 1); setNonce(n => n + 1); } }}>{t('← Back', '← 이전')}</button>
         <button className="ghost-btn" style={prim} onClick={() => { clear(); if (i === SC_SAME.length - 1) { setView('try'); setAt(0); setBad(null); setNonce(n => n + 1); } else { const nx = SC_SAME[i + 1]; if (nx.arc != null) playAt(scIdx(nx.key), nx.arc); setI(i + 1); setNonce(n => n + 1); } }}>{i === SC_SAME.length - 1 ? t('Your turn →', '내가 해보기 →') : t('Next →', '다음 →')}</button>
@@ -55103,16 +55106,16 @@ function ScSame() {
     </>;
   } else {
     const K = scIdx(kk), N = scNames(kk), Q = K.concat(K.slice(0, 7).reverse()), N2 = N.concat(N.slice(0, 7).reverse()), QS = Q.slice(1).map((k, j) => Math.abs(k - Q[j])), done = at >= 14, marks = {}, names = {}, arcs = [];
-    const ps = at >= 7 ? 7 : 0; for (let j = ps; j <= at; j++) { marks[Q[j]] = j === at && !done ? 'pick' : 'pass'; names[Q[j]] = N2[j]; }
+    const pat = at === 7 && !go, ps = at >= 7 && !pat ? 7 : 0; for (let j = ps; j <= at; j++) { marks[Q[j]] = j === at && !done && !pat ? 'pick' : 'pass'; names[Q[j]] = N2[j]; }
     for (let j = ps; j < at; j++) arcs.push([Q[j], Q[j + 1], j === at - 1, SC_COL[QS[j]]]);
     if (bad != null) marks[bad] = 'bad';
-    const dn = at >= 7, word = (j) => scStepWord(QS[j], j >= 7);
-    const line = done ? t('That is ' + N[0] + ' major, up and down: the same pattern.', N[0] + ' 장음계를 올라가고 내려왔어요. 같은 패턴이에요.')
+    const dn = at >= 7 && !pat, word = (j) => scStepWord(QS[j], j >= 7);
+    const line = pat ? t('That is the way up: look at the pattern. Then we come back down.', '올라가는 길이에요. 패턴을 보세요. 그다음 내려와요.') : done ? t('That is ' + N[0] + ' major, up and down: the same pattern.', N[0] + ' 장음계를 올라가고 내려왔어요. 같은 패턴이에요.')
       : bad != null ? t('Not that key. From ' + N2[at] + ', go ' + word(at) + '.', '그 건반이 아니에요. ' + N2[at] + '에서 ' + word(at) + ' 가요.')
       : at === 0 ? t('Start on ' + N[0] + '. Then tap ' + word(0) + '.', N[0] + '에서 시작해요. 그다음 ' + word(0) + ' 건반을 눌러요.')
       : at === 7 ? t('Now come back down. From ' + N2[at] + ', tap ' + word(at) + '.', '이제 내려와요. ' + N2[at] + '에서 ' + word(at) + ' 건반을 눌러요.')
       : t('From ' + N2[at] + ', tap ' + word(at) + '.', N2[at] + '에서 ' + word(at) + ' 건반을 눌러요.');
-    const tap = (k) => { if (done) return; clear(); if (k === Q[at + 1]) { setBad(null); setAt(at + 1); setNonce(n => n + 1); playKey(Q[at], 0.35); timers.current.push(setTimeout(() => playKey(k, 0.6), 400)); }
+    const tap = (k) => { if (done || pat) return; clear(); if (k === Q[at + 1]) { setBad(null); setAt(at + 1); setNonce(n => n + 1); playKey(Q[at], 0.35); timers.current.push(setTimeout(() => playKey(k, 0.6), 400)); }
       else { setBad(k); playKey(k, 0.4); timers.current.push(setTimeout(() => setBad(null), 1100)); } };
     body = <>
       <div style={titleStyle}>{t('Your turn', '내가 해보기')}</div>
@@ -55120,11 +55123,12 @@ function ScSame() {
         {SC_PICK.map(k => <button key={k} className={'chip' + (kk === k ? ' active' : '')} aria-pressed={kk === k} style={{...KF_BTN,minHeight:40,padding:'0 4px'}} onClick={() => { clear(); setKk(k); setAt(0); setBad(null); setNonce(n => n + 1); playKey(SF12.indexOf(k), 0.5); }}>{prettyNote(k)}</button>)}
       </div>
       <div style={lineStyle}>{line}</div>
-      {!done && scDirTag(at >= 7)}
+      {!done && scDirTag(at >= 7 && !pat)}
       <ScKeys ks={K} marks={at === 0 ? { ...marks, [K[0]]: 'pick' } : marks} names={names} arcs={arcs} nonce={nonce + kk} onTap={tap}/>
       <ScPillRow st={QS} upTo={at} cur={at - 1}/>
       {row(<>
         <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { clear(); setView('one'); setI(SC_SAME.length - 1); setNonce(n => n + 1); }}>{t('← Back', '← 이전')}</button>
+        {pat && <button className="ghost-btn" style={prim} onClick={() => { setGo(true); setNonce(n => n + 1); }}>{t('Come down →', '내려가기 →')}</button>}
         {done && <button className="ghost-btn" style={prim} onClick={() => { setAt(0); setBad(null); setNonce(n => n + 1); }}>{t('Again', '다시 하기')}</button>}
       </>)}
     </>;
@@ -55478,13 +55482,15 @@ const SC_ALLSTEPS = [
   { set: SC_12, text: ['Twelve start notes in all, and one pattern for every one of them.', '시작하는 음은 모두 열두 개예요. 열두 개 모두 패턴은 하나예요.'] },
 ];
 function ScAll() {
-  const [view, setView] = useState('all');   // 'all' -> 'one' -> 'try'
+  const [go, setGo] = useState(false);
+  const [view, setView] = useState('all'), [stf, setStf] = useState(false);   // 'all' -> 'one' -> 'try'
   const [i, setI] = useState(0), [nonce, setNonce] = useState(0), [kk, setKk] = useState('C');
   const [tk, setTk] = useState('Eb'), [at, setAt] = useState(0), [bad, setBad] = useState(null);
   const P = useScPlay([view, i, kk, tk]);
   const timers = useRef([]);
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   useEffect(() => clear, []);
+  useEffect(() => { if (at < 7 && go) setGo(false); }, [at, go]);
   const title = t('All twelve keys', '12개 조 모두');
   const ST = [2, 2, 1, 2, 2, 2, 1];
   const mv = (K, j, anim) => [K[j], K[j + 1], anim, SC_COL[ST[j]]];
@@ -55513,7 +55519,9 @@ function ScAll() {
       {A && scDirTag(A.dn)}
       <ScKeys ks={K} marks={A ? A.marks : marks} names={A ? A.names : names} arcs={A ? A.arcs : ST.map((_, j) => mv(K, j, false))} nonce={nonce + ':' + i + kk + (A ? 'a' + P.an : '')}/>
       {A ? <ScPillRow st={QS} upTo={P.an} cur={P.an - 1}/> : <ScPills/>}
-      <ScStaffScale k={kk} ring={A ? (P.an <= 7 ? P.an : 14 - P.an) : null}/>
+      {scFingers(kk, 'RH', 1) && scFingers(kk, 'LH', 1) && <ScPair keyName={kk} n={1} cur={A ? (P.an <= 7 ? P.an : 14 - P.an) : undefined}/>}
+      <ScStaffBtn on={stf} set={setStf}/>
+      {stf && <ScStaffScale k={kk} ring={A ? (P.an <= 7 ? P.an : 14 - P.an) : null}/>}
       {scPlayBtn(P, Q)}
       {scRow(<>
         <button className="ghost-btn" style={scS.back} onClick={() => { clear(); if (i === 0) setView('all'); else { const p = SC_ALLSTEPS[i - 1]; setI(i - 1); setKk(p.set[0]); setNonce(n => n + 1); } }}>{t('← Back', '← 이전')}</button>
@@ -55523,26 +55531,27 @@ function ScAll() {
     </>;
   } else {
     const K = scIdx(tk), N = scNames(tk), Q = K.concat(K.slice(0, 7).reverse()), N2 = N.concat(N.slice(0, 7).reverse()), QS = Q.slice(1).map((k, j) => Math.abs(k - Q[j])), done = at >= 14, marks = {}, names = {}, arcs = [];
-    const ps = at >= 7 ? 7 : 0; for (let j = ps; j <= at; j++) { marks[Q[j]] = j === at && !done ? 'pick' : 'pass'; names[Q[j]] = N2[j]; }
+    const pat = at === 7 && !go, ps = at >= 7 && !pat ? 7 : 0; for (let j = ps; j <= at; j++) { marks[Q[j]] = j === at && !done && !pat ? 'pick' : 'pass'; names[Q[j]] = N2[j]; }
     for (let j = ps; j < at; j++) arcs.push([Q[j], Q[j + 1], j === at - 1, SC_COL[QS[j]]]);
     if (bad != null) marks[bad] = 'bad';
-    const dn = at >= 7, word = (j) => scStepWord(QS[j], j >= 7);
-    const line = done ? t('That is ' + N[0] + ' major, up and down: the same pattern.', N[0] + ' 장음계를 올라가고 내려왔어요. 같은 패턴이에요.')
+    const dn = at >= 7 && !pat, word = (j) => scStepWord(QS[j], j >= 7);
+    const line = pat ? t('That is the way up: look at the pattern. Then we come back down.', '올라가는 길이에요. 패턴을 보세요. 그다음 내려와요.') : done ? t('That is ' + N[0] + ' major, up and down: the same pattern.', N[0] + ' 장음계를 올라가고 내려왔어요. 같은 패턴이에요.')
       : bad != null ? t('Not that key. From ' + N2[at] + ', go ' + word(at) + '.', '그 건반이 아니에요. ' + N2[at] + '에서 ' + word(at) + ' 가요.')
       : at === 0 ? t('Start on ' + N[0] + '. Then tap ' + word(0) + '.', N[0] + '에서 시작해요. 그다음 ' + word(0) + ' 건반을 눌러요.')
       : at === 7 ? t('Now come back down. From ' + N2[at] + ', tap ' + word(at) + '.', '이제 내려와요. ' + N2[at] + '에서 ' + word(at) + ' 건반을 눌러요.')
       : t('From ' + N2[at] + ', tap ' + word(at) + '.', N2[at] + '에서 ' + word(at) + ' 건반을 눌러요.');
-    const tap = (k) => { if (done) return; clear(); if (k === Q[at + 1]) { setBad(null); setAt(at + 1); setNonce(n => n + 1); playKey(Q[at], 0.35); timers.current.push(setTimeout(() => playKey(k, 0.6), 400)); }
+    const tap = (k) => { if (done || pat) return; clear(); if (k === Q[at + 1]) { setBad(null); setAt(at + 1); setNonce(n => n + 1); playKey(Q[at], 0.35); timers.current.push(setTimeout(() => playKey(k, 0.6), 400)); }
       else { setBad(k); playKey(k, 0.4); timers.current.push(setTimeout(() => setBad(null), 1100)); } };
     body = <>
       <div style={scS.title}>{t('Your turn', '내가 해보기')}</div>
       {chips(SC_12, tk, (k) => { clear(); setTk(k); setAt(0); setBad(null); setNonce(n => n + 1); playKey(SCALES[k].rootPc, 0.5); }, 6)}
       <div style={scS.line}>{line}</div>
-      {!done && scDirTag(at >= 7)}
+      {!done && scDirTag(at >= 7 && !pat)}
       <ScKeys ks={K} marks={at === 0 ? { ...marks, [K[0]]: 'pick' } : marks} names={names} arcs={arcs} nonce={nonce + tk} onTap={tap}/>
       <ScPillRow st={QS} upTo={at} cur={at - 1}/>
       {scRow(<>
         <button className="ghost-btn" style={scS.back} onClick={() => { clear(); setView('one'); setI(SC_ALLSTEPS.length - 1); setKk('C'); setNonce(n => n + 1); }}>{t('← Back', '← 이전')}</button>
+        {pat && <button className="ghost-btn" style={scS.prim} onClick={() => { setGo(true); setNonce(n => n + 1); }}>{t('Come down →', '내려가기 →')}</button>}
         {done && <button className="ghost-btn" style={scS.prim} onClick={() => { setAt(0); setBad(null); setNonce(n => n + 1); }}>{t('Again', '다시 하기')}</button>}
       </>)}
     </>;
@@ -55650,13 +55659,20 @@ function ScChrom() {
 const SC_MF = ['natural', 'harmonic', 'melodic'];
 const scMinSteps = (f) => { const s = MINOR_FORMS[f].steps.concat([12]); return s.slice(1).map((v, j) => v - s[j]); };
 function ScMinor() {
-  const [view, setView] = useState('all');   // 'all' -> 'one' -> 'try'
+  const [go, setGo] = useState(false);
+  const [view, setView] = useState('all'), [stf, setStf] = useState(false);   // 'all' -> 'one' -> 'try'
   const [i, setI] = useState(0), [nonce, setNonce] = useState(0), [fm, setFm] = useState('harmonic'), [at, setAt] = useState(0), [bad, setBad] = useState(null);
   const P = useScPlay([view, i, fm]);
   const timers = useRef([]);
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   useEffect(() => clear, []);
+  useEffect(() => { if (at < 7 && go) setGo(false); }, [at, go]);
   const title = t('Three kinds of minor', '세 가지 단음계');
+  const TXK = {
+    natural: ['Natural minor: nothing is raised. T S T T S T T.', '자연 단음계: 올리는 음이 없어요. T S T T S T T.'],
+    harmonic: ['Harmonic minor, the one you’ll play most: raise the 7th note a semitone, going up and coming down. C becomes C♯.', '화성 단음계, 가장 많이 치게 될 단음계: 7번째 음을 반음 올려요, 올라갈 때도 내려올 때도. C가 C♯이 돼요.'],
+    melodic: ['Melodic minor: going up, raise the 6th and 7th (B♮ and C♯). Coming down, play the natural minor.', '가락 단음계: 올라갈 때는 6음과 7음(B♮과 C♯)을 올려요. 내려올 때는 자연 단음계를 쳐요.']
+  };
   const TXT = {
     natural: ['Natural minor: follow the key signature. D minor has one flat, B♭, and no other sign is added.', '자연 단음계: 조표대로 쳐요. D 단조의 조표는 플랫 하나(B♭)이고, 따로 붙는 표는 없어요.'],
     harmonic: ['Harmonic minor, the one you’ll play most: the 7th note is raised, C becomes C♯, going up and coming down. That sharp is not in the key signature: it is written beside the note.', '화성 단음계, 가장 많이 치게 될 단음계: 7번째 음을 올려요. C가 C♯이 돼요, 올라갈 때도 내려올 때도. 이 샤프는 조표에 있는 게 아니라 음표 옆에 따로 적어요.'],
@@ -55676,19 +55692,25 @@ function ScMinor() {
       {scRow(<button className="ghost-btn" style={scS.prim} onClick={() => { setView('one'); setI(0); setNonce(n => n + 1); }}>{t('One by one →', '하나씩 →')}</button>)}
     </>;
   } else if (view === 'one') {
-    const f = SC_MF[i], M = mk(f), Dn = f === 'melodic' ? mk('natural') : M, Q = M.K.concat(Dn.K.slice(0, 7).reverse()), QS = Q.slice(1).map((k, j) => Math.abs(k - Q[j])), an = P.an;
+    const f = SC_MF[i], M = mk(f), Dn = f === 'melodic' ? mk('natural') : M, Q = M.K.concat(Dn.K.slice(0, 7).reverse()), N2 = M.N.concat(Dn.N.slice(0, 7).reverse()), QS = Q.slice(1).map((k, j) => Math.abs(k - Q[j])), an = P.an, A = an >= 0 ? scAnim(Q, N2, QS, an, 7, M.marks) : null;
     const upI = scMinItems(f, 'up'), dnI = scMinItems(f, 'down');
-    const cUp = f === 'harmonic' ? [6] : f === 'melodic' ? [5, 6] : [], cDn = f === 'harmonic' ? [1] : [];
+    const cUp = f === 'harmonic' ? [6] : f === 'melodic' ? [5, 6] : [], cDn = f === 'harmonic' ? [1] : [], aUp = f === 'melodic' ? [] : [5], aDn = [2];
     const onlyUp = an >= 0 ? Array.from({ length: Math.min(an, 7) + 1 }, (_, j) => j) : null, onlyDn = an >= 0 ? (an >= 7 ? Array.from({ length: an - 6 }, (_, j) => j) : []) : null;
-    const stf = (items, coral, only, ring, key) => <SkgStaff key={key} items={items} k="F" width={330} o={{ boxS: 26, D: 30, hl: coral, signHl: coral, ring: ring == null ? [] : [ring], ...skgUnder(items, 'F', only, coral) }}/>;
+    const stf0 = (items, coral, alt, only, ring, key) => <SkgStaff key={key} items={items} k="F" width={330} o={{ boxS: 26, D: 30, hl: coral, hl2: alt, signHl: coral, underAlt: alt, ksCol: '#2e8a6e', ring: ring == null ? [] : [ring], ...skgUnder(items, 'F', only, coral) }}/>;
     body = <>
       <div style={scS.title}>{title}</div>
-      <div style={scS.line}>{t(TXT[f][0], TXT[f][1])}</div>
-      {scDirTag(false)}
-      {stf(upI, cUp, onlyUp, an >= 0 && an <= 7 ? an : null, 'u' + f + an)}
-      {scDirTag(true)}
-      {stf(dnI, cDn, onlyDn, an >= 7 ? an - 7 : null, 'd' + f + an)}
+      <div style={scS.line}>{stf ? t(TXT[f][0], TXT[f][1]) : t(TXK[f][0], TXK[f][1])}</div>
+      {A && scDirTag(A.dn)}
+      <ScKeys ks={M.K} marks={A ? A.marks : M.marks} names={A ? A.names : M.names} arcs={A ? A.arcs : M.ST.map((_, j) => mvK(M.K, M.ST, j, false))} nonce={nonce + ':' + i + (A ? 'a' + P.an : '')}/>
       {an >= 0 ? <ScPillRow st={QS} upTo={an} cur={an - 1}/> : <ScPillRow st={M.ST} upTo={7}/>}
+      <ScStaffBtn on={stf} set={setStf}/>
+      {stf && <>
+        {scDirTag(false)}
+        {stf0(upI, cUp, aUp, onlyUp, an >= 0 && an <= 7 ? an : null, 'u' + f + an)}
+        {scDirTag(true)}
+        {stf0(dnI, cDn, aDn, onlyDn, an >= 7 ? an - 7 : null, 'd' + f + an)}
+      <div style={{display:'flex',justifyContent:'center',gap:14,flexWrap:'wrap',fontSize:12,fontWeight:800,margin:'2px 0 4px'}}><span style={{color:'#2e8a6e'}}>{t('● from the key signature', '● 조표에서 온 음')}</span>{f !== 'natural' && <span style={{color:'#c0431f'}}>{t('● accidental, beside the note', '● 임시표, 음표 옆에 붙은 음')}</span>}</div>
+      </>}
       {scPlayBtn(P, Q)}
       {scRow(<>
         <button className="ghost-btn" style={scS.back} onClick={() => { clear(); if (i === 0) setView('all'); else { setI(i - 1); setNonce(n => n + 1); } }}>{t('← Back', '← 이전')}</button>
@@ -55697,19 +55719,19 @@ function ScMinor() {
     </>;
   } else {
     const M = mk(fm), K = M.K, D = fm === 'melodic' ? mk('natural') : M, Q = K.concat(D.K.slice(0, 7).reverse()), N2 = M.N.concat(D.N.slice(0, 7).reverse()), QS = Q.slice(1).map((k, j) => Math.abs(k - Q[j])), done = at >= 14, marks = {}, names = {}, arcs = [];
-    const ps = at >= 7 ? 7 : 0; for (let j = ps; j <= at; j++) { marks[Q[j]] = j === at && !done ? 'pick' : (j < 8 && M.marks[Q[j]] === 'target') ? 'target' : 'pass'; names[Q[j]] = N2[j]; }
+    const pat = at === 7 && !go, ps = at >= 7 && !pat ? 7 : 0; for (let j = ps; j <= at; j++) { marks[Q[j]] = j === at && !done && !pat ? 'pick' : (j < 8 && M.marks[Q[j]] === 'target') ? 'target' : 'pass'; names[Q[j]] = N2[j]; }
     for (let j = ps; j < at; j++) arcs.push([Q[j], Q[j + 1], j === at - 1, scColOf(QS[j])]);
     if (bad != null) marks[bad] = 'bad';
     const word = (j) => scStepWord(QS[j], j >= 7);
     const fl = MINOR_FORMS[fm].label;
     const raised = fm === 'melodic' && at >= 7 && bad != null && (bad === K[5] || bad === K[6]);
-    const line = done ? (fm === 'melodic' ? t('That is D melodic minor: up with B♮ and C♯, down as the natural minor.', 'D 가락 단음계예요: 올라갈 때는 B♮과 C♯, 내려올 때는 자연 단음계예요.') : t('That is D ' + fl.toLowerCase() + ' minor, up and down.', 'D ' + fl + ' 단음계를 올라가고 내려왔어요.'))
+    const line = pat ? t('That is the way up: look at the pattern. Then we come back down.', '올라가는 길이에요. 패턴을 보세요. 그다음 내려와요.') : done ? (fm === 'melodic' ? t('That is D melodic minor: up with B♮ and C♯, down as the natural minor.', 'D 가락 단음계예요: 올라갈 때는 B♮과 C♯, 내려올 때는 자연 단음계예요.') : t('That is D ' + fl.toLowerCase() + ' minor, up and down.', 'D ' + fl + ' 단음계를 올라가고 내려왔어요.'))
       : raised ? t('Not that key. Coming down, the melodic minor plays the natural minor: ' + N2[at + 1] + ', not ' + prettyAny(spellMinor('D', 'melodic')[bad === K[5] ? 5 : 6]) + '.', '그 건반이 아니에요. 내려올 때 가락 단음계는 자연 단음계를 쳐요: ' + prettyAny(spellMinor('D', 'melodic')[bad === K[5] ? 5 : 6]) + ' 말고 ' + N2[at + 1] + '이에요.')
       : bad != null ? t('Not that key. From ' + N2[at] + ', go ' + word(at) + '.', '그 건반이 아니에요. ' + N2[at] + '에서 ' + word(at) + ' 가요.')
       : at === 0 ? t('Start on D. Then tap ' + word(0) + '.', 'D에서 시작해요. 그다음 ' + word(0) + ' 건반을 눌러요.')
       : at === 7 ? (fm === 'melodic' ? t('Now come back down. Melodic minor comes down as the natural minor. From D, tap ' + word(at) + '.', '이제 내려와요. 가락 단음계는 내려올 때 자연 단음계예요. D에서 ' + word(at) + ' 건반을 눌러요.') : t('Now come back down. From D, tap ' + word(at) + '.', '이제 내려와요. D에서 ' + word(at) + ' 건반을 눌러요.'))
       : t('From ' + N2[at] + ', tap ' + word(at) + '.', N2[at] + '에서 ' + word(at) + ' 건반을 눌러요.');
-    const tap = (k) => { if (done) return; clear(); if (k === Q[at + 1]) { setBad(null); setAt(at + 1); setNonce(n => n + 1); playKey(Q[at], 0.35); timers.current.push(setTimeout(() => playKey(k, 0.6), 400)); }
+    const tap = (k) => { if (done || pat) return; clear(); if (k === Q[at + 1]) { setBad(null); setAt(at + 1); setNonce(n => n + 1); playKey(Q[at], 0.35); timers.current.push(setTimeout(() => playKey(k, 0.6), 400)); }
       else { setBad(k); playKey(k, 0.4); timers.current.push(setTimeout(() => setBad(null), 1100)); } };
     body = <>
       <div style={scS.title}>{t('Your turn', '내가 해보기')}</div>
@@ -55717,11 +55739,18 @@ function ScMinor() {
         {SC_MF.map(f => <button key={f} className={'chip' + (fm === f ? ' active' : '')} aria-pressed={fm === f} style={{...KF_BTN,minHeight:40,padding:'0 4px'}} onClick={() => { clear(); setFm(f); setAt(0); setBad(null); setNonce(n => n + 1); playKey(2, 0.5); }}>{MINOR_FORMS[f].label}</button>)}
       </div>
       <div style={scS.line}>{line}</div>
-      {!done && scDirTag(at >= 7)}
+      {!done && scDirTag(at >= 7 && !pat)}
       <ScKeys ks={K} marks={at === 0 ? { ...marks, [K[0]]: 'pick' } : marks} names={names} arcs={arcs} nonce={nonce + fm} onTap={tap}/>
+      {(() => {   // the staff with its key signature (B♭); each note appears as she taps it: key-signature notes green, accidentals coral
+        const dn = at >= 7 && go, cnt = dn ? at - 6 : at + 1, all = scMinItems(fm, dn ? 'down' : 'up'), items = all.slice(0, cnt).concat([['||']]);
+        const acc = dn ? (fm === 'harmonic' ? [1] : []) : (fm === 'harmonic' ? [6] : fm === 'melodic' ? [5, 6] : []), ks = dn ? [2] : (fm === 'melodic' ? [] : [5]);
+        const on = (l) => l.filter(j => j < cnt);
+        return <SkgStaff key={'tr' + fm + (dn ? 'd' : 'u') + cnt} items={items} k="F" width={330} o={{ boxS: 26, D: 30, hl: on(acc), hl2: on(ks), signHl: on(acc), underAlt: on(ks), ksCol: '#2e8a6e', ...skgUnder(items, 'F', null, on(acc)) }}/>;
+      })()}
       <ScPillRow st={QS} upTo={at} cur={at - 1}/>
       {scRow(<>
         <button className="ghost-btn" style={scS.back} onClick={() => { clear(); setView('one'); setI(2); setNonce(n => n + 1); }}>{t('← Back', '← 이전')}</button>
+        {pat && <button className="ghost-btn" style={scS.prim} onClick={() => { setGo(true); setNonce(n => n + 1); }}>{t('Come down →', '내려가기 →')}</button>}
         {done && <button className="ghost-btn" style={scS.prim} onClick={() => { setAt(0); setBad(null); setNonce(n => n + 1); }}>{t('Again', '다시 하기')}</button>}
       </>)}
     </>;
@@ -55751,10 +55780,13 @@ function scAnim(Q, N2, QS, an, split, tmark) {
 const scPlayBtn = (P, Q) => <div style={{textAlign:'center',marginTop:10}}><button className="ghost-btn" style={{...KF_BTN,minWidth:200,borderColor:'#e4572e',color:'#c0431f'}} onClick={() => P.an >= 0 ? P.stop() : P.play(Q)}>{P.an >= 0 ? t('■ Stop', '■ 멈추기') : t('▶ Up and down', '▶ 올라갔다 내려오기')}</button></div>;
 
 // ─── Phase 588 (her call, 2026-10-20 14:53): the staff with its key signature. Lesson 11 shows D minor (one flat, B♭): the natural minor follows the key signature; the raised notes of the harmonic and melodic minors are accidentals beside the notes, not in the key signature.
+function ScStaffBtn({ on, set }) {
+  return <div style={{display:'flex',justifyContent:'center',margin:'6px 0 2px'}}><button className="ghost-btn" style={{...scS.back,minHeight:40,padding:'0 16px',fontSize:13}} aria-pressed={on} onClick={() => set(!on)}>{on ? t('Hide the staff', '오선 숨기기') : t('Write it on the staff', '오선에 써 보기')}</button></div>;
+}
 const SC_D0 = { C: 28, G: 32, D: 29, A: 33, E: 30, B: 27, F: 31, Bb: 27, Eb: 30, Ab: 33, Db: 29, Gb: 32 };
 function ScStaffScale({ k, ring, only, width = 330 }) {
   const d0 = SC_D0[k], items = Array.from({ length: 8 }, (_, j) => ['q', 1, d0 + j]).concat([['||']]), hl = skgOf(items, k, n => n.byKey);
-  return <SkgStaff items={items} k={k} width={width} o={{ boxS: 26, D: 30, hl, ...skgUnder(items, k, only, hl), ring: ring == null ? [] : [ring] }}/>;
+  return <SkgStaff items={items} k={k} width={width} o={{ boxS: 26, D: 30, hl2: hl, underAlt: hl, ksCol: '#2e8a6e', ...skgUnder(items, k, only, []), ring: ring == null ? [] : [ring] }}/>;
 }
 // D minor on the treble staff, d 29 to 36, with the key signature of F major (B♭). Up or down; signs only where the form raises a note.
 function scMinItems(form, dir) {
