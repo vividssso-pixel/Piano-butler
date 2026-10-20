@@ -23003,7 +23003,7 @@ const HOME_LIVE = {
     checkLine: ['Questions, level by level', '문제를 단계별로'],
   },
   'p-scale': {
-    lessons: ['sc-shape', 'sc-same', 'sc-deg', 'sc-finger', 'sc-odd', 'sc-black'], check: 'scales', tools: [], more: [],
+    lessons: ['sc-shape', 'sc-same', 'sc-deg', 'sc-finger', 'sc-black'], check: 'scales', tools: [], more: [],
     tryLine: ['Three steps: white keys, black keys, all twelve', '세 단계: 흰건반, 검은건반, 열두 조'],
     checkLine: ['Questions, level by level', '문제를 단계별로'],
   },
@@ -54929,9 +54929,8 @@ function ScShape() {
 [['sc-shape', 'The major scale pattern', '장음계의 모양', 'T T S T T T S, on the keys of C.', 'C의 건반 위에서 T T S T T T S.', ScShape],
  ['sc-same', 'The same pattern from any note', '어느 음에서 시작해도 같은 패턴', 'G has an F♯, F has a B♭: the pattern decides.', 'G에는 F♯, F에는 B♭: 패턴이 정해 줘요.', ScSame],
  ['sc-deg', 'The degrees of the scale', '음계의 음 번호와 이름', 'Tonic, supertonic … leading note.', '으뜸음, 윗으뜸음 … 이끎음.', ScDeg],
- ['sc-finger', 'The standard fingering', '기본 운지', 'Right hand 1 2 3, 1 2 3 4, 5. Left hand: the mirror.', '오른손 1 2 3, 1 2 3 4, 5. 왼손은 거울.', ScFinger],
- ['sc-odd', 'White keys: two are different', '흰건반에서 시작: 둘은 달라요', 'F and B: one hand each.', 'F와 B: 한 손씩.', ScOdd],
- ['sc-black', 'Starting on a black key', '검은건반에서 시작하기', 'The thumb only ever plays white keys.', '엄지는 흰건반만 쳐요.', ScBlack]].forEach(([id, en, ko, benEn, bko, Comp]) => {
+ ['sc-finger', 'Fingering from a white key', '흰건반에서 시작하는 운지', 'The standard shape, and the two hands that differ.', '기본 모양, 그리고 다른 두 손.', ScFinger],
+ ['sc-black', 'Fingering from a black key', '검은건반에서 시작하는 운지', 'The same groups, another order. The thumb plays white keys.', '같은 묶음, 다른 순서. 엄지는 흰건반.', ScBlack]].forEach(([id, en, ko, benEn, bko, Comp]) => {
   TOOLS.push({ id, ch: 'concept', title: en, blurb: benEn, hidden: true, get kicker() { return TOOL_AREAS.find(a => a.id === 'pitch').name + ' · ' + (LANG === 'ko' ? '스케일' : 'Scales'); }, C: () => <Comp/> });
   TOOL_KO[id] = [ko, bko];
   const tl = TOOLS[TOOLS.length - 1], k = TOOL_KO[id], ti = tl.title, bl = tl.blurb; tl.titleEn = ti; tl.blurbEn = bl;
@@ -54945,7 +54944,7 @@ function ScShape() {
 const SC_OFF = [0, 2, 4, 5, 7, 9, 11, 12];
 const scIdx = (key) => SC_OFF.map(o => (SCALES[key] ? SCALES[key].rootPc : SF12.indexOf(key)) + o);
 const scNames = (key) => spellScale(key).concat([key]).map(prettyNote);
-function ScKeys({ marks, onTap, arcs, nonce, names, ks, ncol }) {
+function ScKeys({ marks, onTap, arcs, nonce, names, ks, ncol, nums }) {
   const kx = keyCenterX, white = (i) => PC_INFO[((i % 12) + 12) % 12].white;
   const x0 = Math.min(...ks.map(kx)) - 24, x1 = Math.max(...ks.map(kx)) + 24;
   const pt = (i) => [kx(i), white(i) ? 99 : 58];
@@ -54962,8 +54961,11 @@ function ScKeys({ marks, onTap, arcs, nonce, names, ks, ncol }) {
       <path d={line} stroke={col || '#26296b'} strokeWidth={w} style={dash}/><path d={head} stroke={col || '#26296b'} strokeWidth={w} style={headAnim}/>
     </g>; });
   return (<div style={{maxWidth:330,margin:'0 auto'}}>
-    <TapKeyboard octaves={2} extraC labels="white" marks={marks} onTap={onTap} top={46} vx={[x0, x1]} overlay={<g aria-hidden="true">{arrows}{Object.entries(names || {}).map(([k, txt]) =>
-      <text key={'n' + k + txt} x={kx(+k)} y={white(+k) ? -9 : -27} textAnchor="middle" fontSize="17" fontWeight="900" fill={(ncol && ncol[k]) || '#c0431f'} style={{animation:'fadeUp 0.3s both'}}>{txt}</text>)}</g>}/>
+    <TapKeyboard octaves={2} extraC labels={arcs.length ? 'white' : 'all'} marks={marks} onTap={onTap} top={46} vx={[x0, x1]} overlay={<g aria-hidden="true">{arrows}{Object.entries(names || {}).map(([k, txt]) => { const col = (ncol && ncol[k]) || '#c0431f';
+      return <g key={'n' + k + txt} style={{animation:'fadeUp 0.3s both'}}>
+        {nums && txt === '1' && <circle cx={kx(+k)} cy={-18} r={13} fill="none" stroke={col} strokeWidth="2.4"/>}
+        <text x={kx(+k)} y={nums ? -12 : (white(+k) ? -9 : -27)} textAnchor="middle" fontSize="17" fontWeight="900" fill={col}>{txt}</text>
+      </g>; })}</g>}/>
   </div>);
 }
 // the story screens: n = notes shown (from the tonic), bad = a key the pattern rules out, arc = the one move drawn strong
@@ -55137,128 +55139,69 @@ const SC_FSTEPS = [
   { hand: 'LH', n: 5, text: ['Then 4 fingers: 4, 3, 2, 1.', '그다음 4개: 4, 3, 2, 1번 손가락.'] },
   { hand: 'LH', n: 8, text: ['Then 3: fingers 3, 2, 1.', '그다음 3개: 3, 2, 1번 손가락.'] },
 ];
-function ScFinger() {
-  const [view, setView] = useState('all');   // 'all' -> 'one' -> 'same' -> 'try'
-  const [i, setI] = useState(0), [nonce, setNonce] = useState(0), [kk, setKk] = useState('C'), [hand, setHand] = useState('RH');
-  const [seq, setSeq] = useState([]), [at, setAt] = useState(0), [bad, setBad] = useState(null);
-  const timers = useRef([]);
-  const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
-  useEffect(() => clear, []);
-  const titleStyle = {textAlign:'center',fontFamily:"'Playfair Display', Georgia, serif",fontSize:22,fontWeight:900,color:'#26296b',lineHeight:1.2,margin:'0 0 8px',textWrap:'balance'};
-  const lineStyle = {textAlign:'center',fontSize:15,fontWeight:800,color:'#26296b',margin:'8px 0 6px',minHeight:42,textWrap:'balance',wordBreak:'keep-all'};
-  const prim = {...KF_BTN,minWidth:140,background:'#26296b',color:'#fffefa',borderColor:'#26296b'};
-  const row = (children) => <div style={{textAlign:'center',marginTop:14,display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>{children}</div>;
-  const title = t('The standard fingering', '기본 운지');
-  const newRound = () => { setSeq(shuffle([0, 1, 2, 3, 4, 5, 6, 7])); setAt(0); setBad(null); setNonce(n => n + 1); };
-  const last = SC_FSTEPS.length - 1;
-  let body;
-  if (view === 'all') {
-    const K = scIdx('C'), marks = {}, names = {}, ncol = {}; scPaint('C', 'RH', K, 8, marks, names, ncol);
-    body = <>
-      <div style={titleStyle}>{title}</div>
-      <div style={lineStyle}>{t('Right hand: a group of 3 (coral) and a group of 4 (blue).', '오른손: 3개 묶음(산호색)과 4개 묶음(파란색).')}</div>
-      <ScKeys ks={K} marks={marks} names={names} ncol={ncol} arcs={[]} nonce="all"/>
-      {row(<button className="ghost-btn" style={prim} onClick={() => { setView('one'); setI(0); setNonce(n => n + 1); }}>{t('One by one →', '하나씩 →')}</button>)}
-    </>;
-  } else if (view === 'one') {
-    const E = SC_FSTEPS[i], K = scIdx('C'), marks = {}, names = {}, ncol = {}; scPaint('C', E.hand, K, E.n, marks, names, ncol);
-    body = <>
-      <div style={titleStyle}>{title}</div>
-      <div style={lineStyle}>{(E.hand === 'RH' ? t('Right hand. ', '오른손. ') : t('Left hand. ', '왼손. ')) + t(E.text[0], E.text[1])}</div>
-      <ScKeys ks={K} marks={marks} names={names} ncol={ncol} arcs={[]} nonce={nonce + ':' + i}/>
-      {row(<>
-        <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { clear(); if (i === 0) setView('all'); else { setI(i - 1); setNonce(n => n + 1); } }}>{t('← Back', '← 이전')}</button>
-        <button className="ghost-btn" style={prim} onClick={() => { clear(); if (i === last) { setView('same'); setNonce(n => n + 1); } else { setI(i + 1); setNonce(n => n + 1); } }}>{t('Next →', '다음 →')}</button>
-      </>)}
-    </>;
-  } else if (view === 'same') {
-    const K = scIdx('G'), marks = {}, names = {}, ncol = {}; scPaint('G', 'RH', K, 8, marks, names, ncol);
-    body = <>
-      <div style={titleStyle}>{title}</div>
-      <div style={lineStyle}>{t('The same fingers for these five keys: C, G, D, A, E. Here is G.', '이 다섯 조는 손가락이 같아요: C, G, D, A, E. 여기는 G예요.')}</div>
-      <ScKeys ks={K} marks={marks} names={names} ncol={ncol} arcs={[]} nonce="same"/>
-      {row(<>
-        <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { setView('one'); setI(last); setNonce(n => n + 1); }}>{t('← Back', '← 이전')}</button>
-        <button className="ghost-btn" style={prim} onClick={() => { setView('try'); newRound(); }}>{t('Your turn →', '내가 해보기 →')}</button>
-      </>)}
-    </>;
-  } else {
-    const K = scIdx(kk), F = SCALES[kk].octaves[1][hand], N = scNames(kk), done = at >= 8, marks = {}, names = {}, ncol = {};
-    seq.slice(0, at).forEach(j => { marks[K[j]] = 'good'; names[K[j]] = String(F[j]); ncol[K[j]] = '#2e8a6e'; });
-    const cur = seq[at]; if (cur != null && !done) marks[K[cur]] = 'pick';
-    const handWord = hand === 'RH' ? t('Right hand', '오른손') : t('Left hand', '왼손');
-    const line = done ? t('All eight notes: that is the ' + handWord.toLowerCase() + ' fingering of ' + N[0] + ' major.', '여덟 음을 다 했어요. ' + N[0] + ' 장음계 ' + handWord + ' 운지예요.')
-      : bad != null ? t('Not that finger. Which finger plays ' + N[cur] + '?', '그 손가락이 아니에요. ' + N[cur] + '은 몇 번 손가락일까요?')
-      : t(handWord + ': which finger plays ' + N[cur] + '? (' + (at + 1) + '/8)', handWord + ': ' + N[cur] + '은 몇 번 손가락일까요? (' + (at + 1) + '/8)');
-    const pick = (f) => { if (done) return; clear(); if (f === F[cur]) { setBad(null); setAt(at + 1); setNonce(n => n + 1); playKey(K[cur], 0.6); } else { setBad(f); playKey(K[cur], 0.4); timers.current.push(setTimeout(() => setBad(null), 1100)); } };
-    body = <>
-      <div style={titleStyle}>{t('Your turn', '내가 해보기')}</div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(5,minmax(0,1fr))',gap:6,maxWidth:330,margin:'0 auto 6px'}}>
-        {['C', 'G', 'D', 'A', 'E'].map(k => <button key={k} className={'chip' + (kk === k ? ' active' : '')} aria-pressed={kk === k} style={{...KF_BTN,minHeight:40,padding:'0 4px'}} onClick={() => { clear(); setKk(k); newRound(); playKey(SF12.indexOf(k), 0.5); }}>{k}</button>)}
-      </div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:6,maxWidth:330,margin:'0 auto 6px'}}>
-        {[['RH', t('Right hand', '오른손')], ['LH', t('Left hand', '왼손')]].map(([h, lab]) => <button key={h} className={'chip' + (hand === h ? ' active' : '')} aria-pressed={hand === h} style={{...KF_BTN,minHeight:40}} onClick={() => { clear(); setHand(h); newRound(); }}>{lab}</button>)}
-      </div>
-      <div style={lineStyle}>{line}</div>
-      <ScKeys ks={K} marks={marks} names={names} ncol={ncol} arcs={[]} nonce={nonce + kk + hand}/>
-      {!done && <div style={{display:'grid',gridTemplateColumns:'repeat(5,minmax(0,1fr))',gap:6,maxWidth:330,margin:'10px auto 0'}}>
-        {[1, 2, 3, 4, 5].map(f => <button key={f} className="ghost-btn" style={{...KF_BTN,minHeight:48,fontSize:18,padding:0,...(bad === f ? {background:'#fbe3da',borderColor:'#e4572e',color:'#c0431f'} : {})}} onClick={() => pick(f)}>{f}</button>)}
-      </div>}
-      {row(<>
-        <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { clear(); setView('same'); setNonce(n => n + 1); }}>{t('← Back', '← 이전')}</button>
-        {done && <button className="ghost-btn" style={prim} onClick={() => newRound()}>{t('Again', '다시 하기')}</button>}
-      </>)}
-    </>;
-  }
-  return <div className="try-box" data-sc-lesson="finger" style={{background:'#fff',border:'1px solid var(--border)',borderRadius:10,padding:'10px 10px 12px',margin:'4px 0 16px'}}>{body}</div>;
+// a strip of group blocks: coral = a group of 3, blue = a group of 4, grey = the rest (finger numbers inside); rows: { keys, key, hand, odd }
+function ScStrip({ rows }) {
+  const blocks = (key, hand) => { const F = SCALES[key].octaves[1][hand]; let p = 0; return scLens(key, hand).map((raw, g) => { const len = Math.abs(raw), pl = raw < 0, a = p; p += len;
+    const bg = !pl && len === 3 ? '#fbe3da' : !pl && len === 4 ? '#dfe9f8' : '#efeadc', bd = !pl && len === 3 ? '#e4572e' : !pl && len === 4 ? '#3b4fa8' : '#d8cfb6', col = !pl && len === 3 ? SC_G3 : !pl && len === 4 ? SC_G4 : '#26296b';
+    return <div key={g} style={{gridColumn:'span ' + len,height:30,borderRadius:7,background:bg,border:'1.5px solid ' + bd,color:col,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:900,fontSize:14,letterSpacing:'0.04em'}}>{F.slice(a, p).join(' ')}</div>; }); };
+  return <div style={{display:'grid',gap:8,maxWidth:330,margin:'0 auto'}}>
+    {rows.map((r, i) => <div key={i} style={{display:'grid',gridTemplateColumns:'74px minmax(0,1fr) 18px',alignItems:'center',gap:6}}>
+      <div style={{lineHeight:1.15}}><div style={{fontWeight:900,fontSize:13,color:'#26296b',wordSpacing:4}}>{r.keys}</div><div style={{fontSize:11,fontWeight:700,color:'#6d6f9c'}}>{r.hand === 'RH' ? t('right hand', '오른손') : t('left hand', '왼손')}</div></div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(8,minmax(0,1fr))',gap:2}}>{blocks(r.key, r.hand)}</div>
+      <div style={{fontWeight:900,fontSize:18,color:'#c0431f',textAlign:'center'}}>{r.odd ? '≠' : ''}</div>
+    </div>)}
+  </div>;
 }
-// ─── Phase 575: Scales, lesson 5: white-key starts whose fingering is different: F (right hand) and B (left hand). Only to notice that they differ.
-// Her text: F's right hand plays the group of 4 first, so finger 4 takes the B♭ and the thumb stays off it; F's left hand is standard.
-// B's right hand is standard; B's left hand starts on finger 4 and plays two groups of 4, so its thumb lands on the white keys E and B.
-const SC_ODD = [
-  { key: 'F', hand: 'RH', text: ['F: the right hand plays the group of 4 first, so finger 4 takes the B♭ and the thumb stays off it.', 'F: 오른손이 4개 묶음을 먼저 쳐서, B♭은 4번 손가락이 맡고 엄지는 닿지 않아요.'] },
-  { key: 'F', hand: 'LH', text: ['F: the left hand is the standard shape.', 'F: 왼손은 기본 모양이에요.'] },
-  { key: 'B', hand: 'RH', text: ['B: the right hand is the standard shape.', 'B: 오른손은 기본 모양이에요.'] },
-  { key: 'B', hand: 'LH', text: ['B: the left hand starts on finger 4 and plays two groups of 4, so its thumb lands on the white keys E and B.', 'B: 왼손은 4번 손가락으로 시작해서 4개 묶음을 두 번 치니까, 엄지가 흰건반 E와 B에 놓여요.'] },
-];
+// ─── Phase 577 (her call, 2026-10-20): lessons 4 and 5 are one lesson. The standard fingering, then one strip of groups for every white-key start,
+// so F's right hand and B's left hand are only noticed as different; then "standard or different?".
 const SC_ODD_SET = ['F:RH', 'B:LH'];
-function ScOdd() {
-  const [view, setView] = useState('all');   // 'all' -> 'one' -> 'try'
+function ScFinger() {
+  const [view, setView] = useState('all');   // 'all' -> 'one' -> 'cmp' -> 'try'
   const [i, setI] = useState(0), [nonce, setNonce] = useState(0);
   const [seq, setSeq] = useState([]), [at, setAt] = useState(0), [given, setGiven] = useState(null), [score, setScore] = useState(0);
   const titleStyle = {textAlign:'center',fontFamily:"'Playfair Display', Georgia, serif",fontSize:22,fontWeight:900,color:'#26296b',lineHeight:1.2,margin:'0 0 8px',textWrap:'balance'};
   const lineStyle = {textAlign:'center',fontSize:15,fontWeight:800,color:'#26296b',margin:'8px 0 6px',minHeight:42,textWrap:'balance',wordBreak:'keep-all'};
   const prim = {...KF_BTN,minWidth:140,background:'#26296b',color:'#fffefa',borderColor:'#26296b'};
   const row = (children) => <div style={{textAlign:'center',marginTop:14,display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>{children}</div>;
-  const title = t('White keys: two are different', '흰건반에서 시작: 둘은 달라요');
-  const paint = (key, hand) => { const K = scIdx(key), marks = {}, names = {}, ncol = {}; scPaint(key, hand, K, 8, marks, names, ncol); return { K, marks, names, ncol }; };
+  const title = t('Fingering from a white key', '흰건반에서 시작하는 운지');
+  const paint = (key, hand, upto = 8) => { const K = scIdx(key), marks = {}, names = {}, ncol = {}; scPaint(key, hand, K, upto, marks, names, ncol); return { K, marks, names, ncol }; };
+  const last = SC_FSTEPS.length - 1;
   const newRound = () => { const all = []; ['C', 'G', 'D', 'A', 'E', 'F', 'B'].forEach(k => ['RH', 'LH'].forEach(h => all.push(k + ':' + h)));
     const rest = shuffle(all.filter(x => !SC_ODD_SET.includes(x))).slice(0, 4); setSeq(shuffle([...SC_ODD_SET, ...rest])); setAt(0); setGiven(null); setScore(0); setNonce(n => n + 1); };
   let body;
   if (view === 'all') {
-    const P = paint('F', 'RH');
+    const P = paint('C', 'RH');
     body = <>
       <div style={titleStyle}>{title}</div>
-      <div style={lineStyle}>{t('Most white-key scales share one fingering. F and B each have one hand that is different.', '흰건반에서 시작하는 스케일은 대부분 운지가 같아요. F와 B는 한 손씩 달라요.')}</div>
-      <ScKeys ks={P.K} marks={P.marks} names={P.names} ncol={P.ncol} arcs={[]} nonce="all"/>
+      <div style={lineStyle}>{t('Right hand: a group of 3 (coral) and a group of 4 (blue). The thumb is circled.', '오른손: 3개 묶음(산호색)과 4개 묶음(파란색). 엄지에 동그라미를 쳤어요.')}</div>
+      <ScKeys nums ks={P.K} marks={P.marks} names={P.names} ncol={P.ncol} arcs={[]} nonce="all"/>
       {row(<button className="ghost-btn" style={prim} onClick={() => { setView('one'); setI(0); setNonce(n => n + 1); }}>{t('One by one →', '하나씩 →')}</button>)}
     </>;
   } else if (view === 'one') {
-    const E = SC_ODD[i], P = paint(E.key, E.hand);
+    const E = SC_FSTEPS[i], P = paint('C', E.hand, E.n);
     body = <>
       <div style={titleStyle}>{title}</div>
       <div style={lineStyle}>{(E.hand === 'RH' ? t('Right hand. ', '오른손. ') : t('Left hand. ', '왼손. ')) + t(E.text[0], E.text[1])}</div>
-      <ScKeys ks={P.K} marks={P.marks} names={P.names} ncol={P.ncol} arcs={[]} nonce={nonce + ':' + i}/>
+      <ScKeys nums ks={P.K} marks={P.marks} names={P.names} ncol={P.ncol} arcs={[]} nonce={nonce + ':' + i}/>
       {row(<>
         <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { if (i === 0) setView('all'); else { setI(i - 1); setNonce(n => n + 1); } }}>{t('← Back', '← 이전')}</button>
-        <button className="ghost-btn" style={prim} onClick={() => { if (i === SC_ODD.length - 1) { setView('try'); newRound(); } else { setI(i + 1); setNonce(n => n + 1); } }}>{i === SC_ODD.length - 1 ? t('Your turn →', '내가 해보기 →') : t('Next →', '다음 →')}</button>
+        <button className="ghost-btn" style={prim} onClick={() => { if (i === last) { setView('cmp'); setNonce(n => n + 1); } else { setI(i + 1); setNonce(n => n + 1); } }}>{t('Next →', '다음 →')}</button>
+      </>)}
+    </>;
+  } else if (view === 'cmp') {
+    body = <>
+      <div style={titleStyle}>{title}</div>
+      <div style={lineStyle}>{t('C, G, D, A and E share one fingering. F and B each have one hand that is different (≠).', 'C, G, D, A, E는 운지가 같아요. F와 B는 한 손씩 달라요(≠).')}</div>
+      <ScStrip rows={[{ keys: 'C G D A E', key: 'C', hand: 'RH' }, { keys: 'C G D A E', key: 'C', hand: 'LH' }, { keys: 'F', key: 'F', hand: 'RH', odd: true }, { keys: 'F', key: 'F', hand: 'LH' }, { keys: 'B', key: 'B', hand: 'RH' }, { keys: 'B', key: 'B', hand: 'LH', odd: true }]}/>
+      {row(<>
+        <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { setView('one'); setI(last); setNonce(n => n + 1); }}>{t('← Back', '← 이전')}</button>
+        <button className="ghost-btn" style={prim} onClick={() => { setView('try'); newRound(); }}>{t('Your turn →', '내가 해보기 →')}</button>
       </>)}
     </>;
   } else {
     const done = at >= seq.length, cur = done ? null : seq[at], [ck, ch] = cur ? cur.split(':') : ['C', 'RH'];
     const odd = cur ? SC_ODD_SET.includes(cur) : false, P = paint(ck, ch), N = scNames(ck);
-    const handWord = ch === 'RH' ? t('right hand', '오른손') : t('left hand', '왼손');
-    const handKo = ch === 'RH' ? '오른손' : '왼손';
+    const handWord = ch === 'RH' ? t('right hand', '오른손') : t('left hand', '왼손'), handKo = ch === 'RH' ? '오른손' : '왼손';
     const answer = (v) => { if (given != null || done) return; setGiven(v); if ((v === 'odd') === odd) setScore(x => x + 1); setNonce(n => n + 1); };
     const line = done ? t('Only two are different: the right hand of F and the left hand of B. You got ' + score + ' of ' + seq.length + '.', '다른 건 둘뿐이에요: F의 오른손과 B의 왼손. ' + seq.length + '개 중 ' + score + '개 맞았어요.')
       : given == null ? t('The ' + handWord + ' of ' + N[0] + ' major: the standard shape, or different? (' + (at + 1) + '/' + seq.length + ')', N[0] + ' 장음계 ' + handKo + ': 기본 모양일까요, 다를까요? (' + (at + 1) + '/' + seq.length + ')')
@@ -55266,25 +55209,23 @@ function ScOdd() {
     body = <>
       <div style={titleStyle}>{t('Your turn', '내가 해보기')}</div>
       <div style={lineStyle}>{line}</div>
-      {!done && <ScKeys ks={P.K} marks={given != null ? P.marks : { [P.K[0]]: 'pick' }} names={given != null ? P.names : {}} ncol={P.ncol} arcs={[]} nonce={nonce + cur}/>}
+      {!done && <ScKeys nums ks={P.K} marks={given != null ? P.marks : { [P.K[0]]: 'pick' }} names={given != null ? P.names : {}} ncol={P.ncol} arcs={[]} nonce={nonce + cur}/>}
       {!done && given == null && <div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:8,maxWidth:330,margin:'12px auto 0'}}>
         <button className="ghost-btn" style={{...KF_BTN,minHeight:48}} onClick={() => answer('std')}>{t('Standard', '기본 모양')}</button>
         <button className="ghost-btn" style={{...KF_BTN,minHeight:48}} onClick={() => answer('odd')}>{t('Different', '달라요')}</button>
       </div>}
       {row(<>
-        <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { setView('one'); setI(SC_ODD.length - 1); setNonce(n => n + 1); }}>{t('← Back', '← 이전')}</button>
+        <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { setView('cmp'); setNonce(n => n + 1); }}>{t('← Back', '← 이전')}</button>
         {given != null && !done && <button className="ghost-btn" style={prim} onClick={() => { setAt(at + 1); setGiven(null); setNonce(n => n + 1); }}>{t('Next →', '다음 →')}</button>}
         {done && <button className="ghost-btn" style={prim} onClick={() => newRound()}>{t('Again', '다시 하기')}</button>}
       </>)}
     </>;
   }
-  return <div className="try-box" data-sc-lesson="odd" style={{background:'#fff',border:'1px solid var(--border)',borderRadius:10,padding:'10px 10px 12px',margin:'4px 0 16px'}}>{body}</div>;
+  return <div className="try-box" data-sc-lesson="finger" style={{background:'#fff',border:'1px solid var(--border)',borderRadius:10,padding:'10px 10px 12px',margin:'4px 0 16px'}}>{body}</div>;
 }
-
-// ─── Phase 576: Scales, lesson 6: the keys that start on a black key (B♭ E♭ A♭ D♭, then G♭ / F♯). Her text (SCALE_PATTERNS):
-// the thumb only ever plays white keys; in all four keys the right-hand thumbs go on C and F, and the left hand is one shape for all four:
-// 3-2-1, 4-3-2-1, 3. G♭ / F♯: three black keys in a row, fingers 2-3-4 cover them; both thumbs land on the only two white keys, C♭ (B) and F.
-// Finger numbers are her SCALES[key].octaves[1] arrays.
+// ─── Lesson 5 (was 6): the keys that start on a black key. Her text (SCALE_PATTERNS): the thumb only ever plays white keys; in all four keys the
+// right-hand thumbs go on C and F; the left hand is one shape for all four: 3-2-1, 4-3-2-1, 3; G♭ / F♯: three black keys in a row, fingers 2-3-4,
+// both thumbs on the only two white keys, C♭ (B) and F. First one strip: the same groups of 3 and 4, in another order.
 const SC_BLK = [
   { key: 'Bb', hand: 'RH', text: ['B♭ major starts on a black key. The thumb only ever plays white keys: here C and F.', 'B♭ 장음계는 검은건반에서 시작해요. 엄지는 흰건반만 쳐요: 여기서는 C와 F.'] },
   { key: 'Eb', hand: 'RH', text: ['E♭ major: again the right-hand thumbs are on C and F.', 'E♭ 장음계: 오른손 엄지는 이번에도 C와 F예요.'] },
@@ -55294,7 +55235,7 @@ const SC_BLK = [
   { key: 'Gb', hand: 'RH', text: ['G♭ / F♯: three black keys in a row. Fingers 2, 3, 4 cover them; the thumbs land on the only two white keys, C♭ (B) and F.', 'G♭ / F♯: 나란히 있는 검은건반 세 개. 2, 3, 4번이 그 셋을 맡고, 엄지는 단 두 개뿐인 흰건반 C♭(B)과 F에 놓여요.'] },
 ];
 function ScBlack() {
-  const [view, setView] = useState('all');   // 'all' -> 'one' -> 'try'
+  const [view, setView] = useState('all');   // 'all' (the strips) -> 'one' -> 'try'
   const [i, setI] = useState(0), [nonce, setNonce] = useState(0), [kk, setKk] = useState('Bb'), [hand, setHand] = useState('RH');
   const [found, setFound] = useState([]), [bad, setBad] = useState(null), [why, setWhy] = useState('');
   const timers = useRef([]);
@@ -55304,16 +55245,15 @@ function ScBlack() {
   const lineStyle = {textAlign:'center',fontSize:15,fontWeight:800,color:'#26296b',margin:'8px 0 6px',minHeight:42,textWrap:'balance',wordBreak:'keep-all'};
   const prim = {...KF_BTN,minWidth:140,background:'#26296b',color:'#fffefa',borderColor:'#26296b'};
   const row = (children) => <div style={{textAlign:'center',marginTop:14,display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap'}}>{children}</div>;
-  const title = t('Starting on a black key', '검은건반에서 시작하기');
+  const title = t('Fingering from a black key', '검은건반에서 시작하는 운지');
   const paint = (key, h) => { const K = scIdx(key), marks = {}, names = {}, ncol = {}; scPaint(key, h, K, 8, marks, names, ncol); return { K, marks, names, ncol }; };
   const reset = () => { setFound([]); setBad(null); setWhy(''); setNonce(n => n + 1); };
   let body;
   if (view === 'all') {
-    const P = paint('Bb', 'RH');
     body = <>
       <div style={titleStyle}>{title}</div>
-      <div style={lineStyle}>{t('When a scale starts on a black key, the thumb only ever plays white keys.', '검은건반에서 시작하는 스케일에서 엄지는 흰건반만 쳐요.')}</div>
-      <ScKeys ks={P.K} marks={P.marks} names={P.names} ncol={P.ncol} arcs={[]} nonce="all"/>
+      <div style={lineStyle}>{t('The same groups of 3 and 4, in another order. The thumb only ever plays white keys.', '같은 3개, 4개 묶음이 순서만 바뀌어요. 엄지는 흰건반만 쳐요.')}</div>
+      <ScStrip rows={[{ keys: 'B♭', key: 'Bb', hand: 'RH' }, { keys: 'E♭', key: 'Eb', hand: 'RH' }, { keys: 'A♭', key: 'Ab', hand: 'RH' }, { keys: 'D♭', key: 'Db', hand: 'RH' }, { keys: 'B♭ E♭ A♭ D♭', key: 'Bb', hand: 'LH' }]}/>
       {row(<button className="ghost-btn" style={prim} onClick={() => { setView('one'); setI(0); setNonce(n => n + 1); }}>{t('One by one →', '하나씩 →')}</button>)}
     </>;
   } else if (view === 'one') {
@@ -55321,21 +55261,19 @@ function ScBlack() {
     body = <>
       <div style={titleStyle}>{title}</div>
       <div style={lineStyle}>{(E.hand === 'RH' ? t('Right hand. ', '오른손. ') : t('Left hand. ', '왼손. ')) + t(E.text[0], E.text[1])}</div>
-      <ScKeys ks={P.K} marks={P.marks} names={P.names} ncol={P.ncol} arcs={[]} nonce={nonce + ':' + i}/>
+      <ScKeys nums ks={P.K} marks={P.marks} names={P.names} ncol={P.ncol} arcs={[]} nonce={nonce + ':' + i}/>
       {row(<>
         <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { if (i === 0) setView('all'); else { setI(i - 1); setNonce(n => n + 1); } }}>{t('← Back', '← 이전')}</button>
         <button className="ghost-btn" style={prim} onClick={() => { if (i === SC_BLK.length - 1) { setView('try'); reset(); } else { setI(i + 1); setNonce(n => n + 1); } }}>{i === SC_BLK.length - 1 ? t('Your turn →', '내가 해보기 →') : t('Next →', '다음 →')}</button>
       </>)}
     </>;
   } else {
-    // her turn: tap the two thumb keys (finger 1) of the key and hand she picked
     const K = scIdx(kk), F = SCALES[kk].octaves[1][hand], N = scNames(kk), thumbs = F.map((f, j) => f === 1 ? K[j] : null).filter(x => x != null);
     const done = found.length >= thumbs.length, P = paint(kk, hand), marks = {}, names = {}, ncol = {};
     if (done) Object.assign(marks, P.marks), Object.assign(names, P.names), Object.assign(ncol, P.ncol);
     found.forEach(k => { marks[k] = 'good'; names[k] = '1'; ncol[k] = '#2e8a6e'; });
     if (bad != null) marks[bad] = 'bad';
-    const handWord = hand === 'RH' ? t('right hand', '오른손') : t('left hand', '왼손');
-    const handKo = hand === 'RH' ? '오른손' : '왼손';
+    const handWord = hand === 'RH' ? t('right hand', '오른손') : t('left hand', '왼손'), handKo = hand === 'RH' ? '오른손' : '왼손';
     const line = done ? t('Both thumbs found. Here is the whole fingering of ' + N[0] + ' major.', '엄지 둘을 다 찾았어요. ' + N[0] + ' 장음계의 운지 전체예요.')
       : bad != null ? why : t(N[0] + ' major, ' + handWord + ': tap the keys where the thumb goes. (' + found.length + '/' + thumbs.length + ')', N[0] + ' 장음계 ' + handKo + ': 엄지가 가는 건반을 눌러요. (' + found.length + '/' + thumbs.length + ')');
     const tap = (k) => { if (done || found.includes(k)) return; clear();
@@ -55350,7 +55288,7 @@ function ScBlack() {
         {[['RH', t('Right hand', '오른손')], ['LH', t('Left hand', '왼손')]].map(([h, lab]) => <button key={h} className={'chip' + (hand === h ? ' active' : '')} aria-pressed={hand === h} style={{...KF_BTN,minHeight:40}} onClick={() => { clear(); setHand(h); reset(); }}>{lab}</button>)}
       </div>
       <div style={lineStyle}>{line}</div>
-      <ScKeys ks={K} marks={marks} names={names} ncol={ncol} arcs={[]} nonce={nonce + kk + hand} onTap={tap}/>
+      <ScKeys nums ks={K} marks={marks} names={names} ncol={ncol} arcs={[]} nonce={nonce + kk + hand} onTap={tap}/>
       {row(<>
         <button className="ghost-btn" style={{...KF_BTN,minWidth:110}} onClick={() => { clear(); setView('one'); setI(SC_BLK.length - 1); setNonce(n => n + 1); }}>{t('← Back', '← 이전')}</button>
         {done && <button className="ghost-btn" style={prim} onClick={() => reset()}>{t('Again', '다시 하기')}</button>}
