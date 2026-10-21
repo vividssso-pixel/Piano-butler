@@ -1,0 +1,7 @@
+import sys
+p = sys.argv[1]
+lines = open(p, encoding='utf-8').read().split('\n')
+idx = [i for i, l in enumerate(lines) if l.startswith('| 619 |')]
+assert len(idx) == 1
+lines.insert(idx[0] + 1, "| 620 | 2026-10-21 | **Home, Pitch: Keys and staff is one concept again, with the six chapters as collapsible sections.** Her call (2026-10-21): bring the six chapters in as categories inside the concept instead of six concepts (my recommendation, accepted: sections folded, only the current one open, a check button at the end of each section). `homeCats` lists `p-staff` itself again; `HOME_LIVE['p-staff']` has `groups` (p-keys Keyboard patterns, p-names Note names, p-stf The staff and clefs, p-lines Line and space names, p-ledger Ledger lines and 8va, p-range Pitch and range), each with its lessons and its chapter drill (first-steps, note-names, staff, whole-staff, ledger-lines, pitch-range). `ConceptHome` renders groups (numbered header, open/close, lessons, then 'Questions, level by level'). `HOME_STAFF` stays only to name the lesson kickers. The area page shows 'Keys and staff' once. Built by `patch629.py` (`t633`). Opened the concept page in English and Korean, opened a section and a lesson: no console errors. Not yet checked: the back button from a lesson to the open section. Not yet committed (computer not linked; rows 617 to 620 all need adding, in order). |")
+open(p, 'w', encoding='utf-8').write('\n'.join(lines)); print('ok')

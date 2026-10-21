@@ -1,0 +1,7 @@
+import sys
+p = sys.argv[1]
+lines = open(p, encoding='utf-8').read().split('\n')
+idx = [i for i, l in enumerate(lines) if l.startswith('| 617 |')]
+assert len(idx) == 1
+lines.insert(idx[0] + 1, "| 618 | 2026-10-21 | **Home, Pitch, Keys and staff concept 1 (Keyboard patterns) polished in the Scales way.** Her answer: \"start with 1\". Three lessons rebuilt as new components, each with views whole picture, one at a time, her turn: `KpHear` (kp-hear: left is low, right is high; tap keys to hear; her turn: hear a sound, say Low or High; a wrong answer says plainly it is wrong and shows the true side), `KpHouses` (kp-houses: small house = 2 black keys, big house = 3, with roofs over the keyboard; her turn: tap a small or big house; wrong answers explain 2 vs 3 and that a white key is not a house), `KpWhite` (kp-white: C D E at the small house, F G A B at the big house, her wording C left door, D inside, E right door, F left door, G and A inside, B right door; her turn: tap a named white key; a wrong answer gives the door/inside guide). `kp-piano` (WholePiano) and `kp-song` (BlackKeySong) are registered bare, without the extra title wrapper, so the title no longer shows twice. Korean lines are mine. Built by `patch628.py` (+ `ks1.jsx`) (`t631`). Opened all five lessons at 390 px in English and Korean, stepped through the views: no console errors. Not yet committed: the computer was not linked (rows 617 and 618 both need adding, in order). |")
+open(p, 'w', encoding='utf-8').write('\n'.join(lines)); print('ok')

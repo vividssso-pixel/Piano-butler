@@ -1,0 +1,7 @@
+import sys
+p = sys.argv[1]
+lines = open(p, encoding='utf-8').read().split('\n')
+idx = [i for i, l in enumerate(lines) if l.startswith('| 618 |')]
+assert len(idx) == 1
+lines.insert(idx[0] + 1, "| 619 | 2026-10-21 | **Keys and staff concept 1: lesson 1 redesigned from the learning goal, not from the old tools.** Her call: \"don't cling to the old ones, propose what is efficient for learning, one at a time\", and the order is patterns first, then high and low. New lesson `kp-groups` (KpGroups) at the head of `p-keys`: black keys come in groups of 2 and 3. Views: the whole picture (two octaves, bracket and number over each group, tap a group to hear it), a group of 2, a group of 3, her turn (\"tap a group of N\"; a wrong answer says plainly it is wrong and how many that group has; a white key gets its own guide). No house names here (decision 1, my recommendation: houses arrive in lesson 3 as the places white keys live). Planned order for the concept: 1 patterns, 2 high and low, 3 white keys by house position, 4 the pattern repeats, 5 find any key. The other lessons in the list are still the first-pass ones from row 618 and will be redesigned one at a time. Built by `patch628b.py` (+ `ks2.jsx`) (`t632`). Opened at 390 px in English and Korean, stepped through all views: no console errors. Not yet committed (computer not linked; rows 617, 618 and 619 all need adding, in order). |")
+open(p, 'w', encoding='utf-8').write('\n'.join(lines)); print('ok')
