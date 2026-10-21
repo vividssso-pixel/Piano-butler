@@ -13,23 +13,35 @@ const kqHouseKeys = (oct, small, from = 0) => { const k = []; for (let o = from;
 const kqPaint = (marks, keys, style) => { keys.forEach(k => { marks[k] = style; }); return marks; };
 const kqNames = (oct, letters, ncol) => { const n = {}, c = {}; for (let o = 0; o < oct; o++) letters.forEach(L => { n[o * 12 + KQ_PC[L]] = L; c[o * 12 + KQ_PC[L]] = kqHouseCol(L); }); return { names: n, ncol: c }; };
 // the keyboard, the Scales one
-const kqKb = (f, onTap) => <ScKeys ks={[0, f.oct * 12]} oct={f.oct} marks={f.marks || {}} names={f.names || {}} ncol={f.ncol || {}} arcs={[]} nonce={0} onTap={onTap} mw={340}/>;
+const KQX = [18, 36, 54, 72, 90, 126, 144, 162, 180, 198, 216, 234];
+const kqX = (k) => Math.floor(k / 12) * 252 + KQX[((k % 12) + 12) % 12];
+const kqVx = (a, b) => [kqX(a) - 24, kqX(b) + 24];
+// f.bare: a keyboard with no letters at all (the first lessons, before the names are taught); f.ks: crop to the keys a..b (a close-up)
+const kqKb = (f, onTap) => f.bare
+  ? <div style={{ maxWidth: f.mw || 340, margin: '0 auto' }}><TapKeyboard octaves={f.oct} extraC marks={f.marks || {}} onTap={onTap} top={0} names={f.names || null} nameCol={f.ncol || null} vx={f.vx || kqVx(0, f.oct * 12)}/></div>
+  : <ScKeys ks={f.ks || [0, f.oct * 12]} oct={f.oct} marks={f.marks || {}} names={f.names || {}} ncol={f.ncol || {}} arcs={[]} nonce={0} onTap={onTap} mw={f.mw || 340}/>;
+// words or numbers above the keyboard, at the keys' own x (same crop as the keyboard under it, so they line up)
+const kqNumRow = (vx, items, fs = 22) => { const sc = (vx[1] - vx[0]) / 340, h = (fs + 14) * sc; return <div style={{ maxWidth: 340, margin: '0 auto' }}><svg viewBox={`${vx[0]} 0 ${vx[1] - vx[0]} ${h}`} style={{ width: '100%', display: 'block' }}>
+  {items.map((it) => <text key={it.t + ':' + it.x} x={it.x} y={h - 8 * sc} textAnchor="middle" fontSize={fs * sc} fontWeight="900" fill={it.col} style={{ animation: 'fadeUp 0.3s both' }}>{it.t}</text>)}</svg></div>; };
 // roofs, drawn in the keyboard's own coordinates (so they sit exactly over the black keys)
-function KqRoofs({ oct = 2, show = 'both', lit = [] }) {
+function KqRoofs({ oct = 2, show = 'both', vx, k = 0 }) {
   const hs = []; for (let o = 0; o < oct; o++) { hs.push({ small: true, x1: o * 252 + 23, x2: o * 252 + 85, id: o * 2 }); hs.push({ small: false, x1: o * 252 + 131, x2: o * 252 + 229, id: o * 2 + 1 }); }
-  return <div style={{ maxWidth: 340, margin: '0 auto' }}><svg viewBox={`-6 0 ${oct * 252 + 48} 40`} style={{ width: '100%', display: 'block' }}>
-    {hs.map(h => { const col = h.small ? KQ.CO : KQ.BL, mid = (h.x1 + h.x2) / 2, dim = show !== 'both' && (show === 'small') !== h.small; return <g key={h.id} style={{ opacity: dim ? 0.18 : 1, transition: 'opacity 0.25s' }}>
-      <polygon points={`${h.x1},38 ${mid},${h.small ? 12 : 4} ${h.x2},38`} fill={col + '33'} stroke={col} strokeWidth="2.4" strokeLinejoin="round"/>
-      {h.small ? <rect x={mid - 3} y={24} width="6" height="8" fill={col}/> : <><rect x={mid - 10} y={22} width="6" height="8" fill={col}/><rect x={mid + 4} y={22} width="6" height="8" fill={col}/></>}</g>; })}
+  const v = vx || [-6, oct * 252 + 42], sc = (v[1] - v[0]) / 340, H = 46 * sc;
+  return <div style={{ maxWidth: 340, margin: '0 auto' }}><svg viewBox={`${v[0]} 0 ${v[1] - v[0]} ${H}`} style={{ width: '100%', display: 'block' }}>
+    <style>{'@keyframes kqDrop{from{transform:translateY(-' + 26 * sc + 'px);opacity:0}to{transform:none;opacity:1}}'}</style>
+    {hs.filter(h => show === 'both' || (show === 'small') === h.small).map(h => { const col = h.small ? KQ.CO : KQ.BL, mid = (h.x1 + h.x2) / 2, y0 = H - 2 * sc, ph = (h.small ? 26 : 34) * sc;
+      return <g key={h.id + ':' + k} style={{ animation: 'kqDrop 0.55s ease-out both' }}>
+        <polygon points={`${h.x1},${y0} ${mid},${y0 - ph} ${h.x2},${y0}`} fill={col + '33'} stroke={col} strokeWidth={2.4 * sc} strokeLinejoin="round"/>
+        {h.small ? <rect x={mid - 3 * sc} y={y0 - 14 * sc} width={6 * sc} height={8 * sc} fill={col}/> : <><rect x={mid - 10 * sc} y={y0 - 16 * sc} width={6 * sc} height={8 * sc} fill={col}/><rect x={mid + 4 * sc} y={y0 - 16 * sc} width={6 * sc} height={8 * sc} fill={col}/></>}</g>; })}
   </svg></div>;
 }
 const kqFeed = (ok, txt) => <div style={{ textAlign: 'center', fontSize: 14.5, fontWeight: 900, minHeight: 40, margin: '8px 0 0', color: ok === true ? '#2e8a6e' : ok === false ? '#c8361b' : KQ.NV, textWrap: 'balance' }}>{txt}</div>;
 // the black-key groups: a bracket and its count (coral 2, blue 3), in the keyboard's coordinates
-function KqGroupsTop({ oct = 2, show = 'both', lit = -1, onTap }) {
+function KqGroupsTop({ oct = 2, show = 'both', lit = null, onTap, upto = 99 }) {
   const items = []; for (let o = 0; o < oct; o++) [[1, 3], [6, 8, 10]].forEach((g, gi) => { const c = (k) => o * 252 + (k === 1 ? 36 : k === 3 ? 72 : k === 6 ? 144 : k === 8 ? 180 : 216); items.push({ n: g.length, x1: c(g[0]) - 11, x2: c(g[g.length - 1]) + 11, keys: g.map(k => o * 12 + k), id: o * 2 + gi }); });
   return <div style={{ maxWidth: 340, margin: '0 auto' }}><svg viewBox={`-6 0 ${oct * 252 + 48} 40`} style={{ width: '100%', display: 'block' }}>
-    {items.map(it => { const col = it.n === 2 ? KQ.CO : KQ.BL, on = lit === it.id, dim = show !== 'both' && show !== it.n, mid = (it.x1 + it.x2) / 2;
-      return <g key={it.id} onClick={() => onTap && onTap(it)} style={{ cursor: onTap ? 'pointer' : 'default', opacity: dim ? 0.18 : 1, transition: 'opacity 0.25s' }}>
+    {items.map(it => { const col = it.n === 2 ? KQ.CO : KQ.BL, on = !!lit && lit.g === it.id, dim = show !== 'both' && show !== it.n, mid = (it.x1 + it.x2) / 2, hid = it.id >= upto;
+      return <g key={it.id} onClick={() => onTap && onTap(it)} style={{ cursor: onTap ? 'pointer' : 'default', opacity: hid ? 0 : dim ? 0.18 : 1, transition: 'opacity 0.35s' }}>
         <path d={`M${it.x1},36 V26 H${it.x2} V36`} fill="none" stroke={col} strokeWidth={on ? 4.5 : 3} strokeLinejoin="round"/>
         <text x={mid} y="18" textAnchor="middle" fontSize="19" fontWeight="900" fill={col}>{it.n}</text></g>; })}
   </svg></div>;
@@ -64,19 +76,23 @@ const kqPlayDs = (ds) => ds.forEach((d, j) => setTimeout(() => playKey(dMidiKey(
 
 // ── the engine: every lesson has the same three views ──
 function KqEngine({ spec }) {
-  const [view, setView] = useState('all'), [si, setSi] = useState(0), [qn, setQn] = useState(0), [q, setQ] = useState(null), [res, setRes] = useState(null), [pickd, setPickd] = useState(null), [last, setLast] = useState(null), [stf, setStf] = useState(false);
-  const pick = (v) => { if (!q || res === 'ok' || (res === 'no' && !q.retry)) return; const ok = q.ok(v); setPickd(v); setRes(ok ? 'ok' : 'no'); if (q.onPick) q.onPick(v, ok); };
-  const ctx = { last, setLast, res, pickd, si, q, pick, qn };
-  const go = (v, i) => { setView(v); if (i != null) setSi(i); setRes(null); setPickd(null); };
-  const newQ = (n) => { const nq = spec.make(n, q); setQ(nq); setQn(n); setRes(null); setPickd(null); setLast(null); if (nq.play) setTimeout(nq.play, 300); };
+  const [view, setView] = useState('all'), [si, setSi] = useState(0), [qn, setQn] = useState(0), [q, setQ] = useState(null), [res, setRes] = useState(null), [pickd, setPickd] = useState(null), [last, setLast] = useState(null), [stf, setStf] = useState(false), [tk, setTk] = useState(0), [found, setFound] = useState([]);
+  useEffect(() => { setTk(0); const id = setInterval(() => setTk(x => x >= 40 ? x : x + 1), 650); return () => clearInterval(id); }, [view, si, qn]);
+  const pick = (v) => { if (!q) return;
+    if (q.kind === 'multi') { if (res === 'ok') return; if (q.targets.includes(v)) { if (found.includes(v)) return; const nf = found.concat([v]); setFound(nf); setPickd(null); setRes(nf.length === q.targets.length ? 'ok' : null); } else { setPickd(v); setRes('no'); } return; }
+    if (res === 'ok' || (res === 'no' && !q.retry)) return; const ok = q.ok(v); setPickd(v); setRes(ok ? 'ok' : 'no'); if (q.onPick) q.onPick(v, ok); };
+  const ctx = { last, setLast, res, pickd, si, q, pick, qn, tk, view, found };
+  const go = (v, i) => { setView(v); if (i != null) setSi(i); setRes(null); setPickd(null); setFound([]); };
+  const newQ = (n) => { const nq = spec.make(n, q); setQ(nq); setQn(n); setRes(null); setPickd(null); setLast(null); setFound([]); if (nq.play) setTimeout(nq.play, 300); };
   const startTry = () => { setView('try'); newQ(0); };
   const show = (f, allowStaff) => {
     if (!f) return null;
     const kb = f.kb, marks = kb ? { ...(kb.marks || {}) } : {};
     if (kb && view === 'try' && q && q.kind === 'key' && pickd != null) marks[pickd] = res === 'ok' ? 'good' : 'bad';
+    if (kb && view === 'try' && q && q.kind === 'multi') { found.forEach(k => { marks[k] = 'good'; }); if (pickd != null && res === 'no') marks[pickd] = 'bad'; }
     return <>
       {f.top}{f.staff}{f.mid}
-      {kb && kqKb({ ...kb, marks }, (k) => { playKey(k + (kb.base || 0), 0.6); setLast(k); if (view === 'try' && q && q.kind === 'key') pick(k); else if (kb.onTap) kb.onTap(k); })}
+      {kb && kqKb({ ...kb, marks }, (k) => { playKey(k + (kb.base || 0), 0.6); setLast(k); if (view === 'try' && q && (q.kind === 'key' || q.kind === 'multi')) pick(k); else if (kb.onTap) kb.onTap(k); })}
       {allowStaff && f.staffAlt && <>
         <div style={{ textAlign: 'center', margin: '8px 0 0' }}><button className="ghost-btn" style={{ ...scS.back, minWidth: 0, fontSize: 14 }} onClick={() => setStf(!stf)}>{stf ? t('Hide the staff', '스태프 숨기기') : t('Show on the staff', '스태프로 보여주기')}</button></div>
         {stf && f.staffAlt}</>}
@@ -97,7 +113,7 @@ function KqEngine({ spec }) {
     </>)}
   </>; }
   else if (q) { const f = q.fig(ctx);
-    const txt = res === 'ok' ? [kqT(q.yes), true] : res === 'no' ? [kqT(typeof q.no === 'function' ? q.no(pickd) : q.no), false] : ['', null];
+    const txt = res === 'ok' ? [kqT(q.yes), true] : res === 'no' ? [kqT(typeof q.no === 'function' ? q.no(pickd) : q.no), false] : q.kind === 'multi' && found.length ? [kqT(q.prog(found.length, q.targets.length)), true] : ['', null];
     body = <>
       {tit(spec.tryTitle || ['Your turn', '내가 해보기'])}{lin(q.prompt)}{show(f, false)}
       {q.opts && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(' + (q.cols || 2) + ',1fr)', gap: 8, margin: '10px 0 0' }}>
@@ -108,7 +124,7 @@ function KqEngine({ spec }) {
         <button className="ghost-btn" style={scS.back} onClick={() => go('step', steps.length - 1)}>{t('← Back', '← 이전')}</button>
         {q.play && <button className="ghost-btn" style={scS.back} onClick={q.play}>{t('♪ Again', '♪ 다시')}</button>}
         {(res === 'ok' || (res === 'no' && !q.retry)) && <button className="ghost-btn" style={scS.prim} onClick={() => newQ(qn + 1)}>{t('Another →', '다른 것 →')}</button>}
-        {res === 'no' && q.retry && <button className="ghost-btn" style={scS.back} onClick={() => { setRes(null); setPickd(null); }}>{t('Try again', '다시 해 보기')}</button>}
+        {res === 'no' && q.retry && q.kind !== 'multi' && <button className="ghost-btn" style={scS.back} onClick={() => { setRes(null); setPickd(null); }}>{t('Try again', '다시 해 보기')}</button>}
       </>)}
     </>; }
   return scBox('kq', body);
@@ -116,38 +132,7 @@ function KqEngine({ spec }) {
 const kqLet7 = () => KQ_ABC.map(L => ({ id: L, label: L }));
 const KQ_SPEC = {};
 
-// ══ 1. Keyboard patterns and note names ══
-// 1. black keys in twos and threes
-{ const KB = (show, extra) => { const m = {}; for (let o = 0; o < 2; o++) { if (show !== 3) kqPaint(m, KQ_BK2.map(k => o * 12 + k), 'seg3'); if (show !== 2) kqPaint(m, KQ_BK3.map(k => o * 12 + k), 'seg4'); } return { oct: 2, base: 0, marks: { ...m, ...(extra || {}) } }; };
-  KQ_SPEC['kq-groups'] = {
-    title: ['Black keys in 2s and 3s', '검은건반은 2개, 3개씩'], allLine: ['The black keys sit together in groups. Tap a group to hear it.', '검은건반은 무리지어 모여 있어요. 무리를 눌러 들어 보세요.'],
-    fig: (c) => ({ top: <KqGroupsTop onTap={(it) => { it.keys.forEach((k, j) => setTimeout(() => playKey(k, 0.3), j * 220)); c.setLast(it.id); }} lit={c.last}/>, kb: KB('both') }),
-    steps: [
-      { title: ['A group of 2', '2개짜리 무리'], line: ['Two black keys, side by side.', '검은건반 두 개가 나란히 있어요.'], fig: () => ({ top: <KqGroupsTop show={2}/>, kb: KB(2) }) },
-      { title: ['A group of 3', '3개짜리 무리'], line: ['Three in a row. Count them.', '세 개가 줄지어 있어요. 세어 보세요.'], fig: () => ({ top: <KqGroupsTop show={3}/>, kb: KB(3) }) },
-      { title: ['They take turns', '번갈아 나와요'], line: ['Read from the left: 2, 3, 2, 3. The order never changes.', '왼쪽부터 읽어요: 2, 3, 2, 3. 순서는 절대 바뀌지 않아요.'], fig: () => ({ top: <KqGroupsTop/>, kb: KB('both') }) },
-    ],
-    make: (n) => { const want = [3, 2, 2, 3, 3, 2][n % 6], other = 5 - want; return { kind: 'key', retry: true, prompt: ['Tap a group of ' + want + '.', '검은건반이 ' + want + '개인 무리를 눌러 보세요.'], fig: () => ({ top: <KqGroupsTop/>, kb: { oct: 2, base: 0 } }),
-      ok: (k) => (want === 2 ? KQ_BK2 : KQ_BK3).includes(k % 12), yes: ['That is the one: ' + want + ' in a row.', '맞아요. ' + want + '개가 나란히 있어요.'],
-      no: (k) => [([1, 3, 6, 8, 10].includes(k % 12) ? 'That group has ' + other + '. Look for ' + want + ' in a row.' : 'White keys do not count here. Look at the black ones.'), ([1, 3, 6, 8, 10].includes(k % 12) ? '그 무리는 ' + other + '개예요. ' + want + '개가 나란히 있는 곳을 찾아요.' : '흰건반은 세지 않아요. 검은건반을 보세요.')] }; },
-  }; }
-// 2. low and high
-KQ_SPEC['kq-hear'] = {
-  title: ['Low and high', '낮은 소리, 높은 소리'], allLine: ['Left sounds low and right sounds high. Slide along the keys and listen.', '왼쪽은 낮은 소리, 오른쪽은 높은 소리예요. 건반을 훑으며 들어 보세요.'],
-  fig: (c) => ({ top: kqArrow(c.last, 48), kb: { oct: 4, base: -24 } }),
-  steps: [
-    { title: ['The left side', '왼쪽'], line: ['These keys make the lowest sounds.', '이 건반들이 가장 낮은 소리를 내요.'], fig: (c) => ({ top: kqArrow(c.last, 48), kb: { oct: 4, base: -24, marks: kqPaint({}, Array.from({ length: 12 }, (_, i) => i), 'seg3') } }) },
-    { title: ['The right side', '오른쪽'], line: ['These make the highest sounds.', '이 건반들이 가장 높은 소리를 내요.'], fig: (c) => ({ top: kqArrow(c.last, 48), kb: { oct: 4, base: -24, marks: kqPaint({}, Array.from({ length: 12 }, (_, i) => 36 + i), 'seg4') } }) },
-    { title: ['Step by step', '한 건반씩'], line: ['Each key to the right is a little higher than the one before.', '오른쪽으로 한 건반 갈 때마다 조금씩 높아져요.'], fig: (c) => ({ top: kqArrow(c.last, 48), kb: { oct: 4, base: -24, marks: kqPaint({}, Array.from({ length: 8 }, (_, i) => 20 + i), 'seg3') } }) },
-  ],
-  tryTitle: ['Which is higher?', '어느 쪽이 더 높을까요?'],
-  make: (n) => { const gap = [30, 20, 12, 7, 4, 2][Math.min(n, 5)], lo = kqRnd(48 - gap), hi = lo + gap, firstHigh = Math.random() < 0.5, a = firstHigh ? hi : lo, b = firstHigh ? lo : hi;
-    return { kind: 'choice', prompt: ['Listen to two sounds. Which one is higher?', '소리 두 개를 들어 보세요. 어느 쪽이 더 높을까요?'], opts: [{ id: '1', label: () => t('The first', '처음 소리') }, { id: '2', label: () => t('The second', '나중 소리') }], ans: firstHigh ? '1' : '2', ok: (v) => v === (firstHigh ? '1' : '2'),
-      play: () => { playKey(a - 24, 0.8); setTimeout(() => playKey(b - 24, 0.8), 900); },
-      fig: (c) => ({ top: kqArrow(c.res ? hi : null, 48), kb: { oct: 4, base: -24, marks: c.res ? { [lo]: 'seg3', [hi]: 'pick' } : {} } }),
-      yes: ['Yes. The higher sound came from the key further right.', '맞아요. 높은 소리는 더 오른쪽 건반에서 났어요.'], no: ['The other one was higher; look at where its key is.', '다른 쪽이 더 높았어요. 그 건반이 어디 있는지 보세요.'] }; },
-};
-// 3 and 4. the two houses
+// ══ 1. Keyboard patterns and note names (three lessons, her call 2026-10-22: 1+2, 3+4 and 5+6+7 each into one) ══
 const KQ_DOOR = {
   C: [['C: the left door', 'C: 왼쪽 문'], ['Just before the two black keys.', '검은건반 두 개 바로 앞에 있어요.'], ['the left door of the small house', '작은 집의 왼쪽 문']],
   D: [['D: inside', 'D: 집 안'], ['Between the two black keys.', '두 검은건반 사이에 있어요.'], ['inside the small house, between its two black keys', '작은 집 안, 두 검은건반 사이']],
@@ -157,59 +142,87 @@ const KQ_DOOR = {
   A: [['A: inside, second', 'A: 집 안, 둘째'], ['Between the second and third black keys.', '둘째와 셋째 검은건반 사이에 있어요.'], ['inside the big house, after its second black key', '큰 집 안, 둘째 검은건반 다음']],
   B: [['B: the right door', 'B: 오른쪽 문'], ['Just after the three black keys.', '검은건반 세 개 바로 뒤에 있어요.'], ['the right door of the big house', '큰 집의 오른쪽 문']],
 };
-const kqHouse = (small) => { const Ls = small ? KQ_SMALL : KQ_BIG, style = small ? 'seg3' : 'seg4', pk = small ? 'pick' : 'pickB', show = small ? 'small' : 'big', hk = kqHouseKeys(2, small);
-  const ds = (arr) => arr.map(L => 28 + 'CDEFGAB'.indexOf(L));
-  const kb = (letters, cur) => { const m = kqPaint({}, hk, style), nm = kqNames(2, letters); if (cur) for (let o = 0; o < 2; o++) m[o * 12 + KQ_PC[cur]] = pk; return { oct: 2, base: 0, marks: m, names: nm.names, ncol: nm.ncol }; };
-  return {
-    title: small ? ['The small house', '작은 집'] : ['The big house', '큰 집'],
-    allLine: small ? ['Two black keys make a small house, and three white keys live under it.', '검은건반 두 개가 작은 집을 이루고, 그 아래 흰건반 세 개가 살아요.'] : ['Three black keys make a big house, and four white keys live under it.', '검은건반 세 개가 큰 집을 이루고, 그 아래 흰건반 네 개가 살아요.'],
-    fig: () => ({ top: <KqRoofs show={show}/>, kb: kb(Ls), staffAlt: kqStaff(ds(Ls), 'treble', { under: true }) }),
-    steps: Ls.map((L, i) => ({ title: KQ_DOOR[L][0], line: KQ_DOOR[L][1], fig: () => ({ top: <KqRoofs show={show}/>, kb: kb(Ls.slice(0, i + 1), L), staffAlt: kqStaff(ds(Ls.slice(0, i + 1)), 'treble', { under: true, ring: [i] }) }) })),
-    make: () => { const L = kqPick(Ls); return { kind: 'key', retry: true, prompt: ['Tap ' + L + '.', L + '을 눌러 보세요.'], fig: () => ({ top: <KqRoofs show={show}/>, kb: { oct: 2, base: 0, marks: kqPaint({}, hk, style) } }), ok: (k) => k % 12 === KQ_PC[L],
-      yes: ['Yes, ' + L + ' is ' + KQ_DOOR[L][2][0] + '.', '맞아요. ' + L + '는 ' + KQ_DOOR[L][2][1] + '에 있어요.'],
-      no: (k) => [(KQ_L[k % 12] ? 'That is ' + KQ_L[k % 12] + '. ' : 'That is a black key. ') + L + ' is ' + KQ_DOOR[L][2][0] + '.', (KQ_L[k % 12] ? '그건 ' + KQ_L[k % 12] + '예요. ' : '그건 검은건반이에요. ') + L + '는 ' + KQ_DOOR[L][2][1] + '에 있어요.'] }; },
-  }; };
-KQ_SPEC['kq-small'] = kqHouse(true);
-KQ_SPEC['kq-big'] = kqHouse(false);
-// 5. the same name everywhere
-KQ_SPEC['kq-find'] = {
-  title: ['The same name, everywhere', '어디에나 있는 같은 이름'], allLine: ['Tap a white key and every key with its name lights up.', '흰건반을 누르면 이름이 같은 건반이 모두 켜져요.'],
-  fig: (c) => { const p = c.last != null ? ((c.last % 12) + 12) % 12 : null, L = p != null ? KQ_L[p] : null; if (!L) return { kb: { oct: 3, base: -12 } }; const small = KQ_SMALL.includes(L), m = {}, n = {}, cc = {}; for (let o = 0; o < 3; o++) { m[o * 12 + p] = small ? 'seg3' : 'seg4'; n[o * 12 + p] = L; cc[o * 12 + p] = kqHouseCol(L); } m[c.last] = small ? 'pick' : 'pickB'; return { kb: { oct: 3, base: -12, marks: m, names: n, ncol: cc } }; },
-  steps: ['D', 'G'].map((L) => ({ title: ['All the ' + L + '’s', '모든 ' + L], line: L === 'D' ? ['Every D is inside a small house.', 'D는 모두 작은 집 안에 있어요.'] : ['Every G is inside a big house.', 'G는 모두 큰 집 안에 있어요.'], fig: () => { const m = {}, nn = kqNames(3, [L]); kqPaint(m, [0, 1, 2].map(o => o * 12 + KQ_PC[L]), KQ_SMALL.includes(L) ? 'seg3' : 'seg4'); return { kb: { oct: 3, base: -12, marks: m, names: nn.names, ncol: nn.ncol } }; } })),
-  make: () => { const L = kqPick(['D', 'G', 'A', 'E', 'F', 'B', 'C']); return { kind: 'key', retry: true, prompt: ['Tap any ' + L + '.', L + ' 아무거나 눌러 보세요.'], fig: () => ({ kb: { oct: 3, base: -12 } }), ok: (k) => k % 12 === KQ_PC[L],
-    yes: ['Another house, the same spot.', '다른 집이지만 자리는 같아요.'], no: (k) => [(KQ_L[k % 12] ? 'That is ' + KQ_L[k % 12] + '. ' : 'That is a black key. ') + L + ' is ' + KQ_DOOR[L][2][0] + '.', (KQ_L[k % 12] ? '그건 ' + KQ_L[k % 12] + '예요. ' : '그건 검은건반이에요. ') + L + '는 ' + KQ_DOOR[L][2][1] + '에 있어요.'] }; },
-};
-// 6. middle C
 const KQ_MC = [
   { k: 24, p: ['Tap middle C.', '가운데 도를 눌러 보세요.'], y: ['Yes, the C in the middle of the keyboard.', '맞아요. 건반 한가운데의 C예요.'] },
   { k: 36, p: ['Tap the next C to the right of middle C.', '가운데 도의 오른쪽 다음 C를 눌러 보세요.'], y: ['One pattern up from middle C.', '가운데 도에서 무늬 하나 위예요.'] },
   { k: 12, p: ['Tap the next C to the left of middle C.', '가운데 도의 왼쪽 다음 C를 눌러 보세요.'], y: ['One pattern down from middle C.', '가운데 도에서 무늬 하나 아래예요.'] },
 ];
-KQ_SPEC['kq-middle'] = {
-  title: ['Middle C', '가운데 도'], allLine: ['One of the C’s has its own name: middle C. It is the C in the middle of the keyboard.', 'C 중 하나는 이름이 따로 있어요: 가운데 도. 건반 한가운데 있는 C예요.'],
-  fig: () => ({ kb: { oct: 4, base: -24, marks: { 24: 'pick' }, names: { 0: 'C', 12: 'C', 24: 'C', 36: 'C', 48: 'C' }, ncol: { 0: KQ.NV, 12: KQ.NV, 24: KQ.COD, 36: KQ.NV, 48: KQ.NV } }, staffAlt: kqStaff([28], 'treble', { under: true }) }),
-  steps: [
-    { title: ['Find the middle', '한가운데 찾기'], line: ['This keyboard has four patterns. Middle C begins the third.', '이 건반에는 무늬가 네 개예요. 가운데 도는 세 번째 무늬를 시작해요.'], fig: () => ({ kb: { oct: 4, base: -24, marks: { 24: 'pick' }, names: { 24: 'C' }, ncol: { 24: KQ.COD } }, staffAlt: kqStaff([28], 'treble', { under: true }) }) },
-    { title: ['The other C’s', '다른 C들'], line: ['Each one is a whole pattern away from the next.', '하나씩 무늬 하나만큼 떨어져 있어요.'], fig: () => ({ kb: { oct: 4, base: -24, marks: kqPaint({ 24: 'pick' }, [0, 12, 36, 48], 'seg4'), names: { 0: 'C', 12: 'C', 24: 'C', 36: 'C', 48: 'C' }, ncol: { 0: KQ.BL, 12: KQ.BL, 24: KQ.COD, 36: KQ.BL, 48: KQ.BL } } }) },
-  ],
-  make: (n) => { const Q = KQ_MC[n % KQ_MC.length]; return { kind: 'key', retry: true, prompt: Q.p, fig: () => ({ kb: { oct: 4, base: -24 } }), ok: (k) => k === Q.k, yes: Q.y,
-    no: (k) => k % 12 === 0 ? ['That is a C, but not the right one. Count patterns from the middle.', '그건 C지만 찾는 C가 아니에요. 한가운데에서 무늬를 세어 보세요.'] : ['That is not a C. A C comes just before a group of 2 black keys.', '그건 C가 아니에요. C는 검은건반 2개짜리 무리 바로 앞에 있어요.'] }; },
-};
-// 7. one pattern, 12 keys, 7 names
-const kqBr = (oct, hl) => <div style={{ maxWidth: 340, margin: '0 auto' }}><svg viewBox={`-6 0 ${oct * 252 + 48} 34`} style={{ width: '100%', display: 'block' }}>{Array.from({ length: oct }, (_, o) => <g key={o} style={{ opacity: hl == null || hl === o ? 1 : 0.2, transition: 'opacity 0.25s' }}><path d={`M${o * 252 + 3},32 V20 H${o * 252 + 249} V32`} fill="none" stroke={hl === o ? KQ.CO : KQ.NV} strokeWidth="3" strokeLinejoin="round"/><text x={o * 252 + 126} y="14" textAnchor="middle" fontSize="15" fontWeight="900" fill={hl === o ? KQ.CO : KQ.NV}>{o + 1}</text></g>)}</svg></div>;
-KQ_SPEC['kq-repeat'] = {
-  title: ['12 keys, 7 names', '건반 12개, 이름 7개'], allLine: ['The pattern holds 12 keys, and the 7 white ones have names. Then everything starts again.', '무늬 하나에 건반이 12개 있고, 흰건반 7개에는 이름이 있어요. 그다음 모든 게 다시 시작돼요.'],
-  fig: () => { const nm = kqNames(2, ['C', 'D', 'E', 'F', 'G', 'A', 'B']), m = kqPaint({}, kqHouseKeys(2, true), 'seg3'); kqPaint(m, kqHouseKeys(2, false), 'seg4'); return { top: kqBr(2, null), kb: { oct: 2, base: 0, marks: m, names: nm.names, ncol: nm.ncol }, staffAlt: kqStaff([28, 29, 30, 31, 32, 33, 34, 35], 'treble', { under: true }) }; },
-  steps: [
-    { title: ['Count the keys', '건반 세어 보기'], line: ['One pattern has 7 white keys and 5 black keys.', '무늬 하나에는 흰건반 7개, 검은건반 5개가 있어요.'], fig: () => ({ top: kqBr(2, 0), kb: { oct: 2, base: 0, marks: kqPaint({}, Array.from({ length: 12 }, (_, i) => i), 'seg3') } }) },
-    { title: ['Name the white ones', '흰건반 이름 붙이기'], line: ['Coral for the small house, blue for the big house: C D E F G A B.', '작은 집은 코랄, 큰 집은 파랑: C D E F G A B.'], fig: () => { const nm = kqNames(1, ['C', 'D', 'E', 'F', 'G', 'A', 'B']), m = kqPaint({}, kqHouseKeys(1, true), 'seg3'); kqPaint(m, kqHouseKeys(1, false), 'seg4'); return { top: kqBr(2, 0), kb: { oct: 2, base: 0, marks: m, names: nm.names, ncol: nm.ncol }, staffAlt: kqStaff([28, 29, 30, 31, 32, 33, 34], 'treble', { under: true }) }; } },
-    { title: ['Round again', '다시 처음부터'], line: ['After B the next pattern begins, and C comes round again.', 'B 다음에는 다음 무늬가 시작되고, C가 다시 나와요.'], fig: () => { const nm = kqNames(2, ['C', 'D', 'E', 'F', 'G', 'A', 'B']), m = kqPaint({}, kqHouseKeys(2, true), 'seg3'); kqPaint(m, kqHouseKeys(2, false), 'seg4'); m[12] = 'pick'; return { top: kqBr(2, 1), kb: { oct: 2, base: 0, marks: m, names: nm.names, ncol: nm.ncol } }; } },
-  ],
-  make: (n) => n % 2 === 0 ? { kind: 'key', retry: true, prompt: ['Tap the key where a new pattern begins.', '새 무늬가 시작되는 건반을 눌러 보세요.'], fig: () => ({ top: kqBr(3, null), kb: { oct: 3, base: 0 } }), ok: (k) => k % 12 === 0,
-    yes: ['C, the first key of every pattern.', 'C예요. 모든 무늬의 첫 건반이에요.'], no: (k) => [([1, 3, 6, 8, 10].includes(k % 12) ? 'A black key never starts a pattern. ' : 'That is ' + KQ_L[k % 12] + ', in the middle of one. ') + 'Look just before a group of 2.', ([1, 3, 6, 8, 10].includes(k % 12) ? '검은건반에서는 무늬가 시작되지 않아요. ' : '그건 ' + KQ_L[k % 12] + '예요, 무늬의 중간이에요. ') + '검은건반 2개짜리 무리 바로 앞을 보세요.'] }
-    : { kind: 'choice', cols: 4, prompt: ['Which name comes after B?', 'B 다음에 오는 이름은?'], opts: kqLet7(), ans: 'C', ok: (v) => v === 'C', fig: () => ({ kb: { oct: 2, base: 0, marks: { 11: 'seg4', 12: 'pass' } } }),
-      yes: ['C again: the new pattern has begun.', '다시 C예요. 새 무늬가 시작됐어요.'], no: ['After B the names start over, at C.', 'B 다음에는 이름이 처음부터 다시 시작해서 C가 와요.'] },
-};
+// ── lesson 1: the black keys, then low and high. No letters on the keys yet; a tap anywhere in a group's column counts as that group.
+const KQ_REG = (k) => [0, 1, 2, 3, 4].includes(((k % 12) + 12) % 12) ? 2 : 3;
+{ const GR = { 2: { keys: [1, 3], style: 'seg3', col: KQ.CO, vx: kqVx(0, 4) }, 3: { keys: [6, 8, 10], style: 'seg4', col: KQ.BL, vx: kqVx(5, 11) } };
+  const blacks = (n, o = 2) => { const m = {}; for (let i = 0; i < o; i++) (n === 2 ? [1, 3] : n === 3 ? [6, 8, 10] : [1, 3, 6, 8, 10]).forEach(k => { m[i * 12 + k] = n === 2 ? 'seg3' : n === 3 ? 'seg4' : (KQ_BK2.includes(k) ? 'seg3' : 'seg4'); }); return m; };
+  const zoom = (n, c) => { const g = GR[n], lit = Math.min(c.tk, n), m = {}; g.keys.slice(0, lit).forEach(k => { m[k] = g.style; });
+    return { top: kqNumRow(g.vx, g.keys.slice(0, lit).map((k, i) => ({ x: kqX(k), t: String(i + 1), col: g.col }))), kb: { bare: true, oct: 1, vx: g.vx, mw: 300, marks: m } }; };
+  const reg = (want) => ({ kind: 'key', retry: true, prompt: ['Tap the side with ' + want + ' black keys.', '검은건반이 ' + want + '개인 쪽을 눌러 보세요.'],
+    fig: (c) => ({ kb: { bare: true, oct: 2, base: 0, marks: c.res === 'ok' ? blacks(want) : {} } }), ok: (k) => KQ_REG(k) === want,
+    yes: want === 2 ? ['Two, side by side.', '두 개가 나란히 있네요.'] : ['Three, in a row.', '세 개가 줄지어 있네요.'],
+    no: (k) => ['That side has ' + (5 - want) + ' black keys. Look for the side with ' + want + '.', '그쪽은 검은건반이 ' + (5 - want) + '개예요. ' + want + '개인 쪽을 찾아 보세요.'] });
+  const hearQ = (n) => { const gap = [30, 20, 12, 7, 4, 2][Math.min(n, 5)], lo = kqRnd(48 - gap), hi = lo + gap, firstHigh = Math.random() < 0.5, a = firstHigh ? hi : lo, b = firstHigh ? lo : hi;
+    return { kind: 'choice', prompt: ['Listen to two sounds. Which one is higher?', '소리 두 개를 들어 보세요. 어느 쪽이 더 높을까요?'], opts: [{ id: '1', label: () => t('The first', '처음 소리') }, { id: '2', label: () => t('The second', '나중 소리') }], ans: firstHigh ? '1' : '2', ok: (v) => v === (firstHigh ? '1' : '2'),
+      play: () => { playKey(a - 24, 0.8); setTimeout(() => playKey(b - 24, 0.8), 900); },
+      fig: (c) => ({ top: kqArrow(c.res ? hi : null, 48), kb: { bare: true, oct: 4, base: -24, marks: c.res ? { [lo]: 'seg3', [hi]: 'pick' } : {} } }),
+      yes: ['The higher sound came from the key further right.', '높은 소리는 더 오른쪽 건반에서 났어요.'], no: ['The other one was higher. Its key is further to the right.', '다른 쪽이 더 높았어요. 그 건반이 더 오른쪽에 있어요.'] }; };
+  KQ_SPEC['kq-black'] = {
+    title: ['Black keys', '검은건반'], allLine: ['They come in groups of 2 and 3, always in the same order. Tap to listen.', '2개와 3개씩 모여 있고, 순서는 늘 같아요. 눌러 들어 보세요.'],
+    fig: (c) => ({ top: <KqGroupsTop lit={c.last && typeof c.last === 'object' ? c.last : null} onTap={(it) => { it.keys.forEach((k, j) => setTimeout(() => playKey(k, 0.3), j * 220)); c.setLast({ g: it.id }); }}/>, kb: { bare: true, oct: 2, base: 0, marks: blacks(0) } }),
+    steps: [
+      { title: ['Two', '둘'], line: ['Two black keys stand side by side. Count them.', '검은건반 두 개가 나란히 서 있어요. 세어 보세요.'], fig: (c) => zoom(2, c) },
+      { title: ['Three', '셋'], line: ['Then comes a row of three.', '그다음에는 세 개가 줄지어 있어요.'], fig: (c) => zoom(3, c) },
+      { title: ['Two, three, two, three', '둘, 셋, 둘, 셋'], line: ['The groups take turns from left to right, and the order never changes.', '무리는 왼쪽에서 오른쪽으로 번갈아 나오고, 순서는 바뀌지 않아요.'], fig: (c) => { const u = Math.min(c.tk, 4), m = {}; for (let i = 0; i < u; i++) Object.assign(m, kqPaint({}, (i % 2 === 0 ? [1, 3] : [6, 8, 10]).map(k => Math.floor(i / 2) * 12 + k), i % 2 === 0 ? 'seg3' : 'seg4')); return { top: <KqGroupsTop upto={u}/>, kb: { bare: true, oct: 2, base: 0, marks: m } }; } },
+      { title: ['Low and high', '낮은 소리, 높은 소리'], line: ['Tap along the keys. Left sounds low and right sounds high.', '건반을 눌러 보세요. 왼쪽은 낮은 소리, 오른쪽은 높은 소리예요.'], fig: (c) => ({ top: kqArrow(typeof c.last === 'number' ? c.last : null, 48), kb: { bare: true, oct: 4, base: -24, marks: typeof c.last === 'number' ? { [c.last]: 'pick' } : {} } }) },
+    ],
+    make: (n) => [reg(3), reg(2), hearQ(n), reg(2), reg(3), hearQ(n)][n % 6],
+  }; }
+
+// ── lesson 2: the two houses, shown big, then the letters one at a time
+const KQ_HZ = { small: { Ls: KQ_SMALL, ks: [0, 4], style: 'seg3', pk: 'pick', col: KQ.COD, name: ['The small house', '작은 집'] }, big: { Ls: KQ_BIG, ks: [5, 11], style: 'seg4', pk: 'pickB', col: KQ.BL, name: ['The big house', '큰 집'] } };
+{ const ds = (arr) => arr.map(L => 28 + 'CDEFGAB'.indexOf(L));
+  const hz = (kind, shown, cur, tkey) => { const h = KQ_HZ[kind], small = kind === 'small', m = kqPaint({}, kqHouseKeys(1, small), h.style), nm = kqNames(1, shown);
+    if (cur) m[KQ_PC[cur]] = h.pk;
+    return { top: <KqRoofs oct={1} show={kind} vx={kqVx(h.ks[0], h.ks[1])} k={tkey}/>, kb: { bare: true, oct: 1, vx: kqVx(h.ks[0], h.ks[1]), mw: 290, marks: m, names: nm.names, ncol: nm.ncol }, staffAlt: shown.length ? kqStaff(ds(shown), 'treble', { under: true, ring: cur ? [shown.indexOf(cur)] : [] }) : null }; };
+  const letters = (kind, c) => { const Ls = KQ_HZ[kind].Ls, n = Math.min(c.tk, Ls.length); return hz(kind, Ls.slice(0, n), c.tk >= 1 && c.tk <= Ls.length ? Ls[c.tk - 1] : null, 'l'); };
+  const both = (cur) => { const nm = kqNames(2, ['C', 'D', 'E', 'F', 'G', 'A', 'B']), m = kqPaint({}, kqHouseKeys(2, true), 'seg3'); kqPaint(m, kqHouseKeys(2, false), 'seg4'); if (cur != null) m[cur] = KQ_SMALL.includes(KQ_L[cur % 12]) ? 'pick' : 'pickB'; return { top: <KqRoofs oct={2}/>, kb: { oct: 2, base: 0, marks: m, names: nm.names, ncol: nm.ncol }, staffAlt: kqStaff([28, 29, 30, 31, 32, 33, 34], 'treble', { under: true }) }; };
+  KQ_SPEC['kq-houses'] = {
+    title: ['Two houses', '두 채의 집'], allLine: ['The black keys build two kinds of house, and the white keys live inside them.', '검은건반이 집 두 채를 짓고, 흰건반이 그 안에 살아요.'],
+    fig: (c) => both(typeof c.last === 'number' ? c.last : null),
+    steps: [
+      { title: KQ_HZ.small.name, line: ['Two black keys make the roof, and three white keys live underneath.', '검은건반 두 개가 지붕이 되고, 그 아래 흰건반 세 개가 살아요.'], fig: () => hz('small', [], null, 's') },
+      { title: ['Meet C, D and E', 'C, D, E를 만나 봐요'], line: ['C waits at the left door, D lives inside, and E waits at the right door.', 'C는 왼쪽 문, D는 집 안, E는 오른쪽 문에 있어요.'], fig: (c) => letters('small', c) },
+      { title: KQ_HZ.big.name, line: ['Three black keys make the roof, and four white keys live underneath.', '검은건반 세 개가 지붕이 되고, 그 아래 흰건반 네 개가 살아요.'], fig: () => hz('big', [], null, 'b') },
+      { title: ['Meet F, G, A and B', 'F, G, A, B를 만나 봐요'], line: ['F waits at the left door, G and A live inside, and B waits at the right door.', 'F는 왼쪽 문, G와 A는 집 안, B는 오른쪽 문에 있어요.'], fig: (c) => letters('big', c) },
+      { title: ['Round and round', '돌고 돌아요'], line: ['Small house, big house, small house, big house: tap the keys to hear each name’s place.', '작은 집, 큰 집, 작은 집, 큰 집: 건반을 눌러 각 이름의 자리를 들어 보세요.'], fig: (c) => both(typeof c.last === 'number' ? c.last : null) },
+    ],
+    make: (n, prev) => { let L; do { L = kqPick(KQ_ABC.filter(x => x !== 'A' || true)); } while (prev && prev.L === L); const small = KQ_SMALL.includes(L), hk = kqHouseKeys(2, true).concat(kqHouseKeys(2, false)), m = {}; hk.forEach(k => { m[k] = KQ_SMALL.includes(KQ_L[k % 12] || (KQ_BK2.includes(k % 12) ? 'C' : 'F')) ? 'seg3' : 'seg4'; });
+      return { L, kind: 'key', retry: true, prompt: ['Tap ' + L + '.', L + ' 건반을 눌러 보세요.'], fig: () => ({ top: <KqRoofs oct={2}/>, kb: { bare: true, oct: 2, base: 0, marks: m } }), ok: (k) => k % 12 === KQ_PC[L],
+        yes: ['Yes, ' + L + ' is ' + KQ_DOOR[L][2][0] + '.', '맞아요. ' + L + '는 ' + KQ_DOOR[L][2][1] + '에 있어요.'],
+        no: (k) => [(KQ_L[k % 12] ? 'That is ' + KQ_L[k % 12] + '. ' : 'That is a black key. ') + L + ' is ' + KQ_DOOR[L][2][0] + '.', (KQ_L[k % 12] ? '그건 ' + KQ_L[k % 12] + '예요. ' : '그건 검은건반이에요. ') + L + '는 ' + KQ_DOOR[L][2][1] + '에 있어요.'] }; },
+  }; }
+
+// ── lesson 3: the same name all along the keyboard, middle C, and 12 keys with 7 names
+{ const O = 3, N = O * 12, base = -12;
+  const same = (Ls, cur) => { const m = {}; const nm = kqNames(O, Ls); Ls.forEach(L => { for (let o = 0; o <= O; o++) { const k = o * 12 + KQ_PC[L]; if (k <= N) { m[k] = KQ_SMALL.includes(L) ? 'seg3' : 'seg4'; if (k <= N && k % 12 === 0 && o === O) { nm.names[k] = L; nm.ncol[k] = kqHouseCol(L); } } } }); if (cur != null) m[cur] = KQ_SMALL.includes(KQ_L[cur % 12]) ? 'pick' : 'pickB'; return { oct: O, base, marks: m, names: nm.names, ncol: nm.ncol }; };
+  const allNames = (cur) => same(['C', 'D', 'E', 'F', 'G', 'A', 'B'], cur);
+  const twelve = (c) => { const n = Math.min(c.tk, 12), m = {}; for (let k = 0; k < n; k++) m[k] = 'seg3'; const nm = c.tk >= 14 ? kqNames(1, ['C', 'D', 'E', 'F', 'G', 'A', 'B']) : { names: {}, ncol: {} }; if (c.tk >= 14) m[12] = 'pick';
+    return { top: kqNumRow(kqVx(0, 12), Array.from({ length: n }, (_, k) => ({ x: kqX(k), t: String(k + 1), col: KQ.NV })), 15), kb: { oct: 1, base: 0, marks: m, names: nm.names, ncol: nm.ncol, mw: 340 } }; };
+  const multi = (L, prev) => { const pc = KQ_PC[L], targets = []; for (let o = 0; o <= O; o++) if (o * 12 + pc <= N) targets.push(o * 12 + pc);
+    return { L, kind: 'multi', retry: true, targets, prompt: ['Tap every ' + L + ' on the keyboard.', L + ' 건반을 모두 눌러 보세요.'], prog: (a, b) => ['Found ' + a + ' of ' + b + '. Keep going.', b + '개 중 ' + a + '개를 찾았어요. 계속해요.'],
+      fig: () => ({ kb: { bare: true, oct: O, base } }), yes: ['All ' + targets.length + ' found: every pattern has one.', '모두 ' + targets.length + '개 찾았어요. 무늬마다 하나씩 있어요.'],
+      no: (k) => [(KQ_L[((k % 12) + 12) % 12] ? 'That is ' + KQ_L[((k % 12) + 12) % 12] + '. ' : 'That is a black key. ') + L + ' is ' + KQ_DOOR[L][2][0] + '.', (KQ_L[((k % 12) + 12) % 12] ? '그건 ' + KQ_L[((k % 12) + 12) % 12] + '예요. ' : '그건 검은건반이에요. ') + L + '는 ' + KQ_DOOR[L][2][1] + '에 있어요.'] }; };
+  const nextL = (prev) => { let L; do { L = kqPick(KQ_ABC); } while (prev && prev.L === L); return L; };
+  KQ_SPEC['kq-names'] = {
+    title: ['Every key has its place', '모든 건반에는 제 자리가 있어요'], allLine: ['The seven names go round and round, so every letter appears again in each pattern. Tap a key to hear it.', '이름 일곱 개가 돌고 돌아서, 무늬마다 같은 글자가 다시 나와요. 건반을 눌러 들어 보세요.'],
+    fig: (c) => ({ kb: allNames(typeof c.last === 'number' ? c.last : null), staffAlt: null }),
+    steps: [
+      { title: ['Every C', '모든 C'], line: ['Each C waits at the left door of a small house.', 'C는 모두 작은 집의 왼쪽 문에 서 있어요.'], fig: () => ({ kb: same(['C']) }) },
+      { title: ['One letter at a time', '글자 하나씩'], line: ['Watch: the same letter lights up in every pattern.', '보세요. 같은 글자가 무늬마다 켜져요.'], fig: (c) => ({ kb: same(['DEFGAB'[Math.min(Math.floor(c.tk / 2), 5)]]) }) },
+      { title: ['Middle C', '가운데 도'], line: ['One C has a name of its own: the C in the middle of the keyboard.', 'C 하나는 이름이 따로 있어요. 건반 한가운데 있는 C예요.'], fig: () => ({ kb: { ...same(['C'], 12) }, staffAlt: kqStaff([28], 'treble', { under: true }) }) },
+      { title: ['Twelve keys, seven names', '건반 열두 개, 이름 일곱 개'], line: ['Count every key in one pattern, black ones too. Only the white keys have letters.', '무늬 하나의 건반을 검은건반까지 모두 세어 보세요. 글자가 있는 건 흰건반뿐이에요.'], fig: (c) => twelve(c) },
+    ],
+    make: (n, prev) => [() => multi(nextL(prev), prev), () => ({ L: null, kind: 'key', retry: true, prompt: KQ_MC[n % 3].p, fig: () => ({ kb: { bare: true, oct: O, base } }), ok: (k) => k === [12, 24, 0][n % 3], yes: KQ_MC[n % 3].y,
+        no: (k) => k % 12 === 0 ? ['That is a C, but not the right one. Count patterns from the middle.', '그건 C지만 찾는 C가 아니에요. 한가운데에서 무늬를 세어 보세요.'] : ['That is not a C. A C waits at the left door of a small house, just before two black keys.', '그건 C가 아니에요. C는 작은 집의 왼쪽 문, 검은건반 두 개 바로 앞에 있어요.'] }),
+      () => multi(nextL(prev), prev), () => ({ L: null, kind: 'choice', cols: 4, prompt: ['Which name comes after B?', 'B 다음에 오는 이름은?'], opts: kqLet7(), ans: 'C', ok: (v) => v === 'C', fig: () => ({ kb: { bare: true, oct: 1, base: 0, marks: { 11: 'seg4', 12: 'pass' } } }),
+        yes: ['C again: the next pattern has begun.', '다시 C예요. 다음 무늬가 시작됐어요.'], no: ['After B the names start over at C.', 'B 다음에는 이름이 처음부터 다시 시작해서 C가 와요.'] })][n % 4](),
+  }; }
 
 // ══ 2. The staff and clefs ══
 KQ_SPEC['kq-lines'] = {
@@ -385,13 +398,9 @@ KQ_SPEC['kq-range'] = {
 const kqRow = (id, en, ko, bEn, bKo) => [id, en, ko, bEn, bKo, () => <KqEngine spec={KQ_SPEC[id]}/>];
 const KS_ROWS = [
   ['p-keys', [
-    kqRow('kq-groups', 'Black keys in 2s and 3s', '검은건반은 2개, 3개씩', 'The black keys sit in groups of 2 and 3.', '검은건반은 2개, 3개씩 모여 있어요.'),
-    kqRow('kq-hear', 'Low and high', '낮은 소리, 높은 소리', 'Left is low, right is high.', '왼쪽은 낮은 소리, 오른쪽은 높은 소리.'),
-    kqRow('kq-small', 'The small house', '작은 집', 'C D E under the two black keys.', '검은건반 두 개 아래의 C D E.'),
-    kqRow('kq-big', 'The big house', '큰 집', 'F G A B under the three black keys.', '검은건반 세 개 아래의 F G A B.'),
-    kqRow('kq-find', 'The same name, everywhere', '어디에나 있는 같은 이름', 'Every key with the same name.', '이름이 같은 건반 모두.'),
-    kqRow('kq-middle', 'Middle C', '가운데 도', 'The C in the middle of the keyboard.', '건반 한가운데 있는 C.'),
-    kqRow('kq-repeat', '12 keys, 7 names', '건반 12개, 이름 7개', 'One pattern, and then it starts again.', '무늬 하나, 그리고 다시 시작.'),
+    kqRow('kq-black', 'Black keys', '검은건반', 'Groups of 2 and 3, and low and high.', '2개와 3개씩 모인 검은건반, 낮은 소리와 높은 소리.'),
+    kqRow('kq-houses', 'Two houses', '두 채의 집', 'C D E under two black keys, F G A B under three.', '검은건반 두 개 아래의 C D E, 세 개 아래의 F G A B.'),
+    kqRow('kq-names', 'Every key has its place', '모든 건반에는 제 자리가 있어요', 'The same name everywhere, middle C, 12 keys and 7 names.', '어디서나 같은 이름, 가운데 도, 건반 12개와 이름 7개.'),
   ]],
   ['p-stf', [
     kqRow('kq-lines', 'Five lines, four spaces', '줄 다섯, 칸 넷', 'Counting lines and spaces from the bottom.', '아래에서부터 줄과 칸 세기.'),
