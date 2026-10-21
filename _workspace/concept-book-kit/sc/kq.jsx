@@ -47,7 +47,7 @@ function KqGroupsTop({ oct = 2, show = 'both', lit = null, onTap, upto = 99 }) {
   </svg></div>;
 }
 const kqArrow = (pos, n) => <div style={{ maxWidth: 340, margin: '0 auto' }}><svg viewBox="0 0 500 34" style={{ width: '100%', display: 'block' }}>
-  <text x="20" y="12" fontSize="13" fontWeight="900" fill={KQ.COD}>{t('← low · under the sea', '← 낮은 소리 · 바다 아래')}</text><text x="480" y="12" textAnchor="end" fontSize="13" fontWeight="900" fill={KQ.BL}>{t('high · up in the sky →', '높은 소리 · 하늘 위 →')}</text>
+  <text x="20" y="12" fontSize="13" fontWeight="900" fill={KQ.COD}>{t('← low', '← 낮은 소리')}</text><text x="480" y="12" textAnchor="end" fontSize="13" fontWeight="900" fill={KQ.BL}>{t('high →', '높은 소리 →')}</text>
   <line x1="20" y1="24" x2="470" y2="24" stroke={KQ.NV} strokeWidth="3"/><path d="M468 16 L486 24 L468 32 Z" fill={KQ.NV}/>
   {pos != null && <circle cx={20 + 450 * (pos + 0.5) / n} cy="24" r="8" fill={KQ.CO} style={{ transition: 'cx 0.25s' }}/>}
 </svg></div>;
@@ -133,20 +133,20 @@ const kqLet7 = () => KQ_ABC.map(L => ({ id: L, label: L }));
 const KQ_SPEC = {};
 
 // ══ 1. Keyboard patterns and note names (three lessons, her call 2026-10-22: 1+2, 3+4 and 5+6+7 each into one) ══
-// her story from the chapters (Keyboard Patterns, The Musical Alphabet): who lives on each white key
+// where each white key sits inside its house: [title, line, phrase for feedback, short label above the key]
 const KQ_DOOR = {
-  C: [['C: Clara', 'C: 클라라'], ['Clara, a little princess, lives at the small house’s left door.', '꼬마 공주 클라라는 작은 집의 왼쪽 문에 살아요.'], ['where Clara lives, the small house’s left door', '클라라가 사는 작은 집의 왼쪽 문'], ['Clara', '클라라']],
-  D: [['D: her Dog', 'D: 강아지'], ['Her dog sleeps in a doghouse between the two black keys.', '클라라의 강아지는 검은건반 두 개 사이의 개집에서 자요.'], ['where the dog sleeps, between the two black keys', '강아지가 자는 두 검은건반 사이'], ['her Dog', '강아지']],
-  E: [['E: the Exit', 'E: 출구'], ['The small house’s right door is the Exit.', '작은 집의 오른쪽 문은 출구예요.'], ['the Exit, the small house’s right door', '출구, 작은 집의 오른쪽 문'], ['the Exit', '출구']],
-  F: [['F: the Front door', 'F: 앞문'], ['The big house’s left door is the Front door.', '큰 집의 왼쪽 문은 앞문이에요.'], ['the Front door, the big house’s left door', '앞문, 큰 집의 왼쪽 문'], ['the Front door', '앞문']],
-  G: [['G: Grandma', 'G: 할머니'], ['Grandma lives inside the big house, and she loves apples.', '할머니는 큰 집 안에 살아요. 사과를 좋아하세요.'], ['where Grandma lives, inside the big house', '할머니가 사는 큰 집 안'], ['Grandma', '할머니']],
-  A: [['A: the Apple garden', 'A: 사과 정원'], ['Grandma’s apple garden is right next to her.', '할머니의 사과 정원은 바로 옆에 있어요.'], ['the Apple garden, right next to Grandma', '사과 정원, 할머니 바로 옆'], ['her Apple garden', '사과 정원']],
-  B: [['B: the Back door', 'B: 뒷문'], ['The big house’s right door is the Back door.', '큰 집의 오른쪽 문은 뒷문이에요.'], ['the Back door, the big house’s right door', '뒷문, 큰 집의 오른쪽 문'], ['the Back door', '뒷문']],
+  C: [['C: the left door', 'C: 왼쪽 문'], ['It sits just before the two black keys.', '검은건반 두 개 바로 앞에 있어요.'], ['the left door of the small house', '작은 집의 왼쪽 문'], ['left door', '왼쪽 문']],
+  D: [['D: inside', 'D: 집 안'], ['It sits between the two black keys.', '두 검은건반 사이에 있어요.'], ['inside the small house, between its two black keys', '작은 집 안, 두 검은건반 사이'], ['inside', '집 안']],
+  E: [['E: the right door', 'E: 오른쪽 문'], ['It sits just after the two black keys.', '검은건반 두 개 바로 뒤에 있어요.'], ['the right door of the small house', '작은 집의 오른쪽 문'], ['right door', '오른쪽 문']],
+  F: [['F: the left door', 'F: 왼쪽 문'], ['It sits just before the three black keys.', '검은건반 세 개 바로 앞에 있어요.'], ['the left door of the big house', '큰 집의 왼쪽 문'], ['left door', '왼쪽 문']],
+  G: [['G: inside, first', 'G: 집 안, 첫째'], ['It sits between the first and second black keys.', '첫째와 둘째 검은건반 사이에 있어요.'], ['inside the big house, after its first black key', '큰 집 안, 첫째 검은건반 다음'], ['inside, first', '집 안, 첫째']],
+  A: [['A: inside, second', 'A: 집 안, 둘째'], ['It sits between the second and third black keys.', '둘째와 셋째 검은건반 사이에 있어요.'], ['inside the big house, after its second black key', '큰 집 안, 둘째 검은건반 다음'], ['inside, second', '집 안, 둘째']],
+  B: [['B: the right door', 'B: 오른쪽 문'], ['It sits just after the three black keys.', '검은건반 세 개 바로 뒤에 있어요.'], ['the right door of the big house', '큰 집의 오른쪽 문'], ['right door', '오른쪽 문']],
 };
 const KQ_MC = [
   { k: 12, p: ['Tap middle C.', '가운데 도를 눌러 보세요.'], y: ['Yes, the C in the middle of the keyboard.', '맞아요. 건반 한가운데의 C예요.'] },
-  { k: 24, p: ['Tap the next C above middle C, up in the sky.', '가운데 도 위쪽, 하늘 쪽의 다음 C를 눌러 보세요.'], y: ['One house up from middle C.', '가운데 도에서 집 하나 위예요.'] },
-  { k: 0, p: ['Tap the next C below middle C, down under the sea.', '가운데 도 아래쪽, 바다 쪽의 다음 C를 눌러 보세요.'], y: ['One house down from middle C.', '가운데 도에서 집 하나 아래예요.'] },
+  { k: 24, p: ['Tap the next C to the right of middle C.', '가운데 도의 오른쪽 다음 C를 눌러 보세요.'], y: ['One house to the right of middle C.', '가운데 도에서 오른쪽으로 집 하나예요.'] },
+  { k: 0, p: ['Tap the next C to the left of middle C.', '가운데 도의 왼쪽 다음 C를 눌러 보세요.'], y: ['One house to the left of middle C.', '가운데 도에서 왼쪽으로 집 하나예요.'] },
 ];
 const kqLetterKeyNo = (k, L) => [(KQ_L[((k % 12) + 12) % 12] ? 'That is ' + KQ_L[((k % 12) + 12) % 12] + '. ' : 'That is a black key. ') + L + ' is ' + KQ_DOOR[L][2][0] + '.', (KQ_L[((k % 12) + 12) % 12] ? '그건 ' + KQ_L[((k % 12) + 12) % 12] + ' 건반이에요. ' : '그건 검은건반이에요. ') + L + ' 건반: ' + KQ_DOOR[L][2][1] + '.'];
 
@@ -164,7 +164,7 @@ const KQ_REG = (k) => [0, 1, 2, 3, 4].includes(((k % 12) + 12) % 12) ? 2 : 3;
     return { kind: 'choice', prompt: ['Listen to two sounds. Which one is higher?', '소리 두 개를 들어 보세요. 어느 쪽이 더 높을까요?'], opts: [{ id: '1', label: () => t('The first', '처음 소리') }, { id: '2', label: () => t('The second', '나중 소리') }], ans: firstHigh ? '1' : '2', ok: (v) => v === (firstHigh ? '1' : '2'),
       play: () => { playKey(a - 24, 0.8); setTimeout(() => playKey(b - 24, 0.8), 900); },
       fig: (c) => ({ top: kqArrow(c.res ? hi : null, 48), kb: { bare: true, oct: 4, base: -24, marks: c.res ? { [lo]: 'seg3', [hi]: 'pick' } : {} } }),
-      yes: ['The higher sound came from the key further right, up in the sky.', '높은 소리는 더 오른쪽, 하늘 쪽 건반에서 났어요.'], no: ['The other one was higher. Its key is further right, up in the sky.', '다른 쪽이 더 높았어요. 그 건반은 더 오른쪽, 하늘 쪽에 있어요.'] }; };
+      yes: ['The higher sound came from the key further right.', '높은 소리는 더 오른쪽 건반에서 났어요.'], no: ['The other one was higher. Its key is further right.', '다른 쪽이 더 높았어요. 그 건반이 더 오른쪽에 있어요.'] }; };
   KQ_SPEC['kq-black'] = {
     title: ['Black keys', '검은건반'], allLine: ['They come in groups of 2 and 3, always in the same order. Tap to listen.', '2개와 3개씩 모여 있고, 순서는 늘 같아요. 눌러 들어 보세요.'],
     fig: (c) => ({ top: <KqGroupsTop lit={c.last && typeof c.last === 'object' ? c.last : null} onTap={(it) => { it.keys.forEach((k, j) => setTimeout(() => playKey(k, 0.3), j * 220)); c.setLast({ g: it.id }); }}/>, kb: { bare: true, oct: 2, base: 0, marks: blacks(0) } }),
@@ -172,7 +172,7 @@ const KQ_REG = (k) => [0, 1, 2, 3, 4].includes(((k % 12) + 12) % 12) ? 2 : 3;
       { title: ['Two', '둘'], line: ['Two black keys stand side by side. Count them.', '검은건반 두 개가 나란히 서 있어요. 세어 보세요.'], fig: (c) => zoom(2, c) },
       { title: ['Three', '셋'], line: ['Then comes a row of three.', '그다음에는 세 개가 줄지어 있어요.'], fig: (c) => zoom(3, c) },
       { title: ['Two, three, two, three', '둘, 셋, 둘, 셋'], line: ['The groups take turns from left to right, and the order never changes.', '무리는 왼쪽에서 오른쪽으로 번갈아 나오고, 순서는 바뀌지 않아요.'], fig: (c) => { const u = Math.min(c.tk, 4), m = {}; for (let i = 0; i < u; i++) Object.assign(m, kqPaint({}, (i % 2 === 0 ? [1, 3] : [6, 8, 10]).map(k => Math.floor(i / 2) * 12 + k), i % 2 === 0 ? 'seg3' : 'seg4')); return { top: <KqGroupsTop upto={u}/>, kb: { bare: true, oct: 2, base: 0, marks: m } }; } },
-      { title: ['Low and high', '낮은 소리, 높은 소리'], line: ['Tap along the keys. Left is down under the sea, right is up in the sky.', '건반을 눌러 보세요. 왼쪽은 바다 아래, 오른쪽은 하늘 위예요.'], fig: (c) => ({ top: kqArrow(typeof c.last === 'number' ? c.last : null, 48), kb: { bare: true, oct: 4, base: -24, marks: typeof c.last === 'number' ? { [c.last]: 'pick' } : {} } }) },
+      { title: ['Low and high', '낮은 소리, 높은 소리'], line: ['Tap along the keys. Left sounds low and right sounds high.', '건반을 눌러 보세요. 왼쪽은 낮은 소리, 오른쪽은 높은 소리예요.'], fig: (c) => ({ top: kqArrow(typeof c.last === 'number' ? c.last : null, 48), kb: { bare: true, oct: 4, base: -24, marks: typeof c.last === 'number' ? { [c.last]: 'pick' } : {} } }) },
     ],
     make: (n) => [reg(2), reg(3), hearQ(n), reg(3), reg(2), hearQ(n)][n % 6],
   }; }
@@ -186,7 +186,7 @@ const KQ_HZ = { small: { Ls: KQ_SMALL, ks: [0, 4], style: 'seg3', pk: 'pick', co
     ids.forEach(id => { const o = Math.floor(id / 2), small = id % 2 === 0; kqPaint(m, kqHouseKeys(o + 1, small, o), small ? 'seg3' : 'seg4'); (small ? KQ_SMALL : KQ_BIG).forEach(L => { names[o * 12 + KQ_PC[L]] = L; ncol[o * 12 + KQ_PC[L]] = kqHouseCol(L); }); });
     if (cur != null && m[cur]) m[cur] = KQ_SMALL.includes(KQ_L[cur % 12] || (KQ_BK2.includes(cur % 12) ? 'C' : 'F')) ? 'pick' : 'pickB';
     return { top: <KqRoofs oct={2} only={ids}/>, kb: { oct: 2, base: 0, marks: m, names, ncol, plain: true } }; };
-  const one = (L, i) => { const kind = KQ_SMALL.includes(L) ? 'small' : 'big', Ls = KQ_HZ[kind].Ls; return { title: KQ_DOOR[L][0], line: KQ_DOOR[L][1], fig: () => hz(kind, Ls.slice(0, i + 1), L, true, true) }; };
+  const one = (L, i) => { const kind = KQ_SMALL.includes(L) ? 'small' : 'big', Ls = KQ_HZ[kind].Ls; return { title: KQ_DOOR[L][0], line: KQ_DOOR[L][1], fig: () => hz(kind, Ls.slice(0, i + 1), L, true, false) }; };
   const tryKb = (marks) => ({ top: <KqRoofs oct={2}/>, kb: { bare: true, oct: 2, base: 0, marks } });
   const houseM = (() => { const m = {}; kqHouseKeys(2, true).forEach(k => { m[k] = 'seg3'; }); kqHouseKeys(2, false).forEach(k => { m[k] = 'seg4'; }); return m; })();
   const pcOf = (L) => KQ_PC[L];
@@ -205,13 +205,13 @@ const KQ_HZ = { small: { Ls: KQ_SMALL, ks: [0, 4], style: 'seg3', pk: 'pick', co
       if (kind === 0) return { L, kind: 'key', retry: true, prompt: ['Tap ' + L + '.', L + ' 건반을 눌러 보세요.'], fig: () => tryKb(houseM), ok: (k) => k % 12 === pcOf(L),
         yes: ['Yes, ' + L + ' is ' + D[2][0] + '.', '맞아요. ' + L + ' 건반: ' + D[2][1] + '.'], no: (k) => kqLetterKeyNo(k, L) };
       if (kind === 1) { const small = KQ_SMALL.includes(L), Ls = small ? KQ_SMALL : KQ_BIG, mk = { ...houseM }; mk[pcOf(L) + 12] = small ? 'pick' : 'pickB';
-        return { L, kind: 'choice', cols: 2, prompt: ['Who lives on the key marked in the second house?', '두 번째 집에서 표시된 건반에는 누가 살까요?'], opts: Ls.map(x => ({ id: x, label: () => kqT(KQ_DOOR[x][3]) })), ans: L, ok: (v) => v === L, fig: () => tryKb(mk),
+        return { L, kind: 'choice', cols: Ls.length > 3 ? 4 : 3, prompt: ['Which letter is the key marked in the second house?', '두 번째 집에서 표시된 건반은 어떤 글자일까요?'], opts: Ls.map(x => ({ id: x, label: x })), ans: L, ok: (v) => v === L, fig: () => tryKb(mk),
           yes: ['Yes: ' + L + ', ' + D[2][0] + '.', '맞아요. ' + L + ' 건반: ' + D[2][1] + '.'], no: ['That key is ' + L + ': ' + D[2][0] + '.', '이 건반은 ' + L + ' 건반이에요: ' + D[2][1] + '.'] }; }
-      return { L, kind: 'key', retry: true, prompt: ['Tap the key where ' + D[3][0] + ' lives.', D[3][1] + '의 건반을 눌러 보세요.'], fig: () => tryKb(houseM), ok: (k) => k % 12 === pcOf(L),
-        yes: ['Yes, ' + D[3][0] + ' is on ' + L + '.', '맞아요. ' + D[3][1] + '의 건반은 ' + L + ' 건반이에요.'], no: (k) => kqLetterKeyNo(k, L) }; },
+      return { L, kind: 'key', retry: true, prompt: ['Tap the white key that is ' + D[2][0] + '.', D[2][1] + '인 흰건반을 눌러 보세요.'], fig: () => tryKb(houseM), ok: (k) => k % 12 === pcOf(L),
+        yes: ['Yes, that is ' + L + '.', '맞아요. ' + L + ' 건반이에요.'], no: (k) => kqLetterKeyNo(k, L) }; },
   }; }
 
-// ── lesson 3: the same name in every house, middle C (the ground), twelve keys and seven names, and round again
+// ── lesson 3: the same name in every house, middle C, twelve keys and seven names, and round again
 { const O = 3, N = O * 12, base = -12;
   const same = (Ls, cur) => { const m = {}; const nm = kqNames(O, Ls); Ls.forEach(L => { for (let o = 0; o <= O; o++) { const k = o * 12 + KQ_PC[L]; if (k <= N) { m[k] = KQ_SMALL.includes(L) ? 'seg3' : 'seg4'; if (k % 12 === 0 && o === O) { nm.names[k] = L; nm.ncol[k] = kqHouseCol(L); } } } }); if (cur != null) m[cur] = KQ_SMALL.includes(KQ_L[cur % 12]) ? 'pick' : 'pickB'; return { oct: O, base, marks: m, names: nm.names, ncol: nm.ncol, plain: true }; };
   const allNames = (cur) => same(['C', 'D', 'E', 'F', 'G', 'A', 'B'], cur);
@@ -225,14 +225,14 @@ const KQ_HZ = { small: { Ls: KQ_SMALL, ks: [0, 4], style: 'seg3', pk: 'pick', co
     title: ['Every key has its place', '모든 건반에는 제 자리가 있어요'], allLine: ['The seven names go round and round, so every house has the same letters. Tap a key to hear it.', '이름 일곱 개가 돌고 돌아서, 집마다 같은 글자가 있어요. 건반을 눌러 들어 보세요.'],
     fig: (c) => ({ kb: c.tk >= 1 || typeof c.last === 'number' ? allNames(typeof c.last === 'number' ? c.last : null) : { oct: O, base } }),
     steps: [
-      { title: ['Every C', '모든 C'], line: ['Clara lives at the left door of every small house, so every C is in the same spot.', '클라라는 작은 집마다 왼쪽 문에 살아서, 모든 C가 같은 자리에 있어요.'], fig: () => ({ kb: same(['C']) }) },
+      { title: ['Every C', '모든 C'], line: ['Each C sits at the left door of a small house, so every C has the same spot.', 'C는 작은 집마다 왼쪽 문에 있어서, 모든 C가 같은 자리에 있어요.'], fig: () => ({ kb: same(['C']) }) },
       { title: ['One letter at a time', '글자 하나씩'], line: ['Watch: each letter lights up in every house, always in its own spot.', '보세요. 글자마다 모든 집에서 늘 제 자리에 켜져요.'], fig: (c) => ({ kb: c.tk < 1 ? { oct: O, base } : same(['DEFGAB'[Math.min(Math.floor((c.tk - 1) / 2), 5)]]) }) },
-      { title: ['Middle C', '가운데 도'], line: ['One C is the ground. Go up into the sky, or down under the sea.', 'C 하나는 땅이에요. 위로 가면 하늘, 아래로 가면 바다예요.'], fig: () => ({ top: kqArrow(null, 36), kb: { ...same(['C'], 12) } }) },
+      { title: ['Middle C', '가운데 도'], line: ['One C has a name of its own: the C in the middle of the keyboard.', 'C 하나는 이름이 따로 있어요. 건반 한가운데 있는 C예요.'], fig: () => ({ kb: { ...same(['C'], 12) } }) },
       { title: ['Twelve keys, seven names', '건반 열두 개, 이름 일곱 개'], line: ['Count every key in one house pair, black ones too. Only the white keys have letters.', '집 한 쌍의 건반을 검은건반까지 모두 세어 보세요. 글자가 있는 건 흰건반뿐이에요.'], fig: (c) => twelve(c) },
-      { title: ['Round again', '다시 처음으로'], line: ['After B the next small house begins, and Clara waits at C again.', 'B 다음에는 다음 작은 집이 시작되고, 클라라가 다시 C에서 기다려요.'], fig: () => ({ kb: { oct: 2, base: 0, marks: { 11: 'seg4', 12: 'pick' }, names: { 11: 'B', 12: 'C' }, ncol: { 11: KQ.BL, 12: KQ.COD }, plain: true, ks: [5, 16] } }) },
+      { title: ['Round again', '다시 처음으로'], line: ['After B the next small house begins, and C comes round again.', 'B 다음에는 다음 작은 집이 시작되고, C가 다시 나와요.'], fig: () => ({ kb: { oct: 2, base: 0, marks: { 11: 'seg4', 12: 'pick' }, names: { 11: 'B', 12: 'C' }, ncol: { 11: KQ.BL, 12: KQ.COD }, plain: true, ks: [5, 16] } }) },
     ],
     make: (n, prev) => [() => multi(nextL(prev, n === 0)), () => ({ L: null, kind: 'key', retry: true, prompt: KQ_MC[Math.floor(n / 4) % 3].p, fig: () => ({ kb: { bare: true, oct: O, base } }), ok: (k) => k === KQ_MC[Math.floor(n / 4) % 3].k, yes: KQ_MC[Math.floor(n / 4) % 3].y,
-        no: (k) => k % 12 === 0 ? ['That is a C, but not the right one. Count houses from the ground.', '그건 C지만 찾는 C가 아니에요. 땅에서부터 집을 세어 보세요.'] : ['That is not a C. Clara lives at the small house’s left door, just before two black keys.', '그건 C가 아니에요. 클라라는 작은 집의 왼쪽 문, 검은건반 두 개 바로 앞에 살아요.'] }),
+        no: (k) => k % 12 === 0 ? ['That is a C, but not the right one. Count houses from middle C.', '그건 C지만 찾는 C가 아니에요. 가운데 도에서부터 집을 세어 보세요.'] : ['That is not a C. A C sits at the small house’s left door, just before two black keys.', '그건 C가 아니에요. C는 작은 집의 왼쪽 문, 검은건반 두 개 바로 앞에 있어요.'] }),
       () => multi(nextL(prev)), () => ({ L: null, kind: 'choice', cols: 4, prompt: ['Which name comes after B?', 'B 다음에 오는 이름은?'], opts: kqLet7(), ans: 'C', ok: (v) => v === 'C', fig: () => ({ kb: { bare: true, oct: 1, base: 0, marks: { 11: 'seg4', 12: 'pass' } } }),
         yes: ['C again: the next house has begun.', '다시 C예요. 다음 집이 시작됐어요.'], no: ['After B the names start over at C.', 'B 다음에는 이름이 처음부터 다시 시작해서 C가 와요.'] })][n % 4](),
   }; }
