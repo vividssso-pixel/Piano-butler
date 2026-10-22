@@ -1,0 +1,7 @@
+import sys
+p = sys.argv[1]
+lines = open(p, encoding='utf-8').read().split('\n')
+idx = [i for i, l in enumerate(lines) if l.startswith('| 629 |')]
+assert len(idx) == 1
+lines.insert(idx[0] + 1, "| 630 | 2026-10-22 | **Keys and staff sections 2-5 rebuilt from scratch (her call 08:58: 'tear it all down, build the best you can think of').** 18 small lessons became 12 firmer ones, all in neutral wording (no Queen/King, no mnemonic sentences, no lesson characters). Section 2: Lines and spaces; Higher and lower (staff step = next white key); Treble and bass clefs. Section 3 'Notes on the staff': Letters up the staff; Five landmarks (with counting from them); From staff to keys. Section 4: Ledger lines (above and below, plus how many ledger lines); Middle C on the page; 8va. Section 5: Octaves (new: 8 white keys, 12 keys); Long and short; How far a piano reaches. Every lesson: whole picture, one at a time, then 4 rotating try questions with wrong-answer guidance. Staff pictures now render larger; keyboards in these lessons no longer print letters on the keys (the old ones leaked answers). Section 1 left as built (reviewed, not rewritten). **For her review (music facts from memory, not checked against her material):** the clef anchors (treble curl on line 2 = G, bass dots round line 4 = F), 'usually right hand / left hand', the five landmarks, ledger-line letters, 'octave = eight', 8va. Next: the same drill-under-the-lesson on Scales and Key signatures Home concepts (her 08:55 request). |")
+open(p, 'w', encoding='utf-8').write('\n'.join(lines)); print('ok')
