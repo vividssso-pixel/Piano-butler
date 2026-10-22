@@ -12073,11 +12073,13 @@ function FsQuestion({ q, given, locked, onAnswer, pixel }) {
 }
 const FS_KO = { High: '높게', Low: '낮게', 'Loud (f)': '크게 (f)', 'Soft (p)': '작게 (p)', 'Small house': '작은 집', 'Big house': '큰 집' };
 function fsLabel(c) { return LANG === 'ko' && FS_KO[c] ? FS_KO[c] : c; }
+const FS_ALL_LEVELS = [...FS_LEVELS, ...NOTE_NAME_LEVELS.map(l => ({ ...l, n: l.n + FS_LEVELS.length, src: 'nn' }))];
 const FIRST_STEPS_DRILL = {
-  id: 'first-steps', label: 'Keyboard Patterns', levels: FS_LEVELS, generate: genFsQuestion,
-  check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
-  answerLabel: (q) => LANG === 'ko' ? fsLabel(q.answer) : q.answer.toLowerCase(),
-  Question: FsQuestion, Learn: FirstStepsLearn,
+  id: 'first-steps', label: 'Keyboard Patterns', levels: FS_ALL_LEVELS,
+  generate: (lv, prev) => lv.src === 'nn' ? { ...genNoteQuestion(lv, prev), src: 'nn' } : genFsQuestion(lv, prev),
+  check: (q, ans) => q.src === 'nn' ? NOTE_NAMES_DRILL.check(q, ans) : ans !== null && ans !== undefined && ans === q.answer,
+  answerLabel: (q) => q.src === 'nn' ? NOTE_NAMES_DRILL.answerLabel(q) : LANG === 'ko' ? fsLabel(q.answer) : q.answer.toLowerCase(),
+  Question: (props) => props.q.src === 'nn' ? <NoteNamesQuestion {...props}/> : <FsQuestion {...props}/>, Learn: FirstStepsLearn,
 };
 
 // ─── Stage 2: Pulse and counting (Phase 120) ─────────────────────────────────────
@@ -22982,11 +22984,11 @@ const HOME_LINE = {
 };
 const HOME_LIVE = {
   'p-staff': { lessons: [], groups: [
-    { id: 'p-keys', en: 'Keyboard patterns and note names', ko: '건반 패턴과 음 이름', lessons: ['kq-black', 'kq-houses', 'kq-names'], checks: [['first-steps', 'Questions: keyboard patterns', '문제: 건반 패턴'], ['note-names', 'Questions: note names', '문제: 음 이름']] },
+    { id: 'p-keys', en: 'Keyboard patterns and note names', ko: '건반 패턴과 음 이름', lessons: ['kq-black', 'kq-houses', 'kq-names'], check: 'first-steps' },
     { id: 'p-stf', en: 'The staff and clefs', ko: '오선과 음자리표', lessons: ['kq-lines', 'kq-climb', 'kq-clefs'], check: 'staff' },
     { id: 'p-lines', en: 'Notes on the staff', ko: '오선 위의 음 이름', lessons: ['kq-letters', 'kq-landmarks', 'kq-read'], check: 'whole-staff' },
     { id: 'p-ledger', en: 'Ledger lines and 8va', ko: '덧줄과 8va', lessons: ['kq-ledger', 'kq-middlec', 'kq-8va'], check: 'ledger-lines' },
-    { id: 'p-range', en: 'Pitch and range', ko: '음높이와 음역', lessons: ['kq-octave', 'kq-size', 'kq-range'], check: 'pitch-range' },
+    { id: 'p-range', en: 'Pitch and range', ko: '음높이와 음역', lessons: ['kq-size', 'kq-range'], check: 'pitch-range' },
   ] },
   'p-clock': {
     lessons: ['ac-half', 'ac-whole', 'ac-sharp', 'ac-flat', 'ac-natural', 'ac-bar', 'ac-play', 'ac-two', 'ac-double', 'ac-cmp'], check: 'clock', tools: [], more: [],
@@ -23109,15 +23111,15 @@ function ConceptHome({ st, update }) {
               </button>
               {on && <div style={{display:'flex',flexDirection:'column',gap:10,marginTop:4}}>
                 {g.lessons.map((id, i) => { const tl = TOOLS.find(x => x.id === id); return tl ? step(i + 1, tl.title, tl.blurb, false, () => go({ view: 'tools', tool: id, ret: 'home' })) : null; })}
-                {(g.checks || (g.check ? [[g.check, 'Questions, level by level', '\u6587\u984c']] : [])).map(([id, en, ko]) => <button key={id} onClick={() => go({ view: 'home', drill: id, tab: 'drill', level: 1, mode: 'lesson' })} style={{display:'block',width:'100%',minHeight:52,marginTop:4,borderRadius:26,border:'none',background:'var(--navy)',color:'#fffefa',fontWeight:800,fontSize:17,cursor:'pointer'}}>{LANG === 'ko' ? (ko === '\u6587\u984c' ? '문제를 단계별로' : ko) + ' \u2192' : en + ' \u2192'}</button>)}
+                {g.check && <button data-questions={g.check} onClick={() => go({ view: 'home', drill: g.check, tab: 'drill', level: 1, mode: 'lesson' })} style={{display:'block',width:'100%',minHeight:52,marginTop:4,borderRadius:26,border:'none',background:'var(--navy)',color:'#fffefa',fontWeight:800,fontSize:17,cursor:'pointer'}}>{t('Questions', '문제')} →</button>}
               </div>}
             </div>
           ); })}
           {live.tools && live.tools.length === 1 && (() => { const tl = TOOLS.find(x => x.id === live.tools[0]); return tl ? step(++n, tl.title, LANG === 'ko' ? live.tryLine[1] : live.tryLine[0], true, () => go({ view: 'tools', tool: tl.id, ret: 'home' })) : null; })()}
           {live.tools && live.tools.length > 1 && step(++n, t('Try', '해 보기'), LANG === 'ko' ? live.tryLine[1] : live.tryLine[0], true, () => go({ hs: 'try' }))}
+          {live.check && <button data-questions={live.check} onClick={() => go({ view: 'home', drill: live.check, tab: 'drill', level: 1, mode: 'lesson' })} style={{display:'block',width:'100%',minHeight:52,marginTop:4,borderRadius:26,border:'none',background:'var(--navy)',color:'#fffefa',fontWeight:800,fontSize:17,cursor:'pointer'}}>{t('Questions', '문제')} →</button>}
         </>; })()}
       </div>
-      {live.check && <button onClick={() => go({ view: 'home', drill: live.check, tab: 'drill', level: 1, mode: 'lesson' })} style={{display:'block',width:'100%',minHeight:60,marginTop:18,borderRadius:30,border:'none',background:'var(--navy)',color:'#fffefa',fontWeight:800,fontSize:20,cursor:'pointer'}}>{t('Start the drill →', '드릴 시작 →')}</button>}
     </div>
   );
   // level 1: the concepts of one area
@@ -56706,7 +56708,7 @@ const KQ_HZ = { small: { Ls: KQ_SMALL, ks: [0, 4], style: 'seg3', pk: 'pick', co
       { title: ['One letter at a time', '글자 하나씩'], line: ['Watch: each letter lights up in every pattern, always in its own spot.', '보세요. 글자마다 모든 무늬에서 늘 제 자리에 켜져요.'], fig: (c) => ({ kb: c.tk < 1 ? { oct: O, base } : same(['DEFGAB'[Math.min(Math.floor((c.tk - 1) / 2), 5)]]) }) },
       { title: ['Middle C', '가운데 도'], line: ['One C has a name of its own: the C in the middle of the keyboard.', 'C 하나는 이름이 따로 있어요. 건반 한가운데 있는 C예요.'], fig: () => ({ kb: { ...same(['C'], 12) } }) },
       { title: ['Twelve keys, seven names', '건반 열두 개, 이름 일곱 개'], line: ['A group of 2 and a group of 3 make one pattern. Count its 12 keys, black ones too: only the white keys have letters.', '2개 묶음과 3개 묶음이 무늬 하나예요. 건반 12개를 검은건반까지 세어 보세요. 글자가 있는 건 흰건반뿐이에요.'], fig: (c) => twelve(c) },
-      { title: ['Round again', '다시 처음으로'], line: ['After B the next group of 2 begins, and C comes round again.', 'B 다음에는 다음 2개 묶음이 시작되고, C가 다시 나와요.'], fig: () => ({ kb: { oct: 2, base: 0, marks: { 11: 'seg4', 12: 'pick' }, names: { 11: 'B', 12: 'C' }, ncol: { 11: KQ.BL, 12: KQ.COD }, plain: true, ks: [5, 16] } }) },
+      { title: ['Round again', '다시 처음으로'], line: ['After B the next group of 2 begins, and C comes round again. From one C to the next C is called an octave.', 'B 다음에는 다음 2개 묶음이 시작되고, C가 다시 나와요. 한 C에서 다음 C까지를 한 옥타브라고 불러요.'], fig: () => ({ kb: { oct: 2, base: 0, marks: { 11: 'seg4', 12: 'pick' }, names: { 11: 'B', 12: 'C' }, ncol: { 11: KQ.BL, 12: KQ.COD }, plain: true, ks: [5, 16] } }) },
     ],
     make: (n, prev) => { const WH = [0, 2, 4, 5, 7, 9, 11, 12], mcI = Math.floor(n / 8) % 3,
       mid = () => ({ L: null, kind: 'key', retry: true, prompt: KQ_MC[mcI].p, fig: () => ({ kb: { bare: true, oct: O, base } }), ok: (k) => k === KQ_MC[mcI].k, yes: KQ_MC[mcI].y,
@@ -56919,7 +56921,7 @@ KQ_SPEC['kq-octave'] = {
 
 // ══ 5. Pitch and range ══
 const kqBars = ({ lens, hl, onTap, pickd }) => <svg viewBox="0 0 320 120" style={{ width: '100%', maxWidth: 340, display: 'block', margin: '0 auto' }}>
-  {lens.map((h, i) => { const x = 20 + i * (280 / lens.length) + 4, w = 280 / lens.length - 8, on = hl === i, pk = pickd === i; return <g key={i} onClick={() => onTap && onTap(i)} style={{ cursor: onTap ? 'pointer' : 'default' }}><rect x={x} y={14} width={w} height={h} rx="6" fill={pk ? '#fad0c2' : on ? '#fbe3da' : '#fffefa'} stroke={on || pk ? KQ.CO : KQ.NV} strokeWidth="3"/></g>; })}
+  {lens.map((h, i) => { const x = 20 + i * (280 / lens.length) + 4, w = 280 / lens.length - 8, on = hl === i, pk = pickd === i; return <g key={i} onClick={() => onTap && onTap(i)} style={{ cursor: onTap ? 'pointer' : 'default' }}><rect x={x} y={14} width={w} height={h} rx="6" fill={pk ? '#fad0c2' : on ? '#fbe3da' : '#fffefa'} stroke={on || pk ? KQ.CO : KQ.NV} strokeWidth="3"/>{onTap && <text x={x + w / 2} y={14 + h / 2 + 8} textAnchor="middle" fontSize="24" fontWeight="900" fill={on || pk ? KQ.COD : '#9a9cc2'} style={{ pointerEvents: 'none' }}>♪</text>}</g>; })}
 </svg>;
 const KQ_XY = [0, 2, 4, 5, 7, 9, 11, 12], KQ_LENS = [100, 92, 84, 78, 70, 62, 54, 46];
 KQ_SPEC['kq-size'] = {
@@ -56929,12 +56931,30 @@ KQ_SPEC['kq-size'] = {
     { title: ['The longest bar', '가장 긴 막대'], line: ['It makes the lowest sound.', '가장 낮은 소리가 나요.'], fig: () => ({ top: kqBars({ lens: KQ_LENS, hl: 0, onTap: (i) => playKey(KQ_XY[i], 0.7) }) }) },
     { title: ['The shortest bar', '가장 짧은 막대'], line: ['It makes the highest sound.', '가장 높은 소리가 나요.'], fig: () => ({ top: kqBars({ lens: KQ_LENS, hl: 7, onTap: (i) => playKey(KQ_XY[i], 0.7) }) }) },
   ],
-  make: () => { const a = 30 + kqRnd(60), b = a + kqPick([-1, 1]) * (15 + kqRnd(30)), lens = [a, b], low = a > b ? 0 : 1; return { kind: 'tap', retry: true, prompt: ['Tap the bar that sounds lower.', '더 낮게 울리는 막대를 눌러 보세요.'], fig: (c) => ({ top: kqBars({ lens, onTap: (i) => { playKey(i === low ? 0 : 12, 0.7); c.pick(i); }, pickd: c.pickd }) }), ok: (i) => i === low,
-    yes: ['The longer bar always sounds lower.', '더 긴 막대가 늘 더 낮게 울려요.'], no: ['That bar is shorter, so it rings higher.', '그 막대는 더 짧아서 더 높게 울려요.'] }; },
+  make: () => { const a = 30 + kqRnd(60), b = a + kqPick([-1, 1]) * (15 + kqRnd(30)), lens = [a, b], low = a > b ? 0 : 1, ans = low === 0 ? 'L' : 'R';
+    return { kind: 'choice', cols: 2, prompt: ['Tap each bar to hear it. Which one sounds lower?', '막대를 하나씩 눌러 소리를 들어 보세요. 어느 쪽이 더 낮게 들리나요?'], opts: [{ id: 'L', label: () => t('The left bar', '왼쪽 막대') }, { id: 'R', label: () => t('The right bar', '오른쪽 막대') }], ans, ok: (v) => v === ans,
+      fig: (c) => ({ top: kqBars({ lens, hl: c.res ? low : c.last, onTap: (i) => { playKey(i === low ? 0 : 12, 0.7); c.setLast(i); } }) }),
+      yes: ['The longer bar sounds lower.', '더 긴 막대가 더 낮게 들려요.'], no: ['The longer bar sounds lower. The shorter one rings higher.', '더 긴 막대가 더 낮게 들려요. 짧은 막대는 더 높게 울려요.'] }; },
 };
 const KQ_PIANO = 'Piano (today, 88 keys)', KQ_RNG = [KQ_PIANO, 'Violin', 'Cello', 'Flute', 'Tuba', 'Soprano', 'Bass'];
+// instrument sounds for the range lesson (a plain synth: bowed, flute, reed, brass, voice; keyboards use the piano)
+const kqTimbre = (name) => { const r = SPR_RANGE(name); if (!r) return 'piano'; if (r.g === 'Strings') return /Guitar|Harp/.test(name) ? 'piano' : 'bow'; if (r.g === 'Woodwind') return /Flute|Piccolo/.test(name) ? 'flute' : 'reed'; if (r.g === 'Brass') return 'brass'; if (r.g === 'Voices') return 'voice'; return 'piano'; };
+function kqSound(name, m, at = 0, len = 1.1) {
+  const ctx = getAudio(); if (!ctx) return; const kind = kqTimbre(name), t0 = ctx.currentTime + 0.04 + at;
+  if (kind === 'piano') return instNote('piano', ctx, t0, m, len, 0.48);
+  const f = mFreq(m), out = ctx.createGain(), end = t0 + len, peak = 0.2, atk = kind === 'brass' ? 0.07 : kind === 'bow' ? 0.12 : kind === 'voice' ? 0.1 : 0.08;
+  out.gain.setValueAtTime(0.0001, t0); out.gain.exponentialRampToValueAtTime(peak, t0 + atk); out.gain.setValueAtTime(peak, end - 0.18); out.gain.exponentialRampToValueAtTime(0.0001, end); out.connect(ctx.destination);
+  const osc = (type, freq, g, dest) => { const o = ctx.createOscillator(), gg = ctx.createGain(); o.type = type; o.frequency.value = freq; gg.gain.value = g; o.connect(gg); gg.connect(dest); o.start(t0); o.stop(end + 0.05); return o; };
+  const vib = (o, rate, depth, delay) => { const l = ctx.createOscillator(), lg = ctx.createGain(); l.frequency.value = rate; lg.gain.value = depth; l.connect(lg); lg.connect(o.frequency); l.start(t0 + delay); l.stop(end + 0.05); };
+  const lp = (hz, q = 0.7) => { const b = ctx.createBiquadFilter(); b.type = 'lowpass'; b.frequency.value = hz; b.Q.value = q; b.connect(out); return b; };
+  if (kind === 'bow') { const d = lp(Math.min(f * 5 + 600, 5000)); const a = osc('sawtooth', f, 0.6, d), b = osc('sawtooth', f * 1.004, 0.4, d); vib(a, 5.6, f * 0.007, 0.25); vib(b, 5.6, f * 0.007, 0.25); }
+  else if (kind === 'flute') { const d = lp(Math.min(f * 4, 6000)); const a = osc('sine', f, 0.8, d); osc('sine', f * 2, 0.18, d); osc('triangle', f * 3, 0.05, d); vib(a, 5, f * 0.005, 0.3); }
+  else if (kind === 'reed') { const d = lp(Math.min(f * 6, 4500), 1.5); const a = osc('square', f, 0.35, d); osc('sawtooth', f, 0.25, d); vib(a, 5, f * 0.004, 0.35); }
+  else if (kind === 'brass') { const d = lp(f * 1.5, 1); d.frequency.setValueAtTime(f * 1.5, t0); d.frequency.linearRampToValueAtTime(Math.min(f * 7, 5000), t0 + 0.22); osc('sawtooth', f, 0.55, d); osc('sawtooth', f * 1.003, 0.35, d); }
+  else { const mix = ctx.createGain(); mix.gain.value = 0.9; [[800, 6], [1150, 5], [2800, 3]].forEach(([hz, q]) => { const b = ctx.createBiquadFilter(); b.type = 'bandpass'; b.frequency.value = hz; b.Q.value = q; mix.connect(b); b.connect(out); }); const a = osc('sawtooth', f, 1, mix); vib(a, 5.5, f * 0.012, 0.25); }
+}
 const kqRangeFig = (name, c) => { const R = SPR_RANGE(name); return { top: <div style={{ maxWidth: 520, margin: '0 auto' }}><SprStrip range={[R.lo, R.hi]}/></div>,
-  mid: <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center', margin: '8px 0 0' }}>{KQ_RNG.map(n => <button key={n} className={'chip' + (n === name ? ' active' : '')} style={{ padding: '6px 12px', minHeight: 40 }} onClick={() => { const r = SPR_RANGE(n); sprPiano(r.lo); sprPiano(r.hi, 0.95); c.setLast(n); }}>{rangeName(n)}</button>)}</div> }; };
+  mid: <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center', margin: '8px 0 0' }}>{KQ_RNG.map(n => <button key={n} className={'chip' + (n === name ? ' active' : '')} style={{ padding: '6px 12px', minHeight: 40 }} onClick={() => { const r = SPR_RANGE(n); kqSound(n, r.lo, 0, 0.9); kqSound(n, r.hi, 0.95, 0.9); c.setLast(n); }}>{rangeName(n)}</button>)}</div> }; };
 KQ_SPEC['kq-range'] = {
   title: ['How far a piano reaches', '피아노가 닿는 범위'], allLine: ['A piano covers a huge range. Tap a name to see how much of it another instrument covers.', '피아노는 아주 넓은 범위를 맡아요. 이름을 눌러 다른 악기가 그중 얼마를 맡는지 보세요.'],
   fig: (c) => kqRangeFig(c.last || KQ_PIANO, c),
@@ -56943,7 +56963,7 @@ KQ_SPEC['kq-range'] = {
     { title: ['The others', '다른 악기들'], line: ['A violin, a cello or a voice each covers only a part.', '바이올린, 첼로, 목소리는 각각 일부만 맡아요.'], fig: (c) => kqRangeFig(c.last && c.last !== KQ_PIANO ? c.last : 'Violin', c) },
   ],
   make: () => { let a, b; do { a = kqPick(KQ_RNG.slice(1)); b = kqPick(KQ_RNG.slice(1)); } while (a === b || SPR_RANGE(a).lo === SPR_RANGE(b).lo); const low = SPR_RANGE(a).lo < SPR_RANGE(b).lo ? a : b; return { kind: 'choice', prompt: ['Which one reaches lower?', '어느 쪽이 더 낮은 음까지 내려갈까요?'], opts: [a, b].map(n => ({ id: n, label: () => rangeName(n) })), ans: low, ok: (v) => v === low,
-    fig: (c) => ({ top: <div style={{ maxWidth: 520, margin: '0 auto' }}><SprStrip range={c.res ? [SPR_RANGE(low).lo, SPR_RANGE(low).hi] : null}/></div> }), play: () => { sprPiano(SPR_RANGE(a).lo); sprPiano(SPR_RANGE(b).lo, 0.95); },
+    fig: (c) => ({ top: <div style={{ maxWidth: 520, margin: '0 auto' }}><SprStrip range={c.res ? [SPR_RANGE(low).lo, SPR_RANGE(low).hi] : null}/></div> }), play: () => { kqSound(a, SPR_RANGE(a).lo, 0, 0.9); kqSound(b, SPR_RANGE(b).lo, 1, 0.9); },
     yes: [rangeName(low) + ' starts lower down.', rangeName(low) + '은(는) 더 낮은 곳에서 시작해요.'], no: ['It is the ' + rangeName(low) + ': its lowest note is lower.', rangeName(low) + '이(가) 정답이에요. 가장 낮은 음이 더 낮아요.'] }; },
 };
 
@@ -56971,7 +56991,6 @@ const KS_ROWS = [
     kqRow('kq-8va', '8va', '8va', 'Play one octave higher than written.', '쓴 것보다 한 옥타브 높게 치기.'),
   ]],
   ['p-range', [
-    kqRow('kq-octave', 'Octaves', '옥타브', 'Same name, 12 keys apart.', '이름이 같고 건반 12개 떨어진 음.'),
     kqRow('kq-size', 'Long and short', '긴 것과 짧은 것', 'Long bars sound low, short bars sound high.', '긴 막대는 낮게, 짧은 막대는 높게.'),
     kqRow('kq-range', 'How far a piano reaches', '피아노가 닿는 범위', 'The piano’s range next to other instruments.', '다른 악기와 비교한 피아노의 범위.'),
   ]],
