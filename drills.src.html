@@ -12073,11 +12073,13 @@ function FsQuestion({ q, given, locked, onAnswer, pixel }) {
 }
 const FS_KO = { High: '높게', Low: '낮게', 'Loud (f)': '크게 (f)', 'Soft (p)': '작게 (p)', 'Small house': '작은 집', 'Big house': '큰 집' };
 function fsLabel(c) { return LANG === 'ko' && FS_KO[c] ? FS_KO[c] : c; }
+const FS_ALL_LEVELS = [...FS_LEVELS, ...NOTE_NAME_LEVELS.map(l => ({ ...l, n: l.n + FS_LEVELS.length, src: 'nn' }))];
 const FIRST_STEPS_DRILL = {
-  id: 'first-steps', label: 'Keyboard Patterns', levels: FS_LEVELS, generate: genFsQuestion,
-  check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer,
-  answerLabel: (q) => LANG === 'ko' ? fsLabel(q.answer) : q.answer.toLowerCase(),
-  Question: FsQuestion, Learn: FirstStepsLearn,
+  id: 'first-steps', label: 'Keyboard Patterns', levels: FS_ALL_LEVELS,
+  generate: (lv, prev) => lv.src === 'nn' ? { ...genNoteQuestion(lv, prev), src: 'nn' } : genFsQuestion(lv, prev),
+  check: (q, ans) => q.src === 'nn' ? NOTE_NAMES_DRILL.check(q, ans) : ans !== null && ans !== undefined && ans === q.answer,
+  answerLabel: (q) => q.src === 'nn' ? NOTE_NAMES_DRILL.answerLabel(q) : LANG === 'ko' ? fsLabel(q.answer) : q.answer.toLowerCase(),
+  Question: (props) => props.q.src === 'nn' ? <NoteNamesQuestion {...props}/> : <FsQuestion {...props}/>, Learn: FirstStepsLearn,
 };
 
 // ─── Stage 2: Pulse and counting (Phase 120) ─────────────────────────────────────
@@ -22982,7 +22984,7 @@ const HOME_LINE = {
 };
 const HOME_LIVE = {
   'p-staff': { lessons: [], groups: [
-    { id: 'p-keys', en: 'Keyboard patterns and note names', ko: '건반 패턴과 음 이름', lessons: ['kq-black', 'kq-houses', 'kq-names'], checks: [['first-steps', 'Questions: keyboard patterns', '문제: 건반 패턴'], ['note-names', 'Questions: note names', '문제: 음 이름']] },
+    { id: 'p-keys', en: 'Keyboard patterns and note names', ko: '건반 패턴과 음 이름', lessons: ['kq-black', 'kq-houses', 'kq-names'], check: 'first-steps' },
     { id: 'p-stf', en: 'The staff and clefs', ko: '오선과 음자리표', lessons: ['kq-lines', 'kq-climb', 'kq-clefs'], check: 'staff' },
     { id: 'p-lines', en: 'Notes on the staff', ko: '오선 위의 음 이름', lessons: ['kq-letters', 'kq-landmarks', 'kq-read'], check: 'whole-staff' },
     { id: 'p-ledger', en: 'Ledger lines and 8va', ko: '덧줄과 8va', lessons: ['kq-ledger', 'kq-middlec', 'kq-8va'], check: 'ledger-lines' },
@@ -23109,15 +23111,15 @@ function ConceptHome({ st, update }) {
               </button>
               {on && <div style={{display:'flex',flexDirection:'column',gap:10,marginTop:4}}>
                 {g.lessons.map((id, i) => { const tl = TOOLS.find(x => x.id === id); return tl ? step(i + 1, tl.title, tl.blurb, false, () => go({ view: 'tools', tool: id, ret: 'home' })) : null; })}
-                {(g.checks || (g.check ? [[g.check, 'Questions, level by level', '\u6587\u984c']] : [])).map(([id, en, ko]) => <button key={id} onClick={() => go({ view: 'home', drill: id, tab: 'drill', level: 1, mode: 'lesson' })} style={{display:'block',width:'100%',minHeight:52,marginTop:4,borderRadius:26,border:'none',background:'var(--navy)',color:'#fffefa',fontWeight:800,fontSize:17,cursor:'pointer'}}>{LANG === 'ko' ? (ko === '\u6587\u984c' ? '문제를 단계별로' : ko) + ' \u2192' : en + ' \u2192'}</button>)}
+                {g.check && <button data-questions={g.check} onClick={() => go({ view: 'home', drill: g.check, tab: 'drill', level: 1, mode: 'lesson' })} style={{display:'block',width:'100%',minHeight:52,marginTop:4,borderRadius:26,border:'none',background:'var(--navy)',color:'#fffefa',fontWeight:800,fontSize:17,cursor:'pointer'}}>{t('Questions', '문제')} →</button>}
               </div>}
             </div>
           ); })}
           {live.tools && live.tools.length === 1 && (() => { const tl = TOOLS.find(x => x.id === live.tools[0]); return tl ? step(++n, tl.title, LANG === 'ko' ? live.tryLine[1] : live.tryLine[0], true, () => go({ view: 'tools', tool: tl.id, ret: 'home' })) : null; })()}
           {live.tools && live.tools.length > 1 && step(++n, t('Try', '해 보기'), LANG === 'ko' ? live.tryLine[1] : live.tryLine[0], true, () => go({ hs: 'try' }))}
+          {live.check && <button data-questions={live.check} onClick={() => go({ view: 'home', drill: live.check, tab: 'drill', level: 1, mode: 'lesson' })} style={{display:'block',width:'100%',minHeight:52,marginTop:4,borderRadius:26,border:'none',background:'var(--navy)',color:'#fffefa',fontWeight:800,fontSize:17,cursor:'pointer'}}>{t('Questions', '문제')} →</button>}
         </>; })()}
       </div>
-      {live.check && <button onClick={() => go({ view: 'home', drill: live.check, tab: 'drill', level: 1, mode: 'lesson' })} style={{display:'block',width:'100%',minHeight:60,marginTop:18,borderRadius:30,border:'none',background:'var(--navy)',color:'#fffefa',fontWeight:800,fontSize:20,cursor:'pointer'}}>{t('Start the drill →', '드릴 시작 →')}</button>}
     </div>
   );
   // level 1: the concepts of one area
