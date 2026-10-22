@@ -7,7 +7,7 @@ s = s[:i] + open('/home/claude/pbtest/sc/kq.jsx', encoding='utf-8').read() + s[j
 m = re.search(r"(\{ id: 'p-keys', en: '[^']*', ko: '[^']*', lessons: )\[[^\]]*\]", s)
 assert m
 s = s[:m.start()] + m.group(1) + "['kq-black', 'kq-houses', 'kq-names']" + s[m.end():]
-for gid, ls in [('p-stf', "['kq-lines', 'kq-climb', 'kq-clefs']"), ('p-lines', "['kq-letters', 'kq-landmarks', 'kq-read']"), ('p-ledger', "['kq-ledger', 'kq-middlec', 'kq-8va']"), ('p-range', "['kq-octave', 'kq-size', 'kq-range']")]:
+for gid, ls in [('p-stf', "['kq-lines', 'kq-climb', 'kq-clefs']"), ('p-lines', "['kq-letters', 'kq-landmarks', 'kq-read']"), ('p-ledger', "['kq-ledger', 'kq-middlec', 'kq-8va']"), ('p-range', "['kq-size', 'kq-range']")]:
     m2 = re.search(r"(\{ id: '" + gid + r"', en: '[^']*', ko: '[^']*', lessons: )\[[^\]]*\]", s)
     assert m2, gid
     s = s[:m2.start()] + m2.group(1) + ls + s[m2.end():]
