@@ -100,7 +100,7 @@ function KqEngine({ spec }) {
     if (kb && view === 'try' && q && q.kind === 'multi') { found.forEach(k => { marks[k] = 'good'; }); if (pickd != null && res === 'no') marks[pickd] = 'bad'; }
     return <>
       {f.top}{f.staff}{f.mid}
-      {kb && kqKb({ ...kb, marks, keepBlack: spec === KQ_SPEC['kq-black'], mcOn: ['kq-climb', 'kq-clefs', 'kq-read', 'kq-middlec'].some(id => spec === KQ_SPEC[id]), mcCap: spec === KQ_SPEC['kq-climb'] }, (k) => { playKey(k + (kb.base || 0), 0.6); setLast(k); if (view === 'try' && q && (q.kind === 'key' || q.kind === 'multi')) pick(k); else if (kb.onTap) kb.onTap(k); })}
+      {kb && kqKb({ ...kb, marks, keepBlack: !!kb.keepBlack || spec === KQ_SPEC['kq-black'], mcOn: !!kb.mcOn || ['kq-climb', 'kq-clefs', 'kq-read', 'kq-middlec'].some(id => spec === KQ_SPEC[id]), mcCap: spec === KQ_SPEC['kq-climb'] }, (k) => { playKey(k + (kb.base || 0), 0.6); setLast(k); if (view === 'try' && q && (q.kind === 'key' || q.kind === 'multi')) pick(k); else if (kb.onTap) kb.onTap(k); })}
       {allowStaff && f.staffAlt && <>
         <div style={{ textAlign: 'center', margin: '8px 0 0' }}><button className="ghost-btn" style={{ ...scS.back, minWidth: 0, fontSize: 14 }} onClick={() => setStf(!stf)}>{stf ? t('Hide the staff', '오선 숨기기') : t('Show on the staff', '오선으로 보여주기')}</button></div>
         {stf && f.staffAlt}</>}
@@ -125,7 +125,7 @@ function KqEngine({ spec }) {
     body = <>
       {tit(spec.tryTitle || ['Your turn', '내가 해보기'])}{lin(q.prompt)}{kqFeed(txt[1], txt[0])}{show(f, false)}
       {q.opts && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(' + (q.cols || 2) + ',1fr)', gap: 8, margin: '10px 0 0' }}>
-        {q.opts.map(o => <button key={o.id} className={'choice-btn' + (res == null ? '' : o.id === q.ans ? ' good' : o.id === pickd ? ' bad' : '')} disabled={res != null} onClick={() => pick(o.id)} style={{ padding: '13px 4px', fontSize: q.cols > 3 ? 18 : 16, fontWeight: 900 }}>{typeof o.label === 'function' ? o.label() : o.label}</button>)}
+        {q.opts.map(o => <button key={o.id} className={'choice-btn' + (res == null ? '' : o.id === q.ans ? ' good' : o.id === pickd ? ' bad' : '')} disabled={res != null} onClick={() => pick(o.id)} style={{ gridColumn: o.span ? '1 / -1' : undefined, padding: '13px 4px', fontSize: q.cols > 3 ? 18 : 16, fontWeight: 900 }}>{typeof o.label === 'function' ? o.label() : o.label}</button>)}
       </div>}
       {scRow(<>
         <button className="ghost-btn" style={scS.back} onClick={() => go('step', steps.length - 1)}>{t('← Back', '← 이전')}</button>
@@ -316,14 +316,15 @@ const KQ_GR = () => ({ ...KQ_GRAND(), 12: 'pick' });
 const KQ_GRNM = { 5: 'F', 12: 'C', 19: 'G' }, KQ_GRCOL = { 5: KQ.BL, 12: KQ.COD, 19: KQ.COD };
 const kqGrand = () => ({ staff: <>{kqStaff([28, 32], 'treble', { under: true })}{kqStaff([28, 24], 'bass', { under: true })}</>, kb: { oct: 2, ks: [0, 24], base: -12, plain: true, marks: KQ_GR(), names: KQ_GRNM, ncol: KQ_GRCOL } });
 KQ_SPEC['kq-clefs'] = {
-  title: ['Treble and bass clefs', '높은음자리표와 낮은음자리표'], allLine: ['A clef sign at the start of a staff says which notes that staff is for. Both staves are read from middle C, the centre of the keyboard.', '오선 맨 앞의 음자리표가 그 오선이 어느 음을 위한 것인지 알려 줘요. 두 오선 모두 건반 한가운데의 가운데 도를 기준으로 읽어요.'],
+  title: ['Treble and bass clefs', '높은음자리표와 낮은음자리표'], allLine: ['A clef sign at the start of a staff says which notes that staff is for. The treble clef is the Queen, high; the bass clef is the King, low. Both are read from middle C.', '오선 맨 앞의 음자리표가 그 오선이 어느 음을 위한 것인지 알려 줘요. 높은음자리표는 여왕, 높은 음이고 낮은음자리표는 왕, 낮은 음이에요. 둘 다 가운데 도를 기준으로 읽어요.'],
   fig: () => kqGrand(),
   steps: [
-    { title: ['The treble clef', '높은음자리표'], line: ['Its curl circles line 2, which is G, to the right of middle C. It is for the higher notes, usually played by the right hand.', '말린 부분이 2번 줄을 감싸요. 그 줄이 G이고, 가운데 도의 오른쪽에 있어요. 높은 음을 위한 표이고, 보통 오른손이 쳐요.'],
+    { title: ['The treble clef: the Queen', '높은음자리표: 여왕'], line: ['The Queen sings the high notes, usually with the right hand. Her curl circles line 2, G, to the right of middle C: that line is her house.', '여왕은 높은 음을 노래해요. 보통 오른손이 쳐요. 말린 부분이 2번 줄 G를 감싸요. 가운데 도의 오른쪽이고, 그 줄이 여왕의 집이에요.'],
       fig: () => ({ staff: kqStaff([32], 'treble', { ring: [0], under: true }), kb: { oct: 2, ks: [0, 24], base: -12, plain: true, marks: { 12: 'pass', 19: 'pick' }, names: { 12: 'C', 19: 'G' }, ncol: { 12: KQ.COD, 19: KQ.COD } } }) },
-    { title: ['The bass clef', '낮은음자리표'], line: ['Its two dots sit either side of line 4, which is F, to the left of middle C. It is for the lower notes, usually played by the left hand.', '두 점이 4번 줄의 양쪽에 있어요. 그 줄이 F이고, 가운데 도의 왼쪽에 있어요. 낮은 음을 위한 표이고, 보통 왼손이 쳐요.'],
+    { title: ['The bass clef: the King', '낮은음자리표: 왕'], line: ['The King sings the low notes, usually with the left hand. His two dots sit either side of line 4, F, to the left of middle C: that line is his house.', '왕은 낮은 음을 노래해요. 보통 왼손이 쳐요. 두 점이 4번 줄 F의 양쪽에 있어요. 가운데 도의 왼쪽이고, 그 줄이 왕의 집이에요.'],
       fig: () => ({ staff: kqStaff([24], 'bass', { ring: [0], under: true }), kb: { oct: 2, ks: [0, 24], base: -12, plain: true, marks: { 12: 'pass', 5: 'pickB' }, names: { 12: 'C', 5: 'F' }, ncol: { 12: KQ.COD, 5: KQ.BL } } }) },
     { title: ['Both together', '함께 쓰기'], line: ['Piano music stacks them. Middle C sits between the two staves: the treble staff reads to the right of it, the bass staff to the left.', '피아노 악보는 둘을 겹쳐 써요. 가운데 도는 두 오선 사이에 있어요. 높은음자리 오선은 그 오른쪽, 낮은음자리 오선은 그 왼쪽을 읽어요.'], fig: () => kqGrand() },
+    { title: ['The G clef and the F clef', 'G 음자리표와 F 음자리표'], line: ['Long ago the treble clef was a written letter G and the bass clef a letter F. So they are also called the G clef and the F clef: they name the Queen’s and the King’s lines.', '아주 옛날 높은음자리표는 손으로 쓴 글자 G였고, 낮은음자리표는 글자 F였어요. 그래서 G 음자리표, F 음자리표라고도 불러요. 여왕의 줄과 왕의 줄 이름이에요.'], fig: () => kqGrand() },
   ],
   make: (n) => { const tr = Math.floor(n / 4) % 2 === 0, k = n % 4;
     if (k === 0) { const high = Math.random() < 0.5, key = high ? 13 + kqRnd(11) : 1 + kqRnd(10), ans = high ? 'T' : 'B';
@@ -349,10 +350,10 @@ KQ_SPEC['kq-letters'] = {
   title: ['Letters up the staff', '오선을 따라 오르는 글자'], allLine: ['Every line and every space has a letter. One place up is the next letter.', '줄과 칸마다 글자가 있어요. 한 자리 오를 때마다 다음 글자예요.'],
   fig: () => ({ staff: kqStaff([30, 31, 32, 33, 34, 35, 36, 37], 'treble', { under: true }) }),
   steps: [
-    { title: ['Treble lines', '높은음자리 줄'], line: ['The five lines, from the bottom: E G B D F. Every Good Boy Deserves Fun.', '다섯 줄을 아래에서부터: E G B D F. Every Good Boy Deserves Fun.'], fig: () => ({ staff: kqStaff(KQ_ST.treble.lines, 'treble', { under: true }) }) },
+    { title: ['Treble lines', '높은음자리 줄'], line: ['The five lines, from the bottom: E G B D F. Every Good Boy Deserves Fun.', '다섯 줄을 아래에서부터 읽으면 E G B D F예요.'], fig: () => ({ staff: kqStaff(KQ_ST.treble.lines, 'treble', { under: true }) }) },
     { title: ['Treble spaces', '높은음자리 칸'], line: ['The four spaces, from the bottom: F A C E. They spell FACE.', '네 칸을 아래에서부터: F A C E. FACE라는 단어가 돼요.'], fig: () => ({ staff: kqStaff(KQ_ST.treble.spaces, 'treble', { under: true }) }) },
-    { title: ['Bass lines', '낮은음자리 줄'], line: ['The bass staff starts two letters lower: G B D F A. Great Big Dragon Flies Away.', '낮은음자리 오선은 두 글자 아래에서 시작해요: G B D F A. Great Big Dragon Flies Away.'], fig: () => ({ staff: kqStaff(KQ_ST.bass.lines, 'bass', { under: true }) }) },
-    { title: ['Bass spaces', '낮은음자리 칸'], line: ['The spaces: A C E G. All Cows Eat Grass.', '칸은 A C E G예요. All Cows Eat Grass.'], fig: () => ({ staff: kqStaff(KQ_ST.bass.spaces, 'bass', { under: true }) }) },
+    { title: ['Bass lines', '낮은음자리 줄'], line: ['The bass staff starts two letters lower: G B D F A. Great Big Dragon Flies Away.', '낮은음자리 오선은 두 글자 아래에서 시작해요. 줄은 G B D F A예요.'], fig: () => ({ staff: kqStaff(KQ_ST.bass.lines, 'bass', { under: true }) }) },
+    { title: ['Bass spaces', '낮은음자리 칸'], line: ['The spaces: A C E G. All Cows Eat Grass.', '칸은 A C E G예요.'], fig: () => ({ staff: kqStaff(KQ_ST.bass.spaces, 'bass', { under: true }) }) },
   ],
   make: (n) => kqNameQ(n % 2 === 0 ? 'treble' : 'bass'),
 };
@@ -436,13 +437,17 @@ KQ_SPEC['kq-middlec'] = {
       yes: ['That is ' + kqLetter(d) + '.', kqLetter(d) + '예요.'], no: (k) => KQ_L[((k % 12) + 12) % 12] === kqLetter(d) ? ['The right letter, but another one. Look for the one nearest middle C.', '글자는 맞지만 다른 것이에요. 가운데 도에서 가장 가까운 것을 찾아요.'] : ['That key is ' + (KQ_L[((k % 12) + 12) % 12] || 'a black key') + '. The note is ' + kqLetter(d) + ': count from middle C.', '그 건반은 ' + (KQ_L[((k % 12) + 12) % 12] || '검은건반') + '이에요. 이 음은 ' + kqLetter(d) + '예요: 가운데 도에서 세어 보세요.'] }; },
 };
 KQ_SPEC['kq-8va'] = {
-  title: ['8va', '8va'], allLine: ['Very high notes need many ledger lines, so 8va stands in: play it one octave higher than written.', '아주 높은 음은 덧줄이 너무 많아져서 8va를 써요: 쓴 것보다 한 옥타브 높게 쳐요.'],
+  title: ['8va and 8vb', '8va와 8vb'], allLine: ['Very high or very low notes need many ledger lines. 8va above the notes: play one octave higher. 8vb below the notes: one octave lower.', '아주 높거나 아주 낮은 음은 덧줄이 많아져요. 음표 위에 8va가 있으면 한 옥타브 높게, 음표 아래에 8vb가 있으면 한 옥타브 낮게 쳐요.'],
   fig: () => ({ staff: kqStaff([38, 39, 40, 41], 'treble', { bracket: { from: 0, bar: 0, label: '8va' } }), kb: { oct: 3, base: 0, ks: [12, 36], marks: kqPaint(kqPaint({}, [17, 19, 21, 23], 'seg3'), [29, 31, 33, 35], 'seg4') } }),
   steps: [
     { title: ['As written', '쓴 그대로'], line: ['Without a sign, you play the keys the notes sit on.', '기호가 없으면 음표가 앉은 그대로의 건반을 쳐요.'], fig: () => ({ staff: kqStaff([38, 39, 40, 41], 'treble'), kb: { oct: 3, base: 0, marks: kqPaint({}, [17, 19, 21, 23], 'seg3') } }) },
     { title: ['With 8va', '8va가 있으면'], line: ['The same letters, one octave up: coral is written, blue is what you play.', '같은 글자를 한 옥타브 위에서: 코랄은 쓴 음, 파랑은 실제로 치는 음이에요.'], fig: () => ({ staff: kqStaff([38, 39, 40, 41], 'treble', { bracket: { from: 0, bar: 0, label: '8va' } }), kb: { oct: 3, base: 0, ks: [12, 36], marks: kqPaint(kqPaint({}, [17, 19, 21, 23], 'seg3'), [29, 31, 33, 35], 'seg4') } }) },
+    { title: ['With 8vb', '8vb가 있으면'], line: ['8vb sits below the notes, mostly in the bass clef: the same letters, one octave lower. Coral is written, blue is what you play.', '8vb는 음표 아래에 있어요. 주로 낮은음자리표에서 써요. 같은 글자를 한 옥타브 아래에서 쳐요. 코랄은 쓴 음, 파랑은 실제로 치는 음이에요.'], fig: () => kq8vbFig() },
   ],
-  make: () => { const d = kqPick([38, 39, 40, 41]), tk = dMidiKey(d) + 12; return { kind: 'key', retry: true, prompt: ['This note is under an 8va. Which key do you play?', '이 음표는 8va 아래에 있어요. 어느 건반을 칠까요?'], fig: () => ({ staff: kqStaff([d, d], 'treble', { bracket: { from: 0, bar: 0, label: '8va' } }), kb: { oct: 3, base: 0, ks: [12, 36], plain: true, names: { 12: 'C', 24: 'C', 36: 'C' }, ncol: { 12: KQ.NV, 24: KQ.NV, 36: KQ.NV } } }), ok: (k) => k === tk, onPick: (k, ok) => { if (ok) playKey(tk, 0.6); },
+  make: (n) => { if (n % 2 === 1) { const d = kqPick(KQ_8VB), tk = dMidiKey(d) + 24, L = kqLetter(d);
+    return { kind: 'key', retry: true, prompt: ['This note is under an 8vb. Which key do you play?', '이 음표 아래에 8vb가 있어요. 어느 건반을 칠까요?'], fig: () => ({ staff: <KqStaffSvg clef="bass" notes={[{ d }]} ott="8vb"/>, kb: kq8vbKb({ ks: [0, 24] }) }), ok: (k) => k === tk, onPick: (k, ok) => { if (ok) playKey(tk - 36, 0.6); },
+      yes: ['One octave below the written ' + L + '.', '쓴 ' + L + '보다 한 옥타브 아래예요.'], no: (k) => [(KQ_L[((k % 12) + 12) % 12] ? 'That is ' + KQ_L[((k % 12) + 12) % 12] + '. ' : '') + 'Find the written ' + L + ', then take the next ' + L + ' to its left.', (KQ_L[((k % 12) + 12) % 12] ? '그건 ' + KQ_L[((k % 12) + 12) % 12] + ' 건반이에요. ' : '') + '쓴 ' + L + '를 찾고, 그 왼쪽의 다음 ' + L + '를 누르세요.'] }; }
+    const d = kqPick([38, 39, 40, 41]), tk = dMidiKey(d) + 12; return { kind: 'key', retry: true, prompt: ['This note is under an 8va. Which key do you play?', '이 음표는 8va 아래에 있어요. 어느 건반을 칠까요?'], fig: () => ({ staff: kqStaff([d, d], 'treble', { bracket: { from: 0, bar: 0, label: '8va' } }), kb: { oct: 3, base: 0, ks: [12, 36], plain: true, names: { 12: 'C', 24: 'C', 36: 'C' }, ncol: { 12: KQ.NV, 24: KQ.NV, 36: KQ.NV } } }), ok: (k) => k === tk, onPick: (k, ok) => { if (ok) playKey(tk, 0.6); },
     yes: ['One octave above the written ' + kqLetter(d) + '.', '쓴 ' + kqLetter(d) + ' 한 옥타브 위예요.'], no: (k) => [(KQ_L[((k % 12) + 12) % 12] ? 'That is ' + KQ_L[((k % 12) + 12) % 12] + '. ' : '') + 'Find the written ' + kqLetter(d) + ', then take the next ' + kqLetter(d) + ' to its right.', (KQ_L[((k % 12) + 12) % 12] ? '그건 ' + KQ_L[((k % 12) + 12) % 12] + ' 건반이에요. ' : '') + '쓴 ' + kqLetter(d) + '를 찾고, 그 오른쪽의 다음 ' + kqLetter(d) + '를 누르세요.'] }; },
 };
 
@@ -463,8 +468,83 @@ KQ_SPEC['kq-octave'] = {
     const up = k === 0, from = up ? s : s + 12, tk = up ? s + 12 : s;
     return { kind: 'key', retry: true, prompt: up ? ['Tap the key one octave above the marked key.', '표시된 건반의 한 옥타브 위 건반을 눌러 보세요.'] : ['Tap the key one octave below the marked key.', '표시된 건반의 한 옥타브 아래 건반을 눌러 보세요.'], play: () => playKey(from, 0.7),
       fig: () => ({ kb: { oct: 3, ks: [0, 36], base: 0, plain: true, marks: { [from]: 'pick' } } }), ok: (x) => x === tk, yes: ['Same name, 12 keys ' + (up ? 'higher.' : 'lower.'), '이름이 같고, 건반 12개 ' + (up ? '위예요.' : '아래예요.')],
-      no: (x) => [x % 12 === from % 12 ? 'Right name, but ' + (Math.abs(x - from) / 12) + ' octaves away. One octave is the next key with the same name.' : 'One octave ' + (up ? 'up' : 'down') + ' is 12 keys away: the next key with the same name.', x % 12 === from % 12 ? '이름은 맞지만 ' + (Math.abs(x - from) / 12) + '옥타브 떨어졌어요. 한 옥타브는 같은 이름의 바로 다음 건반이에요.' : '한 옥타브 ' + (up ? '위' : '아래') + '는 건반 12개 떨어진 곳, 같은 이름의 다음 건반이에요.'] }; },
+      no: (x) => x === from ? ['That is the marked key itself. One octave ' + (up ? 'up' : 'down') + ' is the next key with the same name.', '그건 표시된 건반 자신이에요. 한 옥타브 ' + (up ? '위' : '아래') + '는 같은 이름의 바로 다음 건반이에요.'] : [x % 12 === from % 12 ? 'Right name, but ' + (Math.abs(x - from) / 12) + ' octaves away. One octave is the next key with the same name.' : 'One octave ' + (up ? 'up' : 'down') + ' is 12 keys away: the next key with the same name.', x % 12 === from % 12 ? '이름은 맞지만 ' + (Math.abs(x - from) / 12) + '옥타브 떨어졌어요. 한 옥타브는 같은 이름의 바로 다음 건반이에요.' : '한 옥타브 ' + (up ? '위' : '아래') + '는 건반 12개 떨어진 곳, 같은 이름의 다음 건반이에요.'] }; },
 };
+
+// ══ Build D (her calls 2026-10-24: the old Keys-and-staff topics move onto the Home): writing notes, the alto clef, 8vb ══
+// a staff drawn for the new lessons: whole-note heads left to right (with ledger lines), an 8va / 8vb bracket,
+// and, with onPick, big tap rows for every line and space from lo to hi (one step = 5 units; the svg is drawn about twice size)
+function KqStaffSvg({ clef, lo, hi, notes = [], onPick, ott }) {
+  const c = CLEFS[clef], nN = notes.length, W = nN <= 1 ? 150 : 66 + (nN - 1) * 40 + 36, yOf = (d) => dY(d), ink = clefInkYs(clef, yOf, clef), ds = notes.map(n => n.d);
+  const top = Math.max(hi != null ? hi : c.high, c.high, ...ds), bot = Math.min(lo != null ? lo : c.low, c.low, ...ds);
+  const n = nN, xs = notes.map((_, i) => n === 1 ? 100 : 66 + i * 40);
+  const by = ott === '8va' ? yOf(top) - 14 : ott === '8vb' ? yOf(bot) + 16 : null;
+  const y0 = Math.min(yOf(top) - 9, ink[0] - 2, by != null ? by - 12 : 1e9), y1 = Math.max(yOf(bot) + 10, ink[1] + 2, by != null ? by + 8 : -1e9);
+  const rows = []; if (onPick) for (let d = lo; d <= hi; d++) rows.push(d);
+  return <svg viewBox={`0 ${y0} ${W} ${y1 - y0}`} style={{ width: '100%', maxWidth: 330, display: 'block', margin: '0 auto', touchAction: 'manipulation', userSelect: 'none' }}>
+    {c.lines.map(l => <line key={l} x1="4" x2={W - 4} y1={yOf(l)} y2={yOf(l)} stroke={KQ.NV} strokeOpacity="0.6" strokeWidth="1.1"/>)}
+    <ClefGlyph clef={clef} st={clef} yOf={yOf} ink={KQ.NV}/>
+    {rows.map(d => <circle key={'g' + d} cx={100} cy={yOf(d)} r="1.2" fill={KQ.CO} opacity="0.55" style={{ pointerEvents: 'none' }}/>)}
+    {notes.map((nt, i) => <g key={'n' + i} opacity={nt.op || 1} style={{ pointerEvents: 'none', animation: 'fadeUp 0.25s both' }}>
+      <Ledgers clef={clef} d={nt.d} x={xs[i]} yOf={yOf} ink={KQ.NV}/>
+      <ellipse cx={xs[i]} cy={yOf(nt.d)} rx="7" ry="5" transform={`rotate(-20 ${xs[i]} ${yOf(nt.d)})`} fill={nt.col || KQ.NV}/>
+      {nt.lab && <text x={xs[i] + 11} y={yOf(nt.d) + 4} fontSize="11" fontWeight="900" fill={nt.col || KQ.NV} style={{ paintOrder: 'stroke', stroke: '#fffefa', strokeWidth: 3 }}>{nt.lab}</text>}
+    </g>)}
+    {ott && <g style={{ animation: 'fadeUp 0.3s both' }}><text x={xs[0] - 22} y={by + 4} fontSize="11" fontWeight="900" fontStyle="italic" fill={ott === '8va' ? KQ.COD : KQ.BL}>{ott}</text>
+      <path d={`M${xs[0] - 2},${by} L${xs[n - 1] + 10},${by} L${xs[n - 1] + 10},${by + (ott === '8va' ? 6 : -6)}`} fill="none" stroke={ott === '8va' ? KQ.COD : KQ.BL} strokeWidth="1.3" strokeDasharray="4 3"/></g>}
+    {rows.map(d => <rect key={'r' + d} x="40" y={yOf(d) - 2.5} width={W - 44} height="5" fill="transparent" style={{ cursor: 'pointer' }} onClick={() => onPick(d)}/>)}
+  </svg>;
+}
+const kqCap = (a, col = KQ.NV) => <div style={{ textAlign: 'center', fontSize: 15, fontWeight: 900, color: col, margin: '6px 0 2px', textWrap: 'balance', wordBreak: 'keep-all' }}>{kqT(a)}</div>;
+const kqClefW = (clef) => clef === 'treble' ? ['treble', '높은음자리'] : clef === 'bass' ? ['bass', '낮은음자리'] : ['alto', '알토음자리'];
+
+// ── Write it on the staff: tap the place; any octave counts. Count from the Queen's G (treble) or the King's F (bass).
+const KQ_WR = { treble: [28, 39], bass: [17, 28] };
+const KQ_WR_FROM = { treble: [32, ['Count from G on line 2, the Queen’s line.', '2번 줄, 여왕의 줄 G에서 세어 보세요.']], bass: [24, ['Count from F on line 4, the King’s line.', '4번 줄, 왕의 줄 F에서 세어 보세요.']] };
+const kqWrNotes = (clef, list) => list.map(([d, hl]) => ({ d, col: hl ? KQ.CO : KQ.NV, lab: kqLetter(d) }));
+KQ_SPEC['kq-write'] = {
+  title: ['Write it on the staff', '오선에 쓰기'], allLine: ['Tap a line or a space to write a note there. Its name appears beside it.', '줄이나 칸을 눌러 음표를 써 보세요. 옆에 음 이름이 나와요.'],
+  fig: (c) => ({ staff: <KqStaffSvg clef="treble" lo={28} hi={39} notes={typeof c.last === 'number' ? [{ d: c.last, col: KQ.CO, lab: kqLetter(c.last) }] : []} onPick={(d) => { c.setLast(d); playKey(dMidiKey(d), 0.5); }}/> }),
+  steps: [
+    { title: ['G on line 2', '2번 줄의 G'], line: ['In the treble clef, G sits on line 2, the line the Queen’s curl circles.', '높은음자리표에서 G는 2번 줄에 있어요. 여왕의 말린 부분이 감싸는 줄이에요.'], fig: () => ({ staff: <KqStaffSvg clef="treble" notes={kqWrNotes('treble', [[32, 1]])}/> }) },
+    { title: ['Count from G', 'G에서 세기'], line: ['To write B, count up from G, one letter per place: G on line 2, A in space 2, B on line 3.', 'B를 쓰려면 G에서 한 자리에 한 글자씩 올라가요. 2번 줄 G, 2번 칸 A, 3번 줄 B.'], fig: (c) => ({ staff: <KqStaffSvg clef="treble" notes={kqWrNotes('treble', [[32, 0], [33, 0], [34, 1]].slice(0, Math.min(c.tk + 1, 3)))}/> }) },
+    { title: ['In the bass clef', '낮은음자리표에서'], line: ['In the bass clef start from F on line 4, the King’s line. To write D, count down: F, E, D.', '낮은음자리표에서는 4번 줄, 왕의 줄 F에서 시작해요. D를 쓰려면 F, E, D로 내려가요.'], fig: (c) => ({ staff: <KqStaffSvg clef="bass" notes={kqWrNotes('bass', [[24, 0], [23, 0], [22, 1]].slice(0, Math.min(c.tk + 1, 3)))}/> }) },
+  ],
+  make: (n, prev) => { const clef = n % 2 === 0 ? 'treble' : 'bass', [lo, hi] = KQ_WR[clef]; let L, g = 0; do { L = kqPick('CDEFGAB'.split('')); } while (prev && prev.L === L && g++ < 8);
+    const all = []; for (let d = lo; d <= hi; d++) if (kqLetter(d) === L) all.push(d); const [fromD, hint] = KQ_WR_FROM[clef], w = kqClefW(clef);
+    return { L, kind: 'tap', retry: true, prompt: ['Write ' + L + ' on the ' + w[0] + ' staff. Any ' + L + ' counts.', w[1] + ' 오선에 ' + L + '를 써 보세요. 어느 ' + L + '든 괜찮아요.'], ok: (v) => kqLetter(v) === L, onPick: (v) => playKey(dMidiKey(v), 0.5),
+      fig: (c) => ({ staff: <KqStaffSvg clef={clef} lo={lo} hi={hi} onPick={c.res === 'ok' ? null : c.pick} notes={c.pickd == null ? [] : c.res === 'ok' ? all.map(d => ({ d, col: '#2e8a6e', op: d === c.pickd ? 1 : 0.4, lab: d === c.pickd ? L : null })) : [{ d: c.pickd, col: '#c8361b', lab: kqLetter(c.pickd) }]}/> }),
+      yes: all.length > 1 ? [L + '. The faint one is ' + L + ' too, an octave away.', L + '예요. 흐린 음표도 한 옥타브 떨어진 ' + L + '예요.'] : [L + '.', L + '예요.'],
+      no: (v) => ['That is ' + kqLetter(v) + '. ' + hint[0], '그건 ' + kqLetter(v) + '예요. ' + hint[1]] }; },
+};
+
+// ── The alto clef: the C clef, centred on line 3, middle C
+const KQ_ALTO = [24, 25, 26, 27, 28, 29, 30, 31, 32];
+const kqAltoKb = (d, o = {}) => ({ oct: 2, ks: [0, 24], base: -12, plain: true, names: { 12: 'C' }, ncol: { 12: KQ.COD }, marks: d == null ? { 12: 'pass' } : { 12: 'pass', [dMidiKey(d) + 12]: o.mk || 'pick' } });
+KQ_SPEC['kq-alto'] = {
+  title: ['The alto clef', '알토음자리표'], allLine: ['A third clef: the alto clef, a C clef. Its middle points at line 3, and line 3 is middle C.', '세 번째 음자리표, 알토음자리표는 C 음자리표예요. 가운데가 3번 줄을 가리키고, 그 줄이 가운데 도예요.'],
+  fig: () => ({ staff: <KqStaffSvg clef="alto" notes={[{ d: 28, col: KQ.CO, lab: 'C' }]}/>, kb: kqAltoKb(28) }),
+  steps: [
+    { title: ['Middle C on line 3', '3번 줄은 가운데 도'], line: ['The clef sits right on the middle line. That line is middle C, the same key as always.', '음자리표가 가운데 줄에 딱 걸쳐 있어요. 그 줄이 가운데 도예요. 늘 치던 그 건반이에요.'], fig: () => ({ staff: <KqStaffSvg clef="alto" notes={[{ d: 28, col: KQ.CO, lab: 'C' }]}/>, kb: kqAltoKb(28) }) },
+    { title: ['Count from C', 'C에서 세기'], line: ['Count up and down from middle C, one letter per place: D in the space above, B in the space below.', '가운데 도에서 한 자리에 한 글자씩 세어요. 위의 칸은 D, 아래 칸은 B예요.'], fig: () => ({ staff: <KqStaffSvg clef="alto" notes={[{ d: 27, lab: 'B' }, { d: 28, col: KQ.CO, lab: 'C' }, { d: 29, lab: 'D' }]}/>, kb: { ...kqAltoKb(28), marks: { 11: 'seg3', 12: 'pick', 14: 'seg3' } } }) },
+    { title: ['Who reads it', '누가 읽을까요'], line: ['The viola reads the alto clef. Its notes sit in the middle: too high for the bass clef, too low for the treble.', '비올라가 알토음자리표를 읽어요. 비올라의 음은 가운데에 있어서, 낮은음자리표에는 너무 높고 높은음자리표에는 너무 낮아요.'], fig: () => ({ staff: <KqStaffSvg clef="alto" notes={[24, 26, 28, 30, 32].map(d => ({ d, col: d === 28 ? KQ.CO : KQ.NV, lab: kqLetter(d) }))}/> }) },
+  ],
+  make: (n, prev) => { const k = n % 3; let d, g = 0; do { d = kqPick(KQ_ALTO); } while (prev && prev.d === d && g++ < 8); const L = kqLetter(d), up = d - 28;
+    const why = up === 0 ? ['Line 3 is middle C.', '3번 줄이 가운데 도예요.'] : ['Count ' + (up > 0 ? 'up' : 'down') + ' from middle C on line 3: ' + Math.abs(up) + ' place' + (Math.abs(up) > 1 ? 's' : '') + ', ' + L + '.', '3번 줄 가운데 도에서 ' + (up > 0 ? '위로' : '아래로') + ' ' + Math.abs(up) + '자리, ' + L + '예요.'];
+    if (k === 1) return { d, kind: 'choice', cols: 3, prompt: ['In the alto clef, which line is middle C?', '알토음자리표에서 가운데 도는 몇 번 줄일까요?'], opts: [2, 3, 4].map(x => ({ id: String(x), label: () => t('Line ' + x, x + '번 줄') })), ans: '3', ok: (v) => v === '3',
+      fig: (c) => ({ staff: <KqStaffSvg clef="alto" notes={c.res ? [{ d: 28, col: KQ.CO, lab: 'C' }] : []}/> }), yes: ['Line 3, the middle line.', '3번 줄, 가운데 줄이에요.'], no: ['The alto clef is centred on the middle line, line 3: middle C.', '알토음자리표는 가운데 줄, 3번 줄에 걸쳐 있어요. 그 줄이 가운데 도예요.'] };
+    if (k === 0) return { d, kind: 'choice', cols: 4, prompt: ['Alto clef: name this note.', '알토음자리표: 이 음표의 이름은?'], opts: kqLet7(), ans: L, ok: (v) => v === L, fig: (c) => ({ staff: <KqStaffSvg clef="alto" notes={c.res ? [{ d: 28, col: KQ.CO, lab: 'C', op: d === 28 ? 0 : 0.5 }, { d, lab: L }] : [{ d }]}/> }),
+      yes: [L + '.', L + '예요.'], no: why };
+    const tk = dMidiKey(d) + 12;
+    return { d, kind: 'key', retry: true, prompt: ['Alto clef: find this note on the keys.', '알토음자리표: 이 음을 건반에서 찾아요.'], fig: () => ({ staff: <KqStaffSvg clef="alto" notes={[{ d }]}/>, kb: kqAltoKb(null) }), ok: (x) => x === tk, onPick: (x, ok) => { if (ok) playKey(dMidiKey(d), 0.6); },
+      yes: [L + ', ' + (up === 0 ? 'middle C itself.' : Math.abs(up) + ' white key' + (Math.abs(up) > 1 ? 's' : '') + ' ' + (up > 0 ? 'above' : 'below') + ' middle C.'), up === 0 ? '가운데 도 그 자체예요.' : L + ', 가운데 도에서 흰건반 ' + Math.abs(up) + '개 ' + (up > 0 ? '위예요.' : '아래예요.')], no: why };
+  },
+};
+
+// ── 8vb, beside 8va: the same letters one octave lower (written below the notes, mostly in the bass clef)
+const KQ_8VB = [17, 16, 15, 14];   // F E D C below the bass staff
+const kq8vbKb = (o = {}) => ({ oct: 3, base: -36, ks: o.ks || [0, 17], plain: true, names: { 0: 'C', 12: 'C', 24: 'C' }, ncol: { 0: KQ.NV, 12: KQ.NV, 24: KQ.NV }, marks: o.marks || {} });
+const kq8vbFig = () => ({ staff: <KqStaffSvg clef="bass" notes={KQ_8VB.map(d => ({ d, col: KQ.CO }))} ott="8vb"/>, kb: kq8vbKb({ marks: kqPaint(kqPaint({}, KQ_8VB.map(d => dMidiKey(d) + 36), 'seg3'), KQ_8VB.map(d => dMidiKey(d) + 24), 'seg4') }) });
 
 // ══ 5. Pitch and range ══
 const kqBars = ({ lens, hl, onTap, pickd }) => <svg viewBox="0 0 320 120" style={{ width: '100%', maxWidth: 340, display: 'block', margin: '0 auto' }}>
@@ -521,21 +601,24 @@ const KS_ROWS = [
     kqRow('kq-black', 'Black keys', '검은건반', 'Groups of 2 and 3, and low and high.', '2개와 3개씩 모인 검은건반, 낮은 소리와 높은 소리.'),
     kqRow('kq-houses', 'Naming the white keys', '흰건반 이름 붙이기', 'C D E around the group of 2, F G A B around the group of 3.', '2개 묶음 둘레의 C D E, 3개 묶음 둘레의 F G A B.'),
     kqRow('kq-names', 'Every key has its place', '모든 건반에는 제 자리가 있어요', 'The same name everywhere, middle C, 12 keys and 7 names.', '어디서나 같은 이름, 가운데 도, 건반 12개와 이름 7개.'),
+    kqRow('kq-octave', 'Octaves', '옥타브', 'The next key with the same name: 8 white keys, 12 keys.', '같은 이름의 다음 건반: 흰건반 8개, 건반 12개.'),
   ]],
   ['p-stf', [
     kqRow('kq-lines', 'Lines and spaces', '줄과 칸', 'Five lines, four spaces, counted from the bottom.', '줄 다섯, 칸 넷, 아래에서부터 세기.'),
     kqRow('kq-climb', 'Higher and lower', '높은 음, 낮은 음', 'Up the staff is right on the keys.', '오선에서 위는 건반에서 오른쪽.'),
-    kqRow('kq-clefs', 'Treble and bass clefs', '높은음자리표와 낮은음자리표', 'Which notes each staff is for.', '각 오선이 맡는 음.'),
+    kqRow('kq-clefs', 'Treble and bass clefs', '높은음자리표와 낮은음자리표', 'The Queen and the King: which notes each staff is for.', '여왕과 왕: 각 오선이 맡는 음.'),
+    kqRow('kq-alto', 'The alto clef', '알토음자리표', 'A C clef: line 3 is middle C.', 'C 음자리표: 3번 줄이 가운데 도.'),
   ]],
   ['p-lines', [
     kqRow('kq-letters', 'Letters up the staff', '오선을 따라 오르는 글자', 'One place up is the next letter.', '한 자리 위는 다음 글자.'),
     kqRow('kq-landmarks', 'Five landmarks', '기준 음 다섯 개', 'Five notes to know, and counting from them.', '알아 둘 음 다섯 개와 거기서 세기.'),
     kqRow('kq-read', 'From staff to keys', '오선에서 건반으로', 'Read the note, find its key.', '음표를 읽고 건반 찾기.'),
+    kqRow('kq-write', 'Write it on the staff', '오선에 쓰기', 'Tap the line or space; count from G or F.', '줄이나 칸을 눌러 쓰기, G나 F에서 세기.'),
   ]],
   ['p-ledger', [
     kqRow('kq-ledger', 'Ledger lines', '덧줄', 'Notes above and below the staff.', '오선 위아래의 음.'),
     kqRow('kq-middlec', 'Middle C on the page', '악보 위의 가운데 도', 'One key, two places on the page.', '건반 하나, 악보 위 두 자리.'),
-    kqRow('kq-8va', '8va', '8va', 'Play one octave higher than written.', '쓴 것보다 한 옥타브 높게 치기.'),
+    kqRow('kq-8va', '8va and 8vb', '8va와 8vb', 'One octave higher, or one octave lower, than written.', '쓴 것보다 한 옥타브 높게, 또는 낮게.'),
   ]],
   ['p-range', [
     kqRow('kq-size', 'Long and short', '긴 것과 짧은 것', 'Long bars sound low, short bars sound high.', '긴 막대는 낮게, 짧은 막대는 높게.'),

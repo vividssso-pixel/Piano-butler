@@ -312,6 +312,121 @@ CHQ_SPEC['ch-inv'] = {
       yes: ['Stacked in skips it is ' + names.join(' ') + ': ' + nmEn + '.', '건너 쌓으면 ' + names.join(' ') + ', ' + ivqJ(nmKo, '이에요', '예요') + '.'], no: ['Stack the same notes in skips: ' + names.join(' ') + '. The root is ' + names[0] + '.', '같은 음을 하나씩 건너 쌓으면 ' + names.join(' ') + '. 근음은 ' + kqYe(names[0]) + '.'] }; },
 };
 
+// ══ Build E (her call 2026-10-24: the old chord topics move onto the Home): the seven chords in a key, cadences,
+// 9th / 11th / 13th chords, the 12-bar blues. Music facts and Korean terms flagged for her review in CLAUDE.md row 642.
+// ── the seven chords in a major key
+const CHQ_SEV = { 1: ['I', '으뜸화음', 'major'], 2: ['ii', '윗으뜸화음', 'minor'], 3: ['iii', '가온화음', 'minor'], 4: ['IV', '버금딸림화음', 'major'], 5: ['V', '딸림화음', 'major'], 6: ['vi', '버금가온화음', 'minor'], 7: ['vii°', '이끎화음', 'dim'] };
+const chqSevKb = (key, d, o = {}) => { const D = chqDeg(key, d), K = IVQ_KEYS[key]; return o.between ? chqBetween(D.keys, { ks: [K.k, K.k + 17] }) : chqKb(D.keys, { ks: [K.k, K.k + 17], base: chqScaleBase(key), words: o.words === undefined ? [CHQ_SEV[d][0], null, null] : o.words }); };
+const chqSevCap = (key, d) => { const D = chqDeg(key, d), q = CHQ_SEV[d][2]; return ivqCap(kqT([CHQ_SEV[d][0] + ' in ' + key + ' major: ' + D.names.join(' ') + ', ' + chqQW(q)[0], key + '장조의 ' + CHQ_SEV[d][0] + ' · ' + CHQ_SEV[d][1] + ': ' + D.names.join(' ') + ', ' + chqQW(q)[1]]), KQ.COD); };
+const chqSevRow = (c, key) => { const d = c.last && typeof c.last === 'object' && c.last.sev ? c.last.sev : 1;
+  return { d, row: <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 4, maxWidth: 380, margin: '0 auto 8px' }}>{[1, 2, 3, 4, 5, 6, 7].map(x => <button key={x} className={'chip' + (x === d ? ' active' : '')} aria-pressed={x === d} style={{ minHeight: 44, padding: 0, justifyContent: 'center', fontWeight: 900, fontSize: 15 }} onClick={() => { c.setLast({ sev: x }); chqPlay(chqDeg(key, x).keys, 'block'); }}>{CHQ_SEV[x][0]}</button>)}</div> }; };
+CHQ_SPEC['ch-seven'] = {
+  title: ['Seven chords in a key', '조 안의 일곱 화음'], allLine: ['Build a triad on every note of the major scale, using only the scale’s notes. Three are major, three are minor and one is diminished. Tap one to hear it.', '장음계의 모든 음 위에 음계 안의 음만으로 3화음을 쌓아요. 장3화음 셋, 단3화음 셋, 감3화음 하나가 나와요. 하나를 눌러 들어 보세요.'],
+  fig: (c) => { const { d, row } = chqSevRow(c, 'C'); return { mid: row, kb: chqSevKb('C', d), below: chqSevCap('C', d) }; },
+  steps: [
+    { title: ['On every note', '모든 음 위에'], line: ['Start on each note of C major and skip a note twice, staying on the white keys: C E G, D F A, E G B, and so on.', 'C장음계의 음마다 하나씩 건너 두 번 쌓아요. 흰건반만 써요. C E G, D F A, E G B, 이렇게 계속해요.'], fig: (c) => { const d = 1 + Math.floor(c.tk / 2) % 7; return { kb: chqSevKb('C', d, { words: [String(d), null, null] }), below: ivqCap(chqDeg('C', d).names.join(' '), KQ.COD) }; } },
+    { title: ['Major: I, IV, V', '장3화음: I, IV, V'], line: ['I, IV and V are major triads: 3 keys between, then 2. Their numerals are capitals.', 'I, IV, V는 장3화음이에요. 사이 건반 3, 그다음 2. 대문자로 써요.'], fig: (c) => { const d = [1, 4, 5][Math.floor(c.tk / 3) % 3]; return { kb: chqSevKb('C', d, { between: true }), below: chqSevCap('C', d) }; } },
+    { title: ['Minor: ii, iii, vi', '단3화음: ii, iii, vi'], line: ['ii, iii and vi are minor triads: 2 keys between, then 3. Their numerals are small letters.', 'ii, iii, vi는 단3화음이에요. 사이 건반 2, 그다음 3. 소문자로 써요.'], fig: (c) => { const d = [2, 3, 6][Math.floor(c.tk / 3) % 3]; return { kb: chqSevKb('C', d, { between: true }), below: chqSevCap('C', d) }; } },
+    { title: ['Diminished: vii°', '감3화음: vii°'], line: ['The chord on note 7 is diminished: 2 and 2. Its numeral is small, with a little circle: vii°.', '7번 음 위의 화음은 감3화음이에요. 사이 건반 2와 2. 소문자에 작은 동그라미를 붙여 vii°로 써요.'], fig: () => ({ kb: chqSevKb('C', 7, { between: true }), below: chqSevCap('C', 7) }) },
+    { title: ['Every major key', '모든 장조에서'], line: ['The pattern is the same in every major key: I ii iii IV V vi vii°. In G major, ii is A C E.', '모든 장조에서 패턴이 같아요. I ii iii IV V vi vii°. G장조에서 ii는 A C E예요.'], fig: (c) => { const { d, row } = chqSevRow(c, 'G'); return { mid: row, kb: chqSevKb('G', d), below: chqSevCap('G', d) }; } },
+  ],
+  make: (n, prev) => { const kind = [0, 1, 2, 0, 1][n % 5]; let key, d, g = 0; do { key = kqPick(CHQ_KEYS); d = 1 + kqRnd(7); } while (prev && prev.id === key + d && g++ < 8);
+    const D = chqDeg(key, d), K = IVQ_KEYS[key], q = CHQ_SEV[d][2], R = CHQ_SEV[d][0], id = key + d, nm = D.names.join(' ');
+    if (kind === 0) return { id, kind: 'choice', cols: 4, prompt: ['In ' + key + ' major, which chord is marked?', key + '장조에서 표시된 화음은 어느 것일까요?'], opts: [1, 2, 3, 4, 5, 6, 7].map(x => ({ id: String(x), label: CHQ_SEV[x][0] })), ans: String(d), ok: (v) => v === String(d), play: () => chqPlay(D.keys, 'block'),
+      fig: (c) => ({ kb: chqSevKb(key, d, { words: c.res ? undefined : null }) }),
+      yes: [nm + ' starts on note ' + d + ': ' + R + ', ' + (q === 'dim' ? 'diminished.' : q + '.'), ivqJ(nm, '은', '는') + ' ' + d + '번 음에서 시작해요. ' + R + ', ' + chqQW(q)[1] + '이에요.'],
+      no: ['Count up the scale from ' + key + ' as 1 to the lowest marked note, ' + D.names[0] + ': note ' + d + ', so ' + R + '.', key + '를 1로 맨 아래 표시 음 ' + D.names[0] + '까지 세면 ' + d + '번 음이에요. 그래서 ' + ivqJ(R, '이에요', '예요') + '.'] };
+    if (kind === 1) { const opts = [['major', ['Major', '장3화음']], ['minor', ['Minor', '단3화음']], ['dim', ['Diminished', '감3화음']]];
+      return { id, kind: 'choice', cols: 3, prompt: ['In ' + key + ' major, chord ' + R + ' is…', key + '장조의 ' + ivqJ(R, '은', '는') + '…'], opts: opts.map(([x, w]) => ({ id: x, label: () => kqT(w) })), ans: q, ok: (v) => v === q, play: () => chqPlay(D.keys, 'block'),
+        fig: (c) => ({ kb: c.res ? chqSevKb(key, d, { between: true }) : chqSevKb(key, d) }),
+        yes: [R + ', ' + nm + ': ' + chqQW(q)[0] + '.', R + ', ' + nm + ': ' + chqQW(q)[1] + '이에요.'],
+        no: [d === 7 ? 'The chord on note 7 is always diminished: 2 + 2.' : [1, 4, 5].includes(d) ? 'I, IV and V are major: 3 + 2.' : 'ii, iii and vi are minor: 2 + 3.', d === 7 ? '7번 음 위의 화음은 언제나 감3화음이에요. 2 + 2.' : [1, 4, 5].includes(d) ? 'I, IV, V는 장3화음이에요. 3 + 2.' : 'ii, iii, vi는 단3화음이에요. 2 + 3.'] }; }
+    return { id, kind: 'multi', retry: true, targets: D.keys, prompt: ['Tap chord ' + R + ' in ' + key + ' major. The scale is marked.', key + '장조의 ' + ivqJ(R, '을', '를') + ' 눌러 보세요. 음계가 표시돼 있어요.'], prog: (a, b) => ['Found ' + a + ' of ' + b + '. Keep going.', b + '개 중 ' + a + '개를 찾았어요. 계속해요.'],
+      fig: () => ({ kb: ivqKb({ ks: [K.k, K.k + 17], marks: chqScaleBase(key) }) }), yes: [R + ' in ' + key + ' major: ' + nm + '.', key + '장조의 ' + R + ': ' + nm + '.'],
+      no: () => ['Start on note ' + d + ' of the scale, ' + D.names[0] + ', then skip a scale note each time: ' + nm + '.', '음계의 ' + d + '번 음 ' + D.names[0] + '에서 시작해서 음계 음을 하나씩 건너요. ' + ivqJ(nm, '이에요', '예요') + '.'] }; },
+};
+
+// ── cadences: two chords at the end of a phrase
+const CHQ_CAD = {
+  perfect: { r: [5, 1], w: ['perfect cadence', '정격종지'], feel: ['V to I: it sounds finished, like a full stop.', 'V에서 I: 마침표처럼 끝난 느낌이에요.'] },
+  plagal: { r: [4, 1], w: ['plagal cadence', '변격종지'], feel: ['IV to I: finished too, but softer. It is the “Amen” at the end of a hymn.', 'IV에서 I: 역시 끝난 느낌이지만 더 부드러워요. 찬송가 끝의 “아멘”이에요.'] },
+  imperfect: { r: [1, 5], w: ['imperfect cadence', '반종지'], feel: ['Ending on V: it sounds unfinished, like a comma.', 'V로 끝나요: 쉼표처럼 끝나지 않은 느낌이에요.'] },
+  interrupted: { r: [5, 6], w: ['interrupted cadence', '거짓종지'], feel: ['V to vi: you expect I, and vi comes instead. A surprise.', 'V에서 vi: I이 올 줄 알았는데 vi가 와요. 깜짝 놀라요.'] },
+};
+const CHQ_CADS = ['perfect', 'plagal', 'imperfect', 'interrupted'];
+const chqCadPlay = (key, id) => CHQ_CAD[id].r.forEach((d, i) => setTimeout(() => chqPlay(chqDeg(key, d).keys, 'block'), i * 950));
+const chqRom = (d) => CHQ_SEV[d][0];
+const chqCadFig = (key, id) => { const [a, b] = CHQ_CAD[id].r, A = chqDeg(key, a), B = chqDeg(key, b), K = IVQ_KEYS[key];
+  return { mid: <>{ivqKbEl(chqKb(A.keys, { ks: [K.k, K.k + 17], words: [chqRom(a), null, null] }))}{ivqCap(chqRom(a) + ': ' + A.names.join(' '), KQ.COD)}</>, kb: chqKb(B.keys, { ks: [K.k, K.k + 17], words: [chqRom(b), null, null] }), below: ivqCap(chqRom(b) + ': ' + B.names.join(' '), KQ.COD) }; };
+const chqCadBtn = (key, id) => <div style={{ textAlign: 'center', margin: '0 0 6px' }}>{ivqPlayBtn('▶ ' + CHQ_CAD[id].r.map(chqRom).join(' → '), () => chqCadPlay(key, id))}</div>;
+CHQ_SPEC['ch-cad'] = {
+  title: ['Cadences', '종지'], allLine: ['A cadence is the two chords at the end of a phrase. Some sound finished, some sound like a comma. Tap one to hear it in C major.', '종지는 프레이즈 끝의 두 화음이에요. 끝난 느낌도 있고, 쉼표 같은 느낌도 있어요. 하나를 눌러 C장조로 들어 보세요.'],
+  fig: (c) => { const id = c.last && typeof c.last === 'object' && c.last.cad ? c.last.cad : 'perfect';
+    return { top: <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 6, maxWidth: 380, margin: '0 auto 8px' }}>{CHQ_CADS.map(x => <button key={x} className={'chip' + (x === id ? ' active' : '')} aria-pressed={x === id} style={{ minHeight: 54, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1, whiteSpace: 'normal', lineHeight: 1.15, padding: '4px 6px' }} onClick={() => { c.setLast({ cad: x }); chqCadPlay('C', x); }}><span style={{ fontWeight: 800, fontSize: 13 }}>{kqT(CHQ_CAD[x].w)}</span><span style={{ fontWeight: 900, fontSize: 15 }}>{CHQ_CAD[x].r.map(chqRom).join(' → ')}</span></button>)}</div>, ...chqCadFig('C', id) }; },
+  steps: CHQ_CADS.map(id => ({ title: [CHQ_CAD[id].w[0][0].toUpperCase() + CHQ_CAD[id].w[0].slice(1), CHQ_CAD[id].w[1]], line: CHQ_CAD[id].feel, fig: () => ({ top: chqCadBtn('C', id), ...chqCadFig('C', id) }) })),
+  make: (n, prev) => { const kind = n % 3; let key, id, g = 0; do { key = kqPick(CHQ_KEYS); id = kqPick(CHQ_CADS); } while (prev && prev.id === id && g++ < 8);
+    const C = CHQ_CAD[id], pair = C.r.map(chqRom).join(' → '), opts = CHQ_CADS.map(x => ({ id: x, label: () => kqT(CHQ_CAD[x].w) }));
+    if (kind === 0) return { id, kind: 'choice', cols: 2, prompt: ['Listen: which cadence is it?', '들어 보세요. 어떤 종지일까요?'], opts, ans: id, ok: (v) => v === id, play: () => chqCadPlay(key, id),
+      fig: (c) => c.res ? chqCadFig(key, id) : { mid: <div style={{ textAlign: 'center', fontSize: 34, fontWeight: 900, color: KQ.NV, margin: '8px 0' }}>? → ?</div> },
+      yes: [pair + ': ' + C.w[0] + '.', pair + ': ' + C.w[1] + '예요.'], no: [pair + ': the ' + C.w[0] + '. ' + C.feel[0] + ' Press ♪ Again.', pair + ': ' + C.w[1] + '예요. ' + C.feel[1] + ' ♪ 다시를 눌러 보세요.'] };
+    if (kind === 1) return { id, kind: 'choice', cols: 2, prompt: [pair + ' at the end of a phrase is…', '프레이즈 끝의 ' + ivqJ(pair, '은', '는') + '…'], opts, ans: id, ok: (v) => v === id, onPick: () => chqCadPlay(key, id),
+      fig: () => chqCadFig(key, id), yes: [C.w[0][0].toUpperCase() + C.w[0].slice(1) + '. ' + C.feel[0], C.w[1] + '예요. ' + C.feel[1]], no: [pair + ' is the ' + C.w[0] + '. ' + C.feel[0], ivqJ(pair, '은', '는') + ' ' + C.w[1] + '예요. ' + C.feel[1]] };
+    const all = CHQ_CADS.map(x => CHQ_CAD[x].r.map(chqRom).join(' → '));
+    return { id, kind: 'choice', cols: 2, prompt: ['Which chords make the ' + C.w[0] + '?', ivqJ(C.w[1], '은', '는') + ' 어떤 두 화음일까요?'], opts: all.map(x => ({ id: x, label: x })), ans: pair, ok: (v) => v === pair, onPick: () => chqCadPlay(key, id),
+      fig: (c) => c.res ? chqCadFig(key, id) : { mid: null }, yes: [pair + '. ' + C.feel[0], pair + '. ' + C.feel[1]], no: ['The ' + C.w[0] + ' is ' + pair + '. ' + C.feel[0], C.w[1] + ': ' + pair + '. ' + C.feel[1]] }; },
+};
+
+// ── 9th, 11th and 13th chords: keep stacking 3rds
+const CHQ_EXT = [7, 11, 14, 17, 21, 24, 28], CHQ_EXTN = ['G', 'B', 'D', 'F', 'A', 'C', 'E'];
+const CHQ_EXTP = [['root', '근음'], ['3rd', '3음'], ['5th', '5음'], ['7th', '7음'], ['9th', '9음'], ['11th', '11음'], ['13th', '13음']];
+const CHQ_EXTS = [['G7', 4], ['G9', 5], ['G11', 6], ['G13', 7]];
+const chqExtKb = (cnt, hl) => { const m = {}, names = {}, ncol = {}; CHQ_EXT.slice(0, cnt).forEach((k, j) => { m[k] = j === cnt - 1 && hl ? 'pickB' : 'pick'; names[k] = String([1, 3, 5, 7, 9, 11, 13][j]); ncol[k] = j >= 4 ? KQ.BL : KQ.COD; });
+  return ivqKb({ oct: 3, ks: [7, 28], marks: m, names, ncol }); };
+CHQ_SPEC['ch-ext'] = {
+  title: ['9th, 11th and 13th chords', '9화음, 11화음, 13화음'], allLine: ['Keep stacking 3rds on a seventh chord: a 9th, an 11th, a 13th. From G on the white keys, skipping one each time: G B D F A C E, all seven letters.', '7화음 위에 3도를 계속 쌓아요. 9음, 11음, 13음. G에서 흰건반을 하나씩 건너 쌓으면 G B D F A C E, 일곱 글자가 모두 나와요.'],
+  fig: (c) => { const cnt = 4 + Math.floor(c.tk / 2) % 4; return { kb: chqExtKb(cnt, true), below: ivqCap(CHQ_EXTS[cnt - 4][0] + ': ' + CHQ_EXTN.slice(0, cnt).join(' '), KQ.COD, true) }; },
+  steps: CHQ_EXTS.map(([sym, cnt], j) => ({ title: [sym, sym], line: [[ 'G7: G B D F, the seventh chord on note 5 of C major.', 'Add a 3rd on top: A, the 9th. G B D F A is G9. The 9th is the same letter as the 2nd, one octave higher.', 'One more: C, the 11th. G B D F A C is G11.', 'And one more: E, the 13th. G B D F A C E is G13. Now every letter is in the chord.'][j],
+    ['G7: G B D F, C장조 5번 음 위의 7화음이에요.', '위에 3도를 하나 더: A, 9음이에요. G B D F A가 G9예요. 9음은 2음과 같은 글자, 한 옥타브 위예요.', '하나 더: C, 11음. G B D F A C가 G11이에요.', '또 하나: E, 13음. G B D F A C E가 G13이에요. 이제 모든 글자가 화음 안에 있어요.'][j]],
+    fig: () => ({ kb: chqExtKb(cnt, true), mid: chqPlayBtn(CHQ_EXT.slice(0, cnt)) }) })),
+  make: (n, prev) => { const kind = n % 3; let cnt, g = 0; do { cnt = 5 + kqRnd(3); } while (prev && prev.cnt === cnt && g++ < 8); const sym = CHQ_EXTS[cnt - 4][0], top = CHQ_EXTN[cnt - 1], part = CHQ_EXTP[cnt - 1];
+    if (kind === 0) return { cnt, kind: 'choice', cols: 4, prompt: ['G7 is G B D F. Which note is the ' + part[0] + ' of ' + sym + '?', 'G7은 G B D F예요. ' + sym + '의 ' + part[1] + '은 어느 음일까요?'], opts: ['A', 'B', 'C', 'E'].map(x => ({ id: x, label: x })), ans: top, ok: (v) => v === top,
+      fig: (c) => ({ kb: chqExtKb(c.res ? cnt : 4, !!c.res) }), yes: [sym + ': ' + CHQ_EXTN.slice(0, cnt).join(' ') + '. The ' + part[0] + ' is ' + top + '.', sym + ': ' + CHQ_EXTN.slice(0, cnt).join(' ') + '. ' + part[1] + '은 ' + ivqJ(top, '이에요', '예요') + '.'],
+      no: ['Keep skipping a white key above F: A is the 9th, C the 11th, E the 13th.', 'F 위로 흰건반을 하나씩 건너요. A가 9음, C가 11음, E가 13음이에요.'] };
+    if (kind === 1) return { cnt, kind: 'choice', cols: 4, prompt: ['Name the chord: ' + CHQ_EXTN.slice(0, cnt).join(' '), '화음 이름은? ' + CHQ_EXTN.slice(0, cnt).join(' ')], opts: CHQ_EXTS.map(([s]) => ({ id: s, label: s })), ans: sym, ok: (v) => v === sym,
+      fig: (c) => ({ kb: chqExtKb(cnt, !!c.res), mid: chqPlayBtn(CHQ_EXT.slice(0, cnt)) }), yes: [cnt + ' notes, up to the ' + part[0] + ': ' + sym + '.', '음 ' + cnt + '개, ' + part[1] + '까지: ' + ivqJ(sym, '이에요', '예요') + '.'],
+      no: ['Count the notes: ' + cnt + '. Four is a 7th chord, five a 9th, six an 11th, seven a 13th.', '음을 세어 보세요. ' + cnt + '개예요. 넷이면 7화음, 다섯이면 9화음, 여섯이면 11화음, 일곱이면 13화음이에요.'] };
+    const tk = CHQ_EXT[cnt - 1];
+    return { cnt, kind: 'key', retry: true, prompt: ['Here is G7. Tap the ' + part[0] + ' to make it ' + sym + '.', 'G7이에요. ' + part[1] + '을 눌러 ' + sym + '로 만들어 보세요.'], fig: (c) => ({ kb: c.res === 'ok' ? chqExtKb(cnt, true) : { ...chqExtKb(4, false), oct: 3 } }), ok: (k) => k === tk, onPick: (k, ok) => { if (ok) setTimeout(() => chqPlay(CHQ_EXT.slice(0, cnt), 'block'), 300); },
+      yes: [top + ', the ' + part[0] + ': ' + sym + '.', top + ', ' + part[1] + ': ' + ivqJ(sym, '이에요', '예요') + '.'], no: ['Skip a white key each time above F: A, then C, then E. The ' + part[0] + ' is ' + top + '.', 'F 위로 흰건반을 하나씩 건너요. A, C, E. ' + part[1] + '은 ' + ivqJ(top, '이에요', '예요') + '.'] }; },
+};
+
+// ── the 12-bar blues: I I I I | IV IV I I | V IV I I
+const CHQ_BLUES = [1, 1, 1, 1, 4, 4, 1, 1, 5, 4, 1, 1];
+const chqBluesGrid = (key, on, hide) => <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 6, maxWidth: 360, margin: '0 auto 8px' }}>
+  {CHQ_BLUES.map((d, i) => { const h = hide && hide.includes(i), cur = on === i; return <div key={i} style={{ border: '1.5px solid ' + (cur ? KQ.CO : 'rgba(38,41,107,0.18)'), borderRadius: 10, background: cur ? '#fbe3da' : '#fffefa', padding: '6px 2px', textAlign: 'center', transition: 'all 0.2s' }}>
+    <div style={{ fontSize: 11, fontWeight: 800, color: '#9a9cc2', fontVariantNumeric: 'tabular-nums' }}>{i + 1}</div><div style={{ fontSize: 20, fontWeight: 900, color: h ? KQ.CO : KQ.NV }}>{h ? '?' : CHQ_ROMW[d][0]}</div></div>; })}</div>;
+const chqBluesPlay = (key, setOn) => CHQ_BLUES.forEach((d, i) => setTimeout(() => { chqPlay(chqDeg(key, d).keys, 'block'); if (setOn) setOn(i); }, i * 700));
+const chqBluesFig = (c, key, hide) => { const on = c.last && typeof c.last === 'object' && c.last.bar != null ? c.last.bar : null, d = on != null ? CHQ_BLUES[on] : 1;
+  return { mid: <>{chqBluesGrid(key, on, hide)}<div style={{ textAlign: 'center', margin: '0 0 6px' }}>{ivqPlayBtn(t('▶ Play 12 bars', '▶ 12마디 치기'), () => chqBluesPlay(key, (i) => c.setLast({ bar: i })))}</div></>, kb: chqDegKb(key, d, { scale: false }) }; };
+CHQ_SPEC['ch-blues'] = {
+  title: ['The 12-bar blues', '12마디 블루스'], allLine: ['Twelve bars, three chords: I, IV and V. Four bars of I; IV, IV, I, I; then V, IV, I, I. Press play and follow the bars.', '12마디에 화음 세 개, I, IV, V예요. I 네 마디, IV IV I I, 그다음 V IV I I. 눌러서 마디를 따라가 보세요.'],
+  fig: (c) => chqBluesFig(c, 'C'),
+  steps: [
+    { title: ['Bars 1 to 4: I', '1–4마디: I'], line: ['Four bars of I. In C: C E G.', 'I을 네 마디. C장조에서는 C E G예요.'], fig: () => ({ mid: chqBluesGrid('C', null), kb: chqDegKb('C', 1, { scale: true }) }) },
+    { title: ['Bars 5 to 8: IV, IV, I, I', '5–8마디: IV, IV, I, I'], line: ['Two bars of IV, F A C, then back to I for two.', 'IV, F A C를 두 마디, 그다음 I로 돌아와 두 마디.'], fig: () => ({ mid: chqBluesGrid('C', 4), kb: chqDegKb('C', 4, { scale: true }) }) },
+    { title: ['Bars 9 to 12: V, IV, I, I', '9–12마디: V, IV, I, I'], line: ['V, G B D, then IV, then two bars of I to finish. Blues players often add a 7th to each chord.', 'V, G B D, 그다음 IV, 마지막으로 I 두 마디. 블루스에서는 화음마다 7음을 더해 치는 일이 많아요.'], fig: () => ({ mid: chqBluesGrid('C', 8), kb: chqDegKb('C', 5, { scale: true }) }) },
+  ],
+  make: (n, prev) => { const kind = n % 2; let bar, g = 0; do { bar = kqPick([4, 5, 6, 8, 9, 10]); } while (prev && prev.bar === bar && g++ < 8); const d = CHQ_BLUES[bar], R = CHQ_ROMW[d][0];
+    if (kind === 0) return { bar, kind: 'choice', cols: 3, prompt: ['Which chord fills bar ' + (bar + 1) + '?', (bar + 1) + '마디의 화음은?'], opts: [1, 4, 5].map(x => ({ id: String(x), label: CHQ_ROMW[x][0] })), ans: String(d), ok: (v) => v === String(d),
+      fig: (c) => ({ mid: chqBluesGrid('C', c.res ? bar : null, c.res ? [] : [bar]) }), yes: ['Bar ' + (bar + 1) + ': ' + R + '.', (bar + 1) + '마디: ' + ivqJ(R, '이에요', '예요') + '.'],
+      no: ['The rows go I I I I, IV IV I I, V IV I I. Bar ' + (bar + 1) + ' is ' + R + '.', '줄마다 I I I I, IV IV I I, V IV I I예요. ' + (bar + 1) + '마디는 ' + ivqJ(R, '이에요', '예요') + '.'] };
+    let key, h = 0; do { key = kqPick(['G', 'F', 'D']); } while (prev && prev.key === key && h++ < 8); const dd = kqPick([4, 5]), D = chqDeg(key, dd), ans = D.names.join(' '), opts = shuffle([1, 4, 5].map(x => chqDeg(key, x).names.join(' ')));
+    return { bar, key, kind: 'choice', cols: 1, prompt: ['The 12-bar blues in ' + key + ' major. Chord ' + CHQ_ROMW[dd][0] + ' is…', key + '장조의 12마디 블루스. ' + ivqJ(CHQ_ROMW[dd][0], '은', '는') + '…'], opts: opts.map(x => ({ id: x, label: x })), ans, ok: (v) => v === ans,
+      fig: (c) => ({ kb: c.res ? chqDegKb(key, dd, { scale: true }) : ivqKb({ ks: [IVQ_KEYS[key].k, IVQ_KEYS[key].k + 17], marks: chqScaleBase(key) }) }),
+      yes: [CHQ_ROMW[dd][0] + ' in ' + key + ' major: ' + ans + '.', key + '장조의 ' + CHQ_ROMW[dd][0] + ': ' + ans + '.'], no: [CHQ_ROMW[dd][0] + ' starts on note ' + dd + ' of ' + key + ' major: ' + ans + '.', ivqJ(CHQ_ROMW[dd][0], '은', '는') + ' ' + key + '장조의 ' + dd + '번 음에서 시작해요. ' + ivqJ(ans, '이에요', '예요') + '.'] }; },
+};
+
+
 const chqRow = (id, en, ko, bEn, bKo) => [id, en, ko, bEn, bKo, () => <KqEngine spec={CHQ_SPEC[id]}/>];
 const CHQ_ROWS = [
   chqRow('ch-stack', 'Root, 3rd, 5th', '근음, 3음, 5음', 'Skip a key, skip a key: a triad on any white key.', '하나 건너, 하나 건너: 어느 흰건반 위에서나 3화음.'),
@@ -323,7 +438,11 @@ const CHQ_ROWS = [
   chqRow('ch-ear', 'Hear major and minor', '장3화음과 단3화음 듣기', 'The same root, one note different.', '같은 근음, 다른 음 하나.'),
   chqRow('ch-tonic', 'The tonic triad', '으뜸화음', 'Notes 1, 3 and 5 of the scale: chord I.', '음계의 1번, 3번, 5번 음: I.'),
   chqRow('ch-145', 'I, IV and V7', 'I, IV, V7', 'The chords on notes 1, 4 and 5, and V7.', '1번, 4번, 5번 음 위의 화음과 V7.'),
+  chqRow('ch-seven', 'Seven chords in a key', '조 안의 일곱 화음', 'I ii iii IV V vi vii°: major, minor, diminished.', 'I ii iii IV V vi vii°: 장, 단, 감.'),
   chqRow('ch-inv', 'Inversions', '전위', 'A different note at the bottom; 7th chords too.', '맨 아래 음만 바꿔요. 7화음도.'),
+  chqRow('ch-cad', 'Cadences', '종지', 'Perfect, plagal, imperfect, interrupted.', '정격종지, 변격종지, 반종지, 거짓종지.'),
+  chqRow('ch-ext', '9th, 11th and 13th chords', '9화음, 11화음, 13화음', 'Keep stacking 3rds: G B D F A C E.', '3도를 계속 쌓아요: G B D F A C E.'),
+  chqRow('ch-blues', 'The 12-bar blues', '12마디 블루스', 'I I I I, IV IV I I, V IV I I.', 'I I I I, IV IV I I, V IV I I.'),
 ];
 CHQ_ROWS.forEach(([id, en, ko, benEn, bko, Comp]) => {
   TOOLS.push({ id, ch: 'concept', title: en, blurb: benEn, hidden: true, get kicker() { return TOOL_AREAS.find(a => a.id === 'pitch').name + ' · ' + homeCatById('p-chords').name; }, C: Comp });
