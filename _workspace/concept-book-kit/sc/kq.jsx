@@ -100,7 +100,7 @@ function KqEngine({ spec }) {
     if (kb && view === 'try' && q && q.kind === 'multi') { found.forEach(k => { marks[k] = 'good'; }); if (pickd != null && res === 'no') marks[pickd] = 'bad'; }
     return <>
       {f.top}{f.staff}{f.mid}
-      {kb && kqKb({ ...kb, marks, keepBlack: spec === KQ_SPEC['kq-black'], mcOn: ['kq-climb', 'kq-clefs', 'kq-read', 'kq-middlec'].some(id => spec === KQ_SPEC[id]), mcCap: spec === KQ_SPEC['kq-climb'] }, (k) => { playKey(k + (kb.base || 0), 0.6); setLast(k); if (view === 'try' && q && (q.kind === 'key' || q.kind === 'multi')) pick(k); else if (kb.onTap) kb.onTap(k); })}
+      {kb && kqKb({ ...kb, marks, keepBlack: !!kb.keepBlack || spec === KQ_SPEC['kq-black'], mcOn: !!kb.mcOn || ['kq-climb', 'kq-clefs', 'kq-read', 'kq-middlec'].some(id => spec === KQ_SPEC[id]), mcCap: spec === KQ_SPEC['kq-climb'] }, (k) => { playKey(k + (kb.base || 0), 0.6); setLast(k); if (view === 'try' && q && (q.kind === 'key' || q.kind === 'multi')) pick(k); else if (kb.onTap) kb.onTap(k); })}
       {allowStaff && f.staffAlt && <>
         <div style={{ textAlign: 'center', margin: '8px 0 0' }}><button className="ghost-btn" style={{ ...scS.back, minWidth: 0, fontSize: 14 }} onClick={() => setStf(!stf)}>{stf ? t('Hide the staff', '오선 숨기기') : t('Show on the staff', '오선으로 보여주기')}</button></div>
         {stf && f.staffAlt}</>}
@@ -125,7 +125,7 @@ function KqEngine({ spec }) {
     body = <>
       {tit(spec.tryTitle || ['Your turn', '내가 해보기'])}{lin(q.prompt)}{kqFeed(txt[1], txt[0])}{show(f, false)}
       {q.opts && <div style={{ display: 'grid', gridTemplateColumns: 'repeat(' + (q.cols || 2) + ',1fr)', gap: 8, margin: '10px 0 0' }}>
-        {q.opts.map(o => <button key={o.id} className={'choice-btn' + (res == null ? '' : o.id === q.ans ? ' good' : o.id === pickd ? ' bad' : '')} disabled={res != null} onClick={() => pick(o.id)} style={{ padding: '13px 4px', fontSize: q.cols > 3 ? 18 : 16, fontWeight: 900 }}>{typeof o.label === 'function' ? o.label() : o.label}</button>)}
+        {q.opts.map(o => <button key={o.id} className={'choice-btn' + (res == null ? '' : o.id === q.ans ? ' good' : o.id === pickd ? ' bad' : '')} disabled={res != null} onClick={() => pick(o.id)} style={{ gridColumn: o.span ? '1 / -1' : undefined, padding: '13px 4px', fontSize: q.cols > 3 ? 18 : 16, fontWeight: 900 }}>{typeof o.label === 'function' ? o.label() : o.label}</button>)}
       </div>}
       {scRow(<>
         <button className="ghost-btn" style={scS.back} onClick={() => go('step', steps.length - 1)}>{t('← Back', '← 이전')}</button>
