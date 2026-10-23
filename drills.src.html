@@ -4808,7 +4808,8 @@ function DoubleSharpShape({ x, y, color }) {
   const r = 4.4;
   return <path d={`M${x - r},${y - r} L${x + r},${y + r} M${x - r},${y + r} L${x + r},${y - r}`} stroke={color} strokeWidth="2.7" strokeLinecap="butt" fill="none"/>;
 }
-function KSStaff({ count, type, width = 170, ink = '#26296b', accent = '#e4572e', upto, clef = 'treble', numbers, onPick, ghostPos, ring, tonicPos, tonicFrom, tallBox }) {   // Phase 516: tonicPos = draw the key note at this staff step; tonicFrom = step of the sign it comes from (draws the half-step arrow)   // Phase 515: ring = circle the sign with this index   // Phase 509: onPick(step) = tap the staff; ghostPos = a faint wrong guess
+const KF_POS_NAME = ['E', 'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'A'];   // treble staff, bottom line = 0
+function KSStaff({ count, type, width = 170, ink = '#26296b', accent = '#e4572e', upto, clef = 'treble', numbers, onPick, ghostPos, ring, tonicPos, tonicFrom, tallBox, zoom = 1.6, dots }) {   // Phase 516: tonicPos = draw the key note at this staff step; tonicFrom = step of the sign it comes from (draws the half-step arrow)   // Phase 515: ring = circle the sign with this index   // Phase 509: onPick(step) = tap the staff; ghostPos = a faint wrong guess
   const tall = numbers || tallBox;
   const order = type === 'sharp' ? SHARP_ORDER : FLAT_ORDER;
   const posMap = type === 'sharp' ? SHARP_POS : FLAT_POS;
@@ -4821,13 +4822,14 @@ function KSStaff({ count, type, width = 170, ink = '#26296b', accent = '#e4572e'
   const lowD = clef === 'bass' ? 18 : 30;
   const yOf = (d) => base - (d - lowD) * 5;
   return (
-    <svg viewBox={`0 ${base - (tall ? 72 : 60)} ${width} ${tall ? 90 : 78}`} style={{width:'100%',maxWidth:width * 1.6,display:'block',margin:'0 auto',cursor:onPick ? 'pointer' : undefined,touchAction:onPick ? 'manipulation' : undefined}} data-staff-pick={onPick ? '1' : undefined}
+    <svg viewBox={`0 ${base - (tall ? 72 : 60)} ${width} ${tall ? 90 : 78}`} style={{width:'100%',maxWidth:width * zoom,display:'block',margin:'0 auto',cursor:onPick ? 'pointer' : undefined,touchAction:onPick ? 'manipulation' : undefined}} data-staff-pick={onPick ? '1' : undefined}
       onClick={onPick ? (e) => { const r = e.currentTarget.getBoundingClientRect(); const vy = (base - (tall ? 72 : 60)) + (e.clientY - r.top) / r.height * (tall ? 90 : 78); const st = Math.round((base - vy) / 5); if (st >= 0 && st <= 10) onPick(st); } : undefined}>
       {onPick && <rect x="0" y={base - (tall ? 72 : 60)} width={width} height={tall ? 90 : 78} fill="transparent"/>}
       {ghostPos != null && (type === 'sharp' ? <g opacity="0.55"><SharpShape x={56 + accs.length * 15} y={yPos(ghostPos)} color="#c8361b"/></g> : <g opacity="0.55"><FlatShape x={56 + accs.length * 15} y={yPos(ghostPos)} color="#c8361b"/></g>)}
       {numbers && accs.map((acc, i) => <text key={'n' + acc} x={56 + i * 15} y={base - 62} textAnchor="middle" fontSize="9.5" fontWeight="800" fill={upto === i ? '#c8361b' : '#6d6f9c'}>{i + 1}</text>)}
       {[0, 2, 4, 6, 8].map(p => <line key={p} x1="4" x2={width - 4} y1={base - p * 5} y2={base - p * 5} stroke={ink} strokeOpacity="0.5" strokeWidth="1.1"/>)}
       <ClefGlyph clef={clef} st={clef} yOf={yOf} ink={ink}/>
+      {dots && Array.from({ length: 11 }, (_, p) => <circle key={'dt' + p} cx={56 + accs.length * 15} cy={base - p * 5} r="1.4" fill="#e4572e" opacity="0.7" pointerEvents="none"/>)}
       {accs.map((acc, i) => {
         const x = xs[i], y = yPos(posMap[acc]);
         const col = upto !== undefined && i === upto ? '#c8361b' : accent;
@@ -4998,7 +5000,7 @@ function PlaceIt({ initType = 'sharp' }) {
     else { setMiss(pos); setTries(t => t + 1); setTimeout(() => setMiss(m => (m === pos ? null : m)), 700); }
   }
   function reset(ty) { setType(ty); setN(0); setMiss(null); setTries(0); }
-  const pos2name = (p) => ['E', 'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'A'][p + 1];
+  const pos2name = (p) => ['D', 'E', 'F', 'G', 'A', 'B', 'C', 'D', 'E', 'F', 'G'][p + 1];
   return (
     <div className="try-box" style={{background:'var(--brass-bg)',borderRadius:10,padding:'10px',margin:'4px 0 16px'}}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:4}}>
@@ -5259,7 +5261,7 @@ function KfFind({ type, go, setKi, mode, goLabel, onBack, backFn }) {   // mode 
   const finish = () => { setFound(true); playKey(tonic, 0.6); const j = KEY_SIGS.findIndex(q => q.major === k.major); if (j >= 0) setKi(j); };
   const hit = (keyIdx, step) => {
     if (done || auto) return;
-    const flash = () => { if (keyIdx != null) setBad(keyIdx); else setBadPos(step); timers.current.push(setTimeout(() => { setBad(null); setBadPos(null); }, 650)); };
+    const flash = () => { if (keyIdx != null) setBad(keyIdx); else setBadPos(step); timers.current.push(setTimeout(() => { setBad(null); setBadPos(null); }, keyIdx != null ? 650 : 1400)); };
     if (stage === 0) {
       const ok = keyIdx != null ? m12(keyIdx) === pcOfName(order[want]) : step === lastPos;
       if (!ok) return flash();
@@ -5294,13 +5296,13 @@ function KfFind({ type, go, setKi, mode, goLabel, onBack, backFn }) {   // mode 
   const tapStaff = (st) => {
     if (got >= 7) return;
     if (st === (sharp ? SHARP_POS : FLAT_POS)[order[got]]) { clear(); setBadPos(null); playKey(kidx(order[got]), 0.45); setGot(got + 1); setLit(got + 1); }
-    else { setBadPos(st); clear(); timers.current.push(setTimeout(() => setBadPos(null), 650)); }
+    else { setBadPos(st); clear(); timers.current.push(setTimeout(() => setBadPos(null), 1400)); }
   };
   if (phase === 'order' && view === 'tap') return (<>
     <KfChain hi={[0]}/>
     <div style={titleStyle}>{got >= 7 ? t('All seven!', '일곱 개 모두!') : t('Tap ' + nameWord + ' ' + (got + 1), nameWord + ' ' + (got + 1) + '번을 눌러요')}</div>
     <div style={{textAlign:'center',fontSize:12,color:'#5a5d8f',margin:'-4px 0 4px',minHeight:16}}>{got >= 7 ? '' : t('on the staff or on the keys', '오선이나 건반에서')}</div>
-    <div style={{maxWidth:260,margin:'0 auto'}}><KSStaff count={lit} type={type} width={200} numbers upto={lit > 0 ? lit - 1 : undefined} onPick={got >= 7 ? undefined : tapStaff} ghostPos={badPos}/></div>
+    <div style={{maxWidth:340,margin:'0 auto'}}><KSStaff count={lit} type={type} width={200} zoom={2} dots={got < 7} numbers upto={lit > 0 ? lit - 1 : undefined} onPick={got >= 7 ? undefined : tapStaff} ghostPos={badPos}/>{<div role="status" style={{textAlign:'center',fontSize:13,fontWeight:700,color:'#c8361b',minHeight:18}}>{badPos != null ? t('That is ' + KF_POS_NAME[badPos] + '. Try again.', '그건 ' + KF_POS_NAME[badPos] + '예요. 다시 해 봐요.') : ''}</div>}</div>
     <div style={{display:'flex',flexWrap:'wrap',gap:'0 6px',justifyContent:'center',fontSize:14,fontWeight:700,lineHeight:1.5,margin:'2px 0 6px',textWrap:'balance'}}>
       {words.map((w, i) => <span key={i} style={{opacity:i < got ? 0.45 : 1,color:i === got ? '#c8361b' : '#26296b',fontWeight:i === got ? 900 : 700}}>{w}</span>)}
     </div>
@@ -5332,7 +5334,7 @@ function KfFind({ type, go, setKi, mode, goLabel, onBack, backFn }) {   // mode 
     <div style={{display:'grid',gridTemplateColumns:'repeat(' + (tiny ? 4 : 7) + ', minmax(0, 1fr))',gap:4,marginBottom:6}}>
       {[1, 2, 3, 4, 5, 6, 7].map(i => <button key={i} className={'chip' + (n === i ? ' active' : '')} aria-pressed={n === i} style={{...KF_BTN,minWidth:44,padding:'0 2px',fontSize:14}} onClick={() => pickN(i)}>{i}{sym}</button>)}
     </div>
-    <div style={{maxWidth:260,margin:'0 auto'}}><KSStaff count={lit} type={type} width={200} numbers upto={(stage === 1 || done) && !auto ? want : undefined} tallBox={sharp} onPick={done || auto ? undefined : (st) => hit(null, st)} ring={(stage === 1 || (done && !auto)) ? want : undefined} tonicPos={done && !auto ? tonicStep : undefined} tonicFrom={done && !auto && sharp ? lastPos : undefined} ghostPos={badPos}/></div>
+    <div style={{maxWidth:340,margin:'0 auto'}}><KSStaff count={lit} type={type} width={200} zoom={2} dots={!(done || auto)} numbers upto={(stage === 1 || done) && !auto ? want : undefined} tallBox={sharp} onPick={done || auto ? undefined : (st) => hit(null, st)} ring={(stage === 1 || (done && !auto)) ? want : undefined} tonicPos={done && !auto ? tonicStep : undefined} tonicFrom={done && !auto && sharp ? lastPos : undefined} ghostPos={badPos}/>{<div role="status" style={{textAlign:'center',fontSize:13,fontWeight:700,color:'#c8361b',minHeight:18}}>{badPos != null ? t('That is ' + KF_POS_NAME[badPos] + '. Try again.', '그건 ' + KF_POS_NAME[badPos] + '예요. 다시 해 봐요.') : ''}</div>}</div>
     {wordsRow}
     <div style={{textAlign:'center',fontSize:15,fontWeight:800,color:'#26296b',margin:'8px 0 6px',minHeight:40,textWrap:'balance'}}>{done ? '' : auto ? t('Only one: it is F.', '하나뿐이면 F예요.') : !sharp ? t('Tap the second last ♭ on the staff or the keys. That is the key.', '뒤에서 두 번째 플랫을 오선이나 건반에서 눌러요. 그게 바로 그 조예요.') : stage === 0 ? t('Tap the last ♯ on the staff or the keys.', '마지막 샤프를 오선이나 건반에서 눌러요.') : t('Now go up a half step: tap the key.', '이제 반음 위, 그 조를 눌러요.')}</div>
     <div style={{maxWidth:300,margin:'0 auto'}}><TapKeyboard octaves={1} marks={bad != null ? { ...marks, [bad]: 'miss' } : marks} labels="all" bigLabels extraC={sharp} extraB={!sharp} onTap={done || auto ? undefined : (i) => hit(i, null)}/></div>
@@ -5487,15 +5489,15 @@ function KfMinor({ i, setI, go }) {   // Phase 522: learn (find the major, then 
 }
 function KfCircle({ i, setI, go }) {
   const ks = KEY_SIGS[i];
-  const [sel, setSel] = useState(FIFTHS.includes(ks.major) ? ks.major : 'C');
-  const sg = KEY_SIGS.find(x => x.major === sel) || KEY_SIGS[0];
-  const pick = (k) => { setSel(k); playKey(pcOfName(k), 0.5); const j = KEY_SIGS.findIndex(q => q.major === k); if (j >= 0) setI(j); };
+  const [selM, setSelM] = useState(FIFTHS.includes(fifthsSlot(ks.major)) ? ks.major : 'C');
+  const sel = fifthsSlot(selM), sg = KEY_SIGS.find(x => x.major === selM) || KEY_SIGS[0];
+  const pick = (slot) => { const k = fifthsPick(slot, selM); setSelM(k); playKey(pcOfName(k), 0.5); const j = KEY_SIGS.findIndex(q => q.major === k); if (j >= 0) setI(j); };
   return (<>
     <KfChain hi={[1]}/>
     <div style={{textAlign:'center',fontFamily:"'Playfair Display', Georgia, serif",fontSize:22,fontWeight:900,color:'#26296b',lineHeight:1.2,margin:'0 0 6px',textWrap:'balance'}}>{t('Every key, in one circle', '모든 조를 한 바퀴에')}</div>
     <div style={{maxWidth:290,margin:'0 auto'}}><FifthsRing sel={sel} onPick={pick} o={{ filled: [], twins: true, minors: true }} label={t('The circle of fifths, ' + skgKeyName(sel) + ' ringed; inside each key, its relative minor.', '5도권: ' + skgKeyName(sel) + '에 동그라미. 조마다 안쪽에 그 나란한조.')}/></div>
     <div style={{maxWidth:200,margin:'2px auto 0'}}><KSStaff count={sg.count} type={sg.type} width={170}/></div>
-    <div style={{textAlign:'center',fontSize:14,fontWeight:800,color:'#26296b',margin:'2px 0 4px',textWrap:'balance'}}>{cbKeyLines(sel)[0]}</div>
+    <div style={{textAlign:'center',fontSize:14,fontWeight:800,color:'#26296b',margin:'2px 0 4px',textWrap:'balance'}}>{cbKeyLines(selM)[0]}</div>
     <div style={{textAlign:'center',fontSize:15,fontWeight:800,color:'#26296b',margin:'6px 0 0'}}>{t('Clockwise: one more ♯. Anticlockwise: one more ♭.', '시계 방향은 샤프 하나 더, 반시계 방향은 플랫 하나 더.')}</div>
     <KfNext go={go}/>
   </>);
@@ -5515,8 +5517,8 @@ function KfPiece({ i, setI }) {   // Phase 531: one table of the key signatures,
     <div role="group" aria-label={t('How to see the keys', '조를 보는 방법')} style={{display:'flex',gap:0,justifyContent:'center',margin:'0 auto 12px',maxWidth:240,border:'1.5px solid #26296b',borderRadius:999,overflow:'hidden'}}>
       {[['circle', t('Circle', '원')], ['list', t('List', '목록')]].map(([v, lab]) => <button key={v} type="button" aria-pressed={view === v} onClick={() => setView(v)} style={{flex:1,minHeight:38,border:'none',cursor:'pointer',font:'inherit',fontSize:14,fontWeight:800,background:view === v ? '#26296b' : '#fffefa',color:view === v ? '#fffefa' : '#26296b'}}>{lab}</button>)}
     </div>
-    {view === 'circle' && (() => { const sel = FIFTHS.includes(ks.major) ? ks.major : 'C', sg = KEY_SIGS.find(x => x.major === sel) || KEY_SIGS[0];
-      const pick = (k) => { playKey(pcOfName(k), 0.5); const j = KEY_SIGS.findIndex(q => q.major === k); if (j >= 0) setI(j); };
+    {view === 'circle' && (() => { const sel = FIFTHS.includes(fifthsSlot(ks.major)) ? fifthsSlot(ks.major) : 'C', sg = FIFTHS.includes(fifthsSlot(ks.major)) ? ks : KEY_SIGS[0];
+      const pick = (slot) => { const k = fifthsPick(slot, ks.major); playKey(pcOfName(k), 0.5); const j = KEY_SIGS.findIndex(q => q.major === k); if (j >= 0) setI(j); };
       return <>
         <div style={{maxWidth:290,margin:'0 auto'}}><FifthsRing sel={sel} onPick={pick} o={{ filled: [], twins: true, minors: true }} label={t('The circle of fifths, ' + skgKeyName(sel) + ' ringed; inside each key, its relative minor.', '5도권: ' + skgKeyName(sel) + '에 동그라미. 조마다 안쪽에 그 나란한조.')}/></div>
         <div style={{display:'flex',alignItems:'stretch',justifyContent:'center',gap:4,margin:'4px auto 0',maxWidth:220}} role="img" aria-label={t('The key signature on the treble and bass staves', '높은음자리표와 낮은음자리표의 조표')}>
@@ -5568,7 +5570,7 @@ function KfWhat() {
     ? (done ? t('The ♯ on the F line is in the key signature. Every F is sharp: the low ones and the high one.', '조표의 ♯이 F 줄에 있어요. 낮은 F도 높은 F도, 모든 F가 샵이에요.') : '')
     : (done ? t('Every ' + letters + ' gets ' + word + ', in every octave.', '모든 ' + letters + '에 ' + word + '이 붙어요, 어느 옥타브에서나.') : '');
   return (
-    <div className="try-box" data-kf-lesson="what" style={{background:'#fff',border:'1px solid var(--border)',borderRadius:10,padding:'10px 10px 12px',margin:'4px 0 16px'}}>
+    <div data-kf-inner="what">
       <div style={titleStyle}>{view === 'all' ? t('What a key signature does', '조표가 하는 일') : t('Your turn', '내가 해보기')}</div>
       {view === 'try' && <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap',marginBottom:8}}>
         {['G', 'D', 'F', 'Bb'].map(x => <button key={x} className={'chip' + (k === x ? ' active' : '')} aria-pressed={k === x} style={{...KF_BTN,padding:'0 12px',fontSize:14}} onClick={() => setK(x)}>{skgKeyName(x)}</button>)}
@@ -46729,6 +46731,7 @@ const skgFill = (x, lo, hi, avoid = []) => pick([x - 2, x - 1, x + 1, x + 2, x +
 // where the key's changed letters sit in a range (every octave)
 const skgDsOf = (key, lo, hi) => { const L = Object.keys(skgMap(key)); const out = []; for (let d = lo; d <= hi; d++) if (L.includes(dName(d))) out.push(d); return out; };
 const KN_STEP = { E: 0, F: 1, G: 2, A: 3, B: 4, C: 5, D: 6 };   // a letter's place on the treble staff, bottom line = 0
+const knLang = (s) => typeof s !== 'string' ? s : LANG === 'ko' ? s.replace(/ major$/, '장조').replace(/ minor$/, '단조') : s.replace(/장조$/, ' major').replace(/단조$/, ' minor');
 function genKnQuestion(lv, prev) {   // Phase 533: the questions that follow the Home lessons (all 15 key signatures)
   const uid = Math.random(), kind = lv.kind;
   const nm = (k, which) => which === 'minor' ? minName(k) : majName(k);
@@ -46847,9 +46850,9 @@ function skgCheck(q, ans) { return ans != null && String(ans) === String(q.answe
 function skgAnswerLabel(q) {
   if (q.kind === 'mykeys') return myKeySigLabel(q);
   if (q.kind === 'kn-order') return prettyNote(q.answer);
-  if (q.kind === 'kn-min') return majName(q.k) + ' → ' + q.answer;
-  if (q.kind === 'kn-last') return q.answer + t(' (the last note is the key note)', ' (마지막 음이 그 조의 음이에요)');
-  if (q.kind && q.kind.indexOf('kn-') === 0) return q.answer + ' (' + sigLabel(q.k) + ')';
+  if (q.kind === 'kn-min') return majName(q.k) + ' → ' + knLang(q.answer);
+  if (q.kind === 'kn-last') return knLang(q.answer) + t(' (the last note is the key note)', ' (마지막 음이 그 조의 음이에요)');
+  if (q.kind && q.kind.indexOf('kn-') === 0) return knLang(q.answer) + ' (' + sigLabel(q.k) + ')';
   if (q.sub === 'name') return skgKeyName(q.k) + ' (' + skgCountWords(q.k) + (SKG_KEY[q.k][1] ? ': ' + skgSignNames(q.k).join('\u00a0') : '') + ')';
   if (q.kind === 'which') { const L = skgSigns(q.k).map(([, l]) => l); return q.answer + t(' (every ' + L.join(' and every ') + ')', ' (모든 ' + L.join('와 모든 ') + ')'); }
   if (q.kind === 'write') { const right = q.opts[q.choices.indexOf(q.answer)]; return q.answer + ': ' + right.map(([s, d]) => { const nm = dName(d) + (s === '#' ? '♯' : '♭'); return t(nm + ' on ' + skgWhere(d, q.clef), skgKo(skgWhere(d, q.clef) + '의 ' + nm)); }).join(t(', then ', ', 그다음 ')); }
@@ -46881,7 +46884,7 @@ function KnQuestion({ q, given, locked, onAnswer, pixel, fbAbove }) {
     top = <>{prompt(t('Which major key has this key signature?', '이 조표는 어떤 장조일까요?'))}{paper(<KSStaff count={q.k.count} type={q.k.type} ink={ink} width={170} clef={q.clef}/>)}</>;
   }
   return <div style={fbAbove ? {display:'contents'} : undefined}><BoardTrack b={board} pixel={pixel}/>{top}
-    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:8,order:3}}>{q.choices.map(c => <button key={c} disabled={locked} onClick={() => onAnswer(c)} className={btnCls + st(c)} style={{padding:'14px 6px',minHeight:44}}>{q.kind === 'kn-order' ? prettyNote(c) : c}</button>)}</div></div>;
+    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:8,order:3}}>{q.choices.map(c => <button key={c} disabled={locked} onClick={() => onAnswer(c)} className={btnCls + st(c)} style={{padding:'14px 6px',minHeight:44}}>{q.kind === 'kn-order' ? prettyNote(c) : knLang(c)}</button>)}</div></div>;
 }
 const SkgQuestionAll = (p) => p.q && p.q.kind === 'mykeys' ? <MyKeySigQuestion {...p}/> : p.q && p.q.kind && p.q.kind.indexOf('kn-') === 0 ? <KnQuestion {...p}/> : <SkgQuestion {...p}/>;
 Object.assign(KEYSIG_DRILL, { feedbackAbove: true, levels: SKG_LEVELS, generate: genSkgQuestion, check: skgCheck, answerLabel: skgAnswerLabel, Question: SkgQuestionAll, Learn: SkgLearn });
@@ -48062,6 +48065,9 @@ function KeyRing({ sel = 'C', onPick, o = {}, label }) {
 // o.en: English hints (the Workbook is English only)
 const FIFTHS = ['C', 'G', 'D', 'A', 'E', 'B', 'Gb', 'Db', 'Ab', 'Eb', 'Bb', 'F'];
 const FIFTHS_SIG = ['0', '1♯', '2♯', '3♯', '4♯', '5♯', '6♯ 6♭', '5♭', '4♭', '3♭', '2♭', '1♭'];
+const FIFTHS_SLOT = { 'F#': 'Gb', 'C#': 'Db', Cb: 'B' }, FIFTHS_PAIR = { B: ['B', 'Cb'], Gb: ['Gb', 'F#'], Db: ['Db', 'C#'] };
+const fifthsSlot = (m) => FIFTHS_SLOT[m] || m;
+const fifthsPick = (slot, cur) => { const tw = FIFTHS_PAIR[slot]; return !tw ? slot : fifthsSlot(cur) === slot ? tw[(tw.indexOf(cur) + 1) % tw.length] : tw[0]; };
 const FIFTHS_TWIN = { B: ['B', 'C♭'], Db: ['D♭', 'C♯'] }, FIFTHS_TWIN_SIG = { B: '5♯ 7♭', Db: '5♭ 7♯' };
 const FIFTHS_MINOR = { C: 'Am', G: 'Em', D: 'Bm', A: 'F♯m', E: 'C♯m', B: ['G♯m', 'A♭m'], Gb: ['D♯m', 'E♭m'], Db: ['B♭m', 'A♯m'], Ab: 'Fm', Eb: 'Cm', Bb: 'Gm', F: 'Dm' };
 function FifthsRing({ sel, onPick, o = {}, label }) {
@@ -55030,7 +55036,7 @@ function ScShape() {
  ['sc-both', 'Both hands together', '양손 같이', 'One column per note: right hand above, left hand below.', '한 칸에 음 하나: 위는 오른손, 아래는 왼손.', ScBoth],
  ['sc-all', 'All twelve keys', '12개 조 모두', 'One pattern, twelve start notes.', '패턴 하나, 시작 음 열두 개.', ScAll],
  ['sc-chrom', 'The chromatic scale', '반음계', 'Every key, one half step at a time.', '모든 건반을 반음씩.', ScChrom],
- ['sc-min', 'Three kinds of minor', '세 가지 단음계', 'Natural, harmonic and melodic, shown on A.', 'A에서 보는 자연, 화성, 가락.', ScMinor],
+ ['sc-min', 'Three kinds of minor', '세 가지 단음계', 'Natural, harmonic and melodic, shown on D.', 'D에서 보는 자연, 화성, 가락.', ScMinor],
  ['sc-modes', 'The seven modes', '일곱 가지 선법', 'The seven homes, each with its name.', '일곱 개의 집과 그 이름.', MdNames]].forEach(([id, en, ko, benEn, bko, Comp]) => {
   TOOLS.push({ id, ch: 'concept', title: en, blurb: benEn, hidden: true, get kicker() { return TOOL_AREAS.find(a => a.id === 'pitch').name + ' · ' + (LANG === 'ko' ? '스케일' : 'Scales'); }, C: Comp });
   TOOL_KO[id] = [ko, bko];
