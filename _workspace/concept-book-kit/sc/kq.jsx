@@ -349,10 +349,10 @@ KQ_SPEC['kq-letters'] = {
   title: ['Letters up the staff', '오선을 따라 오르는 글자'], allLine: ['Every line and every space has a letter. One place up is the next letter.', '줄과 칸마다 글자가 있어요. 한 자리 오를 때마다 다음 글자예요.'],
   fig: () => ({ staff: kqStaff([30, 31, 32, 33, 34, 35, 36, 37], 'treble', { under: true }) }),
   steps: [
-    { title: ['Treble lines', '높은음자리 줄'], line: ['The five lines, from the bottom: E G B D F. Every Good Boy Deserves Fun.', '다섯 줄을 아래에서부터: E G B D F. Every Good Boy Deserves Fun.'], fig: () => ({ staff: kqStaff(KQ_ST.treble.lines, 'treble', { under: true }) }) },
+    { title: ['Treble lines', '높은음자리 줄'], line: ['The five lines, from the bottom: E G B D F. Every Good Boy Deserves Fun.', '다섯 줄을 아래에서부터 읽으면 E G B D F예요.'], fig: () => ({ staff: kqStaff(KQ_ST.treble.lines, 'treble', { under: true }) }) },
     { title: ['Treble spaces', '높은음자리 칸'], line: ['The four spaces, from the bottom: F A C E. They spell FACE.', '네 칸을 아래에서부터: F A C E. FACE라는 단어가 돼요.'], fig: () => ({ staff: kqStaff(KQ_ST.treble.spaces, 'treble', { under: true }) }) },
-    { title: ['Bass lines', '낮은음자리 줄'], line: ['The bass staff starts two letters lower: G B D F A. Great Big Dragon Flies Away.', '낮은음자리 오선은 두 글자 아래에서 시작해요: G B D F A. Great Big Dragon Flies Away.'], fig: () => ({ staff: kqStaff(KQ_ST.bass.lines, 'bass', { under: true }) }) },
-    { title: ['Bass spaces', '낮은음자리 칸'], line: ['The spaces: A C E G. All Cows Eat Grass.', '칸은 A C E G예요. All Cows Eat Grass.'], fig: () => ({ staff: kqStaff(KQ_ST.bass.spaces, 'bass', { under: true }) }) },
+    { title: ['Bass lines', '낮은음자리 줄'], line: ['The bass staff starts two letters lower: G B D F A. Great Big Dragon Flies Away.', '낮은음자리 오선은 두 글자 아래에서 시작해요. 줄은 G B D F A예요.'], fig: () => ({ staff: kqStaff(KQ_ST.bass.lines, 'bass', { under: true }) }) },
+    { title: ['Bass spaces', '낮은음자리 칸'], line: ['The spaces: A C E G. All Cows Eat Grass.', '칸은 A C E G예요.'], fig: () => ({ staff: kqStaff(KQ_ST.bass.spaces, 'bass', { under: true }) }) },
   ],
   make: (n) => kqNameQ(n % 2 === 0 ? 'treble' : 'bass'),
 };
