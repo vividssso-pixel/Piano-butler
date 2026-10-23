@@ -1,0 +1,7 @@
+import sys
+p = sys.argv[1]
+lines = open(p, encoding='utf-8').read().split('\n')
+idx = [i for i, l in enumerate(lines) if l.startswith('| 636 |')]
+assert len(idx) == 1
+lines.insert(idx[0] + 1, "| 637 | 2026-10-23 | **Chords rebuilt in the Keys and staff style (her 19:48 go-ahead).** Eight new lessons on KqEngine (sc/ch.jsx, spliced by sc/patch659.py after the Intervals ones), each whole picture, one by one, your turn; keyboard first, the staff on request. Home shows three groups, each with one Questions button at its level of the chords drill: (1) Building a triad: Root, 3rd, 5th (skip a key, skip a key, on any white key), Triads on the staff (all lines or all spaces, root at the bottom, bass staff too), Blocked and broken (fingers 1 3 5 and 5 3 1); level 1. (2) Major and minor: Major or minor (hop arrows 4 + 3 and 3 + 4; on white keys C F G major, D E A minor, B D F neither), Hear major and minor; level 3. (3) Chords in a key: The tonic triad (C G D F major), I, IV and V, Inversions (root position, 1st, 2nd); level 7. The fourteen old Toolbox tools stay in the Toolbox (cadences, 7th chords and beyond are only there). With this every Pitch concept is on the Home. **For her review (not from a checked source):** the facts above, 'in a major key I, IV and V are all major', the tonic triad of a major key is major, and the Korean terms 근음/3음/5음, 장3화음/단3화음, 으뜸화음/버금딸림화음/딸림화음, 함께/펼쳐서, 기본 위치/제1전위/제2전위 (taken from the older Chords pads). Modes has no Questions button (it has no drill). |")
+open(p, 'w', encoding='utf-8').write('\n'.join(lines)); print('ok')
