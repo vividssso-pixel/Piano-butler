@@ -174,7 +174,7 @@ CHQ_SPEC['ch-tonic'] = {
       no: (k) => ['Count the marked scale from ' + key + ' as 1: notes 1, 3 and 5 are ' + D.names.join(' ') + '.', key + '를 1로 표시된 음계를 세어 보세요. 1번, 3번, 5번 음은 ' + D.names.join(' ') + '예요.'] };
     if (kind === 1) { const opts = CHQ_KEYS;
       return { key, kind: 'choice', cols: 4, prompt: ['This is the tonic triad of a major key. Which key?', '이건 어느 장조의 으뜸화음일까요?'], opts: opts.map(x => ({ id: x, label: () => t(x + ' major', x + '장조') })), ans: key, ok: (v) => v === key, play: () => chqPlay(D.keys, 'block'),
-        fig: (c) => ({ kb: chqKb(D.keys, { ks: [K.k, K.k + 14], words: c.res ? ['1', '3', '5'] : D.names }) }),
+        fig: (c) => ({ kb: chqKb(D.keys, { ks: [K.k, K.k + 14], words: c.res ? ['1', '3', '5'] : null, plain: !c.res }) }),
         yes: [D.names.join(' ') + ': the tonic triad of ' + key + ' major.', D.names.join(' ') + ': ' + key + '장조의 으뜸화음이에요.'], no: ['The root names the key: ' + D.names.join(' ') + ' is the tonic triad of ' + key + ' major.', '근음이 조 이름이에요. ' + D.names.join(' ') + '는 ' + key + '장조의 으뜸화음이에요.'] }; }
     const ans = D.names.join(' '), L0 = 'CDEFGAB'.indexOf(key), w1 = [0, 2, 4].map(s => 'CDEFGAB'[(L0 + s) % 7]).join(' '), w2 = [0, 1, 2].map(j => K.names[j]).join(' '), w3 = [4, 6, 8].map(j => K.names[j % 7]).join(' ');
     const opts = shuffle([...new Set([ans, w1, w2, w3])]); while (opts.length < 4) opts.push([3, 5, 7].map(j => K.names[j % 7]).join(' '));

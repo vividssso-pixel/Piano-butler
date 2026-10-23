@@ -5,7 +5,7 @@
 const ivqOrdEn = (n) => n === 1 ? 'unison' : n === 8 ? 'octave' : n + (n === 2 ? 'nd' : n === 3 ? 'rd' : 'th');
 const ivqA = (n) => [n === 8 ? 'an octave' : n === 1 ? 'a unison' : 'a ' + ivqOrdEn(n), n === 8 ? '옥타브' : n + '도'];
 const IVQ_QW = { P: ['perfect', '완전'], M: ['major', '장'], m: ['minor', '단'], A: ['augmented', '증'], d: ['diminished', '감'] };
-const ivqNm = (q, n) => [IVQ_QW[q][0] + ' ' + ivqOrdEn(n), IVQ_QW[q][1] + n + '도'];
+const ivqNm = (q, n) => n === 8 && q === 'P' ? ['octave', '옥타브'] : [IVQ_QW[q][0] + ' ' + ivqOrdEn(n), IVQ_QW[q][1] + n + '도'];
 const ivqAn = (q, n) => { const w = ivqNm(q, n); return [(/^[aeiou]/.test(w[0]) ? 'an ' : 'a ') + w[0], w[1]]; };
 const IVQ_SCALE = [0, 2, 4, 5, 7, 9, 11, 12];   // a major scale, in half steps from the key note
 const ivqWhite = (k) => [0, 2, 4, 5, 7, 9, 11].includes(((k % 12) + 12) % 12);
@@ -72,7 +72,7 @@ const IVQ_SPEC = {};
 // ══ 1. The number ══
 // ── lesson 1: count the letters
 IVQ_SPEC['iv-count'] = {
-  title: ['Count the letters', '글자를 세어요'], allLine: ['An interval is the distance between two notes. Its number counts the letters from the lower note up to the higher one, both notes included. Tap a white key to count from C.', '음정은 두 음 사이의 거리예요. 음정의 숫자는 아래 음부터 위 음까지 글자를 세요. 두 음 모두 넣어서요. 흰건반을 눌러 C부터 세어 보세요.'],
+  title: ['Count the letters', '글자를 세어요'], allLine: ['An interval is the distance between two notes. Its number counts the letters from the lower note up to the higher one, both notes included. Tap a white key to count from C.', '음정은 두 음 사이의 거리예요. 음정의 숫자는 아래 음부터 위 음까지, 두 음을 모두 넣어서 글자를 세어요. 흰건반을 눌러 C부터 세어 보세요.'],
   fig: (c) => { const hi = typeof c.last === 'number' && ivqWhite(c.last) && c.last > 0 && c.last <= 12 ? c.last : 7, n = ivqCountW(0, hi);
     return { kb: ivqLetters(0, hi, typeof c.last === 'number' ? 99 : c.tk + 1, { ks: [0, 12] }), below: c.tk + 1 >= n || typeof c.last === 'number' ? ivqCap(kqT(['C to ' + ivqL(hi) + ': ' + ivqA(n)[0], 'C에서 ' + ivqL(hi) + '까지: ' + ivqA(n)[1]]), KQ.COD, true) : ivqCap(' '),
       staffAlt: ivqStaffEl({ d: 28 }, { d: 28 + n - 1 }, { ladder: hi, colors: [KQ.COD, KQ.COD] }) }; },
@@ -103,7 +103,7 @@ IVQ_SPEC['iv-count'] = {
 // ── lesson 2: on the staff, every line and space counts
 const IVQ_ODD = (n) => n % 2 === 1;
 IVQ_SPEC['iv-staff'] = {
-  title: ['Intervals on the staff', '오선 위의 음정'], allLine: ['On the staff, count every line and every space from the lower note. The lower note is 1.', '오선에서는 아래 음부터 줄과 칸을 하나씩 모두 세요. 아래 음이 1이에요.'],
+  title: ['Intervals on the staff', '오선 위의 음정'], allLine: ['On the staff, count every line and every space from the lower note. The lower note is 1.', '오선에서는 아래 음부터 줄과 칸을 하나씩 모두 세어요. 아래 음이 1이에요.'],
   fig: (c) => ({ staff: ivqStaffEl({ d: 30 }, { d: 34 }, { ladder: 'all', colors: [KQ.COD, KQ.COD] }), below: ivqCap(kqT(['E to B: line 1 to line 3, a 5th', 'E에서 B: 1번 줄에서 3번 줄, 5도']), KQ.COD, true) }),
   steps: [
     { title: ['A 2nd: the very next place', '2도: 바로 다음 자리'], line: ['From a line to the space just above it, or from a space to the line just above. One step up the staff.', '줄에서 바로 위 칸으로, 또는 칸에서 바로 위 줄로. 오선에서 한 걸음이에요.'], fig: () => ({ staff: ivqStaffEl({ d: 30 }, { d: 31 }, { ladder: 2, colors: [KQ.COD, KQ.COD] }), kb: ivqLetters(4, 5, 99, { ks: [0, 12] }) }) },
@@ -160,7 +160,7 @@ IVQ_SPEC['iv-half'] = {
 // ── lesson 4: above the key note of a major scale every interval is major or perfect
 const IVQ_KEYS = { C: { k: 0, names: ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C'] }, G: { k: 7, names: ['G', 'A', 'B', 'C', 'D', 'E', 'F♯', 'G'] }, D: { k: 2, names: ['D', 'E', 'F♯', 'G', 'A', 'B', 'C♯', 'D'] }, F: { k: 5, names: ['F', 'G', 'A', 'B♭', 'C', 'D', 'E', 'F'] } };
 const ivqQOf = (n) => [2, 3, 6, 7].includes(n) ? 'M' : 'P';
-const ivqShort = (n) => [(ivqQOf(n) === 'M' ? 'M' : 'P') + n, (ivqQOf(n) === 'M' ? '장' : '완') + n];
+const ivqShort = (n) => n === 8 ? ['8ve', '옥타브'] : [(ivqQOf(n) === 'M' ? 'M' : 'P') + n, (ivqQOf(n) === 'M' ? '장' : '완') + n];
 const ivqTonicKb = (key, only, extra = {}) => { const K = IVQ_KEYS[key], m = {}, names = {}, ncol = {};
   IVQ_SCALE.forEach((s, i) => { const k = K.k + s, n = i + 1; if (n === 1) { m[k] = 'pick'; return; } if (only && !only.includes(n)) { m[k] = 'pass'; return; } m[k] = ivqQOf(n) === 'M' ? 'seg3' : 'seg4'; names[k] = kqT(ivqShort(n)); ncol[k] = ivqQOf(n) === 'M' ? KQ.COD : KQ.BL; });
   return ivqKb({ ks: [K.k, K.k + 12], ...extra, marks: { ...m, ...(extra.marks || {}) }, names, ncol }); };
@@ -195,7 +195,7 @@ IVQ_SPEC['iv-tonic'] = {
 const IVQ_MIN = [[3, 'E', 'E♭'], [6, 'A', 'A♭'], [2, 'D', 'D♭'], [7, 'B', 'B♭']];
 const ivqPair = (n, q) => { const top = IVQ_SCALE[n - 1] - (q === 'm' ? 1 : 0); return top; };   // from C, in half steps
 const ivqMinFig = (rows) => { const els = rows.map(([n, q], j) => { const b = ivqPair(n, q), nm = q === 'm' ? IVQ_MIN.find(r => r[0] === n)[2] : IVQ_KEYS.C.names[n - 1];
-  return <React.Fragment key={j}>{ivqKbEl({ ...ivqHops(0, b), ks: [0, 12] })}{ivqCap(kqT(['C to ' + nm + ': ' + b + ' half steps, ' + ivqAn(q, n)[0], 'C에서 ' + nm + ': 반음 ' + b + '개, ' + ivqNm(q, n)[1]]), q === 'm' ? KQ.COD : KQ.BL)}</React.Fragment>; });
+  return <React.Fragment key={j}>{ivqKbEl({ ...ivqHops(0, b), ks: [0, 12] })}{ivqCap(kqT(['C to ' + nm + ': ' + b + ' half step' + (b === 1 ? '' : 's') + ', ' + ivqAn(q, n)[0], 'C에서 ' + nm + ': 반음 ' + b + '개, ' + ivqNm(q, n)[1]]), q === 'm' ? KQ.COD : KQ.BL)}</React.Fragment>; });
   return { top: <>{els}</> }; };
 IVQ_SPEC['iv-minor'] = {
   title: ['One half step smaller', '반음 하나 작게'], allLine: ['Bring the top note of a major interval down one half step and it becomes minor. The number stays the same.', '장음정의 위 음을 반음 하나 내리면 단음정이 돼요. 숫자는 그대로예요.'],
@@ -281,7 +281,7 @@ IVQ_SPEC['iv-invert'] = {
   fig: () => ivqInvFig(0, 4),
   steps: [
     { title: ['A 3rd becomes a 6th', '3도는 6도로'], line: ['C up to E is a 3rd. Move the C up an octave: E up to C is a 6th.', 'C에서 E는 3도예요. C를 한 옥타브 올리면 E에서 C는 6도예요.'], fig: () => ivqInvFig(0, 4) },
-    { title: ['Pairs that make 9', '합이 9인 짝'], line: ['2nd and 7th, 3rd and 6th, 4th and 5th: each pair adds up to 9. So do the unison and the octave, 1 and 8.', '2도와 7도, 3도와 6도, 4도와 5도. 짝마다 더하면 9예요. 1도와 옥타브, 1과 8도 그래요.'],
+    { title: ['Pairs that make 9', '합이 9인 짝'], line: ['2nd and 7th, 3rd and 6th, 4th and 5th: each pair adds up to 9. So do the unison and the octave, 1 and 8.', '2도와 7도, 3도와 6도, 4도와 5도. 짝마다 더하면 9예요. 1도와 옥타브, 1과 8을 더해도 9예요.'],
       fig: (c) => ({ mid: <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(92px, 1fr))', gap: 8, maxWidth: 440, margin: '6px auto' }}>{[[2, 7], [3, 6], [4, 5], [1, 8]].map(([x, y], i) => <div key={x} style={{ border: '1.5px solid ' + (i === Math.floor(c.tk / 2) % 4 ? KQ.CO : 'rgba(38,41,107,0.14)'), borderRadius: 10, padding: '10px 2px', textAlign: 'center', background: i === Math.floor(c.tk / 2) % 4 ? '#fbe3da' : '#fffefa', transition: 'all 0.3s' }}><div style={{ fontSize: 24, fontWeight: 900, color: KQ.NV, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{x} ↔ {y}</div><div style={{ fontSize: 13, fontWeight: 800, color: KQ.COD }}>= 9</div></div>)}</div>,
         kb: (() => { const [x] = [[2, 7], [3, 6], [4, 5], [1, 8]][Math.floor(c.tk / 2) % 4]; const b = ivqWhitesUp(0, x)[x - 1]; return x === 1 ? ivqKb({ ks: [0, 16], marks: { 0: 'pick', 12: 'pick' }, names: { 0: '1', 12: '8' }, ncol: { 0: KQ.COD, 12: KQ.COD } }) : ivqLetters(0, b, 99, { ks: [0, 16] }); })() }) },
     { title: ['Major becomes minor', '장은 단으로'], line: ['Major turns into minor, and minor into major. Perfect stays perfect. C to E, a major 3rd, turns into E to C, a minor 6th.', '장음정은 단음정으로, 단음정은 장음정으로 바뀌어요. 완전음정은 그대로 완전음정이에요. 장3도 C–E를 뒤집으면 단6도 E–C가 돼요.'], fig: () => ivqInvFig(0, 4, 'M', 'm', true) },
@@ -297,7 +297,7 @@ IVQ_SPEC['iv-invert'] = {
     return { nn, kind: 'choice', cols: 2, prompt: [ivqAn(q, nn)[0].replace(/^a/, 'A') + ' turned upside down is…', ivqNm(q, nn)[1] + '를 뒤집으면…'], opts: shuffle(opts).map(([x, y]) => ({ id: x + y, label: () => kqT(ivqNm(x, y)) })), ans, ok: (v) => v === ans,
       yes: [ivqAn(qi, inv)[0].replace(/^a/, 'A') + ': ' + nn + ' + ' + inv + ' = 9, and ' + (q === 'P' ? 'perfect stays perfect.' : IVQ_QW[q][0] + ' turns ' + IVQ_QW[qi][0] + '.'), ivqNm(qi, inv)[1] + '예요. ' + nn + ' + ' + inv + ' = 9, ' + (q === 'P' ? '완전은 그대로 완전이에요.' : IVQ_QW[q][1] + '음정은 ' + IVQ_QW[qi][1] + '음정이 돼요.')],
       no: ['Two things change: the number (' + nn + ' + ' + inv + ' = 9) and the kind (' + (q === 'P' ? 'perfect stays perfect' : IVQ_QW[q][0] + ' becomes ' + IVQ_QW[qi][0]) + '): ' + ivqNm(qi, inv)[0] + '.', '두 가지가 바뀌어요. 숫자(' + nn + ' + ' + inv + ' = 9)와 종류(' + (q === 'P' ? '완전은 그대로' : IVQ_QW[q][1] + '은 ' + IVQ_QW[qi][1] + '으로') + ')예요. ' + ivqNm(qi, inv)[1] + '예요.'],
-      fig: () => ({ mid: <div style={{ height: 4 }}/> }) }; },
+      fig: (c) => { const b = ivqWhitesUp(0, nn)[nn - 1]; return c.res ? ivqInvFig(0, b) : { kb: ivqLetters(0, b, 99, { ks: [0, 16] }) }; } }; },
 };
 
 // ── lesson 9: the tritone
