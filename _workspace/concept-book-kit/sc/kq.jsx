@@ -3,6 +3,7 @@
 // the key you tapped solid. Every lesson: the whole picture, one at a time, her turn. Title, line and feedback each say something new. The staff is shown on request in the keyboard lessons.
 const KQ = { CO: '#e4572e', COD: '#c0431f', BL: '#3b4fa8', NV: '#26296b' };
 const kqT = (a) => t(a[0], a[1]);
+const kqYe = (w) => { const x = String(w), ch = x.slice(-1), c = ch.charCodeAt(0); const closed = /[♯♭]/.test(ch) || (c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 > 0); return x + (closed ? '이에요' : '예요'); };
 const kqRnd = (n) => Math.floor(Math.random() * n), kqPick = (a) => a[kqRnd(a.length)];
 const KQ_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }, KQ_L = { 0: 'C', 2: 'D', 4: 'E', 5: 'F', 7: 'G', 9: 'A', 11: 'B' }, KQ_ABC = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
 const KQ_SMALL = ['C', 'D', 'E'], KQ_BIG = ['F', 'G', 'A', 'B'], KQ_BK2 = [1, 3], KQ_BK3 = [6, 8, 10];
@@ -20,11 +21,11 @@ const kqVx = (a, b) => [kqX(a) - 24, kqX(b) + 24];
 const KQW = 560;
 const kqW = (vx) => Math.min(KQW, Math.max(380, (vx[1] - vx[0]) * 1.5));
 const KQ_BLK = [1, 3, 6, 8, 10];
-const kqKb = (f0, onTap) => { let f = f0.keepBlack ? f0 : { ...f0, marks: Object.fromEntries(Object.entries(f0.marks || {}).filter(([k, v]) => !(KQ_BLK.includes(((+k % 12) + 12) % 12) && (v === 'seg3' || v === 'seg4')))) }; if (f0.mcOn && !f.bare) { const mc = -(f.base || 0), rg = f.ks || [0, f.oct * 12]; if (mc >= rg[0] && mc <= rg[1] && !(f.names && f.names[mc])) { const mk = { ...(f.marks || {}) }; if (!mk[mc]) mk[mc] = 'pass'; f = { ...f, marks: mk, names: { ...(f.names || {}), [mc]: 'C' }, ncol: { ...(f.ncol || {}), [mc]: KQ.COD }, cap: true }; } }
+const kqKb = (f0, onTap) => { let f = f0.keepBlack ? f0 : { ...f0, marks: Object.fromEntries(Object.entries(f0.marks || {}).filter(([k, v]) => !(KQ_BLK.includes(((+k % 12) + 12) % 12) && (v === 'seg3' || v === 'seg4')))) }; if (f0.mcOn && !f.bare) { const mc = -(f.base || 0), rg = f.ks || [0, f.oct * 12]; if (mc >= rg[0] && mc <= rg[1] && !(f.names && f.names[mc])) { const mk = { ...(f.marks || {}) }; if (!mk[mc]) mk[mc] = 'pass'; f = { ...f, marks: mk, names: { ...(f.names || {}), [mc]: 'C' }, ncol: { ...(f.ncol || {}), [mc]: KQ.COD }, cap: !!f0.mcCap }; } }
   const el = f.bare
   ? <div style={{ maxWidth: f.mw || kqW(f.vx || kqVx(0, f.oct * 12)), margin: '0 auto' }}><TapKeyboard octaves={f.oct} extraC marks={f.marks || {}} onTap={onTap} top={0} names={f.names || null} nameCol={f.ncol || null} vx={f.vx || kqVx(0, f.oct * 12)}/></div>
-  : <ScKeys ks={f.ks || [0, f.oct * 12]} oct={f.oct} marks={f.marks || {}} names={f.names || {}} ncol={f.ncol || {}} arcs={f.arcs || []} nonce={f.nonce || 0} onTap={onTap} mw={f.mw || kqW([kqX(f.ks ? f.ks[0] : 0) - 24, kqX(f.ks ? f.ks[1] : f.oct * 12) + 24])} plain={f.plain !== false}/>;
-  return f.cap ? <>{el}<div style={{ textAlign: 'center', fontSize: 13.5, fontWeight: 800, color: KQ.COD, margin: '2px 0 0' }}>{t('C = middle C, the C in the centre of the keyboard', 'C = 가운데 도, 건반 한가운데의 C')}</div></> : el; };
+  : <ScKeys ks={f.ks || [0, f.oct * 12]} oct={f.oct} marks={f.marks || {}} names={f.names || {}} ncol={f.ncol || {}} arcs={f.arcs || []} spans={f.spans || []} nonce={f.nonce || 0} onTap={onTap} mw={f.mw || kqW([kqX(f.ks ? f.ks[0] : 0) - 24, kqX(f.ks ? f.ks[1] : f.oct * 12) + 24])} plain={f.plain !== false}/>;
+  return f.cap ? <>{el}<div style={{ textAlign: 'center', fontSize: 13.5, fontWeight: 800, color: KQ.COD, margin: '2px 0 0' }}>{t('C = middle C, the C near the middle of the keyboard', 'C = 가운데 도, 건반 한가운데 가까이의 C')}</div></> : el; };
 // words or numbers above the keyboard, at the keys' own x (same crop as the keyboard under it, so they line up)
 const kqNumRow = (vx, items, fs = 22, drop = 0) => { const sc = (vx[1] - vx[0]) / 430, h0 = (fs + 14) * sc, h = h0 + drop, w = kqW(vx), pxu = w / (vx[1] - vx[0]);
   return <div style={{ maxWidth: w, margin: '0 auto', marginBottom: drop ? -drop * pxu : 0, position: 'relative', zIndex: 1, pointerEvents: 'none' }}><svg viewBox={`${vx[0]} 0 ${vx[1] - vx[0]} ${h}`} style={{ width: '100%', display: 'block' }}>
@@ -99,9 +100,9 @@ function KqEngine({ spec }) {
     if (kb && view === 'try' && q && q.kind === 'multi') { found.forEach(k => { marks[k] = 'good'; }); if (pickd != null && res === 'no') marks[pickd] = 'bad'; }
     return <>
       {f.top}{f.staff}{f.mid}
-      {kb && kqKb({ ...kb, marks, keepBlack: spec === KQ_SPEC['kq-black'], mcOn: ['kq-climb', 'kq-clefs', 'kq-read', 'kq-middlec'].some(id => spec === KQ_SPEC[id]) }, (k) => { playKey(k + (kb.base || 0), 0.6); setLast(k); if (view === 'try' && q && (q.kind === 'key' || q.kind === 'multi')) pick(k); else if (kb.onTap) kb.onTap(k); })}
+      {kb && kqKb({ ...kb, marks, keepBlack: spec === KQ_SPEC['kq-black'], mcOn: ['kq-climb', 'kq-clefs', 'kq-read', 'kq-middlec'].some(id => spec === KQ_SPEC[id]), mcCap: spec === KQ_SPEC['kq-climb'] }, (k) => { playKey(k + (kb.base || 0), 0.6); setLast(k); if (view === 'try' && q && (q.kind === 'key' || q.kind === 'multi')) pick(k); else if (kb.onTap) kb.onTap(k); })}
       {allowStaff && f.staffAlt && <>
-        <div style={{ textAlign: 'center', margin: '8px 0 0' }}><button className="ghost-btn" style={{ ...scS.back, minWidth: 0, fontSize: 14 }} onClick={() => setStf(!stf)}>{stf ? t('Hide the staff', '스태프 숨기기') : t('Show on the staff', '스태프로 보여주기')}</button></div>
+        <div style={{ textAlign: 'center', margin: '8px 0 0' }}><button className="ghost-btn" style={{ ...scS.back, minWidth: 0, fontSize: 14 }} onClick={() => setStf(!stf)}>{stf ? t('Hide the staff', '오선 숨기기') : t('Show on the staff', '오선으로 보여주기')}</button></div>
         {stf && f.staffAlt}</>}
       {f.below}
     </>;
@@ -162,10 +163,10 @@ const KQ_REG = (k) => [0, 1, 2, 3, 4].includes(((k % 12) + 12) % 12) ? 2 : 3;
   const blacks = (n, o = 2) => { const m = {}; for (let i = 0; i < o; i++) (n === 2 ? [1, 3] : n === 3 ? [6, 8, 10] : [1, 3, 6, 8, 10]).forEach(k => { m[i * 12 + k] = n === 2 ? 'seg3' : n === 3 ? 'seg4' : (KQ_BK2.includes(k) ? 'seg3' : 'seg4'); }); return m; };
   const zoom = (n, c) => { const g = GR[n], lit = Math.min(c.tk, n), m = {}; g.keys.slice(0, lit).forEach(k => { m[k] = g.style; });
     return { top: kqNumRow(g.vx, g.keys.slice(0, lit).map((k, i) => ({ x: kqX(k), t: String(i + 1), col: g.col }))), kb: { bare: true, oct: 1, vx: g.vx, mw: 300, marks: m } }; };
-  const reg = (want) => ({ kind: 'key', retry: true, prompt: ['Tap the side with ' + want + ' black keys.', '검은건반이 ' + want + '개인 쪽을 눌러 보세요.'],
+  const reg = (want) => ({ kind: 'key', retry: true, prompt: ['Tap any key in a group of ' + want + ' black keys.', '검은건반이 ' + want + '개 모인 곳의 건반을 아무거나 눌러 보세요.'],
     fig: (c) => ({ kb: { bare: true, oct: 2, base: 0, marks: c.res === 'ok' ? blacks(want) : {} } }), ok: (k) => KQ_REG(k) === want,
     yes: want === 2 ? ['Two, side by side.', '두 개가 나란히 있네요.'] : ['Three, in a row.', '세 개가 줄지어 있네요.'],
-    no: (k) => ['That side has ' + (5 - want) + ' black keys. Look for the side with ' + want + '.', '그쪽은 검은건반이 ' + (5 - want) + '개예요. ' + want + '개인 쪽을 찾아 보세요.'] });
+    no: (k) => ['That key is in a group of ' + (5 - want) + '. Look for a group of ' + want + '.', '그 건반은 ' + (5 - want) + '개 묶음에 있어요. ' + want + '개 묶음을 찾아 보세요.'] });
   const hearQ = (n) => { const gap = [30, 20, 12, 7, 4, 2][Math.min(n, 5)], lo = kqRnd(48 - gap), hi = lo + gap, firstHigh = Math.random() < 0.5, a = firstHigh ? hi : lo, b = firstHigh ? lo : hi;
     return { kind: 'choice', prompt: ['Listen to two sounds. Which one is higher?', '소리 두 개를 들어 보세요. 어느 쪽이 더 높을까요?'], opts: [{ id: '1', label: () => t('The first', '처음 소리') }, { id: '2', label: () => t('The second', '나중 소리') }], ans: firstHigh ? '1' : '2', ok: (v) => v === (firstHigh ? '1' : '2'),
       play: () => { playKey(a - 24, 0.8); setTimeout(() => playKey(b - 24, 0.8), 900); },
@@ -181,8 +182,8 @@ const KQ_REG = (k) => [0, 1, 2, 3, 4].includes(((k % 12) + 12) % 12) ? 2 : 3;
     steps: [
       { title: ['Two', '둘'], line: ['Two black keys stand side by side. Count them.', '검은건반 두 개가 나란히 서 있어요. 세어 보세요.'], fig: (c) => zoom(2, c) },
       { title: ['Three', '셋'], line: ['Then comes a row of three.', '그다음에는 세 개가 줄지어 있어요.'], fig: (c) => zoom(3, c) },
-      { title: ['Two, three, two, three', '둘, 셋, 둘, 셋'], line: ['The groups take turns from left to right, and the order never changes.', '무리는 왼쪽에서 오른쪽으로 번갈아 나오고, 순서는 바뀌지 않아요.'], fig: (c) => { const u = Math.min(c.tk, 4), m = {}; for (let i = 0; i < u; i++) Object.assign(m, kqPaint({}, (i % 2 === 0 ? [1, 3] : [6, 8, 10]).map(k => Math.floor(i / 2) * 12 + k), i % 2 === 0 ? 'seg3' : 'seg4')); return { top: <KqGroupsTop upto={u}/>, kb: { bare: true, oct: 2, base: 0, marks: m } }; } },
-      { title: ['Low and high', '낮은 소리, 높은 소리'], line: ['Tap along the keys. Left sounds low and right sounds high.', '건반을 눌러 보세요. 왼쪽은 낮은 소리, 오른쪽은 높은 소리예요.'], fig: (c) => ({ top: kqArrow(typeof c.last === 'number' ? c.last : null, 48), kb: { bare: true, oct: 4, base: -24, marks: typeof c.last === 'number' ? { [c.last]: 'pick' } : {} } }) },
+      { title: ['Two, three, two, three', '둘, 셋, 둘, 셋'], line: ['The groups take turns from left to right, and the order never changes.', '묶음은 왼쪽에서 오른쪽으로 번갈아 나오고, 순서는 바뀌지 않아요.'], fig: (c) => { const u = Math.min(c.tk, 4), m = {}; for (let i = 0; i < u; i++) Object.assign(m, kqPaint({}, (i % 2 === 0 ? [1, 3] : [6, 8, 10]).map(k => Math.floor(i / 2) * 12 + k), i % 2 === 0 ? 'seg3' : 'seg4')); return { top: <KqGroupsTop upto={u}/>, kb: { bare: true, oct: 2, base: 0, marks: m } }; } },
+      { title: ['Low and high', '낮은 소리, 높은 소리'], line: ['Tap along the keys. Left sounds low and right sounds high.', '건반을 눌러 보세요. 왼쪽은 낮은 소리, 오른쪽은 높은 소리예요.'], fig: (c) => ({ top: kqArrow(typeof c.last === 'number' ? c.last : null, 36), kb: { bare: true, oct: 3, base: -12, marks: typeof c.last === 'number' ? { [c.last]: 'pick' } : {} } }) },
     ],
     make: (n) => { const cntQ = () => { const g = kqPick([2, 3]), ks = g === 2 ? [1, 3] : [6, 8, 10], m = {}; ks.forEach(k => { m[k] = g === 2 ? 'seg3' : 'seg4'; }); return { kind: 'choice', cols: 2, prompt: ['How many black keys are in the marked group?', '표시된 묶음에 검은건반이 몇 개 있을까요?'], opts: [{ id: '2', label: '2' }, { id: '3', label: '3' }], ans: String(g), ok: (v) => v === String(g), fig: () => ({ kb: { bare: true, oct: 1, base: 0, marks: m, mw: 380 } }), yes: ['Yes, ' + g + '.', '맞아요. ' + g + '개예요.'], no: ['Count the marked black keys: ' + g + '.', '표시된 검은건반을 세어 보세요. ' + g + '개예요.'] }; };
       const hl = (hi) => { const m0 = 8 + kqRnd(20); return { kind: 'key', retry: true, prompt: hi ? ['Tap any key that sounds higher than the marked key.', '표시된 건반보다 높게 들리는 건반을 아무거나 눌러 보세요.'] : ['Tap any key that sounds lower than the marked key.', '표시된 건반보다 낮게 들리는 건반을 아무거나 눌러 보세요.'], play: () => playKey(m0, 0.7), fig: () => ({ kb: { bare: true, oct: 3, base: 0, marks: { [m0]: 'pick' } } }), ok: (k) => hi ? k > m0 : k < m0,
@@ -217,15 +218,15 @@ const KQ_HZ = { small: { Ls: KQ_SMALL, ks: [0, 4], style: 'seg3', pk: 'pick', co
       const kind = n % 8, D = KQ_DOOR[L];
       if (kind === 4) { const small = KQ_SMALL.includes(L), mk = { ...houseM }; mk[pcOf(L)] = small ? 'pick' : 'pickB';
         return { L, kind: 'choice', cols: 2, prompt: ['This white key sits by which group of black keys?', '이 흰건반은 어느 검은건반 묶음 옆에 있을까요?'], opts: [{ id: '2', label: () => t('The group of 2', '2개 묶음') }, { id: '3', label: () => t('The group of 3', '3개 묶음') }], ans: small ? '2' : '3', ok: (v) => v === (small ? '2' : '3'), fig: () => tryKb(mk),
-          yes: ['Yes: ' + L + ' belongs to the group of ' + (small ? '2' : '3') + '.', '맞아요. ' + L + '은(는) ' + (small ? '2' : '3') + '개 묶음에 속해요.'], no: ['It is ' + L + ', which belongs to the group of ' + (small ? '2' : '3') + '.', L + '이에요. ' + (small ? '2' : '3') + '개 묶음에 속해요.'] }; }
+          yes: ['Yes: ' + L + ' belongs to the group of ' + (small ? '2' : '3') + '.', '맞아요. ' + L + '은(는) ' + (small ? '2' : '3') + '개 묶음에 속해요.'], no: ['It is ' + L + ', which belongs to the group of ' + (small ? '2' : '3') + '.', kqYe(L) + '. ' + (small ? '2' : '3') + '개 묶음에 속해요.'] }; }
       if (kind === 5) return { L, kind: 'choice', cols: 4, prompt: ['Which letter is the white key ' + D[2][0] + '?', D[2][1] + '인 흰건반은 어떤 글자일까요?'], opts: kqLet7(), ans: L, ok: (v) => v === L, fig: () => tryKb(houseM),
-        yes: ['Yes: ' + L + '.', '맞아요. ' + L + '이에요.'], no: ['That is ' + L + '. Look at where it sits among the black keys.', L + '이에요. 검은건반 사이에서 어디에 있는지 보세요.'] };
+        yes: ['Yes: ' + L + '.', '맞아요. ' + kqYe(L) + '.'], no: ['That is ' + L + '. Look at where it sits among the black keys.', L + '이에요. 검은건반 사이에서 어디에 있는지 보세요.'] };
       if (kind === 6) return { L, kind: 'key', retry: true, prompt: ['Tap ' + L + ' in the higher pattern, the one on the right.', '오른쪽의 더 높은 무늬에서 ' + L + ' 건반을 눌러 보세요.'], fig: () => tryKb(houseM), ok: (k) => k === pcOf(L) + 12,
         yes: ['Yes: the same letter, one pattern higher.', '맞아요. 같은 글자, 한 무늬 위예요.'], no: (k) => k % 12 === pcOf(L) ? ['Right letter, but the lower pattern. Take the one on the right.', '글자는 맞지만 낮은 무늬예요. 오른쪽 것을 눌러 보세요.'] : kqLetterKeyNo(k, L) };
       if (kind === 7) { let L2; do { L2 = kqPick(KQ_ABC); } while (L2 === L); const targets = [pcOf(L), pcOf(L) + 12, pcOf(L2), pcOf(L2) + 12];
         return { L, kind: 'multi', retry: true, targets, prompt: ['Tap every ' + L + ' and every ' + L2 + '.', L + ' 건반과 ' + L2 + ' 건반을 모두 눌러 보세요.'], prog: (a, b) => ['Found ' + a + ' of ' + b + '. Keep going.', b + '개 중 ' + a + '개를 찾았어요. 계속해요.'], fig: () => tryKb(houseM),
           yes: ['All four found: each letter once in each pattern.', '네 개 모두 찾았어요. 글자마다 무늬마다 하나씩이에요.'], no: (k) => [(KQ_L[((k % 12) + 12) % 12] ? 'That is ' + KQ_L[((k % 12) + 12) % 12] + '. ' : 'That is a black key. ') + 'Look for ' + L + ' and ' + L2 + '.', (KQ_L[((k % 12) + 12) % 12] ? '그건 ' + KQ_L[((k % 12) + 12) % 12] + ' 건반이에요. ' : '그건 검은건반이에요. ') + L + '과(와) ' + L2 + ' 건반을 찾아 보세요.'] }; }
-      if (kind === 3) { const targets = [pcOf(L), pcOf(L) + 12]; return { L, kind: 'multi', retry: true, targets, prompt: ['Tap every white key that is ' + D[2][0] + '.', D[2][1] + '인 흰건반을 모두 눌러 보세요.'], prog: (a, b) => ['Found ' + a + ' of ' + b + '. One more.', b + '개 중 ' + a + '개를 찾았어요. 하나 더요.'], fig: () => tryKb(houseM), yes: ['Both found: that is the letter ' + L + ', once in each pattern.', '두 개 모두 찾았어요. 글자 ' + L + '이에요. 무늬마다 하나씩 있어요.'], no: (k) => kqLetterKeyNo(k, L) }; }
+      if (kind === 3) { const targets = [pcOf(L), pcOf(L) + 12]; return { L, kind: 'multi', retry: true, targets, prompt: ['Tap every white key that is ' + D[2][0] + '.', D[2][1] + '인 흰건반을 모두 눌러 보세요.'], prog: (a, b) => ['Found ' + a + ' of ' + b + '. One more.', b + '개 중 ' + a + '개를 찾았어요. 하나 더요.'], fig: () => tryKb(houseM), yes: ['Both found: that is the letter ' + L + ', once in each pattern.', '두 개 모두 찾았어요. 글자 ' + kqYe(L) + '. 무늬마다 하나씩 있어요.'], no: (k) => kqLetterKeyNo(k, L) }; }
       if (kind === 0) return { L, kind: 'key', retry: true, prompt: ['Tap ' + L + '.', L + ' 건반을 눌러 보세요.'], fig: () => tryKb(houseM), ok: (k) => k % 12 === pcOf(L),
         yes: ['Yes, ' + L + ' is ' + D[2][0] + '.', '맞아요. ' + L + ' 건반: ' + D[2][1] + '.'], no: (k) => kqLetterKeyNo(k, L) };
       if (kind === 1) { const small = KQ_SMALL.includes(L), Ls = small ? KQ_SMALL : KQ_BIG, mk = { ...houseM }; mk[pcOf(L) + 12] = small ? 'pick' : 'pickB';
@@ -258,7 +259,7 @@ const KQ_HZ = { small: { Ls: KQ_SMALL, ks: [0, 4], style: 'seg3', pk: 'pick', co
     ],
     make: (n, prev) => { const WH = [0, 2, 4, 5, 7, 9, 11, 12], mcI = Math.floor(n / 8) % 3,
       mid = () => ({ L: null, kind: 'key', retry: true, prompt: KQ_MC[mcI].p, fig: () => ({ kb: { bare: true, oct: O, base } }), ok: (k) => k === KQ_MC[mcI].k, yes: KQ_MC[mcI].y,
-        no: (k) => k % 12 === 0 ? ['That is a C, but not the right one. Count patterns from middle C.', '그건 C지만 찾는 C가 아니에요. 가운데 도에서부터 무늬를 세어 보세요.'] : ['That is not a C. A C sits just left of a group of 2 black keys.', '그건 C가 아니에요. C는 검은건반 2개 묶음 바로 왼쪽에 있어요.'] }),
+        no: (k) => k % 12 === 0 ? ['That is a C, but not the one asked for. Middle C is the C in the middle of this keyboard.', '그건 C지만 찾는 C가 아니에요. 가운데 도는 이 건반 한가운데의 C예요.'] : ['That is not a C. A C sits just left of a group of 2 black keys.', '그건 C가 아니에요. C는 검은건반 2개 묶음 바로 왼쪽에 있어요.'] }),
       nbr = (dir) => { const Ls = dir > 0 ? KQ_ABC.filter(x => x !== 'A' || true) : 'DEFGAB'.split(''); const L = kqPick(dir > 0 ? 'CDEFGAB'.split('') : Ls), i0 = 'CDEFGAB'.indexOf(L), A = 'CDEFGAB'[(i0 + dir + 7) % 7], k0 = WH[i0], k1 = dir > 0 ? WH[i0 + 1] : WH[i0 - 1];
         return { L: null, kind: 'choice', cols: 4, prompt: dir > 0 ? ['Which name comes after ' + L + '?', L + ' 다음에 오는 이름은?'] : ['Which name comes before ' + L + '?', L + ' 앞에 오는 이름은?'], opts: kqLet7(), ans: A, ok: (v) => v === A,
           fig: (c) => ({ kb: { bare: true, oct: 1, base: 0, marks: c.res ? { [k0]: 'seg3', [k1]: 'pass' } : { [k0]: 'pick' } } }),
@@ -292,7 +293,7 @@ KQ_SPEC['kq-lines'] = {
 const kqClimb = (ds, marks) => ({ staff: kqStaff(ds, 'treble'), kb: { oct: 2, ks: [0, 12], base: 0, plain: true, marks } });
 const kqWhiteMarks = (ds, last) => { const m = {}; ds.forEach((d, i) => { m[dMidiKey(d)] = i === ds.length - 1 && last ? 'pick' : 'seg3'; }); return m; };
 KQ_SPEC['kq-climb'] = {
-  title: ['Higher and lower', '높이와 낮이'], allLine: ['A note higher on the staff is a key further right on the keyboard, and it sounds higher.', '오선에서 더 위에 있는 음표는 건반에서 더 오른쪽이고, 더 높게 들려요.'],
+  title: ['Higher and lower', '높은 음, 낮은 음'], allLine: ['A note higher on the staff is a key further right on the keyboard, and it sounds higher.', '오선에서 더 위에 있는 음표는 건반에서 더 오른쪽이고, 더 높게 들려요.'],
   fig: () => kqClimb([28, 29, 30, 31, 32, 33, 34, 35], kqWhiteMarks([28, 29, 30, 31, 32, 33, 34, 35])),
   steps: [
     { title: ['One step up', '한 걸음 위로'], line: ['Each step up the staff, from a line to a space or a space to a line, is the next white key to the right.', '오선에서 줄에서 칸으로, 칸에서 줄로 한 걸음 오르면 흰건반은 바로 오른쪽이에요.'], fig: (c) => { const ds = [28, 29, 30, 31, 32, 33, 34, 35].slice(0, Math.min(c.tk + 1, 8)); return kqClimb(ds, kqWhiteMarks(ds, true)); } },
@@ -339,8 +340,8 @@ KQ_SPEC['kq-clefs'] = {
 };
 
 // ══ 3. Notes on the staff ══
-const KQ_ST = { treble: { lines: [30, 32, 34, 36, 38], spaces: [31, 33, 35, 37], hint: ['Treble staff: line 1 is E, and each place up is the next letter. Lines: Every Good Boy Deserves Fun. Spaces: FACE.', '높은음자리 오선: 1번 줄은 E이고, 한 자리 오를 때마다 다음 글자예요. 줄은 Every Good Boy Deserves Fun, 칸은 FACE.'] },
-  bass: { lines: [18, 20, 22, 24, 26], spaces: [19, 21, 23, 25], hint: ['Bass staff: line 1 is G, and each place up is the next letter. Lines: Great Big Dragon Flies Away. Spaces: All Cows Eat Grass.', '낮은음자리 오선: 1번 줄은 G이고, 한 자리 오를 때마다 다음 글자예요. 줄은 Great Big Dragon Flies Away, 칸은 All Cows Eat Grass.'] } };
+const KQ_ST = { treble: { lines: [30, 32, 34, 36, 38], spaces: [31, 33, 35, 37], hint: ['Count up from line 1 = E, one letter per place.', '1번 줄 E에서 한 자리에 한 글자씩 올라가며 세어 보세요.'] },
+  bass: { lines: [18, 20, 22, 24, 26], spaces: [19, 21, 23, 25], hint: ['Count up from line 1 = G, one letter per place.', '1번 줄 G에서 한 자리에 한 글자씩 올라가며 세어 보세요.'] } };
 const kqNameQ = (clef) => { const S = KQ_ST[clef], d = kqPick(S.lines.concat(S.spaces)), L = kqLetter(d), isLine = S.lines.includes(d), num = (isLine ? S.lines : S.spaces).indexOf(d) + 1, w = kqLS(isLine ? 'line' : 'space');
   return { kind: 'choice', cols: 4, prompt: ['Name this note.', '이 음표의 이름을 말해요.'], opts: kqLet7(), ans: L, ok: (v) => v === L, fig: (c) => ({ staff: kqStaff([d], clef, { ring: [0], under: c.res ? true : null }) }),
     yes: [L + ', on ' + w[0] + ' ' + num + '.', L + '예요. ' + num + '번 ' + w[1] + '에 있어요.'], no: [L + ', on ' + w[0] + ' ' + num + '. ' + S.hint[0], L + '예요. ' + num + '번 ' + w[1] + '이에요. ' + S.hint[1]] }; };
@@ -361,7 +362,7 @@ const KQ_LM = [
 const kqCountQ = () => { const H = kqPick(KQ_LM.filter(x => x.d !== 28)), off = kqPick([-2, -1, 1, 2]), d = H.d + off, L = kqLetter(d), a = Math.abs(off), stp = a === 1 ? ' place ' : ' places ';
   return { kind: 'choice', cols: 4, prompt: ['Start from ' + H.n[0] + ' (ringed). Name the other note.', '동그라미 친 ' + H.n[1] + '에서 시작해요. 다른 음표의 이름을 말해요.'], opts: kqLet7(), ans: L, ok: (v) => v === L,
     fig: (c) => ({ staff: kqStaff([H.d, d], H.c, { ring: [0], under: c.res ? true : [0] }) }), yes: [L + ': ' + a + stp + (off > 0 ? 'up.' : 'down.'), L + '예요. ' + a + '자리 ' + (off > 0 ? '위예요.' : '아래예요.')],
-    no: ['From ' + kqLetter(H.d) + ', go ' + a + stp + (off > 0 ? 'up' : 'down') + ' the alphabet: ' + L + '.', kqLetter(H.d) + '에서 알파벳으로 ' + a + '자리 ' + (off > 0 ? '위' : '아래') + '로 가면 ' + L + '이에요.'] }; };
+    no: ['From ' + kqLetter(H.d) + ', go ' + a + stp + (off > 0 ? 'up' : 'down') + ' the alphabet: ' + L + '.', kqLetter(H.d) + '에서 알파벳으로 ' + a + '자리 ' + (off > 0 ? '위' : '아래') + '로 가면 ' + kqYe(L) + '.'] }; };
 // the grand staff folded at middle C: each landmark above has its mirror below (G and F, the two Cs)
 function KqFold({ stage = 2 }) {
   const yc = 150, h = 11, Y = (d) => yc - (d - 28) * h, T = KQ.COD, B = KQ.BL;
@@ -390,7 +391,7 @@ KQ_SPEC['kq-landmarks'] = {
   ],
   make: (n, prev) => { if (n % 2 === 1) return kqCountQ(); let H; do { H = kqPick(KQ_LM); } while (prev && prev.H === H);
     return { H, kind: 'choice', cols: 1, prompt: ['Which landmark is this?', '어느 기준 음일까요?'], opts: KQ_LM.map(x => ({ id: String(x.d), label: () => t(x.n[0], x.n[1]) })), ans: String(H.d), ok: (v) => v === String(H.d),
-      fig: () => ({ staff: kqStaff([H.d], H.c, { ring: [0] }) }), yes: [H.n[0].charAt(0).toUpperCase() + H.n[0].slice(1) + ': ' + H.w[0] + '.', H.n[1] + '이에요. ' + H.w[1] + '이에요.'], no: ['This is ' + H.n[0] + ': ' + H.w[0] + '.', H.n[1] + '이에요. ' + H.w[1] + '이에요.'] }; },
+      fig: () => ({ staff: kqStaff([H.d], H.c, { ring: [0] }) }), yes: [H.n[0].charAt(0).toUpperCase() + H.n[0].slice(1) + ': ' + H.w[0] + '.', kqYe(H.n[1]) + '. ' + H.w[1] + '이에요.'], no: ['This is ' + H.n[0] + ': ' + H.w[0] + '.', kqYe(H.n[1]) + '. ' + H.w[1] + '이에요.'] }; },
 };
 KQ_SPEC['kq-read'] = {
   title: ['From staff to keys', '오선에서 건반으로'], allLine: ['Read the note, then find its key. Tap a key to hear it.', '음표를 읽고, 그 건반을 찾아요. 건반을 누르면 소리가 나요.'],
@@ -400,7 +401,7 @@ KQ_SPEC['kq-read'] = {
     { title: ['Bass: from middle C down', '낮은음자리: 가운데 도에서 아래로'], line: ['Bass F is the F just below middle C.', '낮은음자리표의 F는 가운데 도 바로 아래의 F예요.'], fig: () => ({ staff: kqStaff([24], 'bass', { under: true }), kb: { oct: 2, ks: [0, 12], base: -12, plain: true, marks: { 5: 'pickB' }, names: { 5: 'F' }, ncol: { 5: KQ.BL } } }) },
   ],
   make: (n) => { const treble = n % 2 === 0, d = treble ? kqPick(KQ_ST.treble.lines.concat(KQ_ST.treble.spaces, [28, 39])) : kqPick(KQ_ST.bass.lines.concat(KQ_ST.bass.spaces, [27])), base = -24, tk = dMidiKey(d) - base, clef = treble ? 'treble' : 'bass', L = kqLetter(d);
-    return { kind: 'key', retry: true, prompt: ['Which key is this note?', '이 음표는 어느 건반일까요?'], fig: () => ({ staff: kqStaff([d], clef), kb: { oct: 4, ks: [0, 48], base, plain: true } }), ok: (k) => k === tk, onPick: (k, ok) => { if (ok) playKey(dMidiKey(d), 0.6); },
+    return { kind: 'key', retry: true, prompt: ['Which key is this note?', '이 음표는 어느 건반일까요?'], fig: () => ({ staff: kqStaff([d], clef), kb: { oct: 4, ks: treble ? [24, 48] : [0, 24], base, plain: true } }), ok: (k) => k === tk, onPick: (k, ok) => { if (ok) playKey(dMidiKey(d), 0.6); },
       yes: ['That is ' + L + '.', L + '예요.'], no: (k) => KQ_L[((k % 12) + 12) % 12] === L ? ['Right letter, but another ' + L + '. Check which octave the note is in.', '글자는 맞지만 다른 ' + L + '예요. 음표가 어느 옥타브인지 확인해 보세요.'] : ['That key is not ' + L + '. Count from ' + (treble ? 'treble G or middle C.' : 'bass F or middle C.'), '그 건반은 ' + L + '이(가) 아니에요. ' + (treble ? '높은음자리표의 G나 가운데 도' : '낮은음자리표의 F나 가운데 도') + '에서 세어 보세요.'] }; },
 };
 
@@ -436,13 +437,13 @@ KQ_SPEC['kq-middlec'] = {
 };
 KQ_SPEC['kq-8va'] = {
   title: ['8va', '8va'], allLine: ['Very high notes need many ledger lines, so 8va stands in: play it one octave higher than written.', '아주 높은 음은 덧줄이 너무 많아져서 8va를 써요: 쓴 것보다 한 옥타브 높게 쳐요.'],
-  fig: () => ({ staff: kqStaff([38, 39, 40, 41], 'treble', { bracket: { from: 0, bar: 0, label: '8va' } }), kb: { oct: 3, base: 0, marks: kqPaint(kqPaint({}, [17, 19, 21, 23], 'seg3'), [29, 31, 33, 35], 'seg4') } }),
+  fig: () => ({ staff: kqStaff([38, 39, 40, 41], 'treble', { bracket: { from: 0, bar: 0, label: '8va' } }), kb: { oct: 3, base: 0, ks: [12, 36], marks: kqPaint(kqPaint({}, [17, 19, 21, 23], 'seg3'), [29, 31, 33, 35], 'seg4') } }),
   steps: [
     { title: ['As written', '쓴 그대로'], line: ['Without a sign, you play the keys the notes sit on.', '기호가 없으면 음표가 앉은 그대로의 건반을 쳐요.'], fig: () => ({ staff: kqStaff([38, 39, 40, 41], 'treble'), kb: { oct: 3, base: 0, marks: kqPaint({}, [17, 19, 21, 23], 'seg3') } }) },
-    { title: ['With 8va', '8va가 있으면'], line: ['The same letters, one octave up: coral is written, blue is what you play.', '같은 글자를 한 옥타브 위에서: 코랄은 쓴 음, 파랑은 실제로 치는 음이에요.'], fig: () => ({ staff: kqStaff([38, 39, 40, 41], 'treble', { bracket: { from: 0, bar: 0, label: '8va' } }), kb: { oct: 3, base: 0, marks: kqPaint(kqPaint({}, [17, 19, 21, 23], 'seg3'), [29, 31, 33, 35], 'seg4') } }) },
+    { title: ['With 8va', '8va가 있으면'], line: ['The same letters, one octave up: coral is written, blue is what you play.', '같은 글자를 한 옥타브 위에서: 코랄은 쓴 음, 파랑은 실제로 치는 음이에요.'], fig: () => ({ staff: kqStaff([38, 39, 40, 41], 'treble', { bracket: { from: 0, bar: 0, label: '8va' } }), kb: { oct: 3, base: 0, ks: [12, 36], marks: kqPaint(kqPaint({}, [17, 19, 21, 23], 'seg3'), [29, 31, 33, 35], 'seg4') } }) },
   ],
-  make: () => { const d = kqPick([38, 39, 40, 41]), tk = dMidiKey(d) + 12; return { kind: 'key', retry: true, prompt: ['This note is under an 8va. Which key do you play?', '이 음표는 8va 아래에 있어요. 어느 건반을 칠까요?'], fig: () => ({ staff: kqStaff([d, d], 'treble', { bracket: { from: 0, bar: 0, label: '8va' } }), kb: { oct: 3, base: 0 } }), ok: (k) => k === tk, onPick: (k, ok) => { if (ok) playKey(tk, 0.6); },
-    yes: ['One octave above the written ' + kqLetter(d) + '.', '쓴 ' + kqLetter(d) + ' 한 옥타브 위예요.'], no: ['Find the written ' + kqLetter(d) + ', then take the next ' + kqLetter(d) + ' to its right.', '쓴 ' + kqLetter(d) + '를 찾고, 그 오른쪽의 다음 ' + kqLetter(d) + '를 치세요.'] }; },
+  make: () => { const d = kqPick([38, 39, 40, 41]), tk = dMidiKey(d) + 12; return { kind: 'key', retry: true, prompt: ['This note is under an 8va. Which key do you play?', '이 음표는 8va 아래에 있어요. 어느 건반을 칠까요?'], fig: () => ({ staff: kqStaff([d, d], 'treble', { bracket: { from: 0, bar: 0, label: '8va' } }), kb: { oct: 3, base: 0, ks: [12, 36], plain: true, names: { 12: 'C', 24: 'C', 36: 'C' }, ncol: { 12: KQ.NV, 24: KQ.NV, 36: KQ.NV } } }), ok: (k) => k === tk, onPick: (k, ok) => { if (ok) playKey(tk, 0.6); },
+    yes: ['One octave above the written ' + kqLetter(d) + '.', '쓴 ' + kqLetter(d) + ' 한 옥타브 위예요.'], no: (k) => [(KQ_L[((k % 12) + 12) % 12] ? 'That is ' + KQ_L[((k % 12) + 12) % 12] + '. ' : '') + 'Find the written ' + kqLetter(d) + ', then take the next ' + kqLetter(d) + ' to its right.', (KQ_L[((k % 12) + 12) % 12] ? '그건 ' + KQ_L[((k % 12) + 12) % 12] + ' 건반이에요. ' : '') + '쓴 ' + kqLetter(d) + '를 찾고, 그 오른쪽의 다음 ' + kqLetter(d) + '를 누르세요.'] }; },
 };
 
 KQ_SPEC['kq-octave'] = {
@@ -500,7 +501,7 @@ function kqSound(name, m, at = 0, len = 1.1) {
   else { const mix = ctx.createGain(); mix.gain.value = 0.9; [[800, 6], [1150, 5], [2800, 3]].forEach(([hz, q]) => { const b = ctx.createBiquadFilter(); b.type = 'bandpass'; b.frequency.value = hz; b.Q.value = q; mix.connect(b); b.connect(out); }); const a = osc('sawtooth', f, 1, mix); vib(a, 5.5, f * 0.012, 0.25); }
 }
 const kqRangeFig = (name, c) => { const R = SPR_RANGE(name); return { top: <div style={{ maxWidth: 520, margin: '0 auto' }}><SprStrip range={[R.lo, R.hi]}/></div>,
-  mid: <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center', margin: '8px 0 0' }}>{KQ_RNG.map(n => <button key={n} className={'chip' + (n === name ? ' active' : '')} style={{ padding: '6px 12px', minHeight: 40 }} onClick={() => { const r = SPR_RANGE(n); kqSound(n, r.lo, 0, 0.9); kqSound(n, r.hi, 0.95, 0.9); c.setLast(n); }}>{rangeName(n)}</button>)}</div> }; };
+  mid: <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center', margin: '8px 0 0' }}>{KQ_RNG.map(n => <button key={n} className={'chip' + (n === name ? ' active' : '')} style={{ padding: '6px 12px', minHeight: 40 }} onClick={() => { const r = SPR_RANGE(n); kqSound(n, r.lo, 0, 0.9); kqSound(n, r.hi, 0.95, 0.9); c.setLast(n); }}>{kqRangeName(n)}</button>)}</div> }; };
 KQ_SPEC['kq-range'] = {
   title: ['How far a piano reaches', '피아노가 닿는 범위'], allLine: ['A piano covers a huge range. Tap a name to see how much of it another instrument covers.', '피아노는 아주 넓은 범위를 맡아요. 이름을 눌러 다른 악기가 그중 얼마를 맡는지 보세요.'],
   fig: (c) => kqRangeFig(c.last || KQ_PIANO, c),
@@ -508,9 +509,9 @@ KQ_SPEC['kq-range'] = {
     { title: ['The piano', '피아노'], line: ['88 keys, from A0 at the far left to C8 at the far right.', '건반 88개, 맨 왼쪽 A0에서 맨 오른쪽 C8까지예요.'], fig: (c) => kqRangeFig(KQ_PIANO, c) },
     { title: ['The others', '다른 악기들'], line: ['A violin, a cello or a voice each covers only a part.', '바이올린, 첼로, 목소리는 각각 일부만 맡아요.'], fig: (c) => kqRangeFig(c.last && c.last !== KQ_PIANO ? c.last : 'Violin', c) },
   ],
-  make: () => { let a, b; do { a = kqPick(KQ_RNG.slice(1)); b = kqPick(KQ_RNG.slice(1)); } while (a === b || SPR_RANGE(a).lo === SPR_RANGE(b).lo); const low = SPR_RANGE(a).lo < SPR_RANGE(b).lo ? a : b; return { kind: 'choice', prompt: ['Which one reaches lower?', '어느 쪽이 더 낮은 음까지 내려갈까요?'], opts: [a, b].map(n => ({ id: n, label: () => rangeName(n) })), ans: low, ok: (v) => v === low,
+  make: () => { let a, b; do { a = kqPick(KQ_RNG.slice(1)); b = kqPick(KQ_RNG.slice(1)); } while (a === b || SPR_RANGE(a).lo === SPR_RANGE(b).lo); const low = SPR_RANGE(a).lo < SPR_RANGE(b).lo ? a : b; return { kind: 'choice', prompt: ['Which one reaches lower?', '어느 쪽이 더 낮은 음까지 내려갈까요?'], opts: [a, b].map(n => ({ id: n, label: () => kqRangeName(n) })), ans: low, ok: (v) => v === low,
     fig: (c) => ({ top: <div style={{ maxWidth: 520, margin: '0 auto' }}><SprStrip range={c.res ? [SPR_RANGE(low).lo, SPR_RANGE(low).hi] : null}/></div> }), play: () => { kqSound(a, SPR_RANGE(a).lo, 0, 0.9); kqSound(b, SPR_RANGE(b).lo, 1, 0.9); },
-    yes: [rangeName(low) + ' starts lower down.', rangeName(low) + '은(는) 더 낮은 곳에서 시작해요.'], no: ['It is the ' + rangeName(low) + ': its lowest note is lower.', rangeName(low) + '이(가) 정답이에요. 가장 낮은 음이 더 낮아요.'] }; },
+    yes: [kqRangeName(low) + ' starts lower down.', kqRangeName(low) + '은(는) 더 낮은 곳에서 시작해요.'], no: ['It is the ' + kqRangeName(low) + ': its lowest note is lower.', kqRangeName(low) + '이(가) 정답이에요. 가장 낮은 음이 더 낮아요.'] }; },
 };
 
 // the registry: five sections, each lesson one idea
@@ -523,7 +524,7 @@ const KS_ROWS = [
   ]],
   ['p-stf', [
     kqRow('kq-lines', 'Lines and spaces', '줄과 칸', 'Five lines, four spaces, counted from the bottom.', '줄 다섯, 칸 넷, 아래에서부터 세기.'),
-    kqRow('kq-climb', 'Higher and lower', '높이와 낮이', 'Up the staff is right on the keys.', '오선에서 위는 건반에서 오른쪽.'),
+    kqRow('kq-climb', 'Higher and lower', '높은 음, 낮은 음', 'Up the staff is right on the keys.', '오선에서 위는 건반에서 오른쪽.'),
     kqRow('kq-clefs', 'Treble and bass clefs', '높은음자리표와 낮은음자리표', 'Which notes each staff is for.', '각 오선이 맡는 음.'),
   ]],
   ['p-lines', [
