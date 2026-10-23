@@ -117,7 +117,7 @@ function KqEngine({ spec }) {
     {tit(s.title)}{lin(s.line)}{show(s.fig(ctx), true)}
     {scRow(<>
       <button className="ghost-btn" style={scS.back} onClick={() => si === 0 ? go('all') : go('step', si - 1)}>{t('← Back', '← 이전')}</button>
-      <button className="ghost-btn" style={scS.prim} onClick={() => si < steps.length - 1 ? go('step', si + 1) : startTry()}>{si < steps.length - 1 ? t('Next →', '다음 →') : t('Your turn →', '내가 해보기 →')}</button>
+      <button className="ghost-btn" style={scS.prim} onClick={() => si < steps.length - 1 ? go('step', si + 1) : spec.onLast ? spec.onLast() : startTry()}>{si < steps.length - 1 ? t('Next →', '다음 →') : spec.lastLabel ? kqT(spec.lastLabel) : t('Your turn →', '내가 해보기 →')}</button>
     </>)}
   </>; }
   else if (q) { const f = q.fig(ctx);
