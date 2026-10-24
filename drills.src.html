@@ -55763,8 +55763,8 @@ const scMinSteps = (f) => { const s = MINOR_FORMS[f].steps.concat([12]); return 
 function ScMinor() {
   const [go, setGo] = useState(false);
   const [view, setView] = useState('all'), [stf, setStf] = useState(false);   // 'all' -> 'one' -> 'try'
-  const [i, setI] = useState(0), [nonce, setNonce] = useState(0), [fm, setFm] = useState('harmonic'), [at, setAt] = useState(0), [bad, setBad] = useState(null);
-  const P = useScPlay([view, i, fm]);
+  const [i, setI] = useState(0), [nonce, setNonce] = useState(0), [fm, setFm] = useState('harmonic'), [at, setAt] = useState(0), [bad, setBad] = useState(null), [mkey, setMkey] = useState('D');
+  const P = useScPlay([view, i, fm, mkey]);
   const timers = useRef([]);
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = []; };
   useEffect(() => clear, []);
@@ -55780,7 +55780,7 @@ function ScMinor() {
     harmonic: ['Harmonic minor, the one you’ll play most: the 7th note is raised, C becomes C♯, going up and coming down. That sharp is not in the key signature: it is written beside the note.', '화성 단음계, 가장 많이 치게 될 단음계: 7번째 음을 올려요. C가 C♯이 돼요, 올라갈 때도 내려올 때도. 이 샵은 조표에 있는 게 아니라 음표 옆에 따로 적어요.'],
     melodic: ['Melodic minor: going up, the 6th and 7th are raised: B♭ becomes B♮ and C becomes C♯, written beside the notes. Coming down, back to the key signature: the natural minor.', '가락 단음계: 올라갈 때는 6음과 7음을 올려요. B♭이 B♮이 되고 C가 C♯이 돼요. 음표 옆에 따로 적어요. 내려올 때는 조표대로, 자연 단음계를 쳐요.'],
   };
-  const mk = (f) => { const stp = MINOR_FORMS[f].steps, K = stp.map(x => 2 + x).concat([14]), N = spellMinor('D', f).map(prettyAny).concat(['D']), marks = {}, names = {};
+  const mk = (f, key = 'D') => { const r0 = MINOR_SCALES[key].rootPc, stp = MINOR_FORMS[f].steps, K = stp.map(x => r0 + x).concat([r0 + 12]), N = spellMinor(key, f).map(prettyAny).concat([prettyNote(key)]), marks = {}, names = {};
     K.forEach((k, j) => { marks[k] = (f === 'harmonic' && j === 6) || (f === 'melodic' && (j === 5 || j === 6)) ? 'target' : 'pass'; names[k] = N[j]; }); return { K, N, marks, names, ST: scMinSteps(f) }; };
   const mvK = (K, ST, j, anim) => [K[j], K[j + 1], anim, scColOf(ST[j])];
   let body;
@@ -55820,34 +55820,38 @@ function ScMinor() {
       </>)}
     </>;
   } else {
-    const M = mk(fm), K = M.K, D = fm === 'melodic' ? mk('natural') : M, Q = K.concat(D.K.slice(0, 7).reverse()), N2 = M.N.concat(D.N.slice(0, 7).reverse()), QS = Q.slice(1).map((k, j) => Math.abs(k - Q[j])), done = at >= 14, marks = {}, names = {}, arcs = [];
+    const M = mk(fm, mkey), K = M.K, D = fm === 'melodic' ? mk('natural', mkey) : M, KN = prettyNote(mkey), rel = scMinRel(mkey),
+      itU = scMinItems(fm, 'up', mkey), shown = (j) => { const it = itU[j], n = M.N[j]; return it && it[3] === 'n' ? n + '♮' : n; }, Q = K.concat(D.K.slice(0, 7).reverse()), N2 = M.N.concat(D.N.slice(0, 7).reverse()), QS = Q.slice(1).map((k, j) => Math.abs(k - Q[j])), done = at >= 14, marks = {}, names = {}, arcs = [];
     const pat = at === 7 && !go, ps = at >= 7 && !pat ? 7 : 0; for (let j = ps; j <= at; j++) { marks[Q[j]] = j === at && !done && !pat ? 'pick' : (j < 8 && M.marks[Q[j]] === 'target') ? 'target' : 'pass'; names[Q[j]] = N2[j]; }
     for (let j = ps; j < at; j++) arcs.push([Q[j], Q[j + 1], j === at - 1, scColOf(QS[j])]);
     if (bad != null) marks[bad] = 'bad';
     const word = (j) => scStepWord(QS[j], j >= 7);
     const fl = MINOR_FORMS[fm].label;
     const raised = fm === 'melodic' && at >= 7 && bad != null && (bad === K[5] || bad === K[6]);
-    const line = pat ? t('That is the way up: look at the pattern. Then we come back down.', '올라가는 길이에요. 패턴을 보세요. 그다음 내려와요.') : done ? (fm === 'melodic' ? t('That is D melodic minor: up with B♮ and C♯, down as the natural minor.', 'D 가락 단음계예요: 올라갈 때는 B♮과 C♯, 내려올 때는 자연 단음계예요.') : t('That is D ' + fl.toLowerCase() + ' minor, up and down.', 'D ' + fl + ' 단음계를 올라가고 내려왔어요.'))
-      : raised ? t('Not that key. Coming down, the melodic minor plays the natural minor: ' + N2[at + 1] + ', not ' + prettyAny(spellMinor('D', 'melodic')[bad === K[5] ? 5 : 6]) + '.', '그 건반이 아니에요. 내려올 때 가락 단음계는 자연 단음계를 쳐요: ' + prettyAny(spellMinor('D', 'melodic')[bad === K[5] ? 5 : 6]) + ' 말고 ' + N2[at + 1] + '이에요.')
+    const line = pat ? t('That is the way up: look at the pattern. Then we come back down.', '올라가는 길이에요. 패턴을 보세요. 그다음 내려와요.') : done ? (fm === 'melodic' ? t('That is ' + KN + ' melodic minor: up with ' + shown(5) + ' and ' + shown(6) + ', down as the natural minor.', KN + ' 가락 단음계예요: 올라갈 때는 ' + shown(5) + '과 ' + shown(6) + ', 내려올 때는 자연 단음계예요.') : t('That is ' + KN + ' ' + fl.toLowerCase() + ' minor, up and down.', KN + ' ' + fl + ' 단음계를 올라가고 내려왔어요.'))
+      : raised ? t('Not that key. Coming down, the melodic minor plays the natural minor: ' + N2[at + 1] + ', not ' + prettyAny(spellMinor(mkey, 'melodic')[bad === K[5] ? 5 : 6]) + '.', '그 건반이 아니에요. 내려올 때 가락 단음계는 자연 단음계를 쳐요: ' + prettyAny(spellMinor(mkey, 'melodic')[bad === K[5] ? 5 : 6]) + ' 말고 ' + N2[at + 1] + '이에요.')
       : bad != null ? t('Not that key. From ' + N2[at] + ', go ' + word(at) + '.', '그 건반이 아니에요. ' + N2[at] + '에서 ' + word(at) + ' 가요.')
-      : at === 0 ? t('Start on D. Then tap ' + word(0) + '.', 'D에서 시작해요. 그다음 ' + word(0) + ' 건반을 눌러요.')
-      : at === 7 ? (fm === 'melodic' ? t('Now come back down. Melodic minor comes down as the natural minor. From D, tap ' + word(at) + '.', '이제 내려와요. 가락 단음계는 내려올 때 자연 단음계예요. D에서 ' + word(at) + ' 건반을 눌러요.') : t('Now come back down. From D, tap ' + word(at) + '.', '이제 내려와요. D에서 ' + word(at) + ' 건반을 눌러요.'))
+      : at === 0 ? t('Start on ' + KN + '. Then tap ' + word(0) + '.', KN + '에서 시작해요. 그다음 ' + word(0) + ' 건반을 눌러요.')
+      : at === 7 ? (fm === 'melodic' ? t('Now come back down. Melodic minor comes down as the natural minor. From ' + KN + ', tap ' + word(at) + '.', '이제 내려와요. 가락 단음계는 내려올 때 자연 단음계예요. ' + KN + '에서 ' + word(at) + ' 건반을 눌러요.') : t('Now come back down. From ' + KN + ', tap ' + word(at) + '.', '이제 내려와요. ' + KN + '에서 ' + word(at) + ' 건반을 눌러요.'))
       : t('From ' + N2[at] + ', tap ' + word(at) + '.', N2[at] + '에서 ' + word(at) + ' 건반을 눌러요.');
     const tap = (k) => { if (done || pat) return; clear(); if (k === Q[at + 1]) { setBad(null); setAt(at + 1); setNonce(n => n + 1); playKey(Q[at], 0.35); timers.current.push(setTimeout(() => playKey(k, 0.6), 400)); }
       else { setBad(k); playKey(k, 0.4); timers.current.push(setTimeout(() => setBad(null), 1100)); } };
     body = <>
       <div style={scS.title}>{t('Your turn', '내가 해보기')}</div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(5,minmax(0,1fr))',gap:5,maxWidth:330,margin:'0 auto 6px'}}>
+        {SC_MINK.map(k => <button key={k} className={'chip' + (mkey === k ? ' active' : '')} aria-pressed={mkey === k} style={{...KF_BTN,minHeight:38,padding:'0 2px',fontSize:14}} onClick={() => { clear(); setMkey(k); setAt(0); setBad(null); setNonce(n => n + 1); playKey(MINOR_SCALES[k].rootPc, 0.5); }}>{prettyNote(k)}</button>)}
+      </div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:6,maxWidth:330,margin:'0 auto 6px'}}>
-        {SC_MF.map(f => <button key={f} className={'chip' + (fm === f ? ' active' : '')} aria-pressed={fm === f} style={{...KF_BTN,minHeight:40,padding:'0 4px'}} onClick={() => { clear(); setFm(f); setAt(0); setBad(null); setNonce(n => n + 1); playKey(2, 0.5); }}>{MINOR_FORMS[f].label}</button>)}
+        {SC_MF.map(f => <button key={f} className={'chip' + (fm === f ? ' active' : '')} aria-pressed={fm === f} style={{...KF_BTN,minHeight:40,padding:'0 4px'}} onClick={() => { clear(); setFm(f); setAt(0); setBad(null); setNonce(n => n + 1); playKey(MINOR_SCALES[mkey].rootPc, 0.5); }}>{MINOR_FORMS[f].label}</button>)}
       </div>
       {scLineEl(line)}
       {!done && scDirTag(at >= 7 && !pat)}
-      <ScKeys ks={K} marks={at === 0 ? { ...marks, [K[0]]: 'pick' } : marks} names={names} arcs={arcs} nonce={nonce + fm} onTap={tap}/>
-      {(() => {   // the staff with its key signature (B♭); each note appears as she taps it: key-signature notes green, accidentals coral
-        const dn = at >= 7 && go, cnt = dn ? at - 6 : at + 1, all = scMinItems(fm, dn ? 'down' : 'up'), items = all.slice(0, cnt).concat([['||']]);
-        const acc = dn ? (fm === 'harmonic' ? [1] : []) : (fm === 'harmonic' ? [6] : fm === 'melodic' ? [5, 6] : []), ks = dn ? [2] : (fm === 'melodic' ? [] : [5]);
+      <ScKeys ks={K} marks={at === 0 ? { ...marks, [K[0]]: 'pick' } : marks} names={names} arcs={arcs} nonce={nonce + fm + mkey} onTap={tap}/>
+      {(() => {   // the staff with the key's key signature; each note appears as she taps it: key-signature notes green, accidentals coral
+        const dn = at >= 7 && go, cnt = dn ? at - 6 : at + 1, all = scMinItems(fm, dn ? 'down' : 'up', mkey), items = all.slice(0, cnt).concat([['||']]);
+        const sigL = skgSigns(rel).map(([, l]) => l), acc = all.map((it, j) => it[3] ? j : -1).filter(j => j >= 0), ks = all.map((it, j) => it[2] != null && !it[3] && sigL.includes('CDEFGAB'[((it[2] % 7) + 7) % 7]) ? j : -1).filter(j => j >= 0);
         const on = (l) => l.filter(j => j < cnt);
-        return <SkgStaff key={'tr' + fm + (dn ? 'd' : 'u') + cnt} items={items} k="F" width={330} o={{ boxS: 26, D: 30, hl: on(acc), hl2: on(ks), signHl: on(acc), underAlt: on(ks), ksCol: '#2e8a6e', ...skgUnder(items, 'F', null, on(acc)) }}/>;
+        return <SkgStaff key={'tr' + fm + mkey + (dn ? 'd' : 'u') + cnt} items={items} k={rel} width={330} o={{ boxS: 26, D: 30, hl: on(acc), hl2: on(ks), signHl: on(acc), underAlt: on(ks), ksCol: '#2e8a6e', ...skgUnder(items, rel, null, on(acc)) }}/>;
       })()}
       <ScPillRow st={QS} upTo={at} cur={at - 1}/>
       {scRow(<>
@@ -55894,11 +55898,15 @@ function ScStaffScale({ k, ring, only, width = 330 }) {
   return <SkgStaff items={items} k={k} width={width} o={{ boxS: 26, D: 30, hl2: hl, underAlt: hl, ksCol: '#2e8a6e', ...skgUnder(items, k, only, []), ring: ring == null ? [] : [ring] }}/>;
 }
 // D minor on the treble staff, d 29 to 36, with the key signature of F major (B♭). Up or down; signs only where the form raises a note.
-function scMinItems(form, dir) {
-  const up = [29, 30, 31, 32, 33, 34, 35, 36], idx = dir === 'up' ? up : up.slice().reverse();
-  const sign = (j) => form === 'harmonic' && j === 6 ? '#' : form === 'melodic' && dir === 'up' && j === 5 ? 'n' : form === 'melodic' && dir === 'up' && j === 6 ? '#' : null;
+function scMinItems(form, dir, key = 'D') {
+  const L = 'CDEFGAB'.indexOf(key[0]), d0 = 28 + L, up = Array.from({ length: 8 }, (_, j) => d0 + j), idx = dir === 'up' ? up : up.slice().reverse();
+  const KS = KEY_SIGS.find(x => x.minor === key), sig = !KS || !KS.type ? [] : (KS.type === 'sharp' ? SHARP_ORDER : FLAT_ORDER).slice(0, KS.count);
+  const nm = spellMinor(key, form === 'melodic' && dir === 'down' ? 'natural' : form), acc = (n) => n.length > 1 ? n.slice(1) : '';
+  const sign = (j) => { const n = nm[j % 7], a = acc(n), ka = acc(sig.find(x => x[0] === n[0]) || n[0]); return a === ka ? null : a === '' ? 'n' : a; };
   return idx.map((d, q) => { const j = dir === 'up' ? q : 7 - q, sg = sign(j); return sg ? ['q', 1, d, sg] : ['q', 1, d]; }).concat([['||']]);
 }
+const scMinRel = (key) => (KEY_SIGS.find(x => x.minor === key) || { major: 'F' }).major;
+const SC_MINK = ['C', 'C#', 'D', 'E', 'F', 'F#', 'G', 'A', 'Bb', 'B'];
 
 // ── The Scale finder, on the circle of fifths: a dial that turns so the chosen key stands at the top ──
 const SFD_MAJ = ['C', 'G', 'D', 'A', 'E', 'B', 'Gb', 'Db', 'Ab', 'Eb', 'Bb', 'F'];
