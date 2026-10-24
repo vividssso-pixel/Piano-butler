@@ -19727,16 +19727,17 @@ function KeepGoing({ onOpen }) {
 // and one button for what to do next. Every chapter ends with "Next on your path".
 const GUIDE_KEY = 'pb_guide_v1', STEPS_TOTAL_KEY = 'pb_steps_total_v1';
 const PATH_STAGES = [   // Phase 436: five floors of the house, in the plan's order; inside a floor any room first.
-  // Build O (2026-10-25): named by grade, as the curriculum plan's floors -- Ground (before Preliminary), P–1 (Preliminary and
-  // Grade 1), 2–3; a band with two storeys is told apart by I and II. The Home's floor marks use the same names (HOME_FLOOR).
-  { ids: ['posture-hands', 'first-steps', 'pulse', 'note-names', 'note-values', 'staff'], en: ['Ground · I', 'Sitting well, the keys and their letters, a steady beat, the first note values and the staff.'], ko: ['Ground · I', '바른 자세, 건반과 글자, 일정한 박, 처음 음표 길이, 그리고 오선.'] },
-  { ids: ['whole-staff', 'time-signatures', 'reading-steps', 'dynamics', 'tones', 'pitch-range'], en: ['Ground · II', 'Both staves, bar lines and time signatures, the first tunes, loud and soft, half and whole steps, high and low.'], ko: ['Ground · II', '두 오선, 세로줄과 박자표, 첫 선율, 셈여림, 반음과 온음, 높고 낮은 소리.'] },
-  { ids: ['tempo', 'rhythm', 'ledger-lines', 'scales', 'accidentals', 'piano-story'], en: ['P–1 · I', 'Speed, quavers and dots, ledger lines, scales, accidentals, and the piano’s own story.'], ko: ['P–1 · I', '빠르기, 8분음표와 점, 덧줄, 스케일, 임시표, 그리고 피아노 이야기.'] },
-  { ids: ['key-signatures', 'signs', 'intervals', 'chords', 'terms', 'form'], en: ['P–1 · II', 'Key signatures, signs, intervals and chords, the words for how to play, and how a piece is built.'], ko: ['P–1 · II', '조표, 기호, 음정과 화음, 음악 용어, 그리고 곡의 짜임.'] },
-  { ids: ['melody', 'composers', 'styles', 'more-scales'], en: ['2–3', 'How a tune is shaped, music through time, and more scales.'], ko: ['2–3', '선율의 모양, 시대별 음악, 그리고 더 많은 음계.'] },
+  // Build P (2026-10-25): named by grade in plain words -- Beginner (before Prelim), Prelim – Grade 1, Grades 2–3; storeys with
+  // one name are told apart by their number (floorName). One grade per floor as each floor is rebuilt. The Home's marks: HOME_FLOOR.
+  { ids: ['posture-hands', 'first-steps', 'pulse', 'note-names', 'note-values', 'staff'], en: ['Beginner', 'Sitting well, the keys and their letters, a steady beat, the first note values and the staff.'], ko: ['Beginner', '바른 자세, 건반과 글자, 일정한 박, 처음 음표 길이, 그리고 오선.'] },
+  { ids: ['whole-staff', 'time-signatures', 'reading-steps', 'dynamics', 'tones', 'pitch-range'], en: ['Beginner', 'Both staves, bar lines and time signatures, the first tunes, loud and soft, half and whole steps, high and low.'], ko: ['Beginner', '두 오선, 세로줄과 박자표, 첫 선율, 셈여림, 반음과 온음, 높고 낮은 소리.'] },
+  { ids: ['tempo', 'rhythm', 'ledger-lines', 'scales', 'accidentals', 'piano-story'], en: ['Prelim – Grade 1', 'Speed, quavers and dots, ledger lines, scales, accidentals, and the piano’s own story.'], ko: ['Prelim – Grade 1', '빠르기, 8분음표와 점, 덧줄, 스케일, 임시표, 그리고 피아노 이야기.'] },
+  { ids: ['key-signatures', 'signs', 'intervals', 'chords', 'terms', 'form'], en: ['Prelim – Grade 1', 'Key signatures, signs, intervals and chords, the words for how to play, and how a piece is built.'], ko: ['Prelim – Grade 1', '조표, 기호, 음정과 화음, 음악 용어, 그리고 곡의 짜임.'] },
+  { ids: ['melody', 'composers', 'styles', 'more-scales'], en: ['Grades 2–3', 'How a tune is shaped, music through time, and more scales.'], ko: ['Grade 2–3', '선율의 모양, 시대별 음악, 그리고 더 많은 음계.'] },
 ];
 const pathStageIds = (s) => s.ids.filter(id => DRILLS.find(d => d.id === id));   // a room waits off the map until its chapter exists (accidentals; more-scales: pentatonic, blues, whole-tone, the modes)
 const pathIds = () => PATH_STAGES.flatMap(pathStageIds);
+const floorName = (k, caps) => { const s = PATH_STAGES[k], nm = caps ? s.en[0].toUpperCase() : t(s.en[0], s.ko[0]); return LANG === 'ko' && !caps ? (k + 1) + '층 · ' + nm : (caps ? 'FLOOR ' : 'Floor ') + (k + 1) + ' · ' + nm; };   // Build P
 // Phase 361 (Sohyun: "지도 순서로"): the books, the Books shelf and every "Chapter n" follow the map's seven stages.
 const STAGES = PATH_STAGES.map((st, n) => ({ n, en: st.en, ko: st.ko, title: st.en[0], blurb: st.en[1], ids: pathStageIds(st) }));
 function loadStepTotals() { try { return JSON.parse(localStorage.getItem(STEPS_TOTAL_KEY)) || {}; } catch (e) { return {}; } }
@@ -19791,7 +19792,7 @@ function StartGuide({ onOpen, always }) {
       <StaffHead title={t('Start here', '여기서 시작')}/>
       <div style={{padding:'10px 4px 0'}}>
         <h2 style={{fontSize:25,fontWeight:900,margin:'0 0 6px',lineHeight:1.15,color:'var(--navy)'}}>{t('How Piano Butler Drills works', '피아노 버틀러 드릴 사용법')}</h2>
-        <p style={{fontSize:14.5,color:'var(--navy-soft)',margin:'0 0 12px',lineHeight:1.5}}>{t('Everything here is one house: five floors, a room for each chapter. Start on Ground · I and go up floor by floor. On each floor, any room first. Three things to know:', '여기 있는 모든 것은 집 한 채예요: 다섯 층, 챕터마다 방 하나. Ground · I에서 시작해 한 층씩 올라가요. 같은 층에서는 어느 방부터 해도 돼요. 알아 둘 세 가지:')}</p>
+        <p style={{fontSize:14.5,color:'var(--navy-soft)',margin:'0 0 12px',lineHeight:1.5}}>{t('Everything here is one house: five floors, a room for each chapter. Start on floor 1, Beginner, and go up floor by floor. On each floor, any room first. Three things to know:', '여기 있는 모든 것은 집 한 채예요: 다섯 층, 챕터마다 방 하나. 1층 Beginner에서 시작해 한 층씩 올라가요. 같은 층에서는 어느 방부터 해도 돼요. 알아 둘 세 가지:')}</p>
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(160px, 1fr))',gap:10,marginBottom:14}}>
           {how.map(([h, x], i) => <div key={i} style={{display:'flex',gap:10,alignItems:'flex-start',background:'var(--surface)',border:'1.5px solid var(--navy-line)',borderRadius:12,padding:'10px 11px'}}>
             <GuideNum n={i + 1} on={i === 2}/><span><b style={{display:'block',fontSize:14.5,color:'var(--navy)',marginBottom:2}}>{h}</b><span style={{fontSize:13,color:'var(--navy-soft)',lineHeight:1.45}}>{x}</span></span>
@@ -19859,7 +19860,7 @@ function PathNext({ id, onOpen, onMap }) {
     <div style={{marginTop:26,border:'1.5px solid var(--navy-line)',borderRadius:16,background:'var(--surface)',padding:'14px 14px 12px'}}>
       <div style={{fontSize:11.5,fontWeight:800,letterSpacing:'0.08em',textTransform:'uppercase',color:'var(--coral)'}}>{t('Next on your path', '나의 경로에서 다음')}</div>
       {d ? <>
-        <div style={{fontSize:13,color:'var(--navy-soft)',margin:'2px 0 8px'}}>{nk !== k ? t('That was the last room on ' + s.en[0] + '. Next floor: ' + PATH_STAGES[nk].en[0] + '.', s.ko[0] + '의 마지막 방이에요. 다음 층: ' + PATH_STAGES[nk].ko[0] + '.') : t('Floor ' + (k + 1) + ' of ' + PATH_STAGES.length + ': ' + s.en[0], PATH_STAGES.length + '층 중 ' + (k + 1) + '층: ' + s.ko[0])}</div>
+        <div style={{fontSize:13,color:'var(--navy-soft)',margin:'2px 0 8px'}}>{nk !== k ? t('That was the last room on floor ' + (k + 1) + '. Next: ' + floorName(nk) + '.', (k + 1) + '층의 마지막 방이에요. 다음: ' + floorName(nk) + '.') : t('Floor ' + (k + 1) + ' of ' + PATH_STAGES.length + ': ' + s.en[0], PATH_STAGES.length + '층 중 ' + (k + 1) + '층: ' + s.ko[0])}</div>
         <button className="primary-btn" style={{width:'100%',padding:'11px 16px',fontSize:15.5,display:'flex',justifyContent:'space-between',alignItems:'center'}} onClick={() => onOpen(nx)}><span>{d.label}</span><span>→</span></button>
       </> : <div style={{fontSize:14.5,fontWeight:800,color:'var(--navy)',margin:'4px 0 8px'}}>{t('This is the last chapter on the path. Well done!', '경로의 마지막 챕터예요. 잘했어요!')}</div>}
       <div style={{textAlign:'center',marginTop:8}}><button className="chip" style={{padding:'4px 12px',fontSize:12.5}} onClick={() => { try { localStorage.setItem(GUIDE_KEY, 'open'); } catch (e) {} onMap(); }}>{t('See the whole path', '전체 경로 보기')}</button></div>
@@ -21080,7 +21081,7 @@ function MapHead({ onOpen }) {
 function MapHome({ onOpen }) {
   return (
     <div className="fade-up" data-testid="map-home">
-      <PageIntro title={UI_TEACHER ? t('Music map', '음악 지도') : t('My music map', '나의 음악 지도')} text={t('The Piano Butler’s house: five floors, a room for each chapter. Your butler meets you in the hall. Open the door and go up, floor by floor; on each floor, any room first. New to the piano? Start on Ground · I. Already playing? Go straight to any room, or carry on with the button.', '피아노 버틀러의 집: 다섯 층, 챕터마다 방 하나. 버틀러가 현관에서 맞아 줘요. 문을 열고 한 층씩 올라가요. 같은 층에서는 어느 방부터 해도 돼요. 처음이라면 Ground · I부터, 이미 배우고 있다면 어느 방으로든 바로 가거나 버튼을 눌러 이어서 해요.')}/>
+      <PageIntro title={UI_TEACHER ? t('Music map', '음악 지도') : t('My music map', '나의 음악 지도')} text={t('The Piano Butler’s house: five floors, a room for each chapter. Your butler meets you in the hall. Open the door and go up, floor by floor; on each floor, any room first. New to the piano? Start on floor 1, Beginner. Already playing? Go straight to any room, or carry on with the button.', '피아노 버틀러의 집: 다섯 층, 챕터마다 방 하나. 버틀러가 현관에서 맞아 줘요. 문을 열고 한 층씩 올라가요. 같은 층에서는 어느 방부터 해도 돼요. 처음이라면 1층 Beginner부터, 이미 배우고 있다면 어느 방으로든 바로 가거나 버튼을 눌러 이어서 해요.')}/>
       <MapHead onOpen={onOpen}/>
       <HouseMap onOpen={onOpen} noIntro/>
     </div>
@@ -21140,7 +21141,7 @@ function BooksShelf() {
       </div>
       {STAGES.map(st => (
         <div key={st.n} className="card" style={{marginBottom:10,padding:'8px 12px'}}>
-          <div style={{fontSize:11.5,fontWeight:900,color:'var(--coral)',letterSpacing:.4,marginBottom:2}}>{t(st.en[0].toUpperCase(), st.ko[0])}</div>
+          <div style={{fontSize:11.5,fontWeight:900,color:'var(--coral)',letterSpacing:.4,marginBottom:2}}>{LANG === 'ko' ? floorName(st.n) : floorName(st.n, true)}</div>
           {st.ids.map(id => (
             <div key={id} style={{display:'flex',alignItems:'center',gap:'4px 10px',flexWrap:'wrap',padding:'6px 0',borderTop:'1px solid #efe9d9'}}>
               <span style={{flex:'1 1 150px',fontSize:14,fontWeight:800,color:'var(--navy)'}}><span style={{color:'var(--muted)',fontWeight:700,marginRight:6}}>{bkChapterNo(id)}</span>{bkChapterName(id)}</span>
@@ -22710,7 +22711,7 @@ function townhouseSvg(view, o = {}) {
     body += '<rect x="' + RX0 + '" y="' + pFix(yy) + '" width="' + (X1 - RX0) + '" height="' + LH + '" stroke="none"/>';
     // the floor's plaque, centred in a moulded frame: just the floor -- "GROUND · II", "P–1 · I" (her 2026-10-12: no floor names;
     // Build O: named by grade, in both languages); coral on your floor, green once every room on it is done
-    const name = String((st.s && st.s.en[0]) || 'Level ' + (k + 1)).toUpperCase(), mw = rdWidth(name, 700, 11.5, TH_CAPS), pw = (thFontsIn() ? mw : Math.max(mw, name.length * 9.4)) + name.length * 1.04 + 30, px = (X0 + X1) / 2 - pw / 2;   // Cinzel's capitals are wide: trust a measure only once the letters are in
+    const name = st.s ? (o.print || LANG !== 'ko' ? 'FLOOR ' : '') + (k + 1) + (o.print || LANG !== 'ko' ? '' : '층') + ' · ' + st.s.en[0].toUpperCase() : 'LEVEL ' + (k + 1), mw = rdWidth(name, 700, 11.5, TH_CAPS), pw = (thFontsIn() ? mw : Math.max(mw, name.length * 9.4)) + name.length * 1.04 + 30, px = (X0 + X1) / 2 - pw / 2;   // Cinzel's capitals are wide: trust a measure only once the letters are in
     body += stR(px, yy + 4, pw, 20, 0.9) + stR(px + 2, yy + 6, pw - 4, 16, 0.4, 'none')
       + stT((X0 + X1) / 2, yy + 18.4, name, { size: 11.5, weight: 700, font: TH_CAPS, digits: "'Playfair Display',Georgia,serif", ls: '0.09em', fill: here ? ST.C : st.st.every(v => v === 'done') ? ST.G : ST.N, anchor: 'middle' });
     const nr = Math.ceil(n / c);   // Phase 442: the first rooms on the lowest row, counted from the bottom left -- you climb the house
@@ -22815,7 +22816,7 @@ function HouseMap({ onOpen, compact, noIntro }) {
     else if (g.getAttribute('data-chapter')) { e.preventDefault(); onOpen(g.getAttribute('data-chapter')); }
   };
   const weekEl = week && <div data-testid="map-week" role="img" aria-label={t((name ? name + '’s week' : 'My week') + ': ' + week.n + ' practice days this week' + (week.queen ? ', a queen' : ', ' + (WEEK_GOAL - week.n) + ' more to become a queen'), (name ? name + '의 일주일' : '나의 일주일') + ': 이번 주 연습 ' + week.n + '일' + (week.queen ? ', 퀸' : ', 퀸까지 ' + (WEEK_GOAL - week.n) + '일'))} style={{lineHeight:0}} dangerouslySetInnerHTML={{__html: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + week.W + ' ' + week.H + '" width="100%">' + week.svg + '</svg>'}}/>;
-  const intro = t('The Piano Butler’s house: five floors, a room for each chapter. Your butler meets you in the hall. Open the door and go up, floor by floor; on each floor, any room first. New to the piano? Start on Ground · I. Already playing? Go straight to any room.', '피아노 버틀러의 집: 다섯 층, 챕터마다 방 하나. 버틀러가 현관에서 맞아 줘요. 문을 열고 한 층씩 올라가요. 같은 층에서는 어느 방부터 해도 돼요. 처음이라면 Ground · I부터, 이미 배우고 있다면 어느 방으로든 바로 가요.');
+  const intro = t('The Piano Butler’s house: five floors, a room for each chapter. Your butler meets you in the hall. Open the door and go up, floor by floor; on each floor, any room first. New to the piano? Start on floor 1, Beginner. Already playing? Go straight to any room.', '피아노 버틀러의 집: 다섯 층, 챕터마다 방 하나. 버틀러가 현관에서 맞아 줘요. 문을 열고 한 층씩 올라가요. 같은 층에서는 어느 방부터 해도 돼요. 처음이라면 1층 Beginner부터, 이미 배우고 있다면 어느 방으로든 바로 가요.');
   const hint = { textAlign:'center', fontFamily:"'Cormorant Garamond', Georgia, serif", fontStyle:LANG === 'ko' ? 'normal' : 'italic', fontSize:19, fontWeight:700, color:'#e4572e', marginTop:4, lineHeight:'26px' };   // the same line under the hall and under the house, so the hall keeps its place
   const css = '[data-house] [data-chapter]:focus-visible,[data-house] [data-door]:focus-visible{outline:none}[data-house] [data-chapter]:focus-visible rect,[data-house] [data-door]:focus-visible rect{stroke:#e4572e;stroke-width:3}'
     + '[data-hall] [data-leaf]{transition:transform .45s cubic-bezier(.3,.7,.3,1);transform-box:fill-box}[data-hall] [data-leaf="l"]{transform-origin:left center}[data-hall] [data-leaf="r"]{transform-origin:right center}[data-opening] [data-leaf]{transform:scaleX(.16)}'
@@ -22855,10 +22856,13 @@ function houseMiniShapes(current, W = 600) {
     let z = [11, 10.5, 10, 9.5].find(z => x.ids.every(id => one(id, z))), lines = {};
     if (z == null) z = 10;
     x.ids.forEach(id => { lines[id] = one(id, z) ? [nm(id)] : thWrap(nm(id), rw - 24, z, TH_SERIF).slice(0, 2); });
-    const fh = FH + (x.ids.some(id => lines[id].length > 1) ? 11 : 0);
+    const lbl = x.st.en[0].toUpperCase(), fits = (txt, z) => rdWidth(txt, 700, z, TH_CAPS) + txt.length * z * 0.06 <= SC - 6;   // Build P: the floor's name
+    let lz = 8.6; while (lz > 7.2 && !fits(lbl, lz)) lz -= 0.2;
+    const ll = fits(lbl, lz) ? [lbl] : lbl.replace(' – ', ' –\n').split('\n');
+    if (ll.length > 1) { lz = 8.2; while (lz > 6.6 && !ll.every(p => fits(p, lz))) lz -= 0.2; }
+    const fh = Math.max(FH + (x.ids.some(id => lines[id].length > 1) ? 11 : 0), ll.length > 1 ? 24 : 0);
     svg += stL(X0, y + fh, X0 + HW, y + fh, 0.6);
-    const lbl = x.st.en[0].toUpperCase(); let lz = 8.6; while (lz > 6.6 && rdWidth(lbl, 700, lz, TH_CAPS) + lbl.length * lz * 0.06 > SC - 6) lz -= 0.2;   // Build O: the floor's name, as small as it must be to fit
-    svg += stT(X0 + 2, y + 13, lbl, { size: +lz.toFixed(1), weight: 700, fill: has ? ST.C : ST.N, font: TH_CAPS, digits: "'Playfair Display',Georgia,serif", ls: '0.06em' });
+    ll.forEach((p, i) => { svg += stT(X0 + 2, y + 12.6 + i * 9, p, { size: +lz.toFixed(1), weight: 700, fill: has ? ST.C : ST.N, font: TH_CAPS, digits: "'Playfair Display',Georgia,serif", ls: '0.06em' }); });
     x.ids.forEach((id, j) => {
       const rx = X0 + SC + j * rw, on = id === current, ls = lines[id], cx = rx + (rw - 3) / 2, fill = on ? ST.C : ST.N;
       const gx = cx - (16 + rdWidth(ls[0], 700, z, TH_SERIF)) / 2;   // the number and the first line together, centred in the cell
@@ -22890,7 +22894,7 @@ function BkHousePage() {
   return <>
     <div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em',marginTop:4}}>YOUR MAP</div>
     <h1 style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:32,fontWeight:900,color:BK.ink,margin:'2px 0 4px',lineHeight:1.05}}>The Piano Butler’s house</h1>
-    <p style={{fontSize:13.5,color:BK.muted,margin:'0 0 8px',lineHeight:1.5}}>Every floor is a stage, from Ground up, and every room is a chapter, numbered 1 to {pathIds().length}. Your butler meets you in the hall: go up, floor by floor. On each floor, any room first. When you finish a chapter, <b style={{color:BK.ink}}>colour in its room</b>. Draw a little pawn (that’s you) in the room you are in.</p>
+    <p style={{fontSize:13.5,color:BK.muted,margin:'0 0 8px',lineHeight:1.5}}>Every floor is a stage, from Beginner up through the grades, and every room is a chapter, numbered 1 to {pathIds().length}. Your butler meets you in the hall: go up, floor by floor. On each floor, any room first. When you finish a chapter, <b style={{color:BK.ink}}>colour in its room</b>. Draw a little pawn (that’s you) in the room you are in.</p>
     <div style={{flex:1,minHeight:0,display:'flex',alignItems:'center',justifyContent:'center'}}><PenArt shapes={[{ k: 'raw', svg: v.svg }]} vb={v.vb} label="The Piano Butler’s house" style={{maxHeight:'100%'}}/></div>
   </>;
 }
@@ -23046,8 +23050,8 @@ const HOME_LIVE = {
     lessons: ['md-home', 'md-start', 'sc-modes', 'md-family', 'md-ladder', 'md-parent', 'md-keys'], tools: [], more: [],
   },
 };
-// Build O (the curriculum plan, 2026-10-25): the floor of every Home lesson. 'G' Ground, 'P1' Preliminary and Grade 1,
-// '23' Grades 2-3, '4', '5', 'home' the Home only. A lesson that runs across floors carries the first one it is taught on.
+// Build O (the curriculum plan, 2026-10-25): the floor of every Home lesson. 'G' Beginner (before Prelim), 'P1' Prelim and
+// Grade 1, '23' Grades 2-3, '4', '5', 'home' the Home only (Build P: shown in plain words, HOME_FLOOR_NAME). A lesson that runs across floors carries the first one it is taught on.
 const HOME_FLOOR = (() => {
   const m = {}, set = (fl, ids) => ids.split(' ').forEach(id => { m[id] = fl; });
   set('G', 'kq-black kq-houses kq-names kq-octave kq-lines kq-climb kq-clefs kq-letters kq-fold kq-landmarks kq-read kq-write kq-size kq-range'
@@ -23062,12 +23066,12 @@ const HOME_FLOOR = (() => {
   set('home', 'ch-ext ch-blues');
   return m;
 })();
-const HOME_FLOOR_NAME = { G: 'Ground', P1: 'P–1', '23': '2–3', '4': '4', '5': '5' };
+const HOME_FLOOR_NAME = { G: 'Beginner', P1: 'Prelim – Grade 1', '23': 'Grades 2–3', '4': 'Grade 4', '5': 'Grade 5' };   // Build P: plain words
 function FloorMark({ id }) {   // sits at the start of the lesson's line, so the title keeps its width; Inter, whose 1 is never an I
   const fl = HOME_FLOOR[id]; if (!fl) return null;
   const box = { display:'inline-block', verticalAlign:'1px', marginRight:7, fontSize:10.5, fontWeight:800, lineHeight:1.25, whiteSpace:'nowrap', fontVariantNumeric:'lining-nums' };
   if (fl === 'home') return <span data-floor="home" style={{...box,color:'var(--navy-soft)',border:'1px dashed var(--navy-line)',borderRadius:3,padding:'1px 6px'}}>{t('Home only', '홈에만')}</span>;
-  return <span data-floor={fl} title={t('Floor', '층') + ' ' + HOME_FLOOR_NAME[fl]} style={{...box,letterSpacing:'0.07em',color:'var(--navy)',border:'1px solid var(--navy)',boxShadow:'inset 0 0 0 1.5px var(--surface), inset 0 0 0 2.1px rgba(38,41,107,0.4)',borderRadius:2,padding:'2px 7px 1px'}}>{HOME_FLOOR_NAME[fl].toUpperCase()}</span>;
+  return <span data-floor={fl} title={HOME_FLOOR_NAME[fl]} style={{...box,letterSpacing:'0.07em',color:'var(--navy)',border:'1px solid var(--navy)',boxShadow:'inset 0 0 0 1.5px var(--surface), inset 0 0 0 2.1px rgba(38,41,107,0.4)',borderRadius:2,padding:'2px 7px 1px'}}>{HOME_FLOOR_NAME[fl].toUpperCase()}</span>;
 }
 const HOME_AREA_LINE = {
   pitch: ['What the notes are', '음의 높이와 이름'], rhythm: ['How long they last', '음의 길이와 박'], touch: ['How they are played', '소리를 만드는 방법'],
