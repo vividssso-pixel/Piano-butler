@@ -3,7 +3,7 @@
 // and picture, its Remember line under the butler; one by one is the page's 'At the piano', one step on each screen, with the
 // page's moving picture above it (what the online book showed), then 'Not like this'; your turn is the app's own questions.
 // The pages are the book's own (postureLbPages, plLbPages, ...), taken apart, not copied: change the book, the Home follows.
-const LBH_FN = { scales: (s) => sscLbPages(s), 'key-signatures': (s) => skgLbPages(s), 'posture-hands': (s) => postureLbPages(s), pulse: (s) => plLbPages(s), 'note-values': (s) => nvLbPages(s), 'time-signatures': (s) => tsLbPages(s), rhythm: (s) => srhLbPages(s), 'whole-staff': (s) => wsLbPages(s) };
+const LBH_FN = { 'posture-hands': (s) => postureLbPages(s), pulse: (s) => plLbPages(s), 'note-values': (s) => nvLbPages(s), 'time-signatures': (s) => tsLbPages(s), rhythm: (s) => srhLbPages(s), 'whole-staff': (s) => wsLbPages(s) };
 const lbhCache = {};
 const LBH_KNOWN = () => [LbLive, LbPic, LbSay, LbPiano, LbNot, LbRemember, LbTune, LbDefs, LbStageRows];
 const lbhHas = (n) => { let f = false; React.Children.forEach(n, (x) => { if (f || !x || typeof x !== 'object') return; if (LBH_KNOWN().includes(x.type)) f = true; else if (x.props && x.props.children) f = lbhHas(x.props.children); }); return f; };
@@ -136,17 +136,7 @@ lbhAdd('kq-fold', 'p-staff', 'pitch', 'Fold at Clara’s ladder', '클라라의 
 // and the butler's Remember line under it -- the book's own line where a book page teaches the same thing, otherwise the
 // lesson's own key sentence.
 const LbhFrameCtx = React.createContext(false);
-// her 2026-10-24: "what the Lesson Book has that would help, fitted to the lessons as they are": the book page's 'At the piano'
-// steps under the lesson, folded away until asked for (the book's panel, its boxes ticked on screen)
-function LbhPiano({ ch, page, only, named }) {
-  const [open, setOpen] = useState(false); const p = lbhPage(ch, page), st = only ? only.map(j => p.piano[j]) : p.piano;
-  if (!st || !st.length) return null;
-  return <div style={{ margin: '10px 0 4px' }}>
-    <button className="chip" aria-expanded={open} onClick={() => setOpen(!open)} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 14px', minHeight: 44, fontSize: 14, fontWeight: 800 }}><LbKeysIcon size={20}/>{t('At the piano', '피아노 앞에서')}{named ? ': ' + p.title : ''} ({st.length}) {open ? '▴' : '▾'}</button>
-    {open && lbhWrap(ch, <LbPiano steps={st}/>)}</div>; }
-const LbhKeys = ({ Keys, rem, piano, frame = true }) => <LbhFrameCtx.Provider value={frame}><Keys/>{piano && <LbhPiano ch={piano[0]} page={piano[1]} only={piano[2]}/>}{lbhRem(null, kqT(rem))}</LbhFrameCtx.Provider>;
-// a lesson with more than one book page behind it: each page's steps, one after the other
-const LbhPianos = ({ list }) => <>{list.map(([ch, page, only], k) => <LbhPiano key={k} ch={ch} page={page} only={only} named/>)}</>;
+const LbhKeys = ({ Keys, rem, frame = true }) => <LbhFrameCtx.Provider value={frame}><Keys/>{lbhRem(null, kqT(rem))}</LbhFrameCtx.Provider>;
 // each picture (keyboard, staff, fingering table, the circle of fifths) sits in the book's frame; a picture inside a framed one
 // is not framed again, and two pictures one under the other share one frame (CSS: .lbh-fig + .lbh-fig)
 const lbhFramed = (C, nm) => function LbhFramed(p) { const f0 = React.useContext(LbhFrameCtx), fr = f0 === true || (Array.isArray(f0) && f0.includes(nm));
@@ -154,15 +144,15 @@ const lbhFramed = (C, nm) => function LbhFramed(p) { const f0 = React.useContext
 ScKeys = lbhFramed(ScKeys, 'ScKeys'); AcKeys = lbhFramed(AcKeys, 'AcKeys'); SkgStaff = lbhFramed(SkgStaff, 'SkgStaff'); KSStaff = lbhFramed(KSStaff, 'KSStaff'); ScPair = lbhFramed(ScPair, 'ScPair'); FifthsRing = lbhFramed(FifthsRing, 'FifthsRing'); TapKeyboard = lbhFramed(TapKeyboard, 'TapKeyboard');
 const lbhSetC = (id, C) => { const tl = TOOLS.find(x => x.id === id); if (tl) tl.C = C; };
 const LBH_REM = {
-  'sc-shape': ['A major scale: T T S T T T S. Whole, whole, half, whole, whole, whole, half.', '장음계: T T S T T T S. 온음, 온음, 반음, 온음, 온음, 온음, 반음.'],
-  'sc-same': ['G major: one sharp, F♯. F major: one flat, B♭.', 'G장조 음계: 샵 하나, F♯. F장조 음계: 플랫 하나, B♭.'],
+  'sc-shape': ['A major scale: T\u00a0T\u00a0S\u00a0T\u00a0T\u00a0T\u00a0S. Whole, whole, half, whole, whole, whole, half.', '장음계: T\u00a0T\u00a0S\u00a0T\u00a0T\u00a0T\u00a0S. 온음, 온음, 반음, 온음, 온음, 온음, 반음.'],
+  'sc-same': ['Start anywhere and keep T\u00a0T\u00a0S\u00a0T\u00a0T\u00a0T\u00a0S: a black key comes in to keep the pattern.', '어디서 시작하든 T\u00a0T\u00a0S\u00a0T\u00a0T\u00a0T\u00a0S를 지켜요. 패턴을 지키려고 검은건반이 들어와요.'],
   'sc-deg': ['Degrees 1 to 8. Degree 1, the tonic, is home.', '음의 번호는 1부터 8까지. 1번 음인 으뜸음이 집이에요.'],
-  'sc-wr': ['A group of 3, a group of 4, finger 5 on top.', '3개 묶음, 4개 묶음, 맨 위는 5번.'],
-  'sc-wl': ['The mirror of the right hand: 5 at the bottom, a group of 4, then a group of 3.', '오른손의 거울: 맨 아래 5번, 4개 묶음, 그다음 3개 묶음.'],
+  'sc-wr': ['A group of 3, a group of 4, finger 5 on top. Only F has different groups.', '3개 묶음, 4개 묶음, 맨 위는 5번. F만 묶음이 달라요.'],
+  'sc-wl': ['5 at the bottom, a group of 4, a group of 3. Only B has different groups.', '맨 아래 5번, 4개 묶음, 3개 묶음. B만 묶음이 달라요.'],
   'sc-br': ['The right hand always starts on finger 2.', '오른손은 늘 2번으로 시작해요.'],
-  'sc-bl': ['B♭, E♭, A♭, D♭: one shape. The left hand starts on finger 3.', 'B♭, E♭, A♭, D♭는 한 가지 모양. 왼손은 3번으로 시작해요.'],
+  'sc-bl': ['D♭, E♭, A♭, B♭: one shape. The left hand starts on finger 3.', 'D♭, E♭, A♭, B♭는 한 가지 모양. 왼손은 3번으로 시작해요.'],
   'sc-both': ['One column, one note: the right hand on top, the left hand below.', '한 칸에 음 하나: 위는 오른손, 아래는 왼손.'],
-  'sc-all': ['One pattern, T T S T T T S, from any of the twelve notes.', '패턴은 하나, T T S T T T S. 열두 음 어디서든 시작해요.'],
+  'sc-all': ['One pattern, T\u00a0T\u00a0S\u00a0T\u00a0T\u00a0T\u00a0S, from any of the twelve notes.', '패턴은 하나, T\u00a0T\u00a0S\u00a0T\u00a0T\u00a0T\u00a0S. 열두 음 어디서든 시작해요.'],
   'sc-chrom': ['All twelve keys, one half step at a time.', '열두 건반 모두, 반음씩.'],
   'sc-min': ['Three minors from D: they differ only near the top.', '세 단음계 모두 D에서: 위쪽 한두 음만 달라요.'],
   'sc-penta': ['Pentatonic: the major scale without notes 4 and 7.', '5음 음계: 장음계에서 4번과 7번 음을 빼요.'],
@@ -176,7 +166,5 @@ const LBH_REM = {
   'kf-write': ['Straight after the clef, in their order, each on its own line or space.', '음자리표 바로 뒤에, 정해진 순서대로, 저마다 제 줄이나 칸에.'],
   'kf-trans': ['Every note keeps its number in the scale.', '음마다 음계의 번호는 그대로예요.'],
 };
-// the book pages whose 'At the piano' fits a lesson: [chapter, page, the steps that fit (all when left out)]
-const LBH_PIANO = { 'sc-shape': ['scales', 1], 'sc-wr': ['scales', 2, [0]], 'sc-wl': ['scales', 2, [1]], 'sc-deg': ['scales', 3], 'sc-same': ['scales', 4], 'kf-what': ['key-signatures', 1] };
 Object.entries(LBH_REM).forEach(([id, rem]) => { const tl = TOOLS.find(x => x.id === id); if (!tl) return; const K = tl.C;
-  lbhSetC(id, id === 'sc-same' ? () => <LbhFrameCtx.Provider value={true}><K/><LbhPianos list={[['scales', 4], ['scales', 5]]}/>{lbhRem(null, kqT(rem))}</LbhFrameCtx.Provider> : () => <LbhKeys Keys={K} rem={rem} piano={LBH_PIANO[id]} frame={id === 'kf-piece' ? ['FifthsRing'] : true}/>); });   // the circle of fifths: its two braced staves stay as they are
+  lbhSetC(id, () => <LbhKeys Keys={K} rem={rem} frame={id === 'kf-piece' ? ['FifthsRing'] : true}/>); });   // the circle of fifths: its two braced staves stay as they are
