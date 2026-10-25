@@ -1,0 +1,7 @@
+import sys
+p = sys.argv[1]
+lines = open(p, encoding='utf-8').read().split('\n')
+idx = [i for i, l in enumerate(lines) if l.startswith('| 656 |')]
+assert len(idx) == 1
+lines.insert(idx[0] + 1, "| 657 | 2026-10-25 | **The Beginner floor in its new order (her answer: option 1, 'two new rooms and the topics in turn').** Built on row 656. Rooms: 1 Posture (technique), 2 Keyboard patterns (pitch), 3 Pulse (rhythm), 4 Musical alphabet (pitch), 5 Hand positions (technique, NEW, waits off the map until its chapter exists), 6 Listen and sing (aural, NEW, waits likewise), 7 Notes & rests (rhythm), 8 Staff & two clefs (pitch), 9 Steps & skips (pieces), 10 Line and space names (pitch), 11 Time signatures (rhythm; the tie is taught here), 12 Dynamics & articulation (expression; slur or tie comes after the tie), 13 Pitch & range (pitch, instruments), 14 Tones & semitones (pitch). Until the two new rooms exist the map numbers the twelve 1-12 in this order; every later chapter's number moves with them (the books number from the map; no app text names a chapter number past 2; printed books from before this row show the old numbers). Checked: no 'Chapter n' in app or book text refers to a moved chapter. **Next:** build the two rooms (Learn from the book pages, questions, Lesson Book, Workbook), Hand positions first. Files: drills.html, drills.src.html, _workspace/concept-book-kit/sc/patch681.py. |")
+open(p, 'w', encoding='utf-8').write('\n'.join(lines)); print('ok')
