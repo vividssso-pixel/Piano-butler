@@ -1,0 +1,7 @@
+import sys
+p = sys.argv[1]
+lines = open(p, encoding='utf-8').read().split('\n')
+idx = [i for i, l in enumerate(lines) if l.startswith('| 667 |')]
+assert len(idx) == 1
+lines.insert(idx[0] + 1, "| 668 | 2026-10-26 | **6/8 Time, chapter 16 (Build AD; the syllabus check's finding 2: 6/8 is Grade 1, so it comes down to Prelim - Grade 1).** Built on row 667 (the chapters after Rhythm Patterns move up one: Playing Scales is 19, Minor Scales 23). A rhythm room after Rhythm Patterns on the first Prelim - Grade 1 floor, on the rhythm chapter's rows and scoring (RqStaff, srhRaw; quavers as the counted unit, the strong click on 1 and 4, hearts on the two big beats). Five steps: (1) Two big beats: count six, tap only 1 and 4. (2) The dotted crotchet: three quavers, one big beat (drawn as note = three quavers), tap it. (3) Long, short: crotchet + quaver, 1 (2) 3. (4) 3/4 or 6/8: the same six quavers beamed 2 2 2 or 3 3, heard by the strong clicks; 'Which one?'. (5) Count, clap, play: four new lines (one with a dotted minim). Drill: six levels (on which count, how many quavers, 3/4 or 6/8 by the beams, by ear, fill the bar, tap it). Home: Rhythm gets a group '6/8 time' after Rhythm patterns. Book: 7 pages. The Home's older 'More rhythm: 6/8 time' lesson stays where it is (a near-twin for the board's call 11). Files: drills.html, drills.src.html, _workspace/concept-book-kit/sc/patch692.py (+ e8x.jsx, e8h.jsx). |")
+open(p, 'w', encoding='utf-8').write('\n'.join(lines)); print('ok')
