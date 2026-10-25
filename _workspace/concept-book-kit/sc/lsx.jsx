@@ -17,29 +17,35 @@ const lsBtn = { padding:'10px 14px', fontSize:14, minHeight:44 };
 const lsMsg = (txt, col) => <div style={{textAlign:'center',fontSize:15,fontWeight:900,color:col || 'var(--navy)',minHeight:22,lineHeight:1.35}}>{txt}</div>;
 const lsClara = (w = 30) => <PenArt shapes={sfClara(26, 31, 1.2)} vb={[0, 0, 52, 58]} style={{width:w}}/>;
 
-// ── step 1: keep the beat; the music stops for a bar, the beat does not ──
-// a little tune in C position over C and G chords: two bars, a quiet bar, a last bar (beats counted from the first bar)
-const LS_MEL = [[0, 28, 1], [1, 29, 1], [2, 30, 1], [3, 28, 1], [4, 30, 1], [5, 31, 1], [6, 32, 2], [12, 30, 1], [13, 29, 1], [14, 28, 2]];
-const lsChord = (b) => (b >= 8 && b < 12 ? null : b === 6 || b === 7 || b === 12 || b === 13 ? [18, 20, 22] : [21, 23, 25]);
-const lsQuiet = (b) => b >= 8 && b < 12;
-function lsBeatRun() {
-  return plRun(4 + 16, { bpm: LS_BPM, silentFrom: 4, extra: (ctx, tm, i, spb) => { if (i < 4) return; const b = i - 4, ch = lsChord(b);
-    if (ch) ch.forEach(d => lsNote(ctx, tm, d, spb * 0.55, 0.06));
-    LS_MEL.filter(m => m[0] === b).forEach(m => lsNote(ctx, tm, m[1], m[2] * spb * 0.9, 0.2)); } });
+// ── step 1: keep the beat. Build AA (the syllabus, 26 Oct): simple chord passages in two- or three-beat time, slow, moderate
+// or quick; the child claps the beats and carries on when the music stops. Here the music comes back after the quiet bars, so the
+// child hears whether they are still together. ──
+const LS_SPEEDS = { slow: 60, moderate: 84, quick: 108 };
+const LS_SPEED_NAME = { slow: ['Slow', '느리게'], moderate: ['Moderate', '보통'], quick: ['Quick', '빠르게'] };
+const LS_PLAN = { 2: ['C', 'C', 'G', 'C', null, null, 'G', 'C'], 3: ['C', 'G', 'C', null, null, 'G', 'C'] };   // bars: I and V chords, two quiet bars
+const LS_CHORD = { C: [21, 25, 28, 30], G: [18, 22, 27, 29] };   // C3 G3 C4 E4 / G2 D3 B3 D4
+const lsQuietOf = (m) => (i) => !LS_PLAN[m][Math.floor(i / m)];
+function lsBeatRun(m, bpm) {
+  const bars = LS_PLAN[m];
+  return plRun(m + bars.length * m, { bpm, silentFrom: m, extra: (ctx, tm, i, spb) => { if (i < m) return; const b = i - m, ch = bars[Math.floor(b / m)];
+    if (ch) LS_CHORD[ch].forEach(d => lsNote(ctx, tm, d, spb * 0.6, b % m === 0 ? 0.1 : 0.06)); } });
 }
-function LsBeatPad({ onResult }) {
+function LsBeatPad({ onResult, meter = 2, speed = 'moderate', fixed }) {
   const T = usePlTimers();
+  const [m, setM] = useState(meter), [sp, setSp] = useState(speed);
   const [phase, setPhase] = useState('ready'), [lit, setLit] = useState(-1), [res, setRes] = useState(null);
   const run = useRef(null), taps = useRef([]);
+  const n = LS_PLAN[m].length * m, quiet = lsQuietOf(m), nQuiet = Array.from({ length: n }, (_, i) => i).filter(quiet).length;
+  const reset = () => { T.clear(); stopClicks(); setRes(null); setPhase('ready'); setLit(-1); };
   function start() {
     T.clear(); setRes(null); taps.current = [];
-    const r = lsBeatRun(); if (!r) return; run.current = r;
-    r.at.forEach((a, i) => T.at(r, a, () => { setLit(i - 4); setPhase(i < 4 ? 'count' : lsQuiet(i - 4) ? 'quiet' : 'go'); }));
-    T.at(r, r.at[19] + r.spb * 0.9, () => {
+    const r = lsBeatRun(m, LS_SPEEDS[sp]); if (!r) return; run.current = r;
+    r.at.forEach((a, i) => T.at(r, a, () => { setLit(i - m); setPhase(i < m ? 'count' : quiet(i - m) ? 'quiet' : 'go'); }));
+    T.at(r, r.at[m + n - 1] + r.spb * 0.9, () => {
       setLit(-1); setPhase('done');
-      const at = r.at.slice(4), m = plMatch(at, taps.current.filter(tp => tp > r.at[4] - PL_TOL));
-      const quiet = m.offs.slice(8, 12).filter(o => o !== null).length;
-      const out = { hits: m.hits, total: 16, quiet, extra: m.extra, marks: m.offs.map(o => (o === null ? '?' : '✓')), ok: m.hits >= 14 && quiet >= 3 && m.extra <= 2 };
+      const at = r.at.slice(m), mt = plMatch(at, taps.current.filter(tp => tp > r.at[m] - PL_TOL));
+      const qh = mt.offs.filter((o, j) => o !== null && quiet(j)).length;
+      const out = { hits: mt.hits, total: n, quiet: qh, nQuiet, extra: mt.extra, marks: mt.offs.map(o => (o === null ? '?' : '✓')), ok: mt.hits >= n - 2 && qh >= nQuiet - 1 && mt.extra <= 2 };
       setRes(out); if (onResult) onResult(out);
     });
     setPhase('count');
@@ -49,12 +55,17 @@ function LsBeatPad({ onResult }) {
   return (
     <div className="try-box" style={actBox} data-ls="beat">
       <div style={actTitle}>{t('Keep the beat', '박 지키기')}</div>
-      <div style={actNote}>{LANG === 'ko' ? <>클릭 4번을 듣고, 음악에 맞춰 박마다 패드를 쳐요. 셋째 마디에서 <b>음악이 멈춰도</b> 계속 쳐요. 넷째 마디에서 음악이 돌아올 때 함께 있나요?</> : <>Listen to 4 clicks, then tap every beat with the music. In bar 3 <b>the music stops</b>: keep tapping. When it comes back in bar 4, are you still with it?</>}</div>
-      <PlCircles n={16} r={12} gap={30} kind={(i) => (lsQuiet(i) ? 'silent' : 'beat')} lit={lit} mark={(i) => (res ? res.marks[i] : null)}/>
+      <div style={actNote}>{LANG === 'ko' ? <>한 마디에 박 둘 또는 셋, 그리고 빠르기를 골라요. 클릭 한 마디를 듣고, 화음에 맞춰 박마다 패드를 쳐요. <b>음악이 멈춰도</b> 계속 쳐요. 음악이 돌아올 때 함께 있나요?</> : <>Choose two or three beats in a bar, and a speed. Listen to one bar of clicks, then tap every beat with the chords. When <b>the music stops</b>, keep tapping. When it comes back, are you still with it?</>}</div>
+      {fixed && <div style={{textAlign:'center',fontSize:14,fontWeight:900,color:'var(--navy)',marginBottom:6}}>{t('In ' + (m === 2 ? 'two' : 'three'), m === 2 ? '두 박' : '세 박')} · {t(LS_SPEED_NAME[sp][0], LS_SPEED_NAME[sp][1])}</div>}
+      {!fixed && <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap',marginBottom:8}}>
+        {[2, 3].map(x => <button key={x} className={'chip' + (x === m ? ' active' : '')} style={{minHeight:40,padding:'6px 12px'}} onClick={() => { reset(); setM(x); }}>{t('In ' + (x === 2 ? 'two' : 'three'), x === 2 ? '두 박' : '세 박')}</button>)}
+        {Object.keys(LS_SPEEDS).map(x => <button key={x} className={'chip' + (x === sp ? ' active' : '')} style={{minHeight:40,padding:'6px 12px'}} onClick={() => { reset(); setSp(x); }}>{t(LS_SPEED_NAME[x][0], LS_SPEED_NAME[x][1])}</button>)}
+      </div>}
+      <PlCircles n={n} r={11} gap={27} group={m} kind={(i) => (quiet(i) ? 'silent' : 'beat')} label={(i) => String(i % m + 1)} lit={lit} mark={(i) => (res ? res.marks[i] : null)}/>
       {lsMsg(phase === 'count' ? t('Get ready…', '준비…') : phase === 'go' ? t('Tap the beat', '박을 쳐요') : phase === 'quiet' ? t('The music stopped: keep going!', '음악이 멈췄어요: 계속 쳐요!') : '', phase === 'quiet' ? BK.coral : undefined)}
       <PlPad on={live} onTap={tap}/>
       <div style={{textAlign:'center',marginTop:8}}><button className="ghost-btn" style={lsBtn} onClick={start}>{phase === 'done' ? t('▶ Again', '▶ 다시') : t('▶ Start', '▶ 시작')}</button></div>
-      {res && lsMsg(t('On the beat: ' + res.hits + ' of 16 · in the quiet bar: ' + res.quiet + ' of 4', '박에 맞게: 16개 중 ' + res.hits + '개 · 조용한 마디에서: 4개 중 ' + res.quiet + '개') + (res.ok ? ' ✓' : ''), res.ok ? BK.green : BK.coral)}
+      {res && lsMsg(t('On the beat: ' + res.hits + ' of ' + res.total + ' · in the quiet bars: ' + res.quiet + ' of ' + res.nQuiet, '박에 맞게: ' + res.total + '개 중 ' + res.hits + '개 · 조용한 마디에서: ' + res.nQuiet + '개 중 ' + res.quiet + '개') + (res.ok ? ' ✓' : ''), res.ok ? BK.green : BK.coral)}
       {plHint()}
     </div>
   );
@@ -123,12 +134,12 @@ function LsEchoPad({ onResult, fixed }) {
 }
 
 // ── step 3: up or down: higher is up towards the bird, lower is down towards the turtle ──
-function lsPair(prev) {
+function lsPair(prev) {   // Build AA: two notes at least a third apart (two white keys or more), never the same
   let a, b, g = 0;
-  do { a = 24 + Math.floor(Math.random() * 11); b = a + pick([1, 2, 3, 4, 5, -1, -2, -3, -4, -5, 0]); } while ((b < 21 || b > 38 || (prev && prev.a === a && prev.b === b)) && g++ < 30);
-  return { a, b, answer: b > a ? 'up' : b < a ? 'down' : 'same' };
+  do { a = 22 + Math.floor(Math.random() * 13); b = a + pick([2, 3, 4, 5, 6]) * pick([1, -1]); } while ((b < 19 || b > 40 || (prev && prev.a === a && prev.b === b)) && g++ < 30);
+  return { a, b, answer: b > a ? 'up' : 'down' };
 }
-const LS_DIR = { up: () => t('Up', '위로'), down: () => t('Down', '아래로'), same: () => t('The same', '같아요') };
+const LS_DIR = { up: () => t('Higher', '더 높아요'), down: () => t('Lower', '더 낮아요'), same: () => t('The same', '같아요') };
 const lsDirIcon = (c, s = 30) => (c === 'up' ? birdIcon(s) : c === 'down' ? turtleIcon(s) : <span style={{fontSize:s * 0.8,fontWeight:900,lineHeight:1,color:BK.ink}}>=</span>);
 // the keys from low to high, two keys lit (the first coral, the second navy), the turtle at the low end and the bird at the high end
 function LsTwoKeys({ a, b, show = true, k = 1.1, ic = 34, nums = true }) {   // the first note pale, the second coral; 1 and 2 on the keys
@@ -146,15 +157,15 @@ function LsUpDownPad({ onResult }) {
   const say = (c) => { if (!q || ans) return; setAns(c); const ok = c === q.answer; setRun(n => (ok ? n + 1 : 0)); if (onResult) onResult({ ok }); };
   return (
     <div className="try-box" style={actBox} data-ls="updown">
-      <div style={actTitle}>{t('Up or down?', '위로? 아래로?')}</div>
-      <div style={actNote}>{LANG === 'ko' ? <>두 음을 들어요. 두 번째 음은 <b>위로</b>(하늘의 새 쪽) 갈까요, <b>아래로</b>(바다의 거북이 쪽) 갈까요?</> : <>Listen to two notes. Does the second go <b>up</b> (towards the bird in the sky) or <b>down</b> (towards the turtle in the sea)?</>}</div>
+      <div style={actTitle}>{t('Higher or lower?', '높을까, 낮을까?')}</div>
+      <div style={actNote}>{LANG === 'ko' ? <>두 음을 들어요. 두 번째 음은 <b>더 높을까요</b>(하늘의 새 쪽으로 위), <b>더 낮을까요</b>(바다의 거북이 쪽으로 아래)?</> : <>Listen to two notes. Is the second <b>higher</b> (up towards the bird in the sky) or <b>lower</b> (down towards the turtle in the sea)?</>}</div>
       <LsTwoKeys a={q && ans ? q.a : null} b={q && ans ? q.b : null}/>
       <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap',margin:'10px 0'}}>
         <button className="ghost-btn" style={lsBtn} onClick={fresh}>{q ? t('▶ New pair', '▶ 새 두 음') : t('▶ Play two notes', '▶ 두 음 듣기')}</button>
         {q && <button className="ghost-btn" style={lsBtn} onClick={() => hear(q)}>{t('♪ Again', '♪ 다시 듣기')}</button>}
       </div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:8}}>{['up', 'same', 'down'].map(c => <button key={c} disabled={!q} className={'choice-btn' + (!ans || !q ? '' : c === q.answer ? ' good' : c === ans ? ' bad' : '')} onClick={() => say(c)} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,padding:'10px 4px'}}>{lsDirIcon(c)}<span style={{fontSize:15,fontWeight:900}}>{LS_DIR[c]()}</span></button>)}</div>
-      {q && ans && lsMsg(ans === q.answer ? t('Yes: ' + LS_DIR[q.answer]().toLowerCase() + '. ' + (run > 1 ? run + ' in a row!' : ''), '맞아요: ' + LS_DIR[q.answer]() + '. ' + (run > 1 ? run + '번 연속!' : '')) : t('Listen again: it went ' + LS_DIR[q.answer]().toLowerCase() + '. The keys show where.', '다시 들어 봐요: ' + LS_DIR[q.answer]() + '예요. 건반이 어디인지 보여 줘요.'), ans === q.answer ? BK.green : BK.coral)}
+      <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8}}>{['up', 'down'].map(c => <button key={c} disabled={!q} className={'choice-btn' + (!ans || !q ? '' : c === q.answer ? ' good' : c === ans ? ' bad' : '')} onClick={() => say(c)} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:4,padding:'10px 4px'}}>{lsDirIcon(c)}<span style={{fontSize:15,fontWeight:900}}>{LS_DIR[c]()}</span></button>)}</div>
+      {q && ans && lsMsg(ans === q.answer ? t('Yes: ' + LS_DIR[q.answer]().toLowerCase() + '. ' + (run > 1 ? run + ' in a row!' : ''), '맞아요: ' + LS_DIR[q.answer]() + '. ' + (run > 1 ? run + '번 연속!' : '')) : t('Listen again: it was ' + LS_DIR[q.answer]().toLowerCase() + '. The keys show where.', '다시 들어 봐요: ' + LS_DIR[q.answer]() + '. 건반이 어디인지 보여 줘요.'), ans === q.answer ? BK.green : BK.coral)}
     </div>
   );
 }
@@ -189,7 +200,7 @@ function LsFindPad({ onResult }) {
 }
 
 // ── step 5: sing it back: three notes, then five; then play them in C position, right hand ──
-const LS_SING = { 3: ['1 2 3', '3 2 1', '1 2 1', '3 4 5', '5 4 3', '2 3 2'], 5: ['1 2 3 2 1', '3 4 5 4 3', '5 4 3 2 1', '1 2 3 4 5', '3 2 1 2 3', '5 4 3 4 5'] };
+const LS_SING = { 3: ['1 2 3', '3 2 1', '1 2 1', '3 4 5', '5 4 3', '2 3 2'], 5: ['1 2 3 2 1', '3 4 5 4 3', '5 4 3 2 1', '1 2 3 4 5', '3 2 1 2 3', '5 4 3 4 5'], 6: ['1 2 3 4 3 2', '5 4 3 2 3 1', '3 4 5 4 3 1', '1 2 3 1 2 1', '1 3 2 4 3 1', '5 4 3 4 2 1'] };   // Build AA: six too (the syllabus: five or six one-beat notes)
 const lsFingers = (s) => s.split(' ').map(Number);
 function LsSingRow({ fs, got = 0, lit = -1, show = false, size = 32 }) {
   return <div style={{display:'flex',gap:6,justifyContent:'center'}}>{fs.map((f, i) => { const on = i === lit, done = i < got;
@@ -197,11 +208,12 @@ function LsSingRow({ fs, got = 0, lit = -1, show = false, size = 32 }) {
       background:on ? BK.coral : done ? BK.ink : '#fff',border:'2px solid ' + (on ? BK.coral : BK.ink),color:on || done ? '#fff' : BK.ink,transition:'background .1s'}}>{done || show ? f : ''}</span>; })}</div>;
 }
 function LsSingPad({ onResult, len0 = 3, fixed }) {
-  const [len, setLen] = useState(len0), [ti, setTi] = useState(0), [got, setGot] = useState(0), [miss, setMiss] = useState(0), [lit, setLit] = useState(-1), [show, setShow] = useState(false), [heard, setHeard] = useState(false), [wrong, setWrong] = useState(null);
+  const [len, setLen] = useState(len0), [ti, setTi] = useState(0), [got, setGot] = useState(0), [miss, setMiss] = useState(0), [lit, setLit] = useState(-1), [show, setShow] = useState(false), [heard, setHeard] = useState(false), [wrong, setWrong] = useState(null), [step, setStep] = useState(-1);
   const stop = useRef(null); useEffect(() => () => stop.current && stop.current(), []);
   const fs = lsFingers(fixed || LS_SING[len][ti]), ds = fs.map(f => hpFingerD('C', 'R', f)), done = got >= fs.length;
   const listen = () => { stop.current && stop.current(); setHeard(true); stop.current = lsSeq(ds, 600, setLit); };
-  const reset = (l, i) => { stop.current && stop.current(); setLen(l); setTi(i); setGot(0); setMiss(0); setShow(false); setHeard(false); setWrong(null); setLit(-1); };
+  const reset = (l, i) => { stop.current && stop.current(); setLen(l); setTi(i); setGot(0); setMiss(0); setShow(false); setHeard(false); setWrong(null); setLit(-1); setStep(-1); };
+  const oneByOne = () => { stop.current && stop.current(); setHeard(true); const j = step + 1 >= fs.length ? 0 : step + 1; setStep(j); setLit(j); lsPlay(ds[j], 0.9); };   // the phrase again, waiting on each note: sing it, then the next
   const tap = (d) => { lsPlay(d, 0.6); if (done || !heard) return;
     if (d === ds[got]) { const g = got + 1; setGot(g); setWrong(null); if (g >= fs.length && onResult) onResult({ ok: miss === 0, miss }); } else { setMiss(m => m + 1); setWrong(d); } };
   const lit2 = {}; if (got > 0 && !done) lit2[ds[got - 1]] = 'cor';
@@ -210,7 +222,7 @@ function LsSingPad({ onResult, len0 = 3, fixed }) {
       <div style={actTitle}>{t('Sing it back', '따라 부르기')}</div>
       <div style={actNote}>{LANG === 'ko' ? <>짧은 선율을 들어요. <b>"라"로 따라 불러요</b>. 그다음 C 자리 오른손으로 쳐요. 엄지 1번은 가운데 도.</> : <>Listen to a short tune. <b>Sing it back on "la"</b>. Then play it in C position, right hand: thumb 1 on middle C.</>}</div>
       {!fixed && <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap',marginBottom:8}}>
-        {[3, 5].map(l => <button key={l} className={'chip' + (l === len ? ' active' : '')} style={{minHeight:40,padding:'6px 12px'}} onClick={() => reset(l, 0)}>{t(l + ' notes', l + '음')}</button>)}
+        {[3, 5, 6].map(l => <button key={l} className={'chip' + (l === len ? ' active' : '')} style={{minHeight:40,padding:'6px 12px'}} onClick={() => reset(l, 0)}>{t(l + ' notes', l + '음')}</button>)}
         <button className="chip" style={{minHeight:40,padding:'6px 12px'}} onClick={() => reset(len, (ti + 1) % LS_SING[len].length)}>{t('Another tune', '다른 선율')}</button>
       </div>}
       <LsSingRow fs={fs} got={got} lit={lit} show={show || done}/>
@@ -218,6 +230,7 @@ function LsSingPad({ onResult, len0 = 3, fixed }) {
       {lsMsg(!heard ? t('Tap ▶ Listen first.', '먼저 ▶ 듣기를 눌러요.') : done ? t('Listen, sing, play ✓' + (miss ? '' : ' First time!'), '듣고, 부르고, 치기 ✓' + (miss ? '' : ' 한 번에!')) : wrong != null ? t('Not that one: sing it again, then try.', '그 건반이 아니에요: 다시 불러 보고 쳐요.') : t('Sing it, then play note ' + (got + 1) + '.', '불러 보고, ' + (got + 1) + '번째 음을 쳐요.'), done ? BK.green : wrong != null ? BK.coral : undefined)}
       <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap',marginTop:8}}>
         <button className="ghost-btn" style={lsBtn} onClick={listen}>{t('▶ Listen', '▶ 듣기')}</button>
+        <button className="ghost-btn" style={lsBtn} onClick={oneByOne}>{step < 0 || step + 1 >= fs.length ? t('▶ Note by note', '▶ 한 음씩') : t('▶ Next note (' + (step + 2) + ')', '▶ 다음 음 (' + (step + 2) + ')')}</button>
         {!done && <button className="ghost-btn" style={lsBtn} onClick={() => setShow(true)}>{t('Show the fingers', '손가락 번호 보기')}</button>}
       </div>
     </div>
@@ -235,12 +248,12 @@ const lsPicSing = () => lsRawPic([1, 2, 3].map((f, i) => lsCircleSvg(16 + i * 24
 
 function lsLbPages(scr = false) {
   const ch = 'listen-sing';
-  const checks5 = [[lsPicBeat(), t('I keep the beat, and keep going when the music stops', '박을 지키고, 음악이 멈춰도 계속 가요')], [lsPicEcho(), t('I echo a two-bar rhythm, straight after it', '두 마디 리듬을 바로 이어서 따라 쳐요')],
-    [lsPicUpDown(), t('I hear whether a tune goes up or down', '선율이 위로 가는지 아래로 가는지 들어요')], [lsPicFind(), t('I sing a note, then find it on the keys', '음 하나를 부르고, 건반에서 찾아요')], [lsPicSing(), t('I sing back three notes, then five, and play them', '세 음, 그다음 다섯 음을 따라 부르고 쳐요')]];
+  const checks5 = [[lsPicBeat(), t('I keep the beat in two or in three, slow to quick, and keep going when the music stops', '두 박이든 세 박이든, 느리게부터 빠르게까지 박을 지키고, 음악이 멈춰도 계속 가요')], [lsPicEcho(), t('I echo a two-bar rhythm, straight after it', '두 마디 리듬을 바로 이어서 따라 쳐요')],
+    [lsPicUpDown(), t('I hear whether the second of two notes is higher or lower', '두 음 중 두 번째가 더 높은지 낮은지 들어요')], [lsPicFind(), t('I sing a note, then find it on the keys', '음 하나를 부르고, 건반에서 찾아요')], [lsPicSing(), t('I sing back three notes, then five or six, and play them', '세 음, 그다음 다섯·여섯 음을 따라 부르고 쳐요')]];
   const pen = (x) => <PenArt shapes={x.shapes} vb={x.vb} style={{width:90}}/>;
-  const toc = [[t('Keep the beat', '박 지키기'), 2], [t('Echo the rhythm', '리듬 메아리'), 3], [t('Up or down', '위로? 아래로?'), 4], [t('Find your note', '내 음 찾기'), 5], [t('Sing it back', '따라 부르기'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]];
-  const beatStill = <LbPic h={120}><div style={{width:'100%'}}><PlCircles n={16} r={scr ? 12 : 16} gap={scr ? 30 : 40} kind={(i) => (lsQuiet(i) ? 'silent' : 'play')} label={(i) => String(i % 4 + 1)}/>
-    <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr',textAlign:'center',fontSize:12.5,fontWeight:900,color:BK.muted,marginTop:4}}><span>{t('the music', '음악')}</span><span style={{color:BK.coral}}>{t('quiet: keep going', '조용히: 계속')}</span><span>{t('the music again', '다시 음악')}</span></div></div></LbPic>;
+  const toc = [[t('Keep the beat', '박 지키기'), 2], [t('Echo the rhythm', '리듬 메아리'), 3], [t('Higher or lower', '높을까, 낮을까?'), 4], [t('Find your note', '내 음 찾기'), 5], [t('Sing it back', '따라 부르기'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]];
+  const beatStill = <LbPic h={140}><div style={{width:'100%',display:'grid',gap:10}}>{[2, 3].map(m => <div key={m} style={{display:'grid',gridTemplateColumns:'62px 1fr',alignItems:'center',gap:6}}><span style={{fontSize:12.5,fontWeight:900,color:BK.muted}}>{t('in ' + (m === 2 ? 'two' : 'three'), m === 2 ? '두 박' : '세 박')}</span><PlCircles n={LS_PLAN[m].length * m} r={scr ? 10 : 13} gap={scr ? 24 : 32} group={m} kind={(i) => (lsQuietOf(m)(i) ? 'silent' : 'play')} label={(i) => String(i % m + 1)}/></div>)}
+    <div style={{textAlign:'center',fontSize:12.5,fontWeight:900,color:BK.coral}}>{t('dashed: the music stops, the beat goes on', '점선: 음악은 멈춰도 박은 계속')}</div></div></LbPic>;
   return [
     // 1. opener
     <LbPage key="1" no={1} chId={ch} teacher={<>{t('Ears first. Every step here is listening, then singing or tapping, then the keys: the app plays and scores the taps; whether a child sang in tune is your ear. Sing on "la" at a comfortable pitch: if a voice sits higher than C position, let it sing there. No staff yet: the staff comes in chapter ' + bkChapterNo('staff') + '.', '귀가 먼저예요. 모든 단계가 듣기, 그다음 부르거나 치기, 그다음 건반이에요. 앱은 소리를 들려주고 탭을 채점해요. 음정에 맞게 불렀는지는 선생님의 귀가 판단해요. 편한 높이에서 "라"로 불러요. 목소리가 C 자리보다 높은 곳에 있으면 거기서 불러도 돼요. 오선은 아직이에요: ' + bkChapterNo('staff') + '장에서 배워요.')}</>} qr={bkLink('drill=' + ch + '&lock=1')}>
@@ -258,23 +271,23 @@ function lsLbPages(scr = false) {
         </div></LbOnly>
         <div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
-          {[t('keep a steady beat, even when the music stops', '음악이 멈춰도 꾸준한 박을 지킬 수 있어요'), t('echo a two-bar rhythm', '두 마디 리듬을 따라 칠 수 있어요'), t('hear whether a tune goes up or down', '선율이 위로 가는지 아래로 가는지 들을 수 있어요'), t('sing a note and find it on the keys', '음 하나를 부르고 건반에서 찾을 수 있어요'), t('sing back a short tune, then play it', '짧은 선율을 따라 부르고 칠 수 있어요')].map(x => <div key={x} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:3}}>{bkGoal(15)}</span><span>{x}</span></div>)}
+          {[t('keep a steady beat in two or in three, even when the music stops', '두 박이든 세 박이든, 음악이 멈춰도 꾸준한 박을 지킬 수 있어요'), t('echo a two-bar rhythm', '두 마디 리듬을 따라 칠 수 있어요'), t('hear whether a note is higher or lower', '음이 더 높은지 낮은지 들을 수 있어요'), t('sing a note and find it on the keys', '음 하나를 부르고 건반에서 찾을 수 있어요'), t('sing back a short tune, then play it', '짧은 선율을 따라 부르고 칠 수 있어요')].map(x => <div key={x} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:3}}>{bkGoal(15)}</span><span>{x}</span></div>)}
         </div>
       </div>
       <LbOnly print><LbDrillStrip id={ch}/></LbOnly>
     </LbPage>,
     // 2. keep the beat
     <LbPage key="2" no={2} chId={ch} kicker={t('Step 1', '1단계')} title={t('Keep the beat', '박 지키기')}
-      teacher={<>{t('Play any tune the child knows, steady, and stop for a bar or two in the middle: the clapping should not stop or slow down. Then come back in together. Walking the beat round the room works as well as clapping.', '아이가 아는 곡을 일정하게 치다가 중간에 한두 마디 멈춰 주세요. 박수가 멈추거나 느려지면 안 돼요. 그다음 함께 다시 들어가요. 박수 대신 방을 걸으며 박을 걸어도 좋아요.')}</>} qr={bkLink('drill=' + ch + '&tab=drill&level=1')}>
+      teacher={<>{t('Play simple chords in two- or three-beat time, slow, then moderate, then quick, and stop: the clapping carries on at the same speed. In lessons, come back in after a bar or two to check you are still together. Walking the beat round the room works as well as clapping.', '두 박 또는 세 박으로 간단한 화음을 느리게, 보통으로, 빠르게 치다가 멈춰 주세요. 박수는 같은 빠르기로 계속 가요. 레슨에서는 한두 마디 뒤에 다시 들어가서 아직 함께인지 확인해요. 박수 대신 방을 걸으며 박을 걸어도 좋아요.')}</>} qr={bkLink('drill=' + ch + '&tab=drill&level=1')}>
       <LbLive still={beatStill} live={<LsBeatPad/>}/>
       <LbSay>{LANG === 'ko' ? <>음악 밑에는 언제나 <b>박</b>이 흘러요. 음악이 멈춰도 <b>박은 계속 가요</b>: 속으로 세면서 계속 쳐요. 음악이 돌아올 때 같이 있어야 해요.</> : <>Under the music there is always a <b>beat</b>. When the music stops, <b>the beat goes on</b>: keep tapping, counting inside. When the music comes back, be right there with it.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [
-        <>선생님이 곡을 쳐요. 박마다 손뼉을 쳐요.</>,
-        <>선생님이 중간에 멈춰요. 손뼉은 멈추지 않아요: 1 2 3 4, 속으로 세면서.</>,
+        <>선생님이 두 박이나 세 박으로 화음을 쳐요. 박마다 손뼉을 쳐요. 느리게, 보통으로, 빠르게.</>,
+        <>선생님이 중간에 멈춰요. 손뼉은 멈추지 않아요: 1 2, 또는 1 2 3, 속으로 세면서.</>,
         <>선생님이 다시 들어와요. 같이 있었나요? 이번엔 걸으면서 해 봐요.</>,
       ] : [
-        <>Your teacher plays a tune. Clap every beat.</>,
-        <>Your teacher stops in the middle. Your clapping doesn't: 1 2 3 4, counting inside.</>,
+        <>Your teacher plays chords in two or in three. Clap every beat: slow, moderate, then quick.</>,
+        <>Your teacher stops in the middle. Your clapping doesn't: 1 2, or 1 2 3, counting inside.</>,
         <>Your teacher comes back in. Were you still together? Now try it walking.</>,
       ]}/>
       <LbRemember>{t('The beat keeps going, even when the music stops.', '음악이 멈춰도 박은 계속 가요.')}</LbRemember>
@@ -299,16 +312,16 @@ function lsLbPages(scr = false) {
       <LbRemember>{t('Listen to the end, then echo it on the beat.', '끝까지 듣고, 박에 맞춰 메아리.')}</LbRemember>
     </LbPage>,
     // 4. up or down
-    <LbPage key="4" no={4} chId={ch} kicker={t('Step 3', '3단계')} title={t('Up or down', '위로? 아래로?')}
-      teacher={<>{t('Play two notes, wide apart first, then closer. The child shows the answer with the body: arm up like the bird, down like the turtle. Watch for "up" meaning "louder": play the second note soft and higher, or loud and lower.', '두 음을 처음엔 멀리, 그다음 가깝게 쳐 주세요. 아이는 몸으로 답해요: 새처럼 팔을 위로, 거북이처럼 아래로. "위로"를 "더 크게"로 헷갈리는지 봐 주세요: 두 번째 음을 여리고 높게, 또는 세고 낮게 쳐 보세요.')}</>} qr={bkLink('drill=' + ch + '&tab=drill&level=1')}>
+    <LbPage key="4" no={4} chId={ch} kicker={t('Step 3', '3단계')} title={t('Higher or lower', '높을까, 낮을까?')}
+      teacher={<>{t('Play two notes, at least a third apart: wide apart first, then closer. The child shows the answer with the body: arm up like the bird, down like the turtle. Watch for "up" meaning "louder": play the second note soft and higher, or loud and lower.', '두 음을 3도 이상 떨어뜨려, 처음엔 멀리, 그다음 가깝게 쳐 주세요. 아이는 몸으로 답해요: 새처럼 팔을 위로, 거북이처럼 아래로. "위로"를 "더 크게"로 헷갈리는지 봐 주세요: 두 번째 음을 여리고 높게, 또는 세고 낮게 쳐 보세요.')}</>} qr={bkLink('drill=' + ch + '&tab=drill&level=1')}>
       <LbLive still={<LbPic h={150}><div style={{width:'100%',maxWidth:620,margin:'0 auto'}}><LsTwoKeys a={28} b={31} k={2.2} ic={48}/></div></LbPic>} live={<LsUpDownPad/>}/>
       <LbSay>{LANG === 'ko' ? <>두 번째 음이 더 높으면 <b>위로</b>: 오른쪽, 하늘의 <b>새</b> 쪽. 더 낮으면 <b>아래로</b>: 왼쪽, 바다의 <b>거북이</b> 쪽. 높고 낮음은 크고 작음과 달라요.</> : <>If the second note is higher, it goes <b>up</b>: to the right, towards the <b>bird</b> in the sky. Lower goes <b>down</b>: to the left, towards the <b>turtle</b> in the sea. High and low are not loud and soft.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [
-        <>선생님이 두 음을 쳐요. 눈을 감고 들어요. 위로면 팔을 위로, 아래로면 아래로.</>,
+        <>선생님이 두 음을 쳐요. 눈을 감고 들어요. 더 높으면 팔을 위로, 더 낮으면 아래로.</>,
         <>세 음: 위로-위로, 아래로-아래로, 위로-아래로? 팔로 모양을 그려요.</>,
         <>바꿔요: 내가 두 음을 치고, 선생님이 맞혀요.</>,
       ] : [
-        <>Your teacher plays two notes. Close your eyes and listen: arm up for up, down for down.</>,
+        <>Your teacher plays two notes. Close your eyes and listen: arm up for higher, down for lower.</>,
         <>Three notes: up-up, down-down, or up-down? Draw the shape with your arm.</>,
         <>Swap: you play two notes, your teacher guesses.</>,
       ]}/>
@@ -334,18 +347,18 @@ function lsLbPages(scr = false) {
     </LbPage>,
     // 6. sing it back
     <LbPage key="6" no={6} chId={ch} kicker={t('Step 5', '5단계')} title={t('Sing it back', '따라 부르기')}
-      teacher={<>{t('Three notes first, by step, in C position; then five. Sing back before playing, every time: the ear leads and the hand follows. If the playing goes wrong, sing it again rather than hunting on the keys.', '처음엔 C 자리에서 한 걸음씩 움직이는 세 음, 그다음 다섯 음. 치기 전에 언제나 먼저 따라 불러요: 귀가 앞서고 손이 따라가요. 치다가 틀리면 건반을 더듬지 말고 다시 불러 보게 해 주세요.')}</>} qr={bkLink('drill=' + ch + '&tab=drill&level=4')}>
+      teacher={<>{t('Three notes first, by step, in C position; then five or six, one beat each. Play the phrase, then play it again note by note, waiting for the child to sing each one. Sing back before playing, every time: the ear leads and the hand follows. If the playing goes wrong, sing it again rather than hunting on the keys.', '처음엔 C 자리에서 한 걸음씩 움직이는 세 음, 그다음 한 박씩 다섯·여섯 음. 선율을 한 번 쳐 주고, 다시 한 음씩 치면서 아이가 하나씩 부를 때까지 기다려 주세요. 치기 전에 언제나 먼저 따라 불러요: 귀가 앞서고 손이 따라가요. 치다가 틀리면 건반을 더듬지 말고 다시 불러 보게 해 주세요.')}</>} qr={bkLink('drill=' + ch + '&tab=drill&level=4')}>
       <LbLive still={<LbPic h={160}><div style={{display:'flex',flexDirection:'column',gap:12,width:'100%',maxWidth:420,margin:'0 auto'}}>
         <LsSingRow fs={[1, 2, 3]} show size={scr ? 32 : 40}/><HpKeys pos="C" hands="R" fingers={false} names={false} lit={{ 28: 'cor', 29: 'cor', 30: 'cor' }} k={2}/></div></LbPic>} live={<LsSingPad/>}/>
-      <LbSay>{LANG === 'ko' ? <>짧은 선율을 들어요. <b>"라"로 따라 불러요</b>. 그다음 C 자리 오른손으로 쳐요. <b>듣고, 부르고, 치기.</b> 세 음부터, 그다음 다섯 음.</> : <>Listen to a short tune. <b>Sing it back on "la"</b>. Then play it in C position, right hand. <b>Listen, sing, play.</b> Three notes first, then five.</>}</LbSay>
+      <LbSay>{LANG === 'ko' ? <>짧은 선율을 들어요. <b>"라"로 따라 불러요</b>. 그다음 C 자리 오른손으로 쳐요. <b>듣고, 부르고, 치기.</b> 세 음부터, 그다음 다섯·여섯 음.</> : <>Listen to a short tune. <b>Sing it back on "la"</b>. Then play it in C position, right hand. <b>Listen, sing, play.</b> Three notes first, then five or six.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [
         <>선생님이 세 음을 쳐요. "라"로 따라 불러요.</>,
         <>C 자리 오른손으로 쳐요. 엄지 1번은 가운데 도.</>,
-        <>이제 다섯 음. 틀리면 다시 불러 보고 쳐요.</>,
+        <>이제 다섯·여섯 음. 선생님이 한 음씩 다시 쳐 주면 하나씩 따라 불러요. 틀리면 다시 불러 보고 쳐요.</>,
       ] : [
         <>Your teacher plays three notes. Sing them back on "la".</>,
         <>Play them in C position, right hand: thumb 1 on middle C.</>,
-        <>Now five notes. If it goes wrong, sing it again, then play.</>,
+        <>Now five or six notes. Your teacher plays them again note by note: sing each one. If it goes wrong, sing it again, then play.</>,
       ]}/>
       <LbRemember>{t('Listen, sing, play.', '듣고, 부르고, 치기.')}</LbRemember>
     </LbPage>,
@@ -370,21 +383,21 @@ function LsLearn({ onStart }) {
 
 // ── the drill: every question is heard (it plays by itself, and ▶ plays it again) ──
 const LS_LEVELS = [
-  { n: 1, label: 'Up or down?', kind: 'updown', time: 10 },
+  { n: 1, label: 'Higher or lower?', kind: 'updown', time: 10 },
   { n: 2, label: 'Low, middle or high?', kind: 'hml', time: 10 },
   { n: 3, label: 'Same or different rhythm?', kind: 'rhythm', time: 14 },
   { n: 4, label: 'Same or different tune?', kind: 'tune', time: 14 },
   { n: 5, label: 'Which shape?', kind: 'shape', time: 12 },
   { n: 6, label: 'Find the note', kind: 'find', time: 14 },
 ];
-Object.assign(LEVEL_KO, { 'Up or down?': '위로? 아래로?', 'Low, middle or high?': '낮은? 가운데? 높은?', 'Same or different rhythm?': '같은 리듬? 다른 리듬?', 'Same or different tune?': '같은 선율? 다른 선율?', 'Which shape?': '어떤 모양?', 'Find the note': '음 찾기' });
+Object.assign(LEVEL_KO, { 'Higher or lower?': '높을까, 낮을까?', 'Low, middle or high?': '낮은? 가운데? 높은?', 'Same or different rhythm?': '같은 리듬? 다른 리듬?', 'Same or different tune?': '같은 선율? 다른 선율?', 'Which shape?': '어떤 모양?', 'Find the note': '음 찾기' });
 const LS_R1 = ['w w w w', 'w w r w', 'r r w w', 'w - w w', 'w w w -', 'r w r w', 'w r w r', 'r r r w', 'w - w -', 'r w w -'].map(s => s.split(' '));
 const LS_T4 = ['1 2 3 1', '3 2 1 2', '1 3 5 3', '5 4 3 2', '1 2 3 4', '3 3 2 1', '5 3 4 2', '1 1 2 3', '2 3 4 3'].map(lsFingers);
 const LS_REG = { low: [14, 18], middle: [27, 29], high: [41, 45] };
 const LS_SHAPES = ['uu', 'dd', 'ud', 'du'];
 function genLsQuestion(lv, prev) {
   const uid = Math.random(), k = lv.kind;
-  if (k === 'updown') { const x = lsPair(prev); return { kind: k, ...x, choices: ['up', 'same', 'down'], key: x.a + ':' + x.b, uid }; }
+  if (k === 'updown') { const x = lsPair(prev); return { kind: k, ...x, choices: ['up', 'down'], key: x.a + ':' + x.b, uid }; }
   if (k === 'hml') { let reg, d, g = 0; do { reg = pick(['low', 'middle', 'high']); const [a, b] = LS_REG[reg]; d = a + Math.floor(Math.random() * (b - a + 1)); } while (prev && prev.d === d && g++ < 10); return { kind: k, d, answer: reg, choices: ['low', 'middle', 'high'], key: reg + d, uid }; }
   if (k === 'rhythm') { const ai = Math.floor(Math.random() * LS_R1.length), same = Math.random() < 0.4; let bi = ai, g = 0; if (!same) do { bi = Math.floor(Math.random() * LS_R1.length); } while (bi === ai && g++ < 20);
     return { kind: k, a: LS_R1[ai], b: LS_R1[bi], answer: ai === bi ? 'same' : 'different', choices: ['same', 'different'], key: ai + ':' + bi, uid }; }
@@ -428,7 +441,7 @@ function LsQuestion({ q, given, locked, onAnswer, pixel }) {
   const done = !!given, btnCls = pixel ? 'pixel-choice' : 'choice-btn';
   const cls = (c) => btnCls + (!done ? '' : c === q.answer ? ' good' : given.ans === c ? ' bad' : '');
   const pick1 = (c) => { if (locked || done) return; clear(); setLit(-1); onAnswer(c); };
-  const title = { updown: t('Does the second note go up, down or stay the same?', '두 번째 음은 위로 갈까요, 아래로 갈까요, 같을까요?'), hml: t('Is this note low, in the middle, or high?', '이 음은 낮은 음, 가운데 음, 높은 음 중 어느 것일까요?'),
+  const title = { updown: t('Is the second note higher or lower?', '두 번째 음은 더 높을까요, 더 낮을까요?'), hml: t('Is this note low, in the middle, or high?', '이 음은 낮은 음, 가운데 음, 높은 음 중 어느 것일까요?'),
     rhythm: t('Two rhythms: the same, or different?', '리듬 두 개: 같을까요, 다를까요?'), tune: t('Two tunes: the same, or different?', '선율 두 개: 같을까요, 다를까요?'), shape: t('Three notes: which shape do they make?', '세 음: 어떤 모양을 만들까요?'), find: t('Sing it, then find it in C position.', '불러 보고, C 자리에서 찾아요.') }[q.kind];
   const btnPad = pixel ? '14px 4px' : '12px 4px', fs = pixel ? 10 : 16;
   let body;
@@ -436,7 +449,7 @@ function LsQuestion({ q, given, locked, onAnswer, pixel }) {
     const lit2 = done ? { [q.answer]: 'cor' } : {};
     body = <div style={{marginBottom:6}}><LsKeys lit={lit2} letters={done} onTap={(d) => { lsPlay(d, 0.6); pick1(d); }}/></div>;
   } else {
-    const cols = q.kind === 'rhythm' || q.kind === 'tune' ? 2 : q.kind === 'shape' ? 4 : 3;
+    const cols = q.kind === 'rhythm' || q.kind === 'tune' || q.kind === 'updown' ? 2 : q.kind === 'shape' ? 4 : 3;
     const label = (c) => q.kind === 'updown' ? <>{lsDirIcon(c, 28)}<span style={{fontSize:fs,fontWeight:900}}>{LS_DIR[c]()}</span></>
       : q.kind === 'hml' ? <>{c === 'low' ? turtleIcon(30) : c === 'high' ? birdIcon(30) : lsClara(24)}<span style={{fontSize:fs,fontWeight:900}}>{LS_HML[c]()}</span></>
       : q.kind === 'shape' ? lsShapePic(c, pixel ? 44 : 56)
@@ -446,7 +459,7 @@ function LsQuestion({ q, given, locked, onAnswer, pixel }) {
       : q.kind === 'updown' && done ? <div style={{margin:'0 0 10px'}}><LsTwoKeys a={q.a} b={q.b}/></div> : null;
     body = <>{vis}<div style={{display:'grid',gridTemplateColumns:'repeat(' + cols + ',minmax(0,1fr))',gap:8}}>{q.choices.map(c => <button key={c} disabled={locked} className={cls(c)} style={{padding:btnPad,display:'flex',flexDirection:'column',alignItems:'center',gap:4}} onClick={() => pick1(c)}>{label(c)}</button>)}</div></>;
   }
-  const why = !done ? null : q.kind === 'updown' ? t('It went ' + LS_DIR[q.answer]().toLowerCase() + (q.answer === 'up' ? ': towards the bird.' : q.answer === 'down' ? ': towards the turtle.' : '.'), LS_DIR[q.answer]() + (q.answer === 'up' ? ': 새 쪽으로.' : q.answer === 'down' ? ': 거북이 쪽으로.' : '.'))
+  const why = !done ? null : q.kind === 'updown' ? t(q.answer === 'up' ? 'Higher: up towards the bird.' : 'Lower: down towards the turtle.', q.answer === 'up' ? '더 높아요: 새 쪽으로 위.' : '더 낮아요: 거북이 쪽으로 아래.')
     : q.kind === 'hml' ? t(q.answer === 'low' ? 'Low: down with the turtle.' : q.answer === 'high' ? 'High: up with the bird.' : 'In the middle, near Clara (middle C).', q.answer === 'low' ? '낮은 음: 거북이와 함께 아래.' : q.answer === 'high' ? '높은 음: 새와 함께 위.' : '가운데, 클라라(가운데 도) 근처.')
     : q.kind === 'rhythm' ? t(q.answer === 'same' ? 'The same rhythm twice.' : 'Different: listen for where the walks and run-nings change.', q.answer === 'same' ? '같은 리듬이 두 번.' : '달라요: 타와 티-티가 어디서 바뀌는지 들어 봐요.')
     : q.kind === 'tune' ? t(q.answer === 'same' ? 'The same tune twice.' : 'Different: one note changed.', q.answer === 'same' ? '같은 선율이 두 번.' : '달라요: 한 음이 바뀌었어요.')
