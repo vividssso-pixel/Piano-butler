@@ -20020,9 +20020,9 @@ const HOME_STAFF = [{ id: 'p-keys', area: 'pitch', en: 'Keyboard patterns and no
   { id: 'p-lines', area: 'pitch', en: 'Notes on the staff', ko: '오선 위의 음 이름' }, { id: 'p-ledger', area: 'pitch', en: 'Ledger lines and 8va', ko: '덧줄과 8va' }, { id: 'p-range', area: 'pitch', en: 'Pitch and range', ko: '음높이와 음역' }]
   .map(v => ({ id: v.id, area: v.area, get name() { return LANG === 'ko' ? v.ko : v.en; } }));
 const HOME_PITCH_ORDER = ['p-staff', 'p-clock', 'p-intervals', 'p-scale', 'p-keysig', 'p-chords', 'p-modes'];
-const homeCats = (areaId) => { const all = TOOL_CATS.filter(c => c.area === areaId).flatMap(c => c.id === 'p-scales' ? HOME_VIRTUAL : [c]); return areaId === 'pitch' ? HOME_PITCH_ORDER.map(id => all.find(c => c.id === id)).filter(Boolean).concat(all.filter(c => !HOME_PITCH_ORDER.includes(c.id))) : all; };
+const homeCats = (areaId) => { const dr = HOME_DOOR.find(d => d.area === areaId); if (dr) return [dr]; const all = TOOL_CATS.filter(c => c.area === areaId).flatMap(c => c.id === 'p-scales' ? HOME_VIRTUAL : [c]); return areaId === 'pitch' ? HOME_PITCH_ORDER.map(id => all.find(c => c.id === id)).filter(Boolean).concat(all.filter(c => !HOME_PITCH_ORDER.includes(c.id))) : all; };
 const HOME_AURAL = { id: 'aural', area: 'aural', get name() { return t('Aural', '청음'); } };   // Build X: the Aural door (no Toolbox concept of its own)
-const homeCatById = (id) => TOOL_CATS.find(c => c.id === id) || HOME_VIRTUAL.find(c => c.id === id) || HOME_STAFF.find(c => c.id === id) || (id === 'aural' ? HOME_AURAL : undefined);
+const homeCatById = (id) => TOOL_CATS.find(c => c.id === id) || HOME_VIRTUAL.find(c => c.id === id) || HOME_STAFF.find(c => c.id === id) || HOME_DOOR.find(c => c.id === id) || (id === 'aural' ? HOME_AURAL : undefined);
 // an area's name over its concepts: a larger Playfair line (not capitals, so it never reads as one more staff head) and what
 // the area holds; navy only (coral stays for 'you are here')
 const toolAreaHead = (a) => <div className="tool-area" style={{display:'flex',alignItems:'baseline',gap:'4px 12px',flexWrap:'wrap',margin:'30px 4px 10px',paddingBottom:6,borderBottom:'2px solid var(--navy)'}}>
@@ -22065,7 +22065,7 @@ function readUrlState(studentMode) {
     tool: TOOLS.find(t => t.id === p.get('tool')) ? p.get('tool') : null,
     kit: p.get('kit') ? p.get('kit').split(',').filter(id => TOOLS.find(t => t.id === id)) : null,
     kn: p.get('kn') || '',
-    ha: TOOL_AREAS.some(a => a.id === p.get('area')) ? p.get('area') : null, hc: homeCatById(p.get('concept')) ? p.get('concept') : null, hs: p.get('room') === 'try' ? 'try' : null, ret: p.get('ret') === 'home' ? 'home' : null,
+    ha: TOOL_AREAS.some(a => a.id === p.get('area')) ? p.get('area') : null, hc: HOME_OLD[p.get('concept')] ? (window.__ksOpen = HOME_OLD[p.get('concept')][1], HOME_OLD[p.get('concept')][0]) : homeCatById(p.get('concept')) ? p.get('concept') : null, hs: p.get('room') === 'try' ? 'try' : null, ret: p.get('ret') === 'home' ? 'home' : null,
     view: p.get('kit') ? 'kit' : p.get('ret') === 'home' && p.get('drill') ? 'home' : p.get('view') === 'chapters' ? 'chapters' : p.get('view') === 'toolbox' ? 'toolbox' : p.get('view') === 'students' ? 'students' : p.get('view') === 'home' ? 'home' : p.get('tool') ? (PRACTICE_IDS.includes(p.get('tool')) && p.get('view') === 'practice' ? 'practice' : 'tools') : ['tools', 'practice'].includes(p.get('view')) ? p.get('view') : todayView ? 'today' : 'path',
   };
 }
@@ -23113,6 +23113,30 @@ const HOME_LIVE = {
     { id: 'c-melody', en: 'Melody', ko: '선율', lessons: ['mlx-map', 'mlx-line', 'mlx-phrasing', 'mlx-qa', 'mlx-motif', 'mlx-seq', 'mlx-build', 'phrase-marks', 'question-answer', 'melody-sequence', 'complete-melody'], check: 'melody' },
   ] },
 };
+// Build AG (plan call 5, 2026-10-26: as few categories as possible): Touch and expression, Technique and Pieces are one list of
+// rooms each, opened straight from the Home like Rhythm. Pitch keeps its seven topics. HOME_OLD sends old concept links to the
+// merged door and opens that room.
+const HOME_DOOR = [{ id: 'h-touch', area: 'touch' }, { id: 'h-tech', area: 'tech' }, { id: 'h-piece', area: 'piece' }]
+  .map(d => ({ id: d.id, area: d.area, get name() { return TOOL_AREAS.find(a => a.id === d.area).name; } }));
+const HOME_OLD = {};
+(() => {
+  const L = HOME_LIVE, g = (cid, gid) => L[cid].groups.find(x => x.id === gid);
+  const art = g('t-touch', 't-art'), speed = g('t-tempo', 't-speed');
+  L['h-touch'] = { lessons: [], groups: [g('t-touch', 't-dyn'),
+    { ...art, lessons: art.lessons.concat(g('t-touch', 't-pedal').lessons, g('t-touch', 't-orn').lessons) },
+    { ...speed, lessons: speed.lessons.concat(g('t-tempo', 't-feel').lessons) }, g('t-tempo', 't-terms')],
+    tools: L['t-tempo'].tools, tryLine: L['t-tempo'].tryLine };
+  L['h-tech'] = { lessons: [], groups: [
+    { id: 'k-post', en: 'Posture and hands', ko: '자세와 손', lessons: L['k-posture'].lessons.slice(), check: L['k-posture'].check },
+    { id: 'k-pos', en: 'Hand positions', ko: '손 자리', lessons: L['k-positions'].lessons.filter(id => !L['k-posture'].lessons.includes(id)), check: L['k-positions'].check },
+  ].concat(L['k-play'].groups) };
+  L['h-piece'] = { lessons: [], groups: [
+    { id: 'c-read', en: 'Reading tunes', ko: '선율 읽기', lessons: L['c-reading'].lessons.slice(), check: L['c-reading'].check },
+  ].concat(L['c-map'].groups) };
+  Object.assign(HOME_OLD, { 't-touch': ['h-touch', 't-dyn'], 't-tempo': ['h-touch', 't-speed'], 'k-posture': ['h-tech', 'k-post'],
+    'k-positions': ['h-tech', 'k-pos'], 'k-play': ['h-tech', 'kpl-scales'], 'c-reading': ['h-piece', 'c-read'], 'c-map': ['h-piece', 'c-signs'] });
+  Object.keys(HOME_OLD).forEach(k => { delete L[k]; });
+})();
 // Build O (the curriculum plan, 2026-10-25): the floor of every Home lesson. 'G' Beginner (before Prelim), 'P1' Prelim and
 // Grade 1, '23' Grades 2-3, '4', '5', 'home' the Home only (Build P: shown in plain words, HOME_FLOOR_NAME). A lesson that runs across floors carries the first one it is taught on.
 const HOME_FLOOR = (() => {
@@ -23252,7 +23276,7 @@ function ConceptHome({ st, update }) {
       <button className="ghost-btn" style={ghost} onClick={() => go(area && !soloOf(area.id) ? { hc: null, hs: null } : { ha: null, hc: null, hs: null })}>← {area && !soloOf(area.id) ? area.name : t('Home', '홈')}</button>
       <StaffHead title={cat.name}/>
       <div style={{display:'flex',flexDirection:'column',gap:10,marginTop:14}}>
-        {(() => { let n = 0; return <>
+        {(() => { let n = live.groups ? live.groups.reduce((a, x) => a + x.lessons.length, 0) : 0; return <>
           {(live.groups ? [] : (live.lessons || [])).map(id => { const tl = TOOLS.find(x => x.id === id); return tl ? step(++n, tl.title, tl.blurb, false, () => go({ view: 'tools', tool: id, ret: 'home' }), id) : null; })}
           {live.groups && live.groups.map((g, gi) => { const off = live.groups.slice(0, gi).reduce((a, x) => a + x.lessons.length, 0); const on = (live.groups.some(x => x.id === openG) ? openG : openG === null ? null : live.groups[0].id) === g.id; return (
             <div key={g.id} data-ks-group={g.id} style={{border:'1.5px solid var(--navy-line)',borderRadius:16,background:on ? '#fffefa' : 'transparent',padding:on ? '4px 12px 14px' : 0}}>
@@ -23381,7 +23405,7 @@ function App() {
   OPEN_CH = (id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }; // Phase 360: chapter links inside a lesson
   // a student with a link always has a button back to the Today page on the Learn and Practice lists
   const todayBack = showToday && !T ? <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:12}} onClick={() => { update({ view: 'today', tool: null, kit: null, drill: null, from: null }); try { window.scrollTo(0, 0); } catch (e) {} }}>{t('← Today', '← 오늘')}</button> : null;
-  const homeBack = '← ' + (st.hs === 'try' ? t('Try', '해 보기') : ((homeCatById(st.hc) || {}).name || t('Home', '홈')));
+  const homeBack = '← ' + (st.hs === 'try' ? t('Try', '해 보기') : ((homeCatById(st.hc) || (st.ha && homeCats(st.ha).length === 1 ? homeCats(st.ha)[0] : null) || {}).name || t('Home', '홈')));
   useEffect(() => { if (st.view === 'home' && !T) setSt(prev => ({ ...prev, view: 'path', drill: null, ret: null })); }, [st.view, T]);
   function jumpToChapter(id) { setFindOpen(false); update({ view: (T && (st.view === 'toolbox' || st.view === 'chapters')) ? st.view : 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }
 
@@ -23447,7 +23471,7 @@ function App() {
           const fromToday = !T && !!st.from && st.from.drill === st.drill;
           return (
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6,marginBottom:14}}>
-              <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => fromToday ? update({ drill: null, view: 'today', from: null }) : update({ drill: null })}>{T ? (st.view === 'home' ? '← ' + ((homeCatById(st.hc) || {}).name || t('Home', '홈')) : t('← Back', '← 뒤로')) : fromToday ? t('← Today', '← 오늘') : t('← Learn', '← 배우기')}</button>
+              <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => fromToday ? update({ drill: null, view: 'today', from: null }) : update({ drill: null })}>{T ? (st.view === 'home' ? '← ' + ((homeCatById(st.hc) || (st.ha && homeCats(st.ha).length === 1 ? homeCats(st.ha)[0] : null) || {}).name || t('Home', '홈')) : t('← Back', '← 뒤로')) : fromToday ? t('← Today', '← 오늘') : t('← Learn', '← 배우기')}</button>
               <span style={{fontSize:12,fontWeight:800,color:'var(--muted)',textAlign:'center'}}>{sg ? sg.title : ''}</span>
               <span style={{display:'flex',gap:4}}>
                 {!(T && st.view === 'home') && <button className="ghost-btn" style={{fontSize:13,padding:'5px 9px'}} disabled={k <= 0} onClick={() => update({ drill: list[k - 1], tab: 'learn', level: 1 })}>‹</button>}
