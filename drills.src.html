@@ -12842,11 +12842,11 @@ const TR_TUNES = [
 ];
 function Transposer() {
   const TKEYS = ['C', 'G', 'F', 'D', 'Bb', 'A', 'Eb'];
-  const [tid, setTid] = useState('a');
+  const [tid, setTid] = useState('a'), [mine, setMine] = useState([]);   // Build BK: My tune, up to eight notes on C D E F G
   const [to, setTo] = useState('G');
   const [on, setOn] = useState(-1);
   const [show, setShow] = useState(false);
-  const tune = TR_TUNES.find(x => x.id === tid);
+  const tune = tid === 'mine' ? { id: 'mine', degs: mine.length ? mine : [[0, 1]] } : TR_TUNES.find(x => x.id === tid);
   const mk = (key) => { const sc = scaleNotes(key, false), up = sc[0].d < 28 ? 7 : 0; return tune.degs.map(([g, dur]) => ({ d: sc[g].d + up, acc: sc[g].acc, dur })); };
   const from = mk('C'), dest = mk(to);
   const ks = KEY_SIGS.find(k => k.major === to);
@@ -12854,7 +12854,8 @@ function Transposer() {
     <div className="try-box" style={actBox}>
       <div style={actTitle}>{t('Transpose a tune', '선율 조옮김')}</div>
       <div style={actNote}>{LANG === 'ko' ? <>조옮김을 하려면 모든 음의 <b>음계 위치(도수)</b>는 그대로 두고 새 조로 옮겨요. 먼저 선율 위에 도수 번호를 쓰고, 새 조에서 그 도수의 음을 찾아요.</> : <>To transpose, keep every note on the same <b>scale degree</b> and move to a new key. Write the degree numbers over the tune first, then find those degrees in the new key.</>}</div>
-      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:4}}>{TR_TUNES.map(tt => <button key={tt.id} className={'chip' + (tt.id === tid ? ' active' : '')} style={{padding:'3px 9px',fontSize:13}} onClick={() => { setTid(tt.id); setShow(false); }}>{tt.title}</button>)}</div>
+      <div style={{display:'flex',gap:4,flexWrap:'wrap',marginBottom:4}}>{TR_TUNES.map(tt => <button key={tt.id} className={'chip' + (tt.id === tid ? ' active' : '')} style={{padding:'3px 9px',fontSize:13}} onClick={() => { setTid(tt.id); setShow(false); }}>{tt.title}</button>)}<button className={'chip' + (tid === 'mine' ? ' active' : '')} style={{padding:'3px 9px',fontSize:13}} onClick={() => { setTid('mine'); setShow(false); }}>{t('My tune', '내 선율')}</button></div>
+      {tid === 'mine' && <div data-tr="mine" style={{margin:'2px 0 6px'}}><div style={{fontSize:12.5,fontWeight:800,color:BK.muted,textAlign:'center'}}>{t('Play up to eight notes on C D E F G: they become the tune in C.', 'C D E F G로 여덟 음까지 쳐요: C장조 선율이 돼요.')}</div><SpKb lo={0} hi={7} W={34} H={80} lit={{ 0: 'pale', 2: 'pale', 4: 'pale', 5: 'pale', 7: 'pale' }} names={{ 0: 'C', 2: 'D', 4: 'E', 5: 'F', 7: 'G' }} onTap={(k) => { const g = { 0: 0, 2: 1, 4: 2, 5: 3, 7: 4 }[k]; if (g == null) return; playKey(k, 0.4); setShow(false); setMine(m => (m.length >= 8 ? m : [...m, [g, 1]])); }} label={t('My tune', '내 선율')}/><div style={{textAlign:'center',marginTop:4}}><button className="ghost-btn" disabled={!mine.length} onClick={() => { setMine([]); setShow(false); }}>{t('Clear', '지우기')}</button></div></div>}
       <div style={{fontSize:12,fontWeight:800,color:'var(--muted)',margin:'4px 0 2px'}}>{t('IN C MAJOR', 'C 장조')}</div>
       <div style={{background:'#fff',borderRadius:8}}><MelodyStaff notes={from} on={on} names width={300}/></div>
       <div style={{display:'flex',justifyContent:'center',gap:10,fontSize:15,fontWeight:900,color:'#e4572e',margin:'4px 0'}}>{tune.degs.map(([g], i) => <span key={i}>{g + 1}̂</span>)}</div>
@@ -19406,6 +19407,9 @@ const TOOLS = [
   { id: 'mk-dyn', ch: 'dynamics', title: 'Loud and soft, your way', blurb: 'Ode to Joy plays; tap pp to ff and shape it, then hear it back.', C: () => <DynShape/> },   // Build BJ
   { id: 'mk-tempo', ch: 'tempo', title: 'Drive the tempo', blurb: 'Speed Twinkle up and slow it down; the Italian word follows.', C: () => <TempoDrive/> },
   { id: 'mk-mm', ch: 'minor-scales', title: 'Bright or dark?', blurb: 'Your tune on C D E F G with the bright 3rd, then the darker one.', C: () => <BrightDark/> },
+  { id: 'mk-iv', ch: 'intervals', title: 'A tune from one interval', blurb: 'Pick a 2nd, 3rd, 4th, 5th or octave and hop only by it.', C: () => <IntervalTune/> },   // Build BK
+  { id: 'mk-acc', ch: 'accidentals', title: 'Add a sharp or a flat', blurb: 'Tap any note of Ode to Joy to sharpen or flatten it, and hear it.', C: () => <AccPlay/> },
+  { id: 'mk-sty', ch: 'styles', title: 'One tune, four styles', blurb: 'Twinkle over a Baroque, Classical, jazz or pop band; then play it yourself.', C: () => <StyleBand/> },
   { id: 'csx-jam', ch: 'styles', title: 'Blues jam', blurb: 'A blues band in C: play any lit key, then hear your solo back.', C: () => <BluesJam/> },   // Build BH
   { id: 'csx-pop', ch: 'styles', title: 'A song', blurb: 'A song’s map (verse, chorus, bridge) and the four chords C G Am F.', C: () => <CsxPopPad/> },
   { id: 'csx-ear', ch: 'styles', title: 'Which style?', blurb: 'Hear a few bars: folk, classical, jazz and blues, or pop?', C: () => <CsxGenreEarPad/> },
@@ -19678,6 +19682,9 @@ const TOOL_KO = {
   'mk-dyn': ['셈여림, 내 마음대로', '환희의 송가가 나오는 동안 pp에서 ff까지 눌러 만들고, 다시 들어요.'],
   'mk-tempo': ['빠르기 운전', '반짝반짝 작은 별을 빠르게, 느리게. 이탈리아어 빠르기말이 따라와요.'],
   'mk-mm': ['밝게? 어둡게?', 'C D E F G로 친 내 가락을 밝은 셋째 음으로, 그다음 어두운 셋째 음으로.'],
+  'mk-iv': ['음정 하나로 선율 만들기', '2도, 3도, 4도, 5도, 옥타브 중 하나를 골라 그 음정으로만 움직여요.'],
+  'mk-acc': ['샵이나 플랫 붙이기', '환희의 송가의 아무 음이나 올리고 내려서 들어 봐요.'],
+  'mk-sty': ['한 선율, 네 스타일', '반짝반짝 작은 별을 바로크, 고전, 재즈, 팝 밴드 위에서. 그다음 내가 쳐요.'],
   'csx-jam': ['블루스 잼', 'C장조 블루스 밴드: 켜진 건반 아무거나, 그다음 내 솔로 듣기.'],
   'csx-pop': ['노래 한 곡', '노래의 지도(벌스, 후렴, 브리지)와 네 화음 C G Am F.'],
   'csx-ear': ['어떤 스타일일까요?', '몇 마디를 듣고 골라요: 민속 음악, 클래식, 재즈와 블루스, 대중음악.'],
@@ -20136,11 +20143,11 @@ const TOOL_META = {
   'keyboard-ancestors': ['about', 0, 3, 'show ear'], 'piano-timeline': ['about', 1, 3, 'show'], 'piano-action': ['about', 0, 3, 'show ear'], 'eras': ['about', 1, 3, 'show ear'], 'spr-zone': ['about', 0, 1, 'game ear'], 'spr-big': ['about', 0, 1, 'game ear'], 'spr-fam': ['about', 0, 2, 'game'], 'spr-ladder': ['about', 0, 2, 'game ear'], 'spr-range': ['about', 0, 3, 'show game'], 'hz-explorer': ['about', 1, 3, 'show ear'], 'string-lab': ['about', 0, 3, 'show ear'], 'size-pitch': ['about', 0, 2, 'game ear'], 'octave-ladder': ['about', 1, 3, 'game ear'], 'range-chart': ['about', 1, 3, 'show ear'],
   'mlx-map': ['melody', 1, 3, 'show ear'], 'mlx-line': ['melody', 1, 3, 'game ear'], 'mlx-phrasing': ['melody', 1, 3, 'show ear'], 'mlx-qa': ['melody', 1, 3, 'show ear'], 'mlx-motif': ['melody', 1, 3, 'game ear'], 'mlx-seq': ['melody', 1, 3, 'show ear'], 'mlx-words': ['melody', 2, 3, 'show ear'], 'mlx-write': ['melody', 3, 3, 'show ear'], 'mlx-couplet': ['melody', 3, 3, 'show ear'], 'mlx-build': ['melody', 1, 3, 'show ear'], 'tune-anatomy': ['melody', 0, 1, 'show'], 'draw-tune': ['melody', 0, 2, 'game ear'], 'phrase-marks': ['melody', 1, 2, 'show'], 'question-answer': ['melody', 1, 2, 'game ear'], 'melody-sequence': ['melody', 1, 2, 'show ear'],
   'fmx-map': ['melody', 1, 3, 'show ear'], 'fmx-phrase': ['melody', 1, 2, 'show ear'], 'fmx-letters': ['melody', 1, 3, 'game ear'], 'fmx-binary': ['melody', 2, 3, 'show ear'], 'fmx-ternary': ['melody', 2, 3, 'show ear'], 'fmx-find': ['melody', 2, 3, 'game ear'], 'fmx-build': ['melody', 1, 3, 'show ear'], 'form-shapes': ['melody', 0, 2, 'show'], 'form-builder': ['melody', 0, 2, 'game ear'], 'same-or-new': ['melody', 1, 2, 'game ear'], 'rondo-refrain': ['melody', 1, 3, 'game ear'], 'binary-ternary-spot': ['melody', 1, 3, 'game ear'],
-  'csx-map': ['about', 0, 3, 'show ear'], 'csx-texture': ['about', 0, 3, 'show ear game'], 'csx-era': ['about', 0, 3, 'show ear'], 'csx-penta': ['about', 0, 3, 'show ear'], 'csx-blues': ['about', 1, 3, 'show ear game'], 'csx-jam': ['about', 0, 3, 'show ear game'], 'mk-dyn': ['expression', 0, 1, 'game ear'], 'mk-tempo': ['rtempo', 0, 2, 'game ear'], 'mk-mm': ['scales', 1, 2, 'game ear'], 'mk-band': ['rpulse', 0, 1, 'game home'], 'mk-qa': ['steps', 0, 1, 'game ear'], 'mk-loop': ['harmony', 1, 3, 'game ear'], 'csx-pop': ['about', 0, 3, 'show ear'], 'csx-ear': ['about', 1, 3, 'game ear'], 'texture-types': ['about', 0, 2, 'show ear'], 'texture-spotter': ['about', 1, 3, 'game ear'], 'genre-traits': ['about', 1, 3, 'show'], 'swing-feel': ['about', 1, 3, 'game ear'], 'twelve-bar-blues': ['about', 2, 3, 'game ear'],
+  'csx-map': ['about', 0, 3, 'show ear'], 'csx-texture': ['about', 0, 3, 'show ear game'], 'csx-era': ['about', 0, 3, 'show ear'], 'csx-penta': ['about', 0, 3, 'show ear'], 'csx-blues': ['about', 1, 3, 'show ear game'], 'csx-jam': ['about', 0, 3, 'show ear game'], 'mk-iv': ['intervals', 1, 2, 'game ear'], 'mk-acc': ['clock', 1, 2, 'game ear'], 'mk-sty': ['about', 0, 3, 'show ear game'], 'mk-dyn': ['expression', 0, 1, 'game ear'], 'mk-tempo': ['rtempo', 0, 2, 'game ear'], 'mk-mm': ['scales', 1, 2, 'game ear'], 'mk-band': ['rpulse', 0, 1, 'game home'], 'mk-qa': ['steps', 0, 1, 'game ear'], 'mk-loop': ['harmony', 1, 3, 'game ear'], 'csx-pop': ['about', 0, 3, 'show ear'], 'csx-ear': ['about', 1, 3, 'game ear'], 'texture-types': ['about', 0, 2, 'show ear'], 'texture-spotter': ['about', 1, 3, 'game ear'], 'genre-traits': ['about', 1, 3, 'show'], 'swing-feel': ['about', 1, 3, 'game ear'], 'twelve-bar-blues': ['about', 2, 3, 'game ear'],
   'cpx-map': ['about', 0, 3, 'show ear'], 'cpx-baroque': ['about', 0, 3, 'show ear'], 'cpx-classical': ['about', 0, 3, 'show ear'], 'cpx-romantic': ['about', 0, 3, 'show ear'], 'cpx-modern': ['about', 0, 3, 'show ear'], 'cpx-alive': ['about', 0, 3, 'show'], 'cpx-order': ['about', 1, 3, 'game'], 'era-worlds': ['about', 0, 3, 'show'], 'movement-map': ['about', 1, 3, 'show ear'], 'composer-time-machine': ['about', 0, 3, 'show game'], 'composer-cards': ['about', 0, 3, 'show ear'], 'who-am-i': ['about', 1, 3, 'game'], 'name-that-tune': ['about', 0, 3, 'game ear'],
 };
 // Phase 484: each tool's concept (the inventory of 17 October); the old topic stays in TOOL_META for its level and kinds
-const TOOL_CONCEPT = { 'accidental-bar': 'p-clock', 'accidental-cards': 'p-clock', 'all-keys': 'p-scales', 'key-finder': 'p-scales', 'alto-clef': 'p-staff', 'anacrusis': 'r-beat', 'arm-alignment': 'k-posture', 'arm-moves': 'k-posture', 'bar-lines': 'r-beat', 'beam-apples': 'r-beat', 'beat-doubler': 'r-beat', 'beat-groups': 'r-beat', 'beat-or-rhythm': 'r-beat', 'beat-target': 'r-beat', 'binary-ternary-spot': 'c-map', 'black-key-jam': 'p-staff', 'black-key-song': 'p-staff', 'black-white-neighbours': 'p-staff', 'build-minor': 'p-scales', 'cadences': 'p-chords', 'chord-extensions': 'p-chords', 'chromatic': 'p-clock', 'chx-145': 'p-chords', 'chx-clock': 'p-chords', 'chx-hands': 'k-play', 'chx-mm': 'p-chords', 'chx-stack': 'p-chords', 'chx-tonic': 'p-chords', 'circle-fifths': 'p-scales', 'clef-basics': 'p-staff', 'clef-story': 'p-staff', 'common-cut': 'r-beat', 'complete-melody': 'c-map', 'composer-cards': 'about', 'composer-time-machine': 'about', 'count-along': 'r-beat', 'count-aloud': 'r-beat', 'count-more': 'r-beat', 'count-ring': 'r-beat', 'cpx-alive': 'about', 'cpx-baroque': 'about', 'cpx-classical': 'about', 'cpx-map': 'about', 'cpx-modern': 'about', 'cpx-order': 'about', 'cpx-romantic': 'about', 'csx-blues': 'about', 'csx-jam': 'about', 'mk-dyn': 't-touch', 'mk-tempo': 't-tempo', 'mk-mm': 'p-scales', 'mk-band': 'r-beat', 'mk-qa': 'c-reading', 'mk-loop': 'p-chords', 'csx-ear': 'about', 'csx-era': 'about', 'csx-map': 'about', 'csx-penta': 'about', 'csx-pop': 'about', 'csx-texture': 'about', 'dc-ds-coda': 'c-map', 'dot-lab': 'r-beat', 'dotted-notes': 'r-beat', 'draw-tune': 'c-map', 'duplets': 'r-beat', 'dyn-order': 't-touch', 'echo': 'c-reading', 'era-worlds': 'about', 'eras': 'about', 'fill-bar': 'r-beat', 'find-every': 'p-staff', 'finger-beat': 'r-beat', 'finger-friends': 'k-posture', 'finger-numbers': 'k-positions', 'five-positions': 'k-positions', 'fix-the-bar': 'r-beat', 'flash-cards': 'p-staff', 'flats-order': 'p-scales', 'fmx-binary': 'c-map', 'fmx-build': 'c-map', 'fmx-find': 'c-map', 'fmx-letters': 'c-map', 'fmx-map': 'c-map', 'fmx-phrase': 'c-map', 'fmx-ternary': 'c-map', 'fold': 'p-staff', 'form-builder': 'c-map', 'form-shapes': 'c-map', 'genre-traits': 'about', 'grace-write': 't-touch', 'grouping': 'r-beat', 'hairpin': 't-touch', 'hand-shape': 'k-posture', 'hear-find': 'c-reading', 'heard-bar': 'r-beat', 'high-low': 'p-staff', 'hz-explorer': 'about', 'interval-ear': 'p-intervals', 'interval-ruler': 'p-intervals', 'inversions': 'p-chords', 'invert-interval': 'p-intervals', 'ivx-big': 'p-intervals', 'ivx-count': 'p-intervals', 'ivx-hand': 'p-intervals', 'ivx-ladder': 'p-intervals', 'ivx-mh': 'p-intervals', 'ivx-tonic': 'p-intervals', 'key-chords': 'p-chords', 'key-houses': 'p-staff', 'keyboard-ancestors': 'about', 'landmark-hop': 'p-staff', 'landmarks': 'p-staff', 'ledger-landmarks': 'p-staff', 'ledger-twins': 'p-staff', 'ledger-walk': 'p-staff', 'ledger-write': 'p-staff', 'letter-chain': 'p-staff', 'letter-hop': 'p-intervals', 'major-fingering': 'k-play', 'major-minor': 'p-chords', 'make-card': 'r-beat', 'melody-sequence': 'c-map', 'metronome': 't-tempo', 'mini-tune': 'c-reading', 'minor-fingering': 'k-play', 'mlx-build': 'c-map', 'mlx-line': 'c-map', 'mlx-map': 'c-map', 'mlx-motif': 'c-map', 'mlx-phrasing': 'c-map', 'mlx-qa': 'c-map', 'mlx-seq': 'c-map', 'mlx-words': 'c-map', 'mlx-write': 'c-map', 'mlx-couplet': 'c-map', 'modes': 'p-scales', 'movement-map': 'about', 'name-reveal': 'p-staff', 'name-that-tune': 'about', 'note-rest-match': 'r-beat', 'note-rest-naming': 'r-beat', 'note-value-tree': 'r-beat', 'nv-hold': 'r-beat', 'nv-long': 'r-beat', 'nv-rests': 'r-beat', 'nv-run': 'r-beat', 'nv-walk': 'r-beat', 'octave-ladder': 'about', 'ornaments': 't-touch', 'ottava': 'p-staff', 'pedal': 't-touch', 'perfect-counter': 'practice', 'phrase-marks': 'c-map', 'piano-action': 'about', 'piano-timeline': 'about', 'place-it': 'p-scales', 'posture-check': 'k-posture', 'practice-dice': 'practice', 'practice-timer': 'practice', 'primary-triads': 'p-chords', 'question-answer': 'c-map', 'range-chart': 'about', 'regroup': 'r-beat', 'relative-minor': 'p-scales', 'rest-grouping': 'r-beat', 'rhymes': 'p-staff', 'rhythm-cards-all': 'r-beat', 'road-map': 'c-map', 'rondo-refrain': 'c-map', 'sac-bar': 'p-clock', 'sac-line': 'p-clock', 'sac-natural': 'p-clock', 'sac-signs': 'p-clock', 'sac-tune': 'p-clock', 'same-or-new': 'c-map', 'same-tune-tempo': 't-tempo', 'scale-finder': 'p-scales', 'scale-intervals': 'p-intervals', 'sdy-hair': 't-touch', 'sdy-ladder': 't-touch', 'sdy-pf': 't-touch', 'sdy-tie': 't-touch', 'sdy-touch': 't-touch', 'semitone-counter': 'p-intervals', 'seventh-chords': 'p-chords', 'sgn-dc': 'c-map', 'sgn-ds': 'c-map', 'sgn-pause': 't-tempo', 'sgn-rep': 'c-map', 'sgn-volta': 'c-map', 'sharp-flat': 'p-clock', 'sharps-order': 'p-scales', 'sight-reading': 'c-reading', 'silent-beats': 'r-beat', 'sit-check': 'k-posture', 'size-pitch': 'p-staff', 'skg-acc': 'p-scales', 'skg-every': 'p-scales', 'skg-f': 'p-scales', 'skg-five': 'p-scales', 'skg-g': 'p-scales', 'speed-change': 't-tempo', 'split-it': 'r-beat', 'spr-big': 'about', 'spr-fam': 'about', 'spr-ladder': 'about', 'spr-range': 'about', 'spr-zone': 'about', 'sps-action': 'about', 'sps-keys': 'about', 'sps-pedals': 'about', 'sps-softloud': 'about', 'sps-sound': 'about', 'srh-alone': 'r-beat', 'srh-beams': 'r-beat', 'srh-dot': 'r-beat', 'srh-read': 'r-beat', 'srh-up': 'r-beat', 'ssk-cpos': 'k-positions', 'ssk-gpos': 'k-positions', 'ssk-read': 'c-reading', 'ssk-shape': 'c-reading', 'ssk-step': 'c-reading', 'staff-basics': 'p-staff', 'staff-climb': 'p-staff', 'steady-beat': 'r-beat', 'step-skip': 'c-reading', 'step-updown': 'p-staff', 'stm-metro': 't-tempo', 'stm-read': 't-tempo', 'stm-sf': 't-tempo', 'stm-steady': 't-tempo', 'stm-words': 't-tempo', 'string-lab': 'about', 'swing-feel': 'r-beat', 'tap-tempo': 't-tempo', 'tempo-race': 't-tempo', 'tempo-walk': 't-tempo', 'term-cards': 't-tempo', 'term-match': 't-tempo', 'term-mixer': 't-tempo', 'term-sort': 't-tempo', 'texture-spotter': 'about', 'texture-types': 'about', 'tie-slur': 't-touch', 'time-sig-numbers': 'r-beat', 'tmx-build': 't-tempo', 'tmx-change': 't-tempo', 'tmx-map': 't-tempo', 'tmx-speed': 't-tempo', 'tmx-touch': 't-touch', 'tmx-vol': 't-touch', 'tone-semitone': 'p-clock', 'touch-ear': 't-touch', 'touch-lengths': 't-touch', 'transpose': 'p-scales', 'triad-stack': 'p-chords', 'tritone': 'p-intervals', 'ts-bars': 'r-beat', 'ts-build': 'r-beat', 'ts-numbers': 'r-beat', 'ts-strong': 'r-beat', 'ts-tie': 'r-beat', 'tune-anatomy': 'c-map', 'twelve-bar-blues': 'p-chords', 'who-am-i': 'about', 'whole-piano': 'p-staff', 'write-note': 'p-staff' };
+const TOOL_CONCEPT = { 'accidental-bar': 'p-clock', 'accidental-cards': 'p-clock', 'all-keys': 'p-scales', 'key-finder': 'p-scales', 'alto-clef': 'p-staff', 'anacrusis': 'r-beat', 'arm-alignment': 'k-posture', 'arm-moves': 'k-posture', 'bar-lines': 'r-beat', 'beam-apples': 'r-beat', 'beat-doubler': 'r-beat', 'beat-groups': 'r-beat', 'beat-or-rhythm': 'r-beat', 'beat-target': 'r-beat', 'binary-ternary-spot': 'c-map', 'black-key-jam': 'p-staff', 'black-key-song': 'p-staff', 'black-white-neighbours': 'p-staff', 'build-minor': 'p-scales', 'cadences': 'p-chords', 'chord-extensions': 'p-chords', 'chromatic': 'p-clock', 'chx-145': 'p-chords', 'chx-clock': 'p-chords', 'chx-hands': 'k-play', 'chx-mm': 'p-chords', 'chx-stack': 'p-chords', 'chx-tonic': 'p-chords', 'circle-fifths': 'p-scales', 'clef-basics': 'p-staff', 'clef-story': 'p-staff', 'common-cut': 'r-beat', 'complete-melody': 'c-map', 'composer-cards': 'about', 'composer-time-machine': 'about', 'count-along': 'r-beat', 'count-aloud': 'r-beat', 'count-more': 'r-beat', 'count-ring': 'r-beat', 'cpx-alive': 'about', 'cpx-baroque': 'about', 'cpx-classical': 'about', 'cpx-map': 'about', 'cpx-modern': 'about', 'cpx-order': 'about', 'cpx-romantic': 'about', 'csx-blues': 'about', 'csx-jam': 'about', 'mk-iv': 'p-intervals', 'mk-acc': 'p-clock', 'mk-sty': 'about', 'mk-dyn': 't-touch', 'mk-tempo': 't-tempo', 'mk-mm': 'p-scales', 'mk-band': 'r-beat', 'mk-qa': 'c-reading', 'mk-loop': 'p-chords', 'csx-ear': 'about', 'csx-era': 'about', 'csx-map': 'about', 'csx-penta': 'about', 'csx-pop': 'about', 'csx-texture': 'about', 'dc-ds-coda': 'c-map', 'dot-lab': 'r-beat', 'dotted-notes': 'r-beat', 'draw-tune': 'c-map', 'duplets': 'r-beat', 'dyn-order': 't-touch', 'echo': 'c-reading', 'era-worlds': 'about', 'eras': 'about', 'fill-bar': 'r-beat', 'find-every': 'p-staff', 'finger-beat': 'r-beat', 'finger-friends': 'k-posture', 'finger-numbers': 'k-positions', 'five-positions': 'k-positions', 'fix-the-bar': 'r-beat', 'flash-cards': 'p-staff', 'flats-order': 'p-scales', 'fmx-binary': 'c-map', 'fmx-build': 'c-map', 'fmx-find': 'c-map', 'fmx-letters': 'c-map', 'fmx-map': 'c-map', 'fmx-phrase': 'c-map', 'fmx-ternary': 'c-map', 'fold': 'p-staff', 'form-builder': 'c-map', 'form-shapes': 'c-map', 'genre-traits': 'about', 'grace-write': 't-touch', 'grouping': 'r-beat', 'hairpin': 't-touch', 'hand-shape': 'k-posture', 'hear-find': 'c-reading', 'heard-bar': 'r-beat', 'high-low': 'p-staff', 'hz-explorer': 'about', 'interval-ear': 'p-intervals', 'interval-ruler': 'p-intervals', 'inversions': 'p-chords', 'invert-interval': 'p-intervals', 'ivx-big': 'p-intervals', 'ivx-count': 'p-intervals', 'ivx-hand': 'p-intervals', 'ivx-ladder': 'p-intervals', 'ivx-mh': 'p-intervals', 'ivx-tonic': 'p-intervals', 'key-chords': 'p-chords', 'key-houses': 'p-staff', 'keyboard-ancestors': 'about', 'landmark-hop': 'p-staff', 'landmarks': 'p-staff', 'ledger-landmarks': 'p-staff', 'ledger-twins': 'p-staff', 'ledger-walk': 'p-staff', 'ledger-write': 'p-staff', 'letter-chain': 'p-staff', 'letter-hop': 'p-intervals', 'major-fingering': 'k-play', 'major-minor': 'p-chords', 'make-card': 'r-beat', 'melody-sequence': 'c-map', 'metronome': 't-tempo', 'mini-tune': 'c-reading', 'minor-fingering': 'k-play', 'mlx-build': 'c-map', 'mlx-line': 'c-map', 'mlx-map': 'c-map', 'mlx-motif': 'c-map', 'mlx-phrasing': 'c-map', 'mlx-qa': 'c-map', 'mlx-seq': 'c-map', 'mlx-words': 'c-map', 'mlx-write': 'c-map', 'mlx-couplet': 'c-map', 'modes': 'p-scales', 'movement-map': 'about', 'name-reveal': 'p-staff', 'name-that-tune': 'about', 'note-rest-match': 'r-beat', 'note-rest-naming': 'r-beat', 'note-value-tree': 'r-beat', 'nv-hold': 'r-beat', 'nv-long': 'r-beat', 'nv-rests': 'r-beat', 'nv-run': 'r-beat', 'nv-walk': 'r-beat', 'octave-ladder': 'about', 'ornaments': 't-touch', 'ottava': 'p-staff', 'pedal': 't-touch', 'perfect-counter': 'practice', 'phrase-marks': 'c-map', 'piano-action': 'about', 'piano-timeline': 'about', 'place-it': 'p-scales', 'posture-check': 'k-posture', 'practice-dice': 'practice', 'practice-timer': 'practice', 'primary-triads': 'p-chords', 'question-answer': 'c-map', 'range-chart': 'about', 'regroup': 'r-beat', 'relative-minor': 'p-scales', 'rest-grouping': 'r-beat', 'rhymes': 'p-staff', 'rhythm-cards-all': 'r-beat', 'road-map': 'c-map', 'rondo-refrain': 'c-map', 'sac-bar': 'p-clock', 'sac-line': 'p-clock', 'sac-natural': 'p-clock', 'sac-signs': 'p-clock', 'sac-tune': 'p-clock', 'same-or-new': 'c-map', 'same-tune-tempo': 't-tempo', 'scale-finder': 'p-scales', 'scale-intervals': 'p-intervals', 'sdy-hair': 't-touch', 'sdy-ladder': 't-touch', 'sdy-pf': 't-touch', 'sdy-tie': 't-touch', 'sdy-touch': 't-touch', 'semitone-counter': 'p-intervals', 'seventh-chords': 'p-chords', 'sgn-dc': 'c-map', 'sgn-ds': 'c-map', 'sgn-pause': 't-tempo', 'sgn-rep': 'c-map', 'sgn-volta': 'c-map', 'sharp-flat': 'p-clock', 'sharps-order': 'p-scales', 'sight-reading': 'c-reading', 'silent-beats': 'r-beat', 'sit-check': 'k-posture', 'size-pitch': 'p-staff', 'skg-acc': 'p-scales', 'skg-every': 'p-scales', 'skg-f': 'p-scales', 'skg-five': 'p-scales', 'skg-g': 'p-scales', 'speed-change': 't-tempo', 'split-it': 'r-beat', 'spr-big': 'about', 'spr-fam': 'about', 'spr-ladder': 'about', 'spr-range': 'about', 'spr-zone': 'about', 'sps-action': 'about', 'sps-keys': 'about', 'sps-pedals': 'about', 'sps-softloud': 'about', 'sps-sound': 'about', 'srh-alone': 'r-beat', 'srh-beams': 'r-beat', 'srh-dot': 'r-beat', 'srh-read': 'r-beat', 'srh-up': 'r-beat', 'ssk-cpos': 'k-positions', 'ssk-gpos': 'k-positions', 'ssk-read': 'c-reading', 'ssk-shape': 'c-reading', 'ssk-step': 'c-reading', 'staff-basics': 'p-staff', 'staff-climb': 'p-staff', 'steady-beat': 'r-beat', 'step-skip': 'c-reading', 'step-updown': 'p-staff', 'stm-metro': 't-tempo', 'stm-read': 't-tempo', 'stm-sf': 't-tempo', 'stm-steady': 't-tempo', 'stm-words': 't-tempo', 'string-lab': 'about', 'swing-feel': 'r-beat', 'tap-tempo': 't-tempo', 'tempo-race': 't-tempo', 'tempo-walk': 't-tempo', 'term-cards': 't-tempo', 'term-match': 't-tempo', 'term-mixer': 't-tempo', 'term-sort': 't-tempo', 'texture-spotter': 'about', 'texture-types': 'about', 'tie-slur': 't-touch', 'time-sig-numbers': 'r-beat', 'tmx-build': 't-tempo', 'tmx-change': 't-tempo', 'tmx-map': 't-tempo', 'tmx-speed': 't-tempo', 'tmx-touch': 't-touch', 'tmx-vol': 't-touch', 'tone-semitone': 'p-clock', 'touch-ear': 't-touch', 'touch-lengths': 't-touch', 'transpose': 'p-scales', 'triad-stack': 'p-chords', 'tritone': 'p-intervals', 'ts-bars': 'r-beat', 'ts-build': 'r-beat', 'ts-numbers': 'r-beat', 'ts-strong': 'r-beat', 'ts-tie': 'r-beat', 'tune-anatomy': 'c-map', 'twelve-bar-blues': 'p-chords', 'who-am-i': 'about', 'whole-piano': 'p-staff', 'write-note': 'p-staff' };
 Object.keys(TOOL_META).forEach(id => { if (TOOL_CONCEPT[id]) TOOL_META[id][0] = TOOL_CONCEPT[id]; });
 function toolMeta(id) { const m = TOOL_META[id]; if (m) return { cat: m[0], lo: m[1], hi: m[2], kinds: m[3].split(' ') }; const t = TOOLS.find(x => x.id === id); return { cat: TOOL_CONCEPT[id] || 'practice', lo: 0, hi: 3, kinds: ['show'], ch: t && t.ch }; }
 // Phase 168 (2026-09-28): shared search text for a tool -- title + blurb + its category's
@@ -20350,6 +20357,15 @@ const TOOL_ICON = {
   ),
   'mk-mm': () => (
     <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#5a4fa0"/><circle cx="8" cy="12" r="4.5" fill="#e9a83a"/><path d="M18.5 7.5 A5 5 0 1 0 18.5 16.5 A4 4 0 1 1 18.5 7.5 Z" fill="#fefbf3"/></svg>
+  ),
+  'mk-iv': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3f9a7e"/><path d="M4 18 L9 13 L14 18 L19 8" fill="none" stroke="#fefbf3" strokeWidth="2" strokeLinejoin="round"/><circle cx="19" cy="8" r="2.2" fill="#e9a83a"/></svg>
+  ),
+  'mk-acc': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#b85068"/><text x="12" y="17" textAnchor="middle" fontSize="15" fontWeight="900" fill="#fefbf3">♯</text></svg>
+  ),
+  'mk-sty': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3b4fa8"/>{[0, 1, 2, 3].map(i => <rect key={i} x={3 + (i % 2) * 9.5} y={3 + Math.floor(i / 2) * 9.5} width="8" height="8" rx="2" fill={i === 1 ? '#e9a83a' : '#fefbf3'}/>)}</svg>
   ),
   'csx-jam': () => (
     <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3f9a7e"/><rect x="3" y="9" width="18" height="11" rx="1.5" fill="#fefbf3"/>{[6, 9, 14, 17].map(x => <rect key={x} x={x} y="9" width="2.2" height="6.5" fill="#26296b"/>)}<path d="M15 3 V7.5" stroke="#e9a83a" strokeWidth="1.4"/><ellipse cx="13.8" cy="7.6" rx="1.6" ry="1.2" fill="#e9a83a"/></svg>
@@ -20778,7 +20794,7 @@ const CHAPTER_TOOL_ORDER = {
   'signs': ['sgn-rep', 'sgn-volta', 'sgn-dc', 'sgn-ds', 'sgn-pause', 'road-map', 'dc-ds-coda', 'ottava', 'ornaments', 'grace-write'],
   'staff': ['staff-basics', 'staff-climb', 'clef-basics', 'clef-story', 'alto-clef'],
   'whole-staff': ['rhymes', 'landmarks', 'landmark-hop', 'fold', 'flash-cards', 'write-note'],
-  'styles': ['csx-map', 'csx-texture', 'csx-era', 'csx-penta', 'csx-blues', 'csx-jam', 'csx-pop', 'csx-ear'],   // Build AP: texture-types, texture-spotter, genre-traits, swing-feel, twelve-bar-blues were twins
+  'styles': ['csx-map', 'csx-texture', 'csx-era', 'csx-penta', 'csx-blues', 'csx-jam', 'csx-pop', 'mk-sty', 'csx-ear'],   // Build AP: texture-types, texture-spotter, genre-traits, swing-feel, twelve-bar-blues were twins
   'composers': ['cpx-map', 'cpx-baroque', 'cpx-dances', 'cpx-classical', 'cpx-romantic', 'cpx-modern', 'cpx-alive', 'cpx-order', 'composer-cards', 'movement-map', 'who-am-i', 'name-that-tune'],   // Build AP: era-worlds, composer-time-machine were twins
   'tempo': ['stm-sf', 'stm-words', 'stm-read', 'stm-metro', 'stm-steady', 'mk-tempo', 'metronome', 'tempo-walk', 'tempo-race', 'tap-tempo', 'same-tune-tempo', 'speed-change'],
   'terms': ['tmx-map', 'tmx-speed', 'tmx-change', 'tmx-vol', 'tmx-touch', 'tmx-build', 'term-sort', 'term-cards', 'term-mixer', 'term-match'],
@@ -23138,7 +23154,7 @@ const HOME_LIVE = {
   ] },
   'p-clock': { lessons: [], groups: [   // Build W: the chapters Tones & Semitones and Accidentals, then the double signs
     { id: 'ac-steps', en: 'Tones and semitones', ko: '온음과 반음', lessons: ['ac-half', 'ac-whole', 'ac-sharp', 'ac-flat', 'ac-two'], check: 'tones' },
-    { id: 'ac-signs', en: 'Accidentals in a tune', ko: '곡 속의 임시표', lessons: ['ac-natural', 'ac-bar', 'ac-play', 'ac-cmp'], check: 'accidentals' },
+    { id: 'ac-signs', en: 'Accidentals in a tune', ko: '곡 속의 임시표', lessons: ['ac-natural', 'ac-bar', 'ac-play', 'ac-cmp', 'mk-acc'], check: 'accidentals' },
     { id: 'ac-dbl', en: 'Double sharps and flats', ko: '겹샵과 겹플랫', lessons: ['ac-double'], check: 'clock', level: 35 },
   ] },
   'p-keysig': {
@@ -23155,7 +23171,7 @@ const HOME_LIVE = {
     { id: 'ch-more', en: 'More chords', ko: '더 많은 화음', lessons: ['ch-ext'] },   // Build AQ: the 12-bar blues is a Styles step
   ] },
   'p-intervals': { lessons: [], groups: [
-    { id: 'iv-num', en: 'The number', ko: '음정의 숫자', lessons: ['iv-count', 'iv-staff'], check: 'intervals', level: 1 },
+    { id: 'iv-num', en: 'The number', ko: '음정의 숫자', lessons: ['iv-count', 'iv-staff', 'mk-iv'], check: 'intervals', level: 1 },
     { id: 'iv-qual', en: 'Major, minor and perfect', ko: '장음정, 단음정, 완전음정', lessons: ['iv-half', 'iv-tonic', 'iv-minor'], check: 'intervals', level: 8 },
     { id: 'iv-hear', en: 'Hearing intervals', ko: '음정 듣기', lessons: ['iv-mh', 'iv-ear'], check: 'intervals', level: 5 },
     { id: 'iv-turn', en: 'Upside down, and the tritone', ko: '음정 뒤집기와 트라이톤', lessons: ['iv-invert', 'iv-tritone'], check: 'intervals', level: 9 },
@@ -63034,6 +63050,108 @@ function BrightDark() {
         <button className="ghost-btn" style={spBtn} disabled={!notes.length || on} onClick={() => play(true)}>{t('▶ Hear it dark', '▶ 어둡게 듣기')}</button>
         <button className="ghost-btn" style={spBtn} disabled={on} onClick={() => { last.current = 0; setNotes(DS_TUNE.slice()); }}>{t('Ode to Joy', '환희의 송가')}</button>
         <button className="ghost-btn" style={spBtn} disabled={!notes.length || on} onClick={() => { last.current = 0; setNotes([]); }}>{t('Clear', '지우기')}</button>
+      </div>
+    </div>
+  );
+}
+
+
+// ══ Build BK: call 25, batch 3 ══
+// a tune from one interval: white keys counted in letters from middle C (0 = C4); every hop is the same number
+const IVT_N = [2, 3, 4, 5, 8];
+const ivtSemi = (i) => [0, 2, 4, 5, 7, 9, 11][((i % 7) + 7) % 7] + 12 * Math.floor(i / 7);
+const IVT_WORD = { 2: ['a 2nd: a step', '2도: 한 걸음'], 3: ['a 3rd: a skip', '3도: 한 칸 건너뛰기'], 4: ['a 4th', '4도'], 5: ['a 5th', '5도'], 8: ['an octave', '옥타브'] };
+function IntervalTune() {
+  const [n, setN] = useState(3), [seq, setSeq] = useState([0]), [cur, setCur] = useState(-1), tms = useRef([]);
+  useEffect(() => () => tms.current.forEach(clearTimeout), []);
+  const move = (dir) => { if (seq.length >= 12) return; const nx = seq[seq.length - 1] + dir * (n - 1); if (nx < -7 || nx > 14) return; playKey(ivtSemi(nx), 0.4); setSeq([...seq, nx]); };
+  const notes = seq.map((i, j) => ({ d: 28 + i, dur: j === seq.length - 1 && j ? 2 : 1 }));
+  const play = () => { tms.current.forEach(clearTimeout); tms.current = playMelody(notes, 100, setCur) || []; tms.current.push(setTimeout(() => setCur(-1), (0.1 + (notes.reduce((a, x) => a + x.dur, 0) + 0.5) * 0.6) * 1000)); };
+  const last = seq[seq.length - 1], canUp = last + (n - 1) <= 14 && seq.length < 12, canDn = last - (n - 1) >= -7 && seq.length < 12;
+  return (
+    <div className="try-box" style={actBox} data-ivt="pad">
+      <div style={actTitle}>{t('A tune from one interval', '음정 하나로 선율 만들기')}</div>
+      <div style={actNote}>{LANG === 'ko' ? <>음정을 하나 골라요. 선율이 <b>그 음정으로만</b> 위로, 아래로 움직여요. 2도는 걸음, 3도는 건너뛰기, 옥타브는 같은 이름의 음까지. 들어 보면 음정마다 색깔이 달라요.</> : <>Choose one interval. Your tune moves <b>only by that interval</b>, up or down. A 2nd steps, a 3rd skips, an octave jumps to the same letter. Each interval has its own sound.</>}</div>
+      {spChips(IVT_N.map(x => [x, t(x === 8 ? 'Octave' : x + (x === 2 ? 'nd' : x === 3 ? 'rd' : 'th'), x === 8 ? '옥타브' : x + '도')]), n, (x) => setN(x))}
+      <div style={{textAlign:'center',fontSize:13.5,fontWeight:900,color:BK.coral,margin:'2px 0'}}>{t('Only ' + IVT_WORD[n][0], IVT_WORD[n][1] + '만')}</div>
+      <div style={{background:'#fff',borderRadius:8,margin:'4px 0'}}><MelodyStaff notes={notes} on={cur} names width={340}/></div>
+      <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap',marginTop:6}}>
+        <button className="ghost-btn" style={spBtn} disabled={!canDn} onClick={() => move(-1)}>{t('▼ Down a ', '▼ 아래로 ') + (n === 8 ? t('n octave', ' 옥타브') : t(n + (n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'), n + '도'))}</button>
+        <button className="ghost-btn" style={spBtn} disabled={!canUp} onClick={() => move(1)}>{t('▲ Up a ', '▲ 위로 ') + (n === 8 ? t('n octave', ' 옥타브') : t(n + (n === 2 ? 'nd' : n === 3 ? 'rd' : 'th'), n + '도'))}</button>
+      </div>
+      <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap',marginTop:8}}>
+        <button className="ghost-btn" style={spBtn} disabled={seq.length < 2} onClick={play}>{t('▶ Play my tune', '▶ 내 선율 듣기')}</button>
+        <button className="ghost-btn" style={spBtn} disabled={seq.length < 2} onClick={() => { tms.current.forEach(clearTimeout); setCur(-1); setSeq([0]); }}>{t('Start again', '처음부터')}</button>
+      </div>
+    </div>
+  );
+}
+
+// add a sharp or a flat: Ode to Joy on the staff (C D E F G), each note flipped natural, sharp, flat
+const ACP_D = { 0: 28, 2: 29, 4: 30, 5: 31, 7: 32 };
+function AccPlay() {
+  const [acc, setAcc] = useState(() => DS_TUNE.map(() => 0)), [cur, setCur] = useState(-1), tms = useRef([]);
+  useEffect(() => () => tms.current.forEach(clearTimeout), []);
+  const notes = DS_TUNE.map(([k, d], i) => ({ d: ACP_D[k], acc: acc[i], dur: d }));
+  const flip = (i) => { const nx = acc[i] === 0 ? 1 : acc[i] === 1 ? -1 : 0; const a = acc.slice(); a[i] = nx; setAcc(a); playKey(ivMidi({ d: notes[i].d, acc: nx }) - 60, 0.45); };
+  const play = () => { tms.current.forEach(clearTimeout); tms.current = playMelody(notes, 100, setCur) || []; tms.current.push(setTimeout(() => setCur(-1), (0.1 + 16.5 * 0.6) * 1000)); };
+  const changed = acc.filter(Boolean).length;
+  return (
+    <div className="try-box" style={actBox} data-acp="pad">
+      <div style={actTitle}>{t('Add a sharp or a flat', '샵이나 플랫 붙이기')}</div>
+      <div style={actNote}>{LANG === 'ko' ? <>“환희의 송가” 첫 줄이에요. 아래 음 이름을 누를 때마다 <b>♯ → ♭ → 제자리</b>로 바뀌어요. 임시표 하나가 선율의 색깔을 어떻게 바꾸는지 들어 봐요.</> : <>The first line of Ode to Joy. Tap a note name below to make it <b>♯, then ♭, then natural</b> again. Hear how one accidental changes the colour of the tune.</>}</div>
+      <div style={{background:'#fff',borderRadius:8,margin:'4px 0'}}><MelodyStaff notes={notes} on={cur} width={340}/></div>
+      <div style={{display:'flex',gap:4,justifyContent:'center',flexWrap:'wrap',margin:'6px 0'}}>{notes.map((x, i) => <button key={i} type="button" onClick={() => flip(i)} style={{minWidth:36,padding:'6px 4px',borderRadius:10,cursor:'pointer',fontSize:14,fontWeight:900,background:cur === i ? BK.coral : x.acc ? '#fbe3da' : '#fff',color:cur === i ? '#fff' : BK.ink,border:'2px solid ' + (cur === i ? BK.coral : BK.ink)}}>{ivName(x)}</button>)}</div>
+      <div style={{textAlign:'center',fontSize:14,fontWeight:900,minHeight:20,color:changed ? BK.coral : BK.muted}}>{changed ? t(changed + (changed === 1 ? ' note changed' : ' notes changed'), changed + '개 음이 바뀌었어요') : t('No accidentals yet', '아직 임시표가 없어요')}</div>
+      <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap',marginTop:8}}>
+        <button className="ghost-btn" style={spBtn} onClick={play}>{t('▶ Play', '▶ 듣기')}</button>
+        <button className="ghost-btn" style={spBtn} onClick={() => setAcc(DS_TUNE.map(([k]) => (k === 4 ? -1 : 0)))}>{t('Every E flat', 'E를 모두 E♭으로')}</button>
+        <button className="ghost-btn" style={spBtn} disabled={!changed} onClick={() => setAcc(DS_TUNE.map(() => 0))}>{t('All natural', '모두 제자리')}</button>
+      </div>
+    </div>
+  );
+}
+
+// one tune, four styles: Twinkle (TD_TUNE) over a band, a chord every two beats
+const SB_CH = ['C', 'C', 'F', 'C', 'F', 'C', 'G', 'C'];
+const SB_TRI = { C: [48, 52, 55], F: [53, 57, 60], G: [43, 47, 50] }, SB_7 = { C: [52, 55, 59], F: [57, 60, 64], G: [53, 59, 62] };   // the jazz chords: C E G B, F A C E, G B D F (the root in the bass)
+const SB_STY = {
+  baroque: { inst: 'harpsichord', name: ['Baroque', '바로크'], say: ['A harpsichord, and a bass that keeps moving.', '하프시코드, 쉬지 않고 움직이는 베이스.'] },
+  classical: { inst: 'piano', name: ['Classical', '고전'], say: ['A clear tune over an Alberti bass: low, high, middle, high.', '알베르티 베이스(낮은, 높은, 가운데, 높은 음) 위의 또렷한 선율.'] },
+  jazz: { inst: 'piano', name: ['Jazz', '재즈'], say: ['Swing, a walking bass and 7th chords.', '스윙, 걷는 베이스, 7화음.'] },
+  pop: { inst: 'piano', name: ['Pop', '팝'], say: ['A steady chord on every beat over the bass.', '베이스 위에 박마다 고른 화음.'] },
+};
+const SB_BASS = { C: 48, F: 41, G: 43 };   // C3, F2, G2
+const sbBand = (sty) => { const ev = [];
+  SB_CH.forEach((c, h) => { const b = h * 2, [r, th, fi] = SB_TRI[c], B = SB_BASS[c];
+    if (sty === 'classical') [r, fi, th, fi].forEach((m, k) => ev.push([b + k * 0.5, m, 0.48, 0.3]));
+    else if (sty === 'baroque') [B, B + 7, B + 12, B + 7].forEach((m, k) => ev.push([b + k * 0.5, m, 0.45, 0.38]));
+    else if (sty === 'jazz') { [B, B + 4].forEach((m, k) => ev.push([b + k, m, 0.9, 0.42])); SB_7[c].forEach(m => ev.push([b + 1, m, 0.5, 0.22])); }
+    else { ev.push([b, B, 1.8, 0.45]); [0, 1].forEach(k => [r, th, fi].forEach(m => ev.push([b + k, m, 0.85, k ? 0.2 : 0.28]))); } });
+  return ev; };
+function StyleBand() {
+  const [sty, setSty] = useState('classical'), [tune, setTune] = useState(true), [cur, setCur] = useState(-1), [on, setOn] = useState(false), tms = useRef([]);
+  const stop = () => { tms.current.forEach(clearTimeout); tms.current = []; stopClicks(); setOn(false); setCur(-1); };
+  useEffect(() => () => { tms.current.forEach(clearTimeout); stopClicks(); }, []);
+  const play = () => { stop(); const ctx = getAudio(); if (!ctx) return; const S = SB_STY[sty], bpm = sty === 'jazz' ? 108 : 96, spb = 60 / bpm, t0 = ctx.currentTime + 0.12;
+    const sw = (b) => (sty === 'jazz' && Math.abs(b % 1 - 0.5) < 1e-6 ? b + 1 / 6 : b);
+    sbBand(sty).forEach(([b, m, d, v]) => instNote(S.inst, ctx, t0 + sw(b) * spb, m, d * spb, v));
+    let b = 0; TD_TUNE.forEach(([k, d], i) => { if (tune) instNote(S.inst, ctx, t0 + b * spb, 60 + k, d * spb * 0.92, 0.62); const at = b; tms.current.push(setTimeout(() => setCur(i), (0.12 + at * spb) * 1000)); b += d; });
+    instNote(S.inst, ctx, t0 + 16 * spb, 48, 2 * spb, 0.4); if (tune) instNote(S.inst, ctx, t0 + 16 * spb, 60, 2 * spb, 0.5);
+    tms.current.push(setTimeout(() => { setOn(false); setCur(-1); }, (0.12 + 18 * spb) * 1000)); setOn(true); };
+  const tap = (k) => { playKey(k, 0.45); };
+  const kl = {}; [0, 2, 4, 5, 7, 9].forEach(k => { kl[k] = 'pale'; }); if (cur >= 0 && !tune) kl[TD_TUNE[cur][0]] = 'cor';
+  return (
+    <div className="try-box" style={actBox} data-sb="pad">
+      <div style={actTitle}>{t('One tune, four styles', '한 선율, 네 스타일')}</div>
+      <div style={actNote}>{LANG === 'ko' ? <>“반짝반짝 작은 별”을 네 가지 밴드 위에서 들어요. 그다음 <b>선율 끄기</b>를 누르고, 밴드에 맞춰 내가 선율을 쳐 봐요(켜진 건반이 칠 음을 알려 줘요).</> : <>Hear Twinkle over four different bands. Then switch <b>the tune off</b> and play it yourself with the band (the lit key shows the note to play).</>}</div>
+      {spChips(Object.keys(SB_STY).map(x => [x, t(SB_STY[x].name[0], SB_STY[x].name[1])]), sty, (x) => { stop(); setSty(x); })}
+      <div style={{textAlign:'center',fontSize:13.5,fontWeight:800,color:BK.muted,margin:'4px 0',minHeight:20}}>{t(SB_STY[sty].say[0], SB_STY[sty].say[1])}</div>
+      <div style={{display:'flex',gap:4,justifyContent:'center',flexWrap:'wrap',margin:'6px 0'}}>{TD_TUNE.map(([k, d], i) => <span key={i} style={{width:d * 18 + (d - 1) * 4,height:18,borderRadius:9,background:cur === i ? BK.coral : '#fff',border:'2px solid ' + (cur === i ? BK.coral : BK.ink)}}/>)}</div>
+      {!tune && <div style={{margin:'6px 0 4px'}}><SpKb lo={0} hi={9} W={34} H={88} lit={kl} names={{ 0: 'C', 2: 'D', 4: 'E', 5: 'F', 7: 'G', 9: 'A' }} onTap={tap} label={t('Play the tune', '선율 치기')}/></div>}
+      <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap',marginTop:8}}>
+        {on ? <button className="ghost-btn" style={spBtn} onClick={stop}>{t('■ Stop', '■ 멈추기')}</button> : <button className="ghost-btn" style={spBtn} onClick={play}>{t('▶ Play', '▶ 듣기')}</button>}
+        <button className="ghost-btn" style={spBtn} onClick={() => { stop(); setTune(!tune); }}>{tune ? t('Tune off: I play it', '선율 끄기: 내가 쳐요') : t('Tune on', '선율 켜기')}</button>
       </div>
     </div>
   );
