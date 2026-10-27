@@ -1595,13 +1595,15 @@ function Lesson({ id, title, intro, children, onStart, startLabel, head, noArt }
   // Phase 350: a step may say storeAs={n}: its tick is stored under n (its old place), so reordering steps keeps every tick on its step
   const sk = (i) => { const p = steps[i] && steps[i].props; return p && p.storeAs != null ? p.storeAs : i; };
   const [done, setDone] = useState(() => loadDone()[id] || {});
-  const [open, setOpen] = useState(() => { const d = loadDone()[id] || {}; const o = {}; steps.forEach((s, i) => { o[i] = !d[sk(i)]; }); return o; });
-  useEffect(() => { const d = loadDone()[id] || {}; setDone(d); const o = {}; steps.forEach((s, i) => { o[i] = !d[sk(i)]; }); setOpen(o); }, [id]);
+  // Build BL: one step open at a time: the first one not yet ticked
+  const firstOpen = (d) => { const i = steps.findIndex((s, j) => !d[sk(j)]); return i < 0 ? {} : { [i]: true }; };
+  const [open, setOpen] = useState(() => firstOpen(loadDone()[id] || {}));
+  useEffect(() => { const d = loadDone()[id] || {}; setDone(d); setOpen(firstOpen(d)); }, [id]);
   const markDone = (i) => {
     const all = loadDone(); const mine = { ...(all[id] || {}) }; const k = sk(i); mine[k] = !mine[k]; all[id] = mine; saveDone(all); setDone(mine);
-    if (mine[k]) { setOpen(o => ({ ...o, [i]: false, [i + 1]: true })); setTimeout(() => { const el = document.getElementById(id + '-step-' + (i + 1)); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120); }
+    if (mine[k]) { setOpen(i + 1 < steps.length ? { [i + 1]: true } : {}); setTimeout(() => { const el = document.getElementById(id + '-step-' + (i + 1)); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 120); }
   };
-  const jump = (i) => { setOpen(o => ({ ...o, [i]: true })); setTimeout(() => { const el = document.getElementById(id + '-step-' + i); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); };
+  const jump = (i) => { setOpen({ [i]: true }); setTimeout(() => { const el = document.getElementById(id + '-step-' + i); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); };
   const counted = steps.map((x, i) => i).filter(i => !(steps[i].props && steps[i].props.extra)), nTot = counted.length;   // Phase 476: an extra step is not counted
   const count = counted.filter(i => done[sk(i)]).length;
   useEffect(() => { try { const m = loadStepTotals(); if (m[id] !== nTot) { m[id] = nTot; localStorage.setItem(STEPS_TOTAL_KEY, JSON.stringify(m)); } } catch (e) {} }, [id, nTot]);
@@ -1632,7 +1634,7 @@ function Lesson({ id, title, intro, children, onStart, startLabel, head, noArt }
       <div style={{fontSize:12,color:'var(--muted)',fontWeight:700,margin:'2px 0 4px'}}>{t(count + ' of ' + nTot + ' steps done', nTot + '개 중 ' + count + '개 완료')}</div>
       {steps.map((s, i) => React.cloneElement(s, {
         key: i, n: i + 1, total: steps.length, id: id + '-step-' + i, color: STEP_COLORS[i % STEP_COLORS.length],
-        open: !!open[i], done: !!done[sk(i)], onToggle: () => setOpen(o => ({ ...o, [i]: !o[i] })), onDone: () => markDone(i),
+        open: !!open[i], done: !!done[sk(i)], onToggle: () => setOpen(o => (o[i] ? {} : { [i]: true })), onDone: () => markDone(i),
       }))}
       <LessonMore id={id}/>
       {onStart && <button className="primary-btn" style={{marginTop:16}} onClick={onStart}>{startLabel || t('Start the drill →', '드릴 시작하기 →')}</button>}
