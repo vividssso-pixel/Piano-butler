@@ -2903,10 +2903,10 @@ const METERS = [
 ];
 const SUBS = {
   simple: [[1, 'Beats only'], [2, 'Quavers'], [3, 'Triplets'], [4, 'Semiquavers']],
-  compound: [[1, 'Dotted beats'], [3, 'Quavers'], [6, 'Semiquavers']],
+  compound: [[1, 'Dotted crotchets'], [3, 'Quavers'], [6, 'Semiquavers']],
   compoundQ: [[1, 'Quavers'], [2, 'Semiquavers']],
 };
-const SUB_KO = { 'Beats only': '박만', 'Quavers': '8분음표', 'Triplets': '셋잇단음표', 'Semiquavers': '16분음표', 'Dotted beats': '점 박만' };
+const SUB_KO = { 'Beats only': '박만', 'Quavers': '8분음표', 'Triplets': '셋잇단음표', 'Semiquavers': '16분음표', 'Dotted crotchets': '점4분음표만' };
 const SUB_WORDS = { 1: [], 2: ['+'], 3: ['trip', 'let'], 4: ['e', '+', 'a'], 6: ['+', '', '+', '', '+'] };   // Phase 464: + for 'and' (Book rule 12)
 // One bar as a list of clicks: { at (fraction of the bar's beat units), level 2 bar / 1 beat / 0 sub, label, beat }
 function meterGrid(m, sub, grp, cmode) {
@@ -8402,8 +8402,8 @@ const TWO_BARS = [
   { get name() { return t('Dotted minim, crotchet', '점2분음표, 4분음표'); }, notes: [3, 1] },
 ];
 function twoItem(q) { return q === 1 ? NV_NOTES[2] : q === 2 ? NV_NOTES[1] : q === 3 ? NV_DOTTED[0] : NV_NOTES[0]; }
-function BeatDoubler() {
-  const [bot, setBot] = useState(8); // 2, 4 or 8 on the bottom
+function BeatDoubler({ bots = [2, 4, 8], start = 8 } = {}) {   // Build BF: the 6/8 chapter offers 4 or 8, the minim beat step 4 or 2
+  const [bot, setBot] = useState(start); // 2, 4 or 8 on the bottom
   const [bar, setBar] = useState(0);
   const [pos, setPos] = useState(-1);
   const timers = useRef([]);
@@ -8433,9 +8433,9 @@ function BeatDoubler() {
     <div className="try-box" style={actBox}>
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:4}}>
         <div style={actTitle}>{t('The bottom number changes the beat', '아래 숫자가 박을 바꿔요')}</div>
-        <div style={{display:'flex',gap:3,flexWrap:'wrap'}}>{[2, 4, 8].map(v => <button key={v} className={'chip' + (bot === v ? ' active' : '')} style={{padding:'2px 9px',fontSize:12}} onClick={() => { setBot(v); setBar(0); setPos(-1); }}>{v} {t('on the bottom', '아래')}</button>)}</div>
+        <div style={{display:'flex',gap:3,flexWrap:'wrap'}}>{bots.map(v => <button key={v} className={'chip' + (bot === v ? ' active' : '')} style={{padding:'2px 9px',fontSize:12}} onClick={() => { setBot(v); setBar(0); setPos(-1); }}>{v} {t('on the bottom', '아래')}</button>)}</div>
       </div>
-      <div style={actNote}>{t('Flip between them. With 8 every number doubles; with 2 every number is cut in half: the opposite direction.', '눌러서 바꿔 보세요. 8이면 모든 숫자가 두 배, 2이면 모든 숫자가 절반: 반대 방향이에요.')}</div>
+      <div style={actNote}>{!bots.includes(2) ? t('Flip between them. With 8 on the bottom the quaver is one beat, so every number doubles.', '눌러서 바꿔 보세요. 아래가 8이면 8분음표가 1박이라 모든 숫자가 두 배.') : !bots.includes(8) ? t('Flip between them. With 2 on the bottom the minim is one beat, so every number is cut in half.', '눌러서 바꿔 보세요. 아래가 2면 2분음표가 1박이라 모든 숫자가 절반.') : t('Flip between them. With 8 every number doubles; with 2 every number is cut in half: the opposite direction.', '눌러서 바꿔 보세요. 8이면 모든 숫자가 두 배, 2이면 모든 숫자가 절반: 반대 방향이에요.')}</div>
       <div style={{display:'flex',alignItems:'center',gap:10,background:'#fff',borderRadius:10,padding:'8px 10px'}}>
         <TSig top={sig[0]} bottom={sig[1]} size={34}/>
         <div style={{fontSize:13.5,lineHeight:1.4}}>{t('One beat = ', '1박 = ')}<b>{beatName}</b><br/><span style={{color:'#6d6f9c'}}>{sub}</span></div>
@@ -8473,7 +8473,7 @@ function BeatDoubler() {
         </div>
       </div>
       <div style={{fontSize:13,color:'#6d6f9c',marginTop:6,lineHeight:1.45}}>{half
-        ? t('Only two BIG beats in a bar: 1 and 2. Each minim beat holds two crotchets: "1 &" and "2 &". Unlike 6/8, nothing is grouped in threes: every note is cut in half.', '한 마디에 큰 박은 딱 두 개: 1과 2. 2분음표 한 박에 4분음표가 두 개 들어가요: "1 &", "2 &". 6/8과 달리 3개씩 묶지 않아요: 모든 음표가 그냥 반으로 잘려요.')
+        ? t('Two beats in a bar: 1 and 2. The minim is one beat, so a crotchet is half a beat: "1 +", "2 +". Unlike 6/8, nothing is grouped in threes: every note is cut in half.', '한 마디에 2박: 1과 2. 2분음표가 1박이라서 4분음표는 반 박: "1 +", "2 +". 6/8과 달리 셋씩 묶지 않아요: 모든 음표가 그냥 반으로 줄어요.')
         : t('Bold numbers start a note; grey numbers are held. Keep counting them. The crotchet lasts 2 counts, the dotted crotchet 3.', '굵은 숫자에서 음이 시작되고, 회색 숫자는 이어서 끄는 박이에요. 계속 세요. 4분음표는 2박, 점4분음표는 3박 동안 울려요.')}</div>
       <div style={{textAlign:'center',marginTop:6}}><button className="ghost-btn" onClick={play}>{t('♪ Play and count', '♪ 연주하며 세기')}</button></div></>}
     </div>
@@ -18255,7 +18255,7 @@ const GROUP_SIGS = {
   '2/4': { beat: 2, bar: 4, get rule() { return t('Group quavers in crotchet beats (pairs). All four may be joined in 2/4.', '8분음표는 4분음표 박 단위로(두 개씩) 묶어요. 2/4에서는 네 개를 다 이어도 돼요.'); } },
   '3/4': { beat: 2, bar: 6, get rule() { return t('Group quavers in crotchet beats (pairs), or all six together. Never in threes: that would look like 6/8.', '8분음표는 4분음표 박 단위로(두 개씩), 또는 여섯 개를 모두 함께 묶어요. 세 개씩은 절대 안 돼요: 6/8처럼 보이거든요.'); } },
   '4/4': { beat: 2, bar: 8, get rule() { return t('Group in crotchet beats, or join beats 1+2 or 3+4, but never across the middle of the bar (beats 2+3).', '4분음표 박 단위로 묶거나, 1+2박 또는 3+4박을 이어요. 하지만 마디 한가운데(2+3박)를 가로질러 잇지는 않아요.'); } },
-  '6/8': { beat: 3, bar: 6, get rule() { return t('Group quavers in threes: one group per dotted-crotchet beat. Never in pairs: that would look like 3/4.', '8분음표는 세 개씩: 점4분음표 한 박에 한 묶음. 두 개씩은 절대 안 돼요: 3/4처럼 보이거든요.'); } },
+  '6/8': { beat: 3, bar: 6, get rule() { return t('Group quavers in threes (one dotted crotchet each): 1 2 3, 4 5 6. Never in pairs: that would look like 3/4.', '8분음표는 세 개씩 묶어요(점4분음표 하나 길이): 1 2 3, 4 5 6. 두 개씩은 절대 안 돼요: 3/4처럼 보이거든요.'); } },
 };
 function groupEvents(pattern, groupSize, crossMiddle) {
   // pattern: array of quaver counts (1 = quaver, 2 = crotchet...). Beam runs of quavers in groups of groupSize (by position).
@@ -18862,10 +18862,10 @@ function CommonCutTime() {
             );
           })}
         </div>
-        <div style={{textAlign:'center',fontSize:14,fontWeight:800,marginTop:10}}>{cut ? t('2 big beats, each a minim', '큰 박 2개, 각각 2분음표') : t('4 beats, each a crotchet', '박 4개, 각각 4분음표')}</div>
+        <div style={{textAlign:'center',fontSize:14,fontWeight:800,marginTop:10}}>{cut ? t('2 beats, each a minim', '2박, 각각 2분음표') : t('4 beats, each a crotchet', '4박, 각각 4분음표')}</div>
       </div>
       <div style={{fontSize:13,color:'#4a4d86',marginTop:8,lineHeight:1.5}}>{cut
-        ? t('Same four crotchets of music in the bar as 4/4, but you feel only TWO beats ("1 + 2 +"), so the beat is the minim and the music moves along twice as fast as when you count four.', '한 마디 안의 음은 4/4와 같은 4분음표 네 개 길이지만, 박은 "두 개"만 느껴요 ("1 + 2 +"). 그래서 음악이 두 배 빨리 흘러가요. 한 박이 2분음표 하나예요.')
+        ? t('The bar holds the same four crotchets as 4/4, but the minim is one beat: every note counts half, so a crotchet is half a beat. Count only two: "1 + 2 +".', '한 마디는 4/4와 같은 4분음표 네 개 길이지만, 2분음표가 1박이에요: 모든 음표가 반으로 줄어서 4분음표는 반 박. 둘만 세요: "1 + 2 +".')
         : t('The most common time of all, so it gets its own symbol. It is simply another way of writing 4/4: four crotchet beats in every bar.', '가장 흔한 박자라서 자기만의 기호가 있어요. 4/4를 다르게 쓴 것뿐이에요: 한 마디에 4분음표 4박.')}</div>
       <div style={{textAlign:'center',marginTop:8}}><button className="ghost-btn" onClick={play}>♪ {t('Play and count', '세면서 듣기')}</button></div>
     </div>
@@ -18923,7 +18923,7 @@ function DupletDemo() {
         {[['simple', t('Simple beat (crotchet)', '단순박자의 한 박 (4분음표)')], ['compound', t('Compound beat (dotted crotchet)', '겹박자의 한 박 (점4분음표)')]].map(([k, l]) => <button key={k} className={'chip' + (setId === k ? ' active' : '')} style={{padding:'3px 10px',fontSize:13}} onClick={() => { setSetId(k); setSel(k === 'compound' ? 2 : 2); setOn(-1); }}>{l}</button>)}
       </div>
       <div style={{display:'flex',gap:10,flexWrap:'wrap',fontSize:11.5,fontWeight:800,margin:'0 0 6px'}}>
-        <span style={{color:'#3b4fa8'}}>▍ {t('blue line = the big beats (1, 2, 3, 4…)', '파란 선 = 큰 박 (1, 2, 3, 4…)')}</span>
+        <span style={{color:'#3b4fa8'}}>▍ {t('blue line = the beats (1, 2, 3, 4…)', '파란 선 = 박 (1, 2, 3, 4…)')}</span>
         <span style={{color:'#a88a45'}}>▍ {t('tan line = where lanes line up', '황갈색 선 = 줄들이 만나는 곳')}</span>
         <span style={{color:'#c8361b'}}>⌐ {t('red bracket = a tuplet', '빨간 괄호 = 잇단음표')}</span>
       </div>
@@ -19400,6 +19400,7 @@ const TOOLS = [
   { id: 'csx-era', ch: 'styles', title: 'The sound of each period', blurb: 'Hear a piece from each period and what to listen for.', C: () => <CsxEraPad/> },
   { id: 'csx-penta', ch: 'styles', title: 'Five notes', blurb: 'The pentatonic scale on C or on the black keys: make up a folk tune.', C: () => <CsxPentaPad/> },
   { id: 'csx-blues', ch: 'styles', title: 'Blues and swing', blurb: 'The 12-bar blues swung, a missing chord to find, and straight against swing.', C: () => <CsxBluesPad/> },
+  { id: 'csx-jam', ch: 'styles', title: 'Blues jam', blurb: 'A blues band in C: play any lit key, then hear your solo back.', C: () => <BluesJam/> },   // Build BH
   { id: 'csx-pop', ch: 'styles', title: 'A song', blurb: 'A song’s map (verse, chorus, bridge) and the four chords C G Am F.', C: () => <CsxPopPad/> },
   { id: 'csx-ear', ch: 'styles', title: 'Which style?', blurb: 'Hear a few bars: folk, classical, jazz and blues, or pop?', C: () => <CsxGenreEarPad/> },
   { id: 'texture-types', ch: 'styles', hidden: true, title: 'Textures: how many voices?', blurb: 'Monophony, homophony, and polyphony: the same tune, three ways.', C: () => <TextureTypes/> },
@@ -19665,6 +19666,7 @@ const TOOL_KO = {
   'csx-era': ['시대마다 다른 소리', '시대마다 곡 하나를 듣고, 찾아 들을 소리를 봐요.'],
   'csx-penta': ['다섯 음', 'C D E G A나 검은건반 다섯 개의 5음음계: 민요풍 선율을 지어 봐요.'],
   'csx-blues': ['블루스와 스윙', '스윙으로 듣는 12마디 블루스, 빠진 화음 찾기, 스트레이트와 스윙.'],
+  'csx-jam': ['블루스 잼', 'C장조 블루스 밴드: 켜진 건반 아무거나, 그다음 내 솔로 듣기.'],
   'csx-pop': ['노래 한 곡', '노래의 지도(벌스, 후렴, 브리지)와 네 화음 C G Am F.'],
   'csx-ear': ['어떤 스타일일까요?', '몇 마디를 듣고 골라요: 민속 음악, 클래식, 재즈와 블루스, 대중음악.'],
   'texture-types': ['텍스처: 목소리는 몇 개?', '모노포니, 호모포니, 폴리포니: 같은 선율, 세 가지 방법.'],
@@ -19987,7 +19989,7 @@ const CHAPTER_SEARCH_TERMS = {
   'note-names': 'note name names letter alphabet musical alphabet forwards backwards step skip octave keyboard',
   'pulse': 'pulse beat steady tempo metronome rhythm tap strong weak accent groups march pat clap',
   'rhythm': 'rhythm clap count beat pattern',
-  'six-eight': '6/8 six eight compound time dotted crotchet big beats quavers in threes 3/4 or 6/8 count clap',
+  'six-eight': '6/8 six eight compound time quaver one beat everything doubles dotted crotchet three beats quavers in threes 3/4 or 6/8 count clap',
   'reading-steps': 'sight reading step skip melody hear find which tune spot the change wrong note',
   'posture-hands': 'posture hand shape beginner sit stool arm weight alignment finger number which finger thumb',
   'hand-positions': 'hand position c position g position five finger thumb middle c both hands together mirror move',
@@ -20122,11 +20124,11 @@ const TOOL_META = {
   'keyboard-ancestors': ['about', 0, 3, 'show ear'], 'piano-timeline': ['about', 1, 3, 'show'], 'piano-action': ['about', 0, 3, 'show ear'], 'eras': ['about', 1, 3, 'show ear'], 'spr-zone': ['about', 0, 1, 'game ear'], 'spr-big': ['about', 0, 1, 'game ear'], 'spr-fam': ['about', 0, 2, 'game'], 'spr-ladder': ['about', 0, 2, 'game ear'], 'spr-range': ['about', 0, 3, 'show game'], 'hz-explorer': ['about', 1, 3, 'show ear'], 'string-lab': ['about', 0, 3, 'show ear'], 'size-pitch': ['about', 0, 2, 'game ear'], 'octave-ladder': ['about', 1, 3, 'game ear'], 'range-chart': ['about', 1, 3, 'show ear'],
   'mlx-map': ['melody', 1, 3, 'show ear'], 'mlx-line': ['melody', 1, 3, 'game ear'], 'mlx-phrasing': ['melody', 1, 3, 'show ear'], 'mlx-qa': ['melody', 1, 3, 'show ear'], 'mlx-motif': ['melody', 1, 3, 'game ear'], 'mlx-seq': ['melody', 1, 3, 'show ear'], 'mlx-words': ['melody', 2, 3, 'show ear'], 'mlx-write': ['melody', 3, 3, 'show ear'], 'mlx-couplet': ['melody', 3, 3, 'show ear'], 'mlx-build': ['melody', 1, 3, 'show ear'], 'tune-anatomy': ['melody', 0, 1, 'show'], 'draw-tune': ['melody', 0, 2, 'game ear'], 'phrase-marks': ['melody', 1, 2, 'show'], 'question-answer': ['melody', 1, 2, 'game ear'], 'melody-sequence': ['melody', 1, 2, 'show ear'],
   'fmx-map': ['melody', 1, 3, 'show ear'], 'fmx-phrase': ['melody', 1, 2, 'show ear'], 'fmx-letters': ['melody', 1, 3, 'game ear'], 'fmx-binary': ['melody', 2, 3, 'show ear'], 'fmx-ternary': ['melody', 2, 3, 'show ear'], 'fmx-find': ['melody', 2, 3, 'game ear'], 'fmx-build': ['melody', 1, 3, 'show ear'], 'form-shapes': ['melody', 0, 2, 'show'], 'form-builder': ['melody', 0, 2, 'game ear'], 'same-or-new': ['melody', 1, 2, 'game ear'], 'rondo-refrain': ['melody', 1, 3, 'game ear'], 'binary-ternary-spot': ['melody', 1, 3, 'game ear'],
-  'csx-map': ['about', 0, 3, 'show ear'], 'csx-texture': ['about', 0, 3, 'show ear game'], 'csx-era': ['about', 0, 3, 'show ear'], 'csx-penta': ['about', 0, 3, 'show ear'], 'csx-blues': ['about', 1, 3, 'show ear game'], 'csx-pop': ['about', 0, 3, 'show ear'], 'csx-ear': ['about', 1, 3, 'game ear'], 'texture-types': ['about', 0, 2, 'show ear'], 'texture-spotter': ['about', 1, 3, 'game ear'], 'genre-traits': ['about', 1, 3, 'show'], 'swing-feel': ['about', 1, 3, 'game ear'], 'twelve-bar-blues': ['about', 2, 3, 'game ear'],
+  'csx-map': ['about', 0, 3, 'show ear'], 'csx-texture': ['about', 0, 3, 'show ear game'], 'csx-era': ['about', 0, 3, 'show ear'], 'csx-penta': ['about', 0, 3, 'show ear'], 'csx-blues': ['about', 1, 3, 'show ear game'], 'csx-jam': ['about', 0, 3, 'show ear game'], 'csx-pop': ['about', 0, 3, 'show ear'], 'csx-ear': ['about', 1, 3, 'game ear'], 'texture-types': ['about', 0, 2, 'show ear'], 'texture-spotter': ['about', 1, 3, 'game ear'], 'genre-traits': ['about', 1, 3, 'show'], 'swing-feel': ['about', 1, 3, 'game ear'], 'twelve-bar-blues': ['about', 2, 3, 'game ear'],
   'cpx-map': ['about', 0, 3, 'show ear'], 'cpx-baroque': ['about', 0, 3, 'show ear'], 'cpx-classical': ['about', 0, 3, 'show ear'], 'cpx-romantic': ['about', 0, 3, 'show ear'], 'cpx-modern': ['about', 0, 3, 'show ear'], 'cpx-alive': ['about', 0, 3, 'show'], 'cpx-order': ['about', 1, 3, 'game'], 'era-worlds': ['about', 0, 3, 'show'], 'movement-map': ['about', 1, 3, 'show ear'], 'composer-time-machine': ['about', 0, 3, 'show game'], 'composer-cards': ['about', 0, 3, 'show ear'], 'who-am-i': ['about', 1, 3, 'game'], 'name-that-tune': ['about', 0, 3, 'game ear'],
 };
 // Phase 484: each tool's concept (the inventory of 17 October); the old topic stays in TOOL_META for its level and kinds
-const TOOL_CONCEPT = { 'accidental-bar': 'p-clock', 'accidental-cards': 'p-clock', 'all-keys': 'p-scales', 'key-finder': 'p-scales', 'alto-clef': 'p-staff', 'anacrusis': 'r-beat', 'arm-alignment': 'k-posture', 'arm-moves': 'k-posture', 'bar-lines': 'r-beat', 'beam-apples': 'r-beat', 'beat-doubler': 'r-beat', 'beat-groups': 'r-beat', 'beat-or-rhythm': 'r-beat', 'beat-target': 'r-beat', 'binary-ternary-spot': 'c-map', 'black-key-jam': 'p-staff', 'black-key-song': 'p-staff', 'black-white-neighbours': 'p-staff', 'build-minor': 'p-scales', 'cadences': 'p-chords', 'chord-extensions': 'p-chords', 'chromatic': 'p-clock', 'chx-145': 'p-chords', 'chx-clock': 'p-chords', 'chx-hands': 'k-play', 'chx-mm': 'p-chords', 'chx-stack': 'p-chords', 'chx-tonic': 'p-chords', 'circle-fifths': 'p-scales', 'clef-basics': 'p-staff', 'clef-story': 'p-staff', 'common-cut': 'r-beat', 'complete-melody': 'c-map', 'composer-cards': 'about', 'composer-time-machine': 'about', 'count-along': 'r-beat', 'count-aloud': 'r-beat', 'count-more': 'r-beat', 'count-ring': 'r-beat', 'cpx-alive': 'about', 'cpx-baroque': 'about', 'cpx-classical': 'about', 'cpx-map': 'about', 'cpx-modern': 'about', 'cpx-order': 'about', 'cpx-romantic': 'about', 'csx-blues': 'about', 'csx-ear': 'about', 'csx-era': 'about', 'csx-map': 'about', 'csx-penta': 'about', 'csx-pop': 'about', 'csx-texture': 'about', 'dc-ds-coda': 'c-map', 'dot-lab': 'r-beat', 'dotted-notes': 'r-beat', 'draw-tune': 'c-map', 'duplets': 'r-beat', 'dyn-order': 't-touch', 'echo': 'c-reading', 'era-worlds': 'about', 'eras': 'about', 'fill-bar': 'r-beat', 'find-every': 'p-staff', 'finger-beat': 'r-beat', 'finger-friends': 'k-posture', 'finger-numbers': 'k-positions', 'five-positions': 'k-positions', 'fix-the-bar': 'r-beat', 'flash-cards': 'p-staff', 'flats-order': 'p-scales', 'fmx-binary': 'c-map', 'fmx-build': 'c-map', 'fmx-find': 'c-map', 'fmx-letters': 'c-map', 'fmx-map': 'c-map', 'fmx-phrase': 'c-map', 'fmx-ternary': 'c-map', 'fold': 'p-staff', 'form-builder': 'c-map', 'form-shapes': 'c-map', 'genre-traits': 'about', 'grace-write': 't-touch', 'grouping': 'r-beat', 'hairpin': 't-touch', 'hand-shape': 'k-posture', 'hear-find': 'c-reading', 'heard-bar': 'r-beat', 'high-low': 'p-staff', 'hz-explorer': 'about', 'interval-ear': 'p-intervals', 'interval-ruler': 'p-intervals', 'inversions': 'p-chords', 'invert-interval': 'p-intervals', 'ivx-big': 'p-intervals', 'ivx-count': 'p-intervals', 'ivx-hand': 'p-intervals', 'ivx-ladder': 'p-intervals', 'ivx-mh': 'p-intervals', 'ivx-tonic': 'p-intervals', 'key-chords': 'p-chords', 'key-houses': 'p-staff', 'keyboard-ancestors': 'about', 'landmark-hop': 'p-staff', 'landmarks': 'p-staff', 'ledger-landmarks': 'p-staff', 'ledger-twins': 'p-staff', 'ledger-walk': 'p-staff', 'ledger-write': 'p-staff', 'letter-chain': 'p-staff', 'letter-hop': 'p-intervals', 'major-fingering': 'k-play', 'major-minor': 'p-chords', 'make-card': 'r-beat', 'melody-sequence': 'c-map', 'metronome': 't-tempo', 'mini-tune': 'c-reading', 'minor-fingering': 'k-play', 'mlx-build': 'c-map', 'mlx-line': 'c-map', 'mlx-map': 'c-map', 'mlx-motif': 'c-map', 'mlx-phrasing': 'c-map', 'mlx-qa': 'c-map', 'mlx-seq': 'c-map', 'mlx-words': 'c-map', 'mlx-write': 'c-map', 'mlx-couplet': 'c-map', 'modes': 'p-scales', 'movement-map': 'about', 'name-reveal': 'p-staff', 'name-that-tune': 'about', 'note-rest-match': 'r-beat', 'note-rest-naming': 'r-beat', 'note-value-tree': 'r-beat', 'nv-hold': 'r-beat', 'nv-long': 'r-beat', 'nv-rests': 'r-beat', 'nv-run': 'r-beat', 'nv-walk': 'r-beat', 'octave-ladder': 'about', 'ornaments': 't-touch', 'ottava': 'p-staff', 'pedal': 't-touch', 'perfect-counter': 'practice', 'phrase-marks': 'c-map', 'piano-action': 'about', 'piano-timeline': 'about', 'place-it': 'p-scales', 'posture-check': 'k-posture', 'practice-dice': 'practice', 'practice-timer': 'practice', 'primary-triads': 'p-chords', 'question-answer': 'c-map', 'range-chart': 'about', 'regroup': 'r-beat', 'relative-minor': 'p-scales', 'rest-grouping': 'r-beat', 'rhymes': 'p-staff', 'rhythm-cards-all': 'r-beat', 'road-map': 'c-map', 'rondo-refrain': 'c-map', 'sac-bar': 'p-clock', 'sac-line': 'p-clock', 'sac-natural': 'p-clock', 'sac-signs': 'p-clock', 'sac-tune': 'p-clock', 'same-or-new': 'c-map', 'same-tune-tempo': 't-tempo', 'scale-finder': 'p-scales', 'scale-intervals': 'p-intervals', 'sdy-hair': 't-touch', 'sdy-ladder': 't-touch', 'sdy-pf': 't-touch', 'sdy-tie': 't-touch', 'sdy-touch': 't-touch', 'semitone-counter': 'p-intervals', 'seventh-chords': 'p-chords', 'sgn-dc': 'c-map', 'sgn-ds': 'c-map', 'sgn-pause': 't-tempo', 'sgn-rep': 'c-map', 'sgn-volta': 'c-map', 'sharp-flat': 'p-clock', 'sharps-order': 'p-scales', 'sight-reading': 'c-reading', 'silent-beats': 'r-beat', 'sit-check': 'k-posture', 'size-pitch': 'p-staff', 'skg-acc': 'p-scales', 'skg-every': 'p-scales', 'skg-f': 'p-scales', 'skg-five': 'p-scales', 'skg-g': 'p-scales', 'speed-change': 't-tempo', 'split-it': 'r-beat', 'spr-big': 'about', 'spr-fam': 'about', 'spr-ladder': 'about', 'spr-range': 'about', 'spr-zone': 'about', 'sps-action': 'about', 'sps-keys': 'about', 'sps-pedals': 'about', 'sps-softloud': 'about', 'sps-sound': 'about', 'srh-alone': 'r-beat', 'srh-beams': 'r-beat', 'srh-dot': 'r-beat', 'srh-read': 'r-beat', 'srh-up': 'r-beat', 'ssk-cpos': 'k-positions', 'ssk-gpos': 'k-positions', 'ssk-read': 'c-reading', 'ssk-shape': 'c-reading', 'ssk-step': 'c-reading', 'staff-basics': 'p-staff', 'staff-climb': 'p-staff', 'steady-beat': 'r-beat', 'step-skip': 'c-reading', 'step-updown': 'p-staff', 'stm-metro': 't-tempo', 'stm-read': 't-tempo', 'stm-sf': 't-tempo', 'stm-steady': 't-tempo', 'stm-words': 't-tempo', 'string-lab': 'about', 'swing-feel': 'r-beat', 'tap-tempo': 't-tempo', 'tempo-race': 't-tempo', 'tempo-walk': 't-tempo', 'term-cards': 't-tempo', 'term-match': 't-tempo', 'term-mixer': 't-tempo', 'term-sort': 't-tempo', 'texture-spotter': 'about', 'texture-types': 'about', 'tie-slur': 't-touch', 'time-sig-numbers': 'r-beat', 'tmx-build': 't-tempo', 'tmx-change': 't-tempo', 'tmx-map': 't-tempo', 'tmx-speed': 't-tempo', 'tmx-touch': 't-touch', 'tmx-vol': 't-touch', 'tone-semitone': 'p-clock', 'touch-ear': 't-touch', 'touch-lengths': 't-touch', 'transpose': 'p-scales', 'triad-stack': 'p-chords', 'tritone': 'p-intervals', 'ts-bars': 'r-beat', 'ts-build': 'r-beat', 'ts-numbers': 'r-beat', 'ts-strong': 'r-beat', 'ts-tie': 'r-beat', 'tune-anatomy': 'c-map', 'twelve-bar-blues': 'p-chords', 'who-am-i': 'about', 'whole-piano': 'p-staff', 'write-note': 'p-staff' };
+const TOOL_CONCEPT = { 'accidental-bar': 'p-clock', 'accidental-cards': 'p-clock', 'all-keys': 'p-scales', 'key-finder': 'p-scales', 'alto-clef': 'p-staff', 'anacrusis': 'r-beat', 'arm-alignment': 'k-posture', 'arm-moves': 'k-posture', 'bar-lines': 'r-beat', 'beam-apples': 'r-beat', 'beat-doubler': 'r-beat', 'beat-groups': 'r-beat', 'beat-or-rhythm': 'r-beat', 'beat-target': 'r-beat', 'binary-ternary-spot': 'c-map', 'black-key-jam': 'p-staff', 'black-key-song': 'p-staff', 'black-white-neighbours': 'p-staff', 'build-minor': 'p-scales', 'cadences': 'p-chords', 'chord-extensions': 'p-chords', 'chromatic': 'p-clock', 'chx-145': 'p-chords', 'chx-clock': 'p-chords', 'chx-hands': 'k-play', 'chx-mm': 'p-chords', 'chx-stack': 'p-chords', 'chx-tonic': 'p-chords', 'circle-fifths': 'p-scales', 'clef-basics': 'p-staff', 'clef-story': 'p-staff', 'common-cut': 'r-beat', 'complete-melody': 'c-map', 'composer-cards': 'about', 'composer-time-machine': 'about', 'count-along': 'r-beat', 'count-aloud': 'r-beat', 'count-more': 'r-beat', 'count-ring': 'r-beat', 'cpx-alive': 'about', 'cpx-baroque': 'about', 'cpx-classical': 'about', 'cpx-map': 'about', 'cpx-modern': 'about', 'cpx-order': 'about', 'cpx-romantic': 'about', 'csx-blues': 'about', 'csx-jam': 'about', 'csx-ear': 'about', 'csx-era': 'about', 'csx-map': 'about', 'csx-penta': 'about', 'csx-pop': 'about', 'csx-texture': 'about', 'dc-ds-coda': 'c-map', 'dot-lab': 'r-beat', 'dotted-notes': 'r-beat', 'draw-tune': 'c-map', 'duplets': 'r-beat', 'dyn-order': 't-touch', 'echo': 'c-reading', 'era-worlds': 'about', 'eras': 'about', 'fill-bar': 'r-beat', 'find-every': 'p-staff', 'finger-beat': 'r-beat', 'finger-friends': 'k-posture', 'finger-numbers': 'k-positions', 'five-positions': 'k-positions', 'fix-the-bar': 'r-beat', 'flash-cards': 'p-staff', 'flats-order': 'p-scales', 'fmx-binary': 'c-map', 'fmx-build': 'c-map', 'fmx-find': 'c-map', 'fmx-letters': 'c-map', 'fmx-map': 'c-map', 'fmx-phrase': 'c-map', 'fmx-ternary': 'c-map', 'fold': 'p-staff', 'form-builder': 'c-map', 'form-shapes': 'c-map', 'genre-traits': 'about', 'grace-write': 't-touch', 'grouping': 'r-beat', 'hairpin': 't-touch', 'hand-shape': 'k-posture', 'hear-find': 'c-reading', 'heard-bar': 'r-beat', 'high-low': 'p-staff', 'hz-explorer': 'about', 'interval-ear': 'p-intervals', 'interval-ruler': 'p-intervals', 'inversions': 'p-chords', 'invert-interval': 'p-intervals', 'ivx-big': 'p-intervals', 'ivx-count': 'p-intervals', 'ivx-hand': 'p-intervals', 'ivx-ladder': 'p-intervals', 'ivx-mh': 'p-intervals', 'ivx-tonic': 'p-intervals', 'key-chords': 'p-chords', 'key-houses': 'p-staff', 'keyboard-ancestors': 'about', 'landmark-hop': 'p-staff', 'landmarks': 'p-staff', 'ledger-landmarks': 'p-staff', 'ledger-twins': 'p-staff', 'ledger-walk': 'p-staff', 'ledger-write': 'p-staff', 'letter-chain': 'p-staff', 'letter-hop': 'p-intervals', 'major-fingering': 'k-play', 'major-minor': 'p-chords', 'make-card': 'r-beat', 'melody-sequence': 'c-map', 'metronome': 't-tempo', 'mini-tune': 'c-reading', 'minor-fingering': 'k-play', 'mlx-build': 'c-map', 'mlx-line': 'c-map', 'mlx-map': 'c-map', 'mlx-motif': 'c-map', 'mlx-phrasing': 'c-map', 'mlx-qa': 'c-map', 'mlx-seq': 'c-map', 'mlx-words': 'c-map', 'mlx-write': 'c-map', 'mlx-couplet': 'c-map', 'modes': 'p-scales', 'movement-map': 'about', 'name-reveal': 'p-staff', 'name-that-tune': 'about', 'note-rest-match': 'r-beat', 'note-rest-naming': 'r-beat', 'note-value-tree': 'r-beat', 'nv-hold': 'r-beat', 'nv-long': 'r-beat', 'nv-rests': 'r-beat', 'nv-run': 'r-beat', 'nv-walk': 'r-beat', 'octave-ladder': 'about', 'ornaments': 't-touch', 'ottava': 'p-staff', 'pedal': 't-touch', 'perfect-counter': 'practice', 'phrase-marks': 'c-map', 'piano-action': 'about', 'piano-timeline': 'about', 'place-it': 'p-scales', 'posture-check': 'k-posture', 'practice-dice': 'practice', 'practice-timer': 'practice', 'primary-triads': 'p-chords', 'question-answer': 'c-map', 'range-chart': 'about', 'regroup': 'r-beat', 'relative-minor': 'p-scales', 'rest-grouping': 'r-beat', 'rhymes': 'p-staff', 'rhythm-cards-all': 'r-beat', 'road-map': 'c-map', 'rondo-refrain': 'c-map', 'sac-bar': 'p-clock', 'sac-line': 'p-clock', 'sac-natural': 'p-clock', 'sac-signs': 'p-clock', 'sac-tune': 'p-clock', 'same-or-new': 'c-map', 'same-tune-tempo': 't-tempo', 'scale-finder': 'p-scales', 'scale-intervals': 'p-intervals', 'sdy-hair': 't-touch', 'sdy-ladder': 't-touch', 'sdy-pf': 't-touch', 'sdy-tie': 't-touch', 'sdy-touch': 't-touch', 'semitone-counter': 'p-intervals', 'seventh-chords': 'p-chords', 'sgn-dc': 'c-map', 'sgn-ds': 'c-map', 'sgn-pause': 't-tempo', 'sgn-rep': 'c-map', 'sgn-volta': 'c-map', 'sharp-flat': 'p-clock', 'sharps-order': 'p-scales', 'sight-reading': 'c-reading', 'silent-beats': 'r-beat', 'sit-check': 'k-posture', 'size-pitch': 'p-staff', 'skg-acc': 'p-scales', 'skg-every': 'p-scales', 'skg-f': 'p-scales', 'skg-five': 'p-scales', 'skg-g': 'p-scales', 'speed-change': 't-tempo', 'split-it': 'r-beat', 'spr-big': 'about', 'spr-fam': 'about', 'spr-ladder': 'about', 'spr-range': 'about', 'spr-zone': 'about', 'sps-action': 'about', 'sps-keys': 'about', 'sps-pedals': 'about', 'sps-softloud': 'about', 'sps-sound': 'about', 'srh-alone': 'r-beat', 'srh-beams': 'r-beat', 'srh-dot': 'r-beat', 'srh-read': 'r-beat', 'srh-up': 'r-beat', 'ssk-cpos': 'k-positions', 'ssk-gpos': 'k-positions', 'ssk-read': 'c-reading', 'ssk-shape': 'c-reading', 'ssk-step': 'c-reading', 'staff-basics': 'p-staff', 'staff-climb': 'p-staff', 'steady-beat': 'r-beat', 'step-skip': 'c-reading', 'step-updown': 'p-staff', 'stm-metro': 't-tempo', 'stm-read': 't-tempo', 'stm-sf': 't-tempo', 'stm-steady': 't-tempo', 'stm-words': 't-tempo', 'string-lab': 'about', 'swing-feel': 'r-beat', 'tap-tempo': 't-tempo', 'tempo-race': 't-tempo', 'tempo-walk': 't-tempo', 'term-cards': 't-tempo', 'term-match': 't-tempo', 'term-mixer': 't-tempo', 'term-sort': 't-tempo', 'texture-spotter': 'about', 'texture-types': 'about', 'tie-slur': 't-touch', 'time-sig-numbers': 'r-beat', 'tmx-build': 't-tempo', 'tmx-change': 't-tempo', 'tmx-map': 't-tempo', 'tmx-speed': 't-tempo', 'tmx-touch': 't-touch', 'tmx-vol': 't-touch', 'tone-semitone': 'p-clock', 'touch-ear': 't-touch', 'touch-lengths': 't-touch', 'transpose': 'p-scales', 'triad-stack': 'p-chords', 'tritone': 'p-intervals', 'ts-bars': 'r-beat', 'ts-build': 'r-beat', 'ts-numbers': 'r-beat', 'ts-strong': 'r-beat', 'ts-tie': 'r-beat', 'tune-anatomy': 'c-map', 'twelve-bar-blues': 'p-chords', 'who-am-i': 'about', 'whole-piano': 'p-staff', 'write-note': 'p-staff' };
 Object.keys(TOOL_META).forEach(id => { if (TOOL_CONCEPT[id]) TOOL_META[id][0] = TOOL_CONCEPT[id]; });
 function toolMeta(id) { const m = TOOL_META[id]; if (m) return { cat: m[0], lo: m[1], hi: m[2], kinds: m[3].split(' ') }; const t = TOOLS.find(x => x.id === id); return { cat: TOOL_CONCEPT[id] || 'practice', lo: 0, hi: 3, kinds: ['show'], ch: t && t.ch }; }
 // Phase 168 (2026-09-28): shared search text for a tool -- title + blurb + its category's
@@ -20319,6 +20321,9 @@ const TOOL_ICON = {
   // Phase 210 (2026-09-29): recolored onto the styles chapter's sage-green "about" track badge
   // (the new track color, matching the illustrated-content rollout's established rounded-square
   // style). No semantic colors here worth preserving -- all moved onto cream/mustard/ink.
+  'csx-jam': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3f9a7e"/><rect x="3" y="9" width="18" height="11" rx="1.5" fill="#fefbf3"/>{[6, 9, 14, 17].map(x => <rect key={x} x={x} y="9" width="2.2" height="6.5" fill="#26296b"/>)}<path d="M15 3 V7.5" stroke="#e9a83a" strokeWidth="1.4"/><ellipse cx="13.8" cy="7.6" rx="1.6" ry="1.2" fill="#e9a83a"/></svg>
+  ),
   'csx-blues': () => (
     <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#3f9a7e"/>{Array.from({ length: 12 }, (_, i) => <rect key={i} x={3 + (i % 4) * 4.7} y={5 + Math.floor(i / 4) * 5} width="4" height="4" rx="0.8" fill={i === 8 ? '#e9a83a' : '#fefbf3'}/>)}</svg>
   ),
@@ -20743,7 +20748,7 @@ const CHAPTER_TOOL_ORDER = {
   'signs': ['sgn-rep', 'sgn-volta', 'sgn-dc', 'sgn-ds', 'sgn-pause', 'road-map', 'dc-ds-coda', 'ottava', 'ornaments', 'grace-write'],
   'staff': ['staff-basics', 'staff-climb', 'clef-basics', 'clef-story', 'alto-clef'],
   'whole-staff': ['rhymes', 'landmarks', 'landmark-hop', 'fold', 'flash-cards', 'write-note'],
-  'styles': ['csx-map', 'csx-texture', 'csx-era', 'csx-penta', 'csx-blues', 'csx-pop', 'csx-ear'],   // Build AP: texture-types, texture-spotter, genre-traits, swing-feel, twelve-bar-blues were twins
+  'styles': ['csx-map', 'csx-texture', 'csx-era', 'csx-penta', 'csx-blues', 'csx-jam', 'csx-pop', 'csx-ear'],   // Build AP: texture-types, texture-spotter, genre-traits, swing-feel, twelve-bar-blues were twins
   'composers': ['cpx-map', 'cpx-baroque', 'cpx-dances', 'cpx-classical', 'cpx-romantic', 'cpx-modern', 'cpx-alive', 'cpx-order', 'composer-cards', 'movement-map', 'who-am-i', 'name-that-tune'],   // Build AP: era-worlds, composer-time-machine were twins
   'tempo': ['stm-sf', 'stm-words', 'stm-read', 'stm-metro', 'stm-steady', 'metronome', 'tempo-walk', 'tempo-race', 'tap-tempo', 'same-tune-tempo', 'speed-change'],
   'terms': ['tmx-map', 'tmx-speed', 'tmx-change', 'tmx-vol', 'tmx-touch', 'tmx-build', 'term-sort', 'term-cards', 'term-mixer', 'term-match'],
@@ -26185,8 +26190,8 @@ function TimeSigTeacher() {
       watch="Drawing a bar line after every note, or forgetting the double bar at the end. Bar lines go after a full bar, not before it."
       say="“Count the beats out loud as you go. When you reach the top number, draw the line.”"/>
     <TcBlock page={5} title="When the quaver is the count" answers={<>{tcAns('TRY IT', W.s4.tog.map(it => fmtNum(it.beats * 2)))}{tcAns('YOUR TURN', W.s4.home.map(it => nvName(it) + ' ' + fmtNum(it.beats * 2)))}{tcAns('PLAY', TS_RIDDLES.map(r => r[1]))}</>}
-      watch="Keeping the 4/4 values (crotchet = 1) when the bottom number is 8. Mixing up the six quaver COUNTS with the 2 big beats you FEEL."
-      say="“With 8 on the bottom, count in quavers, so everything counts double. Six counts, two big beats.”"/>
+      watch="Keeping the 4/4 values (crotchet = 1) when the bottom number is 8: in 6/8 the quaver is one beat, so every note counts double."
+      say="“8 on the bottom: the quaver is one beat, so everything counts double. Six beats, 1 and 4 strong.”"/>
   </>);
   P(<>
     <TcBlock page={6} title="Simple and compound" answers={<>{tcAns('TRY IT', W.s5.tog.map(ts => ts + ' ' + TS[ts].kind + ', ' + (TS[ts].kind === 'compound' ? TS[ts].top / 3 : TS[ts].top)))}
@@ -30671,7 +30676,7 @@ function bookExtras(id) {
     { symbols: [{ glyph: barlineGlyph('bar'), w: 150, name: 'Bar line', means: 'closes a full bar.', play: 'keep going, no stop.' }, { glyph: barlineGlyph('double'), w: 150, name: 'Double bar line', means: 'the end of a section.', play: 'watch for a change coming.' }, { glyph: barlineGlyph('final'), w: 150, name: 'Final bar line', means: 'the end of the piece.', play: 'stop: the piece is over.' }],
       remember: 'Count the beats: when the bar is full, draw the bar line.' },
     { remember: '8 on the bottom: the quaver is the beat, so every note counts double.' },
-    { symbols: [{ glyph: bigTS(6, 8), w: 90, name: 'Compound time (6/8)', means: 'six quavers in two groups of three.', play: 'count 1 2 3 4 5 6. Feel 2 big beats.' }],
+    { symbols: [{ glyph: bigTS(6, 8), w: 90, name: 'Compound time (6/8)', means: 'the quaver is one beat: six beats, in two groups of three.', play: 'count 1 2 3 4 5 6, leaning on 1 and 4.' }],
       remember: '6, 9 or 12 on top = compound time: the quavers go in groups of three.' },
     { remember: 'Beam notes to show the beats: pairs in 3/4, threes in 6/8.' },
     { remember: 'A triplet squeezes three equal notes into the time of two.' },
@@ -35638,20 +35643,23 @@ const e8Play = (key) => rqRunS(E8[key], { ...e8Props(key) });
 const e8Btn = { padding:'10px 14px', fontSize:14, minHeight:44 };
 const e8Msg = (txt, col) => <div style={{textAlign:'center',fontSize:15,fontWeight:900,color:col || 'var(--navy)',minHeight:22,lineHeight:1.35,textWrap:'balance'}}>{txt}</div>;
 const e8Box = (title, note, body, tag) => <div className="try-box" style={actBox} data-e8={tag}><div style={actTitle}>{title}</div><div style={actNote}>{note}</div>{body}</div>;
+// Build BF: the five notes with their beats in 6/8 (the quaver is one beat, every note doubled), for the page
+const e8ValRow = () => <div style={{display:'grid',gridTemplateColumns:'repeat(5,minmax(0,1fr))',gap:8,maxWidth:560,width:'100%',margin:'0 auto'}}>{DOUBLE_ROWS.map((f, i) => { const it = f(), v = it.beats * 2;
+  return <div key={i} style={{textAlign:'center'}}><div style={{display:'flex',justifyContent:'center'}}><Glyph item={it} size={54}/></div><div style={{fontSize:24,fontWeight:900,color:BK.coral,lineHeight:1.1}}>{fmtNum(v)}</div><div style={{fontSize:12,fontWeight:800,color:BK.muted}}>{v > 1 ? t('beats', '박') : t('beat', '박')}</div></div>; })}</div>;
 // a note and the quavers it lasts: = and the quavers drawn as small beamed groups
 const e8Eq = (glyph, n) => <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,margin:'4px 0 8px'}}><Glyph item={glyph} size={56}/><span style={{fontSize:22,fontWeight:900,color:BK.ink}}>=</span>
-  <span style={{display:'inline-flex',gap:3}}>{Array.from({ length: n }, (_, i) => <Glyph key={i} item={NV_NOTES[3]} size={40}/>)}</span><span style={{fontSize:15,fontWeight:900,color:BK.coral}}>{t(n + (n === 1 ? ' quaver' : ' quavers'), '8분음표 ' + n)}</span></div>;
+  <span style={{display:'inline-flex',gap:3}}>{Array.from({ length: n }, (_, i) => <Glyph key={i} item={NV_NOTES[3]} size={40}/>)}</span><span style={{fontSize:15,fontWeight:900,color:BK.coral}}>{t(n + (n === 1 ? ' beat' : ' beats'), n + '박')}</span></div>;
 
 function E8BigPad() {
-  return e8Box(t('Two big beats', '큰 박 둘'), LANG === 'ko' ? <>8분음표 여섯을 <b>1 2 3 4 5 6</b>으로 세요. 셋씩 묶여서 <b>1과 4가 센박</b>: 큰 박 둘이에요(하트). 먼저 듣고, 그다음 센박에서만 쳐요.</> : <>Count the six quavers <b>1 2 3 4 5 6</b>. They go in threes, so <b>1 and 4 are strong</b>: two big beats (the hearts). Listen first, then tap only the strong beats.</>,
+  return e8Box(t('The quaver is one beat', '8분음표가 1박'), LANG === 'ko' ? <>아래 숫자 8: <b>8분음표가 1박</b>. 위 숫자 6: 한 마디에 <b>6박</b>. <b>1 2 3 4 5 6</b>으로 세요. 셋씩 묶여서 <b>1과 4가 센박</b>(하트). 먼저 듣고, 그다음 센박에서만 쳐요.</> : <>The 8 on the bottom: <b>the quaver is one beat</b>. The 6 on top: <b>six beats</b> in a bar. Count <b>1 2 3 4 5 6</b>. They go in threes, so <b>1 and 4 are strong</b> (the hearts). Listen first, then tap only the strong beats.</>,
     <RqStaff items={E8.big} {...E8P} only={[0, 3, 6, 9]}/>, 'big');
 }
 function E8DotPad() {
-  return e8Box(t('The dotted crotchet', '점4분음표'), LANG === 'ko' ? <>점4분음표 하나가 <b>8분음표 셋</b>, 곧 <b>큰 박 하나</b>예요. 1 (2 3), 4 (5 6): 누르고 있는 동안 속으로 세어요.</> : <>One dotted crotchet lasts <b>three quavers</b>: <b>one big beat</b>. 1 (2 3), 4 (5 6): keep counting inside while you hold it.</>,
+  return e8Box(t('The dotted crotchet', '점4분음표'), LANG === 'ko' ? <>6/8에서는 모든 음표가 두 배: 4분음표가 2박이니까 점4분음표는 <b>3박</b>(8분음표 셋)이에요. 1 (2 3), 4 (5 6): 누르고 있는 동안 속으로 세어요.</> : <>In 6/8 every note counts double: a crotchet is 2 beats, so a dotted crotchet is <b>3 beats</b> (three quavers). 1 (2 3), 4 (5 6): keep counting inside while you hold it.</>,
     <>{e8Eq(NV_DOTTED[1], 3)}<RqStaff items={E8.dot} {...E8P}/></>, 'dot');
 }
 function E8LsPad() {
-  return e8Box(t('Long, short', '길게, 짧게'), LANG === 'ko' ? <>큰 박 하나를 <b>4분음표(8분음표 둘)와 8분음표 하나</b>로 나눠요: 길게, 짧게. 1 (2) 3, 4 (5) 6.</> : <>Split one big beat into <b>a crotchet (two quavers) and a quaver</b>: long, short. 1 (2) 3, 4 (5) 6.</>,
+  return e8Box(t('Long, short', '길게, 짧게'), LANG === 'ko' ? <>셋 묶음 하나를 <b>4분음표(2박)와 8분음표(1박)</b>로 나눠요: 길게, 짧게. 1 (2) 3, 4 (5) 6.</> : <>Split a group of three into <b>a crotchet (2 beats) and a quaver (1 beat)</b>: long, short. 1 (2) 3, 4 (5) 6.</>,
     <>{e8Eq(NV_NOTES[2], 2)}<RqStaff items={E8.ls} {...E8P}/></>, 'ls');
 }
 // 3/4 or 6/8: the same six quavers, grouped 2 2 2 (three beats) or 3 3 (two big beats); heard by where the strong clicks fall
@@ -35660,15 +35668,15 @@ function E8TwoPad({ onResult }) {
   const fresh = () => { const k = Math.random() < 0.5 ? 't34' : 'big'; setMys(k); setAns(null); e8Play(k); };
   const say = (c) => { if (!mys || ans) return; setAns(c); const ok = c === mys; setRun(n => (ok ? n + 1 : 0)); if (onResult) onResult({ ok }); };
   const row = (key, lab) => <div><div style={{fontSize:13,fontWeight:900,color:key === 'big' ? BK.coral : BK.ink,textAlign:'center'}}>{lab}</div>{e8El(key)}</div>;
-  return e8Box(t('3/4 or 6/8?', '3/4? 6/8?'), LANG === 'ko' ? <>둘 다 한 마디에 8분음표 여섯. <b>3/4</b>는 둘씩 묶어 <b>세 박</b>, <b>6/8</b>은 셋씩 묶어 <b>큰 박 둘</b>. 센 클릭이 어디 오는지 들어 봐요.</> : <>Both hold six quavers in a bar. <b>3/4</b> groups them in twos: <b>three beats</b>. <b>6/8</b> in threes: <b>two big beats</b>. Listen for where the strong clicks fall.</>,
-    <>{row('t34', t('3/4: three beats, 2 2 2', '3/4: 세 박, 2 2 2'))}{row('big', t('6/8: two big beats, 3 3', '6/8: 큰 박 둘, 3 3'))}
+  return e8Box(t('3/4 or 6/8?', '3/4? 6/8?'), LANG === 'ko' ? <>둘 다 한 마디에 8분음표 여섯. <b>3/4</b>는 4분음표가 1박이라 둘씩 묶어 <b>세 박</b>, <b>6/8</b>은 8분음표가 1박이라 <b>6박</b>을 셋씩 묶어요. 센 클릭이 어디 오는지 들어 봐요.</> : <>Both hold six quavers in a bar. <b>3/4</b>: the crotchet is the beat, so the quavers go in twos: <b>three beats</b>. <b>6/8</b>: the quaver is the beat, <b>six beats</b> in threes. Listen for where the strong clicks fall.</>,
+    <>{row('t34', t('3/4: three beats, 2 2 2', '3/4: 세 박, 2 2 2'))}{row('big', t('6/8: six beats, 3 3', '6/8: 6박, 3 3'))}
       <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap',marginTop:8}}>
         <button className="ghost-btn" style={e8Btn} onClick={() => { setMys(null); setAns(null); e8Play('t34'); }}>{t('▶ 3/4', '▶ 3/4')}</button>
         <button className="ghost-btn" style={e8Btn} onClick={() => { setMys(null); setAns(null); e8Play('big'); }}>{t('▶ 6/8', '▶ 6/8')}</button>
         <button className="ghost-btn" style={e8Btn} onClick={fresh}>{t('▶ Which one?', '▶ 어느 쪽?')}</button>
         {mys && <button className="ghost-btn" style={e8Btn} onClick={() => e8Play(mys)}>{t('♪ Again', '♪ 다시')}</button>}
       </div>
-      {mys && <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8,marginTop:10}}>{[['t34', t('3/4: three beats', '3/4: 세 박')], ['big', t('6/8: two big beats', '6/8: 큰 박 둘')]].map(([id, lab]) => <button key={id} className={'choice-btn' + (!ans ? '' : id === mys ? ' good' : id === ans ? ' bad' : '')} onClick={() => say(id)} style={{padding:'12px 4px',fontSize:15,fontWeight:900}}>{lab}</button>)}</div>}
+      {mys && <div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:8,marginTop:10}}>{[['t34', t('3/4: three beats', '3/4: 세 박')], ['big', t('6/8: six beats in threes', '6/8: 6박, 셋씩')]].map(([id, lab]) => <button key={id} className={'choice-btn' + (!ans ? '' : id === mys ? ' good' : id === ans ? ' bad' : '')} onClick={() => say(id)} style={{padding:'12px 4px',fontSize:15,fontWeight:900}}>{lab}</button>)}</div>}
       {ans && e8Msg(ans === mys ? t('Yes! ' + (run > 1 ? run + ' in a row.' : ''), '맞아요! ' + (run > 1 ? run + '번 연속.' : '')) : t('Count the clicks between the strong ones: two quavers each (3/4), or three (6/8).', '센 클릭 사이의 클릭을 세어 봐요: 둘씩(3/4)인지, 셋씩(6/8)인지.'), ans === mys ? BK.green : BK.coral)}</>, 'two');
 }
 function E8ReadPad() {
@@ -35686,19 +35694,19 @@ const e8PicRead = () => ({ shapes: [{ k: 'raw', svg: [1, 2, 3, 4, 5, 6].map((n, 
 
 function e8LbPages(scr = false) {
   const ch = 'six-eight';
-  const checks5 = [[e8PicBig(), t('I count 6/8 in six and feel two big beats, 1 and 4', '6/8을 여섯으로 세고 큰 박 둘(1과 4)을 느껴요')], [e8PicDot(), t('I hold a dotted crotchet for one big beat', '점4분음표를 큰 박 하나만큼 눌러요')],
+  const checks5 = [[e8PicBig(), t('I count 6/8 with the quaver as one beat: six beats, 1 and 4 strong', '6/8을 8분음표 1박으로 세요: 6박, 1과 4가 센박')], [e8PicDot(), t('I hold a dotted crotchet for 3 beats', '점4분음표를 3박 동안 눌러요')],
     [e8PicLs(), t('I play long-short: a crotchet and a quaver', '길게-짧게를 쳐요: 4분음표와 8분음표')], [e8PicTwo(), t('I tell 3/4 from 6/8, by eye and by ear', '3/4과 6/8을 눈과 귀로 구별해요')], [e8PicRead(), t('I count, clap and play a new line in 6/8', '6/8의 새 줄을 세고, 손뼉 치고, 쳐요')]];
   const pen = (x) => <PenArt shapes={x.shapes} vb={x.vb} style={{width:90}}/>;
-  const toc = [[t('Two big beats', '큰 박 둘'), 2], [t('The dotted crotchet', '점4분음표'), 3], [t('Long, short', '길게, 짧게'), 4], [t('3/4 or 6/8?', '3/4? 6/8?'), 5], [t('Count, clap, play', '세고, 손뼉 치고, 치기'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]];
+  const toc = [[t('The quaver is one beat', '8분음표가 1박'), 2], [t('The dotted crotchet', '점4분음표'), 3], [t('Long, short', '길게, 짧게'), 4], [t('3/4 or 6/8?', '3/4? 6/8?'), 5], [t('Count, clap, play', '세고, 손뼉 치고, 치기'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]];
   const still = (key, mw = 560) => <LbPic h={150}><div style={{width:'100%',maxWidth:mw,margin:'0 auto'}}>{e8El(key)}</div></LbPic>;
   return [
-    <LbPage key="1" no={1} chId={ch} teacher={<>{t('6/8 is a Grade 1 time signature (with or without an anacrusis). Count every quaver (1 2 3 4 5 6) while learning, and feel the two big beats (1 and 4) once it is easy: the clicks here are quavers, the strong click on 1 and 4. Chapter ' + bkChapterNo('time-signatures') + ' has the two numbers; chapter ' + bkChapterNo('rhythm') + ' the quaver groups and the dotted crotchet in 2/4, 3/4 and 4/4.', '6/8은 Grade 1 박자표예요(못갖춘마디가 있든 없든). 배울 때는 8분음표마다 세고(1 2 3 4 5 6), 익숙해지면 큰 박 둘(1과 4)을 느껴요: 여기 클릭은 8분음표마다, 센 클릭은 1과 4. 박자표의 두 숫자는 ' + bkChapterNo('time-signatures') + '장, 8분음표 묶음과 점4분음표(2/4, 3/4, 4/4)는 ' + bkChapterNo('rhythm') + '장에 있어요.')}</>} qr={bkLink('drill=' + ch + '&lock=1')}>
+    <LbPage key="1" no={1} chId={ch} teacher={<>{t('6/8 is a Grade 1 time signature (with or without an anacrusis). The 8 on the bottom makes the quaver one beat, so every note counts double: crotchet 2, dotted crotchet 3, dotted minim 6. Count 1 2 3 4 5 6, leaning on 1 and 4: the clicks here are quavers, the strong click on 1 and 4. The theory papers call 6/8 compound duple (two groups of three). Chapter ' + bkChapterNo('time-signatures') + ' has the two numbers; chapter ' + bkChapterNo('rhythm') + ' the quaver groups and the dotted crotchet in 2/4, 3/4 and 4/4.', '6/8은 Grade 1 박자표예요(못갖춘마디가 있든 없든). 아래 숫자 8이 8분음표를 1박으로 만들어서 모든 음표가 두 배예요: 4분음표 2박, 점4분음표 3박, 점2분음표 6박. 1 2 3 4 5 6으로 세고 1과 4에 힘을 줘요: 여기 클릭은 8분음표마다, 센 클릭은 1과 4. 이론 시험에서는 6/8을 겹두박자(셋씩 두 묶음)라고 불러요. 박자표의 두 숫자는 ' + bkChapterNo('time-signatures') + '장, 8분음표 묶음과 점4분음표(2/4, 3/4, 4/4)는 ' + bkChapterNo('rhythm') + '장에 있어요.')}</>} qr={bkLink('drill=' + ch + '&lock=1')}>
       <LbOnly print><div data-ch={ch}>
         <div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em'}}>CHAPTER {bkChapterNo(ch)}</div>
         <div style={{fontFamily:LB_SERIF,fontSize:50,fontWeight:900,color:BK.ink,lineHeight:1.02,margin:'4px 0 0'}}>{t('6/8 Time', '6/8박자')}</div>
       </div></LbOnly>
       {still('big', 600)}
-      <LbSay size={18}>{t('Six quavers in a bar, in two groups of three: two big beats. Count 1 2 3 4 5 6; 1 and 4 are strong.', '한 마디에 8분음표 여섯, 셋씩 두 묶음: 큰 박 둘. 1 2 3 4 5 6으로 세고, 1과 4가 세요.')}</LbSay>
+      <LbSay size={18}>{t('8 on the bottom: the quaver is one beat, and every note counts double. Six beats in a bar, in two groups of three: count 1 2 3 4 5 6; 1 and 4 are strong.', '아래 숫자 8: 8분음표가 1박, 모든 음표가 두 배. 한 마디에 6박, 셋씩 두 묶음: 1 2 3 4 5 6으로 세고, 1과 4가 세요.')}</LbSay>
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
@@ -35706,47 +35714,47 @@ function e8LbPages(scr = false) {
         </div></LbOnly>
         <div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
-          {[t('count 6/8 and feel its two big beats', '6/8을 세고 큰 박 둘을 느낄 수 있어요'), t('hold a dotted crotchet for one big beat', '점4분음표를 큰 박 하나만큼 누를 수 있어요'), t('play long-short in 6/8', '6/8에서 길게-짧게를 칠 수 있어요'), t('tell 3/4 from 6/8', '3/4과 6/8을 구별할 수 있어요'), t('count, clap and play a new line in 6/8', '6/8의 새 줄을 세고, 손뼉 치고, 칠 수 있어요')].map(x => <div key={x} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:3}}>{bkGoal(15)}</span><span>{x}</span></div>)}
+          {[t('count 6/8 with the quaver as one beat', '6/8을 8분음표 1박으로 셀 수 있어요'), t('hold a dotted crotchet for 3 beats', '점4분음표를 3박 동안 누를 수 있어요'), t('play long-short in 6/8', '6/8에서 길게-짧게를 칠 수 있어요'), t('tell 3/4 from 6/8', '3/4과 6/8을 구별할 수 있어요'), t('count, clap and play a new line in 6/8', '6/8의 새 줄을 세고, 손뼉 치고, 칠 수 있어요')].map(x => <div key={x} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:3}}>{bkGoal(15)}</span><span>{x}</span></div>)}
         </div>
       </div>
       <LbOnly print><LbDrillStrip id={ch}/></LbOnly>
     </LbPage>,
-    <LbPage key="2" no={2} chId={ch} kicker={t('Step 1', '1단계')} title={t('Two big beats', '큰 박 둘')}
-      teacher={<>{t('Clap all six quavers, then only 1 and 4; then walk the big beats round the room while you clap the quavers. Watch for a child who hears 6/8 as three in a bar (1 3 5 strong): say 1 2 3, 4 5 6 with the 1 and 4 louder.', '8분음표 여섯을 모두 손뼉 치고, 그다음 1과 4만 쳐요. 그다음 선생님이 8분음표를 치는 동안 아이는 큰 박에 맞춰 방을 걸어요. 6/8을 세 박(1 3 5가 센박)으로 듣는 아이가 있으면, 1과 4를 크게 해서 1 2 3, 4 5 6으로 말해 주세요.')}</>} qr={bkLink('drill=' + ch + '&tab=drill&level=1')}>
-      <LbLive still={still('big')} live={<E8BigPad/>}/>
-      <LbSay>{LANG === 'ko' ? <>6/8: 한 마디에 <b>8분음표 여섯</b>. 셋씩 묶어서 <b>1 2 3, 4 5 6</b>으로 세고, <b>1과 4가 센박</b>이에요. 그래서 6/8은 <b>큰 박 둘</b>로 느껴요.</> : <>6/8: <b>six quavers</b> in a bar. Count them in threes, <b>1 2 3, 4 5 6</b>, and <b>1 and 4 are strong</b>. So 6/8 feels like <b>two big beats</b>.</>}</LbSay>
+    <LbPage key="2" no={2} chId={ch} kicker={t('Step 1', '1단계')} title={t('The quaver is one beat', '8분음표가 1박')}
+      teacher={<>{t('Start from the bottom number: 8, so the quaver is one beat and every note doubles (the toy at the top). Clap all six quavers, then only 1 and 4; then the child walks on 1 and 4 round the room while you clap every quaver. Watch for a child who hears 6/8 as three in a bar (1 3 5 strong): say 1 2 3, 4 5 6 with the 1 and 4 louder.', '아래 숫자부터 봐요: 8이니까 8분음표가 1박이고 모든 음표가 두 배(맨 위의 교구). 8분음표 여섯을 모두 손뼉 치고, 그다음 1과 4만 쳐요. 그다음 선생님이 8분음표마다 치는 동안 아이는 1과 4에 맞춰 방을 걸어요. 6/8을 세 박(1 3 5가 센박)으로 듣는 아이가 있으면, 1과 4를 크게 해서 1 2 3, 4 5 6으로 말해 주세요.')}</>} qr={bkLink('drill=' + ch + '&tab=drill&level=1')}>
+      <LbLive still={<LbPic h={230}><div style={{width:'100%',maxWidth:600,margin:'0 auto',display:'grid',gap:6}}>{e8ValRow()}{e8El('big')}</div></LbPic>} live={<><BeatDoubler bots={[4, 8]} start={8}/><div style={{height:12}}/><E8BigPad/></>}/>
+      <LbSay>{LANG === 'ko' ? <>6/8: 아래 8은 <b>8분음표가 1박</b>, 위 6은 <b>한 마디에 6박</b>. 그래서 모든 음표가 <b>두 배</b>예요(4분음표 2박, 점4분음표 3박). 셋씩 묶어 <b>1 2 3, 4 5 6</b>으로 세고, <b>1과 4가 센박</b>.</> : <>6/8: the 8 means <b>the quaver is one beat</b>; the 6 means <b>six beats</b> in a bar. So every note counts <b>double</b> (crotchet 2, dotted crotchet 3). Count in threes, <b>1 2 3, 4 5 6</b>: <b>1 and 4 are strong</b>.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [<>8분음표 여섯을 손뼉 치며 세요: 1 2 3 4 5 6. 1과 4를 더 크게.</>, <>이번엔 1과 4에서만 손뼉. 나머지는 속으로 세요.</>, <>피아노로: 1과 4에 가운데 도, 나머지는 그 옆 D를 살짝.</>]
         : [<>Clap six quavers and count: 1 2 3 4 5 6. Make 1 and 4 louder.</>, <>Now clap only on 1 and 4; count the rest inside.</>, <>At the piano: middle C on 1 and 4, a soft D for the others.</>]}/>
-      <LbRemember>{t('Six quavers, two big beats: 1 and 4.', '8분음표 여섯, 큰 박 둘: 1과 4.')}</LbRemember>
+      <LbRemember>{t('8 on the bottom: the quaver is one beat. Everything doubles.', '아래 8: 8분음표가 1박. 모두 두 배.')}</LbRemember>
     </LbPage>,
     <LbPage key="3" no={3} chId={ch} kicker={t('Step 2', '2단계')} title={t('The dotted crotchet', '점4분음표')}
-      teacher={<>{t('In 6/8 the dotted crotchet is the big beat (in 2/4, 3/4 and 4/4 it was a beat and a half). Hold it while counting the three quavers inside, out loud at first.', '6/8에서는 점4분음표가 큰 박 하나예요(2/4, 3/4, 4/4에서는 한 박 반이었어요). 처음에는 소리 내어, 그 안의 8분음표 셋을 세면서 누르고 있어요.')}</>} qr={bkLink('drill=' + ch + '&tab=drill&level=2')}>
+      teacher={<>{t('In 6/8 the dotted crotchet is 3 beats (in 2/4, 3/4 and 4/4 it was a beat and a half: everything doubles). Hold it while counting the three quavers inside, out loud at first.', '6/8에서는 점4분음표가 3박이에요(2/4, 3/4, 4/4에서는 한 박 반: 모두 두 배). 처음에는 소리 내어, 그 안의 8분음표 셋을 세면서 누르고 있어요.')}</>} qr={bkLink('drill=' + ch + '&tab=drill&level=2')}>
       <LbLive still={<LbPic h={180}><div style={{width:'100%',maxWidth:560,margin:'0 auto'}}>{e8Eq(NV_DOTTED[1], 3)}{e8El('dot')}</div></LbPic>} live={<E8DotPad/>}/>
-      <LbSay>{LANG === 'ko' ? <>점4분음표 하나 = <b>8분음표 셋</b> = <b>큰 박 하나</b>. 1 (2 3), 4 (5 6): 누르는 동안 속으로 세어요.</> : <>One dotted crotchet = <b>three quavers</b> = <b>one big beat</b>. 1 (2 3), 4 (5 6): count inside while you hold it.</>}</LbSay>
+      <LbSay>{LANG === 'ko' ? <>점4분음표 하나 = <b>8분음표 셋</b> = <b>3박</b>. 1 (2 3), 4 (5 6): 누르는 동안 속으로 세어요.</> : <>One dotted crotchet = <b>three quavers</b> = <b>3 beats</b>. 1 (2 3), 4 (5 6): count inside while you hold it.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [<>점4분음표 둘: 1에서 누르고 2 3을 세고, 4에서 누르고 5 6을 세요.</>, <>둘째 마디: 8분음표 셋, 그다음 점4분음표 하나.</>, <>가운데 도로 쳐요. 소리 내어 세면서.</>]
         : [<>Two dotted crotchets: press on 1 and count 2 3; press on 4 and count 5 6.</>, <>Bar two: three quavers, then one dotted crotchet.</>, <>Play it on middle C, counting out loud.</>]}/>
-      <LbRemember>{t('Dotted crotchet: three quavers, one big beat.', '점4분음표: 8분음표 셋, 큰 박 하나.')}</LbRemember>
+      <LbRemember>{t('Dotted crotchet in 6/8: 3 beats.', '6/8의 점4분음표: 3박.')}</LbRemember>
     </LbPage>,
     <LbPage key="4" no={4} chId={ch} kicker={t('Step 3', '3단계')} title={t('Long, short', '길게, 짧게')}
-      teacher={<>{t('The crotchet-quaver pair is the sound of 6/8: a lilt. Say it on the counts first (1, 3; 4, 6), then tap. A crotchet in 6/8 lasts two quavers, not one beat.', '4분음표-8분음표 짝이 6/8다운 소리예요: 흔들리는 느낌. 먼저 셈으로 말하고(1, 3; 4, 6), 그다음 쳐요. 6/8에서 4분음표는 한 박이 아니라 8분음표 둘이에요.')}</>} qr={bkLink('drill=' + ch + '&tab=drill&level=5')}>
+      teacher={<>{t('The crotchet-quaver pair is the sound of 6/8: a lilt. Say it on the counts first (1, 3; 4, 6), then tap. A crotchet in 6/8 is 2 beats, not 1.', '4분음표-8분음표 짝이 6/8다운 소리예요: 흔들리는 느낌. 먼저 셈으로 말하고(1, 3; 4, 6), 그다음 쳐요. 6/8에서 4분음표는 1박이 아니라 2박이에요.')}</>} qr={bkLink('drill=' + ch + '&tab=drill&level=5')}>
       <LbLive still={<LbPic h={180}><div style={{width:'100%',maxWidth:560,margin:'0 auto'}}>{e8Eq(NV_NOTES[2], 2)}{e8El('ls')}</div></LbPic>} live={<E8LsPad/>}/>
-      <LbSay>{LANG === 'ko' ? <>큰 박 하나를 <b>4분음표 + 8분음표</b>로 나눠요: 길게, 짧게. 4분음표는 8분음표 둘. 셈은 <b>1 (2) 3, 4 (5) 6</b>.</> : <>Split a big beat into <b>a crotchet and a quaver</b>: long, short. The crotchet lasts two quavers. Count <b>1 (2) 3, 4 (5) 6</b>.</>}</LbSay>
+      <LbSay>{LANG === 'ko' ? <>셋 묶음 하나를 <b>4분음표 + 8분음표</b>로 나눠요: 길게, 짧게. 4분음표 2박, 8분음표 1박. 셈은 <b>1 (2) 3, 4 (5) 6</b>.</> : <>Split a group of three into <b>a crotchet and a quaver</b>: long, short. The crotchet is 2 beats, the quaver 1. Count <b>1 (2) 3, 4 (5) 6</b>.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [<>셈으로 말해요: 1, 3, 4, 6. 그다음 같은 리듬으로 손뼉.</>, <>둘째 마디: 점4분음표, 그다음 8분음표 셋.</>, <>피아노로, 가운데 도. 길게, 짧게가 흔들리듯이.</>]
         : [<>Say the counts: 1, 3, 4, 6. Then clap the same rhythm.</>, <>Bar two: a dotted crotchet, then three quavers.</>, <>At the piano on middle C: long, short, with a lilt.</>]}/>
-      <LbRemember>{t('Crotchet + quaver = one big beat: long, short.', '4분음표 + 8분음표 = 큰 박 하나: 길게, 짧게.')}</LbRemember>
+      <LbRemember>{t('Crotchet 2 + quaver 1 = 3: long, short.', '4분음표 2 + 8분음표 1 = 3: 길게, 짧게.')}</LbRemember>
     </LbPage>,
     <LbPage key="5" no={5} chId={ch} kicker={t('Step 4', '4단계')} title={t('3/4 or 6/8?', '3/4? 6/8?')}
-      teacher={<>{t('Both bars hold six quavers; the beaming shows the beat: 3/4 beams them in twos (three crotchet beats), 6/8 in threes (two dotted-crotchet beats). By ear, the strong clicks: every second quaver in 3/4, every third in 6/8.', '두 마디 모두 8분음표 여섯이에요. 빔이 박을 보여 줘요: 3/4은 둘씩(4분음표 세 박), 6/8은 셋씩(점4분음표 두 박). 귀로는 센 클릭: 3/4은 둘째 8분음표마다, 6/8은 셋째마다.')}</>} qr={bkLink('drill=' + ch + '&tab=drill&level=3')}>
-      <LbLive still={<LbPic h={220}><div style={{display:'flex',flexDirection:'column',gap:6,width:'100%',maxWidth:560,margin:'0 auto'}}><div style={{fontSize:13,fontWeight:900,color:BK.ink,textAlign:'center'}}>{t('3/4: three beats, 2 2 2', '3/4: 세 박, 2 2 2')}</div>{e8El('t34')}<div style={{fontSize:13,fontWeight:900,color:BK.coral,textAlign:'center'}}>{t('6/8: two big beats, 3 3', '6/8: 큰 박 둘, 3 3')}</div>{e8El('big')}</div></LbPic>} live={<E8TwoPad/>}/>
-      <LbSay>{LANG === 'ko' ? <>둘 다 8분음표 여섯. <b>3/4</b>은 <b>둘씩</b> 묶어서 세 박, <b>6/8</b>은 <b>셋씩</b> 묶어서 큰 박 둘. 빔을 보면 알 수 있고, 센 클릭으로 들을 수 있어요.</> : <>Both hold six quavers. <b>3/4</b> groups them <b>in twos</b>: three beats. <b>6/8</b> <b>in threes</b>: two big beats. The beams show it; the strong clicks let you hear it.</>}</LbSay>
+      teacher={<>{t('Both bars hold six quavers; the beaming shows the beat: 3/4 beams them in twos (three crotchet beats), 6/8 in threes (six quaver beats, 1 and 4 strong; the theory papers call it compound duple). By ear, the strong clicks: every second quaver in 3/4, every third in 6/8.', '두 마디 모두 8분음표 여섯이에요. 빔이 박을 보여 줘요: 3/4은 둘씩(4분음표 세 박), 6/8은 셋씩(8분음표 6박, 1과 4가 센박; 이론 시험에서는 겹두박자). 귀로는 센 클릭: 3/4은 둘째 8분음표마다, 6/8은 셋째마다.')}</>} qr={bkLink('drill=' + ch + '&tab=drill&level=3')}>
+      <LbLive still={<LbPic h={220}><div style={{display:'flex',flexDirection:'column',gap:6,width:'100%',maxWidth:560,margin:'0 auto'}}><div style={{fontSize:13,fontWeight:900,color:BK.ink,textAlign:'center'}}>{t('3/4: three beats, 2 2 2', '3/4: 세 박, 2 2 2')}</div>{e8El('t34')}<div style={{fontSize:13,fontWeight:900,color:BK.coral,textAlign:'center'}}>{t('6/8: six beats, 3 3', '6/8: 6박, 3 3')}</div>{e8El('big')}</div></LbPic>} live={<E8TwoPad/>}/>
+      <LbSay>{LANG === 'ko' ? <>둘 다 8분음표 여섯. <b>3/4</b>은 <b>둘씩</b> 묶어서 세 박, <b>6/8</b>은 8분음표가 1박, <b>셋씩</b> 묶어서 6박. 빔을 보면 알 수 있고, 센 클릭으로 들을 수 있어요.</> : <>Both hold six quavers. <b>3/4</b> groups them <b>in twos</b>: three beats. <b>6/8</b>: the quaver is the beat, six beats <b>in threes</b>. The beams show it; the strong clicks let you hear it.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [<>3/4로 세요: 1 + 2 + 3 +. 그다음 6/8: 1 2 3 4 5 6. 센 곳만 크게.</>, <>선생님이 둘 중 하나를 치면, 3/4인지 6/8인지 말해요.</>, <>내가 치고, 선생님이 맞혀요.</>]
         : [<>Count 3/4: 1 + 2 + 3 +. Then 6/8: 1 2 3 4 5 6. Loud only on the strong ones.</>, <>Your teacher plays one of them: say 3/4 or 6/8.</>, <>Now you play, and your teacher guesses.</>]}/>
-      <LbRemember>{t('3/4: in twos, three beats. 6/8: in threes, two big beats.', '3/4: 둘씩, 세 박. 6/8: 셋씩, 큰 박 둘.')}</LbRemember>
+      <LbRemember>{t('3/4: in twos, three beats. 6/8: in threes, six beats.', '3/4: 둘씩, 세 박. 6/8: 셋씩, 6박.')}</LbRemember>
     </LbPage>,
     <LbPage key="6" no={6} chId={ch} kicker={t('Step 5', '5단계')} title={t('Count, clap, play', '세고, 손뼉 치고, 치기')}
       teacher={<>{t('Every new line in the same order: the counts under the notes, said out loud; clapped; then tapped or played on one note. The dotted minim fills a whole bar of 6/8.', '새 줄은 언제나 같은 순서로: 음표 아래 셈을 소리 내어 말하고, 손뼉 치고, 그다음 한 음으로 쳐요. 점2분음표는 6/8 한 마디를 다 채워요.')}</>} qr={bkLink('drill=' + ch + '&tab=drill&level=6')}>
       <LbLive still={<LbPic h={220}><div style={{display:'flex',flexDirection:'column',gap:8,width:'100%',maxWidth:560,margin:'0 auto'}}>{e8El('m1')}{e8El('m3')}</div></LbPic>} live={<E8ReadPad/>}/>
-      <LbSay>{LANG === 'ko' ? <>새 줄: 음표마다 <b>셈을 찾아서</b>(1~6) 소리 내어 말하고, <b>손뼉 치고</b>, 그다음 <b>쳐요</b>. 점2분음표는 한 마디 전체: 1부터 6까지.</> : <>A new line: <b>find each note's count</b> (1 to 6) and say it, <b>clap it</b>, then <b>play it</b>. A dotted minim fills the whole bar: 1 to 6.</>}</LbSay>
+      <LbSay>{LANG === 'ko' ? <>새 줄: 음표마다 <b>셈을 찾아서</b>(1~6) 소리 내어 말하고, <b>손뼉 치고</b>, 그다음 <b>쳐요</b>. 점2분음표는 한 마디 전체: 1부터 6까지.</> : <>A new line: <b>find each note's count</b> (1 to 6) and say it, <b>clap it</b>, then <b>play it</b>. A dotted minim fills the whole bar: 6 beats, 1 to 6.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [<>첫 줄의 셈을 말해요: 1 2 3, 4 6 | 1, 4.</>, <>손뼉 치며 세어요. 그다음 가운데 도로 쳐요.</>, <>둘째 줄: 점2분음표는 여섯까지 누르고 있어요.</>]
         : [<>Say the first line's counts: 1 2 3, 4 6 | 1, 4.</>, <>Clap it while counting. Then play it on middle C.</>, <>Line two: hold the dotted minim through all six.</>]}/>
       <LbRemember>{t('Find the counts, say them, clap, play.', '셈을 찾고, 말하고, 손뼉 치고, 쳐요.')}</LbRemember>
@@ -35788,11 +35796,11 @@ function E8Workbook({ startNo = 1 }) {
   // 2 (faces "Two big beats")
   P(<>
     <WbTop step={1}/>
-    <Part kind="together" title="Find the big beats" how="The counts are under the notes. Circle every note that falls on 1 or 4: the two big beats in each bar.">
+    <Part kind="together" title="Find the strong beats" how="The counts are under the notes. Circle every note that falls on 1 or 4: the strong beats in each bar.">
       <div style={{display:'grid',gap:10}}>{W.strong.map((row, i) => <ExCell key={row} n={i + 1} ex={i === 0}><div style={{padding:'18px 6px 4px'}}>{e8wRow(E8[row], { ...E8P.so, counts: undefined, lit: i === 0 ? [0, 3, 6, 9] : undefined })}</div></ExCell>)}</div>
     </Part>
-    <Part kind="home" title="Two big beats this week" how="Do each one and tick a box each day.">
-      <PhLog rows={['Clap six quavers, saying 1 2 3 4 5 6, with 1 and 4 louder', 'Clap only 1 and 4 while you say all six', 'Walk the big beats while someone claps the quavers']} label={300}/>
+    <Part kind="home" title="Six beats this week" how="Do each one and tick a box each day.">
+      <PhLog rows={['Clap six quavers, saying 1 2 3 4 5 6, with 1 and 4 louder', 'Clap only 1 and 4 while you say all six', 'Walk on 1 and 4 while someone claps every quaver']} label={300}/>
     </Part>
     <Part kind="play" title="Six or two?" how="Say the counts and tap your knees: both hands on 1 and 4, one finger on the others. Then try it with your eyes closed. How many bars can you do without stopping?">
       <div style={{display:'flex',justifyContent:'center',gap:14,alignItems:'center',padding:'14px 0',fontSize:14,fontWeight:800,color:BK.ink}}>
@@ -35805,7 +35813,7 @@ function E8Workbook({ startNo = 1 }) {
   // 3 (faces "The dotted crotchet")
   P(<>
     <WbTop step={2}/>
-    <Part kind="together" title="How many quavers?" how="In 6/8 we count quavers. Write how many quavers each note lasts.">
+    <Part kind="together" title="How many beats?" how="In 6/8 the quaver is one beat, so every note counts double. Write how many beats each note lasts.">
       <BkGrid cols={4} gap="6px 10px">{W.len.map((k, i) => <ExCell key={k} n={i + 1} ex={i === 0}><div style={{display:'grid',gap:4,justifyItems:'center',padding:'16px 2px 4px'}}>{e8wGlyph(k, 70)}{nvBox(i === 0, String(E8W_LEN[k]), 44, 30)}</div></ExCell>)}</BkGrid>
     </Part>
     <Part kind="home" title="Count inside the long note" how="Clap this row each day, counting out loud: 1 (2 3), 4 (5 6). Hold the dotted crotchet for all three counts.">
@@ -35839,7 +35847,7 @@ function E8Workbook({ startNo = 1 }) {
   // 5 (faces "3/4 or 6/8?")
   P(<>
     <WbTop step={4}/>
-    <Part kind="together" title="3/4 or 6/8?" how="Six quavers, no time signature. Look at the beams: in twos is 3/4 (three beats), in threes is 6/8 (two big beats). Write the time signature.">
+    <Part kind="together" title="3/4 or 6/8?" how="Six quavers, no time signature. Look at the beams: in twos is 3/4 (three beats), in threes is 6/8 (six beats). Write the time signature.">
       <BkGrid cols={2} gap="6px 10px">{W.see.map((row, i) => <ExCell key={i} n={i + 1} ex={i === 0}><div style={{display:'grid',gap:4,padding:'18px 4px 4px'}}>{e8wRow(e8wSee(row), { mw: 260 })}
         <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:11.5,fontWeight:800,color:BK.ink}}>time signature {nvBox(i === 0, row === 't34' ? '3/4' : '6/8', 48, 28)}</div></div></ExCell>)}</BkGrid>
     </Part>
@@ -35861,7 +35869,7 @@ function E8Workbook({ startNo = 1 }) {
     <Part kind="home" title="New lines this week" how="The same order every time: say the counts, clap, play. Tick a box each day.">
       <PhLog rows={['Line 1', 'Line 2', 'The long-short rows', 'The dotted minim row: one note for the whole bar']} label={300}/>
     </Part>
-    <Part kind="play" title="Write your own" how="Two bars of 6/8. In each box (one big beat) draw three quavers, a dotted crotchet, or a crotchet and a quaver. Write the counts, then clap it.">
+    <Part kind="play" title="Write your own" how="Two bars of 6/8. In each box (three beats) draw three quavers, a dotted crotchet, or a crotchet and a quaver. Write the counts, then clap it.">
       {e8wRow([['ts', 6, 8], ['box', 1.5], ['box', 1.5], ['|'], ['box', 1.5], ['box', 1.5], ['||']], { mw: 560 })}
     </Part>
     <Faces/>
@@ -35875,7 +35883,7 @@ function E8PaperCheck() {
   const C = E8_WB.chk;
   return <div className="lb-paper" style={{display:'flex',flexDirection:'column',gap:4}}>
     <LbPaperHead/>
-    {bkSec('A', 'In 6/8, how many quavers does each note last?')}
+    {bkSec('A', 'In 6/8, how many beats does each note last?')}
     <BkGrid cols={4} gap="6px 8px">{C.len.map((k, i) => <BkCell key={k} n={i + 1}><div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:10,padding:'14px 2px 2px'}}>{e8wGlyph(k, 54)}{bkBox(36, 26)}</div></BkCell>)}</BkGrid>
     {bkSec('B', 'On which count does the coral note start?')}
     <BkGrid cols={2} gap="6px 8px">{C.count.map(([row, i], k) => <BkCell key={k} n={k + 5}><div style={{display:'grid',gap:3,padding:'14px 2px 2px'}}>{e8wRow(E8[row], { ...E8P.so, counts: false, lit: i, mw: 280 })}<div style={{display:'flex',justifyContent:'center'}}>{bkBox(36, 26)}</div></div></BkCell>)}</BkGrid>
@@ -35891,21 +35899,21 @@ function E8Teacher() {
   const nm = (k) => ({ e: 'quaver', q: 'crotchet', qd: 'dotted crotchet', hd: 'dotted minim' })[k];
   P(<>
     <div style={{fontFamily:LB_SERIF,fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('six-eight')}</div>
-    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Each workbook page faces its Lesson Book page. 6/8 is a Grade 1 time signature (with or without an anacrusis). Count every quaver while learning; feel the two big beats once it is easy. Clapping and playing are checked at the piano, counting out loud.</div>
-    <TcBlock page={2} title="Two big beats" answers={<>{tcAns('TRY IT', W.strong.map(row => e8wStrong(row)))}{tcAns('PLAY', ['any number of bars, both hands on 1 and 4 only'])}</>}
+    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Each workbook page faces its Lesson Book page. 6/8 is a Grade 1 time signature (with or without an anacrusis). The quaver is one beat (8 on the bottom), so every note counts double; 1 and 4 are strong. Clapping and playing are checked at the piano, counting out loud.</div>
+    <TcBlock page={2} title="The quaver is one beat" answers={<>{tcAns('TRY IT', W.strong.map(row => e8wStrong(row)))}{tcAns('PLAY', ['any number of bars, both hands on 1 and 4 only'])}</>}
       watch="Hearing 6/8 as three in a bar (1 3 5 strong). Say 1 2 3, 4 5 6 with 1 and 4 louder."
-      say="“Six quavers, two big beats: 1 and 4.”"/>
+      say="“8 on the bottom: the quaver is one beat. 1 and 4 are strong.”"/>
     <TcBlock page={3} title="The dotted crotchet" answers={<>{tcAns('TRY IT', W.len.map(k => nm(k) + ' ' + E8W_LEN[k]))}{tcAns('PLAY', ['3, a dotted crotchet', '3, a dotted crotchet', '6, a dotted minim'], 5)}</>}
-      watch="Holding the dotted crotchet for one count only: in 6/8 it is a whole big beat (three quavers). In 2/4, 3/4 and 4/4 it was a beat and a half."
-      say="“Dotted crotchet: three quavers, one big beat.”"/>
+      watch="Holding the dotted crotchet for one count only: in 6/8 it is 3 beats (three quavers). In 2/4, 3/4 and 4/4 it was a beat and a half: everything doubles."
+      say="“Dotted crotchet in 6/8: 3 beats.”"/>
     <TcBlock page={4} title="Long, short" answers={<>{tcAns('TRY IT', W.count.map(([row, i]) => e8wCountOf(row, i)))}{tcAns('PLAY', W.fill.map(f => nm(E8_FILL[f][1])), 5)}</>}
-      watch="Giving the crotchet one count: in 6/8 it lasts two quavers (1, 3; 4, 6)."
-      say="“Crotchet and quaver make one big beat: long, short.”"/>
+      watch="Giving the crotchet one beat: in 6/8 it is 2 beats (1, 3; 4, 6)."
+      say="“Crotchet 2, quaver 1: long, short.”"/>
   </>);
   P(<>
     <TcBlock page={5} title="3/4 or 6/8?" answers={<>{tcAns('TRY IT', W.see.map(row => (row === 't34' ? '3/4 (in twos)' : '6/8 (in threes)')))}{tcAns('PLAY', ['3/4: [1 2] [3 4] [5 6], beats start on 1, 3, 5', '6/8: [1 2 3] [4 5 6], beats start on 1 and 4'], 5)}</>}
       watch="Counting the quavers (six either way) instead of looking at how they are grouped."
-      say="“3/4: in twos, three beats. 6/8: in threes, two big beats.”"/>
+      say="“3/4: in twos, three beats. 6/8: in threes, six beats.”"/>
     <TcBlock page={6} title="Count, clap, play" answers={<>{tcAns('TRY IT', W.write.map(row => e8wCounts(row)))}{tcAns('PLAY', ['any two bars that fill 6/8: each box is three quavers long'])}</>}
       watch="Skipping the counting step and clapping by guess. Every new line in the same order: counts out loud, clap, then play."
       say="“Find the counts, say them, clap, play.”"/>
@@ -35930,13 +35938,13 @@ function E8Learn({ onStart }) {
 // ── the drill ──
 const E8_LEVELS = [
   { n: 1, label: 'On which count?', kind: 'count', time: 10 },
-  { n: 2, label: 'How many quavers?', kind: 'len', time: 8 },
+  { n: 2, label: 'How many beats?', kind: 'len', time: 8 },
   { n: 3, label: '3/4 or 6/8? Look at the beams', kind: 'see', time: 8 },
   { n: 4, label: 'Listen: 3/4 or 6/8?', kind: 'hear', time: 14, noPrint: true },
   { n: 5, label: 'Fill the bar', kind: 'fill', time: 12 },
   { n: 6, label: 'Tap it', kind: 'tap', time: 30, noPrint: true },
 ];
-Object.assign(LEVEL_KO, { 'On which count?': '몇째 셈에서?', 'How many quavers?': '8분음표 몇 개?', '3/4 or 6/8? Look at the beams': '3/4? 6/8? 빔을 봐요', 'Listen: 3/4 or 6/8?': '듣기: 3/4? 6/8?', 'Fill the bar': '마디 채우기', 'Tap it': '쳐 보기' });
+Object.assign(LEVEL_KO, { 'On which count?': '몇째 셈에서?', 'How many beats?': '몇 박?', '3/4 or 6/8? Look at the beams': '3/4? 6/8? 빔을 봐요', 'Listen: 3/4 or 6/8?': '듣기: 3/4? 6/8?', 'Fill the bar': '마디 채우기', 'Tap it': '쳐 보기' });
 const E8_LEN = [['e', 1, () => NV_NOTES[3]], ['q', 2, () => NV_NOTES[2]], ['qd', 3, () => NV_DOTTED[1]], ['hd', 6, () => NV_DOTTED[0]]];
 // a bar of 6/8 with one note missing (the box), and the note that fills it
 const E8_FILL = [[[['q'], ['e'], ['q'], ['box', 0.5]], 'e'], [[['qd'], ['box', 1.5]], 'qd'], [[['e3'], ['box', 1], ['e']], 'q'], [[['q'], ['e'], ['box', 1.5]], 'qd'], [[['box', 1], ['e'], ['qd']], 'q'], [[['qd'], ['q'], ['box', 0.5]], 'e']];
@@ -35964,14 +35972,14 @@ function E8Question({ q, given, locked, onAnswer, pixel }) {
   useEffect(() => { if (q.kind !== 'hear') return; const id = setTimeout(() => e8Play(q.row), 350); return () => { clearTimeout(id); stopClicks(); }; }, [q.uid]);
   let title, fig = null, label = (c) => c, cols = q.choices.length;
   if (q.kind === 'count') { title = t('6/8: on which count does the coral note start?', '6/8: 산호색 음은 몇째 셈에서 시작할까요?'); fig = rqStaffEl(E8[q.row], { ...E8P.so, lit: q.i, counts: done ? undefined : false, hearts: false }); cols = 6; }
-  else if (q.kind === 'len') { const x = E8_LEN.find(y => y[0] === q.n); title = t('In 6/8, how many quavers does this note last?', '6/8에서 이 음표는 8분음표 몇 개만큼일까요?'); fig = <div style={{display:'flex',justifyContent:'center',margin:'4px 0 8px'}}><Glyph item={x[2]()} size={90}/></div>; }
+  else if (q.kind === 'len') { const x = E8_LEN.find(y => y[0] === q.n); title = t('In 6/8 the quaver is one beat. How many beats is this note?', '6/8에서는 8분음표가 1박. 이 음표는 몇 박일까요?'); fig = <div style={{display:'flex',justifyContent:'center',margin:'4px 0 8px'}}><Glyph item={x[2]()} size={90}/></div>; }
   else if (q.kind === 'see') { title = t('Six quavers, no time signature. 3/4 or 6/8? Look at the beams.', '8분음표 여섯, 박자표가 없어요. 3/4일까요, 6/8일까요? 빔을 봐요.'); fig = rqStaffEl(E8[q.row].filter(it => it[0] !== 'ts').slice(0, q.row === 't34' ? 3 : 2).concat([['||']]), { counts: done ? undefined : false, hearts: false }); }
   else if (q.kind === 'hear') { title = t('Listen to the strong clicks: 3/4 or 6/8?', '센 클릭을 들어 봐요: 3/4일까요, 6/8일까요?'); fig = done ? e8El(q.row, { hearts: false }) : null; }
   else if (q.kind === 'fill') { title = t('Which note fills this bar of 6/8?', '6/8 이 마디를 채우는 음표는?'); fig = rqStaffEl([['ts', 6, 8]].concat(E8_FILL[q.i][0], [['||']]), { counts: false, hearts: false }); label = (c) => <Glyph item={E8_NOTE[c]()} size={pixel ? 34 : 44}/>; }
   else { title = t('Tap it: press for each note and hold it for its length.', '쳐 보세요: 음표마다 누르고, 그 길이만큼 누르고 있어요.'); fig = <RqStaff key={q.uid} items={E8[q.row]} {...e8Props(q.row)} onResult={(r) => { if (!locked && !done) onAnswer(r.ok ? 'ok' : 'no'); }}/>; cols = 0; }
   const why = !done ? null : q.kind === 'count' ? t('Count every quaver: 1 2 3 4 5 6; the coral note starts on ' + q.answer + '.', '8분음표마다 세어요: 1 2 3 4 5 6. 산호색 음은 ' + q.answer + '에서 시작해요.')
     : q.kind === 'len' ? t('Quaver 1, crotchet 2, dotted crotchet 3, dotted minim 6.', '8분음표 1, 4분음표 2, 점4분음표 3, 점2분음표 6.')
-    : q.kind === 'see' || q.kind === 'hear' ? t(q.answer === '3/4' ? '3/4: quavers in twos, three beats.' : '6/8: quavers in threes, two big beats.', q.answer === '3/4' ? '3/4: 8분음표 둘씩, 세 박.' : '6/8: 8분음표 셋씩, 큰 박 둘.')
+    : q.kind === 'see' || q.kind === 'hear' ? t(q.answer === '3/4' ? '3/4: quavers in twos, three beats.' : '6/8: the quaver is the beat, six beats in threes.', q.answer === '3/4' ? '3/4: 8분음표 둘씩, 세 박.' : '6/8: 8분음표가 1박, 6박을 셋씩.')
     : q.kind === 'fill' ? t('A bar of 6/8 holds six quavers: the missing part is a ' + e8NoteName(q.answer) + '.', '6/8 한 마디는 8분음표 여섯: 빈 곳은 ' + e8NoteName(q.answer) + '.') : null;
   return (<div>
     <p style={pixel ? {fontSize:11.5,textAlign:'center'} : {fontSize:15,fontWeight:700,textAlign:'center',margin:'0 0 8px',color:'var(--muted)',textWrap:'balance'}}>{title}</p>
@@ -36056,6 +36064,36 @@ function LwMetrePad({ onResult }) {
   );
 }
 
+
+// ══ Build BG: one bar, two bars, then all four (her 15:04) ══
+// The bars of a passage, a run of them as a passage of its own, walk / run-ning under a Grade 1 line, and the
+// bars a try missed. useEcho keeps which run of bars a pad is on; off (the drills, the Home) it is the whole passage.
+const ecBars = (items) => { const out = [[]]; items.forEach(it => { if (it[0] === 'ts' || it[0] === '||') return; if (it[0] === '|') out.push([]); else out[out.length - 1].push(it); }); return out.filter(b => b.length); };
+const ecSlice = (items, a, b) => { const ts = items.find(it => it[0] === 'ts'), out = ts ? [ts] : []; ecBars(items).slice(a, b).forEach((bar, k) => { if (k) out.push(['|']); out.push(...bar); }); out.push(['||']); return out; };
+const EC_SAY = ['q', 'p', 'h', 'hd'];
+const ecSay = (items) => (items.every(it => ['ts', '|', '||'].includes(it[0]) || EC_SAY.includes(it[0]))
+  ? srhSounds(items).map(x => (x.rest ? null : x.d >= 2 ? t('hold', '길게') : x.d === 1 ? t('walk', '타') : Math.abs(x.b % 1) < 1e-6 ? t('run-', '티') : t('ning', '티'))) : null);
+const ecWords = (E) => { const w = ecSay(E.sub); return w ? { words: w, counts: false } : {}; };
+function useEcho(items, on) {
+  const nb = ecBars(items).length;
+  const [rung, setRung] = useState(on ? 1 : nb), [part, setPart] = useState(0), [see, setSee] = useState(true);
+  const span = Math.min(rung, nb), parts = Math.ceil(nb / span), p = Math.min(part, parts - 1), a = p * span, full = span >= nb;
+  const set = (r, q = 0, sh) => { setRung(r); setPart(q); setSee(sh != null ? sh : true); };
+  return { on, nb, rung: span, part: p, parts, a, full, see, setSee, set, sub: full ? items : ecSlice(items, a, a + span) };
+}
+const ecMiss = (E, res) => { if (!res || !res.marks) return []; const top = srhTop(E.sub), out = new Set(); srhSounds(E.sub).forEach((x, j) => { if (res.marks[j] === '?') out.add(Math.floor(x.b / top + 1e-6)); }); return [...out].sort((a, b) => a - b); };
+const ecRow = (E, change) => !E.on ? null : <div data-ec="rungs" style={{margin:'0 0 4px'}}>
+  <div style={{textAlign:'center',fontSize:12.5,fontWeight:800,color:BK.muted,margin:'2px 0 0'}}>{t('One bar, then two, then all ' + E.nb + '.', '한 마디, 두 마디, 그다음 ' + E.nb + '마디 전부.')}</div>
+  {spChips([[1, t('1 bar', '한 마디')], [2, t('2 bars', '두 마디')], [E.nb, t('All ' + E.nb + ', like the test', E.nb + '마디 전부, 시험처럼')]], E.rung, (r) => change(() => E.set(r)))}
+  {!E.full && <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap',alignItems:'center'}}>
+    {spChips(Array.from({ length: E.parts }, (_, q) => [q, E.rung === 1 ? t('Bar ' + (q + 1), (q + 1) + '마디') : t('Bars ' + (q * E.rung + 1) + '–' + (q * E.rung + E.rung), (q * E.rung + 1) + '–' + (q * E.rung + E.rung) + '마디')]), E.part, (q) => change(() => E.set(E.rung, q, E.see)))}
+    <button className="ghost-btn" style={{...spBtn,padding:'6px 12px',fontSize:13}} onClick={() => E.setSee(!E.see)}>{E.see ? t('Hide the notes', '음표 가리기') : t('Show the notes', '음표 보기')}</button></div>}
+</div>;
+const ecNext = (E, res, change) => { if (!E.on || !res) return null;
+  if (!E.full) { const last = E.part >= E.parts - 1;
+    return <button className="ghost-btn" style={spBtn} onClick={() => change(() => (last ? E.set(E.rung === 1 && E.nb > 2 ? 2 : E.nb, 0, E.rung === 1 && E.nb > 2 ? E.see : false) : E.set(E.rung, E.part + 1, E.see)))}>{last ? (E.rung === 1 && E.nb > 2 ? t('▶ Now two bars', '▶ 이제 두 마디') : t('▶ Now all ' + E.nb, '▶ 이제 ' + E.nb + '마디 전부')) : (E.rung === 1 ? t('▶ Next bar', '▶ 다음 마디') : t('▶ The next two', '▶ 다음 두 마디'))}</button>; }
+  return <>{ecMiss(E, res).map(b => <button key={b} className="ghost-btn" style={spBtn} onClick={() => change(() => E.set(1, b, true))}>{t('▶ Bar ' + (b + 1) + ' again', '▶ ' + (b + 1) + '마디 다시')}</button>)}</>; };
+
 // ── step 3: clap it back: a passage in two or three, heard twice, then tapped; the notes show only afterwards ──
 const LW_CLAP = [
   [['ts', 2], ['q'], ['q'], ['|'], ['p'], ['q'], ['|'], ['q'], ['q'], ['|'], ['h'], ['||']],
@@ -36070,27 +36108,30 @@ function LwClapPad({ onResult, fixed }) {
   const T = usePlTimers();
   const [i, setI] = useState(fixed != null ? fixed : 0), [phase, setPhase] = useState('ready'), [heard, setHeard] = useState(0), [res, setRes] = useState(null);
   const run = useRef(null), taps = useRef([]);
-  const items = LW_CLAP[i], snd = srhSounds(items), notes = snd.map((s, j) => [s, j]).filter(([s]) => !s.rest), top = srhTop(items), n = srhBeats(items);
+  const E = useEcho(LW_CLAP[i], fixed == null), items = E.sub, snd = srhSounds(items), notes = snd.map((s, j) => [s, j]).filter(([s]) => !s.rest), top = srhTop(items), n = srhBeats(items);
   const reset = () => { T.clear(); stopClicks(); setPhase('ready'); setHeard(0); setRes(null); };
   const listen = () => { T.clear(); setRes(null); const r = rqRunS(items, { bpm: LW_CLAP_BPM }); if (!r) return; setPhase('listen');
+    if (!E.full) { T.at(r, r.at[r.lead] + n * r.spb + 0.2, () => { setPhase('ready'); setHeard(2); }); setHeard(1); return; }
     T.at(r, r.at[r.lead] + n * r.spb, () => { const r2 = rqRunS(items, { bpm: LW_CLAP_BPM }); if (!r2) return; T.at(r2, r2.at[r2.lead] + n * r2.spb + 0.2, () => { setPhase('ready'); setHeard(2); }); }); setHeard(1); };
   const go = () => { T.clear(); setRes(null); taps.current = []; const r = rqRunS(items, { bpm: LW_CLAP_BPM, silent: true }); if (!r) return; run.current = r; setPhase('count');
     const g = r.at[r.lead]; T.at(r, g - 0.05, () => setPhase('tap'));
     T.at(r, g + n * r.spb + 0.1, () => { const tol = Math.min(PL_TOL, r.spb * 0.22), mt = plMatch(notes.map(([s]) => g + s.b * r.spb), taps.current.filter(tp => tp > g - tol), tol), marks = {};
       notes.forEach(([s, j], k) => { marks[j] = mt.offs[k] === null ? '?' : '✓'; });
-      const out = { hits: mt.hits, total: notes.length, extra: mt.extra, marks, ok: mt.hits >= notes.length - 1 && mt.extra <= 1 }; setRes(out); setPhase('done'); if (onResult) onResult(out); }); };
+      const out = { hits: mt.hits, total: notes.length, extra: mt.extra, marks, ok: E.full ? mt.hits >= notes.length - 1 && mt.extra <= 1 : mt.hits === notes.length && mt.extra === 0 }; setRes(out); setPhase('done'); if (onResult && E.full) onResult(out); }); };
   const tap = React.useCallback(() => { const r = run.current; if (r && (phase === 'count' || phase === 'tap')) { taps.current.push(r.now()); const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime, SRH_HZ, 0.1, 0.16, 'triangle'); } }, [phase]);
   return (
     <div className="try-box" style={actBox} data-lw="clap">
       <div style={actTitle}>{t('Clap it back', '따라 치기')}</div>
       <div style={actNote}>{LANG === 'ko' ? <>짧은 리듬을 <b>두 번</b> 들어요(두 박 또는 세 박). 그다음 클릭에 맞춰 똑같이 쳐요. 음표는 친 다음에 보여요.</> : <>Hear a short passage <b>twice</b> (in two or in three). Then tap it back with the clicks. The notes show afterwards.</>}</div>
-      {!fixed && spChips(LW_CLAP.map((_, j) => [j, t('Passage ' + (j + 1), (j + 1) + '번')]), i, (j) => { reset(); setI(j); })}
-      {res ? rqStaffEl(items, { marks: res.marks, hearts: false }) : <div style={{textAlign:'center',fontSize:14,fontWeight:900,color:BK.muted,margin:'6px 0'}}>{t(top === 2 ? 'Two beats in a bar' : 'Three beats in a bar', top === 2 ? '한 마디에 두 박' : '한 마디에 세 박')} · {t(['Not heard yet', 'Heard once', 'Heard twice'][Math.min(heard, 2)], ['아직 안 들었어요', '한 번 들었어요', '두 번 들었어요'][Math.min(heard, 2)])}</div>}
+      {!fixed && spChips(LW_CLAP.map((_, j) => [j, t('Passage ' + (j + 1), (j + 1) + '번')]), i, (j) => { reset(); setI(j); E.set(E.rung === E.nb ? E.nb : 1, 0, E.rung !== E.nb); })}
+      {ecRow(E, (f) => { reset(); f(); })}
+      {res ? rqStaffEl(items, { marks: res.marks, hearts: false, ...ecWords(E) }) : E.see && !E.full ? rqStaffEl(items, { hearts: false, ...ecWords(E) }) : <div style={{textAlign:'center',fontSize:14,fontWeight:900,color:BK.muted,margin:'6px 0'}}>{t(top === 2 ? 'Two beats in a bar' : 'Three beats in a bar', top === 2 ? '한 마디에 두 박' : '한 마디에 세 박')} · {t(['Not heard yet', 'Heard once', 'Heard twice'][Math.min(heard, 2)], ['아직 안 들었어요', '한 번 들었어요', '두 번 들었어요'][Math.min(heard, 2)])}</div>}
       {lwMsg(phase === 'listen' ? t('Listen…', '들어요…') : phase === 'count' ? t('Get ready…', '준비…') : phase === 'tap' ? t('Tap it back!', '따라 쳐요!') : res ? t('On time: ' + res.hits + ' of ' + res.total + (res.extra ? ' · extra taps: ' + res.extra : '') + (res.ok ? ' ✓' : ''), '제때: ' + res.total + '개 중 ' + res.hits + '개' + (res.extra ? ' · 더 친 것: ' + res.extra : '') + (res.ok ? ' ✓' : '')) : '', res ? (res.ok ? BK.green : BK.coral) : undefined)}
       <PlPad on={phase === 'count' || phase === 'tap'} onTap={tap}/>
       {lwRow(<>
-        <button className="ghost-btn" style={lwBtn} onClick={listen}>{t('▶ Listen (twice)', '▶ 듣기 (두 번)')}</button>
+        <button className="ghost-btn" style={lwBtn} onClick={listen}>{E.full ? t('▶ Listen (twice)', '▶ 듣기 (두 번)') : t('▶ Listen', '▶ 듣기')}</button>
         <button className="ghost-btn" style={lwBtn} disabled={!heard} onClick={go}>{res ? t('▶ Again', '▶ 다시') : t('▶ Tap it back', '▶ 따라 치기')}</button>
+        {ecNext(E, res, (f) => { reset(); f(); })}
       </>)}
       {plHint()}
     </div>
@@ -36455,15 +36496,16 @@ function L2ClapPad({ onResult, fixed }) {
   const T = usePlTimers();
   const [i, setI] = useState(fixed != null ? fixed : 0), [phase, setPhase] = useState('ready'), [heard, setHeard] = useState(0), [res, setRes] = useState(null), [met, setMet] = useState(null);
   const run = useRef(null), taps = useRef([]);
-  const items = L2_CLAP[i], snd = srhSounds(items), notes = snd.map((s, j) => [s, j]).filter(([s]) => !s.rest), top = srhTop(items), n = srhBeats(items);
+  const E = useEcho(L2_CLAP[i], fixed == null), items = E.sub, snd = srhSounds(items), notes = snd.map((s, j) => [s, j]).filter(([s]) => !s.rest), top = srhTop(items), n = srhBeats(items);
   const reset = () => { T.clear(); stopClicks(); setPhase('ready'); setHeard(0); setRes(null); setMet(null); };
   const listen = () => { T.clear(); setRes(null); setMet(null); const r = rqRunS(items, { bpm: L2_CLAP_BPM }); if (!r) return; setPhase('listen');
+    if (!E.full) { T.at(r, r.at[r.lead] + n * r.spb + 0.2, () => { setPhase('ready'); setHeard(2); }); setHeard(1); return; }
     T.at(r, r.at[r.lead] + n * r.spb, () => { const r2 = rqRunS(items, { bpm: L2_CLAP_BPM }); if (!r2) return; T.at(r2, r2.at[r2.lead] + n * r2.spb + 0.2, () => { setPhase('ready'); setHeard(2); }); }); setHeard(1); };
   const go = () => { T.clear(); setRes(null); setMet(null); taps.current = []; const r = rqRunS(items, { bpm: L2_CLAP_BPM, silent: true }); if (!r) return; run.current = r; setPhase('count');
     const g = r.at[r.lead]; T.at(r, g - 0.05, () => setPhase('tap'));
     T.at(r, g + n * r.spb + 0.1, () => { const tol = Math.min(PL_TOL, r.spb * 0.22), mt = plMatch(notes.map(([s]) => g + s.b * r.spb), taps.current.filter(tp => tp > g - tol), tol), marks = {};
       notes.forEach(([s, j], k) => { marks[j] = mt.offs[k] === null ? '?' : '✓'; });
-      setRes({ hits: mt.hits, total: notes.length, extra: mt.extra, marks, ok: mt.hits >= notes.length - 1 && mt.extra <= 1 }); setPhase('done'); }); };
+      setRes({ hits: mt.hits, total: notes.length, extra: mt.extra, marks, ok: E.full ? mt.hits >= notes.length - 1 && mt.extra <= 1 : mt.hits === notes.length && mt.extra === 0 }); setPhase('done'); }); };
   const say = (m) => { if (!res || met) return; setMet(m); if (onResult) onResult({ ok: res.ok && m === top, clap: res.ok, metre: m === top }); };
   const tap = React.useCallback(() => { const r = run.current; if (r && (phase === 'count' || phase === 'tap')) { taps.current.push(r.now()); const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime, SRH_HZ, 0.1, 0.16, 'triangle'); } }, [phase]);
   return (
@@ -36471,15 +36513,17 @@ function L2ClapPad({ onResult, fixed }) {
       <div style={actTitle}>{t('Clap it back: two or three?', '따라 치고, 두 박? 세 박?')}</div>
       <div style={actNote}>{LANG === 'ko' ? <>리듬을 <b>두 번</b> 들어요. 그다음 클릭에 맞춰 똑같이 치고, <b>두 박인지 세 박인지</b> 말해요. 이번에는 <b>점4분음표와 8분음표</b>(길게, 짧게)도 나와요.</>
         : <>Hear the passage <b>twice</b>. Then tap it back with the clicks and say: <b>two or three</b> beats in a bar? Now with <b>the dotted crotchet and quaver</b> too (long, short).</>}</div>
-      {!fixed && spChips(L2_CLAP.map((_, j) => [j, t('Passage ' + (j + 1), (j + 1) + '번')]), i, (j) => { reset(); setI(j); })}
-      {met ? rqStaffEl(items, { marks: res.marks, hearts: false }) : <div style={{textAlign:'center',fontSize:14,fontWeight:900,color:BK.muted,margin:'6px 0'}}>{t(['Not heard yet', 'Heard once', 'Heard twice'][heard], ['아직 안 들었어요', '한 번 들었어요', '두 번 들었어요'][heard])}</div>}
-      {l2Msg(phase === 'listen' ? t('Listen…', '들어요…') : phase === 'count' ? t('Get ready…', '준비…') : phase === 'tap' ? t('Tap it back!', '따라 쳐요!') : res && !met ? t('On time: ' + res.hits + ' of ' + res.total + '. Two or three?', '제때: ' + res.total + '개 중 ' + res.hits + '개. 두 박? 세 박?')
+      {!fixed && spChips(L2_CLAP.map((_, j) => [j, t('Passage ' + (j + 1), (j + 1) + '번')]), i, (j) => { reset(); setI(j); E.set(E.rung === E.nb ? E.nb : 1, 0, E.rung !== E.nb); })}
+      {ecRow(E, (f) => { reset(); f(); })}
+      {met || (res && !E.full) ? rqStaffEl(items, { marks: res.marks, hearts: false, ...ecWords(E) }) : E.see && !E.full ? rqStaffEl(items, { hearts: false, ...ecWords(E) }) : <div style={{textAlign:'center',fontSize:14,fontWeight:900,color:BK.muted,margin:'6px 0'}}>{t(['Not heard yet', 'Heard once', 'Heard twice'][heard], ['아직 안 들었어요', '한 번 들었어요', '두 번 들었어요'][heard])}</div>}
+      {l2Msg(phase === 'listen' ? t('Listen…', '들어요…') : phase === 'count' ? t('Get ready…', '준비…') : phase === 'tap' ? t('Tap it back!', '따라 쳐요!') : res && !met ? t('On time: ' + res.hits + ' of ' + res.total + (E.full ? '. Two or three?' : res.ok ? ' ✓' : ''), '제때: ' + res.total + '개 중 ' + res.hits + '개' + (E.full ? '. 두 박? 세 박?' : res.ok ? ' ✓' : ''))
         : met ? t((res.ok ? 'Clapped back ✓ ' : 'Clap: nearly. ') + (met === top ? (top === 2 ? 'Two ✓' : 'Three ✓') : 'It was ' + (top === 2 ? 'two.' : 'three.')), (res.ok ? '따라 치기 ✓ ' : '따라 치기: 거의. ') + (met === top ? (top === 2 ? '두 박 ✓' : '세 박 ✓') : (top === 2 ? '두 박이었어요.' : '세 박이었어요.'))) : '', met ? (res.ok && met === top ? BK.green : BK.coral) : undefined)}
-      {res && !met && <div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:8,marginTop:8}}>{[[2, t('Two', '두 박')], [3, t('Three', '세 박')]].map(([m, lab]) => <button key={m} className="choice-btn" onClick={() => say(m)} style={{padding:'12px 4px',fontSize:16,fontWeight:900}}>{lab}</button>)}</div>}
+      {res && !met && E.full && <div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:8,marginTop:8}}>{[[2, t('Two', '두 박')], [3, t('Three', '세 박')]].map(([m, lab]) => <button key={m} className="choice-btn" onClick={() => say(m)} style={{padding:'12px 4px',fontSize:16,fontWeight:900}}>{lab}</button>)}</div>}
       <PlPad on={phase === 'count' || phase === 'tap'} onTap={tap}/>
       {l2Row(<>
-        <button className="ghost-btn" style={l2Btn} onClick={listen}>{t('▶ Listen (twice)', '▶ 듣기 (두 번)')}</button>
+        <button className="ghost-btn" style={l2Btn} onClick={listen}>{E.full ? t('▶ Listen (twice)', '▶ 듣기 (두 번)') : t('▶ Listen', '▶ 듣기')}</button>
         <button className="ghost-btn" style={l2Btn} disabled={!heard} onClick={go}>{res ? t('▶ Again', '▶ 다시') : t('▶ Tap it back', '▶ 따라 치기')}</button>
+        {(E.full ? met : res) && ecNext(E, res, (f) => { reset(); f(); })}
       </>)}
       {plHint()}
     </div>
@@ -36493,24 +36537,28 @@ function L2Pills({ ph, got = 0, lit = -1, show = false, u = 34 }) {
       <span style={{width:w,height:hh,borderRadius:hh / 2,boxSizing:'border-box',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:Math.round(u * 0.41),fontWeight:900,background:on ? BK.coral : done ? BK.ink : '#fff',border:'2px solid ' + (on ? BK.coral : BK.ink),color:on || done ? '#fff' : BK.ink}}>{done || show ? l2Let(k) : ''}</span>
       <span style={{fontSize:Math.round(u * 0.33),fontWeight:900,color:BK.muted}}>{lwBeatWord(b)}</span></span>; })}</div>;
 }
+// Build BG: where a tune splits in two: the first note that starts at or after half its beats
+const l2Half = (ph) => { const tot = ph.reduce((a, [, b]) => a + b, 0); let acc = 0; for (let j = 0; j < ph.length; j++) { if (acc >= tot / 2 - 1e-6) return j; acc += ph[j][1]; } return Math.ceil(ph.length / 2); };
 function L2SingPad({ onResult, fixed }) {
   const T = useSpTimers();
-  const [i, setI] = useState(fixed != null ? fixed : 0), [lit, setLit] = useState(-1), [got, setGot] = useState(0), [miss, setMiss] = useState(0), [heard, setHeard] = useState(false), [wrong, setWrong] = useState(null);
-  const ph = L2_PH[i], ks = ph.map(([k]) => k), done = got >= ph.length;
-  const listen = () => { T.clear(); setHeard(true); const len = lwPlay(ph, 80, T, setLit); const spb = 60 / 80; T.at((0.15 + (len + 1) * spb) * 1000, () => lwPlay(ph, 80, T, setLit)); };
-  const reset = (j) => { T.clear(); setI(j); setGot(0); setMiss(0); setHeard(false); setWrong(null); setLit(-1); };
-  const tap = (k) => { playKey(k, 0.6); if (done || !heard) return; if (k === ks[got]) { const g = got + 1; setGot(g); setWrong(null); if (g >= ks.length && onResult) onResult({ ok: miss === 0, miss }); } else { setMiss(m => m + 1); setWrong(k); } };
+  const [i, setI] = useState(fixed != null ? fixed : 0), [lit, setLit] = useState(-1), [got, setGot] = useState(0), [miss, setMiss] = useState(0), [heard, setHeard] = useState(false), [wrong, setWrong] = useState(null), [half, setHalf] = useState(fixed != null ? 2 : 0);
+  const PH = L2_PH[i], cut = l2Half(PH), ph = half === 0 ? PH.slice(0, cut) : half === 1 ? PH.slice(cut) : PH, ks = ph.map(([k]) => k), done = got >= ph.length;
+  const listen = () => { T.clear(); setHeard(true); const len = lwPlay(ph, 80, T, setLit); const spb = 60 / 80; if (half === 2) T.at((0.15 + (len + 1) * spb) * 1000, () => lwPlay(ph, 80, T, setLit)); };
+  const reset = (j, h) => { T.clear(); setI(j); setGot(0); setMiss(0); setHeard(false); setWrong(null); setLit(-1); if (h != null) setHalf(h); };
+  const tap = (k) => { playKey(k, 0.6); if (done || !heard) return; if (k === ks[got]) { const g = got + 1; setGot(g); setWrong(null); if (g >= ks.length && onResult && half === 2) onResult({ ok: miss === 0, miss }); } else { setMiss(m => m + 1); setWrong(k); } };
   const kl = {}; if (got > 0 && !done) kl[ks[got - 1]] = 'cor'; if (wrong != null) kl[wrong] = 'bad';
   return (
     <div className="try-box" style={actBox} data-l2="sing">
       <div style={actTitle}>{t('Sing a longer tune', '더 긴 선율 따라 부르기')}</div>
       <div style={actNote}>{LANG === 'ko' ? <>이번 선율은 더 길고, <b>건너뛰는 음</b>도 있어요. 두 번 듣고, <b>음과 리듬을 둘 다</b> "라"로 불러요. 그다음 건반에서 쳐요.</>
         : <>This tune is longer, with <b>skips</b> as well as steps. Hear it twice, sing it back on "la" with <b>the notes and the rhythm</b>, then play it.</>}</div>
-      {!fixed && spChips(L2_PH.map((_, j) => [j, String(j + 1)]), i, reset)}
+      {!fixed && spChips(L2_PH.map((_, j) => [j, String(j + 1)]), i, (j) => reset(j, 0))}
+      {fixed == null && spChips([[0, t('First half', '앞 절반')], [1, t('Second half', '뒤 절반')], [2, t('The whole tune', '선율 전체')]], half, (h) => reset(i, h))}
       <L2Pills ph={ph} got={got} lit={lit} show={done}/>
       <div style={{margin:'8px 0 4px'}}><SpKb lo={0} hi={12} W={34} H={86} lit={kl} names={{ 0: 'C' }} onTap={tap} label={t('Play the tune', '선율 치기')}/></div>
-      {l2Msg(!heard ? t('Tap ▶ Listen: it plays twice.', '▶ 듣기를 눌러요: 두 번 나와요.') : done ? t('Sung and played ✓' + (miss ? '' : ' First time!'), '부르고 쳤어요 ✓' + (miss ? '' : ' 한 번에!')) : wrong != null ? t('Not that one: sing it again, then try.', '그 건반이 아니에요: 다시 불러 보고 찾아요.') : t('Sing it, then play it, note by note: ' + got + ' of ' + ks.length, '부르고, 한 음씩 쳐요: ' + ks.length + '개 중 ' + got + '개'), done ? BK.green : wrong != null ? BK.coral : undefined)}
-      {l2Row(<button className="ghost-btn" style={l2Btn} onClick={listen}>{t('▶ Listen (twice)', '▶ 듣기 (두 번)')}</button>)}
+      {l2Msg(!heard ? (half < 2 ? t('Tap ▶ Listen.', '▶ 듣기를 눌러요.') : t('Tap ▶ Listen: it plays twice.', '▶ 듣기를 눌러요: 두 번 나와요.')) : done ? t('Sung and played ✓' + (miss ? '' : ' First time!'), '부르고 쳤어요 ✓' + (miss ? '' : ' 한 번에!')) : wrong != null ? t('Not that one: sing it again, then try.', '그 건반이 아니에요: 다시 불러 보고 찾아요.') : t('Sing it, then play it, note by note: ' + got + ' of ' + ks.length, '부르고, 한 음씩 쳐요: ' + ks.length + '개 중 ' + got + '개'), done ? BK.green : wrong != null ? BK.coral : undefined)}
+      {l2Row(<><button className="ghost-btn" style={l2Btn} onClick={listen}>{half === 2 ? t('▶ Listen (twice)', '▶ 듣기 (두 번)') : t('▶ Listen', '▶ 듣기')}</button>
+        {done && half < 2 && <button className="ghost-btn" style={l2Btn} onClick={() => reset(i, half + 1)}>{half === 0 ? t('▶ Now the second half', '▶ 이제 뒤 절반') : t('▶ Now the whole tune', '▶ 이제 선율 전체')}</button>}</>)}
     </div>
   );
 }
@@ -36813,15 +36861,16 @@ function L4ClapPad({ onResult, fixed, set = L4_CLAP, bpm = L4_CLAP_BPM, note = n
   const T = usePlTimers();
   const [i, setI] = useState(fixed != null ? fixed : 0), [phase, setPhase] = useState('ready'), [heard, setHeard] = useState(0), [res, setRes] = useState(null), [met, setMet] = useState(null);
   const run = useRef(null), taps = useRef([]);
-  const P = set[i], items = P.items, snd = srhSounds(items), notes = snd.map((s, j) => [s, j]).filter(([s]) => !s.rest), top = P.m, n = srhBeats(items);
+  const P = set[i], E = useEcho(P.items, fixed == null), items = E.sub, snd = srhSounds(items), notes = snd.map((s, j) => [s, j]).filter(([s]) => !s.rest), top = P.m, n = srhBeats(items);
   const reset = () => { T.clear(); stopClicks(); setPhase('ready'); setHeard(0); setRes(null); setMet(null); };
   const listen = () => { T.clear(); setRes(null); setMet(null); const r = rqRunS(items, { bpm }); if (!r) return; setPhase('listen');
+    if (!E.full) { T.at(r, r.at[r.lead] + n * r.spb + 0.2, () => { setPhase('ready'); setHeard(2); }); setHeard(1); return; }
     T.at(r, r.at[r.lead] + n * r.spb, () => { const r2 = rqRunS(items, { bpm }); if (!r2) return; T.at(r2, r2.at[r2.lead] + n * r2.spb + 0.2, () => { setPhase('ready'); setHeard(2); }); }); setHeard(1); };
   const go = () => { T.clear(); setRes(null); setMet(null); taps.current = []; const r = rqRunS(items, { bpm, silent: true }); if (!r) return; run.current = r; setPhase('count');
     const g = r.at[r.lead]; T.at(r, g - 0.05, () => setPhase('tap'));
     T.at(r, g + n * r.spb + 0.1, () => { const tol = Math.min(PL_TOL, r.spb * 0.18), mt = plMatch(notes.map(([s]) => g + s.b * r.spb), taps.current.filter(tp => tp > g - tol), tol), marks = {};
       notes.forEach(([s, j], k) => { marks[j] = mt.offs[k] === null ? '?' : '✓'; });
-      setRes({ hits: mt.hits, total: notes.length, extra: mt.extra, marks, ok: mt.hits >= notes.length - 1 && mt.extra <= 1 }); setPhase('done'); }); };
+      setRes({ hits: mt.hits, total: notes.length, extra: mt.extra, marks, ok: E.full ? mt.hits >= notes.length - 1 && mt.extra <= 1 : mt.hits === notes.length && mt.extra === 0 }); setPhase('done'); }); };
   const say = (m) => { if (!res || met) return; setMet(m); if (onResult) onResult({ ok: res.ok && m === top, clap: res.ok, metre: m === top }); };
   const tap = React.useCallback(() => { const r = run.current; if (r && (phase === 'count' || phase === 'tap')) { taps.current.push(r.now()); const ctx = getAudio(); if (ctx) blip(ctx, ctx.currentTime, SRH_HZ, 0.1, 0.16, 'triangle'); } }, [phase]);
   return (
@@ -36829,15 +36878,17 @@ function L4ClapPad({ onResult, fixed, set = L4_CLAP, bpm = L4_CLAP_BPM, note = n
       <div style={actTitle}>{t('Clap it back: two or three?', '따라 치고, 두 박? 세 박?')}</div>
       <div style={actNote}>{note || (LANG === 'ko' ? <>리듬을 <b>두 번</b> 들어요. 클릭에 맞춰 똑같이 치고, <b>두 박인지 세 박인지</b> 말해요. 이번에는 <b>점8분음표와 16분음표</b>(길게-짧게, 콩-닥)와 <b>8분쉼표</b>도 나와요.</>
         : <>Hear the passage <b>twice</b>. Tap it back with the clicks, then say <b>two or three</b>. Now with <b>the dotted quaver and semiquaver</b> (long-short, snappy) and <b>a quaver rest</b>.</>)}</div>
-      {!fixed && spChips(set.map((_, j) => [j, t('Passage ' + (j + 1), (j + 1) + '번')]), i, (j) => { reset(); setI(j); })}
-      {met ? rqStaffEl(items, { marks: res.marks, hearts: false }) : <div style={{textAlign:'center',fontSize:14,fontWeight:900,color:BK.muted,margin:'6px 0'}}>{t(['Not heard yet', 'Heard once', 'Heard twice'][heard], ['아직 안 들었어요', '한 번 들었어요', '두 번 들었어요'][heard])}</div>}
-      {lwMsg(phase === 'listen' ? t('Listen…', '들어요…') : phase === 'count' ? t('Get ready…', '준비…') : phase === 'tap' ? t('Tap it back!', '따라 쳐요!') : res && !met ? t('On time: ' + res.hits + ' of ' + res.total + '. Two or three?', '제때: ' + res.total + '개 중 ' + res.hits + '개. 두 박? 세 박?')
+      {!fixed && spChips(set.map((_, j) => [j, t('Passage ' + (j + 1), (j + 1) + '번')]), i, (j) => { reset(); setI(j); E.set(E.rung === E.nb ? E.nb : 1, 0, E.rung !== E.nb); })}
+      {ecRow(E, (f) => { reset(); f(); })}
+      {met || (res && !E.full) ? rqStaffEl(items, { marks: res.marks, hearts: false, ...ecWords(E) }) : E.see && !E.full ? rqStaffEl(items, { hearts: false, ...ecWords(E) }) : <div style={{textAlign:'center',fontSize:14,fontWeight:900,color:BK.muted,margin:'6px 0'}}>{t(['Not heard yet', 'Heard once', 'Heard twice'][heard], ['아직 안 들었어요', '한 번 들었어요', '두 번 들었어요'][heard])}</div>}
+      {lwMsg(phase === 'listen' ? t('Listen…', '들어요…') : phase === 'count' ? t('Get ready…', '준비…') : phase === 'tap' ? t('Tap it back!', '따라 쳐요!') : res && !met ? t('On time: ' + res.hits + ' of ' + res.total + (E.full ? '. Two or three?' : res.ok ? ' ✓' : ''), '제때: ' + res.total + '개 중 ' + res.hits + '개' + (E.full ? '. 두 박? 세 박?' : res.ok ? ' ✓' : ''))
         : met ? t((res.ok ? 'Clapped back ✓ ' : 'Clap: nearly. ') + (met === top ? (top === 2 ? 'Two ✓' : 'Three ✓') : 'It was ' + (top === 2 ? 'two.' : 'three.')), (res.ok ? '따라 치기 ✓ ' : '따라 치기: 거의. ') + (met === top ? (top === 2 ? '두 박 ✓' : '세 박 ✓') : (top === 2 ? '두 박이었어요.' : '세 박이었어요.'))) : '', met ? (res.ok && met === top ? BK.green : BK.coral) : undefined)}
-      {res && !met && <div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:8,marginTop:8}}>{[[2, t('Two', '두 박')], [3, t('Three', '세 박')]].map(([m, lab]) => <button key={m} className="choice-btn" onClick={() => say(m)} style={{padding:'12px 4px',fontSize:16,fontWeight:900}}>{lab}</button>)}</div>}
+      {res && !met && E.full && <div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:8,marginTop:8}}>{[[2, t('Two', '두 박')], [3, t('Three', '세 박')]].map(([m, lab]) => <button key={m} className="choice-btn" onClick={() => say(m)} style={{padding:'12px 4px',fontSize:16,fontWeight:900}}>{lab}</button>)}</div>}
       <PlPad on={phase === 'count' || phase === 'tap'} onTap={tap}/>
       {lwRow(<>
-        <button className="ghost-btn" style={lwBtn} onClick={listen}>{t('▶ Listen (twice)', '▶ 듣기 (두 번)')}</button>
+        <button className="ghost-btn" style={lwBtn} onClick={listen}>{E.full ? t('▶ Listen (twice)', '▶ 듣기 (두 번)') : t('▶ Listen', '▶ 듣기')}</button>
         <button className="ghost-btn" style={lwBtn} disabled={!heard} onClick={go}>{res ? t('▶ Again', '▶ 다시') : t('▶ Tap it back', '▶ 따라 치기')}</button>
+        {(E.full ? met : res) && ecNext(E, res, (f) => { reset(); f(); })}
       </>)}
       {plHint()}
     </div>
@@ -40086,7 +40137,7 @@ const R2_Q = {
     { prompt: ['In 3/2, how many minim beats are in a bar?', '3/2에서 한 마디에 2분음표 박이 몇 개?'], opts: [['2', '2'], ['3', '3'], ['4', '4']], ans: '3', yes: ['Three: the top number. The bottom 2 means minims.', '셋: 위의 숫자. 아래의 2는 2분음표.'], no: ['Top number 3, bottom number 2 (minims): three minim beats.', '위의 3, 아래의 2(2분음표): 2분음표 세 박.'] },
     { prompt: ['Cut common time (C with a line) is the same as…', '세로선이 그어진 C는 어느 박자와 같을까요?'], opts: [['44', '4/4'], ['22', '2/2'], ['32', '3/2']], ans: '22', yes: ['2/2: two minim beats in a bar.', '2/2: 한 마디에 2분음표 두 박.'], no: ['The line cuts common time in half: 2/2, two minim beats.', '세로선이 4/4를 반으로 나눠요: 2/2, 2분음표 두 박.'] }][v]; },
   e98: () => { const v = Math.floor(Math.random() * 2); return [
-    { prompt: ['9/8 is…', '9/8은…'], opts: [['ct', t('compound triple', '겹박자 세 박')], ['cd', t('compound duple', '겹박자 두 박')], ['st', t('simple triple', '홑박자 세 박')]], ans: 'ct', yes: ['Compound triple: three dotted-crotchet beats, each of three quavers.', '겹세박자: 점4분음표 세 박, 한 박에 8분음표 셋.'], no: ['Nine quavers in threes: three dotted-crotchet beats, compound triple.', '8분음표 아홉을 셋씩: 점4분음표 세 박, 겹세박자.'] },
+    { prompt: ['9/8 is…', '9/8은…'], opts: [['ct', t('compound triple', '겹박자 세 박')], ['cd', t('compound duple', '겹박자 두 박')], ['st', t('simple triple', '홑박자 세 박')]], ans: 'ct', yes: ['Compound triple: nine quaver beats in three groups of three.', '겹세박자: 8분음표 9박을 셋씩 세 묶음.'], no: ['Nine quaver beats in threes: three groups, compound triple.', '8분음표 9박을 셋씩: 세 묶음, 겹세박자.'] },
     { prompt: ['3/8 has how many quaver beats in a bar?', '3/8은 한 마디에 8분음표 박이 몇 개?'], opts: [['2', '2'], ['3', '3'], ['6', '6']], ans: '3', yes: ['Three quaver beats: simple triple, counted 1 2 3.', '8분음표 세 박: 홑세박자, 1 2 3.'], no: ['Top 3, bottom 8 (quavers): three quaver beats.', '위의 3, 아래의 8(8분음표): 8분음표 세 박.'] }][v]; },
 };
 // ── the pictures on paper ──
@@ -40101,8 +40152,8 @@ function r2LbPages(scr = false) {
   const ch = 'rhythm-23', rh = bkChapterNo('rhythm'), e8 = bkChapterNo('six-eight');
   const pen = (x) => <PenArt shapes={x.shapes} vb={x.vb} style={{width:90}}/>;
   const checks5 = [[r2PicSemi(), t('I count and clap semiquavers, alone and with a quaver: 1 e + a', '16분음표를 혼자서, 그리고 8분음표와 함께 세고 쳐요: 1 e + a')], [r2PicDot(), t('I clap the dotted quaver and semiquaver: long, short', '점8분음표와 16분음표를 쳐요: 길게, 짧게')],
-    [r2PicTrip(), t('I fit three into a beat, and two into a dotted beat', '한 박에 셋, 점 박에 둘을 넣어요')], [r2PicMin(), t('I count minim beats in 2/2, cut common time and 3/2', '2/2, 세로선 C, 3/2에서 2분음표 박을 세요')], [r2Pic98(), t('I count 3/8 and 9/8, and say which is simple and which compound', '3/8과 9/8을 세고, 홑박자인지 겹박자인지 말해요')]];
-  const toc = [[t('Semiquavers', '16분음표'), 2], [t('Dotted quaver and semiquaver', '점8분음표와 16분음표'), 3], [t('Three in a beat, two in a dotted beat', '한 박에 셋, 점 박에 둘'), 4], [t('The minim beat', '2분음표 박'), 5], [t('3/8 and 9/8', '3/8과 9/8'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]];
+    [r2PicTrip(), t('I fit three where two go, and two where three go', '둘 자리에 셋, 셋 자리에 둘을 넣어요')], [r2PicMin(), t('I count minim beats in 2/2, cut common time and 3/2', '2/2, 세로선 C, 3/2에서 2분음표 박을 세요')], [r2Pic98(), t('I count 3/8 and 9/8, and say which is simple and which compound', '3/8과 9/8을 세고, 홑박자인지 겹박자인지 말해요')]];
+  const toc = [[t('Semiquavers', '16분음표'), 2], [t('Dotted quaver and semiquaver', '점8분음표와 16분음표'), 3], [t('Triplets and duplets', '셋잇단음표와 2잇단음표'), 4], [t('The minim beat', '2분음표 박'), 5], [t('3/8 and 9/8', '3/8과 9/8'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]];
   const still = (keys) => <LbPic h={150}><div style={{display:'flex',flexDirection:'column',gap:12,width:'100%',maxWidth:600,margin:'0 auto'}}>{keys.map(k => <div key={k}>{r2El(k)}</div>)}</div></LbPic>;
   const pg = (no, step, title, keys, sayEn, sayKo, teach, pianoEn, pianoKo, remember, live, lvl) => <LbPage key={no} no={no} chId={ch} kicker={t('Step ' + step, step + '단계')} title={title} teacher={teach} qr={bkLink('drill=' + ch + '&tab=drill&level=' + lvl)}>
     <LbLive still={still(keys)} live={live}/>
@@ -40125,7 +40176,7 @@ function r2LbPages(scr = false) {
         </div></LbOnly>
         <div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
-          {[t('count and clap semiquavers and the dotted quaver', '16분음표와 점8분음표를 세고 칠 수 있어요'), t('fit three into a beat and two into a dotted beat', '한 박에 셋, 점 박에 둘을 넣을 수 있어요'), t('count in 2/2, 3/2, 3/8 and 9/8', '2/2, 3/2, 3/8, 9/8로 셀 수 있어요'), t('say whether a time signature is simple or compound', '박자표가 홑박자인지 겹박자인지 말할 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x}</span></div>)}
+          {[t('count and clap semiquavers and the dotted quaver', '16분음표와 점8분음표를 세고 칠 수 있어요'), t('fit three where two go, and two where three go', '둘 자리에 셋, 셋 자리에 둘을 넣을 수 있어요'), t('count in 2/2, 3/2, 3/8 and 9/8', '2/2, 3/2, 3/8, 9/8로 셀 수 있어요'), t('say whether a time signature is simple or compound', '박자표가 홑박자인지 겹박자인지 말할 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x}</span></div>)}
         </div>
       </div>
       <LbOnly print><LbDrillStrip id={ch}/></LbOnly>
@@ -40138,18 +40189,18 @@ function r2LbPages(scr = false) {
       <>{t('Grade 3: the dotted quaver and semiquaver, and in compound time the dotted quaver, semiquaver and quaver. The short note is often clapped too early; count 1 e + a under it.', '3급: 점8분음표와 16분음표, 그리고 겹박자에서 점8분음표, 16분음표, 8분음표. 짧은 음을 너무 일찍 치기 쉬워요: 아래에서 1 e + a를 세요.')}</>,
       [<>Count 1 e + a and clap only on 1 and a.</>, <>Clap line 1: long-short, long-short, then two crotchets.</>, <>Line 2 in 3/4: listen first, then tap it back.</>], [<>1 e + a를 세며 1과 a에만 쳐요.</>, <>1번 줄: 길게-짧게, 길게-짧게, 그다음 4분음표 둘.</>, <>2번 줄(3/4): 먼저 듣고, 따라 쳐요.</>],
       t('Long, short: the short one on a.', '길게, 짧게: 짧은 음은 a에.'), <R2Pad step="dot" keys={['dotA', 'dotB']} title={t('Dotted quaver and semiquaver', '점8분음표와 16분음표')} note={t('The dot makes the quaver three semiquavers long; the semiquaver fills the last quarter of the beat.', '점이 8분음표를 16분음표 셋 길이로 만들어요. 16분음표가 박의 마지막 4분의 1을 채워요.')} ask={R2_Q.dot}/>, 2),
-    pg(4, 3, t('Three in a beat, two in a dotted beat', '한 박에 셋, 점 박에 둘'), ['tripA', 'duA'], <>A <b>triplet</b> puts three quavers where two go: <b>1 trip let</b>. In 6/8 a <b>duplet</b> puts two where three go.</>, <><b>셋잇단음표</b>는 둘 자리에 셋: <b>1 trip let</b>. 6/8에서 <b>2잇단음표</b>는 셋 자리에 둘.</>,
+    pg(4, 3, t('Triplets and duplets', '셋잇단음표와 2잇단음표'), ['tripA', 'duA'], <>A <b>triplet</b> puts three quavers where two go: <b>1 trip let</b>. In 6/8 a <b>duplet</b> puts two where three go.</>, <><b>셋잇단음표</b>는 둘 자리에 셋: <b>1 trip let</b>. 6/8에서 <b>2잇단음표</b>는 셋 자리에 둘.</>,
       <>{t('Grade 2: triplet quavers in simple time. Grade 3: the duplet in compound time. Keep the beat steady while the notes inside it change.', '2급: 홑박자의 셋잇단 8분음표. 3급: 겹박자의 2잇단음표. 박 안의 음이 바뀌어도 박은 고르게.')}</>,
       [<>Walk the beat; say 1 trip let on each step.</>, <>Clap line 1: triplets, then crotchets, then quavers.</>, <>Line 2 in 6/8: two even notes across three quavers.</>], [<>박을 걸으며 걸음마다 1 trip let.</>, <>1번 줄: 셋잇단음표, 4분음표, 8분음표.</>, <>2번 줄(6/8): 8분음표 셋 길이에 고른 음 둘.</>],
-      t('Three for two, two for three.', '둘 자리에 셋, 셋 자리에 둘.'), <R2Pad step="trip" keys={['tripA', 'duA']} title={t('Three in a beat, two in a dotted beat', '한 박에 셋, 점 박에 둘')} note={t('The small number over the beam says how many fit in: 3 where two would go, 2 where three would go.', '빔 위의 작은 숫자가 몇 개가 들어가는지 말해요: 둘 자리에 3, 셋 자리에 2.')} ask={R2_Q.trip}/>, 3),
-    pg(5, 4, t('The minim beat', '2분음표 박'), ['minA', 'minB'], <>When the bottom number is <b>2</b>, the <b>minim</b> is the beat: <b>2/2</b> (also written as a C with a line), <b>3/2</b>.</>, <>아래 숫자가 <b>2</b>이면 <b>2분음표</b>가 한 박: <b>2/2</b>(세로선 C로도 써요), <b>3/2</b>.</>,
+      t('Three for two, two for three.', '둘 자리에 셋, 셋 자리에 둘.'), <R2Pad step="trip" keys={['tripA', 'duA']} title={t('Triplets and duplets', '셋잇단음표와 2잇단음표')} note={t('The small number over the beam says how many fit in: 3 where two would go, 2 where three would go.', '빔 위의 작은 숫자가 몇 개가 들어가는지 말해요: 둘 자리에 3, 셋 자리에 2.')} ask={R2_Q.trip}/>, 3),
+    pg(5, 4, t('The minim beat', '2분음표 박'), ['minA', 'minB'], <>When the bottom number is <b>2</b>, the <b>minim</b> is one beat, so every note counts <b>half</b>: a crotchet is half a beat. <b>2/2</b> (also written as a C with a line), <b>3/2</b>.</>, <>아래 숫자가 <b>2</b>이면 <b>2분음표</b>가 1박이라서 모든 음표가 <b>반</b>: 4분음표는 반 박. <b>2/2</b>(세로선 C로도 써요), <b>3/2</b>.</>,
       <>{t('Grade 3: 3/2, 2/2 and cut common time. The same notes as 4/4 or 3/4 look, but the beat is the minim: crotchets are half a beat.', '3급: 3/2, 2/2, 세로선 C. 4/4나 3/4와 같은 음표처럼 보여도 박은 2분음표: 4분음표는 반 박.')}</>,
       [<>Count 1 + 2 + with a minim on each number.</>, <>Clap line 1 in 2/2, then line 2 in 3/2.</>, <>Find a piece in cut common time and count it in two.</>], [<>숫자마다 2분음표, 1 + 2 + 로 세요.</>, <>1번 줄(2/2), 그다음 2번 줄(3/2)을 쳐요.</>, <>세로선 C로 된 곡을 찾아 둘로 세어 봐요.</>],
-      t('Bottom number 2: the minim is the beat.', '아래 숫자 2: 2분음표가 한 박.'), <R2Pad step="minim" keys={['minA', 'minB', 'minC']} title={t('The minim beat', '2분음표 박')} note={t('2/2, cut common time and 3/2: a click on every minim.', '2/2, 세로선 C, 3/2: 2분음표마다 클릭.')} ask={R2_Q.minim}/>, 4),
-    pg(6, 5, t('3/8 and 9/8', '3/8과 9/8'), ['e38', 'e98'], <><b>3/8</b>: three quaver beats, simple triple. <b>9/8</b>: nine quavers in threes, three dotted-crotchet beats: <b>compound triple</b>.</>, <><b>3/8</b>: 8분음표 세 박, 홑세박자. <b>9/8</b>: 8분음표 아홉을 셋씩, 점4분음표 세 박: <b>겹세박자</b>.</>,
+      t('Bottom number 2: the minim is one beat. Everything halves.', '아래 숫자 2: 2분음표가 1박. 모두 절반.'), <><BeatDoubler bots={[4, 2]} start={2}/><div style={{height:12}}/><R2Pad step="minim" keys={['minA', 'minB', 'minC']} title={t('The minim beat', '2분음표 박')} note={t('2/2, cut common time and 3/2: a click on every minim.', '2/2, 세로선 C, 3/2: 2분음표마다 클릭.')} ask={R2_Q.minim}/></>, 4),
+    pg(6, 5, t('3/8 and 9/8', '3/8과 9/8'), ['e38', 'e98'], <><b>3/8</b>: three quaver beats, simple triple. <b>9/8</b>: nine quaver beats in three groups of three: <b>compound triple</b>.</>, <><b>3/8</b>: 8분음표 세 박, 홑세박자. <b>9/8</b>: 8분음표 9박을 셋씩 세 묶음: <b>겹세박자</b>.</>,
       <>{t('Grade 3: 3/8 and 9/8, and compound triple time in general knowledge. Bottom number 8: quavers. Top 3: simple, each quaver a beat. Top 6 or 9: compound, the quavers in threes.', '3급: 3/8과 9/8, 일반 지식의 겹세박자. 아래 숫자 8: 8분음표. 위가 3: 홑박자, 8분음표마다 한 박. 위가 6이나 9: 겹박자, 8분음표를 셋씩.')}</>,
-      [<>Count 1 2 3 in 3/8, one quaver to each number.</>, <>9/8: count 1 to 9, leaning on 1, 4 and 7.</>, <>Clap line 2, feeling three big beats.</>], [<>3/8: 숫자마다 8분음표 하나, 1 2 3.</>, <>9/8: 1부터 9까지, 1, 4, 7에 힘을 줘요.</>, <>2번 줄을 큰 박 셋으로 느끼며 쳐요.</>],
-      t('9/8: three big beats of three.', '9/8: 셋씩 묶인 큰 박 셋.'), <R2Pad step="e98" keys={['e38', 'e98']} title={t('3/8 and 9/8', '3/8과 9/8')} note={t('Count every quaver. In 9/8 the strong ones are 1, 4 and 7.', '8분음표마다 세요. 9/8에서는 1, 4, 7이 세요.')} ask={R2_Q.e98}/>, 5),
+      [<>Count 1 2 3 in 3/8, one quaver to each number.</>, <>9/8: count 1 to 9, leaning on 1, 4 and 7.</>, <>Clap line 2, leaning on 1, 4 and 7.</>], [<>3/8: 숫자마다 8분음표 하나, 1 2 3.</>, <>9/8: 1부터 9까지, 1, 4, 7에 힘을 줘요.</>, <>2번 줄을 1, 4, 7에 힘을 주며 쳐요.</>],
+      t('9/8: nine beats, in threes.', '9/8: 9박, 셋씩.'), <R2Pad step="e98" keys={['e38', 'e98']} title={t('3/8 and 9/8', '3/8과 9/8')} note={t('Count every quaver. In 9/8 the strong ones are 1, 4 and 7.', '8분음표마다 세요. 9/8에서는 1, 4, 7이 세요.')} ask={R2_Q.e98}/>, 5),
     <LbPage key="7" no={7} chId={ch} kicker={t('Check-up', '점검')} title={t('My five checks', '나의 다섯 가지 확인')}
       teacher={<>{t('Clap and count each one to you, then write a bar of it.', '하나씩 손뼉과 셈으로 들려주고, 그다음 한 마디씩 써 봐요.')}</>}>
       <LbSay>{t('Tick each one: not yet, nearly, or got it!', '하나씩 표시해요: 아직, 거의, 됐어요!')}</LbSay>
@@ -40214,11 +40265,11 @@ function R2Teacher() {
     <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Theory of Music Grades 2 and 3, Time and Rhythm. Each line as the app plays it, with its counts. The child counts aloud first, then claps.</div>
     <TcBlock page={2} title="Semiquavers" answers={<>{lines(['semiA', 'semiB', 'semiC'])}{tcAns('PLAY', ['4', '2', '3'], 3)}</>} watch="Semiquavers rushed into the next beat. Say 1 e + a steadily before clapping." say="“Four to a beat: 1 e + a.”"/>
     <TcBlock page={3} title="Dotted quaver and semiquaver" answers={<>{lines(['dotA', 'dotB'])}{tcAns('PLAY', ['a', 'one beat'], 3)}</>} watch="The pair clapped as two even quavers. The short note comes late, on a." say="“Long, short: the short one on a.”"/>
-    <TcBlock page={4} title="Three in a beat, two in a dotted beat" answers={<>{lines(['tripA', 'duA'])}{tcAns('PLAY', ['3', '2'], 3)}</>} watch="Triplets that turn into a quaver and two semiquavers; duplets that slip back into three." say="“Three for two, two for three.”"/>
+    <TcBlock page={4} title="Triplets and duplets" answers={<>{lines(['tripA', 'duA'])}{tcAns('PLAY', ['3', '2'], 3)}</>} watch="Triplets that turn into a quaver and two semiquavers; duplets that slip back into three." say="“Three for two, two for three.”"/>
   </>);
   P(<>
     <TcBlock page={5} title="The minim beat" answers={<>{lines(['minA', 'minB', 'minC'])}{tcAns('PLAY', ['3', '2', '2'], 3)}</>} watch="Counting crotchets in 2/2. The click falls on every minim." say="“Bottom number 2: the minim is the beat.”"/>
-    <TcBlock page={6} title="3/8 and 9/8" answers={<>{lines(['e38', 'e98'])}{tcAns('PLAY', ['S', 'C', 'C', 'S'], 3)}</>} watch="9/8 counted as three bars of 3/8 with equal weight. Lean on 1, 4 and 7." say="“9/8: three big beats of three.”"/>
+    <TcBlock page={6} title="3/8 and 9/8" answers={<>{lines(['e38', 'e98'])}{tcAns('PLAY', ['S', 'C', 'C', 'S'], 3)}</>} watch="9/8 counted as three bars of 3/8 with equal weight. Lean on 1, 4 and 7." say="“9/8: nine beats, in threes.”"/>
     <TcBlock page={7} title="The check-up on paper (the Workbook's last page)" answers={<><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'4px 14px',marginBottom:4}}>{['chkA', 'chkB'].map(k => <div key={k} style={{maxWidth:300}}>{r2El(k, { counts: 'ans', hearts: false })}</div>)}</div>{tcAns('B', ['4', '3', '3', '2'], 5)}{tcAns('C', ['3', '2', '3', '3 (dotted crotchets)'], 9)}{tcAns('D', ['C', 'S', 'C', 'S'], 13)}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Part A: one mark for each bar counted right (4 marks). Parts B to D: one mark each. Score each part on its own (4 marks each, pass 3+). Not passed? Go back: A p.2 and p.3 · B p.2 to p.4 · C p.5 and p.6 · D p.6. Then clap and count each line to you. Transposition (Grades 2 and 3, a melody of up to eight bars into another key of the grade) is in the Transposing lesson on the Home.</div></>}/>
   </>);
@@ -40293,7 +40344,7 @@ function R4BarPad({ fixed, onResult }) {
 function R4TsPad() {
   const [q, setQ] = useState(null), [pickd, setPick] = useState(null);
   return (<div>
-    <R2Pad step="ts4" keys={['e64', 'e128']} title={r4StepT('ts')} note={t('6/4: two dotted-minim beats, each of three crotchets: compound duple. 12/8: four dotted-crotchet beats, each of three quavers: compound quadruple.', '6/4: 점2분음표 두 박, 한 박에 4분음표 셋: 겹두박자. 12/8: 점4분음표 네 박, 한 박에 8분음표 셋: 겹네박자.')}/>
+    <R2Pad step="ts4" keys={['e64', 'e128']} title={r4StepT('ts')} note={t('6/4: six crotchet beats in two groups of three: compound duple. 12/8: twelve quaver beats in four groups of three: compound quadruple.', '6/4: 4분음표 6박을 셋씩 두 묶음: 겹두박자. 12/8: 8분음표 12박을 셋씩 네 묶음: 겹네박자.')}/>
     <div className="try-box" style={actBox} data-r4="ts">
       <div style={actTitle}>{t('Simple or compound? Two, three or four?', '홑박자? 겹박자? 둘, 셋, 넷?')}</div>
       {!q ? <div style={{textAlign:'center'}}><button className="ghost-btn" style={spBtn} onClick={() => { setQ(R4_Q.ts()); setPick(null); }}>{t('▶ A time signature', '▶ 박자표 하나')}</button></div>
@@ -40323,19 +40374,19 @@ function r4LbPages(scr = false) {
   const TEACH = {
     sync: t('Syncopation with minim, crotchet and quaver values only (Theory of Music Grade 4): a note that starts off the beat, or on a weak beat, and is held over the next beat or the strong beat. Clap with the beat said aloud, so the held-over beat is felt, not clapped.', '이론 4급의 당김음은 2분음표, 4분음표, 8분음표로만: 박 사이나 여린박에서 시작해 다음 박이나 센박 위로 이어지는 음. 박을 소리 내어 세며 쳐서, 이어지는 박은 치지 않고 느끼게 해요.'),
     hem: t('Hemiola: in triple time, two bars of three regrouped as three groups of two, often with a tie across the bar line, usually just before a cadence (minuets, courantes). Clap the line, then clap only the three long groups.', '헤미올라: 세박자에서 세 박 두 마디가 둘씩 세 묶음으로 바뀌어요. 마디선을 넘는 붙임줄과 함께, 대개 종지 바로 앞(미뉴에트, 쿠랑트). 줄을 친 다음, 긴 세 묶음만 쳐 봐요.'),
-    ts: t('The time signatures 6/4 and 12/8 are added at Grade 4; general knowledge asks for compound quadruple time (12/8: four dotted-crotchet beats). Every time signature so far can be sorted two ways: simple or compound (the beat plain or dotted), and duple, triple or quadruple (beats in a bar). Chapter ' + r2c + ' has 3/8, 9/8 and the minim beat.', '4급에 6/4와 12/8이 더해지고, 일반 지식은 겹네박자를 물어요(12/8: 점4분음표 네 박). 지금까지의 박자표는 두 가지로 나눠요: 홑박자와 겹박자(박이 보통 음표인지 점음표인지), 그리고 두·세·네 박자(한 마디의 박 수). ' + r2c + '장에 3/8, 9/8, 2분음표 박이 있어요.'),
+    ts: t('The time signatures 6/4 and 12/8 are added at Grade 4; general knowledge asks for compound quadruple time (12/8: twelve quaver beats in four groups of three). Every time signature so far can be sorted two ways: simple or compound (the beat plain or dotted), and duple, triple or quadruple (beats in a bar). Chapter ' + r2c + ' has 3/8, 9/8 and the minim beat.', '4급에 6/4와 12/8이 더해지고, 일반 지식은 겹네박자를 물어요(12/8: 점4분음표 네 박). 지금까지의 박자표는 두 가지로 나눠요: 홑박자와 겹박자(박이 보통 음표인지 점음표인지), 그리고 두·세·네 박자(한 마디의 박 수). ' + r2c + '장에 3/8, 9/8, 2분음표 박이 있어요.'),
     bar: t('Barring an unbarred phrase: given the time signature, add the bar lines (and the double bar). If the phrase starts with an anacrusis, the first bar line comes after it and the last bar is short by the same amount. The app shows three barrings to choose from; on paper the child draws them.', '마디선 없는 프레이즈에 마디선 긋기: 박자표를 보고 마디선(과 끝세로줄)을 그어요. 못갖춘마디로 시작하면 첫 마디선은 그 뒤에, 마지막 마디는 그만큼 짧아요. 앱은 세 가지 중에서 고르고, 종이에서는 아이가 직접 그어요.'),
   };
   const SAY = {
     sync: <>{LANG === 'ko' ? <>당김음은 <b>강세를 박 사이로</b> 옮겨요: 8분음표-4분음표-8분음표에서 4분음표는 <b>+</b>에서 시작해 박 위로 이어져요.</> : <>Syncopation moves <b>the accent off the beat</b>: in quaver-crotchet-quaver the crotchet starts on the <b>+</b> and is held over the beat.</>}</>,
     hem: <>{LANG === 'ko' ? <>세박자 두 마디(<b>3 + 3</b>)가 <b>2 + 2 + 2</b>로 들려요: 마디선을 넘는 붙임줄이 가운데 2분음표를 만들어요.</> : <>Two bars of three (<b>3 + 3</b>) heard as <b>2 + 2 + 2</b>: a tie across the bar line makes the middle minim.</>}</>,
-    ts: <>{LANG === 'ko' ? <><b>6/4</b>: 점2분음표 두 박(겹두박자). <b>12/8</b>: 점4분음표 네 박(<b>겹네박자</b>).</> : <><b>6/4</b>: two dotted-minim beats (compound duple). <b>12/8</b>: four dotted-crotchet beats (<b>compound quadruple</b>).</>}</>,
+    ts: <>{LANG === 'ko' ? <><b>6/4</b>: 4분음표 6박, 셋씩 두 묶음(겹두박자). <b>12/8</b>: 8분음표 12박, 셋씩 네 묶음(<b>겹네박자</b>).</> : <><b>6/4</b>: six crotchet beats, two groups of three (compound duple). <b>12/8</b>: twelve quaver beats, four groups of three (<b>compound quadruple</b>).</>}</>,
     bar: <>{LANG === 'ko' ? <>박자표가 한 마디의 박 수를 말해 줘요. 음표를 더해 마디가 찰 때마다 마디선.</> : <>The time signature says how many beats fill a bar. Add up the notes; a bar line each time a bar is full.</>}</>,
   };
   const PIANO = {
     sync: [t('Say 1 + 2 + and clap line 1: no clap on the beat the crotchet holds.', '1 + 2 + 를 말하며 1번 줄: 4분음표가 이어지는 박에서는 치지 않아요.'), t('Play it on one note, with a little accent on each syncopated note.', '한 음으로 치며, 당김음마다 살짝 강세.'), t('Find syncopation in a piece you are learning.', '배우는 곡에서 당김음을 찾아요.')],
     hem: [t('Clap line 1 counting 1 2 3.', '1 2 3을 세며 1번 줄을 쳐요.'), t('Now count bars 2 and 3 as 1 2, 1 2, 1 2.', '이번엔 2–3마디를 1 2, 1 2, 1 2로 세요.'), t('Find the hemiola before the end of a minuet.', '미뉴에트 끝 앞에서 헤미올라를 찾아요.')],
-    ts: [t('Clap 6/4: count 1 2 3 4 5 6, accents on 1 and 4.', '6/4: 1 2 3 4 5 6, 1과 4에 강세.'), t('Clap 12/8: four big beats, each 1 + a… in threes.', '12/8: 큰 박 넷, 한 박에 셋씩.'), t('Sort five time signatures into simple and compound.', '박자표 다섯 개를 홑박자와 겹박자로 나눠요.')],
+    ts: [t('Clap 6/4: count 1 2 3 4 5 6, accents on 1 and 4.', '6/4: 1 2 3 4 5 6, 1과 4에 강세.'), t('Clap 12/8: count 1 to 12, accents on 1, 4, 7 and 10.', '12/8: 1부터 12까지, 1, 4, 7, 10에 강세.'), t('Sort five time signatures into simple and compound.', '박자표 다섯 개를 홑박자와 겹박자로 나눠요.')],
     bar: [t('Count the beats in a bar from the time signature.', '박자표에서 한 마디의 박 수를 세요.'), t('Add up the notes in a phrase; draw a bar line when a bar is full.', '프레이즈의 음표를 더하며, 마디가 차면 마디선.'), t('Check: the anacrusis and the last bar add up to one bar.', '확인: 못갖춘마디와 마지막 마디를 더하면 한 마디.')],
   };
   const live = { sync: <R2Pad step="sync" keys={['syncA', 'syncB']} title={r4StepT('sync')} note={t('Count the beats aloud; clap the notes. Where a note is held over a beat, feel that beat without clapping it.', '박을 소리 내어 세고, 음표를 쳐요. 음이 박 위로 이어지면 그 박은 치지 말고 느껴요.')} ask={R4_Q.sync}/>,
@@ -40432,7 +40483,7 @@ function R4Teacher() {
   </>);
   P(<>
     <TcBlock page={4} title="6/4 and 12/8" answers={<><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'4px 14px',marginBottom:4}}>{['e64', 'e128'].map(k => <div key={k}>{r2El(k, { counts: true, hearts: false })}</div>)}</div>{tcAns('PLAY', ['compound duple', 'compound quadruple', 'compound triple', 'simple triple'], 3)}{tcAns('SIMPLE OR COMPOUND', R4_TS.map(([a, b, c]) => a + '/' + b + ' ' + R4_TSN[c][0]))}</>}
-      watch="Calling 6/4 simple triple (six crotchets in threes is two dotted-minim beats: compound duple)."
+      watch="Calling 6/4 simple triple (six crotchet beats in two groups of three: compound duple)."
       say="“Dotted beat: compound. Count the beats.”"/>
     <TcBlock page={5} title="Bar lines for a phrase" answers={<><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'4px 14px'}}>{R4_BAR.map((x, j) => <div key={j} style={{display:'flex',alignItems:'center',gap:6}}>{nvNum(j + 1)}<div style={{flex:1,minWidth:0}}>{r4BarEl(x, r4BarAt(x))}</div></div>)}</div><div style={{fontSize:12,color:BK.ink,margin:'4px 0'}}><b style={{color:BK.muted,fontSize:10.5,letterSpacing:'0.06em'}}>TRY IT</b>  Workbook 1–4 are phrases {R4_WB.bar.map(j => j + 1).join(', ')} above.</div>{tcAns('PLAY', ['3', '12'], 5)}</>}
       watch="Forgetting the anacrusis: the first bar line comes after it, and the last bar is short by the same amount."
@@ -40698,12 +40749,12 @@ function R2Workbook({ startNo = 1 }) {
   page(2, 'Count the dotted rhythms', R2_WB.counts.dot, ['Count 1 e + a, clapping only on 1 and a', 'Clap line 1 and line 2, counting aloud', 'Play a scale in dotted rhythm: long-short, long-short'], 'Long and short', 'Answer.', [['the count of the semiquaver after a dotted quaver', 3], ['a dotted quaver and a semiquaver make how many beats?', 4]]);
   page(3, 'Count the triplets and duplets', R2_WB.counts.trip, ['Walk the beat and say 1 trip let on each step', 'Clap line 1; then line 2 in 6/8, two even notes across three quavers', 'Make up a bar of 2/4 with one triplet in it'], 'Three for two, two for three', 'Answer.', R2_PLAY3);
   page(4, 'Count the minim beats', R2_WB.counts.minim, ['Count 1 + 2 + with a minim on each number', 'Clap line 1 in 2/2, then line 2 in 3/2', 'Find a piece in cut common time and count it in two'], 'Beats in a bar', 'How many beats in one bar?', [['3/2', 3], ['2/2', 4], ['cut common time', 5]]);
-  page(5, 'Count 3/8 and 9/8', R2_WB.counts.e98, ['Count 1 2 3 in 3/8, one quaver to each number', '9/8: count 1 to 9, leaning on 1, 4 and 7', 'Clap line 2, feeling three big beats'], 'Simple or compound?', 'Write S or C.', [['3/8', 3], ['6/8', 4], ['9/8', 5], ['3/4', 6]]);
+  page(5, 'Count 3/8 and 9/8', R2_WB.counts.e98, ['Count 1 2 3 in 3/8, one quaver to each number', '9/8: count 1 to 9, leaning on 1, 4 and 7', 'Clap line 2, leaning on 1, 4 and 7'], 'Simple or compound?', 'Write S or C.', [['3/8', 3], ['6/8', 4], ['9/8', 5], ['3/4', 6]]);
   P(<R2PaperCheck/>);
   return <>{pages}</>;
 }
 // page 3's play part (triplets) has its own questions
-const R2_PLAY3 = [['a triplet: how many quavers in one crotchet beat?', 3], ['a duplet: how many notes in one dotted-crotchet beat?', 4]];
+const R2_PLAY3 = [['a triplet: how many quavers in one crotchet beat?', 3], ['a duplet: how many notes in the time of three quavers?', 4]];
 function R2PaperCheck() {
   const rows = (items, n0) => <BkGrid cols={2} gap="6px 8px">{items.map(([l, w], i) => <BkCell key={i} n={i + n0}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,padding:'14px 4px 2px',fontSize:12.5,fontWeight:800,color:BK.ink}}>{l}{bkBox(w || 44, 24)}</div></BkCell>)}</BkGrid>;
   return <div className="lb-paper" style={{display:'flex',flexDirection:'column',gap:4}}>
@@ -41417,7 +41468,7 @@ function R4Workbook({ startNo = 1 }) {
   page(2, 'Count the hemiola', 'Write the count under every note. The tie joins two notes into one sound: count through it. Then clap, feeling 2 + 2 + 2 across two bars.', ['hemA', 'hemB'],
     ['Count 1 2 3 | 1 2 3, then clap minims across the two bars: 2 + 2 + 2', 'Clap line 1 and line 2, counting aloud', 'Find a hemiola just before a cadence in a minuet or a courante'], 'Three twos', 'Answer.',
     [['two bars of 3/4 as a hemiola: how many groups of two?', 3], ['they sound like one bar of which time signature?', 4]]);
-  page(3, 'Count 6/4 and 12/8', 'Write the count under every note. 6/4: two dotted-minim beats. 12/8: four dotted-crotchet beats. Then clap, leaning on each beat.', ['e64', 'e128'],
+  page(3, 'Count 6/4 and 12/8', 'Write the count under every note. 6/4: six crotchet beats, in threes. 12/8: twelve quaver beats, in threes. Then clap, leaning on the first of each three.', ['e64', 'e128'],
     ['6/4: count 1 to 6, leaning on 1 and 4', '12/8: count 1 to 12, leaning on 1, 4, 7 and 10', 'Clap each line, then walk the beat while you count'], 'Name the time', 'Simple or compound; duple, triple or quadruple?',
     [['6/4', 3, 170], ['12/8', 4, 170], ['9/8', 5, 170], ['3/2', 6, 170]]);
   P(<>
@@ -41446,7 +41497,7 @@ function R4PaperCheck() {
     {bkSec('B', 'Simple or compound; duple, triple or quadruple?')}
     {rows(C.ts.map(([a, b]) => a + '/' + b), 5, 170)}
     {bkSec('C', 'How many?')}
-    {rows(['crotchets in a bar of 6/4', 'dotted-crotchet beats in a bar of 12/8', 'minims in a hemiola across two bars of 3/4', 'quavers in a bar of 9/8'], 9)}
+    {rows(['crotchets in a bar of 6/4', 'groups of three in a bar of 12/8', 'minims in a hemiola across two bars of 3/4', 'quavers in a bar of 9/8'], 9)}
     {bkSec('D', 'Draw the four bar lines.')}
     <BkCell n="13–16"><div style={{padding:'14px 2px 0',maxWidth:560,margin:'0 auto',width:'100%'}}>{r4BarEl(R4_BAR[C.bar], [])}</div></BkCell>
   </div>;
@@ -47808,20 +47859,20 @@ const TS_LEVELS = [
   { n: 6, label: 'Ties: how many beats?', kind: 'tie', time: 10 },
   { n: 7, label: 'Whole-bar rests', kind: 'wholebar', time: 8 },
   { n: 8, label: 'The bottom number: 2, 4 or 8', kind: 'bottom', time: 10 },
-  { n: 9, label: 'Compound time: big beats', kind: 'six8', time: 10 },
+  { n: 9, label: 'Compound time: groups of three', kind: 'six8', time: 10 },
   { n: 10, label: 'Simple, compound or irregular?', kind: 'meter', time: 10 },
 ];
 Object.assign(LEVEL_KO, {
   'How many beats in a bar?': '한 마디에 몇 박?', 'Where does the bar line go?': '세로줄은 어디에?', 'Tap the strong beat': '센박에 쳐요',
   'Fill the bar': '마디 채우기', 'Rests on the staff': '오선 위의 쉼표', 'Ties: how many beats?': '붙임줄: 몇 박?',
   'Whole-bar rests': '한 마디 쉼표', 'The bottom number: 2, 4 or 8': '아래 숫자: 2, 4, 8',
-  'Compound time: big beats': '겹박자: 큰 박', 'Simple, compound or irregular?': '홑박자, 겹박자, 혼합박자?',
+  'Compound time: groups of three': '겹박자: 셋씩 묶음', 'Simple, compound or irregular?': '홑박자, 겹박자, 혼합박자?',
 });
 // the higher levels say their rule over every question (nothing in the book teaches it yet)
 const TS_RULE = {
   wholebar: () => t('A semibreve rest also fills a whole bar of 2/4 or 3/4.', '온쉼표는 2/4나 3/4에서도 한 마디 전체를 쉬어요.'),
   bottom: () => t('The bottom number is the beat: 2 a minim, 4 a crotchet, 8 a quaver. C with a line through it is 2/2.', '아래 숫자가 한 박이에요: 2는 2분음표, 4는 4분음표, 8은 8분음표. 줄이 그어진 C는 2/2예요.'),
-  six8: () => t('6/8, 9/8, 12/8: the quavers go in threes. Three quavers make one big beat.', '6/8, 9/8, 12/8: 8분음표가 셋씩 묶여요. 8분음표 셋이 큰 박 하나예요.'),
+  six8: () => t('6/8, 9/8, 12/8: the quaver is one beat, and the beats go in threes. Three quavers make one group: a dotted crotchet.', '6/8, 9/8, 12/8: 8분음표가 1박이고, 박이 셋씩 묶여요. 8분음표 셋이 한 묶음: 점4분음표.'),
   meter: () => t('Simple: each beat splits in two. Compound: each beat splits in three (top 6, 9 or 12). Irregular: 5 or 7.', '홑박자: 한 박이 둘로 나뉘어요. 겹박자: 한 박이 셋으로 나뉘어요 (위 숫자 6, 9, 12). 혼합박자: 5나\u00a07.'),
 };
 // the bars the levels are made of, by time signature (every one written the way the books write it)
@@ -47984,7 +48035,7 @@ function TsQuestion({ q, given, locked, onAnswer, pixel }) {
     {grid(4, c => <span style={{fontSize:pixel ? 12 : 18,fontWeight:900}}>{c}</span>)}
   </>;
   else if (q.kind === 'six8') body = <>
-    {prompt(q.v === 'quavers' ? t('How many quavers fill a bar of ' + q.sig + '?', q.sig + '에서 한 마디는 8분음표 몇 개일까요?') : q.v === 'beats' ? t('How many big beats are in a bar of ' + q.sig + '?', q.sig + '에서 한 마디는 큰 박 몇 개일까요?') : t('Which note is one big beat in ' + q.sig + '?', q.sig + '에서 큰 박 하나는 어떤 음표일까요?'))}
+    {prompt(q.v === 'quavers' ? t('How many quavers fill a bar of ' + q.sig + '?', q.sig + '에서 한 마디는 8분음표 몇 개일까요?') : q.v === 'beats' ? t('How many groups of three are in a bar of ' + q.sig + '?', q.sig + '에서 한 마디는 셋 묶음이 몇 개일까요?') : t('Which note fills one group of three in ' + q.sig + '?', q.sig + '에서 셋 묶음 하나를 채우는 음표는?'))}
     <div style={{textAlign:'center',margin:'0 0 12px',color:ink}}><TsBigSig sig={q.sig} ink={ink}/></div>
     {q.v === 'unit' ? grid(2, c => <><Glyph item={TS_NOTE[c]()} ink={ink} size={52}/>{done && !pixel && <span style={{display:'block',fontSize:12,fontWeight:700}}>{tsNoteName(c)}</span>}</>, '6px 2px') : grid(q.choices.length, c => <span style={{fontSize:pixel ? 12 : 18,fontWeight:900}}>{c}</span>)}
   </>;
@@ -48016,7 +48067,7 @@ function tsAnswerLabel(q) {
   if (q.kind === 'reston') return LANG === 'ko' ? nvRoomName(q.answer) + ({ r: '. 오선 가운데에 서 있어요', hr: '. 3번 줄 위에 앉아요', wr: '. 4번 줄에 매달려요' })[q.answer] : 'a ' + nvRoomName(q.answer) + ({ r: '. It stands in the middle of the staff', hr: '. It sits on line 3', wr: '. It hangs from line 4' })[q.answer];
   if (q.kind === 'tie') return beats(q.answer);
   if (q.kind === 'wholebar') return t(q.answer + ' beats (a whole bar)', q.answer + '박 (한 마디 전체)');
-  if (q.kind === 'six8') return (q.v === 'unit' ? t('a dotted crotchet', '점4분음표') : q.v === 'beats' ? t(q.answer + ' big beats', '큰 박 ' + q.answer + '개') : t(q.answer + ' quavers', '8분음표 ' + q.answer + '개')) + ' (' + q.sig + ')';
+  if (q.kind === 'six8') return (q.v === 'unit' ? t('a dotted crotchet', '점4분음표') : q.v === 'beats' ? t(q.answer + ' groups of three', '셋 묶음 ' + q.answer + '개') : t(q.answer + ' quavers', '8분음표 ' + q.answer + '개')) + ' (' + q.sig + ')';
   if (q.kind === 'bottom') return t('a ' + tsNoteName(q.answer), tsNoteName(q.answer)) + ' (' + (q.sig === 'cut' ? t('cut time, 2/2', '알라 브레베, 2/2') : q.sig) + ')';
   return (LANG === 'ko' ? TS_METER_NAME[q.answer]() : TS_METER_NAME[q.answer]().toLowerCase() + ' time') + ' (' + q.sig + ')';
 }
@@ -62660,7 +62711,8 @@ function csxLbPages(scr = false) {
     ], [
       X('Play the 12-bar blues in C with your left hand: C, F and G, one chord a bar.', '왼손으로 C장조 12마디 블루스를 쳐요: C, F, G를 한 마디에 한 화음씩.'),
       X('Play quavers on one note, straight, then swung: long-short.', '한 음으로 8분음표를 스트레이트로, 그다음 스윙으로 쳐요: 길게-짧게.'),
-    ], X('Blues: three chords, twelve bars. Jazz swings and improvises.', '블루스는 세 화음, 열두 마디. 재즈는 스윙하고 즉흥 연주해요.'), <CsxBluesPad/>),
+      X('Make up a blues: your teacher plays the 12 bars, you play any notes of C, E♭, F, F♯, G, B♭ on top.', '블루스 지어 보기: 선생님이 12마디를 치는 동안, C, E♭, F, F♯, G, B♭ 중 아무 음이나 위에서 쳐요.'),
+    ], X('Blues: three chords, twelve bars. Jazz swings and improvises.', '블루스는 세 화음, 열두 마디. 재즈는 스윙하고 즉흥 연주해요.'), <><CsxBluesPad/><div style={{height:12}}/><BluesJam/></>),
 
     P(6, t('Step 5', '5단계'), t('Pop', '대중음악'), p6, [
       [t('popular music', '대중음악'), X('Music made for many listeners: songs on records, radio and online. Today’s pop began in the 1950s.', '많은 사람이 듣도록 만든 음악: 음반, 라디오, 인터넷으로 듣는 노래. 오늘날 같은 팝은 1950년대에 시작됐어요.')],
@@ -62706,6 +62758,45 @@ const csxSwingEv = (swing) => { const long = swing ? 2 / 3 : 1 / 2, ev = [];
 // the 12-bar blues in C: a left-hand boogie (root with the fifth, sixth, flat seventh, sixth), swung, and the chord on beat 1
 const CSX_ROOT = { I: 48, IV: 53, V: 55 };
 const csxChordNm = (c) => t(c + ' (' + { I: 'C', IV: 'F', V: 'G' }[c] + ')', c + '(' + { I: 'C', IV: 'F', V: 'G' }[c] + ')');   // I (C), IV (F), V (G)
+
+// ══ Build BH: Blues jam ══
+const JAM_B6 = [0, 3, 5, 6, 7, 10, 12, 15, 17, 18, 19, 22, 24], JAM_B3 = [0, 3, 5, 12, 15, 17, 24];   // semitones from middle C
+const JAM_NM = { 0: 'C', 3: 'E♭', 5: 'F', 6: 'F♯', 7: 'G', 10: 'B♭' };
+function BluesJam() {
+  const tm = useRef([]), loop = useRef(null), t0 = useRef(0), solo = useRef([]), alive = useRef(true);
+  const [on, setOn] = useState(null), [bar, setBar] = useState(-1), [six, setSix] = useState(false), [n, setN] = useState(0), [lit, setLit] = useState(null), [box, w] = useCpxW(420);
+  const bpm = 104, barMs = 4 * 60 / bpm * 1000, ev = React.useMemo(() => csxBluesEv(12).filter(e => e[0] < 48), []);
+  const keys = six ? JAM_B6 : JAM_B3;
+  const clear = () => { tm.current.forEach(clearTimeout); tm.current = []; clearTimeout(loop.current); loop.current = null; };
+  const stop = () => { clear(); stopClicks(); if (alive.current) { setOn(null); setBar(-1); } };
+  useEffect(() => () => { alive.current = false; clear(); stopClicks(); }, []);
+  const flash = (k) => { setLit(k); tm.current.push(setTimeout(() => setLit(l => (l === k ? null : l)), 220)); };
+  const round = (mode) => { const sec = playEvents('piano', ev, bpm); if (!sec) { stop(); return; } t0.current = performance.now() + 100;
+    for (let i = 0; i < 12; i++) tm.current.push(setTimeout(() => setBar(i), 100 + i * barMs));
+    if (mode === 'solo') solo.current.forEach(({ k, at }) => tm.current.push(setTimeout(() => { playKey(k, 0.45); flash(k); }, 100 + at)));
+    loop.current = setTimeout(() => { if (mode === 'solo') { stop(); return; } if (mode === 'band') round('band'); }, 100 + 12 * barMs); };
+  const startBand = () => { clear(); solo.current = []; setN(0); setOn('band'); round('band'); };
+  const hearSolo = () => { if (!solo.current.length) return; clear(); setOn('solo'); round('solo'); };
+  const tap = (k) => { if (!keys.includes(k)) return; playKey(k, 0.45); flash(k);
+    if (on === 'band') { const at = (performance.now() - t0.current) % (12 * barMs); if (solo.current.length < 200) { solo.current.push({ k, at }); setN(solo.current.length); } } };
+  const kl = {}; keys.forEach(k => { kl[k] = 'pale'; }); if (lit != null) kl[lit] = 'cor';
+  const names = {}; keys.forEach(k => { names[k] = JAM_NM[k % 12]; });
+  return (
+    <div className="try-box" style={actBox} data-jam="blues">
+      <div style={actTitle}>{t('Blues jam', '블루스 잼')}</div>
+      <div style={actNote}>{LANG === 'ko' ? <>밴드가 <b>12마디 블루스</b>를 계속 돌려요. 켜진 건반은 <b>블루스 음계</b>라서 <b>아무거나</b> 쳐도 어울려요. 먼저 세 음으로, 익숙해지면 여섯 음으로. 친 음은 모두 남아서, 밴드와 함께 다시 들을 수 있어요.</>
+        : <>The band plays the <b>12-bar blues</b> round and round. The lit keys are the <b>blues scale</b>, so <b>anything</b> you play fits. Start with three notes, then all six. Every note you play is kept, so you can hear your solo back with the band.</>}</div>
+      {spChips([[false, t('Three notes', '세 음')], [true, t('All six', '여섯 음 모두')]], six, (v) => setSix(v))}
+      <div ref={box} style={{maxWidth:420,margin:'4px auto 6px'}}><CsxBlues W={w} ch={Math.max(40, Math.round(w / 8.5))} hl={bar} label={t('The 12-bar blues in C', 'C장조 12마디 블루스')}/></div>
+      <div style={{margin:'6px 0 4px'}}><SpKb lo={0} hi={24} W={22} H={88} lit={kl} names={names} onTap={tap} label={t('The blues scale', '블루스 음계')}/></div>
+      <div style={{textAlign:'center',fontSize:14,fontWeight:900,color:on ? BK.coral : BK.muted,minHeight:20}}>{on === 'band' ? t('Your turn: play along! Notes kept: ' + n, '이제 같이 쳐요! 남은 음: ' + n) : on === 'solo' ? t('Your solo, with the band', '내 솔로, 밴드와 함께') : n ? t(n + ' notes kept', n + '개 음이 남아 있어요') : t('Start the band, then play', '밴드를 켜고, 쳐요')}</div>
+      <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap',marginTop:8}}>
+        {on ? <button className="ghost-btn" style={spBtn} onClick={stop}>{t('■ Stop', '■ 멈추기')}</button> : <button className="ghost-btn" style={spBtn} onClick={startBand}>{t('▶ Start the band', '▶ 밴드 켜기')}</button>}
+        <button className="ghost-btn" style={spBtn} disabled={!n || on === 'solo'} onClick={hearSolo}>{t('▶ Hear my solo', '▶ 내 솔로 듣기')}</button>
+      </div>
+    </div>
+  );
+}
 const csxBluesEv = (bars = 12) => { const ev = [];
   BLUES_12.slice(0, bars).forEach((c, i) => { const r = CSX_ROOT[c];
     [7, 9, 10, 9].forEach((up, k) => { const b = i * 4 + k; [0, 2 / 3].forEach((o, j) => { ev.push([b + o, r, (j ? 1 / 3 : 2 / 3) * 0.95, j ? 0.35 : 0.5]); ev.push([b + o, r + up, (j ? 1 / 3 : 2 / 3) * 0.95, j ? 0.3 : 0.45]); }); });
@@ -68112,17 +68203,17 @@ const e8BigQ = (n) => (n % 2 === 0 ? e8TapQ('big', { only: [0, 3, 6, 9], prompt:
     ['1 and 4: the start of each group of three.', '1과 4: 셋씩 묶인 묶음의 첫 음이에요.'], ['The quavers go in threes: the strong ones are 1 and 4.', '8분음표가 셋씩 묶여서, 센박은 1과 4예요.']));
 const e8DotQ = (n) => (n % 2 === 0 ? e8TapQ('dot')
   : e8Choice(['In 6/8, how many quavers does a dotted crotchet last?', '6/8에서 점4분음표는 8분음표 몇 개만큼일까요?'], [['1', '1'], ['2', '2'], ['3', '3'], ['6', '6']], '3', <div style={{display:'flex',justifyContent:'center',margin:'4px 0 8px'}}><Glyph item={NV_DOTTED[1]} size={90}/></div>,
-    ['Three: one big beat.', '셋: 큰 박 하나.'], ['A crotchet is two quavers; the dot adds one more: three.', '4분음표는 8분음표 둘, 점이 하나를 더해요: 셋.']));
+    ['Three beats.', '3박.'], ['A crotchet is two quavers; the dot adds one more: three.', '4분음표는 8분음표 둘, 점이 하나를 더해요: 셋.']));
 const e8LsQ = (n) => (n % 2 === 0 ? e8TapQ(n % 4 === 0 ? 'ls' : 'ls2')
   : e8Choice(['Long, short: on which counts do the two notes start?', '길게, 짧게: 두 음은 몇째 셈에서 시작할까요?'], [['1 2', '1, 2'], ['1 3', '1, 3'], ['1 4', '1, 4']], '1 3', e8El('ls', { counts: false }),
     ['1 and 3: the crotchet holds through 2.', '1과 3: 4분음표가 2까지 이어져요.'], ['The crotchet lasts two quavers (1 2), so the quaver comes on 3.', '4분음표가 8분음표 둘(1 2)이라서, 8분음표는 3에서 와요.']));
 const e8TwoQ = (n) => { const a = Math.random() < 0.5 ? 't34' : 'big', ans = a === 't34' ? '3/4' : '6/8';
-  return { kind: 'choice', cols: 2, prompt: ['Listen to the strong clicks: 3/4 or 6/8?', '센 클릭을 들어 봐요: 3/4일까요, 6/8일까요?'], opts: [{ id: '3/4', label: () => t('3/4: three beats', '3/4: 세 박') }, { id: '6/8', label: () => t('6/8: two big beats', '6/8: 큰 박 둘') }], ans, ok: (v) => v === ans,
+  return { kind: 'choice', cols: 2, prompt: ['Listen to the strong clicks: 3/4 or 6/8?', '센 클릭을 들어 봐요: 3/4일까요, 6/8일까요?'], opts: [{ id: '3/4', label: () => t('3/4: three beats', '3/4: 세 박') }, { id: '6/8', label: () => t('6/8: six beats in threes', '6/8: 6박, 셋씩') }], ans, ok: (v) => v === ans,
     play: () => e8Play(a), fig: (c) => ({ mid: c.res ? e8El(a, { hearts: false }) : null }), yes: ans === '3/4' ? ['3/4: strong on every second quaver.', '3/4: 둘째 8분음표마다 센박.'] : ['6/8: strong on every third quaver.', '6/8: 셋째 8분음표마다 센박.'],
     no: ans === '3/4' ? ['It was 3/4: the strong clicks came every two quavers. Press ♪ Again.', '3/4이었어요: 센 클릭이 8분음표 둘마다 왔어요. ♪ 다시를 눌러 보세요.'] : ['It was 6/8: the strong clicks came every three quavers. Press ♪ Again.', '6/8이었어요: 센 클릭이 8분음표 셋마다 왔어요. ♪ 다시를 눌러 보세요.'] }; };
 const e8ReadQ = (n) => e8TapQ(E8_READ[n % E8_READ.length]);
-e8HomeAdd('e8-big', 1, 'Two big beats', '큰 박 둘', 'Six quavers; 1 and 4 are strong.', '8분음표 여섯, 1과 4가 센박.', e8BigQ);
-e8HomeAdd('e8-dot', 2, 'The dotted crotchet', '점4분음표', 'Three quavers: one big beat.', '8분음표 셋: 큰 박 하나.', e8DotQ);
+e8HomeAdd('e8-big', 1, 'The quaver is one beat', '8분음표가 1박', 'Six beats; 1 and 4 are strong.', '6박, 1과 4가 센박.', e8BigQ);
+e8HomeAdd('e8-dot', 2, 'The dotted crotchet', '점4분음표', 'Three quavers: 3 beats.', '8분음표 셋: 3박.', e8DotQ);
 e8HomeAdd('e8-ls', 3, 'Long, short', '길게, 짧게', 'A crotchet and a quaver: 1 (2) 3.', '4분음표와 8분음표: 1 (2) 3.', e8LsQ);
 e8HomeAdd('e8-34', 4, '3/4 or 6/8?', '3/4? 6/8?', 'Twos or threes.', '둘씩, 아니면 셋씩.', e8TwoQ);
 e8HomeAdd('e8-read', 5, 'Count, clap, play', '세고, 손뼉 치고, 치기', 'New lines in 6/8.', '6/8의 새 줄.', e8ReadQ);
@@ -68211,7 +68302,7 @@ const r2Q = (kind) => (n, prev) => { if (n % 2 === 0) { const key = { semi: 'sem
 const r2HomeAdd = (id, i, en, ko, benEn, bko, make) => lbhAdd(id, 'r-beat', 'rhythm', en, ko, benEn, bko, lbhSpec('rhythm-23', i, { make }));
 r2HomeAdd('r2-semi', 1, 'Semiquavers', '16분음표', 'Four to a beat, and with a quaver.', '한 박에 넷, 그리고 8분음표와 함께.', r2Q('semi'));
 r2HomeAdd('r2-dot', 2, 'Dotted quaver and semiquaver', '점8분음표와 16분음표', 'Long, short: the short one on a.', '길게, 짧게: 짧은 음은 a에.', r2Q('dot'));
-r2HomeAdd('r2-trip', 3, 'Three in a beat, two in a dotted beat', '한 박에 셋, 점 박에 둘', 'Triplets and duplets.', '셋잇단음표와 2잇단음표.', r2Q('trip'));
+r2HomeAdd('r2-trip', 3, 'Triplets and duplets', '셋잇단음표와 2잇단음표', 'Triplets and duplets.', '셋잇단음표와 2잇단음표.', r2Q('trip'));
 r2HomeAdd('r2-minim', 4, 'The minim beat', '2분음표 박', '2/2, cut common time, 3/2.', '2/2, 세로선 C, 3/2.', r2Q('minim'));
 r2HomeAdd('r2-98', 5, '3/8 and 9/8', '3/8과 9/8', 'Simple triple and compound triple.', '홑세박자와 겹세박자.', r2Q('e98'));
 
