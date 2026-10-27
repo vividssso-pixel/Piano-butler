@@ -22714,12 +22714,13 @@ function thWrap(text, maxW, size, font) {   // breaks at a space, or just after 
   String(text).split(' ').forEach(w => w.replace(/·/g, '·\u0001').split('\u0001').filter(Boolean).forEach((p, j) => { const nx = cur ? cur + (j ? '' : ' ') + p : p; if (cur && rdWidth(nx, 700, size, font) > maxW) { out.push(cur); cur = p; } else cur = nx; }));
   if (cur) out.push(cur); return out;
 }
-function thPic(cx, top, ic, faded) {   // the chapter's picture on the wall, no frame (Phase 438); faded: the guides' rooms without a page
-  const k = 0.8, iw = 48 * k;
+function thPic(cx, top, ic, faded, k = 0.8) {   // the chapter's picture on the wall, no frame (Phase 438); faded: the guides' rooms without a page; k: Build BM, smaller in the compact house
+  const iw = 48 * k;
   return '<g transform="translate(' + pFix(cx - iw / 2) + ' ' + pFix(top + 2) + ') scale(' + k + ')" fill="none" stroke="' + ST.N + '" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" opacity="' + (faded ? 0.5 : 1) + '">' + ic + '</g>';
 }
 // your room: its picture under a wide glass dome on a little round table (her 14:45: the dome instead of Clara, wider)
-function thDome(cx, top, ic) {
+function thDome(cx, top, ic, sc = 1) {   // sc: Build BM, the dome scaled to a compact room
+  if (sc !== 1) return '<g transform="translate(' + pFix(cx) + ' ' + pFix(top) + ') scale(' + sc + ') translate(' + pFix(-cx) + ' ' + pFix(-top) + ')">' + thDome(cx, top, ic) + '</g>';
   const T = top + 33, fl = top + 46, R = 28, k = 0.66, iw = 48 * k;
   return stR(cx - R - 3, T - 3, 2 * R + 6, 3, 0.9)
     + stR(cx - 18, T, 36, 2.2, 0.8) + stR(cx - 1.3, T + 2.2, 2.6, fl - T - 6, 0.7)
@@ -22792,8 +22793,8 @@ function thNames(state, rooms) {
   rs.forEach(r => { lines[r.id] = thWrap(r[key], r.w - 33, z, TH_SERIF).slice(0, 2); ml = Math.max(ml, lines[r.id].length); });
   return { z, lines, ml };
 }
-function thRoom(view, state, id, x, y, w, h, fs, out, dimNew, lay) {   // dimNew: the guides' front page greys the rooms without a page; lay: thNames
-  const st = state[id], on = id === view.here, done = st === 'done', num = view.nums[id], cy = y + h - 22;
+function thRoom(view, state, id, x, y, w, h, fs, out, dimNew, lay, cmp) {   // dimNew: the guides' front page greys the rooms without a page; lay: thNames; cmp: Build BM, a compact room
+  const st = state[id], on = id === view.here, done = st === 'done', num = view.nums[id], cy = y + h - (cmp ? 10 : 22);
   let s = '<rect x="' + pFix(x) + '" y="' + pFix(y) + '" width="' + pFix(w) + '" height="' + pFix(h) + '" stroke-width="1"/>';
   if (fs.wp === 'drape') {   // a theatre: a scalloped valance and two curtains tied back
     let v = stD('M', x + 2, y + 2, 'L', x + w - 2, y + 2, 'L', x + w - 2, y + 6);
@@ -22803,7 +22804,7 @@ function thRoom(view, state, id, x, y, w, h, fs, out, dimNew, lay) {   // dimNew
   } else if (fs.wp !== 'panel') s += '<rect x="' + pFix(x + 1) + '" y="' + pFix(y + 1) + '" width="' + pFix(w - 2) + '" height="' + pFix(cy - y - 1) + '" fill="url(#thwp-' + fs.wp + ')" stroke="none" opacity="0.13"/>';
   // the wainscot: a chair rail and panels
   s += '<g opacity="0.4">' + stL(x + 2, cy, x + w - 2, cy, 0.9) + stL(x + 2, cy + 2.4, x + w - 2, cy + 2.4, 0.5) + '</g>';
-  const fh = 6, np = w > 120 ? 3 : 2, pw = (w - 6 - np * 6) / np;
+  const fh = 6, np = cmp ? 0 : w > 120 ? 3 : 2, pw = (w - 6 - np * 6) / Math.max(1, np);
   for (let k = 0; k < np; k++) s += '<rect x="' + pFix(x + 6 + k * (pw + 6)) + '" y="' + pFix(cy + 6) + '" width="' + pFix(pw) + '" height="' + pFix(y + h - fh - cy - 9) + '" fill="none" stroke-width="0.6" opacity="0.3"/>';
   s += '<rect x="' + pFix(x + 1) + '" y="' + pFix(y + h - fh) + '" width="' + pFix(w - 2) + '" height="' + fh + '" fill="url(#thfl-' + fs.fl + ')" stroke="none" opacity="0.32"/>' + stL(x + 1, y + h - fh, x + w - 1, y + h - fh, 0.5);
   if (on) s += '<rect x="' + pFix(x + 1.2) + '" y="' + pFix(y + 1.2) + '" width="' + pFix(w - 2.4) + '" height="' + pFix(h - 2.4) + '" fill="none" stroke="' + ST.C + '" stroke-width="2.4"/>';
@@ -22814,9 +22815,9 @@ function thRoom(view, state, id, x, y, w, h, fs, out, dimNew, lay) {   // dimNew
   s += stSquare(sx, sy, sq, num, done ? ST.G : null, 11) + stT(sx + sq + 5, sy + 13, lines[0], { size: nz, weight: 700, font: TH_SERIF, fill: nfill });
   if (lines[1]) s += stT(cx, sy + 27, lines[1], { size: nz, weight: 700, font: TH_SERIF, fill: nfill, anchor: 'middle' });
   const ic = HOUSE_ICONS[id];
-  const picTop = Math.max(sy + lay.ml * 14 + 14, cy - 40);   // one height on the floor
-  if (ic && !on) s += thPic(x + w / 2, picTop, ic, dimNew && st === 'new');
-  if (on) out.fig = stG(ic ? thDome(x + w / 2, picTop, ic) : '');   // your room: the dome, not Clara
+  const picTop = cmp ? sy + lay.ml * 14 + 7 : Math.max(sy + lay.ml * 14 + 14, cy - 40);   // one height on the floor
+  if (ic && !on) s += thPic(x + w / 2, picTop, ic, dimNew && st === 'new', cmp ? 0.52 : 0.8);
+  if (on) out.fig = stG(ic ? thDome(x + w / 2, picTop - (cmp ? 4 : 0), ic, cmp ? 0.6 : 1) : '');   // your room: the dome, not Clara
   if (view.focus && thArea(id) !== view.focus) s += '<rect x="' + pFix(x + 1) + '" y="' + pFix(y + 1) + '" width="' + pFix(w - 2) + '" height="' + pFix(h - 2) + '" fill="#fff" opacity="0.78" stroke="none"/>';   // Build V: another topic's room, paled
   const label = num + '. ' + t(nm[0], nm[1] || nm[0]) + (done ? t(', done', ', 완료') : on ? t(', you are here', ', 지금 여기') : '');
   out.btns.push({ num, html: '<g data-chapter="' + id + '" data-status="' + st + '" data-here="' + (on ? '1' : '0') + '" role="button" tabindex="0" aria-label="' + penEsc(label).replace(/"/g, '&quot;') + '" style="cursor:pointer"><rect x="' + pFix(x + 1) + '" y="' + pFix(y + 1) + '" width="' + pFix(w - 2) + '" height="' + pFix(h - 2) + '" fill="transparent"/></g>' });
@@ -22827,6 +22828,8 @@ function thRoom(view, state, id, x, y, w, h, fs, out, dimNew, lay) {   // dimNew
 function townhouseSvg(view, o = {}) {
   const state = {}; view.stages.forEach(x => x.ids.forEach((id, j) => { state[id] = x.st[j]; }));
   const { RH, LH, SLAB, GH } = TH, W = o.wide ? 720 : TH.W, X0 = TH.X0, X1 = W - TH.X0, RX0 = X0, out = { btns: [], fig: null };
+  const cmp = !o.wide && !o.print;   // Build BM: the compact house on phones and narrow screens
+  const rowsOf = (n) => { const m = o.wide ? 6 : cmp ? 4 : 3, nr = Math.ceil(n / m), b = Math.floor(n / nr), ex = n % nr; return Array.from({ length: nr }, (_, r) => b + (r < ex ? 1 : 0)); };   // the bottom row first
   const cols = (n) => o.wide ? (n <= 6 ? n : Math.ceil(n / 2)) : n <= 3 ? n : n === 4 ? 2 : 3;   // Build Q: twelve rooms, two rows of six
   let head = '', body = '', glow = '';
   const top = 176; let y = top;
@@ -22835,8 +22838,9 @@ function townhouseSvg(view, o = {}) {
   for (let k = view.stages.length - 1; k >= 0; k--) {   // the floors, the top stage first
     const st = view.stages[k], fs = (st.s && st.s.th) || TH_FLOOR[k], n = st.ids.length, c = cols(n), here = st.ids.includes(view.here);
     const gi = st.s && st.s.garret ? gTop : 0, L0 = RX0 + gi, L1 = X1 - gi;   // Build AZ: the attic's rooms sit between the slopes
-    const rwOf = (j) => (L1 - L0) / Math.min(c, n - Math.floor(j / c) * c), lay = thNames(state, st.ids.map((id, j) => [id, rwOf(j)]));
-    const rh = RH + (lay.ml - 1) * 14, fh = LH + rh * Math.ceil(n / c);
+    const RS = cmp ? rowsOf(n) : null, at = (j) => { if (!RS) { const r = Math.floor(j / c); return [r, j - r * c, Math.min(c, n - r * c)]; } let r = 0, a = j; while (a >= RS[r]) { a -= RS[r]; r++; } return [r, a, RS[r]]; };
+    const rwOf = (j) => (L1 - L0) / at(j)[2], lay = thNames(state, st.ids.map((id, j) => [id, rwOf(j)]));
+    const rh = (cmp ? 52 + (fs.wp === 'drape' ? 7 : 0) : RH) + (lay.ml - 1) * 14, fh = LH + rh * (RS ? RS.length : Math.ceil(n / c));
     body += gi ? thCornice(y, L0 - 4, L1 + 4) : thCornice(y, X0, X1); const yy = y + SLAB;
     body += '<rect x="' + L0 + '" y="' + pFix(yy) + '" width="' + (L1 - L0) + '" height="' + LH + '" stroke="none"/>';
     // the floor's plaque, centred in a moulded frame: just the floor -- "GROUND · II", "P–1 · I" (her 2026-10-12: no floor names;
@@ -22844,10 +22848,10 @@ function townhouseSvg(view, o = {}) {
     const name = st.s && st.s.attic ? (o.print || LANG !== 'ko' ? 'ATTIC' : '다락방') : st.s && st.s.stories ? (o.print || LANG !== 'ko' ? 'STORIES OF MUSIC' : '음악 이야기') : st.s ? (o.print || LANG !== 'ko' ? 'FLOOR ' : '') + (k + 1) + (o.print || LANG !== 'ko' ? '' : '층') + ' · ' + st.s.en[0].toUpperCase() : 'LEVEL ' + (k + 1), mw = rdWidth(name, 700, 11.5, TH_CAPS), pw = (thFontsIn() ? mw : Math.max(mw, name.length * 9.4)) + name.length * 1.04 + 30, px = (X0 + X1) / 2 - pw / 2;   // Cinzel's capitals are wide: trust a measure only once the letters are in
     body += stR(px, yy + 4, pw, 20, 0.9) + stR(px + 2, yy + 6, pw - 4, 16, 0.4, 'none')
       + stT((X0 + X1) / 2, yy + 18.4, name, { size: 11.5, weight: 700, font: TH_CAPS, digits: "'Playfair Display',Georgia,serif", ls: '0.09em', fill: here ? ST.C : st.st.every(v => v === 'done') ? ST.G : ST.N, anchor: 'middle' });
-    const nr = Math.ceil(n / c);   // Phase 442: the first rooms on the lowest row, counted from the bottom left -- you climb the house
+    const nr = RS ? RS.length : Math.ceil(n / c);   // Phase 442: the first rooms on the lowest row, counted from the bottom left -- you climb the house
     st.ids.forEach((id, j) => {
-      const r = Math.floor(j / c), cc = j - r * c, rw = rwOf(j);
-      body += thRoom(view, state, id, L0 + cc * rw, yy + LH + (nr - 1 - r) * rh, rw, rh, fs, out, o.dimNew, lay);
+      const [r, cc] = at(j), rw = rwOf(j);
+      body += thRoom(view, state, id, L0 + cc * rw, yy + LH + (nr - 1 - r) * rh, rw, rh, fs, out, o.dimNew, lay, cmp);
     });
     if (gi) {   // the slopes: slate outside, a white knee wall inside, the line between them as strong as the walls
       const yb = yy + fh;
