@@ -20179,8 +20179,8 @@ const stageOfChapter = (id) => PATH_STAGES.findIndex(s => pathStageIds(s).includ
 function guideFocus(status, ids) {
   let last = null; try { last = localStorage.getItem(LAST_CHAPTER_KEY); } catch (e) {}
   if (last && ids.includes(last) && status[last] === 'started') return { id: last, kind: 'resume' };
-  const nx = ids.find(id => status[id] !== 'done');
-  return nx ? { id: nx, kind: ids.some(id => status[id] !== 'new') ? 'next' : 'start' } : null;
+  const nx = placeNext(ids, id => status[id] !== 'done');   // Build CR: from the placed floor
+  return nx ? { id: nx, kind: ids.some(id => status[id] !== 'new') ? 'next' : placeFloor() > 0 ? 'placed' : 'start' } : null;
 }
 const GuideNum = ({ n, on }) => <span style={{flex:'0 0 auto',width:30,height:30,borderRadius:15,display:'inline-flex',alignItems:'center',justifyContent:'center',fontFamily:"'Playfair Display', Georgia, serif",fontWeight:900,fontSize:16,
   background:on ? 'var(--coral)' : 'var(--navy)',color:'#fff'}}>{n}</span>;
@@ -20195,7 +20195,7 @@ function StartGuide({ onOpen, always }) {
   const label = (id) => (DRILLS.find(d => d.id === id) || {}).label;
   const closedBar = !open && !always;
   const cta = next && <button className="primary-btn" style={{width:'100%',padding:'12px 16px',fontSize:15.5,textAlign:'left',display:'flex',justifyContent:'space-between',alignItems:'center',gap:10}} onClick={() => onOpen(next)}>
-    <span><span style={{display:'block',fontSize:11.5,fontWeight:800,letterSpacing:'0.08em',textTransform:'uppercase',opacity:0.8}}>{focus.kind === 'resume' ? t('Keep going', '이어서 하기') : focus.kind === 'next' ? t('Next on your path', '나의 경로에서 다음') : t('Start at the beginning', '처음부터 시작하기')}</span>{label(next)}</span><span style={{fontSize:20}}>→</span></button>;
+    <span><span style={{display:'block',fontSize:11.5,fontWeight:800,letterSpacing:'0.08em',textTransform:'uppercase',opacity:0.8}}>{focus.kind === 'resume' ? t('Keep going', '이어서 하기') : focus.kind === 'next' ? t('Next on your path', '나의 경로에서 다음') : focus.kind === 'placed' ? t('Your start', '나의 시작') : t('Start at the beginning', '처음부터 시작하기')}</span>{label(next)}</span><span style={{fontSize:20}}>→</span></button>;
   if (closedBar) return (
     <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap',border:'1.5px solid var(--navy-line)',borderRadius:14,background:'var(--surface)',padding:'10px 12px',margin:'0 0 18px'}}>
       <span style={{flex:1,minWidth:160,fontSize:13.5,color:'var(--navy)'}}><b>{t('Your path', '나의 경로')}</b> · {t(nStarted + ' of ' + ids.length + ' chapters started, ' + nDone + ' finished', ids.length + '개 챕터 중 ' + nStarted + '개 시작, ' + nDone + '개 완료')}</span>
@@ -21673,9 +21673,115 @@ const GUIDE_HOW = () => [
   [t('Do the drill', '드릴 하기'), t('At the bottom of the chapter, press “Start the drill” for a quick quiz on what you learned.', '챕터 맨 아래의 “드릴 시작하기”를 누르면 배운 것을 짧은 퀴즈로 확인해요.')],
   [t('Press Next', '다음 누르기'), t('Every chapter ends with “Next on your path”, so you always know what comes after.', '모든 챕터 끝에 “나의 경로에서 다음”이 있어요. 그래서 다음에 할 일을 늘 알 수 있어요.')],
 ];
+
+// ══ Build CR: Where should you start? (board call 29) ══
+const PLACE_KEY = 'pb_place_v1', PLACE_N = 6, PLACE_PASS = 5;
+function loadPlace() { try { const v = JSON.parse(localStorage.getItem(PLACE_KEY)); return v && typeof v === 'object' ? v : null; } catch (e) { return null; } }
+const placeFloor = () => { const p = loadPlace(); return p && p.piano > 0 ? p.piano : 0; };
+function placeNext(ids, notDone) {   // the next room: from the placed floor up (theory rooms above the placed theory grade wait), then from the bottom
+  const p = loadPlace(), k = placeFloor(), th = p && p.theory ? p.theory : 7;
+  if (k > 0 && PATH_STAGES[k]) { const first = pathStageIds(PATH_STAGES[k])[0], i = ids.indexOf(first); if (i > 0) { const nx = ids.slice(i).find(id => notDone(id) && !(THEORY_ROOM[id] > th)); if (nx) return nx; } }
+  return ids.find(notDone);
+}
+function placeLadders() {
+  const piano = [], theory = [];
+  PATH_STAGES.forEach((st, k) => { if (stageExtra(st)) return; const ids = pathStageIds(st).filter(id => CHECK_LV[id] && !THEORY_ROOM[id]); if (ids.length) piano.push({ k, ids }); });
+  for (let n = 1; n <= 6; n++) { const ids = pathIds().filter(id => THEORY_ROOM[id] === n && CHECK_LV[id]); if (ids.length) theory.push({ n, ids }); }
+  return { piano, theory };
+}
+function placeItems(ids, n, noSound) {   // n questions from as many rooms as possible; the theory ladder asks without sound or tapping
+  const lv = (id) => chkLevels(id).filter(l => !(noSound && l.noPrint));
+  const rooms = chkShuffle(ids.filter(id => lv(id).length)), out = [];
+  let r = 0; while (out.length < n && rooms.length) { const id = rooms[r % rooms.length], L = lv(id); out.push({ id, lv: L[Math.floor(Math.random() * L.length)] }); r++; }
+  return chkShuffle(out);
+}
+const PLACE_PIANO = [['0', 'Not yet', '아직'], ['P', 'Prelim', 'Prelim'], ['1', 'Grade 1', 'Grade 1'], ['2', '2', '2'], ['3', '3', '3'], ['4', '4', '4'], ['5', '5', '5'], ['6', '6', '6'], ['7', '7', '7'], ['8', '8', '8']];
+const PLACE_THEORY = [['0', 'Not yet', '아직'], ['1', 'Grade 1', 'Grade 1'], ['2', '2', '2'], ['3', '3', '3'], ['4', '4', '4'], ['5', '5', '5'], ['6', '6', '6']];
+const placeChips = (opts, val, set) => <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:10}}>{opts.map(([id, en, ko]) => <button key={id} className={'chip' + (id === val ? ' active' : '')} aria-pressed={id === val} style={{minHeight:40,padding:'6px 12px'}} onClick={() => set(id)}>{t(en, ko)}</button>)}</div>;
+function placeStartRung(lad, said) {   // the rung of the grade the child says they have passed
+  if (said === '0') return 0;
+  const name = said === 'P' ? 'Prelim' : 'Grade ' + said, i = lad.findIndex(x => PATH_STAGES[x.k].en[0] === name);
+  return Math.max(0, i);
+}
+function Placement({ onOpen, onClose }) {
+  const lads = useMemo(() => placeLadders(), []);
+  const [phase, setPhase] = useState('ask'), [pg, setPg] = useState('0'), [tg, setTg] = useState('0');
+  const [track, setTrack] = useState('piano'), [rung, setRung] = useState(0), [items, setItems] = useState(null), [runKey, setRunKey] = useState(0);
+  const [down, setDown] = useState(false), [last, setLast] = useState(null), [res, setRes] = useState({}), [miss, setMiss] = useState([]);
+  const box = useRef(null);
+  const lad = track === 'piano' ? lads.piano : lads.theory;
+  const theoryStart = () => Math.max(0, Math.min(lads.theory.length - 1, (+tg || 1) - 1));
+  const rungName = (tr, i) => tr === 'piano' ? floorName(lads.piano[i].k) : theoryName(lads.theory[i].n);
+  const ask = (tr, i) => { const L = tr === 'piano' ? lads.piano : lads.theory; setTrack(tr); setRung(i); setItems(placeItems(L[i].ids, PLACE_N, tr === 'theory')); setRunKey(x => x + 1); setPhase('run'); try { box.current.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {} };
+  const begin = () => { setRes({}); setMiss([]); setDown(false); ask('piano', placeStartRung(lads.piano, pg)); };
+  const finish = (tr, startIdx) => {
+    const out = { ...res, [tr]: startIdx };
+    setRes(out);
+    if (tr === 'piano') { setDown(false); setLast(null); setPhase('turn'); return; }
+    const piano = lads.piano[out.piano] || lads.piano[lads.piano.length - 1], th = out.theory >= lads.theory.length ? null : lads.theory[out.theory];
+    try { localStorage.setItem(PLACE_KEY, JSON.stringify({ piano: piano.k, theory: th ? th.n : 7, at: Date.now() })); } catch (e) {}
+    setPhase('done');
+  };
+  const done = (r) => {
+    const right = r.filter(x => x.ok).length, pass = right >= PLACE_PASS, missed = r.filter(x => !x.ok).map(x => x.id);
+    setLast({ right, total: r.length, pass, name: rungName(track, rung) });
+    if (pass) { setMiss(m => m.concat(missed)); if (rung + 1 < lad.length && !down) { setPhase('climb'); return; } finish(track, down ? rung + 1 : lad.length); return; }
+    if (rung > 0 && !down && rung === (track === 'piano' ? placeStartRung(lads.piano, pg) : theoryStart())) { setDown(true); setPhase('lower'); return; }
+    finish(track, rung);
+  };
+  const shell = (body) => <div ref={box} data-testid="placement" data-phase={phase} style={{...chkBox(false),margin:'12px 0 0',textAlign:'left'}}>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',gap:8}}><div style={chkKicker}>{t('Where should you start?', '어디서 시작할까?')}</div><button className="chip" style={{padding:'2px 10px',fontSize:12}} onClick={onClose}>{t('Close', '닫기')}</button></div>{body}</div>;
+  if (phase === 'ask') return shell(<>
+    <div style={{fontSize:15,color:'#26296b',lineHeight:1.45,margin:'2px 0 8px'}}>{t('About ten minutes of quick questions, in two parts: piano (ears, keys, scales; sound on) and theory. They can be at different grades, and that is fine.', '빠른 문제로 10분쯤, 두 부분: 피아노(귀, 건반, 스케일; 소리 켜기)와 이론. 둘의 급이 달라도 괜찮아요.')}</div>
+    <div style={{fontSize:13,fontWeight:800,color:'#4a4d86',margin:'4px 0 4px'}}>{t('Piano exam passed', '통과한 피아노 시험')}</div>
+    {placeChips(PLACE_PIANO, pg, setPg)}
+    <div style={{fontSize:13,fontWeight:800,color:'#4a4d86',margin:'2px 0 4px'}}>{t('Theory exam passed', '통과한 이론 시험')}</div>
+    {placeChips(PLACE_THEORY, tg, setTg)}
+    <div style={{fontSize:12.5,color:'#6d6f9c',margin:'0 0 8px'}}>{t('Not sure? Choose Not yet: the questions will find your level.', '잘 모르겠으면 ‘아직’을 골라요: 문제가 알아서 찾아 줘요.')}</div>
+    <button className="primary-btn" data-testid="place-start" onClick={begin}>{t('Start →', '시작 →')}</button>
+  </>);
+  if (phase === 'run' && items) return shell(<>
+    <div style={{fontSize:15,fontWeight:900,color:'#26296b',margin:'0 0 2px'}}>{(track === 'piano' ? t('Piano · ', '피아노 · ') : t('Theory · ', '이론 · ')) + rungName(track, rung)}</div>
+    <div style={{display:'flex',gap:3,margin:'2px 0 0'}} aria-hidden="true">{lad.map((x, i) => <span key={i} style={{flex:1,height:5,borderRadius:3,background:i < rung ? '#26296b' : i === rung ? '#e4572e' : 'rgba(38,41,107,0.12)'}}/>)}</div>
+    <CheckRun key={'p' + runKey} items={items} floor onDone={done} onQuit={onClose}/>
+  </>);
+  if (phase === 'climb' || phase === 'lower' || phase === 'turn') return shell(<div data-testid="place-step" style={{textAlign:'center',padding:'6px 0'}}>
+    {last && <div style={{fontSize:34,fontWeight:900,color:'#26296b'}}>{last.right}<span style={{fontSize:17,color:'var(--muted)'}}> / {last.total}</span></div>}
+    <div style={{fontSize:16,fontWeight:900,color:phase === 'climb' ? '#2e8a6e' : '#26296b',margin:'4px 0 10px'}}>{phase === 'climb' ? t(last.name + ': easy for you! Up a floor.', last.name + ': 쉽네요! 한 층 위로.') : phase === 'lower' ? t('That one was hard. Let’s try a floor lower.', '조금 어려웠어요. 한 층 아래로 가 봐요.') : t('Piano done! Now theory: no sound, just looking and thinking.', '피아노 끝! 이제 이론: 소리 없이, 보고 생각하기.')}</div>
+    {phase === 'turn' && <div style={{fontSize:14,color:'#4a4d86',margin:'-4px 0 10px'}}>{t('Piano: ', '피아노: ') + floorName(lads.piano[Math.min(res.piano, lads.piano.length - 1)].k)}</div>}
+    <button className="primary-btn" data-testid="place-next" onClick={() => phase === 'turn' ? ask('theory', theoryStart()) : ask(track, phase === 'climb' ? rung + 1 : rung - 1)}>{phase === 'climb' ? t('Next floor →', '다음 층 →') : phase === 'lower' ? t('One floor lower →', '한 층 아래 →') : t('Theory →', '이론 →')}</button>
+  </div>);
+  if (phase === 'done') {
+    const p = lads.piano[Math.min(res.piano, lads.piano.length - 1)], allPiano = res.piano >= lads.piano.length, th = res.theory >= lads.theory.length ? null : lads.theory[res.theory];
+    const firstRoom = pathStageIds(PATH_STAGES[p.k])[0], thFirst = th ? th.ids[0] : null;
+    const room = (id) => <button key={id} className="chip" style={{fontSize:13,minHeight:36}} onClick={() => onOpen(id)}>{bkChapterNo(id) + ' · ' + bkChapterName(id)} ›</button>;
+    const visit = [...new Set(miss)].filter(id => pathIds().indexOf(id) >= 0);
+    return shell(<div data-testid="place-result" data-floor={p.k} data-theory={th ? th.n : 7} style={{textAlign:'center'}}>
+      <CheckStamp text={t('START!', '출발!')} color="#26296b"/>
+      <div style={{display:'grid',gap:10,textAlign:'left',margin:'6px 0 0'}}>
+        <div style={{borderTop:'1px solid rgba(38,41,107,0.12)',paddingTop:8}}>
+          <div style={{...chkKicker,margin:0}}>{t('Piano', '피아노')}</div>
+          <div style={{fontSize:17,fontWeight:900,color:'#26296b'}}>{allPiano ? t('Every floor was easy. Start at the top: ', '모든 층이 쉬웠어요. 맨 위에서: ') + floorName(p.k) : floorName(p.k)}</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:6}}><button className="primary-btn" data-testid="place-go" style={{width:'auto',padding:'9px 14px',fontSize:14}} onClick={() => onOpen(firstRoom)}>{t('Start here: ', '여기서 시작: ') + bkChapterName(firstRoom) + ' →'}</button></div>
+        </div>
+        <div style={{borderTop:'1px solid rgba(38,41,107,0.12)',paddingTop:8}}>
+          <div style={{...chkKicker,margin:0}}>{t('Theory', '이론')}</div>
+          <div style={{fontSize:17,fontWeight:900,color:'#26296b'}}>{th ? theoryName(th.n) : t('Every theory grade was easy!', '모든 이론 급이 쉬웠어요!')}</div>
+          {th && <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:6}}><button className="primary-btn" data-testid="place-go-theory" style={{width:'auto',padding:'9px 14px',fontSize:14}} onClick={() => onOpen(thFirst)}>{t('Start here: ', '여기서 시작: ') + bkChapterName(thFirst) + ' →'}</button></div>}
+        </div>
+        {visit.length > 0 && <div style={{borderTop:'1px solid rgba(38,41,107,0.12)',paddingTop:8}}>
+          <div style={{fontSize:13,fontWeight:800,color:'#4a4d86',margin:'0 0 4px'}}>{t('Missed on the way up: worth a quick look', '올라오다 틀린 방: 잠깐 들러 봐요')}</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:6}}>{visit.slice(0, 6).map(room)}</div></div>}
+      </div>
+      <div style={{fontSize:12.5,color:'#6d6f9c',margin:'10px 0 0'}}>{t('Saved: the house now starts you on this floor. Do it again any time.', '저장했어요: 이제 집이 이 층부터 안내해요. 언제든 다시 해도 돼요.')}</div>
+    </div>);
+  }
+  return null;
+}
 // The top of the map page: the one chapter to open next, and "How it works" folded away until asked for.
 function MapHead({ onOpen }) {
   const [help, setHelp] = useState(false);
+  const [place, setPlace] = useState(() => BOOT_PARAMS.get('start') === '1'), [, setPt] = useState(0);   // Build CR
   const totals = loadStepTotals(), ids = pathIds();
   const status = Object.fromEntries(ids.map(id => [id, chapterStatus(id, totals)]));
   const focus = guideFocus(status, ids), next = focus ? focus.id : null;
@@ -21684,11 +21790,13 @@ function MapHead({ onOpen }) {
     <div data-testid="map-head" style={{margin:'0 0 16px'}}>
       {next
         ? <button className="primary-btn" data-testid="map-continue" style={{width:'100%',padding:'12px 16px',fontSize:15.5,textAlign:'left',display:'flex',justifyContent:'space-between',alignItems:'center',gap:10}} onClick={() => onOpen(next)}>
-            <span><span style={{display:'block',fontSize:11.5,fontWeight:800,letterSpacing:'0.08em',textTransform:'uppercase',opacity:0.8}}>{focus.kind === 'resume' ? t('Keep going', '이어서 하기') : focus.kind === 'next' ? t('Next on your path', '나의 경로에서 다음') : t('Start at the beginning', '처음부터 시작하기')}</span>{label(next)}</span><span style={{fontSize:20}}>→</span></button>
+            <span><span style={{display:'block',fontSize:11.5,fontWeight:800,letterSpacing:'0.08em',textTransform:'uppercase',opacity:0.8}}>{focus.kind === 'resume' ? t('Keep going', '이어서 하기') : focus.kind === 'next' ? t('Next on your path', '나의 경로에서 다음') : focus.kind === 'placed' ? t('Your start', '나의 시작') : t('Start at the beginning', '처음부터 시작하기')}</span>{label(next)}</span><span style={{fontSize:20}}>→</span></button>
         : <div style={{fontSize:14.5,fontWeight:800,color:'var(--good)',textAlign:'center',margin:'6px 0'}}>{t('Every chapter on the path is done. Wonderful!', '경로의 모든 챕터를 마쳤어요. 멋져요!')}</div>}
-      <div style={{display:'flex',justifyContent:'flex-end',marginTop:8}}>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,flexWrap:'wrap',marginTop:8}}>
+        <button className={'chip' + (place ? ' active' : '')} data-testid="map-place" aria-expanded={place} style={{padding:'3px 11px',fontSize:12.5,fontWeight:800}} onClick={() => setPlace(v => !v)}>{loadPlace() ? t('Find my start again ▸', '시작점 다시 찾기 ▸') : focus && focus.kind === 'start' ? t('Already playing? Find your start ▸', '이미 치고 있나요? 시작점 찾기 ▸') : t('Where should I start? ▸', '어디서 시작할까? ▸')}</button>
         <button className={'chip' + (help ? ' active' : '')} data-testid="map-help" aria-expanded={help} style={{padding:'3px 11px',fontSize:12.5}} onClick={() => setHelp(h => !h)}>{help ? t('Hide how it works ▴', '사용법 접기 ▴') : t('? How it works', '? 사용법')}</button>
       </div>
+      {place && <Placement onOpen={onOpen} onClose={() => { setPlace(false); setPt(x => x + 1); }}/>}
       {help && <div data-testid="map-help-panel" style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(160px, 1fr))',gap:10,marginTop:10}}>
         {GUIDE_HOW().map(([h, x], i) => <div key={i} style={{display:'flex',gap:10,alignItems:'flex-start',background:'var(--surface)',border:'1.5px solid var(--navy-line)',borderRadius:12,padding:'10px 11px'}}>
           <GuideNum n={i + 1} on={i === 2}/><span><b style={{display:'block',fontSize:14.5,color:'var(--navy)',marginBottom:2}}>{h}</b><span style={{fontSize:13,color:'var(--navy-soft)',lineHeight:1.45}}>{x}</span></span>
@@ -23311,13 +23419,16 @@ function thRoom(view, state, id, x, y, w, h, fs, out, dimNew, lay, cmp) {   // d
   s += stSquare(sx, sy, sq, num, done ? ST.G : null, 11) + stT(sx + sq + 5, sy + 13, lines[0], { size: nz, weight: 700, font: TH_SERIF, fill: nfill });
   if (lines[1]) s += stT(cx, sy + 27, lines[1], { size: nz, weight: 700, font: TH_SERIF, fill: nfill, anchor: 'middle' });
   const star = view.star && view.star[id];   // Build CN: the chapter check passed
+  const thn = THEORY_ROOM[id];   // Build CQ: the Theory mark
+  if (thn) { const tw = cmp ? 17 : 21, th = cmp ? 10 : 12, tx = x + (cmp ? 5 : 8), ty = y + h - 6 - (cmp ? 14 : 17);
+    s += '<rect x="' + pFix(tx) + '" y="' + pFix(ty) + '" width="' + tw + '" height="' + th + '" rx="' + (th / 2) + '" fill="#fff" stroke="' + ST.N + '" stroke-width="0.9"/>' + stT(tx + tw / 2, ty + th - (cmp ? 2.4 : 2.8), 'T' + thn, { size: cmp ? 7.2 : 8.6, weight: 800, fill: ST.N, anchor: 'middle' }); }
   if (star) s += '<path d="' + chkStarD(x + w - (cmp ? 9 : 12), y + h - 6 - (cmp ? 8 : 11), cmp ? 5.5 : 7.5) + '" fill="' + ST.G + '" stroke="#fff" stroke-width="0.8"/>';
   const ic = HOUSE_ICONS[id];
   const picTop = cmp ? sy + lay.ml * 14 + 5 : Math.max(sy + lay.ml * 14 + 14, cy - 40);   // one height on the floor
   if (ic && !on) s += thPic(x + w / 2, picTop, ic, dimNew && st === 'new', cmp ? 0.44 : 0.8);
   if (on) out.fig = stG(ic ? thDome(x + w / 2, picTop - (cmp ? 4 : 0), ic, cmp ? 0.52 : 1) : '');   // your room: the dome, not Clara
   if (view.focus && thArea(id) !== view.focus) s += '<rect x="' + pFix(x + 1) + '" y="' + pFix(y + 1) + '" width="' + pFix(w - 2) + '" height="' + pFix(h - 2) + '" fill="#fff" opacity="0.78" stroke="none"/>';   // Build V: another topic's room, paled
-  const label = num + '. ' + t(nm[0], nm[1] || nm[0]) + (done ? t(', done', ', 완료') : on ? t(', you are here', ', 지금 여기') : '') + (star ? t(', check passed', ', 체크 통과') : '');
+  const label = num + '. ' + t(nm[0], nm[1] || nm[0]) + (done ? t(', done', ', 완료') : on ? t(', you are here', ', 지금 여기') : '') + (star ? t(', check passed', ', 체크 통과') : '') + (thn ? ', ' + theoryName(thn) : '');
   out.btns.push({ num, html: '<g data-chapter="' + id + '" data-status="' + st + '" data-here="' + (on ? '1' : '0') + '" role="button" tabindex="0" aria-label="' + penEsc(label).replace(/"/g, '&quot;') + '" style="cursor:pointer"><rect x="' + pFix(x + 1) + '" y="' + pFix(y + 1) + '" width="' + pFix(w - 2) + '" height="' + pFix(h - 2) + '" fill="transparent"/></g>' });
   return s;
 }
@@ -23425,7 +23536,7 @@ function RoomPeek({ id, num, floor, onGo, onClose }) {
         <span style={{flex:'0 0 30px',height:30,display:'inline-flex',alignItems:'center',justifyContent:'center',background:st === 'done' ? '#2e8a6e' : BK.ink,color:'#fff',fontFamily:LB_SERIF,fontWeight:800,fontSize:15}}>{num}</span>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontFamily:LB_SERIF,fontSize:19,fontWeight:800,color:BK.ink,lineHeight:1.15,textWrap:'balance'}}>{bkChapterName(id)}</div>
-          <div style={{fontSize:12,fontWeight:800,color:BK.muted,marginTop:2}}>{floor}{steps.length ? ' · ' + t(nDone + ' of ' + steps.length + ' steps done', steps.length + '단계 중 ' + nDone + '단계 완료') : ''}</div>
+          <div style={{fontSize:12,fontWeight:800,color:BK.muted,marginTop:2}}>{floor}{THEORY_ROOM[id] ? ' · ' + theoryName(THEORY_ROOM[id]) : ''}{steps.length ? ' · ' + t(nDone + ' of ' + steps.length + ' steps done', steps.length + '단계 중 ' + nDone + '단계 완료') : ''}</div>
           {CHECK_LV[id] && <div data-testid="peek-check" style={{fontSize:12,fontWeight:800,color:(loadChecks().rooms[id] || {}).pass ? '#2e8a6e' : BK.muted,marginTop:1}}>{(loadChecks().rooms[id] || {}).pass ? '★ ' + t('Chapter check passed', '챕터 체크 통과') : t('Chapter check: not yet', '챕터 체크: 아직')}</div>}
         </div>
         <button type="button" onClick={onClose} aria-label={t('Close', '닫기')} style={{flex:'0 0 auto',width:36,height:36,borderRadius:18,border:'1.5px solid rgba(38,41,107,0.25)',background:'#fff',color:BK.ink,fontSize:18,fontWeight:900,cursor:'pointer',lineHeight:1}}>×</button>
@@ -23456,7 +23567,7 @@ function HouseMap({ onOpen, compact, noIntro }) {
   const all = stages.flatMap(x => x.ids), nums = {}; all.forEach((id, k) => { nums[id] = k + 1; });
   const finished = stages.reduce((a, x) => a + x.st.filter(v => v === 'done').length, 0);
   let last = null; try { last = localStorage.getItem(LAST_CHAPTER_KEY); } catch (e) {}
-  const here = last && all.includes(last) && chapterState(last).status !== 'done' ? last : all.find(id => chapterState(id).status !== 'done');
+  const here = last && all.includes(last) && chapterState(last).status !== 'done' ? last : placeNext(all, id => chapterState(id).status !== 'done');
   const link = loadStoredLink(), name = link && link.name ? link.name.trim() : '', today = localDay();
   const chkRooms = loadChecks().rooms, star = {}; Object.keys(chkRooms).forEach(id => { if (chkRooms[id].pass) star[id] = 1; });   // Build CN
   const sig = stages.map(x => x.st.join(',')).join('|') + here + LANG + compact + name + today + fontTick + wide + (topic || '') + Object.keys(star).join(',');
@@ -23593,7 +23704,7 @@ function MusicMap({ onOpen, compact, noIntro }) {
   const all = stages.flatMap(x => x.ids);
   const finished = stages.reduce((a, x) => a + x.st.filter(v => v === 'done').length, 0);
   let last = null; try { last = localStorage.getItem(LAST_CHAPTER_KEY); } catch (e) {}
-  const here = last && all.includes(last) && chapterState(last).status !== 'done' ? last : all.find(id => chapterState(id).status !== 'done');
+  const here = last && all.includes(last) && chapterState(last).status !== 'done' ? last : placeNext(all, id => chapterState(id).status !== 'done');
   const lay = rdLayout(stages.length, wide, compact), r = RD.r, fin = lay.fin;
   const key = (e, fn) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fn(); } };
   const serif = { fontFamily: "'Playfair Display', Georgia, serif" }, sans = { fontFamily: "Inter, 'Pretendard', sans-serif" };
@@ -23897,6 +24008,36 @@ const HOME_FLOOR = (() => {
   Object.keys(m).forEach(id => { if (m[id] === '23') m[id] = to2.has(id) ? '2' : to3.has(id) ? '3' : '23'; });
   return m;
 })();
+
+// ══ Build CQ: the Theory mark (call 24, mark C) ══
+const THEORY_ROOM = { 'note-values': 1, dynamics: 1, staff: 1, 'whole-staff': 1, 'time-signatures': 1, tones: 1,
+  tempo: 1, rhythm: 1, 'ledger-lines': 1, scales: 1, 'minor-scales': 2, signs: 2,
+  accidentals: 1, 'key-signatures': 1, terms: 1, 'six-eight': 2, intervals: 1, chords: 1, form: 2,
+  melody: 2, 'harmony-23': 3, 'rhythm-23': 3, 'keys-4': 4, 'harmony-4': 4, 'rhythm-4': 4, 'keys-5': 5, 'harmony-5': 5, 'harmony-6': 6,
+  'piano-story': 0, 'pitch-range': 0, composers: 0, styles: 0 };   // 0: only the lessons marked Grade 4 to 6 (the strings, the dances, the woodwinds, the brass, the genres)
+const THEORY_LESSON = { 'term-cards': 2, 'term-match': 2, 'term-mixer': 2, 'term-sort': 2, 'rp-dot': 2, 'rm-68': 2, 'kf-minor': 2, 'rm-sync': 4, 'ac-double': 4,
+  'sc-wr': 0, 'sc-wl': 0, 'sc-br': 0, 'sc-bl': 0, 'sc-both': 0, 'sc-chrom': 0, 'ch-hands': 0, 'ch-ear': 0, 'iv-ear': 0, 'ms-ear': 0, 'ac-play': 0,
+  'stm-sf': 0, 'stm-metro': 0, 'stm-steady': 0, 'stm-read': 0, 'rp-read': 0, 'e8-read': 0, 'rm-swing': 0, 'fmx-fugue': 0, 'pedal': 0 };
+let _thRoomOf = null;
+function theoryRoomOf(id) {
+  if (!_thRoomOf) { _thRoomOf = {}; Object.values(HOME_LIVE).forEach(v => { (v.lessons || []).forEach(x => { if (v.check && !_thRoomOf[x]) _thRoomOf[x] = v.check; }); (v.groups || []).forEach(g => g.lessons.forEach(x => { if (g.check && !_thRoomOf[x]) _thRoomOf[x] = g.check; })); }); }
+  if (_thRoomOf[id]) return _thRoomOf[id];
+  const tl = TOOLS.find(x => x.id === id); return tl && THEORY_ROOM[tl.ch] !== undefined ? tl.ch : null;
+}
+function theoryOf(id) {
+  if (!id || /^mk-/.test(id)) return null;
+  if (THEORY_LESSON[id] !== undefined) return THEORY_LESSON[id] || null;
+  const room = theoryRoomOf(id); if (!room || THEORY_ROOM[room] === undefined) return null;
+  const fl = HOME_FLOOR[id], n = { '2': 2, '3': 3, '4': 4, '5': 5, '6': 6 }[fl];
+  if (n) return n;
+  if (!THEORY_ROOM[room] || !fl || fl === '23' || fl === '7' || fl === '8' || fl === 'home') return null;
+  return THEORY_ROOM[room];
+}
+const theoryName = (n) => t('Theory Grade ' + n, '이론 ' + n + '급');
+function TheoryTag({ id }) {
+  const n = theoryOf(id); if (!n) return null;
+  return <span data-theory={n} title={theoryName(n)} aria-label={theoryName(n)} style={{flex:'none',alignSelf:'center',fontSize:11.5,fontWeight:800,lineHeight:1,color:'#fffefa',background:'var(--navy)',borderRadius:4,padding:'4px 5px 3px',letterSpacing:'0.02em',fontVariantNumeric:'lining-nums'}}>{'T' + n}</span>;
+}
 const HOME_FLOOR_NAME = { G: 'Beginner', P: 'Prelim', '1': 'Grade 1', '2': 'Grade 2', '3': 'Grade 3', '23': 'Grades 2–3', '4': 'Grade 4', '5': 'Grade 5', '6': 'Grade 6', '7': 'Grade 7', '8': 'Grade 8' };   // Build BO: Grades 6 to 8   // Build P: plain words
 function FloorMark({ id }) {   // sits at the start of the lesson's line, so the title keeps its width; Inter, whose 1 is never an I
   const fl = HOME_FLOOR[id]; if (!fl) return null;
@@ -23959,6 +24100,7 @@ function ConceptHome({ st, update }) {
     <button key={n} onClick={onClick} data-lesson={fid || undefined} style={{...homeRow(on),minHeight:92}}>
       <span style={{flex:'none',width:40,height:40,borderRadius:20,background:'var(--navy)',color:'#fffefa',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,fontSize:18}}>{n}</span>
       <span style={{flex:1,minWidth:0,display:'block'}}><span style={homeTitle}>{title}</span><span style={homeSub}>{fid && <FloorMark id={fid}/>}{line}</span></span>
+      {fid && <TheoryTag id={fid}/>}
       <HomeChev on/>
     </button>
   );
