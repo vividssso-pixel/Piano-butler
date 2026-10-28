@@ -23311,13 +23311,16 @@ function thRoom(view, state, id, x, y, w, h, fs, out, dimNew, lay, cmp) {   // d
   s += stSquare(sx, sy, sq, num, done ? ST.G : null, 11) + stT(sx + sq + 5, sy + 13, lines[0], { size: nz, weight: 700, font: TH_SERIF, fill: nfill });
   if (lines[1]) s += stT(cx, sy + 27, lines[1], { size: nz, weight: 700, font: TH_SERIF, fill: nfill, anchor: 'middle' });
   const star = view.star && view.star[id];   // Build CN: the chapter check passed
+  const thn = THEORY_ROOM[id];   // Build CQ: the Theory mark
+  if (thn) { const tw = cmp ? 17 : 21, th = cmp ? 10 : 12, tx = x + (cmp ? 5 : 8), ty = y + h - 6 - (cmp ? 14 : 17);
+    s += '<rect x="' + pFix(tx) + '" y="' + pFix(ty) + '" width="' + tw + '" height="' + th + '" rx="' + (th / 2) + '" fill="#fff" stroke="' + ST.N + '" stroke-width="0.9"/>' + stT(tx + tw / 2, ty + th - (cmp ? 2.4 : 2.8), 'T' + thn, { size: cmp ? 7.2 : 8.6, weight: 800, fill: ST.N, anchor: 'middle' }); }
   if (star) s += '<path d="' + chkStarD(x + w - (cmp ? 9 : 12), y + h - 6 - (cmp ? 8 : 11), cmp ? 5.5 : 7.5) + '" fill="' + ST.G + '" stroke="#fff" stroke-width="0.8"/>';
   const ic = HOUSE_ICONS[id];
   const picTop = cmp ? sy + lay.ml * 14 + 5 : Math.max(sy + lay.ml * 14 + 14, cy - 40);   // one height on the floor
   if (ic && !on) s += thPic(x + w / 2, picTop, ic, dimNew && st === 'new', cmp ? 0.44 : 0.8);
   if (on) out.fig = stG(ic ? thDome(x + w / 2, picTop - (cmp ? 4 : 0), ic, cmp ? 0.52 : 1) : '');   // your room: the dome, not Clara
   if (view.focus && thArea(id) !== view.focus) s += '<rect x="' + pFix(x + 1) + '" y="' + pFix(y + 1) + '" width="' + pFix(w - 2) + '" height="' + pFix(h - 2) + '" fill="#fff" opacity="0.78" stroke="none"/>';   // Build V: another topic's room, paled
-  const label = num + '. ' + t(nm[0], nm[1] || nm[0]) + (done ? t(', done', ', 완료') : on ? t(', you are here', ', 지금 여기') : '') + (star ? t(', check passed', ', 체크 통과') : '');
+  const label = num + '. ' + t(nm[0], nm[1] || nm[0]) + (done ? t(', done', ', 완료') : on ? t(', you are here', ', 지금 여기') : '') + (star ? t(', check passed', ', 체크 통과') : '') + (thn ? ', ' + theoryName(thn) : '');
   out.btns.push({ num, html: '<g data-chapter="' + id + '" data-status="' + st + '" data-here="' + (on ? '1' : '0') + '" role="button" tabindex="0" aria-label="' + penEsc(label).replace(/"/g, '&quot;') + '" style="cursor:pointer"><rect x="' + pFix(x + 1) + '" y="' + pFix(y + 1) + '" width="' + pFix(w - 2) + '" height="' + pFix(h - 2) + '" fill="transparent"/></g>' });
   return s;
 }
@@ -23425,7 +23428,7 @@ function RoomPeek({ id, num, floor, onGo, onClose }) {
         <span style={{flex:'0 0 30px',height:30,display:'inline-flex',alignItems:'center',justifyContent:'center',background:st === 'done' ? '#2e8a6e' : BK.ink,color:'#fff',fontFamily:LB_SERIF,fontWeight:800,fontSize:15}}>{num}</span>
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontFamily:LB_SERIF,fontSize:19,fontWeight:800,color:BK.ink,lineHeight:1.15,textWrap:'balance'}}>{bkChapterName(id)}</div>
-          <div style={{fontSize:12,fontWeight:800,color:BK.muted,marginTop:2}}>{floor}{steps.length ? ' · ' + t(nDone + ' of ' + steps.length + ' steps done', steps.length + '단계 중 ' + nDone + '단계 완료') : ''}</div>
+          <div style={{fontSize:12,fontWeight:800,color:BK.muted,marginTop:2}}>{floor}{THEORY_ROOM[id] ? ' · ' + theoryName(THEORY_ROOM[id]) : ''}{steps.length ? ' · ' + t(nDone + ' of ' + steps.length + ' steps done', steps.length + '단계 중 ' + nDone + '단계 완료') : ''}</div>
           {CHECK_LV[id] && <div data-testid="peek-check" style={{fontSize:12,fontWeight:800,color:(loadChecks().rooms[id] || {}).pass ? '#2e8a6e' : BK.muted,marginTop:1}}>{(loadChecks().rooms[id] || {}).pass ? '★ ' + t('Chapter check passed', '챕터 체크 통과') : t('Chapter check: not yet', '챕터 체크: 아직')}</div>}
         </div>
         <button type="button" onClick={onClose} aria-label={t('Close', '닫기')} style={{flex:'0 0 auto',width:36,height:36,borderRadius:18,border:'1.5px solid rgba(38,41,107,0.25)',background:'#fff',color:BK.ink,fontSize:18,fontWeight:900,cursor:'pointer',lineHeight:1}}>×</button>
@@ -23897,6 +23900,36 @@ const HOME_FLOOR = (() => {
   Object.keys(m).forEach(id => { if (m[id] === '23') m[id] = to2.has(id) ? '2' : to3.has(id) ? '3' : '23'; });
   return m;
 })();
+
+// ══ Build CQ: the Theory mark (call 24, mark C) ══
+const THEORY_ROOM = { 'note-values': 1, dynamics: 1, staff: 1, 'whole-staff': 1, 'time-signatures': 1, tones: 1,
+  tempo: 1, rhythm: 1, 'ledger-lines': 1, scales: 1, 'minor-scales': 2, signs: 2,
+  accidentals: 1, 'key-signatures': 1, terms: 1, 'six-eight': 2, intervals: 1, chords: 1, form: 2,
+  melody: 2, 'harmony-23': 3, 'rhythm-23': 3, 'keys-4': 4, 'harmony-4': 4, 'rhythm-4': 4, 'keys-5': 5, 'harmony-5': 5, 'harmony-6': 6,
+  'piano-story': 0, 'pitch-range': 0, composers: 0, styles: 0 };   // 0: only the lessons marked Grade 4 to 6 (the strings, the dances, the woodwinds, the brass, the genres)
+const THEORY_LESSON = { 'term-cards': 2, 'term-match': 2, 'term-mixer': 2, 'term-sort': 2, 'rp-dot': 2, 'rm-68': 2, 'kf-minor': 2, 'rm-sync': 4, 'ac-double': 4,
+  'sc-wr': 0, 'sc-wl': 0, 'sc-br': 0, 'sc-bl': 0, 'sc-both': 0, 'sc-chrom': 0, 'ch-hands': 0, 'ch-ear': 0, 'iv-ear': 0, 'ms-ear': 0, 'ac-play': 0,
+  'stm-sf': 0, 'stm-metro': 0, 'stm-steady': 0, 'stm-read': 0, 'rp-read': 0, 'e8-read': 0, 'rm-swing': 0, 'fmx-fugue': 0, 'pedal': 0 };
+let _thRoomOf = null;
+function theoryRoomOf(id) {
+  if (!_thRoomOf) { _thRoomOf = {}; Object.values(HOME_LIVE).forEach(v => { (v.lessons || []).forEach(x => { if (v.check && !_thRoomOf[x]) _thRoomOf[x] = v.check; }); (v.groups || []).forEach(g => g.lessons.forEach(x => { if (g.check && !_thRoomOf[x]) _thRoomOf[x] = g.check; })); }); }
+  if (_thRoomOf[id]) return _thRoomOf[id];
+  const tl = TOOLS.find(x => x.id === id); return tl && THEORY_ROOM[tl.ch] !== undefined ? tl.ch : null;
+}
+function theoryOf(id) {
+  if (!id || /^mk-/.test(id)) return null;
+  if (THEORY_LESSON[id] !== undefined) return THEORY_LESSON[id] || null;
+  const room = theoryRoomOf(id); if (!room || THEORY_ROOM[room] === undefined) return null;
+  const fl = HOME_FLOOR[id], n = { '2': 2, '3': 3, '4': 4, '5': 5, '6': 6 }[fl];
+  if (n) return n;
+  if (!THEORY_ROOM[room] || !fl || fl === '23' || fl === '7' || fl === '8' || fl === 'home') return null;
+  return THEORY_ROOM[room];
+}
+const theoryName = (n) => t('Theory Grade ' + n, '이론 ' + n + '급');
+function TheoryTag({ id }) {
+  const n = theoryOf(id); if (!n) return null;
+  return <span data-theory={n} title={theoryName(n)} aria-label={theoryName(n)} style={{flex:'none',alignSelf:'center',fontSize:11.5,fontWeight:800,lineHeight:1,color:'#fffefa',background:'var(--navy)',borderRadius:4,padding:'4px 5px 3px',letterSpacing:'0.02em',fontVariantNumeric:'lining-nums'}}>{'T' + n}</span>;
+}
 const HOME_FLOOR_NAME = { G: 'Beginner', P: 'Prelim', '1': 'Grade 1', '2': 'Grade 2', '3': 'Grade 3', '23': 'Grades 2–3', '4': 'Grade 4', '5': 'Grade 5', '6': 'Grade 6', '7': 'Grade 7', '8': 'Grade 8' };   // Build BO: Grades 6 to 8   // Build P: plain words
 function FloorMark({ id }) {   // sits at the start of the lesson's line, so the title keeps its width; Inter, whose 1 is never an I
   const fl = HOME_FLOOR[id]; if (!fl) return null;
@@ -23959,6 +23992,7 @@ function ConceptHome({ st, update }) {
     <button key={n} onClick={onClick} data-lesson={fid || undefined} style={{...homeRow(on),minHeight:92}}>
       <span style={{flex:'none',width:40,height:40,borderRadius:20,background:'var(--navy)',color:'#fffefa',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:800,fontSize:18}}>{n}</span>
       <span style={{flex:1,minWidth:0,display:'block'}}><span style={homeTitle}>{title}</span><span style={homeSub}>{fid && <FloorMark id={fid}/>}{line}</span></span>
+      {fid && <TheoryTag id={fid}/>}
       <HomeChev on/>
     </button>
   );
