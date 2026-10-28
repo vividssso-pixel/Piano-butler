@@ -1,0 +1,12 @@
+import sys
+p = sys.argv[1]
+lines = open(p, encoding='utf-8').read().split('\n')
+idx = [i for i, l in enumerate(lines) if l.startswith('| 737 |')]
+assert len(idx) == 1
+assert not any(l.startswith('| 738 |') for l in lines)
+rows = [
+"| 738 | 2026-10-28 | **The dashboard's start and checks, one voice on the Home, the Home for adults (Build CS; board calls 8, 3 and 2, her 21:18: 'dashboard first; 2 agreed; 3 in my metaphors').** (1) The drills sync two more stores for a linked student: checks (pb_checks_v1) and place (pb_place_v1); merged without loss (first pass, best, furthest review per room; the latest checkpoint round per floor; the later placement). They need the database step migrations/2026-10-28_phaseD_checks-and-plan.sql (run once in Supabase; tested on PostgreSQL 16 with a Supabase-like stub: refused before, saved after, RLS own students only, anon cannot read the table). Before it is run the two stores are refused once a session and nothing else changes; after, what a device already holds is sent once (SYNC_LATE). (2) The teacher's plan: table student_plan {piano: floor index, theory: 1 to 7, home: true}; pb_get returns it as plan; the device keeps it (pb_plan_v1) and it wins over the student's placement: the house's next room and 'you are here' start on that floor, theory rooms above the theory grade wait, a floor checkpoint asks theory only up to that grade (call 24; a line says how many rooms). (3) teacher-dashboard.html: 'Start and checks' on a linked student's page: the placement, Start floor / Theory grade / Show the Home (adults) with Save, the effect in one line, and the chapter checks by floor (stars passed, checkpoint date and score, rooms to review) with reviews due. DRILLS_HOUSE in the dashboard is generated from the drills build by sc/housedata.js: rerun it when the house changes. (4) Call 2: a child sees the music map and Practice, as before; a linked adult the teacher switched the Home on for gets 'The Home: every topic' on Today and the Home with a way back. (5) Call 3: the Home's Keys and staff in her words, as the rooms say them: the small and the big house and their doors (KQ_DOOR, questions included), the turtle low and the bird high, Clara on middle C and Clara's ladder, the Queen's G and the King's F. Sources patch764.py (call 3), patch765.py (sync, plan, Home), dpatch766.py (dashboard); tests cs765.js, dash766.js (mock Supabase), kq765.js, pg_test.sql. |",
+]
+lines[idx[0] + 1:idx[0] + 1] = rows
+open(p, 'w', encoding='utf-8').write('\n'.join(lines))
+print('row 738 added')

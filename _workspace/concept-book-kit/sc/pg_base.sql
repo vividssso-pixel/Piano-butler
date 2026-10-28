@@ -1,0 +1,13 @@
+create role anon nologin; create role authenticated nologin;
+create schema auth;
+create table auth.users (id uuid primary key);
+create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.uid', true), '')::uuid $$;
+grant usage on schema auth to anon, authenticated; grant execute on function auth.uid() to anon, authenticated;
+grant usage on schema public to anon, authenticated;
+alter default privileges in schema public grant all on tables to anon, authenticated;
+create table public.students (id uuid primary key default gen_random_uuid(), user_id uuid not null, name text);
+alter table public.students enable row level security;
+create policy st_sel on public.students for select to authenticated using (user_id = auth.uid());
+grant all on public.students to authenticated;
+insert into auth.users values ('11111111-1111-1111-1111-111111111111'), ('22222222-2222-2222-2222-222222222222');
+insert into public.students (id, user_id, name) values ('aaaaaaaa-0000-0000-0000-000000000001', '11111111-1111-1111-1111-111111111111', 'Mia'), ('bbbbbbbb-0000-0000-0000-000000000002', '22222222-2222-2222-2222-222222222222', 'Other');

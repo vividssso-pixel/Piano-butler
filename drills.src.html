@@ -1736,12 +1736,13 @@ function FloorCheckCard({ here, onOpen }) {
   const box = useRef(null);
   const f = floors[sel]; if (!f) return null;
   const N = f.part ? FLOOR_HALF_N : FLOOR_N, c = loadChecks(), rec = c.floors[f.key];
+  const thG = myTheory(), fIds0 = thG < 7 ? f.ids.filter(id => !(THEORY_ROOM[id] > thG)) : f.ids, fIds = fIds0.length ? fIds0 : f.ids, thCut = fIds.length < f.ids.length;   // Build CS (call 24)
   const nDone = f.ids.filter(id => chapterState(id).status === 'done').length;
   const nm = (id) => bkChapterNo(id) + ' · ' + bkChapterName(id);
-  const start = () => { setItems(chkFloorItems(f.ids, N)); setOut(null); setMode('run'); setTimeout(() => { try { box.current.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {} }, 60); };
+  const start = () => { setItems(chkFloorItems(fIds, N)); setOut(null); setMode('run'); setTimeout(() => { try { box.current.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {} }, 60); };
   const done = (r) => {
     const per = {}; r.forEach(x => { const p = per[x.id] = per[x.id] || { right: 0, n: 0, miss: [] }; p.n++; if (x.ok) p.right++; else p.miss.push(x.n); });
-    const right = r.filter(x => x.ok).length, review = f.ids.filter(id => per[id] && per[id].miss.length);
+    const right = r.filter(x => x.ok).length, review = fIds.filter(id => per[id] && per[id].miss.length);
     const cc = loadChecks(); cc.floors[f.key] = { at: Date.now(), right, total: r.length, review }; saveChecks(cc);
     setOut({ right, total: r.length, per, review }); setMode('done'); setTick(x => x + 1);
   };
@@ -1752,6 +1753,7 @@ function FloorCheckCard({ here, onOpen }) {
     <div style={{display:'flex',flexWrap:'wrap',gap:5,margin:'4px 0 8px'}}>{floors.map(chip)}</div>
     {mode === 'idle' && <>
       <div style={{fontSize:16,fontWeight:900,color:'#26296b',lineHeight:1.3}}>{chkFloorName(f)}</div>
+      {thCut && <div data-testid="floor-theory-cut" style={{fontSize:12.5,color:'#6d6f9c',fontWeight:700,margin:'2px 0 0'}}>{t('Theory up to ' + theoryName(thG) + ' only: ' + fIds.length + ' of the ' + f.ids.length + ' rooms.', theoryName(thG) + '까지의 이론만: 방 ' + f.ids.length + '개 중 ' + fIds.length + '개.')}</div>}
       <div style={{fontSize:13.5,color:'#4a4d86',lineHeight:1.45,margin:'3px 0 0'}}>{t(N + ' mixed questions from its ' + f.ids.length + ' rooms (' + bkChapterNo(f.ids[0]) + '–' + bkChapterNo(f.ids[f.ids.length - 1]) + '). No playing and no pass mark: it shows which rooms to visit again.', '방 ' + f.ids.length + '개(' + bkChapterNo(f.ids[0]) + '~' + bkChapterNo(f.ids[f.ids.length - 1]) + '번)에서 섞은 ' + N + '문제. 연주도, 통과 점수도 없어요: 다시 가 볼 방을 알려 줘요.')}</div>
       <div style={{fontSize:13,color:'#6d6f9c',fontWeight:700,margin:'4px 0 0'}}>{rec ? t('Last time (' + chkDate(rec.at) + '): ' + rec.right + ' of ' + rec.total + (rec.review.length ? ' · rooms to visit again: ' + rec.review.length : ' · nothing to review'), '지난번(' + chkDate(rec.at) + '): ' + rec.total + '개 중 ' + rec.right + '개' + (rec.review.length ? ' · 다시 가 볼 방 ' + rec.review.length + '개' : ' · 복습할 방 없음')) : nDone === f.ids.length ? t('Every room on it is done: ready!', '방을 모두 끝냈어요: 준비 완료!') : t(nDone + ' of ' + f.ids.length + ' rooms done. You can try it any time.', '방 ' + f.ids.length + '개 중 ' + nDone + '개 완료. 언제든 해 볼 수 있어요.')}</div>
       <button className="primary-btn" data-testid="floor-check-start" style={{marginTop:10}} onClick={start}>{t('Start the checkpoint →', '중간점검 시작 →')}</button>
@@ -21677,9 +21679,13 @@ const GUIDE_HOW = () => [
 // ══ Build CR: Where should you start? (board call 29) ══
 const PLACE_KEY = 'pb_place_v1', PLACE_N = 6, PLACE_PASS = 5;
 function loadPlace() { try { const v = JSON.parse(localStorage.getItem(PLACE_KEY)); return v && typeof v === 'object' ? v : null; } catch (e) { return null; } }
-const placeFloor = () => { const p = loadPlace(); return p && p.piano > 0 ? p.piano : 0; };
+const PLAN_KEY = 'pb_plan_v1';   // Build CS: the teacher's plan for a linked student (from pb_get): { piano: floor index, theory: 1..7, home: bool }
+function loadPlan() { try { const v = JSON.parse(localStorage.getItem(PLAN_KEY)); return v && typeof v === 'object' && !Array.isArray(v) ? v : null; } catch (e) { return null; } }
+const placeFloor = () => { const pl = loadPlan(); if (pl && Number.isInteger(pl.piano) && pl.piano >= 0 && PATH_STAGES[pl.piano]) return pl.piano; const p = loadPlace(); return p && p.piano > 0 ? p.piano : 0; };
+const myTheory = () => { const pl = loadPlan(); if (pl && pl.theory >= 1 && pl.theory <= 7) return Math.round(pl.theory); const p = loadPlace(); return p && p.theory >= 1 && p.theory <= 7 ? p.theory : 7; };   // 7 = no limit
+const planHome = () => { const pl = loadPlan(); return !!(pl && pl.home === true); };
 function placeNext(ids, notDone) {   // the next room: from the placed floor up (theory rooms above the placed theory grade wait), then from the bottom
-  const p = loadPlace(), k = placeFloor(), th = p && p.theory ? p.theory : 7;
+  const k = placeFloor(), th = myTheory();
   if (k > 0 && PATH_STAGES[k]) { const first = pathStageIds(PATH_STAGES[k])[0], i = ids.indexOf(first); if (i > 0) { const nx = ids.slice(i).find(id => notDone(id) && !(THEORY_ROOM[id] > th)); if (nx) return nx; } }
   return ids.find(notDone);
 }
@@ -21999,13 +22005,15 @@ async function fetchStudentInfo(token) {
 const SYNC_STORES = {
   records: 'pb_drill_records_v1', stamps: 'pb_scale_stamps_v1', lesson_steps: 'pb_lesson_steps_v1', steps_total: 'pb_steps_total_v1',
   posture: 'pb_posture_v1', arm_ex: 'pb_arm_ex_v1', last_chapter: 'pb_last_chapter_v1',
+  checks: 'pb_checks_v1', place: 'pb_place_v1',   // Build CS (needs the database step phaseD; refused quietly before it)
 };
+const SYNC_LATE = ['checks', 'place'];   // stores added after devices already held them: sent once even if unchanged
 const SYNC_STORE_NAMES = Object.keys(SYNC_STORES);
 const SYNC_KEY_TO_STORE = {}; SYNC_STORE_NAMES.forEach(s => { SYNC_KEY_TO_STORE[SYNC_STORES[s]] = s; });
 const SYNC_OWNER_KEY = 'pb_sync_owner_v1', SYNC_REVS_KEY = 'pb_sync_revs_v1', SYNC_DIRTY_KEY = 'pb_sync_dirty_v1', SYNC_LOGQ_KEY = 'pb_sync_log_v1', SYNC_BACKUP_KEY = 'pb_sync_backup_v1';
 // live state: token = the link being synced; watch = a link exists on this device (changes are marked); busy = a chapter/tool is open;
 // deferred = a pull is waiting for the student to leave the chapter; ver = per-store change counter; appliedN = how many times remote data replaced local data
-const SY = { token: null, watch: false, timer: null, running: false, again: false, status: 'idle', prompt: null, appliedN: 0, busy: false, deferred: false, ver: {}, subs: new Set(), hooked: false, listening: false, applying: false, lastRun: 0 };
+const SY = { noStore: {}, token: null, watch: false, timer: null, running: false, again: false, status: 'idle', prompt: null, appliedN: 0, busy: false, deferred: false, ver: {}, subs: new Set(), hooked: false, listening: false, applying: false, lastRun: 0 };
 function sySet(patch) { Object.assign(SY, patch); SY.subs.forEach(f => { try { f(); } catch (e) {} }); }
 const syIsObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const syNum = (x) => { const n = +x; return isFinite(n) ? n : 0; };
@@ -22057,6 +22065,7 @@ function syHasProgress() {
   const ls = syReadStore('lesson_steps'); if (ls && Object.keys(ls).some(k => syIsObj(ls[k]) && Object.keys(ls[k]).some(i => ls[k][i]))) return true;
   const po = syReadStore('posture'); if (po && ((Array.isArray(po.history) && po.history.length) || (syIsObj(po.marks) && Object.keys(po.marks).length))) return true;
   const ar = syReadStore('arm_ex'); if (ar && Object.keys(ar).some(k => syNum(ar[k]) > 0)) return true;
+  const ck = syReadStore('checks'); if (ck && syIsObj(ck.rooms) && Object.keys(ck.rooms).length) return true;
   return false;
 }
 const syHasUnsaved = () => Object.keys(syDirty()).length > 0 || syQueue().length > 0;
@@ -22100,6 +22109,22 @@ function syMerge(store, L, R, sum) {
     [...(Array.isArray(R.history) ? R.history : []), ...(Array.isArray(L.history) ? L.history : [])].filter(syIsObj).forEach(h => { const d = String(h.day); if (!byDay[d] || syNum(h.ok) >= syNum(byDay[d].ok)) byDay[d] = h; });
     return { marks: { ...(syIsObj(R.marks) ? R.marks : {}), ...(syIsObj(L.marks) ? L.marks : {}) }, history: Object.keys(byDay).sort().map(d => byDay[d]).slice(-8) };
   }
+  if (store === 'checks') {                                          // Build CS: first pass, best score, furthest review; the latest checkpoint round
+    const a = syIsObj(R.rooms) ? R.rooms : {}, b = syIsObj(L.rooms) ? L.rooms : {}, rooms = {};
+    new Set([...Object.keys(a), ...Object.keys(b)]).forEach(id => {
+      const x = syIsObj(a[id]) ? a[id] : null, y = syIsObj(b[id]) ? b[id] : null;
+      if (!x || !y) { rooms[id] = x || y; return; }
+      const o = { ...x, ...y, best: Math.max(syNum(x.best), syNum(y.best)), tries: Math.max(syNum(x.tries), syNum(y.tries)) };
+      const ps = [x.pass, y.pass].map(syNum).filter(v => v > 0); if (ps.length) o.pass = Math.min(...ps);
+      const rx = syIsObj(x.review) ? x.review : null, ry = syIsObj(y.review) ? y.review : null;
+      if (rx || ry) o.review = !rx ? ry : !ry ? rx : (syNum(ry.stage) > syNum(rx.stage) || (syNum(ry.stage) === syNum(rx.stage) && syNum(ry.due) >= syNum(rx.due))) ? ry : rx;
+      rooms[id] = o;
+    });
+    const floors = { ...(syIsObj(R.floors) ? R.floors : {}) };
+    Object.entries(syIsObj(L.floors) ? L.floors : {}).forEach(([k, v]) => { if (syIsObj(v) && (!syIsObj(floors[k]) || syNum(v.at) >= syNum(floors[k].at))) floors[k] = v; });
+    return { ...R, ...L, rooms, floors };
+  }
+  if (store === 'place') return syNum(L.at) >= syNum(R.at) ? L : R;   // the later placement
   return L;
 }
 
@@ -22166,7 +22191,16 @@ function syBackupLocal() {
 // forget everything that belongs to one student on this device (the synced progress, the sync bookkeeping, the Today page's own memory)
 function syClearLocal() {
   SYNC_STORE_NAMES.forEach(s => syWriteStore(s, null));
-  [SYNC_OWNER_KEY, SYNC_REVS_KEY, SYNC_DIRTY_KEY, SYNC_LOGQ_KEY, TODAY_CACHE_KEY, TODAY_TICKS_KEY, 'pb_my_keys_v1'].forEach(syDel);
+  [SYNC_OWNER_KEY, SYNC_REVS_KEY, SYNC_DIRTY_KEY, SYNC_LOGQ_KEY, TODAY_CACHE_KEY, TODAY_TICKS_KEY, 'pb_my_keys_v1', PLAN_KEY].forEach(syDel);
+}
+// Build CS: the teacher's plan from pb_get ('plan' is there once phaseD is run; without the key nothing is touched). -> true when it changed
+function syApplyPlan(d) {
+  if (!d || typeof d !== 'object' || !('plan' in d)) return false;
+  const v = syIsObj(d.plan) ? JSON.stringify(d.plan) : null; let cur = null;
+  try { cur = localStorage.getItem(PLAN_KEY); } catch (e) {}
+  if (cur === v) return false;
+  try { SY.applying = true; if (v == null) localStorage.removeItem(PLAN_KEY); else localStorage.setItem(PLAN_KEY, v); } catch (e) {} finally { SY.applying = false; }
+  return true;
 }
 // bring this device and the database level for one student. -> 'ok' | 'offline' | 'unavailable' | 'invalid' | 'prompt'
 async function syPull(token, pushOnly) {
@@ -22184,6 +22218,7 @@ async function syPull(token, pushOnly) {
     if (syHasProgress()) { sySet({ prompt: { name: String(d.name || '').slice(0, 40) } }); return 'prompt'; }
     sySetOwner(d.ref);
   }
+  if (!pushOnly && syApplyPlan(d)) sySet({ appliedN: SY.appliedN + 1 });   // Build CS
   const res = await syReconcile(token, d, false, pushOnly);
   if (res !== 'ok') return res;
   return await syFlushLog(token);
@@ -22193,6 +22228,7 @@ async function syReconcile(token, d, importSum, pushOnly) {
   const revs = syRevs();
   let changed = false, result = 'ok';
   for (const store of SYNC_STORE_NAMES) {
+    if (SY.noStore[store]) { syClearDirty(store); continue; }                              // Build CS: refused earlier in this session (phaseD not run)
     let remote = d && d.stores && syIsObj(d.stores[store]) ? d.stores[store] : null;      // { value, rev }
     for (let attempt = 0; attempt < 3; attempt++) {
       const v0 = SY.ver[store] || 0;
@@ -22208,6 +22244,7 @@ async function syReconcile(token, d, importSum, pushOnly) {
           if (syIsObj(L) && !Object.keys(L).length) { syClearDirty(store); revs[store] = 0; break; } // nothing to keep
           toPush = L; pushBase = 0;
         } else if (base > 0) { if (!pushOnly) { syWriteStore(store, null); revs[store] = 0; changed = true; } break; } // the teacher cleared this progress: follow
+        else if (SYNC_LATE.includes(store) && !SY.noStore[store]) { toPush = L; pushBase = 0; }      // Build CS: held before it was synced: send it once
         else break;                                                                          // never synced and not changed: leave it
       } else {
         const rrev = syNum(remote.rev), rval = syClean(store, remote.value);
@@ -22236,6 +22273,7 @@ async function syReconcile(token, d, importSum, pushOnly) {
       }
       if (a.reason === 'conflict') { remote = a.value == null ? null : { value: a.value, rev: syNum(a.rev) }; if (!remote) revs[store] = 0; continue; }
       if (a.reason === 'link') { result = 'invalid'; break; }
+      if (a.reason === 'store') SY.noStore[store] = 1;                                         // Build CS: the database does not take this store yet (phaseD not run)
       syClearDirty(store); break;                                                            // refused for good (size / shape): do not retry forever
     }
     if (result !== 'ok') break;
@@ -22900,11 +22938,12 @@ function StudentScales({ onOpenTool }) {
     </div>
   );
 }
-function StudentHome({ link, onOpenChapter, onOpenTool }) {
+function StudentHome({ link, onOpenChapter, onOpenTool, onHome }) {
   const sec = { marginTop: 26 };
   return (
     <div data-testid="student-home">
       <TodayView link={link} onOpenChapter={onOpenChapter} onOpenTool={onOpenTool} onAll={() => {}} head={<HowItWorks/>} compact/>
+      {onHome && planHome() && <div style={sec}><button className="primary-btn" data-testid="today-home" onClick={onHome}>{t('The Home: every topic →', '홈: 모든 주제 →')}</button></div>}
       <div style={sec}>
         <StaffHead title={t('My practice tools', '나의 연습 도구')}/>
         <div style={{ height: 10 }}/>
@@ -24229,8 +24268,9 @@ function App() {
   function toggleSolfa() { const v = !solfaEn; setSolfaEn(v); try { localStorage.setItem('pb_solfa_v1', v ? '1' : '0'); } catch (e) {} }
   const T = teacher && !preview && !st.lock;
   UI_TEACHER = T;
+  const HM = T || (showToday && !st.lock && planHome());   // Build CS (call 2): the Home is the teacher's, and an adult's when the teacher switched it on
   const active = DRILLS.find(d => d.id === st.drill) || DRILLS[0];
-  const inChapter = (st.view === 'path' || st.view === 'chapters' || st.view === 'toolbox' || (T && st.view === 'home')) && !!st.drill;
+  const inChapter = (st.view === 'path' || st.view === 'chapters' || st.view === 'toolbox' || (HM && st.view === 'home')) && !!st.drill;
   const concept = active.concept || null;
   const level = concept ? ((concept.levels.find(l => l.n === st.level) || concept.levels[0]).n) : st.level;
 
@@ -24272,7 +24312,7 @@ function App() {
   // a student with a link always has a button back to the Today page on the Learn and Practice lists
   const todayBack = showToday && !T ? <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:12}} onClick={() => { update({ view: 'today', tool: null, kit: null, drill: null, from: null }); try { window.scrollTo(0, 0); } catch (e) {} }}>{t('← Today', '← 오늘')}</button> : null;
   const homeBack = '← ' + (st.hs === 'try' ? t('Try', '해 보기') : ((homeCatById(st.hc) || (st.ha && homeCats(st.ha).length === 1 ? homeCats(st.ha)[0] : null) || {}).name || t('Home', '홈')));
-  useEffect(() => { if (st.view === 'home' && !T) setSt(prev => ({ ...prev, view: 'path', drill: null, ret: null })); }, [st.view, T]);
+  useEffect(() => { if (st.view === 'home' && !HM) setSt(prev => ({ ...prev, view: 'path', drill: null, ret: null })); }, [st.view, HM]);
   function jumpToChapter(id) { setFindOpen(false); update({ view: (T && (st.view === 'toolbox' || st.view === 'chapters')) ? st.view : 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }
 
   return (
@@ -24313,7 +24353,7 @@ function App() {
         )}
         <SoundSettings/>
         {st.view === 'today' && !T && !st.lock && sl.link ? (
-          <StudentHome link={sl.link} onOpenChapter={(id) => { update({ view: 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1, from: { drill: id } }); try { window.scrollTo(0, 0); } catch (e) {} }} onOpenTool={(id) => { update({ view: PRACTICE_IDS.includes(id) ? 'practice' : 'tools', tool: id, kit: null, drill: null, from: { tool: id } }); try { window.scrollTo(0, 0); } catch (e) {} }} onAll={() => { update({ view: 'path', tool: null, kit: null, drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
+          <StudentHome link={sl.link} onOpenChapter={(id) => { update({ view: 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1, from: { drill: id } }); try { window.scrollTo(0, 0); } catch (e) {} }} onOpenTool={(id) => { update({ view: PRACTICE_IDS.includes(id) ? 'practice' : 'tools', tool: id, kit: null, drill: null, from: { tool: id } }); try { window.scrollTo(0, 0); } catch (e) {} }} onHome={() => { update({ view: 'home', ha: null, hc: null, hs: null, drill: null, tool: null, kit: null, from: null }); try { window.scrollTo(0, 0); } catch (e) {} }} onAll={() => { update({ view: 'path', tool: null, kit: null, drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
         ) : st.view === 'kit' && st.kit ? (
           st.tool
             ? <ToolView id={st.tool} locked={st.lock} backLabel="← Kit" onBack={() => update({ tool: null })} onChapter={(id) => update({ view: 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
@@ -24322,8 +24362,8 @@ function App() {
           st.tool
             ? <ToolView id={st.tool} locked={st.lock} backLabel={st.from && st.from.tool === st.tool ? '← Today' : st.view === 'practice' ? '← Practice' : st.ret === 'home' ? homeBack : '← Toolbox'} onBack={() => st.from && st.from.tool === st.tool ? update({ tool: null, view: 'today', from: null }) : update({ tool: null, view: (st.view === 'practice' ? null : st.ret) || (T && st.view === 'tools' ? 'toolbox' : st.view), ret: null })} onChapter={(id) => update({ view: st.ret === 'toolbox' ? 'toolbox' : 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
             : <>{todayBack}<PracticeView onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
-        ) : st.view === 'home' && T && !inChapter && !st.lock ? (
-          <ConceptHome st={st} update={update}/>
+        ) : st.view === 'home' && HM && !inChapter && !st.lock ? (
+          <>{!st.ha && !st.hc && !st.hs && todayBack}<ConceptHome st={st} update={update}/></>
         ) : !inChapter && !st.lock ? (
           T && st.view === 'toolbox'
             ? <ToolboxTab onOpenTool={(id) => { update({ view: 'tools', tool: id, ret: 'toolbox' }); try { window.scrollTo(0, 0); } catch (e) {} }}
@@ -24337,25 +24377,25 @@ function App() {
           const fromToday = !T && !!st.from && st.from.drill === st.drill;
           return (
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:6,marginBottom:14}}>
-              <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => fromToday ? update({ drill: null, view: 'today', from: null }) : update({ drill: null })}>{T ? (st.view === 'home' ? '← ' + ((homeCatById(st.hc) || (st.ha && homeCats(st.ha).length === 1 ? homeCats(st.ha)[0] : null) || {}).name || t('Home', '홈')) : t('← Back', '← 뒤로')) : fromToday ? t('← Today', '← 오늘') : t('← Learn', '← 배우기')}</button>
+              <button className="ghost-btn" style={{fontSize:13,padding:'5px 10px'}} onClick={() => fromToday ? update({ drill: null, view: 'today', from: null }) : update({ drill: null })}>{(T || (HM && st.view === 'home')) ? (st.view === 'home' ? '← ' + ((homeCatById(st.hc) || (st.ha && homeCats(st.ha).length === 1 ? homeCats(st.ha)[0] : null) || {}).name || t('Home', '홈')) : t('← Back', '← 뒤로')) : fromToday ? t('← Today', '← 오늘') : t('← Learn', '← 배우기')}</button>
               <span style={{fontSize:12,fontWeight:800,color:'var(--muted)',textAlign:'center'}}>{sg ? sg.title : ''}</span>
               <span style={{display:'flex',gap:4}}>
-                {!(T && st.view === 'home') && <button className="ghost-btn" style={{fontSize:13,padding:'5px 9px'}} disabled={k <= 0} onClick={() => update({ drill: list[k - 1], tab: 'learn', level: 1 })}>‹</button>}
-                {!(T && st.view === 'home') && <button className="ghost-btn" style={{fontSize:13,padding:'5px 9px'}} disabled={k >= list.length - 1} onClick={() => update({ drill: list[k + 1], tab: 'learn', level: 1 })}>›</button>}
+                {!(HM && st.view === 'home') && <button className="ghost-btn" style={{fontSize:13,padding:'5px 9px'}} disabled={k <= 0} onClick={() => update({ drill: list[k - 1], tab: 'learn', level: 1 })}>‹</button>}
+                {!(HM && st.view === 'home') && <button className="ghost-btn" style={{fontSize:13,padding:'5px 9px'}} disabled={k >= list.length - 1} onClick={() => update({ drill: list[k + 1], tab: 'learn', level: 1 })}>›</button>}
               </span>
             </div>
           );
         })()}
 
-        {!st.lock && !(T && st.view === 'home') && <AfterNote id={active.id} onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/>}
+        {!st.lock && !(HM && st.view === 'home') && <AfterNote id={active.id} onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/>}
         {concept ? (
           <>
-            <ConceptView concept={concept} tab={st.tab} level={level} mode={st.mode} locked={st.lock} onChange={update} drillOnly={T && st.view === 'home'} />
+            <ConceptView concept={concept} tab={st.tab} level={level} mode={st.mode} locked={st.lock} onChange={update} drillOnly={HM && st.view === 'home'} />
             {T && st.tab === 'drill' && <ShareLink drillId={active.id} level={level} mode={st.mode} />}
             {T && st.tab === 'drill' && !concept.noPrint && !(concept.levels.find(l => l.n === level) || {}).noPrint && <PrintLink drillId={active.id} level={level} />}
           </>
         ) : active.render()}
-        {!st.lock && !(T && st.view === 'home') && <PathNext id={active.id} onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }} onMap={() => { update({ view: 'path', drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>}
+        {!st.lock && !(HM && st.view === 'home') && <PathNext id={active.id} onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }} onMap={() => { update({ view: 'path', drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>}
         </>}
       </div>
     </div>
@@ -72432,7 +72472,7 @@ const kqKb = (f0, onTap) => { let f = f0.keepBlack ? f0 : { ...f0, marks: Object
   const el = f.bare
   ? <div style={{ maxWidth: f.mw || kqW(f.vx || kqVx(0, f.oct * 12)), margin: '0 auto' }}><TapKeyboard octaves={f.oct} extraC marks={f.marks || {}} onTap={onTap} top={0} names={f.names || null} nameCol={f.ncol || null} vx={f.vx || kqVx(0, f.oct * 12)}/></div>
   : <ScKeys ks={f.ks || [0, f.oct * 12]} oct={f.oct} marks={f.marks || {}} names={f.names || {}} ncol={f.ncol || {}} arcs={f.arcs || []} spans={f.spans || []} nonce={f.nonce || 0} onTap={onTap} mw={f.mw || kqW([kqX(f.ks ? f.ks[0] : 0) - 24, kqX(f.ks ? f.ks[1] : f.oct * 12) + 24])} plain={f.plain !== false}/>;
-  return f.cap ? <>{el}<div style={{ textAlign: 'center', fontSize: 13.5, fontWeight: 800, color: KQ.COD, margin: '2px 0 0' }}>{t('C = middle C, the C near the middle of the keyboard', 'C = 가운데 도, 건반 한가운데 가까이의 C')}</div></> : el; };
+  return f.cap ? <>{el}<div style={{ textAlign: 'center', fontSize: 13.5, fontWeight: 800, color: KQ.COD, margin: '2px 0 0' }}>{t('C = middle C, Clara’s key, near the middle of the keyboard', 'C = 가운데 도, 클라라의 건반, 건반 한가운데 가까이')}</div></> : el; };
 // words or numbers above the keyboard, at the keys' own x (same crop as the keyboard under it, so they line up)
 const kqNumRow = (vx, items, fs = 22, drop = 0) => { const sc = (vx[1] - vx[0]) / 430, h0 = (fs + 14) * sc, h = h0 + drop, w = kqW(vx), pxu = w / (vx[1] - vx[0]);
   return <div style={{ maxWidth: w, margin: '0 auto', marginBottom: drop ? -drop * pxu : 0, position: 'relative', zIndex: 1, pointerEvents: 'none' }}><svg viewBox={`${vx[0]} 0 ${vx[1] - vx[0]} ${h}`} style={{ width: '100%', display: 'block' }}>
@@ -72548,17 +72588,17 @@ const KQ_SPEC = {};
 
 // ══ 1. Keyboard patterns and note names (three lessons, her call 2026-10-22: 1+2, 3+4 and 5+6+7 each into one) ══
 // where each white key sits next to the black-key groups: [title, line, phrase for feedback, short label]
-const KQ_DOOR = {
-  C: [['C: left of the 2', 'C: 2개 묶음의 왼쪽'], ['It sits just left of the group of 2.', '2개 묶음 바로 왼쪽에 있어요.'], ['just left of the group of 2', '2개 묶음 바로 왼쪽'], ['left', '왼쪽']],
-  D: [['D: between the 2', 'D: 2개 사이'], ['It sits between the two black keys.', '두 검은건반 사이에 있어요.'], ['between the two black keys', '두 검은건반 사이'], ['between', '사이']],
-  E: [['E: right of the 2', 'E: 2개 묶음의 오른쪽'], ['It sits just right of the group of 2.', '2개 묶음 바로 오른쪽에 있어요.'], ['just right of the group of 2', '2개 묶음 바로 오른쪽'], ['right', '오른쪽']],
-  F: [['F: left of the 3', 'F: 3개 묶음의 왼쪽'], ['It sits just left of the group of 3.', '3개 묶음 바로 왼쪽에 있어요.'], ['just left of the group of 3', '3개 묶음 바로 왼쪽'], ['left', '왼쪽']],
-  G: [['G: first gap in the 3', 'G: 3개 묶음의 첫째 틈'], ['It sits between the 1st and 2nd black keys of the group of 3.', '3개 묶음의 첫째와 둘째 검은건반 사이에 있어요.'], ['between the 1st and 2nd black keys of the group of 3', '3개 묶음의 첫째와 둘째 검은건반 사이'], ['first gap', '첫째 틈']],
-  A: [['A: second gap in the 3', 'A: 3개 묶음의 둘째 틈'], ['It sits between the 2nd and 3rd black keys of the group of 3.', '3개 묶음의 둘째와 셋째 검은건반 사이에 있어요.'], ['between the 2nd and 3rd black keys of the group of 3', '3개 묶음의 둘째와 셋째 검은건반 사이'], ['second gap', '둘째 틈']],
-  B: [['B: right of the 3', 'B: 3개 묶음의 오른쪽'], ['It sits just right of the group of 3.', '3개 묶음 바로 오른쪽에 있어요.'], ['just right of the group of 3', '3개 묶음 바로 오른쪽'], ['right', '오른쪽']],
+const KQ_DOOR = {   // Build CS: the doors of her small and big houses (the rooms' words: 'C is at the small house's left door, D is inside, E at the right door')
+  C: [['C: the small house’s left door', 'C: 작은 집의 왼쪽 문'], ['It lives at the left door of the small house.', '작은 집의 왼쪽 문에 살아요.'], ['at the small house’s left door', '작은 집의 왼쪽 문'], ['left door', '왼쪽 문']],
+  D: [['D: inside the small house', 'D: 작은 집 안'], ['It lives inside, between the two black keys.', '집 안, 두 검은건반 사이에 살아요.'], ['inside the small house', '작은 집 안'], ['inside', '안']],
+  E: [['E: the small house’s right door', 'E: 작은 집의 오른쪽 문'], ['It lives at the right door of the small house.', '작은 집의 오른쪽 문에 살아요.'], ['at the small house’s right door', '작은 집의 오른쪽 문'], ['right door', '오른쪽 문']],
+  F: [['F: the big house’s left door', 'F: 큰 집의 왼쪽 문'], ['It lives at the left door of the big house.', '큰 집의 왼쪽 문에 살아요.'], ['at the big house’s left door', '큰 집의 왼쪽 문'], ['left door', '왼쪽 문']],
+  G: [['G: first inside the big house', 'G: 큰 집 안 첫째'], ['It lives inside, between the 1st and 2nd black keys.', '집 안, 첫째와 둘째 검은건반 사이에 살아요.'], ['between the big house’s 1st and 2nd black keys', '큰 집의 첫째와 둘째 검은건반 사이'], ['inside', '안']],
+  A: [['A: second inside the big house', 'A: 큰 집 안 둘째'], ['It lives inside too, between the 2nd and 3rd black keys.', '역시 집 안, 둘째와 셋째 검은건반 사이에 살아요.'], ['between the big house’s 2nd and 3rd black keys', '큰 집의 둘째와 셋째 검은건반 사이'], ['inside', '안']],
+  B: [['B: the big house’s right door', 'B: 큰 집의 오른쪽 문'], ['It lives at the right door of the big house.', '큰 집의 오른쪽 문에 살아요.'], ['at the big house’s right door', '큰 집의 오른쪽 문'], ['right door', '오른쪽 문']],
 };
 const KQ_MC = [
-  { k: 12, p: ['Tap middle C.', '가운데 도를 눌러 보세요.'], y: ['Yes, the C in the middle of the keyboard.', '맞아요. 건반 한가운데의 C예요.'] },
+  { k: 12, p: ['Tap middle C.', '가운데 도를 눌러 보세요.'], y: ['Yes: middle C, Clara’s key, in the middle of the keyboard.', '맞아요. 클라라의 건반, 건반 한가운데의 가운데 도예요.'] },
   { k: 24, p: ['Tap the next C to the right of middle C.', '가운데 도의 오른쪽 다음 C를 눌러 보세요.'], y: ['One pattern to the right of middle C.', '가운데 도에서 오른쪽으로 무늬 하나예요.'] },
   { k: 0, p: ['Tap the next C to the left of middle C.', '가운데 도의 왼쪽 다음 C를 눌러 보세요.'], y: ['One pattern to the left of middle C.', '가운데 도에서 왼쪽으로 무늬 하나예요.'] },
 ];
@@ -72578,19 +72618,19 @@ const KQ_REG = (k) => [0, 1, 2, 3, 4].includes(((k % 12) + 12) % 12) ? 2 : 3;
     return { kind: 'choice', prompt: ['Listen to two sounds. Which one is higher?', '소리 두 개를 들어 보세요. 어느 쪽이 더 높을까요?'], opts: [{ id: '1', label: () => t('The first', '처음 소리') }, { id: '2', label: () => t('The second', '나중 소리') }], ans: firstHigh ? '1' : '2', ok: (v) => v === (firstHigh ? '1' : '2'),
       play: () => { playKey(a - 24, 0.8); setTimeout(() => playKey(b - 24, 0.8), 900); },
       fig: (c) => ({ top: kqArrow(c.res ? hi : null, 48), kb: { bare: true, oct: 4, base: -24, marks: c.res ? { [lo]: 'seg3', [hi]: 'pick' } : {} } }),
-      yes: ['The higher sound came from the key further right.', '높은 소리는 더 오른쪽 건반에서 났어요.'], no: ['The other one was higher. Its key is further right.', '다른 쪽이 더 높았어요. 그 건반이 더 오른쪽에 있어요.'] }; };
+      yes: ['The higher sound, the bird’s, came from the key further right.', '높은 소리, 새의 소리는 더 오른쪽 건반에서 났어요.'], no: ['The other one was higher. Its key is further right.', '다른 쪽이 더 높았어요. 그 건반이 더 오른쪽에 있어요.'] }; };
   const multiB = (n) => { const ks = (n === 2 ? [1, 3] : [6, 8, 10]), targets = [0, 1].flatMap(o => ks.map(k => o * 12 + k));
     return { kind: 'multi', retry: true, targets, prompt: ['Tap every black key that sits in a group of ' + n + '.', '검은건반이 ' + n + '개씩 모인 곳의 건반을 모두 눌러 보세요.'], prog: (a, b) => ['Found ' + a + ' of ' + b + '. Keep going.', b + '개 중 ' + a + '개를 찾았어요. 계속해요.'],
       fig: () => ({ kb: { bare: true, oct: 2, base: 0 } }), yes: ['All ' + targets.length + ' found: ' + (n === 2 ? 'two' : 'three') + ' in every group.', '모두 ' + targets.length + '개 찾았어요. 묶음마다 ' + n + '개씩이에요.'],
       no: (k) => [[1, 3, 6, 8, 10].includes(((k % 12) + 12) % 12) ? 'That key is in a group of ' + (5 - n) + '. Look for the groups of ' + n + '.' : 'Only the black keys count here. Look for the groups of ' + n + '.', [1, 3, 6, 8, 10].includes(((k % 12) + 12) % 12) ? '그 건반은 ' + (5 - n) + '개 묶음에 있어요. ' + n + '개 묶음을 찾아 보세요.' : '여기서는 검은건반만 골라요. ' + n + '개 묶음을 찾아 보세요.'] }; };
   KQ_SPEC['kq-black'] = {
-    title: ['Black keys', '검은건반'], allLine: ['They come in groups of 2 and 3, always in the same order. Tap to listen.', '2개와 3개씩 모여 있고, 순서는 늘 같아요. 눌러 들어 보세요.'],
+    title: ['Black keys', '검은건반'], allLine: ['They come in groups of 2 and 3, the small houses and the big houses, always in the same order. Tap to listen.', '2개와 3개씩 모여 있어요. 작은 집과 큰 집이고, 순서는 늘 같아요. 눌러 들어 보세요.'],
     fig: (c) => ({ top: <KqGroupsTop lit={c.last && typeof c.last === 'object' ? c.last : null} onTap={(it) => { it.keys.forEach((k, j) => setTimeout(() => playKey(k, 0.3), j * 220)); c.setLast({ g: it.id }); }}/>, kb: { bare: true, oct: 2, base: 0, marks: blacks(0) } }),
     steps: [
-      { title: ['Two', '둘'], line: ['Two black keys stand side by side. Count them.', '검은건반 두 개가 나란히 서 있어요. 세어 보세요.'], fig: (c) => zoom(2, c) },
-      { title: ['Three', '셋'], line: ['Then comes a row of three.', '그다음에는 세 개가 줄지어 있어요.'], fig: (c) => zoom(3, c) },
+      { title: ['Two', '둘'], line: ['Two black keys stand side by side: a small house. Count them.', '검은건반 두 개가 나란히 서 있어요. 작은 집이에요. 세어 보세요.'], fig: (c) => zoom(2, c) },
+      { title: ['Three', '셋'], line: ['Then comes a row of three: a big house.', '그다음에는 세 개가 줄지어 있어요. 큰 집이에요.'], fig: (c) => zoom(3, c) },
       { title: ['Two, three, two, three', '둘, 셋, 둘, 셋'], line: ['The groups take turns from left to right, and the order never changes.', '묶음은 왼쪽에서 오른쪽으로 번갈아 나오고, 순서는 바뀌지 않아요.'], fig: (c) => { const u = Math.min(c.tk, 4), m = {}; for (let i = 0; i < u; i++) Object.assign(m, kqPaint({}, (i % 2 === 0 ? [1, 3] : [6, 8, 10]).map(k => Math.floor(i / 2) * 12 + k), i % 2 === 0 ? 'seg3' : 'seg4')); return { top: <KqGroupsTop upto={u}/>, kb: { bare: true, oct: 2, base: 0, marks: m } }; } },
-      { title: ['Low and high', '낮은 소리, 높은 소리'], line: ['Tap along the keys. Left sounds low and right sounds high.', '건반을 눌러 보세요. 왼쪽은 낮은 소리, 오른쪽은 높은 소리예요.'], fig: (c) => ({ top: kqArrow(typeof c.last === 'number' ? c.last : null, 36), kb: { bare: true, oct: 3, base: -12, marks: typeof c.last === 'number' ? { [c.last]: 'pick' } : {} } }) },
+      { title: ['Low and high', '낮은 소리, 높은 소리'], line: ['Tap along the keys. Left is low, down with the turtle; right is high, up with the bird.', '건반을 눌러 보세요. 왼쪽은 낮은 소리, 거북이와 함께 아래로. 오른쪽은 높은 소리, 새와 함께 위로.'], fig: (c) => ({ top: kqArrow(typeof c.last === 'number' ? c.last : null, 36), kb: { bare: true, oct: 3, base: -12, marks: typeof c.last === 'number' ? { [c.last]: 'pick' } : {} } }) },
     ],
     make: (n) => { const cntQ = () => { const g = kqPick([2, 3]), ks = g === 2 ? [1, 3] : [6, 8, 10], m = {}; ks.forEach(k => { m[k] = g === 2 ? 'seg3' : 'seg4'; }); return { kind: 'choice', cols: 2, prompt: ['How many black keys are in the marked group?', '표시된 묶음에 검은건반이 몇 개 있을까요?'], opts: [{ id: '2', label: '2' }, { id: '3', label: '3' }], ans: String(g), ok: (v) => v === String(g), fig: () => ({ kb: { bare: true, oct: 1, base: 0, marks: m, mw: 380 } }), yes: ['Yes, ' + g + '.', '맞아요. ' + g + '개예요.'], no: ['Count the marked black keys: ' + g + '.', '표시된 검은건반을 세어 보세요. ' + g + '개예요.'] }; };
       const hl = (hi) => { const m0 = 8 + kqRnd(20); return { kind: 'key', retry: true, prompt: hi ? ['Tap any key that sounds higher than the marked key.', '표시된 건반보다 높게 들리는 건반을 아무거나 눌러 보세요.'] : ['Tap any key that sounds lower than the marked key.', '표시된 건반보다 낮게 들리는 건반을 아무거나 눌러 보세요.'], play: () => playKey(m0, 0.7), fig: () => ({ kb: { bare: true, oct: 3, base: 0, marks: { [m0]: 'pick' } } }), ok: (k) => hi ? k > m0 : k < m0,
@@ -72599,7 +72639,7 @@ const KQ_REG = (k) => [0, 1, 2, 3, 4].includes(((k % 12) + 12) % 12) ? 2 : 3;
   }; }
 
 // ── lesson 2: naming the white keys, one at a time, by where each sits next to the black-key groups; then four ways to try
-const KQ_HZ = { small: { Ls: KQ_SMALL, ks: [0, 4], style: 'seg3', pk: 'pick', col: KQ.COD, name: ['The group of 2', '2개 묶음'] }, big: { Ls: KQ_BIG, ks: [5, 11], style: 'seg4', pk: 'pickB', col: KQ.BL, name: ['The group of 3', '3개 묶음'] } };
+const KQ_HZ = { small: { Ls: KQ_SMALL, ks: [0, 4], style: 'seg3', pk: 'pick', col: KQ.COD, name: ['The small house', '작은 집'] }, big: { Ls: KQ_BIG, ks: [5, 11], style: 'seg4', pk: 'pickB', col: KQ.BL, name: ['The big house', '큰 집'] } };
 { const hz = (kind, shown, cur, paint = true, word = false) => { const h = KQ_HZ[kind], small = kind === 'small', vx = kqVx(h.ks[0], h.ks[1]), m = paint ? kqPaint({}, kqHouseKeys(1, small).filter(k => KQ_L[k % 12]), h.style) : {}, nm = kqNames(1, shown);
     if (cur) { m[KQ_PC[cur]] = h.pk; nm.ncol[KQ_PC[cur]] = '#fff'; }
     return { top: <>{<KqRoofs oct={1} show={kind} vx={vx} k={kind}/>}{word && cur ? kqNumRow(vx, [{ x: kqX(KQ_PC[cur]), t: kqT(KQ_DOOR[cur][3]), col: h.col }], 17) : null}</>, kb: { bare: true, oct: 1, vx, mw: 290, marks: m, names: nm.names, ncol: nm.ncol } }; };
@@ -72612,34 +72652,34 @@ const KQ_HZ = { small: { Ls: KQ_SMALL, ks: [0, 4], style: 'seg3', pk: 'pick', co
   const houseM = (() => { const m = {}; kqHouseKeys(2, true).forEach(k => { m[k] = 'seg3'; }); kqHouseKeys(2, false).forEach(k => { m[k] = 'seg4'; }); return m; })();
   const pcOf = (L) => KQ_PC[L];
   KQ_SPEC['kq-houses'] = {
-    title: ['Naming the white keys', '흰건반 이름 붙이기'], allLine: ['Each white key is named by where it sits next to the black-key groups.', '흰건반은 검은건반 묶음 옆 어디에 있는지로 이름을 붙여요.'],
+    title: ['Naming the white keys', '흰건반 이름 붙이기'], allLine: ['Each white key is named by where it lives: at the small house or the big house, at a door or inside.', '흰건반은 어디에 사는지로 이름을 붙여요. 작은 집인지 큰 집인지, 문인지 집 안인지예요.'],
     fig: (c) => both(typeof c.last === 'number' ? c.last : null, c.tk),
     steps: [
-      { title: KQ_HZ.small.name, line: ['Three white keys go with it: one on the left, one between, one on the right.', '흰건반 세 개가 딸려 있어요. 왼쪽, 사이, 오른쪽에 하나씩이에요.'], fig: (c) => hz('small', [], null, c.tk >= 1) },
+      { title: KQ_HZ.small.name, line: ['Three white keys live here: one at each door and one inside.', '흰건반 세 개가 살아요. 양쪽 문에 하나씩, 집 안에 하나예요.'], fig: (c) => hz('small', [], null, c.tk >= 1) },
       one('C', 0), one('D', 1), one('E', 2),
-      { title: KQ_HZ.big.name, line: ['Four white keys go with it: one on the left, two between, one on the right.', '흰건반 네 개가 딸려 있어요. 왼쪽에 하나, 사이에 둘, 오른쪽에 하나예요.'], fig: (c) => hz('big', [], null, c.tk >= 1) },
+      { title: KQ_HZ.big.name, line: ['Four white keys live here: one at each door and two inside.', '흰건반 네 개가 살아요. 양쪽 문에 하나씩, 집 안에 둘이에요.'], fig: (c) => hz('big', [], null, c.tk >= 1) },
       one('F', 0), one('G', 1), one('A', 2), one('B', 3),
-      { title: ['The pattern repeats', '무늬는 되풀이돼요'], line: ['Group of 2, group of 3, again and again, with the same seven letters. Tap the keys to hear them.', '2개 묶음, 3개 묶음이 되풀이되고 같은 일곱 글자가 돌아와요. 건반을 눌러 들어 보세요.'], fig: (c) => both(typeof c.last === 'number' ? c.last : null, c.tk) },
+      { title: ['The pattern repeats', '무늬는 되풀이돼요'], line: ['Small house, big house, again and again, with the same seven letters. Tap the keys to hear them.', '작은 집, 큰 집이 되풀이되고 같은 일곱 글자가 돌아와요. 건반을 눌러 들어 보세요.'], fig: (c) => both(typeof c.last === 'number' ? c.last : null, c.tk) },
     ],
     make: (n, prev) => { let L; do { L = kqPick(KQ_ABC); } while (prev && prev.L === L);
       const kind = n % 8, D = KQ_DOOR[L];
       if (kind === 4) { const small = KQ_SMALL.includes(L), mk = { ...houseM }; mk[pcOf(L)] = small ? 'pick' : 'pickB';
-        return { L, kind: 'choice', cols: 2, prompt: ['This white key sits by which group of black keys?', '이 흰건반은 어느 검은건반 묶음 옆에 있을까요?'], opts: [{ id: '2', label: () => t('The group of 2', '2개 묶음') }, { id: '3', label: () => t('The group of 3', '3개 묶음') }], ans: small ? '2' : '3', ok: (v) => v === (small ? '2' : '3'), fig: () => tryKb(mk),
-          yes: ['Yes: ' + L + ' belongs to the group of ' + (small ? '2' : '3') + '.', '맞아요. ' + L + '은(는) ' + (small ? '2' : '3') + '개 묶음에 속해요.'], no: ['It is ' + L + ', which belongs to the group of ' + (small ? '2' : '3') + '.', kqYe(L) + '. ' + (small ? '2' : '3') + '개 묶음에 속해요.'] }; }
-      if (kind === 5) return { L, kind: 'choice', cols: 4, prompt: ['Which letter is the white key ' + D[2][0] + '?', D[2][1] + '인 흰건반은 어떤 글자일까요?'], opts: kqLet7(), ans: L, ok: (v) => v === L, fig: () => tryKb(houseM),
+        return { L, kind: 'choice', cols: 2, prompt: ['Which house does this white key live at?', '이 흰건반은 어느 집에 살까요?'], opts: [{ id: '2', label: () => t('The small house', '작은 집') }, { id: '3', label: () => t('The big house', '큰 집') }], ans: small ? '2' : '3', ok: (v) => v === (small ? '2' : '3'), fig: () => tryKb(mk),
+          yes: ['Yes: ' + L + ' lives at the ' + (small ? 'small' : 'big') + ' house.', '맞아요. ' + L + '은(는) ' + (small ? '작은' : '큰') + ' 집에 살아요.'], no: ['It is ' + L + ', and it lives at the ' + (small ? 'small' : 'big') + ' house.', kqYe(L) + '. ' + (small ? '작은' : '큰') + ' 집에 살아요.'] }; }
+      if (kind === 5) return { L, kind: 'choice', cols: 4, prompt: ['Which letter is the white key ' + D[2][0] + '?', D[2][1] + '에 있는 흰건반은 어떤 글자일까요?'], opts: kqLet7(), ans: L, ok: (v) => v === L, fig: () => tryKb(houseM),
         yes: ['Yes: ' + L + '.', '맞아요. ' + kqYe(L) + '.'], no: ['That is ' + L + '. Look at where it sits among the black keys.', L + '이에요. 검은건반 사이에서 어디에 있는지 보세요.'] };
       if (kind === 6) return { L, kind: 'key', retry: true, prompt: ['Tap ' + L + ' in the higher pattern, the one on the right.', '오른쪽의 더 높은 무늬에서 ' + L + ' 건반을 눌러 보세요.'], fig: () => tryKb(houseM), ok: (k) => k === pcOf(L) + 12,
         yes: ['Yes: the same letter, one pattern higher.', '맞아요. 같은 글자, 한 무늬 위예요.'], no: (k) => k % 12 === pcOf(L) ? ['Right letter, but the lower pattern. Take the one on the right.', '글자는 맞지만 낮은 무늬예요. 오른쪽 것을 눌러 보세요.'] : kqLetterKeyNo(k, L) };
       if (kind === 7) { let L2; do { L2 = kqPick(KQ_ABC); } while (L2 === L); const targets = [pcOf(L), pcOf(L) + 12, pcOf(L2), pcOf(L2) + 12];
         return { L, kind: 'multi', retry: true, targets, prompt: ['Tap every ' + L + ' and every ' + L2 + '.', L + ' 건반과 ' + L2 + ' 건반을 모두 눌러 보세요.'], prog: (a, b) => ['Found ' + a + ' of ' + b + '. Keep going.', b + '개 중 ' + a + '개를 찾았어요. 계속해요.'], fig: () => tryKb(houseM),
           yes: ['All four found: each letter once in each pattern.', '네 개 모두 찾았어요. 글자마다 무늬마다 하나씩이에요.'], no: (k) => [(KQ_L[((k % 12) + 12) % 12] ? 'That is ' + KQ_L[((k % 12) + 12) % 12] + '. ' : 'That is a black key. ') + 'Look for ' + L + ' and ' + L2 + '.', (KQ_L[((k % 12) + 12) % 12] ? '그건 ' + KQ_L[((k % 12) + 12) % 12] + ' 건반이에요. ' : '그건 검은건반이에요. ') + L + '과(와) ' + L2 + ' 건반을 찾아 보세요.'] }; }
-      if (kind === 3) { const targets = [pcOf(L), pcOf(L) + 12]; return { L, kind: 'multi', retry: true, targets, prompt: ['Tap every white key that is ' + D[2][0] + '.', D[2][1] + '인 흰건반을 모두 눌러 보세요.'], prog: (a, b) => ['Found ' + a + ' of ' + b + '. One more.', b + '개 중 ' + a + '개를 찾았어요. 하나 더요.'], fig: () => tryKb(houseM), yes: ['Both found: that is the letter ' + L + ', once in each pattern.', '두 개 모두 찾았어요. 글자 ' + kqYe(L) + '. 무늬마다 하나씩 있어요.'], no: (k) => kqLetterKeyNo(k, L) }; }
+      if (kind === 3) { const targets = [pcOf(L), pcOf(L) + 12]; return { L, kind: 'multi', retry: true, targets, prompt: ['Tap every white key ' + D[2][0] + '.', D[2][1] + '에 있는 흰건반을 모두 눌러 보세요.'], prog: (a, b) => ['Found ' + a + ' of ' + b + '. One more.', b + '개 중 ' + a + '개를 찾았어요. 하나 더요.'], fig: () => tryKb(houseM), yes: ['Both found: that is the letter ' + L + ', once in each pattern.', '두 개 모두 찾았어요. 글자 ' + kqYe(L) + '. 무늬마다 하나씩 있어요.'], no: (k) => kqLetterKeyNo(k, L) }; }
       if (kind === 0) return { L, kind: 'key', retry: true, prompt: ['Tap ' + L + '.', L + ' 건반을 눌러 보세요.'], fig: () => tryKb(houseM), ok: (k) => k % 12 === pcOf(L),
         yes: ['Yes, ' + L + ' is ' + D[2][0] + '.', '맞아요. ' + L + ' 건반: ' + D[2][1] + '.'], no: (k) => kqLetterKeyNo(k, L) };
       if (kind === 1) { const small = KQ_SMALL.includes(L), Ls = small ? KQ_SMALL : KQ_BIG, mk = { ...houseM }; mk[pcOf(L) + 12] = small ? 'pick' : 'pickB';
         return { L, kind: 'choice', cols: Ls.length > 3 ? 4 : 3, prompt: ['Which letter is the marked key?', '표시된 건반은 어떤 글자일까요?'], opts: Ls.map(x => ({ id: x, label: x })), ans: L, ok: (v) => v === L, fig: () => tryKb(mk),
           yes: ['Yes: ' + L + ', ' + D[2][0] + '.', '맞아요. ' + L + ' 건반: ' + D[2][1] + '.'], no: ['That key is ' + L + ': ' + D[2][0] + '.', '이 건반은 ' + L + ' 건반이에요: ' + D[2][1] + '.'] }; }
-      return { L, kind: 'key', retry: true, prompt: ['Tap the white key that is ' + D[2][0] + '.', D[2][1] + '인 흰건반을 눌러 보세요.'], fig: () => tryKb(houseM), ok: (k) => k % 12 === pcOf(L),
+      return { L, kind: 'key', retry: true, prompt: ['Tap the white key ' + D[2][0] + '.', D[2][1] + '에 있는 흰건반을 눌러 보세요.'], fig: () => tryKb(houseM), ok: (k) => k % 12 === pcOf(L),
         yes: ['Yes, that is ' + L + '.', '맞아요. ' + L + ' 건반이에요.'], no: (k) => kqLetterKeyNo(k, L) }; },
   }; }
 
@@ -72658,15 +72698,15 @@ const KQ_HZ = { small: { Ls: KQ_SMALL, ks: [0, 4], style: 'seg3', pk: 'pick', co
     title: ['Every key has its place', '모든 건반에는 제 자리가 있어요'], allLine: ['The seven names go round and round, so every pattern has the same letters. Tap a key to hear it.', '이름 일곱 개가 돌고 돌아서, 무늬마다 같은 글자가 있어요. 건반을 눌러 들어 보세요.'],
     fig: (c) => ({ kb: c.tk >= 1 || typeof c.last === 'number' ? allNames(typeof c.last === 'number' ? c.last : null) : { oct: O, base } }),
     steps: [
-      { title: ['Every C', '모든 C'], line: ['Each C sits just left of a group of 2, so every C has the same spot.', 'C는 2개 묶음 바로 왼쪽마다 있어서, 모든 C가 같은 자리에 있어요.'], fig: () => ({ kb: same(['C']) }) },
+      { title: ['Every C', '모든 C'], line: ['Each C lives at the left door of a small house, so every C has the same spot.', 'C는 작은 집마다 왼쪽 문에 살아서, 모든 C가 같은 자리에 있어요.'], fig: () => ({ kb: same(['C']) }) },
       { title: ['One letter at a time', '글자 하나씩'], line: ['Watch: each letter lights up in every pattern, always in its own spot.', '보세요. 글자마다 모든 무늬에서 늘 제 자리에 켜져요.'], fig: (c) => ({ kb: c.tk < 1 ? { oct: O, base } : same(['DEFGAB'[Math.min(Math.floor((c.tk - 1) / 2), 5)]]) }) },
-      { title: ['Middle C', '가운데 도'], line: ['One C has a name of its own: the C in the middle of the keyboard.', 'C 하나는 이름이 따로 있어요. 건반 한가운데 있는 C예요.'], fig: () => ({ kb: { ...same(['C'], 12) } }) },
-      { title: ['Twelve keys, seven names', '건반 열두 개, 이름 일곱 개'], line: ['A group of 2 and a group of 3 make one pattern. Count its 12 keys, black ones too: only the white keys have letters.', '2개 묶음과 3개 묶음이 무늬 하나예요. 건반 12개를 검은건반까지 세어 보세요. 글자가 있는 건 흰건반뿐이에요.'], fig: (c) => twelve(c) },
-      { title: ['Round again', '다시 처음으로'], line: ['After B the next group of 2 begins, and C comes round again. From one C to the next C is called an octave.', 'B 다음에는 다음 2개 묶음이 시작되고, C가 다시 나와요. 한 C에서 다음 C까지를 한 옥타브라고 불러요.'], fig: () => ({ kb: { oct: 2, base: 0, marks: { 11: 'seg4', 12: 'pick' }, names: { 11: 'B', 12: 'C' }, ncol: { 11: KQ.BL, 12: KQ.COD }, plain: true, ks: [5, 16] } }) },
+      { title: ['Middle C', '가운데 도'], line: ['One C has a name of its own: middle C, in the middle of the keyboard. Clara lives here.', 'C 하나는 이름이 따로 있어요. 건반 한가운데의 가운데 도예요. 클라라가 여기 살아요.'], fig: () => ({ kb: { ...same(['C'], 12) } }) },
+      { title: ['Twelve keys, seven names', '건반 열두 개, 이름 일곱 개'], line: ['A small house and a big house make one pattern. Count its 12 keys, black ones too: only the white keys have letters.', '작은 집과 큰 집이 무늬 하나예요. 건반 12개를 검은건반까지 세어 보세요. 글자가 있는 건 흰건반뿐이에요.'], fig: (c) => twelve(c) },
+      { title: ['Round again', '다시 처음으로'], line: ['After B the next small house begins, and C comes round again. From one C to the next C is called an octave.', 'B 다음에는 다음 작은 집이 시작되고, C가 다시 나와요. 한 C에서 다음 C까지를 한 옥타브라고 불러요.'], fig: () => ({ kb: { oct: 2, base: 0, marks: { 11: 'seg4', 12: 'pick' }, names: { 11: 'B', 12: 'C' }, ncol: { 11: KQ.BL, 12: KQ.COD }, plain: true, ks: [5, 16] } }) },
     ],
     make: (n, prev) => { const WH = [0, 2, 4, 5, 7, 9, 11, 12], mcI = Math.floor(n / 8) % 3,
       mid = () => ({ L: null, kind: 'key', retry: true, prompt: KQ_MC[mcI].p, fig: () => ({ kb: { bare: true, oct: O, base } }), ok: (k) => k === KQ_MC[mcI].k, yes: KQ_MC[mcI].y,
-        no: (k) => k % 12 === 0 ? ['That is a C, but not the one asked for. Middle C is the C in the middle of this keyboard.', '그건 C지만 찾는 C가 아니에요. 가운데 도는 이 건반 한가운데의 C예요.'] : ['That is not a C. A C sits just left of a group of 2 black keys.', '그건 C가 아니에요. C는 검은건반 2개 묶음 바로 왼쪽에 있어요.'] }),
+        no: (k) => k % 12 === 0 ? ['That is a C, but not the one asked for. Middle C is the C in the middle of this keyboard.', '그건 C지만 찾는 C가 아니에요. 가운데 도는 이 건반 한가운데의 C예요.'] : ['That is not a C. A C lives at the left door of a small house.', '그건 C가 아니에요. C는 작은 집의 왼쪽 문에 살아요.'] }),
       nbr = (dir) => { const Ls = dir > 0 ? KQ_ABC.filter(x => x !== 'A' || true) : 'DEFGAB'.split(''); const L = kqPick(dir > 0 ? 'CDEFGAB'.split('') : Ls), i0 = 'CDEFGAB'.indexOf(L), A = 'CDEFGAB'[(i0 + dir + 7) % 7], k0 = WH[i0], k1 = dir > 0 ? WH[i0 + 1] : WH[i0 - 1];
         return { L: null, kind: 'choice', cols: 4, prompt: dir > 0 ? ['Which name comes after ' + L + '?', L + ' 다음에 오는 이름은?'] : ['Which name comes before ' + L + '?', L + ' 앞에 오는 이름은?'], opts: kqLet7(), ans: A, ok: (v) => v === A,
           fig: (c) => ({ kb: { bare: true, oct: 1, base: 0, marks: c.res ? { [k0]: 'seg3', [k1]: 'pass' } : { [k0]: 'pick' } } }),
@@ -72730,7 +72770,7 @@ KQ_SPEC['kq-clefs'] = {
       fig: () => ({ staff: kqStaff([32], 'treble', { ring: [0], under: true }), kb: { oct: 2, ks: [0, 24], base: -12, plain: true, marks: { 12: 'pass', 19: 'pick' }, names: { 12: 'C', 19: 'G' }, ncol: { 12: KQ.COD, 19: KQ.COD } } }) },
     { title: ['The bass clef: the King', '낮은음자리표: 왕'], line: ['The King sings the low notes, usually with the left hand. His two dots sit either side of line 4, F, to the left of middle C: that line is his house.', '왕은 낮은 음을 노래해요. 보통 왼손이 쳐요. 두 점이 4번 줄 F의 양쪽에 있어요. 가운데 도의 왼쪽이고, 그 줄이 왕의 집이에요.'],
       fig: () => ({ staff: kqStaff([24], 'bass', { ring: [0], under: true }), kb: { oct: 2, ks: [0, 24], base: -12, plain: true, marks: { 12: 'pass', 5: 'pickB' }, names: { 12: 'C', 5: 'F' }, ncol: { 12: KQ.COD, 5: KQ.BL } } }) },
-    { title: ['Both together', '함께 쓰기'], line: ['Piano music stacks them. Middle C sits between the two staves: the treble staff reads to the right of it, the bass staff to the left.', '피아노 악보는 둘을 겹쳐 써요. 가운데 도는 두 오선 사이에 있어요. 높은음자리 오선은 그 오른쪽, 낮은음자리 오선은 그 왼쪽을 읽어요.'], fig: () => kqGrand() },
+    { title: ['Both together', '함께 쓰기'], line: ['Piano music stacks them. Clara, middle C, sits between the two staves: the treble staff reads to the right of her, the bass staff to the left.', '피아노 악보는 둘을 겹쳐 써요. 클라라, 가운데 도는 두 오선 사이에 있어요. 높은음자리 오선은 그 오른쪽, 낮은음자리 오선은 그 왼쪽을 읽어요.'], fig: () => kqGrand() },
     { title: ['The G clef and the F clef', 'G 음자리표와 F 음자리표'], line: ['Long ago the treble clef was a written letter G and the bass clef a letter F. So they are also called the G clef and the F clef: they name the Queen’s and the King’s lines.', '아주 옛날 높은음자리표는 손으로 쓴 글자 G였고, 낮은음자리표는 글자 F였어요. 그래서 G 음자리표, F 음자리표라고도 불러요. 여왕의 줄과 왕의 줄 이름이에요.'], fig: () => kqGrand() },
   ],
   make: (n) => { const tr = Math.floor(n / 4) % 2 === 0, k = n % 4;
@@ -72788,11 +72828,11 @@ function KqFold({ stage = 2 }) {
 }
 const kqFoldKb = (stage) => ({ oct: 2, ks: [0, 24], base: -12, plain: true, mc: false, marks: { 12: 'pick', ...(stage >= 1 ? { 19: 'pick', 5: 'pickB' } : {}), ...(stage >= 2 ? { 0: 'seg4', 24: 'seg3' } : {}) }, names: { 12: 'C', ...(stage >= 1 ? { 19: 'G', 5: 'F' } : {}), ...(stage >= 2 ? { 0: 'C', 24: 'C' } : {}) }, ncol: { 12: KQ.COD, 19: KQ.COD, 5: KQ.BL, 0: KQ.BL, 24: KQ.COD } });
 KQ_SPEC['kq-landmarks'] = {
-  title: ['Five landmarks', '기준 음 다섯 개'], allLine: ['Fold the two staves at middle C and the landmarks mirror each other: G and F, and the two Cs.', '두 오선을 가운데 도에서 접으면 기준 음이 서로 마주 봐요. G와 F, 그리고 두 C예요.'],
+  title: ['Five landmarks', '기준 음 다섯 개'], allLine: ['Fold the two staves at Clara’s ladder, middle C, and the landmarks mirror each other: the Queen’s G and the King’s F, and the two Cs.', '두 오선을 클라라의 발판, 가운데 도에서 접으면 기준 음이 서로 마주 봐요. 여왕의 G와 왕의 F, 그리고 두 C예요.'],
   fig: () => ({ staff: <KqFold stage={2}/>, kb: kqFoldKb(2) }),
   steps: [
-    { title: ['Middle C in the centre', '한가운데의 가운데 도'], line: ['The two staves meet at middle C, on a short line of its own. It is the centre of the keyboard too.', '두 오선은 가운데 도에서 만나요. 자기만의 짧은 줄 위에 있고, 건반에서도 한가운데예요.'], fig: () => ({ staff: <KqFold stage={0}/>, kb: kqFoldKb(0) }) },
-    { title: ['Fold: G and F', '접기: G와 F'], line: ['Fold at middle C. Treble G, 4 steps above, meets bass F, 4 steps below. On the keyboard they are 7 keys either side.', '가운데 도에서 접어요. 4걸음 위의 높은음자리 G와 4걸음 아래의 낮은음자리 F가 마주 봐요. 건반에서는 양쪽으로 7칸이에요.'], fig: () => ({ staff: <KqFold stage={1}/>, kb: kqFoldKb(1) }) },
+    { title: ['Middle C in the centre', '한가운데의 가운데 도'], line: ['The two staves meet at middle C, on a short line of its own: Clara’s ladder. It is the centre of the keyboard too.', '두 오선은 가운데 도에서 만나요. 자기만의 짧은 줄, 클라라의 발판 위에 있고, 건반에서도 한가운데예요.'], fig: () => ({ staff: <KqFold stage={0}/>, kb: kqFoldKb(0) }) },
+    { title: ['Fold: G and F', '접기: G와 F'], line: ['Fold at Clara’s ladder. The Queen’s G, 4 steps above, lands on the King’s F, 4 steps below. On the keyboard they are 7 keys either side.', '클라라의 발판에서 접어요. 4걸음 위 여왕의 G가 4걸음 아래 왕의 F에 겹쳐요. 건반에서는 양쪽으로 7칸이에요.'], fig: () => ({ staff: <KqFold stage={1}/>, kb: kqFoldKb(1) }) },
     { title: ['Fold again: the two Cs', '다시 접기: 두 C'], line: ['Seven steps above and seven steps below are the two other landmarks: treble C and bass C, an octave either side of middle C.', '7걸음 위와 7걸음 아래가 나머지 기준 음이에요. 높은음자리 C와 낮은음자리 C로, 가운데 도에서 한 옥타브씩 떨어져 있어요.'], fig: () => ({ staff: <KqFold stage={2}/>, kb: kqFoldKb(2) }) },
     { title: ['A place up', '한 자리 위'], line: ['Count letters from a landmark: one place up from G is A.', '기준 음에서 글자를 세어요. G에서 한 자리 위는 A예요.'], fig: () => ({ staff: kqStaff([32, 33], 'treble', { under: true, ring: [0] }) }) },
     { title: ['A place down', '한 자리 아래'], line: ['One place down from G is F.', 'G에서 한 자리 아래는 F예요.'], fig: () => ({ staff: kqStaff([32, 31], 'treble', { under: true, ring: [0] }) }) },
@@ -72816,7 +72856,7 @@ KQ_SPEC['kq-read'] = {
 // ══ 4. Ledger lines and 8va ══
 const KQ_LED = { 39: 0, 40: 1, 41: 1, 42: 2, 17: 0, 16: 1, 15: 1, 14: 2 };
 KQ_SPEC['kq-ledger'] = {
-  title: ['Ledger lines', '덧줄'], allLine: ['When a note is too high or too low for the five lines, short extra lines are added: ledger lines.', '다섯 줄에 담기지 않는 높은 음이나 낮은 음에는 짧은 덧줄을 더해요.'],
+  title: ['Ledger lines', '덧줄'], allLine: ['When a note is too high or too low for the five lines, short extra lines are added: ledger lines, the ladders out of the staff.', '다섯 줄에 담기지 않는 높은 음이나 낮은 음에는 짧은 덧줄을 더해요. 오선 밖으로 나가는 발판이에요.'],
   fig: () => ({ staff: <>{kqStaff([38, 39, 40, 41, 42], 'treble', { under: true })}{kqStaff([18, 17, 16, 15, 14], 'bass', { under: true })}</> }),
   steps: [
     { title: ['Above the treble staff', '높은음자리 오선 위'], line: ['The top line is F. The letters carry on: G in the space above, A on the first ledger line.', '맨 윗줄은 F예요. 글자는 이어져요. 위의 칸은 G, 첫 덧줄은 A예요.'], fig: () => ({ staff: kqStaff([38, 39, 40], 'treble', { under: true, ring: [2] }) }) },
@@ -72836,8 +72876,8 @@ KQ_SPEC['kq-middlec'] = {
   title: ['Middle C on the page', '악보 위의 가운데 도'], allLine: ['One key, two places on the page: under the treble staff, or above the bass staff.', '건반은 하나인데 악보에서는 두 자리예요: 높은음자리 오선 아래, 또는 낮은음자리 오선 위.'],
   fig: () => ({ staff: <>{kqStaff([28], 'treble')}{kqStaff([28], 'bass')}</>, kb: { oct: 2, ks: [0, 24], base: -12, names: { 12: 'C' }, ncol: { 12: KQ.COD }, marks: { 12: 'pick' } } }),
   steps: [
-    { title: ['Under the treble staff', '높은음자리 오선 아래'], line: ['A short line below the lowest line.', '가장 아래 줄 밑의 짧은 줄이에요.'], fig: () => ({ staff: kqStaff([28], 'treble'), kb: { oct: 2, ks: [0, 24], base: -12, names: { 12: 'C' }, ncol: { 12: KQ.COD }, marks: { 12: 'pick' } } }) },
-    { title: ['Above the bass staff', '낮은음자리 오선 위'], line: ['A short line above the top line. It is the same key.', '가장 위 줄 위의 짧은 줄이에요. 같은 건반이에요.'], fig: () => ({ staff: kqStaff([28], 'bass'), kb: { oct: 2, ks: [0, 24], base: -12, names: { 12: 'C' }, ncol: { 12: KQ.COD }, marks: { 12: 'pick' } } }) },
+    { title: ['Under the treble staff', '높은음자리 오선 아래'], line: ['A short line below the lowest line: Clara’s ladder.', '가장 아래 줄 밑의 짧은 줄, 클라라의 발판이에요.'], fig: () => ({ staff: kqStaff([28], 'treble'), kb: { oct: 2, ks: [0, 24], base: -12, names: { 12: 'C' }, ncol: { 12: KQ.COD }, marks: { 12: 'pick' } } }) },
+    { title: ['Above the bass staff', '낮은음자리 오선 위'], line: ['A short line above the top line: Clara’s ladder again, the same key.', '가장 위 줄 위의 짧은 줄, 역시 클라라의 발판이에요. 같은 건반이에요.'], fig: () => ({ staff: kqStaff([28], 'bass'), kb: { oct: 2, ks: [0, 24], base: -12, names: { 12: 'C' }, ncol: { 12: KQ.COD }, marks: { 12: 'pick' } } }) },
   ],
   make: () => { const treble = Math.random() < 0.5, d = kqPick([26, 27, 28, 29]), clef = treble ? 'treble' : 'bass', tk = dMidiKey(d) + 12;
     return { kind: 'key', retry: true, prompt: ['Find this note near middle C.', '가운데 도 근처의 이 음표를 찾아요.'], fig: () => ({ staff: kqStaff([d], clef), kb: { oct: 2, ks: [0, 24], base: -12, names: { 12: 'C' }, ncol: { 12: KQ.COD } } }), ok: (k) => k === tk, onPick: (k, ok) => { if (ok) playKey(dMidiKey(d), 0.6); },
@@ -73005,8 +73045,8 @@ KQ_SPEC['kq-range'] = {
 const kqRow = (id, en, ko, bEn, bKo) => [id, en, ko, bEn, bKo, () => <KqEngine spec={KQ_SPEC[id]}/>];
 const KS_ROWS = [
   ['p-keys', [
-    kqRow('kq-black', 'Black keys', '검은건반', 'Groups of 2 and 3, and low and high.', '2개와 3개씩 모인 검은건반, 낮은 소리와 높은 소리.'),
-    kqRow('kq-houses', 'Naming the white keys', '흰건반 이름 붙이기', 'C D E around the group of 2, F G A B around the group of 3.', '2개 묶음 둘레의 C D E, 3개 묶음 둘레의 F G A B.'),
+    kqRow('kq-black', 'Black keys', '검은건반', 'The small and the big houses, the turtle and the bird.', '작은 집과 큰 집, 거북이와 새.'),
+    kqRow('kq-houses', 'Naming the white keys', '흰건반 이름 붙이기', 'C D E at the small house, F G A B at the big house.', '작은 집의 C D E, 큰 집의 F G A B.'),
     kqRow('kq-names', 'Every key has its place', '모든 건반에는 제 자리가 있어요', 'The same name everywhere, middle C, 12 keys and 7 names.', '어디서나 같은 이름, 가운데 도, 건반 12개와 이름 7개.'),
     kqRow('kq-octave', 'Octaves', '옥타브', 'The next key with the same name: 8 white keys, 12 keys.', '같은 이름의 다음 건반: 흰건반 8개, 건반 12개.'),
   ]],

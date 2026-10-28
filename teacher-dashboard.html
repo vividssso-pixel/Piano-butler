@@ -1852,6 +1852,127 @@ function ThisWeekCard({ studentId, logs }) {
   );
 }
 
+// ─── Build CS (board call 8): where the student starts in the drills, and their chapter checks ───────────────
+// The drills send two more kinds of progress through the student's link: 'checks' (each chapter check, floor checkpoint
+// and review) and 'place' (the "Where should you start?" round). You set the student's own start here (student_plan); the
+// drills take it the next time the student opens their link: the house starts on that floor, theory rooms above the theory
+// grade wait, and a floor checkpoint asks theory only up to that grade. "Show the Home" is for adults: children see the
+// music map and Practice. All of it needs migrations/2026-10-28_phaseD_checks-and-plan.sql (run once in Supabase).
+// DRILLS_HOUSE comes from the drills build (sc/housedata.js): floors, rooms [id, chapter no, name, theory grade, has a check].
+const DRILLS_HOUSE = {"floors":[{"name":"Beginner","extra":0,"rooms":[["posture-hands",1,"Posture & Hand Shape",0,1],["first-steps",2,"Keyboard Patterns",0,1],["pulse",3,"Pulse & Counting",0,1],["note-names",4,"The Musical Alphabet",0,1],["hand-positions",5,"Hand Positions",0,1],["ear-prep",6,"Ear Prep",0,1],["note-values",7,"Notes & Rests",1,1],["dynamics",8,"Dynamics & Articulation",1,1],["staff",9,"The Staff & the Two Clefs",1,1],["reading-steps",10,"Steps & Skips",0,1],["whole-staff",11,"Line and Space Names",1,1],["time-signatures",12,"Time Signatures",1,1],["tones",13,"Tones & Semitones",1,1]]},{"name":"Prelim","extra":0,"rooms":[["listen-sing",14,"Ear Training, Prelim",0,1],["tempo",15,"Tempo Race",1,1],["rhythm",16,"Rhythm Patterns",1,1],["ledger-lines",17,"Ledger Lines",1,1],["scales",18,"Scales",1,1],["scale-play",19,"Playing Scales",0,1],["minor-scales",20,"Minor Scales",2,1],["signs",21,"Signs",2,1]]},{"name":"Grade 1","extra":0,"rooms":[["listen-write",22,"Ear Training, Grade 1",0,1],["accidentals",23,"Accidentals",1,1],["key-signatures",24,"Key Signatures",1,1],["terms",25,"Musical Terms",1,1],["six-eight",26,"6/8 Time",2,1],["intervals",27,"Intervals",1,1],["chords",28,"Chords",1,1],["form",29,"Musical Form",2,1]]},{"name":"Grade 2","extra":0,"rooms":[["listen-23",30,"Ear Training, Grade 2",0,1],["melody",31,"Melody & Phrasing",2,1],["scales-23",32,"Scales Further",0,1]]},{"name":"Grade 3","extra":0,"rooms":[["listen-3",33,"Ear Training, Grade 3",0,1],["harmony-23",34,"Intervals and Chords Further",3,1],["rhythm-23",35,"Rhythm Further",3,1]]},{"name":"Grade 4","extra":0,"rooms":[["listen-4",36,"Ear Training, Grade 4",0,1],["scales-4",37,"Scales and Arpeggios, Grade 4",0,1],["keys-4",38,"Keys and Intervals, Grade 4",4,1],["harmony-4",39,"Chords and Cadences, Grade 4",4,1],["rhythm-4",40,"Rhythm, Grade 4",4,1]]},{"name":"Grade 5","extra":0,"rooms":[["listen-5",41,"Ear Training, Grade 5",0,1],["scales-5",42,"Scales and Arpeggios, Grade 5",0,1],["keys-5",43,"Keys and Intervals, Grade 5",5,1],["harmony-5",44,"Chords and Cadences, Grade 5",5,1]]},{"name":"Grade 6","extra":0,"rooms":[["listen-6",45,"Ear Training, Grade 6",0,1],["scales-6",46,"Scales, Grade 6",0,1],["arps-6",47,"Arpeggios and Progressions, Grade 6",0,1],["harmony-6",48,"Chords and Cadences, Grade 6",6,1]]},{"name":"Grade 7","extra":0,"rooms":[["listen-7",49,"Ear Training, Grade 7",0,1],["scales-7",50,"Scales, Grade 7",0,1],["arps-7",51,"Arpeggios and Progressions, Grade 7",0,1],["pieces-78",52,"Knowing Your Pieces, Grades 7 and 8",0,1]]},{"name":"Grade 8","extra":0,"rooms":[["listen-8",53,"Ear Training, Grade 8",0,1],["scales-8",54,"Scales, Grade 8",0,1],["arps-8",55,"Arpeggios and Progressions, Grade 8",0,1]]},{"name":"Stories of music","extra":1,"rooms":[["piano-story",56,"The Piano’s Story",0,1],["pitch-range",57,"Instruments",0,1],["composers",58,"Composers through Time",0,1],["styles",59,"Styles & Genres",0,1]]}],"cps":[{"key":"0a","k":0,"part":1},{"key":"0b","k":0,"part":2},{"key":"1","k":1,"part":0},{"key":"2","k":2,"part":0},{"key":"3","k":3,"part":0},{"key":"4","k":4,"part":0},{"key":"5","k":5,"part":0},{"key":"6","k":6,"part":0},{"key":"7","k":7,"part":0},{"key":"8","k":8,"part":0},{"key":"9","k":9,"part":0}]};
+const dhFloorName = (k) => { const f = DRILLS_HOUSE.floors[k]; return f ? "Floor " + (k + 1) + " · " + f.name : "—"; };
+const dhRoom = (id) => { for (const f of DRILLS_HOUSE.floors) { const r = f.rooms.find(x => x[0] === id); if (r) return r; } return null; };
+const dhRoomName = (id) => { const r = dhRoom(id); return r ? r[1] + " · " + r[2] : String(id); };
+const dhTheoryName = (n) => n >= 7 ? "every theory grade" : "Theory Grade " + n;
+const dhDate = (ms) => { try { return new Date(ms).toLocaleDateString("en-AU", { day: "numeric", month: "short" }); } catch (e) { return ""; } };
+function DrillStartChecks({ studentId }) {
+  const [d, setD] = useState(null);   // null = loading; { checks, place, plan, planOk }
+  const [form, setForm] = useState({ piano: "", theory: "", home: false });
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  useEffect(() => {
+    let off = false;
+    setD(null); setMsg("");
+    Promise.all([
+      _supabase.from("progress_store").select("store,value,updated_at").eq("student_id", studentId).in("store", ["checks", "place"]),
+      _supabase.from("student_plan").select("plan,updated_at").eq("student_id", studentId).maybeSingle(),
+    ]).then(([a, b]) => {
+      if (off) return;
+      const st = {}; (a.data || []).forEach(r => { st[r.store] = r.value; });
+      const plan = !b.error && b.data && isObj(b.data.plan) ? b.data.plan : null;
+      setD({ checks: isObj(st.checks) ? st.checks : null, place: isObj(st.place) ? st.place : null, plan, planOk: !b.error });
+      setForm({ piano: plan && Number.isInteger(plan.piano) ? String(plan.piano) : "", theory: plan && plan.theory ? String(plan.theory) : "", home: !!(plan && plan.home) });
+    });
+    return () => { off = true; };
+  }, [studentId]);
+  if (!d) return null;
+  const { checks, place, plan } = d;
+  const rooms = checks && isObj(checks.rooms) ? checks.rooms : {}, cpRec = checks && isObj(checks.floors) ? checks.floors : {};
+  const now = Date.now();
+  const passed = (id) => isObj(rooms[id]) && rooms[id].pass > 0;
+  const due = Object.keys(rooms).filter(id => isObj(rooms[id]) && isObj(rooms[id].review) && rooms[id].review.stage < 3 && rooms[id].review.due <= now);
+  const floorRows = DRILLS_HOUSE.floors.map((f, k) => {
+    if (f.extra) return null;
+    const ids = f.rooms.filter(r => r[4]).map(r => r[0]);
+    const cps = DRILLS_HOUSE.cps.filter(c => c.k === k).map(c => ({ ...c, rec: isObj(cpRec[c.key]) ? cpRec[c.key] : null }));
+    const n = ids.filter(passed).length, review = [...new Set(cps.flatMap(c => c.rec && Array.isArray(c.rec.review) ? c.rec.review : []))];
+    if (!n && !cps.some(c => c.rec)) return null;
+    return { k, n, of: ids.length, cps, review };
+  }).filter(Boolean);
+  const nPassed = Object.keys(rooms).filter(passed).length, nCheckable = DRILLS_HOUSE.floors.reduce((a, f) => a + (f.extra ? 0 : f.rooms.filter(r => r[4]).length), 0);
+  const effFloor = plan && Number.isInteger(plan.piano) ? plan.piano : place && place.piano >= 0 ? place.piano : null;
+  const effTheory = plan && plan.theory ? plan.theory : place && place.theory ? place.theory : null;
+  async function save() {
+    setBusy(true); setMsg("");
+    const p = {}; if (form.piano !== "") p.piano = +form.piano; if (form.theory !== "") p.theory = +form.theory; if (form.home) p.home = true;
+    const q = Object.keys(p).length
+      ? _supabase.from("student_plan").upsert({ student_id: studentId, plan: p, updated_at: new Date().toISOString() }).select().single()
+      : _supabase.from("student_plan").delete().eq("student_id", studentId);
+    const { error } = await q;
+    setBusy(false);
+    if (error) { setMsg("Could not save: " + error.message); return; }
+    setD(x => ({ ...x, plan: Object.keys(p).length ? p : null }));
+    setMsg("Saved. The drills follow it the next time the student opens their link.");
+  }
+  const sel = { border: "1px solid #e9e2d2", borderRadius: 10, padding: "7px 10px", fontSize: 13, background: "#fff", color: "#26296b", maxWidth: "100%" };
+  const lab = { display: "block", fontSize: 10, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7a7ca6", marginBottom: 4 };
+  const th = { textAlign: "left", fontSize: 10, fontWeight: 700, color: "#7a7ca6", textTransform: "uppercase", letterSpacing: "0.05em", padding: "0 10px 6px 0", whiteSpace: "nowrap" };
+  const td = { fontSize: 13, color: "#34377b", padding: "8px 10px 8px 0", borderTop: "1px solid #efe9d9", verticalAlign: "top" };
+  return (
+    <section className="no-print mb-6" data-testid="drill-start">
+      <SecHead title="Start and checks" right={nPassed ? <span className="text-xs font-bold" style={{color:"#26296b"}}>{"★ " + nPassed + " of " + nCheckable + " chapters"}</span> : null}/>
+      <div className="card p-5">
+        <DashBlock title="Where to start" note="the student’s placement and your setting" testid="drill-start-where">
+          <p className="text-sm mb-3" style={{color:"#26296b"}} data-testid="drill-place">
+            {place ? <>Placement, {dhDate(place.at)}: <b>piano {dhFloorName(place.piano)}</b> · <b>{dhTheoryName(place.theory || 1)}</b></>
+                   : <span className="text-slate-500">No placement yet. The student can take it on their music map: “Where should I start?”</span>}
+          </p>
+          {d.planOk ? (
+            <div style={{display:"flex",flexWrap:"wrap",gap:10,alignItems:"flex-end"}}>
+              <label style={{minWidth:0}}><span style={lab}>Start floor</span>
+                <select style={sel} value={form.piano} onChange={e => setForm(f => ({ ...f, piano: e.target.value }))} data-testid="plan-floor">
+                  <option value="">{place ? "Their placement" : "From the bottom"}</option>
+                  {DRILLS_HOUSE.floors.map((f, k) => f.extra ? null : <option key={k} value={String(k)}>{dhFloorName(k)}</option>)}
+                </select></label>
+              <label style={{minWidth:0}}><span style={lab}>Theory grade</span>
+                <select style={sel} value={form.theory} onChange={e => setForm(f => ({ ...f, theory: e.target.value }))} data-testid="plan-theory">
+                  <option value="">{place ? "Their placement" : "Not set"}</option>
+                  {[1,2,3,4,5,6].map(n => <option key={n} value={String(n)}>{"Theory Grade " + n}</option>)}
+                  <option value="7">All theory done</option>
+                </select></label>
+              <label className="text-sm" style={{display:"flex",gap:6,alignItems:"center",color:"#26296b",padding:"0 0 7px"}}>
+                <input type="checkbox" checked={form.home} onChange={e => setForm(f => ({ ...f, home: e.target.checked }))} data-testid="plan-home"/> Show the Home (adults)</label>
+              <button className="btn-primary text-xs py-2 px-4" disabled={busy} onClick={save} data-testid="plan-save">{busy ? "Saving…" : "Save"}</button>
+            </div>
+          ) : (
+            <p className="text-xs rounded-lg p-2" style={{background:"#faf6ec",border:"1px solid #efe9d9",color:"#62649a"}} data-testid="plan-needs-sql">Setting the start needs one database step: run migrations/2026-10-28_phaseD_checks-and-plan.sql once in Supabase (SQL Editor). Until then the drills use the student’s own placement.</p>
+          )}
+          {(effFloor != null || effTheory) && <p className="text-xs mt-3" style={{color:"#62649a"}} data-testid="plan-effect">
+            The drills now start them on <b style={{color:"#26296b"}}>{effFloor != null ? dhFloorName(effFloor) : "Floor 1 · Beginner"}</b>{effTheory && effTheory < 7 ? <>, with theory up to <b style={{color:"#26296b"}}>{dhTheoryName(effTheory)}</b></> : null}.</p>}
+          {msg && <p className="text-xs mt-2" style={{color: /Could not/.test(msg) ? "#c0431f" : "#26296b"}} role="status">{msg}</p>}
+        </DashBlock>
+        <DashBlock title="Chapter checks" note="★ = passed: 8 or more of 10" testid="drill-checks">
+          {!floorRows.length ? <p className="text-sm text-slate-500" data-testid="checks-empty">No checks yet. They appear here when the student does a chapter check or a floor checkpoint through their link.</p> : (
+            <div style={{overflowX:"auto"}}>
+              <table style={{width:"100%",borderCollapse:"collapse"}}>
+                <thead><tr><th style={th}>Floor</th><th style={th}>Chapters passed</th><th style={th}>Checkpoint</th><th style={th}>To review</th></tr></thead>
+                <tbody>{floorRows.map(r => (
+                  <tr key={r.k} data-floor={r.k}>
+                    <td style={{...td,fontWeight:700,whiteSpace:"nowrap"}}>{dhFloorName(r.k)}</td>
+                    <td style={td}><span style={{fontWeight:800,color: r.n === r.of ? "#2e8a6e" : "#26296b"}}>{"★ " + r.n}</span><span style={{color:"#7a7ca6"}}>{" of " + r.of}</span></td>
+                    <td style={td}>{r.cps.map(c => <div key={c.key} style={{whiteSpace:"nowrap"}}>{c.part ? (c.part === 1 ? "1st half: " : "2nd half: ") : ""}{c.rec ? dhDate(c.rec.at) + " · " + c.rec.right + "/" + c.rec.total : <span style={{color:"#a3a5c2"}}>not yet</span>}</div>)}</td>
+                    <td style={td}>{r.review.length ? r.review.map(id => <span key={id} style={{...coralPill,display:"inline-block",fontSize:12,borderRadius:999,padding:"2px 8px",margin:"0 4px 4px 0"}}>{dhRoomName(id)}</span>) : <span style={{color:"#a3a5c2"}}>—</span>}</td>
+                  </tr>))}</tbody>
+              </table>
+            </div>
+          )}
+          {due.length > 0 && <p className="text-xs mt-3" style={{color:"#26296b"}} data-testid="checks-due"><b style={{color:"#c0431f"}}>Review due:</b> {due.map(dhRoomName).join(", ")}</p>}
+        </DashBlock>
+      </div>
+    </section>
+  );
+}
+
 function StudentLinkPanel({ student, logs }) {
   const [row, setRow] = useState(undefined);      // undefined = loading, null = no link yet
   const [name, setName] = useState(firstNameOf(student.name));
@@ -1967,6 +2088,7 @@ function StudentLinkPanel({ student, logs }) {
       {row && <ThisWeekCard studentId={student.id} logs={logs}/>}
       {row && <PracticeStrip studentId={student.id}/>}
       {row && <DrillProgress studentId={student.id}/>}
+      {row && <DrillStartChecks studentId={student.id}/>}
     </>
   );
 }
