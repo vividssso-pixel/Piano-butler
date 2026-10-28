@@ -1590,6 +1590,218 @@ function ChapterArt({ id }) {
   );
 }
 
+
+// ══ Build CN: the checks (call 28) ══
+const CHECK_KEY = 'pb_checks_v1', CHECK_N = 10, CHECK_PASS = 8, FLOOR_N = 15, FLOOR_HALF_N = 14, REVIEW_N = 5, DAY_MS = 864e5;
+const CHECK_LV = {
+  'posture-hands': [1, 2, 3], 'first-steps': [1, 2, 3, 4, 5, 6, 7, 8], pulse: [1, 2, 4, 5], 'note-names': [1, 2, 3, 4, 5],
+  'hand-positions': [1, 2, 3, 4, 5], 'ear-prep': [1, 2, 3, 4, 5], 'note-values': [1, 2, 3, 5], dynamics: [1, 2, 3, 4, 5, 6, 7, 8],
+  staff: [1, 2, 3, 4, 5, 6, 7], 'reading-steps': [1, 2, 3, 4, 5, 6, 7, 8], 'whole-staff': [1, 2, 3, 4, 5, 6, 7],
+  'time-signatures': [1, 2, 4, 5, 6, 7], tones: [1, 2, 3, 4, 5, 6, 7],
+  'listen-sing': [1, 2, 3], tempo: [1, 2, 3, 4, 5, 6, 7, 8], rhythm: [1, 2, 3, 4, 5, 6], 'ledger-lines': [1, 2, 3, 4, 5, 7],
+  scales: [1, 2, 3, 5, 6, 63, 64, 9], 'scale-play': [1, 2, 3, 4, 5, 6], 'minor-scales': [1, 2, 3, 4, 5, 6], signs: [1, 2, 3, 4, 5, 6, 7, 8],
+  'listen-write': [1, 2, 3], accidentals: [1, 2, 3, 4, 5, 6, 7, 8], 'key-signatures': [2, 6], terms: [1, 2, 3, 4, 5, 6, 7, 8],
+  'six-eight': [1, 2, 3, 4, 5], intervals: [1, 3, 2, 4, 6, 8, 5, 7], chords: [1, 2, 4, 6, 3, 5, 7, 8, 10], form: [1, 2, 3, 4, 5, 6, 7, 8],
+  'listen-23': [1], 'listen-3': [1, 2, 3], melody: [1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12], 'scales-23': [1, 2, 3, 4, 5],
+  'harmony-23': [1, 2, 3, 4, 5, 6], 'rhythm-23': [1, 2, 3, 4, 5, 6],
+  'listen-4': [1, 2, 3], 'scales-4': [1, 2, 3, 4, 5], 'keys-4': [1, 2, 3, 4, 5, 6], 'harmony-4': [1, 2, 3, 4], 'rhythm-4': [1, 2, 3, 4],
+  'listen-5': [1, 2, 3], 'scales-5': [1, 2, 3, 4, 5], 'keys-5': [1, 2, 3, 4, 5], 'harmony-5': [1, 2, 3, 4, 5],
+  'listen-6': [1, 2, 3, 4], 'scales-6': [1, 2, 3, 4, 5, 6], 'arps-6': [1, 2, 3, 4], 'harmony-6': [1, 2, 3, 4, 5],
+  'listen-7': [1, 2, 4], 'scales-7': [1, 2, 3, 4, 5, 6], 'arps-7': [1, 2, 3, 4], 'pieces-78': [1, 2, 3, 4],
+  'listen-8': [1, 2, 4], 'scales-8': [1, 2, 3, 4, 5], 'arps-8': [1, 2, 3, 4],
+  'piano-story': [1, 2, 3, 4, 5, 6, 7, 8], 'pitch-range': [1, 2, 3, 4, 5, 6, 7], composers: [1, 2, 3, 4, 5, 6, 7, 8], styles: [1, 2, 3, 4, 5, 6, 7, 8],
+};
+function loadChecks() { try { const v = JSON.parse(localStorage.getItem(CHECK_KEY)); if (v && typeof v === 'object') return { rooms: v.rooms || {}, floors: v.floors || {} }; } catch (e) {} return { rooms: {}, floors: {} }; }
+function saveChecks(c) { try { localStorage.setItem(CHECK_KEY, JSON.stringify(c)); } catch (e) {} }
+function chkConcept(id) { const d = DRILLS.find(x => x.id === id); return d && d.concept && d.concept.generate ? d.concept : null; }
+function chkLevels(id) { const c = chkConcept(id); return c ? (CHECK_LV[id] || []).map(n => c.levels.find(l => l.n === n)).filter(Boolean) : []; }
+function chkShuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const x = a[i]; a[i] = a[j]; a[j] = x; } return a; }
+function chkItems(id, n) { const lv = chkLevels(id), out = []; let pool = []; while (out.length < n && lv.length) { if (!pool.length) pool = chkShuffle(lv); out.push({ id, lv: pool.shift() }); } return out; }   // every part once before any part twice
+function chkFloorItems(ids, n) { const rooms = chkShuffle(ids.filter(id => chkLevels(id).length)); return chkShuffle(rooms.flatMap((id, i) => chkItems(id, Math.floor(n / rooms.length) + (i < n % rooms.length ? 1 : 0)))); }
+function checkFloors() {   // the checkpoints: one per grade floor; a floor of more than ten rooms has two, one per half
+  const out = [];
+  PATH_STAGES.forEach((st, k) => { if (stageExtra(st)) return; const ids = pathStageIds(st).filter(id => CHECK_LV[id]); if (!ids.length) return;
+    if (ids.length > 10) { const h = Math.ceil(ids.length / 2); out.push({ key: k + 'a', k, ids: ids.slice(0, h), part: 1 }); out.push({ key: k + 'b', k, ids: ids.slice(h), part: 2 }); }
+    else out.push({ key: String(k), k, ids }); });
+  return out;
+}
+const chkFloorName = (f) => floorName(f.k) + (f.part ? (f.part === 1 ? t(', first half', ', 앞 절반') : t(', second half', ', 뒤 절반')) : '');
+const chkDate = (ts) => { try { return new Date(ts).toLocaleDateString(LANG === 'ko' ? 'ko-KR' : 'en-AU', { day: 'numeric', month: 'short' }); } catch (e) { return ''; } };
+const chkLvLabel = (id, n) => { const c = chkConcept(id), l = c && c.levels.find(x => x.n === n); return l ? lvName(typeof l.label === 'string' ? l.label : t(l.label[0], l.label[1])) : ''; };
+const chkPracticeHref = (id, n) => '?drill=' + id + '&level=' + n + '&tab=drill' + (LANG === 'ko' ? '&lang=ko' : '');
+function chkStarD(cx, cy, r) { let d = ''; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r; d += (i ? 'L' : 'M') + (cx + rr * Math.cos(a)).toFixed(2) + ' ' + (cy + rr * Math.sin(a)).toFixed(2); } return d + 'Z'; }
+const ChkStar = ({ size = 22, fill = '#2e8a6e' }) => <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true" style={{flex:'0 0 auto',display:'block'}}><path d={chkStarD(12, 12.6, 11)} fill={fill}/></svg>;
+function CheckStamp({ text, color }) {   // the stamp at the end of a round
+  return <svg viewBox="0 0 120 120" width="108" height="108" aria-hidden="true" style={{display:'block',margin:'2px auto 4px',transform:'rotate(-8deg)'}}>
+    <circle cx="60" cy="60" r="53" fill="#fff" stroke={color} strokeWidth="4.5"/><circle cx="60" cy="60" r="45" fill="none" stroke={color} strokeWidth="1.4" strokeDasharray="3 3"/>
+    <path d={chkStarD(60, 36, 9)} fill={color}/>
+    <text x="60" y="72" textAnchor="middle" fontFamily="'Playfair Display', Georgia, serif" fontWeight="900" fontSize={text.length > 6 ? 17 : 21} fill={color} letterSpacing="1">{text}</text>
+    <path d={chkStarD(36, 88, 4)} fill={color} opacity="0.6"/><path d={chkStarD(84, 88, 4)} fill={color} opacity="0.6"/>
+  </svg>;
+}
+const chkKicker = { fontSize:11.5, fontWeight:900, color:'#e4572e', letterSpacing:'0.1em', textTransform:'uppercase', margin:'0 0 3px' };
+const chkBox = (pass) => ({ margin:'14px 0 0', padding:'12px', border:'1.5px solid ' + (pass ? '#2e8a6e' : 'rgba(38,41,107,0.28)'), borderRadius:10, background:'#fff' });
+
+// One round: the questions come from each room's own drill (generate, check, answerLabel, Question).
+function CheckRun({ items, floor, onDone, onQuit }) {
+  const [qs] = useState(() => { const prev = {}; return items.map(it => { const c = chkConcept(it.id), k = it.id + '|' + it.lv.n; let q = null; try { q = c.generate(it.lv, prev[k] || null); } catch (e) { q = null; } if (q) prev[k] = q; return q; }); });
+  const list = items.map((it, j) => ({ ...it, q: qs[j] })).filter(x => x.q);
+  const [i, setI] = useState(0), [given, setGiven] = useState(null), [res, setRes] = useState([]), [streak, setStreak] = useState(0);
+  const timer = useRef(null);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const it = list[i], drill = it && chkConcept(it.id);
+  const next = (r) => { clearTimeout(timer.current); try { stopClicks(); } catch (e) {} if (i + 1 >= list.length) { onDone(r); return; } setGiven(null); setI(i + 1); };
+  const answer = (ans, force) => {
+    if (given || !it) return;
+    let ok = false; if (force != null) ok = !!force; else { try { ok = ans !== null && ans !== undefined && !!drill.check(it.q, ans); } catch (e) { ok = false; } }
+    const r = res.concat([{ id: it.id, n: it.lv.n, ok }]);
+    setRes(r); setGiven({ ans, ok, timedOut: false }); setStreak(x => ok ? x + 1 : 0);
+    if (ok) timer.current = setTimeout(() => next(r), 1100);
+  };
+  useEffect(() => { window.__pbCheckForce = (ok) => answer(null, !!ok); });
+  useEffect(() => () => { try { delete window.__pbCheckForce; } catch (e) {} }, []);
+  if (!it) return null;
+  const Q = drill.Question, right = res.filter(x => x.ok).length;
+  const fb = <div style={{minHeight:40,margin:drill.feedbackAbove ? '4px 0 6px' : '12px 0 0',textAlign:'center',order:1}}>{given && <DrillFeedback given={given} isGame={false} drill={drill} q={it.q}/>}</div>;
+  const qProps = { q: it.q, level: it.lv, given, locked: !!given, onAnswer: (a) => answer(a), pixel: false, stats: { correct: right, asked: res.length, streak } };
+  return <div data-testid="check-run" data-q={i + 1} data-n={list.length} style={{marginTop:10}}>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',gap:8,fontSize:13,fontWeight:800,color:'var(--muted)',margin:'0 0 8px'}}>
+      <span>{t('Question ', '문제 ') + (i + 1) + ' / ' + list.length}</span>
+      <span style={{color:streak >= 2 ? '#e4572e' : 'var(--muted)'}}>{streak >= 2 ? t(streak + ' in a row!', streak + '개 연속!') : t(right + ' right', right + '개 맞힘')}</span>
+    </div>
+    {floor && <div style={{...chkKicker,margin:'0 0 6px'}}>{bkChapterNo(it.id) + ' · ' + bkChapterName(it.id)}</div>}
+    <div key={i} className="card" style={{padding:16}}>
+      {drill.feedbackAbove ? <div style={{display:'flex',flexDirection:'column'}}><Q {...qProps} fbAbove/>{fb}</div> : <><Q {...qProps}/>{fb}</>}
+      {given && <button className="primary-btn" style={{marginTop:10}} onClick={() => next(res)}>{i + 1 >= list.length ? t('See how I did →', '결과 보기 →') : t('Next →', '다음 →')}</button>}
+    </div>
+    <button className="ghost-btn" style={{marginTop:8,fontSize:13}} onClick={() => { clearTimeout(timer.current); try { stopClicks(); } catch (e) {} onQuit(); }}>{t('Stop the check', '그만하기')}</button>
+  </div>;
+}
+function chkWeakChips(id, ns) {
+  return <div style={{display:'flex',flexWrap:'wrap',gap:6,justifyContent:'center',margin:'6px 0 2px'}}>{ns.map(n => <a key={n} className="chip" href={chkPracticeHref(id, n)} style={{textDecoration:'none',minHeight:40,display:'inline-flex',alignItems:'center',whiteSpace:'normal',textAlign:'left',fontSize:13.5}}>{chkLvLabel(id, n)} ›</a>)}</div>;
+}
+// The chapter check, at the end of every room
+function RoomCheckCard({ id }) {
+  const [mode, setMode] = useState('idle'), [items, setItems] = useState(null), [out, setOut] = useState(null), [, setTick] = useState(0);
+  const box = useRef(null);
+  if (!chkLevels(id).length) return null;
+  const rec = loadChecks().rooms[id] || {};
+  const start = () => { setItems(chkItems(id, CHECK_N)); setOut(null); setMode('run'); setTimeout(() => { try { box.current.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {} }, 60); };
+  const done = (r) => {
+    const right = r.filter(x => x.ok).length, by = {};
+    r.forEach(x => { (by[x.n] = by[x.n] || []).push(x.ok); });
+    const lost = Object.keys(by).filter(n => by[n].length >= 2 && by[n].every(v => !v)).map(Number);
+    const pass = right >= Math.min(CHECK_PASS, r.length) && !lost.length, weak = [...new Set(r.filter(x => !x.ok).map(x => x.n))];
+    const c = loadChecks(), o = c.rooms[id] || {}, now = Date.now(), first = pass && !o.pass;
+    o.last = right; o.best = Math.max(o.best || 0, right); o.tries = (o.tries || 0) + 1;
+    if (first) { o.pass = now; o.review = { due: now + 7 * DAY_MS, stage: 1 }; }
+    c.rooms[id] = o; saveChecks(c);
+    setOut({ right, total: r.length, pass, lost, weak, first }); setMode('done'); setTick(x => x + 1);
+  };
+  return <div ref={box} data-testid="room-check" data-pass={rec.pass ? '1' : '0'} style={chkBox(rec.pass)}>
+    <div style={chkKicker}>{t('Chapter check', '챕터 체크')}</div>
+    {mode === 'idle' && <>
+      <div style={{display:'flex',alignItems:'center',gap:10}}>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:16,fontWeight:900,color:'#26296b',lineHeight:1.3}}>{t('10 quick questions. Get 8 and this room gets a star.', '빠른 10문제. 8개 맞히면 이 방에 별이 붙어요.')}</div>
+          <div style={{fontSize:13,color:'#4a4d86',marginTop:3,lineHeight:1.4}}>{rec.pass ? t('Passed on ' + chkDate(rec.pass) + ' · best ' + rec.best + ' of 10', chkDate(rec.pass) + ' 통과 · 최고 10개 중 ' + rec.best + '개') : rec.tries ? t('Best so far: ' + rec.best + ' of 10', '지금까지 최고: 10개 중 ' + rec.best + '개') : t('No help and no piano. About three minutes.', '도움 없이, 피아노 없이. 3분쯤 걸려요.')}</div>
+        </div>
+        {rec.pass && <ChkStar size={30}/>}
+      </div>
+      <button className="primary-btn" data-testid="room-check-start" style={{marginTop:10}} onClick={start}>{rec.pass ? t('Do it again →', '다시 해 보기 →') : t('Start the check →', '체크 시작 →')}</button>
+    </>}
+    {mode === 'run' && items && <CheckRun key={'r' + (rec.tries || 0)} items={items} onDone={done} onQuit={() => setMode('idle')}/>}
+    {mode === 'done' && out && <div data-testid="check-result" data-pass={out.pass ? '1' : '0'} data-right={out.right} style={{textAlign:'center',padding:'4px 0 2px'}}>
+      {out.pass ? <CheckStamp text={t('PASSED', '통과!')} color="#2e8a6e"/> : null}
+      <div style={{fontSize:40,fontWeight:900,color:'#26296b',lineHeight:1.1}}>{out.right}<span style={{fontSize:20,color:'var(--muted)'}}> / {out.total}</span></div>
+      {out.pass ? <>
+        <div style={{fontSize:17,fontWeight:900,color:'#2e8a6e',margin:'4px 0 2px'}}>{out.right === out.total ? t('Every one right! A star for this room.', '모두 맞혔어요! 이 방에 별이 붙었어요.') : t('A star for this room!', '이 방에 별이 붙었어요!')}</div>
+        {out.first && <div style={{fontSize:13.5,color:'#4a4d86',lineHeight:1.45}}>{t('In a week, five quick questions will check it stuck.', '일주일 뒤에 빠른 5문제로 잘 남았는지 봐요.')}</div>}
+      </> : <>
+        <div style={{fontSize:17,fontWeight:900,color:'#e4572e',margin:'4px 0 2px'}}>{out.lost.length && out.right >= CHECK_PASS ? t('So close! But one part was missed every time.', '아깝다! 한 부분을 모두 틀렸어요.') : out.right === CHECK_PASS - 1 ? t('So close!', '아깝다!') : t('Not yet. Once more?', '아직이에요. 한 번 더?')}</div>
+        <div style={{fontSize:13.5,color:'#4a4d86',lineHeight:1.45}}>{t('Practise these, then try again:', '이걸 연습하고 다시 해 봐요:')}</div>
+        {chkWeakChips(id, out.lost.length ? out.lost : out.weak)}
+      </>}
+      <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap',marginTop:10}}>
+        <button className="primary-btn" style={{width:'auto',padding:'10px 16px'}} onClick={start}>{out.pass ? t('Again: new questions', '다시: 새 문제') : t('Try again: new questions →', '다시 하기: 새 문제 →')}</button>
+        <button className="ghost-btn" style={{width:'auto'}} onClick={() => setMode('idle')}>{t('Close', '닫기')}</button>
+      </div>
+    </div>}
+  </div>;
+}
+// The floor checkpoints, under the house
+function FloorCheckCard({ here, onOpen }) {
+  const floors = checkFloors(), hereF = Math.max(0, floors.findIndex(f => f.ids.includes(here)));
+  const [sel, setSel] = useState(hereF), [mode, setMode] = useState('idle'), [items, setItems] = useState(null), [out, setOut] = useState(null), [, setTick] = useState(0);
+  const box = useRef(null);
+  const f = floors[sel]; if (!f) return null;
+  const N = f.part ? FLOOR_HALF_N : FLOOR_N, c = loadChecks(), rec = c.floors[f.key];
+  const nDone = f.ids.filter(id => chapterState(id).status === 'done').length;
+  const nm = (id) => bkChapterNo(id) + ' · ' + bkChapterName(id);
+  const start = () => { setItems(chkFloorItems(f.ids, N)); setOut(null); setMode('run'); setTimeout(() => { try { box.current.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {} }, 60); };
+  const done = (r) => {
+    const per = {}; r.forEach(x => { const p = per[x.id] = per[x.id] || { right: 0, n: 0, miss: [] }; p.n++; if (x.ok) p.right++; else p.miss.push(x.n); });
+    const right = r.filter(x => x.ok).length, review = f.ids.filter(id => per[id] && per[id].miss.length);
+    const cc = loadChecks(); cc.floors[f.key] = { at: Date.now(), right, total: r.length, review }; saveChecks(cc);
+    setOut({ right, total: r.length, per, review }); setMode('done'); setTick(x => x + 1);
+  };
+  const chip = (g, j) => { const rr = c.floors[g.key], ok = rr && !rr.review.length;
+    return <button key={g.key} className={'chip' + (j === sel ? ' active' : '')} disabled={mode === 'run'} onClick={() => { setSel(j); setMode('idle'); setOut(null); }} style={{fontSize:12.5,padding:'4px 10px',minHeight:34}}>{(ok ? '✓ ' : '') + (LANG === 'ko' ? PATH_STAGES[g.k].ko[0] : PATH_STAGES[g.k].en[0]) + (g.part ? ' ' + g.part : '')}</button>; };
+  return <div ref={box} data-testid="floor-check" data-floor={f.key} style={{...chkBox(false),maxWidth:440,margin:'18px auto 0',textAlign:'left'}}>
+    <div style={chkKicker}>{t('Floor checkpoint', '층 중간점검')}</div>
+    <div style={{display:'flex',flexWrap:'wrap',gap:5,margin:'4px 0 8px'}}>{floors.map(chip)}</div>
+    {mode === 'idle' && <>
+      <div style={{fontSize:16,fontWeight:900,color:'#26296b',lineHeight:1.3}}>{chkFloorName(f)}</div>
+      <div style={{fontSize:13.5,color:'#4a4d86',lineHeight:1.45,margin:'3px 0 0'}}>{t(N + ' mixed questions from its ' + f.ids.length + ' rooms (' + bkChapterNo(f.ids[0]) + '–' + bkChapterNo(f.ids[f.ids.length - 1]) + '). No playing and no pass mark: it shows which rooms to visit again.', '방 ' + f.ids.length + '개(' + bkChapterNo(f.ids[0]) + '~' + bkChapterNo(f.ids[f.ids.length - 1]) + '번)에서 섞은 ' + N + '문제. 연주도, 통과 점수도 없어요: 다시 가 볼 방을 알려 줘요.')}</div>
+      <div style={{fontSize:13,color:'#6d6f9c',fontWeight:700,margin:'4px 0 0'}}>{rec ? t('Last time (' + chkDate(rec.at) + '): ' + rec.right + ' of ' + rec.total + (rec.review.length ? ' · rooms to visit again: ' + rec.review.length : ' · nothing to review'), '지난번(' + chkDate(rec.at) + '): ' + rec.total + '개 중 ' + rec.right + '개' + (rec.review.length ? ' · 다시 가 볼 방 ' + rec.review.length + '개' : ' · 복습할 방 없음')) : nDone === f.ids.length ? t('Every room on it is done: ready!', '방을 모두 끝냈어요: 준비 완료!') : t(nDone + ' of ' + f.ids.length + ' rooms done. You can try it any time.', '방 ' + f.ids.length + '개 중 ' + nDone + '개 완료. 언제든 해 볼 수 있어요.')}</div>
+      <button className="primary-btn" data-testid="floor-check-start" style={{marginTop:10}} onClick={start}>{t('Start the checkpoint →', '중간점검 시작 →')}</button>
+    </>}
+    {mode === 'run' && items && <CheckRun key={'f' + f.key + (rec ? rec.at : 0)} items={items} floor onDone={done} onQuit={() => setMode('idle')}/>}
+    {mode === 'done' && out && <div data-testid="floor-result" data-right={out.right} data-review={out.review.length} style={{textAlign:'center'}}>
+      <CheckStamp text={t('DONE', '끝!')} color="#26296b"/>
+      <div style={{fontSize:36,fontWeight:900,color:'#26296b',lineHeight:1.1}}>{out.right}<span style={{fontSize:18,color:'var(--muted)'}}> / {out.total}</span></div>
+      <div style={{fontSize:15,fontWeight:900,color:out.review.length ? '#e4572e' : '#2e8a6e',margin:'4px 0 8px'}}>{out.review.length ? t('Rooms to visit again:', '다시 가 볼 방:') : t('Everything stuck. On to the next floor!', '모두 잘 남았어요. 다음 층으로!')}</div>
+      <div style={{display:'grid',gap:4,textAlign:'left'}}>{f.ids.filter(id => out.per[id]).map(id => { const p = out.per[id], miss = p.miss.length > 0;
+        return <div key={id} style={{display:'flex',alignItems:'center',gap:8,fontSize:14,minHeight:36,borderTop:'1px solid rgba(38,41,107,0.1)'}}>
+          <span style={{flex:1,minWidth:0,color:'#26296b',fontWeight:700}}>{nm(id)}</span>
+          <span style={{fontWeight:900,color:miss ? '#e4572e' : '#2e8a6e'}}>{p.right + '/' + p.n}</span>
+          {miss ? <button className="chip" style={{fontSize:12.5,minHeight:34}} onClick={() => onOpen(id)}>{t('Visit again ›', '다시 가기 ›')}</button> : <span style={{color:'#2e8a6e',fontWeight:900,width:20,textAlign:'center'}}>✓</span>}
+        </div>; })}</div>
+      <button className="ghost-btn" style={{marginTop:10}} onClick={() => setMode('idle')}>{t('Close', '닫기')}</button>
+    </div>}
+  </div>;
+}
+// The review: a passed room comes back after seven days (then a month); at the top of the house
+function chkDueReview() { const c = loadChecks(), now = Date.now(), ids = pathIds(); return Object.keys(c.rooms).filter(id => ids.includes(id) && c.rooms[id].review && c.rooms[id].review.due <= now && chkLevels(id).length).sort((a, b) => c.rooms[a].review.due - c.rooms[b].review.due)[0] || null; }
+function ReviewCard() {
+  const [id] = useState(() => chkDueReview());
+  const [mode, setMode] = useState('idle'), [items, setItems] = useState(null), [out, setOut] = useState(null);
+  if (!id) return null;
+  const rec = loadChecks().rooms[id] || {}, stage = rec.review ? rec.review.stage : 1;
+  const start = () => { setItems(chkItems(id, REVIEW_N)); setMode('run'); };
+  const done = (r) => {
+    const right = r.filter(x => x.ok).length, pass = right === r.length, now = Date.now(), c = loadChecks(), o = c.rooms[id] || {};
+    o.review = pass ? (stage >= 2 ? { due: 9e15, stage: 3, kept: now } : { due: now + 30 * DAY_MS, stage: 2 }) : { due: now + 2 * DAY_MS, stage };
+    c.rooms[id] = o; saveChecks(c);
+    setOut({ right, total: r.length, pass, stage, weak: [...new Set(r.filter(x => !x.ok).map(x => x.n))] }); setMode('done');
+  };
+  return <div data-testid="review-card" data-room={id} style={{...chkBox(false),maxWidth:440,margin:'0 auto 12px',textAlign:'left',borderColor:'#e4572e'}}>
+    <div style={chkKicker}>{t('Review time', '복습 시간')}</div>
+    {mode === 'idle' && <>
+      <div style={{fontSize:16,fontWeight:900,color:'#26296b',lineHeight:1.3}}>{bkChapterNo(id) + ' · ' + bkChapterName(id)}</div>
+      <div style={{fontSize:13.5,color:'#4a4d86',lineHeight:1.45,margin:'3px 0 0'}}>{stage === 1 ? t('You passed it a week ago. Five quick questions: did it stick?', '일주일 전에 통과한 방이에요. 빠른 5문제: 잘 남았나요?') : t('A month on: five quick questions, all five to keep it.', '한 달 뒤: 빠른 5문제, 다섯 개 모두 맞히면 끝.')}</div>
+      <button className="primary-btn" data-testid="review-start" style={{marginTop:10}} onClick={start}>{t('Start the review →', '복습 시작 →')}</button>
+    </>}
+    {mode === 'run' && items && <CheckRun items={items} onDone={done} onQuit={() => setMode('idle')}/>}
+    {mode === 'done' && out && <div data-testid="review-result" data-pass={out.pass ? '1' : '0'} style={{textAlign:'center'}}>
+      {out.pass && <CheckStamp text={t('KEPT', '기억!')} color="#2e8a6e"/>}
+      <div style={{fontSize:36,fontWeight:900,color:'#26296b',lineHeight:1.1}}>{out.right}<span style={{fontSize:18,color:'var(--muted)'}}> / {out.total}</span></div>
+      <div style={{fontSize:15,fontWeight:900,color:out.pass ? '#2e8a6e' : '#e4572e',margin:'4px 0 4px'}}>{out.pass ? (out.stage >= 2 ? t('It stuck for good!', '완전히 내 것이 됐어요!') : t('It stuck! See you in a month.', '잘 남았어요! 한 달 뒤에 또 봐요.')) : t('A little has slipped. Practise this, and it comes back in two days:', '조금 잊었어요. 이걸 연습하면, 이틀 뒤에 다시 와요:')}</div>
+      {!out.pass && chkWeakChips(id, out.weak)}
+    </div>}
+  </div>;
+}
+
 function Lesson({ id, title, intro, children, onStart, startLabel, head, noArt }) {
   const steps = React.Children.toArray(children).filter(Boolean);
   // Phase 350: a step may say storeAs={n}: its tick is stored under n (its old place), so reordering steps keeps every tick on its step
@@ -1637,6 +1849,7 @@ function Lesson({ id, title, intro, children, onStart, startLabel, head, noArt }
         open: !!open[i], done: !!done[sk(i)], onToggle: () => setOpen(o => (o[i] ? {} : { [i]: true })), onDone: () => markDone(i),
       }))}
       <LessonMore id={id}/>
+      <RoomCheckCard id={id}/>
       {onStart && <button className="primary-btn" style={{marginTop:16}} onClick={onStart}>{startLabel || t('Start the drill →', '드릴 시작하기 →')}</button>}
     </div>
   );
@@ -19441,6 +19654,7 @@ const TOOLS = [
   { id: 'csx-era', ch: 'styles', title: 'The sound of each period', blurb: 'Hear a piece from each period and what to listen for.', C: () => <CsxEraPad/> },
   { id: 'csx-penta', ch: 'styles', title: 'Five notes', blurb: 'The pentatonic scale on C or on the black keys: make up a folk tune.', C: () => <CsxPentaPad/> },
   { id: 'csx-blues', ch: 'styles', title: 'Blues and swing', blurb: 'The 12-bar blues swung, a missing chord to find, and straight against swing.', C: () => <CsxBluesPad/> },
+  { id: 'mk-gtime', ch: 'time-signatures', title: 'Guess my time signature', blurb: 'Four bars in a secret 2/4, 3/4 or 4/4: hide it, play it, and let someone guess.', C: () => <GuessTime/> },   // Build CO
   { id: 'mk-surprise', ch: 'piano-story', title: 'Make a surprise!', blurb: 'A quiet tune with one huge BANG: on the piano it surprises; on the harpsichord it cannot.', C: () => <SurpriseTune/> },   // Build CK
   { id: 'mk-who', ch: 'pitch-range', title: 'Who can play my note?', blurb: 'Move one note across the 88 keys: the instruments and voices that reach it light up.', C: () => <WhoCanPlay/> },
   { id: 'mk-first', ch: 'composers', title: 'Who came first?', blurb: 'A chain of composers: born earlier, later or the same year? Alive at the same time? Build a streak.', C: () => <WhoFirst/> },
@@ -19760,6 +19974,7 @@ const TOOL_KO = {
   'csx-era': ['시대마다 다른 소리', '시대마다 곡 하나를 듣고, 찾아 들을 소리를 봐요.'],
   'csx-penta': ['다섯 음', 'C D E G A나 검은건반 다섯 개의 5음음계: 민요풍 선율을 지어 봐요.'],
   'csx-blues': ['블루스와 스윙', '스윙으로 듣는 12마디 블루스, 빠진 화음 찾기, 스트레이트와 스윙.'],
+  'mk-gtime': ['내 박자표 맞혀 봐', '비밀 2/4, 3/4, 4/4로 네 마디: 숨기고 들려주고, 맞혀 보라고 해요.'],
   'mk-surprise': ['깜짝 놀래기!', '조용한 선율에 큰 쾅 하나: 피아노는 놀래키고, 하프시코드는 못 해요.'],
   'mk-who': ['내 음을 누가 낼 수 있을까?', '88건반 위로 음 하나를 옮겨요: 그 음에 닿는 악기와 목소리에 불이 켜져요.'],
   'mk-first': ['누가 먼저일까?', '작곡가 사슬: 먼저, 나중, 같은 해? 같은 시대에 살았을까? 연속 기록을 세워요.'],
@@ -19925,7 +20140,8 @@ const PATH_STAGES = [   // Phase 436: the floors of the house, in the plan's ord
   { ids: ['posture-hands', 'first-steps', 'pulse', 'note-names', 'hand-positions', 'ear-prep', 'note-values', 'dynamics', 'staff', 'reading-steps', 'whole-staff', 'time-signatures', 'tones'], en: ['Beginner', 'Sitting and hands, the keys and their letters, beat and note values, games for your ears, loud and soft, the staff and the first tunes, half and whole steps.'], ko: ['Beginner', '자세와 손, 건반과 글자, 박과 음표 길이, 귀 놀이, 셈여림, 오선과 첫 선율, 반음과 온음.'] },   // Build CC: Ear Prep   // Build V: Loud & soft before the staff   // Build S: the topics in turn
   { ids: ['listen-sing', 'tempo', 'rhythm', 'ledger-lines', 'scales', 'scale-play', 'minor-scales', 'signs'], en: ['Prelim', 'Your ears for Prelim, speed, quavers and dots, ledger lines, scales and how to play them, minor scales, and signs.'], ko: ['Prelim', 'Prelim 청음, 빠르기, 8분음표와 점, 덧줄, 스케일과 스케일 치기, 단음계, 그리고 기호.'] },   // Build CC: a floor for Prelim   // Build AH: the piano's story moves to Stories of music   // Build AB: Playing Scales
   { ids: ['listen-write', 'accidentals', 'key-signatures', 'terms', 'six-eight', 'intervals', 'chords', 'form'], en: ['Grade 1', 'Your ears for Grade 1, accidentals and key signatures, the words for how to play, 6/8, intervals and chords, and how a piece is built.'], ko: ['Grade 1', '1급 청음, 임시표와 조표, 음악 용어, 6/8박자, 음정과 화음, 그리고 곡의 짜임.'] },   // Build CC: a floor for Grade 1
-  { ids: ['listen-23', 'listen-3', 'melody', 'scales-23', 'harmony-23', 'rhythm-23'], en: ['Grades 2–3', 'Your ears for Grade 2 and for Grade 3; how a tune is shaped; scales, intervals and chords, and rhythm a step further.'], ko: ['Grade 2–3', '2급 청음과 3급 청음, 선율의 모양, 그리고 스케일, 음정과 화음, 리듬을 한 걸음 더.'] },   // Build CC: an ear room per grade   // Build AM: Rhythm Further   // Build AL: Intervals and Chords Further   // Build AK: Scales Further   // Build AJ: Ear Training, Grades 2–3   // Build AH: Composers and Styles move to Stories of music
+  { ids: ['listen-23', 'melody', 'scales-23'], en: ['Grade 2', 'Your ears for Grade 2, how a tune is shaped, and scales a step further: black-key starts, the melodic minor, the chromatic scale from any note.'], ko: ['Grade 2', '2급 청음, 선율의 모양, 그리고 스케일 한 걸음 더: 검은건반에서 시작하기, 가락 단음계, 어느 음에서든 반음계.'] },   // Build CP: Grades 2 and 3 a floor each
+  { ids: ['listen-3', 'harmony-23', 'rhythm-23'], en: ['Grade 3', 'Your ears for Grade 3, intervals and chords a step further, and rhythm a step further.'], ko: ['Grade 3', '3급 청음, 음정과 화음 한 걸음 더, 그리고 리듬 한 걸음 더.'] },   // Build CC: an ear room per grade   // Build AM: Rhythm Further   // Build AL: Intervals and Chords Further   // Build AK: Scales Further   // Build AJ: Ear Training, Grades 2–3   // Build AH: Composers and Styles move to Stories of music
   { ids: ['listen-4', 'scales-4', 'keys-4', 'harmony-4', 'rhythm-4'], en: ['Grade 4', 'Your ears, scales and arpeggios, keys and intervals, chords and cadences, and rhythm.'], ko: ['Grade 4', '귀, 스케일과 아르페지오, 조와 음정, 화음과 종지, 그리고 리듬.'] },   // Build AR: the Grade 4 floor (call 9); its rooms appear as they are built (call 18)
   { ids: ['listen-5', 'scales-5', 'keys-5', 'harmony-5'], en: ['Grade 5', 'Your ears, scales and arpeggios, keys and intervals, and chords and cadences.'], ko: ['Grade 5', '귀, 스케일과 아르페지오, 조와 음정, 그리고 화음과 종지.'] },   // Build AZ: the Grade 5 floor (call 23); its rooms appear as they are built
   { ids: ['listen-6', 'scales-6', 'arps-6', 'harmony-6'], en: ['Grade 6', 'Your ears, scales, arpeggios and chord walks, and chords and cadences.'], ko: ['Grade 6', '귀, 스케일, 아르페지오와 화음 진행, 그리고 화음과 종지.'] },   // Build BO: the Grade 6 floor (call 26); its rooms appear as they are built
@@ -20287,11 +20503,11 @@ const TOOL_META = {
   'keyboard-ancestors': ['about', 0, 3, 'show ear'], 'piano-timeline': ['about', 1, 3, 'show'], 'piano-action': ['about', 0, 3, 'show ear'], 'eras': ['about', 1, 3, 'show ear'], 'spr-zone': ['about', 0, 1, 'game ear'], 'spr-big': ['about', 0, 1, 'game ear'], 'spr-fam': ['about', 0, 2, 'game'], 'spr-ladder': ['about', 0, 2, 'game ear'], 'spr-range': ['about', 0, 3, 'show game'], 'hz-explorer': ['about', 1, 3, 'show ear'], 'string-lab': ['about', 0, 3, 'show ear'], 'size-pitch': ['about', 0, 2, 'game ear'], 'octave-ladder': ['about', 1, 3, 'game ear'], 'range-chart': ['about', 1, 3, 'show ear'],
   'mlx-map': ['melody', 1, 3, 'show ear'], 'mlx-line': ['melody', 1, 3, 'game ear'], 'mlx-phrasing': ['melody', 1, 3, 'show ear'], 'mlx-qa': ['melody', 1, 3, 'show ear'], 'mlx-motif': ['melody', 1, 3, 'game ear'], 'mlx-seq': ['melody', 1, 3, 'show ear'], 'mlx-words': ['melody', 2, 3, 'show ear'], 'mlx-write': ['melody', 3, 3, 'show ear'], 'mlx-couplet': ['melody', 3, 3, 'show ear'], 'mlx-build': ['melody', 1, 3, 'show ear'], 'tune-anatomy': ['melody', 0, 1, 'show'], 'draw-tune': ['melody', 0, 2, 'game ear'], 'phrase-marks': ['melody', 1, 2, 'show'], 'question-answer': ['melody', 1, 2, 'game ear'], 'melody-sequence': ['melody', 1, 2, 'show ear'],
   'fmx-map': ['melody', 1, 3, 'show ear'], 'fmx-phrase': ['melody', 1, 2, 'show ear'], 'fmx-letters': ['melody', 1, 3, 'game ear'], 'fmx-binary': ['melody', 2, 3, 'show ear'], 'fmx-ternary': ['melody', 2, 3, 'show ear'], 'fmx-find': ['melody', 2, 3, 'game ear'], 'fmx-build': ['melody', 1, 3, 'show ear'], 'form-shapes': ['melody', 0, 2, 'show'], 'form-builder': ['melody', 0, 2, 'game ear'], 'same-or-new': ['melody', 1, 2, 'game ear'], 'rondo-refrain': ['melody', 1, 3, 'game ear'], 'binary-ternary-spot': ['melody', 1, 3, 'game ear'],
-  'csx-map': ['about', 0, 3, 'show ear'], 'csx-texture': ['about', 0, 3, 'show ear game'], 'csx-era': ['about', 0, 3, 'show ear'], 'csx-penta': ['about', 0, 3, 'show ear'], 'csx-blues': ['about', 1, 3, 'show ear game'], 'csx-jam': ['about', 0, 3, 'show ear game'], 'mk-iv': ['intervals', 1, 2, 'game ear'], 'mk-cad': ['chords', 3, 3, 'game ear'], 'mk-fourkeys': ['chords', 3, 3, 'game ear'], 'mk-thirds': ['scales', 3, 3, 'game ear'], 'mk-colour': ['chords', 3, 3, 'game ear'], 'mk-map': ['melody', 3, 3, 'write show'], 'mk-accomp': ['chords', 3, 3, 'game ear'], 'mk-mode': ['scales', 3, 3, 'game ear'], 'mk-mem': ['melody', 3, 3, 'game ear'], 'mk-poly': ['rrhythm', 3, 3, 'game ear'], 'mk-wave': ['chords', 3, 3, 'game ear'], 'mk-two': ['chords', 3, 3, 'write ear'], 'mk-acc': ['clock', 1, 2, 'game ear'], 'mk-sty': ['about', 0, 3, 'show ear game'], 'mk-dyn': ['expression', 0, 1, 'game ear'], 'mk-tempo': ['rtempo', 0, 2, 'game ear'], 'mk-mm': ['scales', 1, 2, 'game ear'], 'mk-band': ['rpulse', 0, 1, 'game home'], 'mk-word': ['keys', 0, 0, 'game'], 'mk-lines': ['pitch', 0, 1, 'game ear'], 'mk-exam': ['rpulse', 0, 1, 'game ear'], 'mk-hang': ['steps', 0, 1, 'game ear'], 'mk-keytune': ['scales', 0, 1, 'game ear'], 'mk-remix': ['scales', 0, 1, 'game ear'], 'mk-e8': ['rpulse', 1, 1, 'game ear'], 'mk-pianist': ['body', 0, 1, 'game'], 'mk-bingo': ['intervals', 2, 2, 'game ear'], 'mk-triad': ['chords', 2, 3, 'game ear'], 'mk-surprise': ['about', 0, 1, 'game ear'], 'mk-who': ['about', 0, 2, 'game ear'], 'mk-first': ['about', 1, 2, 'game'], 'mk-dj': ['scales', 2, 3, 'game ear'], 'mk-flip': ['intervals', 2, 3, 'game'], 'mk-decor': ['melody', 2, 3, 'game ear'], 'mk-four4': ['scales', 2, 2, 'game ear'], 'mk-anykey': ['scales', 2, 2, 'game ear'], 'mk-tunechords': ['chords', 2, 2, 'game ear'], 'mk-offbeat': ['rrhythm', 2, 2, 'game ear'], 'mk-ways': ['rnotes', 0, 1, 'game ear'], 'mk-hidden': ['steps', 1, 2, 'game ear'], 'mk-duel': ['steps', 1, 2, 'game ear'], 'mk-melmin': ['scales', 1, 2, 'game ear'], 'mk-choir': ['chords', 1, 2, 'game ear'], 'mk-split': ['rrhythm', 1, 2, 'game ear'], 'mk-ladders': ['ledger', 1, 2, 'game'], 'mk-road': ['words', 1, 2, 'game ear'], 'mk-recipe': ['words', 1, 2, 'game ear'], 'mk-staffword': ['pitch', 0, 1, 'game'], 'mk-move': ['steps', 0, 1, 'game ear'], 'mk-trick': ['rpulse', 0, 0, 'game ear'], 'mk-steps': ['tones', 0, 1, 'game ear'], 'mk-qa': ['steps', 0, 1, 'game ear'], 'mk-loop': ['harmony', 1, 3, 'game ear'], 'csx-pop': ['about', 0, 3, 'show ear'], 'csx-ear': ['about', 1, 3, 'game ear'], 'texture-types': ['about', 0, 2, 'show ear'], 'texture-spotter': ['about', 1, 3, 'game ear'], 'genre-traits': ['about', 1, 3, 'show'], 'swing-feel': ['about', 1, 3, 'game ear'], 'twelve-bar-blues': ['about', 2, 3, 'game ear'],
+  'csx-map': ['about', 0, 3, 'show ear'], 'csx-texture': ['about', 0, 3, 'show ear game'], 'csx-era': ['about', 0, 3, 'show ear'], 'csx-penta': ['about', 0, 3, 'show ear'], 'csx-blues': ['about', 1, 3, 'show ear game'], 'csx-jam': ['about', 0, 3, 'show ear game'], 'mk-iv': ['intervals', 1, 2, 'game ear'], 'mk-cad': ['chords', 3, 3, 'game ear'], 'mk-fourkeys': ['chords', 3, 3, 'game ear'], 'mk-thirds': ['scales', 3, 3, 'game ear'], 'mk-colour': ['chords', 3, 3, 'game ear'], 'mk-map': ['melody', 3, 3, 'write show'], 'mk-accomp': ['chords', 3, 3, 'game ear'], 'mk-mode': ['scales', 3, 3, 'game ear'], 'mk-mem': ['melody', 3, 3, 'game ear'], 'mk-poly': ['rrhythm', 3, 3, 'game ear'], 'mk-wave': ['chords', 3, 3, 'game ear'], 'mk-two': ['chords', 3, 3, 'write ear'], 'mk-acc': ['clock', 1, 2, 'game ear'], 'mk-sty': ['about', 0, 3, 'show ear game'], 'mk-dyn': ['expression', 0, 1, 'game ear'], 'mk-tempo': ['rtempo', 0, 2, 'game ear'], 'mk-mm': ['scales', 1, 2, 'game ear'], 'mk-band': ['rpulse', 0, 1, 'game home'], 'mk-word': ['keys', 0, 0, 'game'], 'mk-lines': ['pitch', 0, 1, 'game ear'], 'mk-exam': ['rpulse', 0, 1, 'game ear'], 'mk-hang': ['steps', 0, 1, 'game ear'], 'mk-keytune': ['scales', 0, 1, 'game ear'], 'mk-remix': ['scales', 0, 1, 'game ear'], 'mk-e8': ['rpulse', 1, 1, 'game ear'], 'mk-pianist': ['body', 0, 1, 'game'], 'mk-bingo': ['intervals', 2, 2, 'game ear'], 'mk-triad': ['chords', 2, 3, 'game ear'], 'mk-surprise': ['about', 0, 1, 'game ear'], 'mk-gtime': ['rtime', 0, 1, 'game ear'], 'mk-who': ['about', 0, 2, 'game ear'], 'mk-first': ['about', 1, 2, 'game'], 'mk-dj': ['scales', 2, 3, 'game ear'], 'mk-flip': ['intervals', 2, 3, 'game'], 'mk-decor': ['melody', 2, 3, 'game ear'], 'mk-four4': ['scales', 2, 2, 'game ear'], 'mk-anykey': ['scales', 2, 2, 'game ear'], 'mk-tunechords': ['chords', 2, 2, 'game ear'], 'mk-offbeat': ['rrhythm', 2, 2, 'game ear'], 'mk-ways': ['rnotes', 0, 1, 'game ear'], 'mk-hidden': ['steps', 1, 2, 'game ear'], 'mk-duel': ['steps', 1, 2, 'game ear'], 'mk-melmin': ['scales', 1, 2, 'game ear'], 'mk-choir': ['chords', 1, 2, 'game ear'], 'mk-split': ['rrhythm', 1, 2, 'game ear'], 'mk-ladders': ['ledger', 1, 2, 'game'], 'mk-road': ['words', 1, 2, 'game ear'], 'mk-recipe': ['words', 1, 2, 'game ear'], 'mk-staffword': ['pitch', 0, 1, 'game'], 'mk-move': ['steps', 0, 1, 'game ear'], 'mk-trick': ['rpulse', 0, 0, 'game ear'], 'mk-steps': ['tones', 0, 1, 'game ear'], 'mk-qa': ['steps', 0, 1, 'game ear'], 'mk-loop': ['harmony', 1, 3, 'game ear'], 'csx-pop': ['about', 0, 3, 'show ear'], 'csx-ear': ['about', 1, 3, 'game ear'], 'texture-types': ['about', 0, 2, 'show ear'], 'texture-spotter': ['about', 1, 3, 'game ear'], 'genre-traits': ['about', 1, 3, 'show'], 'swing-feel': ['about', 1, 3, 'game ear'], 'twelve-bar-blues': ['about', 2, 3, 'game ear'],
   'cpx-map': ['about', 0, 3, 'show ear'], 'cpx-baroque': ['about', 0, 3, 'show ear'], 'cpx-classical': ['about', 0, 3, 'show ear'], 'cpx-romantic': ['about', 0, 3, 'show ear'], 'cpx-modern': ['about', 0, 3, 'show ear'], 'cpx-alive': ['about', 0, 3, 'show'], 'cpx-order': ['about', 1, 3, 'game'], 'era-worlds': ['about', 0, 3, 'show'], 'movement-map': ['about', 1, 3, 'show ear'], 'composer-time-machine': ['about', 0, 3, 'show game'], 'composer-cards': ['about', 0, 3, 'show ear'], 'who-am-i': ['about', 1, 3, 'game'], 'name-that-tune': ['about', 0, 3, 'game ear'],
 };
 // Phase 484: each tool's concept (the inventory of 17 October); the old topic stays in TOOL_META for its level and kinds
-const TOOL_CONCEPT = { 'accidental-bar': 'p-clock', 'accidental-cards': 'p-clock', 'all-keys': 'p-scales', 'key-finder': 'p-scales', 'alto-clef': 'p-staff', 'anacrusis': 'r-beat', 'arm-alignment': 'k-posture', 'arm-moves': 'k-posture', 'bar-lines': 'r-beat', 'beam-apples': 'r-beat', 'beat-doubler': 'r-beat', 'beat-groups': 'r-beat', 'beat-or-rhythm': 'r-beat', 'beat-target': 'r-beat', 'binary-ternary-spot': 'c-map', 'black-key-jam': 'p-staff', 'black-key-song': 'p-staff', 'black-white-neighbours': 'p-staff', 'build-minor': 'p-scales', 'cadences': 'p-chords', 'chord-extensions': 'p-chords', 'chromatic': 'p-clock', 'chx-145': 'p-chords', 'chx-clock': 'p-chords', 'chx-hands': 'k-play', 'chx-mm': 'p-chords', 'chx-stack': 'p-chords', 'chx-tonic': 'p-chords', 'circle-fifths': 'p-scales', 'clef-basics': 'p-staff', 'clef-story': 'p-staff', 'common-cut': 'r-beat', 'complete-melody': 'c-map', 'composer-cards': 'about', 'composer-time-machine': 'about', 'count-along': 'r-beat', 'count-aloud': 'r-beat', 'count-more': 'r-beat', 'count-ring': 'r-beat', 'cpx-alive': 'about', 'cpx-baroque': 'about', 'cpx-classical': 'about', 'cpx-map': 'about', 'cpx-modern': 'about', 'cpx-order': 'about', 'cpx-romantic': 'about', 'csx-blues': 'about', 'csx-jam': 'about', 'mk-iv': 'p-intervals', 'mk-cad': 'p-chords', 'mk-fourkeys': 'p-chords', 'mk-thirds': 'p-scales', 'mk-colour': 'p-chords', 'mk-map': 'c-map', 'mk-accomp': 'p-chords', 'mk-mode': 'p-scales', 'mk-mem': 'c-map', 'mk-acc': 'p-clock', 'mk-sty': 'about', 'mk-dyn': 't-touch', 'mk-tempo': 't-tempo', 'mk-mm': 'p-scales', 'mk-band': 'r-beat', 'mk-word': 'p-staff', 'mk-lines': 'p-staff', 'mk-exam': 'aural', 'mk-hang': 'aural', 'mk-keytune': 'p-scales', 'mk-remix': 'k-play', 'mk-e8': 'r-beat', 'mk-pianist': 'k-posture', 'mk-bingo': 'aural', 'mk-triad': 'aural', 'mk-surprise': 'about', 'mk-who': 'about', 'mk-first': 'about', 'mk-dj': 'k-play', 'mk-flip': 'p-scales', 'mk-decor': 'p-chords', 'mk-four4': 'k-play', 'mk-anykey': 'p-scales', 'mk-tunechords': 'p-chords', 'mk-offbeat': 'r-beat', 'mk-ways': 'r-beat', 'mk-hidden': 'aural', 'mk-duel': 'aural', 'mk-melmin': 'k-play', 'mk-choir': 'p-chords', 'mk-split': 'r-beat', 'mk-ladders': 'p-staff', 'mk-road': 'c-map', 'mk-recipe': 't-tempo', 'mk-staffword': 'p-staff', 'mk-move': 'k-positions', 'mk-trick': 'aural', 'mk-steps': 'p-clock', 'mk-qa': 'c-reading', 'mk-loop': 'p-chords', 'csx-ear': 'about', 'csx-era': 'about', 'csx-map': 'about', 'csx-penta': 'about', 'csx-pop': 'about', 'csx-texture': 'about', 'dc-ds-coda': 'c-map', 'dot-lab': 'r-beat', 'dotted-notes': 'r-beat', 'draw-tune': 'c-map', 'duplets': 'r-beat', 'dyn-order': 't-touch', 'echo': 'c-reading', 'era-worlds': 'about', 'eras': 'about', 'fill-bar': 'r-beat', 'find-every': 'p-staff', 'finger-beat': 'r-beat', 'finger-friends': 'k-posture', 'finger-numbers': 'k-positions', 'five-positions': 'k-positions', 'fix-the-bar': 'r-beat', 'flash-cards': 'p-staff', 'flats-order': 'p-scales', 'fmx-binary': 'c-map', 'fmx-build': 'c-map', 'fmx-find': 'c-map', 'fmx-letters': 'c-map', 'fmx-map': 'c-map', 'fmx-phrase': 'c-map', 'fmx-ternary': 'c-map', 'fold': 'p-staff', 'form-builder': 'c-map', 'form-shapes': 'c-map', 'genre-traits': 'about', 'grace-write': 't-touch', 'grouping': 'r-beat', 'hairpin': 't-touch', 'hand-shape': 'k-posture', 'hear-find': 'c-reading', 'heard-bar': 'r-beat', 'high-low': 'p-staff', 'hz-explorer': 'about', 'interval-ear': 'p-intervals', 'interval-ruler': 'p-intervals', 'inversions': 'p-chords', 'invert-interval': 'p-intervals', 'ivx-big': 'p-intervals', 'ivx-count': 'p-intervals', 'ivx-hand': 'p-intervals', 'ivx-ladder': 'p-intervals', 'ivx-mh': 'p-intervals', 'ivx-tonic': 'p-intervals', 'key-chords': 'p-chords', 'key-houses': 'p-staff', 'keyboard-ancestors': 'about', 'landmark-hop': 'p-staff', 'landmarks': 'p-staff', 'ledger-landmarks': 'p-staff', 'ledger-twins': 'p-staff', 'ledger-walk': 'p-staff', 'ledger-write': 'p-staff', 'letter-chain': 'p-staff', 'letter-hop': 'p-intervals', 'major-fingering': 'k-play', 'major-minor': 'p-chords', 'make-card': 'r-beat', 'melody-sequence': 'c-map', 'metronome': 't-tempo', 'mini-tune': 'c-reading', 'minor-fingering': 'k-play', 'mlx-build': 'c-map', 'mlx-line': 'c-map', 'mlx-map': 'c-map', 'mlx-motif': 'c-map', 'mlx-phrasing': 'c-map', 'mlx-qa': 'c-map', 'mlx-seq': 'c-map', 'mlx-words': 'c-map', 'mlx-write': 'c-map', 'mlx-couplet': 'c-map', 'modes': 'p-scales', 'movement-map': 'about', 'name-reveal': 'p-staff', 'name-that-tune': 'about', 'note-rest-match': 'r-beat', 'note-rest-naming': 'r-beat', 'note-value-tree': 'r-beat', 'nv-hold': 'r-beat', 'nv-long': 'r-beat', 'nv-rests': 'r-beat', 'nv-run': 'r-beat', 'nv-walk': 'r-beat', 'octave-ladder': 'about', 'ornaments': 't-touch', 'ottava': 'p-staff', 'pedal': 't-touch', 'perfect-counter': 'practice', 'phrase-marks': 'c-map', 'piano-action': 'about', 'piano-timeline': 'about', 'place-it': 'p-scales', 'posture-check': 'k-posture', 'practice-dice': 'practice', 'practice-timer': 'practice', 'primary-triads': 'p-chords', 'question-answer': 'c-map', 'range-chart': 'about', 'regroup': 'r-beat', 'relative-minor': 'p-scales', 'rest-grouping': 'r-beat', 'rhymes': 'p-staff', 'rhythm-cards-all': 'r-beat', 'road-map': 'c-map', 'rondo-refrain': 'c-map', 'sac-bar': 'p-clock', 'sac-line': 'p-clock', 'sac-natural': 'p-clock', 'sac-signs': 'p-clock', 'sac-tune': 'p-clock', 'same-or-new': 'c-map', 'same-tune-tempo': 't-tempo', 'scale-finder': 'p-scales', 'scale-intervals': 'p-intervals', 'sdy-hair': 't-touch', 'sdy-ladder': 't-touch', 'sdy-pf': 't-touch', 'sdy-tie': 't-touch', 'sdy-touch': 't-touch', 'semitone-counter': 'p-intervals', 'seventh-chords': 'p-chords', 'sgn-dc': 'c-map', 'sgn-ds': 'c-map', 'sgn-pause': 't-tempo', 'sgn-rep': 'c-map', 'sgn-volta': 'c-map', 'sharp-flat': 'p-clock', 'sharps-order': 'p-scales', 'sight-reading': 'c-reading', 'silent-beats': 'r-beat', 'sit-check': 'k-posture', 'size-pitch': 'p-staff', 'skg-acc': 'p-scales', 'skg-every': 'p-scales', 'skg-f': 'p-scales', 'skg-five': 'p-scales', 'skg-g': 'p-scales', 'speed-change': 't-tempo', 'split-it': 'r-beat', 'spr-big': 'about', 'spr-fam': 'about', 'spr-ladder': 'about', 'spr-range': 'about', 'spr-zone': 'about', 'sps-action': 'about', 'sps-keys': 'about', 'sps-pedals': 'about', 'sps-softloud': 'about', 'sps-sound': 'about', 'srh-alone': 'r-beat', 'srh-beams': 'r-beat', 'srh-dot': 'r-beat', 'srh-read': 'r-beat', 'srh-up': 'r-beat', 'ssk-cpos': 'k-positions', 'ssk-gpos': 'k-positions', 'ssk-read': 'c-reading', 'ssk-shape': 'c-reading', 'ssk-step': 'c-reading', 'staff-basics': 'p-staff', 'staff-climb': 'p-staff', 'steady-beat': 'r-beat', 'step-skip': 'c-reading', 'step-updown': 'p-staff', 'stm-metro': 't-tempo', 'stm-read': 't-tempo', 'stm-sf': 't-tempo', 'stm-steady': 't-tempo', 'stm-words': 't-tempo', 'string-lab': 'about', 'swing-feel': 'r-beat', 'tap-tempo': 't-tempo', 'tempo-race': 't-tempo', 'tempo-walk': 't-tempo', 'term-cards': 't-tempo', 'term-match': 't-tempo', 'term-mixer': 't-tempo', 'term-sort': 't-tempo', 'texture-spotter': 'about', 'texture-types': 'about', 'tie-slur': 't-touch', 'time-sig-numbers': 'r-beat', 'tmx-build': 't-tempo', 'tmx-change': 't-tempo', 'tmx-map': 't-tempo', 'tmx-speed': 't-tempo', 'tmx-touch': 't-touch', 'tmx-vol': 't-touch', 'tone-semitone': 'p-clock', 'touch-ear': 't-touch', 'touch-lengths': 't-touch', 'transpose': 'p-scales', 'triad-stack': 'p-chords', 'tritone': 'p-intervals', 'ts-bars': 'r-beat', 'ts-build': 'r-beat', 'ts-numbers': 'r-beat', 'ts-strong': 'r-beat', 'ts-tie': 'r-beat', 'tune-anatomy': 'c-map', 'twelve-bar-blues': 'p-chords', 'who-am-i': 'about', 'whole-piano': 'p-staff', 'write-note': 'p-staff' };
+const TOOL_CONCEPT = { 'accidental-bar': 'p-clock', 'accidental-cards': 'p-clock', 'all-keys': 'p-scales', 'key-finder': 'p-scales', 'alto-clef': 'p-staff', 'anacrusis': 'r-beat', 'arm-alignment': 'k-posture', 'arm-moves': 'k-posture', 'bar-lines': 'r-beat', 'beam-apples': 'r-beat', 'beat-doubler': 'r-beat', 'beat-groups': 'r-beat', 'beat-or-rhythm': 'r-beat', 'beat-target': 'r-beat', 'binary-ternary-spot': 'c-map', 'black-key-jam': 'p-staff', 'black-key-song': 'p-staff', 'black-white-neighbours': 'p-staff', 'build-minor': 'p-scales', 'cadences': 'p-chords', 'chord-extensions': 'p-chords', 'chromatic': 'p-clock', 'chx-145': 'p-chords', 'chx-clock': 'p-chords', 'chx-hands': 'k-play', 'chx-mm': 'p-chords', 'chx-stack': 'p-chords', 'chx-tonic': 'p-chords', 'circle-fifths': 'p-scales', 'clef-basics': 'p-staff', 'clef-story': 'p-staff', 'common-cut': 'r-beat', 'complete-melody': 'c-map', 'composer-cards': 'about', 'composer-time-machine': 'about', 'count-along': 'r-beat', 'count-aloud': 'r-beat', 'count-more': 'r-beat', 'count-ring': 'r-beat', 'cpx-alive': 'about', 'cpx-baroque': 'about', 'cpx-classical': 'about', 'cpx-map': 'about', 'cpx-modern': 'about', 'cpx-order': 'about', 'cpx-romantic': 'about', 'csx-blues': 'about', 'csx-jam': 'about', 'mk-iv': 'p-intervals', 'mk-cad': 'p-chords', 'mk-fourkeys': 'p-chords', 'mk-thirds': 'p-scales', 'mk-colour': 'p-chords', 'mk-map': 'c-map', 'mk-accomp': 'p-chords', 'mk-mode': 'p-scales', 'mk-mem': 'c-map', 'mk-acc': 'p-clock', 'mk-sty': 'about', 'mk-dyn': 't-touch', 'mk-tempo': 't-tempo', 'mk-mm': 'p-scales', 'mk-band': 'r-beat', 'mk-word': 'p-staff', 'mk-lines': 'p-staff', 'mk-exam': 'aural', 'mk-hang': 'aural', 'mk-keytune': 'p-scales', 'mk-remix': 'k-play', 'mk-e8': 'r-beat', 'mk-pianist': 'k-posture', 'mk-bingo': 'aural', 'mk-triad': 'aural', 'mk-surprise': 'about', 'mk-gtime': 'r-beat', 'mk-who': 'about', 'mk-first': 'about', 'mk-dj': 'k-play', 'mk-flip': 'p-scales', 'mk-decor': 'p-chords', 'mk-four4': 'k-play', 'mk-anykey': 'p-scales', 'mk-tunechords': 'p-chords', 'mk-offbeat': 'r-beat', 'mk-ways': 'r-beat', 'mk-hidden': 'aural', 'mk-duel': 'aural', 'mk-melmin': 'k-play', 'mk-choir': 'p-chords', 'mk-split': 'r-beat', 'mk-ladders': 'p-staff', 'mk-road': 'c-map', 'mk-recipe': 't-tempo', 'mk-staffword': 'p-staff', 'mk-move': 'k-positions', 'mk-trick': 'aural', 'mk-steps': 'p-clock', 'mk-qa': 'c-reading', 'mk-loop': 'p-chords', 'csx-ear': 'about', 'csx-era': 'about', 'csx-map': 'about', 'csx-penta': 'about', 'csx-pop': 'about', 'csx-texture': 'about', 'dc-ds-coda': 'c-map', 'dot-lab': 'r-beat', 'dotted-notes': 'r-beat', 'draw-tune': 'c-map', 'duplets': 'r-beat', 'dyn-order': 't-touch', 'echo': 'c-reading', 'era-worlds': 'about', 'eras': 'about', 'fill-bar': 'r-beat', 'find-every': 'p-staff', 'finger-beat': 'r-beat', 'finger-friends': 'k-posture', 'finger-numbers': 'k-positions', 'five-positions': 'k-positions', 'fix-the-bar': 'r-beat', 'flash-cards': 'p-staff', 'flats-order': 'p-scales', 'fmx-binary': 'c-map', 'fmx-build': 'c-map', 'fmx-find': 'c-map', 'fmx-letters': 'c-map', 'fmx-map': 'c-map', 'fmx-phrase': 'c-map', 'fmx-ternary': 'c-map', 'fold': 'p-staff', 'form-builder': 'c-map', 'form-shapes': 'c-map', 'genre-traits': 'about', 'grace-write': 't-touch', 'grouping': 'r-beat', 'hairpin': 't-touch', 'hand-shape': 'k-posture', 'hear-find': 'c-reading', 'heard-bar': 'r-beat', 'high-low': 'p-staff', 'hz-explorer': 'about', 'interval-ear': 'p-intervals', 'interval-ruler': 'p-intervals', 'inversions': 'p-chords', 'invert-interval': 'p-intervals', 'ivx-big': 'p-intervals', 'ivx-count': 'p-intervals', 'ivx-hand': 'p-intervals', 'ivx-ladder': 'p-intervals', 'ivx-mh': 'p-intervals', 'ivx-tonic': 'p-intervals', 'key-chords': 'p-chords', 'key-houses': 'p-staff', 'keyboard-ancestors': 'about', 'landmark-hop': 'p-staff', 'landmarks': 'p-staff', 'ledger-landmarks': 'p-staff', 'ledger-twins': 'p-staff', 'ledger-walk': 'p-staff', 'ledger-write': 'p-staff', 'letter-chain': 'p-staff', 'letter-hop': 'p-intervals', 'major-fingering': 'k-play', 'major-minor': 'p-chords', 'make-card': 'r-beat', 'melody-sequence': 'c-map', 'metronome': 't-tempo', 'mini-tune': 'c-reading', 'minor-fingering': 'k-play', 'mlx-build': 'c-map', 'mlx-line': 'c-map', 'mlx-map': 'c-map', 'mlx-motif': 'c-map', 'mlx-phrasing': 'c-map', 'mlx-qa': 'c-map', 'mlx-seq': 'c-map', 'mlx-words': 'c-map', 'mlx-write': 'c-map', 'mlx-couplet': 'c-map', 'modes': 'p-scales', 'movement-map': 'about', 'name-reveal': 'p-staff', 'name-that-tune': 'about', 'note-rest-match': 'r-beat', 'note-rest-naming': 'r-beat', 'note-value-tree': 'r-beat', 'nv-hold': 'r-beat', 'nv-long': 'r-beat', 'nv-rests': 'r-beat', 'nv-run': 'r-beat', 'nv-walk': 'r-beat', 'octave-ladder': 'about', 'ornaments': 't-touch', 'ottava': 'p-staff', 'pedal': 't-touch', 'perfect-counter': 'practice', 'phrase-marks': 'c-map', 'piano-action': 'about', 'piano-timeline': 'about', 'place-it': 'p-scales', 'posture-check': 'k-posture', 'practice-dice': 'practice', 'practice-timer': 'practice', 'primary-triads': 'p-chords', 'question-answer': 'c-map', 'range-chart': 'about', 'regroup': 'r-beat', 'relative-minor': 'p-scales', 'rest-grouping': 'r-beat', 'rhymes': 'p-staff', 'rhythm-cards-all': 'r-beat', 'road-map': 'c-map', 'rondo-refrain': 'c-map', 'sac-bar': 'p-clock', 'sac-line': 'p-clock', 'sac-natural': 'p-clock', 'sac-signs': 'p-clock', 'sac-tune': 'p-clock', 'same-or-new': 'c-map', 'same-tune-tempo': 't-tempo', 'scale-finder': 'p-scales', 'scale-intervals': 'p-intervals', 'sdy-hair': 't-touch', 'sdy-ladder': 't-touch', 'sdy-pf': 't-touch', 'sdy-tie': 't-touch', 'sdy-touch': 't-touch', 'semitone-counter': 'p-intervals', 'seventh-chords': 'p-chords', 'sgn-dc': 'c-map', 'sgn-ds': 'c-map', 'sgn-pause': 't-tempo', 'sgn-rep': 'c-map', 'sgn-volta': 'c-map', 'sharp-flat': 'p-clock', 'sharps-order': 'p-scales', 'sight-reading': 'c-reading', 'silent-beats': 'r-beat', 'sit-check': 'k-posture', 'size-pitch': 'p-staff', 'skg-acc': 'p-scales', 'skg-every': 'p-scales', 'skg-f': 'p-scales', 'skg-five': 'p-scales', 'skg-g': 'p-scales', 'speed-change': 't-tempo', 'split-it': 'r-beat', 'spr-big': 'about', 'spr-fam': 'about', 'spr-ladder': 'about', 'spr-range': 'about', 'spr-zone': 'about', 'sps-action': 'about', 'sps-keys': 'about', 'sps-pedals': 'about', 'sps-softloud': 'about', 'sps-sound': 'about', 'srh-alone': 'r-beat', 'srh-beams': 'r-beat', 'srh-dot': 'r-beat', 'srh-read': 'r-beat', 'srh-up': 'r-beat', 'ssk-cpos': 'k-positions', 'ssk-gpos': 'k-positions', 'ssk-read': 'c-reading', 'ssk-shape': 'c-reading', 'ssk-step': 'c-reading', 'staff-basics': 'p-staff', 'staff-climb': 'p-staff', 'steady-beat': 'r-beat', 'step-skip': 'c-reading', 'step-updown': 'p-staff', 'stm-metro': 't-tempo', 'stm-read': 't-tempo', 'stm-sf': 't-tempo', 'stm-steady': 't-tempo', 'stm-words': 't-tempo', 'string-lab': 'about', 'swing-feel': 'r-beat', 'tap-tempo': 't-tempo', 'tempo-race': 't-tempo', 'tempo-walk': 't-tempo', 'term-cards': 't-tempo', 'term-match': 't-tempo', 'term-mixer': 't-tempo', 'term-sort': 't-tempo', 'texture-spotter': 'about', 'texture-types': 'about', 'tie-slur': 't-touch', 'time-sig-numbers': 'r-beat', 'tmx-build': 't-tempo', 'tmx-change': 't-tempo', 'tmx-map': 't-tempo', 'tmx-speed': 't-tempo', 'tmx-touch': 't-touch', 'tmx-vol': 't-touch', 'tone-semitone': 'p-clock', 'touch-ear': 't-touch', 'touch-lengths': 't-touch', 'transpose': 'p-scales', 'triad-stack': 'p-chords', 'tritone': 'p-intervals', 'ts-bars': 'r-beat', 'ts-build': 'r-beat', 'ts-numbers': 'r-beat', 'ts-strong': 'r-beat', 'ts-tie': 'r-beat', 'tune-anatomy': 'c-map', 'twelve-bar-blues': 'p-chords', 'who-am-i': 'about', 'whole-piano': 'p-staff', 'write-note': 'p-staff' };
 Object.keys(TOOL_META).forEach(id => { if (TOOL_CONCEPT[id]) TOOL_META[id][0] = TOOL_CONCEPT[id]; });
 function toolMeta(id) { const m = TOOL_META[id]; if (m) return { cat: m[0], lo: m[1], hi: m[2], kinds: m[3].split(' ') }; const t = TOOLS.find(x => x.id === id); return { cat: TOOL_CONCEPT[id] || 'practice', lo: 0, hi: 3, kinds: ['show'], ch: t && t.ch }; }
 // Phase 168 (2026-09-28): shared search text for a tool -- title + blurb + its category's
@@ -20484,6 +20700,9 @@ const TOOL_ICON = {
   // Phase 210 (2026-09-29): recolored onto the styles chapter's sage-green "about" track badge
   // (the new track color, matching the illustrated-content rollout's established rounded-square
   // style). No semantic colors here worth preserving -- all moved onto cream/mustard/ink.
+  'mk-gtime': () => (
+    <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#2e8a6e"/><text x="12" y="11" textAnchor="middle" fontFamily="Georgia, serif" fontSize="9" fontWeight="900" fill="#fefbf3">?</text><path d="M7 12.6H17" stroke="#fefbf3" strokeWidth="1"/><text x="12" y="20.5" textAnchor="middle" fontFamily="Georgia, serif" fontSize="8.5" fontWeight="900" fill="#fefbf3">4</text></svg>
+  ),
   'mk-surprise': () => (
     <svg width="34" height="34" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#e4572e"/>{[4, 7, 10].map(x => <circle key={x} cx={x} cy="15" r="1.3" fill="#fefbf3"/>)}<path d="M17 6 L18.2 9.5 L21.5 9 L19 11.5 L21 14.5 L17.6 13.4 L16 16.5 L15.3 13 L12 12.5 L15 10.6 L14 7.4 Z" fill="#e9a83a"/></svg>
   ),
@@ -21074,7 +21293,7 @@ const CHAPTER_TOOL_ORDER = {
   'composers': ['cpx-map', 'cpx-baroque', 'cpx-dances', 'cpx-classical', 'cpx-romantic', 'cpx-modern', 'cpx-alive', 'cpx-order', 'composer-cards', 'movement-map', 'who-am-i', 'name-that-tune', 'mk-first'],   // Build AP: era-worlds, composer-time-machine were twins
   'tempo': ['stm-sf', 'stm-words', 'stm-read', 'stm-metro', 'stm-steady', 'mk-tempo', 'metronome', 'tempo-walk', 'tempo-race', 'tap-tempo', 'same-tune-tempo', 'speed-change'],
   'terms': ['tmx-map', 'tmx-speed', 'tmx-change', 'tmx-vol', 'tmx-touch', 'tmx-build', 'term-sort', 'term-cards', 'term-mixer', 'term-match', 'mk-recipe'],
-  'time-signatures': ['ts-bars', 'ts-numbers', 'ts-strong', 'ts-build', 'ts-tie', 'bar-lines', 'beat-groups', 'beat-target', 'fill-bar', 'fix-the-bar', 'rest-grouping', 'heard-bar', 'count-along', 'time-sig-numbers', 'common-cut', 'beat-doubler'],
+  'time-signatures': ['ts-bars', 'ts-numbers', 'ts-strong', 'ts-build', 'ts-tie', 'bar-lines', 'beat-groups', 'beat-target', 'fill-bar', 'fix-the-bar', 'rest-grouping', 'heard-bar', 'count-along', 'time-sig-numbers', 'common-cut', 'beat-doubler', 'mk-gtime'],
   'tones': ['tone-semitone', 'accidental-cards', 'sharp-flat', 'accidental-bar', 'chromatic', 'mk-steps'],
   'accidentals': ['sac-signs', 'sac-natural', 'sac-bar', 'sac-line', 'sac-tune'],
 };
@@ -23091,12 +23310,14 @@ function thRoom(view, state, id, x, y, w, h, fs, out, dimNew, lay, cmp) {   // d
   const sx = cx - (sq + 5 + rdWidth(lines[0], 700, nz, TH_SERIF)) / 2;   // the square and the first line together, centred
   s += stSquare(sx, sy, sq, num, done ? ST.G : null, 11) + stT(sx + sq + 5, sy + 13, lines[0], { size: nz, weight: 700, font: TH_SERIF, fill: nfill });
   if (lines[1]) s += stT(cx, sy + 27, lines[1], { size: nz, weight: 700, font: TH_SERIF, fill: nfill, anchor: 'middle' });
+  const star = view.star && view.star[id];   // Build CN: the chapter check passed
+  if (star) s += '<path d="' + chkStarD(x + w - (cmp ? 9 : 12), y + h - 6 - (cmp ? 8 : 11), cmp ? 5.5 : 7.5) + '" fill="' + ST.G + '" stroke="#fff" stroke-width="0.8"/>';
   const ic = HOUSE_ICONS[id];
   const picTop = cmp ? sy + lay.ml * 14 + 5 : Math.max(sy + lay.ml * 14 + 14, cy - 40);   // one height on the floor
   if (ic && !on) s += thPic(x + w / 2, picTop, ic, dimNew && st === 'new', cmp ? 0.44 : 0.8);
   if (on) out.fig = stG(ic ? thDome(x + w / 2, picTop - (cmp ? 4 : 0), ic, cmp ? 0.52 : 1) : '');   // your room: the dome, not Clara
   if (view.focus && thArea(id) !== view.focus) s += '<rect x="' + pFix(x + 1) + '" y="' + pFix(y + 1) + '" width="' + pFix(w - 2) + '" height="' + pFix(h - 2) + '" fill="#fff" opacity="0.78" stroke="none"/>';   // Build V: another topic's room, paled
-  const label = num + '. ' + t(nm[0], nm[1] || nm[0]) + (done ? t(', done', ', 완료') : on ? t(', you are here', ', 지금 여기') : '');
+  const label = num + '. ' + t(nm[0], nm[1] || nm[0]) + (done ? t(', done', ', 완료') : on ? t(', you are here', ', 지금 여기') : '') + (star ? t(', check passed', ', 체크 통과') : '');
   out.btns.push({ num, html: '<g data-chapter="' + id + '" data-status="' + st + '" data-here="' + (on ? '1' : '0') + '" role="button" tabindex="0" aria-label="' + penEsc(label).replace(/"/g, '&quot;') + '" style="cursor:pointer"><rect x="' + pFix(x + 1) + '" y="' + pFix(y + 1) + '" width="' + pFix(w - 2) + '" height="' + pFix(h - 2) + '" fill="transparent"/></g>' });
   return s;
 }
@@ -23205,6 +23426,7 @@ function RoomPeek({ id, num, floor, onGo, onClose }) {
         <div style={{flex:1,minWidth:0}}>
           <div style={{fontFamily:LB_SERIF,fontSize:19,fontWeight:800,color:BK.ink,lineHeight:1.15,textWrap:'balance'}}>{bkChapterName(id)}</div>
           <div style={{fontSize:12,fontWeight:800,color:BK.muted,marginTop:2}}>{floor}{steps.length ? ' · ' + t(nDone + ' of ' + steps.length + ' steps done', steps.length + '단계 중 ' + nDone + '단계 완료') : ''}</div>
+          {CHECK_LV[id] && <div data-testid="peek-check" style={{fontSize:12,fontWeight:800,color:(loadChecks().rooms[id] || {}).pass ? '#2e8a6e' : BK.muted,marginTop:1}}>{(loadChecks().rooms[id] || {}).pass ? '★ ' + t('Chapter check passed', '챕터 체크 통과') : t('Chapter check: not yet', '챕터 체크: 아직')}</div>}
         </div>
         <button type="button" onClick={onClose} aria-label={t('Close', '닫기')} style={{flex:'0 0 auto',width:36,height:36,borderRadius:18,border:'1.5px solid rgba(38,41,107,0.25)',background:'#fff',color:BK.ink,fontSize:18,fontWeight:900,cursor:'pointer',lineHeight:1}}>×</button>
       </div>
@@ -23236,8 +23458,9 @@ function HouseMap({ onOpen, compact, noIntro }) {
   let last = null; try { last = localStorage.getItem(LAST_CHAPTER_KEY); } catch (e) {}
   const here = last && all.includes(last) && chapterState(last).status !== 'done' ? last : all.find(id => chapterState(id).status !== 'done');
   const link = loadStoredLink(), name = link && link.name ? link.name.trim() : '', today = localDay();
-  const sig = stages.map(x => x.st.join(',')).join('|') + here + LANG + compact + name + today + fontTick + wide + (topic || '');
-  const view = { stages, here, nums, focus: topic, pawn: name ? (x, y, k) => stPiece(VIC_PAWN_NAVY, x, y, k) : null };
+  const chkRooms = loadChecks().rooms, star = {}; Object.keys(chkRooms).forEach(id => { if (chkRooms[id].pass) star[id] = 1; });   // Build CN
+  const sig = stages.map(x => x.st.join(',')).join('|') + here + LANG + compact + name + today + fontTick + wide + (topic || '') + Object.keys(star).join(',');
+  const view = { stages, here, nums, focus: topic, star, pawn: name ? (x, y, k) => stPiece(VIC_PAWN_NAVY, x, y, k) : null };
   const house = useMemo(() => townhouseSvg(view, { wide }), [sig]);
   const hall = useMemo(() => townhouseSvg(view, { hall: true, wide }), [sig]);
   const week = useMemo(() => compact ? null : weekSvg({ days: practiceDays(), today, name }), [sig]);
@@ -23279,12 +23502,14 @@ function HouseMap({ onOpen, compact, noIntro }) {
       <div data-testid="map-count" style={{fontSize:12.5,fontWeight:600,color:'#6d6f9c',maxWidth:wide ? 820 : 440,margin:'0 auto 4px'}}>{t(finished + ' of ' + all.length + ' chapters done', all.length + '개 챕터 중 ' + finished + '개 완료')}</div>
       <div style={{maxWidth:wide ? 820 : 440,margin:'0 auto'}}>
         {weekEl && <div style={{marginBottom:14,maxWidth:440}}>{weekEl}</div>}
+        {!compact && <ReviewCard/>}
         {inside && !compact && <HouseTopics value={topic} onChange={setTopic}/>}
         <div ref={houseRef} data-house-view role="group" aria-label={t('The Piano Butler’s house: ' + houseFloors() + ', one room for each chapter', '피아노 버틀러의 집: ' + houseFloors(true) + ', 챕터마다 방 하나')}>
           {inside
             ? <><div ref={artRef} data-grow style={{animation: cameIn.current ? 'pbRise .8s cubic-bezier(.25,.7,.3,1) both' : 'none'}}><PenArt shapes={[{ k: 'raw', svg: house.svg }]} vb={house.vb} inter/></div>
                 <div style={hint}>{t('Tap a room to see what is inside', '방을 누르면 안에 무엇이 있는지 보여요')}</div>
-                {peek && (() => { const k = stages.findIndex(x => x.ids.includes(peek)); return <RoomPeek id={peek} num={nums[peek]} floor={k >= 0 ? floorName(k) : ''} onGo={() => { const c = peek; setPeek(null); onOpen(c); }} onClose={() => setPeek(null)}/>; })()}</>
+                {peek && (() => { const k = stages.findIndex(x => x.ids.includes(peek)); return <RoomPeek id={peek} num={nums[peek]} floor={k >= 0 ? floorName(k) : ''} onGo={() => { const c = peek; setPeek(null); onOpen(c); }} onClose={() => setPeek(null)}/>; })()}
+                {!compact && <FloorCheckCard here={here} onOpen={onOpen}/>}</>
             : <div data-hall data-opening={opening ? '1' : undefined}>
                 <div ref={artRef}><PenArt shapes={[{ k: 'raw', svg: hall.svg }]} vb={hall.vb} inter/></div>
                 <div style={hint}>{t('Tap the door to come in', '문을 눌러 들어와요')}</div>
@@ -23516,7 +23741,7 @@ const HOME_LIVE = {
   'r-beat': { lessons: [], groups: [
     { id: 'rb-pulse', en: 'The steady beat', ko: '꾸준한 박', lessons: ['rb-beat', 'rb-count', 'rb-silent', 'rb-words', 'rb-finger', 'mk-band'], check: 'pulse' },
     { id: 'rb-values', en: 'How long notes last', ko: '음표와 쉼표의 길이', lessons: ['rn-q', 'rn-h', 'rn-long', 'rn-p', 'rn-rest', 'mk-ways'], check: 'note-values' },
-    { id: 'rb-bars', en: 'Bars and time signatures', ko: '마디와 박자표', lessons: ['rt-bars', 'rt-ts', 'rt-strong', 'rt-fill', 'rt-tie'], check: 'time-signatures' },
+    { id: 'rb-bars', en: 'Bars and time signatures', ko: '마디와 박자표', lessons: ['rt-bars', 'rt-ts', 'rt-strong', 'rt-fill', 'rt-tie', 'mk-gtime'], check: 'time-signatures' },
     { id: 'rb-patterns', en: 'Rhythm patterns', ko: '리듬 패턴', lessons: ['rp-beams', 'rp-alone', 'rp-dot', 'rp-up', 'rp-read'], check: 'rhythm' },
     { id: 'rb-68', en: '6/8 time', ko: '6/8박자', lessons: ['e8-big', 'e8-dot', 'e8-ls', 'e8-34', 'e8-read', 'mk-e8'], check: 'six-eight' },   // Build AD
     { id: 'rb-23', en: 'Rhythm further', ko: '리듬 한 걸음 더', lessons: ['r2-semi', 'r2-dot', 'r2-trip', 'r2-minim', 'r2-98', 'mk-split'], check: 'rhythm-23' },   // Build AM
@@ -23653,7 +23878,7 @@ const HOME_FLOOR = (() => {
   set('6', 'fmx-sonata fmx-fugue mlx-modulate spr-brass csx-genres');   // Build BS: Grade 6 general knowledge and creative work
   set('4', 'spr-tune cpx-dances');   // Build AW: Grade 4 general knowledge in Stories of music (after the composers line, which would mark the dances Grades 2-3)
   set('23', 'l2-clap2 lw-metre l3-sing');   // Build CC: Ear training, Grades 2 and 3
-  set('G', 'mk-word mk-staffword mk-move mk-trick mk-steps');   // Build CE: the Beginner floor's things to make
+  set('G', 'mk-word mk-staffword mk-move mk-trick mk-steps mk-gtime');   // Build CE: the Beginner floor's things to make
   set('G', 'mk-lines'); set('P1', 'mk-ladders mk-road'); set('1', 'mk-recipe');   // Build CF (P1 becomes Prelim below)
   set('P1', 'mk-exam mk-keytune mk-remix'); set('1', 'mk-hang mk-e8');   // Build CG
   set('G', 'mk-pianist mk-ways'); set('23', 'mk-hidden mk-duel mk-melmin mk-choir mk-split');   // Build CH
@@ -23664,9 +23889,15 @@ const HOME_FLOOR = (() => {
   const g1 = new Set(('ac-natural ac-bar ac-play ac-cmp iv-count iv-staff kf-what kf-minor kf-write kf-trans ch-stack ch-staff ch-hands ch-mm ch-ear ch-tonic'
     + ' tmx-build tmx-map fmx-map fmx-phrase fmx-letters fmx-binary fmx-ternary fmx-find fmx-build e8-big e8-dot e8-ls e8-34 e8-read rm-68 lw-home lw-clap lw-phrase').split(' '));
   Object.keys(m).forEach(id => { if (m[id] === 'P1') m[id] = g1.has(id) ? '1' : 'P'; });
+  // Build CP (her 15:17): Grades 2 and 3 a floor each; each lesson marked by the grade that asks for it (Syllabus check 2–3)
+  const to2 = new Set(('l2-dyad l2-sing l2-clap2 mk-hidden scf-thumb scf-meet scf-mel scf-mirror scf-chrom mk-melmin h3-iv mlx-map mlx-line mlx-motif mlx-words mlx-build'
+    + ' iv-half iv-tonic iv-minor sc-br sc-bl kf-sharps kf-msharp rm-semi rm-trip rm-swing dc-ds-coda road-map same-or-new binary-ternary-spot').split(' '));
+  const to3 = new Set(('l2-any l2-deg l2-clap lw-metre l3-sing mk-duel h3-deg h3-inv h3-satb h3-cad mk-choir r2-semi r2-dot r2-trip r2-minim r2-98 mk-split'
+    + ' mlx-qa mlx-phrasing mlx-seq mlx-write phrase-marks question-answer melody-sequence iv-ear kf-flats kf-mflat ch-145 ch-inv ch-cad rm-cut form-shapes rondo-refrain').split(' '));
+  Object.keys(m).forEach(id => { if (m[id] === '23') m[id] = to2.has(id) ? '2' : to3.has(id) ? '3' : '23'; });
   return m;
 })();
-const HOME_FLOOR_NAME = { G: 'Beginner', P: 'Prelim', '1': 'Grade 1', '23': 'Grades 2–3', '4': 'Grade 4', '5': 'Grade 5', '6': 'Grade 6', '7': 'Grade 7', '8': 'Grade 8' };   // Build BO: Grades 6 to 8   // Build P: plain words
+const HOME_FLOOR_NAME = { G: 'Beginner', P: 'Prelim', '1': 'Grade 1', '2': 'Grade 2', '3': 'Grade 3', '23': 'Grades 2–3', '4': 'Grade 4', '5': 'Grade 5', '6': 'Grade 6', '7': 'Grade 7', '8': 'Grade 8' };   // Build BO: Grades 6 to 8   // Build P: plain words
 function FloorMark({ id }) {   // sits at the start of the lesson's line, so the title keeps its width; Inter, whose 1 is never an I
   const fl = HOME_FLOOR[id]; if (!fl) return null;
   const box = { display:'inline-block', verticalAlign:'1px', marginRight:7, fontSize:10.5, fontWeight:800, lineHeight:1.25, whiteSpace:'nowrap', fontVariantNumeric:'lining-nums' };
@@ -68932,6 +69163,100 @@ function WhoFirst() {
       <div style={{display:'grid',gridTemplateColumns:'repeat(' + opts.length + ',minmax(0,1fr))',gap:6}}>{opts.map(([id, lab]) => <button key={id} className={'choice-btn' + (!res ? '' : id === truth ? ' good' : id === res.x ? ' bad' : '')} onClick={() => answer(id)} style={{padding:'10px 4px',fontSize:13.5,fontWeight:900,minWidth:0}}>{lab}</button>)}</div>
       {spMsg(res ? (res.ok ? t('Yes! ' + run + ' in a row.' + (truth === 'same' ? ' Both born in ' + a.born + '!' : ''), '맞아요! ' + run + '연속.' + (truth === 'same' ? ' 둘 다 ' + a.born + '년생!' : '')) : t('Not this time: ' + B.sur[0] + ', ' + wfYrs(B) + '. The streak starts again.', '아쉬워요: ' + B.sur[1] + ', ' + wfYrs(B) + '. 연속이 처음부터.')) : t('Streak: ' + run + (st.best ? ' · best: ' + st.best : ''), '연속: ' + run + (st.best ? ' · 최고: ' + st.best : '')), res ? (res.ok ? BK.green : BK.coral) : undefined)}
       {res && <div style={{textAlign:'center',marginTop:8}}><button className="primary-btn" style={spBtn} onClick={next}>{t('Next →', '다음 →')}</button></div>}
+    </div>
+  );
+}
+
+
+// ══ Build CO: Time signatures, Guess my time signature ══
+const GT_VAL = [['q', 1, 'walk', '타'], ['p', 1, 'run-ning', '티-티'], ['h', 2, '2 beats', '2박'], ['hd', 3, '3 beats', '3박'], ['w', 4, '4 beats', '4박'], ['r', 1, 'rest, 1 beat', '쉼표 1박'], ['hr', 2, 'rest, 2 beats', '쉼표 2박']];
+const GT_BPM = 96;
+const gtLen = (k) => GT_VAL.find(v => v[0] === k)[1];
+const gtSum = (bar) => bar.reduce((a, k) => a + gtLen(k), 0);
+function gtRandom(top) {
+  return [0, 1, 2, 3].map(() => { const bar = []; let left = top;
+    while (left > 0) { const opts = GT_VAL.filter(v => v[1] <= left && !(left === top && v[0][0] !== 'q' && v[0] !== 'h' && v[0] !== 'hd' && v[0] !== 'w') && !(v[0] === 'w' && top !== 4)); const v = opts[Math.floor(Math.random() * opts.length)]; bar.push(v[0]); left -= v[1]; }
+    return bar; });
+}
+function GuessTime() {
+  const [top, setTop] = useState(3), [bars, setBars] = useState([[], [], [], []]), [msg, setMsg] = useState(null), [phase, setPhase] = useState('make');
+  const [easy, setEasy] = useState(true), [score, setScore] = useState([0, 0]), [last, setLast] = useState(null), [lit, setLit] = useState(-1);
+  const [got, setGot] = useState({ fool: false, all: {}, rest: false });
+  const T = useSpTimers();
+  const cur = bars.findIndex(b => gtSum(b) < top), full = cur < 0;
+  const add = (k) => {
+    if (phase !== 'make') return;
+    if (full) { setMsg([t('All four bars are full. Hide it and play it!', '네 마디가 다 찼어요. 숨기고 들려줘요!'), 0]); return; }
+    const left = top - gtSum(bars[cur]);
+    if (gtLen(k) > left) { setMsg([t('Only ' + left + (left === 1 ? ' beat' : ' beats') + ' left in bar ' + (cur + 1) + '. Try a shorter one.', (cur + 1) + '번 마디에 ' + left + '박만 남았어요. 더 짧은 걸로.'), 1]); return; }
+    setMsg(null); setBars(bs => bs.map((b, j) => (j === cur ? b.concat([k]) : b)));
+  };
+  const undo = () => { let j = 3; while (j >= 0 && !bars[j].length) j--; if (j < 0) return; setBars(bs => bs.map((b, i) => (i === j ? b.slice(0, -1) : b))); setMsg(null); };
+  const reset = (n) => { T.clear(); setLit(-1); setBars([[], [], [], []]); setMsg(null); setPhase('make'); setLast(null); if (n) setTop(n); };
+  const items = (all) => { const out = [['ts', top]]; for (let j = 0; j < 4; j++) { if (!bars[j].length) break; bars[j].forEach(k => out.push([k])); if (gtSum(bars[j]) < top) break; out.push([j === 3 ? '||' : '|']); } return out; };
+  const play = () => {
+    T.clear(); const ctx = getAudio(); if (!ctx) return;
+    const spb = 60 / GT_BPM, lead = 0.15, t0 = ctx.currentTime + lead + 2 * spb;
+    metroClick(ctx, ctx.currentTime + lead, false, 0.16); metroClick(ctx, ctx.currentTime + lead + spb, false, 0.16);   // ready, go: the same in every metre
+    let b = 0;
+    bars.forEach((bar, j) => {
+      if (easy) for (let i = 0; i < top; i++) metroClick(ctx, t0 + (b + i) * spb, i === 0, i === 0 ? 0.42 : 0.14);
+      let pos = 0;
+      bar.forEach(k => { const at = t0 + (b + pos) * spb, strong = pos === 0, v = strong ? (easy ? 0.26 : 0.34) : 0.15;
+        if (k === 'p') { blip(ctx, at, SRH_HZ, spb * 0.42, v, 'triangle'); blip(ctx, at + spb / 2, SRH_HZ, spb * 0.42, 0.13, 'triangle'); }
+        else if (k !== 'r' && k !== 'hr') blip(ctx, at, SRH_HZ, gtLen(k) * spb * 0.9, v, 'triangle');
+        pos += gtLen(k); });
+      T.at((lead + 2 * spb + b * spb) * 1000, () => setLit(j)); b += top;
+    });
+    T.at((lead + 2 * spb + b * spb) * 1000 + 150, () => setLit(-1));
+  };
+  const hide = () => { setPhase('listen'); setTimeout(play, 60); };
+  const guess = (n) => {
+    const right = n === top; setScore(([a, c]) => (right ? [a, c + 1] : [a + 1, c])); setLast({ n, right }); setPhase('reveal'); T.clear(); setLit(-1);
+    setGot(g => ({ fool: g.fool || !right, all: { ...g.all, [top]: true }, rest: g.rest || bars.some(b => b.some(k => k === 'r' || k === 'hr')) }));
+  };
+  const goals = [[got.fool, t('Fool the listener', '듣는 사람 속이기')], [Object.keys(got.all).length >= 3, t('One in 2/4, 3/4 and 4/4', '2/4, 3/4, 4/4 하나씩')], [got.rest, t('A rest in it', '쉼표 넣기')]];
+  const stars = goals.filter(g => g[0]).length;
+  const staff = <div style={{position:'relative'}}><SrhStaff items={items()} full o={{}} label={t('Your four bars in ' + top + '/4', top + '/4로 만든 네 마디')}/></div>;
+  return (
+    <div className="try-box" style={actBox} data-mk="gtime">
+      <div style={actTitle}>{t('Guess my time signature', '내 박자표 맞혀 봐')}</div>
+      <div style={actNote}>{t('Make four bars in a secret time signature. Then hide it, play it, and let someone guess: how many beats in each bar? Listen for the strong beat 1.', '비밀 박자표로 네 마디를 만들어요. 그다음 숨기고 들려주고, 맞혀 보라고 해요: 한 마디에 몇 박일까? 센박 1을 잘 들어 봐요.')}</div>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,margin:'0 0 6px',fontSize:13.5,fontWeight:900,color:BK.ink}}>
+        <span>{t('Me ' + score[0] + ' : ' + score[1] + ' Listener', '나 ' + score[0] + ' : ' + score[1] + ' 듣는 사람')}</span>
+        <span aria-label={t(stars + ' of 3 stars', '별 3개 중 ' + stars + '개')} style={{color:stars ? BK.green : BK.muted,letterSpacing:2}}>{'★'.repeat(stars)}<span style={{opacity:0.3}}>{'★'.repeat(3 - stars)}</span></span>
+      </div>
+      {phase === 'make' && <>
+        {spChips([[2, '2/4'], [3, '3/4'], [4, '4/4']], top, (n) => reset(n))}
+        {staff}
+        <div style={{display:'flex',gap:4,justifyContent:'center',margin:'4px 0 6px'}} aria-hidden="true">{[0, 1, 2, 3].map(j => <span key={j} style={{width:46,height:8,borderRadius:4,background:gtSum(bars[j]) >= top ? BK.ink : gtSum(bars[j]) ? 'rgba(38,41,107,0.35)' : 'rgba(38,41,107,0.1)'}}/>)}</div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(4,minmax(0,1fr))',gap:6}}>
+          {GT_VAL.filter(v => v[1] <= top).map(v => <button key={v[0]} className="choice-btn" onClick={() => add(v[0])} style={{padding:'4px 2px',display:'flex',flexDirection:'column',alignItems:'center',gap:0,minHeight:64}}>
+            <NvGlyph kind={v[0]} size={30}/><span style={{fontSize:11.5,fontWeight:800,lineHeight:1.2}}>{t(v[2], v[3])}</span></button>)}
+        </div>
+        {msg ? spMsg(msg[0], msg[1] ? BK.coral : BK.green) : spMsg(full ? t('Four bars! Now hide it and play it.', '네 마디 완성! 이제 숨기고 들려줘요.') : t('Bar ' + (cur + 1) + ': ' + (top - gtSum(bars[cur])) + ' of ' + top + ' beats left', (cur + 1) + '번 마디: ' + top + '박 중 ' + (top - gtSum(bars[cur])) + '박 남음'))}
+        <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap',marginTop:6}}>
+          <button className="primary-btn" style={spBtn} disabled={!full} onClick={hide}>{t('Hide it and play →', '숨기고 들려주기 →')}</button>
+          <button className="ghost-btn" style={spBtn} onClick={undo}>{t('Undo', '되돌리기')}</button>
+          <button className="ghost-btn" style={spBtn} onClick={() => { setBars(gtRandom(top)); setMsg(null); }}>{t('Surprise me', '아무거나')}</button>
+        </div>
+        <label style={{display:'flex',alignItems:'center',justifyContent:'center',gap:6,fontSize:13,fontWeight:700,color:BK.muted,marginTop:8}}><input type="checkbox" checked={!easy} onChange={(e) => setEasy(!e.target.checked)}/>{t('Harder: no clicks, only the notes', '더 어렵게: 클릭 없이 음만')}</label>
+      </>}
+      {phase !== 'make' && <>
+        {phase === 'listen'
+          ? <div style={{border:'2px dashed ' + BK.ink,borderRadius:12,padding:'18px 10px',textAlign:'center',margin:'4px 0 8px'}}>
+              <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:44,fontWeight:900,color:BK.ink,lineHeight:1}}>?<br/><span style={{fontSize:30}}>4</span></div>
+              <div style={{display:'flex',gap:4,justifyContent:'center',margin:'10px 0 0'}}>{[0, 1, 2, 3].map(j => <span key={j} style={{width:40,height:10,borderRadius:5,background:lit === j ? BK.coral : 'rgba(38,41,107,0.15)',transition:'background .1s'}}/>)}</div>
+              <div style={{fontSize:13.5,fontWeight:700,color:BK.muted,marginTop:8}}>{t('Listener: how many beats in a bar?', '듣는 사람: 한 마디에 몇 박일까요?')}</div>
+            </div>
+          : <>{staff}{spMsg(last && last.right ? t('The listener got it: ' + top + ' beats in a bar.', '듣는 사람이 맞혔어요: 한 마디에 ' + top + '박.') : t('You fooled them! It was ' + top + '/4, not ' + (last ? last.n : '') + '/4.', '속였어요! ' + (last ? last.n : '') + '/4가 아니라 ' + top + '/4였어요.'), last && last.right ? BK.ink : BK.coral)}</>}
+        {phase === 'listen' && <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:8,margin:'0 0 8px'}}>{[2, 3, 4].map(n => <button key={n} className="choice-btn" style={{padding:'12px 4px',fontSize:18,fontWeight:900}} onClick={() => guess(n)}>{n}<span style={{fontSize:12,fontWeight:800,display:'block'}}>{t('beats', '박')}</span></button>)}</div>}
+        <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap',marginTop:6}}>
+          <button className={phase === 'listen' ? 'primary-btn' : 'ghost-btn'} style={spBtn} onClick={play}>{t('▶ Play it again', '▶ 다시 듣기')}</button>
+          {phase === 'reveal' && <button className="primary-btn" style={spBtn} onClick={() => reset()}>{t('Make another →', '하나 더 만들기 →')}</button>}
+        </div>
+      </>}
+      <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap',marginTop:10}}>{goals.map(([ok, lab], i) => <span key={i} style={{fontSize:12,fontWeight:800,padding:'3px 9px',borderRadius:12,border:'1.5px solid ' + (ok ? BK.green : 'rgba(38,41,107,0.2)'),color:ok ? BK.green : BK.muted}}>{(ok ? '★ ' : '☆ ') + lab}</span>)}</div>
     </div>
   );
 }
