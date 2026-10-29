@@ -33884,22 +33884,33 @@ function LbChallenge({ children, kind = 'row', n = 5 }) {
     : Array.from({ length: n }, (_, i) => scr
       ? <button key={i} onClick={() => setOn(i + 1 === on ? i : i + 1)} aria-label={t('In a row: ', '연속: ') + (i + 1)} aria-pressed={i < on} style={{width:28,height:28,padding:4,margin:-4,border:0,background:'none',cursor:'pointer'}}><span style={{display:'block',width:20,height:20,borderRadius:10,border:'1.8px solid ' + BK.green,background:i < on ? BK.green : '#fff'}}/></button>
       : <span key={i} style={{display:'inline-block',width:17,height:17,borderRadius:9,border:'1.6px solid ' + BK.green}}/>);
-  return <div className="lb-challenge" data-kind={kind} style={{display:'flex',alignItems:'center',gap:'6px 12px',flexWrap:'wrap',borderTop:'0.8px solid ' + BK.ink,borderBottom:'0.8px solid ' + BK.ink,padding:'5px 2px'}}>
+  return <div className="lb-challenge" data-kind={kind} style={{display:'flex',alignItems:'center',gap:'4px 12px',flexWrap:'wrap',borderTop:'0.8px solid ' + BK.ink,borderBottom:'0.8px solid ' + BK.ink,padding:'4px 2px'}}>
     <span style={{fontSize:9.5,fontWeight:800,color:BK.coral,...VIC_CAPS,whiteSpace:'nowrap'}}>{kind === 'time' ? t('Beat your time', '기록 깨기') : t(n + ' in a row', n + '번 연속')}</span>
-    <span style={{flex:'1 1 230px',fontSize:14,lineHeight:1.42,color:BK.ink,minWidth:0}}>{children}</span>
+    <span style={{flex:'1 1 230px',fontSize:13.5,lineHeight:1.38,color:BK.ink,minWidth:0}}>{children}</span>
     <span style={{display:'inline-flex',gap:6,alignItems:'center',flex:'0 0 auto'}}>{slots}</span>
   </div>;
 }
-// The butler's joke: one per chapter, on the opener. Printed, the answer is upside down; online, one tap shows it.
-function LbJoke({ q, a }) {
+// 'Guess first!' (Build CU): a question the chapter answers, on the opener. Printed: a line for the guess and the page
+// with the answer; online: one tap shows it.
+function LbGuess({ q, a, page }) {
   const scr = lbScreen(); const [open, setOpen] = useState(false);
-  return <div className="lb-joke" style={{display:'flex',alignItems:'center',gap:10,fontSize:14.5,lineHeight:1.45,color:BK.ink}}>
-    <img src={VIC_CAMEO} alt="" style={{height:34,width:'auto',flex:'0 0 auto'}}/>
-    <span style={{minWidth:0}}><span style={{fontSize:9.5,fontWeight:800,color:BK.coral,...VIC_CAPS,marginRight:8}}>{t('The butler’s joke', '버틀러의 농담')}</span>{q}{' '}
-      {scr ? (open ? <i style={{fontWeight:700}}>{a}</i> : <button className="chip" onClick={() => setOpen(true)} style={{fontSize:12,padding:'1px 9px',verticalAlign:'1px'}}>{t('Answer', '정답')}</button>)
-           : <span style={{display:'inline-block',transform:'rotate(180deg)',fontStyle:'italic',color:BK.muted,whiteSpace:'nowrap'}}>{a}</span>}</span>
+  return <div className="lb-guess" style={{display:'flex',alignItems:'center',gap:'6px 12px',flexWrap:'wrap',borderTop:'0.8px solid ' + BK.ink,borderBottom:'0.8px solid ' + BK.ink,padding:'6px 2px'}}>
+    <span style={{fontSize:9.5,fontWeight:800,color:BK.coral,...VIC_CAPS,whiteSpace:'nowrap'}}>{t('Guess first!', '먼저 맞혀 봐요!')}</span>
+    <span style={{flex:'1 1 240px',fontSize:14.5,lineHeight:1.42,color:BK.ink,minWidth:0}}>{q}</span>
+    {scr ? (open ? <b style={{fontSize:14,color:BK.ink}}>{a}</b> : <button className="chip" onClick={() => setOpen(true)} style={{fontSize:12.5,padding:'2px 10px'}}>{t('Answer', '정답')}</button>)
+         : <span style={{display:'inline-flex',alignItems:'flex-end',gap:8,fontSize:11.5,color:BK.muted,flex:'0 0 auto'}}><span style={{display:'inline-block',width:72,height:20,borderBottom:'1.2px solid ' + BK.ink}}/>{t('answer on page ' + page, '정답은 ' + page + '쪽에')}</span>}
   </div>;
 }
+// 'After this chapter, I can' (Build CU): the opener's second list in a raised panel with green tick boxes, so it never
+// looks like the contents beside it. The heading carries lb-can-h; the panel and boxes are drawn here, print and online.
+const LB_CAN_CSS = `
+  div:has(> .lb-can-h) { border: 0.8px solid rgba(38,41,107,0.55); box-shadow: inset 0 0 0 4px #fff, inset 0 0 0 4.7px rgba(38,41,107,0.45); background: #fff; padding: 10px 14px 8px; }
+  div:has(> .lb-can-h) > div:not(.lb-can-h) { border-bottom: none !important; }
+  div:has(> .lb-can-h) > div:not(.lb-can-h) svg { display: none !important; }
+  div:has(> .lb-can-h) > div:not(.lb-can-h) > span:has(> svg:only-child) { display: none !important; }
+  div:has(> .lb-can-h) > div:not(.lb-can-h)::before { content: ''; flex: 0 0 auto; width: 15px; height: 15px; margin-top: 3px; border: 1.6px solid #2e8a6e; border-radius: 2px; background: #fff; }
+`;
+try { const el = document.createElement('style'); el.setAttribute('data-lb-can', ''); el.textContent = LB_CAN_CSS; document.head.appendChild(el); } catch (e) {}
 // Phase 394: the check-up page's paper part
 function LbPaperHead() {
   return <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',gap:10,paddingTop:2,flexWrap:'wrap'}}>
@@ -33960,13 +33971,14 @@ function postureLbPages(scr = false) {
       </div></LbOnly>
       <LbPic h={230}><LbFig art="puppet" h={290} cap={t('Sit tall, like a puppet on a string', '줄에 매달린 인형처럼 곧게 앉아요')}/></LbPic>
       <LbSay size={18}>{t('First, learn to sit and hold your hands. Then every note is easier.', '먼저 앉는 법과 손 모양을 배워요. 그러면 모든 음이 쉬워져요.')}</LbSay>
+      <LbGuess q={t('Which finger is number 1?', '1번 손가락은 어느 손가락일까요?')} a={t('The thumb, on both hands.', '엄지예요. 양손 모두.')} page={5}/>
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
           {[['Sit at the piano', 2], ['Let the arm carry the hand', 3], ['A round hand', 4], ['Finger numbers', 5], ['Play: finger walks', 6], ['My five checks', 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {[t('sit at the right height and distance', '알맞은 높이와 거리로 앉을 수 있어요'), t('move your hand with the whole arm', '팔 전체로 손을 움직일 수 있어요'), t('make a round hand and play on the tips', '둥근 손으로, 손끝으로 칠 수 있어요'), t('say every finger number, on both hands', '양손의 손가락 번호를 모두 말할 수 있어요')].map(x => <div key={x} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:3}}>{bkGoal(15)}</span><span>{x}</span></div>)}
         </div>
       </div>
@@ -33987,6 +33999,7 @@ function postureLbPages(scr = false) {
         <>Slide in or out until your <b>elbows are just in front of you</b>, a fist from your sides.</>,
       ]}/>
       <LbNot items={[[<PbArt name="not-sofa" h={104}/>, t('Leaning back, like on a sofa', '소파처럼 뒤로 기대기')], [<PbArt name="not-close" h={104}/>, t('So close the elbows squash in', '너무 가까워서 팔꿈치가 눌려요')], [<PbArt name="not-swing" h={104}/>, t('Too high: feet swinging', '너무 높아서 발이 대롱대롱')]]}/>
+      <LbChallenge>{t('Ready in 5 seconds: front half of the stool, feet flat, sitting tall. Someone counts.', '5초 안에 준비: 의자 앞쪽 절반, 발바닥은 바닥에, 허리는 쭉. 누가 세어 줘요.')}</LbChallenge>
       <LbRemember>{t('Front half of the stool, feet flat, sit tall, leaning a little forward.', '의자 앞쪽 절반, 발은 평평하게, 곧게 앉아 앞으로 살짝 기울여요.')}</LbRemember>
     </LbPage>,
     // 3. arm -- the six warm-ups as one sequence, in Sohyun's order (2026-10-08): each move checks something the next one needs
@@ -34006,6 +34019,7 @@ function postureLbPages(scr = false) {
             <div style={{fontSize:scr ? 13.5 : 12.5,color:BK.ink,lineHeight:1.4}}>{how}</div>
           </div>))}
       </div>}/>
+      <LbChallenge>{t('All six movements in order, without looking at the book.', '책을 보지 않고 여섯 동작을 순서대로.')}</LbChallenge>
       <LbRemember>{t('The arm leads from above, elbows free. It stays free, even while a finger presses.', '팔이 위에서 이끌고, 팔꿈치는 자유롭게. 손가락이 누를 때도 팔은 자유로워요.')}</LbRemember>
     </LbPage>,
     // 4. round hand
@@ -34035,6 +34049,7 @@ function postureLbPages(scr = false) {
         <><b>Thumb in and out:</b> slide the thumb in under fingers 2, 3 and 4, then back out. The hand stays round and still.</>,
       ]}/>
       <LbNot items={[[<PbArt name="hand-flat" h={80}/>, t('Flat fingers', '납작한 손가락')], [<PbArt name="hand-cave" h={80}/>, t('Tip joint caving in', '손끝 관절이 꺾여요')], [<PbArt name="hand-high" h={80}/>, t('Wrist stiff and high', '손목이 굳고 높아요')]]}/>
+      <LbChallenge>{t('One key with each finger, on the tip, knuckles up: not one knuckle caves in.', '손가락마다 건반 하나씩, 손끝으로, 마디는 위로: 꺾이는 마디 하나 없이.')}</LbChallenge>
       <LbRemember>{t('A free wrist, as if on a roller. Watch the knuckles and fingertips.', '롤러 위처럼 자유로운 손목. 마디와 손끝을 살펴봐요.')}</LbRemember>
     </LbPage>,
     // 5. finger numbers
@@ -34058,6 +34073,7 @@ function postureLbPages(scr = false) {
         ]}/>
         <div style={{background:BK.soft,borderRadius:12,padding:'6px 4px',display:'flex',justifyContent:'center'}}><PbArt name="mirror" h={170}/></div>
       </div>
+      <LbChallenge kind="time">{t('Number race: someone calls "Left hand, 4!" and you wiggle it. How fast can you answer ten calls?', '번호 경주: 누가 "왼손 4번!" 하고 부르면 꼼지락. 열 번 부르는 데 얼마나 빨리?')}</LbChallenge>
       <LbRemember>{t('Fingers are numbered 1 to 5 from the thumb, on both hands.', '양손 모두, 엄지부터 1번에서 5번까지.')}</LbRemember>
     </LbPage>,
     // 6. finger walks
@@ -34073,6 +34089,7 @@ function postureLbPages(scr = false) {
         {FW_TUNES.map(x => <LbTune key={x.icon} icon={x.icon} name={t(x.en, x.ko)} how={t(x.howEn, x.howKo)} seq={x.seq}/>)}
         <div style={{fontSize:13,color:BK.muted}}>{t('An empty dashed circle: hold the note one more beat.', '빈 점선 동그라미: 그 음을 한 박 더 누르고 있어요.')}</div>
       </>} live={<FingerWalks bare/>}/>
+      <LbChallenge>{t('1 2 3 4 5 and back: a little rainbow over every key, shoulders soft.', '1 2 3 4 5 갔다가 돌아오기: 건반마다 작은 무지개, 어깨는 편하게.')}</LbChallenge>
       <LbRemember>{t('A little rainbow from key to key. Relaxed: the whole hand helps.', '건반에서 건반으로 작은 무지개. 편하게, 손 전체가 도와줘요.')}</LbRemember>
     </LbPage>,
     // 7. five checks
@@ -34259,13 +34276,14 @@ function hpLbPages(scr = false) {
       </div></LbOnly>
       <LbPic h={200}><HpKeys pos="C" k={1.5} label={t('C position: both hands on the keyboard, one finger on each key, the left hand 5 4 3 2 1 on C D E F G below middle C, the right hand 1 2 3 4 5 on C D E F G from middle C', 'C 자리: 양손을 건반에, 건반 하나에 손가락 하나. 왼손 5 4 3 2 1은 가운데 도 아래 C D E F G, 오른손 1 2 3 4 5는 가운데 도부터 C D E F G')}/></LbPic>
       <LbSay size={18}>{t('Five fingers, five keys, one finger on each: that is a hand position. Learn two, C and G, and move between them.', '다섯 손가락, 건반 다섯 개, 건반 하나에 손가락 하나: 이게 손 자리예요. C 자리와 G 자리를 익히고, 그 사이를 옮겨 다녀요.')}</LbSay>
+      <LbGuess q={t('Both hands play the same finger numbers together. Do they move the same way, or opposite ways?', '두 손이 같은 번호를 함께 치면, 같은 쪽으로 갈까요, 반대쪽으로 갈까요?')} a={t('Opposite ways: mirror twins.', '반대쪽이에요. 거울 쌍둥이.')} page={5}/>
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
           {[[t('C position', 'C 자리'), 2], [t('G position', 'G 자리'), 3], [t('Move between them', '자리 옮기기'), 4], [t('Hands together', '양손 함께'), 5], [t('Taking turns', '번갈아 치기'), 6], [t('Play: tunes in C and G', '연주: C 자리·G 자리 곡'), 7], [t('My five checks', '나의 다섯 가지 확인'), 8]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {[t('put each hand in C position, first time', '양손을 각각 한 번에 C 자리에 놓을 수 있어요'), t('move the same shape to G', '같은 모양을 G로 옮길 수 있어요'), t('go from C to G and back, the arm carrying the hand', '팔이 손을 데려가서, C에서 G로 갔다 돌아올 수 있어요'), t('play both hands together on the same finger numbers', '양손이 같은 번호로 함께 칠 수 있어요'), t('pass a tune from one hand to the other', '선율을 한 손에서 다른 손으로 넘길 수 있어요')].map(x => <div key={x} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:3}}>{bkGoal(15)}</span><span>{x}</span></div>)}
         </div>
       </div>
@@ -34286,6 +34304,7 @@ function hpLbPages(scr = false) {
         <>Left hand in C position: play C D E F G and back, saying <b>5 4 3 2 1 2 3 4 5</b>.</>,
         <>Hands on your knees, then back to C position in one go, without looking twice. Five times.</>,
       ]}/>
+      <LbChallenge>{t('Eyes closed, land in C position, open your eyes and check: every finger on its key?', '눈 감고 C 자리에 내려앉고, 눈 뜨고 확인: 손가락마다 제 건반에?')}</LbChallenge>
       <LbRemember>{t('One finger, one key. Right thumb on middle C; left little finger on the C below.', '손가락 하나, 건반 하나. 오른손 엄지는 가운데 도, 왼손 새끼손가락은 아래 C.')}</LbRemember>
     </LbPage>,
     // 3. G position
@@ -34303,6 +34322,7 @@ function hpLbPages(scr = false) {
         <>Left hand in G position: play G A B C D and back, saying the note names.</>,
         <>A puzzle: in G position, which finger plays C? Play it with the right hand, then the left.</>,
       ]}/>
+      <LbChallenge>{t('In G position, say the note under each finger without playing: right hand, then left.', 'G 자리에서 치지 않고 손가락마다 밑의 음 이름 말하기: 오른손, 그다음 왼손.')}</LbChallenge>
       <LbRemember>{t('The same shape on G: G A B C D, one finger on each.', 'G 위의 같은 모양: G A B C D, 건반 하나에 손가락 하나.')}</LbRemember>
     </LbPage>,
     // 4. move
@@ -34328,6 +34348,7 @@ function hpLbPages(scr = false) {
         <>On a steady beat: five notes, one silent beat to move, five notes.</>,
         <>The left hand the same.</>,
       ]}/>
+      <LbChallenge>{t('C position, G position, C position on a steady beat, with no stop.', '꾸준한 박으로 C 자리, G 자리, 다시 C 자리, 멈춤 없이.')}</LbChallenge>
       <LbRemember>{t('Lift, travel, land: the arm carries the hand. The shape stays the same.', '들고, 옮기고, 내려놓기: 팔이 손을 데려가요. 모양은 그대로.')}</LbRemember>
     </LbPage>,
     // 5. together
@@ -34345,6 +34366,7 @@ function hpLbPages(scr = false) {
         <>1+1, 2+2, 3+3, 4+4, 5+5, and back to 1+1, saying the numbers.</>,
         <>Slowly, one steady beat each. The hands move apart, then back together.</>,
       ]}/>
+      <LbChallenge>{t('1+1 up to 5+5 and back, both hands landing exactly together.', '1+1부터 5+5까지 갔다 오기, 두 손이 딱 함께 닿게.')}</LbChallenge>
       <LbRemember>{t('Same numbers together: mirror twins.', '같은 번호를 함께: 거울 쌍둥이.')}</LbRemember>
     </LbPage>,
     // 6. turns
@@ -34363,6 +34385,7 @@ function hpLbPages(scr = false) {
         <>Right hand E F G, left hand E F G. Then G F E D C, in turn.</>,
         <>Swap: the left hand calls first, the right hand answers.</>,
       ]}/>
+      <LbChallenge>{t('Call and answer with no gap: the other hand answers right on the next beat.', '부르고 대답하기를 틈 없이: 다른 손이 바로 다음 박에 대답해요.')}</LbChallenge>
       <LbRemember>{t('The waiting hand stays ready on its keys.', '기다리는 손은 자기 건반 위에서 준비해요.')}</LbRemember>
     </LbPage>,
     // 7. play
@@ -34370,6 +34393,7 @@ function hpLbPages(scr = false) {
       teacher={<>{t('Our own tunes, by finger numbers: no staff yet. One circle is one steady beat; a dashed circle holds one more. The row says which hand and which position.', '우리가 만든 곡이에요. 손가락 번호로 쳐요: 오선은 아직이에요. 동그라미 하나가 일정한 박 하나, 점선 동그라미는 한 박 더. 줄 이름이 어느 손, 어느 자리인지 알려 줘요.')}</>}>
       <LbSay>{LANG === 'ko' ? <>손가락 번호로 쳐요. <b>동그라미 하나가 일정한 박 하나</b>, 점선 동그라미는 한 박 더 눌러요.</> : <>Play by finger numbers. <b>One circle is one steady beat</b>; a dashed circle holds one more.</>}</LbSay>
       {HP_TUNES().slice(0, 4).map(x => <HpRows key={x.name} {...x}/>)}
+      <LbChallenge>{t('One tune all the way through on a steady beat, with no stop.', '곡 하나를 꾸준한 박으로 끝까지, 멈춤 없이.')}</LbChallenge>
       <LbRemember>{t('Round hand, one finger on each key, a steady beat.', '둥근 손, 건반 하나에 손가락 하나, 일정한 박.')}</LbRemember>
     </LbPage>,
     // 8. five checks
@@ -34930,7 +34954,7 @@ function lsLbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {[t('keep a steady beat in two or in three, even when the music stops', '두 박이든 세 박이든, 음악이 멈춰도 꾸준한 박을 지킬 수 있어요'), t('echo a two-bar rhythm', '두 마디 리듬을 따라 칠 수 있어요'), t('hear whether a note is higher or lower', '음이 더 높은지 낮은지 들을 수 있어요'), t('sing back a short tune, then play it', '짧은 선율을 따라 부르고 칠 수 있어요')].map(x => <div key={x} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:3}}>{bkGoal(15)}</span><span>{x}</span></div>)}
         </div>
       </div>
@@ -35220,13 +35244,14 @@ function epLbPages(scr = false) {
       </div></LbOnly>
       <LbPic h={190}>{epHml(true, scr)}</LbPic>
       <LbSay size={18}>{t('A warm-up for your ears: quick rounds of five. How many in a row?', '귀 준비운동: 다섯 문제씩 빠르게. 몇 개 연속으로 맞힐까요?')}</LbSay>
+      <LbGuess q={t('Close your eyes. Is the piano\'s lowest note nearer your left hand or your right?', '눈을 감아요. 피아노의 가장 낮은 음은 왼손 쪽일까요, 오른손 쪽일까요?')} a={t('Your left: down with the turtle.', '왼손 쪽이에요. 거북이와 함께 아래로.')} page={2}/>
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {[t('tell low, middle and high', '낮은 음, 가운데 음, 높은 음을 구별할 수 있어요'), t('hear whether two rhythms are the same', '두 리듬이 같은지 들을 수 있어요'), t('hear whether two tunes are the same', '두 선율이 같은지 들을 수 있어요'), t('hear which way a tune goes', '선율이 어느 쪽으로 가는지 들을 수 있어요'), t('sing a note and find it on the keys', '음 하나를 부르고 건반에서 찾을 수 있어요')].map(x => <div key={x} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:3}}>{bkGoal(15)}</span><span>{x}</span></div>)}
         </div>
       </div>
@@ -35245,6 +35270,7 @@ function epLbPages(scr = false) {
         <>Faster now: three notes in a row, three moves.</>,
         <>Swap: you play, your teacher moves. Can you catch them out?</>,
       ]}/>
+      <LbChallenge>{t('Five notes, five right moves in a row.', '음 다섯 개, 맞는 동작 다섯 번 연속.')}</LbChallenge>
       <LbRemember>{t('Low, middle, high: turtle, Clara, bird.', '낮은, 가운데, 높은: 거북이, 클라라, 새.')}</LbRemember>
     </LbPage>,
     <LbPage key="3" no={3} chId={ch} kicker={t('Step 2', '2단계')} title={t('Same rhythm, or not?', '같은 리듬일까?')}
@@ -35263,6 +35289,7 @@ function epLbPages(scr = false) {
         <>Different? Clap the second one and say it: "walk run-ning walk walk".</>,
         <>Swap: you clap two, your teacher answers. Try a tiny change to trick them.</>,
       ]}/>
+      <LbChallenge>{t('Five pairs of rhythms, five right answers in a row.', '리듬 다섯 쌍, 맞는 대답 다섯 번 연속.')}</LbChallenge>
       <LbRemember>{t('Listen to the end of both.', '둘 다 끝까지 들어요.')}</LbRemember>
     </LbPage>,
     <LbPage key="4" no={4} chId={ch} kicker={t('Step 3', '3단계')} title={t('Same tune, or not?', '같은 선율일까?')}
@@ -35281,6 +35308,7 @@ function epLbPages(scr = false) {
         <>Different? Sing both, and find the note that changed.</>,
         <>Your turn: play a tune twice and change one note the second time. Can your teacher spot it?</>,
       ]}/>
+      <LbChallenge>{t('Five pairs of tunes, five right answers in a row.', '선율 다섯 쌍, 맞는 대답 다섯 번 연속.')}</LbChallenge>
       <LbRemember>{t('Sing the first one inside.', '첫 번째를 속으로 불러요.')}</LbRemember>
     </LbPage>,
     <LbPage key="5" no={5} chId={ch} kicker={t('Step 4', '4단계')} title={t('Which way did it go?', '어느 쪽으로 갔을까?')}
@@ -35296,6 +35324,7 @@ function epLbPages(scr = false) {
         <>Now on paper: a dot for each note, joined up.</>,
         <>Swap: you draw a path, your teacher plays it. Did it sound like your drawing?</>,
       ]}/>
+      <LbChallenge>{t('Five paths drawn right in a row.', '길 다섯 개를 연속으로 맞게 그리기.')}</LbChallenge>
       <LbRemember>{t('Up to the bird, down to the turtle.', '위로는 새, 아래로는 거북이.')}</LbRemember>
     </LbPage>,
     <LbPage key="6" no={6} chId={ch} kicker={t('Step 5', '5단계')} title={t('Find your note', '내 음 찾기')}
@@ -35313,6 +35342,7 @@ function epLbPages(scr = false) {
         <>Keep singing while you look for it in C position. A wrong key: higher or lower?</>,
         <>Found it? Play it and sing with it. Say its letter name too.</>,
       ]}/>
+      <LbChallenge>{t('Five notes sung, then found, in a row.', '음 다섯 개를 부르고 찾기, 연속으로.')}</LbChallenge>
       <LbRemember>{t('Sing it, then find it: higher or lower?', '부르고, 찾아요: 더 높아? 더 낮아?')}</LbRemember>
     </LbPage>,
     <LbPage key="7" no={7} chId={ch} kicker={t('Check-up', '점검')} title={t('My five checks', '나의 다섯 가지 확인')}
@@ -35728,7 +35758,7 @@ function spLbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {[t('turn the thumb under and 3 over without a bump', '엄지 밑으로 넣기와 3번 넘기기를 덜컹하지 않게 할 수 있어요'), t('play a scale with one note on every beat', '한 박에 한 음씩 음계를 칠 수 있어요'), t('play A and E minor, natural and harmonic', 'A단조와 E단조를 자연·화성 단음계로 칠 수 있어요'), t('play contrary motion: mirror twins', '반대 방향으로 칠 수 있어요: 거울 쌍둥이'), t('play two octaves with both hands together', '두 옥타브를 양손 함께 칠 수 있어요')].map(x => <div key={x} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:3}}>{bkGoal(15)}</span><span>{x}</span></div>)}
         </div>
       </div>
@@ -36316,7 +36346,7 @@ function msLbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {[t('tell a major third from a minor third', '장3도와 단3도를 구별할 수 있어요'), t('name the minor key of a key signature', '조표를 보고 단조 이름을 말할 수 있어요'), t('write a harmonic minor scale', '화성 단음계를 적을 수 있어요'), t('mark tones, semitones and the tone and a half', '온음, 반음, 온음 반을 표시할 수 있어요'), t('hear a major or a harmonic minor scale', '장음계와 화성 단음계를 들어서 구별할 수 있어요')].map(x => <div key={x} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:3}}>{bkGoal(15)}</span><span>{x}</span></div>)}
         </div>
       </div>
@@ -36747,7 +36777,7 @@ function e8LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {[t('count 6/8 with the quaver as one beat', '6/8을 8분음표 1박으로 셀 수 있어요'), t('hold a dotted crotchet for 3 beats', '점4분음표를 3박 동안 누를 수 있어요'), t('play long-short in 6/8', '6/8에서 길게-짧게를 칠 수 있어요'), t('tell 3/4 from 6/8', '3/4과 6/8을 구별할 수 있어요'), t('count, clap and play a new line in 6/8', '6/8의 새 줄을 세고, 손뼉 치고, 칠 수 있어요')].map(x => <div key={x} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:3}}>{bkGoal(15)}</span><span>{x}</span></div>)}
         </div>
       </div>
@@ -37269,7 +37299,7 @@ function lwLbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {[t('hum the home note of a tune', '선율의 집 음을 흥얼거릴 수 있어요'), t('clap back a passage heard twice', '두 번 들은 리듬을 따라 칠 수 있어요'), t('sing back a tune with its rhythm', '리듬까지 선율을 따라 부를 수 있어요')].map(x => <div key={x} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:3}}>{bkGoal(15)}</span><span>{x}</span></div>)}
         </div>
       </div>
@@ -37669,7 +37699,7 @@ function l2LbPages(scr = false, g = 2) {   // Build CC: Grade 2 and Grade 3 are 
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {order.map(x => END[x]).map((x, i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x}</span></div>)}
         </div>
       </div>
@@ -37981,7 +38011,7 @@ function l4LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checks4.map(([, x], i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I /, '').replace(/^나는 /, '')}</span></div>)}
         </div>
       </div>
@@ -38221,7 +38251,7 @@ function l5LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checks4.map(([, x], i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I /, '').replace(/^나는 /, '')}</span></div>)}
         </div>
       </div>
@@ -38615,7 +38645,7 @@ function l6LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checks4.map(([, x], i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I /, '')}</span></div>)}
         </div>
       </div>
@@ -38866,7 +38896,7 @@ function l7LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checks4.map(([, x], i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I /, '')}</span></div>)}
         </div>
       </div>
@@ -39061,7 +39091,7 @@ function l8LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checks4.map(([, x], i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I /, '')}</span></div>)}
         </div>
       </div>
@@ -39460,7 +39490,7 @@ function scfLbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {[t('start a scale on a black key, with the thumbs on white keys', '검은건반에서 스케일을 시작하고, 엄지는 흰건반에 둘 수 있어요'), t('play two octaves hands together, even when the thumbs never meet', '엄지가 만나지 않아도 두 옥타브를 양손으로 칠 수 있어요'), t('play the melodic minor up and down', '가락 단음계를 올라갔다 내려올 수 있어요'), t('play the chromatic scale from any note', '어느 음에서든 반음계를 칠 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x}</span></div>)}
         </div>
       </div>
@@ -39882,7 +39912,7 @@ function s4LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {[t('find finger 4 in every octave of a four-octave scale', '네 옥타브 스케일에서 옥타브마다 4번 자리를 찾을 수 있어요'), t('play four notes a beat, legato and staccato', '한 박에 네 음을 레가토와 스타카토로 칠 수 있어요'), t('play the chromatic scale hands together', '반음계를 양손으로 칠 수 있어요'), t('finger an arpeggio over four octaves', '네 옥타브 아르페지오의 손가락을 알아요')].map((x, i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x}</span></div>)}
         </div>
       </div>
@@ -40169,7 +40199,7 @@ function s5LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {[t('find finger 4 in every Grade 5 key', '5급 조마다 4번 자리를 찾을 수 있어요'), t('play one scale all p, all f, and louder up and softer down', '한 스케일을 모두 p, 모두 f, 올라가며 세게 내려오며 여리게 칠 수 있어요'), t('play contrary motion in the Grade 4 keys', '4급 조를 반대 방향으로 칠 수 있어요'), t('play arpeggios four notes a beat, hands together', '아르페지오를 한 박에 네 음, 양손으로 칠 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x}</span></div>)}
         </div>
       </div>
@@ -40556,7 +40586,7 @@ function s6LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {[t('find finger 4 in F♯ major and D♯ minor', 'F♯장조와 D♯단조에서 4번 자리를 찾을 수 있어요'), t('play the abbreviated grand scale from memory', '줄인 그랜드 스케일을 외워서 칠 수 있어요'), t('keep one hand legato while the other plays staccato', '한 손은 스타카토, 다른 손은 레가토를 지킬 수 있어요'), t('play three against two, steady', '3 대 2를 고르게 칠 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x}</span></div>)}
         </div>
       </div>
@@ -40943,7 +40973,7 @@ function s7LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checks.map(([, x], i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I /, '')}</span></div>)}
         </div>
       </div>
@@ -41312,7 +41342,7 @@ function s8LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checks.map(([, x], i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I /, '')}</span></div>)}
         </div>
       </div>
@@ -41685,7 +41715,7 @@ function a6LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checks.map(([, x], i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I /, '')}</span></div>)}
         </div>
       </div>
@@ -41996,7 +42026,7 @@ function a7LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checks.map(([, x], i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I /, '')}</span></div>)}
         </div>
       </div>
@@ -42261,7 +42291,7 @@ function a8LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checks.map(([, x], i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I /, '')}</span></div>)}
         </div>
       </div>
@@ -42608,7 +42638,7 @@ function p78LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checks.map(([, x], i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I /, '')}</span></div>)}
         </div>
       </div>
@@ -43127,7 +43157,7 @@ function h3LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {[t('name any interval above the tonic, major or minor key', '장조든 단조든 으뜸음 위의 음정을 말할 수 있어요'), t('name every degree of the scale', '음계의 모든 음의 이름을 말할 수 있어요'), t('write I, IV and V in root position and first inversion', 'I, IV, V를 기본 위치와 제1전위로 쓸 수 있어요'), t('write a perfect and a plagal cadence in four parts', '정격종지와 변격종지를 네 성부로 쓸 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x}</span></div>)}
         </div>
       </div>
@@ -43533,7 +43563,7 @@ function k4LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checks5.slice(0, 4).map(([, x], i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I /, '')}</span></div>)}
         </div>
       </div>
@@ -43848,7 +43878,7 @@ function k5LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checks5.slice(0, 4).map(([, x], i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I /, '')}</span></div>)}
         </div>
       </div>
@@ -44150,7 +44180,7 @@ function h4LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checks4.map(([, x], i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I /, '')}</span></div>)}
         </div>
       </div>
@@ -44448,7 +44478,7 @@ function h5LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checks5.slice(0, 4).map(([, x], i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I /, '')}</span></div>)}
         </div>
       </div>
@@ -44751,7 +44781,7 @@ function h6LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checks.map(([, x], i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I /, '')}</span></div>)}
         </div>
       </div>
@@ -45061,7 +45091,7 @@ function r2LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {[t('count and clap semiquavers and the dotted quaver', '16분음표와 점8분음표를 세고 칠 수 있어요'), t('fit three where two go, and two where three go', '둘 자리에 셋, 셋 자리에 둘을 넣을 수 있어요'), t('count in 2/2, 3/2, 3/8 and 9/8', '2/2, 3/2, 3/8, 9/8로 셀 수 있어요'), t('say whether a time signature is simple or compound', '박자표가 홑박자인지 겹박자인지 말할 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x}</span></div>)}
         </div>
       </div>
@@ -45292,7 +45322,7 @@ function r4LbPages(scr = false) {
           {toc.map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:700}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checks4.map(([, x], i) => <div key={i} style={{display:'flex',alignItems:'flex-start',gap:9,fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I /, '')}</span></div>)}
         </div>
       </div>
@@ -46619,6 +46649,10 @@ function fsLbPages(scr = false) {
     s.push({ ...penText(mcX + W + 10, Y + H + 12, t('up into the sky →', '하늘 위로 →'), { size: 8.5, weight: 800, fill: PEN_N, anchor: 'start' }), halo: true });
     s.push(...penPlace([...fsTurtle(0, 0, 1), ...fsWaves(-22, 12, 44, 1, 3)], 0.6, [0, 0], [11, 40]));
     s.push(...penPlace([...fsCloud(-24, 14, 0.8), ...fsBird(4, 0, 1)], 0.82, [0, 0], [548, 26]));
+    // Build CU (her 12:51): on the ground at middle C the turtle and the bird can both walk: they meet there
+    s.push(penLine([mcX - 70, 186], [mcX + W + 70, 186], 1.6, 'rgba(38,41,107,0.45)'));
+    s.push(...penPlace(fsTurtle(0, 0, 1), 0.95, [0, 0], [mcX - 26, 174]));
+    s.push(...penPlace(fsBird(0, 0, 1), 1.05, [0, 0], [mcX + W + 24, 175]));
     return s;
   })();
   // p6: right hand 2 3 4 on the big house (the play page)
@@ -46662,14 +46696,14 @@ function fsLbPages(scr = false) {
       </div></LbOnly>
       <LbPic h={210}><FsCoverScene/></LbPic>
       <LbSay size={17.5}>{t('The piano\'s 88 keys are one small pattern, repeated. A small house: 2 black keys, 3 white keys. A big house: 3 black keys, 4 white keys. Know the pattern, and you always know where you are. The next chapter gives every key its name.', '피아노 건반 88개는 작은 패턴 하나의 반복이에요. 작은 집: 검은건반 2개, 흰건반 3개. 큰 집: 검은건반 3개, 흰건반 4개. 패턴을 알면 어디서든 길을 잃지 않아요. 다음 챕터에서 건반마다 이름이 생겨요.')}</LbSay>
-      <LbJoke q={t('Why do the piano keys never get lost?', '건반들은 왜 길을 잃지 않을까요?')} a={t('They always know which house they live in.', '자기가 어느 집에 사는지 늘 알거든요.')}/>
+      <LbGuess q={t('How many small houses does a real piano have?', '진짜 피아노에는 작은 집이 몇 채 있을까요?')} a={t('Seven, and seven big ones.', '일곱 채, 큰 집도 일곱 채예요.')} page={4}/>
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
           {[[t('Small house, big house', '작은 집, 큰 집'), 2], [t('The white keys of each house', '집마다 딸린 흰건반'), 3], [t('The whole piano & middle C', '피아노 전체와 가운데 도'), 4], [t('Play on the patterns', '패턴 위에서 연주'), 5], [t('My five checks', '나의 다섯 가지 확인'), 6]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {[t('find any small house or big house', '어떤 작은 집, 큰 집이든 찾을 수 있어요'), t('say which white keys belong to each house', '집마다 어떤 흰건반이 딸려 있는지 말할 수 있어요'), t('hear high and low, and show the turtle\'s end and the bird\'s', '높은 소리와 낮은 소리를 듣고, 거북이 쪽과 새 쪽을 가리킬 수 있어요'), t('find middle C on a real piano', '진짜 피아노에서 가운데 도를 찾을 수 있어요'), t('play legato on the black keys with 2 3 4', '검은건반에서 2 3 4로 레가토로 칠 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:2}}>{bkGoal(15)}</span><span>{x}</span></div>)}
         </div>
       </div>
@@ -46719,8 +46753,8 @@ function fsLbPages(scr = false) {
     // 5. the whole piano & middle C
     <LbPage key="4" no={4} chId={ch} kicker={t('Step 3', '3단계')} title={t('The whole piano & middle C', '피아노 전체와 가운데 도')}
       teacher={<>{t('Tick each house while counting so none is counted twice. The lonely black key is A♯0/B♭0, the second key from the bottom. ', '세면서 집마다 표시하면 두 번 세지 않아요. 외로운 검은건반은 맨 아래에서 두 번째 건반(A♯0/B♭0)이에요. ')}{t('The lonely key is the lighthouse, standing by the sea at the low end.', '외로운 건반은 등대예요: 낮은 쪽 바닷가에 홀로 서 있어요.')}</>}>
-      <LbLive still={<LbPic h={210} pad="14px 8px"><div style={{width:'100%'}}><PenArt shapes={art5} vb={[0, 14, P_W, 140]} label={t('All 88 keys: 7 small and 7 big houses, the lighthouse on the lonely black key by the sea, and middle C, the ground between the sea and the sky', '88개 건반 전체: 작은 집 7채와 큰 집 7채, 바닷가 외로운 검은건반 위의 등대, 그리고 바다와 하늘 사이의 땅인 가운데 도')}/></div></LbPic>} live={<WholePiano/>}/>
-      <LbSay>{LANG === 'ko' ? <>진짜 피아노는 건반 <b>88개</b>지만, 작은 집 7채와 큰 집 7채뿐이에요. <b>4번째 작은 집</b>까지 세면 그 왼쪽 문이 <b>가운데 도(middle C)</b>예요. 가운데 도는 <b>땅</b>이에요: 오른쪽은 <b>하늘 위로</b>, 왼쪽은 <b>바다 아래로</b>.</> : <>A real piano has <b>88 keys</b>, but only 7 small houses and 7 big ones. Count to the <b>4th small house</b>: its left door is <b>middle C</b>. Middle C is <b>the ground</b>: right goes <b>up into the sky</b>, left goes <b>down under the sea</b>.</>}</LbSay>
+      <LbLive still={<LbPic h={210} pad="14px 8px"><div style={{width:'100%'}}><PenArt shapes={art5} vb={[0, 14, P_W, 180]} label={t('All 88 keys: 7 small and 7 big houses, the lighthouse on the lonely black key by the sea, and middle C, the ground between the sea and the sky, where the turtle and the bird meet', '88개 건반 전체: 작은 집 7채와 큰 집 7채, 바닷가 외로운 검은건반 위의 등대, 그리고 바다와 하늘 사이의 땅인 가운데 도, 거북이와 새가 만나는 곳')}/></div></LbPic>} live={<WholePiano/>}/>
+      <LbSay>{LANG === 'ko' ? <>진짜 피아노는 건반 <b>88개</b>지만, 작은 집 7채와 큰 집 7채뿐이에요. <b>4번째 작은 집</b>까지 세면 그 왼쪽 문이 <b>가운데 도(middle C)</b>예요. 가운데 도는 <b>땅</b>이에요. 거북이도 새도 걸어 다닐 수 있어요. 오른쪽은 <b>하늘 위로</b>, 왼쪽은 <b>바다 아래로</b>.</> : <>A real piano has <b>88 keys</b>, but only 7 small houses and 7 big ones. Count to the <b>4th small house</b>: its left door is <b>middle C</b>. Middle C is <b>the ground</b>, where the turtle and the bird can both walk: right goes <b>up into the sky</b>, left goes <b>down under the sea</b>.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [
         <>맨 아래부터 <b>작은 집</b>을 세어요: 1... 7까지, 집마다 짚으면서.</>,
         <>맨 아래의 <b>외로운 검은건반</b>을 찾아요: 바닷가의 <b>등대</b>예요. 바로 옆이 가장 낮은 건반이에요.</>,
@@ -46731,7 +46765,7 @@ function fsLbPages(scr = false) {
         <>Play <b>middle C</b>, then the C one house lower (into the sea) and one house higher (into the sky).</>,
       ]}/>
       <LbChallenge>{t('Close your eyes, open them, and find middle C before someone counts to 3.', '눈을 감았다 뜨고, 누가 셋을 세기 전에 가운데 도를 찾아요.')}</LbChallenge>
-      <LbRemember>{t('Middle C is the ground: up into the sky, down under the sea.', '가운데 도는 땅: 위로 가면 하늘, 아래로 가면 바다.')}</LbRemember>
+      <LbRemember>{t('Middle C is the ground, where the turtle and the bird meet: up is the sky, down is the sea.', '가운데 도는 땅, 거북이와 새가 만나는 곳: 위로 가면 하늘, 아래로 가면 바다.')}</LbRemember>
     </LbPage>,
 
     // 6. play on the patterns
@@ -47099,13 +47133,14 @@ function nnLbPages(scr = false) {
       </div></LbOnly>
       <LbPic h={200}><div style={{width:'100%'}}><PenArt shapes={art1} vb={[0, 6, 340, 136]} label={t('The letter wheel, a Ferris wheel with seven gondolas A to G, beside a street of keys; the brother points at the wheel', 'A부터 G까지 일곱 칸이 달린 글자 관람차와 건반 거리; 남동생이 관람차를 가리켜요')}/></div></LbPic>
       <LbSay size={17.5}>{t('Every white key has a name, a letter from A to G. Each house from Chapter 2 now gets its names. Then the names get fast: forwards, backwards, in skips, all over the piano. Soon any key tells you its name at a glance.', '흰건반마다 A부터 G까지 글자 이름이 있어요. 2챕터의 집마다 이제 이름이 생겨요. 그다음 이름이 빨리 나오게 해요: 앞으로, 거꾸로, 건너뛰며, 피아노 어디에서든. 곧 어떤 건반이든 보자마자 이름이 나와요.')}</LbSay>
+      <LbGuess q={t('How many letters does music use to name every white key?', '흰건반 전부에 이름을 붙이는 데 글자가 몇 개 필요할까요?')} a={t('Seven: A to G, round and round.', '일곱 개: A부터 G까지, 돌고 돌아요.')} page={2}/>
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
           {[[t('A to G on the keys', '건반 위의 A부터 G'), 2], [t('The letter wheel', '글자 관람차'), 3], [t('Forwards up, backwards down', '위로는 앞으로, 아래로는 거꾸로'), 4], [t('Name it at a glance', '보자마자 이름 대기'), 5], [t('Skip a letter', '한 글자 건너뛰기'), 6], [t('Play by letter names', '음이름 보고 연주하기'), 7], [t('My five checks', '나의 다섯 가지 확인'), 8]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {[t('find A to G on the keys', '건반에서 A부터 G까지 찾을 수 있어요'), t('say the letters forwards and backwards, from any letter', '어떤 글자에서든 앞으로, 거꾸로 글자를 말할 수 있어요'), t('name any white key at a glance', '어떤 흰건반이든 보자마자 이름을 댈 수 있어요'), t('find the same letter in every octave', '모든 옥타브에서 같은 글자를 찾을 수 있어요'), t('skip up and down the keys: C E G B D F A', '건너뛰며 건반을 오르내릴 수 있어요: C E G B D F A'), t('read letters and play them, word by word', '글자를 읽고 단어처럼 칠 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:2}}>{bkGoal(15)}</span><span>{x}</span></div>)}
         </div>
       </div>
@@ -47127,6 +47162,7 @@ function nnLbPages(scr = false) {
         <>Find and play every <b>C</b> and every <b>F</b>: the two houses' left doors.</>,
         <>Someone says a letter; find it by its house. Play it in three places.</>,
       ]}/>
+      <LbChallenge kind="time">{t('Every C on the piano, bottom to top, as fast as you can. Then every F.', '피아노의 모든 C를 아래에서 위로 최대한 빨리. 그다음 모든 F.')}</LbChallenge>
       <LbRemember>{t('A B C D E F G: C D E in the small house, F G A B in the big.', 'A B C D E F G: C D E는 작은 집에, F G A B는 큰 집에.')}</LbRemember>
     </LbPage>,
 
@@ -47145,6 +47181,7 @@ function nnLbPages(scr = false) {
         <>From <b>middle C</b>, walk up 8 white keys to the next C, saying the letters. One octave, one turn of the wheel.</>,
         <>Someone says any letter; you carry on round the wheel: "E", "F G A B C..."</>,
       ]}/>
+      <LbChallenge kind="time">{t('Round the wheel from E back to E, out loud. Then from B.', 'E에서 시작해 관람차 한 바퀴, 다시 E까지 소리 내어. 그다음 B에서.')}</LbChallenge>
       <LbRemember>{t('Seven letters, round and round: after G comes A.', '일곱 글자가 돌고 돌아요: G 다음은 A.')}</LbRemember>
     </LbPage>,
 
@@ -47170,6 +47207,7 @@ function nnLbPages(scr = false) {
         <>Say the letters <b>backwards in your head</b>: G F E D C B A. Then start from E, from B, from any letter.</>,
         <>In the car, in the bath, on the way to school, until backwards comes as fast as forwards.</>,
       ]}/>
+      <LbChallenge kind="time">{t('The letters backwards from G down to A, then from C round to C.', 'G부터 A까지 거꾸로, 그다음 C부터 C까지 거꾸로.')}</LbChallenge>
       <LbRemember>{t('Up the piano: forwards. Down the piano: backwards.', '피아노 위로는 앞으로, 아래로는 거꾸로.')}</LbRemember>
     </LbPage>,
 
@@ -47188,6 +47226,7 @@ function nnLbPages(scr = false) {
         <>Find <b>every G and A</b>: Grandma and her Apple garden, inside the big house.</>,
         <><b>Fast game:</b> someone touches any white key; say who lives there and its letter. "Grandma: G!" Then swap.</>,
       ]}/>
+      <LbChallenge>{t('The fast game with no slip: someone touches a key, you say who lives there and the letter.', '빠른 게임을 틀리지 않고: 누가 건반을 짚으면, 누가 사는지와 글자를 말해요.')}</LbChallenge>
       <LbRemember>{t('Don\'t count from C: ask who lives there.', 'C부터 세지 말고, 누가 사는지 봐요.')}</LbRemember>
     </LbPage>,
 
@@ -47206,6 +47245,7 @@ function nnLbPages(scr = false) {
         <>Skip back down: <b>C A F D B G E C</b>.</>,
         <>Someone says a letter; you say the letter a skip up (C → E, F → A, A → C).</>,
       ]}/>
+      <LbChallenge kind="time">{t('Skip up from middle C to the next C and back down, saying only the letters you play.', '가운데 도에서 다음 C까지 건너뛰며 올라갔다 내려와요, 치는 글자만 말하면서.')}</LbChallenge>
       <LbRemember>{t('A skip jumps over a friend: C, (D), E.', '건너뛰기는 친구 하나를 넘어가요: C, (D), E.')}</LbRemember>
     </LbPage>,
 
@@ -47228,6 +47268,7 @@ function nnLbPages(scr = false) {
         <>Left hand: <b>4, 3, 2</b> on C D E one small house lower, the same letters, a lower voice.</>,
         <><b>Letter chain:</b> you say a letter, someone says the next, faster and faster, then backwards!</>,
       ]}/>
+      <LbChallenge>{t('C D E, E D C with your eyes on the letters, not on your fingers.', 'C D E, E D C를 손가락이 아니라 글자를 보며.')}</LbChallenge>
       <LbRemember>{t('Read the letter, see its place, play. No counting from C.', '글자를 읽고, 자리를 보고, 쳐요. C부터 세지 않기.')}</LbRemember>
     </LbPage>,
 
@@ -47712,13 +47753,14 @@ function sfLbPages(scr = false) {
       </div></LbOnly>
       {pic(p1, 220, 600)}
       <LbSay size={17.5}>{t('Meet the royal family of the keys. The King sings low, the Queen sings high. Clara lives between them, on middle C. Now we read their notes on paper.', '건반의 왕실 가족을 만나요. 왕은 낮은 목소리, 여왕은 높은 목소리로 노래해요. 클라라는 그 사이 가운데 도에 살아요. 이제 이들의 음을 종이에서 읽어요.')}</LbSay>
+      <LbGuess q={t('Clara can be written in two places on paper. How many keys is that on the piano?', '클라라는 종이에서 두 자리에 쓸 수 있어요. 피아노에서는 건반 몇 개일까요?')} a={t('One: the same middle C.', '하나예요. 같은 가운데 도.')} page={6}/>
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
           {[[t('Lines and spaces', '줄과 칸'), 2], [t('Up the staff, up the piano', '오선 위로, 피아노 위로'), 3], [t('The Queen\'s five', '여왕의 다섯 음'), 4], [t('The King\'s five', '왕의 다섯 음'), 5], [t('Middle C: Clara', '가운데 도: 클라라'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {[t('tell a line note from a space note', '줄 음표와 칸 음표를 구별할 수 있어요'), t('see a step or a skip on the staff, and play it', '오선에서 한 걸음과 건너뛰기를 보고 칠 수 있어요'), t('read C D E F G in the treble clef', '높은음자리표에서 C D E F G를 읽을 수 있어요'), t('read F G A B C in the bass clef', '낮은음자리표에서 F G A B C를 읽을 수 있어요'), t('find middle C on both staves: attached up or down, the same key', '두 오선에서 가운데 도를 찾을 수 있어요: 위에 붙어도 아래에 붙어도 같은 건반')].map((x, i) => <div key={i} style={{display:'flex',gap:9,alignItems:'flex-start',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{flex:'0 0 auto',marginTop:2}}>{bkGoal(15)}</span><span>{x}</span></div>)}
         </div>
       </div>
@@ -47735,6 +47777,7 @@ function sfLbPages(scr = false) {
       ] : [
         <><b>The hand staff:</b> hold one hand out sideways, fingers spread. 5 fingers = 5 lines, the 4 gaps = 4 spaces. Someone touches one; say line or space, and which number.</>,
       ]}/>
+      <LbChallenge>{t('The hand staff with no slip: line or space, and which number.', '손 오선 게임을 틀리지 않고: 줄인지 칸인지, 몇 번인지.')}</LbChallenge>
       <LbRemember>{t('On a line: the line runs through it. In a space: it touches both lines.', '줄 위: 줄이 가운데를 지나요. 칸 안: 위아래 줄에 닿아요.')}</LbRemember>
     </LbPage>,
 
@@ -47750,6 +47793,7 @@ function sfLbPages(scr = false) {
         <>Right hand, thumb on middle C: play the <b>steps</b> as in the picture, up C D E F G and <b>back down</b> F E D C.</>,
         <>Now the <b>skips</b>, a key jumped over each time: C E G E C, then D F A F D. Up and back down.</>,
       ]}/>
+      <LbChallenge kind="time">{t('C D E F G and back, then the skips C E G E C: how fast with no wrong key?', 'C D E F G 갔다 오고, 이어서 건너뛰기 C E G E C: 틀린 건반 없이 얼마나 빨리?')}</LbChallenge>
       <LbRemember>{t('Line to space: a step. Line to line, space to space: a skip.', '줄에서 칸: 한 걸음. 줄에서 줄, 칸에서 칸: 건너뛰기.')}</LbRemember>
     </LbPage>,
 
@@ -47767,6 +47811,7 @@ function sfLbPages(scr = false) {
         <>Someone points to one of the five: count down from the Queen's G or up from middle C, name it, play it.</>,
         <><b>Draw the Queen's curl:</b> <b>start on the G line</b>, her house, and spiral out. The Workbook has one to trace.</>,
       ]}/>
+      <LbChallenge>{t('Someone points to one of the Queen\'s five: name it and play it before they count to 3.', '누가 여왕의 다섯 음 중 하나를 가리키면, 셋 세기 전에 이름을 말하고 쳐요.')}</LbChallenge>
       <LbRemember>{t('The curl wraps round G: the Queen\'s line. Clara to the Queen: C D E F G.', '소용돌이는 G를 감싸요: 여왕의 줄. 클라라에서 여왕까지: C D E F G.')}</LbRemember>
     </LbPage>,
 
@@ -47784,6 +47829,7 @@ function sfLbPages(scr = false) {
         <>Someone points to one of the five: count from the King's F or from middle C, name it, play it.</>,
         <><b>Draw the King's guards:</b> <b>start with a dot on the F line</b> and curl down. Then the two guards, above and below the F line. The Workbook has one to trace.</>,
       ]}/>
+      <LbChallenge>{t('Someone points to one of the King\'s five: name it and play it before they count to 3.', '누가 왕의 다섯 음 중 하나를 가리키면, 셋 세기 전에 이름을 말하고 쳐요.')}</LbChallenge>
       <LbRemember>{t('The two dots guard F: the King\'s line. The King to Clara: F G A B C.', '두 점은 F를 지켜요: 왕의 줄. 왕에서 클라라까지: F G A B C.')}</LbRemember>
     </LbPage>,
 
@@ -47799,6 +47845,7 @@ function sfLbPages(scr = false) {
         <>Play <b>middle C</b>: Clara's place, the one key both hands can reach.</>,
         <><b>Which palace?</b> Someone writes Clara's note under the top staff or over the bottom one. Play middle C each time, with the right hand and with the left: <b>the same key</b>.</>,
       ]}/>
+      <LbChallenge>{t('Someone writes Clara under the top staff or over the bottom one: play middle C with the right hand for the Queen\'s, the left for the King\'s.', '누가 클라라를 위 오선 아래나 아래 오선 위에 쓰면, 여왕네면 오른손, 왕네면 왼손으로 가운데 도를 쳐요.')}</LbChallenge>
       <LbRemember>{t('Clara lives between the Queen and the King: the same key on either staff.', '클라라는 여왕과 왕 사이에 살아요: 어느 오선에 써도 같은 건반.')}</LbRemember>
     </LbPage>,
 
@@ -48304,13 +48351,14 @@ function wsLbPages(scr = false) {
       </div></LbOnly>
       {pic(p1, 230, 620)}
       <LbSay size={17.5}>{t('The treble staff is on top. Its other name is Queensland, the Queen\'s land. The bass staff is below. Its other name is Kingsland, the King\'s land. In Chapter ' + bkChapterNo('staff') + ' you read the nine notes around Clara. Now read every line and space.', '높은음자리표 오선은 위에 있어요. 다른 이름은 여왕의 나라, 퀸즈랜드예요. 낮은음자리표 오선은 아래에 있어요. 다른 이름은 왕의 나라, 킹스랜드예요. ' + bkChapterNo('staff') + '챕터에서 클라라 둘레의 아홉 음을 읽었어요. 이제 모든 줄과 칸을 읽어요.')}</LbSay>
+      <LbGuess q={t('Line 2 is G in the treble clef. What is it in the bass clef?', '2번 줄은 높은음자리표에서 G예요. 낮은음자리표에서는?')} a={t('B. So check the clef first.', 'B예요. 그래서 음자리표부터 봐요.')} page={2}/>
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
           {[[t('Clef check first', '음자리표 확인 먼저'), 2], [t('Treble clef', '높은음자리표'), 3], [t('Bass clef', '낮은음자리표'), 4], [t('Fold at Clara\'s ladder', '클라라의 발판에서 접기'), 5], [t('Five landmarks', '다섯 랜드마크'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {[t('check the clef before you read', '읽기 전에 음자리표부터 확인할 수 있어요'), t('read every line and space in the treble clef', '높은음자리표의 모든 줄과 칸을 읽을 수 있어요'), t('read every line and space in the bass clef', '낮은음자리표의 모든 줄과 칸을 읽을 수 있어요'), t('find the partner note across the fold', '접는 선 건너편의 짝 음을 찾을 수 있어요'), t('read fast from five landmarks', '다섯 랜드마크에서 빨리 읽을 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}{x}</div>)}
         </div>
       </div>
@@ -48329,6 +48377,7 @@ function wsLbPages(scr = false) {
         <><b>Clef check game:</b> your teacher shows a note card. Call out "Treble!" or "Bass!" first, then name the note and play it.</>,
         <>Same place, two names: play line 2 in both clefs, G with the right hand, B with the left.</>,
       ]}/>
+      <LbChallenge>{t('The clef check game: the clef first, then the note. Five cards in a row.', '음자리표 확인 게임: 음자리표 먼저, 그다음 음 이름. 카드 다섯 장 연속.')}</LbChallenge>
       <LbRemember>{t('Clef check first: treble or bass?', '음자리표 확인 먼저: 높은음자리표? 낮은음자리표?')}</LbRemember>
     </LbPage>,
 
@@ -48346,6 +48395,7 @@ function wsLbPages(scr = false) {
         <>Now the spaces: <b>F A C E</b>, "the Queen's FACE!"</>,
         <>{A('B3', <>Just over the top line sits <b>G</b>; just under the bottom line is Chapter {bkChapterNo('staff')}'s <b>D</b>.</>)}</>,
       ]}/>
+      <LbChallenge kind="time">{t('All nine treble notes out loud: the lines, then the Queen\'s FACE.', '높은음자리 아홉 음을 소리 내어: 줄 먼저, 그다음 여왕의 FACE.')}</LbChallenge>
       <LbRemember>{t('Treble clef: Every Good Boy Deserves Fun on the lines, the Queen\'s FACE in the spaces.', '높은음자리표: 줄에는 Every Good Boy Deserves Fun, 칸에는 여왕의 FACE.')}</LbRemember>
     </LbPage>,
 
@@ -48363,6 +48413,7 @@ function wsLbPages(scr = false) {
         <>Now the spaces: <b>A C E G</b>, "all cows eat grass".</>,
         <>{A('B3', <>Just over the top line is Chapter {bkChapterNo('staff')}'s <b>B</b>; just under the bottom line sits <b>F</b>.</>)}</>,
       ]}/>
+      <LbChallenge kind="time">{t('All nine bass notes out loud: the dragon\'s lines, then the cows\' spaces.', '낮은음자리 아홉 음을 소리 내어: 용의 줄 먼저, 그다음 소들의 칸.')}</LbChallenge>
       <LbRemember>{t('Bass clef: the King\'s dragon flies on the lines, his cows eat grass in the spaces.', '낮은음자리표: 왕의 용은 줄 위를 날고, 소들은 칸에서 풀을 먹어요.')}</LbRemember>
     </LbPage>,
 
@@ -48378,6 +48429,7 @@ function wsLbPages(scr = false) {
         <>{A('B5', <><b>The mirror walk:</b> both thumbs on middle C. Right hand up C D E F G, left hand down C B A G F, same finger numbers together. The last two, G and F, are fold partners.</>)}</>,
         <><b>Three Cs:</b> play bass C with the left hand, middle C with both thumbs, treble C with the right, low to high.</>,
       ]}/>
+      <LbChallenge>{t('The mirror walk from middle C: both hands land together on every note.', '가운데 도에서 거울 걷기: 음마다 두 손이 함께 닿게.')}</LbChallenge>
       <LbRemember>{t('Fold at Clara: G meets F, C meets C.', '클라라에서 접으면: G는 F와, C는 C와 만나요.')}</LbRemember>
     </LbPage>,
 
@@ -48393,6 +48445,7 @@ function wsLbPages(scr = false) {
         <>Play the five landmarks from low to high: C, F, C, G, C, naming each one.</>,
         <><b>Landmark hop:</b> your teacher points to a note. Clef check → nearest landmark → a step or a skip → name it → play it.</>,
       ]}/>
+      <LbChallenge>{t('Landmark hop: clef, nearest landmark, step or skip, name, play.', '랜드마크 뛰기: 음자리표, 가장 가까운 랜드마크, 걸음이나 건너뛰기, 이름, 연주.')}</LbChallenge>
       <LbRemember>{t('Find the nearest landmark, then step or skip.', '가장 가까운 랜드마크를 찾고, 한 걸음 또는 건너뛰기.')}</LbRemember>
     </LbPage>,
 
@@ -48776,9 +48829,27 @@ function WbPage({ no, chId, children, bare, teacher }) {
 // inside page margins); white, with the cut-in-corner frame inside -- in the printed books only: online the plain
 // box (Sohyun 2026-10-12: the frame sat crooked in every chapter on the web; Phase 430)
 function LbPic({ children, h, gap = 18, pad = '14px 16px' }) {
-  const scr = lbScreen();
+  const scr = lbScreen(), boxRef = React.useRef(null);
+  React.useLayoutEffect(() => {   // Build CU: fit the drawing inside its frame (print only)
+    if (scr) return; const el = boxRef.current; if (!el) return;
+    const fit = () => {
+      const kids = [...el.children].filter(c => getComputedStyle(c).position !== 'absolute'); if (!kids.length) return;
+      kids.forEach(c => { if (!('mw0' in c.dataset)) { c.dataset.mw0 = c.style.maxWidth || ''; c.dataset.ml0 = c.style.marginLeft || ''; c.dataset.mr0 = c.style.marginRight || ''; } c.style.maxWidth = c.dataset.mw0; c.style.marginLeft = c.dataset.ml0; c.style.marginRight = c.dataset.mr0; c.style.zoom = ''; });
+      const cs = getComputedStyle(el), inner = el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      // the drawn extent, drawings that spill past their own box included (screen px, so divide by the page's own zoom)
+      const measure = () => { const r0 = el.getBoundingClientRect(), sc = r0.height && el.offsetHeight ? r0.height / el.offsetHeight : 1; let t0 = Infinity, b0 = -Infinity;
+        kids.forEach(k => { [k, ...k.querySelectorAll('*')].forEach(nd => { const r = nd.getBoundingClientRect(); if (r.width > 0 || r.height > 0) { t0 = Math.min(t0, r.top); b0 = Math.max(b0, r.bottom); } }); });
+        return { need: (b0 - t0) / sc, sc }; };
+      let m = measure(); if (!(inner > 20 && m.need > inner + 2)) return;
+      const f = Math.max(0.6, (inner - 4) / m.need);
+      kids.forEach(c => { const w = c.getBoundingClientRect().width / m.sc; c.style.maxWidth = (w * f).toFixed(1) + 'px'; c.style.marginLeft = 'auto'; c.style.marginRight = 'auto'; });   // a drawing that fills the width shrinks with it
+      m = measure(); if (m.need > inner + 2) { const g = Math.max(0.6, (inner - 4) / m.need); kids.forEach(c => { c.style.zoom = g.toFixed(3); }); }   // anything else: zoom
+    };
+    fit(); const tm = setTimeout(fit, 500); try { document.fonts.ready.then(fit); } catch (e) {}
+    return () => clearTimeout(tm);
+  });
   const pp = String(pad).split(' ').map(parseFloat), p = pp.length === 1 ? (pp[0] + 4) + 'px ' + (pp[0] + 8) + 'px' : pp.map((v, i) => (i % 2 ? v + 8 : v + 4) + 'px').join(' ');
-  return <div className="lb-pic" style={{position:'relative',background:'#fff',border:'0.8px solid ' + BK.ink2,padding:p,display:'flex',alignItems:'center',justifyContent:'center',gap,minHeight:scr ? 0 : h,flex:'1 1 auto',flexWrap:'wrap'}}>{children}{!scr && <VicCutFrame/>}</div>;
+  return <div ref={boxRef} className="lb-pic" style={{position:'relative',background:'#fff',border:'0.8px solid ' + BK.ink2,padding:p,display:'flex',alignItems:'center',justifyContent:'center',gap,minHeight:scr ? 0 : h,flex:'1 1 auto',flexWrap:'wrap'}}>{children}{!scr && <VicCutFrame/>}</div>;
 }
 // the chair rail: thick and thin above, thin and thick below, the butler's portrait at its start
 function LbRemember({ children }) {
@@ -49045,7 +49116,7 @@ function llLbPages(scr = false) {
           {[[t('Clara\'s ladder is a ledger line', '클라라의 발판은 덧줄'), 2], [t('Up into the sky', '하늘로 올라가기'), 3], [t('Down into the sea', '바다로 내려가기'), 4], [t('Between the staves', '두 오선 사이'), 5], [t('Five Cs', '다섯 C'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {[t('say what a ledger line is and draw one neatly', '덧줄이 뭔지 말하고 깔끔하게 그을 수 있어요'), t('read up to three ladders above the treble staff', '높은음자리표 오선 위로 발판 세 개까지 읽을 수 있어요'), t('read up to three ladders below the bass staff', '낮은음자리표 오선 아래로 발판 세 개까지 읽을 수 있어요'), t('read the ladders between the staves both ways', '두 오선 사이의 발판을 두 가지로 읽을 수 있어요'), t('find the five Cs from the sea to the sky', '바다에서 하늘까지 다섯 C를 찾을 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}{x}</div>)}
         </div>
       </div>
@@ -49727,13 +49798,14 @@ function tnLbPages(scr = false) {
       {pic(art1, [0, 38, 340, 220], t('The keyboard street with Clara at her C: two coral dotted lines on the keys, each a half step (to the black key, then up again to D, like a stair) and under the keys a navy dotted line from C to D, a whole step. Below: a half step is a semitone, a whole step is a tone', '클라라가 C에 서 있는 건반 거리: 건반 위의 산호색 점선 둘, 각각 반음(검은건반으로, 그리고 계단처럼 한 번 더 D로), 건반 아래 C에서 D까지 남색 점선은 온음. 아래: 반음은 반음, 온음은 온음'), 250, 620)}
       <LbSay size={17.5}>{LANG === 'ko' ? <><b>반음</b>은 <b>반음</b>: 바로 옆 건반까지. <b>온음</b>은 <b>온음</b>: 반음 두 개. 두 기호가 음을 반음 옮겨요: <b>샵</b>는 위로, <b>플랫</b>은 아래로.</>
         : <>A <b>semitone</b> is a <b>half step</b>: to the very next key. A <b>tone</b> is a <b>whole step</b>: two half steps. Two signs move a note a half step: the <b>sharp</b> up, the <b>flat</b> down.</>}</LbSay>
+      <LbGuess q={t('Is there always a black key between two white keys?', '흰건반 두 개 사이에는 늘 검은건반이 있을까요?')} a={t('No: E F and B C have none, only a half step.', '아니요. E F와 B C 사이에는 없어요: 반음뿐.')} page={4}/>
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
           {[[t('A half step: a semitone', '반음: 반음'), 2], [t('A whole step: a tone', '온음: 온음'), 3], [t('White half steps', '흰건반의 반음'), 4], [t('Sharp and flat', '샵과 플랫'), 5], [t('Sharps and flats on the staff', '오선 위의 샵과 플랫'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {[t('play a half step up and down from any key', '어떤 건반에서든 반음 위와 아래를 칠 수 있어요'), t('play a whole step up and down from any key', '어떤 건반에서든 온음 위와 아래를 칠 수 있어요'), t('show the white half steps: E F and B C', '흰건반의 반음을 보여 줄 수 있어요: E F와 B C'), <>{t('name every black key two ways: C', '검은건반마다 이름 두 개를 말할 수 있어요: C')}{tnSign('#')} = D{tnSign('b')}</>, t('read sharps and flats on the staff and play them', '오선의 샵과 플랫을 읽고 칠 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x}</span></div>)}
         </div>
       </div>
@@ -49752,6 +49824,7 @@ function tnLbPages(scr = false) {
         <>Put a finger on D, the Dog. Play a half step up, then a half step down: both black keys. Say "half step" each time.</>,
         <><b>The half-step walk:</b> from middle C, play every key, black and white, up to the next C. Count the steps, not the keys: 12 half steps. This walk is the <b>chromatic scale</b>.</>,
       ]}/>
+      <LbChallenge kind="time">{t('The half-step walk from middle C to the next C, counting the 12 half steps out loud.', '가운데 도에서 다음 C까지 반음 걷기, 반음 12개를 소리 내어 세며.')}</LbChallenge>
       <LbRemember>{t('A semitone is a half step: the very next key, black or white.', '반음은 반음: 바로 옆 건반, 검은건반이든 흰건반이든.')}</LbRemember>
     </LbPage>,
 
@@ -49767,6 +49840,7 @@ function tnLbPages(scr = false) {
         <>From C, play a whole step up: over the black key to D. Then a whole step up from D: E.</>,
         <><b>Half or whole?</b> Play each pair and say "half step, semitone" or "whole step, tone": C D, E F, B C, F G. Then two black-key pairs: the big house's first and second black keys, and the small house's second black key with E.</>,
       ]}/>
+      <LbChallenge>{t('Someone plays two keys: half step or whole step?', '누가 건반 두 개를 치면: 반음일까요, 온음일까요?')}</LbChallenge>
       <LbRemember>{t('A tone is a whole step: two half steps, one key in between.', '온음은 온음: 반음 두 개, 사이에 건반 하나.')}</LbRemember>
     </LbPage>,
 
@@ -49782,6 +49856,7 @@ function tnLbPages(scr = false) {
         <>Find every E and F on the piano, then every B and C: no black key between them, a half step.</>,
         <>Walk up the white keys from C to the next C, naming each step: whole, whole, <b>half</b>, whole, whole, whole, <b>half</b>. This order is the major scale's recipe. In the Scales room you build scales with it.</>,
       ]}/>
+      <LbChallenge kind="time">{t('Every E F and every B C on the piano, bottom to top.', '피아노의 모든 E F와 B C를 아래에서 위로.')}</LbChallenge>
       <LbRemember>{t('No black key between E F and B C: only a half step.', 'E F, B C 사이엔 검은건반이 없어요: 반음뿐.')}</LbRemember>
     </LbPage>,
 
@@ -49797,6 +49872,7 @@ function tnLbPages(scr = false) {
         <>Play C, then C{tnSign('#')}: a half step up. Play D, then D{tnSign('b')}: a half step down. The same black key, the same attic!</>,
         <>Name every black key both ways: the small house C{tnSign('#')} = D{tnSign('b')}, D{tnSign('#')} = E{tnSign('b')}; the big house F{tnSign('#')} = G{tnSign('b')}, G{tnSign('#')} = A{tnSign('b')}, A{tnSign('#')} = B{tnSign('b')}.</>,
       ]}/>
+      <LbChallenge>{t('Someone names a black key one way (C♯): say its other name (D♭) before they count to 3.', '누가 검은건반 이름 하나(C♯)를 말하면, 셋 세기 전에 다른 이름(D♭)을 말해요.')}</LbChallenge>
       <LbRemember><>{tnSign('#')}{t(' up a half step, ', '는 반음 위, ')}{tnSign('b')}{t(' down a half step: to the very next key, black or white.', '은 반음 아래: 바로 옆 건반으로, 검은건반이든 흰건반이든.')}</></LbRemember>
     </LbPage>,
 
@@ -49812,6 +49888,7 @@ function tnLbPages(scr = false) {
         <>Read and play the four notes on the treble staff with the right hand: F{tnSign('#')}, C{tnSign('#')}, B{tnSign('b')}, E{tnSign('b')}.</>,
         <>Read and play the four on the bass staff with the left hand: F{tnSign('#')}, E{tnSign('b')}, B{tnSign('b')}, G{tnSign('#')}.</>,
       ]}/>
+      <LbChallenge>{t('A note with a sharp or a flat: say the letter, then the sign, then play it.', '샵이나 플랫이 붙은 음: 글자 먼저, 그다음 기호, 그리고 연주.')}</LbChallenge>
       <LbRemember>{t('The sign goes just before the note, on the note\'s own line or space.', '기호는 음표 바로 앞, 그 음의 줄이나 칸에.')}</LbRemember>
     </LbPage>,
 
@@ -50488,13 +50565,14 @@ function plLbPages(scr = false) {
       {pic(art1, [0, 26, 340, 190], t('A coral heart, your heartbeat, and beside it two rows of four beat circles, 1 2 3 4 and 1 2 3 4, with the same gap between every two: the pulse, steady, it never stops', '산호색 심장, 내 심장 박동. 그 옆에 박 동그라미 네 개씩 두 줄: 1 2 3 4, 1 2 3 4, 둘 사이마다 똑같은 간격. 박은 꾸준하고 멈추지 않아요'), 200)}
       <LbSay size={17.5}>{LANG === 'ko' ? <>음악에는 심장 박동이 있어요: <b>박</b>이에요. 박은 <b>매번 똑같은 간격</b>으로 꾸준해요. 음이 멈춰도 계속돼요.</>
         : <>Music has a heartbeat: the <b>pulse</b>. It is steady, with <b>the same gap every time</b>. It goes on even when the notes stop.</>}</LbSay>
+      <LbGuess q={t('When the notes stop, does the beat stop too?', '음이 멈추면 박도 멈출까요?')} a={t('No: silent beats still count.', '아니요. 조용한 박도 세요.')} page={4}/>
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
           {[[t('A steady beat', '꾸준한 박'), 2], [t('Count out loud', '소리 내어 세기'), 3], [t('When the notes stop', '음이 멈출 때'), 4], [t('Beat or rhythm?', '박일까, 리듬일까?'), 5], [t('The beat in your fingers', '손가락으로 박 치기'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {[t('pat a steady beat, the same gap every time', '매번 똑같은 간격으로 꾸준한 박을 칠 수 있어요'), t('count out loud, 1 2 3 4, while you pat', '무릎을 치면서 소리 내어 셀 수 있어요: 1 2 3 4'), t('keep counting through silent beats', '조용한 박에서도 계속 셀 수 있어요'), t('tell the beat from the rhythm', '박과 리듬을 구별할 수 있어요'), t('play a new finger on each beat and count out loud', '박마다 다른 손가락으로 치면서 소리 내어 셀 수 있어요')].map((x, i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x}</span></div>)}
         </div>
       </div>
@@ -50513,6 +50591,7 @@ function plLbPages(scr = false) {
         <>Pat your knees with both hands 8 times, the same gap every time, like a clock.</>,
         <>Walk 8 steps across the room, one step on each beat.</>,
       ]}/>
+      <LbChallenge>{t('Pat 8 beats with the same gap every time while someone listens for a hurry.', '무릎을 8번, 매번 같은 간격으로. 누가 서두르는지 들어 줘요.')}</LbChallenge>
       <LbRemember>{t('A steady beat: the same gap every time.', '꾸준한 박: 매번 똑같은 간격.')}</LbRemember>
     </LbPage>,
 
@@ -50528,6 +50607,7 @@ function plLbPages(scr = false) {
         <>Pat your knees and count out loud: 1 2 3 4, four times round, without stopping.</>,
         <>Right hand, finger 3 on the right black key of the 4th small house. Play on every beat and count: 1 2 3 4, four times round.</>,
       ]}/>
+      <LbChallenge>{t('Pat and count 1 2 3 4, four times round, with no stop and no extra number.', '무릎을 치며 1 2 3 4를 네 바퀴, 멈춤도 덤 숫자도 없이.')}</LbChallenge>
       <LbRemember>{t('Count out loud: 1 2 3 4, then 1 again.', '소리 내어 세기: 1 2 3 4, 그리고 다시 1.')}</LbRemember>
     </LbPage>,
 
@@ -50543,6 +50623,7 @@ function plLbPages(scr = false) {
         <>Right hand, finger 3 on the right black key of the 4th small house: play on 1 and 2, lift on 3 and 4, and keep counting out loud. Four times round.</>,
         <>Now play only on 1, and count 2 3 4 with your hand just above the key. Four times round.</>,
       ]}/>
+      <LbChallenge>{t('Play only on 1, count the rest in your head, and come back in exactly on the next 1.', '1에서만 치고, 나머지는 머릿속으로 세다가 다음 1에 딱 맞춰 들어와요.')}</LbChallenge>
       <LbRemember>{t('Silent beats still count.', '조용한 박에서도 계속 세요.')}</LbRemember>
     </LbPage>,
 
@@ -50558,6 +50639,7 @@ function plLbPages(scr = false) {
         <>Tap the beat with your foot and say: walk, run-ning, walk, run-ning, one word on each beat. Then clap the words while your foot keeps the beat.</>,
         <>Now: run-ning, run-ning, walk, walk. And: walk, walk, run-ning, walk.</>,
       ]}/>
+      <LbChallenge>{t('Foot on the beat, clap the words: walk, run-ning, run-ning, walk. Change the order each time; the foot never changes.', '발은 박, 손뼉은 낱말: 타, 티-티, 티-티, 타. 순서를 매번 바꿔도 발은 그대로.')}</LbChallenge>
       <LbRemember>{t('The beat stays steady; the rhythm is the sounds on top.', '박은 꾸준하게, 리듬은 그 위의 소리.')}</LbRemember>
     </LbPage>,
 
@@ -50569,6 +50651,7 @@ function plLbPages(scr = false) {
       <LbTune name={t('Small-house beat', '작은 집 박')} coral how={t('right hand, fingers 2 and 3 on the 4th small house', '오른손, 넷째 작은 집에 2번과 3번 손가락')} seq={['2', '3', '2', '3', '2', '3', '2', '3']}/>
       <LbTune name={t('Big-house beat', '큰 집 박')} coral how={t('right hand, fingers 2 3 4 on the big house next to it', '오른손, 바로 옆 큰 집에 2번 3번 4번 손가락')} seq={['2', '3', '4', '3', '2', '3', '4', '3']}/>
       <LbTune name={t('Left-hand beat', '왼손 박')} coral how={t('left hand, fingers 3 and 2 on the 3rd small house', '왼손, 셋째 작은 집에 3번과 2번 손가락')} seq={['3', '2', '3', '2', '3', '2', '3', '2']}/>
+      <LbChallenge>{t('Each row twice, counting out loud, with no stop between the rows.', '줄마다 두 번, 소리 내어 세며, 줄 사이에 멈춤 없이.')}</LbChallenge>
       <LbRemember>{t('A new finger on each beat; keep counting.', '박마다 다른 손가락, 계속 세면서.')}</LbRemember>
     </LbPage>,
 
@@ -51498,13 +51581,14 @@ function nvLbPages(scr = false) {
       {pic(art1, [0, 0, 410, 310], t('The note family over four beats, four coral hearts numbered 1 2 3 4. One semibreve lasts all four beats; two minims, two beats each; four crotchets, one beat each; four pairs of quavers, two on each beat. Under each note a coral sound line as long as its beats.', '박 네 개, 1 2 3 4 번호가 붙은 산호색 심장 넷 위의 음표 가족. 온음표 하나는 네 박 내내, 2분음표 둘은 두 박씩, 4분음표 넷은 한 박씩, 8분음표 둘씩 네 쌍은 한 박에 둘. 음표마다 아래에 박만큼 긴 산호색 소리 줄.'), 230, 500)}
       <LbSay size={17.5}>{LANG === 'ko' ? <>음표마다 소리 나는 <b>박의 수</b>가 정해져 있어요. <b>모양</b>을 보면 알 수 있어요. <b>쉼표</b>는 몇 박 동안 쉬는지 알려 줘요.</>
         : <>Every note lasts a number of <b>beats</b>. Its <b>shape</b> tells you how many. A <b>rest</b> is a silence that lasts beats too.</>}</LbSay>
+      <LbGuess q={t('Which lasts longest: a crotchet, a minim or a semibreve?', '4분음표, 2분음표, 온음표 중 어느 게 가장 길까요?')} a={t('The semibreve: 4 beats.', '온음표예요. 4박.')} page={4}/>
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
           {[[t('The crotchet: one beat', '4분음표: 한 박'), 2], [t('The minim: two beats', '2분음표: 두 박'), 3], [t('Longer notes: 3 and 4 beats', '더 긴 음표: 3박과 4박'), 4], [t('Two quavers on one beat', '한 박에 8분음표 둘'), 5], [t('Rests: silence you count', '쉼표: 세면서 쉬어요'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checksRows.map(([, , x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I can /, '')}</span></div>)}
         </div>
       </div>
@@ -51523,6 +51607,7 @@ function nvLbPages(scr = false) {
         <>Right hand, finger 1 on middle C: a crotchet on every beat, counting {C4}. Four times round.</>,
         <>Walk round the room: one step on each beat, counting out loud. 8 steps.</>,
       ]}/>
+      <LbChallenge>{t('Eight crotchets, counting out loud, every one the same length.', '4분음표 여덟 개, 소리 내어 세며, 모두 같은 길이로.')}</LbChallenge>
       <LbRemember>{t('A crotchet: one beat.', '4분음표: 한 박.')}</LbRemember>
     </LbPage>,
 
@@ -51538,6 +51623,7 @@ function nvLbPages(scr = false) {
         <>Right hand, finger 1 on middle C: a minim on 1 and on 3, each held through the next beat. Count out loud, four times round.</>,
         <>Right hand, fingers 2 and 3 on the 4th small house: finger 2 two crotchets (1, 2), finger 3 a minim (3 4). Count out loud, four times round.</>,
       ]}/>
+      <LbChallenge>{t('Hold every minim to the end of its second beat: no early lift.', '2분음표마다 둘째 박 끝까지 누르기: 일찍 떼지 않기.')}</LbChallenge>
       <LbRemember>{t('A minim: two beats.', '2분음표: 두 박.')}</LbRemember>
     </LbPage>,
 
@@ -51553,6 +51639,7 @@ function nvLbPages(scr = false) {
         <>Right hand, finger 1 on middle C: a dotted minim (1 2 3), then a crotchet (4). Count out loud, four times round.</>,
         <>Right hand, finger 3 on the right black key of the 4th small house: a semibreve (1 2 3 4). Count out loud, four times round.</>,
       ]}/>
+      <LbChallenge>{t('Someone points to a note in the picture: say its beats before they count to 3.', '누가 그림 속 음표를 가리키면, 셋을 세기 전에 박 수를 말해요.')}</LbChallenge>
       <LbRemember>{t('Dotted minim: 3 beats. Semibreve: 4 beats.', '점2분음표: 3박. 온음표: 4박.')}</LbRemember>
     </LbPage>,
 
@@ -51568,6 +51655,7 @@ function nvLbPages(scr = false) {
         <>Say and clap: walk, run-ning, walk, run-ning. Then play it with right-hand finger 1 on middle C, counting 1, 2 +, 3, 4 +. Four times round.</>,
         <>Now run-ning, run-ning, walk, walk: say it, clap it, then play it on middle C, counting 1 +, 2 +, 3, 4. Four times round.</>,
       ]}/>
+      <LbChallenge>{t('walk, run-ning, run-ning, walk: say it, clap it, play it, with no stumble.', '타, 티-티, 티-티, 타: 말하고, 손뼉 치고, 쳐요, 더듬지 않고.')}</LbChallenge>
       <LbRemember>{t('Two quavers: one beat.', '8분음표 둘: 한 박.')}</LbRemember>
     </LbPage>,
 
@@ -51583,6 +51671,7 @@ function nvLbPages(scr = false) {
         <>Right hand, finger 1 on middle C: play on 1, 2 and 4. On 3, lift your hand just above the key and count. Four times round.</>,
         <>Right hand, finger 1 on middle C: a minim (1 2), then a minim rest (3 4), your hand just above the key. Count out loud, four times round.</>,
       ]}/>
+      <LbChallenge>{t('At each rest, hand just above the key, counting: the next note comes in exactly on time.', '쉼표마다 손은 건반 바로 위, 세면서: 다음 음이 딱 제때 들어와요.')}</LbChallenge>
       <LbRemember>{t('A rest: count the silence.', '쉼표: 쉬면서 세요.')}</LbRemember>
     </LbPage>,
 
@@ -52387,13 +52476,14 @@ function tsLbPages(scr = false) {
       {pic(p1, 220, 640)}
       <LbSay size={17.5}>{LANG === 'ko' ? <>음악은 <b>마디</b>로 나뉘어요. 악보 맨 앞의 <b>박자표</b>는 마디를 어떻게 세는지 알려 줘요.</>
         : <>Music is divided into <b>bars</b>. The <b>time signature</b> at the start tells you how to count them.</>}</LbSay>
+      <LbGuess q={t('In 3/4, how many beats are in every bar?', '3/4에서는 마디마다 몇 박일까요?')} a={t('Three: the top number.', '세 박: 위의 숫자예요.')} page={3}/>
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
           {[[t('Bars and bar lines', '마디와 세로줄'), 2], [t('The two numbers', '두 숫자'), 3], [t('Strong and weak beats', '센박과 여린박'), 4], [t('Fill the bar', '마디 채우기'), 5], [t('The tie', '붙임줄'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checksRows.map(([, , x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I can /, '')}</span></div>)}
         </div>
       </div>
@@ -52421,6 +52511,7 @@ function tsLbPages(scr = false) {
         <>{G3}: play the three bars, counting 1 2 3 in each bar.</>,
         <>{G3}: play the two bars with the repeat sign, counting 1 2 3. Go back and play them again. Four bars in all.</>,
       ]}/>
+      <LbChallenge>{t('The bars with the repeat, counting 1 2 3, back to the start with no stop.', '도돌이표까지 1 2 3을 세며 치고, 멈춤 없이 처음으로.')}</LbChallenge>
       <LbRemember>{t('Bar lines make bars. Two dots: play it again.', '세로줄은 마디를 만들어요. 점 두 개: 한 번 더.')}</LbRemember>
     </LbPage>,
 
@@ -52445,6 +52536,7 @@ function tsLbPages(scr = false) {
         <>Pat your knees and count each time signature above, two bars each: {nb('1 2')}, {nb('1 2 3')}, {C1}, and C: {C1}.</>,
         <>{G3}: play the four staves in this order, two bars each, counting out loud: 3/4, C, 2/4, 4/4.</>,
       ]}/>
+      <LbChallenge>{t('Someone names a time signature: pat two bars of it, counting, with no wrong number.', '누가 박자표를 말하면 두 마디를 무릎 치며 세요, 틀린 숫자 없이.')}</LbChallenge>
       <LbRemember>{t('Top: beats in a bar. Bottom 4: a crotchet beat.', '위: 한 마디의 박 수. 아래 4: 4분음표가 한 박.')}</LbRemember>
     </LbPage>,
 
@@ -52467,6 +52559,7 @@ function tsLbPages(scr = false) {
         <>Pat your knees on 1 and clap on the other beats. Count out loud. Four bars each of 2/4, 3/4 and 4/4.</>,
         <>{G3}: a crotchet on every beat, beat 1 a little louder. Four bars of 3/4, then four of 4/4.</>,
       ]}/>
+      <LbChallenge>{t('Four bars of 3/4, beat 1 a little louder every time.', '3/4 네 마디, 1박을 매번 조금 더 세게.')}</LbChallenge>
       <LbRemember>{t('Beat 1 is strong.', '1박은 센박.')}</LbRemember>
     </LbPage>,
 
@@ -52489,6 +52582,7 @@ function tsLbPages(scr = false) {
         <>{G3}: play the three bars of 4/4, counting out loud. In the rests, lift your hand just above the key and keep counting.</>,
         <>{G3}: play the three bars of 3/4, counting out loud. Two quavers are 2 +: say “2 and”.</>,
       ]}/>
+      <LbChallenge>{t('Someone points to a bar: add up its notes and rests to the top number.', '누가 마디를 가리키면 음표와 쉼표를 더해 위의 숫자가 되는지 말해요.')}</LbChallenge>
       <LbRemember>{t('Notes and rests fill each bar exactly.', '음표와 쉼표가 마디를 꼭 맞게 채워요.')}</LbRemember>
     </LbPage>,
 
@@ -52507,6 +52601,7 @@ function tsLbPages(scr = false) {
         <>{G3}: play the top two bars. Hold the minim through beat 1 of bar{'\u00a0'}2, and count the light numbers out loud too.</>,
         <>{G3}: play the bottom two bars, without the tie. Play G again on beat 1 of bar{'\u00a0'}2. Hear the difference.</>,
       ]}/>
+      <LbChallenge>{t('Someone plays two bars: thumbs up for a tie (held), thumbs down for no tie (played again).', '누가 두 마디를 치면: 이어서 누르면 엄지 위(붙임줄), 다시 치면 엄지 아래.')}</LbChallenge>
       <LbRemember>{t('A tie: play once, hold for both.', '붙임줄: 한 번 치고, 두 음표만큼 누르기.')}</LbRemember>
     </LbPage>,
 
@@ -53432,13 +53527,14 @@ function sskLbPages(scr = false) {
       {pic(p1, 220, 520)}
       <LbSay size={17.5}>{LANG === 'ko' ? <><b>선율</b>은 위로 가거나, 아래로 가거나, 같은 음에 머물러요. 앞 음에서 얼마나 움직이는지 읽어요: <b>한{'\u00a0'}걸음</b>, <b>건너뛰기</b>, 같은{'\u00a0'}음.</>
         : <>A <b>tune</b> goes up, goes down or stays on the same note. Read how far each note moves from the one before: a <b>step</b>, a <b>skip</b> or the same note.</>}</LbSay>
+      <LbGuess q={t('On the staff, does a skip go from a line to the next line, or to the next space?', '오선에서 건너뛰기는 줄에서 다음 줄로 갈까요, 다음 칸으로 갈까요?')} a={t('To the next line (space to space too): one letter jumped over.', '다음 줄이에요(칸에서는 다음 칸): 글자 하나를 넘어가요.')} page={3}/>
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
           {[[t('Up, down or the same', '위로, 아래로, 같은 음'), 2], [t('Steps and skips', '한 걸음과 건너뛰기'), 3], [t('C position', 'C 자리'), 4], [t('G position', 'G 자리'), 5], [t('Read a tune', '선율 읽기'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checksRows.map(([, , x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I can /, '')}</span></div>)}
         </div>
       </div>
@@ -53466,6 +53562,7 @@ function sskLbPages(scr = false) {
         <>{RHC}, one finger on each key up to G: play the tune above, counting {nb('1 2 3 4')}.</>,
         <>Say how each note moves: up, up, up, up, the same, down… Then play it again, saying the moves.</>,
       ]}/>
+      <LbChallenge>{t('Say each move before you play it, up, down or the same, through a whole tune with no slip.', '치기 전에 움직임을 먼저 말하기: 위, 아래, 같은 음. 곡 하나를 틀리지 않고.')}</LbChallenge>
       <LbRemember>{t('Higher on the staff, further right on the keys.', '오선에서 높을수록 건반에서 오른쪽.')}</LbRemember>
     </LbPage>,
 
@@ -53486,6 +53583,7 @@ function sskLbPages(scr = false) {
         <>Right hand, thumb on middle C: play C E G, skips up. Then G F E D C, steps down.</>,
         <>Left hand, finger 5 on the C below middle C: play C D E, steps up. Then E C, a skip down.</>,
       ]}/>
+      <LbChallenge>{t('Someone points to two notes on the staff: step or skip, before they count to 3.', '누가 오선의 두 음을 가리키면, 셋 세기 전에 한 걸음인지 건너뛰기인지.')}</LbChallenge>
       <LbRemember>{t('The next white key: a step. Jump one: a skip.', '바로 옆 흰 건반: 한 걸음. 흰 건반 하나 건너: 건너뛰기.')}</LbRemember>
     </LbPage>,
 
@@ -53506,6 +53604,7 @@ function sskLbPages(scr = false) {
         <>Right hand in C position: play C D E F G and back down, saying the finger numbers: {nb('1 2 3 4 5 4 3 2 1')}.</>,
         <>Left hand in C position: play C D E F G and back down, saying the finger numbers: {nb('5 4 3 2 1 2 3 4 5')}.</>,
       ]}/>
+      <LbChallenge kind="time">{t('C D E F G and back with each hand, saying the finger numbers, with no slip.', '양손 각각 C D E F G 갔다 오기, 손가락 번호를 말하며, 틀리지 않고.')}</LbChallenge>
       <LbRemember>{t('In a position, a step is the next finger; a skip jumps one finger.', '자리 안에서 한 걸음은 바로 옆 손가락, 건너뛰기는 손가락 하나 건너.')}</LbRemember>
     </LbPage>,
 
@@ -53526,6 +53625,7 @@ function sskLbPages(scr = false) {
         <>Left hand in G position: play G A B C D and back down, saying the finger numbers: {nb('5 4 3 2 1 2 3 4 5')}.</>,
         <>Right hand, play the finger numbers {nb('1 2 3 1 3 5 3 1')}: once in C position, once in G position.</>,
       ]}/>
+      <LbChallenge>{t('1 2 3 1 3 5 3 1 in C position, then straight on in G position, with no stop.', 'C 자리에서 1 2 3 1 3 5 3 1, 이어서 멈춤 없이 G 자리에서.')}</LbChallenge>
       <LbRemember>{t('Same fingers, same shape, a new place.', '같은 손가락, 같은 모양, 새 자리.')}</LbRemember>
     </LbPage>,
 
@@ -53546,6 +53646,7 @@ function sskLbPages(scr = false) {
         <>Clap the rhythm, counting {nb('1 2 3')}.</>,
         <>Say the moves: step up, step up, skip up, skip down… Then play it, counting out loud.</>,
       ]}/>
+      <LbChallenge>{t('A new tune: first note, rhythm, moves, then play it through with no stop.', '새 곡: 첫 음, 리듬, 움직임, 그다음 멈춤 없이 끝까지.')}</LbChallenge>
       <LbRemember>{t('First note, rhythm, moves, then play.', '첫 음, 리듬, 움직임, 그리고 연주.')}</LbRemember>
     </LbPage>,
 
@@ -54273,13 +54374,14 @@ function sdyLbPages(scr = false) {
       {pic(p1, 220, 680)}
       <LbSay size={17.5}>{LANG === 'ko' ? <><b>셈여림</b>은 얼마나 세게 또는 여리게 칠지 알려 줘요. <b>아티큘레이션</b>은 음을 이어서 칠지 끊어서 칠지 알려 줘요.</>
         : <><b>Dynamics</b> tell you how loud or soft to play. <b>Articulation</b> tells you how to join or separate the notes.</>}</LbSay>
+      <LbGuess q={t('Which one means loud: piano or forte?', '피아노와 포르테 중 어느 게 "세게"일까요?')} a={t('Forte. Piano means soft.', '포르테예요. 피아노는 "여리게".')} page={2}/>
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
           {[[t('Soft and loud', '여리게와 세게'), 2], [t('From pp to f', 'pp에서 f까지'), 3], [t('Getting louder and softer', '점점 세게, 점점 여리게'), 4], [t('Legato and staccato', '레가토와 스타카토'), 5], [t('Slur and tie', '이음줄과 붙임줄'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{sdyRich(n)}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checksRows.map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{sdyRich(x.replace(/^I can /, ''))}</span></div>)}
         </div>
       </div>
@@ -54305,6 +54407,7 @@ function sdyLbPages(scr = false) {
         <>{RHC}, the finger numbers over the notes: play the top tune {dm('p')}, fingertips close to the keys and the arm light.</>,
         <>Play the bottom tune {dm('f')}, the arm’s weight sinking into firm fingertips. Keep the same speed.</>,
       ]}/>
+      <LbChallenge>{t('Someone calls "p!" or "f!": play middle C that loud before they count to 3.', '누가 "p!" 또는 "f!" 하면 셋 세기 전에 그 셈여림으로 가운데 도를 쳐요.')}</LbChallenge>
       <LbRemember>{LANG === 'ko' ? <>{dm('p')} 여리게, {dm('f')} 세게.</> : <>{dm('p')} soft, {dm('f')} loud.</>}</LbRemember>
     </LbPage>,
 
@@ -54325,6 +54428,7 @@ function sdyLbPages(scr = false) {
         <>{RHC}: play the four bars {dm('pp')}, {dm('p')}, {dm('mf')}, {dm('f')}, each a little louder.</>,
         <>Play them again from {dm('f')} to {dm('pp')}, each bar a little softer.</>,
       ]}/>
+      <LbChallenge>{t('pp, p, mf, f on one key: four loudnesses, no two the same.', '건반 하나로 pp, p, mf, f: 네 가지 크기, 같은 것 둘 없이.')}</LbChallenge>
       <LbRemember>{t('m means medium. The same letter twice means very.', 'm은 ‘조금’, 같은 글자 두 개는 ‘매우’.')}</LbRemember>
     </LbPage>,
 
@@ -54347,6 +54451,7 @@ function sdyLbPages(scr = false) {
         <>{RHC}: play C D E F G getting louder, from {dm('p')} to {dm('f')}; then G F E D C getting softer, back to {dm('p')}.</>,
         <>Play the tune above: louder through bar 1, {dm('f')} in bar 2, softer through bar 3. Keep the same speed.</>,
       ]}/>
+      <LbChallenge>{t('C D E F G getting louder, G F E D C getting softer, with no sudden jump.', 'C D E F G는 점점 세게, G F E D C는 점점 여리게, 갑자기 튀는 음 없이.')}</LbChallenge>
       <LbRemember>{t('Opening: louder. Closing: softer.', '벌어지면 점점 세게, 좁아지면 점점 여리게.')}</LbRemember>
     </LbPage>,
 
@@ -54369,6 +54474,7 @@ function sdyLbPages(scr = false) {
         <>{RHC}: play C D E F G legato. Each finger comes up as the next goes down.</>,
         <>Play it again, C D E F staccato: a light bounce from the wrist. Hold G for all four beats.</>,
       ]}/>
+      <LbChallenge>{t('Someone calls "legato!" or "staccato!" while you play: change on the very next note.', '치는 중에 누가 "레가토!"나 "스타카토!"를 외치면 바로 다음 음부터 바꿔요.')}</LbChallenge>
       <LbRemember>{t('Legato joins. Staccato bounces.', '레가토는 잇고, 스타카토는 튀어요.')}</LbRemember>
     </LbPage>,
 
@@ -54389,6 +54495,7 @@ function sdyLbPages(scr = false) {
         <>{RHC}: play the top tune, G F E D C with the slur, smooth and joined.</>,
         <>Play the bottom tune, counting 1 2 3 4: E on 1, G on 3. Play G once and hold it to the end of bar 2.</>,
       ]}/>
+      <LbChallenge>{t('Someone points to a curve: say "slur!" or "tie!" before they count to 3.', '누가 곡선을 가리키면 셋 세기 전에 "이음줄!" 또는 "붙임줄!".')}</LbChallenge>
       <LbRemember>{t('Different notes: a slur. The same note: a tie.', '다른 음: 이음줄. 같은 음: 붙임줄.')}</LbRemember>
     </LbPage>,
 
@@ -55164,7 +55271,7 @@ function sprLbPages(scr = false) {
           {[[t('Low, middle and high', '낮은 음, 가운데 음, 높은 음'), 2], [t('Big is low, small is high', '크면 낮고, 작으면 높아요'), 3], [t('The instrument families', '악기 가족'), 4], [t('Low to high', '낮은 것부터 높은 것까지'), 5], [t('The piano’s range', '피아노의 음역'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checksRows.map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I can /, '')}</span></div>)}
         </div>
       </div>
@@ -55966,7 +56073,7 @@ function stmLbPages(scr = false) {
           {[[t('Slow and fast', '느리게와 빠르게'), 2], [t('Four tempo words', '빠르기말 네 개'), 3], [t('Reading the tempo', '빠르기 읽기'), 4], [t('The metronome', '메트로놈'), 5], [t('A steady tempo', '꾸준한 빠르기'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checksRows.map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I can /, '')}</span></div>)}
         </div>
       </div>
@@ -56890,7 +56997,7 @@ function srhLbPages(scr = false) {
           {[[t('Grouping quavers', '8분음표 묶기'), 2], [t('A quaver alone', '혼자 있는 8분음표'), 3], [t('The dotted crotchet', '점4분음표'), 4], [t('Before beat 1', '첫 박보다 먼저'), 5], [t('Count, clap, play', '세기, 손뼉 치기, 피아노 치기'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checksRows.map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I can /, '')}</span></div>)}
         </div>
       </div>
@@ -57724,7 +57831,7 @@ function sscLbPages(scr = false) {
           {[[t('The major scale', '장음계'), 2], [t('C major fingering', 'C장조 손가락 번호'), 3], [t('Scale degrees', '음의 번호'), 4], [t('G major', 'G장조 음계'), 5], [t('F major', 'F장조 음계'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checksRows.map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{sscSx(x.replace(/^I can /, ''))}</span></div>)}
         </div>
       </div>
@@ -58483,7 +58590,7 @@ function sacLbPages(scr = false) {
           {[[t('Sharp and flat', '샵과 플랫'), 2], [t('The natural', '내추럴'), 3], [t('Until the bar line', '세로줄까지'), 4], [t('Its own line or space', '같은 줄이나 칸만'), 5], [t('Reading a tune', '선율 읽기'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checksRows.map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{sscSx(x.replace(/^I can /, ''))}</span></div>)}
         </div>
       </div>
@@ -59188,7 +59295,7 @@ function spsLbPages(scr = false) {
           {[[t('Before the piano', '피아노 이전'), 2], [t('The first piano', '최초의 피아노'), 3], [t('Inside the piano', '피아노 속'), 4], [t('The pedals', '페달'), 5], [t('Grand and upright', '그랜드와 업라이트'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checksRows.map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{x.replace(/^I can /, '')}</span></div>)}
         </div>
       </div>
@@ -59994,7 +60101,7 @@ function skgLbPages(scr = false) {
           {[[t('The key signature', '조표'), 2], [t('G major', 'G장조'), 3], [t('F major', 'F장조'), 4], [t('Key signature and accidental', '조표와 임시표'), 5], [sscSx(t('D major and B♭ major', 'D장조와 B♭장조')), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}<span>{n}</span></span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checksRows.map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{sscSx(x.replace(/^I can /, ''))}</span></div>)}
         </div>
       </div>
@@ -60912,7 +61019,7 @@ function sgnLbPages(scr = false) {
           {[[t('Repeat signs', '도돌이표'), 2], [t('1st and 2nd time bars', '1번 괄호와 2번 괄호'), 3], ['D.C. al Fine', 4], ['D.S. al Fine', 5], [t('The pause', '늘임표'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}<span>{n}</span></span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checksRows.map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{sscSx(x.replace(/^I can /, ''))}</span></div>)}
         </div>
       </div>
@@ -61950,7 +62057,7 @@ function ivxLbPages(scr = false) {
           {[[t('Counting an interval', '음정 세기'), 2], [t('2nd to 5th, in the hand', '손 안의 2도~5도'), 3], [t('6th, 7th and octave', '6도, 7도, 옥타브'), 4], [t('Melodic and harmonic', '선율적 음정과 화성적 음정'), 5], [t('Above the tonic', '으뜸음 위의 음정'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}<span>{n}</span></span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checksRows.map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)',textWrap:'pretty'}}>{bkGoal(15)}<span>{sscSx(x.replace(/^I can /, ''))}</span></div>)}
         </div>
       </div>
@@ -62738,7 +62845,7 @@ function chxLbPages(scr = false) {
           {[[t('Stack a triad', '3화음 쌓기'), 2], [t('Major and minor', '장3화음과 단3화음'), 3], [t('The tonic triad', '으뜸화음'), 4], [t('I, IV and V', 'I, IV, V'), 5], [t('Both hands', '양손으로'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}<span>{n}</span></span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checksRows.map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)',textWrap:'pretty'}}>{bkGoal(15)}<span>{sscSx(x.replace(/^I can /, ''))}</span></div>)}
         </div>
       </div>
@@ -63617,7 +63724,7 @@ function tmxLbPages(scr = false) {
           {[[t('The speed ladder', '빠르기 사다리'), 2], [t('Changing speed', '빠르기 변화'), 3], [t('Loud and soft', '셈여림'), 4], [t('Touch and character', '터치와 느낌'), 5], [t('Little words', '꾸며 주는 말'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}<span>{n}</span></span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checksRows.map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)',textWrap:'pretty'}}>{bkGoal(15)}<span>{tmxRich(x.replace(/^I can /, ''))}</span></div>)}
         </div>
       </div>
@@ -64401,7 +64508,7 @@ function fmxLbPages(scr = false) {
           {[[t('The phrase', '프레이즈'), 2], [t('Same or different', '같은 음악, 새 음악'), 3], [t('Binary form', '2부 형식'), 4], [t('Ternary form', '3부 형식'), 5], [t('Finding the form', '형식 찾기'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}<span>{n}</span></span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checksRows.map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)',textWrap:'pretty'}}>{bkGoal(15)}<span>{x.replace(/^I can /, '')}</span></div>)}
         </div>
       </div>
@@ -65222,7 +65329,7 @@ function mlxLbPages(scr = false) {
           {[[t('The line of a tune', '선율선'), 2], [t('Phrasing', '프레이징'), 3], [t('Question and answer', '질문과 대답'), 4], [t('The motif', '동기'), 5], [t('Repetition and sequence', '반복과 동형 진행'), 6], [t('Words and rhythm', '가사와 리듬'), 7], [t('Writing a melody', '선율 쓰기'), 8], [t('A couplet, a stanza (Grades 4, 5)', '두 줄 시, 네 줄 시(4·5급)'), '9, 10'], [t('My nine checks', '나의 아홉 가지 확인'), 11]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}<span>{n}</span></span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checksRows.slice(0, 7).map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)',textWrap:'pretty'}}>{bkGoal(15)}<span>{x.replace(/^I can /, '')}</span></div>)}
         </div>
       </div>
@@ -66871,7 +66978,7 @@ function cpxLbPages(scr = false) {
           {[[cmpEraTag('baroque'), 2], [cmpEraTag('classical'), 3], [cmpEraTag('romantic'), 4], [t('Modern and Contemporary', '근대와 현대'), 5], [t('Who lived when', '누가 언제 살았을까'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',gap:8,fontSize:15,padding:'3px 0',borderBottom:'1px dotted rgba(38,41,107,0.3)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checksRows.map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)',textWrap:'pretty'}}>{bkGoal(15)}<span>{x.replace(/^I can /, '')}</span></div>)}
         </div>
       </div>
@@ -67643,7 +67750,7 @@ function csxLbPages(scr = false) {
           {[[t('Texture', '텍스처'), 2], [t('The sound of each period', '시대마다 다른 소리'), 3], [t('Folk music', '민속 음악'), 4], [t('Blues and jazz', '블루스와 재즈'), 5], [t('Pop', '대중음악'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',gap:8,fontSize:15,padding:'3px 0',borderBottom:'1px dotted rgba(38,41,107,0.3)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 챕터를 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this chapter, I can', '이 챕터를 마치면')}</div>
           {checksRows.map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'4px 0',borderBottom:'1px solid rgba(38,41,107,0.16)',textWrap:'pretty'}}>{bkGoal(15)}<span>{x.replace(/^I can /, '')}</span></div>)}
         </div>
       </div>
@@ -70429,7 +70536,7 @@ function cbScalesPagesOld(scr = false) {   // Phase 495: the old nine pages, kep
           {[[t('The major scale', '장음계'), 2], [t('Any key', '어느 음에서나 장음계'), 3], [t('Key signatures', '조표'), 4], [t('The circle of fifths', '5도권'), 5], [t('Minor scales', '단음계'), 6], [t('Other scales', '다른 음계'), 7], [t('Practise in steps', '단계별로 연습하기'), 8], [t('My five checks', '나의 다섯 가지 확인'), 9]].map(([n, p]) => <div key={p} className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'3px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{n}</span><span style={{color:BK.muted,fontWeight:800}}>{p}</span></div>)}
         </div></LbOnly>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 책을 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this book, I can', '이 책을 마치면')}</div>
           {checksRows.map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'3px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{cbSx(x.replace(/^I can /, ''))}</span></div>)}
         </div>
       </div>
@@ -70659,7 +70766,7 @@ function cbScalesPages(scr = false) {
           <div className="lb-toc-row" style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:14.5,padding:'3px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}><span style={{display:'flex',alignItems:'center',gap:9}}>{bkGoal(15)}{t('My five checks', '나의 다섯 가지 확인')}</span><span style={{color:BK.muted,fontWeight:800}}>10</span></div>
         </div>
         <div>
-          <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('By the end, you can', '이 책을 마치면')}</div>
+          <div className="lb-toc-h lb-can-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('After this book, I can', '이 책을 마치면')}</div>
           {checksRows.map(([, x], i) => <div key={i} style={{display:'flex',gap:9,fontSize:14.5,padding:'3px 0',borderBottom:'1px solid rgba(38,41,107,0.16)'}}>{bkGoal(15)}<span>{cbSx(x.replace(/^I can /, ''))}</span></div>)}
         </div>
       </div>
