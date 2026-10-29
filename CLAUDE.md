@@ -37,7 +37,7 @@ in the repo as reference only.
 Terminal), and mention once per session anything committed but unpushed.
 
 **drills.html is now a COMPILED file (Phase 327).** Never edit `drills.html` by hand. The source is
-`drills.src.html`; after editing it run `node tools/precompile.js` (it writes `drills.html`). Details in the
+`drills.src.html`; after editing it run `node tools/precompile.js` (it writes `drills.html` and `drills.app.js`). Details in the
 section "drills.html: source and compiled page" below.
 
 Be specific and honest, not just reassuring. If something is stalling, say it's stalling — and
@@ -61,21 +61,20 @@ claude.ai/artifact/VgstnAko8v3AyvQQLabFeN); update it after every build.*
 | **Source and build** | Edit `drills.src.html`, compile to `drills.html` (see "drills.html: source and compiled page" below). The cloud workspace builds with patch scripts; each build's patch and tests are copied to `_workspace/concept-book-kit/sc/`, its CLAUDE.md row script and commit message to `sc/ship/`. |
 | **teacher-dashboard.html** | Sign in at `login.html` (email and password; "Email me a sign-in link instead" if forgotten). Student links, lesson logs, This week ticks, and on each linked student's page **Start and checks**: their placement, the teacher's setting (start floor, theory grade, the Home for adults), chapter checks by floor, reviews due (CS). |
 | **Supabase** | Migrations A1, B1, B2, B3, C and D all run (Sohyun re-ran B3, C, D in order on 2026-10-29). Each file is safe to run again. Students never read tables; they call `pb_*` functions with the token in their link. |
-| **Git** | Pushed up to CU (`b71506b`) on 2026-10-29. CV (`0766ad5`) committed, waiting for her push. |
-| **App size** | 8.2 MB (2.2 MB gzipped). First screen 0.9 s on a desktop, about 4 s with a four-times slower CPU, about 9 s on a slow phone and network; three quarters is the browser reading the code. Proposal waiting for her OK: move the app code into its own versioned file (tested: first screen about a third sooner, return visits another third). A per-floor split saves little for a large rebuild: not now. |
+| **Git** | Pushed up to CU (`b71506b`) on 2026-10-29. CV (`0766ad5`), the CLAUDE.md tidy (`ee9c28e`) and CW committed, waiting for her push. |
+| **App size** | 8.2 MB of code (2.2 MB gzipped). Since Build CW (her OK, 2026-10-29) the code is its own file, `drills.app.js`, next to a 34 KB `drills.html` that loads it as `drills.app.js?v=<hash>` (a new hash each build, so a new page never meets an old cached copy). Measured on a copy with a four-times slower CPU: the first screen comes about a third sooner (4.9 s to 3.2 s), a returning student's another third (3.6 s to 2.5 s), because the browser keeps the file and its compiled code. A per-floor split would save little (the books above Beginner are about 14%) for a large rebuild: not now. |
 | **Revenue** (Top Priority) | Last checked 2026-09-15: 319 clicks and 15.2k impressions over three months, 38 of 40 pages indexed. AdSense rejected again 2026-09-19 (low-value content); Sohyun waits for traffic before any re-review, and a re-review is always her call. Not re-checked since. |
 | **Security** | Still outstanding from the 2026-08-14 incident, all on her phone: Gmail, GitHub, bank and card, Namecheap, Apple ID, Supabase, AdSense, Anthropic passwords. Never touch these. |
 
 ### Waiting on Sohyun
-- Push CV.
+- Push: CV, the CLAUDE.md tidy and CW.
 - On the iPad: how long drills takes to open, print chapter 2's Lesson Book once, the Music Lab sound (open since 2026-10-07).
 - A trial with 3 to 5 students: links sent, start floors set in the dashboard, watch for two weeks whether they come back.
-- Two open calls on the board: the two-week freeze (my recommendation: no full stop; size and this file first, the Prelim books after the trial starts) and the app code in its own file.
+- Nothing open on the board right now. The two-week freeze: her OK (2026-10-29) to no full stop, the Prelim books after the trial starts. The app code in its own file: built (CW).
 
 ### Next (Claude)
-1. The app code in its own file, on her OK.
-2. The Beginner floor's two checkpoints on paper (bespoke paper items in the books' style, with a teacher-copy key).
-3. The Prelim floor's Lesson Books, fun first, once the trial has started. Then the Workbooks, and splitting the mixed Grades 2-3 rooms.
+1. The Beginner floor's two checkpoints on paper (bespoke paper items in the books' style, with a teacher-copy key).
+2. The Prelim floor's Lesson Books, fun first, once the trial has started. Then the Workbooks, and splitting the mixed Grades 2-3 rooms.
 
 ### Parked (remind, do not build)
 - A link from thepianobutler.com to drills: until everything else is done (call 30, her 2026-10-28).
@@ -294,10 +293,11 @@ Each `piano-repertoire_gX.html` is a **self-contained single-file app** — no s
 | File | What it is |
 |------|------------|
 | `drills.src.html` | **The SOURCE.** App code is JSX inside `<script id="app-jsx" type="text/jsx-raw">`, compiled in the browser by babel-standalone. It still works if opened by itself (slowly), so it is also the fallback. |
-| `drills.html` | **The page the site serves.** Same page with the code already compiled in `<script id="app-js">`, no babel-standalone. Loads in about half a second. Starts with a `GENERATED by precompile.js` comment. |
-| `tools/precompile.js` | `node tools/precompile.js` (or `node tools/precompile.js <in> <out>`) reads `drills.src.html` and writes `drills.html`. Uses `@babel/standalone` if installed, otherwise `@babel/core` + `@babel/preset-react` (both are in this repo's `node_modules`). Always the classic runtime (`React.createElement`): the page loads React from a CDN script, so a `jsx-runtime` / `jsxDEV` import would break it, and the script refuses to write such output. |
+| `drills.html` | **The page the site serves.** Since Build CW (2026-10-29) a 34 KB shell: the same page with no babel-standalone, which loads the compiled code with `<script id="app-js" src="drills.app.js?v=<hash>">`. Starts with a `GENERATED by precompile.js` comment. |
+| `drills.app.js` | **The compiled app code** (about 8 MB), written by precompile.js next to the page (named after it: `drills.html` -> `drills.app.js`). Its own file so the browser keeps it, and its compiled code, between visits and reads it while it downloads. Never edit it by hand. |
+| `tools/precompile.js` | `node tools/precompile.js` (or `node tools/precompile.js <in> <out>`) reads `drills.src.html` and writes `drills.html` and `drills.app.js` (the hash in `?v=` is the code's). Uses `@babel/standalone` if installed, otherwise `@babel/core` + `@babel/preset-react` (both are in this repo's `node_modules`). Always the classic runtime (`React.createElement`): the page loads React from a CDN script, so a `jsx-runtime` / `jsxDEV` import would break it, and the script refuses to write such output. |
 
-**Rule: edit `drills.src.html`, then run `node tools/precompile.js`, then commit BOTH files.** Never edit `drills.html` directly: the next precompile would overwrite the change. The verification bar is unchanged: check `drills.html` in a real browser (`?book=...` pages, a chapter, a tool), in both languages.
+**Rule: edit `drills.src.html`, then run `node tools/precompile.js`, then commit all three: `drills.src.html`, `drills.html` and `drills.app.js`.** Never edit `drills.html` directly: the next precompile would overwrite the change. The verification bar is unchanged: check `drills.html` in a real browser (`?book=...` pages, a chapter, a tool), in both languages.
 
 The printed books and the Cut-outs are generated from the same file (`?book=lesson|work|teacher|cutouts`). The build chain that produces the source (patch scripts, `book.jsx`, `cutouts.jsx`) lives in the cloud workspace; the latest copy is `_workspace/book-build-2026-10-06b.tar.gz` (untracked backup; `STATE.md` inside it explains the chain).
 
