@@ -1,0 +1,12 @@
+const path = require('path'); const NM = '/home/claude/pbtest/kit/node_modules';
+const { chromium } = require(NM + '/playwright'); const http = require('http'), fs = require('fs');
+(async () => { const FILE = '/home/claude/pbtest/a3/' + process.argv[2];
+  const srv = http.createServer((req, res) => { const u = req.url.split('?')[0]; if (u.endsWith('.app.js')) { res.writeHead(200, { 'content-type': 'text/javascript' }); return res.end(fs.readFileSync(path.join(path.dirname(FILE), path.basename(u)))); } res.writeHead(200, { 'content-type': 'text/html' }); res.end(fs.readFileSync(FILE)); }); await new Promise(r => srv.listen(0, r));
+  const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' }); const p = await b.newPage();
+  p.on('pageerror', e => console.log('PAGEERR', String(e.message).slice(0, 400), '\n', (e.stack || '').split('\n').slice(1, 4).join(' | ').slice(0, 400)));
+  const file = u => r => r.fulfill({ path: u, contentType: 'text/javascript' });
+  await p.route('**/cdnjs.cloudflare.com/ajax/libs/react/**', file(NM + '/react/umd/react.production.min.js'));
+  await p.route('**/cdnjs.cloudflare.com/ajax/libs/react-dom/**', file(NM + '/react-dom/umd/react-dom.production.min.js'));
+  await p.route('**/fonts.googleapis.com/**', r => r.fulfill({ body: '', contentType: 'text/css' })); await p.route('**/googletagmanager.com/**', r => r.fulfill({ body: '' }));
+  await p.goto('http://localhost:' + srv.address().port + '/drills.html' + (process.argv[3] || '')); await p.waitForTimeout(5000);
+  console.log('root children', await p.evaluate(() => document.querySelector('#root') ? document.querySelector('#root').children.length : -1)); await b.close(); srv.close(); })();
