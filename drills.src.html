@@ -201,6 +201,9 @@ var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],
 </script>
 <script id="app-jsx" type="text/jsx-raw">
 const { useState, useEffect, useRef, useMemo } = React;
+// Build CX: the paper checkpoints (?book=check|checkkey&floor=0a). Read first, before any seeded data is made, so every
+// generator, and the fixed check-up data of the parts a checkpoint uses, give the checkpoint its own items.
+const CKP = (() => { try { const q = new URLSearchParams(location.search), b = q.get('book'); return b === 'check' || b === 'checkkey' ? { key: q.get('floor') || '0a', teacher: b === 'checkkey' } : null; } catch (e) { return null; } })();
 
 // ─── Language (Phase 145) ─────────────────────────────────────────────────────────
 // Sohyun: a Korean translation option / language toggle, since her mother (a piano-academy
@@ -21875,7 +21878,7 @@ function BooksShelf() {
       {STAGES.map(st => (
         <div key={st.n} className="card" style={{marginBottom:10,padding:'8px 12px'}}>
           <div style={{fontSize:11.5,fontWeight:900,color:'var(--coral)',letterSpacing:.4,marginBottom:2}}>{LANG === 'ko' ? floorName(st.n) : floorName(st.n, true)}</div>
-          {st.ids.map(id => (
+          {st.ids.map(id => [
             <div key={id} style={{display:'flex',alignItems:'center',gap:'4px 10px',flexWrap:'wrap',padding:'6px 0',borderTop:'1px solid #efe9d9'}}>
               <span style={{flex:'1 1 150px',fontSize:14,fontWeight:800,color:'var(--navy)'}}><span style={{color:'var(--muted)',fontWeight:700,marginRight:6}}>{bkChapterNo(id)}</span>{bkChapterName(id)}</span>
               <span style={{display:'flex',gap:5,flexWrap:'wrap'}}>
@@ -21884,8 +21887,16 @@ function BooksShelf() {
                 {pill('teacher', id, null, !!TEACHER_COPIES[id])}
                 {LESSON_BOOKS[id] && WORKBOOKS[id] && pill('spread', id, t('Lesson + Workbook, side by side', '레슨북 + 워크북 나란히'), true)}
               </span>
-            </div>
-          ))}
+            </div>,
+            ...checkFloors().filter(f => f.k === st.n && CKP_PAGES[f.key] && f.ids[f.ids.length - 1] === id).map(f => (   // Build CX
+              <div key={'ckp-' + f.key} data-testid={'ckp-shelf-' + f.key} style={{display:'flex',alignItems:'center',gap:'4px 10px',flexWrap:'wrap',padding:'7px 0',borderTop:'1px solid #efe9d9',background:'linear-gradient(90deg, rgba(228,87,46,0.06), transparent)'}}>
+                <span style={{flex:'1 1 150px',fontSize:14,fontWeight:800,color:'var(--navy)'}}>{t('Checkpoint', '중간점검') + (f.part ? ' ' + f.part : '')}<span style={{color:'var(--muted)',fontWeight:600,fontSize:12,marginLeft:8}}>{t('on paper, chapters ', '종이로, 챕터 ') + bkChapterNo(f.ids[0]) + '–' + bkChapterNo(f.ids[f.ids.length - 1])}</span></span>
+                <span style={{display:'flex',gap:5,flexWrap:'wrap'}}>
+                  <a href={'?book=check&floor=' + f.key + '&lang=en'} target="_blank" rel="noopener" style={{fontSize:11.5,fontWeight:800,color:KIND.work.col,border:'1.5px solid ' + KIND.work.col,borderRadius:8,padding:'3px 9px',textDecoration:'none',background:'#fff',whiteSpace:'nowrap'}}>{t('Student', '학생용')}</a>
+                  <a href={'?book=checkkey&floor=' + f.key + '&lang=en'} target="_blank" rel="noopener" style={{fontSize:11.5,fontWeight:800,color:KIND.teacher.col,border:'1.5px solid ' + KIND.teacher.col,borderRadius:8,padding:'3px 9px',textDecoration:'none',background:'#fff',whiteSpace:'nowrap'}}>{t('Key', '정답')}</a>
+                </span>
+              </div>)),
+          ])}
         </div>
       ))}
     </div>
@@ -24427,7 +24438,7 @@ const BK = { ink: '#26296b', coral: '#e4572e', muted: '#6d6f9c', line: 'rgba(38,
 function bkRand(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let x = a; x = Math.imul(x ^ (x >>> 15), x | 1); x ^= x + Math.imul(x ^ (x >>> 7), x | 61); return ((x ^ (x >>> 14)) >>> 0) / 4294967296; }; }
 function bkHash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
 // Run fn with Math.random replaced by a seeded generator (so pick / shuffle / the drill generators repeat exactly).
-function withSeed(key, fn) { const r = Math.random; Math.random = bkRand(bkHash(key)); try { return fn(); } finally { Math.random = r; } }
+function withSeed(key, fn) { const r = Math.random; Math.random = bkRand(bkHash((CKP ? 'ckp-' + CKP.key + ':' : '') + key)); try { return fn(); } finally { Math.random = r; } }
 function bkChapterNo(id) { return STAGES.flatMap(s => s.ids).indexOf(id) + 1; }
 function bkChapterName(id) { const d = DRILLS.find(x => x.id === id); return d ? d.label : id; }
 
@@ -24882,7 +24893,7 @@ function CheckHead({ total }) {
     <NameLine score={total}/>
   </>;
 }
-const bkSec = (letter, title) => <div style={{display:'flex',alignItems:'center',gap:9,margin:'7px 0 3px'}}><span style={{display:'flex',gap:3,flex:'0 0 auto'}}>{letter.split(' · ').map(L => <span key={L} style={{width:18,height:18,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:LB_SERIF,fontSize:12.5,fontWeight:800,lineHeight:1,...vicSquare(L.charCodeAt(0) - 65)}}>{L}</span>)}</span><span style={{fontSize:14,fontWeight:900,color:BK.ink}}>{title}</span></div>;
+const bkSec = (letter, title) => <div data-sec={letter} style={{display:'flex',alignItems:'center',gap:9,margin:'7px 0 3px'}}><span style={{display:'flex',gap:3,flex:'0 0 auto'}}>{letter.split(' · ').map(L => <span key={L} style={{width:18,height:18,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:LB_SERIF,fontSize:12.5,fontWeight:800,lineHeight:1,...vicSquare(L.charCodeAt(0) - 65)}}>{L}</span>)}</span><span style={{fontSize:14,fontWeight:900,color:BK.ink}}>{title}</span></div>;
 
 // A paper keyboard. White keys numbered 0.. from `start`. labels {i: text}, ex {i: true} (label in coral =
 // worked example), boxes [i] (a write-in box on the key), dots [i] (a coral dot marks the key to name),
@@ -27717,7 +27728,7 @@ function fsWorkbook() {
   const whites = (n, len, avoid) => { const out = []; let g = 0; while (out.length < n && g++ < 200) { const w = Math.floor(Math.random() * len); if (w !== avoid && out[out.length - 1] !== w) out.push(w); } return out; };
   const s3 = withSeed(k('s3'), () => [1, ...whites(5, 7, -1)]);        // whose house: the first one is the worked example (D: small)
   const s4 = withSeed(k('s4'), () => [4, ...whites(5, 10, 4)]);        // name it: the first one is the worked example (G)
-  const chk = withSeed(k('chk'), () => ({ wh: shuffle([0, 4, 2, 6]), ln: shuffle([1, 5, 3, 8]), hl: Array.from({ length: 4 }, pair), sg: shuffle([3, 4, 5, 3]), lg: shuffle([true, false, true, false]) }));
+  const chk = withSeed(k('chk'), () => ({ wh: shuffle(CKP ? [1, 5, 3, 2] : [0, 4, 2, 6]), ln: shuffle([1, 5, 3, 8]), hl: Array.from({ length: 4 }, pair), sg: shuffle([3, 4, 5, 3]), lg: shuffle([true, false, true, false]) }));
   return { s3, s4, chk };
 }
 const fsLetter = (i) => 'CDEFGAB'[i % 7];
@@ -28189,7 +28200,7 @@ function phWorkbook() {
   return { order, fingers, chk };
 }
 const PH_FILL = [['Up and back', ['1', '2', '?3', '-', '|', '3', '?2', '1', '-']], ['Little hill', ['1', '2', '?3', '4', '|', '?3', '2', '1', '-']], ['Stairs and slide', ['1', '2', '3', '?4', '5', '-', '|', '5', '?4', '3', '2', '1', '-']]];
-const PH_FILL_CHK = [['1', '2', '3', '?4', '5'], ['5', '4', '?3', '2', '1'], ['2', '3', '4', '?5'], ['1', '?2', '3', '2', '1']];   // Phase 417: no item with two right answers
+const PH_FILL_CHK = CKP ? [['1', '?2', '3', '4', '5'], ['5', '4', '3', '?2', '1'], ['3', '?4', '5'], ['5', '?4', '3', '4', '5']] : [['1', '2', '3', '?4', '5'], ['5', '4', '?3', '2', '1'], ['2', '3', '4', '?5'], ['1', '?2', '3', '2', '1']];   // Phase 417: no item with two right answers
 function phConcepts() {
   return [
     { id: 'st', name: 'Sitting at the piano', step: '1', page: '2' },
@@ -31317,7 +31328,7 @@ function PitchRangeTeacher() {
 const WORKBOOKS = { front: FrontMatter, staff: SfWorkbook, 'whole-staff': WsWorkbook, 'note-names': NoteNamesWorkbook, 'note-values': NoteValuesWorkbook, 'time-signatures': TimeSigWorkbook, 'ledger-lines': LedgerWorkbook, intervals: IntervalsWorkbook, 'key-signatures': KeySigWorkbook, 'first-steps': FirstStepsWorkbook, pulse: PulseWorkbook, 'posture-hands': PostureWorkbook, rhythm: RhythmWorkbook, 'reading-steps': ReadingStepsWorkbook, dynamics: DynamicsWorkbook, signs: SignsWorkbook, tempo: TempoWorkbook, terms: TermsWorkbook, tones: TonesWorkbook, scales: ScalesWorkbook, chords: ChordsWorkbook , form: MusicalFormWorkbook, 'piano-story': PianoStoryWorkbook, 'pitch-range': PitchRangeWorkbook };
 
 // ─── Teacher copy (?book=teacher&ch=staff): answers, what to watch for, what to say ───
-const tcAns = (label, list, n0 = 1) => <div style={{fontSize:12,color:BK.ink,lineHeight:1.65,marginBottom:2}}><b style={{color:BK.muted,fontSize:10.5,letterSpacing:'0.06em'}}>{label}</b>{'  '}{list.map((a, i) => <React.Fragment key={i}><span style={{marginRight:10,whiteSpace:String(a).length > 14 ? 'normal' : 'nowrap'}}>{n0 != null && <span style={{color:BK.muted}}>{i + n0}.</span>} <b style={{color:BK.green}}>{a}</b></span>{' '}</React.Fragment>)}</div>;
+const tcAns = (label, list, n0 = 1) => <div data-sec={label} style={{fontSize:12,color:BK.ink,lineHeight:1.65,marginBottom:2}}><b style={{color:BK.muted,fontSize:10.5,letterSpacing:'0.06em'}}>{label}</b>{'  '}{list.map((a, i) => <React.Fragment key={i}><span style={{marginRight:10,whiteSpace:String(a).length > 14 ? 'normal' : 'nowrap'}}>{n0 != null && <span style={{color:BK.muted}}>{i + n0}.</span>} <b style={{color:BK.green}}>{a}</b></span>{' '}</React.Fragment>)}</div>;
 function StaffTeacher() {
   const W = useMemo(() => staffWorkbook(), [LANG]);
   const pages = [];
@@ -34440,6 +34451,7 @@ const HP_WB = {
   chk: { c: [['L', 3], ['R', 4], ['L', 1], ['R', 2]], g: [['R', 3], ['L', 5], ['R', 1], ['L', 4]], where: [['G', 'R'], ['C', 'L'], ['C', 'R'], ['G', 'L']],
     mirror: [['C', 'L', 3], ['G', 'R', 2], ['C', 'R', 4], ['G', 'L', 5]], fill: [['1', '2', '?3', '4', '5'], ['5', '?4', '3', '2', '1'], ['2', '3', '?4', '5'], ['4', '3', '?2', '1']] },   // steps only: one right answer each
 };
+if (CKP) Object.assign(HP_WB.chk, { c: [['R', 5], ['L', 2], ['R', 3], ['L', 4]], where: [['C', 'R'], ['G', 'L'], ['G', 'R'], ['C', 'L']] });   // Build CX
 const hpwHand = (h) => (h === 'R' ? 'Right hand' : 'Left hand');
 const hpwOther = (h) => (h === 'R' ? 'L' : 'R');
 const hpwMirror = ([pos, h, f]) => hpLet(hpFingerD(pos, hpwOther(h), f));
@@ -47331,7 +47343,7 @@ const NN_SONG_L = ['E', 'D', 'C', '-', '|', 'E', 'D', 'C', '-', '|', 'C', 'C', '
 const NN_SONG_GAPS = [1, 7, 12, 15, 19, 21];
 const NN_CHK_SONG = ['E', 'D', '?C', '-', '|', 'E', '?D', 'C', '-'];
 // Phase 399: spelling words on the keys (the play page, the Workbook and the check-up's part E)
-const NN_CHK_WORDS = ['BAG', 'FACE'];
+const NN_CHK_WORDS = CKP ? ['BEAD', 'CAGE'] : ['BAG', 'FACE'];
 const NN_SPELL = ['BAG', 'CAFE', 'FACE', 'EGG'];
 const nnSpellDots = (w) => [...new Set(w.split('').map(l => NN_L7.indexOf(l)))];
 function NnSpellCell({ w, n, ex, kw = 140, kh = 46 }) {
@@ -47894,8 +47906,8 @@ function StaffLessonBook() { return <>{sfLbPages(false)}</>; }
 const sfChkData = () => withSeed('sf-chk405', () => ({
     ls: shuffle([30, 33, 36, 35]).map(d => ({ d })),
     ss: [[31, 32], [34, 32], [30, 32], [37, 36]].map(([a, b]) => ({ a, b })),   // Phase 417: item 7 E-G (was E-B, a 5th)
-    tr: shuffle([29, 30, 31, 32]),
-    ba: shuffle([25, 26, 27, 24]),
+    tr: shuffle(CKP ? [28, 29, 31, 32] : [29, 30, 31, 32]),
+    ba: shuffle(CKP ? [24, 26, 27, 28] : [25, 26, 27, 24]),
     mc: { treble: shuffle([{ d: 28 }, { d: 31 }, { d: 29 }]), bass: shuffle([{ d: 28 }, { d: 25 }, { d: 27 }]) },
   }));
 
@@ -48678,8 +48690,8 @@ function WsWorkbook({ startNo = 1, frames = true }) {
 
 const wsChkData = () => withSeed('ws-chk419', () => ({
   crown: shuffle([['treble', 34], ['bass', 24], ['treble', 31], ['bass', 19]]),
-  q: shuffle([30, 33, 36, 38]),
-  k: shuffle([18, 21, 25, 26]),
+  q: shuffle(CKP ? [32, 35, 31, 37] : [30, 33, 36, 38]),
+  k: shuffle(CKP ? [20, 23, 24, 19] : [18, 21, 25, 26]),
   fold: shuffle([32, 31, 35, 37]),
   lm: shuffle([['treble', 33], ['bass', 22], ['treble', 37], ['bass', 26]]),
 }));
@@ -48837,11 +48849,11 @@ function LbPage({ no, chId, kicker, title, teacher, qr, book, head, children }) 
   );
 }
 // One fixed A4 page. Head: book + chapter on the cornice; foot: the floor and the page number.
-function WbPage({ no, chId, children, bare, teacher }) {
+function WbPage({ no, chId, children, bare, teacher, head, left }) {
   return (
     <section className="bk-page" style={{position:'relative'}}>
       {!bare && <VicFloor no={no}/>}
-      {!bare && <VicHead left={teacher ? <b style={{color:BK.coral}}>Teacher copy</b> : t('Workbook', '워크북')} right={chId === 'front' ? t('Start here', '여기서 시작') : t('Chapter ', '') + bkChapterNo(chId) + t('', '장') + ' · ' + bkChapterName(chId)} mb={9}/>}
+      {!bare && <VicHead left={left || (teacher ? <b style={{color:BK.coral}}>Teacher copy</b> : t('Workbook', '워크북'))} right={head ? head : chId === 'front' ? t('Start here', '여기서 시작') : t('Chapter ', '') + bkChapterNo(chId) + t('', '장') + ' · ' + bkChapterName(chId)} mb={9}/>}
       <div style={{flex:1,minHeight:0,overflow:'hidden',display:'flex',flexDirection:'column'}} className="bk-body"><BkChapterCtx.Provider value={chId}>{children}</BkChapterCtx.Provider></div>
     </section>
   );
@@ -48983,7 +48995,15 @@ function WbTop({ step }) {
     </div>
   );
 }
+const CkpKeyCtx = React.createContext(null);   // Build CX: a checkpoint key collects one Teacher copy's check-up answers
 function TcBlock({ page, title, answers, watch, say, goBack }) {
+  const K = React.useContext(CkpKeyCtx);
+  if (K) {   // key mode: only the check-up block, only the parts the checkpoint uses, drawn in the key's own slot
+    if (!K.el || !/^(The check-up on paper|Check-up)/.test(title || '')) return null;
+    const kids = React.Children.toArray(answers && answers.props && answers.props.children !== undefined ? answers.props.children : answers)
+      .filter(c => c && c.props && c.props['data-sec'] != null && String(c.props['data-sec']).split(' · ').some(L => K.secs.includes(L)));
+    return ReactDOM.createPortal(<div className="ckp-key-ans">{kids}</div>, K.el);
+  }
   return (
     <div style={{...VIC_PANEL,boxShadow:'inset 0 0 0 3px #fff, inset 0 0 0 3.7px ' + BK.hair,border:'0.8px solid ' + BK.hair,padding:'10px 14px',marginBottom:12,breakInside:'avoid'}}>
       <div style={{display:'flex',alignItems:'baseline',gap:10,marginBottom:6}}>
@@ -50353,6 +50373,7 @@ const TN_CHK = {
   half: [['w4', 1], ['b1', -1], ['w2', 1], ['w3', -1]], whole: [['w1', 1], ['w5', -1], ['b0', 1], ['w2', -1]],
   names: ['b1', 'b4', 'b3'], read: [['treble', 36, '#'], ['treble', 32, 'b'], ['bass', 22, '#'], ['bass', 25, 'b']],
 };
+if (CKP) Object.assign(TN_CHK, { half: [['w1', -1], ['b3', 1], ['w5', 1], ['w6', -1]], names: ['b5', 'b0', 'b3'] });   // Build CX
 function TnPaperCheck() {
   const C = TN_CHK, cell = (n, props, under) => <BkCell key={n} n={n}><div style={{padding:'12px 2px 3px'}}><TnPKeys whites={7} w={26} h={90} slots {...props}/>{under}</div></BkCell>;
   const x4 = sfXs(4, 510, true);
@@ -51222,6 +51243,7 @@ const PL_CHK = {
   sounds: [['turtle', 'bird', 'bird', 'bird'], ['bird', 'bird', 'turtle', 'turtle'], ['bird', 'turtle', 'bird', 'bird'], ['turtle', 'bird', 'turtle', 'turtle']],
   which: [[[2, 3, 4, 3], 3], [[3, 2, 3, 2], 2], [[2, 3, 2, 3], 4], [[4, 3, 2, 3], 1]],
 };
+if (CKP) Object.assign(PL_CHK, { fill: [{ 1: 2, 6: 3 }, { 3: 4, 4: 1 }, { 0: 1, 7: 4 }, { 2: 3, 5: 2 }], sounds: [['bird', 'bird', 'bird', 'turtle'], ['turtle', 'turtle', 'bird', 'turtle'], ['bird', 'turtle', 'turtle', 'bird'], ['bird', 'bird', 'bird', 'bird']] });   // Build CX
 const plSteady = (g) => g.every(x => x === g[0]);
 const plFingerRow = (fs, size = 28, ans) => <PlRow n={4} gap={8} circ={(i) => plC('finger', fs[i], { size })} under={(i) => plCount(String(i + 1), BK.muted)}/>;
 
@@ -52158,6 +52180,7 @@ const NV_CHK = {
   plus: [[['p', 1], ['q', 1], ['p', 1], ['q', 1]], [['q', 1], ['p', 1], ['p', 1], ['q', 1]]],
   rests: [[['q', 1], ['r', 1], ['hr', 2]], [['wr', 4]]],
 };
+if (CKP) Object.assign(NV_CHK, { name: ['q', 'w', 'h', 'hd', 'q', 'h'], count: [[['h', 2], ['q', 1], ['q', 1]], [['hd', 3], ['q', 1]]] });   // Build CX
 // draw a line from each note to its rest; ex: the first line drawn
 function NvMatch({ notes, rests, ex }) {
   const G = 66, x0 = 40, x1 = 370, y = (i) => 2 + i * G;
@@ -53143,6 +53166,7 @@ const TS_CHK = {
   fill: [{ top: 4, bars: [['?hr', 'h']] }, { top: 3, bars: [['h', '?r']] }],
   tie: [{ top: 3, bars: [['q', 'q', 'q'], ['hd']], ties: [[3, 5]], ans: 4 }, { top: 2, bars: [['q', 'q'], ['h']], ties: [[2, 4]], ans: 3 }],
 };
+if (CKP) Object.assign(TS_CHK, { bl: { top: 3, bars: [['q', 'q', 'q'], ['h', 'q'], ['hd']] }, sig: [{ top: 3, bars: [['h', 'q']] }, { top: 4, bars: [['q', 'q', 'h']] }] });   // Build CX
 // the beats at which each bar starts (for the answers)
 const tsBarStarts = (r) => { let b = 0; return r.bars.slice(0, -1).map(bar => (b += bar.reduce((a, k) => a + NV_ROOM[k.replace('?', '')].b, 0))); };
 const tsBeatsOf = (r) => r.bars.reduce((a, bar) => a + bar.reduce((x, k) => x + NV_ROOM[k.replace('?', '')].b, 0), 0);
@@ -54042,6 +54066,7 @@ const SSK_CHK = {
   names: [{ clef: 'treble', items: sskW([33, 36, 34, 32]) }, { clef: 'bass', items: sskW([22, 19, 21, 18]) }],
   read: { clef: 'treble', items: [['ts', 3], ...sskQ([32, 34, 33]), ['|'], ...sskQ([33, 35, 34]), ['|'], ['hd', 3, 32], ['||']] },
 };
+if (CKP) Object.assign(SSK_CHK, { ss: [['treble', 33, 31], ['bass', 21, 22], ['treble', 30, 30], ['bass', 24, 26]], fing: [{ clef: 'treble', pos: 'C', hand: 'rh', items: sskW([29, 31, 28, 32]) }, { clef: 'bass', pos: 'C', hand: 'lh', items: sskW([21, 22, 24, 25]) }] });   // Build CX
 const sskFingers = (r) => sskNotesOf(r.items).map(x => sskFingerOf(r.pos, r.hand, x.d));
 const sskNames = (r) => sskNotesOf(r.items).map(x => dName(x.d));
 // a two-note cell (step, skip or the same)
@@ -54903,6 +54928,7 @@ const SDY_CHK = {
   drawHair: { items: [['ts', 4], ...sdyQ([28, 29, 30, 31]), ['|'], ['w', 4, 32], ['||']], k: { dyn: [[0, 'p'], [4, 'f']], hairBox: [[0, 3]] } },
   dots: [['ts', 2], ...sdyQ([30, 32]), ['sp', 10], ['||']],
 };
+if (CKP) Object.assign(SDY_CHK, { order: ['mf', 'p', 'f', 'pp'], touch: [['legato', [28, 29, 30, 31]], ['staccato', [31, 30, 29, 30]]] });   // Build CX
 const SDY_MEANS = { p: 'soft', f: 'loud', pp: 'very soft', mf: 'medium loud' };
 const sdyRank = (s) => SDY_SIX.indexOf(s);
 const sdyOrderOf = (list) => list.map(s => 1 + list.slice().sort((a, b) => sdyRank(a) - sdyRank(b)).indexOf(s));
@@ -76645,11 +76671,110 @@ function SpreadBook({ id }) {
   return <>{out}</>;
 }
 
+
+// ─── Build CX: the floor checkpoints on paper ───
+// Two parts of each room's check-up on paper (the Workbook's last page), chapter by chapter, with fresh items; the
+// teacher's key takes the same parts' answers from each Teacher copy. Not a mock exam: no score, no pass mark; a part
+// with any wrong answer means that room is visited again (the last page has the list to tick).
+const CKP_ROOMS = {
+  'posture-hands': { secs: ['A', 'E'], back: { A: [1, 2], E: [5, 6] }, Paper: () => <PhPaperCheck/> },
+  'first-steps': { secs: ['C', 'D'], back: { C: [2, 3], D: [3, 4] }, Paper: () => <FsPaperCheck/> },
+  pulse: { secs: ['B', 'D'], back: { B: [2, 3], D: [4, 5] }, Paper: () => <PlPaperCheck/> },
+  'note-names': { secs: ['A', 'E'], back: { A: ['1 and 4', '2 and 5'], E: [6, 7] }, Paper: () => <NnPaperCheck/> },
+  'hand-positions': { secs: ['A', 'C'], back: { A: [1, 2], C: [3, 4] }, Paper: () => <HpPaperCheck/> },
+  'ear-prep': { secs: ['A', 'B'], back: { A: [1, 2], B: [3, 4] }, Paper: () => <EpCkpPaper/>, key: () => <EpCkpKey/> },
+  'note-values': { secs: ['A', 'C'], back: { A: ['1 to 3', '2 to 4'], C: ['2 and 3', '3 and 4'] }, Paper: () => <NvPaperCheck/> },
+  dynamics: { secs: ['A', 'D'], back: { A: [2, 3], D: [4, 5] }, Paper: () => <SdyPaperCheck/> },
+  staff: { secs: ['C', 'D'], back: { C: [3, 4], D: [4, 5] }, Paper: () => <SfPaperCheck/> },
+  'reading-steps': { secs: ['B', 'C'], back: { B: [2, 3], C: [3, 4] }, Paper: () => <SskPaperCheck/> },
+  'whole-staff': { secs: ['B', 'C'], back: { B: [2, 3], C: [3, 4] }, Paper: () => <WsPaperCheck/> },
+  'time-signatures': { secs: ['A', 'B'], back: { A: [1, 2], B: [2, 3] }, Paper: () => <TsPaperCheck/> },
+  tones: { secs: ['A', 'D'], back: { A: [1, 2], D: [4, 5] }, Paper: () => <TnPaperCheck/> },
+};
+// which rooms share a printed page (measured, so no page overflows)
+const CKP_PAGES = { '0a': [['posture-hands', 'first-steps'], ['pulse', 'note-names'], ['hand-positions', 'ear-prep'], ['note-values']], '0b': [['dynamics', 'staff'], ['reading-steps', 'whole-staff'], ['time-signatures', 'tones']] };
+const ckpFloor = (fk) => checkFloors().find(f => f.key === fk) || null;
+const ckpTitle = (f) => floorName(f.k) + ' checkpoint' + (f.part ? ' ' + f.part : '');
+const ckpChapters = (ids) => 'Chapters ' + bkChapterNo(ids[0]) + ' to ' + bkChapterNo(ids[ids.length - 1]);
+// Ear Prep has no Workbook: two listening parts, the teacher plays
+function EpCkpPaper() {
+  const opt = (k, ic, w) => <div key={k} style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3}}>{ic}<span style={{fontSize:11.5,fontWeight:800,color:BK.ink}}>{w}</span></div>;
+  return <div className="lb-paper" style={{display:'flex',flexDirection:'column',gap:4}}>
+    {bkSec('A', 'Your teacher plays one note. Circle the turtle (low), middle C or the bird (high).')}
+    <BkGrid cols={2} gap="6px 10px">{[1, 2, 3, 4].map(n => <BkCell key={n} n={n}><div style={{display:'flex',justifyContent:'center',alignItems:'flex-end',gap:22,padding:'14px 4px 4px'}}>{[opt('t', turtleIcon(36), 'low'), opt('m', lsMidC(32), 'middle C'), opt('b', birdIcon(36), 'high')]}</div></BkCell>)}</BkGrid>
+    {bkSec('B', 'Your teacher plays two short tunes. Circle same or different.')}
+    <BkGrid cols={4} gap="6px 8px">{[5, 6, 7, 8].map(n => <BkCell key={n} n={n}><div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:9,padding:'16px 4px 6px',fontSize:13.5,fontWeight:800,color:BK.ink}}><span>same</span><span>different</span></div></BkCell>)}</BkGrid>
+  </div>;
+}
+function EpCkpKey() {
+  const line = (n0) => [0, 1, 2, 3].map(i => <span key={i} style={{marginRight:12,whiteSpace:'nowrap'}}><i style={{color:BK.muted}}>{n0 + i}</i> <span style={{display:'inline-block',width:58,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span></span>);
+  return <div className="ckp-key-ans" style={{fontSize:12,color:BK.ink,lineHeight:1.65}}>
+    <div data-sec="A"><b style={{color:BK.muted,fontSize:10.5,letterSpacing:'0.06em'}}>A</b>  Your choice, as the app does: low, two octaves below middle C; middle, near middle C; high, two octaves above. Write what you played: {line(1)}</div>
+    <div data-sec="B"><b style={{color:BK.muted,fontSize:10.5,letterSpacing:'0.06em'}}>B</b>  Two short tunes of four notes; for different, change one note. Write same or different: {line(5)}</div>
+  </div>;
+}
+function CkpRoomHead({ id }) {
+  return <div style={{display:'flex',alignItems:'baseline',gap:10,borderTop:'2.2px solid ' + BK.ink,paddingTop:5,marginTop:4}}>
+    <span style={{fontSize:10,fontWeight:900,color:'#fff',background:BK.ink,padding:'2px 7px',letterSpacing:'0.08em'}}>{bkChapterNo(id)}</span>
+    <span style={{fontFamily:LB_SERIF,fontSize:18,fontWeight:800,color:BK.ink}}>{bkChapterName(id)}</span></div>;
+}
+// one room's two parts: its check-up page drawn whole, then everything but the two parts hidden
+function CkpRoomPaper({ id }) {
+  const R = CKP_ROOMS[id], box = useRef(null);
+  React.useLayoutEffect(() => {
+    const el = box.current && box.current.querySelector('.lb-paper'); if (!el) return;
+    let cur = null;
+    [...el.children].forEach(c => { const sec = c.getAttribute('data-sec'); if (sec != null) cur = sec;
+      const on = cur != null && cur.split(' · ').some(L => R.secs.includes(L)); if (!on) c.style.display = 'none'; });   // a shown part keeps its own display (flex, grid)
+    el.style.flex = '0 0 auto';
+  });
+  return <div className="ckp-room" data-ckp-room={id} style={{display:'flex',flexDirection:'column',gap:2}}><CkpRoomHead id={id}/><div ref={box}>{R.Paper()}</div></div>;
+}
+function CkpPaperBook({ fk }) {
+  const f = ckpFloor(fk), groups = (CKP_PAGES[fk] || []).map(g => g.filter(id => CKP_ROOMS[id]));
+  if (!f || !groups.length) return <p style={{textAlign:'center',fontSize:16,margin:'40px 16px'}}>No checkpoint on paper for “{fk}” yet.</p>;
+  const ids = groups.flat(), last = groups.length - 1;
+  return <>{groups.map((g, gi) => <WbPage key={gi} no={gi + 1} chId={g[0]} left="Checkpoint" head={ckpTitle(f) + ' · ' + ckpChapters(ids)}>
+    {gi === 0 && <div style={{display:'flex',alignItems:'flex-end',justifyContent:'space-between',gap:12,flexWrap:'wrap',margin:'0 0 6px'}}>
+      <div><div style={{fontFamily:LB_SERIF,fontSize:30,fontWeight:900,color:BK.ink,lineHeight:1.05}}>{ckpTitle(f)}</div>
+        <div style={{fontSize:13.5,color:BK.ink,marginTop:3}}>Show what you remember! {ckpChapters(ids)}, two parts from each. No piano, no help, about 15 minutes.</div></div>
+      <span style={{fontSize:12,color:BK.muted}}>Name <span style={{display:'inline-block',width:120,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span>  Date <span style={{display:'inline-block',width:60,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span></span></div>}
+    <div style={{display:'flex',flexDirection:'column',gap:10}}>{g.map(id => <CkpRoomPaper key={id} id={id}/>)}</div>
+    {gi === last && <div className="ckp-end" style={{display:'flex',gap:16,alignItems:'stretch',marginTop:'auto',paddingTop:10}}>
+      <div style={{flex:1,...VIC_PANEL,padding:'8px 12px'}}><div style={{fontSize:12.5,fontWeight:900,color:BK.ink,marginBottom:4}}>Rooms to visit again (your teacher ticks)</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'3px 14px'}}>{ids.map(id => <span key={id} style={{display:'flex',alignItems:'center',gap:7,fontSize:12.5,color:BK.ink}}><span style={{flex:'0 0 auto',width:14,height:14,border:'1.4px solid ' + BK.green,borderRadius:2}}/>{bkChapterNo(id) + ' ' + bkChapterName(id)}</span>)}</div></div>
+      <div style={{flex:'0 0 auto',width:118,display:'flex',alignItems:'center',justifyContent:'center'}}><div style={{width:104,height:104,borderRadius:52,border:'2px dashed ' + BK.coral,display:'flex',alignItems:'center',justifyContent:'center',textAlign:'center',fontSize:12,fontWeight:900,color:BK.coral,lineHeight:1.3,letterSpacing:'0.04em'}}>CHECKPOINT<br/>DONE!</div></div>
+    </div>}
+  </WbPage>)}</>;
+}
+// one room's answers: its Teacher copy drawn hidden; its check-up block sends the two parts' answers here
+function CkpRoomKey({ id }) {
+  const R = CKP_ROOMS[id], [el, setEl] = useState(null), Teacher = TEACHER_COPIES[id];
+  const back = Object.entries(R.back).map(([L, [st, pg]]) => L + ' → step ' + st + ' (Lesson Book page ' + pg + ')').join(' · ');
+  return <div className="ckp-room-key" data-ckp-room={id} style={{breakInside:'avoid'}}>
+    <CkpRoomHead id={id}/>
+    {R.key ? R.key() : <div ref={setEl} className="ckp-key-slot" style={{marginTop:3}}/>}
+    {!R.key && el && Teacher && <CkpKeyCtx.Provider value={{ el, secs: R.secs }}><div style={{display:'none'}}><Teacher/></div></CkpKeyCtx.Provider>}
+    <div style={{fontSize:11.5,color:BK.ink,marginTop:2}}><b style={{color:BK.coral}}>Any wrong: visit again.</b> {back}</div>
+  </div>;
+}
+function CkpKeyBook({ fk }) {
+  const f = ckpFloor(fk), ids = (CKP_PAGES[fk] || []).flat().filter(id => CKP_ROOMS[id]);
+  if (!f || !ids.length) return <p style={{textAlign:'center',fontSize:16,margin:'40px 16px'}}>No checkpoint key for “{fk}” yet.</p>;
+  const css = '.ckp-key-ans [data-sec] { margin-bottom: 1px }';
+  return <WbPage no={1} chId={ids[0]} teacher head={ckpTitle(f) + ' · key'}>
+    <style>{css}</style>
+    <div style={{fontFamily:LB_SERIF,fontSize:26,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Key · {ckpTitle(f)}</div>
+    <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 8px',lineHeight:1.5}}>{ckpChapters(ids)}, two parts of each room's check-up on paper, with new items (the Workbook's own check-up page is never repeated). Not a mock exam: no score, no pass mark. A part with any wrong answer means that room is visited again: tick it on the student's last page, and go back to the step shown.</div>
+    <div style={{display:'flex',flexDirection:'column',gap:8}}>{ids.map(id => <CkpRoomKey key={id} id={id}/>)}</div>
+  </WbPage>;
+}
+
 function BookRoot({ kind, ch }) {
   BOOK = true;
   try { document.documentElement.lang = LANG; } catch (e) {} // lets the browser pick a Korean font for Hangul
   const ids = ch === 'all' ? (kind === 'cutouts' ? CUTOUT_LIST.map(x => x.id) : STAGES.flatMap(s => s.ids)) : [ch];
-  const fixed = kind === 'concept' || kind === 'spread' || kind === 'work' || kind === 'teacher' || kind === 'cutouts' || (kind === 'lesson' && ids.every(id => LESSON_BOOKS[id]));
+  const fixed = kind === 'check' || kind === 'checkkey' || kind === 'concept' || kind === 'spread' || kind === 'work' || kind === 'teacher' || kind === 'cutouts' || (kind === 'lesson' && ids.every(id => LESSON_BOOKS[id]));
   const css = fixed
     ? `@page { size: A4; margin: 0 } html, body { background: #e9e4d8 } .bk-page { width: 210mm; height: 297mm; box-sizing: border-box; padding: 13mm 15mm 9mm; background: #fff; margin: 0 auto 8mm; display: flex; flex-direction: column; break-after: page; overflow: hidden; } .bk-body > * { flex-shrink: 0 }
        @media print { html, body { background: #fff } .bk-page { margin: 0 } .no-print { display: none !important } }` + LB_CSS
@@ -76673,7 +76798,8 @@ function BookRoot({ kind, ch }) {
         <button onClick={() => window.print()} style={{padding:'10px 22px',fontSize:15,fontWeight:800,background:BK.ink,color:'#fff',border:'none',borderRadius:8,cursor:'pointer'}}><PrintIcon/>{t('Print / Save as PDF', '인쇄 / PDF로 저장')}</button>
       </div>
       {fixed
-        ? kind === 'spread' ? ids.filter(id => LESSON_BOOKS[id] && WORKBOOKS[id]).map(id => <SpreadBook key={id} id={id}/>)
+        ? kind === 'check' ? <CkpPaperBook fk={(CKP && CKP.key) || '0a'}/> : kind === 'checkkey' ? <CkpKeyBook fk={(CKP && CKP.key) || '0a'}/>
+        : kind === 'spread' ? ids.filter(id => LESSON_BOOKS[id] && WORKBOOKS[id]).map(id => <SpreadBook key={id} id={id}/>)
         : ids.map(id => { const Wb = reg[id]; return Wb ? <Wb key={id}/> : kind === 'concept' ? <p key={id} style={{textAlign:'center',fontSize:16,margin:'40px 16px'}}>{t('No concept book called “' + id + '”.', '“' + id + '”라는 개념책이 없어요.')}</p> : null; })
         : ids.map(id => LESSON_BOOKS[id] ? React.createElement(LESSON_BOOKS[id], { key: id }) : <LessonFix key={id}><LessonBookChapter id={id}/></LessonFix>)}
     </div>
@@ -76685,7 +76811,7 @@ function Root() {
   try { printParams = new URLSearchParams(location.search); } catch (e) {}
   const lp = printParams && printParams.get('lang');
   if (lp === 'ko' || lp === 'en') LANG = lp; // explicit language from a link (e.g. the QR codes in the Korean books)
-  if (printParams && (printParams.get('book') === 'lesson' || printParams.get('book') === 'work' || printParams.get('book') === 'teacher' || printParams.get('book') === 'cutouts' || printParams.get('book') === 'spread' || printParams.get('book') === 'concept')) {
+  if (printParams && (printParams.get('book') === 'lesson' || printParams.get('book') === 'work' || printParams.get('book') === 'teacher' || printParams.get('book') === 'cutouts' || printParams.get('book') === 'spread' || printParams.get('book') === 'concept' || printParams.get('book') === 'check' || printParams.get('book') === 'checkkey')) {
     return <BookRoot kind={printParams.get('book')} ch={printParams.get('ch') || 'staff'}/>;
   }
   if (printParams && printParams.get('print') === '1') {
