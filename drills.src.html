@@ -21909,8 +21909,7 @@ function BooksShelf() {
 }
 
 function ToolboxTab({ onOpenTool, onOpenKit, onStudents, onChapter }) {
-  const [booksOn] = useState(booksUnlocked);
-  const [sec, setSec] = useState(() => { try { return booksUnlocked() && new URLSearchParams(window.location.search).get('sec') === 'books' ? 'books' : 'tools'; } catch (e) { return 'tools'; } });
+  const sec = 'tools';   // Build DD: the Books are their own tab now
   const [kits, setKits] = useState(loadKits);
   const [who, setWho0] = useState(() => loadWho(loadKits()));
   const [copied, setCopied] = useState(false);
@@ -21928,13 +21927,7 @@ function ToolboxTab({ onOpenTool, onOpenKit, onStudents, onChapter }) {
   const chip = (on, label, onClick, key) => <button key={key || label} className={'chip' + (on ? ' active' : '')} style={{padding:'2px 9px',fontSize:12}} onClick={onClick}>{label}</button>;
   return (
     <div className="fade-up">
-      <PageIntro title={t('Toolbox', '도구함')} text={sec === 'books' ? t('The printed books (Lesson Book, Workbook, Teacher copy for every chapter) and paper cut-outs.', '인쇄용 책(챕터마다 레슨북, 워크북, 교사용)과 오려 쓰는 종이 교구.') : t('Search for one activity in the middle of a lesson, or browse by area and concept. Press ☆ to put an activity in a kit you can send as a link.', '레슨 중에 쓸 활동 하나를 검색하거나 영역과 개념별로 찾아보세요. ☆ 를 누르면 링크로 보낼 수 있는 키트에 담겨요.')}/>
-      {booksOn && <div style={{display:'flex',gap:6,margin:'-6px 0 12px'}}>
-        {[['tools', t('Activities', '활동')], ['books', t('Books', '책')]].map(([k, l]) => (
-          <button key={k} className={'chip' + (sec === k ? ' active' : '')} style={{padding:'6px 16px',fontSize:14,fontWeight:800}} onClick={() => setSec(k)}>{l}</button>
-        ))}
-      </div>}
-      {booksOn && sec === 'books' && <BooksShelf/>}
+      <PageIntro title={t('Toolbox', '도구함')} text={t('Search for one activity in the middle of a lesson, or browse by area and concept. Press ☆ to put an activity in a kit you can send as a link.', '레슨 중에 쓸 활동 하나를 검색하거나 영역과 개념별로 찾아보세요. ☆ 를 누르면 링크로 보낼 수 있는 키트에 담겨요.')}/>
       {sec === 'tools' && <div className="card" style={{marginBottom:10,padding:'10px 12px'}}>
         <div style={{display:'flex',gap:4,flexWrap:'wrap',alignItems:'center'}}>
           <span style={{fontSize:12,fontWeight:900,color:'var(--muted)',marginRight:2}}>{t('KIT','키트')}</span>
@@ -22825,7 +22818,7 @@ function readUrlState(studentMode) {
     kit: p.get('kit') ? p.get('kit').split(',').filter(id => TOOLS.find(t => t.id === id)) : null,
     kn: p.get('kn') || '',
     ha: TOOL_AREAS.some(a => a.id === p.get('area')) ? p.get('area') : null, hc: HOME_OLD[p.get('concept')] ? (window.__ksOpen = HOME_OLD[p.get('concept')][1], HOME_OLD[p.get('concept')][0]) : homeCatById(p.get('concept')) ? p.get('concept') : null, hs: p.get('room') === 'try' ? 'try' : null, ret: p.get('ret') === 'home' ? 'home' : null, rc: DRILLS.find(d => d.id === p.get('from')) ? p.get('from') : null,
-    view: p.get('kit') ? 'kit' : p.get('ret') === 'home' && p.get('drill') ? 'home' : p.get('view') === 'chapters' ? 'chapters' : p.get('view') === 'toolbox' ? 'toolbox' : p.get('view') === 'students' ? 'students' : p.get('view') === 'home' ? 'home' : p.get('tool') ? (PRACTICE_IDS.includes(p.get('tool')) && p.get('view') === 'practice' ? 'practice' : 'tools') : ['tools', 'practice'].includes(p.get('view')) ? p.get('view') : todayView ? 'today' : 'path',
+    view: p.get('kit') ? 'kit' : p.get('ret') === 'home' && p.get('drill') ? 'home' : p.get('view') === 'chapters' ? 'chapters' : p.get('view') === 'books' || (p.get('view') === 'toolbox' && p.get('sec') === 'books') ? 'books' : p.get('view') === 'toolbox' ? 'toolbox' : p.get('view') === 'students' ? 'students' : p.get('view') === 'home' ? 'home' : p.get('tool') ? (PRACTICE_IDS.includes(p.get('tool')) && p.get('view') === 'practice' ? 'practice' : 'tools') : ['tools', 'practice'].includes(p.get('view')) ? p.get('view') : todayView ? 'today' : 'path',
   };
 }
 
@@ -24286,7 +24279,7 @@ function App() {
   UI_TEACHER = T;
   const HM = T || (showToday && !st.lock && planHome());   // Build CS (call 2): the Home is the teacher's, and an adult's when the teacher switched it on
   const active = DRILLS.find(d => d.id === st.drill) || DRILLS[0];
-  const inChapter = (st.view === 'path' || st.view === 'chapters' || st.view === 'toolbox' || (HM && st.view === 'home')) && !!st.drill;
+  const inChapter = (st.view === 'path' || st.view === 'chapters' || st.view === 'toolbox' || st.view === 'books' || (HM && st.view === 'home')) && !!st.drill;
   const concept = active.concept || null;
   const level = concept ? ((concept.levels.find(l => l.n === st.level) || concept.levels[0]).n) : st.level;
 
@@ -24296,6 +24289,7 @@ function App() {
       if (st.view === 'kit' && st.kit) { p.set('kit', st.kit.join(',')); if (st.kn) p.set('kn', st.kn); if (st.tool) p.set('tool', st.tool); }
       else if (st.view === 'tools' || st.view === 'practice') { if (st.tool) p.set('tool', st.tool); if (st.view === 'practice' || !st.tool) p.set('view', st.view); if (st.ret === 'home') { p.set('ret', 'home'); if (st.ha) p.set('area', st.ha); if (st.hc) p.set('concept', st.hc); if (st.hs) p.set('room', st.hs); } }
       else if (st.view === 'students') p.set('view', 'students');
+      else if (st.view === 'books' && !st.drill) p.set('view', 'books');   // Build DD
       else if (st.view === 'today') p.set('view', 'today');
       else if (st.view === 'home' && !st.drill) { p.set('view', 'home'); if (st.ha) p.set('area', st.ha); if (st.hc) p.set('concept', st.hc); if (st.hs) p.set('room', st.hs); }
       else if (!st.drill) p.set('view', (st.view === 'chapters' || st.view === 'toolbox') ? st.view : 'path');
@@ -24331,7 +24325,7 @@ function App() {
     if (st.rc) return st.rc; if (st.lock) return null; const tl = TOOLS.find(x => x.id === st.tool); return tl && DRILLS.find(d => d.id === tl.ch) ? tl.ch : null; })();
   const homeBack = '← ' + (st.hs === 'try' ? t('Try', '해 보기') : ((homeCatById(st.hc) || (st.ha && homeCats(st.ha).length === 1 ? homeCats(st.ha)[0] : null) || {}).name || t('Home', '홈')));
   useEffect(() => { if (st.view === 'home' && !HM) setSt(prev => ({ ...prev, view: 'path', drill: null, ret: null })); }, [st.view, HM]);
-  function jumpToChapter(id) { setFindOpen(false); update({ view: (T && (st.view === 'toolbox' || st.view === 'chapters')) ? st.view : 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }
+  function jumpToChapter(id) { setFindOpen(false); update({ view: (T && (st.view === 'toolbox' || st.view === 'chapters' || st.view === 'books')) ? st.view : 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }
 
   return (
     <div style={{minHeight:'100vh',background:'var(--bg)'}}>
@@ -24363,7 +24357,7 @@ function App() {
         {preview && <div style={{background:'#26296b',color:'#fff',borderRadius:10,padding:'8px 12px',marginBottom:12,fontSize:13.5,display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}><span>{t('You’re seeing what a student sees.', '학생에게 보이는 화면이에요.')}</span><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setPreview(false)}>{t('Back to teacher view', '교사 화면으로')}</button></div>}
         {!st.lock && !(showToday && !T) && (
           <div style={{display:'flex',gap:6,borderBottom:'1.5px solid var(--navy-line)',marginBottom:16}}>
-            {(T ? [['home', t('Home', '홈')], ['path', t('Chapters', '챕터')], ['toolbox', t('Toolbox', '도구함')], ['practice', t('Practice', '연습')]] : (showToday ? [['today', t('Today', '오늘')], ['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]] : [['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]])).map(([v, l]) => (
+            {(T ? [['home', t('Home', '홈')], ['path', t('Chapters', '챕터')], ...(booksUnlocked() ? [['books', t('Books', '책')]] : []), ['toolbox', t('Toolbox', '도구함')], ['practice', t('Practice', '연습')]] : (showToday ? [['today', t('Today', '오늘')], ['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]] : [['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]])).map(([v, l]) => (
               <button key={v} onClick={() => { update({ view: v, tool: null, kit: null, from: null, ret: null, drill: (v === 'practice' || v === 'students') ? st.drill : null, ...(v === 'home' ? { ha: null, hc: null, hs: null } : {}) }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderBottom:'3px solid ' + ((st.view === v || (v === 'path' && st.view === 'chapters') || (T && v === 'toolbox' && st.view === 'tools' && st.ret === 'toolbox') || (T && v === 'home' && st.view === 'tools' && st.ret === 'home')) ? 'var(--coral)' : 'transparent'),marginBottom:-1.5,background:'transparent',padding:'10px 0',fontFamily:"'Playfair Display', Georgia, serif",fontSize:T ? 14.5 : 18,fontWeight:800,cursor:'pointer',
                 color:(st.view === v || (v === 'path' && st.view === 'chapters') || (T && v === 'toolbox' && st.view === 'tools' && st.ret === 'toolbox') || (T && v === 'home' && st.view === 'tools' && st.ret === 'home')) ? 'var(--navy)' : 'var(--muted)'}}>{l}</button>
             ))}
@@ -24383,7 +24377,9 @@ function App() {
         ) : st.view === 'home' && HM && !inChapter && !st.lock ? (
           <>{!st.ha && !st.hc && !st.hs && todayBack}<ConceptHome st={st} update={update}/></>
         ) : !inChapter && !st.lock ? (
-          T && st.view === 'toolbox'
+          T && st.view === 'books'
+            ? <div className="fade-up"><PageIntro title={t('Books', '책')} text={t('The printed books (Lesson Book, Workbook, Teacher copy for every chapter), the checkpoints on paper and the paper cut-outs.', '인쇄용 책(챕터마다 레슨북, 워크북, 교사용), 종이 중간점검, 오려 쓰는 종이 교구.')}/><BooksShelf/></div>
+          : T && st.view === 'toolbox'
             ? <ToolboxTab onOpenTool={(id) => { update({ view: 'tools', tool: id, ret: 'toolbox' }); try { window.scrollTo(0, 0); } catch (e) {} }}
                 onOpenKit={(k) => { update({ view: 'kit', kit: k.tools, kn: k.name, tool: null }); try { window.scrollTo(0, 0); } catch (e) {} }}
                 onStudents={() => { update({ view: 'students' }); try { window.scrollTo(0, 0); } catch (e) {} }}
@@ -37710,6 +37706,7 @@ function l2LbPages(scr = false, g = 2) {   // Build CC: Grade 2 and Grade 3 are 
       <LbSay>{LANG === 'ko' ? <>두 음이 <b>함께</b> 울려요. 선생님이 묻는 음을 흥얼거려요: <b>높은 음</b>(새 쪽)이나 <b>낮은 음</b>(거북이 쪽). 그다음 건반에서 찾아요.</> : <>Two notes sound <b>together</b>. Hum the one your teacher asks for: <b>the higher</b> (the bird's) or <b>the lower</b> (the turtle's). Then find it on the keys.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [<>선생님이 두 음을 함께 두 번 쳐요. 높은 음부터 흥얼거려 봐요.</>, <>이번엔 낮은 음. 어려우면 선생님이 두 음을 하나씩 쳐 줘요.</>, <>흥얼거린 음을 건반에서 찾아요.</>]
         : [<>Your teacher plays two notes together, twice. Hum the higher one first.</>, <>Now the lower one. If it is hard, your teacher plays them one at a time.</>, <>Find the note you hummed on the keys.</>]}/>
+      <LbChallenge>{t('Your teacher plays two notes together: hum the one they ask for, the bird\'s or the turtle\'s.', '선생님이 두 음을 함께 치면 묻는 음을 흥얼거려요: 새 쪽이나 거북이 쪽.')}</LbChallenge>
       <LbRemember>{t('Two at once: pick one out and hum it.', '함께 울리는 두 음: 하나를 골라 흥얼거려요.')}</LbRemember>
     </LbPage>;
     if (x === 'any') return <LbPage key={no} no={no} chId={ch} kicker={kick} title={NAME.any}
@@ -37718,6 +37715,7 @@ function l2LbPages(scr = false, g = 2) {   // Build CC: Grade 2 and Grade 3 are 
       <LbSay>{LANG === 'ko' ? <>이제 <b>어떤 두 음이든</b>. 가까운 두 음은 더 어려워요. 먼저 두 음을 듣고, 묻는 음 하나만 마음속으로 따라가요.</> : <>Now <b>any two notes</b>. Close ones are harder. Hear both, then follow just the one you are asked for.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [<>선생님이 두 음을 함께 두 번 쳐요. 높은 음, 그다음 낮은 음을 흥얼거려요.</>, <>가까운 두 음(2도)도 해 봐요.</>, <>흥얼거린 음을 건반에서 찾아요.</>]
         : [<>Your teacher plays two notes together, twice. Hum the higher, then the lower.</>, <>Try two close ones (a 2nd) too.</>, <>Find the note you hummed on the keys.</>]}/>
+      <LbChallenge>{t('Your teacher plays any two notes together, close ones too: hum the one they ask for.', '선생님이 어떤 두 음이든 함께 쳐요, 가까운 음도: 묻는 음을 흥얼거려요.')}</LbChallenge>
       <LbRemember>{t('Close or far: follow just one.', '가깝든 멀든: 하나만 따라가요.')}</LbRemember>
     </LbPage>;
     if (x === 'deg') return <LbPage key={no} no={no} chId={ch} kicker={kick} title={NAME.deg}
@@ -37726,6 +37724,7 @@ function l2LbPages(scr = false, g = 2) {   // Build CC: Grade 2 and Grade 3 are 
       <LbSay>{LANG === 'ko' ? <>먼저 <b>으뜸음(1)</b>, 그다음 다른 음. 1에서 <b>1 2 3 4 5</b>로 올라가며 불러요. 그 음을 만나는 숫자가 이름이에요: <b>2도, 3도, 4도, 5도</b>.</> : <>First <b>the keynote (1)</b>, then another note. Sing up from 1, <b>1 2 3 4 5</b>. The number where you meet it is its name: <b>the 2nd, 3rd, 4th or 5th</b>.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [<>선생님이 으뜸음과 다른 음을 두 번 쳐요. 그 음을 불러요.</>, <>으뜸음에서 1 2 3 4 5로 올라가며 불러서 숫자를 찾아요.</>, <>이름을 말해요: "3도", "5도".</>]
         : [<>Your teacher plays the keynote and another note, twice. Sing the note.</>, <>Sing up from the keynote, 1 2 3 4 5, to find its number.</>, <>Say its name: "the 3rd", "the 5th".</>]}/>
+      <LbChallenge>{t('Your teacher plays the keynote and another note: sing up from home and name it, 2nd to 5th.', '선생님이 으뜸음과 다른 음을 치면 집에서부터 올라가며 불러 이름을 말해요: 2도부터 5도까지.')}</LbChallenge>
       <LbRemember>{t('Sing up from home until you meet it.', '집에서부터 올라가며, 만날 때까지 불러요.')}</LbRemember>
     </LbPage>;
     if (x === 'metre') return <LbPage key={no} no={no} chId={ch} kicker={kick} title={NAME.metre}
@@ -37734,6 +37733,7 @@ function l2LbPages(scr = false, g = 2) {   // Build CC: Grade 2 and Grade 3 are 
       <LbSay>{LANG === 'ko' ? <>센 박(1)이 몇 박마다 오는지 들어요. <b>쿵-짝</b>이면 한 마디에 <b>두 박</b>, <b>쿵-짝-짝</b>이면 <b>세 박</b>.</> : <>Listen for how often the strong beat (1) comes. <b>Oom-pah</b>: <b>two</b> beats in a bar. <b>Oom-pah-pah</b>: <b>three</b>.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [<>선생님이 반주를 쳐요. 낮은 음마다 1부터 세어요.</>, <>두 박이면 1에서 손뼉, 2에서 무릎. 세 박이면 손뼉, 무릎, 무릎.</>, <>반주 없는 리듬으로도 해 봐요.</>]
         : [<>Your teacher plays an accompaniment. Count from 1 at each low note.</>, <>In two: clap on 1, pat your knees on 2. In three: clap, pat, pat.</>, <>Now try it with a rhythm on its own.</>]}/>
+      <LbChallenge>{t('Your teacher plays an accompaniment: say "two!" or "three!" before the second bar ends.', '선생님이 반주를 치면 둘째 마디가 끝나기 전에 "두 박!" 또는 "세 박!"')}</LbChallenge>
       <LbRemember>{t('Oom-pah: two. Oom-pah-pah: three.', '쿵-짝: 두 박. 쿵-짝-짝: 세 박.')}</LbRemember>
     </LbPage>;
     if (x === 'clap') return <LbPage key={no} no={no} chId={ch} kicker={kick} title={NAME.clap}
@@ -37743,6 +37743,7 @@ function l2LbPages(scr = false, g = 2) {   // Build CC: Grade 2 and Grade 3 are 
       <LbSay>{LANG === 'ko' ? <>리듬을 <b>두 번</b> 들어요. 같은 빠르기로 똑같이 쳐요{g === 3 ? <>, 그리고 <b>두 박인지 세 박인지</b> 말해요</> : null}. <b>점4분음표와 8분음표</b>는 길게, 짧게.</> : <>Hear it <b>twice</b>. Clap it back at the same speed{g === 3 ? <>, then say <b>two or three</b></> : null}. <b>The dotted crotchet and quaver</b>: long, short.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [<>선생님이 네 마디를 두 번 쳐요. 듣기만 하며 속으로 세요.</>, <>같은 빠르기로 손뼉 쳐요.</>, g === 3 ? <>두 박이었나요, 세 박이었나요? 센 박이 몇 박마다 오는지 떠올려요.</> : <>틀린 곳은 선생님이 그 마디만 다시 쳐 줘요.</>]
         : [<>Your teacher plays four bars, twice. Just listen and count inside.</>, <>Clap it back at the same speed.</>, g === 3 ? <>Two or three? Think how often the strong beat came.</> : <>Where it went wrong, your teacher plays just that bar again.</>]}/>
+      <LbChallenge>{g === 3 ? t('Your teacher claps four bars twice: clap them back, then say two or three.', '선생님이 네 마디를 두 번 치면 따라 치고, 두 박인지 세 박인지 말해요.') : t('Your teacher claps four bars twice: clap them back at the same speed, long and short in their places.', '선생님이 네 마디를 두 번 치면 같은 빠르기로 따라 쳐요, 길게 짧게도 제자리에.')}</LbChallenge>
       <LbRemember>{g === 3 ? t('Clap it back, then say two or three.', '따라 치고, 두 박인지 세 박인지 말해요.') : t('Listen twice, then clap: long, short.', '두 번 듣고 손뼉: 길게, 짧게.')}</LbRemember>
     </LbPage>;
     return <LbPage key={no} no={no} chId={ch} kicker={kick} title={NAME.sing}
@@ -37751,6 +37752,7 @@ function l2LbPages(scr = false, g = 2) {   // Build CC: Grade 2 and Grade 3 are 
       <LbSay>{LANG === 'ko' ? <>이번 선율은 <b>더 길고</b>, <b>건너뛰는 음</b>도 있어요. 두 번 듣고, <b>음도 리듬도</b> 따라 불러요: 타, 티-티, 길게.</> : <>This tune is <b>longer</b>, with <b>skips</b> as well as steps. Hear it twice and sing back <b>the notes and the rhythm</b>: walk, run-ning, hold.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [<>선생님이 선율을 두 번 쳐요. 들으며 속으로 따라 불러요.</>, <>"라"로 불러요: 음도, 리듬도.</>, <>건반에서 쳐요. 긴 음은 끝까지 누르고 있어요.</>]
         : [<>Your teacher plays the tune twice. Sing along inside as you listen.</>, <>Sing it on "la": the notes and the rhythm.</>, <>Play it on the keys. Hold the long note to its end.</>]}/>
+      <LbChallenge>{t('Your teacher plays a longer tune twice: sing it back on "la", the skips and the rhythm too.', '선생님이 더 긴 선율을 두 번 치면 "라"로 따라 불러요, 건너뛰는 음도 리듬도.')}</LbChallenge>
       <LbRemember>{t('Longer, with skips: the notes and the rhythm, both.', '더 길고 건너뛰어도: 음도, 리듬도.')}</LbRemember>
     </LbPage>; };
   const last = order.length + 2;
@@ -37762,6 +37764,7 @@ function l2LbPages(scr = false, g = 2) {   // Build CC: Grade 2 and Grade 3 are 
       </div></LbOnly>
       {dyadStill(g === 3 ? [[2, 5], [0, 9]] : [[0, 4], [0, 7]])}
       <LbSay size={18}>{g === 3 ? t('Your ears for Grade 3: any two notes at once, the notes of the scale from home, two or three, and longer tunes.', '3급의 귀: 함께 울리는 어떤 두 음이든, 집에서 세는 음계의 음, 두 박·세 박, 더 긴 선율.') : t('Your ears for Grade 2: two notes at once, a passage clapped back, and a longer tune sung back.', '2급의 귀: 함께 울리는 두 음, 따라 치는 리듬, 따라 부르는 더 긴 선율.')}</LbSay>
+      {g === 3 ? <LbGuess q={t('Two notes together, close or far apart: which pair is harder to pick one from?', '함께 울리는 두 음, 가까운 쌍과 먼 쌍: 어느 쪽에서 하나를 골라내기가 더 어려울까요?')} a={t('The close ones.', '가까운 쌍이에요.')} page={2}/> : <LbGuess q={t('Two notes sound together. Can you hum just one of them?', '두 음이 함께 울려요. 그중 하나만 흥얼거릴 수 있을까요?')} a={t('Yes: the higher (the bird\'s) or the lower (the turtle\'s).', '네. 높은 음(새 쪽)이나 낮은 음(거북이 쪽).')} page={2}/>}
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
@@ -39553,6 +39556,7 @@ function scfLbPages(scr = false) {
       </div></LbOnly>
       <LbPic h={170}><div style={{width:'100%',maxWidth:560,margin:'0 auto'}}>{thumbStill('Bb', 'R')}</div></LbPic>
       <LbSay size={18}>{t('Scales for Grades 2 and 3: black-key starts, two hands that turn at different times, the melodic minor, contrary motion in new keys, and the chromatic scale from any note.', '2·3급 스케일: 검은건반에서 시작하기, 따로 넘어가는 두 손, 가락 단음계, 새 조의 반대 방향, 어느 음에서든 반음계.')}</LbSay>
+      <LbGuess q={t('B♭ major, right hand: which finger plays the first key?', 'B♭장조 오른손: 첫 건반은 몇 번 손가락일까요?')} a={t('Finger 2. The thumb takes the first white key.', '2번이에요. 엄지는 처음 나오는 흰건반에.')} page={2}/>
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
@@ -39571,6 +39575,7 @@ function scfLbPages(scr = false) {
       <LbSay>{LANG === 'ko' ? <>검은건반에서 시작하면 <b>오른손은 2번</b>으로 시작해요. <b>엄지는 처음 나오는 흰건반</b>에. 이 스케일들에서 엄지는 <b>흰건반만</b> 쳐요.</> : <>Starting on a black key? The <b>right hand starts on 2</b>, and <b>the thumb takes the first white key</b>. In these scales the thumb plays <b>only white keys</b>.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [<>B♭장조 오른손: 엄지 자리 C와 F를 먼저 찾아요. 그다음 2 1 2 3 1 2 3 4.</>, <>왼손: 3 2 1 4 3 2 1 3. 엄지는 D와 A.</>, <>한 옥타브씩, 그다음 두 옥타브. 한 박에 두 음, 메트로놈 60부터.</>]
         : [<>B♭ major, right hand: find the thumb's keys first, C and F. Then 2 1 2 3 1 2 3 4.</>, <>Left hand: 3 2 1 4 3 2 1 3. The thumb plays D and A.</>, <>One octave, then two. Two notes a beat, from metronome 60.</>]}/>
+      <LbChallenge kind="time" tid="beat20">{t('B♭ major, right hand, two octaves up and down from memory: how fast with no wrong finger?', 'B♭장조 오른손 두 옥타브 올라갔다 내려오기, 외워서: 틀린 손가락 없이 얼마나 빨리?')}</LbChallenge>
       <LbRemember>{t('Black key first? Finger 2, then the thumb on the first white key.', '검은건반이 먼저? 2번, 그다음 첫 흰건반에 엄지.')}</LbRemember>
     </LbPage>,
     <LbPage key="3" no={3} chId={ch} kicker={t('Step 2', '2단계')} title={t('Where the thumbs meet', '엄지가 만나는 곳')}
@@ -39579,6 +39584,7 @@ function scfLbPages(scr = false) {
       <LbSay>{LANG === 'ko' ? <>양손 함께 두 옥타브. 두 엄지가 <b>가운데 으뜸음에서만</b> 만나는 스케일, <b>두 군데</b>에서 만나는 스케일, 그리고 <b>한 번도 안 만나는</b> 스케일이 있어요. B♭장조는 한 번도 안 만나요.</> : <>Two octaves, hands together. In some scales the thumbs meet <b>only on the middle keynote</b>, in one <b>in two places</b>, and in some <b>never</b>. In B♭ major they never meet.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [<>한 손씩 두 옥타브. 그다음 양손 함께, 아주 천천히.</>, <>엄지가 안 만나는 곳: 넘어가는 곳 두세 음만 양손으로 여러 번.</>, <>티-티를 고르게: 메트로놈 60, 그다음 84(2급), 92(3급).</>]
         : [<>Two octaves, each hand. Then hands together, very slowly.</>, <>Where the thumbs don't meet: just the two or three notes around each turn, hands together, several times.</>, <>Even run-ning: metronome 60, then 84 (Grade 2), 92 (Grade 3).</>]}/>
+      <LbChallenge>{t('B♭ major, hands together, two octaves, while someone listens for a bump at a turn: even all the way.', 'B♭장조 양손 함께 두 옥타브, 누가 넘기는 곳의 덜컹을 들어요: 끝까지 고르게.')}</LbChallenge>
       <LbRemember>{t('The thumbs never meet? Each hand turns on its own: keep it even.', '엄지가 안 만나요? 손마다 따로 넘어가요: 고르게.')}</LbRemember>
     </LbPage>,
     <LbPage key="4" no={4} chId={ch} kicker={t('Step 3', '3단계')} title={t('The melodic minor', '가락 단음계')}
@@ -39587,6 +39593,7 @@ function scfLbPages(scr = false) {
       <LbSay>{LANG === 'ko' ? <>올라갈 때는 <b>6도와 7도를 반음씩 올려요</b>: G단조에서 E와 F♯. 내려올 때는 <b>자연 단음계</b>: F와 E♭.</> : <>Going up, <b>the 6th and 7th rise a semitone</b>: in G minor, E and F♯. Coming down, <b>the natural minor</b>: F and E♭.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [<>G 자연 단음계를 한 옥타브 쳐요.</>, <>올라갈 때 E와 F♯로 바꿔요. 내려올 때는 F와 E♭.</>, <>두 옥타브, 한 손씩. 3급은 C 가락 단음계를 양손 함께.</>]
         : [<>Play G natural minor, one octave.</>, <>Going up, change to E and F♯. Coming down, F and E♭.</>, <>Two octaves, each hand. Grade 3: C melodic minor hands together.</>]}/>
+      <LbChallenge>{t('Someone names G or C minor: play its melodic minor, one octave, the 6th and 7th rising only on the way up.', '누가 G단조나 C단조를 말하면 가락 단음계 한 옥타브: 6과 7은 올라갈 때만 올려요.')}</LbChallenge>
       <LbRemember>{t('Up: 6 and 7 rise. Down: natural.', '올라갈 때: 6과 7이 올라가요. 내려올 때: 자연.')}</LbRemember>
     </LbPage>,
     <LbPage key="5" no={5} chId={ch} kicker={t('Step 4', '4단계')} title={t('Mirror twins, or not?', '거울 쌍둥이일까, 아닐까?')}
@@ -39595,6 +39602,7 @@ function scfLbPages(scr = false) {
       <LbSay>{LANG === 'ko' ? <>반대 방향에서 <b>손마다 자기 번호</b>를 써요. D장조는 번호가 끝까지 같아서 <b>거울 쌍둥이</b>. B♭장조는 다섯째 음부터 달라요.</> : <>In contrary motion <b>each hand uses its own numbers</b>. In D major they match all the way: <b>mirror twins</b>. In B♭ major they part at the fifth note.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [<>두 손을 같은 음에 놓아요. 오른손은 위로, 왼손은 아래로.</>, <>번호가 달라지는 곳에서 멈춰서 확인해요.</>, <>메트로놈 66(2급), 80(3급). 한 박에 두 음.</>]
         : [<>Both hands on the same note. The right hand goes up, the left hand down.</>, <>Stop where the numbers part, and check.</>, <>Metronome 66 (Grade 2), 80 (Grade 3). Two notes a beat.</>]}/>
+      <LbChallenge>{t('Someone names D or B♭ major: contrary motion, one octave, then say "twins!" or "not twins!" for the numbers.', '누가 D장조나 B♭장조를 말하면 반대 방향 한 옥타브, 그다음 번호가 "쌍둥이!"인지 "아니!"인지.')}</LbChallenge>
       <LbRemember>{t('Each hand keeps its own numbers.', '손마다 자기 번호를 지켜요.')}</LbRemember>
     </LbPage>,
     <LbPage key="6" no={6} chId={ch} kicker={t('Step 5', '5단계')} title={t('Chromatic from any note', '어느 음에서든 반음계')}
@@ -39603,6 +39611,7 @@ function scfLbPages(scr = false) {
       <LbSay>{LANG === 'ko' ? <><b>검은건반은 3번</b>, <b>흰건반은 1번</b>, <b>흰건반 둘이 붙은 곳은 2번</b>: 오른손은 F와 C, 왼손은 E와 B. 이 규칙이면 어느 음에서든 시작해요.</> : <><b>3 on black</b>, <b>1 on white</b>, <b>2 where two white keys sit together</b>: the right hand's F and C, the left hand's E and B. With this rule you can start anywhere.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [<>D에서 오른손, 한 옥타브. 3번이 검은건반에만 가는지 봐요.</>, <>왼손도. E와 B에서 2번.</>, <>두 옥타브. 3급은 A와 E♭에서, 양손 함께: 3번이 같이 떨어져요.</>]
         : [<>From D, right hand, one octave. Check that 3 only ever plays black keys.</>, <>Left hand too: 2 on E and B.</>, <>Two octaves. Grade 3: from A and E♭, hands together: the 3s land together.</>]}/>
+      <LbChallenge kind="time" tid="beat21">{t('The chromatic scale from any note someone calls, right hand, one octave up and down: how fast with 3 only ever on a black key?', '누가 부르는 음에서 반음계, 오른손 한 옥타브 올라갔다 내려오기: 3번이 검은건반만 치면서 얼마나 빨리?')}</LbChallenge>
       <LbRemember>{t('3 on black, 1 on white, 2 where two whites sit together.', '검은건반 3, 흰건반 1, 흰건반 둘이 붙은 곳 2.')}</LbRemember>
     </LbPage>,
     <LbPage key="7" no={7} chId={ch} kicker={t('Check-up', '점검')} title={t('My five checks', '나의 다섯 가지 확인')}
@@ -43220,6 +43229,7 @@ function h3LbPages(scr = false) {
       </div></LbOnly>
       <LbPic h={170}><div style={{width:'100%',maxWidth:scr ? 300 : 420,margin:'0 auto'}}><SatbStaff chords={h3CadChords('C', 'perfect')} labels={['V', 'I']} width={W}/></div></LbPic>
       <LbSay size={18}>{t('Theory for Grades 2 and 3: intervals in minor keys, the names of the degrees, chords turned over, four voices, and the two cadences that end a piece.', '2·3급 이론: 단조의 음정, 음계 음의 이름, 자리를 바꾼 화음, 네 성부, 그리고 곡을 끝내는 두 종지.')}</LbSay>
+      <LbGuess q={t('In a minor key, the 3rd above the tonic: major or minor?', '단조에서 으뜸음 위의 3도는 장3도일까요, 단3도일까요?')} a={t('Minor. The 6th too.', '단3도예요. 6도도 단음정.')} page={2}/>
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
@@ -43238,6 +43248,7 @@ function h3LbPages(scr = false) {
       <LbSay>{LANG === 'ko' ? <>단조에서는 <b>3도와 6도가 단음정</b>이 돼요. 7도는 올린 이끎음이라 <b>장7도</b> 그대로. 4도, 5도, 8도는 언제나 <b>완전음정</b>.</> : <>In a minor key <b>the 3rd and the 6th are minor</b>. The 7th is the raised leading note, so it stays <b>a major 7th</b>. The 4th, 5th and octave are always <b>perfect</b>.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [<>A와 C를 함께 쳐요: 단3도. 그다음 A와 C♯: 장3도. 소리를 비교해요.</>, <>A단조 음계의 음을 하나씩 A와 함께 치고 이름을 말해요.</>, <>낮은음자리표로 쓴 음정도 똑같이 세어요: 선과 칸.</>]
         : [<>Play A and C together: a minor 3rd. Then A and C♯: a major 3rd. Compare the sound.</>, <>Play each note of A minor with A and name it.</>, <>Intervals in the bass clef count the same way: lines and spaces.</>]}/>
+      <LbChallenge>{t('Someone plays a 3rd or a 6th above A: say "major!" or "minor!" before they count to 3.', '누가 A 위의 3도나 6도를 치면 셋 세기 전에 "장!" 또는 "단!"')}</LbChallenge>
       <LbRemember>{t('Minor key: the 3rd and 6th go minor.', '단조: 3도와 6도가 단음정.')}</LbRemember>
     </LbPage>,
     <LbPage key="3" no={3} chId={ch} kicker={t('Step 2', '2단계')} title={t('The degree names', '음계 음의 이름')}
@@ -43246,6 +43257,7 @@ function h3LbPages(scr = false) {
       <LbSay>{LANG === 'ko' ? <>1 <b>으뜸음</b>, 2 <b>윗으뜸음</b>, 3 <b>가온음</b>, 4 <b>버금딸림음</b>, 5 <b>딸림음</b>, 6 <b>버금가온음</b>, 7 <b>이끎음</b>.</> : <>1 <b>tonic</b>, 2 <b>supertonic</b>, 3 <b>mediant</b>, 4 <b>subdominant</b>, 5 <b>dominant</b>, 6 <b>submediant</b>, 7 <b>leading note</b>.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [<>C장조 음계를 치며 이름을 말해요.</>, <>딸림음(G)은 C의 5도 위, 버금딸림음(F)은 5도 아래: 아래의 F에서 C까지 세어 봐요.</>, <>이끎음 B에서 멈춰요: C로 가고 싶어져요.</>]
         : [<>Play C major, naming each note.</>, <>The dominant (G) is a 5th above C, the subdominant (F) a 5th below: count from the F below up to C.</>, <>Stop on the leading note, B: it wants to go on to C.</>]}/>
+      <LbChallenge>{t('Someone calls a degree name, tonic to leading note: play that note of C major before they count to 3.', '누가 으뜸음부터 이끎음까지 이름 하나를 부르면 셋 세기 전에 C장조의 그 음을 쳐요.')}</LbChallenge>
       <LbRemember>{t('Dominant: 5 up. Subdominant: 5 down.', '딸림음: 5도 위. 버금딸림음: 5도 아래.')}</LbRemember>
     </LbPage>,
     <LbPage key="4" no={4} chId={ch} kicker={t('Step 3', '3단계')} title={t('Root position and first inversion', '기본 위치와 제1전위')}
@@ -43254,6 +43266,7 @@ function h3LbPages(scr = false) {
       <LbSay>{LANG === 'ko' ? <><b>기본 위치</b>: 근음이 맨 아래. 근음을 한 옥타브 올리면 <b>3음이 맨 아래</b>: <b>제1전위</b>(Ib).</> : <><b>Root position</b>: the root at the bottom. Move the root up an octave and <b>the 3rd is at the bottom</b>: <b>first inversion</b> (Ib).</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [<>C장조 I: C E G. 그다음 E G C.</>, <>IV와 V도: F A C → A C F, G B D → B D G.</>, <>G장조와 F장조에서도. 단조의 V는 이끎음을 올려요.</>]
         : [<>C major, I: C E G. Then E G C.</>, <>IV and V too: F A C → A C F, G B D → B D G.</>, <>In G and F major as well. In a minor key, V raises the leading note.</>]}/>
+      <LbChallenge>{t('Someone calls "root position!" or "first inversion!": play C major\'s I that way before they count to 3.', '누가 "기본 위치!" 또는 "제1전위!"를 외치면 셋 세기 전에 C장조 I을 그렇게 쳐요.')}</LbChallenge>
       <LbRemember>{t('First inversion: the 3rd at the bottom.', '제1전위: 3음이 맨 아래.')}</LbRemember>
     </LbPage>,
     <LbPage key="5" no={5} chId={ch} kicker={t('Step 4', '4단계')} title={t('Soprano, alto, tenor, bass', '소프라노, 알토, 테너, 베이스')}
@@ -43262,6 +43275,7 @@ function h3LbPages(scr = false) {
       <LbSay>{LANG === 'ko' ? <>높은음자리표에 <b>소프라노</b>(기둥 위)와 <b>알토</b>(기둥 아래), 낮은음자리표에 <b>테너</b>(기둥 위)와 <b>베이스</b>(기둥 아래).</> : <>On the treble staff, <b>soprano</b> (stems up) and <b>alto</b> (stems down); on the bass staff, <b>tenor</b> (stems up) and <b>bass</b> (stems down).</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [<>C장조 I을 네 성부로: 베이스 C, 테너 E, 알토 G, 소프라노 C.</>, <>한 성부씩 불러 봐요. 테너는 가운데 도 근처.</>, <>각 성부의 음역 안에 있는지 확인해요.</>]
         : [<>C major I in four parts: bass C, tenor E, alto G, soprano C.</>, <>Sing each part on its own. The tenor sits around middle C.</>, <>Check each part stays inside its range.</>]}/>
+      <LbChallenge>{t('Someone names a voice, soprano to bass: point to its staff and say "stems up" or "stems down" before they count to 3.', '누가 소프라노부터 베이스까지 성부 하나를 말하면 셋 세기 전에 그 오선을 가리키고 "기둥 위" 또는 "기둥 아래".')}</LbChallenge>
       <LbRemember>{t('Treble: soprano up, alto down. Bass: tenor up, bass down.', '높은음: 소프라노 위, 알토 아래. 낮은음: 테너 위, 베이스 아래.')}</LbRemember>
     </LbPage>,
     <LbPage key="6" no={6} chId={ch} kicker={t('Step 5', '5단계')} title={t('Perfect and plagal cadences', '정격종지와 변격종지')}
@@ -43270,6 +43284,7 @@ function h3LbPages(scr = false) {
       <LbSay>{LANG === 'ko' ? <><b>정격종지</b>: V에서 I. <b>변격종지</b>: IV에서 I. 베이스는 근음, 이끎음은 위로, 같은 음은 그대로.</> : <><b>Perfect</b>: V to I. <b>Plagal</b>: IV to I. Roots in the bass, the leading note up, a shared note stays.</>}</LbSay>
       <LbPiano steps={LANG === 'ko' ? [<>C장조 정격종지를 쳐요: 왼손 G→C, 오른손 B D G → C E G.</>, <>변격종지: 왼손 F→C, 오른손 F A C → E G C.</>, <>어느 쪽이 "아멘"처럼 들려요?</>]
         : [<>Play the perfect cadence in C: left hand G→C, right hand B D G → C E G.</>, <>The plagal: left hand F→C, right hand F A C → E G C.</>, <>Which one sounds like "Amen"?</>]}/>
+      <LbChallenge>{t('Someone plays a cadence in C: say "perfect!" or "plagal!" before they count to 3.', '누가 C장조 종지를 치면 셋 세기 전에 "정격!" 또는 "변격!"')}</LbChallenge>
       <LbRemember>{t('V–I perfect, IV–I plagal.', 'V–I 정격, IV–I 변격.')}</LbRemember>
     </LbPage>,
     <LbPage key="7" no={7} chId={ch} kicker={t('Check-up', '점검')} title={t('My five checks', '나의 다섯 가지 확인')}
@@ -45140,10 +45155,12 @@ function r2LbPages(scr = false) {
     [r2PicTrip(), t('I fit three where two go, and two where three go', '둘 자리에 셋, 셋 자리에 둘을 넣어요')], [r2PicMin(), t('I count minim beats in 2/2, cut common time and 3/2', '2/2, 세로선 C, 3/2에서 2분음표 박을 세요')], [r2Pic98(), t('I count 3/8 and 9/8, and say which is simple and which compound', '3/8과 9/8을 세고, 홑박자인지 겹박자인지 말해요')]];
   const toc = [[t('Semiquavers', '16분음표'), 2], [t('Dotted quaver and semiquaver', '점8분음표와 16분음표'), 3], [t('Triplets and duplets', '셋잇단음표와 2잇단음표'), 4], [t('The minim beat', '2분음표 박'), 5], [t('3/8 and 9/8', '3/8과 9/8'), 6], [t('My five checks', '나의 다섯 가지 확인'), 7]];
   const still = (keys) => <LbPic h={150}><div style={{display:'flex',flexDirection:'column',gap:12,width:'100%',maxWidth:600,margin:'0 auto'}}>{keys.map(k => <div key={k}>{r2El(k)}</div>)}</div></LbPic>;
+  const R2_CHAL = { 2: <LbChallenge>{t('Someone claps a slow beat: fit four even semiquavers inside each one, 1 e + a, four beats in a row.', '누가 느린 박을 치면 그 안에 고른 16분음표 넷, 1 e + a, 네 박 연속.')}</LbChallenge>, 3: <LbChallenge>{t('Long, short, four bars in a row, counting 1 e + a: the short note on a, never early.', '길게 짧게를 네 마디 연속, 1 e + a를 세며: 짧은 음은 a에, 절대 일찍 치지 않게.')}</LbChallenge>, 4: <LbChallenge>{t('Someone calls "two!" or "three!": clap that many even notes inside the next beat.', '누가 "둘!" 또는 "셋!"을 외치면 다음 박 안에 그만큼의 고른 음을 손뼉 쳐요.')}</LbChallenge>, 5: <LbChallenge>{t('Someone shows a bar in 2/2 or 3/2: count it out loud with the minim as the beat, before they count to 3.', '누가 2/2나 3/2 마디를 보여 주면 셋 세기 전에 2분음표를 1박으로 소리 내어 세요.')}</LbChallenge>, 6: <LbChallenge>{t('Someone shows a bar in 3/8 or 9/8: say which, then count its quavers out loud, leaning on 1 (and on 4 and 7 in 9/8).', '누가 3/8이나 9/8 마디를 보여 주면 어느 쪽인지 말하고 8분음표를 소리 내어 세요. 1에 힘을 주고(9/8은 4와 7에도).')}</LbChallenge> };   // Build DE
   const pg = (no, step, title, keys, sayEn, sayKo, teach, pianoEn, pianoKo, remember, live, lvl) => <LbPage key={no} no={no} chId={ch} kicker={t('Step ' + step, step + '단계')} title={title} teacher={teach} qr={bkLink('drill=' + ch + '&tab=drill&level=' + lvl)}>
     <LbLive still={still(keys)} live={live}/>
     <LbSay>{LANG === 'ko' ? sayKo : sayEn}</LbSay>
     <LbPiano steps={LANG === 'ko' ? pianoKo : pianoEn}/>
+    {R2_CHAL[no]}
     <LbRemember>{remember}</LbRemember>
   </LbPage>;
   return [
@@ -45154,6 +45171,7 @@ function r2LbPages(scr = false) {
       </div></LbOnly>
       {still(['semiB', 'e98'])}
       <LbSay size={18}>{t('Rhythm for Grades 2 and 3: smaller notes inside the beat, long and short, three for two, the minim beat, and nine quavers in a bar.', '2·3급 리듬: 박 안의 더 작은 음표, 길게 짧게, 둘 자리에 셋, 2분음표 박, 그리고 한 마디에 8분음표 아홉.')}</LbSay>
+      <LbGuess q={t('Four semiquavers under two beams: how many beats?', '빔 두 개로 묶인 16분음표 넷: 몇 박일까요?')} a={t('One beat, shared four ways: 1 e + a.', '한 박을 넷이 나눠요: 1 e + a.')} page={2}/>
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
@@ -45255,7 +45273,7 @@ function R2Teacher() {
   P(<>
     <TcBlock page={5} title="The minim beat" answers={<>{lines(['minA', 'minB', 'minC'])}{tcAns('PLAY', ['3', '2', '2'], 3)}</>} watch="Counting crotchets in 2/2. The click falls on every minim." say="“Bottom number 2: the minim is the beat.”"/>
     <TcBlock page={6} title="3/8 and 9/8" answers={<>{lines(['e38', 'e98'])}{tcAns('PLAY', ['S', 'C', 'C', 'S'], 3)}</>} watch="9/8 counted as three bars of 3/8 with equal weight. Lean on 1, 4 and 7." say="“9/8: nine beats, in threes.”"/>
-    <TcBlock page={7} title="The check-up on paper (the Workbook's last page)" answers={<><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'4px 14px',marginBottom:4}}>{['chkA', 'chkB'].map(k => <div key={k} style={{maxWidth:300}}>{r2El(k, { counts: 'ans', hearts: false })}</div>)}</div>{tcAns('B', ['4', '3', '3', '2'], 5)}{tcAns('C', ['3', '2', '3', '3 (dotted crotchets)'], 9)}{tcAns('D', ['C', 'S', 'C', 'S'], 13)}
+    <TcBlock page={7} title="The check-up on paper (the Workbook's last page)" answers={<><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'4px 14px',marginBottom:4}}>{['chkA', 'chkB'].map(k => <div key={k} style={{maxWidth:300}}>{r2El(k, { counts: 'ans', hearts: false })}</div>)}</div>{tcAns('B', R2_CHK.how.map(x => String(x[1])), 5)}{tcAns('C', R2_CHK.beats.map(x => x[1]), 9)}{tcAns('D', R2_CHK.kind.map(x => x[1]), 13)}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Part A: one mark for each bar counted right (4 marks). Parts B to D: one mark each. Score each part on its own (4 marks each, pass 3+). Not passed? Go back: A p.2 and p.3 · B p.2 to p.4 · C p.5 and p.6 · D p.6. Then clap and count each line to you. Transposition (Grades 2 and 3, a melody of up to eight bars into another key of the grade) is in the Transposing lesson on the Home.</div></>}/>
   </>);
   return <>{pages}</>;
@@ -45492,6 +45510,7 @@ const SCF_WB = {
   chrom: [[0, 'R'], [1, 'L']],
   chk: { thumb: [['Eb', 'L'], ['A', 'R'], ['Gm', 'L'], ['Fsm', 'L']], meet: ['A', 'Eb', 'Gm', 'Bm'], mirror: ['D', 'Bb', 'Emh', 'Gmh'], chrom: [[0, 'R', 1], [1, 'L', 2], [2, 'R', 1], [1, 'R', 3]] },
 };
+if (CKP) Object.assign(SCF_WB.chk, { meet: ['Bb', 'D', 'Gm', 'A'], chrom: [[1, 'R', 1], [0, 'L', 2], [2, 'L', 3], [0, 'R', 3]] });   // Build DF
 const scfwThumbs = (k, h) => { const K = scfKeys(k, 1), N = scfNames(k, 1); return scfThumbPcs(k, h).map(pc => N[K.findIndex(x => spPc(x) === pc)]); };
 const scfwMeet = (k) => { const m = scfMeet(k), N = scfNames(k); return m.length ? m.map(j => N[j]).join(', ') : 'never'; };
 const scfwHand = (h) => (h === 'R' ? 'right hand' : 'left hand');
@@ -45615,6 +45634,7 @@ const H3_WB = {
   cad: [['C', 'plagal'], ['G', 'perfect'], ['Am', 'perfect'], ['F', 'plagal']],
   chk: { iv: [['Dm', 3, 'treble'], ['Am', 7, 'bass'], ['Em', 5, 'treble'], ['Gm', 6, 'treble']], deg: [4, 7, 3, 5], inv: [['G', 1, 1, 'bass'], ['C', 4, 0, 'treble'], ['D', 5, 1, 'treble'], ['F', 1, 0, 'bass']], cad: [['D', 'perfect'], ['C', 'plagal'], ['Dm', 'plagal'], ['G', 'perfect']] },
 };
+if (CKP) Object.assign(H3_WB.chk, { deg: [2, 6, 1, 5], cad: [['G', 'plagal'], ['Am', 'perfect'], ['F', 'plagal'], ['D', 'perfect']] });   // Build DF
 const h3wIv = ([k, n]) => ({ M: 'M', m: 'm', P: 'P' }[H3_QMIN[n]] + (n === 8 ? '8' : n));
 const h3wIvLong = ([k, n]) => H3_QW[H3_QMIN[n]][0] + ' ' + H3_ORD[n];
 const h3wInv = ([k, d, inv]) => h3Rom(k, d) + (inv ? 'b' : '');
@@ -45740,6 +45760,9 @@ function R2Workbook({ startNo = 1 }) {
 }
 // page 3's play part (triplets) has its own questions
 const R2_PLAY3 = [['a triplet: how many quavers in one crotchet beat?', 3], ['a duplet: how many notes in the time of three quavers?', 4]];
+const R2_CHK = CKP   // Build DF: the checkpoint's own items
+  ? { how: [['semiquavers in a minim', 8], ['quavers in a crotchet', 2], ['semiquavers in a quaver', 2], ['quavers in a triplet', 3]], beats: [['2/2', '2'], ['9/8', '3 (dotted crotchets)'], ['3/2', '3'], ['6/8', '2 (dotted crotchets)']], kind: [['3/2', 'S'], ['9/8', 'C'], ['2/2', 'S'], ['6/8', 'C']] }
+  : { how: [['semiquavers in a crotchet', 4], ['semiquavers in a dotted quaver', 3], ['quavers in a triplet', 3], ['notes in a duplet', 2]], beats: [['3/2', '3'], ['2/2', '2'], ['3/8', '3'], ['9/8', '3 (dotted crotchets)']], kind: [['9/8', 'C'], ['3/8', 'S'], ['6/8', 'C'], ['3/2', 'S']] };
 function R2PaperCheck() {
   const rows = (items, n0) => <BkGrid cols={2} gap="6px 8px">{items.map(([l, w], i) => <BkCell key={i} n={i + n0}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,padding:'14px 4px 2px',fontSize:12.5,fontWeight:800,color:BK.ink}}>{l}{bkBox(w || 44, 24)}</div></BkCell>)}</BkGrid>;
   return <div className="lb-paper" style={{display:'flex',flexDirection:'column',gap:4}}>
@@ -45747,11 +45770,11 @@ function R2PaperCheck() {
     {bkSec('A', 'Write the counts under the notes.')}
     <div style={{display:'grid',gap:6}}>{['chkA', 'chkB'].map((k, i) => <BkCell key={k} n={i === 0 ? '1–2' : '3–4'}><div style={{padding:'14px 2px 0'}}>{r2El(k, { counts: 'blank', hearts: true })}</div></BkCell>)}</div>
     {bkSec('B', 'How many?')}
-    {rows([['semiquavers in a crotchet'], ['semiquavers in a dotted quaver'], ['quavers in a triplet'], ['notes in a duplet']], 5)}
+    {rows(R2_CHK.how.map(([l]) => [l]), 5)}
     {bkSec('C', 'How many beats in a bar?')}
-    {rows([['3/2'], ['2/2'], ['3/8'], ['9/8']], 9)}
+    {rows(R2_CHK.beats.map(([l]) => [l]), 9)}
     {bkSec('D', 'Simple (S) or compound (C)?')}
-    {rows([['9/8'], ['3/8'], ['6/8'], ['3/2']], 13)}
+    {rows(R2_CHK.kind.map(([l]) => [l]), 13)}
   </div>;
 }
 WORKBOOKS['rhythm-23'] = R2Workbook;
@@ -65410,7 +65433,7 @@ function mlxLbPages(scr = false) {
 
   // p1 (macro first): the map of a tune
   const p1 = <LbLive still={stack([<MlxMapSvg key="m" label={t('The map of a tune. The tune: 8 bars; its line rises to a high point, the A in bar 3, and comes down to C. Its phrases: a question, bars 1 to 4, and an answer, bars 5 to 8. Its bars: bar 1 is the motif (coral); bars 2 and 3 are the motif a step higher each time (sequence); bar 5 is the motif again (repetition); bar 6 a step higher. Bar 1 opened up: C E D F on the staff.', '선율의 지도. 선율 전체: 8마디. 선율선이 3마디의 A까지 올라갔다가 C로 내려와요. 프레이즈: 질문(1~4마디)과 대답(5~8마디). 마디: 1마디가 동기(산호색), 2·3마디는 동기를 한 걸음씩 높여서(동형 진행), 5마디는 동기 그대로(반복), 6마디는 한 걸음 높여서. 1마디를 펼치면: 오선 위의 C E D F.')}/>,
-    cap(t('Here: notes make the motif, the motif makes the phrases, a question and an answer make the tune.', '여기서는 음이 모여 동기, 동기가 모여 프레이즈, 질문과 대답이 모여 선율이 돼요.'))], 380, 10)} live={<MlxMapPad/>}/>;
+    cap(t('Here: notes make the motif, the motif makes the phrases, a question and an answer make the tune.', '여기서는 음이 모여 동기, 동기가 모여 프레이즈, 질문과 대답이 모여 선율이 돼요.'))], scr ? 380 : 270, 10)} live={<MlxMapPad/>}/>;
   // p2: the line of a tune
   const w8 = mlxVbw(MLX_Q, true);
   const p2 = stack([<MlxRow key="q" bars={MLX_Q} ts end={false} line hiCoral hl={[mlxHigh(MLX_Q)]} width={w8} n0={1} label={t('Bars 1 to 4 with their line drawn above: up and down in small waves to the A in bar 3, the high point (coral), then down to G.', '1~4마디와 그 위에 그린 선율선: 작은 물결로 오르내리며 3마디의 A(가장 높은 음, 산호색)까지 올라간 뒤 G로 내려와요.')}/>,
@@ -65490,6 +65513,7 @@ function mlxLbPages(scr = false) {
       </div></LbOnly>
       {p1}
       <LbSay size={17.5}>{LANG === 'ko' ? <>음이 리듬과 함께 하나씩 이어져 만드는 음악이 <b>선율</b>이에요. 이 선율은 한 동기로 만든 질문과 대답이에요.</> : <><b>Melody</b> is notes one after another, with their rhythm, that make a tune. This tune is a question and an answer, built from one motif.</>}</LbSay>
+      <LbGuess q={X('A tune in C major stops on G. Is that a question or an answer?', 'C장조 선율이 G에서 멈춰요. 질문일까요, 대답일까요?')} a={X('A question: it has not come home to C.', '질문이에요. 아직 집인 C로 돌아오지 않았어요.')} page={4}/>
       <div className="lb-toc" style={{display:'grid',gridTemplateColumns:scr ? '1fr' : '1fr 1fr',gap:20}}>
         <LbOnly print><div>
           <div className="lb-toc-h" style={{fontFamily:LB_SERIF,fontSize:20,fontWeight:800,marginBottom:6}}>{t('In this chapter', '이 챕터에서는')}</div>
@@ -65514,6 +65538,7 @@ function mlxLbPages(scr = false) {
         X('Play the picture’s tune. Draw its line in the air with your other hand.', '그림의 선율을 쳐요. 다른 손으로 공중에 선율선을 그려요.'),
         X('Your teacher plays a tune. Draw its line, and mark its high point.', '선생님이 선율을 쳐요. 선율선을 그리고 가장 높은 음에 표시해요.'),
       ]}/>
+      <LbChallenge>{X('Your teacher plays a tune: draw its line in the air and point to where the high point was, before they count to 3.', '선생님이 선율을 치면 셋 세기 전에 공중에 선율선을 그리고 가장 높은 음이 어디였는지 가리켜요.')}</LbChallenge>
       <LbRemember>{X('The line goes where the notes go.', '선율선은 음이 가는 대로 가요.')}</LbRemember>
     </LbPage>,
 
@@ -65527,6 +65552,7 @@ function mlxLbPages(scr = false) {
         X('Play the phrase: louder to the high point, softer to the resting note, then lift at the breath mark.', '프레이즈를 쳐요: 가장 높은 음까지 점점 세게, 쉬는 음까지 점점 여리게, 숨표에서 손을 들어요.'),
         X('Play it once at one loudness, then shaped. Say which you like.', '한 번은 같은 세기로, 한 번은 모양을 살려 쳐요. 어느 쪽이 좋은지 말해요.'),
       ]}/>
+      <LbChallenge>{X('Someone plays a phrase shaped or flat: say "shaped!" or "flat!" before they count to 3.', '누가 프레이즈를 모양을 살려 치거나 밋밋하게 치면 셋 세기 전에 "모양!" 또는 "밋밋!"')}</LbChallenge>
       <LbRemember>{X('A phrase often gets louder to its high point and softer to its end.', '프레이즈는 보통 가장 높은 음까지 점점 세지고, 끝으로 갈수록 여려져요.')}</LbRemember>
     </LbPage>,
 
@@ -65540,6 +65566,7 @@ function mlxLbPages(scr = false) {
         X('Play the question, then the answer. Listen to how each one ends.', '질문을 치고 대답을 쳐요. 둘이 어떻게 끝나는지 잘 들어요.'),
         X('Play the answer. Then end it on G instead of C: it turns into a question.', '대답을 쳐요. 그다음 C 대신 G로 끝내요: 질문으로 바뀌어요.'),
       ]}/>
+      <LbChallenge>{X('Someone plays a phrase: say "question!" or "answer!" before they count to 3.', '누가 프레이즈를 치면 셋 세기 전에 "질문!" 또는 "대답!"')}</LbChallenge>
       <LbRemember>{X('A question ends away from the tonic; its answer ends on the tonic.', '질문은 으뜸음이 아닌 음에서, 대답은 으뜸음에서 끝나요.')}</LbRemember>
     </LbPage>,
 
@@ -65552,6 +65579,7 @@ function mlxLbPages(scr = false) {
         X('Play the motif, bar 1. Then play the tune and say “motif” each time it comes back.', '1마디의 동기를 쳐요. 그다음 선율을 치면서 동기가 다시 나올 때마다 “동기”라고 말해요.'),
         X('In a piece you are learning, find a motif. Count how many times it comes.', '배우고 있는 곡에서 동기를 찾아요. 몇 번 나오는지 세어요.'),
       ]}/>
+      <LbChallenge>{X('Your teacher plays a tune: clap each time the motif comes back, with none missed.', '선생님이 선율을 치면 동기가 돌아올 때마다 손뼉, 하나도 놓치지 않고.')}</LbChallenge>
       <LbRemember>{X('A motif is a short idea that comes back.', '동기는 다시 나오는 짧은 음악 조각이에요.')}</LbRemember>
     </LbPage>,
 
@@ -65565,6 +65593,7 @@ function mlxLbPages(scr = false) {
         X('Play the motif from D twice (repetition). Then from D and from E (sequence up), and from D and from C (sequence down).', 'D에서 동기를 두 번 쳐요(반복). 그다음 D와 E에서(올라가는 동형 진행), D와 C에서(내려가는 동형 진행) 쳐요.'),
         X('Make a motif of four notes. Play it, then play it a step higher, and a step higher again.', '네 음으로 동기를 만들어요. 그 동기를 치고, 한 걸음 높여서 치고, 또 한 걸음 높여서 쳐요.'),
       ]}/>
+      <LbChallenge>{X('Someone plays a motif twice: say "repetition!" or "sequence!" before they count to 3.', '누가 동기를 두 번 치면 셋 세기 전에 "반복!" 또는 "동형 진행!"')}</LbChallenge>
       <LbRemember>{X('Same notes: repetition. Same shape, new start: sequence.', '같은 음이면 반복, 같은 모양으로 새 음에서 시작하면 동형 진행.')}</LbRemember>
     </LbPage>,
 
@@ -65579,6 +65608,7 @@ function mlxLbPages(scr = false) {
         X('Say the couplet and clap on each strong syllable. Then draw an upright line before each one.', '두 줄 시를 말하면서 센 음절마다 손뼉을 쳐요. 그다음 센 음절마다 그 앞에 세로줄을 그어요.'),
         X('Clap the rhythm and say the words with it. Then play it on one note.', '리듬을 손뼉으로 치면서 가사를 함께 말해요. 그다음 한 음으로 쳐요.'),
       ]}/>
+      <LbChallenge>{X('Someone says a couplet you have not seen: clap on every strong syllable, with no slip.', '누가 처음 보는 두 줄 시를 말하면 센 음절마다 손뼉, 틀리지 않고.')}</LbChallenge>
       <LbRemember>{X('Strong syllables on strong beats: a bar line before each one.', '센 음절은 센박에: 센 음절마다 그 앞에 마디줄.')}</LbRemember>
     </LbPage>,
 
@@ -65591,6 +65621,7 @@ function mlxLbPages(scr = false) {
         X('Play the example and sing it. Then write your own on the same rhythm and play it.', '보기를 치고 노래해요. 그다음 같은 리듬에 나의 선율을 써서 쳐요.'),
         X('Write one in F major and one in D major. End each on its tonic.', 'F장조로 하나, D장조로 하나 써요. 모두 으뜸음에서 끝내요.'),
       ]}/>
+      <LbChallenge>{X('Make up a four-bar tune on the spot: bars 1 and 2 ask, bars 3 and 4 come home. A new one each time.', '즉석에서 네 마디 선율 짓기: 1·2마디는 묻고, 3·4마디는 집으로. 매번 새로.')}</LbChallenge>
       <LbRemember>{X('Bars 1 and 2 ask; bars 3 and 4 answer and come home to the tonic.', '1·2마디는 묻고, 3·4마디는 대답하며 으뜸음으로 돌아와요.')}</LbRemember>
     </LbPage>,
 
@@ -65600,6 +65631,7 @@ function mlxLbPages(scr = false) {
         X('Play the example and sing the words with it. Point to where line 1 asks and where line 2 answers.', '보기를 치면서 가사를 함께 불러요. 첫 줄이 묻는 곳과 둘째 줄이 대답하는 곳을 짚어요.'),
         X('Write a melody for another couplet, in a minor key. Mark the strong syllables first, as on page 7.', '다른 두 줄 시에 단조로 선율을 써요. 먼저 7쪽처럼 센 음절에 표시해요.'),
       ]}/>
+      <LbChallenge>{X('Someone says a new couplet: sing it to a tune of your own that comes home at the end of line 2.', '누가 새 두 줄 시를 말하면 나만의 선율로 불러요. 둘째 줄 끝에서 집으로.')}</LbChallenge>
       <LbRemember>{X('The words set the rhythm. Line 1 asks; line 2 answers on the tonic.', '가사가 리듬을 정해요. 첫 줄은 묻고, 둘째 줄은 으뜸음으로 대답해요.')}</LbRemember>
     </LbPage>,
 
@@ -65609,6 +65641,7 @@ function mlxLbPages(scr = false) {
         X('Play the example and sing it. Where does each line rest?', '보기를 치고 노래해요. 줄마다 어디에서 쉬나요?'),
         X('Write a melody for another stanza, in a key with up to three sharps or flats. A phrase mark over each line.', '다른 네 줄 시에 샵이나 플랫 세 개까지의 조로 선율을 써요. 줄마다 프레이즈 표시.'),
       ]}/>
+      <LbChallenge>{X('Play your stanza tune: someone says where lines 1 to 3 rest, and that line 4 comes home.', '내가 쓴 네 줄 시 선율을 쳐요: 듣는 사람이 1~3줄이 쉬는 곳과 4줄이 집으로 오는 것을 말해요.')}</LbChallenge>
       <LbRemember>{X('Four lines, one way home: lines 1 to 3 rest away; line 4 comes home.', '네 줄, 집으로 가는 한 길: 1~3줄은 밖에서 쉬고, 4줄이 집으로 돌아와요.')}</LbRemember>
     </LbPage>,
 
@@ -66661,6 +66694,7 @@ const MLX_CHK = {
   rs: [[mB([2, 0, 1, 0], 30), 'down'], [mB([0, 2, 0, 1], 28), 'rep'], [mB([0, 1, 2, 0], 29), 'up']],
 };
 MLX_CHK.qa = MLX_CHK.qa.slice(0, 2);   // Build AO: a question and an answer, side by side (room for section E)
+if (CKP) Object.assign(MLX_CHK, { qa: [[mB([0, 1, 2, 0], 28), mB([1, 0, 1, 2], 29), mB([2, 1, 0, 1], 29), mW(28)], [mB([0, 2, 1, 3], 28), mB([2, 1, 0, 1], 29), mB([3, 2, 1, 0], 30), mW(32)]], word: ['phrasing', 'high point', 'repetition', 'question phrase'] });   // Build DF
 const mlxChkNo = () => { const C = MLX_CHK, nB = C.line.length + 1, nC = nB + C.qa.length, nD = nC + C.word.length, nE = nD + C.rs.length; return { nB, nC, nD, nE, total: nE + MW_CHK_E.length - 1 }; };   // Build AO: E
 // a staff row on paper (D 17 by default; bars stacked bar under bar with tsRoom)
 const mlxWbRow = (bars, o = {}) => <div style={{width:'100%',maxWidth:o.mw || 9999,margin:'0 auto'}}><MlxRow bars={bars} ts={o.ts !== false} tsRoom={o.tsRoom} end={o.end} D={o.D || 17} marks={o.marks} hair={o.hair} hl={o.hl || []} ring={o.ring} motifs={o.motifs} breath={o.breath} line={o.line} n0={o.n0} tag={o.tag} width={o.w || mlxVbw(bars, o.ts !== false, o.D || 17)} label={o.label || 'A tune.'}/></div>;
@@ -76821,9 +76855,16 @@ const CKP_ROOMS = {
   intervals: { secs: ['B', 'C'], back: { B: ['2 and 3', '3 and 4'], C: [4, 5] }, Paper: () => <IvxPaperCheck/> },
   chords: { secs: ['B', 'C'], back: { B: [1, 2], C: [2, 3] }, Paper: () => <ChxPaperCheck/> },
   form: { secs: ['A', 'B'], back: { A: [2, 3], B: ['3 and 4', '4 and 5'] }, Paper: () => <FmxPaperCheck/> },
+  // Build DF: Grades 2 and 3
+  'listen-23': { secs: ['A', 'B'], back: { A: [1, 2], B: [2, 3] }, Paper: () => <L2CkpPaper g={2}/>, key: () => <L2CkpKey g={2}/> },
+  melody: { secs: ['B', 'C'], back: { B: [3, 4], C: ['1 to 5', '2 to 6'] }, Paper: () => <MlxPaperCheck/> },
+  'scales-23': { secs: ['B', 'D'], back: { B: [2, 3], D: [5, 6] }, Paper: () => <ScfPaperCheck/> },
+  'listen-3': { secs: ['A', 'B'], back: { A: [2, 3], B: [3, 4] }, Paper: () => <L2CkpPaper g={3}/>, key: () => <L2CkpKey g={3}/> },
+  'harmony-23': { secs: ['B', 'D'], back: { B: [2, 3], D: [5, 6] }, Paper: () => <H3PaperCheck/> },
+  'rhythm-23': { secs: ['C', 'D'], back: { C: ['4 and 5', '5 and 6'], D: ['3 and 5', '4 and 6'] }, Paper: () => <R2PaperCheck/> },
 };
 // which rooms share a printed page (measured, so no page overflows)
-const CKP_PAGES = { '2': [['listen-write', 'accidentals'], ['key-signatures', 'terms'], ['six-eight', 'intervals'], ['chords', 'form']], '1': [['listen-sing', 'tempo', 'rhythm'], ['ledger-lines', 'scales'], ['scale-play', 'minor-scales'], ['signs']], '0a': [['posture-hands', 'first-steps'], ['pulse', 'note-names'], ['hand-positions', 'ear-prep'], ['note-values']], '0b': [['dynamics', 'staff'], ['reading-steps', 'whole-staff'], ['time-signatures', 'tones']] };
+const CKP_PAGES = { '3': [['listen-23', 'melody'], ['scales-23']], '4': [['listen-3', 'harmony-23'], ['rhythm-23']], '2': [['listen-write', 'accidentals'], ['key-signatures', 'terms'], ['six-eight', 'intervals'], ['chords', 'form']], '1': [['listen-sing', 'tempo', 'rhythm'], ['ledger-lines', 'scales'], ['scale-play', 'minor-scales'], ['signs']], '0a': [['posture-hands', 'first-steps'], ['pulse', 'note-names'], ['hand-positions', 'ear-prep'], ['note-values']], '0b': [['dynamics', 'staff'], ['reading-steps', 'whole-staff'], ['time-signatures', 'tones']] };
 const ckpFloor = (fk) => checkFloors().find(f => f.key === fk) || null;
 const ckpTitle = (f) => floorName(f.k) + ' checkpoint' + (f.part ? ' ' + f.part : '');
 const ckpChapters = (ids) => 'Chapters ' + bkChapterNo(ids[0]) + ' to ' + bkChapterNo(ids[ids.length - 1]);
@@ -76876,6 +76917,32 @@ function LwCkpKey() {
   return <div className="ckp-key-ans" style={{fontSize:12,color:BK.ink,lineHeight:1.65}}>
     <div data-sec="A"><b style={{color:BK.muted,fontSize:10.5,letterSpacing:'0.06em'}}>A</b>  A short tune in C, G or F major; stop on its home note (the tonic) or before it. Write what you played: {line(1)}</div>
     <div data-sec="B"><b style={{color:BK.muted,fontSize:10.5,letterSpacing:'0.06em'}}>B</b>  Four bars in 2/4 or 3/4, with a clear first beat. Write in two or in three: {line(5)}</div>
+  </div>;
+}
+// Ear Training, Grades 2 and 3: two listening parts, the teacher plays (Build DF)
+function L2CkpPaper({ g }) {
+  const pick = (ws) => <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:ws.length > 2 ? 4 : 9,padding:'14px 4px 6px',fontSize:13.5,fontWeight:800,color:BK.ink}}>{ws.map(w => <span key={w}>{w}</span>)}</div>;
+  return <div className="lb-paper" style={{display:'flex',flexDirection:'column',gap:4}}>
+    {g === 3
+      ? <>{bkSec('A', 'Your teacher plays the keynote, then another note. Circle which it is.')}
+        <BkGrid cols={4} gap="6px 8px">{[1, 2, 3, 4].map(n => <BkCell key={n} n={n}>{pick(['2nd', '3rd', '4th', '5th'])}</BkCell>)}</BkGrid>
+        {bkSec('B', 'Your teacher plays an accompaniment. Circle in two or in three.')}
+        <BkGrid cols={4} gap="6px 8px">{[5, 6, 7, 8].map(n => <BkCell key={n} n={n}>{pick(['in two', 'in three'])}</BkCell>)}</BkGrid></>
+      : <>{bkSec('A', 'Your teacher plays two notes together, then one of them alone. Circle higher or lower.')}
+        <BkGrid cols={4} gap="6px 8px">{[1, 2, 3, 4].map(n => <BkCell key={n} n={n}>{pick(['the higher', 'the lower'])}</BkCell>)}</BkGrid>
+        {bkSec('B', 'Your teacher claps a rhythm twice, then once more. Circle same or different.')}
+        <BkGrid cols={4} gap="6px 8px">{[5, 6, 7, 8].map(n => <BkCell key={n} n={n}>{pick(['same', 'different'])}</BkCell>)}</BkGrid></>}
+  </div>;
+}
+function L2CkpKey({ g }) {
+  const line = (n0) => [0, 1, 2, 3].map(i => <span key={i} style={{marginRight:12,whiteSpace:'nowrap'}}><i style={{color:BK.muted}}>{n0 + i}</i> <span style={{display:'inline-block',width:58,borderBottom:'1px solid ' + BK.ink}}>&nbsp;</span></span>);
+  const B = (x) => <b style={{color:BK.muted,fontSize:10.5,letterSpacing:'0.06em'}}>{x}</b>;
+  return <div className="ckp-key-ans" style={{fontSize:12,color:BK.ink,lineHeight:1.65}}>
+    {g === 3
+      ? <><div data-sec="A">{B('A')}  The keynote, then the 2nd, 3rd, 4th or 5th of its major scale, as in the room's step 2. Write which: {line(1)}</div>
+        <div data-sec="B">{B('B')}  Four bars of oom-pah or oom-pah-pah, as in step 3. Write in two or in three: {line(5)}</div></>
+      : <><div data-sec="A">{B('A')}  Two notes a major 3rd or a perfect 5th apart, together within an octave from middle C, then the higher or the lower alone. Write which you played alone: {line(1)}</div>
+        <div data-sec="B">{B('B')}  A two-bar rhythm with a dotted crotchet, twice; then the same, or one beat changed. Write same or different: {line(5)}</div></>}
   </div>;
 }
 function CkpRoomHead({ id }) {
