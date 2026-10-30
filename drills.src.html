@@ -1646,7 +1646,7 @@ const chkKicker = { fontSize:11.5, fontWeight:900, color:'#e4572e', letterSpacin
 const chkBox = (pass) => ({ margin:'14px 0 0', padding:'12px', border:'1.5px solid ' + (pass ? '#2e8a6e' : 'rgba(38,41,107,0.28)'), borderRadius:10, background:'#fff' });
 
 // One round: the questions come from each room's own drill (generate, check, answerLabel, Question).
-function CheckRun({ items, floor, onDone, onQuit }) {
+function CheckRun({ items, floor, onDone, onQuit, dunno }) {   // Build DP (35): dunno: an 'I don't know' button (the placement)
   const [qs] = useState(() => { const prev = {}; return items.map(it => { const c = chkConcept(it.id), k = it.id + '|' + it.lv.n; let q = null; try { q = c.generate(it.lv, prev[k] || null); } catch (e) { q = null; } if (q) prev[k] = q; return q; }); });
   const list = items.map((it, j) => ({ ...it, q: qs[j] })).filter(x => x.q);
   const [i, setI] = useState(0), [given, setGiven] = useState(null), [res, setRes] = useState([]), [streak, setStreak] = useState(0);
@@ -1654,10 +1654,10 @@ function CheckRun({ items, floor, onDone, onQuit }) {
   useEffect(() => () => clearTimeout(timer.current), []);
   const it = list[i], drill = it && chkConcept(it.id);
   const next = (r) => { clearTimeout(timer.current); try { stopClicks(); } catch (e) {} if (i + 1 >= list.length) { onDone(r); return; } setGiven(null); setI(i + 1); };
-  const answer = (ans, force) => {
+  const answer = (ans, force, dk) => {
     if (given || !it) return;
     let ok = false; if (force != null) ok = !!force; else { try { ok = ans !== null && ans !== undefined && !!drill.check(it.q, ans); } catch (e) { ok = false; } }
-    const r = res.concat([{ id: it.id, n: it.lv.n, ok }]);
+    const r = res.concat([{ id: it.id, n: it.lv.n, ok, dunno: !!dk }]);
     setRes(r); setGiven({ ans, ok, timedOut: false }); setStreak(x => ok ? x + 1 : 0);
     if (ok) timer.current = setTimeout(() => next(r), 1100);
   };
@@ -1677,7 +1677,10 @@ function CheckRun({ items, floor, onDone, onQuit }) {
       {drill.feedbackAbove ? <div style={{display:'flex',flexDirection:'column'}}><Q {...qProps} fbAbove/>{fb}</div> : <><Q {...qProps}/>{fb}</>}
       {given && <button className="primary-btn" style={{marginTop:10}} onClick={() => next(res)}>{i + 1 >= list.length ? t('See how I did →', '결과 보기 →') : t('Next →', '다음 →')}</button>}
     </div>
-    <button className="ghost-btn" style={{marginTop:8,fontSize:13}} onClick={() => { clearTimeout(timer.current); try { stopClicks(); } catch (e) {} onQuit(); }}>{t('Stop the check', '그만하기')}</button>
+    <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}}>
+      <button className="ghost-btn" style={{marginTop:8,fontSize:13}} onClick={() => { clearTimeout(timer.current); try { stopClicks(); } catch (e) {} onQuit(); }}>{t('Stop the check', '그만하기')}</button>
+      {dunno && !given && <button className="ghost-btn" data-testid="check-dunno" style={{marginTop:8,fontSize:13}} onClick={() => answer(null, false, true)}>{t("I don't know", '모르겠어요')}</button>}
+    </div>
   </div>;
 }
 function chkWeakChips(id, ns) {
@@ -1839,6 +1842,7 @@ function Lesson({ id, title, intro, children, onStart, startLabel, head, noArt }
       {intro && <p style={{fontSize:14.5,color:'var(--muted)',margin:'0 0 8px',lineHeight:1.5}}>{intro}</p>}
       {!noArt && <ChapterArt id={STAFF_ART[id] ? id : String(id).split('-')[0]}/>}
       {head}
+      {DICT_BRING[id] && <DictChips ch={id}/>}
       <div style={{display:'flex',flexWrap:'wrap',gap:5,margin:'4px 0 2px'}}>
         {steps.map((s, i) => {
           const c = STEP_COLORS[i % STEP_COLORS.length];
@@ -1878,10 +1882,12 @@ function LessonMake({ id }) {   // Build CA: the room's own thing to make, at th
 }
 function LessonMore({ id }) {
   const own = { 'posture-hands': ['sit-check', 'arm-moves', 'hand-shape'], 'whole-staff': ['rhymes'] }[id] || [];
-  const list = (CHAPTER_TOOL_ORDER[id] || []).filter(x => !/^(sdy|ssk|srh|ssc|stm|sps|spr|skg|sgn|ivx|chx|tmx|fmx|mlx|cpx|csx|sac|ts|nv|mk)-/.test(x) && !own.includes(x) && !(MAKE_EXTRA[id] || []).includes(x)).map(x => TOOLS.find(tl => tl.id === x)).filter(Boolean);
+  const SF_ROOMS = ['scales', 'scale-play', 'minor-scales', 'scales-23', 'scales-3', 'scales-4', 'scales-5', 'scales-6', 'scales-7', 'scales-8', 'arps-6', 'arps-7', 'arps-8'];   // Build DP (37): the Scale finder in every scales room, first
+  const base = (CHAPTER_TOOL_ORDER[id] || []).filter(x => x !== 'scale-finder');
+  const list = (SF_ROOMS.includes(id) ? ['scale-finder'].concat(base) : base).filter(x => !/^(sdy|ssk|srh|ssc|stm|sps|spr|skg|sgn|ivx|chx|tmx|fmx|mlx|cpx|csx|sac|ts|nv|mk)-/.test(x) && !own.includes(x) && !(MAKE_EXTRA[id] || []).includes(x)).map(x => TOOLS.find(tl => tl.id === x)).filter(Boolean);
   if (!list.length) return <LessonMake id={id}/>;
   return <><LessonMake id={id}/><div style={{margin:'14px 0 0',padding:'10px 12px',border:'1px solid rgba(38,41,107,0.16)',borderRadius:10,background:'#fff'}}>
-    <div style={{fontSize:14,fontWeight:900,color:'var(--text)',margin:'0 0 6px'}}>{t('More in the toolbox', '툴박스에 더 있어요')}</div>
+    <div style={{fontSize:14,fontWeight:900,color:'var(--text)',margin:'0 0 6px'}}>{t('More to play with', '더 놀아 보기')}</div>
     <div style={{display:'flex',flexWrap:'wrap',gap:6}}>{list.map(tl => <a key={tl.id} className="chip" href={'?tool=' + tl.id + '&from=' + id + (LANG === 'ko' ? '&lang=ko' : '')} style={{textDecoration:'none',minHeight:44,display:'inline-flex',alignItems:'center',fontSize:13.5,whiteSpace:'normal',textAlign:'left',maxWidth:'100%'}}>{sscSx(LANG === 'ko' && TOOL_KO[tl.id] ? TOOL_KO[tl.id][0] : tl.title)}</a>)}</div>
   </div></>;
 }
@@ -7452,6 +7458,52 @@ function theoryKey(tonic, mode) {
 }
 function fmtTheory(n) { return n[0] + n.slice(1).replace(/x/g, '♯♯').replace(/bb/g, '♭♭').replace(/b/g, '♭').replace(/#/g, '♯'); }
 function scalePcOf(n) { return (({ C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 })[n[0]] + (n.indexOf('#') > 0 ? 1 : n.indexOf('b') > 0 ? -1 : 0) + 12) % 12; }
+// Build DP (37, her 22:53 and 23:05): one keyboard for both hands. Right-hand numbers above the keys, left-hand numbers
+// below, the thumbs in coral; thin navy brackets join each finger group (from one thumb to the next) instead of coloured
+// fills; a black key is named only when the scale uses it, spelt for the key. Hands together, one tap is one note: the
+// key lights and both hands sound (the left an octave lower); 'Up and down' plays the whole scale both hands.
+function SfHandsKeyboard({ rootPc, offsets, fR, fL, names, downOffsets }) {
+  const total = offsets[offsets.length - 1], { keys, whiteCount } = buildKeyboard(rootPc, total);
+  const W = 30, H = 78, BW = 18, BH = 48, TOP = 44, BOT = 40;
+  const [at, setAt] = useState(-1), timer = useRef(null);
+  const seq = useMemo(() => [...offsets, ...(downOffsets || offsets).slice(0, -1).reverse()], [offsets, downOffsets]);
+  useEffect(() => { setAt(-1); return () => clearTimeout(timer.current); }, [rootPc, offsets]);
+  const base = 60 + rootPc - (rootPc > 6 ? 12 : 0);
+  const sound = (off) => { const ctx = getAudio(); if (!ctx) return; blip(ctx, ctx.currentTime + 0.01, 440 * Math.pow(2, (base + off - 69) / 12), 0.36, 0.2, 'triangle'); blip(ctx, ctx.currentTime + 0.01, 440 * Math.pow(2, (base + off - 12 - 69) / 12), 0.36, 0.16, 'triangle'); };
+  const step = () => { clearTimeout(timer.current); const n = (at + 1) % seq.length; setAt(n); sound(seq[n]); };
+  const playAll = () => { clearTimeout(timer.current); let i = 0; const tick = () => { setAt(i); sound(seq[i]); i++; if (i < seq.length) timer.current = setTimeout(tick, 320); else timer.current = setTimeout(() => setAt(-1), 500); }; tick(); };
+  const xOf = (k) => k.isWhite ? k.whiteIndex * W + W / 2 : (k.precedingWhiteIndex + 1) * W;
+  const idxOf = {}; offsets.forEach((o, i) => { idxOf[o] = i; });
+  const litOff = at >= 0 ? seq[at] : null;
+  const groups = (f, up) => { if (!f) return []; const g = []; let st = up ? f.indexOf(1) : 0; if (st < 0) st = 0; for (let i = st + 1; i <= f.length; i++) { if (i === f.length || (up ? f[i] === 1 : f[i - 1] === 1)) { if (i - st >= 2) g.push([st, i - 1]); st = i; } } return g; };
+  const gR = groups(fR, true), gL = groups(fL, false);
+  const num = (x, y, f, lit) => <g>{f === 1 && <circle cx={x} cy={y - 4.5} r="8.5" fill={lit ? '#e4572e' : '#fff'} stroke="#e4572e" strokeWidth="1.6"/>}<text x={x} y={y} textAnchor="middle" fontSize="13" fontWeight="900" fill={f === 1 ? (lit ? '#fff' : '#e4572e') : lit ? '#e4572e' : '#26296b'}>{f}</text></g>;
+  const bracket = (g, y, dir) => g.map(([a, b], j) => { const x1 = xOf(keys[offsets[a]]) - 9, x2 = xOf(keys[offsets[b]]) + 9; return <path key={j} d={'M' + x1 + ' ' + (y - 4 * dir) + ' V' + y + ' H' + x2 + ' V' + (y - 4 * dir)} fill="none" stroke="#26296b" strokeWidth="1.1" opacity="0.7"/>; });
+  return <div data-sf-hands>
+    <svg viewBox={(-BW / 2) + ' 0 ' + (whiteCount * W + BW) + ' ' + (TOP + H + BOT)} style={{width:'100%',display:'block',margin:'0 auto'}}>
+      {fR && <text x={-BW / 2 + 2} y="11" fontSize="9" fontWeight="900" fill="#6d6f9c" letterSpacing="0.06em">{t('RIGHT HAND', '오른손')}</text>}
+      {fL && <text x={-BW / 2 + 2} y={TOP + H + BOT - 3} fontSize="9" fontWeight="900" fill="#6d6f9c" letterSpacing="0.06em">{t('LEFT HAND', '왼손')}</text>}
+      {keys.filter(k => k.isWhite).map(k => { const i = idxOf[k.i], lit = litOff === k.i, inS = i != null; return <g key={'w' + k.i}>
+        <rect x={k.whiteIndex * W} y={TOP} width={W} height={H} fill={lit ? '#fbe3da' : inS ? '#fff' : '#f6f3ea'} stroke={lit ? '#e4572e' : 'rgba(38,41,107,0.45)'} strokeWidth={lit ? 2 : 1.2}/>
+        {inS && names[i] && <text x={xOf(k)} y={TOP + H - 8} textAnchor="middle" fontSize="11" fontWeight="900" fill="#26296b">{prettyAny(names[i])}</text>}
+      </g>; })}
+      {keys.filter(k => !k.isWhite).map(k => { const i = idxOf[k.i], lit = litOff === k.i, inS = i != null; return <g key={'b' + k.i}>
+        <rect x={xOf(k) - BW / 2} y={TOP} width={BW} height={BH} fill={lit ? '#e4572e' : '#26296b'} stroke={inS ? '#fff' : 'none'} strokeWidth={inS ? 1.2 : 0}/>
+        {inS && names[i] && <text x={xOf(k)} y={TOP + BH - 7} textAnchor="middle" fontSize="9.5" fontWeight="900" fill="#fff">{prettyAny(names[i])}</text>}
+      </g>; })}
+      {fR && offsets.map((o, i) => <React.Fragment key={'r' + i}>{num(xOf(keys[o]), TOP - 12, fR[i], litOff === o)}</React.Fragment>)}
+      {fR && bracket(gR, TOP - 4, 1)}
+      {fL && offsets.map((o, i) => <React.Fragment key={'l' + i}>{num(xOf(keys[o]), TOP + H + 22, fL[i], litOff === o)}</React.Fragment>)}
+      {fL && bracket(gL, TOP + H + 6, -1)}
+    </svg>
+    <div style={{display:'flex',gap:8,flexWrap:'wrap',justifyContent:'center',alignItems:'center',marginTop:6}}>
+      <button type="button" className="primary-btn" data-sf-step style={{width:'auto',padding:'9px 16px',fontSize:14}} onClick={step}>{at < 0 ? t('▶ Hands together: tap for each note', '▶ 양손: 한 음씩 탭') : t('Next note ▶', '다음 음 ▶')}</button>
+      <button type="button" className="ghost-btn" data-sf-all style={{fontSize:13}} onClick={playAll}>{t('♪ Up and down', '♪ 올라갔다 내려오기')}</button>
+      {at >= 0 && <button type="button" className="chip" style={{fontSize:12}} onClick={() => { clearTimeout(timer.current); setAt(-1); }}>{t('Reset', '처음으로')}</button>}
+    </div>
+    {!fR && !fL && <p style={{fontSize:13,color:'var(--muted)',margin:'8px 0 0',textAlign:'center',lineHeight:1.5}}>{t('No finger numbers for this form: look the fingering up in the book.', '이 형태엔 손가락 번호가 없어요: 책에서 찾아 보세요.')}</p>}
+  </div>;
+}
 function ScaleFinderFree({ ext, onKey } = {}) {
   const init = PENDING_SCALE || (() => { try { const p = new URLSearchParams(location.search); return parseScaleQuery((p.get('key') || '') + (p.get('mode') === 'minor' ? ' minor' : '')); } catch (e) { return null; } })() || (ext && SCALES[ext] ? { key: ext, mode: 'major' } : null) || { key: 'C', mode: 'major' };
   PENDING_SCALE = null;
@@ -7543,17 +7595,9 @@ function ScaleFinderFree({ ext, onKey } = {}) {
             {DEGREE_NAMES.map((nm, i) => <div key={i}><b style={{color:'#e4572e'}}>{i + 1}</b> {mode === 'minor' && form === 'natural' && i === 6 ? t('subtonic', '서브토닉') : (LANG === 'ko' ? DEGREE_NAMES_KO[i] : nm)} <span style={{color:'var(--muted)'}}>{prettyAny(names[i])}</span></div>)}
           </div>}
         </div>}
-        <div style={{fontSize:12,fontWeight:900,color:'var(--muted)',letterSpacing:'0.05em',marginBottom:4}}>{t('RIGHT HAND', '오른손')}</div>
-        <ScaleKeyboard rootPc={info.rootPc} offsets={offs} fingers={fing('RH')} hand="RH" plain={clash} names={names.concat([names[0]])}/>
-        <div style={{fontSize:12,fontWeight:900,color:'var(--muted)',letterSpacing:'0.05em',margin:'10px 0 4px'}}>{t('LEFT HAND', '왼손')}</div>
-        <ScaleKeyboard rootPc={info.rootPc} offsets={offs} fingers={fing('LH')} hand="LH" plain={clash} names={names.concat([names[0]])}/>
-        <div style={{display:clash ? 'none' : 'flex',gap:10,flexWrap:'wrap',alignItems:'center',justifyContent:'center',marginTop:8,fontSize:12,fontWeight:700,color:'#4a4d86'}}>
-          <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:14,height:14,borderRadius:3,background:SEGMENT_COLORS.three.fill,border:'1.5px solid ' + SEGMENT_COLORS.three.stroke}}/>{t('1-2-3 group', '1-2-3 묶음')}</span>
-          <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:14,height:14,borderRadius:3,background:SEGMENT_COLORS.four.fill,border:'1.5px solid ' + SEGMENT_COLORS.four.stroke}}/>{t('1-2-3-4 group', '1-2-3-4 묶음')}</span>
-          <span style={{display:'inline-flex',alignItems:'center',gap:5}}><span style={{width:14,height:14,borderRadius:3,background:'#fff',border:'1.5px solid #7f81a8'}}/>{t('start / end note', '시작 / 끝 음')}</span>
-        </div>
+        <SfHandsKeyboard rootPc={info.rootPc} offsets={offs} fR={clash ? null : fing('RH')} fL={clash ? null : fing('LH')} names={names.concat([names[0]])} downOffsets={mode === 'minor' && form === 'melodic' ? minorOffsets('natural', oct) : null}/>
         {clash && <p style={{fontSize:13,color:'var(--muted)',margin:'8px 0 0',textAlign:'center',lineHeight:1.5}}>{t('No finger numbers for this form: the harmonic fingering would put a thumb on a black key. The lit keys are the notes of the scale; look the fingering up in your book.', '이 형태는 손가락 번호를 보여 주지 않아요: 화성 단음계 손가락으로 치면 엄지가 검은건반에 닿아요. 불 켜진 건반이 이 스케일의 음이에요. 손가락 번호는 책에서 확인해요.')}</p>}
-        <div style={{textAlign:'center',marginTop:8}}><button className="ghost-btn" onClick={() => playScaleNotes(info.rootPc, offs, mode === 'minor' && form === 'melodic' ? minorOffsets('natural', oct) : null)}>{t('♪ Hear it up and down', '♪ 올라갔다 내려오며 듣기')}</button></div>
+        <div style={{textAlign:'center',marginTop:8,display:'none'}}><button className="ghost-btn" onClick={() => playScaleNotes(info.rootPc, offs, mode === 'minor' && form === 'melodic' ? minorOffsets('natural', oct) : null)}>{t('♪ Hear it up and down', '♪ 올라갔다 내려오며 듣기')}</button></div>
       </div>
       {hub && <div style={{display:'flex',gap:6,flexWrap:'wrap',marginTop:12}}>{[['build', t('Build it', '직접 만들기')], ['patterns', t('Fingering patterns', '손가락 번호 패턴')], ['stamps', t('Stamps', '도장')], ['modes', t('Modes', '선법')]].map(([id, l]) => <button key={id} className={'chip' + (sec === id ? ' active' : '')} style={{padding:'9px 16px',fontSize:14,minHeight:40}} aria-pressed={sec === id} onClick={() => setSec(sec === id ? null : id)}>{l}</button>)}</div>}
       {hub && sec === 'build' && <div style={{marginTop:10}}><ScaleBuilder key={mode} mode={mode}/></div>}
@@ -21713,6 +21757,11 @@ const PLACE_KEY = 'pb_place_v1', PLACE_N = 6, PLACE_PASS = 5;
 function loadPlace() { try { const v = JSON.parse(localStorage.getItem(PLACE_KEY)); return v && typeof v === 'object' ? v : null; } catch (e) { return null; } }
 const PLAN_KEY = 'pb_plan_v1';   // Build CS: the teacher's plan for a linked student (from pb_get): { piano: floor index, theory: 1..7, home: bool }
 function loadPlan() { try { const v = JSON.parse(localStorage.getItem(PLAN_KEY)); return v && typeof v === 'object' && !Array.isArray(v) ? v : null; } catch (e) { return null; } }
+// Build DP (36, her A): a room's skill, for the placement: a floor's questions come round-robin from the four skills, and a
+// miss in one skill only still climbs, with that skill's rooms marked to review
+const PLACE_SKILL = (id) => /^(listen|ear-)/.test(id) ? 'ear' : /^(pulse|note-values|time-signatures|rhythm|six-eight|tempo)/.test(id) ? 'rhythm' : /^(note-names|staff|reading-steps|whole-staff|ledger-lines|signs|dynamics|terms|accidentals|key-signatures|keys-)/.test(id) ? 'reading' : 'keys';
+const PLACE_SKILL_NAME = { ear: ['ear', '귀'], rhythm: ['rhythm', '리듬'], reading: ['reading', '악보 읽기'], keys: ['keys and scales', '건반과 스케일'] };
+const placeReview = () => { const p = loadPlace(); return p && Array.isArray(p.review) ? p.review : []; };
 const placeFloor = () => { const pl = loadPlan(); if (pl && Number.isInteger(pl.piano) && pl.piano >= 0 && PATH_STAGES[pl.piano]) return pl.piano; const p = loadPlace(); return p && p.piano > 0 ? p.piano : 0; };
 const myTheory = () => { const pl = loadPlan(); if (pl && pl.theory >= 1 && pl.theory <= 7) return Math.round(pl.theory); const p = loadPlace(); return p && p.theory >= 1 && p.theory <= 7 ? p.theory : 7; };   // 7 = no limit
 const planHome = () => { const pl = loadPlan(); return !!(pl && pl.home === true); };
@@ -21727,10 +21776,11 @@ function placeLadders() {
   for (let n = 1; n <= 6; n++) { const ids = pathIds().filter(id => THEORY_ROOM[id] === n && CHECK_LV[id]); if (ids.length) theory.push({ n, ids }); }
   return { piano, theory };
 }
-function placeItems(ids, n, noSound) {   // n questions from as many rooms as possible; the theory ladder asks without sound or tapping
+function placeItems(ids, n, noSound) {   // n questions from as many rooms as possible, round-robin over the four skills (Build DP); the theory ladder asks without sound or tapping
   const lv = (id) => chkLevels(id).filter(l => !(noSound && l.noPrint));
-  const rooms = chkShuffle(ids.filter(id => lv(id).length)), out = [];
-  let r = 0; while (out.length < n && rooms.length) { const id = rooms[r % rooms.length], L = lv(id); out.push({ id, lv: L[Math.floor(Math.random() * L.length)] }); r++; }
+  const bySkill = {}; chkShuffle(ids.filter(id => lv(id).length)).forEach(id => { const k = PLACE_SKILL(id); (bySkill[k] = bySkill[k] || []).push(id); });
+  const skills = chkShuffle(Object.keys(bySkill)), out = []; if (!skills.length) return out;
+  let r = 0; while (out.length < n) { const k = skills[r % skills.length], list = bySkill[k], id = list[Math.floor(r / skills.length) % list.length], L = lv(id); out.push({ id, lv: L[Math.floor(Math.random() * L.length)] }); r++; }
   return chkShuffle(out);
 }
 const PLACE_PIANO = [['0', 'Not yet', '아직'], ['P', 'Prelim', 'Prelim'], ['1', 'Grade 1', 'Grade 1'], ['2', '2', '2'], ['3', '3', '3'], ['4', '4', '4'], ['5', '5', '5'], ['6', '6', '6'], ['7', '7', '7'], ['8', '8', '8']];
@@ -21746,24 +21796,27 @@ function Placement({ onOpen, onClose }) {
   const [phase, setPhase] = useState('ask'), [pg, setPg] = useState('0'), [tg, setTg] = useState('0');
   const [track, setTrack] = useState('piano'), [rung, setRung] = useState(0), [items, setItems] = useState(null), [runKey, setRunKey] = useState(0);
   const [down, setDown] = useState(false), [last, setLast] = useState(null), [res, setRes] = useState({}), [miss, setMiss] = useState([]);
+  const [review, setReview] = useState([]), [dk, setDk] = useState(0);   // Build DP: the rooms of a one-skill miss; the 'I don't know' count
   const box = useRef(null);
   const lad = track === 'piano' ? lads.piano : lads.theory;
   const theoryStart = () => Math.max(0, Math.min(lads.theory.length - 1, (+tg || 1) - 1));
   const rungName = (tr, i) => tr === 'piano' ? floorName(lads.piano[i].k) : theoryName(lads.theory[i].n);
   const ask = (tr, i) => { const L = tr === 'piano' ? lads.piano : lads.theory; setTrack(tr); setRung(i); setItems(placeItems(L[i].ids, PLACE_N, tr === 'theory')); setRunKey(x => x + 1); setPhase('run'); try { box.current.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {} };
-  const begin = () => { setRes({}); setMiss([]); setDown(false); ask('piano', placeStartRung(lads.piano, pg)); };
+  const begin = () => { setRes({}); setMiss([]); setReview([]); setDk(0); setDown(false); ask('piano', placeStartRung(lads.piano, pg)); };
   const finish = (tr, startIdx) => {
     const out = { ...res, [tr]: startIdx };
     setRes(out);
     if (tr === 'piano') { setDown(false); setLast(null); setPhase('turn'); return; }
     const piano = lads.piano[out.piano] || lads.piano[lads.piano.length - 1], th = out.theory >= lads.theory.length ? null : lads.theory[out.theory];
-    try { localStorage.setItem(PLACE_KEY, JSON.stringify({ piano: piano.k, theory: th ? th.n : 7, at: Date.now() })); } catch (e) {}
+    try { localStorage.setItem(PLACE_KEY, JSON.stringify({ piano: piano.k, theory: th ? th.n : 7, at: Date.now(), review: [...new Set(review)] })); } catch (e) {}
     setPhase('done');
   };
   const done = (r) => {
-    const right = r.filter(x => x.ok).length, pass = right >= PLACE_PASS, missed = r.filter(x => !x.ok).map(x => x.id);
-    setLast({ right, total: r.length, pass, name: rungName(track, rung) });
-    if (pass) { setMiss(m => m.concat(missed)); if (rung + 1 < lad.length && !down) { setPhase('climb'); return; } finish(track, down ? rung + 1 : lad.length); return; }
+    const right = r.filter(x => x.ok).length, missed = r.filter(x => !x.ok).map(x => x.id), skills = [...new Set(missed.map(PLACE_SKILL))];
+    const oneSkill = right === PLACE_PASS - 1 && skills.length === 1, pass = right >= PLACE_PASS || oneSkill;   // Build DP (36): a miss in one skill only still climbs
+    setDk(x => x + r.filter(x => x.dunno).length);
+    setLast({ right, total: r.length, pass, name: rungName(track, rung), skill: oneSkill ? skills[0] : null });
+    if (pass) { setMiss(m => m.concat(missed)); if (oneSkill) setReview(v => v.concat([...new Set(missed)])); if (rung + 1 < lad.length && !down) { setPhase('climb'); return; } finish(track, down ? rung + 1 : lad.length); return; }
     if (rung > 0 && !down && rung === (track === 'piano' ? placeStartRung(lads.piano, pg) : theoryStart())) { setDown(true); setPhase('lower'); return; }
     finish(track, rung);
   };
@@ -21781,11 +21834,11 @@ function Placement({ onOpen, onClose }) {
   if (phase === 'run' && items) return shell(<>
     <div style={{fontSize:15,fontWeight:900,color:'#26296b',margin:'0 0 2px'}}>{(track === 'piano' ? t('Piano · ', '피아노 · ') : t('Theory · ', '이론 · ')) + rungName(track, rung)}</div>
     <div style={{display:'flex',gap:3,margin:'2px 0 0'}} aria-hidden="true">{lad.map((x, i) => <span key={i} style={{flex:1,height:5,borderRadius:3,background:i < rung ? '#26296b' : i === rung ? '#e4572e' : 'rgba(38,41,107,0.12)'}}/>)}</div>
-    <CheckRun key={'p' + runKey} items={items} floor onDone={done} onQuit={onClose}/>
+    <CheckRun key={'p' + runKey} items={items} floor dunno onDone={done} onQuit={onClose}/>
   </>);
   if (phase === 'climb' || phase === 'lower' || phase === 'turn') return shell(<div data-testid="place-step" style={{textAlign:'center',padding:'6px 0'}}>
     {last && <div style={{fontSize:34,fontWeight:900,color:'#26296b'}}>{last.right}<span style={{fontSize:17,color:'var(--muted)'}}> / {last.total}</span></div>}
-    <div style={{fontSize:16,fontWeight:900,color:phase === 'climb' ? '#2e8a6e' : '#26296b',margin:'4px 0 10px'}}>{phase === 'climb' ? t(last.name + ': easy for you! Up a floor.', last.name + ': 쉽네요! 한 층 위로.') : phase === 'lower' ? t('That one was hard. Let’s try a floor lower.', '조금 어려웠어요. 한 층 아래로 가 봐요.') : t('Piano done! Now theory: no sound, just looking and thinking.', '피아노 끝! 이제 이론: 소리 없이, 보고 생각하기.')}</div>
+    <div style={{fontSize:16,fontWeight:900,color:phase === 'climb' ? '#2e8a6e' : '#26296b',margin:'4px 0 10px'}}>{phase === 'climb' ? (last.skill ? t(last.name + ': up a floor, and ' + PLACE_SKILL_NAME[last.skill][0] + ' rooms to review.', last.name + ': 한 층 위로, ' + PLACE_SKILL_NAME[last.skill][1] + ' 방은 다시 볼 방.') : t(last.name + ': easy for you! Up a floor.', last.name + ': 쉽네요! 한 층 위로.')) : phase === 'lower' ? t('That one was hard. Let’s try a floor lower.', '조금 어려웠어요. 한 층 아래로 가 봐요.') : t('Piano done! Now theory: no sound, just looking and thinking.', '피아노 끝! 이제 이론: 소리 없이, 보고 생각하기.')}</div>
     {phase === 'turn' && <div style={{fontSize:14,color:'#4a4d86',margin:'-4px 0 10px'}}>{t('Piano: ', '피아노: ') + floorName(lads.piano[Math.min(res.piano, lads.piano.length - 1)].k)}</div>}
     <button className="primary-btn" data-testid="place-next" onClick={() => phase === 'turn' ? ask('theory', theoryStart()) : ask(track, phase === 'climb' ? rung + 1 : rung - 1)}>{phase === 'climb' ? t('Next floor →', '다음 층 →') : phase === 'lower' ? t('One floor lower →', '한 층 아래 →') : t('Theory →', '이론 →')}</button>
   </div>);
@@ -21793,7 +21846,7 @@ function Placement({ onOpen, onClose }) {
     const p = lads.piano[Math.min(res.piano, lads.piano.length - 1)], allPiano = res.piano >= lads.piano.length, th = res.theory >= lads.theory.length ? null : lads.theory[res.theory];
     const firstRoom = pathStageIds(PATH_STAGES[p.k])[0], thFirst = th ? th.ids[0] : null;
     const room = (id) => <button key={id} className="chip" style={{fontSize:13,minHeight:36}} onClick={() => onOpen(id)}>{bkChapterNo(id) + ' · ' + bkChapterName(id)} ›</button>;
-    const visit = [...new Set(miss)].filter(id => pathIds().indexOf(id) >= 0);
+    const rev = [...new Set(review)].filter(id => pathIds().indexOf(id) >= 0), visit = [...new Set(miss)].filter(id => pathIds().indexOf(id) >= 0 && !rev.includes(id));   // Build DP
     return shell(<div data-testid="place-result" data-floor={p.k} data-theory={th ? th.n : 7} style={{textAlign:'center'}}>
       <CheckStamp text={t('START!', '출발!')} color="#26296b"/>
       <div style={{display:'grid',gap:10,textAlign:'left',margin:'6px 0 0'}}>
@@ -21807,9 +21860,13 @@ function Placement({ onOpen, onClose }) {
           <div style={{fontSize:17,fontWeight:900,color:'#26296b'}}>{th ? theoryName(th.n) : t('Every theory grade was easy!', '모든 이론 급이 쉬웠어요!')}</div>
           {th && <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:6}}><button className="primary-btn" data-testid="place-go-theory" style={{width:'auto',padding:'9px 14px',fontSize:14}} onClick={() => onOpen(thFirst)}>{t('Start here: ', '여기서 시작: ') + bkChapterName(thFirst) + ' →'}</button></div>}
         </div>
+        {rev.length > 0 && <div data-testid="place-review" style={{borderTop:'1px solid rgba(38,41,107,0.12)',paddingTop:8}}>
+          <div style={{fontSize:13,fontWeight:900,color:'#e4572e',margin:'0 0 4px'}}>{t('Rooms to review: the house marks them until their check is passed', '다시 볼 방: 체크를 통과할 때까지 집에 표시돼요')}</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:6}}>{rev.slice(0, 8).map(room)}</div></div>}
         {visit.length > 0 && <div style={{borderTop:'1px solid rgba(38,41,107,0.12)',paddingTop:8}}>
           <div style={{fontSize:13,fontWeight:800,color:'#4a4d86',margin:'0 0 4px'}}>{t('Missed on the way up: worth a quick look', '올라오다 틀린 방: 잠깐 들러 봐요')}</div>
           <div style={{display:'flex',flexWrap:'wrap',gap:6}}>{visit.slice(0, 6).map(room)}</div></div>}
+        {dk > 0 && <div style={{fontSize:12.5,color:'#6d6f9c'}}>{t("'I don't know': " + dk + (dk === 1 ? ' time' : ' times') + ', counted as misses.', "'모르겠어요' " + dk + '번, 틀린 것으로 셌어요.')}</div>}
       </div>
       <div style={{fontSize:12.5,color:'#6d6f9c',margin:'10px 0 0'}}>{t('Saved: the house now starts you on this floor. Do it again any time.', '저장했어요: 이제 집이 이 층부터 안내해요. 언제든 다시 해도 돼요.')}</div>
     </div>);
@@ -23438,6 +23495,7 @@ function thDefs() {
     + p('thwp-sprig', 12, 12, '<g fill="' + N + '"><circle cx="3" cy="3" r="0.9"/><circle cx="9" cy="9" r="0.9"/></g>')
     + p('thwp-scale', 12, 8, '<path d="M0 8 A6 6 0 0 1 12 8 M-6 4 A6 6 0 0 1 6 4 M6 4 A6 6 0 0 1 18 4" fill="none" stroke="' + N + '" stroke-width="0.7"/>')
     + p('thwp-trellis', 11, 11, '<path d="M0 0 L11 11 M11 0 L0 11" stroke="' + N + '" stroke-width="0.7"/>')
+    + '<radialGradient id="thglow" cx="50%" cy="45%" r="60%"><stop offset="0" stop-color="#ffd98a" stop-opacity="0.75"/><stop offset="0.55" stop-color="#ffe9b8" stop-opacity="0.45"/><stop offset="1" stop-color="#fff6dc" stop-opacity="0"/></radialGradient>'   // Build DP (34): the lit room
     + p('thwp-damask', 12, 14, '<path d="M6 2 L9 7 L6 12 L3 7 Z" fill="none" stroke="' + N + '" stroke-width="0.8"/>')
     + p('thwp-regency', 14, 8, '<line x1="3" y1="0" x2="3" y2="8" stroke="' + N + '" stroke-width="2.4"/><line x1="7" y1="0" x2="7" y2="8" stroke="' + N + '" stroke-width="0.6"/>')
     + p('thfl-chequer', 12, 6, '<rect width="6" height="6" fill="' + N + '"/>')
@@ -23488,6 +23546,7 @@ function thNames(state, rooms) {
 function thRoom(view, state, id, x, y, w, h, fs, out, dimNew, lay, cmp) {   // dimNew: the guides' front page greys the rooms without a page; lay: thNames; cmp: Build BM, a compact room
   const st = state[id], on = id === view.here, done = st === 'done', num = view.nums[id], cy = y + h - (cmp ? 10 : 22);
   let s = '<rect x="' + pFix(x) + '" y="' + pFix(y) + '" width="' + pFix(w) + '" height="' + pFix(h) + '" stroke-width="1"/>';
+  if (on) s += '<rect x="' + pFix(x + 1) + '" y="' + pFix(y + 1) + '" width="' + pFix(w - 2) + '" height="' + pFix(h - 2) + '" fill="#fff4d6" stroke="none"/><rect x="' + pFix(x + 1) + '" y="' + pFix(y + 1) + '" width="' + pFix(w - 2) + '" height="' + pFix(h - 2) + '" fill="url(#thglow)" stroke="none"/>';   // Build DP (34): the light is on in your room
   if (fs.wp === 'drape') {   // a theatre: a scalloped valance and two curtains tied back
     let v = stD('M', x + 2, y + 2, 'L', x + w - 2, y + 2, 'L', x + w - 2, y + 6);
     const nsc = Math.max(3, Math.round((w - 4) / 10)), sw2 = (w - 4) / nsc;
@@ -23507,6 +23566,8 @@ function thRoom(view, state, id, x, y, w, h, fs, out, dimNew, lay, cmp) {   // d
   s += stSquare(sx, sy, sq, num, done ? ST.G : null, 11) + stT(sx + sq + 5, sy + 13, lines[0], { size: nz, weight: 700, font: TH_SERIF, fill: nfill });
   if (lines[1]) s += stT(cx, sy + 27, lines[1], { size: nz, weight: 700, font: TH_SERIF, fill: nfill, anchor: 'middle' });
   const star = view.star && view.star[id];   // Build CN: the chapter check passed
+  if (!done && !star && view.review && view.review.includes(id)) { const rw = cmp ? 34 : 44, rh = cmp ? 10 : 12, rx0 = x + w - rw - (cmp ? 5 : 8), ry0 = y + h - 6 - (cmp ? 14 : 17);   // Build DP (36): a room to review, from the placement
+    s += '<rect x="' + pFix(rx0) + '" y="' + pFix(ry0) + '" width="' + rw + '" height="' + rh + '" rx="' + (rh / 2) + '" fill="#fff" stroke="' + ST.C + '" stroke-width="0.9"/>' + stT(rx0 + rw / 2, ry0 + rh - (cmp ? 2.4 : 2.8), t('review', '다시'), { size: cmp ? 7 : 8.4, weight: 800, fill: ST.C, anchor: 'middle' }); }
   const thn = THEORY_ROOM[id];   // Build CQ: the Theory mark
   if (thn) { const tw = cmp ? 17 : 21, th = cmp ? 10 : 12, tx = x + (cmp ? 5 : 8), ty = y + h - 6 - (cmp ? 14 : 17);
     s += '<rect x="' + pFix(tx) + '" y="' + pFix(ty) + '" width="' + tw + '" height="' + th + '" rx="' + (th / 2) + '" fill="#fff" stroke="' + ST.N + '" stroke-width="0.9"/>' + stT(tx + tw / 2, ty + th - (cmp ? 2.4 : 2.8), 'T' + thn, { size: cmp ? 7.2 : 8.6, weight: 800, fill: ST.N, anchor: 'middle' }); }
@@ -23658,8 +23719,8 @@ function HouseMap({ onOpen, compact, noIntro }) {
   const here = last && all.includes(last) && chapterState(last).status !== 'done' ? last : placeNext(all, id => chapterState(id).status !== 'done');
   const link = loadStoredLink(), name = link && link.name ? link.name.trim() : '', today = localDay();
   const chkRooms = loadChecks().rooms, star = {}; Object.keys(chkRooms).forEach(id => { if (chkRooms[id].pass) star[id] = 1; });   // Build CN
-  const sig = stages.map(x => x.st.join(',')).join('|') + here + LANG + compact + name + today + fontTick + wide + (topic || '') + Object.keys(star).join(',');
-  const view = { stages, here, nums, focus: topic, star, pawn: name ? (x, y, k) => stPiece(VIC_PAWN_NAVY, x, y, k) : null };
+  const sig = stages.map(x => x.st.join(',')).join('|') + here + LANG + compact + name + today + fontTick + wide + (topic || '') + Object.keys(star).join(',') + placeReview().join(',');
+  const view = { stages, here, nums, focus: topic, star, review: placeReview(), pawn: name ? (x, y, k) => stPiece(VIC_PAWN_NAVY, x, y, k) : null };   // Build DP: the rooms to review
   const house = useMemo(() => townhouseSvg(view, { wide }), [sig]);
   const hall = useMemo(() => townhouseSvg(view, { hall: true, wide }), [sig]);
   const week = useMemo(() => compact ? null : weekSvg({ days: practiceDays(), today, name }), [sig]);
@@ -24274,7 +24335,11 @@ function ConceptHome({ st, update }) {
   // level 0: the five areas
   return (
     <div className="fade-up">
-      <h2 style={{fontFamily:"'Playfair Display', Georgia, serif",fontWeight:900,fontSize:32,lineHeight:1.1,margin:'4px 0 16px',color:'var(--navy)',textWrap:'balance'}}>{t('Where do you want to go?', '어디로 갈까요?')}</h2>
+      <h2 style={{fontFamily:"'Playfair Display', Georgia, serif",fontWeight:900,fontSize:32,lineHeight:1.1,margin:'4px 0 12px',color:'var(--navy)',textWrap:'balance'}}>{t('Where do you want to go?', '어디로 갈까요?')}</h2>
+      <div data-testid="home-quick" style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',margin:'0 0 14px'}}>
+        <span style={{fontSize:11.5,fontWeight:900,color:'var(--muted)',letterSpacing:'0.06em'}}>{t('QUICK', '바로')}</span>
+        {[['scale-finder', t('Scale finder', '스케일 찾기')], ['metronome', t('Metronome', '메트로놈')]].map(([id, l]) => <button key={id} type="button" className="chip" data-quick={id} style={{padding:'5px 12px',fontSize:13.5,fontWeight:800}} onClick={() => go({ view: 'tools', tool: id, ret: 'home' })}>{l}</button>)}
+      </div>
       <div style={{display:'flex',flexDirection:'column',gap:10}}>
         {TOOL_AREAS.filter(a => a.id !== 'beside').map(a => (
           <button key={a.id} style={homeRow(false)} onClick={() => go({ ha: a.id, hc: null, hs: null })}>
@@ -24368,8 +24433,12 @@ function App() {
   useEffect(() => { if (st.view === 'home' && !HM) setSt(prev => ({ ...prev, view: 'path', drill: null, ret: null })); }, [st.view, HM]);
   function jumpToChapter(id) { setFindOpen(false); update({ view: (T && (st.view === 'chapters' || st.view === 'books' || st.view === 'printables')) ? st.view : 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }
 
+  const [term, setTerm] = useState(null);   // Build DO: the dictionary card
+  const termCtx = useMemo(() => ({ open: (id) => setTerm(id), room: (id) => { setTerm(null); jumpToChapter(id); } }), [st.view]);
   return (
+    <DictCtx.Provider value={termCtx}>
     <div style={{minHeight:'100vh',background:'var(--bg)'}}>
+      {term && <DictCard id={term} onClose={() => setTerm(null)}/>}
       <div style={{background:'var(--bg)',padding:'14px 16px 30px',backgroundImage:'repeating-linear-gradient(to bottom, transparent 0 3px, var(--navy) 3px 4.2px)',backgroundSize:'100% 20px',backgroundRepeat:'no-repeat',backgroundPosition:'0 100%'}}>
         <div className="pb-main" style={{maxWidth:600,margin:'0 auto',display:'flex',flexWrap:'wrap',alignItems:'center',justifyContent:'space-between',gap:10}}>
           <div style={{minWidth:0}}>
@@ -24451,6 +24520,7 @@ function App() {
         </>}
       </div>
     </div>
+    </DictCtx.Provider>
   );
 }
 
@@ -33880,7 +33950,7 @@ function lbWordsFirst(children) {
 }
 // Sohyun 2026-10-09 (Phase 393): the lesson's words must be easy to read -- bigger, a little heavier, more air
 function LbSay({ children, size = 16.5 }) {
-  return <p className="lb-say" style={{fontSize:Math.max(size + 1.5, 18),lineHeight:1.55,fontWeight:500,color:BK.ink,margin:'2px 0'}}>{children}</p>;
+  return <p className="lb-say" style={{fontSize:Math.max(size + 1.5, 18),lineHeight:1.55,fontWeight:500,color:BK.ink,margin:'2px 0'}}><Gloss>{children}</Gloss></p>;   // Build DO: the earlier rooms' words are links on screen
 }
 function LbKeysIcon({ size = 22 }) {
   return <svg viewBox="0 0 24 16" width={size} height={size * 16 / 24} aria-hidden="true"><rect x="1" y="1" width="22" height="14" rx="2" fill="#fff" stroke={BK.ink} strokeWidth="1.4"/>{[6.5, 12, 17.5].map(x => <line key={x} x1={x} x2={x} y1="1" y2="15" stroke={BK.ink} strokeWidth="1"/>)}{[5, 10.5, 16].map(x => <rect key={x} x={x} y="1" width="3" height="8" fill={BK.ink}/>)}</svg>;
@@ -33921,6 +33991,7 @@ function LbTune({ name, how, seq, icon, coral }) {   // coral (Phase 455): finge
 function LbDrillStrip({ id }) {   // Phase 409: only the code -- the levels live in the drill itself
   return (
     <div data-lb-drill style={{display:'flex',justifyContent:'flex-end',alignItems:'center',gap:8,marginTop:'auto'}}>
+      {DICT_BRING[id] && DICT_BRING[id].some(x => dictEarlier(x, id)) && <div data-term-print={id} style={{fontSize:11.5,color:BK.muted,fontWeight:700,flex:1,minWidth:0,marginRight:'auto',lineHeight:1.35}}>{t('Bring with you: ', '가져올 것: ') + DICT_BRING[id].filter(x => dictEarlier(x, id)).map(x => dictName(DICT_BY_ID[x]) + ' (' + (LANG === 'ko' ? bkChapterNo(DICT_BY_ID[x].room) + '장' : 'ch. ' + bkChapterNo(DICT_BY_ID[x].room)) + ')').join(' · ')}</div>}
       <span style={{fontSize:10.5,color:BK.muted}}>{t('online', '온라인')}</span>
       <div style={{padding:4,border:'0.8px solid ' + BK.hair,borderRadius:2,background:'#fff',lineHeight:0}}><QR url={bkLink('drill=' + id + '&tab=drill&level=1&lock=1')} size={64}/></div>
     </div>
@@ -34011,7 +34082,7 @@ function LbScreenPage({ page }) {
     <LbScreenCtx.Provider value={true}>
       <BkChapterCtx.Provider value={page.props.chId}>
         <div className="lb-screen" data-lb-screen={page.props.no} style={{display:'flex',flexDirection:'column',gap:14,margin:'4px 0 6px'}}>
-          {lbWordsFirst(children)}
+          <GlossSeen.Provider value={new Set()}>{lbWordsFirst(children)}</GlossSeen.Provider>
           {/* Phase 399: no teacher strip on screen either -- teacher content lives in the Teacher copy */}
         </div>
       </BkChapterCtx.Provider>
@@ -49099,6 +49170,163 @@ function VicCutFrame({ inset = 9, r = 11, gap = 3 }) {
     {sz && sz[0] > 40 && sz[1] > 40 && <><path d={d(sz[0], sz[1], inset, r)} fill="none" stroke={BK.ink} strokeWidth="1.1"/><path d={d(sz[0], sz[1], inset + gap, r + gap)} fill="none" stroke={BK.ink} strokeOpacity="0.45" strokeWidth="0.6"/></>}
   </svg>;
 }
+
+// ─── Build DO (call 31, her 21:23, 21:25 and 21:41): the dictionary ───────────────────────────────────────────
+// A term an earlier room taught, met again in a later room's text, is underlined (dotted navy) on screen; a tap opens a
+// small card: the term, one neutral line (no metaphors: those stay inside the rooms), the room's own small picture,
+// 'Go to the room', and a one-question quick check from that room's own check. The opener also shows 'Bring with you':
+// up to four such terms, the ones the chapter's text uses most (DICT_BRING, baked from the Lesson Books by scan31.js).
+// Only terms from rooms before this one, and the first time each appears on a screen page. The books print the
+// 'Bring with you' line on the opener (no underlines in print). The definitions are mine (terms31.json), for her to check.
+const DICT_TERMS = [
+  { id: "pulse", room: "pulse", en: ["pulse"], ko: ["박"], defEn: "The steady tick a piece moves on; what you tap your foot to.", defKo: "곡이 흘러가는 일정한 똑딱임. 발로 맞추는 그것." },
+  { id: "bar", room: "pulse", en: ["bar", "bars", "bar line", "bar lines"], ko: ["마디", "세로줄"], defEn: "A group of beats between two bar lines; the first beat of a bar is the strongest.", defKo: "세로줄 둘 사이의 박 묶음. 마디의 첫 박이 가장 세요." },
+  { id: "middle-c", room: "note-names", en: ["middle C"], ko: ["가운데 C", "중간 C"], defEn: "The C nearest the middle of the keyboard; the treble and bass staves meet there.", defKo: "건반 한가운데에 가장 가까운 C. 높은음자리표와 낮은음자리표가 거기서 만나요." },
+  { id: "letter-names", room: "note-names", en: ["letter names", "musical alphabet"], ko: ["음이름", "음악 알파벳"], defEn: "The seven names of the white keys, A to G, repeating up the keyboard.", defKo: "흰건반의 일곱 이름 A~G. 건반을 따라 되풀이돼요." },
+  { id: "octave", room: "note-names", en: ["octave", "octaves"], ko: ["옥타브"], defEn: "The distance from one note to the next note with the same name, eight letter names apart.", defKo: "한 음에서 같은 이름의 다음 음까지의 거리. 음이름 여덟 개 떨어져요." },
+  { id: "five-finger-position", room: "hand-positions", en: ["five-finger position", "hand position", "C position", "G position"], ko: ["다섯 손가락 자리", "손 자리"], defEn: "The hand resting on five keys in a row, one finger each, named after its lowest note.", defKo: "다섯 건반 위에 손가락 하나씩 얹은 자리. 가장 낮은 음 이름으로 불러요." },
+  { id: "finger-numbers", room: "hand-positions", en: ["finger numbers", "finger number"], ko: ["손가락 번호", "운지"], defEn: "1 is the thumb and 5 the little finger, in both hands.", defKo: "엄지가 1, 새끼손가락이 5. 양손 같아요." },
+  { id: "crotchet", room: "note-values", en: ["crotchet", "crotchets", "quarter note"], ko: ["4분음표"], defEn: "A note with a filled head and a stem, worth one beat.", defKo: "속이 찬 머리에 기둥이 있는 음표. 한 박." },
+  { id: "minim", room: "note-values", en: ["minim", "minims", "half note"], ko: ["2분음표"], defEn: "A note with an open head and a stem, worth two beats.", defKo: "속이 빈 머리에 기둥이 있는 음표. 두 박." },
+  { id: "semibreve", room: "note-values", en: ["semibreve", "semibreves", "whole note"], ko: ["온음표"], defEn: "An open note head with no stem, worth four beats.", defKo: "기둥 없는 빈 머리의 음표. 네 박." },
+  { id: "quaver", room: "note-values", en: ["quaver", "quavers", "eighth note", "eighth notes"], ko: ["8분음표"], defEn: "A note with a flag or a beam, worth half a beat; two make one beat.", defKo: "꼬리나 가로줄이 달린 음표. 반 박. 둘이 한 박이에요." },
+  { id: "dotted-note", room: "note-values", en: [], ko: ["점음표"], defEn: "A dot after a note adds half its value: a dotted minim is three beats.", defKo: "음표 뒤의 점은 그 길이의 반을 더해요. 점2분음표는 세 박." },
+  { id: "rest", room: "note-values", en: ["rests"], ko: ["쉼표"], defEn: "A sign for silence; each rest lasts as long as the note it matches.", defKo: "쉬라는 기호. 짝이 되는 음표만큼 쉬어요." },
+  { id: "tie", room: "note-values", en: ["tie", "ties"], ko: ["붙임줄"], defEn: "A curved line joining two notes of the same pitch into one longer sound.", defKo: "같은 높이의 두 음을 하나로 잇는 굽은 줄." },
+  { id: "dynamics", room: "dynamics", en: ["dynamics", "dynamic"], ko: ["셈여림"], defEn: "How loud or soft to play: p is soft, f is loud, m before them means moderately.", defKo: "얼마나 크게·작게 칠지. p는 여리게, f는 세게, 앞의 m은 조금." },
+  { id: "crescendo", room: "dynamics", en: ["crescendo", "diminuendo", "decrescendo"], ko: ["크레셴도", "디미누엔도"], defEn: "Crescendo: gradually louder. Diminuendo: gradually softer. Written as hairpins or cresc. / dim.", defKo: "크레셴도는 점점 세게, 디미누엔도는 점점 여리게. 꺾쇠 기호나 cresc./dim.으로 적어요." },
+  { id: "staccato", room: "dynamics", en: ["staccato"], ko: ["스타카토"], defEn: "A dot above or below a note: play it short and detached.", defKo: "음표 위나 아래의 점. 짧게 떼어서 쳐요." },
+  { id: "legato", room: "dynamics", en: ["legato", "slur", "slurs"], ko: ["레가토", "이음줄"], defEn: "Smoothly joined, no gap between notes. A slur is the curved line that asks for it.", defKo: "음 사이를 끊지 않고 매끄럽게. 이음줄이 그걸 알리는 굽은 줄이에요." },
+  { id: "accent", room: "dynamics", en: ["accent", "accents"], ko: ["악센트"], defEn: "A > sign: play that note a little louder than its neighbours.", defKo: "> 기호. 그 음을 옆 음보다 조금 세게." },
+  { id: "staff", room: "staff", en: ["staff", "stave", "staves"], ko: ["오선"], defEn: "The five lines music is written on; notes sit on lines or in the spaces between.", defKo: "음악을 적는 다섯 줄. 음표는 줄 위나 줄 사이 칸에 앉아요." },
+  { id: "treble-clef", room: "staff", en: ["treble clef"], ko: ["높은음자리표"], defEn: "The clef for higher notes, usually the right hand; its curl wraps round the G line.", defKo: "높은 음을 적는 음자리표, 보통 오른손. 소용돌이가 G 줄을 감아요." },
+  { id: "bass-clef", room: "staff", en: ["bass clef"], ko: ["낮은음자리표"], defEn: "The clef for lower notes, usually the left hand; its two dots sit either side of the F line.", defKo: "낮은 음을 적는 음자리표, 보통 왼손. 점 두 개가 F 줄을 사이에 두고 있어요." },
+  { id: "grand-staff", room: "staff", en: ["grand staff", "grand stave"], ko: ["큰보표"], defEn: "The treble and bass staves joined by a brace, as piano music is written.", defKo: "높은음자리표 오선과 낮은음자리표 오선을 괄호로 묶은 것. 피아노 악보가 이렇게 적혀요." },
+  { id: "step", room: "reading-steps", en: [], ko: ["차례가기", "한 걸음"], defEn: "A move to the very next letter name, line to space or space to line.", defKo: "바로 다음 음이름으로 가기. 줄에서 칸으로, 칸에서 줄로." },
+  { id: "skip", room: "reading-steps", en: ["skip", "skips"], ko: ["건너뛰기"], defEn: "A move that jumps over one letter name: line to the next line, or space to the next space.", defKo: "음이름 하나를 건너뛰기. 줄에서 다음 줄로, 칸에서 다음 칸으로." },
+  { id: "ledger-line", room: "ledger-lines", en: ["ledger line", "ledger lines"], ko: ["덧줄"], defEn: "A short extra line above or below the staff for notes that run off it.", defKo: "오선 위나 아래에 붙이는 짧은 줄. 오선을 벗어난 음을 적어요." },
+  { id: "time-signature", room: "time-signatures", en: ["time signature", "time signatures"], ko: ["박자표"], defEn: "The two numbers at the start: the top is how many beats in a bar, the bottom which note is one beat.", defKo: "시작에 적힌 숫자 둘. 위는 한 마디의 박 수, 아래는 한 박이 되는 음표." },
+  { id: "semitone", room: "tones", en: ["semitone", "semitones", "half step", "half steps"], ko: ["반음"], defEn: "The distance to the very next key, black or white; the smallest step on the piano.", defKo: "바로 옆 건반까지의 거리, 검은건반 포함. 피아노에서 가장 작은 걸음." },
+  { id: "tone", room: "tones", en: ["tone", "tones", "whole step", "whole steps", "whole tone"], ko: ["온음"], defEn: "Two semitones: a step with one key in between.", defKo: "반음 둘. 사이에 건반 하나를 둔 걸음." },
+  { id: "sharp", room: "tones", en: ["sharp", "sharps"], ko: ["샵", "올림표"], defEn: "♯: play the note a semitone higher.", defKo: "♯: 그 음을 반음 올려서." },
+  { id: "flat", room: "tones", en: ["flat", "flats"], ko: ["플랫", "내림표"], defEn: "♭: play the note a semitone lower.", defKo: "♭: 그 음을 반음 내려서." },
+  { id: "natural", room: "accidentals", en: [], ko: ["내추럴", "제자리표"], defEn: "♮: cancel a sharp or flat and play the plain note.", defKo: "♮: 샵이나 플랫을 지우고 원래 음으로." },
+  { id: "accidental", room: "accidentals", en: ["accidental", "accidentals"], ko: ["임시표"], defEn: "A sharp, flat or natural written in front of a note; it lasts to the end of the bar.", defKo: "음표 앞에 적는 샵·플랫·내추럴. 그 마디 끝까지 효력이 있어요." },
+  { id: "tempo", room: "tempo", en: ["tempo"], ko: ["빠르기", "템포"], defEn: "How fast the beat goes; shown by a word (Allegro) or a metronome number.", defKo: "박이 얼마나 빠른가. 말(Allegro)이나 메트로놈 숫자로 보여요." },
+  { id: "metronome", room: "tempo", en: ["metronome", "metronome mark"], ko: ["메트로놈"], defEn: "A machine that clicks the beat; ♩ = 60 means sixty crotchet beats a minute.", defKo: "박을 똑딱여 주는 기계. ♩ = 60은 1분에 4분음표 60박." },
+  { id: "scale", room: "scales", en: ["scale", "scales"], ko: ["스케일", "음계"], defEn: "The notes of a key in order, from the keynote up to the next keynote.", defKo: "한 조의 음을 으뜸음에서 다음 으뜸음까지 차례로 늘어놓은 것." },
+  { id: "major-scale", room: "scales", en: ["major scale", "major scales"], ko: ["장음계", "장조"], defEn: "A scale with the pattern tone tone semitone tone tone tone semitone.", defKo: "온음 온음 반음 온음 온음 온음 반음 차례의 음계." },
+  { id: "tonic", room: "scales", en: ["tonic", "keynote"], ko: ["으뜸음"], defEn: "The first note of a scale, the note a key is named after; music usually ends on it.", defKo: "음계의 첫 음, 조의 이름이 되는 음. 보통 곡이 거기서 끝나요." },
+  { id: "degree", room: "scales", en: ["degree", "degrees", "scale degree"], ko: ["음도"], defEn: "A note's number in its scale, 1 to 7, counted from the tonic.", defKo: "음계 안에서 그 음의 번호, 으뜸음부터 1~7." },
+  { id: "thumb-under", room: "scale-play", en: ["thumb under", "thumb goes under", "passing the thumb"], ko: ["엄지 넣기"], defEn: "Passing the thumb under the hand to reach the next key without a gap.", defKo: "손 아래로 엄지를 넣어 끊김 없이 다음 건반으로 가기." },
+  { id: "minor-scale", room: "minor-scales", en: ["minor scale", "minor scales"], ko: ["단음계", "단조"], defEn: "A scale with a semitone between its 2nd and 3rd notes; it sounds darker than major.", defKo: "2음과 3음 사이가 반음인 음계. 장음계보다 어둡게 들려요." },
+  { id: "harmonic-minor", room: "minor-scales", en: ["harmonic minor"], ko: ["화성 단음계"], defEn: "The minor scale with its 7th note raised a semitone, going up and down.", defKo: "7음을 반음 올린 단음계. 올라갈 때도 내려올 때도." },
+  { id: "melodic-minor", room: "minor-scales", en: ["melodic minor"], ko: ["가락 단음계"], defEn: "The minor scale with the 6th and 7th raised going up, and lowered again coming down.", defKo: "올라갈 때 6음과 7음을 올리고, 내려올 때 다시 내리는 단음계." },
+  { id: "relative-minor", room: "minor-scales", en: ["relative minor", "relative major", "relative key"], ko: ["나란한조", "관계조"], defEn: "The major and minor keys that share a key signature; the minor starts three semitones below the major.", defKo: "같은 조표를 쓰는 장조와 단조. 단조는 장조보다 반음 세 개 아래에서 시작해요." },
+  { id: "repeat-sign", room: "signs", en: ["repeat sign", "repeat signs"], ko: ["도돌이표"], defEn: "Two dots by a double bar line: play that section again.", defKo: "겹세로줄 옆의 점 둘. 그 부분을 다시 쳐요." },
+  { id: "first-and-second-time", room: "signs", en: ["first-time bar", "second-time bar", "first and second time bars"], ko: ["1번 괄호", "2번 괄호"], defEn: "Brackets numbered 1 and 2 over the end of a repeat: play 1 the first time, skip to 2 the second.", defKo: "도돌이 끝의 1·2번 괄호. 처음엔 1, 두 번째엔 1을 건너뛰고 2." },
+  { id: "pause", room: "signs", en: ["fermata"], ko: ["늘임표", "페르마타"], defEn: "A sign over a note: hold it longer than written.", defKo: "음표 위의 기호. 적힌 것보다 길게 끌어요." },
+  { id: "key-signature", room: "key-signatures", en: ["key signature", "key signatures"], ko: ["조표"], defEn: "The sharps or flats written after the clef; they apply to every note of that name in the piece.", defKo: "음자리표 다음에 적는 샵이나 플랫. 곡 안의 그 이름 음 전부에 적용돼요." },
+  { id: "key", room: "key-signatures", en: [], ko: [], defEn: "The scale a piece is built on, named by its tonic: C major, A minor.", defKo: "곡이 바탕으로 삼는 음계, 으뜸음 이름으로 불러요: C장조, A단조." },
+  { id: "interval", room: "intervals", en: ["interval", "intervals"], ko: ["음정"], defEn: "The distance between two notes, counted by letter names: C to E is a 3rd.", defKo: "두 음 사이의 거리, 음이름으로 세요: C에서 E는 3도." },
+  { id: "major-minor-interval", room: "intervals", en: ["major 3rd", "minor 3rd", "major 2nd", "minor 2nd", "major 6th", "minor 6th", "major 7th", "minor 7th"], ko: ["장3도", "단3도", "장2도", "단2도", "장6도", "단6도"], defEn: "2nds, 3rds, 6ths and 7ths are major or minor; the minor one is a semitone smaller.", defKo: "2도·3도·6도·7도는 장 또는 단. 단이 반음 작아요." },
+  { id: "perfect-interval", room: "intervals", en: ["perfect 4th", "perfect 5th", "perfect octave"], ko: ["완전4도", "완전5도", "완전8도"], defEn: "4ths, 5ths and octaves of the major scale are called perfect.", defKo: "장음계의 4도·5도·8도는 완전이라고 불러요." },
+  { id: "chord", room: "chords", en: ["chord", "chords"], ko: ["화음", "코드"], defEn: "Three or more notes sounded together.", defKo: "세 개 이상의 음을 함께 울리는 것." },
+  { id: "triad", room: "chords", en: ["triad", "triads"], ko: ["3화음"], defEn: "A three-note chord built in 3rds: a root, a 3rd and a 5th above it.", defKo: "3도씩 쌓은 세 음의 화음: 근음, 그 위 3도, 5도." },
+  { id: "root", room: "chords", en: ["root"], ko: ["근음", "기본 위치"], defEn: "The note a chord is built on. Root position: the root is the lowest note.", defKo: "화음을 쌓는 바탕 음. 기본 위치는 근음이 맨 아래에 있는 것." },
+  { id: "primary-chords", room: "chords", en: ["primary chords"], ko: ["주요 3화음"], defEn: "The chords on the 1st, 4th and 5th degrees: I, IV and V.", defKo: "1·4·5음 위의 화음: I, IV, V." },
+  { id: "roman-numerals", room: "chords", en: ["Roman numerals", "Roman numeral"], ko: ["로마 숫자"], defEn: "Chords named by their degree: I, IV, V in capitals for major chords, ii, vi in small letters for minor.", defKo: "음도로 화음을 부르는 법: 장화음은 대문자 I, IV, V, 단화음은 소문자 ii, vi." },
+  { id: "inversion", room: "harmony-3", en: ["inversion", "inversions", "first inversion", "second inversion"], ko: ["자리바꿈", "첫째 자리바꿈", "둘째 자리바꿈"], defEn: "A chord with a note other than the root at the bottom: first inversion has the 3rd lowest, second inversion the 5th.", defKo: "근음이 아닌 음이 맨 아래에 오는 화음. 첫째 자리바꿈은 3음이, 둘째는 5음이 맨 아래." },
+  { id: "cadence", room: "harmony-3", en: ["cadence", "cadences"], ko: ["종지", "마침꼴"], defEn: "The two chords that end a phrase, like punctuation in a sentence.", defKo: "프레이즈를 맺는 두 화음, 문장의 문장부호 같은 것." },
+  { id: "perfect-cadence", room: "harmony-3", en: ["perfect cadence"], ko: ["정격 종지", "완전 종지"], defEn: "V then I: a full stop.", defKo: "V 다음 I: 마침표." },
+  { id: "plagal-cadence", room: "harmony-3", en: ["plagal cadence"], ko: ["변격 종지"], defEn: "IV then I: the 'Amen' ending.", defKo: "IV 다음 I: '아멘' 마침." },
+  { id: "imperfect-cadence", room: "harmony-4", en: ["imperfect cadence", "interrupted cadence"], ko: ["반종지", "위종지"], defEn: "Imperfect: a phrase ending on V, a comma. Interrupted: V then vi instead of I, a surprise.", defKo: "반종지는 V로 끝나는 쉼표. 위종지는 V 다음 I 대신 vi, 깜짝 마침." },
+  { id: "phrase", room: "melody", en: ["phrase", "phrases"], ko: ["프레이즈", "악구"], defEn: "A musical sentence, often four bars, shown by a long curved line.", defKo: "음악의 한 문장, 흔히 네 마디. 긴 굽은 줄로 보여요." },
+  { id: "question-answer", room: "melody", en: ["question and answer"], ko: ["질문과 대답", "질문 악구", "대답 악구"], defEn: "Two phrases that belong together: the first ends open, the second ends on the tonic.", defKo: "짝이 되는 두 프레이즈: 앞은 열린 채 끝나고, 뒤는 으뜸음으로 끝나요." },
+  { id: "sequence", room: "melody", en: ["sequence", "sequences"], ko: ["동형진행", "시퀀스"], defEn: "The same short idea repeated higher or lower.", defKo: "같은 짧은 생각을 더 높게나 낮게 되풀이하기." },
+  { id: "motif", room: "melody", en: ["motif", "motifs"], ko: ["동기", "모티프"], defEn: "A short musical idea, a few notes, that a piece is built from.", defKo: "곡을 만드는 짧은 음악 생각, 음 몇 개." },
+  { id: "form", room: "form", en: ["binary form", "ternary form"], ko: ["형식", "두도막", "세도막"], defEn: "How a piece is laid out in sections: binary is AB, ternary is ABA.", defKo: "곡이 부분으로 짜인 모양: 두도막은 AB, 세도막은 ABA." },
+  { id: "compound-time", room: "six-eight", en: ["compound time"], ko: ["겹박자", "홑박자"], defEn: "Compound time: each beat divides into three (6/8 has two dotted-crotchet beats). Simple time: each beat divides into two.", defKo: "겹박자는 한 박이 셋으로 나뉘어요(6/8은 점4분음표 두 박). 홑박자는 둘로." },
+  { id: "anacrusis", room: "rhythm", en: ["anacrusis", "upbeat"], ko: ["못갖춘마디", "여린내기"], defEn: "A note or two before the first full bar; the last bar is short by the same amount.", defKo: "첫 온전한 마디 앞의 한두 음. 마지막 마디가 그만큼 짧아요." },
+  { id: "transpose", room: "keys-4", en: ["transpose", "transposition", "transposing"], ko: ["조옮김", "이조"], defEn: "Writing or playing the same music in a different key, every note moved by the same interval.", defKo: "같은 음악을 다른 조로 적거나 치기. 모든 음을 같은 음정만큼 옮겨요." },
+  { id: "modulation", room: "keys-4", en: ["modulation", "modulate", "modulates"], ko: ["전조"], defEn: "A change of key during a piece, most often to the dominant or the relative key.", defKo: "곡 중간에 조가 바뀌는 것. 흔히 딸림조나 나란한조로." },
+  { id: "dominant", room: "chords", en: ["dominant", "dominant chord", "V chord"], ko: ["딸림음", "딸림화음"], defEn: "The 5th degree of the scale, and the chord on it (V); it pulls back to the tonic.", defKo: "음계의 5음과 그 위의 화음(V). 으뜸음으로 되돌아가려 해요." },
+  { id: "subdominant", room: "chords", en: ["subdominant", "subdominant chord", "IV chord"], ko: ["버금딸림음", "버금딸림화음"], defEn: "The 4th degree of the scale, and the chord on it (IV).", defKo: "음계의 4음과 그 위의 화음(IV)." },
+  { id: "arpeggio", room: "scales-4", en: ["arpeggio", "arpeggios", "broken chord", "broken chords"], ko: ["아르페지오", "펼침화음"], defEn: "The notes of a chord played one after another instead of together.", defKo: "화음의 음을 함께가 아니라 하나씩 차례로 치기." },
+  { id: "chromatic-scale", room: "scales-23", en: ["chromatic scale"], ko: ["반음계"], defEn: "Every key in order, black and white: twelve semitones to the octave.", defKo: "검은건반 흰건반 전부 차례로: 한 옥타브에 반음 열두 개." },
+  { id: "contrary-motion", room: "scales-23", en: ["contrary motion"], ko: ["반대 방향", "반진행"], defEn: "The hands moving in opposite directions, one up as the other comes down.", defKo: "두 손이 반대로 움직이기. 한 손이 올라갈 때 다른 손은 내려와요." },
+  { id: "syncopation", room: "rhythm-4", en: ["syncopation", "syncopated"], ko: ["당김음", "싱커페이션"], defEn: "An accent on a weak beat or between beats, where you don't expect it.", defKo: "여린 박이나 박 사이의 악센트, 기대하지 않은 자리에." },
+  { id: "triplet", room: "rhythm-2", en: ["triplet", "triplets"], ko: ["셋잇단음표"], defEn: "Three notes squeezed into the time of two of the same kind, marked with a 3.", defKo: "같은 종류 두 개의 길이에 세 개를 넣은 것, 3으로 표시." },
+  { id: "semiquaver", room: "rhythm-2", en: ["semiquaver", "semiquavers", "sixteenth note", "sixteenth notes"], ko: ["16분음표"], defEn: "A note with two flags or beams, a quarter of a beat; four make one beat.", defKo: "꼬리나 가로줄이 둘인 음표, 한 박의 4분의 1. 넷이 한 박." }
+];
+const DICT_BY_ID = Object.fromEntries(DICT_TERMS.map(x => [x.id, x]));
+const DICT_BRING = {"note-names": ["pulse"], "hand-positions": ["middle-c", "pulse", "letter-names"], "ear-prep": ["middle-c", "five-finger-position", "letter-names"], "note-values": ["pulse", "middle-c"], "dynamics": ["tie", "bar", "five-finger-position", "finger-numbers"], "staff": ["middle-c"], "reading-steps": ["five-finger-position", "staff", "finger-numbers", "middle-c"], "whole-staff": ["treble-clef", "bass-clef", "staff", "middle-c"], "time-signatures": ["bar", "pulse", "tie", "rest"], "tones": ["staff", "middle-c", "treble-clef", "bass-clef"], "listen-sing": ["pulse", "bar", "middle-c", "five-finger-position"], "tempo": ["pulse", "bar", "staff", "crotchet"], "rhythm": ["quaver", "pulse", "crotchet", "bar"], "ledger-lines": ["staff", "treble-clef", "bass-clef", "middle-c"], "scales": ["semitone", "tone", "sharp", "octave"], "scale-play": ["scale", "octave", "major-scale", "pulse"], "minor-scales": ["semitone", "major-scale", "tone", "scale"], "signs": ["bar", "pulse", "five-finger-position", "skip"], "listen-write": ["bar", "tempo", "pulse", "degree"], "accidentals": ["bar", "sharp", "flat", "semitone"], "key-signatures": ["major-scale", "sharp", "flat", "bar"], "terms": ["tempo", "staccato", "legato", "crescendo"], "six-eight": ["pulse", "quaver", "crotchet", "bar"], "intervals": ["octave", "tonic", "letter-names", "staff"], "chords": ["major-scale", "tonic", "letter-names", "scale"], "form": ["bar", "repeat-sign", "pulse", "rest"], "listen-23": ["bar", "degree", "major-minor-interval", "perfect-interval"], "melody": ["bar", "tonic", "staff", "flat"], "scales-23": ["scale", "octave", "major-scale", "melodic-minor"], "harmony-2": ["major-minor-interval", "interval", "tonic", "minor-scale"], "rhythm-2": ["quaver", "pulse", "crotchet"], "listen-3": ["pulse", "tonic", "bar", "major-minor-interval"], "melody-3": ["bar", "phrase", "motif", "tonic"], "scales-3": ["melodic-minor", "scale", "harmonic-minor", "octave"], "harmony-3": ["root", "chord", "tonic", "dominant"], "rhythm-3": ["quaver", "minim", "semiquaver", "pulse"], "listen-4": ["interval", "major-minor-interval", "triad", "perfect-interval"], "scales-4": ["octave", "scale", "pulse", "major-scale"], "keys-4": ["interval", "semitone", "accidental", "sharp"], "harmony-4": ["chord", "cadence", "root", "inversion"], "rhythm-4": ["bar", "pulse", "time-signature", "phrase"], "melody-4": ["motif", "tonic", "bar", "phrase"], "listen-5": ["interval", "tonic", "pulse", "triad"], "scales-5": ["scale", "arpeggio", "octave", "major-scale"], "keys-5": ["interval", "sharp", "melodic-minor", "flat"], "harmony-5": ["chord", "cadence", "inversion", "root"], "melody-5": ["motif", "phrase", "bar", "sequence"], "listen-6": ["interval", "triad", "cadence", "harmonic-minor"], "scales-6": ["scale", "octave", "staccato", "contrary-motion"], "arps-6": ["chord", "arpeggio", "major-scale", "semitone"], "harmony-6": ["chord", "cadence", "minor-scale", "pulse"], "listen-7": ["triad", "phrase", "cadence", "bar"], "scales-7": ["octave", "scale", "major-scale", "contrary-motion"], "arps-7": ["arpeggio", "chord", "inversion", "octave"], "pieces-78": ["bar", "cadence", "accidental", "tone"], "listen-8": ["triad", "cadence", "phrase", "bar"], "scales-8": ["scale", "octave", "chromatic-scale", "major-scale"], "arps-8": ["arpeggio", "chord", "inversion", "octave"], "piano-story": ["chord", "flat", "middle-c"], "pitch-range": ["middle-c", "staff", "bar", "flat"], "composers": ["chord", "tempo"], "styles": ["chord", "bar", "quaver", "scale"]};
+const dictName = (x) => (LANG === 'ko' ? x.ko[0] : x.en[0]);
+const DICT_RX = (() => {
+  const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), en = [], ko = [];
+  DICT_TERMS.forEach(x => { x.en.forEach(a => en.push([a, x.id])); x.ko.forEach(a => ko.push([a, x.id])); });
+  en.sort((a, b) => b[0].length - a[0].length); ko.sort((a, b) => b[0].length - a[0].length);
+  return { en: { rx: new RegExp('\\b(' + en.map(x => esc(x[0])).join('|') + ')\\b', 'gi'), map: Object.fromEntries(en.map(([a, i]) => [a.toLowerCase(), i])) },
+    ko: { rx: new RegExp('(' + ko.map(x => esc(x[0])).join('|') + ')', 'g'), map: Object.fromEntries(ko) } };
+})();
+const DictCtx = React.createContext(null);     // { open(id), room(id) }: the App
+const GlossSeen = React.createContext(null);   // one Set per screen page: each term underlined once a page
+function dictEarlier(id, ch) { const x = DICT_BY_ID[id]; if (!x || x.room === ch) return false; const a = bkChapterNo(x.room), b = bkChapterNo(ch); return a > 0 && b > 0 && a < b; }
+function glossText(s, ch, seen) {
+  const L = LANG === 'ko' ? DICT_RX.ko : DICT_RX.en, out = []; let last = 0, m; L.rx.lastIndex = 0;
+  while ((m = L.rx.exec(s))) { const id = L.map[LANG === 'ko' ? m[1] : m[1].toLowerCase()]; if (!id || !dictEarlier(id, ch) || (seen && seen.has(id))) continue; if (seen) seen.add(id); out.push(s.slice(last, m.index), <DictLink key={m.index} id={id}>{m[1]}</DictLink>); last = m.index + m[1].length; }
+  if (!out.length) return s; out.push(s.slice(last)); return out;
+}
+function glossNode(node, ch, seen) {
+  if (typeof node === 'string') return glossText(node, ch, seen);
+  if (Array.isArray(node)) return node.map((n, i) => <React.Fragment key={i}>{glossNode(n, ch, seen)}</React.Fragment>);
+  if (React.isValidElement(node) && (typeof node.type === 'string' || node.type === React.Fragment) && node.props.children != null && !node.props.dangerouslySetInnerHTML) return React.cloneElement(node, {}, glossNode(node.props.children, ch, seen));
+  return node;
+}
+function DictLink({ id, children }) {
+  const Tc = React.useContext(DictCtx);
+  return <button type="button" className="term-link" data-term={id} onClick={() => Tc && Tc.open(id)} style={{all:'unset',cursor:'pointer',borderBottom:'1.6px dotted var(--navy)',paddingBottom:1}}>{children}</button>;
+}
+function Gloss({ children }) {   // on screen, inside a chapter: the earlier rooms' words become links
+  const scr = React.useContext(LbScreenCtx), ch = React.useContext(BkChapterCtx), seen = React.useContext(GlossSeen);
+  if (!scr || !ch) return children;
+  return glossNode(children, ch, seen);
+}
+function DictIcon({ room, size = 46 }) { return <svg viewBox="0 0 48 44" width={size} height={size * 44 / 48} fill="none" stroke={BK.ink} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" dangerouslySetInnerHTML={{ __html: HOUSE_ICONS[room] || '' }}/>; }
+function DictChips({ ch, label }) {   // 'Bring with you': the opener's chips (screen)
+  const Tc = React.useContext(DictCtx), ids = (DICT_BRING[ch] || []).filter(id => dictEarlier(id, ch));
+  if (!ids.length) return null;
+  return <div data-term-chips={ch} style={{display:'flex',alignItems:'center',flexWrap:'wrap',gap:6,margin:'2px 0 8px'}}>
+    <span style={{fontSize:11.5,fontWeight:900,color:'var(--muted)',letterSpacing:'0.06em'}}>{label || t('BRING WITH YOU', '가져올 것')}</span>
+    {ids.map(id => <button key={id} type="button" className="chip" data-term={id} style={{padding:'3px 10px',fontSize:13,fontWeight:800}} onClick={() => Tc && Tc.open(id)}>{dictName(DICT_BY_ID[id])}</button>)}
+  </div>;
+}
+function DictCard({ id, onClose }) {
+  const x = DICT_BY_ID[id], Tc = React.useContext(DictCtx);
+  const [chk, setChk] = useState(false), [res, setRes] = useState(null);
+  if (!x) return null;
+  const room = x.room, lv = (chkLevels(room) || [])[0];
+  return <div role="dialog" aria-label={dictName(x)} data-term-card={id} onClick={onClose} style={{position:'fixed',inset:0,zIndex:60,background:'rgba(38,41,107,0.28)',display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
+    <div onClick={(e) => e.stopPropagation()} style={{background:'#fffefa',borderRadius:'14px 14px 0 0',width:'100%',maxWidth:560,maxHeight:'88vh',overflow:'auto',padding:'14px 16px 20px',boxShadow:'0 -6px 24px rgba(38,41,107,0.18)'}}>
+      <div style={{display:'flex',alignItems:'center',gap:12}}>
+        <DictIcon room={room}/>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontFamily:LB_SERIF,fontSize:23,fontWeight:900,color:'var(--navy)',lineHeight:1.1}}>{dictName(x)}</div>
+          <div style={{fontSize:12,color:'var(--muted)',fontWeight:700,marginTop:2}}>{(LANG === 'ko' ? bkChapterNo(room) + '장' : 'Chapter ' + bkChapterNo(room)) + ' · ' + bkChapterName(room)}</div>
+        </div>
+        <button type="button" className="chip" aria-label={t('Close', '닫기')} style={{padding:'3px 10px'}} onClick={onClose}>✕</button>
+      </div>
+      <div style={{fontSize:16.5,lineHeight:1.5,color:BK.ink,margin:'10px 0 12px'}}>{t(x.defEn, x.defKo)}</div>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}}>
+        <button type="button" className="primary-btn" data-term-room={room} style={{width:'auto',padding:'8px 14px',fontSize:14}} onClick={() => Tc && Tc.room(room)}>{t('Go to the room →', '그 방으로 →')}</button>
+        {!chk && lv && <button type="button" className="chip" data-term-check="1" style={{padding:'6px 12px',fontSize:13.5,fontWeight:800}} onClick={() => { setRes(null); setChk(true); }}>{t('Quick check', '바로 확인')}</button>}
+        {res != null && <span style={{fontSize:14,fontWeight:800,color:res ? '#2e8a6e' : 'var(--navy)'}}>{res ? t('Got it!', '맞았어요!') : t('Not yet: the room is one tap away.', '아직이에요: 그 방이 한 번에 열려요.')}</span>}
+      </div>
+      {chk && lv && <CheckRun items={[{ id: room, lv }]} onDone={(r) => { setRes(!!(r[0] && r[0].ok)); setChk(false); }} onQuit={() => setChk(false)}/>}
+    </div>
+  </div>;
+}
+
 function LbPage({ no, chId, kicker, title, teacher, qr, book, head, children }) {
   return (
     <section className={'bk-page lb-page' + (title ? '' : ' lb-opener')} data-lb-page={no} style={{position:'relative'}}>
@@ -49109,7 +49337,7 @@ function LbPage({ no, chId, kicker, title, teacher, qr, book, head, children }) 
         <div style={{fontFamily:LB_SERIF,fontSize:36,fontWeight:900,color:BK.ink,lineHeight:1.05,margin:'3px 0 4px'}}>{title}</div>
         <VicRule/>
       </div>}
-      <div className="bk-body" style={{flex:1,minHeight:0,overflow:'hidden',display:'flex',flexDirection:'column',gap:16}}><BkChapterCtx.Provider value={chId}>{lbWordsFirst(children)}</BkChapterCtx.Provider></div>
+      <div className="bk-body" style={{flex:1,minHeight:0,overflow:'hidden',display:'flex',flexDirection:'column',gap:16}}><BkChapterCtx.Provider value={chId}>{lbWordsFirst(children)}{!title && DICT_BRING[chId] && <LbOnly print><div data-term-print={chId} style={{fontSize:11.5,color:BK.muted,fontWeight:700,marginTop:'auto'}}>{t('Bring with you: ', '가져올 것: ') + DICT_BRING[chId].filter(id => dictEarlier(id, chId)).map(id => dictName(DICT_BY_ID[id]) + ' (' + (LANG === 'ko' ? bkChapterNo(DICT_BY_ID[id].room) + '장' : 'ch. ' + bkChapterNo(DICT_BY_ID[id].room)) + ')').join(' · ')}</div></LbOnly>}</BkChapterCtx.Provider></div>
       {/* Sohyun 2026-10-09: teacher content prints in the Teacher copy, not in the Lesson Book;
           on screen it still shows in the teacher view (LbScreenPage). */}
     </section>
@@ -49165,7 +49393,7 @@ function LbRemember({ children }) {
       <div className="lb-rem-row" style={{display:'flex',alignItems:'center',gap:12,borderTop:'0.7px solid ' + BK.ink,borderBottom:'0.7px solid ' + BK.ink,padding:'3px 2px'}}>
         <img src={VIC_CAMEO} alt="" style={{height:42,width:'auto',flex:'0 0 auto'}}/>
         <span style={{fontSize:9.5,fontWeight:800,color:BK.coral,...VIC_CAPS,whiteSpace:'nowrap',flex:'0 0 auto'}}>{t('Remember', '기억해요')}</span>
-        <span className="lb-rem-txt" style={{fontSize:16.5,fontWeight:800,color:BK.ink,minWidth:0}}>{children}</span>
+        <span className="lb-rem-txt" style={{fontSize:16.5,fontWeight:800,color:BK.ink,minWidth:0}}><Gloss>{children}</Gloss></span>
       </div>
     </div>
   );
@@ -49186,7 +49414,7 @@ function LbPiano({ steps, title, icon }) {
         {steps.map((s, i) => (
           <div key={i} style={{display:'flex',alignItems:'flex-start',gap:10,fontSize:15,lineHeight:1.45,color:BK.ink}}>
             <span style={{flex:'0 0 23px',height:23,...vicSquare(i),fontFamily:LB_SERIF,fontWeight:800,fontSize:13.5,fontVariantNumeric:'lining-nums',display:'flex',alignItems:'center',justifyContent:'center'}}>{i + 1}</span>
-            <span style={{flex:1,paddingTop:1}}>{s}</span>
+            <span style={{flex:1,paddingTop:1}}><Gloss>{s}</Gloss></span>
             <LbTick label={t('Done', '했어요') + ' ' + (i + 1)}/>
           </div>
         ))}
@@ -49321,6 +49549,7 @@ function TcBlock({ page, title, answers, watch, say, goBack }) {
 const VIC_OPENER_ORN = encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 190 16"><g stroke="#26296b" stroke-width="0.9"><line x1="0" y1="8" x2="84" y2="8"/><line x1="106" y1="8" x2="190" y2="8"/></g><g transform="rotate(45 95 8)" stroke="#26296b" stroke-width="0.8"><rect x="90" y="3" width="5" height="5" fill="#26296b"/><rect x="95" y="3" width="5" height="5" fill="#fff"/><rect x="90" y="8" width="5" height="5" fill="#fff"/><rect x="95" y="8" width="5" height="5" fill="#26296b"/></g></svg>');
 const VIC_CSS = `
   .bk-page { padding-bottom: 11.5mm !important; }
+  .bk-body:has([data-lb-drill]) > [data-term-print] { display: none; }   /* Build DO fix: the QR row carries the line */
   .lb-opener [data-ch] { text-align: center; }
   .lb-opener [data-ch] > div:first-child { font-size: 11.5px !important; font-weight: 800 !important; letter-spacing: 0.24em !important; }
   .lb-opener [data-ch] > div:first-child::before, .lb-opener [data-ch] > div:first-child::after { content: ''; display: inline-block; width: 26px; border-top: 1px solid currentColor; vertical-align: middle; margin: 0 12px 3px; }
@@ -72575,32 +72804,14 @@ function ScaleFinderDial() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 6, maxWidth: 330, margin: '8px auto 6px' }}>
         {[1, 2].map(n => <button key={n} className={'chip' + (oct === n ? ' active' : '')} aria-pressed={oct === n} style={{ ...KF_BTN, minHeight: 38 }} onClick={() => setOct(n)}>{n === 1 ? t('1 octave', '1옥타브') : t('2 octaves', '2옥타브')}</button>)}
       </div>
-      {clash ? <>
-        <ScKeys clean ks={K} marks={marks} names={names} arcs={[]} nonce={mode + key + form} mw={520}/>
-        <p style={{ fontSize: 13, color: 'var(--muted)', margin: '8px 0 0', textAlign: 'center', lineHeight: 1.5 }}>{t('No finger numbers for this form: the harmonic fingering would put a thumb on a black key. Look the fingering up in your book.', '이 형태는 손가락 번호를 보여 주지 않아요: 화성 단음계의 손가락 번호로는 엄지가 검은건반에 놓여요. 책에서 찾아보세요.')}</p></>
-        : (() => { const e = mode === 'major' ? info.octaves[oct] : fing, KK = offs.map(o => info.rootPc + o), kn = mode === 'major' ? key : 'm' + key;
-          const paint = (hand) => { const F = e[hand], mk = {}, nm = {}, nc = {}, curK = an >= 0 ? seq[an].k : null; scRuns(kn, hand, F).forEach(g => { for (let q = g.from; q < g.from + g.len; q++) { mk[KK[q]] = g.kind === 3 ? 'seg3' : g.kind === 4 ? 'seg4' : 'pass'; nc[KK[q]] = g.kind === 3 ? '#c0431f' : g.kind === 4 ? '#3b4fa8' : '#26296b'; } }); F.forEach((f, q) => { nm[KK[q]] = String(f); }); if (curK != null) { mk[curK] = 'pick'; nc[curK] = '#fff'; } return { mk, nm, nc }; };
-          const row = (hand, label) => { const P = paint(hand); return <div style={{ marginTop: hand === 'RH' ? 4 : 10 }}>
-            <div style={{ fontSize: 12, fontWeight: 900, color: 'var(--muted)', letterSpacing: '0.05em', marginBottom: 2 }}>{label}</div>
-            <div><div><ScKeys inKey clean ks={KK} marks={P.mk} names={P.nm} ncol={P.nc} arcs={[]} nonce={hand + key + mode + form + oct} mw={oct === 2 ? 640 : 520} oct={oct === 2 ? 3 : 2}/></div></div></div>; };
-          return <div data-sfd-fing>
-            {row('RH', t('RIGHT HAND', '오른손'))}{row('LH', t('LEFT HAND', '왼손'))}
-            <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', marginTop: 8, fontSize: 12.5, fontWeight: 800, color: '#26296b' }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ width: 14, height: 14, borderRadius: 3, background: MARK_STYLE.seg3.white, border: '1.5px solid ' + MARK_STYLE.seg3.stroke }}/>{t('1-2-3', '1-2-3')}</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}><span style={{ width: 14, height: 14, borderRadius: 3, background: MARK_STYLE.seg4.white, border: '1.5px solid ' + MARK_STYLE.seg4.stroke }}/>{t('1-2-3-4', '1-2-3-4')}</span>
-            </div>
-            <div data-sfd-thumb style={{ minHeight: 24, textAlign: 'center', fontWeight: 900, fontSize: 14, color: '#c0431f', marginTop: 6 }}>{thumbMsg}</div>
-            {wt && <div style={{ textAlign: 'center', marginTop: 4 }}><button className="ghost-btn" style={scS.prim} data-sfd-next onClick={() => runFrom(an + 1)}>{t('Next →', '다음 →')}</button></div>}
-          </div>; })()}
+      <SfHandsKeyboard rootPc={info.rootPc} offsets={offs} fR={clash ? null : eF.RH} fL={clash ? null : eF.LH} names={offs.map(o => names[info.rootPc + (o % 12)] || '')} downOffsets={mode === 'minor' && form === 'melodic' ? minorOffsets('natural', oct) : null}/>
+      {clash && <p style={{ fontSize: 13, color: 'var(--muted)', margin: '8px 0 0', textAlign: 'center', lineHeight: 1.5 }}>{t('No finger numbers for this form: the harmonic fingering would put a thumb on a black key. Look the fingering up in your book.', '이 형태는 손가락 번호를 보여 주지 않아요: 화성 단음계의 번호로는 엄지가 검은건반에 와요. 책에서 찾아 보세요.')}</p>}
       {noteDown && <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, margin: '6px 0' }}>{noteDown}</div>}
       <ScStaffBtn on={stf} set={setStf}/>
       {stf && (staff ? <>
         {[['R', 'treble', t('RIGHT HAND', '오른손')], ['L', 'bass', t('LEFT HAND', '왼손')]].map(([h, cf, lb]) => <div key={h} style={{ marginTop: 6 }}><div style={{ fontSize: 12, fontWeight: 900, color: 'var(--muted)', letterSpacing: '0.05em' }}>{lb}</div><SkgStaff items={staff[h].items} k={staff.k} clef={cf} width={330} o={{ boxS: 26, D: 30, hl: staff[h].coral, hl2: staff[h].alt, signHl: staff[h].coral, underAlt: staff[h].alt, ksCol: '#2e8a6e', fingers: staff[h].fingers, ring1: true, fingerCols: sfdCols(h === 'R' ? 'RH' : 'LH'), ringGlide: true, ring: an >= 0 ? [seq[an].j < 8 ? seq[an].j : seq[an].j - 7] : [], ...skgUnder(staff[h].items, staff.k, null, staff[h].coral) }}/></div>)}
         <div style={{ textAlign: 'center', fontSize: 12.5, fontWeight: 700, color: '#6d6f9c', marginTop: 4 }}>{t('Green: from the key signature. Coral: a sign written beside the note.', '초록: 조표에 있는 음. 빨간색: 음표 옆에 붙이는 표.')}</div>
       </> : <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--muted)', marginTop: 6 }}>{t('This form needs a double sharp, so the staff is left out here.', '이 형태는 겹샵이 필요해서 오선은 보여 주지 않아요.')}</div>)}
-      {scRow(<>
-        <button className="ghost-btn" style={scS.back} data-sfd-play onClick={playA}>{an >= 0 ? t('■ Stop', '■ 멈추기') : t('▶ Up and down: you press Next at each thumb', '▶ 올라갔다 내려오기: 엄지마다 \'다음\'을 눌러요')}</button>
-      </>)}
       <div style={{ textAlign: 'center', fontSize: 13, fontWeight: 700, color: '#5a5d8f', marginTop: 8 }}>{relLine}</div>
     </div>
   </>;
