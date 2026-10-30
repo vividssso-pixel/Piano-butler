@@ -1,0 +1,25 @@
+import sys, io
+md, hist = sys.argv[1], sys.argv[2]   # CLAUDE.md, CLAUDE-history.md
+s = io.open(md, encoding='utf-8').read()
+def R(old, new):
+    global s
+    assert s.count(old) == 1, old[:80]
+    s = s.replace(old, new)
+R("| **Git** | Pushed up to CW (`93fc0e3`) on 2026-10-29. CX, CY to DC (`28013ea`) and DD to DF committed, waiting for her push. |",
+  "| **Git** | Pushed up to CW (`93fc0e3`) on 2026-10-29. CX (`bae0e02`), CY to DC (`28013ea`), DD to DF (`958c9fa`) and DG to DJ committed, waiting for her push. |")
+R("plus the attic, Stories of music. 59 rooms (chapters),", "plus the attic, Stories of music. 65 rooms (chapters; the Grades 2 and 3 rooms are split by grade since DG to DJ, her 30 Oct call: Intervals, Grade 2 / Chords and Cadences, Grade 3; Rhythm, Grade 2 / Grade 3; Scales, Grade 2 / Grade 3; Melody & Phrasing (Grade 2) / Writing a Melody (3) / A Melody for a Couplet (4) / for a Stanza (5)),")
+R("- Push: CX, CY to DC, and DD to DF (three commits).", "- Push: CX, CY to DC, DD to DF, and DG to DJ (four commits).")
+R("1. Her call on splitting the mixed Grades 2-3 rooms by grade (on the board). Then the Workbooks, fun first, floor by floor.",
+  "1. A Printables tab for the cut-out teaching aids (her 14:57 question; my yes is on the board). Then own check-up items for the split rooms, and the Workbooks, fun first, floor by floor.")
+io.open(md, 'w', encoding='utf-8').write(s)
+h = io.open(hist, encoding='utf-8').read().split('\n')
+idx = [i for i, l in enumerate(h) if l.startswith('| 751 |')]
+assert len(idx) == 1 and not any(l.startswith('| 752 |') for l in h)
+h[idx[0] + 1:idx[0] + 1] = [
+ "| 752 | 2026-10-30 | **The Grades 2 and 3 rooms split by grade, part 1: the split layer and Intervals / Chords and Cadences (Build DG; her 13:18 'split them, the other grades are all split').** A sub-room is a view of a base chapter: `splitDrill(SUB, BASE, levels, Learn)` defines the drill's levels, generate and the rest as getters on the base (allLevels when the base's own levels are filtered); `SplitCtx` {steps, secs, pages, step} tells a base page function which steps and check-up parts to keep: `splitLb(pages, steps)` keeps the opener, the steps and the last page and renumbers; `splitWb(pages, steps, secs, startNo, extra)` keeps the step pages and the check-up wrapped in `PaperParts` (hides the parts not in secs); `TcBlock` maps or drops the teacher copy's blocks; `SPLIT_OLD` maps the old ids (harmony-23, rhythm-23) in the URL aliases and bkChapterName. Intervals and chords further → 'Intervals, Grade 2' (harmony-2: step 1, levels 1-2, check-up part A, forced treble) on the Grade 2 floor and 'Chords and Cadences, Grade 3' (harmony-3: steps 2-5, levels 3-6, parts B C D) on the Grade 3 floor; CKP_ROOMS, CKP_PAGES, PATH_STAGES, prereqs, home groups follow. Test: dg782.js (IDS). |",
+ "| 753 | 2026-10-30 | **The split, part 2: Rhythm (Build DH).** Rhythm further → 'Rhythm, Grade 2' (rhythm-2: steps 1 and 3, levels 1 and 3, part B) and 'Rhythm, Grade 3' (rhythm-3: steps 2, 4, 5; levels 2, 4, 5, 6; parts A C D). rhythm-4's book counts from rhythm-3; keys-4 and harmony-4 prerequisites name harmony-3. |",
+ "| 754 | 2026-10-30 | **The split, part 3: Melody (Build DI; her 14:39 '1. a': steps 8 and 9 to Grade 4 and Grade 5).** Melody & Phrasing keeps its id on the Grade 2 floor with steps 1-6 (levels up to 10); 'Writing a Melody' (melody-3: step 7, levels 11-12) on Grade 3; 'A Melody for a Couplet' (melody-4: step 8, level 11) on Grade 4 after Rhythm; 'A Melody for a Stanza' (melody-5: step 9, level 12) on Grade 5. The one-step rooms print one teacher page and a workbook of the step page only (no check-up; their check-up items are on the base's). Tools mlx-write, mlx-couplet, mlx-stanza, mlx-modulate open in their rooms. |",
+ "| 755 | 2026-10-30 | **The split, part 4: Scales (Build DJ; her 14:39 '2. a room of its own, so the grades never mix').** Scales further → 'Scales, Grade 2' (scales-23 keeps its id; its piano steps lose the Grade 3 lines: C melodic minor hands together, ♩ = 80 / 92, from A and E♭) and a new 'Scales, Grade 3' (scales-3, chapter 37, after Writing a Melody): its own three steps written for it (s3LbPages: C melodic minor hands together on ScfMelRow Cm; contrary motion in the Grade 3 keys on ScfCmKb Bmh and Bb: D and G harmonic minor are mirror twins, B harmonic minor parts at the fourth note, B♭ at the fifth, all from SCF_CM's data; the chromatic scale from A and from E♭ hands together, chromStill with a start) and a check-up page; drill levels 3-5 via splitDrill; its Workbook is the base check-up's parts B C D only and its teacher copy the base's melodic-minor, contrary-motion and chromatic blocks (one page), until it has pages of its own. The dashboard's DRILLS_HOUSE regenerated (65 rooms; dpatch786.py maps harmony-23 and rhythm-23 to the Grade 3 rooms). Chapter numbers moved: 33 to 65. Tests: dg782.js (all ten ids), df781.js, shelf776.js N=6, dd779.js, cz775.js, dash771.js on td786, and the full set. |",
+]
+io.open(hist, 'w', encoding='utf-8').write('\n'.join(h))
+print('CLAUDE.md and CLAUDE-history.md updated (rows 752 to 755)')
