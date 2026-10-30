@@ -21443,7 +21443,7 @@ function KitView({ ids, name, onOpen, onChapter }) {
     </div>
   );
 }
-function ToolView({ id, locked, onBack, onChapter, backLabel = '← Toolbox', backAlways }) {
+function ToolView({ id, locked, onBack, onChapter, backLabel = '← Home', backAlways }) {   // Build DN: the Home is the generic way back
   const t = TOOLS.find(x => x.id === id);
   const [copied, setCopied] = useState(false);
   if (!t) return <div className="card">That tool isn’t here any more. <button className="ghost-btn" onClick={onBack}>Toolbox</button></div>;
@@ -21452,7 +21452,7 @@ function ToolView({ id, locked, onBack, onChapter, backLabel = '← Toolbox', ba
   function copy() { try { navigator.clipboard.writeText(link).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }, () => {}); } catch (e) {} }
   return (
     <div className="fade-up">
-      {(!locked || backAlways || backLabel !== '← Toolbox') && <button className="ghost-btn" data-testid="tool-back" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={onBack}>{LANG === 'ko' ? ({ '← Toolbox': '← 도구 모음', '← Home': '← 홈', '← Lesson plan': '← 계획', '← Practice': '← 연습', '← Kit': '← 키트', '← Today': '← 오늘' })[backLabel] || backLabel : backLabel}</button>}
+      {(!locked || backAlways || backLabel !== '← Home') && <button className="ghost-btn" data-testid="tool-back" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={onBack}>{LANG === 'ko' ? ({ '← Toolbox': '← 도구 모음', '← Home': '← 홈', '← Lesson plan': '← 계획', '← Practice': '← 연습', '← Kit': '← 키트', '← Today': '← 오늘' })[backLabel] || backLabel : backLabel}</button>}
       <div className="card" data-home-lesson={t.ch === 'concept' ? '1' : undefined}>
         <div style={{fontSize:12,fontWeight:800,color:(TOOL_CATS.find(c => c.id === toolMeta(t.id).cat) || {}).color || 'var(--muted)',textTransform:'uppercase',letterSpacing:'0.06em',marginBottom:12}}>{t.kicker || (TOOL_CATS.find(c => c.id === toolMeta(t.id).cat) || {}).name || 'Tool'}</div>
         <t.C/>
@@ -22858,7 +22858,7 @@ function readUrlState(studentMode) {
     kit: p.get('kit') ? p.get('kit').split(',').filter(id => TOOLS.find(t => t.id === id)) : null,
     kn: p.get('kn') || '',
     ha: TOOL_AREAS.some(a => a.id === p.get('area')) ? p.get('area') : null, hc: HOME_OLD[p.get('concept')] ? (window.__ksOpen = HOME_OLD[p.get('concept')][1], HOME_OLD[p.get('concept')][0]) : homeCatById(p.get('concept')) ? p.get('concept') : null, hs: p.get('room') === 'try' ? 'try' : null, ret: p.get('ret') === 'home' ? 'home' : null, rc: DRILLS.find(d => d.id === p.get('from')) ? p.get('from') : null,
-    view: p.get('kit') ? 'kit' : p.get('ret') === 'home' && p.get('drill') ? 'home' : p.get('view') === 'chapters' ? 'chapters' : p.get('view') === 'books' || (p.get('view') === 'toolbox' && p.get('sec') === 'books') ? 'books' : p.get('view') === 'printables' ? 'printables' : p.get('view') === 'toolbox' ? 'toolbox' : p.get('view') === 'students' ? 'students' : p.get('view') === 'home' ? 'home' : p.get('tool') ? (PRACTICE_IDS.includes(p.get('tool')) && p.get('view') === 'practice' ? 'practice' : 'tools') : ['tools', 'practice'].includes(p.get('view')) ? p.get('view') : todayView ? 'today' : 'path',
+    view: p.get('kit') ? 'kit' : p.get('ret') === 'home' && p.get('drill') ? 'home' : p.get('view') === 'chapters' ? 'chapters' : p.get('view') === 'books' || (p.get('view') === 'toolbox' && p.get('sec') === 'books') ? 'books' : p.get('view') === 'printables' ? 'printables' : p.get('view') === 'toolbox' ? 'home' : p.get('view') === 'students' ? 'students' : p.get('view') === 'home' ? 'home' : p.get('tool') ? (PRACTICE_IDS.includes(p.get('tool')) && p.get('view') === 'practice' ? 'practice' : 'tools') : ['tools', 'practice'].includes(p.get('view')) ? p.get('view') : todayView ? 'today' : 'path',
   };
 }
 
@@ -24262,7 +24262,7 @@ function ConceptHome({ st, update }) {
         {homeCats(area.id).map(c => { const on = !!HOME_LIVE[c.id], ln = HOME_LINE[c.id] || ['', '']; return (
           <button key={c.id} style={{...homeRow(on),minHeight:76}} onClick={() => {
             if (on) go({ ha: area.id, hc: c.id, hs: null });
-            else { go({ view: 'toolbox' }); setTimeout(() => { try { const el = document.getElementById('cat-' + c.id); if (el) el.scrollIntoView(); } catch (e) {} }, 300); }
+            else go({ view: 'practice', tool: null });   // Build DN: no Toolbox; the Practice tab holds these
           }}>
             <span style={{flex:1,minWidth:0,display:'block'}}><span style={{...homeTitle,fontSize:20}}>{c.name}</span><span style={{...homeSub,fontSize:13,marginTop:2}}>{LANG === 'ko' ? ln[1] : ln[0]}</span></span>
             {on ? <HomeChev on/> : <span style={{flex:'none',fontSize:11,fontWeight:800,color:'var(--navy-soft)',border:'1px solid var(--navy-line)',borderRadius:10,padding:'2px 8px'}}>{t('Toolbox', '도구함')}</span>}
@@ -24319,7 +24319,7 @@ function App() {
   UI_TEACHER = T;
   const HM = T || (showToday && !st.lock && planHome());   // Build CS (call 2): the Home is the teacher's, and an adult's when the teacher switched it on
   const active = DRILLS.find(d => d.id === st.drill) || DRILLS[0];
-  const inChapter = (st.view === 'path' || st.view === 'chapters' || st.view === 'toolbox' || st.view === 'books' || st.view === 'printables' || (HM && st.view === 'home')) && !!st.drill;
+  const inChapter = (st.view === 'path' || st.view === 'chapters' || st.view === 'books' || st.view === 'printables' || (HM && st.view === 'home')) && !!st.drill;
   const concept = active.concept || null;
   const level = concept ? ((concept.levels.find(l => l.n === st.level) || concept.levels[0]).n) : st.level;
 
@@ -24333,7 +24333,7 @@ function App() {
       else if (st.view === 'printables' && !st.drill) p.set('view', 'printables');   // Build DL
       else if (st.view === 'today') p.set('view', 'today');
       else if (st.view === 'home' && !st.drill) { p.set('view', 'home'); if (st.ha) p.set('area', st.ha); if (st.hc) p.set('concept', st.hc); if (st.hs) p.set('room', st.hs); }
-      else if (!st.drill) p.set('view', (st.view === 'chapters' || st.view === 'toolbox') ? st.view : 'path');
+      else if (!st.drill) p.set('view', st.view === 'chapters' ? st.view : 'path');
       else {
         p.set('drill', active.id);
         if (st.view === 'home') { p.set('ret', 'home'); if (st.ha) p.set('area', st.ha); if (st.hc) p.set('concept', st.hc); }
@@ -24366,7 +24366,7 @@ function App() {
     if (st.rc) return st.rc; if (st.lock) return null; const tl = TOOLS.find(x => x.id === st.tool); return tl && DRILLS.find(d => d.id === tl.ch) ? tl.ch : null; })();
   const homeBack = '← ' + (st.hs === 'try' ? t('Try', '해 보기') : ((homeCatById(st.hc) || (st.ha && homeCats(st.ha).length === 1 ? homeCats(st.ha)[0] : null) || {}).name || t('Home', '홈')));
   useEffect(() => { if (st.view === 'home' && !HM) setSt(prev => ({ ...prev, view: 'path', drill: null, ret: null })); }, [st.view, HM]);
-  function jumpToChapter(id) { setFindOpen(false); update({ view: (T && (st.view === 'toolbox' || st.view === 'chapters' || st.view === 'books' || st.view === 'printables')) ? st.view : 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }
+  function jumpToChapter(id) { setFindOpen(false); update({ view: (T && (st.view === 'chapters' || st.view === 'books' || st.view === 'printables')) ? st.view : 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }
 
   return (
     <div style={{minHeight:'100vh',background:'var(--bg)'}}>
@@ -24391,16 +24391,16 @@ function App() {
       </div>
 
       {T && !findOpen && <FindButton onOpen={() => setFindOpen(true)}/>}
-      {T && findOpen && <FindOverlay onClose={() => setFindOpen(false)} onJump={(id) => { setFindOpen(false); update({ view: 'tools', tool: id, kit: null, ret: 'toolbox' }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/>}
+      {T && findOpen && <FindOverlay onClose={() => setFindOpen(false)} onJump={(id) => { setFindOpen(false); update({ view: 'tools', tool: id, kit: null, ret: 'home' }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/>}
 
       <div className="pb-main" key={mk} style={{maxWidth:600,margin:'0 auto',padding:'20px 16px 92px'}}>
         <StudentBanner sl={sl}/>
         {preview && <div style={{background:'#26296b',color:'#fff',borderRadius:10,padding:'8px 12px',marginBottom:12,fontSize:13.5,display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}><span>{t('You’re seeing what a student sees.', '학생에게 보이는 화면이에요.')}</span><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setPreview(false)}>{t('Back to teacher view', '교사 화면으로')}</button></div>}
         {!st.lock && !(showToday && !T) && (
           <div style={{display:'flex',gap:6,borderBottom:'1.5px solid var(--navy-line)',marginBottom:16}}>
-            {(T ? [['home', t('Home', '홈')], ['path', t('Chapters', '챕터')], ...(booksUnlocked() ? [['books', t('Books', '책')], ['printables', t('Printables', '교구')]] : []), ['toolbox', t('Toolbox', '도구함')], ['practice', t('Practice', '연습')]] : (showToday ? [['today', t('Today', '오늘')], ['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]] : [['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]])).map(([v, l]) => (
+            {(T ? [['home', t('Home', '홈')], ['path', t('Chapters', '챕터')], ...(booksUnlocked() ? [['books', t('Books', '책')], ['printables', t('Printables', '교구')]] : []), ['practice', t('Practice', '연습')]] : (showToday ? [['today', t('Today', '오늘')], ['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]] : [['path', t('Learn', '배우기')], ['practice', t('Practice', '연습')]])).map(([v, l]) => (
               <button key={v} onClick={() => { update({ view: v, tool: null, kit: null, from: null, ret: null, drill: (v === 'practice' || v === 'students') ? st.drill : null, ...(v === 'home' ? { ha: null, hc: null, hs: null } : {}) }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderBottom:'3px solid ' + ((st.view === v || (v === 'path' && st.view === 'chapters') || (T && v === 'toolbox' && st.view === 'tools' && st.ret === 'toolbox') || (T && v === 'home' && st.view === 'tools' && st.ret === 'home')) ? 'var(--coral)' : 'transparent'),marginBottom:-1.5,background:'transparent',padding:'10px 0',fontFamily:"'Playfair Display', Georgia, serif",fontSize:T ? 14.5 : 18,fontWeight:800,cursor:'pointer',
-                color:(st.view === v || (v === 'path' && st.view === 'chapters') || (T && v === 'toolbox' && st.view === 'tools' && st.ret === 'toolbox') || (T && v === 'home' && st.view === 'tools' && st.ret === 'home')) ? 'var(--navy)' : 'var(--muted)'}}>{l}</button>
+                color:(st.view === v || (v === 'path' && st.view === 'chapters') || (T && v === 'home' && st.view === 'tools' && (st.ret === 'home' || st.ret === 'toolbox'))) ? 'var(--navy)' : 'var(--muted)'}}>{l}</button>
             ))}
           </div>
         )}
@@ -24410,10 +24410,10 @@ function App() {
         ) : st.view === 'kit' && st.kit ? (
           st.tool
             ? <ToolView id={st.tool} locked={st.lock} backLabel="← Kit" onBack={() => update({ tool: null })} onChapter={(id) => update({ view: 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
-            : <>{T && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={() => update({ view: 'toolbox', kit: null, kn: '' })}>{t('← Toolbox', '← 도구함')}</button>}<KitView ids={st.kit} name={st.kn} onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/></>
+            : <>{T && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={() => update({ view: 'home', kit: null, kn: '' })}>{t('← Home', '← 홈')}</button>}<KitView ids={st.kit} name={st.kn} onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/></>
         ) : (st.view === 'tools' || st.view === 'practice') ? (
           st.tool
-            ? <ToolView id={st.tool} locked={st.lock} backAlways={!!toolBackCh} backLabel={st.from && st.from.tool === st.tool ? '← Today' : st.view === 'practice' ? '← Practice' : st.ret === 'home' ? homeBack : toolBackCh ? '← ' + bkChapterName(toolBackCh) : '← Toolbox'} onBack={() => st.from && st.from.tool === st.tool ? update({ tool: null, view: 'today', from: null }) : st.view !== 'practice' && st.ret !== 'home' && toolBackCh ? update({ view: 'path', tool: null, drill: toolBackCh, tab: 'learn', level: 1, ret: null, rc: null }) : update({ tool: null, view: (st.view === 'practice' ? null : st.ret) || (T && st.view === 'tools' ? 'toolbox' : st.view), ret: null })} onChapter={(id) => update({ view: st.ret === 'toolbox' ? 'toolbox' : 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
+            ? <ToolView id={st.tool} locked={st.lock} backAlways={!!toolBackCh} backLabel={st.from && st.from.tool === st.tool ? '← Today' : st.view === 'practice' ? '← Practice' : st.ret === 'home' ? homeBack : toolBackCh ? '← ' + bkChapterName(toolBackCh) : homeBack} onBack={() => st.from && st.from.tool === st.tool ? update({ tool: null, view: 'today', from: null }) : st.view !== 'practice' && st.ret !== 'home' && toolBackCh ? update({ view: 'path', tool: null, drill: toolBackCh, tab: 'learn', level: 1, ret: null, rc: null }) : update({ tool: null, view: (st.view === 'practice' ? null : st.ret === 'toolbox' ? 'home' : st.ret) || (T && st.view === 'tools' ? 'home' : st.view), ret: null })} onChapter={(id) => update({ view: st.ret === 'toolbox' ? 'toolbox' : 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
             : <>{todayBack}<PracticeView onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
         ) : st.view === 'home' && HM && !inChapter && !st.lock ? (
           <>{!st.ha && !st.hc && !st.hs && todayBack}<ConceptHome st={st} update={update}/></>
@@ -24422,11 +24422,6 @@ function App() {
             ? <div className="fade-up"><PageIntro title={t('Printables', '교구')} text={t('Paper tools to print, cut out and play with at the lesson table. Each set is a few A4 pages with a Try this box.', '인쇄해서 오려 쓰는 종이 교구. 세트마다 A4 몇 장과 해 보기 상자가 있어요.')}/><PrintablesShelf onChapter={jumpToChapter}/></div>
           : T && st.view === 'books'
             ? <div className="fade-up"><PageIntro title={t('Books', '책')} text={t('The printed books (Lesson Book, Workbook, Teacher copy for every chapter) and the checkpoints on paper.', '인쇄용 책(챕터마다 레슨북, 워크북, 교사용)과 종이 중간점검.')}/><BooksShelf/></div>
-          : T && st.view === 'toolbox'
-            ? <ToolboxTab onOpenTool={(id) => { update({ view: 'tools', tool: id, ret: 'toolbox' }); try { window.scrollTo(0, 0); } catch (e) {} }}
-                onOpenKit={(k) => { update({ view: 'kit', kit: k.tools, kn: k.name, tool: null }); try { window.scrollTo(0, 0); } catch (e) {} }}
-                onStudents={() => { update({ view: 'students' }); try { window.scrollTo(0, 0); } catch (e) {} }}
-                onChapter={jumpToChapter}/>
             : <>{todayBack}<MapHome onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
         ) : <>
         {!st.lock && (() => {
@@ -39808,7 +39803,7 @@ Object.assign(SCALES_23_DRILL, { levels: SCF_LEVELS, generate: genScfQuestion, c
 function ScfTeacher({ g = 2 }) {   // Build DJ: g = 3 is Scales, Grade 3 (the melodic minor, contrary motion and chromatic blocks, and the check-up's parts B to D)
   const pages = [], ch = g === 3 ? 'scales-3' : 'scales-23', one = [];
   const P = (content) => g === 3 ? one.push(content) : pages.push(<WbPage key={pages.length} no={pages.length + 1} chId={ch} teacher>{content}</WbPage>);
-  const finish = () => { if (one.length) pages.push(<SplitCtx.Provider key="one" value={{ steps: [3, 4, 5], secs: ['B', 'C', 'D'], pages: { 1: 1, 4: 2, 5: 3, 6: 4, 7: 5 } }}><WbPage no={1} chId={ch} teacher>{one.map((c, i) => <React.Fragment key={i}>{c}</React.Fragment>)}</WbPage></SplitCtx.Provider>); };
+  const finish = () => { if (one.length) pages.push(<SplitCtx.Provider key="one" value={{ steps: [3, 4, 5], secs: ['A', 'B', 'C', 'D'], pages: { 1: 1, 4: 2, 5: 3, 6: 4, 7: 5 } }}><WbPage no={1} chId={ch} teacher>{one.map((c, i) => <React.Fragment key={i}>{c}</React.Fragment>)}</WbPage></SplitCtx.Provider>); };
   const fing = (k) => SCF[k].en + ': RH ' + SCF[k].R.slice(0, 8).join(' ') + ' · LH ' + SCF[k].L.slice(0, 8).join(' ');
   P(<>
     <div style={{fontFamily:LB_SERIF,fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName(ch)}</div>
@@ -39830,8 +39825,10 @@ function ScfTeacher({ g = 2 }) {   // Build DJ: g = 3 is Scales, Grade 3 (the me
     <TcBlock page={6} title="Chromatic from any note" answers={<>{tcAns('TRY IT', SCF_WB.chrom.map(([st, h]) => 'from ' + SCF_CHROM[st][0] + ', ' + scfwHand(h) + ': ' + scfwChromNames(st).map((_, j) => scfChF(SCF_CHROM[st][1] + j, h, j === 0 || j === 12)).join(' ')))}{tcAns('PLAY', ['right hand: F and C', 'left hand: E and B'], 3)}{tcAns(spTx('TWO OCTAVES, TWO NOTES A BEAT'), ['Grade 2: from D, hands separately, ♩ = 84', 'Grade 3: from A and from D♯/E♭, hands separately and together, ♩ = 92', 'RH 3 on black, 1 on white, 2 on F and C · LH 3 on black, 1 on white, 2 on E and B; the LH may start and end on 4'])}</>}
       watch="2 and 3 swapped on the white keys either side of E–F or B–C. Hands together: the 3s land together."
       say="“3 on black, 1 on white, 2 where two whites sit together.”"/>
-    <TcBlock page={7} title="The check-up on paper (the Workbook's last page)" answers={<>{tcAns('A', SCF_WB.chk.thumb.map(([k, h]) => scfwThumbs(k, h).join(', ')))}{tcAns('B', SCF_WB.chk.meet.map(scfwMeet), 5)}{tcAns('C', SCF_WB.chk.mirror.map(k => (scfMirror(k) ? 'Y' : 'N')), 9)}{tcAns('D', SCF_WB.chk.chrom.map(([st, h, j]) => String(scfChF(SCF_CHROM[st][1] + j, h, false))), 13)}
-      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>One mark for each answer. Score each part on its own (4 marks each, pass 3+). Not passed? Go back to that step's page: A p.2 · B p.3 · C p.5 · D p.6. Then hear each scale at the piano, from memory, at the grade's speed: an even run-ning through every turn.</div></>}/>
+    {g === 3 ? <TcBlock page={7} title="The check-up on paper (the Workbook's last page)" answers={<>{tcAns('A', SCF_WB.chk3.mel.map(scfwMel))}{tcAns('B', SCF_WB.chk3.mirror.map(k => (scfMirror(k) ? 'Y' : 'N')), 5)}{tcAns('C', SCF_WB.chk3.chrom.map(([st, h, j]) => String(scfChF(SCF_CHROM[st][1] + j, h, false))), 9)}{tcAns('D', SCF_WB.chk3.meet.map(scfwMeet), 13)}
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>One mark for each answer. Score each part on its own (4 marks each, pass 3+). Not passed? Go back to that step's page: A p.2 · B p.3 · C p.4 · D: chapter {bkChapterNo('scales-23')}'s rule, thumbs meet or never. Then hear each scale at the piano, from memory, at the grade's speed.</div></>}/>
+    : <TcBlock page={7} title="The check-up on paper (the Workbook's last page)" answers={<>{tcAns('A', SCF_WB.chk2.thumb.map(([k, h]) => scfwThumbs(k, h).join(', ')))}{tcAns('B', SCF_WB.chk2.meet.map(scfwMeet), 5)}{tcAns('C', SCF_WB.chk2.mirror.map(k => (scfMirror(k) ? 'Y' : 'N')), 9)}{tcAns('D', SCF_WB.chk2.chrom.map(([st, h, j]) => String(scfChF(SCF_CHROM[st][1] + j, h, false))), 13)}
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>One mark for each answer. Score each part on its own (4 marks each, pass 3+). Not passed? Go back to that step's page: A p.2 · B p.3 · C p.5 · D p.6. Then hear each scale at the piano, from memory, at the grade's speed: an even run-ning through every turn.</div></>}/>}
   </>);
   finish();   // Build DJ
   return <>{pages}</>;
@@ -43497,7 +43494,7 @@ splitDrill(HARMONY_2_DRILL, HARMONY_23_DRILL, [1, 2], (p) => <H3Learn g={2} {...
 splitDrill(HARMONY_3_DRILL, HARMONY_23_DRILL, [3, 4, 5, 6], (p) => <H3Learn g={3} {...p}/>);
 // the teacher's copy: the answers for each step, in every key the chapter uses
 function H3Teacher({ g = 3 }) {   // Build DG: g = 2 (step 1) or 3 (steps 2 to 5); the blocks map themselves (SplitCtx in TcBlock)
-  const pages = [], ch = g === 2 ? 'harmony-2' : 'harmony-3', STEPS = g === 2 ? [1] : [2, 3, 4, 5], secs = g === 2 ? ['A'] : ['B', 'C', 'D'];
+  const pages = [], ch = g === 2 ? 'harmony-2' : 'harmony-3', STEPS = g === 2 ? [1] : [2, 3, 4, 5], secs = ['A', 'B', 'C', 'D'];   // Build DM: the check-up is the room's own
   const P = (content) => pages.push(<SplitCtx.Provider key={pages.length} value={{ steps: STEPS, secs, pages: splitMap(STEPS.map(st => st + 1).concat([7])) }}><WbPage no={pages.length + 1} chId={ch} teacher>{content}</WbPage></SplitCtx.Provider>);
   const ivRow = (k) => H3_MIN[k].en + ': ' + [2, 3, 4, 5, 6, 7, 8].map(n => { const [, b] = h3Above(k, 'treble', n); return h3Let(b) + ' ' + { M: 'M', m: 'm', P: 'P' }[H3_QMIN[n]] + (n === 8 ? '8' : n); }).join(', ');
   const triRow = (k) => H3_TRI[k].en + ': ' + [1, 4, 5].map(d => h3Rom(k, d) + ' ' + h3Triad(k, d, 'treble', 0).map(h3Let).join(' ') + ' / ' + h3Triad(k, d, 'treble', 1).map(h3Let).join(' ')).join(' · ');
@@ -43521,8 +43518,10 @@ function H3Teacher({ g = 3 }) {   // Build DG: g = 2 (step 1) or 3 (steps 2 to 5
     <TcBlock page={6} title="Perfect and plagal cadences" answers={<>{tcAns('TRY IT', H3_WB.cad.map(([k, id]) => h3CadRom(k, id).join('–') + ' ' + (id === 'perfect' ? 'P' : 'Pl')))}{tcAns('PLAY', ['C → G'], 5)}{tcAns('S, A, T, B', H3_CAD_KEYS.flatMap(k => ['perfect', 'plagal'].map(id => H3_CAD[k].en + ' ' + id + ': ' + H3_CAD[k][id].map((c, i) => h3CadRom(k, id)[i] + ' ' + c.map(x => x.replace('#', '♯').replace(/^([A-G])b/, '$1♭')).join(' ')).join(' → '))))}</>}
       watch="The leading note falling, or a shared note moved for no reason. Then check every pair of voices for parallel 5ths and octaves."
       say="“V–I perfect, IV–I plagal.”"/>
-    <TcBlock page={7} title="The check-up on paper (the Workbook's last page)" answers={<>{tcAns('A', H3_WB.chk.iv.map(h3wIv))}{tcAns('B', H3_WB.chk.deg.map(d => H3_DEGN[d - 1][0]), 5)}{tcAns('C', H3_WB.chk.inv.map(h3wInv), 9)}{tcAns('D', H3_WB.chk.cad.map(([k, id]) => (id === 'perfect' ? 'P' : 'Pl')), 13)}
-      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>One mark for each answer. Score each part on its own (4 marks each, pass 3+). Not passed? Go back to that step's page: {g === 2 ? 'A p.2' : 'B p.2 · C p.3 · D p.5'}. Then play each one at the piano.</div></>}/>
+    {g === 2 ? <TcBlock page={7} title="The check-up on paper (the Workbook's last page)" answers={<>{tcAns('A', H3_WB.chk2.iv.map(h3wIv))}{tcAns('B', H3_WB.chk2.ql.map(([k, n]) => H3_QMIN[n]), 5)}
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>One mark for each answer. Score each part on its own (4 marks each, pass 3+). Not passed? Go back to the step's page: A and B p.2. Then play each interval at the piano.</div></>}/>
+    : <TcBlock page={7} title="The check-up on paper (the Workbook's last page)" answers={<>{tcAns('A', H3_WB.chk.deg.map(d => H3_DEGN[d - 1][0]))}{tcAns('B', H3_WB.chk.inv.map(h3wInv), 5)}{tcAns('C', H3_WB.chk.cad.map(([k, id]) => (id === 'perfect' ? 'P' : 'Pl')), 9)}
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>One mark for each answer. Score each part on its own (4 marks each, pass 3+). Not passed? Go back to that step's page: A p.2 · B p.3 · C p.5. Then play each one at the piano.</div></>}/>}
   </>);
   return <>{pages}</>;
 }
@@ -45398,7 +45397,7 @@ splitDrill(RHYTHM_3_DRILL, RHYTHM_23_DRILL, [2, 4, 5, 6], (p) => <R2Learn g={3} 
 Object.assign(RHYTHM_23_DRILL, { levels: R2_LEVELS, generate: genR2Question, check: (q, ans) => ans !== null && ans !== undefined && ans === q.answer, answerLabel: r2AnswerLabel, Question: R2Question, Learn: R2Learn });
 // the teacher's copy: every line with its counts, and what to listen for
 function R2Teacher({ g = 3 }) {   // Build DH: g = 2 (steps 1 and 3) or 3 (steps 2, 4, 5)
-  const pages = [], ch = g === 2 ? 'rhythm-2' : 'rhythm-3', STEPS = g === 2 ? [1, 3] : [2, 4, 5], secs = g === 2 ? ['B'] : ['A', 'C', 'D'];
+  const pages = [], ch = g === 2 ? 'rhythm-2' : 'rhythm-3', STEPS = g === 2 ? [1, 3] : [2, 4, 5], secs = ['A', 'B', 'C', 'D'];   // Build DM: the check-up is the room's own
   const P = (content) => pages.push(<SplitCtx.Provider key={pages.length} value={{ steps: STEPS, secs, pages: splitMap(STEPS.map(st => st + 1).concat([7])) }}><WbPage no={pages.length + 1} chId={ch} teacher>{content}</WbPage></SplitCtx.Provider>);
   const lines = (keys) => <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'4px 14px'}}>{keys.map((k, i) => <div key={k} style={{display:'flex',alignItems:'center',gap:6}}>{nvNum(i + 1)}<div style={{flex:1,minWidth:0,maxWidth:330}}>{r2El(k, { hearts: false })}</div></div>)}</div>;
   P(<>
@@ -45411,8 +45410,10 @@ function R2Teacher({ g = 3 }) {   // Build DH: g = 2 (steps 1 and 3) or 3 (steps
   P(<>
     <TcBlock page={5} title="The minim beat" answers={<>{lines(['minA', 'minB', 'minC'])}{tcAns('PLAY', ['3', '2', '2'], 3)}</>} watch="Counting crotchets in 2/2. The click falls on every minim." say="“Bottom number 2: the minim is the beat.”"/>
     <TcBlock page={6} title="3/8 and 9/8" answers={<>{lines(['e38', 'e98'])}{tcAns('PLAY', ['S', 'C', 'C', 'S'], 3)}</>} watch="9/8 counted as three bars of 3/8 with equal weight. Lean on 1, 4 and 7." say="“9/8: nine beats, in threes.”"/>
-    <TcBlock page={7} title="The check-up on paper (the Workbook's last page)" answers={<><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'4px 14px',marginBottom:4}}>{['chkA', 'chkB'].map(k => <div key={k} style={{maxWidth:300}}>{r2El(k, { counts: 'ans', hearts: false })}</div>)}</div>{tcAns('B', R2_CHK.how.map(x => String(x[1])), 5)}{tcAns('C', R2_CHK.beats.map(x => x[1]), 9)}{tcAns('D', R2_CHK.kind.map(x => x[1]), 13)}
-      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Part A: one mark for each bar counted right (4 marks). Parts B to D: one mark each. Score each part on its own (4 marks each, pass 3+). Not passed? Go back: A p.2 and p.3 · B p.2 to p.4 · C p.5 and p.6 · D p.6. Then clap and count each line to you. Transposition (Grades 2 and 3, a melody of up to eight bars into another key of the grade) is in the Transposing lesson on the Home.</div></>}/>
+    {g === 2 ? <TcBlock page={7} title="The check-up on paper (the Workbook's last page)" answers={<><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'4px 14px',marginBottom:4}}>{['chk2A', 'chk2B'].map(k => <div key={k} style={{maxWidth:300}}>{r2El(k, { counts: 'ans', hearts: false })}</div>)}</div>{tcAns('B', R2_CHK2.how.map(x => String(x[1])), 5)}
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Part A: one mark for each bar counted right (4 marks). Part B: one mark each. Score each part on its own (4 marks each, pass 3+). Not passed? Go back: A p.2 and p.3 · B p.2 and p.3. Then clap and count each line to you. Transposition (a melody of up to eight bars into another key of the grade) is in the Transposing lesson on the Home.</div></>}/>
+    : <TcBlock page={7} title="The check-up on paper (the Workbook's last page)" answers={<><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'4px 14px',marginBottom:4}}>{['chk3A', 'chk3B'].map(k => <div key={k} style={{maxWidth:300}}>{r2El(k, { counts: 'ans', hearts: false })}</div>)}</div>{tcAns('B', R2_CHK3.beats.map(x => x[1]), 5)}{tcAns('C', R2_CHK3.kind.map(x => x[1]), 9)}
+      <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>Part A: one mark for each bar counted right (4 marks). Parts B and C: one mark each. Score each part on its own (4 marks each, pass 3+). Not passed? Go back: A p.2 and p.3 · B p.3 and p.4 · C p.4. Then clap and count each line to you. Transposition (a melody of up to eight bars into another key of the grade) is in the Transposing lesson on the Home.</div></>}/>}
   </>);
   return <>{pages}</>;
 }
@@ -45650,6 +45651,14 @@ const SCF_WB = {
   chk: { thumb: [['Eb', 'L'], ['A', 'R'], ['Gm', 'L'], ['Fsm', 'L']], meet: ['A', 'Eb', 'Gm', 'Bm'], mirror: ['D', 'Bb', 'Emh', 'Gmh'], chrom: [[0, 'R', 1], [1, 'L', 2], [2, 'R', 1], [1, 'R', 3]] },
 };
 if (CKP) Object.assign(SCF_WB.chk, { meet: ['Bb', 'D', 'Gm', 'A'], chrom: [[1, 'R', 1], [0, 'L', 2], [2, 'L', 3], [0, 'R', 3]] });   // Build DF
+// Build DM: each room's own check-up, in its own grade's keys (the floor checkpoint takes the second set)
+SCF_WB.chk2 = CKP
+  ? { thumb: [['D', 'R'], ['Bb', 'L'], ['Bm', 'R'], ['Gm', 'R']], meet: ['Bb', 'Gm', 'D', 'Bm'], mirror: ['F', 'Dmh', 'G', 'Emh'], chrom: [[0, 'L', 1], [0, 'R', 3], [0, 'L', 3], [0, 'R', 2]] }
+  : { thumb: [['Bb', 'L'], ['D', 'R'], ['Gm', 'L'], ['Bm', 'R']], meet: ['D', 'Bb', 'Bm', 'Gm'], mirror: ['G', 'F', 'Emh', 'Dmh'], chrom: [[0, 'R', 1], [0, 'L', 2], [0, 'R', 3], [0, 'L', 3]] };
+SCF_WB.chk3 = CKP
+  ? { mel: [['down', 7], ['up', 6], ['down', 6], ['up', 7]], mirror: ['Bb', 'Gmh', 'Bmh', 'D'], chrom: [[2, 'R', 1], [1, 'L', 3], [2, 'L', 2], [1, 'R', 3]], meet: ['Cm', 'A', 'Fsm', 'Eb'] }
+  : { mel: [['up', 6], ['up', 7], ['down', 7], ['down', 6]], mirror: ['D', 'Bb', 'Bmh', 'Gmh'], chrom: [[1, 'R', 1], [2, 'L', 2], [1, 'L', 3], [2, 'R', 3]], meet: ['A', 'Eb', 'Cm', 'Fsm'] };
+const scfwMel = ([dir, deg]) => (dir === 'up' ? SCF_MEL.Cm.up : SCF_MEL.Cm.dn.slice().reverse())[deg - 1];   // C melodic minor: the 6th or 7th going up or down
 const scfwThumbs = (k, h) => { const K = scfKeys(k, 1), N = scfNames(k, 1); return scfThumbPcs(k, h).map(pc => N[K.findIndex(x => spPc(x) === pc)]); };
 const scfwMeet = (k) => { const m = scfMeet(k), N = scfNames(k); return m.length ? m.map(j => N[j]).join(', ') : 'never'; };
 const scfwHand = (h) => (h === 'R' ? 'right hand' : 'left hand');
@@ -45741,11 +45750,24 @@ function ScfWorkbook({ startNo = 1, g = 2 }) {   // Build DJ: g = 3 is Scales, G
     </Part>
     <Faces/>
   </>);
-  P(<ScfPaperCheck/>);
-  return <>{g === 3 ? splitWb(pages, [], ['B', 'C', 'D'], startNo) : pages}</>;
+  P(<ScfPaperCheck g={2}/>);
+  return <>{g === 3 ? [<WbPage key="chk" no={startNo + 1} chId={ch}><ScfPaperCheck g={3}/></WbPage>] : pages}</>;   // Build DM: its own check-up
 }
-function ScfPaperCheck() {
-  const C = SCF_WB.chk;
+function ScfPaperCheck({ g = 2 }) {   // Build DM: g = 2 Scales, Grade 2; g = 3 Scales, Grade 3 (its own parts)
+  const C = g === 3 ? SCF_WB.chk3 : SCF_WB.chk2;
+  if (g === 3) return <div className="lb-paper" style={{display:'flex',flexDirection:'column',gap:4}}>
+    <LbPaperHead/>
+    {bkSec('A', 'C melodic minor: write the note.')}
+    <BkGrid cols={4} gap="6px 8px">{C.mel.map(([dir, deg], i) => <BkCell key={i} n={i + 1}><div style={{display:'grid',gap:4,padding:'14px 2px 2px',justifyItems:'center'}}><div style={{fontSize:11,fontWeight:900,color:BK.muted,textAlign:'center',lineHeight:1.25}}>{dir === 'up' ? 'going up' : 'coming down'}, the {deg}th</div>{bkBox(44, 24)}</div></BkCell>)}</BkGrid>
+    {bkSec('B', 'Contrary motion from one note: mirror twins? Y or N')}
+    <BkGrid cols={2} gap="6px 8px">{C.mirror.map((k, i) => <BkCell key={i} n={i + 5}><div style={{display:'grid',gridTemplateColumns:'1fr auto',alignItems:'center',gap:6,padding:'14px 0 0'}}><div><div style={{fontSize:10.5,fontWeight:900,color:BK.muted,textAlign:'center'}}>{scfCmName(k)}</div><ScfCmKb k={k} W={9} H={24}/></div>{bkBox(30, 24)}</div></BkCell>)}</BkGrid>
+    {bkSec('C', 'Chromatic scale: which finger plays the red key?')}
+    <BkGrid cols={4} gap="6px 8px">{C.chrom.map(([st, h, j], i) => { const s0 = SCF_CHROM[st][1]; return <BkCell key={i} n={i + 9}><div style={{display:'grid',gap:3,padding:'14px 0 0'}}>
+      <div style={{fontSize:10,fontWeight:900,color:BK.muted,textAlign:'center',lineHeight:1.2}}>From {SCF_CHROM[st][0]}, {scfwHand(h)}</div><SpKb lo={s0} hi={s0 + 12} W={10} H={28} lit={{ [s0 + j]: 'cor' }} names={{ [s0]: SCF_CHROM[st][0] }} k={1}/>
+      <div style={{display:'flex',justifyContent:'center'}}>{bkBox(30, 24)}</div></div></BkCell>; })}</BkGrid>
+    {bkSec('D', 'Two octaves hands together: where do both thumbs play? (letters, or never)')}
+    <BkGrid cols={2} gap="6px 8px">{C.meet.map((k, i) => <BkCell key={i} n={i + 13}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,padding:'14px 4px 2px',fontSize:12.5,fontWeight:800,color:BK.ink}}>{SCF[k].en}{bkBox(100, 24)}</div></BkCell>)}</BkGrid>
+  </div>;
   return <div className="lb-paper" style={{display:'flex',flexDirection:'column',gap:4}}>
     <LbPaperHead/>
     {bkSec('A', 'Which two letters does the thumb play?')}
@@ -45775,6 +45797,10 @@ const H3_WB = {
   chk: { iv: [['Dm', 3, 'treble'], ['Am', 7, 'bass'], ['Em', 5, 'treble'], ['Gm', 6, 'treble']], deg: [4, 7, 3, 5], inv: [['G', 1, 1, 'bass'], ['C', 4, 0, 'treble'], ['D', 5, 1, 'treble'], ['F', 1, 0, 'bass']], cad: [['D', 'perfect'], ['C', 'plagal'], ['Dm', 'plagal'], ['G', 'perfect']] },
 };
 if (CKP) Object.assign(H3_WB.chk, { deg: [2, 6, 1, 5], cad: [['G', 'plagal'], ['Am', 'perfect'], ['F', 'plagal'], ['D', 'perfect']] });   // Build DF
+// Build DM: Intervals, Grade 2's own check-up: A name the interval above the tonic (treble, the step's keys); B major, minor or perfect
+H3_WB.chk2 = CKP
+  ? { iv: [['Em', 6, 'treble'], ['Dm', 2, 'treble'], ['Am', 5, 'treble'], ['Gm', 7, 'treble']], ql: [['Dm', 3, 'treble'], ['Am', 8, 'treble'], ['Em', 7, 'treble'], ['Gm', 4, 'treble']] }
+  : { iv: [['Dm', 3, 'treble'], ['Am', 7, 'treble'], ['Em', 5, 'treble'], ['Gm', 6, 'treble']], ql: [['Am', 4, 'treble'], ['Em', 2, 'treble'], ['Dm', 6, 'treble'], ['Gm', 8, 'treble']] };
 const h3wIv = ([k, n]) => ({ M: 'M', m: 'm', P: 'P' }[H3_QMIN[n]] + (n === 8 ? '8' : n));
 const h3wIvLong = ([k, n]) => H3_QW[H3_QMIN[n]][0] + ' ' + H3_ORD[n];
 const h3wInv = ([k, d, inv]) => h3Rom(k, d) + (inv ? 'b' : '');
@@ -45854,21 +45880,27 @@ function H3Workbook({ startNo = 1, g = 3 }) {   // Build DG: g = 2 (step 1) or 3
     </Part>
     <Faces/>
   </>);
-  P(<H3PaperCheck/>);
-  return <>{splitWb(pages, g === 2 ? [1] : [2, 3, 4, 5], g === 2 ? ['A'] : ['B', 'C', 'D'], startNo)}</>;
+  P(<H3PaperCheck g={g}/>);
+  return <>{splitWb(pages, g === 2 ? [1] : [2, 3, 4, 5], ['A', 'B', 'C', 'D'], startNo)}</>;   // Build DM: the check-up page is the room's own
 }
-function H3PaperCheck() {
-  const SP = React.useContext(SplitCtx), C = SP && SP.steps.length === 1 ? { ...H3_WB.chk, iv: H3_WB.chk.iv.map(it => [it[0], it[1], 'treble']) } : H3_WB.chk;   // Build DG: Grade 2, treble only
-  return <div className="lb-paper" style={{display:'flex',flexDirection:'column',gap:4}}>
+function H3PaperCheck({ g = 3 }) {   // Build DM: g = 2 Intervals, Grade 2 (its own two parts); g = 3 Chords and Cadences, Grade 3 (its own three, from item 1)
+  const C = H3_WB.chk, ivCell = (it, i, n0) => { const [a, b] = h3Above(it[0], it[2], it[1]); return <BkCell key={i} n={i + n0}><div style={{display:'grid',gap:2,padding:'14px 0 0'}}><div style={{fontSize:10,fontWeight:900,color:BK.muted,textAlign:'center'}}>{H3_MIN[it[0]].en}</div><IntervalStaff clef={it[2]} notes={[a, b]} width={130}/><div style={{display:'flex',justifyContent:'center'}}>{bkBox(40, 24)}</div></div></BkCell>; };
+  if (g === 2) return <div className="lb-paper" style={{display:'flex',flexDirection:'column',gap:4}}>
     <LbPaperHead/>
     {bkSec('A', 'Name the interval above the tonic (M, m or P and the number).')}
-    <BkGrid cols={4} gap="6px 8px">{C.iv.map((it, i) => { const [a, b] = h3Above(it[0], it[2], it[1]); return <BkCell key={i} n={i + 1}><div style={{display:'grid',gap:2,padding:'14px 0 0'}}><div style={{fontSize:10,fontWeight:900,color:BK.muted,textAlign:'center'}}>{H3_MIN[it[0]].en}</div><IntervalStaff clef={it[2]} notes={[a, b]} width={130}/><div style={{display:'flex',justifyContent:'center'}}>{bkBox(40, 24)}</div></div></BkCell>; })}</BkGrid>
-    {bkSec('B', 'Write the name of the degree.')}
-    <BkGrid cols={4} gap="6px 8px">{C.deg.map((d, i) => <BkCell key={i} n={i + 5}><div style={{display:'flex',alignItems:'center',gap:6,padding:'14px 2px 2px',fontFamily:LB_SERIF,fontSize:20,fontWeight:900,color:BK.ink}}>{d}{bkBox(84, 24)}</div></BkCell>)}</BkGrid>
-    {bkSec('C', 'Name the chord: I, IV, V, Ib, IVb or Vb.')}
-    <BkGrid cols={4} gap="6px 8px">{C.inv.map((it, i) => <BkCell key={i} n={i + 9}><div style={{display:'grid',gap:2,padding:'14px 0 0'}}><div style={{fontSize:10,fontWeight:900,color:BK.muted,textAlign:'center'}}>{H3_TRI[it[0]].en}</div><ChordStaff clef={it[3]} chords={[{ notes: h3Triad(it[0], it[1], it[3], it[2]) }]} width={130}/><div style={{display:'flex',justifyContent:'center'}}>{bkBox(40, 24)}</div></div></BkCell>)}</BkGrid>
-    {bkSec('D', 'Perfect (P) or plagal (Pl)?')}
-    <BkGrid cols={4} gap="6px 8px">{C.cad.map(([k, id], i) => <BkCell key={i} n={i + 13}><div style={{display:'grid',gap:2,padding:'14px 0 0'}}><div style={{fontSize:10,fontWeight:900,color:BK.muted,textAlign:'center'}}>{H3_CAD[k].en}</div><div style={{maxWidth:130,width:'100%',margin:'0 auto'}}><SatbStaff chords={h3CadChords(k, id)} ks={H3_CAD[k].ks} width={170} stems={false}/></div><div style={{display:'flex',justifyContent:'center'}}>{bkBox(40, 24)}</div></div></BkCell>)}</BkGrid>
+    <BkGrid cols={4} gap="6px 8px">{H3_WB.chk2.iv.map((it, i) => ivCell(it, i, 1))}</BkGrid>
+    {bkSec('B', 'Major (M), minor (m) or perfect (P)?')}
+    <BkGrid cols={4} gap="6px 8px">{H3_WB.chk2.ql.map((it, i) => ivCell(it, i, 5))}</BkGrid>
+  </div>;
+  const n0 = { deg: 1, inv: 5, cad: 9 }, L = { deg: 'A', inv: 'B', cad: 'C' };
+  return <div className="lb-paper" style={{display:'flex',flexDirection:'column',gap:4}}>
+    <LbPaperHead/>
+    {bkSec(L.deg, 'Write the name of the degree.')}
+    <BkGrid cols={4} gap="6px 8px">{C.deg.map((d, i) => <BkCell key={i} n={i + n0.deg}><div style={{display:'flex',alignItems:'center',gap:6,padding:'14px 2px 2px',fontFamily:LB_SERIF,fontSize:20,fontWeight:900,color:BK.ink}}>{d}{bkBox(84, 24)}</div></BkCell>)}</BkGrid>
+    {bkSec(L.inv, 'Name the chord: I, IV, V, Ib, IVb or Vb.')}
+    <BkGrid cols={4} gap="6px 8px">{C.inv.map((it, i) => <BkCell key={i} n={i + n0.inv}><div style={{display:'grid',gap:2,padding:'14px 0 0'}}><div style={{fontSize:10,fontWeight:900,color:BK.muted,textAlign:'center'}}>{H3_TRI[it[0]].en}</div><ChordStaff clef={it[3]} chords={[{ notes: h3Triad(it[0], it[1], it[3], it[2]) }]} width={130}/><div style={{display:'flex',justifyContent:'center'}}>{bkBox(40, 24)}</div></div></BkCell>)}</BkGrid>
+    {bkSec(L.cad, 'Perfect (P) or plagal (Pl)?')}
+    <BkGrid cols={4} gap="6px 8px">{C.cad.map(([k, id], i) => <BkCell key={i} n={i + n0.cad}><div style={{display:'grid',gap:2,padding:'14px 0 0'}}><div style={{fontSize:10,fontWeight:900,color:BK.muted,textAlign:'center'}}>{H3_CAD[k].en}</div><div style={{maxWidth:130,width:'100%',margin:'0 auto'}}><SatbStaff chords={h3CadChords(k, id)} ks={H3_CAD[k].ks} width={170} stems={false}/></div><div style={{display:'flex',justifyContent:'center'}}>{bkBox(40, 24)}</div></div></BkCell>)}</BkGrid>
   </div>;
 }
 WORKBOOKS['harmony-2'] = () => <H3Workbook g={2}/>;   // Build DG
@@ -45896,15 +45928,48 @@ function R2Workbook({ startNo = 1, g = 3 }) {   // Build DH
   page(3, 'Count the triplets and duplets', R2_WB.counts.trip, ['Walk the beat and say 1 trip let on each step', 'Clap line 1; then line 2 in 6/8, two even notes across three quavers', 'Make up a bar of 2/4 with one triplet in it'], 'Three for two, two for three', 'Answer.', R2_PLAY3);
   page(4, 'Count the minim beats', R2_WB.counts.minim, ['Count 1 + 2 + with a minim on each number', 'Clap line 1 in 2/2, then line 2 in 3/2', 'Find a piece in cut common time and count it in two'], 'Beats in a bar', 'How many beats in one bar?', [['3/2', 3], ['2/2', 4], ['cut common time', 5]]);
   page(5, 'Count 3/8 and 9/8', R2_WB.counts.e98, ['Count 1 2 3 in 3/8, one quaver to each number', '9/8: count 1 to 9, leaning on 1, 4 and 7', 'Clap line 2, leaning on 1, 4 and 7'], 'Simple or compound?', 'Write S or C.', [['3/8', 3], ['6/8', 4], ['9/8', 5], ['3/4', 6]]);
-  P(<R2PaperCheck/>);
-  return <>{splitWb(pages, g === 2 ? [1, 3] : [2, 4, 5], g === 2 ? ['B'] : ['A', 'C', 'D'], startNo)}</>;
+  P(<R2PaperCheck g={g}/>);
+  return <>{splitWb(pages, g === 2 ? [1, 3] : [2, 4, 5], ['A', 'B', 'C', 'D'], startNo)}</>;   // Build DM
 }
 // page 3's play part (triplets) has its own questions
 const R2_PLAY3 = [['a triplet: how many quavers in one crotchet beat?', 3], ['a duplet: how many notes in the time of three quavers?', 4]];
 const R2_CHK = CKP   // Build DF: the checkpoint's own items
   ? { how: [['semiquavers in a minim', 8], ['quavers in a crotchet', 2], ['semiquavers in a quaver', 2], ['quavers in a triplet', 3]], beats: [['2/2', '2'], ['9/8', '3 (dotted crotchets)'], ['3/2', '3'], ['6/8', '2 (dotted crotchets)']], kind: [['3/2', 'S'], ['9/8', 'C'], ['2/2', 'S'], ['6/8', 'C']] }
   : { how: [['semiquavers in a crotchet', 4], ['semiquavers in a dotted quaver', 3], ['quavers in a triplet', 3], ['notes in a duplet', 2]], beats: [['3/2', '3'], ['2/2', '2'], ['3/8', '3'], ['9/8', '3 (dotted crotchets)']], kind: [['9/8', 'C'], ['3/8', 'S'], ['6/8', 'C'], ['3/2', 'S']] };
-function R2PaperCheck() {
+// Build DM: each room's own check-up lines and items (the floor checkpoint takes the second set)
+Object.assign(R2, {
+  chk2A: { items: [['ts', 4], ['s4'], ['q'], ['p'], ['s4'], ['||']], g: 2 }, chk2B: { items: [['ts', 2], ['t3'], ['q'], ['|'], ['q'], ['t3'], ['||']], g: 2, so: { countFn: (p) => rqTripCount(p) } },
+  chk3A: { items: [['ts', 4], ['ds'], ['q'], ['ds'], ['q'], ['||']], g: 3 }, chk3B: { items: [['ts', 2, 2], ['q'], ['q'], ['h'], ['|'], ['w'], ['||']], g: 3, unit: 2, clicks: 2, bpm: 96, so: { countStep: 1, heartStep: 2, countFn: (p) => rq22Count(p) } },
+});
+if (CKP) Object.assign(R2, { chk2A: { items: [['ts', 4], ['q'], ['s4'], ['s4'], ['p'], ['||']], g: 2 }, chk2B: { items: [['ts', 2], ['q'], ['t3'], ['|'], ['t3'], ['t3'], ['||']], g: 2, so: { countFn: (p) => rqTripCount(p) } },
+  chk3A: { items: [['ts', 4], ['q'], ['ds'], ['ds'], ['q'], ['||']], g: 3 }, chk3B: { items: [['ts', 2, 2], ['h'], ['q'], ['q'], ['|'], ['h'], ['h'], ['||']], g: 3, unit: 2, clicks: 2, bpm: 96, so: { countStep: 1, heartStep: 2, countFn: (p) => rq22Count(p) } } });
+const R2_CHK2 = CKP
+  ? { how: [['quavers in a triplet', 3], ['semiquavers in a minim', 8], ['notes in a duplet', 2], ['semiquavers in a quaver', 2]] }
+  : { how: [['semiquavers in a crotchet', 4], ['quavers in a triplet', 3], ['semiquavers in a minim', 8], ['notes in a duplet', 2]] };
+const R2_CHK3 = CKP
+  ? { beats: [['2/2', '2'], ['9/8', '3 (dotted crotchets)'], ['3/2', '3'], ['3/8', '3']], kind: [['3/2', 'S'], ['9/8', 'C'], ['2/2', 'S'], ['6/8', 'C']] }
+  : { beats: [['3/2', '3'], ['2/2', '2'], ['3/8', '3'], ['9/8', '3 (dotted crotchets)']], kind: [['9/8', 'C'], ['3/8', 'S'], ['6/8', 'C'], ['3/2', 'S']] };
+function R2PaperCheck({ g = 3 }) {   // Build DM: g = 2 Rhythm, Grade 2 (counts; how many); g = 3 Rhythm, Grade 3 (counts; beats in a bar; simple or compound)
+  const rows = (items, n0) => <BkGrid cols={2} gap="6px 8px">{items.map(([l, w], i) => <BkCell key={i} n={i + n0}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,padding:'14px 4px 2px',fontSize:12.5,fontWeight:800,color:BK.ink}}>{l}{bkBox(w || 44, 24)}</div></BkCell>)}</BkGrid>;
+  const lines = (keys) => <div style={{display:'grid',gap:6}}>{keys.map((k, i) => <BkCell key={k} n={i === 0 ? '1–2' : '3–4'}><div style={{padding:'14px 2px 0'}}>{r2El(k, { counts: 'blank', hearts: true })}</div></BkCell>)}</div>;
+  if (g === 2) return <div className="lb-paper" style={{display:'flex',flexDirection:'column',gap:4}}>
+    <LbPaperHead/>
+    {bkSec('A', 'Write the counts under the notes.')}
+    {lines(['chk2A', 'chk2B'])}
+    {bkSec('B', 'How many?')}
+    {rows(R2_CHK2.how.map(([l]) => [l]), 5)}
+  </div>;
+  return <div className="lb-paper" style={{display:'flex',flexDirection:'column',gap:4}}>
+    <LbPaperHead/>
+    {bkSec('A', 'Write the counts under the notes.')}
+    {lines(['chk3A', 'chk3B'])}
+    {bkSec('B', 'How many beats in a bar?')}
+    {rows(R2_CHK3.beats.map(([l]) => [l]), 5)}
+    {bkSec('C', 'Simple (S) or compound (C)?')}
+    {rows(R2_CHK3.kind.map(([l]) => [l]), 9)}
+  </div>;
+}
+function R2PaperCheckBase() {   // the mixed room's page (kept for the record; no room prints it now)
   const rows = (items, n0) => <BkGrid cols={2} gap="6px 8px">{items.map(([l, w], i) => <BkCell key={i} n={i + n0}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,padding:'14px 4px 2px',fontSize:12.5,fontWeight:800,color:BK.ink}}>{l}{bkBox(w || 44, 24)}</div></BkCell>)}</BkGrid>;
   return <div className="lb-paper" style={{display:'flex',flexDirection:'column',gap:4}}>
     <LbPaperHead/>
@@ -77048,13 +77113,13 @@ const CKP_ROOMS = {
   // Build DF: Grades 2 and 3
   'listen-23': { secs: ['A', 'B'], back: { A: [1, 2], B: [2, 3] }, Paper: () => <L2CkpPaper g={2}/>, key: () => <L2CkpKey g={2}/> },
   melody: { secs: ['B', 'C'], back: { B: [3, 4], C: ['1 to 5', '2 to 6'] }, Paper: () => <MlxPaperCheck/> },
-  'scales-23': { secs: ['A', 'D'], back: { A: [1, 2], D: [5, 6] }, Paper: () => <ScfPaperCheck/> },   // Build DJ: Grade 2 asks these
-  'scales-3': { secs: ['B', 'C'], back: { B: [1, 2], C: [2, 3] }, Paper: () => <ScfPaperCheck/> },
+  'scales-23': { secs: ['A', 'D'], back: { A: [1, 2], D: [5, 6] }, Paper: () => <ScfPaperCheck g={2}/> },   // Build DM: each room's own items
+  'scales-3': { secs: ['A', 'C'], back: { A: [2], C: [4] }, Paper: () => <ScfPaperCheck g={3}/> },
   'listen-3': { secs: ['A', 'B'], back: { A: [2, 3], B: [3, 4] }, Paper: () => <L2CkpPaper g={3}/>, key: () => <L2CkpKey g={3}/> },
-  'harmony-2': { secs: ['A'], back: { A: [1, 2] }, Paper: () => <SplitCtx.Provider value={{ steps: [1], secs: ['A'], pages: {} }}><H3PaperCheck/></SplitCtx.Provider> },   // Build DG
-  'harmony-3': { secs: ['B', 'D'], back: { B: [1, 2], D: [4, 5] }, Paper: () => <H3PaperCheck/> },
-  'rhythm-2': { secs: ['B'], back: { B: ['1 and 2', '2 and 3'] }, Paper: () => <R2PaperCheck/> },   // Build DH
-  'rhythm-3': { secs: ['C', 'D'], back: { C: ['2 and 3', '3 and 4'], D: ['1 and 3', '2 and 4'] }, Paper: () => <R2PaperCheck/> },
+  'harmony-2': { secs: ['B'], back: { B: [2] }, Paper: () => <H3PaperCheck g={2}/> },   // Build DM: one part, so the page fits (the room's check-up on paper has both)
+  'harmony-3': { secs: ['A', 'C'], back: { A: [2], C: [4, 5] }, Paper: () => <H3PaperCheck g={3}/> },
+  'rhythm-2': { secs: ['B'], back: { B: ['2 and 3'] }, Paper: () => <R2PaperCheck g={2}/> },   // its part A (two lines of counts) is too tall for the checkpoint's page
+  'rhythm-3': { secs: ['B', 'C'], back: { B: ['3 and 4'], C: ['2 and 4'] }, Paper: () => <R2PaperCheck g={3}/> },
 };
 // which rooms share a printed page (measured, so no page overflows)
 const CKP_PAGES = { '3': [['listen-23', 'melody'], ['scales-23', 'harmony-2', 'rhythm-2']], '4': [['listen-3', 'melody-3', 'harmony-3'], ['scales-3', 'rhythm-3']], '2': [['listen-write', 'accidentals'], ['key-signatures', 'terms'], ['six-eight', 'intervals'], ['chords', 'form']], '1': [['listen-sing', 'tempo', 'rhythm'], ['ledger-lines', 'scales'], ['scale-play', 'minor-scales'], ['signs']], '0a': [['posture-hands', 'first-steps'], ['pulse', 'note-names'], ['hand-positions', 'ear-prep'], ['note-values']], '0b': [['dynamics', 'staff'], ['reading-steps', 'whole-staff'], ['time-signatures', 'tones']] };
