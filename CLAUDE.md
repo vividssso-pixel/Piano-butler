@@ -61,19 +61,19 @@ claude.ai/artifact/VgstnAko8v3AyvQQLabFeN); update it after every build.*
 | **Source and build** | Edit `drills.src.html`, compile to `drills.html` (see "drills.html: source and compiled page" below). The cloud workspace builds with patch scripts; each build's patch and tests are copied to `_workspace/concept-book-kit/sc/`, its CLAUDE.md row script and commit message to `sc/ship/`. |
 | **teacher-dashboard.html** | Sign in at `login.html` (email and password; "Email me a sign-in link instead" if forgotten). Student links, lesson logs, This week ticks, and on each linked student's page **Start and checks**: their placement, the teacher's setting (start floor, theory grade, the Home for adults), chapter checks by floor, reviews due (CS). |
 | **Supabase** | Migrations A1, B1, B2, B3, C and D all run (Sohyun re-ran B3, C, D in order on 2026-10-29). Each file is safe to run again. Students never read tables; they call `pb_*` functions with the token in their link. |
-| **Git** | Pushed up to EC (`754294a`) on 2026-10-31. ED committed, waiting for her push. |
+| **Git** | Pushed up to EC (`754294a`) on 2026-10-31. ED and EE committed, waiting for her push. |
 | **App size** | 8.2 MB of code (2.2 MB gzipped). Since Build CW (her OK, 2026-10-29) the code is its own file, `drills.app.js`, next to a 34 KB `drills.html` that loads it as `drills.app.js?v=<hash>` (a new hash each build, so a new page never meets an old cached copy). Measured on a copy with a four-times slower CPU: the first screen comes about a third sooner (4.9 s to 3.2 s), a returning student's another third (3.6 s to 2.5 s), because the browser keeps the file and its compiled code. A per-floor split would save little (the books above Beginner are about 14%) for a large rebuild: not now. |
 | **Revenue** (Top Priority) | Last checked 2026-09-15: 319 clicks and 15.2k impressions over three months, 38 of 40 pages indexed. AdSense rejected again 2026-09-19 (low-value content); Sohyun waits for traffic before any re-review, and a re-review is always her call. Not re-checked since. |
 | **Security** | Still outstanding from the 2026-08-14 incident, all on her phone: Gmail, GitHub, bank and card, Namecheap, Apple ID, Supabase, AdSense, Anthropic passwords. Never touch these. |
 
 ### Waiting on Sohyun
-- Push: ED (one commit), before she opens a cloud window.
+- Push: ED and EE (two commits), before she opens a cloud window.
 - On the iPad: how long drills takes to open, print chapter 2's Lesson Book once, the Music Lab sound (open since 2026-10-07).
 - A trial with 3 to 5 students: links sent, start floors set in the dashboard, watch for two weeks whether they come back.
 - Nothing open on the board right now. The Prelim books: she chose not to wait for the trial (2026-10-30 00:36); built (CZ).
 
 ### Next (Claude)
-1. The heavy jobs run in Claude Code cloud sessions on her credits (her 31 Oct 18:20, 18:23), one window at a time, each pushing its own branch (never main) for her to merge: the rest of call 39 (the staff under the Grade 4 to 8 rooms' other keyboards), then the Workbooks, fun first, floor by floor. The prompts: _workspace/concept-book-kit/HANDOFF-cloud.md. The board is updated from the chat when she merges. Then a Pieces shelf (her 22:31) once she says which grade and what for.
+1. The Workbooks, fun first, floor by floor. Her 31 Oct 19:49: no cloud session today, the work goes on in the chat; for a cloud window later, the prompts are in _workspace/concept-book-kit/HANDOFF-cloud.md (each window pushes its own branch, never main, for her to merge). Then a Pieces shelf (her 22:31) once she says which grade and what for.
 
 ### Parked (remind, do not build)
 - A link from thepianobutler.com to drills: until everything else is done (call 30, her 2026-10-28).
