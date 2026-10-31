@@ -35,7 +35,7 @@ const sleep = (ms) => new Promise(r => setTimeout(r, ms));
     say(w.n === 1 && w.over.every(x => x <= 2) && !p._errs.length, '7 ' + ch + ': Write it here', JSON.stringify(w)); await p.close(); }
   // call 38: the Scales map on the Quick line, nine floors, the floors are doors
   for (const lang of ['en', 'ko']) { const p = await H.open({ path: '?teacher=1&view=home', w: 420, h: 1200, dsf: 1, lang }); await sleep(1000);
-    await p.locator('[data-quick="scales-map"]').click(); await sleep(900);
+    await p.locator('[data-quick="reference"]').click(); await sleep(1100); await p.locator('[data-ref-scalesmap]').click(); await sleep(700);   // Build EC: the Scales map lives in the Reference
     const r = await p.evaluate(() => ({ floors: document.querySelectorAll('[data-smap-floor]').length, chips: document.querySelectorAll('[data-scales-map] .chip').length, ids: [...document.querySelectorAll('[data-scales-map] .chip')].map(e => e.innerText).filter(x => /^[A-G][sb]?(mh?|mel|m)?\d$/.test(x)) }));
     await p.locator('[data-smap-floor="scales-8"] button').first().click(); await sleep(900);
     say(r.floors === 9 && r.chips > 60 && r.ids.length === 0 && /drill=scales-8/.test(await p.evaluate(() => location.search)) && !p._errs.length, lang, 'call 38 the Scales map: nine floors, names not ids, a door', JSON.stringify(r.ids), p._errs.slice(0, 1));
