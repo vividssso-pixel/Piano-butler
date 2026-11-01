@@ -19650,7 +19650,7 @@ const TOOLS = [
   { id: 'chromatic', ch: 'tones', title: 'Chromatic scale & enharmonics', blurb: 'Every key, its fingering, and all its names, double sharps too.', C: () => <ChromaticScale/> },
   { id: 'accidental-bar', ch: 'tones', title: 'How long an accidental lasts', blurb: 'Until the bar line: hear it.', C: () => <><ExplTones2/><AccidentalBar/></> },
   { id: 'scale-finder', ch: 'scales', title: 'Scale finder', blurb: 'Turn the circle of fifths to any major or minor key: the keyboard, both hands’ fingering, the key signature.', C: () => <ScaleFinderDial/> },
-  { id: 'reference', ch: 'concept', title: 'Reference', blurb: 'The whole of the theory on a few tables, Beginner to Grade 8; each row a door into its room.', C: (p) => <ReferenceView onChapter={p && p.onChapter}/> },   // Build EC (call 41)
+  { id: 'reference', ch: 'concept', title: 'Reference', blurb: 'The whole of the theory, the signs, the words, the periods and the instruments on a few tables, Beginner to Grade 8; each row a door into its room.', C: (p) => <ReferenceView onChapter={p && p.onChapter}/> },   // Build EC (call 41)
   { id: 'scales-map', ch: 'scales', title: 'Scales map', blurb: 'Every scale in the house on one page: the keys of each grade, the forms and the speed.', C: (p) => <ScalesMapView onChapter={p && p.onChapter}/> },   // Build DQ (call 38)
   { id: 'build-minor', hidden: true, ch: 'scales', title: 'Build a harmonic minor', blurb: 'With the tone-and-a-half step.', C: () => <ScaleBuilder mode="minor"/> },
   { id: 'modes', hidden: true, ch: 'scales', title: 'The seven modes', blurb: 'Ionian to Locrian: same notes, a new home note.', C: () => <Modes/> },
@@ -19969,7 +19969,7 @@ const TOOL_KO = {
   'chromatic': ['반음계와 딴이름한소리', '모든 건반, 손가락 번호, 그리고 모든 이름, 겹샵까지.'],
   'accidental-bar': ['임시표는 언제까지 유효할까', '세로줄까지: 들어 봐요.'],
   'scale-finder': ['스케일 찾기', '5도권을 돌려서 어떤 장조·단조든 찾아요: 건반, 양손 손가락 번호, 조표.'],
-  'reference': ['한눈에 보기', 'Beginner부터 Grade 8까지의 이론을 표 몇 장에. 줄마다 그걸 배우는 방으로 가는 문.'],
+  'reference': ['한눈에 보기', 'Beginner부터 Grade 8까지의 이론과 기호, 용어, 시대, 악기를 표 몇 장에. 줄마다 그걸 배우는 방으로 가는 문.'],
   'scales-map': ['스케일 지도', '집 안의 모든 스케일을 한 장에: 급마다 조, 형태, 빠르기.'],
   'build-minor': ['화성단음계 만들기', '온+반음이 있는 단음계.'],
   'modes': ['일곱 가지 선법', '이오니안부터 로크리안까지: 같은 음, 새로운 집.'],
@@ -21607,16 +21607,34 @@ function ScalesMapView({ onChapter }) {
 // teaching (its steps, its key lists: SCF, SCF_CM, S4_KEYS..., K4_IDS, MM_KEYS, H3_MIN, DEGREE_NAMES, DICT_TERMS); the
 // patterns (tones and semitones, semitones in an interval, the key signatures) are counted by the code, not typed.
 // On screen: ?tool=reference (the Home's Quick line); on paper: ?book=reference (A4, the books' look). The Scales map lives
-// inside it (Scales, floor by floor) and the dictionary's terms are its last table.
+// inside it (Scales, floor by floor) and the dictionary's terms are in Words about music.
+// ── Build ED (her 31 Oct 15:56: 'the book's Reference is so good, I want almost all of it in the Reference; there is more
+// after my screenshots'): the whole of the reference pages of the theory book in her folder (its pp. 226-251), in the
+// house's own data and drawings, never the book's words or pictures: the grand staff and the four clefs; every note value
+// from the breve to the hemidemisemiquaver with its rest; the time signatures the book lists (x/16, 9/4, 12/4, five and
+// seven beats, 3 + 3 + 2); every major and minor scale spelt out; every chord on any root; the signs (the book's visual
+// index); the words for how to play (the terms room's 96 and the book's others); words about music (the dictionary, the
+// pieces rooms' kinds of piece and forms, the styles room's words); the periods (the composers room's six); the
+// instruments (the Stories of music room's families, clefs and the score order). Rows the house does not teach say 'extra'.
+// A ♪ plays the room's own sound where it has one. Spellings and steps are counted by the code (refSpell), not typed.
 const RefPaper = React.createContext(false);
+const RefGo = React.createContext(null);
 const refFloor = (room) => { const s = STAGES.find(x => x.ids.includes(room)); return s && s.en ? s.en[0] : ''; };
+const REF_STORY = { 'pitch-range': ['Instruments', '악기'], composers: ['Composers', '작곡가'], styles: ['Styles', '양식'], 'piano-story': ['The piano’s story', '피아노 이야기'] };   // the attic's rooms by name
 function RefDoor({ room, g }) {
-  const paper = React.useContext(RefPaper), go = React.useContext(RefGo), lab = g || refFloor(room);
+  const paper = React.useContext(RefPaper), go = React.useContext(RefGo);
+  if (!room) return <span data-ref-extra style={{fontSize:10.5,fontWeight:800,fontStyle:'italic',color:BK.muted,whiteSpace:'nowrap',justifySelf:'end'}}>{t('extra', '더 알기')}</span>;
+  const lab = g || (REF_STORY[room] ? t(REF_STORY[room][0], REF_STORY[room][1]) : refFloor(room));
   if (paper) return <span style={{fontSize:10.5,fontWeight:800,color:BK.muted,whiteSpace:'nowrap'}}>{lab}</span>;
   return <button type="button" className="chip" data-ref-door={room} onClick={() => go && go(room)} title={bkChapterName(room)}
     style={{minHeight:28,padding:'2px 7px',fontSize:11,fontWeight:900,whiteSpace:'nowrap',justifySelf:'end'}}>{lab} ›</button>;
 }
-const RefGo = React.createContext(null);
+// ♪: the room's own sound (screen only)
+function RefHear({ on, k }) {
+  if (React.useContext(RefPaper)) return null;
+  return <button type="button" className="chip" data-ref-hear={k} aria-label={t('Hear it', '들어 보기')} onClick={(e) => { e.stopPropagation(); try { on(); } catch (err) {} }}
+    style={{minHeight:28,minWidth:30,padding:'2px 7px',fontSize:13.5,fontWeight:900,color:BK.coral,lineHeight:1}}>♪</button>;
+}
 // a table: hairlines between rows, the columns set by the caller
 function RefTable({ cols, head, rows, k }) {
   return <div data-ref-table={k} style={{display:'grid',gridTemplateColumns:cols,alignItems:'center',columnGap:8,border:'1.5px solid rgba(38,41,107,0.22)',borderRadius:10,background:'#fff',padding:'2px 10px'}}>
@@ -21625,26 +21643,49 @@ function RefTable({ cols, head, rows, k }) {
   </div>;
 }
 const RefNote = ({ children }) => <div style={{fontSize:12.5,color:BK.muted,lineHeight:1.45,margin:'6px 2px 0'}}>{children}</div>;
+const RefLab = ({ children }) => <div style={{fontSize:12,fontWeight:900,color:BK.coral,letterSpacing:'0.06em',textTransform:'uppercase',margin:'10px 2px 5px'}}>{children}</div>;
 function RefSvgEl({ inner, w, h, vb }) { const k = React.useContext(RefPaper) ? 0.78 : 1; return <svg viewBox={vb || ('0 0 ' + w + ' ' + h)} width={w * k} height={h * k} style={{display:'block',overflow:'visible'}} dangerouslySetInnerHTML={{ __html: inner }}/>; }
 const refSvg = (inner, w, h, vb) => <RefSvgEl inner={inner} w={w} h={h} vb={vb}/>;
-// one note or rest, drawn with the house's own glyphs (nvbNote, nvbRest, the rhythm staff's rests): heads, stems and flags as
-// everywhere else. kind: w h q e s; dot: dotted
-function refNoteSvg(kind, dot) {
-  const y = 46, x = 14, col = PEN_N;
-  let s;
-  if (kind === 's') {   // the semiquaver: the quaver's flag twice, on a longer stem
-    const sx = x + NV_SX, top = y - 38;
-    s = nvbHead(x, y, 'q', col, 1) + '<line x1="' + sx + '" y1="' + y + '" x2="' + sx + '" y2="' + top + '" stroke="' + col + '" stroke-width="1.9" stroke-linecap="round"/>'
-      + [0, 8].map(d => '<path d="M' + sx + ' ' + (top + d) + ' c 2 8 12 10 7.5 22" fill="none" stroke="' + col + '" stroke-width="2.4" stroke-linecap="round"/>').join('');
-  } else s = nvbNote(x, y, kind, { col }).svg;
-  if (dot) s += '<circle cx="' + (x + 14) + '" cy="' + (y - 2) + '" r="2.6" fill="' + col + '"/>';
-  return refSvg(s, 30, 46, '0 4 34 52');
+// spelling: a key note, then letter steps and semitones from it; the letter decides, the semitones set the sign
+const REF_LET = ['C', 'D', 'E', 'F', 'G', 'A', 'B'], REF_NATPC = [0, 2, 4, 5, 7, 9, 11], REF_ACC = { '-2': '𝄫', '-1': '♭', 0: '', 1: '♯', 2: '𝄪' };
+const refKey = (k) => { const L = REF_LET.indexOf(k[0]), a = k.slice(1); return { L, pc: (REF_NATPC[L] + (a === '♯' ? 1 : a === '♭' ? -1 : 0) + 12) % 12 }; };
+const refSpell = (k, steps, semis) => { const r = refKey(k); return steps.map((st, i) => { const L = (r.L + st) % 7, d = (((r.pc + semis[i] - REF_NATPC[L]) % 12) + 18) % 12 - 6; return REF_LET[L] + REF_ACC[d]; }); };
+// a name with a double sharp or flat: the sign in the music font
+const refNm = (s, key) => /[𝄪𝄫]/u.test(s) ? <span key={key} style={{whiteSpace:'nowrap'}}>{s[0]}<span style={{fontFamily:MUSIC_FONT}}>{s.slice(1)}</span></span> : <span key={key} style={{whiteSpace:'nowrap'}}>{s}</span>;
+const refRoot = (pc) => 60 + pc - (pc > 6 ? 12 : 0);
+const refHz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+// notes one after another (gap), then together (block)
+function refPlayNotes(midis, gap = 0.28, block = true, len = 0.45) {
+  const ctx = getAudio(); if (!ctx) return; stopClicks(); const t0 = ctx.currentTime + 0.06;
+  midis.forEach((m, i) => blip(ctx, t0 + i * gap, refHz(m), len, 0.15, 'triangle'));
+  if (block) { const b = t0 + midis.length * gap + 0.12; midis.forEach(m => blip(ctx, b, refHz(m), 1.2, 0.1, 'triangle')); }
 }
-function refRestSvg(kind) {
-  const col = PEN_N;
-  const s = kind === 'w' ? nvbRest(17, 22, 'w', { col }).svg : kind === 'h' ? nvbRest(17, 34, 'h', { col }).svg : kind === 'q' ? nvbRest(17, 30, 'q', { col, k: 1.05 }).svg
-    : kind === 'e' ? srhQuaverRest(19, 32, col, 1.2) : srhSemiRest(19, 32, col);
-  return refSvg(s, 30, 46, '0 4 34 52');
+// one note or rest, drawn with the house's own glyphs (nvbNote, nvbRest, the rhythm staff's rests): heads, stems and flags as
+// everywhere else. kind: b w h q e s d x (breve to hemidemisemiquaver); dot: dotted
+function refNoteSvg(kind, dot) {
+  const y = 46, x = 14, col = PEN_N, flags = { s: 2, d: 3, x: 4 }[kind];
+  let s;
+  if (flags) {   // the quaver's flag two, three or four times, on a longer stem
+    const sx = x + NV_SX, top = y - 30 - flags * 8;
+    s = nvbHead(x, y, 'q', col, 1) + '<line x1="' + sx + '" y1="' + y + '" x2="' + sx + '" y2="' + top + '" stroke="' + col + '" stroke-width="1.9" stroke-linecap="round"/>'
+      + Array.from({ length: flags }, (_, i) => '<path d="M' + sx + ' ' + (top + i * 8) + ' c 2 8 12 10 7.5 22" fill="none" stroke="' + col + '" stroke-width="2.4" stroke-linecap="round"/>').join('');
+  } else if (kind === 'b') {   // the breve: the semibreve between two pairs of upright lines
+    s = nvbHead(x, y, 'w', col, 1) + [-11.5, -9, 9, 11.5].map(d => '<line x1="' + (x + d) + '" x2="' + (x + d) + '" y1="' + (y - 6.5) + '" y2="' + (y + 6.5) + '" stroke="' + col + '" stroke-width="1.5"/>').join('');
+  } else s = nvbNote(x, y, kind, { col }).svg;
+  if (dot) s += '<circle cx="' + (x + (kind === 'b' ? 18 : 14)) + '" cy="' + (y - 2) + '" r="2.6" fill="' + col + '"/>';
+  return flags > 2 ? refSvg(s, 30, 57, '0 -8 34 64') : refSvg(s, 30, 46, '0 4 34 52');
+}
+// a rest with n hooks on one slanting stroke (the quaver rest's own hook, again and again down the stroke)
+const refHookRest = (x, y, n, col) => { const o = (n - 1) * 4; let s = '';
+  for (let i = 0; i < n; i++) { const dx = -2.4 * i, dy = 8 * i - o;
+    s += '<circle cx="' + (x - 2.6 + dx) + '" cy="' + (y - 6.6 + dy) + '" r="3" fill="' + col + '"/><path d="M' + (x - 3.4 + dx) + ' ' + (y - 4.6 + dy) + ' Q' + (x + 1.6 + dx) + ' ' + (y - 3.4 + dy) + ' ' + (x + 4.6 + dx) + ' ' + (y - 9 + dy) + '" fill="none" stroke="' + col + '" stroke-width="2.1" stroke-linecap="round"/>'; }
+  return s + '<line x1="' + (x + 4.6) + '" y1="' + (y - 9 - o) + '" x2="' + (x - 1 - 2.4 * (n - 1)) + '" y2="' + (y + 9.5 + o) + '" stroke="' + col + '" stroke-width="2.1" stroke-linecap="round"/>'; };
+function refRestSvg(kind, dot) {
+  const col = PEN_N, n = { e: 1, s: 2, d: 3, x: 4 }[kind];
+  let s = kind === 'b' ? [22, 30].map(yy => '<line x1="6" x2="28" y1="' + yy + '" y2="' + yy + '" stroke="' + col + '" stroke-width="1.4"/>').join('') + '<rect x="13" y="22" width="8" height="8" fill="' + col + '"/>'
+    : kind === 'w' ? nvbRest(17, 22, 'w', { col }).svg : kind === 'h' ? nvbRest(17, 34, 'h', { col }).svg : kind === 'q' ? nvbRest(17, 30, 'q', { col, k: 1.05 }).svg : refHookRest(19, 32, n, col);
+  if (dot) s += '<circle cx="' + (kind === 'b' || kind === 'w' || kind === 'h' ? 30 : 27) + '" cy="' + (kind === 'w' ? 26 : 28) + '" r="2.6" fill="' + col + '"/>';
+  return n > 2 ? refSvg(s, 30, 57, '0 -8 34 64') : refSvg(s, 30, 46, '0 4 34 52');
 }
 // a beamed group with its number over the beam: the triplet (3) and the duplet (2)
 function refTupletSvg(n) {
@@ -21654,55 +21695,135 @@ function refTupletSvg(n) {
 // a time signature: two numbers on a short staff, or the C and the cut C
 function RefTime({ top, bot, sym }) {
   const lines = [0, 1, 2, 3, 4].map(i => '<line x1="0" x2="34" y1="' + (6 + i * 8) + '" y2="' + (6 + i * 8) + '" stroke="' + PEN_N + '" stroke-opacity="0.45" stroke-width="1"/>').join('');
-  const num = (v, y) => '<text x="17" y="' + y + '" text-anchor="middle" font-size="17.5" font-weight="900" font-family="Georgia, serif" fill="' + PEN_N + '">' + v + '</text>';
+  const num = (v, y) => '<text x="17" y="' + y + '" text-anchor="middle" font-size="' + (String(v).length > 1 ? 15.5 : 17.5) + '" font-weight="900" font-family="Georgia, serif" fill="' + PEN_N + '">' + v + '</text>';
   const inner = sym ? '<text x="17" y="28.5" text-anchor="middle" font-size="24" font-weight="900" font-family="Georgia, serif" fill="' + PEN_N + '">C</text>' + (sym === 'cut' ? '<line x1="17.5" x2="17.5" y1="6" y2="40" stroke="' + PEN_N + '" stroke-width="1.8"/>' : '')
     : num(top, 21.5) + num(bot, 37.5);
   return refSvg(lines + inner, 34, 46);
 }
 const refSec = (id, en, ko) => ({ id, en, ko });
-const REF_SECS = [refSec('notes', 'Notes and rests', '음표와 쉼표'), refSec('time', 'Time signatures', '박자표'), refSec('keys', 'Keys and key signatures', '조와 조표'), refSec('scales', 'Scales', '음계'), refSec('intervals', 'Intervals', '음정'), refSec('chords', 'Chords and cadences', '화음과 종지'), refSec('terms', 'Signs and terms', '기호와 용어')];
+const REF_SECS = [refSec('staff', 'The staff and the clefs', '오선과 음자리표'), refSec('notes', 'Notes and rests', '음표와 쉼표'), refSec('time', 'Time signatures', '박자표'), refSec('keys', 'Keys and key signatures', '조와 조표'),
+  refSec('scales', 'Scales', '음계'), refSec('intervals', 'Intervals', '음정'), refSec('chords', 'Chords and cadences', '화음과 종지'), refSec('signs', 'Signs', '기호'),
+  refSec('play', 'Words for how to play', '연주 용어'), refSec('terms', 'Words about music', '음악 낱말'), refSec('periods', 'Periods', '시대'), refSec('instruments', 'Instruments', '악기')];
 function RefHead({ id }) { const s = REF_SECS.find(x => x.id === id); return <div id={'ref-' + id} data-ref-sec={id} style={{scrollMarginTop:12,margin:'0 0 8px'}}><StaffHead title={t(s.en, s.ko)}/></div>; }
 
-// 1. notes and rests (the beats with the crotchet as one beat, as in 2/4, 3/4 and 4/4)
-const REF_NOTES = [
-  ['w', 0, 'semibreve', '온음표', '4', 'w', 'note-values'], ['h', 1, 'dotted minim', '점2분음표', '3', null, 'note-values'], ['h', 0, 'minim', '2분음표', '2', 'h', 'note-values'],
-  ['q', 1, 'dotted crotchet', '점4분음표', '1½', null, 'rhythm'], ['q', 0, 'crotchet', '4분음표', '1', 'q', 'note-values'], ['e', 1, 'dotted quaver', '점8분음표', '¾', null, 'rhythm-3'],
-  ['e', 0, 'quaver', '8분음표', '½', 'e', 'note-values'], ['s', 0, 'semiquaver', '16분음표', '¼', null, 'rhythm-2'],
-];
-function RefNotes() {
-  return <div>
-    <RefTable k="notes" cols="30px 30px minmax(0,1fr) 30px auto" head={[t('Note', '음표'), t('Rest', '쉼표'), t('Name', '이름'), t('Beats', '박'), '']}
-      rows={REF_NOTES.map(([k, d, en, ko, b, r, room]) => [refNoteSvg(k, d), r ? refRestSvg(r) : <span/>, <b style={{fontWeight:800}}>{t(en, ko)}</b>, <span style={{fontWeight:900,fontSize:15}}>{b}</span>, <RefDoor room={room}/>])}/>
-    <div style={{height:6}}/>
-    <RefTable k="tuplets" cols="64px minmax(0,1fr) auto" rows={[[refTupletSvg(3), t('triplet: three in the time of two', '셋잇단음표: 둘 자리에 셋'), <RefDoor room="rhythm-2"/>], [refTupletSvg(2), t('duplet: two in the time of three', '2잇단음표: 셋 자리에 둘'), <RefDoor room="rhythm-2" g="Grade 3"/>]]}/>
-    <RefNote>{t('Beats with the crotchet as one beat (2/4, 3/4, 4/4). A dot adds half the note’s value.', '4분음표를 한 박으로 셀 때(2/4, 3/4, 4/4)의 박. 점은 그 음표 값의 절반을 더해요.')}</RefNote>
+// 1. the staff: every white key from C two octaves below middle C to C two octaves above, on the grand staff (tap: hear it);
+// the four clefs, each with middle C where it sits
+function RefGrandStaff() {
+  const paper = React.useContext(RefPaper), [on, setOn] = useState(-1), tm = useRef(null);
+  const yT = (d) => 68 - (d - 30) * 4, yB = (d) => yT(d) + 24, x0 = 62, dx = 15, W = x0 + 28 * dx + 14, H = 190;
+  const ln = (y, a = 18, b = W - 4) => '<line x1="' + a + '" x2="' + b + '" y1="' + y + '" y2="' + y + '" stroke="' + PEN_N + '" stroke-opacity="0.55" stroke-width="1"/>';
+  let s = [30, 32, 34, 36, 38].map(d => ln(yT(d))).join('') + [18, 20, 22, 24, 26].map(d => ln(yB(d))).join('');
+  s += '<line x1="18" x2="18" y1="' + yT(38) + '" y2="' + yB(18) + '" stroke="' + PEN_N + '" stroke-width="1.3"/>';
+  const ya = yT(38), yb = yB(18), ym = (ya + yb) / 2;   // the brace
+  s += '<path d="M14 ' + ya + ' C6 ' + (ya + 8) + ' 12 ' + (ym - 14) + ' 6 ' + ym + ' C12 ' + (ym + 14) + ' 6 ' + (yb - 8) + ' 14 ' + yb + '" fill="none" stroke="' + PEN_N + '" stroke-width="2.4" stroke-linecap="round"/>';
+  const notes = []; for (let d = 14; d <= 42; d++) notes.push(d);
+  notes.forEach((d, i) => { const x = x0 + i * dx, up = d >= 28, y = up ? yT(d) : yB(d), col = i === on || d === 28 ? PEN_C : PEN_N;
+    const led = (l) => ln(up ? yT(l) : yB(l), x - 8.5, x + 8.5).replace('stroke-opacity="0.55" stroke-width="1"', 'stroke-width="1.3"');
+    if (up && d === 28) s += led(28);
+    if (up) for (let l = 40; l <= d; l += 2) s += led(l);
+    if (!up) for (let l = 16; l >= d; l -= 2) s += led(l);
+    s += '<ellipse cx="' + x + '" cy="' + y + '" rx="5.4" ry="3.9" transform="rotate(-20 ' + x + ' ' + y + ')" fill="' + col + '"/>';
+    s += '<text x="' + x + '" y="' + (H - 6) + '" text-anchor="middle" font-size="11" font-weight="900" font-family="Georgia, serif" fill="' + col + '">' + REF_LET[d % 7] + '</text>'; });
+  const hit = (d, i) => { setOn(i); playKey(12 * (Math.floor(d / 7) + 1) + REF_NATPC[d % 7] - 60, 0.6); clearTimeout(tm.current); tm.current = setTimeout(() => setOn(-1), 450); };
+  return <div style={{overflowX:paper ? 'visible' : 'auto',margin:'0 0 4px'}}>
+    <svg data-ref-grand viewBox={'0 0 ' + W + ' ' + H} style={{width:paper ? '78%' : W,minWidth:paper ? 0 : W,display:'block',margin:paper ? '0 auto' : 0}} role="img" aria-label={t('Every white key from C2 to C6 on the grand staff', '큰보표 위의 흰건반, C2부터 C6까지')}>
+      <g transform="translate(12 0)"><ClefGlyph clef="treble" st="treble" yOf={yT} ink={PEN_N}/><ClefGlyph clef="bass" st="bass" yOf={yB} ink={PEN_N}/></g>
+      <g dangerouslySetInnerHTML={{ __html: s }}/>
+      {!paper && notes.map((d, i) => <rect key={d} x={x0 + i * dx - 7.5} y="0" width={dx} height={H} fill="transparent" style={{cursor:'pointer'}} onClick={() => hit(d, i)}/>)}
+    </svg>
   </div>;
 }
-// 2. time signatures: the bottom number; simple and compound
+const REF_CLEFS = [
+  ['treble', 30, 'treble', 'Treble clef · G clef', '높은음자리표 · G음자리표', 'curls round G, line 2', 'G(둘째 줄)를 감아요', 'staff'],
+  ['bass', 18, 'bass', 'Bass clef · F clef', '낮은음자리표 · F음자리표', 'its dots round F, line 4', '두 점이 F(넷째 줄)를 감싸요', 'staff'],
+  ['alto', 24, 'alto', 'Alto clef · C clef', '알토음자리표 · C음자리표', 'middle C on line 3', '가운데 C가 셋째 줄', 'staff', 'Grade 2'],
+  ['tenor', 22, 'alto', 'Tenor clef · C clef', '테너음자리표 · C음자리표', 'middle C on line 4', '가운데 C가 넷째 줄', 'pitch-range'],
+];
+function RefClefPic({ bottom, glyph }) {
+  const yOf = (d) => 48 - (d - bottom) * 4, x = 70;
+  let s = [0, 2, 4, 6, 8].map(p => '<line x1="2" x2="92" y1="' + yOf(bottom + p) + '" y2="' + yOf(bottom + p) + '" stroke="' + PEN_N + '" stroke-opacity="0.55" stroke-width="1"/>').join('');
+  if (28 < bottom || 28 > bottom + 8) s += '<line x1="' + (x - 10) + '" x2="' + (x + 10) + '" y1="' + yOf(28) + '" y2="' + yOf(28) + '" stroke="' + PEN_N + '" stroke-width="1.3"/>';
+  s += '<ellipse cx="' + x + '" cy="' + yOf(28) + '" rx="5.6" ry="4" transform="rotate(-20 ' + x + ' ' + yOf(28) + ')" fill="' + PEN_C + '"/>';
+  const k = React.useContext(RefPaper) ? 0.8 : 1;
+  return <svg viewBox="0 0 96 72" width={96 * k} height={72 * k} style={{display:'block',overflow:'visible'}}><ClefGlyph clef={glyph} st={glyph} yOf={yOf} ink={PEN_N}/><g dangerouslySetInnerHTML={{ __html: s }}/></svg>;
+}
+function RefStaff() {
+  return <div>
+    <RefGrandStaff/>
+    <RefNote>{t('Every white key from C two octaves below middle C to C two octaves above; middle C in coral, on its own ledger line between the staves.', '가운데 C 두 옥타브 아래 C부터 두 옥타브 위 C까지의 흰건반 모두. 코랄색이 가운데 C, 두 오선 사이의 덧줄 위.')}{React.useContext(RefPaper) ? '' : t(' Tap a note to hear it.', ' 음표를 누르면 소리가 나요.')}</RefNote>
+    <div style={{display:'flex',flexWrap:'wrap',gap:6,justifyContent:'flex-end',marginTop:6}}><RefDoor room="whole-staff"/><RefDoor room="ledger-lines"/></div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))',gap:6,marginTop:8}}>{REF_CLEFS.map(([id, bottom, glyph, en, ko, hen, hko, room, g]) =>
+      <div key={id} data-ref-clef={id} style={{border:'1.5px solid rgba(38,41,107,0.22)',borderRadius:10,background:'#fff',padding:'6px 8px',display:'flex',flexDirection:'column',alignItems:'flex-start',gap:3,minWidth:0}}>
+        <RefClefPic bottom={bottom} glyph={glyph}/>
+        <b style={{fontSize:12.5,fontWeight:800,lineHeight:1.25}}>{t(en, ko)}</b>
+        <span style={{fontSize:12,color:BK.muted,lineHeight:1.3}}>{t(hen, hko)}</span>
+        <RefDoor room={room} g={g}/>
+      </div>)}</div>
+  </div>;
+}
+
+// 2. notes and rests (the beats with the crotchet as one beat, as in 2/4, 3/4 and 4/4), the breve to the hemidemisemiquaver
+const REF_NOTES = [
+  ['b', 0, 'breve', '겹온음표', '8', 'note-values', 'Grade 4'], ['w', 1, 'dotted semibreve', '점온음표', '6', null], ['w', 0, 'semibreve', '온음표', '4', 'note-values'],
+  ['h', 1, 'dotted minim', '점2분음표', '3', 'note-values'], ['h', 0, 'minim', '2분음표', '2', 'note-values'], ['q', 1, 'dotted crotchet', '점4분음표', '1½', 'rhythm'],
+  ['q', 0, 'crotchet', '4분음표', '1', 'note-values'], ['e', 1, 'dotted quaver', '점8분음표', '¾', 'rhythm-3'], ['e', 0, 'quaver', '8분음표', '½', 'note-values'],
+  ['s', 0, 'semiquaver', '16분음표', '¼', 'rhythm-2'], ['d', 0, 'demi\u00adsemi\u00adquaver', '32분음표', '⅛', null], ['x', 0, 'hemi\u00addemi\u00adsemi\u00adquaver', '64분음표', '1/16', null],
+];
+function RefNotes() {
+  const paper = React.useContext(RefPaper);
+  return <div>
+    <div style={{display:'grid',gridTemplateColumns:paper ? '1fr 1fr' : 'minmax(0,1fr)',gap:8,alignItems:'start'}}>{(paper ? [REF_NOTES.slice(0, 6), REF_NOTES.slice(6)] : [REF_NOTES]).map((list, li) =>
+    <RefTable key={li} k="notes" cols="30px 30px minmax(0,1fr) 34px auto" head={[t('Note', '음표'), t('Rest', '쉼표'), t('Name', '이름'), t('Beats', '박'), '']}
+      rows={list.map(([k, d, en, ko, b, room, g]) => [refNoteSvg(k, d), refRestSvg(k, d), <b style={{fontWeight:800}}>{t(en, ko)}</b>, <span style={{fontWeight:900,fontSize:b.length > 2 ? 12.5 : 15,whiteSpace:'nowrap'}}>{b}</span>, <RefDoor room={room} g={g}/>])}/>)}</div>
+    <div style={{height:6}}/>
+    <RefTable k="tuplets" cols="64px minmax(0,1fr) auto" rows={[[refTupletSvg(3), t('triplet: three in the time of two', '셋잇단음표: 둘 자리에 셋'), <RefDoor room="rhythm-2"/>], [refTupletSvg(2), t('duplet: two in the time of three', '2잇단음표: 셋 자리에 둘'), <RefDoor room="rhythm-2" g="Grade 3"/>]]}/>
+    <RefNote>{t('Beats with the crotchet as one beat (2/4, 3/4, 4/4). Each plain note is half the plain note above it; a dot adds half the note’s value.', '4분음표를 한 박으로 셀 때(2/4, 3/4, 4/4)의 박. 점 없는 음표는 위의 점 없는 음표의 절반, 점은 그 음표 값의 절반을 더해요.')}</RefNote>
+  </div>;
+}
+// 3. time signatures: the bottom number; simple, compound and irregular; a ♪ plays two bars, the strong beats louder
 const REF_TS = {
   simple: [[2, 4, null, '2 crotchets', '4분음표 둘', 'time-signatures'], [3, 4, null, '3 crotchets', '4분음표 셋', 'time-signatures'], [4, 4, 'c', '4 crotchets', '4분음표 넷', 'time-signatures'],
-    [2, 2, 'cut', '2 minims', '2분음표 둘', 'rhythm-3'], [3, 2, null, '3 minims', '2분음표 셋', 'rhythm-3'], [3, 8, null, '3 quavers', '8분음표 셋', 'rhythm-3']],
-  compound: [[6, 8, null, '2 dotted crotchets', '점4분음표 둘', 'six-eight'], [9, 8, null, '3 dotted crotchets', '점4분음표 셋', 'rhythm-3'], [12, 8, null, '4 dotted crotchets', '점4분음표 넷', 'rhythm-3'], [6, 4, null, '2 dotted minims', '점2분음표 둘', 'rhythm-4']],
+    [2, 2, 'cut', '2 minims', '2분음표 둘', 'rhythm-3'], [3, 2, null, '3 minims', '2분음표 셋', 'rhythm-3'], [4, 2, null, '4 minims', '2분음표 넷', null], [3, 8, null, '3 quavers', '8분음표 셋', 'rhythm-3'], [3, 16, null, '3 semiquavers', '16분음표 셋', null]],
+  compound: [[6, 8, null, '2 dotted crotchets', '점4분음표 둘', 'six-eight'], [9, 8, null, '3 dotted crotchets', '점4분음표 셋', 'rhythm-3'], [12, 8, null, '4 dotted crotchets', '점4분음표 넷', 'rhythm-3'],
+    [6, 4, null, '2 dotted minims', '점2분음표 둘', 'rhythm-4'], [9, 4, null, '3 dotted minims', '점2분음표 셋', null], [12, 4, null, '4 dotted minims', '점2분음표 넷', null],
+    [6, 16, null, '2 dotted quavers', '점8분음표 둘', null], [9, 16, null, '3 dotted quavers', '점8분음표 셋', null], [12, 16, null, '4 dotted quavers', '점8분음표 넷', null]],
+  irregular: [[5, 4, null, '5 crotchets: 3 + 2 or 2 + 3', '4분음표 다섯: 3 + 2 또는 2 + 3', 'time-signatures', [3, 2]], [7, 4, null, '7 crotchets: 4 + 3 or 3 + 4', '4분음표 일곱: 4 + 3 또는 3 + 4', null, [4, 3]],
+    [5, 8, null, '5 quavers: 3 + 2 or 2 + 3', '8분음표 다섯: 3 + 2 또는 2 + 3', null, [3, 2]], [7, 8, null, '7 quavers: 2 + 2 + 3 or 3 + 2 + 2', '8분음표 일곱: 2 + 2 + 3 또는 3 + 2 + 2', null, [2, 2, 3]]],
 };
-function RefTimeTiles({ list }) {
+// two bars of clicks: accent 1 the bar's first, 0.5 each group's first, 0 the rest
+function refPlayBar(acc, unit) {
+  const ctx = getAudio(); if (!ctx) return; stopClicks(); const t0 = ctx.currentTime + 0.1;
+  [0, 1].forEach(bar => acc.forEach((a, i) => { const at = t0 + (bar * acc.length + i) * unit;
+    if (a === 1) beatTick(ctx, at, 0, 1320, 0.05, 0.4); else if (a === 0.5) beatTick(ctx, at, 1, 1040, 0.05, 0.22); else beatTick(ctx, at, 2, 880, 0.05, 0.1); }));
+}
+const refGroupsAcc = (groups) => groups.flatMap((g, i) => Array.from({ length: g }, (_, j) => (j ? 0 : i ? 0.5 : 1)));
+function refTsHear(kind, a, b, groups) {
+  if (kind === 'simple') return refPlayBar(Array.from({ length: a }, (_, i) => (i === 0 ? 1 : a === 4 && i === 2 ? 0.5 : 0)), { 2: 0.8, 4: 0.55, 8: 0.38, 16: 0.28 }[b]);
+  if (kind === 'compound') return refPlayBar(refGroupsAcc(Array.from({ length: a / 3 }, () => 3)), { 4: 0.3, 8: 0.2, 16: 0.15 }[b]);
+  return refPlayBar(refGroupsAcc(groups), { 4: 0.42, 8: 0.22 }[b]);
+}
+function RefTimeTiles({ list, kind }) {
   const paper = React.useContext(RefPaper);
-  return <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(' + (paper ? 122 : 150) + 'px,1fr))',gap:6}}>{list.map(([a, b, sym, en, ko, room]) => <div key={a + '/' + b} data-ref-ts={a + '/' + b}
+  return <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(' + (paper ? 122 : 150) + 'px,1fr))',gap:6}}>{list.map(([a, b, sym, en, ko, room, groups]) => <div key={a + '/' + b} data-ref-ts={a + '/' + b}
     style={{display:'grid',gridTemplateColumns:sym ? '34px 34px 1fr' : '34px 1fr',alignItems:'center',gap:6,border:'1.5px solid rgba(38,41,107,0.22)',borderRadius:10,background:'#fff',padding:'5px 8px'}}>
     <RefTime top={a} bot={b}/>{sym && <RefTime sym={sym}/>}
-    <div style={{display:'flex',flexDirection:'column',gap:3,alignItems:'flex-start',minWidth:0}}><span style={{fontSize:12.5,fontWeight:800,lineHeight:1.25}}>{t(en, ko)}</span><RefDoor room={room}/></div>
+    <div style={{display:'flex',flexDirection:'column',gap:3,alignItems:'flex-start',minWidth:0}}><span style={{fontSize:12.5,fontWeight:800,lineHeight:1.25}}>{t(en, ko)}</span>
+      <span style={{display:'flex',gap:4,alignItems:'center',flexWrap:'wrap'}}><RefHear k={'ts' + a + '-' + b} on={() => refTsHear(kind, a, b, groups)}/><RefDoor room={room}/></span></div>
   </div>)}</div>;
 }
 function RefTimes() {
-  const lab = (en, ko) => <div style={{fontSize:12,fontWeight:900,color:BK.coral,letterSpacing:'0.06em',textTransform:'uppercase',margin:'10px 2px 5px'}}>{t(en, ko)}</div>;
   return <div>
     <RefTable k="bottom" cols="40px 38px minmax(0,1fr) auto" head={[t('Bottom', '아래 숫자'), '', t('Each count is a', '세는 단위'), '']}
-      rows={[[2, 'h', 'minim', '2분음표', 'rhythm-3'], [4, 'q', 'crotchet', '4분음표', 'time-signatures'], [8, 'e', 'quaver', '8분음표', 'six-eight']].map(([n, k, en, ko, room]) => [<span style={{fontFamily:LB_SERIF,fontWeight:900,fontSize:20}}>{n}</span>, refNoteSvg(k), <b style={{fontWeight:800}}>{t(en, ko)}</b>, <RefDoor room={room}/>])}/>
+      rows={[[2, 'h', 'minim', '2분음표', 'rhythm-3'], [4, 'q', 'crotchet', '4분음표', 'time-signatures'], [8, 'e', 'quaver', '8분음표', 'six-eight'], [16, 's', 'semiquaver', '16분음표', null]].map(([n, k, en, ko, room]) => [<span style={{fontFamily:LB_SERIF,fontWeight:900,fontSize:20}}>{n}</span>, refNoteSvg(k), <b style={{fontWeight:800}}>{t(en, ko)}</b>, <RefDoor room={room}/>])}/>
     <RefNote>{t('The top number: how many in a bar.', '위 숫자: 한 마디에 몇 개.')}</RefNote>
-    {lab('Simple: each beat splits in two', '홑박자: 한 박이 둘로')}<RefTimeTiles list={REF_TS.simple}/>
-    {lab('Compound: each beat is a dotted note and splits in three', '겹박자: 한 박이 점음표, 셋으로')}<RefTimeTiles list={REF_TS.compound}/>
+    <RefLab>{t('Simple: each beat splits in two', '홑박자: 한 박이 둘로')}</RefLab><RefTimeTiles list={REF_TS.simple} kind="simple"/>
+    <RefLab>{t('Compound: each beat is a dotted note and splits in three', '겹박자: 한 박이 점음표, 셋으로')}</RefLab><RefTimeTiles list={REF_TS.compound} kind="compound"/>
+    <RefLab>{t('Irregular: five or seven, in uneven groups', '혼합박자: 다섯이나 일곱, 고르지 않은 묶음')}</RefLab><RefTimeTiles list={REF_TS.irregular} kind="irregular"/>
+    <div style={{display:'flex',gap:6,alignItems:'center',margin:'6px 2px 0'}}><span style={{fontSize:12.5,color:BK.muted,lineHeight:1.45,flex:1,minWidth:0}}>{t('Calypso and many dances keep 4/4 but group the eight quavers 3 + 3 + 2.', '칼립소와 많은 춤곡은 4/4 그대로, 8분음표 여덟을 3 + 3 + 2로 묶어요.')}</span>
+      <RefHear k="ts-calypso" on={() => refPlayBar(refGroupsAcc([3, 3, 2]), 0.2)}/><RefDoor room={null}/></div>
   </div>;
 }
-// 3. keys: the order of the signs, every key with its relative minor, where the house first meets it (the scales rooms' key
+// 4. keys: the order of the signs, every key with its relative minor, where the house first meets it (the scales rooms' key
 // lists, Key Signatures, Minor Scales, Keys and Intervals 4 and 5)
 const REF_KEYS = [
   ['C', 'A', 0, null, 'scales', 'scales'], ['G', 'E', 1, 'sharp', 'scales', 'scales'], ['D', 'B', 2, 'sharp', 'key-signatures', 'scales-23'], ['A', 'F♯', 3, 'sharp', 'scales-3', 'scales-3'],
@@ -21730,7 +21851,8 @@ function RefKeys() {
     <RefNote>{t('The relative minor shares its major’s signature; its key note is three semitones lower. Same sounds, two names: B and C♭, F♯ and G♭, C♯ and D♭ major; G♯ and A♭, D♯ and E♭, A♯ and B♭ minor.', '나란한조는 장조와 조표가 같고, 으뜸음은 반음 셋 아래. 소리는 같고 이름은 둘: B와 C♭, F♯과 G♭, C♯과 D♭ 장조; G♯과 A♭, D♯과 E♭, A♯과 B♭ 단조.')}</RefNote>
   </div>;
 }
-// 4. scales: each form's steps counted from its notes (semitones from the key note); then the Scales map, floor by floor
+// 5. scales: each form's steps counted from its notes (semitones from the key note); the Scales map, floor by floor; then
+// every major and minor scale spelt out (part b), the 6th and 7th that the harmonic and melodic minor raise in coral
 const REF_SCALES = [
   ['pent', 'pentatonic (the black keys)', '5음 음계(검은건반)', [0, 2, 4, 7, 9, 12], 'first-steps'],
   ['maj', 'major', '장음계', [0, 2, 4, 5, 7, 9, 11, 12], 'scales'],
@@ -21741,8 +21863,27 @@ const REF_SCALES = [
   ['lyd', 'Lydian mode: the major with its 4th raised', '리디안 선법: 4도를 올린 장음계', [0, 2, 4, 6, 7, 9, 11, 12], 'scales-7'],
 ];
 const refStep = (d) => d === 1 ? 'S' : d === 2 ? 'T' : d === 3 ? 'T+S' : d === 4 ? '2T' : String(d);
-function RefScales() {
+const REF_SC = { maj: [0, 2, 4, 5, 7, 9, 11, 12], nat: [0, 2, 3, 5, 7, 8, 10, 12], harm: [0, 2, 3, 5, 7, 8, 11, 12], mel: [0, 2, 3, 5, 7, 9, 11, 12] }, REF_ST8 = [0, 1, 2, 3, 4, 5, 6, 7], REF_ST7 = REF_ST8.slice(0, 7);
+function RefAllScales() {
+  const notes = (arr, hot) => <span style={{display:'flex',flexWrap:'wrap',gap:'0 6px',fontWeight:800,fontFamily:'Georgia, serif'}}>{arr.map((n, i) => <span key={i} style={{color:hot && hot.includes(i) ? BK.coral : BK.ink}}>{refNm(n)}</span>)}</span>;
+  const maj = REF_KEYS.map(r => r[0]), min = REF_KEYS.map(r => r[1]), paper = React.useContext(RefPaper);
+  return <div style={paper ? {display:'grid',gridTemplateColumns:'1fr 1.15fr',gap:12,alignItems:'start'} : null}><div>
+    <RefLab>{t('Every major scale', '모든 장음계')}</RefLab>
+    <RefTable k="allmajor" cols="62px minmax(0,1fr) auto" rows={maj.map((k, i) => { const nn = refSpell(k, REF_ST7, REF_SC.maj); return [<b style={{fontWeight:800,whiteSpace:'nowrap'}}>{refMaj(k)}</b>, <div data-ref-allscale={'M' + k}>{notes(nn)}</div>,
+      <span style={{display:'flex',gap:4,alignItems:'center'}}><RefHear k={'sM' + k} on={() => playScaleNotes(refKey(k).pc, REF_SC.maj)}/><RefDoor room={REF_KEYS[i][4]}/></span>]; })}/></div><div>
+    <RefLab>{t('Every minor scale: the natural minor; the harmonic raises the 7th, the melodic the 6th and 7th going up', '모든 단음계: 자연 단음계; 화성 단음계는 7음을, 가락 단음계는 올라갈 때 6음과 7음을 올려요')}</RefLab>
+    <RefTable k="allminor" cols="62px minmax(0,1fr) auto" rows={min.map((k, i) => { const nat = refSpell(k, REF_ST7, REF_SC.nat), h = refSpell(k, REF_ST7, REF_SC.harm), m = refSpell(k, REF_ST7, REF_SC.mel), pc = refKey(k).pc;
+      return [<b style={{fontWeight:800,whiteSpace:'nowrap'}}>{refMin(k)}</b>,
+        <div data-ref-allscale={'m' + k} style={{display:'flex',flexDirection:'column',gap:2}}>{notes(nat)}<span style={{display:'flex',flexWrap:'wrap',alignItems:'center',gap:'2px 6px',fontSize:12,color:BK.muted,fontWeight:700}}>
+          <span style={{display:'inline-flex',gap:4,alignItems:'center'}}>{t('harmonic', '화성')} <b style={{color:BK.coral}}>{refNm(h[6])}</b><RefHear k={'sm' + k} on={() => playScaleNotes(pc, REF_SC.harm)}/></span>
+          <span style={{display:'inline-flex',gap:4,alignItems:'center'}}>{t('melodic up', '가락 ↑')} <b style={{color:BK.coral}}>{refNm(m[5])} {refNm(m[6])}</b><RefHear k={'sl' + k} on={() => playScaleNotes(pc, REF_SC.mel, REF_SC.nat)}/></span></span></div>,
+        <span style={{display:'flex',gap:4,alignItems:'center'}}><RefHear k={'sn' + k} on={() => playScaleNotes(pc, REF_SC.nat)}/><RefDoor room={REF_KEYS[i][5]}/></span>]; })}/>
+    <RefNote>{t('The melodic minor comes down as the natural minor.', '가락 단음계는 자연 단음계로 내려와요.')}</RefNote>
+  </div></div>;
+}
+function RefScales({ part }) {
   const paper = React.useContext(RefPaper), [map, setMap] = useState(false), go = React.useContext(RefGo);
+  if (part === 'b') return <RefAllScales/>;
   return <div>
     <RefTable k="scales" cols="minmax(0,1fr) auto" head={[t('Form · its steps (T tone, S semitone)', '형태 · 걸음(T 온음, S 반음)'), '']}
       rows={REF_SCALES.map(([id, en, ko, semis, room]) => { const steps = semis.slice(1).map((v, i) => v - semis[i]);
@@ -21752,9 +21893,10 @@ function RefScales() {
       <button type="button" className="ghost-btn" data-ref-scalesmap aria-expanded={map} onClick={() => setMap(x => !x)} style={{width:'100%',minHeight:44,fontSize:14}}>{map ? t('Hide the scales floor by floor', '층마다 스케일 닫기') : t('Every grade’s scales, floor by floor ›', '급마다 스케일, 층마다 ›')}</button>
       {map && <div style={{marginTop:8}}><ScalesMapView onChapter={go}/></div>}
     </div>}
+    {!part && <RefAllScales/>}
   </div>;
 }
-// 5. intervals: by number, with the semitones in each quality; the rules
+// 6. intervals: by number, with the semitones in each quality; the rules
 const REF_IV = [[2, [['minor', '단', 1], ['major', '장', 2]]], [3, [['minor', '단', 3], ['major', '장', 4]]], [4, [['perfect', '완전', 5], ['augmented', '증', 6]]], [5, [['diminished', '감', 6], ['perfect', '완전', 7]]],
   [6, [['minor', '단', 8], ['major', '장', 9]]], [7, [['minor', '단', 10], ['major', '장', 11]]], [8, [['perfect', '완전', 12]]]];
 function RefIntervals() {
@@ -21772,7 +21914,8 @@ function RefIntervals() {
     ]}/>
   </div>;
 }
-// 6. chords: the triad on every degree of C major (semibreves, no stems), the degree names, the kinds, the positions, cadences
+// 7. chords: the triad on every degree of C major (semibreves, no stems), the degree names; every kind of chord on any root
+// (its notes spelt by the code, its intervals counted from the root); the positions; cadences
 function RefChordStaff() {
   const base = 64, yOf = (d) => base - (d - 30) * 5, x0 = 54, dx = 40, roman = ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°'];
   let s = [0, 2, 4, 6, 8].map(p => '<line x1="4" x2="' + (x0 + dx * 7 - 10) + '" y1="' + (base - p * 5) + '" y2="' + (base - p * 5) + '" stroke="' + PEN_N + '" stroke-opacity="0.5" stroke-width="1.1"/>').join('');
@@ -21783,22 +21926,46 @@ function RefChordStaff() {
   return <svg viewBox={'0 ' + (base - 52) + ' ' + (x0 + dx * 7 - 6) + ' 84'} style={{width:'100%',maxWidth:420,display:'block',margin:'0 auto'}} role="img" aria-label={t('The triad on every degree of C major, I to vii°', 'C장조 모든 음 위의 3화음, I부터 vii°까지')}>
     <ClefGlyph clef="treble" st="treble" yOf={yOf} ink={PEN_N}/><g dangerouslySetInnerHTML={{ __html: s }}/></svg>;
 }
-function RefChords() {
+// [id, name en, name ko, symbol after the root, letter steps, semitones, room]; the house's own names (SEVENTH_TYPES)
+const REF_CHORDS = [
+  ['maj', 'major', '장3화음', '', [0, 2, 4], [0, 4, 7], 'chords'], ['min', 'minor', '단3화음', 'm', [0, 2, 4], [0, 3, 7], 'chords'],
+  ['dim', 'diminished', '감3화음', '°', [0, 2, 4], [0, 3, 6], 'harmony-5'], ['aug', 'augmented', '증3화음', '+', [0, 2, 4], [0, 4, 8], 'listen-8'],
+  ['dom7', 'dominant 7th', '딸림7화음', '7', [0, 2, 4, 6], [0, 4, 7, 10], 'harmony-6'], ['maj7', 'major 7th', '장7화음', 'maj7', [0, 2, 4, 6], [0, 4, 7, 11], 'chords'],
+  ['min7', 'minor 7th', '단7화음', 'm7', [0, 2, 4, 6], [0, 3, 7, 10], 'chords'], ['hdim7', 'half-diminished', '반감7화음', 'm7♭5', [0, 2, 4, 6], [0, 3, 6, 10], 'chords'],
+  ['dim7', 'diminished 7th', '감7화음', '°7', [0, 2, 4, 6], [0, 3, 6, 9], 'arps-6'], ['six', 'major 6th (added 6th)', '부가6화음', '6', [0, 2, 4, 5], [0, 4, 7, 9], null],
+  ['min6', 'minor 6th', '단 부가6화음', 'm6', [0, 2, 4, 5], [0, 3, 7, 9], null],
+];
+const REF_ROOTS = ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'];
+// an interval's name from its letter steps and semitones: 'M3', 'P5', 'm7', 'd5', 'A5'
+const refIvName = (st, se) => { const base = REF_NATPC[st], perf = [0, 3, 4].includes(st), d = se - base;
+  const q = perf ? (d === 0 ? 'P' : d === 1 ? 'A' : d === -1 ? 'd' : '?') : (d === 0 ? 'M' : d === -1 ? 'm' : d === 1 ? 'A' : d === -2 ? 'd' : '?'); return q + (st + 1); };
+const REF_IVQ_KO = { P: '완전', M: '장', m: '단', A: '증', d: '감' };
+function RefChordKinds() {
+  const paper = React.useContext(RefPaper), [root, setRoot] = useState('C'), r = paper ? 'C' : root, pc = refKey(r).pc;
+  return <div data-ref-chordkinds>
+    {!paper && <div style={{display:'flex',flexWrap:'wrap',gap:4,margin:'0 0 6px'}}>{REF_ROOTS.map(x => <button key={x} type="button" className={'chip' + (x === root ? ' active' : '')} data-ref-root={x} onClick={() => setRoot(x)} style={{minHeight:32,minWidth:38,padding:'2px 8px',fontSize:13,fontWeight:900}}>{x}</button>)}</div>}
+    <RefTable k="chordtypes" cols="minmax(0,1fr) minmax(0,1.1fr) auto" head={[t('Chord · symbol', '화음 · 기호'), t('From the root · on ', '근음에서 · ') + r, '']}
+      rows={REF_CHORDS.map(([id, en, ko, sym, st, se, room]) => { const nn = refSpell(r, st, se), ivs = st.slice(1).map((x, i) => refIvName(x, se[i + 1]));
+        return [<span data-ref-chord={id}><b style={{fontWeight:800}}>{t(en, ko)}</b> <span style={{fontWeight:900,color:BK.coral,whiteSpace:'nowrap'}}>{r}{sym}</span></span>,
+          <span style={{display:'flex',flexDirection:'column',gap:1}}><span style={{fontSize:12,color:BK.muted,fontWeight:700}}>{ivs.map(v => LANG === 'ko' ? REF_IVQ_KO[v[0]] + v.slice(1) + '도' : v).join(' · ')}</span>
+            <span style={{display:'flex',gap:'0 6px',flexWrap:'wrap',fontWeight:800,fontFamily:'Georgia, serif'}}>{nn.map((n, i) => refNm(n, i))}</span></span>,
+          <span style={{display:'flex',gap:4,alignItems:'center'}}><RefHear k={'ch' + id} on={() => refPlayNotes(se.map(x => refRoot(pc) + x))}/><RefDoor room={room}/></span>]; })}/>
+    <RefNote>{t('M major, m minor, P perfect, A augmented, d diminished: each counted from the root.', 'M 장, m 단, P 완전, A 증, d 감: 모두 근음에서 센 음정.')}{paper ? ' ' + t('Shown on C.', 'C 위에서.') : ''}</RefNote>
+  </div>;
+}
+function RefChords({ part }) {
   const rm = ['I', 'ii', 'iii', 'IV', 'V', 'vi', 'vii°'], q = ['major', 'minor', 'minor', 'major', 'major', 'minor', 'diminished'], qk = { major: '장', minor: '단', diminished: '감' };
   return <div>
-    <RefChordStaff/>
+    {part !== 'b' && <><RefChordStaff/>
     <RefTable k="degrees" cols="44px minmax(0,1fr) auto" head={[t('Degree', '음'), t('Name · its triad in a major key', '이름 · 장조에서의 3화음'), '']}
       rows={rm.map((r, i) => [<b style={{fontFamily:LB_SERIF,fontWeight:900,fontSize:15,color:i === 0 || i === 3 || i === 4 ? BK.coral : BK.ink}}>{r}</b>, <span><b style={{fontWeight:800}}>{t(DEGREE_NAMES[i], DEGREE_NAMES_KO[i])}</b> · {t(q[i], qk[q[i]] + '3화음')}</span>, i === 0 ? <RefDoor room="harmony-3"/> : <span/>])}/>
     <div style={{height:8}}/>
-    <RefTable k="chordkinds" cols="minmax(0,1fr) auto" rows={[
-      [t('Major triad: a major 3rd, then a minor 3rd. Minor: a minor 3rd, then a major 3rd.', '장3화음: 장3도 위에 단3도. 단3화음: 단3도 위에 장3도.'), <RefDoor room="chords"/>],
+    <RefTable k="chordpos" cols="minmax(0,1fr) auto" rows={[
       [t('I, IV and V: the primary triads.', 'I, IV, V: 주요 3화음.'), <RefDoor room="chords"/>],
       [t('Root position (a), first inversion (b): the 3rd in the bass.', '기본 위치(a), 첫째 자리바꿈(b): 3음이 베이스.'), <RefDoor room="harmony-3"/>],
       [t('Second inversion (c): the 5th in the bass; Ic before V is the cadential 6-4.', '둘째 자리바꿈(c): 5음이 베이스; V 앞의 Ic가 종지 6-4.'), <RefDoor room="harmony-5"/>],
-      [t('Diminished triad: two minor 3rds (vii° in a major key).', '감3화음: 단3도 둘(장조의 vii°).'), <RefDoor room="harmony-5"/>],
-      [t('Dominant 7th (V7): V with a minor 7th above its root; four positions, a b c d.', '딸림7화음(V7): V에 근음 위 단7도; 네 자리 a b c d.'), <RefDoor room="harmony-6"/>],
-      [t('Diminished 7th of a key: three minor 3rds, starting on its leading note.', '조의 감7화음: 단3도 셋, 그 조의 이끎음에서 시작.'), <RefDoor room="arps-6"/>],
-      [t('Augmented triad: two major 3rds.', '증3화음: 장3도 둘.'), <RefDoor room="listen-8"/>],
+      [t('Dominant 7th (V7): four positions, a b c d.', '딸림7화음(V7): 네 자리 a b c d.'), <RefDoor room="harmony-6"/>],
+      [t('Diminished 7th of a key: it starts on the key’s leading note.', '조의 감7화음: 그 조의 이끎음에서 시작.'), <RefDoor room="arps-6"/>],
     ]}/>
     <div style={{height:8}}/>
     <RefTable k="cadences" cols="minmax(0,1fr) 58px auto" head={[t('Cadence', '종지'), '', '']} rows={[   // the rooms' own words (Chords and Cadences, Grade 4)
@@ -21806,42 +21973,300 @@ function RefChords() {
       [<span><b style={{fontWeight:800}}>{t('plagal', '변격종지')}</b> · {t('the “Amen”', '“아멘”')}</span>, <b style={{fontFamily:LB_SERIF}}>IV – I</b>, <RefDoor room="harmony-3"/>],
       [<span><b style={{fontWeight:800}}>{t('imperfect', '반종지')}</b> · {t('a comma', '쉼표(,)')}</span>, <b style={{fontFamily:LB_SERIF}}>… – V</b>, <RefDoor room="harmony-4"/>],
       [<span><b style={{fontWeight:800}}>{t('interrupted', '거짓종지')}</b> · {t('the surprise', '깜짝')}</span>, <b style={{fontFamily:LB_SERIF}}>V – vi</b>, <RefDoor room="harmony-4"/>],
-    ]}/>
+    ]}/></>}
+    {part !== 'a' && <><RefLab>{t('Every kind of chord, on any root', '모든 화음, 어느 근음에서든')}</RefLab><RefChordKinds/></>}
   </div>;
 }
-// 7. signs and terms: the dictionary's words, floor by floor; a tap opens its card
-const REF_TERM_NAME = { 'dotted-note': ['dotted note', '점음표'], step: ['step', '차례가기'], natural: ['natural', '제자리표'], key: ['key', '조'] };   // these four keep no word list (so the text does not link every 'key' or 'step')
+// 8. signs: a picture of each (the book's visual index, drawn with the house's pens), its name, the room; ♪ the room's sound
+const refHead = (x, y, fill = PEN_N) => '<ellipse cx="' + x + '" cy="' + y + '" rx="5.6" ry="4" transform="rotate(-20 ' + x + ' ' + y + ')" fill="' + fill + '"/>';
+const refStemUp = (x, y, h = 26) => '<line x1="' + (x + 5.1) + '" x2="' + (x + 5.1) + '" y1="' + y + '" y2="' + (y - h) + '" stroke="' + PEN_N + '" stroke-width="1.6"/>';
+const refLn = (x1, y1, x2, y2, w = 1.3, op) => '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + PEN_N + '" stroke-width="' + w + '"' + (op ? ' stroke-opacity="' + op + '"' : '') + ' stroke-linecap="round"/>';
+const refTx = (s, x, y, size = 20, o = {}) => '<text x="' + x + '" y="' + y + '" text-anchor="' + (o.a || 'middle') + '" font-size="' + size + '" font-weight="' + (o.w || 900) + '"' + (o.it === false ? '' : ' font-style="italic"') + ' font-family="' + (o.f || 'Georgia, serif') + '" fill="' + (o.c || PEN_N) + '">' + s + '</text>';
+const refStaff5 = (y0 = 10, gap = 8, a = 6, b = 58) => [0, 1, 2, 3, 4].map(i => refLn(a, y0 + i * gap, b, y0 + i * gap, 1, 0.5)).join('');
+const REF_MUS = MUSIC_FONT.replace(/'/g, '&apos;');
+function refSignSvg(id) {
+  const P = PEN_N, dynTx = (s) => refTx(s, 32, 32, 25);
+  const small = (cx, cy, slash) => '<ellipse cx="' + cx + '" cy="' + cy + '" rx="3.6" ry="2.7" transform="rotate(-20 ' + cx + ' ' + cy + ')" fill="' + P + '"/>' + refLn(cx + 3.3, cy, cx + 3.3, cy - 14, 1.1) + '<path d="M' + (cx + 3.3) + ' ' + (cy - 14) + ' c1 4 6 5 4 11" fill="none" stroke="' + P + '" stroke-width="1.2"/>' + (slash ? refLn(cx - 3, cy - 4, cx + 8, cy - 13, 1.2) : '');
+  const big = (cx, cy) => refHead(cx, cy) + refStemUp(cx, cy, 24);
+  switch (id) {
+    case 'bar': return refStaff5() + refLn(32, 10, 32, 42, 1.4);
+    case 'dbar': return refStaff5() + refLn(29, 10, 29, 42, 1.3) + refLn(35, 10, 35, 42, 1.3);
+    case 'fbar': return refStaff5(10, 8, 6, 46) + refLn(41, 10, 41, 42, 1.3) + '<rect x="45" y="10" width="4.5" height="32" fill="' + P + '"/>';
+    case 'repeat': return refStaff5() + '<rect x="6" y="10" width="4" height="32" fill="' + P + '"/>' + refLn(13.5, 10, 13.5, 42, 1.2) + '<circle cx="18" cy="22" r="2" fill="' + P + '"/><circle cx="18" cy="30" r="2" fill="' + P + '"/>'
+      + '<circle cx="46" cy="22" r="2" fill="' + P + '"/><circle cx="46" cy="30" r="2" fill="' + P + '"/>' + refLn(50.5, 10, 50.5, 42, 1.2) + '<rect x="54" y="10" width="4" height="32" fill="' + P + '"/>';
+    case 'volta': return refStaff5(18, 6) + '<path d="M6 16 V4 H30 V16 M34 16 V4 H58" fill="none" stroke="' + P + '" stroke-width="1.3"/>' + refTx('1.', 9, 13, 10, { a: 'start', it: false }) + refTx('2.', 37, 13, 10, { a: 'start', it: false });
+    case 'brace': return [0, 1, 2, 3, 4].map(i => refLn(18, 4 + i * 4, 58, 4 + i * 4, 1, 0.5) + refLn(18, 30 + i * 4, 58, 30 + i * 4, 1, 0.5)).join('') + refLn(18, 4, 18, 46, 1.2)
+      + '<path d="M14 4 C8 9 13 19 8 25 C13 31 8 41 14 46" fill="none" stroke="' + P + '" stroke-width="2.2" stroke-linecap="round"/>';
+    case 'ledger': return refStaff5(22, 6) + refLn(24, 16, 40, 16, 1.3) + refLn(24, 10, 40, 10, 1.3) + refHead(32, 10);
+    case 'sharp': case 'flat': case 'natural': case 'dsharp': case 'dflat':
+      return '<text x="32" y="' + (id === 'dsharp' ? 38 : 36) + '" text-anchor="middle" font-size="' + (id === 'dsharp' ? 44 : 32) + '" font-family="' + REF_MUS + '" fill="' + P + '">' + { sharp: '♯', flat: '♭', natural: '♮', dsharp: '𝄪', dflat: '𝄫' }[id] + '</text>';
+    case 'pp': case 'p': case 'mp': case 'mf': case 'f': case 'ff': case 'fp': return dynTx(id);
+    case 'sf': return dynTx('sfz');
+    case 'cresc': return '<path d="M56 16 L8 25 L56 34" fill="none" stroke="' + P + '" stroke-width="1.6" stroke-linejoin="round"/>';
+    case 'dim': return '<path d="M8 16 L56 25 L8 34" fill="none" stroke="' + P + '" stroke-width="1.6" stroke-linejoin="round"/>';
+    case 'stacc': return refHead(30, 30) + refStemUp(30, 30) + '<circle cx="30" cy="41" r="2.3" fill="' + P + '"/>';
+    case 'ten': return refHead(30, 30) + refStemUp(30, 30) + refLn(23, 41, 37, 41, 2);
+    case 'accent': return refHead(30, 30) + refStemUp(30, 30) + '<path d="M22 37 L38 41.5 L22 46" fill="none" stroke="' + P + '" stroke-width="1.6" stroke-linejoin="round"/>';
+    case 'slur': return refHead(16, 34) + refHead(46, 26) + '<path d="M14 26 Q30 8 46 18" fill="none" stroke="' + P + '" stroke-width="1.6"/>';
+    case 'tie': return refHead(16, 30) + refHead(46, 30) + '<path d="M18 38 Q31 47 44 38" fill="none" stroke="' + P + '" stroke-width="1.6"/>';
+    case 'fermata': return '<path d="M12 34 C14 10 50 10 52 34" fill="none" stroke="' + P + '" stroke-width="2.6" stroke-linecap="round"/><circle cx="32" cy="30" r="3" fill="' + P + '"/>';
+    case 'arp': return [16, 26, 36].map(y => refHead(40, y)) + '<path d="M24 6 q3 3 0 6 t0 6 t0 6 t0 6 t0 6 t0 6 t0 6" fill="none" stroke="' + P + '" stroke-width="1.6"/>';
+    case 'gliss': return refHead(12, 38) + refHead(52, 12) + refLn(18, 35, 46, 15, 1.4) + refTx('gliss.', 34, 36, 9.5, { w: 700 });
+    case 'trill': return refTx('tr', 18, 30, 17) + '<path d="M28 25 q3 -5 6 0 t6 0 t6 0 t6 0" fill="none" stroke="' + P + '" stroke-width="1.6"/>';
+    case 'turn': case 'iturn': { const x = 32, y = 26; return '<path d="M' + (x - 11) + ',' + (y - 1) + ' c0,-7 7,-7 9,-2 c2,5 4,6 4,6 c2,5 9,5 9,-2 M' + (x - 11) + ',' + (y - 1) + ' c0,4 4,5 6,2 M' + (x + 11) + ',' + (y - 1) + ' c0,-4 -4,-5 -6,-2" fill="none" stroke="' + P + '" stroke-width="1.8"/>' + (id === 'iturn' ? refLn(x, y - 12, x, y + 10, 1.6) : ''); }
+    case 'mord': case 'lmord': { const x = 32, y = 28; return '<path d="M' + (x - 10) + ',' + y + ' l4,-6 l4,6 l4,-6 l4,6 l4,-6" fill="none" stroke="' + P + '" stroke-width="2" stroke-linejoin="round"/>' + (id === 'lmord' ? refLn(x, y - 11, x, y + 5, 1.6) : ''); }
+    case 'acc': return small(20, 30, true) + big(40, 34);
+    case 'app': return small(20, 30, false) + big(40, 34);
+    case 'dc': return refTx('D.C.', 32, 31, 17);
+    case 'ds': return refTx('D.S.', 32, 31, 17);
+    case 'fine': return refTx('Fine', 32, 31, 17);
+    case 'segno': return '<text x="32" y="36" text-anchor="middle" font-size="32" font-family="' + REF_MUS + '" fill="' + P + '">𝄋</text>';
+    case 'coda': return '<ellipse cx="32" cy="24" rx="8" ry="11" fill="none" stroke="' + P + '" stroke-width="2.6"/>' + refLn(32, 8, 32, 40, 1.4) + refLn(18, 24, 46, 24, 1.4);
+    case '8va': return refTx('8va', 6, 24, 14, { a: 'start' }) + '<path d="M28 19 H56 V26" fill="none" stroke="' + P + '" stroke-width="1.3" stroke-dasharray="3 3"/>';
+    case '8vb': return refTx('8vb', 6, 34, 14, { a: 'start' }) + '<path d="M28 29 H56 V22" fill="none" stroke="' + P + '" stroke-width="1.3" stroke-dasharray="3 3"/>';
+    case 'ped': return refTx('Ped.', 6, 30, 15, { a: 'start', w: 800 }) + refTx('✱', 52, 31, 15, { it: false });
+    case 'pedline': return '<path d="M6 16 V32 H28 L33 24 L38 32 H58 V16" fill="none" stroke="' + P + '" stroke-width="1.5" stroke-linejoin="round"/>';
+    case 'unacorda': return refTx('una corda', 32, 30, 12.5, { w: 800 });
+    case 'metro': return refHead(14, 34) + refStemUp(14, 34) + refTx('= 60', 40, 38, 14, { it: false });
+    default: return '';
+  }
+}
+// [id, name en, name ko, room (null: the house doesn't teach it), grade label, sound]
+const REF_SIGNS = [
+  ['lines', 'Lines and bars', '선과 마디', [['bar', 'bar line', '세로줄', 'pulse'], ['dbar', 'double bar line: a new section', '겹세로줄: 새 부분', 'time-signatures'], ['fbar', 'final bar line: the end', '끝세로줄: 끝', 'time-signatures'],
+    ['repeat', 'repeat signs', '도돌이표', 'signs'], ['volta', '1st and 2nd time bars', '1번·2번 괄호', 'signs'], ['brace', 'brace: the grand staff', '중괄호: 큰보표', 'staff'], ['ledger', 'ledger lines', '덧줄', 'ledger-lines']]],
+  ['acc', 'Sharps and flats', '샵과 플랫', [['sharp', 'sharp: a semitone higher', '샵: 반음 위로', 'tones'], ['flat', 'flat: a semitone lower', '플랫: 반음 아래로', 'tones'], ['natural', 'natural: cancels the sharp or flat', '내추럴: 샵·플랫을 취소', 'accidentals'],
+    ['dsharp', 'double sharp: two semitones higher', '겹샵: 반음 둘 위로', 'tones', 'Grade 4'], ['dflat', 'double flat: two semitones lower', '겹플랫: 반음 둘 아래로', 'tones', 'Grade 4']]],
+  ['dyn', 'Loud and soft', '셈여림', [['pp', 'pianissimo: very soft', '피아니시모: 매우 여리게', 'dynamics'], ['p', 'piano: soft', '피아노: 여리게', 'dynamics'], ['mp', 'mezzo piano: moderately soft', '메조 피아노: 조금 여리게', 'dynamics'],
+    ['mf', 'mezzo forte: moderately loud', '메조 포르테: 조금 세게', 'dynamics'], ['f', 'forte: loud', '포르테: 세게', 'dynamics'], ['ff', 'fortissimo: very loud', '포르티시모: 매우 세게', 'dynamics'],
+    ['fp', 'forte-piano: loud, then at once soft', '포르테피아노: 세게, 곧바로 여리게', 'terms', 'Grade 3'], ['sf', 'sforzando: a strong accent', '스포르찬도: 강한 악센트', 'terms', 'Grade 3'],
+    ['cresc', 'crescendo: getting louder', '크레셴도: 점점 세게', 'dynamics'], ['dim', 'diminuendo: getting softer', '디미누엔도: 점점 여리게', 'dynamics']]],
+  ['touch', 'Touch', '터치', [['stacc', 'staccato: short, detached', '스타카토: 짧게 끊어서', 'dynamics'], ['ten', 'tenuto: held, full length', '테누토: 길이를 꽉 채워', 'terms', 'Grade 4'], ['accent', 'accent: stronger', '악센트: 더 강하게', 'dynamics'],
+    ['slur', 'slur: smooth, joined', '이음줄: 부드럽게 이어서', 'dynamics'], ['tie', 'tie: one note, held for both', '붙임줄: 한 음을 둘 길이만큼', 'note-values'], ['fermata', 'pause (fermata): hold it longer', '늘임표(페르마타): 더 길게', 'signs'],
+    ['arp', 'spread chord: bottom to top', '펼침화음: 아래에서 위로', null], ['gliss', 'glissando: slide across the keys', '글리산도: 건반 위로 미끄러지듯', null]]],
+  ['orn', 'Ornaments', '꾸밈음', [['trill', 'trill', '트릴', 'signs', 'Grade 4'], ['turn', 'turn', '턴', 'signs', 'Grade 4'], ['iturn', 'inverted turn: below first', '뒤집힌 턴: 아래부터', null], ['mord', 'upper mordent', '모르덴트 (위)', 'signs', 'Grade 4'], ['lmord', 'lower mordent', '모르덴트 (아래)', 'signs', 'Grade 4'],
+    ['acc', 'acciaccatura: crushed in', '아치아카투라: 짧게 끼워서', 'signs', 'Grade 4'], ['app', 'appoggiatura: leaning', '아포자투라: 기대어서', 'signs', 'Grade 4']]],
+  ['road', 'Finding your way', '길 찾기', [['dc', 'da capo: from the beginning', '다 카포: 처음부터', 'signs'], ['ds', 'dal segno: from the sign', '달 세뇨: 표시부터', 'signs'], ['segno', 'segno: the sign', '세뇨: 그 표시', 'signs'],
+    ['coda', 'coda: the ending', '코다: 끝맺는 부분', 'signs'], ['fine', 'fine: the end', '피네: 끝', 'signs'], ['8va', '8va: an octave higher', '8va: 한 옥타브 높게', 'signs'], ['8vb', '8vb: an octave lower', '8vb: 한 옥타브 낮게', 'signs']]],
+  ['ped', 'Pedals and speed', '페달과 빠르기', [['ped', 'sustain pedal: down, then up (✱)', '댐퍼 페달: 밟고, 떼기(✱)', 'dynamics'], ['pedline', 'pedal line: down, change, up', '페달 선: 밟고, 바꾸고, 떼기', 'dynamics'],
+    ['unacorda', 'una corda: the soft pedal', '우나 코르다: 약음 페달', 'terms', 'Grade 3'], ['metro', 'metronome mark: crotchet beats per minute', '메트로놈 표: 1분에 4분음표 몇 박', 'tempo']]],
+];
+const REF_SIGN_ORN = { trill: 'trill', turn: 'turn', mord: 'mordent', lmord: 'lower', acc: 'acc', app: 'app' };
+function refSignSound(id) {
+  const dy = DYNAMICS.find(x => x.id === id); if (dy) return () => playDyn(dy.vol);
+  if (id === 'fp') return () => playChange('fp'); if (id === 'sf') return () => playChange('sfz');
+  if (id === 'cresc' || id === 'dim') return () => playChange(id);
+  const ar = { stacc: 'dot', ten: 'tenuto', accent: 'accent', slur: 'slur', fermata: 'fermata' }[id]; if (ar) return () => playArtic(ar);
+  if (id === 'tie') return () => refPlayNotes([67], 0, false, 1.4);
+  if (REF_SIGN_ORN[id]) return () => playOrnament(ORNAMENTS.find(o => o.id === REF_SIGN_ORN[id]));
+  if (id === 'iturn') return () => refPlayNotes([65, 67, 69, 67], 0.16, false, 0.2);
+  if (id === 'arp') return () => refPlayNotes([55, 60, 64, 67, 72], 0.07, false, 1.4);
+  if (id === 'gliss') return () => refPlayNotes([60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79, 81, 83, 84], 0.045, false, 0.18);
+  if (id === 'metro') return () => { const ctx = getAudio(); if (!ctx) return; stopClicks(); const t0 = ctx.currentTime + 0.08; for (let i = 0; i < 4; i++) metroClick(ctx, t0 + i, i === 0, i === 0 ? 0.3 : 0.18); };
+  return null;
+}
+function RefSigns() {
+  const paper = React.useContext(RefPaper), k = paper ? 0.62 : 1;
+  return <div data-ref-signs>{REF_SIGNS.map(([gid, gen, gko, list]) => <div key={gid}>
+    <RefLab>{t(gen, gko)}</RefLab>
+    <div style={{display:'grid',gridTemplateColumns:paper ? 'repeat(4,minmax(0,1fr))' : 'repeat(auto-fill,minmax(112px,1fr))',gap:paper ? 4 : 5}}>{list.map(([id, en, ko, room, g]) => { const snd = refSignSound(id);
+      if (paper) return <div key={id} data-ref-sign={id} style={{border:'1.2px solid rgba(38,41,107,0.22)',borderRadius:8,background:'#fff',padding:'3px 6px',display:'grid',gridTemplateColumns:'42px minmax(0,1fr)',gap:6,alignItems:'center'}}>
+        <svg viewBox="0 0 64 48" width={64 * k} height={48 * k} style={{display:'block',overflow:'visible'}} dangerouslySetInnerHTML={{ __html: refSignSvg(id) }}/>
+        <span style={{fontSize:10,fontWeight:800,lineHeight:1.2}}>{t(en, ko)}<br/><RefDoor room={room} g={g}/></span></div>;
+      return <div key={id} data-ref-sign={id} style={{border:'1.5px solid rgba(38,41,107,0.22)',borderRadius:10,background:'#fff',padding:'5px 7px',display:'flex',flexDirection:'column',gap:3,minWidth:0}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:4}}><svg viewBox="0 0 64 48" width={64 * k} height={48 * k} style={{display:'block',overflow:'visible',flex:'0 0 auto'}} dangerouslySetInnerHTML={{ __html: refSignSvg(id) }}/>{snd && <RefHear k={'sg' + id} on={snd}/>}</div>
+        <span style={{fontSize:11.5,fontWeight:800,lineHeight:1.25,minHeight:paper ? 0 : 29}}>{t(en, ko)}</span>
+        <span style={{display:'flex',justifyContent:'flex-end'}}><RefDoor room={room} g={g}/></span>
+      </div>; })}</div>
+  </div>)}</div>;
+}
+// 9. words for how to play: the terms room's 96 (its own meanings, grades and sounds) and the book's others, by what they do;
+// speed from slow to fast by the house's own beats a minute
+const REF_JOBS = [['speed', 'Speed, slow to fast', '빠르기, 느림에서 빠름으로'], ['change', 'Changing speed', '빠르기 바꾸기'], ['loud', 'Loud and soft', '셈여림'], ['mood', 'Mood and character', '분위기와 성격'],
+  ['touch', 'Touch and sound', '터치와 소리'], ['way', 'Finding your way in the score', '악보에서 길 찾기'], ['little', 'Little words', '덧붙이는 말'], ['others', 'For other players and groups', '다른 악기와 합주에서']];
+const REF_JOB_OF = { Legato: 'touch', Staccato: 'touch', 'Mezzo staccato': 'touch', Sostenuto: 'touch', Leggiero: 'touch', 'Ben marcato': 'touch', Cantabile: 'touch', Cantando: 'touch', Tenuto: 'touch',
+  Portamento: 'touch', 'Una corda': 'touch', 'Tre corde': 'touch', 'Sotto voce': 'loud', Sempre: 'little', Poco: 'little', Molto: 'little', Senza: 'little', Assai: 'little', Quasi: 'little', Subito: 'little',
+  'Non troppo': 'little', 'Dal segno': 'way', 'Da capo al fine': 'way', Attacca: 'way', 'Main droite': 'way', 'Main gauche': 'way', Loco: 'way', Opus: 'way', 'M.M.': 'way', 'Ad libitum': 'change' };
+const REF_JOB_CAT = { Speed: 'speed', 'Changing speed': 'change', Volume: 'loud', Strings: 'others', Other: 'mood' };
+// where the house teaches a word first, before the terms room (Speed in Tempo, loud and soft and the touches in Dynamics, the
+// road signs in Signs)
+const REF_FIRST = { Adagio: 'tempo', Andante: 'tempo', Moderato: 'tempo', Allegretto: 'tempo', Allegro: 'tempo', Presto: 'tempo', Pianissimo: 'dynamics', Piano: 'dynamics', 'Mezzo piano': 'dynamics',
+  'Mezzo forte': 'dynamics', Forte: 'dynamics', Fortissimo: 'dynamics', Crescendo: 'dynamics', Diminuendo: 'dynamics', Decrescendo: 'dynamics', Legato: 'dynamics', Staccato: 'dynamics',
+  'Dal segno': 'signs', 'Da capo al fine': 'signs' };
+// the book's other words (its pp. 240-241), in my words: [term, abbr, meaning en, meaning ko, job, language ('fr' 'de'), sort (speed)]
+const REF_MORE_WORDS = [
+  ['Adagietto', '', 'fairly slow, a little faster than adagio', '조금 느리게, 아다지오보다 조금 빠르게', 'speed', '', 66], ['Lent', '', 'slow', '느리게', 'speed', 'fr'], ['Langsam', '', 'slow', '느리게', 'speed', 'de'],
+  ['Modéré', '', 'at a moderate speed', '보통 빠르기로', 'speed', 'fr'], ['Vite', '', 'fast', '빠르게', 'speed', 'fr'], ['Schnell', '', 'fast', '빠르게', 'speed', 'de'], ['Veloce', '', 'swift, nimble', '날쌔게', 'speed'],
+  ['Animando', '', 'getting more lively', '점점 활기 있게', 'change'], ['Stretto', '', 'pressing on, faster', '몰아가며 빠르게', 'change'], ['A piacere', '', 'as you please: free in time', '마음대로: 박을 자유롭게', 'change'],
+  ['Liberamente', '', 'freely', '자유롭게', 'change'], ['Come prima', '', 'as at first', '처음처럼', 'change'], ['Rigoroso', '', 'in strict time', '박자를 엄격하게 지켜', 'change'],
+  ['Senza misura', '', 'without strict time', '박에 매이지 않고', 'change'], ['Ralentir', '', 'slow down', '느려지게', 'change', 'fr'], ['En retenant', '', 'holding back', '조금씩 늦추며', 'change', 'fr'],
+  ['Retenu', '', 'held back', '늦추어', 'change', 'fr'], ['Au mouvement', '', 'back to the first speed (a tempo)', '원래 빠르기로(a tempo)', 'change', 'fr'],
+  ['Mezza voce', '', 'half voice: quietly', '목소리를 반쯤 줄여: 조용히', 'loud'],
+  ['Affettuoso', '', 'tenderly', '다정하게', 'mood'], ['Amabile', '', 'lovingly, pleasantly', '사랑스럽게', 'mood'], ['Appassionato', '', 'with passion', '열정적으로', 'mood'], ['Con bravura', '', 'brilliantly, showing skill', '화려하게, 솜씨를 뽐내며', 'mood'],
+  ['Calmato', '', 'calmed', '가라앉혀 고요하게', 'mood'], ['Capriccioso', '', 'fanciful, unpredictable', '변덕스럽게', 'mood'], ['Deciso', '', 'decisively', '단호하게', 'mood'], ['Energico', '', 'with energy', '힘차게', 'mood'],
+  ['Espressivo', 'espress.', 'with expression', '표정 있게', 'mood'], ['Furioso', '', 'furiously', '격렬하게', 'mood'], ['Grandioso', '', 'grandly', '웅대하게', 'mood'], ['Lacrimoso', '', 'tearfully', '눈물 젖은 듯', 'mood'],
+  ['Lamentoso', '', 'mournfully', '애통하게', 'mood'], ['Mesto', '', 'sad', '슬프게', 'mood'], ['Misterioso', '', 'mysteriously', '신비롭게', 'mood'], ['Nobilmente', '', 'nobly', '고귀하게', 'mood'],
+  ['Spiritoso', '', 'with spirit', '생기 있게', 'mood'], ['Vigoroso', '', 'vigorously', '활발하고 힘차게', 'mood'], ['Alla marcia', '', 'like a march', '행진곡풍으로', 'mood'], ['Ritmico', '', 'rhythmically', '리듬을 살려', 'mood'],
+  ['Joyeux', '', 'joyful', '즐겁게', 'mood', 'fr'], ['Doux, douce', '', 'soft and sweet', '부드럽고 달콤하게', 'mood', 'fr'],
+  ['Marcato', 'marc.', 'marked, each note stressed', '또렷하게, 음마다 힘을 주어', 'touch'], ['Martellato', '', 'hammered', '망치로 치듯', 'touch'], ['Secco', '', 'dry: short, with no ring', '건조하게: 짧게, 울림 없이', 'touch'],
+  ['Parlando', '', 'like speaking', '말하듯이', 'touch'], ['Glissando', 'gliss.', 'slide across the keys', '건반 위로 미끄러지듯', 'touch'], ['Légèrement', '', 'lightly', '가볍게', 'touch', 'fr'], ['Leicht', '', 'lightly', '가볍게', 'touch', 'de'],
+  ['Naturale', 'nat.', 'normally again, after a special effect', '특수 효과 뒤에 다시 보통으로', 'touch'],
+  ['Fine', '', 'the end', '끝', 'way'], ['Segue', '', 'go straight on to the next', '쉬지 않고 다음으로', 'way'], ['Come sopra', '', 'as above', '위와 같이', 'way'], ['Di nuovo', '', 'again', '다시', 'way'],
+  ['Ossia', '', 'or: another (often easier) version', '또는: 다른(흔히 더 쉬운) 버전', 'way'], ['G.P.', '', 'general pause: everyone silent', '총휴지: 모두 쉼', 'way'], ['Lunga', '', 'long: a long pause', '길게: 긴 늘임', 'way'],
+  ['Ottava', '8va', 'an octave higher (ottava bassa: lower)', '한 옥타브 높게(ottava bassa: 낮게)', 'way'], ['Mano destra, mano sinistra', 'M.D., M.S.', 'right hand, left hand', '오른손, 왼손', 'way'],
+  ['Tacet', '', 'silent: do not play', '쉬어요: 연주하지 않음', 'others'], ['Tutti', '', 'everyone', '모두 함께', 'others'],
+  ['Unisono', 'unis.', 'in unison: all on the same notes', '같은 음으로 함께', 'others'], ['Divisi', 'div.', 'divided into groups', '나누어서', 'others'], ['Colla voce, colla parte', '', 'follow the singer, follow the soloist', '노래를, 독주를 따라가며', 'others'],
+  ['Obbligato', '', 'a part that must be played', '꼭 연주해야 하는 파트', 'others'],
+  ['Col legno', '', 'with the wood of the bow', '활대 나무로', 'others'], ['Détaché', '', 'a separate bow for each note', '음마다 활을 따로', 'others', 'fr'], ['Spiccato', '', 'a bouncing bow', '활을 튀기며', 'others'],
+  ['Con sordino', 'con sord.', 'with a mute', '약음기를 끼고', 'others'], ['Sourdine', '', 'mute', '약음기', 'others', 'fr'], ['Vibrato', '', 'a slight wobble of the pitch, for warmth', '음높이를 살짝 떨어 따뜻하게', 'others'],
+  ['Flatterzunge', 'Flzg.', 'flutter-tonguing (wind players)', '플러터 텅잉(관악기)', 'others', 'de'],
+];
+const REF_LANG = { fr: ['French', '프랑스어'], de: ['German', '독일어'] };
+const refPlayWordsList = () => {
+  const out = TERMS.map(tm => ({ term: tm.term, abbr: tm.abbr, mean: tm.meaning, job: REF_JOB_OF[tm.term] || REF_JOB_CAT[tm.cat] || 'mood', tm: tm.hear ? tm : null, room: REF_FIRST[tm.term] || 'terms', g: REF_FIRST[tm.term] ? null : 'Grade ' + tm.grade, sort: tm.hear && tm.hear.bpm }));
+  const an = TEMPO_TERMS.find(x => x.term === 'Andantino');
+  if (an) out.push({ term: 'Andantino', abbr: '', mean: an.meaning, job: 'speed', tm: { term: 'Andantino', cat: 'Speed', hear: { bpm: an.demo } }, room: 'tempo', sort: an.demo });
+  REF_MORE_WORDS.forEach(([term, abbr, en, ko, job, lang, sort]) => out.push({ term, abbr, mean: t(en, ko), job, lang, room: null, sort, tm: sort ? { term, cat: 'Speed', hear: { bpm: sort } } : null }));
+  return out;
+};
+function RefWordRow({ w }) {
+  return <div data-ref-word={w.term} style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) auto',alignItems:'center',gap:6,padding:'3px 0',borderBottom:'1px solid rgba(38,41,107,0.08)',breakInside:'avoid'}}>
+    <div style={{minWidth:0,lineHeight:1.35}}><b style={{fontWeight:800}}>{w.term}</b>{w.abbr ? <span style={{color:BK.muted,fontWeight:700}}> ({w.abbr})</span> : null}{w.lang ? <span style={{color:BK.muted,fontSize:'0.85em',fontWeight:700}}> {t(REF_LANG[w.lang][0], REF_LANG[w.lang][1])}</span> : null}
+      <span style={{color:BK.muted}}> · </span><span>{w.mean}</span></div>
+    <span style={{display:'flex',gap:4,alignItems:'center'}}>{w.tm && <RefHear k={'w' + w.term} on={() => playTerm(w.tm)}/>}<RefDoor room={w.room} g={w.g}/></span>
+  </div>;
+}
+function RefWordGroups({ groups }) {
+  const paper = React.useContext(RefPaper);
+  return <div>{groups.map(([id, en, ko, list]) => <div key={id} data-ref-wordgroup={id}>
+    <RefLab>{t(en, ko)}</RefLab>
+    <div style={paper ? {columnCount:3,columnGap:14,fontSize:11} : {display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(290px,1fr))',columnGap:16,fontSize:13.5}}>{list.map(w => <RefWordRow key={w.term} w={w}/>)}</div>
+  </div>)}</div>;
+}
+function RefPlay({ part }) {
+  const all = refPlayWordsList(), jobs = part === 'a' ? REF_JOBS.slice(0, 3) : part === 'b' ? REF_JOBS.slice(3, 5) : part === 'c' ? REF_JOBS.slice(5) : REF_JOBS;
+  const groups = jobs.map(([id, en, ko]) => { let list = all.filter(w => w.job === id);
+    if (id === 'speed') list = [...list.filter(w => w.sort).sort((a, b) => a.sort - b.sort), ...list.filter(w => !w.sort)];
+    return [id, en, ko, list]; });
+  return <div data-ref-play>
+    {(!part || part === 'a') && <RefNote>{t('The terms room’s words with their grade, and more from the reference pages (extra). ♪ plays the room’s own example.', '용어 방의 낱말과 그 급, 그리고 레퍼런스의 낱말 더(더 알기). ♪는 그 방의 예를 들려줘요.')}</RefNote>}
+    <RefWordGroups groups={groups}/>
+  </div>;
+}
+// 10. words about music: the dictionary's words floor by floor (a tap opens its card); kinds of piece (Knowing your pieces),
+// forms (Form, Knowing your pieces), texture and style (Styles), the voices (the instruments room), and the book's others
+const REF_TERM_NAME = { 'dotted-note': ['dotted note', '점음표'], step: ['step', '차례가기'], natural: ['natural', '내추럴'], key: ['key', '조'] };   // these four keep no word list (so the text does not link every 'key' or 'step')
 const refTermName = (x) => LANG === 'ko' ? (x.ko[0] || (REF_TERM_NAME[x.id] || [])[1] || x.id) : (x.en[0] || (REF_TERM_NAME[x.id] || [])[0] || x.id);
-function RefTerms() {
+const refTrim = (s) => { s = String(s).replace(/\.$/, ''); return LANG === 'ko' || !/^[A-Z][a-z ]/.test(s) || /^[A-Z][a-z]+ [A-Z]/.test(s) ? s : s[0].toLowerCase() + s.slice(1); };
+const REF_FORM_KO = { 'Exposition, development, recapitulation': '제시부, 전개부, 재현부', 'Theme, var. 1, var. 2, var. 3': '주제, 변주 1, 변주 2, 변주 3', 'Minuet, trio, minuet': '미뉴에트, 트리오, 미뉴에트' };
+// the book's other words (its glossary, pp. 246-249), in my words: [term en, term ko, meaning en, meaning ko, group]
+const REF_MORE_TERMS = [
+  ['Concerto', '협주곡', 'a soloist with an orchestra, usually in three movements', '독주자와 오케스트라, 보통 세 악장', 'kinds'], ['Symphony', '교향곡', 'a large work for orchestra in several movements', '오케스트라를 위한 여러 악장의 큰 작품', 'kinds', 'pieces-78'],
+  ['Suite', '모음곡', 'a set of pieces; in the Baroque, dances in one key', '여러 곡의 모음; 바로크에서는 한 조의 춤곡들', 'kinds', 'pieces-78'], ['String quartet', '현악 4중주', 'two violins, a viola and a cello', '바이올린 둘, 비올라, 첼로', 'kinds', 'pieces-78'],
+  ['Opera', '오페라', 'a story sung on stage, with an orchestra', '오케스트라와 함께 무대에서 노래로 하는 이야기', 'kinds'], ['Aria', '아리아', 'a song for one singer in an opera or oratorio', '오페라나 오라토리오의 독창곡', 'kinds', 'form', 'Grade 5'],
+  ['Oratorio', '오라토리오', 'a sacred story for voices and orchestra, not acted', '목소리와 오케스트라의 종교적인 이야기, 연기 없이', 'kinds', 'pieces-78'], ['Overture', '서곡', 'the orchestra’s opening piece before an opera or ballet', '오페라나 발레 앞에 오케스트라가 여는 곡', 'kinds'],
+  ['Canon', '카논', 'one tune, started by each voice in turn', '한 선율을 성부마다 차례로 시작', 'forms'], ['Ground bass', '그라운드 베이스', 'a bass line repeated under changing music above', '위의 음악이 바뀌는 동안 되풀이되는 베이스', 'forms'],
+  ['Cadenza', '카덴차', 'a solo passage to show off, near a concerto movement’s end', '협주곡 악장 끝 무렵 솜씨를 보여 주는 독주 부분', 'forms'], ['Coda', '코다', 'the closing section of a piece', '곡을 끝맺는 부분', 'forms', 'signs'],
+  ['Ostinato', '오스티나토', 'a pattern repeated again and again', '계속 되풀이되는 음형', 'forms'],
+  ['Movement', '악장', 'a complete section of a larger work', '큰 작품 속의 완결된 한 부분', 'forms', 'pieces-78'],
+  ['Counterpoint', '대위법', 'two or more independent tunes at once', '둘 이상의 독립된 선율이 동시에', 'tex', 'composers'], ['Consonance', '협화음', 'notes that sound at rest together', '함께 울려 편안한 음들', 'tex'],
+  ['Dissonance', '불협화음', 'notes that clash and want to move on', '부딪쳐 다음으로 가고 싶어 하는 음들', 'tex'], ['Timbre', '음색', 'the colour of a sound: a flute and a violin on the same note', '소리의 색깔: 같은 음의 플루트와 바이올린', 'tex'],
+  ['Tonality', '조성', 'music built round a home key', '으뜸조를 중심으로 짜인 음악', 'tex'], ['Atonal', '무조', 'music with no home key', '으뜸조가 없는 음악', 'tex'],
+  ['Twelve-tone music', '12음 음악', 'all twelve notes in a fixed row, none the home note', '열두 음을 정한 순서로, 어느 음도 으뜸음이 아님', 'tex', 'composers'], ['Programme music', '표제 음악', 'music that tells a story or paints a scene', '이야기를 들려주거나 장면을 그리는 음악', 'tex'],
+  ['A cappella', '아카펠라', 'voices alone, no instruments', '악기 없이 목소리만', 'more'], ['Accompaniment', '반주', 'the part that supports the tune', '선율을 받쳐 주는 파트', 'more'],
+  ['Chamber music', '실내악', 'music for a small group, one player a part', '작은 앙상블, 파트마다 한 명', 'more'], ['Continuo', '통주저음', 'Baroque bass line with a keyboard filling in the chords', '건반이 화음을 채우는 바로크의 베이스', 'more'],
+  ['Libretto', '리브레토', 'the words of an opera', '오페라의 대본', 'more'], ['Recitative', '레치타티보', 'singing in the rhythm of speech, to move the story on', '말하는 리듬으로 이야기를 이끌어 가는 노래', 'kinds', 'form', 'Grade 5'],
+  ['Leitmotif', '라이트모티프', 'a short tune that stands for a person or idea', '인물이나 생각을 나타내는 짧은 선율', 'more'], ['Score', '총보', 'the music with every part, one above another', '모든 파트를 위아래로 적은 악보', 'more'],
+  ['Repertoire', '레퍼토리', 'the pieces a player can perform', '연주자가 연주할 수 있는 곡들', 'more'], ['Recital', '리사이틀', 'a concert by one player or a small group', '한 명이나 작은 그룹의 연주회', 'more'],
+];
+function RefTerms({ part }) {
   const paper = React.useContext(RefPaper), [card, setCard] = useState(null);
   const floors = STAGES.map(s => ({ name: s.en ? s.en[0] : '', terms: DICT_TERMS.filter(x => s.ids.includes(x.room)) })).filter(f => f.terms.length);
+  const more = (gr) => REF_MORE_TERMS.filter(x => x[4] === gr).map(([en, ko, men, mko, , room, g]) => ({ term: t(en, ko), mean: t(men, mko), room: room || null, g }));
+  const kinds = [...P8_TITLES.map(([, en, ko, men, mko]) => ({ term: t(en, ko), mean: refTrim(t(men, mko)), room: 'pieces-8' })), ...more('kinds')];
+  // the Form room's lessons: binary, ternary and rondo (Grade 1), minuet and trio and variations (Grade 5), sonata form (Grade 6)
+  const forms = [...FORM_Q.map(([shape, id]) => ({ term: t(FORM_N[id][0], FORM_N[id][1]), mean: LANG === 'ko' ? REF_FORM_KO[shape] || shape : refTrim(shape), room: 'form', g: id === 'sonata' ? 'Grade 6' : ['minuet', 'variations'].includes(id) ? 'Grade 5' : null })),
+    { term: t('Fugue', '푸가'), mean: t('a subject that enters in each voice in turn; the answer, the countersubject, episodes between the entries', '성부마다 차례로 들어오는 주제; 응답, 대주제, 주제 제시 사이의 간주부(에피소드)'), room: 'form', g: 'Grade 6' }, ...more('forms')];
+  const tex = [...CSX_WORDS.map(([en, men, mko]) => ({ term: sprCap(t(en, CSX_WORD_KO[en] || en)), mean: t(men, mko), room: 'styles' })), ...more('tex')];
+  const vo = RANGES.find(g => g.g === 'Voices'), voices = vo ? vo.rows.map(([n, lo, hi]) => ({ term: rangeName(n), mean: t('sings about ', '대략 ') + lo + '–' + hi + t('', ' 음역을 노래해요'), room: 'pitch-range' })) : [];
   return <div data-ref-terms>
+    {part !== 'b' && <><RefLab>{t('The dictionary, floor by floor', '사전, 층마다')}</RefLab>
     {floors.map(f => <div key={f.name} style={{display:'grid',gridTemplateColumns:'74px minmax(0,1fr)',gap:6,alignItems:'baseline',padding:'5px 0',borderBottom:'1px solid rgba(38,41,107,0.1)'}}>
       <span style={{fontSize:11,fontWeight:900,color:BK.coral,letterSpacing:'0.04em'}}>{f.name}</span>
       <span style={{display:'flex',flexWrap:'wrap',gap:paper ? '0 10px' : 4}}>{f.terms.map(x => paper ? <span key={x.id} style={{fontSize:12.5,fontWeight:700}}>{refTermName(x)}</span>
         : <button key={x.id} type="button" className="chip" data-ref-term={x.id} onClick={() => setCard(x.id)} style={{minHeight:30,padding:'2px 9px',fontSize:12.5,fontWeight:800}}>{refTermName(x)}</button>)}</span>
     </div>)}
-    {card && <DictCard id={card} onClose={() => setCard(null)}/>}
+    {card && <DictCard id={card} onClose={() => setCard(null)}/>}</>}
+    <RefWordGroups groups={[...(part !== 'b' ? [['kinds', 'Kinds of piece', '곡의 종류', kinds]] : []), ...(part !== 'a' ? [['forms', 'Forms', '형식', forms], ['tex', 'Texture, style and sound', '짜임, 양식, 소리', tex],
+      ['voices', 'Voices', '목소리', voices], ['more', 'More words', '낱말 더', more('more')]] : [])]}/>
   </div>;
 }
-const REF_BODY = { notes: RefNotes, time: RefTimes, keys: RefKeys, scales: RefScales, intervals: RefIntervals, chords: RefChords, terms: RefTerms };
+// 11. the periods: the composers room's six (its years, its first 'what you hear', its composers in its own order); ♪ the
+// styles room's example of each
+const REF_REN = [['Tallis', '탈리스'], ['Byrd', '버드'], ['Palestrina', '팔레스트리나']];   // the book's p. 242 (the house's composers start in the Baroque)
+function RefPeriods() {
+  const paper = React.useContext(RefPaper), y0 = 1400, y1 = 2026, W = 600, X = (y) => (y - y0) / (y1 - y0) * W;
+  return <div data-ref-periods>
+    <svg viewBox={'0 0 ' + W + ' 40'} style={{width:'100%',display:'block',margin:'0 0 6px'}} role="img" aria-label={t('The six periods on one line, 1400 to today', '여섯 시대를 한 줄에, 1400년부터 오늘까지')}>
+      {CMP_ERA_IDS.map((id, i) => { const p = CMP_PERIODS[id], a = X(p.years[0]), b = X(Math.min(p.years[1], y1)); return <g key={id}>
+        <rect x={a} y="6" width={b - a} height="14" fill={i % 2 ? '#fff' : 'rgba(38,41,107,0.12)'} stroke={PEN_N} strokeWidth="1"/>
+        <text x={a + 3} y="33" fontSize="10.5" fontWeight="900" fill={PEN_N} fontFamily="Georgia, serif">{p.years[0]}</text>
+        {paper && <text x={(a + b) / 2} y="16.5" textAnchor="middle" fontSize="8.5" fontWeight="800" fill={PEN_N}>{t(p.short[0], p.short[1])}</text>}</g>; })}
+    </svg>
+    <RefTable k="periods" cols="minmax(0,1fr) auto" rows={CMP_ERA_IDS.map(id => { const p = CMP_PERIODS[id], who = id === 'renaissance' ? REF_REN.map(x => t(x[0], x[1])) : CMP.filter(c => c.era === id).slice(0, 4).map(c => (c.name[0].indexOf(c.sur[0]) === 0 ? t(c.name[0], c.name[1]) : t(c.sur[0], c.sur[1])));
+        return [<div data-ref-period={id}><b style={{fontWeight:800}}>{t(p.short[0], p.short[1])}</b> <span style={{fontSize:12,fontWeight:800,color:BK.coral,whiteSpace:'nowrap'}}>{p.years[0]}–{p.years[1] > 2025 ? t('today', '오늘') : p.years[1]}</span>
+          <div style={{fontSize:13}}>{t(p.sound[0][0], p.sound[0][1])}</div><div style={{color:BK.muted,fontWeight:700,fontSize:12.5}}>{who.join(', ')}</div></div>,
+          <span style={{display:'flex',gap:4,alignItems:'center'}}>{id !== 'renaissance' && <RefHear k={'era' + id} on={() => csxEraHear(id)}/>}<RefDoor room="composers" g={id === 'renaissance' ? t('Composers', '작곡가') : null}/></span>]; })}/>
+    {!paper && <RefNote>{t('♪ plays the Styles room’s example of each period.', '♪는 양식 방의 시대별 예를 들려줘요.')}</RefNote>}
+  </div>;
+}
+// 12. the instruments: the four families (how they sound, the Stories of music room's own words) and the keyboards; the
+// orchestra's instruments with the clef each reads (its Grade 4 and 5 pages); the score order (the book's p. 245)
+const REF_PERC = [['timpani', '팀파니'], ['side drum', '작은북'], ['bass drum', '큰북'], ['cymbals', '심벌즈'], ['triangle', '트라이앵글'], ['xylophone', '실로폰'], ['glockenspiel', '글로켄슈필']];
+const REF_STR_CLEF = { Violin: ['treble clef', '높은음자리표'], Viola: ['alto clef', '알토음자리표'], Cello: ['bass clef, tenor and treble for high notes', '낮은음자리표, 높은 음은 테너·높은음자리표'], 'Double bass': ['bass clef, sounding an octave lower', '낮은음자리표, 한 옥타브 낮게 소리 나요'] };
+const REF_SCORE = [['Woodwind', '목관 악기', 'piccolo, flutes, oboes, cor anglais, clarinets, bass clarinet, bassoons, contrabassoon', '피콜로, 플루트, 오보에, 잉글리시 호른, 클라리넷, 베이스 클라리넷, 바순, 콘트라바순'],
+  ['Brass', '금관 악기', 'horns, trumpets, trombones, tuba', '호른, 트럼펫, 트롬본, 튜바'], ['Percussion', '타악기', 'timpani, then the other percussion', '팀파니, 그다음 다른 타악기'],
+  ['Harp and keyboards', '하프와 건반', 'harp, celesta, piano', '하프, 첼레스타, 피아노'], ['The soloist', '독주자', 'in a concerto, just above the strings', '협주곡에서는 현악기 바로 위'],
+  ['Strings', '현악기', 'violins I, violins II, violas, cellos, double basses', '제1바이올린, 제2바이올린, 비올라, 첼로, 더블베이스']];
+function RefInstruments() {
+  const paper = React.useContext(RefPaper), k = paper ? 0.5 : 0.6;
+  const icons = (ids) => <svg viewBox={'0 0 ' + ids.length * 62 + ' 62'} width={ids.length * 62 * k} height={62 * k} style={{display:'block',flex:'0 0 auto'}}>{ids.map((id, i) => <SprInst key={id} id={id} x={i * 62} y={0} s={1}/>)}</svg>;
+  const fam = (id, icn, name, how, rows, g, room = 'pitch-range') => <div key={id} data-ref-family={id} style={{border:'1.5px solid rgba(38,41,107,0.22)',borderRadius:10,background:'#fff',padding:'6px 10px',breakInside:'avoid'}}>
+    <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>{icn && icons(icn)}<div style={{flex:'1 1 140px',minWidth:0}}><b style={{fontWeight:800,fontSize:14}}>{sprCap(name)}</b><br/><span style={{fontSize:12.5,color:BK.muted}}>{how}</span></div><RefDoor room={room} g={g}/></div>
+    {rows && <div style={{marginTop:4}}>{rows.map(([n, clef, snd], i) => <div key={i} style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) auto',gap:6,alignItems:'center',padding:'2px 0',borderTop:'1px solid rgba(38,41,107,0.08)',fontSize:13}}>
+      <span><b style={{fontWeight:800}}>{n}</b>{clef ? <span style={{color:BK.muted}}> · {clef}</span> : null}</span>{snd === 'x' ? <RefDoor room={null}/> : snd ? <RefHear k={'in' + id + i} on={snd}/> : <span/>}</div>)}</div>}
+  </div>;
+  return <div data-ref-instruments>
+    <div style={{display:'grid',gridTemplateColumns:paper ? '1fr 1fr' : 'repeat(auto-fill,minmax(280px,1fr))',gap:6}}>
+      {fam('strings', ['violin', 'cello', 'harp'], sprFamName('strings'), SPR_FAM.strings.howLong(), SPR_TUNE.map(v => [rangeName(v.n), t(REF_STR_CLEF[v.n][0], REF_STR_CLEF[v.n][1]), () => sprTunePlay(v)]), t('Instruments · Grade 4', '악기 · Grade 4'))}
+      {fam('woodwind', ['flute', 'clarinet', 'recorder'], sprFamName('woodwind'), SPR_FAM.woodwind.howLong(), SPR_WIND.map(v => [t(v.n[0], v.n[1]), t(v.clef[0], v.clef[1]), () => sprWindPlay(v)]), t('Instruments · Grade 5', '악기 · Grade 5'))}
+      {fam('brass', ['trumpet', 'trombone', 'tuba'], sprFamName('brass'), SPR_FAM.brass.howLong(), SPR_BRASS.map(v => [t(v.n[0], v.n[1]), t(v.clef[0], v.clef[1]), () => sprWindPlay(v)]), t('Instruments · Grade 6', '악기 · Grade 6'))}
+      {fam('percussion', ['drum', 'xylophone', 'triangle'], sprFamName('percussion'), SPR_FAM.percussion.howLong(), [[sprCap(REF_PERC.map(x => t(x[0], x[1])).join(', ')), '', 'x']])}
+      {fam('keyboards', null, t('Keyboards', '건반 악기'), t('Keys move hammers that strike strings (piano), tangents that press them (clavichord), quills that pluck them (harpsichord) or valves that let air into pipes (organ).', '건반이 줄을 치는 해머(피아노), 줄을 누르는 탄젠트(클라비코드), 줄을 뜯는 깃촉(하프시코드), 파이프에 바람을 넣는 밸브(오르간)를 움직여요.'),
+        [[t('Piano, harpsichord, clavichord, organ', '피아노, 하프시코드, 클라비코드, 오르간'), t('the grand staff', '큰보표'), null]], null, 'piano-story')}
+    </div>
+    <div style={{display:'flex',alignItems:'baseline',justifyContent:'space-between',gap:8}}><RefLab>{t('The score, top to bottom', '총보, 위에서 아래로')}</RefLab><RefDoor room={null}/></div>
+    <RefTable k="score" cols="minmax(0,0.8fr) minmax(0,2fr)" rows={REF_SCORE.map(([en, ko, men, mko]) => [<b style={{fontWeight:800}}>{t(en, ko)}</b>, <span style={{fontSize:12.5}}>{t(men, mko)}</span>])}/>
+  </div>;
+}
+const REF_BODY = { staff: RefStaff, notes: RefNotes, time: RefTimes, keys: RefKeys, scales: RefScales, intervals: RefIntervals, chords: RefChords, signs: RefSigns, play: RefPlay, terms: RefTerms, periods: RefPeriods, instruments: RefInstruments };
 function ReferenceView({ onChapter }) {
   const jump = (id) => { const el = document.getElementById('ref-' + id); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
   return <RefGo.Provider value={onChapter || null}><div data-reference style={{display:'flex',flexDirection:'column',gap:18}}>
     <div>
-      <div style={{fontSize:14,color:'#4a4d86',lineHeight:1.5,margin:'0 0 8px'}}>{t('The whole of the theory on a few tables, Beginner to Grade 8. Each row shows the floor where you learn it: tap it to go to that room.', 'Beginner부터 Grade 8까지의 이론을 표 몇 장에. 줄마다 그걸 배우는 층이 있어요: 누르면 그 방으로 가요.')}</div>
+      <div style={{fontSize:14,color:'#4a4d86',lineHeight:1.5,margin:'0 0 8px'}}>{t('The whole of the theory on a few tables, Beginner to Grade 8. Each row shows the floor where you learn it: tap it to go to that room. ♪ plays it.', 'Beginner부터 Grade 8까지의 이론을 표 몇 장에. 줄마다 그걸 배우는 층이 있어요: 누르면 그 방으로 가요. ♪는 소리.')}</div>
       <div style={{display:'flex',flexWrap:'wrap',gap:5}}>{REF_SECS.map(s => <button key={s.id} type="button" className="chip" data-ref-jump={s.id} onClick={() => jump(s.id)} style={{minHeight:34,padding:'3px 11px',fontSize:12.5,fontWeight:800}}>{t(s.en, s.ko)}</button>)}</div>
     </div>
     {REF_SECS.map(s => { const B = REF_BODY[s.id]; return <section key={s.id} style={{minWidth:0}}><RefHead id={s.id}/><B/></section>; })}
   </div></RefGo.Provider>;
 }
-// on paper: five A4 pages in the books' look
-const REF_PAGES = [['notes', 'time'], ['keys'], ['scales', 'intervals'], ['chords'], ['terms']], REF_PAGE_COLS = { 0: true };   // page 1 in two columns
+// on paper: A4 pages in the books' look; 'id:a' and 'id:b' split a long section over two pages
+const REF_PAGES = [['staff', 'notes'], ['time'], ['keys'], ['scales:a', 'intervals'], ['scales:b'], ['chords:a'], ['chords:b'], ['signs'], ['play:a'], ['play:b'], ['play:c'], ['terms:a'], ['terms:b'], ['periods'], ['instruments']], REF_PAGE_COLS = {};
 function RefBook() {
   return <RefPaper.Provider value={true}>{REF_PAGES.map((ids, i) => <section key={i} className="bk-page" data-ref-page={i + 1} style={{position:'relative'}}>
     <VicFloor no={i + 1}/>
-    <VicHead left={t('Reference', '한눈에 보기')} right={ids.map(id => { const s = REF_SECS.find(x => x.id === id); return t(s.en, s.ko); }).join(' · ')} mb={10}/>
-    <div className="bk-body" style={REF_PAGE_COLS[i] ? {flex:1,minHeight:0,overflow:'hidden',display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,alignItems:'start'} : {flex:1,minHeight:0,overflow:'hidden',display:'flex',flexDirection:'column',gap:12}}>{ids.map(id => { const B = REF_BODY[id]; return <div key={id} style={{minWidth:0}}><RefHead id={id}/><B/></div>; })}</div>
+    <VicHead left={t('Reference', '한눈에 보기')} right={ids.map(x => { const [id, part] = x.split(':'), s = REF_SECS.find(y => y.id === id); return t(s.en, s.ko) + (part && part !== 'a' ? t(' (cont.)', ' (이어서)') : ''); }).join(' · ')} mb={10}/>
+    <div className="bk-body" style={REF_PAGE_COLS[i] ? {flex:1,minHeight:0,overflow:'hidden',display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,alignItems:'start'} : {flex:1,minHeight:0,overflow:'hidden',display:'flex',flexDirection:'column',gap:12}}>{ids.map(x => { const [id, part] = x.split(':'), B = REF_BODY[id]; return <div key={x} style={{minWidth:0}}>{(!part || part === 'a') && <RefHead id={id}/>}<B part={part}/></div>; })}</div>
   </section>)}</RefPaper.Provider>;
 }
 
@@ -34997,8 +35422,8 @@ function HpWorkbook({ startNo = 1 }) {
     <Part kind="home" title="Where is C in G position?" how="Find C in G position. Write the finger that plays it, then check at the piano.">
       <div style={{display:'flex',gap:30,justifyContent:'center',fontSize:13.5,fontWeight:800,color:BK.ink,padding:'6px 0'}}>{['Right hand', 'Left hand'].map((l, i) => <span key={l} style={{display:'inline-flex',alignItems:'center',gap:8}}>{nvNum(7 + i)} {l}: finger {bkBox(40, 32)}</span>)}</div>
     </Part>
-    <Part kind="play" title="The letter ladder" how="Write the missing letters of G position. Then say them up and down, without the piano: G A B C D, D C B A G.">
-      <div style={{display:'flex',gap:10,justifyContent:'center',padding:'10px 0'}}>{['G', '', 'B', '', 'D'].map((l, i) => <span key={i} style={{width:52,height:52,border:'2px solid ' + (l ? BK.ink : BK.coral),borderRadius:8,display:'inline-flex',alignItems:'center',justifyContent:'center',fontFamily:LB_SERIF,fontSize:26,fontWeight:800,color:BK.ink}}>{l}</span>)}</div>
+    <Part kind="play" title="The letter ladder" how="Write the missing letters of G position, from G at the bottom. Then say them up and down, without the piano: G A B C D, D C B A G.">
+      <HpLadder/>
     </Part>
     <Faces/>
   </>);
@@ -35013,10 +35438,10 @@ function HpWorkbook({ startNo = 1 }) {
       <PhLog rows={['Right hand: C D E F G, lift, travel, land, G A B C D', 'And back again, from G to C', 'On a steady beat: one silent beat to move', 'The left hand the same']} label={300}/>
     </Part>
     <Part kind="play" title="The bridge" how="Trace the dotted bridge from C position to G position in one smooth line, without lifting your pencil. Write lift, travel and land where they happen.">
-      <svg viewBox="0 0 600 150" style={{width:'100%',display:'block'}}>
-        {[[40, 'C position'], [360, 'G position']].map(([x, l]) => <g key={l}>{[0, 1, 2, 3, 4].map(k => <rect key={k} x={x + k * 40} y="92" width="40" height="44" fill={k === 0 ? '#fbe3da' : '#fff'} stroke={BK.ink} strokeWidth="1.6"/>)}<text x={x + 100} y="84" textAnchor="middle" fontSize="13" fontWeight="900" fill={BK.ink}>{l}</text></g>)}
-        <path d="M60 92 C90 10 400 10 380 92" fill="none" stroke={BK.coral} strokeWidth="2.4" strokeDasharray="2 7" strokeLinecap="round"/>
-        {[[118, 40], [220, 22], [330, 40]].map(([x, y], i) => <line key={i} x1={x - 26} x2={x + 26} y1={y + 18} y2={y + 18} stroke={BK.line} strokeWidth="1.4"/>)}
+      <svg viewBox="0 0 600 236" style={{width:'100%',display:'block'}}>
+        {[[40, 'C position'], [360, 'G position']].map(([x, l]) => <g key={l}>{[0, 1, 2, 3, 4].map(k => <rect key={k} x={x + k * 40} y="160" width="40" height="70" fill={k === 0 ? '#fbe3da' : '#fff'} stroke={BK.ink} strokeWidth="1.6"/>)}<text x={x + 100} y="150" textAnchor="middle" fontSize="14" fontWeight="900" fill={BK.ink}>{l}</text></g>)}
+        <path d="M60 160 C90 6 400 6 380 160" fill="none" stroke={BK.coral} strokeWidth="2.6" strokeDasharray="2 7" strokeLinecap="round"/>
+        {[[112, 92], [220, 66], [328, 92]].map(([x, y], i) => <line key={i} x1={x - 30} x2={x + 30} y1={y} y2={y} stroke={BK.line} strokeWidth="1.4"/>)}
       </svg>
     </Part>
     <Faces/>
@@ -35031,8 +35456,8 @@ function HpWorkbook({ startNo = 1 }) {
     <Part kind="home" title="Together this week" how="Do each one at the piano and tick a box each day.">
       <PhLog rows={['1+1, 2+2, 3+3, 4+4, 5+5 and back, saying the numbers', 'Slowly: one steady beat each, both keys exactly together', 'Eyes closed: feel both thumbs on their keys']} label={300}/>
     </Part>
-    <Part kind="play" title="Draw the mirror" how="Put both hands flat, thumbs touching, and draw round them. Write the finger numbers: the same numbers face each other, like a mirror.">
-      <div style={{display:'flex',flex:1}}>{area('Left hand · thumbs touching · right hand', 110)}</div>
+    <Part kind="play" title="Fill in the mirror" how="The thumbs meet at the dashed line. Write the missing finger numbers: each number faces its twin. Then colour the two 3s.">
+      <HpMirrorFill/>
     </Part>
     <Faces/>
   </>);
@@ -35046,8 +35471,8 @@ function HpWorkbook({ startNo = 1 }) {
         <div><div style={{fontSize:10.5,fontWeight:900,color:BK.coral,marginBottom:3}}>Left hand answers</div>{hpwCircles(i === 0 ? ans : ans.split(' ').map(x => (x === '-' ? '-' : '?' + x)).join(' '), false)}</div>
       </div></ExCell>)}</div>
     </Part>
-    <Part kind="play" title="Make your own echo" how="Write a call for the right hand in the first four circles. Write the left hand's answer, with the same letters, in the next four. Play it with someone at home: you call, they answer.">
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,padding:'8px 4px'}}>{['Right hand calls', 'Left hand answers'].map((l, k) => <div key={l}><div style={{fontSize:10.5,fontWeight:900,color:k ? BK.coral : BK.muted,marginBottom:4}}>{l}</div><PhCircles seq={['?', '?', '?', '?']} size={40}/></div>)}</div>
+    <Part kind="play" title="The finger code" how="Write the letter each finger plays. Every row spells a word! The first one is done.">
+      <BkGrid cols={2} gap="8px 12px">{HP_CODE.map((row, i) => <HpCodeCell key={i} row={row} n={5 + i} ex={i === 0}/>)}</BkGrid>
     </Part>
     <Faces/>
   </>);
@@ -35062,9 +35487,8 @@ function HpWorkbook({ startNo = 1 }) {
     <Part kind="home" title="Tunes this week" how="Play each tune. Tick it when the hand stays round and the beat stays steady.">
       <PhLog rows={['Up and down the street', 'The left hand climbs too', 'Over to G', 'Mirror twins', 'Echo']} label={190}/>
     </Part>
-    <Part kind="play" title="Write your own tune" how="Right hand, C position. Write a finger number in each circle; a dashed circle holds one more beat. End on 1. Then play it, and give it a name.">
-      <div style={{display:'grid',gap:8,padding:'4px 0'}}><PhCircles seq={['?', '?', '?', '?', '|', '?', '?', '?', '?', '|', '?', '?', '?', '?', '|', '?', '-', '-', '-']} size={27}/>
-        <div style={{fontSize:12,color:BK.muted,display:'flex',alignItems:'center',gap:8}}>Name of my tune <span style={{display:'inline-block',flex:1,borderBottom:'1.5px solid ' + BK.line,height:18}}/></div></div>
+    <Part kind="play" title="The same tune, higher" how="Right hand. Write the letter each finger plays, in C position and then in G position. Play both: the same tune, higher.">
+      <HpSameTune/>
     </Part>
     <Faces/>
   </>);
@@ -35112,13 +35536,13 @@ function HpTeacher() {
       say="“Lift, travel, land: the arm carries the hand.”"/>
   </>);
   P(<>
-    <TcBlock page={5} title="Hands together" answers={<>{tcAns('TRY IT', W.mirror.map(hpwMirror))}{tcAns('PLAY', ['two hands drawn thumbs touching, the same numbers facing each other'])}</>}
+    <TcBlock page={5} title="Hands together" answers={<>{tcAns('TRY IT', W.mirror.map(hpwMirror))}{tcAns('PLAY', ['left hand 5 4 3 2 1, right hand 1 2 3 4 5; the two 3s coloured, one each side of the line'])}</>}
       watch="Same numbers together move the hands in opposite directions: the shapes mirror each other. Both keys exactly together; slow."
       say="“Same numbers together: mirror twins.”"/>
-    <TcBlock page={6} title="Taking turns" answers={<>{tcAns('TRY IT', W.echo.map(([c, a]) => 'right ' + c.replace(/ -/, '') + ' → left ' + a.replace(/ -/, '')))}{tcAns('PLAY', ['any call; the answer uses the same letters, so right 1 2 3 is left 5 4 3'])}</>}
+    <TcBlock page={6} title="Taking turns" answers={<>{tcAns('TRY IT', W.echo.map(([c, a]) => 'right ' + c.replace(/ -/, '') + ' → left ' + a.replace(/ -/, '')))}{tcAns('PLAY', HP_CODE.map(([h, pos, fs], i) => fs.map(f => hpLetter(pos, h, f)).join('') + (i ? '' : ' (done)')), 5)}</>}
       watch="The waiting hand lifting off into the lap. It stays on its keys, ready and quiet."
       say="“The waiting hand stays ready on its keys.”"/>
-    <TcBlock page={7} title="Tunes in C and G" answers={<>{tcAns('TRY IT', W.fill.map(([n, s]) => n + ': ' + fill(s)))}{tcAns('PLAY', ['any tune of finger numbers 1 to 5, ending on 1'])}</>}
+    <TcBlock page={7} title="Tunes in C and G" answers={<>{tcAns('TRY IT', W.fill.map(([n, s]) => n + ': ' + fill(s)))}{tcAns('PLAY', MT_SONGS.map(([name, , seq]) => name + ': C position ' + seq.map(f => hpLetter('C', 'R', f)).join(' ') + '; G position ' + seq.map(f => hpLetter('G', 'R', f)).join(' ')))}</>}
       watch="Rushing the dashed circles: each one holds a whole beat. Over to G: the lift happens in the silent moment, not by stretching."
       say="“Round hand, one finger on each key, a steady beat.”"/>
     <TcBlock page={8} title="The check-up on paper (the Workbook's last page)" answers={<>{tcAns('A', C.c.map(([, f]) => String(f)))}{tcAns('B', C.g.map(([, f]) => String(f)), 5)}{tcAns('C', C.where.map(([pos, h]) => pos + ', ' + h), 9)}{tcAns('D', C.mirror.map(hpwMirror), 13)}{tcAns('E', C.fill.map(fill), 17)}
@@ -36469,12 +36893,8 @@ function SpWorkbook({ startNo = 1 }) {
     <Part kind="home" title="With the metronome" how="Tick a box each day. Move up to 76 only when the turns are even. Play from memory.">
       <PhLog rows={['C major, right hand, then left: at 60', 'G major, right hand, then left: at 60', 'C and G major at 76, the last note held for two beats']} label={300}/>
     </Part>
-    <Part kind="play" title="Beat puzzle" how="One note a beat, up and back, and the last note held for two beats. Count it out.">
-      <div style={{display:'grid',gap:12,padding:'10px 4px',fontSize:13.5,fontWeight:800,color:BK.ink}}>
-        <span style={{display:'flex',alignItems:'center',gap:10}}>{nvNum(5)} How many beats is one C major scale, up and back? {bkBox(48, 32)}</span>
-        <span style={{display:'flex',alignItems:'center',gap:10}}>{nvNum(6)} And G major? {bkBox(48, 32)}</span>
-        <span style={{display:'flex',alignItems:'center',gap:10}}>{nvNum(7)} At metronome 76, is one scale more or less than 15 seconds? {bkBox(64, 32)}</span>
-      </div>
+    <Part kind="play" title="The four-bar scale" how="One note a beat, up and back, the last note held for two beats. Write each scale's letters, one in a box: the held note takes two. Four bars exactly! Then play it.">
+      <SpFourBarPlay/>
     </Part>
     <Faces/>
   </>);
@@ -36561,8 +36981,8 @@ function SpTeacher() {
     <TcBlock page={2} title="Smooth turns" answers={<>{tcAns('TRY IT', W.turn.map(turn))}{tcAns('PLAY', ['an arc from C, under fingers 2 and 3, to F'])}</>}
       watch="A late thumb, a loud note on the turn, a hand that jumps. The wrist stays level and the elbow does not fly out: the arm carries the hand along."
       say="“The thumb gets ready early: it is under F before you need it.”"/>
-    <TcBlock page={3} title="On the beat" answers={<>{tcAns('TRY IT', W.fing.map(fing))}{tcAns('PLAY', ['16 beats (15 notes, the last held for two)', '16', 'less (16 beats at 76 is about 13 seconds)'], 5)}</>}
-      watch="The hands running ahead after a turn; the last note cut short. Start at 60; move to 76 only when the turns are even."
+    <TcBlock page={3} title="On the beat" answers={<>{tcAns('TRY IT', W.fing.map(fing))}{tcAns('PLAY', ['C', 'G'].map(k => [0, 1, 2, 3].map(b => spFourBar(k).slice(4 * b, 4 * b + 4).join(' ')).join(' | ')), 5)}</>}
+      watch="The hands running ahead after a turn; the last note cut short. Start at 60; move to 76 only when the turns are even. In the four-bar scale, a row a box short or a box over has a note missing or written twice: most often the top note twice."
       say="“One note on every click. The last one holds for two.”"/>
     <TcBlock page={4} title="A and E minor" answers={<>{tcAns('TRY IT', W.form.map(k => spwForm(k) + ' (' + SP_SC[k].en + ')'))}{tcAns('YOUR TURN', ['A minor: G♯', 'E minor: D♯'], 5)}{tcAns('PLAY', ['A B C D E F G♯ A, G♯ in its own colour'])}</>}
       watch="Forgetting the raised 7th on the way down, or playing it in the natural form. The fingers are C major's in both hands."
@@ -37037,10 +37457,8 @@ function MsWorkbook({ startNo = 1 }) {
     <Part kind="home" title="Three half steps down" how="From the major key's first note, count three half steps down on the piano. Write the minor key's first note.">
       <div style={{display:'flex',gap:22,justifyContent:'center',flexWrap:'wrap',fontSize:14,fontWeight:800,color:BK.ink,padding:'6px 0'}}>{W.down.map((M, i) => line(5 + i, prettyNote(M) + ' major →', bkBox(40, 32)))}</div>
     </Part>
-    <Part kind="play" title="Key signature twins" how="Draw a line from each major key to the minor key that shares its key signature.">
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'14px 120px',justifyContent:'center',padding:'14px 40px',fontFamily:LB_SERIF,fontSize:20,fontWeight:800,color:BK.ink}}>
-        {[['C major', 'D minor'], ['G major', 'A minor'], ['F major', 'G minor'], ['B♭ major', 'E minor']].map(([a, b]) => <React.Fragment key={a}><span style={{display:'flex',alignItems:'center',justifyContent:'flex-end',gap:10}}>{a}<span style={{width:9,height:9,borderRadius:5,background:BK.ink}}/></span><span style={{display:'flex',alignItems:'center',gap:10}}><span style={{width:9,height:9,borderRadius:5,background:BK.ink}}/>{b}</span></React.Fragment>)}
-      </div>
+    <Part kind="play" title="Same keys, a new home" how="Twins share a key signature, so they share their keys. Play up and down from the navy star: the major. Then from the red star, on the same keys: its minor twin (the natural minor). Tick each.">
+      <MsTwinsPlay/>
     </Part>
     <Faces/>
   </>);
@@ -37071,8 +37489,8 @@ function MsWorkbook({ startNo = 1 }) {
     <Part kind="home" title="Count on the keys" how="A harmonic minor. Count the half steps on the piano, then write the number.">
       <div style={{display:'flex',gap:20,justifyContent:'center',flexWrap:'wrap',fontSize:14,fontWeight:800,color:BK.ink,padding:'6px 0'}}>{W.count.map(([a, b], i) => line(5 + i, a + ' to ' + b, bkBox(40, 32)))}</div>
     </Part>
-    <Part kind="play" title="The secret code" how="Every harmonic minor has the same code of seven steps. Write it from memory, then check it against the boxes above.">
-      <div style={{display:'flex',gap:8,justifyContent:'center',padding:'12px 0'}}>{Array.from({ length: 7 }, (_, j) => <span key={j} style={{width:46,height:46,border:'2px solid ' + BK.coral,borderRadius:8}}/>)}</div>
+    <Part kind="play" title="The step trail" how="From the star, go up: T is 2 half steps, S is 1, T½ is 3. Write each step's number on the key it lands on. Step 7 lands on the flag! Then name the scale.">
+      <MsTrail/>
     </Part>
     <Faces/>
   </>);
@@ -37084,11 +37502,11 @@ function MsWorkbook({ startNo = 1 }) {
       <BkGrid cols={2} gap="6px 10px">{W.kind.map((x, i) => <ExCell key={i} n={i + 1} ex={i === 0}><div style={{display:'grid',gap:6,padding:'16px 2px 4px'}}>{mswBoxes(mswKindLetters(x), { size: 30 })}
         <div style={{display:'flex',alignItems:'center',justifyContent:'center',gap:8,fontSize:11.5,fontWeight:800,color:BK.ink}}>M or H {nvBox(i === 0, x[1] === 'maj' ? 'M' : 'H', 40, 28)}</div></div></ExCell>)}</BkGrid>
     </Part>
-    <Part kind="home" title="Listen this week" how="Ask someone to play you a scale, up and down. Is it major or harmonic minor? Tick a box when you get it right.">
-      <PhLog rows={['C major, then A harmonic minor', 'G major, then E harmonic minor', 'F major, then D harmonic minor', 'Mixed: someone picks, you say']} label={300}/>
+    <Part kind="home" title="The same tune, darker" how="Each tune in major, with its steps. Write the same steps in its minor twin. Play both: the same tune, darker.">
+      <MsTunes/>
     </Part>
     <Part kind="play" title="Code breaker" how="Each code is a scale's seven steps. Which one is major, and which is harmonic minor?">
-      <div style={{display:'grid',gap:12,justifyItems:'center',padding:'12px 0'}}>{W.code.map((c, i) => <span key={c} style={{display:'inline-flex',alignItems:'center',gap:12,fontSize:15,fontWeight:900,color:BK.ink}}>{nvNum(5 + i)}<span style={{letterSpacing:'0.12em'}}>{c}</span>{bkBox(110, 32)}</span>)}</div>
+      <div style={{display:'grid',gap:12,justifyItems:'center',padding:'12px 0'}}>{W.code.map((c, i) => <span key={c} style={{display:'inline-flex',alignItems:'center',gap:12,fontSize:15,fontWeight:900,color:BK.ink}}>{nvNum(9 + i)}<span style={{letterSpacing:'0.12em'}}>{c}</span>{bkBox(110, 32)}</span>)}</div>
     </Part>
     <Faces/>
   </>);
@@ -37125,19 +37543,19 @@ function MsTeacher() {
     <TcBlock page={2} title="Major or minor third?" answers={<>{tcAns('TRY IT', W.third.map(third))}{tcAns('PLAY', ['C–E: B', 'D–F: D', 'F–A: B', 'E–G: D'], 7)}</>}
       watch="Counting the keys instead of the half steps between them (C to E is four half steps, five keys). Count the moves, not the keys."
       say="“Start on the first key and count each step to the next key, black or white: one, two, three…”"/>
-    <TcBlock page={3} title="The minor key's key signature" answers={<>{tcAns('TRY IT', W.sig.map(M => prettyNote(M) + ' major, ' + msMinOf(M) + ' minor'))}{tcAns('YOUR TURN', W.down.map(M => prettyNote(M) + ' → ' + msMinOf(M)), 5)}{tcAns('PLAY', ['C–A, G–E, F–D, B♭–G'])}</>}
-      watch="Counting up instead of down (C up three half steps is E♭), or naming the minor on the same note (C major, C minor): that key has a different key signature. A key signature alone does not say major or minor: the piece's first and last notes do."
+    <TcBlock page={3} title="The minor key's key signature" answers={<>{tcAns('TRY IT', W.sig.map(M => prettyNote(M) + ' major, ' + msMinOf(M) + ' minor'))}{tcAns('YOUR TURN', W.down.map(M => prettyNote(M) + ' → ' + msMinOf(M)), 5)}{tcAns('PLAY', MS_TWINS.map(([M, m]) => SP_SC[M].en + ' and ' + SP_SC[m].en.replace('natural ', '') + ': ' + (SP_SC[M].nm.filter(x => x.length > 1).join(', ') || 'the white keys')), null)}</>}
+      watch="Counting up instead of down (C up three half steps is E♭), or naming the minor on the same note (C major, C minor): that key has a different key signature. A key signature alone does not say major or minor: the piece's first and last notes do. In Same keys, a new home: playing the minor with the major's pattern from its note (C♯ in A, G♯ in E): stay on the lit keys. This is the natural minor; the raised 7th is the next page."
       say="“Same key signature: the minor is three half steps down.”"/>
     <TcBlock page={4} title="The harmonic minor" answers={<>{tcAns('TRY IT', W.raise.map(m => m + ' minor: ' + msNames(m, 'harmonic')[6]))}{tcAns('YOUR TURN', ['A B C D E F G♯ A, from the second space up to the A above the staff, the sharp in front of G'])}{tcAns('PLAY', W.wrong.map(([m, j, w]) => m + ' minor: ' + w + ' should be ' + msNames(m, 'harmonic')[j]), 5)}</>}
       watch="Writing the raised 7th in the key signature, or putting the sharp after the note. In G minor the F♯ comes with two flats in the key signature; in D minor the C♯ with one flat."
       say="“Harmonic minor: raise the 7th, beside the note.”"/>
   </>);
   P(<>
-    <TcBlock page={5} title="Tone, semitone, tone and a half" answers={<>{tcAns('TRY IT', W.gaps.map(m => m + ': ' + gapRow(m)))}{tcAns('YOUR TURN', W.count.map(([a, b, n]) => a + '–' + b + ': ' + n), 5)}{tcAns('PLAY', ['T S T T S T½ S'])}</>}
-      watch="Calling the tone and a half a tone, because the two letters are next to each other (F to G♯). Count the half steps, not the letters."
+    <TcBlock page={5} title="Tone, semitone, tone and a half" answers={<>{tcAns('TRY IT', W.gaps.map(m => m + ': ' + gapRow(m)))}{tcAns('YOUR TURN', W.count.map(([a, b, n]) => a + '–' + b + ': ' + n), 5)}{tcAns('PLAY', [SP_SC[MS_TRAIL.nm].nm.slice(1).concat([SP_SC[MS_TRAIL.nm].nm[0]]).map((x, i) => (i + 1) + ' ' + x).join(', ') + ': 7 on the flag', MS_TRAIL.m + ' harmonic minor'], null)}</>}
+      watch="Calling the tone and a half a tone, because the two letters are next to each other (F to G♯). Count the half steps, not the letters. In the step trail, the T½ counted as three white keys: count every key, black ones too."
       say="“Harmonic minor: T S T T S T½ S. The wide step is between the 6th and the raised 7th.”"/>
-    <TcBlock page={6} title="Major or harmonic minor?" answers={<>{tcAns('TRY IT', W.kind.map(([x, q]) => (q === 'maj' ? 'M' : 'H') + ' (' + (q === 'maj' ? prettyNote(x) + ' major' : x + ' harmonic minor') + ')'))}{tcAns('PLAY', ['major', 'harmonic minor'], 5)}</>}
-      watch="By ear: playing the scale fast. Play it at a walking pace, up and down; the darker third comes at once, the wide step near the top."
+    <TcBlock page={6} title="Major or harmonic minor?" answers={<>{tcAns('TRY IT', W.kind.map(([x, q]) => (q === 'maj' ? 'M' : 'H') + ' (' + (q === 'maj' ? prettyNote(x) + ' major' : x + ' harmonic minor') + ')'))}{tcAns('YOUR TURN', MS_TUNES.map(([si, M, m]) => msTuneLetters(m, MT_SONGS[si][2]).join(' ')), 5)}{tcAns('PLAY', ['major', 'harmonic minor'], 9)}</>}
+      watch="By ear: playing the scale fast. Play it at a walking pace, up and down; the darker third comes at once, the wide step near the top. In the same tune, darker: counting the steps from the major's first note again; in the minor, its own first note is 1 (A in A minor). The tunes use no 7th, so they sound the same in the natural and the harmonic minor."
       say="“A darker third and a wide step near the top: harmonic minor.”"/>
     <TcBlock page={7} title="The check-up on paper (the Workbook's last page)" answers={<>{tcAns('A', C.third.map(([, q]) => (q === 'maj' ? 'major' : 'minor')))}{tcAns('B', C.sig.map(M => msMinOf(M) + ' minor'), 5)}{tcAns('C', C.raise.map(m => msNames(m, 'harmonic')[6]), 9)}{tcAns('D', C.gap.map(([m, j]) => mswGapAns(MS_GAPS[j])), 13)}{tcAns('E', C.kind.map(([, q]) => (q === 'maj' ? 'M' : 'H')), 17)}
       <div style={{fontSize:12,color:BK.ink,marginTop:6,lineHeight:1.5}}>One mark for each answer. Score each part on its own (4 marks each, pass 3+). Not passed? Go back to that step's page: A p.2 · B p.3 · C p.4 · D p.5 · E p.6. The two checks by ear stay at the piano.</div></>}/>
@@ -39992,6 +40410,38 @@ function ScfStaffPair({ en, fR, fL, lhDown = true, w = 330, label }) {
       <SkgStaff items={items} k={sig} clef={cf} width={w} full o={{ boxS: 22, D: 26, hl: coral, signHl: coral, ksCol: '#2e8a6e', fingers: fg || undefined, ...skgUnder(items, sig, null, coral) }} label={label || en}/></div>)}
   </div>;
 }
+// ── Build EE (the rest of call 39, her 02:09 'the pictures also show it on the staff'): any run of keys on the staff, spelt
+// with the names the picture already shows, read against a key signature (accidentals only where the signature and the bar
+// do not already give the note), placed in the octave nearest the staff's middle, the right hand's fingers over the treble
+// and the left hand's under the bass. Her 20:30 ('it has to make sense: only the ones better changed'): only under the 7th
+// chords (Arpeggios and Progressions, Grades 6 to 8), where the staff shows what the keys cannot: the four notes stacked in
+// 3rds on lines or on spaces, and their spelling (E♯ not F, F♭ not E, C♭ not B). The chromatic scales (the same notes in
+// both hands, a fingering task), the arpeggios (the names are on the keys already) and the scales a 3rd and a 6th apart
+// keep their keyboards alone.
+const SP_RUN_SIGN = { 1: '#', [-1]: 'b', 0: 'n' };
+const spRunAlt = (nm) => (nm.includes('𝄪') ? 2 : nm.includes('𝄫') ? -2 : nm.includes('♯') ? 1 : nm.includes('♭') ? -1 : 0);
+// keys (0 = middle C) with their names ('G♯') -> staff items in the key 'sig' (SKG_KEY's names); null for a double sharp or flat
+function spRunItems(keys, names, sig = 'C', shift = 0) {
+  const base = {}; skgSigns(sig).forEach(([s, l]) => { base[l] = s === '#' ? 1 : -1; });
+  const cur = {}, items = [];
+  for (let j = 0; j < keys.length; j++) {
+    const nm = names[j], L = 'CDEFGAB'.indexOf(nm[0]), a = spRunAlt(nm); if (L < 0 || Math.abs(a) > 1) return null;
+    const m = 60 + keys[j] + shift, oct = Math.round((m - a - [0, 2, 4, 5, 7, 9, 11][L]) / 12) - 1, d = 7 * oct + L;
+    const now = cur[d] != null ? cur[d] : (base[nm[0]] || 0);
+    if (a !== now) { items.push(['q', 1, d, SP_RUN_SIGN[a]]); cur[d] = a; } else items.push(['q', 1, d]);
+  }
+  return items.concat([['||']]);
+}
+// the octave that puts the run's middle nearest the staff's middle line (B4 on the treble, D3 on the bass)
+const spRunShift = (keys, clef) => { const mid = (Math.min(...keys) + Math.max(...keys)) / 2, want = clef === 'bass' ? -10 : 11; return 12 * Math.round((want - mid) / 12); };
+// rows: [{ hand: 'R' | 'L', keys, names, fingers, hl, sig }]; one staff each, the treble for the right hand, the bass for the left
+function SpRunStaff({ rows, label, w = 380 }) {
+  const out = rows.map((r, i) => { const clef = r.hand === 'L' ? 'bass' : 'treble', items = spRunItems(r.keys, r.names, r.sig || 'C', spRunShift(r.keys, clef));
+    if (!items) return <div key={i} style={{textAlign:'center',fontSize:12,color:BK.muted,fontWeight:700,margin:'4px 0'}}>{t('This one needs a double sharp, so the staff is left out here.', '이건 겹샵이 필요해서 오선은 여기 없어요.')}</div>;
+    return <div key={i} style={{display:'grid',gridTemplateColumns:rows.length > 1 ? '34px 1fr' : '1fr',alignItems:'center',gap:4,minWidth:0}}>{rows.length > 1 && <span style={{fontSize:10,fontWeight:900,color:BK.muted,textAlign:'right'}}>{r.hand === 'L' ? t('LH', '왼손') : t('RH', '오른손')}</span>}
+      <SkgStaff items={items} k={r.sig || 'C'} clef={clef} width={w} full={r.keys.length > 9} o={{ boxS: 22, D: r.keys.length > 9 && r.fingers ? 22 : 26, hl: r.hl || [], ksCol: '#2e8a6e', fingers: r.fingers || undefined, fingerAt: clef === 'bass' ? 'below' : undefined }} label={label}/></div>; });
+  return <div data-run-staff style={{display:'grid',gridTemplateColumns:rows.length > 1 ? 'repeat(auto-fit, minmax(250px, 1fr))' : '1fr',gap:'2px 10px',width:'100%',maxWidth:rows.length > 1 ? undefined : 460,margin:'6px auto 0'}}>{out}</div>;
+}
 // Build DQ (her 01:48): note by note, do the hands go together? Right-hand finger over left-hand finger; a navy link while they match, coral from the note where they part
 function ScfTwinStrip({ k }) {
   const c = scfCm(k), d = scfFirstDiff(k);
@@ -42336,6 +42786,7 @@ function Sev7Pad({ kind = 'dom', keys = ['Fs', 'Eb', 'C', 'G', 'F'], onResult, f
       {!fixed && spChips(keys.map(x => [x, t('of ' + S7_KEYS[x], S7_KEYS[x] + '의')]), k, (x) => reset(() => setK(x)))}
       <div style={{display:'flex',justifyContent:'center',gap:6,margin:'2px 0 6px'}}>{nm.map((x, j) => <span key={j} style={{minWidth:40,padding:'5px 6px',borderRadius:8,border:'1.5px solid ' + (j === got && !done ? BK.coral : 'rgba(38,41,107,0.25)'),textAlign:'center',fontWeight:900,fontSize:15,color:j < got ? (done ? BK.green : BK.coral) : BK.muted}}>{j < got ? x : '?'}</span>)}</div>
       <SpKb lo={-12} hi={19} W={14} H={70} lit={lit} names={Object.fromEntries(N.slice(0, got).map((x, j) => [x, nm[j]]).concat(ton.filter(x => x >= -12 && x <= 19).map(x => [x, KN])))} onTap={tap} up={done && F && F.R ? Object.fromEntries(N.map((x, j) => [x, F.R[j]])) : {}} label={t('Build the chord', '화음 쌓기')}/>
+      {lbScreen() && got > 0 && <SpRunStaff label={(kind === 'dom' ? t('The dominant 7th of ', '딸림7화음: ') : t('The diminished 7th of ', '감7화음: ')) + KN} rows={[{ hand: 'R', keys: N.slice(0, got), names: nm.slice(0, got) }]}/>}
       {spMsg(done ? t((kind === 'dom' ? 'The dominant 7th of ' : 'The diminished 7th of ') + KN + ': ' + nm.join(' ') + (F ? '. Right hand ' + F.R.join(' ') + '.' : '.'), KN + (kind === 'dom' ? '의 딸림7: ' : '의 감7: ') + nm.join(' ') + (F ? '. 오른손 ' + F.R.join(' ') + '.' : '.'))
         : bad != null ? t('Not that one. ', '그 건반이 아니에요. ') + ask : ask, done ? BK.green : bad != null ? BK.coral : undefined)}
       <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap',marginTop:8}}>
@@ -42636,6 +43087,7 @@ function Dom7InvPad({ keys = ['D', 'Ab'], onResult, fixed, note, bpm = 72 }) {
       {!fixed && spChips([0, 1, 2, 3].map(p => [p, t(D7_POS[p][0], D7_POS[p][1])]), inv, (x) => reset(() => setInv(x)))}
       <div style={{display:'flex',justifyContent:'center',gap:6,margin:'2px 0 6px'}}>{nm.map((x, j) => <span key={j} style={{minWidth:40,padding:'5px 6px',borderRadius:8,border:'1.5px solid ' + (j === inv ? BK.coral : 'rgba(38,41,107,0.25)'),background:j === inv ? '#fbe3da' : '#fff',textAlign:'center',fontWeight:900,fontSize:15,color:BK.ink}}>{x}<div style={{fontSize:10,fontWeight:800,color:BK.muted}}>{['1', '3', '5', '7'][j]}</div></span>)}</div>
       <SpKb lo={-12} hi={hiK} W={hiK > 19 ? 12 : 14} H={70} lit={lit} names={Object.fromEntries(N.map((x, j) => [x, nm[j]]))} onTap={tap} label={t('Find the first note', '첫 음 찾기')}/>
+      {lbScreen() && <SpRunStaff label={t(D7_POS[inv][0], D7_POS[inv][1])} rows={[{ hand: 'R', keys: [0, 1, 2, 3, 4].map(j => N[(inv + j) % 4] + 12 * Math.floor((inv + j) / 4)), names: [0, 1, 2, 3, 4].map(j => nm[(inv + j) % 4]), hl: [0] }]}/>}
       {spMsg(hit ? t(D7_POS[inv][0] + ': it starts on ' + nm[inv] + ': ' + [0, 1, 2, 3, 4].map(j => nm[(inv + j) % 4]).join(' ') + '…', D7_POS[inv][1] + ': ' + nm[inv] + '에서 시작: ' + [0, 1, 2, 3, 4].map(j => nm[(inv + j) % 4]).join(' ') + '…') : bad != null ? t('Not that one: count along the chord, A C♯ E G.', '그 건반이 아니에요: 화음을 따라 세어요.') : t(D7_POS[inv][0] + ': where does it start?', D7_POS[inv][1] + ': 어디서 시작할까요?'), hit ? BK.green : bad != null ? BK.coral : undefined)}
       <div style={{display:'flex',gap:8,justifyContent:'center',flexWrap:'wrap',marginTop:8}}>
         <button className="ghost-btn" style={spBtn} onClick={run}>{t('▶ Hear it, two octaves', '▶ 두 옥타브 듣기')}</button>
@@ -50814,6 +51266,131 @@ function llShort(clef, d) {
 // the three Cs a ledger note hops from, as pictures to circle: the turtle (low C), Clara (her C), the bird (high C)
 const llCPick = (on) => <span style={{display:'inline-flex',gap:3}}>{[[14, [...fsTurtle(22, 26, 0.8)]], [28, sfMidKey(22, 22, 0.9)], [42, [...fsBird(22, 26, 1)]]].map(([c, sh]) => <span key={c} style={{width:40,height:40,borderRadius:20,border:'1.6px solid ' + (on === c ? BK.coral : 'transparent'),display:'inline-flex',alignItems:'center',justifyContent:'center'}}><PenArt shapes={sh} vb={[0, 0, 44, 44]} style={{width:34}}/></span>)}</span>;
 
+// Build EG (her 1 Nov 10:39 and 14:37): the Prelim Workbooks, fun first -- only the parts better changed, each swapped
+// for a game that practises the same thing, none added.
+
+// Chapter 17, Ledger Lines, page 2: PLAY counted the same ladders YOUR TURN had just drawn. Now the ladder race: a track
+// of 14 squares, a note without its ladders on each of the first 13. Write how many ladders each note needs; then from
+// square 1 move that many squares each time. The right counts land exactly on the flag (square 14); from any square off
+// the path the counts overshoot it, so the flag checks the counting. Notes from the room's own (the sky, the sea and
+// between the staves: 1 to 3 ladders). Path 1 3 6 7 9 12, then the flag.
+const LL_RACE = [['treble', 42], ['bass', 13], ['treble', 44], ['bass', 15], ['bass', 12], ['treble', 28], ['bass', 14], ['treble', 43], ['treble', 44], ['bass', 29], ['treble', 26], ['bass', 30], ['bass', 12]];
+const llRaceRun = (from) => { const out = []; let s = from; while (s < LL_RACE.length) { out.push(s); s += llRungCount(...LL_RACE[s]); } return { path: out, end: s }; };
+const llRacePath = () => llRaceRun(0).path;
+function LlRaceSq({ i }) {
+  const flag = i === LL_RACE.length, sq = LL_RACE[i];
+  return <div style={{position:'relative',height:100,border:'1px solid rgba(38,41,107,0.32)',borderRadius:3,background:i % 2 ? 'rgba(38,41,107,0.055)' : '#fff',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-between',padding:'12px 2px 4px',minWidth:0}} data-race={i}>
+    <span style={{position:'absolute',top:1,left:5,fontFamily:LB_SERIF,fontStyle:'italic',fontWeight:700,fontSize:13,color:BK.muted}}>{i + 1}</span>
+    {i === 0 && <span style={{position:'absolute',top:0,right:4,fontSize:10,fontWeight:900,color:BK.coral,letterSpacing:'0.04em'}}>★ start</span>}
+    {flag
+      ? <svg viewBox="0 0 40 60" style={{width:40,margin:'auto'}}><line x1="12" y1="6" x2="12" y2="56" stroke={BK.ink} strokeWidth="2.4"/><path d="M12 6 L36 14 L12 22 Z" fill={BK.coral}/><line x1="4" y1="56" x2="22" y2="56" stroke={BK.ink} strokeWidth="2.4"/></svg>
+      : <><div style={{width:58,flex:'1 1 auto',display:'flex',alignItems:'center'}}><PaperStaff clef={sq[0]} notes={[{ d: sq[1], rungs: [] }]} width={92} guides={sq[1] > CLEFS[sq[0]].high ? [3, 0] : [0, 3]}/></div>
+        <span style={{flex:'0 0 auto',display:'flex'}}>{nvBox(i === 0, String(llRungCount(...sq)), 32, 22)}</span></>}
+  </div>;
+}
+function LlRace() {
+  const N = LL_RACE.length + 1, top = Array.from({ length: 7 }, (_, i) => i), low = Array.from({ length: N - 7 }, (_, i) => N - 1 - i);
+  return <div style={{display:'grid',gap:4}}>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(7, 1fr)',gap:6}}>{top.map(i => <LlRaceSq key={i} i={i}/>)}</div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(7, 1fr)',gap:6}}><span style={{gridColumn:7,textAlign:'center',color:BK.coral,fontSize:13,fontWeight:900,lineHeight:1}}>↓</span></div>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(7, 1fr)',gap:6}}>{low.map(i => <LlRaceSq key={i} i={i}/>)}</div>
+  </div>;
+}
+
+// A plain keyboard for the Workbook games: white keys lo..hi (semitones from middle C = 0), keys in `lit` pale, letters on
+// the keys in `names`, and extra marks drawn by `draw(kx, top, H)`.
+const kbIsW = (s) => [0, 2, 4, 5, 7, 9, 11].includes(((s % 12) + 12) % 12);
+const kbWIdx = (s) => Math.floor(s / 12) * 7 + [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6][((s % 12) + 12) % 12];
+function WbKb({ lo, hi, w = 30, h = 92, top = 6, below = 6, lit = new Set(), names = {}, draw, width }) {
+  const w0 = kbWIdx(lo), nw = kbWIdx(hi) - w0 + 1, bw = w * 0.6, bh = h * 0.6, W = nw * w + 4;
+  const kx = (s) => 2 + (kbWIdx(s) - w0 + (kbIsW(s) ? 0.5 : 1)) * w, keys = []; for (let s = lo; s <= hi; s++) keys.push(s);
+  return <svg viewBox={'0 0 ' + W + ' ' + (top + h + below)} style={{width:width || W,maxWidth:'100%',display:'block'}}>
+    {keys.filter(kbIsW).map(s => <rect key={'w' + s} x={2 + (kbWIdx(s) - w0) * w} y={top} width={w} height={h} rx="2" fill={lit.has(s) ? '#fbe3da' : '#fff'} stroke={BK.ink} strokeWidth="1.2"/>)}
+    {keys.filter(s => !kbIsW(s)).map(s => <g key={'b' + s}><rect x={kx(s) - bw / 2} y={top} width={bw} height={bh} rx="1.5" fill={BK.ink}/>{lit.has(s) && <circle cx={kx(s)} cy={top + bh - 8} r="3.2" fill={BK.coral}/>}</g>)}
+    {keys.map(s => names[s] == null ? null : <text key={'n' + s} x={kx(s)} y={kbIsW(s) ? top + h - 8 : top + bh - 15} textAnchor="middle" fontSize={kbIsW(s) ? 12 : 8.5} fontWeight="900" fill={kbIsW(s) ? BK.ink : '#fff'} style={{fontFamily:'Inter, sans-serif'}}>{names[s]}</text>)}
+    {draw && draw(kx, top, h)}
+  </svg>;
+}
+const wbTick = (label) => <span style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:12,fontWeight:800,color:BK.ink,whiteSpace:'nowrap'}}><span style={{width:15,height:15,border:'1.5px solid ' + BK.ink,borderRadius:3,background:'#fff'}}/>{label}</span>;
+const wbLetterBox = (x, opts = {}) => <span style={{width:opts.w || 30,height:opts.h || 30,boxSizing:'border-box',border:'1.5px solid ' + (opts.ex ? BK.coral : opts.given ? BK.ink : BK.line),borderRadius:5,display:'inline-flex',alignItems:'center',justifyContent:'center',fontFamily:LB_SERIF,fontSize:(opts.h || 30) * 0.5,fontWeight:800,fontStyle:opts.ex ? 'italic' : 'normal',color:opts.ex ? BK.coral : BK.ink,background:'#fff'}}>{x}</span>;
+
+// Chapter 19, Playing Scales, page 3: PLAY was sums ("at 76, more or less than 15 seconds?"). Now the four-bar scale: one
+// note a beat, up and back, the last note held for two beats (the room's own way) -- 15 notes and the hold fill four bars
+// of four beats exactly, so the boxes check the counting. Then play it at 60.
+const spFourBar = (k) => { const up = spNames(k, 1); return up.concat(up.slice(0, 7).reverse()).concat(['–']); };
+function SpFourBars({ k, n, ex }) {
+  const seq = spFourBar(k);
+  return <div style={{display:'grid',gridTemplateColumns:'84px auto',alignItems:'end',gap:8,justifyContent:'center'}}>
+    <span style={{display:'flex',alignItems:'center',gap:8,fontFamily:LB_SERIF,fontSize:15,fontWeight:800,color:BK.ink,paddingBottom:6}}>{nvNum(n)} {SP_SC[k].en}</span>
+    <div style={{display:'flex',alignItems:'flex-end'}}>{[0, 1, 2, 3].map(b => <div key={b} style={{display:'flex',alignItems:'flex-end',padding:'0 5px',borderRight:'1.6px solid ' + BK.ink,borderLeft:b === 0 ? '1.6px solid ' + BK.ink : 'none'}}>
+      {[0, 1, 2, 3].map(j => <div key={j} style={{display:'grid',justifyItems:'center',gap:2,margin:'0 2px'}}><span style={{fontSize:9.5,fontWeight:800,color:BK.muted}}>{j + 1}</span>{wbLetterBox(ex && b === 0 && j === 0 ? seq[0] : '', { ex: ex && b === 0 && j === 0, w: 26, h: 36 })}</div>)}</div>)}</div>
+  </div>;
+}
+function SpFourBarPlay() {
+  return <div style={{display:'grid',gap:26,justifyItems:'center',padding:'4px 0'}}>
+    <SpFourBars k="C" n={5} ex/><SpFourBars k="G" n={6}/>
+    <div style={{display:'flex',gap:22,flexWrap:'wrap',justifyContent:'center'}}>{wbTick('C major at 60')}{wbTick('G major at 60')}{wbTick('both at 76')}</div>
+  </div>;
+}
+
+// Chapter 20, Minor Scales, page 3: PLAY matched the same four pairs YOUR TURN had just written. Now the twins at the
+// piano: a major key and its minor twin share a key signature, so the natural minor plays the same keys from another
+// home. The keys lit, a navy bracket over the major scale and a red one under the minor; play both, hear the twin.
+const MS_TWINS = [['C', 'Am', 0, -3], ['G', 'Em', 7, 4], ['F', 'Dm', 5, 2]];   // [major, its natural minor twin, the major's home, the twin's home]
+function MsTwinRow({ tw }) {
+  const [M, m, hM, hm] = tw, S = SP_SC[M], lit = new Set(), names = {}, lo = hm, hi = hM + 12;
+  for (let s = lo; s <= hi; s++) { const j = S.steps.indexOf(((s - hM) % 12 + 12) % 12); if (j >= 0) { lit.add(s); names[s] = S.nm[j]; } }
+  const br = (kx, a, b, y, c, up) => <path d={'M' + (kx(a) - 6) + ' ' + (y + (up ? 6 : -6)) + ' V' + y + ' H' + (kx(b) + 6) + ' V' + (y + (up ? 6 : -6))} fill="none" stroke={c} strokeWidth="2"/>;
+  return <div style={{display:'grid',gridTemplateColumns:'118px auto 1fr',alignItems:'center',gap:14}}>
+    <div style={{display:'grid',gap:4,fontFamily:LB_SERIF,fontSize:15,fontWeight:800,lineHeight:1.15}}><span style={{color:BK.ink}}>{S.en}</span><span style={{color:BK.coral}}>{SP_SC[m].en.replace('natural ', '')}</span></div>
+    <WbKb lo={lo} hi={hi} w={30} h={84} top={22} below={22} lit={lit} names={names} width={310}
+      draw={(kx, top, h) => <g>{br(kx, hM, hM + 12, top - 10, BK.ink, true)}{br(kx, hm, hm + 12, top + h + 10, BK.coral, false)}
+        <text x={kx(hM)} y={top - 13} textAnchor="middle" fontSize="13" fill={BK.ink}>★</text><text x={kx(hm)} y={top + h + 21} textAnchor="middle" fontSize="13" fill={BK.coral}>★</text></g>}/>
+    <div style={{display:'grid',gap:8}}>{wbTick('major, up and down')}{wbTick('minor, up and down')}</div>
+  </div>;
+}
+const MsTwinsPlay = () => <div style={{display:'grid',gap:14,justifyItems:'center',padding:'4px 0'}}>{MS_TWINS.map(tw => <MsTwinRow key={tw[0]} tw={tw}/>)}</div>;
+
+// Chapter 20, Minor Scales, page 5: PLAY asked for the code of steps "from memory" with the answer in the boxes above.
+// Now the step trail of chapter 13, with the tone and a half: from the star on E, T S T T S T½ S (the room's harmonic
+// minor steps); the seventh step lands on the flag, so the flag checks the trail. Then name the scale: E harmonic minor.
+const MS_TRAIL = { m: 'E', home: 4, nm: 'Emh' };
+const msTrailMoves = () => SP_HAR.concat([12]).slice(1).map((x, i) => x - SP_HAR[i]);
+const msTrailKeys = () => SP_HAR.concat([12]).slice(1).map(x => MS_TRAIL.home + x);
+const MS_STEP = { 1: 'S', 2: 'T', 3: 'T½' };
+function MsTrail() {
+  const lo = MS_TRAIL.home, hi = MS_TRAIL.home + 12, end = hi;
+  const slots = (kx, top, h) => { const out = []; for (let s = lo + 1; s <= hi; s++) out.push(<circle key={s} cx={kx(s)} cy={kbIsW(s) ? top + h - 17 : top + h * 0.6 - 13} r={kbIsW(s) ? 12 : 10} fill={kbIsW(s) ? 'none' : '#fff'} stroke={BK.ink} strokeWidth="0.9" strokeOpacity={kbIsW(s) ? 0.45 : 0}/>); return out; };
+  return <div style={{display:'grid',gap:18,justifyItems:'center',padding:'0 6px'}}>
+    <WbKb lo={lo} hi={hi} w={52} h={104} top={32} below={4} width={470} draw={(kx, top, h) => <g>{slots(kx, top, h)}
+      <text x={kx(lo)} y={top + h - 9} textAnchor="middle" fontSize="24" fill={BK.coral}>★</text>
+      <text x={kx(lo)} y={top - 10} textAnchor="middle" fontSize="12" fontWeight="900" fill={BK.coral}>start</text>
+      <g transform={'translate(' + kx(end) + ' ' + (top - 4) + ')'}><line x1="0" y1="0" x2="0" y2="-26" stroke={BK.ink} strokeWidth="1.8"/><path d="M0 -26 L16 -21 L0 -16 Z" fill={BK.coral}/></g></g>}/>
+    <div style={{display:'flex',flexWrap:'wrap',gap:'8px 22px',justifyContent:'center',alignItems:'center'}}>{msTrailMoves().map((n, i) => <span key={i} style={{display:'inline-flex',alignItems:'center',gap:7,fontSize:14,fontWeight:800,color:BK.ink,whiteSpace:'nowrap'}}>
+      <span style={{fontFamily:LB_SERIF,fontStyle:'italic',fontWeight:700,fontSize:15}}>{i + 1}</span>{MS_STEP[n]} up</span>)}</div>
+    <span style={{display:'inline-flex',alignItems:'center',gap:8,fontSize:14,fontWeight:800,color:BK.ink}}>The scale: {bkBox(50, 32)} harmonic minor</span>
+  </div>;
+}
+
+// Chapter 20, Minor Scales, page 6: YOUR TURN needed someone at home to play the scales. Now the same tune, darker: the
+// tunes of Hand Positions (Hot cross buns, Mary had a little lamb: the steps from MT_SONGS) in a major key; the child
+// writes the same steps in its minor twin and plays both -- the minor third makes it darker. Alone, by ear. The tunes use
+// no 7th, so this is the natural minor and the harmonic minor alike: the page says minor.
+const MS_TUNES = [[0, 'C', 'Am'], [1, 'C', 'Am'], [1, 'G', 'Em'], [0, 'F', 'Dm']];
+const msTuneLetters = (k, steps) => steps.map(d => SP_SC[k].nm[d - 1]);
+function MsTuneCard({ tu, n, ex }) {
+  const [si, M, m] = tu, steps = MT_SONGS[si][2], bx = { w: 28, h: 28 };
+  const row = (label, c, cells) => <div style={{display:'grid',gridTemplateColumns:'64px auto',alignItems:'center',gap:6}}><span style={{fontSize:11.5,fontWeight:900,color:c}}>{label}</span><div style={{display:'flex',gap:3}}>{cells}</div></div>;
+  return <ExCell n={n} ex={ex}><div style={{display:'grid',gap:4,padding:'16px 4px 2px'}}>
+    <span style={{fontFamily:LB_SERIF,fontStyle:'italic',fontSize:14.5,fontWeight:700,color:BK.ink}}>{MT_SONGS[si][0]}</span>
+    {row('steps', BK.muted, steps.map((d, j) => <span key={j} style={{width:bx.w,textAlign:'center',fontSize:11,fontWeight:900,color:BK.muted}}>{d}</span>))}
+    {row(SP_SC[M].en, BK.ink, msTuneLetters(M, steps).map((x, j) => <span key={j}>{wbLetterBox(x, { ...bx, given: true })}</span>))}
+    {row(SP_SC[m].en.replace('natural ', ''), BK.coral, msTuneLetters(m, steps).map((x, j) => <span key={j}>{wbLetterBox(ex ? x : '', { ...bx, ex })}</span>))}
+    <div style={{display:'flex',justifyContent:'flex-end',marginTop:2}}>{wbTick('played both')}</div>
+  </div></ExCell>;
+}
+const MsTunes = () => <BkGrid cols={2} gap="8px 10px">{MS_TUNES.map((tu, i) => <MsTuneCard key={i} tu={tu} n={5 + i} ex={i === 0}/>)}</BkGrid>;
+
 function LedgerWorkbook({ startNo = 1 }) {
   const W = useMemo(() => llWorkbook(), [LANG]);
   const pages = [];
@@ -50846,9 +51423,8 @@ function LedgerWorkbook({ startNo = 1 }) {
         <PaperStaff clef={cl} notes={[{ d, rungs: i === 0 ? null : [], rungC: BK.coral, color: i === 0 ? BK.coral : undefined }]} width={92} guides={d > CLEFS[cl].high ? [3, 0] : [0, 3]}/>
       </div></ExCell>)}</BkGrid>
     </Part>
-    <Part kind="play" title="How many ladders?" how="The ladders are missing. Count the dotted lines out to each note: how many does it need? 0, 1, 2 or 3.">
-      {(() => { const xs = sfXs(W.count.length, 440, true); return <SfRow clef="treble" width={440} notes={W.count.map((d, i) => ({ d, x: xs[i], rungs: [] }))} guides={[3, 2]}
-        items={W.count.map((d, i) => ({ x: xs[i], n: 14 + i, ex: i === 0, ans: String(llRungCount('treble', d)) }))}/>; })()}
+    <Part kind="play" title="The ladder race" how="Write each note's ladders. Then from the star, move that many squares each time: land exactly on the flag!">
+      <LlRace/>
     </Part>
     <Faces/>
   </>);
@@ -50964,8 +51540,8 @@ function LedgerTeacher() {
   P(<>
     <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:28,fontWeight:900,color:BK.ink,margin:'2px 0 2px'}}>Teacher copy · {bkChapterName('ledger-lines')}</div>
     <div style={{fontSize:12.5,color:BK.muted,margin:'0 0 12px',lineHeight:1.5}}>Answers for every workbook page, the mistakes students make most, and a line to say when they get stuck. Its other spelling is leger line. Some books teach the ledger notes as four lists: A C E above the treble staff, C A F below it, C E G above the bass staff, E C A below it; this book counts out of each staff and reads from the five Cs instead. The lists' third notes between the staves (F three ladders under the treble staff, G three ladders over the bass staff) come later. AMEB: Preliminary needs one ladder below the treble staff; Grade 1 one ladder above and below both staves; Grade 2 up to three.</div>
-    <TcBlock page={2} title="Middle C's short line is a ledger line" answers={<>{tcAns('TRY IT', W.neat.map(([, , f]) => f ? '✗ (' + (f === 'gap' ? 'a gap' : f === 'long' ? 'too long' : 'a lid on top') + ')' : '✓'))}{tcAns('YOUR TURN', W.draw.map(([cl, d]) => dName(d) + ': ' + llRungCount(cl, d)), 6)}{tcAns('PLAY', W.count.map(d => String(llRungCount('treble', d))), 14)}</>}
-      watch="Ladders drawn as one long line, a gap between the staff and the note, a lid on a note in a space (one line too many on top), ladders further apart than the staff lines. The notes just outside the staff (G over the treble staff, F under the bass staff) need no ladder."
+    <TcBlock page={2} title="Middle C's short line is a ledger line" answers={<>{tcAns('TRY IT', W.neat.map(([, , f]) => f ? '✗ (' + (f === 'gap' ? 'a gap' : f === 'long' ? 'too long' : 'a lid on top') + ')' : '✓'))}{tcAns('YOUR TURN', W.draw.map(([cl, d]) => dName(d) + ': ' + llRungCount(cl, d)), 6)}{tcAns('PLAY', LL_RACE.map(([cl, d]) => dName(d) + ' ' + llRungCount(cl, d)))}{tcAns('THE RACE', ['squares ' + llRacePath().map(i => i + 1).join(', ') + ', then the flag (14)'], null)}</>}
+      watch="Ladders drawn as one long line, a gap between the staff and the note, a lid on a note in a space (one line too many on top), ladders further apart than the staff lines. The notes just outside the staff (G over the treble staff, F under the bass staff) need no ladder. In the ladder race one wrong count takes the counter off the path, and from every square off it the counts run past the flag: if it does not land on the flag, look for the note counted wrong."
       say="“Count the ladders out from the staff: line, space, ladder…”"/>
     <TcBlock page={3} title="Up into the sky" answers={<>{tcAns('TRY IT', W.sky.tog.map((d, i) => W.sky.given.includes(i) || i === W.sky.ex ? null : dName(d) + ' ' + llShort('treble', d)).filter(Boolean), null)}{tcAns('YOUR TURN', W.sky.home.map(dName))}{tcAns('PLAY', LL_WORDS_SKY.map(w => w.word + ': ' + w.notes.map(d => dName(d) + ' ' + llShort('treble', d)).join(', ')), 9)}</>}
       watch="Counting the ladders wrong: starting from the wrong line (start on the top line, F), or calling the space just over the staff a ladder. High C is on ladder 2, not ladder 3."
@@ -51650,10 +52226,8 @@ function TnWorkbook({ startNo = 1 }) {
     <Part kind="home" title="Up or down?" how="Go a whole step the way the arrow says, and mark that key.">
       <BkGrid cols={2} gap="8px 10px">{W.upDown.map(([k, dir], i) => keyCell(i + 5, false, { you: [k], arrow: [k, dir, 2.1] }, null, true))}</BkGrid>
     </Part>
-    <Part kind="play" title="Half or whole?" how="The two red keys: a half step or a whole step apart? Circle one.">
-      <BkGrid cols={4} gap="8px 8px">{W.pairs.map((pr, i) => <ExCell key={i} n={i + 9} ex={i === 0}><div style={{padding:'14px 2px 3px'}}>
-        <TnPKeys whites={8} w={26} h={72} you={pr}/>
-        <div style={{display:'flex',justifyContent:'center',marginTop:4}}>{wsChoose(['half', 'whole'], i === 0 ? tnPairStep(pr) : null)}</div></div></ExCell>)}</BkGrid>
+    <Part kind="play" title="The step trail" how="From the star, write each move's number on the key it lands on. Move 7 ends on the flag!">
+      <TnTrail/>
     </Part>
     <Faces/>
   </>);
@@ -51767,7 +52341,7 @@ function TnTeacher() {
     <TcBlock page={2} title="A half step: a semitone" answers={<>{tcAns('TRY IT', W.halfUp.map(k => nm(k) + ' → ' + nm(tnStep(k, 1))))}{tcAns('YOUR TURN', W.halfDown.map(k => nm(k) + ' → ' + nm(tnStep(k, -1))), 5)}{tcAns('PLAY', W.count.map(([a, b]) => nm(a) + ' to ' + nm(b) + ': ' + (TN_PC[b] - TN_PC[a])), 9)}</>}
       watch="Counting the key they stand on as the first step (“C, C♯, D: three!”). Skipping the black key and landing on the next white key. From E and B a half step up is a white key: there is no black key on their right."
       say="“Count the steps, not the keys: the first step lands on the very next key.”"/>
-    <TcBlock page={3} title="A whole step: a tone" answers={<>{tcAns('TRY IT', W.wholeUp.map(k => nm(k) + ' → ' + nm(tnStep(k, 2))))}{tcAns('YOUR TURN', W.upDown.map(([k, d]) => nm(k) + (d > 0 ? ' up → ' : ' down → ') + nm(tnStep(k, 2 * d))), 5)}{tcAns('PLAY', W.pairs.map(p => nm(p[0]) + ' ' + nm(p[1]) + ': ' + tnPairStep(p)), 9)}</>}
+    <TcBlock page={3} title="A whole step: a tone" answers={<>{tcAns('TRY IT', W.wholeUp.map(k => nm(k) + ' → ' + nm(tnStep(k, 2))))}{tcAns('YOUR TURN', W.upDown.map(([k, d]) => nm(k) + (d > 0 ? ' up → ' : ' down → ') + nm(tnStep(k, 2 * d))), 5)}{tcAns('PLAY', [tnTrailKeys().map((k, i) => (i + 1) + ' ' + nm(k)).join(', ') + ': move 7 on the flag'], 9)}</>}
       watch="Thinking a whole step is always from a white key to the next white key: E to F is not. From E a whole step up is the black key F♯; from F a whole step down is E♭. A whole step can be black to black (F♯ to G♯)."
       say="“Two half steps: one key in between.”"/>
     <TcBlock page={4} title="White half steps: E F and B C" answers={<>{tcAns('TRY IT', ['1-7: ' + hw('C')], null)}{tcAns('YOUR TURN', ['8-14: ' + hw('A')], null)}{tcAns('PLAY', ['6 circles: E F and B C in each of the three octaves'], null)}</>}
@@ -53525,7 +54099,7 @@ const NV_WB = {
   count3: [[['q', 1], ['q', 1], ['h', 2]], [['h', 2], ['h', 2]]],
   // p4: longer notes
   beats4: ['hd', 'w', 'q', 'h', 'w', 'hd', 'h', 'q'],
-  lines4: [[['hd', 3], ['q', 1]], [['w', 4]], [['q', 1], ['hd', 3]], [['h', 2], ['h', 2]]],
+  // (the hidden note, NV_HIDE, is YOUR TURN here)
   count4: [[['hd', 3], ['q', 1]], [['w', 4]]],
   // p5: quavers
   walkRun: ['p', 'q', 'q', 'p', 'p', 'q', 'p', 'q'],
@@ -53564,6 +54138,126 @@ function NvFiveLines({ k, ex }) {
   </svg>;
 }
 
+// ── Build EF (her 31 Oct 23:05 and 23:22: the Workbooks, fun first, the Beginner floor; only the parts better changed,
+// each swapped for a game that practises the same thing, never a part added). Chapter 7, page 4: the hidden note. Colour
+// every note that lasts 3 beats and a big dotted minim appears (its hollow head, its stem, its dot); the child circles
+// its name and writes its beats, so the picture checks the colouring. The other cells hold minims (the one to mix up, so
+// the most of them), crotchets and semibreves.
+const NV_HIDE = ['......X....', '......X....', '......X....', '...XXXX....', '..X...X.X..', '..XXXX.....'];
+const NV_HIDE_CELLS = (() => {
+  const R = bkRand(bkHash('nv-wb-hide')), others = [...Array(21).fill('h'), ...Array(16).fill('q'), ...Array(15).fill('w')];
+  for (let i = others.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [others[i], others[j]] = [others[j], others[i]]; }
+  let o = 0;
+  return NV_HIDE.join('').split('').map(c => (c === 'X' ? 'hd' : others[o++]));
+})();
+function NvHidden({ cell = 36, solved = false }) {
+  const C = NV_HIDE[0].length, R = NV_HIDE.length;
+  return <div style={{display:'grid',gridTemplateColumns:'24px auto auto',justifyContent:'center',alignItems:'center',gap:'0 26px',padding:'2px 0'}}>
+    <span style={{alignSelf:'start'}}>{nvNum(9)}</span>
+    <svg data-nv-hidden viewBox={'0 0 ' + C * cell + ' ' + R * cell} style={{width:C * cell,maxWidth:'100%',display:'block'}}>
+      {NV_HIDE_CELLS.map((k, i) => { const x = (i % C) * cell, y = Math.floor(i / C) * cell;
+        return <g key={i} data-k={k}>
+          <rect x={x + 0.5} y={y + 0.5} width={cell - 1} height={cell - 1} fill={solved && k === 'hd' ? BK.coral : '#fff'} fillOpacity={solved && k === 'hd' ? 0.45 : 1} stroke={BK.line} strokeWidth="1"/>
+          <svg x={x + 2} y={y + 2} width={cell - 4} height={cell - 4} viewBox="14 16 52 56" dangerouslySetInnerHTML={{ __html: nvGlyphRaw(k) }}/>
+        </g>; })}
+    </svg>
+    <div style={{display:'grid',gap:10,justifyItems:'start',minWidth:0}}>
+      <span style={{fontSize:12.5,fontWeight:900,color:BK.ink}}>The note that appears:</span>
+      <div style={{display:'grid',gap:6}}>{['minim', 'dotted minim', 'semibreve'].map(w => <span key={w}>{nvChoose([w])}</span>)}</div>
+      <span style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:12.5,fontWeight:800,color:BK.ink}}>It lasts {bkBox(36, 30)} beats</span>
+    </div>
+  </div>;
+}
+
+// Chapter 5, Hand positions. Page 6's PLAY 'Make your own echo' was free and needed someone at home (Book rules 3 and 4):
+// now the finger code, four rows of finger numbers (each hand, each position) whose letters spell a word, so the word
+// checks the letters. Page 7's PLAY 'Write your own tune' was free: now the same tune, higher, the room's two tunes
+// (MT_SONGS) in C position and in G position. Page 5's 'Draw the mirror' asked for two hands traced in a box 3 cm tall and
+// pushed the page over: now the mirror's missing numbers. Pages 3 and 4's PLAY pictures are drawn big enough to fill.
+const HP_CODE = [['R', 'C', [3, 5, 5]], ['R', 'G', [3, 2, 1]], ['L', 'C', [2, 3, 4]], ['L', 'G', [1, 4, 1]]];   // EGG BAG FED DAD
+const hpLetter = (pos, h, f) => (pos === 'C' ? 'CDEFG' : 'GABCD')[h === 'R' ? f - 1 : 5 - f];
+const hpRing = (x, size = 30) => <span style={{width:size,height:size,borderRadius:size / 2,border:'2px solid ' + BK.ink,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:size * 0.52,fontWeight:900,color:BK.ink,background:'#fff'}}>{x}</span>;
+function HpCodeCell({ row, n, ex }) {
+  const [h, pos, fs] = row;
+  return <ExCell n={n} ex={ex}><div style={{display:'grid',justifyItems:'center',gap:10,padding:'22px 4px 14px'}}>
+    <div style={{fontSize:12.5,fontWeight:900,color:BK.muted}}>{hpwHand(h)}, {pos} position</div>
+    <div style={{display:'flex',gap:20}}>{fs.map((f, i) => <div key={i} style={{display:'grid',justifyItems:'center',gap:8}}>{hpRing(f, 40)}{nvBox(ex, hpLetter(pos, h, f), 44, 42)}</div>)}</div>
+  </div></ExCell>;
+}
+function HpSameTune({ ex0 = true }) {
+  return <div style={{display:'grid',gap:12}}>{MT_SONGS.map(([name, , seq], r) => <div key={name} style={{border:'1px solid rgba(38,41,107,0.16)',borderRadius:10,padding:'8px 10px',display:'grid',gap:6}}>
+    <span style={{fontFamily:LB_SERIF,fontSize:14,fontWeight:800,color:BK.ink}}>{name}</span>
+    <div style={{display:'grid',gridTemplateColumns:'86px repeat(' + seq.length + ', 36px)',gap:'6px 6px',alignItems:'center',justifyItems:'center',justifyContent:'start'}}>
+      <span style={{justifySelf:'start',fontSize:11,fontWeight:900,color:BK.muted}}>Fingers</span>{seq.map((f, i) => <span key={i}>{hpRing(f, 28)}</span>)}
+      {['C', 'G'].map(pos => <React.Fragment key={pos}><span style={{justifySelf:'start',fontSize:11.5,fontWeight:900,color:BK.ink}}>{pos} position</span>{seq.map((f, i) => <span key={i}>{nvBox(ex0 && r === 0 && i === 0, hpLetter(pos, 'R', f), 32, 30)}</span>)}</React.Fragment>)}
+    </div></div>)}</div>;
+}
+function HpMirrorFill() {
+  const side = (label, s) => <div style={{display:'grid',justifyItems:'center',gap:6}}>{hpwCircles(s, false, 34)}<span style={{fontSize:11.5,fontWeight:900,color:BK.muted}}>{label}</span></div>;
+  return <div style={{display:'flex',justifyContent:'center',alignItems:'flex-start',gap:22,padding:'6px 0'}}>
+    {side('Left hand', '5 ?4 3 ?2 1')}<span style={{width:0,alignSelf:'stretch',borderLeft:'2px dashed ' + BK.coral}}/>{side('Right hand', '1 ?2 ?3 4 ?5')}
+  </div>;
+}
+function HpLadder() {
+  const L = ['D', '', 'B', '', 'G'], x0 = 70, x1 = 230, y0 = 20, G = 58;
+  return <svg viewBox="0 0 300 300" style={{width:330,maxWidth:'100%',display:'block',margin:'0 auto'}}>
+    <line x1={x0} x2={x0} y1="6" y2="296" stroke={BK.ink} strokeWidth="5" strokeLinecap="round"/><line x1={x1} x2={x1} y1="6" y2="296" stroke={BK.ink} strokeWidth="5" strokeLinecap="round"/>
+    {L.map((l, i) => { const y = y0 + i * G + 20; return <g key={i}>
+      <line x1={x0} x2={x1} y1={y} y2={y} stroke={BK.ink} strokeWidth="4" strokeLinecap="round"/>
+      <rect x="124" y={y - 24} width="52" height="48" rx="8" fill="#fff" stroke={l ? BK.ink : BK.coral} strokeWidth="2"/>
+      {l && <text x="150" y={y + 10} textAnchor="middle" fontFamily={LB_SERIF} fontSize="27" fontWeight="800" fill={BK.ink}>{l}</text>}
+    </g>; })}
+  </svg>;
+}
+
+// Chapter 8, Dynamics, page 3: YOUR TURN numbered the signs a second time and circled the louder of two. Now the voice
+// ladder (the everyday voices of the old dynamics opener, VolumeLadder): four voices, each written as loud as it is, the
+// child writes its sign, pp, p, mf or f. Same skill, tied to sounds the child knows.
+const SDY_VOICES = [['classroom talk', 'mf', 19, 800], ['a whisper', 'pp', 13, 600], ['playground shout!', 'f', 23, 900], ['library voice', 'p', 15, 700]];
+function SdyVoices() {
+  return <BkGrid cols={4} gap="8px 10px">{SDY_VOICES.map(([w, sgn, fs, fw], i) => <BkCell key={i} n={i + 2}><div style={{display:'grid',justifyItems:'center',alignContent:'space-between',gap:10,padding:'18px 4px 8px',minHeight:118}}>
+    <span style={{fontSize:fs,fontWeight:fw,fontStyle:sgn === 'pp' ? 'italic' : 'normal',color:sgn === 'pp' ? BK.muted : BK.ink,textAlign:'center',lineHeight:1.1,minHeight:52,display:'flex',alignItems:'center'}}>{sgn === 'f' ? w.toUpperCase() : w}</span>
+    {sdyBox(48, 44)}</div></BkCell>)}</BkGrid>;
+}
+
+// Chapter 10, Steps & Skips, page 3: PLAY drew a single second note four times. Now the secret word: start on the red
+// note, follow the moves, draw each next note and write every letter; the letters spell a word, so the word checks the
+// notes. Two words in C position, so the right hand plays them with the thumb on middle C: EGG (a skip up, the same),
+// FED (a step down, a step down).
+const SSK_WORDS = [[30, [2, 0]], [31, [-1, -1]]];   // E G G, F E D
+function SskWordPath({ start, moves, n }) {
+  const X0 = 66, G = 60, W = X0 + moves.length * G + 34, xs = [X0, ...moves.map((_, i) => X0 + (i + 1) * G)];
+  return <ExCell n={n}><div style={{padding:'12px 6px 8px'}}>
+    <SfRow clef="treble" notes={[{ d: start, x: X0, color: BK.coral }]} width={W} minSpan={[29, 36]} items={moves.map((m, i) => ({ x: xs[i + 1], label: m === 0 ? 'same' : SF_MOVE[m] }))}/>
+    <div style={{position:'relative',height:40,marginTop:6}}>{xs.map((x, i) => <span key={i} style={{position:'absolute',left:(x / W * 100) + '%',transform:'translateX(-50%)',top:0}}>{bkBox(38, 36)}</span>)}</div>
+  </div></ExCell>;
+}
+
+// Chapter 12, Time Signatures, page 3: YOUR TURN wrote four more time signatures, as TRY IT does. Now spot the wrong
+// bar: each tune has one bar with a beat too many; the child counts every bar against the top number and crosses it out.
+const TS_WRONG = [{ top: 3, bars: [['h', 'q'], ['q', 'q', 'q'], ['h', 'h'], ['hd']], wrong: 3 }, { top: 4, bars: [['q', 'q', 'h'], ['w', 'q'], ['h', 'q', 'q'], ['w']], wrong: 2 }];
+
+// Chapter 13, Tones & Semitones, page 3: PLAY asked 'half or whole?' of four more pairs. Now the step trail: from the
+// star, seven moves (whole up, half up, ..., half down); the child writes each move's number on the key it lands on, and
+// the seventh lands on the flag, so the flag checks the trail. C D E♭ F G A♭ B♭, then down to A.
+const TN_TRAIL = { start: 'w0', moves: [[2, 1], [1, 1], [2, 1], [2, 1], [1, 1], [2, 1], [1, -1]] };
+const tnTrailKeys = () => { const out = []; let k = TN_TRAIL.start; TN_TRAIL.moves.forEach(([n, d]) => { k = tnStep(k, n * d); out.push(k); }); return out; };
+function TnTrail() {
+  const w = 50, h = 80, T = 27, bw = w * 0.6, bh = h * 0.6, W = 8 * w + 4, L = (i) => TN_WL[i % 7], hasB = (i) => 'CDFGA'.includes(L(i)) && i < 7;
+  const cx = (k) => k[0] === 'w' ? 2 + (+k.slice(1) + 0.5) * w : 2 + (+k.slice(1) + 1) * w, end = tnTrailKeys().slice(-1)[0];
+  return <div style={{display:'grid',gridTemplateColumns:'auto 1fr',gap:22,alignItems:'center',padding:'0 6px'}}>
+    <svg viewBox={'0 0 ' + W + ' ' + (T + h + 4)} style={{width:380,maxWidth:'100%',display:'block'}}>
+      {Array.from({ length: 8 }, (_, i) => <g key={i}><rect x={2 + i * w} y={T} width={w} height={h} rx="3" fill="#fff" stroke={BK.ink} strokeWidth="1.3"/>
+        {('w' + i) !== TN_TRAIL.start && <circle cx={2 + (i + 0.5) * w} cy={T + h - 15} r="10" fill="none" stroke={BK.ink} strokeWidth="0.9" strokeOpacity="0.45"/>}</g>)}
+      {Array.from({ length: 8 }, (_, i) => hasB(i) && <g key={'b' + i}><rect x={2 + (i + 1) * w - bw / 2} y={T} width={bw} height={bh} rx="2" fill={BK.ink}/><circle cx={2 + (i + 1) * w} cy={T + bh - 12} r="9" fill="#fff"/></g>)}
+      <text x={cx(TN_TRAIL.start)} y={T + h - 9} textAnchor="middle" fontSize="22" fill={BK.coral}>★</text>
+      <text x={cx(TN_TRAIL.start)} y={T - 9} textAnchor="middle" fontSize="11" fontWeight="900" fill={BK.coral}>start</text>
+      <g transform={'translate(' + cx(end) + ' ' + (T - 4) + ')'}><line x1="0" y1="0" x2="0" y2="-24" stroke={BK.ink} strokeWidth="1.8"/><path d="M0 -24 L15 -19 L0 -14 Z" fill={BK.coral}/></g>
+    </svg>
+    <div style={{display:'grid',gridTemplateRows:'repeat(4, auto)',gridAutoFlow:'column',gap:'6px 18px',justifyContent:'start'}}>{TN_TRAIL.moves.map(([n, d], i) => <span key={i} style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:12.5,fontWeight:800,color:BK.ink,whiteSpace:'nowrap'}}>
+      <span style={{fontFamily:LB_SERIF,fontStyle:'italic',fontWeight:700,fontSize:14}}>{i + 1}</span>{(n === 2 ? 'whole' : 'half') + (d > 0 ? ' up' : ' down')}</span>)}</div>
+  </div>;
+}
 function NvWorkbook({ startNo = 1 }) {
   const W = NV_WB, pages = [];
   const P = (content) => pages.push(<WbPage key={pages.length} no={startNo + 1 + pages.length} chId="note-values">{content}</WbPage>);
@@ -53606,11 +54300,11 @@ function NvWorkbook({ startNo = 1 }) {
     <Part kind="together" title="How many beats?" how="Write how many beats each note lasts: 1, 2, 3 or 4.">
       <BkGrid cols={4} gap="8px 10px">{W.beats4.map((k, i) => <NvNameCell key={i} k={k} n={i + 1} ex={i === 0}/>)}</BkGrid>
     </Part>
-    <Part kind="home" title="Draw the sound lines" how="Draw each note's sound line on the dotted line, as long as its beats.">
-      <BkGrid cols={2} gap="8px 12px">{W.lines4.map((row, i) => nvBarCell(row, i, 9, false, () => ({ lines: 'guide', count: 'none' })))}</BkGrid>
+    <Part kind="home" title="The hidden note" how="Colour every note that lasts 3 beats. A note appears: circle its name and write its beats.">
+      <NvHidden/>
     </Part>
     <Part kind="play" title="Count it, then play it" how="Write the count in every box, grey ones too. A grey box is a beat you hold. Then play it on middle C, counting out loud.">
-      <div style={{display:'grid',gap:16}}>{W.count4.map((row, r) => <div key={r} style={{display:'grid',gridTemplateColumns:'24px 1fr',alignItems:'center',gap:6}}>{nvNum(13 + r)}<NvPaperBar row={row} count="boxes" maxW={340}/></div>)}</div>
+      <div style={{display:'grid',gap:16}}>{W.count4.map((row, r) => <div key={r} style={{display:'grid',gridTemplateColumns:'24px 1fr',alignItems:'center',gap:6}}>{nvNum(10 + r)}<NvPaperBar row={row} count="boxes" maxW={340}/></div>)}</div>
     </Part>
     <Faces/>
   </>);
@@ -53684,8 +54378,8 @@ function NvTeacher() {
     <TcBlock page={3} title="The minim: two beats" answers={<>{tcAns('TRY IT', W.qh.map(k => nvNameEn[k] + ', ' + NV_BEATS[k]))}{tcAns('YOUR TURN', W.lines3.map(lineTxt), 9)}{tcAns('PLAY', W.count3.map(cnt), 13)}</>}
       watch="Cutting the minim short: letting go on its second beat, or saying only “1” and going on. The held number is still said, just more quietly."
       say="“Play on 1, hold on 2: keep the key down while you say it.”"/>
-    <TcBlock page={4} title="Longer notes: 3 and 4 beats" answers={<>{tcAns('TRY IT', W.beats4.map(k => nvNameEn[k] + ', ' + NV_BEATS[k]))}{tcAns('YOUR TURN', W.lines4.map(lineTxt), 9)}{tcAns('PLAY', W.count4.map(cnt), 13)}</>}
-      watch="Mixing up the dotted minim (stem, dot) and the semibreve (no stem). Letting a semibreve go after two or three beats."
+    <TcBlock page={4} title="Longer notes: 3 and 4 beats" answers={<>{tcAns('TRY IT', W.beats4.map(k => nvNameEn[k] + ', ' + NV_BEATS[k]))}{tcAns('YOUR TURN', ['the 14 dotted minims coloured: a big dotted minim appears (hollow head, stem, dot); dotted minim circled, 3 beats'], 9)}{tcAns('PLAY', W.count4.map(cnt), 10)}</>}
+      watch="Mixing up the dotted minim (stem, dot) and the semibreve (no stem). In the hidden note, colouring the minims too: look for the dot. Letting a semibreve go after two or three beats."
       say="“The dot adds half the minim: two beats and one more.”"/>
   </>);
   P(<>
@@ -54559,11 +55253,11 @@ function TsWorkbook({ startNo = 1 }) {
     <Part kind="together" title="Write the time signature" how="Count the beats in the bar. Write the top number, and 4 under it. The first one is done.">
       <BkGrid cols={2} gap="8px 14px">{W.sig1.map((r, i) => <ExCell key={i} n={i + 1} ex={i === 0}><div style={{padding:'10px 4px 0'}}><TsPaper mm={4.5} items={tsPaperItems({ ...r, sig: i === 0 ? 'ans' : 'blank' })} o={{ D: 34, hearts: false }}/></div></ExCell>)}</BkGrid>
     </Part>
-    <Part kind="home" title="More time signatures" how="Write the time signature for each bar.">
-      <BkGrid cols={2} gap="8px 14px">{W.sig2.map((r, i) => <ExCell key={i} n={i + 3}><div style={{padding:'10px 4px 0'}}><TsPaper mm={4.5} items={tsPaperItems({ ...r, sig: 'blank' })} o={{ D: 30, hearts: false }}/></div></ExCell>)}</BkGrid>
+    <Part kind="home" title="Spot the wrong bar" how="Each tune has one bar with a beat too many. Count every bar, then cross out the wrong one.">
+      <div style={{display:'grid',gap:8}}>{TS_WRONG.map((r, i) => <ExCell key={i} n={i + 3}><div style={{padding:'12px 4px 2px'}}><TsPaper mm={4.4} items={tsPaperItems(r)} o={{ D: 26, hearts: false }}/></div></ExCell>)}</div>
     </Part>
     <Part kind="play" title="Write it, then play it" how="Write the time signature. Then right hand, finger 3 on G: play it, counting out loud.">
-      <div style={{display:'grid',gap:5}}>{W.sig3.map((r, i) => tsRowN(7 + i, <TsPaper mm={4.1} items={tsPaperItems({ ...r, sig: 'blank' })} o={{ D: 30, hearts: false }}/>, 4.1, false))}</div>
+      <div style={{display:'grid',gap:5}}>{W.sig3.map((r, i) => tsRowN(5 + i, <TsPaper mm={4.1} items={tsPaperItems({ ...r, sig: 'blank' })} o={{ D: 30, hearts: false }}/>, 4.1, false))}</div>
     </Part>
     <Faces/>
   </>);
@@ -54655,7 +55349,7 @@ function TsTeacher() {
     <TcBlock page={2} title="Bars and bar lines" answers={<>{tcLesson('Play the repeat line with the child; at the dots, point back to bar 1 and say “back!”. The count never stops. Ask: how many bars did you play? (4)')}{tcAns('TRY IT', [after(W.bl)])}{tcAns('YOUR TURN', W.bl2.map(after), 2)}{tcAns('PLAY', ['two dots, then a thin and a thick line at the end; play the three bars twice'], 5)}</>}
       watch="Counting on past the top number instead of starting again at 1. A bar line after every note instead of after every bar. At the repeat sign: playing it only once. On paper: repeat dots on the lines or after the double bar line; bar lines that do not reach from the top line to the bottom line."
       say="“Count to the top number, then a bar line, then start again at 1.”"/>
-    <TcBlock page={3} title="The two numbers" answers={<>{tcLesson('Point to the four staves in a mixed order; the child says the top number before playing.')}{tcAns('TRY IT', W.sig1.map(sigTxt))}{tcAns('YOUR TURN', W.sig2.map(sigTxt), 3)}{tcAns('PLAY', W.sig3.map(sigTxt), 7)}</>}
+    <TcBlock page={3} title="The two numbers" answers={<>{tcLesson('Point to the four staves in a mixed order; the child says the top number before playing.')}{tcAns('TRY IT', W.sig1.map(sigTxt))}{tcAns('YOUR TURN', TS_WRONG.map(r => 'bar ' + r.wrong + ' (' + r.bars[r.wrong - 1].reduce((a, k) => a + NV_ROOM[k].b, 0) + ' beats in ' + r.top + '/4)'), 3)}{tcAns('PLAY', W.sig3.map(sigTxt), 5)}</>}
       watch="The numbers swapped, or a fraction line drawn between them: a time signature has none. Counting the notes instead of the beats: a bar with one minim written as 1/4."
       say="“Top: how many beats. Bottom 4: crotchets.”"/>
     <TcBlock page={4} title="Strong and weak beats" answers={<>{tcLesson('Clap the 4/4 line: ONE two THREE four, beat 3 less than beat 1.')}{tcAns('TRY IT', [strong(W.st1)])}{tcAns('YOUR TURN', W.st2.map(strong), 2)}{tcAns('PLAY', [cnt(W.st3)], 4)}</>}
@@ -55467,9 +56161,8 @@ function SskWorkbook({ startNo = 1 }) {
     <Part kind="home" title="More pairs" how="Circle step, skip or same.">
       <BkGrid cols={2} gap="8px 14px">{W.ss2.map((c, i) => <ExCell key={i} n={i + 3}><div style={{padding:'10px 4px 2px'}}>{sskPair(c, 3.5)}{sskCircle(['step', 'skip', 'same'])}</div></ExCell>)}</BkGrid>
     </Part>
-    <Part kind="play" title="Draw it, then play it" how="Draw the second note: a step or a skip from the first. Then right hand, thumb on middle C: play the two notes.">
-      <BkGrid cols={2} gap="8px 14px">{W.ss3.map(([d, mv], i) => <ExCell key={i} n={i + 7}><div style={{padding:'10px 2px 2px'}}><SskPaper mm={3.5} items={[['w', 4, d], ['sp', 50]]} o={{ D: 12, x0: 42 }}/>
-        <div style={{textAlign:'center',fontSize:12.5,fontWeight:800,color:BK.ink}}>{(Math.abs(mv) === 1 ? 'a step ' : 'a skip ') + (mv > 0 ? 'up' : 'down')}</div></div></ExCell>)}</BkGrid>
+    <Part kind="play" title="The secret word" how="Start on the red note. Follow the moves and draw each next note. Write every letter: they spell a word! Then right hand, thumb on middle C: play it.">
+      <BkGrid cols={2} gap="8px 14px">{SSK_WORDS.map(([d, mv], i) => <SskWordPath key={i} start={d} moves={mv} n={i + 7}/>)}</BkGrid>
     </Part>
     <Faces/>
   </>);
@@ -55567,7 +56260,7 @@ function SskTeacher() {
     <TcBlock page={2} title="Up, down or the same" answers={<>{sskLesson('Play a few notes; the child, eyes shut, points up, down or straight ahead. Then swap.')}{tcAns('TRY IT', [arrows(W.dir1, 2)], 1)}{tcAns('YOUR TURN', W.dir2.map(r => arrows(r)), 2)}{tcAns('PLAY', [arrows(W.dir3)], 4)}</>}
       watch="Reading every note name instead of the move. A repeated note played as a step. Up on the staff mixed up with up the keyboard: higher notes are to the right. Arrows drawn on the notes instead of between them."
       say="“Higher on the staff, further right on the keys.”"/>
-    <TcBlock page={3} title="Steps and skips" answers={<>{sskLesson('Ask for a step or a skip from any note, up or down, in both clefs; the child names the line or space it lands on.')}{tcAns('TRY IT', W.ss1.map(c => sskMove(c[1], c[2])))}{tcAns('YOUR TURN', W.ss2.map(c => sskMove(c[1], c[2])), 3)}{tcAns('PLAY', W.ss3.map(([d, mv]) => dName(d) + ' → ' + dName(d + mv)), 7)}</>}
+    <TcBlock page={3} title="Steps and skips" answers={<>{sskLesson('Ask for a step or a skip from any note, up or down, in both clefs; the child names the line or space it lands on.')}{tcAns('TRY IT', W.ss1.map(c => sskMove(c[1], c[2])))}{tcAns('YOUR TURN', W.ss2.map(c => sskMove(c[1], c[2])), 3)}{tcAns('PLAY', SSK_WORDS.map(([d, mv]) => { const ds = [d]; mv.forEach(m => ds.push(ds[ds.length - 1] + m)); return ds.map(dName).join(' '); }), 7)}</>}
       watch="A line-to-space move read as a skip (it is a step). A skip on the keys that jumps a black key instead of a white one. A skip from a line drawn on a space."
       say="“Line to space: a step. Line to line: a skip.”"/>
     <TcBlock page={4} title="C position" answers={<>{sskLesson('Every finger curved and touching its key before playing. Name a finger; the child plays it and says the note name.')}{tcAns('TRY IT', [fings(W.f1, 2)], 1)}{tcAns('YOUR TURN', W.f2.map(r => fings(r)), 2)}{tcAns('PLAY', [nms(W.f3)], 4)}</>}
@@ -56328,13 +57021,12 @@ function SdyWorkbook({ startNo = 1 }) {
     <Part kind="together" title="Soft to loud" how={sdyHow('Number the signs from the softest (1) to the loudest (4). pp is done for you.')}>
       {sskRowN(1, order(W.order1, true))}
     </Part>
-    <Part kind="home" title="Number them, then the louder one" how="Row 2: number them 1 to 4, softest first. Boxes 3 to 6: circle the louder sign.">
-      <div style={{display:'grid',gap:10}}>{sskRowN(2, order(W.order2))}
-        <BkGrid cols={4} gap="8px 10px">{W.louder.map((pr, i) => <BkCell key={i} n={i + 3}><div style={{padding:'14px 2px 6px',display:'flex',justifyContent:'center',gap:40}}>{pr.map(s => <span key={s}>{sdyBig(s, 32, BK.ink)}</span>)}</div></BkCell>)}</BkGrid></div>
+    <Part kind="home" title="The voice ladder" how="How loud is each voice? Write its sign: pp, p, mf or f.">
+      <SdyVoices/>
     </Part>
-    <Part kind="play" title="Mark it, then play it" how={sdyHow('Write pp, p, mf and f, one in each box. Tune 7: each bar a little softer than the one before. Tune 8: each bar a little louder. Then right hand in C position: play each.')}>
-      <div style={{display:'grid',gap:12}}>{sskRowN(7, <SdyPaper mm={5} items={W.softer} o={{ D: 26 }} k={{ dynBox: [0, 2, 4, 6] }}/>)}
-        {sskRowN(8, <SdyPaper mm={4.8} items={W.louder8} o={{ D: 20 }} k={{ dynBox: [0, 4, 8, 12] }}/>)}</div>
+    <Part kind="play" title="Mark it, then play it" how={sdyHow('Write pp, p, mf and f, one in each box. Tune 6: each bar a little softer than the one before. Tune 7: each bar a little louder. Then right hand in C position: play each.')}>
+      <div style={{display:'grid',gap:12}}>{sskRowN(6, <SdyPaper mm={5} items={W.softer} o={{ D: 26 }} k={{ dynBox: [0, 2, 4, 6] }}/>)}
+        {sskRowN(7, <SdyPaper mm={4.8} items={W.louder8} o={{ D: 20 }} k={{ dynBox: [0, 4, 8, 12] }}/>)}</div>
     </Part>
     <Faces/>
   </>);
@@ -56430,7 +57122,7 @@ function SdyTeacher() {
     <TcBlock page={2} title="Soft and loud" answers={<>{sdyLesson('Play a note p and then f; the child copies. Then the child plays and the teacher, eyes shut, says p or f.')}{tcAns('TRY IT', W.mean.map(s => SDY_MEANS[s]))}{tcAns('YOUR TURN', W.write.map(w => w === 'loud' ? 'f' : 'p'), 5)}{tcAns('PLAY', ['p under bar 1, f under bar 2', 'f under bar 1, p under bar 3'], 9)}</>}
       watch={R('Getting faster when loud, slower when soft. f from a stiff wrist or caving fingertip joints, not arm weight. p so soft that notes do not sound. The sign written over the staff.')}
       say={R('“p soft, f loud: the same speed.”')}/>
-    <TcBlock page={3} title="From pp to f" answers={<>{sdyLesson('Four steps of loudness: the child plays one C E G at each, and the teacher names the sign. Then the teacher plays one, and the child names it.')}{tcAns('TRY IT', [sdyOrderOf(W.order1).join(' ')], 1)}{tcAns('YOUR TURN', [sdyOrderOf(W.order2).join(' '), ...W.louder.map(louder)], 2)}{tcAns('PLAY', ['f mf p pp', 'pp p mf f'], 7)}</>}
+    <TcBlock page={3} title="From pp to f" answers={<>{sdyLesson('Four steps of loudness: the child plays one C E G at each, and the teacher names the sign. Then the teacher plays one, and the child names it.')}{tcAns('TRY IT', [sdyOrderOf(W.order1).join(' ')], 1)}{tcAns('YOUR TURN', SDY_VOICES.map(([w, sgn]) => w + ': ' + sgn), 2)}{tcAns('PLAY', ['f mf p pp', 'pp p mf f'], 6)}</>}
       watch={R('pp and p played the same. mf heard as “medium soft”: it is medium loud. mf read as louder than f. Letters written upright or as capitals: dynamics are small italic letters.')}
       say="“m means medium. The same letter twice means very.”"/>
     <TcBlock page={4} title="Getting louder and softer" answers={<>{sdyLesson('Five notes up, a crescendo; five notes down, a diminuendo. The loudness grows a little on every note, not all at once at the end.')}{tcAns('TRY IT', W.hairs.map(hw))}{tcAns('YOUR TURN', W.draw.map(r => r.dir === 'cresc' ? 'opening (crescendo)' : 'closing (diminuendo)'), 5)}{tcAns('PLAY', [W.fit.ans.join(' ')], 7)}</>}
