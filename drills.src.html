@@ -13468,9 +13468,9 @@ function speakTerm(tm) {
     const fr = /^Main /.test(tm.term), text = tm.term === 'M.M.' ? 'Maelzel’s metronome' : tm.term.replace('’', "'");
     const u = new SpeechSynthesisUtterance(text);
     const vs = window.speechSynthesis.getVoices();
-    const lang = tm.term === 'M.M.' ? 'en' : fr ? 'fr' : 'it';
+    const lang = tm.lang || (tm.term === 'M.M.' ? 'en' : fr ? 'fr' : 'it');   // m25: a word may bring its own language
     const v = vs.find(x => x.lang && x.lang.toLowerCase().startsWith(lang)); if (v) u.voice = v;
-    u.lang = lang === 'it' ? 'it-IT' : lang === 'fr' ? 'fr-FR' : 'en-AU'; u.rate = 0.8;
+    u.lang = lang === 'it' ? 'it-IT' : lang === 'fr' ? 'fr-FR' : lang === 'de' ? 'de-DE' : 'en-AU'; u.rate = 0.8;
     window.speechSynthesis.speak(u);
     return true;
   } catch (e) { return false; }
@@ -22188,13 +22188,22 @@ const refPlayWordsList = () => {
   const an = TEMPO_TERMS.find(x => x.term === 'Andantino');
   if (an) out.push({ term: 'Andantino', abbr: '', mean: an.meaning, job: 'speed', tm: { term: 'Andantino', cat: 'Speed', hear: { bpm: an.demo } }, room: 'tempo', sort: an.demo });
   REF_MORE_WORDS.forEach(([term, abbr, en, ko, job, lang, sort]) => out.push({ term, abbr, mean: t(en, ko), job, lang, room: null, sort, tm: sort ? { term, cat: 'Speed', hear: { bpm: sort } } : null }));
+  out.forEach(w => { w.say = true; });   // m25: the How to play words are Italian (or French, German): say them
   return out;
 };
+// m25 (her 'it would be nice to hear how the words are said'): 🗣 says the word in its language (the device's own voice)
+function RefSay({ term, lang }) {
+  if (React.useContext(RefPaper)) return null;
+  let ok = false; try { ok = !!window.speechSynthesis; } catch (e) {}
+  if (!ok || !term) return null;
+  return <button type="button" className="chip" data-ref-say={term} aria-label={t('Say ', '발음 ') + term} title={t('How it is said', '발음 듣기')} onClick={() => speakTerm({ term, lang })}
+    style={{minHeight:28,minWidth:30,padding:'2px 7px',fontSize:13,lineHeight:1}}>🗣</button>;
+}
 function RefWordRow({ w }) {
   return <div data-ref-word={w.term} style={{display:'grid',gridTemplateColumns:'minmax(0,1fr) auto',alignItems:'center',gap:6,padding:'3px 0',borderBottom:'1px solid rgba(38,41,107,0.08)',breakInside:'avoid'}}>
     <div style={{minWidth:0,lineHeight:1.35}}><b style={{fontWeight:800}}>{w.term}</b>{w.abbr ? <span style={{color:BK.muted,fontWeight:700}}> ({w.abbr})</span> : null}{w.lang ? <span style={{color:BK.muted,fontSize:'0.85em',fontWeight:700}}> {t(REF_LANG[w.lang][0], REF_LANG[w.lang][1])}</span> : null}
-      <span style={{color:BK.muted}}> · </span><span>{w.mean}</span></div>
-    <span style={{display:'flex',gap:4,alignItems:'center'}}>{w.tm && <RefHear k={'w' + w.term} on={() => playTerm(w.tm)}/>}<RefDoor room={w.room} g={w.g}/></span>
+      {PRON[w.term] ? <span style={{color:BK.muted,fontSize:'0.82em',fontStyle:'italic'}}> [{PRON[w.term]}]</span> : null}<span style={{color:BK.muted}}> · </span><span>{w.mean}</span></div>
+    <span style={{display:'flex',gap:4,alignItems:'center'}}>{w.say && <RefSay term={w.term} lang={w.lang}/>}{w.tm && <RefHear k={'w' + w.term} on={() => playTerm(w.tm)}/>}<RefDoor room={w.room} g={w.g}/></span>
   </div>;
 }
 function RefWordGroups({ groups }) {
