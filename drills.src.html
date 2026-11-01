@@ -23833,7 +23833,7 @@ function StudentHome({ link, onOpenChapter, onOpenTool, onHome }) {
   return (
     <div data-testid="student-home">
       <TodayView link={link} onOpenChapter={onOpenChapter} onOpenTool={onOpenTool} onAll={() => {}} head={<HowItWorks/>} compact/>
-      {onHome && planHome() && <div style={sec}><button className="primary-btn" data-testid="today-home" onClick={onHome}>{t('The Map by topic →', '주제별 지도 →')}</button></div>}
+      {onHome && <div style={sec}><button className="primary-btn" data-testid="today-home" onClick={onHome}>{t('The Map by topic →', '주제별 지도 →')}</button></div>}
       <div style={sec}>
         <StaffHead title={t('My practice tools', '나의 연습 도구')}/>
         <div style={{ height: 10 }}/>
@@ -25165,7 +25165,7 @@ function ConceptHome({ st, update }) {
 // The last view a teacher (or an adult with Topics switched on) chose is kept; visitors and children see the House.
 const MAP_VIEW_KEY = 'pb_map_view_v1';
 function mapSave(x) { try { localStorage.setItem(MAP_VIEW_KEY, x); } catch (e) {} }
-function mapPick(canTopics) { if (!canTopics) return 'path'; let x = null; try { x = localStorage.getItem(MAP_VIEW_KEY); } catch (e) {} return x === 'house' ? 'path' : 'home'; }
+function mapPick(canTopics, teacher) { if (!canTopics) return 'path'; let x = null; try { x = localStorage.getItem(MAP_VIEW_KEY); } catch (e) {} return x === 'house' ? 'path' : x === 'topics' ? 'home' : (teacher ? 'home' : 'path'); }   // M2: children and visitors start on the House
 function MapSwitch({ value, onPick }) {
   const opts = [['house', t('House', '집'), t('by floor', '층별')], ['topics', t('Topics', '주제'), t('by topic', '주제별')]];
   return <div role="tablist" aria-label={t('Two views of the map', '지도를 보는 두 가지 방법')} data-map-switch={value} style={{display:'flex',border:'1.5px solid var(--navy)',borderRadius:12,overflow:'hidden',margin:'0 0 14px'}}>
@@ -25194,7 +25194,7 @@ function App() {
   function toggleSolfa() { const v = !solfaEn; setSolfaEn(v); try { localStorage.setItem('pb_solfa_v1', v ? '1' : '0'); } catch (e) {} }
   const T = teacher && !preview && !st.lock;
   UI_TEACHER = T;
-  const HM = T || (showToday && !st.lock && planHome());   // Build CS (call 2): the Home is the teacher's, and an adult's when the teacher switched it on
+  const HM = T || !st.lock;   // Map merge M2: Topics for every student and visitor (single-tool links, lock=1, stay as they are)   // Build CS (call 2): the Home is the teacher's, and an adult's when the teacher switched it on
   const active = DRILLS.find(d => d.id === st.drill) || DRILLS[0];
   const inChapter = (st.view === 'path' || st.view === 'chapters' || st.view === 'books' || st.view === 'printables' || (HM && st.view === 'home')) && !!st.drill;
   const concept = active.concept || null;
@@ -25280,7 +25280,7 @@ function App() {
         {!st.lock && !(showToday && !T) && (
           <div style={{display:'flex',gap:6,borderBottom:'1.5px solid var(--navy-line)',marginBottom:16}}>
             {(T ? [['map', t('Map', '지도')], ...(booksUnlocked() ? [['books', t('Books', '책')], ['printables', t('Printables', '교구')]] : []), ['practice', t('Practice', '연습')]] : (showToday ? [['today', t('Today', '오늘')], ['map', t('Map', '지도')], ['practice', t('Practice', '연습')]] : [['map', t('Map', '지도')], ['practice', t('Practice', '연습')]])).map(([v, l]) => (
-              <button key={v} onClick={() => { update({ view: v === 'map' ? mapPick(HM) : v, tool: null, kit: null, from: null, ret: null, drill: (v === 'practice' || v === 'students') ? st.drill : null, ...(v === 'map' ? { ha: null, hc: null, hs: null } : {}) }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderBottom:'3px solid ' + (((st.view === v || (v === 'map' && (st.view === 'path' || st.view === 'chapters' || st.view === 'home' || (T && st.view === 'tools' && (st.ret === 'home' || st.ret === 'toolbox'))))) || (v === 'path' && st.view === 'chapters') || (T && v === 'toolbox' && st.view === 'tools' && st.ret === 'toolbox') || (T && v === 'home' && st.view === 'tools' && st.ret === 'home')) ? 'var(--coral)' : 'transparent'),marginBottom:-1.5,background:'transparent',padding:'10px 0',fontFamily:"'Playfair Display', Georgia, serif",fontSize:T ? 14.5 : 18,fontWeight:800,cursor:'pointer',
+              <button key={v} onClick={() => { update({ view: v === 'map' ? mapPick(HM, T) : v, tool: null, kit: null, from: null, ret: null, drill: (v === 'practice' || v === 'students') ? st.drill : null, ...(v === 'map' ? { ha: null, hc: null, hs: null } : {}) }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderBottom:'3px solid ' + (((st.view === v || (v === 'map' && (st.view === 'path' || st.view === 'chapters' || st.view === 'home' || (T && st.view === 'tools' && (st.ret === 'home' || st.ret === 'toolbox'))))) || (v === 'path' && st.view === 'chapters') || (T && v === 'toolbox' && st.view === 'tools' && st.ret === 'toolbox') || (T && v === 'home' && st.view === 'tools' && st.ret === 'home')) ? 'var(--coral)' : 'transparent'),marginBottom:-1.5,background:'transparent',padding:'10px 0',fontFamily:"'Playfair Display', Georgia, serif",fontSize:T ? 14.5 : 18,fontWeight:800,cursor:'pointer',
                 color:(st.view === v || (v === 'map' && (st.view === 'path' || st.view === 'chapters' || st.view === 'home' || (T && st.view === 'tools' && (st.ret === 'home' || st.ret === 'toolbox'))))) ? 'var(--navy)' : 'var(--muted)'}}>{l}</button>
             ))}
           </div>
