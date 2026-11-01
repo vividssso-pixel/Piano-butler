@@ -1,0 +1,28 @@
+const {chromium}=require('playwright');const fs=require('fs');let pass=0,fail=0;const ok=(c,m)=>{if(c)pass++;else{fail++;console.log('FAIL',m)}};
+let STORE=null;const errs=[];
+async function dev(b,w,h){const c=await b.newContext({viewport:{width:w,height:h}});
+ await c.addInitScript(()=>{try{localStorage.setItem('sb-icefqxaccclwasnfzgnp-auth-token',JSON.stringify({access_token:'tok',expires_at:Math.floor(Date.now()/1000)+3600,user:{id:'u1'}}));}catch(e){}});
+ await c.route('**/__ls',async r=>{const {op,body}=JSON.parse(r.request().postData());if(op==='put')STORE={...body};if(op==='del')STORE=null;await r.fulfill({json:{data:op==='select'?STORE:null}});});
+ await c.route(/supabase\.co\/rest\/v1\/lesson_sessions/,async r=>{const m=r.request().method();if(m==='GET')return r.fulfill({json:STORE?[STORE]:[]});const bd=JSON.parse(r.request().postData());STORE={...(STORE||{}),...bd};return r.fulfill({status:201,body:''});});
+ await c.route(/cdnjs\.cloudflare\.com.*react-dom/,r=>r.fulfill({body:fs.readFileSync('/tmp/da/node_modules/react-dom/umd/react-dom.production.min.js'),contentType:'application/javascript'}));
+ await c.route(/cdnjs\.cloudflare\.com.*\/react\//,r=>r.fulfill({body:fs.readFileSync('/tmp/da/node_modules/react/umd/react.production.min.js'),contentType:'application/javascript'}));
+ await c.route(/googletagmanager|fonts\.g/,r=>r.abort());
+ const p=await c.newPage();p.on('pageerror',e=>errs.push(e.message.slice(0,150)));return p;}
+const B='http://localhost:8855/';
+(async()=>{const b=await chromium.launch();const phone=await dev(b,390,844),ipad=await dev(b,820,1100);
+ await phone.goto(B+'teacher-dashboard.html');await phone.waitForTimeout(3000);
+ await phone.click('[data-testid=name-chip]:has-text("Mia")');await phone.waitForTimeout(1200);await phone.click('[data-testid=start-lesson]');await phone.waitForURL(/drills/);await phone.waitForTimeout(1500);
+ ok(STORE&&STORE.name==='Mia','server has the lesson '+JSON.stringify(STORE));
+ await ipad.goto(B+'drills.html?teacher=1');await ipad.waitForTimeout(4000);
+ ok(await ipad.isVisible('[data-testid=lesson-bar]'),'ipad shows bar from server');
+ await ipad.goto(B+'drills.html?drill=key-signatures&tab=learn');await ipad.waitForTimeout(4000);
+ ok(STORE&&STORE.shown&&STORE.shown.length===1&&STORE.shown[0].id==='key-signatures','ipad note reached server '+JSON.stringify(STORE&&STORE.shown));
+ await phone.goto(B+'teacher-dashboard.html');await phone.waitForTimeout(3500);
+ ok(await phone.isVisible('[data-testid=lesson-banner]'),'phone banner');ok(/1 shown/.test(await phone.textContent('[data-testid=lesson-banner]')),'phone sees 1 shown');
+ await phone.click('[data-testid=lesson-end]');await phone.waitForTimeout(800);
+ const items=await phone.$$eval('[data-testid=end-item]',es=>es.map(e=>e.textContent));ok(items.some(x=>/Key Signatures/.test(x)),'phone end sheet has iPad item '+items);
+ await phone.screenshot({path:'phone-end.png'});
+ await phone.click('[data-testid=end-save]');await phone.waitForTimeout(1200);ok(STORE===null,'server cleared');
+ await ipad.reload();await ipad.waitForTimeout(4000);ok(!(await ipad.isVisible('[data-testid=lesson-bar]')),'ipad bar gone after phone saved');
+ ok(!(await ipad.evaluate(()=>localStorage.getItem('pb_lesson_v1'))),'ipad local cleared');
+ ok(errs.length===0,'errors '+errs.join('|'));await b.close();console.log('pass',pass,'fail',fail)})();

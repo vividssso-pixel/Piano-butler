@@ -91,6 +91,7 @@ of those six pages were matched to the searches on 1 Nov (commit a36ee04): **re-
 this layout until the merge is done.
 
 ### Waiting on Sohyun
+- Run `migrations/2026-11-01_phaseE_lesson-sessions.sql` once in Supabase (lesson mode across her phone and iPad; until then it works on one device).
 - Push: EJ (one commit), before she opens a cloud window.
 - On the iPad: how long drills takes to open, print chapter 2's Lesson Book once, the Music Lab sound (open since 2026-10-07).
 - A trial with 3 to 5 students: links sent, start floors set in the dashboard, watch for two weeks whether they come back.
