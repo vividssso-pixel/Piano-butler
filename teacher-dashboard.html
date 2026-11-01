@@ -1782,7 +1782,7 @@ function TodayActivity({ a }) {
   );
 }
 
-function ThisWeekCard({ studentId, logs }) {
+function ThisWeekCard({ studentId, logs, compact }) {
   const log = latestHomeworkLog(logs);
   const lessonDay = log ? String(log.date).slice(0, 10) : "";
   const [res, setRes] = useState(null); // null = loading, { ticks: Map|false, plays: [] }
@@ -1813,8 +1813,9 @@ function ThisWeekCard({ studentId, logs }) {
   const wd = (at) => new Date(at).toLocaleDateString("en-AU", { weekday: "short" });
   return (
     <section className="no-print mb-6" data-testid="this-week">
-      <SecHead title="This week" right={log && res && lines.length ? <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={nDone === lines.length ? navyPill : coralPill} data-testid="this-week-count">{nDone} of {lines.length} done</span> : null}/>
-      <div className="card p-5">
+      {!compact && <SecHead title="This week" right={log && res && lines.length ? <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={nDone === lines.length ? navyPill : coralPill} data-testid="this-week-count">{nDone} of {lines.length} done</span> : null}/>}
+      <div className={compact ? "card p-4" : "card p-5"}>
+        {compact && <SimpleHead title="This week" right={log && res && lines.length ? <span data-testid="this-week-count">{nDone} of {lines.length} done</span> : null}/>}
         {!log && <p className="text-sm text-slate-500">No homework yet. Write it under Log lesson › “For the student”; it shows here and on the student’s Today page.</p>}
         {log && (
           <>
@@ -1924,8 +1925,7 @@ function DrillStartChecks({ studentId }) {
                   {[1,2,3,4,5,6].map(n => <option key={n} value={String(n)}>{"Theory Grade " + n}</option>)}
                   <option value="7">All theory done</option>
                 </select></label>
-              <label className="text-sm" style={{display:"flex",gap:6,alignItems:"center",color:"#26296b",padding:"0 0 7px"}}>
-                <input type="checkbox" checked={form.home} onChange={e => setForm(f => ({ ...f, home: e.target.checked }))} data-testid="plan-home"/> Show Topics on the Map (adults)</label>
+              {/* Map merge M2 (2026-11-01): Topics are open to every student now, so the old 'Show the Home (adults)' switch is gone (the saved value is kept, unused) */}
               <button className="btn-primary text-xs py-2 px-4" disabled={busy} onClick={save} data-testid="plan-save">{busy ? "Saving…" : "Save"}</button>
             </div>
           ) : (
@@ -2074,6 +2074,43 @@ function StudentLinkPanel({ student, logs, onRow }) {
   );
 }
 
+// Dashboard D2: the simple student page -- a small heading inside a card, the week's practice, the last lesson, a "More" item
+const SimpleHead = ({ title, right }) => (
+  <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:8,marginBottom:6}}>
+    <span style={{fontSize:11,fontWeight:800,letterSpacing:"0.07em",textTransform:"uppercase",color:"#e4572e"}}>{title}</span>
+    {right ? <span style={{fontSize:12,fontWeight:700,color:"#7a7ca6"}}>{right}</span> : null}
+  </div>
+);
+function PracticeWeek({ studentId }) {
+  const [days, setDays] = useState(null);   // null = loading, false = not available, Set of local days
+  useEffect(() => {
+    let off = false; setDays(null);
+    const from = localDayStr(localDayPlus(-6));
+    Promise.all([
+      _supabase.from("practice_checkins").select("day").eq("student_id", studentId).gte("day", from),
+      _supabase.from("practice_log").select("at").eq("student_id", studentId).gte("at", new Date(from + "T00:00:00").toISOString()).limit(1000),
+    ]).then(([a, b]) => { if (off) return; if (a.error && b.error) { setDays(false); return; } const s = new Set(); (a.data || []).forEach(r => s.add(String(r.day).slice(0, 10))); (b.data || []).forEach(r => s.add(localDayStr(new Date(r.at)))); setDays(s); });
+    return () => { off = true; };
+  }, [studentId]);
+  if (days === false) return null;
+  const list = Array.from({ length: 7 }, (_, i) => localDayPlus(i - 6));
+  const n = days ? list.filter(d => days.has(localDayStr(d))).length : null;
+  return (
+    <div className="card p-4 mb-3 no-print" data-testid="practice-week">
+      <SimpleHead title="Practice" right={days ? n + " of the last 7 days" : "…"}/>
+      <div style={{display:"flex",gap:6}}>{list.map(d => { const on = days && days.has(localDayStr(d)), today = localDayStr(d) === localDayStr(localDayPlus(0)); return (
+        <span key={localDayStr(d)} title={d.toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"short"})} data-done={on ? "1" : "0"}
+          style={{width:26,height:26,borderRadius:"50%",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,boxSizing:"border-box",
+            background: on ? "#2e8a6e" : "transparent", color: on ? "#fff" : "#a0a2c4", border: on ? "2px solid #2e8a6e" : today ? "2px dashed #e4572e" : "2px solid #e9e2d2"}}>{d.toLocaleDateString("en-AU",{weekday:"narrow"})}</span>); })}</div>
+    </div>
+  );
+}
+const MoreItem = ({ title, children, open, onToggle, testid }) => (
+  <details className="pb-more-item" data-testid={testid} open={open} onToggle={onToggle} style={{borderTop:"1px solid #ece6d6"}}>
+    <summary className="no-print" style={{cursor:"pointer",listStyle:"none",padding:"11px 4px",fontSize:14,fontWeight:700,color:"#26296b"}}>▸ {title}</summary>
+    <div style={{padding:"4px 0 10px"}}>{children}</div>
+  </details>
+);
 // Dashboard D1: the heading of each part of the student page
 const PartHead = ({ n, title, sub, flat }) => (
   <div className="no-print" data-part={n} style={{margin: flat ? "0 0 12px" : "26px 0 12px", display:"flex", alignItems:"baseline", gap:10}}>
@@ -2092,11 +2129,14 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
   const [showAllLogs, setShowAllLogs] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
-  const openSettings = () => { setSettingsOpen(true); setTimeout(() => { const el = document.querySelector('[data-testid="settings"]'); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60); };
+  const [moreOpen, setMoreOpen] = useState(false);   // Dashboard D2
+  const [linkOpen, setLinkOpen] = useState(false);
+  useEffect(() => { setMoreOpen(false); setLinkOpen(false); }, [student.id]);
+  const openSettings = () => { setMoreOpen(true); setLinkOpen(true); setSettingsOpen(true); setTimeout(() => { const el = document.querySelector('[data-testid="more-link"]'); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60); };
   const copyStudentLink = () => { if (!linkRow) return; const u = studentLinkUrl(linkRow.token); const done = () => { setLinkCopied(true); setTimeout(() => setLinkCopied(false), 1600); }; try { navigator.clipboard.writeText(u).then(done, () => window.prompt("Copy the student link:", u)); } catch (e) { window.prompt("Copy the student link:", u); } };
   useEffect(() => { setLinkRow(undefined); setShowAllLogs(false); setSettingsOpen(false); }, [student.id]);
   useEffect(() => {   // the PDF prints everything
-    const before = () => { try { ReactDOM.flushSync(() => { setShowAllLogs(true); setSettingsOpen(true); }); } catch (e) { setShowAllLogs(true); setSettingsOpen(true); } };
+    const before = () => { try { ReactDOM.flushSync(() => { setShowAllLogs(true); setSettingsOpen(true); setMoreOpen(true); setLinkOpen(true); }); } catch (e) { setShowAllLogs(true); setSettingsOpen(true); } try { document.querySelectorAll("details").forEach(d => { d.open = true; }); } catch (e) {} };
     window.addEventListener("beforeprint", before);
     return () => window.removeEventListener("beforeprint", before);
   }, []);
@@ -2157,97 +2197,94 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
         ← All students
       </button>
 
-      {/* Student header card */}
-      <div className="card p-5 mb-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shrink-0"
-              style={{background:"#26296b",color:"#fff",fontFamily:"'Playfair Display',Georgia,serif"}}>{initials}</div>
-            <div>
-              <h2 className="text-lg font-bold text-slate-800">{student.name}</h2>
-              <p className="text-sm text-slate-400">{student.age ? "Age " + student.age + " · " : ""}{student.grade || student.level || "General"} · {student.lessonDuration}min · {student.lessonsPerWeek==="fortnightly" ? "Fortnightly" : student.lessonsPerWeek ? `${student.lessonsPerWeek}× per week` : ""}</p>
-              {student.termGoal && (
-                <p className="text-xs mt-1 px-2 py-1 rounded-lg inline-block" style={navyPill}>
-                  Goal: {student.termGoal}
-                </p>
-              )}
-              {studentNorm.startingPhase && studentNorm.startingPhase !== "foundation" && studentNorm.startingPhase !== "exploration" && (
-                <p className="text-xs mt-1 px-2 py-1 rounded-lg inline-block" style={navyPill}>
-                  Started with me at: {PHASE_META[studentNorm.startingPhase]?.name}
-                </p>
-              )}
-            </div>
-          </div>
-          <div className="flex gap-3 flex-wrap">
-            {isExamStudent(student) && weeksLeft !== null && (
-              <div className="text-center px-4 py-2 rounded-xl" style={{background:"#faf6ec"}}>
-                <p className="text-2xl font-black" style={{color:weeksLeft<=4?"#e4572e":"#26296b"}}>{weeksLeft}w</p>
-                <p className="text-xs text-slate-400">to exam</p>
-                <p className="text-[10px] text-slate-400">{fmtShort(student.examDate)}</p>
-              </div>
-            )}
-            <div className="text-center px-4 py-2 rounded-xl bg-slate-50">
-              <p className="text-xl font-black text-slate-700">{currentPlanMonth?.label || "—"}</p>
-              <p className="text-xs text-slate-400">{pm.name}</p>
-            </div>
-            <div className="text-center px-4 py-2 rounded-xl bg-slate-50">
-              <p className="text-2xl font-black text-slate-700">{studentLogs.length}</p>
-              <p className="text-xs text-slate-400">logs</p>
+      {/* Dashboard D2: the simple student page -- who, when, this week, practice, the last lesson; the rest under More */}
+      <div className="card p-5 mb-3">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold shrink-0"
+            style={{background:"#26296b",color:"#fff",fontFamily:"'Playfair Display',Georgia,serif"}}>{initials}</div>
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold text-slate-800" style={{lineHeight:1.2}}>{student.name}</h2>
+            <p className="text-sm text-slate-400">{[student.grade || student.level || "General", student.lessonDay ? student.lessonDay.slice(0,3) + "s " + fmtTime(student.lessonTime) : null, isExamStudent(student) && student.examDate ? "exam " + fmtShort(student.examDate) : null].filter(Boolean).join(" · ")}</p>
+            <div className="flex gap-1.5 flex-wrap mt-1.5">
+              {cardSt && <span style={pillS(TONE[cardSt.tone].bg, TONE[cardSt.tone].fg)} data-testid="detail-status">{cardSt.text}</span>}
+              {student.paused && <span style={pillS("#ecebf5","#4a4d86")}>Paused{student.pauseUntil ? " until " + fmtShort(student.pauseUntil) : ""}</span>}
+              {!student.paused && (() => { const nd = daysUntilNext(student.lessonDay); return nd === null ? null : <span style={nd === 0 ? pillS("#fbe3da","#c0431f") : pillS("#faf6ec","#62649a")}>{nd === 0 ? "Next: today" : nd === 1 ? "Next: tomorrow" : "Next: in " + nd + " days"}</span>; })()}
             </div>
           </div>
         </div>
-
-
-        <div className="flex gap-2 mt-4 pt-4 border-t border-slate-100 flex-wrap">
-          <button onClick={()=>onEdit(student)} className="btn-ghost text-xs py-1.5 px-3">Edit student</button>
-          <button onClick={()=>window.print()} className="btn-ghost text-xs py-1.5 px-3 flex items-center gap-1.5">
-            Download PDF
-          </button>
-          {student.paused ? (
-            <button onClick={()=>onResume(student)}
-              className="btn-ghost text-xs py-1.5 px-3 font-semibold">
-              Resume lessons
-            </button>
-          ) : (
-            <button onClick={()=>onPause(student)}
-              className="btn-ghost text-xs py-1.5 px-3 font-semibold">
-              Pause lessons
-            </button>
-          )}
+        <div className="flex gap-2 mt-4 no-print">
+          <button onClick={()=>onLog(student)} className="btn-primary text-sm py-2.5 px-4" style={{flex:1}} data-testid="detail-log">+ Log lesson</button>
+          {linkRow ? <button onClick={copyStudentLink} className="btn-ghost text-sm py-2.5 px-4" style={{flex:1}} data-testid="link-strip-copy">{linkCopied ? "Copied" : "Copy link"}</button>
+            : linkRow === null ? <button onClick={openSettings} className="btn-ghost text-sm py-2.5 px-4" style={{flex:1}} data-testid="link-strip-make">Make a link</button> : null}
         </div>
-        {/* Dashboard D1c: the student link stays one tap away (the panel itself is under Settings) */}
-        {linkRow !== undefined && (
-          <div className="no-print flex items-center gap-2 flex-wrap mt-3 px-3 py-2 rounded-xl" data-testid="link-strip" style={{background:"#faf6ec",border:"1px solid #e9e2d2"}}>
-            <span className="text-xs font-bold" style={{color:"#26296b"}}>Student link</span>
-            {linkRow ? (<>
-              <span style={linkRow.active === false ? pillS("#fbe3da","#c0431f") : pillS("#e3f1ec","#2e8a6e")}>{linkRow.active === false ? "Paused" : "Active"}</span>
-              <span className="flex-1"/>
-              <button onClick={copyStudentLink} className="btn-primary text-xs py-1.5 px-3" data-testid="link-strip-copy">{linkCopied ? "Copied" : "Copy link"}</button>
-              <button onClick={openSettings} className="btn-ghost text-xs py-1.5 px-3">Link settings</button>
-            </>) : (<>
-              <span className="text-xs text-slate-500">none yet: with a link the student gets homework, practice and drills, and you see them here</span>
-              <span className="flex-1"/>
-              <button onClick={openSettings} className="btn-primary text-xs py-1.5 px-3" data-testid="link-strip-make">Make a link</button>
-            </>)}
-          </div>
-        )}
-        {student.paused && (
-          <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold"
-            style={{background:"#fbe3da",color:"#c0431f",border:"1px solid rgba(228,87,46,0.35)"}}>
-            Paused since {fmtDate(student.pausedAt)}
-            {student.pauseUndecided
-              ? " · Return date TBD"
-              : student.pauseUntil
-                ? ` · Returning ${fmtDate(student.pauseUntil)}`
-                : ""
-            }
-          </div>
-        )}
       </div>
+      {(() => { const soon = localDayStr(localDayPlus(7)); const mk = studentLogs.filter(l => l.type === "absent" && l.makeupDate && l.makeupDate <= soon).sort((a, b) => a.makeupDate.localeCompare(b.makeupDate))[0]; return mk ? (
+        <div className="no-print mb-3 px-4 py-2.5 rounded-xl flex items-center justify-between gap-3" data-testid="makeup-soon" style={{background:"#fdf0dc",color:"#9a6212",fontSize:13,fontWeight:700}}>
+          <span>Makeup {mk.makeupDate < todayStr() ? "overdue since" : "on"} {fmtDate(mk.makeupDate)} (for {fmtShort(mk.date)})</span>
+          <button onClick={()=>onMarkAttended(mk)} className="underline" style={{fontWeight:800}}>✓ Done</button>
+        </div>) : null; })()}
+      <ThisWeekCard studentId={student.id} logs={studentLogs} compact/>
+      {linkRow && <PracticeWeek studentId={student.id}/>}
+      {(() => { const last = lastAttended(studentLogs); return (
+        <div className="card p-4 mb-3" data-testid="last-lesson">
+          <SimpleHead title="Last lesson" right={last ? fmtShort(last.date) : null}/>
+          {!last ? <p className="text-sm text-slate-500">No lessons logged yet.</p> : (<>
+            {last.notes && <p className="text-sm" style={{color:"#26296b",lineHeight:1.5,whiteSpace:"pre-wrap"}}>{last.notes}</p>}
+            {(last.repertoire || last.technical) && <p className="text-xs mt-2" style={{color:"#62649a"}}><b style={{letterSpacing:"0.05em",textTransform:"uppercase",fontSize:10.5}}>Pieces</b><br/>{[last.repertoire, last.technical].filter(Boolean).join(" · ")}</p>}
+            <button onClick={()=>onEditLog(last)} className="no-print text-xs mt-2 underline" style={{color:"#7a7ca6"}}>Edit this lesson</button>
+          </>)}
+        </div>); })()}
 
-      {/* ══ Dashboard D1: 1 · in the lesson ══ */}
-      <PartHead n="1" title="In the lesson" sub="this week, makeups, the last lessons"/>
-      {linkRow && <ThisWeekCard studentId={student.id} logs={studentLogs}/>}
+      <details className="mt-4" data-testid="more" open={moreOpen} onToggle={e=>setMoreOpen(e.currentTarget.open)}>
+        <summary className="no-print" style={{cursor:"pointer",listStyle:"none",textAlign:"center",fontSize:13.5,fontWeight:800,color:"#7a7ca6",padding:12,border:"1.5px dashed #cfc9b6",borderRadius:12}}>More {moreOpen ? "▴" : "▾"}</summary>
+        <div className="card px-4 mt-3" style={{paddingTop:2,paddingBottom:2}}>
+          <MoreItem title={"All lessons (" + studentLogs.length + ")"} testid="more-lessons">
+      {/* Lesson log */}
+      <SecHead title="Lesson history" right={<button onClick={()=>onLog(student)} className="btn-primary text-xs py-2 px-4 no-print">+ Log lesson</button>}/>
+
+      {studentLogs.length === 0 ? (
+        <div className="card p-10 text-center text-slate-400 text-sm">No lessons logged yet.</div>
+      ) : (
+        <div className="space-y-4">
+          {studentLogs.map(log=>(
+            <div key={log.id} className="card overflow-hidden">
+              <div className="px-5 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-slate-400 font-mono">{log.monthStr ? MONTH_NAMES[parseInt(log.monthStr.slice(5,7))-1]+" "+log.monthStr.slice(0,4) : fmtDate(log.date)}</span>
+                  <span className="text-sm font-semibold text-slate-700">{fmtDate(log.date)}</span>
+                  {log.type==="absent" && <span style={{fontSize:"10px",fontWeight:700,padding:"1px 8px",borderRadius:"99px",...coralPill}}>Absent</span>}
+                  {log.type==="makeup" && <span style={{fontSize:"10px",fontWeight:700,padding:"1px 8px",borderRadius:"99px",...navyPill}}>Makeup</span>}
+                </div>
+                <div className="flex gap-2">
+                  {log.type === "absent" && (
+                    <button onClick={()=>onMarkAttended(log)}
+                      className="text-xs font-bold px-2 py-1 rounded-lg transition-colors"
+                      style={navyPill}
+                      title="Change this to an attended lesson">
+                      ✓ Mark attended
+                    </button>
+                  )}
+                  <button onClick={()=>onEditLog(log)} className="text-xs text-slate-400 hover:text-indigo-600 px-2 py-1 rounded-lg hover:bg-indigo-50">Edit</button>
+                  <button onClick={()=>onDeleteLog(log.id)} className="text-xs text-slate-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50">Delete</button>
+                </div>
+              </div>
+              <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                {LOG_SECTIONS.filter(s=>log[s.key]?.trim()).map(s=>(
+                  <div key={s.key}>
+                    <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{color:s.color}}>{s.label}</p>
+                    <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{s.key === "homework" ? keysLineShow(String(log[s.key])).replace(/\s*\[(?:chapter|tool):[a-z0-9-]+\]/g, " ↗") : log[s.key]}</p>
+                  </div>
+                ))}
+                {LOG_SECTIONS.every(s=>!log[s.key]?.trim()) && (
+                  <p className="text-sm text-slate-400 col-span-2">No content recorded.</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+          </MoreItem>
+          {studentLogs.some(l => l.type === "absent" && l.makeupDate) && <MoreItem title={"Makeups (" + studentLogs.filter(l => l.type === "absent" && l.makeupDate).length + " pending)"} testid="more-makeups">
       {/* ── Makeup Schedule ── */}
       {(() => {
         // Absent logs that have a makeupDate set (pending makeups)
@@ -2304,80 +2341,11 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
         );
       })()}
 
-      {/* Lesson log */}
-      <SecHead title="Lesson history" right={<button onClick={()=>onLog(student)} className="btn-primary text-xs py-2 px-4 no-print">+ Log lesson</button>}/>
-
-      {studentLogs.length === 0 ? (
-        <div className="card p-10 text-center text-slate-400 text-sm">No lessons logged yet.</div>
-      ) : (
-        <div className="space-y-4">
-          {(showAllLogs ? studentLogs : studentLogs.slice(0, 3)).map(log=>(
-            <div key={log.id} className="card overflow-hidden">
-              <div className="px-5 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-slate-400 font-mono">{log.monthStr ? MONTH_NAMES[parseInt(log.monthStr.slice(5,7))-1]+" "+log.monthStr.slice(0,4) : fmtDate(log.date)}</span>
-                  <span className="text-sm font-semibold text-slate-700">{fmtDate(log.date)}</span>
-                  {log.type==="absent" && <span style={{fontSize:"10px",fontWeight:700,padding:"1px 8px",borderRadius:"99px",...coralPill}}>Absent</span>}
-                  {log.type==="makeup" && <span style={{fontSize:"10px",fontWeight:700,padding:"1px 8px",borderRadius:"99px",...navyPill}}>Makeup</span>}
-                </div>
-                <div className="flex gap-2">
-                  {log.type === "absent" && (
-                    <button onClick={()=>onMarkAttended(log)}
-                      className="text-xs font-bold px-2 py-1 rounded-lg transition-colors"
-                      style={navyPill}
-                      title="Change this to an attended lesson">
-                      ✓ Mark attended
-                    </button>
-                  )}
-                  <button onClick={()=>onEditLog(log)} className="text-xs text-slate-400 hover:text-indigo-600 px-2 py-1 rounded-lg hover:bg-indigo-50">Edit</button>
-                  <button onClick={()=>onDeleteLog(log.id)} className="text-xs text-slate-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50">Delete</button>
-                </div>
-              </div>
-              <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-                {LOG_SECTIONS.filter(s=>log[s.key]?.trim()).map(s=>(
-                  <div key={s.key}>
-                    <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{color:s.color}}>{s.label}</p>
-                    <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{s.key === "homework" ? keysLineShow(String(log[s.key])).replace(/\s*\[(?:chapter|tool):[a-z0-9-]+\]/g, " ↗") : log[s.key]}</p>
-                  </div>
-                ))}
-                {LOG_SECTIONS.every(s=>!log[s.key]?.trim()) && (
-                  <p className="text-sm text-slate-400 col-span-2">No content recorded.</p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      {studentLogs.length > 3 && !showAllLogs && (
-        <div className="no-print mt-3 mb-6 text-center"><button onClick={()=>setShowAllLogs(true)} className="btn-ghost text-xs py-1.5 px-4" data-testid="logs-show-all">Show all {studentLogs.length} lessons</button></div>
-      )}
-
-      {/* ══ 2 · progress ══ */}
-      <PartHead n="2" title="Progress" sub="practice, drills, the plan"/>
-      {linkRow && <PracticeStrip studentId={student.id}/>}
-      {linkRow && <DrillProgress studentId={student.id}/>}
-      {linkRow && <DrillStartChecks studentId={student.id}/>}
-      {/* This month plan — exam students only */}
-      {isExamStudent(student) && currentPlanMonth && (
-        <section className="mb-6">
-        <SecHead title={"This month · " + currentPlanMonth.label}/>
-        <div className="card p-5">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={navyPill}>{pm.name}</span>
-          </div>
-          <p className="text-sm text-slate-700 leading-relaxed mb-4">{currentPlanMonth.focus}</p>
-          <div className="flex flex-wrap gap-2">
-            {[["Repertoire",alloc.repertoire,"#ecebf5","#26296b"]].map(([label,mins,bg,col])=>(
-              <div key={label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
-                style={{background:bg,color:col}}>
-                {label} <span className="font-normal opacity-70">{mins}m</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        </section>
-      )}
-
+          </MoreItem>}
+          {linkRow && <MoreItem title="Practice, last 14 days" testid="more-practice"><PracticeStrip studentId={student.id}/></MoreItem>}
+          {linkRow && <MoreItem title="Drill progress and best scores" testid="more-drills"><DrillProgress studentId={student.id}/></MoreItem>}
+          {linkRow && <MoreItem title="Where to start and chapter checks" testid="more-checks"><DrillStartChecks studentId={student.id}/></MoreItem>}
+          <MoreItem title="Teaching guide and plan" testid="more-guide">
       {/* AI Guide */}
       <section className="mb-6">
       <SecHead title="Teaching guide"/>
@@ -2407,6 +2375,62 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
       </div>
       </section>
 
+      {/* This month plan — exam students only */}
+      {isExamStudent(student) && currentPlanMonth && (
+        <section className="mb-6">
+        <SecHead title={"This month · " + currentPlanMonth.label}/>
+        <div className="card p-5">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={navyPill}>{pm.name}</span>
+          </div>
+          <p className="text-sm text-slate-700 leading-relaxed mb-4">{currentPlanMonth.focus}</p>
+          <div className="flex flex-wrap gap-2">
+            {[["Repertoire",alloc.repertoire,"#ecebf5","#26296b"]].map(([label,mins,bg,col])=>(
+              <div key={label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+                style={{background:bg,color:col}}>
+                {label} <span className="font-normal opacity-70">{mins}m</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        </section>
+      )}
+
+      {/* General plan panel — shown when no exam date set */}
+      {!isExamStudent(student) && (
+        <GeneralPlanPanel student={student} logs={studentLogs} alloc={alloc} />
+      )}
+      {/* Full plan timeline — exam students only */}
+      {isExamStudent(student) && plan.length > 0 && (
+        <div className="mt-8" style={{breakBefore:"auto"}}>
+          <SecHead title={"Full plan · " + plan.length + " months"}/>
+          <div className="space-y-1.5">
+            {plan.map((m,i)=>{
+              const pm2 = PHASE_META[m.phase]||PHASE_META.foundation;
+              const isCurrent = m.monthStr === curMonthStr;
+              const isPast    = m.monthStr < curMonthStr;
+              const hasLog    = studentLogs.some(l=>l.monthStr===m.monthStr);
+              return (
+                <div key={i} className="flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all"
+                  style={{
+                    background: isCurrent ? "#fbe3da" : isPast ? "#faf6ec" : "transparent",
+                    border: isCurrent ? "1px solid rgba(228,87,46,0.35)" : "1px solid transparent",
+                    breakInside: "avoid",
+                  }}>
+                  <span className="text-xs font-bold text-slate-500 w-16 shrink-0">{m.label}</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold shrink-0" style={navyPill}>{pm2.name}</span>
+                  <span className="text-xs text-slate-500 flex-1 truncate">{m.focus}</span>
+                  {isCurrent && <span className="text-xs font-bold shrink-0" style={{color:"#e4572e"}}>← now</span>}
+                  {hasLog && !isCurrent && <span className="text-xs font-bold shrink-0" style={{color:"#26296b"}}>✓</span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+          </MoreItem>
+          <MoreItem title="Progress passport (for parents)" testid="more-passport">
       {/* ── Progress Passport ── */}
       {(() => {
         // Period filter
@@ -2590,49 +2614,25 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
         );
       })()}
 
-      {/* General plan panel — shown when no exam date set */}
-      {!isExamStudent(student) && (
-        <GeneralPlanPanel student={student} logs={studentLogs} alloc={alloc} />
-      )}
-      {/* ══ 3 · settings, closed ══ */}
-      <details className="mt-8" data-testid="settings" open={settingsOpen} onToggle={e=>setSettingsOpen(e.currentTarget.open)}>
-        <summary className="no-print" style={{cursor:"pointer",listStyle:"none"}}><PartHead n="3" title={"Settings " + (settingsOpen ? "▾" : "▸")} sub={"student link" + (isExamStudent(student) ? ", the full plan" : "") + ", delete"} flat/></summary>
-        <StudentLinkPanel student={student} logs={studentLogs} onRow={setLinkRow}/>
-      {/* Full plan timeline — exam students only */}
-      {isExamStudent(student) && plan.length > 0 && (
-        <div className="mt-8" style={{breakBefore:"auto"}}>
-          <SecHead title={"Full plan · " + plan.length + " months"}/>
-          <div className="space-y-1.5">
-            {plan.map((m,i)=>{
-              const pm2 = PHASE_META[m.phase]||PHASE_META.foundation;
-              const isCurrent = m.monthStr === curMonthStr;
-              const isPast    = m.monthStr < curMonthStr;
-              const hasLog    = studentLogs.some(l=>l.monthStr===m.monthStr);
-              return (
-                <div key={i} className="flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all"
-                  style={{
-                    background: isCurrent ? "#fbe3da" : isPast ? "#faf6ec" : "transparent",
-                    border: isCurrent ? "1px solid rgba(228,87,46,0.35)" : "1px solid transparent",
-                    breakInside: "avoid",
-                  }}>
-                  <span className="text-xs font-bold text-slate-500 w-16 shrink-0">{m.label}</span>
-                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold shrink-0" style={navyPill}>{pm2.name}</span>
-                  <span className="text-xs text-slate-500 flex-1 truncate">{m.focus}</span>
-                  {isCurrent && <span className="text-xs font-bold shrink-0" style={{color:"#e4572e"}}>← now</span>}
-                  {hasLog && !isCurrent && <span className="text-xs font-bold shrink-0" style={{color:"#26296b"}}>✓</span>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
+          </MoreItem>
+          <MoreItem title="Student link settings" testid="more-link" open={linkOpen} onToggle={e=>setLinkOpen(e.currentTarget.open)}>
+            <StudentLinkPanel student={student} logs={studentLogs} onRow={setLinkRow}/>
+          </MoreItem>
+          <MoreItem title="Edit · Pause · PDF · Delete" testid="more-actions">
+            <div className="flex gap-2 flex-wrap mb-3">
+              <button onClick={()=>onEdit(student)} className="btn-ghost text-xs py-1.5 px-3">Edit student</button>
+              <button onClick={()=>window.print()} className="btn-ghost text-xs py-1.5 px-3">Download PDF</button>
+              {student.paused ? <button onClick={()=>onResume(student)} className="btn-ghost text-xs py-1.5 px-3 font-semibold">Resume lessons</button>
+                : <button onClick={()=>onPause(student)} className="btn-ghost text-xs py-1.5 px-3 font-semibold">Pause lessons</button>}
+            </div>
         {onDelete && (
           <div className="no-print card p-4 mb-6 flex items-center justify-between gap-3 flex-wrap">
             <p className="text-xs text-slate-500">Delete this student and all their lesson logs. It cannot be undone.</p>
             <button onClick={()=>onDelete(student.id)} className="btn-ghost text-xs py-1.5 px-3" style={{color:"#c0431f",borderColor:"rgba(228,87,46,0.35)"}} data-testid="delete-student">Delete student</button>
           </div>
         )}
+          </MoreItem>
+        </div>
       </details>
     </div>
   );
