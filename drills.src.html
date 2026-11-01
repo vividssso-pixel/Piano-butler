@@ -22343,7 +22343,9 @@ function RefSpine({ id, label, dark, h, on, onPick }) {
     <span style={{writingMode:'vertical-rl',textOrientation:ko ? 'upright' : 'mixed',transform:ko ? 'none' : 'rotate(180deg)',fontFamily:LB_SERIF,fontWeight:700,fontSize:ko ? 14 : 15,letterSpacing:ko ? '0.08em' : '0.03em',whiteSpace:'nowrap'}}>{label}</span>
   </button>;
 }
-function RefShelf({ onChapter, onHouse }) {
+const SHELF_TOOLS = { time: [['metronome', 'Metronome', '메트로놈']], scales: [['scale-finder', 'Scale finder', '스케일 찾기']] };   // m17
+const SHELF_FAVS = [['scale-finder', 'Scale finder', '스케일 찾기'], ['metronome', 'Metronome', '메트로놈']];   // m17: for now (her 'like a favourites list, for now')
+function RefShelf({ onChapter, onHouse, onTool }) {
   const [sel, setSel] = useState(() => { let x = null; try { x = localStorage.getItem(REF_PICK_KEY + '_shelf'); } catch (e) {} return REF_SECS.some(s => s.id === x) ? x : null; });
   const panel = useRef(null), ko = LANG === 'ko';
   const pick = (id) => { setSel(id); try { localStorage.setItem(REF_PICK_KEY + '_shelf', id || ''); } catch (e) {} if (id) setTimeout(() => { const el = panel.current; if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); };
@@ -22356,6 +22358,8 @@ function RefShelf({ onChapter, onHouse }) {
       <div><div style={{fontFamily:LB_SERIF,fontStyle:'italic',fontSize:16.5,color:'var(--navy)'}}>{t('“Which book shall I fetch?”', '“어떤 책을 꺼내 드릴까요?”')}</div>
         <div style={{fontSize:12.5,color:'#4a4d86',marginTop:2}}>{L && L.name ? L.name + ' · ' : ''}<button type="button" data-ref-house onClick={onHouse} style={{border:'none',background:'none',padding:0,font:'inherit',fontWeight:800,color:'var(--coral, #e4572e)',cursor:'pointer'}}>{t('My house ›', '나의 집 ›')}</button></div></div>
     </div>
+    {onTool && <div data-ref-favs style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',margin:'10px 0 0'}}><span style={{fontSize:10.5,fontWeight:900,letterSpacing:'0.1em',textTransform:'uppercase',color:'#4a4d86'}}>★ {t('Favourites', '즐겨찾기')}</span>
+      {SHELF_FAVS.map(([id, en, ko2]) => <button key={id} type="button" className="chip" data-ref-fav={id} onClick={() => onTool(id)} style={{padding:'4px 12px',fontSize:13,fontWeight:800}}>{t(en, ko2)}</button>)}</div>}
     {REF_SHELVES.map(([en, kr, books]) => <div key={en} style={{marginTop:18}}>
       <div style={{fontSize:10.5,fontWeight:900,letterSpacing:'0.1em',textTransform:'uppercase',color:'#4a4d86',margin:'0 0 8px'}}>{t(en, kr)}</div>
       <div style={{display:'flex',alignItems:'flex-end',gap:5,padding:'0 4px',borderBottom:'5px solid #b59a68',boxShadow:'0 3px 0 rgba(38,41,107,.12)',minHeight:120}}>
@@ -22366,7 +22370,9 @@ function RefShelf({ onChapter, onHouse }) {
       <i aria-hidden="true" style={{position:'absolute',left:16,right:16,top:8,height:5,borderTop:'1px solid #c9a24f',borderBottom:'1px solid #c9a24f'}}/>
       <i aria-hidden="true" style={{position:'absolute',left:16,right:16,bottom:8,height:5,borderTop:'1px solid #c9a24f',borderBottom:'1px solid #c9a24f'}}/>
       <div style={{display:'flex',justifyContent:'flex-end'}}><button type="button" data-ref-close onClick={() => pick(null)} style={{border:'none',background:'none',font:'inherit',fontSize:13,fontWeight:800,color:'#4a4d86',cursor:'pointer',padding:'2px 0'}}>{t('Back on the shelf ✕', '책장에 꽂기 ✕')}</button></div>
-      <RefHead id={s.id}/><B/>
+      <RefHead id={s.id}/>
+      {onTool && SHELF_TOOLS[s.id] && <div style={{display:'flex',gap:6,flexWrap:'wrap',margin:'0 0 10px'}}>{SHELF_TOOLS[s.id].map(([id, en, ko2]) => <button key={id} type="button" className="ghost-btn" data-ref-tool={id} onClick={() => onTool(id)} style={{padding:'6px 14px',fontSize:13.5}}>{t(en, ko2)} ›</button>)}</div>}
+      <B/>
     </section>}
   </div></RefGo.Provider>;
 }
@@ -22787,7 +22793,9 @@ function MapHead({ onOpen }) {
   const label = (id) => (DRILLS.find(d => d.id === id) || {}).label;
   return (
     <div data-testid="map-head" style={{margin:'0 0 16px'}}>
-      {next
+      {next && focus.kind === 'start'
+        ? <span data-testid="map-door-hint" hidden/>   /* the house itself says 'Tap the door to come in' */
+        : next
         ? <button className="primary-btn" data-testid="map-continue" style={{width:'100%',padding:'12px 16px',fontSize:15.5,textAlign:'left',display:'flex',justifyContent:'space-between',alignItems:'center',gap:10}} onClick={() => onOpen(next)}>
             <span><span style={{display:'block',fontSize:11.5,fontWeight:800,letterSpacing:'0.08em',textTransform:'uppercase',opacity:0.8}}>{focus.kind === 'resume' ? t('Keep going', '이어서 하기') : focus.kind === 'next' ? t('Next on your path', '나의 경로에서 다음') : focus.kind === 'placed' ? t('Your start', '나의 시작') : t('Start at the beginning', '처음부터 시작하기')}</span>{label(next)}</span><span style={{fontSize:20}}>→</span></button>
         : <div style={{fontSize:14.5,fontWeight:800,color:'var(--good)',textAlign:'center',margin:'6px 0'}}>{t('Every chapter on the path is done. Wonderful!', '경로의 모든 챕터를 마쳤어요. 멋져요!')}</div>}
@@ -22807,7 +22815,7 @@ function MapHead({ onOpen }) {
 function MapHome({ onOpen }) {
   return (
     <div className="fade-up" data-testid="map-home">
-      <PageIntro title={UI_TEACHER ? t('Music map', '음악 지도') : t('My music map', '나의 음악 지도')} text={t('The Piano Butler’s house: ' + houseFloors() + ', a room for each chapter. Your butler meets you in the hall. Open the door and go up, floor by floor; on each floor, any room first. New to the piano? Start on Beginner. Already playing? Go straight to any room, or carry on with the button.', '피아노 버틀러의 집: ' + houseFloors(true) + ', 챕터마다 방 하나. 버틀러가 현관에서 맞아 줘요. 문을 열고 한 층씩 올라가요. 같은 층에서는 어느 방부터 해도 돼요. 처음이라면 Beginner부터, 이미 배우고 있다면 어느 방으로든 바로 가거나 버튼을 눌러 이어서 해요.')}/>
+      <PageIntro title={UI_TEACHER ? t('Music map', '음악 지도') : t('My music map', '나의 음악 지도')} text={<>{t((['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve'][houseFloorsN()] || houseFloorsN()) + ' floors of music. ', houseFloorsN() + '층의 음악. ')}<b style={{color:'var(--navy)'}}>{t('Open any door', '아무 문이나 열고')}</b>{t(' and climb.', ' 올라가요.')}</>}   /* m17: her 'too long, nobody reads it' *//>
       <MapHead onOpen={onOpen}/>
       <HouseMap onOpen={onOpen} noIntro/>
     </div>
@@ -25524,7 +25532,7 @@ function App() {
         {preview && <div style={{background:'#26296b',color:'#fff',borderRadius:10,padding:'8px 12px',marginBottom:12,fontSize:13.5,display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}><span>{t('You’re seeing what a student sees.', '학생에게 보이는 화면이에요.')}</span><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setPreview(false)}>{t('Back to teacher view', '교사 화면으로')}</button></div>}
         {!st.lock && !(showToday && !T) && (
           <div style={{display:'flex',gap:6,borderBottom:'1.5px solid var(--navy-line)',marginBottom:16}}>
-            {(T ? [['map', t('Library', '서재')], ...(booksUnlocked() ? [['books', t('Books', '책')], ['printables', t('Printables', '교구')]] : []), ['practice', t('Practice', '연습')], ['lib', t('🔒 Lessons', '🔒 레슨')]]   /* m16: the old Home categories, hers alone, at the end */ : (showToday ? [['today', t('Today', '오늘')], ['map', t('Map', '지도')], ['practice', t('Practice', '연습')]] : [['map', t('Map', '지도')], ['practice', t('Practice', '연습')]])).map(([v, l]) => (
+            {(T ? [['map', t('Library', '서재')], ...(booksUnlocked() ? [['books', t('Books', '책')], ['printables', t('Printables', '교구')]] : []), ['practice', t('Practice', '연습')], ['lib', <span style={{whiteSpace:'nowrap'}}><span style={{fontSize:'0.8em'}}>🔒</span>{t('Lessons', '레슨')}</span>]]   /* m16: the old Home categories, hers alone, at the end */ : (showToday ? [['today', t('Today', '오늘')], ['map', t('Map', '지도')], ['practice', t('Practice', '연습')]] : [['map', t('Map', '지도')], ['practice', t('Practice', '연습')]])).map(([v, l]) => (
               <button key={v} onClick={() => { update({ view: v === 'map' ? mapPick(HM, T) : v === 'lib' ? 'home' : v, lib: v === 'lib', tool: null, kit: null, from: null, ret: null, drill: (v === 'practice' || v === 'students') ? st.drill : null, ...(v === 'map' || v === 'lib' ? { ha: null, hc: null, hs: null } : {}) }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderBottom:'3px solid ' + ((((st.view === v && v !== 'lib') || (v === 'map' && !st.lib && (st.view === 'path' || st.view === 'chapters' || st.view === 'home' || (T && st.view === 'tools' && st.ret === 'toolbox'))) || (v === 'lib' && !!st.lib && (st.view === 'home' || (st.view === 'tools' && st.ret === 'home')))) || (v === 'path' && st.view === 'chapters') || (T && v === 'toolbox' && st.view === 'tools' && st.ret === 'toolbox') || false) ? 'var(--coral)' : 'transparent'),marginBottom:-1.5,background:'transparent',padding:'10px 0',fontFamily:"'Playfair Display', Georgia, serif",fontSize:T ? 14.5 : 18,fontWeight:800,cursor:'pointer',
                 color:((st.view === v && v !== 'lib') || (v === 'map' && !st.lib && (st.view === 'path' || st.view === 'chapters' || st.view === 'home' || (T && st.view === 'tools' && st.ret === 'toolbox'))) || (v === 'lib' && !!st.lib && (st.view === 'home' || (st.view === 'tools' && st.ret === 'home')))) ? 'var(--navy)' : 'var(--muted)'}}>{l}</button>
             ))}
@@ -25539,12 +25547,12 @@ function App() {
             : <>{T && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={() => update({ view: 'home', kit: null, kn: '' })}>{t('← Topics', '← 주제')}</button>}<KitView ids={st.kit} name={st.kn} onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/></>
         ) : (st.view === 'tools' || st.view === 'practice') ? (
           st.tool
-            ? <ToolView id={st.tool} locked={st.lock} backAlways={!!toolBackCh} backLabel={st.from && st.from.tool === st.tool ? '← Today' : st.view === 'practice' ? '← Practice' : st.ret === 'home' ? homeBack : toolBackCh ? '← ' + bkChapterName(toolBackCh) : homeBack} onBack={() => st.from && st.from.tool === st.tool ? update({ tool: null, view: 'today', from: null }) : st.view !== 'practice' && st.ret !== 'home' && toolBackCh ? update({ view: 'path', tool: null, drill: toolBackCh, tab: 'learn', level: 1, ret: null, rc: null }) : update({ tool: null, view: (st.view === 'practice' ? null : st.ret === 'toolbox' ? 'home' : st.ret) || (T && st.view === 'tools' ? 'home' : st.view), ret: null })} onChapter={(id) => update({ view: st.ret === 'toolbox' ? 'toolbox' : 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
+            ? <ToolView id={st.tool} locked={st.lock} backAlways={!!toolBackCh} backLabel={st.from && st.from.tool === st.tool ? '← Today' : st.view === 'practice' ? '← Practice' : st.ret === 'home' ? homeBack : (st.ret === 'toolbox' && T) ? t('← Library', '← 서재') : toolBackCh ? '← ' + bkChapterName(toolBackCh) : homeBack} onBack={() => st.from && st.from.tool === st.tool ? update({ tool: null, view: 'today', from: null }) : st.view !== 'practice' && st.ret !== 'home' && toolBackCh ? update({ view: 'path', tool: null, drill: toolBackCh, tab: 'learn', level: 1, ret: null, rc: null }) : update({ tool: null, view: (st.view === 'practice' ? null : st.ret === 'toolbox' ? 'home' : st.ret) || (T && st.view === 'tools' ? 'home' : st.view), ret: null })} onChapter={(id) => update({ view: st.ret === 'toolbox' ? 'toolbox' : 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
             : <>{todayBack}<PracticeView onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
         ) : st.view === 'home' && HM && !inChapter && !st.lock ? (
           (T && (st.lib || st.ha || st.hc || st.hs))
             ? <ConceptHome st={st} update={update}/>
-            : <>{todayBack}<RefShelf onChapter={jumpToChapter} onHouse={() => { mapSave('house'); update({ view: 'path', lib: false, ha: null, hc: null, hs: null, drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
+            : <>{todayBack}<RefShelf onChapter={jumpToChapter} onTool={(id) => { update({ view: 'tools', tool: id, ret: 'toolbox', lib: false }); try { window.scrollTo(0, 0); } catch (e) {} }} onHouse={() => { mapSave('house'); update({ view: 'path', lib: false, ha: null, hc: null, hs: null, drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
         ) : !inChapter && !st.lock ? (
           T && st.view === 'printables'
             ? <div className="fade-up"><PageIntro title={t('Printables', '교구')} text={t('Paper tools to print, cut out and play with at the lesson table. Each set is a few A4 pages with a Try this box.', '인쇄해서 오려 쓰는 종이 교구. 세트마다 A4 몇 장과 해 보기 상자가 있어요.')}/><PrintablesShelf onChapter={jumpToChapter}/></div>
