@@ -521,7 +521,8 @@ const rowToLog = (r) => {
     homework: extra.homework || "",
     mood: extra.mood || "",
     pieceRating: extra.pieceRating || "",
-    type: extra.type || "regular", // "regular" | "absent" | "makeup"
+    type: extra.type || "regular", // "regular" | "absent" | "makeup" | "cancelled" (Dashboard D5)
+    reason: extra.reason || "",
     makeupDate: extra.makeupDate || "",
     shown: Array.isArray(extra.shown) ? extra.shown : [],   // Dashboard D3: what the lesson showed (lesson mode)
   };
@@ -544,6 +545,7 @@ const logToRow = (f, studentId, userId) => ({
     ...(f.pieceRating? { pieceRating: f.pieceRating }: {}),
     ...(f.type && f.type !== "regular" ? { type: f.type } : {}),
     ...(f.makeupDate ? { makeupDate: f.makeupDate }  : {}),
+    ...(f.reason ? { reason: f.reason } : {}),
     ...(Array.isArray(f.shown) && f.shown.length ? { shown: f.shown.slice(0, 30) } : {}),
   }) || null,
 });
@@ -612,63 +614,61 @@ function PauseModal({ student, onSave, onClose }) {
   );
 }
 
+// Dashboard D5: why there was no lesson. [id, label, type]: absent counts against attendance, cancelled does not
+const NO_LESSON_REASONS = [["absent", "Absent", "absent"], ["sick", "Sick", "absent"], ["teacher", "I cancelled", "cancelled"], ["holiday", "Holiday or break", "cancelled"], ["moved", "Moved to another day", "cancelled"], ["other", "Other", "cancelled"]];
+const noLesson = (l) => !!l && (l.type === "absent" || l.type === "cancelled");
+const offLabel = (l) => { const r = NO_LESSON_REASONS.find(x => x[0] === (l && l.reason)); return r ? r[1] : l && l.type === "cancelled" ? "No lesson" : "Absent"; };
 function AbsenceModal({ student, onSave, onClose }) {
-  const [type, setType] = useState("absent");
+  const [reason, setReason] = useState("absent");
+  const [mk, setMk] = useState(false);   // record a makeup lesson instead
   const [date, setDate] = useState(todayStr());
   const [makeupDate, setMakeupDate] = useState("");
   const [notes, setNotes] = useState("");
-
+  const r = NO_LESSON_REASONS.find(x => x[0] === reason) || NO_LESSON_REASONS[0];
+  const owes = !mk && reason !== "holiday";
   const handleSave = () => {
-    onSave({ date, type, makeupDate: type==="absent" ? makeupDate : "", notes, repertoire:"", technical:"", srAural:"", gk:"", mood:"", pieceRating:"" });
+    if (mk) onSave({ date, type: "makeup", makeupDate: "", notes, repertoire:"", technical:"", srAural:"", gk:"", mood:"", pieceRating:"" });
+    else onSave({ date, type: r[2], reason: r[0], makeupDate: owes ? makeupDate : "", notes, repertoire:"", technical:"", srAural:"", gk:"", mood:"", pieceRating:"" });
   };
-
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose} data-testid="no-lesson">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm fade-in" onClick={e=>e.stopPropagation()}>
         <div className="p-5 border-b border-slate-100">
-          <h2 className="text-sm font-bold text-slate-800">Record absence / makeup</h2>
+          <h2 className="text-sm font-bold text-slate-800">{mk ? "Makeup lesson" : "No lesson"}</h2>
           <p className="text-xs text-slate-400 mt-0.5">{student.name}</p>
         </div>
         <div className="p-5 space-y-4">
-          {/* Type */}
-          <div>
-            <label className="field-label text-slate-500">Type</label>
-            <div className="flex gap-2">
-              {[["absent","Absent"],["makeup","Makeup lesson"]].map(([val,label])=>(
-                <button key={val} onClick={()=>setType(val)}
-                  className="flex-1 py-2 rounded-xl text-sm font-semibold border transition-all"
-                  style={type===val
-                    ? {background: val==="absent"?"#fbe3da":"#ecebf5", color: val==="absent"?"#c0431f":"#26296b", borderColor: val==="absent"?"#f3c3b3":"#b8b9d9"}
-                    : {background:"white", color:"#7a7ca6", borderColor:"#e9e2d2"}}>
+          {!mk && <div>
+            <label className="field-label text-slate-500">Why</label>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              {NO_LESSON_REASONS.map(([id, label, type]) => (
+                <button key={id} onClick={()=>setReason(id)} data-testid={"reason-" + id}
+                  className="py-2.5 rounded-xl text-sm font-semibold border transition-all"
+                  style={reason === id ? (type === "absent" ? {background:"#fbe3da",color:"#c0431f",borderColor:"#f3c3b3"} : {background:"#ecebf5",color:"#26296b",borderColor:"#b8b9d9"}) : {background:"white",color:"#62649a",borderColor:"#e9e2d2"}}>
                   {label}
-                </button>
-              ))}
+                </button>))}
             </div>
-          </div>
-
-          {/* Date */}
+            <p className="text-[11px] mt-2" style={{color:"#7a7ca6"}}>{r[2] === "absent" ? "Counts as the student’s absence." : "Not counted against the student."}</p>
+          </div>}
           <div>
-            <label className="field-label text-slate-500">{type==="absent" ? "Absent date" : "Makeup date"}</label>
+            <label className="field-label text-slate-500">{mk ? "Makeup date" : "Lesson date"}</label>
             <input type="date" value={date} onChange={e=>setDate(e.target.value)} className="input"/>
           </div>
-
-          {/* Makeup date (only when absent) */}
-          {type==="absent" && (
+          {owes && (
             <div>
-              <label className="field-label text-slate-500">Makeup scheduled for (optional)</label>
-              <input type="date" value={makeupDate} onChange={e=>setMakeupDate(e.target.value)} className="input"/>
+              <label className="field-label text-slate-500">{reason === "moved" ? "Moved to" : "Makeup on (optional)"}</label>
+              <input type="date" value={makeupDate} onChange={e=>setMakeupDate(e.target.value)} className="input" data-testid="makeup-date"/>
             </div>
           )}
-
-          {/* Notes */}
           <div>
             <label className="field-label text-slate-500">Notes (optional)</label>
-            <input value={notes} onChange={e=>setNotes(e.target.value)} placeholder="e.g. Sick, family trip…" className="input"/>
+            <input value={notes} onChange={e=>setNotes(e.target.value)} placeholder="" className="input"/>
           </div>
+          <button onClick={()=>setMk(x=>!x)} className="text-xs underline" style={{color:"#7a7ca6"}}>{mk ? "← No lesson instead" : "Record a makeup lesson instead"}</button>
         </div>
         <div className="p-5 flex gap-3 border-t border-slate-100">
           <button className="btn-ghost flex-1" onClick={onClose}>Cancel</button>
-          <button className="btn-primary flex-1" onClick={handleSave}>Save</button>
+          <button className="btn-primary flex-1" onClick={handleSave} data-testid="no-lesson-save">Save</button>
         </div>
       </div>
     </div>
@@ -1220,7 +1220,7 @@ function StudentCard({ student, logs, act, onLog, onSelect }) {
   const studentLogs = logs.filter(l=>l.studentId===student.id).sort((a,b)=>b.date.localeCompare(a.date));
   const last = lastAttended(studentLogs);
   const ym = currentMonthStr();
-  const thisMonth = studentLogs.filter(l => l.date && l.date.startsWith(ym) && l.type !== "absent").length;
+  const thisMonth = studentLogs.filter(l => l.date && l.date.startsWith(ym) && !noLesson(l)).length;
   const nextLessonDays = daysUntilNext(student.lessonDay);
   const examDays = isExamStudent(student) ? daysUntilExam(student.examDate) : null;
   const isToday = nextLessonDays === 0;
@@ -1700,7 +1700,7 @@ const hwLines = (text) => String(text || "").split(/\r?\n/).map(x => x.replace(/
   const label = (m ? line.slice(0, m.index).trim() : line) || (m ? chapterLabel(m[2]) : line);
   return { key: line.slice(0, 220), text: label.slice(0, 200), chapter: m && m[1] === "chapter" ? m[2] : null };
 });
-const latestHomeworkLog = (logs) => (logs || []).filter(l => l.type !== "absent" && (l.homework || "").trim())
+const latestHomeworkLog = (logs) => (logs || []).filter(l => !noLesson(l) && (l.homework || "").trim())
   .sort((a, b) => String(b.date).localeCompare(String(a.date)) || (Number(b.id) || 0) - (Number(a.id) || 0))[0] || null;
 // ─── Dashboard build D1 (2026-11-01): the dashboard at a glance ───────────────────────────────────────────────────────
 // One fetch for all the students (links, practice check-ins, drill plays, homework ticks), so the cards and the Today list
@@ -1709,7 +1709,7 @@ const NO_LESSON_DAYS = 28;      // "No lesson in N weeks" (coral) after this man
 const LOW_PRACTICE_DAYS = 1;    // "Little practice" (amber): a student with a link practised on this many days or fewer in the last 7
 const TONE = { ok: { bg:"#e3f1ec", fg:"#2e8a6e", bar:"#2e8a6e" }, warn: { bg:"#fdf0dc", fg:"#9a6212", bar:"#d69a2d" }, bad: { bg:"#fbe3da", fg:"#c0431f", bar:"#e4572e" }, n: { bg:"#ecebf5", fg:"#4a4d86", bar:"#c9c8de" } };
 const pillS = (bg, fg) => ({ fontSize:"10.5px", fontWeight:800, padding:"2px 8px", borderRadius:"99px", background:bg, color:fg, whiteSpace:"nowrap", display:"inline-block" });
-const lastAttended = (studentLogs) => (studentLogs || []).filter(l => l.type !== "absent").sort((a, b) => String(b.date).localeCompare(String(a.date)))[0] || null;
+const lastAttended = (studentLogs) => (studentLogs || []).filter(l => !noLesson(l)).sort((a, b) => String(b.date).localeCompare(String(a.date)))[0] || null;
 const daysSince = (ymd) => ymd ? Math.round((new Date(todayStr() + "T12:00:00") - new Date(String(ymd).slice(0, 10) + "T12:00:00")) / 86400000) : null;
 // the homework of a lesson log, done or not: a chapter line once that chapter was played on or after the lesson day, any line once ticked
 function weekHomework(log, ticks, plays) {
@@ -2115,7 +2115,7 @@ function NameChips({ students, logs, onPick, current }) {
     if (s.lessonDay === dn && fortOk) todays.push({ s, t: s.lessonTime || "09:00", tag: fmtTime(s.lessonTime || "09:00") });
     if (s.lessonsPerWeek === 2 && s.lessonDay2 === dn) todays.push({ s, t: s.lessonTime2 || "09:00", tag: fmtTime(s.lessonTime2 || "09:00") });
   });
-  logs.filter(l => l.type === "absent" && l.makeupDate === today).forEach(l => { const s = students.find(x => x.id === l.studentId); if (s) todays.push({ s, t: "99", tag: "makeup" }); });
+  logs.filter(l => noLesson(l) && l.makeupDate === today).forEach(l => { const s = students.find(x => x.id === l.studentId); if (s) todays.push({ s, t: "99", tag: "makeup" }); });
   todays.sort((a, b) => a.t.localeCompare(b.t));
   const ids = new Set(todays.map(x => x.s.id));
   const rest = students.filter(s => !ids.has(s.id)).sort((a, b) => a.name.localeCompare(b.name));
@@ -2172,7 +2172,7 @@ function EndLessonSheet({ lesson, student, logs, act, onSave, onAbsent, onBack, 
         <textarea className="input" rows={2} placeholder="Notes (optional)" value={notes} onChange={e => setNotes(e.target.value)} style={{width:"100%",marginTop:10,fontSize:14}} data-testid="end-notes"/>
         <div className="flex gap-2 mt-3">
           <button className="btn-primary text-sm py-2.5 px-4" style={{flex:2}} disabled={busy} onClick={save} data-testid="end-save">{busy ? "Saving…" : "Save lesson"}</button>
-          <button className="btn-ghost text-sm py-2.5 px-4" style={{flex:1}} onClick={onAbsent}>Absent</button>
+          <button className="btn-ghost text-sm py-2.5 px-4" style={{flex:1}} onClick={onAbsent}>No lesson</button>
         </div>
         <div className="flex justify-between mt-3 text-xs">
           <a href="drills.html?teacher=1" onClick={onBack} style={{color:"#62649a",textDecoration:"underline"}}>Back to the materials</a>
@@ -2328,7 +2328,7 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
         </div>
         {onStartLesson && <div className="no-print text-center mt-2"><button onClick={()=>onLog(student)} className="text-xs underline" style={{color:"#7a7ca6"}} data-testid="detail-log">+ Log a lesson without the materials</button></div>}
       </div>
-      {(() => { const soon = localDayStr(localDayPlus(7)); const mk = studentLogs.filter(l => l.type === "absent" && l.makeupDate && l.makeupDate <= soon).sort((a, b) => a.makeupDate.localeCompare(b.makeupDate))[0]; return mk ? (
+      {(() => { const soon = localDayStr(localDayPlus(7)); const mk = studentLogs.filter(l => noLesson(l) && l.makeupDate && l.makeupDate <= soon).sort((a, b) => a.makeupDate.localeCompare(b.makeupDate))[0]; return mk ? (
         <div className="no-print mb-3 px-4 py-2.5 rounded-xl flex items-center justify-between gap-3" data-testid="makeup-soon" style={{background:"#fdf0dc",color:"#9a6212",fontSize:13,fontWeight:700}}>
           <span>Makeup {mk.makeupDate < todayStr() ? "overdue since" : "on"} {fmtDate(mk.makeupDate)} (for {fmtShort(mk.date)})</span>
           <button onClick={()=>onMarkAttended(mk)} className="underline" style={{fontWeight:800}}>✓ Done</button>
@@ -2363,11 +2363,11 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-slate-400 font-mono">{log.monthStr ? MONTH_NAMES[parseInt(log.monthStr.slice(5,7))-1]+" "+log.monthStr.slice(0,4) : fmtDate(log.date)}</span>
                   <span className="text-sm font-semibold text-slate-700">{fmtDate(log.date)}</span>
-                  {log.type==="absent" && <span style={{fontSize:"10px",fontWeight:700,padding:"1px 8px",borderRadius:"99px",...coralPill}}>Absent</span>}
+                  {noLesson(log) && <span style={{fontSize:"10px",fontWeight:700,padding:"1px 8px",borderRadius:"99px",...(log.type === "absent" ? coralPill : navyPill)}}>{offLabel(log)}</span>}
                   {log.type==="makeup" && <span style={{fontSize:"10px",fontWeight:700,padding:"1px 8px",borderRadius:"99px",...navyPill}}>Makeup</span>}
                 </div>
                 <div className="flex gap-2">
-                  {log.type === "absent" && (
+                  {noLesson(log) && (
                     <button onClick={()=>onMarkAttended(log)}
                       className="text-xs font-bold px-2 py-1 rounded-lg transition-colors"
                       style={navyPill}
@@ -2395,12 +2395,12 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
         </div>
       )}
           </MoreItem>
-          {studentLogs.some(l => l.type === "absent" && l.makeupDate) && <MoreItem title={"Makeups (" + studentLogs.filter(l => l.type === "absent" && l.makeupDate).length + " pending)"} testid="more-makeups">
+          {studentLogs.some(l => noLesson(l) && l.makeupDate) && <MoreItem title={"Makeups (" + studentLogs.filter(l => noLesson(l) && l.makeupDate).length + " pending)"} testid="more-makeups">
       {/* ── Makeup Schedule ── */}
       {(() => {
         // Absent logs that have a makeupDate set (pending makeups)
         const pendingMakeups = studentLogs
-          .filter(l => l.type === "absent" && l.makeupDate)
+          .filter(l => noLesson(l) && l.makeupDate)
           .sort((a, b) => a.makeupDate.localeCompare(b.makeupDate));
 
         if (pendingMakeups.length === 0) return null;
@@ -2555,8 +2555,8 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
           ? studentLogs.filter(l => new Date(l.date + "T12:00:00") >= periodStart)
           : studentLogs;
 
-        const totalLogs    = filteredLogs.filter(l => l.type !== "absent");
-        const absentLogs   = filteredLogs.filter(l => l.type === "absent");
+        const totalLogs    = filteredLogs.filter(l => !noLesson(l));
+        const absentLogs   = filteredLogs.filter(l => l.type === "absent");   // D5: 'cancelled' (teacher, holiday…) is neither a lesson nor an absence
         const attendanceTotal = studentLogs.length;
         const attendanceRate  = attendanceTotal > 0
           ? Math.round(((attendanceTotal - absentLogs.length) / attendanceTotal) * 100)
@@ -2781,16 +2781,16 @@ function TodayView({ students, logs, roster, onLog, onAbsence, onSelect, onDelet
   const today = todayStr();
   const todayLogs = logs.filter(l => l.date === today);
   // Dashboard D1: a makeup booked for today (an absent log with today's makeup date) is listed too
-  const makeups = logs.filter(l => l.type === "absent" && l.makeupDate === today).map(l => ({ log: l, student: students.find(s => s.id === l.studentId) })).filter(x => x.student);
+  const makeups = logs.filter(l => noLesson(l) && l.makeupDate === today).map(l => ({ log: l, student: students.find(s => s.id === l.studentId) })).filter(x => x.student);
   const logOf = (s) => todayLogs.find(l => l.studentId === s.id);
-  const statusOf = (s) => { if (s.paused) return "paused"; const lg = logOf(s); return !lg ? "pending" : lg.type === "absent" ? "absent" : "logged"; };
+  const statusOf = (s) => { if (s.paused) return "paused"; const lg = logOf(s); return !lg ? "pending" : noLesson(lg) ? "absent" : "logged"; };
   const toMin = (t) => { const [h,m] = String(t).split(":").map(Number); return h*60 + (m||0); };
   const nowMin = now.getHours()*60 + now.getMinutes();
   const nextIdx = slots.findIndex(sl => statusOf(sl.student) === "pending" && toMin(sl.time) + sl.dur > nowMin);
   const n = (st) => slots.filter(sl => statusOf(sl.student) === st).length;
   const active = slots.length - n("paused");
   const sub = [active + " lesson" + (active !== 1 ? "s" : "") + " today"]
-    .concat(makeups.length ? [makeups.length + " makeup" + (makeups.length !== 1 ? "s" : "")] : [], n("logged") ? [n("logged") + " logged"] : [], n("absent") ? [n("absent") + " absent"] : [], n("paused") ? [n("paused") + " paused"] : []).join(", ");
+    .concat(makeups.length ? [makeups.length + " makeup" + (makeups.length !== 1 ? "s" : "")] : [], n("logged") ? [n("logged") + " logged"] : [], n("absent") ? [n("absent") + " no lesson"] : [], n("paused") ? [n("paused") + " paused"] : []).join(", ");
 
   // when there is nothing today: the next lesson this week
   const nextLater = (() => {
@@ -2849,14 +2849,14 @@ function TodayView({ students, logs, roster, onLog, onAbsence, onSelect, onDelet
                   {status === "paused" && <span className="pb-tag">Paused</span>}
                   {status === "pending" && (<>
                     <button onClick={()=>onLog(s)} className="pb-act primary">+ Log lesson</button>
-                    <button onClick={()=>onAbsence(s)} className="pb-act quiet pb-absent-btn">Absent</button>
+                    <button onClick={()=>onAbsence(s)} className="pb-act quiet pb-absent-btn">No lesson</button>
                   </>)}
                   {status === "logged" && (<>
                     <span className="pb-tag good">✓ Logged</span>
                     <button onClick={()=>onLog(s)} className="pb-act quiet">Edit log</button>
                   </>)}
                   {status === "absent" && (<>
-                    <span className="pb-tag hot">Absent</span>
+                    <span className="pb-tag hot">{offLabel(todayLog)}</span>
                     <button onClick={()=>onMarkAttended(todayLog)} className="pb-act quiet">✓ Attended</button>
                     <button onClick={()=>onAbsence(s)} className="pb-act quiet">Set makeup</button>
                     <button onClick={()=>onDeleteLog(todayLog.id)} className="pb-act quiet">Undo</button>
@@ -2866,7 +2866,7 @@ function TodayView({ students, logs, roster, onLog, onAbsence, onSelect, onDelet
             );
           })}
           {makeups.map(({ log, student: s }) => {
-            const done = todayLogs.some(l => l.studentId === s.id && l.type !== "absent");
+            const done = todayLogs.some(l => l.studentId === s.id && !noLesson(l));
             return (
               <div key={"m" + log.id} className="pb-row" data-lesson-row="1" data-makeup="1" data-status={done ? "logged" : "pending"}>
                 <div className="pb-time"><b>Makeup</b><span>{(s.lessonDuration || 45) + " min"}</span></div>
@@ -3928,7 +3928,7 @@ function ScheduleView({ students, logs, overrides, onLog, onAbsence, onSelect, o
                 <span style={{display:"block", fontSize:12, fontWeight:600, color: isToday ? "#e4572e" : "#6d6f9c"}}>{isToday ? "Today" : day.slice(0,3)}</span>
                 <span style={{display:"block", fontFamily:"'Playfair Display',Georgia,serif", fontWeight:900, fontSize:22, lineHeight:1.1, color: isToday ? "#e4572e" : "#26296b", marginTop:1}}>{dt ? dt.getDate() : ""}</span>
                 <span style={{display:"block", fontSize:11, color:"#6d6f9c", marginTop:2}}>{count ? `${count} lesson${count!==1?"s":""}, ${timeStr}` : "No lessons"}</span>
-                {dt && logs.filter(l => l.type === "absent" && l.makeupDate === ymdLocal(dt)).map(l => { const ms = students.find(x => x.id === l.studentId); return ms ? (
+                {dt && logs.filter(l => noLesson(l) && l.makeupDate === ymdLocal(dt)).map(l => { const ms = students.find(x => x.id === l.studentId); return ms ? (
                   <button key={l.id} data-makeup-chip="1" onClick={()=>onSelect(ms)} title={"Makeup for " + fmtDate(l.date)}
                     style={{display:"inline-block", marginTop:4, fontSize:10.5, fontWeight:800, padding:"1px 7px", borderRadius:99, background:"#fdf0dc", color:"#9a6212", border:"none", cursor:"pointer"}}>Makeup · {firstNameOf(ms.name)}</button>
                 ) : null; })}
@@ -4018,7 +4018,7 @@ function ScheduleView({ students, logs, overrides, onLog, onAbsence, onSelect, o
                 // Status for today's slot only
                 const todayStr = ymdLocal(new Date());
                 const todayLog = isToday ? logs.filter(l => l.studentId===s.id && l.date===todayStr).sort((a,b)=>b.date.localeCompare(a.date))[0] : null;
-                const todayStatus = !isToday ? null : todayLog ? (todayLog.type==="absent" ? "absent" : "logged") : "pending";
+                const todayStatus = !isToday ? null : todayLog ? (noLesson(todayLog) ? "absent" : "logged") : "pending";
 
                 const isPopoverOpen = activePopover?.overrideKey === slot.overrideKey;
 
@@ -4139,12 +4139,12 @@ function ScheduleView({ students, logs, overrides, onLog, onAbsence, onSelect, o
                           <span className="pb-slot-btn" style={{background:"#e3f1ec",color:"#2e8a6e",cursor:"default"}}>Logged</span>
                         )}
                         {todayStatus === "absent" && (
-                          <span className="pb-slot-btn" style={{background:"#fbe3da",color:"#c0431f",cursor:"default"}}>Absent</span>
+                          <span className="pb-slot-btn" style={{background:"#fbe3da",color:"#c0431f",cursor:"default"}}>{offLabel(todayLog)}</span>
                         )}
                         {todayStatus === "pending" && (
                           <>
                             <button onClick={()=>onLog(s)} className="pb-slot-btn" style={{background:"#26296b",color:"#fff"}}>+ Log</button>
-                            <button onClick={()=>onAbsence(s)} className="pb-slot-btn" style={{background:"transparent",color:"#6d6f9c"}}>Absent</button>
+                            <button onClick={()=>onAbsence(s)} className="pb-slot-btn" style={{background:"transparent",color:"#6d6f9c"}}>No lesson</button>
                           </>
                         )}
                       </div>
@@ -4502,8 +4502,8 @@ function App() {
       if (sortBy === "monthcount") {
         const now = new Date();
         const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
-        const aCount = logs.filter(l=>l.studentId===a.id && l.date&&l.date.startsWith(ym) && l.type!=="absent").length;
-        const bCount = logs.filter(l=>l.studentId===b.id && l.date&&l.date.startsWith(ym) && l.type!=="absent").length;
+        const aCount = logs.filter(l=>l.studentId===a.id && l.date&&l.date.startsWith(ym) && !noLesson(l)).length;
+        const bCount = logs.filter(l=>l.studentId===b.id && l.date&&l.date.startsWith(ym) && !noLesson(l)).length;
         return bCount - aCount;
       }
       return 0;
