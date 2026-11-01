@@ -1,0 +1,22 @@
+const {chromium}=require('playwright');const fs=require('fs');let pass=0,fail=0;const ok=(c,m)=>{if(c)pass++;else{fail++;console.log('FAIL',m)}};
+async function pg(b){const c=await b.newContext({viewport:{width:430,height:900}});const p=await c.newPage();p.errs=[];p.on('pageerror',e=>p.errs.push(e.message.slice(0,150)));
+ await p.route(/cdnjs\.cloudflare\.com.*react-dom/,r=>r.fulfill({body:fs.readFileSync('/tmp/da/node_modules/react-dom/umd/react-dom.production.min.js'),contentType:'application/javascript'}));
+ await p.route(/cdnjs\.cloudflare\.com.*\/react\//,r=>r.fulfill({body:fs.readFileSync('/tmp/da/node_modules/react/umd/react.production.min.js'),contentType:'application/javascript'}));
+ await p.route(/googletagmanager|fonts\.g/,r=>r.abort());return p;}
+const tabs=p=>p.evaluate(()=>[...document.querySelectorAll('.pb-main button')].filter(b=>b.style.flex==='1 1 0%'||b.style.flex==='1').map(b=>b.textContent.trim()+(b.style.color.includes('navy')?'*':'')));
+const B='http://localhost:8855/';
+(async()=>{const b=await chromium.launch();
+ let p=await pg(b);await p.goto(B+'drills.html?teacher=1&view=home');await p.waitForTimeout(3500);
+ let tb=await tabs(p);console.log(tb);ok(tb.map(x=>x.replace('*','')).join()==='Map,Lessons,Books,Printables,Practice','teacher tabs');ok(tb[0].endsWith('*'),'Map active on Topics');
+ ok(await p.$('[data-ref-pick]'),'topics = reference');ok(!/Where do you want to go/.test(await p.textContent('body')),'no categories on Topics');
+ await p.click('.pb-main button:has-text("Lessons")');await p.waitForTimeout(800);
+ ok(/Where do you want to go/.test(await p.textContent('body')),'Lessons shows categories');ok(!(await p.$('[data-map-switch]')),'no map switch in Lessons');
+ tb=await tabs(p);ok(tb[1].endsWith('*')&&!tb[0].endsWith('*'),'Lessons active '+tb);
+ await p.click('text=Pitch');await p.waitForTimeout(700);ok(/← Lessons/.test(await p.textContent('body')),'back says Lessons');
+ await p.click('text=← Lessons');await p.waitForTimeout(500);ok(/Where do you want to go/.test(await p.textContent('body')),'back to Lessons top');
+ await p.click('.pb-main button:has-text("Map")');await p.waitForTimeout(700);ok(await p.$('[data-map-switch]'),'Map back');ok(!/Where do you want to go/.test(await p.textContent('body')),'map has no categories');
+ ok(p.errs.length===0,'errors '+p.errs);
+ let v=await pg(b);await v.goto(B+'drills.html?teacher=0&view=home&area=pitch');await v.waitForTimeout(3500);
+ tb=await tabs(v);ok(tb.map(x=>x.replace('*','')).join()==='Map,Practice','visitor tabs '+tb);ok(await v.$('[data-ref-pick]'),'visitor old area URL -> reference');ok(!/Where do you want to go/.test(await v.textContent('body')),'visitor sees no categories');
+ ok(v.errs.length===0,'visitor errors '+v.errs);
+ await b.close();console.log('pass',pass,'fail',fail)})();
