@@ -25067,7 +25067,7 @@ function townhouseSvg(view, o = {}) {
   const btns = o.hall ? '<g data-door role="button" tabindex="0" aria-label="' + penEsc(t('Open the door and come in', '문을 열고 들어가요')) + '" style="cursor:pointer"><rect x="' + pFix(door[0]) + '" y="' + pFix(door[1]) + '" width="' + door[2] + '" height="' + door[3] + '" rx="3" fill="transparent"/></g>'
     : o.print ? '' : out.btns.sort((a, b) => a.num - b.num).map(b => b.html).join('');   // on paper nothing is a button
   const svg = '<g transform="translate(0 ' + (-y0) + ')">' + thDefs() + pvDef + stG(head + body) + (o.print ? '' : glow) + (out.fig && !o.hall ? '<g data-testid="map-figure">' + out.fig + '</g>' : '') + btns + '</g>';
-  return { svg, W, H, vb: o.hall ? [0, pFix(hallTop - y0), W, pFix(H - (hallTop - y0))] : [0, 0, W, H] };
+  return { svg, W, H, vb: o.hall && !o.whole ? [0, pFix(hallTop - y0), W, pFix(H - (hallTop - y0))] : [0, 0, W, H] };   // m31: o.whole, the hall with the whole house above it
 }
 
 // Build BN: what is inside a room, from its own Lesson Book: the steps' titles (the opener and the check-up left out)
@@ -25127,7 +25127,7 @@ function HouseMap({ onOpen, compact, noIntro }) {
   const [chkPick, setChkPick] = useState(null);
   const view = { stages, here, nums, openK: effK, chk: chkByK, chkOk, focus: null, star, review: placeReview(), pawn: name ? (x, y, k) => stPiece(VIC_PAWN_NAVY, x, y, k) : null };   // Build DP: the rooms to review
   const house = useMemo(() => townhouseSvg(view, { wide }), [sig, UI_TEACHER, LANG, effK, Object.keys(chkOk).join(',')]);   // m18: the T marks follow the teacher view
-  const hall = useMemo(() => townhouseSvg(view, { hall: true, wide }), [sig]);
+  const hall = useMemo(() => townhouseSvg({ ...view, openK: -1 }, { hall: true, whole: true, wide }), [sig, Object.keys(chkOk).join(',')]);   // m31 (her 'this should come with it'): the closed house, roof to door, before you go in
   const week = null;   // m11: the pawn board left the Map (weekSvg kept for later use)
   const reduced = (() => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } })();
   const enter = () => {
