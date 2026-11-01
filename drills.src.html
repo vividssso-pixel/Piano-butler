@@ -22642,6 +22642,43 @@ function RefRanges() {
     ]}/>}
   </div>;
 }
+// m29: search the Library. Every book is rendered once, hidden, and its rows are searched; a result opens its book at the row.
+const REF_FIND_SEL = '[data-ref-table] > div, [data-ref-sign], [data-ref-word], [data-ref-scale], [data-ref-clef], [data-ref-movement], [data-ref-period], [data-ref-term]';
+const refFold = (x) => String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+function refFind(root, q) {
+  const f = refFold(q).trim(); if (!root || f.length < 2) return [];
+  const out = [], seen = {};
+  REF_SECS.forEach(sec => { const name = t(sec.en, sec.ko); if (refFold(name).includes(f) || refFold(sec.en).includes(f)) { out.push({ sec: sec.id, text: name, book: true, rank: 0 }); seen[sec.id + '|'] = 1; } });
+  root.querySelectorAll('[data-ref-find]').forEach(box => {
+    const sec = box.getAttribute('data-ref-find');
+    box.querySelectorAll(REF_FIND_SEL).forEach(el => {
+      if (el.querySelector && el.querySelector(REF_FIND_SEL)) return;   // the innermost only
+      const parts = []; const tw = document.createTreeWalker(el, NodeFilter.SHOW_TEXT); let nd; while ((nd = tw.nextNode())) { const x = nd.nodeValue.trim(); if (x) parts.push(x); }
+      const raw = parts.join(' ').replace(/\s+/g, ' ').replace(/ ([·,:;)])/g, '$1').trim(); if (!raw || raw.length > 260) return;
+      const low = refFold(raw), i = low.indexOf(f); if (i < 0) return;
+      const key = sec + '|' + low; if (seen[key]) return; seen[key] = 1;
+      out.push({ sec, text: raw.length > 110 ? (i > 40 ? '… ' + raw.slice(i - 30, i + 80) : raw.slice(0, 110)) + ' …' : raw, rank: low === f ? 0.5 : i === 0 || /[\s(·]/.test(low[i - 1] || ' ') ? 1 : 2 });
+    });
+  });
+  return out.sort((a, b) => a.rank - b.rank).slice(0, 14);
+}
+function RefSearch({ onOpen }) {
+  const [q, setQ] = useState(''), [on, setOn] = useState(false), [res, setRes] = useState([]), box = useRef(null);
+  useEffect(() => { if (!on) return; const id = setTimeout(() => setRes(refFind(box.current, q)), 120); return () => clearTimeout(id); }, [q, on]);
+  const name = (id) => { const x = REF_SECS.find(z => z.id === id); return x ? t(x.en, x.ko) : id; };
+  return <div data-ref-search style={{margin:'12px 0 0',position:'relative'}}>
+    <input type="search" value={q} onFocus={() => setOn(true)} onChange={e => { setOn(true); setQ(e.target.value); }} placeholder={t('Find in the Library: minim, Dorian, staccato…', '서재에서 찾기: 2분음표, 도리안, 스타카토…')} aria-label={t('Find in the Library', '서재에서 찾기')}
+      style={{width:'100%',boxSizing:'border-box',font:'inherit',fontSize:15,padding:'10px 14px',border:'1.5px solid rgba(38,41,107,0.22)',borderRadius:12,background:'#fff',color:'var(--navy)'}}/>
+    {q.trim().length >= 2 && <div data-ref-results style={{marginTop:6,border:'1.5px solid rgba(38,41,107,0.18)',borderRadius:12,background:'#fff',overflow:'hidden'}}>
+      {res.length ? res.map((r, i) => <button key={i} type="button" data-ref-result={r.sec} onClick={() => { onOpen(r.sec, r.book ? null : q); setQ(''); }}
+        style={{display:'flex',width:'100%',textAlign:'left',gap:10,alignItems:'baseline',justifyContent:'space-between',border:'none',borderTop:i ? '1px solid rgba(38,41,107,0.1)' : 'none',background:'none',font:'inherit',padding:'8px 12px',cursor:'pointer',color:'var(--navy)'}}>
+        <span style={{fontSize:13.5,lineHeight:1.35,minWidth:0}}>{r.book ? <b>{r.text}</b> : r.text}</span>
+        <span style={{flex:'none',fontSize:11,fontWeight:900,color:'#e4572e',whiteSpace:'nowrap'}}>{r.book ? t('the book ›', '책 ›') : name(r.sec) + ' ›'}</span></button>)
+        : <div style={{padding:'9px 12px',fontSize:13.5,color:'#6d6f9c'}}>{t('Nothing found. Try another word.', '찾지 못했어요. 다른 낱말로 해 봐요.')}</div>}
+    </div>}
+    {on && <div ref={box} aria-hidden="true" style={{display:'none'}}><RefGo.Provider value={null}>{REF_SECS.map(sec => { const B = REF_BODY[sec.id]; return B ? <div key={sec.id} data-ref-find={sec.id}><B/></div> : null; })}</RefGo.Provider></div>}
+  </div>;
+}
 const SHELF_TOOLS = { time: [['metronome', 'Metronome', '메트로놈']], scales: [['scale-finder', 'Scale finder', '스케일 찾기']] };   // m17
 const SHELF_FAVS = [['scale-finder', 'Scale finder', '스케일 찾기'], ['metronome', 'Metronome', '메트로놈']];   // m17: for now (her 'like a favourites list, for now')
 function RefShelf({ onChapter, onHouse, onTool }) {
@@ -22661,6 +22698,7 @@ function RefShelf({ onChapter, onHouse, onTool }) {
       <div><div style={{fontFamily:LB_SERIF,fontStyle:LANG === 'ko' ? 'normal' : 'italic',fontSize:16.5,color:'var(--navy)'}}>{t('“Which book shall I fetch?”', '“어떤 책을 꺼내 드릴까요?”')}</div>
         <div style={{fontSize:12.5,color:'#4a4d86',marginTop:2}}>{L && L.name ? L.name + ' · ' : ''}<button type="button" data-ref-house onClick={onHouse} style={{border:'none',background:'none',padding:0,font:'inherit',fontWeight:800,color:'var(--coral, #e4572e)',cursor:'pointer'}}>{t('My house ›', '나의 집 ›')}</button></div></div>
     </div>
+    <RefSearch onOpen={(id, q) => { pick(id); if (q) setTimeout(() => { try { const pn = document.querySelector('[data-ref-panel="' + id + '"]'); if (!pn) return; const f = refFold(q).trim(); const cand = [...pn.querySelectorAll(REF_FIND_SEL)].filter(e => !e.querySelector(REF_FIND_SEL) && refFold(e.textContent).includes(f)); const el = cand.find(e => refFold(e.textContent).trim() === f) || cand[0]; if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); const o = el.style.background; el.style.background = '#ffe9df'; el.style.transition = 'background .6s'; setTimeout(() => { el.style.background = o; }, 1800); } } catch (e) {} }, 380); }}/>
     {onTool && <div data-ref-favs style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',margin:'10px 0 0'}}><span style={{fontSize:10.5,fontWeight:900,letterSpacing:'0.1em',textTransform:'uppercase',color:'#4a4d86'}}>★ {t('Favourites', '즐겨찾기')}</span>
       {SHELF_FAVS.map(([id, en, ko2]) => <button key={id} type="button" className="chip" data-ref-fav={id} onClick={() => onTool(id)} style={{padding:'4px 12px',fontSize:13,fontWeight:800}}>{t(en, ko2)}</button>)}</div>}
     {one ? <div data-ref-oneshelf style={{marginTop:18,display:'flex',alignItems:'flex-end',gap:10}}>   {/* m21: one shelf when it fits; m22: a wooden section per group, its name on the shelf's edge */}
@@ -25069,7 +25107,7 @@ function HouseMap({ onOpen, compact, noIntro }) {
   const chkRooms = loadChecks().rooms, star = {}; Object.keys(chkRooms).forEach(id => { if (chkRooms[id].pass) star[id] = 1; });   // Build CN
   const sig = stages.map(x => x.st.join(',')).join('|') + here + LANG + compact + name + today + fontTick + wide + (topic || '') + Object.keys(star).join(',') + placeReview().join(',');
   const hereK = Math.max(0, stages.findIndex(x => x.ids.includes(here))), effK = openK == null ? hereK : openK;
-  const view = { stages, here, nums, openK: effK, focus: topic, star, review: placeReview(), pawn: name ? (x, y, k) => stPiece(VIC_PAWN_NAVY, x, y, k) : null };   // Build DP: the rooms to review
+  const view = { stages, here, nums, openK: effK, focus: null, star, review: placeReview(), pawn: name ? (x, y, k) => stPiece(VIC_PAWN_NAVY, x, y, k) : null };   // Build DP: the rooms to review
   const house = useMemo(() => townhouseSvg(view, { wide }), [sig, UI_TEACHER, LANG, effK]);   // m18: the T marks follow the teacher view
   const hall = useMemo(() => townhouseSvg(view, { hall: true, wide }), [sig]);
   const week = null;   // m11: the pawn board left the Map (weekSvg kept for later use)
@@ -25114,7 +25152,7 @@ function HouseMap({ onOpen, compact, noIntro }) {
       <div style={{maxWidth:wide ? 820 : 440,margin:'0 auto'}}>
         {weekEl && <div style={{marginBottom:14,maxWidth:440}}>{weekEl}</div>}
         {!compact && <ReviewCard/>}
-        {inside && !compact && <HouseTopics value={topic} onChange={setTopic}/>}
+        {false && inside && !compact && <HouseTopics value={topic} onChange={setTopic}/>}   {/* m29: the Library does topics now */}
         <div ref={houseRef} data-house-view role="group" aria-label={t('The Piano Butler’s house: ' + houseFloors() + ', one room for each chapter', '피아노 버틀러의 집: ' + houseFloors(true) + ', 챕터마다 방 하나')}>
           {inside
             ? <><div ref={artRef} data-grow style={{animation: cameIn.current ? 'pbRise .8s cubic-bezier(.25,.7,.3,1) both' : 'none'}}><PenArt shapes={[{ k: 'raw', svg: house.svg }]} vb={house.vb} inter/></div>
