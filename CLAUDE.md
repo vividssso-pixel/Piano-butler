@@ -80,6 +80,12 @@ and visitors). Exams are a lens on the same rooms (AMEB now; grade labels kept a
 **Visitors (when the site links drills; not yet).** Map and Reference all open; lessons open Beginner to Grade 1 and the
 first room of each higher floor; a few drills per floor; no saved progress; book samples only. A soft lock is enough until
 payments exist; leave a per-room open/locked flag in the Map data.
+**Search (Search Console, 31 Jul - 30 Oct 2026, read 1 Nov).** 686 clicks (about twice the 3 months before), 28.9k impressions,
+CTR 2.4%, average position 9.2; 44 pages indexed, 7 not. More than half the clicks go to the diploma lists (LMusA 108, AMusA 99,
+ABRSM LRSM 75, FRSM 53, Trinity ATCL 47), then AMEB Grade 8/3/4. Australia about half, then the UK, Hong Kong, the US, Singapore,
+Malaysia. So the visitors are mostly adult diploma candidates and teachers on several boards: the first paid product should
+serve them (diploma prep: programme planning, viva voce, programme notes), the kids' workbooks second. Titles and descriptions
+of those six pages were matched to the searches on 1 Nov (commit a36ee04): **re-check their CTR in Search Console around 29 Nov.**
 **Build rule.** The Map merge touches drills.src.html: do it between workbook builds, in small commits. Nothing new outside
 this layout until the merge is done.
 
