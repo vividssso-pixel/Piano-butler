@@ -2949,7 +2949,7 @@ function MyVoiceRecorder() {
     </div>
   );
 }
-function SoundSettings() {
+function SoundSettings({ menu }) {   // m15: menu = inside the teacher's ⚙ menu, always open, no Done
   const [p, setP] = useState(SOUND);
   const set = (patch) => {
     const np = { ...p, ...patch }; setP(np); saveSoundPrefs(np);
@@ -2962,6 +2962,15 @@ function SoundSettings() {
   const [open, setOpen] = useState(false);
   const chip = (on, label, onClick) => <button className={'chip' + (on ? ' active' : '')} style={{padding:'3px 10px',fontSize:13}} onClick={onClick}>{label}</button>;
   const summary = (p.piano ? t('Piano', '피아노') : t('Simple', '심플')) + ' · ' + (p.count === 'voice' ? t('Voice count', '음성 카운트') : ({ wood: t('Woodblock', '우드블록'), tick: t('Tick', '틱'), beep: t('Beep', '삐') })[p.click || 'wood'] + t(' click', ' 클릭'));
+  if (menu) return (
+    <div data-testid="menu-sound" style={{display:'flex',flexDirection:'column',gap:6,fontSize:12.5,fontWeight:800,color:'#4a4d86'}}>
+      <div style={{display:'flex',flexWrap:'wrap',gap:5}}>{chip(p.piano, t('Piano', '피아노'), () => set({ piano: true }))}{chip(!p.piano, t('Simple', '심플'), () => set({ piano: false }))}</div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:5,alignItems:'center'}}><span>{t('Count', '카운트')}</span>{chip(p.count === 'click', t('Click', '클릭'), () => set({ count: 'click' }))}{chip(p.count === 'voice', t('Voice 1 2 3 4', '음성 1 2 3 4'), () => set({ count: 'voice' }))}</div>
+      <div style={{display:'flex',flexWrap:'wrap',gap:5}}>{p.count === 'click' ? [['wood', t('Woodblock', '우드블록')], ['tick', t('Tick', '틱')], ['beep', t('Beep', '삐')]].map(([k, l]) => <React.Fragment key={k}>{chip((p.click || 'wood') === k, l, () => set({ click: k }))}</React.Fragment>)
+        : [['heart', t('Female (US)', '여성 (US)')], ['emma', t('Female (UK)', '여성 (UK)')], ['michael', t('Male', '남성')], ['myvoice', t('My voice', '내 목소리')]].map(([k, l]) => <React.Fragment key={k}>{chip((p.voice || 'heart') === k, l, () => set({ voice: k }))}</React.Fragment>)}</div>
+      {p.count === 'voice' && p.voice === 'myvoice' && <MyVoiceRecorder/>}
+    </div>
+  );
   if (!open) return (
     <div style={{display:'flex',justifyContent:'flex-end',margin:'-6px 0 10px'}}>
       <button onClick={() => setOpen(true)} style={{border:'none',background:'transparent',fontSize:13,fontWeight:800,color:'#4a4d86',cursor:'pointer',fontFamily:'inherit',padding:'2px 4px'}}>♪ {t('Sound', '소리')}: {summary} <span style={{color:'#e4572e'}}>{t('change', '변경')}</span></button>
@@ -22316,6 +22325,57 @@ function RefPick({ onChapter }) {
     <section style={{minWidth:0}}><RefHead id={s.id}/><B/></section>
   </div></RefGo.Provider>;
 }
+// m14: the Library (her 1 Nov: 'books like this' -- the navy and ivory spines, gold bands, a wooden shelf; a book taken from the
+// shelf opens below with its table). It replaces the Topics chips; the House is behind 'My house'.
+const REF_SHELVES = [
+  ['Reading music', '악보 읽기', [['staff', 'Staff and clefs', '오선과 음자리표'], ['notes', 'Notes and rests', '음표와 쉼표'], ['time', 'Time signatures', '박자표'], ['signs', 'Signs', '기호']]],
+  ['Pitch and harmony', '음높이와 화성', [['keys', 'Keys', '조성'], ['scales', 'Scales', '음계'], ['intervals', 'Intervals', '음정'], ['chords', 'Chords', '화음'], ['cadences', 'Cadences', '종지']]],
+  ['Words and history', '용어와 역사', [['play', 'How to play', '연주 용어'], ['terms', 'Music words', '음악 낱말'], ['periods', 'Periods', '시대'], ['instruments', 'Instruments', '악기']]],
+];
+const REF_SPINE_H = [150, 138, 160, 128, 144, 132, 156, 140, 150, 136, 148, 130, 142];
+function RefSpine({ id, label, dark, h, on, onPick }) {
+  const ko = LANG === 'ko', band = (top) => <i aria-hidden="true" style={{position:'absolute',left:0,right:0,[top ? 'top' : 'bottom']:12,height:5,borderTop:'1px solid ' + (dark ? '#c9a24f' : '#a8823f'),borderBottom:'1px solid ' + (dark ? '#c9a24f' : '#a8823f')}}/>;
+  return <button type="button" data-ref-spine={id} aria-pressed={on} onClick={() => onPick(on ? null : id)} title={label}
+    style={{flex:'none',position:'relative',width:'clamp(36px, 9vw, 58px)',height:h,border:'none',padding:0,cursor:'pointer',borderRadius:'4px 4px 1px 1px',
+      background:dark ? 'linear-gradient(90deg,#1a1c55 0%,#2f3280 30%,#2a2d78 65%,#17194c 100%)' : 'linear-gradient(90deg,#e6dcc3 0%,#fbf6ea 30%,#f6efdd 65%,#ddd1b4 100%)',
+      color:dark ? '#fff' : 'var(--navy)',boxShadow:on ? '0 8px 12px rgba(38,41,107,.28)' : '0 1px 0 rgba(0,0,0,.08)',transform:on ? 'translateY(-10px)' : 'none',transition:'transform .18s',display:'flex',alignItems:'center',justifyContent:'center'}}>
+    {band(true)}{band(false)}
+    <span style={{writingMode:'vertical-rl',textOrientation:ko ? 'upright' : 'mixed',transform:ko ? 'none' : 'rotate(180deg)',fontFamily:LB_SERIF,fontWeight:700,fontSize:ko ? 14 : 15,letterSpacing:ko ? '0.08em' : '0.03em',whiteSpace:'nowrap'}}>{label}</span>
+  </button>;
+}
+const SHELF_TOOLS = { time: [['metronome', 'Metronome', '메트로놈']], scales: [['scale-finder', 'Scale finder', '스케일 찾기']] };   // m17
+const SHELF_FAVS = [['scale-finder', 'Scale finder', '스케일 찾기'], ['metronome', 'Metronome', '메트로놈']];   // m17: for now (her 'like a favourites list, for now')
+function RefShelf({ onChapter, onHouse, onTool }) {
+  const [sel, setSel] = useState(() => { let x = null; try { x = localStorage.getItem(REF_PICK_KEY + '_shelf'); } catch (e) {} return REF_SECS.some(s => s.id === x) ? x : null; });
+  const panel = useRef(null), ko = LANG === 'ko';
+  const pick = (id) => { setSel(id); try { localStorage.setItem(REF_PICK_KEY + '_shelf', id || ''); } catch (e) {} if (id) setTimeout(() => { const el = panel.current; if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); };
+  const s = sel && REF_SECS.find(z => z.id === sel), B = s && REF_BODY[s.id];
+  const L = (typeof tLessonGet === 'function' && tLessonGet()) || null;
+  let k = 0;
+  return <RefGo.Provider value={onChapter || null}><div data-ref-shelf data-ref-open={sel || ''} style={{marginBottom:26}}>
+    <div style={{display:'flex',alignItems:'center',gap:12,margin:'0 0 6px'}}>
+      <img src={VIC_CAMEO} alt="" style={{height:50,flex:'none'}}/>
+      <div><div style={{fontFamily:LB_SERIF,fontStyle:'italic',fontSize:16.5,color:'var(--navy)'}}>{t('“Which book shall I fetch?”', '“어떤 책을 꺼내 드릴까요?”')}</div>
+        <div style={{fontSize:12.5,color:'#4a4d86',marginTop:2}}>{L && L.name ? L.name + ' · ' : ''}<button type="button" data-ref-house onClick={onHouse} style={{border:'none',background:'none',padding:0,font:'inherit',fontWeight:800,color:'var(--coral, #e4572e)',cursor:'pointer'}}>{t('My house ›', '나의 집 ›')}</button></div></div>
+    </div>
+    {onTool && <div data-ref-favs style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',margin:'10px 0 0'}}><span style={{fontSize:10.5,fontWeight:900,letterSpacing:'0.1em',textTransform:'uppercase',color:'#4a4d86'}}>★ {t('Favourites', '즐겨찾기')}</span>
+      {SHELF_FAVS.map(([id, en, ko2]) => <button key={id} type="button" className="chip" data-ref-fav={id} onClick={() => onTool(id)} style={{padding:'4px 12px',fontSize:13,fontWeight:800}}>{t(en, ko2)}</button>)}</div>}
+    {REF_SHELVES.map(([en, kr, books]) => <div key={en} style={{marginTop:18}}>
+      <div style={{fontSize:10.5,fontWeight:900,letterSpacing:'0.1em',textTransform:'uppercase',color:'#4a4d86',margin:'0 0 8px'}}>{t(en, kr)}</div>
+      <div style={{display:'flex',alignItems:'flex-end',gap:5,padding:'0 4px',borderBottom:'5px solid #b59a68',boxShadow:'0 3px 0 rgba(38,41,107,.12)',minHeight:120}}>
+        {books.map(([id, ben, bko], i) => { const label = t(ben, bko), h = Math.max(REF_SPINE_H[k++ % 13], label.length * (ko ? 15 : 8.2) + 64);
+          return <RefSpine key={id} id={id} label={label} dark={i % 2 === 0} h={h} on={sel === id} onPick={pick}/>; })}
+      </div></div>)}
+    {s && <section ref={panel} data-ref-panel={s.id} style={{marginTop:22,background:'#fff',borderRadius:6,padding:'22px 16px 22px',position:'relative',boxShadow:'0 0 0 1.5px rgba(38,41,107,.14)',scrollMarginTop:12}}>
+      <i aria-hidden="true" style={{position:'absolute',left:16,right:16,top:8,height:5,borderTop:'1px solid #c9a24f',borderBottom:'1px solid #c9a24f'}}/>
+      <i aria-hidden="true" style={{position:'absolute',left:16,right:16,bottom:8,height:5,borderTop:'1px solid #c9a24f',borderBottom:'1px solid #c9a24f'}}/>
+      <div style={{display:'flex',justifyContent:'flex-end'}}><button type="button" data-ref-close onClick={() => pick(null)} style={{border:'none',background:'none',font:'inherit',fontSize:13,fontWeight:800,color:'#4a4d86',cursor:'pointer',padding:'2px 0'}}>{t('Back on the shelf ✕', '책장에 꽂기 ✕')}</button></div>
+      <RefHead id={s.id}/>
+      {onTool && SHELF_TOOLS[s.id] && <div style={{display:'flex',gap:6,flexWrap:'wrap',margin:'0 0 10px'}}>{SHELF_TOOLS[s.id].map(([id, en, ko2]) => <button key={id} type="button" className="ghost-btn" data-ref-tool={id} onClick={() => onTool(id)} style={{padding:'6px 14px',fontSize:13.5}}>{t(en, ko2)} ›</button>)}</div>}
+      <B/>
+    </section>}
+  </div></RefGo.Provider>;
+}
 function ReferenceView({ onChapter, pick }) {
   if (pick) return <RefPick onChapter={onChapter}/>;   // M5: the Map's Topics view, one topic at a time
   const jump = (id) => { const el = document.getElementById('ref-' + id); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
@@ -22733,7 +22793,9 @@ function MapHead({ onOpen }) {
   const label = (id) => (DRILLS.find(d => d.id === id) || {}).label;
   return (
     <div data-testid="map-head" style={{margin:'0 0 16px'}}>
-      {next
+      {next && focus.kind === 'start'
+        ? <span data-testid="map-door-hint" hidden/>   /* the house itself says 'Tap the door to come in' */
+        : next
         ? <button className="primary-btn" data-testid="map-continue" style={{width:'100%',padding:'12px 16px',fontSize:15.5,textAlign:'left',display:'flex',justifyContent:'space-between',alignItems:'center',gap:10}} onClick={() => onOpen(next)}>
             <span><span style={{display:'block',fontSize:11.5,fontWeight:800,letterSpacing:'0.08em',textTransform:'uppercase',opacity:0.8}}>{focus.kind === 'resume' ? t('Keep going', '이어서 하기') : focus.kind === 'next' ? t('Next on your path', '나의 경로에서 다음') : focus.kind === 'placed' ? t('Your start', '나의 시작') : t('Start at the beginning', '처음부터 시작하기')}</span>{label(next)}</span><span style={{fontSize:20}}>→</span></button>
         : <div style={{fontSize:14.5,fontWeight:800,color:'var(--good)',textAlign:'center',margin:'6px 0'}}>{t('Every chapter on the path is done. Wonderful!', '경로의 모든 챕터를 마쳤어요. 멋져요!')}</div>}
@@ -22753,7 +22815,7 @@ function MapHead({ onOpen }) {
 function MapHome({ onOpen }) {
   return (
     <div className="fade-up" data-testid="map-home">
-      <PageIntro title={UI_TEACHER ? t('Music map', '음악 지도') : t('My music map', '나의 음악 지도')} text={t('The Piano Butler’s house: ' + houseFloors() + ', a room for each chapter. Your butler meets you in the hall. Open the door and go up, floor by floor; on each floor, any room first. New to the piano? Start on Beginner. Already playing? Go straight to any room, or carry on with the button.', '피아노 버틀러의 집: ' + houseFloors(true) + ', 챕터마다 방 하나. 버틀러가 현관에서 맞아 줘요. 문을 열고 한 층씩 올라가요. 같은 층에서는 어느 방부터 해도 돼요. 처음이라면 Beginner부터, 이미 배우고 있다면 어느 방으로든 바로 가거나 버튼을 눌러 이어서 해요.')}/>
+      <PageIntro title={UI_TEACHER ? t('Music map', '음악 지도') : t('My music map', '나의 음악 지도')} text={<>{t((['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve'][houseFloorsN()] || houseFloorsN()) + ' floors of music. ', houseFloorsN() + '층의 음악. ')}<b style={{color:'var(--navy)'}}>{t('Open any door', '아무 문이나 열고')}</b>{t(' and climb.', ' 올라가요.')}</>}   /* m17: her 'too long, nobody reads it' *//>
       <MapHead onOpen={onOpen}/>
       <HouseMap onOpen={onOpen} noIntro/>
     </div>
@@ -24403,7 +24465,107 @@ function thNames(state, rooms) {
   rs.forEach(r => { lines[r.id] = thWrap(r[key], r.w - 33, z, TH_SERIF).slice(0, 2); ml = Math.max(ml, lines[r.id].length); });
   return { z, lines, ml };
 }
-function thRoom(view, state, id, x, y, w, h, fs, out, dimNew, lay, cmp) {   // dimNew: the guides' front page greys the rooms without a page; lay: thNames; cmp: Build BM, a compact room
+const CH_SUB = {"posture-hands": ["Sit tall, round hands", "바른 자세, 둥근 손"],
+  "first-steps": ["Black keys in twos and threes", "검은건반 2개·3개"],
+  "pulse": ["Feel the steady beat", "일정한 박 느끼기"],
+  "note-names": ["A to G on the keys", "건반 위 A부터 G"],
+  "hand-positions": ["Middle C and C position", "가운데 도와 C 자리"],
+  "ear-prep": ["Games for your ears", "귀로 하는 놀이"],
+  "note-values": ["How long each note lasts", "음표마다 길이"],
+  "dynamics": ["p, f and in between", "p, f, 그 사이"],
+  "staff": ["Five lines, two clefs", "다섯 줄, 두 음자리표"],
+  "reading-steps": ["Read by step and skip", "걸음과 건너뛰기로 읽기"],
+  "whole-staff": ["Every note on the staff", "오선 위 모든 음"],
+  "time-signatures": ["2/4, 3/4 and 4/4", "2/4, 3/4, 4/4"],
+  "tones": ["Whole and half steps", "온음과 반음"],
+  "listen-sing": ["Hear it, sing it back", "듣고 따라 부르기"],
+  "tempo": ["How fast: the Italian words", "빠르기와 이탈리아어"],
+  "rhythm": ["Quavers and dots", "8분음표와 점음표"],
+  "ledger-lines": ["Notes above and below", "오선 위아래의 음"],
+  "scales": ["How a scale is built", "스케일의 짜임"],
+  "scale-play": ["Thumb under, smooth and even", "엄지 넘기기, 고르게"],
+  "minor-scales": ["Natural and harmonic", "자연단음계, 화성단음계"],
+  "signs": ["Repeats, pause, D.C.", "도돌이표, 늘임표, D.C."],
+  "listen-write": ["Home note, clap it back", "으뜸음, 리듬 따라 치기"],
+  "accidentals": ["Sharps, flats, naturals", "샵, 플랫, 제자리표"],
+  "key-signatures": ["The sharps or flats of a key", "조의 샵과 플랫"],
+  "terms": ["Largo to presto", "라르고부터 프레스토"],
+  "six-eight": ["Two big beats in threes", "셋씩 묶인 두 큰 박"],
+  "intervals": ["From a 2nd to an octave", "2도부터 옥타브까지"],
+  "chords": ["Triads; I, IV and V", "3화음; I, IV, V"],
+  "form": ["AB, ABA, rondo", "AB, ABA, 론도"],
+  "listen-23": ["Two notes together", "동시에 울리는 두 음"],
+  "melody": ["Question and answer", "묻고 답하는 프레이즈"],
+  "scales-23": ["Black-key starts, chromatic", "검은건반 시작, 반음계"],
+  "harmony-2": ["Major, minor, perfect", "장·단·완전 음정"],
+  "rhythm-2": ["Semiquavers and triplets", "16분음표와 셋잇단"],
+  "listen-3": ["Name the interval", "음정 이름 맞히기"],
+  "melody-3": ["Write a four-bar tune", "네 마디 선율 쓰기"],
+  "scales-3": ["Contrary motion, new keys", "반진행, 새 조"],
+  "harmony-3": ["Degree names, inversions", "음의 이름, 자리바꿈"],
+  "rhythm-3": ["2/2, 3/8 and 9/8", "2/2, 3/8, 9/8"],
+  "listen-4": ["Intervals and two parts", "음정과 두 성부"],
+  "scales-4": ["Four octaves, arpeggios", "4옥타브, 아르페지오"],
+  "keys-4": ["Up to six sharps or flats", "샵·플랫 여섯 개까지"],
+  "harmony-4": ["The four cadences", "네 가지 종지"],
+  "rhythm-4": ["Syncopation, 12/8", "당김음, 12/8"],
+  "melody-4": ["A tune for a couplet", "두 줄 시에 선율"],
+  "listen-5": ["Three intervals, triads", "음정 셋, 3화음"],
+  "scales-5": ["Now with dynamics", "셈여림을 넣어서"],
+  "keys-5": ["Every key, both minors", "모든 조, 두 단음계"],
+  "harmony-5": ["The cadential 6-4", "종지 6-4"],
+  "melody-5": ["A tune for a stanza", "네 줄 시에 선율"],
+  "listen-6": ["Triads and inversions", "3화음과 자리바꿈"],
+  "scales-6": ["The grand scale", "그랜드 스케일"],
+  "arps-6": ["Inversions, dominant 7th", "자리바꿈, 딸림7"],
+  "harmony-6": ["V7 and figured bass", "V7과 숫자저음"],
+  "listen-7": ["Cadences, sing from memory", "종지, 외워 부르기"],
+  "scales-7": ["Three against two", "3 대 2"],
+  "arps-7": ["Chord walks, accompaniments", "화음 진행, 반주형"],
+  "pieces-78": ["Form and style of your piece", "내 곡의 형식과 스타일"],
+  "listen-8": ["All four cadences", "네 가지 종지 모두"],
+  "scales-8": ["A third and a sixth apart", "3도·6도 간격"],
+  "arps-8": ["I IV I6-4 V I", "I IV I6-4 V I"],
+  "pieces-8": ["Your pieces, diploma depth", "디플로마 깊이로 내 곡"],
+  "piano-story": ["Inside the piano", "피아노 속 이야기"],
+  "piano-story-8": ["The piano through time", "피아노의 역사"],
+  "pitch-range": ["High and low instruments", "높은 악기, 낮은 악기"],
+  "composers": ["Baroque to today", "바로크부터 오늘까지"],
+  "styles": ["Folk, jazz, blues, classical", "민요, 재즈, 블루스, 클래식"]};   // m18: one line, what you learn in the room (drafts, 1 Nov; hers to edit)
+const TH_SANS = "Inter, 'Pretendard', system-ui, sans-serif";
+function thCleanLay(state, rooms, cmp) {   // m18: the clean room -- the number, the name in a bold sans, one line of what you learn
+  const tz = cmp ? 11.5 : 14, sz = cmp ? 8.6 : 10.5, pad = cmp ? 7 : 9;
+  const lines = {}, subs = {}; let ml = 1, sl = 1;
+  rooms.forEach(([id, w]) => { const nm = CH_SHORT[id] || [id, ''], sb = CH_SUB[id];
+    lines[id] = thWrap(t(nm[0], nm[1] || nm[0]), w - 2 * pad, tz, TH_SANS).slice(0, 2); ml = Math.max(ml, lines[id].length);
+    subs[id] = sb ? thWrap(t(sb[0], sb[1]), w - 2 * pad, sz, TH_SANS).slice(0, 3) : []; sl = Math.max(sl, subs[id].length); });
+  const sq = cmp ? 14 : 17, h = pad + sq + 5 + ml * tz * 1.12 + 4 + sl * sz * 1.3 + pad;
+  return { clean: true, tz, sz, pad, sq, lines, subs, ml, sl, h: Math.ceil(h) };
+}
+function thRoomClean(view, state, id, x, y, w, h, fs, out, dimNew, lay, cmp) {
+  const st = state[id], on = id === view.here, done = st === 'done', num = view.nums[id], { tz, sz, pad, sq } = lay;
+  let s = '<rect x="' + pFix(x) + '" y="' + pFix(y) + '" width="' + pFix(w) + '" height="' + pFix(h) + '" fill="#fff" stroke-width="1"/>';
+  if (on) s += '<rect x="' + pFix(x + 1.2) + '" y="' + pFix(y + 1.2) + '" width="' + pFix(w - 2.4) + '" height="' + pFix(h - 2.4) + '" fill="#fff3ee" stroke="' + ST.C + '" stroke-width="2.4"/>';
+  const nfill = on ? ST.C : dimNew && st === 'new' ? ST.NEW : ST.N;
+  s += stSquare(x + pad, y + pad, sq, num, done ? ST.G : null, cmp ? 9 : 11);
+  let ty = y + pad + sq + 5 + tz * 0.9;
+  (lay.lines[id] || []).forEach((ln, i) => { s += stT(x + pad, ty + i * tz * 1.12, ln, { size: tz, weight: 800, font: TH_SANS, fill: nfill, ls: '-0.01em' }); });
+  ty += (lay.lines[id] || []).length * tz * 1.12 + 3 - tz * 0.9 + sz * 0.95;   // right under its own name
+  (lay.subs[id] || []).forEach((ln, i) => { s += stT(x + pad, ty + i * sz * 1.3, ln, { size: sz, weight: 500, font: TH_SANS, fill: '#5a5d92' }); });
+  const thn = THEORY_ROOM[id];
+  if (thn && UI_TEACHER) s += stT(x + w - pad, y + pad + sq * 0.72, 'T' + thn, { size: cmp ? 7.5 : 9, weight: 800, fill: '#8a8cb8', anchor: 'end' });   // her 1 Nov: the T marks for the teacher only
+  const star = view.star && view.star[id];
+  if (!done && !star && view.review && view.review.includes(id)) { const rw = cmp ? 34 : 44, rh = cmp ? 10 : 12, rx0 = x + w - rw - pad, ry0 = y + pad + (UI_TEACHER && thn ? sq + 2 : 2);
+    s += '<rect x="' + pFix(rx0) + '" y="' + pFix(ry0) + '" width="' + rw + '" height="' + rh + '" rx="' + (rh / 2) + '" fill="#fff" stroke="' + ST.C + '" stroke-width="0.9"/>' + stT(rx0 + rw / 2, ry0 + rh - (cmp ? 2.4 : 2.8), t('review', '다시'), { size: cmp ? 7 : 8.4, weight: 800, fill: ST.C, anchor: 'middle' }); }
+  if (star) s += '<path d="' + chkStarD(x + w - (cmp ? 9 : 12), y + h - (cmp ? 9 : 12), cmp ? 5.5 : 7.5) + '" fill="' + ST.G + '" stroke="#fff" stroke-width="0.8"/>';
+  if (view.focus && thArea(id) !== view.focus) s += '<rect x="' + pFix(x + 1) + '" y="' + pFix(y + 1) + '" width="' + pFix(w - 2) + '" height="' + pFix(h - 2) + '" fill="#fff" opacity="0.78" stroke="none"/>';
+  const nm = CH_SHORT[id] || [id, ''], sb = CH_SUB[id];
+  const label = num + '. ' + t(nm[0], nm[1] || nm[0]) + (sb ? ': ' + t(sb[0], sb[1]) : '') + (done ? t(', done', ', 완료') : on ? t(', you are here', ', 지금 여기') : '') + (star ? t(', check passed', ', 체크 통과') : '');
+  out.btns.push({ num, html: '<g data-chapter="' + id + '" data-status="' + st + '" data-here="' + (on ? '1' : '0') + '" data-clean="1" role="button" tabindex="0" aria-label="' + penEsc(label).replace(/"/g, '&quot;') + '" style="cursor:pointer"><rect x="' + pFix(x + 1) + '" y="' + pFix(y + 1) + '" width="' + pFix(w - 2) + '" height="' + pFix(h - 2) + '" fill="transparent"/></g>' });
+  return s;
+}
+function thRoom(view, state, id, x, y, w, h, fs, out, dimNew, lay, cmp) {
+  if (lay && lay.clean) return thRoomClean(view, state, id, x, y, w, h, fs, out, dimNew, lay, cmp);   // m18   // dimNew: the guides' front page greys the rooms without a page; lay: thNames; cmp: Build BM, a compact room
   const st = state[id], on = id === view.here, done = st === 'done', num = view.nums[id], cy = y + h - (cmp ? 10 : 22);
   let s = '<rect x="' + pFix(x) + '" y="' + pFix(y) + '" width="' + pFix(w) + '" height="' + pFix(h) + '" stroke-width="1"/>';
   if (on) s += '<rect x="' + pFix(x + 1) + '" y="' + pFix(y + 1) + '" width="' + pFix(w - 2) + '" height="' + pFix(h - 2) + '" fill="#fff4d6" stroke="none"/><rect x="' + pFix(x + 1) + '" y="' + pFix(y + 1) + '" width="' + pFix(w - 2) + '" height="' + pFix(h - 2) + '" fill="url(#thglow)" stroke="none"/>';   // Build DP (34): the light is on in your room
@@ -24461,8 +24623,8 @@ function townhouseSvg(view, o = {}) {
     const st = view.stages[k], fs = (st.s && st.s.th) || TH_FLOOR[k], n = st.ids.length, c = cols(n), here = st.ids.includes(view.here);
     const gi = st.s && st.s.garret ? gTop : 0, L0 = RX0 + gi, L1 = X1 - gi;   // Build AZ: the attic's rooms sit between the slopes
     const RS = cmp ? rowsOf(n) : null, at = (j) => { if (!RS) { const r = Math.floor(j / c); return [r, j - r * c, Math.min(c, n - r * c)]; } let r = 0, a = j; while (a >= RS[r]) { a -= RS[r]; r++; } return [r, a, RS[r]]; };
-    const rwOf = (j) => (L1 - L0) / at(j)[2], lay = thNames(state, st.ids.map((id, j) => [id, rwOf(j)]));
-    const rh = (cmp ? 45 + (fs.wp === 'drape' ? 7 : 0) : RH) + (lay.ml - 1) * 14, fh = LH + rh * (RS ? RS.length : Math.ceil(n / c));
+    const rwOf = (j) => (L1 - L0) / at(j)[2], lay = o.print ? thNames(state, st.ids.map((id, j) => [id, rwOf(j)])) : thCleanLay(state, st.ids.map((id, j) => [id, rwOf(j)]), cmp);   // m18: the clean rooms on screen; paper keeps its pictures
+    const rh = lay.clean ? lay.h : (cmp ? 45 + (fs.wp === 'drape' ? 7 : 0) : RH) + (lay.ml - 1) * 14, fh = LH + rh * (RS ? RS.length : Math.ceil(n / c));
     body += gi ? thCornice(y, L0 - 4, L1 + 4) : thCornice(y, X0, X1); const yy = y + SLAB;
     body += '<rect x="' + L0 + '" y="' + pFix(yy) + '" width="' + (L1 - L0) + '" height="' + LH + '" stroke="none"/>';
     // the floor's plaque, centred in a moulded frame: just the floor -- "GROUND · II", "P–1 · I" (her 2026-10-12: no floor names;
@@ -24589,7 +24751,7 @@ function HouseMap({ onOpen, compact, noIntro }) {
   const chkRooms = loadChecks().rooms, star = {}; Object.keys(chkRooms).forEach(id => { if (chkRooms[id].pass) star[id] = 1; });   // Build CN
   const sig = stages.map(x => x.st.join(',')).join('|') + here + LANG + compact + name + today + fontTick + wide + (topic || '') + Object.keys(star).join(',') + placeReview().join(',');
   const view = { stages, here, nums, focus: topic, star, review: placeReview(), pawn: name ? (x, y, k) => stPiece(VIC_PAWN_NAVY, x, y, k) : null };   // Build DP: the rooms to review
-  const house = useMemo(() => townhouseSvg(view, { wide }), [sig]);
+  const house = useMemo(() => townhouseSvg(view, { wide }), [sig, UI_TEACHER, LANG]);   // m18: the T marks follow the teacher view
   const hall = useMemo(() => townhouseSvg(view, { hall: true, wide }), [sig]);
   const week = null;   // m11: the pawn board left the Map (weekSvg kept for later use)
   const reduced = (() => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } })();
@@ -25449,11 +25611,12 @@ function App() {
               <a className="chip" data-testid="to-dashboard" href="teacher-dashboard.html" style={{padding:'5px 12px',fontSize:13,fontWeight:800,textDecoration:'none',display:'inline-block'}}>{t('Dashboard', '대시보드')}</a>
               <button className="chip" style={{padding:'5px 12px',fontSize:13,fontWeight:800}} onClick={() => setPreview(true)}>{t('Student view', '학생 화면')}</button>
               <button className="chip" data-testid="head-settings" aria-expanded={headMenu} aria-label={t('Settings', '설정')} onClick={() => setHeadMenu(x => !x)} style={{padding:'5px 10px',fontSize:14,fontWeight:800,minWidth:34}}>⚙</button>
-              {headMenu && <div role="menu" data-testid="head-menu" style={{position:'absolute',right:0,top:'calc(100% + 6px)',zIndex:60,background:'#fffefa',border:'1.5px solid var(--navy-line)',borderRadius:12,padding:'10px 12px',boxShadow:'0 8px 24px rgba(38,41,107,0.14)',minWidth:200,display:'flex',flexDirection:'column',gap:10}}>
+              {headMenu && <div role="menu" data-testid="head-menu" style={{position:'absolute',right:0,top:'calc(100% + 6px)',zIndex:60,background:'#fffefa',border:'1.5px solid var(--navy-line)',borderRadius:12,padding:'10px 12px',boxShadow:'0 8px 24px rgba(38,41,107,0.14)',minWidth:200,width:'min(300px, calc(100vw - 32px))',display:'flex',flexDirection:'column',gap:10}}>
                 <div><div style={{fontSize:11,fontWeight:900,color:'var(--muted)',letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:5}}>{t('Language', '언어')}</div>
                   <div style={{display:'flex',gap:5}}>{[['en', 'English'], ['ko', '한국어']].map(([k, l]) => <button key={k} className={'chip' + (lang === k ? ' active' : '')} onClick={() => { if (lang !== k) toggleLang(); }} style={{padding:'4px 12px',fontSize:13,fontWeight:800}}>{l}</button>)}</div></div>
                 {lang !== 'ko' && <div><div style={{fontSize:11,fontWeight:900,color:'var(--muted)',letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:5}}>{t('Note names', '음 이름')}</div>
                   <button className={'chip' + (solfaEn ? ' active' : '')} onClick={toggleSolfa} title="Show fixed-do syllables (C = Do) beside the letter names" style={{padding:'4px 12px',fontSize:13,fontWeight:800}}>{solfaEn ? 'Do Re Mi: on' : 'Do Re Mi: off'}</button></div>}
+                <div><div style={{fontSize:11,fontWeight:900,color:'var(--muted)',letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:5}}>{t('Sound', '소리')}</div><SoundSettings menu/></div>
               </div>}
             </div>}
           </div>
@@ -25469,13 +25632,13 @@ function App() {
         {preview && <div style={{background:'#26296b',color:'#fff',borderRadius:10,padding:'8px 12px',marginBottom:12,fontSize:13.5,display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}><span>{t('You’re seeing what a student sees.', '학생에게 보이는 화면이에요.')}</span><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setPreview(false)}>{t('Back to teacher view', '교사 화면으로')}</button></div>}
         {!st.lock && !(showToday && !T) && (
           <div style={{display:'flex',gap:6,borderBottom:'1.5px solid var(--navy-line)',marginBottom:16}}>
-            {(T ? [['map', t('Map', '지도')], ['lib', t('Lessons', '레슨')], ...(booksUnlocked() ? [['books', t('Books', '책')], ['printables', t('Printables', '교구')]] : []), ['practice', t('Practice', '연습')]] : (showToday ? [['today', t('Today', '오늘')], ['map', t('Map', '지도')], ['practice', t('Practice', '연습')]] : [['map', t('Map', '지도')], ['practice', t('Practice', '연습')]])).map(([v, l]) => (
+            {(T ? [['map', t('Library', '서재')], ...(booksUnlocked() ? [['books', t('Books', '책')], ['printables', t('Printables', '교구')]] : []), ['practice', t('Practice', '연습')], ['lib', <span style={{whiteSpace:'nowrap'}}><span style={{fontSize:'0.8em'}}>🔒</span>{t('Lessons', '레슨')}</span>]]   /* m16: the old Home categories, hers alone, at the end */ : (showToday ? [['today', t('Today', '오늘')], ['map', t('Map', '지도')], ['practice', t('Practice', '연습')]] : [['map', t('Map', '지도')], ['practice', t('Practice', '연습')]])).map(([v, l]) => (
               <button key={v} onClick={() => { update({ view: v === 'map' ? mapPick(HM, T) : v === 'lib' ? 'home' : v, lib: v === 'lib', tool: null, kit: null, from: null, ret: null, drill: (v === 'practice' || v === 'students') ? st.drill : null, ...(v === 'map' || v === 'lib' ? { ha: null, hc: null, hs: null } : {}) }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderBottom:'3px solid ' + ((((st.view === v && v !== 'lib') || (v === 'map' && !st.lib && (st.view === 'path' || st.view === 'chapters' || st.view === 'home' || (T && st.view === 'tools' && st.ret === 'toolbox'))) || (v === 'lib' && !!st.lib && (st.view === 'home' || (st.view === 'tools' && st.ret === 'home')))) || (v === 'path' && st.view === 'chapters') || (T && v === 'toolbox' && st.view === 'tools' && st.ret === 'toolbox') || false) ? 'var(--coral)' : 'transparent'),marginBottom:-1.5,background:'transparent',padding:'10px 0',fontFamily:"'Playfair Display', Georgia, serif",fontSize:T ? 14.5 : 18,fontWeight:800,cursor:'pointer',
                 color:((st.view === v && v !== 'lib') || (v === 'map' && !st.lib && (st.view === 'path' || st.view === 'chapters' || st.view === 'home' || (T && st.view === 'tools' && st.ret === 'toolbox'))) || (v === 'lib' && !!st.lib && (st.view === 'home' || (st.view === 'tools' && st.ret === 'home')))) ? 'var(--navy)' : 'var(--muted)'}}>{l}</button>
             ))}
           </div>
         )}
-        <SoundSettings/>
+        {!(T && !st.lock) && <SoundSettings/>}
         {st.view === 'today' && !T && !st.lock && sl.link ? (
           <StudentHome link={sl.link} onOpenChapter={(id) => { update({ view: 'path', tool: null, kit: null, drill: id, tab: 'learn', level: 1, from: { drill: id } }); try { window.scrollTo(0, 0); } catch (e) {} }} onOpenTool={(id) => { update({ view: PRACTICE_IDS.includes(id) ? 'practice' : 'tools', tool: id, kit: null, drill: null, from: { tool: id } }); try { window.scrollTo(0, 0); } catch (e) {} }} onHome={() => { update({ view: 'home', ha: null, hc: null, hs: null, drill: null, tool: null, kit: null, from: null }); try { window.scrollTo(0, 0); } catch (e) {} }} onAll={() => { update({ view: 'path', tool: null, kit: null, drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/>
         ) : st.view === 'kit' && st.kit ? (
@@ -25484,18 +25647,18 @@ function App() {
             : <>{T && <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:10}} onClick={() => update({ view: 'home', kit: null, kn: '' })}>{t('← Topics', '← 주제')}</button>}<KitView ids={st.kit} name={st.kn} onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }} onChapter={jumpToChapter}/></>
         ) : (st.view === 'tools' || st.view === 'practice') ? (
           st.tool
-            ? <ToolView id={st.tool} locked={st.lock} backAlways={!!toolBackCh} backLabel={st.from && st.from.tool === st.tool ? '← Today' : st.view === 'practice' ? '← Practice' : st.ret === 'home' ? homeBack : toolBackCh ? '← ' + bkChapterName(toolBackCh) : homeBack} onBack={() => st.from && st.from.tool === st.tool ? update({ tool: null, view: 'today', from: null }) : st.view !== 'practice' && st.ret !== 'home' && toolBackCh ? update({ view: 'path', tool: null, drill: toolBackCh, tab: 'learn', level: 1, ret: null, rc: null }) : update({ tool: null, view: (st.view === 'practice' ? null : st.ret === 'toolbox' ? 'home' : st.ret) || (T && st.view === 'tools' ? 'home' : st.view), ret: null })} onChapter={(id) => update({ view: st.ret === 'toolbox' ? 'toolbox' : 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
+            ? <ToolView id={st.tool} locked={st.lock} backAlways={!!toolBackCh} backLabel={st.from && st.from.tool === st.tool ? '← Today' : st.view === 'practice' ? '← Practice' : st.ret === 'home' ? homeBack : (st.ret === 'toolbox' && T) ? t('← Library', '← 서재') : toolBackCh ? '← ' + bkChapterName(toolBackCh) : homeBack} onBack={() => st.from && st.from.tool === st.tool ? update({ tool: null, view: 'today', from: null }) : st.view !== 'practice' && st.ret !== 'home' && toolBackCh ? update({ view: 'path', tool: null, drill: toolBackCh, tab: 'learn', level: 1, ret: null, rc: null }) : update({ tool: null, view: (st.view === 'practice' ? null : st.ret === 'toolbox' ? 'home' : st.ret) || (T && st.view === 'tools' ? 'home' : st.view), ret: null })} onChapter={(id) => update({ view: st.ret === 'toolbox' ? 'toolbox' : 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
             : <>{todayBack}<PracticeView onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
         ) : st.view === 'home' && HM && !inChapter && !st.lock ? (
           (T && (st.lib || st.ha || st.hc || st.hs))
             ? <ConceptHome st={st} update={update}/>
-            : <>{todayBack}<MapSwitch value="topics" onPick={(x) => { mapSave(x); update({ view: x === 'house' ? 'path' : 'home', lib: false, ha: null, hc: null, hs: null, drill: null }); }}/><ReferenceView pick onChapter={jumpToChapter}/></>
+            : <>{todayBack}<RefShelf onChapter={jumpToChapter} onTool={(id) => { update({ view: 'tools', tool: id, ret: 'toolbox', lib: false }); try { window.scrollTo(0, 0); } catch (e) {} }} onHouse={() => { mapSave('house'); update({ view: 'path', lib: false, ha: null, hc: null, hs: null, drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
         ) : !inChapter && !st.lock ? (
           T && st.view === 'printables'
             ? <div className="fade-up"><PageIntro title={t('Printables', '교구')} text={t('Paper tools to print, cut out and play with at the lesson table. Each set is a few A4 pages with a Try this box.', '인쇄해서 오려 쓰는 종이 교구. 세트마다 A4 몇 장과 해 보기 상자가 있어요.')}/><PrintablesShelf onChapter={jumpToChapter}/></div>
           : T && st.view === 'books'
             ? <div className="fade-up"><PageIntro title={t('Books', '책')} text={t('The printed books (Lesson Book, Workbook, Teacher copy for every chapter) and the checkpoints on paper.', '인쇄용 책(챕터마다 레슨북, 워크북, 교사용)과 종이 중간점검.')}/><BooksShelf/></div>
-            : <>{todayBack}{HM && <MapSwitch value="house" onPick={(x) => { mapSave(x); update({ view: x === 'house' ? 'path' : 'home', lib: false, ha: null, hc: null, hs: null, drill: null }); }}/>}<MapHome onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
+            : <>{todayBack}{HM && <div style={{display:'flex',justifyContent:'flex-end',margin:'0 0 8px'}}><button type="button" className="chip" data-map-library onClick={() => { mapSave('topics'); update({ view: 'home', lib: false, ha: null, hc: null, hs: null, drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{padding:'4px 12px',fontSize:13,fontWeight:800}}>{t('The library ›', '서재 ›')}</button></div>}<MapHome onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
         ) : <>
         {!st.lock && (() => {
           const sg = catOfChapter(active.id) ? { title: catOfChapter(active.id).name } : null, list = orderedChapterIds(), k = list.indexOf(active.id);
