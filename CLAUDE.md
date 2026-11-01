@@ -86,7 +86,7 @@ ABRSM LRSM 75, FRSM 53, Trinity ATCL 47), then AMEB Grade 8/3/4. Australia about
 Malaysia. So the visitors are mostly adult diploma candidates and teachers on several boards: the first paid product should
 serve them (diploma prep: programme planning, viva voce, programme notes), the kids' workbooks second. Titles and descriptions
 of those six pages were matched to the searches on 1 Nov (commit a36ee04): **re-check their CTR in Search Console around 29 Nov.**
-**Map merge.** Step 1 done (history row 782): one Map tab, House / Topics. Before the site links drills, the default for a visitor must become the student view (today it is the teacher view).
+**Map merge.** Step 1 done (history row 782): one Map tab, House / Topics. Before the site links drills, the default for a visitor must become the student view (today it is the teacher view). Later (her 1 Nov): the placement test ('Where should you start?') becomes an entry point straight from thepianobutler.com.
 **Order (her call, 1 Nov late).** Teacher and her students first; what visitors see is decided just before the site links drills. Proposed then (not decided): three levels -- anyone (Topics/Reference all; the House with every room title, 1-2 rooms open per floor), a free account (more rooms, progress saved; parents make the account), her students (everything). Accounts for visitors are a new build; a per-room open/locked flag goes in the room data first.
 **Build rule.** The Map merge touches drills.src.html: do it between workbook builds, in small commits. Nothing new outside
 this layout until the merge is done.
