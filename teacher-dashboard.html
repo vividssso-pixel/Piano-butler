@@ -2084,6 +2084,28 @@ function StudentLinkPanel({ student, logs, onRow }) {
 const LESSON_KEY = "pb_lesson_v1";
 const lessonGet = () => { try { const x = JSON.parse(localStorage.getItem(LESSON_KEY) || "null"); return x && x.studentId != null ? x : null; } catch (e) { return null; } };
 const lessonSet = (x) => { try { if (x) localStorage.setItem(LESSON_KEY, JSON.stringify(x)); else localStorage.removeItem(LESSON_KEY); } catch (e) {} };
+// the server copy (lesson_sessions, one row per teacher). undefined = no table yet (SQL not run) or offline: the local copy carries on
+const lsFromRow = (r) => ({ studentId: r.student_id, name: r.name || "", startedAt: Date.parse(r.started_at) || Date.now(), shown: Array.isArray(r.shown) ? r.shown : [], synced: true });
+const lsMerge = (a, b) => { const out = []; const seen = new Set(); [...(a || []), ...(b || [])].forEach(it => { const k = it.kind + ":" + it.id; if (!seen.has(k)) { seen.add(k); out.push(it); } }); return out; };
+async function lsFetch() { try { const { data, error } = await _supabase.from("lesson_sessions").select("*").maybeSingle(); return error ? undefined : (data || null); } catch (e) { return undefined; } }
+async function lsPut(uid, x) { if (!uid || !x) return false; try { const { error } = await _supabase.from("lesson_sessions").upsert({ user_id: uid, student_id: String(x.studentId), name: (x.name || "").slice(0, 40), started_at: new Date(x.startedAt || Date.now()).toISOString(), shown: (x.shown || []).slice(0, 60), updated_at: new Date().toISOString() }); return !error; } catch (e) { return false; } }
+async function lsClear(uid) { if (!uid) return; try { await _supabase.from("lesson_sessions").delete().eq("user_id", uid); } catch (e) {} }
+// local and server agree: same student -> both lists of what was shown; another student or none -> the server wins;
+// no server row but a local one that was synced before -> the lesson ended on another device
+async function lessonSync(uid) {
+  const local = lessonGet(), srv = await lsFetch();
+  if (srv === undefined) return local;
+  if (srv) {
+    const s = lsFromRow(srv);
+    const merged = local && String(local.studentId) === String(s.studentId) ? { ...s, shown: lsMerge(s.shown, local.shown) } : s;
+    lessonSet(merged);
+    if (merged.shown.length > s.shown.length) await lsPut(uid, merged);
+    return merged;
+  }
+  if (local && local.synced) { lessonSet(null); return null; }
+  if (local) { const ok = await lsPut(uid, local); if (ok) { local.synced = true; lessonSet(local); } }
+  return local;
+}
 const lessonItemLine = (it) => it.kind === "room" ? it.label + " [chapter:" + it.id + "]" : it.kind === "tool" ? it.label + " [tool:" + it.id + "]" : it.label;
 function NameChips({ students, logs, onPick, current }) {
   const dn = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][new Date().getDay()], today = todayStr();
@@ -4336,7 +4358,14 @@ function App() {
   const roster = useRosterActivity(students, logs, tab);
   const [lesson, setLesson] = useState(() => lessonGet());   // Dashboard D3
   const [endOpen, setEndOpen] = useState(() => { try { return new URLSearchParams(location.search).get("endlesson") === "1"; } catch (e) { return false; } });
-  useEffect(() => { const f = () => setLesson(lessonGet()); window.addEventListener("focus", f); window.addEventListener("pageshow", f); return () => { window.removeEventListener("focus", f); window.removeEventListener("pageshow", f); }; }, []);
+  useEffect(() => {   // Dashboard D4: the open lesson follows the teacher across devices
+    if (!userId) return;
+    let off = false;
+    const f = () => { lessonSync(userId).then(x => { if (!off) setLesson(x); }); };
+    f(); window.addEventListener("focus", f); window.addEventListener("pageshow", f);
+    const iv = setInterval(f, 30000);
+    return () => { off = true; window.removeEventListener("focus", f); window.removeEventListener("pageshow", f); clearInterval(iv); };
+  }, [userId]);
   const clearEndParam = () => { try { const u = new URL(location.href); u.searchParams.delete("endlesson"); history.replaceState(null, "", u.pathname + (u.search ? u.search : "") + u.hash); } catch (e) {} };   // Dashboard D1: practice and homework for the cards and Today
 
   // ── Load data from Supabase on mount ──────────────────────────────────────
@@ -4740,15 +4769,17 @@ function App() {
   const startLesson = (s) => {
     const cur = lessonGet();
     if (cur && String(cur.studentId) !== String(s.id) && !confirm("A lesson with " + cur.name + " is still open. Start a new one with " + firstNameOf(s.name) + "? (The open one is discarded.)")) return;
-    if (!cur || String(cur.studentId) !== String(s.id)) lessonSet({ studentId: s.id, name: firstNameOf(s.name), startedAt: Date.now(), shown: [] });
-    window.location.href = "drills.html?teacher=1";
+    let x = cur && String(cur.studentId) === String(s.id) ? cur : { studentId: s.id, name: firstNameOf(s.name), startedAt: Date.now(), shown: [] };
+    lessonSet(x);
+    const go = () => { window.location.href = "drills.html?teacher=1"; };
+    lsPut(userId, x).then(ok => { if (ok) { x = { ...x, synced: true }; lessonSet(x); } go(); }, go);
   };
   const saveLesson = async (s, f) => {
     const row = logToRow({ date: todayStr(), notes: f.notes, homework: f.homework, shown: f.shown, type: "regular" }, s.id, userId);
     const { data, error } = await _supabase.from("lesson_logs").insert(row).select().single();
     if (error) { alert("Could not save the lesson: " + error.message); return; }
     setLogs(p => [rowToLog(data), ...p]);
-    lessonSet(null); setLesson(null); setEndOpen(false); clearEndParam();
+    lessonSet(null); setLesson(null); setEndOpen(false); clearEndParam(); lsClear(userId);
   };
 
   // ── Loading / error states ────────────────────────────────────────────────
@@ -4908,9 +4939,9 @@ function App() {
         {lesson && endOpen && (() => { const s = students.find(x => String(x.id) === String(lesson.studentId)); return s ? (
           <EndLessonSheet lesson={lesson} student={s} logs={logs} act={roster[s.id]}
             onSave={(f) => saveLesson(s, f)}
-            onAbsent={() => { lessonSet(null); setLesson(null); setEndOpen(false); clearEndParam(); setAbsenceTarget(s); }}
+            onAbsent={() => { lessonSet(null); setLesson(null); setEndOpen(false); clearEndParam(); lsClear(userId); setAbsenceTarget(s); }}
             onBack={() => {}}
-            onDiscard={() => { if (!confirm("Discard this lesson? Nothing is saved.")) return; lessonSet(null); setLesson(null); setEndOpen(false); clearEndParam(); }}/>
+            onDiscard={() => { if (!confirm("Discard this lesson? Nothing is saved.")) return; lessonSet(null); setLesson(null); setEndOpen(false); clearEndParam(); lsClear(userId); }}/>
         ) : null; })()}
         {(tab==="today" || (tab==="students" && view==="list")) && <NameChips students={students} logs={logs} current={null} onPick={(s) => { setSelected(s); setView("detail"); setTab("students"); }}/>}
 
