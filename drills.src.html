@@ -20308,7 +20308,11 @@ const houseFloors = (ko) => { const n = houseFloorsN(), w = (ko ? ['', '한 층'
   const sm = PATH_STAGES.some(x => x.stories), at = PATH_STAGES.some(x => x.attic);   // Build AH: four floors, a Stories of music room and an attic
   const gr = PATH_STAGES.some(x => x.stories && x.garret);   // Build AZ: Stories of music is the attic
   return w + (sm ? (ko ? (gr ? '과 다락방의 음악 이야기 방' : at ? ', 음악 이야기 방' : '과 음악 이야기 방') : (gr ? ' and a Stories of music room in the attic' : at ? ', a Stories of music room' : ' and a Stories of music room')) : '') + (at ? (ko ? '과 다락방' : ' and an attic') : ''); };   // Build Q; Build V: and the attic
-const floorName = (k, caps) => { if (PATH_STAGES[k].attic) return caps ? 'ATTIC' : t('The attic', '다락방'); if (PATH_STAGES[k].stories) return caps ? 'STORIES OF MUSIC' : t('Stories of music', '음악 이야기'); const s = PATH_STAGES[k]; return caps ? s.en[0].toUpperCase() : t(s.en[0], s.ko[0]); };   // Build P; Build CV (her 2026-10-29): the grade only, no floor number
+// m36 (her 1 Nov: 'not AMEB's names: Level 1 is a floor and a level-up'): Beginner -> Level 0, Prelim -> Level ½, Grade n -> Level n.
+// The exam's own name stays for the teacher as '≈ Grade 3' (lvlExam).
+const lvlName = (x) => { const v = String(x || ''); return v === 'Beginner' ? 'Level 0' : v === 'Prelim' ? 'Level ½' : v.replace(/^Grade (\d)$/, 'Level $1'); };
+const lvlExam = (x) => '≈ ' + String(x || '');
+const floorName = (k, caps) => { if (PATH_STAGES[k].attic) return caps ? 'ATTIC' : t('The attic', '다락방'); if (PATH_STAGES[k].stories) return caps ? 'STORIES OF MUSIC' : t('Stories of music', '음악 이야기'); const s = PATH_STAGES[k]; return caps ? lvlName(s.en[0]).toUpperCase() : lvlName(t(s.en[0], s.ko[0])); };   // Build P; Build CV (her 2026-10-29): the grade only, no floor number
 // Phase 361 (Sohyun: "지도 순서로"): the books, the Books shelf and every "Chapter n" follow the map's seven stages.
 const STAGES = PATH_STAGES.map((st, n) => ({ n, en: st.en, ko: st.ko, title: st.en[0], blurb: st.en[1], ids: pathStageIds(st) }));
 function loadStepTotals() { try { return JSON.parse(localStorage.getItem(STEPS_TOTAL_KEY)) || {}; } catch (e) { return {}; } }
@@ -20381,7 +20385,7 @@ function StartGuide({ onOpen, always }) {
             return <div key={k} style={{position:'relative',display:'flex',gap:12,alignItems:'flex-start',padding:'6px 0 12px'}}>
               <GuideNum n={k + 1} on={here}/>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{display:'flex',alignItems:'baseline',gap:8,flexWrap:'wrap'}}><b style={{fontSize:15.5,color:'var(--navy)'}}>{t(s.en[0], s.ko[0])}</b>{here && <span style={{fontSize:10.5,fontWeight:900,letterSpacing:'0.08em',color:'var(--coral)'}}>{t('YOU ARE HERE', '지금 여기')}</span>}</div>
+                <div style={{display:'flex',alignItems:'baseline',gap:8,flexWrap:'wrap'}}><b style={{fontSize:15.5,color:'var(--navy)'}}>{lvlName(t(s.en[0], s.ko[0]))}</b>{here && <span style={{fontSize:10.5,fontWeight:900,letterSpacing:'0.08em',color:'var(--coral)'}}>{t('YOU ARE HERE', '지금 여기')}</span>}</div>
                 <div style={{fontSize:12.5,color:'var(--navy-soft)',lineHeight:1.4,margin:'1px 0 6px'}}>{t(s.en[1], s.ko[1])}</div>
                 <div style={{display:'flex',gap:5,flexWrap:'wrap'}}>{sid.map(id => { const st = status[id], isNext = id === next;
                   return <button key={id} onClick={() => onOpen(id)} style={{display:'inline-flex',alignItems:'center',gap:5,padding:'3px 10px',borderRadius:14,fontSize:12.5,fontWeight:800,cursor:'pointer',fontFamily:'inherit',
@@ -21629,12 +21633,12 @@ function ScalesMapView({ onChapter }) {
 // A ♪ plays the room's own sound where it has one. Spellings and steps are counted by the code (refSpell), not typed.
 const RefPaper = React.createContext(false);
 const RefGo = React.createContext(null);
-const refFloor = (room) => { const s = STAGES.find(x => x.ids.includes(room)); return s && s.en ? s.en[0] : ''; };
+const refFloor = (room) => { const s = STAGES.find(x => x.ids.includes(room)); return s && s.en ? lvlName(s.en[0]) : ''; };
 const REF_STORY = { 'pitch-range': ['Instruments', '악기'], composers: ['Composers', '작곡가'], styles: ['Styles', '양식'], 'piano-story': ['The piano’s story', '피아노 이야기'] };   // the attic's rooms by name
 function RefDoor({ room, g }) {
   const paper = React.useContext(RefPaper), go = React.useContext(RefGo);
   if (!room) return <span data-ref-extra style={{fontSize:10.5,fontWeight:800,fontStyle:'italic',color:BK.muted,whiteSpace:'nowrap',justifySelf:'end'}}>{t('extra', '더 알기')}</span>;
-  const lab = g || (REF_STORY[room] ? t(REF_STORY[room][0], REF_STORY[room][1]) : refFloor(room));
+  const lab = lvlName(g) || (REF_STORY[room] ? t(REF_STORY[room][0], REF_STORY[room][1]) : refFloor(room));
   if (paper) return <span style={{fontSize:10.5,fontWeight:800,color:BK.muted,whiteSpace:'nowrap'}}>{lab}</span>;
   return <button type="button" className="chip" data-ref-door={room} onClick={() => go && go(room)} title={bkChapterName(room)}
     style={{minHeight:28,padding:'2px 7px',fontSize:11,fontWeight:900,whiteSpace:'nowrap',justifySelf:'end'}}>{lab} ›</button>;
@@ -22272,7 +22276,7 @@ const REF_MORE_TERMS = [
 ];
 function RefTerms({ part }) {
   const paper = React.useContext(RefPaper), [card, setCard] = useState(null);
-  const floors = STAGES.map(s => ({ name: s.en ? s.en[0] : '', terms: DICT_TERMS.filter(x => s.ids.includes(x.room)) })).filter(f => f.terms.length);
+  const floors = STAGES.map(s => ({ name: s.en ? lvlName(s.en[0]) : '', terms: DICT_TERMS.filter(x => s.ids.includes(x.room)) })).filter(f => f.terms.length);
   const more = (gr) => REF_MORE_TERMS.filter(x => x[4] === gr).map(([en, ko, men, mko, , room, g]) => ({ term: t(en, ko), mean: t(men, mko), room: room || null, g }));
   const kinds = [...P8_TITLES.map(([, en, ko, men, mko]) => ({ term: t(en, ko), mean: refTrim(t(men, mko)), room: 'pieces-8' })), ...more('kinds')];
   // the Form room's lessons: binary, ternary and rondo (Grade 1), minuet and trio and variations (Grade 5), sonata form (Grade 6)
@@ -24986,7 +24990,7 @@ function townhouseSvg(view, o = {}) {
     body += '<rect x="' + L0 + '" y="' + pFix(yy) + '" width="' + (L1 - L0) + '" height="' + LH + '" stroke="none"/>';
     // the floor's plaque, centred in a moulded frame: just the floor -- "GROUND · II", "P–1 · I" (her 2026-10-12: no floor names;
     // Build O: named by grade, in both languages); red on your floor, green once every room on it is done
-    const name = st.s && st.s.attic ? (o.print || LANG !== 'ko' ? 'ATTIC' : '다락방') : st.s && st.s.stories ? (o.print || LANG !== 'ko' ? 'STORIES OF MUSIC' : '음악 이야기') : st.s ? st.s.en[0].toUpperCase() : 'LEVEL ' + (k + 1), mw = rdWidth(name, 700, 11.5, TH_CAPS), pw = (thFontsIn() ? mw : Math.max(mw, name.length * 9.4)) + name.length * 1.04 + 30, px = (X0 + X1) / 2 - pw / 2;   // Cinzel's capitals are wide: trust a measure only once the letters are in
+    const name = st.s && st.s.attic ? (o.print || LANG !== 'ko' ? 'ATTIC' : '다락방') : st.s && st.s.stories ? (o.print || LANG !== 'ko' ? 'STORIES OF MUSIC' : '음악 이야기') : st.s ? lvlName(st.s.en[0]).toUpperCase() : 'LEVEL ' + (k + 1), mw = rdWidth(name, 700, 11.5, TH_CAPS), pw = (thFontsIn() ? mw : Math.max(mw, name.length * 9.4)) + name.length * 1.04 + 30, px = (X0 + X1) / 2 - pw / 2;   // Cinzel's capitals are wide: trust a measure only once the letters are in
     const lit = !shut && view.openK != null && k === view.openK, pf = lit ? '#2e8a6e' : here ? ST.C : ST.N;   // m34: the open floor lit green, your floor coral, the rest navy
     if (lit && !o.print) body += '<rect x="' + L0 + '" y="' + pFix(yy) + '" width="' + (L1 - L0) + '" height="' + LH + '" fill="#eef7f1" stroke="none"/>';
     if (o.print) body += stR(px, yy + (cmp ? 2 : 4), pw, cmp ? 18 : 20, 0.9) + stR(px + 2, yy + (cmp ? 4 : 6), pw - 4, cmp ? 14 : 16, 0.4, 'none')
@@ -25001,6 +25005,7 @@ function townhouseSvg(view, o = {}) {
       out.btns.push({ num: 1000 + k * 2 + j, html: '<g data-floorcheck="' + f.key + '" role="button" tabindex="0" aria-label="' + penEsc(name + ' checkpoint' + (fck.length > 1 ? ' ' + (j + 1) : '')).replace(/"/g, '&quot;') + '" style="cursor:pointer"><rect x="' + pFix(x0 - 2) + '" y="' + pFix(y0 - 3) + '" width="' + (pwid + 4) + '" height="' + (ph + 6) + '" fill="transparent" stroke="none"/></g>' });
     });
     const nr = RS ? RS.length : Math.ceil(n / c);   // Phase 442: the first rooms on the lowest row, counted from the bottom left -- you climb the house
+    if (!o.print && UI_TEACHER && st.s && !st.s.stories && !st.s.attic) body += stT(L1 - (shut ? (cmp ? 46 : 56) : 8), yy + (cmp ? 15 : 18), lvlExam(st.s.en[0]), { size: cmp ? 8 : 9.5, weight: 700, font: TH_SANS, fill: '#9a9cc0', anchor: 'end' });   // m36
     if (shut) {   // a closed floor: its plaque, how many rooms are done, and a tap opens it
       const dn = st.st.filter(v => v === 'done').length;
       body += stT(L1 - 8, yy + (cmp ? 15.2 : 18.4), dn + '/' + n + '  ▸', { size: cmp ? 10 : 11.5, weight: 800, font: TH_SANS, fill: dn === n ? ST.G : '#6d6f9c', anchor: 'end' });
@@ -25291,7 +25296,7 @@ function MusicMap({ onOpen, compact, noIntro }) {
           const surf = cy + r - 2 * r * f;
           const next = x.ids.find((id, j) => x.st[j] !== 'done') || x.ids[0];
           // the stage name (shrinks a little if a long name would run into the next column)
-          const num = String(i + 1).padStart(2, '0'), name = t(x.s.en[0], x.s.ko[0]);
+          const num = String(i + 1).padStart(2, '0'), name = lvlName(t(x.s.en[0], x.s.ko[0]));
           const nameW = rdWidth(name, 800, 18, true) + rdWidth(num, 800, 12.5) + 7, nameSize = nameW > G.maxW ? Math.max(14, 18 * (G.maxW - rdWidth(num, 800, 12.5) - 7) / (nameW - rdWidth(num, 800, 12.5) - 7)) : 18;
           // its chapters as words, flowed onto lines
           const words = []; let wx = 0, line = 0;
