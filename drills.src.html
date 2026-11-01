@@ -21702,7 +21702,7 @@ function RefTime({ top, bot, sym }) {
 }
 const refSec = (id, en, ko) => ({ id, en, ko });
 const REF_SECS = [refSec('staff', 'The staff and the clefs', '오선과 음자리표'), refSec('notes', 'Notes and rests', '음표와 쉼표'), refSec('time', 'Time signatures', '박자표'), refSec('keys', 'Keys and key signatures', '조와 조표'),
-  refSec('scales', 'Scales', '음계'), refSec('intervals', 'Intervals', '음정'), refSec('chords', 'Chords and cadences', '화음과 종지'), refSec('signs', 'Signs', '기호'),
+  refSec('scales', 'Scales', '음계'), refSec('intervals', 'Intervals', '음정'), refSec('chords', 'Chords', '화음'), refSec('cadences', 'Cadences', '종지'), refSec('signs', 'Signs', '기호'),
   refSec('play', 'Words for how to play', '연주 용어'), refSec('terms', 'Words about music', '음악 낱말'), refSec('periods', 'Periods', '시대'), refSec('instruments', 'Instruments', '악기')];
 function RefHead({ id }) { const s = REF_SECS.find(x => x.id === id); return <div id={'ref-' + id} data-ref-sec={id} style={{scrollMarginTop:12,margin:'0 0 8px'}}><StaffHead title={t(s.en, s.ko)}/></div>; }
 
@@ -21719,7 +21719,9 @@ function RefGrandStaff() {
   const notes = []; for (let d = 14; d <= 42; d++) notes.push(d);
   notes.forEach((d, i) => { const x = x0 + i * dx, up = d >= 28, y = up ? yT(d) : yB(d), col = i === on || d === 28 ? PEN_C : PEN_N;
     const led = (l) => ln(up ? yT(l) : yB(l), x - 8.5, x + 8.5).replace('stroke-opacity="0.55" stroke-width="1"', 'stroke-width="1.3"');
-    if (up && d === 28) s += led(28);
+    if (up && d === 28) { s += led(28);   // m13a: middle C written in the bass too, same key, same column
+      const yb = yB(28); s += ln(yb, x - 8.5, x + 8.5).replace('stroke-opacity="0.55" stroke-width="1"', 'stroke-width="1.3"');
+      s += '<ellipse data-ref-midc-bass cx="' + x + '" cy="' + yb + '" rx="5.4" ry="3.9" transform="rotate(-20 ' + x + ' ' + yb + ')" fill="' + col + '"/>'; }
     if (up) for (let l = 40; l <= d; l += 2) s += led(l);
     if (!up) for (let l = 16; l >= d; l -= 2) s += led(l);
     s += '<ellipse cx="' + x + '" cy="' + y + '" rx="5.4" ry="3.9" transform="rotate(-20 ' + x + ' ' + y + ')" fill="' + col + '"/>';
@@ -21750,7 +21752,7 @@ function RefClefPic({ bottom, glyph }) {
 function RefStaff() {
   return <div>
     <RefGrandStaff/>
-    <RefNote>{t('Every white key from C two octaves below middle C to C two octaves above; middle C in coral, on its own ledger line between the staves.', '가운데 C 두 옥타브 아래 C부터 두 옥타브 위 C까지의 흰건반 모두. 코랄색이 가운데 C, 두 오선 사이의 덧줄 위.')}{React.useContext(RefPaper) ? '' : t(' Tap a note to hear it.', ' 음표를 누르면 소리가 나요.')}</RefNote>
+    <RefNote>{t('Every white key from C two octaves below middle C to C two octaves above; middle C in coral, written two ways: on a ledger line below the treble staff and on a ledger line above the bass staff. Same key, same sound.', '가운데 C 두 옥타브 아래 C부터 두 옥타브 위 C까지의 흰건반 모두. 코랄색이 가운데 C: 높은음자리표 아래 덧줄에도, 낮은음자리표 위 덧줄에도 써요. 같은 건반, 같은 소리.')}{React.useContext(RefPaper) ? '' : t(' Tap a note to hear it.', ' 음표를 누르면 소리가 나요.')}</RefNote>
     <div style={{display:'flex',flexWrap:'wrap',gap:6,justifyContent:'flex-end',marginTop:6}}><RefDoor room="whole-staff"/><RefDoor room="ledger-lines"/></div>
     <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))',gap:6,marginTop:8}}>{REF_CLEFS.map(([id, bottom, glyph, en, ko, hen, hko, room, g]) =>
       <div key={id} data-ref-clef={id} style={{border:'1.5px solid rgba(38,41,107,0.22)',borderRadius:10,background:'#fff',padding:'6px 8px',display:'flex',flexDirection:'column',alignItems:'flex-start',gap:3,minWidth:0}}>
@@ -22006,7 +22008,13 @@ function RefChords({ part }) {
       [t('Dominant 7th (V7): four positions, a b c d.', '딸림7화음(V7): 네 자리 a b c d.'), <RefDoor room="harmony-6"/>],
       [t('Diminished 7th of a key: it starts on the key’s leading note.', '조의 감7화음: 그 조의 이끎음에서 시작.'), <RefDoor room="arps-6"/>],
     ]}/>
-    <div style={{height:8}}/>
+</>}
+    {part !== 'a' && <><RefLab>{t('Every kind of chord, on any root', '모든 화음, 어느 근음에서든')}</RefLab><RefChordKinds/></>}
+  </div>;
+}
+// 7b. cadences (m13: their own section; her 'why are chords and cadences stuck together? split them')
+function RefCadences() {
+  return <div>
     <RefTable k="cadences" cols="minmax(0,1fr) 58px auto" head={[t('Cadence', '종지'), '', '']} rows={[   // the rooms' own words (Chords and Cadences, Grade 4)
       [<span><b style={{fontWeight:800}}>{t('perfect', '정격종지')}</b> · {t('a full stop', '마침표(.)')}</span>, <b style={{fontFamily:LB_SERIF}}>V – I</b>, <RefDoor room="harmony-3"/>],
       [<span><b style={{fontWeight:800}}>{t('plagal', '변격종지')}</b> · {t('the “Amen”', '“아멘”')}</span>, <b style={{fontFamily:LB_SERIF}}>IV – I</b>, <RefDoor room="harmony-3"/>],
@@ -22018,8 +22026,7 @@ function RefChords({ part }) {
         [<span><b style={{fontWeight:800}}>{t('Picardy third', '피카르디 3도')}</b> · {t('a minor-key piece ends on the major tonic', '단조 곡이 장3화음 으뜸화음으로 끝나요')}</span>, <b style={{fontFamily:LB_SERIF}}>V – I</b>, <RefDoor room={null}/>],
       ]),
     ]}/>
-    {!React.useContext(RefPaper) && <RefNote>{t('Other names: perfect = authentic, imperfect = half cadence, interrupted = deceptive.', '다른 이름: 정격종지 = authentic, 반종지 = half cadence, 거짓종지 = deceptive.')}</RefNote>}</>}
-    {part !== 'a' && <><RefLab>{t('Every kind of chord, on any root', '모든 화음, 어느 근음에서든')}</RefLab><RefChordKinds/></>}
+    {!React.useContext(RefPaper) && <RefNote>{t('Other names: perfect = authentic, imperfect = half cadence, interrupted = deceptive.', '다른 이름: 정격종지 = authentic, 반종지 = half cadence, 거짓종지 = deceptive.')}</RefNote>}
   </div>;
 }
 // 8. signs: a picture of each (the book's visual index, drawn with the house's pens), its name, the room; ♪ the room's sound
@@ -22294,7 +22301,7 @@ function RefInstruments() {
     <RefTable k="score" cols="minmax(0,0.8fr) minmax(0,2fr)" rows={REF_SCORE.map(([en, ko, men, mko]) => [<b style={{fontWeight:800}}>{t(en, ko)}</b>, <span style={{fontSize:12.5}}>{t(men, mko)}</span>])}/>
   </div>;
 }
-const REF_BODY = { staff: RefStaff, notes: RefNotes, time: RefTimes, keys: RefKeys, scales: RefScales, intervals: RefIntervals, chords: RefChords, signs: RefSigns, play: RefPlay, terms: RefTerms, periods: RefPeriods, instruments: RefInstruments };
+const REF_BODY = { staff: RefStaff, notes: RefNotes, time: RefTimes, keys: RefKeys, scales: RefScales, intervals: RefIntervals, chords: RefChords, cadences: RefCadences, signs: RefSigns, play: RefPlay, terms: RefTerms, periods: RefPeriods, instruments: RefInstruments };
 const REF_PICK_KEY = 'pb_ref_pick_v1';
 function RefPick({ onChapter }) {
   const [sel, setSel] = useState(() => { let x = null; try { x = localStorage.getItem(REF_PICK_KEY); } catch (e) {} return REF_SECS.some(s => s.id === x) ? x : REF_SECS[0].id; });
@@ -22321,7 +22328,7 @@ function ReferenceView({ onChapter, pick }) {
   </div></RefGo.Provider>;
 }
 // on paper: A4 pages in the books' look; 'id:a' and 'id:b' split a long section over two pages
-const REF_PAGES = [['staff', 'notes'], ['time'], ['keys'], ['scales:a', 'intervals'], ['scales:b'], ['chords:a'], ['chords:b'], ['signs'], ['play:a'], ['play:b'], ['play:c'], ['terms:a'], ['terms:b'], ['periods'], ['instruments']], REF_PAGE_COLS = {};
+const REF_PAGES = [['staff', 'notes'], ['time'], ['keys'], ['scales:a', 'intervals'], ['scales:b'], ['chords:a', 'cadences'], ['chords:b'], ['signs'], ['play:a'], ['play:b'], ['play:c'], ['terms:a'], ['terms:b'], ['periods'], ['instruments']], REF_PAGE_COLS = {};
 function RefBook() {
   return <RefPaper.Provider value={true}>{REF_PAGES.map((ids, i) => <section key={i} className="bk-page" data-ref-page={i + 1} style={{position:'relative'}}>
     <VicFloor no={i + 1}/>
@@ -24584,7 +24591,7 @@ function HouseMap({ onOpen, compact, noIntro }) {
   const view = { stages, here, nums, focus: topic, star, review: placeReview(), pawn: name ? (x, y, k) => stPiece(VIC_PAWN_NAVY, x, y, k) : null };   // Build DP: the rooms to review
   const house = useMemo(() => townhouseSvg(view, { wide }), [sig]);
   const hall = useMemo(() => townhouseSvg(view, { hall: true, wide }), [sig]);
-  const week = useMemo(() => compact ? null : weekSvg({ days: practiceDays(), today, name }), [sig]);
+  const week = null;   // m11: the pawn board left the Map (weekSvg kept for later use)
   const reduced = (() => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } })();
   const enter = () => {
     if (inside || opening) return;
@@ -25353,6 +25360,7 @@ function App() {
   const [preview, setPreview] = useState(false);
   const [lang, setLang] = useState(LANG);
   const [findOpen, setFindOpen] = useState(false);
+  const [headMenu, setHeadMenu] = useState(false);   // m12: the teacher's ⚙ menu
   const [lesson, setLesson] = useState(() => tLessonGet());   // lesson mode
   useEffect(() => { if (!teacher) return; let off = false; const f = () => tLessonPull().then(x => { if (!off) setLesson(x ? { ...x } : null); }); f(); window.addEventListener('focus', f); window.addEventListener('pageshow', f); return () => { off = true; window.removeEventListener('focus', f); window.removeEventListener('pageshow', f); }; }, [teacher]);
   LANG = lang;
@@ -25433,14 +25441,20 @@ function App() {
             <h1 style={{color:'var(--text)',fontSize:21,fontWeight:900,margin:0,letterSpacing:'-0.02em',lineHeight:1.2}}>
               {st.lock ? (st.view === 'kit' ? (st.kn || t('Your tools', '내 도구')) : st.tool ? (TOOLS.find(tl => tl.id === st.tool) || {}).title : active.label) : t('Practice Drills', '연습 드릴')}
             </h1>
+            {T && <div data-testid="teacher-label" style={{fontSize:11,fontWeight:900,color:'#e4572e',letterSpacing:'0.06em',textTransform:'uppercase',marginTop:2}}>{t('Teacher view', '교사 화면')}</div>}
           </div>
           <div style={{display:'flex',flexWrap:'wrap',justifyContent:'flex-end',alignItems:'center',gap:8,flex:'0 1 auto',minWidth:0,marginLeft:'auto'}}>
-            <button className="chip" style={{padding:'3px 9px',fontSize:12}} onClick={toggleLang} title={t('한국어로 보기', 'View in English')}>{lang === 'ko' ? 'EN' : '한국어'}</button>
-            {T && lang !== 'ko' && <button className={'chip' + (solfaEn ? ' active' : '')} style={{padding:'3px 9px',fontSize:12}} onClick={toggleSolfa} title="Show fixed-do syllables (C = Do) beside the letter names">Do Re Mi</button>}
-            {T && <div style={{textAlign:'right'}}>
-              <div style={{fontSize:11,fontWeight:900,color:'#e4572e',letterSpacing:'0.06em'}}>{t('TEACHER VIEW', '교사 화면')}</div>
-              <button className="chip" style={{padding:'3px 10px',fontSize:12,marginTop:3}} onClick={() => setPreview(true)}>{t('Student view', '학생 화면')}</button>{' '}
-              <a className="chip" data-testid="to-dashboard" href="teacher-dashboard.html" style={{padding:'3px 10px',fontSize:12,marginTop:3,textDecoration:'none',display:'inline-block'}}>{t('Dashboard', '대시보드')}</a>
+            {!T && <button className="chip" style={{padding:'3px 9px',fontSize:12}} onClick={toggleLang} title={t('한국어로 보기', 'View in English')}>{lang === 'ko' ? 'EN' : '한국어'}</button>}
+            {T && <div style={{display:'flex',gap:6,alignItems:'center',position:'relative'}} data-testid="teacher-head">
+              <a className="chip" data-testid="to-dashboard" href="teacher-dashboard.html" style={{padding:'5px 12px',fontSize:13,fontWeight:800,textDecoration:'none',display:'inline-block'}}>{t('Dashboard', '대시보드')}</a>
+              <button className="chip" style={{padding:'5px 12px',fontSize:13,fontWeight:800}} onClick={() => setPreview(true)}>{t('Student view', '학생 화면')}</button>
+              <button className="chip" data-testid="head-settings" aria-expanded={headMenu} aria-label={t('Settings', '설정')} onClick={() => setHeadMenu(x => !x)} style={{padding:'5px 10px',fontSize:14,fontWeight:800,minWidth:34}}>⚙</button>
+              {headMenu && <div role="menu" data-testid="head-menu" style={{position:'absolute',right:0,top:'calc(100% + 6px)',zIndex:60,background:'#fffefa',border:'1.5px solid var(--navy-line)',borderRadius:12,padding:'10px 12px',boxShadow:'0 8px 24px rgba(38,41,107,0.14)',minWidth:200,display:'flex',flexDirection:'column',gap:10}}>
+                <div><div style={{fontSize:11,fontWeight:900,color:'var(--muted)',letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:5}}>{t('Language', '언어')}</div>
+                  <div style={{display:'flex',gap:5}}>{[['en', 'English'], ['ko', '한국어']].map(([k, l]) => <button key={k} className={'chip' + (lang === k ? ' active' : '')} onClick={() => { if (lang !== k) toggleLang(); }} style={{padding:'4px 12px',fontSize:13,fontWeight:800}}>{l}</button>)}</div></div>
+                {lang !== 'ko' && <div><div style={{fontSize:11,fontWeight:900,color:'var(--muted)',letterSpacing:'0.06em',textTransform:'uppercase',marginBottom:5}}>{t('Note names', '음 이름')}</div>
+                  <button className={'chip' + (solfaEn ? ' active' : '')} onClick={toggleSolfa} title="Show fixed-do syllables (C = Do) beside the letter names" style={{padding:'4px 12px',fontSize:13,fontWeight:800}}>{solfaEn ? 'Do Re Mi: on' : 'Do Re Mi: off'}</button></div>}
+              </div>}
             </div>}
           </div>
         </div>
