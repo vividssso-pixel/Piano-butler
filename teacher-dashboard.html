@@ -400,7 +400,7 @@ function generateGuide(student, logs, currentMonthIdx, plan) {
     return { status:"neutral", alerts:[], tips:["Start logging lessons to get personalised guidance."] };
   }
 
-  // ── Check: weeks without a lesson (Dashboard D1) ──
+  // ── Check: weeks without a lesson (Build EH) ──
   const lastAtt = lastAttended(studentLogs), gapD = lastAtt ? daysSince(lastAtt.date) : null;
   if (!student.paused && (gapD === null || gapD >= NO_LESSON_DAYS)) {
     status = "urgent";
@@ -1205,7 +1205,7 @@ function LogModal({ student, existingLog, currentMonth, lastLog, keysNow, onSave
 /* ═══════════════════════════════════════════════════════════════════════════
    STUDENT CARD (list view)
 ═══════════════════════════════════════════════════════════════════════════ */
-// Dashboard build D1 (2026-11-01): the card shows what a teacher checks before a lesson: the last lesson, the practice days and the
+// Build EH (2026-11-01): the card shows what a teacher checks before a lesson: the last lesson, the practice days and the
 // homework, with one status (useRosterActivity, studentStatus). Edit and Delete are on the student's page.
 const CardStat = ({ value, label, wide, testid }) => (
   <div style={wide ? {gridColumn:"span 2"} : null} data-testid={testid}>
@@ -1382,7 +1382,7 @@ const shortDate = (d) => d.toLocaleDateString("en-AU", { day: "numeric", month: 
 const longWeekday = (d) => d.toLocaleDateString("en-AU", { weekday: "long" });
 
 function PracticeStrip({ studentId }) {
-  // Dashboard D1: one practice strip -- a day counts when the student tapped "I practised today" or played a drill
+  // Build EH: one practice strip -- a day counts when the student tapped "I practised today" or played a drill
   const [res, setRes] = useState(null); // null = loading, false = not available, { rows, plays }
   useEffect(() => {
     let off = false;
@@ -1700,7 +1700,7 @@ const hwLines = (text) => String(text || "").split(/\r?\n/).map(x => x.replace(/
 });
 const latestHomeworkLog = (logs) => (logs || []).filter(l => l.type !== "absent" && (l.homework || "").trim())
   .sort((a, b) => String(b.date).localeCompare(String(a.date)) || (Number(b.id) || 0) - (Number(a.id) || 0))[0] || null;
-// ─── Dashboard build D1 (2026-11-01): the dashboard at a glance ───────────────────────────────────────────────────────
+// ─── Build EH (2026-11-01): the dashboard at a glance ───────────────────────────────────────────────────────
 // One fetch for all the students (links, practice check-ins, drill plays, homework ticks), so the cards and the Today list
 // show practice and homework without opening each student. The two numbers below decide the status on a card.
 const NO_LESSON_DAYS = 28;      // "No lesson in N weeks" (coral) after this many days without an attended lesson
@@ -1965,7 +1965,7 @@ function StudentLinkPanel({ student, logs, onRow }) {
   const [copied, setCopied] = useState(false);
   const [confirmNew, setConfirmNew] = useState(false);
   const [renaming, setRenaming] = useState(false);
-  useEffect(() => { if (onRow) onRow(row); }, [row]);   // Dashboard D1: the student page places the practice cards itself
+  useEffect(() => { if (onRow) onRow(row); }, [row]);   // Build EH: the student page places the practice cards itself
 
   useEffect(() => {
     let off = false;
@@ -2074,7 +2074,7 @@ function StudentLinkPanel({ student, logs, onRow }) {
   );
 }
 
-// Dashboard D1: the heading of each part of the student page
+// Build EH: the heading of each part of the student page
 const PartHead = ({ n, title, sub, flat }) => (
   <div className="no-print" data-part={n} style={{margin: flat ? "0 0 12px" : "26px 0 12px", display:"flex", alignItems:"baseline", gap:10}}>
     <span style={{fontSize:11, fontWeight:800, letterSpacing:"0.08em", textTransform:"uppercase", color:"#e4572e", whiteSpace:"nowrap"}}>{n} · {title}</span>
@@ -2087,7 +2087,7 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
   // Back-fill startingPhase for older student records
   const studentNorm = { startingPhase: isExamStudent(student) ? "foundation" : "exploration", ...student };
   const [passportPeriod, setPassportPeriod] = useState("all"); // "month" | "quarter" | "all"
-  // Dashboard D1: three parts (in the lesson / progress / settings); the link panel reports whether the student has a link
+  // Build EH: three parts (in the lesson / progress / settings); the link panel reports whether the student has a link
   const [linkRow, setLinkRow] = useState(undefined);
   const [showAllLogs, setShowAllLogs] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -2221,7 +2221,7 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
         )}
       </div>
 
-      {/* ══ Dashboard D1: 1 · in the lesson ══ */}
+      {/* ══ Build EH: 1 · in the lesson ══ */}
       <PartHead n="1" title="In the lesson" sub="this week, makeups, the last lessons"/>
       {linkRow && <ThisWeekCard studentId={student.id} logs={studentLogs}/>}
       {linkRow === null && (
@@ -2651,7 +2651,7 @@ function TodayView({ students, logs, roster, onLog, onAbsence, onSelect, onDelet
 
   const today = todayStr();
   const todayLogs = logs.filter(l => l.date === today);
-  // Dashboard D1: a makeup booked for today (an absent log with today's makeup date) is listed too
+  // Build EH: a makeup booked for today (an absent log with today's makeup date) is listed too
   const makeups = logs.filter(l => l.type === "absent" && l.makeupDate === today).map(l => ({ log: l, student: students.find(s => s.id === l.studentId) })).filter(x => x.student);
   const logOf = (s) => todayLogs.find(l => l.studentId === s.id);
   const statusOf = (s) => { if (s.paused) return "paused"; const lg = logOf(s); return !lg ? "pending" : lg.type === "absent" ? "absent" : "logged"; };
@@ -2699,7 +2699,7 @@ function TodayView({ students, logs, roster, onLog, onAbsence, onSelect, onDelet
             const phase = (curM>=0 ? plan[curM] : plan[plan.length-1])?.phase;
             const pm = PHASE_META[phase] || PHASE_META.foundation;
             const examDays = isExamStudent(s) ? daysUntilExam(s.examDate) : null;
-            const meta = [s.grade || "General"];   // Dashboard D1: the plan phase is on the student page
+            const meta = [s.grade || "General"];   // Build EH: the plan phase is on the student page
             return (
               <div key={i} className="pb-row" data-lesson-row="1" data-status={status} data-next={isNext ? "1" : "0"}>
                 <div className="pb-time">
@@ -4226,7 +4226,7 @@ function App() {
   // overrides: { "<weekKey>/<studentId>/<slotIdx>": { day, time, id } }
   // id = Supabase row id (for upsert/delete)
   const [overrides, setOverrides] = useState({});
-  const roster = useRosterActivity(students, logs, tab);   // Dashboard D1: practice and homework for the cards and Today
+  const roster = useRosterActivity(students, logs, tab);   // Build EH: practice and homework for the cards and Today
 
   // ── Load data from Supabase on mount ──────────────────────────────────────
   useEffect(() => {
