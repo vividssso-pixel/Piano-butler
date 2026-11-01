@@ -1,0 +1,14 @@
+const {chromium}=require('playwright');const fs=require('fs');
+(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:760,height:1000}});const errs=[];p.on('pageerror',e=>errs.push(e.message));
+await p.route(/cdnjs\.cloudflare\.com.*react-dom/,r=>r.fulfill({body:fs.readFileSync('/tmp/da/node_modules/react-dom/umd/react-dom.production.min.js'),contentType:'application/javascript'}));
+await p.route(/cdnjs\.cloudflare\.com.*\/react\//,r=>r.fulfill({body:fs.readFileSync('/tmp/da/node_modules/react/umd/react.production.min.js'),contentType:'application/javascript'}));
+await p.route(/googletagmanager|fonts\.g/,r=>r.abort());
+await p.goto('http://localhost:8855/drills.html?teacher=1&view=home');await p.waitForTimeout(3500);
+await p.click('[data-ref-pick-chip=chords]');await p.waitForTimeout(600);
+const el=await p.$('[data-ref-pick]');await el.screenshot({path:'chords.png'});
+const fams=await p.$$eval('[data-ref-chordfam]',es=>es.map(e=>e.getAttribute('data-ref-chordfam')+':'+e.querySelectorAll('[data-ref-chord]').length));console.log(fams);
+const rows=await p.$$eval('[data-ref-chord]',es=>es.map(e=>e.closest('[data-ref-table]')).length);
+const txt=await p.evaluate(()=>[...document.querySelectorAll('[data-ref-chord]')].map(e=>{const cells=[...e.parentElement.parentElement.children];return e.textContent}).slice(-6));console.log(txt);
+await p.click('[data-ref-root="E♭"]');await p.waitForTimeout(300);
+const t2=await p.evaluate(()=>document.querySelector('[data-ref-chordfam=ext]').innerText.split('\n').slice(0,30).join(' | '));console.log(t2);
+console.log('errors',errs.length,errs.slice(0,2));await b.close()})();
