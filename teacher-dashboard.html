@@ -1242,7 +1242,7 @@ function StudentCard({ student, logs, act, onLog, onSelect }) {
             <p className="text-xs text-slate-400 mt-0.5">{student.age ? "Age " + student.age + " · " : ""}{student.grade || student.level || "General"} · {student.lessonDuration}m</p>
             <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
               {student.paused && <span style={pillS("#ecebf5","#4a4d86")}>Paused</span>}
-              {!student.paused && nextLessonDays !== null && <span style={isToday ? pillS("#fbe3da","#c0431f") : pillS("#faf6ec","#62649a")}>{isToday ? "Today " + fmtTime(student.lessonTime) : "Next: " + (student.lessonDay||"").slice(0,3) + (nextLessonDays === 1 ? " (tomorrow)" : " in " + nextLessonDays + "d")}</span>}
+              {!student.paused && !student.test && nextLessonDays !== null && <span style={isToday ? pillS("#fbe3da","#c0431f") : pillS("#faf6ec","#62649a")}>{isToday ? "Today " + fmtTime(student.lessonTime) : "Next: " + (student.lessonDay||"").slice(0,3) + (nextLessonDays === 1 ? " (tomorrow)" : " in " + nextLessonDays + "d")}</span>}
               {examDays !== null && examDays >= 0 && <span style={examDays <= 14 ? pillS("#fbe3da","#c0431f") : pillS("#faf6ec","#62649a")}>Exam in {examDays}d</span>}
               {st && <span style={pillS(tone.bg, tone.fg)} data-testid="card-status">{st.text}</span>}
             </div>
@@ -1720,6 +1720,7 @@ function weekHomework(log, ticks, plays) {
   return { day, total: rows.length, done: rows.filter(r => r.done).length, notYet: rows.filter(r => !r.done).map(r => r.text) };
 }
 function studentStatus(student, studentLogs, act) {
+  if (student.test) return { tone: "n", text: "Test · only you" };   // Dashboard D6
   if (student.paused) return null;
   if (!studentLogs.length) return { tone: "n", text: "No lessons yet" };
   const last = lastAttended(studentLogs), gap = last ? daysSince(last.date) : null;
@@ -2110,7 +2111,7 @@ const lessonItemLine = (it) => it.kind === "room" ? it.label + " [chapter:" + it
 function NameChips({ students, logs, onPick, current }) {
   const dn = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][new Date().getDay()], today = todayStr();
   const todays = [];
-  students.filter(s => !s.paused).forEach(s => {
+  students.filter(s => !s.paused && !s.test).forEach(s => {
     const fortOk = s.lessonsPerWeek !== "fortnightly" || isFortnightWeek(s.startDate);
     if (s.lessonDay === dn && fortOk) todays.push({ s, t: s.lessonTime || "09:00", tag: fmtTime(s.lessonTime || "09:00") });
     if (s.lessonsPerWeek === 2 && s.lessonDay2 === dn) todays.push({ s, t: s.lessonTime2 || "09:00", tag: fmtTime(s.lessonTime2 || "09:00") });
@@ -2129,7 +2130,7 @@ function NameChips({ students, logs, onPick, current }) {
   return (
     <div className="no-print mb-5" data-testid="name-chips">
       {todays.length > 0 && <>{lab("Today")}<div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>{todays.map((x, i) => chip(x.s, x.tag, "t" + i))}</div></>}
-      {rest.length > 0 && <>{lab(todays.length ? "Everyone else" : "Students")}<div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{rest.map(s => chip(s, null, s.id))}</div></>}
+      {rest.length > 0 && <>{lab(todays.length ? "Everyone else" : "Students")}<div style={{display:"flex",gap:6,flexWrap:"wrap"}}>{rest.map(s => chip(s, s.test ? "test" : null, s.id))}</div></>}
     </div>
   );
 }
@@ -2771,6 +2772,7 @@ function TodayView({ students, logs, roster, onLog, onAbsence, onSelect, onDelet
   // Today's lessons -- paused students are listed too (faded)
   const slots = [];
   students.forEach(s => {
+    if (s.test) return;   // Dashboard D6: the test student has no lesson day
     const isFort = s.lessonsPerWeek === "fortnightly";
     const fortOk = !isFort || isFortnightWeek(s.startDate);
     if (s.lessonDay === todayName && fortOk) slots.push({ student:s, time: s.lessonTime||"09:00", dur: s.lessonDuration||45 });
@@ -2798,7 +2800,7 @@ function TodayView({ students, logs, roster, onLog, onAbsence, onSelect, onDelet
     for (let k = 1; k <= 7; k++) {
       const d = new Date(now); d.setDate(now.getDate() + k); const dn = dayNames[d.getDay()];
       const c = [];
-      students.filter(s => !s.paused).forEach(s => { if (s.lessonDay === dn) c.push({ s, time: s.lessonTime || "09:00" }); if (s.lessonsPerWeek === 2 && s.lessonDay2 === dn) c.push({ s, time: s.lessonTime2 || "09:00" }); });
+      students.filter(s => !s.paused && !s.test).forEach(s => { if (s.lessonDay === dn) c.push({ s, time: s.lessonTime || "09:00" }); if (s.lessonsPerWeek === 2 && s.lessonDay2 === dn) c.push({ s, time: s.lessonTime2 || "09:00" }); });
       if (c.length) { c.sort((a,b) => a.time.localeCompare(b.time)); return { day: k === 1 ? "Tomorrow" : dn, time: c[0].time, name: c[0].s.name }; }
     }
     return null;
@@ -2946,7 +2948,7 @@ function CreateSlotPopover({ popover, students, onSave, onSaveNew, onCancel }) {
   };
   const adjust = (d) => setEditTime(t => minsToTime(timeToMins(t) + d));
   const endTime = minsToTime(timeToMins(editTime) + dur);
-  const available = students.filter(s => !s.paused);
+  const available = students.filter(s => !s.paused && !s.test);
   const canSave = mode === "existing" ? !!selectedId : newName.trim().length > 0;
 
   const handleSave = (weekOnly) => {
@@ -3594,6 +3596,7 @@ function ScheduleView({ students, logs, overrides, onLog, onAbsence, onSelect, o
   const slots = [];
   const skippedSlots = []; // slots hidden this week (skip override)
   students.forEach(s => {
+    if (s.test) return;   // Dashboard D6
     if (s.lessonDay) {
       const overrideKey = `${currentWeekKey}/${s.id}/1`;
       const ov = getEffectiveOverride(s.id, 1, currentWeekKey);
@@ -4522,6 +4525,14 @@ function App() {
     setShowAdd(false);
   };
 
+  const addTestStudent = async () => {   // Dashboard D6
+    if (students.some(s => s.test)) return;
+    const row = studentToRow({ name: "Test (me)", grade: "", lessonDay: "Monday", lessonTime: "00:00", lessonDuration: 30, startDate: todayStr(), test: true }, userId);
+    const { data, error } = await _supabase.from("students").insert(row).select().single();
+    if (error) { alert("Could not add the test student: " + error.message); return; }
+    setStudents(p => [...p, rowToStudent(data)]);
+  };
+
   const updateStudent = async (f) => {
     const row = studentToRow({...editing, ...f});
     const { data, error } = await _supabase.from("students").update(row).eq("id", editing.id).select().single();
@@ -5067,6 +5078,13 @@ function App() {
                   <StudentCard key={s.id} student={s} logs={logs} act={roster[s.id]}
                     onLog={setLogging} onSelect={selectStudent}/>
                 ))}
+                {!students.some(s => s.test) && (
+                  <button onClick={addTestStudent} data-testid="add-test-student" className="card no-print"
+                    style={{border:"1.5px dashed #cfc9b6",background:"transparent",padding:20,textAlign:"left",cursor:"pointer",color:"#62649a"}}>
+                    <p className="font-bold text-sm" style={{color:"#26296b"}}>+ A test student for you</p>
+                    <p className="text-xs mt-1" style={{lineHeight:1.5}}>Try lesson mode, homework and the student’s own page without touching a real student. It stays off Today and the Schedule.</p>
+                  </button>
+                )}
                 {filtered.length===0 && (
                   <div className="col-span-3 text-center py-12 text-slate-400 text-sm">
                     No students match your filters.

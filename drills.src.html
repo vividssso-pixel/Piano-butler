@@ -25277,9 +25277,10 @@ function TLessonPick({ onStart }) {
   const [list, setList] = useState(null);   // null = not loaded, false = no login, [] = students
   useEffect(() => { if (!open || list) return; tTeacherGet('students?select=id,name,lesson_day,lesson_time,lesson_day2,lesson_time2,extra&order=name').then(a => setList(Array.isArray(a) ? a : false)); }, [open]);
   const today = T_DAYS[new Date().getDay()];
-  const rows = Array.isArray(list) ? list.map(s => { let ex = {}; try { ex = typeof s.extra === 'string' ? JSON.parse(s.extra || '{}') : (s.extra || {}); } catch (e) {} return { ...s, paused: !!ex.paused,
-    when: s.lesson_day === today ? (s.lesson_time || '') : s.lesson_day2 === today ? (s.lesson_time2 || '') : null }; }).filter(s => !s.paused) : [];
-  const todays = rows.filter(s => s.when != null).sort((a, b) => String(a.when).localeCompare(String(b.when))), rest = rows.filter(s => s.when == null);
+  const rows = Array.isArray(list) ? list.map(s => { let ex = {}; try { ex = typeof s.extra === 'string' ? JSON.parse(s.extra || '{}') : (s.extra || {}); } catch (e) {} return { ...s, paused: !!ex.paused, test: !!ex.test,
+    when: s.lesson_day === today ? (s.lesson_time || '') : s.lesson_day2 === today ? (s.lesson_time2 || '') : null }; }).filter(s => !s.paused).map(s => s.test ? { ...s, when: null } : s) : [];
+  const tests = rows.filter(s => s.test), real = rows.filter(s => !s.test);
+  const todays = real.filter(s => s.when != null).sort((a, b) => String(a.when).localeCompare(String(b.when))), rest = real.filter(s => s.when == null);
   const chip = (s) => <button key={s.id} type="button" className="chip" data-testid="tpick-name" onClick={() => { setOpen(false); onStart(s); }} style={{minHeight:40,padding:'6px 13px',fontSize:14,fontWeight:800}}>{tFirst(s.name)}{s.when ? <span style={{fontWeight:600,opacity:0.7,marginLeft:5,fontSize:12}}>{s.when.slice(0, 5)}</span> : null}</button>;
   const lab = (x) => <div style={{fontSize:11,fontWeight:900,letterSpacing:'0.07em',textTransform:'uppercase',color:'#e4572e',margin:'8px 0 5px'}}>{x}</div>;
   return <div data-testid="tpick" style={{background:'#fffefa',border:'1.5px solid var(--navy-line)',borderRadius:12,padding:'8px 12px',marginBottom:12}}>
@@ -25289,6 +25290,7 @@ function TLessonPick({ onStart }) {
       : list === false ? <div style={{fontSize:13,color:'var(--muted)',padding:'6px 0'}}>{t('Sign in on the dashboard once on this device, then come back.', '이 기기에서 대시보드에 한 번 로그인한 뒤 다시 오세요.')} <a href="teacher-dashboard.html" style={{color:'var(--navy)',fontWeight:800}}>{t('Dashboard', '대시보드')}</a></div>
       : <div>{todays.length > 0 && <>{lab(t('Today', '오늘'))}<div style={{display:'flex',flexWrap:'wrap',gap:6}}>{todays.map(chip)}</div></>}
           {rest.length > 0 && <>{lab(todays.length ? t('Everyone else', '나머지 학생') : t('Students', '학생'))}<div style={{display:'flex',flexWrap:'wrap',gap:6}}>{rest.map(chip)}</div></>}
+          {tests.length > 0 && <>{lab(t('Try it yourself', '직접 해 보기'))}<div style={{display:'flex',flexWrap:'wrap',gap:6}}>{tests.map(s => <button key={s.id} type="button" className="chip" data-testid="tpick-test" onClick={() => { setOpen(false); onStart({ ...s, name: 'Me (test)' }); }} style={{minHeight:40,padding:'6px 13px',fontSize:14,fontWeight:800,borderStyle:'dashed'}}>{t('Me (test)', '나 (테스트)')}</button>)}</div></>}
           {!rows.length && <div style={{fontSize:13,color:'var(--muted)',padding:'6px 0'}}>{t('No students yet. Add them on the dashboard.', '아직 학생이 없어요. 대시보드에서 추가하세요.')}</div>}</div>)}
   </div>;
 }
