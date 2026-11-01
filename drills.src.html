@@ -22389,7 +22389,7 @@ function RefSpine({ id, label, dark, h, on, onPick, w }) {
       background:dark ? 'linear-gradient(90deg,#1a1c55 0%,#2f3280 30%,#2a2d78 65%,#17194c 100%)' : 'linear-gradient(90deg,#e6dcc3 0%,#fbf6ea 30%,#f6efdd 65%,#ddd1b4 100%)',
       color:dark ? '#fff' : 'var(--navy)',boxShadow:on ? '0 8px 12px rgba(38,41,107,.28)' : '0 1px 0 rgba(0,0,0,.08)',transform:on ? 'translateY(-10px)' : 'none',transition:'transform .18s',display:'flex',alignItems:'center',justifyContent:'center'}}>
     {band(true)}{band(false)}
-    <span style={{writingMode:'vertical-rl',textOrientation:ko ? 'upright' : 'mixed',transform:ko ? 'none' : 'rotate(180deg)',fontFamily:LB_SERIF,fontWeight:700,fontSize:ko ? 14 : 15,letterSpacing:ko ? '0.08em' : '0.03em',whiteSpace:'nowrap'}}>{label}</span>
+    <span style={{writingMode:'vertical-rl',textOrientation:ko ? 'upright' : 'mixed',transform:ko ? 'none' : 'rotate(180deg)',fontFamily:LB_SERIF,fontWeight:700,fontSize:(typeof w === 'number' && w < 34) ? (ko ? 12.5 : 13.5) : ko ? 14 : 15,letterSpacing:ko ? '0.08em' : '0.03em',whiteSpace:'nowrap'}}>{label}</span>
   </button>;
 }
 // m23 (her 1 Nov: 'fill each shelf with whatever theory there is'): five more books on the Pitch and harmony shelf
@@ -22688,27 +22688,29 @@ function RefShelf({ onChapter, onHouse, onTool }) {
   const [bw, setBw] = useState(() => { try { return Math.min(600, window.innerWidth - 32); } catch (e) { return 360; } });
   useEffect(() => { const el = box.current; if (!el) return; const f = () => setBw(el.clientWidth); f(); let ro = null; try { ro = new ResizeObserver(f); ro.observe(el); } catch (e) {} return () => { try { ro && ro.disconnect(); } catch (e) {} }; }, []);
   const MX = Math.max(...REF_SHELVES.map(x => x[2].length)), spW2 = Math.max(26, Math.min(58, Math.floor((bw - 8 - (MX - 1) * 5) / MX)));   // m23: a full shelf still fits the screen
-  const NB = REF_SHELVES.reduce((a, x) => a + x[2].length, 0), spW = Math.floor((bw - 2 * 10 - 6 * 5 - (NB - 3) * 4) / NB), one = spW >= 36;   // m21: thirteen spines on one shelf when each is at least 36px
+  const NB = REF_SHELVES.reduce((a, x) => a + x[2].length, 0), spW = Math.floor((bw - 2 * 10 - 6 * 5 - (NB - 3) * 4) / NB), one = spW >= 36;
+  const rowW = (grp) => { const n = grp.reduce((a, gi) => a + REF_SHELVES[gi][2].length, 0); return Math.floor((bw - (grp.length - 1) * 10 - grp.length * 10 - (n - grp.length) * 4) / n); };
+  const pairs = REF_SHELVES.length === 4 ? [[0, 1], [2, 3]] : null, rows = one ? [REF_SHELVES.map((x, i) => i)] : pairs && pairs.every(g => rowW(g) >= 28) ? pairs : null;   // m33: two shelves when every spine still gets 28px   // m21: thirteen spines on one shelf when each is at least 36px
   const pick = (id) => { setSel(id); try { localStorage.setItem(REF_PICK_KEY + '_shelf', id || ''); } catch (e) {} if (id) setTimeout(() => { const el = panel.current; if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); };
   const s = sel && REF_SECS.find(z => z.id === sel), B = s && REF_BODY[s.id];
   const L = (typeof tLessonGet === 'function' && tLessonGet()) || null;
   let k = 0;
   return <RefGo.Provider value={onChapter || null}><div data-ref-shelf ref={box} data-ref-open={sel || ''} style={{marginBottom:26}}>
     <div style={{display:'flex',alignItems:'center',gap:12,margin:'0 0 6px'}}>
-      <img src={VIC_CAMEO} alt="" style={{height:50,flex:'none'}}/>
-      <div><div style={{fontFamily:LB_SERIF,fontStyle:LANG === 'ko' ? 'normal' : 'italic',fontSize:16.5,color:'var(--navy)'}}>{t('“Which book shall I fetch?”', '“어떤 책을 꺼내 드릴까요?”')}</div>
-        <div style={{fontSize:12.5,color:'#4a4d86',marginTop:2}}>{L && L.name ? L.name + ' · ' : ''}<button type="button" data-ref-house onClick={onHouse} style={{border:'none',background:'none',padding:0,font:'inherit',fontWeight:800,color:'var(--coral, #e4572e)',cursor:'pointer'}}>{t('My house ›', '나의 집 ›')}</button></div></div>
+      <img src={VIC_CAMEO} alt="" style={{height:58,flex:'none'}}/>
+      <div><div style={{fontFamily:LB_SERIF,fontStyle:LANG === 'ko' ? 'normal' : 'italic',fontSize:'clamp(19px, 4.6vw, 23px)',lineHeight:1.2,color:'var(--navy)'}}>{t('“Which book shall I fetch?”', '“어떤 책을 꺼내 드릴까요?”')}</div>
+        {!UI_TEACHER && <div style={{fontSize:12.5,color:'#4a4d86',marginTop:2}}>{L && L.name ? L.name + ' · ' : ''}<button type="button" data-ref-house onClick={onHouse} style={{border:'none',background:'none',padding:0,font:'inherit',fontWeight:800,color:'var(--coral, #e4572e)',cursor:'pointer'}}>{t('My house ›', '나의 집 ›')}</button></div>}   {/* m34: the teacher has the House tab */}</div>
     </div>
     <RefSearch onOpen={(id, q) => { pick(id); if (q) setTimeout(() => { try { const pn = document.querySelector('[data-ref-panel="' + id + '"]'); if (!pn) return; const f = refFold(q).trim(); const cand = [...pn.querySelectorAll(REF_FIND_SEL)].filter(e => !e.querySelector(REF_FIND_SEL) && refFold(e.textContent).includes(f)); const el = cand.find(e => refFold(e.textContent).trim() === f) || cand[0]; if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); const o = el.style.background; el.style.background = '#ffe9df'; el.style.transition = 'background .6s'; setTimeout(() => { el.style.background = o; }, 1800); } } catch (e) {} }, 380); }}/>
     {onTool && <div data-ref-favs style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',margin:'10px 0 0'}}><span style={{fontSize:10.5,fontWeight:900,letterSpacing:'0.1em',textTransform:'uppercase',color:'#4a4d86'}}>★ {t('Favourites', '즐겨찾기')}</span>
       {SHELF_FAVS.map(([id, en, ko2]) => <button key={id} type="button" className="chip" data-ref-fav={id} onClick={() => onTool(id)} style={{padding:'4px 12px',fontSize:13,fontWeight:800}}>{t(en, ko2)}</button>)}</div>}
-    {one ? <div data-ref-oneshelf style={{marginTop:18,display:'flex',alignItems:'flex-end',gap:10}}>   {/* m21: one shelf when it fits; m22: a wooden section per group, its name on the shelf's edge */}
-      {REF_SHELVES.map(([en, kr, books], gi) => <div key={en} style={{display:'flex',flexDirection:'column',minWidth:0,flex:'1 1 auto'}}>
+    {rows ? rows.map((grp, ri) => { const sw = Math.min(...rows.map(rowW)); return <div key={ri} data-ref-oneshelf style={{marginTop:ri ? 26 : 18,display:'flex',alignItems:'flex-end',gap:10}}>   {/* m21/m22: sections on one shelf; m33: two shelves of two sections when one is too tight */}
+      {grp.map(gi => REF_SHELVES[gi]).map(([en, kr, books], gi) => <div key={en} style={{display:'flex',flexDirection:'column',minWidth:0,flex:'0 0 auto'}}>
         <div style={{display:'flex',alignItems:'flex-end',gap:4,padding:'0 5px'}}>{books.map(([id, ben, bko], i) => { const label = t(ben, bko), h = Math.max(REF_SPINE_H[k++ % REF_SPINE_H.length], label.length * (ko ? 15 : 8.2) + 64);
-          return <RefSpine key={id} id={id} label={label} dark={i % 2 === 0} h={h} on={sel === id} onPick={pick} w={spW}/>; })}</div>
+          return <RefSpine key={id} id={id} label={label} dark={i % 2 === 0} h={h} on={sel === id} onPick={pick} w={sw}/>; })}</div>
         <div style={{height:5,background:'#b59a68',borderRadius:1,boxShadow:'0 3px 0 rgba(38,41,107,.12)'}}/>
-        <div style={{fontSize:9.5,fontWeight:900,letterSpacing:'0.08em',textTransform:'uppercase',color:'#4a4d86',whiteSpace:'nowrap',textAlign:'center',marginTop:7}}>{t(en, kr)}</div></div>)}
-    </div> :
+        <div style={{fontSize:9.5,fontWeight:900,letterSpacing:'0.08em',textTransform:'uppercase',color:'#4a4d86',textAlign:'center',marginTop:7,lineHeight:1.3}}>{t(en, kr)}</div></div>)}
+    </div>; }) :
     REF_SHELVES.map(([en, kr, books]) => <div key={en} style={{marginTop:18}}>
       <div style={{fontSize:10.5,fontWeight:900,letterSpacing:'0.1em',textTransform:'uppercase',color:'#4a4d86',margin:'0 0 8px'}}>{t(en, kr)}</div>
       <div style={{display:'flex',alignItems:'flex-end',gap:5,padding:'0 4px',borderBottom:'5px solid #b59a68',boxShadow:'0 3px 0 rgba(38,41,107,.12)',minHeight:120}}>
@@ -24982,10 +24984,12 @@ function townhouseSvg(view, o = {}) {
     // the floor's plaque, centred in a moulded frame: just the floor -- "GROUND · II", "P–1 · I" (her 2026-10-12: no floor names;
     // Build O: named by grade, in both languages); red on your floor, green once every room on it is done
     const name = st.s && st.s.attic ? (o.print || LANG !== 'ko' ? 'ATTIC' : '다락방') : st.s && st.s.stories ? (o.print || LANG !== 'ko' ? 'STORIES OF MUSIC' : '음악 이야기') : st.s ? st.s.en[0].toUpperCase() : 'LEVEL ' + (k + 1), mw = rdWidth(name, 700, 11.5, TH_CAPS), pw = (thFontsIn() ? mw : Math.max(mw, name.length * 9.4)) + name.length * 1.04 + 30, px = (X0 + X1) / 2 - pw / 2;   // Cinzel's capitals are wide: trust a measure only once the letters are in
+    const lit = !shut && view.openK != null && k === view.openK, pf = lit ? '#2e8a6e' : here ? ST.C : ST.N;   // m34: the open floor lit green, your floor coral, the rest navy
+    if (lit && !o.print) body += '<rect x="' + L0 + '" y="' + pFix(yy) + '" width="' + (L1 - L0) + '" height="' + LH + '" fill="#eef7f1" stroke="none"/>';
     if (o.print) body += stR(px, yy + (cmp ? 2 : 4), pw, cmp ? 18 : 20, 0.9) + stR(px + 2, yy + (cmp ? 4 : 6), pw - 4, cmp ? 14 : 16, 0.4, 'none')
       + stT((X0 + X1) / 2, yy + (cmp ? 15.2 : 18.4), name, { size: 11.5, weight: 700, font: TH_CAPS, digits: "'Playfair Display',Georgia,serif", ls: '0.09em', fill: here ? ST.C : st.st.every(v => v === 'done') ? ST.G : ST.N, anchor: 'middle' });
-    else body += '<rect x="' + pFix(px) + '" y="' + pFix(yy + (cmp ? 2 : 4)) + '" width="' + pFix(pw) + '" height="' + (cmp ? 18 : 20) + '" fill="' + (here ? ST.C : ST.N) + '" stroke="' + (here ? ST.C : ST.N) + '" stroke-width="0.9"/>'   // m30: plaque B (her pick)
-      + '<rect x="' + pFix(px + 2.2) + '" y="' + pFix(yy + (cmp ? 4.2 : 6.2)) + '" width="' + pFix(pw - 4.4) + '" height="' + (cmp ? 13.6 : 15.6) + '" fill="none" stroke="' + (here ? '#fff' : '#c9a24f') + '" stroke-width="0.7"/>'
+    else body += '<rect x="' + pFix(px) + '" y="' + pFix(yy + (cmp ? 2 : 4)) + '" width="' + pFix(pw) + '" height="' + (cmp ? 18 : 20) + '" fill="' + pf + '" stroke="' + pf + '" stroke-width="0.9"/>'   // m30: plaque B (her pick)
+      + '<rect x="' + pFix(px + 2.2) + '" y="' + pFix(yy + (cmp ? 4.2 : 6.2)) + '" width="' + pFix(pw - 4.4) + '" height="' + (cmp ? 13.6 : 15.6) + '" fill="none" stroke="' + (lit || here ? '#fff' : '#c9a24f') + '" stroke-width="0.7"/>'
       + stT((X0 + X1) / 2, yy + (cmp ? 15.2 : 18.4), name, { size: 11.5, weight: 700, font: TH_CAPS, digits: "'Playfair Display',Georgia,serif", ls: '0.09em', fill: '#f6ead0', anchor: 'middle' });
     fck.forEach((f, j) => {   // m30: a '✓ Check' pill on the left of every floor (Beginner: 1 and 2)
       const pwid = fck.length > 1 ? (cmp ? 30 : 34) : (cmp ? 48 : 56), ph = cmp ? 14 : 16, x0 = L0 + 6 + j * (pwid + 4), y0 = yy + (LH - ph) / 2 + (cmp ? 1 : 1), ok = view.chkOk && view.chkOk[f.key];
