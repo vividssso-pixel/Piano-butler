@@ -400,7 +400,7 @@ function generateGuide(student, logs, currentMonthIdx, plan) {
     return { status:"neutral", alerts:[], tips:["Start logging lessons to get personalised guidance."] };
   }
 
-  // ── Check: weeks without a lesson (Build EH) ──
+  // ── Check: weeks without a lesson (Dashboard D1) ──
   const lastAtt = lastAttended(studentLogs), gapD = lastAtt ? daysSince(lastAtt.date) : null;
   if (!student.paused && (gapD === null || gapD >= NO_LESSON_DAYS)) {
     status = "urgent";
@@ -1205,7 +1205,7 @@ function LogModal({ student, existingLog, currentMonth, lastLog, keysNow, onSave
 /* ═══════════════════════════════════════════════════════════════════════════
    STUDENT CARD (list view)
 ═══════════════════════════════════════════════════════════════════════════ */
-// Build EH (2026-11-01): the card shows what a teacher checks before a lesson: the last lesson, the practice days and the
+// Dashboard build D1 (2026-11-01): the card shows what a teacher checks before a lesson: the last lesson, the practice days and the
 // homework, with one status (useRosterActivity, studentStatus). Edit and Delete are on the student's page.
 const CardStat = ({ value, label, wide, testid }) => (
   <div style={wide ? {gridColumn:"span 2"} : null} data-testid={testid}>
@@ -1382,7 +1382,7 @@ const shortDate = (d) => d.toLocaleDateString("en-AU", { day: "numeric", month: 
 const longWeekday = (d) => d.toLocaleDateString("en-AU", { weekday: "long" });
 
 function PracticeStrip({ studentId }) {
-  // Build EH: one practice strip -- a day counts when the student tapped "I practised today" or played a drill
+  // Dashboard D1: one practice strip -- a day counts when the student tapped "I practised today" or played a drill
   const [res, setRes] = useState(null); // null = loading, false = not available, { rows, plays }
   useEffect(() => {
     let off = false;
@@ -1700,7 +1700,7 @@ const hwLines = (text) => String(text || "").split(/\r?\n/).map(x => x.replace(/
 });
 const latestHomeworkLog = (logs) => (logs || []).filter(l => l.type !== "absent" && (l.homework || "").trim())
   .sort((a, b) => String(b.date).localeCompare(String(a.date)) || (Number(b.id) || 0) - (Number(a.id) || 0))[0] || null;
-// ─── Build EH (2026-11-01): the dashboard at a glance ───────────────────────────────────────────────────────
+// ─── Dashboard build D1 (2026-11-01): the dashboard at a glance ───────────────────────────────────────────────────────
 // One fetch for all the students (links, practice check-ins, drill plays, homework ticks), so the cards and the Today list
 // show practice and homework without opening each student. The two numbers below decide the status on a card.
 const NO_LESSON_DAYS = 28;      // "No lesson in N weeks" (coral) after this many days without an attended lesson
@@ -1965,7 +1965,7 @@ function StudentLinkPanel({ student, logs, onRow }) {
   const [copied, setCopied] = useState(false);
   const [confirmNew, setConfirmNew] = useState(false);
   const [renaming, setRenaming] = useState(false);
-  useEffect(() => { if (onRow) onRow(row); }, [row]);   // Build EH: the student page places the practice cards itself
+  useEffect(() => { if (onRow) onRow(row); }, [row]);   // Dashboard D1: the student page places the practice cards itself
 
   useEffect(() => {
     let off = false;
@@ -2074,7 +2074,7 @@ function StudentLinkPanel({ student, logs, onRow }) {
   );
 }
 
-// Build EH: the heading of each part of the student page
+// Dashboard D1: the heading of each part of the student page
 const PartHead = ({ n, title, sub, flat }) => (
   <div className="no-print" data-part={n} style={{margin: flat ? "0 0 12px" : "26px 0 12px", display:"flex", alignItems:"baseline", gap:10}}>
     <span style={{fontSize:11, fontWeight:800, letterSpacing:"0.08em", textTransform:"uppercase", color:"#e4572e", whiteSpace:"nowrap"}}>{n} · {title}</span>
@@ -2082,15 +2082,18 @@ const PartHead = ({ n, title, sub, flat }) => (
     <span style={{flex:1, height:1, background:"#e3dfd2", alignSelf:"center"}}/>
   </div>
 );
-function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAttended, onBack, onEdit, onPause, onResume, onDelete }) {
+function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAttended, onBack, onEdit, onPause, onResume, onDelete, act }) {
   const gc = GRADE_COLOR[student.grade] || GRADE_COLOR["Grade 5"];
   // Back-fill startingPhase for older student records
   const studentNorm = { startingPhase: isExamStudent(student) ? "foundation" : "exploration", ...student };
   const [passportPeriod, setPassportPeriod] = useState("all"); // "month" | "quarter" | "all"
-  // Build EH: three parts (in the lesson / progress / settings); the link panel reports whether the student has a link
+  // Dashboard D1: three parts (in the lesson / progress / settings); the link panel reports whether the student has a link
   const [linkRow, setLinkRow] = useState(undefined);
   const [showAllLogs, setShowAllLogs] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const openSettings = () => { setSettingsOpen(true); setTimeout(() => { const el = document.querySelector('[data-testid="settings"]'); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60); };
+  const copyStudentLink = () => { if (!linkRow) return; const u = studentLinkUrl(linkRow.token); const done = () => { setLinkCopied(true); setTimeout(() => setLinkCopied(false), 1600); }; try { navigator.clipboard.writeText(u).then(done, () => window.prompt("Copy the student link:", u)); } catch (e) { window.prompt("Copy the student link:", u); } };
   useEffect(() => { setLinkRow(undefined); setShowAllLogs(false); setSettingsOpen(false); }, [student.id]);
   useEffect(() => {   // the PDF prints everything
     const before = () => { try { ReactDOM.flushSync(() => { setShowAllLogs(true); setSettingsOpen(true); }); } catch (e) { setShowAllLogs(true); setSettingsOpen(true); } };
@@ -2106,7 +2109,12 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
   const alloc = getAlloc(student.lessonDuration);
 
   const studentLogs = logs.filter(l=>l.studentId===student.id).sort((a,b)=>b.date.localeCompare(a.date));
-  const guide = generateGuide(student, logs, Math.max(currentMonthIdx,0), plan);
+  const guide0 = generateGuide(student, logs, Math.max(currentMonthIdx,0), plan);
+  // Dashboard D1b: the guide agrees with the card -- little practice is not "Looking good"
+  const cardSt = studentStatus(student, studentLogs, act);
+  const guide = cardSt && cardSt.tone === "warn" && guide0.status === "on-track"
+    ? { status: "warning", alerts: ["Little practice: practised on " + act.days7 + " of the last 7 days."], tips: guide0.tips.filter(x => !/^On track/.test(x)) }
+    : guide0;
 
   const weeksLeft  = isExamStudent(student) ? weeksUntil(student.examDate) : null;
   const monthsLeft = isExamStudent(student)
@@ -2207,6 +2215,22 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
             </button>
           )}
         </div>
+        {/* Dashboard D1c: the student link stays one tap away (the panel itself is under Settings) */}
+        {linkRow !== undefined && (
+          <div className="no-print flex items-center gap-2 flex-wrap mt-3 px-3 py-2 rounded-xl" data-testid="link-strip" style={{background:"#faf6ec",border:"1px solid #e9e2d2"}}>
+            <span className="text-xs font-bold" style={{color:"#26296b"}}>Student link</span>
+            {linkRow ? (<>
+              <span style={linkRow.active === false ? pillS("#fbe3da","#c0431f") : pillS("#e3f1ec","#2e8a6e")}>{linkRow.active === false ? "Paused" : "Active"}</span>
+              <span className="flex-1"/>
+              <button onClick={copyStudentLink} className="btn-primary text-xs py-1.5 px-3" data-testid="link-strip-copy">{linkCopied ? "Copied" : "Copy link"}</button>
+              <button onClick={openSettings} className="btn-ghost text-xs py-1.5 px-3">Link settings</button>
+            </>) : (<>
+              <span className="text-xs text-slate-500">none yet: with a link the student gets homework, practice and drills, and you see them here</span>
+              <span className="flex-1"/>
+              <button onClick={openSettings} className="btn-primary text-xs py-1.5 px-3" data-testid="link-strip-make">Make a link</button>
+            </>)}
+          </div>
+        )}
         {student.paused && (
           <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold"
             style={{background:"#fbe3da",color:"#c0431f",border:"1px solid rgba(228,87,46,0.35)"}}>
@@ -2221,15 +2245,9 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
         )}
       </div>
 
-      {/* ══ Build EH: 1 · in the lesson ══ */}
+      {/* ══ Dashboard D1: 1 · in the lesson ══ */}
       <PartHead n="1" title="In the lesson" sub="this week, makeups, the last lessons"/>
       {linkRow && <ThisWeekCard studentId={student.id} logs={studentLogs}/>}
-      {linkRow === null && (
-        <div className="card p-4 mb-6 no-print text-sm text-slate-500 flex items-center justify-between gap-3 flex-wrap" data-testid="no-link-note">
-          <span>No student link yet. With a link, the homework ticks and the practice days show here.</span>
-          <button onClick={()=>setSettingsOpen(true)} className="btn-ghost text-xs py-1.5 px-3">Make a link in Settings</button>
-        </div>
-      )}
       {/* ── Makeup Schedule ── */}
       {(() => {
         // Absent logs that have a makeupDate set (pending makeups)
@@ -2474,7 +2492,7 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
 
         return (
           <section className="mb-6">
-          <SecHead title="Progress Passport" right={<span className="text-xs font-bold" style={{color:"#e4572e"}}>{totalLogs.length} lessons</span>}/>
+          <SecHead title="Progress Passport" right={<span className="text-xs font-bold" style={{color:"#e4572e"}}>{totalLogs.length} {totalLogs.length === 1 ? "lesson" : "lessons"}</span>}/>
           <div className="card p-5">
             {/* Header */}
             <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -2651,7 +2669,7 @@ function TodayView({ students, logs, roster, onLog, onAbsence, onSelect, onDelet
 
   const today = todayStr();
   const todayLogs = logs.filter(l => l.date === today);
-  // Build EH: a makeup booked for today (an absent log with today's makeup date) is listed too
+  // Dashboard D1: a makeup booked for today (an absent log with today's makeup date) is listed too
   const makeups = logs.filter(l => l.type === "absent" && l.makeupDate === today).map(l => ({ log: l, student: students.find(s => s.id === l.studentId) })).filter(x => x.student);
   const logOf = (s) => todayLogs.find(l => l.studentId === s.id);
   const statusOf = (s) => { if (s.paused) return "paused"; const lg = logOf(s); return !lg ? "pending" : lg.type === "absent" ? "absent" : "logged"; };
@@ -2699,7 +2717,7 @@ function TodayView({ students, logs, roster, onLog, onAbsence, onSelect, onDelet
             const phase = (curM>=0 ? plan[curM] : plan[plan.length-1])?.phase;
             const pm = PHASE_META[phase] || PHASE_META.foundation;
             const examDays = isExamStudent(s) ? daysUntilExam(s.examDate) : null;
-            const meta = [s.grade || "General"];   // Build EH: the plan phase is on the student page
+            const meta = [s.grade || "General"];   // Dashboard D1: the plan phase is on the student page
             return (
               <div key={i} className="pb-row" data-lesson-row="1" data-status={status} data-next={isNext ? "1" : "0"}>
                 <div className="pb-time">
@@ -4226,7 +4244,7 @@ function App() {
   // overrides: { "<weekKey>/<studentId>/<slotIdx>": { day, time, id } }
   // id = Supabase row id (for upsert/delete)
   const [overrides, setOverrides] = useState({});
-  const roster = useRosterActivity(students, logs, tab);   // Build EH: practice and homework for the cards and Today
+  const roster = useRosterActivity(students, logs, tab);   // Dashboard D1: practice and homework for the cards and Today
 
   // ── Load data from Supabase on mount ──────────────────────────────────────
   useEffect(() => {
@@ -4930,6 +4948,7 @@ function App() {
               onPause={setPauseTarget}
               onResume={resumeStudent}
               onDelete={deleteStudent}
+              act={roster[liveStudent.id]}
             />
           );
         })()}
