@@ -25164,6 +25164,22 @@ function ConceptHome({ st, update }) {
 // ── Map merge M1: one Map tab, two views of the same rooms. House = the chapters' house; Topics = the Home with its Reference.
 // The last view a teacher (or an adult with Topics switched on) chose is kept; visitors and children see the House.
 const MAP_VIEW_KEY = 'pb_map_view_v1';
+// ── Lesson mode (with the teacher dashboard, same browser): {studentId, name, startedAt, shown: [{kind, id, label, at}]}
+const TLESSON_KEY = 'pb_lesson_v1';
+function tLessonGet() { try { const x = JSON.parse(localStorage.getItem(TLESSON_KEY) || 'null'); return x && x.studentId != null ? x : null; } catch (e) { return null; } }
+function tLessonNote(kind, id, label) {
+  const x = tLessonGet(); if (!x || !id) return x;
+  x.shown = Array.isArray(x.shown) ? x.shown : [];
+  if (!x.shown.some(it => it.kind === kind && it.id === id)) { x.shown.push({ kind, id, label: String(label || id).slice(0, 80), at: Date.now() }); try { localStorage.setItem(TLESSON_KEY, JSON.stringify(x)); } catch (e) {} }
+  return x;
+}
+function TLessonBar({ lesson }) {
+  const n = (lesson.shown || []).length;
+  return <div data-testid="lesson-bar" style={{position:'sticky',top:0,zIndex:40,background:'#e4572e',color:'#fff',padding:'9px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,fontWeight:800,fontSize:13.5}}>
+    <span>{t('Lesson with ', '레슨: ')}{lesson.name} · {n} {t(n === 1 ? 'shown' : 'shown', '개 보여 줌')}</span>
+    <a href="teacher-dashboard.html?endlesson=1" data-testid="lesson-bar-end" style={{background:'#fff',color:'#e4572e',borderRadius:10,padding:'5px 11px',textDecoration:'none',fontSize:13}}>{t('End lesson', '레슨 끝내기')}</a>
+  </div>;
+}
 function mapSave(x) { try { localStorage.setItem(MAP_VIEW_KEY, x); } catch (e) {} }
 function mapPick(canTopics, teacher) { if (!canTopics) return 'path'; let x = null; try { x = localStorage.getItem(MAP_VIEW_KEY); } catch (e) {} return x === 'house' ? 'path' : x === 'topics' ? 'home' : (teacher ? 'home' : 'path'); }   // M2: children and visitors start on the House
 function MapSwitch({ value, onPick }) {
@@ -25186,6 +25202,7 @@ function App() {
   const [preview, setPreview] = useState(false);
   const [lang, setLang] = useState(LANG);
   const [findOpen, setFindOpen] = useState(false);
+  const [lesson, setLesson] = useState(() => tLessonGet());   // lesson mode
   LANG = lang;
   try { document.documentElement.lang = lang; } catch (e) {}   // Phase 439: the Korean line rule (and the browser's Hangul font) follow the switch
   function toggleLang() { const next = lang === 'ko' ? 'en' : 'ko'; setLang(next); }
@@ -25236,6 +25253,11 @@ function App() {
   useEffect(() => { if (st.drill && CHAPTER_CAT[st.drill]) { try { localStorage.setItem(LAST_CHAPTER_KEY, st.drill); } catch (e) {} } }, [st.drill]);
   useEffect(() => { try { const n = parseInt(BOOT_PARAMS.get('step'), 10); if (!st.drill || isNaN(n)) return; const tmo = setTimeout(() => { const part = BOOT_PARAMS.get('part'); const el = [st.drill + '-step-', st.drill + '-' + (part === 'minor' ? 'minor' : 'major') + '-step-'].map(x => document.getElementById(x + (n - 1))).find(Boolean); /* Phase 361: Scales has two lessons */ if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 700); return () => clearTimeout(tmo); } catch (e) {} }, []);
   function update(patch) { setSt(prev => ({ ...prev, ...patch })); }
+  // lesson mode: note each room and tool the teacher opens while a lesson is open
+  useEffect(() => { if (!T || st.lock || !tLessonGet()) return; let x = null;
+    if (st.drill) { const d = DRILLS.find(z => z.id === st.drill); x = tLessonNote('room', st.drill, d && d.label); }
+    if (st.tool) { const tl = TOOLS.find(z => z.id === st.tool); x = tLessonNote('tool', st.tool, tl && tl.title); }
+    if (x) setLesson({ ...x }); }, [st.drill, st.tool, T, st.lock]);
   OPEN_CH = (id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }; // Phase 360: chapter links inside a lesson
   // a student with a link always has a button back to the Today page on the Learn and Practice lists
   const todayBack = showToday && !T ? <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:12}} onClick={() => { update({ view: 'today', tool: null, kit: null, drill: null, from: null }); try { window.scrollTo(0, 0); } catch (e) {} }}>{t('← Today', '← 오늘')}</button> : null;
@@ -25251,6 +25273,7 @@ function App() {
     <DictCtx.Provider value={termCtx}>
     <div style={{minHeight:'100vh',background:'var(--bg)'}}>
       {term && <DictCard id={term} onClose={() => setTerm(null)}/>}
+      {T && lesson && <TLessonBar lesson={lesson}/>}
       <div style={{background:'var(--bg)',padding:'14px 16px 30px',backgroundImage:'repeating-linear-gradient(to bottom, transparent 0 3px, var(--navy) 3px 4.2px)',backgroundSize:'100% 20px',backgroundRepeat:'no-repeat',backgroundPosition:'0 100%'}}>
         <div className="pb-main" style={{maxWidth:600,margin:'0 auto',display:'flex',flexWrap:'wrap',alignItems:'center',justifyContent:'space-between',gap:10}}>
           <div style={{minWidth:0}}>
