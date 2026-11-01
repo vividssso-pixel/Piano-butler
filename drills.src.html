@@ -26177,7 +26177,7 @@ function ExHead({ n, title, how }) {
   );
 }
 function BkGrid({ cols, children, gap = '10px 12px' }) {
-  return <div style={{display:'grid',gridTemplateColumns:'repeat(' + cols + ',1fr)',gap}}>{children}</div>;
+  return <div style={{display:'grid',gridTemplateColumns:'repeat(' + cols + ',minmax(0,1fr))',gap}}>{children}</div>;   // m39: a cell may shrink, never spill off the page
 }
 
 function NameLine({ score }) {
@@ -36274,7 +36274,7 @@ function HpPaperCheck() {
     <BkGrid cols={4} gap="6px 8px">{C.g.map(([h, f], i) => cell('G', h, f, i + 5))}</BkGrid>
     {bkSec('C', 'Which position (C or G)? Which hand (R or L)?')}
     <BkGrid cols={4} gap="6px 8px">{C.where.map(([pos, h], i) => { const lit = {}; hpKeysOf(pos, h).forEach(d => { lit[d] = 'cor'; });
-      return <BkCell key={i} n={i + 9}><div style={{display:'grid',gap:4,padding:'14px 0 0'}}><HpKeys pos={pos} hands={h} span={[17, 37]} fingers={false} letters={false} names={false} mc={false} pale={false} lit={lit} W={7} k={1}/>
+      return <BkCell key={i} n={i + 9}><div style={{display:'grid',gap:4,padding:'14px 0 0'}}><HpKeys pos={pos} hands={h} span={[17, 37]} fingers={false} letters={false} names={false} mc={true} pale={false} lit={lit} W={7} k={1}/>
         <div style={{display:'flex',justifyContent:'center',gap:8,fontSize:10.5,fontWeight:900,color:BK.muted}}><span style={{display:'inline-flex',alignItems:'center',gap:3}}>C/G {bkBox(26, 22)}</span><span style={{display:'inline-flex',alignItems:'center',gap:3}}>R/L {bkBox(26, 22)}</span></div></div></BkCell>; })}</BkGrid>
     {bkSec('D', 'Mirror twins: which letter does the other hand\'s same finger play?')}
     <BkGrid cols={4} gap="6px 8px">{C.mirror.map((it, i) => { const [pos, h, f] = it; return <BkCell key={i} n={i + 13}><div style={{display:'grid',gap:3,padding:'14px 0 0'}}>
@@ -50566,7 +50566,7 @@ function SfWorkbook({ startNo = 1, frames = true }) {
   </>);
   // 7 (puzzle page for step 5)
   P(<>
-    <WbTop step={5}/>
+    <WbTop step={5} cont/>
     <Part kind="play" grow={false} title="The secret message" how="Write each note's letter in its box: every staff spells a word. The last one is seven notes long!">
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'4px 14px',alignItems:'end'}}>
         {SF_MSG.slice(0, 3).map((m, i) => { const xs = [64, 98, 132]; return <SfRow key={i} clef={m.clef} width={152} notes={m.notes.map((d, j) => ({ d, x: xs[j] }))} minSpan={m.clef === 'bass' ? [29, 17] : [27, 39]} items={xs.map((x, j) => ({ x, ex: i === 0, ans: m.word[j], box: true, w: 30 }))}/>; })}
@@ -51527,12 +51527,12 @@ function ExCell({ n, ex, children }) {
     </div>
   );
 }
-function WbTop({ step }) {
+function WbTop({ step, cont }) {   // m39: cont, the step goes on over the page
   const chId = React.useContext(BkChapterCtx), SP = React.useContext(SplitCtx);
   if (SP && SP.step) step = SP.step;   // Build DG: a sub-room's own step number
   return (
     <div className="wb-top" style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:8,margin:'0 0 2px'}}>
-      <b style={{color:BK.coral,fontSize:10.5,fontWeight:800,...VIC_CAPS}}>{bkStepLabel(step)}</b>
+      <b style={{color:BK.coral,fontSize:10.5,fontWeight:800,...VIC_CAPS}}>{bkStepLabel(step)}{cont ? ' · continued' : ''}</b>
       <span style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:10.5,color:BK.muted}}>online<QR url={bkStepLink(chId, step)} size={34}/></span>
     </div>
   );
@@ -52898,11 +52898,11 @@ const TN_WL = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 function TnPKeys({ start = 'C', whites = 7, w = 34, h = 104, you = [], dots = [], labels = {}, arrow = null, rings = [], gaps = [], slots = false, wslots = false }) {
   const s0 = TN_WL.indexOf(start), L = (i) => TN_WL[(s0 + i) % 7];
   const hasB = (i) => 'CDFGA'.includes(L(i)) && i < whites - 1;
-  const bw = w * 0.6, bh = h * 0.6, T = arrow ? 26 : 3, W = whites * w + 4;
+  const bw = w * 0.6, bh = h * 0.6, T = arrow ? 26 : 3, W = whites * w + 4, PADX = arrow ? 16 : 0;   // m39: room for an arrow that runs past the end keys
   const cx = (k) => k[0] === 'w' ? 2 + (+k.slice(1) + 0.5) * w : 2 + (+k.slice(1) + 1) * w;
   const youW = you.filter(k => k[0] === 'w'), youB = you.filter(k => k[0] === 'b');
   return (
-    <svg viewBox={`0 0 ${W} ${T + h + 4}`} style={{width:'100%',display:'block'}}>
+    <svg viewBox={`${-PADX} 0 ${W + 2 * PADX} ${T + h + 4}`} style={{width:'100%',display:'block'}}>
       {arrow && (() => { const x1 = cx(arrow[0]), x2 = x1 + arrow[1] * w * (arrow[2] || 1.15), y = 19; return <g>
         <line x1={x1} y1={y} x2={x2} y2={y} stroke={BK.coral} strokeWidth="2"/><path d={`M${x2 - arrow[1] * 7} ${y - 5} L${x2} ${y} L${x2 - arrow[1] * 7} ${y + 5}`} fill="none" stroke={BK.coral} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
         <text x={(x1 + x2) / 2} y={y - 6} textAnchor="middle" fontSize="11" fontWeight="900" fill={BK.coral}>{arrow[1] > 0 ? 'up' : 'down'}</text></g>; })()}
@@ -52971,7 +52971,7 @@ function TnWorkbook({ startNo = 1 }) {
   // 2 (faces "A half step: a semitone")
   P(<>
     <WbTop step={1}/>
-    <Part kind="together" title="A half step up" how="Your key is in red. Mark the key a half step up, the very next key on the right: a dot on a white key, or fill in the circle on a black key.">
+    <Part kind="together" title="A half step up" how="Your key is coloured. Mark the key a half step up, the very next key on the right: a dot on a white key, or fill in the circle on a black key.">
       <BkGrid cols={2} gap="8px 10px">{W.halfUp.map((k, i) => keyCell(i + 1, i === 0, { you: [k], arrow: [k, 1], dots: i === 0 ? [tnStep(k, 1)] : [] }, null, true))}</BkGrid>
     </Part>
     <Part kind="home" title="A half step down" how="Mark the key a half step down: the very next key on the left.">
@@ -53037,8 +53037,8 @@ function TnWorkbook({ startNo = 1 }) {
         </div></ExCell>; })}</BkGrid>
     </Part>
     <Part kind="play" title="Same key or not?" how="Are the two names the same black key on the piano? Circle yes or no.">
-      <BkGrid cols={4} gap="10px 10px">{W.same.map(([x, y], i) => <ExCell key={i} n={i + 10} ex={i === 0}><div style={{padding:'16px 4px 8px',display:'grid',justifyItems:'center',gap:10}}>
-        <div style={{fontSize:30,fontWeight:900,color:BK.ink,lineHeight:1}}>{tnSignTxt(x)} <span style={{color:BK.muted,fontSize:22}}>·</span> {tnSignTxt(y)}</div>
+      <BkGrid cols={4} gap="10px 10px">{W.same.map(([x, y], i) => <ExCell key={i} n={i + 10} ex={i === 0}><div style={{padding:'24px 4px 8px',display:'grid',justifyItems:'center',gap:10}}>
+        <div style={{fontSize:27,fontWeight:900,color:BK.ink,lineHeight:1}}>{tnSignTxt(x)} <span style={{color:BK.muted,fontSize:22}}>·</span> {tnSignTxt(y)}</div>
         {wsChoose(['yes', 'no'], i === 0 ? (tnSamePc(x, y) ? 'yes' : 'no') : null)}</div></ExCell>)}</BkGrid>
     </Part>
     <Faces/>
@@ -54846,7 +54846,7 @@ const NV_BEATS = { w: 4, h: 2, hd: 3, q: 1, p: 1, r: 1, hr: 2, wr: 4 };
 function NvNameCell({ k, n, ex, words, beats = true }) {
   return <ExCell n={n} ex={ex}><div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'4px 2px 0'}}>
     <NvGlyph kind={k} size={46}/>
-    {words && <div style={{display:'flex',justifyContent:'center'}}>{nvChoose(words, ex ? nvNameEn[k] : null)}</div>}
+    {words && <div style={{display:'flex',justifyContent:'center'}}>{nvChoose(words, ex ? (words.includes('walk') ? (k === 'q' ? 'walk' : 'run-ning') : nvNameEn[k]) : null)}</div>}
     {beats && <span style={{display:'inline-flex',alignItems:'center',gap:5,fontSize:12,fontWeight:800,color:BK.ink}}>beats {ex ? bkHand(String(NV_BEATS[k]), 36, 30) : bkBox(36, 30)}</span>}
   </div></ExCell>;
 }
