@@ -1,0 +1,23 @@
+const {chromium}=require('playwright');const fs=require('fs');let pass=0,fail=0;const ok=(c,m)=>{if(c)pass++;else{fail++;console.log('FAIL',m)}};
+(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:760,height:1000}});const errs=[];p.on('pageerror',e=>errs.push(e.message));
+await p.route(/cdnjs\.cloudflare\.com.*react-dom/,r=>r.fulfill({body:fs.readFileSync('/tmp/da/node_modules/react-dom/umd/react-dom.production.min.js'),contentType:'application/javascript'}));
+await p.route(/cdnjs\.cloudflare\.com.*\/react\//,r=>r.fulfill({body:fs.readFileSync('/tmp/da/node_modules/react/umd/react.production.min.js'),contentType:'application/javascript'}));
+await p.route(/googletagmanager|fonts\.g/,r=>r.abort());
+await p.goto('http://localhost:8855/drills.html?teacher=1&view=home');await p.waitForTimeout(3500);
+await p.click('[data-ref-pick-chip=scales]');await p.waitForTimeout(300);
+const sc=await p.$$eval('[data-ref-scale]',es=>es.map(e=>e.getAttribute('data-ref-scale')));ok(sc.length===14,'scales '+sc);
+const blues=await p.evaluate(()=>document.querySelector('[data-ref-scale=blues]').innerText.replace(/\n/g,' '));ok(/T\+S T S S T\+S T/.test(blues),'blues steps '+blues);
+const dor=await p.evaluate(()=>document.querySelector('[data-ref-scale=dor]').innerText.replace(/\n/g,' '));ok(/T S T T T S T/.test(dor),'dorian '+dor);
+await p.click('[data-ref-pick-chip=intervals]');await p.waitForTimeout(300);
+const iv=await p.evaluate(()=>document.querySelector('[data-ref-table=intervals]').innerText.replace(/\n/g,' '));ok(/unison.*perfect 0.*augmented 1/.test(iv)&&/7th.*diminished 9/.test(iv)&&/tritone/i.test(await p.textContent('[data-ref-pick]')),'intervals '+iv.slice(0,200));
+await p.click('[data-ref-pick-chip=chords]');await p.waitForTimeout(300);
+const cad=await p.evaluate(()=>document.querySelector('[data-ref-table=cadences]').innerText.replace(/\n/g,' '));ok(/Phrygian/.test(cad)&&/Picardy/.test(cad)&&/cadential 6-4/.test(cad),'cadences '+cad);ok(/authentic/.test(await p.textContent('[data-ref-pick]')),'other names');
+const el=await p.$('[data-ref-table=cadences]');await el.screenshot({path:'cad.png'});
+// paper book unchanged
+const q=await b.newPage({viewport:{width:900,height:1200}});await q.route(/cdnjs\.cloudflare\.com.*react-dom/,r=>r.fulfill({body:fs.readFileSync('/tmp/da/node_modules/react-dom/umd/react-dom.production.min.js'),contentType:'application/javascript'}));
+await q.route(/cdnjs\.cloudflare\.com.*\/react\//,r=>r.fulfill({body:fs.readFileSync('/tmp/da/node_modules/react/umd/react.production.min.js'),contentType:'application/javascript'}));await q.route(/googletagmanager|fonts\.g/,r=>r.abort());
+q.on('pageerror',e=>errs.push('paper: '+e.message));
+await q.goto('http://localhost:8855/drills.html?book=reference');await q.waitForTimeout(4000);
+const pc=await q.evaluate(()=>({sc:document.querySelectorAll('[data-ref-scale]').length,cad:(document.querySelector('[data-ref-table=cadences]')||{innerText:''}).innerText.includes('Phrygian'),iv:(document.querySelector('[data-ref-table=intervals]')||{innerText:''}).innerText.includes('unison'),pages:document.querySelectorAll('[data-ref-page]').length}));
+ok(pc.sc===7&&!pc.cad&&!pc.iv,'paper unchanged '+JSON.stringify(pc));
+ok(errs.length===0,'errors '+errs.join('|'));await b.close();console.log('pass',pass,'fail',fail)})();
