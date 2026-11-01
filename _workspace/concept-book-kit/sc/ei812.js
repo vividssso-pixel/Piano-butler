@@ -7,7 +7,7 @@ let bad = 0; const ok = (c, m, x) => { if (!c) bad++; console.log((c ? 'ok   ' :
 const CH = {
   'rhythm-2': [['One beat a word', 'Three for two, two for three', 'Switch every beat'], ['Semiquaver sums', 'How many semiquavers?', 'Make up a bar']],
   melody: [['both the other way'], ['a motif of your own', 'my own']],
-  'rhythm-3': [['Long and short', 'Beats in a bar', 'Simple or compound?'], ['One beat a word']],
+  'rhythm-3': [['Count the dotted rhythms', 'Count the minim beats', 'Count 3/8 and 9/8'], ['Semiquaver sums', 'Three for two, two for three']],
 };
 (async () => {
   const H = await start(B);
