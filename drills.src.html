@@ -20396,7 +20396,7 @@ function StartGuide({ onOpen, always }) {
           <span style={{flex:1}}/>
           {!always && <button className="chip" style={{padding:'3px 10px',fontSize:12.5}} onClick={() => setOpenSaved(false)}>{t('Hide the guide ▴', '안내 접기 ▴')}</button>}
         </div>
-        {UI_TEACHER && <div style={{fontSize:12.5,color:'var(--navy-soft)',lineHeight:1.45,marginTop:8,borderTop:'1px dashed var(--navy-line)',paddingTop:8}}>{t('Teaching? Use the Toolbox tab to find one activity in the middle of a lesson, or the Chapters tab for the full lessons.', '가르치는 중인가요? 레슨 중에 쓸 활동 하나는 도구함 탭에서 찾고, 전체 레슨은 챕터 탭에서 열어요.')}</div>}
+        {UI_TEACHER && <div style={{fontSize:12.5,color:'var(--navy-soft)',lineHeight:1.45,marginTop:8,borderTop:'1px dashed var(--navy-line)',paddingTop:8}}>{t('Teaching? The Library finds a topic in the middle of a lesson; the House has the full chapters, floor by floor.', '가르치는 중인가요? 레슨 중에 주제 하나는 서재에서 찾고, 전체 챕터는 집에서 층마다 열어요.')}</div>}
       </div>
     </section>
   );
@@ -22529,7 +22529,7 @@ const REF_COMPOSERS = [
 function RefComposers() {
   return <div>
     <RefTable k="composers" cols="96px minmax(0,1fr) auto" head={[t('Period', '시대'), t('Composers', '작곡가'), '']}
-      rows={REF_COMPOSERS.map(([en, ko, list]) => [refB(t(en, ko)), <span>{list.map(([n, nk, y], i) => <span key={n} style={{whiteSpace:'nowrap'}}>{i ? ' · ' : ''}{t(n, nk)} <span style={{color:BK.muted,fontSize:11.5}}>{y}</span></span>)}</span>, <RefDoor room="composers"/>])}/>
+      rows={REF_COMPOSERS.map(([en, ko, list]) => [refB(t(en, ko)), <span>{list.map(([n, nk, y], i) => <React.Fragment key={n}>{i ? ' · ' : ''}<span style={{whiteSpace:'nowrap'}}>{t(n, nk)} <span style={{color:BK.muted,fontSize:11.5}}>{y}</span></span></React.Fragment>)}</span>, <RefDoor room="composers"/>])}/>
     <RefNote>{t('A few of the composers pianists meet most, in order of birth. The Periods book has the dates and the sound of each period.', '피아니스트가 가장 자주 만나는 작곡가 몇 명, 태어난 순서로. 시대마다의 연도와 소리는 Periods 책에.')}</RefNote>
   </div>;
 }
@@ -22589,7 +22589,7 @@ function ReferenceView({ onChapter, pick }) {
   </div></RefGo.Provider>;
 }
 // on paper: A4 pages in the books' look; 'id:a' and 'id:b' split a long section over two pages
-const REF_PAGES = [['staff', 'notes'], ['time'], ['keys'], ['scales:a', 'intervals'], ['scales:b'], ['chords:a', 'cadences'], ['chords:b'], ['signs'], ['play:a'], ['play:b'], ['play:c'], ['terms:a'], ['terms:b'], ['periods'], ['instruments']], REF_PAGE_COLS = {};
+const REF_PAGES = [['staff', 'notes'], ['rhythm'], ['time'], ['signs'], ['ornaments'], ['keys'], ['related', 'modes'], ['scales:a', 'intervals'], ['scales:b'], ['chords:a', 'cadences'], ['chords:b'], ['nonchord'], ['chromatic', 'transposition'], ['play:a'], ['play:b'], ['play:c'], ['terms:a'], ['terms:b'], ['form', 'texture'], ['kinds'], ['periods'], ['composers'], ['instruments']], REF_PAGE_COLS = {};   // m26: the shelves' order, the new books in
 function RefBook() {
   return <RefPaper.Provider value={true}>{REF_PAGES.map((ids, i) => <section key={i} className="bk-page" data-ref-page={i + 1} style={{position:'relative'}}>
     <VicFloor no={i + 1}/>
@@ -24792,6 +24792,7 @@ function thRoom(view, state, id, x, y, w, h, fs, out, dimNew, lay, cmp) {
   const sx = cx - (sq + 5 + rdWidth(lines[0], 700, nz, TH_SERIF)) / 2;   // the square and the first line together, centred
   s += stSquare(sx, sy, sq, num, done ? ST.G : null, 11) + stT(sx + sq + 5, sy + 13, lines[0], { size: nz, weight: 700, font: TH_SERIF, fill: nfill });
   if (lines[1]) s += stT(cx, sy + 27, lines[1], { size: nz, weight: 700, font: TH_SERIF, fill: nfill, anchor: 'middle' });
+  if (view.subs && CH_SUB[id]) { const sb = thWrap(CH_SUB[id][0], w - 8, 8.8, TH_SANS)[0] || ''; s += stT(cx, sy + lay.ml * 14 + 11, sb, { size: 8.8, weight: 500, font: TH_SANS, fill: ST.N, anchor: 'middle' }); }   // m26: what you learn, on the Workbook's map
   const star = view.star && view.star[id];   // Build CN: the chapter check passed
   if (!done && !star && view.review && view.review.includes(id)) { const rw = cmp ? 34 : 44, rh = cmp ? 10 : 12, rx0 = x + w - rw - (cmp ? 5 : 8), ry0 = y + h - 6 - (cmp ? 14 : 17);   // Build DP (36): a room to review, from the placement
     s += '<rect x="' + pFix(rx0) + '" y="' + pFix(ry0) + '" width="' + rw + '" height="' + rh + '" rx="' + (rh / 2) + '" fill="#fff" stroke="' + ST.C + '" stroke-width="0.9"/>' + stT(rx0 + rw / 2, ry0 + rh - (cmp ? 2.4 : 2.8), t('review', '다시'), { size: cmp ? 7 : 8.4, weight: 800, fill: ST.C, anchor: 'middle' }); }
@@ -24800,7 +24801,7 @@ function thRoom(view, state, id, x, y, w, h, fs, out, dimNew, lay, cmp) {
     s += '<rect x="' + pFix(tx) + '" y="' + pFix(ty) + '" width="' + tw + '" height="' + th + '" rx="' + (th / 2) + '" fill="#fff" stroke="' + ST.N + '" stroke-width="0.9"/>' + stT(tx + tw / 2, ty + th - (cmp ? 2.4 : 2.8), 'T' + thn, { size: cmp ? 7.2 : 8.6, weight: 800, fill: ST.N, anchor: 'middle' }); }
   if (star) s += '<path d="' + chkStarD(x + w - (cmp ? 9 : 12), y + h - 6 - (cmp ? 8 : 11), cmp ? 5.5 : 7.5) + '" fill="' + ST.G + '" stroke="#fff" stroke-width="0.8"/>';
   const ic = HOUSE_ICONS[id];
-  const picTop = cmp ? sy + lay.ml * 14 + 5 : Math.max(sy + lay.ml * 14 + 14, cy - 40);   // one height on the floor
+  const picTop = cmp ? sy + lay.ml * 14 + 5 : Math.max(sy + lay.ml * 14 + 14 + (view.subs ? 13 : 0), cy - 40);   // one height on the floor
   if (ic && !on) s += thPic(x + w / 2, picTop, ic, dimNew && st === 'new', cmp ? 0.44 : 0.8);
   if (on) out.fig = stG(ic ? thDome(x + w / 2, picTop - (cmp ? 4 : 0), ic, cmp ? 0.52 : 1) : '');   // your room: the dome, not Clara
   if (view.focus && thArea(id) !== view.focus) s += '<rect x="' + pFix(x + 1) + '" y="' + pFix(y + 1) + '" width="' + pFix(w - 2) + '" height="' + pFix(h - 2) + '" fill="#fff" opacity="0.78" stroke="none"/>';   // Build V: another topic's room, paled
@@ -24826,7 +24827,7 @@ function townhouseSvg(view, o = {}) {
     const RS = cmp ? rowsOf(n) : null, at = (j) => { if (!RS) { const r = Math.floor(j / c); return [r, j - r * c, Math.min(c, n - r * c)]; } let r = 0, a = j; while (a >= RS[r]) { a -= RS[r]; r++; } return [r, a, RS[r]]; };
     const rwOf = (j) => (L1 - L0) / at(j)[2], lay = o.print ? thNames(state, st.ids.map((id, j) => [id, rwOf(j)])) : thCleanLay(state, st.ids.map((id, j) => [id, rwOf(j)]), cmp);   // m18: the clean rooms on screen; paper keeps its pictures
     const shut = !o.print && view.openK != null && k !== view.openK;   // m20: one floor open (hers: 'the Library shows everything; here just the floor I am on')
-    const rh = lay.clean ? lay.h : (cmp ? 45 + (fs.wp === 'drape' ? 7 : 0) : RH) + (lay.ml - 1) * 14, fh = shut ? LH + (cmp ? 4 : 6) : LH + rh * (RS ? RS.length : Math.ceil(n / c));
+    const rh = lay.clean ? lay.h : (cmp ? 45 + (fs.wp === 'drape' ? 7 : 0) : RH) + (lay.ml - 1) * 14 + (view.subs ? 13 : 0) /* m26: room for the 'what you learn' line on paper */, fh = shut ? LH + (cmp ? 4 : 6) : LH + rh * (RS ? RS.length : Math.ceil(n / c));
     body += gi ? thCornice(y, L0 - 4, L1 + 4) : thCornice(y, X0, X1); const yy = y + SLAB;
     body += '<rect x="' + L0 + '" y="' + pFix(yy) + '" width="' + (L1 - L0) + '" height="' + LH + '" stroke="none"/>';
     // the floor's plaque, centred in a moulded frame: just the floor -- "GROUND · II", "P–1 · I" (her 2026-10-12: no floor names;
@@ -25070,7 +25071,7 @@ function BkHousePage() {
   const nums = {}; stages.flatMap(x => x.ids).forEach((id, k) => { nums[id] = k + 1; });
   const [ft, setFt] = useState(0);
   useEffect(() => { try { Promise.all([document.fonts.load('700 12px Cinzel'), document.fonts.load("700 15px 'Cormorant Garamond'")]).then(() => { rdCtx = null; setFt(1); }); } catch (e) {} }, []);
-  const v = useMemo(() => townhouseSvg({ stages, here: null, nums }, { wide: true, print: true }), [ft]);
+  const v = useMemo(() => townhouseSvg({ stages, here: null, nums, subs: true }, { wide: true, print: true }), [ft]);
   return <>
     <div style={{fontSize:13,fontWeight:900,color:BK.coral,letterSpacing:'0.12em',marginTop:4}}>YOUR MAP</div>
     <h1 style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:32,fontWeight:900,color:BK.ink,margin:'2px 0 4px',lineHeight:1.05}}>The Piano Butler’s house</h1>
