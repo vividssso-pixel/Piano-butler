@@ -22871,8 +22871,11 @@ function initialMode() {
     if (linkTokenFromHash()) { localStorage.setItem(MODE_KEY, 'student'); return false; }
     const saved = localStorage.getItem(MODE_KEY);
     if (saved === 'student') return false;
-    return true; // default: teacher view, until ?teacher=0 or a student link says otherwise
-  } catch (e) { return true; }
+    if (saved === 'teacher') return true;
+    // m35 (her 1 Nov: the visitor's default becomes the student view): the teacher view only on a device signed in to the dashboard
+    for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i) || ''; if (/^sb-.*-auth-token$/.test(k)) { localStorage.setItem(MODE_KEY, 'teacher'); return true; } }
+    return false;
+  } catch (e) { return false; }
 }
 function TeacherOnly({ children }) { return UI_TEACHER ? children : null; }
 
@@ -25050,7 +25053,7 @@ function townhouseSvg(view, o = {}) {
   body += stR(dx - 38, gb, 76, 5, 0, ST.N) + stR(dx - 44, gb + 7, 88, 5, 0, ST.N);
   const pv = gb + 14;
   body += '<rect x="6" y="' + pFix(pv) + '" width="' + (W - 12) + '" height="16" fill="url(#thpv)" stroke-width="0.8"/>';
-  if (!o.print) body += stT(W / 2, pv + 34, T_('Start · floor by floor, any room first', '출발 · 한 층씩, 방은 마음대로'), { size: 11, weight: 700, fill: ST.C, anchor: 'middle', font: TH_CAPS, ls: '0.1em' });
+  // m35: 'Start · floor by floor, any room first' left the screen (the line under the house says it; her 'keep one')
   // the roof: a mansard in chequered slates, iron cresting, a pedimented dormer with the name, chimneys, two turrets
   const rb = top, rt = top - (cmp ? 54 : 66), g2 = gTop ? gTop - 8 : 0, roof = stD('M', X0 + 6 + g2, rb, 'L', X0 + 30 + g2, rt, 'L', X1 - 30 - g2, rt, 'L', X1 - 6 - g2, rb, 'Z');
   head += '<path d="' + roof + '" fill="url(#thslate)" stroke-width="1.6"/>';
