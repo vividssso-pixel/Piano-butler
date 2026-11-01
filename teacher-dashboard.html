@@ -400,6 +400,13 @@ function generateGuide(student, logs, currentMonthIdx, plan) {
     return { status:"neutral", alerts:[], tips:["Start logging lessons to get personalised guidance."] };
   }
 
+  // ── Check: weeks without a lesson (Dashboard D1) ──
+  const lastAtt = lastAttended(studentLogs), gapD = lastAtt ? daysSince(lastAtt.date) : null;
+  if (!student.paused && (gapD === null || gapD >= NO_LESSON_DAYS)) {
+    status = "urgent";
+    alerts.push(gapD === null ? "No attended lesson logged yet." : "No lesson logged in " + Math.floor(gapD / 7) + " weeks: check in with the student.");
+  }
+
   // ── Check: missing sections ──
   // ── Check: exam-specific urgency ──
   if (isExamStudent(student)) {
@@ -1198,167 +1205,58 @@ function LogModal({ student, existingLog, currentMonth, lastLog, keysNow, onSave
 /* ═══════════════════════════════════════════════════════════════════════════
    STUDENT CARD (list view)
 ═══════════════════════════════════════════════════════════════════════════ */
-function StudentCard({ student, logs, onLog, onEdit, onDelete, onSelect }) {
+// Dashboard build D1 (2026-11-01): the card shows what a teacher checks before a lesson: the last lesson, the practice days and the
+// homework, with one status (useRosterActivity, studentStatus). Edit and Delete are on the student's page.
+const CardStat = ({ value, label, wide, testid }) => (
+  <div style={wide ? {gridColumn:"span 2"} : null} data-testid={testid}>
+    <p style={{fontSize:16,fontWeight:800,color:"#26296b",lineHeight:1.2}}>{value}</p>
+    <p style={{fontSize:11,color:"#7a7ca6",marginTop:2,lineHeight:1.3}}>{label}</p>
+  </div>
+);
+function StudentCard({ student, logs, act, onLog, onSelect }) {
   const gc = GRADE_COLOR[student.grade] || GRADE_COLOR["Grade 5"];
   const studentLogs = logs.filter(l=>l.studentId===student.id).sort((a,b)=>b.date.localeCompare(a.date));
-  const lastLog = studentLogs[0];
-  const thisMonthLogs = (() => {
-    const now = new Date();
-    const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
-    return studentLogs.filter(l => l.date && l.date.startsWith(ym) && l.type !== "absent").length;
-  })();
-  const studentNorm = { startingPhase: isExamStudent(student) ? "foundation" : "exploration", ...student };
-  const plan = buildPlan(studentNorm);
-  const curMonthStr = currentMonthStr();
-  const currentMonthIdx = plan.findIndex(m => m.monthStr === curMonthStr);
-  const currentPlanMonth = currentMonthIdx >= 0 ? plan[currentMonthIdx] : plan[plan.length-1];
-  const phase = currentPlanMonth?.phase;
-  const pm = PHASE_META[phase] || PHASE_META.foundation;
-
-  const weeksLeft = isExamStudent(student) ? weeksUntil(student.examDate) : null;
-  const monthsLeft = isExamStudent(student)
-    ? monthsUntil(student.examDate)
-    : monthsUntil(addMonths(student.startDate, student.planMonths||3));
-
-  const guide = generateGuide(student, logs, Math.max(currentMonthIdx,0), plan);
-
-  const urgentColor = weeksLeft !== null && weeksLeft <= 4 ? "#e4572e" : "#26296b";
-
-  // D-day helpers
+  const last = lastAttended(studentLogs);
+  const ym = currentMonthStr();
+  const thisMonth = studentLogs.filter(l => l.date && l.date.startsWith(ym) && l.type !== "absent").length;
   const nextLessonDays = daysUntilNext(student.lessonDay);
   const examDays = isExamStudent(student) ? daysUntilExam(student.examDate) : null;
-  const nextLessonLabel = nextLessonDays === 0 ? "Today!" : nextLessonDays === 1 ? "Tomorrow" : nextLessonDays !== null ? `in ${nextLessonDays}d` : null;
   const isToday = nextLessonDays === 0;
-
+  const st = studentStatus(student, studentLogs, act);
+  const tone = st ? TONE[st.tone] : null;
   const initials = student.name.split(" ").map(n=>n[0]).join("").slice(0,2).toUpperCase();
-
+  const loading = act === undefined;
   return (
     <div className="card overflow-hidden hover:shadow-lg transition-all duration-200 cursor-pointer fade-in flex flex-col"
+      data-testid="student-card" data-status={st ? st.tone : "paused"}
       style={student.paused ? {opacity:0.55, filter:"grayscale(40%)"} : {}}
       onClick={()=>onSelect(student)}>
-
-      {/* Phase bar */}
-      <div className="h-1.5" style={{background: student.paused ? "#e3e2ee" : pm.color}}/>
-
+      <div className="h-1.5" style={{background: tone ? tone.bar : "#e3e2ee"}}/>
       <div className="p-5 flex-1 flex flex-col">
-        {/* Top row */}
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
-              style={{background:gc.bg, color:gc.text}}>{initials}</div>
-            <div>
-              <div className="flex items-center gap-2">
-                <p className="font-bold text-slate-800 text-sm leading-tight">{student.name}</p>
-                {student.paused && (
-                  <span style={{fontSize:"10px",fontWeight:700,padding:"1px 7px",borderRadius:"99px",background:"#ecebf5",color:"#4a4d86"}}>Paused</span>
-                )}
-              </div>
-              <p className="text-xs text-slate-400 mt-0.5">{student.age ? "Age " + student.age + " · " : ""}{student.grade || student.level || "General"} · {student.lessonDuration}m</p>
-              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                {nextLessonLabel && (
-                  <span style={{fontSize:"10px",fontWeight:700,padding:"1px 7px",borderRadius:"99px",
-                    background:isToday?"#fbe3da":"#faf6ec", color:isToday?"#c0431f":"#62649a",
-                    border:isToday?"1px solid #f3c3b3":"1px solid #e9e2d2"}}>
-                    {isToday ? "Today" : `Next: ${(student.lessonDay||"").slice(0,3)} ${nextLessonLabel}`}
-                  </span>
-                )}
-                {examDays !== null && (
-                  <span style={{fontSize:"10px",fontWeight:700,padding:"1px 7px",borderRadius:"99px",
-                    background:examDays<=14?"#fbe3da":"#faf6ec",
-                    color:examDays<=14?"#c0431f":"#62649a",
-                    border:examDays<=14?"1px solid #f3c3b3":"1px solid #e9e2d2"}}>
-                    {`Exam in ${examDays}d`}
-                  </span>
-                )}
-              </div>
+        <div className="flex items-start gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{background:gc.bg, color:gc.text}}>{initials}</div>
+          <div className="min-w-0">
+            <p className="font-bold text-slate-800 text-sm leading-tight">{student.name}</p>
+            <p className="text-xs text-slate-400 mt-0.5">{student.age ? "Age " + student.age + " · " : ""}{student.grade || student.level || "General"} · {student.lessonDuration}m</p>
+            <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+              {student.paused && <span style={pillS("#ecebf5","#4a4d86")}>Paused</span>}
+              {!student.paused && nextLessonDays !== null && <span style={isToday ? pillS("#fbe3da","#c0431f") : pillS("#faf6ec","#62649a")}>{isToday ? "Today " + fmtTime(student.lessonTime) : "Next: " + (student.lessonDay||"").slice(0,3) + (nextLessonDays === 1 ? " (tomorrow)" : " in " + nextLessonDays + "d")}</span>}
+              {examDays !== null && examDays >= 0 && <span style={examDays <= 14 ? pillS("#fbe3da","#c0431f") : pillS("#faf6ec","#62649a")}>Exam in {examDays}d</span>}
+              {st && <span style={pillS(tone.bg, tone.fg)} data-testid="card-status">{st.text}</span>}
             </div>
           </div>
-          <div className="text-right shrink-0">
-            {isExamStudent(student) && weeksLeft !== null ? (
-              <>
-                <p className="text-lg font-black" style={{color:urgentColor}}>{weeksLeft}w</p>
-                <p className="text-xs text-slate-400">to exam</p>
-              </>
-            ) : null}
-          </div>
         </div>
-
-        {/* Phase + current month */}
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{background:pm.bg,color:pm.text}}>
-            {pm.name}
-          </span>
-          {currentPlanMonth && <span className="text-xs text-slate-400">{currentPlanMonth.label}</span>}
+        <div className="grid grid-cols-3 gap-2 mb-4 mt-auto" data-testid="card-stats">
+          <CardStat value={last ? fmtShort(last.date) : "—"} label={"last lesson" + (thisMonth ? " · " + thisMonth + " this month" : "")} testid="card-last"/>
+          {loading ? <CardStat wide value="…" label="practice and homework"/>
+            : act.linked ? (<>
+              <CardStat value={act.days7 + " / 7"} label="days practised" testid="card-days"/>
+              <CardStat value={act.hw ? act.hw.done + " / " + act.hw.total : "—"} label={act.hw ? "homework done" : "no homework set"} testid="card-hw"/>
+            </>) : <CardStat wide value="—" label="no student link" testid="card-nolink"/>}
         </div>
-
-        {/* This month focus */}
-        {currentPlanMonth && (
-          <div className="bg-slate-50 rounded-xl p-3 mb-3">
-            <p className="text-xs font-bold text-slate-500 mb-1">This month</p>
-            <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">{currentPlanMonth.focus}</p>
-          </div>
-        )}
-
-        {/* AI guide */}
-        {guide.status !== "neutral" && (
-          <div className="rounded-xl p-3 mb-3"
-            style={{background: guide.status==="urgent"?"#fbe3da": guide.status==="warning"?"#fdf1ec":"#e3f1ec"}}>
-            <p className="text-xs font-bold mb-1"
-              style={{color: guide.status==="urgent"?"#c0431f": guide.status==="warning"?"#c0431f":"#2e8a6e"}}>
-              {guide.status==="urgent"?"Needs attention": guide.status==="warning"?"Worth a look":"On track"}
-            </p>
-            <p className="text-xs leading-relaxed" style={{color:"#4a4d86"}}>
-              {guide.alerts[0] || guide.tips[0]}
-            </p>
-          </div>
-        )}
-
-        {/* Last log */}
-        <div className="mt-auto">
-          {lastLog ? (
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <p className="text-xs text-slate-400">Last lesson: {fmtShort(lastLog.date)}</p>
-                {thisMonthLogs > 0 && (
-                  <span title="Lessons this month" style={{fontSize:"10px",fontWeight:700,padding:"1px 7px",borderRadius:"99px",background:"#ecebf5",color:"#1b1d52",border:"1px solid #d4d5ea"}}>
-                    {thisMonthLogs}× this month
-                  </span>
-                )}
-              </div>
-              {/* Mood trend — last 3 logs */}
-              {(() => {
-                const recent = studentLogs.slice(0,3).map(l=>l.mood).filter(Boolean);
-                const MOOD_EMOJI = { rough:"😕", okay:"😐", good:"🙂", great:"😀" };
-                return recent.length > 0 ? (
-                  <div className="flex gap-0.5" title="Recent lesson moods">
-                    {recent.map((m,i)=>(
-                      <span key={i} style={{fontSize:"14px",opacity: i===0?1:i===1?0.65:0.35}}>{MOOD_EMOJI[m]||""}</span>
-                    ))}
-                  </div>
-                ) : null;
-              })()}
-            </div>
-          ) : (
-            <p className="text-xs text-slate-400 mb-3">No lessons logged yet</p>
-          )}
-
-          {/* Actions */}
-          <div className="flex gap-2" onClick={e=>e.stopPropagation()}>
-            <button onClick={()=>onLog(student)}
-              className="flex-1 text-white text-xs font-bold py-2 rounded-xl transition-all"
-              style={{background:"#26296b"}}>
-              + Log lesson
-            </button>
-            <button onClick={()=>onEdit(student)}
-              className="px-3 py-2 border border-slate-200 rounded-xl text-xs text-slate-500 hover:bg-slate-50">
-              Edit
-            </button>
-            <button onClick={()=>onDelete(student.id)}
-              title="Delete student" aria-label={"Delete " + student.name}
-              className="px-3 py-2 border border-slate-200 rounded-xl text-xs text-slate-400 hover:bg-slate-50">
-              ✕
-            </button>
-          </div>
+        <div className="flex gap-2" onClick={e=>e.stopPropagation()}>
+          <button onClick={()=>onLog(student)} className="flex-1 text-white text-xs font-bold py-2 rounded-xl transition-all" style={{background:"#26296b"}}>+ Log lesson</button>
+          <button onClick={()=>onSelect(student)} className="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50">Open</button>
         </div>
       </div>
     </div>
@@ -1484,43 +1382,46 @@ const shortDate = (d) => d.toLocaleDateString("en-AU", { day: "numeric", month: 
 const longWeekday = (d) => d.toLocaleDateString("en-AU", { weekday: "long" });
 
 function PracticeStrip({ studentId }) {
-  const [rows, setRows] = useState(null); // null = loading, false = not available, array = ok
+  // Dashboard D1: one practice strip -- a day counts when the student tapped "I practised today" or played a drill
+  const [res, setRes] = useState(null); // null = loading, false = not available, { rows, plays }
   useEffect(() => {
     let off = false;
-    setRows(null);
-    _supabase.from("practice_checkins").select("day,minutes").eq("student_id", studentId)
-      .gte("day", localDayStr(localDayPlus(-60))).order("day", { ascending: true })
-      .then(({ data, error }) => { if (!off) setRows(error ? false : (data || [])); });
+    setRes(null);
+    Promise.all([
+      _supabase.from("practice_checkins").select("day,minutes").eq("student_id", studentId).gte("day", localDayStr(localDayPlus(-60))).order("day", { ascending: true }),
+      _supabase.from("practice_log").select("at").eq("student_id", studentId).gte("at", localDayPlus(-60).toISOString()).order("at", { ascending: true }).limit(2000),
+    ]).then(([a, b]) => { if (!off) setRes(a.error && b.error ? false : { rows: a.error ? [] : (a.data || []), plays: b.error ? [] : (b.data || []) }); });
     return () => { off = true; };
   }, [studentId]);
-  if (!rows) return null; // still loading, or the table is not there yet
-  const by = new Map(rows.map(r => [String(r.day).slice(0,10), r.minutes]));
+  if (!res) return null; // still loading, or the tables are not there yet
+  const mins = new Map(res.rows.map(r => [String(r.day).slice(0,10), r.minutes]));
+  const plays = new Map(); res.plays.forEach(r => { const d = localDayStr(new Date(r.at)); plays.set(d, (plays.get(d) || 0) + 1); });
+  const did = (d) => mins.has(d) || plays.has(d);
   const today = localDayStr(localDayPlus(0));
   const days = Array.from({ length: 14 }, (_, i) => localDayStr(localDayPlus(i - 13)));
-  const dow = (new Date().getDay() + 6) % 7;                      // Monday = 0
-  const monday = localDayStr(localDayPlus(-dow));
-  const weekRows = rows.filter(r => String(r.day).slice(0,10) >= monday && String(r.day).slice(0,10) <= today);
-  const weekMin = weekRows.reduce((a, r) => a + (r.minutes || 0), 0);
-  const in14 = days.filter(d => by.has(d)).length;
-  const last = rows.length ? String(rows[rows.length - 1].day).slice(0,10) : null;
+  const in7 = days.slice(7).filter(did).length, in14 = days.filter(did).length;
+  const min7 = days.slice(7).reduce((a, d) => a + (mins.get(d) || 0), 0);
+  const all = [...new Set([...mins.keys(), ...plays.keys()])].sort();
+  const last = all.length ? all[all.length - 1] : null;
   const lastDate = last ? new Date(last + "T12:00:00") : null;
   const fmt = (d) => new Date(d + "T12:00:00").toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short" });
+  const tip = (d) => { const x = []; if (mins.has(d)) x.push(mins.get(d) ? "checked in, " + mins.get(d) + " min" : "checked in"); if (plays.has(d)) x.push(plays.get(d) + (plays.get(d) === 1 ? " drill" : " drills")); return fmt(d) + (x.length ? " · " + x.join(" · ") : ""); };
   return (
     <section className="no-print mb-6" data-testid="practice-strip">
-      <SecHead title="Daily practice"/>
+      <SecHead title="Practice"/>
       <div className="card p-5">
       <div className="mb-4" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:12}} data-testid="practice-tiles">
-        <DashTile label="This week" value={weekRows.length} sub={(weekRows.length === 1 ? "day" : "days") + (weekMin > 0 ? " · " + weekMin + " min" : "")} color="#26296b"/>
+        <DashTile label="Last 7 days" value={in7} sub={(in7 === 1 ? "day practised" : "days practised") + (min7 > 0 ? " · " + min7 + " min" : "")} color="#26296b"/>
         <DashTile label="Last 14 days" value={in14} sub={in14 === 1 ? "day practised" : "days practised"} color="#26296b"/>
-        <DashTile label="Last check-in" value={lastDate ? shortDate(lastDate) : "—"} sub={lastDate ? longWeekday(lastDate) : "none yet"} color="#26296b"/>
+        <DashTile label="Last practice" value={lastDate ? shortDate(lastDate) : "—"} sub={lastDate ? longWeekday(lastDate) : "none yet"} color="#26296b"/>
       </div>
-      <DashBlock title="Last 14 days" note="each circle is a day, green = practised">
-        <div className="flex gap-1.5 flex-wrap" aria-label="Practice check-ins, last 14 days">
+      <DashBlock title="Last 14 days" note="green = practised: an “I practised today” tap or a drill played">
+        <div className="flex gap-1.5 flex-wrap" aria-label="Practice, last 14 days">
           {days.map(d => {
-            const yes = by.has(d), isToday = d === today, m = by.get(d);
+            const yes = did(d), isToday = d === today;
             return (
               <div key={d} className="flex flex-col items-center" style={{width:26}}>
-                <span title={fmt(d) + (yes ? (m ? " · " + m + " min" : " · practised") : "")} data-day={d} data-done={yes ? "1" : "0"}
+                <span title={tip(d)} data-day={d} data-done={yes ? "1" : "0"}
                   style={{width:24,height:24,borderRadius:"50%",display:"inline-block",boxSizing:"border-box",
                     background: yes ? "#2e8a6e" : "transparent",
                     border: yes ? "2px solid #2e8a6e" : isToday ? "2px dashed #e4572e" : "2px solid #e9e2d2"}}/>
@@ -1529,7 +1430,7 @@ function PracticeStrip({ studentId }) {
             );
           })}
         </div>
-        {!last && <p className="text-sm text-slate-500 mt-3">No check-ins yet. They appear here when the student taps “I practised today” on their Today page.</p>}
+        {!last && <p className="text-sm text-slate-500 mt-3">No practice yet. A day turns green when the student taps “I practised today” on their Today page or plays a drill through their link.</p>}
       </DashBlock>
       </div>
     </section>
@@ -1653,7 +1554,7 @@ function DrillProgress({ studentId }) {
   );
   return (
     <section className="no-print mb-6" data-testid="drill-progress">
-      <SecHead title="Drill progress" right={empty ? null : <span className="text-xs font-bold" style={{color:"#e4572e"}}>{log.length + (log.length === 1 ? " session" : " sessions") + " in 60 days"}</span>}/>
+      <SecHead title="Drill progress" right={empty ? null : <span className="text-xs font-bold" style={{color:"#62649a"}}>{log.length + (log.length === 1 ? " session" : " sessions") + " in 60 days"}</span>}/>
       <div className="card p-5">
       <p className="text-sm text-slate-500 mb-4">Saved from the student’s link, on any device they use.</p>
       {empty ? (
@@ -1799,6 +1700,88 @@ const hwLines = (text) => String(text || "").split(/\r?\n/).map(x => x.replace(/
 });
 const latestHomeworkLog = (logs) => (logs || []).filter(l => l.type !== "absent" && (l.homework || "").trim())
   .sort((a, b) => String(b.date).localeCompare(String(a.date)) || (Number(b.id) || 0) - (Number(a.id) || 0))[0] || null;
+// ─── Dashboard build D1 (2026-11-01): the dashboard at a glance ───────────────────────────────────────────────────────
+// One fetch for all the students (links, practice check-ins, drill plays, homework ticks), so the cards and the Today list
+// show practice and homework without opening each student. The two numbers below decide the status on a card.
+const NO_LESSON_DAYS = 28;      // "No lesson in N weeks" (coral) after this many days without an attended lesson
+const LOW_PRACTICE_DAYS = 1;    // "Little practice" (amber): a student with a link practised on this many days or fewer in the last 7
+const TONE = { ok: { bg:"#e3f1ec", fg:"#2e8a6e", bar:"#2e8a6e" }, warn: { bg:"#fdf0dc", fg:"#9a6212", bar:"#d69a2d" }, bad: { bg:"#fbe3da", fg:"#c0431f", bar:"#e4572e" }, n: { bg:"#ecebf5", fg:"#4a4d86", bar:"#c9c8de" } };
+const pillS = (bg, fg) => ({ fontSize:"10.5px", fontWeight:800, padding:"2px 8px", borderRadius:"99px", background:bg, color:fg, whiteSpace:"nowrap", display:"inline-block" });
+const lastAttended = (studentLogs) => (studentLogs || []).filter(l => l.type !== "absent").sort((a, b) => String(b.date).localeCompare(String(a.date)))[0] || null;
+const daysSince = (ymd) => ymd ? Math.round((new Date(todayStr() + "T12:00:00") - new Date(String(ymd).slice(0, 10) + "T12:00:00")) / 86400000) : null;
+// the homework of a lesson log, done or not: a chapter line once that chapter was played on or after the lesson day, any line once ticked
+function weekHomework(log, ticks, plays) {
+  if (!log) return null;
+  const day = String(log.date).slice(0, 10);
+  const rows = hwLines(log.homework).map(ln => ({ ...ln, done: !!((ln.chapter && plays.some(r => r.drill === ln.chapter && localDayStr(new Date(r.at)) >= day)) || (ticks && ticks.has(ln.key))) }));
+  if (!rows.length) return null;
+  return { day, total: rows.length, done: rows.filter(r => r.done).length, notYet: rows.filter(r => !r.done).map(r => r.text) };
+}
+function studentStatus(student, studentLogs, act) {
+  if (student.paused) return null;
+  if (!studentLogs.length) return { tone: "n", text: "No lessons yet" };
+  const last = lastAttended(studentLogs), gap = last ? daysSince(last.date) : null;
+  if (gap === null) return { tone: "bad", text: "No lesson attended yet" };
+  if (gap >= NO_LESSON_DAYS) return { tone: "bad", text: "No lesson in " + Math.floor(gap / 7) + " weeks" };
+  const wk = isExamStudent(student) ? weeksUntil(student.examDate) : null;
+  if (wk !== null && wk >= 0 && wk <= 4 && !studentLogs.some(l => /mock/i.test((l.notes || "") + " " + (l.repertoire || "")))) return { tone: "bad", text: "Exam soon, no mock yet" };
+  if (act && act.linked && gap >= 5 && act.days7 <= LOW_PRACTICE_DAYS) return { tone: "warn", text: "Little practice" };
+  return { tone: "ok", text: "On track" };
+}
+function useRosterActivity(students, logs, refresh) {
+  const [act, setAct] = useState({});
+  const ids = students.map(s => s.id);
+  const key = ids.join(",") + "|" + logs.length + "|" + logs.map(l => l.id).slice(0, 3).join(",") + "|" + refresh;
+  useEffect(() => {
+    let off = false;
+    if (!ids.length) { setAct({}); return; }
+    const hwLog = {};
+    ids.forEach(id => { hwLog[id] = latestHomeworkLog(logs.filter(l => l.studentId === id)); });
+    const d7 = localDayStr(localDayPlus(-6)), cap = localDayStr(localDayPlus(-60));
+    let since = Object.values(hwLog).filter(Boolean).map(l => String(l.date).slice(0, 10)).reduce((a, d) => d < a ? d : a, d7);
+    if (since < cap) since = cap;
+    const same = (a, b) => String(a) === String(b);
+    Promise.all([
+      _supabase.from("student_links").select("student_id,active").in("student_id", ids),
+      _supabase.from("practice_checkins").select("student_id,day").in("student_id", ids).gte("day", d7),
+      _supabase.from("practice_log").select("student_id,at,drill").in("student_id", ids).gte("at", new Date(since + "T00:00:00").toISOString()).limit(5000),
+      _supabase.from("homework_ticks").select("student_id,lesson_date,item").in("student_id", ids).gte("lesson_date", since),
+    ]).then(([L, C, P, T]) => {
+      if (off) return;
+      const out = {};
+      ids.forEach(id => {
+        const link = !L.error && (L.data || []).find(r => same(r.student_id, id) && r.active !== false);
+        if (!link) { out[id] = { linked: false }; return; }
+        const days = new Set();
+        if (!C.error) (C.data || []).filter(r => same(r.student_id, id)).forEach(r => days.add(String(r.day).slice(0, 10)));
+        const plays = P.error ? [] : (P.data || []).filter(r => same(r.student_id, id));
+        plays.forEach(r => { const d = localDayStr(new Date(r.at)); if (d >= d7) days.add(d); });
+        const log = hwLog[id];
+        const ticks = T.error || !log ? null : new Map((T.data || []).filter(r => same(r.student_id, id) && String(r.lesson_date).slice(0, 10) === String(log.date).slice(0, 10)).map(r => [r.item, true]));
+        out[id] = { linked: true, days7: days.size, hw: weekHomework(log, ticks, plays) };
+      });
+      setAct(out);
+    }).catch(() => { if (!off) setAct({}); });
+    return () => { off = true; };
+  }, [key]);
+  return act;
+}
+// the homework and practice line under a student in the Today list
+function TodayActivity({ a }) {
+  if (!a || !a.linked) return null;
+  const hw = a.hw, low = a.days7 <= LOW_PRACTICE_DAYS;
+  const hwTone = !hw ? null : hw.done === hw.total ? TONE.ok : hw.done === 0 ? TONE.warn : TONE.n;
+  return (
+    <div data-testid="today-activity" style={{marginTop:6}}>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+        {hw && <span style={pillS(hwTone.bg, hwTone.fg)}>Homework {hw.done} / {hw.total}</span>}
+        <span style={pillS(low ? TONE.warn.bg : TONE.ok.bg, low ? TONE.warn.fg : TONE.ok.fg)}>Practised {a.days7} of the last 7 days</span>
+      </div>
+      {hw && hw.notYet.length > 0 && <p className="pb-meta" style={{marginTop:4}}>Not yet: {hw.notYet.slice(0, 2).join(" · ")}{hw.notYet.length > 2 ? " · +" + (hw.notYet.length - 2) + " more" : ""}</p>}
+    </div>
+  );
+}
+
 function ThisWeekCard({ studentId, logs }) {
   const log = latestHomeworkLog(logs);
   const lessonDay = log ? String(log.date).slice(0, 10) : "";
@@ -1974,7 +1957,7 @@ function DrillStartChecks({ studentId }) {
   );
 }
 
-function StudentLinkPanel({ student, logs }) {
+function StudentLinkPanel({ student, logs, onRow }) {
   const [row, setRow] = useState(undefined);      // undefined = loading, null = no link yet
   const [name, setName] = useState(firstNameOf(student.name));
   const [busy, setBusy] = useState(false);
@@ -1982,6 +1965,7 @@ function StudentLinkPanel({ student, logs }) {
   const [copied, setCopied] = useState(false);
   const [confirmNew, setConfirmNew] = useState(false);
   const [renaming, setRenaming] = useState(false);
+  useEffect(() => { if (onRow) onRow(row); }, [row]);   // Dashboard D1: the student page places the practice cards itself
 
   useEffect(() => {
     let off = false;
@@ -2086,19 +2070,33 @@ function StudentLinkPanel({ student, logs }) {
         {msg && <p className="text-xs mt-3" style={{color:"#c0431f"}} role="alert">{msg}</p>}
       </div>
       </section>
-      {row && <ThisWeekCard studentId={student.id} logs={logs}/>}
-      {row && <PracticeStrip studentId={student.id}/>}
-      {row && <DrillProgress studentId={student.id}/>}
-      {row && <DrillStartChecks studentId={student.id}/>}
     </>
   );
 }
 
-function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAttended, onBack, onEdit, onPause, onResume }) {
+// Dashboard D1: the heading of each part of the student page
+const PartHead = ({ n, title, sub, flat }) => (
+  <div className="no-print" data-part={n} style={{margin: flat ? "0 0 12px" : "26px 0 12px", display:"flex", alignItems:"baseline", gap:10}}>
+    <span style={{fontSize:11, fontWeight:800, letterSpacing:"0.08em", textTransform:"uppercase", color:"#e4572e", whiteSpace:"nowrap"}}>{n} · {title}</span>
+    <span style={{fontSize:12, color:"#7a7ca6"}}>{sub}</span>
+    <span style={{flex:1, height:1, background:"#e3dfd2", alignSelf:"center"}}/>
+  </div>
+);
+function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAttended, onBack, onEdit, onPause, onResume, onDelete }) {
   const gc = GRADE_COLOR[student.grade] || GRADE_COLOR["Grade 5"];
   // Back-fill startingPhase for older student records
   const studentNorm = { startingPhase: isExamStudent(student) ? "foundation" : "exploration", ...student };
   const [passportPeriod, setPassportPeriod] = useState("all"); // "month" | "quarter" | "all"
+  // Dashboard D1: three parts (in the lesson / progress / settings); the link panel reports whether the student has a link
+  const [linkRow, setLinkRow] = useState(undefined);
+  const [showAllLogs, setShowAllLogs] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  useEffect(() => { setLinkRow(undefined); setShowAllLogs(false); setSettingsOpen(false); }, [student.id]);
+  useEffect(() => {   // the PDF prints everything
+    const before = () => { try { ReactDOM.flushSync(() => { setShowAllLogs(true); setSettingsOpen(true); }); } catch (e) { setShowAllLogs(true); setSettingsOpen(true); } };
+    window.addEventListener("beforeprint", before);
+    return () => window.removeEventListener("beforeprint", before);
+  }, []);
   const plan = buildPlan(studentNorm);
   const curMonthStr = currentMonthStr();
   const currentMonthIdx = plan.findIndex(m => m.monthStr === curMonthStr);
@@ -2223,8 +2221,124 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
         )}
       </div>
 
-      <StudentLinkPanel student={student} logs={studentLogs}/>
+      {/* ══ Dashboard D1: 1 · in the lesson ══ */}
+      <PartHead n="1" title="In the lesson" sub="this week, makeups, the last lessons"/>
+      {linkRow && <ThisWeekCard studentId={student.id} logs={studentLogs}/>}
+      {linkRow === null && (
+        <div className="card p-4 mb-6 no-print text-sm text-slate-500 flex items-center justify-between gap-3 flex-wrap" data-testid="no-link-note">
+          <span>No student link yet. With a link, the homework ticks and the practice days show here.</span>
+          <button onClick={()=>setSettingsOpen(true)} className="btn-ghost text-xs py-1.5 px-3">Make a link in Settings</button>
+        </div>
+      )}
+      {/* ── Makeup Schedule ── */}
+      {(() => {
+        // Absent logs that have a makeupDate set (pending makeups)
+        const pendingMakeups = studentLogs
+          .filter(l => l.type === "absent" && l.makeupDate)
+          .sort((a, b) => a.makeupDate.localeCompare(b.makeupDate));
 
+        if (pendingMakeups.length === 0) return null;
+
+        const today = todayStr();
+
+        return (
+          <section className="mb-6">
+          <SecHead title="Makeup schedule" right={<span className="text-xs font-bold" style={{color:"#e4572e"}}>{pendingMakeups.length} pending</span>}/>
+          <div className="card p-5">
+            <div className="space-y-3">
+              {pendingMakeups.map(log => {
+                const isOverdue = log.makeupDate < today;
+                const isToday   = log.makeupDate === today;
+                return (
+                  <div key={log.id} className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
+                    style={{
+                      background: isOverdue ? "#fbe3da" : isToday ? "#ecebf5" : "#faf6ec",
+                      border: `1px solid ${isOverdue ? "rgba(228,87,46,0.35)" : "#e9e2d2"}`
+                    }}>
+                    <div>
+                      <p className="text-xs text-slate-400 mb-0.5">
+                        Absent: <span className="font-semibold text-slate-600">{fmtDate(log.date)}</span>
+                      </p>
+                      <p className="text-sm font-bold"
+                        style={{color: isOverdue ? "#c0431f" : "#26296b"}}>
+                        {isOverdue ? "Overdue — " : isToday ? "Today — " : ""}
+                        Makeup: {fmtDate(log.makeupDate)}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
+                      <button
+                        onClick={() => onMarkAttended(log)}
+                        className="text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
+                        style={navyPill}
+                        title="Makeup completed — mark as attended">
+                        ✓ Done
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-[10px] text-slate-400 mt-3">
+              Click <strong>✓ Done</strong> when the makeup lesson has taken place — it will be recorded as an attended lesson.
+            </p>
+          </div>
+          </section>
+        );
+      })()}
+
+      {/* Lesson log */}
+      <SecHead title="Lesson history" right={<button onClick={()=>onLog(student)} className="btn-primary text-xs py-2 px-4 no-print">+ Log lesson</button>}/>
+
+      {studentLogs.length === 0 ? (
+        <div className="card p-10 text-center text-slate-400 text-sm">No lessons logged yet.</div>
+      ) : (
+        <div className="space-y-4">
+          {(showAllLogs ? studentLogs : studentLogs.slice(0, 3)).map(log=>(
+            <div key={log.id} className="card overflow-hidden">
+              <div className="px-5 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-slate-400 font-mono">{log.monthStr ? MONTH_NAMES[parseInt(log.monthStr.slice(5,7))-1]+" "+log.monthStr.slice(0,4) : fmtDate(log.date)}</span>
+                  <span className="text-sm font-semibold text-slate-700">{fmtDate(log.date)}</span>
+                  {log.type==="absent" && <span style={{fontSize:"10px",fontWeight:700,padding:"1px 8px",borderRadius:"99px",...coralPill}}>Absent</span>}
+                  {log.type==="makeup" && <span style={{fontSize:"10px",fontWeight:700,padding:"1px 8px",borderRadius:"99px",...navyPill}}>Makeup</span>}
+                </div>
+                <div className="flex gap-2">
+                  {log.type === "absent" && (
+                    <button onClick={()=>onMarkAttended(log)}
+                      className="text-xs font-bold px-2 py-1 rounded-lg transition-colors"
+                      style={navyPill}
+                      title="Change this to an attended lesson">
+                      ✓ Mark attended
+                    </button>
+                  )}
+                  <button onClick={()=>onEditLog(log)} className="text-xs text-slate-400 hover:text-indigo-600 px-2 py-1 rounded-lg hover:bg-indigo-50">Edit</button>
+                  <button onClick={()=>onDeleteLog(log.id)} className="text-xs text-slate-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50">Delete</button>
+                </div>
+              </div>
+              <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                {LOG_SECTIONS.filter(s=>log[s.key]?.trim()).map(s=>(
+                  <div key={s.key}>
+                    <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{color:s.color}}>{s.label}</p>
+                    <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{s.key === "homework" ? keysLineShow(String(log[s.key])).replace(/\s*\[(?:chapter|tool):[a-z0-9-]+\]/g, " ↗") : log[s.key]}</p>
+                  </div>
+                ))}
+                {LOG_SECTIONS.every(s=>!log[s.key]?.trim()) && (
+                  <p className="text-sm text-slate-400 col-span-2">No content recorded.</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {studentLogs.length > 3 && !showAllLogs && (
+        <div className="no-print mt-3 mb-6 text-center"><button onClick={()=>setShowAllLogs(true)} className="btn-ghost text-xs py-1.5 px-4" data-testid="logs-show-all">Show all {studentLogs.length} lessons</button></div>
+      )}
+
+      {/* ══ 2 · progress ══ */}
+      <PartHead n="2" title="Progress" sub="practice, drills, the plan"/>
+      {linkRow && <PracticeStrip studentId={student.id}/>}
+      {linkRow && <DrillProgress studentId={student.id}/>}
+      {linkRow && <DrillStartChecks studentId={student.id}/>}
       {/* This month plan — exam students only */}
       {isExamStudent(student) && currentPlanMonth && (
         <section className="mb-6">
@@ -2458,107 +2572,14 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
         );
       })()}
 
-      {/* ── Makeup Schedule ── */}
-      {(() => {
-        // Absent logs that have a makeupDate set (pending makeups)
-        const pendingMakeups = studentLogs
-          .filter(l => l.type === "absent" && l.makeupDate)
-          .sort((a, b) => a.makeupDate.localeCompare(b.makeupDate));
-
-        if (pendingMakeups.length === 0) return null;
-
-        const today = todayStr();
-
-        return (
-          <section className="mb-6">
-          <SecHead title="Makeup schedule" right={<span className="text-xs font-bold" style={{color:"#e4572e"}}>{pendingMakeups.length} pending</span>}/>
-          <div className="card p-5">
-            <div className="space-y-3">
-              {pendingMakeups.map(log => {
-                const isOverdue = log.makeupDate < today;
-                const isToday   = log.makeupDate === today;
-                return (
-                  <div key={log.id} className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
-                    style={{
-                      background: isOverdue ? "#fbe3da" : isToday ? "#ecebf5" : "#faf6ec",
-                      border: `1px solid ${isOverdue ? "rgba(228,87,46,0.35)" : "#e9e2d2"}`
-                    }}>
-                    <div>
-                      <p className="text-xs text-slate-400 mb-0.5">
-                        Absent: <span className="font-semibold text-slate-600">{fmtDate(log.date)}</span>
-                      </p>
-                      <p className="text-sm font-bold"
-                        style={{color: isOverdue ? "#c0431f" : "#26296b"}}>
-                        {isOverdue ? "Overdue — " : isToday ? "Today — " : ""}
-                        Makeup: {fmtDate(log.makeupDate)}
-                      </p>
-                    </div>
-                    <div className="flex gap-2 shrink-0">
-                      <button
-                        onClick={() => onMarkAttended(log)}
-                        className="text-xs font-bold px-3 py-1.5 rounded-lg transition-colors"
-                        style={navyPill}
-                        title="Makeup completed — mark as attended">
-                        ✓ Done
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <p className="text-[10px] text-slate-400 mt-3">
-              Click <strong>✓ Done</strong> when the makeup lesson has taken place — it will be recorded as an attended lesson.
-            </p>
-          </div>
-          </section>
-        );
-      })()}
-
-      {/* Lesson log */}
-      <SecHead title="Lesson history" right={<button onClick={()=>onLog(student)} className="btn-primary text-xs py-2 px-4 no-print">+ Log lesson</button>}/>
-
-      {studentLogs.length === 0 ? (
-        <div className="card p-10 text-center text-slate-400 text-sm">No lessons logged yet.</div>
-      ) : (
-        <div className="space-y-4">
-          {studentLogs.map(log=>(
-            <div key={log.id} className="card overflow-hidden">
-              <div className="px-5 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-slate-400 font-mono">{log.monthStr ? MONTH_NAMES[parseInt(log.monthStr.slice(5,7))-1]+" "+log.monthStr.slice(0,4) : fmtDate(log.date)}</span>
-                  <span className="text-sm font-semibold text-slate-700">{fmtDate(log.date)}</span>
-                  {log.type==="absent" && <span style={{fontSize:"10px",fontWeight:700,padding:"1px 8px",borderRadius:"99px",...coralPill}}>Absent</span>}
-                  {log.type==="makeup" && <span style={{fontSize:"10px",fontWeight:700,padding:"1px 8px",borderRadius:"99px",...navyPill}}>Makeup</span>}
-                </div>
-                <div className="flex gap-2">
-                  {log.type === "absent" && (
-                    <button onClick={()=>onMarkAttended(log)}
-                      className="text-xs font-bold px-2 py-1 rounded-lg transition-colors"
-                      style={navyPill}
-                      title="Change this to an attended lesson">
-                      ✓ Mark attended
-                    </button>
-                  )}
-                  <button onClick={()=>onEditLog(log)} className="text-xs text-slate-400 hover:text-indigo-600 px-2 py-1 rounded-lg hover:bg-indigo-50">Edit</button>
-                  <button onClick={()=>onDeleteLog(log.id)} className="text-xs text-slate-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50">Delete</button>
-                </div>
-              </div>
-              <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-                {LOG_SECTIONS.filter(s=>log[s.key]?.trim()).map(s=>(
-                  <div key={s.key}>
-                    <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{color:s.color}}>{s.label}</p>
-                    <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{s.key === "homework" ? keysLineShow(String(log[s.key])).replace(/\s*\[(?:chapter|tool):[a-z0-9-]+\]/g, " ↗") : log[s.key]}</p>
-                  </div>
-                ))}
-                {LOG_SECTIONS.every(s=>!log[s.key]?.trim()) && (
-                  <p className="text-sm text-slate-400 col-span-2">No content recorded.</p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* General plan panel — shown when no exam date set */}
+      {!isExamStudent(student) && (
+        <GeneralPlanPanel student={student} logs={studentLogs} alloc={alloc} />
       )}
-
+      {/* ══ 3 · settings, closed ══ */}
+      <details className="mt-8" data-testid="settings" open={settingsOpen} onToggle={e=>setSettingsOpen(e.currentTarget.open)}>
+        <summary className="no-print" style={{cursor:"pointer",listStyle:"none"}}><PartHead n="3" title={"Settings " + (settingsOpen ? "▾" : "▸")} sub={"student link" + (isExamStudent(student) ? ", the full plan" : "") + ", delete"} flat/></summary>
+        <StudentLinkPanel student={student} logs={studentLogs} onRow={setLinkRow}/>
       {/* Full plan timeline — exam students only */}
       {isExamStudent(student) && plan.length > 0 && (
         <div className="mt-8" style={{breakBefore:"auto"}}>
@@ -2588,10 +2609,13 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
         </div>
       )}
 
-      {/* General plan panel — shown when no exam date set */}
-      {!isExamStudent(student) && (
-        <GeneralPlanPanel student={student} logs={studentLogs} alloc={alloc} />
-      )}
+        {onDelete && (
+          <div className="no-print card p-4 mb-6 flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-xs text-slate-500">Delete this student and all their lesson logs. It cannot be undone.</p>
+            <button onClick={()=>onDelete(student.id)} className="btn-ghost text-xs py-1.5 px-3" style={{color:"#c0431f",borderColor:"rgba(228,87,46,0.35)"}} data-testid="delete-student">Delete student</button>
+          </div>
+        )}
+      </details>
     </div>
   );
 }
@@ -2609,7 +2633,7 @@ const TODAY_REST = (
     <rect x="18" y="8" width="12" height="3.8" fill="#26296b"/>
   </svg>
 );
-function TodayView({ students, logs, onLog, onAbsence, onSelect, onDeleteLog, onMarkAttended }) {
+function TodayView({ students, logs, roster, onLog, onAbsence, onSelect, onDeleteLog, onMarkAttended }) {
   const now = new Date();
   const dayNames = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
   const todayName = dayNames[now.getDay()];
@@ -2627,6 +2651,8 @@ function TodayView({ students, logs, onLog, onAbsence, onSelect, onDeleteLog, on
 
   const today = todayStr();
   const todayLogs = logs.filter(l => l.date === today);
+  // Dashboard D1: a makeup booked for today (an absent log with today's makeup date) is listed too
+  const makeups = logs.filter(l => l.type === "absent" && l.makeupDate === today).map(l => ({ log: l, student: students.find(s => s.id === l.studentId) })).filter(x => x.student);
   const logOf = (s) => todayLogs.find(l => l.studentId === s.id);
   const statusOf = (s) => { if (s.paused) return "paused"; const lg = logOf(s); return !lg ? "pending" : lg.type === "absent" ? "absent" : "logged"; };
   const toMin = (t) => { const [h,m] = String(t).split(":").map(Number); return h*60 + (m||0); };
@@ -2635,11 +2661,11 @@ function TodayView({ students, logs, onLog, onAbsence, onSelect, onDeleteLog, on
   const n = (st) => slots.filter(sl => statusOf(sl.student) === st).length;
   const active = slots.length - n("paused");
   const sub = [active + " lesson" + (active !== 1 ? "s" : "") + " today"]
-    .concat(n("logged") ? [n("logged") + " logged"] : [], n("absent") ? [n("absent") + " absent"] : [], n("paused") ? [n("paused") + " paused"] : []).join(", ");
+    .concat(makeups.length ? [makeups.length + " makeup" + (makeups.length !== 1 ? "s" : "")] : [], n("logged") ? [n("logged") + " logged"] : [], n("absent") ? [n("absent") + " absent"] : [], n("paused") ? [n("paused") + " paused"] : []).join(", ");
 
   // when there is nothing today: the next lesson this week
   const nextLater = (() => {
-    if (slots.some(sl => !sl.student.paused)) return null;
+    if (slots.some(sl => !sl.student.paused) || makeups.length) return null;
     for (let k = 1; k <= 7; k++) {
       const d = new Date(now); d.setDate(now.getDate() + k); const dn = dayNames[d.getDay()];
       const c = [];
@@ -2656,7 +2682,7 @@ function TodayView({ students, logs, onLog, onAbsence, onSelect, onDeleteLog, on
         <p className="pb-page-sub">{sub}</p>
       </div>
 
-      {slots.length === 0 ? (
+      {slots.length === 0 && makeups.length === 0 ? (
         <div className="pb-run pb-empty" data-testid="today-empty">
           {TODAY_REST}
           <p className="pb-empty-title">No lessons today</p>
@@ -2673,7 +2699,7 @@ function TodayView({ students, logs, onLog, onAbsence, onSelect, onDeleteLog, on
             const phase = (curM>=0 ? plan[curM] : plan[plan.length-1])?.phase;
             const pm = PHASE_META[phase] || PHASE_META.foundation;
             const examDays = isExamStudent(s) ? daysUntilExam(s.examDate) : null;
-            const meta = [s.grade || "General", pm.name];
+            const meta = [s.grade || "General"];   // Dashboard D1: the plan phase is on the student page
             return (
               <div key={i} className="pb-row" data-lesson-row="1" data-status={status} data-next={isNext ? "1" : "0"}>
                 <div className="pb-time">
@@ -2688,6 +2714,7 @@ function TodayView({ students, logs, onLog, onAbsence, onSelect, onDeleteLog, on
                     {examDays !== null && examDays >= 0 && <span className={examDays <= 14 ? "pb-hot" : ""}>{", exam in " + examDays + " day" + (examDays !== 1 ? "s" : "")}</span>}
                     {status === "absent" && todayLog?.makeupDate ? <span>{", makeup " + fmtDate(todayLog.makeupDate)}</span> : null}
                   </p>
+                  {status !== "paused" && <TodayActivity a={roster && roster[s.id]}/>}
                 </div>
                 <div className="pb-acts">
                   {status === "paused" && <span className="pb-tag">Paused</span>}
@@ -2705,6 +2732,24 @@ function TodayView({ students, logs, onLog, onAbsence, onSelect, onDeleteLog, on
                     <button onClick={()=>onAbsence(s)} className="pb-act quiet">Set makeup</button>
                     <button onClick={()=>onDeleteLog(todayLog.id)} className="pb-act quiet">Undo</button>
                   </>)}
+                </div>
+              </div>
+            );
+          })}
+          {makeups.map(({ log, student: s }) => {
+            const done = todayLogs.some(l => l.studentId === s.id && l.type !== "absent");
+            return (
+              <div key={"m" + log.id} className="pb-row" data-lesson-row="1" data-makeup="1" data-status={done ? "logged" : "pending"}>
+                <div className="pb-time"><b>Makeup</b><span>{(s.lessonDuration || 45) + " min"}</span></div>
+                <div className="pb-node" aria-hidden="true"><span className="pb-dot"/></div>
+                <div className="pb-body">
+                  <button className="pb-name" onClick={()=>onSelect(s)} title={"Open " + s.name}>{s.name}</button>
+                  <p className="pb-meta">Makeup for the lesson missed on {fmtDate(log.date)}</p>
+                  <TodayActivity a={roster && roster[s.id]}/>
+                </div>
+                <div className="pb-acts">
+                  {done ? <span className="pb-tag good">✓ Logged</span> : <button onClick={()=>onLog(s)} className="pb-act primary">+ Log lesson</button>}
+                  <button onClick={()=>onMarkAttended(log)} className="pb-act quiet" title="The missed lesson counts as attended">✓ Makeup done</button>
                 </div>
               </div>
             );
@@ -3754,6 +3799,10 @@ function ScheduleView({ students, logs, overrides, onLog, onAbsence, onSelect, o
                 <span style={{display:"block", fontSize:12, fontWeight:600, color: isToday ? "#e4572e" : "#6d6f9c"}}>{isToday ? "Today" : day.slice(0,3)}</span>
                 <span style={{display:"block", fontFamily:"'Playfair Display',Georgia,serif", fontWeight:900, fontSize:22, lineHeight:1.1, color: isToday ? "#e4572e" : "#26296b", marginTop:1}}>{dt ? dt.getDate() : ""}</span>
                 <span style={{display:"block", fontSize:11, color:"#6d6f9c", marginTop:2}}>{count ? `${count} lesson${count!==1?"s":""}, ${timeStr}` : "No lessons"}</span>
+                {dt && logs.filter(l => l.type === "absent" && l.makeupDate === ymdLocal(dt)).map(l => { const ms = students.find(x => x.id === l.studentId); return ms ? (
+                  <button key={l.id} data-makeup-chip="1" onClick={()=>onSelect(ms)} title={"Makeup for " + fmtDate(l.date)}
+                    style={{display:"inline-block", marginTop:4, fontSize:10.5, fontWeight:800, padding:"1px 7px", borderRadius:99, background:"#fdf0dc", color:"#9a6212", border:"none", cursor:"pointer"}}>Makeup · {firstNameOf(ms.name)}</button>
+                ) : null; })}
               </div>
             );
           })}
@@ -4177,6 +4226,7 @@ function App() {
   // overrides: { "<weekKey>/<studentId>/<slotIdx>": { day, time, id } }
   // id = Supabase row id (for upsert/delete)
   const [overrides, setOverrides] = useState({});
+  const roster = useRosterActivity(students, logs, tab);   // Dashboard D1: practice and homework for the cards and Today
 
   // ── Load data from Supabase on mount ──────────────────────────────────────
   useEffect(() => {
@@ -4556,7 +4606,7 @@ function App() {
 
   // Mark an absent log as attended (type → regular)
   const markAttended = async (log) => {
-    if (!confirm(`Mark ${fmtDate(log.date)} as attended for ${selected?.name || "this student"}?`)) return;
+    if (!confirm(`Mark ${fmtDate(log.date)} as attended for ${(students.find(s => s.id === log.studentId) || selected || {}).name || "this student"}?`)) return;
     const extra = {};
     const row = { type: "regular", extra: Object.keys(extra).length ? JSON.stringify(extra) : null };
     const { data, error } = await _supabase.from("lesson_logs").update(row).eq("id", log.id).select().single();
@@ -4734,6 +4784,7 @@ function App() {
           <TodayView
             students={students}
             logs={logs}
+            roster={roster}
             onLog={setLogging}
             onAbsence={setAbsenceTarget}
             onSelect={s=>{setSelected(s);setView("detail");setTab("students");}}
@@ -4847,9 +4898,8 @@ function App() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filtered.map(s=>(
-                  <StudentCard key={s.id} student={s} logs={logs}
-                    onLog={setLogging} onEdit={setEditing}
-                    onDelete={deleteStudent} onSelect={selectStudent}/>
+                  <StudentCard key={s.id} student={s} logs={logs} act={roster[s.id]}
+                    onLog={setLogging} onSelect={selectStudent}/>
                 ))}
                 {filtered.length===0 && (
                   <div className="col-span-3 text-center py-12 text-slate-400 text-sm">
@@ -4879,6 +4929,7 @@ function App() {
               onEdit={setEditing}
               onPause={setPauseTarget}
               onResume={resumeStudent}
+              onDelete={deleteStudent}
             />
           );
         })()}
