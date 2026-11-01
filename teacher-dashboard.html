@@ -2082,7 +2082,7 @@ const PartHead = ({ n, title, sub, flat }) => (
     <span style={{flex:1, height:1, background:"#e3dfd2", alignSelf:"center"}}/>
   </div>
 );
-function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAttended, onBack, onEdit, onPause, onResume, onDelete }) {
+function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAttended, onBack, onEdit, onPause, onResume, onDelete, act }) {
   const gc = GRADE_COLOR[student.grade] || GRADE_COLOR["Grade 5"];
   // Back-fill startingPhase for older student records
   const studentNorm = { startingPhase: isExamStudent(student) ? "foundation" : "exploration", ...student };
@@ -2091,6 +2091,9 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
   const [linkRow, setLinkRow] = useState(undefined);
   const [showAllLogs, setShowAllLogs] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const openSettings = () => { setSettingsOpen(true); setTimeout(() => { const el = document.querySelector('[data-testid="settings"]'); if (el && el.scrollIntoView) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60); };
+  const copyStudentLink = () => { if (!linkRow) return; const u = studentLinkUrl(linkRow.token); const done = () => { setLinkCopied(true); setTimeout(() => setLinkCopied(false), 1600); }; try { navigator.clipboard.writeText(u).then(done, () => window.prompt("Copy the student link:", u)); } catch (e) { window.prompt("Copy the student link:", u); } };
   useEffect(() => { setLinkRow(undefined); setShowAllLogs(false); setSettingsOpen(false); }, [student.id]);
   useEffect(() => {   // the PDF prints everything
     const before = () => { try { ReactDOM.flushSync(() => { setShowAllLogs(true); setSettingsOpen(true); }); } catch (e) { setShowAllLogs(true); setSettingsOpen(true); } };
@@ -2106,7 +2109,12 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
   const alloc = getAlloc(student.lessonDuration);
 
   const studentLogs = logs.filter(l=>l.studentId===student.id).sort((a,b)=>b.date.localeCompare(a.date));
-  const guide = generateGuide(student, logs, Math.max(currentMonthIdx,0), plan);
+  const guide0 = generateGuide(student, logs, Math.max(currentMonthIdx,0), plan);
+  // Dashboard D1b: the guide agrees with the card -- little practice is not "Looking good"
+  const cardSt = studentStatus(student, studentLogs, act);
+  const guide = cardSt && cardSt.tone === "warn" && guide0.status === "on-track"
+    ? { status: "warning", alerts: ["Little practice: practised on " + act.days7 + " of the last 7 days."], tips: guide0.tips.filter(x => !/^On track/.test(x)) }
+    : guide0;
 
   const weeksLeft  = isExamStudent(student) ? weeksUntil(student.examDate) : null;
   const monthsLeft = isExamStudent(student)
@@ -2207,6 +2215,22 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
             </button>
           )}
         </div>
+        {/* Dashboard D1c: the student link stays one tap away (the panel itself is under Settings) */}
+        {linkRow !== undefined && (
+          <div className="no-print flex items-center gap-2 flex-wrap mt-3 px-3 py-2 rounded-xl" data-testid="link-strip" style={{background:"#faf6ec",border:"1px solid #e9e2d2"}}>
+            <span className="text-xs font-bold" style={{color:"#26296b"}}>Student link</span>
+            {linkRow ? (<>
+              <span style={linkRow.active === false ? pillS("#fbe3da","#c0431f") : pillS("#e3f1ec","#2e8a6e")}>{linkRow.active === false ? "Paused" : "Active"}</span>
+              <span className="flex-1"/>
+              <button onClick={copyStudentLink} className="btn-primary text-xs py-1.5 px-3" data-testid="link-strip-copy">{linkCopied ? "Copied" : "Copy link"}</button>
+              <button onClick={openSettings} className="btn-ghost text-xs py-1.5 px-3">Link settings</button>
+            </>) : (<>
+              <span className="text-xs text-slate-500">none yet: with a link the student gets homework, practice and drills, and you see them here</span>
+              <span className="flex-1"/>
+              <button onClick={openSettings} className="btn-primary text-xs py-1.5 px-3" data-testid="link-strip-make">Make a link</button>
+            </>)}
+          </div>
+        )}
         {student.paused && (
           <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold"
             style={{background:"#fbe3da",color:"#c0431f",border:"1px solid rgba(228,87,46,0.35)"}}>
@@ -2224,12 +2248,6 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
       {/* ══ Dashboard D1: 1 · in the lesson ══ */}
       <PartHead n="1" title="In the lesson" sub="this week, makeups, the last lessons"/>
       {linkRow && <ThisWeekCard studentId={student.id} logs={studentLogs}/>}
-      {linkRow === null && (
-        <div className="card p-4 mb-6 no-print text-sm text-slate-500 flex items-center justify-between gap-3 flex-wrap" data-testid="no-link-note">
-          <span>No student link yet. With a link, the homework ticks and the practice days show here.</span>
-          <button onClick={()=>setSettingsOpen(true)} className="btn-ghost text-xs py-1.5 px-3">Make a link in Settings</button>
-        </div>
-      )}
       {/* ── Makeup Schedule ── */}
       {(() => {
         // Absent logs that have a makeupDate set (pending makeups)
@@ -2474,7 +2492,7 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
 
         return (
           <section className="mb-6">
-          <SecHead title="Progress Passport" right={<span className="text-xs font-bold" style={{color:"#e4572e"}}>{totalLogs.length} lessons</span>}/>
+          <SecHead title="Progress Passport" right={<span className="text-xs font-bold" style={{color:"#e4572e"}}>{totalLogs.length} {totalLogs.length === 1 ? "lesson" : "lessons"}</span>}/>
           <div className="card p-5">
             {/* Header */}
             <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -4930,6 +4948,7 @@ function App() {
               onPause={setPauseTarget}
               onResume={resumeStudent}
               onDelete={deleteStudent}
+              act={roster[liveStudent.id]}
             />
           );
         })()}
