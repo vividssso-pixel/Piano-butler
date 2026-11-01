@@ -21861,7 +21861,16 @@ const REF_SCALES = [
   ['mel', 'melodic minor, going up (down: the natural minor)', '가락 단음계, 올라갈 때(내려올 때: 자연 단음계)', [0, 2, 3, 5, 7, 9, 11, 12], 'scales-23'],
   ['chr', 'chromatic: every key', '반음계: 모든 건반', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], 'scales-23'],
   ['lyd', 'Lydian mode: the major with its 4th raised', '리디안 선법: 4도를 올린 장음계', [0, 2, 4, 6, 7, 9, 11, 12], 'scales-7'],
+  // more scales in common use (the printed page keeps the first seven)
+  ['dor', 'Dorian mode: the natural minor with its 6th raised', '도리안 선법: 6도를 올린 자연 단음계', [0, 2, 3, 5, 7, 9, 10, 12], null],
+  ['phr', 'Phrygian mode: the natural minor with its 2nd lowered', '프리지안 선법: 2도를 내린 자연 단음계', [0, 1, 3, 5, 7, 8, 10, 12], null],
+  ['mix', 'Mixolydian mode: the major with its 7th lowered', '믹솔리디안 선법: 7도를 내린 장음계', [0, 2, 4, 5, 7, 9, 10, 12], null],
+  ['loc', 'Locrian mode: the natural minor with its 2nd and 5th lowered', '로크리안 선법: 2도와 5도를 내린 자연 단음계', [0, 1, 3, 5, 6, 8, 10, 12], null],
+  ['mpent', 'minor pentatonic', '단 5음 음계', [0, 3, 5, 7, 10, 12], null],
+  ['blues', 'blues scale: the minor pentatonic with the flattened 5th', '블루스 음계: 단 5음 음계에 ♭5', [0, 3, 5, 6, 7, 10, 12], null],
+  ['whole', 'whole-tone: six tones', '온음 음계: 온음 여섯', [0, 2, 4, 6, 8, 10, 12], null],
 ];
+const REF_SCALES_PAPER = 7;
 const refStep = (d) => d === 1 ? 'S' : d === 2 ? 'T' : d === 3 ? 'T+S' : d === 4 ? '2T' : String(d);
 const REF_SC = { maj: [0, 2, 4, 5, 7, 9, 11, 12], nat: [0, 2, 3, 5, 7, 8, 10, 12], harm: [0, 2, 3, 5, 7, 8, 11, 12], mel: [0, 2, 3, 5, 7, 9, 11, 12] }, REF_ST8 = [0, 1, 2, 3, 4, 5, 6, 7], REF_ST7 = REF_ST8.slice(0, 7);
 function RefAllScales() {
@@ -21886,9 +21895,10 @@ function RefScales({ part }) {
   if (part === 'b') return <RefAllScales/>;
   return <div>
     <RefTable k="scales" cols="minmax(0,1fr) auto" head={[t('Form · its steps (T tone, S semitone)', '형태 · 걸음(T 온음, S 반음)'), '']}
-      rows={REF_SCALES.map(([id, en, ko, semis, room]) => { const steps = semis.slice(1).map((v, i) => v - semis[i]);
+      rows={(paper ? REF_SCALES.slice(0, REF_SCALES_PAPER) : REF_SCALES).map(([id, en, ko, semis, room]) => { const steps = semis.slice(1).map((v, i) => v - semis[i]);
         return [<div data-ref-scale={id}><b style={{fontWeight:800}}>{t(en, ko)}</b><div style={{display:'flex',flexWrap:'wrap',gap:3,marginTop:3}}>{id === 'chr' ? <span style={{fontSize:12,fontWeight:800,color:BK.muted}}>{t('S × 12', 'S × 12')}</span>
           : steps.map((d, i) => <span key={i} style={{fontSize:11.5,fontWeight:900,padding:'1px 6px',borderRadius:6,border:'1.2px solid ' + (d === 1 ? BK.coral : 'rgba(38,41,107,0.35)'),color:d === 1 ? BK.coral : BK.ink}}>{refStep(d)}</span>)}</div></div>, <RefDoor room={room}/>]; })}/>
+    {!paper && <RefNote>{t('The major is also the Ionian mode, the natural minor the Aeolian. The pentatonic on the black keys is the major pentatonic.', '장음계는 이오니안 선법, 자연 단음계는 에올리안 선법이기도 해요. 검은건반 5음 음계는 장 5음 음계예요.')}</RefNote>}
     {!paper && <div style={{margin:'8px 0 0'}}>
       <button type="button" className="ghost-btn" data-ref-scalesmap aria-expanded={map} onClick={() => setMap(x => !x)} style={{width:'100%',minHeight:44,fontSize:14}}>{map ? t('Hide the scales floor by floor', '층마다 스케일 닫기') : t('Every grade’s scales, floor by floor ›', '급마다 스케일, 층마다 ›')}</button>
       {map && <div style={{marginTop:8}}><ScalesMapView onChapter={go}/></div>}
@@ -21897,13 +21907,15 @@ function RefScales({ part }) {
   </div>;
 }
 // 6. intervals: by number, with the semitones in each quality; the rules
-const REF_IV = [[2, [['minor', '단', 1], ['major', '장', 2]]], [3, [['minor', '단', 3], ['major', '장', 4]]], [4, [['perfect', '완전', 5], ['augmented', '증', 6]]], [5, [['diminished', '감', 6], ['perfect', '완전', 7]]],
-  [6, [['minor', '단', 8], ['major', '장', 9]]], [7, [['minor', '단', 10], ['major', '장', 11]]], [8, [['perfect', '완전', 12]]]];
+const REF_IV = [[1, [['perfect', '완전', 0, 1], ['augmented', '증', 1, 1]], 1], [2, [['minor', '단', 1], ['major', '장', 2], ['augmented', '증', 3, 1]]], [3, [['minor', '단', 3], ['major', '장', 4]]],
+  [4, [['diminished', '감', 4, 1], ['perfect', '완전', 5], ['augmented', '증', 6]]], [5, [['diminished', '감', 6], ['perfect', '완전', 7], ['augmented', '증', 8, 1]]],
+  [6, [['minor', '단', 8], ['major', '장', 9], ['augmented', '증', 10, 1]]], [7, [['diminished', '감', 9, 1], ['minor', '단', 10], ['major', '장', 11]]], [8, [['perfect', '완전', 12]]]];   // [n, qualities [en, ko, semitones, extra], extra row]
 function RefIntervals() {
-  const nm = (n) => n === 8 ? t('octave', '옥타브(8도)') : t(H3_ORD[n], H3_ORDK[n]);
+  const nm = (n) => n === 8 ? t('octave', '옥타브(8도)') : n === 1 ? t('unison', '완전1도(같은 음)') : t(H3_ORD[n], H3_ORDK[n]);
+  const paper = React.useContext(RefPaper), ivRows = REF_IV.filter(r => !(paper && r[2])).map(([n, qs]) => [n, qs.filter(q => !(paper && q[3]))]);
   return <div>
     <RefTable k="intervals" cols="70px minmax(0,1fr)" head={[t('Number', '숫자'), t('Quality · semitones', '성질 · 반음 수')]}
-      rows={REF_IV.map(([n, qs]) => [<b style={{fontFamily:LB_SERIF,fontWeight:900,fontSize:15}}>{nm(n)}</b>, <span style={{display:'flex',flexWrap:'wrap',gap:'2px 10px'}}>{qs.map(([en, ko, s]) => <span key={en}>{t(en, ko)} <b style={{fontWeight:900}}>{s}</b></span>)}</span>])}/>
+      rows={ivRows.map(([n, qs]) => [<b style={{fontFamily:LB_SERIF,fontWeight:900,fontSize:15}}>{nm(n)}</b>, <span style={{display:'flex',flexWrap:'wrap',gap:'2px 10px'}}>{qs.map(([en, ko, s]) => <span key={en}>{t(en, ko)} <b style={{fontWeight:900}}>{s}</b></span>)}</span>])}/>
     <RefTable k="ivrules" cols="minmax(0,1fr) auto" rows={[
       [t('A semitone is the very next key; a tone is two semitones.', '반음은 바로 옆 건반, 온음은 반음 둘.'), <RefDoor room="tones"/>],
       [t('Count the letters, both ends included: that is the number.', '양 끝을 포함해 글자를 세면 그게 숫자.'), <RefDoor room="intervals"/>],
@@ -21911,6 +21923,10 @@ function RefIntervals() {
       [t('In a minor key (the harmonic minor), above the tonic: the 3rd and 6th minor, the 7th major.', '단조(화성 단음계)에서 으뜸음 위로: 3도·6도는 단음정, 7도는 장음정.'), <RefDoor room="harmony-2"/>],
       [t('Augmented: a semitone wider than major or perfect. Diminished: a semitone narrower than minor or perfect.', '증음정: 장·완전보다 반음 넓게. 감음정: 단·완전보다 반음 좁게.'), <RefDoor room="keys-5"/>],
       [t('Upside down: the numbers add to 9; major and minor swap, augmented and diminished swap, perfect stays perfect.', '자리바꿈: 숫자의 합은 9, 장↔단, 증↔감, 완전은 그대로.'), <RefDoor room="keys-5"/>],
+      ...(paper ? [] : [
+        [t('Six semitones: the tritone, an augmented 4th or a diminished 5th (the same keys, two names).', '반음 여섯: 트라이톤, 증4도 또는 감5도(같은 건반, 두 이름).'), <RefDoor room="keys-5"/>],
+        [t('Wider than an octave: compound intervals. A 9th is an octave and a 2nd, a 10th an octave and a 3rd; the quality stays the same.', '옥타브보다 넓으면 겹음정: 9도는 옥타브+2도, 10도는 옥타브+3도, 성질은 그대로.'), <RefDoor room={null}/>],
+      ]),
     ]}/>
   </div>;
 }
@@ -21996,7 +22012,13 @@ function RefChords({ part }) {
       [<span><b style={{fontWeight:800}}>{t('plagal', '변격종지')}</b> · {t('the “Amen”', '“아멘”')}</span>, <b style={{fontFamily:LB_SERIF}}>IV – I</b>, <RefDoor room="harmony-3"/>],
       [<span><b style={{fontWeight:800}}>{t('imperfect', '반종지')}</b> · {t('a comma', '쉼표(,)')}</span>, <b style={{fontFamily:LB_SERIF}}>… – V</b>, <RefDoor room="harmony-4"/>],
       [<span><b style={{fontWeight:800}}>{t('interrupted', '거짓종지')}</b> · {t('the surprise', '깜짝')}</span>, <b style={{fontFamily:LB_SERIF}}>V – vi</b>, <RefDoor room="harmony-4"/>],
-    ]}/></>}
+      ...(React.useContext(RefPaper) ? [] : [
+        [<span><b style={{fontWeight:800}}>{t('cadential 6-4', '종지 6-4')}</b> · {t('the 6-4 leans into V', '6-4가 V로 기대요')}</span>, <b style={{fontFamily:LB_SERIF}}>Ic – V – I</b>, <RefDoor room="harmony-5"/>],
+        [<span><b style={{fontWeight:800}}>{t('Phrygian', '프리지안 종지')}</b> · {t('an imperfect cadence in a minor key, the bass falling a semitone', '단조의 반종지, 베이스가 반음 내려가요')}</span>, <b style={{fontFamily:LB_SERIF}}>ivb – V</b>, <RefDoor room={null}/>],
+        [<span><b style={{fontWeight:800}}>{t('Picardy third', '피카르디 3도')}</b> · {t('a minor-key piece ends on the major tonic', '단조 곡이 장3화음 으뜸화음으로 끝나요')}</span>, <b style={{fontFamily:LB_SERIF}}>V – I</b>, <RefDoor room={null}/>],
+      ]),
+    ]}/>
+    {!React.useContext(RefPaper) && <RefNote>{t('Other names: perfect = authentic, imperfect = half cadence, interrupted = deceptive.', '다른 이름: 정격종지 = authentic, 반종지 = half cadence, 거짓종지 = deceptive.')}</RefNote>}</>}
     {part !== 'a' && <><RefLab>{t('Every kind of chord, on any root', '모든 화음, 어느 근음에서든')}</RefLab><RefChordKinds/></>}
   </div>;
 }
