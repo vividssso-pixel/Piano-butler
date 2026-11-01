@@ -66,6 +66,23 @@ claude.ai/artifact/VgstnAko8v3AyvQQLabFeN); update it after every build.*
 | **Revenue** (Top Priority) | Last checked 2026-09-15: 319 clicks and 15.2k impressions over three months, 38 of 40 pages indexed. AdSense rejected again 2026-09-19 (low-value content); Sohyun waits for traffic before any re-review, and a re-review is always her call. Not re-checked since. |
 | **Security** | Still outstanding from the 2026-08-14 incident, all on her phone: Gmail, GitHub, bank and card, Namecheap, Apple ID, Supabase, AdSense, Anthropic passwords. Never touch these. |
 
+### Direction decided 2026-11-01 (Sohyun, in the dashboard window) -- read before any build
+**Goal.** Piano Butler is a side project that must earn income separate from her lessons (she teaches full time), built as a
+leveraged system: little of her time per sale, one source of data feeding many outputs. Order: (1) fix the layout and merge
+the map, (2) a sellable bundle sample plus a copyright check of the books, (3) she picks a marketplace and prices, (4) search
+pages from the same data. A teacher subscription comes only after a student trial and a teacher beta.
+**What sells it.** AMEB 2026 fit, Ear Training inside every grade, and a taste of viva voce and sight-reading.
+**Layout (fixed).** drills.html: student `Today / Map / Practice`; teacher `Map / Books / Printables / Practice`;
+visitor `Map / Practice`. The **Map** replaces Home + Chapters (Learn): one map, two views of the same rooms -- the
+**house** (floors by grade; the default for children) and **At a glance** (the Reference tables; the default for teachers
+and visitors). Exams are a lens on the same rooms (AMEB now; grade labels kept as data, not hard-coded). Teacher dashboard:
+`Today / Students / Schedule` + Lesson materials (Dashboard D1, built).
+**Visitors (when the site links drills; not yet).** Map and Reference all open; lessons open Beginner to Grade 1 and the
+first room of each higher floor; a few drills per floor; no saved progress; book samples only. A soft lock is enough until
+payments exist; leave a per-room open/locked flag in the Map data.
+**Build rule.** The Map merge touches drills.src.html: do it between workbook builds, in small commits. Nothing new outside
+this layout until the merge is done.
+
 ### Waiting on Sohyun
 - Push: Dashboard D1 and EI (two commits), before she opens a cloud window.
 - On the iPad: how long drills takes to open, print chapter 2's Lesson Book once, the Music Lab sound (open since 2026-10-07).
