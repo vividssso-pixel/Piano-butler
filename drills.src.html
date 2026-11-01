@@ -23835,7 +23835,7 @@ function readUrlState(studentMode) {
     kit: p.get('kit') ? p.get('kit').split(',').filter(id => TOOLS.find(t => t.id === id)) : null,
     kn: p.get('kn') || '',
     ha: TOOL_AREAS.some(a => a.id === p.get('area')) ? p.get('area') : null, hc: HOME_OLD[p.get('concept')] ? (window.__ksOpen = HOME_OLD[p.get('concept')][1], HOME_OLD[p.get('concept')][0]) : homeCatById(p.get('concept')) ? p.get('concept') : null, hs: p.get('room') === 'try' ? 'try' : null, ret: p.get('ret') === 'home' ? 'home' : null, rc: DRILLS.find(d => d.id === p.get('from')) ? p.get('from') : null,
-    view: p.get('kit') ? 'kit' : p.get('ret') === 'home' && p.get('drill') ? 'home' : p.get('view') === 'chapters' ? 'chapters' : p.get('view') === 'books' || (p.get('view') === 'toolbox' && p.get('sec') === 'books') ? 'books' : p.get('view') === 'printables' ? 'printables' : p.get('view') === 'toolbox' ? 'home' : p.get('view') === 'students' ? 'students' : p.get('view') === 'home' ? 'home' : p.get('tool') ? (PRACTICE_IDS.includes(p.get('tool')) && p.get('view') === 'practice' ? 'practice' : 'tools') : ['tools', 'practice'].includes(p.get('view')) ? p.get('view') : todayView ? 'today' : 'path',
+    view: p.get('kit') ? 'kit' : p.get('ret') === 'home' && p.get('drill') ? 'home' : p.get('view') === 'chapters' ? 'chapters' : p.get('view') === 'books' || (p.get('view') === 'toolbox' && p.get('sec') === 'books') ? 'books' : p.get('view') === 'printables' ? 'printables' : p.get('view') === 'toolbox' ? 'home' : p.get('view') === 'students' ? 'students' : p.get('view') === 'home' ? 'home' : p.get('tool') ? (PRACTICE_IDS.includes(p.get('tool')) && p.get('view') === 'practice' ? 'practice' : 'tools') : ['tools', 'practice'].includes(p.get('view')) ? p.get('view') : todayView ? 'today' : (!studentMode && !p.get('drill') && !p.get('lock')) ? 'home' : 'path',   // m19: the teacher lands on the Library
   };
 }
 
@@ -24624,7 +24624,8 @@ function townhouseSvg(view, o = {}) {
     const gi = st.s && st.s.garret ? gTop : 0, L0 = RX0 + gi, L1 = X1 - gi;   // Build AZ: the attic's rooms sit between the slopes
     const RS = cmp ? rowsOf(n) : null, at = (j) => { if (!RS) { const r = Math.floor(j / c); return [r, j - r * c, Math.min(c, n - r * c)]; } let r = 0, a = j; while (a >= RS[r]) { a -= RS[r]; r++; } return [r, a, RS[r]]; };
     const rwOf = (j) => (L1 - L0) / at(j)[2], lay = o.print ? thNames(state, st.ids.map((id, j) => [id, rwOf(j)])) : thCleanLay(state, st.ids.map((id, j) => [id, rwOf(j)]), cmp);   // m18: the clean rooms on screen; paper keeps its pictures
-    const rh = lay.clean ? lay.h : (cmp ? 45 + (fs.wp === 'drape' ? 7 : 0) : RH) + (lay.ml - 1) * 14, fh = LH + rh * (RS ? RS.length : Math.ceil(n / c));
+    const shut = !o.print && view.openK != null && k !== view.openK;   // m20: one floor open (hers: 'the Library shows everything; here just the floor I am on')
+    const rh = lay.clean ? lay.h : (cmp ? 45 + (fs.wp === 'drape' ? 7 : 0) : RH) + (lay.ml - 1) * 14, fh = shut ? LH + (cmp ? 4 : 6) : LH + rh * (RS ? RS.length : Math.ceil(n / c));
     body += gi ? thCornice(y, L0 - 4, L1 + 4) : thCornice(y, X0, X1); const yy = y + SLAB;
     body += '<rect x="' + L0 + '" y="' + pFix(yy) + '" width="' + (L1 - L0) + '" height="' + LH + '" stroke="none"/>';
     // the floor's plaque, centred in a moulded frame: just the floor -- "GROUND · II", "P–1 · I" (her 2026-10-12: no floor names;
@@ -24633,6 +24634,11 @@ function townhouseSvg(view, o = {}) {
     body += stR(px, yy + (cmp ? 2 : 4), pw, cmp ? 18 : 20, 0.9) + stR(px + 2, yy + (cmp ? 4 : 6), pw - 4, cmp ? 14 : 16, 0.4, 'none')
       + stT((X0 + X1) / 2, yy + (cmp ? 15.2 : 18.4), name, { size: 11.5, weight: 700, font: TH_CAPS, digits: "'Playfair Display',Georgia,serif", ls: '0.09em', fill: here ? ST.C : st.st.every(v => v === 'done') ? ST.G : ST.N, anchor: 'middle' });
     const nr = RS ? RS.length : Math.ceil(n / c);   // Phase 442: the first rooms on the lowest row, counted from the bottom left -- you climb the house
+    if (shut) {   // a closed floor: its plaque, how many rooms are done, and a tap opens it
+      const dn = st.st.filter(v => v === 'done').length;
+      body += stT(L1 - 8, yy + (cmp ? 15.2 : 18.4), dn + '/' + n + '  ▸', { size: cmp ? 10 : 11.5, weight: 800, font: TH_SANS, fill: dn === n ? ST.G : '#6d6f9c', anchor: 'end' });
+      out.btns.push({ num: -100 + k, html: '<g data-floor="' + k + '" role="button" tabindex="0" aria-label="' + penEsc(name + ': ' + dn + ' of ' + n).replace(/"/g, '&quot;') + '" style="cursor:pointer"><rect x="' + L0 + '" y="' + pFix(yy) + '" width="' + (L1 - L0) + '" height="' + (fh - 1) + '" fill="transparent" stroke="none"/></g>' });
+    } else
     st.ids.forEach((id, j) => {
       const [r, cc] = at(j), rw = rwOf(j);
       body += thRoom(view, state, id, L0 + cc * rw, yy + LH + (nr - 1 - r) * rh, rw, rh, fs, out, o.dimNew, lay, cmp);
@@ -24670,7 +24676,7 @@ function townhouseSvg(view, o = {}) {
   const qTop = garretBot || top;   // Build AZ: the quoins and the corner lines start under the attic
   if (o.print) body += stQuoins(X0, qTop, gb, false) + stQuoins(X1, qTop, gb, true);   // paper stays plain
   else spans.filter(sp => sp.y1 > qTop).map(sp => ({ ...sp, y0: Math.max(sp.y0, qTop) })).concat([{ y0: hallTop, y1: gb, wp: '', hall: true }]).forEach(sp => {
-    const f = sp.hall ? '#fff' : TH_Q_TINT[sp.wp] || '#fff'; body += stQuoins(X0, sp.y0, sp.y1, false, f) + stQuoins(X1, sp.y0, sp.y1, true, f); });
+    const f = '#fff'; /* m20: her 'the coloured bricks back to navy or white' */ body += stQuoins(X0, sp.y0, sp.y1, false, f) + stQuoins(X1, sp.y0, sp.y1, true, f); });
   body += stL(X0, qTop, X0, gb, 2.2) + stL(X1, qTop, X1, gb, 2.2);
   body += stR(dx - 38, gb, 76, 5, 0, ST.N) + stR(dx - 44, gb + 7, 88, 5, 0, ST.N);
   const pv = gb + 14;
@@ -24738,6 +24744,7 @@ function HouseMap({ onOpen, compact, noIntro }) {
   const [inside, setInside] = useState(() => houseCameIn);
   const [topic, setTopic0] = useState(() => { try { return localStorage.getItem(HOUSE_TOPIC_KEY) || null; } catch (e) { return null; } });   // Build V
   const setTopic = (v) => { setTopic0(v); try { if (v) localStorage.setItem(HOUSE_TOPIC_KEY, v); else localStorage.removeItem(HOUSE_TOPIC_KEY); } catch (e) {} };
+  const [openK, setOpenK] = useState(null);   // m20: the floor open by hand (null: your floor)
   const [opening, setOpening] = useState(false), [peek, setPeek] = useState(null);   // Build BN: the room whose card is showing
   const [wide, setWide] = useState(() => { try { return window.innerWidth >= 760; } catch (e) { return false; } });   // big screens: the wide house, a floor's rooms in one row
   useEffect(() => { const el = box.current; if (!el) return; const f = () => setWide(el.clientWidth >= 700); f(); let ro = null; try { ro = new ResizeObserver(f); ro.observe(el); } catch (e) { window.addEventListener('resize', f); } return () => { try { ro && ro.disconnect(); } catch (e) {} window.removeEventListener('resize', f); }; }, []);
@@ -24750,8 +24757,9 @@ function HouseMap({ onOpen, compact, noIntro }) {
   const link = loadStoredLink(), name = link && link.name ? link.name.trim() : '', today = localDay();
   const chkRooms = loadChecks().rooms, star = {}; Object.keys(chkRooms).forEach(id => { if (chkRooms[id].pass) star[id] = 1; });   // Build CN
   const sig = stages.map(x => x.st.join(',')).join('|') + here + LANG + compact + name + today + fontTick + wide + (topic || '') + Object.keys(star).join(',') + placeReview().join(',');
-  const view = { stages, here, nums, focus: topic, star, review: placeReview(), pawn: name ? (x, y, k) => stPiece(VIC_PAWN_NAVY, x, y, k) : null };   // Build DP: the rooms to review
-  const house = useMemo(() => townhouseSvg(view, { wide }), [sig, UI_TEACHER, LANG]);   // m18: the T marks follow the teacher view
+  const hereK = Math.max(0, stages.findIndex(x => x.ids.includes(here))), effK = openK == null ? hereK : openK;
+  const view = { stages, here, nums, openK: effK, focus: topic, star, review: placeReview(), pawn: name ? (x, y, k) => stPiece(VIC_PAWN_NAVY, x, y, k) : null };   // Build DP: the rooms to review
+  const house = useMemo(() => townhouseSvg(view, { wide }), [sig, UI_TEACHER, LANG, effK]);   // m18: the T marks follow the teacher view
   const hall = useMemo(() => townhouseSvg(view, { hall: true, wide }), [sig]);
   const week = null;   // m11: the pawn board left the Map (weekSvg kept for later use)
   const reduced = (() => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } })();
@@ -24771,12 +24779,14 @@ function HouseMap({ onOpen, compact, noIntro }) {
   }, [inside]);
   const open = (e) => {
     if (e.target.closest && e.target.closest('[data-door]')) { enter(); return; }
+    const fl = e.target.closest && e.target.closest('[data-floor]'); if (fl) { setPeek(null); setOpenK(Number(fl.getAttribute('data-floor'))); return; }   // m20
     const c = e.target.closest && e.target.closest('[data-chapter]'); if (!c) { if (!(e.target.closest && e.target.closest('[data-testid="room-peek"]'))) setPeek(null); return; }
     const cid = c.getAttribute('data-chapter'); if (peek === cid) { setPeek(null); onOpen(cid); } else { setPeek(cid); try { const b = c.getBoundingClientRect(); if (b.bottom > window.innerHeight * 0.42) window.scrollBy({ top: b.top - window.innerHeight * 0.18, behavior: 'smooth' }); } catch (er) {} }   // the first tap shows what is inside (the room kept above the card); the second goes in
   };
   const key = (e) => {
     const g = e.target; if (!g || !g.getAttribute || (e.key !== 'Enter' && e.key !== ' ')) return;
     if (g.getAttribute('data-door') != null) { e.preventDefault(); enter(); }
+    else if (g.getAttribute('data-floor') != null) { e.preventDefault(); setOpenK(Number(g.getAttribute('data-floor'))); }
     else if (g.getAttribute('data-chapter')) { e.preventDefault(); const cid = g.getAttribute('data-chapter'); if (peek === cid) { setPeek(null); onOpen(cid); } else setPeek(cid); }
   };
   const weekEl = week && <div data-testid="map-week" role="img" aria-label={t((name ? name + '’s week' : 'My week') + ': ' + week.n + ' practice days this week' + (week.queen ? ', a queen' : ', ' + (WEEK_GOAL - week.n) + ' more to become a queen'), (name ? name + '의 일주일' : '나의 일주일') + ': 이번 주 연습 ' + week.n + '일' + (week.queen ? ', 퀸' : ', 퀸까지 ' + (WEEK_GOAL - week.n) + '일'))} style={{lineHeight:0}} dangerouslySetInnerHTML={{__html: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + week.W + ' ' + week.H + '" width="100%">' + week.svg + '</svg>'}}/>;
@@ -25500,7 +25510,8 @@ function TLessonBar({ lesson }) {
   </div>;
 }
 function mapSave(x) { try { localStorage.setItem(MAP_VIEW_KEY, x); } catch (e) {} }
-function mapPick(canTopics, teacher) { if (!canTopics) return 'path'; let x = null; try { x = localStorage.getItem(MAP_VIEW_KEY); } catch (e) {} return x === 'house' ? 'path' : x === 'topics' ? 'home' : (teacher ? 'home' : 'path'); }   // M2: children and visitors start on the House
+function mapPick(canTopics, teacher) { if (!canTopics) return 'path'; if (teacher) return 'home';   // m19: the teacher's Library tab always opens the Library (her 'where did the Reference go?')
+ let x = null; try { x = localStorage.getItem(MAP_VIEW_KEY); } catch (e) {} return x === 'house' ? 'path' : x === 'topics' ? 'home' : (teacher ? 'home' : 'path'); }   // M2: children and visitors start on the House
 function MapSwitch({ value, onPick }) {
   const opts = [['house', t('House', '집'), t('by floor', '층별')], ['topics', t('Topics', '주제'), t('by topic', '주제별')]];
   return <div role="tablist" aria-label={t('Two views of the map', '지도를 보는 두 가지 방법')} data-map-switch={value} style={{display:'flex',border:'1.5px solid var(--navy)',borderRadius:12,overflow:'hidden',margin:'0 0 14px'}}>
@@ -25601,7 +25612,7 @@ function App() {
           <div style={{minWidth:0}}>
             <a href="index.html" style={{color:'var(--muted)',fontSize:13,textDecoration:'none',display:'block',marginBottom:2}}>{t('← Piano Butler', '← 피아노 버틀러')}</a>
             <h1 style={{color:'var(--text)',fontSize:21,fontWeight:900,margin:0,letterSpacing:'-0.02em',lineHeight:1.2}}>
-              {st.lock ? (st.view === 'kit' ? (st.kn || t('Your tools', '내 도구')) : st.tool ? (TOOLS.find(tl => tl.id === st.tool) || {}).title : active.label) : t('Practice Drills', '연습 드릴')}
+              {st.lock ? (st.view === 'kit' ? (st.kn || t('Your tools', '내 도구')) : st.tool ? (TOOLS.find(tl => tl.id === st.tool) || {}).title : active.label) : <button type="button" data-testid="home-title" onClick={() => { update({ view: mapPick(HM, T), lib: false, tool: null, kit: null, from: null, ret: null, drill: null, ha: null, hc: null, hs: null }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{border:'none',background:'none',padding:0,margin:0,font:'inherit',color:'inherit',letterSpacing:'inherit',cursor:'pointer',textAlign:'left'}}>{t('Practice Drills', '연습 드릴')}</button>}   {/* m19: the title goes home */}
             </h1>
             {T && <div data-testid="teacher-label" style={{fontSize:11,fontWeight:900,color:'#e4572e',letterSpacing:'0.06em',textTransform:'uppercase',marginTop:2}}>{t('Teacher view', '교사 화면')}</div>}
           </div>
@@ -25632,10 +25643,11 @@ function App() {
         {preview && <div style={{background:'#26296b',color:'#fff',borderRadius:10,padding:'8px 12px',marginBottom:12,fontSize:13.5,display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}><span>{t('You’re seeing what a student sees.', '학생에게 보이는 화면이에요.')}</span><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setPreview(false)}>{t('Back to teacher view', '교사 화면으로')}</button></div>}
         {!st.lock && !(showToday && !T) && (
           <div style={{display:'flex',gap:6,borderBottom:'1.5px solid var(--navy-line)',marginBottom:16}}>
-            {(T ? [['map', t('Library', '서재')], ...(booksUnlocked() ? [['books', t('Books', '책')], ['printables', t('Printables', '교구')]] : []), ['practice', t('Practice', '연습')], ['lib', <span style={{whiteSpace:'nowrap'}}><span style={{fontSize:'0.8em'}}>🔒</span>{t('Lessons', '레슨')}</span>]]   /* m16: the old Home categories, hers alone, at the end */ : (showToday ? [['today', t('Today', '오늘')], ['map', t('Map', '지도')], ['practice', t('Practice', '연습')]] : [['map', t('Map', '지도')], ['practice', t('Practice', '연습')]])).map(([v, l]) => (
-              <button key={v} onClick={() => { update({ view: v === 'map' ? mapPick(HM, T) : v === 'lib' ? 'home' : v, lib: v === 'lib', tool: null, kit: null, from: null, ret: null, drill: (v === 'practice' || v === 'students') ? st.drill : null, ...(v === 'map' || v === 'lib' ? { ha: null, hc: null, hs: null } : {}) }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderBottom:'3px solid ' + ((((st.view === v && v !== 'lib') || (v === 'map' && !st.lib && (st.view === 'path' || st.view === 'chapters' || st.view === 'home' || (T && st.view === 'tools' && st.ret === 'toolbox'))) || (v === 'lib' && !!st.lib && (st.view === 'home' || (st.view === 'tools' && st.ret === 'home')))) || (v === 'path' && st.view === 'chapters') || (T && v === 'toolbox' && st.view === 'tools' && st.ret === 'toolbox') || false) ? 'var(--coral)' : 'transparent'),marginBottom:-1.5,background:'transparent',padding:'10px 0',fontFamily:"'Playfair Display', Georgia, serif",fontSize:T ? 14.5 : 18,fontWeight:800,cursor:'pointer',
-                color:((st.view === v && v !== 'lib') || (v === 'map' && !st.lib && (st.view === 'path' || st.view === 'chapters' || st.view === 'home' || (T && st.view === 'tools' && st.ret === 'toolbox'))) || (v === 'lib' && !!st.lib && (st.view === 'home' || (st.view === 'tools' && st.ret === 'home')))) ? 'var(--navy)' : 'var(--muted)'}}>{l}</button>
-            ))}
+            {(T ? [['map', t('Library', '서재')], ['house', t('House', '집')], ...(booksUnlocked() ? [['books', t('Books', '책')], ['printables', t('Printables', '교구')]] : []), ['practice', t('Practice', '연습')], ['lib', <span style={{whiteSpace:'nowrap'}}><span style={{fontSize:'0.8em'}}>🔒</span>{t('Lessons', '레슨')}</span>]]   /* m16: the old Home categories, hers alone, at the end */ : (showToday ? [['today', t('Today', '오늘')], ['map', t('Map', '지도')], ['practice', t('Practice', '연습')]] : [['map', t('Map', '지도')], ['practice', t('Practice', '연습')]])).map(([v, l]) => { const on = v === 'map' ? (T ? !st.lib && (st.view === 'home' || (st.view === 'tools' && st.ret === 'toolbox')) : !st.lib && (st.view === 'path' || st.view === 'chapters' || st.view === 'home')) : v === 'house' ? (st.view === 'path' || st.view === 'chapters') : v === 'lib' ? !!st.lib && (st.view === 'home' || (st.view === 'tools' && st.ret === 'home')) : st.view === v;   // m19: Library and House, two tabs
+              return (
+              <button key={v} onClick={() => { update({ view: v === 'map' ? mapPick(HM, T) : v === 'house' ? 'path' : v === 'lib' ? 'home' : v, lib: v === 'lib', tool: null, kit: null, from: null, ret: null, drill: (v === 'practice' || v === 'students') ? st.drill : null, ...(v === 'map' || v === 'lib' || v === 'house' ? { ha: null, hc: null, hs: null } : {}) }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderBottom:'3px solid ' + (on ? 'var(--coral)' : 'transparent'),marginBottom:-1.5,background:'transparent',padding:'10px 0',fontFamily:"'Playfair Display', Georgia, serif",fontSize:T ? 13.5 : 18,fontWeight:800,cursor:'pointer',
+                color:on ? 'var(--navy)' : 'var(--muted)'}}>{l}</button>
+            ); })}
           </div>
         )}
         {!(T && !st.lock) && <SoundSettings/>}
@@ -25658,7 +25670,7 @@ function App() {
             ? <div className="fade-up"><PageIntro title={t('Printables', '교구')} text={t('Paper tools to print, cut out and play with at the lesson table. Each set is a few A4 pages with a Try this box.', '인쇄해서 오려 쓰는 종이 교구. 세트마다 A4 몇 장과 해 보기 상자가 있어요.')}/><PrintablesShelf onChapter={jumpToChapter}/></div>
           : T && st.view === 'books'
             ? <div className="fade-up"><PageIntro title={t('Books', '책')} text={t('The printed books (Lesson Book, Workbook, Teacher copy for every chapter) and the checkpoints on paper.', '인쇄용 책(챕터마다 레슨북, 워크북, 교사용)과 종이 중간점검.')}/><BooksShelf/></div>
-            : <>{todayBack}{HM && <div style={{display:'flex',justifyContent:'flex-end',margin:'0 0 8px'}}><button type="button" className="chip" data-map-library onClick={() => { mapSave('topics'); update({ view: 'home', lib: false, ha: null, hc: null, hs: null, drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{padding:'4px 12px',fontSize:13,fontWeight:800}}>{t('The library ›', '서재 ›')}</button></div>}<MapHome onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
+            : <>{todayBack}{HM && !T && <div style={{display:'flex',justifyContent:'flex-end',margin:'0 0 8px'}}><button type="button" className="chip" data-map-library onClick={() => { mapSave('topics'); update({ view: 'home', lib: false, ha: null, hc: null, hs: null, drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{padding:'4px 12px',fontSize:13,fontWeight:800}}>{t('The library ›', '서재 ›')}</button></div>}<MapHome onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
         ) : <>
         {!st.lock && (() => {
           const sg = catOfChapter(active.id) ? { title: catOfChapter(active.id).name } : null, list = orderedChapterIds(), k = list.indexOf(active.id);
