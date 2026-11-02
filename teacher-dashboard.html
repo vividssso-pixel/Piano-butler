@@ -476,6 +476,8 @@ const rowToStudent = (r) => {
   };
 };
 
+// m53 (her 2 Nov): a grade the student has for sure (exam taken, or clearly at it), in progress or finished
+const gradeLabel = (s) => s && s.grade ? s.grade + (s.gradeDone ? " · finished" : " · in progress") : (s && s.level) || "General";
 // Map app student object → Supabase row (for insert/update)
 const studentToRow = (f, userId) => {
   // Pull out the core columns, stash the rest in `extra`
@@ -732,6 +734,20 @@ function StudentModal({ initial, onSave, onClose }) {
               onChange={e=>{ const v = e.target.value; set("age", v === "" ? "" : Math.max(1, Math.min(99, parseInt(v) || 1))); }} placeholder="e.g. 9"/>
           </div>
 
+          {/* m53: Grade, if known, in progress or finished (shown on Today and the student page) */}
+          <div>
+            <label className="field-label text-slate-500" htmlFor="student-grade">Grade <span className="font-normal text-slate-400 normal-case">(if you know it for sure)</span></label>
+            <div className="flex gap-2 items-center">
+              <select id="student-grade" className="input" style={{flex:"1 1 auto"}} value={f.grade || ""} onChange={e=>set("grade",e.target.value)}>
+                <option value="">Not set</option>
+                {gradeOptions.map(g=><option key={g} value={g}>{g}</option>)}
+              </select>
+              {f.grade && [[false,"In progress"],[true,"Finished"]].map(([v,lab])=>(
+                <button key={lab} type="button" aria-pressed={!!f.gradeDone===v} data-grade-done={String(v)} onClick={()=>set("gradeDone",v)}
+                  className="py-2 px-3 rounded-xl text-sm font-semibold border" style={!!f.gradeDone===v?{background:"#26296b",color:"white",borderColor:"#26296b",whiteSpace:"nowrap"}:{background:"white",color:"#62649a",borderColor:"#e9e2d2",whiteSpace:"nowrap"}}>{lab}</button>))}
+            </div>
+          </div>
+
           {/* Exam or not */}
           <div>
             <label className="field-label text-slate-500">Exam</label>
@@ -747,13 +763,7 @@ function StudentModal({ initial, onSave, onClose }) {
             </div>
             {examOn && (
               <div className="mt-3 space-y-3">
-                <div>
-                  <label className="field-label text-slate-500" htmlFor="student-grade">Grade</label>
-                  <select id="student-grade" className="input" value={f.grade || ""} onChange={e=>set("grade",e.target.value)}>
-                    <option value="">Choose grade…</option>
-                    {gradeOptions.map(g=><option key={g} value={g}>{g}</option>)}
-                  </select>
-                </div>
+                {/* m53: the Grade moved above, for every student */}
                 <div>
                   <label className="field-label text-slate-500" htmlFor="student-exam-date">Exam date <span className="font-normal text-slate-400 normal-case">(optional, gives the countdown and monthly plan)</span></label>
                   <input id="student-exam-date" type="date" className="input" value={f.examDate||""} onChange={e=>set("examDate",e.target.value)}/>
@@ -1467,7 +1477,7 @@ function StudentCard({ student, logs, act, onLog, onSelect }) {
           <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{background:gc.bg, color:gc.text}}>{initials}</div>
           <div className="min-w-0">
             <p className="font-bold text-slate-800 text-sm leading-tight">{student.name}</p>
-            <p className="text-xs text-slate-400 mt-0.5">{student.age ? "Age " + student.age + " · " : ""}{student.grade || student.level || "General"} · {student.lessonDuration}m</p>
+            <p className="text-xs text-slate-400 mt-0.5">{student.age ? "Age " + student.age + " · " : ""}{gradeLabel(student)} · {student.lessonDuration}m</p>
             <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
               {student.paused && <span style={pillS("#ecebf5","#4a4d86")}>Paused</span>}
               {!student.paused && !student.test && nextLessonDays !== null && <span style={isToday ? pillS("#fbe3da","#c0431f") : pillS("#faf6ec","#62649a")}>{isToday ? "Today " + fmtTime(student.lessonTime) : "Next: " + (student.lessonDay||"").slice(0,3) + (nextLessonDays === 1 ? " (tomorrow)" : " in " + nextLessonDays + "d")}</span>}
@@ -2521,7 +2531,7 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
             <p style={{fontSize:"9pt",color:"#7a7ca6",letterSpacing:"0.08em",textTransform:"uppercase",marginBottom:"4px"}}>Piano Butler — Teacher Plan</p>
             <h1 style={{fontSize:"18pt",fontWeight:"800",color:"#26296b",margin:0}}>{student.name}</h1>
             <p style={{fontSize:"10pt",color:"#62649a",marginTop:"4px"}}>
-              {student.grade || student.level || "General"} · {student.lessonDuration}min lessons
+              {gradeLabel(student)} · {student.lessonDuration}min lessons
               {student.examDate ? ` · Exam: ${fmtDate(student.examDate)}` : ""}
             </p>
           </div>
@@ -2541,7 +2551,7 @@ function StudentDetail({ student, logs, onLog, onEditLog, onDeleteLog, onMarkAtt
             style={{background:"#26296b",color:"#fff",fontFamily:"'Playfair Display',Georgia,serif"}}>{initials}</div>
           <div className="min-w-0">
             <h2 className="text-lg font-bold text-slate-800" style={{lineHeight:1.2}}>{student.name}</h2>
-            <p className="text-sm text-slate-400">{[student.grade || student.level || "General", student.lessonDay ? student.lessonDay.slice(0,3) + "s " + fmtTime(student.lessonTime) : null, isExamStudent(student) && student.examDate ? "exam " + fmtShort(student.examDate) : null].filter(Boolean).join(" · ")}</p>
+            <p className="text-sm text-slate-400">{[gradeLabel(student), student.lessonDay ? student.lessonDay.slice(0,3) + "s " + fmtTime(student.lessonTime) : null, isExamStudent(student) && student.examDate ? "exam " + fmtShort(student.examDate) : null].filter(Boolean).join(" · ")}</p>
             <div className="flex gap-1.5 flex-wrap mt-1.5">
               {cardSt && <span style={pillS(TONE[cardSt.tone].bg, TONE[cardSt.tone].fg)} data-testid="detail-status">{cardSt.text}</span>}
               {student.paused && <span style={pillS("#ecebf5","#4a4d86")}>Paused{student.pauseUntil ? " until " + fmtShort(student.pauseUntil) : ""}</span>}
@@ -3059,7 +3069,7 @@ function TodayView({ students, logs, roster, onLog, onAbsence, onSelect, onDelet
             const phase = (curM>=0 ? plan[curM] : plan[plan.length-1])?.phase;
             const pm = PHASE_META[phase] || PHASE_META.foundation;
             const examDays = isExamStudent(s) ? daysUntilExam(s.examDate) : null;
-            const meta = [s.grade || "General"];   // Dashboard D1: the plan phase is on the student page
+            const meta = [gradeLabel(s)];   // Dashboard D1: the plan phase is on the student page
             return (
               <div key={i} className="pb-row" data-lesson-row="1" data-status={status} data-next={isNext ? "1" : "0"}>
                 <div className="pb-time">
