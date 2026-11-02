@@ -20474,16 +20474,16 @@ const CARD_SEEN_KEY = 'pb_cards_seen_v1';
 const CARD_RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'], CARD_SUITS = ['♠', '♥', '♦', '♣'];
 function myCards() {
   const rec = loadChecks().floors;
-  return checkFloors().map((f, i) => { const r = rec[f.key]; return { key: f.key, name: chkFloorName(f), rank: f.key === '0a' ? '0A' : f.key === '0b' ? '0B' : f.k === 1 ? '½' : String(f.k - 1), suit: PIECE_SYM[pieceOfFloor(i)], piece: pieceOfFloor(i), pname: t(PIECE_NAME[pieceOfFloor(i)][0], PIECE_NAME[pieceOfFloor(i)][1]), on: !!(r && !(r.review || []).length), at: r && r.at }; });
+  return checkFloors().map((f, i) => { const r = rec[f.key]; return { key: f.key, name: chkFloorName(f), rank: CARD_RANKS[i % 13], suit: CARD_SUITS[i % 4], on: !!(r && !(r.review || []).length), at: r && r.at }; });
 }
 function PlayingCard({ c, small }) {
-  const col = '#26296b', pcol = pieceCol() || '#26296b';   /* m63: still a playing card; your chess piece on its face, the floor in its corners */
+  const col = c.suit === '♥' || c.suit === '♦' ? '#e4572e' : '#26296b';
   const box = { position: 'relative', aspectRatio: '5 / 7', borderRadius: 10, border: '1.5px solid #26296b', boxShadow: 'inset 0 0 0 4px #fff, inset 0 0 0 5px rgba(38,41,107,0.25)', background: '#fff', overflow: 'hidden' };
   if (!c.on) return <div style={{ ...box, background: 'repeating-linear-gradient(45deg,#26296b 0 6px,#2f3278 6px 12px)', boxShadow: 'inset 0 0 0 4px #fff' }}>
     <span style={{ position: 'absolute', left: 0, right: 0, top: '34%', textAlign: 'center', color: '#c9a24f', font: '700 26px Georgia, serif' }}>?</span>
     {!small && <span style={{ position: 'absolute', left: 4, right: 4, bottom: 6, textAlign: 'center', fontSize: 9.5, fontWeight: 700, color: '#c9cbe6' }}>{c.name}</span>}</div>;
   const corner = (rot) => <b style={{ position: 'absolute', [rot ? 'right' : 'left']: 7, [rot ? 'bottom' : 'top']: small ? 4 : 20, fontSize: small ? 10 : 13, lineHeight: 1, textAlign: 'center', color: col, transform: rot ? 'rotate(180deg)' : 'none' }}>{c.rank}<br/>{c.suit}</b>;
-  return <div style={box}>{corner(false)}<span style={{ position: 'absolute', left: 0, right: 0, top: small ? '24%' : '20%', display: 'flex', justifyContent: 'center' }}><PieceIcon kind={c.piece} col={pcol} h={small ? 40 : 58}/></span>{!small && corner(true)}
+  return <div style={box}>{corner(false)}<span style={{ position: 'absolute', left: 0, right: 0, top: '26%', textAlign: 'center', fontSize: small ? 26 : 38, color: col }}>{c.suit}</span>{!small && corner(true)}
     {!small && <span style={{ position: 'absolute', left: 4, right: 4, bottom: 5, textAlign: 'center', fontSize: 9.5, fontWeight: 700, color: '#6d6f9c' }}>{c.name}</span>}</div>;
 }
 function MyCards() {
@@ -20498,7 +20498,7 @@ function MyCards() {
     <div style={{ fontSize: 13, color: 'var(--muted)', margin: '0 0 10px' }}>{t('Pass a floor’s checkpoint and the butler deals you its card. ' + got.length + ' of ' + cards.length + '.', '층 중간점검을 통과하면 버틀러가 그 층의 카드를 줘요. ' + cards.length + '장 중 ' + got.length + '장.')}</div>
     {fresh && <div data-testid="new-card" style={{ display: 'flex', gap: 12, alignItems: 'center', background: 'var(--surface)', border: '1.5px solid var(--navy-line)', borderRadius: 14, padding: 12, marginBottom: 12 }}>
       <div style={{ width: 62, flex: 'none' }}><PlayingCard c={fresh} small/></div>
-      <div><b style={{ color: 'var(--navy)' }}>{t('New card!', '새 카드!')}</b><div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.4 }}>{t('You passed the ' + fresh.name + ' checkpoint. The butler deals you the ' + fresh.pname + ' card.', fresh.name + ' 중간점검을 통과했어요. 버틀러가 ' + fresh.pname + ' 카드를 줘요.')}</div></div></div>}
+      <div><b style={{ color: 'var(--navy)' }}>{t('New card!', '새 카드!')}</b><div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.4 }}>{t('You passed the ' + fresh.name + ' checkpoint. The butler deals you the ' + fresh.rank + ' ' + fresh.suit + '.', fresh.name + ' 중간점검을 통과했어요. 버틀러가 ' + fresh.suit + fresh.rank + ' 카드를 줘요.')}</div></div></div>}
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>{cards.map(c => <PlayingCard key={c.key} c={c}/>)}</div>
   </div>;
 }
@@ -24494,7 +24494,7 @@ function SoloToday({ onOpenChapter, onOpenTool, onAll }) {
       {k >= 0 && <div data-testid="solo-next" style={{ background: '#fff3ee', border: '1.5px solid var(--coral)', borderRadius: 12, padding: '10px 12px', fontSize: 13.5, color: 'var(--navy)', marginBottom: 14 }}>
         <b style={{ display: 'block', fontSize: 14.5 }}>{floorName(k) + ': ' + t(fDone + ' of ' + floorIds.length + ' rooms done', floorIds.length + '개 중 ' + fDone + '개 완료')}</b>
         {fDone < floorIds.length ? t('Finish the rest and the ' + floorName(k) + ' checkpoint is ready.', '나머지를 마치면 ' + floorName(k) + ' 중간점검을 볼 수 있어요.') : t('The ' + floorName(k) + ' checkpoint is ready: tap ✓ Check on your floor.', floorName(k) + ' 중간점검을 볼 차례예요: 층의 ✓ 점검을 눌러요.')}
-        {nextCard ? t(' Pass it for the ' + nextCard.pname + ' card.', ' 통과하면 ' + nextCard.pname + ' 카드.') : ''}</div>}
+        {nextCard ? t(' Pass it for the ' + nextCard.rank + ' ' + nextCard.suit + ' card.', ' 통과하면 ' + nextCard.suit + nextCard.rank + ' 카드.') : ''}</div>}
       <div style={card}><div style={lab}>{t('My progress', '나의 진도')}</div>
         <div style={{ display: 'flex', gap: 8 }}>{[[ids.filter(id => status[id] === 'done').length, t('rooms done', '끝낸 방')], [learned, t('pieces learned', '마친 곡')], [cards.filter(c => c.on).length + '/' + cards.length, t('cards', '카드')]].map(([n, w], i) =>
           <div key={i} style={{ flex: 1, border: '1.5px solid var(--navy-line)', borderRadius: 12, padding: 10 }}><b style={{ display: 'block', fontSize: 22, color: 'var(--navy)' }}>{n}</b><span style={{ fontSize: 12, color: 'var(--muted)' }}>{w}</span></div>)}</div></div>
