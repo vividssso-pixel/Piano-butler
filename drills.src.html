@@ -24308,7 +24308,7 @@ function readUrlState(studentMode) {
     kit: p.get('kit') ? p.get('kit').split(',').filter(id => TOOLS.find(t => t.id === id)) : null,
     kn: p.get('kn') || '',
     ha: TOOL_AREAS.some(a => a.id === p.get('area')) ? p.get('area') : null, hc: HOME_OLD[p.get('concept')] ? (window.__ksOpen = HOME_OLD[p.get('concept')][1], HOME_OLD[p.get('concept')][0]) : homeCatById(p.get('concept')) ? p.get('concept') : null, hs: p.get('room') === 'try' ? 'try' : null, ret: p.get('ret') === 'home' ? 'home' : null, rc: DRILLS.find(d => d.id === p.get('from')) ? p.get('from') : null,
-    view: p.get('kit') ? 'kit' : p.get('ret') === 'home' && p.get('drill') ? 'home' : p.get('view') === 'chapters' ? 'chapters' : p.get('view') === 'books' || (p.get('view') === 'toolbox' && p.get('sec') === 'books') ? 'books' : p.get('view') === 'printables' ? 'printables' : p.get('view') === 'toolbox' ? 'home' : p.get('view') === 'students' ? 'students' : p.get('view') === 'home' ? 'home' : p.get('tool') ? (PRACTICE_IDS.includes(p.get('tool')) && p.get('view') === 'practice' ? 'practice' : 'tools') : ['tools', 'practice'].includes(p.get('view')) ? p.get('view') : todayView ? 'today' : (!studentMode && !p.get('drill') && !p.get('lock')) ? 'home' : 'path',   // m19: the teacher lands on the Library
+    view: p.get('kit') ? 'kit' : p.get('ret') === 'home' && p.get('drill') ? 'home' : p.get('view') === 'chapters' ? 'chapters' : p.get('view') === 'books' || (p.get('view') === 'toolbox' && p.get('sec') === 'books') ? 'books' : p.get('view') === 'printables' ? 'printables' : p.get('view') === 'toolbox' ? 'home' : p.get('view') === 'students' ? 'students' : p.get('view') === 'home' ? 'home' : p.get('tool') ? (PRACTICE_IDS.includes(p.get('tool')) && p.get('view') === 'practice' ? 'practice' : 'tools') : ['tools', 'practice'].includes(p.get('view')) ? p.get('view') : todayView ? 'today' : 'path',   // m62 (her 2 Nov): everyone lands on the House (m19 sent the teacher to the Library)
   };
 }
 
@@ -25116,13 +25116,21 @@ function VisitorLock({ onBack }) {
 function thRoomClean(view, state, id, x, y, w, h, fs, out, dimNew, lay, cmp) {
   const st = state[id], on = id === view.here, done = st === 'done', num = view.nums[id], { tz, sz, pad, sq } = lay;
   let s = '<rect x="' + pFix(x) + '" y="' + pFix(y) + '" width="' + pFix(w) + '" height="' + pFix(h) + '" fill="#fff" stroke-width="1"/>';
-  if (on) s += '<rect x="' + pFix(x + 1.2) + '" y="' + pFix(y + 1.2) + '" width="' + pFix(w - 2.4) + '" height="' + pFix(h - 2.4) + '" fill="#fff3ee" stroke="' + ST.C + '" stroke-width="2.4"/>';
+  if (on) s += '<rect x="' + pFix(x + 0.6) + '" y="' + pFix(y + 0.6) + '" width="' + pFix(w - 1.2) + '" height="' + pFix(h - 1.2) + '" fill="#fbdfe3" stroke="none"/>';   /* m61: her 2 Nov: your room filled pink, no coral frame */
   const nfill = on ? ST.C : dimNew && st === 'new' ? ST.NEW : ST.N;
   s += stSquare(x + pad, y + pad, sq, num, done ? ST.G : null, cmp ? 9 : 11);
   let ty = y + pad + sq + 5 + tz * 0.9;
   (lay.lines[id] || []).forEach((ln, i) => { s += stT(x + pad, ty + i * tz * 1.12, ln, { size: tz, weight: 800, font: TH_SANS, fill: nfill, ls: '-0.01em' }); });
   ty += (lay.lines[id] || []).length * tz * 1.12 + 3 - tz * 0.9 + sz * 0.95;   // right under its own name
   (lay.subs[id] || []).forEach((ln, i) => { s += stT(x + pad, ty + i * sz * 1.3, ln, { size: sz, weight: 500, font: TH_SANS, fill: '#5a5d92' }); });
+  if (on && PB_ART.rabbit) {   /* m61/m62: the rabbit butler stands in the corner of your room, as big as the corner allows without touching a word */
+    const boxes = [], ny0 = y + pad + sq + 5 + tz * 0.9;
+    (lay.lines[id] || []).forEach((ln, i) => boxes.push([x + pad + rdWidth(ln, 800, tz, TH_SANS), ny0 + i * tz * 1.12 + tz * 0.3]));
+    (lay.subs[id] || []).forEach((ln, i) => boxes.push([x + pad + rdWidth(ln, 500, sz, TH_SANS), ty + i * sz * 1.3 + sz * 0.3]));
+    const fits = (RH) => { const L = x + w - RH * 160 / 210 * 0.78 - 3, T = y + h - RH - 2 + RH * 0.06; return boxes.every(([r, b]) => r < L - 2 || b < T); };
+    let RH = Math.min(h * 0.62, cmp ? 48 : 74); while (RH > (cmp ? 26 : 34) && !fits(RH)) RH -= 2;
+    const RW = RH * 160 / 210, r = PB_ART.rabbit, inner = r.slice(r.indexOf('>') + 1, r.lastIndexOf('</svg>'));
+    s += '<g transform="translate(' + pFix(x + w - RW - 1) + ' ' + pFix(y + h - RH - 2) + ') scale(' + (RH / 210).toFixed(4) + ')">' + inner + '</g>'; }
   const thn = THEORY_ROOM[id];
   if (thn && UI_TEACHER) s += stT(x + w - pad, y + pad + sq * 0.72, 'T' + thn, { size: cmp ? 7.5 : 9, weight: 800, fill: '#8a8cb8', anchor: 'end' });   // her 1 Nov: the T marks for the teacher only
   const star = view.star && view.star[id];
@@ -26251,7 +26259,7 @@ function App() {
         {preview && <div style={{background:'#26296b',color:'#fff',borderRadius:10,padding:'8px 12px',marginBottom:12,fontSize:13.5,display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}><span>{t('You’re seeing what a student sees.', '학생에게 보이는 화면이에요.')}</span><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setPreview(false)}>{t('Back to teacher view', '교사 화면으로')}</button></div>}
         {!st.lock && (T || showToday) && (   /* m43: a linked student gets Today · Practice */
           <div style={{display:'flex',gap:6,borderBottom:'1.5px solid var(--navy-line)',marginBottom:16}}>
-            {(T ? [['map', t('Library', '서재')], ['house', t('House', '집')], ...(booksUnlocked() ? [['books', t('Books', '책')], ['printables', t('Printables', '교구')]] : []), ['practice', t('Practice', '연습')], ['lib', <span style={{whiteSpace:'nowrap'}}><span style={{fontSize:'0.8em'}}>🔒</span>{t('Lessons', '레슨')}</span>]]   /* m16: the old Home categories, hers alone, at the end */ : [['today', t('Today', '오늘')], ['practice', t('Practice', '연습')]]).map(([v, l]) => { const on = v === 'map' ? (T ? !st.lib && (st.view === 'home' || (st.view === 'tools' && st.ret === 'toolbox')) : !st.lib && (st.view === 'path' || st.view === 'chapters' || st.view === 'home')) : v === 'house' ? (st.view === 'path' || st.view === 'chapters') : v === 'lib' ? !!st.lib && (st.view === 'home' || (st.view === 'tools' && st.ret === 'home')) : (!T && v === 'practice') ? ['practice', 'path', 'chapters', 'home', 'tools'].includes(st.view) : st.view === v;   // m19: Library and House, two tabs
+            {(T ? [['house', t('House', '집')], ...(booksUnlocked() ? [['books', t('Books', '책')]] : []), ['map', t('Library', '서재')], ...(booksUnlocked() ? [['printables', t('Printables', '교구')]] : []), ['practice', t('Practice', '연습')], ['lib', <span style={{whiteSpace:'nowrap'}}><span style={{fontSize:'0.8em'}}>🔒</span>{t('Lessons', '레슨')}</span>]]   /* m16: the old Home categories, hers alone, at the end */ : [['today', t('Today', '오늘')], ['practice', t('Practice', '연습')]]).map(([v, l]) => { const on = v === 'map' ? (T ? !st.lib && (st.view === 'home' || (st.view === 'tools' && st.ret === 'toolbox')) : !st.lib && (st.view === 'path' || st.view === 'chapters' || st.view === 'home')) : v === 'house' ? (st.view === 'path' || st.view === 'chapters') : v === 'lib' ? !!st.lib && (st.view === 'home' || (st.view === 'tools' && st.ret === 'home')) : (!T && v === 'practice') ? ['practice', 'path', 'chapters', 'home', 'tools'].includes(st.view) : st.view === v;   // m19: Library and House, two tabs
               return (
               <button key={v} onClick={() => { update({ view: v === 'map' ? mapPick(HM, T) : v === 'house' ? 'path' : v === 'lib' ? 'home' : v, lib: v === 'lib', tool: null, kit: null, from: null, ret: null, drill: T && (v === 'practice' || v === 'students') ? st.drill : null, ...(v === 'map' || v === 'lib' || v === 'house' ? { ha: null, hc: null, hs: null } : {}) }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderBottom:'3px solid ' + (on ? 'var(--coral)' : 'transparent'),marginBottom:-1.5,background:'transparent',padding:'10px 0',fontFamily:"'Playfair Display', Georgia, serif",fontSize:T ? 13.5 : 18,fontWeight:800,cursor:'pointer',
                 color:on ? 'var(--navy)' : 'var(--muted)'}}>{l}</button>
