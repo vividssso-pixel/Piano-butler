@@ -29,12 +29,12 @@ function layer(bar) {
   }
   return out;
 }
-function mei(src, meter, lines) {
-  const bars = src.split('|'); let ms = '';
+function mei(src, meter, lines, nobars) {
+  const bars = nobars ? [src.replace(/\|/g, ' ')] : src.split('|'); let ms = '';
   const bars2 = SRC2 ? SRC2.split('|') : null;
   bars.forEach((b, i) => { let l1, l2 = '';
     if (bars2) { LOC = 1; STEM = 'up'; l1 = layer(b); LOC = -1; STEM = 'down'; l2 = `<layer n="2">${layer(bars2[i])}</layer>`; LOC = 0; STEM = 'up'; } else l1 = layer(b);
-    ms += `<measure n="${i + 1}"${i === bars.length - 1 ? ' right="end"' : ''}><staff n="1"><layer n="1">${l1}</layer>${l2}</staff></measure>`; });
+    ms += `<measure n="${i + 1}"${nobars ? ' right="invis" metcon="false"' : i === bars.length - 1 ? ' right="end"' : ''}><staff n="1"><layer n="1">${l1}</layer>${l2}</staff></measure>`; });
   const tieXml = TIES.map(([a, b]) => `<tie startid="#${a}" endid="#${b}"/>`).join('');
   if (tieXml) ms = ms.replace(/<\/staff>/, '</staff>' + tieXml);
   TIES = []; pend = null;
@@ -60,7 +60,8 @@ function addCounts(svg) {
     inf.labels.forEach((l, k) => { const x = x0 + k * step; const held = k > 0 || inf.tied;
       if (k === 0 && inf.tied && lastX != null) { const xa = lastX + 150, xb = x - 150; if (xb > xa) out += `<line x1="${xa.toFixed(0)}" x2="${xb.toFixed(0)}" y1="${Y - 95}" y2="${Y - 95}" stroke="${HELD}" stroke-width="26" stroke-linecap="round"/>`; }
       lastX = x;
-      out += `<text x="${x.toFixed(0)}" y="${Y}" text-anchor="middle" font-size="${FS}" font-weight="700" fill="${held ? HELD : ON}" class="cnt">${l.replace('&', '&amp;')}</text>`;
+      if (l === '?') out += `<rect x="${(x - 150).toFixed(0)}" y="${Y - 300}" width="300" height="360" rx="30" fill="#fff" stroke="#26296b" stroke-width="22"/>`;
+      else out += `<text x="${x.toFixed(0)}" y="${Y}" text-anchor="middle" font-size="${FS}" font-weight="700" fill="${held ? HELD : ON}" class="cnt">${l.replace('&', '&amp;')}</text>`;
       if (k > 0) { const xa = x0 + (k - 1) * step + 150, xb = x - 150; if (xb > xa) out += `<line x1="${xa.toFixed(0)}" x2="${xb.toFixed(0)}" y1="${Y - 95}" y2="${Y - 95}" stroke="${HELD}" stroke-width="26" stroke-linecap="round"/>`; }
     });
   });
@@ -71,7 +72,7 @@ const S = JSON.parse(fs.readFileSync(process.argv[2], 'utf8')); const out = {};
 for (const [k, v] of Object.entries(S)) {
   INFO = {}; id = 0; LOC = (v.lines ?? 1) === 5 ? 4 : 0; SRC2 = v.src2 || null;
   tk.setOptions({ pageWidth: v.w || 2000, adjustPageHeight: true, adjustPageWidth: true, scale: 50, header: 'none', footer: 'none', svgViewBox: true, pageMarginTop: 10, pageMarginBottom: 60, pageMarginLeft: 10, pageMarginRight: 30, breaks: 'none', spacingLinear: v.sp ?? 0.05, spacingNonLinear: 1.0, font: 'Leipzig' });
-  tk.loadData(mei(v.src, v.meter || '', v.lines ?? 1));
+  tk.loadData(mei(v.src, v.meter || '', v.lines ?? 1, v.nobars));
   out[k] = addCounts(tk.renderToSVG(1));
 }
 fs.writeFileSync(process.argv[3], JSON.stringify(out)); console.log(Object.keys(out).length);
