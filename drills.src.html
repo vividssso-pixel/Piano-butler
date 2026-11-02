@@ -24851,6 +24851,17 @@ const stPilaster = (x, y0, y1, w = 8) => stR(x - w / 2, y0 + 4, w, y1 - y0 - 8, 
 const stUrn = (x, y) => stP(stD('M', x - 3, y, 'L', x - 2, y - 2, 'C', x - 6, y - 4, x - 5, y - 10, x, y - 11, 'C', x + 5, y - 10, x + 6, y - 4, x + 2, y - 2, 'L', x + 3, y, 'Z'), ST.FW) + stC(x, y - 12.5, 1.4, 0, ST.N);
 const stFinial = (x, y, h = 10) => stL(x, y, x, y - h) + stC(x, y - h - 1.5, 1.8, 0, ST.N) + stP(stD('M', x - 3, y - 3, 'l', 3, -4, 'l', 3, 4, 'Z'), ST.FW, ST.N);
 const stPawn = (x, y, k) => '<g transform="translate(' + pFix(x) + ' ' + pFix(y) + ') scale(' + k + ')">' + VIC_PAWN + '</g>';
+/* m64 (her 2 Nov: "why are the letters clumped?"): a label's white halo is drawn with paint-order, and some PDF viewers ignore it,
+   so the halo stroke turns into blots over the letters. While printing, each haloed label becomes two plain labels: the halo below, the letters on top. */
+(function () {
+  const added = [];
+  const haloOf = (el) => { const po = el.getAttribute('paint-order') || (el.style && el.style.paintOrder) || ''; if (po.indexOf('stroke') < 0) return null; const sc = el.getAttribute('stroke') || (el.style && el.style.stroke); return sc && sc !== 'none' ? sc : null; };
+  window.addEventListener('beforeprint', () => { try { document.querySelectorAll('svg text').forEach(el => { const sc = haloOf(el); if (!sc || el.__pbHalo) return;
+    const top = el.cloneNode(true); top.removeAttribute('paint-order'); top.setAttribute('stroke', 'none'); if (top.style) { top.style.paintOrder = ''; top.style.stroke = 'none'; }
+    el.__pbHalo = { fill: el.getAttribute('fill'), sf: el.style ? el.style.fill : '' }; el.setAttribute('fill', sc); if (el.style) el.style.fill = sc; el.removeAttribute('paint-order'); if (el.style) el.style.paintOrder = '';
+    el.parentNode.insertBefore(top, el.nextSibling); added.push([el, top]); }); } catch (e) {} });
+  window.addEventListener('afterprint', () => { added.splice(0).forEach(([el, top]) => { try { top.remove(); const h = el.__pbHalo; if (h) { if (h.fill == null) el.removeAttribute('fill'); else el.setAttribute('fill', h.fill); if (el.style) el.style.fill = h.sf || ''; el.setAttribute('paint-order', 'stroke'); } delete el.__pbHalo; } catch (e) {} }); });
+})();
 const stPiece = (svg, x, y, k) => '<g transform="translate(' + pFix(x) + ' ' + pFix(y) + ') scale(' + k + ')">' + svg + '</g>';
 /* m63 (her 2 Nov): your chess piece grows as you climb: Pawn on Level 0, ½ and 1, Knight on 2-3, Bishop 4-5, Rook 6-7, Queen 8.
    The 11 floor check-ups match a set: 4 pawns, 2 knights, 2 bishops, 2 rooks, 1 queen. Base at (0,0), about 100 units tall. */
