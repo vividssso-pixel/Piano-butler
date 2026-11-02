@@ -1054,15 +1054,17 @@ async function openStatement(student, logs, months, note) {
   const fresh = rooms.filter(c => touched.has(c.id)), shown = (fresh.length ? fresh : rooms).slice(-8);
   const more = rooms.length - shown.length;
   // pieces: each piece's ratings, lesson by lesson
-  const pieces = new Map();
-  L.forEach(l => String(l.repertoire || "").split("\n").forEach(line => { const m = /^([🔴🟡🟢])\s*(.+)$/u.exec(line.trim()); const name = (m ? m[2] : line.trim()); if (!name) return; if (!pieces.has(name)) pieces.set(name, []); if (m) pieces.get(name).push(ST_RATE[m[1]]); }));
-  const pc = [...pieces.entries()].filter(([, r]) => r.length).slice(-6);
+  const finishedSet = new Set(); sorted.forEach(l => String(l.repertoire || "").split("\n").forEach(line => { const pp = parsePiece(line); if (pp.t && pp.f) finishedSet.add(pp.t); }));
+  const pieces = new Map();   // m47: name -> [{ s, b, d }] in this period
+  L.forEach(l => String(l.repertoire || "").split("\n").forEach(line => { const pp = parsePiece(line); if (!pp.t) return; if (!pieces.has(pp.t)) pieces.set(pp.t, []); if (pp.s && !pp.f) pieces.get(pp.t).push({ s: pp.s, b: pp.b, d: l.date }); }));
+  const pc = [...pieces.entries()].filter(([, r]) => r.length).map(([name, r]) => { const top = r.reduce((a, x) => x.s >= a.s ? x : a, r[0]); return [name, r, top]; }).filter(([name]) => !finishedSet.has(name)).slice(-6);
+  const learned = new Map(); sorted.forEach(l => String(l.repertoire || "").split("\n").forEach(line => { const pp = parsePiece(line); if (pp.t && pp.f) learned.set(pp.t, pp.s); }));
   // the boards
   const played = new Set(checks.map(c => String(c.day).slice(0, 10))), lessonDays = new Set(L.filter(l => !noLesson(l)).map(l => l.date));
   const monthsList = []; for (let d = new Date(start.getFullYear(), start.getMonth(), 1); d <= end; d = new Date(d.getFullYear(), d.getMonth() + 1, 1)) monthsList.push([d.getFullYear(), d.getMonth()]);
   const per = monthsList.length <= 3 ? 3 : 4, S = per === 3 ? 38 : 30, hasLink = checks.length > 0;
   const boards = monthsList.map(([y, m]) => '<div class="b"><b>' + new Date(y, m, 1).toLocaleDateString("en-GB", { month: "long" }) + (monthsList.length > 4 && m === 0 ? " " + y : "") + '</b>' + stBoard(y, m, S, played, lessonDays, from, to) + '</div>').join("");
-  const nowPiece = (() => { for (let i = L.length - 1; i >= 0; i--) { const x = String(L[i].repertoire || "").split("\n").map(z => z.replace(/^[🔴🟡🟢]\s*/u, "").trim()).filter(Boolean); if (x.length) return x[0]; } return ""; })();
+  const nowPiece = (() => { for (let i = L.length - 1; i >= 0; i--) { const x = String(L[i].repertoire || "").split("\n").map(z => parsePiece(z).t).filter(Boolean); if (x.length) return x[0]; } return ""; })();
   const lastRoom = shown.length ? shown[shown.length - 1].label : "";
   const help = [nowPiece ? "Ask " + first + " to play you " + nowPiece + ", and just listen." : "Ask " + first + " to play you something new, and just listen.",
     "A few short sessions a week help more than one long one.",
@@ -1073,7 +1075,7 @@ async function openStatement(student, logs, months, note) {
   const tickBy = {}; ticks.forEach(t => { const k = String(t.lesson_date).slice(0, 10); tickBy[k] = (tickBy[k] || 0) + 1; });
   const rowsHtml = L.slice().reverse().map(l => {
     const off = noLesson(l), hw = String(l.homework || "").split("\n").map(x => hwPlain(x).replace(/\s*\[(chapter|tool):[a-z0-9-]+\]$/, "")).filter(x => x && !HW_KEYS_RE.test(x));
-    const ps = String(l.repertoire || "").split("\n").map(x => x.trim()).filter(Boolean).map(x => { const m = /^([🔴🟡🟢])\s*(.+)$/u.exec(x); return (m ? dot(ST_RATE[m[1]]) : "") + stEsc(m ? m[2] : x); }).join(" · ");
+    const ps = String(l.repertoire || "").split("\n").map(x => x.trim()).filter(Boolean).map(x => { const pp = parsePiece(x); return stEsc(pp.t) + (pp.s ? ' <span style="color:#7a7ca6">(' + PIECE_STAGES[pp.s - 1].toLowerCase() + (pp.b ? " ♩=" + pp.b : "") + ')</span>' : ""); }).join(" · ");
     const n = tickBy[l.date] || 0;
     return '<div class="lr"><span class="dt">' + (off ? "" : '<svg viewBox="0 0 24 24" width="12" fill="#e4572e">' + ST_QUEEN + '</svg> ') + fmt(l.date, { weekday: "short", day: "numeric", month: "short" }) + '</span><span>'
       + (off ? '<span style="color:#9a9cc0">No lesson' + (l.reason ? " (" + stEsc(l.reason) + ")" : "") + '</span>' : (l.type === "makeup" ? '<small class="mk">Makeup</small> ' : "") + (ps || '<span style="color:#9a9cc0">Lesson</span>') + (hw.length ? '<small>' + stEsc(hw.join(" · ")) + '</small>' : ""))
@@ -1084,6 +1086,7 @@ async function openStatement(student, logs, months, note) {
     + '.note{margin-top:18px;background:#fff;border-left:4px solid #e4572e;border-radius:8px;padding:12px 16px;font-family:Georgia,serif;font-size:15px;line-height:1.5;font-style:italic}'
     + '.cds{display:grid;grid-template-columns:1fr 1fr;gap:4px 22px}.cd{display:flex;gap:10px;align-items:flex-start;padding:6px 0;border-bottom:1px solid #eee8da}.tk{flex:none;width:20px;height:20px;border-radius:50%;background:#2e8a6e;color:#fff;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center}.cd b{font-size:13.5px;display:block}.cd small{font-size:11px;color:#9a9cc0}'
     + '.pc{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #eee8da}.pc b{width:170px;font-size:13.5px}.sts{flex:1;display:flex;align-items:center}.st{width:15px;height:15px;border-radius:50%;flex:none;box-sizing:border-box}.ln{flex:1;height:3px;background:#e1dccd}'
+    + '.pc2{padding:8px 0;border-bottom:1px solid #eee8da}.pc2 b{font-size:14px}.pc2 small{display:block;font-size:12px;color:#7a7ca6;margin:2px 0 6px}.lad{display:flex;align-items:center}.lad span{flex:none;width:13px;height:13px;border-radius:50%;background:#e6dfcd}.lad span.on{background:#2e8a6e}.lad span.now{background:#f2b3a3;box-shadow:0 0 0 3px #fdece7}.lad em{flex:1;height:2px;background:#e1dccd}.ll{display:flex;justify-content:space-between;font-size:9px;color:#9a9cc0;margin-top:3px}.lrn{display:flex;flex-wrap:wrap;gap:6px}.lrn span{background:#e8f3ee;color:#2e8a6e;border-radius:99px;padding:4px 10px;font-size:12.5px;font-weight:700}'
     + '.r{background:#fff;border:2px solid #26296b}.y{background:#f2b3a3}.g{background:#2e8a6e}.d{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:3px;box-sizing:border-box}'
     + '.bs{display:grid;grid-template-columns:repeat(' + per + ',1fr);gap:14px}.b b{display:block;font-family:Georgia,serif;font-size:14px;margin-bottom:2px}'
     + '.leg{display:flex;gap:16px;font-size:11.5px;color:#7a7ca6;margin-top:6px;align-items:center}.hp{display:grid;gap:6px;font-size:13px}.hp div{background:#fff;border-radius:8px;padding:8px 12px 8px 26px;position:relative}.hp div:before{content:"";position:absolute;left:12px;top:14px;width:6px;height:6px;border-radius:50%;background:#e4572e}'
@@ -1093,8 +1096,10 @@ async function openStatement(student, logs, months, note) {
   const p1 = '<div class="pg"><div style="display:flex;justify-content:space-between;align-items:center"><div><div class="ser" style="font-size:28px;font-weight:700">' + stEsc(first) + '’s ' + label + '</div><div style="font-size:13px;color:#7a7ca6">' + fmt(from, { day: "numeric", month: "long", year: "numeric" }) + ' – ' + fmt(to, { day: "numeric", month: "long", year: "numeric" }) + ' · Piano Butler</div></div></div>'
     + (note && note.trim() ? '<div class="note">' + stEsc(note.trim()) + '</div>' : "")
     + (rooms.length ? '<div class="lab">What ' + stEsc(first) + ' can do now</div><div class="cds">' + shown.map(c => '<div class="cd"><span class="tk">✓</span><div><b>' + stEsc(CAN_DO[c.id] || c.label) + '</b><small>' + stEsc(c.label) + '</small></div></div>').join("") + '</div>' + (more > 0 ? '<div style="font-size:11.5px;color:#9a9cc0;margin-top:6px">and ' + more + ' more rooms finished before</div>' : "") : "")
-    + (pc.length ? '<div class="lab">' + stEsc(first) + '’s pieces, growing</div>' + pc.map(([name, r]) => '<div class="pc"><b>' + stEsc(name) + '</b><div class="sts">' + r.slice(-8).map(c => '<span class="st ' + c + '"></span>').join('<span class="ln"></span>') + '</div></div>').join("")
-      + '<div class="leg"><span><span class="st r" style="display:inline-block;width:11px;height:11px;vertical-align:-2px"></span> needs work</span><span><span class="st y" style="display:inline-block;width:11px;height:11px;vertical-align:-2px"></span> progressing</span><span><span class="st g" style="display:inline-block;width:11px;height:11px;vertical-align:-2px"></span> solid</span></div>' : "")
+    + (pc.length ? '<div class="lab">' + stEsc(first) + '’s pieces, growing</div>' + pc.map(([name, r, top]) => { const f0 = r[0];
+        return '<div class="pc2"><b>' + stEsc(name) + '</b><small>' + (f0.s !== top.s ? PIECE_STAGES[f0.s - 1] + ' (' + fmt(f0.d, { day: "numeric", month: "short" }) + ') → ' : 'Now: ') + PIECE_STAGES[top.s - 1] + (top.b ? ' at ♩=' + top.b : '') + (f0.s !== top.s ? ' (' + fmt(top.d, { day: "numeric", month: "short" }) + ')' : '') + '</small><div class="lad">'
+          + PIECE_STAGES.map((nm, i) => '<span class="' + (i + 1 < top.s ? 'on' : i + 1 === top.s ? 'now' : '') + '"></span>').join('<em></em>') + '</div><div class="ll">' + PIECE_STAGES.map(nm => '<span>' + nm + '</span>').join("") + '</div></div>'; }).join("") : "")
+    + (learned.size ? '<div class="lab">Pieces ' + stEsc(first) + ' has learned</div><div class="lrn">' + [...learned.entries()].map(([n, st6]) => '<span>✓ ' + stEsc(n) + '' + '</span>').join("") + '</div>' : "")
     + '<div class="lab">When ' + stEsc(first) + ' played</div><div class="bs">' + boards + '</div><div class="leg">' + (hasLink ? '<span><svg viewBox="0 0 24 24" width="14" fill="#26296b">' + ST_PAWN + '</svg> played at home</span>' : "") + '<span><svg viewBox="0 0 24 24" width="14" fill="#e4572e">' + ST_QUEEN + '</svg> lesson</span></div>'
     /* m46b (her 2 Nov): no 'Ways to help at home', parents would only ask her */
     + '<div class="foot"><span>' + lessonDays.size + ' lessons in this period</span><span>Page 1</span></div></div>';
@@ -1143,7 +1148,7 @@ function LinkPicker({ links, items, max, onAdd, onClose }) {
   const tabBtn = (k, t) => <button type="button" onClick={() => setTab(k)} style={{ flex: 1, padding: "6px", borderRadius: 10, border: "none", fontWeight: 800, fontSize: 12.5, cursor: "pointer", background: tab === k ? "#26296b" : "#f4f1ea", color: tab === k ? "white" : "#62649a" }}>{t}</button>;
   return (
     <div data-testid="link-picker" className="mb-2 p-3 rounded-xl" style={{ border: "1px solid #e9e2d2", background: "#fffefa" }}>
-      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>{tabBtn("chapter", "Chapters")}{tabBtn("tool", "Practice activities")}
+      <div style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "center" }}><span style={{ flex: 1, fontSize: 12.5, fontWeight: 800, color: "#26296b" }}>Pick a chapter</span>
         <button type="button" onClick={onClose} aria-label="Close" style={{ border: "none", background: "none", color: "#7a7ca6", fontSize: 14, cursor: "pointer", padding: "0 4px" }}>✕</button></div>
       {tab === "chapter" ? <>
         <input data-testid="pick-search" value={q} onChange={e => setQ(e.target.value)} placeholder="Search a chapter (e.g. scales, cadence, 6/8)" className="input text-sm" style={{ marginBottom: 8 }}/>
@@ -1161,6 +1166,27 @@ function LinkPicker({ links, items, max, onAdd, onClose }) {
   );
 }
 // A numbered list of short items (rows are { t: text, r: rating }). Used for repertoire, technical work, and so on.
+// m47 (her 2 Nov): a piece moves through stages instead of red / yellow / green. Stored in the line as "[s3 ♩96] Minuet in G";
+// an old line's 🔴 / 🟡 / 🟢 reads as stage 1 / 3 / 5. The drills read the same prefix (pieceItems).
+const PIECE_STAGES = ["Right hand", "Left hand", "Hands together", "Up to speed", "Fluent"];   // her 2 Nov: fluent is the goal; memorising is a bonus, not a stage
+const PIECE_STAGE_OLD = { "🔴": 1, "🟡": 3, "🟢": 5 };
+const parsePiece = (line) => { const x = String(line || "").trim(); let m = /^\[s([1-6])(?:\s*♩\s*(\d{2,3}))?(\s*✓)?\]\s*(.+)$/u.exec(x); if (m) return { s: Math.min(5, +m[1]), b: m[2] || "", f: !!m[3], t: m[4] }; m = /^([🔴🟡🟢])\s*(.+)$/u.exec(x); if (m) return { s: PIECE_STAGE_OLD[m[1]], b: "", f: false, t: m[2] }; return { s: 0, b: "", f: false, t: x }; };
+const STAGE_SHORT = ["Right hand", "Left hand", "Together", "Speed", "Fluent"];
+// m47b (her 2 Nov: 'buttons for the stages, as simple as possible', 'start and finish'): one row of stage buttons under each piece, and Finish
+function StageBar({ it, onPatch }) {
+  const n = +it.r || 0, done = !!it.f;
+  return (
+    <div data-stagebar style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap", marginTop: 5 }}>
+      {STAGE_SHORT.map((nm, j) => { const on = j + 1 <= n, cur = j + 1 === n;
+        return <button key={j} type="button" data-stage-pick={j + 1} aria-pressed={cur} onClick={() => onPatch({ r: cur ? (j ? String(j) : "") : String(j + 1) })}
+          style={{ fontSize: 11, fontWeight: 800, padding: "4px 9px", borderRadius: 99, cursor: "pointer", border: "1.5px solid " + (on ? "#2e8a6e" : "#e1dccd"), background: cur ? "#2e8a6e" : on ? "#e8f3ee" : "white", color: cur ? "white" : on ? "#2e8a6e" : "#9a9cc0" }}>{nm}</button>; })}
+      {n >= 4 && <input aria-label="Metronome speed" value={it.b || ""} onChange={e => onPatch({ b: e.target.value.replace(/\D/g, "").slice(0, 3) })} placeholder="♩=" inputMode="numeric" style={{ width: 46, border: "1px solid #e9e2d2", borderRadius: 8, padding: "4px", fontSize: 12, textAlign: "center", color: "#26296b" }}/>}
+      <button type="button" data-finish aria-pressed={done} onClick={() => onPatch({ f: !done, r: !done && n < 5 ? "5" : it.r })}
+        style={{ marginLeft: "auto", fontSize: 11, fontWeight: 800, padding: "4px 10px", borderRadius: 99, cursor: "pointer", border: "1.5px solid #e4572e", background: done ? "#e4572e" : "white", color: done ? "white" : "#e4572e" }}>{done ? "✓ Finished" : "Finish"}</button>
+    </div>
+  );
+}
+const stageCol = (n) => n >= 5 ? ["#2e8a6e", "#2e8a6e", "white"] : n >= 3 ? ["#f2b3a3", "#fdece7", "#b9421f"] : n >= 1 ? ["#26296b", "white", "#26296b"] : ["#d9d3c4", "white", "#9a9cc0"];
 const RATING_NEXT = { "": "🔴", "🔴": "🟡", "🟡": "🟢", "🟢": "" };
 const RATING_COLOR = { "🔴": "#dc2626", "🟡": "#eab308", "🟢": "#16a34a" };
 const RATING_NAME = { "": "not rated", "🔴": "needs work", "🟡": "progressing", "🟢": "solid" };
@@ -1200,9 +1226,18 @@ function ListField({ label, color, bg, hint, items, onChange, max = 8, placehold
             <AutoText value={it.t} onChange={v => patch(i, { t: v })} placeholder={i === 0 ? placeholder : ""} label={label + " " + (i + 1)}
               onEnter={() => add(i + 1)} onEmptyBackspace={items.length > 1 ? () => del(i) : null}
               innerRef={el => { refs.current[i] = el; }} bg={bg} accent={color}/>
+            {rating && <StageBar it={it} onPatch={p => patch(i, p)}/>}
             {it.k && <p style={{ margin: "2px 0 0", fontSize: 10, color: "#e4572e", fontWeight: 700 }} data-link={it.k}>↗ The student gets an Open button for this {String(it.k).startsWith("tool:") ? "activity" : "chapter"}</p>}
           </div>
-          {rating && (
+          {false && (() => { const n = +it.r || 0, [bd, bg2, fg] = stageCol(n);   /* m47: the stage chip; ‹ goes back one */
+            return <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 5, flex: "0 0 auto" }}>
+              {n > 0 && <button type="button" aria-label="One stage back" onClick={() => patch(i, { r: n > 1 ? String(n - 1) : "" })} style={{ border: "none", background: "none", color: "#9a9cc0", fontSize: 15, cursor: "pointer", padding: "0 2px" }}>‹</button>}
+              <button type="button" data-stage={n} onClick={() => patch(i, { r: n >= 5 ? "" : String(n + 1) })} title="Tap to move the piece on a stage"
+                style={{ fontSize: 11.5, fontWeight: 800, padding: "5px 10px", borderRadius: 99, cursor: "pointer", whiteSpace: "nowrap", border: "1.5px solid " + bd, background: bg2, color: fg }}>{n ? PIECE_STAGES[n - 1] : "Stage"} ›</button>
+              {n >= 3 && <input aria-label="Metronome speed" value={it.b || ""} onChange={e => patch(i, { b: e.target.value.replace(/\D/g, "").slice(0, 3) })} placeholder="♩=" inputMode="numeric"
+                style={{ width: 46, border: "1px solid #e9e2d2", borderRadius: 8, padding: "5px 4px", fontSize: 12, textAlign: "center", color: "#26296b" }}/>}
+            </div>; })()}
+          {false && (
             <button type="button" onClick={() => patch(i, { r: RATING_NEXT[it.r || ""] })} aria-label={"Rating: " + RATING_NAME[it.r || ""] + ". Tap to change."} title={"Tap to change: red = needs work, yellow = progressing, green = solid"} data-rating={it.r || ""}
               style={{ flex: "0 0 22px", width: 22, height: 22, marginTop: 8, borderRadius: 11, cursor: "pointer", padding: 0, boxSizing: "border-box",
                 background: it.r ? RATING_COLOR[it.r] : "transparent", border: it.r ? "2px solid " + RATING_COLOR[it.r] : "2px solid #d9d3c4" }}/>
@@ -1222,19 +1257,19 @@ const parseItems = (text, rating, withLinks) => {
   const lines = String(text || "").split(/\r?\n/).map(x => x.trim()).filter(x => x && !(withLinks && HW_KEYS_RE.test(hwPlain(x))));
   if (!lines.length) return [{ t: "", r: "" }];
   return lines.map(l => {
-    const m = rating ? /^([🔴🟡🟢])\s*(.*)$/u.exec(l) : null;
-    if (m) return { t: m[2], r: m[1] };
+    if (rating) { const pp = parsePiece(l); return { t: pp.t, r: pp.s ? String(pp.s) : "", b: pp.b, f: pp.f }; }   // m47
     const lk = withLinks ? /^(.*?)\s*\[(chapter|tool):([a-z0-9-]{1,40})\]$/.exec(l) : null;
     if (lk) { const k = lk[2] + ":" + lk[3]; return { t: lk[1].trim() || linkLabel(k), r: "", k }; }
     return { t: l, r: "" };
   });
 };
-const joinItems = (items, rating) => items.map(it => ({ t: it.t.trim() || (it.k ? linkLabel(it.k) : ""), r: it.r, k: it.k })).filter(it => it.t).map(it => (rating && it.r ? it.r + " " : "") + it.t + (it.k ? " [" + it.k + "]" : "")).join("\n");
+const joinItems = (items, rating) => items.map(it => ({ t: it.t.trim() || (it.k ? linkLabel(it.k) : ""), r: it.r, b: it.b, f: it.f, k: it.k })).filter(it => it.t).map(it => (rating && (+it.r || it.f) ? "[s" + (+it.r || 5) + (it.b ? " ♩" + it.b : "") + (it.f ? " ✓" : "") + "] " : "") + it.t + (it.k ? " [" + it.k + "]" : "")).join("\n");
 
 function LogModal({ student, existingLog, currentMonth, lastLog, keysNow, onSave, onClose }) {
   const blank = { date:todayStr(), repertoire:"", technical:"", srAural:"", gk:"", notes:"", homework:"", mood:"", pieceRating:"" };
   const [f, setF] = useState(existingLog ?? blank);
-  const [lists, setLists] = useState(() => { const src = existingLog ?? blank; return { rep: parseItems(src.repertoire, true), tech: parseItems(src.technical), sr: parseItems(src.srAural), gk: parseItems(src.gk), hw: parseItems(src.homework, false, true) }; });
+  const [lists, setLists] = useState(() => { const src = existingLog ?? blank; const carry = existingLog ? src.repertoire : String((lastLog && lastLog.repertoire) || "").split("\n").filter(x => x.trim() && !parsePiece(x).f).join("\n");   /* m47b: last lesson's pieces carry on until finished */
+    return { rep: parseItems(carry, true), tech: parseItems(src.technical), sr: parseItems(src.srAural), gk: parseItems(src.gk), hw: parseItems(src.homework, false, true) }; });
   const setList = (k) => (items) => setLists(p => ({ ...p, [k]: items }));
   const [legacy] = useState(() => ({ tech: !!((existingLog?.technical || "").trim()), sr: !!((existingLog?.srAural || "").trim()), gk: !!((existingLog?.gk || "").trim()) }));
   const own = keysOf(existingLog?.homework);   // this log's own keys line (null: none)
@@ -1310,9 +1345,9 @@ function LogModal({ student, existingLog, currentMonth, lastLog, keysNow, onSave
 
         {/* Fields: every section is a short numbered list */}
         <div className="p-5 space-y-5 max-h-[60vh] overflow-y-auto">
-          <ListField testid="list-rep" label="Repertoire" color="#26296b" bg="#ecebf5" items={lists.rep} onChange={setList("rep")} rating addLabel="Add piece"
+          <ListField testid="list-rep" label="Repertoire" color="#26296b" bg="#ecebf5" items={lists.rep} onChange={setList("rep")} rating addLabel="Start a new piece"
             placeholder="e.g. Minuet in G, bars 1–8, hands together"
-            hint="One piece per row. The names show on the student's Today page as “Pieces you're working on” (if they have a student link). The red / yellow / green circle is for you only: tap it to rate, red needs work, yellow progressing, green solid."/>
+            hint="One piece per row. The names show on the student's Today page as “Pieces you're working on” (if they have a student link). Last lesson's pieces are already here. Tap the stage each piece is at; Finish when it is done (it moves to the pieces learned and stops coming back). The speed box is optional."/>
           {legacy.tech && <ListField testid="list-tech" label="Technical work" color="#7c3aed" bg="#f5f3ff" items={lists.tech} onChange={setList("tech")} placeholder="e.g. C major scale, 2 octaves"/>}
           {legacy.sr && <ListField testid="list-sr" label="Sight-reading & aural" color="#0891b2" bg="#ecfeff" items={lists.sr} onChange={setList("sr")} placeholder="e.g. SR p.14, intervals up to a 6th"/>}
           {legacy.gk && <ListField testid="list-gk" label="General knowledge" color="#d97706" bg="#fffbeb" items={lists.gk} onChange={setList("gk")} placeholder="e.g. Terms: andante, legato"/>}
@@ -1327,7 +1362,7 @@ function LogModal({ student, existingLog, currentMonth, lastLog, keysNow, onSave
           {/* Private notes */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="field-label" htmlFor="log-notes" style={{color:"#62649a",marginBottom:0}}>Notes (private)</label>
+              <label className="field-label" htmlFor="log-notes" style={{color:"#62649a",marginBottom:0}}>Technique, scales &amp; notes (private)</label>
               <button onClick={copyHomework}
                 style={{
                   fontSize:"10px",fontWeight:700,padding:"3px 10px",borderRadius:"99px",cursor:"pointer",
@@ -1342,7 +1377,7 @@ function LogModal({ student, existingLog, currentMonth, lastLog, keysNow, onSave
               value={f.notes}
               onChange={e=>set("notes",e.target.value)}
               rows={3}
-              placeholder="e.g. C major scale, 2 octaves. Sight-reading p.14, hesitant on bar 5. Terms: andante, legato. Parents updated re: exam."
+              placeholder="Whatever you did besides the pieces, e.g. G major 2 octaves HT ♩=80, arpeggios, sight-reading p.14, terms andante and legato."
               className="input text-sm"
               style={{background:"#faf6ec",borderColor:"transparent"}}
               onFocus={e=>e.target.style.borderColor="#62649a"}
