@@ -20469,7 +20469,23 @@ function LessonPath({ onOpen, onBack }) {
 // A tool lives in one home category but can also be listed in others (Phase 237: the metronome is essential practice kit).
 const TOOL_ALSO_IN = { 'metronome': ['practice'], 'scale-finder': ['k-play'] };
 const PRACTICE_IDS = ['arm-moves', 'posture-check', 'beat-target', 'practice-timer', 'practice-dice', 'perfect-counter', 'sight-reading', 'echo', 'term-cards', 'make-card', 'count-along', 'metronome', 'find-every', 'write-note', 'fill-bar'];
-function PracticeView({ onOpen }) {
+const PRACTICE_GROUPS = [[['Play', '연습'], ['echo', 'sight-reading', 'count-along', 'beat-target', 'find-every', 'write-note', 'fill-bar', 'term-cards', 'make-card']], [['Body', '몸'], ['posture-check', 'arm-moves']], [['Tools', '도구'], ['metronome', 'practice-timer', 'practice-dice', 'perfect-counter']]];   // m43
+function PracticeView({ onOpen, onHouse, onLibrary }) {
+  if (!UI_TEACHER) {   // m43 (her 2 Nov: 'Today and Practice only; House and Library inside Practice')
+    const door = (bg, title, sub, fn, id) => <button type="button" data-testid={id} onClick={fn} style={{flex:1,minWidth:0,textAlign:'left',border:'none',borderRadius:14,background:bg,color:'#fff',padding:'14px 12px',cursor:'pointer',font:'inherit'}}><b style={{display:'block',fontFamily:"'Playfair Display', Georgia, serif",fontSize:21,fontWeight:800}}>{title}</b><span style={{display:'block',fontSize:12.5,opacity:0.88,marginTop:3,lineHeight:1.35}}>{sub}</span></button>;
+    return (
+      <div className="fade-up" data-testid="student-practice">
+        <div style={{display:'flex',gap:10,marginBottom:6}}>
+          {onHouse && door('var(--navy)', t('House', '집'), t('Your rooms, floor by floor', '층마다 나의 방'), onHouse, 'door-house')}
+          {onLibrary && door('#2e8a6e', t('Library', '서재'), t('Books to look things up', '찾아보는 책들'), onLibrary, 'door-library')}
+        </div>
+        {PRACTICE_GROUPS.map(([nm, ids]) => <div key={nm[0]} style={{marginTop:16}}>
+          <div style={{fontSize:11,fontWeight:900,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--coral)',margin:'0 0 2px'}}>{t(nm[0], nm[1])}</div>
+          {ids.map((id, i) => { const tl = TOOLS.find(x => x.id === id); if (!tl) return null; return <SlimRow key={id} title={id === 'perfect-counter' ? t('5 in a row', '5번 연속') : LANG === 'ko' && TOOL_KO[id] ? TOOL_KO[id][0] : tl.title} sub={tl.blurb} onClick={() => onOpen(id)} last={i === ids.length - 1}/>; })}
+        </div>)}
+      </div>
+    );
+  }
   return (
     <div className="fade-up">
       <PageIntro title={t('Practice', '연습')} text={UI_TEACHER ? t('For home practice and the last five minutes of a lesson. Send any of these to a student with its link.', '집에서 연습할 때나 레슨 마지막 5분에 쓰세요. 링크로 학생에게 보낼 수 있어요.') : t('Tools for practising at home.', '집에서 연습할 때 쓰는 도구예요.')}/>
@@ -23057,9 +23073,10 @@ function placeItems(ids, n, noSound) {   // n questions from as many rooms as po
   let r = 0; while (out.length < n) { const k = skills[r % skills.length], list = bySkill[k], id = list[Math.floor(r / skills.length) % list.length], L = lv(id); out.push({ id, lv: L[Math.floor(Math.random() * L.length)] }); r++; }
   return chkShuffle(out);
 }
-const PLACE_PIANO = [['0', 'Not yet', '아직'], ['P', 'Prelim', 'Prelim'], ['1', 'Grade 1', 'Grade 1'], ['2', '2', '2'], ['3', '3', '3'], ['4', '4', '4'], ['5', '5', '5'], ['6', '6', '6'], ['7', '7', '7'], ['8', '8', '8']];
-const PLACE_THEORY = [['0', 'Not yet', '아직'], ['1', 'Grade 1', 'Grade 1'], ['2', '2', '2'], ['3', '3', '3'], ['4', '4', '4'], ['5', '5', '5'], ['6', '6', '6']];
+const PLACE_PIANO = [['0', 'None', '없음'], ['P', 'Preliminary', 'Preliminary'], /* m43: the exam you passed, by its own name */ ['1', 'Grade 1', 'Grade 1'], ['2', '2', '2'], ['3', '3', '3'], ['4', '4', '4'], ['5', '5', '5'], ['6', '6', '6'], ['7', '7', '7'], ['8', '8', '8']];
+const PLACE_THEORY = [['0', 'None', '없음'], ['1', 'Grade 1', 'Grade 1'], ['2', '2', '2'], ['3', '3', '3'], ['4', '4', '4'], ['5', '5', '5'], ['6', '6', '6']];
 const placeChips = (opts, val, set) => <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:10}}>{opts.map(([id, en, ko]) => <button key={id} className={'chip' + (id === val ? ' active' : '')} aria-pressed={id === val} style={{minHeight:40,padding:'6px 12px'}} onClick={() => set(id)}>{t(en, ko)}</button>)}</div>;
+const placeExam = (k) => { const s = PATH_STAGES[k]; if (!s || s.attic || s.stories || !s.en) return ''; const n = s.en[0]; return n === 'Prelim' ? 'Preliminary' : /^Grade \d$/.test(n) ? n : ''; };   // m43
 function placeStartRung(lad, said) {   // the rung of the grade the child says they have passed
   if (said === '0') return 0;
   const name = said === 'P' ? 'Prelim' : 'Grade ' + said, i = lad.findIndex(x => PATH_STAGES[x.k].en[0] === name);
@@ -23097,12 +23114,12 @@ function Placement({ onOpen, onClose }) {
   const shell = (body) => <div ref={box} data-testid="placement" data-phase={phase} style={{...chkBox(false),margin:'12px 0 0',textAlign:'left'}}>
     <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',gap:8}}><div style={chkKicker}>{t('Where should you start?', '어디서 시작할까?')}</div><button className="chip" style={{padding:'2px 10px',fontSize:12}} onClick={onClose}>{t('Close', '닫기')}</button></div>{body}</div>;
   if (phase === 'ask') return shell(<>
-    <div style={{fontSize:15,color:'#26296b',lineHeight:1.45,margin:'2px 0 8px'}}>{t('About ten minutes of quick questions, in two parts: piano (ears, keys, scales; sound on) and theory. They can be at different grades, and that is fine.', '빠른 문제로 10분쯤, 두 부분: 피아노(귀, 건반, 스케일; 소리 켜기)와 이론. 둘의 급이 달라도 괜찮아요.')}</div>
-    <div style={{fontSize:13,fontWeight:800,color:'#4a4d86',margin:'4px 0 4px'}}>{t('Piano exam passed', '통과한 피아노 시험')}</div>
+    <div style={{fontSize:15,color:'#26296b',lineHeight:1.45,margin:'2px 0 8px'}}>{t('About ten minutes of quick questions, in two parts: piano (ears, keys, scales; sound on) and theory. They can be at different levels, and that is fine.', '빠른 문제로 10분쯤, 두 부분: 피아노(귀, 건반, 스케일; 소리 켜기)와 이론. 둘의 레벨이 달라도 괜찮아요.')}</div>
+    <div style={{fontSize:13,fontWeight:800,color:'#4a4d86',margin:'4px 0 4px'}}>{t('Last piano exam you passed', '마지막으로 통과한 피아노 시험')}</div>
     {placeChips(PLACE_PIANO, pg, setPg)}
-    <div style={{fontSize:13,fontWeight:800,color:'#4a4d86',margin:'2px 0 4px'}}>{t('Theory exam passed', '통과한 이론 시험')}</div>
+    <div style={{fontSize:13,fontWeight:800,color:'#4a4d86',margin:'2px 0 4px'}}>{t('Last theory exam you passed', '마지막으로 통과한 이론 시험')}</div>
     {placeChips(PLACE_THEORY, tg, setTg)}
-    <div style={{fontSize:12.5,color:'#6d6f9c',margin:'0 0 8px'}}>{t('Not sure? Choose Not yet: the questions will find your level.', '잘 모르겠으면 ‘아직’을 골라요: 문제가 알아서 찾아 줘요.')}</div>
+    <div style={{fontSize:12.5,color:'#6d6f9c',margin:'0 0 8px'}}>{t('Not sure? Choose None: the questions will find your level.', '잘 모르겠으면 ‘없음’을 골라요: 문제가 알아서 찾아 줘요.')}</div>
     <button className="primary-btn" data-testid="place-start" onClick={begin}>{t('Start →', '시작 →')}</button>
   </>);
   if (phase === 'run' && items) return shell(<>
@@ -23127,11 +23144,13 @@ function Placement({ onOpen, onClose }) {
         <div style={{borderTop:'1px solid rgba(38,41,107,0.12)',paddingTop:8}}>
           <div style={{...chkKicker,margin:0}}>{t('Piano', '피아노')}</div>
           <div style={{fontSize:17,fontWeight:900,color:'#26296b'}}>{allPiano ? t('Every floor was easy. Start at the top: ', '모든 층이 쉬웠어요. 맨 위에서: ') + floorName(p.k) : floorName(p.k)}</div>
+          {placeExam(p.k) && <div data-testid="place-exam" style={{fontSize:12.5,color:'var(--muted)',marginTop:1}}>{t('About where a ' + placeExam(p.k) + ' exam sits', placeExam(p.k) + ' 시험쯤이에요')}</div>}
           <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:6}}><button className="primary-btn" data-testid="place-go" style={{width:'auto',padding:'9px 14px',fontSize:14}} onClick={() => onOpen(firstRoom)}>{t('Start here: ', '여기서 시작: ') + bkChapterName(firstRoom) + ' →'}</button></div>
         </div>
         <div style={{borderTop:'1px solid rgba(38,41,107,0.12)',paddingTop:8}}>
           <div style={{...chkKicker,margin:0}}>{t('Theory', '이론')}</div>
-          <div style={{fontSize:17,fontWeight:900,color:'#26296b'}}>{th ? theoryName(th.n) : t('Every theory grade was easy!', '모든 이론 급이 쉬웠어요!')}</div>
+          <div style={{fontSize:17,fontWeight:900,color:'#26296b'}}>{th ? theoryName(th.n) : t('Every theory level was easy!', '모든 이론 레벨이 쉬웠어요!')}</div>
+          {th && <div style={{fontSize:12.5,color:'var(--muted)',marginTop:1}}>{t('About where a Grade ' + th.n + ' theory exam sits', '이론 ' + th.n + '급 시험쯤이에요')}</div>}
           {th && <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:6}}><button className="primary-btn" data-testid="place-go-theory" style={{width:'auto',padding:'9px 14px',fontSize:14}} onClick={() => onOpen(thFirst)}>{t('Start here: ', '여기서 시작: ') + bkChapterName(thFirst) + ' →'}</button></div>}
         </div>
         {rev.length > 0 && <div data-testid="place-review" style={{borderTop:'1px solid rgba(38,41,107,0.12)',paddingTop:8}}>
@@ -23148,6 +23167,13 @@ function Placement({ onOpen, onClose }) {
   return null;
 }
 // The top of the map page: the one chapter to open next, and "How it works" folded away until asked for.
+function LevelCompare() {   // m43 (her 2 Nov: 'comparable, without copying the exam names')
+  const rows = [['Level 0', t('Before a first exam', '첫 시험 전')], ['Level ½', 'Preliminary'], ['Level 1–8', 'Grade 1–8']];
+  return <div data-testid="level-compare" style={{marginTop:10,background:'var(--surface)',border:'1.5px solid var(--navy-line)',borderRadius:12,padding:'10px 12px'}}>
+    <div style={{fontSize:13,color:'var(--navy-soft)',lineHeight:1.45,marginBottom:6}}>{t('Our levels follow the usual exam steps, so you can compare.', '우리 레벨은 보통의 시험 단계를 따라가요. 그래서 비교할 수 있어요.')}</div>
+    {rows.map(([a, b]) => <div key={a} style={{display:'flex',justifyContent:'space-between',gap:10,padding:'5px 0',borderTop:'1px solid var(--navy-line)',fontSize:13.5}}><b style={{color:'var(--navy)'}}>{a}</b><span style={{color:'var(--muted)'}}>≈ {b}</span></div>)}
+  </div>;
+}
 function MapHead({ onOpen }) {
   const [help, setHelp] = useState(false);
   const [place, setPlace] = useState(() => BOOT_PARAMS.get('start') === '1'), [, setPt] = useState(0);   // Build CR
@@ -23173,6 +23199,7 @@ function MapHead({ onOpen }) {
           <GuideNum n={i + 1} on={i === 2}/><span><b style={{display:'block',fontSize:14.5,color:'var(--navy)',marginBottom:2}}>{h}</b><span style={{fontSize:13,color:'var(--navy-soft)',lineHeight:1.45}}>{x}</span></span>
         </div>)}
       </div>}
+      {help && <LevelCompare/>}
     </div>
   );
 }
@@ -23945,7 +23972,7 @@ function playedSince(drillId, lessonDate) {
   });
   return first;
 }
-function TodayView({ link, onOpenChapter, onOpenTool, onAll, head, compact }) {
+function TodayView({ link, onOpenChapter, onOpenTool, onAll, head, compact, greet, tail }) {   // m43: greet(dateLabel), tail before the saved line
   const token = link.token, who = token.slice(0, 8);
   const [data, setData] = useState(() => { try { const c = JSON.parse(localStorage.getItem(TODAY_CACHE_KEY)); return c && c.token === token && c.data ? c.data : null; } catch (e) { return null; } });
   const [status, setStatus] = useState('loading'); // loading | ok | offline | invalid
@@ -24069,8 +24096,8 @@ function TodayView({ link, onOpenChapter, onOpenTool, onAll, head, compact }) {
 
   return (
     <div data-testid="today">
-      <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 900, fontSize: 32, margin: '0 0 2px', letterSpacing: '-0.02em', color: 'var(--navy)' }}>{t('Today', '오늘')}</h2>
-      <div style={{ color: 'var(--muted)', fontSize: 15, marginBottom: 16 }}>{dateLabel}</div>
+      {greet ? greet(dateLabel) : <><h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 900, fontSize: 32, margin: '0 0 2px', letterSpacing: '-0.02em', color: 'var(--navy)' }}>{t('Today', '오늘')}</h2>
+      <div style={{ color: 'var(--muted)', fontSize: 15, marginBottom: 16 }}>{dateLabel}</div></>}
       {head}
 
       {status === 'invalid' && <div role="status" style={{ ...card, color: 'var(--text)', fontSize: 14.5 }}>{t('This link isn’t active. Ask your teacher for a new one. You can keep practicing.', '이 링크는 지금 쓸 수 없어요. 선생님께 새 링크를 부탁해 보세요. 연습은 계속할 수 있어요.')}</div>}
@@ -24080,7 +24107,7 @@ function TodayView({ link, onOpenChapter, onOpenTool, onAll, head, compact }) {
       {status !== 'invalid' && data && (
         <div style={card}>
           <div style={{ ...kicker, display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-            <span>{lesson ? t('This week', '이번 주') + (lessonLabel ? ' · ' + t('lesson on ', '') + lessonLabel + t('', ' 레슨') : '') : t('From your teacher', '선생님이 올려준 것')}</span>
+            <span style={{ color: greet ? 'var(--coral)' : undefined }}>{greet ? t('From your teacher', '선생님이 올려준 것') + (lessonLabel ? ' · ' + lessonLabel : '') : lesson ? t('This week', '이번 주') + (lessonLabel ? ' · ' + t('lesson on ', '') + lessonLabel + t('', ' 레슨') : '') : t('From your teacher', '선생님이 올려준 것')}</span>
             {items.length > 0 && <span data-testid="hw-count" style={{ color: nDoneHw === items.length ? 'var(--good)' : 'var(--coral)', whiteSpace: 'nowrap' }}>{t(nDoneHw + ' of ' + items.length + ' done', items.length + '개 중 ' + nDoneHw + '개')}</span>}
           </div>
           {items.length > 0 && <div aria-hidden="true" style={{ height: 6, borderRadius: 4, background: 'var(--navy-line)', margin: '-2px 0 12px', overflow: 'hidden' }}><i style={{ display: 'block', height: '100%', width: Math.round(100 * nDoneHw / items.length) + '%', background: nDoneHw === items.length ? 'var(--good)' : 'var(--coral)', transition: 'width .3s' }} /></div>}
@@ -24114,7 +24141,7 @@ function TodayView({ link, onOpenChapter, onOpenTool, onAll, head, compact }) {
 
       {status !== 'invalid' && (
         <div style={card}>
-          <div style={kicker}>{t('Did you practise at the piano today?', '오늘 피아노 연습했어요?')}</div>
+          <div style={{ ...kicker, color: greet ? 'var(--coral)' : kicker.color }}>{t('Did you practise at the piano today?', '오늘 피아노 연습했어요?')}</div>
           <button disabled={busy || checked} aria-pressed={checked} onClick={() => save(mins)} style={{ width: '100%', border: 'none', background: checked ? 'var(--good)' : 'var(--coral)', color: '#fff', fontFamily: 'Inter, sans-serif', fontWeight: 800, fontSize: 18, padding: 16, borderRadius: 14, boxShadow: '0 4px 0 ' + (checked ? '#236a53' : '#b9421f'), cursor: checked ? 'default' : 'pointer' }}>
             {checked ? t('Practised today ✓', '오늘 연습 완료 ✓') : t('I practised today', '오늘 연습했어요')}
           </button>
@@ -24166,6 +24193,7 @@ function TodayView({ link, onOpenChapter, onOpenTool, onAll, head, compact }) {
         <button onClick={onAll} style={{ display: 'block', width: '100%', marginTop: 6, background: 'none', border: 'none', color: 'var(--muted)', fontWeight: 700, fontSize: 14, padding: 8, cursor: 'pointer' }}>{t('All chapters →', '전체 챕터 →')}</button>
       </div>
       )}
+      {tail}
       {(() => {
         const line = syncStatus === 'saved' ? t('Your progress is saved ✓', '진도가 저장됐어요 ✓') : (syncStatus === 'offline' && syHasUnsaved()) ? t('Not saved yet. We’ll save it when you’re online.', '아직 저장 전이에요. 인터넷에 연결되면 저장할게요.') : null;
         return line ? <div data-testid="sync-line" style={{ textAlign: 'center', fontSize: 12.5, color: 'var(--muted)', marginBottom: 8 }}>{line}</div> : null;
@@ -24328,32 +24356,48 @@ function StudentScales({ onOpenTool }) {
     </div>
   );
 }
-function StudentHome({ link, onOpenChapter, onOpenTool, onHome }) {
-  const sec = { marginTop: 26 };
+function StudentHome({ link, onOpenChapter, onOpenTool, onAll }) {   // m43 (her 2 Nov): teacher, practised, next room in a line, my progress, three quick tools
+  const [open, setOpen] = useState(null);   // 'scales' | 'rhythms': the old stamp sheets, opened from My progress
+  const totals = loadStepTotals(), ids = pathIds();
+  const status = Object.fromEntries(ids.map(id => [id, chapterStatus(id, totals)]));
+  const focus = guideFocus(status, ids), next = focus ? focus.id : null, nDone = ids.filter(id => status[id] === 'done').length;
+  const st = loadStamps(), nSc = ['major', 'minor'].reduce((a, m) => a + CLOCK_KEYS[m].reduce((b, k) => b + CLOCK_STEPS.filter(([x]) => st[(m === 'minor' ? 'm:' : '') + k + ':' + x]).length, 0), 0);
+  const nRh = [...RS_NOTES, ...RS_DOTS, ...RS_TIMES].filter(r => st['r:' + r.id]).length;
+  const k = next ? stageOfChapter(next) : -1, lv = k >= 0 ? floorName(k) : '';
+  const h = new Date().getHours(), hello = h < 12 ? t('Good morning.', '좋은 아침이에요.') : h < 18 ? t('Good afternoon.', '안녕하세요.') : t('Good evening.', '좋은 저녁이에요.');
+  const greet = (date) => <div data-testid="today-greet" style={{ display: 'flex', gap: 12, alignItems: 'center', margin: '0 0 14px' }}>
+    <img src={VIC_CAMEO} alt="" style={{ height: 58, flex: '0 0 auto' }}/>
+    <div><div style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontSize: 22, color: 'var(--navy)', lineHeight: 1.2 }}>{'“' + hello + '”'}</div>
+      <div style={{ fontSize: 13.5, color: 'var(--muted)', marginTop: 2 }}>{date}{lv ? ' · ' + lv : ''}</div></div>
+  </div>;
+  const lab = { fontSize: 11, fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--coral)', marginBottom: 10 };
+  const tile = (n, of, word, fn, on, id) => <button type="button" data-testid={id} aria-expanded={on == null ? undefined : on} onClick={fn} style={{ flex: 1, minWidth: 0, textAlign: 'left', background: on ? '#fff3ee' : 'var(--surface)', border: '1.5px solid ' + (on ? 'var(--coral)' : 'var(--navy-line)'), borderRadius: 12, padding: '10px 10px', cursor: 'pointer', font: 'inherit' }}>
+    <b style={{ display: 'block', fontSize: 22, color: 'var(--navy)', lineHeight: 1.1 }}>{n}{of ? <span style={{ fontSize: 14, color: 'var(--muted)' }}>/{of}</span> : null}</b><span style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.3 }}>{word}</span></button>;
+  const quick = [['scale-finder', '♯'], ['metronome', '♩'], ['practice-timer', '◷']];
+  const tail = <>
+    {next && <button type="button" data-testid="today-next" onClick={() => onOpenChapter(next)} style={{ display: 'flex', width: '100%', alignItems: 'center', gap: 6, background: 'none', border: 'none', borderTop: '1px solid var(--navy-line)', borderBottom: '1px solid var(--navy-line)', padding: '11px 4px', margin: '0 0 14px', font: 'inherit', fontSize: 14.5, color: 'var(--navy)', cursor: 'pointer', textAlign: 'left' }}>
+      <span style={{ color: 'var(--muted)', whiteSpace: 'nowrap' }}>{focus.kind === 'resume' ? t('Keep going:', '이어서:') : t('Next room:', '다음 방:')}</span>
+      <b style={{ minWidth: 0, overflowWrap: 'anywhere' }}>{bkChapterNo(next) + ' · ' + bkChapterName(next)}</b>
+      <span style={{ marginLeft: 'auto', color: 'var(--coral)', fontWeight: 900, whiteSpace: 'nowrap' }}>{t('Go in ›', '들어가기 ›')}</span></button>}
+    <div data-testid="today-progress" style={{ background: 'var(--surface)', border: '1.5px solid var(--navy-line)', borderRadius: 16, padding: 16, marginBottom: 14, boxShadow: '0 4px 18px rgba(38,41,107,0.05)' }}>
+      <div style={lab}>{t('My progress', '나의 진도')}</div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        {tile(nDone, null, t(nDone === 1 ? 'room done' : 'rooms done', '끝낸 방'), onAll, null, 'prog-rooms')}
+        {tile(nSc, 72, t('scale stamps', '스케일 도장'), () => setOpen(o => o === 'scales' ? null : 'scales'), open === 'scales', 'prog-scales')}
+        {tile(nRh, RS_TOTAL, t('rhythm stamps', '리듬 도장'), () => setOpen(o => o === 'rhythms' ? null : 'rhythms'), open === 'rhythms', 'prog-rhythms')}
+      </div>
+      {open === 'scales' && <div style={{ marginTop: 12 }}><StudentScales onOpenTool={onOpenTool}/></div>}
+      {open === 'rhythms' && <div style={{ marginTop: 12 }}><RhythmSheet/></div>}
+    </div>
+    <div style={{ ...lab, margin: '4px 0 8px' }}>{t('Quick tools', '바로 쓰는 도구')}</div>
+    <div data-testid="today-quick" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0,1fr))', gap: 8, marginBottom: 14 }}>
+      {quick.map(([id, g]) => { const tl = TOOLS.find(x => x.id === id); if (!tl) return null; return <button key={id} type="button" data-tool={id} onClick={() => onOpenTool(id)} style={{ background: 'var(--surface)', border: '1.5px solid var(--navy-line)', borderRadius: 12, padding: '10px 4px', cursor: 'pointer', font: 'inherit', textAlign: 'center' }}>
+        <span aria-hidden="true" style={{ display: 'block', fontSize: 20, color: 'var(--coral)', lineHeight: 1.1 }}>{g}</span><b style={{ display: 'block', fontSize: 13, color: 'var(--navy)', marginTop: 3 }}>{LANG === 'ko' && TOOL_KO[id] ? TOOL_KO[id][0] : tl.title}</b></button>; })}
+    </div>
+  </>;
   return (
     <div data-testid="student-home">
-      <TodayView link={link} onOpenChapter={onOpenChapter} onOpenTool={onOpenTool} onAll={() => {}} head={<HowItWorks/>} compact/>
-      {onHome && <div style={sec}><button className="primary-btn" data-testid="today-home" onClick={onHome}>{t('The Map by topic →', '주제별 지도 →')}</button></div>}
-      <div style={sec}>
-        <StaffHead title={t('My practice tools', '나의 연습 도구')}/>
-        <div style={{ height: 10 }}/>
-        <StudentTools onOpen={onOpenTool}/>
-      </div>
-      <div style={sec}>
-        <StaffHead title={t('My scales', '나의 스케일')}/>
-        <div style={{ height: 10 }}/>
-        <StudentScales onOpenTool={onOpenTool}/>
-      </div>
-      <div style={sec}>
-        <StaffHead title={t('My rhythms', '나의 리듬')}/>
-        <div style={{ height: 10 }}/>
-        <RhythmSheet/>
-      </div>
-      <div style={sec}>
-        <StaffHead title={t('My music map', '나의 음악 지도')}/>
-        <div style={{ height: 10 }}/>
-        <HouseMap onOpen={onOpenChapter} compact/>
-      </div>
+      <TodayView link={link} onOpenChapter={onOpenChapter} onOpenTool={onOpenTool} onAll={onAll} compact greet={greet} tail={tail}/>
     </div>
   );
 }
@@ -25616,7 +25660,7 @@ function theoryOf(id) {
   if (!THEORY_ROOM[room] || !fl || fl === '23' || fl === '7' || fl === '8' || fl === 'home') return null;
   return THEORY_ROOM[room];
 }
-const theoryName = (n) => t('Theory Grade ' + n, '이론 ' + n + '급');
+const theoryName = (n) => t('Theory, Level ' + n, '이론 레벨 ' + n);   // m43
 function TheoryTag({ id }) {
   const n = theoryOf(id); if (!n) return null;
   return <span data-theory={n} title={theoryName(n)} aria-label={theoryName(n)} style={{flex:'none',alignSelf:'center',fontSize:11.5,fontWeight:800,lineHeight:1,color:'#fffefa',background:'var(--navy)',borderRadius:4,padding:'4px 5px 3px',letterSpacing:'0.02em',fontVariantNumeric:'lining-nums'}}>{'T' + n}</span>;
@@ -25983,7 +26027,7 @@ function App() {
     if (x) setLesson({ ...x }); }, [st.drill, st.tool, T, st.lock]);
   OPEN_CH = (id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }; // Phase 360: chapter links inside a lesson
   // a student with a link always has a button back to the Today page on the Learn and Practice lists
-  const todayBack = showToday && !T ? <button className="ghost-btn" style={{fontSize:13,padding:'5px 12px',marginBottom:12}} onClick={() => { update({ view: 'today', tool: null, kit: null, drill: null, from: null }); try { window.scrollTo(0, 0); } catch (e) {} }}>{t('← Today', '← 오늘')}</button> : null;
+  const todayBack = !T ? <button className="ghost-btn" data-testid="back-practice" style={{fontSize:13,padding:'5px 12px',marginBottom:12}} onClick={() => { update({ view: 'practice', tool: null, kit: null, drill: null, from: null, lib: false }); try { window.scrollTo(0, 0); } catch (e) {} }}>{t('← Practice', '← 연습')}</button> : null;   // m43: House and Library sit inside Practice
   const toolBackCh = (() => { if (!st.tool || st.ret === 'toolbox' || st.ret === 'home' || st.view === 'practice' || (st.from && st.from.tool === st.tool)) return null;   // Build CY
     if (st.rc) return st.rc; if (st.lock) return null; const tl = TOOLS.find(x => x.id === st.tool); return tl && DRILLS.find(d => d.id === tl.ch) ? tl.ch : null; })();
   const homeBack = '← ' + (st.hs === 'try' ? t('Try', '해 보기') : ((homeCatById(st.hc) || (st.ha && homeCats(st.ha).length === 1 ? homeCats(st.ha)[0] : null) || {}).name || t('Lessons', '레슨')));
@@ -26031,11 +26075,11 @@ function App() {
         <StudentBanner sl={sl}/>
         {T && !st.lock && !lesson && <TLessonPick onStart={(s) => { const cur = tLessonGet(); if (cur && String(cur.studentId) !== String(s.id) && !window.confirm(t('A lesson with ' + cur.name + ' is still open. Start a new one?', cur.name + '의 레슨이 아직 열려 있어요. 새로 시작할까요?'))) return; setLesson({ ...tLessonStart(s) }); }}/>}
         {preview && <div style={{background:'#26296b',color:'#fff',borderRadius:10,padding:'8px 12px',marginBottom:12,fontSize:13.5,display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}><span>{t('You’re seeing what a student sees.', '학생에게 보이는 화면이에요.')}</span><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setPreview(false)}>{t('Back to teacher view', '교사 화면으로')}</button></div>}
-        {!st.lock && !(showToday && !T) && (
+        {!st.lock && (T || showToday) && (   /* m43: a linked student gets Today · Practice */
           <div style={{display:'flex',gap:6,borderBottom:'1.5px solid var(--navy-line)',marginBottom:16}}>
-            {(T ? [['map', t('Library', '서재')], ['house', t('House', '집')], ...(booksUnlocked() ? [['books', t('Books', '책')], ['printables', t('Printables', '교구')]] : []), ['practice', t('Practice', '연습')], ['lib', <span style={{whiteSpace:'nowrap'}}><span style={{fontSize:'0.8em'}}>🔒</span>{t('Lessons', '레슨')}</span>]]   /* m16: the old Home categories, hers alone, at the end */ : (showToday ? [['today', t('Today', '오늘')], ['map', t('Map', '지도')], ['practice', t('Practice', '연습')]] : [['map', t('Map', '지도')], ['practice', t('Practice', '연습')]])).map(([v, l]) => { const on = v === 'map' ? (T ? !st.lib && (st.view === 'home' || (st.view === 'tools' && st.ret === 'toolbox')) : !st.lib && (st.view === 'path' || st.view === 'chapters' || st.view === 'home')) : v === 'house' ? (st.view === 'path' || st.view === 'chapters') : v === 'lib' ? !!st.lib && (st.view === 'home' || (st.view === 'tools' && st.ret === 'home')) : st.view === v;   // m19: Library and House, two tabs
+            {(T ? [['map', t('Library', '서재')], ['house', t('House', '집')], ...(booksUnlocked() ? [['books', t('Books', '책')], ['printables', t('Printables', '교구')]] : []), ['practice', t('Practice', '연습')], ['lib', <span style={{whiteSpace:'nowrap'}}><span style={{fontSize:'0.8em'}}>🔒</span>{t('Lessons', '레슨')}</span>]]   /* m16: the old Home categories, hers alone, at the end */ : [['today', t('Today', '오늘')], ['practice', t('Practice', '연습')]]).map(([v, l]) => { const on = v === 'map' ? (T ? !st.lib && (st.view === 'home' || (st.view === 'tools' && st.ret === 'toolbox')) : !st.lib && (st.view === 'path' || st.view === 'chapters' || st.view === 'home')) : v === 'house' ? (st.view === 'path' || st.view === 'chapters') : v === 'lib' ? !!st.lib && (st.view === 'home' || (st.view === 'tools' && st.ret === 'home')) : (!T && v === 'practice') ? ['practice', 'path', 'chapters', 'home', 'tools'].includes(st.view) : st.view === v;   // m19: Library and House, two tabs
               return (
-              <button key={v} onClick={() => { update({ view: v === 'map' ? mapPick(HM, T) : v === 'house' ? 'path' : v === 'lib' ? 'home' : v, lib: v === 'lib', tool: null, kit: null, from: null, ret: null, drill: (v === 'practice' || v === 'students') ? st.drill : null, ...(v === 'map' || v === 'lib' || v === 'house' ? { ha: null, hc: null, hs: null } : {}) }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderBottom:'3px solid ' + (on ? 'var(--coral)' : 'transparent'),marginBottom:-1.5,background:'transparent',padding:'10px 0',fontFamily:"'Playfair Display', Georgia, serif",fontSize:T ? 13.5 : 18,fontWeight:800,cursor:'pointer',
+              <button key={v} onClick={() => { update({ view: v === 'map' ? mapPick(HM, T) : v === 'house' ? 'path' : v === 'lib' ? 'home' : v, lib: v === 'lib', tool: null, kit: null, from: null, ret: null, drill: T && (v === 'practice' || v === 'students') ? st.drill : null, ...(v === 'map' || v === 'lib' || v === 'house' ? { ha: null, hc: null, hs: null } : {}) }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderBottom:'3px solid ' + (on ? 'var(--coral)' : 'transparent'),marginBottom:-1.5,background:'transparent',padding:'10px 0',fontFamily:"'Playfair Display', Georgia, serif",fontSize:T ? 13.5 : 18,fontWeight:800,cursor:'pointer',
                 color:on ? 'var(--navy)' : 'var(--muted)'}}>{l}</button>
             ); })}
           </div>
@@ -26050,7 +26094,7 @@ function App() {
         ) : (st.view === 'tools' || st.view === 'practice') ? (
           st.tool
             ? <ToolView id={st.tool} locked={st.lock} backAlways={!!toolBackCh} backLabel={st.from && st.from.tool === st.tool ? '← Today' : st.view === 'practice' ? '← Practice' : st.ret === 'home' ? homeBack : (st.ret === 'toolbox' && T) ? t('← Library', '← 서재') : toolBackCh ? '← ' + bkChapterName(toolBackCh) : homeBack} onBack={() => st.from && st.from.tool === st.tool ? update({ tool: null, view: 'today', from: null }) : st.view !== 'practice' && st.ret !== 'home' && toolBackCh ? update({ view: 'path', tool: null, drill: toolBackCh, tab: 'learn', level: 1, ret: null, rc: null }) : update({ tool: null, view: (st.view === 'practice' ? null : st.ret === 'toolbox' ? 'home' : st.ret) || (T && st.view === 'tools' ? 'home' : st.view), ret: null })} onChapter={(id) => update({ view: st.ret === 'toolbox' ? 'toolbox' : 'path', tool: null, drill: id, tab: 'learn', level: 1 })}/>
-            : <>{todayBack}<PracticeView onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
+            : <PracticeView onOpen={(id) => { update({ tool: id }); try { window.scrollTo(0, 0); } catch (e) {} }} onHouse={() => { update({ view: 'path', tool: null, drill: null, from: null, lib: false }); try { window.scrollTo(0, 0); } catch (e) {} }} onLibrary={HM ? () => { update({ view: 'home', lib: false, ha: null, hc: null, hs: null, drill: null, from: null }); try { window.scrollTo(0, 0); } catch (e) {} } : null}/>
         ) : st.view === 'home' && HM && !inChapter && !st.lock ? (
           (T && (st.lib || st.ha || st.hc || st.hs))
             ? <ConceptHome st={st} update={update}/>
