@@ -20469,6 +20469,39 @@ function LessonPath({ onOpen, onBack }) {
 // A tool lives in one home category but can also be listed in others (Phase 237: the metronome is essential practice kit).
 const TOOL_ALSO_IN = { 'metronome': ['practice'], 'scale-finder': ['k-play'] };
 const PRACTICE_IDS = ['arm-moves', 'posture-check', 'beat-target', 'practice-timer', 'practice-dice', 'perfect-counter', 'sight-reading', 'echo', 'term-cards', 'make-card', 'count-along', 'metronome', 'find-every', 'write-note', 'fill-bar'];
+// m56 (her 2 Nov, mockup approved): one playing card per floor checkpoint passed (A, 2, 3 …; spades, hearts, diamonds, clubs in turn)
+const CARD_SEEN_KEY = 'pb_cards_seen_v1';
+const CARD_RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'], CARD_SUITS = ['♠', '♥', '♦', '♣'];
+function myCards() {
+  const rec = loadChecks().floors;
+  return checkFloors().map((f, i) => { const r = rec[f.key]; return { key: f.key, name: chkFloorName(f), rank: CARD_RANKS[i % 13], suit: CARD_SUITS[i % 4], on: !!(r && !(r.review || []).length), at: r && r.at }; });
+}
+function PlayingCard({ c, small }) {
+  const col = c.suit === '♥' || c.suit === '♦' ? '#e4572e' : '#26296b';
+  const box = { position: 'relative', aspectRatio: '5 / 7', borderRadius: 10, border: '1.5px solid #26296b', boxShadow: 'inset 0 0 0 4px #fff, inset 0 0 0 5px rgba(38,41,107,0.25)', background: '#fff', overflow: 'hidden' };
+  if (!c.on) return <div style={{ ...box, background: 'repeating-linear-gradient(45deg,#26296b 0 6px,#2f3278 6px 12px)', boxShadow: 'inset 0 0 0 4px #fff' }}>
+    <span style={{ position: 'absolute', left: 0, right: 0, top: '34%', textAlign: 'center', color: '#c9a24f', font: '700 26px Georgia, serif' }}>?</span>
+    {!small && <span style={{ position: 'absolute', left: 4, right: 4, bottom: 6, textAlign: 'center', fontSize: 9.5, fontWeight: 700, color: '#c9cbe6' }}>{c.name}</span>}</div>;
+  const corner = (rot) => <b style={{ position: 'absolute', [rot ? 'right' : 'left']: 7, [rot ? 'bottom' : 'top']: small ? 4 : 20, fontSize: small ? 10 : 13, lineHeight: 1, textAlign: 'center', color: col, transform: rot ? 'rotate(180deg)' : 'none' }}>{c.rank}<br/>{c.suit}</b>;
+  return <div style={box}>{corner(false)}<span style={{ position: 'absolute', left: 0, right: 0, top: '26%', textAlign: 'center', fontSize: small ? 26 : 38, color: col }}>{c.suit}</span>{!small && corner(true)}
+    {!small && <span style={{ position: 'absolute', left: 4, right: 4, bottom: 5, textAlign: 'center', fontSize: 9.5, fontWeight: 700, color: '#6d6f9c' }}>{c.name}</span>}</div>;
+}
+function MyCards() {
+  const cards = myCards(), got = cards.filter(c => c.on);
+  const [fresh] = useState(() => { let seen = {}; try { seen = JSON.parse(localStorage.getItem(CARD_SEEN_KEY) || '{}') || {}; } catch (e) {}
+    const f = got.filter(c => !seen[c.key]).sort((a, b) => (b.at || 0) - (a.at || 0))[0];
+    if (f) { const m = { ...seen }; got.forEach(c => { m[c.key] = 1; }); try { localStorage.setItem(CARD_SEEN_KEY, JSON.stringify(m)); } catch (e) {} }
+    return f || null; });   /* the new card shows once, on this visit */
+  if (!cards.length) return null;
+  return <div data-testid="my-cards" style={{ marginTop: 18 }}>
+    <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--coral)', margin: '0 0 2px' }}>{t('My cards', '나의 카드')}</div>
+    <div style={{ fontSize: 13, color: 'var(--muted)', margin: '0 0 10px' }}>{t('Pass a floor’s checkpoint and the butler deals you its card. ' + got.length + ' of ' + cards.length + '.', '층 중간점검을 통과하면 버틀러가 그 층의 카드를 줘요. ' + cards.length + '장 중 ' + got.length + '장.')}</div>
+    {fresh && <div data-testid="new-card" style={{ display: 'flex', gap: 12, alignItems: 'center', background: 'var(--surface)', border: '1.5px solid var(--navy-line)', borderRadius: 14, padding: 12, marginBottom: 12 }}>
+      <div style={{ width: 62, flex: 'none' }}><PlayingCard c={fresh} small/></div>
+      <div><b style={{ color: 'var(--navy)' }}>{t('New card!', '새 카드!')}</b><div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.4 }}>{t('You passed the ' + fresh.name + ' checkpoint. The butler deals you the ' + fresh.rank + ' ' + fresh.suit + '.', fresh.name + ' 중간점검을 통과했어요. 버틀러가 ' + fresh.suit + fresh.rank + ' 카드를 줘요.')}</div></div></div>}
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>{cards.map(c => <PlayingCard key={c.key} c={c}/>)}</div>
+  </div>;
+}
 const PRACTICE_GROUPS = [[['Practice tools', '연습 도구'], ['metronome', 'practice-timer', 'practice-dice', 'perfect-counter']]];   // m43; m44 (her 2 Nov): only these four under the doors, the rest live in their rooms
 function PracticeView({ onOpen, onHouse, onLibrary }) {
   if (!UI_TEACHER) {   // m43 (her 2 Nov: 'Today and Practice only; House and Library inside Practice')
@@ -20483,6 +20516,7 @@ function PracticeView({ onOpen, onHouse, onLibrary }) {
           <div style={{fontSize:11,fontWeight:900,letterSpacing:'0.1em',textTransform:'uppercase',color:'var(--coral)',margin:'0 0 2px'}}>{t(nm[0], nm[1])}</div>
           {ids.map((id, i) => { const tl = TOOLS.find(x => x.id === id); if (!tl) return null; return <SlimRow key={id} title={id === 'perfect-counter' ? t('5 in a row', '5번 연속') : LANG === 'ko' && TOOL_KO[id] ? TOOL_KO[id][0] : tl.title} sub={tl.blurb} onClick={() => onOpen(id)} last={i === ids.length - 1}/>; })}
         </div>)}
+        {!isVisitor() && <MyCards/>}
       </div>
     );
   }
@@ -23190,7 +23224,7 @@ function MapHead({ onOpen }) {
             <span><span style={{display:'block',fontSize:11.5,fontWeight:800,letterSpacing:'0.08em',textTransform:'uppercase',opacity:0.8}}>{focus.kind === 'resume' ? t('Keep going', '이어서 하기') : focus.kind === 'next' ? t('Next on your path', '나의 경로에서 다음') : focus.kind === 'placed' ? t('Your start', '나의 시작') : t('Start at the beginning', '처음부터 시작하기')}</span>{label(next)}</span><span style={{fontSize:20}}>→</span></button>
         : <div style={{fontSize:14.5,fontWeight:800,color:'var(--good)',textAlign:'center',margin:'6px 0'}}>{t('Every chapter on the path is done. Wonderful!', '경로의 모든 챕터를 마쳤어요. 멋져요!')}</div>}
       <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8,flexWrap:'wrap',marginTop:8}}>
-        <button className={'chip' + (place ? ' active' : '')} data-testid="map-place" aria-expanded={place} style={{padding:'3px 11px',fontSize:12.5,fontWeight:800}} onClick={() => setPlace(v => !v)}>{loadPlace() ? t('Find my start again ▸', '시작점 다시 찾기 ▸') : focus && focus.kind === 'start' ? t('Already playing? Find your start ▸', '이미 치고 있나요? 시작점 찾기 ▸') : t('Where should I start? ▸', '어디서 시작할까? ▸')}</button>
+        <button className={'chip' + (place ? ' active' : '')} data-testid="map-place" aria-expanded={place} style={{padding:'3px 11px',fontSize:12.5,fontWeight:800}} onClick={() => setPlace(v => !v)}>{loadPlace() ? t('Find my start again ▸', '시작점 다시 찾기 ▸') : isVisitor() ? t('Which floor should I start on? ▸', '어느 층에서 시작할까? ▸') : focus && focus.kind === 'start' ? t('Already playing? Find your start ▸', '이미 치고 있나요? 시작점 찾기 ▸') : t('Where should I start? ▸', '어디서 시작할까? ▸')}</button>
         <button className={'chip' + (help ? ' active' : '')} data-testid="map-help" aria-expanded={help} style={{padding:'3px 11px',fontSize:12.5}} onClick={() => setHelp(h => !h)}>{help ? t('Hide how it works ▴', '사용법 접기 ▴') : t('? How it works', '? 사용법')}</button>
       </div>
       {place && <Placement onOpen={onOpen} onClose={() => { setPlace(false); setPt(x => x + 1); }}/>}
@@ -24957,6 +24991,18 @@ function thCleanLay(state, rooms, cmp) {   // m18: the clean room -- the number,
   const sq = cmp ? 14 : 17, h = pad + sq + 5 + ml * tz * 1.12 + 4 + sl * sz * 1.3 + pad;
   return { clean: true, tz, sz, pad, sq, lines, subs, ml, sl, h: Math.ceil(h) };
 }
+// m56 (her 2 Nov): a visitor sees a few well-made rooms on each floor; every room opens with a teacher's student link.
+const VIS_OPEN = new Set(['first-steps', 'note-values', 'staff', 'rhythm', 'scales', 'intervals', 'key-signatures', 'melody', 'harmony-2', 'harmony-3', 'melody-3', 'keys-4', 'harmony-5', 'arps-6', 'pieces-78', 'composers', 'styles']);
+const isVisitor = () => !UI_TEACHER && !(linkTokenFromHash() || loadStoredLink());
+const visLocked = (id) => isVisitor() && !!id && !VIS_OPEN.has(id);
+function VisitorLock({ onBack }) {
+  return <div data-testid="visitor-lock" className="fade-up" style={{textAlign:'center',background:'var(--surface)',border:'1.5px solid var(--navy-line)',borderRadius:16,padding:'26px 18px',margin:'10px 0'}}>
+    <svg width="40" height="44" viewBox="0 0 40 44" aria-hidden="true"><rect x="5" y="19" width="30" height="22" rx="4" fill="var(--navy)"/><path d="M12 19v-6a8 8 0 0 1 16 0v6" fill="none" stroke="var(--navy)" strokeWidth="4"/><circle cx="20" cy="30" r="3" fill="#c9a24f"/></svg>
+    <div style={{fontFamily:"'Playfair Display', Georgia, serif",fontSize:22,fontWeight:800,color:'var(--navy)',margin:'8px 0 4px'}}>{t('This room is locked', '잠긴 방이에요')}</div>
+    <div style={{fontSize:14.5,color:'var(--muted)',lineHeight:1.5,maxWidth:340,margin:'0 auto 14px'}}>{t('Every room opens with a student link from your teacher. The open rooms on each floor are yours to try now.', '모든 방은 선생님이 주는 학생 링크로 열려요. 층마다 열린 방은 지금 바로 해 볼 수 있어요.')}</div>
+    <button className="primary-btn" style={{width:'auto',padding:'10px 20px'}} onClick={onBack}>{t('Back to the house', '집으로 돌아가기')}</button>
+  </div>;
+}
 function thRoomClean(view, state, id, x, y, w, h, fs, out, dimNew, lay, cmp) {
   const st = state[id], on = id === view.here, done = st === 'done', num = view.nums[id], { tz, sz, pad, sq } = lay;
   let s = '<rect x="' + pFix(x) + '" y="' + pFix(y) + '" width="' + pFix(w) + '" height="' + pFix(h) + '" fill="#fff" stroke-width="1"/>';
@@ -24974,6 +25020,9 @@ function thRoomClean(view, state, id, x, y, w, h, fs, out, dimNew, lay, cmp) {
     s += '<rect x="' + pFix(rx0) + '" y="' + pFix(ry0) + '" width="' + rw + '" height="' + rh + '" rx="' + (rh / 2) + '" fill="#fff" stroke="' + ST.C + '" stroke-width="0.9"/>' + stT(rx0 + rw / 2, ry0 + rh - (cmp ? 2.4 : 2.8), t('review', '다시'), { size: cmp ? 7 : 8.4, weight: 800, fill: ST.C, anchor: 'middle' }); }
   if (star) s += '<path d="' + chkStarD(x + w - (cmp ? 9 : 12), y + h - (cmp ? 9 : 12), cmp ? 5.5 : 7.5) + '" fill="' + ST.G + '" stroke="#fff" stroke-width="0.8"/>';
   if (view.focus && thArea(id) !== view.focus) s += '<rect x="' + pFix(x + 1) + '" y="' + pFix(y + 1) + '" width="' + pFix(w - 2) + '" height="' + pFix(h - 2) + '" fill="#fff" opacity="0.78" stroke="none"/>';
+  if (view.lock && view.lock(id)) { const lx = x + w - (cmp ? 13 : 16), ly = y + (cmp ? 5 : 7);   /* m56: a visitor's locked room, greyed, a small padlock */
+    s += '<rect x="' + pFix(x + 1) + '" y="' + pFix(y + 1) + '" width="' + pFix(w - 2) + '" height="' + pFix(h - 2) + '" fill="#f4f1ea" opacity="0.72" stroke="none"/>'
+      + '<rect x="' + pFix(lx) + '" y="' + pFix(ly + 4) + '" width="9" height="7" rx="1.5" fill="' + ST.N + '"/><path d="M' + pFix(lx + 2) + ' ' + pFix(ly + 4) + 'v-1.6a2.5 2.5 0 0 1 5 0v1.6" fill="none" stroke="' + ST.N + '" stroke-width="1.4"/>'; }
   const nm = CH_SHORT[id] || [id, ''], sb = CH_SUB[id];
   const label = num + '. ' + t(nm[0], nm[1] || nm[0]) + (sb ? ': ' + t(sb[0], sb[1]) : '') + (done ? t(', done', ', 완료') : on ? t(', you are here', ', 지금 여기') : '') + (star ? t(', check passed', ', 체크 통과') : '');
   out.btns.push({ num, html: '<g data-chapter="' + id + '" data-status="' + st + '" data-here="' + (on ? '1' : '0') + '" data-clean="1" role="button" tabindex="0" aria-label="' + penEsc(label).replace(/"/g, '&quot;') + '" style="cursor:pointer"><rect x="' + pFix(x + 1) + '" y="' + pFix(y + 1) + '" width="' + pFix(w - 2) + '" height="' + pFix(h - 2) + '" fill="transparent"/></g>' });
@@ -25196,7 +25245,7 @@ function HouseMap({ onOpen, compact, noIntro }) {
   const hereK = Math.max(0, stages.findIndex(x => x.ids.includes(here))), effK = openK == null ? hereK : openK;
   const chkByK = {}, chkOk = {}, chkRec = loadChecks().floors; checkFloors().forEach(f => { (chkByK[f.k] = chkByK[f.k] || []).push(f); const r = chkRec[f.key]; if (r && !r.review.length) chkOk[f.key] = 1; });   // m30
   const [chkPick, setChkPick] = useState(null);
-  const view = { stages, here, nums, openK: effK, chk: chkByK, chkOk, focus: null, star, review: placeReview(), pawn: name ? (x, y, k) => stPiece(VIC_PAWN_NAVY, x, y, k) : null };   // Build DP: the rooms to review
+  const view = { stages, here, nums, openK: effK, chk: chkByK, chkOk, focus: null, star, review: placeReview(), lock: isVisitor() ? visLocked : null, pawn: name ? (x, y, k) => stPiece(VIC_PAWN_NAVY, x, y, k) : null };   // Build DP: the rooms to review
   const house = useMemo(() => townhouseSvg(view, { wide }), [sig, UI_TEACHER, LANG, effK, Object.keys(chkOk).join(',')]);   // m18: the T marks follow the teacher view
   const hall = useMemo(() => townhouseSvg({ ...view, openK: -1 }, { hall: true, whole: true, wide }), [sig, Object.keys(chkOk).join(',')]);   // m31 (her 'this should come with it'): the closed house, roof to door, before you go in
   const week = null;   // m11: the pawn board left the Map (weekSvg kept for later use)
@@ -25859,6 +25908,11 @@ function tLessonNote(kind, id, label) {
   if (!x.shown.some(it => it.kind === kind && it.id === id)) { x.shown.push({ kind, id, label: String(label || id).slice(0, 80), at: Date.now() }); try { localStorage.setItem(TLESSON_KEY, JSON.stringify(x)); } catch (e) {} tLessonPush(x); }
   return x;
 }
+function tTeacherWho() {   // m56: the dashboard login kept in this browser -> { email } or null
+  try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (!/^sb-.*-auth-token$/.test(k)) continue;
+    const v = JSON.parse(localStorage.getItem(k) || 'null'); const u = v && (v.user || (v.currentSession && v.currentSession.user)); if (u && (v.refresh_token || v.access_token)) return { email: u.email || '' }; } } catch (e) {}
+  return null;
+}
 function tTeacherSession() {   // the dashboard's login in this browser (supabase-js keeps it as sb-<project>-auth-token)
   try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (!/^sb-.*-auth-token$/.test(k)) continue;
     const s = JSON.parse(localStorage.getItem(k) || 'null'); const tk = s && (s.access_token || (s.currentSession && s.currentSession.access_token)); const u = s && (s.user || (s.currentSession && s.currentSession.user));
@@ -26055,6 +26109,9 @@ function App() {
               {st.lock ? (st.view === 'kit' ? (st.kn || t('Your tools', '내 도구')) : st.tool ? (TOOLS.find(tl => tl.id === st.tool) || {}).title : active.label) : <button type="button" data-testid="home-title" onClick={() => { update({ view: mapPick(HM, T), lib: false, tool: null, kit: null, from: null, ret: null, drill: null, ha: null, hc: null, hs: null }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{border:'none',background:'none',padding:0,margin:0,font:'inherit',color:'inherit',letterSpacing:'inherit',cursor:'pointer',textAlign:'left'}}>{t('Practice Drills', '연습 드릴')}</button>}   {/* m19: the title goes home */}
             </h1>
             {T && <div data-testid="teacher-label" style={{fontSize:11,fontWeight:900,color:'#e4572e',letterSpacing:'0.06em',textTransform:'uppercase',marginTop:2}}>{t('Teacher view', '교사 화면')}</div>}
+            {T && (() => { const w = tTeacherWho(); return <div data-testid="signin-state" style={{fontSize:12,fontWeight:700,marginTop:3,color:w ? '#2e8a6e' : '#9a9cc0',display:'flex',alignItems:'center',gap:5}}>
+              <span aria-hidden="true" style={{width:7,height:7,borderRadius:4,background:w ? '#2e8a6e' : '#c9c6d9',display:'inline-block'}}/>
+              {w ? t('Signed in' + (w.email ? ' as ' + w.email : ''), (w.email ? w.email + '(으)로 ' : '') + '로그인됨') : <span>{t('Not signed in · ', '로그인 안 됨 · ')}<a href="login.html" style={{color:'#e4572e'}}>{t('Sign in', '로그인')}</a></span>}</div>; })()}
           </div>
           <div style={{display:'flex',flexWrap:'wrap',justifyContent:'flex-end',alignItems:'center',gap:8,flex:'0 1 auto',minWidth:0,marginLeft:'auto'}}>
             {!T && <button className="chip" style={{padding:'3px 9px',fontSize:12}} onClick={toggleLang} title={t('한국어로 보기', 'View in English')}>{lang === 'ko' ? 'EN' : '한국어'}</button>}
@@ -26111,7 +26168,7 @@ function App() {
           : T && st.view === 'books'
             ? <div className="fade-up"><PageIntro title={t('Books', '책')} text={t('The printed books (Lesson Book, Workbook, Teacher copy for every chapter) and the checkpoints on paper.', '인쇄용 책(챕터마다 레슨북, 워크북, 교사용)과 종이 중간점검.')}/><BooksShelf/></div>
             : <>{todayBack}{HM && !T && <div style={{display:'flex',justifyContent:'flex-end',margin:'0 0 8px'}}><button type="button" className="chip" data-map-library onClick={() => { mapSave('topics'); update({ view: 'home', lib: false, ha: null, hc: null, hs: null, drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{padding:'4px 12px',fontSize:13,fontWeight:800}}>{t('The library ›', '서재 ›')}</button></div>}<MapHome onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
-        ) : <>
+        ) : visLocked(st.drill) ? <VisitorLock onBack={() => { update({ view: 'path', drill: null, from: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/> : <>
         {!st.lock && (() => {
           const sg = catOfChapter(active.id) ? { title: catOfChapter(active.id).name } : null, list = orderedChapterIds(), k = list.indexOf(active.id);
           const fromToday = !T && !!st.from && st.from.drill === st.drill;
