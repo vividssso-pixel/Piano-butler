@@ -900,6 +900,42 @@ const hwPlain = (x) => String(x).replace(/^\s*(?:[-*•·]|\d+[.)])\s+/, "").tri
 const keysOf = (text) => { const ln = String(text || "").split(/\r?\n/).map(hwPlain).find(x => HW_KEYS_RE.test(x)); if (!ln) return null; const k = HW_KEYS_RE.exec(ln)[1].split(/[\s,]+/).map(keyId); return KEYS_FIFTHS.filter(x => k.includes(x)); };
 const latestKeys = (logs) => { for (const l of [...(logs || [])].sort((a, b) => String(b.date).localeCompare(String(a.date)) || (Number(b.id) || 0) - (Number(a.id) || 0))) { const k = keysOf(l.homework); if (k) return k; } return null; };   // null: never set
 const keysLineShow = (text) => String(text || "").replace(/^\s*(?:(?:[-*•·]|\d+[.)])\s+)?\[keys:([^\]]{0,80})\]\s*$/m, (m) => { const ks = keysOf(m) || []; return ks.length ? "Keys: " + ks.map(x => KEY_LABEL[x] || x).join(" ") : "Keys: the chapters' own"; });
+// m49 (her 2 Nov): scales like the pieces. Add a scale (major and its relative minor side by side), then tap its stage.
+// Stored in lesson_logs.technical as "[s3 ♩80] G major"; the twelve-key maps take their keys from the scales added.
+const SC_MIN = ["A", "E", "B", "F♯", "C♯", "G♯", "E♭", "B♭", "F", "C", "G", "D"];
+const scMaj = (k) => (KEY_LABEL[k] || k);
+const scOrder = (t) => { const m = /^(.+?) (major|minor)$/.exec(t); if (!m) return 99; const i = m[2] === "major" ? KEYS_FIFTHS.map(scMaj).indexOf(m[1]) : SC_MIN.indexOf(m[1]); return i < 0 ? 99 : i * 2 + (m[2] === "minor" ? 1 : 0); };
+const scKeys = (items) => KEYS_FIFTHS.filter((k, i) => items.some(it => it.t === scMaj(k) + " major" || it.t === SC_MIN[i] + " minor"));
+function ScalesField({ items, onChange }) {
+  const [pick, setPick] = useState(false);
+  const rows = items.filter(it => it.t && it.t.trim());
+  const has = (t) => rows.some(it => it.t === t);
+  const toggle = (t) => { const next = has(t) ? rows.filter(it => it.t !== t) : [...rows, { t, r: "", b: "" }]; next.sort((a, b) => scOrder(a.t) - scOrder(b.t)); onChange(next.length ? next : [{ t: "", r: "" }]); };
+  const patch = (i, pt) => onChange(rows.map((it, j) => j === i ? { ...it, ...pt } : it));
+  const half = (t, label, top) => { const on = has(t); return <button type="button" data-scale={t} aria-pressed={on} onClick={() => toggle(t)}
+    style={{ display: "block", width: "100%", border: "none", borderTop: top ? "none" : "1px solid #e9e2d2", padding: "7px 2px", background: on ? "#26296b" : "white", color: on ? "white" : top ? "#26296b" : "#62649a", fontWeight: top ? 800 : 700, fontSize: top ? 13 : 12, cursor: "pointer" }}>{label}</button>; };
+  return (
+    <div data-testid="scales-field">
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginBottom: 4 }}>
+        <span className="field-label" style={{ color: "#26296b", marginBottom: 0 }}>Scales</span>
+        <button type="button" onClick={() => setPick(x => !x)} aria-expanded={pick} style={{ fontSize: 10, fontWeight: 700, padding: "3px 10px", borderRadius: 99, cursor: "pointer", border: "1px solid " + (pick ? "#26296b" : "#e9e2d2"), background: pick ? "#ecebf5" : "white", color: pick ? "#26296b" : "#62649a" }}>{pick ? "Done" : "+ Add a scale"}</button>
+      </div>
+      <p className="text-xs text-slate-400 mb-2">Each major sits over its relative minor. Tap to add or remove, then tap the stage like a piece. These keys also go on the student's twelve-key maps.</p>
+      {pick && <div data-testid="scale-pick" style={{ display: "grid", gridTemplateColumns: "repeat(6, minmax(0, 1fr))", gap: 6, marginBottom: 10 }}>
+        {KEYS_FIFTHS.map((k, i) => <div key={k} style={{ border: "1.5px solid #d9d3c4", borderRadius: 12, overflow: "hidden" }}>{half(scMaj(k) + " major", scMaj(k), true)}{half(SC_MIN[i] + " minor", SC_MIN[i] + "m", false)}</div>)}
+      </div>}
+      {rows.map((it, i) => (
+        <div key={it.t} data-scale-row={it.t} style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#26296b", background: "#ecebf5", borderRadius: 10, padding: "8px 12px" }}>{it.t}</div>
+            <StageBar it={it} onPatch={pt => patch(i, pt)}/>
+          </div>
+          <button type="button" onClick={() => toggle(it.t)} aria-label={"Remove " + it.t} style={{ flex: "0 0 22px", marginTop: 8, border: "none", background: "transparent", color: "#9b9cbd", fontSize: 18, cursor: "pointer", padding: 0 }}>×</button>
+        </div>
+      ))}
+    </div>
+  );
+}
 function KeysField({ keys, onChange }) {
   const on = new Set(keys);
   const chip = (active) => ({ minHeight: 44, padding: "4px 6px", borderRadius: 99, border: "1.5px solid " + (active ? "#26296b" : "#d9d3c4"), background: active ? "#26296b" : "#fff", color: active ? "#fff" : "#26296b", fontWeight: 800, fontSize: 13, cursor: "pointer" });
@@ -1269,16 +1305,17 @@ function LogModal({ student, existingLog, currentMonth, lastLog, keysNow, onSave
   const blank = { date:todayStr(), repertoire:"", technical:"", srAural:"", gk:"", notes:"", homework:"", mood:"", pieceRating:"" };
   const [f, setF] = useState(existingLog ?? blank);
   const [lists, setLists] = useState(() => { const src = existingLog ?? blank; const carry = existingLog ? src.repertoire : String((lastLog && lastLog.repertoire) || "").split("\n").filter(x => x.trim() && !parsePiece(x).f).join("\n");   /* m47b: last lesson's pieces carry on until finished */
-    return { rep: parseItems(carry, true), tech: parseItems(src.technical), sr: parseItems(src.srAural), gk: parseItems(src.gk), hw: parseItems(src.homework, false, true) }; });
+    const carrySc = existingLog ? src.technical : String((lastLog && lastLog.technical) || "").split("\n").filter(x => x.trim() && !parsePiece(x).f).join("\n");   /* m49: scales carry on too */
+    return { rep: parseItems(carry, true), sc: parseItems(carrySc, true).filter(it => it.t), tech: parseItems(src.technical), sr: parseItems(src.srAural), gk: parseItems(src.gk), hw: parseItems(src.homework, false, true) }; });
   const setList = (k) => (items) => setLists(p => ({ ...p, [k]: items }));
   const [legacy] = useState(() => ({ tech: !!((existingLog?.technical || "").trim()), sr: !!((existingLog?.srAural || "").trim()), gk: !!((existingLog?.gk || "").trim()) }));
   const own = keysOf(existingLog?.homework);   // this log's own keys line (null: none)
   const [keys, setKeys] = useState(() => own != null ? own : (keysNow || []));
   // the keys line: with homework, or when it changes the keys, or when this log had one; [keys:-] when keys set before are cleared
-  const keysLine = (hw) => { const now = keysNow || [], changed = keys.join() !== now.join();
-    if (keys.length) return (hw || changed || own != null) ? "[keys:" + keys.join(",") + "]" : "";
+  const keysLine = (hw, kk) => { const now = keysNow || [], changed = kk.join() !== now.join();   /* m49: kk, the keys of the scales added */
+    if (kk.length) return (hw || changed || own != null) ? "[keys:" + kk.join(",") + "]" : "";
     return (now.length || own != null || (hw && keysNow != null)) ? "[keys:-]" : ""; };   // once cleared, the clear goes on with each homework
-  const save = () => { const hw = joinItems(lists.hw); onSave({ ...f, repertoire: joinItems(lists.rep, true), technical: joinItems(lists.tech), srAural: joinItems(lists.sr), gk: joinItems(lists.gk), homework: [keysLine(hw), hw].filter(Boolean).join("\n") }); };
+  const save = () => { const hw = joinItems(lists.hw); onSave({ ...f, repertoire: joinItems(lists.rep, true), technical: joinItems(lists.sc, true), srAural: joinItems(lists.sr), gk: joinItems(lists.gk), homework: [keysLine(hw, lists.sc.some(it => it.t) ? scKeys(lists.sc) : keys), hw].filter(Boolean).join("\n") }); };
   const [copied, setCopied] = useState(false);
   const set = (k,v) => setF(p=>({...p,[k]:v}));
 
@@ -1348,7 +1385,7 @@ function LogModal({ student, existingLog, currentMonth, lastLog, keysNow, onSave
           <ListField testid="list-rep" label="Repertoire" color="#26296b" bg="#ecebf5" items={lists.rep} onChange={setList("rep")} rating addLabel="Start a new piece"
             placeholder="e.g. Minuet in G, bars 1–8, hands together"
             hint="One piece per row. The names show on the student's Today page as “Pieces you're working on” (if they have a student link). Last lesson's pieces are already here. Tap the stage each piece is at; Finish when it is done (it moves to the pieces learned and stops coming back). The speed box is optional."/>
-          {legacy.tech && <ListField testid="list-tech" label="Technical work" color="#7c3aed" bg="#f5f3ff" items={lists.tech} onChange={setList("tech")} placeholder="e.g. C major scale, 2 octaves"/>}
+          <ScalesField items={lists.sc} onChange={setList("sc")}/>   {/* m49: scales like the pieces (was the old Technical work list) */}
           {legacy.sr && <ListField testid="list-sr" label="Sight-reading & aural" color="#0891b2" bg="#ecfeff" items={lists.sr} onChange={setList("sr")} placeholder="e.g. SR p.14, intervals up to a 6th"/>}
           {legacy.gk && <ListField testid="list-gk" label="General knowledge" color="#d97706" bg="#fffbeb" items={lists.gk} onChange={setList("gk")} placeholder="e.g. Terms: andante, legato"/>}
 
@@ -1357,7 +1394,6 @@ function LogModal({ student, existingLog, currentMonth, lastLog, keysNow, onSave
             placeholder="e.g. Minuet in G, bars 1–8, slowly"
             hint="This week's homework. Shows on the student's Today page when they have a student link. A chapter or activity gets an Open button. Your notes below stay private."
 />
-          <KeysField keys={keys} onChange={setKeys}/>
 
           {/* Private notes */}
           <div>
