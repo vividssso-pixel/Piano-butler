@@ -31,6 +31,11 @@ async function requireAuth() {
     window.location.href = "login.html";
     return null;
   }
+  // m57: a learner (signed up on join.html) has no dashboard: their practice is in the drills
+  if (session.user && session.user.user_metadata && session.user.user_metadata.role === "learner") {
+    window.location.href = "drills.html?teacher=0&view=today";
+    return null;
+  }
   return session;
 }
 
