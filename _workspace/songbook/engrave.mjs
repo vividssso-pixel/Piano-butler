@@ -8,6 +8,9 @@ const S = JSON.parse(fs.readFileSync(process.argv[2], 'utf8'));
 const DUR = { s: '1', m: '2', c: '4', q: '8' }, LEN = { s: 4, m: 2, c: 1, q: 0.5 };
 let id = 0; const nid = () => 'x' + (++id);
 const pn = (p) => [p[0], p.slice(1)];
+// move a pitch up by letter steps (C to G is 4): the tune keeps its shape and its finger numbers; a chord letter moves the same way
+const L7 = 'cdefgab', trp = (p, k) => { if (!k) return p; const i = L7.indexOf(p[0]) + k; return L7[i % 7] + (+p.slice(1) + Math.floor(i / 7)); };
+const trChord = (c, k) => trp(c.toLowerCase() + '4', k)[0].toUpperCase();
 function noteXml(p, d, o = {}) {
   const [pname, oct] = pn(p); const i = nid(); o.ids && o.ids.push(i);
   const syl = o.syl ? `<verse n="1"><syl${o.wp ? ` wordpos="${o.wp}" con="d"` : ''}>${o.syl}</syl></verse>` : '';
@@ -20,17 +23,17 @@ function mei(b0, b1, o) {
   let ms = '', ctrl = [];
   for (let b = b0; b < b1; b++) {
     const bar = S.bars[b]; let l1 = '';
-    bar.forEach(([p, d, syl, wp]) => { const [i, x] = noteXml(p, d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm }); l1 += x;
+    bar.forEach(([p, d, syl, wp]) => { const [i, x] = noteXml(trp(p, o.tr), d, { syl: o.words ? syl : '', wp: o.words ? wp : '', rhythm: o.rhythm }); l1 += x;
       if (o.fing) ctrl.push(`<fing startid="#${i}" place="above">${S.rh_finger[p]}</fing>`); INFO[i] = { len: LEN[d] }; });
     let st2 = '';
     if (o.lh) { const ch = S.chords[b], last = b === S.bars.length - 1, pat = (last && S.lh[o.lh].end) || S.lh[o.lh][ch]; let l2 = '';
       pat.forEach(([ps, d, f]) => { const [i, x] = ps.length > 1 ? chordXml(ps, d, 'up') : noteXml(ps[0], d, { stem: 'up' }); l2 += x; if (f !== '' && f != null) String(f).split(' ').reverse().forEach(ff => ctrl.push(`<fing startid="#${i}" place="below" staff="2">${ff}</fing>`)); });
       st2 = `<staff n="2"><layer n="1">${l2}</layer></staff>`; }
-    if (o.chords) ctrl.push(`<harm staff="1" tstamp="1" place="above">${S.chords[b]}</harm>`);
+    if (o.chords) ctrl.push(`<harm staff="1" tstamp="1" place="above">${trChord(S.chords[b], o.tr)}</harm>`);
     const right = b === S.bars.length - 1 ? ' right="end"' : '';
     ms += `<measure n="${b + 1}"${right}><staff n="1"><layer n="1">${l1}</layer></staff>${st2}${ctrl.splice(0).join('')}</measure>`;
   }
-  const met = o.meter ? ` meter.count="4" meter.unit="4"` : '';
+  const met = (o.key ? ` keysig="${o.key}"` : '') + (o.meter ? ` meter.count="4" meter.unit="4"` : '');
   const sd = o.rhythm ? `<staffDef n="1" lines="1" clef.shape="perc" clef.line="1" clef.visible="false"${met}/>`
     : o.lh ? `<staffGrp symbol="brace" bar.thru="true"><staffDef n="1" lines="5" clef.shape="G" clef.line="2"${met}/><staffDef n="2" lines="5" clef.shape="F" clef.line="4"${met}/></staffGrp>`
     : `<staffDef n="1" lines="5" clef.shape="G" clef.line="2"${met}/>`;
@@ -72,6 +75,7 @@ const JOBS = {
   w2a: [0, 4, { lh: 'way2', meter: 1 }], w2b: [4, 8, { lh: 'way2' }],
   w3a: [0, 4, { lh: 'way3', chords: 1, meter: 1 }], w3b: [4, 8, { lh: 'way3', chords: 1 }],
   w4a: [0, 4, { lh: 'way4', chords: 1, meter: 1 }], w4b: [4, 8, { lh: 'way4', chords: 1 }],
+  g1: [0, 4, { fing: 1, chords: 1, meter: 1, tr: 4, key: '1s' }],   // Move it: bars 1 to 4 in G, one sharp, the same fingers
 };
 const out = {};
 for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
@@ -79,9 +83,14 @@ for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
   tk.setOptions({ pageWidth: 2100, adjustPageHeight: true, adjustPageWidth: false, scale: 50, header: 'none', footer: 'none', svgViewBox: true,
     pageMarginTop: 30, pageMarginBottom: o.counts || o.boxes ? 260 : 40, pageMarginLeft: 20, pageMarginRight: 20, breaks: 'none', spacingLinear: 0.25, spacingNonLinear: 0.6, font: 'Leipzig', lyricSize: 4.0, lyricTopMinMargin: o.rhythm ? 2 : 5, lyricWordSpace: 2.6, fingeringScale: 0.9 });
   tk.loadData(mei(b0, b1, o)); let svg = tk.renderToSVG(1);
-  // fingers above the staff: Verovio clears the staff but not a stem that rises past it (G's stem), so lift them a little
+  // fingers above the staff: Verovio clears the staff but not a stem that rises past it (G's, A's), so set them all on one
+  // line, clear of the highest stem
   if (o.fing) { const sy = +(svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1];
-    svg = svg.replace(/<g id="[^"]+" class="fing">\s*<text x="\d+" y="(\d+)"/g, (m, y) => +y < sy ? m.replace('class="fing">', 'class="fing" transform="translate(0,-90)">') : m); } if (o.counts) svg = addCounts(svg); if (o.boxes) svg = addBoxes(svg, S.bars[b0][0][0][0].toUpperCase());
+    const tops = [...svg.matchAll(/class="stem">\s*<path d="M\d+ (\d+) L\d+ (\d+)"/g)].map(m => Math.min(+m[1], +m[2]));
+    const base = Math.min(sy, ...tops) - 130;
+    svg = svg.replace(/<g id="[^"]+" class="fing">\s*<text x="\d+" y="(\d+)"/g, (m, y) => +y < sy ? m.replace('class="fing">', `class="fing" transform="translate(0,${base - +y})">`) : m);
+    // and the chord letters above the fingers
+    if (o.chords) svg = svg.replace(/<g id="[^"]+" class="harm">\s*<text x="\d+" y="(\d+)"/g, (m, y) => m.replace('class="harm">', `class="harm" transform="translate(0,${Math.min(0, base - 330 - +y)})">`)); }
   out[k] = svg;
 }
 fs.writeFileSync(process.argv[3], JSON.stringify(out)); console.log(Object.keys(out).length, 'snippets');
