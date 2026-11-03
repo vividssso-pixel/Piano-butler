@@ -107,7 +107,7 @@ function addRows(svg, ways, b0, pic) {
 const JOBS = {
   sing1: [0, 4, { words: 1, meter: 1, boxes: 1 }], sing2: [4, 8, { words: 1 }],
   rhy1: [0, 4, { words: 1, rhythm: 1, meter: 1, counts: 1, pw: 1350 }], rhy2: [4, 8, { words: 1, rhythm: 1, counts: 1, pw: 1350 }],   // bigger: the first thing a child reads
-  play1: [0, 4, { fing: 1, chords: 1, meter: 1, rows: ['way2', 'way3', 'way4'], pic: 1 }],   // the tune once, every way under it
+  play1: [0, 4, { fing: 1, chords: 1, meter: 1, rows: ['way2', 'way3', 'way4'] }],   // the tune once, every way under it
   play2: [4, 8, { fing: 1, chords: 1, rows: ['way2', 'way3', 'way4'] }],
   g1: [0, 4, { fing: 1, chords: 1, meter: 1, tr: 4, key: '1s' }], g2: [4, 8, { fing: 1, chords: 1, tr: 4, key: '1s' }],   // Move it: bars 1 to 4 in G, one sharp, the same fingers
 };

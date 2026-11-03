@@ -46,48 +46,55 @@ def kb(start=0, tr=0, sharp=None, width=380):
 
 # a left-hand keyboard from G below to G (the C chord under C to G, the G chord's hand moved down to G), the way's notes for
 # that chord lit with their fingers
-def lhkb(way, ch):
-    pat = SONG['lh'][way][ch][0]; fing = dict(zip(pat[0], str(pat[2]).split()))
-    keys = ['g2', 'a2', 'b2', 'c3', 'd3', 'e3', 'f3', 'g3']; W, H, w = len(keys) * 24, 104, 24; out = ''
+def lhkb(way, ch, both=False):
+    pats = [SONG['lh'][way][c][0] for c in (['C', 'G'] if both else [ch])]
+    fing = {p: str(f).split()[k] for ps, d, f in pats for k, p in enumerate(ps)}
+    keys = ['c3', 'd3', 'e3', 'f3', 'g3']; W, H, w = len(keys) * 30, 104, 30; out = ''
     for i, p in enumerate(keys):
         lit = p in fing
         out += f'<rect x="{i * w}" y="0" width="{w}" height="{H}" rx="2" fill="{"#fbe3da" if lit else "#fff"}" stroke="{N}" stroke-width="1.2"/>'
-        out += f'<text x="{i * w + w / 2}" y="{H - 7}" text-anchor="middle" font-family="AH" font-weight="700" font-size="11" fill="{N}">{p[0].upper()}</text>'
-        if lit: out += f'<circle cx="{i * w + w / 2}" cy="{H - 30}" r="9.5" fill="{C}"/><text x="{i * w + w / 2}" y="{H - 26}" text-anchor="middle" font-family="AH" font-weight="700" font-size="12" fill="#fff">{fing[p]}</text>'
-    for i in (0, 1, 3, 4, 6): out += f'<rect x="{(i + 1) * w - 7}" y="0" width="14" height="{H * 0.56}" rx="2" fill="{N}"/>'
-    return f'<div class="lk"><b>{ch}</b><svg viewBox="-1 -1 {W + 2} {H + 2}" style="width:168px;display:block">{out}</svg></div>'
-def lead(n, t, stars, how, way):
-    keys = ''.join(lhkb(way, ch) for ch in ['C', 'G'])
-    return f'<div class="way"><div class="wh"><span class="wn">Way {n}</span><b>{t}</b><span class="st">{"★" * stars}{"☆" * (4 - stars)}</span></div><div class="lw"><p class="how">{how}</p><div class="lks"><span class="lkh">Left hand</span>{keys}</div></div>{mus("L" + str(n) + "a")}{mus("L" + str(n) + "b")}</div>'
+        out += f'<text x="{i * w + w / 2}" y="{H - 7}" text-anchor="middle" font-family="AH" font-weight="700" font-size="12" fill="{N}">{p[0].upper()}</text>'
+        if lit: out += f'<circle cx="{i * w + w / 2}" cy="{H - 31}" r="10" fill="{C}"/><text x="{i * w + w / 2}" y="{H - 26.5}" text-anchor="middle" font-family="AH" font-weight="700" font-size="13" fill="#fff">{fing[p]}</text>'
+    for i in (0, 1, 3): out += f'<rect x="{(i + 1) * w - 8}" y="0" width="16" height="{H * 0.56}" rx="2" fill="{N}"/>'
+    return f'<div class="lk"><svg viewBox="-1 -1 {W + 2} {H + 2}" style="width:150px;display:block">{out}</svg><span class="lkc">roots: C 5, G 1</span></div>'
 
-chips = ''.join(f'<span class="chip">{t}</span>' for t in ['crotchet, minim, semibreve', 'C position, then G', 'chords C and G'])
+chips = ''.join(f'<span class="chip">{t}</span>' for t in ['4/4', 'crotchet, minim, semibreve', 'C position', 'steps and a skip', 'chords C and G'])
 WAYS = [(1, 'The tune', 'Right hand alone. The numbers above the notes are your fingers.'),
-        (2, 'Just the root', 'Left hand, row 2: each chord’s root, finger 5, held all bar. For G your hand moves down to G.'),
-        (3, 'Root and fifth', 'Row 3: add the fifth on top with finger 1, on beats 1 and 3. The ring is the gap Way 4 fills.'),
-        (4, 'The whole chord', 'Row 4: fill the gap with finger 3. C E G for C, G B D for G.')]
+        (2, 'Hold the root', 'Add the left hand, row 2. A chord is named after its root: under C play C (finger 5), under G play G (finger 1). Hold it all bar.'),
+        (3, 'Root on 1 and 3', 'Row 3: the same root, played on beats 1 and 3.'),
+        (4, 'Root on every beat', 'Row 4: the root on every beat, while the right hand plays the tune.')]
 legend = ''.join(f'<div class="wl"><span class="wn">Way {n}</span><span class="st">{"★" * n}{"☆" * (4 - n)}</span><b>{t}</b><span class="wd">{d}</span></div>' for n, t, d in WAYS)
+
+# note pictures for the values in the song (drawn, so no font is needed): a head, hollow from the minim, a stem below the semibreve
+def note(kind, s=1.0):
+    head = f'<ellipse cx="14" cy="40" rx="9" ry="6.3" transform="rotate(-22 14 40)" fill="{N if kind == "c" else "#fff"}" stroke="{N}" stroke-width="{0 if kind == "c" else 2.6}"/>'
+    stem = '' if kind == 's' else f'<line x1="22.3" y1="38" x2="22.3" y2="6" stroke="{N}" stroke-width="2.2"/>'
+    return f'<svg viewBox="0 0 30 50" style="width:{24 * s}px;height:{40 * s}px">{head}{stem}</svg>'
+def beats(n): return '<span class="bd">' + '<i></i>' * n + '</span>'
+vals = ''.join(f'<div class="nv">{note(k, 1.15)}<div><b>{nm}</b><span>{n} beat{"s" if n > 1 else ""}</span>{beats(n)}</div></div>' for k, nm, n in [('c', 'crotchet', 1), ('m', 'minim', 2), ('s', 'semibreve', 4)])
+tsig = f"""<div class="ts"><div class="tsn"><span>4</span><span>4</span></div><div class="tsx"><p><b>Top 4:</b> four beats in every bar.</p><p><b>Bottom 4:</b> a crotchet is one beat.</p></div></div>"""
 
 P1 = page(f'''<div class="kick">Lesson {LESSON}</div><h1>{SONG["title"]}</h1>
 <p class="lead">A rhyme by Sarah Josepha Hale, first printed in Boston in 1830, about a lamb that followed a girl to school. We sing it to the tune of <i>Merrily we roll along</i>.</p>
 <div class="chips"><span class="cl">In this song</span>{chips}</div>
 {part(1, 'Say and clap', 'Say the words in time, then clap them and count: clap on the coral numbers, hold through the grey ones.')}
+<div class="mat"><div class="mh">The time</div>{tsig}<div class="mh">The notes</div><div class="nvs">{vals}</div></div>
 {mus('rhy1')}{mus('rhy2')}
-<div class="pos"><div>{kb(width=380)}</div><div><p class="cap2"><b>Your hand: C position.</b> Right thumb on middle C, a finger on each key up to G. The song’s notes are lit.</p>{ticks(['Said it in time', 'Clapped and counted'])}</div></div>''', 1)
+{ticks(['Said it in time', 'Clapped and counted', 'Found every minim (2 beats)'], True)}''', 1)
 
 P2 = page(f'''{part(2, 'Listen and sing', 'Listen first, pointing to each note as it sounds. Then sing. Write the letter names of bars 1 to 4 in the boxes; the first one is done.')}
 {mus('sing1')}{mus('sing2')}
-<div class="row2"><div>{ticks(['Listened and pointed', 'Sang it with the words', 'Wrote the letter names', 'Sang it on the letter names'])}</div><div class="qr">{qr(URL)}<span>Scan me</span></div></div>
-{part(3, 'Play it four ways', 'One tune, four ways: each adds a little more for the left hand. Your teacher tells you which way is yours this week.')}
-<div class="lg"><div class="lgl">{legend}</div><div class="lks"><span class="lkh">Left hand</span>{lhkb('way4', 'C')}{lhkb('way4', 'G')}</div></div>''', 2)
+<div class="pos"><div>{kb(width=330)}</div><div><p class="cap2"><b>Your hand: C position.</b> Right thumb on middle C, a finger on each key up to G. The song’s notes are lit.</p>
+<p class="cap2"><b>Steps and a skip.</b> Most notes move by a step, to the next key. Only once does the tune skip a key: E up to G. In which bar? <span class="ib"></span></p></div></div>
+<div class="row2"><div>{ticks(['Listened and pointed', 'Sang it with the words', 'Wrote the letter names', 'Found the skip'])}</div><div class="qr">{qr(URL)}<span>Scan me</span></div></div>''', 2)
 
-P3 = page(f'''{mus('play1')}{mus('play2')}
+P3 = page(f'''{part(3, 'Play it four ways', 'One tune, four ways: each adds a little more for the left hand. Your teacher tells you which way is yours this week.')}
+<div class="lg"><div class="lgl">{legend}</div><div class="lks"><span class="lkh">Left hand</span>{lhkb('way2', 'C', both=True)}</div></div>
+{mus('play1')}{mus('play2')}
 <div class="tog"><span class="tgh">Play together</span><span>Two players, one song: one plays Way 1, the other a left-hand row. Then swap.</span></div>
-{part(4, 'Move it to G', 'Same fingers, new home: thumb on G, and the tune moves with your hand. The chords move too: C becomes G, G becomes D.')}
-<div class="mv"><div>{kb(4, 4, 3, 260)}</div><div><p class="cap2"><b>G position.</b> The key of G has one black key, F♯: the sharp sign at the start of the staff. This tune never needs it.</p></div></div>
-{mus('g1')}
-<div class="chk"><div class="ch">5 · Check</div><div class="cgrid">
+<div class="chk"><div class="ch">4 · Check</div><div class="cgrid">
 <div>{ticks(['I can say and clap it', 'I can sing it with the words', 'I can name its notes'])}</div>
-<div>{''.join(f'<div class="wrow"><span class="wk">In {k}</span><div class="ticks h">' + ''.join(f'<span class="tk"><span class="bx"></span>Way {i}</span>' for i in range(1, 5 if k == 'C' else 4)) + '</div></div>' for k in 'CG')}
+<div><div class="ck2">I can play it:</div><div class="ticks h">{''.join(f'<span class="tk"><span class="bx"></span>Way {i}</span>' for i in range(1, 5))}</div>
 <div class="tch"><span>Teacher</span><span class="tk"><span class="bx"></span>Pass</span><span class="tk"><span class="bx"></span>Not yet</span></div></div></div></div>''', 3)
 
 css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margin:0;background:#e9e4d8;font-family:'AH',Arial,sans-serif;color:{N}}}
@@ -103,7 +110,7 @@ css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margi
 .mus svg{{width:100%;height:auto;display:block}} .mus text{{font-family:'AH',Arial !important}} .mus .harm text, .mus g.harm text{{font-family:'PF',Georgia,serif !important;font-weight:700}}
 .mus g.fing text{{font-weight:700}} .mus .cnt{{font-family:'AH',Arial !important}}
 .ticks{{display:flex;flex-direction:column;gap:8px;margin:8px 0}} .ticks.h{{flex-direction:row;gap:18px}} .tk{{display:inline-flex;align-items:center;gap:9px;font-size:15.5px;font-weight:700}} .bx{{width:20px;height:20px;border:1.8px solid {N};border-radius:4px;display:inline-block;flex:none}}
-.lw{{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center}} .lks{{display:flex;align-items:flex-end;gap:12px}} .lkh{{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:{MUTE};writing-mode:vertical-rl;transform:rotate(180deg)}} .lk{{display:grid;justify-items:center;gap:2px}} .lk b{{font-family:'PF',Georgia,serif;font-size:18px}} .pos{{display:grid;grid-template-columns:380px 1fr;gap:24px;align-items:center;margin-top:18px}} .lg{{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center;margin-top:6px}} .lgl{{display:grid;gap:7px}} .wl{{display:grid;grid-template-columns:52px 64px 132px minmax(0,1fr);align-items:baseline;gap:8px;font-size:14.5px}} .wl b{{font-family:'PF',Georgia,serif;font-size:17px}} .wl .st{{margin:0;font-size:13px}} .wd{{color:#3d4080;line-height:1.4}} .sh{{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};margin:2px 0 6px}} .lks{{flex-direction:column;align-items:center}} .tog{{display:flex;gap:14px;align-items:baseline;border:1.5px dashed {C};border-radius:6px;padding:8px 14px;margin:6px 0 4px;font-size:15px}} .tgh{{font-size:11.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};white-space:nowrap}} .row2{{display:grid;grid-template-columns:1fr 110px;gap:16px;align-items:center}} .qr{{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:700;color:{MUTE};letter-spacing:.12em;text-transform:uppercase}} .qrb{{width:96px;height:96px;border:1.5px dashed {HELD};display:flex;align-items:center;justify-content:center;color:{HELD};font-size:14px}}
+.lw{{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center}} .lks{{display:flex;align-items:flex-end;gap:12px}} .lkh{{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:{MUTE};writing-mode:vertical-rl;transform:rotate(180deg)}} .lk{{display:grid;justify-items:center;gap:2px}} .lk b{{font-family:'PF',Georgia,serif;font-size:18px}} .pos{{display:grid;grid-template-columns:380px 1fr;gap:24px;align-items:center;margin-top:18px}} .lg{{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center;margin-top:6px}} .lgl{{display:grid;gap:7px}} .wl{{display:grid;grid-template-columns:52px 64px 132px minmax(0,1fr);align-items:baseline;gap:8px;font-size:14.5px}} .wl b{{font-family:'PF',Georgia,serif;font-size:17px}} .wl .st{{margin:0;font-size:13px}} .wd{{color:#3d4080;line-height:1.4}} .sh{{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};margin:2px 0 6px}} .lks{{flex-direction:column;align-items:center}} .mat{{display:grid;grid-template-columns:auto auto;gap:6px 18px;align-items:center;justify-content:start;border:1.2px solid #d9d6ea;padding:12px 16px;margin:8px 0 10px}} .mh{{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}} .ts{{display:flex;align-items:center;gap:16px}} .tsn{{display:flex;flex-direction:column;align-items:center;font-family:'PF',Georgia,serif;font-weight:700;font-size:34px;line-height:.82}} .tsx p{{margin:0;font-size:15px}} .nvs{{display:flex;gap:26px}} .nv{{display:flex;align-items:center;gap:8px}} .nv b{{display:block;font-size:15px}} .nv span{{font-size:13px;color:#3d4080}} .bd{{display:flex;gap:3px;margin-top:3px}} .bd i{{width:8px;height:8px;border-radius:50%;background:{C};display:block}} .ib{{display:inline-block;width:46px;height:30px;border:1.8px solid {N};border-radius:4px;vertical-align:middle;margin-left:6px}} .lkc{{font-size:12px;font-weight:700;color:{MUTE};margin-top:4px}} .tog{{display:flex;gap:14px;align-items:baseline;border:1.5px dashed {C};border-radius:6px;padding:8px 14px;margin:6px 0 4px;font-size:15px}} .tgh{{font-size:11.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};white-space:nowrap}} .row2{{display:grid;grid-template-columns:1fr 110px;gap:16px;align-items:center}} .qr{{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:700;color:{MUTE};letter-spacing:.12em;text-transform:uppercase}} .qrb{{width:96px;height:96px;border:1.5px dashed {HELD};display:flex;align-items:center;justify-content:center;color:{HELD};font-size:14px}}
 .kbw{{max-width:460px;margin:6px auto 4px}} .kbw svg{{max-width:460px !important}} .sk{{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin:6px 0 4px}} .sk .ticks{{margin:0}} .two{{display:grid;grid-template-columns:1fr 1.15fr;gap:24px;align-items:start;margin-top:6px}} .cap{{font-size:13px;color:{MUTE};text-align:center}} .q{{font-size:15.5px;margin:2px 0 4px}}
 .way.gs .mus{{max-width:91%;margin:0 auto}} .way{{border-top:1px solid #d9d6ea;padding-top:10px;margin-top:12px}} .wh{{display:flex;align-items:baseline;gap:12px}} .wn{{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}} .wh b{{font-family:'PF',Georgia,serif;font-size:21px}} .st{{margin-left:auto;color:{C};letter-spacing:.1em;font-size:15px}}
 .chk{{border:1.5px solid {N};margin-top:8px;padding:12px 16px}} .ch{{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};margin-bottom:4px}} .cgrid{{display:grid;grid-template-columns:1fr 1.25fr;gap:20px}} .chk .ticks.h{{gap:12px}} .chk .tk{{white-space:nowrap}}
