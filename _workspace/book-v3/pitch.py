@@ -25,30 +25,30 @@ P22 = ppage(f"""{head('Part I · Pitch · 1', 'The keyboard', 'Keys to the <b>le
 {kbx('C', 14, 30, 120, brackets=[(a, b, ('2 black keys' if k == 2 else '3 black keys'), True) for a, b, k in g14], label=True, shade={i: ('#fdeee8' if i % 7 < 3 else '#eef0f8') for i in range(14)}, marks=[f'<line x1="{x * 30}" x2="{x * 30}" y1="0" y2="120" stroke="#26296b" stroke-width="3.4"/>' for x in (3, 7, 10)], scale=1.25)}
 {two(h3('The white keys') + '<p>Seven letters, <b>A B C D E F G</b>, then the letters start again. <b>C D E</b> sit around each group of two black keys (C just left of it), <b>F G A B</b> around each group of three (F just left of it): the two tints on the picture.</p>',
      h3('Middle C and octaves') + '<p><b>Middle C</b> is the C nearest the middle of the keyboard. From one C to the next is an <b>octave</b>: eight white keys, counting both. Octaves are numbered from the bottom: middle C is <b>C4</b>, the C below it C3, the C above C5; every key up to the next B shares the number (D4, E4 … B4).</p>')}
-{tbl(['Term', 'Meaning', 'First met'], [['pitch', 'how high or low a sound is', 'Level 0'], ['octave', 'from one note to the next with the same name (8 white keys, 12 semitones)', 'Level 0'], ['semitone', 'from one key to the very next key, black or white', 'Level 0'], ['tone', 'two semitones', 'Level 0'], ['register', 'a part of the keyboard: low, middle or high', 'Level 0']], ['20%', '60%', '20%'])}
+{tbl(['Term', 'Meaning', 'First met'], [['pitch', 'how high or low a sound is', 'Level 0'], ['register', 'a part of the keyboard: low, middle or high', 'Level 0'], ['semitone', 'from one key to the very next key, black or white', 'Level 0'], ['tone', 'two semitones', 'Level 0'], ['octave', 'from one note to the next with the same name (8 white keys, 12 semitones)', 'Level 0']], ['20%', '60%', '20%'])}
 {howto('find any key, for example G4', ['Find middle C (C4): the C just left of the two black keys nearest the middle.', 'Say the letters up from it, one white key each: C D E F G.', 'Still in the same octave, so it is G4. One octave higher is G5.'])}
 {foot('The staff p. 23 · The staff and the keyboard p. 25 · Semitones p. 27', 'Workbook Pitch 1 · Online: Keyboard patterns, Musical alphabet')}""", 22)
 
 clefs = [[gsym('𝄞', 46), '<b>treble clef</b> (G clef)', 'curls round the line for G (line 2)', 'Level 0'], [gsym('𝄢', 30), '<b>bass clef</b> (F clef)', 'its two dots sit either side of the line for F (line 4)', 'Level 0'], [gsym('𝄡', 34), '<b>alto clef</b> (C clef)', 'its centre marks middle C, on line 3', 'Level 2']]
 P23 = ppage(f"""{head('Part I · Pitch · 2', 'The staff and the clefs', 'Music is written on a <b>staff</b> (or stave) of five lines and four spaces. Lines and spaces are counted from the <b>bottom</b>. Higher notes sit higher on the staff. A <b>clef</b> at the start tells you which notes the lines and spaces stand for.')}
 {tbl(['Clef', 'Name', 'How it shows its note', 'First met'], clefs, ['12%', '28%', '44%', '16%'])}
-{two(h3('The grand staff') + '<p>Piano music uses two staves joined by a brace: the treble staff, usually for the right hand, above the bass staff, usually for the left. <b>Middle C</b> sits between them on a short line of its own, and can be written in either staff.</p>', px('gs_c', 140, 'Middle C in the treble staff (left) and in the bass staff (right): the same key.'), '1fr 1fr')}
+{two(h3('The grand staff') + '<p>Piano music uses two staves joined by a brace: the treble staff, usually for the right hand, above the bass staff, usually for the left. <b>Middle C</b> sits between them on a short line of its own, and can be written in either staff.</p>', px('gs_c', 118, 'Middle C in the treble staff (left) and in the bass staff (right): the same key.'), '1fr 1fr')}
 {h3('Ledger lines')}
 <p>Notes above or below the staff sit on short extra lines called <b>ledger lines</b>, spaced exactly like the staff lines. Count on from the staff as if the lines went on.</p>
-{two(px('ledger', 76, 'Treble: A, B, C below; A, B, C above.'), px('ledger_b', 76, 'Bass: E, D, C below; C, D, E above.'))}
+{two(px('ledger', 64, 'Treble: A, B, C below; A, B, C above.'), px('ledger_b', 64, 'Bass: E, D, C below; C, D, E above.'))}
 {h3('Octave signs')}
 {tbl(['Sign', 'Meaning', 'First met'], [['<b>8va</b>', 'play an octave higher than written, as far as the dotted line goes', 'Level ½'], ['<b>8vb</b>', 'play an octave lower', 'Level ½'], ['<b>15ma</b>', 'play two octaves higher', 'Level 4'], ['<b>loco</b>', 'back where it is written', 'Level ½']], ['16%', '64%', '20%'])}
 {foot('Reading the notes p. 24 · The staff and the keyboard p. 25', 'Workbook Pitch 2 · Online: Library › Staff and clefs')}""", 23)
 
 rhy = [['Treble lines', 'E G B D F', '<i>Every Good Boy Deserves Fun</i>'], ['Treble spaces', 'F A C E', 'spells <i>FACE</i>'], ['Bass lines', 'G B D F A', '<i>Great Big Dragon Flies Away</i>'], ['Bass spaces', 'A C E G', '<i>All Cows Eat Grass</i>']]
 P24 = ppage(f"""{head('Part I · Pitch · 3', 'Reading the notes', 'Each line and space has one letter name. Learn them in two ways: by the patterns below, and by a few <b>landmark notes</b> you can find instantly and count from.')}
-{two(px('tr_lines', 92, 'Treble clef: the lines'), px('tr_spaces', 92, 'Treble clef: the spaces'))}
-{two(px('bs_lines', 92, 'Bass clef: the lines'), px('bs_spaces', 92, 'Bass clef: the spaces'))}
+{two(px('tr_lines', 80, 'Treble clef: the lines'), px('tr_spaces', 80, 'Treble clef: the spaces'))}
+{two(px('bs_lines', 80, 'Bass clef: the lines'), px('bs_spaces', 80, 'Bass clef: the spaces'))}
 {tbl(['Staff', 'Notes, bottom to top', 'To remember'], rhy, ['24%', '30%', '46%'])}
 {h3('Landmark notes')}
 <p>Find these first; every other note is a <b>step</b> (line to the next space, or space to the next line) or a <b>skip</b> (line to line, space to space) away.</p>
-<div class="lmr"><div><b>Treble clef</b><br>Middle C on its ledger line below; the G the clef curls round (line 2); the C in the third space.</div>{px('lm_t', 80)}</div>
-<div class="lmr"><div><b>Bass clef</b><br>The C in the second space; the F between the clef’s dots (line 4); middle C on its ledger line above.</div>{px('lm_b', 80)}</div>
+<div class="lmr"><div><b>Treble clef</b><br>Middle C on its ledger line below; the G the clef curls round (line 2); the C in the third space.</div>{px('lm_t', 70)}</div>
+<div class="lmr"><div><b>Bass clef</b><br>The C in the second space; the F between the clef’s dots (line 4); middle C on its ledger line above.</div>{px('lm_b', 70)}</div>
 {howto('read a note you are not sure of', ['Check the clef first.', 'Find the nearest landmark note.', 'Step or skip from it, saying the letters: a skip jumps one letter (G, B), a step goes to the next (G, A).'])}""", 24)
 
 P25 = ppage(f"""{head('Part I · Pitch · 4', 'The staff and the keyboard', 'Every line and space of the grand staff is one white key. Read from left to right, the notes climb the staff exactly as the keys climb the keyboard: two octaves from C3 to C5, with middle C in coral where the two staves meet.')}
@@ -84,7 +84,7 @@ P27 = ppage(f"""{head('Part I · Pitch · 6', 'Counting intervals', 'An <b>inter
 {px('ex_iv', 100, 'D up to A: D E F G A is five letters, so the interval is a 5th, whether the notes come one after the other or together.')}
 {h3('Interval numbers from C')}
 {px('intv', 104)}
-{howto('name an interval’s number', ['Say the lower note’s letter as 1.', 'Count up the letters to the higher note: line, space, line …', 'The last number is the interval: 3 letters a 3rd, 5 letters a 5th, 8 letters an octave. Sharps and flats do not change the number.'])}
+{howto('name an interval’s number', ['Say the lower note’s letter as 1.', 'Count up the letters to the higher note: line, space, line …', 'The last number is the interval: the same note is a unison (1), 3 letters a 3rd, 5 letters a 5th, 8 letters an octave. Sharps and flats do not change the number.'])}
 {foot('Major, minor and perfect p. 28 · Scales p. 29', 'Workbook Pitch 4 · Online: Library › Intervals')}""", 27)
 
 iv = [['unison', '0', '', '', 'Level 1'], ['2nd', '1 (minor)', '2 (major)', '', 'Level 1'], ['3rd', '3 (minor)', '4 (major)', '', 'Level ½'], ['4th', '', '5 (perfect)', '6 (augmented)', 'Level 1'], ['5th', '6 (diminished)', '7 (perfect)', '', 'Level 1'], ['6th', '8 (minor)', '9 (major)', '', 'Level 2'], ['7th', '10 (minor)', '11 (major)', '', 'Level 2'], ['octave', '', '12 (perfect)', '', 'Level 1']]
@@ -100,13 +100,13 @@ P28 = ppage(f"""{head('Part I · Pitch · 7', 'Major, minor and perfect', 'Two i
 forms = [['major', 'T T S T T T S', 'Level ½'], ['natural minor', 'T S T T S T T', 'Level ½'], ['harmonic minor', 'T S T T S T+S S', 'Level ½'], ['melodic minor (up)', 'T S T T T T S; down as the natural minor', 'Level 2'], ['chromatic', 'every semitone', 'Level 2'], ['pentatonic (black keys)', 'T T T+S T T+S', 'Level 0']]
 deg = [['1', 'tonic'], ['2', 'supertonic'], ['3', 'mediant'], ['4', 'subdominant'], ['5', 'dominant'], ['6', 'submediant'], ['7', 'leading note']]
 P29 = ppage(f"""{head('Part I · Pitch · 8', 'Scales', 'A <b>scale</b> is a ladder of notes from one key note up to the next, in a fixed pattern of tones (T) and semitones (S). The pattern, not the starting note, makes a scale major or minor.')}
-{px('c_maj', 52, 'C major: T T S T T T S. The semitones fall between 3–4 and 7–8.')}
+{px('c_maj', 44, 'C major: T T S T T T S. The semitones fall between 3–4 and 7–8.')}
 {tbl(['Scale', 'Steps', 'First met'], forms, ['30%', '50%', '20%'])}
 {h3('A minor in three forms')}
-{px('a_nat', 46, 'Natural: the notes of C major, from A to A.')}
-{px('a_har', 46, 'Harmonic: the 7th raised a semitone (G♯).')}
-{px('a_mel', 46, 'Melodic: 6th and 7th raised going up, lowered coming down.')}
-{two(h3('Degree names') + '<p class="degs">' + ' · '.join(f'<b>{a}</b> {b}' for a, b in deg) + '</p>', h3('Two kinds of minor partner') + '<p><b>Relative</b> minor: the same key signature, three semitones lower (C major and A minor). <b>Parallel</b> (tonic) minor: the same key note (C major and C minor).</p>')}
+{px('a_nat', 40, 'Natural: the notes of C major, from A to A.')}
+{px('a_har', 40, 'Harmonic: the 7th raised a semitone (G♯).')}
+{px('a_mel', 40, 'Melodic: 6th and 7th raised going up, lowered coming down.')}
+{two(h3('Degree names') + '<p class="degs">' + ' · '.join(f'<b>{a}</b> {b}' for a, b in deg) + '</p>', h3('Minor partners') + '<p><b>Relative</b>: same signature, 3 semitones lower (C major, A minor). <b>Parallel</b>: same key note (C major, C minor).</p>')}
 {howto('build any major scale', ['Write the eight letters from the key note up, every letter once.', 'Check each step against T T S T T T S on the keyboard; add a sharp or flat where a step is wrong. G major: G A B C D E F♯ G.'])}""", 29)
 
 keys = [['C major', 'A minor', '—', 'Level ½'], ['G major', 'E minor', '1♯', 'Level ½'], ['D major', 'B minor', '2♯', 'Level 1'], ['A major', 'F♯ minor', '3♯', 'Level 3'], ['E major', 'C♯ minor', '4♯', 'Level 4'], ['B major', 'G♯ minor', '5♯', 'Level 4'], ['F major', 'D minor', '1♭', 'Level ½'], ['B♭ major', 'G minor', '2♭', 'Level 1'], ['E♭ major', 'C minor', '3♭', 'Level 3'], ['A♭ major', 'F minor', '4♭', 'Level 4'], ['D♭ major', 'B♭ minor', '5♭', 'Level 4']]
