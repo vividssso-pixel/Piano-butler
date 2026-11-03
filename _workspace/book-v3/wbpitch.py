@@ -52,7 +52,7 @@ B2 = tq('Use', 'Reading the notes', 'The staff and the notes', 'A step goes from
 C2 = tq('Practise', 'Reading the notes', 'The staff and the notes', 'Find a landmark note first (middle C, treble G, bass F), then step or skip from it.', f'''
 {ex(1, 'Draw it', 2, 'Draw each note as a semibreve, in the one place on the staff where it fits.', grid([pc('blank_t', t, 58) for t in ('G on a line', 'C in a space', 'E on a line', 'F in a space')] + [pc('blank_b', t, 58) for t in ('A in a space', 'B on a line', 'G on a line', 'E in a space')], 4))}
 {ex(2, 'Step or skip?', 1, 'Circle step or skip.', grid([pc(f'ss{i}', circ('step', 'skip'), 62) for i in range(6)], 6))}
-{ex(3, 'Name-it race', 2, 'Time yourself naming all sixteen notes on page 3, out loud. Write your time each day and watch it fall.', '<div class="race">' + ''.join(f'<span><b>Day {d}</b>{BOX}<i>sec</i></span>' for d in range(1, 8)) + '</div>')}''', 5, 24)
+{ex(3, 'Name-it race', 2, 'Time yourself naming all sixteen notes on page 3, out loud. Write your time each day and watch it fall.', '<div class="race">' + ''.join(f'<span><b>Day {d}</b>{BOX}<i>sec</i></span>' for d in range(1, 8)) + '</div>')}''', 5, 25)
 
 # ---------- 3 Sharps, flats and naturals (Handbook p. 25) ----------
 KB3 = 40
@@ -61,35 +61,35 @@ k3 = kbd('C', 7, KB3, 120, bdots=(), marks=[num((i + 1) * KB3, 120 * 0.6 - 12, t
 A3 = tq('Learn', 'Sharps, flats and naturals', 'Sharps, flats and naturals', 'A sharp raises a note a semitone, a flat lowers it, a natural cancels either.', f'''
 {ex(1, 'The signs', 1, 'Write the name of each sign and what it does.', tbl(['Sign', 'Name', 'What it does'], [[gsym('♯', 28), LINE, LINE], [gsym('♭', 28), LINE, LINE], [gsym('♮', 28), LINE, LINE]], ['14%', '30%', '56%']))}
 {ex(2, 'Two names for each black key', 2, 'Give each numbered black key its sharp name and its flat name.', '<div class="two" style="grid-template-columns:1fr 1.1fr;align-items:center">' + k3 + tbl(['Key', 'Sharp name', 'Flat name'], [['1', '<b class="done2">C♯</b>', '<b class="done2">D♭</b>']] + [[str(i), LINE, LINE] for i in range(2, 6)], ['18%', '41%', '41%']) + '</div>')}
-{ex(3, 'Name the notes', 1, 'Write the full name of each note, with its sharp or flat.', grid([pc(k, BOX, 58) for k in ('t_f#4', 't_bb4', 't_c#5', 't_eb4', 't_g#4', 't_ab4', 'b_f#3', 'b_bb2')], 8))}''', 6, 25)
+{ex(3, 'Name the notes', 1, 'Write the full name of each note, with its sharp or flat.', grid([pc(k, BOX, 58) for k in ('t_f#4', 't_bb4', 't_c#5', 't_eb4', 't_g#4', 't_ab4', 'b_f#3', 'b_bb2')], 8))}''', 6, 26)
 B3 = tq('Use', 'Sharps, flats and naturals', 'Sharps, flats and naturals', 'An accidental lasts until the bar line; the next bar starts fresh.', f'''
 {ex(1, 'How long does it last?', 2, 'Write the full name of each numbered note.', wpx('acc_bar', 80) + anrow('12345'))}
 {ex(2, 'A semitone away', 2, 'Write the note a semitone higher and a semitone lower. Use the keyboard on page 6 if you need it.', tbl(['Note', 'A semitone higher', 'A semitone lower'], [['C', '<b class="done2">C♯</b>', '<b class="done2">B</b>']] + [[x, LINE, LINE] for x in ('E', 'F', 'B', 'G')], ['20%', '40%', '40%']))}
 {ex(3, 'Same sound, new name', 2, 'Write another name for each note (an enharmonic).', '<div class="ts6">' + ''.join(f'<div><b>{x}</b> = {BOX}</div>' for x in ('C♯', 'E♭', 'G♭', 'A♯', 'E♯', 'C♭')) + '</div>')}
-{ex(4, 'In your music', 1, 'Find each of these in a piece you are learning.', piece(['a sharp', 'a flat', 'a natural', 'an accidental cancelled by a bar line']))}''', 7, 25)
+{ex(4, 'In your music', 1, 'Find each of these in a piece you are learning.', piece(['a sharp', 'a flat', 'a natural', 'an accidental cancelled by a bar line']))}''', 7, 26)
 
 # ---------- 4 Intervals (Handbook p. 26) ----------
 A4 = tq('Learn', 'Intervals', 'Tones, semitones and intervals', 'Count letter names, both ends included: C up to E is a 3rd (C D E).', f'''
 {ex(1, 'Interval numbers', 1, 'Write the number of each interval (2nd, 3rd, 4th…).', grid([pc(f'iv{i}', BOX, 70) for i in range(8)], 8))}
 {ex(2, 'Melodic or harmonic?', 1, 'Circle melodic (one after the other) or harmonic (together).', grid([pc(f'mh{i}', circ('melodic', 'harmonic'), 66) for i in range(4)], 4))}
-{ex(3, 'Count the semitones', 2, 'Count every key from the first note to the second, black and white. The first is done.', '<div class="ts6">' + ''.join(f'<div><b>{a}</b> {BOX if not d else "<b class=done2>" + d + "</b>"} <span class="mu2">semitones</span></div>' for a, d in (('C up to E', '4'), ('C up to G', ''), ('E up to F', ''), ('D up to F', ''), ('C up to C', ''), ('F up to B', ''))) + '</div>')}''', 8, 26)
+{ex(3, 'Count the semitones', 2, 'Count every key from the first note to the second, black and white. The first is done.', '<div class="ts6">' + ''.join(f'<div><b>{a}</b> {BOX if not d else "<b class=done2>" + d + "</b>"} <span class="mu2">semitones</span></div>' for a, d in (('C up to E', '4'), ('C up to G', ''), ('E up to F', ''), ('D up to F', ''), ('C up to C', ''), ('F up to B', ''))) + '</div>')}''', 8, 27)
 B4 = tq('Use', 'Intervals', 'Tones, semitones and intervals', 'A major 3rd is four semitones; a minor 3rd is three.', f'''
 {ex(1, 'Draw the note above', 2, 'Draw a note the given interval above, then write its letter name.', grid([pc(f'up{i}', f'{t} {BOX}', 64) for i, t in enumerate(('a 3rd', 'a 5th', 'a 4th', 'an octave', 'a 2nd', 'a 6th'))], 6))}
 {ex(2, 'Major or minor 3rd?', 3, 'Count the semitones, then circle major or minor.', grid([pc(f'th{i}', f'{BOX} &nbsp;{circ("M", "m")}', 66) for i in range(6)], 6))}
 {ex(3, 'Higher, lower or the same?', 1, 'Someone plays two notes, one after the other. Circle what the second does. Swap and play for them.', '<div class="ts6">' + ''.join(f'<div><b>{i}</b><span class="tf">higher · lower · same</span></div>' for i in range(1, 7)) + '</div>')}
-{ex(4, 'In your music', 1, 'Find each of these in a piece you are learning.', piece(['a harmonic 3rd', 'a melodic 5th', 'an octave', 'five notes moving by step']))}''', 9, 26)
+{ex(4, 'In your music', 1, 'Find each of these in a piece you are learning.', piece(['a harmonic 3rd', 'a melodic 5th', 'an octave', 'five notes moving by step']))}''', 9, 28)
 
 # ---------- 5 Scales and keys (Handbook pp. 27–28) ----------
 A5 = tq('Learn', 'Scales and keys', 'Scales and keys', 'Every major scale has the same pattern: T T S T T T S.', f'''
 {ex(1, 'Fix the scale', 2, 'This should be G major, but one note is missing its sharp. Add it, then answer.', wpx('g_noacc', 92) + f'<div class="add">the note that needs a sharp {BOX} &nbsp; semitones between degrees {BOX} – {BOX} and {BOX} – {BOX}</div>')}
 {ex(2, 'The major pattern', 1, 'Write T or S between each pair of degrees.', '<div class="tsp">' + ''.join(f'<span class="dg">{i}</span>' + (f'<span class="ab{" dn" if i < 3 else ""}">{"T" if i < 3 else ""}</span>' if i < 8 else '') for i in range(1, 9)) + '</div>')}
 {ex(3, 'Degree names', 1, 'Write the name of each degree.', tbl(['Degree', 'Name', 'Degree', 'Name'], [['1', '<b class="done2">tonic</b>', '2', LINE], ['5', LINE, '3', LINE], ['4', LINE, '6', LINE], ['7', LINE, '', '']], ['12%', '38%', '12%', '38%']))}
-{ex(4, 'Relative minor', 2, 'Each major key shares its key signature with a minor key, three semitones lower.', '<div class="ts6">' + ''.join(f'<div><b>{a}</b> → {BOX if not d else "<b class=done2>" + d + "</b>"} <span class="mu2">minor</span></div>' for a, d in (('C major', 'A'), ('G major', ''), ('F major', ''), ('D major', ''), ('B♭ major', ''), ('E♭ major', ''))) + '</div>')}''', 10, 27)
+{ex(4, 'Relative minor', 2, 'Each major key shares its key signature with a minor key, three semitones lower.', '<div class="ts6">' + ''.join(f'<div><b>{a}</b> → {BOX if not d else "<b class=done2>" + d + "</b>"} <span class="mu2">minor</span></div>' for a, d in (('C major', 'A'), ('G major', ''), ('F major', ''), ('D major', ''), ('B♭ major', ''), ('E♭ major', ''))) + '</div>')}''', 10, 29)
 B5 = tq('Use', 'Scales and keys', 'Scales and keys', 'The order of sharps: F C G D A E B. The order of flats is the same, backwards.', f'''
 {ex(1, 'Name the key', 2, 'Write the major key and its relative minor for each key signature.', grid([pc('ks' + k, f'major {BOX} &nbsp; minor {BOX}', 56) for k in ('1s', '1f', '2s', '2f', '3s', '3f')], 3, 'ksg'))}
 {ex(2, 'Which minor?', 3, 'Three forms of A minor, going up. Write natural, harmonic or melodic under each.', ''.join(f'<div class="opc mrow"><span class="ol">{l}</span>{wpx(k, 44)}<span class="al mf"></span></div>' for l, k in (('A', 'mf_a'), ('B', 'mf_b'), ('C', 'mf_c'))))}
 {ex(3, 'In order', 1, 'Write the order of sharps and the order of flats.', '<div class="ord"><b>Sharps</b>' + BOX * 7 + '</div><div class="ord"><b>Flats</b>' + BOX * 7 + '</div>')}
-{ex(4, 'Play it', 1, 'Play each scale one octave, hands separately. Tick a circle each day it is even and correct.', '<div class="ts6">' + ''.join(f'<div><b>{s}</b>{ticks(4)}</div>' for s in ('G major', 'F major', 'A harm. minor')) + '</div>')}''', 11, 28)
+{ex(4, 'Play it', 1, 'Play each scale one octave, hands separately. Tick a circle each day it is even and correct.', '<div class="ts6">' + ''.join(f'<div><b>{s}</b>{ticks(4)}</div>' for s in ('G major', 'F major', 'A harm. minor')) + '</div>')}''', 11, 30)
 
 # ---------- Review, progress, answers ----------
 R = wpage2(f'''<div class="kick">Pitch · Review</div><h1>Review</h1><p class="rem2"><span>Ten minutes</span>No help, no piano. Mark it with the answers on page 14.</p>
@@ -98,7 +98,7 @@ R = wpage2(f'''<div class="kick">Pitch · Review</div><h1>Review</h1><p class="r
 {ex(3, 'Complete it', 2, 'One word or letter in each box.', f'<div class="sent"><p>A semitone higher than E is {BOX} .</p><p>From C to the next C there are {BOX} white keys, counting both.</p><p>A natural sign {LINE.replace("al", "al in")} a sharp or flat.</p><p>The relative minor of G major is {BOX} minor.</p></div>')}
 {ex(4, 'True or false?', 1, 'Circle T or F.', tfrows(('E to F is a tone.', 'A key signature applies to every line of the piece.', 'An accidental lasts until the end of the bar.')))}
 <div class="score">Score <span class="ab"></span> / 15</div>''', 12, 22)
-concepts = [('the keyboard and the musical alphabet', 22), ('tones and semitones', 26), ('the staff and the clefs', 23), ('treble clef notes', 24), ('bass clef notes', 24), ('ledger lines', 23), ('sharps, flats and naturals', 25), ('enharmonic names', 25), ('interval numbers', 26), ('major and minor 3rds', 26), ('major scales', 27), ('minor scales', 27), ('key signatures', 28)]
+concepts = [('the keyboard and the musical alphabet', 22), ('tones and semitones', 27), ('the staff and the clefs', 23), ('treble clef notes', 24), ('bass clef notes', 24), ('ledger lines', 23), ('sharps, flats and naturals', 26), ('enharmonic names', 26), ('interval numbers', 27), ('major and minor 3rds', 28), ('major scales', 29), ('minor scales', 29), ('key signatures', 30)]
 PR = wpage2(f'''<div class="kick">Pitch · Progress</div><h1>My progress</h1><p class="rem2"><span>How to use</span>Tick each column when it is true. Come back to this page every few weeks.</p>
 {tbl(['Concept', 'I know it', 'I can write it', 'I can play it', 'Handbook'], [[c, '<span class="cb2"></span>', '<span class="cb2"></span>', '<span class="cb2"></span>', f'p. {p}'] for c, p in concepts], ['40%', '15%', '15%', '15%', '15%'], 'prog')}
 <div class="note2"><b>Teacher’s note</b><div class="lines"><span class="al"></span><span class="al"></span><span class="al"></span></div></div>''', 13, 22)

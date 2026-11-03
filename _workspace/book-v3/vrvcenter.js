@@ -8,7 +8,7 @@ const { chromium } = require('playwright'); const fs = require('fs');
   for (const [k, svg] of Object.entries(S)) {
     await p.setContent('<body style="margin:0">' + svg + '</body>');
     out[k] = await p.evaluate(() => {
-      const GAP = 150;   // a little under one staff space (180 units)
+      const GAP = 230;   // a little under one staff space (180 units)
       const texts = [...document.querySelectorAll('g.verse text')];
       texts.forEach(tx => {
         const owner = tx.closest('g.chord') || tx.closest('g.note'); if (!owner) return;
