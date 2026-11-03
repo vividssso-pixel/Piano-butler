@@ -22,8 +22,8 @@ OPEN = f'''<section class="pg part2"><div class="pframe"><div class="pk">Part I<
 
 g14 = black_groups('C', 14)
 P22 = ppage(f'''{head('Part I · Pitch · 1', 'The keyboard', 'Keys to the <b>left</b> sound <b>lower</b>; keys to the <b>right</b> sound <b>higher</b>. The black keys come in groups of <b>two</b> and <b>three</b>, and that pattern repeats all the way along: it is how you find every note.')}
-{kbx('C', 14, 30, 120, brackets=[(a, b, ('2' if k == 2 else '3'), True) for a, b, k in g14], label=True, shade={0: '#fde6dd'}, scale=1.25)}
-{two(h3('The white keys') + '<p>The white keys are named with seven letters, <b>A B C D E F G</b>, then the letters start again. <b>C</b> is the white key just left of each group of two black keys; <b>F</b> is just left of each group of three.</p>',
+{kbx('C', 14, 30, 120, brackets=[(a, b, ('2 black keys' if k == 2 else '3 black keys'), True) for a, b, k in g14], label=True, shade={i: ('#fdeee8' if i % 7 < 3 else '#eef0f8') for i in range(14)}, marks=[f'<line x1="{x * 30}" x2="{x * 30}" y1="0" y2="120" stroke="#26296b" stroke-width="3.4"/>' for x in (3, 7, 10)], scale=1.25)}
+{two(h3('The white keys') + '<p>The white keys are named with seven letters, <b>A B C D E F G</b>, then the letters start again. <b>C D E</b> sit around each group of two black keys (C just left of it), <b>F G A B</b> around each group of three (F just left of it): the two tints on the picture.</p>',
      h3('Middle C and octaves') + '<p><b>Middle C</b> is the C nearest the middle of the keyboard, usually right in front of you. From one C to the next is an <b>octave</b>: eight white keys, counting both. A full piano has 88 keys, from A at the bottom to C at the top.</p>')}
 {h3('Words to know')}
 {tbl(['Term', 'Meaning', 'First met'], [['pitch', 'how high or low a sound is', 'Level 0'], ['octave', 'the distance from one note to the next with the same name (8 white keys)', 'Level 0'], ['semitone', 'from one key to the very next key, black or white', 'Level 0'], ['tone', 'two semitones', 'Level 0'], ['register', 'a part of the keyboard: low, middle or high', 'Level 0']], ['20%', '60%', '20%'])}
@@ -44,7 +44,9 @@ P24 = ppage(f'''{head('Part I · Pitch · 3', 'Reading the notes', 'Each line an
 {two(px('bs_lines', 100, 'Bass clef: the lines'), px('bs_spaces', 100, 'Bass clef: the spaces'))}
 {tbl(['Staff', 'Notes, bottom to top', 'To remember'], rhy, ['24%', '30%', '46%'])}
 {h3('Landmark notes')}
-{two('<p>Find these first: middle C, the G the treble clef curls round, the F between the bass clef’s dots. Any other note is a step or a skip away. A <b>step</b> moves from a line to the next space (or space to line); a <b>skip</b> jumps from line to line or space to space.</p>', px('lm_t', 78, 'Treble clef: middle C, the G it curls round, the C in the third space') + px('lm_b', 78, 'Bass clef: the C in the second space, the F between its dots, middle C'), '1fr 1.2fr')}
+<p>Find these first; every other note is a <b>step</b> or a <b>skip</b> away. A step moves from a line to the next space (or a space to the next line); a skip jumps from line to line or space to space.</p>
+<div class="lmr"><div><b>Treble clef</b><br>Middle C on its own ledger line below; the G the clef curls round (line 2); the C in the third space.</div>{px('lm_t', 84)}</div>
+<div class="lmr"><div><b>Bass clef</b><br>The C in the second space; the F between the clef’s two dots (line 4); middle C on its ledger line above.</div>{px('lm_b', 84)}</div>
 {watch(['Reading the bass clef with treble names: the same position has a different name in each clef.', 'Counting lines from the top: always count from the bottom.'])}''', 24)
 
 acc = [[gsym('♯', 28), 'sharp', 'raises a note by a semitone', 'Level 0'], [gsym('♭', 28), 'flat', 'lowers a note by a semitone', 'Level 0'], [gsym('♮', 28), 'natural', 'cancels a sharp or flat', 'Level ½'], [gsym('𝄪', 16), 'double sharp', 'raises by two semitones', 'Level 4'], [gsym('𝄫', 28), 'double flat', 'lowers by two semitones', 'Level 4']]
@@ -53,7 +55,7 @@ P25 = ppage(f'''{head('Part I · Pitch · 4', 'Sharps, flats and naturals', 'An 
 {h3('An accidental lasts for the bar')}
 {two(px('acc_bar', 96, 'The sharp still counts later in the bar; after the bar line, F is F again.'), px('acc_nat', 96, 'A natural cancels the flat for the rest of the bar.'))}
 {h3('One key, two names')}
-{two('<p>Every black key has two names: the key between F and G is both <b>F♯</b> and <b>G♭</b>. Notes that sound the same but are written differently are <b>enharmonic</b>. White keys can have sharp or flat names too: <b>E♯</b> is F, <b>C♭</b> is B.</p>', kbx('C', 7, 34, 110, label=True, marks=[f'<text x="{1 * 34}" y="-6" text-anchor="middle" font-family="AH" font-size="12" font-weight="700" fill="#e4572e">C♯ D♭</text>', f'<text x="{4 * 34}" y="-6" text-anchor="middle" font-family="AH" font-size="12" font-weight="700" fill="#e4572e">F♯ G♭</text>']).replace('viewBox="-2 -2', 'viewBox="-2 -20'), '1fr 1fr')}
+{two('<p>Every black key has two names: the key between F and G is both <b>F♯</b> and <b>G♭</b>. Notes that sound the same but are written differently are <b>enharmonic</b>. White keys can have sharp or flat names too: <b>E♯</b> is F, <b>C♭</b> is B.</p>', kbx('C', 7, 46, 150, label=True, marks=[f'<text x="{(i + 1) * 46}" y="{y}" text-anchor="middle" font-family="AH,Arial" font-size="10.5" font-weight="700" fill="#fff">{t}</text>' for i, (s1, f1) in zip((0, 1, 3, 4, 5), (('C♯', 'D♭'), ('D♯', 'E♭'), ('F♯', 'G♭'), ('G♯', 'A♭'), ('A♯', 'B♭'))) for y, t in ((62, s1), (77, f1))], scale=1.0), '1fr 1fr')}
 {watch(['Forgetting that an accidental carries on through the bar.', 'Thinking every sharp is a black key: E♯ and B♯ are white keys.'])}
 {foot('Keys and key signatures p. 28', 'Workbook Levels 0–½ · Accidentals · Online: Library › Signs')}''', 25)
 
@@ -87,7 +89,7 @@ P28 = ppage(f'''{head('Part I · Pitch · 7', 'Keys and key signatures', 'A <b>k
 {foot('Scales p. 27 · Related keys p. 30', 'Workbook Levels ½–4 · Keys · Online: Scale finder, Library › Keys')}''', 28)
 
 css += '''
-.degs{font-size:14px;line-height:1.7}
+.degs{font-size:14px;line-height:1.7} .lmr{display:grid;grid-template-columns:1fr 1.25fr;gap:18px;align-items:center;margin:8px 0} .lmr>div:first-child{font-size:14.5px;line-height:1.55} .lmr .vx{margin:0}
 .px .vs svg{width:100%;height:auto} .px text{font-family:'AH',Arial !important;fill:#26296b !important;font-weight:700} .kbf{display:flex;justify-content:center}
 '''
 html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{OPEN}{P22}{P23}{P24}{P25}{P26}{P27}{P28}</body></html>'

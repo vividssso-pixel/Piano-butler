@@ -29,6 +29,11 @@ const { chromium } = require('playwright');
           const d = (T.left + T.right) / 2 - (a + b) / 2;
           if (Math.abs(d) > 2) out.push(`p${i + 1}: label “${tx.textContent.trim()}” ${Math.round(d)}px off its note`);
         });
+        pg.querySelectorAll('svg').forEach(sv => {   // (5) a gap of at least 3px between every label and any notehead or ledger line
+          const objs = [...sv.querySelectorAll('g.notehead, g.ledgerLines path, g.accid')].map(e => e.getBoundingClientRect()).filter(r => r.width);
+          sv.querySelectorAll('g.verse text').forEach(tx => { const T = tx.getBoundingClientRect(); if (!T.width) return;
+            if (objs.some(R => R.left < T.right && R.right > T.left && T.top < R.bottom + 3 && T.bottom > R.top - 3)) out.push(`p${i + 1}: label “${tx.textContent.trim()}” touches a note`); });
+        });
         const body = pg.querySelector('.body');
         if (body) {
           const limit = (pg.querySelector('.sign, .ffoot') || pg.querySelector('.foot')).getBoundingClientRect().top - 4;
