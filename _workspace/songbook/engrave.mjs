@@ -91,6 +91,7 @@ for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
     svg = svg.replace(/<g id="[^"]+" class="fing">\s*<text x="\d+" y="(\d+)"/g, (m, y) => +y < sy ? m.replace('class="fing">', `class="fing" transform="translate(0,${base - +y})">`) : m);
     // and the chord letters above the fingers
     if (o.chords) svg = svg.replace(/<g id="[^"]+" class="harm">\s*<text x="\d+" y="(\d+)"/g, (m, y) => m.replace('class="harm">', `class="harm" transform="translate(0,${Math.min(0, base - 330 - +y)})">`)); }
+  if (o.counts) svg = addCounts(svg); if (o.boxes) svg = addBoxes(svg, S.bars[b0][0][0][0].toUpperCase());
   out[k] = svg;
 }
 fs.writeFileSync(process.argv[3], JSON.stringify(out)); console.log(Object.keys(out).length, 'snippets');

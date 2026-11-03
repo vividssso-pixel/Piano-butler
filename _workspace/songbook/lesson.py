@@ -9,7 +9,14 @@ def b64(p): return base64.b64encode(open(p, 'rb').read()).decode()
 FF = (f"@font-face{{font-family:'AH';font-weight:400;src:url(data:font/woff2;base64,{b64(FD + 'atkinson-hyperlegible/files/atkinson-hyperlegible-latin-400-normal.woff2')}) format('woff2')}}"
       f"@font-face{{font-family:'AH';font-weight:700;src:url(data:font/woff2;base64,{b64(FD + 'atkinson-hyperlegible/files/atkinson-hyperlegible-latin-700-normal.woff2')}) format('woff2')}}"
       f"@font-face{{font-family:'PF';font-weight:700;src:url(data:font/woff2;base64,{b64(FD + 'playfair-display/files/playfair-display-latin-700-normal.woff2')}) format('woff2')}}")
-LESSON, LEVEL = 6, 'Level 0'
+LESSON, LEVEL = 5, 'Level 0'
+ROOM = SONG.get('room', 'note-values')   # the drills room this lesson goes with (the QR opens it; drills needs ?room=)
+import qrcode, qrcode.image.svg
+def qr(url):   # a plain navy QR, drawn as one SVG path
+    q = qrcode.QRCode(border=1, error_correction=qrcode.constants.ERROR_CORRECT_M); q.add_data(url); q.make(fit=True)
+    m = q.get_matrix(); n = len(m); d = ''.join(f'M{x},{y}h1v1h-1z' for y, r in enumerate(m) for x, v in enumerate(r) if v)
+    return f'<svg viewBox="0 0 {n} {n}" style="width:96px;height:96px;display:block" shape-rendering="crispEdges"><path d="{d}" fill="{N}"/></svg>'
+URL = 'https://thepianobutler.com/drills.html?room=' + ROOM
 def page(inner, n): return f'<section class="pg"><div class="top"><span>THE PIANO BUTLER LESSON BOOK · {LEVEL.upper()}</span><span>LESSON {LESSON} · {SONG["title"].upper()}</span></div><div class="rule"></div><div class="body">{inner}</div><div class="foot"><span>{n}</span></div></section>'
 def mus(k, cls=''): return f'<div class="mus {cls}" data-snip="{k}">{V[k]}</div>'
 def part(n, t, how): return f'<div class="ph"><span class="pn">{n}</span><h2>{t}</h2></div><p class="how">{how}</p>'
@@ -43,7 +50,7 @@ P1 = page(f'''<div class="kick">Lesson {LESSON}</div><h1>{SONG["title"]}</h1>
 <div class="chips"><span class="cl">In this song</span>{chips}</div>
 {part(1, 'Listen and sing', 'Listen first, pointing to each note as it sounds. Then sing.')}
 {mus('sing1')}{mus('sing2')}
-<div class="row2"><div>{ticks(['Listened and pointed', 'Sang it with the words', 'Sang it on the letter names'])}</div><div class="qr"><div class="qrb">QR</div><span>Listen</span></div></div>
+<div class="row2"><div>{ticks(['Listened and pointed', 'Sang it with the words', 'Sang it on the letter names'])}</div><div class="qr">{qr(URL)}<span>Scan me</span></div></div>
 {part(2, 'Say and clap', 'Say the words in time, then clap them and count. Clap on the coral numbers; hold through the grey ones.')}
 {mus('rhy1')}{mus('rhy2')}
 {ticks(['Said it in time', 'Clapped and counted'], True)}''', 1)
@@ -53,6 +60,7 @@ P2 = page(f'''{part(3, 'Read it', 'The song uses four notes of C position. Find 
 <p class="q"><b>Write the letter names</b> of bars 1 to 4 in the boxes. The first one is done.</p>{mus('read1')}
 <div class="sk"><p class="q"><b>In bar 4 the tune goes from E to G.</b> Is that a step or a skip?</p><div class="ticks h"><span class="tk"><span class="bx"></span>a step</span><span class="tk"><span class="bx"></span>a skip</span></div></div>
 {part(4, 'Play it four ways', 'Start with Way 1. Each way adds a little more for the left hand; your teacher tells you which way is yours this week.')}
+<div class="tog"><span class="tgh">Play together</span><span>Two players, one song: one plays Way 1, the other the left hand of Way 4. Then swap.</span></div>
 {way(1, 'The tune', 1, 'Right hand alone. The numbers are your fingers.', 'w1a', 'w1b')}''', 2)
 
 P3 = page(f'''{way(2, 'One long note below', 2, 'The left hand holds one note each bar: C with finger 5, or G with finger 1. Count four.', 'w2a', 'w2b')}
@@ -80,7 +88,7 @@ css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margi
 .mus svg{{width:100%;height:auto;display:block}} .mus text{{font-family:'AH',Arial !important}} .mus .harm text, .mus g.harm text{{font-family:'PF',Georgia,serif !important;font-weight:700}}
 .mus g.fing text{{font-weight:700}} .mus .cnt{{font-family:'AH',Arial !important}}
 .ticks{{display:flex;flex-direction:column;gap:8px;margin:8px 0}} .ticks.h{{flex-direction:row;gap:18px}} .tk{{display:inline-flex;align-items:center;gap:9px;font-size:15.5px;font-weight:700}} .bx{{width:20px;height:20px;border:1.8px solid {N};border-radius:4px;display:inline-block;flex:none}}
-.row2{{display:grid;grid-template-columns:1fr 110px;gap:16px;align-items:center}} .qr{{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:700;color:{MUTE};letter-spacing:.12em;text-transform:uppercase}} .qrb{{width:96px;height:96px;border:1.5px dashed {HELD};display:flex;align-items:center;justify-content:center;color:{HELD};font-size:14px}}
+.tog{{display:flex;gap:14px;align-items:baseline;border:1.5px dashed {C};border-radius:6px;padding:8px 14px;margin:6px 0 4px;font-size:15px}} .tgh{{font-size:11.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};white-space:nowrap}} .row2{{display:grid;grid-template-columns:1fr 110px;gap:16px;align-items:center}} .qr{{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:700;color:{MUTE};letter-spacing:.12em;text-transform:uppercase}} .qrb{{width:96px;height:96px;border:1.5px dashed {HELD};display:flex;align-items:center;justify-content:center;color:{HELD};font-size:14px}}
 .kbw{{max-width:460px;margin:6px auto 4px}} .kbw svg{{max-width:460px !important}} .sk{{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin:6px 0 4px}} .sk .ticks{{margin:0}} .two{{display:grid;grid-template-columns:1fr 1.15fr;gap:24px;align-items:start;margin-top:6px}} .cap{{font-size:13px;color:{MUTE};text-align:center}} .q{{font-size:15.5px;margin:2px 0 4px}}
 .way.gs .mus{{max-width:91%;margin:0 auto}} .way{{border-top:1px solid #d9d6ea;padding-top:10px;margin-top:12px}} .wh{{display:flex;align-items:baseline;gap:12px}} .wn{{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}} .wh b{{font-family:'PF',Georgia,serif;font-size:21px}} .st{{margin-left:auto;color:{C};letter-spacing:.1em;font-size:15px}}
 .chk{{border:1.5px solid {N};margin-top:8px;padding:12px 16px}} .ch{{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};margin-bottom:4px}} .cgrid{{display:grid;grid-template-columns:1fr 1.25fr;gap:20px}} .chk .ticks.h{{gap:12px}} .chk .tk{{white-space:nowrap}}
