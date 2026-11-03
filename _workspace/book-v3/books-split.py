@@ -34,7 +34,7 @@ for part, n, title, blurb, hs, hp, hpp, ws, wp, wpp in CH:
     hf = f'1 Handbook/{PARTN[part].replace(" · ", " ")}/handbook-{base}.pdf'; wf = f'2 Workbook/{part}/workbook-{base}.pdf'
     cut(hs, hp, O + hf); cut(ws, wp, O + wf); thumb(hs, hp[0], O + f'_thumbs/hb-{base}.jpg'); thumb(ws, wp[0], O + f'_thumbs/wb-{base}.jpg')
     cards['hb'][part].append((f'Chapter {n} · {part}', title, blurb, hf, f'_thumbs/hb-{base}.jpg', f'p. {hpp}' if '–' not in hpp else f'pp. {hpp}', len(hp)))
-    cards['wb'][part].append((f'Chapter {n} · {part}', title, blurb, wf, f'_thumbs/wb-{base}.jpg', f'Workbook {part} pp. {wpp}', len(wp)))
+    cards['wb'][part].append((f'Chapter {n} · {part}', title, blurb, wf, f'_thumbs/wb-{base}.jpg', f'pp. {wpp}', len(wp)))
 for kind, part, title, src, pages, blurb in EXTRA:
     base = f'{"1" if part == "Pitch" else "2"}-0-{slug(title)}' if kind == 'hb' else f'{"1" if part == "Pitch" else "2"}-9-{slug(title)}'
     f = (f'1 Handbook/{PARTN[part].replace(" · ", " ")}/handbook-{base}.pdf' if kind == 'hb' else f'2 Workbook/{part}/workbook-{base}.pdf')
@@ -46,26 +46,52 @@ def card(c):
     lab, title, blurb, f, th, pp, n = c
     return f'''<div class="card"><a class="sheet" href="{E(f)}" target="_blank"><img src="{E(th)}" alt="" loading="lazy"></a><div class="txt"><div class="topic">{E(lab)}</div><h3>{E(title)}</h3><p>{E(blurb)}</p>
 <div class="foot"><span class="meta">{n} {"page" if n == 1 else "pages"}{" · " + E(pp) if pp else ""}</span><a class="btn" href="{E(f)}" target="_blank">Open</a></div></div></div>'''
-def sec(kind, name, sub):
-    out = f'<section class="sec"><div class="sec-h"><h2>{name}</h2><span class="count">{sub}</span></div>'
-    for part in ('Pitch', 'Time'):
-        out += f'<div class="stage"><div class="stage-h">{PARTN[part] if kind == "hb" else part}</div><div class="grid">' + ''.join(card(c) for c in cards[kind][part]) + '</div></div>'
-    return out + '</section>'
-page = f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Books, chapter by chapter</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:wght@800;900&display=swap" rel="stylesheet">
-<style>:root{{--cream:#faf6ec;--paper:#fffefa;--navy:#26296b;--navy-soft:#4a4d86;--muted:#6d6f9c;--line:#e8e1d0;--coral:#e4572e;--cut:#8a6a2c}}
+BOOKS = [('hbP', 'hb', 'Pitch', 'The Piano Butler Handbook', 'Part I', 'Pitch', 'The keyboard, the staff, accidentals, intervals, scales and keys', 'Whole books (later)/handbook-part1-pitch.pdf'),
+         ('wbP', 'wb', 'Pitch', 'The Piano Butler Workbook', 'Workbook', 'Pitch', 'Learn and Use pages for every Pitch chapter, review and answers', 'Whole books (later)/workbook-pitch.pdf'),
+         ('hbT', 'hb', 'Time', 'The Piano Butler Handbook', 'Part II', 'Time', 'Pulse, note values, time signatures and rhythm', 'Whole books (later)/handbook-part2-time.pdf'),
+         ('wbT', 'wb', 'Time', 'The Piano Butler Workbook', 'Workbook', 'Time', 'Learn and Use pages for every Time chapter, review and answers', 'Whole books (later)/workbook-time.pdf')]
+def cover(b):
+    k, kind, part, series, kick, title, blurb, whole = b
+    n = len(cards[kind][part]); acc = '#e4572e' if kind == 'wb' else '#f4a9bb'
+    return f"""<button type="button" class="book" data-book="{k}" aria-expanded="false"><span class="cv {kind}"><span class="fr"><span class="se">{E(series)}</span><span class="ki" style="color:{acc}">{E(kick)}</span><span class="ti">{E(title)}</span><span class="dv"></span><span class="bl">{E(blurb)}</span><span class="bw"><svg viewBox="0 0 40 24" width="34" height="20"><path d="M2 3 L18 12 L2 21 Z" fill="none" stroke="#fffdf7" stroke-width="2" stroke-linejoin="round"/><path d="M38 3 L22 12 L38 21 Z" fill="none" stroke="#fffdf7" stroke-width="2" stroke-linejoin="round"/><circle cx="20" cy="12" r="2.6" fill="{acc}"/></svg></span></span></span>
+<span class="cap"><b>{E(kick if kind == 'hb' else 'Workbook')} · {E(title)}</b><span>{n} {"sections" if kind == "hb" else "parts"} · tap to open</span></span></button>"""
+def panel(b):
+    k, kind, part, series, kick, title, blurb, whole = b
+    return f"""<section class="panel" id="p-{k}" hidden><div class="ph"><h2>{E(series)} · {E(kick + ' · ' if kind == 'hb' else '')}{E(title)}</h2><a class="whole" href="{E(whole)}" target="_blank">The whole draft as one PDF</a></div>
+<div class="grid">{''.join(card(c) for c in cards[kind][part])}</div></section>"""
+page = f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>The books</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+<style>:root{{--cream:#faf6ec;--navy:#26296b;--dk:#1c1e4f;--navy-soft:#4a4d86;--muted:#6d6f9c;--line:#e8e1d0;--coral:#e4572e}}
 *{{box-sizing:border-box}} body{{margin:0;background:var(--cream);color:var(--navy);font-family:Inter,-apple-system,sans-serif;line-height:1.55}}
 .wrap{{max-width:1100px;margin:0 auto;padding:28px 20px 72px}} h1,h2,h3{{font-family:'Playfair Display',Georgia,serif;margin:0}}
 h1{{font-size:clamp(38px,6vw,60px);font-weight:900;line-height:1.02}} .lead{{font-size:17px;color:var(--navy-soft);margin:12px 0 0;max-width:40em}}
-.jump{{display:flex;gap:10px;margin:20px 0 0;flex-wrap:wrap}} .jump a{{text-decoration:none;font-weight:700;font-size:14px;border:1.5px solid var(--navy);border-radius:999px;padding:7px 14px;background:var(--paper);color:var(--navy)}}
-.sec{{margin-top:46px}} .sec-h{{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1.5px solid var(--navy);padding-bottom:8px}} .sec-h h2{{font-size:clamp(28px,4vw,38px);font-weight:900}} .count{{font-size:14px;color:var(--muted);font-weight:600}}
-.stage{{margin-top:26px}} .stage-h{{font-family:'Playfair Display',serif;font-size:24px;font-weight:800;margin-bottom:14px}}
-.grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:26px 22px}} .card{{display:flex;flex-direction:column}}
+.shelf{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px;margin-top:30px;padding-bottom:16px;border-bottom:8px solid #b59a68;box-shadow:0 4px 0 rgba(38,41,107,.12)}}
+.book{{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:10px}} .book:focus-visible .cv{{outline:3px solid var(--coral);outline-offset:4px}}
+.cv{{display:block;aspect-ratio:210/297;background:var(--dk);border-radius:2px 6px 6px 2px;box-shadow:inset 6px 0 0 rgba(0,0,0,.25),0 8px 18px rgba(28,30,79,.25);transition:transform .2s;padding:9%}}
+.cv.wb{{background:#26296b}} .book:hover .cv,.book[aria-expanded=true] .cv{{transform:translateY(-8px)}} .book[aria-expanded=true] .cv{{outline:3px solid var(--coral);outline-offset:4px}}
+.fr{{display:flex;flex-direction:column;height:100%;border:1.5px solid rgba(255,253,247,.7);outline:.6px solid rgba(255,253,247,.4);outline-offset:-6px;padding:14% 10% 10%;color:#fffdf7}}
+.se{{font-size:clamp(8px,1vw,10.5px);letter-spacing:.14em;text-transform:uppercase;opacity:.85}} .ki{{font-size:clamp(9px,1.1vw,12px);font-weight:800;letter-spacing:.3em;text-transform:uppercase;margin-top:16%}}
+.ti{{font-family:'Playfair Display',serif;font-weight:800;font-size:clamp(26px,3.6vw,42px);line-height:1;margin-top:4px}} .dv{{width:40%;height:4px;border-top:1px solid #fffdf7;border-bottom:1px solid #fffdf7;opacity:.7;margin:10% 0}}
+.bl{{font-size:clamp(9px,1vw,12px);line-height:1.45;opacity:.9}} .bw{{margin-top:auto}}
+.cap{{display:flex;flex-direction:column}} .cap b{{font-size:15px}} .cap span{{font-size:12.5px;color:var(--muted);font-weight:600}}
+.panel{{margin-top:34px}} .ph{{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1.5px solid var(--navy);padding-bottom:8px;margin-bottom:22px}} .ph h2{{font-size:clamp(24px,3.4vw,32px);font-weight:900}} .whole{{font-size:14px;font-weight:700;color:var(--navy-soft)}}
+.grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,210px),1fr));gap:24px 20px}} .card{{display:flex;flex-direction:column}}
 .sheet{{display:block;background:#fff;border:1px solid var(--line);border-radius:4px;overflow:hidden;transition:transform .15s}} .sheet:hover{{transform:translateY(-3px)}} .sheet img{{display:block;width:100%;height:auto}}
-.txt{{padding:12px 2px 0;display:flex;flex-direction:column;flex:1}} .topic{{font-size:12.5px;font-weight:700;color:var(--coral)}} h3{{font-size:20px;font-weight:800;margin:2px 0 6px;line-height:1.2}} .card p{{font-size:14px;color:var(--navy-soft);margin:0 0 8px}}
+.txt{{padding:12px 2px 0;display:flex;flex-direction:column;flex:1}} .topic{{font-size:12.5px;font-weight:700;color:var(--coral)}} h3{{font-size:19px;font-weight:800;margin:2px 0 6px;line-height:1.2}} .card p{{font-size:14px;color:var(--navy-soft);margin:0 0 8px}}
 .foot{{margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:10px}} .meta{{font-size:12.5px;color:var(--muted);font-weight:600}} .btn{{text-decoration:none;background:var(--coral);color:#fff;font-weight:700;font-size:14px;border-radius:999px;padding:7px 15px}}
-</style></head><body><div class="wrap"><h1>The books, chapter by chapter</h1><p class="lead">Drafts. Every chapter of The Piano Butler Handbook and Workbook as its own PDF. The whole books come later.</p>
-<div class="jump"><a href="#hb">The Handbook</a><a href="#wb">The Workbook</a><a href="3 Activities and games/rhythm-activities-games.pdf" target="_blank">Rhythm activities and games</a><a href="3 Activities and games/pitch-games.pdf" target="_blank">Pitch games</a></div>
-<div id="hb">{sec("hb", "The Handbook", "Part I and Part II, one PDF per chapter")}</div><div id="wb">{sec("wb", "The Workbook", "Learn and Use pages per chapter")}</div></div></body></html>'''
+.more{{margin-top:40px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}} .more b{{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-right:4px}} .more a{{text-decoration:none;font-weight:700;font-size:14px;border:1.5px solid var(--navy);border-radius:999px;padding:7px 14px;background:#fffefa;color:var(--navy)}}
+@media(max-width:700px){{.shelf{{grid-template-columns:repeat(2,minmax(0,1fr))}}}}
+</style></head><body><div class="wrap"><h1>The books</h1><p class="lead">Drafts. Tap a book to see its chapters; every chapter opens as its own PDF.</p>
+<div class="shelf">{''.join(cover(b) for b in BOOKS)}</div>
+{''.join(panel(b) for b in BOOKS)}
+<div class="more"><b>Activities and games</b><a href="3 Activities and games/rhythm-activities-games.pdf" target="_blank">Rhythm activities and games</a><a href="3 Activities and games/pitch-games.pdf" target="_blank">Pitch games</a></div>
+</div><script>
+document.querySelectorAll('.book').forEach(b => b.addEventListener('click', () => {{
+  const k = b.dataset.book, on = b.getAttribute('aria-expanded') === 'true';
+  document.querySelectorAll('.book').forEach(x => x.setAttribute('aria-expanded', 'false'));
+  document.querySelectorAll('.panel').forEach(p => p.hidden = true);
+  if (!on) {{ b.setAttribute('aria-expanded', 'true'); const p = document.getElementById('p-' + k); p.hidden = false; p.scrollIntoView({{behavior: 'smooth', block: 'start'}}); }}
+}}));
+</script></body></html>"""
 open(O + 'index.html', 'w').write(page)
 print(sum(len(v) for k in cards.values() for v in k.values()), 'cards')
