@@ -70,7 +70,7 @@ function addBoxes(svg, ex) {
 // A lead sheet's "when" row, under the staff: for each bar, the left hand's pattern for that bar's chord, placed on its beats.
 // A single note shows its finger number (coral); two notes together show a coral dot; a note held past its beat runs on
 // as a grey line to the end of its length.
-function addWhen(svg, way, b0) {
+function addWhen(svg, way, b0, pic) {
   const ev = []; let m; const re = /<g id="(x\d+)" class="note">\s*<g class="notehead">\s*<use xlink:href="#[^"]+" transform="translate\((\d+), (\d+)\)|<g id="[^"]+" class="barLine"[^>]*>\s*<path d="M(\d+) /g;
   while ((m = re.exec(svg))) { if (m[1]) ev.push({ id: m[1], x: +m[2] }); else ev.push({ bar: true, x: +m[4] }); }
   const sy = +(svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1], HW = 212, Y = sy + 1330;
@@ -80,7 +80,13 @@ function addWhen(svg, way, b0) {
   let out = '';
   bars.filter(b => b.length).forEach((bx, j) => { const b = b0 + j, last = b === S.bars.length - 1, pat = (last && S.lh[way].end) || S.lh[way][S.chords[b]]; let beat = 0;
     pat.forEach(([ps, d, f]) => { const L = LEN[d], x = bx[beat], xe = beat + L < bx.length ? bx[beat + L] - 130 : bx[bx.length - 1] + 330;
-      if (ps.length > 1) out += `<circle cx="${x.toFixed(0)}" cy="${Y - 100}" r="70" fill="${ON}" class="when"/>`;
+      if (ps.length > 1 && pic && f) {   // the chord's picture, first line only: its notes stacked, a third a head apart (so a
+        // root-position triad's heads touch), a dashed ring where a note is still to come
+        const st = ps.map(p => L7.indexOf(p[0]) + 7 * +p.slice(1)), lo = Math.min(...st), hi = Math.max(...st), D = 240;
+        for (let k = lo; k <= hi; k += 2) { const cy = Y - 100 + (hi - k) / 2 * D, has = st.includes(k);   // the top note on the row, the rest below
+          out += has ? `<circle cx="${x.toFixed(0)}" cy="${cy.toFixed(0)}" r="${D / 2}" fill="${ON}" class="when"/>`
+                     : `<circle cx="${x.toFixed(0)}" cy="${cy.toFixed(0)}" r="${D / 2 - 12}" fill="#fff" stroke="${ON}" stroke-width="16" stroke-dasharray="34 26" class="when"/>`; } }
+      else if (ps.length > 1) out += `<circle cx="${x.toFixed(0)}" cy="${Y - 100}" r="70" fill="${ON}" class="when"/>`;
       else out += `<text x="${x.toFixed(0)}" y="${Y}" text-anchor="middle" font-size="290" font-weight="700" fill="${ON}" class="cnt when">${f}</text>`;
       if (L > 1) out += `<line x1="${(x + 140).toFixed(0)}" x2="${xe.toFixed(0)}" y1="${Y - 100}" y2="${Y - 100}" stroke="${HELD}" stroke-width="26" stroke-linecap="round"/>`;
       beat += L; }); });
@@ -95,15 +101,15 @@ const JOBS = {
   w3a: [0, 4, { lh: 'way3', chords: 1, meter: 1 }], w3b: [4, 8, { lh: 'way3', chords: 1 }],
   w4a: [0, 4, { lh: 'way4', chords: 1, meter: 1 }], w4b: [4, 8, { lh: 'way4', chords: 1 }],
   L2a: [0, 4, { chords: 1, meter: 1, lead: 'way2' }], L2b: [4, 8, { chords: 1, lead: 'way2' }],
-  L3a: [0, 4, { chords: 1, meter: 1, lead: 'way3' }], L3b: [4, 8, { chords: 1, lead: 'way3' }],
-  L4a: [0, 4, { chords: 1, meter: 1, lead: 'way4' }], L4b: [4, 8, { chords: 1, lead: 'way4' }],
+  L3a: [0, 4, { chords: 1, meter: 1, lead: 'way3', pic: 1 }], L3b: [4, 8, { chords: 1, lead: 'way3' }],
+  L4a: [0, 4, { chords: 1, meter: 1, lead: 'way4', pic: 1 }], L4b: [4, 8, { chords: 1, lead: 'way4' }],
   g1: [0, 4, { fing: 1, chords: 1, meter: 1, tr: 4, key: '1s' }],   // Move it: bars 1 to 4 in G, one sharp, the same fingers
 };
 const out = {};
 for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
   INFO = {}; id = 0;
   tk.setOptions({ pageWidth: 2100, adjustPageHeight: true, adjustPageWidth: false, scale: 50, header: 'none', footer: 'none', svgViewBox: true,
-    pageMarginTop: 30, pageMarginBottom: o.counts || o.boxes || o.lead ? 300 : 40, pageMarginLeft: 20, pageMarginRight: 20, breaks: 'none', spacingLinear: 0.25, spacingNonLinear: 0.6, font: 'Leipzig', lyricSize: 4.0, lyricTopMinMargin: o.rhythm ? 2 : 5, lyricWordSpace: 2.6, fingeringScale: 0.9 });
+    pageMarginTop: 30, pageMarginBottom: o.pic ? 500 : o.counts || o.boxes || o.lead ? 300 : 40, pageMarginLeft: 20, pageMarginRight: 20, breaks: 'none', spacingLinear: 0.25, spacingNonLinear: 0.6, font: 'Leipzig', lyricSize: 4.0, lyricTopMinMargin: o.rhythm ? 2 : 5, lyricWordSpace: 2.6, fingeringScale: 0.9 });
   tk.loadData(mei(b0, b1, o)); let svg = tk.renderToSVG(1);
   // fingers above the staff: Verovio clears the staff but not a stem that rises past it (G's, A's), so set them all on one
   // line, clear of the highest stem
@@ -113,7 +119,7 @@ for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
     svg = svg.replace(/<g id="[^"]+" class="fing">\s*<text x="\d+" y="(\d+)"/g, (m, y) => +y < sy ? m.replace('class="fing">', `class="fing" transform="translate(0,${base - +y})">`) : m);
     // and the chord letters above the fingers
     if (o.chords) svg = svg.replace(/<g id="[^"]+" class="harm">\s*<text x="\d+" y="(\d+)"/g, (m, y) => m.replace('class="harm">', `class="harm" transform="translate(0,${Math.min(0, base - 330 - +y)})">`)); }
-  if (o.counts) svg = addCounts(svg); if (o.boxes) svg = addBoxes(svg, S.bars[b0][0][0][0].toUpperCase()); if (o.lead) svg = addWhen(svg, o.lead, b0);
+  if (o.counts) svg = addCounts(svg); if (o.boxes) svg = addBoxes(svg, S.bars[b0][0][0][0].toUpperCase()); if (o.lead) svg = addWhen(svg, o.lead, b0, o.pic);
   out[k] = svg;
 }
 fs.writeFileSync(process.argv[3], JSON.stringify(out)); console.log(Object.keys(out).length, 'snippets');

@@ -44,16 +44,18 @@ def kb(start=0, tr=0, sharp=None, width=380):
     out += f'<text x="{w / 2}" y="{H + 20}" text-anchor="middle" font-family="AH" font-weight="700" font-size="12" fill="{MUTE}">middle C</text>'
     return f'<svg viewBox="-2 {-2 - top} {W + 4} {H + 28 + top}" style="width:100%;max-width:{width}px;display:block;margin:0 auto">{out}</svg>'
 
-LHF = {'c3': 5, 'd3': 4, 'e3': 3, 'f3': 2, 'g3': 1}
+# a left-hand keyboard from G below to G (the C chord under C to G, the G chord's hand moved down to G), the way's notes for
+# that chord lit with their fingers
 def lhkb(way, ch):
-    notes = [p for ps, d, f in SONG['lh'][way][ch] for p in ps]; W, H, w = 5 * 34, 108, 34; out = ''
-    for i, l in enumerate('cdefg'):
-        p = l + '3'; lit = p in notes
-        out += f'<rect x="{i * w}" y="0" width="{w}" height="{H}" rx="2" fill="{"#fbe3da" if lit else "#fff"}" stroke="{N}" stroke-width="1.4"/>'
-        out += f'<text x="{i * w + w / 2}" y="{H - 8}" text-anchor="middle" font-family="AH" font-weight="700" font-size="13" fill="{N}">{l.upper()}</text>'
-        if lit: out += f'<circle cx="{i * w + w / 2}" cy="{H - 36}" r="11" fill="{C}"/><text x="{i * w + w / 2}" y="{H - 31.5}" text-anchor="middle" font-family="AH" font-weight="700" font-size="13" fill="#fff">{LHF[p]}</text>'
-    for i in (0, 1, 3): out += f'<rect x="{(i + 1) * w - 10}" y="0" width="20" height="{H * 0.58}" rx="2" fill="{N}"/>'
-    return f'<div class="lk"><b>{ch}</b><svg viewBox="-1 -1 {W + 2} {H + 2}" style="width:130px;display:block">{out}</svg></div>'
+    pat = SONG['lh'][way][ch][0]; fing = dict(zip(pat[0], str(pat[2]).split()))
+    keys = ['g2', 'a2', 'b2', 'c3', 'd3', 'e3', 'f3', 'g3']; W, H, w = len(keys) * 24, 104, 24; out = ''
+    for i, p in enumerate(keys):
+        lit = p in fing
+        out += f'<rect x="{i * w}" y="0" width="{w}" height="{H}" rx="2" fill="{"#fbe3da" if lit else "#fff"}" stroke="{N}" stroke-width="1.2"/>'
+        out += f'<text x="{i * w + w / 2}" y="{H - 7}" text-anchor="middle" font-family="AH" font-weight="700" font-size="11" fill="{N}">{p[0].upper()}</text>'
+        if lit: out += f'<circle cx="{i * w + w / 2}" cy="{H - 30}" r="9.5" fill="{C}"/><text x="{i * w + w / 2}" y="{H - 26}" text-anchor="middle" font-family="AH" font-weight="700" font-size="12" fill="#fff">{fing[p]}</text>'
+    for i in (0, 1, 3, 4, 6): out += f'<rect x="{(i + 1) * w - 7}" y="0" width="14" height="{H * 0.56}" rx="2" fill="{N}"/>'
+    return f'<div class="lk"><b>{ch}</b><svg viewBox="-1 -1 {W + 2} {H + 2}" style="width:168px;display:block">{out}</svg></div>'
 def lead(n, t, stars, how, way):
     keys = ''.join(lhkb(way, ch) for ch in ['C', 'G'])
     return f'<div class="way"><div class="wh"><span class="wn">Way {n}</span><b>{t}</b><span class="st">{"★" * stars}{"☆" * (4 - stars)}</span></div><div class="lw"><p class="how">{how}</p><div class="lks"><span class="lkh">Left hand</span>{keys}</div></div>{mus("L" + str(n) + "a")}{mus("L" + str(n) + "b")}</div>'
@@ -77,16 +79,16 @@ P2 = page(f'''{part(3, 'Read it', 'The song uses four notes of C position. Find 
 <div class="tog"><span class="tgh">Play together</span><span>Two players, one song: one plays Way 1, the other the left hand of Way 4. Then swap.</span></div>
 {way(1, 'The tune', 1, 'Right hand alone. The numbers are your fingers.', 'w1a', 'w1b')}''', 2)
 
-P3 = page(f'''{lead(2, 'One long note', 2, 'The letters above the staff are the chords. Under each bar, your left hand holds one note all bar long: C with finger 5 for C, G with finger 1 for G.', 'way2')}
-{lead(3, 'Two notes together', 3, 'Same chords; now two notes together on beats 1 and 3 (the dots): C and G for C, D and G for G.', 'way3')}''', 3)
+P3 = page(f'''{lead(2, 'Just the root', 2, 'The letters above the staff are the chords. A chord is named after its root: play just the root, finger 5, all bar long. C for C; for G, your hand moves down to G.', 'way2')}
+{lead(3, 'Root and fifth', 3, 'Add the fifth on top with finger 1, on beats 1 and 3: C and G for C, G and D for G. The ring in the picture is the gap Way 4 fills.', 'way3')}''', 3)
 
-P4 = page(f'''{lead(4, 'A moving bass', 4, 'Same chords; now one note a beat. The numbers are your fingers: 5 1 3 1 for C, 4 1 2 1 for G.', 'way4')}
+P4 = page(f'''{lead(4, 'The whole chord', 4, 'Fill the gap with finger 3: root, third and fifth, three notes close together. C E G for C, G B D for G.', 'way4')}
 {part(5, 'Move it to G', 'Same fingers, new home: thumb on G, and the tune moves with your hand. The chords move too: C becomes G, G becomes D.')}
 <div class="mv"><div>{kb(4, 4, 3, 300)}</div><p class="cap2"><b>G position.</b> The key of G has one black key, F♯: the sharp sign at the start of the staff. This tune never needs it.</p></div>
 {mus('g1', 'gl')}
 <div class="chk"><div class="ch">6 · Check</div><div class="cgrid">
 <div>{ticks(['I can sing it with the words', 'I can clap and count it', 'I can name its notes'])}</div>
-<div>{''.join(f'<div class="wrow"><span class="wk">In {k}</span><div class="ticks h">' + ''.join(f'<span class="tk"><span class="bx"></span>Way {i}</span>' for i in range(1, 5)) + '</div></div>' for k in 'CG')}
+<div>{''.join(f'<div class="wrow"><span class="wk">In {k}</span><div class="ticks h">' + ''.join(f'<span class="tk"><span class="bx"></span>Way {i}</span>' for i in range(1, 5 if k == 'C' else 4)) + '</div></div>' for k in 'CG')}
 <div class="tch"><span>Teacher</span><span class="tk"><span class="bx"></span>Pass</span><span class="tk"><span class="bx"></span>Not yet</span></div></div></div></div>''', 4)
 
 css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margin:0;background:#e9e4d8;font-family:'AH',Arial,sans-serif;color:{N}}}

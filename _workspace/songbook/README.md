@@ -14,7 +14,11 @@ One lesson, one song, six parts:
    4 Nov 09:21): the tune with the chord letters, and under each bar only when the left hand plays (a held note's finger
    and a line, dots for two notes together, a finger a beat), beside two small left-hand keyboards for C and G. The bass
    clef waits for its own room (lesson 8).
-   The ways:
+   Root first (her 09:25): Way 2 just the root (finger 5, the hand moves down for G), Way 3 root and fifth (5 1), Way 4
+   the whole chord in root position (5 3 1: C E G, G B D). In the first line the dots are pictures of the chord: its notes
+   stacked a third a head apart, so root-position heads touch, and a dashed ring where the third is still to come.
+   In G only Ways 1-3 (the D chord's third is F sharp).
+   The ways (before 09:25):
    Way 1 the tune (RH fingers); Way 2 one long note below (C or G); Way 3 with chords (C-G / D-G on beats 1 and 3);
    Way 4 a moving bass (5 1 3 1 / 4 1 2 1). Play together: one player Way 1, the other Way 4's left hand.
 5. Move it to G (her 4 Nov 01:17: learn the whole key, turn the keys) -- same fingers, new home: the G keyboard (G position,
