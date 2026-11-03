@@ -22751,6 +22751,26 @@ function RefSearch({ onOpen }) {
 }
 const SHELF_TOOLS = { time: [['metronome', 'Metronome', '메트로놈']], scales: [['scale-finder', 'Scale finder', '스케일 찾기']] };   // m17
 const SHELF_FAVS = [['scale-finder', 'Scale finder', '스케일 찾기'], ['metronome', 'Metronome', '메트로놈']];   // m17: for now (her 'like a favourites list, for now')
+// m66 (her 3 Nov): the topic books (The Piano Butler Handbook and Workbook, drafts) sit in the Library, each topic opening its own pages.
+// Files in /books/ (robots.txt keeps them out of search). Links jump to the PDF page (#page=); labels give the printed page numbers.
+const PB_BOOKS = { hb: 'books/handbook-draft.pdf', wb: 'books/workbook-draft.pdf', rg: 'books/rhythm-activities-games.pdf', pg: 'books/pitch-games.pdf' };
+const TOPIC_BOOKS = {   // [file, pdf page, label]
+  staff: [['hb', 2, 'Handbook pp. 22–25: keyboard, staff, notes, accidentals'], ['wb', 1, 'Workbook · Pitch pp. 1–7'], ['pg', 1, 'Pitch games']],
+  notes: [['hb', 11, 'Handbook pp. 37–38: notes, rests, note lengths'], ['wb', 17, 'Workbook · Time pp. 3–6']],
+  rhythm: [['hb', 10, 'Handbook pp. 36, 41–42: pulse, groups, off the beat'], ['wb', 15, 'Workbook · Time pp. 1–2, 9–10'], ['rg', 1, 'Rhythm activities and games']],
+  time: [['hb', 13, 'Handbook pp. 39–40: time signatures'], ['wb', 21, 'Workbook · Time pp. 7–8']],
+  intervals: [['hb', 6, 'Handbook p. 26: tones, semitones, intervals'], ['wb', 8, 'Workbook · Pitch pp. 8–9'], ['pg', 6, 'Frog hops (game)']],
+  scales: [['hb', 7, 'Handbook p. 27: scales'], ['wb', 10, 'Workbook · Pitch pp. 10–11'], ['pg', 3, 'Scale trains (game)']],
+  keys: [['hb', 8, 'Handbook p. 28: keys and key signatures'], ['wb', 10, 'Workbook · Pitch pp. 10–11'], ['pg', 5, 'Who am I? (game)']],
+};
+function TopicBooks({ id }) {
+  const L = booksUnlocked() && TOPIC_BOOKS[id]; if (!L) return null;
+  const col = { hb: '#26296b', wb: '#e4572e', rg: '#8a6a2c', pg: '#8a6a2c' };
+  return <div data-topic-books={id} style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',margin:'0 0 12px',padding:'8px 10px',border:'1px solid #e6e0cf',borderRadius:8,background:'#fdfbf5'}}>
+    <span style={{fontSize:10.5,fontWeight:900,letterSpacing:'0.1em',textTransform:'uppercase',color:'#4a4d86',marginRight:2}}>{t('In the books', '책에서')}</span>
+    {L.map(([f, pg, label]) => <a key={f + pg} href={PB_BOOKS[f] + '#page=' + pg} target="_blank" rel="noopener" data-topic-book={f} style={{fontSize:12,fontWeight:800,color:col[f],border:'1.5px solid ' + col[f],borderRadius:8,padding:'3px 9px',textDecoration:'none',background:'#fff'}}>{label}</a>)}
+  </div>;
+}
 function RefShelf({ onChapter, onHouse, onTool }) {
   const [sel, setSel] = useState(() => { let x = null; try { x = localStorage.getItem(REF_PICK_KEY + '_shelf'); } catch (e) {} return REF_SECS.some(s => s.id === x) ? x : null; });
   const panel = useRef(null), ko = LANG === 'ko', box = useRef(null);
@@ -22772,7 +22792,7 @@ function RefShelf({ onChapter, onHouse, onTool }) {
     </div>
     <RefSearch onOpen={(id, q) => { pick(id); if (q) setTimeout(() => { try { const pn = document.querySelector('[data-ref-panel="' + id + '"]'); if (!pn) return; const f = refFold(q).trim(); const cand = [...pn.querySelectorAll(REF_FIND_SEL)].filter(e => !e.querySelector(REF_FIND_SEL) && refFold(e.textContent).includes(f)); const el = cand.find(e => refFold(e.textContent).trim() === f) || cand[0]; if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); const o = el.style.background; el.style.background = '#ffe9df'; el.style.transition = 'background .6s'; setTimeout(() => { el.style.background = o; }, 1800); } } catch (e) {} }, 380); }}/>
     {onTool && <div data-ref-favs style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',margin:'10px 0 0'}}><span style={{fontSize:10.5,fontWeight:900,letterSpacing:'0.1em',textTransform:'uppercase',color:'#4a4d86'}}>★ {t('Favourites', '즐겨찾기')}</span>
-      {SHELF_FAVS.map(([id, en, ko2]) => <button key={id} type="button" className="chip" data-ref-fav={id} onClick={() => onTool(id)} style={{padding:'4px 12px',fontSize:13,fontWeight:800}}>{t(en, ko2)}</button>)}{booksUnlocked() && <a href={'?book=reference' + (LANG === 'ko' ? '&lang=ko' : '&lang=en')} target="_blank" rel="noopener" className="chip" data-ref-print style={{padding:'4px 12px',fontSize:13,fontWeight:800,textDecoration:'none',marginLeft:'auto'}}>{t('Print the Reference', '참고 자료 인쇄')}</a>}</div>}   {/* m65: the Reference book lives in the Library */}
+      {SHELF_FAVS.map(([id, en, ko2]) => <button key={id} type="button" className="chip" data-ref-fav={id} onClick={() => onTool(id)} style={{padding:'4px 12px',fontSize:13,fontWeight:800}}>{t(en, ko2)}</button>)}{booksUnlocked() && <a href={PB_BOOKS.hb} target="_blank" rel="noopener" className="chip" data-ref-handbook style={{padding:'4px 12px',fontSize:13,fontWeight:800,textDecoration:'none',marginLeft:'auto'}}>{t('The Handbook', '핸드북')}</a>}{booksUnlocked() && <a href={PB_BOOKS.wb} target="_blank" rel="noopener" className="chip" data-ref-workbook style={{padding:'4px 12px',fontSize:13,fontWeight:800,textDecoration:'none',color:'#e4572e'}}>{t('The Workbook', '워크북')}</a>}{booksUnlocked() && <a href={'?book=reference' + (LANG === 'ko' ? '&lang=ko' : '&lang=en')} target="_blank" rel="noopener" className="chip" data-ref-print style={{padding:'4px 12px',fontSize:13,fontWeight:800,textDecoration:'none'}}>{t('Print the Reference', '참고 자료 인쇄')}</a>}</div>}   {/* m65: the Reference book lives in the Library */}
     {rows ? rows.map((grp, ri) => { const sw = Math.min(...rows.map(rowW)); return <div key={ri} data-ref-oneshelf style={{marginTop:ri ? 26 : 18,display:'flex',alignItems:'flex-end',gap:10}}>   {/* m21/m22: sections on one shelf; m33: two shelves of two sections when one is too tight */}
       {grp.map(gi => REF_SHELVES[gi]).map(([en, kr, books], gi) => <div key={en} style={{display:'flex',flexDirection:'column',minWidth:0,flex:'0 0 auto'}}>
         <div style={{display:'flex',alignItems:'flex-end',gap:4,padding:'0 5px'}}>{books.map(([id, ben, bko], i) => { const label = t(ben, bko), h = Math.max(REF_SPINE_H[k++ % REF_SPINE_H.length], label.length * (ko ? 15 : 8.2) + 64);
@@ -22791,6 +22811,7 @@ function RefShelf({ onChapter, onHouse, onTool }) {
       <i aria-hidden="true" style={{position:'absolute',left:16,right:16,bottom:8,height:5,borderTop:'1px solid #c9a24f',borderBottom:'1px solid #c9a24f'}}/>
       <div style={{display:'flex',justifyContent:'flex-end'}}><button type="button" data-ref-close onClick={() => pick(null)} style={{border:'none',background:'none',font:'inherit',fontSize:13,fontWeight:800,color:'#4a4d86',cursor:'pointer',padding:'2px 0'}}>{t('Back on the shelf ✕', '책장에 꽂기 ✕')}</button></div>
       <RefHead id={s.id}/>
+      <TopicBooks id={s.id}/>
       {onTool && SHELF_TOOLS[s.id] && <div style={{display:'flex',gap:6,flexWrap:'wrap',margin:'0 0 10px'}}>{SHELF_TOOLS[s.id].map(([id, en, ko2]) => <button key={id} type="button" className="ghost-btn" data-ref-tool={id} onClick={() => onTool(id)} style={{padding:'6px 14px',fontSize:13.5}}>{t(en, ko2)} ›</button>)}</div>}
       <B/>
     </section>}
