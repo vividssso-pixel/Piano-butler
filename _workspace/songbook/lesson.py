@@ -82,7 +82,7 @@ P1 = page(f'''<div class="kick">Lesson {LESSON}</div><h1>{SONG["title"]}</h1>
 {mus('rhy1')}{mus('rhy2')}
 {ticks(['Said it in time', 'Clapped and counted', 'Found every minim (2 beats)'], True)}''', 1)
 
-P2 = page(f'''{part(2, 'Listen and sing', 'Listen first, pointing to each note as it sounds. Then sing. Write the letter names of bars 1 to 4 in the boxes; the first one is done.')}
+P2 = page(f'''{part(2, 'Listen and sing', 'Listen first, pointing to each note as it sounds. Then sing. Write the letter name of every note in the boxes; the first one is done.')}
 {mus('sing1')}{mus('sing2')}
 <div class="pos"><div>{kb(width=330)}</div><div><p class="cap2"><b>Your hand: C position.</b> Right thumb on middle C, a finger on each key up to G. The song’s notes are lit.</p>
 <p class="cap2"><b>Steps and a skip.</b> Most notes move by a step, to the next key. Only once does the tune skip a key: E up to G. In which bar? <span class="ib"></span></p></div></div>

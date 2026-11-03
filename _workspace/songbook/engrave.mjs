@@ -66,8 +66,8 @@ function addBoxes(svg, ex) {
   const sy = +(svg.match(/class="staff"[\s\S]*?<path d="M\d+ (\d+)/) || [0, 0])[1];
   const sylY = [...svg.matchAll(/class="syl">\s*<text x="[\d.]+" y="(\d+)"/g)].map(m => +m[1]);
   const T = sylY.length ? Math.max(...sylY) + 160 : sy + 1110; let out = '';
-  ev.forEach((x, k) => { out += `<rect x="${x - 190}" y="${T}" width="380" height="380" rx="40" fill="#fff" stroke="${k === 0 ? '#e4572e' : '#26296b'}" stroke-width="22" class="wbox"/>`;
-    if (k === 0) out += `<text x="${x}" y="${T + 295}" text-anchor="middle" font-size="290" font-weight="700" fill="#e4572e" class="cnt">${ex}</text>`; });
+  ev.forEach((x, k) => { out += `<rect x="${x - 190}" y="${T}" width="380" height="380" rx="40" fill="#fff" stroke="${k === 0 && ex ? '#e4572e' : '#26296b'}" stroke-width="22" class="wbox"/>`;
+    if (k === 0 && ex) out += `<text x="${x}" y="${T + 295}" text-anchor="middle" font-size="290" font-weight="700" fill="#e4572e" class="cnt">${ex}</text>`; });
   return svg.replace(/(<g class="page-margin"[^>]*>)/, `$1${out}`);
 }
 // A lead sheet's "when" row, under the staff: for each bar, the left hand's pattern for that bar's chord, placed on its beats.
@@ -105,7 +105,7 @@ function addRows(svg, ways, b0, pic) {
   return svg.replace(/(<g class="page-margin"[^>]*>)/, `$1${lab}`);
 }
 const JOBS = {
-  sing1: [0, 4, { words: 1, meter: 1, boxes: 1 }], sing2: [4, 8, { words: 1 }],
+  sing1: [0, 4, { words: 1, meter: 1, boxes: 1 }], sing2: [4, 8, { words: 1, boxes: 1, noEx: 1 }],
   rhy1: [0, 4, { words: 1, rhythm: 1, meter: 1, counts: 1, pw: 1350 }], rhy2: [4, 8, { words: 1, rhythm: 1, counts: 1, pw: 1350 }],   // bigger: the first thing a child reads
   play1: [0, 4, { fing: 1, chords: 1, meter: 1, rows: ['way2', 'way3', 'way4'] }],   // the tune once, every way under it
   play2: [4, 8, { fing: 1, chords: 1, rows: ['way2', 'way3', 'way4'] }],
@@ -125,7 +125,7 @@ for (const [k, [b0, b1, o]] of Object.entries(JOBS)) {
     svg = svg.replace(/<g id="[^"]+" class="fing">\s*<text x="\d+" y="(\d+)"/g, (m, y) => +y < sy ? m.replace('class="fing">', `class="fing" transform="translate(0,${base - +y})">`) : m);
     // and the chord letters above the fingers
     if (o.chords) svg = svg.replace(/<g id="[^"]+" class="harm">\s*<text x="\d+" y="(\d+)"/g, (m, y) => m.replace('class="harm">', `class="harm" transform="translate(0,${Math.min(0, base - 330 - +y)})">`)); }
-  if (o.counts) svg = addCounts(svg); if (o.boxes) svg = addBoxes(svg, S.bars[b0][0][0][0].toUpperCase()); if (o.rows) svg = addRows(svg, o.rows, b0, o.pic);
+  if (o.counts) svg = addCounts(svg); if (o.boxes) svg = addBoxes(svg, o.noEx ? '' : S.bars[b0][0][0][0].toUpperCase()); if (o.rows) svg = addRows(svg, o.rows, b0, o.pic);
   out[k] = svg;
 }
 fs.writeFileSync(process.argv[3], JSON.stringify(out)); console.log(Object.keys(out).length, 'snippets');

@@ -9,7 +9,7 @@ One lesson, one song, three A4 pages (her 4 Nov 10:08 and 10:16):
 1. Say and clap -- what the song is made of first: the time (4/4: four beats in a bar, a crotchet a beat) and the note
    values it uses (crotchet 1, minim 2, semibreve 4, with beat dots); then the words on a one-line rhythm staff with
    the counts (coral where a note starts, grey while it is held).
-2. Listen and sing -- the tune with the words, the letter-name boxes of bars 1-4 under the words; C position on the
+2. Listen and sing -- the tune with the words, a letter-name box under every note (bars 1-8, her 10:20); C position on the
    keys (the song's notes lit); steps and the one skip (E up to G: in which bar?); a QR to the lesson's drills room
    (`drills.html?room=<id>`; drills still needs that link).
 3. Play it four ways -- root only at this stage (her 10:16): Way 1 the tune; Way 2 hold the root (C with 5, G with 1,
