@@ -20,6 +20,9 @@ const { chromium } = require('playwright');
       for (let x = 0; x < texts.length; x++) for (let y = x + 1; y < texts.length; y++) if (hit(texts[x].r, texts[y].r, 1)) bad.push([key, 'text/text', texts[x].t + ' ' + texts[y].t, (Math.min(texts[x].r.bottom, texts[y].r.bottom) - Math.max(texts[x].r.top, texts[y].r.top)).toFixed(1) + 'px of ' + (texts[x].r.bottom - texts[x].r.top).toFixed(1)]);
       boxes.forEach(bx => heads.forEach(h => { if (hit(bx, h)) bad.push([key, 'box/head']); }));
     });
+    // what must be there: the counts under the rhythm lines, the answer boxes under the reading line
+    const need = { rhy1: '.cnt', rhy2: '.cnt', read1: 'rect.wbox', L2a: '.when', L3a: '.when', L4a: '.when', L4b: '.when' };
+    for (const [k, sel] of Object.entries(need)) { const el = document.querySelector('.mus[data-snip="' + k + '"]'); if (!el || !el.querySelectorAll(sel).length) bad.push([k, 'missing', sel]); }
     return { n: document.querySelectorAll('.mus').length, bad };
   });
   console.log(r.n, 'snippets;', r.bad.length, 'clashes'); r.bad.slice(0, 30).forEach(x => console.log(' ', x.join(' | ')));
