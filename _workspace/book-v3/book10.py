@@ -76,7 +76,7 @@ P37 = page(f'''{head('Part II · Time · 2', 'Notes and rests', 'A note’s shap
      h3('Which rest is which?') + '<figure class="vx"><svg viewBox="0 0 300 90" style="width:100%;height:auto;display:block"><line x1="10" x2="290" y1="20" y2="20" stroke="#26296b" stroke-width="1.2"/><line x1="10" x2="290" y1="32" y2="32" stroke="#26296b" stroke-width="1.2"/><line x1="10" x2="290" y1="44" y2="44" stroke="#26296b" stroke-width="1.2"/><line x1="10" x2="290" y1="56" y2="56" stroke="#26296b" stroke-width="1.2"/><line x1="10" x2="290" y1="68" y2="68" stroke="#26296b" stroke-width="1.2"/><line x1="150" x2="150" y1="20" y2="68" stroke="#26296b" stroke-width="1.2"/><rect x="62" y="32" width="26" height="7" fill="#26296b"/><rect x="202" y="37" width="26" height="7" fill="#26296b"/> <text x="75" y="86" text-anchor="middle" font-family="AH" font-size="12" font-weight="700" fill="#e4572e">semibreve rest</text><text x="215" y="86" text-anchor="middle" font-family="AH" font-size="12" font-weight="700" fill="#e4572e">minim rest</text></svg></figure>' + '<p class="sm">The semibreve rest <b>hangs</b> below the fourth line; the minim rest <b>sits</b> on the middle line.</p>', '1fr 1fr')}''', 37)
 
 tree = ''.join(f'<div class="trw"><span class="trl">{lab}</span><div class="trc">' + ''.join(f'<div class="tri">{gcell("n", k, 36)}</div>' for _ in range(n)) + '</div></div>' for lab, k, n in (('1 semibreve', 'sb', 1), ('2 minims', 'm', 2), ('4 crotchets', 'c', 4), ('8 quavers', 'q', 8), ('16 semiquavers', 'sq', 16)))
-P38 = page(f'''{head('Part II · Time · 2', 'How long is a note?', 'Each row lasts exactly as long as the row above it: the same stretch of time, cut in half again and again.')}
+P38 = page(f'''{head('Part II · Time · 3', 'How long is a note?', 'Each row lasts exactly as long as the row above it: the same stretch of time, cut in half again and again.')}
 <div class="tree">{tree}</div>
 {two(h3('The dot') + '<p>A dot adds <b>half the note’s value</b>: a dotted minim lasts 2 + 1 = 3 beats; a dotted crotchet 1 + ½ = 1½. A <b>double dot</b> adds half, then a quarter: a double-dotted minim lasts 2 + 1 + ½ = 3½.</p>' + vx('dot', 78),
      h3('The tie') + '<p>A curve joining two notes <b>of the same pitch</b> makes one longer sound: play the first, hold through the second. Ties can cross a bar line, where a dot cannot.</p>' + vx('tie', 78))}
@@ -87,7 +87,7 @@ P38 = page(f'''{head('Part II · Time · 2', 'How long is a note?', 'Each row la
 
 bottom = [['2', gcell('n', 'm', 34), 'minim', 'Level 3'], ['4', gcell('n', 'c', 34), 'crotchet', 'Level 0'], ['8', gcell('n', 'q', 34), 'quaver', 'Level 1'], ['16', gcell('n', 'sq', 34), 'semiquaver', lv('')]]
 simple = [[ts(2, 4), '2 crotchets', 'Level 0'], [ts(3, 4), '3 crotchets', 'Level 0'], [f'<span class="tsrow">{ts(4, 4)}{gsym("𝄴", 26)}</span>', '4 crotchets (the C sign: common time)', 'Level 0'], [f'<span class="tsrow">{ts(2, 2)}{gsym("𝄵", 30)}</span>', '2 minims (the cut C: cut common time)', 'Level 3'], [ts(3, 2), '3 minims', 'Level 3'], [ts(4, 2), '4 minims', lv('')], [ts(3, 8), '3 quavers', 'Level 3']]
-P39 = page(f'''{head('Part II · Time · 3', 'Time signatures', 'Two numbers at the start of the music. The <b>top number</b> says how many counts are in each bar; the <b>bottom number</b> says which note gets one count.')}
+P39 = page(f'''{head('Part II · Time · 4', 'Time signatures', 'Two numbers at the start of the music. The <b>top number</b> says how many counts are in each bar; the <b>bottom number</b> says which note gets one count.')}
 {two(h3('The bottom number') + tbl(['Bottom', 'Note', 'One count is a', 'First met'], bottom, ['18%', '16%', '36%', '30%']),
      box('Simple or compound?', '<p>In <b>simple time</b> each beat divides into <b>two</b>. In <b>compound time</b> each beat is a dotted note and divides into <b>three</b>.</p><p><b>Quick test:</b> a top number of 6, 9 or 12 means compound. Divide it by 3 to find the beats: 6/8 has 2, 9/8 has 3, 12/8 has 4.</p>'))}
 {h3('Simple time: each beat divides in two')}
@@ -99,7 +99,7 @@ P39 = page(f'''{head('Part II · Time · 3', 'Time signatures', 'Two numbers at 
 
 compound = [[ts(6, 8), '2 dotted crotchets', 'Level 1'], [ts(9, 8), '3 dotted crotchets', 'Level 3'], [ts(12, 8), '4 dotted crotchets', 'Level 3'], [ts(6, 4), '2 dotted minims', 'Level 4']]
 irreg = [[ts(5, 4), '5 crotchets: 3 + 2 or 2 + 3', 'Level 0'], [ts(7, 4), '7 crotchets: 4 + 3 or 3 + 4', lv('')], [ts(5, 8), '5 quavers: 3 + 2 or 2 + 3', lv('')], [ts(7, 8), '7 quavers: 2 + 2 + 3 or 3 + 2 + 2', lv('')]]
-P40 = page(f'''{head('Part II · Time · 3', 'Compound and irregular time', 'Compound time has dotted beats that divide into three; irregular time has five or seven counts, grouped unevenly. (9/4, 12/4 and the /16 signatures exist but are rare.)')}
+P40 = page(f'''{head('Part II · Time · 5', 'Compound and irregular time', 'Compound time has dotted beats that divide into three; irregular time has five or seven counts, grouped unevenly. (9/4, 12/4 and the /16 signatures exist but are rare.)')}
 {h3('Compound time')}
 {tbl(['Time signature', 'Each bar holds', 'First met'], compound, ['26%', '50%', '24%'])}
 {h3('Counting 6/8')}
@@ -110,7 +110,7 @@ P40 = page(f'''{head('Part II · Time · 3', 'Compound and irregular time', 'Com
 {tbl(['Time signature', 'Each bar holds', 'First met'], irreg, ['26%', '50%', '24%'])}
 {two(box('Uneven groups in 4/4', '<p>Many dances keep 4/4 but group the eight quavers 3 + 3 + 2: “1 2 3, 1 2 3, 1 2”.</p>'), vx('t332', 64), '1fr 1fr')}''', 40)
 
-P41 = page(f'''{head('Part II · Time · 4', 'Rhythm: groups and upbeats', 'Rhythm is the pattern of long and short sounds over the pulse. The pulse stays steady; the rhythm moves around it. The way notes are grouped on the page shows where the beats are.')}
+P41 = page(f'''{head('Part II · Time · 6', 'Rhythm: groups and upbeats', 'Rhythm is the pattern of long and short sounds over the pulse. The pulse stays steady; the rhythm moves around it. The way notes are grouped on the page shows where the beats are.')}
 {h3('Grouping with beams')}
 <p>Beams join the notes of <b>one beat</b>, so the beats stay visible. In 4/4 a beam may cover beats 1–2 or 3–4, but never cross the middle of the bar. In compound time, quavers are beamed in threes.</p>
 {two(vx('beamgood', 78, '✓ The middle of the bar can be seen.'), vx('beambad', 78, '✗ A beam across beats 2–3 hides it.'))}
@@ -122,7 +122,7 @@ P41 = page(f'''{head('Part II · Time · 4', 'Rhythm: groups and upbeats', 'Rhyt
 {vx('small', 100, 'Crotchet, two quavers, four semiquavers and a triplet (“1 & a”): one beat each.')}''', 41)
 
 terms = [['syncopation', 'the stress falls off the beat, often on a note held across it', 'Level 4'], ['hemiola', 'two bars of three felt as three bars of two', 'Level 4'], ['swing', 'pairs of quavers played long–short, like the first and last notes of a triplet', 'Level ½'], ['polyrhythm', 'two rhythms at once, such as three notes in one hand against two in the other', 'Level 7'], ['rubato', 'time stretched and given back, for expression; the pulse returns', lv('')]]
-P42 = page(f'''{head('Part II · Time · 4', 'Rhythm: off the beat', 'Once the pulse is secure, rhythm can pull against it. Every one of these effects needs a steady beat underneath.')}
+P42 = page(f'''{head('Part II · Time · 7', 'Rhythm: off the beat', 'Once the pulse is secure, rhythm can pull against it. Every one of these effects needs a steady beat underneath.')}
 {two(h3('Syncopation') + vx('sync', 70, 'The crotchet starts on “&” and is held through beat 2.') + '<p class="sm">Level 4. Feel beat 2 even though nothing is played on it.</p>',
      h3('Hemiola') + vx('hemi', 70, 'Two bars of 3/4 felt as three minims.') + '<p class="sm">Level 4. Common at cadences in Baroque dances.</p>')}
 {h3('Swing <span class="lvl2">Level ½</span>')}

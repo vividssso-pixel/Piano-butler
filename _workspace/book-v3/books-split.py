@@ -6,10 +6,10 @@ SRC = {'hbP': '/mnt/user-data/outputs/handbook-part1-pitch.pdf', 'hbT': '/mnt/us
 # chapter: (part, n, title, blurb, handbook pages in its PDF (1-based), printed pp, workbook pages, workbook printed pp)
 CH = [
  ('Pitch', 1, 'The keyboard', 'High and low, white-key names, the groups of two and three black keys, octaves.', 'hbP', [2], '22', 'wbP', [1, 2], '1–2'),
- ('Pitch', 2, 'The staff and the notes', 'Lines and spaces, treble and bass clefs, ledger lines, reading every note.', 'hbP', [3, 4], '23–24', 'wbP', [3, 4, 5], '3–5'),
- ('Pitch', 3, 'Sharps, flats and naturals', 'Accidentals, how long they last, two names for one key.', 'hbP', [5], '25', 'wbP', [6, 7], '6–7'),
- ('Pitch', 4, 'Tones, semitones and intervals', 'Counting the distance between notes: numbers and qualities.', 'hbP', [6], '26', 'wbP', [8, 9], '8–9'),
- ('Pitch', 5, 'Scales and keys', 'Major and minor scales, degree names, key signatures.', 'hbP', [7, 8], '27–28', 'wbP', [10, 11], '10–11'),
+ ('Pitch', 2, 'The staff and the notes', 'Lines and spaces, clefs, ledger lines, reading every note, and the map from staff to keyboard.', 'hbP', [3, 4, 5], '23–25', 'wbP', [3, 4, 5], '3–5'),
+ ('Pitch', 3, 'Sharps, flats and naturals', 'Accidentals, how long they last, two names for one key.', 'hbP', [6], '26', 'wbP', [6, 7], '6–7'),
+ ('Pitch', 4, 'Tones, semitones and intervals', 'Counting the distance between notes: numbers and qualities.', 'hbP', [7, 8], '27–28', 'wbP', [8, 9], '8–9'),
+ ('Pitch', 5, 'Scales and keys', 'Major and minor scales, degree names, key signatures, the circle of fifths.', 'hbP', [9, 10, 11], '29–31', 'wbP', [10, 11], '10–11'),
  ('Time', 1, 'Pulse and the bar', 'The steady beat, tempo, strong beats and bar lines.', 'hbT', [2], '36', 'wbT', [1, 2], '1–2'),
  ('Time', 2, 'Notes and rests', 'Every note value and its rest, and their other names.', 'hbT', [3], '37', 'wbT', [3, 4], '3–4'),
  ('Time', 3, 'How long is a note?', 'Adding values, dots and ties.', 'hbT', [4], '38', 'wbT', [5, 6], '5–6'),
