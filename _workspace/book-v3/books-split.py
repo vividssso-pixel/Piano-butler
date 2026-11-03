@@ -2,21 +2,21 @@
 import os, subprocess, html
 from pypdf import PdfReader, PdfWriter
 O = '/mnt/user-data/outputs/books-latest/'
-SRC = {'hbP': '/mnt/user-data/outputs/handbook-part1-pitch.pdf', 'hbT': '/mnt/user-data/outputs/handbook-part2-time.pdf', 'wbP': '/mnt/user-data/outputs/workbook-pitch.pdf', 'wbT': '/mnt/user-data/outputs/workbook-time.pdf'}
+SRC = {'hbP': '/mnt/user-data/outputs/handbook-part1-pitch.pdf', 'hbT': '/mnt/user-data/outputs/handbook-part2-time.pdf', 'wbP': '/mnt/user-data/outputs/workbook-pitch.pdf', 'wbT': '/mnt/user-data/outputs/workbook-time.pdf', 'hbX': '/mnt/user-data/outputs/house-rooms/handbook-tips.pdf'}
 # chapter: (part, n, title, blurb, handbook pages in its PDF (1-based), printed pp, workbook pages, workbook printed pp)
 CH = [
- ('Pitch', 1, 'The keyboard', 'High and low, white-key names, the groups of two and three black keys, octaves.', 'hbP', [3], '22', 'wbP', [1, 2], '1–2'),
- ('Pitch', 2, 'The staff and the notes', 'Lines and spaces, clefs, ledger lines, reading every note, and the map from staff to keyboard.', 'hbP', [4, 5, 6], '23–25', 'wbP', [3, 4, 5], '3–5'),
- ('Pitch', 3, 'Sharps, flats and naturals', 'Accidentals, how long they last, two names for one key.', 'hbP', [7], '26', 'wbP', [6, 7], '6–7'),
- ('Pitch', 4, 'Tones, semitones and intervals', 'Counting the distance between notes: numbers and qualities.', 'hbP', [8, 9], '27–28', 'wbP', [8, 9], '8–9'),
- ('Pitch', 5, 'Scales and keys', 'Major and minor scales, key signatures, finding the key, the circle of fifths.', 'hbP', [10, 11, 12, 13, 14], '29–33', 'wbP', [10, 11], '10–11'),
+ ('Pitch', 1, 'The keyboard', 'High and low, white-key names, the groups of two and three black keys, octaves.', 'hbP', [2], '22', 'wbP', [1, 2], '1–2'),
+ ('Pitch', 2, 'The staff and the notes', 'Lines and spaces, clefs, ledger lines, reading every note, and the map from staff to keyboard.', 'hbP', [3, 4, 5], '23–25', 'wbP', [3, 4, 5], '3–5'),
+ ('Pitch', 3, 'Sharps, flats and naturals', 'Accidentals, how long they last, two names for one key.', 'hbP', [6], '26', 'wbP', [6, 7], '6–7'),
+ ('Pitch', 4, 'Tones, semitones and intervals', 'Counting the distance between notes: numbers and qualities.', 'hbP', [7, 8], '27–28', 'wbP', [8, 9], '8–9'),
+ ('Pitch', 5, 'Scales and keys', 'Major and minor scales, key signatures, finding the key, the circle of fifths.', 'hbP', [9, 10, 11, 12, 13], '29–33', 'wbP', [10, 11], '10–11'),
  ('Time', 1, 'Pulse and the bar', 'The steady beat, tempo, strong beats and bar lines.', 'hbT', [2, 3], '36–37', 'wbT', [1, 2], '1–2'),
  ('Time', 2, 'Notes and rests', 'Every note value and its rest, and their other names.', 'hbT', [4, 5], '38–39', 'wbT', [3, 4], '3–4'),
  ('Time', 3, 'How long is a note?', 'Adding values, dots and ties.', 'hbT', [6, 7], '40–41', 'wbT', [5, 6], '5–6'),
  ('Time', 4, 'Time signatures', 'Simple, compound and irregular time.', 'hbT', [8, 9, 10, 11], '42–45', 'wbT', [7, 8], '7–8'),
  ('Time', 5, 'Rhythm', 'Grouping, upbeats, triplets, syncopation and swing.', 'hbT', [12, 13, 14, 15], '46–49', 'wbT', [9, 10], '9–10'),
 ]
-EXTRA = [('hb', 'Pitch', 'Before you start · Part I opener', 'hbP', [1, 2], 'Every note answers three questions; the map of Part I.'), ('hb', 'Time', 'Part II opener', 'hbT', [1], 'The map of Part II and its contents.'),
+EXTRA = [('hb', 'Pitch', 'Part I opener', 'hbP', [1], 'The map of Part I and its contents.'), ('hb', 'Tips', 'Tips', 'hbX', [1, 2], 'Everything one note tells you; when a passage won’t come right; five ways to fix a hard bar.'), ('hb', 'Time', 'Part II opener', 'hbT', [1], 'The map of Part II and its contents.'),
          ('wb', 'Pitch', 'Review, progress and answers', 'wbP', [12, 13, 14], 'A ten-minute review, the progress chart and every answer.'), ('wb', 'Time', 'Review, progress and answers', 'wbT', [11, 12, 13], 'A ten-minute review, the progress chart and every answer.')]
 R = {k: PdfReader(v) for k, v in SRC.items()}
 def slug(x): return ''.join(c if c.isalnum() else '-' for c in x.lower()).strip('-').replace('--', '-')
@@ -27,8 +27,8 @@ def cut(src, pages, path):
 def thumb(src, page, path):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     subprocess.run(['pdftoppm', '-jpeg', '-jpegopt', 'quality=82', '-r', '60', '-f', str(page), '-l', str(page), '-singlefile', SRC[src], path[:-4]], check=True)
-cards = {'hb': {'Pitch': [], 'Time': []}, 'wb': {'Pitch': [], 'Time': []}}
-PARTN = {'Pitch': 'Part I · Pitch', 'Time': 'Part II · Time'}
+cards = {'hb': {'Pitch': [], 'Time': [], 'Tips': []}, 'wb': {'Pitch': [], 'Time': []}}
+PARTN = {'Pitch': 'Part I · Pitch', 'Time': 'Part II · Time', 'Tips': 'Tips'}
 for part, n, title, blurb, hs, hp, hpp, ws, wp, wpp in CH:
     base = f'{"1" if part == "Pitch" else "2"}-{n}-{slug(title)}'
     hf = f'1 Handbook/{PARTN[part].replace(" · ", " ")}/handbook-{base}.pdf'; wf = f'2 Workbook/{part}/workbook-{base}.pdf'
@@ -36,7 +36,7 @@ for part, n, title, blurb, hs, hp, hpp, ws, wp, wpp in CH:
     cards['hb'][part].append((f'Chapter {n} · {part}', title, blurb, hf, f'_thumbs/hb-{base}.jpg', f'p. {hpp}' if '–' not in hpp else f'pp. {hpp}', len(hp)))
     cards['wb'][part].append((f'Chapter {n} · {part}', title, blurb, wf, f'_thumbs/wb-{base}.jpg', f'pp. {wpp}', len(wp)))
 for kind, part, title, src, pages, blurb in EXTRA:
-    base = f'{"1" if part == "Pitch" else "2"}-0-{slug(title)}' if kind == 'hb' else f'{"1" if part == "Pitch" else "2"}-9-{slug(title)}'
+    base = f'{"1" if part == "Pitch" else "3" if part == "Tips" else "2"}-0-{slug(title)}' if kind == 'hb' else f'{"1" if part == "Pitch" else "2"}-9-{slug(title)}'
     f = (f'1 Handbook/{PARTN[part].replace(" · ", " ")}/handbook-{base}.pdf' if kind == 'hb' else f'2 Workbook/{part}/workbook-{base}.pdf')
     cut(src, pages, O + f); thumb(src, pages[0], O + f'_thumbs/{kind}-{base}.jpg')
     c = (part, title, blurb, f, f'_thumbs/{kind}-{base}.jpg', '', len(pages))
@@ -49,12 +49,13 @@ def card(c):
 BOOKS = [('hbP', 'hb', 'Pitch', 'The Piano Butler Handbook', 'Part I', 'Pitch', 'The keyboard, the staff, accidentals, intervals, scales and keys', 'Whole books (later)/handbook-part1-pitch.pdf'),
          ('wbP', 'wb', 'Pitch', 'The Piano Butler Workbook', 'Workbook', 'Pitch', 'Learn and Use pages for every Pitch chapter, review and answers', 'Whole books (later)/workbook-pitch.pdf'),
          ('hbT', 'hb', 'Time', 'The Piano Butler Handbook', 'Part II', 'Time', 'Pulse, note values, time signatures and rhythm', 'Whole books (later)/handbook-part2-time.pdf'),
-         ('wbT', 'wb', 'Time', 'The Piano Butler Workbook', 'Workbook', 'Time', 'Learn and Use pages for every Time chapter, review and answers', 'Whole books (later)/workbook-time.pdf')]
+         ('wbT', 'wb', 'Time', 'The Piano Butler Workbook', 'Workbook', 'Time', 'Learn and Use pages for every Time chapter, review and answers', 'Whole books (later)/workbook-time.pdf'),
+         ('hbX', 'hb', 'Tips', 'The Piano Butler Handbook', 'Handbook extra', 'Tips', 'Reading every note, fixing a hard passage, a first look at a new piece', 'Whole books (later)/handbook-tips.pdf')]
 def cover(b):
     k, kind, part, series, kick, title, blurb, whole = b
     n = len(cards[kind][part]); acc = '#e4572e' if kind == 'wb' else '#f4a9bb'; ink = '#26296b' if kind == 'wb' else '#fffdf7'
     return f"""<button type="button" class="book" data-book="{k}" aria-expanded="false"><span class="cv {kind}"><span class="fr"><span class="se">{E(series)}</span><span class="ki" style="color:{acc}">{E(kick)}</span><span class="ti">{E(title)}</span><span class="dv"></span><span class="bl">{E(blurb)}</span><span class="bw"><svg viewBox="0 0 40 24" width="34" height="20"><path d="M2 3 L18 12 L2 21 Z" fill="none" stroke="{ink}" stroke-width="2" stroke-linejoin="round"/><path d="M38 3 L22 12 L38 21 Z" fill="none" stroke="{ink}" stroke-width="2" stroke-linejoin="round"/><circle cx="20" cy="12" r="2.6" fill="{acc}"/></svg></span></span></span>
-<span class="cap"><b>{E(kick if kind == 'hb' else 'Workbook')} · {E(title)}</b><span>{n} {"sections" if kind == "hb" else "parts"} · tap to open</span></span></button>"""
+<span class="cap"><b>{E(kick if kind == 'hb' else 'Workbook')} · {E(title)}</b><span>{n} {("section" if n == 1 else "sections") if kind == "hb" else "parts"} · tap to open</span></span></button>"""
 def panel(b):
     k, kind, part, series, kick, title, blurb, whole = b
     return f"""<section class="panel" id="p-{k}" hidden><div class="ph"><h2>{E(series)} · {E(kick + ' · ' if kind == 'hb' else '')}{E(title)}</h2><a class="whole" href="{E(whole)}" target="_blank">The whole draft as one PDF</a></div>
