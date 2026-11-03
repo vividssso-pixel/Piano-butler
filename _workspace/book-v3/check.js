@@ -41,13 +41,15 @@ const { chromium } = require('playwright');
           if (lk && lk.getBoundingClientRect().bottom > pg.querySelector('.foot').getBoundingClientRect().top - 4) out.push(`p${i + 1}: links run into the page number`);
           let last = 0; body.querySelectorAll('*').forEach(e => { if (e.closest('.links')) return; const R = e.getBoundingClientRect(); if (R.height) last = Math.max(last, R.bottom); });
           if (last > limit) out.push(`p${i + 1}: content runs ${Math.round(last - limit)}px into the footer`);
+          if (!pg.classList.contains('part2')) { const top = body.getBoundingClientRect().top, room = limit - top, used = last - top;   // (6) no wasted space: a page is at least 80% full
+            if (room > 0 && used / room < 0.8) out.push(`p${i + 1}: page only ${Math.round(100 * used / room)}% full`); }
           body.querySelectorAll('*').forEach(e => { const R = e.getBoundingClientRect(); if (R.width && (R.right > P.right - 20 || R.left < P.left + 20)) out.push(`p${i + 1}: ${e.tagName.toLowerCase()} pokes out sideways`); });
         }
       });
       return [...new Set(out)];
     });
     console.log(f.split('/').pop() + ': ' + (r.length ? r.length + ' problem(s)' : 'OK'));
-    r.slice(0, 25).forEach(x => console.log('   ' + x)); bad += r.length;
+    r.slice(0, 25).forEach(x => console.log('   ' + x)); bad += (/handbook/.test(f) || process.env.STRICTFILL) ? r.length : r.filter(x => !/% full$/.test(x)).length;   // fill rule is strict for handbooks; a warning elsewhere until those pages are filled
     await p.close();
   }
   await b.close(); process.exit(bad ? 1 : 0);

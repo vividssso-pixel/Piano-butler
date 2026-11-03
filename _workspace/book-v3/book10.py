@@ -6,6 +6,11 @@ for _k, _ids in HLT.items():
     for _n in _ids:
         for _c in ('note', 'rest'): V[_k] = V[_k].replace(f'<g id="{_n}" class="{_c}">', f'<g id="{_n}" class="{_c}" fill="#e4572e" color="#e4572e" stroke="#e4572e">')
 def inact(title, fig, steps, result): return '<div class="inact2"><div class="bh">In action</div><b class="it">' + title + '</b><div class="ia2">' + fig + '<ol>' + ''.join(f'<li><span class="in">{i + 1}</span><span>{t}</span></li>' for i, t in enumerate(steps)) + '</ol></div><div class="ires">' + result + '</div></div>'
+def realm(title, items, tryit=''):   # 'In real music': where the idea lives across all music, not only exams
+    return '<div class="realm"><div class="bh">In real music</div><b class="it">' + title + '</b><div class="rmg">' + ''.join(f'<div><i>{g}</i><span>{t}</span></div>' for g, t in items) + '</div>' + (f'<p class="tryit"><b>Try it.</b> {tryit}</p>' if tryit else '') + '</div>'
+def listen(items):
+    return '<div class="lis"><p class="lish">Listen for it</p><div class="lisg">' + ''.join('<div><b>'+a+'</b><span>'+b+'</span><i>'+c+'</i></div>' for a,b,c in items) + '</div></div>'
+def drill(t): return '<p class="drill"><span>Two-minute drill</span>' + t + '</p>'
 def thinkt(t): return '<p class="think"><span>Think of it</span>' + t + '</p>'
 DK, N, C, CR, G, MUTE = '#1c1e4f', '#26296b', '#e4572e', '#fffdf7', '#2e8a6e', '#6d6f9c'
 FD = '/tmp/claude-0/vrv/node_modules/@fontsource/'
@@ -73,6 +78,10 @@ P36 = page(f'''{head('Part II · Time · 1', 'Pulse, tempo and the bar', 'Under 
 {watch(['Speeding up in the easy bars and slowing down in the hard ones: choose a tempo you can keep in the hardest bar.', 'Counting the notes instead of the beats.'])}
 {inact('Is this a march or a waltz?', vx('ia_waltz', 70), ['<b>Tap a steady beat</b> as you clap or listen.', '<b>Find the strong one:</b> the coral beats feel heavier.', '<b>Count the gap</b> between strong beats: 1 2 3, 1 2 3.'], 'Groups of three: a <b>waltz</b>, in 3/4. Groups of two would be a march.')}
 {thinkt('The pulse is a heartbeat or a ticking clock: it keeps going even when nothing is played.')}
+{realm('One pulse, every style', [('Waltz · 3 beats', 'The Blue Danube (Johann Strauss II), Chopin’s waltzes: strong, weak, weak.'), ('March · 2 beats', 'Sousa’s marches: left, right, left, right.'), ('Pop and rock · 4 beats', 'Almost every song on the radio: the drummer’s kick drum marks beats 1 and 3.'), ('Film music · tempo as mood', 'A slow pulse for sadness or awe, a fast one for a chase: the tempo tells the story before the tune does.')], 'Put on any song and tap your foot. Then find beat 1: it is where the music feels heaviest and the chords usually change.')}
+{inact('Set the tempo before you play', vx('t34', 60), ['<b>Read the mark:</b> ♩ = 96 means 96 crotchet beats a minute.', '<b>Set the metronome</b> and listen to one full bar first.', '<b>Count one bar aloud</b> (1 2 3), then start on the next beat 1.'], 'The first note is already <b>in time</b>, not a guess.')}
+{drill('Walk round the room to a metronome at 60, 90 and 120: a step on every beat, a clap on every beat 1.')}
+{listen([('Strauss, The Blue Danube', 'Orchestral waltz', 'Feel ONE big beat per bar: the “oom” of oom-pah-pah.'), ('Sousa, The Stars and Stripes Forever', 'Brass march', 'Left-right steps: two strong beats a bar.'), ('Any pop chorus', 'Drum kit', 'The snare lands on beats 2 and 4: the backbeat.')])}
 {foot('Time signatures p. 39 · Tempo words p. 70', 'Workbook Level 0 · Pulse · Online: Metronome')}''', 36)
 
 rows = [('breve', 'breve', 'double whole note', '8', 'Level 4'), ('dsb', 'dotted semibreve', 'dotted whole note', '6', ''), ('sb', 'semibreve', 'whole note', '4', 'Level 0'), ('dm', 'dotted minim', 'dotted half note', '3', 'Level 0'), ('m', 'minim', 'half note', '2', 'Level 0'), ('dc', 'dotted crotchet', 'dotted quarter note', '1½', 'Level ½'),
@@ -85,7 +94,12 @@ P37 = page(f'''{head('Part II · Time · 2', 'Notes and rests', 'A note’s shap
 <!--SPLIT-->
 {two(h3('Parts of a note') + '<p>The <b>head</b> sits on a line or in a space. A <b>stem</b> goes up on the right of the head or down on the left. <b>Flags</b> on the stem halve the value each time; groups of quavers are joined by <b>beams</b> instead of flags.</p>',
      h3('Which rest is which?') + '<figure class="vx"><svg viewBox="0 0 300 90" style="width:100%;height:auto;display:block"><line x1="10" x2="290" y1="20" y2="20" stroke="#26296b" stroke-width="1.2"/><line x1="10" x2="290" y1="32" y2="32" stroke="#26296b" stroke-width="1.2"/><line x1="10" x2="290" y1="44" y2="44" stroke="#26296b" stroke-width="1.2"/><line x1="10" x2="290" y1="56" y2="56" stroke="#26296b" stroke-width="1.2"/><line x1="10" x2="290" y1="68" y2="68" stroke="#26296b" stroke-width="1.2"/><line x1="150" x2="150" y1="20" y2="68" stroke="#26296b" stroke-width="1.2"/><rect x="62" y="32" width="26" height="7" fill="#26296b"/><rect x="202" y="37" width="26" height="7" fill="#26296b"/> <text x="75" y="86" text-anchor="middle" font-family="AH" font-size="12" font-weight="700" fill="#e4572e">semibreve rest</text><text x="215" y="86" text-anchor="middle" font-family="AH" font-size="12" font-weight="700" fill="#e4572e">minim rest</text></svg></figure>' + '<p class="sm">The semibreve rest <b>hangs</b> below the fourth line; the minim rest <b>sits</b> on the middle line.</p>', '1fr 1fr')}
-{inact('How long is each sound, and each silence?', vx('ia_rest', 66), ['<b>Name each shape:</b> minim, crotchet, crotchet rest.', '<b>Count its beats:</b> 2, 1 and 1.', '<b>Count the rests too:</b> the coral rests last as long as their notes.'], 'Every bar adds up to <b>4 beats</b>, silences included.')}''', 37).replace('<svg viewBox="0 0 300 90"', '<svg viewBox="0 0 300 90" class="rst"', 1)
+{inact('How long is each sound, and each silence?', vx('ia_rest', 66), ['<b>Name each shape:</b> minim, crotchet, crotchet rest.', '<b>Count its beats:</b> 2, 1 and 1.', '<b>Count the rests too:</b> the coral rests last as long as their notes.'], 'Every bar adds up to <b>4 beats</b>, silences included.')}
+{realm('Silence is part of the music', [('Classical', 'Beethoven’s Fifth Symphony opens with a rest: the famous four notes start just after the beat.'), ('Pop and film', 'The sudden stop before the last chorus or the big hit: a full bar’s rest makes the next sound louder.'), ('Jazz', 'Players say the notes you leave out matter as much as the ones you play.'), ('Drums', 'Drum notation uses exactly the same notes and rests, on one line.')], 'In the next piece you play, count every rest aloud and lift your hands off the keys during it.')}
+{inact('What completes the bar?', vx('ia_fill', 60), ['<b>The time signature:</b> 4/4, so the bar needs four beats.', '<b>Add what is there:</b> minim 2 + crotchet 1 = 3.', '<b>One beat is missing:</b> a crotchet, or a crotchet rest.'], 'Add <b>one beat</b>: a crotchet or a crotchet rest.')}
+{drill('In your next piece, say each bar’s values aloud in rhythm (“long, short, short”) before you play it.')}
+{listen([('Haydn, “Surprise” Symphony', 'Classical', 'The quiet bars set you up; the silence before the bang matters.'), ('Beethoven, Symphony No. 5', 'Opening', 'The rest comes first: da-da-da-DUM begins on silence.'), ('Funk and hip-hop grooves', 'Bass and drums', 'The gaps between notes make the groove.')])}
+{thinkt('A rest is a breath in a sentence: the words stop, but the meaning carries on. Keep counting through it.')}''', 37).replace('<svg viewBox="0 0 300 90"', '<svg viewBox="0 0 300 90" class="rst"', 1)
 
 tree = ''.join(f'<div class="trw"><span class="trl">{lab}</span><div class="trc">' + ''.join(f'<div class="tri">{gcell("n", k, 36)}</div>' for _ in range(n)) + '</div></div>' for lab, k, n in (('1 semibreve', 'sb', 1), ('2 minims', 'm', 2), ('4 crotchets', 'c', 4), ('8 quavers', 'q', 8), ('16 semiquavers', 'sq', 16)))
 P38 = page(f'''{head('Part II · Time · 3', 'How long is a note?', 'Each row lasts exactly as long as the row above it: the same stretch of time, cut in half again and again.')}
@@ -98,6 +112,10 @@ P38 = page(f'''{head('Part II · Time · 3', 'How long is a note?', 'Each row la
 {two(vx('restgood', 70, '✓ The silence on beats 3–4 is one minim rest; a whole silent bar takes a semibreve rest, in any time signature.'), vx('restbad', 70, '✗ In 4/4, a minim rest on beats 2–3 hides the middle of the bar: write two crotchet rests.'))}
 {inact('Dot or tie: which is longer?', vx('ia_dot', 66), ['<b>The dotted minim:</b> 2 + half of 2 = 3 beats.', '<b>The tied notes:</b> a minim tied to a crotchet, 2 + 1 = 3 beats.', '<b>Play both:</b> one sound, held for three beats.'], 'They are <b>the same length</b>. A tie can also cross a bar line, which a dot cannot.')}
 {thinkt('A tie is a bridge between two notes: you cross it without stopping.')}
+{realm('Long and short, dotted and tied', [('Marches and anthems', 'Dotted rhythms (long–short) give a proud, marching step.'), ('Baroque overtures', 'Grand openings in French style are full of sharp dotted notes.'), ('Pop and jazz melodies', 'Ties across the bar line let a sung word arrive early, just before the beat.'), ('Lullabies', 'Long tied notes at phrase ends let the music breathe out.')])}
+{inact('Count a double dot', vx('ddot', 60), ['<b>The minim:</b> 2 beats.', '<b>First dot:</b> half of 2 = 1. <b>Second dot:</b> half of that = ½.', '<b>Add:</b> 2 + 1 + ½ = 3½, so the quaver after it fills the bar.'], 'A double-dotted minim lasts <b>3½ beats</b>.')}
+{drill('Clap a dotted crotchet and quaver (“long–short”) ten times, then clap two even crotchets: feel the difference.')}
+{listen([('Bach, French Overture style', 'Baroque', 'Sharp dotted rhythms: long–short, played crisply.'), ('“Scotch snap” in Scottish folk', 'Folk', 'The reverse: short–long, the snap comes first.'), ('National anthems', 'Ceremonial', 'Dotted crotchet + quaver gives the lift on key words.')])}
 {foot('Time signatures p. 39 · Rhythm p. 41', 'Workbook Level 0 · Note values · Online: Library › Notes and rests')}''', 38)
 
 bottom = [['2', gcell('n', 'm', 34), 'minim', 'Level 3'], ['4', gcell('n', 'c', 34), 'crotchet', 'Level 0'], ['8', gcell('n', 'q', 34), 'quaver', 'Level 1'], ['16', gcell('n', 'sq', 34), 'semiquaver', lv('')]]
@@ -112,6 +130,10 @@ P39 = page(f'''{head('Part II · Time · 4', 'Time signatures', 'Two numbers at 
 <p>A new time signature can appear in the middle of a piece, right after a bar line; it holds until the next one. A time signature is written only once, not on every line.</p>
 {watch(['Reading 6/8 as six beats: at most speeds it moves in two.', 'Mixing up 3/4 and 6/8: both hold six quavers, grouped differently (page 40).'])}
 {inact('Read a time signature', vx('ia_ts', 66), ['<b>Top number 3:</b> three counts in each bar.', '<b>Bottom number 4:</b> a crotchet is one count.', '<b>Check a bar:</b> two quavers + crotchet + crotchet = 3.'], '3/4: <b>three crotchet beats</b> in every bar.')}
+{realm('Time signatures you already know', [('2/4 · polka', 'Two quick beats: hop, step.'), ('3/4 · waltz, minuet', 'Three beats: the dance of the ballroom.'), ('4/4 · common time', 'Most pop, rock, hymns and marches for the classroom.'), ('2/2 · cut time', 'Marches and fast pieces: felt in two big beats.'), ('6/8 · jigs, lullabies', 'Two swaying beats, each split in three.'), ('5/4 and 7/8', 'Take Five (Brubeck), Mars (Holst), Balkan folk dances.')])}
+{inact('Which time signature fits?', vx('ia_which', 60), ['<b>Find the strong beats</b> by clapping, accenting the first note of each bar.', '<b>Count each bar:</b> two crotchets, or one minim: 2 beats.', '<b>Each beat is a crotchet.</b>'], 'It is in <b>2/4</b>: two crotchet beats a bar.')}
+{drill('Open three pieces you play and read only their time signatures aloud: “three crotchets a bar”, “two dotted crotchets a bar”…')}
+{listen([('Tchaikovsky, Swan Lake waltzes', 'Ballet', 'Count 1-2-3, but dancers feel one lift per bar.'), ('Brubeck, Take Five', 'Jazz', 'Five beats: count 3 + 2 and it settles.'), ('Holst, Mars', 'Orchestral', '5/4 that marches unevenly: 1 2 3, 1 2.')])}
 {foot('Pulse and the bar p. 36 · Compound time p. 40', 'Workbook Level 0 · Time signatures · Online: Library › Time signatures')}''', 39)
 
 compound = [[ts(6, 8), '2 dotted crotchets', 'Level 1'], [ts(9, 8), '3 dotted crotchets', 'Level 3'], [ts(12, 8), '4 dotted crotchets', 'Level 3'], [ts(6, 4), '2 dotted minims', 'Level 4']]
@@ -128,7 +150,11 @@ P40 = page(f'''{head('Part II · Time · 5', 'Compound and irregular time', 'Com
 {tbl(['Time signature', 'Each bar holds', 'First met'], irreg, ['26%', '50%', '24%'])}
 {two(box('Uneven groups in 4/4', '<p>Many dances keep 4/4 but group the eight quavers 3 + 3 + 2: “1 2 3, 1 2 3, 1 2”.</p>'), vx('t332', 54), '1fr 1fr')}
 {inact('Count 6/8 in two', vx('ia_68', 66), ['<b>Slowly, count all six:</b> 1 2 3 4 5 6.', '<b>Lean on 1 and 4</b>, the coral notes.', '<b>Faster, count only those:</b> two beats, each a dotted crotchet.'], '6/8 has <b>two beats</b> in a bar, each split into three.')}
-{thinkt('Like a skipping rope: two big swings, each with three little steps inside.')}''', 40)
+{thinkt('Like a skipping rope: two big swings, each with three little steps inside.')}
+{realm('Uneven and compound beats in real music', [('6/8 · rocking', 'Row, Row, Row Your Boat; the barcarolles of Offenbach and Chopin, which imitate a gondola.'), ('5/4 · lopsided', 'Take Five (Dave Brubeck), Mars from The Planets (Holst), the Mission: Impossible theme.'), ('7/8 · folk', 'Dances from Bulgaria and Greece, counted 2 + 2 + 3.'), ('3 + 3 + 2 · pop and Latin', 'The bass and drums of countless pop and Latin songs.')], 'Clap 3 + 3 + 2 (accent the first of each group) along with a pop song in 4/4: it fits.')}
+{inact('Hear 3 + 3 + 2 inside 4/4', vx('t332', 60), ['<b>Count eight quavers</b> in a bar of 4/4.', '<b>Group them</b> 3 + 3 + 2, accenting 1, 4 and 7.', '<b>Keep the beat</b> in your foot: it stays in four.'], 'The bar is still <b>4/4</b>; only the accents are uneven.')}
+{drill('Tap 3 + 3 + 2 on your knees (right hand on each accent) while counting 1 to 8. Then speed up.')}
+{listen([('Offenbach, Barcarolle', 'Opera', '6/8 rocks like a boat: two beats, each split in three.'), ('Bernstein, America', 'Musical', '6/8 and 3/4 take turns: 1-2-3 4-5-6 then 1-2 3-4 5-6.'), ('Latin and pop riffs', 'Clave, tresillo', '3 + 3 + 2 hides inside so many grooves.')])}''', 40)
 
 P41 = page(f'''{head('Part II · Time · 6', 'Rhythm: groups and upbeats', 'Rhythm is the pattern of long and short sounds over the pulse. The pulse stays steady; the rhythm moves around it. The way notes are grouped on the page shows where the beats are.')}
 {h3('Grouping with beams')}
@@ -142,7 +168,13 @@ P41 = page(f'''{head('Part II · Time · 6', 'Rhythm: groups and upbeats', 'Rhyt
 {two(vx('trip', 80, 'Triplet: three notes in the time of two.') + '<p class="sm">Level 2. Three exactly equal notes.</p>', vx('dup', 80, 'Duplet: two notes in the time of three, in compound time.') + '<p class="sm">Level 2.</p>')}
 {h3('Counting smaller values')}
 {vx('small', 100, 'Crotchet, two quavers, four semiquavers and a triplet (“1 & a”): one beat each.')}
-''', 41)
+
+{realm('Groups and upbeats in pieces you know', [('Upbeats', 'Happy Birthday and Amazing Grace both start before the first strong beat.'), ('Triplets', 'The first movement of Beethoven’s Moonlight Sonata flows in triplets from start to end.'), ('Blues and rock', 'A shuffle beat is triplets with the middle one left out.'), ('Semiquavers', 'The fast running notes of Baroque keyboard music, grouped in fours.')])}
+{inact('Count a triplet', vx('trip', 60), ['<b>Find the 3:</b> three quavers in the time of two.', '<b>Say “1 & a”</b> evenly across the first beat.', '<b>Back to two</b> on beat 2: “2 &”.'], 'Three <b>equal</b> notes in one beat: never two quick and one long.')}
+{drill('Say “trip-o-let, trip-o-let” to a metronome at 60, then clap it. Then play it on one note.')}
+{listen([('Beethoven, “Moonlight” Sonata', 'Romantic', 'Triplets roll on under a melody in duplets.'), ('Chopin, Fantaisie-Impromptu', 'Romantic', 'Four in one hand against three in the other.'), ('Blues shuffle', 'Blues', 'Triplet feel: every beat swings in three.')])}
+{thinkt('Syncopation is a comedian’s timing: the joke lands just before you expect it, and that is why it works.')}
+{drill('Clap the beat with your feet and the off-beats with your hands: “and” claps only. Then mix the two, bar by bar.')}''', 41)
 
 terms = [['syncopation', 'the stress falls off the beat, often on a note held across it', 'Level 4'], ['hemiola', 'two bars of three felt as three bars of two', 'Level 4'], ['swing', 'pairs of quavers played long–short, like the first and last notes of a triplet', 'Level ½'], ['polyrhythm', 'two rhythms at once, such as three notes in one hand against two in the other', 'Level 7'], ['rubato', 'time stretched and given back, for expression; the pulse returns', lv('')]]
 P42 = page(f'''{head('Part II · Time · 7', 'Rhythm: off the beat', 'Once the pulse is secure, rhythm can pull against it. Every one of these effects needs a steady beat underneath.')}
@@ -157,6 +189,9 @@ P42 = page(f'''{head('Part II · Time · 7', 'Rhythm: off the beat', 'Once the p
 {watch(['Rushing the short notes after a long one: keep counting inside the long note.', 'Playing a triplet unevenly: three equal notes, not two quick and one long.', 'Letting syncopation drag the pulse: tap the beat with your foot.'])}
 {inact('Count a syncopation', vx('ia_sync', 66), ['<b>Tap the beats:</b> 1, 2.', '<b>Find the coral crotchet:</b> it starts on the “&”, between the beats.', '<b>Hold it through beat 2</b>, then play bar 2 on the beats.'], 'The accent falls <b>off the beat</b>: that is syncopation.')}
 {thinkt('Syncopation is a step that lands between the beats, like a skip in your walk.')}
+{realm('Off the beat, everywhere', [('Ragtime', 'Scott Joplin’s The Entertainer: syncopated right hand over a steady left hand.'), ('Musicals', 'America from West Side Story (Bernstein) switches between two and three beats: a hemiola you can sing.'), ('Jazz and blues', 'Swing quavers: written even, played long–short.'), ('Romantic piano', 'Chopin’s nocturnes use rubato; his Fantaisie-Impromptu plays four notes against three.')], 'Tap a steady beat with your foot and clap on the “&”s only. Then try the first bars of The Entertainer.')}
+{inact('Play swing quavers', vx('swingw', 54) + vx('swingp', 54), ['<b>Read the top line:</b> even quavers, marked Swing.', '<b>Play them as the second line:</b> long–short, like triplets with the middle note tied.', '<b>Keep the beat even;</b> only the pairs lean.'], 'Swing changes <b>how</b> quavers are played, not how they are written.')}
+{drill('Say “doo-ba, doo-ba” in a lazy long–short, then play a C major scale up and down in swing quavers.')}
 {foot('Notes and rests p. 37 · Words for how to play p. 70', 'Workbook Levels ½–4 · Rhythm · Online: Rhythm clock')}''', 42)
 
 css = f'''
@@ -174,7 +209,7 @@ h3{{font-size:17px;font-weight:700;margin:14px 0 6px;padding-top:8px;border-top:
 .gl2{{font-family:'NM';line-height:1;color:{N};display:inline-block;vertical-align:middle}} .mm{{white-space:nowrap;font-weight:700}}
 .ts{{display:inline-flex;flex-direction:column;align-items:center;line-height:.8;font-family:'PF',Georgia,serif;font-size:17px;vertical-align:middle;margin-right:6px}}
 .box{{border-left:3px solid {C};padding:6px 0 4px 14px;margin:10px 0}} .bh{{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};margin-bottom:2px}}
-.rst{{max-height:78px}} .remem{{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;border-top:1px dashed #c9cbe0;border-bottom:1px dashed #c9cbe0;padding:5px 2px;margin:5px 0 4px;font-size:13px;color:#3d4080}} .remem .rl{{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}} .remem .ri i{{font-style:normal;color:{MUTE};font-size:12px}} .inact2{{border:1.5px solid {C};border-radius:4px;padding:8px 12px 10px;margin:10px 0;background:#fff}} .inact2 .bh{{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}} .inact2 .it{{font-size:15px;display:block;margin:1px 0 4px}} .ia2{{display:grid;grid-template-columns:1fr 1.1fr;gap:14px;align-items:center}} .ia2 .vx{{border:0;margin:0;padding:2px 0}} .ia2 ol{{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:13px;line-height:1.4}} .ia2 li{{display:flex;gap:8px}} .in{{flex:none;width:20px;height:20px;border-radius:50%;background:{C};color:#fff;font-weight:700;font-size:11.5px;display:flex;align-items:center;justify-content:center}} .ires{{margin-top:6px;padding-top:6px;border-top:1px solid #f0d8cf;font-size:14px}} .think{{display:flex;gap:10px;align-items:baseline;font-size:13.5px;margin:6px 0;color:#3d4080}} .think span{{flex:none;font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{G}}} .watch{{border-top:1px solid #c9cbe0;border-bottom:1px solid #c9cbe0;padding:8px 2px;margin:12px 0}} .wr{{display:flex;gap:10px;font-size:14.5px;line-height:1.45;padding:2px 0}} .x{{color:{C};font-weight:700}}
+.rst{{max-height:78px}} .remem{{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px;border-top:1px dashed #c9cbe0;border-bottom:1px dashed #c9cbe0;padding:5px 2px;margin:5px 0 4px;font-size:13px;color:#3d4080}} .remem .rl{{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}} .remem .ri i{{font-style:normal;color:{MUTE};font-size:12px}} .lis{{margin:10px 0;border:1.5px solid #e3e1ee;border-radius:8px;padding:9px 12px}} .lish{{margin:0 0 6px;font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}} .lisg{{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}} .lisg div{{font-size:12.5px;line-height:1.4}} .lisg b{{display:block;color:#26296b}} .lisg span{{display:block;color:#6d6f9c;font-size:11.5px}} .lisg i{{display:block;font-style:normal;margin-top:3px}} .drill{{display:flex;gap:10px;align-items:baseline;font-size:13.5px;margin:8px 0;padding:8px 10px;background:#fdf6f2;color:#3d4080}} .drill span{{flex:none;font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}} .realm{{border-top:3px solid {N};background:#f6f6fb;padding:8px 12px 10px;margin:10px 0}} .realm .bh{{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{N}}} .realm .it{{font-size:15px;display:block;margin:1px 0 6px}} .rmg{{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px}} .rmg>div{{display:flex;flex-direction:column;font-size:13px;line-height:1.4;border-left:2px solid {C};padding-left:8px}} .rmg i{{font-style:normal;font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:{MUTE}}} .tryit{{font-size:13.5px;margin:8px 0 0}} .inact2{{border:1.5px solid {C};border-radius:4px;padding:8px 12px 10px;margin:10px 0;background:#fff}} .inact2 .bh{{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}} .inact2 .it{{font-size:15px;display:block;margin:1px 0 4px}} .ia2{{display:grid;grid-template-columns:1fr 1.1fr;gap:14px;align-items:center}} .ia2 .vx{{border:0;margin:0;padding:2px 0}} .ia2 ol{{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:13px;line-height:1.4}} .ia2 li{{display:flex;gap:8px}} .in{{flex:none;width:20px;height:20px;border-radius:50%;background:{C};color:#fff;font-weight:700;font-size:11.5px;display:flex;align-items:center;justify-content:center}} .ires{{margin-top:6px;padding-top:6px;border-top:1px solid #f0d8cf;font-size:14px}} .think{{display:flex;gap:10px;align-items:baseline;font-size:13.5px;margin:6px 0;color:#3d4080}} .think span{{flex:none;font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{G}}} .watch{{border-top:1px solid #c9cbe0;border-bottom:1px solid #c9cbe0;padding:8px 2px;margin:12px 0}} .wr{{display:flex;gap:10px;font-size:14.5px;line-height:1.45;padding:2px 0}} .x{{color:{C};font-weight:700}}
 .links{{position:absolute;left:58px;right:58px;bottom:62px;display:grid;grid-template-columns:1fr 1fr;gap:22px;font-size:13.5px;color:#3d4080;border-top:1px solid #e2ddd0;padding-top:9px}} .lab{{display:block;font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}}
 .vx{{margin:6px 0;border:1px solid #e2ddd0;background:#fff;padding:8px 12px 6px}} .vs{{display:flex;justify-content:center}} .vs svg{{width:100%;height:auto;color:{N};fill:{N}}}
 .vx text{{font-family:'AH',Arial !important;font-weight:700}} figcaption{{font-size:13px;color:{MUTE};margin-top:4px;line-height:1.4}}
@@ -194,8 +229,8 @@ for _old, _pg in zip(range(36, 43), (P36, P37, P38, P39, P40, P41, P42)):
         _kick = _re.search(r'<div class="kick">(.*?)</div>', _a).group(1)
         _head_end = _a.index('<div class="body">') + len('<div class="body">')
         _foot = _pg[_pg.rindex('<div class="foot">'):]
-        _secs.append(_a + '</div>' + _foot)
-        _secs.append(_a[:_head_end] + f'<div class="kick">{_kick} · continued</div>' + _b)
+        _secs.append((_a + '</div>' + _foot).replace('<section class="pg"', f'<section class="pg" data-flow="A{_old}"', 1))
+        _secs.append((_a[:_head_end] + f'<div class="kick fk2">{_kick} · continued</div>' + _b).replace('<section class="pg"', f'<section class="pg" data-flow="B{_old}"', 1))
         _n += 2
     else:
         _secs.append(_pg); _n += 1
@@ -203,7 +238,21 @@ _secs = [_re.sub(r'<div class="foot"><span>\d+</span></div>', f'<div class="foot
 _body = ''.join(_secs)
 _body = _re.sub(r'(p\. |page )(3[6-9]|4[0-2])\b', lambda m: m.group(1) + str(_map[int(m.group(2))]), _body)
 TIME_MAP = _map
-html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{OPEN}{_body}</body></html>'
+FLOWJS = '''<script>
+// Each topic fills its first page, then flows on to its second: blocks move between the two until the first is as full as it can be.
+(async function () { try { await document.fonts.ready; } catch (e) {}
+  document.querySelectorAll('section[data-flow^="A"]').forEach(A => {
+    const B = document.querySelector('section[data-flow="B' + A.dataset.flow.slice(1) + '"]'); if (!B) return;
+    const ab = A.querySelector('.body'), bb = B.querySelector('.body'), kick = bb.querySelector('.fk2');
+    const limit = () => A.querySelector('.foot').getBoundingClientRect().top - 24;
+    const bottom = () => { let m = 0; [...ab.children].forEach(c => { const r = c.getBoundingClientRect(); if (r.height) m = Math.max(m, r.bottom); }); return m; };
+    while (bottom() > limit() && ab.children.length > 3) bb.insertBefore(ab.lastElementChild, kick.nextSibling);
+    for (;;) { const nx = kick.nextElementSibling; if (!nx || nx.classList.contains('links')) break; ab.appendChild(nx); if (bottom() > limit()) { bb.insertBefore(nx, kick.nextSibling); break; } }
+  });
+  document.body.dataset.flowed = '1';
+})();
+</script>'''
+html = f'<!doctype html><html><head><meta charset="utf-8"><style>{FF}</style><style>{css}</style></head><body>{OPEN}{_body}{FLOWJS}</body></html>'
 
 open('/mnt/user-data/outputs/house-rooms/handbook-time2.html', 'w').write(html)
 print('ok')

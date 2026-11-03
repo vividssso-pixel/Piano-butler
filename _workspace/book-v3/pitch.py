@@ -31,7 +31,9 @@ P21 = page(f"""{head('Before you start', 'Every note answers six questions', 'Wh
 {six_q()}
 <div class="six">{''.join(f'<div><b>{q}</b><span>{a}</span><i>{p}</i></div>' for q, a, p in SIX)}</div>
 <p class="think"><span>Think of it</span>Like a news report: who, when, where, what, how and why. Leave one out and the story is not clear; leave one out in a piece and the note is not right. Finger numbers are the “who”, so they matter as much as the note itself.</p>
-<p class="sm">When something feels hard in a piece, ask which of the six questions is the problem, then turn to that part.</p>""", 21, 'BEFORE YOU START')
+{h3('When a passage won’t come right, ask which question it is')}
+{tbl(['What you notice', 'Question', 'Turn to'], [['You stumble in the same place every time', '<b class="co">Who?</b> the finger', 'Playing and listening'], ['It rushes, drags or the counting slips', '<b class="co">When?</b> the rhythm', 'Part II · Time'], ['A note sounds wrong', '<b class="co">Where?</b> the note name', 'Part I · Pitch'], ['A chord sounds odd or thin', '<b class="co">What?</b> the harmony', 'Harmony'], ['It is correct but flat and dull', '<b class="co">How?</b> the expression', 'Expression'], ['It does not seem to go anywhere', '<b class="co">Why?</b> the shape', 'Shape and style']], ['46%', '24%', '30%'])}
+<p class="sm">The same six questions work for any music you meet: a pop song, a hymn, a film theme or a sonata.</p>""", 21, 'BEFORE YOU START')
 
 g14 = black_groups('C', 14)
 P22 = ppage(f"""{head('Part I · Pitch · 1', 'The keyboard', 'Keys to the <b>left</b> sound <b>lower</b>; keys to the <b>right</b> sound <b>higher</b>. The black keys come in groups of <b>two</b> and <b>three</b>, and that pattern repeats all the way along: it is how you find every note.')}
@@ -76,6 +78,7 @@ P26 = ppage(f"""{head('Part I · Pitch · 5', 'Sharps, flats and naturals', 'An 
 <div class="rules"><div><b>Only that line or space.</b> A sharp on the F in the first space does not change the F an octave higher.</div><div><b>A tie carries it on.</b> A note tied across the bar line keeps its accidental.</div><div><b>Reminders.</b> A courtesy accidental, sometimes in brackets, just reminds you after a bar line.</div></div>
 {h3('One key, two names')}
 {two('<p>Every black key has two names: the key between F and G is both <b>F♯</b> and <b>G♭</b>. Notes that sound the same but are written differently are <b>enharmonic</b>. White keys can have sharp or flat names too: <b>E♯</b> is F, <b>C♭</b> is B.</p>', kbx('C', 7, 46, 150, label=True, marks=[f'<text x="{(i + 1) * 46}" y="{y}" text-anchor="middle" font-family="AH,Arial" font-size="10.5" font-weight="700" fill="#fff">{t}</text>' for i, (s1, f1) in zip((0, 1, 3, 4, 5), (('C♯', 'D♭'), ('D♯', 'E♭'), ('F♯', 'G♭'), ('G♯', 'A♭'), ('A♯', 'B♭'))) for y, t in ((62, s1), (77, f1))], scale=1.0), '1fr 1fr')}
+<p class="think"><span>Think of it</span>Like a colour wheel: colours side by side blend smoothly, colours on opposite sides clash. C and G sit side by side; C and F♯ sit opposite, and sound far apart.</p>
 {foot('Keys and key signatures p. 31', 'Workbook Pitch 3 · Online: Library › Signs')}""", 26)
 
 def semis(start, n, hi=(), W=36):   # numbered semitones from a key: 0 on the start, 1, 2 … on every key in turn
@@ -125,6 +128,7 @@ P29b = ppage(f"""{head('Part I · Pitch · 9', 'Minor scales', 'Every minor scal
 {px('a_mel', 84, 'Melodic: the 6th and 7th raised going up (<b class="co">F♯ G♯</b>), lowered coming down (<b class="co">G♮ F♮</b>).')}
 {two(h3('Relative minor') + '<p>Same key signature, three semitones below the major: C major and A minor share every note.</p>', h3('Parallel minor') + '<p>Same key note, different signature: C major (no sharps or flats) and C minor (three flats).</p>')}
 <p class="think"><span>Think of it</span>The relative minor lives in the same house as its major, with the same furniture (notes); the parallel minor lives at the same address (key note) but furnishes it differently.</p>
+<p class="sm"><b>Hear it everywhere:</b> the raised 7th of the harmonic minor gives Bach’s minor fugues, Middle Eastern melodies and film villains their tense pull; the melodic minor runs smoothly up through jazz lines and Baroque solos; the natural minor is the sound of many folk songs and pop ballads.</p>
 {foot('Scales p. 29 · Keys and key signatures p. 31', 'Workbook Pitch 5 · Online: Scale finder, Library › Scales')}""", 30)
 
 P30 = ppage(f"""{head('Part I · Pitch · 10', 'Keys and key signatures', 'A <b>key signature</b> at the start of each line lists the sharps or flats the piece uses throughout, so they do not have to be written before every note. They always appear in the same order.')}
@@ -133,6 +137,7 @@ P30 = ppage(f"""{head('Part I · Pitch · 10', 'Keys and key signatures', 'A <b>
 {tbl(['Major', 'Relative minor', 'Signature', 'First met'], keys, ['28%', '28%', '20%', '24%'])}
 <p class="sm">Six and seven sharps or flats (F♯, C♯, G♭, C♭ major and their minors) come at Levels 4–6.</p>
 {two('<svg viewBox="0 0 300 120" style="width:100%;max-width:300px;display:block;margin:0 auto"><circle cx="78" cy="60" r="50" fill="#fff" stroke="#26296b" stroke-width="3"/><circle cx="78" cy="60" r="42" fill="none" stroke="#26296b" stroke-width="1"/><text x="78" y="56" text-anchor="middle" font-family="AH,Arial" font-size="15" font-weight="700" fill="#26296b">A major</text><text x="78" y="74" text-anchor="middle" font-family="AH,Arial" font-size="11" fill="#6d6f9c">front</text><circle cx="222" cy="60" r="50" fill="#fdeee8" stroke="#e4572e" stroke-width="3"/><circle cx="222" cy="60" r="42" fill="none" stroke="#e4572e" stroke-width="1"/><text x="222" y="56" text-anchor="middle" font-family="AH,Arial" font-size="15" font-weight="700" fill="#e4572e">F♯ minor</text><text x="222" y="74" text-anchor="middle" font-family="AH,Arial" font-size="11" fill="#6d6f9c">back</text><text x="150" y="66" text-anchor="middle" font-family="AH,Arial" font-size="22" fill="#26296b">⇄</text></svg>', h3('One signature, two keys') + '<p>Every key signature belongs to <b>one major key and one minor key</b>, like the two sides of a coin: three sharps are A major or F♯ minor. The minor is the <b>relative minor</b>, three semitones below the major.</p>', '1fr 1.3fr')}
+<p class="think"><span>Think of it</span>A key signature is a dress code printed on the invitation: say it once at the door, and everyone at the party follows it without being told again.</p>
 {foot('Scales p. 29 · Finding the key p. 32 · The circle of fifths p. 33', 'Workbook Pitch 5 · Online: Scale finder, Library › Keys')}""", 31)
 
 P31 = ppage(f"""{head('Part I · Pitch · 11', 'Finding the key', 'A key signature names two keys, a major and its relative minor. Three quick rules find the major; one more finds the minor; then the music itself tells you which of the two it is.')}
