@@ -28,7 +28,7 @@ const { chromium } = require('playwright'); const fs = require('fs');
     return o.outerHTML;
   });
   // worked examples: colour the clue notes coral
-  const HL = { ex_key: ['n5', 'n10', 'n11'] };
+  const HL = { ex_key: ['n5', 'n10', 'n11'], ia_read: ['n1', 'n3'], ia_iv: ['n1', 'n3', 'n5', 'n8'], ia_sc1: ['n3', 'n7'], ia_sc2: ['n3', 'n7'] };
   for (const [k, ids] of Object.entries(HL)) if (S[k]) ids.forEach(n => { S[k] = S[k].replace(`<g id="${n}" class="note">`, `<g id="${n}" class="note" fill="#e4572e" color="#e4572e" stroke="#e4572e">`); });
   // ex_key: a '1' under the key signature, on the same row as the other clue numbers
   if (S.ex_key) { const m = S.ex_key.match(/class="keySig"[\s\S]*?<use[^>]*x="([\d.]+)"/), y = (S.ex_key.match(/<text x="[\d.]+" y="([\d.]+)"/) || [])[1];

@@ -89,7 +89,7 @@ B5 = tq('Use', 'Scales and keys', 'Scales and keys', 'The order of sharps: F C G
 {ex(1, 'Name the key', 2, 'Write the major key and its relative minor for each key signature.', grid([pc('ks' + k, f'major {BOX} &nbsp; minor {BOX}', 56) for k in ('1s', '1f', '2s', '2f', '3s', '3f')], 3, 'ksg'))}
 {ex(2, 'Which minor?', 3, 'Three forms of A minor, going up. Write natural, harmonic or melodic under each.', ''.join(f'<div class="opc mrow"><span class="ol">{l}</span>{wpx(k, 44)}<span class="al mf"></span></div>' for l, k in (('A', 'mf_a'), ('B', 'mf_b'), ('C', 'mf_c'))))}
 {ex(3, 'In order', 1, 'Write the order of sharps and the order of flats.', '<div class="ord"><b>Sharps</b>' + BOX * 7 + '</div><div class="ord"><b>Flats</b>' + BOX * 7 + '</div>')}
-{ex(4, 'Play it', 1, 'Play each scale one octave, hands separately. Tick a circle each day it is even and correct.', '<div class="ts6">' + ''.join(f'<div><b>{s}</b>{ticks(4)}</div>' for s in ('G major', 'F major', 'A harm. minor')) + '</div>')}''', 11, 30)
+{ex(4, 'Play it', 1, 'Play each scale one octave, hands separately. Tick a circle each day it is even and correct.', '<div class="ts6">' + ''.join(f'<div><b>{s}</b>{ticks(4)}</div>' for s in ('G major', 'F major', 'A harm. minor')) + '</div>')}''', 11, 31)
 
 # ---------- Review, progress, answers ----------
 R = wpage2(f'''<div class="kick">Pitch · Review</div><h1>Review</h1><p class="rem2"><span>Ten minutes</span>No help, no piano. Mark it with the answers on page 14.</p>
@@ -98,7 +98,7 @@ R = wpage2(f'''<div class="kick">Pitch · Review</div><h1>Review</h1><p class="r
 {ex(3, 'Complete it', 2, 'One word or letter in each box.', f'<div class="sent"><p>A semitone higher than E is {BOX} .</p><p>From C to the next C there are {BOX} white keys, counting both.</p><p>A natural sign {LINE.replace("al", "al in")} a sharp or flat.</p><p>The relative minor of G major is {BOX} minor.</p></div>')}
 {ex(4, 'True or false?', 1, 'Circle T or F.', tfrows(('E to F is a tone.', 'A key signature applies to every line of the piece.', 'An accidental lasts until the end of the bar.')))}
 <div class="score">Score <span class="ab"></span> / 15</div>''', 12, 22)
-concepts = [('the keyboard and the musical alphabet', 22), ('tones and semitones', 27), ('the staff and the clefs', 23), ('treble clef notes', 24), ('bass clef notes', 24), ('ledger lines', 23), ('sharps, flats and naturals', 26), ('enharmonic names', 26), ('interval numbers', 27), ('major and minor 3rds', 28), ('major scales', 29), ('minor scales', 29), ('key signatures', 30)]
+concepts = [('the keyboard and the musical alphabet', 22), ('tones and semitones', 27), ('the staff and the clefs', 23), ('treble clef notes', 24), ('bass clef notes', 24), ('ledger lines', 23), ('sharps, flats and naturals', 26), ('enharmonic names', 26), ('interval numbers', 27), ('major and minor 3rds', 28), ('major scales', 29), ('minor scales', 30), ('key signatures', 31)]
 PR = wpage2(f'''<div class="kick">Pitch · Progress</div><h1>My progress</h1><p class="rem2"><span>How to use</span>Tick each column when it is true. Come back to this page every few weeks.</p>
 {tbl(['Concept', 'I know it', 'I can write it', 'I can play it', 'Handbook'], [[c, '<span class="cb2"></span>', '<span class="cb2"></span>', '<span class="cb2"></span>', f'p. {p}'] for c, p in concepts], ['40%', '15%', '15%', '15%', '15%'], 'prog')}
 <div class="note2"><b>Teacher’s note</b><div class="lines"><span class="al"></span><span class="al"></span><span class="al"></span></div></div>''', 13, 22)
