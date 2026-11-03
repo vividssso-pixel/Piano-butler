@@ -50,7 +50,7 @@ def foot(see, practise): return f'<div class="links"><div><span class="lab">See 
 def two(a, b, r='1fr 1fr'): return f'<div class="two" style="grid-template-columns:{r}"><div>{a}</div><div>{b}</div></div>'
 
 flow = ''.join(f'<div class="fl"><span class="fln">{i + 1}</span><b>{a}</b><span>{b}</span></div>' + ('<span class="fa">›</span>' if i < 4 else '') for i, (a, b) in enumerate([('Pulse', 'the steady beat underneath'), ('Bar', 'beats in groups of 2, 3 or 4'), ('Time signature', 'how many beats, and which note is one beat'), ('Note values', 'how long each sound lasts'), ('Rhythm', 'the pattern of long and short')]))
-OPEN = f'''<section class="pg part2"><div class="pframe"><div class="pk">Part II</div><div class="pt">Time</div><div class="pdv"></div>
+OPEN = f'''<section class="pg part2"><div class="pframe"><div class="pk">Part II · When?</div><div class="pt">Time</div><div class="pdv"></div>
 <p class="pl">Music moves through time. Underneath it runs a steady <b>pulse</b>; the pulse is grouped into <b>bars</b>; and every note and rest takes a measured share of it. This part goes from that big picture down to the length of a single note.</p>
 <div class="flow">{flow}</div>
 <div class="pin"><div class="pih">In this part</div>{''.join(f'<div class="tr"><span>{x}</span><span class="dots"></span><span>{p}</span></div>' for x, p in (('Pulse, tempo and the bar', 36), ('Notes and rests', 37), ('How long is a note?', 38), ('Time signatures', 39), ('Compound and irregular time', 40), ('Rhythm: groups and upbeats', 41), ('Rhythm: off the beat', 42)))}</div></div></section>'''
