@@ -36,8 +36,10 @@ const { chromium } = require('playwright');
         });
         const body = pg.querySelector('.body');
         if (body) {
-          const limit = (pg.querySelector('.sign, .ffoot') || pg.querySelector('.foot')).getBoundingClientRect().top - 4;
-          let last = 0; body.querySelectorAll('*').forEach(e => { const R = e.getBoundingClientRect(); if (R.height) last = Math.max(last, R.bottom); });
+          const lk = body.querySelector('.links');   // See also / Practise it sit at the bottom: content keeps 20px clear of them
+          const limit = lk ? lk.getBoundingClientRect().top - 20 : (pg.querySelector('.sign, .ffoot') || pg.querySelector('.foot')).getBoundingClientRect().top - 4;
+          if (lk && lk.getBoundingClientRect().bottom > pg.querySelector('.foot').getBoundingClientRect().top - 4) out.push(`p${i + 1}: links run into the page number`);
+          let last = 0; body.querySelectorAll('*').forEach(e => { if (e.closest('.links')) return; const R = e.getBoundingClientRect(); if (R.height) last = Math.max(last, R.bottom); });
           if (last > limit) out.push(`p${i + 1}: content runs ${Math.round(last - limit)}px into the footer`);
           body.querySelectorAll('*').forEach(e => { const R = e.getBoundingClientRect(); if (R.width && (R.right > P.right - 20 || R.left < P.left + 20)) out.push(`p${i + 1}: ${e.tagName.toLowerCase()} pokes out sideways`); });
         }
