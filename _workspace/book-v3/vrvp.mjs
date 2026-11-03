@@ -34,7 +34,7 @@ function mei(v) {
 const S = JSON.parse(fs.readFileSync(process.argv[2], 'utf8')); const out = {};
 for (const [k, v] of Object.entries(S)) {
   id = 0;
-  tk.setOptions({ pageWidth: v.w || 2100, adjustPageHeight: true, adjustPageWidth: true, scale: 50, header: 'none', footer: 'none', svgViewBox: true, pageMarginTop: 20, pageMarginBottom: 20, pageMarginLeft: v.clef === 'GF' ? 60 : 10, pageMarginRight: 30, breaks: 'none', spacingLinear: v.sp ?? 0.5, spacingNonLinear: 0.6, lyricSize: 4.2, font: 'Leipzig' });
+  tk.setOptions({ pageWidth: v.w || 2100, adjustPageHeight: true, adjustPageWidth: true, scale: 50, header: 'none', footer: 'none', svgViewBox: true, pageMarginTop: 20, pageMarginBottom: 20, pageMarginLeft: v.clef === 'GF' ? 60 : 10, pageMarginRight: 30, breaks: 'none', spacingLinear: v.sp ?? 0.5, spacingNonLinear: 0.6, lyricSize: 4.2, lyricTopMinMargin: 4, font: 'Leipzig' });
   tk.loadData(mei(v));
   out[k] = tk.renderToSVG(1);
 }
