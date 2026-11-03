@@ -9,7 +9,7 @@ CH = [
  ('Pitch', 2, 'The staff and the notes', 'Lines and spaces, clefs, ledger lines, reading every note, and the map from staff to keyboard.', 'hbP', [3, 4, 5], '23–25', 'wbP', [3, 4, 5], '3–5'),
  ('Pitch', 3, 'Sharps, flats and naturals', 'Accidentals, how long they last, two names for one key.', 'hbP', [6], '26', 'wbP', [6, 7], '6–7'),
  ('Pitch', 4, 'Tones, semitones and intervals', 'Counting the distance between notes: numbers and qualities.', 'hbP', [7, 8], '27–28', 'wbP', [8, 9], '8–9'),
- ('Pitch', 5, 'Scales and keys', 'Major and minor scales, degree names, key signatures, the circle of fifths.', 'hbP', [9, 10, 11], '29–31', 'wbP', [10, 11], '10–11'),
+ ('Pitch', 5, 'Scales and keys', 'Major and minor scales, key signatures, finding the key, the circle of fifths.', 'hbP', [9, 10, 11, 12, 13], '29–33', 'wbP', [10, 11], '10–11'),
  ('Time', 1, 'Pulse and the bar', 'The steady beat, tempo, strong beats and bar lines.', 'hbT', [2], '36', 'wbT', [1, 2], '1–2'),
  ('Time', 2, 'Notes and rests', 'Every note value and its rest, and their other names.', 'hbT', [3], '37', 'wbT', [3, 4], '3–4'),
  ('Time', 3, 'How long is a note?', 'Adding values, dots and ties.', 'hbT', [4], '38', 'wbT', [5, 6], '5–6'),
