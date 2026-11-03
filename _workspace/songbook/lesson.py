@@ -60,36 +60,35 @@ def lead(n, t, stars, how, way):
     keys = ''.join(lhkb(way, ch) for ch in ['C', 'G'])
     return f'<div class="way"><div class="wh"><span class="wn">Way {n}</span><b>{t}</b><span class="st">{"★" * stars}{"☆" * (4 - stars)}</span></div><div class="lw"><p class="how">{how}</p><div class="lks"><span class="lkh">Left hand</span>{keys}</div></div>{mus("L" + str(n) + "a")}{mus("L" + str(n) + "b")}</div>'
 
-chips = ''.join(f'<span class="chip">{t}</span>' for t in ['crotchet, minim, semibreve', 'C position, then G', 'steps and a skip'])
+chips = ''.join(f'<span class="chip">{t}</span>' for t in ['crotchet, minim, semibreve', 'C position, then G', 'chords C and G'])
+WAYS = [(1, 'The tune', 'Right hand alone. The numbers above the notes are your fingers.'),
+        (2, 'Just the root', 'Left hand, row 2: each chord’s root, finger 5, held all bar. For G your hand moves down to G.'),
+        (3, 'Root and fifth', 'Row 3: add the fifth on top with finger 1, on beats 1 and 3. The ring is the gap Way 4 fills.'),
+        (4, 'The whole chord', 'Row 4: fill the gap with finger 3. C E G for C, G B D for G.')]
+legend = ''.join(f'<div class="wl"><span class="wn">Way {n}</span><span class="st">{"★" * n}{"☆" * (4 - n)}</span><b>{t}</b><span class="wd">{d}</span></div>' for n, t, d in WAYS)
+
 P1 = page(f'''<div class="kick">Lesson {LESSON}</div><h1>{SONG["title"]}</h1>
 <p class="lead">A rhyme by Sarah Josepha Hale, first printed in Boston in 1830, about a lamb that followed a girl to school. We sing it to the tune of <i>Merrily we roll along</i>.</p>
 <div class="chips"><span class="cl">In this song</span>{chips}</div>
-{part(1, 'Listen and sing', 'Listen first, pointing to each note as it sounds. Then sing.')}
-{mus('sing1')}{mus('sing2')}
-<div class="row2"><div>{ticks(['Listened and pointed', 'Sang it with the words', 'Sang it on the letter names'])}</div><div class="qr">{qr(URL)}<span>Scan me</span></div></div>
-{part(2, 'Say and clap', 'Say the words in time, then clap them and count. Clap on the coral numbers; hold through the grey ones.')}
+{part(1, 'Say and clap', 'Say the words in time, then clap them and count: clap on the coral numbers, hold through the grey ones.')}
 {mus('rhy1')}{mus('rhy2')}
-{ticks(['Said it in time', 'Clapped and counted'], True)}''', 1)
+<div class="pos"><div>{kb(width=380)}</div><div><p class="cap2"><b>Your hand: C position.</b> Right thumb on middle C, a finger on each key up to G. The song’s notes are lit.</p>{ticks(['Said it in time', 'Clapped and counted'])}</div></div>''', 1)
 
-P2 = page(f'''{part(3, 'Read it', 'The song uses four notes of C position. Find them on the keys, then on the staff.')}
-<div class="kbw">{kb()}<p class="cap">C position: the right-hand thumb on middle C. The song’s four notes are lit.</p></div>
-<p class="q"><b>Write the letter names</b> of bars 1 to 4 in the boxes. The first one is done.</p>{mus('read1')}
-<div class="sk"><p class="q"><b>In bar 4 the tune goes from E to G.</b> Is that a step or a skip?</p><div class="ticks h"><span class="tk"><span class="bx"></span>a step</span><span class="tk"><span class="bx"></span>a skip</span></div></div>
-{part(4, 'Play it four ways', 'Start with Way 1. Each way adds a little more for the left hand; your teacher tells you which way is yours this week.')}
-<div class="tog"><span class="tgh">Play together</span><span>Two players, one song: one plays Way 1, the other the left hand of Way 4. Then swap.</span></div>
-{way(1, 'The tune', 1, 'Right hand alone. The numbers are your fingers.', 'w1a', 'w1b')}''', 2)
+P2 = page(f'''{part(2, 'Listen and sing', 'Listen first, pointing to each note as it sounds. Then sing. Write the letter names of bars 1 to 4 in the boxes; the first one is done.')}
+{mus('sing1')}{mus('sing2')}
+<div class="row2"><div>{ticks(['Listened and pointed', 'Sang it with the words', 'Wrote the letter names', 'Sang it on the letter names'])}</div><div class="qr">{qr(URL)}<span>Scan me</span></div></div>
+{part(3, 'Play it four ways', 'One tune, four ways: each adds a little more for the left hand. Your teacher tells you which way is yours this week.')}
+<div class="lg"><div class="lgl">{legend}</div><div class="lks"><span class="lkh">Left hand</span>{lhkb('way4', 'C')}{lhkb('way4', 'G')}</div></div>''', 2)
 
-P3 = page(f'''{lead(2, 'Just the root', 2, 'The letters above the staff are the chords. A chord is named after its root: play just the root, finger 5, all bar long. C for C; for G, your hand moves down to G.', 'way2')}
-{lead(3, 'Root and fifth', 3, 'Add the fifth on top with finger 1, on beats 1 and 3: C and G for C, G and D for G. The ring in the picture is the gap Way 4 fills.', 'way3')}''', 3)
-
-P4 = page(f'''{lead(4, 'The whole chord', 4, 'Fill the gap with finger 3: root, third and fifth, three notes close together. C E G for C, G B D for G.', 'way4')}
-{part(5, 'Move it to G', 'Same fingers, new home: thumb on G, and the tune moves with your hand. The chords move too: C becomes G, G becomes D.')}
-<div class="mv"><div>{kb(4, 4, 3, 300)}</div><p class="cap2"><b>G position.</b> The key of G has one black key, F♯: the sharp sign at the start of the staff. This tune never needs it.</p></div>
-{mus('g1', 'gl')}
-<div class="chk"><div class="ch">6 · Check</div><div class="cgrid">
-<div>{ticks(['I can sing it with the words', 'I can clap and count it', 'I can name its notes'])}</div>
+P3 = page(f'''{mus('play1')}{mus('play2')}
+<div class="tog"><span class="tgh">Play together</span><span>Two players, one song: one plays Way 1, the other a left-hand row. Then swap.</span></div>
+{part(4, 'Move it to G', 'Same fingers, new home: thumb on G, and the tune moves with your hand. The chords move too: C becomes G, G becomes D.')}
+<div class="mv"><div>{kb(4, 4, 3, 260)}</div><div><p class="cap2"><b>G position.</b> The key of G has one black key, F♯: the sharp sign at the start of the staff. This tune never needs it.</p></div></div>
+{mus('g1')}
+<div class="chk"><div class="ch">5 · Check</div><div class="cgrid">
+<div>{ticks(['I can say and clap it', 'I can sing it with the words', 'I can name its notes'])}</div>
 <div>{''.join(f'<div class="wrow"><span class="wk">In {k}</span><div class="ticks h">' + ''.join(f'<span class="tk"><span class="bx"></span>Way {i}</span>' for i in range(1, 5 if k == 'C' else 4)) + '</div></div>' for k in 'CG')}
-<div class="tch"><span>Teacher</span><span class="tk"><span class="bx"></span>Pass</span><span class="tk"><span class="bx"></span>Not yet</span></div></div></div></div>''', 4)
+<div class="tch"><span>Teacher</span><span class="tk"><span class="bx"></span>Pass</span><span class="tk"><span class="bx"></span>Not yet</span></div></div></div></div>''', 3)
 
 css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margin:0;background:#e9e4d8;font-family:'AH',Arial,sans-serif;color:{N}}}
 .pg{{width:794px;height:1123px;background:#fff;margin:0 auto 24px;position:relative;overflow:hidden;padding:42px 58px 0;page-break-after:always}}
@@ -104,12 +103,12 @@ css = f'''@page {{ size: A4; margin: 0 }} *{{box-sizing:border-box}} body{{margi
 .mus svg{{width:100%;height:auto;display:block}} .mus text{{font-family:'AH',Arial !important}} .mus .harm text, .mus g.harm text{{font-family:'PF',Georgia,serif !important;font-weight:700}}
 .mus g.fing text{{font-weight:700}} .mus .cnt{{font-family:'AH',Arial !important}}
 .ticks{{display:flex;flex-direction:column;gap:8px;margin:8px 0}} .ticks.h{{flex-direction:row;gap:18px}} .tk{{display:inline-flex;align-items:center;gap:9px;font-size:15.5px;font-weight:700}} .bx{{width:20px;height:20px;border:1.8px solid {N};border-radius:4px;display:inline-block;flex:none}}
-.lw{{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center}} .lks{{display:flex;align-items:flex-end;gap:12px}} .lkh{{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:{MUTE};writing-mode:vertical-rl;transform:rotate(180deg)}} .lk{{display:grid;justify-items:center;gap:2px}} .lk b{{font-family:'PF',Georgia,serif;font-size:18px}} .tog{{display:flex;gap:14px;align-items:baseline;border:1.5px dashed {C};border-radius:6px;padding:8px 14px;margin:6px 0 4px;font-size:15px}} .tgh{{font-size:11.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};white-space:nowrap}} .row2{{display:grid;grid-template-columns:1fr 110px;gap:16px;align-items:center}} .qr{{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:700;color:{MUTE};letter-spacing:.12em;text-transform:uppercase}} .qrb{{width:96px;height:96px;border:1.5px dashed {HELD};display:flex;align-items:center;justify-content:center;color:{HELD};font-size:14px}}
+.lw{{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center}} .lks{{display:flex;align-items:flex-end;gap:12px}} .lkh{{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:{MUTE};writing-mode:vertical-rl;transform:rotate(180deg)}} .lk{{display:grid;justify-items:center;gap:2px}} .lk b{{font-family:'PF',Georgia,serif;font-size:18px}} .pos{{display:grid;grid-template-columns:380px 1fr;gap:24px;align-items:center;margin-top:18px}} .lg{{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:18px;align-items:center;margin-top:6px}} .lgl{{display:grid;gap:7px}} .wl{{display:grid;grid-template-columns:52px 64px 132px minmax(0,1fr);align-items:baseline;gap:8px;font-size:14.5px}} .wl b{{font-family:'PF',Georgia,serif;font-size:17px}} .wl .st{{margin:0;font-size:13px}} .wd{{color:#3d4080;line-height:1.4}} .sh{{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};margin:2px 0 6px}} .lks{{flex-direction:column;align-items:center}} .tog{{display:flex;gap:14px;align-items:baseline;border:1.5px dashed {C};border-radius:6px;padding:8px 14px;margin:6px 0 4px;font-size:15px}} .tgh{{font-size:11.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};white-space:nowrap}} .row2{{display:grid;grid-template-columns:1fr 110px;gap:16px;align-items:center}} .qr{{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:700;color:{MUTE};letter-spacing:.12em;text-transform:uppercase}} .qrb{{width:96px;height:96px;border:1.5px dashed {HELD};display:flex;align-items:center;justify-content:center;color:{HELD};font-size:14px}}
 .kbw{{max-width:460px;margin:6px auto 4px}} .kbw svg{{max-width:460px !important}} .sk{{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin:6px 0 4px}} .sk .ticks{{margin:0}} .two{{display:grid;grid-template-columns:1fr 1.15fr;gap:24px;align-items:start;margin-top:6px}} .cap{{font-size:13px;color:{MUTE};text-align:center}} .q{{font-size:15.5px;margin:2px 0 4px}}
 .way.gs .mus{{max-width:91%;margin:0 auto}} .way{{border-top:1px solid #d9d6ea;padding-top:10px;margin-top:12px}} .wh{{display:flex;align-items:baseline;gap:12px}} .wn{{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C}}} .wh b{{font-family:'PF',Georgia,serif;font-size:21px}} .st{{margin-left:auto;color:{C};letter-spacing:.1em;font-size:15px}}
 .chk{{border:1.5px solid {N};margin-top:8px;padding:12px 16px}} .ch{{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{C};margin-bottom:4px}} .cgrid{{display:grid;grid-template-columns:1fr 1.25fr;gap:20px}} .chk .ticks.h{{gap:12px}} .chk .tk{{white-space:nowrap}}
-.mv{{display:grid;grid-template-columns:300px 1fr;gap:22px;align-items:center;margin:4px 0 2px}} .cap2{{font-size:15px;line-height:1.5;margin:0}} .gl{{max-width:91%;margin:0 auto}} .wrow{{display:flex;align-items:center;gap:10px;margin:6px 0}} .wk{{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:{C};width:38px;flex:none}} .wrow .ticks{{margin:0}} .ck2{{font-size:15.5px;font-weight:700;margin:8px 0 2px}}
+.mv{{display:grid;grid-template-columns:260px 1fr;gap:22px;align-items:center;margin:4px 0 2px}} .cap2{{font-size:15px;line-height:1.5;margin:0}} .gl{{max-width:91%;margin:0 auto}} .wrow{{display:flex;align-items:center;gap:10px;margin:6px 0}} .wk{{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:{C};width:38px;flex:none}} .wrow .ticks{{margin:0}} .ck2{{font-size:15.5px;font-weight:700;margin:8px 0 2px}}
 .tch{{display:flex;align-items:center;gap:16px;margin-top:12px;padding-top:10px;border-top:1px dashed #c9cbe0}} .tch>span:first-child{{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:{MUTE}}}
 @media print {{ body{{background:#fff}} .pg{{margin:0}} }}'''
-html = f'<!doctype html><html><head><meta charset="utf-8"><title>Lesson {LESSON}: {SONG["title"]}</title><style>{FF}</style><style>{css}</style></head><body>{P1}{P2}{P3}{P4}</body></html>'
+html = f'<!doctype html><html><head><meta charset="utf-8"><title>Lesson {LESSON}: {SONG["title"]}</title><style>{FF}</style><style>{css}</style></head><body>{P1}{P2}{P3}</body></html>'
 open(sys.argv[3], 'w').write(html); print('ok', len(html))
