@@ -21,6 +21,14 @@ const { chromium } = require('playwright');
               out.push(`p${i + 1}: ${el.tagName.toLowerCase()}${el.className && el.className.baseVal === undefined ? '.' + el.className : ''} outside ${cell.tagName.toLowerCase()} (${Math.round(Math.max(C.top - E.top, E.bottom - C.bottom, C.left - E.left, E.right - C.right))}px) in “${(cell.innerText || '').trim().slice(0, 30)}”`);
           });
         });
+        pg.querySelectorAll('g.verse text').forEach(tx => {   // (4) every note label sits centred under its notehead
+          const ow = tx.closest('g.chord') || tx.closest('g.note'); if (!ow) return;
+          const hs = [...ow.querySelectorAll('g.notehead')]; if (!hs.length) return;
+          let a = 1e9, b = -1e9; hs.forEach(h => { const r = h.getBoundingClientRect(); a = Math.min(a, r.left); b = Math.max(b, r.right); });
+          const T = tx.getBoundingClientRect(); if (!T.width) return;
+          const d = (T.left + T.right) / 2 - (a + b) / 2;
+          if (Math.abs(d) > 2) out.push(`p${i + 1}: label “${tx.textContent.trim()}” ${Math.round(d)}px off its note`);
+        });
         const body = pg.querySelector('.body');
         if (body) {
           const limit = (pg.querySelector('.sign, .ffoot') || pg.querySelector('.foot')).getBoundingClientRect().top - 4;
