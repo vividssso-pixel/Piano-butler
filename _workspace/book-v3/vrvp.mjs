@@ -20,7 +20,7 @@ function one(tok, dflt) {
 function layer(src, dflt) { return src.trim().split(/\s+/).filter(Boolean).map(t => one(t, dflt)).join(''); }
 function mei(v) {
   const dflt = v.dur || '1';
-  const staves = v.clef === 'GF' ? [['G', 2, v.src], ['F', 4, v.src2 || '']] : [[v.clef || 'G', v.clef === 'F' ? 4 : 2, v.src]];
+  const staves = v.clef === 'GF' ? [['G', 2, v.src], ['F', 4, v.src2 || '']] : [[v.clef || 'G', v.cline || (v.clef === 'F' ? 4 : 2), v.src]];
   const bars = staves.map(s => s[2].split('|'));
   const n = Math.max(...bars.map(b => b.length));
   let ms = '';
