@@ -21,7 +21,7 @@ const { chromium } = require('playwright');
       boxes.forEach(bx => heads.forEach(h => { if (hit(bx, h)) bad.push([key, 'box/head']); }));
     });
     // what must be there: the counts under the rhythm lines, the answer boxes under the reading line
-    const need = { rhy1: '.cnt', rhy2: '.cnt', read1: 'rect.wbox' };
+    const need = { rhy1: '.cnt', rhy2: '.cnt', read1: 'rect.wbox', L2a: '.when', L3a: '.when', L4a: '.when', L4b: '.when' };
     for (const [k, sel] of Object.entries(need)) { const el = document.querySelector('.mus[data-snip="' + k + '"]'); if (!el || !el.querySelectorAll(sel).length) bad.push([k, 'missing', sel]); }
     return { n: document.querySelectorAll('.mus').length, bad };
   });

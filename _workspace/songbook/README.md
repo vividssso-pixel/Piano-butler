@@ -10,7 +10,11 @@ One lesson, one song, six parts:
    (`drills.html?room=<id>`; drills still needs that link).
 2. Say and clap -- the words on a one-line rhythm staff, counts under them: coral where a note starts, grey dashes while it is held.
 3. Read it -- C position on the keys (the song's notes lit, finger numbers), the letter names of bars 1-4 in boxes, step or skip.
-4. Play it four ways -- the same tune with more for the left hand each way (stars 1-4):
+4. Play it four ways -- the same tune with more for the left hand each way (stars 1-4). Ways 2-4 are lead sheets (her
+   4 Nov 09:21): the tune with the chord letters, and under each bar only when the left hand plays (a held note's finger
+   and a line, dots for two notes together, a finger a beat), beside two small left-hand keyboards for C and G. The bass
+   clef waits for its own room (lesson 8).
+   The ways:
    Way 1 the tune (RH fingers); Way 2 one long note below (C or G); Way 3 with chords (C-G / D-G on beats 1 and 3);
    Way 4 a moving bass (5 1 3 1 / 4 1 2 1). Play together: one player Way 1, the other Way 4's left hand.
 5. Move it to G (her 4 Nov 01:17: learn the whole key, turn the keys) -- same fingers, new home: the G keyboard (G position,
