@@ -22772,7 +22772,7 @@ function RefShelf({ onChapter, onHouse, onTool }) {
     </div>
     <RefSearch onOpen={(id, q) => { pick(id); if (q) setTimeout(() => { try { const pn = document.querySelector('[data-ref-panel="' + id + '"]'); if (!pn) return; const f = refFold(q).trim(); const cand = [...pn.querySelectorAll(REF_FIND_SEL)].filter(e => !e.querySelector(REF_FIND_SEL) && refFold(e.textContent).includes(f)); const el = cand.find(e => refFold(e.textContent).trim() === f) || cand[0]; if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); const o = el.style.background; el.style.background = '#ffe9df'; el.style.transition = 'background .6s'; setTimeout(() => { el.style.background = o; }, 1800); } } catch (e) {} }, 380); }}/>
     {onTool && <div data-ref-favs style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap',margin:'10px 0 0'}}><span style={{fontSize:10.5,fontWeight:900,letterSpacing:'0.1em',textTransform:'uppercase',color:'#4a4d86'}}>★ {t('Favourites', '즐겨찾기')}</span>
-      {SHELF_FAVS.map(([id, en, ko2]) => <button key={id} type="button" className="chip" data-ref-fav={id} onClick={() => onTool(id)} style={{padding:'4px 12px',fontSize:13,fontWeight:800}}>{t(en, ko2)}</button>)}</div>}
+      {SHELF_FAVS.map(([id, en, ko2]) => <button key={id} type="button" className="chip" data-ref-fav={id} onClick={() => onTool(id)} style={{padding:'4px 12px',fontSize:13,fontWeight:800}}>{t(en, ko2)}</button>)}{booksUnlocked() && <a href={'?book=reference' + (LANG === 'ko' ? '&lang=ko' : '&lang=en')} target="_blank" rel="noopener" className="chip" data-ref-print style={{padding:'4px 12px',fontSize:13,fontWeight:800,textDecoration:'none',marginLeft:'auto'}}>{t('Print the Reference', '참고 자료 인쇄')}</a>}</div>}   {/* m65: the Reference book lives in the Library */}
     {rows ? rows.map((grp, ri) => { const sw = Math.min(...rows.map(rowW)); return <div key={ri} data-ref-oneshelf style={{marginTop:ri ? 26 : 18,display:'flex',alignItems:'flex-end',gap:10}}>   {/* m21/m22: sections on one shelf; m33: two shelves of two sections when one is too tight */}
       {grp.map(gi => REF_SHELVES[gi]).map(([en, kr, books], gi) => <div key={en} style={{display:'flex',flexDirection:'column',minWidth:0,flex:'0 0 auto'}}>
         <div style={{display:'flex',alignItems:'flex-end',gap:4,padding:'0 5px'}}>{books.map(([id, ben, bko], i) => { const label = t(ben, bko), h = Math.max(REF_SPINE_H[k++ % REF_SPINE_H.length], label.length * (ko ? 15 : 8.2) + 64);
@@ -23304,12 +23304,58 @@ function PrintablesShelf({ onChapter }) {
     </div>
   );
 }
+// m65 (her 3 Nov): no Books or Printables tab. Each chapter carries its own books and cut-outs; the whole sets sit under the House.
+const CB_KIND = { lesson: ['Lesson Book', '레슨북', '#26296b'], work: ['Chapter Workbook', '챕터 워크북', '#e4572e'], teacher: ['Teacher copy', '교사용', '#8a6a2c'], spread: ['Side by side', '나란히', '#26296b'], cutouts: ['Cut-outs', '오려 쓰는 교구', '#8a6a2c'] };
+function cbPill(kind, href, label, key) {
+  const [en, ko, col] = CB_KIND[kind];
+  return <a key={key || kind} href={href} target="_blank" rel="noopener" data-cb={kind} style={{fontSize:12,fontWeight:800,color:col,border:'1.5px solid ' + col,borderRadius:8,padding:'3px 9px',textDecoration:'none',background:'#fff',whiteSpace:'nowrap'}}>{label || t(en, ko)}</a>;
+}
+function ChapterBooksStrip({ id }) {
+  const bk = (kind) => '?book=' + kind + '&ch=' + id + '&lang=en';
+  const cuts = (typeof CUTOUT_LIST !== 'undefined' ? CUTOUT_LIST : []).filter(c => c.ch === id);
+  const ckps = checkFloors().filter(f => CKP_PAGES[f.key] && f.ids[f.ids.length - 1] === id);
+  if (!LESSON_BOOKS[id] && !WORKBOOKS[id] && !TEACHER_COPIES[id] && !cuts.length && !ckps.length) return null;
+  return (
+    <div data-testid="chapter-books" className="no-print" style={{background:'#fff',border:'1.5px solid #e6e0cf',borderRadius:12,padding:'8px 11px',marginBottom:14}}>
+      <div style={{fontSize:11,fontWeight:900,letterSpacing:'.08em',color:'var(--muted)',marginBottom:6}}>{t('BOOKS FOR THIS CHAPTER', '이 챕터의 책')}</div>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+        {LESSON_BOOKS[id] && cbPill('lesson', bk('lesson'))}
+        {WORKBOOKS[id] && cbPill('work', bk('work'))}
+        {TEACHER_COPIES[id] && cbPill('teacher', bk('teacher'))}
+        {LESSON_BOOKS[id] && WORKBOOKS[id] && cbPill('spread', bk('spread'))}
+        {cuts.map(c => cbPill('cutouts', '?book=cutouts&ch=' + c.id + '&lang=en', <>✂ {c.name}</>, 'cut-' + c.id))}
+      </div>
+      {ckps.map(f => (
+        <div key={f.key} data-testid={'chapter-ckp-' + f.key} style={{marginTop:8,paddingTop:8,borderTop:'1px dashed #e6e0cf',display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',fontSize:13,fontWeight:800,color:'var(--navy)'}}>
+          {t('Checkpoint', '중간점검') + (f.part ? ' ' + f.part : '')}<span style={{color:'var(--muted)',fontWeight:600,fontSize:12}}>{t('on paper', '종이로')}</span>
+          {cbPill('work', '?book=check&floor=' + f.key + '&lang=en', t('Student', '학생용'), 'ck-s')}
+          {cbPill('teacher', '?book=checkkey&floor=' + f.key + '&lang=en', t('Key', '정답'), 'ck-k')}
+        </div>))}
+    </div>
+  );
+}
+function WholeSetsCard() {
+  const w = (kind, ch, label) => cbPill(kind, '?book=' + kind + '&ch=' + ch + '&lang=en', label, kind + ch);
+  return (
+    <div data-testid="whole-sets" className="card no-print" style={{marginTop:14,padding:'10px 12px'}}>
+      <div style={{fontSize:11,fontWeight:900,letterSpacing:'.08em',color:'var(--muted)'}}>{t('ALL CHAPTER BOOKS', '챕터 책 전체')}</div>
+      <div style={{fontSize:12.5,color:'var(--muted)',lineHeight:1.5,margin:'4px 0 8px'}}>{t('Each chapter’s books and cut-outs are inside the chapter. Whole sets for printing in one go (long, so they take a moment to open):', '챕터마다 책과 교구는 그 챕터 안에 있어요. 한 번에 인쇄할 전체 묶음(길어서 열리는 데 잠깐 걸려요):')}</div>
+      <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+        {w('lesson', 'all', t('All Lesson Books', '레슨북 전체'))}
+        {w('work', 'all', t('All Chapter Workbooks', '챕터 워크북 전체'))}
+        {w('work', 'front', t('Workbook front pages', '워크북 앞부분'))}
+        {w('teacher', 'all', t('All Teacher copies', '교사용 전체'))}
+        {w('cutouts', 'all', t('All cut-outs', '교구 전체'))}
+      </div>
+    </div>
+  );
+}
 function BooksShelf() {
   const STAGE_KO = ['시작하기', '피아노 기본', '리듬과 박 세기', '악보 읽기', '소리, 기호, 용어', '이론: 스케일, 조, 화음', '악기 알아보기'];
   const href = (kind, ch) => '?book=' + kind + '&ch=' + ch + '&lang=en';
   const KIND = {
     lesson: { en: 'Lesson Book', ko: '레슨북', col: '#26296b' },
-    work: { en: 'Workbook', ko: '워크북', col: '#e4572e' },
+    work: { en: 'Chapter Workbook', ko: '챕터 워크북', col: '#e4572e' },
     teacher: { en: 'Teacher copy', ko: '교사용', col: '#8a6a2c' },
     cutouts: { en: 'Cut-outs', ko: '오려 쓰는 교구', col: '#8a6a2c' },
     spread: { en: 'Side by side', ko: '나란히', col: '#26296b' },
@@ -26334,7 +26380,7 @@ function App() {
         {preview && <div style={{background:'#26296b',color:'#fff',borderRadius:10,padding:'8px 12px',marginBottom:12,fontSize:13.5,display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}><span>{t('You’re seeing what a student sees.', '학생에게 보이는 화면이에요.')}</span><button className="chip" style={{padding:'2px 9px',fontSize:12}} onClick={() => setPreview(false)}>{t('Back to teacher view', '교사 화면으로')}</button></div>}
         {!st.lock && (T || showToday) && (   /* m43: a linked student gets Today · Practice */
           <div style={{display:'flex',gap:6,borderBottom:'1.5px solid var(--navy-line)',marginBottom:16}}>
-            {(T ? [['house', t('House', '집')], ...(booksUnlocked() ? [['books', t('Books', '책')]] : []), ['map', t('Library', '서재')], ...(booksUnlocked() ? [['printables', t('Printables', '교구')]] : []), ['practice', t('Practice', '연습')], ['lib', <span style={{whiteSpace:'nowrap'}}><span style={{fontSize:'0.8em'}}>🔒</span>{t('Lessons', '레슨')}</span>]]   /* m16: the old Home categories, hers alone, at the end */ : [['today', t('Today', '오늘')], ['practice', t('Practice', '연습')]]).map(([v, l]) => { const on = v === 'map' ? (T ? !st.lib && (st.view === 'home' || (st.view === 'tools' && st.ret === 'toolbox')) : !st.lib && (st.view === 'path' || st.view === 'chapters' || st.view === 'home')) : v === 'house' ? (st.view === 'path' || st.view === 'chapters') : v === 'lib' ? !!st.lib && (st.view === 'home' || (st.view === 'tools' && st.ret === 'home')) : (!T && v === 'practice') ? ['practice', 'path', 'chapters', 'home', 'tools'].includes(st.view) : st.view === v;   // m19: Library and House, two tabs
+            {(T ? [['house', t('House', '집')], ['map', t('Library', '서재')], ['practice', t('Practice', '연습')], ['lib', <span style={{whiteSpace:'nowrap'}}><span style={{fontSize:'0.8em'}}>🔒</span>{t('Lessons', '레슨')}</span>]]   /* m16: the old Home categories, hers alone, at the end */ : [['today', t('Today', '오늘')], ['practice', t('Practice', '연습')]]).map(([v, l]) => { const on = v === 'map' ? (T ? !st.lib && (st.view === 'home' || (st.view === 'tools' && st.ret === 'toolbox')) : !st.lib && (st.view === 'path' || st.view === 'chapters' || st.view === 'home')) : v === 'house' ? (st.view === 'path' || st.view === 'chapters') : v === 'lib' ? !!st.lib && (st.view === 'home' || (st.view === 'tools' && st.ret === 'home')) : (!T && v === 'practice') ? ['practice', 'path', 'chapters', 'home', 'tools'].includes(st.view) : st.view === v;   // m19: Library and House, two tabs
               return (
               <button key={v} onClick={() => { update({ view: v === 'map' ? mapPick(HM, T) : v === 'house' ? 'path' : v === 'lib' ? 'home' : v, lib: v === 'lib', tool: null, kit: null, from: null, ret: null, drill: T && (v === 'practice' || v === 'students') ? st.drill : null, ...(v === 'map' || v === 'lib' || v === 'house' ? { ha: null, hc: null, hs: null } : {}) }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{flex:1,border:'none',borderBottom:'3px solid ' + (on ? 'var(--coral)' : 'transparent'),marginBottom:-1.5,background:'transparent',padding:'10px 0',fontFamily:"'Playfair Display', Georgia, serif",fontSize:T ? 13.5 : 18,fontWeight:800,cursor:'pointer',
                 color:on ? 'var(--navy)' : 'var(--muted)'}}>{l}</button>
@@ -26359,11 +26405,11 @@ function App() {
             ? <ConceptHome st={st} update={update}/>
             : <>{todayBack}<RefShelf onChapter={jumpToChapter} onTool={(id) => { update({ view: 'tools', tool: id, ret: 'toolbox', lib: false }); try { window.scrollTo(0, 0); } catch (e) {} }} onHouse={() => { mapSave('house'); update({ view: 'path', lib: false, ha: null, hc: null, hs: null, drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
         ) : !inChapter && !st.lock ? (
-          T && st.view === 'printables'
+          false && T && st.view === 'printables'
             ? <div className="fade-up"><PageIntro title={t('Printables', '교구')} text={t('Paper tools to print, cut out and play with at the lesson table. Each set is a few A4 pages with a Try this box.', '인쇄해서 오려 쓰는 종이 교구. 세트마다 A4 몇 장과 해 보기 상자가 있어요.')}/><PrintablesShelf onChapter={jumpToChapter}/></div>
-          : T && st.view === 'books'
+          : false && T && st.view === 'books'
             ? <div className="fade-up"><PageIntro title={t('Books', '책')} text={t('The printed books (Lesson Book, Workbook, Teacher copy for every chapter) and the checkpoints on paper.', '인쇄용 책(챕터마다 레슨북, 워크북, 교사용)과 종이 중간점검.')}/><BooksShelf/></div>
-            : <>{todayBack}{HM && !T && <div style={{display:'flex',justifyContent:'flex-end',margin:'0 0 8px'}}><button type="button" className="chip" data-map-library onClick={() => { mapSave('topics'); update({ view: 'home', lib: false, ha: null, hc: null, hs: null, drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{padding:'4px 12px',fontSize:13,fontWeight:800}}>{t('The library ›', '서재 ›')}</button></div>}<MapHome onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/></>
+            : <>{todayBack}{HM && !T && <div style={{display:'flex',justifyContent:'flex-end',margin:'0 0 8px'}}><button type="button" className="chip" data-map-library onClick={() => { mapSave('topics'); update({ view: 'home', lib: false, ha: null, hc: null, hs: null, drill: null }); try { window.scrollTo(0, 0); } catch (e) {} }} style={{padding:'4px 12px',fontSize:13,fontWeight:800}}>{t('The library ›', '서재 ›')}</button></div>}<MapHome onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/>{T && booksUnlocked() && <WholeSetsCard/>}</>
         ) : visLocked(st.drill) ? <VisitorLock onBack={() => { update({ view: 'path', drill: null, from: null }); try { window.scrollTo(0, 0); } catch (e) {} }}/> : <>
         {!st.lock && (() => {
           const sg = catOfChapter(active.id) ? { title: catOfChapter(active.id).name } : null, list = orderedChapterIds(), k = list.indexOf(active.id);
@@ -26380,6 +26426,7 @@ function App() {
           );
         })()}
 
+        {!st.lock && T && booksUnlocked() && <ChapterBooksStrip id={active.id}/>}   {/* m65: the chapter's books live in the chapter */}
         {!st.lock && !(HM && st.view === 'home') && <AfterNote id={active.id} onOpen={(id) => { update({ drill: id, tab: 'learn', level: 1 }); try { window.scrollTo(0, 0); } catch (e) {} }}/>}
         {concept ? (
           <>
@@ -51921,7 +51968,7 @@ function WbPage({ no, chId, children, bare, teacher, head, left }) {
   return (
     <section className="bk-page" style={{position:'relative'}}>
       {!bare && <VicFloor no={no}/>}
-      {!bare && <VicHead left={left || (teacher ? <b style={{color:BK.coral}}>Teacher copy</b> : t('Workbook', '워크북'))} right={head ? head : chId === 'front' ? t('Start here', '여기서 시작') : t('Chapter ', '') + bkChapterNo(chId) + t('', '장') + ' · ' + bkChapterName(chId)} mb={9}/>}
+      {!bare && <VicHead left={left || (teacher ? <b style={{color:BK.coral}}>Teacher copy</b> : t('Chapter Workbook', '챕터 워크북'))} right={head ? head : chId === 'front' ? t('Start here', '여기서 시작') : t('Chapter ', '') + bkChapterNo(chId) + t('', '장') + ' · ' + bkChapterName(chId)} mb={9}/>}
       <div style={{flex:1,minHeight:0,overflow:'hidden',display:'flex',flexDirection:'column'}} className="bk-body"><BkChapterCtx.Provider value={chId}>{children}</BkChapterCtx.Provider></div>
     </section>
   );
