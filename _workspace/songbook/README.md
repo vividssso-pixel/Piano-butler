@@ -4,7 +4,7 @@ Her 4 Nov 01:00: books first, a song-led set (song Lesson Book + Level Workbook 
 starting from nothing. This folder makes one sample lesson for her to judge: `lesson-05-mary-had-a-little-lamb.pdf`
 (Lesson 5 in the Level 0 list of 4 Nov; it goes with the drills room 'note-values').
 
-One lesson, one song, three A4 pages (her 4 Nov 10:08 and 10:16):
+One lesson, one song, three A4 pages, a part to a page (her 4 Nov 10:08, 10:16 and 10:35):
 
 1. Say and clap -- what the song is made of first: the time (4/4: four beats in a bar, a crotchet a beat) and the note
    values it uses (crotchet 1, minim 2, semibreve 4, with beat dots); then the words on a one-line rhythm staff with
@@ -15,9 +15,8 @@ One lesson, one song, three A4 pages (her 4 Nov 10:08 and 10:16):
 3. Play it four ways -- root only at this stage (her 10:16): Way 1 the tune; Way 2 hold the root (C with 5, G with 1,
    in C position); Way 3 the root on beats 1 and 3; Way 4 the root on every beat. A legend, a small left-hand keyboard,
    then ONE score: the tune with right-hand fingers and chord letters, a numbered row under it for each of Ways 2-4
-   with only finger numbers and hold lines. Play together: a small teacher duet (her 10:30) made from the song's
-   `duet` data -- two treble staves played an octave higher, the right hand a pattern on the chord's notes, the left
-   hand two notes a half bar -- so the child can play any Way under it.
+   with only finger numbers and hold lines. Play together (two players). The teacher duet was tried in the book and taken out (her 10:36); the song's
+   `duet` data stays for the play-along page (playalong-mary.html).
 4. Check.
 
 Move it (transposing) is left out for now (her 10:16: later, it looked too much); the code still has the G line (g1, g2).

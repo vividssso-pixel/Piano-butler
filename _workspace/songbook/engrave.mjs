@@ -116,7 +116,7 @@ function addRows(svg, ways, b0, pic) {
   return svg.replace(/(<g class="page-margin"[^>]*>)/, `$1${lab}`);
 }
 const JOBS = {
-  sing1: [0, 4, { words: 1, meter: 1, boxes: 1 }], sing2: [4, 8, { words: 1, boxes: 1, noEx: 1 }],
+  sing1: [0, 4, { words: 1, meter: 1, boxes: 1, pw: 1500 }], sing2: [4, 8, { words: 1, boxes: 1, noEx: 1, pw: 1500 }],
   rhy1: [0, 4, { words: 1, rhythm: 1, meter: 1, counts: 1, pw: 1350 }], rhy2: [4, 8, { words: 1, rhythm: 1, counts: 1, pw: 1350 }],   // bigger: the first thing a child reads
   play1: [0, 4, { fing: 1, chords: 1, meter: 1, rows: ['way2', 'way3', 'way4'] }],   // the tune once, every way under it
   play2: [4, 8, { fing: 1, chords: 1, rows: ['way2', 'way3', 'way4'] }],
