@@ -25,7 +25,7 @@ P22 = ppage(f"""{head('Part I · Pitch · 1', 'The keyboard', 'Keys to the <b>le
 {kbx('C', 14, 30, 120, brackets=[(a, b, ('2 black keys' if k == 2 else '3 black keys'), True) for a, b, k in g14], label=True, shade={i: ('#fdeee8' if i % 7 < 3 else '#eef0f8') for i in range(14)}, marks=[f'<line x1="{x * 30}" x2="{x * 30}" y1="0" y2="120" stroke="#26296b" stroke-width="3.4"/>' for x in (3, 7, 10)], scale=1.25)}
 {two(h3('The white keys') + '<p>Seven letters, <b>A B C D E F G</b>, then the letters start again. <b>C D E</b> sit around each group of two black keys (C just left of it), <b>F G A B</b> around each group of three (F just left of it): the two tints on the picture.</p>',
      h3('Middle C and octaves') + '<p><b>Middle C</b> is the C nearest the middle of the keyboard. From one C to the next is an <b>octave</b>: eight white keys, counting both. Octaves are numbered from the bottom: middle C is <b>C4</b>, the C below it C3, the C above C5; every key up to the next B shares the number (D4, E4 … B4).</p>')}
-{tbl(['Term', 'Meaning', 'First met'], [['pitch', 'how high or low a sound is', 'Level 0'], ['octave', 'from one note to the next with the same name (8 white keys, 12 semitones)', 'Level 0'], ['semitone', 'from one key to the very next key, black or white', 'Level 0'], ['tone', 'two semitones', 'Level 0'], ['register', 'a part of the keyboard: low, middle or high', 'Level 0']], ['20%', '60%', '20%'])}
+{tbl(['Term', 'Meaning', 'First met'], [['pitch', 'how high or low a sound is', 'Level 0'], ['register', 'a part of the keyboard: low, middle or high', 'Level 0'], ['semitone', 'from one key to the very next key, black or white', 'Level 0'], ['tone', 'two semitones', 'Level 0'], ['octave', 'from one note to the next with the same name (8 white keys, 12 semitones)', 'Level 0']], ['20%', '60%', '20%'])}
 {howto('find any key, for example G4', ['Find middle C (C4): the C just left of the two black keys nearest the middle.', 'Say the letters up from it, one white key each: C D E F G.', 'Still in the same octave, so it is G4. One octave higher is G5.'])}
 {foot('The staff p. 23 · The staff and the keyboard p. 25 · Semitones p. 27', 'Workbook Pitch 1 · Online: Keyboard patterns, Musical alphabet')}""", 22)
 
@@ -88,7 +88,7 @@ P27 = ppage(f"""{head('Part I · Pitch · 6', 'Counting intervals', 'An <b>inter
 {px('ex_iv', 100, 'D up to A: D E F G A is five letters, so the interval is a 5th, whether the notes come one after the other or together.')}
 {h3('Interval numbers from C')}
 {px('intv', 104)}
-{howto('name an interval’s number', ['Say the lower note’s letter as 1.', 'Count up the letters to the higher note: line, space, line …', 'The last number is the interval: 3 letters a 3rd, 5 letters a 5th, 8 letters an octave. Sharps and flats do not change the number.'])}
+{howto('name an interval’s number', ['Say the lower note’s letter as 1.', 'Count up the letters to the higher note: line, space, line …', 'The last number is the interval: the same note is a unison (1), 3 letters a 3rd, 5 letters a 5th, 8 letters an octave. Sharps and flats do not change the number.'])}
 {remember([('The letters run A to G, then start again.', '22'), ('A step goes from a line to the next space.', '24')])}
 {foot('Major, minor and perfect p. 28 · Scales p. 29', 'Workbook Pitch 4 · Online: Library › Intervals')}""", 27)
 
