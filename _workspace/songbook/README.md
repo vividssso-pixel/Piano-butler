@@ -15,7 +15,9 @@ One lesson, one song, three A4 pages (her 4 Nov 10:08 and 10:16):
 3. Play it four ways -- root only at this stage (her 10:16): Way 1 the tune; Way 2 hold the root (C with 5, G with 1,
    in C position); Way 3 the root on beats 1 and 3; Way 4 the root on every beat. A legend, a small left-hand keyboard,
    then ONE score: the tune with right-hand fingers and chord letters, a numbered row under it for each of Ways 2-4
-   with only finger numbers and hold lines. Play together.
+   with only finger numbers and hold lines. Play together: a small teacher duet (her 10:30) made from the song's
+   `duet` data -- two treble staves played an octave higher, the right hand a pattern on the chord's notes, the left
+   hand two notes a half bar -- so the child can play any Way under it.
 4. Check.
 
 Move it (transposing) is left out for now (her 10:16: later, it looked too much); the code still has the G line (g1, g2).
