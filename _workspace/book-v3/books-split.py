@@ -10,11 +10,11 @@ CH = [
  ('Pitch', 3, 'Sharps, flats and naturals', 'Accidentals, how long they last, two names for one key.', 'hbP', [7], '26', 'wbP', [6, 7], '6–7'),
  ('Pitch', 4, 'Tones, semitones and intervals', 'Counting the distance between notes: numbers and qualities.', 'hbP', [8, 9], '27–28', 'wbP', [8, 9], '8–9'),
  ('Pitch', 5, 'Scales and keys', 'Major and minor scales, key signatures, finding the key, the circle of fifths.', 'hbP', [10, 11, 12, 13, 14], '29–33', 'wbP', [10, 11], '10–11'),
- ('Time', 1, 'Pulse and the bar', 'The steady beat, tempo, strong beats and bar lines.', 'hbT', [2], '36', 'wbT', [1, 2], '1–2'),
- ('Time', 2, 'Notes and rests', 'Every note value and its rest, and their other names.', 'hbT', [3], '37', 'wbT', [3, 4], '3–4'),
- ('Time', 3, 'How long is a note?', 'Adding values, dots and ties.', 'hbT', [4], '38', 'wbT', [5, 6], '5–6'),
- ('Time', 4, 'Time signatures', 'Simple, compound and irregular time.', 'hbT', [5, 6], '39–40', 'wbT', [7, 8], '7–8'),
- ('Time', 5, 'Rhythm', 'Grouping, upbeats, triplets, syncopation and swing.', 'hbT', [7, 8], '41–42', 'wbT', [9, 10], '9–10'),
+ ('Time', 1, 'Pulse and the bar', 'The steady beat, tempo, strong beats and bar lines.', 'hbT', [2, 3], '36–37', 'wbT', [1, 2], '1–2'),
+ ('Time', 2, 'Notes and rests', 'Every note value and its rest, and their other names.', 'hbT', [4, 5], '38–39', 'wbT', [3, 4], '3–4'),
+ ('Time', 3, 'How long is a note?', 'Adding values, dots and ties.', 'hbT', [6, 7], '40–41', 'wbT', [5, 6], '5–6'),
+ ('Time', 4, 'Time signatures', 'Simple, compound and irregular time.', 'hbT', [8, 9, 10, 11], '42–45', 'wbT', [7, 8], '7–8'),
+ ('Time', 5, 'Rhythm', 'Grouping, upbeats, triplets, syncopation and swing.', 'hbT', [12, 13, 14, 15], '46–49', 'wbT', [9, 10], '9–10'),
 ]
 EXTRA = [('hb', 'Pitch', 'Before you start · Part I opener', 'hbP', [1, 2], 'Every note answers three questions; the map of Part I.'), ('hb', 'Time', 'Part II opener', 'hbT', [1], 'The map of Part II and its contents.'),
          ('wb', 'Pitch', 'Review, progress and answers', 'wbP', [12, 13, 14], 'A ten-minute review, the progress chart and every answer.'), ('wb', 'Time', 'Review, progress and answers', 'wbT', [11, 12, 13], 'A ten-minute review, the progress chart and every answer.')]

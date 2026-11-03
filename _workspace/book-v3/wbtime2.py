@@ -43,13 +43,13 @@ NTB = '<table class="ht nt"><colgroup><col style="width:14%"><col style="width:4
 A2 = tp('Learn', 'Notes and rests', 'Notes and rests', 'Each plain note lasts half as long as the one above it; every note has a rest of the same length.', f'''
 {ex(1, 'Name, beats and rest', 1, 'Write each note’s name and beats (crotchet = 1 beat), then draw the rest of the same length. The first row is done.', NTB)}
 {ex(2, 'Draw it', 2, 'Draw one note for each length (crotchet = 1 beat).', '<div class="mm4">' + ''.join(f'<div><span class="drw"></span><span class="mmk">{t}</span></div>' for t in ('2 beats', '½ beat', '3 beats', '4 beats')) + '</div>')}
-{ex(3, 'The other name', 1, 'Write the other name for each note. The first is done.', tbl(['Name', 'Also called'], [['semibreve', '<b class="done2">whole note</b>'], ['minim', LINE], ['crotchet', LINE], ['quaver', LINE], ['semiquaver', LINE]], ['40%', '60%']))}''', 3, 37)
+{ex(3, 'The other name', 1, 'Write the other name for each note. The first is done.', tbl(['Name', 'Also called'], [['semibreve', '<b class="done2">whole note</b>'], ['minim', LINE], ['crotchet', LINE], ['quaver', LINE], ['semiquaver', LINE]], ['40%', '60%']))}''', 3, 38)
 heads = [(70, 62), (130, 50), (190, 26), (250, 32), (310, 56), (370, 20), (430, 68), (490, 38), (550, 44)]
 B2 = tp('Use', 'Notes and rests', 'Notes and rests', 'Below the middle line, stems go up on the right; above it, down on the left.', f'''
 {ex(1, 'Rests on the staff', 1, 'Draw a semibreve rest in the first bar (it hangs below the fourth line) and a minim rest in the second (it sits on the middle line).', staff('', 2))}
 {ex(2, 'Draw the stems', 2, 'Turn every head into a crotchet: add a stem going the right way. The first is done.', staff('', 1, heads=heads, stems=[0]))}
 {ex(3, 'Finish with a rest', 2, 'Each bar is short. Complete it with one rest.', grid([cell(k, 'rest ' + BOX, 64) for k in ('wra', 'wrb', 'wrc', 'wrd')], 4))}
-{ex(4, 'Which did you hear?', 2, 'Someone claps one rhythm from each row (or play it in the online Library). Circle A, B or C.', opts(('wa1', 'wa2', 'wa3')) + opts(('wa4', 'wa5', 'wa6')))}''', 4, 37)
+{ex(4, 'Which did you hear?', 2, 'Someone claps one rhythm from each row (or play it in the online Library). Circle A, B or C.', opts(('wa1', 'wa2', 'wa3')) + opts(('wa4', 'wa5', 'wa6')))}''', 4, 38)
 
 # ---------- 3 How long ----------
 sums = [(['m', 'c'], '3'), (['c', 'q'], ''), (['dm', 'c'], ''), (['sb', 'm'], ''), (['dc', 'q'], ''), (['q', 'q', 'q', 'q'], '')]
@@ -57,12 +57,12 @@ srows = ''.join('<div class="sum">' + ' <span class="pl">+</span> '.join(gin('n'
 A3 = tp('Learn', 'How long is a note?', 'How long is a note?', 'A dot adds half the note’s value; a tie joins two notes of the same pitch into one sound.', f'''
 {ex(1, 'Note sums', 1, 'Add up the beats (crotchet = 1 beat). The first one is done.', f'<div class="sums">{srows}</div>')}
 {ex(2, 'Complete the bar', 2, 'Each bar is one note short. Write the one note that completes it.', grid([cell(k, 'one note ' + BOX, 64) for k in ('wf1', 'wf2', 'wf3', 'wf4', 'wf5', 'wf6')], 3))}
-{ex(3, 'Dots and ties: count it', 2, 'Write a count in every box.', wx('wc44', 84))}''', 5, 38)
+{ex(3, 'Dots and ties: count it', 2, 'Write a count in every box.', wx('wc44', 84))}''', 5, 40)
 B3 = tp('Use', 'How long is a note?', 'How long is a note?', 'A tie can cross a bar line; a dot cannot.', f'''
 {ex(1, 'Tie or dot?', 2, 'Each tie makes one sound. Write the one dotted note that lasts the same.', grid([cell(k, 'dotted note ' + BOX, 60) for k in ('wti1', 'wti2', 'wti3')], 3))}
 {ex(2, 'Spot the mistake', 2, 'One bar does not add up to four beats. Circle it and correct it.', wx('wmis2', 70))}
 {ex(3, 'Clap and count', 1, 'Clap the dotted rhythms, counting the “&” inside each dotted crotchet. Tick a circle each time it is steady.', wx('wl2', 66) + ticks())}
-{ex(4, 'In your music', 1, 'Find each of these in a piece you are learning.', piece(['a dotted minim', 'a dotted crotchet', 'a tie', 'a rest of one whole bar']))}''', 6, 38)
+{ex(4, 'In your music', 1, 'Find each of these in a piece you are learning.', piece(['a dotted minim', 'a dotted crotchet', 'a tie', 'a rest of one whole bar']))}''', 6, 40)
 
 # ---------- 4 Time signatures ----------
 sc = [ts(3, 4), ts(6, 8), ts(2, 2), ts(9, 8), ts(4, 4), ts(12, 8), ts(3, 8), ts(6, 4)]
@@ -70,21 +70,21 @@ scrows = ''.join(f'<div class="scc">{x}<span class="sel">simple · compound</spa
 A4 = tp('Learn', 'Time signatures', 'Time signatures', 'Top number: how many counts in a bar. Bottom number: which note is one count.', f'''
 {ex(1, 'Which time signature?', 1, 'Each line is one full bar. Write a time signature that fits.', grid([cell(k, 'time signature ' + BOX, 60) for k in ('wt1', 'wt2', 'wt3', 'wt4', 'wt5', 'wt6')], 3))}
 {ex(2, 'Simple or compound?', 2, 'Circle simple or compound, then write how many beats are in each bar.', f'<div class="scg">{scrows}</div>')}
-{ex(3, 'What does it mean?', 1, 'Complete each sentence.', '<div class="sent"><p>In 3/4 there are ' + BOX + ' beats in a bar, and each beat is a ' + LINE.replace('al', 'al in') + '.</p><p>In 6/8 there are ' + BOX + ' beats in a bar, and each beat is a ' + LINE.replace('al', 'al in') + '.</p><p>C means the same as ' + BOX + ' ; ¢ means the same as ' + BOX + ' .</p></div>')}''', 7, 39)
+{ex(3, 'What does it mean?', 1, 'Complete each sentence.', '<div class="sent"><p>In 3/4 there are ' + BOX + ' beats in a bar, and each beat is a ' + LINE.replace('al', 'al in') + '.</p><p>In 6/8 there are ' + BOX + ' beats in a bar, and each beat is a ' + LINE.replace('al', 'al in') + '.</p><p>C means the same as ' + BOX + ' ; ¢ means the same as ' + BOX + ' .</p></div>')}''', 7, 42)
 B4 = tp('Use', 'Time signatures', 'Time signatures', 'In compound time each beat is a dotted note, divided into three.', f'''
 {ex(1, 'Add the bar lines', 2, 'Draw a bar line after every full bar, and a final bar line at the end.', wx('wb1', 50) + wx('wb2', 50) + wx('wb3', 50))}
 {ex(2, 'Beam them', 3, 'The same six quavers in two time signatures. Join them with beams to show the beats: in twos for 3/4, in threes for 6/8.', grid([cell('wbm2', '3 beats', 64), cell('wbm1', '2 beats', 64)], 2))}
-{ex(3, 'Make your own', 3, 'Write one bar of 6/8 and one bar of 3/4 with six quavers each, beamed correctly. Clap both and feel the difference.', staff('6/8', 1) + staff('3/4', 1))}''', 8, 39)
+{ex(3, 'Make your own', 3, 'Write one bar of 6/8 and one bar of 3/4 with six quavers each, beamed correctly. Clap both and feel the difference.', staff('6/8', 1) + staff('3/4', 1))}''', 8, 42)
 
 # ---------- 5 Rhythm ----------
 A5 = tp('Learn', 'Rhythm', 'Rhythm', 'Beams join the notes of one beat, so the beats stay visible.', f'''
 {ex(1, 'Good grouping?', 2, 'Circle ✓ if the grouping shows the beats, ✗ if it hides one.', grid([cell(k, '✓ &nbsp; ✗', 64) for k in ('wg1', 'wg2', 'wg3', 'wg4')], 2))}
 {ex(2, 'Count it', 2, 'Write a count in every box: a triplet, then a syncopation.', '<div class="two" style="grid-template-columns:1fr 1fr">' + wx('wtr', 80) + wx('wsy', 80) + '</div>')}
-{ex(3, 'The upbeat', 2, 'This piece starts on beat 3. Write a count in every box. Then: how many beats does the last bar need?', wx('wan', 70) + f'<div class="add">beats in the last bar {BOX}</div>')}''', 9, 41)
+{ex(3, 'The upbeat', 2, 'This piece starts on beat 3. Write a count in every box. Then: how many beats does the last bar need?', wx('wan', 70) + f'<div class="add">beats in the last bar {BOX}</div>')}''', 9, 46)
 B5 = tp('Use', 'Rhythm', 'Rhythm', 'Swing: pairs of quavers written evenly, played long–short.', f'''
 {ex(1, 'Swing', 1, 'Which line shows how swung quavers are played? Circle A or B, then play both and hear the difference.', '<div class="op3" style="grid-template-columns:1fr 1fr">' + ''.join(f'<div class="opc"><span class="ol">{l}</span>{wx(k, 60)}</div>' for l, k in (('A', 'wsw1'), ('B', 'wsw2'))) + '</div>')}
 {ex(2, 'Clap and count', 2, 'Clap each line with a metronome while counting aloud. Tick a circle each day it is steady.', ''.join(f'<div class="cl2"><div class="clh"><span class="lv3">{l}</span>{ticks()}</div>{wx(k, 64)}</div>' for k, l in (('wl6', '6/8'), ('wl3', 'triplets and semiquavers'), ('wl4', 'syncopation'))))}
-{ex(3, 'In your music', 1, 'Find each of these in a piece you are learning.', piece(['an upbeat (anacrusis)', 'a triplet', 'a syncopation', 'swing marked at the top']))}''', 10, 42)
+{ex(3, 'In your music', 1, 'Find each of these in a piece you are learning.', piece(['an upbeat (anacrusis)', 'a triplet', 'a syncopation', 'swing marked at the top']))}''', 10, 48)
 
 # ---------- Review, progress, answers ----------
 rsum = ''.join('<div class="sum">' + ' <span class="pl">+</span> '.join(gin('n', k, 32) for k in ks) + ' <span class="pl">=</span> ' + BOX + '</div>' for ks in (['dm', 'q', 'q'], ['dc', 'q', 'm']))
@@ -97,7 +97,7 @@ R = wpage(f'''<div class="kick">Time · Review</div><h1>Review</h1><p class="rem
 <div class="score">Score <span class="ab"></span> / 20</div>''', 11, 36)
 concepts = ['pulse, tempo and strong beats', 'bar lines and repeat signs', 'note and rest values', 'dots and ties', 'simple time signatures', 'compound time (6/8)', 'grouping with beams', 'upbeats', 'triplets', 'syncopation and swing']
 PR = wpage(f'''<div class="kick">Time · Progress</div><h1>My progress</h1><p class="rem2"><span>How to use</span>Tick each column when it is true. Come back to this page every few weeks.</p>
-{tbl(['Concept', 'I know it', 'I can write it', 'I can play it', 'Handbook'], [[c, '<span class="cb2"></span>', '<span class="cb2"></span>', '<span class="cb2"></span>', f'p. {p}'] for c, p in zip(concepts, (36, 36, 37, 38, 39, 40, 41, 41, 41, 42))], ['40%', '15%', '15%', '15%', '15%'], 'prog')}
+{tbl(['Concept', 'I know it', 'I can write it', 'I can play it', 'Handbook'], [[c, '<span class="cb2"></span>', '<span class="cb2"></span>', '<span class="cb2"></span>', f'p. {p}'] for c, p in zip(concepts, (36, 36, 38, 40, 42, 44, 46, 46, 46, 48))], ['40%', '15%', '15%', '15%', '15%'], 'prog')}
 <div class="note2"><b>Teacher’s note</b><div class="lines"><span class="al"></span><span class="al"></span><span class="al"></span></div></div>''', 12, 36)
 ans = [('p. 1', 'Slow to fast: 60, 76, 92, 120. Strong beats on 1; in 4/4 medium on 3. Signs: bar line, double bar line, final bar line, repeat signs. Count: 1 2 3 · 1–2 3 · 1–2–3.'),
        ('p. 2', 'Mistake: bar 3 has 4 beats.'),
