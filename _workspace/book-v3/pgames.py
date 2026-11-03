@@ -5,7 +5,7 @@ WP.update(json.load(open('/tmp/claude-0/pk/wp/gout_c.json')))
 bow = f'<svg viewBox="0 0 40 24" style="width:30px;height:18px"><path d="M2 3 L18 12 L2 21 Z" fill="none" stroke="{N_}" stroke-width="2" stroke-linejoin="round"/><path d="M38 3 L22 12 L38 21 Z" fill="none" stroke="{N_}" stroke-width="2" stroke-linejoin="round"/><circle cx="20" cy="12" r="2.6" fill="{C}"/></svg>'
 def gpage(title, how, inner, n):
     return f'''<section class="pg"><div class="top"><span>PIANO BUTLER · FREE PRINTABLE</span><span>PITCH GAMES</span></div><div class="rule"></div>
-<div class="body"><div class="kick">Pitch game</div><h1>{title}</h1><p class="lead">{how}</p>{inner}</div><div class="ffoot"><span>{bow}</span><span>More at <b>thepianobutler.com</b></span><span>Free to print and share for teaching. © Piano Butler</span></div><div class="foot"><span>{n}</span></div></section>'''
+<div class="body"><div class="kick">Pitch game</div><h1>{title}</h1><p class="lead">{how}</p>{inner}</div><div class="ffoot"><span>{bow}</span><span>More at <b>thepianobutler.com</b></span><span>Free for personal and classroom use. Share the link, not the file. © Piano Butler</span></div><div class="foot"><span>{n}</span></div></section>'''
 def ud(t): return f'<p class="sm">Answers, upside down: <span class="ud">{t}</span></p>'
 
 # 1. Note crossword: every clue is written in notes
