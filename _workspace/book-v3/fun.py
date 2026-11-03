@@ -4,7 +4,9 @@ exec(open('/tmp/claude-0/pk/wbtime2.py').read())
 random.seed(7)
 def g(k, h=26):
     return gin('r', k[1:], h) if k.startswith('r') else gin('n', k, h)
-def pat(keys, h=26): return '<span class="pat">' + ''.join(g(k, h) for k in keys) + '</span>'
+def pat(keys, h=26, maxw=None):
+    if maxw: h = min(h, int((maxw / len(keys) - 2) / 0.72))
+    return '<span class="pat">' + ''.join(g(k, h) for k in keys) + '</span>'
 def fpage(kind, title, how, inner, n, foot=True):
     ff = f'<div class="ffoot"><span>{bow}</span><span>More at <b>thepianobutler.com</b></span><span>Free to print and share for teaching. © Piano Butler</span></div>' if foot else ''
     return f'''<section class="pg"><div class="top"><span>PIANO BUTLER · {kind}</span><span>RHYTHM GAMES</span></div><div class="rule"></div>
@@ -69,7 +71,7 @@ for pos, i in enumerate(order):
     s = SQ[i]
     if isinstance(s, str):
         t, sub = SPEC[s]; inner = f'<b class="sp">{t}</b><span class="sps">{sub}</span>'
-    else: inner = pat(s, 30 if len(s) <= 4 else 24)
+    else: inner = pat(s, 30, maxw=88)
     grid[pos] = f'<div class="bsq{" spc" if isinstance(s, str) else ""}"><span class="bn">{i + 1}</span>{inner}</div>'
 P4 = fpage('FREE PRINTABLE', 'Race to the double bar', 'Two to four players, one die, a counter each. Roll and move. Clap the rhythm on your square while counting aloud: if another player agrees it was right, stay; if not, go back to where you were. First to the final bar wins.',
            f'<div class="board">{"".join(grid)}</div><div class="rules"><div><b>Start</b> on square 1.</div><div><b>Harder:</b> play the rhythm on the piano instead of clapping, at ♩ = 80.</div><div><b>Team game:</b> one claps, the other counts aloud.</div></div>', 4)

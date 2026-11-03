@@ -90,7 +90,7 @@ BARS = [[['c', 'c', 'c', 'c'], ['m', 'c', 'c'], ['c', 'c', 'm'], ['q', 'q', 'c',
         [['c', 'q', 'q', 'm'], ['m', 'm'], ['c', 'c', 'c', 'rc'], ['dm', 'c'], ['q', 'q', 'q', 'q', 'm'], ['c', 'm', 'c']],
         [['c', 'c', 'c', 'c'], ['q', 'q', 'c', 'q', 'q', 'c'], ['m', 'c', 'rc'], ['c', 'c', 'm'], ['dc', 'q', 'm'], ['rc', 'c', 'c', 'c']],
         [['sb'], ['m', 'm'], ['dm', 'rc'], ['m', 'rm'], ['sb'], ['c', 'c', 'm']]]
-rows = ''.join(f'<tr><td class="die"><span class="dface">{i + 1}</span></td>' + ''.join(f'<td>{pat(BARS[b][i], 26)}</td>' for b in range(4)) + '</tr>' for i in range(6))
+rows = ''.join(f'<tr><td class="die"><span class="dface">{i + 1}</span></td>' + ''.join(f'<td>{pat(BARS[b][i], 26, maxw=108)}</td>' for b in range(4)) + '</tr>' for i in range(6))
 add('The dice composer', 'Two hundred years ago, composers sold dice games for writing music by chance. Roll a die four times: the first roll chooses bar 1, the second bar 2, and so on. Copy your bars below, clap them, then play them on one key, or on a five-finger scale.',
     f'<table class="ht dice"><thead><tr><th></th>' + ''.join(f'<th>{c}</th>' for c in COLS) + f'</tr></thead><tbody>{rows}</tbody></table><h3>My piece</h3>' + staff('4/4', 4) + '<div class="tickrow"><span>Clapped it · Played it · Played it to someone</span>' + ticks(3) + '</div><p class="sm">There are 6 × 6 × 6 × 6 = 1,296 possible pieces.</p>')
 

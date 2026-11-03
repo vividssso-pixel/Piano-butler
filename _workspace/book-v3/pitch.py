@@ -30,7 +30,7 @@ P22 = ppage(f'''{head('Part I · Pitch · 1', 'The keyboard', 'Keys to the <b>le
 {watch(['Finding C by counting from the bottom: find a group of two black keys and look just to the left.', 'Calling every white-to-white step a tone: E–F and B–C have no black key between them, so they are semitones.'])}
 {foot('The staff p. 23 · Tones and semitones p. 26', 'Workbook Level 0 · Keyboard · Online: Keyboard patterns, Musical alphabet')}''', 22)
 
-clefs = [[gl('𝄞', 40), '<b>treble clef</b> (G clef)', 'curls round the line for G (line 2)', 'Level 0'], [gl('𝄢', 34), '<b>bass clef</b> (F clef)', 'its two dots sit either side of the line for F (line 4)', 'Level 0'], [gl('𝄡', 34), '<b>alto clef</b> (C clef)', 'its centre marks middle C, on line 3', 'Level 2']]
+clefs = [[gsym('𝄞', 46), '<b>treble clef</b> (G clef)', 'curls round the line for G (line 2)', 'Level 0'], [gsym('𝄢', 30), '<b>bass clef</b> (F clef)', 'its two dots sit either side of the line for F (line 4)', 'Level 0'], [gsym('𝄡', 34), '<b>alto clef</b> (C clef)', 'its centre marks middle C, on line 3', 'Level 2']]
 P23 = ppage(f'''{head('Part I · Pitch · 2', 'The staff and the clefs', 'Music is written on a <b>staff</b> (or stave) of five lines and four spaces. Lines and spaces are counted from the <b>bottom</b>. Higher notes sit higher on the staff. A <b>clef</b> at the start tells you which notes the lines and spaces stand for.')}
 {tbl(['Clef', 'Name', 'How it shows its note', 'First met'], clefs, ['12%', '28%', '44%', '16%'])}
 {two(h3('The grand staff') + '<p>Piano music uses two staves joined by a brace: the treble staff, usually for the right hand, above the bass staff, usually for the left. <b>Middle C</b> sits between them on a short line of its own, and can be written in either staff.</p>', px('gs_c', 190), '1fr 1fr')}
@@ -47,7 +47,7 @@ P24 = ppage(f'''{head('Part I · Pitch · 3', 'Reading the notes', 'Each line an
 {two('<p>Find these first: middle C, the G the treble clef curls round, the F between the bass clef’s dots. Any other note is a step or a skip away. A <b>step</b> moves from a line to the next space (or space to line); a <b>skip</b> jumps from line to line or space to space.</p>', px('landmarks', 160), '1fr 1.2fr')}
 {watch(['Reading the bass clef with treble names: the same position has a different name in each clef.', 'Counting lines from the top: always count from the bottom.'])}''', 24)
 
-acc = [[gl('♯', 30), 'sharp', 'raises a note by a semitone', 'Level 0'], [gl('♭', 30), 'flat', 'lowers a note by a semitone', 'Level 0'], [gl('♮', 30), 'natural', 'cancels a sharp or flat', 'Level ½'], [gl('𝄪', 30), 'double sharp', 'raises by two semitones', 'Level 4'], [gl('𝄫', 30), 'double flat', 'lowers by two semitones', 'Level 4']]
+acc = [[gsym('♯', 28), 'sharp', 'raises a note by a semitone', 'Level 0'], [gsym('♭', 28), 'flat', 'lowers a note by a semitone', 'Level 0'], [gsym('♮', 28), 'natural', 'cancels a sharp or flat', 'Level ½'], [gsym('𝄪', 16), 'double sharp', 'raises by two semitones', 'Level 4'], [gsym('𝄫', 28), 'double flat', 'lowers by two semitones', 'Level 4']]
 P25 = ppage(f'''{head('Part I · Pitch · 4', 'Sharps, flats and naturals', 'An <b>accidental</b> written before a note changes its pitch by a semitone. On the keyboard, a sharp usually means the black key to the right, a flat the black key to the left.')}
 {tbl(['Sign', 'Name', 'What it does', 'First met'], acc, ['12%', '22%', '46%', '20%'])}
 {h3('An accidental lasts for the bar')}
