@@ -40,10 +40,11 @@ const S = {"title": "Mary had a little lamb", "bars": [[["e4", "c", "Ma", "i"], 
 const LEN = { c: 1, m: 2, s: 4, q: 0.5 };
 const SPEEDS = [['Slow', 60], ['Medium', 80], ['Fast', 100]];
 const PARTS = [['tune', 'The tune'], ['band', 'The band'], ['way2', 'Way 2'], ['way3', 'Way 3'], ['way4', 'Way 4']];
-const STYLES = { musicbox: ['Music box', 'A music box over soft strings, a low bass and a shaker.'],
+const STYLES = { duet: ['Piano duet', 'A second piano an octave above you: the teacher’s part from the book’s data.'],
+  musicbox: ['Music box', 'A music box over soft strings, a low bass and a shaker.'],
   country: ['Boom-chick', 'Bass on 1 and 3, a guitar strum on 2 and 4, a light drum.'],
   ballad: ['Ballad', 'Strings, a rolling piano and a slow drum.'] };
-let style = 'musicbox';
+let style = 'duet';
 let bpm = 60, on = { tune: true, band: true, way2: false, way3: false, way4: false };
 const $ = (id) => document.getElementById(id);
 function seg(el, items, isOn, set) {
@@ -87,6 +88,13 @@ function inst(kind, t, m, dur, vol) {   // the band's voices: one oscillator rec
 const triad = (sym) => { const r = { C: 48, D: 50, E: 52, F: 53, G: 55, A: 57, B: 59 }[sym[0]], minor = /m$/.test(sym); return [r, r + (minor ? 3 : 4), r + 7]; };
 function band(start, spb) {   // [time, fn] for the band, in the chosen style, bar by bar; the last bar one rolled chord
   const last = S.bars.length - 1, out = [];
+  if (style === 'duet') {   // the teacher's duet, an octave above the child, on the same piano voice
+    const D = S.duet; S.chords.forEach((ch, b) => { const T = start + b * 4 * spb;
+      if (b === last) { D.end.rh.concat(D.end.lh).forEach((p, k) => out.push(() => tone(T + k * 0.03, midi(p) + 12, 3.6 * spb, 0.12))); return; }
+      D.rh[ch].forEach((p, k) => out.push(() => tone(T + k * spb, midi(p) + 12, spb * 0.95, 0.15)));
+      [0, 2].forEach(k => D.lh[ch].forEach(p => out.push(() => tone(T + k * spb, midi(p) + 12, 2 * spb * 0.95, 0.11)))); });
+    return out;
+  }
   S.chords.forEach((ch, b) => { const [r, t3, f5] = triad(ch), T = start + b * 4 * spb, nb = S.chords[b + 1];
     if (b === last) { [r - 12, r, t3, f5, r + 12, t3 + 12, f5 + 12, r + 24].forEach((m, k) => out.push(() => inst(k < 1 ? 'bass' : style === 'musicbox' ? 'bell' : 'pluck', T + k * 0.06, m + (style === 'musicbox' && k ? 12 : 0), 3 * spb, k ? 0.07 : 0.22)));
       out.push(() => inst('pad', T, r + 12, 3.5 * spb, 0.035)); out.push(() => inst('pad', T, t3 + 12, 3.5 * spb, 0.03)); if (style !== 'musicbox') out.push(() => kick(T, 0.5)); return; }
