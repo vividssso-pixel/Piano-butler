@@ -4,7 +4,7 @@ Her 4 Nov 01:00: books first, a song-led set (song Lesson Book + Level Workbook 
 starting from nothing. This folder makes one sample lesson for her to judge: `lesson-06-mary-had-a-little-lamb.pdf`
 (the lesson number is a placeholder until the Level 0 song list is set).
 
-One lesson, one song, five parts:
+One lesson, one song, six parts:
 
 1. Listen and sing -- the tune with the words (sound before symbol); a QR box for the recording (placeholder).
 2. Say and clap -- the words on a one-line rhythm staff, counts under them: coral where a note starts, grey dashes while it is held.
@@ -12,7 +12,11 @@ One lesson, one song, five parts:
 4. Play it four ways -- the same tune with more for the left hand each way (stars 1-4):
    Way 1 the tune (RH fingers); Way 2 one long note below (C or G); Way 3 with chords (C-G / D-G on beats 1 and 3);
    Way 4 a moving bass (5 1 3 1 / 4 1 2 1).
-5. Check -- I can..., the four ways, the teacher's Pass / Not yet, and lines for the teacher's note.
+5. Move it to G (her 4 Nov 01:17: learn the whole key, turn the keys) -- same fingers, new home: the G keyboard (G position,
+   the key's one black key F sharp), bars 1-4 in G with one sharp and the same finger numbers (new notes to read), the chords
+   moved (C to G, G to D). This tune uses only C D E G, so in G it never meets F sharp and in F never B flat: a first song for
+   turning the keys.
+6. Check -- I can..., the four ways in C and in G, the teacher's Pass / Not yet.
 
 Facts on the page, checked (Wikipedia, "Mary Had a Little Lamb", 4 Nov 2026): a rhyme by Sarah Josepha Hale, first printed in 1830
 by Marsh, Capen & Lyon, Boston; sung today to the tune of "Merrily We Roll Along" (not Lowell Mason's 1830s setting).
